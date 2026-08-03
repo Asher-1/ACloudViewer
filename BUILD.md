@@ -244,8 +244,9 @@ Expand the `INSTALL` group in CMake GUI to enable plugins:
 | qSIBR                   | PLUGIN_STANDARD_QSIBR                    | OFF           | SIBR Gaussian Splatting viewers (**Linux/Windows**; CI and docs default **OFF on macOS**) |
 | qDA3                    | PLUGIN_STANDARD_QDA3                     | OFF           | Depth Anything V3 — monocular depth, camera pose, COLMAP/GLB export, Automatic Reconstruction integration ([README](plugins/core/Standard/qDA3/README.md)). Requires `AICore_ENABLED=ON` (and `BUILD_RECONSTRUCTION=ON` for pipeline integration). |
 | qFreeSplatter           | PLUGIN_STANDARD_QFREESPLATTER            | OFF           | FreeSplatter 3D Gaussian Splatting — uncalibrated photos to 3D Gaussians, pose recovery, SIBR-compatible PLY export, optional in-app viewer via qSIBR ([README](plugins/core/Standard/qFreeSplatter/README.md)). Requires `AICore_ENABLED=ON`; pair with `PLUGIN_STANDARD_QSIBR=ON` for visualization. |
-| qLightGlue              | PLUGIN_STANDARD_QLIGHTGLUE               | OFF           | LightGlue sparse feature matching — SIFT/ELoFTR e2e via GGUF ([README](plugins/core/Standard/qLightGlue/README.md)). Requires `AICore_ENABLED=ON`. |
+| qLightGlue              | PLUGIN_STANDARD_QLIGHTGLUE               | OFF           | Sparse matching — **SIFT/ALIKED LightGlue** via GGUF ([README](plugins/core/Standard/qLightGlue/README.md)). Requires `AICore_ENABLED=ON`. |
 | qDeepLSD                | PLUGIN_STANDARD_QDEEPLSD                 | OFF           | DeepLSD wireframe extraction (df/angle GGUF) ([README](plugins/core/Standard/qDeepLSD/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/deeplsd`). |
+| qFaceDetect             | PLUGIN_STANDARD_QFACEDETECT              | OFF           | face-detect.cpp — SCRFD/YuNet detection, ArcFace/SFace verify, age/gender ([README](plugins/core/Standard/qFaceDetect/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/facedetect`). |
 
 > 📖 **Plugin catalog:** [plugins/README.md](plugins/README.md) — per-plugin README index and AICore build recipes.
 
@@ -321,21 +322,25 @@ cmake -DBUILD_CUDA_MODULE=ON \
       -DPLUGIN_STANDARD_QSIBR=ON \
       -DAICore_ENABLED=ON \
       -DPLUGIN_STANDARD_QDA3=ON \
+      -DPLUGIN_STANDARD_QDEEPLSD=ON \
+      -DPLUGIN_STANDARD_QFACEDETECT=ON \
       -DPLUGIN_STANDARD_QFREESPLATTER=ON \
       -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
       ..
 cmake --build . --config Release
 ```
 
-#### AICore (qDA3 + qFreeSplatter + qLightGlue) Build
+#### AICore (qDA3 + qDeepLSD + qFaceDetect + qFreeSplatter + qLightGlue) Build
 
-Builds `libAICore.so` (shared ggml inference core for DA3, FreeSplatter, and LightGlue) and the selected GUI plugins. Runtime **Auto** uses Metal → CPU on macOS and Vulkan → CPU on Linux/Windows by default. When `-DAICore_USE_CUDA=ON` and the CUDA backend is built, Auto becomes **CUDA → Vulkan → CPU** on Linux/Windows. SYCL remains explicit-only. CUDA is only enabled by `-DAICore_USE_CUDA=ON`; the unrelated CloudViewer `BUILD_CUDA_MODULE` option no longer adds CUDA to distributed AICore packages.
+Builds `libAICore.so` (shared ggml inference core for DA3, DeepLSD, FaceDetect, FreeSplatter, and LightGlue) and the selected GUI plugins. Runtime **Auto** uses Metal → CPU on macOS and Vulkan → CPU on Linux/Windows by default. When `-DAICore_USE_CUDA=ON` and the CUDA backend is built, Auto becomes **CUDA → Vulkan → CPU** on Linux/Windows. SYCL remains explicit-only. CUDA is only enabled by `-DAICore_USE_CUDA=ON`; the unrelated CloudViewer `BUILD_CUDA_MODULE` option no longer adds CUDA to distributed AICore packages.
 
 ```bash
 cmake -DBUILD_GUI=ON \
       -DBUILD_RECONSTRUCTION=ON \
       -DAICore_ENABLED=ON \
       -DPLUGIN_STANDARD_QDA3=ON \
+      -DPLUGIN_STANDARD_QDEEPLSD=ON \
+      -DPLUGIN_STANDARD_QFACEDETECT=ON \
       -DPLUGIN_STANDARD_QFREESPLATTER=ON \
       -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
       ..
@@ -635,7 +640,7 @@ version meets the bundled CUDA runtime major version. No CUDA Toolkit install re
 - **[Plugin catalog](plugins/README.md)** - Per-plugin README index (AI, Standard, I/O)
 - **[qDA3 Plugin](plugins/core/Standard/qDA3/README.md)** - Depth Anything V3 build, models, and Automatic Reconstruction integration
 - **[qFreeSplatter Plugin](plugins/core/Standard/qFreeSplatter/README.md)** - FreeSplatter 3D Gaussian Splatting, models, and SIBR export
-- **[qLightGlue Plugin](plugins/core/Standard/qLightGlue/README.md)** - LightGlue sparse feature matching (GGUF)
+- **[qLightGlue Plugin](plugins/core/Standard/qLightGlue/README.md)** - SIFT/ALIKED LightGlue matching (GGUF)
 
 ---
 

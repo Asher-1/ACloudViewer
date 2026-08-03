@@ -11,14 +11,13 @@
 #include <unordered_map>
 #include <vector>
 
-namespace lightglue::aliked_internal {
-
-#if defined(LIGHTGLUE_HAS_CUDA)
-struct AlikedDkdScratch;
-struct AlikedSddhScratch;
+#if defined(AICORE_CUDA_ALIKED)
+#include "cuda/aliked_cuda.hpp"
 #endif
 
-#if defined(LIGHTGLUE_HAS_VULKAN)
+namespace lightglue::aliked_internal {
+
+#if defined(AICORE_VULKAN_ALIKED)
 struct AlikedVulkanDkdScratch {
   GpuTensor nms;
   GpuTensor tmp_a;
@@ -27,13 +26,16 @@ struct AlikedVulkanDkdScratch {
   GpuTensor block_keys;
   GpuTensor block_indices;
   GpuTensor indices_dev;
+  GpuTensor score_contig;
   int32_t map_count = 0;
   int32_t max_kpts = 0;
+  int32_t score_h = 0;
+  int32_t score_w = 0;
 };
 
 struct AlikedVulkanSddhScratch {
   GpuTensor workspace;
-  GpuTensor feature_nchw;
+  GpuTensor feature_contig;
   int32_t capacity_count = 0;
   int32_t dim = 0;
   int32_t kernel_size = 0;
@@ -67,8 +69,17 @@ public:
 
   internal::Backend *backend() const { return backend_; }
   GgmlGpuSession *ggml() { return &ggml_; }
+  const GgmlGpuSession *ggml() const { return &ggml_; }
+  GgmlGpuSession *ComputeGgml() { return &compute_ggml_; }
+  const GgmlGpuSession *ComputeGgml() const { return &compute_ggml_; }
+  bool IsWarmedUp() const { return warmed_up_; }
 
   bool Warmup(const TensorMap &tensors, std::string *error);
+
+  bool EnsureComputeLinked(std::string *error);
+
+  // Copy persistent weight handles from an already-warmed cache (stack fallback).
+  bool ShareWarmStateFrom(const GpuPipelineCache &source, std::string *error);
 
   bool EnsureInput(int32_t w, int32_t h, int32_t c, std::string *error);
   GpuTensor &InputBuffer() { return input_buffer_; }
@@ -108,12 +119,12 @@ public:
   bool HasSddhWeights() const { return sddh_loaded_; }
   const CachedSddhWeights &SddhWeightTensors() const { return sddh_weights_; }
 
-#if defined(LIGHTGLUE_HAS_CUDA)
+#if defined(AICORE_CUDA_ALIKED)
   AlikedDkdScratch *dkd_scratch() { return dkd_scratch_.get(); }
   AlikedSddhScratch *sddh_scratch() { return sddh_scratch_.get(); }
 #endif
 
-#if defined(LIGHTGLUE_HAS_VULKAN)
+#if defined(AICORE_VULKAN_ALIKED)
   bool EnsureVulkanDkdScratch(int32_t h, int32_t w, int32_t max_kpts, std::string *error);
   AlikedVulkanDkdScratch *vulkan_dkd_scratch() { return &vulkan_dkd_scratch_; }
   bool EnsureVulkanSddhScratch(int32_t count, int32_t dim, int32_t kernel_size,
@@ -124,6 +135,8 @@ public:
 private:
   internal::Backend *backend_ = nullptr;
   GgmlGpuSession ggml_;
+  GgmlGpuSession compute_ggml_;
+  bool compute_linked_ = false;
   std::unordered_map<std::string, CachedDcnWeights> dcn_weights_;
   GpuTensor dcn_nchw_in_;
   GpuTensor dcn_nchw_offset_;
@@ -145,12 +158,12 @@ private:
   int32_t input_h_ = 0;
   int32_t input_c_ = 0;
 
-#if defined(LIGHTGLUE_HAS_CUDA)
+#if defined(AICORE_CUDA_ALIKED)
   std::unique_ptr<AlikedDkdScratch> dkd_scratch_;
   std::unique_ptr<AlikedSddhScratch> sddh_scratch_;
 #endif
 
-#if defined(LIGHTGLUE_HAS_VULKAN)
+#if defined(AICORE_VULKAN_ALIKED)
   AlikedVulkanDkdScratch vulkan_dkd_scratch_;
   AlikedVulkanSddhScratch vulkan_sddh_scratch_;
 #endif

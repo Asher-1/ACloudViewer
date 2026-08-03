@@ -16,13 +16,19 @@
 #include "ggml_gpu_session.hpp"
 #include "gpu_pipeline_cache.hpp"
 #include "gpu_postprocess.hpp"
+#include "gpu_sync.hpp"
 #include "gpu_tensor.hpp"
+#include "score_debug.hpp"
 #include "model_weights.hpp"
 #include "tensor_ops.hpp"
-#if defined(LIGHTGLUE_HAS_CUDA)
+#include "aliked_stage_bench.hpp"
+#if defined(AICORE_VULKAN_ALIKED)
+#include "vulkan/vulkan_aliked_dispatch.hpp"
+#endif
+#if defined(AICORE_CUDA_ALIKED)
 #include <cuda_runtime.h>
 
-#include "aliked_cuda.hpp"
+#include "cuda/aliked_cuda.hpp"
 #endif
 
 #include <algorithm>
@@ -78,23 +84,16 @@ float *DevPtr(const GpuTensor &tensor) {
     return reinterpret_cast<float *>(tensor.tensor->data);
 }
 
+bool LogBackboneIfDebug(internal::Backend *backend, const GpuTensor &tensor,
+                        int32_t c, int32_t h, int32_t w, const char *stage,
+                        std::string *error);
+
 bool UseCudaCustomKernels(internal::Backend *backend) {
-#if defined(LIGHTGLUE_HAS_CUDA)
+#if defined(AICORE_CUDA_ALIKED)
     return backend != nullptr && backend->IsCuda();
 #else
     (void)backend;
     return false;
-#endif
-}
-
-void SyncGpuPipeline(internal::Backend *backend) {
-    if (backend != nullptr && backend->handle != nullptr) {
-        ggml_backend_synchronize(backend->handle);
-    }
-#if defined(LIGHTGLUE_HAS_CUDA)
-    if (backend != nullptr && backend->IsCuda()) {
-        cudaDeviceSynchronize();
-    }
 #endif
 }
 
@@ -108,7 +107,7 @@ bool AvgPoolGpu(internal::Backend *backend,
     if (!UseCudaCustomKernels(backend)) {
         return RunAvgPool2dGpu(backend, input, kh, kw, stride, output, error);
     }
-#if defined(LIGHTGLUE_HAS_CUDA)
+#if defined(AICORE_CUDA_ALIKED)
     const int32_t oh = (input.h - kh) / stride + 1;
     const int32_t ow = (input.w - kw) / stride + 1;
     if (!GpuTensor::Allocate(backend, ow, oh, input.c, output, error)) {
@@ -143,13 +142,63 @@ bool UpsampleGpu(internal::Backend *backend,
                                  error)) {
             return false;
         }
-        ggml_backend_tensor_copy(input.tensor, output->tensor);
+        BackendTensorCopyCompat(backend, input.tensor, output->tensor);
         return true;
     }
+#if defined(AICORE_VULKAN_ALIKED)
+    if (backend != nullptr && backend->IsVulkan()) {
+        FlushGpuPipeline(backend);
+    }
+    if (backend != nullptr && backend->IsVulkan() &&
+        UseVulkanGpuUpsample(backend)) {
+        GpuTensor src_contig;
+        const GpuTensor *src = &input;
+        if (!IsContiguousWhcn(input.tensor, input.w, input.h, input.c)) {
+            if (!GpuTensor::Allocate(backend, input.w, input.h, input.c,
+                                     &src_contig, error)) {
+                return false;
+            }
+            BackendTensorCopyCompat(backend, input.tensor, src_contig.tensor);
+            src = &src_contig;
+        }
+        GpuTensor upsampled;
+        if (!GpuTensor::Allocate(backend, out_w, out_h, input.c, &upsampled,
+                                 error)) {
+            return false;
+        }
+        if (VkAlikedUpsampleBilinear(backend->handle, src->tensor,
+                                     upsampled.tensor, input.c, input.h,
+                                     input.w, out_h, out_w)) {
+            *output = std::move(upsampled);
+            FlushGpuPipeline(backend);
+            return true;
+        }
+    }
+    if (backend != nullptr && backend->IsVulkan()) {
+        std::vector<float> in_nchw;
+        if (!input.DownloadNchw(backend, &in_nchw, input.c, input.h, input.w,
+                                error)) {
+            return false;
+        }
+        std::vector<float> out_nchw;
+        UpsampleBilinear(in_nchw, input.c, input.h, input.w, out_h, out_w,
+                         &out_nchw);
+        if (!GpuTensor::Allocate(backend, out_w, out_h, input.c, output,
+                                 error)) {
+            return false;
+        }
+        if (!output->UploadNchw(backend, out_nchw, input.c, out_h, out_w,
+                              error)) {
+            return false;
+        }
+        FlushGpuPipeline(backend);
+        return true;
+    }
+#endif
     if (!UseCudaCustomKernels(backend)) {
         return RunInterpolateGpu(backend, input, out_w, out_h, output, error);
     }
-#if defined(LIGHTGLUE_HAS_CUDA)
+#if defined(AICORE_CUDA_ALIKED)
     GpuTensor upsampled;
     if (!GpuTensor::Allocate(backend, out_w, out_h, input.c, &upsampled,
                              error)) {
@@ -186,7 +235,7 @@ bool CropWhcnGpu(internal::Backend *backend,
         return RunCropWhcnGpu(backend, input, pad_top, pad_left, out_h, out_w,
                               output, error);
     }
-#if defined(LIGHTGLUE_HAS_CUDA)
+#if defined(AICORE_CUDA_ALIKED)
     if (!GpuTensor::Allocate(backend, out_w, out_h, input.c, output, error)) {
         return false;
     }
@@ -214,7 +263,7 @@ bool SeluGpu(internal::Backend *backend,
     if (!UseCudaCustomKernels(backend)) {
         return RunSeluGpu(backend, tensor, error);
     }
-#if defined(LIGHTGLUE_HAS_CUDA)
+#if defined(AICORE_CUDA_ALIKED)
     SyncGpuPipeline(backend);
     if (!AlikedCudaApplySelu(backend->handle, DevPtr(*tensor),
                              tensor->ElementCount())) {
@@ -327,7 +376,7 @@ bool ConcatChannelGpu(internal::Backend *backend,
     if (!UseCudaCustomKernels(backend)) {
         return RunConcatChannelGpu(backend, a, b, output, error);
     }
-#if defined(LIGHTGLUE_HAS_CUDA)
+#if defined(AICORE_CUDA_ALIKED)
     if (!GpuTensor::Allocate(backend, a.w, a.h, a.c + b.c, output, error)) {
         return false;
     }
@@ -354,7 +403,7 @@ bool SigmoidInPlaceGpu(internal::Backend *backend,
     if (!UseCudaCustomKernels(backend)) {
         return RunSigmoidInPlaceGpu(backend, tensor, error);
     }
-#if defined(LIGHTGLUE_HAS_CUDA)
+#if defined(AICORE_CUDA_ALIKED)
     SyncGpuPipeline(backend);
     if (!AlikedCudaSigmoidInPlace(backend->handle, DevPtr(*tensor),
                                   tensor->ElementCount())) {
@@ -382,7 +431,7 @@ bool L2NormalizeChannelsGpu(internal::Backend *backend,
         return RunL2NormalizeChannelsGpu(backend, tensor, channels, h, w,
                                          error);
     }
-#if defined(LIGHTGLUE_HAS_CUDA)
+#if defined(AICORE_CUDA_ALIKED)
     SyncGpuPipeline(backend);
     if (!AlikedCudaL2NormalizeChannels(backend->handle, DevPtr(*tensor),
                                        channels, h, w)) {
@@ -403,11 +452,12 @@ bool L2NormalizeChannelsGpu(internal::Backend *backend,
 bool AddInPlaceGpu(internal::Backend *backend,
                    GpuTensor *accum,
                    const GpuTensor &other,
-                   std::string *error) {
+                   std::string *error,
+                   const char *cache_key = nullptr) {
     if (!UseCudaCustomKernels(backend)) {
-        return RunAddGpu(backend, accum, other, error);
+        return RunAddGpu(backend, accum, other, error, cache_key);
     }
-#if defined(LIGHTGLUE_HAS_CUDA)
+#if defined(AICORE_CUDA_ALIKED)
     SyncGpuPipeline(backend);
     if (!AlikedCudaAddInPlace(backend->handle, DevPtr(*accum), DevPtr(other),
                               accum->ElementCount())) {
@@ -425,7 +475,8 @@ bool AddInPlaceGpu(internal::Backend *backend,
 #endif
 }
 
-bool ResBlockForwardGpu(GpuPipelineCache *cache,
+bool ResBlockForwardGpu(GpuPipelineCache *compute,
+                        GpuPipelineCache *weights,
                         const GpuTensor &input,
                         int32_t ic,
                         int32_t oc,
@@ -434,10 +485,19 @@ bool ResBlockForwardGpu(GpuPipelineCache *cache,
                         bool dcn,
                         GpuTensor *output,
                         std::string *error) {
+    if (compute == nullptr) {
+        compute = weights;
+    }
+    if (weights == nullptr) {
+        weights = compute;
+    }
+    GpuPipelineCache *const dcn_cache = weights;
+    internal::Backend *const backend = compute->backend();
+    GgmlConvRunner *const runner = compute->ggml()->runner();
     GpuTensor conv1;
     if (dcn) {
         if (!DcnConvBnDispatch(
-                    cache, input,
+                    dcn_cache, input,
                     RequireTensor(tensors, prefix + "_conv1_offset_conv_weight",
                                   error),
                     RequireTensor(tensors, prefix + "_conv1_offset_conv_bias",
@@ -453,7 +513,7 @@ bool ResBlockForwardGpu(GpuPipelineCache *cache,
         }
     } else {
         if (!ConvBnSeluGpu(
-                    cache->ggml()->runner(), cache->backend(), input,
+                    runner, backend, input,
                     RequireTensor(tensors, prefix + "_conv1_weight", error), oc,
                     3, 3, RequireTensor(tensors, prefix + "_bn1_weight", error),
                     RequireTensor(tensors, prefix + "_bn1_bias", error),
@@ -463,14 +523,19 @@ bool ResBlockForwardGpu(GpuPipelineCache *cache,
             return false;
         }
     }
-    if (dcn && !SeluGpu(cache->backend(), &conv1, error)) {
+    if (dcn && !SeluGpu(backend, &conv1, error)) {
+        return false;
+    }
+    if (dcn &&
+        !LogBackboneIfDebug(backend, conv1, oc, conv1.h, conv1.w,
+                            (prefix + ".selu1").c_str(), error)) {
         return false;
     }
 
     GpuTensor conv2;
     if (dcn) {
         if (!DcnConvBnDispatch(
-                    cache, conv1,
+                    dcn_cache, conv1,
                     RequireTensor(tensors, prefix + "_conv2_offset_conv_weight",
                                   error),
                     RequireTensor(tensors, prefix + "_conv2_offset_conv_bias",
@@ -492,11 +557,15 @@ bool ResBlockForwardGpu(GpuPipelineCache *cache,
                 RequireTensor(tensors, prefix + "_bn2_bias", error),
                 RequireTensor(tensors, prefix + "_bn2_running_mean", error),
                 RequireTensor(tensors, prefix + "_bn2_running_var", error));
-        if (!cache->ggml()->runner()->RunDevice(fused, conv1, &conv2, 1, 1,
-                                                error,
-                                                (prefix + ".conv2").c_str())) {
+        if (!runner->RunDevice(fused, conv1, &conv2, 1, 1, error,
+                               (prefix + ".conv2").c_str())) {
             return false;
         }
+    }
+    if (dcn &&
+        !LogBackboneIfDebug(backend, conv2, oc, conv2.h, conv2.w,
+                            (prefix + ".dcn2_out").c_str(), error)) {
+        return false;
     }
 
     GpuTensor identity_buf;
@@ -504,7 +573,7 @@ bool ResBlockForwardGpu(GpuPipelineCache *cache,
     if (tensors.count(prefix + "_downsample_weight") > 0) {
         const std::vector<float> &down_b =
                 RequireTensor(tensors, prefix + "_downsample_bias", error);
-        if (!ConvGpu(cache->ggml()->runner(), input,
+        if (!ConvGpu(runner, input,
                      RequireTensor(tensors, prefix + "_downsample_weight",
                                    error),
                      oc, 1, 1, &down_b, 0, 1, &identity_buf,
@@ -518,14 +587,47 @@ bool ResBlockForwardGpu(GpuPipelineCache *cache,
         return false;
     }
 
-    if (!AddInPlaceGpu(cache->backend(), &conv2, *identity, error)) {
+    if (!AddInPlaceGpu(backend, &conv2, *identity, error,
+                       (prefix + ".add").c_str())) {
         return false;
     }
-    if (!SeluGpu(cache->backend(), &conv2, error)) {
+    if (dcn &&
+        !LogBackboneIfDebug(backend, conv2, oc, conv2.h, conv2.w,
+                            (prefix + ".add_out").c_str(), error)) {
+        return false;
+    }
+    if (dcn) {
+        FlushGpuPipeline(backend);
+    }
+    if (!SeluGpu(backend, &conv2, error)) {
+        return false;
+    }
+    if (dcn &&
+        !LogBackboneIfDebug(backend, conv2, oc, conv2.h, conv2.w,
+                            (prefix + ".selu2").c_str(), error)) {
         return false;
     }
     *output = std::move(conv2);
     return true;
+}
+
+bool LogBackboneIfDebug(internal::Backend *backend, const GpuTensor &tensor,
+                        int32_t c, int32_t h, int32_t w, const char *stage,
+                        std::string *error) {
+#if defined(AICORE_VULKAN_ALIKED)
+    if (backend != nullptr && backend->IsVulkan() && DkdDebugEnabled()) {
+        BarrierGpuPipeline(backend);
+        return LogBackboneStage(backend, tensor, c, h, w, stage, error);
+    }
+#else
+    (void)backend;
+    (void)tensor;
+    (void)c;
+    (void)h;
+    (void)w;
+    (void)stage;
+#endif
+    return error == nullptr || error->empty();
 }
 
 }  // namespace
@@ -548,146 +650,283 @@ bool ExtractDenseMapGpuVram(const TensorMap &tensors,
     }
 
     GpuPipelineCache stack_cache(backend);
-    GpuPipelineCache *active = cache != nullptr ? cache : &stack_cache;
-    if (!active->Warmup(tensors, error)) {
-        return false;
+    GpuPipelineCache *pipe = cache != nullptr ? cache : &stack_cache;
+    {
+        StageBench bench("setup");
+        if (cache != nullptr && cache->IsWarmedUp()) {
+            if (!pipe->EnsureComputeLinked(error)) {
+                return false;
+            }
+        } else if (!pipe->Warmup(tensors, error) ||
+                   !pipe->EnsureComputeLinked(error)) {
+            return false;
+        }
     }
+
+    GgmlGpuSession *compute = pipe->ComputeGgml();
+    GgmlConvRunner *runner = compute->runner();
+    internal::Backend *const b = pipe->backend();
+
+#if defined(AICORE_VULKAN_ALIKED)
+    if (b != nullptr && b->IsVulkan()) {
+        BarrierGpuPipeline(b);
+    }
+#endif
 
     InputPadder padder(height, width, 32);
     const std::vector<float> padded = padder.Pad(image, 3, height, width);
 
-    if (!active->EnsureInput(padder.padded_w, padder.padded_h, 3, error)) {
+    if (!pipe->EnsureInput(padder.padded_w, padder.padded_h, 3, error)) {
         return false;
     }
-    GpuTensor &x1 = active->InputBuffer();
-    if (!x1.UploadNchw(backend, padded, 3, padder.padded_h, padder.padded_w,
-                       error)) {
-        return false;
-    }
-
-    if (!ConvBnSeluGpu(active->ggml()->runner(), active->backend(), x1,
-                       RequireTensor(tensors, "block1_conv1_weight", error), 16,
-                       3, 3, RequireTensor(tensors, "block1_bn1_weight", error),
-                       RequireTensor(tensors, "block1_bn1_bias", error),
-                       RequireTensor(tensors, "block1_bn1_running_mean", error),
-                       RequireTensor(tensors, "block1_bn1_running_var", error),
-                       1, 1, &x1, "block1.conv1", error)) {
-        return false;
-    }
-    if (!ConvBnSeluGpu(active->ggml()->runner(), active->backend(), x1,
-                       RequireTensor(tensors, "block1_conv2_weight", error), 16,
-                       3, 3, RequireTensor(tensors, "block1_bn2_weight", error),
-                       RequireTensor(tensors, "block1_bn2_bias", error),
-                       RequireTensor(tensors, "block1_bn2_running_mean", error),
-                       RequireTensor(tensors, "block1_bn2_running_var", error),
-                       1, 1, &x1, "block1.conv2", error)) {
-        return false;
+    GpuTensor &x1 = pipe->InputBuffer();
+    {
+        StageBench bench("upload_input");
+        if (!x1.UploadNchw(b, padded, 3, padder.padded_h, padder.padded_w,
+                             error)) {
+            return false;
+        }
     }
 
-    GpuTensor x2;
-    if (!AvgPoolGpu(backend, x1, 2, 2, 2, &x2, error)) {
-        return false;
-    }
-    if (!ResBlockForwardGpu(active, x2, 16, 32, tensors, "block2", false, &x2,
-                            error)) {
-        return false;
+    {
+        StageBench bench("backbone");
+        if (!ConvBnSeluGpu(runner, b, x1,
+                           RequireTensor(tensors, "block1_conv1_weight", error),
+                           16, 3, 3,
+                           RequireTensor(tensors, "block1_bn1_weight", error),
+                           RequireTensor(tensors, "block1_bn1_bias", error),
+                           RequireTensor(tensors, "block1_bn1_running_mean",
+                                         error),
+                           RequireTensor(tensors, "block1_bn1_running_var", error),
+                           1, 1, &x1, "block1.conv1", error)) {
+            return false;
+        }
+        if (!ConvBnSeluGpu(runner, b, x1,
+                           RequireTensor(tensors, "block1_conv2_weight", error),
+                           16, 3, 3,
+                           RequireTensor(tensors, "block1_bn2_weight", error),
+                           RequireTensor(tensors, "block1_bn2_bias", error),
+                           RequireTensor(tensors, "block1_bn2_running_mean",
+                                         error),
+                           RequireTensor(tensors, "block1_bn2_running_var", error),
+                           1, 1, &x1, "block1.conv2", error)) {
+            return false;
+        }
+
+        GpuTensor x2;
+        if (!AvgPoolGpu(b, x1, 2, 2, 2, &x2, error)) {
+            return false;
+        }
+        if (!ResBlockForwardGpu(pipe, pipe, x2, 16, 32, tensors, "block2",
+                                false, &x2, error)) {
+            return false;
+        }
+        if (!LogBackboneIfDebug(b, x2, 32, x2.h, x2.w, "block2_out", error)) {
+            return false;
+        }
+
+        GpuTensor x3;
+        if (!AvgPoolGpu(b, x2, 4, 4, 4, &x3, error)) {
+            return false;
+        }
+        if (!ResBlockForwardGpu(pipe, pipe, x3, 32, 64, tensors, "block3",
+                                true, &x3, error)) {
+            return false;
+        }
+        if (!LogBackboneIfDebug(b, x3, 64, x3.h, x3.w, "block3_out", error)) {
+            return false;
+        }
+
+        GpuTensor x4;
+        if (!AvgPoolGpu(b, x3, 4, 4, 4, &x4, error)) {
+            return false;
+        }
+        if (!LogBackboneIfDebug(b, x4, 64, x4.h, x4.w, "block4.in", error)) {
+            return false;
+        }
+        if (!ResBlockForwardGpu(pipe, pipe, x4, 64, 128, tensors, "block4",
+                                true, &x4, error)) {
+            return false;
+        }
+        if (!LogBackboneIfDebug(b, x4, 128, x4.h, x4.w, "block4_out", error)) {
+            return false;
+        }
+
+        auto project = [&](const GpuTensor &src, const char *weight_name,
+                           GpuTensor *dst) -> bool {
+            return ConvSeluGpu(runner, b, src,
+                               RequireTensor(tensors, weight_name, error), 32,
+                               1, 1, nullptr, 0, 1, dst, weight_name, error);
+        };
+
+        const int32_t fh = x1.h;
+        const int32_t fw = x1.w;
+        GpuTensor f1;
+        if (!project(x1, "conv1_weight", &f1)) {
+            return false;
+        }
+        if (!LogBackboneIfDebug(b, f1, 32, fh, fw, "proj_f1", error)) {
+            return false;
+        }
+        GpuTensor f2;
+        if (!project(x2, "conv2_weight", &f2)) {
+            return false;
+        }
+        if (!LogBackboneIfDebug(b, f2, 32, f2.h, f2.w, "proj_f2", error)) {
+            return false;
+        }
+        GpuTensor f3;
+        if (!project(x3, "conv3_weight", &f3)) {
+            return false;
+        }
+        GpuTensor f4;
+        if (!project(x4, "conv4_weight", &f4)) {
+            return false;
+        }
+#if defined(AICORE_VULKAN_ALIKED)
+        if (b != nullptr && b->IsVulkan()) {
+            BarrierGpuPipeline(b);
+        }
+#endif
+        if (!UpsampleGpu(b, f2, fw, fh, &f2, error)) {
+            return false;
+        }
+        if (!LogBackboneIfDebug(b, f2, 32, fh, fw, "upsample_f2", error)) {
+            return false;
+        }
+        if (!UpsampleGpu(b, f3, fw, fh, &f3, error)) {
+            return false;
+        }
+        if (!LogBackboneIfDebug(b, f3, 32, fh, fw, "upsample_f3", error)) {
+            return false;
+        }
+        if (!UpsampleGpu(b, f4, fw, fh, &f4, error)) {
+            return false;
+        }
+        if (!LogBackboneIfDebug(b, f4, 32, fh, fw, "upsample_f4", error)) {
+            return false;
+        }
+#if defined(AICORE_VULKAN_ALIKED)
+        if (b != nullptr && b->IsVulkan()) {
+            BarrierGpuPipeline(b);
+        }
+#endif
+
+        GpuTensor fused;
+        if (!ConcatChannelGpu(b, f1, f2, &fused, error)) {
+            return false;
+        }
+        if (!LogBackboneIfDebug(b, fused, 64, fh, fw, "concat_f1_f2", error)) {
+            return false;
+        }
+        GpuTensor fused2;
+        if (!ConcatChannelGpu(b, fused, f3, &fused2, error)) {
+            return false;
+        }
+        if (!LogBackboneIfDebug(b, fused2, 96, fh, fw, "concat_96", error)) {
+            return false;
+        }
+        GpuTensor feature_gpu;
+        if (!ConcatChannelGpu(b, fused2, f4, &feature_gpu, error)) {
+            return false;
+        }
+        if (!LogBackboneIfDebug(b, feature_gpu, 128, fh, fw, "concat_out",
+                                error)) {
+            return false;
+        }
+
+        std::vector<GgmlGpuSession::ConvChainSpec> score_layers =
+                pipe->ScoreHeadLayers();
+        score_layers.push_back(
+                {pipe->ScoreHeadFinal(), 1, 1, "score_head_6", false});
+        GpuTensor score_gpu;
+        BarrierGpuPipeline(b);
+#if defined(AICORE_VULKAN_ALIKED)
+        if (b != nullptr && b->IsVulkan() && DkdDebugEnabled()) {
+            if (!LogFeatureMapStage(b, feature_gpu, 128, fh, fw,
+                                    "score_head_in", error)) {
+                return false;
+            }
+        }
+#endif
+        const bool use_score_sched =
+                b != nullptr && b->HasSched();
+        GgmlGpuSession::ScoreHeadSchedOptions sched_opts{};
+        if (use_score_sched) {
+            sched_opts.apply_sigmoid = true;
+            if (!compute->RunScoreHeadSchedGraph(score_layers, feature_gpu,
+                                                 &score_gpu, sched_opts,
+                                                 error)) {
+                return false;
+            }
+        } else if (!compute->RunFusedConvChainGraph(score_layers, feature_gpu,
+                                                    &score_gpu, error)) {
+            return false;
+        }
+        BarrierGpuPipeline(b);
+#if defined(AICORE_VULKAN_ALIKED)
+        if (b != nullptr && b->IsVulkan() && DkdDebugEnabled()) {
+            if (!LogScoreMapStage(b, score_gpu, score_gpu.h, score_gpu.w,
+                                  use_score_sched ? "sigmoid" : "score_head_out",
+                                  error)) {
+                return false;
+            }
+        }
+#endif
+        if (!use_score_sched) {
+            if (!SigmoidInPlaceGpu(b, &score_gpu, error)) {
+                return false;
+            }
+#if defined(AICORE_VULKAN_ALIKED)
+            if (b != nullptr && b->IsVulkan()) {
+                VkAlikedQueueIdle(b->handle);
+                if (DkdDebugEnabled()) {
+                    LogScoreMapStage(b, score_gpu, score_gpu.h, score_gpu.w,
+                                     "sigmoid", error);
+                }
+            }
+#endif
+        }
+        if (!L2NormalizeChannelsGpu(b, &feature_gpu, 128, fh, fw, error)) {
+            return false;
+        }
+
+        maps->height = orig_h;
+        maps->width = orig_w;
+        if (padder.pad_top == 0 && padder.pad_left == 0 &&
+            orig_h == feature_gpu.h && orig_w == feature_gpu.w) {
+            maps->feature = std::move(feature_gpu);
+            maps->score = std::move(score_gpu);
+        } else {
+            if (!CropWhcnGpu(b, feature_gpu, padder.pad_top, padder.pad_left,
+                             orig_h, orig_w, &maps->feature, error)) {
+                return false;
+            }
+            if (!CropWhcnGpu(b, score_gpu, padder.pad_top, padder.pad_left,
+                             orig_h, orig_w, &maps->score, error)) {
+                return false;
+            }
+        }
+#if defined(AICORE_VULKAN_ALIKED)
+        if (b != nullptr && b->IsVulkan()) {
+            if (!PinVulkanScoreMap(b, &maps->score, maps->height, maps->width,
+                                   pipe, error)) {
+                return false;
+            }
+            if (DkdDebugEnabled()) {
+                LogScoreMapStage(b, maps->score, maps->height, maps->width,
+                                 "crop_pin", error);
+            }
+            VkAlikedQueueIdle(b->handle);
+        }
+#endif
     }
 
-    GpuTensor x3;
-    if (!AvgPoolGpu(backend, x2, 4, 4, 4, &x3, error)) {
-        return false;
+    {
+        StageBench bench("dense_tail");
+        (void)maps;
     }
-    if (!ResBlockForwardGpu(active, x3, 32, 64, tensors, "block3", true, &x3,
-                            error)) {
-        return false;
-    }
-
-    GpuTensor x4;
-    if (!AvgPoolGpu(backend, x3, 4, 4, 4, &x4, error)) {
-        return false;
-    }
-    if (!ResBlockForwardGpu(active, x4, 64, 128, tensors, "block4", true, &x4,
-                            error)) {
-        return false;
-    }
-
-    auto project = [&](const GpuTensor &src, const char *weight_name,
-                       GpuTensor *dst) -> bool {
-        return ConvSeluGpu(active->ggml()->runner(), active->backend(), src,
-                           RequireTensor(tensors, weight_name, error), 32, 1, 1,
-                           nullptr, 0, 1, dst, weight_name, error);
-    };
-
-    const int32_t fh = x1.h;
-    const int32_t fw = x1.w;
-    GpuTensor f1;
-    if (!project(x1, "conv1_weight", &f1)) {
-        return false;
-    }
-    GpuTensor f2;
-    if (!project(x2, "conv2_weight", &f2)) {
-        return false;
-    }
-    if (!UpsampleGpu(backend, f2, fw, fh, &f2, error)) {
-        return false;
-    }
-    GpuTensor f3;
-    if (!project(x3, "conv3_weight", &f3)) {
-        return false;
-    }
-    if (!UpsampleGpu(backend, f3, fw, fh, &f3, error)) {
-        return false;
-    }
-    GpuTensor f4;
-    if (!project(x4, "conv4_weight", &f4)) {
-        return false;
-    }
-    if (!UpsampleGpu(backend, f4, fw, fh, &f4, error)) {
-        return false;
-    }
-
-    GpuTensor fused;
-    if (!ConcatChannelGpu(backend, f1, f2, &fused, error)) {
-        return false;
-    }
-    GpuTensor fused2;
-    if (!ConcatChannelGpu(backend, fused, f3, &fused2, error)) {
-        return false;
-    }
-    GpuTensor feature_gpu;
-    if (!ConcatChannelGpu(backend, fused2, f4, &feature_gpu, error)) {
-        return false;
-    }
-
-    std::vector<GgmlGpuSession::ConvChainSpec> score_layers =
-            active->ScoreHeadLayers();
-    score_layers.push_back(
-            {active->ScoreHeadFinal(), 1, 1, "score_head_6", false});
-    GpuTensor score_gpu;
-    SyncGpuPipeline(backend);
-    if (!active->ggml()->RunFusedConvChainGraph(score_layers, feature_gpu,
-                                                &score_gpu, error)) {
-        return false;
-    }
-    SyncGpuPipeline(backend);
-    if (!SigmoidInPlaceGpu(backend, &score_gpu, error)) {
-        return false;
-    }
-    if (!L2NormalizeChannelsGpu(backend, &feature_gpu, 128, fh, fw, error)) {
-        return false;
-    }
-
-    if (!CropWhcnGpu(backend, feature_gpu, padder.pad_top, padder.pad_left,
-                     orig_h, orig_w, &maps->feature, error)) {
-        return false;
-    }
-    if (!CropWhcnGpu(backend, score_gpu, padder.pad_top, padder.pad_left,
-                     orig_h, orig_w, &maps->score, error)) {
-        return false;
-    }
-    maps->height = orig_h;
-    maps->width = orig_w;
-    SyncGpuPipeline(backend);
+    BarrierGpuPipeline(b);
     return error == nullptr || error->empty();
 }
 

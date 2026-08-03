@@ -1,9 +1,11 @@
 # qDeepLSD
 
-DeepLSD wireframe field extraction for ACloudViewer — **native C++ GGML**:
+DeepLSD wireframe line extraction for ACloudViewer — **native C++ GGML**.
+
+**User guide:** [docs/guides/plugins/qDeepLSD.md](../../../docs/guides/plugins/qDeepLSD.md)
 
 ```
-Image → AICore DeepLSD GGML → distance field + angle → heatmap overlay in DB tree
+Image → AICore DeepLSD GGML → df + angle → AFM + LSD → line segments → DB tree
 ```
 
 ## Build

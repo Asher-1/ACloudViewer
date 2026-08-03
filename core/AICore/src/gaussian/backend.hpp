@@ -6,11 +6,13 @@
 
 #include <cstddef>
 #include <string>
+#include <vector>
 
 namespace aicore {
 namespace gaussian {
 
 struct engine_backend {
+    std::vector<ggml_backend_t> gpu_backends;
     ggml_backend_t be = nullptr;
     ggml_backend_t cpu_be = nullptr;
     ggml_gallocr_t galloc = nullptr;

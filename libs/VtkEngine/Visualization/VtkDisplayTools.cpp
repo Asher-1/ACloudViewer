@@ -687,13 +687,21 @@ void VtkDisplayTools::drawLines(const CC_DRAW_CONTEXT& context,
 
     if (lineset->isRedraw() || firstShow) {
         vis->drawLineSet(context, lineset);
-        vis->transformEntities(context);
+        if (!lineset->is2DMode()) {
+            vis->transformEntities(context);
+        }
     }
 
     if (vis->contains(viewID)) {
-        if (lineset->isColorOverridden() || !lineset->HasColors()) {
-            ecvColor::Rgbf polygonColor =
-                    ecvTools::TransFormRGB(context.defaultPolylineColor);
+        ecvColor::Rgb lineColor = context.defaultPolylineColor;
+        if (lineset->isColorOverridden()) {
+            lineColor = lineset->getTempColor();
+        } else if (lineset->colorsShown()) {
+            lineColor = lineset->getColor();
+        }
+
+        if (!lineset->HasColors()) {
+            ecvColor::Rgbf polygonColor = ecvTools::TransFormRGB(lineColor);
             vis->setShapeUniqueColor(polygonColor.r, polygonColor.g,
                                      polygonColor.b, viewID, viewport);
         }
@@ -1527,28 +1535,54 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
             ccPolyline* poly =
                     param.entity ? ccHObjectCaster::ToPolyline(param.entity)
                                  : nullptr;
-            if (!poly || poly->size() < 2) break;
-
-            CC_DRAW_CONTEXT ctx;
-            ecvDisplayTools::GetContext(ctx);
-            ctx.display = param.context.display;
-            if (!ctx.display) {
-                ctx.display = ecvViewManager::instance().getEffectiveView();
+            cloudViewer::geometry::LineSet* lineSet =
+                    (!poly && param.entity)
+                            ? ccHObjectCaster::ToLineSet(param.entity)
+                            : nullptr;
+            if (poly && poly->size() >= 2) {
+                CC_DRAW_CONTEXT ctx;
+                ecvDisplayTools::GetContext(ctx);
+                ctx.display = param.context.display;
+                if (!ctx.display) {
+                    ctx.display = ecvViewManager::instance().getEffectiveView();
+                }
+                ctx.defaultViewPort = viewport;
+                ctx.viewID = poly->getViewId();
+                ctx.drawingFlags = poly->is2DMode()
+                                           ? (CC_DRAW_2D | CC_DRAW_FOREGROUND)
+                                           : (CC_DRAW_3D | CC_DRAW_FOREGROUND);
+                if (poly->isColorOverridden()) {
+                    ctx.defaultPolylineColor = poly->getTempColor();
+                } else if (poly->colorsShown()) {
+                    ctx.defaultPolylineColor = poly->getColor();
+                }
+                if (poly->getWidth() != 0) {
+                    ctx.currentLineWidth = poly->getWidth();
+                }
+                drawPolygon(ctx, poly);
+            } else if (lineSet && lineSet->HasLines()) {
+                CC_DRAW_CONTEXT ctx;
+                ecvDisplayTools::GetContext(ctx);
+                ctx.display = param.context.display;
+                if (!ctx.display) {
+                    ctx.display = ecvViewManager::instance().getEffectiveView();
+                }
+                ctx.defaultViewPort = viewport;
+                ctx.viewID = lineSet->getViewId();
+                ctx.drawingFlags =
+                        lineSet->is2DMode()
+                                ? (CC_DRAW_2D | CC_DRAW_FOREGROUND)
+                                : (CC_DRAW_3D | CC_DRAW_FOREGROUND);
+                if (lineSet->isColorOverridden()) {
+                    ctx.defaultPolylineColor = lineSet->getTempColor();
+                } else if (lineSet->colorsShown()) {
+                    ctx.defaultPolylineColor = lineSet->getColor();
+                }
+                if (lineSet->getWidth() != 0) {
+                    ctx.currentLineWidth = lineSet->getWidth();
+                }
+                drawLines(ctx, lineSet);
             }
-            ctx.defaultViewPort = viewport;
-            ctx.viewID = poly->getViewId();
-            ctx.drawingFlags = poly->is2DMode()
-                                       ? (CC_DRAW_2D | CC_DRAW_FOREGROUND)
-                                       : (CC_DRAW_3D | CC_DRAW_FOREGROUND);
-            if (poly->isColorOverridden()) {
-                ctx.defaultPolylineColor = poly->getTempColor();
-            } else if (poly->colorsShown()) {
-                ctx.defaultPolylineColor = poly->getColor();
-            }
-            if (poly->getWidth() != 0) {
-                ctx.currentLineWidth = poly->getWidth();
-            }
-            drawPolygon(ctx, poly);
         } break;
         case WIDGETS_TYPE::WIDGET_SPHERE:
             if (!vis->contains(viewID)) {
@@ -1594,6 +1628,35 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
             break;
         case WIDGETS_TYPE::WIDGET_POLYLINE_2D:
             if (m_visualizer2D) {
+                auto drawLineSet2D =
+                        [&](cloudViewer::geometry::LineSet* lineSet) {
+                            if (!lineSet || !lineSet->is2DMode() ||
+                                !lineSet->HasLines()) {
+                                return;
+                            }
+
+                            const std::string lsViewID =
+                                    CVTools::FromQString(lineSet->getViewId());
+                            ecvColor::Rgbf color =
+                                    ecvColor::FromRgb(ecvColor::green);
+                            if (lineSet->isColorOverridden()) {
+                                color = ecvColor::FromRgb(lineSet->getTempColor());
+                            } else if (lineSet->colorsShown()) {
+                                color = ecvColor::FromRgb(lineSet->getColor());
+                            }
+
+                            for (size_t i = 0; i < lineSet->lines_.size(); ++i) {
+                                const auto seg = lineSet->GetLineCoordinate(i);
+                                m_visualizer2D->addLine(
+                                        static_cast<int>(seg.first.x()),
+                                        static_cast<int>(seg.first.y()),
+                                        static_cast<int>(seg.second.x()),
+                                        static_cast<int>(seg.second.y()),
+                                        color.r, color.g, color.b, lsViewID,
+                                        param.opacity);
+                            }
+                        };
+
                 if (param.entity &&
                     param.entity->isKindOf(CV_TYPES::POLY_LINE)) {
                     ccPolyline* poly =
@@ -1640,6 +1703,9 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
                                 static_cast<int>(poly->getPoint(0)->y), color.r,
                                 color.g, color.b, viewID, param.opacity);
                     }
+                } else if (param.entity &&
+                           param.entity->isKindOf(CV_TYPES::LINESET)) {
+                    drawLineSet2D(ccHObjectCaster::ToLineSet(param.entity));
                 }
             } else {
                 if (param.entity &&
@@ -1652,6 +1718,18 @@ void VtkDisplayTools::drawWidgets(const WIDGETS_PARAMETER& param) {
 
                     ecvDisplayTools::DrawWidgets(
                             WIDGETS_PARAMETER(poly,
+                                              WIDGETS_TYPE::WIDGET_POLYLINE),
+                            true);
+                } else if (param.entity &&
+                           param.entity->isKindOf(CV_TYPES::LINESET)) {
+                    cloudViewer::geometry::LineSet* lineSet =
+                            ccHObjectCaster::ToLineSet(param.entity);
+                    if (!lineSet || !lineSet->HasLines()) {
+                        return;
+                    }
+
+                    ecvDisplayTools::DrawWidgets(
+                            WIDGETS_PARAMETER(lineSet,
                                               WIDGETS_TYPE::WIDGET_POLYLINE),
                             true);
                 }

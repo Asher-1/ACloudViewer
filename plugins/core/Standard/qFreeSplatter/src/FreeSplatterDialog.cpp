@@ -12,27 +12,37 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QFontMetrics>
 #include <QFrame>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QMessageBox>
 #include <QSettings>
-#include <QSslConfiguration>
-#include <QSslError>
-#include <QSslSocket>
+#include <QTabBar>
 #include <QTimer>
 #include <QVBoxLayout>
+#include <QCloseEvent>
 
 #include "FaceCaptureWidget.h"
 #include "aicore/backend_capi.h"
 #include "aicore/gaussian_capi.h"
+#include "ecvModelDownloader.h"
+#include "ecvClickableImageLabel.h"
+
+#include "aicore/inference_log.h"
+#include <CVLog.h>
 
 static const char* kDownloadBase =
         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
         "3dgs/";
 
 static const int kThumbSize = 96;
+static const int kThumbCaptionH = 18;
+static const int kThumbRemoveBtnH = 20;
+static const int kThumbTileSpacing = 8;
+static const int kThumbStripHeight =
+        kThumbSize + kThumbCaptionH + kThumbRemoveBtnH + kThumbTileSpacing;
 
 namespace {
 
@@ -124,8 +134,46 @@ QString FreeSplatterDialog::formatFileSize(qint64 bytes) {
 FreeSplatterDialog::FreeSplatterDialog(QWidget* parent) : QDialog(parent) {
     setWindowTitle("FreeSplatter 3D Reconstruction");
     setMinimumWidth(560);
-    m_netManager = new QNetworkAccessManager(this);
     setupUi();
+    m_downloader = new ecvModelDownloader(this);
+    connect(m_downloader, &ecvModelDownloader::logMessage, this,
+            &FreeSplatterDialog::appendLog);
+    connect(m_downloader, &ecvModelDownloader::progress, this,
+            [this](qint64 received, qint64 total) {
+                if (total > 0) {
+                    m_progressBar->setValue(
+                            static_cast<int>(received * 100 / total));
+                    m_downloadLabel->setText(
+                            tr("Downloading... %1 / %2")
+                                    .arg(formatFileSize(received))
+                                    .arg(formatFileSize(total)));
+                }
+            });
+    connect(m_downloader, &ecvModelDownloader::finished, this,
+            [this](bool ok, const QString& dest) {
+                Q_UNUSED(dest);
+                const QString finishedFilename = m_downloadTargetFilename;
+                const bool shouldAutoRun = m_autoRunAfterDownload;
+                m_downloadInProgress = false;
+                m_downloadLabel->setVisible(false);
+                m_progressBar->setValue(ok ? 100 : 0);
+                populateModelCombo(finishedFilename);
+                updateRunButtonState();
+
+                if (ok && shouldAutoRun) {
+                    m_autoRunAfterDownload = false;
+                    selectModelByFilename(finishedFilename);
+                    onRun();
+                } else if (!ok) {
+                    m_autoRunAfterDownload = false;
+                }
+            });
+    CVLog::Print(QString("[FreeSplatter] Model cache: %1").arg(modelCacheDir()));
+    aicore_inference_log::log_backend_probe(QStringLiteral("FS"));
+}
+
+void FreeSplatterDialog::setAppInterface(ecvMainAppInterface* app) {
+    m_app = app;
 }
 
 void FreeSplatterDialog::setupUi() {
@@ -138,18 +186,27 @@ void FreeSplatterDialog::setupUi() {
     auto* modelLayout = new QGridLayout(modelGroup);
     modelLayout->setVerticalSpacing(4);
 
-    modelLayout->addWidget(new QLabel("Mode:"), 0, 0);
+    auto* pipelineHint = new QLabel(
+            tr("<b>Pipeline:</b> <i>Face detect</i> → <i>Multi-view capture</i> "
+               "→ <i>Gaussian 3D reconstruct</i> → <i>Export / SIBR</i>"));
+    pipelineHint->setWordWrap(true);
+    pipelineHint->setStyleSheet(
+            "color: #334155; background: #f8fafc; border: 1px solid #cbd5e1; "
+            "padding: 4px 8px; border-radius: 4px; font-size: 11px;");
+    modelLayout->addWidget(pipelineHint, 0, 0, 1, 4);
+
+    modelLayout->addWidget(new QLabel("Mode:"), 1, 0);
     m_modeCombo = new QComboBox;
     m_modeCombo->addItem("3D Reconstruct (Gaussian)",
                          static_cast<int>(Mode::Reconstruct));
     m_modeCombo->addItem("Model Info", static_cast<int>(Mode::ModelInfo));
     connect(m_modeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &FreeSplatterDialog::onModeChanged);
-    modelLayout->addWidget(m_modeCombo, 0, 1);
-    modelLayout->addWidget(new QLabel("GGUF:"), 0, 2);
+    modelLayout->addWidget(m_modeCombo, 1, 1);
+    modelLayout->addWidget(new QLabel("GGUF:"), 1, 2);
     m_modelCombo = new QComboBox;
     m_modelCombo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    modelLayout->addWidget(m_modelCombo, 0, 3);
+    modelLayout->addWidget(m_modelCombo, 1, 3);
     connect(m_modelCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &FreeSplatterDialog::onModelComboChanged);
 
@@ -169,7 +226,7 @@ void FreeSplatterDialog::setupUi() {
             &FreeSplatterDialog::onBrowseCustomModel);
     customModelLayout->addWidget(m_browseCustomModelBtn);
     m_customModelRow->setVisible(false);
-    modelLayout->addWidget(m_customModelRow, 1, 0, 1, 4);
+    modelLayout->addWidget(m_customModelRow, 2, 0, 1, 4);
 
     m_objectHintLabel = new QLabel;
     m_objectHintLabel->setTextFormat(Qt::RichText);
@@ -180,7 +237,11 @@ void FreeSplatterDialog::setupUi() {
     m_objectHintLabel->setVisible(false);
     modelLayout->addWidget(m_objectHintLabel, 3, 0, 1, 4);
 
-    modelLayout->addWidget(new QLabel("Device:"), 4, 0);
+    auto* runtimeRow = new QWidget(modelGroup);
+    auto* runtimeLayout = new QHBoxLayout(runtimeRow);
+    runtimeLayout->setContentsMargins(0, 0, 0, 0);
+    runtimeLayout->setSpacing(8);
+    runtimeLayout->addWidget(new QLabel(tr("Device:")));
     m_deviceCombo = new QComboBox;
     for (int i = 0; i < aicore_device_count(); ++i) {
         const aicore_device_info* d = aicore_device_at(i);
@@ -189,14 +250,13 @@ void FreeSplatterDialog::setupUi() {
     }
     m_deviceCombo->setToolTip(
             tr("Auto tries %1.").arg(aicore_auto_device_order()));
-    modelLayout->addWidget(m_deviceCombo, 4, 1);
-    modelLayout->addWidget(new QLabel("Threads:"), 4, 2);
+    runtimeLayout->addWidget(m_deviceCombo, 1);
+    runtimeLayout->addWidget(new QLabel(tr("Threads:")));
     m_threads = new QSpinBox;
     m_threads->setRange(0, 128);
     m_threads->setSpecialValueText("Auto");
-    modelLayout->addWidget(m_threads, 4, 3);
-
-    modelLayout->addWidget(new QLabel("Views:"), 5, 0);
+    runtimeLayout->addWidget(m_threads);
+    runtimeLayout->addWidget(new QLabel(tr("Views:")));
     m_maxViewsSpin = new QSpinBox;
     m_maxViewsSpin->setRange(0, 64);
     m_maxViewsSpin->setSpecialValueText("Auto");
@@ -205,23 +265,27 @@ void FreeSplatterDialog::setupUi() {
                "Auto: Scene=2, Object-3DGS=16, Object-2DGS=24.\n"
                "Trained with up to 32 views; more views = better quality.\n"
                "O(N\u00b2) compute scaling; 16 views \u2248 30-60s on Metal."));
-    modelLayout->addWidget(m_maxViewsSpin, 5, 1);
+    runtimeLayout->addWidget(m_maxViewsSpin);
+    modelLayout->addWidget(runtimeRow, 3, 0, 1, 4);
 
     mainLayout->addWidget(modelGroup);
 
     // --- I/O configuration ---
     auto* ioGroup = new QGroupBox("Input / Output");
     auto* ioMainLayout = new QVBoxLayout(ioGroup);
-    ioMainLayout->setSpacing(4);
-    ioMainLayout->setContentsMargins(6, 6, 6, 6);
+    ioMainLayout->setSpacing(2);
+    ioMainLayout->setContentsMargins(4, 6, 4, 4);
 
     m_inputTabWidget = new QTabWidget;
+    m_inputTabWidget->setDocumentMode(true);
+    m_inputTabWidget->tabBar()->setDrawBase(false);
 
     // ---- Tab 0: Images ----
     {
         auto* imagesTab = new QWidget;
         auto* imagesLayout = new QVBoxLayout(imagesTab);
-        imagesLayout->setContentsMargins(6, 6, 6, 6);
+        imagesLayout->setContentsMargins(2, 2, 2, 2);
+        imagesLayout->setSpacing(2);
 
         auto* inputBtnLayout = new QHBoxLayout;
         auto* browseFileBtn = new QPushButton("File...");
@@ -245,12 +309,11 @@ void FreeSplatterDialog::setupUi() {
         m_thumbScroll->setWidgetResizable(true);
         m_thumbScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
         m_thumbScroll->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        const int thumbTileH = kThumbSize + 48;
-        m_thumbScroll->setMinimumHeight(thumbTileH);
-        m_thumbScroll->setMaximumHeight(thumbTileH);
+        m_thumbScroll->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        m_thumbScroll->setFixedHeight(kThumbStripHeight);
         m_thumbScroll->setFrameShape(QFrame::StyledPanel);
         m_thumbContainer = new QWidget;
-        m_thumbContainer->setMinimumHeight(thumbTileH - 4);
+        m_thumbContainer->setMinimumHeight(kThumbStripHeight - 4);
         auto* thumbLayout = new QHBoxLayout(m_thumbContainer);
         thumbLayout->setContentsMargins(4, 4, 4, 4);
         m_thumbScroll->setWidget(m_thumbContainer);
@@ -286,8 +349,8 @@ void FreeSplatterDialog::setupUi() {
         dbCol->setSpacing(4);
         m_dbImageList = new QListWidget;
         m_dbImageList->setSelectionMode(QAbstractItemView::ExtendedSelection);
-        m_dbImageList->setMinimumHeight(80);
-        m_dbImageList->setMaximumHeight(140);
+        m_dbImageList->setMinimumHeight(72);
+        m_dbImageList->setMaximumHeight(120);
         m_dbImageList->setAlternatingRowColors(true);
         m_dbImageList->setToolTip(
                 tr("ccImage entities from the DB tree \u2014 check/uncheck to "
@@ -321,21 +384,26 @@ void FreeSplatterDialog::setupUi() {
     if (FaceCaptureWidget::isAvailable()) {
         auto* faceTab = new QWidget;
         auto* faceLayout = new QVBoxLayout(faceTab);
-        faceLayout->setContentsMargins(6, 6, 6, 6);
+        faceLayout->setContentsMargins(4, 4, 4, 4);
+        faceLayout->setSpacing(4);
 
         m_faceCaptureWidget = new FaceCaptureWidget(faceTab);
-        faceLayout->addWidget(m_faceCaptureWidget);
+        faceLayout->addWidget(m_faceCaptureWidget, 1);
 
         auto* faceBtnLayout = new QHBoxLayout;
-        m_faceStartBtn = new QPushButton(tr("Start Camera"));
-        m_faceStopBtn = new QPushButton(tr("Stop Camera"));
+        m_faceStartBtn = new QPushButton(tr("Start Capture"));
+        m_faceStopBtn = new QPushButton(tr("Stop Capture"));
         m_faceStopBtn->setEnabled(false);
         m_faceResetBtn = new QPushButton(tr("Reset"));
         m_faceResetBtn->setEnabled(false);
+        for (QPushButton* btn :
+             {m_faceStartBtn, m_faceStopBtn, m_faceResetBtn}) {
+            btn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+            btn->setMaximumWidth(140);
+        }
         faceBtnLayout->addWidget(m_faceStartBtn);
         faceBtnLayout->addWidget(m_faceStopBtn);
         faceBtnLayout->addWidget(m_faceResetBtn);
-        faceBtnLayout->addStretch();
         faceLayout->addLayout(faceBtnLayout);
 
         connect(m_faceStartBtn, &QPushButton::clicked, this,
@@ -350,14 +418,26 @@ void FreeSplatterDialog::setupUi() {
                 [this]() {
                     m_faceStartBtn->setEnabled(false);
                     m_faceStopBtn->setEnabled(true);
-                    m_faceCaptureWidget->startGuidedCapture({
-                            FaceCaptureWidget::CaptureAngle::Front,
-                            FaceCaptureWidget::CaptureAngle::Left45,
-                            FaceCaptureWidget::CaptureAngle::Right45,
-                            FaceCaptureWidget::CaptureAngle::Up15,
-                            FaceCaptureWidget::CaptureAngle::Down15,
-                    });
-                    m_faceResetBtn->setEnabled(true);
+                    if (m_faceCaptureWidget->inputSource() ==
+                        FaceCaptureWidget::InputSource::Camera) {
+                        m_faceCaptureWidget->startGuidedCapture({
+                                FaceCaptureWidget::CaptureAngle::Front,
+                                FaceCaptureWidget::CaptureAngle::Left45,
+                                FaceCaptureWidget::CaptureAngle::Right45,
+                                FaceCaptureWidget::CaptureAngle::Up15,
+                                FaceCaptureWidget::CaptureAngle::Down15,
+                        });
+                    } else {
+                        m_faceCaptureWidget->startGuidedCapture({
+                                FaceCaptureWidget::CaptureAngle::Front,
+                                FaceCaptureWidget::CaptureAngle::Left45,
+                                FaceCaptureWidget::CaptureAngle::Right45,
+                                FaceCaptureWidget::CaptureAngle::Left90,
+                                FaceCaptureWidget::CaptureAngle::Right90,
+                                FaceCaptureWidget::CaptureAngle::Up15,
+                        });
+                        m_faceResetBtn->setEnabled(true);
+                    }
                 });
         connect(m_faceCaptureWidget, &FaceCaptureWidget::cameraStopped, this,
                 [this]() {
@@ -370,6 +450,8 @@ void FreeSplatterDialog::setupUi() {
                                       .arg(idx)
                                       .arg(total));
                 });
+        connect(m_faceCaptureWidget, &FaceCaptureWidget::logMessage, this,
+                &FreeSplatterDialog::appendLog);
 
         m_inputTabWidget->addTab(faceTab, tr("Face Capture"));
     }
@@ -446,13 +528,10 @@ void FreeSplatterDialog::setupUi() {
     m_progressBar = new QProgressBar;
     m_progressBar->setRange(0, 100);
     m_progressBar->setValue(0);
+    m_progressBar->setFixedHeight(14);
+    m_progressBar->setTextVisible(false);
+    m_progressBar->setVisible(false);
     mainLayout->addWidget(m_progressBar);
-
-    // --- Log ---
-    m_logOutput = new QTextEdit;
-    m_logOutput->setReadOnly(true);
-    m_logOutput->setMaximumHeight(100);
-    mainLayout->addWidget(m_logOutput);
 
     // --- Buttons ---
     auto* btnLayout = new QHBoxLayout;
@@ -504,9 +583,6 @@ void FreeSplatterDialog::setupUi() {
 void FreeSplatterDialog::adaptTabWidgetHeight() {
     if (!m_inputTabWidget) return;
     const int idx = m_inputTabWidget->currentIndex();
-    QWidget* current = m_inputTabWidget->widget(idx);
-    if (!current) return;
-
     for (int i = 0; i < m_inputTabWidget->count(); ++i) {
         QWidget* w = m_inputTabWidget->widget(i);
         if (!w) continue;
@@ -515,45 +591,9 @@ void FreeSplatterDialog::adaptTabWidgetHeight() {
                                       : QSizePolicy::Ignored);
         w->setSizePolicy(sp);
     }
-
-    int contentH = 0;
-    if (QLayout* lay = current->layout()) {
-        const int sp = lay->spacing() >= 0 ? lay->spacing() : 6;
-        int visibleItems = 0;
-        for (int i = 0; i < lay->count(); ++i) {
-            QLayoutItem* item = lay->itemAt(i);
-            if (!item) continue;
-            QWidget* w = item->widget();
-            if (w && !w->isVisible()) continue;
-            int h = 0;
-            if (w) {
-                int hint = qMax(w->sizeHint().height(),
-                                w->minimumSizeHint().height());
-                if (w->maximumHeight() < QWIDGETSIZE_MAX)
-                    hint = qMin(w->maximumHeight(), hint);
-                h = qMax(w->minimumHeight(), hint);
-            } else if (item->layout()) {
-                h = item->layout()->sizeHint().height();
-            }
-            contentH += h;
-            ++visibleItems;
-        }
-        if (visibleItems > 1) contentH += (visibleItems - 1) * sp;
-        const auto m = lay->contentsMargins();
-        contentH += m.top() + m.bottom();
-    } else {
-        contentH = current->minimumSizeHint().height();
-    }
-
-    const int tabBarH = m_inputTabWidget->tabBar()->sizeHint().height();
-    const auto cm = m_inputTabWidget->contentsMargins();
-    const int total = tabBarH + contentH + cm.top() + cm.bottom() + 2;
-    m_inputTabWidget->setFixedHeight(total);
-
-    QTimer::singleShot(0, this, [this]() {
-        layout()->activate();
-        resize(width(), layout()->minimumSize().height());
-    });
+    m_inputTabWidget->setMinimumHeight(0);
+    m_inputTabWidget->setMaximumHeight(QWIDGETSIZE_MAX);
+    m_inputTabWidget->updateGeometry();
 }
 
 void FreeSplatterDialog::refreshModelList() { populateModelCombo(); }
@@ -571,7 +611,7 @@ void FreeSplatterDialog::populateModelCombo(const QString& keepFilename) {
         QString cached = cacheDir + "/" + m.filename;
         QFileInfo fi(cached);
         QString suffix;
-        if (fi.exists()) {
+        if (ecvModelDownloader::isValidCachedFile(fi.absoluteFilePath())) {
             suffix = QString(" [%1] \u2713").arg(formatFileSize(fi.size()));
         } else {
             suffix = QString(" [download]");
@@ -697,7 +737,7 @@ int FreeSplatterDialog::requiredImageCount() const {
         case ModelType::Scene:
             return 2;
         case ModelType::Object:
-            return 3;
+            return 2;
         default:
             return 1;
     }
@@ -714,7 +754,7 @@ bool FreeSplatterDialog::isModelReady() const {
                QFile::exists(m_customModelPath->text().trimmed());
     }
     if (data.isEmpty()) return false;
-    if (QFile::exists(modelCacheDir() + "/" + data)) return true;
+    if (ecvModelDownloader::isValidCachedFile(modelCacheDir() + "/" + data)) return true;
     for (const auto& m : builtinModels()) {
         if (m.filename == data) return true;
     }
@@ -842,28 +882,32 @@ void FreeSplatterDialog::refreshThumbnailStrip() {
         tileLayout->setContentsMargins(2, 2, 2, 2);
         tileLayout->setSpacing(2);
 
-        auto* imgLabel = new QLabel;
+        auto* imgLabel = new ecvClickableImageLabel;
+        imgLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         QImage img = previewForPath(path);
         if (!img.isNull()) {
-            imgLabel->setPixmap(QPixmap::fromImage(
-                    img.scaled(kThumbSize, kThumbSize, Qt::KeepAspectRatio,
-                               Qt::SmoothTransformation)));
+            imgLabel->setPreviewImage(img, kThumbSize);
         } else {
             imgLabel->setFixedSize(kThumbSize, kThumbSize);
-            imgLabel->setAlignment(Qt::AlignCenter);
             imgLabel->setText("?");
             imgLabel->setFrameShape(QFrame::Box);
         }
         imgLabel->setToolTip(path);
-        tileLayout->addWidget(imgLabel, 0, Qt::AlignHCenter);
+        tileLayout->addWidget(
+                ecvClickableImageLabel::wrapWithTapToPreviewHint(imgLabel, tile),
+                0, Qt::AlignHCenter);
 
         QString caption = path.startsWith("db://") ? path.mid(5)
                                                    : QFileInfo(path).fileName();
         auto* nameLabel = new QLabel(caption);
+        nameLabel->setFixedHeight(kThumbCaptionH);
         nameLabel->setMaximumWidth(kThumbSize + 8);
         nameLabel->setAlignment(Qt::AlignCenter);
-        nameLabel->setWordWrap(true);
-        tileLayout->addWidget(nameLabel);
+        nameLabel->setWordWrap(false);
+        nameLabel->setTextFormat(Qt::PlainText);
+        nameLabel->setToolTip(caption);
+        const QFontMetrics fm(nameLabel->font());
+        nameLabel->setText(fm.elidedText(caption, Qt::ElideMiddle, kThumbSize + 8));
 
         auto* removeBtn = new QPushButton("×");
         removeBtn->setFixedSize(20, 20);
@@ -954,7 +998,7 @@ bool FreeSplatterDialog::ensureModelAvailable() {
     if (data == "CUSTOM") return true;
 
     QString cached = modelCacheDir() + "/" + data;
-    if (QFile::exists(cached)) return true;
+    if (ecvModelDownloader::isValidCachedFile(cached)) return true;
 
     for (const auto& bm : builtinModels()) {
         if (bm.filename == data) {
@@ -979,126 +1023,38 @@ bool FreeSplatterDialog::ensureModelAvailable() {
 }
 
 void FreeSplatterDialog::startDownload(const FreeSplatterBuiltinModel& model) {
-    if (m_downloadInProgress) {
-        appendLog(tr("[Warning] A download is already in progress."));
+    if (m_downloadInProgress || !m_downloader) {
+        if (m_downloadInProgress) {
+            appendLog(tr("[Warning] A download is already in progress."));
+        }
         return;
     }
 
     QDir().mkpath(modelCacheDir());
-    QString dest = modelCacheDir() + "/" + model.filename;
-    QString tmpDest = dest + ".part";
+    const QString dest = modelCacheDir() + "/" + model.filename;
 
     m_downloadInProgress = true;
     m_downloadTargetFilename = model.filename;
-    m_downloadTmpPath = tmpDest;
     m_downloadLabel->setText(tr("Downloading %1 ...").arg(model.filename));
     m_downloadLabel->setVisible(true);
     m_progressBar->setRange(0, 100);
     m_progressBar->setValue(0);
     updateRunButtonState();
 
-    QNetworkRequest req(QUrl(model.downloadUrl));
-    req.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
-                     QNetworkRequest::NoLessSafeRedirectPolicy);
-
-    auto sslConfig = QSslConfiguration::defaultConfiguration();
-    sslConfig.setPeerVerifyMode(QSslSocket::VerifyNone);
-    req.setSslConfiguration(sslConfig);
-
-    m_currentDownload = m_netManager->get(req);
-
-    connect(m_currentDownload, &QNetworkReply::sslErrors, this,
-            [this](const QList<QSslError>& errors) {
-                for (const auto& e : errors)
-                    appendLog(tr("[FS] SSL warning (ignored): %1")
-                                      .arg(e.errorString()));
-                m_currentDownload->ignoreSslErrors();
-            });
-
-    m_downloadOutFile = new QFile(tmpDest, m_currentDownload);
-    if (!m_downloadOutFile->open(QIODevice::WriteOnly)) {
-        appendLog(tr("[Error] Cannot write to %1").arg(tmpDest));
-        cancelDownload();
-        return;
-    }
-
-    connect(m_currentDownload, &QNetworkReply::readyRead, this, [this]() {
-        if (m_downloadOutFile && m_currentDownload) {
-            m_downloadOutFile->write(m_currentDownload->readAll());
-        }
-    });
-
-    connect(m_currentDownload, &QNetworkReply::downloadProgress, this,
-            [this](qint64 received, qint64 total) {
-                if (total > 0) {
-                    m_progressBar->setValue(
-                            static_cast<int>(received * 100 / total));
-                    m_downloadLabel->setText(
-                            tr("Downloading... %1 / %2")
-                                    .arg(formatFileSize(received))
-                                    .arg(formatFileSize(total)));
-                }
-            });
-
-    connect(m_currentDownload, &QNetworkReply::finished, this,
-            [this, dest, tmpDest, model]() {
-                if (m_downloadOutFile) {
-                    m_downloadOutFile->close();
-                    m_downloadOutFile->deleteLater();
-                    m_downloadOutFile = nullptr;
-                }
-
-                const bool canceled =
-                        m_currentDownload &&
-                        m_currentDownload->error() ==
-                                QNetworkReply::OperationCanceledError;
-                bool ok = m_currentDownload &&
-                          m_currentDownload->error() == QNetworkReply::NoError;
-
-                if (canceled) {
-                    appendLog(tr("[Info] Download canceled: %1")
-                                      .arg(model.filename));
-                    QFile::remove(tmpDest);
-                    m_autoRunAfterDownload = false;
-                } else if (ok) {
-                    QFile::remove(dest);
-                    QFile::rename(tmpDest, dest);
-                    appendLog(tr("[OK] Model downloaded: %1").arg(dest));
-                } else if (m_currentDownload) {
-                    appendLog(tr("[Error] Download failed: %1")
-                                      .arg(m_currentDownload->errorString()));
-                    QFile::remove(tmpDest);
-                    m_autoRunAfterDownload = false;
-                }
-
-                if (m_currentDownload) {
-                    m_currentDownload->deleteLater();
-                    m_currentDownload = nullptr;
-                }
-
-                const QString finishedFilename = m_downloadTargetFilename;
-                const bool shouldAutoRun = m_autoRunAfterDownload;
-                m_downloadInProgress = false;
-                m_downloadTmpPath.clear();
-                m_downloadLabel->setVisible(false);
-                m_progressBar->setValue(ok ? 100 : 0);
-                populateModelCombo(finishedFilename);
-                updateRunButtonState();
-
-                if (ok && shouldAutoRun) {
-                    m_autoRunAfterDownload = false;
-                    selectModelByFilename(finishedFilename);
-                    onRun();
-                }
-            });
+    ecvModelDownloader::Request req;
+    req.url = model.downloadUrl;
+    req.destPath = dest;
+    m_downloader->download(req);
 }
 
 void FreeSplatterDialog::cancelDownload() {
     if (!m_downloadInProgress) return;
     m_autoRunAfterDownload = false;
-    if (m_currentDownload) {
-        m_currentDownload->abort();
-    }
+    if (m_downloader) m_downloader->cancel();
+    m_downloadInProgress = false;
+    m_downloadLabel->setVisible(false);
+    m_progressBar->setValue(0);
+    updateRunButtonState();
 }
 
 void FreeSplatterDialog::onCancel() {
@@ -1107,6 +1063,15 @@ void FreeSplatterDialog::onCancel() {
         return;
     }
     emit cancelRequested();
+}
+
+void FreeSplatterDialog::closeEvent(QCloseEvent* event) {
+    onCancel();
+    onFaceStopCamera();
+    if (m_faceCaptureWidget) {
+        m_faceCaptureWidget->releaseGpuResources();
+    }
+    QDialog::closeEvent(event);
 }
 
 void FreeSplatterDialog::setDbImages(const QList<DbImageEntry>& images) {
@@ -1206,11 +1171,15 @@ void FreeSplatterDialog::setRunning(bool running) {
     if (running) {
         m_taskStatusLabel->setText(tr("Starting..."));
         m_taskStatusLabel->setVisible(true);
+        m_progressBar->setVisible(true);
         m_progressBar->setRange(0, 100);
         m_progressBar->setValue(0);
     } else {
         m_taskStatusLabel->clear();
         m_taskStatusLabel->setVisible(false);
+        m_progressBar->setVisible(false);
+        m_progressBar->setRange(0, 100);
+        m_progressBar->setValue(0);
     }
     updateRunButtonState();
     m_modeCombo->setEnabled(!running && !m_downloadInProgress);
@@ -1220,6 +1189,7 @@ void FreeSplatterDialog::setTaskStage(const QString& stage, int percent) {
     if (!m_taskStatusLabel) return;
     m_taskStatusLabel->setText(stage);
     m_taskStatusLabel->setVisible(true);
+    m_progressBar->setVisible(true);
     if (percent >= 0) {
         m_progressBar->setRange(0, 100);
         m_progressBar->setValue(percent);
@@ -1256,7 +1226,7 @@ FreeSplatterDialog::Settings FreeSplatterDialog::getSettings() const {
 }
 
 void FreeSplatterDialog::appendLog(const QString& msg) {
-    m_logOutput->append(msg);
+    aicore_inference_log::log(msg);
 }
 
 void FreeSplatterDialog::setProgress(int current, int total) {
@@ -1376,7 +1346,24 @@ void FreeSplatterDialog::onRun() {
 
 void FreeSplatterDialog::onFaceStartCamera() {
     if (!m_faceCaptureWidget) return;
-    m_faceCaptureWidget->startCamera(0);
+    if (m_faceCaptureWidget->inputSource() ==
+        FaceCaptureWidget::InputSource::VideoFile) {
+        const QString path = m_faceCaptureWidget->videoFilePath();
+        if (path.isEmpty() || !QFileInfo::exists(path)) {
+            appendLog(tr("[FaceCapture] Select a valid video file first."));
+            return;
+        }
+        if (!m_faceCaptureWidget->startVideoFile(path)) {
+            appendLog(tr("[FaceCapture] Failed to start video playback."));
+        }
+        return;
+    }
+    const int camIdx = m_faceCaptureWidget->selectedCameraIndex();
+    if (camIdx < 0) {
+        appendLog(tr("[FaceCapture] No camera available."));
+        return;
+    }
+    m_faceCaptureWidget->startCamera(camIdx);
 }
 
 void FreeSplatterDialog::onFaceStopCamera() {
@@ -1393,6 +1380,15 @@ void FreeSplatterDialog::onFaceReset() {
 void FreeSplatterDialog::onFaceCaptureComplete() {
     if (!m_faceCaptureWidget || m_faceCaptureWidget->capturedCount() == 0)
         return;
+
+    const int minCaptures = m_faceCaptureWidget->minCapturesBeforeComplete();
+    if (m_faceCaptureWidget->capturedCount() < minCaptures) {
+        appendLog(tr("[FaceCapture] Need at least %1 captured faces before "
+                     "reconstruction (got %2).")
+                          .arg(minCaptures)
+                          .arg(m_faceCaptureWidget->capturedCount()));
+        return;
+    }
 
     const QString tmpDir =
             QDir::tempPath() + QStringLiteral("/freesplatter_face_capture");

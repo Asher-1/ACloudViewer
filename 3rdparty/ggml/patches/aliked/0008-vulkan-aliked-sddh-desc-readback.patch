@@ -1,0 +1,11 @@
+diff --git a/src/ggml-vulkan/vulkan-shaders/aliked_sddh.comp b/src/ggml-vulkan/vulkan-shaders/aliked_sddh.comp
+--- a/src/ggml-vulkan/vulkan-shaders/aliked_sddh.comp
++++ b/src/ggml-vulkan/vulkan-shaders/aliked_sddh.comp
+@@ -32,7 +32,7 @@ layout(binding = 6) readonly buffer SfConvW { float sf_conv_w[]; };
+ layout(binding = 7) readonly buffer AggWeights { float agg_weights[]; };
+ layout(binding = 8) buffer Workspace { float workspace[]; };
+-layout(binding = 9) writeonly buffer Descriptors { float descriptors[]; };
++layout(binding = 9) buffer Descriptors { float descriptors[]; };
+ 
+ float selu(float x) {
+     return x > 0.0 ? kSeluScale * x : kSeluScale * kSeluAlpha * (exp(x) - 1.0);

@@ -13,10 +13,16 @@
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QMessageBox>
+#include <QSettings>
 #include <QVBoxLayout>
+#include <QCloseEvent>
 
 #include "aicore/backend_capi.h"
 #include "aicore/deeplsd_capi.h"
+#include "ecvModelDownloader.h"
+
+#include "aicore/inference_log.h"
+#include <CVLog.h>
 
 static const char* kDownloadBase =
         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
@@ -37,8 +43,8 @@ bool isSupportedImageFile(const QString& filePath) {
                                Qt::CaseInsensitive);
 }
 
-bool isQ8QuantModel(const QString& filename) {
-    return filename.contains(QStringLiteral("q8_0"), Qt::CaseInsensitive);
+bool isValidCachedGguf(const QFileInfo& fi) {
+    return ecvModelDownloader::isValidCachedFile(fi.absoluteFilePath());
 }
 
 }  // namespace
@@ -76,9 +82,46 @@ QString DeepLSDDialog::modelCacheDir() {
 DeepLSDDialog::DeepLSDDialog(QWidget* parent) : QDialog(parent) {
     setWindowTitle(tr("DeepLSD Line Extraction"));
     setMinimumWidth(720);
-    m_netManager = new QNetworkAccessManager(this);
     setupUi();
+    m_downloader = new ecvModelDownloader(this);
+    connect(m_downloader, &ecvModelDownloader::logMessage, this,
+            &DeepLSDDialog::appendLog);
+    connect(m_downloader, &ecvModelDownloader::progress, this,
+            [this](qint64 received, qint64 total) {
+                if (total > 0 && m_progress) {
+                    m_progress->setValue(
+                            static_cast<int>(received * 100 / total));
+                }
+                if (m_downloadLabel) {
+                    m_downloadLabel->setText(
+                            tr("Downloading %1 — %2")
+                                    .arg(m_modelCombo->currentData().toString())
+                                    .arg(ecvModelDownloader::formatDownloadProgress(
+                                            received, total)));
+                }
+            });
+    connect(m_downloader, &ecvModelDownloader::finished, this,
+            [this](bool ok, const QString& dest) {
+                m_downloadInProgress = false;
+                m_downloadLabel->setVisible(false);
+                if (ok) {
+                    appendLog(tr("[OK] Downloaded model: %1").arg(dest));
+                    populateModelCombo();
+                    if (m_autoRunAfterDownload) {
+                        m_autoRunAfterDownload = false;
+                        onRun();
+                    }
+                } else {
+                    m_autoRunAfterDownload = false;
+                }
+            });
+    CVLog::Print(QString("[DeepLSD] Model cache: %1").arg(modelCacheDir()));
+    aicore_inference_log::log_backend_probe(QStringLiteral("DeepLSD"));
     populateModelCombo();
+}
+
+void DeepLSDDialog::setAppInterface(ecvMainAppInterface* app) {
+    m_app = app;
 }
 
 void DeepLSDDialog::setupUi() {
@@ -92,21 +135,12 @@ void DeepLSDDialog::setupUi() {
     connect(m_modelCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &DeepLSDDialog::onModelComboChanged);
 
-    m_quantWarningLabel = new QLabel;
-    m_quantWarningLabel->setWordWrap(true);
-    m_quantWarningLabel->setStyleSheet(
-            "color: palette(button-text); background: #fff3cd; border: 1px "
-            "solid "
-            "#ffc107; padding: 6px; border-radius: 4px;");
-    m_quantWarningLabel->setVisible(false);
-    modelLayout->addWidget(m_quantWarningLabel, 1, 0, 1, 2);
-
     m_variantHintLabel = new QLabel;
     m_variantHintLabel->setWordWrap(true);
     m_variantHintLabel->setStyleSheet(
             "color: #333; background: #eef4fb; border: 1px solid #b8d4f0; "
             "padding: 6px; border-radius: 4px; font-size: 11px;");
-    modelLayout->addWidget(m_variantHintLabel, 2, 0, 1, 2);
+    modelLayout->addWidget(m_variantHintLabel, 1, 0, 1, 2);
 
     m_customModelRow = new QWidget;
     auto* customLayout = new QHBoxLayout(m_customModelRow);
@@ -117,7 +151,7 @@ void DeepLSDDialog::setupUi() {
     customLayout->addWidget(m_customModelPath, 1);
     customLayout->addWidget(browseModel);
     m_customModelRow->setVisible(false);
-    modelLayout->addWidget(m_customModelRow, 3, 0, 1, 2);
+    modelLayout->addWidget(m_customModelRow, 2, 0, 1, 2);
 
     m_deviceCombo = new QComboBox;
     for (int i = 0; i < aicore_device_count(); ++i) {
@@ -126,14 +160,24 @@ void DeepLSDDialog::setupUi() {
             if (d->is_default) m_deviceCombo->setCurrentIndex(i);
         }
     }
-    modelLayout->addWidget(new QLabel(tr("Device:")), 4, 0);
-    modelLayout->addWidget(m_deviceCombo, 4, 1);
+    modelLayout->addWidget(new QLabel(tr("Device:")), 3, 0);
+    modelLayout->addWidget(m_deviceCombo, 3, 1);
 
     m_threads = new QSpinBox;
     m_threads->setRange(0, 128);
     m_threads->setSpecialValueText(tr("Auto"));
-    modelLayout->addWidget(new QLabel(tr("Threads:")), 5, 0);
-    modelLayout->addWidget(m_threads, 5, 1);
+    modelLayout->addWidget(new QLabel(tr("Threads:")), 4, 0);
+    modelLayout->addWidget(m_threads, 4, 1);
+
+    m_minSegmentScore = new QDoubleSpinBox;
+    m_minSegmentScore->setRange(0.0, 1.0);
+    m_minSegmentScore->setSingleStep(0.05);
+    m_minSegmentScore->setValue(0.15);
+    m_minSegmentScore->setToolTip(
+            tr("Filter by LSD segment quality (-log10 NFA), mapped to 0–1. "
+               "Higher = more significant line (typical 0.1–0.5)."));
+    modelLayout->addWidget(new QLabel(tr("Min segment quality:")), 5, 0);
+    modelLayout->addWidget(m_minSegmentScore, 5, 1);
     main->addWidget(modelGroup);
 
     auto* ioGroup = new QGroupBox(tr("Input"));
@@ -141,23 +185,28 @@ void DeepLSDDialog::setupUi() {
     auto* pathRow = new QHBoxLayout;
     m_imagePath = new QLineEdit;
     m_imagePath->setPlaceholderText(
-            tr("Image file path or db://EntityName from DB tree"));
+            tr("Local image path, or db://EntityName from DB tree"));
+    m_imagePath->setToolTip(
+            tr("Single-image input. Browse remembers the last folder via "
+               "QSettings."));
     connect(m_imagePath, &QLineEdit::textChanged, this,
             [this](const QString&) { updateImagePreview(); });
     auto* browseImg = new QPushButton(tr("Browse..."));
+    browseImg->setToolTip(
+            tr("Pick an image file (last folder is remembered)."));
     connect(browseImg, &QPushButton::clicked, this,
             &DeepLSDDialog::onBrowseImage);
     pathRow->addWidget(m_imagePath, 1);
     pathRow->addWidget(browseImg);
     ioLayout->addLayout(pathRow);
 
-    m_previewLabel = new QLabel;
+    m_previewLabel = new ecvClickableImageLabel;
     m_previewLabel->setFixedSize(kThumbSize, kThumbSize);
-    m_previewLabel->setAlignment(Qt::AlignCenter);
     m_previewLabel->setStyleSheet(
             "border: 1px solid palette(mid); background: palette(base);");
     m_previewLabel->setText(tr("Preview"));
-    ioLayout->addWidget(m_previewLabel, 0, Qt::AlignLeft);
+    ioLayout->addWidget(
+            ecvClickableImageLabel::wrapWithTapToPreviewHint(m_previewLabel));
 
     auto* dbHeader = new QHBoxLayout;
     m_dbToggleBtn = new QToolButton;
@@ -190,10 +239,29 @@ void DeepLSDDialog::setupUi() {
     m_dbContentWidget->setVisible(false);
     ioLayout->addWidget(m_dbContentWidget);
 
-    m_addToDbCheck = new QCheckBox(
-            tr("Add distance-field overlay to DB tree after run"));
-    m_addToDbCheck->setChecked(true);
-    ioLayout->addWidget(m_addToDbCheck);
+    m_addLineVizCheck = new QCheckBox(
+            tr("Add line overlay ccImage to DB tree after run"));
+    m_addLineVizCheck->setToolTip(
+            tr("Raster overlay: detected segments drawn on the source image "
+               "(ccImage, 2D). Good for quick visual QA."));
+    m_addLineVizCheck->setChecked(true);
+    ioLayout->addWidget(m_addLineVizCheck);
+
+    m_addDistanceOverlayCheck = new QCheckBox(
+            tr("Add distance-field heatmap ccImage to DB tree after run"));
+    m_addDistanceOverlayCheck->setToolTip(
+            tr("False-color heatmap of the DeepLSD distance field (ccImage, "
+               "2D). Useful for threshold tuning and debugging."));
+    m_addDistanceOverlayCheck->setChecked(false);
+    ioLayout->addWidget(m_addDistanceOverlayCheck);
+
+    m_exportPolylinesCheck = new QCheckBox(
+            tr("Export detected segments as LineSet in DB tree"));
+    m_exportPolylinesCheck->setToolTip(
+            tr("Vector export: one 2D LineSet entity with segment endpoints "
+               "(editable wireframe geometry, not ccPolyline)."));
+    m_exportPolylinesCheck->setChecked(false);
+    ioLayout->addWidget(m_exportPolylinesCheck);
     main->addWidget(ioGroup);
 
     m_downloadLabel = new QLabel;
@@ -202,11 +270,6 @@ void DeepLSDDialog::setupUi() {
 
     m_progress = new QProgressBar;
     main->addWidget(m_progress);
-
-    m_log = new QTextEdit;
-    m_log->setReadOnly(true);
-    m_log->setMinimumHeight(160);
-    main->addWidget(m_log);
 
     auto* btnRow = new QHBoxLayout;
     m_runBtn = new QPushButton(tr("Run"));
@@ -226,8 +289,9 @@ void DeepLSDDialog::populateModelCombo() {
     for (const auto& m : builtinModels()) {
         const QFileInfo fi(cache + "/" + m.filename);
         const QString suffix =
-                fi.exists() ? QString(" [%1] ✓").arg(formatFileSize(fi.size()))
-                            : QString(" [download]");
+                isValidCachedGguf(fi)
+                        ? QString(" [%1] ✓").arg(formatFileSize(fi.size()))
+                        : QString(" [download]");
         m_modelCombo->addItem(m.displayName + suffix, m.filename);
     }
     m_modelCombo->addItem(tr("Custom..."), "CUSTOM");
@@ -237,10 +301,7 @@ void DeepLSDDialog::populateModelCombo() {
 void DeepLSDDialog::refreshModelList() { populateModelCombo(); }
 
 QString DeepLSDDialog::formatFileSize(qint64 bytes) {
-    if (bytes < 1024) return QString("%1 B").arg(bytes);
-    if (bytes < 1024LL * 1024)
-        return QString("%1 KB").arg(bytes / 1024.0, 0, 'f', 1);
-    return QString("%1 MB").arg(bytes / (1024.0 * 1024.0), 0, 'f', 1);
+    return ecvModelDownloader::formatFileSize(bytes);
 }
 
 DeepLSDDialog::Settings DeepLSDDialog::getSettings() const {
@@ -249,7 +310,10 @@ DeepLSDDialog::Settings DeepLSDDialog::getSettings() const {
     s.inputPath = m_imagePath->text().trimmed();
     s.threads = m_threads->value();
     s.device = m_deviceCombo->currentData().toString();
-    s.addResultToDb = m_addToDbCheck->isChecked();
+    s.minSegmentScore = static_cast<float>(m_minSegmentScore->value());
+    s.addLineVizToDb = m_addLineVizCheck->isChecked();
+    s.addDistanceOverlayToDb = m_addDistanceOverlayCheck->isChecked();
+    s.exportPolylinesToDb = m_exportPolylinesCheck->isChecked();
     return s;
 }
 
@@ -259,7 +323,9 @@ QString DeepLSDDialog::resolveModelPath() const {
     return modelCacheDir() + "/" + data;
 }
 
-void DeepLSDDialog::appendLog(const QString& msg) { m_log->append(msg); }
+void DeepLSDDialog::appendLog(const QString& msg) {
+    aicore_inference_log::log(msg);
+}
 
 void DeepLSDDialog::setProgress(int current, int total) {
     m_progress->setMaximum(total);
@@ -309,44 +375,56 @@ void DeepLSDDialog::updateImagePreview() {
             if (m_dbImageList->item(i)->text() == path.mid(5)) {
                 const QIcon icon = m_dbImageList->item(i)->icon();
                 if (!icon.isNull()) {
-                    m_previewLabel->setPixmap(
-                            icon.pixmap(kThumbSize, kThumbSize));
+                    m_previewLabel->setPreviewPixmap(
+                            icon.pixmap(kThumbSize, kThumbSize), kThumbSize);
                     return;
                 }
             }
         }
+        m_previewLabel->clearPreview();
         m_previewLabel->setText(tr("DB"));
         return;
     }
     if (path.isEmpty() || !isSupportedImageFile(path)) {
-        m_previewLabel->clear();
+        m_previewLabel->clearPreview();
         m_previewLabel->setText(tr("Preview"));
         return;
     }
     QImage img(path);
     if (img.isNull()) {
+        m_previewLabel->clearPreview();
         m_previewLabel->setText(tr("?"));
         return;
     }
-    m_previewLabel->setPixmap(QPixmap::fromImage(img).scaled(
-            kThumbSize, kThumbSize, Qt::KeepAspectRatio,
-            Qt::SmoothTransformation));
+    m_previewLabel->setPreviewImage(img, kThumbSize);
 }
 
 void DeepLSDDialog::onBrowseImage() {
+    QSettings settings;
+    const QString lastDir =
+            settings.value("qDeepLSD/lastImageFileDir", QDir::homePath())
+                    .toString();
     const QString path = QFileDialog::getOpenFileName(
-            this, tr("Select image"), QDir::homePath(),
-            tr("Images (*.png *.jpg *.jpeg *.bmp *.tif *.tiff)"));
-    if (!path.isEmpty()) m_imagePath->setText(path);
+            this, tr("Select image"), lastDir,
+            tr("Images (*.png *.jpg *.jpeg *.bmp *.tif *.tiff *.webp)"));
+    if (path.isEmpty()) return;
+    settings.setValue("qDeepLSD/lastImageFileDir",
+                      QFileInfo(path).absolutePath());
+    m_imagePath->setText(path);
 }
 
 void DeepLSDDialog::onBrowseCustomModel() {
+    QSettings settings;
+    const QString lastDir =
+            settings.value("qDeepLSD/lastModelDir", modelCacheDir())
+                    .toString();
     const QString path = QFileDialog::getOpenFileName(
-            this, tr("Select GGUF"), modelCacheDir(), tr("GGUF (*.gguf)"));
-    if (!path.isEmpty()) {
-        m_customModelPath->setText(path);
-        onModelComboChanged(m_modelCombo->currentIndex());
-    }
+            this, tr("Select GGUF"), lastDir, tr("GGUF (*.gguf)"));
+    if (path.isEmpty()) return;
+    settings.setValue("qDeepLSD/lastModelDir",
+                      QFileInfo(path).absolutePath());
+    m_customModelPath->setText(path);
+    onModelComboChanged(m_modelCombo->currentIndex());
 }
 
 void DeepLSDDialog::onModelComboChanged(int index) {
@@ -391,20 +469,6 @@ void DeepLSDDialog::onModelComboChanged(int index) {
         m_variantHintLabel->setText(variantHint);
         m_variantHintLabel->setVisible(!variantHint.isEmpty());
     }
-
-    const bool q8 = data == "CUSTOM" ? isQ8QuantModel(m_customModelPath->text())
-                                     : isQ8QuantModel(data);
-    if (q8) {
-        m_quantWarningLabel->setText(
-                tr("Q8_0 quantization is experimental: distance/angle fields "
-                   "may deviate noticeably from F32/F16 (df p99 ~0.09, angle "
-                   "p99 ~0.24 vs PyTorch on reference scenes). Prefer F16 for "
-                   "production use."));
-        m_quantWarningLabel->setVisible(true);
-    } else {
-        m_quantWarningLabel->clear();
-        m_quantWarningLabel->setVisible(false);
-    }
 }
 
 void DeepLSDDialog::onDbListActivated(QListWidgetItem* item) {
@@ -416,7 +480,12 @@ bool DeepLSDDialog::ensureModelAvailable() {
     const QString data = m_modelCombo->currentData().toString();
     if (data == "CUSTOM") return !resolveModelPath().isEmpty();
     const QString cached = modelCacheDir() + "/" + data;
-    if (QFile::exists(cached)) return true;
+    const QFileInfo cachedInfo(cached);
+    if (isValidCachedGguf(cachedInfo)) return true;
+    if (cachedInfo.exists()) {
+        QFile::remove(cached);
+        appendLog(tr("[Warning] Removed incomplete model cache: %1").arg(cached));
+    }
     for (const auto& bm : builtinModels()) {
         if (bm.filename != data) continue;
         if (QMessageBox::question(
@@ -433,67 +502,39 @@ bool DeepLSDDialog::ensureModelAvailable() {
 }
 
 void DeepLSDDialog::startDownload(const DeepLSDBuiltinModel& model) {
+    if (m_downloadInProgress || !m_downloader) {
+        if (m_downloadInProgress) {
+            appendLog(tr("[Warning] A download is already in progress."));
+        }
+        return;
+    }
     QDir().mkpath(modelCacheDir());
     const QString dest = modelCacheDir() + "/" + model.filename;
-    const QString tmpDest = dest + ".part";
     m_downloadInProgress = true;
-    m_downloadTmpPath = tmpDest;
     m_downloadLabel->setText(tr("Downloading %1 ...").arg(model.filename));
     m_downloadLabel->setVisible(true);
-    m_currentDownload =
-            m_netManager->get(QNetworkRequest(QUrl(model.downloadUrl)));
-    m_downloadOutFile = new QFile(tmpDest, m_currentDownload);
-    m_downloadOutFile->open(QIODevice::WriteOnly);
-    connect(m_currentDownload, &QNetworkReply::readyRead, this, [this]() {
-        if (m_downloadOutFile && m_currentDownload) {
-            m_downloadOutFile->write(m_currentDownload->readAll());
-        }
-    });
-    connect(m_currentDownload, &QNetworkReply::finished, this, [this, dest]() {
-        if (m_downloadOutFile) {
-            m_downloadOutFile->close();
-            delete m_downloadOutFile;
-            m_downloadOutFile = nullptr;
-        }
-        if (m_currentDownload->error() == QNetworkReply::NoError) {
-            QFile::remove(dest);
-            QFile::rename(m_downloadTmpPath, dest);
-            appendLog(tr("[OK] Downloaded model."));
-            populateModelCombo();
-            if (m_autoRunAfterDownload) onRun();
-        } else {
-            appendLog(tr("[Error] Download failed."));
-            QFile::remove(m_downloadTmpPath);
-        }
-        m_autoRunAfterDownload = false;
-        m_downloadInProgress = false;
-        m_downloadLabel->setVisible(false);
-        m_currentDownload->deleteLater();
-        m_currentDownload = nullptr;
-    });
+    m_progress->setValue(0);
+
+    ecvModelDownloader::Request req;
+    req.url = model.downloadUrl;
+    req.destPath = dest;
+    m_downloader->download(req);
 }
 
 void DeepLSDDialog::cancelDownload() {
-    if (m_currentDownload) m_currentDownload->abort();
+    if (m_downloader) m_downloader->cancel();
+    m_downloadInProgress = false;
+    m_downloadLabel->setVisible(false);
 }
 
 void DeepLSDDialog::onRun() {
     if (!ensureModelAvailable()) return;
-    const Settings s = getSettings();
-    const QString fname = m_modelCombo->currentData().toString();
-    if (fname == "CUSTOM" ? isQ8QuantModel(s.modelPath)
-                          : isQ8QuantModel(fname)) {
-        const QMessageBox::StandardButton btn = QMessageBox::warning(
-                this, tr("Q8_0 accuracy warning"),
-                tr("The selected Q8_0 model uses 8-bit weights and may produce "
-                   "inaccurate wireframe distance/angle fields compared to "
-                   "F16/F32 "
-                   "(experimental; see MODEL_CARD.md).\n\n"
-                   "Continue with Q8_0 anyway?"),
-                QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
-        if (btn != QMessageBox::Yes) return;
-    }
-    emit runRequested(s);
+    emit runRequested(getSettings());
 }
 
 void DeepLSDDialog::onCancel() { emit cancelRequested(); }
+
+void DeepLSDDialog::closeEvent(QCloseEvent* event) {
+    onCancel();
+    QDialog::closeEvent(event);
+}

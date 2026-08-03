@@ -17,16 +17,17 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
-#include <QNetworkAccessManager>
-#include <QNetworkReply>
 #include <QProgressBar>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QSpinBox>
 #include <QTabWidget>
-#include <QTextEdit>
 #include <QToolButton>
 
+#include "ecvModelDownloader.h"
+#include "ecvClickableImageLabel.h"
+
+class ecvMainAppInterface;
 class FaceCaptureWidget;
 
 struct FreeSplatterBuiltinModel {
@@ -73,6 +74,7 @@ public:
 
     explicit FreeSplatterDialog(QWidget* parent = nullptr);
 
+    void setAppInterface(ecvMainAppInterface* app);
     Settings getSettings() const;
     void appendLog(const QString& msg);
     void setProgress(int current, int total);
@@ -92,6 +94,9 @@ signals:
     void visualizeRequested();
     void exportPlyRequested();
     void refreshDbImagesRequested();
+
+protected:
+    void closeEvent(QCloseEvent* event) override;
 
 private slots:
     void onBrowseFile();
@@ -164,7 +169,6 @@ private:
 
     QLabel* m_taskStatusLabel = nullptr;
 
-    QTextEdit* m_logOutput = nullptr;
     QProgressBar* m_progressBar = nullptr;
     QLabel* m_downloadLabel = nullptr;
     QPushButton* m_runBtn = nullptr;
@@ -173,13 +177,11 @@ private:
     QPushButton* m_exportPlyBtn = nullptr;
     QPushButton* m_closeBtn = nullptr;
 
-    QNetworkAccessManager* m_netManager = nullptr;
-    QNetworkReply* m_currentDownload = nullptr;
+    ecvMainAppInterface* m_app = nullptr;
+    ecvModelDownloader* m_downloader = nullptr;
     bool m_autoRunAfterDownload = false;
     bool m_downloadInProgress = false;
     QString m_downloadTargetFilename;
-    QString m_downloadTmpPath;
-    QFile* m_downloadOutFile = nullptr;
     bool m_taskRunning = false;
     bool m_hasResult = false;
 

@@ -10,8 +10,10 @@
 #include <memory>
 #include <string>
 
+#include "aicore/backend_capi.h"
 #include "aicore/deeplsd_capi.h"
 #include "deeplsd.hpp"
+#include "ggml_backend_utils.hpp"
 #include "gguf_weight_quantize.hpp"
 #include "model_cache.hpp"
 
@@ -26,11 +28,10 @@ char* dup_cstr(const std::string& s) {
 }
 
 std::string normalize_device(const char* device) {
-    if (device == nullptr || device[0] == '\0' ||
-        std::strcmp(device, "auto") == 0 || std::strcmp(device, "gpu") == 0) {
-        return "vulkan";
+    if (device == nullptr || device[0] == '\0') {
+        return "cpu";
     }
-    return device;
+    return ggml_common::resolve_device_request(device);
 }
 
 }  // namespace
@@ -152,6 +153,84 @@ AICORE_CAPI int aicore_deeplsd_extract_gray(aicore_deeplsd_ctx* ctx,
     return 0;
 }
 
+AICORE_CAPI int aicore_deeplsd_extract_segments(
+        aicore_deeplsd_ctx* ctx,
+        const uint8_t* gray,
+        int32_t width,
+        int32_t height,
+        int32_t row_stride,
+        aicore_deeplsd_segment** out_segments,
+        int32_t* out_segment_count,
+        float** out_distance,
+        float** out_angle,
+        int32_t* out_width,
+        int32_t* out_height) {
+    if (ctx == nullptr || ctx->extractor == nullptr || gray == nullptr ||
+        out_distance == nullptr || out_angle == nullptr ||
+        out_width == nullptr || out_height == nullptr || width <= 0 ||
+        height <= 0) {
+        return -1;
+    }
+    *out_distance = nullptr;
+    *out_angle = nullptr;
+    if (out_segments != nullptr) {
+        *out_segments = nullptr;
+    }
+    if (out_segment_count != nullptr) {
+        *out_segment_count = 0;
+    }
+
+    deeplsd::DeepLSDResult result;
+    if (!ctx->extractor->ExtractFromGray(gray, width, height, row_stride,
+                                         &result)) {
+        ctx->last_error = ctx->extractor->Error();
+        return -1;
+    }
+
+    const size_t plane = static_cast<size_t>(result.width) * result.height;
+    auto* df = static_cast<float*>(std::malloc(plane * sizeof(float)));
+    auto* ang = static_cast<float*>(std::malloc(plane * sizeof(float)));
+    if (df == nullptr || ang == nullptr) {
+        std::free(df);
+        std::free(ang);
+        ctx->last_error = "out of memory";
+        return -1;
+    }
+    std::memcpy(df, result.distance_field.data(), plane * sizeof(float));
+    std::memcpy(ang, result.angle_field.data(), plane * sizeof(float));
+    *out_distance = df;
+    *out_angle = ang;
+    *out_width = result.width;
+    *out_height = result.height;
+
+    if (out_segments == nullptr || out_segment_count == nullptr) {
+        return 0;
+    }
+
+    const int32_t count = static_cast<int32_t>(result.segments.size());
+    if (count == 0) {
+        return 0;
+    }
+
+    auto* segs = static_cast<aicore_deeplsd_segment*>(
+            std::malloc(static_cast<size_t>(count) *
+                        sizeof(aicore_deeplsd_segment)));
+    if (segs == nullptr) {
+        ctx->last_error = "out of memory";
+        return -1;
+    }
+    for (int32_t i = 0; i < count; ++i) {
+        segs[i].x1 = result.segments[static_cast<size_t>(i)].x1;
+        segs[i].y1 = result.segments[static_cast<size_t>(i)].y1;
+        segs[i].x2 = result.segments[static_cast<size_t>(i)].x2;
+        segs[i].y2 = result.segments[static_cast<size_t>(i)].y2;
+        segs[i].score = result.segments[static_cast<size_t>(i)].score;
+    }
+    *out_segments = segs;
+    *out_segment_count = count;
+    return 0;
+}
+
 AICORE_CAPI char* aicore_deeplsd_info_json(aicore_deeplsd_ctx* ctx) {
     if (ctx == nullptr || ctx->extractor == nullptr) {
         return dup_cstr("{}");
@@ -167,8 +246,7 @@ AICORE_CAPI char* aicore_deeplsd_info_json(aicore_deeplsd_ctx* ctx) {
 AICORE_CAPI void aicore_deeplsd_free_string(char* s) { std::free(s); }
 
 AICORE_CAPI int aicore_deeplsd_warmup_backend(const char* device) {
-    (void)device;
-    return 0;
+    return aicore_warmup_backend(device);
 }
 
 AICORE_CAPI char* aicore_deeplsd_model_cache_dir(void) {

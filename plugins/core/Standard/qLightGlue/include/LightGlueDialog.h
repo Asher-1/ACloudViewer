@@ -13,27 +13,24 @@
 #include <QDoubleSpinBox>
 #include <QFile>
 #include <QGroupBox>
-#include <QHash>
-#include <QImage>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
-#include <QNetworkAccessManager>
-#include <QNetworkReply>
 #include <QProgressBar>
 #include <QPushButton>
 #include <QSpinBox>
-#include <QTabWidget>
-#include <QTextEdit>
 #include <QToolButton>
+
+#include "ecvModelDownloader.h"
+#include "ecvClickableImageLabel.h"
+
+class ecvMainAppInterface;
 
 struct LightGlueBuiltinModel {
     QString displayName;
     QString filename;
     QString downloadUrl;
     int matcherType = 2;
-    /** 0 = LightGlue matcher GGUF, 1 = EfficientLoFTR GGUF */
-    int pipelineType = 0;
 };
 
 class LightGlueDialog : public QDialog {
@@ -49,8 +46,6 @@ public:
 
     struct Settings {
         Mode mode = Mode::Match;
-        /** 0 = LightGlue (SIFT + matcher), 1 = EfficientLoFTR end-to-end */
-        int pipelineType = 0;
         QString modelPath;
         QStringList inputPaths;
         int threads = 0;
@@ -64,6 +59,7 @@ public:
 
     explicit LightGlueDialog(QWidget* parent = nullptr);
 
+    void setAppInterface(ecvMainAppInterface* app);
     Settings getSettings() const;
     void appendLog(const QString& msg);
     void setProgress(int current, int total);
@@ -76,14 +72,15 @@ public:
 
     static QString modelCacheDir();
     void refreshModelList();
-    static QString eloftrModelCacheDir();
-    static QString cacheDirForPipeline(int pipelineType);
 
 signals:
     void runRequested(const LightGlueDialog::Settings& settings);
     void cancelRequested();
     void exportMatchesRequested();
     void refreshDbImagesRequested();
+
+protected:
+    void closeEvent(QCloseEvent* event) override;
 
 private slots:
     void onBrowseFile();
@@ -108,6 +105,8 @@ private:
     bool selectModelByFilename(const QString& filename);
     QString resolveModelPath() const;
     bool ensureModelAvailable();
+    bool ensureAlikedExtractorAvailable(const QString& matcherFilename);
+    void startAlikedExtractorDownload(const QString& extractorFilename);
     void startDownload(const LightGlueBuiltinModel& model);
     void cancelDownload();
     void updateImageStatus();
@@ -127,13 +126,13 @@ private:
     bool assignSelectedToSlot(int slot);
     bool isModelReady() const;
     bool isInputValid() const;
-    int currentPipeline() const;
 
     static QVector<LightGlueBuiltinModel> builtinModels();
     static QString formatFileSize(qint64 bytes);
+    static QString alikedExtractorCacheDir();
+    static QString alikedExtractorFilenameForMatcher(const QString& matcherFilename);
 
     QComboBox* m_modeCombo = nullptr;
-    QTabWidget* m_pipelineTabs = nullptr;
     QWidget* m_minScoreRow = nullptr;
     QGroupBox* m_ioGroup = nullptr;
     QComboBox* m_modelCombo = nullptr;
@@ -144,7 +143,7 @@ private:
     QString m_slotPaths[kSlotCount];
 
     QGroupBox* m_slotGroups[kSlotCount] = {nullptr, nullptr};
-    QLabel* m_slotPreview[kSlotCount] = {nullptr, nullptr};
+    ecvClickableImageLabel* m_slotPreview[kSlotCount] = {nullptr, nullptr};
     QLabel* m_slotNameLabel[kSlotCount] = {nullptr, nullptr};
     QLabel* m_imageStatusLabel = nullptr;
 
@@ -162,19 +161,17 @@ private:
     QLabel* m_downloadLabel = nullptr;
     QLabel* m_taskStatusLabel = nullptr;
     QProgressBar* m_progress = nullptr;
-    QTextEdit* m_log = nullptr;
     QPushButton* m_runBtn = nullptr;
     QPushButton* m_cancelBtn = nullptr;
     QPushButton* m_exportBtn = nullptr;
 
-    QNetworkAccessManager* m_netManager = nullptr;
-    QNetworkReply* m_currentDownload = nullptr;
-    QFile* m_downloadOutFile = nullptr;
+    ecvMainAppInterface* m_app = nullptr;
+    ecvModelDownloader* m_downloader = nullptr;
     bool m_downloadInProgress = false;
     bool m_taskRunning = false;
     bool m_autoRunAfterDownload = false;
     QString m_downloadTargetFilename;
-    QString m_downloadTmpPath;
+    QString m_lastSelectedModel;
 
     QHash<QString, QImage> m_dbPreviews;
 };

@@ -33,6 +33,7 @@
 #include "ecvGuiParameters.h"
 #include "ecvHObjectCaster.h"
 #include "ecvImage.h"
+#include "LineSet.h"
 #include "ecvIndexedTransformationBuffer.h"
 #include "ecvKdTree.h"
 #include "ecvMaterialSet.h"
@@ -912,6 +913,12 @@ void ccHObject::setLineWidthRecursive(PointCoordinateType with) {
         ccPolyline* poly = ccHObjectCaster::ToPolyline(this);
         if (poly && poly->getWidth() != with) {
             poly->setWidth(with);
+        }
+    } else if (this->isKindOf(CV_TYPES::LINESET)) {
+        cloudViewer::geometry::LineSet* lineSet =
+                ccHObjectCaster::ToLineSet(this);
+        if (lineSet && lineSet->getWidth() != with) {
+            lineSet->setWidth(with);
         }
     }
 

@@ -1,0 +1,24 @@
+diff --git a/src/ggml-vulkan/ggml-vulkan-aliked.inc.cpp b/src/ggml-vulkan/ggml-vulkan-aliked.inc.cpp
+--- a/src/ggml-vulkan/ggml-vulkan-aliked.inc.cpp
++++ b/src/ggml-vulkan/ggml-vulkan-aliked.inc.cpp
+@@ -14,7 +14,7 @@ constexpr int32_t kTopKBlockCount = 256;
+ constexpr int32_t kTopKBlockCount = 256;
+ constexpr int32_t kTopKLocal = 32;
+ constexpr int32_t kSddhBatchSize = 64;
+-constexpr int32_t kSddhFinishChunk = 4; // batches per Vulkan submit (256 keypoints @1024)
++constexpr int32_t kSddhFinishChunk = 16; // batches per Vulkan submit when SINGLE=0
+ 
+ static int32_t vk_aliked_sddh_finish_chunk() {
+     const char *env = std::getenv("LIGHTGLUE_ALIKED_VULKAN_SDDH_CHUNK");
+@@ -26,7 +26,10 @@ static int32_t vk_aliked_sddh_finish_chunk() {
+ 
+ static bool vk_aliked_sddh_single_submit() {
+     const char *env = std::getenv("LIGHTGLUE_ALIKED_VULKAN_SDDH_SINGLE");
+-    return env != nullptr && env[0] != '0';
++    if (env != nullptr) {
++        return env[0] != '0';
++    }
++    return true;
+ }
+ 
+ struct vk_aliked_push_deform {

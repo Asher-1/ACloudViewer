@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "deeplsd.hpp"
+#include "deeplsd_line_detect.hpp"
 #include "gguf_loader.hpp"
 
 namespace deeplsd {
@@ -170,6 +171,56 @@ ggml_tensor *UpsampleTo(ggml_context *ctx,
                             input->ne[3], GGML_SCALE_MODE_BILINEAR);
 }
 
+void BilinearUpsamplePlane(const std::vector<float> &src,
+                           int32_t src_w,
+                           int32_t src_h,
+                           int32_t dst_w,
+                           int32_t dst_h,
+                           std::vector<float> *dst) {
+    if (dst == nullptr || src_w <= 0 || src_h <= 0 || dst_w <= 0 ||
+        dst_h <= 0) {
+        return;
+    }
+    dst->assign(static_cast<size_t>(dst_w) * dst_h, 0.0f);
+    if (src_w == dst_w && src_h == dst_h) {
+        *dst = src;
+        return;
+    }
+    for (int32_t y = 0; y < dst_h; ++y) {
+        const float src_y =
+                (static_cast<float>(y) + 0.5f) *
+                        static_cast<float>(src_h) / static_cast<float>(dst_h) -
+                0.5f;
+        const int32_t y0 =
+                std::clamp(static_cast<int32_t>(std::floor(src_y)), 0, src_h - 1);
+        const int32_t y1 = std::min(y0 + 1, src_h - 1);
+        const float wy = src_y - static_cast<float>(y0);
+        for (int32_t x = 0; x < dst_w; ++x) {
+            const float src_x =
+                    (static_cast<float>(x) + 0.5f) *
+                            static_cast<float>(src_w) /
+                            static_cast<float>(dst_w) -
+                    0.5f;
+            const int32_t x0 =
+                    std::clamp(static_cast<int32_t>(std::floor(src_x)), 0,
+                               src_w - 1);
+            const int32_t x1 = std::min(x0 + 1, src_w - 1);
+            const float wx = src_x - static_cast<float>(x0);
+            const auto sample = [&](int32_t sy, int32_t sx) {
+                return src[static_cast<size_t>(sy) * src_w + sx];
+            };
+            const float v00 = sample(y0, x0);
+            const float v01 = sample(y0, x1);
+            const float v10 = sample(y1, x0);
+            const float v11 = sample(y1, x1);
+            const float v0 = v00 * (1.0f - wx) + v01 * wx;
+            const float v1 = v10 * (1.0f - wx) + v11 * wx;
+            (*dst)[static_cast<size_t>(y) * dst_w + x] =
+                    v0 * (1.0f - wy) + v1 * wy;
+        }
+    }
+}
+
 bool Require(const TensorMap &map, const char *key, std::string *error) {
     if (map.count(key) == 0) {
         if (error) {
@@ -244,7 +295,14 @@ public:
         result->height = height;
         result->distance_field = std::move(df);
         result->angle_field = std::move(angle);
-        result->segments.clear();
+        std::string line_err;
+        if (!DetectAfmLines(gray, width, height, row_stride,
+                            result->distance_field.data(),
+                            result->angle_field.data(), &result->segments,
+                            &line_err)) {
+            error_ = line_err.empty() ? "line detection failed" : line_err;
+            return false;
+        }
         return true;
     }
 
@@ -409,14 +467,25 @@ private:
             return false;
         }
 
-        const size_t plane = static_cast<size_t>(w) * h;
-        df->resize(plane);
-        angle->resize(plane);
-        ggml_backend_tensor_get(df_head, df->data(), 0, plane * sizeof(float));
-        ggml_backend_tensor_get(ang_head, angle->data(), 0,
-                                plane * sizeof(float));
+        const int32_t ow = static_cast<int32_t>(df_head->ne[0]);
+        const int32_t oh = static_cast<int32_t>(df_head->ne[1]);
+        const size_t out_plane = static_cast<size_t>(ow) * oh;
+        std::vector<float> df_low(out_plane);
+        std::vector<float> ang_low(out_plane);
+        ggml_backend_tensor_get(df_head, df_low.data(), 0,
+                                out_plane * sizeof(float));
+        ggml_backend_tensor_get(ang_head, ang_low.data(), 0,
+                                out_plane * sizeof(float));
 
         ggml_free(ctx);
+
+        if (ow == w && oh == h) {
+            *df = std::move(df_low);
+            *angle = std::move(ang_low);
+        } else {
+            BilinearUpsamplePlane(df_low, ow, oh, w, h, df);
+            BilinearUpsamplePlane(ang_low, ow, oh, w, h, angle);
+        }
         return true;
     }
 

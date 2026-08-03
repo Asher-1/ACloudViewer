@@ -1,0 +1,83 @@
+diff --git a/src/ggml-vulkan/ggml-vulkan-aliked.inc.cpp b/src/ggml-vulkan/ggml-vulkan-aliked.inc.cpp
+--- a/src/ggml-vulkan/ggml-vulkan-aliked.inc.cpp
++++ b/src/ggml-vulkan/ggml-vulkan-aliked.inc.cpp
+@@ -16,6 +16,14 @@ constexpr int32_t kTopKBlockCount = 256;
+ constexpr int32_t kTopKLocal = 32;
+ constexpr int32_t kSddhBatchSize = 64;
+ constexpr int32_t kSddhFinishChunk = 16; // batches per Vulkan submit when SINGLE=0
++
++static int32_t vk_aliked_sddh_batch_size() {
++    const char *env = std::getenv("LIGHTGLUE_ALIKED_VULKAN_SDDH_BATCH");
++    if (env != nullptr && env[0] != '\0') {
++        return std::max(1, std::atoi(env));
++    }
++    return kSddhBatchSize;
++}
+ 
+ static int32_t vk_aliked_sddh_finish_chunk() {
+     const char *env = std::getenv("LIGHTGLUE_ALIKED_VULKAN_SDDH_CHUNK");
+@@ -30,7 +38,8 @@ static bool vk_aliked_sddh_single_submit() {
+     if (env != nullptr) {
+         return env[0] != '0';
+     }
+-    return false;
++    // One dispatch for all keypoints avoids multi-batch push-constant races (512 kpts).
++    return true;
+ }
+ 
+ struct vk_aliked_push_deform {
+@@ -566,7 +575,8 @@ bool ggml_vulkan_aliked_run_sddh(
+     const uint32_t sf_w = vk_aliked_misalign_floats(ctx, sf_conv_w);
+     const uint32_t agg_w = vk_aliked_misalign_floats(ctx, agg_weights);
+ 
+-    const int32_t num_batches = (count + kSddhBatchSize - 1) / kSddhBatchSize;
++    const int32_t batch_size = vk_aliked_sddh_batch_size();
++    const int32_t num_batches = (count + batch_size - 1) / batch_size;
+ 
+     auto dispatch_batch = [&](int32_t start, int32_t batch) {
+         vk_aliked_push_sddh pc{static_cast<uint32_t>(dim), static_cast<uint32_t>(h),
+@@ -588,19 +598,39 @@ bool ggml_vulkan_aliked_run_sddh(
+             pc, {static_cast<uint32_t>(batch), 1, 1}, false);
+     };
+ 
+-    const int32_t finish_chunk = vk_aliked_sddh_finish_chunk();
+-    for (int32_t chunk = 0; chunk < num_batches; chunk += finish_chunk) {
+-        const int32_t chunk_batches =
+-            std::min(finish_chunk, num_batches - chunk);
+-        ggml_pipeline_request_descriptor_sets(ctx, pipes.sddh,
+-                                              static_cast<uint32_t>(chunk_batches));
+-        for (int32_t b = 0; b < chunk_batches; ++b) {
+-            const int32_t batch_idx = chunk + b;
+-            const int32_t start = batch_idx * kSddhBatchSize;
+-            const int32_t batch = std::min(kSddhBatchSize, count - start);
+-            dispatch_batch(start, batch);
++    const bool single_dispatch = vk_aliked_sddh_single_submit() || num_batches <= 1;
++    if (single_dispatch) {
++        ggml_pipeline_request_descriptor_sets(ctx, pipes.sddh, 1);
++        dispatch_batch(0, count);
++        vk_aliked_finish(ctx);
++    } else {
++        const int32_t finish_chunk = vk_aliked_sddh_finish_chunk();
++        for (int32_t chunk = 0; chunk < num_batches; chunk += finish_chunk) {
++            const int32_t chunk_batches =
++                std::min(finish_chunk, num_batches - chunk);
++            ggml_pipeline_request_descriptor_sets(ctx, pipes.sddh,
++                                                  static_cast<uint32_t>(chunk_batches));
++            for (int32_t b = 0; b < chunk_batches; ++b) {
++                const int32_t batch_idx = chunk + b;
++                const int32_t start = batch_idx * batch_size;
++                const int32_t batch = std::min(batch_size, count - start);
++                if (b > 0) {
++                    vk_aliked_compute_barrier(ctx);
++                }
++                dispatch_batch(start, batch);
++            }
++            if (chunk + finish_chunk < num_batches) {
++                vk_aliked_compute_barrier(ctx);
++            }
++            vk_aliked_finish(ctx);
+         }
+-        vk_aliked_finish(ctx);
+     }
+     ggml_backend_synchronize(backend);
+     return true;

@@ -30,7 +30,7 @@ if( PLUGIN_STANDARD_QLIGHTGLUE )
         target_compile_definitions(${PROJECT_NAME} PRIVATE QLIGHTGLUE_HAS_OPENCV)
     endif()
 
-    target_link_libraries(${PROJECT_NAME} AICore Qt::Network)
+    target_link_libraries(${PROJECT_NAME} AICore)
     if(MSVC)
         target_compile_definitions(${PROJECT_NAME} PRIVATE _USE_MATH_DEFINES)
     endif()

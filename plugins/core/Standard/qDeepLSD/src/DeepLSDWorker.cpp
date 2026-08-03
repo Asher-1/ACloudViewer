@@ -10,12 +10,20 @@
 #include <QElapsedTimer>
 #include <QFileInfo>
 #include <QImage>
+#include <QImageReader>
+#include <QPainter>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QPen>
 #include <algorithm>
 #include <cstdlib>
 
 #ifdef AICore_ENABLED
+#include "aicore/backend_capi.h"
 #include "aicore/deeplsd_capi.h"
 #endif
+#include "aicore/inference_log.h"
+#include "aicore/runtime_capi.h"
 
 DeepLSDWorker::DeepLSDWorker(const Settings& settings, QObject* parent)
     : QThread(parent), m_settings(settings) {
@@ -34,6 +42,54 @@ void DeepLSDWorker::releaseContextOnMainThread() {
 #ifdef AICore_ENABLED
 
 namespace {
+
+constexpr int kDefaultMaxResize = 1024;
+
+struct LoadedGray {
+    QImage original;
+    QImage processed;
+    double scaleX = 1.0;
+    double scaleY = 1.0;
+};
+
+LoadedGray load_gray_resized(const QString& path, int max_resize) {
+    QImageReader reader(path);
+    reader.setAutoTransform(true);
+    const QImage img = reader.read();
+    if (img.isNull()) {
+        return {};
+    }
+    LoadedGray out;
+    out.original = img.convertToFormat(QImage::Format_Grayscale8);
+    out.processed = out.original;
+    if (max_resize > 0) {
+        const int max_dim =
+                std::max(out.original.width(), out.original.height());
+        if (max_dim > max_resize) {
+            out.processed =
+                    out.original.scaled(max_resize, max_resize,
+                                        Qt::KeepAspectRatio,
+                                        Qt::SmoothTransformation);
+            out.scaleX = static_cast<double>(out.original.width()) /
+                         out.processed.width();
+            out.scaleY = static_cast<double>(out.original.height()) /
+                         out.processed.height();
+        }
+    }
+    return out;
+}
+
+DeepLSDLineSegment scale_segment(const aicore_deeplsd_segment& seg,
+                                 double scaleX,
+                                 double scaleY) {
+    DeepLSDLineSegment out;
+    out.x1 = static_cast<float>(seg.x1 * scaleX);
+    out.y1 = static_cast<float>(seg.y1 * scaleY);
+    out.x2 = static_cast<float>(seg.x2 * scaleX);
+    out.y2 = static_cast<float>(seg.y2 * scaleY);
+    out.score = seg.score;
+    return out;
+}
 
 QImage make_distance_overlay(const QImage& gray,
                              const float* df,
@@ -63,6 +119,22 @@ QImage make_distance_overlay(const QImage& gray,
     return rgb;
 }
 
+QImage make_line_visualization(
+        const QImage& gray,
+        const std::vector<DeepLSDLineSegment>& segments) {
+    QImage rgb = gray.convertToFormat(QImage::Format_RGB32);
+    QPainter painter(&rgb);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setPen(QPen(QColor(DeepLSDLineStyle::kRed,
+                               DeepLSDLineStyle::kGreen,
+                               DeepLSDLineStyle::kBlue),
+                        1));
+    for (const DeepLSDLineSegment& seg : segments) {
+        painter.drawLine(QPointF(seg.x1, seg.y1), QPointF(seg.x2, seg.y2));
+    }
+    return rgb;
+}
+
 }  // namespace
 
 bool DeepLSDWorker::runExtract() {
@@ -71,15 +143,23 @@ bool DeepLSDWorker::runExtract() {
         return false;
     }
 
-    QImage img(m_settings.inputPath);
-    if (img.isNull()) {
+    const LoadedGray loaded =
+            load_gray_resized(m_settings.inputPath, kDefaultMaxResize);
+    if (loaded.processed.isNull()) {
         emit logMessage("[Error] Failed to load image.");
         return false;
     }
-    QImage gray = img.convertToFormat(QImage::Format_Grayscale8);
+    emit logMessage(QString("[DeepLSD] Processing %1×%2 (source %3×%4)")
+                            .arg(loaded.processed.width())
+                            .arg(loaded.processed.height())
+                            .arg(loaded.original.width())
+                            .arg(loaded.original.height()));
 
     QElapsedTimer timer;
     timer.start();
+
+    aicore_inference_log::log_device_request(QStringLiteral("DeepLSD"), m_settings.device);
+    emit logMessage("[DeepLSD] Loading model: " + m_settings.modelPath);
 
     aicore_deeplsd_options* opts = aicore_deeplsd_options_new();
     if (!m_settings.device.isEmpty()) {
@@ -100,15 +180,25 @@ bool DeepLSDWorker::runExtract() {
         m_pendingCtx = ctx;
         return false;
     }
+    if (char* info = aicore_deeplsd_info_json(ctx)) {
+        const QJsonObject obj =
+                QJsonDocument::fromJson(QByteArray(info)).object();
+        aicore_deeplsd_free_string(info);
+        const QString resolved = obj.value(QStringLiteral("device")).toString();
+        aicore_inference_log::log_device_resolved(QStringLiteral("DeepLSD"), resolved);
+    }
 
     emit progressUpdate(30, 100);
     float* df = nullptr;
     float* ang = nullptr;
+    aicore_deeplsd_segment* segs = nullptr;
+    int32_t seg_count = 0;
     int32_t ow = 0;
     int32_t oh = 0;
-    if (aicore_deeplsd_extract_gray(ctx, gray.constBits(), gray.width(),
-                                    gray.height(), gray.bytesPerLine(), &df,
-                                    &ang, &ow, &oh) != 0) {
+    if (aicore_deeplsd_extract_segments(
+                ctx, loaded.processed.constBits(), loaded.processed.width(),
+                loaded.processed.height(), loaded.processed.bytesPerLine(),
+                &segs, &seg_count, &df, &ang, &ow, &oh) != 0) {
         emit logMessage(
                 QString("[Error] Extract failed: %1")
                         .arg(aicore_deeplsd_last_error(ctx) ?: "unknown"));
@@ -122,18 +212,45 @@ bool DeepLSDWorker::runExtract() {
     result.imageName = QFileInfo(m_settings.inputPath).completeBaseName();
     result.width = ow;
     result.height = oh;
-    result.overlay = make_distance_overlay(gray, df, ow, oh);
+    result.originalWidth = loaded.original.width();
+    result.originalHeight = loaded.original.height();
+    result.segments.reserve(static_cast<size_t>(seg_count));
+    for (int32_t i = 0; i < seg_count; ++i) {
+        DeepLSDLineSegment seg =
+                scale_segment(segs[i], loaded.scaleX, loaded.scaleY);
+        if (m_settings.minSegmentScore > 0.0f &&
+            seg.score < m_settings.minSegmentScore) {
+            continue;
+        }
+        result.segments.push_back(seg);
+    }
+    if (char* info = aicore_deeplsd_info_json(ctx)) {
+        const QJsonObject obj =
+                QJsonDocument::fromJson(QByteArray(info)).object();
+        aicore_deeplsd_free_string(info);
+        result.resolvedDevice = obj.value(QStringLiteral("device")).toString();
+    }
+    result.lineVisualization =
+            make_line_visualization(loaded.original, result.segments);
+    if (m_settings.computeDistanceOverlay) {
+        QImage procOverlay =
+                make_distance_overlay(loaded.processed, df, ow, oh);
+        result.distanceOverlay =
+                procOverlay.scaled(loaded.original.size(), Qt::IgnoreAspectRatio,
+                                   Qt::SmoothTransformation);
+    }
     result.runtimeMs = timer.elapsed();
 
     std::free(df);
     std::free(ang);
+    std::free(segs);
     m_pendingCtx = ctx;
 
     emit progressUpdate(100, 100);
-    emit logMessage(QString("[DeepLSD] Extracted %1×%2 in %3 ms.")
-                            .arg(ow)
-                            .arg(oh)
-                            .arg(result.runtimeMs, 0, 'f', 1));
+    aicore_inference_log::log_inference_done(QStringLiteral("DeepLSD"), result.resolvedDevice, result.runtimeMs, QStringLiteral("%1 segments on %2×%3")
+                    .arg(result.segments.size())
+                    .arg(result.originalWidth)
+                    .arg(result.originalHeight));
     emit resultReady(result);
     return true;
 }
@@ -145,7 +262,11 @@ void DeepLSDWorker::run() {
     emit logMessage("[Error] AICore not enabled.");
     emit taskFinished(false);
 #else
+    aicore_inference_lock();
+    aicore_cancel_begin();
     const bool ok = runExtract();
+    aicore_cancel_end();
+    aicore_inference_unlock();
     emit taskFinished(ok);
 #endif
 }

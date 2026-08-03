@@ -88,10 +88,8 @@ if (BUILD_RECONSTRUCTION)
 endif ()
 
 # At `make`: cloudViewer.so (or the equivalents) will be created at
-# PYTHON_COMPILED_MODULE_DIR. The default location is
-# `build/lib/${CMAKE_BUILD_TYPE}/Python/{cpu|cuda}`
-set(PYTHON_COMPILED_MODULE_DIR
-        "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Python/$<IF:$<BOOL:${BUILD_CUDA_MODULE}>,cuda,cpu>")
+# PYTHON_COMPILED_MODULE_DIR: build/lib/<Config>/Python/{cpu|cuda}
+cloudviewer_get_python_compiled_module_dir(PYTHON_COMPILED_MODULE_DIR)
 
 # Set BUILD_RPATH to find tbb (and a shared libCloudViewer). We don't install through cmake.
 # if (APPLE)
@@ -219,6 +217,13 @@ file(GENERATE
 set(BUILD_BIN_PATH "${CMAKE_BINARY_DIR}/bin")
 set(CUSTOM_BUILD_TYPE "${CMAKE_BUILD_TYPE}")
 set(PYTHON_PACKAGE_DEPENDS ${GENERATED_OUTPUTS})
+list(APPEND PYTHON_PACKAGE_DEPENDS pybind)
+if(BUILD_TENSORFLOW_OPS)
+    list(APPEND PYTHON_PACKAGE_DEPENDS cloudViewer_tf_ops)
+endif()
+if(BUILD_PYTORCH_OPS)
+    list(APPEND PYTHON_PACKAGE_DEPENDS cloudViewer_torch_ops)
+endif()
 if(AICore_ENABLED AND TARGET AICore)
     list(APPEND PYTHON_PACKAGE_DEPENDS AICore)
 endif()

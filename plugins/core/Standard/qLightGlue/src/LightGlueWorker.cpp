@@ -14,18 +14,18 @@
 #include <QFileInfo>
 #include <QImage>
 #include <cmath>
-#include <future>
+#include <cstring>
+#include <vector>
 
 #ifdef AICore_ENABLED
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <cstring>
-#include <vector>
 
 #include "aicore/aliked_capi.h"
 #include "aicore/backend_capi.h"
-#include "aicore/eloftr_capi.h"
 #include "aicore/lightglue_capi.h"
+#include "aicore/inference_log.h"
+#include "aicore/runtime_capi.h"
 #include "feature_extractor.h"
 #endif
 
@@ -44,10 +44,6 @@ void LightGlueWorker::releaseContextOnMainThread() {
         aicore_lightglue_free(m_pendingCtx);
         m_pendingCtx = nullptr;
     }
-    if (m_pendingElOftrCtx) {
-        aicore_eloftr_free(m_pendingElOftrCtx);
-        m_pendingElOftrCtx = nullptr;
-    }
 #endif
 }
 
@@ -55,26 +51,12 @@ void LightGlueWorker::releaseContextOnMainThread() {
 
 namespace {
 
-QString formatDeviceLog(const LightGlueWorker::Settings& settings) {
-    const QString req = settings.device.trimmed();
-    if (!req.isEmpty() &&
-        req.compare(QLatin1String("auto"), Qt::CaseInsensitive) != 0) {
-        return QStringLiteral("[LG] Using device: %1").arg(req);
-    }
-    return QStringLiteral("[LG] Using device: auto (%1)")
-            .arg(QString::fromUtf8(aicore_auto_device_order()));
-}
-
-QString formatResolvedDeviceLog(aicore_lightglue_ctx* ctx) {
-    if (!ctx) return {};
-    char* info = aicore_lightglue_info_json(ctx);
+QString resolvedDeviceFromInfoJson(char* info,
+                                   void (*freeFn)(char*)) {
     if (!info) return {};
     const QJsonObject obj = QJsonDocument::fromJson(QByteArray(info)).object();
-    aicore_lightglue_free_string(info);
-    const QString resolved = obj.value(QStringLiteral("device")).toString();
-    if (resolved.isEmpty()) return {};
-    return QStringLiteral("[LG] ggml backend ready on device: %1")
-            .arg(resolved);
+    freeFn(info);
+    return obj.value(QStringLiteral("device")).toString();
 }
 
 QString resolve_aliked_extractor_gguf(const QString& matcher_model_path) {
@@ -163,6 +145,7 @@ bool load_gray_same_size(const QString& p0,
                          std::vector<uint8_t>* g1,
                          int* width,
                          int* height,
+                         int max_resize,
                          QString* log) {
     const QImage img0 = lightglue_plugin::load_oriented_qimage(p0);
     const QImage img1 = lightglue_plugin::load_oriented_qimage(p1);
@@ -172,6 +155,20 @@ bool load_gray_same_size(const QString& p0,
     }
     QImage gray0 = img0.convertToFormat(QImage::Format_Grayscale8);
     QImage gray1 = img1.convertToFormat(QImage::Format_Grayscale8);
+    if (max_resize > 0) {
+        const int max_dim0 =
+                std::max(gray0.width(), gray0.height());
+        if (max_dim0 > max_resize) {
+            gray0 = gray0.scaled(max_resize, max_resize, Qt::KeepAspectRatio,
+                                 Qt::SmoothTransformation);
+        }
+        const int max_dim1 =
+                std::max(gray1.width(), gray1.height());
+        if (max_dim1 > max_resize) {
+            gray1 = gray1.scaled(max_resize, max_resize, Qt::KeepAspectRatio,
+                                 Qt::SmoothTransformation);
+        }
+    }
     if (gray0.size() != gray1.size()) {
         gray1 = gray1.scaled(gray0.size(), Qt::IgnoreAspectRatio,
                              Qt::SmoothTransformation);
@@ -182,13 +179,19 @@ bool load_gray_same_size(const QString& p0,
     g1->resize(static_cast<size_t>(*width) * *height);
     std::memcpy(g0->data(), gray0.constBits(), g0->size());
     std::memcpy(g1->data(), gray1.constBits(), g1->size());
+    if (log && max_resize > 0) {
+        *log = QStringLiteral("Input resized to %1×%2 (max edge %3)")
+                       .arg(*width)
+                       .arg(*height)
+                       .arg(max_resize);
+    }
     return true;
 }
 
 }  // namespace
 
 bool LightGlueWorker::runModelInfo() {
-    emit logMessage(formatDeviceLog(m_settings));
+    aicore_inference_log::log_device_request(QStringLiteral("LG"), m_settings.device);
     emit logMessage("[LG] Loading model: " + m_settings.modelPath);
     emit progressUpdate(20, 100);
 
@@ -212,7 +215,12 @@ bool LightGlueWorker::runModelInfo() {
         m_pendingCtx = ctx;
         return false;
     }
-    emit logMessage(formatResolvedDeviceLog(ctx));
+    {
+        char* info = aicore_lightglue_info_json(ctx);
+        const QString resolved =
+                resolvedDeviceFromInfoJson(info, aicore_lightglue_free_string);
+        aicore_inference_log::log_device_resolved(QStringLiteral("LG"), resolved);
+    }
 
     char* json = aicore_lightglue_info_json(ctx);
     if (json) {
@@ -234,7 +242,7 @@ bool LightGlueWorker::runMatch() {
     timer.start();
 
     emit progressUpdate(5, 100);
-    emit logMessage(formatDeviceLog(m_settings));
+    aicore_inference_log::log_device_request(QStringLiteral("LG"), m_settings.device);
     emit logMessage("[LG] Loading model: " + m_settings.modelPath);
 
     aicore_lightglue_options* opts = aicore_lightglue_options_new();
@@ -258,7 +266,12 @@ bool LightGlueWorker::runMatch() {
         m_pendingCtx = ctx;
         return false;
     }
-    emit logMessage(formatResolvedDeviceLog(ctx));
+    {
+        char* info = aicore_lightglue_info_json(ctx);
+        const QString resolved =
+                resolvedDeviceFromInfoJson(info, aicore_lightglue_free_string);
+        aicore_inference_log::log_device_resolved(QStringLiteral("LG"), resolved);
+    }
 
     emit progressUpdate(20, 100);
     emit logMessage("[LG] Extracting RootSIFT features (OpenCV)...");
@@ -280,25 +293,15 @@ bool LightGlueWorker::runMatch() {
 
     aicore_lightglue_match* matches = nullptr;
     int32_t n_matches = 0;
-    int matchRet = 0;
-    auto matchFut = std::async(std::launch::async, [&]() {
-        return aicore_lightglue_run_match(ctx, &f0.view, &f1.view, &matches,
-                                          &n_matches);
-    });
-    {
-        QElapsedTimer elapsed;
-        elapsed.start();
-        const int64_t expectedMs = 15000;
-        while (matchFut.wait_for(std::chrono::milliseconds(1500)) !=
-               std::future_status::ready) {
-            const double t =
-                    elapsed.elapsed() / static_cast<double>(expectedMs);
-            const int pct =
-                    45 + static_cast<int>(50.0 * (1.0 - std::exp(-2.5 * t)));
-            emit progressUpdate(qMin(pct, 94), 100);
-        }
+    const int matchRet = aicore_lightglue_run_match(ctx, &f0.view, &f1.view,
+                                                    &matches, &n_matches);
+    emit progressUpdate(94, 100);
+    if (isInterruptionRequested() || aicore_cancel_requested()) {
+        if (matches) aicore_lightglue_free_matches(matches);
+        m_pendingCtx = ctx;
+        emit logMessage("[LG] Task cancelled.");
+        return false;
     }
-    matchRet = matchFut.get();
     if (matchRet != 0) {
         const char* matchErr = aicore_lightglue_last_error(ctx);
         emit logMessage(QString("[Error] Matching failed: %1")
@@ -319,6 +322,11 @@ bool LightGlueWorker::runMatch() {
                     ? result.imagePath1.mid(5)
                     : QFileInfo(result.imagePath1).completeBaseName();
     result.sourceName = result.imageName0 + "_x_" + result.imageName1;
+    {
+        char* info = aicore_lightglue_info_json(ctx);
+        result.resolvedDevice =
+                resolvedDeviceFromInfoJson(info, aicore_lightglue_free_string);
+    }
     result.nKeypoints0 = f0.view.n_keypoints;
     result.nKeypoints1 = f1.view.n_keypoints;
     result.imageWidth0 = f0.view.image_width;
@@ -338,112 +346,7 @@ bool LightGlueWorker::runMatch() {
     m_pendingCtx = ctx;
 
     emit progressUpdate(100, 100);
-    emit logMessage(QString("[LG] Found %1 mutual matches in %2 ms.")
-                            .arg(n_matches)
-                            .arg(result.runtimeMs, 0, 'f', 1));
-    emit resultReady(result);
-    return true;
-}
-
-bool LightGlueWorker::runMatchElOftr() {
-    if (m_settings.inputPaths.size() != 2) {
-        emit logMessage("[Error] ELoFTR requires exactly two input images.");
-        return false;
-    }
-
-    QElapsedTimer timer;
-    timer.start();
-
-    emit progressUpdate(5, 100);
-    emit logMessage(formatDeviceLog(m_settings));
-    emit logMessage("[ELoFTR] Loading model: " + m_settings.modelPath);
-
-    aicore_eloftr_options* opts = aicore_eloftr_options_new();
-    if (!m_settings.device.isEmpty()) {
-        aicore_eloftr_options_set_device(
-                opts, m_settings.device.toStdString().c_str());
-    }
-    aicore_eloftr_options_set_threads(opts, m_settings.threads);
-
-    aicore_eloftr_ctx* ctx = aicore_eloftr_load_opts(
-            m_settings.modelPath.toStdString().c_str(), opts);
-    aicore_eloftr_options_free(opts);
-    if (!ctx) {
-        emit logMessage("[Error] Failed to allocate ELoFTR context.");
-        return false;
-    }
-    if (const char* err = aicore_eloftr_last_error(ctx)) {
-        emit logMessage(QString("[Error] Failed to load model: %1").arg(err));
-        m_pendingElOftrCtx = ctx;
-        return false;
-    }
-
-    emit progressUpdate(20, 100);
-    std::vector<uint8_t> gray0;
-    std::vector<uint8_t> gray1;
-    int width = 0;
-    int height = 0;
-    QString loadLog;
-    if (!load_gray_same_size(m_settings.inputPaths[0], m_settings.inputPaths[1],
-                             &gray0, &gray1, &width, &height, &loadLog)) {
-        emit logMessage(QString("[Error] %1").arg(loadLog));
-        m_pendingElOftrCtx = ctx;
-        return false;
-    }
-
-    emit logMessage(QString("[ELoFTR] Matching %1×%2 grayscale pair (GGML)...")
-                            .arg(width)
-                            .arg(height));
-    emit progressUpdate(45, 100);
-
-    aicore_eloftr_match* matches = nullptr;
-    int32_t n_matches = 0;
-    if (aicore_eloftr_match_gray(ctx, gray0.data(), gray1.data(), width, height,
-                                 width, &matches, &n_matches) != 0) {
-        const char* matchErr = aicore_eloftr_last_error(ctx);
-        emit logMessage(QString("[Error] ELoFTR matching failed: %1")
-                                .arg(matchErr ? matchErr : "unknown"));
-        m_pendingElOftrCtx = ctx;
-        return false;
-    }
-
-    LightGlueRunResult result;
-    result.imagePath0 = m_settings.inputPaths[0];
-    result.imagePath1 = m_settings.inputPaths[1];
-    result.imageName0 =
-            result.imagePath0.startsWith("db://")
-                    ? result.imagePath0.mid(5)
-                    : QFileInfo(result.imagePath0).completeBaseName();
-    result.imageName1 =
-            result.imagePath1.startsWith("db://")
-                    ? result.imagePath1.mid(5)
-                    : QFileInfo(result.imagePath1).completeBaseName();
-    result.sourceName = result.imageName0 + "_x_" + result.imageName1;
-    result.imageWidth0 = width;
-    result.imageHeight0 = height;
-    result.imageWidth1 = width;
-    result.imageHeight1 = height;
-    result.keypoints0.reserve(n_matches);
-    result.keypoints1.reserve(n_matches);
-    result.runtimeMs = timer.elapsed();
-    result.matches.reserve(n_matches);
-    for (int32_t i = 0; i < n_matches; ++i) {
-        result.keypoints0.append(QPointF(matches[i].x0, matches[i].y0));
-        result.keypoints1.append(QPointF(matches[i].x1, matches[i].y1));
-        if (matches[i].score >= m_settings.minScore) {
-            result.matches.append({i, i, matches[i].score});
-        }
-    }
-    result.nKeypoints0 = result.keypoints0.size();
-    result.nKeypoints1 = result.keypoints1.size();
-
-    aicore_eloftr_free_matches(matches);
-    m_pendingElOftrCtx = ctx;
-
-    emit progressUpdate(100, 100);
-    emit logMessage(QString("[ELoFTR] Found %1 matches in %2 ms.")
-                            .arg(result.matches.size())
-                            .arg(result.runtimeMs, 0, 'f', 1));
+    aicore_inference_log::log_inference_done(QStringLiteral("LG"), result.resolvedDevice, result.runtimeMs, QStringLiteral("%1 mutual matches").arg(n_matches));
     emit resultReady(result);
     return true;
 }
@@ -456,23 +359,25 @@ void LightGlueWorker::run() {
     emit taskFinished(false);
     return;
 #else
-    if (isInterruptionRequested()) {
+    aicore_inference_lock();
+    aicore_cancel_begin();
+    if (isInterruptionRequested() || aicore_cancel_requested()) {
+        aicore_cancel_end();
+        aicore_inference_unlock();
         emit taskFinished(false);
         return;
     }
     bool ok = false;
     switch (m_settings.mode) {
         case Mode::Match:
-            if (m_settings.pipelineType == 1) {
-                ok = runMatchElOftr();
-            } else {
-                ok = runMatch();
-            }
+            ok = runMatch();
             break;
         case Mode::ModelInfo:
             ok = runModelInfo();
             break;
     }
+    aicore_cancel_end();
+    aicore_inference_unlock();
     emit taskFinished(ok);
 #endif
 }

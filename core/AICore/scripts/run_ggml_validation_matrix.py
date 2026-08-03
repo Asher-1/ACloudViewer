@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run ELoFTR / DeepLSD GGUF parity matrix and write JSON + comparison assets.
+"""Run DeepLSD GGUF parity matrix and write JSON + comparison assets.
 
 Reference layout: LightGlue-GGML assets/ggml_validation_YYYYMMDD/
 """
@@ -15,31 +15,16 @@ import time
 from datetime import date
 from pathlib import Path
 
-import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[3]
-ELOFTR_ROOT = ROOT.parent / "MVS" / "EfficientLoFTR"
 DEEPLSD_ROOT = ROOT.parent / "dl" / "DeepLSD"
 DEFAULT_RELEASE = ROOT / "core" / "AICore" / "models" / "release"
 
 
 def run(cmd: list[str], env: dict | None = None) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, capture_output=True, text=True, env=env, check=False)
-
-
-def parse_eloftr(stdout: str) -> dict:
-    out: dict = {}
-    for line in stdout.splitlines():
-        if line.startswith("feat_c abs diff:"):
-            for token in line.split():
-                if "=" in token:
-                    k, v = token.split("=", 1)
-                    out[k] = float(v)
-        elif line.startswith("corr="):
-            out["corr"] = float(line.split("=", 1)[1])
-    return out
 
 
 def parse_deeplsd(stdout: str, stderr: str) -> dict:
@@ -65,7 +50,6 @@ def main() -> int:
     parser.add_argument("--output-dir", type=Path, default=None)
     parser.add_argument("--devices", default="cpu,cuda,vulkan")
     parser.add_argument("--quants", default="f32,f16,q8_0")
-    parser.add_argument("--model", choices=("eloftr", "deeplsd", "all"), default="all")
     parser.add_argument(
         "--images",
         nargs="+",
@@ -74,7 +58,6 @@ def main() -> int:
                 Path.home()
                 / ".cursor/projects/home-ludahai-develop-code-github-ACloudViewer/assets/example-65c22ba6-267e-47c8-8747-d75c3a249d6e.png"
             ),
-            str(ELOFTR_ROOT / "assets/phototourism_sample_images/piazza_san_marco_06795901_3725050516.jpg"),
         ],
     )
     args = parser.parse_args()
@@ -85,30 +68,19 @@ def main() -> int:
 
     ggml_lib = ":".join(
         str(p)
-        for p in (
-            ELOFTR_ROOT / "cpp/build/_deps/ggml-build/src",
-            DEEPLSD_ROOT / "cpp/build/_deps/ggml-build/src",
-        )
+        for p in (DEEPLSD_ROOT / "cpp/build/_deps/ggml-build/src",)
         if p.is_dir()
     )
     env = os.environ.copy()
-    env["LD_LIBRARY_PATH"] = f"{ggml_lib}:{env.get('LD_LIBRARY_PATH', '')}"
+    if ggml_lib:
+        env["LD_LIBRARY_PATH"] = f"{ggml_lib}:{env.get('LD_LIBRARY_PATH', '')}"
 
     rows: list[dict] = []
     devices = [d.strip() for d in args.devices.split(",") if d.strip()]
     quants = [q.strip() for q in args.quants.split(",") if q.strip()]
 
     deeplsd_stems = ("deeplsd_wireframe", "deeplsd_md")
-    specs: list[tuple] = [
-        (
-            "eloftr",
-            "eloftr_outdoor",
-            ELOFTR_ROOT / "scripts/verify_eloftr_ggml.py",
-            640,
-            ELOFTR_ROOT / "cpp/build/eloftr_backbone",
-            None,
-        ),
-    ]
+    specs: list[tuple] = []
     for stem in deeplsd_stems:
         specs.append(
             (
@@ -120,12 +92,10 @@ def main() -> int:
                 DEEPLSD_ROOT / "weights" / f"{stem}.tar",
             )
         )
-    if args.model != "all":
-        specs = [s for s in specs if s[0] == args.model]
 
     for model, stem, script, resize, binary, checkpoint in specs:
         for quant in quants:
-            gguf = args.release_dir / ("ELoFTR" if model == "eloftr" else "DeepLSD") / f"{stem}-{quant}.gguf"
+            gguf = args.release_dir / "DeepLSD" / f"{stem}-{quant}.gguf"
             if not gguf.is_file():
                 print(f"[SKIP] missing {gguf}")
                 continue
@@ -145,17 +115,13 @@ def main() -> int:
                         str(binary),
                         "--resize",
                         str(resize),
+                        "--checkpoint",
+                        str(checkpoint),
                     ]
-                    if checkpoint is not None:
-                        cmd += ["--checkpoint", str(checkpoint)]
                     t0 = time.perf_counter()
                     proc = run(cmd, env=env)
                     elapsed = time.perf_counter() - t0
-                    parsed = (
-                        parse_eloftr(proc.stdout)
-                        if model == "eloftr"
-                        else parse_deeplsd(proc.stdout, proc.stderr)
-                    )
+                    parsed = parse_deeplsd(proc.stdout, proc.stderr)
                     row = {
                         "model": model,
                         "variant": stem,
@@ -169,93 +135,63 @@ def main() -> int:
                     }
                     rows.append(row)
                     status = "PASS" if proc.returncode == 0 else "FAIL"
-                    label = f"{model}/{stem}" if model == "deeplsd" else model
-                    print(f"[{status}] {label} {quant} {device} {img_path.name}")
+                    print(f"[{status}] {model}/{stem} {quant} {device} {img_path.name}")
 
-    model_prefix = args.model if args.model != "all" else "combined"
-    report = out_dir / f"validation_matrix_{model_prefix}.json"
+    report = out_dir / "validation_matrix_deeplsd.json"
     report.write_text(json.dumps(rows, indent=2))
 
-    active_models = {r["model"] for r in rows}
-    for active in active_models:
-        sub = "ELoFTR" if active == "eloftr" else "DeepLSD"
-        if active == "eloftr":
-            variant_stems = ["eloftr_outdoor"]
-        else:
-            variant_stems = sorted({r.get("variant", "deeplsd_wireframe") for r in rows if r["model"] == "deeplsd"})
+    variant_stems = sorted({r.get("variant", "deeplsd_wireframe") for r in rows})
+    for stem in variant_stems:
+        sizes = {}
+        for quant in quants:
+            p = args.release_dir / "DeepLSD" / f"{stem}-{quant}.gguf"
+            if p.is_file():
+                sizes[quant] = file_mb(p)
+        if not sizes:
+            continue
+        fig, ax = plt.subplots(figsize=(5, 3.5))
+        labels = list(sizes.keys())
+        ax.bar(labels, [sizes[k] for k in labels], color="#2a6f97")
+        ax.set_ylabel("GGUF size (MB)")
+        ax.set_title(f"{stem} quantized sizes")
+        fig.tight_layout()
+        suffix = "" if len(variant_stems) == 1 else f"_{stem.replace('deeplsd_', '')}"
+        fig.savefig(out_dir / f"quantization_sizes{suffix}.png", dpi=160)
+        plt.close(fig)
 
-        for stem in variant_stems:
-            sizes = {}
-            for quant in quants:
-                p = args.release_dir / sub / f"{stem}-{quant}.gguf"
-                if p.is_file():
-                    sizes[quant] = file_mb(p)
-            if not sizes:
-                continue
-            fig, ax = plt.subplots(figsize=(5, 3.5))
-            labels = list(sizes.keys())
-            ax.bar(labels, [sizes[k] for k in labels], color="#2a6f97")
-            ax.set_ylabel("GGUF size (MB)")
-            ax.set_title(f"{stem} quantized sizes")
-            fig.tight_layout()
-            suffix = "" if len(variant_stems) == 1 else f"_{stem.replace('deeplsd_', '')}"
-            fig.savefig(out_dir / f"quantization_sizes{suffix}.png", dpi=160)
-            plt.close(fig)
-
-        if active == "eloftr":
-            ref_rows = [
-                r for r in rows
-                if r["model"] == "eloftr" and r["device"] == "cpu" and "piazza" in r["image"]
-            ]
-            if ref_rows:
-                order = {q: i for i, q in enumerate(quants)}
-                ref_rows.sort(key=lambda r: order.get(r["quant"], 99))
-                fig, ax = plt.subplots(figsize=(5, 3.5))
-                ax.bar([r["quant"] for r in ref_rows], [r.get("corr", 0) for r in ref_rows],
-                       color="#0b7a75")
-                ax.axhline(0.9995, color="#555", linewidth=1, label="parity")
-                ax.set_title("RepVGG corr vs PyTorch (CPU, Piazza)")
-                ax.set_ylabel("Pearson corr")
-                ax.legend()
-                fig.tight_layout()
-                fig.savefig(out_dir / "quantization_accuracy.png", dpi=160)
-                plt.close(fig)
-        elif active == "deeplsd":
-            for stem in variant_stems:
-                ref_rows = [
-                    r for r in rows
-                    if r["model"] == "deeplsd"
-                    and r.get("variant") == stem
-                    and r["device"] == "cpu"
-                    and "piazza" in r["image"]
-                ]
-                if not ref_rows:
-                    continue
-                order = {q: i for i, q in enumerate(quants)}
-                ref_rows.sort(key=lambda r: order.get(r["quant"], 99))
-                fig, ax = plt.subplots(figsize=(5, 3.5))
-                x = np.arange(len(ref_rows))
-                w = 0.35
-                ax.bar(x - w / 2, [r.get("df_norm_p99_abs", 0) for r in ref_rows], w,
-                       color="#2a6f97", label="df p99")
-                ax.bar(x + w / 2, [r.get("angle_p99_abs", 0) for r in ref_rows], w,
-                       color="#e76f51", label="angle p99")
-                ax.set_xticks(x, [r["quant"] for r in ref_rows])
-                ax.axhline(0.05, color="#555", linewidth=1, label="tolerance")
-                ax.set_title(f"{stem} p99 vs PyTorch (CPU, Piazza)")
-                ax.set_ylabel("p99 abs error")
-                ax.legend()
-                fig.tight_layout()
-                suffix = "" if len(variant_stems) == 1 else f"_{stem.replace('deeplsd_', '')}"
-                fig.savefig(out_dir / f"quantization_accuracy{suffix}.png", dpi=160)
-                plt.close(fig)
+    for stem in variant_stems:
+        ref_rows = [
+            r for r in rows
+            if r["model"] == "deeplsd"
+            and r.get("variant") == stem
+            and r["device"] == "cpu"
+        ]
+        if not ref_rows:
+            continue
+        order = {q: i for i, q in enumerate(quants)}
+        ref_rows.sort(key=lambda r: order.get(r["quant"], 99))
+        fig, ax = plt.subplots(figsize=(5, 3.5))
+        x = np.arange(len(ref_rows))
+        w = 0.35
+        ax.bar(x - w / 2, [r.get("df_norm_p99_abs", 0) for r in ref_rows], w,
+               color="#2a6f97", label="df p99")
+        ax.bar(x + w / 2, [r.get("angle_p99_abs", 0) for r in ref_rows], w,
+               color="#e76f51", label="angle p99")
+        ax.set_xticks(x, [r["quant"] for r in ref_rows])
+        ax.axhline(0.05, color="#555", linewidth=1, label="tolerance")
+        ax.set_title(f"{stem} p99 vs PyTorch (CPU)")
+        ax.set_ylabel("p99 abs error")
+        ax.legend()
+        fig.tight_layout()
+        suffix = "" if len(variant_stems) == 1 else f"_{stem.replace('deeplsd_', '')}"
+        fig.savefig(out_dir / f"quantization_accuracy{suffix}.png", dpi=160)
+        plt.close(fig)
 
     readme = out_dir / "README.md"
     readme.write_text(
-        f"# GGML validation ({stamp}) — {model_prefix}\n\n"
+        f"# GGML validation ({stamp}) — deeplsd\n\n"
         f"Matrix: `{report.name}`\n\n"
-        f"Regenerate: `python core/AICore/scripts/run_ggml_validation_matrix.py "
-        f"--model {args.model}`\n"
+        "Regenerate: `python core/AICore/scripts/run_ggml_validation_matrix.py`\n"
     )
     print("Wrote", report, readme)
     return 0

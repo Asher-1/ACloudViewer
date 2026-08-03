@@ -13,14 +13,16 @@
 #include <QFile>
 #include <QLabel>
 #include <QLineEdit>
-#include <QNetworkAccessManager>
-#include <QNetworkReply>
 #include <QProgressBar>
 #include <QPushButton>
 #include <QSpinBox>
 #include <QStackedWidget>
-#include <QTextEdit>
 #include <QToolButton>
+
+#include "ecvModelDownloader.h"
+#include "ecvClickableImageLabel.h"
+
+class ecvMainAppInterface;
 
 struct DA3BuiltinModel {
     QString displayName;
@@ -63,6 +65,7 @@ public:
 
     explicit DA3Dialog(QWidget* parent = nullptr);
 
+    void setAppInterface(ecvMainAppInterface* app);
     Settings getSettings() const;
     void appendLog(const QString& msg);
     void setProgress(int current, int total);
@@ -80,6 +83,9 @@ signals:
     void exportDepthRequested();
     void exportAllDepthsRequested(const QString& outputDir);
     void refreshDbImagesRequested();
+
+protected:
+    void closeEvent(QCloseEvent* event) override;
 
 private slots:
     void onBrowseFile();
@@ -110,8 +116,8 @@ private:
 
     static QVector<DA3BuiltinModel> builtinModels();
     static QVector<DA3BuiltinModel> builtinMetricModels();
-    static QString formatFileSize(qint64 bytes);
     void syncModeModelConstraints();
+    void updateInputPreview();
 
     QComboBox* m_modeCombo = nullptr;
 
@@ -129,6 +135,7 @@ private:
     QComboBox* m_deviceCombo = nullptr;
     QSpinBox* m_threads = nullptr;
     QLineEdit* m_inputPath = nullptr;
+    ecvClickableImageLabel* m_inputPreview = nullptr;
     QLineEdit* m_outputDir = nullptr;
     QCheckBox* m_invertCheck = nullptr;
     QCheckBox* m_unprojectCheck = nullptr;
@@ -145,7 +152,6 @@ private:
     QLineEdit* m_quantOutput = nullptr;
     QComboBox* m_quantType = nullptr;
 
-    QTextEdit* m_logOutput = nullptr;
     QProgressBar* m_progressBar = nullptr;
     QLabel* m_downloadLabel = nullptr;
     QPushButton* m_runBtn = nullptr;
@@ -154,11 +160,10 @@ private:
     QPushButton* m_exportAllBtn = nullptr;
     QPushButton* m_closeBtn = nullptr;
 
-    QNetworkAccessManager* m_netManager = nullptr;
-    QNetworkReply* m_currentDownload = nullptr;
+    ecvMainAppInterface* m_app = nullptr;
+    ecvModelDownloader* m_downloader = nullptr;
     QVector<DA3BuiltinModel> m_downloadQueue;
     bool m_autoRunAfterDownload = false;
     bool m_downloadInProgress = false;
     QString m_downloadTargetFilename;
-    QFile* m_downloadOutFile = nullptr;
 };

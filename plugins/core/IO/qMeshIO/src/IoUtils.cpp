@@ -158,6 +158,23 @@ void _assignMaterialProperties(aiMaterial *inAIMaterial,
         inCCMaterial->setTransparency(property);
     }
 }
+
+/** All vertex normals must be non-degenerate (glTF exports often use zero placeholders). */
+bool aiMeshHasUsableNormals(const aiMesh *mesh) {
+    if (mesh == nullptr || !mesh->HasNormals() || mesh->mNumVertices == 0) {
+        return false;
+    }
+    for (unsigned int i = 0; i < mesh->mNumVertices; ++i) {
+        const aiVector3D &n = mesh->mNormals[i];
+        const double len2 = static_cast<double>(n.x) * n.x +
+                            static_cast<double>(n.y) * n.y +
+                            static_cast<double>(n.z) * n.z;
+        if (len2 <= 1e-24) {
+            return false;
+        }
+    }
+    return true;
+}
 }  // namespace
 
 namespace IoUtils {
@@ -337,8 +354,9 @@ ccMesh *newCCMeshFromAIMesh(const aiMesh *inMesh) {
         }
     }
 
-    // normals
-    if (inMesh->HasNormals()) {
+    // normals — ignore Assimp normal arrays that contain zero-length placeholders
+    const bool hasUsableNormals = aiMeshHasUsableNormals(inMesh);
+    if (hasUsableNormals) {
         bool allocated = newPC->reserveTheNormsTable();
 
         if (!allocated) {

@@ -51,6 +51,28 @@ AICORE_CAPI void aicore_deeplsd_free_string(char* s);
 AICORE_CAPI int aicore_deeplsd_warmup_backend(const char* device);
 AICORE_CAPI char* aicore_deeplsd_model_cache_dir(void);
 
+typedef struct aicore_deeplsd_segment {
+    float x1;
+    float y1;
+    float x2;
+    float y2;
+    float score;
+} aicore_deeplsd_segment;
+
+/** Optional segment outputs (caller frees *out_segments with free()). */
+AICORE_CAPI int aicore_deeplsd_extract_segments(
+        aicore_deeplsd_ctx* ctx,
+        const uint8_t* gray,
+        int32_t width,
+        int32_t height,
+        int32_t row_stride,
+        aicore_deeplsd_segment** out_segments,
+        int32_t* out_segment_count,
+        float** out_distance,
+        float** out_angle,
+        int32_t* out_width,
+        int32_t* out_height);
+
 /** Quantize conv weights in F32 GGUF to f16 or q8_0. */
 AICORE_CAPI int aicore_deeplsd_quantize(const char* input_gguf,
                                         const char* output_gguf,

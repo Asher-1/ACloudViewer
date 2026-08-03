@@ -17,12 +17,15 @@
 #include <ecvMainAppInterface.h>
 #include <ecvNormalVectors.h>
 #include <ecvPluginDbNaming.h>
+
 #ifdef HAS_QSIBR
 #include <ecvPluginManager.h>
 #endif
 #include <ecvPointCloud.h>
 #include <ecvScalarField.h>
 #include <ecvViewManager.h>
+
+#include "ecvPersistentSettings.h"
 
 #include <QAction>
 #include <QDir>
@@ -46,6 +49,7 @@
 
 #include "aicore/backend_capi.h"
 #include "aicore/gaussian_capi.h"
+#include "aicore/runtime_capi.h"
 
 namespace {
 
@@ -617,7 +621,11 @@ QString buildGaussianExportBaseName(
     if (source.isEmpty()) source = QStringLiteral("run");
 
     QString name =
-            QStringLiteral("FS_%1_%2_%3").arg(modelKind, modelQuant, source);
+            QStringLiteral("FS_%1_%2_%3_%4").arg(modelKind, modelQuant, source,
+                                                 ecvPluginDbNaming::deviceTagFromName(
+                                                         result.resolvedDevice.isEmpty()
+                                                                 ? settings.device
+                                                                 : result.resolvedDevice));
 
     if (result.nViews > 0) {
         name += QStringLiteral("_%1v").arg(result.nViews);
@@ -637,6 +645,7 @@ static constexpr const char kQSIBRPluginName[] = "SIBR Viewer";
 qFreeSplatter::qFreeSplatter(QObject* parent)
     : QObject(parent),
       ccStdPluginInterface(":/CC/plugin/qFreeSplatter/info.json") {
+    ecvPS::registerSettingsGroup(QStringLiteral("qFreeSplatter"));
     qRegisterMetaType<FreeSplatterResult>("FreeSplatterResult");
     qRegisterMetaType<FreeSplatterDialog::Settings>(
             "FreeSplatterDialog::Settings");
@@ -849,6 +858,7 @@ void qFreeSplatter::showDialog() {
     if (!m_app) return;
     if (!m_dialog) {
         m_dialog = new FreeSplatterDialog(m_app->getMainWindow());
+        m_dialog->setAppInterface(m_app);
         connect(m_dialog, &FreeSplatterDialog::runRequested, this,
                 &qFreeSplatter::executeTask);
         connect(m_dialog, &FreeSplatterDialog::cancelRequested, this,
@@ -882,6 +892,7 @@ void qFreeSplatter::executeTask(const FreeSplatterDialog::Settings& settings) {
     if (m_worker) {
         m_worker->disconnect(this);
         m_worker->disconnect(m_dialog);
+        m_worker->releaseContextOnMainThread();
         m_worker->deleteLater();
         m_worker = nullptr;
     }
@@ -997,6 +1008,9 @@ void qFreeSplatter::executeTask(const FreeSplatterDialog::Settings& settings) {
 }
 
 void qFreeSplatter::cancelTask() {
+#ifdef AICore_ENABLED
+    aicore_cancel_request();
+#endif
     if (m_worker && m_worker->isRunning()) {
         m_worker->requestInterruption();
         m_dialog->appendLog("[FS] Cancel requested...");
@@ -1117,6 +1131,20 @@ ccPointCloud* qFreeSplatter::buildResultPointCloud(
     if (hasColors) cloud->showColors(true);
     cloud->setVisible(true);
     cloud->setEnabled(true);
+
+    const QString device = result.resolvedDevice.isEmpty()
+                                   ? m_currentSettings.device
+                                   : result.resolvedDevice;
+    cloud->setMetaData(QStringLiteral("FS/GaussianCount"), validCount);
+    cloud->setMetaData(QStringLiteral("FS/Views"), result.nViews);
+    cloud->setMetaData(QStringLiteral("FS/Device"), device);
+    cloud->setMetaData(QStringLiteral("FS/RuntimeMs"), result.runtimeMs);
+    cloud->setMetaData(QStringLiteral("FS/Model"),
+                       QFileInfo(m_currentSettings.modelPath).fileName());
+    cloud->setMetaData(QStringLiteral("FS/Width"), result.width);
+    cloud->setMetaData(QStringLiteral("FS/Height"), result.height);
+    cloud->setMetaData(QStringLiteral("FS/SHDegree"), result.shDegree);
+
     return cloud;
 }
 

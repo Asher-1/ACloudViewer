@@ -70,16 +70,30 @@ endfunction(cloudViewer_install_files)
 #   - ARGV3 = install destination suffix (optional)
 #   - ARGV4 = exclusion patterns (optional, list of PATTERN "pattern" EXCLUDE)
 function(cloudViewer_install_ext)
+    set(_install_src "${ARGV1}")
+    set(_install_dest "${ARGV2}")
+    # Windows conda paths may contain backslashes; unescaped \U breaks generated
+    # install() scripts. Normalize once here for all platforms (forward slashes
+    # are accepted on Windows by CMake and Ninja/MSBuild).
+    if(_install_src)
+        file(TO_CMAKE_PATH "${_install_src}" _install_src)
+        string(REPLACE "\\" "/" _install_src "${_install_src}")
+    endif()
+    if(_install_dest)
+        file(TO_CMAKE_PATH "${_install_dest}" _install_dest)
+        string(REPLACE "\\" "/" _install_dest "${_install_dest}")
+    endif()
+
     if ("${ARGV0}" STREQUAL "DIRECTORY")
         set(INSTALL_OPTIONS FILES_MATCHING PATTERN "*")
     elseif ("${ARGV0}" STREQUAL "FILES")
-        if(EXISTS "${ARGV1}")
+        if(EXISTS "${_install_src}")
             set(INSTALL_OPTIONS FILES)
         else()
             # For external project files that may not exist yet at configure time, 
             # skip the existence check - they will be built before install
-            # message(WARNING "File does not exist at configure time (may be built later): ${ARGV1}")
-            # message(WARNING "File does not exist: ${ARGV1}")
+            # message(WARNING "File does not exist at configure time (may be built later): ${_install_src}")
+            # message(WARNING "File does not exist: ${_install_src}")
             set(INSTALL_OPTIONS FILES)
         endif()
     else ()
@@ -95,21 +109,21 @@ function(cloudViewer_install_ext)
     endif()
 
     if (APPLE)
-        install(${ARGV0} ${ARGV1} DESTINATION ${ARGV2}${ARGV3}
+        install(${ARGV0} "${_install_src}" DESTINATION ${_install_dest}${ARGV3}
                 ${INSTALL_OPTIONS}
                 )
         return()
     endif ()
 
     if (NOT CMAKE_CONFIGURATION_TYPES)
-        install(${ARGV0} ${ARGV1} DESTINATION ${ARGV2}${ARGV3}
+        install(${ARGV0} "${_install_src}" DESTINATION ${_install_dest}${ARGV3}
                 ${INSTALL_OPTIONS})
     else ()
-        install(${ARGV0} ${ARGV1} CONFIGURATIONS Release DESTINATION ${ARGV2}${ARGV3}
+        install(${ARGV0} "${_install_src}" CONFIGURATIONS Release DESTINATION ${_install_dest}${ARGV3}
                 ${INSTALL_OPTIONS})
-        install(${ARGV0} ${ARGV1} CONFIGURATIONS RelWithDebInfo DESTINATION ${ARGV2}_withDebInfo${ARGV3}
+        install(${ARGV0} "${_install_src}" CONFIGURATIONS RelWithDebInfo DESTINATION ${_install_dest}_withDebInfo${ARGV3}
                 ${INSTALL_OPTIONS})
-        install(${ARGV0} ${ARGV1} CONFIGURATIONS Debug DESTINATION ${ARGV2}_debug${ARGV3}
+        install(${ARGV0} "${_install_src}" CONFIGURATIONS Debug DESTINATION ${_install_dest}_debug${ARGV3}
                 ${INSTALL_OPTIONS})
     endif ()
 endfunction(cloudViewer_install_ext)
@@ -143,3 +157,5 @@ function(cloudViewer_install_targets trgt)
         endif ()
     endif ()
 endfunction(cloudViewer_install_targets)
+
+include(${CMAKE_CURRENT_LIST_DIR}/CloudViewerOutputDirectories.cmake)

@@ -76,32 +76,42 @@ ACloudViewer: A Modern Library for 3D Point Cloud Processing
 AICore AI Plugins
 -----------------
 
-Three GUI plugins share one native inference library — **libAICore.so** (`ggml <https://github.com/ggml-org/ggml>`_).
+Five GUI plugins share one native inference library — **libAICore.so** (`ggml <https://github.com/ggml-org/ggml>`_).
 Run quantized **GGUF** models on **CUDA / Vulkan / Metal / CPU** with **no Python or PyTorch** at runtime.
 Results land directly in the DB tree and plug into reconstruction, COLMAP, and SIBR workflows.
 
 .. list-table:: Plugin comparison
    :header-rows: 1
-   :widths: 18 27 27 28
+   :widths: 10 18 18 18 18 18
 
    * -
      - **qDA3**
+     - **qDeepLSD**
+     - **qFaceDetect**
      - **qLightGlue**
      - **qFreeSplatter**
    * - Task
      - Monocular & multi-view depth, camera pose
+     - Line-segment / wireframe extraction
+     - Face detect / analyze / verify
      - Sparse feature matching
      - Uncalibrated photos → 3D Gaussian splats
    * - Model
      - Depth Anything V3 GGUF
-     - SIFT + LightGlue GGUF
+     - DeepLSD wireframe GGUF
+     - face-detect.cpp GGUF packs
+     - SIFT/ALIKED LightGlue GGUF
      - FreeSplatter GGUF
    * - Standout
      - Single-image depth cloud in one click
+     - AFM + LSD lines on photos
+     - SCRFD + ArcFace in one dialog
      - 300+ matches in **< 1 s** on GPU
      - **2 photos** → 3D scene + SIBR PLY
    * - CMake
      - ``PLUGIN_STANDARD_QDA3``
+     - ``PLUGIN_STANDARD_QDEEPLSD``
+     - ``PLUGIN_STANDARD_QFACEDETECT``
      - ``PLUGIN_STANDARD_QLIGHTGLUE``
      - ``PLUGIN_STANDARD_QFREESPLATTER``
 
@@ -114,7 +124,7 @@ Results land directly in the DB tree and plug into reconstruction, COLMAP, and S
      </figure>
      <figure style="margin:0; text-align:center;">
        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/qLightGlue.png" alt="LightGlue Feature Matching" style="width:100%; border-radius:8px; border:1px solid rgba(0,0,0,.08);">
-       <figcaption style="margin-top:10px; font-size:.9em; color:#475569;"><strong>LightGlue</strong> — sub-second SIFT feature matching with live visualization</figcaption>
+       <figcaption style="margin-top:10px; font-size:.9em; color:#475569;"><strong>LightGlue</strong> — SIFT / ALIKED matching with live visualization</figcaption>
      </figure>
      <figure style="margin:0; text-align:center;">
        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/qFreeSplatter.png" alt="FreeSplatter 3D Reconstruction" style="width:100%; border-radius:8px; border:1px solid rgba(0,0,0,.08);">
@@ -126,7 +136,7 @@ Why AICore?
 ~~~~~~~~~~~
 
 * **Native C++ end-to-end** — GUI, automatic reconstruction, and COLMAP pipelines without a Python stack
-* **Compact GGUF weights** — e.g. DA3 Base ~142 MB, LightGlue SIFT ~22 MB; one-click download in the dialog
+* **Compact GGUF weights** — e.g. DA3 Base ~142 MB, LightGlue SIFT matcher ~22 MB; four matching families with one-click download in the dialog
 * **Multi-backend GPU** — Auto picks CUDA → Vulkan → CPU (Linux/Windows) or Metal → CPU (macOS)
 * **DB-tree integration** — depth clouds, match lines, Gaussian PLY, and camera frustums appear as first-class entities
 
@@ -136,6 +146,8 @@ Why AICore?
      -DBUILD_GUI=ON \
      -DAICore_ENABLED=ON \
      -DPLUGIN_STANDARD_QDA3=ON \
+     -DPLUGIN_STANDARD_QDEEPLSD=ON \
+     -DPLUGIN_STANDARD_QFACEDETECT=ON \
      -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
      -DPLUGIN_STANDARD_QFREESPLATTER=ON \
      -DBUILD_RECONSTRUCTION=ON \
@@ -146,7 +158,9 @@ Why AICore?
 
 See :doc:`guides/plugins/README` for an overview,
 :doc:`guides/plugins/qDA3`,
-:doc:`plugins/qLightGlue/README`,
+:doc:`guides/plugins/qDeepLSD`,
+:doc:`guides/plugins/qFaceDetect`,
+:doc:`guides/plugins/qLightGlue`,
 and :doc:`guides/plugins/qFreeSplatter` for usage and build instructions.
 Full build options: :doc:`getting_started/build_from_source`.
 
@@ -156,8 +170,10 @@ Full build options: :doc:`getting_started/build_from_source`.
 
    guides/plugins/README
    guides/plugins/qDA3
+   guides/plugins/qDeepLSD
+   guides/plugins/qFaceDetect
+   guides/plugins/qLightGlue
    guides/plugins/qFreeSplatter
-   plugins/qLightGlue/README
 
 .. toctree::
    :maxdepth: 1

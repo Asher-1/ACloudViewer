@@ -16,11 +16,12 @@
 #include <QUuid>
 #include <algorithm>
 #include <cmath>
-#include <future>
 
 #ifdef AICore_ENABLED
 #include "aicore/gaussian_capi.h"
+#include "aicore/runtime_capi.h"
 #endif
+#include "aicore/inference_log.h"
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
 #include <opencv2/imgcodecs.hpp>
@@ -43,6 +44,8 @@ void FreeSplatterWorker::run() {
     emit taskFinished(false);
     return;
 #else
+    aicore_inference_lock();
+    aicore_cancel_begin();
     bool ok = false;
     switch (m_settings.mode) {
         case Mode::Reconstruct:
@@ -55,6 +58,8 @@ void FreeSplatterWorker::run() {
             emit logMessage("[Error] Unknown mode.");
             break;
     }
+    aicore_cancel_end();
+    aicore_inference_unlock();
     emit taskFinished(ok);
 #endif
 }
@@ -86,6 +91,7 @@ aicore_gaussian_ctx* FreeSplatterWorker::loadModel() {
         aicore_gaussian_options_set_device(
                 opts, m_settings.device.toStdString().c_str());
     }
+    aicore_inference_log::log_device_request(QStringLiteral("FS"), m_settings.device);
     aicore_gaussian_options_set_threads(opts, m_settings.threads);
 
     const std::string modelPath = m_settings.modelPath.toStdString();
@@ -102,6 +108,13 @@ aicore_gaussian_ctx* FreeSplatterWorker::loadModel() {
         emit logMessage(QString("[Error] Failed to load model: %1").arg(err));
         stashContext(ctx);
         return nullptr;
+    }
+    if (char* infoJ = aicore_gaussian_info_json(ctx)) {
+        const QJsonObject mi =
+                QJsonDocument::fromJson(QByteArray(infoJ)).object();
+        aicore_gaussian_free_string(infoJ);
+        const QString resolved = mi.value(QStringLiteral("device")).toString();
+        aicore_inference_log::log_device_resolved(QStringLiteral("FS"), resolved);
     }
     return ctx;
 }
@@ -249,30 +262,18 @@ bool FreeSplatterWorker::runReconstruct() {
     float* gaussians = nullptr;
     size_t n_out = 0;
 
-    auto inferFuture = std::async(std::launch::async, [&]() {
-        return aicore_gaussian_run_paths(ctx, cpaths.data(), n, &gaussians,
-                                         &n_out);
-    });
+    QElapsedTimer inferTimer;
+    inferTimer.start();
+    emit progressUpdate(30, 100);
 
-    {
-        QElapsedTimer elapsed;
-        elapsed.start();
-        const int64_t expectedMs =
-                (n <= 2) ? 15000 : static_cast<int64_t>(n) * 7000;
-        while (inferFuture.wait_for(std::chrono::milliseconds(1500)) !=
-               std::future_status::ready) {
-            const double t =
-                    elapsed.elapsed() / static_cast<double>(expectedMs);
-            const int pct =
-                    25 + static_cast<int>(50.0 * (1.0 - std::exp(-2.5 * t)));
-            emit progressUpdate(qMin(pct, 74), 100);
-            const int sec = static_cast<int>(elapsed.elapsed() / 1000);
-            emit logMessage(
-                    QString("[FS] Task is running (%1 s elapsed)...").arg(sec));
-        }
+    // Run on this worker thread only — ggml CUDA is not safe across std::async
+    // threads and can hang when combined with other plugin GPU contexts.
+    if (isInterruptionRequested()) {
+        stashContext(ctx);
+        return false;
     }
-
-    int ret = inferFuture.get();
+    int ret = aicore_gaussian_run_paths(ctx, cpaths.data(), n, &gaussians,
+                                        &n_out);
     if (ret != 0 || !gaussians) {
         const char* err = aicore_gaussian_last_error(ctx);
         emit logMessage(QString("[Error] Inference failed: %1")
@@ -291,8 +292,9 @@ bool FreeSplatterWorker::runReconstruct() {
     const int W = geom.image_width;
     const int gc = geom.gaussian_channels;
 
-    emit logMessage(
-            QString("[FS] Inference complete: %1 gaussians (%2 views, %3x%4)")
+    aicore_inference_log::log_inference_done(
+            QStringLiteral("FS"), devLabel, inferTimer.elapsed(),
+            QStringLiteral("%1 gaussians, %2 views, %3×%4")
                     .arg(n_out)
                     .arg(n)
                     .arg(W)
@@ -307,6 +309,8 @@ bool FreeSplatterWorker::runReconstruct() {
     result.shDegree = geom.sh_degree;
     result.gaussians.resize(static_cast<int>(n_out));
     std::copy(gaussians, gaussians + n_out, result.gaussians.begin());
+    result.resolvedDevice = devLabel;
+    result.runtimeMs = inferTimer.elapsed();
 
     if (m_settings.estimatePoses && n >= 2) {
         emit logMessage("[FS] Estimating camera poses...");

@@ -18,6 +18,7 @@
 #include "ggml-backend.h"
 #include "ggml.h"
 #include "ggml_backend_utils.hpp"
+#include "aicore/runtime_capi.h"
 #if !defined(AICORE_BACKEND_DL)
 #include "ggml-cpu.h"
 #endif
@@ -58,12 +59,13 @@ struct PendingCapture {
 }  // namespace
 
 struct Backend::Impl {
-    ggml_backend_t backend = nullptr;      // primary device (GPU or CPU)
-    ggml_backend_t cpu_backend = nullptr;  // CPU fallback (GPU path only)
-    ggml_gallocr_t galloc = nullptr;  // CPU / single-backend path (unchanged)
+    std::vector<ggml_backend_t> gpu_backends;  // all GPU devices (multi-GPU auto)
+    ggml_backend_t backend = nullptr;          // primary (= gpu_backends[0] or CPU)
+    ggml_backend_t cpu_backend = nullptr;      // CPU fallback (GPU path only)
+    ggml_gallocr_t galloc = nullptr;           // CPU / single-backend path
     ggml_backend_sched_t sched =
-            nullptr;         // GPU path: schedules over {backend, cpu_backend}
-    bool use_sched = false;  // primary accelerator plus CPU fallback
+            nullptr;  // GPU path: schedules over {gpus..., cpu_backend}
+    bool use_sched = false;
     // Inputs registered by the build lambda for the in-flight compute. Copied
     // into the allocated tensors after the graph is allocated, then cleared.
     // Never overlaps across calls (compute is not re-entrant).
@@ -94,7 +96,24 @@ Backend::Backend(const std::string& device) : impl_(new Impl()) {
         return true;
     };
 
-    auto adopt_gpu = [&](ggml_backend_t be, const std::string& name) {
+    auto adopt_gpu_group = [&](ggml_common::GpuBackendGroup group) {
+        impl_->gpu_backends = std::move(group.gpus);
+        impl_->backend =
+                impl_->gpu_backends.empty() ? nullptr : impl_->gpu_backends.front();
+        device_name_ = group.primary_name();
+        if (impl_->gpu_backends.size() > 1) {
+            device_name_ += " (x" + std::to_string(impl_->gpu_backends.size()) +
+                           " GPUs)";
+        }
+        impl_->use_sched = true;
+        offloading_ = true;
+        DA_DEBUG_LOG("aicore::depth::Backend using device: %s",
+                     device_name_.c_str());
+    };
+
+    auto adopt_single_gpu = [&](ggml_backend_t be, const std::string& name) {
+        if (!be) return;
+        impl_->gpu_backends = {be};
         impl_->backend = be;
         device_name_ = name;
         impl_->use_sched = true;
@@ -107,20 +126,16 @@ Backend::Backend(const std::string& device) : impl_(new Impl()) {
 
     if (parsed_name == "cpu") {
         // CPU forced below.
-    } else if (parsed_name.empty() || parsed_name == "auto") {
-        std::string resolved;
-        if (ggml_backend_t be = ggml_common::find_auto_backend(resolved)) {
-            adopt_gpu(be, resolved);
-        }
-    } else if (parsed_name == "gpu" || parsed_name == "cuda" ||
+    } else if (parsed_name.empty() || parsed_name == "auto" ||
+               parsed_name == "gpu" || parsed_name == "cuda" ||
                parsed_name == "opencl" || parsed_name == "metal" ||
                parsed_name == "sycl" || parsed_name == "vulkan") {
         clear_sticky_cuda_errors();
-        std::string resolved;
-        if (ggml_backend_t be = ggml_common::find_gpu_backend(
-                    parsed_name, want_idx, resolved)) {
-            adopt_gpu(be, resolved);
-        } else {
+        ggml_common::GpuBackendGroup group =
+                ggml_common::resolve_gpu_group(want);
+        if (group.primary()) {
+            adopt_gpu_group(std::move(group));
+        } else if (parsed_name != "auto" && !parsed_name.empty()) {
             DA_ERR("Device '%s' is not available. Please select a different "
                    "device in the plugin settings.",
                    want.c_str());
@@ -139,7 +154,7 @@ Backend::Backend(const std::string& device) : impl_(new Impl()) {
                 continue;
             }
             if (ggml_backend_t be = ggml_backend_dev_init(dev, nullptr)) {
-                adopt_gpu(be, name);
+                adopt_single_gpu(be, name);
                 break;
             }
         }
@@ -189,7 +204,11 @@ Backend::~Backend() {
         if (impl_->sched) ggml_backend_sched_free(impl_->sched);
         if (impl_->galloc) ggml_gallocr_free(impl_->galloc);
         if (impl_->cpu_backend) ggml_backend_free(impl_->cpu_backend);
-        if (impl_->backend) ggml_backend_free(impl_->backend);
+        for (ggml_backend_t be : impl_->gpu_backends) {
+            if (be) ggml_backend_free(be);
+        }
+        impl_->gpu_backends.clear();
+        impl_->backend = nullptr;
     }
 }
 
@@ -362,11 +381,8 @@ bool Backend::compute(const std::function<ggml_tensor*(ggml_context*)>& build,
         // GPU path: schedule across {GPU, CPU}. Unsupported ops fall back to
         // CPU.
         if (!impl_->sched) {
-            ggml_backend_t backs[2] = {impl_->backend, impl_->cpu_backend};
-            impl_->sched = ggml_backend_sched_new(
-                    backs, /*bufts=*/nullptr, /*n_backends=*/2,
-                    /*graph_size=*/kGraphSize, /*parallel=*/false,
-                    /*op_offload=*/true);
+            impl_->sched = ggml_common::new_gpu_sched(
+                    impl_->gpu_backends, impl_->cpu_backend, kGraphSize);
             if (!impl_->sched) {
                 DA_ERR("Backend::compute: ggml_backend_sched_new failed");
                 impl_->pending.clear();
@@ -419,6 +435,14 @@ bool Backend::compute(const std::function<ggml_tensor*(ggml_context*)>& build,
 
     enum ggml_status status = GGML_STATUS_FAILED;
     try {
+        if (aicore_cancel_requested()) {
+            DA_ERR("Backend::compute: cancelled before graph_compute");
+            drop_transient_allocators();
+            impl_->captures.clear();
+            impl_->roots.clear();
+            ggml_free(ctx);
+            return false;
+        }
         status = need_sched ? ggml_backend_sched_graph_compute(impl_->sched, gf)
                             : ggml_backend_graph_compute(impl_->backend, gf);
     } catch (const std::exception& e) {

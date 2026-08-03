@@ -78,41 +78,11 @@ if(PLUGIN_STANDARD_QSIBR)
         set(SIBR_ASSIMP_LIBS assimp::assimp)
     endif()
 
-    # zlib: 3rdparty_zlib uses HIDDEN (--exclude-libs) which hides minizip
-    # symbols needed by assimp. Extract the raw library path for direct linking.
-    if(TARGET 3rdparty_zlib)
-        set(SIBR_ZLIB_LIBS 3rdparty_zlib)
-        get_target_property(_zlib_libs 3rdparty_zlib INTERFACE_LINK_LIBRARIES)
-        set(SIBR_ZLIB_RAW "")
-        if(_zlib_libs)
-            foreach(_zl ${_zlib_libs})
-                if(_zl MATCHES "libz\\." OR _zl MATCHES "zlib")
-                    list(APPEND SIBR_ZLIB_RAW "${_zl}")
-                endif()
-            endforeach()
-        endif()
-        if(NOT SIBR_ZLIB_RAW)
-            find_package(ZLIB QUIET)
-            if(ZLIB_FOUND)
-                set(SIBR_ZLIB_RAW ZLIB::ZLIB)
-            else()
-                message(WARNING "qSIBR: Could not extract raw zlib path from 3rdparty_zlib; linking may fail")
-                set(SIBR_ZLIB_RAW "")
-            endif()
-        endif()
-    elseif(TARGET ZLIB::ZLIB)
-        set(SIBR_ZLIB_LIBS ZLIB::ZLIB)
-        set(SIBR_ZLIB_RAW ZLIB::ZLIB)
-    else()
-        find_package(ZLIB QUIET)
-        if(ZLIB_FOUND)
-            set(SIBR_ZLIB_LIBS ZLIB::ZLIB)
-            set(SIBR_ZLIB_RAW ZLIB::ZLIB)
-        else()
-            set(SIBR_ZLIB_LIBS "")
-            set(SIBR_ZLIB_RAW "")
-        endif()
-    endif()
+    # zlib/minizip: 3rdparty_zlib uses HIDDEN (--exclude-libs); assimp needs raw libz.
+    cloudviewer_plugin_link_zlib_minizip(${PROJECT_NAME}
+        PLUGIN_NAME qSIBR
+        OUT_RAW_ZLIB SIBR_ZLIB_RAW
+        NO_LINK)
 
     # Embree
     if(TARGET 3rdparty_embree)

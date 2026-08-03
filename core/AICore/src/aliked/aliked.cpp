@@ -17,13 +17,21 @@
 #include <memory>
 
 #include "aliked_gpu_ops.hpp"
+#include "aliked_stage_bench.hpp"
 #include "backend.h"
 #include "deform_conv.hpp"
 #include "ggml_cnn.hpp"
+#include "ggml_gpu_ops.hpp"
 #include "gpu_pipeline.hpp"
 #include "gpu_pipeline_cache.hpp"
 #include "gpu_postprocess.hpp"
+#include "gpu_sync.hpp"
+#include "gpu_tensor.hpp"
 #include "model_weights.hpp"
+#include "score_debug.hpp"
+#if defined(AICORE_VULKAN_ALIKED)
+#include "vulkan/vulkan_aliked_dispatch.hpp"
+#endif
 #include "postprocess.hpp"
 #include "tensor_ops.hpp"
 
@@ -193,20 +201,36 @@ void DcnConvBn(const std::vector<float> &input,
                const std::vector<float> &var,
                std::vector<float> *output,
                int32_t *oh,
-               int32_t *ow) {
+               int32_t *ow,
+               const char *debug_prefix = nullptr) {
     std::vector<float> offset;
     int32_t offset_h = 0;
     int32_t offset_wd = 0;
     Conv2d(input, ic, ih, iw, offset_w, 18, 3, 3, &offset_b, 1, 1, &offset,
            &offset_h, &offset_wd);
+    if (debug_prefix != nullptr && DkdDebugCaptureActive()) {
+        CaptureBackboneStage(DkdDebugCaptureTarget(),
+                             (std::string(debug_prefix) + ".offset").c_str(),
+                             offset, 18, ih, iw);
+    }
     const float max_offset = std::max(ih, iw) / 4.0f;
     for (float &value : offset) {
         value = std::max(-max_offset, std::min(max_offset, value));
+    }
+    if (debug_prefix != nullptr && DkdDebugCaptureActive()) {
+        CaptureBackboneStage(DkdDebugCaptureTarget(),
+                             (std::string(debug_prefix) + ".offset_clamp").c_str(),
+                             offset, 18, ih, iw);
     }
     std::vector<float> conv;
     DeformConv2d(input, ic, ih, iw, offset, 1, regular_w, oc, 3, 3, nullptr, 1,
                  &conv, oh, ow);
     BatchNorm2d(conv, oc, *oh, *ow, gamma, beta, mean, var, output);
+    if (debug_prefix != nullptr && DkdDebugCaptureActive()) {
+        CaptureBackboneStage(DkdDebugCaptureTarget(),
+                             (std::string(debug_prefix) + ".deform_out").c_str(),
+                             *output, oc, *oh, *ow);
+    }
 }
 
 void ConvBnGgml(GgmlConvRunner *runner,
@@ -330,6 +354,7 @@ void ResBlockForward(const std::vector<float> &input,
     int32_t h1 = 0;
     int32_t w1 = 0;
     if (dcn) {
+        const std::string dcn1_prefix = prefix + ".dcn1";
         DcnConvBn(input, ic, ih, iw,
                   RequireTensor(tensors, prefix + "_conv1_offset_conv_weight",
                                 error),
@@ -341,7 +366,7 @@ void ResBlockForward(const std::vector<float> &input,
                   RequireTensor(tensors, prefix + "_bn1_bias", error),
                   RequireTensor(tensors, prefix + "_bn1_running_mean", error),
                   RequireTensor(tensors, prefix + "_bn1_running_var", error),
-                  &conv1, &h1, &w1);
+                  &conv1, &h1, &w1, dcn1_prefix.c_str());
     } else if (ggml != nullptr) {
         ConvBnGgml(ggml, input, ic, ih, iw,
                    RequireTensor(tensors, prefix + "_conv1_weight", error), oc,
@@ -365,6 +390,7 @@ void ResBlockForward(const std::vector<float> &input,
     int32_t h2 = 0;
     int32_t w2 = 0;
     if (dcn) {
+        const std::string dcn2_prefix = prefix + ".dcn2";
         DcnConvBn(conv1, oc, h1, w1,
                   RequireTensor(tensors, prefix + "_conv2_offset_conv_weight",
                                 error),
@@ -376,7 +402,7 @@ void ResBlockForward(const std::vector<float> &input,
                   RequireTensor(tensors, prefix + "_bn2_bias", error),
                   RequireTensor(tensors, prefix + "_bn2_running_mean", error),
                   RequireTensor(tensors, prefix + "_bn2_running_var", error),
-                  &conv2, &h2, &w2);
+                  &conv2, &h2, &w2, dcn2_prefix.c_str());
     } else if (ggml != nullptr) {
         ConvBnGgml(ggml, conv1, oc, h1, w1,
                    RequireTensor(tensors, prefix + "_conv2_weight", error), oc,
@@ -393,6 +419,12 @@ void ResBlockForward(const std::vector<float> &input,
                RequireTensor(tensors, prefix + "_bn2_running_mean", error),
                RequireTensor(tensors, prefix + "_bn2_running_var", error),
                &conv2, &h2, &w2);
+    }
+    if (dcn && DkdDebugCaptureActive()) {
+        CaptureBackboneStage(DkdDebugCaptureTarget(), (prefix + ".selu1").c_str(),
+                             conv1, oc, h1, w1);
+        CaptureBackboneStage(DkdDebugCaptureTarget(),
+                             (prefix + ".dcn2_out").c_str(), conv2, oc, h2, w2);
     }
 
     std::vector<float> identity = input;
@@ -423,12 +455,25 @@ void ResBlockForward(const std::vector<float> &input,
         return;
     }
 
+    if (dcn && DkdDebugCaptureActive()) {
+        std::vector<float> added(conv2.size());
+        for (size_t i = 0; i < conv2.size(); ++i) {
+            added[i] = conv2[i] + identity[i];
+        }
+        CaptureBackboneStage(DkdDebugCaptureTarget(), (prefix + ".add_out").c_str(),
+                             added, oc, h2, w2);
+    }
+
     output->resize(conv2.size());
     for (size_t i = 0; i < conv2.size(); ++i) {
         (*output)[i] = Selu(conv2[i] + identity[i]);
     }
     *oh = h2;
     *ow = w2;
+    if (dcn && DkdDebugCaptureActive()) {
+        CaptureBackboneStage(DkdDebugCaptureTarget(), (prefix + ".selu2").c_str(),
+                             *output, oc, h2, w2);
+    }
 }
 
 bool ExtractDenseMap(const TensorMap &tensors,
@@ -441,7 +486,17 @@ bool ExtractDenseMap(const TensorMap &tensors,
                      std::vector<float> *score_map,
                      std::string *error,
                      internal::Backend *ggml_backend,
-                     bool use_ggml_cnn) {
+                     bool use_ggml_cnn,
+                     DkdDebugCpuRefs *debug_refs) {
+    struct DkdDebugCaptureScope {
+        explicit DkdDebugCaptureScope(DkdDebugCpuRefs *refs) {
+            if (refs != nullptr) {
+                BeginDkdDebugCapture(refs);
+            }
+        }
+        ~DkdDebugCaptureScope() { EndDkdDebugCapture(); }
+    } debug_scope(debug_refs);
+
     GgmlConvRunner ggml_runner(ggml_backend);
     const bool ggml_on_device =
             use_ggml_cnn && ggml_backend != nullptr &&
@@ -508,6 +563,9 @@ bool ExtractDenseMap(const TensorMap &tensors,
     if (!error->empty()) {
         return false;
     }
+    if (debug_refs != nullptr) {
+        CaptureBackboneStage(debug_refs, "block2_out", x2, 32, h2, w2);
+    }
 
     std::vector<float> x3;
     int32_t h3 = 0;
@@ -518,15 +576,24 @@ bool ExtractDenseMap(const TensorMap &tensors,
     if (!error->empty()) {
         return false;
     }
+    if (debug_refs != nullptr) {
+        CaptureBackboneStage(debug_refs, "block3_out", x3, 64, h3, w3);
+    }
 
     std::vector<float> x4;
     int32_t h4 = 0;
     int32_t w4 = 0;
     AvgPool2d(x3, 64, h3, w3, 4, 4, 4, &x4, &h4, &w4);
+    if (debug_refs != nullptr) {
+        CaptureBackboneStage(debug_refs, "block4.in", x4, 64, h4, w4);
+    }
     ResBlockForward(x4, 64, 128, h4, w4, tensors, "block4", true, nullptr, &x4,
                     &h4, &w4, error);
     if (!error->empty()) {
         return false;
+    }
+    if (debug_refs != nullptr) {
+        CaptureBackboneStage(debug_refs, "block4_out", x4, 128, h4, w4);
     }
 
     auto project = [&](const std::vector<float> &src, int32_t ic, int32_t ih,
@@ -552,23 +619,48 @@ bool ExtractDenseMap(const TensorMap &tensors,
     project(x1, 16, h1, w1, "conv1_weight", &f1);
     fh = h1;
     fw = w1;
+    if (debug_refs != nullptr) {
+        CaptureBackboneStage(debug_refs, "proj_f1", f1, 32, fh, fw);
+    }
     std::vector<float> f2;
     auto [h2p, w2p] = project(x2, 32, h2, w2, "conv2_weight", &f2);
     (void)h2p;
     (void)w2p;
+    if (debug_refs != nullptr) {
+        CaptureBackboneStage(debug_refs, "proj_f2", f2, 32, h2, w2);
+    }
     UpsampleBilinear(f2, 32, h2, w2, fh, fw, &f2);
+    if (debug_refs != nullptr) {
+        CaptureBackboneStage(debug_refs, "upsample_f2", f2, 32, fh, fw);
+    }
     std::vector<float> f3;
     project(x3, 64, h3, w3, "conv3_weight", &f3);
     UpsampleBilinear(f3, 32, h3, w3, fh, fw, &f3);
+    if (debug_refs != nullptr) {
+        CaptureBackboneStage(debug_refs, "upsample_f3", f3, 32, fh, fw);
+    }
     std::vector<float> f4;
     project(x4, 128, h4, w4, "conv4_weight", &f4);
     UpsampleBilinear(f4, 32, h4, w4, fh, fw, &f4);
+    if (debug_refs != nullptr) {
+        CaptureBackboneStage(debug_refs, "upsample_f4", f4, 32, fh, fw);
+    }
 
     std::vector<float> fused;
     ConcatChannel(f1, 32, f2, 32, fh, fw, &fused);
+    if (debug_refs != nullptr) {
+        CaptureBackboneStage(debug_refs, "concat_f1_f2", fused, 64, fh, fw);
+    }
     std::vector<float> fused2;
     ConcatChannel(fused, 64, f3, 32, fh, fw, &fused2);
+    if (debug_refs != nullptr) {
+        CaptureBackboneStage(debug_refs, "concat_96", fused2, 96, fh, fw);
+    }
     ConcatChannel(fused2, 96, f4, 32, fh, fw, feature_map);
+    if (debug_refs != nullptr) {
+        CaptureBackboneStage(debug_refs, "concat_out", *feature_map, 128, fh,
+                            fw);
+    }
 
     std::vector<float> score;
     if (ggml != nullptr) {
@@ -614,12 +706,47 @@ bool ExtractDenseMap(const TensorMap &tensors,
                nullptr, 1, 1, score_map, &fh, &fw);
     }
     Sigmoid(score_map);
+    if (debug_refs != nullptr) {
+        debug_refs->score_padded = *score_map;
+        debug_refs->feature_padded = *feature_map;
+        debug_refs->padded_h = fh;
+        debug_refs->padded_w = fw;
+    }
     L2NormalizeChannels(feature_map, 128, fh, fw);
 
     padder.Unpad(feature_map, 128, orig_h, orig_w);
     padder.Unpad(score_map, 1, orig_h, orig_w);
+    if (debug_refs != nullptr) {
+        debug_refs->score_cropped = *score_map;
+        debug_refs->crop_h = orig_h;
+        debug_refs->crop_w = orig_w;
+    }
     return error->empty();
 }
+
+#if defined(AICORE_VULKAN_ALIKED)
+// Ensures VkAliked + ggml queues drain on every extract exit (success or error).
+struct VulkanExtractScope {
+    internal::Backend *backend = nullptr;
+    GpuPipelineCache *cache = nullptr;
+    bool active = false;
+
+    void Begin(internal::Backend *b, GpuPipelineCache *c) {
+        backend = b;
+        cache = c;
+        if (backend != nullptr && backend->IsVulkan()) {
+            BeginVulkanExtract(backend);
+            active = true;
+        }
+    }
+
+    ~VulkanExtractScope() {
+        if (active && backend != nullptr) {
+            EndVulkanExtract(backend, cache);
+        }
+    }
+};
+#endif
 
 class AlikedFeatureExtractorImpl final : public AlikedFeatureExtractor {
 public:
@@ -636,6 +763,11 @@ public:
                 device_ = backend_.device;
                 if (backend_.IsGpu()) {
                     gpu_cache_ = std::make_unique<GpuPipelineCache>(&backend_);
+#if defined(AICORE_VULKAN_ALIKED)
+                    if (backend_.IsVulkan()) {
+                        ClearCachedGpuOpGraphs();
+                    }
+#endif
                     if (!gpu_cache_->Warmup(tensors_, &init_error_)) {
                         gpu_cache_.reset();
                     }
@@ -644,6 +776,37 @@ public:
         } else {
             device_ = "cpu-ref";
         }
+    }
+
+    ~AlikedFeatureExtractorImpl() override {
+#if defined(AICORE_VULKAN_ALIKED)
+        if (backend_.IsVulkan()) {
+            EndVulkanExtract(&backend_, gpu_cache_.get());
+            gpu_cache_.reset();
+            VkAlikedQueueIdle(backend_.handle);
+            ggml_backend_synchronize(backend_.handle);
+        }
+#endif
+    }
+
+    bool RewarmVulkanBackendIfRequested() {
+#if defined(AICORE_VULKAN_ALIKED)
+        if (!backend_.IsVulkan() ||
+            std::getenv("LIGHTGLUE_ALIKED_VULKAN_FRESH_EXTRACT") == nullptr) {
+            return true;
+        }
+        FlushGpuPipeline(&backend_);
+        gpu_cache_.reset();
+        backend_.Release();
+        if (!backend_.Init(options_.device, options_.num_threads)) {
+            error_ = backend_.error;
+            return false;
+        }
+        gpu_cache_ = std::make_unique<GpuPipelineCache>(&backend_);
+        return gpu_cache_->Warmup(tensors_, &error_);
+#else
+        return true;
+#endif
     }
 
     bool ExtractFromRgb(const uint8_t *rgb,
@@ -681,11 +844,65 @@ public:
         std::vector<float> descriptors;
 
         if (gpu_path) {
-            if (!ExtractDenseMapGpuVram(tensors_, resized, resized_w, resized_h,
-                                        resized_h, resized_w, &gpu_maps,
-                                        &error_, &backend_, gpu_cache_.get())) {
+            if (!RewarmVulkanBackendIfRequested()) {
                 return false;
             }
+#if defined(AICORE_VULKAN_ALIKED)
+            if (backend_.IsVulkan() && DkdDebugEnabled()) {
+                ClearDkdDebugCpuRefs();
+                DkdDebugCpuRefs cpu_refs;
+                std::vector<float> cpu_feat;
+                std::vector<float> cpu_score;
+                if (!ExtractDenseMap(tensors_, resized, resized_w, resized_h,
+                                     resized_h, resized_w, &cpu_feat,
+                                     &cpu_score, &error_, nullptr, false,
+                                     &cpu_refs)) {
+                    return false;
+                }
+                SetDkdDebugCpuRefs(cpu_refs);
+            }
+#endif
+            const bool persistent_graph =
+                    std::getenv("LIGHTGLUE_ALIKED_PERSISTENT_GRAPH") != nullptr;
+#if defined(AICORE_VULKAN_ALIKED)
+            VulkanExtractScope vk_scope;
+            vk_scope.Begin(&backend_, gpu_cache_.get());
+#endif
+            GpuPipelineCache stack_cache(&backend_);
+            GpuPipelineCache *extract_cache = gpu_cache_.get();
+            const bool reuse_gpu_extract_cache = persistent_graph;
+            if (!reuse_gpu_extract_cache) {
+                if (!stack_cache.ShareWarmStateFrom(*gpu_cache_, &error_)) {
+                    return false;
+                }
+                extract_cache = &stack_cache;
+            } else if (!gpu_cache_->EnsureComputeLinked(&error_)) {
+                return false;
+            }
+            // Cached ggml graphs re-bind via ggml_gallocr_alloc_graph immediately
+            // before each graph_compute (shared allocator holds one graph only).
+            if (!ExtractDenseMapGpuVram(tensors_, resized, resized_w, resized_h,
+                                        resized_h, resized_w, &gpu_maps,
+                                        &error_, &backend_, extract_cache)) {
+                return false;
+            }
+            GpuPipelineCache *post_cache =
+                    gpu_cache_ != nullptr ? gpu_cache_.get() : extract_cache;
+            if (!PrepareScoreMapForDkd(&backend_, &gpu_maps.score, gpu_maps.height,
+                                       gpu_maps.width, post_cache, &error_) ||
+                !EnsureDenseWhcnGpu(&backend_, &gpu_maps.feature, &error_)) {
+                return false;
+            }
+#if defined(AICORE_VULKAN_ALIKED)
+            if (backend_.IsVulkan() && DkdDebugEnabled()) {
+                if (!LogScoreMapStage(&backend_, gpu_maps.score, gpu_maps.height,
+                                      gpu_maps.width, "dkd_pre", &error_)) {
+                    return false;
+                }
+            }
+#endif
+            FlushGpuPipeline(&backend_);
+            BarrierGpuPipeline(&backend_);
 
             DkdOptions dkd;
             dkd.radius = options_.nms_radius;
@@ -694,17 +911,24 @@ public:
             dkd.n_limit =
                     options_.max_keypoints > 0 ? options_.max_keypoints : 20000;
 
-            if (!RunDkdDispatch(gpu_maps.score, gpu_maps.height, gpu_maps.width,
-                                dkd, &backend_, &gpu_kpts, &error_,
-                                gpu_cache_.get())) {
-                return false;
+            {
+                StageBench bench("dkd");
+                if (!RunDkdDispatch(gpu_maps.score, gpu_maps.height,
+                                    gpu_maps.width, dkd, &backend_, &gpu_kpts,
+                                    &error_, post_cache)) {
+                    return false;
+                }
             }
 
             std::vector<float> kpts_host(static_cast<size_t>(gpu_kpts.count) *
                                          2);
+            std::vector<float> scores_host(static_cast<size_t>(gpu_kpts.count));
+            BarrierGpuPipeline(&backend_);
             ggml_backend_tensor_get(gpu_kpts.keypoints_norm.tensor,
                                     kpts_host.data(), 0,
                                     kpts_host.size() * sizeof(float));
+            ggml_backend_tensor_get(gpu_kpts.scores.tensor, scores_host.data(), 0,
+                                    scores_host.size() * sizeof(float));
             if (std::getenv("LIGHTGLUE_ALIKED_TRACE")) {
                 const size_t n = kpts_host.size();
                 size_t bad = 0;
@@ -714,41 +938,57 @@ public:
                     }
                 }
                 std::cerr << "dkd kpts count=" << gpu_kpts.count
-                          << " non_finite=" << bad << "\n";
+                          << " non_finite=" << bad;
+                if (gpu_kpts.count > 0) {
+                    std::cerr << " k0=(" << kpts_host[0] << ","
+                              << kpts_host[1] << ")";
+                }
+                std::cerr << "\n";
             }
 
-            if (!RunSddhDispatch(
-                        gpu_maps.feature, descriptor_dim_, gpu_maps.feature.h,
-                        gpu_maps.feature.w, kpts_host, gpu_kpts.count, 3, 16,
-                        RequireTensor(tensors_,
-                                      "desc_head_offset_conv_0_weight",
-                                      &error_),
-                        RequireTensor(tensors_, "desc_head_offset_conv_0_bias",
-                                      &error_),
-                        RequireTensor(tensors_,
-                                      "desc_head_offset_conv_2_weight",
-                                      &error_),
-                        RequireTensor(tensors_, "desc_head_offset_conv_2_bias",
-                                      &error_),
-                        RequireTensor(tensors_, "desc_head_sf_conv_weight",
-                                      &error_),
-                        RequireTensor(tensors_, "desc_head_agg_weights",
-                                      &error_),
-                        &backend_, &gpu_desc, &error_, gpu_cache_.get())) {
-                return false;
+            {
+                StageBench bench("sddh");
+                if (!RunSddhDispatch(
+                            gpu_maps.feature, descriptor_dim_,
+                            gpu_maps.feature.h, gpu_maps.feature.w, kpts_host,
+                            gpu_kpts.count, 3, 16,
+                            RequireTensor(tensors_,
+                                          "desc_head_offset_conv_0_weight",
+                                          &error_),
+                            RequireTensor(tensors_,
+                                          "desc_head_offset_conv_0_bias",
+                                          &error_),
+                            RequireTensor(tensors_,
+                                          "desc_head_offset_conv_2_weight",
+                                          &error_),
+                            RequireTensor(tensors_,
+                                          "desc_head_offset_conv_2_bias",
+                                          &error_),
+                            RequireTensor(tensors_,
+                                          "desc_head_sf_conv_weight",
+                                          &error_),
+                            RequireTensor(tensors_, "desc_head_agg_weights",
+                                            &error_),
+                            &backend_, &gpu_desc, &error_,
+                            post_cache)) {
+                    return false;
+                }
             }
 
             const int32_t count = gpu_kpts.count;
-            dkd_out.scores.resize(static_cast<size_t>(count));
-            dkd_out.keypoints_norm.resize(static_cast<size_t>(count) * 2);
+            dkd_out.scores = scores_host;
+            dkd_out.keypoints_norm = kpts_host;
             descriptors.resize(static_cast<size_t>(count) * descriptor_dim_);
-            ggml_backend_tensor_get(gpu_kpts.scores.tensor,
-                                    dkd_out.scores.data(), 0,
-                                    static_cast<size_t>(count) * sizeof(float));
-            ggml_backend_tensor_get(
-                    gpu_kpts.keypoints_norm.tensor,
-                    dkd_out.keypoints_norm.data(), 0,
-                    static_cast<size_t>(count) * 2 * sizeof(float));
+#if defined(AICORE_VULKAN_ALIKED)
+            if (backend_.IsVulkan()) {
+                FlushGpuPipeline(&backend_);
+            }
+#endif
+            if (std::getenv("LIGHTGLUE_ALIKED_TRACE") && count > 0) {
+                std::cerr << "dkd kpts post-sddh k0=("
+                          << dkd_out.keypoints_norm[0] << ","
+                          << dkd_out.keypoints_norm[1] << ")\n";
+            }
             ggml_backend_tensor_get(gpu_desc.tensor, descriptors.data(), 0,
                                     static_cast<size_t>(count) *
                                             descriptor_dim_ * sizeof(float));
@@ -756,7 +996,7 @@ public:
                                     resized_h, resized_w, &feature_map,
                                     &score_map, &error_,
                                     options_.use_ggml_cnn ? &backend_ : nullptr,
-                                    options_.use_ggml_cnn)) {
+                                    options_.use_ggml_cnn, nullptr)) {
             return false;
         } else {
             DkdOptions dkd;

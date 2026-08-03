@@ -1,0 +1,14 @@
+diff --git a/src/ggml-vulkan/vulkan-shaders/aliked_sddh.comp b/src/ggml-vulkan/vulkan-shaders/aliked_sddh.comp
+--- a/src/ggml-vulkan/vulkan-shaders/aliked_sddh.comp
++++ b/src/ggml-vulkan/vulkan-shaders/aliked_sddh.comp
+@@ -100,8 +100,8 @@ void main() {
+     float max_offset = float(max(p.h, p.w)) / 4.0;
+     int pad = int(p.kernel_size / 2u);
+ 
+-    float x_wh = clamp((x_norm / 2.0 + 0.5) * float(p.w - 1u), 0.0, float(p.w - 1u));
+-    float y_wh = clamp((y_norm / 2.0 + 0.5) * float(p.h - 1u), 0.0, float(p.h - 1u));
++    float x_wh = (x_norm / 2.0 + 0.5) * float(p.w - 1u);
++    float y_wh = (y_norm / 2.0 + 0.5) * float(p.h - 1u);
+ 
+     if (p.kernel_size > 1u) {
+         int x0 = clamp(int(round(x_wh)) - pad, 0, max(int(p.w) - int(p.kernel_size), 0));

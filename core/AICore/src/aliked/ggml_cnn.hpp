@@ -62,9 +62,11 @@ public:
     ggml_backend_buffer_t buffer = nullptr;
     ggml_tensor *kernel = nullptr;
     ggml_tensor *bias = nullptr;
+    bool owns_buffer = true;
     // Persistent device conv graph — avoids per-layer Vulkan buffer alloc.
     ggml_context *graph_ctx = nullptr;
     ggml_backend_buffer_t graph_buffer = nullptr;
+    ggml_gallocr_t graph_gallocr = nullptr;
     ggml_cgraph *graph = nullptr;
     ggml_tensor *graph_in = nullptr;
     ggml_tensor *graph_out = nullptr;
@@ -95,6 +97,15 @@ public:
                           std::string *error) {
     return EnsureCached(cache_key, weights, error);
   }
+
+  // Drop cached device conv graphs (keep fused weights) before each extract.
+  void InvalidateDeviceGraphs();
+
+  // Re-bind gallocr for all cached graphs (once per extract on Vulkan).
+  void RebindAllDeviceGraphs();
+
+  // Share persistent weight buffers from another runner (graph fields omitted).
+  void ImportWeightEntriesFrom(const GgmlConvRunner &other);
 
   const CachedWeight &CachedEntry(const char *cache_key) const {
     return cache_.at(cache_key);

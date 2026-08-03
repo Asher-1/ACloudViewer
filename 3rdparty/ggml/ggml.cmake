@@ -607,7 +607,8 @@ else()
     endif()
 endif()
 
-set(_GGML_PATCH_SCRIPTS)
+set(_GGML_PATCH_SCRIPTS
+    "${CMAKE_CURRENT_LIST_DIR}/patches/apply_ggml_patches.py")
 if(GGML_CPU_ALL_VARIANTS)
     list(APPEND _GGML_PATCH_SCRIPTS
         "${CMAKE_CURRENT_LIST_DIR}/patches/apply_cpu_all_variants_compiler_checks.py")
@@ -670,6 +671,18 @@ ExternalProject_Add(ext_ggml
     ${_GGML_EXTERNAL_DEPENDS_ARGS}
 )
 
+# ALIKED patch adds include/ggml-vulkan-aliked.h; 0002 adds it to GGML_PUBLIC_HEADERS.
+# Copy after install so existing build trees pick up the header without a full ggml refetch.
+if(_GGML_VULKAN_ENABLED)
+    ExternalProject_Add_Step(ext_ggml install_aliked_vulkan_header
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "<SOURCE_DIR>/include/ggml-vulkan-aliked.h"
+            "<INSTALL_DIR>/include/ggml-vulkan-aliked.h"
+        DEPENDEES install
+        COMMENT "Installing ggml-vulkan-aliked.h for AICore ALIKED Vulkan"
+    )
+endif()
+
 set(GGML_INSTALL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR})
 set(GGML_INCLUDE_DIRS ${GGML_INSTALL_DIR}/include)
 set(GGML_LIB_DIR ${GGML_INSTALL_DIR}/${CloudViewer_INSTALL_LIB_DIR})
@@ -708,17 +721,20 @@ target_include_directories(3rdparty_ggml INTERFACE ${GGML_INCLUDE_DIRS})
 # libs (ggml + ggml-base).  In STATIC mode, ggml-cpu is a regular static lib
 # and must be linked explicitly.
 if(GGML_BUILD_SHARED)
-    target_link_libraries(3rdparty_ggml INTERFACE
-        ${GGML_LIB_DIR}/${_GGML_LIB_PREFIX}ggml${_GGML_LIB_SUFFIX}
-        ${GGML_LIB_DIR}/${_GGML_LIB_PREFIX}ggml-base${_GGML_LIB_SUFFIX}
+    set(GGML_CORE_LINK_LIBS
+        "${GGML_LIB_DIR}/${_GGML_LIB_PREFIX}ggml${_GGML_LIB_SUFFIX}"
+        "${GGML_LIB_DIR}/${_GGML_LIB_PREFIX}ggml-base${_GGML_LIB_SUFFIX}"
     )
 else()
-    target_link_libraries(3rdparty_ggml INTERFACE
-        ${GGML_LIB_DIR}/${_GGML_LIB_PREFIX}ggml${_GGML_LIB_SUFFIX}
-        ${GGML_LIB_DIR}/${_GGML_LIB_PREFIX}ggml-cpu${_GGML_LIB_SUFFIX}
-        ${GGML_LIB_DIR}/${_GGML_LIB_PREFIX}ggml-base${_GGML_LIB_SUFFIX}
+    set(GGML_CORE_LINK_LIBS
+        "${GGML_LIB_DIR}/${_GGML_LIB_PREFIX}ggml${_GGML_LIB_SUFFIX}"
+        "${GGML_LIB_DIR}/${_GGML_LIB_PREFIX}ggml-cpu${_GGML_LIB_SUFFIX}"
+        "${GGML_LIB_DIR}/${_GGML_LIB_PREFIX}ggml-base${_GGML_LIB_SUFFIX}"
     )
 endif()
+mark_as_advanced(GGML_CORE_LINK_LIBS)
+
+target_link_libraries(3rdparty_ggml INTERFACE ${GGML_CORE_LINK_LIBS})
 
 # --- GPU backend linking ---
 # In SHARED mode, GPU backends are separate .so/.dylib files loaded at runtime

@@ -7,7 +7,10 @@
 
 #include "gpu_pipeline_cache.hpp"
 
-#include "aliked_cuda.hpp"
+#if defined(AICORE_CUDA_ALIKED)
+#include "cuda/aliked_cuda.hpp"
+#endif
+#include "gpu_sync.hpp"
 #include "gpu_tensor.hpp"
 #include "model_weights.hpp"
 #include "tensor_ops.hpp"
@@ -61,8 +64,8 @@ void PreloadDcn(GpuPipelineCache *cache,
 }  // namespace
 
 GpuPipelineCache::GpuPipelineCache(internal::Backend *backend)
-    : backend_(backend), ggml_(backend) {
-#if defined(LIGHTGLUE_HAS_CUDA)
+    : backend_(backend), ggml_(backend), compute_ggml_(backend) {
+#if defined(AICORE_CUDA_ALIKED)
     dkd_scratch_ = std::make_unique<AlikedDkdScratch>();
     sddh_scratch_ = std::make_unique<AlikedSddhScratch>();
 #endif
@@ -175,6 +178,12 @@ bool GpuPipelineCache::Warmup(const TensorMap &tensors, std::string *error) {
         return false;
     }
 
+#if defined(AICORE_VULKAN_ALIKED)
+    if (backend_->IsVulkan()) {
+        ApplyVulkanAlikedPerfDefaults();
+    }
+#endif
+
     PreloadDcn(this, tensors, "block3", 32, 64, error);
     if (error != nullptr && !error->empty()) {
         return false;
@@ -235,6 +244,45 @@ bool GpuPipelineCache::Warmup(const TensorMap &tensors, std::string *error) {
     return true;
 }
 
+bool GpuPipelineCache::EnsureComputeLinked(std::string *error) {
+    if (compute_linked_) {
+        return true;
+    }
+    if (!warmed_up_) {
+        if (error) {
+            *error = "GpuPipelineCache compute link requires Warmup";
+        }
+        return false;
+    }
+    compute_ggml_.runner()->ImportWeightEntriesFrom(*ggml_.runner());
+    compute_linked_ = true;
+    return true;
+}
+
+bool GpuPipelineCache::ShareWarmStateFrom(const GpuPipelineCache &source,
+                                          std::string *error) {
+    if (backend_ != source.backend_) {
+        if (error) {
+            *error = "GpuPipelineCache backend mismatch for weight sharing";
+        }
+        return false;
+    }
+    if (!source.warmed_up_) {
+        if (error) {
+            *error = "GpuPipelineCache weight source is not warmed up";
+        }
+        return false;
+    }
+
+    ggml_.runner()->ImportWeightEntriesFrom(*source.ggml()->runner());
+    compute_ggml_.runner()->ImportWeightEntriesFrom(*source.ggml()->runner());
+    score_head_layers_ = source.score_head_layers_;
+    score_head_final_ = source.score_head_final_;
+    warmed_up_ = true;
+    compute_linked_ = true;
+    return true;
+}
+
 bool GpuPipelineCache::EnsureSddhWeights(const std::vector<float> &offset_0_w,
                                          const std::vector<float> &offset_0_b,
                                          const std::vector<float> &offset_2_w,
@@ -287,7 +335,7 @@ const float *GpuPipelineCache::SddhAggWeightsPtr() const {
     return DevPtr(sddh_weights_.agg_weights);
 }
 
-#if defined(LIGHTGLUE_HAS_VULKAN)
+#if defined(AICORE_VULKAN_ALIKED)
 
 bool GpuPipelineCache::EnsureVulkanDkdScratch(int32_t h,
                                               int32_t w,
@@ -330,14 +378,14 @@ bool GpuPipelineCache::EnsureVulkanSddhScratch(int32_t count,
                                                int32_t feat_h,
                                                int32_t feat_w,
                                                std::string *error) {
-    (void)count;
-    constexpr int32_t kBatch = 64;
-    const bool workspace_ok = kBatch <= vulkan_sddh_scratch_.capacity_count &&
-                              dim == vulkan_sddh_scratch_.dim &&
-                              kernel_size == vulkan_sddh_scratch_.kernel_size;
+    const int32_t capacity = count > 0 ? count : 1;
+    const bool workspace_ok =
+            count <= vulkan_sddh_scratch_.capacity_count &&
+            dim == vulkan_sddh_scratch_.dim &&
+            kernel_size == vulkan_sddh_scratch_.kernel_size;
     const bool feature_ok = feat_h == vulkan_sddh_scratch_.feat_h &&
                             feat_w == vulkan_sddh_scratch_.feat_w &&
-                            vulkan_sddh_scratch_.feature_nchw.tensor != nullptr;
+                            vulkan_sddh_scratch_.feature_contig.tensor != nullptr;
     if (workspace_ok && feature_ok) {
         return true;
     }
@@ -346,19 +394,22 @@ bool GpuPipelineCache::EnsureVulkanSddhScratch(int32_t count,
                                    static_cast<size_t>(kernel_size) *
                                    static_cast<size_t>(kernel_size) +
                            64 + static_cast<size_t>(dim) * 3;
-        const size_t floats = per * static_cast<size_t>(kBatch);
+        // Vulkan SSBO misalign can add up to 16 floats before tensor data; shader
+        // indexes workspace_off + k*stride — keep tail slack to avoid OOB writes.
+        constexpr size_t kMisalignSlack = 16;
+        const size_t floats =
+                per * static_cast<size_t>(capacity) + kMisalignSlack;
         if (!GpuTensor::Allocate(backend_, static_cast<int32_t>(floats), 1, 1,
                                  &vulkan_sddh_scratch_.workspace, error)) {
             return false;
         }
-        vulkan_sddh_scratch_.capacity_count = kBatch;
+        vulkan_sddh_scratch_.capacity_count = capacity;
         vulkan_sddh_scratch_.dim = dim;
         vulkan_sddh_scratch_.kernel_size = kernel_size;
     }
     if (!feature_ok) {
-        const int32_t feature_elems = dim * feat_h * feat_w;
-        if (!GpuTensor::Allocate(backend_, feature_elems, 1, 1,
-                                 &vulkan_sddh_scratch_.feature_nchw, error)) {
+        if (!GpuTensor::Allocate(backend_, feat_w, feat_h, dim,
+                                 &vulkan_sddh_scratch_.feature_contig, error)) {
             return false;
         }
         vulkan_sddh_scratch_.feat_h = feat_h;

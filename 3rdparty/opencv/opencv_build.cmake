@@ -26,16 +26,39 @@ set(OPENCV_CONTRIB_SOURCE_DIR "${SOURCE_DIR}/modules")
 
 set(SHARED_BUILD_OPENCV ON)
 
-if(PLUGIN_STANDARD_QSIBR OR PLUGIN_STANDARD_QLIGHTGLUE)
-    set(_OPENCV_NEED_FEATURES2D ON)
-else()
-    set(_OPENCV_NEED_FEATURES2D OFF)
+# --- OpenCV optional modules (plugin consumers → BUILD_opencv_* / WITH_*) ---
+# Base (always when BUILD_OPENCV): core, imgproc, imgcodecs, highgui
+#
+# features2d + flann : qLightGlue (cv::SIFT in feature_extractor.cpp)
+# videoio            : qSIBR (VideoCapture files), qFreeSplatter, qFaceDetect
+# WITH_FFMPEG        : MP4/file demux for videoio consumers
+# WITH_V4L           : live webcam (qFreeSplatter, qFaceDetect only — not qSIBR)
+# objdetect+calib3d  : qFreeSplatter Haar fallback, qManualCalib
+# ml                 : q3DMASC
+# opencv_video       : OFF — qSIBR VideoUtils.cpp (optflow/LK) excluded from build
+
+set(_opencv_features2d OFF)
+if(PLUGIN_STANDARD_QLIGHTGLUE)
+    set(_opencv_features2d ON)
 endif()
 
 set(_opencv_videoio OFF)
-if(PLUGIN_STANDARD_QSIBR OR PLUGIN_STANDARD_QFREESPLATTER)
+if(PLUGIN_STANDARD_QSIBR OR PLUGIN_STANDARD_QFREESPLATTER
+        OR PLUGIN_STANDARD_QFACEDETECT)
     set(_opencv_videoio ON)
 endif()
+
+set(_opencv_videoio_ffmpeg OFF)
+if(_opencv_videoio)
+    # All current videoio plugins read container files (MP4/AVI).
+    set(_opencv_videoio_ffmpeg ON)
+endif()
+
+set(_opencv_videoio_v4l OFF)
+if(PLUGIN_STANDARD_QFREESPLATTER OR PLUGIN_STANDARD_QFACEDETECT)
+    set(_opencv_videoio_v4l ON)
+endif()
+
 set(_opencv_objdetect OFF)
 if(PLUGIN_STANDARD_QMANUAL_CALIB OR PLUGIN_STANDARD_QFREESPLATTER)
     set(_opencv_objdetect ON)
@@ -44,6 +67,13 @@ endif()
 set(_opencv_calib3d OFF)
 if(PLUGIN_STANDARD_QMANUAL_CALIB OR _opencv_objdetect)
     set(_opencv_calib3d ON)
+endif()
+
+if(BUILD_OPENCV)
+    message(STATUS "OpenCV modules: features2d=${_opencv_features2d} "
+            "videoio=${_opencv_videoio} ffmpeg=${_opencv_videoio_ffmpeg} "
+            "v4l=${_opencv_videoio_v4l} objdetect=${_opencv_objdetect} "
+            "calib3d=${_opencv_calib3d} video=OFF")
 endif()
 
 ExternalProject_Add(ext_opencv
@@ -67,7 +97,7 @@ ExternalProject_Add(ext_opencv
             -DCMAKE_POSITION_INDEPENDENT_CODE=ON
             -DOPENCV_FORCE_3RDPARTY_BUILD=ON
             -DWITH_TBB=OFF
-            -DWITH_FFMPEG=OFF
+            -DWITH_FFMPEG=$<IF:$<BOOL:${_opencv_videoio_ffmpeg}>,ON,OFF>
             -DBUILD_JASPER=ON
             -DBUILD_JPEG=ON            # Build OpenCV bundled libjpeg from 3rdparty
             -DBUILD_PNG=$<IF:$<PLATFORM_ID:Darwin>,OFF,ON>            # macOS: use system libpng to avoid SDK conflicts; other platforms: bundled version
@@ -82,8 +112,8 @@ ExternalProject_Add(ext_opencv
             -DBUILD_opencv_highgui=ON
             -DBUILD_opencv_imgcodecs=ON
             -DBUILD_opencv_imgproc=ON
-            -DBUILD_opencv_features2d=${_OPENCV_NEED_FEATURES2D}
-            -DBUILD_opencv_flann=${_OPENCV_NEED_FEATURES2D}
+            -DBUILD_opencv_features2d=${_opencv_features2d}
+            -DBUILD_opencv_flann=${_opencv_features2d}
             # -DBUILD_opencv_hdf=OFF
             -DBUILD_opencv_xfeatures2d=OFF
             -DBUILD_opencv_photo=OFF
@@ -107,14 +137,14 @@ ExternalProject_Add(ext_opencv
             -DBUILD_opencv_optflow=OFF
             -DBUILD_opencv_stitching=OFF
             -DBUILD_opencv_ts=OFF
-            -DBUILD_opencv_video=${PLUGIN_STANDARD_QSIBR}
+            -DBUILD_opencv_video=OFF
             -DBUILD_opencv_videoio=${_opencv_videoio}
             -DBUILD_opencv_stereo=OFF
             -DBUILD_opencv_legacy=OFF
             -DWITH_GSTREAMER=OFF
             -DWITH_GTK=OFF
             -DWITH_GTK_2_X=OFF
-            -DWITH_V4L=OFF
+            -DWITH_V4L=$<IF:$<BOOL:${_opencv_videoio_v4l}>,ON,OFF>
             -DWITH_CAROTENE=OFF
             -DWITH_OPENGL=OFF
             -DWITH_OPENCL=OFF

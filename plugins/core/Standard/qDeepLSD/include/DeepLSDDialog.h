@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <QDoubleSpinBox>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDialog>
@@ -14,14 +15,16 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
-#include <QNetworkAccessManager>
-#include <QNetworkReply>
 #include <QProgressBar>
 #include <QPushButton>
 #include <QSpinBox>
-#include <QTextEdit>
 #include <QToolButton>
 #include <QWidget>
+
+#include "ecvModelDownloader.h"
+#include "ecvClickableImageLabel.h"
+
+class ecvMainAppInterface;
 
 struct DeepLSDBuiltinModel {
     QString displayName;
@@ -38,7 +41,10 @@ public:
         QString inputPath;
         int threads = 0;
         QString device = "auto";
-        bool addResultToDb = true;
+        float minSegmentScore = 0.0f;
+        bool addLineVizToDb = true;
+        bool addDistanceOverlayToDb = false;
+        bool exportPolylinesToDb = false;
     };
 
     struct DbImageEntry {
@@ -48,6 +54,7 @@ public:
 
     explicit DeepLSDDialog(QWidget* parent = nullptr);
 
+    void setAppInterface(ecvMainAppInterface* app);
     Settings getSettings() const;
     void appendLog(const QString& msg);
     void setProgress(int current, int total);
@@ -62,6 +69,9 @@ signals:
     void runRequested(const DeepLSDDialog::Settings& settings);
     void cancelRequested();
     void refreshDbImagesRequested();
+
+protected:
+    void closeEvent(QCloseEvent* event) override;
 
 private slots:
     void onBrowseImage();
@@ -83,28 +93,27 @@ private:
     static QString formatFileSize(qint64 bytes);
 
     QComboBox* m_modelCombo = nullptr;
-    QLabel* m_quantWarningLabel = nullptr;
     QLabel* m_variantHintLabel = nullptr;
     QLineEdit* m_imagePath = nullptr;
     QLineEdit* m_customModelPath = nullptr;
     QWidget* m_customModelRow = nullptr;
     QComboBox* m_deviceCombo = nullptr;
     QSpinBox* m_threads = nullptr;
-    QLabel* m_previewLabel = nullptr;
+    QDoubleSpinBox* m_minSegmentScore = nullptr;
+    ecvClickableImageLabel* m_previewLabel = nullptr;
     QLabel* m_downloadLabel = nullptr;
     QProgressBar* m_progress = nullptr;
-    QTextEdit* m_log = nullptr;
     QPushButton* m_runBtn = nullptr;
     QPushButton* m_cancelBtn = nullptr;
-    QCheckBox* m_addToDbCheck = nullptr;
+    QCheckBox* m_addLineVizCheck = nullptr;
+    QCheckBox* m_addDistanceOverlayCheck = nullptr;
+    QCheckBox* m_exportPolylinesCheck = nullptr;
     QToolButton* m_dbToggleBtn = nullptr;
     QWidget* m_dbContentWidget = nullptr;
     QListWidget* m_dbImageList = nullptr;
 
-    QNetworkAccessManager* m_netManager = nullptr;
-    QNetworkReply* m_currentDownload = nullptr;
-    QFile* m_downloadOutFile = nullptr;
+    ecvMainAppInterface* m_app = nullptr;
+    ecvModelDownloader* m_downloader = nullptr;
     bool m_downloadInProgress = false;
     bool m_autoRunAfterDownload = false;
-    QString m_downloadTmpPath;
 };

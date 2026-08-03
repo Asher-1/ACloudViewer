@@ -12,11 +12,22 @@
 #include <QFileInfo>
 #include <algorithm>
 #include <cmath>
-#include <future>
 
 #ifdef AICore_ENABLED
 #include "aicore/backend_capi.h"
 #include "aicore/depth_capi.h"
+#include "aicore/inference_log.h"
+#include "aicore/runtime_capi.h"
+
+namespace {
+
+void fillResolvedDevice(DA3DepthResult& res, aicore_depth_ctx* ctx) {
+    if (const char* dev = aicore_depth_device_name(ctx)) {
+        res.resolvedDevice = QString::fromUtf8(dev);
+    }
+}
+
+}  // namespace
 #endif
 
 DA3Worker::DA3Worker(const DA3Dialog::Settings& settings, QObject* parent)
@@ -35,6 +46,8 @@ void DA3Worker::run() {
     emit taskFinished(false);
     return;
 #else
+    aicore_inference_lock();
+    aicore_cancel_begin();
     bool ok = false;
     emit progressUpdate(0, 100);
     switch (m_settings.mode) {
@@ -66,21 +79,35 @@ void DA3Worker::run() {
             emit logMessage("[Error] Unknown mode.");
             break;
     }
+    aicore_cancel_end();
+    aicore_inference_unlock();
     emit taskFinished(ok);
+#endif
+}
+
+void DA3Worker::releaseContextOnMainThread() {
+#ifdef AICore_ENABLED
+    if (m_pendingCtx) {
+        aicore_depth_free(m_pendingCtx);
+        m_pendingCtx = nullptr;
+    }
 #endif
 }
 
 #ifdef AICore_ENABLED
 
+void DA3Worker::stashContext(aicore_depth_ctx* ctx) { m_pendingCtx = ctx; }
+
 DA3Worker::CtxGuard::~CtxGuard() {
-    if (ctx) {
-        aicore_depth_free(ctx);
+    if (ctx && owner) {
+        owner->stashContext(ctx);
         ctx = nullptr;
     }
 }
 
 DA3Worker::CtxGuard DA3Worker::loadModel() {
     CtxGuard g;
+    g.owner = this;
     const QString modelPath = m_settings.modelPath;
     if (modelPath.isEmpty()) {
         emit logMessage("[Error] No GGUF model path configured.");
@@ -99,18 +126,10 @@ DA3Worker::CtxGuard DA3Worker::loadModel() {
     }
 
     emit progressUpdate(5, 100);
+    aicore_inference_log::log_device_request(QStringLiteral("DA3"), m_settings.device);
     const QByteArray device = m_settings.device.trimmed().isEmpty()
                                       ? QByteArray("auto")
                                       : m_settings.device.trimmed().toUtf8();
-    if (!m_settings.device.isEmpty() &&
-        m_settings.device.trimmed().toLower() != QLatin1String("auto")) {
-        emit logMessage(
-                QString("[DA3] Using device: %1").arg(m_settings.device));
-    } else {
-        emit logMessage(
-                QString("[DA3] Using device: auto (%1)")
-                        .arg(QString::fromUtf8(aicore_auto_device_order())));
-    }
     if (!m_settings.metricModelPath.isEmpty()) {
         if (!QFile::exists(m_settings.metricModelPath)) {
             emit logMessage(QString("[Error] Metric model file not found: %1")
@@ -134,6 +153,11 @@ DA3Worker::CtxGuard DA3Worker::loadModel() {
                                 .arg(modelPath));
         return g;
     }
+    if (const char* resolved = aicore_depth_device_name(g.ctx)) {
+        if (resolved[0] != '\0') {
+            aicore_inference_log::log_device_resolved(QStringLiteral("DA3"), QString::fromUtf8(resolved));
+        }
+    }
     emit progressUpdate(10, 100);
     return g;
 }
@@ -150,7 +174,7 @@ bool DA3Worker::runDepthSingle() {
     int total = m_settings.inputPaths.size();
     int okCount = 0;
     for (int i = 0; i < total; ++i) {
-        if (isInterruptionRequested()) {
+        if (isInterruptionRequested() || aicore_cancel_requested()) {
             emit logMessage("[DA3] Cancelled.");
             break;
         }
@@ -162,24 +186,10 @@ bool DA3Worker::runDepthSingle() {
         int h = 0, w = 0;
         const std::string pathStr = m_settings.inputPaths[i].toStdString();
         float* depth = nullptr;
-        auto fut = std::async(std::launch::async, [&]() {
-            return aicore_depth_depth_path(guard.ctx, pathStr.c_str(), &h, &w);
-        });
-        {
-            QElapsedTimer elapsed;
-            elapsed.start();
-            const int64_t expectedMs = 20000;
-            while (fut.wait_for(std::chrono::milliseconds(1500)) !=
-                   std::future_status::ready) {
-                const double t =
-                        elapsed.elapsed() / static_cast<double>(expectedMs);
-                const int pct =
-                        pctBase + static_cast<int>((pctNext - pctBase) *
-                                                   (1.0 - std::exp(-2.5 * t)));
-                emit progressUpdate(qMin(pct, pctNext - 1), 100);
-            }
-        }
-        depth = fut.get();
+        QElapsedTimer inferTimer;
+        inferTimer.start();
+        depth = aicore_depth_depth_path(guard.ctx, pathStr.c_str(), &h, &w);
+        emit progressUpdate(pctNext, 100);
         if (!depth) {
             const char* err = aicore_depth_last_error(guard.ctx);
             emit logMessage(QString("[Error] Depth estimation failed for: %1%2")
@@ -193,11 +203,13 @@ bool DA3Worker::runDepthSingle() {
 
         DA3DepthResult res;
         res.sourceName = QFileInfo(m_settings.inputPaths[i]).baseName();
+        fillResolvedDevice(res, guard.ctx);
         res.width = w;
         res.height = h;
         res.depth.resize(h * w);
         std::copy(depth, depth + h * w, res.depth.begin());
         res.hasPose = false;
+        res.runtimeMs = inferTimer.elapsed();
         aicore_depth_free_floats(depth);
 
         float dmin = *std::min_element(res.depth.begin(), res.depth.end());
@@ -234,7 +246,7 @@ bool DA3Worker::runDepthPose() {
     int total = m_settings.inputPaths.size();
     int okCount = 0;
     for (int i = 0; i < total; ++i) {
-        if (isInterruptionRequested()) break;
+        if (isInterruptionRequested() || aicore_cancel_requested()) break;
         const int pctBase = 10 + (i * 80) / std::max(total, 1);
         const int pctNext = 10 + ((i + 1) * 80) / std::max(total, 1);
         emit progressUpdate(pctBase, 100);
@@ -246,26 +258,12 @@ bool DA3Worker::runDepthPose() {
         float ext[12] = {}, intr[9] = {};
 
         const std::string pathStr = m_settings.inputPaths[i].toStdString();
-        auto fut = std::async(std::launch::async, [&]() {
-            return aicore_depth_depth_dense(guard.ctx, pathStr.c_str(), &h, &w,
-                                            &depth_ptr, &conf_ptr, &sky_ptr,
-                                            ext, intr, &is_metric);
-        });
-        {
-            QElapsedTimer elapsed;
-            elapsed.start();
-            const int64_t expectedMs = 25000;
-            while (fut.wait_for(std::chrono::milliseconds(1500)) !=
-                   std::future_status::ready) {
-                const double t =
-                        elapsed.elapsed() / static_cast<double>(expectedMs);
-                const int pct =
-                        pctBase + static_cast<int>((pctNext - pctBase) *
-                                                   (1.0 - std::exp(-2.5 * t)));
-                emit progressUpdate(qMin(pct, pctNext - 1), 100);
-            }
-        }
-        int ret = fut.get();
+        QElapsedTimer inferTimer;
+        inferTimer.start();
+        const int ret = aicore_depth_depth_dense(
+                guard.ctx, pathStr.c_str(), &h, &w, &depth_ptr, &conf_ptr,
+                &sky_ptr, ext, intr, &is_metric);
+        emit progressUpdate(pctNext, 100);
         if (ret != 0 || !depth_ptr) {
             const char* err = aicore_depth_last_error(guard.ctx);
             emit logMessage(QString("[Error] Depth+pose failed for: %1%2")
@@ -282,6 +280,7 @@ bool DA3Worker::runDepthPose() {
 
         DA3DepthResult res;
         res.sourceName = QFileInfo(m_settings.inputPaths[i]).baseName();
+        fillResolvedDevice(res, guard.ctx);
         res.width = w;
         res.height = h;
         res.depth.resize(h * w);
@@ -293,6 +292,7 @@ bool DA3Worker::runDepthPose() {
         res.hasPose = true;
         std::copy(ext, ext + 12, res.extrinsics);
         std::copy(intr, intr + 9, res.intrinsics);
+        res.runtimeMs = inferTimer.elapsed();
 
         emit logMessage(QString("[DA3] %1: %2x%3 fx=%4 fy=%5")
                                 .arg(res.sourceName)
@@ -340,9 +340,14 @@ bool DA3Worker::runDepthMultiView() {
 
     int h = 0, w = 0, out_n = 0;
     std::vector<float> ext(n * 12), intr(n * 9);
+    QElapsedTimer inferTimer;
+    inferTimer.start();
     float* depth =
             aicore_depth_depth_pose_multi(guard.ctx, cpaths.data(), n, &h, &w,
                                           &out_n, ext.data(), intr.data());
+    const qint64 multiRuntimeMs = inferTimer.elapsed();
+    const double perViewRuntimeMs =
+            out_n > 0 ? static_cast<double>(multiRuntimeMs) / out_n : 0.0;
     if (!depth) {
         emit logMessage("[Error] Multi-view failed.");
         return false;
@@ -356,6 +361,7 @@ bool DA3Worker::runDepthMultiView() {
     for (int i = 0; i < out_n && i < n; ++i) {
         DA3DepthResult res;
         res.sourceName = QFileInfo(m_settings.inputPaths[i]).baseName() + "_mv";
+        fillResolvedDevice(res, guard.ctx);
         res.width = w;
         res.height = h;
         res.depth.resize(h * w);
@@ -366,6 +372,7 @@ bool DA3Worker::runDepthMultiView() {
                   res.extrinsics);
         std::copy(intr.data() + i * 9, intr.data() + (i + 1) * 9,
                   res.intrinsics);
+        res.runtimeMs = perViewRuntimeMs;
         emit depthResultReady(res);
     }
 

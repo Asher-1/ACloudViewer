@@ -984,8 +984,21 @@ vtkSmartPointer<vtkPolyData> Cc2Vtk::LineSetToPolyData(
     auto vtk_points = vtkSmartPointer<vtkPoints>::New();
     vtk_points->SetNumberOfPoints(static_cast<vtkIdType>(pts.size()));
     for (size_t i = 0; i < pts.size(); ++i) {
-        vtk_points->SetPoint(static_cast<vtkIdType>(i), pts[i].x(), pts[i].y(),
-                             pts[i].z());
+        CCVector3d out;
+        if (lineset->is2DMode()) {
+            const CCVector3 pp(static_cast<PointCoordinateType>(pts[i].x()),
+                               static_cast<PointCoordinateType>(pts[i].y()),
+                               static_cast<PointCoordinateType>(pts[i].z()));
+            ecvGenericGLDisplay* disp = lineset->getDisplay();
+            if (!disp) disp = ecvViewManager::instance().getEffectiveView();
+            if (auto* dt = dynamic_cast<ecvDisplayTools*>(disp))
+                dt->toWorldPoint(pp, out);
+            else
+                out = CCVector3d(pts[i].x(), pts[i].y(), pts[i].z());
+        } else {
+            out = CCVector3d(pts[i].x(), pts[i].y(), pts[i].z());
+        }
+        vtk_points->SetPoint(static_cast<vtkIdType>(i), out.x, out.y, out.z);
     }
 
     auto vtk_lines = vtkSmartPointer<vtkCellArray>::New();
