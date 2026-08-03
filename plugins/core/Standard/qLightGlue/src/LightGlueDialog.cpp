@@ -17,23 +17,21 @@
 #include <QHBoxLayout>
 #include <QMessageBox>
 #include <QSettings>
-#include <QSslConfiguration>
-#include <QSslError>
-#include <QSslSocket>
+#include <QCloseEvent>
 #include <QVBoxLayout>
 
+#include "aicore/aliked_capi.h"
 #include "aicore/backend_capi.h"
-#include "aicore/eloftr_capi.h"
 #include "aicore/lightglue_capi.h"
+#include "ecvModelDownloader.h"
+
+#include "aicore/inference_log.h"
 #include "feature_extractor.h"
+#include <CVLog.h>
 
 static const char* kDownloadBase =
         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
         "LightGlue/";
-
-static const char* kDownloadBaseELoFTR =
-        "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
-        "ELoFTR/";
 
 static const int kThumbSize = 72;
 
@@ -56,6 +54,10 @@ bool isSupportedImageFile(const QString& filePath) {
                                Qt::CaseInsensitive);
 }
 
+bool isValidCachedGguf(const QFileInfo& fi) {
+    return ecvModelDownloader::isValidCachedFile(fi.absoluteFilePath());
+}
+
 QStringList listImageFilesInDir(const QString& dirPath) {
     QStringList files;
     QDirIterator it(dirPath, QDir::Files, QDirIterator::NoIteratorFlags);
@@ -73,26 +75,19 @@ QStringList listImageFilesInDir(const QString& dirPath) {
 
 QVector<LightGlueBuiltinModel> LightGlueDialog::builtinModels() {
     const QString base = QString::fromLatin1(kDownloadBase);
-    const QString baseEl = QString::fromLatin1(kDownloadBaseELoFTR);
     return {
             {tr("SIFT F16 (recommended)"), "sift-lightglue-f16.gguf",
-             base + "sift-lightglue-f16.gguf", 1, 0},
+             base + "sift-lightglue-f16.gguf", 1},
             {tr("SIFT Q8_0 (smaller)"), "sift-lightglue-q8_0.gguf",
-             base + "sift-lightglue-q8_0.gguf", 1, 0},
+             base + "sift-lightglue-q8_0.gguf", 1},
             {tr("SIFT F32"), "sift-lightglue-f32.gguf",
-             base + "sift-lightglue-f32.gguf", 1, 0},
+             base + "sift-lightglue-f32.gguf", 1},
             {tr("ALIKED F16 (recommended)"), "aliked-lightglue-f16.gguf",
-             base + "aliked-lightglue-f16.gguf", 2, 0},
+             base + "aliked-lightglue-f16.gguf", 2},
             {tr("ALIKED Q8_0 (smaller)"), "aliked-lightglue-q8_0.gguf",
-             base + "aliked-lightglue-q8_0.gguf", 2, 0},
+             base + "aliked-lightglue-q8_0.gguf", 2},
             {tr("ALIKED F32"), "aliked-lightglue-f32.gguf",
-             base + "aliked-lightglue-f32.gguf", 2, 0},
-            {tr("ELoFTR Outdoor F16 (recommended)"), "eloftr_outdoor-f16.gguf",
-             baseEl + "eloftr_outdoor-f16.gguf", 0, 1},
-            {tr("ELoFTR Outdoor Q8_0 (smaller)"), "eloftr_outdoor-q8_0.gguf",
-             baseEl + "eloftr_outdoor-q8_0.gguf", 0, 1},
-            {tr("ELoFTR Outdoor F32"), "eloftr_outdoor-f32.gguf",
-             baseEl + "eloftr_outdoor-f32.gguf", 0, 1},
+             base + "aliked-lightglue-f32.gguf", 2},
     };
 }
 
@@ -107,21 +102,6 @@ QString LightGlueDialog::modelCacheDir() {
     return result;
 }
 
-QString LightGlueDialog::eloftrModelCacheDir() {
-    char* dir = aicore_eloftr_model_cache_dir();
-    if (dir) {
-        QString result = QString::fromUtf8(dir);
-        aicore_eloftr_free_string(dir);
-        return result;
-    }
-    return QDir::homePath() +
-           QStringLiteral("/cloudViewer_data/extract/eloftr_models");
-}
-
-QString LightGlueDialog::cacheDirForPipeline(int pipelineType) {
-    return pipelineType == 1 ? eloftrModelCacheDir() : modelCacheDir();
-}
-
 QString LightGlueDialog::formatFileSize(qint64 bytes) {
     if (bytes < 1024) return QString("%1 B").arg(bytes);
     if (bytes < 1024LL * 1024)
@@ -132,15 +112,50 @@ QString LightGlueDialog::formatFileSize(qint64 bytes) {
 }
 
 LightGlueDialog::LightGlueDialog(QWidget* parent) : QDialog(parent) {
-    setWindowTitle(tr("Feature Matching (LightGlue / ELoFTR)"));
+    setWindowTitle(tr("Feature Matching (LightGlue)"));
     setMinimumWidth(720);
-    m_netManager = new QNetworkAccessManager(this);
     setupUi();
+    m_downloader = new ecvModelDownloader(this);
+    connect(m_downloader, &ecvModelDownloader::logMessage, this,
+            &LightGlueDialog::appendLog);
+    connect(m_downloader, &ecvModelDownloader::progress, this,
+            [this](qint64 received, qint64 total) {
+                if (total > 0 && m_progress) {
+                    m_progress->setValue(
+                            static_cast<int>(received * 100 / total));
+                    m_downloadLabel->setText(
+                            tr("Downloading... %1 / %2")
+                                    .arg(formatFileSize(received))
+                                    .arg(formatFileSize(total)));
+                }
+            });
+    connect(m_downloader, &ecvModelDownloader::finished, this,
+            [this](bool ok, const QString& dest) {
+                Q_UNUSED(dest);
+                m_downloadInProgress = false;
+                m_downloadLabel->setVisible(false);
+                populateModelCombo(m_downloadTargetFilename);
+                if (m_downloadTargetFilename.startsWith(
+                            QStringLiteral("aliked-n16rot"))) {
+                    appendLog(tr("[OK] Downloaded ALIKED extractor: %1").arg(dest));
+                } else {
+                    selectModelByFilename(m_downloadTargetFilename);
+                }
+                updateRunButtonState();
+                if (ok && m_autoRunAfterDownload) {
+                    m_autoRunAfterDownload = false;
+                    onRun();
+                } else {
+                    m_autoRunAfterDownload = false;
+                }
+            });
+    CVLog::Print(QString("[LightGlue] Model cache: %1").arg(modelCacheDir()));
+    aicore_inference_log::log_backend_probe(QStringLiteral("LG"));
     populateModelCombo();
 }
 
-int LightGlueDialog::currentPipeline() const {
-    return m_pipelineTabs ? m_pipelineTabs->currentIndex() : 0;
+void LightGlueDialog::setAppInterface(ecvMainAppInterface* app) {
+    m_app = app;
 }
 
 void LightGlueDialog::setupUi() {
@@ -157,38 +172,13 @@ void LightGlueDialog::setupUi() {
             this, &LightGlueDialog::onModeChanged);
     mainLayout->addLayout(modeRow);
 
-    m_pipelineTabs = new QTabWidget;
-    auto* lgTab = new QWidget;
-    auto* lgLayout = new QVBoxLayout(lgTab);
-    lgLayout->setContentsMargins(4, 4, 4, 4);
     auto* lgHint = new QLabel(
             tr("Sparse local features + LightGlue GGML matcher. "
                "SIFT uses OpenCV RootSIFT; ALIKED uses AICore GGML extractor "
                "(download matching aliked-n16rot-*.gguf)."));
     lgHint->setWordWrap(true);
-    lgHint->setStyleSheet("color: #555; font-size: 11px;");
-    lgLayout->addWidget(lgHint);
-    lgLayout->addStretch();
-    m_pipelineTabs->addTab(lgTab, tr("LightGlue"));
-
-    auto* elTab = new QWidget;
-    auto* elLayout = new QVBoxLayout(elTab);
-    elLayout->setContentsMargins(4, 4, 4, 4);
-    auto* elHint = new QLabel(
-            tr("EfficientLoFTR semi-dense matching (RepVGG + coarse GGML). "
-               "Needs two images; exports match visualization to DB."));
-    elHint->setWordWrap(true);
-    elHint->setStyleSheet("color: #555; font-size: 11px;");
-    elLayout->addWidget(elHint);
-    elLayout->addStretch();
-    m_pipelineTabs->addTab(elTab, tr("ELoFTR"));
-    connect(m_pipelineTabs, &QTabWidget::currentChanged, this, [this](int idx) {
-        populateModelCombo();
-        if (m_minScoreRow) {
-            m_minScoreRow->setVisible(idx == 0);
-        }
-    });
-    mainLayout->addWidget(m_pipelineTabs);
+    lgHint->setStyleSheet("color: #555; font-size: 11px; padding: 2px 0;");
+    mainLayout->addWidget(lgHint);
 
     auto* modelGroup = new QGroupBox(tr("Model & Runtime"));
     auto* modelLayout = new QGridLayout(modelGroup);
@@ -232,11 +222,13 @@ void LightGlueDialog::setupUi() {
     m_minScoreRow = new QWidget;
     auto* minScoreLayout = new QHBoxLayout(m_minScoreRow);
     minScoreLayout->setContentsMargins(0, 0, 0, 0);
-    minScoreLayout->addWidget(new QLabel(tr("Min score:")));
+    minScoreLayout->addWidget(new QLabel(tr("Min match score:")));
     m_minScore = new QDoubleSpinBox;
     m_minScore->setRange(0.0, 1.0);
     m_minScore->setSingleStep(0.05);
     m_minScore->setValue(0.1);
+    m_minScore->setToolTip(
+            tr("Filter exported matches by confidence score (0–1)."));
     minScoreLayout->addWidget(m_minScore);
     minScoreLayout->addStretch();
     modelLayout->addWidget(m_minScoreRow, 4, 0, 1, 2);
@@ -261,12 +253,14 @@ void LightGlueDialog::setupUi() {
         m_slotGroups[slot] = slotGroup;
         auto* slotLayout = new QVBoxLayout(slotGroup);
 
-        m_slotPreview[slot] = new QLabel;
+        m_slotPreview[slot] = new ecvClickableImageLabel;
         m_slotPreview[slot]->setFixedSize(kThumbSize + 16, kThumbSize + 16);
-        m_slotPreview[slot]->setAlignment(Qt::AlignCenter);
         m_slotPreview[slot]->setFrameShape(QFrame::StyledPanel);
         m_slotPreview[slot]->setStyleSheet("background: #f4f4f4;");
-        slotLayout->addWidget(m_slotPreview[slot], 0, Qt::AlignHCenter);
+        slotLayout->addWidget(
+                ecvClickableImageLabel::wrapWithTapToPreviewHint(
+                        m_slotPreview[slot], slotGroup),
+                0, Qt::AlignHCenter);
 
         m_slotNameLabel[slot] = new QLabel(tr("(not set)"));
         m_slotNameLabel[slot]->setAlignment(Qt::AlignCenter);
@@ -419,11 +413,6 @@ void LightGlueDialog::setupUi() {
     m_progress->setRange(0, 100);
     mainLayout->addWidget(m_progress);
 
-    m_log = new QTextEdit;
-    m_log->setReadOnly(true);
-    m_log->setMaximumHeight(120);
-    mainLayout->addWidget(m_log);
-
     auto* actionRow = new QHBoxLayout;
     m_runBtn = new QPushButton(tr("Run"));
     connect(m_runBtn, &QPushButton::clicked, this, &LightGlueDialog::onRun);
@@ -450,9 +439,8 @@ void LightGlueDialog::setupUi() {
 void LightGlueDialog::refreshModelList() { populateModelCombo(); }
 
 void LightGlueDialog::populateModelCombo(const QString& keepFilename) {
-    const int pipeline = currentPipeline();
-    const QString cacheDir = cacheDirForPipeline(pipeline);
-    QString selected = keepFilename;
+    const QString cacheDir = modelCacheDir();
+    QString selected = keepFilename.isEmpty() ? m_lastSelectedModel : keepFilename;
     if (selected.isEmpty() && m_modelCombo && m_modelCombo->count() > 0) {
         selected = m_modelCombo->currentData().toString();
     }
@@ -460,24 +448,21 @@ void LightGlueDialog::populateModelCombo(const QString& keepFilename) {
     m_modelCombo->blockSignals(true);
     m_modelCombo->clear();
     for (const auto& m : builtinModels()) {
-        if (m.pipelineType != pipeline) {
-            continue;
-        }
         const QString cached = cacheDir + "/" + m.filename;
         const QFileInfo fi(cached);
         const QString suffix =
-                fi.exists() ? QString(" [%1] ✓").arg(formatFileSize(fi.size()))
-                            : QString(" [download]");
+                isValidCachedGguf(fi)
+                        ? QString(" [%1] ✓").arg(formatFileSize(fi.size()))
+                        : QString(" [download]");
         m_modelCombo->addItem(m.displayName + suffix, m.filename);
     }
     m_modelCombo->insertSeparator(m_modelCombo->count());
     m_modelCombo->addItem(tr("Custom..."), "CUSTOM");
-    const QString defaultModel =
-            pipeline == 1 ? QStringLiteral("eloftr_outdoor-f16.gguf")
-                          : QStringLiteral("sift-lightglue-f16.gguf");
+    const QString defaultModel = QStringLiteral("sift-lightglue-f16.gguf");
     selectModelByFilename(selected.isEmpty() ? defaultModel : selected);
     m_modelCombo->blockSignals(false);
     onModelComboChanged(m_modelCombo->currentIndex());
+    m_lastSelectedModel = m_modelCombo->currentData().toString();
 }
 
 bool LightGlueDialog::selectModelByFilename(const QString& filename) {
@@ -494,13 +479,15 @@ bool LightGlueDialog::selectModelByFilename(const QString& filename) {
 void LightGlueDialog::onModelComboChanged(int index) {
     const QString data = m_modelCombo->itemData(index).toString();
     if (m_customModelRow) m_customModelRow->setVisible(data == "CUSTOM");
+    if (!data.isEmpty() && data != "CUSTOM") {
+        m_lastSelectedModel = data;
+    }
     updateRunButtonState();
 }
 
 LightGlueDialog::Settings LightGlueDialog::getSettings() const {
     Settings s;
     s.mode = static_cast<Mode>(m_modeCombo->currentData().toInt());
-    s.pipelineType = currentPipeline();
     s.modelPath = resolveModelPath();
     s.inputPaths = QStringList() << m_slotPaths[0] << m_slotPaths[1];
     s.threads = m_threads->value();
@@ -512,20 +499,15 @@ LightGlueDialog::Settings LightGlueDialog::getSettings() const {
     for (const auto& model : builtinModels()) {
         if (model.filename == data) {
             s.matcherType = model.matcherType;
-            s.pipelineType = model.pipelineType;
             break;
         }
     }
     if (data == "CUSTOM") {
         const QString name = m_customModelPath->text().toLower();
-        if (name.contains("eloftr")) {
-            s.pipelineType = 1;
-        } else if (name.contains("sift")) {
+        if (name.contains("sift")) {
             s.matcherType = 1;
-            s.pipelineType = 0;
         } else if (name.contains("aliked")) {
             s.matcherType = 2;
-            s.pipelineType = 0;
         }
     }
     return s;
@@ -535,8 +517,7 @@ QString LightGlueDialog::resolveModelPath() const {
     const QString data = m_modelCombo->currentData().toString();
     if (data == "CUSTOM") return m_customModelPath->text().trimmed();
     if (data.isEmpty()) return QString();
-    const int pipeline = currentPipeline();
-    return cacheDirForPipeline(pipeline) + "/" + data;
+    return modelCacheDir() + "/" + data;
 }
 
 bool LightGlueDialog::isModelReady() const {
@@ -546,8 +527,8 @@ bool LightGlueDialog::isModelReady() const {
         return !path.isEmpty() && QFile::exists(path);
     }
     if (data.isEmpty()) return false;
-    const int pipeline = currentPipeline();
-    if (QFile::exists(cacheDirForPipeline(pipeline) + "/" + data)) return true;
+    const QString cached = modelCacheDir() + "/" + data;
+    if (isValidCachedGguf(QFileInfo(cached))) return true;
     for (const auto& m : builtinModels()) {
         if (m.filename == data) return true;
     }
@@ -637,7 +618,7 @@ void LightGlueDialog::refreshSlotWidgets() {
         if (!m_slotPreview[slot] || !m_slotNameLabel[slot]) continue;
         const QString& path = m_slotPaths[slot];
         if (path.isEmpty()) {
-            m_slotPreview[slot]->clear();
+            m_slotPreview[slot]->clearPreview();
             m_slotPreview[slot]->setText(tr("Drop\nor\nBrowse"));
             m_slotNameLabel[slot]->setText(tr("(not set)"));
             if (m_slotGroups[slot]) {
@@ -649,11 +630,9 @@ void LightGlueDialog::refreshSlotWidgets() {
         const QImage img = previewForPath(path);
         if (!img.isNull()) {
             m_slotPreview[slot]->setText(QString());
-            m_slotPreview[slot]->setPixmap(QPixmap::fromImage(
-                    img.scaled(kThumbSize, kThumbSize, Qt::KeepAspectRatio,
-                               Qt::SmoothTransformation)));
+            m_slotPreview[slot]->setPreviewImage(img, kThumbSize);
         } else {
-            m_slotPreview[slot]->setPixmap(QPixmap());
+            m_slotPreview[slot]->clearPreview();
             m_slotPreview[slot]->setText("?");
         }
         m_slotPreview[slot]->setToolTip(path);
@@ -1026,14 +1005,103 @@ void LightGlueDialog::onBrowseCustomModel() {
     m_customModelPath->setText(path);
 }
 
+QString LightGlueDialog::alikedExtractorCacheDir() {
+    char* dir = aicore_aliked_model_cache_dir();
+    if (!dir) {
+        return QDir::homePath() +
+               QStringLiteral("/cloudViewer_data/extract/aliked_models");
+    }
+    QString result = QString::fromUtf8(dir);
+    aicore_aliked_free_string(dir);
+    return result;
+}
+
+QString LightGlueDialog::alikedExtractorFilenameForMatcher(
+        const QString& matcherFilename) {
+    QString stem = matcherFilename;
+    stem.replace(QStringLiteral("aliked-lightglue"),
+                 QStringLiteral("aliked-n16rot"));
+    if (stem.contains(QStringLiteral("-q8_0"))) {
+        stem.replace(QStringLiteral("-q8_0"), QStringLiteral("-f16"));
+    }
+    return stem;
+}
+
+bool LightGlueDialog::ensureAlikedExtractorAvailable(
+        const QString& matcherFilename) {
+    const QString extractorName =
+            alikedExtractorFilenameForMatcher(matcherFilename);
+    const QString cache = alikedExtractorCacheDir();
+    QDir().mkpath(cache);
+    const QString cached = cache + QLatin1Char('/') + extractorName;
+    const QFileInfo cachedInfo(cached);
+    if (isValidCachedGguf(cachedInfo)) return true;
+    if (cachedInfo.exists()) {
+        QFile::remove(cached);
+        appendLog(tr("[Warning] Removed incomplete ALIKED extractor cache: %1")
+                          .arg(cached));
+    }
+
+    const auto answer = QMessageBox::question(
+            this, tr("Download ALIKED Extractor"),
+            tr("ALIKED matching also needs extractor model '%1'.\n\nDownload it "
+               "now?")
+                    .arg(extractorName));
+    if (answer != QMessageBox::Yes) {
+        appendLog(tr("[Info] ALIKED extractor download declined."));
+        return false;
+    }
+    m_autoRunAfterDownload = true;
+    startAlikedExtractorDownload(extractorName);
+    return false;
+}
+
+void LightGlueDialog::startAlikedExtractorDownload(
+        const QString& extractorFilename) {
+    if (m_downloadInProgress || !m_downloader) {
+        if (m_downloadInProgress) {
+            appendLog(tr("[Warning] A download is already in progress."));
+        }
+        return;
+    }
+
+    const QString cache = alikedExtractorCacheDir();
+    QDir().mkpath(cache);
+    const QString dest = cache + QLatin1Char('/') + extractorFilename;
+    const QString url =
+            QString::fromLatin1(kDownloadBase) + extractorFilename;
+
+    m_downloadInProgress = true;
+    m_downloadTargetFilename = extractorFilename;
+    m_downloadLabel->setText(tr("Downloading %1 ...").arg(extractorFilename));
+    m_downloadLabel->setVisible(true);
+    m_progress->setValue(0);
+    updateRunButtonState();
+
+    ecvModelDownloader::Request req;
+    req.url = url;
+    req.destPath = dest;
+    m_downloader->download(req);
+}
+
 bool LightGlueDialog::ensureModelAvailable() {
     const QString data = m_modelCombo->currentData().toString();
     if (data == "CUSTOM") return isModelReady();
 
-    const int pipeline = currentPipeline();
-    const QString cache = cacheDirForPipeline(pipeline);
+    const QString cache = modelCacheDir();
     const QString cached = cache + "/" + data;
-    if (QFile::exists(cached)) return true;
+    const QFileInfo cachedInfo(cached);
+    if (isValidCachedGguf(cachedInfo)) {
+        if (data.contains(QStringLiteral("aliked-lightglue")) &&
+            !ensureAlikedExtractorAvailable(data)) {
+            return false;
+        }
+        return true;
+    }
+    if (cachedInfo.exists()) {
+        QFile::remove(cached);
+        appendLog(tr("[Warning] Removed incomplete model cache: %1").arg(cached));
+    }
 
     for (const auto& bm : builtinModels()) {
         if (bm.filename != data) continue;
@@ -1053,116 +1121,40 @@ bool LightGlueDialog::ensureModelAvailable() {
 }
 
 void LightGlueDialog::startDownload(const LightGlueBuiltinModel& model) {
-    if (m_downloadInProgress) {
-        appendLog(tr("[Warning] A download is already in progress."));
+    if (m_downloadInProgress || !m_downloader) {
+        if (m_downloadInProgress) {
+            appendLog(tr("[Warning] A download is already in progress."));
+        }
         return;
     }
 
-    const int pipeline = model.pipelineType;
-    const QString cache = cacheDirForPipeline(pipeline);
+    const QString cache = modelCacheDir();
     QDir().mkpath(cache);
     const QString dest = cache + "/" + model.filename;
-    const QString tmpDest = dest + ".part";
 
     m_downloadInProgress = true;
     m_downloadTargetFilename = model.filename;
-    m_downloadTmpPath = tmpDest;
     m_downloadLabel->setText(tr("Downloading %1 ...").arg(model.filename));
     m_downloadLabel->setVisible(true);
     m_progress->setValue(0);
     updateRunButtonState();
 
-    QNetworkRequest req(QUrl(model.downloadUrl));
-    req.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
-                     QNetworkRequest::NoLessSafeRedirectPolicy);
-
-    auto sslConfig = QSslConfiguration::defaultConfiguration();
-    sslConfig.setPeerVerifyMode(QSslSocket::VerifyNone);
-    req.setSslConfiguration(sslConfig);
-
-    m_currentDownload = m_netManager->get(req);
-
-    connect(m_currentDownload, &QNetworkReply::sslErrors, this,
-            [this](const QList<QSslError>& errors) {
-                for (const auto& e : errors)
-                    appendLog(tr("[LG] SSL warning (ignored): %1")
-                                      .arg(e.errorString()));
-                m_currentDownload->ignoreSslErrors();
-            });
-
-    m_downloadOutFile = new QFile(tmpDest, m_currentDownload);
-    if (!m_downloadOutFile->open(QIODevice::WriteOnly)) {
-        appendLog(tr("[Error] Cannot write to %1").arg(tmpDest));
-        cancelDownload();
-        return;
-    }
-
-    connect(m_currentDownload, &QNetworkReply::readyRead, this, [this]() {
-        if (m_downloadOutFile && m_currentDownload) {
-            m_downloadOutFile->write(m_currentDownload->readAll());
-        }
-    });
-    connect(m_currentDownload, &QNetworkReply::downloadProgress, this,
-            [this](qint64 received, qint64 total) {
-                if (total > 0) {
-                    m_progress->setValue(
-                            static_cast<int>(received * 100 / total));
-                    m_downloadLabel->setText(
-                            tr("Downloading... %1 / %2")
-                                    .arg(formatFileSize(received))
-                                    .arg(formatFileSize(total)));
-                }
-            });
-    connect(m_currentDownload, &QNetworkReply::finished, this,
-            [this, dest, tmpDest, model]() {
-                if (m_downloadOutFile) {
-                    m_downloadOutFile->close();
-                    m_downloadOutFile->deleteLater();
-                    m_downloadOutFile = nullptr;
-                }
-                const bool ok =
-                        m_currentDownload &&
-                        m_currentDownload->error() == QNetworkReply::NoError;
-                if (ok) {
-                    QFile::remove(dest);
-                    QFile::rename(tmpDest, dest);
-                    appendLog(tr("[OK] Model downloaded: %1").arg(dest));
-                } else if (m_currentDownload) {
-                    appendLog(tr("[Error] Download failed: %1")
-                                      .arg(m_currentDownload->errorString()));
-                    QFile::remove(tmpDest);
-                }
-                cancelDownload();
-                populateModelCombo(model.filename);
-                selectModelByFilename(model.filename);
-                updateRunButtonState();
-                if (ok && m_autoRunAfterDownload) {
-                    m_autoRunAfterDownload = false;
-                    onRun();
-                } else {
-                    m_autoRunAfterDownload = false;
-                }
-            });
+    ecvModelDownloader::Request req;
+    req.url = model.downloadUrl;
+    req.destPath = dest;
+    m_downloader->download(req);
 }
 
 void LightGlueDialog::cancelDownload() {
-    if (m_currentDownload) {
-        m_currentDownload->abort();
-        m_currentDownload->deleteLater();
-        m_currentDownload = nullptr;
-    }
-    if (m_downloadOutFile) {
-        m_downloadOutFile->close();
-        m_downloadOutFile->deleteLater();
-        m_downloadOutFile = nullptr;
-    }
-    if (!m_downloadTmpPath.isEmpty()) QFile::remove(m_downloadTmpPath);
+    if (m_downloader) m_downloader->cancel();
     m_downloadInProgress = false;
     m_downloadLabel->setVisible(false);
     updateRunButtonState();
 }
 
-void LightGlueDialog::appendLog(const QString& msg) { m_log->append(msg); }
+void LightGlueDialog::appendLog(const QString& msg) {
+    aicore_inference_log::log(msg);
+}
 
 void LightGlueDialog::setProgress(int current, int total) {
     m_progress->setMaximum(total);
@@ -1220,6 +1212,11 @@ void LightGlueDialog::onCancel() {
         appendLog(tr("[LG] Download canceled."));
     }
     emit cancelRequested();
+}
+
+void LightGlueDialog::closeEvent(QCloseEvent* event) {
+    onCancel();
+    QDialog::closeEvent(event);
 }
 
 void LightGlueDialog::onExportMatches() { emit exportMatchesRequested(); }

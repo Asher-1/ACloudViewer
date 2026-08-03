@@ -13,8 +13,6 @@
 #include <core/scene/ParseData.hpp>
 #include <core/system/Utils.hpp>
 #include <fstream>
-#include <opencv2/features2d/features2d.hpp>
-#include <opencv2/flann/flann.hpp>
 
 #define PROGRAM_NAME "sibr_chunk2sibr"
 using namespace sibr;

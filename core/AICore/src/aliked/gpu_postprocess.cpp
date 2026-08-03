@@ -7,14 +7,13 @@
 
 #include "gpu_postprocess.hpp"
 
-#include <ggml-backend.h>
-
 #include "gpu_pipeline_cache.hpp"
+#include "gpu_sync.hpp"
 
-#if defined(LIGHTGLUE_HAS_CUDA)
+#if defined(AICORE_CUDA_ALIKED)
 #include <cuda_runtime.h>
 
-#include "aliked_cuda.hpp"
+#include "cuda/aliked_cuda.hpp"
 #include "ggml_backend_util.hpp"
 
 namespace lightglue::aliked_internal {
@@ -22,15 +21,6 @@ namespace {
 
 float *DevPtr(const GpuTensor &tensor) {
     return reinterpret_cast<float *>(tensor.tensor->data);
-}
-
-void SyncGpuPipeline(internal::Backend *backend) {
-    if (backend != nullptr && backend->handle != nullptr) {
-        ggml_backend_synchronize(backend->handle);
-        if (aicore::common::ggml_backend_is_cuda(backend->handle)) {
-            cudaDeviceSynchronize();
-        }
-    }
 }
 
 bool UploadWeights(internal::Backend *backend,

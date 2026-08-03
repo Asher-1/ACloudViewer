@@ -1,5 +1,7 @@
 set( CV_PLUGIN_TARGET_LIST "" CACHE INTERNAL "Internal plugin list" )
 
+include( PluginZlibMinizip )
+
 # AddPlugin should be called once for each plugin.
 # This function sets up a target for the plugin, sets up default properties, and sets the target
 # to link to the necessary libraries.
@@ -96,6 +98,8 @@ function( AddPlugin )
 		CVPluginAPI
 		CVPluginStub
 	)
+
+	cloudviewer_set_plugin_module_output_directory(${PLUGIN_TARGET})
 
 	# Propagate OpenMP support to all plugins so that #if defined(_OPENMP)
 	# code paths are active.  Core libraries link 3rdparty_openmp PRIVATELY,

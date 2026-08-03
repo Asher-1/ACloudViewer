@@ -21,6 +21,11 @@ class ecvGenericVisualizer3D;
 class ccHObject;
 class ccGenericPointCloud;
 class ccPolyline;
+namespace cloudViewer {
+namespace geometry {
+class LineSet;
+}
+}  // namespace cloudViewer
 class ccGenericMesh;
 class ccGenericPrimitive;
 class ccOctree;
@@ -268,6 +273,7 @@ protected:
     void fillWithSensor(ccSensor*);
     void fillWithTransBuffer(ccIndexedTransformationBuffer*);
     void fillWithPolyline(ccPolyline*);
+    void fillWithLineSet(cloudViewer::geometry::LineSet*);
     void fillWithPrimitive(ccGenericPrimitive*);
     void fillWithPointOctree(ccOctree*);
     void fillWithPointKdTree(ccKdTree*);

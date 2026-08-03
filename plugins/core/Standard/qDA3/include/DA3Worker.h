@@ -24,6 +24,8 @@ struct DA3DepthResult {
     bool hasPose = false;
     float extrinsics[12] = {};
     float intrinsics[9] = {};
+    QString resolvedDevice;
+    double runtimeMs = 0.0;
 };
 Q_DECLARE_METATYPE(DA3DepthResult)
 
@@ -43,6 +45,9 @@ class DA3Worker : public QThread {
 public:
     explicit DA3Worker(const DA3Dialog::Settings& settings,
                        QObject* parent = nullptr);
+
+    /** Call from the GUI thread after the worker finishes (ggml/CUDA teardown). */
+    void releaseContextOnMainThread();
 
 signals:
     void logMessage(const QString& msg);
@@ -65,7 +70,10 @@ private:
     bool runQuantize();
     bool runModelInfo();
 
+    void stashContext(aicore_depth_ctx* ctx);
+
     struct CtxGuard {
+        DA3Worker* owner = nullptr;
         aicore_depth_ctx* ctx = nullptr;
         ~CtxGuard();
         explicit operator bool() const { return ctx != nullptr; }
@@ -73,4 +81,5 @@ private:
     CtxGuard loadModel();
 
     DA3Dialog::Settings m_settings;
+    aicore_depth_ctx* m_pendingCtx = nullptr;
 };

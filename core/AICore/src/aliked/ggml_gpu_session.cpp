@@ -8,17 +8,22 @@
 #include "ggml_gpu_session.hpp"
 
 #include "ggml_gpu_ops.hpp"
+#include "gpu_sync.hpp"
+#include "gpu_tensor.hpp"
 
-#if defined(LIGHTGLUE_HAS_CUDA)
-#include "aliked_cuda.hpp"
+#if defined(AICORE_VULKAN_ALIKED)
+#include "vulkan/vulkan_aliked_dispatch.hpp"
+#endif
+#if defined(AICORE_CUDA_ALIKED)
+#include "cuda/aliked_cuda.hpp"
 #endif
 
 #include <ggml-alloc.h>
 #include <ggml-backend.h>
 #include <ggml.h>
-#if defined(LIGHTGLUE_HAS_CUDA)
-#include <cuda_runtime.h>
-#endif
+
+#include <cstring>
+#include <vector>
 
 namespace lightglue::aliked_internal {
 namespace {
@@ -26,6 +31,39 @@ namespace {
 constexpr int64_t kMaxGraphNodes = 512;
 constexpr float kSeluScale = 1.050700987f;
 constexpr float kSeluAlpha = 1.67326324f;
+
+bool VulkanSchedTailOnlyByEnv() {
+    const char *env = std::getenv("LIGHTGLUE_ALIKED_VULKAN_SCHED_TAIL");
+    if (env == nullptr || env[0] == '\0') {
+        return false;
+    }
+    return std::strcmp(env, "0") != 0 && std::strcmp(env, "false") != 0 &&
+           std::strcmp(env, "off") != 0;
+}
+
+void PinTensorToGpu(internal::Backend *backend, ggml_tensor *tensor) {
+    if (backend == nullptr || !backend->HasSched() || tensor == nullptr) {
+        return;
+    }
+    ggml_backend_sched_set_tensor_backend(backend->sched, tensor,
+                                          backend->handle);
+}
+
+void PinSchedScoreHeadGraph(internal::Backend *backend, ggml_cgraph *graph,
+                            ggml_tensor *graph_in,
+                            const std::vector<ggml_tensor *> &weights) {
+    if (backend == nullptr || !backend->HasSched() || graph == nullptr) {
+        return;
+    }
+    PinTensorToGpu(backend, graph_in);
+    for (ggml_tensor *weight : weights) {
+        PinTensorToGpu(backend, weight);
+    }
+    const int n_nodes = ggml_graph_n_nodes(graph);
+    for (int i = 0; i < n_nodes; ++i) {
+        PinTensorToGpu(backend, ggml_graph_node(graph, i));
+    }
+}
 
 float *DevPtr(const GpuTensor &tensor) {
     return reinterpret_cast<float *>(tensor.tensor->data);
@@ -50,17 +88,6 @@ GgmlGpuSession::GgmlGpuSession(internal::Backend *backend)
     : backend_(backend), runner_(backend) {}
 
 GgmlGpuSession::~GgmlGpuSession() = default;
-
-void SyncGpuPipeline(internal::Backend *backend) {
-    if (backend != nullptr && backend->handle != nullptr) {
-        ggml_backend_synchronize(backend->handle);
-#if defined(LIGHTGLUE_HAS_CUDA)
-        if (backend->IsCuda()) {
-            cudaDeviceSynchronize();
-        }
-#endif
-    }
-}
 
 bool GgmlGpuSession::RunConv(const FusedConv2d &weights,
                              const GpuTensor &input,
@@ -98,7 +125,7 @@ bool GgmlGpuSession::RunSeluConvChain(const std::vector<SeluConvSpec> &layers,
         }
         if (layer.apply_selu) {
             SyncGpuPipeline(backend_);
-#if defined(LIGHTGLUE_HAS_CUDA)
+#if defined(AICORE_CUDA_ALIKED)
             if (backend_->IsCuda()) {
                 if (!AlikedCudaApplySelu(backend_->handle, DevPtr(*dst),
                                          dst->ElementCount())) {
@@ -144,29 +171,10 @@ bool GgmlGpuSession::RunFusedConvChainGraph(
         }
     }
 
-    int32_t oh = input.h;
-    int32_t ow = input.w;
-    int32_t oc = input.c;
-    for (const ConvChainSpec &layer : layers) {
-        oh = (oh + 2 * layer.pad - layer.weights.kh) / layer.stride + 1;
-        ow = (ow + 2 * layer.pad - layer.weights.kw) / layer.stride + 1;
-        oc = layer.weights.oc;
-        if (oh <= 0 || ow <= 0) {
-            if (error) {
-                *error = "invalid fused conv chain output shape";
-            }
-            return false;
-        }
-    }
-
-    if (!GpuTensor::Allocate(backend_, ow, oh, oc, output, error)) {
-        return false;
-    }
-
     const size_t graph_overhead =
             ggml_graph_overhead_custom(kMaxGraphNodes, false);
     const size_t ctx_size =
-            graph_overhead + ggml_tensor_overhead() * 128 + 8 * 1024 * 1024;
+            graph_overhead + ggml_tensor_overhead() * 64 + 4 * 1024 * 1024;
     ggml_init_params params{ctx_size, nullptr, true};
     ggml_context *ctx = ggml_init(params);
     if (ctx == nullptr) {
@@ -177,7 +185,9 @@ bool GgmlGpuSession::RunFusedConvChainGraph(
         return false;
     }
 
-    ggml_tensor *x = input.tensor;
+    ggml_tensor *graph_in = ggml_new_tensor_4d(
+            ctx, GGML_TYPE_F32, input.w, input.h, input.c, 1);
+    ggml_tensor *x = graph_in;
     for (const ConvChainSpec &layer : layers) {
         const GgmlConvRunner::CachedWeight &cached =
                 runner_.CachedEntry(layer.cache_key);
@@ -202,30 +212,201 @@ bool GgmlGpuSession::RunFusedConvChainGraph(
         return false;
     }
 
-    if (!ggml_gallocr_alloc_graph(backend_->allocator, graph)) {
+    ggml_gallocr_t gallocr = ggml_gallocr_new(
+            ggml_backend_get_default_buffer_type(backend_->handle));
+    if (gallocr == nullptr) {
         if (error) {
-            *error = "failed to allocate fused conv chain graph";
+            *error = "failed to create fused conv chain gallocr";
         }
         ggml_backend_buffer_free(buffer);
         ggml_free(ctx);
         output->Release();
         return false;
     }
+    if (!ggml_gallocr_alloc_graph(gallocr, graph)) {
+        if (error) {
+            *error = "failed to allocate fused conv chain graph";
+        }
+        ggml_gallocr_free(gallocr);
+        ggml_backend_buffer_free(buffer);
+        ggml_free(ctx);
+        output->Release();
+        return false;
+    }
+
+    BackendTensorCopyCompat(backend_, input.tensor, graph_in);
 
     if (ggml_backend_graph_compute(backend_->handle, graph) !=
         GGML_STATUS_SUCCESS) {
         if (error) {
             *error = "fused conv chain graph compute failed";
         }
+        ggml_gallocr_free(gallocr);
         ggml_backend_buffer_free(buffer);
         ggml_free(ctx);
         output->Release();
         return false;
     }
 
-    ggml_backend_tensor_copy(x, output->tensor);
-    SyncGpuPipeline(backend_);
+    if (!GpuTensor::Allocate(backend_, static_cast<int32_t>(x->ne[0]),
+                             static_cast<int32_t>(x->ne[1]),
+                             static_cast<int32_t>(x->ne[2]), output, error)) {
+        ggml_gallocr_free(gallocr);
+        ggml_backend_buffer_free(buffer);
+        ggml_free(ctx);
+        return false;
+    }
+    BackendTensorCopyCompat(backend_, x, output->tensor);
+#if defined(AICORE_VULKAN_ALIKED)
+    if (backend_->IsVulkan()) {
+        ggml_backend_synchronize(backend_->handle);
+        VkAlikedQueueIdle(backend_->handle);
+    } else
+#endif
+    {
+        FlushGpuPipeline(backend_);
+    }
+    ggml_gallocr_free(gallocr);
     ggml_backend_buffer_free(buffer);
+    ggml_free(ctx);
+    return true;
+}
+
+bool GgmlGpuSession::RunScoreHeadSchedGraph(
+        const std::vector<ConvChainSpec> &layers,
+        const GpuTensor &input,
+        GpuTensor *output,
+        const ScoreHeadSchedOptions &opts,
+        std::string *error) {
+    if (!backend_->HasSched()) {
+        if (error) {
+            *error = "score-head scheduler path requires Vulkan sched backend";
+        }
+        return false;
+    }
+    if (VulkanSchedTailOnlyByEnv() && layers.size() > 1) {
+        std::vector<ConvChainSpec> prefix(layers.begin(), layers.end() - 1);
+        const ConvChainSpec &tail = layers.back();
+        GpuTensor mid;
+        if (!RunFusedConvChainGraph(prefix, input, &mid, error)) {
+            return false;
+        }
+        return RunScoreHeadSchedGraphImpl({tail}, mid, output, opts, error);
+    }
+    return RunScoreHeadSchedGraphImpl(layers, input, output, opts, error);
+}
+
+bool GgmlGpuSession::RunScoreHeadSchedGraphImpl(
+        const std::vector<ConvChainSpec> &layers,
+        const GpuTensor &input,
+        GpuTensor *output,
+        const ScoreHeadSchedOptions &opts,
+        std::string *error) {
+    if (!backend_->HasSched()) {
+        if (error) {
+            *error = "score-head scheduler path requires Vulkan sched backend";
+        }
+        return false;
+    }
+    if (layers.empty() || input.tensor == nullptr) {
+        if (error) {
+            *error = "invalid score-head sched input";
+        }
+        return false;
+    }
+
+    for (const ConvChainSpec &layer : layers) {
+        if (layer.cache_key == nullptr || layer.cache_key[0] == '\0') {
+            if (error) {
+                *error = "score-head sched layer missing cache key";
+            }
+            return false;
+        }
+        if (!runner_.EnsureCachedPublic(layer.cache_key, layer.weights,
+                                        error)) {
+            return false;
+        }
+    }
+
+    const size_t graph_overhead =
+            ggml_graph_overhead_custom(kMaxGraphNodes, false);
+    const size_t ctx_size =
+            graph_overhead + ggml_tensor_overhead() * 64 + 4 * 1024 * 1024;
+    ggml_init_params params{ctx_size, nullptr, true};
+    ggml_context *ctx = ggml_init(params);
+    if (ctx == nullptr) {
+        if (error) {
+            *error = "failed to create score-head sched context";
+        }
+        output->Release();
+        return false;
+    }
+
+    ggml_tensor *graph_in = ggml_new_tensor_4d(
+            ctx, GGML_TYPE_F32, input.w, input.h, input.c, 1);
+    ggml_tensor *x = graph_in;
+    std::vector<ggml_tensor *> weight_tensors;
+    weight_tensors.reserve(layers.size() * 2);
+    for (const ConvChainSpec &layer : layers) {
+        const GgmlConvRunner::CachedWeight &cached =
+                runner_.CachedEntry(layer.cache_key);
+        weight_tensors.push_back(cached.kernel);
+        weight_tensors.push_back(cached.bias);
+        ggml_tensor *conv =
+                ggml_conv_2d_direct(ctx, cached.kernel, x, layer.stride,
+                                    layer.stride, layer.pad, layer.pad, 1, 1);
+        ggml_tensor *added = ggml_add(ctx, conv, cached.bias);
+        x = layer.apply_selu ? GgmlSelu(ctx, added) : added;
+    }
+    if (opts.apply_sigmoid) {
+        x = ggml_sigmoid(ctx, x);
+    }
+    if (opts.apply_crop) {
+        const size_t es = ggml_element_size(x);
+        const size_t offset =
+                static_cast<size_t>(opts.crop_pad_left) * es +
+                static_cast<size_t>(opts.crop_pad_top) * x->nb[1];
+        ggml_tensor *view = ggml_view_4d(
+                ctx, x, opts.crop_out_w, opts.crop_out_h, x->ne[2], 1,
+                x->nb[1], x->nb[2], x->nb[3], offset);
+        ggml_tensor *cropped = ggml_new_tensor_4d(ctx, GGML_TYPE_F32,
+                                                  opts.crop_out_w,
+                                                  opts.crop_out_h, x->ne[2], 1);
+        x = ggml_cpy(ctx, view, cropped);
+    }
+
+    ggml_cgraph *graph = ggml_new_graph_custom(ctx, kMaxGraphNodes, false);
+    ggml_build_forward_expand(graph, x);
+
+    internal::Backend *backend = backend_;
+    ggml_tensor *input_tensor = input.tensor;
+    ggml_cgraph *graph_ptr = graph;
+    std::vector<ggml_tensor *> pin_weights = weight_tensors;
+    ggml_tensor *pin_in = graph_in;
+    if (!backend_->SchedRunGraph(
+                graph,
+                [=]() {
+                    BackendTensorCopyCompat(backend, input_tensor, pin_in);
+                },
+                error,
+                [=]() {
+                    PinSchedScoreHeadGraph(backend, graph_ptr, pin_in,
+                                           pin_weights);
+                })) {
+        ggml_free(ctx);
+        output->Release();
+        return false;
+    }
+
+    const int32_t out_w = static_cast<int32_t>(x->ne[0]);
+    const int32_t out_h = static_cast<int32_t>(x->ne[1]);
+    const int32_t out_c = static_cast<int32_t>(x->ne[2]);
+    if (!GpuTensor::Allocate(backend_, out_w, out_h, out_c, output, error)) {
+        ggml_free(ctx);
+        return false;
+    }
+    ggml_backend_synchronize(backend_->handle);
+    BackendTensorCopyCompat(backend_, x, output->tensor);
     ggml_free(ctx);
     return true;
 }

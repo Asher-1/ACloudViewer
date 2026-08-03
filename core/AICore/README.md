@@ -8,12 +8,50 @@ Downstream code links only `AICore` and includes only `include/aicore/`.
 `ggml` headers, targets, compile definitions, backend handles, and platform
 branches are private implementation details.
 
+### CMake linking (consumer)
+
+```cmake
+target_link_libraries(my_app_or_plugin PRIVATE AICore)
+```
+
+The `AICore` target is built with **`3rdparty_ggml` PRIVATE** — consumers do
+**not** receive `GGML_INCLUDE_DIRS` or the `3rdparty_ggml` interface target.
+
+For **link closure** only, `AICore` propagates on **`INTERFACE`**:
+
+| Propagated | Purpose |
+|------------|---------|
+| `GGML_CORE_LINK_LIBS` | File paths to `libggml` + `libggml-base` (shared packaging) or core static archives (dev static ggml) — **link line only, no headers** |
+
+**Direct C API executables** (AICore tests, `aicore_gguf_quantize`, `free_splatter-cli`)
+also link **`AICore_capi_link`** when `GGML_BACKEND_DL` is enabled on Linux. That
+INTERFACE target adds `-Wl,--allow-shlib-undefined` so `libAICore.so` can leave
+backend symbols unresolved until `ggml_backend_load_all_from_path()`. It is **not**
+propagated through `AICore` itself — doing so breaks Colmap/VTK executables that
+link DSOs needing `crc32` while static `libz.a` is hidden via `--exclude-libs`.
+
+Do **not** `#include <ggml.h>` from plugins, COLMAP, pybind, or CLIs. The stable
+surface is `include/aicore/*.h` (C API) plus optional Qt helpers such as
+`depth_image.h`.
+
+Executables installed outside `bin/` (e.g. `bin/plugins/free_splatter-cli`) should
+set **`INSTALL_RPATH` / `BUILD_RPATH` to `$ORIGIN/..`** so they find
+`libAICore.so` and the ggml runtime bundle copied next to it under `bin/`.
+Backend MODULE `.so` files are loaded from **libAICore's directory**, not from
+the executable's directory. **Never copy `libggml*.so` into `bin/plugins/`** —
+the app only loads `*_PLUGIN.{so,dll,dylib}` from that folder at startup.
+
 ```
 COLMAP / pybind / qDA3 / qFreeSplatter / ccImage
                          |
-                  AICore public ABI
+           target_link_libraries(... AICore)
                          |
-          private ggml core + runtime backends
+                  AICore public ABI (headers)
+                         |
+          PRIVATE 3rdparty_ggml (build + ggml headers)
+          INTERFACE GGML_CORE_LINK_LIBS + DL link opts
+                         |
+          private ggml core + runtime backend MODULEs
 ```
 
 The C ABI is the stable boundary. `depth_image.h` is a narrow Qt adapter kept
@@ -125,6 +163,17 @@ installers under `util/`. Linux/Windows CI packages must contain `ggml-vulkan`;
 macOS packages use Metal only (no Vulkan backend). `libAICore` itself must have
 no hard Vulkan loader dependency.
 
+**ALIKED Vulkan (qLightGlue):** custom ggml-vulkan shaders are not edited in the
+fetched ggml tree. They live in
+`3rdparty/ggml/patches/aliked/0001-vulkan-aliked-custom-compute.patch` (plus
+`0002` header install, `0003` `get_proc_address`) and apply at `ext_ggml`
+configure time. With `AICore_USE_VULKAN=ON`, AICore defines `AICORE_VULKAN_ALIKED`
+and resolves `ggml_vulkan_aliked_*` at runtime via
+`src/aliked/vulkan_aliked_dispatch.cpp` (`ggml_backend_reg_get_proc_address` /
+`dlsym`) — no link-time dependency on `libggml-vulkan.so`. Regenerate the main
+patch from LightGlue-GGML after ggml changes:
+`3rdparty/ggml/patches/export_aliked_patch.sh [path/to/third_party/ggml]`.
+
 Real model performance runs are manual through
 `.github/workflows/aicore-vulkan-hardware.yml`. Linux runners use the labels
 `aicore-vulkan` plus `intel`, `amd`, or `nvidia`. Each runner provides these
@@ -210,12 +259,14 @@ Direct `-DGGML_USE_*` / `-DGGML_ENABLED` are **ignored** (cleared from cache wit
 
 Compile-time macros (set by CMake, not user flags):
 
-| Macro | When set |
-|-------|----------|
-| `AICORE_BACKEND_DL` | Dynamic ggml backend modules (default packaging) |
-| `AICORE_CUDA_STATIC_LINKED` | CUDA statically linked into libAICore (non-DL dev builds) |
-| `AICORE_AUTO_INCLUDE_CUDA` | CUDA in Auto fallback when `AICore_CUDA_ENABLED` |
-| `AICore_ENABLED` | Public: consumer knows AICore is linked |
+| Macro | When set | Role |
+|-------|----------|------|
+| `AICORE_BACKEND_DL` | Dynamic ggml backend modules | Default packaging |
+| `AICORE_CUDA_ALIKED` | `AICore_CUDA_ENABLED` | ALIKED CUDA custom kernels (DCN, DKD, SDDH) |
+| `AICORE_VULKAN_ALIKED` | `AICore_VULKAN_ENABLED` | ALIKED Vulkan custom compute via runtime dispatch |
+| `AICORE_CUDA_STATIC_LINKED` | CUDA statically linked into libAICore | Non-DL dev builds |
+| `AICORE_AUTO_INCLUDE_CUDA` | `AICore_CUDA_ENABLED` | CUDA in Auto fallback |
+| `AICore_ENABLED` | Public | Consumer knows AICore is linked |
 
 ## Extending
 

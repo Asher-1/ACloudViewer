@@ -8,6 +8,7 @@ endif()
 
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/glb_parity_dump.cpp)
     add_executable(glb_parity_dump glb_parity_dump.cpp)
+    cloudviewer_set_bin_runtime_output_directory(glb_parity_dump)
     target_link_libraries(glb_parity_dump PRIVATE AICore)
     target_include_directories(glb_parity_dump PRIVATE
         ${DA_ROOT}/core/AICore/src/depth ${DA_ROOT}/core/AICore/include)
@@ -15,6 +16,7 @@ endif()
 
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/colmap_parity_dump.cpp)
     add_executable(colmap_parity_dump colmap_parity_dump.cpp)
+    cloudviewer_set_bin_runtime_output_directory(colmap_parity_dump)
     target_link_libraries(colmap_parity_dump PRIVATE AICore)
     target_include_directories(colmap_parity_dump PRIVATE
         ${DA_ROOT}/core/AICore/src/depth ${DA_ROOT}/core/AICore/include)

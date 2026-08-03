@@ -20,20 +20,38 @@ file(COPY ${PYTHON_PACKAGE_SRC_DIR}/
 
 # 2) The compiled python-C++ module, i.e. cloudViewer.so (or the equivalents)
 #    Optionally other modules e.g. cloudViewer_tf_ops.so may be included.
-# Folder structure is base_dir/{cpu|cuda}/{pybind*.so|cloudViewer_{torch|tf}_ops.so},
-# so copy base_dir directly to ${PYTHON_PACKAGE_DST_DIR}/cloudViewer
-foreach (COMPILED_MODULE_PATH ${COMPILED_MODULE_PATH_LIST})
+# pybind and libCloudViewer are copied flat into cloudViewer/. The ML ops
+# (cloudViewer_{torch,tf}_ops) are built into base_dir/{cpu,cuda} subdirs; copy
+# every arch subdir that exists so a CUDA wheel bundles both CPU- and CUDA-linked
+# ops (cloudViewer/cpu and cloudViewer/cuda), selected by device at runtime.
+set(_copied_pybind FALSE)
+foreach(COMPILED_MODULE_PATH ${COMPILED_MODULE_PATH_LIST})
     get_filename_component(COMPILED_MODULE_NAME ${COMPILED_MODULE_PATH} NAME)
-    get_filename_component(COMPILED_MODULE_ARCH_DIR ${COMPILED_MODULE_PATH} DIRECTORY)
-    get_filename_component(COMPILED_MODULE_BASE_DIR ${COMPILED_MODULE_ARCH_DIR} DIRECTORY)
-    foreach (ARCH cpu cuda)
-        if (IS_DIRECTORY "${COMPILED_MODULE_BASE_DIR}/${ARCH}")
-            file(INSTALL "${COMPILED_MODULE_BASE_DIR}/${ARCH}/" DESTINATION
-                    "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/${ARCH}"
-                    FILES_MATCHING PATTERN "${COMPILED_MODULE_NAME}")
-        endif ()
-    endforeach ()
-endforeach ()
+    get_filename_component(COMPILED_MODULE_DIR ${COMPILED_MODULE_PATH} DIRECTORY)
+    get_filename_component(COMPILED_MODULE_PARENT ${COMPILED_MODULE_DIR} NAME)
+    if(COMPILED_MODULE_PARENT STREQUAL "cpu" OR COMPILED_MODULE_PARENT STREQUAL "cuda")
+        get_filename_component(COMPILED_MODULE_BASE_DIR ${COMPILED_MODULE_DIR} DIRECTORY)
+        foreach(ARCH cpu cuda)
+            if(EXISTS "${COMPILED_MODULE_BASE_DIR}/${ARCH}/${COMPILED_MODULE_NAME}")
+                file(COPY "${COMPILED_MODULE_BASE_DIR}/${ARCH}/${COMPILED_MODULE_NAME}"
+                     DESTINATION "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/${ARCH}/"
+                     FOLLOW_SYMLINK_CHAIN)
+                set(_copied_pybind TRUE)
+            endif()
+        endforeach()
+    elseif(EXISTS "${COMPILED_MODULE_PATH}")
+        file(COPY ${COMPILED_MODULE_PATH}
+             DESTINATION ${PYTHON_PACKAGE_DST_DIR}/cloudViewer/
+             FOLLOW_SYMLINK_CHAIN)
+        set(_copied_pybind TRUE)
+    endif()
+endforeach()
+if(NOT _copied_pybind)
+    message(FATAL_ERROR
+        "python-package: pybind module was not copied. "
+        "COMPILED_MODULE_PATH_LIST=${COMPILED_MODULE_PATH_LIST}; "
+        "PYTHON_COMPILED_MODULE_DIR=${PYTHON_COMPILED_MODULE_DIR}")
+endif()
 # Include additional libraries that may be absent from the user system
 # eg: libc++.so and libc++abi.so (needed by filament)
 # The linker recognizes only library.so.MAJOR, so remove .MINOR from the filename

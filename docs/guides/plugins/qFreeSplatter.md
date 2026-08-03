@@ -14,6 +14,7 @@ Input images (2+) → FreeSplatterDialog → FreeSplatterWorker → libAICore (g
 ```bash
 cmake -B build_app \
   -DBUILD_GUI=ON \
+  -DBUILD_OPENCV=ON \
   -DAICore_ENABLED=ON \
   -DPLUGIN_STANDARD_QFREESPLATTER=ON \
   -DPLUGIN_STANDARD_QSIBR=ON \
@@ -24,7 +25,8 @@ cmake --build build_app --target QFREESPLATTER_PLUGIN ACloudViewer -j$(nproc)
 
 | CMake option | Description |
 |--------------|-------------|
-| `AICore_ENABLED` | Build `libAICore.so` with FreeSplatter support |
+| `BUILD_OPENCV` | Required for **Face Capture** tab (`HAS_OPENCV_FACE_CAPTURE`) |
+| `AICore_ENABLED` | Build `libAICore.so` with FreeSplatter **and** face-detect (Face Capture GGML detector) |
 | `PLUGIN_STANDARD_QFREESPLATTER` | This plugin |
 | `PLUGIN_STANDARD_QSIBR` | Optional; enables **Visualize (SIBR)** button (runtime invocation, no static link) |
 | `PLUGIN_STANDARD_QFREESPLATTER_TOOLS` | Optional CLI `free_splatter-cli` |
@@ -51,6 +53,28 @@ cmake --build build_app --target QFREESPLATTER_PLUGIN ACloudViewer -j$(nproc)
 | Object | **3+** | Single object |
 
 Optional: **Estimate poses** (PnP), **Opacity threshold**, Basic/Full PLY fields.
+
+### Face Capture tab
+
+Shown when OpenCV is built with **videoio + objdetect** (`BUILD_OPENCV=ON` → `HAS_OPENCV_FACE_CAPTURE` in the plugin). Uses the webcam to capture **five guided face angles** (front, ±45°, ±15° pitch), crops to 512×512, adds them to the input list, and can auto-start reconstruction when the **Object** model is ready.
+
+| Control | Description |
+|---------|-------------|
+| **Face detector** | **OpenCV Haar Cascade** (bundled cascade, no download) or any **GGML pack** from the AICore face-detect catalog (same list as qFaceDetect, excluding the landmarks-only pack) |
+| **Default GGML** | **Buffalo L** when listed; falls back to Haar on first open |
+| **Start Camera** | Opens the default webcam and begins guided auto-capture |
+| **Reset** | Clears captured frames and restarts the angle sequence |
+
+**Face detector backends**
+
+| Backend | Source | Live preview | Notes |
+|---------|--------|--------------|-------|
+| **OpenCV Haar** | Plugin resource `haarcascade_frontalface_alt2.xml` | Every frame | Fast, no model download; weaker on profile / low light |
+| **GGML (AICore)** | [cloudViewer_downloads qFaceDetect](https://github.com/Asher-1/cloudViewer_downloads/releases/tag/qFaceDetect) | Every 2nd frame (bbox held between runs) | SCRFD / YuNet via `libAICore.so`; auto-download on first use |
+
+GGML detector packs (Buffalo L/M/S/SC, AntelopeV2, YuNet+SFace) are listed by `aicore_facedetect_detector_model_at()` in `core/AICore/include/aicore/facedetect_capi.h`. Cache: `~/cloudViewer_data/extract/facedetect_models` (shared with qFaceDetect). **`PLUGIN_STANDARD_QFACEDETECT` is not required** — Face Capture links AICore directly.
+
+Recommended: **Object** model + **Buffalo L** or **Buffalo SC** detector for tighter face boxes before splatting. For licensing, prefer **YuNet + SFace** (Apache-2.0). Pack details: [qFaceDetect MODEL_CARD](../../../plugins/core/Standard/qFaceDetect/models/MODEL_CARD.md).
 
 ### Inference device (Auto)
 
@@ -89,4 +113,5 @@ ctest -LE model   # fast tests without GGUF assets
 ## Further reading
 
 - Full plugin README: [`plugins/core/Standard/qFreeSplatter/README.md`](../../../plugins/core/Standard/qFreeSplatter/README.md)
+- Face detector GGUF packs: [qFaceDetect user guide](qFaceDetect.md) · [MODEL_CARD](../../../plugins/core/Standard/qFaceDetect/models/MODEL_CARD.md)
 - [FreeSplatter](https://github.com/TencentARC/FreeSplatter) · [free-splatter.cpp](https://github.com/LocalAI-io/free-splatter.cpp)

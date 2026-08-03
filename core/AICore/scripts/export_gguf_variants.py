@@ -4,30 +4,19 @@
 Usage (after building AICore with quantize CLI or from Python export):
 
   # 1) Export F32 from upstream PyTorch (sibling repos):
-  #    EfficientLoFTR: scripts/convert_eloftr_to_gguf.py
-  #    DeepLSD:        scripts/convert_deeplsd_to_gguf.py
+  #    DeepLSD: scripts/convert_deeplsd_to_gguf.py
   #
-  # 2) Quantize with AICore C API tools:
-  #    aicore_eloftr_quantize  in.gguf out-f16.gguf f16
-  #    aicore_eloftr_quantize  in.gguf out-q8_0.gguf q8_0
+  # 2) Quantize with AICore tool:
+  #    aicore_gguf_quantize  in.gguf out-f16.gguf f16
+  #    aicore_gguf_quantize  in.gguf out-q8_0.gguf q8_0
   #
   Release naming (cloudViewer_downloads):
-    ELoFTR/eloftr_outdoor-f32.gguf
-    ELoFTR/eloftr_outdoor-f16.gguf
-    ELoFTR/eloftr_outdoor-q8_0.gguf
-# DeepLSD (wireframe + MegaDepth md)
     DeepLSD/deeplsd_wireframe-f32.gguf
     DeepLSD/deeplsd_wireframe-f16.gguf
     DeepLSD/deeplsd_wireframe-q8_0.gguf
     DeepLSD/deeplsd_md-f32.gguf
     DeepLSD/deeplsd_md-f16.gguf
     DeepLSD/deeplsd_md-q8_0.gguf
-    MatchAnything/matchanything_eloftr-f32.gguf
-    MatchAnything/matchanything_eloftr-f16.gguf
-    MatchAnything/matchanything_eloftr-q8_0.gguf
-    MatchAnything/matchanything_roma-f32.gguf
-    MatchAnything/matchanything_roma-f16.gguf
-    MatchAnything/matchanything_roma-q8_0.gguf
 
 Parity: run backend verify in sibling cpp trees (CPU/CUDA/Vulkan).
 """
@@ -42,10 +31,10 @@ from pathlib import Path
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("quantize_bin", help="path to aicore_*_quantize binary")
+    parser.add_argument("quantize_bin", help="path to aicore_gguf_quantize binary")
     parser.add_argument("input_f32", type=Path)
     parser.add_argument("output_dir", type=Path)
-    parser.add_argument("--stem", required=True, help="e.g. eloftr_outdoor")
+    parser.add_argument("--stem", required=True, help="e.g. deeplsd_wireframe")
     args = parser.parse_args()
 
     args.output_dir.mkdir(parents=True, exist_ok=True)

@@ -761,16 +761,7 @@ include(AllSupport)
 
 SET(PROJECT_ROOT_PATH "${PROJECT_SOURCE_DIR}")
 
-if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
-    if (MSVC)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/Debug)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/Release)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_BINARY_DIR}/bin/RelWithDebInfo)
-    else ()
-        SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-    endif ()
-endif ()
+cloudviewer_apply_dev_runtime_bin_layout()
 
 add_subdirectory(core)
 
@@ -784,43 +775,13 @@ endif ()
 # Internal libs used by both ACloudViewer and cloudViewer python package
 add_subdirectory(libs)
 
-# Examples
-if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
-    if (MSVC)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/examples/Debug)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/examples/Release)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_BINARY_DIR}/bin/examples/RelWithDebInfo)
-    else ()
-        SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-    endif ()
-endif ()
 add_subdirectory(examples)
 
-# load plugins (potentially used by ACloudViewer app)
-if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
-    if (MSVC)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/Debug/plugins)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/Release/plugins)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_BINARY_DIR}/bin/RelWithDebInfo/plugins)
-    else ()
-        SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/plugins)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/plugins)
-    endif ()
-endif ()
+cloudviewer_apply_dev_plugin_lib_layout()
 add_subdirectory(plugins)
 
-# ACloudViewer app
-if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
-    if (MSVC)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/Debug)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/Release)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_BINARY_DIR}/bin/RelWithDebInfo)
-    else ()
-        SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-    endif ()
-endif ()
+# ACloudViewer app — restore bin/ layout after plugins/ (Unix LIBRARY may be bin/plugins).
+cloudviewer_apply_dev_runtime_bin_layout()
 
 # ACloudViewer app
 add_subdirectory(app)

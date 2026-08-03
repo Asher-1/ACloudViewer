@@ -9,26 +9,200 @@
 
 #include "deform_conv.hpp"
 #include "ggml_gpu_ops.hpp"
+#include "gpu_sync.hpp"
 #include "postprocess.hpp"
+#include "score_debug.hpp"
 
-#if defined(LIGHTGLUE_HAS_CUDA)
+#if defined(AICORE_CUDA_ALIKED)
 #include <cuda_runtime.h>
 
-#include "aliked_cuda.hpp"
+#include "cuda/aliked_cuda.hpp"
 #endif
 
-#if defined(LIGHTGLUE_HAS_VULKAN)
-#include <ggml-vulkan-aliked.h>
+#if defined(AICORE_VULKAN_ALIKED)
+#include "vulkan/vulkan_aliked_dispatch.hpp"
+#include "gpu_tensor.hpp"
 #endif
 
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
 
 namespace lightglue::aliked_internal {
 namespace {
+
+float VectorMaxAbsDiff(const std::vector<float> &a, const std::vector<float> &b) {
+    const size_t n = std::min(a.size(), b.size());
+    float best = 0.0f;
+    for (size_t i = 0; i < n; ++i) {
+        best = std::max(best, std::fabs(a[i] - b[i]));
+    }
+    return best;
+}
+
+void DumpSddhStageCompare(const char *label, const std::vector<float> &cpu,
+                          const std::vector<float> &gpu) {
+    if (cpu.empty()) {
+        std::fprintf(stderr, "[sddh-stage] %s cpu=EMPTY gpu=%zu max_abs=NA\n", label,
+                     gpu.size());
+        return;
+    }
+    std::fprintf(stderr, "[sddh-stage] %s len=%zu max_abs=%.6g cpu0=%.6g gpu0=%.6g\n",
+                 label, cpu.size(), VectorMaxAbsDiff(cpu, gpu), cpu[0],
+                 gpu.empty() ? 0.0f : gpu[0]);
+}
+
+#if defined(AICORE_VULKAN_ALIKED)
+void DebugCompareVulkanSddhStages(const GpuTensor &feature_map, int32_t dim, int32_t fh,
+                                  int32_t fw, const std::vector<float> &keypoints_norm,
+                                  int32_t keypoint_count, int32_t kernel_size, int32_t n_pos,
+                                  const std::vector<float> &offset_0_w,
+                                  const std::vector<float> &offset_0_b,
+                                  const std::vector<float> &offset_2_w,
+                                  const std::vector<float> &offset_2_b,
+                                  const std::vector<float> &sf_conv_w,
+                                  const std::vector<float> &agg_weights,
+                                  internal::Backend *backend,
+                                  const GpuTensor &descriptors,
+                                  GpuPipelineCache *cache) {
+    if (std::getenv("LIGHTGLUE_ALIKED_SDDH_DEBUG") == nullptr ||
+        keypoint_count <= 0) {
+        return;
+    }
+    const int32_t k = 0;
+    std::vector<float> feature_nchw;
+    if (!feature_map.DownloadNchw(backend, &feature_nchw, dim, fh, fw, nullptr)) {
+        std::fprintf(stderr, "[sddh-stage] feature download failed\n");
+        return;
+    }
+    SddhStageDump cpu{};
+    if (!RunSddhStages(feature_nchw, dim, fh, fw, keypoints_norm, k, kernel_size,
+                       n_pos, offset_0_w, offset_0_b, offset_2_w, offset_2_b,
+                       sf_conv_w, agg_weights, &cpu)) {
+        std::fprintf(stderr, "[sddh-stage] cpu RunSddhStages failed\n");
+        return;
+    }
+
+    std::vector<float> vk_desc(static_cast<size_t>(keypoint_count) * dim);
+    ggml_backend_tensor_get(descriptors.tensor, vk_desc.data(), 0,
+                            vk_desc.size() * sizeof(float));
+    const float *vk0 = vk_desc.data();
+    float vk_norm = 0.0f;
+    for (int32_t c = 0; c < dim; ++c) {
+        vk_norm += vk0[c] * vk0[c];
+    }
+    vk_norm = std::sqrt(vk_norm);
+    float cpu_norm = 0.0f;
+    for (float v : cpu.desc) {
+        cpu_norm += v * v;
+    }
+    cpu_norm = std::sqrt(cpu_norm);
+    float cos = 0.0f;
+    for (int32_t c = 0; c < dim; ++c) {
+        cos += cpu.desc[static_cast<size_t>(c)] * vk0[c];
+    }
+    std::fprintf(stderr,
+                 "[sddh-stage] k=%d kpt_norm=(%.6g,%.6g) x_wh=%.4f y_wh=%.4f "
+                 "cpu_desc_norm=%.6g vk_desc_norm=%.6g cos=%.6g\n",
+                 k, keypoints_norm[0], keypoints_norm[1], cpu.x_wh, cpu.y_wh,
+                 cpu_norm, vk_norm, cos);
+
+    AlikedVulkanSddhScratch *scratch = cache->vulkan_sddh_scratch();
+    if (scratch == nullptr || scratch->workspace.tensor == nullptr) {
+        return;
+    }
+    const size_t patch_size =
+            static_cast<size_t>(dim) * kernel_size * kernel_size;
+    const size_t stride = patch_size + 64 + static_cast<size_t>(dim) * 3;
+    std::vector<float> ws(stride);
+    const size_t byte_off = static_cast<size_t>(k) * stride * sizeof(float);
+    ggml_backend_tensor_get(scratch->workspace.tensor, ws.data(), byte_off,
+                            ws.size() * sizeof(float));
+
+    const size_t off_raw = patch_size;
+    const size_t off_final = patch_size + 32;
+    const size_t sampled = patch_size + 64;
+    const size_t transformed = sampled + static_cast<size_t>(dim);
+    const size_t desc_base = transformed + static_cast<size_t>(dim);
+
+    DumpSddhStageCompare("patch", cpu.patch,
+                         std::vector<float>(ws.begin(), ws.begin() + patch_size));
+    DumpSddhStageCompare(
+            "offset_raw", cpu.offset_raw,
+            std::vector<float>(ws.begin() + off_raw, ws.begin() + off_raw + 32));
+    DumpSddhStageCompare(
+            "offset_final", cpu.offset_final,
+            std::vector<float>(ws.begin() + off_final, ws.begin() + off_final + 32));
+    DumpSddhStageCompare(
+            "sampled", cpu.sampled,
+            std::vector<float>(ws.begin() + sampled,
+                               ws.begin() + sampled + static_cast<size_t>(dim)));
+    DumpSddhStageCompare(
+            "transformed", cpu.transformed,
+            std::vector<float>(ws.begin() + transformed,
+                               ws.begin() + transformed + static_cast<size_t>(dim)));
+    DumpSddhStageCompare(
+            "desc_pre_norm", cpu.desc_pre_norm,
+            std::vector<float>(ws.begin() + desc_base,
+                               ws.begin() + desc_base + static_cast<size_t>(dim)));
+
+    const int32_t k_last = keypoint_count - 1;
+    if (k_last <= 0) {
+        return;
+    }
+    SddhStageDump cpu_last{};
+    if (!RunSddhStages(feature_nchw, dim, fh, fw, keypoints_norm, k_last,
+                       kernel_size, n_pos, offset_0_w, offset_0_b, offset_2_w,
+                       offset_2_b, sf_conv_w, agg_weights, &cpu_last)) {
+        return;
+    }
+    std::vector<float> ws_last(stride);
+    const size_t off_last =
+            static_cast<size_t>(k_last) * stride * sizeof(float);
+    ggml_backend_tensor_get(scratch->workspace.tensor, ws_last.data(), off_last,
+                            ws_last.size() * sizeof(float));
+    const float *vk_last = vk_desc.data() + static_cast<size_t>(k_last) * dim;
+    float vk_last_norm = 0.0f;
+    float cos_last = 0.0f;
+    for (int32_t c = 0; c < dim; ++c) {
+        vk_last_norm += vk_last[c] * vk_last[c];
+        cos_last += cpu_last.desc[static_cast<size_t>(c)] * vk_last[c];
+    }
+    vk_last_norm = std::sqrt(vk_last_norm);
+    std::fprintf(stderr,
+                 "[sddh-stage] k=%d vk_desc_norm=%.6g cos=%.6g patch_max_abs=%.6g\n",
+                 k_last, vk_last_norm, cos_last,
+                 VectorMaxAbsDiff(
+                         cpu_last.patch,
+                         std::vector<float>(ws_last.begin(),
+                                            ws_last.begin() + patch_size)));
+
+    std::vector<float> cos_all(static_cast<size_t>(keypoint_count));
+    for (int32_t ki = 0; ki < keypoint_count; ++ki) {
+        SddhStageDump cpu_ki{};
+        if (!RunSddhStages(feature_nchw, dim, fh, fw, keypoints_norm, ki,
+                           kernel_size, n_pos, offset_0_w, offset_0_b, offset_2_w,
+                           offset_2_b, sf_conv_w, agg_weights, &cpu_ki)) {
+            cos_all[static_cast<size_t>(ki)] = 0.0f;
+            continue;
+        }
+        const float *vk_i = vk_desc.data() + static_cast<size_t>(ki) * dim;
+        float dot = 0.0f;
+        for (int32_t c = 0; c < dim; ++c) {
+            dot += cpu_ki.desc[static_cast<size_t>(c)] * vk_i[c];
+        }
+        cos_all[static_cast<size_t>(ki)] = dot;
+    }
+    std::nth_element(cos_all.begin(),
+                     cos_all.begin() + cos_all.size() / 2, cos_all.end());
+    std::fprintf(stderr, "[sddh-stage] all-k desc cos median=%.6g min=%.6g\n",
+                 cos_all[cos_all.size() / 2],
+                 *std::min_element(cos_all.begin(), cos_all.end()));
+}
+#endif
 
 struct DcnParityEntry {
     std::string name;
@@ -60,6 +234,26 @@ void RecordDcnParity(internal::Backend *backend,
                                  entry.w, error)) {
         return;
     }
+    float max_abs_diff = 0.0f;
+    double cpu_sum = 0.0;
+    double vk_sum = 0.0;
+    for (size_t i = 0; i < entry.cpu.size(); ++i) {
+        cpu_sum += static_cast<double>(entry.cpu[i]);
+        vk_sum += static_cast<double>(entry.vulkan[i]);
+        max_abs_diff =
+                std::max(max_abs_diff,
+                         std::fabs(entry.vulkan[i] - entry.cpu[i]));
+    }
+    const uint32_t wg_x =
+            (static_cast<uint32_t>(entry.w) + 15u) / 16u;
+    const uint32_t wg_y =
+            (static_cast<uint32_t>(entry.h) + 15u) / 16u;
+    const uint32_t wg_z = static_cast<uint32_t>(entry.c);
+    std::fprintf(stderr,
+                 "[dcn-parity] name=%s c=%d h=%d w=%d dispatch_elems=(%d,%d,%d) "
+                 "wg=(%u,%u,%u) cpu_sum=%.3f vk_sum=%.3f max_abs_diff=%.6e\n",
+                 name.c_str(), entry.c, entry.h, entry.w, entry.w, entry.h,
+                 entry.c, wg_x, wg_y, wg_z, cpu_sum, vk_sum, max_abs_diff);
     DcnParityEntries().push_back(std::move(entry));
 }
 
@@ -139,19 +333,8 @@ float *DevPtr(const GpuTensor &tensor) {
     return reinterpret_cast<float *>(tensor.tensor->data);
 }
 
-void SyncGpuPipeline(internal::Backend *backend) {
-    if (backend != nullptr && backend->handle != nullptr) {
-        ggml_backend_synchronize(backend->handle);
-#if defined(LIGHTGLUE_HAS_CUDA)
-        if (backend->IsCuda()) {
-            cudaDeviceSynchronize();
-        }
-#endif
-    }
-}
-
 bool UseCudaCustomKernels(internal::Backend *backend) {
-#if defined(LIGHTGLUE_HAS_CUDA)
+#if defined(AICORE_CUDA_ALIKED)
     return backend != nullptr && backend->IsCuda();
 #else
     (void)backend;
@@ -228,7 +411,7 @@ bool DcnConvBnCpuBridge(GpuPipelineCache *cache,
     return output->UploadNchw(cache->backend(), out_nchw, oc, oh, ow, error);
 }
 
-#if defined(LIGHTGLUE_HAS_CUDA)
+#if defined(AICORE_CUDA_ALIKED)
 bool DcnConvBnCuda(GpuPipelineCache *cache,
                    const GpuTensor &input,
                    const std::vector<float> &offset_w,
@@ -308,17 +491,22 @@ bool DcnConvBnCuda(GpuPipelineCache *cache,
         }
         return false;
     }
+    SyncGpuPipeline(cache->backend());
     return true;
 }
 #endif
 
-#if defined(LIGHTGLUE_HAS_VULKAN)
-bool UseVulkanCompute(internal::Backend *backend) {
-    if (std::getenv("LIGHTGLUE_ALIKED_VULKAN_COMPUTE") == nullptr) {
-        return false;
+#if defined(AICORE_VULKAN_ALIKED)
+bool LogDcnSubstageIfDebug(internal::Backend *backend, const GpuTensor &tensor,
+                           int32_t c, int32_t h, int32_t w,
+                           const std::string &cache_prefix, const char *suffix,
+                           std::string *error) {
+    if (backend == nullptr || !backend->IsVulkan() || !DkdDebugEnabled()) {
+        return true;
     }
-    return backend != nullptr && backend->IsVulkan() &&
-           ggml_vulkan_aliked_available(backend->handle);
+    BarrierGpuPipeline(backend);
+    return LogBackboneStage(backend, tensor, c, h, w,
+                            (cache_prefix + suffix).c_str(), error);
 }
 
 bool DcnConvBnVulkan(GpuPipelineCache *cache,
@@ -338,10 +526,16 @@ bool DcnConvBnVulkan(GpuPipelineCache *cache,
         std::cerr << "dcn_vk begin " << cache_prefix << " ic=" << input.c
                   << " oc=" << oc << "\n";
     }
-    SyncGpuPipeline(cache->backend());
     GpuTensor offset;
     if (!ConvGpu(cache->ggml()->runner(), input, offset_w, 18, 3, 3, &offset_b,
                  1, 1, &offset, (cache_prefix + ".offset").c_str(), error)) {
+        return false;
+    }
+    if (!EnsureDenseWhcn(cache->backend(), &offset, error)) {
+        return false;
+    }
+    if (!LogDcnSubstageIfDebug(cache->backend(), offset, 18, input.h, input.w,
+                               cache_prefix, ".offset", error)) {
         return false;
     }
 
@@ -349,15 +543,17 @@ bool DcnConvBnVulkan(GpuPipelineCache *cache,
         std::cerr << "dcn_vk offset conv done " << cache_prefix << "\n";
     }
 
-    SyncGpuPipeline(cache->backend());
     const float max_offset =
             static_cast<float>(std::max(input.h, input.w)) / 4.0f;
-    if (!ggml_vulkan_aliked_clamp_inplace(cache->backend()->handle,
-                                          offset.tensor, offset.ElementCount(),
-                                          -max_offset, max_offset)) {
-        if (error) {
-            *error = "offset clamp Vulkan failed";
+    if (!RunClampGpu(cache->backend(), &offset, -max_offset, max_offset,
+                     error)) {
+        if (error && error->empty()) {
+            *error = "offset clamp failed";
         }
+        return false;
+    }
+    if (!LogDcnSubstageIfDebug(cache->backend(), offset, 18, input.h, input.w,
+                               cache_prefix, ".offset_clamp", error)) {
         return false;
     }
     if (std::getenv("LIGHTGLUE_ALIKED_TRACE")) {
@@ -370,9 +566,6 @@ bool DcnConvBnVulkan(GpuPipelineCache *cache,
     if (!cache->EnsureDcnWeight(weight_key, fused, error)) {
         return false;
     }
-    if (!cache->EnsureDcnWorkspace(input.w, input.h, input.c, oc, error)) {
-        return false;
-    }
     internal::Backend *backend = cache->backend();
     const GpuPipelineCache::CachedDcnWeights *weights =
             cache->FindDcnWeight(weight_key);
@@ -382,72 +575,52 @@ bool DcnConvBnVulkan(GpuPipelineCache *cache,
         }
         return false;
     }
-    if (!ggml_vulkan_aliked_whcn_to_nchw(backend->handle, input.tensor,
-                                         cache->DcnNchwInTensor(), input.c,
-                                         input.h, input.w)) {
-        if (error) {
-            *error = "DCN input WHCN->NCHW failed";
-        }
-        return false;
-    }
-    if (std::getenv("LIGHTGLUE_ALIKED_TRACE")) {
-        std::cerr << "dcn_vk in layout done " << cache_prefix << "\n";
-    }
-    if (std::getenv("LIGHTGLUE_ALIKED_DCN_DEBUG") != nullptr) {
-        std::vector<float> input_nchw;
-        if (input.DownloadNchw(backend, &input_nchw, input.c, input.h, input.w,
-                               error)) {
-            RecordDcnNchwParity(cache_prefix + ".input_nchw", input_nchw,
-                                cache->DcnNchwInTensor(), input.c, input.h,
-                                input.w);
-        }
-    }
-    if (!ggml_vulkan_aliked_whcn_to_nchw(backend->handle, offset.tensor,
-                                         cache->DcnNchwOffsetTensor(), 18,
-                                         input.h, input.w)) {
-        if (error) {
-            *error = "DCN offset WHCN->NCHW failed";
-        }
-        return false;
-    }
-    if (std::getenv("LIGHTGLUE_ALIKED_DCN_DEBUG") != nullptr) {
-        std::vector<float> offset_nchw;
-        if (offset.DownloadNchw(backend, &offset_nchw, 18, input.h, input.w,
-                                error)) {
-            RecordDcnNchwParity(cache_prefix + ".offset_nchw", offset_nchw,
-                                cache->DcnNchwOffsetTensor(), 18, input.h,
-                                input.w);
-        }
-    }
-    SyncGpuPipeline(backend);
-    if (std::getenv("LIGHTGLUE_ALIKED_TRACE")) {
-        std::cerr << "dcn_vk pre deform " << cache_prefix << "\n";
-    }
     if (!GpuTensor::Allocate(backend, input.w, input.h, oc, output, error)) {
         return false;
     }
-    if (!ggml_vulkan_aliked_deform_conv2d(
-                backend->handle, cache->DcnNchwInTensor(),
-                cache->DcnNchwOffsetTensor(), weights->weight.tensor,
-                weights->bias.tensor, cache->DcnNchwOutTensor(), input.c,
-                input.h, input.w, oc, 3, 3, 1, 0)) {
+    // gallocr / cached conv outputs may carry padded strides; vk deform reads flat WHCN.
+    GpuTensor input_contig;
+    GpuTensor offset_contig;
+    if (!GpuTensor::Allocate(backend, input.w, input.h, input.c, &input_contig,
+                             error) ||
+        !GpuTensor::Allocate(backend, offset.w, offset.h, offset.c,
+                             &offset_contig, error)) {
+        return false;
+    }
+    BackendTensorCopyCompat(cache->backend(), input.tensor,
+                            input_contig.tensor);
+    BackendTensorCopyCompat(cache->backend(), offset.tensor,
+                            offset_contig.tensor);
+    if (std::getenv("LIGHTGLUE_ALIKED_DCN_DEBUG") != nullptr ||
+        DkdDebugEnabled()) {
+        const uint32_t wg_x = (static_cast<uint32_t>(input.w) + 15u) / 16u;
+        const uint32_t wg_y = (static_cast<uint32_t>(input.h) + 15u) / 16u;
+        const uint32_t wg_z = static_cast<uint32_t>(oc);
+        std::fprintf(stderr,
+                     "[dcn-dispatch] stage=%s ic=%d ih=%d iw=%d oc=%d kh=3 kw=3 "
+                     "pad=1 layout=WHCN elems=(%d,%d,%d) wg=(%u,%u,%u) "
+                     "global_inv=(%u,%u,%u)\n",
+                     cache_prefix.c_str(), input.c, input.h, input.w, oc,
+                     input.w, input.h, oc, wg_x, wg_y, wg_z, wg_x * 16u,
+                     wg_y * 16u, wg_z);
+    }
+    if (!VkAlikedDeformConv2d(backend->handle, input_contig.tensor,
+                              offset_contig.tensor, weights->weight.tensor,
+                              weights->bias.tensor, output->tensor, input.c,
+                              input.h, input.w, oc, 3, 3, 1, 1)) {
         if (error) {
             *error = "deform conv Vulkan failed";
         }
         return false;
     }
+    if (!LogDcnSubstageIfDebug(cache->backend(), *output, oc, input.h, input.w,
+                               cache_prefix, ".deform_out", error)) {
+        return false;
+    }
     if (std::getenv("LIGHTGLUE_ALIKED_TRACE")) {
         std::cerr << "dcn_vk deform done " << cache_prefix << "\n";
     }
-    if (!ggml_vulkan_aliked_nchw_to_whcn(
-                backend->handle, cache->DcnNchwOutTensor(), output->tensor, oc,
-                input.h, input.w)) {
-        if (error) {
-            *error = "DCN output NCHW->WHCN failed";
-        }
-        return false;
-    }
-    SyncGpuPipeline(backend);
+    FlushGpuPipeline(backend);
     return true;
 }
 
@@ -459,6 +632,10 @@ bool RunDkdVulkan(const GpuTensor &score_map,
                   GpuKeypointResult *result,
                   std::string *error,
                   GpuPipelineCache *cache) {
+    SyncGpuTensorMeta(const_cast<GpuTensor *>(&score_map));
+    BarrierGpuPipeline(backend);
+    VkAlikedQueueIdle(backend->handle);
+
     const int32_t max_kpts =
             options.top_k > 0 ? options.top_k
                               : (options.n_limit > 0 ? options.n_limit : 20000);
@@ -473,7 +650,8 @@ bool RunDkdVulkan(const GpuTensor &score_map,
 
     AlikedVulkanDkdScratch *scratch = cache->vulkan_dkd_scratch();
     int32_t count = 0;
-    if (!ggml_vulkan_aliked_run_dkd(
+    FlushGpuPipeline(backend);
+    if (!VkAlikedRunDkd(
                 backend->handle, score_map.tensor, h, w, options.radius,
                 options.top_k, options.scores_th, options.n_limit,
                 result->keypoints_norm.tensor, result->scores.tensor, &count,
@@ -487,7 +665,8 @@ bool RunDkdVulkan(const GpuTensor &score_map,
         return false;
     }
     result->count = count;
-    SyncGpuPipeline(backend);
+    VkAlikedQueueIdle(backend->handle);
+    FlushGpuPipeline(backend);
     return true;
 }
 
@@ -520,19 +699,26 @@ bool RunSddhVulkan(const GpuTensor &feature_map,
 
     const GpuPipelineCache::CachedSddhWeights &w = cache->SddhWeightTensors();
     AlikedVulkanSddhScratch *scratch = cache->vulkan_sddh_scratch();
-    SyncGpuPipeline(backend);
-    if (!ggml_vulkan_aliked_whcn_to_nchw(backend->handle, feature_map.tensor,
-                                         scratch->feature_nchw.tensor,
-                                         descriptor_dim, fh, fw)) {
-        if (error) {
-            *error = "SDDH feature WHCN->NCHW failed";
+    FlushGpuPipeline(backend);
+
+    const ggml_tensor *feat = feature_map.tensor;
+    if (scratch->feature_contig.tensor != nullptr) {
+        if (VkAlikedDenseCopyWhcn(backend->handle, feature_map.tensor,
+                                  scratch->feature_contig.tensor, fw, fh,
+                                  descriptor_dim)) {
+            feat = scratch->feature_contig.tensor;
+        } else if (!IsContiguousWhcn(feature_map.tensor, fw, fh,
+                                     descriptor_dim)) {
+            if (error) {
+                *error = "SDDH feature map is not contiguous WHCN";
+            }
+            return false;
         }
-        return false;
     }
-    SyncGpuPipeline(backend);
-    const bool ok = ggml_vulkan_aliked_run_sddh(
-            backend->handle, scratch->feature_nchw.tensor, descriptor_dim, fh,
-            fw, keypoints_norm.tensor, keypoint_count, kernel_size, n_pos,
+
+    const bool ok = VkAlikedRunSddh(
+            backend->handle, feat, descriptor_dim, fh, fw,
+            keypoints_norm.tensor, keypoint_count, kernel_size, n_pos,
             w.offset_0_w.tensor, w.offset_0_b.tensor, w.offset_2_w.tensor,
             w.offset_2_b.tensor, w.sf_conv_w.tensor, w.agg_weights.tensor,
             scratch->workspace.tensor, descriptors->tensor);
@@ -540,12 +726,74 @@ bool RunSddhVulkan(const GpuTensor &feature_map,
         *error = "Vulkan SDDH failed";
         return false;
     }
-    SyncGpuPipeline(backend);
+    FlushGpuPipeline(backend);
+    ggml_backend_synchronize(backend->handle);
     return true;
 }
 #endif
 
 }  // namespace
+
+#if defined(AICORE_VULKAN_ALIKED)
+bool UseVulkanCompute(internal::Backend *backend) {
+    if (std::getenv("LIGHTGLUE_ALIKED_VULKAN_COMPUTE") == nullptr) {
+        return false;
+    }
+    return backend != nullptr && backend->IsVulkan() &&
+           VkAlikedAvailable(backend->handle);
+}
+
+bool UseVulkanGpuUpsample(internal::Backend *backend) {
+    if (backend == nullptr || !backend->IsVulkan() ||
+        !VkAlikedAvailable(backend->handle)) {
+        return false;
+    }
+    const char *env = std::getenv("LIGHTGLUE_ALIKED_VULKAN_GPU_UPSAMPLE");
+    if (env != nullptr) {
+        return env[0] != '0';
+    }
+    // VkAliked upsample can deadlock during first shader compile; opt-in only.
+    return false;
+}
+
+bool UseVulkanDcn(internal::Backend *backend) {
+    if (backend == nullptr || !backend->IsVulkan() ||
+        !VkAlikedAvailable(backend->handle)) {
+        return false;
+    }
+    const char *env = std::getenv("LIGHTGLUE_ALIKED_VULKAN_DCN");
+    if (env != nullptr) {
+        return env[0] != '0';
+    }
+    return true;
+}
+
+bool UseVulkanPostprocess(internal::Backend *backend) {
+    if (backend == nullptr || !backend->IsVulkan() ||
+        !VkAlikedAvailable(backend->handle)) {
+        return false;
+    }
+    const char *env = std::getenv("LIGHTGLUE_ALIKED_VULKAN_POST");
+    if (env != nullptr) {
+        return env[0] != '0';
+    }
+    // VkAliked DKD is fast but parity is not yet gated; opt-in only.
+    return false;
+}
+
+bool UseVulkanSddh(internal::Backend *backend) {
+    if (backend == nullptr || !backend->IsVulkan() ||
+        !VkAlikedAvailable(backend->handle)) {
+        return false;
+    }
+    const char *env = std::getenv("LIGHTGLUE_ALIKED_VULKAN_SDDH");
+    if (env != nullptr) {
+        return env[0] != '0';
+    }
+    // VkAliked SDDH shader currently triggers device-lost; opt-in only.
+    return false;
+}
+#endif
 
 AlikedCustomOpBackend DetectCustomOpBackend(internal::Backend *backend) {
     if (backend == nullptr || !backend->IsGpu()) {
@@ -554,7 +802,7 @@ AlikedCustomOpBackend DetectCustomOpBackend(internal::Backend *backend) {
     if (UseCudaCustomKernels(backend)) {
         return AlikedCustomOpBackend::kCuda;
     }
-#if defined(LIGHTGLUE_HAS_VULKAN)
+#if defined(AICORE_VULKAN_ALIKED)
     if (UseVulkanCompute(backend)) {
         return AlikedCustomOpBackend::kVulkanCompute;
     }
@@ -579,10 +827,8 @@ bool DcnConvBnDispatch(GpuPipelineCache *cache,
                        GpuTensor *output,
                        std::string *error) {
     const bool debug = std::getenv("LIGHTGLUE_ALIKED_DCN_DEBUG") != nullptr;
-#if defined(LIGHTGLUE_HAS_VULKAN)
-    if (DetectCustomOpBackend(cache->backend()) ==
-                AlikedCustomOpBackend::kVulkanCompute &&
-        debug) {
+#if defined(AICORE_VULKAN_ALIKED)
+    if (debug && cache->backend() != nullptr && cache->backend()->IsVulkan()) {
         GpuTensor cpu_out;
         if (!DcnConvBnCpuBridge(cache, input, offset_w, offset_b, regular_w, oc,
                                 gamma, beta, mean, var,
@@ -601,19 +847,24 @@ bool DcnConvBnDispatch(GpuPipelineCache *cache,
     }
 #endif
     switch (DetectCustomOpBackend(cache->backend())) {
-#if defined(LIGHTGLUE_HAS_CUDA)
+#if defined(AICORE_CUDA_ALIKED)
         case AlikedCustomOpBackend::kCuda:
             return DcnConvBnCuda(cache, input, offset_w, offset_b, regular_w,
                                  oc, gamma, beta, mean, var, cache_prefix,
                                  output, error);
 #endif
-#if defined(LIGHTGLUE_HAS_VULKAN)
+#if defined(AICORE_VULKAN_ALIKED)
         case AlikedCustomOpBackend::kVulkanCompute:
             return DcnConvBnVulkan(cache, input, offset_w, offset_b, regular_w,
                                    oc, gamma, beta, mean, var, cache_prefix,
                                    output, error);
 #endif
         case AlikedCustomOpBackend::kVulkanBridge:
+            if (UseVulkanDcn(cache->backend())) {
+                return DcnConvBnVulkan(cache, input, offset_w, offset_b,
+                                       regular_w, oc, gamma, beta, mean, var,
+                                       cache_prefix, output, error);
+            }
             return DcnConvBnCpuBridge(cache, input, offset_w, offset_b,
                                       regular_w, oc, gamma, beta, mean, var,
                                       cache_prefix, output, error);
@@ -633,27 +884,47 @@ bool RunDkdDispatch(const GpuTensor &score_map,
                     GpuKeypointResult *result,
                     std::string *error,
                     GpuPipelineCache *cache) {
-#if defined(LIGHTGLUE_HAS_CUDA)
+#if defined(AICORE_CUDA_ALIKED)
     if (UseCudaCustomKernels(backend)) {
         return RunDkdGpu(score_map, h, w, options, backend, result, error,
                          cache != nullptr ? cache->dkd_scratch() : nullptr);
     }
 #endif
-#if defined(LIGHTGLUE_HAS_VULKAN)
-    if (UseVulkanCompute(backend) && cache != nullptr) {
+#if defined(AICORE_VULKAN_ALIKED)
+    if (UseVulkanPostprocess(backend) && cache != nullptr) {
         return RunDkdVulkan(score_map, h, w, options, backend, result, error,
                             cache);
     }
 #endif
-#if !defined(LIGHTGLUE_HAS_CUDA) && !defined(LIGHTGLUE_HAS_VULKAN)
+#if !defined(AICORE_CUDA_ALIKED) && !defined(AICORE_VULKAN_ALIKED)
     (void)cache;
 #endif
 
     std::vector<float> score_nchw;
-    if (!score_map.DownloadNchw(backend, &score_nchw, 1, h, w, error)) {
+    SyncGpuTensorMeta(const_cast<GpuTensor *>(&score_map));
+    const int32_t sh = score_map.h;
+    const int32_t sw = score_map.w;
+    if (sh <= 0 || sw <= 0 || score_map.c <= 0) {
+        if (error) {
+            *error = "invalid score map tensor shape for DKD";
+        }
         return false;
     }
-    const DkdOutput cpu = RunDkd(score_nchw, h, w, options, w, h);
+    SyncGpuPipeline(backend);
+    FlushGpuPipeline(backend);
+    BarrierGpuPipeline(backend);
+    if (!score_map.DownloadNchw(backend, &score_nchw, score_map.c, sh, sw,
+                                error)) {
+        return false;
+    }
+    if (sh <= 0 || sw <= 0 ||
+        score_nchw.size() != static_cast<size_t>(sh) * static_cast<size_t>(sw)) {
+        if (error) {
+            *error = "score map host buffer size mismatch";
+        }
+        return false;
+    }
+    const DkdOutput cpu = RunDkd(score_nchw, sh, sw, options, sw, sh);
     const int32_t count = static_cast<int32_t>(cpu.scores.size());
     if (!GpuTensor::Allocate(backend, count * 2, 1, 1, &result->keypoints_norm,
                              error)) {
@@ -668,6 +939,7 @@ bool RunDkdDispatch(const GpuTensor &score_map,
     ggml_backend_tensor_set(result->scores.tensor, cpu.scores.data(), 0,
                             cpu.scores.size() * sizeof(float));
     result->count = count;
+    FlushGpuPipeline(backend);
     return true;
 }
 
@@ -697,7 +969,7 @@ bool RunSddhDispatch(const GpuTensor &feature_map,
     ggml_backend_tensor_set(kpts_gpu.tensor, keypoints_norm.data(), 0,
                             keypoints_norm.size() * sizeof(float));
 
-#if defined(LIGHTGLUE_HAS_CUDA)
+#if defined(AICORE_CUDA_ALIKED)
     if (UseCudaCustomKernels(backend)) {
         return RunSddhGpu(feature_map, descriptor_dim, fh, fw, kpts_gpu,
                           keypoint_count, kernel_size, n_pos, offset_0_w,
@@ -705,15 +977,32 @@ bool RunSddhDispatch(const GpuTensor &feature_map,
                           agg_weights, backend, descriptors, error, cache);
     }
 #endif
-#if defined(LIGHTGLUE_HAS_VULKAN)
-    if (UseVulkanCompute(backend) && cache != nullptr &&
-        std::getenv("LIGHTGLUE_ALIKED_VULKAN_SDDH") != nullptr) {
-        return RunSddhVulkan(feature_map, descriptor_dim, fh, fw, kpts_gpu,
-                             keypoint_count, kernel_size, n_pos, cache, backend,
-                             descriptors, error);
+#if defined(AICORE_VULKAN_ALIKED)
+    if (UseVulkanSddh(backend) && cache != nullptr && cache->HasSddhWeights()) {
+        if (std::getenv("LIGHTGLUE_ALIKED_VULKAN_TRACE") != nullptr) {
+            std::fprintf(stderr, "[vk-aliked] RunSddhDispatch: Vulkan SDDH path\n");
+        }
+        if (!RunSddhVulkan(feature_map, descriptor_dim, fh, fw, kpts_gpu,
+                           keypoint_count, kernel_size, n_pos, cache, backend,
+                           descriptors, error)) {
+            return false;
+        }
+        DebugCompareVulkanSddhStages(
+                feature_map, descriptor_dim, fh, fw, keypoints_norm,
+                keypoint_count, kernel_size, n_pos, offset_0_w, offset_0_b,
+                offset_2_w, offset_2_b, sf_conv_w, agg_weights, backend,
+                *descriptors, cache);
+        return true;
+    }
+    if (UseVulkanSddh(backend) && std::getenv("LIGHTGLUE_ALIKED_VULKAN_TRACE") != nullptr) {
+        std::fprintf(stderr,
+                     "[vk-aliked] RunSddhDispatch: CPU fallback (cache=%p "
+                     "has_sddh=%d)\n",
+                     static_cast<void *>(cache),
+                     cache != nullptr && cache->HasSddhWeights());
     }
 #endif
-#if !defined(LIGHTGLUE_HAS_CUDA) && !defined(LIGHTGLUE_HAS_VULKAN)
+#if !defined(AICORE_CUDA_ALIKED) && !defined(AICORE_VULKAN_ALIKED)
     (void)cache;
 #endif
 
@@ -731,6 +1020,7 @@ bool RunSddhDispatch(const GpuTensor &feature_map,
     }
     ggml_backend_tensor_set(descriptors->tensor, desc.data(), 0,
                             desc.size() * sizeof(float));
+    FlushGpuPipeline(backend);
     return true;
 }
 

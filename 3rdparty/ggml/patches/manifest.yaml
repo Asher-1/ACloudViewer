@@ -1,0 +1,12 @@
+# Ordered ggml unified-diff patches applied at ExternalProject fetch time.
+# Add new entries here; do not edit fetched ggml sources in-place.
+#
+# ALIKED Vulkan: merged from legacy aliked/0001-0014 (2026-07-31).
+# Legacy incremental patches remain under aliked/ for archaeology; 0007+ had
+# malformed multi-hunk lines and are superseded by aliked_merged/.
+#
+patches:
+  - file: aliked_merged/0001-vulkan-aliked-core.patch
+    note: ALIKED Vulkan core (shaders, dense-copy, DCN, C API, proc address, CMake header install)
+  - file: aliked_merged/0002-vulkan-aliked-gpu-followup.patch
+    note: ALIKED Vulkan SDDH+DKD parity (queue idle, readback, workspace, NMS/topk, barriers)

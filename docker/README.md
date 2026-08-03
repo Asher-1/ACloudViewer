@@ -113,6 +113,8 @@ Docker/CI GUI builds **do not** enable AICore by default (large ggml/CUDA artifa
 ```bash
 export AICore_ENABLED=ON
 export PLUGIN_STANDARD_QDA3=ON          # Depth Anything V3
+export PLUGIN_STANDARD_QDEEPLSD=ON      # DeepLSD wireframe extraction
+export PLUGIN_STANDARD_QFACEDETECT=ON   # face-detect.cpp (SCRFD/ArcFace)
 export PLUGIN_STANDARD_QFREESPLATTER=ON # FreeSplatter 3D Gaussians
 export PLUGIN_STANDARD_QSIBR=ON         # optional: in-app Gaussian viewer (Linux/Windows)
 ./docker/build_gui_app.sh 3.12 ON

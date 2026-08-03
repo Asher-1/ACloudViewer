@@ -10,6 +10,7 @@
 #ifdef AICore_ENABLED
 #include "aicore/backend_capi.h"
 #include "aicore/lightglue_capi.h"
+#include "aicore/runtime_capi.h"
 #endif
 
 #include <ecvImage.h>
@@ -26,9 +27,13 @@
 #include <QJsonObject>
 #include <QMainWindow>
 #include <QMessageBox>
+#include <QSettings>
+#include <QStandardPaths>
+#include <QSettings>
 
 #include "feature_extractor.h"
 #include "match_visualization.h"
+#include "ecvPersistentSettings.h"
 
 namespace {
 
@@ -43,6 +48,7 @@ bool isLightGlueOutputImage(const ccImage* img) {
 qLightGlue::qLightGlue(QObject* parent)
     : QObject(parent),
       ccStdPluginInterface(":/CC/plugin/qLightGlue/info.json") {
+    ecvPS::registerSettingsGroup(QStringLiteral("qLightGlue"));
     qRegisterMetaType<LightGlueRunResult>("LightGlueRunResult");
     m_action = new QAction(tr("LightGlue Feature Matching"), this);
     m_action->setToolTip(
@@ -94,6 +100,7 @@ void qLightGlue::showDialog() {
     if (!m_app) return;
     if (!m_dialog) {
         m_dialog = new LightGlueDialog(m_app->getMainWindow());
+        m_dialog->setAppInterface(m_app);
         connect(m_dialog, &LightGlueDialog::runRequested, this,
                 &qLightGlue::executeTask);
         connect(m_dialog, &LightGlueDialog::cancelRequested, this,
@@ -218,6 +225,7 @@ void qLightGlue::executeTask(const LightGlueDialog::Settings& settings) {
     if (m_worker) {
         m_worker->disconnect(this);
         m_worker->disconnect(m_dialog);
+        m_worker->releaseContextOnMainThread();
         m_worker->deleteLater();
         m_worker = nullptr;
     }
@@ -248,18 +256,8 @@ void qLightGlue::executeTask(const LightGlueDialog::Settings& settings) {
         resolvedSettings.inputPaths = resolvedPaths;
         m_dialog->appendLog(tr("[LG] Resolved 2 input images for matching."));
 
-        if (resolvedSettings.matcherType == 2 &&
-            resolvedSettings.pipelineType == 0) {
-            m_dialog->appendLog(tr(
-                    "[Error] ALIKED GGUF models are matcher-only. Interactive "
-                    "matching requires a native ALIKED extractor (COLMAP "
-                    "uses ONNX Runtime, not Python).\n"
-                    "[Hint] Select **SIFT LightGlue** for end-to-end C++ "
-                    "matching (OpenCV RootSIFT + GGML)."));
-            return;
-        }
 #ifndef QLIGHTGLUE_HAS_OPENCV
-        if (resolvedSettings.pipelineType == 0) {
+        if (resolvedSettings.matcherType == 1) {
             m_dialog->appendLog(
                     tr("[Error] SIFT extraction requires BUILD_OPENCV=ON."));
             return;
@@ -291,7 +289,6 @@ void qLightGlue::executeTask(const LightGlueDialog::Settings& settings) {
     workerSettings.device = workerDevice;
     workerSettings.minScore = resolvedSettings.minScore;
     workerSettings.matcherType = resolvedSettings.matcherType;
-    workerSettings.pipelineType = resolvedSettings.pipelineType;
 
     m_currentSettings = resolvedSettings;
     m_worker = new LightGlueWorker(workerSettings, this);
@@ -312,6 +309,9 @@ void qLightGlue::executeTask(const LightGlueDialog::Settings& settings) {
 }
 
 void qLightGlue::cancelTask() {
+#ifdef AICore_ENABLED
+    aicore_cancel_request();
+#endif
     if (m_worker && m_worker->isRunning()) {
         m_worker->requestInterruption();
         m_dialog->appendLog(tr("[LG] Cancel requested..."));
@@ -347,23 +347,41 @@ void qLightGlue::addVisualizationToDb(const LightGlueRunResult& result) {
 
     const QString modelTag = ecvPluginDbNaming::modelTagFromFilename(
             m_currentSettings.modelPath);
+    const QString deviceTag = ecvPluginDbNaming::deviceTagFromName(
+            result.resolvedDevice.isEmpty() ? m_currentSettings.device
+                                            : result.resolvedDevice);
     const QString baseName = ecvPluginDbNaming::makeUnique(
-            QStringLiteral("LG_%1_%2_x_%3_%4m")
+            QStringLiteral("LG_%1_%2_x_%3_%4m_%5")
                     .arg(modelTag,
                          ecvPluginDbNaming::sanitizeSegment(result.imageName0),
                          ecvPluginDbNaming::sanitizeSegment(result.imageName1))
-                    .arg(result.matches.size()),
+                    .arg(result.matches.size())
+                    .arg(deviceTag),
             m_app);
 
     auto* matchImage = new ccImage(viz, baseName);
-    matchImage->setMetaData(QStringLiteral("Matches"),
+    const int keypoints0Count = result.nKeypoints0 > 0
+                                        ? result.nKeypoints0
+                                        : result.keypoints0.size();
+    const int keypoints1Count = result.nKeypoints1 > 0
+                                        ? result.nKeypoints1
+                                        : result.keypoints1.size();
+    matchImage->setMetaData(QStringLiteral("Pipeline"),
+                            QStringLiteral("LightGlue"));
+    matchImage->setMetaData(QStringLiteral("MinMatchScore"),
+                            m_currentSettings.minScore);
+    matchImage->setMetaData(QStringLiteral("Keypoints0"), keypoints0Count);
+    matchImage->setMetaData(QStringLiteral("Keypoints1"), keypoints1Count);
+    matchImage->setMetaData(QStringLiteral("MatchCount"),
                             QVariant(result.matches.size()));
-    matchImage->setMetaData(QStringLiteral("Runtime (ms)"),
-                            QVariant(result.runtimeMs));
+    matchImage->setMetaData(QStringLiteral("Runtime (ms)"), result.runtimeMs);
     matchImage->setMetaData(QStringLiteral("Image 0"), result.imageName0);
     matchImage->setMetaData(QStringLiteral("Image 1"), result.imageName1);
     matchImage->setMetaData(QStringLiteral("Model"),
                             QFileInfo(m_currentSettings.modelPath).fileName());
+    if (!result.resolvedDevice.isEmpty()) {
+        matchImage->setMetaData(QStringLiteral("Device"), result.resolvedDevice);
+    }
     matchImage->setVisible(true);
     matchImage->setEnabled(true);
     m_app->addToDB(matchImage, true, true, false, true);
@@ -429,10 +447,20 @@ void qLightGlue::onExportMatches() {
                                         .arg(m_lastResult.sourceName.isEmpty()
                                                      ? QStringLiteral("run")
                                                      : m_lastResult.sourceName);
+    QSettings settings;
+    const QString lastDir = ecvPS::browseDir(
+            settings, QStringLiteral("qLightGlue"),
+            QStringLiteral("lastExportDir"),
+            QStandardPaths::writableLocation(
+                    QStandardPaths::DocumentsLocation));
     const QString path = QFileDialog::getSaveFileName(
-            m_dialog, tr("Export matches"), defaultName,
+            m_dialog, tr("Export matches"),
+            lastDir + QLatin1Char('/') + defaultName,
             tr("JSON files (*.json);;All files (*)"));
     if (path.isEmpty()) return;
+    ecvPS::saveBrowseDir(settings, QStringLiteral("qLightGlue"),
+                                       QStringLiteral("lastExportDir"),
+                                       path);
 
     QJsonObject root;
     root["source"] = m_lastResult.sourceName;

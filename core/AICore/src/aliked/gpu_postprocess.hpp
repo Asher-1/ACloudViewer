@@ -5,8 +5,8 @@
 #include "gpu_tensor.hpp"
 #include "postprocess.hpp"
 
-#if defined(LIGHTGLUE_HAS_CUDA)
-#include "aliked_cuda.hpp"
+#if defined(AICORE_CUDA_ALIKED)
+#include "cuda/aliked_cuda.hpp"
 #endif
 
 #include <string>
@@ -32,7 +32,7 @@ struct GpuKeypointResult {
 bool RunDkdGpu(const GpuTensor &score_map, int32_t h, int32_t w,
                const DkdOptions &options, internal::Backend *backend,
                GpuKeypointResult *output, std::string *error,
-#if defined(LIGHTGLUE_HAS_CUDA)
+#if defined(AICORE_CUDA_ALIKED)
                AlikedDkdScratch *scratch = nullptr
 #else
                void *scratch = nullptr

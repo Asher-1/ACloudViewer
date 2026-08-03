@@ -42,48 +42,22 @@ function(cloudViewer_link_3rdparty_libraries target)
     target_link_libraries(${target} PRIVATE ${CloudViewer_3RDPARTY_HEADER_TARGETS})
 endfunction()
 
-if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
-	if( MSVC )
-        # remove about runtime output settins in order to output ops to build/lib/${CMAKE_BUILD_TYPE}/Python/{cpu|cuda}`
-		UNSET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG)
-		UNSET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE)
-		UNSET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO)
-	else()
-		SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/$<CONFIG>)
-	endif()
-endif()
+cloudviewer_apply_dev_internal_lib_layout()
 add_subdirectory( cloudViewer )
 
-if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
-	if( MSVC )
-		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/Debug)
-		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/Release)
-		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_BINARY_DIR}/bin/RelWithDebInfo)
-	else()
-		SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/$<CONFIG>)
-	endif()
-endif()
+cloudviewer_apply_dev_cvviewer_lib_layout()
 add_subdirectory( CVViewer )
 
 if(BUILD_RECONSTRUCTION)
     add_subdirectory( Reconstruction )
 endif()
 
-# ECV PYTHON LIB
+# ECV PYTHON LIB — pybind output is lib/<Config>/Python/, never bin/.
 if (BUILD_PYTHON_MODULE)
     add_subdirectory( Python )
 endif()
 
-if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
-    if (MSVC)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/Debug)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/Release)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_BINARY_DIR}/bin/RelWithDebInfo)
-    else ()
-        SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-    endif ()
-endif ()
+cloudviewer_apply_dev_runtime_bin_layout()
 
 # VTK ENGINE LIB
 if (USE_VTK_BACKEND)

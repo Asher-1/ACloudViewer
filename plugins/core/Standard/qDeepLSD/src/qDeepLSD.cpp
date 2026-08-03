@@ -10,11 +10,20 @@
 #include <ecvImage.h>
 #include <ecvMainAppInterface.h>
 #include <ecvPluginDbNaming.h>
+#include <LineSet.h>
+
+#include "ecvPersistentSettings.h"
 
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QMainWindow>
 #include <QMessageBox>
+
+#ifdef AICore_ENABLED
+#include "aicore/backend_capi.h"
+#include "aicore/runtime_capi.h"
+#endif
 
 namespace {
 
@@ -24,10 +33,33 @@ bool isDeepLSDOutputImage(const ccImage* img) {
     return img->getMetaData(QStringLiteral("DeepLSD")).isValid();
 }
 
+void applyDeepLSDEntityMetadata(ccHObject* entity,
+                                const DeepLSDDialog::Settings& settings,
+                                const DeepLSDRunResult& result) {
+    if (!entity) return;
+    const QString device = result.resolvedDevice.isEmpty()
+                                   ? settings.device
+                                   : result.resolvedDevice;
+    const int imageW =
+            result.width > 0 ? result.width : result.originalWidth;
+    const int imageH =
+            result.height > 0 ? result.height : result.originalHeight;
+    entity->setMetaData(QStringLiteral("Device"), device);
+    entity->setMetaData(QStringLiteral("Model"),
+                        QFileInfo(settings.modelPath).fileName());
+    entity->setMetaData(QStringLiteral("MinSegmentQuality"),
+                        settings.minSegmentScore);
+    if (imageW > 0 && imageH > 0) {
+        entity->setMetaData(QStringLiteral("ImageSize"),
+                            QStringLiteral("%1x%2").arg(imageW).arg(imageH));
+    }
+}
+
 }  // namespace
 
 qDeepLSD::qDeepLSD(QObject* parent)
     : QObject(parent), ccStdPluginInterface(":/CC/plugin/qDeepLSD/info.json") {
+    ecvPS::registerSettingsGroup(QStringLiteral("qDeepLSD"));
     m_action = new QAction(tr("DeepLSD Wireframe"), this);
     m_action->setToolTip(tr("Extract line wireframe fields with DeepLSD GGML"));
     m_action->setIcon(QIcon(":/CC/plugin/qDeepLSD/images/qDeepLSD.svg"));
@@ -131,6 +163,7 @@ void qDeepLSD::showDialog() {
     if (!m_dialog) {
         m_dialog = new DeepLSDDialog(
                 static_cast<QWidget*>(m_app->getMainWindow()));
+        m_dialog->setAppInterface(m_app);
         connect(m_dialog, &DeepLSDDialog::runRequested, this,
                 &qDeepLSD::executeTask);
         connect(m_dialog, &DeepLSDDialog::cancelRequested, this,
@@ -152,6 +185,14 @@ void qDeepLSD::showDialog() {
 void qDeepLSD::executeTask(const DeepLSDDialog::Settings& settings) {
     if (m_worker && m_worker->isRunning()) return;
 
+    if (m_worker) {
+        m_worker->disconnect(this);
+        m_worker->disconnect(m_dialog);
+        m_worker->releaseContextOnMainThread();
+        m_worker->deleteLater();
+        m_worker = nullptr;
+    }
+
     QString resolvedPath;
     QString err;
     if (!resolveInputPath(settings.inputPath, resolvedPath, &err)) {
@@ -163,10 +204,23 @@ void qDeepLSD::executeTask(const DeepLSDDialog::Settings& settings) {
         return;
     }
 
+    QString workerDevice = settings.device;
+#ifdef AICore_ENABLED
+    if (aicore_warmup_backend(workerDevice.toUtf8().constData()) != 0) {
+        if (aicore_is_gpu_device(workerDevice.toUtf8().constData())) {
+            workerDevice = QStringLiteral("cpu");
+            m_dialog->appendLog(tr(
+                    "[DeepLSD] GPU backend unavailable — using CPU for this run."));
+        }
+    }
+#endif
+
     m_currentSettings = settings;
     m_worker = new DeepLSDWorker(
             DeepLSDWorker::Settings{settings.modelPath, resolvedPath,
-                                    settings.threads, settings.device},
+                                    settings.threads, workerDevice,
+                                    settings.minSegmentScore,
+                                    settings.addDistanceOverlayToDb},
             this);
     connect(m_worker, &DeepLSDWorker::logMessage, m_dialog,
             &DeepLSDDialog::appendLog);
@@ -181,24 +235,113 @@ void qDeepLSD::executeTask(const DeepLSDDialog::Settings& settings) {
 }
 
 void qDeepLSD::cancelTask() {
+#ifdef AICore_ENABLED
+    aicore_cancel_request();
+#endif
     if (m_worker && m_worker->isRunning()) m_worker->requestInterruption();
 }
 
 void qDeepLSD::onResultReady(const DeepLSDRunResult& result) {
-    if (!m_app || result.overlay.isNull()) return;
-    if (!m_currentSettings.addResultToDb) {
-        m_dialog->appendLog(tr("[DeepLSD] Done (DB export disabled)."));
+    if (!m_app) return;
+
+    ccHObject* lastAdded = nullptr;
+    int exportCount = 0;
+
+    if (m_currentSettings.addLineVizToDb &&
+        !result.lineVisualization.isNull()) {
+        const QString deviceTag = ecvPluginDbNaming::deviceTagFromName(
+                result.resolvedDevice.isEmpty() ? m_currentSettings.device
+                                                : result.resolvedDevice);
+        const QString name = ecvPluginDbNaming::makeUnique(
+                QStringLiteral("DeepLSD_%1_%2")
+                        .arg(result.imageName, deviceTag),
+                m_app);
+        auto* img = new ccImage(result.lineVisualization, name);
+        img->setMetaData(QStringLiteral("DeepLSD"), true);
+        img->setMetaData(QStringLiteral("DeepLSDExport"), QStringLiteral("lines"));
+        img->setMetaData(QStringLiteral("Runtime (ms)"), result.runtimeMs);
+        img->setMetaData(QStringLiteral("Source"), result.imagePath);
+        img->setMetaData(QStringLiteral("SegmentCount"),
+                         static_cast<qlonglong>(result.segments.size()));
+        applyDeepLSDEntityMetadata(img, m_currentSettings, result);
+        m_app->addToDB(img, true, true, false, true);
+        lastAdded = img;
+        ++exportCount;
+        m_dialog->appendLog(tr("[DeepLSD] Added line visualization '%1'.")
+                                    .arg(name));
+    }
+
+    if (m_currentSettings.addDistanceOverlayToDb &&
+        !result.distanceOverlay.isNull()) {
+        const QString deviceTag = ecvPluginDbNaming::deviceTagFromName(
+                result.resolvedDevice.isEmpty() ? m_currentSettings.device
+                                                : result.resolvedDevice);
+        const QString name = ecvPluginDbNaming::makeUnique(
+                QStringLiteral("DeepLSD_df_%1_%2")
+                        .arg(result.imageName, deviceTag),
+                m_app);
+        auto* img = new ccImage(result.distanceOverlay, name);
+        img->setMetaData(QStringLiteral("DeepLSD"), true);
+        img->setMetaData(QStringLiteral("DeepLSDExport"),
+                         QStringLiteral("distance_field"));
+        img->setMetaData(QStringLiteral("Runtime (ms)"), result.runtimeMs);
+        img->setMetaData(QStringLiteral("Source"), result.imagePath);
+        applyDeepLSDEntityMetadata(img, m_currentSettings, result);
+        m_app->addToDB(img, true, true, false, true);
+        lastAdded = img;
+        ++exportCount;
+        m_dialog->appendLog(tr("[DeepLSD] Added distance-field overlay '%1'.")
+                                    .arg(name));
+    }
+
+    if (m_currentSettings.exportPolylinesToDb && !result.segments.empty()) {
+        const QString deviceTag = ecvPluginDbNaming::deviceTagFromName(
+                result.resolvedDevice.isEmpty() ? m_currentSettings.device
+                                                : result.resolvedDevice);
+        const QString entityName = ecvPluginDbNaming::makeUnique(
+                QStringLiteral("DeepLSD_lines_%1_%2")
+                        .arg(result.imageName, deviceTag),
+                m_app);
+        auto* lines = new cloudViewer::geometry::LineSet(
+                entityName.toUtf8().constData());
+        lines->setMetaData(QStringLiteral("DeepLSD"), true);
+        lines->setMetaData(QStringLiteral("Source"), result.imagePath);
+        applyDeepLSDEntityMetadata(lines, m_currentSettings, result);
+
+        lines->points_.reserve(result.segments.size() * 2);
+        lines->lines_.reserve(result.segments.size());
+        for (size_t i = 0; i < result.segments.size(); ++i) {
+            const DeepLSDLineSegment& seg = result.segments[i];
+            const int i0 = static_cast<int>(lines->points_.size());
+            lines->points_.emplace_back(seg.x1, seg.y1, 0.0);
+            lines->points_.emplace_back(seg.x2, seg.y2, 0.0);
+            lines->lines_.emplace_back(i0, i0 + 1);
+        }
+
+        lines->set2DMode(true);
+        lines->setColor(ecvColor::Rgb(DeepLSDLineStyle::kRed,
+                                      DeepLSDLineStyle::kGreen,
+                                      DeepLSDLineStyle::kBlue));
+        lines->setWidth(1);
+        lines->showColors(true);
+
+        m_app->addToDB(lines, true, true, false, true);
+        lastAdded = lines;
+        ++exportCount;
+        m_dialog->appendLog(
+                tr("[DeepLSD] Exported %1 segments as LineSet '%2'.")
+                        .arg(lines->segmentCount())
+                        .arg(entityName));
+    }
+
+    if (exportCount == 0) {
+        m_dialog->appendLog(tr("[DeepLSD] Done (no DB export selected)."));
         return;
     }
-    const QString name = ecvPluginDbNaming::makeUnique(
-            QStringLiteral("DeepLSD_%1").arg(result.imageName), m_app);
-    auto* img = new ccImage(result.overlay, name);
-    img->setMetaData(QStringLiteral("DeepLSD"), true);
-    img->setMetaData(QStringLiteral("Runtime (ms)"), result.runtimeMs);
-    img->setMetaData(QStringLiteral("Source"), result.imagePath);
-    m_app->addToDB(img, true, true, false, true);
-    m_app->setSelectedInDB(img, true);
-    m_dialog->appendLog(tr("[DeepLSD] Added '%1' to DB.").arg(name));
+
+    if (lastAdded) {
+        m_app->setSelectedInDB(lastAdded, true);
+    }
 }
 
 void qDeepLSD::onTaskFinished(bool success) {

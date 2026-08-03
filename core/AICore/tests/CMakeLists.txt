@@ -8,37 +8,10 @@
 set(AICORE_TEST_RUNTIME_DIR ${CMAKE_BINARY_DIR}/bin/aicore_tests)
 set(AICORE_TEST_INC ${CMAKE_CURRENT_SOURCE_DIR})
 file(MAKE_DIRECTORY ${AICORE_TEST_RUNTIME_DIR})
-string(REPLACE ";" "|" AICORE_TEST_GGML_GPU_BACKEND_FILES_PIPE
-       "${GGML_GPU_BACKEND_MODULE_FILES}")
 
-function(_aicore_copy_ggml_for_test name)
-    if(GGML_DYNAMIC_BACKENDS AND GGML_RUNTIME_LIB_DIR AND GGML_BACKEND_DIR)
-        set(_copy_script "${CMAKE_CURRENT_SOURCE_DIR}/../cmake/CopyGgmlBackends.cmake")
-        set(_backend_args
-            -DCOPY_BACKEND_MODULES=ON
-            -DGGML_BACKEND_DIR="${GGML_BACKEND_DIR}"
-            -DDEST_DIR="$<TARGET_FILE_DIR:${name}>"
-            -DLIB_PREFIX="${CMAKE_SHARED_LIBRARY_PREFIX}"
-            -DLIB_SUFFIX="${GGML_MODULE_SUFFIX}"
-            -DGPU_FILES_PIPE="${AICORE_TEST_GGML_GPU_BACKEND_FILES_PIPE}")
-        if(GGML_CPU_ALL_VARIANTS)
-            list(APPEND _backend_args -DCPU_ALL_VARIANTS=ON)
-        endif()
-        list(APPEND _backend_args -P "${_copy_script}")
-        add_custom_command(TARGET ${name} POST_BUILD
-            COMMAND ${CMAKE_COMMAND}
-                -DCOPY_CORE_SHARED=ON
-                -DGGML_BACKEND_DIR="${GGML_RUNTIME_LIB_DIR}"
-                -DDEST_DIR="$<TARGET_FILE_DIR:${name}>"
-                -DLIB_PREFIX="${CMAKE_SHARED_LIBRARY_PREFIX}"
-                -DLIB_SUFFIX="${CMAKE_SHARED_LIBRARY_SUFFIX}"
-                -P "${_copy_script}"
-            COMMENT "Copying ggml shared libs for ${name}"
-        )
-        add_custom_command(TARGET ${name} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} ${_backend_args}
-            COMMENT "Copying ggml backend modules for ${name}"
-        )
+function(_aicore_capi_link name)
+    if(TARGET AICore_capi_link)
+        target_link_libraries(${name} PRIVATE AICore_capi_link)
     endif()
 endfunction()
 
@@ -49,12 +22,8 @@ function(_aicore_test_common name)
     target_include_directories(${name} PRIVATE ${AICORE_TEST_INC})
     include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/AICoreCompileDefinitions.cmake)
     aicore_apply_compile_definitions(${name})
-    set(_runtime_dir "${AICORE_TEST_RUNTIME_DIR}/${name}_runtime")
-    set_target_properties(${name} PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${_runtime_dir}"
-        POSITION_INDEPENDENT_CODE ON
-    )
-    _aicore_copy_ggml_for_test(${name})
+    set_target_properties(${name} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+    cloudviewer_set_aicore_test_runtime_layout(${name})
     add_test(NAME ${name} COMMAND ${name})
     set_tests_properties(${name} PROPERTIES SKIP_RETURN_CODE 77)
 endfunction()
@@ -74,6 +43,7 @@ endfunction()
 function(aicore_add_depth_capi_test name)
     add_executable(${name} depth/${name}.cpp)
     target_link_libraries(${name} PRIVATE AICore)
+    _aicore_capi_link(${name})
     _aicore_test_common(${name})
     if(NOT MSVC)
         target_compile_options(${name} PRIVATE -fPIC)
@@ -107,17 +77,7 @@ endfunction()
 function(aicore_add_lightglue_capi_test name)
     add_executable(${name} lightglue/${name}.cpp)
     target_link_libraries(${name} PRIVATE AICore)
-    _aicore_test_common(${name})
-    if(NOT MSVC)
-        target_compile_options(${name} PRIVATE -fPIC)
-        target_link_options(${name} PRIVATE "-no-pie")
-    endif()
-    set_tests_properties(${name} PROPERTIES LABELS "capi")
-endfunction()
-
-function(aicore_add_eloftr_capi_test name)
-    add_executable(${name} eloftr/${name}.cpp)
-    target_link_libraries(${name} PRIVATE AICore)
+    _aicore_capi_link(${name})
     _aicore_test_common(${name})
     if(NOT MSVC)
         target_compile_options(${name} PRIVATE -fPIC)
@@ -129,6 +89,7 @@ endfunction()
 function(aicore_add_deeplsd_capi_test name)
     add_executable(${name} deeplsd/${name}.cpp)
     target_link_libraries(${name} PRIVATE AICore)
+    _aicore_capi_link(${name})
     _aicore_test_common(${name})
     if(NOT MSVC)
         target_compile_options(${name} PRIVATE -fPIC)
@@ -137,9 +98,33 @@ function(aicore_add_deeplsd_capi_test name)
     set_tests_properties(${name} PROPERTIES LABELS "capi")
 endfunction()
 
-function(aicore_add_matchanything_capi_test name)
-    add_executable(${name} matchanything/${name}.cpp)
+function(aicore_add_facedetect_whitebox_test name)
+    if(NOT TARGET AICore_test)
+        return()
+    endif()
+    add_executable(${name} facedetect/${name}.cpp)
+    target_link_libraries(${name} PRIVATE AICore_test)
+    target_include_directories(${name} PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/../src/facedetect)
+    _aicore_test_common(${name})
+endfunction()
+
+function(aicore_add_facedetect_capi_test name)
+    add_executable(${name} facedetect/${name}.cpp)
     target_link_libraries(${name} PRIVATE AICore)
+    _aicore_capi_link(${name})
+    _aicore_test_common(${name})
+    if(NOT MSVC)
+        target_compile_options(${name} PRIVATE -fPIC)
+        target_link_options(${name} PRIVATE "-no-pie")
+    endif()
+    set_tests_properties(${name} PROPERTIES LABELS "capi")
+endfunction()
+
+function(aicore_add_aliked_capi_test name)
+    add_executable(${name} aliked/${name}.cpp)
+    target_link_libraries(${name} PRIVATE AICore)
+    _aicore_capi_link(${name})
     _aicore_test_common(${name})
     if(NOT MSVC)
         target_compile_options(${name} PRIVATE -fPIC)
@@ -151,6 +136,7 @@ endfunction()
 function(aicore_add_gaussian_capi_test name)
     add_executable(${name} gaussian/${name}.cpp)
     target_link_libraries(${name} PRIVATE AICore)
+    _aicore_capi_link(${name})
     _aicore_test_common(${name})
     if(NOT MSVC)
         target_compile_options(${name} PRIVATE -fPIC)
@@ -238,17 +224,21 @@ set_tests_properties(test_gaussian_capi_load PROPERTIES LABELS "capi;model")
 
 aicore_add_lightglue_capi_test(test_lightglue_capi_contract)
 
-aicore_add_eloftr_capi_test(test_eloftr_capi_contract)
-aicore_add_eloftr_capi_test(test_eloftr_capi_load)
-set_tests_properties(test_eloftr_capi_load PROPERTIES LABELS "capi;model")
+aicore_add_aliked_capi_test(test_aliked_capi_contract)
+aicore_add_aliked_capi_test(test_aliked_capi_parity)
+set_tests_properties(test_aliked_capi_parity PROPERTIES LABELS "capi;model;gpu")
+aicore_add_aliked_capi_test(test_aliked_e2e_smoke)
+set_tests_properties(test_aliked_e2e_smoke PROPERTIES LABELS "capi;model;gpu;smoke")
 
 aicore_add_deeplsd_capi_test(test_deeplsd_capi_contract)
 aicore_add_deeplsd_capi_test(test_deeplsd_capi_load)
 set_tests_properties(test_deeplsd_capi_load PROPERTIES LABELS "capi;model")
 
-aicore_add_matchanything_capi_test(test_matchanything_capi_contract)
-aicore_add_matchanything_capi_test(test_matchanything_capi_load)
-set_tests_properties(test_matchanything_capi_load PROPERTIES LABELS "capi;model")
+if(TARGET AICore_test)
+    aicore_add_facedetect_whitebox_test(test_facedetect_align)
+endif()
+aicore_add_facedetect_capi_test(test_facedetect_embed_capi)
+set_tests_properties(test_facedetect_embed_capi PROPERTIES LABELS "capi;model")
 
 add_test(
     NAME test_aicore_public_headers
@@ -275,9 +265,10 @@ set(_aicore_contract_targets
     test_gaussian_capi_contract
     test_gaussian_capi_load
     test_lightglue_capi_contract
-    test_eloftr_capi_contract
-    test_deeplsd_capi_contract
-    test_matchanything_capi_contract)
+    test_aliked_capi_contract
+    test_aliked_capi_parity
+    test_aliked_e2e_smoke
+    test_deeplsd_capi_contract)
 add_custom_target(aicore-contract-tests
     COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -L capi -j1
             -C $<CONFIG>

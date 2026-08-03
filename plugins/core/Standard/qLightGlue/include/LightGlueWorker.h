@@ -32,6 +32,7 @@ struct LightGlueRunResult {
     QString imageName0;
     QString imageName1;
     QString sourceName;
+    QString resolvedDevice;
     double runtimeMs = 0.0;
 };
 
@@ -43,8 +44,6 @@ public:
 
     struct Settings {
         Mode mode = Mode::Match;
-        /** 0 = LightGlue (SIFT + matcher), 1 = EfficientLoFTR end-to-end */
-        int pipelineType = 0;
         QString modelPath;
         QStringList inputPaths;
         int threads = 0;
@@ -52,7 +51,7 @@ public:
         double minScore = 0.1;
         int matcherType = 2;
         int maxKeypoints = 2048;
-        int maxResize = 1024;
+        int maxResize = 640;
     };
 
     explicit LightGlueWorker(const Settings& settings,
@@ -73,13 +72,11 @@ protected:
 private:
 #ifdef AICore_ENABLED
     bool runMatch();
-    bool runMatchElOftr();
     bool runModelInfo();
 #endif
 
     Settings m_settings;
     struct aicore_lightglue_ctx* m_pendingCtx = nullptr;
-    struct aicore_eloftr_ctx* m_pendingElOftrCtx = nullptr;
 };
 
 Q_DECLARE_METATYPE(LightGlueRunResult)

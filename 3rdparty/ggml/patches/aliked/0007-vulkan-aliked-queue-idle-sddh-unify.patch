@@ -1,0 +1,71 @@
+diff --git a/include/ggml-vulkan-aliked.h b/include/ggml-vulkan-aliked.h
+--- a/include/ggml-vulkan-aliked.h
++++ b/include/ggml-vulkan-aliked.h
+@@ -8,6 +8,10 @@ extern "C" {
+ // Returns true when ALIKED Vulkan compute pipelines are available on this backend.
+ GGML_BACKEND_API bool ggml_vulkan_aliked_available(ggml_backend_t backend);
+ 
++// Drain VkAliked + ggml compute queues; reset open compute_ctx / descriptor idx.
++// Call at extract boundaries to avoid stale command buffers across custom ops.
++GGML_BACKEND_API bool ggml_vulkan_aliked_queue_idle(ggml_backend_t backend);
++
+ GGML_BACKEND_API bool ggml_vulkan_aliked_whcn_to_nchw(ggml_backend_t backend,
+                                                       const ggml_tensor *whcn,
+                                                       ggml_tensor *nchw, int32_t c,
+diff --git a/src/ggml-vulkan/ggml-vulkan-aliked.inc.cpp b/src/ggml-vulkan/ggml-vulkan-aliked.inc.cpp
+--- a/src/ggml-vulkan/ggml-vulkan-aliked.inc.cpp
++++ b/src/ggml-vulkan/ggml-vulkan-aliked.inc.cpp
+@@ -323,6 +323,16 @@ bool ggml_vulkan_aliked_available(ggml_backend_t backend) {
+     return vk_aliked_ctx(backend) != nullptr;
+ }
+ 
++bool ggml_vulkan_aliked_queue_idle(ggml_backend_t backend) {
++    ggml_backend_vk_context *ctx = vk_aliked_ctx(backend);
++    if (ctx == nullptr) {
++        return false;
++    }
++    vk_aliked_finish(ctx);
++    ggml_backend_synchronize(backend);
++    return true;
++}
++
+ bool ggml_vulkan_aliked_whcn_to_nchw(ggml_backend_t backend, const ggml_tensor *whcn,
+                                      ggml_tensor *nchw, int32_t c, int32_t h, int32_t w) {
+@@ -570,18 +580,7 @@ bool ggml_vulkan_aliked_run_sddh(
+             pc, {static_cast<uint32_t>(batch), 1, 1}, false);
+     };
+ 
+-    if (vk_aliked_sddh_single_submit()) {
+-        ggml_pipeline_request_descriptor_sets(ctx, pipes.sddh, static_cast<uint32_t>(num_batches));
+-        for (int32_t start = 0; start < count; start += kSddhBatchSize) {
+-            const int32_t batch = std::min(kSddhBatchSize, count - start);
+-            dispatch_batch(start, batch);
+-            if (start + batch < count) {
+-                vk_aliked_compute_barrier(ctx);
+-            }
+-        }
+-        vk_aliked_finish(ctx);
+-        return true;
+-    }
+-
+     const int32_t finish_chunk = vk_aliked_sddh_finish_chunk();
+     for (int32_t chunk = 0; chunk < num_batches; chunk += finish_chunk) {
+         const int32_t chunk_batches =
+@@ -595,6 +584,7 @@ bool ggml_vulkan_aliked_run_sddh(
+         }
+         vk_aliked_finish(ctx);
+     }
++    ggml_backend_synchronize(backend);
+     return true;
+ }
+ diff --git a/src/ggml-vulkan/ggml-vulkan.cpp b/src/ggml-vulkan/ggml-vulkan.cpp
+--- a/src/ggml-vulkan/ggml-vulkan.cpp
++++ b/src/ggml-vulkan/ggml-vulkan.cpp
+@@ -18168,6 +18168,7 @@ static void * ggml_backend_vk_get_proc_address(ggml_backend_reg_t reg, const char
+ #define GGML_VK_ALIKED_PROC(sym) \
+     if (strcmp(name, #sym) == 0) { return reinterpret_cast<void *>(sym); }
+     GGML_VK_ALIKED_PROC(ggml_vulkan_aliked_available)
++    GGML_VK_ALIKED_PROC(ggml_vulkan_aliked_queue_idle)
+     GGML_VK_ALIKED_PROC(ggml_vulkan_aliked_whcn_to_nchw)
+     GGML_VK_ALIKED_PROC(ggml_vulkan_aliked_nchw_to_whcn)
+     GGML_VK_ALIKED_PROC(ggml_vulkan_aliked_dense_copy_whcn)

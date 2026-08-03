@@ -1,0 +1,11 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -335,6 +335,7 @@ set(GGML_PUBLIC_HEADERS
+     include/ggml-virtgpu.h
+     include/ggml-sycl.h
+     include/ggml-vulkan.h
++    include/ggml-vulkan-aliked.h
+     include/ggml-webgpu.h
+     include/ggml-zendnn.h
+     include/ggml-openvino.h

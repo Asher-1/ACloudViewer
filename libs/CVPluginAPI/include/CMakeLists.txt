@@ -7,6 +7,8 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/ecvColorScaleEditorWidget.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvCommandLineInterface.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvMainAppInterface.h
+		${CMAKE_CURRENT_LIST_DIR}/ecvClickableImageLabel.h
+		${CMAKE_CURRENT_LIST_DIR}/ecvModelDownloader.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvOverlayDialog.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvPersistentSettings.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvPickingHub.h

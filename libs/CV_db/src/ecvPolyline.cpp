@@ -165,6 +165,21 @@ ccBBox ccPolyline::getOwnBB(bool withGLFeatures /*=false*/) {
     return emptyBox;
 }
 
+void ccPolyline::drawBB(CC_DRAW_CONTEXT& context, const ecvColor::Rgb& col) {
+    if (size() == 0) {
+        return;
+    }
+    if (is2DMode()) {
+        ccBBox box;
+        getBoundingBox(box.minCorner(), box.maxCorner());
+        if (box.isValid()) {
+            box.draw(context, col);
+        }
+        return;
+    }
+    ccHObject::drawBB(context, col);
+}
+
 bool ccPolyline::hasColors() const { return true; }
 
 void ccPolyline::applyGLTransformation(const ccGLMatrix& trans) {

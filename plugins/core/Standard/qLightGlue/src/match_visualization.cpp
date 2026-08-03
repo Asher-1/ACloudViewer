@@ -9,6 +9,8 @@
 
 #include <QPainter>
 
+#include <algorithm>
+
 namespace {
 
 QImage scale_to_height(const QImage& src, int target_h) {
@@ -69,7 +71,7 @@ QImage renderMatchVisualization(const QImage& image0,
     const QSize dst1(right.width(), right.height());
     const int x_offset1 = left.width() + gap;
 
-    QPen linePen(QColor(0, 255, 0), 1);
+    QPen linePen(QColor(80, 255, 120, 180), 1);
     painter.setPen(linePen);
     for (const auto& m : matches) {
         if (m.idx1 < 0 || m.idx1 >= keypoints0.size() || m.idx2 < 0 ||
@@ -82,15 +84,20 @@ QImage renderMatchVisualization(const QImage& image0,
         painter.drawLine(p0, p1);
     }
 
-    painter.setBrush(QColor(0, 255, 0));
+    // Draw matched keypoints only (2048 SIFT points overlap heavily at r>1).
+    const int r = std::max(1, std::min(2, total_w / 500));
     painter.setPen(Qt::NoPen);
-    const int r = 2;
-    for (const QPointF& kp : keypoints0) {
-        const QPointF p = map_keypoint(kp, src0, dst0);
+    painter.setBrush(QColor(255, 180, 40));
+    for (const auto& m : matches) {
+        if (m.idx1 < 0 || m.idx1 >= keypoints0.size()) continue;
+        const QPointF p = map_keypoint(keypoints0[m.idx1], src0, dst0);
         painter.drawEllipse(p, r, r);
     }
-    for (const QPointF& kp : keypoints1) {
-        const QPointF p = map_keypoint(kp, src1, dst1) + QPointF(x_offset1, 0);
+    painter.setBrush(QColor(60, 210, 255));
+    for (const auto& m : matches) {
+        if (m.idx2 < 0 || m.idx2 >= keypoints1.size()) continue;
+        const QPointF p = map_keypoint(keypoints1[m.idx2], src1, dst1) +
+                           QPointF(x_offset1, 0);
         painter.drawEllipse(p, r, r);
     }
 

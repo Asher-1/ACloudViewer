@@ -52,6 +52,16 @@ inline QString modelTagFromFilename(const QString& modelPath, int maxLen = 28) {
     return tag.isEmpty() ? QStringLiteral("Model") : tag;
 }
 
+/** Resolved ggml device name (e.g. CUDA0, Vulkan0, cpu) for DB export tags. */
+inline QString deviceTagFromName(const QString& device, int maxLen = 12) {
+    const QString trimmed = device.trimmed();
+    if (trimmed.isEmpty()) {
+        return QStringLiteral("cpu");
+    }
+    const QString tag = sanitizeSegment(trimmed, maxLen);
+    return tag.isEmpty() ? QStringLiteral("cpu") : tag.toLower();
+}
+
 inline void collectExistingNames(const ccHObject* root, QSet<QString>& names) {
     if (!root) return;
     names.insert(root->getName());

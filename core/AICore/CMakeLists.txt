@@ -7,7 +7,7 @@
 #
 # Build:   libAICore.so
 # Exports: all public headers under include/aicore/
-# Depends: 3rdparty_ggml (PRIVATE), CVCoreLib, Qt::Core + Qt::Gui
+# Depends: 3rdparty_ggml (PRIVATE build dep), CVCoreLib, Qt::Core + Qt::Gui
 
 if(NOT AICore_ENABLED)
     message(STATUS "AICore module is disabled (set AICore_ENABLED=ON to enable)")
@@ -30,10 +30,9 @@ set(AICORE_COMMON_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/common)
 set(AICORE_DEPTH_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/depth)
 set(AICORE_GAUSSIAN_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/gaussian)
 set(AICORE_LIGHTGLUE_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/lightglue)
-set(AICORE_ELOFTR_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/eloftr)
 set(AICORE_DEEPLSD_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/deeplsd)
 set(AICORE_ALIKED_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/aliked)
-set(AICORE_MATCHANYTHING_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/matchanything)
+set(AICORE_FACEDETECT_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/facedetect)
 
 if(NOT EXISTS ${AICORE_DEPTH_SRC_DIR}/engine.cpp)
     message(WARNING "AICore: depth module not found at ${AICORE_DEPTH_SRC_DIR}")
@@ -61,34 +60,31 @@ file(GLOB GAUSSIAN_SOURCES ${AICORE_GAUSSIAN_SRC_DIR}/*.cpp)
 file(GLOB GAUSSIAN_HEADERS ${AICORE_GAUSSIAN_SRC_DIR}/*.hpp ${AICORE_GAUSSIAN_SRC_DIR}/*.h)
 file(GLOB LIGHTGLUE_SOURCES ${AICORE_LIGHTGLUE_SRC_DIR}/*.cpp)
 file(GLOB LIGHTGLUE_HEADERS ${AICORE_LIGHTGLUE_SRC_DIR}/*.hpp)
-file(GLOB AICORE_ELOFTR_SOURCES ${AICORE_ELOFTR_SRC_DIR}/*.cpp)
 file(GLOB AICORE_DEEPLSD_SOURCES ${AICORE_DEEPLSD_SRC_DIR}/*.cpp)
 file(GLOB AICORE_ALIKED_SOURCES ${AICORE_ALIKED_SRC_DIR}/*.cpp)
-file(GLOB AICORE_MATCHANYTHING_SOURCES ${AICORE_MATCHANYTHING_SRC_DIR}/*.cpp)
+file(GLOB AICORE_FACEDETECT_SOURCES ${AICORE_FACEDETECT_SRC_DIR}/*.cpp)
 file(GLOB AICORE_API_HEADERS ${AICORE_INC_DIR}/aicore/*.h)
 
-if(NOT EXISTS ${AICORE_ELOFTR_SRC_DIR}/repvgg_ggml.cpp)
-    message(FATAL_ERROR "AICore: missing ELoFTR module at ${AICORE_ELOFTR_SRC_DIR}")
-endif()
 if(NOT EXISTS ${AICORE_DEEPLSD_SRC_DIR}/deeplsd_extractor.cpp)
     message(FATAL_ERROR "AICore: missing DeepLSD module at ${AICORE_DEEPLSD_SRC_DIR}")
 endif()
 if(NOT EXISTS ${AICORE_ALIKED_SRC_DIR}/aliked.cpp)
     message(FATAL_ERROR "AICore: missing ALIKED module at ${AICORE_ALIKED_SRC_DIR}")
 endif()
-if(NOT EXISTS ${AICORE_MATCHANYTHING_SRC_DIR}/matchanything_eloftr.cpp)
-    message(FATAL_ERROR "AICore: missing MatchAnything module at ${AICORE_MATCHANYTHING_SRC_DIR}")
+if(NOT EXISTS ${AICORE_FACEDETECT_SRC_DIR}/model.cpp)
+    message(FATAL_ERROR "AICore: missing FaceDetect module at ${AICORE_FACEDETECT_SRC_DIR}")
 endif()
+
+find_package(JPEG REQUIRED)
 
 add_library(${PROJECT_NAME} SHARED
     ${AICORE_COMMON_SOURCES} ${AICORE_COMMON_HEADERS}
     ${DEPTH_SOURCES} ${DEPTH_HEADERS}
     ${GAUSSIAN_SOURCES} ${GAUSSIAN_HEADERS}
     ${LIGHTGLUE_SOURCES} ${LIGHTGLUE_HEADERS}
-    ${AICORE_ELOFTR_SOURCES}
     ${AICORE_DEEPLSD_SOURCES}
     ${AICORE_ALIKED_SOURCES}
-    ${AICORE_MATCHANYTHING_SOURCES}
+    ${AICORE_FACEDETECT_SOURCES}
     ${AICORE_API_HEADERS}
 )
 
@@ -99,6 +95,9 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     CXX_STANDARD_REQUIRED ON
     CXX_VISIBILITY_PRESET hidden
     VISIBILITY_INLINES_HIDDEN ON
+    # Always beside ACloudViewer executable (bin/), never bin/plugins/ where Qt scans *.so.
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
 
 # AICore and its private ggml runtime files are always deployed together. Use
@@ -130,15 +129,36 @@ target_include_directories(${PROJECT_NAME}
         ${AICORE_DEPTH_SRC_DIR}
         ${AICORE_GAUSSIAN_SRC_DIR}
         ${AICORE_LIGHTGLUE_SRC_DIR}
-        ${AICORE_ELOFTR_SRC_DIR}
         ${AICORE_DEEPLSD_SRC_DIR}
         ${AICORE_ALIKED_SRC_DIR}
+        ${AICORE_ALIKED_SRC_DIR}/cuda
+        ${AICORE_ALIKED_SRC_DIR}/vulkan
         ${AICORE_ALIKED_SRC_DIR}/include
-        ${AICORE_MATCHANYTHING_SRC_DIR}
+        ${AICORE_FACEDETECT_SRC_DIR}
 )
 
 add_dependencies(${PROJECT_NAME} 3rdparty_ggml)
-target_link_libraries(${PROJECT_NAME} PRIVATE 3rdparty_ggml)
+# Build: ggml headers/targets stay PRIVATE (see AICore/README.md).
+target_link_libraries(${PROJECT_NAME} PRIVATE 3rdparty_ggml PRIVATE 3rdparty_jpeg)
+find_package(OpenMP)
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(${PROJECT_NAME} PRIVATE OpenMP::OpenMP_CXX)
+endif()
+# Consumers link only AICore; propagate ggml core .so paths (no include dirs) so
+# executables resolve libggml alongside libAICore. Backend MODULE libs remain
+# dlopen'd from libAICore's directory at runtime.
+if(GGML_CORE_LINK_LIBS)
+    target_link_libraries(${PROJECT_NAME} INTERFACE ${GGML_CORE_LINK_LIBS})
+endif()
+# GGML_BACKEND_DL: direct AICore C API executables need allow-shlib-undefined on
+# Linux so libAICore.so can leave backend symbols unresolved until dlopen.
+# Do NOT propagate via AICore INTERFACE — Colmap/VTK link DSOs that need crc32
+# from libz while static libz.a is hidden via --exclude-libs,libz.a.
+if(GGML_DYNAMIC_BACKENDS AND UNIX AND NOT APPLE AND NOT MSVC)
+    add_library(AICore_capi_link INTERFACE)
+    target_link_options(AICore_capi_link INTERFACE "-Wl,--allow-shlib-undefined")
+endif()
+target_compile_definitions(${PROJECT_NAME} PRIVATE FACEDETECT_HAVE_LIBJPEG=1)
 if(DEFINED GGML_INCLUDE_DIRS)
     target_include_directories(${PROJECT_NAME} PRIVATE ${GGML_INCLUDE_DIRS})
 endif()
@@ -151,15 +171,20 @@ endif()
 aicore_apply_compile_definitions(${PROJECT_NAME})
 
 if(AICore_CUDA_ENABLED)
-    target_sources(${PROJECT_NAME} PRIVATE ${AICORE_ALIKED_SRC_DIR}/aliked_cuda.cu)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE LIGHTGLUE_HAS_CUDA=1)
+    target_sources(${PROJECT_NAME} PRIVATE ${AICORE_ALIKED_SRC_DIR}/cuda/aliked_cuda.cu)
     if(TARGET CUDA::cudart)
         target_link_libraries(${PROJECT_NAME} PRIVATE CUDA::cudart)
     endif()
     set_property(TARGET ${PROJECT_NAME} PROPERTY CUDA_SEPARABLE_COMPILATION ON)
 endif()
-# Vulkan ALIKED custom shaders live in LightGlue-GGML ggml fork only; AICore
-# uses CPU dense-map fallback on Vulkan until those ops are vendored.
+if(AICore_VULKAN_ENABLED)
+    target_sources(${PROJECT_NAME} PRIVATE
+        ${AICORE_ALIKED_SRC_DIR}/vulkan/vulkan_aliked_dispatch.cpp)
+    target_include_directories(${PROJECT_NAME} PRIVATE
+        ${AICORE_ALIKED_SRC_DIR}/vulkan)
+endif()
+# Vulkan ALIKED custom compute: 3rdparty/ggml/patches/aliked/0001-vulkan-aliked-custom-compute.patch
+# (AICORE_VULKAN_ALIKED when AICore_VULKAN_ENABLED — see AICoreCompileDefinitions.cmake)
 
 # Static mode only: ggml-cuda static archives are embedded into libAICore.so
 # and pull in CUDA driver API (libcuda.so) as a DT_NEEDED dep.  In Docker/CI
@@ -216,6 +241,10 @@ else()
         check_cxx_compiler_flag("-mfma" AICORE_HAS_FMA)
         if(AICORE_HAS_AVX2 AND AICORE_HAS_FMA)
             set_source_files_properties(${AICORE_DEPTH_SRC_DIR}/winograd.cpp
+                PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma")
+            set_source_files_properties(
+                ${AICORE_FACEDETECT_SRC_DIR}/winograd.cpp
+                ${AICORE_FACEDETECT_SRC_DIR}/directconv.cpp
                 PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma")
         endif()
     endif()
@@ -277,7 +306,25 @@ if(GGML_DYNAMIC_BACKENDS AND GGML_RUNTIME_LIB_DIR AND GGML_BACKEND_DIR)
         COMMAND ${CMAKE_COMMAND} ${_aicore_backend_copy_args}
         COMMENT "Copying ggml dynamic backend modules to libAICore directory"
     )
-
+    # aicore_tests/ sits beside libAICore.so; ggml's backend loader may probe the
+    # executable directory first when scripts set LD_LIBRARY_PATH=.../aicore_tests.
+    if(AICore_BUILD_TESTS)
+        set(_aicore_test_backend_copy_args
+            -DCOPY_BACKEND_MODULES=ON
+            -DGGML_BACKEND_DIR="${GGML_BACKEND_DIR}"
+            -DDEST_DIR="${CMAKE_BINARY_DIR}/bin/aicore_tests"
+            -DLIB_PREFIX="${CMAKE_SHARED_LIBRARY_PREFIX}"
+            -DLIB_SUFFIX="${GGML_MODULE_SUFFIX}"
+            -DGPU_FILES_PIPE="${_aicore_gpu_backend_files_pipe}")
+        if(GGML_CPU_ALL_VARIANTS)
+            list(APPEND _aicore_test_backend_copy_args -DCPU_ALL_VARIANTS=ON)
+        endif()
+        list(APPEND _aicore_test_backend_copy_args -P "${_aicore_copy_ggml_script}")
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} ${_aicore_test_backend_copy_args}
+            COMMENT "Copying ggml dynamic backend modules to aicore_tests directory"
+        )
+    endif()
     # `cmake --install` only ships libAICore.so by default; backend MODULE libs
     # (libggml-cpu.so, libggml-cuda.so, …) must be installed alongside it or
     # ggml_backend_load_all_from_path() finds dev_count=0 at runtime.
@@ -312,6 +359,7 @@ if(AICore_BUILD_TESTS)
             ${DEPTH_SOURCES}
             ${GAUSSIAN_SOURCES}
             ${LIGHTGLUE_SOURCES}
+            ${AICORE_FACEDETECT_SOURCES}
         )
         list(FILTER AICORE_TEST_SOURCES EXCLUDE REGEX
              ".*/(capi|image_depth)\\.cpp$")
@@ -333,6 +381,7 @@ if(AICore_BUILD_TESTS)
             $<BUILD_INTERFACE:${AICORE_DEPTH_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_GAUSSIAN_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_LIGHTGLUE_SRC_DIR}>
+            $<BUILD_INTERFACE:${AICORE_FACEDETECT_SRC_DIR}>
         )
         add_dependencies(AICore_test 3rdparty_ggml)
         target_link_libraries(AICore_test PUBLIC 3rdparty_ggml CVCoreLib)
@@ -359,10 +408,13 @@ if(AICore_BUILD_TESTS)
     message(STATUS "AICore: contract tests enabled")
 endif()
 
-message(STATUS "AICore (SHARED): depth + gaussian + lightglue + eloftr + deeplsd + matchanything, ggml linked once")
+message(STATUS "AICore (SHARED): depth + gaussian + lightglue + deeplsd + facedetect, ggml linked once")
 
 add_executable(aicore_gguf_quantize tools/aicore_gguf_quantize.cpp)
 target_link_libraries(aicore_gguf_quantize PRIVATE AICore)
+if(TARGET AICore_capi_link)
+    target_link_libraries(aicore_gguf_quantize PRIVATE AICore_capi_link)
+endif()
 set_target_properties(aicore_gguf_quantize PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
     FOLDER "core/tools")

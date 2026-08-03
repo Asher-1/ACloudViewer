@@ -73,6 +73,7 @@
         <file>Resources/images/dbMiscGeomSymbolLocked.png</file>
         <file>Resources/images/dbOctreeSymbolLocked.png</file>
         <file>Resources/images/dbPolylineSymbol.png</file>
+        <file>Resources/images/dbLineSetSymbol.png</file>
         <file>Resources/images/dbCircle.png</file>
         <file>Resources/images/primCylinder.gif</file>
         <file>Resources/images/dbSubMeshSymbol.png</file>
@@ -320,6 +321,8 @@
         <file>Resources/images/svg/pqApply.svg</file>
         <file>Resources/images/svg/pqCancel.svg</file>
         <file>Resources/images/svg/pqReset.svg</file>
+        <file>Resources/images/svg/pqResetUI.svg</file>
+        <file>Resources/images/svg/pqResetSettings.svg</file>
         <file>Resources/images/svg/pqPaste.png</file>
         <file>Resources/images/svg/pqNodeMapData.png</file>
         <file>Resources/images/svg/pqInvert.png</file>

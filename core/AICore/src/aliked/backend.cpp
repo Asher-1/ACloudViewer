@@ -7,14 +7,23 @@
 
 #include "backend.h"
 
+#include "../common/ggml_backend_utils.hpp"
+
 #include <ggml-backend.h>
 #include <ggml-cpu.h>
 
+#if defined(AICORE_VULKAN_ALIKED)
+#include "gpu_sync.hpp"
+#include "vulkan/vulkan_aliked_dispatch.hpp"
+#endif
+
 #include <algorithm>
 #include <cctype>
+#include <cstring>
 #include <cstdlib>
 #include <fstream>
 #include <thread>
+#include <vector>
 
 namespace lightglue::internal {
 namespace {
@@ -34,6 +43,15 @@ int DefaultThreadCount() {
         logical = std::max(1u, logical / 2);
     }
     return static_cast<int>(logical);
+}
+
+bool VulkanSchedEnabledByEnv() {
+    const char *env = std::getenv("LIGHTGLUE_ALIKED_VULKAN_SCHED");
+    if (env == nullptr || env[0] == '\0') {
+        return false;
+    }
+    return std::strcmp(env, "0") != 0 && Lower(env) != "false" &&
+           Lower(env) != "off";
 }
 
 void SetCpuThreads(ggml_backend_t backend, int count) {
@@ -121,6 +139,77 @@ bool Backend::Init(const std::string &request, int num_threads) {
         Release();
         return false;
     }
+
+#if defined(AICORE_VULKAN_ALIKED)
+    if (IsVulkan()) {
+        lightglue::aliked_internal::ApplyVulkanAlikedPerfDefaults();
+    }
+#endif
+
+    if (IsVulkan() && VulkanSchedEnabledByEnv()) {
+        cpu_backend = ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_CPU,
+                                                nullptr);
+        if (cpu_backend == nullptr) {
+            error = "failed to initialize CPU backend for Vulkan scheduler";
+            Release();
+            return false;
+        }
+        SetCpuThreads(cpu_backend,
+                      num_threads > 0 ? num_threads : DefaultThreadCount());
+        std::vector<ggml_backend_t> backs = {handle, cpu_backend};
+        std::vector<ggml_backend_buffer_type_t> bufts = {
+                ggml_backend_get_default_buffer_type(handle),
+                ggml_backend_get_default_buffer_type(cpu_backend),
+        };
+        sched = ggml_backend_sched_new(
+                backs.data(), bufts.data(), static_cast<int>(backs.size()),
+                /*graph_size=*/512, /*parallel=*/false,
+                /*op_offload=*/false);
+        if (sched == nullptr) {
+            error = "failed to create ggml backend scheduler for Vulkan";
+            Release();
+            return false;
+        }
+        use_sched = true;
+    }
+    return true;
+}
+
+bool Backend::SchedRunGraph(ggml_cgraph *graph,
+                            const std::function<void()> &set_inputs,
+                            std::string *error,
+                            const std::function<void()> &before_alloc) {
+    if (!HasSched() || graph == nullptr) {
+        if (error) {
+            *error = "Vulkan scheduler is not initialized";
+        }
+        return false;
+    }
+    ggml_backend_sched_reset(sched);
+    if (before_alloc) {
+        before_alloc();
+    }
+    if (!ggml_backend_sched_alloc_graph(sched, graph)) {
+        if (error) {
+            *error = "ggml_backend_sched_alloc_graph failed";
+        }
+        return false;
+    }
+    if (set_inputs) {
+        set_inputs();
+    }
+    if (ggml_backend_sched_graph_compute(sched, graph) != GGML_STATUS_SUCCESS) {
+        if (error) {
+            *error = "ggml_backend_sched_graph_compute failed";
+        }
+        return false;
+    }
+    ggml_backend_sched_synchronize(sched);
+#if defined(AICORE_VULKAN_ALIKED)
+    if (IsVulkan()) {
+        lightglue::aliked_internal::VkAlikedQueueIdle(handle);
+    }
+#endif
     return true;
 }
 
@@ -157,14 +246,29 @@ bool Backend::IsVulkan() const {
 }
 
 void Backend::Release() {
+#if defined(AICORE_VULKAN_ALIKED)
+    if (IsVulkan() && handle != nullptr) {
+        lightglue::aliked_internal::VkAlikedQueueIdle(handle);
+        ggml_backend_synchronize(handle);
+    }
+#endif
+    if (sched != nullptr) {
+        ggml_backend_sched_free(sched);
+        sched = nullptr;
+    }
     if (allocator != nullptr) {
         ggml_gallocr_free(allocator);
         allocator = nullptr;
+    }
+    if (cpu_backend != nullptr) {
+        ggml_backend_free(cpu_backend);
+        cpu_backend = nullptr;
     }
     if (handle != nullptr) {
         ggml_backend_free(handle);
         handle = nullptr;
     }
+    use_sched = false;
     device.clear();
     error.clear();
 }

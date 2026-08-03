@@ -24,6 +24,8 @@ struct FreeSplatterResult {
     bool hasPoses = false;
     QVector<float> cam2world;  // nViews * 16 float32 (row-major 4x4)
     float focal = 0.0f;
+    QString resolvedDevice;
+    double runtimeMs = 0.0;
 };
 
 Q_DECLARE_METATYPE(FreeSplatterResult)

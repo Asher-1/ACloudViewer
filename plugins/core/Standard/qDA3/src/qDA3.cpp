@@ -10,6 +10,7 @@
 #ifdef AICore_ENABLED
 #include "aicore/backend_capi.h"
 #include "aicore/depth_capi.h"
+#include "aicore/runtime_capi.h"
 #endif
 
 #include <ecvGLMatrix.h>
@@ -18,17 +19,23 @@
 #include <ecvPointCloud.h>
 #include <ecvScalarField.h>
 
+#include "ecvPersistentSettings.h"
+
 #include <QAction>
 #include <QDir>
 #include <QFile>
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QMainWindow>
 #include <QMessageBox>
+#include <QSettings>
+#include <QStandardPaths>
 #include <algorithm>
 #include <cmath>
 
 qDA3::qDA3(QObject* parent)
     : QObject(parent), ccStdPluginInterface(":/CC/plugin/qDA3/info.json") {
+    ecvPS::registerSettingsGroup(QStringLiteral("qDA3"));
     m_action = new QAction("DA3 Depth Estimation", this);
     m_action->setToolTip(
             "Depth Anything V3 — monocular depth, pose, 3D reconstruction");
@@ -101,6 +108,7 @@ void qDA3::showDialog() {
     if (!m_app) return;
     if (!m_dialog) {
         m_dialog = new DA3Dialog(m_app->getMainWindow());
+        m_dialog->setAppInterface(m_app);
         connect(m_dialog, &DA3Dialog::runRequested, this, &qDA3::executeTask);
         connect(m_dialog, &DA3Dialog::cancelRequested, this, &qDA3::cancelTask);
         connect(m_dialog, &DA3Dialog::exportDepthRequested, this,
@@ -125,6 +133,7 @@ void qDA3::executeTask(const DA3Dialog::Settings& settings) {
     if (m_worker) {
         m_worker->disconnect(this);
         m_worker->disconnect(m_dialog);
+        m_worker->releaseContextOnMainThread();
         m_worker->deleteLater();
         m_worker = nullptr;
     }
@@ -224,6 +233,9 @@ void qDA3::executeTask(const DA3Dialog::Settings& settings) {
 }
 
 void qDA3::cancelTask() {
+#ifdef AICore_ENABLED
+    aicore_cancel_request();
+#endif
     if (m_worker && m_worker->isRunning()) {
         m_worker->requestInterruption();
         m_dialog->appendLog("[DA3] Cancel requested...");
@@ -271,14 +283,42 @@ QString da3ModeTag(DA3Dialog::Mode mode) {
 
 QString buildDa3ExportBaseName(const DA3Dialog::Settings& settings,
                                const QString& entityKind,
-                               const QString& sourceName) {
+                               const QString& sourceName,
+                               const QString& resolvedDevice) {
     const QString modelTag =
             ecvPluginDbNaming::modelTagFromFilename(settings.modelPath);
     const QString modeTag = da3ModeTag(settings.mode);
+    const QString deviceTag = ecvPluginDbNaming::deviceTagFromName(
+            resolvedDevice.isEmpty() ? settings.device : resolvedDevice);
     QString source = ecvPluginDbNaming::sanitizeSegment(sourceName);
     if (source.isEmpty()) source = QStringLiteral("run");
-    return QStringLiteral("DA3_%1_%2_%3_%4")
-            .arg(modelTag, modeTag, entityKind, source);
+    return QStringLiteral("DA3_%1_%2_%3_%4_%5")
+            .arg(modelTag, modeTag, entityKind, source, deviceTag);
+}
+
+void applyDa3DepthMetadata(ccHObject* entity,
+                           const DA3Dialog::Settings& settings,
+                           const DA3DepthResult& result,
+                           int pointCount,
+                           float depthMin,
+                           float depthMax,
+                           bool unproject) {
+    if (!entity) return;
+    const QString device = result.resolvedDevice.isEmpty()
+                                   ? settings.device
+                                   : result.resolvedDevice;
+    entity->setMetaData(QStringLiteral("DA3/RuntimeMs"), result.runtimeMs);
+    entity->setMetaData(QStringLiteral("DA3/Device"), device);
+    entity->setMetaData(QStringLiteral("DA3/Model"),
+                        QFileInfo(settings.modelPath).fileName());
+    entity->setMetaData(QStringLiteral("DA3/DepthMin"), depthMin);
+    entity->setMetaData(QStringLiteral("DA3/DepthMax"), depthMax);
+    entity->setMetaData(QStringLiteral("DA3/Width"), result.width);
+    entity->setMetaData(QStringLiteral("DA3/Height"), result.height);
+    entity->setMetaData(QStringLiteral("DA3/PointCount"), pointCount);
+    entity->setMetaData(QStringLiteral("DA3/Mode"),
+                        unproject ? QStringLiteral("unproject")
+                                  : QStringLiteral("grid"));
 }
 
 }  // namespace
@@ -300,7 +340,8 @@ void qDA3::onDepthResult(const DA3DepthResult& result) {
     const int N = sampledW * sampledH;
 
     const QString cloudBase = buildDa3ExportBaseName(
-            m_currentSettings, QStringLiteral("Cloud"), result.sourceName);
+            m_currentSettings, QStringLiteral("Cloud"), result.sourceName,
+            result.resolvedDevice);
     const QString cloudName = ecvPluginDbNaming::makeUnique(cloudBase, m_app);
 
     auto* cloud = new ccPointCloud(cloudName);
@@ -419,7 +460,8 @@ void qDA3::onDepthResult(const DA3DepthResult& result) {
     cloud->setEnabled(true);
 
     const QString depthMapBase = buildDa3ExportBaseName(
-            m_currentSettings, QStringLiteral("DepthMap"), result.sourceName);
+            m_currentSettings, QStringLiteral("DepthMap"), result.sourceName,
+            result.resolvedDevice);
     const QString depthMapName =
             ecvPluginDbNaming::makeUnique(depthMapBase, m_app);
 
@@ -429,6 +471,11 @@ void qDA3::onDepthResult(const DA3DepthResult& result) {
                         depthMapName);
     depthImage->setVisible(true);
     depthImage->setEnabled(true);
+
+    applyDa3DepthMetadata(cloud, m_currentSettings, result, N, dmin, dmax,
+                          unproject);
+    applyDa3DepthMetadata(depthImage, m_currentSettings, result, N, dmin, dmax,
+                          unproject);
 
     m_app->addToDB(cloud);
     m_app->addToDB(depthImage);
@@ -449,7 +496,8 @@ void qDA3::onReconResult(const DA3ReconResult& result) {
 
     const int N = result.count;
     const QString reconBase = buildDa3ExportBaseName(
-            m_currentSettings, QStringLiteral("Gaussians"), result.sourceName);
+            m_currentSettings, QStringLiteral("Gaussians"), result.sourceName,
+            QString());
     const QString reconName = ecvPluginDbNaming::makeUnique(reconBase, m_app);
 
     auto* cloud = new ccPointCloud(reconName);
@@ -540,6 +588,7 @@ void qDA3::onTaskFinished(bool success) {
     m_dialog->setRunning(false);
     m_dialog->enableExportButtons(success && m_hasDepthResult);
     if (m_worker) {
+        m_worker->releaseContextOnMainThread();
         m_worker->deleteLater();
         m_worker = nullptr;
     }
@@ -588,10 +637,19 @@ void qDA3::exportDepthMap() {
         return;
     }
 
-    QString path = QFileDialog::getSaveFileName(
-            m_dialog, "Save Depth Map", QString(),
-            "PNG Image (*.png);;TIFF Image (*.tiff *.tif);;All Files (*)");
+    QSettings settings;
+    const QString path = QFileDialog::getSaveFileName(
+            m_dialog, tr("Save Depth Map"),
+            ecvPS::browseDir(
+                    settings, QStringLiteral("qDA3"),
+                    QStringLiteral("lastExportDir"),
+                    QStandardPaths::writableLocation(
+                            QStandardPaths::DocumentsLocation)),
+            tr("PNG Image (*.png);;TIFF Image (*.tiff *.tif);;All Files (*)"));
     if (path.isEmpty()) return;
+    ecvPS::saveBrowseDir(settings, QStringLiteral("qDA3"),
+                                       QStringLiteral("lastExportDir"),
+                                       path);
 
     if (saveDepthAsImage(m_lastDepthResult, path)) {
         m_dialog->appendLog(QString("[DA3] Depth map saved: %1 (%2x%3)")

@@ -16,11 +16,23 @@ set_target_properties(free_splatter-cli PROPERTIES
     CXX_STANDARD_REQUIRED ON
 )
 
+cloudviewer_set_bin_runtime_output_directory(free_splatter-cli)
+
 target_include_directories(free_splatter-cli PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 target_link_libraries(free_splatter-cli PRIVATE AICore 3rdparty_opencv)
+if(TARGET AICore_capi_link)
+    target_link_libraries(free_splatter-cli PRIVATE AICore_capi_link)
+endif()
+
+# libAICore.so + ggml backends live in bin/. RPATH finds them from bin/.
+if(UNIX AND NOT APPLE)
+    set_target_properties(free_splatter-cli PROPERTIES
+        BUILD_RPATH "$ORIGIN"
+        INSTALL_RPATH "$ORIGIN")
+endif()
 
 if(DEFINED OpenCV_INCLUDE_DIRS)
     target_include_directories(free_splatter-cli PRIVATE ${OpenCV_INCLUDE_DIRS})

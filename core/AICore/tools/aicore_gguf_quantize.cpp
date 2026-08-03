@@ -10,16 +10,12 @@
 #include <cstring>
 
 #include "aicore/deeplsd_capi.h"
-#include "aicore/eloftr_capi.h"
-#include "aicore/matchanything_capi.h"
 
 int main(int argc, char** argv) {
     if (argc != 5) {
-        std::fprintf(
-                stderr,
-                "usage: %s eloftr|deeplsd|matchanything input.gguf output.gguf "
-                "f16|q8_0\n",
-                argv[0]);
+        std::fprintf(stderr,
+                     "usage: %s deeplsd input.gguf output.gguf f16|q8_0\n",
+                     argv[0]);
         return 2;
     }
     const char* module = argv[1];
@@ -27,16 +23,10 @@ int main(int argc, char** argv) {
     const char* output = argv[3];
     const char* type = argv[4];
     int rc = -1;
-    if (std::strcmp(module, "eloftr") == 0) {
-        rc = aicore_eloftr_quantize(input, output, type);
-    } else if (std::strcmp(module, "deeplsd") == 0) {
+    if (std::strcmp(module, "deeplsd") == 0) {
         rc = aicore_deeplsd_quantize(input, output, type);
-    } else if (std::strcmp(module, "matchanything") == 0) {
-        rc = aicore_matchanything_quantize(input, output, type);
     } else {
-        std::fprintf(stderr,
-                     "unknown module: %s (want eloftr|deeplsd|matchanything)\n",
-                     module);
+        std::fprintf(stderr, "unknown module: %s (want deeplsd)\n", module);
         return 2;
     }
     if (rc != 0) {

@@ -107,6 +107,10 @@ DkdOutput RunDkd(const std::vector<float> &score_map,
     (void)image_width;
     (void)image_height;
     DkdOutput output;
+    if (h <= 0 || w <= 0 ||
+        score_map.size() < static_cast<size_t>(h) * static_cast<size_t>(w)) {
+        return output;
+    }
     std::vector<float> nms = SimpleNms(score_map, h, w, options.radius);
 
     for (int32_t y = 0; y < options.radius; ++y) {
@@ -234,7 +238,10 @@ DkdOutput RunDkd(const std::vector<float> &score_map,
         float residual_x = 0.0f;
         float residual_y = 0.0f;
         for (int32_t i = 0; i < kernel_area; ++i) {
-            const float weight = x_exp[static_cast<size_t>(i)] / exp_sum;
+            const float weight =
+                    exp_sum > 0.0f
+                            ? x_exp[static_cast<size_t>(i)] / exp_sum
+                            : 0.0f;
             residual_x += weight * hw_grid[static_cast<size_t>(i) * 2 + 0];
             residual_y += weight * hw_grid[static_cast<size_t>(i) * 2 + 1];
         }
@@ -370,6 +377,125 @@ std::vector<float> RunSddh(const std::vector<float> &feature_map,
         }
     }
     return descriptors;
+}
+
+bool RunSddhStages(const std::vector<float> &feature_map,
+                   int32_t dim,
+                   int32_t h,
+                   int32_t w,
+                   const std::vector<float> &keypoints_norm,
+                   int32_t key_index,
+                   int32_t kernel_size,
+                   int32_t n_pos,
+                   const std::vector<float> &offset_0_w,
+                   const std::vector<float> &offset_0_b,
+                   const std::vector<float> &offset_2_w,
+                   const std::vector<float> &offset_2_b,
+                   const std::vector<float> &sf_conv_w,
+                   const std::vector<float> &agg_weights,
+                   SddhStageDump *out) {
+    if (out == nullptr || key_index < 0 ||
+        key_index >= static_cast<int32_t>(keypoints_norm.size() / 2)) {
+        return false;
+    }
+    const float wh_x = static_cast<float>(w - 1);
+    const float wh_y = static_cast<float>(h - 1);
+    const float max_offset = std::max(h, w) / 4.0f;
+    const int32_t pad = kernel_size / 2;
+
+    out->key_index = key_index;
+    const float x_norm = keypoints_norm[static_cast<size_t>(key_index) * 2 + 0];
+    const float y_norm = keypoints_norm[static_cast<size_t>(key_index) * 2 + 1];
+    out->x_wh = (x_norm / 2.0f + 0.5f) * wh_x;
+    out->y_wh = (y_norm / 2.0f + 0.5f) * wh_y;
+
+    if (kernel_size > 1) {
+        const int32_t x0 = std::min(
+                std::max(static_cast<int32_t>(std::lround(out->x_wh)) - pad, 0),
+                w - kernel_size);
+        const int32_t y0 = std::min(
+                std::max(static_cast<int32_t>(std::lround(out->y_wh)) - pad, 0),
+                h - kernel_size);
+        out->patch.assign(static_cast<size_t>(dim) * kernel_size * kernel_size, 0.0f);
+        for (int32_t c = 0; c < dim; ++c) {
+            for (int32_t ky = 0; ky < kernel_size; ++ky) {
+                for (int32_t kx = 0; kx < kernel_size; ++kx) {
+                    out->patch[IndexNchw(c, ky, kx, kernel_size, kernel_size)] =
+                            feature_map[IndexNchw(c, y0 + ky, x0 + kx, h, w)];
+                }
+            }
+        }
+    } else {
+        out->patch.assign(static_cast<size_t>(dim), 0.0f);
+        const int32_t xi = std::min(
+                std::max(static_cast<int32_t>(std::lround(out->x_wh)), 0), w - 1);
+        const int32_t yi = std::min(
+                std::max(static_cast<int32_t>(std::lround(out->y_wh)), 0), h - 1);
+        for (int32_t c = 0; c < dim; ++c) {
+            out->patch[static_cast<size_t>(c)] =
+                    feature_map[IndexNchw(c, yi, xi, h, w)];
+        }
+    }
+
+    int32_t oh = 0;
+    int32_t ow = 0;
+    Conv2d(out->patch, dim, kernel_size, kernel_size, offset_0_w, 32, kernel_size,
+           kernel_size, &offset_0_b, 0, 1, &out->offset_raw, &oh, &ow);
+    ApplySelu(&out->offset_raw);
+    Conv2d(out->offset_raw, 32, oh, ow, offset_2_w, 32, 1, 1, &offset_2_b, 0, 1,
+           &out->offset_final, &oh, &ow);
+
+    out->desc_pre_norm.assign(static_cast<size_t>(dim), 0.0f);
+    out->desc.assign(static_cast<size_t>(dim), 0.0f);
+    out->sampled.assign(static_cast<size_t>(dim), 0.0f);
+    out->transformed.assign(static_cast<size_t>(dim), 0.0f);
+
+    for (int32_t p = 0; p < n_pos; ++p) {
+        const float off_x = std::max(
+                -max_offset,
+                std::min(max_offset, out->offset_final[static_cast<size_t>(p)]));
+        const float off_y = std::max(
+                -max_offset,
+                std::min(max_offset,
+                         out->offset_final[static_cast<size_t>(n_pos + p)]));
+        const float sample_x = (out->x_wh + off_x) / wh_x * 2.0f - 1.0f;
+        const float sample_y = (out->y_wh + off_y) / wh_y * 2.0f - 1.0f;
+        const float px = (sample_x + 1.0f) * 0.5f * wh_x;
+        const float py = (sample_y + 1.0f) * 0.5f * wh_y;
+
+        for (int32_t c = 0; c < dim; ++c) {
+            out->sampled[static_cast<size_t>(c)] =
+                    BilinearSample(feature_map, dim, h, w, c, py, px);
+        }
+
+        for (int32_t c = 0; c < dim; ++c) {
+            float value = 0.0f;
+            for (int32_t ic = 0; ic < dim; ++ic) {
+                value += out->sampled[static_cast<size_t>(ic)] *
+                         sf_conv_w[static_cast<size_t>(c) * dim + ic];
+            }
+            out->transformed[static_cast<size_t>(c)] = Selu(value);
+        }
+
+        for (int32_t c = 0; c < dim; ++c) {
+            for (int32_t ic = 0; ic < dim; ++ic) {
+                out->desc_pre_norm[static_cast<size_t>(c)] +=
+                        out->transformed[static_cast<size_t>(ic)] *
+                        agg_weights[static_cast<size_t>(p) * dim * dim +
+                                    static_cast<size_t>(ic) * dim + c];
+            }
+        }
+    }
+
+    float norm = 0.0f;
+    for (float value : out->desc_pre_norm) {
+        norm += value * value;
+    }
+    norm = std::sqrt(std::max(norm, 1e-12f));
+    for (int32_t c = 0; c < dim; ++c) {
+        out->desc[static_cast<size_t>(c)] = out->desc_pre_norm[static_cast<size_t>(c)] / norm;
+    }
+    return true;
 }
 
 }  // namespace lightglue::aliked_internal

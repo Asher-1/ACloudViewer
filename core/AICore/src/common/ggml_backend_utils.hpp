@@ -23,6 +23,7 @@
 #include <filesystem>
 #include <string>
 #include <thread>
+#include <vector>
 
 #if defined(__APPLE__) || defined(__linux__)
 #include <dlfcn.h>
@@ -220,12 +221,138 @@ inline bool auto_includes_backend(const std::string& backend) {
     return false;
 }
 
+inline std::string registry_backend_id(const char* reg_name) {
+    const std::string name = to_lower(reg_name ? reg_name : "");
+    if (name == "mtl" || name == "metal") return "metal";
+    if (name.find("cuda") != std::string::npos) return "cuda";
+    if (name.find("opencl") != std::string::npos) return "opencl";
+    if (name.find("vulkan") != std::string::npos) return "vulkan";
+    if (name.find("cpu") != std::string::npos) return "cpu";
+    return name;
+}
+
+// All GPU backends for a device request. "auto" collects every GPU of the first
+// auto-priority backend family (e.g. both cuda:0 and cuda:1); "cuda:1" selects one.
+struct GpuBackendGroup {
+    std::vector<ggml_backend_t> gpus;
+    std::vector<std::string> names;
+
+    ggml_backend_t primary() const {
+        return gpus.empty() ? nullptr : gpus.front();
+    }
+    const std::string& primary_name() const {
+        static const std::string kEmpty;
+        return names.empty() ? kEmpty : names.front();
+    }
+    void release() {
+        for (ggml_backend_t be : gpus) {
+            if (be) ggml_backend_free(be);
+        }
+        gpus.clear();
+        names.clear();
+    }
+};
+
+inline GpuBackendGroup resolve_gpu_group(const std::string& device_req) {
+    load_backends_once();
+    GpuBackendGroup group;
+    std::string name;
+    int want_idx = 0;
+    parse_device(device_req, name, want_idx);
+
+    auto append_gpu = [&](ggml_backend_dev_t dev) {
+        if (ggml_backend_t be = ggml_backend_dev_init(dev, nullptr)) {
+            group.gpus.push_back(be);
+            const char* dev_name = ggml_backend_dev_name(dev);
+            group.names.push_back(dev_name ? dev_name : "gpu");
+        }
+    };
+
+    const bool want_all_of_family =
+            (name.empty() || name == "auto" || name == "gpu") && want_idx == 0;
+
+    if (want_all_of_family) {
+        for (const char* const* p = auto_backend_ids(); *p; ++p) {
+            const std::string family = *p;
+            for (size_t i = 0; i < ggml_backend_dev_count(); ++i) {
+                ggml_backend_dev_t dev = ggml_backend_dev_get(i);
+                const auto type = ggml_backend_dev_type(dev);
+                if (type != GGML_BACKEND_DEVICE_TYPE_GPU &&
+                    type != GGML_BACKEND_DEVICE_TYPE_IGPU) {
+                    continue;
+                }
+                const char* reg = ggml_backend_reg_name(
+                        ggml_backend_dev_backend_reg(dev));
+                if (registry_backend_id(reg) != family) continue;
+                append_gpu(dev);
+            }
+            if (!group.gpus.empty()) break;
+        }
+        if (group.gpus.empty()) {
+            std::string resolved;
+            if (ggml_backend_t be = find_integrated_gpu_backend(resolved)) {
+                group.gpus.push_back(be);
+                group.names.push_back(resolved);
+            }
+        }
+    } else if (name == "cpu") {
+        return group;
+    } else {
+        std::string resolved;
+        if (ggml_backend_t be = find_gpu_backend(name, want_idx, resolved)) {
+            group.gpus.push_back(be);
+            group.names.push_back(resolved);
+        }
+    }
+    return group;
+}
+
+inline ggml_backend_sched_t new_gpu_sched(
+        const std::vector<ggml_backend_t>& gpus,
+        ggml_backend_t cpu_backend,
+        size_t graph_size) {
+    if (gpus.empty()) return nullptr;
+    std::vector<ggml_backend_t> backs = gpus;
+    if (cpu_backend) backs.push_back(cpu_backend);
+    if (backs.size() < 2) return nullptr;
+    return ggml_backend_sched_new(backs.data(), nullptr,
+                                  static_cast<int>(backs.size()), graph_size,
+                                  /*parallel=*/false, /*op_offload=*/true);
+}
+
 inline ggml_backend_t find_auto_backend(std::string& resolved_name) {
     for (const char* const* p = auto_backend_ids(); *p; ++p) {
         ggml_backend_t be = find_gpu_backend(*p, 0, resolved_name);
         if (be) return be;
     }
     return nullptr;
+}
+
+// Resolve a user/device UI string to a ggml backend registry id understood by
+// simple CreateBackend helpers (cpu | cuda | vulkan | metal | …).
+inline std::string resolve_device_request(const std::string& device_req) {
+    load_backends_once();
+    std::string name;
+    int want_idx = 0;
+    parse_device(device_req, name, want_idx);
+    if (name.empty() || name == "auto") {
+        for (const char* const* p = auto_backend_ids(); *p; ++p) {
+            std::string resolved;
+            if (find_gpu_backend(*p, want_idx, resolved)) return *p;
+        }
+        return "cpu";
+    }
+    if (name == "gpu") {
+        for (const char* const* p = auto_backend_ids(); *p; ++p) {
+            std::string resolved;
+            if (find_gpu_backend(*p, 0, resolved)) return *p;
+        }
+        return "cpu";
+    }
+    if (name == "cpu") return "cpu";
+    std::string resolved;
+    if (find_gpu_backend(name, want_idx, resolved)) return name;
+    return "cpu";
 }
 
 }  // namespace ggml_common

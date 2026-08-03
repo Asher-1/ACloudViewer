@@ -56,6 +56,7 @@
 #include <ecvPlane.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
+#include <LineSet.h>
 #include <ecvRepresentationManager.h>
 #include <ecvScalarField.h>
 #include <ecvSensor.h>
@@ -121,13 +122,17 @@ void refreshOpacityPreview(ecvGenericGLDisplay* preferredView = nullptr) {
 
 bool isOpacityFolder(const ccHObject* obj) { return obj && obj->isGroup(); }
 
+bool isLineEntity(const ccHObject* obj) {
+    return obj && (obj->isKindOf(CV_TYPES::POLY_LINE) ||
+                   obj->isKindOf(CV_TYPES::LINESET));
+}
+
 bool isOpacityRenderable(const ccHObject* obj) {
     return obj && obj->isEnabled() &&
            (obj->isKindOf(CV_TYPES::POINT_CLOUD) ||
             obj->isKindOf(CV_TYPES::MESH) ||
             obj->isKindOf(CV_TYPES::PRIMITIVE) ||
-            obj->isKindOf(CV_TYPES::POLY_LINE) ||
-            obj->isKindOf(CV_TYPES::FACET));
+            isLineEntity(obj) || obj->isKindOf(CV_TYPES::FACET));
 }
 
 ENTITY_TYPE opacityEntityType(const ccHObject* obj) {
@@ -141,7 +146,7 @@ ENTITY_TYPE opacityEntityType(const ccHObject* obj) {
         obj->isKindOf(CV_TYPES::FACET)) {
         return ENTITY_TYPE::ECV_MESH;
     }
-    if (obj->isKindOf(CV_TYPES::POLY_LINE)) {
+    if (isLineEntity(obj)) {
         return ENTITY_TYPE::ECV_LINES_3D;
     }
     return ENTITY_TYPE::ECV_POINT_CLOUD;
@@ -411,6 +416,8 @@ void ccPropertiesTreeDelegate::fillModel(ccHObject* hObject) {
         fillWithFacet(ccHObjectCaster::ToFacet(m_currentObject));
     } else if (m_currentObject->isA(CV_TYPES::POLY_LINE)) {
         fillWithPolyline(ccHObjectCaster::ToPolyline(m_currentObject));
+    } else if (m_currentObject->isA(CV_TYPES::LINESET)) {
+        fillWithLineSet(ccHObjectCaster::ToLineSet(m_currentObject));
     } else if (m_currentObject->isA(CV_TYPES::POINT_OCTREE)) {
         fillWithPointOctree(ccHObjectCaster::ToOctree(m_currentObject));
     } else if (m_currentObject->isA(CV_TYPES::POINT_KDTREE)) {
@@ -445,7 +452,7 @@ void ccPropertiesTreeDelegate::fillModel(ccHObject* hObject) {
     if (m_currentObject->isKindOf(CV_TYPES::POINT_CLOUD) ||
         m_currentObject->isKindOf(CV_TYPES::MESH) ||
         m_currentObject->isKindOf(CV_TYPES::FACET) ||
-        m_currentObject->isKindOf(CV_TYPES::POLY_LINE) ||
+        isLineEntity(m_currentObject) ||
         m_currentObject->isKindOf(CV_TYPES::SENSOR)) {
         addSeparator(tr("Transformation history"));
         appendWideRow(PERSISTENT_EDITOR(OBJECT_HISTORY_MATRIX_EDITOR));
@@ -575,7 +582,7 @@ void ccPropertiesTreeDelegate::fillWithViewProperties() {
         bool isRenderable = (m_currentObject->isKindOf(CV_TYPES::POINT_CLOUD) ||
                              m_currentObject->isKindOf(CV_TYPES::MESH) ||
                              m_currentObject->isKindOf(CV_TYPES::PRIMITIVE) ||
-                             m_currentObject->isKindOf(CV_TYPES::POLY_LINE) ||
+                             isLineEntity(m_currentObject) ||
                              m_currentObject->isKindOf(CV_TYPES::FACET));
         bool isFolder = isOpacityFolder(m_currentObject);
 
@@ -599,7 +606,7 @@ void ccPropertiesTreeDelegate::fillWithViewProperties() {
                            m_currentObject->isA(CV_TYPES::VIEWPORT_2D_OBJECT) ||
                            m_currentObject->isA(CV_TYPES::VIEWPORT_2D_LABEL));
         bool isImage = m_currentObject->isKindOf(CV_TYPES::IMAGE);
-        bool isPolyline = m_currentObject->isKindOf(CV_TYPES::POLY_LINE);
+        bool isLineLike = isLineEntity(m_currentObject);
         bool isArray = (m_currentObject->isA(CV_TYPES::NORMAL_INDEXES_ARRAY) ||
                         m_currentObject->isA(CV_TYPES::TEX_COORDS_ARRAY) ||
                         m_currentObject->isA(CV_TYPES::NORMALS_ARRAY) ||
@@ -613,10 +620,19 @@ void ccPropertiesTreeDelegate::fillWithViewProperties() {
             hasValidBBox = bbox.isValid();
         }
 
-        if (isPolyline) {
-            ccPolyline* polyline = ccHObjectCaster::ToPolyline(m_currentObject);
-            if (polyline) {
-                if (polyline->size() <= 1 || polyline->is2DMode()) {
+        if (isLineLike) {
+            if (m_currentObject->isKindOf(CV_TYPES::POLY_LINE)) {
+                ccPolyline* polyline =
+                        ccHObjectCaster::ToPolyline(m_currentObject);
+                if (polyline &&
+                    (polyline->size() <= 1 || polyline->is2DMode())) {
+                    hasValidBBox = false;
+                }
+            } else if (m_currentObject->isKindOf(CV_TYPES::LINESET)) {
+                cloudViewer::geometry::LineSet* lineSet =
+                        ccHObjectCaster::ToLineSet(m_currentObject);
+                if (lineSet &&
+                    (!lineSet->HasLines() || lineSet->is2DMode())) {
                     hasValidBBox = false;
                 }
             } else {
@@ -1116,6 +1132,30 @@ void ccPropertiesTreeDelegate::fillWithPolyline(ccPolyline* _obj) {
               true);
 
     // global shift & scale
+    fillWithShifted(_obj);
+}
+
+void ccPropertiesTreeDelegate::fillWithLineSet(
+        cloudViewer::geometry::LineSet* _obj) {
+    assert(_obj && m_model);
+    if (!_obj || !m_model) {
+        return;
+    }
+
+    addSeparator(tr("Line set"));
+
+    appendRow(ITEM(tr("Points")),
+              ITEM(QLocale(QLocale::English).toString(_obj->points_.size())));
+
+    appendRow(ITEM(tr("Segments")),
+              ITEM(QLocale(QLocale::English).toString(_obj->segmentCount())));
+
+    appendRow(ITEM(tr("Length")),
+              ITEM(QLocale(QLocale::English).toString(_obj->computeLength())));
+
+    appendRow(ITEM(tr("Line width")), PERSISTENT_EDITOR(OBJECT_POLYLINE_WIDTH),
+              true);
+
     fillWithShifted(_obj);
 }
 
@@ -2620,7 +2660,7 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
                             if (obj->isKindOf(CV_TYPES::POINT_CLOUD) ||
                                 obj->isKindOf(CV_TYPES::MESH) ||
                                 obj->isKindOf(CV_TYPES::PRIMITIVE) ||
-                                obj->isKindOf(CV_TYPES::POLY_LINE) ||
+                                isLineEntity(obj) ||
                                 obj->isKindOf(CV_TYPES::FACET)) {
                                 totalOpacity += obj->getOpacity();
                                 renderableCount++;
@@ -2830,8 +2870,17 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
         }
         case OBJECT_POLYLINE_WIDTH: {
             ccPolyline* poly = ccHObjectCaster::ToPolyline(m_currentObject);
-            assert(poly);
-            SetComboBoxIndex(editor, static_cast<int>(poly->getWidth()));
+            cloudViewer::geometry::LineSet* lineSet =
+                    poly ? nullptr
+                         : ccHObjectCaster::ToLineSet(m_currentObject);
+            assert(poly || lineSet);
+            if (poly) {
+                SetComboBoxIndex(editor,
+                                 static_cast<int>(poly->getWidth()));
+            } else if (lineSet) {
+                SetComboBoxIndex(editor,
+                                 static_cast<int>(lineSet->getWidth()));
+            }
             break;
         }
         case OBJECT_COLOR_SOURCE: {
@@ -4172,11 +4221,16 @@ void ccPropertiesTreeDelegate::polyineWidthChanged(int size) {
     if (!m_currentObject) return;
 
     ccPolyline* polyline = ccHObjectCaster::ToPolyline(m_currentObject);
-    assert(polyline);
+    cloudViewer::geometry::LineSet* lineSet =
+            polyline ? nullptr : ccHObjectCaster::ToLineSet(m_currentObject);
 
     if (polyline &&
         polyline->getWidth() != static_cast<PointCoordinateType>(size)) {
         polyline->setWidth(static_cast<PointCoordinateType>(size));
+        updateCurrentEntity(false);
+    } else if (lineSet &&
+               lineSet->getWidth() != static_cast<PointCoordinateType>(size)) {
+        lineSet->setWidth(static_cast<PointCoordinateType>(size));
         updateCurrentEntity(false);
     }
 }

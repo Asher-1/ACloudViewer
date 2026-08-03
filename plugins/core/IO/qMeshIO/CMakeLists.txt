@@ -48,8 +48,7 @@ if ( PLUGIN_IO_QMESH )
 		message( WARNING "The AMD64 option may cause link errors. If you run into link errors regarding 'inflate_fast', try turning this off." )
 	endif()
 
-	if (NOT USE_SYSTEM_PNG)
-		target_link_libraries( ${PROJECT_NAME} 3rdparty_zlib )
-	endif()
+	cloudviewer_plugin_link_zlib_minizip(${PROJECT_NAME}
+		PLUGIN_NAME qMeshIO)
 	target_link_libraries( ${PROJECT_NAME} ${ASSIMP_LIBRARIES} )
 endif()

@@ -24,6 +24,9 @@
 
 #include "common.hpp"
 #include "ggml_backend_utils.hpp"
+#include "aicore/runtime_capi.h"
+
+#include <vector>
 
 #if defined(AICORE_CUDA_STATIC_LINKED)
 #include <cuda_runtime.h>
@@ -57,15 +60,52 @@ bool engine_backend::init(const std::string& device_req, int n_threads) {
            device_req.c_str(), name.c_str(), want_idx,
            ggml_backend_dev_count());
 
-    // Auto: platform-specific order from the shared backend registry.
-    if (name.empty() || name == "auto") {
-        std::string resolved;
-        if (ggml_backend_t accelerator =
-                    ggml_common::find_auto_backend(resolved)) {
-            be = accelerator;
-            device = resolved;
-        } else {
-            return init("cpu", n_threads);
+    // Auto / GPU: resolve all matching devices (multi-GPU when auto).
+    if (name.empty() || name == "auto" || name == "gpu" || name == "cuda" ||
+        name == "opencl" || name == "metal" || name == "sycl" ||
+        name == "vulkan") {
+        clear_sticky_cuda_errors();
+#ifdef __APPLE__
+        const bool disable_metal_opt =
+                (name == "metal" || name == "gpu" || name == "auto");
+        const char* saved_opt =
+                disable_metal_opt ? getenv("GGML_METAL_GRAPH_OPTIMIZE_DISABLE")
+                                  : nullptr;
+        const char* saved_fuse = disable_metal_opt
+                                         ? getenv("GGML_METAL_FUSION_DISABLE")
+                                         : nullptr;
+        if (disable_metal_opt) {
+            setenv("GGML_METAL_GRAPH_OPTIMIZE_DISABLE", "1", 1);
+            setenv("GGML_METAL_FUSION_DISABLE", "1", 1);
+        }
+#endif
+        ggml_common::GpuBackendGroup group =
+                ggml_common::resolve_gpu_group(device_req);
+#ifdef __APPLE__
+        if (disable_metal_opt) {
+            if (saved_opt)
+                setenv("GGML_METAL_GRAPH_OPTIMIZE_DISABLE", saved_opt, 1);
+            else
+                unsetenv("GGML_METAL_GRAPH_OPTIMIZE_DISABLE");
+            if (saved_fuse)
+                setenv("GGML_METAL_FUSION_DISABLE", saved_fuse, 1);
+            else
+                unsetenv("GGML_METAL_FUSION_DISABLE");
+        }
+#endif
+        if (!group.primary()) {
+            if (name.empty() || name == "auto") {
+                return init("cpu", n_threads);
+            }
+            error = "no usable '" + name +
+                    "' device (backend built and runtime driver present?)";
+            return false;
+        }
+        gpu_backends = std::move(group.gpus);
+        be = gpu_backends.front();
+        device = group.primary_name();
+        if (gpu_backends.size() > 1) {
+            device += " (x" + std::to_string(gpu_backends.size()) + " GPUs)";
         }
     } else if (name == "cpu") {
         be = ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_CPU, nullptr);
@@ -81,46 +121,6 @@ bool engine_backend::init(const std::string& device_req, int n_threads) {
             n_threads = (int)ggml_common::default_cpu_threads();
         }
         ggml_common::set_cpu_threads(be, n_threads);
-    } else if (name == "gpu" || name == "cuda" || name == "opencl" ||
-               name == "metal" || name == "sycl" || name == "vulkan") {
-        clear_sticky_cuda_errors();
-#ifdef __APPLE__
-        // FreeSplatter's 24-block transformer accumulates numerical divergence
-        // from Metal's graph fusion and reordering. Disable both for this
-        // backend to match CPU-quality results.  The env vars are checked once
-        // at Metal context creation; we restore them immediately after so other
-        // Metal users in the process keep their defaults.
-        const bool disable_metal_opt =
-                (name == "metal" || name == "gpu" || name == "auto");
-        const char* saved_opt =
-                disable_metal_opt ? getenv("GGML_METAL_GRAPH_OPTIMIZE_DISABLE")
-                                  : nullptr;
-        const char* saved_fuse = disable_metal_opt
-                                         ? getenv("GGML_METAL_FUSION_DISABLE")
-                                         : nullptr;
-        if (disable_metal_opt) {
-            setenv("GGML_METAL_GRAPH_OPTIMIZE_DISABLE", "1", 1);
-            setenv("GGML_METAL_FUSION_DISABLE", "1", 1);
-        }
-#endif
-        be = ggml_common::find_gpu_backend(name, want_idx, device);
-#ifdef __APPLE__
-        if (disable_metal_opt) {
-            if (saved_opt)
-                setenv("GGML_METAL_GRAPH_OPTIMIZE_DISABLE", saved_opt, 1);
-            else
-                unsetenv("GGML_METAL_GRAPH_OPTIMIZE_DISABLE");
-            if (saved_fuse)
-                setenv("GGML_METAL_FUSION_DISABLE", saved_fuse, 1);
-            else
-                unsetenv("GGML_METAL_FUSION_DISABLE");
-        }
-#endif
-        if (!be) {
-            error = "no usable '" + name +
-                    "' device (backend built and runtime driver present?)";
-            return false;
-        }
     } else {
         error = "unknown device '" + device_req +
                 "' (want auto|cpu|gpu|sycl|vulkan|cuda|metal)";
@@ -160,10 +160,11 @@ void engine_backend::release() {
         ggml_gallocr_free(galloc);
         galloc = nullptr;
     }
-    if (be) {
-        ggml_backend_free(be);
-        be = nullptr;
+    for (ggml_backend_t gpu : gpu_backends) {
+        if (gpu) ggml_backend_free(gpu);
     }
+    gpu_backends.clear();
+    be = nullptr;
     if (cpu_be) {
         ggml_backend_free(cpu_be);
         cpu_be = nullptr;
@@ -177,9 +178,7 @@ bool engine_backend::is_cpu() const { return ggml_common::is_cpu_backend(be); }
 bool engine_backend::alloc_graph(ggml_cgraph* graph, size_t graph_size) {
     if (!use_sched) return galloc && ggml_gallocr_alloc_graph(galloc, graph);
     if (!sched) {
-        ggml_backend_t backends[2] = {be, cpu_be};
-        sched = ggml_backend_sched_new(backends, nullptr, 2, graph_size, false,
-                                       true);
+        sched = ggml_common::new_gpu_sched(gpu_backends, cpu_be, graph_size);
         if (!sched) return false;
     }
     ggml_backend_sched_reset(sched);
@@ -188,6 +187,7 @@ bool engine_backend::alloc_graph(ggml_cgraph* graph, size_t graph_size) {
 
 enum ggml_status engine_backend::compute_graph(ggml_cgraph* graph) {
     try {
+        if (aicore_cancel_requested()) return GGML_STATUS_FAILED;
         return use_sched ? ggml_backend_sched_graph_compute(sched, graph)
                          : ggml_backend_graph_compute(be, graph);
     } catch (const std::exception& e) {

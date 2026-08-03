@@ -256,8 +256,7 @@ if (WIN32)
     target_compile_definitions(${PROJECT_NAME} PUBLIC _CRT_SECURE_NO_WARNINGS)
 
     # fix cloudViewer torch or tensorflow ops dependency issues
-    set(PYTHON_COMPILED_MODULE_DIR
-        "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Python/$<IF:$<BOOL:${BUILD_CUDA_MODULE}>,cuda,cpu>")
+    cloudviewer_get_python_compiled_module_dir(PYTHON_COMPILED_MODULE_DIR)
     add_custom_command(TARGET ${PROJECT_NAME}
         POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E

@@ -21,6 +21,9 @@ public:
 
   internal::Backend *backend() const { return backend_; }
   GgmlConvRunner *runner() { return &runner_; }
+  const GgmlConvRunner *runner() const { return &runner_; }
+
+  void ResetConvGraphCaches() { runner_.InvalidateDeviceGraphs(); }
 
   bool RunConv(const FusedConv2d &weights, const GpuTensor &input, GpuTensor *output,
                int32_t pad, int32_t stride, const char *cache_key,
@@ -42,6 +45,15 @@ public:
     bool apply_selu = false;
   };
 
+  struct ScoreHeadSchedOptions {
+    bool apply_sigmoid = false;
+    bool apply_crop = false;
+    int32_t crop_pad_top = 0;
+    int32_t crop_pad_left = 0;
+    int32_t crop_out_h = 0;
+    int32_t crop_out_w = 0;
+  };
+
   bool RunSeluConvChain(const std::vector<SeluConvSpec> &layers, const GpuTensor &input,
                         GpuTensor *output, std::string *error);
 
@@ -50,7 +62,20 @@ public:
                               const GpuTensor &input, GpuTensor *output,
                               std::string *error);
 
+  // Vulkan scheduler path: fused conv chain + optional sigmoid + optional crop.
+  // When LIGHTGLUE_ALIKED_VULKAN_SCHED_TAIL=1, SELU prefix uses legacy gallocr;
+  // only the final conv (+ sigmoid) runs through sched.
+  bool RunScoreHeadSchedGraph(const std::vector<ConvChainSpec> &layers,
+                              const GpuTensor &input, GpuTensor *output,
+                              const ScoreHeadSchedOptions &opts,
+                              std::string *error);
+
 private:
+  bool RunScoreHeadSchedGraphImpl(const std::vector<ConvChainSpec> &layers,
+                                  const GpuTensor &input, GpuTensor *output,
+                                  const ScoreHeadSchedOptions &opts,
+                                  std::string *error);
+
   internal::Backend *backend_ = nullptr;
   GgmlConvRunner runner_;
 };

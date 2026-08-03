@@ -22,6 +22,11 @@ enum class AlikedCustomOpBackend {
 
 AlikedCustomOpBackend DetectCustomOpBackend(internal::Backend *backend);
 
+bool UseVulkanGpuUpsample(internal::Backend *backend);
+bool UseVulkanDcn(internal::Backend *backend);
+bool UseVulkanPostprocess(internal::Backend *backend);
+bool UseVulkanSddh(internal::Backend *backend);
+
 bool DcnConvBnDispatch(GpuPipelineCache *cache, const GpuTensor &input,
                        const std::vector<float> &offset_w,
                        const std::vector<float> &offset_b,

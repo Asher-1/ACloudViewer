@@ -117,6 +117,13 @@ ccShiftedObject* ccHObjectCaster::ToShifted(
         return static_cast<ccPolyline*>(obj);
     }
 
+    if (obj && obj->isKindOf(CV_TYPES::LINESET)) {
+        if (lockedVertices) {
+            *lockedVertices = false;
+        }
+        return static_cast<cloudViewer::geometry::LineSet*>(obj);
+    }
+
     return nullptr;
 }
 

@@ -19,14 +19,19 @@
 #include <QHBoxLayout>
 #include <QMessageBox>
 #include <QSettings>
-#include <QSslConfiguration>
-#include <QSslError>
-#include <QSslSocket>
+#include <QCloseEvent>
+
 #include <QStandardItemModel>
 #include <QVBoxLayout>
 
 #include "aicore/backend_capi.h"
 #include "aicore/depth_capi.h"
+#include "ecvModelDownloader.h"
+#include "ecvClickableImageLabel.h"
+#include "ecvPersistentSettings.h"
+
+#include "aicore/inference_log.h"
+#include <CVLog.h>
 
 namespace {
 
@@ -71,6 +76,8 @@ static const char* kDownloadBase =
         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
         "DA3/";
 
+static const int kInputPreviewSize = 96;
+
 QVector<DA3BuiltinModel> DA3Dialog::builtinModels() {
     const QString base = QString::fromLatin1(kDownloadBase);
     return {
@@ -113,21 +120,89 @@ QString DA3Dialog::modelCacheDir() {
     return result;
 }
 
-QString DA3Dialog::formatFileSize(qint64 bytes) {
-    if (bytes < 0) return QString();
-    if (bytes < 1024) return QString("%1 B").arg(bytes);
-    if (bytes < 1024LL * 1024)
-        return QString("%1 KB").arg(bytes / 1024.0, 0, 'f', 1);
-    if (bytes < 1024LL * 1024 * 1024)
-        return QString("%1 MB").arg(bytes / (1024.0 * 1024.0), 0, 'f', 1);
-    return QString("%1 GB").arg(bytes / (1024.0 * 1024.0 * 1024.0), 0, 'f', 2);
+void DA3Dialog::updateInputPreview() {
+    if (!m_inputPreview) return;
+    const QString path = m_inputPath ? m_inputPath->text().trimmed()
+                                     : QString();
+    if (path.isEmpty()) {
+        m_inputPreview->clearPreview();
+        m_inputPreview->setText(tr("Preview"));
+        return;
+    }
+
+    QImage img;
+    const QFileInfo fi(path);
+    if (fi.isDir()) {
+        const QStringList files = listImageFilesInDir(path);
+        if (!files.isEmpty()) {
+            img = QImage(files.first());
+        }
+    } else if (isSupportedImageFile(path)) {
+        img = QImage(path);
+    }
+
+    if (img.isNull()) {
+        m_inputPreview->clearPreview();
+        m_inputPreview->setText(tr("Preview"));
+        return;
+    }
+    m_inputPreview->setPreviewImage(img, kInputPreviewSize);
 }
 
 DA3Dialog::DA3Dialog(QWidget* parent) : QDialog(parent) {
     setWindowTitle("Depth Anything V3");
     setMinimumWidth(620);
-    m_netManager = new QNetworkAccessManager(this);
     setupUi();
+    m_downloader = new ecvModelDownloader(this);
+    connect(m_downloader, &ecvModelDownloader::logMessage, this,
+            &DA3Dialog::appendLog);
+    connect(m_downloader, &ecvModelDownloader::progress, this,
+            [this](qint64 received, qint64 total) {
+                if (total > 0) {
+                    m_progressBar->setValue(
+                            static_cast<int>(received * 100 / total));
+                }
+                if (m_downloadLabel) {
+                    m_downloadLabel->setText(
+                            tr("Downloading %1 — %2")
+                                    .arg(m_downloadTargetFilename)
+                                    .arg(ecvModelDownloader::formatDownloadProgress(
+                                            received, total)));
+                }
+            });
+    connect(m_downloader, &ecvModelDownloader::finished, this,
+            [this](bool ok, const QString& dest) {
+                Q_UNUSED(dest);
+                const QString keepModel =
+                        m_modelCombo->currentData().toString();
+                const QString keepMetric =
+                        m_metricModelCombo->currentData().toString();
+                const bool shouldAutoRun = m_autoRunAfterDownload;
+                m_downloadInProgress = false;
+                m_downloadLabel->setVisible(false);
+                m_progressBar->setValue(ok ? 100 : 0);
+                populateModelCombos(keepModel, keepMetric);
+
+                if (ok && !m_downloadQueue.isEmpty()) {
+                    startDownload(m_downloadQueue.takeFirst());
+                } else {
+                    m_runBtn->setEnabled(true);
+                    m_cancelBtn->setEnabled(false);
+                    if (ok && shouldAutoRun && m_downloadQueue.isEmpty()) {
+                        m_autoRunAfterDownload = false;
+                        onRun();
+                    } else if (!ok) {
+                        m_downloadQueue.clear();
+                        m_autoRunAfterDownload = false;
+                    }
+                }
+            });
+    CVLog::Print(QString("[DA3] Model cache: %1").arg(modelCacheDir()));
+    aicore_inference_log::log_backend_probe(QStringLiteral("DA3"));
+}
+
+void DA3Dialog::setAppInterface(ecvMainAppInterface* app) {
+    m_app = app;
 }
 
 void DA3Dialog::setupUi() {
@@ -230,6 +305,8 @@ void DA3Dialog::setupUi() {
     ioLayout->addWidget(new QLabel("Input:"), row, 0);
     m_inputPath = new QLineEdit;
     m_inputPath->setPlaceholderText("Image file(s) or directory path");
+    connect(m_inputPath, &QLineEdit::textChanged, this,
+            [this](const QString&) { updateInputPreview(); });
     ioLayout->addWidget(m_inputPath, row, 1);
     auto* inputBtnLayout = new QHBoxLayout;
     auto* browseFileBtn = new QPushButton("File...");
@@ -248,6 +325,16 @@ void DA3Dialog::setupUi() {
     auto* inputBtnWidget = new QWidget;
     inputBtnWidget->setLayout(inputBtnLayout);
     ioLayout->addWidget(inputBtnWidget, row, 2);
+
+    row++;
+    m_inputPreview = new ecvClickableImageLabel;
+    m_inputPreview->setFixedSize(kInputPreviewSize, kInputPreviewSize);
+    m_inputPreview->setStyleSheet(
+            "border: 1px solid palette(mid); background: palette(base);");
+    m_inputPreview->setText(tr("Preview"));
+    ioLayout->addWidget(
+            ecvClickableImageLabel::wrapWithTapToPreviewHint(m_inputPreview, this),
+            row, 0, 1, 3, Qt::AlignLeft);
 
     row++;
     m_dbToggleBtn = new QToolButton;
@@ -354,12 +441,6 @@ void DA3Dialog::setupUi() {
     m_progressBar->setValue(0);
     mainLayout->addWidget(m_progressBar);
 
-    // --- Log ---
-    m_logOutput = new QTextEdit;
-    m_logOutput->setReadOnly(true);
-    m_logOutput->setMaximumHeight(150);
-    mainLayout->addWidget(m_logOutput);
-
     // --- Buttons ---
     auto* btnLayout = new QHBoxLayout;
     btnLayout->addStretch();
@@ -421,8 +502,9 @@ void DA3Dialog::populateModelCombos(const QString& keepModelFilename,
         QString cached = cacheDir + "/" + m.filename;
         QFileInfo fi(cached);
         QString suffix;
-        if (fi.exists()) {
-            suffix = QString(" [%1] \u2713").arg(formatFileSize(fi.size()));
+        if (ecvModelDownloader::isValidCachedFile(fi.absoluteFilePath())) {
+            suffix = QString(" [%1] \u2713")
+                             .arg(ecvModelDownloader::formatFileSize(fi.size()));
         } else {
             suffix = QString(" [download]");
         }
@@ -441,8 +523,9 @@ void DA3Dialog::populateModelCombos(const QString& keepModelFilename,
         QString cached = cacheDir + "/" + m.filename;
         QFileInfo fi(cached);
         QString suffix;
-        if (fi.exists()) {
-            suffix = QString(" [%1] \u2713").arg(formatFileSize(fi.size()));
+        if (ecvModelDownloader::isValidCachedFile(fi.absoluteFilePath())) {
+            suffix = QString(" [%1] \u2713")
+                             .arg(ecvModelDownloader::formatFileSize(fi.size()));
         } else {
             suffix = QString(" [download]");
         }
@@ -535,17 +618,33 @@ void DA3Dialog::onMetricModelComboChanged(int index) {
 }
 
 void DA3Dialog::onBrowseCustomModel() {
-    QString path =
-            QFileDialog::getOpenFileName(this, "Select GGUF Model", QString(),
-                                         "GGUF Models (*.gguf);;All Files (*)");
-    if (!path.isEmpty()) m_customModelPath->setText(path);
+    QSettings settings;
+    const QString lastDir = ecvPS::browseDir(
+            settings, QStringLiteral("qDA3"), QStringLiteral("lastModelDir"),
+            modelCacheDir());
+    const QString path = QFileDialog::getOpenFileName(
+            this, tr("Select GGUF Model"), lastDir,
+            tr("GGUF Models (*.gguf);;All Files (*)"));
+    if (path.isEmpty()) return;
+    ecvPS::saveBrowseDir(settings, QStringLiteral("qDA3"),
+                                       QStringLiteral("lastModelDir"),
+                                       path);
+    m_customModelPath->setText(path);
 }
 
 void DA3Dialog::onBrowseCustomMetricModel() {
-    QString path =
-            QFileDialog::getOpenFileName(this, "Select Metric Model", QString(),
-                                         "GGUF Models (*.gguf);;All Files (*)");
-    if (!path.isEmpty()) m_customMetricPath->setText(path);
+    QSettings settings;
+    const QString lastDir = ecvPS::browseDir(
+            settings, QStringLiteral("qDA3"), QStringLiteral("lastModelDir"),
+            modelCacheDir());
+    const QString path = QFileDialog::getOpenFileName(
+            this, tr("Select Metric Model"), lastDir,
+            tr("GGUF Models (*.gguf);;All Files (*)"));
+    if (path.isEmpty()) return;
+    ecvPS::saveBrowseDir(settings, QStringLiteral("qDA3"),
+                                       QStringLiteral("lastModelDir"),
+                                       path);
+    m_customMetricPath->setText(path);
 }
 
 QString DA3Dialog::resolveModelPath(QComboBox* combo,
@@ -565,7 +664,7 @@ bool DA3Dialog::ensureAllModelsAvailable() {
         QString data = combo->currentData().toString();
         if (data == "CUSTOM" || data == "NONE") return;
         QString cached = cacheDir + "/" + data;
-        if (QFile::exists(cached)) return;
+        if (ecvModelDownloader::isValidCachedFile(cached)) return;
         for (const auto& bm : catalog) {
             if (bm.filename == data) {
                 needed.append(bm);
@@ -601,14 +700,15 @@ bool DA3Dialog::ensureAllModelsAvailable() {
 }
 
 void DA3Dialog::startDownload(const DA3BuiltinModel& model) {
-    if (m_downloadInProgress) {
-        appendLog(tr("[Warning] A download is already in progress."));
+    if (m_downloadInProgress || !m_downloader) {
+        if (m_downloadInProgress) {
+            appendLog(tr("[Warning] A download is already in progress."));
+        }
         return;
     }
 
     QDir().mkpath(modelCacheDir());
-    QString dest = modelCacheDir() + "/" + model.filename;
-    QString tmpDest = dest + ".part";
+    const QString dest = modelCacheDir() + "/" + model.filename;
 
     m_downloadInProgress = true;
     m_downloadTargetFilename = model.filename;
@@ -619,117 +719,22 @@ void DA3Dialog::startDownload(const DA3BuiltinModel& model) {
     m_runBtn->setEnabled(false);
     m_cancelBtn->setEnabled(true);
 
-    QNetworkRequest req(QUrl(model.downloadUrl));
-    req.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
-                     QNetworkRequest::NoLessSafeRedirectPolicy);
-
-    auto sslConfig = QSslConfiguration::defaultConfiguration();
-    sslConfig.setPeerVerifyMode(QSslSocket::VerifyNone);
-    req.setSslConfiguration(sslConfig);
-
-    m_currentDownload = m_netManager->get(req);
-
-    connect(m_currentDownload, &QNetworkReply::sslErrors, this,
-            [this](const QList<QSslError>& errors) {
-                for (const auto& e : errors)
-                    appendLog(tr("[DA3] SSL warning (ignored): %1")
-                                      .arg(e.errorString()));
-                m_currentDownload->ignoreSslErrors();
-            });
-
-    m_downloadOutFile = new QFile(tmpDest, m_currentDownload);
-    if (!m_downloadOutFile->open(QIODevice::WriteOnly)) {
-        appendLog(tr("[Error] Cannot write to %1").arg(tmpDest));
-        cancelDownload();
-        return;
-    }
-
-    connect(m_currentDownload, &QNetworkReply::readyRead, this, [this]() {
-        if (m_downloadOutFile && m_currentDownload) {
-            m_downloadOutFile->write(m_currentDownload->readAll());
-        }
-    });
-
-    connect(m_currentDownload, &QNetworkReply::downloadProgress, this,
-            [this](qint64 received, qint64 total) {
-                if (total > 0) {
-                    m_progressBar->setValue(
-                            static_cast<int>(received * 100 / total));
-                    m_downloadLabel->setText(
-                            tr("Downloading... %1 / %2")
-                                    .arg(formatFileSize(received))
-                                    .arg(formatFileSize(total)));
-                }
-            });
-
-    connect(m_currentDownload, &QNetworkReply::finished, this,
-            [this, dest, tmpDest, model]() {
-                if (m_downloadOutFile) {
-                    m_downloadOutFile->close();
-                    m_downloadOutFile->deleteLater();
-                    m_downloadOutFile = nullptr;
-                }
-
-                const bool canceled =
-                        m_currentDownload &&
-                        m_currentDownload->error() ==
-                                QNetworkReply::OperationCanceledError;
-                bool ok = m_currentDownload &&
-                          m_currentDownload->error() == QNetworkReply::NoError;
-
-                if (canceled) {
-                    appendLog(tr("[Info] Download canceled: %1")
-                                      .arg(model.filename));
-                    QFile::remove(tmpDest);
-                    m_downloadQueue.clear();
-                    m_autoRunAfterDownload = false;
-                } else if (ok) {
-                    QFile::remove(dest);
-                    QFile::rename(tmpDest, dest);
-                    appendLog(tr("[OK] Model downloaded: %1").arg(dest));
-                } else if (m_currentDownload) {
-                    appendLog(tr("[Error] Download failed: %1")
-                                      .arg(m_currentDownload->errorString()));
-                    QFile::remove(tmpDest);
-                    m_downloadQueue.clear();
-                    m_autoRunAfterDownload = false;
-                }
-
-                if (m_currentDownload) {
-                    m_currentDownload->deleteLater();
-                    m_currentDownload = nullptr;
-                }
-
-                const QString keepModel =
-                        m_modelCombo->currentData().toString();
-                const QString keepMetric =
-                        m_metricModelCombo->currentData().toString();
-                const bool shouldAutoRun = m_autoRunAfterDownload;
-                m_downloadInProgress = false;
-                m_downloadLabel->setVisible(false);
-                m_progressBar->setValue(ok ? 100 : 0);
-                populateModelCombos(keepModel, keepMetric);
-
-                if (ok && !m_downloadQueue.isEmpty()) {
-                    startDownload(m_downloadQueue.takeFirst());
-                } else {
-                    m_runBtn->setEnabled(true);
-                    m_cancelBtn->setEnabled(false);
-                    if (ok && shouldAutoRun) {
-                        m_autoRunAfterDownload = false;
-                        onRun();
-                    }
-                }
-            });
+    ecvModelDownloader::Request req;
+    req.url = model.downloadUrl;
+    req.destPath = dest;
+    m_downloader->download(req);
 }
 
 void DA3Dialog::cancelDownload() {
     if (!m_downloadInProgress) return;
     m_autoRunAfterDownload = false;
     m_downloadQueue.clear();
-    if (m_currentDownload) {
-        m_currentDownload->abort();
-    }
+    if (m_downloader) m_downloader->cancel();
+    m_downloadInProgress = false;
+    m_downloadLabel->setVisible(false);
+    m_progressBar->setValue(0);
+    m_runBtn->setEnabled(true);
+    m_cancelBtn->setEnabled(false);
 }
 
 void DA3Dialog::onCancel() {
@@ -738,6 +743,11 @@ void DA3Dialog::onCancel() {
         return;
     }
     emit cancelRequested();
+}
+
+void DA3Dialog::closeEvent(QCloseEvent* event) {
+    onCancel();
+    QDialog::closeEvent(event);
 }
 
 void DA3Dialog::setDbImages(const QStringList& imageNames) {
@@ -844,7 +854,9 @@ DA3Dialog::Settings DA3Dialog::getSettings() const {
     return s;
 }
 
-void DA3Dialog::appendLog(const QString& msg) { m_logOutput->append(msg); }
+void DA3Dialog::appendLog(const QString& msg) {
+    aicore_inference_log::log(msg);
+}
 
 void DA3Dialog::setProgress(int current, int total) {
     if (total <= 0) {
@@ -922,20 +934,35 @@ void DA3Dialog::onBrowseFolder() {
 }
 
 void DA3Dialog::onExportAllDepths() {
+    QSettings settings;
     QString dir = m_outputDir->text();
     if (dir.isEmpty()) {
+        const QString lastDir = ecvPS::browseDir(
+                settings, QStringLiteral("qDA3"), QStringLiteral("lastOutputDir"),
+                QDir::homePath());
         dir = QFileDialog::getExistingDirectory(
-                this, "Select Output Directory for Depth Maps");
+                this, tr("Select Output Directory for Depth Maps"), lastDir);
         if (dir.isEmpty()) return;
+        ecvPS::saveBrowseDir(settings, QStringLiteral("qDA3"),
+                                           QStringLiteral("lastOutputDir"),
+                                           dir);
         m_outputDir->setText(dir);
     }
     emit exportAllDepthsRequested(dir);
 }
 
 void DA3Dialog::onBrowseOutput() {
-    QString dir =
-            QFileDialog::getExistingDirectory(this, "Select Output Directory");
-    if (!dir.isEmpty()) m_outputDir->setText(dir);
+    QSettings settings;
+    const QString lastDir = ecvPS::browseDir(
+            settings, QStringLiteral("qDA3"), QStringLiteral("lastOutputDir"),
+            QDir::homePath());
+    const QString dir = QFileDialog::getExistingDirectory(
+            this, tr("Select Output Directory"), lastDir);
+    if (dir.isEmpty()) return;
+    ecvPS::saveBrowseDir(settings, QStringLiteral("qDA3"),
+                                       QStringLiteral("lastOutputDir"),
+                                       dir);
+    m_outputDir->setText(dir);
 }
 
 void DA3Dialog::onRun() {

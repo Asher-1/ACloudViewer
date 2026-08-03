@@ -7,31 +7,40 @@
 
 #include "ggml_cnn.hpp"
 
+#include "gpu_sync.hpp"
+
 #include <ggml-alloc.h>
 #include <ggml-backend.h>
 
-#include "ggml_backend_util.hpp"
 #include "tensor_ops.hpp"
-#if defined(LIGHTGLUE_HAS_CUDA)
+#if defined(AICORE_VULKAN_ALIKED)
+#include "vulkan/vulkan_aliked_dispatch.hpp"
+#endif
+#if defined(AICORE_CUDA_ALIKED)
 #include <cuda_runtime.h>
 #endif
 
 #include <cmath>
+#include <cstdlib>
+#include <memory>
 
 namespace lightglue::aliked_internal {
 namespace {
 
 constexpr int64_t kMaxGraphNodes = 4096;
 
-void SyncGpuPipeline(internal::Backend *backend) {
-    if (backend != nullptr && backend->handle != nullptr) {
-        ggml_backend_synchronize(backend->handle);
-#if defined(LIGHTGLUE_HAS_CUDA)
-        if (aicore::common::ggml_backend_is_cuda(backend->handle)) {
-            cudaDeviceSynchronize();
-        }
-#endif
+bool VulkanForceCpuConv() {
+    return std::getenv("LIGHTGLUE_ALIKED_VULKAN_CPU_CONV") != nullptr;
+}
+
+internal::Backend *VulkanCpuConvBackend() {
+    static std::unique_ptr<internal::Backend> cpu_backend;
+    static bool ready = false;
+    if (!ready) {
+        cpu_backend = std::make_unique<internal::Backend>();
+        ready = cpu_backend->Init("cpu", 0);
     }
+    return ready ? cpu_backend.get() : nullptr;
 }
 
 int32_t IndexNchw(int32_t c, int32_t y, int32_t x, int32_t h, int32_t w) {
@@ -165,19 +174,71 @@ GgmlConvRunner::GgmlConvRunner(internal::Backend *backend)
     : backend_(backend) {}
 
 GgmlConvRunner::~GgmlConvRunner() {
+    InvalidateDeviceGraphs();
     for (auto &entry : cache_) {
-        if (entry.second.graph_buffer != nullptr) {
-            ggml_backend_buffer_free(entry.second.graph_buffer);
+        CachedWeight &w = entry.second;
+        if (w.owns_buffer) {
+            if (w.buffer != nullptr) {
+                ggml_backend_buffer_free(w.buffer);
+            }
+            if (w.ctx != nullptr) {
+                ggml_free(w.ctx);
+            }
         }
-        if (entry.second.graph_ctx != nullptr) {
-            ggml_free(entry.second.graph_ctx);
+    }
+}
+
+void GgmlConvRunner::InvalidateDeviceGraphs() {
+    for (auto &entry : cache_) {
+        CachedWeight &w = entry.second;
+        if (w.graph_gallocr != nullptr) {
+            ggml_gallocr_free(w.graph_gallocr);
+            w.graph_gallocr = nullptr;
         }
-        if (entry.second.buffer != nullptr) {
-            ggml_backend_buffer_free(entry.second.buffer);
+        if (w.graph_buffer != nullptr) {
+            ggml_backend_buffer_free(w.graph_buffer);
+            w.graph_buffer = nullptr;
         }
-        if (entry.second.ctx != nullptr) {
-            ggml_free(entry.second.ctx);
+        if (w.graph_ctx != nullptr) {
+            ggml_free(w.graph_ctx);
+            w.graph_ctx = nullptr;
         }
+        w.graph = nullptr;
+        w.graph_in = nullptr;
+        w.graph_out = nullptr;
+        w.graph_ih = 0;
+        w.graph_iw = 0;
+        w.graph_ic = 0;
+        w.graph_pad = 0;
+        w.graph_stride = 0;
+    }
+}
+
+void GgmlConvRunner::ImportWeightEntriesFrom(const GgmlConvRunner &other) {
+    for (const auto &entry : other.cache_) {
+        if (cache_.count(entry.first) > 0) {
+            continue;
+        }
+        CachedWeight shared{};
+        shared.ctx = entry.second.ctx;
+        shared.buffer = entry.second.buffer;
+        shared.kernel = entry.second.kernel;
+        shared.bias = entry.second.bias;
+        shared.owns_buffer = false;
+        cache_[entry.first] = shared;
+    }
+}
+
+void GgmlConvRunner::RebindAllDeviceGraphs() {
+    if (backend_ == nullptr) {
+        return;
+    }
+    for (auto &entry : cache_) {
+        CachedWeight &w = entry.second;
+        if (w.graph == nullptr || w.graph_gallocr == nullptr) {
+            continue;
+        }
+        ggml_gallocr_alloc_graph(w.graph_gallocr, w.graph);
     }
 }
 
@@ -337,6 +398,10 @@ bool GgmlConvRunner::EnsureDeviceGraph(CachedWeight *entry,
         ggml_backend_buffer_free(entry->graph_buffer);
         entry->graph_buffer = nullptr;
     }
+    if (entry->graph_gallocr != nullptr) {
+        ggml_gallocr_free(entry->graph_gallocr);
+        entry->graph_gallocr = nullptr;
+    }
     if (entry->graph_ctx != nullptr) {
         ggml_free(entry->graph_ctx);
         entry->graph_ctx = nullptr;
@@ -381,9 +446,14 @@ bool GgmlConvRunner::EnsureDeviceGraph(CachedWeight *entry,
         }
         return false;
     }
-    ggml_backend_tensor_copy(entry->kernel, graph_kernel);
-    ggml_backend_tensor_copy(entry->bias, graph_bias);
-    if (!ggml_gallocr_alloc_graph(backend_->allocator, entry->graph)) {
+    ggml_backend_tensor_set(graph_kernel, weights.kernel.data(), 0,
+                            weights.kernel.size() * sizeof(float));
+    ggml_backend_tensor_set(graph_bias, weights.bias.data(), 0,
+                            weights.bias.size() * sizeof(float));
+    entry->graph_gallocr = ggml_gallocr_new(
+            ggml_backend_get_default_buffer_type(backend_->handle));
+    if (entry->graph_gallocr == nullptr ||
+        !ggml_gallocr_alloc_graph(entry->graph_gallocr, entry->graph)) {
         if (error) {
             *error = "failed to allocate cached conv graph";
         }
@@ -416,6 +486,33 @@ bool GgmlConvRunner::RunGraphDevice(ggml_tensor *kernel,
         return false;
     }
 
+    if (backend_->IsVulkan() && VulkanForceCpuConv()) {
+        internal::Backend *cpu_backend = VulkanCpuConvBackend();
+        if (cpu_backend == nullptr) {
+            if (error) {
+                *error = "failed to init CPU backend for Vulkan conv fallback";
+            }
+            return false;
+        }
+        GgmlConvRunner cpu_runner(cpu_backend);
+        std::vector<float> in_nchw;
+        if (!input.DownloadNchw(backend_, &in_nchw, input.c, input.h, input.w,
+                                error)) {
+            return false;
+        }
+        std::vector<float> out_nchw;
+        int32_t oh = 0;
+        int32_t ow = 0;
+        if (!cpu_runner.Run(weights, in_nchw, input.h, input.w, pad, stride,
+                            &out_nchw, &oh, &ow, error, cache_key)) {
+            return false;
+        }
+        if (!GpuTensor::Allocate(backend_, ow, oh, weights.oc, output, error)) {
+            return false;
+        }
+        return output->UploadNchw(backend_, out_nchw, weights.oc, oh, ow, error);
+    }
+
     const int32_t oh = (input.h + 2 * pad - weights.kh) / stride + 1;
     const int32_t ow = (input.w + 2 * pad - weights.kw) / stride + 1;
     if (oh <= 0 || ow <= 0) {
@@ -429,14 +526,21 @@ bool GgmlConvRunner::RunGraphDevice(ggml_tensor *kernel,
         return false;
     }
 
-    if (cache_key != nullptr && cache_key[0] != '\0' &&
-        cache_.count(cache_key) > 0) {
+  if (cache_key != nullptr && cache_key[0] != '\0' &&
+      cache_.count(cache_key) > 0) {
         CachedWeight &entry = cache_[cache_key];
         if (!EnsureDeviceGraph(&entry, weights, input, pad, stride, error)) {
             output->Release();
             return false;
         }
-        ggml_backend_tensor_copy(input.tensor, entry.graph_in);
+        BackendTensorCopyCompat(backend_, input.tensor, entry.graph_in);
+        if (!ggml_gallocr_alloc_graph(entry.graph_gallocr, entry.graph)) {
+            if (error) {
+                *error = "failed to bind cached GGML conv graph allocator";
+            }
+            output->Release();
+            return false;
+        }
         if (ggml_backend_graph_compute(backend_->handle, entry.graph) !=
             GGML_STATUS_SUCCESS) {
             if (error) {
@@ -445,7 +549,18 @@ bool GgmlConvRunner::RunGraphDevice(ggml_tensor *kernel,
             output->Release();
             return false;
         }
-        ggml_backend_tensor_copy(entry.graph_out, output->tensor);
+        SyncGpuPipeline(backend_);
+        FlushGpuPipeline(backend_);
+        if (cache_key != nullptr) {
+            LogTensorStrideIfDebug((std::string(cache_key) + ".graph_out").c_str(),
+                                   entry.graph_out, ow, oh, weights.oc);
+        }
+        BackendTensorCopyCompat(backend_, entry.graph_out, output->tensor);
+        SyncGpuTensorMeta(output);
+        if (cache_key != nullptr) {
+            LogTensorStrideIfDebug((std::string(cache_key) + ".dst").c_str(),
+                                   output->tensor, ow, oh, weights.oc);
+        }
         return true;
     }
 
@@ -490,7 +605,6 @@ bool GgmlConvRunner::RunGraphDevice(ggml_tensor *kernel,
         output->Release();
         return false;
     }
-
     if (ggml_backend_graph_compute(backend_->handle, graph) !=
         GGML_STATUS_SUCCESS) {
         if (error) {
@@ -501,9 +615,17 @@ bool GgmlConvRunner::RunGraphDevice(ggml_tensor *kernel,
         output->Release();
         return false;
     }
-
     ggml_backend_synchronize(backend_->handle);
-    ggml_backend_tensor_copy(out, output->tensor);
+    if (cache_key != nullptr) {
+        LogTensorStrideIfDebug((std::string(cache_key) + ".graph_out").c_str(),
+                               out, ow, oh, weights.oc);
+    }
+    BackendTensorCopyCompat(backend_, out, output->tensor);
+    SyncGpuTensorMeta(output);
+    if (cache_key != nullptr) {
+        LogTensorStrideIfDebug((std::string(cache_key) + ".dst").c_str(),
+                               output->tensor, ow, oh, weights.oc);
+    }
     SyncGpuPipeline(backend_);
     ggml_backend_buffer_free(buffer);
     ggml_free(ctx);

@@ -100,11 +100,8 @@ public:
 
     // inherited methods (ccHObject)
     virtual ccBBox getOwnBB(bool withGLFeatures = false) override;
-    inline virtual void drawBB(CC_DRAW_CONTEXT& context,
-                               const ecvColor::Rgb& col) override {
-        // DGM: only for 3D polylines!
-        if (!is2DMode()) ccShiftedObject::drawBB(context, col);
-    }
+    virtual void drawBB(CC_DRAW_CONTEXT& context,
+                        const ecvColor::Rgb& col) override;
 
     //! Splits the polyline into several parts based on a maximum edge length
     /** \warning output polylines set (parts) may be empty if all the vertices

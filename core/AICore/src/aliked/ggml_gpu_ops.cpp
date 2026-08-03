@@ -7,6 +7,11 @@
 
 #include "ggml_gpu_ops.hpp"
 
+#include "gpu_pipeline_cache.hpp"
+#include "gpu_sync.hpp"
+#include "vulkan/vulkan_aliked_dispatch.hpp"
+#include "gpu_tensor.hpp"
+
 #include <ggml-alloc.h>
 #include <ggml-backend.h>
 #include <ggml.h>
@@ -27,6 +32,7 @@ constexpr float kSeluAlpha = 1.67326324f;
 struct CachedOneInputGraph {
     ggml_context *ctx = nullptr;
     ggml_backend_buffer_t buffer = nullptr;
+    ggml_gallocr_t gallocr = nullptr;
     ggml_cgraph *graph = nullptr;
     ggml_tensor *in = nullptr;
     ggml_tensor *out = nullptr;
@@ -38,6 +44,7 @@ struct CachedOneInputGraph {
 struct CachedUnaryInPlaceGraph {
     ggml_context *ctx = nullptr;
     ggml_backend_buffer_t buffer = nullptr;
+    ggml_gallocr_t gallocr = nullptr;
     ggml_cgraph *graph = nullptr;
     ggml_tensor *in = nullptr;
     ggml_tensor *out = nullptr;
@@ -46,8 +53,96 @@ struct CachedUnaryInPlaceGraph {
     int32_t c = 0;
 };
 
+struct CachedBinaryInPlaceGraph {
+    ggml_context *ctx = nullptr;
+    ggml_backend_buffer_t buffer = nullptr;
+    ggml_gallocr_t gallocr = nullptr;
+    ggml_cgraph *graph = nullptr;
+    ggml_tensor *lhs = nullptr;
+    ggml_tensor *rhs = nullptr;
+    ggml_tensor *out = nullptr;
+    int32_t w = 0;
+    int32_t h = 0;
+    int32_t c = 0;
+};
+
 std::unordered_map<std::string, CachedOneInputGraph> g_one_input_graphs;
 std::unordered_map<std::string, CachedUnaryInPlaceGraph> g_unary_inplace_graphs;
+std::unordered_map<std::string, CachedBinaryInPlaceGraph> g_binary_inplace_graphs;
+
+ggml_gallocr_t NewGraphGallocr(internal::Backend *backend) {
+    if (backend == nullptr || backend->handle == nullptr) {
+        return nullptr;
+    }
+    return ggml_gallocr_new(
+            ggml_backend_get_default_buffer_type(backend->handle));
+}
+
+void FreeGraphGallocr(ggml_gallocr_t *gallocr) {
+    if (gallocr == nullptr || *gallocr == nullptr) {
+        return;
+    }
+    ggml_gallocr_free(*gallocr);
+    *gallocr = nullptr;
+}
+
+bool RunBoundGraphCompute(internal::Backend *backend, ggml_cgraph *graph,
+                          std::string *error) {
+    if (backend == nullptr || backend->handle == nullptr || graph == nullptr) {
+        if (error) {
+            *error = "invalid backend or graph for bound compute";
+        }
+        return false;
+    }
+    if (ggml_backend_graph_compute(backend->handle, graph) !=
+        GGML_STATUS_SUCCESS) {
+        if (error) {
+            *error = "cached ggml graph compute failed";
+        }
+        return false;
+    }
+    SyncGpuPipeline(backend);
+    FlushGpuPipeline(backend);
+    return true;
+}
+
+bool CachedGraphCompute(internal::Backend *backend,
+                        ggml_cgraph *graph,
+                        ggml_gallocr_t graph_gallocr,
+                        std::string *error) {
+    if (backend == nullptr || backend->handle == nullptr || graph == nullptr) {
+        if (error) {
+            *error = "invalid backend or graph for cached compute";
+        }
+        return false;
+    }
+    ggml_gallocr_t gallocr =
+            graph_gallocr != nullptr ? graph_gallocr : backend->allocator;
+    if (gallocr != nullptr && !ggml_gallocr_alloc_graph(gallocr, graph)) {
+        if (error) {
+            *error = "failed to bind cached ggml graph allocator";
+        }
+        return false;
+    }
+    return RunBoundGraphCompute(backend, graph, error);
+}
+
+bool EphemeralGallocrCompute(internal::Backend *backend, ggml_cgraph *graph,
+                             std::string *error) {
+    if (backend == nullptr || backend->allocator == nullptr || graph == nullptr) {
+        if (error) {
+            *error = "invalid backend or graph for ephemeral compute";
+        }
+        return false;
+    }
+    if (!ggml_gallocr_alloc_graph(backend->allocator, graph)) {
+        if (error) {
+            *error = "failed to bind ephemeral ggml graph allocator";
+        }
+        return false;
+    }
+    return CachedGraphCompute(backend, graph, nullptr, error);
+}
 
 ggml_tensor *GgmlSelu(ggml_context *ctx, ggml_tensor *x) {
     ggml_tensor *pos = ggml_scale(ctx, ggml_relu(ctx, x), kSeluScale);
@@ -67,6 +162,16 @@ ggml_tensor *NewInputLike(ggml_context *ctx, const GpuTensor &tensor) {
                               1);
 }
 
+void FinishEphemeralGpuCopy(internal::Backend *backend, bool hard_idle) {
+    SyncGpuPipeline(backend);
+    FlushGpuPipeline(backend);
+#if defined(AICORE_VULKAN_ALIKED)
+    if (hard_idle && backend != nullptr && backend->IsVulkan()) {
+        VkAlikedQueueIdle(backend->handle);
+    }
+#endif
+}
+
 bool RunGraphCopyOut(internal::Backend *backend,
                      ggml_context *ctx,
                      ggml_cgraph *graph,
@@ -82,19 +187,7 @@ bool RunGraphCopyOut(internal::Backend *backend,
         return false;
     }
 
-    if (!ggml_gallocr_alloc_graph(backend->allocator, graph)) {
-        if (error) {
-            *error = "failed to allocate ggml op graph";
-        }
-        ggml_backend_buffer_free(buffer);
-        return false;
-    }
-
-    if (ggml_backend_graph_compute(backend->handle, graph) !=
-        GGML_STATUS_SUCCESS) {
-        if (error) {
-            *error = "ggml op graph compute failed";
-        }
+    if (!EphemeralGallocrCompute(backend, graph, error)) {
         ggml_backend_buffer_free(buffer);
         return false;
     }
@@ -106,7 +199,7 @@ bool RunGraphCopyOut(internal::Backend *backend,
         return false;
     }
 
-    ggml_backend_tensor_copy(out, output->tensor);
+    BackendTensorCopyCompat(backend, out, output->tensor);
     ggml_backend_buffer_free(buffer);
     return true;
 }
@@ -121,6 +214,7 @@ bool RunUnaryInPlaceOnGpuTensor(
         CachedUnaryInPlaceGraph &entry = g_unary_inplace_graphs[cache_key];
         if (entry.graph == nullptr || entry.w != tensor->w ||
             entry.h != tensor->h || entry.c != tensor->c) {
+            FreeGraphGallocr(&entry.gallocr);
             if (entry.buffer != nullptr) {
                 ggml_backend_buffer_free(entry.buffer);
             }
@@ -148,8 +242,9 @@ bool RunUnaryInPlaceOnGpuTensor(
             ggml_build_forward_expand(entry.graph, entry.out);
             entry.buffer =
                     ggml_backend_alloc_ctx_tensors(entry.ctx, backend->handle);
-            if (entry.buffer == nullptr ||
-                !ggml_gallocr_alloc_graph(backend->allocator, entry.graph)) {
+            entry.gallocr = NewGraphGallocr(backend);
+            if (entry.buffer == nullptr || entry.gallocr == nullptr ||
+                !ggml_gallocr_alloc_graph(entry.gallocr, entry.graph)) {
                 if (error) {
                     *error = "failed to allocate cached unary in-place graph";
                 }
@@ -159,15 +254,11 @@ bool RunUnaryInPlaceOnGpuTensor(
             entry.h = tensor->h;
             entry.c = tensor->c;
         }
-        ggml_backend_tensor_copy(tensor->tensor, entry.in);
-        if (ggml_backend_graph_compute(backend->handle, entry.graph) !=
-            GGML_STATUS_SUCCESS) {
-            if (error) {
-                *error = "cached unary in-place compute failed";
-            }
+        BackendTensorCopyCompat(backend, tensor->tensor, entry.in);
+        if (!CachedGraphCompute(backend, entry.graph, entry.gallocr, error)) {
             return false;
         }
-        ggml_backend_tensor_copy(entry.out, tensor->tensor);
+        BackendTensorCopyCompat(backend, entry.out, tensor->tensor);
         return true;
     }
 
@@ -199,27 +290,15 @@ bool RunUnaryInPlaceOnGpuTensor(
         return false;
     }
 
-    if (!ggml_gallocr_alloc_graph(backend->allocator, graph)) {
-        if (error) {
-            *error = "failed to allocate ggml unary in-place graph";
-        }
+    BackendTensorCopyCompat(backend, tensor->tensor, input);
+    if (!EphemeralGallocrCompute(backend, graph, error)) {
         ggml_backend_buffer_free(buffer);
         ggml_free(ctx);
         return false;
     }
 
-    ggml_backend_tensor_copy(tensor->tensor, input);
-    if (ggml_backend_graph_compute(backend->handle, graph) !=
-        GGML_STATUS_SUCCESS) {
-        if (error) {
-            *error = "ggml unary in-place compute failed";
-        }
-        ggml_backend_buffer_free(buffer);
-        ggml_free(ctx);
-        return false;
-    }
-
-    ggml_backend_tensor_copy(out, tensor->tensor);
+    BackendTensorCopyCompat(backend, out, tensor->tensor);
+    FinishEphemeralGpuCopy(backend, true);
     ggml_backend_buffer_free(buffer);
     ggml_free(ctx);
     return true;
@@ -231,7 +310,76 @@ bool RunBinaryInPlaceOnGpuTensor(
         const GpuTensor &other,
         const std::function<ggml_tensor *(
                 ggml_context *, ggml_tensor *, ggml_tensor *)> &op,
-        std::string *error) {
+        std::string *error,
+        const char *cache_key = nullptr) {
+    if (cache_key != nullptr && cache_key[0] != '\0') {
+        CachedBinaryInPlaceGraph &entry = g_binary_inplace_graphs[cache_key];
+        if (entry.graph == nullptr || entry.w != accum->w ||
+            entry.h != accum->h || entry.c != accum->c) {
+            FreeGraphGallocr(&entry.gallocr);
+            if (entry.buffer != nullptr) {
+                ggml_backend_buffer_free(entry.buffer);
+            }
+            if (entry.ctx != nullptr) {
+                ggml_free(entry.ctx);
+            }
+            entry = CachedBinaryInPlaceGraph{};
+
+            const size_t graph_overhead =
+                    ggml_graph_overhead_custom(kMaxGraphNodes, false);
+            const size_t ctx_size =
+                    graph_overhead + ggml_tensor_overhead() * 16 + 1024 * 1024;
+            ggml_init_params params{ctx_size, nullptr, true};
+            entry.ctx = ggml_init(params);
+            if (entry.ctx == nullptr) {
+                if (error) {
+                    *error = "failed to create cached binary in-place context";
+                }
+                return false;
+            }
+            entry.lhs = NewInputLike(entry.ctx, *accum);
+            entry.rhs = NewInputLike(entry.ctx, other);
+            entry.out = op(entry.ctx, entry.lhs, entry.rhs);
+            entry.graph =
+                    ggml_new_graph_custom(entry.ctx, kMaxGraphNodes, false);
+            ggml_build_forward_expand(entry.graph, entry.out);
+            entry.buffer =
+                    ggml_backend_alloc_ctx_tensors(entry.ctx, backend->handle);
+            entry.gallocr = NewGraphGallocr(backend);
+            if (entry.buffer == nullptr || entry.gallocr == nullptr ||
+                !ggml_gallocr_alloc_graph(entry.gallocr, entry.graph)) {
+                if (error) {
+                    *error = "failed to allocate cached binary in-place graph";
+                }
+                return false;
+            }
+            entry.w = accum->w;
+            entry.h = accum->h;
+            entry.c = accum->c;
+        }
+        // Bind graph slots before uploading inputs — re-alloc after copy zeros lhs/rhs.
+        if (!ggml_gallocr_alloc_graph(entry.gallocr, entry.graph)) {
+            if (error) {
+                *error = "failed to bind cached binary in-place graph";
+            }
+            return false;
+        }
+        BackendTensorCopyCompat(backend, accum->tensor, entry.lhs);
+        BackendTensorCopyCompat(backend, other.tensor, entry.rhs);
+        if (!RunBoundGraphCompute(backend, entry.graph, error)) {
+            return false;
+        }
+        GpuTensor result;
+        if (!GpuTensor::Allocate(backend, accum->w, accum->h, accum->c, &result,
+                                 error)) {
+            return false;
+        }
+        BackendTensorCopyCompat(backend, entry.out, result.tensor);
+        FinishEphemeralGpuCopy(backend, true);
+        *accum = std::move(result);
+        return true;
+    }
+
     const size_t graph_overhead =
             ggml_graph_overhead_custom(kMaxGraphNodes, false);
     const size_t ctx_size =
@@ -261,28 +409,16 @@ bool RunBinaryInPlaceOnGpuTensor(
         return false;
     }
 
-    if (!ggml_gallocr_alloc_graph(backend->allocator, graph)) {
-        if (error) {
-            *error = "failed to allocate ggml binary in-place graph";
-        }
+    BackendTensorCopyCompat(backend, accum->tensor, lhs);
+    BackendTensorCopyCompat(backend, other.tensor, rhs);
+    if (!EphemeralGallocrCompute(backend, graph, error)) {
         ggml_backend_buffer_free(buffer);
         ggml_free(ctx);
         return false;
     }
 
-    ggml_backend_tensor_copy(accum->tensor, lhs);
-    ggml_backend_tensor_copy(other.tensor, rhs);
-    if (ggml_backend_graph_compute(backend->handle, graph) !=
-        GGML_STATUS_SUCCESS) {
-        if (error) {
-            *error = "ggml binary in-place compute failed";
-        }
-        ggml_backend_buffer_free(buffer);
-        ggml_free(ctx);
-        return false;
-    }
-
-    ggml_backend_tensor_copy(out, accum->tensor);
+    BackendTensorCopyCompat(backend, out, accum->tensor);
+    FinishEphemeralGpuCopy(backend, true);
     ggml_backend_buffer_free(buffer);
     ggml_free(ctx);
     return true;
@@ -325,22 +461,9 @@ bool RunGraphWithInputs(
         return false;
     }
 
-    if (!ggml_gallocr_alloc_graph(backend->allocator, graph)) {
-        if (error) {
-            *error = "failed to allocate ggml two-input graph";
-        }
-        ggml_backend_buffer_free(buffer);
-        ggml_free(ctx);
-        return false;
-    }
-
-    ggml_backend_tensor_copy(a.tensor, in_a);
-    ggml_backend_tensor_copy(b.tensor, in_b);
-    if (ggml_backend_graph_compute(backend->handle, graph) !=
-        GGML_STATUS_SUCCESS) {
-        if (error) {
-            *error = "ggml two-input compute failed";
-        }
+    BackendTensorCopyCompat(backend, a.tensor, in_a);
+    BackendTensorCopyCompat(backend, b.tensor, in_b);
+    if (!EphemeralGallocrCompute(backend, graph, error)) {
         ggml_backend_buffer_free(buffer);
         ggml_free(ctx);
         return false;
@@ -370,6 +493,7 @@ bool RunGraphWithInput(internal::Backend *backend,
         CachedOneInputGraph &entry = g_one_input_graphs[cache_key];
         if (entry.graph == nullptr || entry.w != input.w ||
             entry.h != input.h || entry.c != input.c) {
+            FreeGraphGallocr(&entry.gallocr);
             if (entry.buffer != nullptr) {
                 ggml_backend_buffer_free(entry.buffer);
             }
@@ -397,8 +521,9 @@ bool RunGraphWithInput(internal::Backend *backend,
             ggml_build_forward_expand(entry.graph, entry.out);
             entry.buffer =
                     ggml_backend_alloc_ctx_tensors(entry.ctx, backend->handle);
-            if (entry.buffer == nullptr ||
-                !ggml_gallocr_alloc_graph(backend->allocator, entry.graph)) {
+            entry.gallocr = NewGraphGallocr(backend);
+            if (entry.buffer == nullptr || entry.gallocr == nullptr ||
+                !ggml_gallocr_alloc_graph(entry.gallocr, entry.graph)) {
                 if (error) {
                     *error = "failed to allocate cached one-input graph";
                 }
@@ -409,21 +534,22 @@ bool RunGraphWithInput(internal::Backend *backend,
             entry.c = input.c;
         }
 
+        GpuTensor tmp_output;
+        GpuTensor *dst = (output == &input) ? &tmp_output : output;
         if (!GpuTensor::Allocate(
                     backend, static_cast<int32_t>(entry.out->ne[0]),
                     static_cast<int32_t>(entry.out->ne[1]),
-                    static_cast<int32_t>(entry.out->ne[2]), output, error)) {
+                    static_cast<int32_t>(entry.out->ne[2]), dst, error)) {
             return false;
         }
-        ggml_backend_tensor_copy(input.tensor, entry.in);
-        if (ggml_backend_graph_compute(backend->handle, entry.graph) !=
-            GGML_STATUS_SUCCESS) {
-            if (error) {
-                *error = "cached one-input compute failed";
-            }
+        BackendTensorCopyCompat(backend, input.tensor, entry.in);
+        if (!CachedGraphCompute(backend, entry.graph, entry.gallocr, error)) {
             return false;
         }
-        ggml_backend_tensor_copy(entry.out, output->tensor);
+        BackendTensorCopyCompat(backend, entry.out, dst->tensor);
+        if (dst != output) {
+            *output = std::move(tmp_output);
+        }
         return true;
     }
 
@@ -455,21 +581,8 @@ bool RunGraphWithInput(internal::Backend *backend,
         return false;
     }
 
-    if (!ggml_gallocr_alloc_graph(backend->allocator, graph)) {
-        if (error) {
-            *error = "failed to allocate ggml one-input graph";
-        }
-        ggml_backend_buffer_free(buffer);
-        ggml_free(ctx);
-        return false;
-    }
-
-    ggml_backend_tensor_copy(input.tensor, in);
-    if (ggml_backend_graph_compute(backend->handle, graph) !=
-        GGML_STATUS_SUCCESS) {
-        if (error) {
-            *error = "ggml one-input compute failed";
-        }
+    BackendTensorCopyCompat(backend, input.tensor, in);
+    if (!EphemeralGallocrCompute(backend, graph, error)) {
         ggml_backend_buffer_free(buffer);
         ggml_free(ctx);
         return false;
@@ -489,6 +602,81 @@ bool RunGraphWithInput(internal::Backend *backend,
 }
 
 }  // namespace
+
+void ClearCachedGpuOpGraphs() {
+    for (auto &entry : g_one_input_graphs) {
+        FreeGraphGallocr(&entry.second.gallocr);
+        if (entry.second.buffer != nullptr) {
+            ggml_backend_buffer_free(entry.second.buffer);
+        }
+        if (entry.second.ctx != nullptr) {
+            ggml_free(entry.second.ctx);
+        }
+    }
+    for (auto &entry : g_unary_inplace_graphs) {
+        FreeGraphGallocr(&entry.second.gallocr);
+        if (entry.second.buffer != nullptr) {
+            ggml_backend_buffer_free(entry.second.buffer);
+        }
+        if (entry.second.ctx != nullptr) {
+            ggml_free(entry.second.ctx);
+        }
+    }
+    g_one_input_graphs.clear();
+    g_unary_inplace_graphs.clear();
+}
+
+void RebindAllCachedGgmlOpGraphs(internal::Backend *backend) {
+    if (backend == nullptr) {
+        return;
+    }
+    for (auto &entry : g_one_input_graphs) {
+        if (entry.second.graph != nullptr && entry.second.gallocr != nullptr) {
+            ggml_gallocr_alloc_graph(entry.second.gallocr, entry.second.graph);
+        }
+    }
+    for (auto &entry : g_unary_inplace_graphs) {
+        if (entry.second.graph != nullptr && entry.second.gallocr != nullptr) {
+            ggml_gallocr_alloc_graph(entry.second.gallocr, entry.second.graph);
+        }
+    }
+}
+
+void BeginVulkanExtract(internal::Backend *backend) {
+#if defined(AICORE_VULKAN_ALIKED)
+    if (backend != nullptr && backend->IsVulkan()) {
+        // Drop SELU/unary graphs from a prior ctx (e.g. CPU-then-Vulkan parity).
+        ClearCachedGpuOpGraphs();
+        VkAlikedQueueIdle(backend->handle);
+        FlushGpuPipeline(backend);
+    }
+#else
+    (void)backend;
+#endif
+}
+
+void EndVulkanExtract(internal::Backend *backend, GpuPipelineCache *cache) {
+#if defined(AICORE_VULKAN_ALIKED)
+    if (backend == nullptr || !backend->IsVulkan()) {
+        return;
+    }
+    VkAlikedQueueIdle(backend->handle);
+    FlushGpuPipeline(backend);
+    if (cache != nullptr) {
+        cache->ggml()->runner()->InvalidateDeviceGraphs();
+        cache->ComputeGgml()->runner()->InvalidateDeviceGraphs();
+    }
+    ClearCachedGpuOpGraphs();
+#else
+    (void)backend;
+    (void)cache;
+#endif
+}
+
+void ResetVulkanExtractPipeline(internal::Backend *backend,
+                                GpuPipelineCache *cache) {
+    EndVulkanExtract(backend, cache);
+}
 
 bool RunAvgPool2dGpu(internal::Backend *backend,
                      const GpuTensor &input,
@@ -632,21 +820,8 @@ bool RunConvBnSeluGpu(GgmlConvRunner *runner,
         return false;
     }
 
-    if (!ggml_gallocr_alloc_graph(backend->allocator, graph)) {
-        if (error) {
-            *error = "failed to allocate conv+SELU graph";
-        }
-        ggml_backend_buffer_free(buffer);
-        ggml_free(ctx);
-        return false;
-    }
-
-    ggml_backend_tensor_copy(input.tensor, in);
-    if (ggml_backend_graph_compute(backend->handle, graph) !=
-        GGML_STATUS_SUCCESS) {
-        if (error) {
-            *error = "conv+SELU compute failed";
-        }
+    BackendTensorCopyCompat(backend, input.tensor, in);
+    if (!EphemeralGallocrCompute(backend, graph, error)) {
         ggml_backend_buffer_free(buffer);
         ggml_free(ctx);
         return false;
@@ -668,7 +843,8 @@ bool RunConvBnSeluGpu(GgmlConvRunner *runner,
 bool RunAddGpu(internal::Backend *backend,
                GpuTensor *accum,
                const GpuTensor &other,
-               std::string *error) {
+               std::string *error,
+               const char *cache_key) {
     if (accum == nullptr || accum->tensor == nullptr ||
         other.tensor == nullptr) {
         if (error) {
@@ -681,7 +857,7 @@ bool RunAddGpu(internal::Backend *backend,
             [](ggml_context *ctx, ggml_tensor *a, ggml_tensor *b) {
                 return ggml_add(ctx, a, b);
             },
-            error);
+            error, cache_key);
 }
 
 bool RunConcatChannelGpu(internal::Backend *backend,
@@ -759,6 +935,23 @@ bool RunL2NormalizeChannelsGpu(internal::Backend *backend,
         return false;
     }
 
+    if (backend != nullptr && backend->IsCuda()) {
+        SyncGpuTensorMeta(tensor);
+        return RunUnaryInPlaceOnGpuTensor(
+                backend, tensor,
+                [](ggml_context *ctx, ggml_tensor *in) {
+                    ggml_tensor *sq = ggml_sqr(ctx, in);
+                    ggml_tensor *sq_p = ggml_permute(ctx, sq, 2, 0, 1, 3);
+                    ggml_tensor *sum_c = ggml_sum_rows(ctx, sq_p);
+                    ggml_tensor *clamped =
+                            ggml_clamp(ctx, sum_c, 1e-12f, 1e30f);
+                    ggml_tensor *norm = ggml_sqrt(ctx, clamped);
+                    ggml_tensor *norm_bc = ggml_repeat(ctx, norm, in);
+                    return ggml_div(ctx, in, norm_bc);
+                },
+                error, "l2norm_channels");
+    }
+
     std::vector<float> nchw;
     if (!tensor->DownloadNchw(backend, &nchw, channels, h, w, error)) {
         return false;
@@ -780,6 +973,25 @@ bool RunCropWhcnGpu(internal::Backend *backend,
             *error = "crop input is null";
         }
         return false;
+    }
+
+    if (backend != nullptr && backend->IsGpu()) {
+        const int32_t ic = input.c;
+        const char *cache_key = "crop_whcn";
+        return RunGraphWithInput(
+                backend,
+                [pad_top, pad_left, out_h, out_w, ic](ggml_context *ctx,
+                                                      ggml_tensor *in) {
+                    const size_t es = ggml_element_size(in);
+                    const size_t offset = pad_left * es + pad_top * in->nb[1];
+                    ggml_tensor *view = ggml_view_4d(
+                            ctx, in, out_w, out_h, ic, 1, in->nb[1], in->nb[2],
+                            in->nb[3], offset);
+                    ggml_tensor *out = ggml_new_tensor_4d(ctx, GGML_TYPE_F32,
+                                                          out_w, out_h, ic, 1);
+                    return ggml_cpy(ctx, view, out);
+                },
+                input, output, error, cache_key);
     }
 
     std::vector<float> nchw;

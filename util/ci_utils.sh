@@ -635,6 +635,8 @@ build_gui_app() {
                 "-DAICore_BUNDLE_CUDA_RUNTIME=${AICore_BUNDLE_CUDA_RUNTIME:-OFF}"
                 "-DAICore_CPU_ALL_VARIANTS=${AICore_CPU_ALL_VARIANTS:-ON}"
                 "-DPLUGIN_STANDARD_QDA3=ON"
+                "-DPLUGIN_STANDARD_QDEEPLSD=ON"
+                "-DPLUGIN_STANDARD_QFACEDETECT=ON"
                 "-DPLUGIN_STANDARD_QFREESPLATTER=ON"
                 "-DPLUGIN_STANDARD_QLIGHTGLUE=ON"
                 "-DPLUGIN_PYTHON=ON"

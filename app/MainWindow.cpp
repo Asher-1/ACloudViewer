@@ -100,6 +100,7 @@
 #include <ecvPlane.h>
 #include <ecvPointCloud.h>
 #include <ecvPolyline.h>
+#include <LineSet.h>
 #include <ecvProgressDialog.h>
 #include <ecvQuadric.h>
 #include <ecvRedrawScope.h>
@@ -1733,6 +1734,8 @@ void MainWindow::connectActions() {
 
     connect(m_ui->actionResetGUIElementsPos, &QAction::triggered, this,
             &MainWindow::doActionResetGUIElementsPos);
+    connect(m_ui->actionResetRegisteredSettings, &QAction::triggered, this,
+            &MainWindow::doActionResetRegisteredSettings);
     connect(m_ui->actionRestoreWindowOnStartup, &QAction::toggled, this,
             &MainWindow::doActionRestoreWindowOnStartup);
     connect(m_ui->actionSaveCustomLayout, &QAction::triggered, this,
@@ -5780,6 +5783,8 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo) {
     bool atLeastOneGBLSensor = (selInfo.gblSensorCount > 0);
     bool atLeastOneCameraSensor = (selInfo.cameraSensorCount > 0);
     bool atLeastOnePolyline = (selInfo.polylineCount > 0);
+    bool atLeastOneLineSet = (selInfo.lineSetCount > 0);
+    bool atLeastOneLineEntity = atLeastOnePolyline || atLeastOneLineSet;
 
     m_ui->actionTracePolyline->setEnabled(!dbIsEmpty);
     m_ui->actionZoomAndCenter->setEnabled(atLeastOneEntity);
@@ -5799,14 +5804,14 @@ void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo) {
     m_ui->actionComputePointsVisibility->setEnabled(atLeastOneGBLSensor);
     m_ui->actionResampleWithOctree->setEnabled(atLeastOneCloud);
     m_ui->actionApplyScale->setEnabled(atLeastOneCloud || atLeastOneMesh ||
-                                       atLeastOnePolyline);
+                                       atLeastOneLineEntity);
     m_ui->actionApplyTransformation->setEnabled(atLeastOneEntity);
     m_ui->actionComputeOctree->setEnabled(atLeastOneCloud || atLeastOneMesh);
     m_ui->actionComputeNormals->setEnabled(atLeastOneCloud || atLeastOneMesh);
     m_ui->actionChangeColorLevels->setEnabled(atLeastOneCloud ||
                                               atLeastOneMesh);
     m_ui->actionEditGlobalShiftAndScale->setEnabled(
-            atLeastOneCloud || atLeastOneMesh || atLeastOnePolyline);
+            atLeastOneCloud || atLeastOneMesh || atLeastOneLineEntity);
     m_ui->actionSetUniqueColor->setEnabled(
             atLeastOneEntity /*atLeastOneCloud || atLeastOneMesh*/);  // DGM: we
                                                                       // can set
@@ -6333,12 +6338,29 @@ void MainWindow::doActionResetGUIElementsPos() {
     settings.remove(ecvPS::MainWinGeom());
     settings.remove(ecvPS::MainWinState());
 
-    QMessageBox::information(this, tr("Restart"),
-                             tr("To finish the process, you'll have to close "
-                                "and restart ACloudViewer"));
+    QMessageBox::information(
+            this, tr("Restart"),
+            tr("To finish the process, close and restart ACloudViewer."));
 
     // to avoid saving them right away!
     s_autoSaveGuiElementPos = false;
+}
+
+void MainWindow::doActionResetRegisteredSettings() {
+    const QMessageBox::StandardButton reply = QMessageBox::question(
+            this, tr("Reset registered settings"),
+            tr("Clear all saved plugin settings (browse paths, dialog defaults, "
+               "etc.) registered with the application?\n\n"
+               "This cannot be undone."),
+            QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+    if (reply != QMessageBox::Yes) return;
+
+    ecvPS::resetAllRegistered();
+
+    QMessageBox::information(
+            this, tr("Reset registered settings"),
+            tr("Registered plugin settings have been cleared.\n\n"
+               "New defaults apply the next time each plugin reads its settings."));
 }
 
 void MainWindow::doActionSaveCustomLayout() {
@@ -10717,6 +10739,16 @@ void MainWindow::doActionClone() {
             if (!clone) {
                 ecvConsole::Error(
                         tr("An error occurred while cloning polyline %1")
+                                .arg(entity->getName()));
+            }
+        } else if (entity->isA(CV_TYPES::LINESET)) {
+            cloudViewer::geometry::LineSet* lineSet =
+                    ccHObjectCaster::ToLineSet(entity);
+            clone = (lineSet ? new cloudViewer::geometry::LineSet(*lineSet)
+                             : nullptr);
+            if (!clone) {
+                ecvConsole::Error(
+                        tr("An error occurred while cloning line set %1")
                                 .arg(entity->getName()));
             }
         } else if (entity->isA(CV_TYPES::CIRCLE)) {

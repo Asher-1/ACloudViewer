@@ -15,7 +15,7 @@ plugins/
 | Location | Purpose |
 |----------|---------|
 | `plugins/core/<Category>/<PluginName>/README.md` | **Authoritative** plugin doc: features, build flags, usage, models |
-| `docs/guides/plugins/` | **User guides** for AI plugins (qDA3, qFreeSplatter); synced into Sphinx |
+| `docs/guides/plugins/` | **User guides** for AI plugins (qDA3, qDeepLSD, qFreeSplatter, qLightGlue); synced into Sphinx |
 | `plugins/core/<Category>/<PluginName>/info.json` | Plugin metadata shown in the app |
 | [`BUILD.md`](../BUILD.md) | CMake option table and common build recipes |
 | [`docs/source/cpp_api/plugins.rst`](../docs/source/cpp_api/plugins.rst) | Sphinx plugin overview (READMEs are synced at doc-build time) |
@@ -26,14 +26,15 @@ When adding a new plugin, add a `README.md` in the plugin directory and register
 
 ## AI inference plugins (AICore)
 
-Both plugins link **`libAICore.so`**, which bundles DA3, FreeSplatter, and LightGlue with a single ggml copy.
+Four GUI plugins link **`libAICore.so`**, which bundles DA3, DeepLSD, FaceDetect, FreeSplatter, and LightGlue with a single ggml copy.
 
 | Plugin | CMake option | User guide | README |
 |--------|--------------|------------|--------|
 | **qDA3** | `PLUGIN_STANDARD_QDA3` | [docs/guides/plugins/qDA3.md](../docs/guides/plugins/qDA3.md) | [qDA3/README.md](core/Standard/qDA3/README.md) |
+| **qDeepLSD** | `PLUGIN_STANDARD_QDEEPLSD` | [docs/guides/plugins/qDeepLSD.md](../docs/guides/plugins/qDeepLSD.md) | [qDeepLSD/README.md](core/Standard/qDeepLSD/README.md) |
+| **qFaceDetect** | `PLUGIN_STANDARD_QFACEDETECT` | [docs/guides/plugins/qFaceDetect.md](../docs/guides/plugins/qFaceDetect.md) | [qFaceDetect/README.md](core/Standard/qFaceDetect/README.md) |
+| **qLightGlue** | `PLUGIN_STANDARD_QLIGHTGLUE` | [docs/guides/plugins/qLightGlue.md](../docs/guides/plugins/qLightGlue.md) | [qLightGlue/README.md](core/Standard/qLightGlue/README.md) |
 | **qFreeSplatter** | `PLUGIN_STANDARD_QFREESPLATTER` | [docs/guides/plugins/qFreeSplatter.md](../docs/guides/plugins/qFreeSplatter.md) | [qFreeSplatter/README.md](core/Standard/qFreeSplatter/README.md) |
-| **qLightGlue** | `PLUGIN_STANDARD_QLIGHTGLUE` | — | [qLightGlue/README.md](core/Standard/qLightGlue/README.md) |
-| **qDeepLSD** | `PLUGIN_STANDARD_QDEEPLSD` | — | [qDeepLSD/README.md](core/Standard/qDeepLSD/README.md) |
 
 **Core library:** enable with `-DAICore_ENABLED=ON` (auto-enables `GGML_ENABLED`).
 
@@ -43,6 +44,8 @@ Both plugins link **`libAICore.so`**, which bundles DA3, FreeSplatter, and Light
 cmake -DBUILD_GUI=ON \
       -DAICore_ENABLED=ON \
       -DPLUGIN_STANDARD_QDA3=ON \
+      -DPLUGIN_STANDARD_QDEEPLSD=ON \
+      -DPLUGIN_STANDARD_QFACEDETECT=ON \
       -DPLUGIN_STANDARD_QFREESPLATTER=ON \
       -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
       -DPLUGIN_STANDARD_QSIBR=ON \

@@ -1,0 +1,12 @@
+diff --git a/src/ggml-vulkan/ggml-vulkan-aliked.inc.cpp b/src/ggml-vulkan/ggml-vulkan-aliked.inc.cpp
+--- a/src/ggml-vulkan/ggml-vulkan-aliked.inc.cpp
++++ b/src/ggml-vulkan/ggml-vulkan-aliked.inc.cpp
+@@ -28,7 +28,7 @@ static bool vk_aliked_sddh_single_submit() {
+     if (env != nullptr) {
+         return env[0] != '0';
+     }
+-    return true;
++    return false;
+ }
+ 
+ struct vk_aliked_push_deform {

@@ -10,6 +10,8 @@
 
 namespace lightglue::aliked_internal {
 
+class GpuPipelineCache;
+
 // Device-resident WHCN tensor [W,H,C,N] (ggml layout).
 struct GpuTensor {
   ggml_context *ctx = nullptr;
@@ -55,5 +57,39 @@ struct GpuTensor {
     return static_cast<size_t>(w) * h * c;
   }
 };
+
+bool IsContiguousWhcn(const ggml_tensor *tensor, int32_t w, int32_t h, int32_t c);
+
+// CUDA custom kernels read flat WHCN; re-pack if gallocr left padded strides.
+bool EnsureDenseWhcn(internal::Backend *backend, GpuTensor *tensor,
+                     std::string *error);
+
+// Vulkan: GPU dense-copy + queue_idle, then host roundtrip fallback.
+bool EnsureDenseWhcnGpu(internal::Backend *backend, GpuTensor *tensor,
+                        std::string *error);
+
+// Pin score map into DKD scratch before gallocr reuses CNN tensor slots (Vulkan).
+bool PinVulkanScoreMap(internal::Backend *backend, GpuTensor *score, int32_t h,
+                       int32_t w, GpuPipelineCache *cache, std::string *error);
+
+// DKD boundary: fence CNN score head, always VkAliked dense-copy into scratch.
+bool PrepareScoreMapForDkd(internal::Backend *backend, GpuTensor *score,
+                           int32_t h, int32_t w, GpuPipelineCache *cache,
+                           std::string *error);
+
+// Always download + re-upload to a fresh contiguous WHCN buffer (Vulkan reuse).
+bool ForceDenseWhcn(internal::Backend *backend, GpuTensor *tensor,
+                    std::string *error);
+
+// Sync GpuTensor::w/h/c from ggml_tensor::ne after backend ops.
+void SyncGpuTensorMeta(GpuTensor *tensor);
+
+void BackendTensorCopyCompat(internal::Backend *backend, const ggml_tensor *src,
+                             ggml_tensor *dst);
+
+// Log ggml nb[] strides when LIGHTGLUE_ALIKED_CONV_STRIDE_DEBUG=1, or when
+// label contains ".offset" and DKD debug is enabled.
+void LogTensorStrideIfDebug(const char *label, const ggml_tensor *tensor,
+                            int32_t w, int32_t h, int32_t c);
 
 } // namespace lightglue::aliked_internal

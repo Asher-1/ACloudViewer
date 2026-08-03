@@ -134,6 +134,14 @@ float BilinearSample(const std::vector<float> &tensor,
                      int32_t channel,
                      float y,
                      float x) {
+    if (h <= 0 || w <= 0 || c <= 0) {
+        return 0.0f;
+    }
+    const size_t need = static_cast<size_t>(c) * static_cast<size_t>(h) *
+                        static_cast<size_t>(w);
+    if (tensor.size() < need) {
+        return 0.0f;
+    }
     const float clamped_y =
             std::min(std::max(y, 0.0f), static_cast<float>(h - 1));
     const float clamped_x =

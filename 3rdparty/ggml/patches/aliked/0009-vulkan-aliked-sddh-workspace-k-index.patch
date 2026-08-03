@@ -1,0 +1,35 @@
+diff --git a/src/ggml-vulkan/vulkan-shaders/aliked_sddh.comp b/src/ggml-vulkan/vulkan-shaders/aliked_sddh.comp
+--- a/src/ggml-vulkan/vulkan-shaders/aliked_sddh.comp
++++ b/src/ggml-vulkan/vulkan-shaders/aliked_sddh.comp
+@@ -56,14 +56,16 @@ float read_feature(int c, int y, int x) {
+ }
+ 
+ float bilinear_sample_feature(int c, float py, float px) {
+-    if (!is_valid_sample(py, px)) {
++    if (!is_finite(py) || !is_finite(px) || p.h <= 0u || p.w <= 0u) {
+         return 0.0;
+     }
+-    int y0 = int(floor(py));
+-    int x0 = int(floor(px));
++    float clamped_y = clamp(py, 0.0, float(p.h - 1u));
++    float clamped_x = clamp(px, 0.0, float(p.w - 1u));
++    int y0 = int(floor(clamped_y));
++    int x0 = int(floor(clamped_x));
+     int y1 = min(y0 + 1, int(p.h) - 1);
+     int x1 = min(x0 + 1, int(p.w) - 1);
+-    float ly = py - float(y0);
+-    float lx = px - float(x0);
++    float ly = clamped_y - float(y0);
++    float lx = clamped_x - float(x0);
+     float hy = 1.0 - ly;
+     float hx = 1.0 - lx;
+ 
+@@ -93,7 +95,7 @@ void main() {
+ 
+     uint patch_size = p.dim * p.kernel_size * p.kernel_size;
+     uint stride = patch_size + 64u + p.dim * 3u;
+-    uint base = p.workspace_off + local_k * stride;
++    uint base = p.workspace_off + k * stride;
+ 
+     float wh_x = max(float(p.w - 1u), 1.0);
+     float wh_y = max(float(p.h - 1u), 1.0);

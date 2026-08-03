@@ -20,7 +20,7 @@ if( PLUGIN_STANDARD_QDEEPLSD )
             ${CMAKE_CURRENT_SOURCE_DIR}/include
     )
 
-    target_link_libraries(${PROJECT_NAME} AICore Qt::Network)
+    target_link_libraries(${PROJECT_NAME} AICore)
 
     if(MSVC)
         target_compile_definitions(${PROJECT_NAME} PRIVATE _USE_MATH_DEFINES)

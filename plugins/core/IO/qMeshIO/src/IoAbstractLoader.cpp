@@ -262,6 +262,12 @@ private:
 IoAbstractLoader::IoAbstractLoader(const FileIOFilter::FilterInfo &info)
     : FileIOFilter(info) {}
 
+unsigned int IoAbstractLoader::_assimpPostProcessFlags() const {
+    return aiProcess_FindInvalidData | aiProcess_JoinIdenticalVertices |
+           aiProcess_RemoveComponent | aiProcess_Triangulate |
+           aiProcess_ValidateDataStructure;
+}
+
 bool IoAbstractLoader::canSave(CV_CLASS_ENUM type,
                                bool &multiple,
                                bool &exclusive) const {
@@ -311,10 +317,7 @@ CC_FILE_ERROR IoAbstractLoader::loadFile(
     importer.SetPropertyBool(AI_CONFIG_PP_FID_IGNORE_TEXTURECOORDS, true);
 
     const aiScene *cScene = importer.ReadFile(
-            inFileName.toStdString(),
-            aiProcess_FindInvalidData | aiProcess_JoinIdenticalVertices |
-                    aiProcess_RemoveComponent | aiProcess_Triangulate |
-                    aiProcess_ValidateDataStructure);
+            inFileName.toStdString(), _assimpPostProcessFlags());
 
     if (cScene == nullptr) {
         CVLog::Warning(QStringLiteral("[qMeshIO] The file '%1' has errors: %2")
