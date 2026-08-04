@@ -11,6 +11,10 @@
 #include <cmath>
 #include <numeric>
 
+#if defined(_OPENMP)
+#include <omp.h>
+#endif
+
 #include "deform_conv.hpp"
 #include "tensor_ops.hpp"
 
@@ -18,6 +22,10 @@ namespace lightglue::aliked_internal {
 namespace {
 
 constexpr float kDkdTemperature = 0.1f;
+
+#if defined(_OPENMP)
+int CpuPostprocessThreads() { return std::min(8, omp_get_max_threads()); }
+#endif
 
 inline int32_t IndexNchw(
         int32_t c, int32_t y, int32_t x, int32_t h, int32_t w) {
@@ -31,6 +39,9 @@ void MaxPool2d(const std::vector<float> &input,
                int32_t pad,
                std::vector<float> *output) {
     output->assign(static_cast<size_t>(h) * w, 0.0f);
+#if defined(_OPENMP)
+#pragma omp parallel for schedule(static) num_threads(CpuPostprocessThreads())
+#endif
     for (int32_t y = 0; y < h; ++y) {
         for (int32_t x = 0; x < w; ++x) {
             float best = -std::numeric_limits<float>::infinity();
@@ -56,32 +67,56 @@ std::vector<float> SimpleNms(const std::vector<float> &scores,
                              int32_t radius) {
     std::vector<float> max_mask;
     MaxPool2d(scores, h, w, radius * 2 + 1, radius, &max_mask);
-    for (size_t i = 0; i < scores.size(); ++i) {
-        max_mask[i] = scores[i] == max_mask[i] ? 1.0f : 0.0f;
+    const int64_t count = static_cast<int64_t>(scores.size());
+#if defined(_OPENMP)
+#pragma omp parallel for schedule(static) num_threads(CpuPostprocessThreads())
+#endif
+    for (int64_t i = 0; i < count; ++i) {
+        max_mask[static_cast<size_t>(i)] =
+                scores[static_cast<size_t>(i)] ==
+                                max_mask[static_cast<size_t>(i)]
+                        ? 1.0f
+                        : 0.0f;
     }
 
     std::vector<float> result = scores;
     for (int iter = 0; iter < 2; ++iter) {
         std::vector<float> supp_mask;
         MaxPool2d(max_mask, h, w, radius * 2 + 1, radius, &supp_mask);
-        for (float &value : supp_mask) {
+#if defined(_OPENMP)
+#pragma omp parallel for schedule(static) num_threads(CpuPostprocessThreads())
+#endif
+        for (int64_t i = 0; i < count; ++i) {
+            float &value = supp_mask[static_cast<size_t>(i)];
             value = value > 0.0f ? 1.0f : 0.0f;
         }
-        for (size_t i = 0; i < result.size(); ++i) {
-            result[i] = supp_mask[i] > 0.0f ? 0.0f : result[i];
+#if defined(_OPENMP)
+#pragma omp parallel for schedule(static) num_threads(CpuPostprocessThreads())
+#endif
+        for (int64_t i = 0; i < count; ++i) {
+            const size_t index = static_cast<size_t>(i);
+            result[index] = supp_mask[index] > 0.0f ? 0.0f : result[index];
         }
         std::vector<float> new_max;
         MaxPool2d(result, h, w, radius * 2 + 1, radius, &new_max);
-        for (size_t i = 0; i < result.size(); ++i) {
-            if (result[i] == new_max[i]) {
-                max_mask[i] = 1.0f;
-            } else if (supp_mask[i] <= 0.0f) {
-                max_mask[i] = 0.0f;
+#if defined(_OPENMP)
+#pragma omp parallel for schedule(static) num_threads(CpuPostprocessThreads())
+#endif
+        for (int64_t i = 0; i < count; ++i) {
+            const size_t index = static_cast<size_t>(i);
+            if (result[index] == new_max[index]) {
+                max_mask[index] = 1.0f;
+            } else if (supp_mask[index] <= 0.0f) {
+                max_mask[index] = 0.0f;
             }
         }
     }
-    for (size_t i = 0; i < result.size(); ++i) {
-        result[i] = max_mask[i] > 0.0f ? scores[i] : 0.0f;
+#if defined(_OPENMP)
+#pragma omp parallel for schedule(static) num_threads(CpuPostprocessThreads())
+#endif
+    for (int64_t i = 0; i < count; ++i) {
+        const size_t index = static_cast<size_t>(i);
+        result[index] = max_mask[index] > 0.0f ? scores[index] : 0.0f;
     }
     return result;
 }
@@ -139,16 +174,16 @@ DkdOutput RunDkd(const std::vector<float> &score_map,
         std::vector<std::pair<float, int32_t>> scored;
         scored.reserve(static_cast<size_t>(h) * w);
         for (int32_t i = 0; i < h * w; ++i) {
-            scored.emplace_back(nms[static_cast<size_t>(i)], i);
+            const float score = nms[static_cast<size_t>(i)];
+            if (score > options.scores_th) {
+                scored.emplace_back(score, i);
+            }
         }
-        std::partial_sort(
-                scored.begin(),
-                scored.begin() + std::min(options.top_k,
-                                          static_cast<int32_t>(scored.size())),
-                scored.end(),
-                [](const auto &a, const auto &b) { return a.first > b.first; });
         const int32_t keep =
                 std::min(options.top_k, static_cast<int32_t>(scored.size()));
+        std::partial_sort(
+                scored.begin(), scored.begin() + keep, scored.end(),
+                [](const auto &a, const auto &b) { return a.first > b.first; });
         indices.reserve(static_cast<size_t>(keep));
         for (int32_t i = 0; i < keep; ++i) {
             indices.push_back(scored[static_cast<size_t>(i)].second);
@@ -276,6 +311,9 @@ std::vector<float> RunSddh(const std::vector<float> &feature_map,
     const float max_offset = std::max(h, w) / 4.0f;
     const int32_t pad = kernel_size / 2;
 
+#if defined(_OPENMP)
+#pragma omp parallel for schedule(static) num_threads(CpuPostprocessThreads())
+#endif
     for (int32_t k = 0; k < num_kpts; ++k) {
         const float x_norm = keypoints_norm[static_cast<size_t>(k) * 2 + 0];
         const float y_norm = keypoints_norm[static_cast<size_t>(k) * 2 + 1];
@@ -326,6 +364,8 @@ std::vector<float> RunSddh(const std::vector<float> &feature_map,
                &offset_raw, &oh, &ow);
 
         std::vector<float> desc(dim, 0.0f);
+        std::vector<float> sampled(dim, 0.0f);
+        std::vector<float> transformed(dim, 0.0f);
         for (int32_t p = 0; p < n_pos; ++p) {
             const float off_x = std::max(
                     -max_offset,
@@ -339,13 +379,11 @@ std::vector<float> RunSddh(const std::vector<float> &feature_map,
             const float px = (sample_x + 1.0f) * 0.5f * wh_x;
             const float py = (sample_y + 1.0f) * 0.5f * wh_y;
 
-            std::vector<float> sampled(dim, 0.0f);
             for (int32_t c = 0; c < dim; ++c) {
                 sampled[static_cast<size_t>(c)] =
                         BilinearSample(feature_map, dim, h, w, c, py, px);
             }
 
-            std::vector<float> transformed(dim, 0.0f);
             for (int32_t c = 0; c < dim; ++c) {
                 float value = 0.0f;
                 for (int32_t ic = 0; ic < dim; ++ic) {
@@ -355,12 +393,16 @@ std::vector<float> RunSddh(const std::vector<float> &feature_map,
                 transformed[static_cast<size_t>(c)] = Selu(value);
             }
 
-            for (int32_t c = 0; c < dim; ++c) {
-                for (int32_t ic = 0; ic < dim; ++ic) {
-                    desc[static_cast<size_t>(c)] +=
-                            transformed[static_cast<size_t>(ic)] *
-                            agg_weights[static_cast<size_t>(p) * dim * dim +
-                                        static_cast<size_t>(ic) * dim + c];
+            const size_t agg_base = static_cast<size_t>(p) * dim * dim;
+            for (int32_t ic = 0; ic < dim; ++ic) {
+                const float value = transformed[static_cast<size_t>(ic)];
+                const float *weights = agg_weights.data() + agg_base +
+                                       static_cast<size_t>(ic) * dim;
+#if defined(_OPENMP)
+#pragma omp simd
+#endif
+                for (int32_t c = 0; c < dim; ++c) {
+                    desc[static_cast<size_t>(c)] += value * weights[c];
                 }
             }
         }

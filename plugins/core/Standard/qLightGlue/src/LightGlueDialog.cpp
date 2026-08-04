@@ -135,13 +135,30 @@ LightGlueDialog::LightGlueDialog(QWidget* parent) : QDialog(parent) {
                 m_downloadInProgress = false;
                 m_downloadLabel->setVisible(false);
                 populateModelCombo(m_downloadTargetFilename);
+
                 if (m_downloadTargetFilename.startsWith(
                             QStringLiteral("aliked-n16rot"))) {
+                    // ALIKED extractor download finished
                     appendLog(tr("[OK] Downloaded ALIKED extractor: %1")
                                       .arg(dest));
+                    m_alikedExtractorPendingDownload = false;
                 } else {
                     selectModelByFilename(m_downloadTargetFilename);
+                    // Matcher download finished; if ALIKED extractor is
+                    // also needed, start that download now.
+                    if (m_alikedExtractorPendingDownload && ok) {
+                        const QString data =
+                                m_modelCombo->currentData().toString();
+                        const QString extractorName =
+                                alikedExtractorFilenameForMatcher(data);
+                        appendLog(tr("[LG] Matcher ready. Now downloading "
+                                     "ALIKED extractor: %1")
+                                          .arg(extractorName));
+                        startAlikedExtractorDownload(extractorName);
+                        return;  // keep m_autoRunAfterDownload for later
+                    }
                 }
+
                 updateRunButtonState();
                 if (ok && m_autoRunAfterDownload) {
                     m_autoRunAfterDownload = false;
@@ -1005,14 +1022,8 @@ void LightGlueDialog::onBrowseCustomModel() {
 }
 
 QString LightGlueDialog::alikedExtractorCacheDir() {
-    char* dir = aicore_aliked_model_cache_dir();
-    if (!dir) {
-        return QDir::homePath() +
-               QStringLiteral("/cloudViewer_data/extract/aliked_models");
-    }
-    QString result = QString::fromUtf8(dir);
-    aicore_aliked_free_string(dir);
-    return result;
+    // ALIKED extractor models share the same cache as matcher models.
+    return modelCacheDir();
 }
 
 QString LightGlueDialog::alikedExtractorFilenameForMatcher(
@@ -1087,36 +1098,112 @@ bool LightGlueDialog::ensureModelAvailable() {
     const QString data = m_modelCombo->currentData().toString();
     if (data == "CUSTOM") return isModelReady();
 
+    // --- Check matcher model ---
     const QString cache = modelCacheDir();
     const QString cached = cache + "/" + data;
     const QFileInfo cachedInfo(cached);
-    if (isValidCachedGguf(cachedInfo)) {
-        if (data.contains(QStringLiteral("aliked-lightglue")) &&
-            !ensureAlikedExtractorAvailable(data)) {
-            return false;
-        }
-        return true;
-    }
-    if (cachedInfo.exists()) {
+    const bool matcherCached = isValidCachedGguf(cachedInfo);
+    if (!matcherCached && cachedInfo.exists()) {
         QFile::remove(cached);
         appendLog(
                 tr("[Warning] Removed incomplete model cache: %1").arg(cached));
     }
 
-    for (const auto& bm : builtinModels()) {
-        if (bm.filename != data) continue;
+    // --- For ALIKED: also check extractor model upfront ---
+    const bool isAliked = data.contains(QStringLiteral("aliked-lightglue"));
+    bool extractorCached = false;
+    QString extractorName;
+    if (isAliked) {
+        extractorName = alikedExtractorFilenameForMatcher(data);
+        const QString extCache = alikedExtractorCacheDir();
+        QDir().mkpath(extCache);
+        const QString extCachedPath =
+                extCache + QLatin1Char('/') + extractorName;
+        const QFileInfo extInfo(extCachedPath);
+        extractorCached = isValidCachedGguf(extInfo);
+        if (!extractorCached && extInfo.exists()) {
+            QFile::remove(extCachedPath);
+            appendLog(tr("[Warning] Removed incomplete ALIKED extractor "
+                         "cache: %1")
+                              .arg(extCachedPath));
+        }
+    }
+
+    // Both models available
+    if (matcherCached && (!isAliked || extractorCached)) {
+        if (isAliked) {
+            appendLog(tr("[LG] ALIKED extractor: %1/%2")
+                              .arg(alikedExtractorCacheDir(), extractorName));
+        }
+        return true;
+    }
+
+    // Find the builtin model entry for download URL
+    const LightGlueBuiltinModel* bm = nullptr;
+    for (const auto& m : builtinModels()) {
+        if (m.filename == data) {
+            bm = &m;
+            break;
+        }
+    }
+
+    // --- Decide what to download and prompt the user ---
+    const bool needMatcher = !matcherCached;
+    const bool needExtractor = isAliked && !extractorCached;
+
+    if (needMatcher && needExtractor) {
+        // Both missing — combined prompt
         const auto answer = QMessageBox::question(
-                this, tr("Download Model"),
-                tr("The model '%1' is not cached locally.\n\nDownload it now?")
-                        .arg(bm.displayName));
+                this, tr("Download ALIKED Models"),
+                tr("ALIKED matching requires two models, both are "
+                   "missing:\n"
+                   "  • Matcher: %1\n"
+                   "  • Extractor: %2\n\n"
+                   "Download both now?")
+                        .arg(data, extractorName));
         if (answer != QMessageBox::Yes) {
             appendLog(tr("[Info] Download declined."));
             return false;
         }
         m_autoRunAfterDownload = true;
-        startDownload(bm);
+        m_alikedExtractorPendingDownload = true;
+        if (bm) startDownload(*bm);
         return false;
     }
+
+    if (needMatcher) {
+        // Only matcher missing
+        if (!bm) return false;
+        const auto answer = QMessageBox::question(
+                this, tr("Download Model"),
+                tr("The model '%1' is not cached locally.\n\nDownload it now?")
+                        .arg(bm->displayName));
+        if (answer != QMessageBox::Yes) {
+            appendLog(tr("[Info] Download declined."));
+            return false;
+        }
+        m_autoRunAfterDownload = true;
+        startDownload(*bm);
+        return false;
+    }
+
+    if (needExtractor) {
+        // Only extractor missing
+        const auto answer =
+                QMessageBox::question(this, tr("Download ALIKED Extractor"),
+                                      tr("ALIKED matching also needs extractor "
+                                         "model '%1'.\n\nDownload it "
+                                         "now?")
+                                              .arg(extractorName));
+        if (answer != QMessageBox::Yes) {
+            appendLog(tr("[Info] ALIKED extractor download declined."));
+            return false;
+        }
+        m_autoRunAfterDownload = true;
+        startAlikedExtractorDownload(extractorName);
+        return false;
+    }
+
     return false;
 }
 

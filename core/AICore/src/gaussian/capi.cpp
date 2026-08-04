@@ -47,6 +47,7 @@ struct aicore_gaussian_ctx {
     aicore::gaussian::model m;
     aicore::gaussian::options opts;
     std::string error;
+    bool ready = false;
 };
 
 // ---- ABI ----
@@ -88,6 +89,8 @@ AICORE_CAPI aicore_gaussian_ctx* aicore_gaussian_load(const char* gguf_path,
     if (ctx->opts.device.empty()) ctx->opts.device = "auto";
     if (!ctx->m.load(gguf_path, ctx->opts.device, ctx->opts.n_threads)) {
         ctx->error = ctx->m.error;
+    } else {
+        ctx->ready = true;
     }
     return ctx;
 }
@@ -101,11 +104,17 @@ AICORE_CAPI aicore_gaussian_ctx* aicore_gaussian_load_opts(
     if (ctx->opts.device.empty()) ctx->opts.device = "auto";
     if (!ctx->m.load(gguf_path, ctx->opts.device, ctx->opts.n_threads)) {
         ctx->error = ctx->m.error;
+    } else {
+        ctx->ready = true;
     }
     return ctx;
 }
 
 AICORE_CAPI void aicore_gaussian_free(aicore_gaussian_ctx* ctx) { delete ctx; }
+
+AICORE_CAPI int aicore_gaussian_is_ready(const aicore_gaussian_ctx* ctx) {
+    return ctx != nullptr && ctx->ready ? 1 : 0;
+}
 
 AICORE_CAPI const char* aicore_gaussian_last_error(
         const aicore_gaussian_ctx* ctx) {

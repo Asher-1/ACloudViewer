@@ -7,6 +7,8 @@
 
 #include "SIBRViewerThread.h"
 
+#include <QCoreApplication>
+#include <QDir>
 #include <algorithm>
 #include <cmath>
 #include <core/graphics/Window.hpp>
@@ -754,7 +756,10 @@ int SIBRViewerThread::runGaussianViewer() {
     const bool memoryPly = !m_gaussianPlyMemory.empty();
     const bool memoryCameras = !m_gaussianCamerasJson.empty();
     const bool memoryBundle = memoryPly && memoryCameras;
-    const std::string memoryStubPath = "/tmp/sibr_freesplatter_memory";
+    const QString memoryStubPathQString =
+            QDir::tempPath() + QStringLiteral("/sibr_freesplatter_memory_%1")
+                                       .arg(QCoreApplication::applicationPid());
+    const std::string memoryStubPath = memoryStubPathQString.toStdString();
     if (!m_datasetPath.isEmpty()) {
         params.push_back({"path", m_datasetPath.toStdString()});
     } else if (memoryPly) {

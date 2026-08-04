@@ -13,6 +13,8 @@
 #include <QThread>
 #include <vector>
 
+struct aicore_cancel_token;
+
 struct DeepLSDLineSegment {
     float x1 = 0.0f;
     float y1 = 0.0f;
@@ -58,7 +60,9 @@ public:
     };
 
     explicit DeepLSDWorker(const Settings& settings, QObject* parent = nullptr);
+    ~DeepLSDWorker() override;
     void releaseContextOnMainThread();
+    void requestTaskCancel();
 
 signals:
     void logMessage(const QString& msg);
@@ -75,5 +79,6 @@ private:
 #endif
 
     Settings m_settings;
+    aicore_cancel_token* m_cancelToken = nullptr;
     struct aicore_deeplsd_ctx* m_pendingCtx = nullptr;
 };

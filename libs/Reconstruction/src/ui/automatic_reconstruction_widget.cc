@@ -32,8 +32,12 @@
 #include "ui/automatic_reconstruction_widget.h"
 
 #include <QMessageBox>
+#include <QCoreApplication>
+#include <QPointer>
 #include <QProgressDialog>
 #include <QShowEvent>
+
+#include <QtConcurrent/QtConcurrentRun>
 
 #include <filesystem>
 #include <set>
@@ -43,6 +47,10 @@
 #include "ui/main_window.h"
 #ifdef COLMAP_DOWNLOAD_ENABLED
 #include "util/download.h"
+#endif
+
+#ifdef AICore_ENABLED
+#include "aicore/backend_capi.h"
 #endif
 
 namespace colmap {
@@ -146,6 +154,24 @@ AutomaticReconstructionWidget::AutomaticReconstructionWidget(
   stereo_mode_cb_ = new QComboBox(this);
   DA3ReconstructionUiBindings::InitStereoModeComboBox(stereo_mode_cb_);
   grid_layout_->addWidget(stereo_mode_cb_, grid_layout_->rowCount() - 1, 1);
+
+  QLabel* da3_device_label = new QLabel(tr("DA3 device"), this);
+  da3_device_label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+  grid_layout_->addWidget(da3_device_label, grid_layout_->rowCount(), 0);
+  da3_device_cb_ = new QComboBox(this);
+#ifdef AICore_ENABLED
+  for (int i = 0; i < aicore_device_count(); ++i) {
+    const aicore_device_info* device = aicore_device_at(i);
+    if (device && device->id) {
+      da3_device_cb_->addItem(QString::fromUtf8(device->label),
+                               QString::fromUtf8(device->id));
+    }
+  }
+#endif
+  if (da3_device_cb_->count() == 0) {
+    da3_device_cb_->addItem(tr("Auto"), QStringLiteral("auto"));
+  }
+  grid_layout_->addWidget(da3_device_cb_, grid_layout_->rowCount() - 1, 1);
 
   da3_sparse_model_label_ = new QLabel(tr("DA3 sparse model"), this);
   da3_sparse_model_label_->setFont(font());
@@ -289,8 +315,96 @@ AutomaticReconstructionWidget::AutomaticReconstructionWidget(
           &AutomaticReconstructionWidget::RenderResult, Qt::QueuedConnection);
 }
 
+AutomaticReconstructionWidget::~AutomaticReconstructionWidget() {
+    if (download_cancelled_) {
+        download_cancelled_->store(true, std::memory_order_relaxed);
+    }
+}
+
+void AutomaticReconstructionWidget::startBackgroundDownload(
+        const QString& title, const QString& initial_label,
+        DownloadOperation operation) {
+    if (download_watcher_) return;
+    download_cancelled_ = std::make_shared<std::atomic_bool>(false);
+    auto* progress = new QProgressDialog(initial_label, tr("Cancel"), 0, 100,
+                                         this);
+    progress->setWindowModality(Qt::ApplicationModal);
+    progress->setWindowTitle(title);
+    progress->setAutoClose(false);
+    progress->setAutoReset(false);
+    progress->setMinimumDuration(0);
+    progress->show();
+
+    const auto cancelled = download_cancelled_;
+    connect(progress, &QProgressDialog::canceled, this, [cancelled]() {
+        cancelled->store(true, std::memory_order_relaxed);
+    });
+    auto* watcher = new QFutureWatcher<DownloadResult>(this);
+    download_watcher_ = watcher;
+    const QPointer<AutomaticReconstructionWidget> widget_guard(this);
+    const QPointer<QProgressDialog> progress_guard(progress);
+    QCoreApplication* const application = QCoreApplication::instance();
+    connect(watcher, &QFutureWatcher<DownloadResult>::finished, this,
+            [this, watcher, progress_guard]() {
+                const DownloadResult result = watcher->result();
+                if (progress_guard) {
+                    progress_guard->close();
+                    progress_guard->deleteLater();
+                }
+                watcher->deleteLater();
+                download_watcher_ = nullptr;
+                download_cancelled_.reset();
+                if (result.canceled) {
+                    QMessageBox::information(this, tr("Download Canceled"),
+                                             tr("The download was canceled."));
+                } else if (!result.error.isEmpty()) {
+                    QMessageBox::critical(this, tr("Download Failed"),
+                                          result.error);
+                } else {
+                    Run();
+                }
+            });
+    watcher->setFuture(QtConcurrent::run(
+            [operation = std::move(operation), cancelled, widget_guard,
+             progress_guard, application]() -> DownloadResult {
+                DownloadResult result;
+                const DownloadProgress callback =
+                        [widget_guard, progress_guard, application](int64_t done,
+                                                                      int64_t total) {
+                            if (!application) return;
+                            QMetaObject::invokeMethod(
+                                    application,
+                                    [widget_guard, progress_guard, done, total]() {
+                                        if (!widget_guard || !progress_guard) return;
+                                        const int percent = total > 0
+                                                ? static_cast<int>(done * 100 / total)
+                                                : 0;
+                                        progress_guard->setValue(percent);
+                                        progress_guard->setLabelText(
+                                                QObject::tr("Downloading... %1 MB")
+                                                        .arg(static_cast<double>(done) /
+                                                                     (1024.0 * 1024.0),
+                                                             0, 'f', 1));
+                                    },
+                                    Qt::QueuedConnection);
+                        };
+                try {
+                    const std::string path = operation(*cancelled, callback);
+                    if (path.empty() || cancelled->load(std::memory_order_relaxed)) {
+                        result.canceled = true;
+                    }
+                } catch (const std::exception& e) {
+                    result.error = QString::fromUtf8(e.what());
+                }
+                return result;
+            }));
+}
+
 void AutomaticReconstructionWidget::showEvent(QShowEvent* event) {
   OptionsWidget::showEvent(event);
+  const int device_index = da3_device_cb_->findData(
+      QString::fromStdString(options_.da3_device));
+  if (device_index >= 0) da3_device_cb_->setCurrentIndex(device_index);
 #ifdef AICore_ENABLED
   DA3ReconstructionUiBindings::ApplyPreferDa3Defaults(da3_ui_controls_);
 #endif
@@ -405,6 +519,7 @@ void AutomaticReconstructionWidget::Run() {
   options_.da3_stereo_quant_type =
       DA3ReconstructionUiBindings::QuantTypeFromComboText(
           da3_stereo_quant_cb_->currentText());
+  options_.da3_device = da3_device_cb_->currentData().toString().toStdString();
 
   options_.da3_force_recompute =
       da3_ui_controls_.da3_force_recompute_cb &&
@@ -466,79 +581,32 @@ void AutomaticReconstructionWidget::Run() {
           QMessageBox::Yes | QMessageBox::No);
       if (answer != QMessageBox::Yes) return;
 
-      for (auto& m : needed) {
+      std::vector<DA3ModelCacheNeed> downloads;
+      for (const auto& m : needed) {
         const auto target = std::filesystem::path(cache_dir) / m.filename;
-        if (std::filesystem::exists(target)) {
-          if (m.dest_path) *m.dest_path = target.string();
-          continue;
-        }
-
-        QProgressDialog progress_dialog(
-            tr("Downloading %1...").arg(QString::fromStdString(m.filename)),
-            tr("Cancel"), 0, 100, this);
-        progress_dialog.setWindowModality(Qt::ApplicationModal);
-        progress_dialog.setWindowTitle(tr("Downloading DA3 Model"));
-        progress_dialog.setAutoClose(false);
-        progress_dialog.setAutoReset(false);
-        progress_dialog.setMinimumDuration(0);
-        progress_dialog.show();
-        QApplication::processEvents();
-
-        bool download_canceled = false;
-        DownloadProgressCallback progress_callback =
-            [&progress_dialog, &download_canceled](
-                int64_t downloaded, int64_t total) {
-              QApplication::processEvents();
-              if (progress_dialog.wasCanceled()) {
-                download_canceled = true;
-                return;
+        if (!std::filesystem::exists(target)) downloads.push_back(m);
+      }
+      if (!downloads.empty()) {
+        const QString title = tr("Downloading DA3 Models");
+        startBackgroundDownload(
+            title, tr("Preparing DA3 model download..."),
+            [downloads = std::move(downloads), cache_dir](
+                    std::atomic_bool& canceled,
+                    const DownloadProgress& progress) -> std::string {
+              for (const auto& model : downloads) {
+                if (canceled.load(std::memory_order_relaxed)) return {};
+                const auto target = std::filesystem::path(cache_dir) /
+                                    model.filename;
+                const std::string path = DownloadAndCacheFile(
+                        model.url, target, progress,
+                        [&canceled]() {
+                          return canceled.load(std::memory_order_relaxed);
+                        });
+                if (path.empty()) return {};
               }
-              if (total > 0) {
-                int percent = static_cast<int>((downloaded * 100) / total);
-                progress_dialog.setValue(percent);
-                double dl_mb =
-                    static_cast<double>(downloaded) / (1024.0 * 1024.0);
-                double tot_mb =
-                    static_cast<double>(total) / (1024.0 * 1024.0);
-                progress_dialog.setLabelText(
-                    tr("Downloading...\n%1 MB / %2 MB (%3%)")
-                        .arg(dl_mb, 0, 'f', 1)
-                        .arg(tot_mb, 0, 'f', 1)
-                        .arg(percent));
-              }
-              QApplication::processEvents();
-            };
-
-        try {
-          auto target = std::filesystem::path(cache_dir) / m.filename;
-          std::string downloaded_path =
-              DownloadAndCacheFile(m.url, target, progress_callback);
-          progress_dialog.close();
-
-          if (download_canceled || downloaded_path.empty()) {
-            QMessageBox::warning(this, tr("Download Canceled"),
-                                 tr("DA3 model download was canceled."));
-            return;
-          }
-
-          if (m.dest_path) {
-            *m.dest_path = target.string();
-          }
-          for (auto& other : needed) {
-            if (other.filename == m.filename && other.dest_path &&
-                other.dest_path != m.dest_path) {
-              *other.dest_path = target.string();
-            }
-          }
-        } catch (const std::exception& e) {
-          progress_dialog.close();
-          QMessageBox::critical(
-              this, tr("Download Failed"),
-              tr("Failed to download DA3 model '%1': %2")
-                  .arg(QString::fromStdString(m.filename))
-                  .arg(e.what()));
-          return;
-        }
+              return "ok";
+            });
+        return;
       }
 #else
       QStringList names;
@@ -564,7 +632,10 @@ void AutomaticReconstructionWidget::Run() {
           options_, &main_window_->reconstruction_manager_);
 
   controller->AddCallback(Thread::FINISHED_CALLBACK,
-                          [this]() { render_result_->trigger(); });
+                          [this, controller]() {
+                            da3_vram_warning_ = controller->da3VramCapWarning();
+                            render_result_->trigger();
+                          });
 
   thread_control_widget_->StartThread("Reconstructing...", true, controller);
 }
@@ -585,7 +656,8 @@ void AutomaticReconstructionWidget::RenderResult() {
   }
 
   if (options_.dense) {
-    const std::string vram_warning = DA3VramCapWarningMessage();
+    const std::string vram_warning =
+        DA3VramCapWarningMessage(da3_vram_warning_);
     if (!vram_warning.empty()) {
       QMessageBox::warning(
           this, tr("DA3 GPU memory"),

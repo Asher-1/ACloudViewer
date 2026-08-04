@@ -157,6 +157,9 @@ AICORE_CAPI void aicore_depth_free(aicore_depth_ctx* c) {
     }
     delete c;
 }
+AICORE_CAPI int aicore_depth_is_ready(const aicore_depth_ctx* c) {
+    return c != nullptr && c->engine != nullptr ? 1 : 0;
+}
 AICORE_CAPI char* aicore_depth_info_json(aicore_depth_ctx* c) {
     if (!c || !c->engine) return nullptr;
     const auto& cfg = c->engine->config();

@@ -48,6 +48,8 @@ struct FaceDetectRunResult {
 
 Q_DECLARE_METATYPE(FaceDetectRunResult)
 
+struct aicore_cancel_token;
+
 class FaceDetectWorker : public QThread {
     Q_OBJECT
 
@@ -69,7 +71,9 @@ public:
 
     explicit FaceDetectWorker(const Settings& settings,
                               QObject* parent = nullptr);
+    ~FaceDetectWorker() override;
     void releaseContextOnMainThread();
+    void requestTaskCancel();
 
 signals:
     void logMessage(const QString& msg);
@@ -88,4 +92,5 @@ private:
     Settings m_settings;
     struct aicore_facedetect_ctx* m_pendingCtx = nullptr;
     struct aicore_facedetect_ctx* m_pendingLandmarkCtx = nullptr;
+    aicore_cancel_token* m_cancelToken = nullptr;
 };

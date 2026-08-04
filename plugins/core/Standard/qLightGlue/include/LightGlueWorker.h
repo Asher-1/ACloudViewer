@@ -11,6 +11,8 @@
 #include <QThread>
 #include <QVector>
 
+struct aicore_cancel_token;
+
 struct LightGlueMatchResult {
     int idx1 = -1;
     int idx2 = -1;
@@ -56,8 +58,10 @@ public:
 
     explicit LightGlueWorker(const Settings& settings,
                              QObject* parent = nullptr);
+    ~LightGlueWorker() override;
 
     void releaseContextOnMainThread();
+    void requestTaskCancel();
 
 signals:
     void logMessage(const QString& msg);
@@ -76,6 +80,7 @@ private:
 #endif
 
     Settings m_settings;
+    aicore_cancel_token* m_cancelToken = nullptr;
     struct aicore_lightglue_ctx* m_pendingCtx = nullptr;
 };
 

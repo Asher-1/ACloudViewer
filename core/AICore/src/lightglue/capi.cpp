@@ -154,6 +154,10 @@ AICORE_CAPI void aicore_lightglue_free(aicore_lightglue_ctx* ctx) {
     delete ctx;
 }
 
+AICORE_CAPI int aicore_lightglue_is_ready(const aicore_lightglue_ctx* ctx) {
+    return ctx != nullptr && ctx->matcher != nullptr ? 1 : 0;
+}
+
 AICORE_CAPI const char* aicore_lightglue_last_error(
         const aicore_lightglue_ctx* ctx) {
     if (!ctx) return "NULL context";

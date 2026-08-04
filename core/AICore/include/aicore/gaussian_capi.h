@@ -44,6 +44,8 @@ AICORE_CAPI aicore_gaussian_ctx* aicore_gaussian_load(const char* gguf_path,
 AICORE_CAPI aicore_gaussian_ctx* aicore_gaussian_load_opts(
         const char* gguf_path, const aicore_gaussian_options* opts);
 AICORE_CAPI void aicore_gaussian_free(aicore_gaussian_ctx* ctx);
+/** True only after a context loaded its model successfully. */
+AICORE_CAPI int aicore_gaussian_is_ready(const aicore_gaussian_ctx* ctx);
 AICORE_CAPI const char* aicore_gaussian_last_error(
         const aicore_gaussian_ctx* ctx);
 

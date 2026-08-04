@@ -31,6 +31,8 @@ AICORE_CAPI void aicore_deeplsd_options_set_threads(
 AICORE_CAPI aicore_deeplsd_ctx* aicore_deeplsd_load_opts(
         const char* gguf_path, const aicore_deeplsd_options* opts);
 AICORE_CAPI void aicore_deeplsd_free(aicore_deeplsd_ctx* ctx);
+/** True only after a context owns a successfully initialized extractor. */
+AICORE_CAPI int aicore_deeplsd_is_ready(const aicore_deeplsd_ctx* ctx);
 AICORE_CAPI const char* aicore_deeplsd_last_error(
         const aicore_deeplsd_ctx* ctx);
 

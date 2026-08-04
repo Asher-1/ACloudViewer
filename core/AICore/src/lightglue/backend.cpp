@@ -24,52 +24,17 @@ namespace lightglue {
 
 bool engine_backend::init(const std::string& device_req, int n_threads) {
     release();
-    ggml_common::load_backends_once();
-
-    std::string name;
-    int want_idx = 0;
-    ggml_common::parse_device(device_req, name, want_idx);
     if (n_threads <= 0) {
         n_threads = static_cast<int>(ggml_common::default_cpu_threads());
     }
-
-    LG_LOG("init: device_req='%s' parsed_name='%s' want_idx=%d dev_count=%zu",
-           device_req.c_str(), name.c_str(), want_idx,
-           ggml_backend_dev_count());
-
-    if (name.empty() || name == "auto") {
-        std::string resolved;
-        if (ggml_backend_t accelerator =
-                    ggml_common::find_auto_backend(resolved)) {
-            be = accelerator;
-            device = resolved;
-        } else {
-            return init("cpu", n_threads);
-        }
-    } else if (name == "cpu") {
-        be = ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_CPU, nullptr);
-        if (!be) {
-            error = "CPU backend init failed";
-            return false;
-        }
-        device = "cpu";
-        if (const char* env = std::getenv("LIGHTGLUE_NTHREADS")) {
-            if (int v = std::atoi(env)) n_threads = v;
-        }
-        ggml_common::set_cpu_threads(be, n_threads);
-    } else if (name == "gpu" || name == "cuda" || name == "opencl" ||
-               name == "metal" || name == "sycl" || name == "vulkan") {
-        be = ggml_common::find_gpu_backend(name, want_idx, device);
-        if (!be) {
-            error = "no usable '" + name +
-                    "' device (backend built and runtime driver present?)";
-            return false;
-        }
-    } else {
-        error = "unknown device '" + device_req +
-                "' (want auto|cpu|gpu|sycl|vulkan|cuda|metal)";
-        return false;
+    if (const char* env = std::getenv("LIGHTGLUE_NTHREADS")) {
+        if (int value = std::atoi(env)) n_threads = value;
     }
+    lease = aicore::runtime::acquire_backend_lease(device_req, n_threads,
+                                                   &error);
+    if (!lease) return false;
+    be = lease.handle();
+    device = lease.device();
 
     galloc = ggml_gallocr_new(ggml_backend_get_default_buffer_type(be));
     if (!galloc) {
@@ -87,14 +52,26 @@ void engine_backend::release() {
         galloc = nullptr;
     }
     if (be) {
-        ggml_backend_free(be);
         be = nullptr;
     }
+    lease.reset();
     device.clear();
     error.clear();
 }
 
-bool engine_backend::is_cpu() const { return ggml_common::is_cpu_backend(be); }
+bool engine_backend::is_cpu() const { return lease.is_cpu(); }
+
+bool engine_backend::supports_fused_attention() const {
+    if (be == nullptr || is_cpu()) return false;
+    ggml_backend_dev_t dev = ggml_backend_get_device(be);
+    ggml_backend_reg_t reg = ggml_backend_dev_backend_reg(dev);
+    const char* name = reg ? ggml_backend_reg_name(reg) : nullptr;
+    // ggml-vulkan's fused flash-attention path currently produces invalid
+    // LightGlue assignment scores for the ALIKED model. Keep the mathematically
+    // equivalent manual attention graph until that backend advertises a
+    // numerically conformant implementation.
+    return name != nullptr && ggml_common::to_lower(name) != "vulkan";
+}
 
 }  // namespace lightglue
 }  // namespace aicore

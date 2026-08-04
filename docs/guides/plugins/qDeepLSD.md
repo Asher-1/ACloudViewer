@@ -2,6 +2,8 @@
 
 Run [DeepLSD](https://github.com/cvg/DeepLSD) **GGUF models** in ACloudViewer (C++ / [ggml](https://github.com/ggml-org/ggml)) for wireframe line-segment extraction from images.
 
+![qDeepLSD line extraction](../../_static/plugin-assets/qDeepLSD/qDeepLSD.png)
+
 ## Architecture
 
 ```

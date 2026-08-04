@@ -13,6 +13,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
+#include <QPlainTextEdit>
 #include <QPushButton>
 #include <QSpinBox>
 #include <QVector>
@@ -123,7 +124,7 @@ private:
     QCheckBox* m_exportAuthToDbCheck = nullptr;
     QPushButton* m_testDataBtn = nullptr;
     QListWidget* m_entryList = nullptr;
-    QLabel* m_authResultLabel = nullptr;
+    QPlainTextEdit* m_authResultLabel = nullptr;
     QLabel* m_dbStatusLabel = nullptr;
     ecvClickableImageLabel* m_authPreviewLabel = nullptr;
 

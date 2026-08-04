@@ -30,6 +30,7 @@
 #include <vector>
 
 #include "aicore/aliked_capi.h"
+#include "aicore/backend_capi.h"
 #include "aicore/lightglue_capi.h"
 
 namespace {
@@ -159,11 +160,71 @@ float KptDistance(float x0, float y0, float x1, float y1) {
 }
 
 float DescCosine(const float* a, const float* b, int32_t dim) {
-    float dot = 0.0f;
+    double dot = 0.0;
+    double norm_a = 0.0;
+    double norm_b = 0.0;
     for (int32_t i = 0; i < dim; ++i) {
-        dot += a[i] * b[i];
+        dot += static_cast<double>(a[i]) * b[i];
+        norm_a += static_cast<double>(a[i]) * a[i];
+        norm_b += static_cast<double>(b[i]) * b[i];
     }
-    return dot;
+    if (norm_a <= 0.0 || norm_b <= 0.0) {
+        return -1.0f;
+    }
+    return static_cast<float>(dot / std::sqrt(norm_a * norm_b));
+}
+
+bool FeaturesLookValid(const ExtractResult& result, const char* device) {
+    const size_t count = static_cast<size_t>(std::max(0, result.count));
+    const size_t dim = static_cast<size_t>(std::max(0, result.dim));
+    if (!result.ok || count == 0 || dim == 0 ||
+        result.keypoints.size() != count * 2 ||
+        result.descriptors.size() != count * dim) {
+        std::fprintf(stderr, "FAIL: %s returned malformed features\n", device);
+        return false;
+    }
+
+    for (float value : result.keypoints) {
+        if (!std::isfinite(value)) {
+            std::fprintf(stderr, "FAIL: %s returned non-finite keypoints\n",
+                         device);
+            return false;
+        }
+    }
+    for (float value : result.descriptors) {
+        if (!std::isfinite(value)) {
+            std::fprintf(stderr, "FAIL: %s returned non-finite descriptors\n",
+                         device);
+            return false;
+        }
+    }
+
+    constexpr float kDuplicateTolPx = 1.0e-4f;
+    for (size_t i = 0; i < count; ++i) {
+        const float* desc = result.descriptors.data() + i * dim;
+        double norm2 = 0.0;
+        for (size_t d = 0; d < dim; ++d) {
+            norm2 += static_cast<double>(desc[d]) * desc[d];
+        }
+        if (norm2 <= 0.0) {
+            std::fprintf(stderr, "FAIL: %s returned a zero descriptor\n",
+                         device);
+            return false;
+        }
+        for (size_t j = 0; j < i; ++j) {
+            if (KptDistance(result.keypoints[i * 2],
+                            result.keypoints[i * 2 + 1],
+                            result.keypoints[j * 2],
+                            result.keypoints[j * 2 + 1]) <= kDuplicateTolPx) {
+                std::fprintf(stderr,
+                             "FAIL: %s returned duplicate keypoints at %zu and "
+                             "%zu\n",
+                             device, j, i);
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
 bool CompareParity(const ExtractResult& ref,
@@ -171,7 +232,7 @@ bool CompareParity(const ExtractResult& ref,
                    float* out_kpt_median,
                    float* out_desc_median) {
     if (!ref.ok || !test.ok || ref.count <= 0 || test.count <= 0 ||
-        ref.dim != test.dim) {
+        ref.count != test.count || ref.dim != test.dim) {
         return false;
     }
 
@@ -180,12 +241,16 @@ bool CompareParity(const ExtractResult& ref,
     kpt_errors.reserve(static_cast<size_t>(test.count));
     desc_cos.reserve(static_cast<size_t>(test.count));
 
+    std::vector<bool> matched(static_cast<size_t>(ref.count), false);
     for (int32_t i = 0; i < test.count; ++i) {
         const float tx = test.keypoints[static_cast<size_t>(i) * 2];
         const float ty = test.keypoints[static_cast<size_t>(i) * 2 + 1];
         float best = std::numeric_limits<float>::infinity();
         int32_t best_j = 0;
         for (int32_t j = 0; j < ref.count; ++j) {
+            if (matched[static_cast<size_t>(j)]) {
+                continue;
+            }
             const float rx = ref.keypoints[static_cast<size_t>(j) * 2];
             const float ry = ref.keypoints[static_cast<size_t>(j) * 2 + 1];
             const float d = KptDistance(tx, ty, rx, ry);
@@ -194,6 +259,7 @@ bool CompareParity(const ExtractResult& ref,
                 best_j = j;
             }
         }
+        matched[static_cast<size_t>(best_j)] = true;
         kpt_errors.push_back(best);
         const float* tdesc =
                 test.descriptors.data() +
@@ -300,6 +366,9 @@ int main(int argc, char** argv) {
             std::fprintf(stderr, "FAIL: %s extract failed\n", only);
             return 1;
         }
+        if (!FeaturesLookValid(gpu, only)) {
+            return 1;
+        }
         std::printf("%s: kpts=%d median_ms=%.2f (bench-only)\n", only,
                     gpu.count, gpu.median_ms);
         return 0;
@@ -309,6 +378,9 @@ int main(int argc, char** argv) {
             ExtractTimed(gguf, "cpu", image, max_kpts, resize, 1);
     if (!cpu.ok) {
         std::fprintf(stderr, "FAIL: CPU reference extract failed\n");
+        return 1;
+    }
+    if (!FeaturesLookValid(cpu, "cpu")) {
         return 1;
     }
     std::printf("cpu: kpts=%d median_ms=%.2f\n", cpu.count, cpu.median_ms);
@@ -329,7 +401,16 @@ int main(int argc, char** argv) {
         const ExtractResult gpu = ExtractTimed(gguf, backend, image, max_kpts,
                                                resize, BenchRuns(3));
         if (!gpu.ok) {
-            std::printf("SKIP backend=%s (load or extract failed)\n", backend);
+            if (!aicore_device_available(backend)) {
+                std::printf("SKIP backend=%s (backend unavailable)\n", backend);
+                continue;
+            }
+            std::printf("FAIL backend=%s (load or extract failed)\n", backend);
+            ++failures;
+            continue;
+        }
+        if (!FeaturesLookValid(gpu, backend)) {
+            ++failures;
             continue;
         }
 

@@ -41,7 +41,8 @@ private:
     QStringList selectedDbImageNames() const;
     bool resolveInputPath(const QString& rawPath,
                           QString& outPath,
-                          QString* errorMsg) const;
+                          QString* errorMsg);
+    void clearStagedInputFiles();
     void refreshDbImages();
     void addResultToDb(const FaceDetectRunResult& result,
                        const FaceDetectDialog::Settings& settings,
@@ -53,5 +54,6 @@ private:
     FaceDetectDialog* m_dialog = nullptr;
     FaceDetectWorker* m_worker = nullptr;
     FaceDetectDialog::Settings m_currentSettings;
+    QStringList m_stagedInputFiles;
     ccHObject::Container m_selectedEntities;
 };

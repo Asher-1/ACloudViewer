@@ -22,6 +22,7 @@ int main() {
     aicore_deeplsd_free_string(nullptr);
 
     AICORE_CHECK(aicore_deeplsd_load_opts(nullptr, nullptr) == nullptr);
+    AICORE_CHECK(aicore_deeplsd_is_ready(nullptr) == 0);
     AICORE_CHECK(aicore_deeplsd_info_json(nullptr) != nullptr);
 
     aicore_deeplsd_options* opts = aicore_deeplsd_options_new();

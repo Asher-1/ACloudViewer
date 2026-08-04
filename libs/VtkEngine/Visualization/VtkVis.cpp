@@ -5122,10 +5122,6 @@ void GetGridAxesActorBounds(vtkGridAxesActor3D* actor, double bounds[6]) {
 
 void VtkVis::SetDataAxesGridProperties(const std::string& viewID,
                                        const AxesGridProperties& props) {
-    CVLog::PrintDebug(
-            "[VtkVis::SetDataAxesGridProperties] viewID=<%s> "
-            "visible=%d showGrid=%d",
-            viewID.c_str(), props.visible, props.showGrid);
     vtkRenderer* renderer = getCurrentRenderer();
     if (!renderer) {
         CVLog::Warning("[VtkVis] No renderer available for Data Axes Grid");
@@ -5283,19 +5279,6 @@ void VtkVis::SetDataAxesGridProperties(const std::string& viewID,
                     if (bounds[1] > bounds[0] && bounds[3] > bounds[2] &&
                         bounds[5] > bounds[4]) {
                         SetGridAxesActorBounds(dataAxesGrid, bounds, false);
-                        CVLog::PrintVerbose(
-                                QString("[VtkVis] Set axes grid bounds from "
-                                        "ccHObject '%1' (viewID: %2): "
-                                        "[%.2f, %.2f] x [%.2f, %.2f] x [%.2f, "
-                                        "%.2f]")
-                                        .arg(obj->getName())
-                                        .arg(QString::fromStdString(viewID))
-                                        .arg(bounds[0])
-                                        .arg(bounds[1])
-                                        .arg(bounds[2])
-                                        .arg(bounds[3])
-                                        .arg(bounds[4])
-                                        .arg(bounds[5]));
                     } else {
                         CVLog::Warning(
                                 "[VtkVis] Invalid bounds calculated from "
@@ -5318,13 +5301,6 @@ void VtkVis::SetDataAxesGridProperties(const std::string& viewID,
 
     dataAxesGrid->Modified();
 
-    CVLog::PrintDebug(
-            "[VtkVis::SetDataAxesGridProperties] Grid ready: visibility=%d "
-            "bounds=[%.2f,%.2f,%.2f,%.2f,%.2f,%.2f]",
-            dataAxesGrid->GetVisibility(), dataAxesGrid->GetGridBounds()[0],
-            dataAxesGrid->GetGridBounds()[1], dataAxesGrid->GetGridBounds()[2],
-            dataAxesGrid->GetGridBounds()[3], dataAxesGrid->GetGridBounds()[4],
-            dataAxesGrid->GetGridBounds()[5]);
     UpdateScreen();
     if (auto rw = getRenderWindow()) {
         rw->Render();

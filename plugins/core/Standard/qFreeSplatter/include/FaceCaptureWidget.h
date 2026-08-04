@@ -13,8 +13,10 @@
 #include <QImage>
 #include <QLabel>
 #include <QLineEdit>
+#include <QListWidget>
 #include <QProgressBar>
 #include <QPushButton>
+#include <QScrollArea>
 #include <QSpinBox>
 #include <QTimer>
 #include <QVBoxLayout>
@@ -33,6 +35,8 @@
 
 #include <memory>
 #include <vector>
+
+class QResizeEvent;
 
 class FaceCaptureWidget : public QWidget {
     Q_OBJECT
@@ -53,6 +57,12 @@ public:
         CaptureAngle angle;
         QRect faceRect;
         bool valid = false;
+    };
+
+    struct IdentityImageBatch {
+        QString id;
+        QString name;
+        QStringList paths;
     };
 
     explicit FaceCaptureWidget(QWidget* parent = nullptr);
@@ -76,6 +86,8 @@ public:
 
     std::vector<CapturedFrame> capturedFrames() const;
     QStringList exportCapturedImages(const QString& outputDir) const;
+    std::vector<IdentityImageBatch> exportCapturedIdentityImages(
+            const QString& outputDir) const;
 
     int capturedCount() const;
     int targetCount() const;
@@ -112,8 +124,13 @@ private slots:
     void onDetectorComboChanged(int index);
     void onSourceChanged(int index);
     void onBrowseVideoFile();
+    void onBrowseRegistry();
+    void reloadRegistry();
+    void filterRegistry(const QString& text);
 
 private:
+    void resizeEvent(QResizeEvent* event) override;
+
     enum class DetectorKind { None, OpenCV, Ggml };
 
     void setupUi();
@@ -129,14 +146,36 @@ private:
     QString angleToString(CaptureAngle angle) const;
     void refreshCapturedGallery();
     void updateCaptureProgressUi();
+    void setAngleGuideText(const QString& text);
     int currentGuideAngleIndex() const;
     void loadFaceCaptureSettings();
     void saveFaceCaptureSettings();
+    bool configureDetectorForRegistrySelection();
+    static std::vector<float> normalizeEmbedding(
+            const std::vector<float>& embedding);
+
+    struct RegistryIdentity {
+        QString id;
+        QString name;
+        QString modelFile;
+        std::vector<float> embedding;
+    };
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
     struct ScoredFace {
         cv::Rect rect;
         float score = 0.f;
+        float landmarks[10]{};
+        bool hasLandmarks = false;
+    };
+
+    struct IdentityTrack {
+        RegistryIdentity identity;
+        std::vector<CapturedFrame> frames;
+        cv::Rect lastRect;
+        float lastDistance = 1.f;
+        int consecutiveDetections = 0;
+        int cooldown = 0;
     };
 
     QImage cvMatToQImage(const cv::Mat& mat);
@@ -148,6 +187,15 @@ private:
     bool embedFaceCrop(const cv::Mat& frame,
                        const cv::Rect& rect,
                        std::vector<float>* embedding);
+    bool embedScoredFace(const cv::Mat& frame,
+                         const ScoredFace& face,
+                         std::vector<float>* embedding);
+    bool processRegistryIdentities(const cv::Mat& frame,
+                                   const std::vector<ScoredFace>& faces,
+                                   QImage* preview);
+    bool captureIdentityFrame(IdentityTrack* track,
+                              const cv::Mat& frame,
+                              const cv::Rect& rect);
     float embeddingDistance(const std::vector<float>& a,
                             const std::vector<float>& b) const;
     void resetIdentityTrack();
@@ -163,18 +211,21 @@ private:
     cv::VideoCapture m_camera;
     cv::CascadeClassifier m_faceCascade;
     cv::Rect m_lastFaceRect;
+    cv::Mat m_latestFrame;
+    cv::Mat m_lastDetectedFrame;
     float m_lastFaceScore = 0.f;
 #endif
 
     ecvClickableImageLabel* m_previewLabel = nullptr;
     QLabel* m_statusLabel = nullptr;
-    QLabel* m_captureProgressLabel = nullptr;
     QProgressBar* m_captureProgress = nullptr;
+    QScrollArea* m_capturedGalleryScroll = nullptr;
     QWidget* m_capturedGalleryRow = nullptr;
     QLabel* m_angleLabel = nullptr;
     QLabel* m_downloadLabel = nullptr;
     QProgressBar* m_downloadProgress = nullptr;
     QPushButton* m_captureBtn = nullptr;
+    QLabel* m_cameraDeviceLabel = nullptr;
     QComboBox* m_cameraCombo = nullptr;
     QComboBox* m_sourceCombo = nullptr;
     QWidget* m_cameraControlsRow = nullptr;
@@ -184,15 +235,26 @@ private:
     QComboBox* m_detectorCombo = nullptr;
     QDoubleSpinBox* m_minScoreSpin = nullptr;
     QSpinBox* m_minCapturesSpin = nullptr;
+    QDoubleSpinBox* m_maxDistanceSpin = nullptr;
     QComboBox* m_faceStrategyCombo = nullptr;
+    QLineEdit* m_registryPathEdit = nullptr;
+    QLineEdit* m_registryFilterEdit = nullptr;
+    QListWidget* m_registryList = nullptr;
+    QLabel* m_registryStatusLabel = nullptr;
 
     std::vector<float> m_referenceEmbedding;
     bool m_hasReferenceEmbedding = false;
-    static constexpr float kSamePersonMaxDistance = 0.55f;
+    static constexpr float kDefaultSamePersonMaxDistance = 0.55f;
+    float maxSamePersonDistance() const;
+    std::vector<RegistryIdentity> m_registryIdentities;
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    std::vector<IdentityTrack> m_identityTracks;
+#endif
 
     ecvModelDownloader* m_downloader = nullptr;
     aicore_facedetect_ctx* m_ggmlCtx = nullptr;
     QString m_loadedGgmlPath;
+    QString m_pendingGgmlPath;
 
     QTimer* m_frameTimer = nullptr;
     bool m_cameraActive = false;
@@ -207,6 +269,7 @@ private:
     bool m_ggmlModelLoading = false;
     QFutureWatcher<aicore_facedetect_ctx*>* m_ggmlLoadWatcher = nullptr;
 
+    bool m_registryPathUserChosen = false;
     DetectorKind m_detectorKind = DetectorKind::OpenCV;
 
     std::vector<CaptureAngle> m_targetAngles;

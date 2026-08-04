@@ -301,6 +301,12 @@ void VtkWidgetPrivate::init() { layoutRenderers(); }
 // static const int CC_MAX_PICKING_CLICK_DURATION_MS = 200;
 static const int CC_MAX_PICKING_CLICK_DURATION_MS = 350;
 
+// Max pixel distance between press and release to treat the gesture as
+// a click (entity picking) rather than a drag (rotation / pan).
+// Anything beyond this threshold is considered a drag and will NOT
+// trigger entity selection in the DB tree.
+static const int CLICK_DRAG_THRESHOLD_PX = 3;
+
 static QMap<QString, VtkShortcutDef> s_vtkShortcutMap;
 static bool s_vtkMapInitialized = false;
 
@@ -1065,6 +1071,7 @@ void QVTKWidgetCustom::mousePressEvent(QMouseEvent* event) {
     curMouseButtonPressed() = true;
     curIgnoreMouseReleaseEvent() = false;
     curLastMousePos() = event->pos();
+    curLastMousePressPos() = event->pos();
 
     if (handleCameraOrientationMouse(event, QEvent::MouseButtonPress)) {
         event->accept();
@@ -2130,12 +2137,21 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
     }
     bool mouseHasMoved = curMouseMoved();
 
+    // Position-based drag detection: compare the release position with
+    // the original press position.  This is the authoritative check —
+    // the mouseMoved flag can be unreliable when VTK's interactor
+    // consumes mouse-move events internally (e.g. trackball rotation)
+    // without our mouseMoveEvent override being invoked.
+    const int mouseMovedDist =
+            (event->pos() - curLastMousePressPos()).manhattanLength();
+    const bool isClick = (mouseMovedDist <= CLICK_DRAG_THRESHOLD_PX);
+
     // reset to default state
     curMouseButtonPressed() = false;
     curMouseMoved() = false;
     QApplication::restoreOverrideCursor();
 
-    if (mouseHasMoved) {
+    if (mouseHasMoved || !isClick) {
         displayTarget()->updateNamePoseRecursive();
     }
 
@@ -2173,8 +2189,9 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
             }
         }
     } else if (event->button() == Qt::LeftButton) {
-        if (mouseHasMoved) {
-            // if a rectangular picking area has been defined
+        if (!isClick) {
+            // Drag — skip entity picking.  Rectangular area selection is
+            // still processed if the user Alt+drag-drew a rectangle.
             if (curRectPickingPoly()) {
                 cloudViewer::GenericIndexedCloudPersist* vertices =
                         curRectPickingPoly()->getAssociatedCloud();
@@ -2208,6 +2225,7 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
 
             event->accept();
         } else {
+            // True click — proceed with entity picking.
             // picking?
             // CRITICAL: Don't start deferred picking if a VTK widget was
             // clicked This prevents doPicking() from overriding the widget

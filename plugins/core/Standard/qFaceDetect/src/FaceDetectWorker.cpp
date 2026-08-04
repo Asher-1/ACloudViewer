@@ -31,7 +31,23 @@
 
 FaceDetectWorker::FaceDetectWorker(const Settings& settings, QObject* parent)
     : QThread(parent), m_settings(settings) {
+#ifdef AICore_ENABLED
+    m_cancelToken = aicore_cancel_token_new();
+#endif
     qRegisterMetaType<FaceDetectRunResult>("FaceDetectRunResult");
+}
+
+FaceDetectWorker::~FaceDetectWorker() {
+#ifdef AICore_ENABLED
+    aicore_cancel_token_free(m_cancelToken);
+#endif
+}
+
+void FaceDetectWorker::requestTaskCancel() {
+#ifdef AICore_ENABLED
+    aicore_cancel_token_request(m_cancelToken);
+#endif
+    requestInterruption();
 }
 
 void FaceDetectWorker::releaseContextOnMainThread() {
@@ -201,6 +217,10 @@ bool FaceDetectWorker::runInference() {
     emit logMessage("[FaceDetect] Loading detector: " + m_settings.modelPath);
 
     aicore_facedetect_options* opts = aicore_facedetect_options_new();
+    if (!opts) {
+        emit logMessage("[Error] Failed to allocate FaceDetect options.");
+        return false;
+    }
     if (!m_settings.device.isEmpty()) {
         aicore_facedetect_options_set_device(
                 opts, m_settings.device.toStdString().c_str());
@@ -209,8 +229,14 @@ bool FaceDetectWorker::runInference() {
 
     aicore_facedetect_ctx* ctx = aicore_facedetect_load_opts(
             m_settings.modelPath.toStdString().c_str(), opts);
-    if (!ctx) {
+    if (!aicore_facedetect_is_ready(ctx)) {
         aicore_facedetect_options_free(opts);
+        if (ctx) {
+            if (const char* err = aicore_facedetect_last_error(ctx)) {
+                emit logMessage(QString("[Error] %1").arg(err));
+            }
+            aicore_facedetect_free(ctx);
+        }
         emit logMessage(
                 "[Error] Failed to create FaceDetect detector context.");
         return false;
@@ -222,9 +248,16 @@ bool FaceDetectWorker::runInference() {
                         m_settings.landmarkModelPath);
         landmark_ctx = aicore_facedetect_load_opts(
                 m_settings.landmarkModelPath.toStdString().c_str(), opts);
-        if (!landmark_ctx) {
+        if (!aicore_facedetect_is_ready(landmark_ctx)) {
             aicore_facedetect_options_free(opts);
             aicore_facedetect_free(ctx);
+            if (landmark_ctx) {
+                if (const char* err =
+                            aicore_facedetect_last_error(landmark_ctx)) {
+                    emit logMessage(QString("[Error] %1").arg(err));
+                }
+                aicore_facedetect_free(landmark_ctx);
+            }
             emit logMessage("[Error] Failed to create landmark context.");
             return false;
         }
@@ -276,6 +309,12 @@ bool FaceDetectWorker::runInference() {
         result.verifyDistance = dist;
         result.verifyMatched = verified;
         result.mode = QStringLiteral("verify");
+
+        // Determine whether anti-spoof vetoed a passing distance.
+        const bool distancePassed = dist <= m_settings.verifyThreshold;
+        const bool antiSpoofVeto =
+                m_settings.antiSpoof && distancePassed && verified == 0;
+
         {
             QJsonObject root;
             root.insert(QStringLiteral("mode"), result.mode);
@@ -284,17 +323,35 @@ bool FaceDetectWorker::runInference() {
             root.insert(QStringLiteral("threshold"),
                         m_settings.verifyThreshold);
             root.insert(QStringLiteral("anti_spoof"), m_settings.antiSpoof);
+            if (m_settings.antiSpoof) {
+                root.insert(QStringLiteral("anti_spoof_passed"),
+                            !antiSpoofVeto);
+            }
             root.insert(QStringLiteral("image_a"), m_settings.inputPath);
             root.insert(QStringLiteral("image_b"), m_settings.secondInputPath);
             result.resultJson =
                     QJsonDocument(root).toJson(QJsonDocument::Indented);
         }
-        emit logMessage(
-                QString("[FaceDetect] Cosine distance %1 — %2 (threshold %3)")
-                        .arg(dist, 0, 'f', 4)
-                        .arg(verified ? QStringLiteral("MATCH")
-                                      : QStringLiteral("NO MATCH"))
-                        .arg(m_settings.verifyThreshold, 0, 'f', 2));
+
+        QString verifyMsg;
+        if (verified) {
+            verifyMsg = QString("[FaceDetect] Cosine distance %1 — MATCH "
+                                "(threshold %2)")
+                                .arg(dist, 0, 'f', 4)
+                                .arg(m_settings.verifyThreshold, 0, 'f', 2);
+        } else if (antiSpoofVeto) {
+            verifyMsg = QString("[FaceDetect] Cosine distance %1 — distance "
+                                "PASSED (threshold %2) but REJECTED by "
+                                "anti-spoof (liveness check failed)")
+                                .arg(dist, 0, 'f', 4)
+                                .arg(m_settings.verifyThreshold, 0, 'f', 2);
+        } else {
+            verifyMsg = QString("[FaceDetect] Cosine distance %1 — NO MATCH "
+                                "(threshold %2)")
+                                .arg(dist, 0, 'f', 4)
+                                .arg(m_settings.verifyThreshold, 0, 'f', 2);
+        }
+        emit logMessage(verifyMsg);
     } else {
         char* json = nullptr;
         if (m_settings.mode == Mode::DenseLandmarks) {
@@ -417,11 +474,11 @@ void FaceDetectWorker::run() {
     emit logMessage("[Error] AICore not enabled.");
     emit taskFinished(false);
 #else
-    aicore_inference_lock();
-    aicore_cancel_begin();
+    aicore_device_task_lock(m_settings.device.toUtf8().constData());
+    aicore_cancel_scope_begin(m_cancelToken);
     const bool ok = runInference();
-    aicore_cancel_end();
-    aicore_inference_unlock();
+    aicore_cancel_scope_end(m_cancelToken);
+    aicore_device_task_unlock();
     emit taskFinished(ok);
 #endif
 }

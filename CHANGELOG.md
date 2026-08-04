@@ -1,7 +1,7 @@
 ACloudViewer Version History
 ============================
 
-v3.9.5-Beta (Asher) - 07/21/2026
+v3.9.5-Beta (Asher) - 08/04/2026
 --------------------------------
 - Multi-window system (ref: ParaView multi-view architecture, CloudCompare ccGLWindow per-view state):
     - Add multiple 3D windows support with independent per-view rendering state
@@ -279,6 +279,14 @@ v3.9.5-Beta (Asher) - 07/21/2026
         (`AICore_BUILD_WHITEBOX_TESTS=ON`, requires `AICore_BUILD_TESTS=ON`):
         loader, graph blocks, image ingest, pose math, optional GGUF parity tier
       - CMake: `PLUGIN_STANDARD_QFREESPLATTER=ON` + `AICore_ENABLED=ON`
+    - Add qDeepLSD plugin: native DeepLSD wireframe extraction through `libAICore.so`
+      - GGUF distance/angle inference with AFM-guided LSD post-process and DB-tree overlays
+      - GUI device selection, model download/cache, and optional segment/polyline export
+      - CMake: `PLUGIN_STANDARD_QDEEPLSD=ON` + `AICore_ENABLED=ON`
+    - Add qFaceDetect plugin: native GGUF face detection and identity recognition
+      - SCRFD/YuNet detection, ArcFace/SFace embeddings, age/gender, verification, and anti-spoof support
+      - SQLite face registry, vectorized cosine-distance matching, and live camera/video recognition
+      - CMake: `PLUGIN_STANDARD_QFACEDETECT=ON` + `AICore_ENABLED=ON`
     - Add qLightGlue plugin: sparse feature matching via GGML LightGlue
       - Native C++ **SIFT** path: OpenCV RootSIFT → AICore LightGlue matcher — no Python,
         no ONNX at runtime (COLMAP-aligned two-stage pipeline)

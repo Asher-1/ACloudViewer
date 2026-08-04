@@ -5,5 +5,7 @@
 # reference tree. Patch application order is therefore unambiguous.
 #
 patches:
+  - file: cuda_cudnn/0001-ggml-cuda-cudnn-conv2d.patch
+    note: Optional cuDNN implicit-GEMM implementation for GGML_OP_CONV_2D
   - file: aliked_merged/0001-vulkan-aliked.patch
     note: ALIKED Vulkan extraction (compute, DCN, SDDH, DKD, public C API, shader registration)

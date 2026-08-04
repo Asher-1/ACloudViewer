@@ -100,26 +100,36 @@ bool engine_backend::init(const std::string& device_req, int n_threads) {
                     "' device (backend built and runtime driver present?)";
             return false;
         }
-        gpu_backends = std::move(group.gpus);
-        be = gpu_backends.front();
         device = group.primary_name();
+        for (size_t i = 0; i < group.gpus.size(); ++i) {
+            aicore::runtime::BackendLease lease =
+                    aicore::runtime::adopt_backend_lease(
+                            group.gpus[i], group.names[i], n_threads);
+            group.gpus[i] = nullptr;
+            if (!lease) {
+                error = "failed to acquire GPU backend lease";
+                release();
+                return false;
+            }
+            gpu_backends.push_back(lease.handle());
+            gpu_leases.push_back(std::move(lease));
+        }
+        be = gpu_backends.front();
         if (gpu_backends.size() > 1) {
             device += " (x" + std::to_string(gpu_backends.size()) + " GPUs)";
         }
     } else if (name == "cpu") {
-        be = ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_CPU, nullptr);
-        if (!be) {
-            error = "CPU backend init failed";
-            return false;
-        }
-        device = "cpu";
         if (const char* env = std::getenv("FREE_SPLATTER_NTHREADS")) {
             if (int v = std::atoi(env)) n_threads = v;
         }
         if (n_threads <= 0) {
             n_threads = (int)ggml_common::default_cpu_threads();
         }
-        ggml_common::set_cpu_threads(be, n_threads);
+        cpu_lease = aicore::runtime::acquire_backend_lease("cpu", n_threads,
+                                                           &error);
+        if (!cpu_lease) return false;
+        be = cpu_lease.handle();
+        device = cpu_lease.device();
     } else {
         error = "unknown device '" + device_req +
                 "' (want auto|cpu|gpu|sycl|vulkan|cuda|metal)";
@@ -130,14 +140,14 @@ bool engine_backend::init(const std::string& device_req, int n_threads) {
 
     if (ggml_backend_dev_type(ggml_backend_get_device(be)) !=
         GGML_BACKEND_DEVICE_TYPE_CPU) {
-        cpu_be = ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_CPU,
-                                           nullptr);
+        cpu_lease = aicore::runtime::acquire_backend_lease("cpu", n_threads,
+                                                           &error);
+        cpu_be = cpu_lease.handle();
         if (!cpu_be) {
-            error = "CPU fallback init failed";
+            if (error.empty()) error = "CPU fallback init failed";
             release();
             return false;
         }
-        ggml_common::set_cpu_threads(cpu_be, n_threads);
         use_sched = true;
     } else {
         galloc = ggml_gallocr_new(ggml_backend_get_default_buffer_type(be));
@@ -151,28 +161,33 @@ bool engine_backend::init(const std::string& device_req, int n_threads) {
 }
 
 void engine_backend::release() {
-    if (sched) {
-        ggml_backend_sched_free(sched);
-        sched = nullptr;
-    }
-    if (galloc) {
-        ggml_gallocr_free(galloc);
-        galloc = nullptr;
-    }
-    for (ggml_backend_t gpu : gpu_backends) {
-        if (gpu) ggml_backend_free(gpu);
+    {
+        const auto backend_lock = lock();
+        if (sched) {
+            ggml_backend_sched_free(sched);
+            sched = nullptr;
+        }
+        if (galloc) {
+            ggml_gallocr_free(galloc);
+            galloc = nullptr;
+        }
     }
     gpu_backends.clear();
     be = nullptr;
-    if (cpu_be) {
-        ggml_backend_free(cpu_be);
-        cpu_be = nullptr;
-    }
+    cpu_be = nullptr;
+    gpu_leases.clear();
+    cpu_lease.reset();
     use_sched = false;
     device.clear();
 }
 
-bool engine_backend::is_cpu() const { return ggml_common::is_cpu_backend(be); }
+bool engine_backend::is_cpu() const { return cpu_lease && gpu_leases.empty(); }
+
+aicore::runtime::BackendLeaseLock engine_backend::lock() const {
+    std::vector<aicore::runtime::BackendLease> leases = gpu_leases;
+    if (cpu_lease) leases.push_back(cpu_lease);
+    return aicore::runtime::lock_backend_leases(leases);
+}
 
 bool engine_backend::alloc_graph(ggml_cgraph* graph, size_t graph_size) {
     if (!use_sched) return galloc && ggml_gallocr_alloc_graph(galloc, graph);

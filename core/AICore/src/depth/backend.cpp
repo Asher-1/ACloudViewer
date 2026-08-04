@@ -59,8 +59,11 @@ struct PendingCapture {
 }  // namespace
 
 struct Backend::Impl {
+    std::vector<aicore::runtime::BackendLease>
+            gpu_leases;                       // owns physical GPU handles
+    aicore::runtime::BackendLease cpu_lease;  // scheduler fallback / CPU path
     std::vector<ggml_backend_t>
-            gpu_backends;                  // all GPU devices (multi-GPU auto)
+            gpu_backends;  // non-owning aliases used by the private scheduler
     ggml_backend_t backend = nullptr;      // primary (= gpu_backends[0] or CPU)
     ggml_backend_t cpu_backend = nullptr;  // CPU fallback (GPU path only)
     ggml_gallocr_t galloc = nullptr;       // CPU / single-backend path
@@ -78,7 +81,8 @@ struct Backend::Impl {
     std::vector<ggml_tensor*> roots;
 };
 
-Backend::Backend(const std::string& device) : impl_(new Impl()) {
+Backend::Backend(const std::string& device, int n_threads) : impl_(new Impl()) {
+    n_threads_ = n_threads > 0 ? n_threads : 1;
     ggml_common::load_backends_once();
     clear_sticky_cuda_errors();
 
@@ -98,11 +102,22 @@ Backend::Backend(const std::string& device) : impl_(new Impl()) {
     };
 
     auto adopt_gpu_group = [&](ggml_common::GpuBackendGroup group) {
-        impl_->gpu_backends = std::move(group.gpus);
+        device_name_ = group.primary_name();
+        for (size_t i = 0; i < group.gpus.size(); ++i) {
+            aicore::runtime::BackendLease lease =
+                    aicore::runtime::adopt_backend_lease(
+                            group.gpus[i], group.names[i], n_threads_);
+            group.gpus[i] = nullptr;
+            if (!lease) {
+                error_ = "failed to acquire GPU backend lease";
+                return;
+            }
+            impl_->gpu_backends.push_back(lease.handle());
+            impl_->gpu_leases.push_back(std::move(lease));
+        }
         impl_->backend = impl_->gpu_backends.empty()
                                  ? nullptr
                                  : impl_->gpu_backends.front();
-        device_name_ = group.primary_name();
         if (impl_->gpu_backends.size() > 1) {
             device_name_ += " (x" + std::to_string(impl_->gpu_backends.size()) +
                             " GPUs)";
@@ -115,8 +130,15 @@ Backend::Backend(const std::string& device) : impl_(new Impl()) {
 
     auto adopt_single_gpu = [&](ggml_backend_t be, const std::string& name) {
         if (!be) return;
-        impl_->gpu_backends = {be};
-        impl_->backend = be;
+        aicore::runtime::BackendLease lease =
+                aicore::runtime::adopt_backend_lease(be, name, n_threads_);
+        if (!lease) {
+            error_ = "failed to acquire GPU backend lease";
+            return;
+        }
+        impl_->gpu_backends = {lease.handle()};
+        impl_->gpu_leases = {std::move(lease)};
+        impl_->backend = impl_->gpu_backends.front();
         device_name_ = name;
         impl_->use_sched = true;
         offloading_ = true;
@@ -176,9 +198,10 @@ Backend::Backend(const std::string& device) : impl_(new Impl()) {
             error_ = "device '" + want + "' init failed";
             return;
         }
-        impl_->backend = ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_CPU,
-                                                   nullptr);
-        device_name_ = "cpu";
+        impl_->cpu_lease = aicore::runtime::acquire_backend_lease(
+                "cpu", n_threads_, &error_);
+        impl_->backend = impl_->cpu_lease.handle();
+        device_name_ = impl_->cpu_lease.device();
         offloading_ = false;
         if (!impl_->backend) {
             DA_ERR("aicore::depth::Backend: CPU backend init failed");
@@ -189,32 +212,39 @@ Backend::Backend(const std::string& device) : impl_(new Impl()) {
     DA_LOG("ggml backend initialized: device=%s", device_name_.c_str());
 
     if (impl_->use_sched) {
-        impl_->cpu_backend = ggml_backend_init_by_type(
-                GGML_BACKEND_DEVICE_TYPE_CPU, nullptr);
+        std::string fallback_error;
+        impl_->cpu_lease = aicore::runtime::acquire_backend_lease(
+                "cpu", n_threads_, &fallback_error);
+        impl_->cpu_backend = impl_->cpu_lease.handle();
         if (!impl_->cpu_backend) {
             DA_WARN("aicore::depth::Backend: CPU fallback init failed; "
-                    "disabling sched");
+                    "disabling sched: %s",
+                    fallback_error.c_str());
             impl_->use_sched = false;
         }
     }
-    set_n_threads(n_threads_);
 }
 
 Backend::~Backend() {
     if (impl_) {
-        // Free allocators/scheduler BEFORE the backends they reference.
-        if (impl_->sched) ggml_backend_sched_free(impl_->sched);
-        if (impl_->galloc) ggml_gallocr_free(impl_->galloc);
-        if (impl_->cpu_backend) ggml_backend_free(impl_->cpu_backend);
-        for (ggml_backend_t be : impl_->gpu_backends) {
-            if (be) ggml_backend_free(be);
+        // Free session-private resources before releasing their shared handles.
+        {
+            const auto backend_lock = lock();
+            if (impl_->sched) ggml_backend_sched_free(impl_->sched);
+            if (impl_->galloc) ggml_gallocr_free(impl_->galloc);
         }
         impl_->gpu_backends.clear();
         impl_->backend = nullptr;
+        impl_->cpu_backend = nullptr;
+        impl_->gpu_leases.clear();
+        impl_->cpu_lease.reset();
     }
 }
 
-void Backend::release_graph_memory() { drop_transient_allocators(); }
+void Backend::release_graph_memory() {
+    const auto backend_lock = lock();
+    drop_transient_allocators();
+}
 
 void Backend::drop_transient_allocators() {
     if (!impl_) return;
@@ -229,18 +259,23 @@ void Backend::drop_transient_allocators() {
 }
 
 void Backend::set_n_threads(int n) {
-    n_threads_ = n > 0 ? n : 1;
-    if (impl_ && impl_->backend &&
-        ggml_common::is_cpu_backend(impl_->backend)) {
-        ggml_common::set_cpu_threads(impl_->backend, n_threads_);
-    }
-    if (impl_ && impl_->cpu_backend) {
-        ggml_common::set_cpu_threads(impl_->cpu_backend, n_threads_);
+    const int requested = n > 0 ? n : 1;
+    if (requested != n_threads_) {
+        DA_WARN("aicore::depth::Backend: CPU thread count is fixed when the "
+                "session is created; create a new session to use %d threads",
+                requested);
     }
 }
 
 ggml_backend_t Backend::handle() const {
     return impl_ ? impl_->backend : nullptr;
+}
+
+aicore::runtime::BackendLeaseLock Backend::lock() const {
+    if (!impl_) return {};
+    std::vector<aicore::runtime::BackendLease> leases = impl_->gpu_leases;
+    if (impl_->cpu_lease) leases.push_back(impl_->cpu_lease);
+    return aicore::runtime::lock_backend_leases(leases);
 }
 
 ggml_tensor* Backend::add_graph_input(ggml_context* ctx,
@@ -312,6 +347,7 @@ bool Backend::compute(const std::function<ggml_tensor*(ggml_context*)>& build,
         DA_ERR("Backend::compute called on an uninitialised backend");
         return false;
     }
+    const auto backend_lock = lock();
 
     // Metadata-only context: holds graph + tensor structs, no tensor data
     // (no_alloc=true). Tensor data lives in the gallocr's persistent buffer.

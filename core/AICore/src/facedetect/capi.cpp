@@ -126,52 +126,6 @@ void filter_analyze_faces(std::vector<fd::Face>* faces, float min_score) {
                  faces->end());
 }
 
-std::string g_last_runtime_device_request;
-int g_last_runtime_threads = -1;
-bool g_runtime_backend_ready = false;
-
-void apply_facedetect_runtime(const char* device, int threads) {
-    const std::string device_request =
-            (device != nullptr && device[0] != '\0') ? device : "auto";
-    const int n_threads =
-            threads > 0 ? threads
-                        : static_cast<int>(ggml_common::default_cpu_threads());
-
-    if (g_runtime_backend_ready &&
-        device_request == g_last_runtime_device_request &&
-        n_threads == g_last_runtime_threads) {
-        fd::set_num_threads(n_threads);
-        return;
-    }
-
-    fd::shutdown_backend();
-    if (device != nullptr && device[0] != '\0') {
-        const std::string resolved =
-                ggml_common::resolve_device_request(device);
-        if (resolved == "cpu") {
-#if defined(_WIN32)
-            _putenv_s("FACEDETECT_DEVICE", "cpu");
-#else
-            setenv("FACEDETECT_DEVICE", "cpu", 1);
-#endif
-        } else {
-            std::string dev_name;
-            if (ggml_common::find_gpu_backend(resolved, 0, dev_name) &&
-                !dev_name.empty()) {
-#if defined(_WIN32)
-                _putenv_s("FACEDETECT_DEVICE", dev_name.c_str());
-#else
-                setenv("FACEDETECT_DEVICE", dev_name.c_str(), 1);
-#endif
-            }
-        }
-    }
-    g_last_runtime_device_request = device_request;
-    g_last_runtime_threads = n_threads;
-    g_runtime_backend_ready = true;
-    fd::set_num_threads(n_threads);
-}
-
 bool load_rgb_image(const uint8_t* rgb,
                     int32_t width,
                     int32_t height,
@@ -196,6 +150,9 @@ struct aicore_facedetect_options {
 };
 
 struct aicore_facedetect_ctx {
+    // Keep the lease before the model so explicit teardown can invalidate its
+    // graph entries while the compatible backend is still bound.
+    fd::BackendLease backend;
     std::unique_ptr<fd::Model> model;
     std::string model_path;
     std::string device;
@@ -206,7 +163,7 @@ struct aicore_facedetect_ctx {
 AICORE_CAPI int aicore_facedetect_abi_version(void) { return 1; }
 
 AICORE_CAPI aicore_facedetect_options* aicore_facedetect_options_new(void) {
-    return new aicore_facedetect_options();
+    return new (std::nothrow) aicore_facedetect_options();
 }
 
 AICORE_CAPI void aicore_facedetect_options_free(
@@ -238,17 +195,33 @@ AICORE_CAPI aicore_facedetect_ctx* aicore_facedetect_load_opts(
     ctx->device = opts != nullptr ? opts->device : "auto";
     ctx->threads = opts != nullptr ? opts->threads : 0;
 
-    apply_facedetect_runtime(ctx->device.c_str(), ctx->threads);
-
-    ctx->model = fd::Model::load(ctx->model_path);
-    if (!ctx->model) {
-        ctx->last_error = "failed to load face-detect GGUF: " + ctx->model_path;
+    try {
+        ctx->backend = fd::acquire_backend_lease(ctx->device, ctx->threads);
+        fd::ScopedBackendBinding bind(ctx->backend);
+        ctx->model = fd::Model::load(ctx->model_path);
+        if (!ctx->model) {
+            ctx->last_error =
+                    "failed to load face-detect GGUF: " + ctx->model_path;
+        }
+    } catch (const std::exception& e) {
+        ctx->last_error = e.what();
     }
     return ctx;
 }
 
 AICORE_CAPI void aicore_facedetect_free(aicore_facedetect_ctx* ctx) {
+    if (ctx == nullptr) return;
+    // ModelLoader invalidates graph-cache entries in its destructor. Bind the
+    // owning registry entry first so that invalidation targets the right cache.
+    {
+        fd::ScopedBackendBinding bind(ctx->backend);
+        ctx->model.reset();
+    }
     delete ctx;
+}
+
+AICORE_CAPI int aicore_facedetect_is_ready(const aicore_facedetect_ctx* ctx) {
+    return ctx != nullptr && ctx->model != nullptr ? 1 : 0;
 }
 
 AICORE_CAPI const char* aicore_facedetect_last_error(
@@ -295,6 +268,7 @@ AICORE_CAPI char* aicore_facedetect_detect_path_json(aicore_facedetect_ctx* ctx,
         return nullptr;
     }
     try {
+        fd::ScopedBackendBinding bind(ctx->backend);
         fd::Image img;
         if (!fd::load_image_rgb(image_path, img)) {
             ctx->last_error =
@@ -318,6 +292,7 @@ AICORE_CAPI char* aicore_facedetect_detect_rgb_json(aicore_facedetect_ctx* ctx,
         return nullptr;
     }
     try {
+        fd::ScopedBackendBinding bind(ctx->backend);
         return dup_cstr(detections_to_json(ctx->model->detect(img)));
     } catch (const std::exception& e) {
         ctx->last_error = e.what();
@@ -331,6 +306,7 @@ AICORE_CAPI char* aicore_facedetect_analyze_path_json(
         return nullptr;
     }
     try {
+        fd::ScopedBackendBinding bind(ctx->backend);
         fd::Image img;
         if (!fd::load_image_rgb(image_path, img)) {
             ctx->last_error =
@@ -357,6 +333,7 @@ AICORE_CAPI char* aicore_facedetect_analyze_rgb_json(aicore_facedetect_ctx* ctx,
         return nullptr;
     }
     try {
+        fd::ScopedBackendBinding bind(ctx->backend);
         std::vector<fd::Face> faces = ctx->model->analyze(img);
         filter_analyze_faces(&faces, min_score);
         return dup_cstr(faces_to_analyze_json(faces));
@@ -384,7 +361,11 @@ AICORE_CAPI char* aicore_facedetect_dense_landmarks_rgb_json(
         return nullptr;
     }
     try {
-        std::vector<fd::Detection> dets = detector_ctx->model->detect(img);
+        std::vector<fd::Detection> dets;
+        {
+            fd::ScopedBackendBinding bind(detector_ctx->backend);
+            dets = detector_ctx->model->detect(img);
+        }
         if (min_score > 0.0f) {
             dets.erase(std::remove_if(dets.begin(), dets.end(),
                                       [min_score](const fd::Detection& d) {
@@ -395,8 +376,11 @@ AICORE_CAPI char* aicore_facedetect_dense_landmarks_rgb_json(
         if (dets.empty()) {
             return dup_cstr("{\"faces\":[]}");
         }
-        const std::vector<fd::DenseLandmarkFace> faces =
-                landmark_ctx->model->dense_landmarks(img, dets);
+        std::vector<fd::DenseLandmarkFace> faces;
+        {
+            fd::ScopedBackendBinding bind(landmark_ctx->backend);
+            faces = landmark_ctx->model->dense_landmarks(img, dets);
+        }
         return dup_cstr(dense_landmarks_to_json(faces));
     } catch (const std::exception& e) {
         detector_ctx->last_error = e.what();
@@ -415,6 +399,7 @@ AICORE_CAPI int aicore_facedetect_embed_path(aicore_facedetect_ctx* ctx,
     }
     *out_vec = nullptr;
     try {
+        fd::ScopedBackendBinding bind(ctx->backend);
         fd::Image img;
         if (!fd::load_image_rgb(image_path, img)) {
             ctx->last_error =
@@ -450,6 +435,7 @@ AICORE_CAPI int aicore_facedetect_embed_rgb(aicore_facedetect_ctx* ctx,
     }
     *out_vec = nullptr;
     try {
+        fd::ScopedBackendBinding bind(ctx->backend);
         fd::Image img;
         if (!load_rgb_image(rgb, width, height, img, &ctx->last_error)) {
             return -1;
@@ -485,6 +471,7 @@ AICORE_CAPI int aicore_facedetect_embed_rgb_landmarks(
     }
     *out_vec = nullptr;
     try {
+        fd::ScopedBackendBinding bind(ctx->backend);
         fd::Image img;
         if (!load_rgb_image(rgb, width, height, img, &ctx->last_error)) {
             return -1;
@@ -509,6 +496,39 @@ AICORE_CAPI int aicore_facedetect_embed_rgb_landmarks(
     }
 }
 
+AICORE_CAPI int aicore_facedetect_cosine_distance_matrix(const float* queries,
+                                                         int query_count,
+                                                         const float* gallery,
+                                                         int gallery_count,
+                                                         int dim,
+                                                         float* out_distances) {
+    if (queries == nullptr || gallery == nullptr || out_distances == nullptr ||
+        query_count <= 0 || gallery_count <= 0 || dim <= 0) {
+        return -1;
+    }
+
+    const int64_t pair_count =
+            static_cast<int64_t>(query_count) * gallery_count;
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static) if (pair_count >= 64)
+#endif
+    for (int64_t pair = 0; pair < pair_count; ++pair) {
+        const int q = static_cast<int>(pair / gallery_count);
+        const int g = static_cast<int>(pair % gallery_count);
+        const float* query = queries + static_cast<size_t>(q) * dim;
+        const float* row = gallery + static_cast<size_t>(g) * dim;
+        float dot = 0.0f;
+#ifdef _OPENMP
+#pragma omp simd reduction(+ : dot)
+#endif
+        for (int d = 0; d < dim; ++d) {
+            dot += query[d] * row[d];
+        }
+        out_distances[pair] = 1.0f - std::clamp(dot, -1.0f, 1.0f);
+    }
+    return 0;
+}
+
 AICORE_CAPI int aicore_facedetect_verify_paths(aicore_facedetect_ctx* ctx,
                                                const char* a,
                                                const char* b,
@@ -521,6 +541,7 @@ AICORE_CAPI int aicore_facedetect_verify_paths(aicore_facedetect_ctx* ctx,
         return -1;
     }
     try {
+        fd::ScopedBackendBinding bind(ctx->backend);
         const float thr = threshold > 0.0f
                                   ? threshold
                                   : ctx->model->config().verify_threshold;
@@ -570,7 +591,7 @@ AICORE_CAPI char* aicore_facedetect_info_json(aicore_facedetect_ctx* ctx) {
         return dup_cstr("{\"architecture\":\"facedetect\"}");
     }
     const fd::FaceConfig& c = ctx->model->config();
-    const std::string resolved_device = fd::global_backend().device_name();
+    const std::string resolved_device = ctx->backend.device_name();
     const std::string json =
             std::string(
                     "{\n  \"architecture\": \"facedetect\",\n  \"pack\": \"") +
@@ -584,8 +605,12 @@ AICORE_CAPI char* aicore_facedetect_info_json(aicore_facedetect_ctx* ctx) {
 }
 
 AICORE_CAPI int aicore_facedetect_warmup_backend(const char* device) {
-    apply_facedetect_runtime(device != nullptr ? device : "auto", 0);
-    (void)fd::global_backend();
+    // Warmup is intentionally lease-scoped: callers that need persistence
+    // retain a model context, while this compatibility API proves availability
+    // without changing any active context's selected backend.
+    const fd::BackendLease lease =
+            fd::acquire_backend_lease(device != nullptr ? device : "auto", 0);
+    if (!lease || lease.backend().handle() == nullptr) return -1;
     return 0;
 }
 

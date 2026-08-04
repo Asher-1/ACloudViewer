@@ -34,6 +34,7 @@ int main() {
     aicore_depth_free_bytes(nullptr);
 
     AICORE_CHECK(aicore_depth_load(nullptr, 1) == nullptr);
+    AICORE_CHECK(aicore_depth_is_ready(nullptr) == 0);
     AICORE_CHECK(aicore_depth_load_nested(nullptr, "m.gguf", 1) == nullptr);
     AICORE_CHECK(aicore_depth_load_nested("a.gguf", nullptr, 1) == nullptr);
     AICORE_CHECK(aicore_depth_info_json(nullptr) == nullptr);

@@ -4,6 +4,8 @@ InsightFace-style face detection and recognition for ACloudViewer — **native C
 
 **User guide:** [docs/guides/plugins/qFaceDetect.md](../../../docs/guides/plugins/qFaceDetect.md)
 
+![qFaceDetect registry and recognition workflow](images/qFaceDetect.png)
+
 ```
 Image → AICore FaceDetect GGML → detect / analyze / verify → annotated ccImage → DB tree
 ```
@@ -58,6 +60,8 @@ All seven packs on [cloudViewer_downloads qFaceDetect](https://github.com/Asher-
 Register gallery identities and authenticate probe images against the SQLite registry. Auth labels show `name (d=…)` cosine distance.
 
 ### Live (camera / video) tab
+
+![qFaceDetect live multi-face recognition](images/qFaceDetect_video.png)
 
 Requires **OpenCV videoio** (`BUILD_OPENCV=ON`; FFmpeg-enabled OpenCV recommended for `.mp4`).
 

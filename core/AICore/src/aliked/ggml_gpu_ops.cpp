@@ -11,7 +11,9 @@
 #include <ggml-backend.h>
 #include <ggml.h>
 
+#include <cstdint>
 #include <functional>
+#include <mutex>
 #include <string>
 #include <unordered_map>
 
@@ -29,6 +31,7 @@ constexpr float kSeluScale = 1.050700987f;
 constexpr float kSeluAlpha = 1.67326324f;
 
 struct CachedOneInputGraph {
+    ggml_backend_t backend = nullptr;
     ggml_context *ctx = nullptr;
     ggml_backend_buffer_t buffer = nullptr;
     ggml_gallocr_t gallocr = nullptr;
@@ -41,6 +44,7 @@ struct CachedOneInputGraph {
 };
 
 struct CachedUnaryInPlaceGraph {
+    ggml_backend_t backend = nullptr;
     ggml_context *ctx = nullptr;
     ggml_backend_buffer_t buffer = nullptr;
     ggml_gallocr_t gallocr = nullptr;
@@ -53,6 +57,7 @@ struct CachedUnaryInPlaceGraph {
 };
 
 struct CachedBinaryInPlaceGraph {
+    ggml_backend_t backend = nullptr;
     ggml_context *ctx = nullptr;
     ggml_backend_buffer_t buffer = nullptr;
     ggml_gallocr_t gallocr = nullptr;
@@ -69,6 +74,13 @@ std::unordered_map<std::string, CachedOneInputGraph> g_one_input_graphs;
 std::unordered_map<std::string, CachedUnaryInPlaceGraph> g_unary_inplace_graphs;
 std::unordered_map<std::string, CachedBinaryInPlaceGraph>
         g_binary_inplace_graphs;
+std::mutex g_gpu_op_cache_mutex;
+
+std::string BackendCacheKey(const char *cache_key, internal::Backend *backend) {
+    const auto handle = reinterpret_cast<std::uintptr_t>(
+            backend != nullptr ? backend->handle : nullptr);
+    return std::string(cache_key) + "@" + std::to_string(handle);
+}
 
 ggml_gallocr_t NewGraphGallocr(internal::Backend *backend) {
     if (backend == nullptr || backend->handle == nullptr) {
@@ -214,7 +226,9 @@ bool RunUnaryInPlaceOnGpuTensor(
         std::string *error,
         const char *cache_key = nullptr) {
     if (cache_key != nullptr && cache_key[0] != '\0') {
-        CachedUnaryInPlaceGraph &entry = g_unary_inplace_graphs[cache_key];
+        std::lock_guard<std::mutex> lock(g_gpu_op_cache_mutex);
+        CachedUnaryInPlaceGraph &entry =
+                g_unary_inplace_graphs[BackendCacheKey(cache_key, backend)];
         if (entry.graph == nullptr || entry.w != tensor->w ||
             entry.h != tensor->h || entry.c != tensor->c) {
             FreeGraphGallocr(&entry.gallocr);
@@ -225,6 +239,7 @@ bool RunUnaryInPlaceOnGpuTensor(
                 ggml_free(entry.ctx);
             }
             entry = CachedUnaryInPlaceGraph{};
+            entry.backend = backend->handle;
 
             const size_t graph_overhead =
                     ggml_graph_overhead_custom(kMaxGraphNodes, false);
@@ -316,7 +331,9 @@ bool RunBinaryInPlaceOnGpuTensor(
         std::string *error,
         const char *cache_key = nullptr) {
     if (cache_key != nullptr && cache_key[0] != '\0') {
-        CachedBinaryInPlaceGraph &entry = g_binary_inplace_graphs[cache_key];
+        std::lock_guard<std::mutex> lock(g_gpu_op_cache_mutex);
+        CachedBinaryInPlaceGraph &entry =
+                g_binary_inplace_graphs[BackendCacheKey(cache_key, backend)];
         if (entry.graph == nullptr || entry.w != accum->w ||
             entry.h != accum->h || entry.c != accum->c) {
             FreeGraphGallocr(&entry.gallocr);
@@ -327,6 +344,7 @@ bool RunBinaryInPlaceOnGpuTensor(
                 ggml_free(entry.ctx);
             }
             entry = CachedBinaryInPlaceGraph{};
+            entry.backend = backend->handle;
 
             const size_t graph_overhead =
                     ggml_graph_overhead_custom(kMaxGraphNodes, false);
@@ -494,7 +512,9 @@ bool RunGraphWithInput(internal::Backend *backend,
                        std::string *error,
                        const char *cache_key = nullptr) {
     if (cache_key != nullptr && cache_key[0] != '\0') {
-        CachedOneInputGraph &entry = g_one_input_graphs[cache_key];
+        std::lock_guard<std::mutex> lock(g_gpu_op_cache_mutex);
+        CachedOneInputGraph &entry =
+                g_one_input_graphs[BackendCacheKey(cache_key, backend)];
         if (entry.graph == nullptr || entry.w != input.w ||
             entry.h != input.h || entry.c != input.c) {
             FreeGraphGallocr(&entry.gallocr);
@@ -505,6 +525,7 @@ bool RunGraphWithInput(internal::Backend *backend,
                 ggml_free(entry.ctx);
             }
             entry = CachedOneInputGraph{};
+            entry.backend = backend->handle;
 
             const size_t graph_overhead =
                     ggml_graph_overhead_custom(kMaxGraphNodes, false);
@@ -607,40 +628,46 @@ bool RunGraphWithInput(internal::Backend *backend,
 
 }  // namespace
 
-void ClearCachedGpuOpGraphs() {
-    for (auto &entry : g_one_input_graphs) {
-        FreeGraphGallocr(&entry.second.gallocr);
-        if (entry.second.buffer != nullptr) {
-            ggml_backend_buffer_free(entry.second.buffer);
+void ClearCachedGpuOpGraphs(internal::Backend *backend) {
+    std::lock_guard<std::mutex> lock(g_gpu_op_cache_mutex);
+    const ggml_backend_t handle =
+            backend != nullptr ? backend->handle : nullptr;
+    const auto clear = [handle](auto *entries) {
+        for (auto it = entries->begin(); it != entries->end();) {
+            auto &entry = it->second;
+            if (handle != nullptr && entry.backend != handle) {
+                ++it;
+                continue;
+            }
+            FreeGraphGallocr(&entry.gallocr);
+            if (entry.buffer != nullptr) {
+                ggml_backend_buffer_free(entry.buffer);
+            }
+            if (entry.ctx != nullptr) {
+                ggml_free(entry.ctx);
+            }
+            it = entries->erase(it);
         }
-        if (entry.second.ctx != nullptr) {
-            ggml_free(entry.second.ctx);
-        }
-    }
-    for (auto &entry : g_unary_inplace_graphs) {
-        FreeGraphGallocr(&entry.second.gallocr);
-        if (entry.second.buffer != nullptr) {
-            ggml_backend_buffer_free(entry.second.buffer);
-        }
-        if (entry.second.ctx != nullptr) {
-            ggml_free(entry.second.ctx);
-        }
-    }
-    g_one_input_graphs.clear();
-    g_unary_inplace_graphs.clear();
+    };
+    clear(&g_one_input_graphs);
+    clear(&g_unary_inplace_graphs);
+    clear(&g_binary_inplace_graphs);
 }
 
 void RebindAllCachedGgmlOpGraphs(internal::Backend *backend) {
     if (backend == nullptr) {
         return;
     }
+    std::lock_guard<std::mutex> lock(g_gpu_op_cache_mutex);
     for (auto &entry : g_one_input_graphs) {
-        if (entry.second.graph != nullptr && entry.second.gallocr != nullptr) {
+        if (entry.second.backend == backend->handle &&
+            entry.second.graph != nullptr && entry.second.gallocr != nullptr) {
             ggml_gallocr_alloc_graph(entry.second.gallocr, entry.second.graph);
         }
     }
     for (auto &entry : g_unary_inplace_graphs) {
-        if (entry.second.graph != nullptr && entry.second.gallocr != nullptr) {
+        if (entry.second.backend == backend->handle &&
+            entry.second.graph != nullptr && entry.second.gallocr != nullptr) {
             ggml_gallocr_alloc_graph(entry.second.gallocr, entry.second.graph);
         }
     }
@@ -651,7 +678,7 @@ void BeginVulkanExtract(internal::Backend *backend) {
     if (backend != nullptr && backend->IsVulkan()) {
         // Drop SELU/unary graphs from a prior ctx (e.g. CPU-then-Vulkan
         // parity).
-        ClearCachedGpuOpGraphs();
+        ClearCachedGpuOpGraphs(backend);
         VkAlikedQueueIdle(backend->handle);
         FlushGpuPipeline(backend);
     }
@@ -671,7 +698,7 @@ void EndVulkanExtract(internal::Backend *backend, GpuPipelineCache *cache) {
         cache->ggml()->runner()->InvalidateDeviceGraphs();
         cache->ComputeGgml()->runner()->InvalidateDeviceGraphs();
     }
-    ClearCachedGpuOpGraphs();
+    ClearCachedGpuOpGraphs(backend);
 #else
     (void)backend;
     (void)cache;
@@ -979,6 +1006,34 @@ bool RunCropWhcnGpu(internal::Backend *backend,
         }
         return false;
     }
+
+#if defined(AICORE_VULKAN_ALIKED)
+    if (backend != nullptr && backend->IsVulkan() &&
+        VkAlikedAvailable(backend->handle)) {
+        if (!GpuTensor::Allocate(backend, out_w, out_h, input.c, output,
+                                 error)) {
+            return false;
+        }
+
+        // The custom dense-copy shader already handles arbitrary WHCN strides
+        // and source offsets. A metadata-only tensor view avoids the Vulkan
+        // ggml_view + cpy path, which can return zero-filled large crops.
+        ggml_tensor cropped_view = *input.tensor;
+        cropped_view.ne[0] = out_w;
+        cropped_view.ne[1] = out_h;
+        const size_t byte_offset =
+                static_cast<size_t>(pad_left) * input.tensor->nb[0] +
+                static_cast<size_t>(pad_top) * input.tensor->nb[1];
+        cropped_view.data =
+                static_cast<uint8_t *>(input.tensor->data) + byte_offset;
+        if (VkAlikedDenseCopyWhcn(backend->handle, &cropped_view,
+                                  output->tensor, out_w, out_h, input.c)) {
+            VkAlikedQueueIdle(backend->handle);
+            return true;
+        }
+        output->Release();
+    }
+#endif
 
     if (backend != nullptr && backend->IsGpu()) {
         const int32_t ic = input.c;

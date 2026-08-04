@@ -31,6 +31,7 @@ struct FreeSplatterResult {
 Q_DECLARE_METATYPE(FreeSplatterResult)
 
 struct aicore_gaussian_ctx;
+struct aicore_cancel_token;
 
 class FreeSplatterWorker : public QThread {
     Q_OBJECT
@@ -52,6 +53,7 @@ public:
 
     explicit FreeSplatterWorker(const Settings& settings,
                                 QObject* parent = nullptr);
+    ~FreeSplatterWorker() override;
 
     void run() override;
 
@@ -59,6 +61,7 @@ public:
     // from the worker thread after inference in ACloudViewer's mixed GPU
     // process).
     void releaseContextOnMainThread();
+    void requestTaskCancel();
 
 signals:
     void logMessage(const QString& msg);
@@ -75,4 +78,5 @@ private:
 
     Settings m_settings;
     aicore_gaussian_ctx* m_pendingCtx = nullptr;
+    aicore_cancel_token* m_cancelToken = nullptr;
 };

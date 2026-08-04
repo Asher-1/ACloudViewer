@@ -96,7 +96,7 @@
                     </p>
                 </div>
                 <div class="about-badges" id="about-badges">
-                    <img id="version-badge" src="https://img.shields.io/badge/version-@VERSION@-blue" alt="Version">
+                    <img id="version-badge" src="https://img.shields.io/badge/version-3.9.5-blue" alt="Version">
                     <img src="https://img.shields.io/badge/license-GPL--2.0%20%7C%20MIT-green" alt="License">
                     <img src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey" alt="Platform">
                     <img id="python-badge" src="https://img.shields.io/badge/python-Loading...-blue" alt="Python">
@@ -173,7 +173,7 @@
                         <i class="fas fa-microchip"></i>
                     </div>
                     <h3 data-i18n="features.aicore.title">AICore AI Plugins</h3>
-                    <p data-i18n="features.aicore.desc">Native GGUF inference for depth (DA3), feature matching (LightGlue), and 3D Gaussian splats (FreeSplatter) — no Python runtime</p>
+                    <p data-i18n="features.aicore.desc">Native GGUF inference for depth (DA3), face recognition, feature matching (LightGlue), and 3D Gaussian splats (FreeSplatter) — no Python runtime</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
@@ -201,7 +201,7 @@
             <div class="aicore-plugins">
                 <article class="aicore-plugin">
                     <div class="aicore-plugin-media">
-                        <img src="images/qDA3.png" alt="Depth Anything V3" data-i18n-alt="aicore.da3.title">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qDA3/images/qDA3.png" alt="Depth Anything V3" data-i18n-alt="aicore.da3.title">
                     </div>
                     <div class="aicore-plugin-body">
                         <h3 data-i18n="aicore.da3.title">Depth Anything V3 (qDA3)</h3>
@@ -215,7 +215,24 @@
 
                 <article class="aicore-plugin aicore-plugin-reverse">
                     <div class="aicore-plugin-media">
-                        <img src="images/qLightGlue.png" alt="LightGlue Feature Matching" data-i18n-alt="aicore.lightglue.title">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qFaceDetect/images/qFaceDetect.png" alt="qFaceDetect registry recognition">
+                            <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qFaceDetect/images/qFaceDetect_video.png" alt="qFaceDetect live recognition">
+                        </div>
+                    </div>
+                    <div class="aicore-plugin-body">
+                        <h3>Face Detection &amp; Recognition (qFaceDetect)</h3>
+                        <p>Run SCRFD/YuNet and ArcFace/SFace GGUF packs for face detection, identity registry matching, verification, and live multi-face recognition in one plugin.</p>
+                        <ul class="aicore-plugin-points">
+                            <li>SQLite identity registry with vectorized cosine-distance matching</li>
+                            <li>Camera/video preview and DB-tree annotated image export</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article class="aicore-plugin aicore-plugin-reverse">
+                    <div class="aicore-plugin-media">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qLightGlue/images/qLightGlue.png" alt="LightGlue Feature Matching" data-i18n-alt="aicore.lightglue.title">
                     </div>
                     <div class="aicore-plugin-body">
                         <h3 data-i18n="aicore.lightglue.title">LightGlue Feature Matching (qLightGlue)</h3>
@@ -229,11 +246,14 @@
 
                 <article class="aicore-plugin">
                     <div class="aicore-plugin-media">
-                        <img src="images/qFreeSplatter.png" alt="FreeSplatter 3D Reconstruction" data-i18n-alt="aicore.freesplatter.title">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qFreeSplatter/images/qFreeSplatter.png" alt="FreeSplatter 3D Reconstruction" data-i18n-alt="aicore.freesplatter.title">
+                            <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qFreeSplatter/images/qFreeSplatter_video.png" alt="qFreeSplatter guided face capture">
+                        </div>
                     </div>
                     <div class="aicore-plugin-body">
                         <h3 data-i18n="aicore.freesplatter.title">FreeSplatter 3D Gaussian Splats (qFreeSplatter)</h3>
-                        <p data-i18n="aicore.freesplatter.desc">Reconstruct a 3D Gaussian scene from as few as two uncalibrated photos. Optional camera pose estimation, SIBR-compatible PLY export, and one-click qSIBR preview.</p>
+                        <p data-i18n="aicore.freesplatter.desc">Reconstruct a 3D Gaussian scene from as few as two uncalibrated photos, or collect guided Face Capture views. Optional camera pose estimation, SIBR-compatible PLY export, and one-click qSIBR preview.</p>
                         <ul class="aicore-plugin-points">
                             <li data-i18n="aicore.freesplatter.point1">Sparse-view 3DGS — no COLMAP preprocessing required</li>
                             <li data-i18n="aicore.freesplatter.point2">Full export with spherical harmonics, scale, and normals</li>
@@ -3362,7 +3382,7 @@ make -j$(nproc)">
                         </div>
                     </div>
                     <div class="gallery-item">
-                        <img src="images/SIBR_viewer.png" alt="3D Gaussian Splatting Viewer" data-i18n-alt="gallery.sibr_viewer.title">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qSIBR/images/SIBR_viewer.png" alt="3D Gaussian Splatting Viewer" data-i18n-alt="gallery.sibr_viewer.title">
                         <div class="gallery-overlay">
                             <h3 data-i18n="gallery.sibr_viewer.title">3D Gaussian Splatting</h3>
                             <p data-i18n="gallery.sibr_viewer.desc">Real-time novel view synthesis with SIBR plugin — CUDA-accelerated 3DGS rendering, remote training viewer, and result import back into ACloudViewer</p>
@@ -3389,24 +3409,24 @@ make -j$(nproc)">
             <div class="gallery-content" id="gallery-aicore">
                 <div class="gallery-grid">
                     <div class="gallery-item">
-                        <img src="images/qDA3.png" alt="Depth Anything V3" data-i18n-alt="gallery.qda3.title">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qDA3/images/qDA3.png" alt="Depth Anything V3" data-i18n-alt="gallery.qda3.title">
                         <div class="gallery-overlay">
                             <h3 data-i18n="gallery.qda3.title">Depth Anything V3</h3>
                             <p data-i18n="gallery.qda3.desc">Monocular depth maps and 3D point clouds from a single photo — GGUF models, GPU-accelerated, DB-tree integration</p>
                         </div>
                     </div>
                     <div class="gallery-item">
-                        <img src="images/qLightGlue.png" alt="LightGlue Feature Matching" data-i18n-alt="gallery.qlightglue.title">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qLightGlue/images/qLightGlue.png" alt="LightGlue Feature Matching" data-i18n-alt="gallery.qlightglue.title">
                         <div class="gallery-overlay">
                             <h3 data-i18n="gallery.qlightglue.title">LightGlue Matching</h3>
                             <p data-i18n="gallery.qlightglue.desc">Sub-second sparse feature matching with SIFT + GGUF LightGlue — live match visualization in the viewport</p>
                         </div>
                     </div>
                     <div class="gallery-item">
-                        <img src="images/qFreeSplatter.png" alt="FreeSplatter 3D Reconstruction" data-i18n-alt="gallery.qfreesplatter.title">
+                        <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qFreeSplatter/images/qFreeSplatter.png" alt="FreeSplatter 3D Reconstruction" data-i18n-alt="gallery.qfreesplatter.title">
                         <div class="gallery-overlay">
                             <h3 data-i18n="gallery.qfreesplatter.title">FreeSplatter 3DGS</h3>
-                            <p data-i18n="gallery.qfreesplatter.desc">Two photos to a 3D Gaussian scene — optional pose estimation, SIBR PLY export, one-click preview</p>
+                            <p data-i18n="gallery.qfreesplatter.desc">Two photos or guided Face Capture to a 3D Gaussian scene — optional pose estimation, SIBR PLY export, one-click preview</p>
                         </div>
                     </div>
                 </div>
@@ -3633,4 +3653,3 @@ make -j$(nproc)">
     <script src="script.js"></script>
 </body>
 </html>
-

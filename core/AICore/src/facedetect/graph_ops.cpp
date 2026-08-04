@@ -278,9 +278,13 @@ ggml_tensor* conv2d(ggml_context* ctx,
     else if (use_wino)
         x = winograd_conv3x3(ctx, W, x, pad, prefer_f4,
                              wino_fused ? B : nullptr, relu);
-    else if (cudnn)
+    else if (cudnn) {
         x = ggml_conv_2d_direct(ctx, W, x, stride, stride, pad, pad, 1, 1);
-    else if (direct)
+        // The unified ggml-cuda backend is shared by ALIKED, depth and
+        // Gaussian sessions. Mark only FaceDetect's explicit cuDNN nodes so
+        // the backend does not globally hijack unrelated GGML_OP_CONV_2D ops.
+        ggml_set_name(x, "facedetect.cudnn.conv2d");
+    } else if (direct)
         x = ggml_conv_2d_direct(ctx, W, x, stride, stride, pad, pad, 1, 1);
     else
         x = ggml_conv_2d(ctx, W, x, stride, stride, pad, pad, 1, 1);

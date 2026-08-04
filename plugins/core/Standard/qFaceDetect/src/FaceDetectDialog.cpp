@@ -16,8 +16,10 @@
 #include <QFileDialog>
 #include <QGridLayout>
 #include <QGroupBox>
+#include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QMessageBox>
+#include <QScreen>
 #include <QSet>
 #include <QSettings>
 #include <QTabWidget>
@@ -39,6 +41,7 @@
 namespace {
 
 const int kThumbSize = FaceDetectUi::kCompactPreviewSize;
+constexpr int kTabViewportMinHeight = 280;
 
 bool isSupportedImageFile(const QString& filePath) {
     static const QStringList extensions = {
@@ -91,6 +94,7 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
 
     auto* outer = new QVBoxLayout(this);
     m_tabWidget = new QTabWidget(this);
+    m_tabWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     FaceDetectUi::applyTabWidgetPaneStyle(m_tabWidget);
 
     m_batchTab = new QWidget;
@@ -161,6 +165,8 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
                     if (m_liveStartBtn) m_liveStartBtn->setEnabled(true);
                     if (m_liveStopBtn) m_liveStopBtn->setEnabled(false);
                 });
+        auto* liveTestDataBtn = m_liveWidget->testDataButton();
+        liveBtnRow->addWidget(liveTestDataBtn);
         liveBtnRow->addWidget(m_liveStartBtn);
         liveBtnRow->addWidget(m_liveStopBtn);
         liveBtnRow->addStretch();
@@ -213,7 +219,13 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
                 });
     }
 
-    outer->addWidget(m_tabWidget, 1);
+    connect(m_tabWidget, &QTabWidget::currentChanged, this, [this](int) {
+        // The stacked page changes after this signal. Defer the measurement so
+        // a short tab never inherits the former page's height.
+        QTimer::singleShot(0, this,
+                           [this]() { updateActiveTabViewportHeight(); });
+    });
+    outer->addWidget(m_tabWidget, 0);
 
     m_downloadLabel = new QLabel(this);
     m_downloadLabel->setVisible(false);
@@ -435,6 +447,45 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
     setupMinScoreLinks();
     loadBatchSettings();
     validateLiveRecognizeModeFromSettings();
+    cacheTabViewportHeights();
+    updateActiveTabViewportHeight();
+}
+
+void FaceDetectDialog::cacheTabViewportHeights() {
+    if (!m_tabWidget) return;
+    for (int i = 0; i < m_tabWidget->count(); ++i) {
+        QWidget* content = m_tabWidget->widget(i);
+        if (!content) continue;
+        // Capture the static layout before a live preview receives pixmaps.
+        // Later content growth belongs to the page's own scroll area.
+        m_tabViewportHeights.insert(content,
+                                    content->minimumSizeHint().height());
+    }
+}
+
+void FaceDetectDialog::updateActiveTabViewportHeight() {
+    if (!m_tabWidget) return;
+    QWidget* content = m_tabWidget->currentWidget();
+    if (!content) return;
+
+    const int tabChrome =
+            m_tabWidget->tabBar()->sizeHint().height() +
+            2 * m_tabWidget->style()->pixelMetric(QStyle::PM_DefaultFrameWidth);
+    const int cachedHeight = m_tabViewportHeights.value(
+            content, content->minimumSizeHint().height());
+    // Use the construction-time layout minimum, not a live preview's
+    // pixmap-driven size hint. The active page owns its overflow.
+    const int contentHeight = std::max(kTabViewportMinHeight, cachedHeight);
+    const int targetHeight = tabChrome + contentHeight;
+
+    m_tabWidget->setFixedHeight(targetHeight);
+    m_tabWidget->updateGeometry();
+    if (isVisible() && m_activeTabHeight >= 0 &&
+        targetHeight != m_activeTabHeight) {
+        resize(width(),
+               std::max(420, height() + targetHeight - m_activeTabHeight));
+    }
+    m_activeTabHeight = targetHeight;
 }
 
 void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
@@ -442,9 +493,6 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
     auto* main = new QVBoxLayout(batchTab);
     FaceDetectUi::setupCompactMainLayout(main);
 
-    auto* testRow = new QHBoxLayout;
-    testRow->setContentsMargins(0, 0, 0, 0);
-    testRow->setSpacing(6);
     auto* testDataBtn = new QPushButton(tr("Use test data"));
     testDataBtn->setToolTip(tr(
             "Download FriendsFaces sample pack and fill batch image path "
@@ -455,9 +503,6 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
             "Registry / Auth for enrollment and authentication."));
     connect(testDataBtn, &QPushButton::clicked, this,
             [this]() { ensureFriendsTestData(false, false, true); });
-    testRow->addWidget(testDataBtn, 0);
-    testRow->addStretch(1);
-    main->addLayout(testRow);
 
     auto* modelGroup = new QGroupBox(tr("Model"));
     auto* modelLayout = new QGridLayout(modelGroup);
@@ -619,6 +664,10 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
     m_previewLabel->setStyleSheet(
             "border: 1px solid palette(mid); background: palette(base);");
     m_previewLabel->setText(tr("A"));
+    auto* labelA = new QLabel(tr("Image A:"));
+    labelA->setFixedWidth(60);
+    labelA->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    pathRow->addWidget(labelA);
     pathRow->addWidget(m_imagePath, 1);
     pathRow->addWidget(browseImg);
     pathRow->addWidget(
@@ -627,6 +676,8 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
 
     m_secondImageRow = new QWidget;
     auto* secondLayout = new QHBoxLayout(m_secondImageRow);
+    secondLayout->setContentsMargins(0, 0, 0, 0);
+    secondLayout->setSpacing(6);
     m_secondImagePath = new QLineEdit;
     m_secondImagePath->setPlaceholderText(tr("Second image for Verify mode"));
     connect(m_secondImagePath, &QLineEdit::textChanged, this,
@@ -635,7 +686,10 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
             FaceDetectUi::makeBrowseButton(tr("Browse…"), m_secondImageRow);
     connect(browseSecond, &QPushButton::clicked, this,
             &FaceDetectDialog::onBrowseSecondImage);
-    secondLayout->addWidget(new QLabel(tr("Image B:")));
+    auto* labelB = new QLabel(tr("Image B:"));
+    labelB->setFixedWidth(60);
+    labelB->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    secondLayout->addWidget(labelB);
     secondLayout->addWidget(m_secondImagePath, 1);
     secondLayout->addWidget(browseSecond);
     m_previewLabelB = new ecvClickableImageLabel;
@@ -723,6 +777,7 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
     connect(m_cancelBtn, &QPushButton::clicked, this,
             &FaceDetectDialog::onCancel);
     btnRow->addStretch();
+    btnRow->addWidget(testDataBtn);
     btnRow->addWidget(m_runBtn);
     btnRow->addWidget(m_cancelBtn);
     main->addLayout(btnRow);
@@ -1219,9 +1274,6 @@ FaceDetectDialog::~FaceDetectDialog() {
     if (m_testDataWorker && m_testDataWorker->isRunning()) {
         m_testDataWorker->wait(5000);
     }
-#ifdef AICore_ENABLED
-    aicore_facedetect_shutdown();
-#endif
 }
 
 void FaceDetectDialog::onLiveStart() {
@@ -1244,7 +1296,7 @@ void FaceDetectDialog::onLiveStart() {
                        "register "
                        "faces manually, then try Recognize again."));
             if (m_tabWidget && m_registryWidget) {
-                m_tabWidget->setCurrentWidget(m_registryWidget);
+                m_tabWidget->setCurrentIndex(1);
             }
             return;
         }

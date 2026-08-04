@@ -51,9 +51,19 @@ int main() {
     const char* image = std::getenv("AICORE_TEST_FACEDETECT_IMAGE");
     if (!gguf || !image) return 77;
 
-    aicore_facedetect_ctx* ctx = aicore_facedetect_load_opts(gguf, nullptr);
-    if (!ctx) {
+    aicore_facedetect_options* opts = aicore_facedetect_options_new();
+    if (!opts) {
+        std::fprintf(stderr, "failed to allocate facedetect options\n");
+        return 1;
+    }
+    if (const char* device = std::getenv("AICORE_TEST_FACEDETECT_DEVICE")) {
+        aicore_facedetect_options_set_device(opts, device);
+    }
+    aicore_facedetect_ctx* ctx = aicore_facedetect_load_opts(gguf, opts);
+    aicore_facedetect_options_free(opts);
+    if (!aicore_facedetect_is_ready(ctx)) {
         std::fprintf(stderr, "failed to load model %s\n", gguf);
+        aicore_facedetect_free(ctx);
         return 1;
     }
 

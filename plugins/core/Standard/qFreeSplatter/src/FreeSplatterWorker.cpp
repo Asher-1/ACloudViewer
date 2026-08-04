@@ -28,14 +28,63 @@
 #include <opencv2/imgproc.hpp>
 #endif
 
+namespace {
+
+#ifdef AICore_ENABLED
+class AICoreInferenceGuard {
+public:
+    AICoreInferenceGuard(aicore_cancel_token* token, const QString& device)
+        : m_token(token) {
+        aicore_device_task_lock(device.toUtf8().constData());
+        aicore_cancel_scope_begin(m_token);
+    }
+    ~AICoreInferenceGuard() {
+        aicore_cancel_scope_end(m_token);
+        aicore_device_task_unlock();
+    }
+
+private:
+    aicore_cancel_token* m_token = nullptr;
+};
+#endif
+
+class TemporaryDirGuard {
+public:
+    void setPath(const QString& path) { m_path = path; }
+    ~TemporaryDirGuard() {
+        if (!m_path.isEmpty()) QDir(m_path).removeRecursively();
+    }
+
+private:
+    QString m_path;
+};
+
+}  // namespace
+
 FreeSplatterWorker::FreeSplatterWorker(const Settings& settings,
                                        QObject* parent)
     : QThread(parent), m_settings(settings) {
+#ifdef AICore_ENABLED
+    m_cancelToken = aicore_cancel_token_new();
+#endif
     static bool registered = false;
     if (!registered) {
         qRegisterMetaType<FreeSplatterResult>("FreeSplatterResult");
         registered = true;
     }
+}
+
+FreeSplatterWorker::~FreeSplatterWorker() {
+#ifdef AICore_ENABLED
+    aicore_cancel_token_free(m_cancelToken);
+#endif
+}
+
+void FreeSplatterWorker::requestTaskCancel() {
+#ifdef AICore_ENABLED
+    aicore_cancel_token_request(m_cancelToken);
+#endif
+    requestInterruption();
 }
 
 void FreeSplatterWorker::run() {
@@ -44,8 +93,7 @@ void FreeSplatterWorker::run() {
     emit taskFinished(false);
     return;
 #else
-    aicore_inference_lock();
-    aicore_cancel_begin();
+    AICoreInferenceGuard inferenceGuard(m_cancelToken, m_settings.device);
     bool ok = false;
     switch (m_settings.mode) {
         case Mode::Reconstruct:
@@ -58,8 +106,6 @@ void FreeSplatterWorker::run() {
             emit logMessage("[Error] Unknown mode.");
             break;
     }
-    aicore_cancel_end();
-    aicore_inference_unlock();
     emit taskFinished(ok);
 #endif
 }
@@ -87,6 +133,10 @@ aicore_gaussian_ctx* FreeSplatterWorker::loadModel() {
     }
 
     aicore_gaussian_options* opts = aicore_gaussian_options_new();
+    if (!opts) {
+        emit logMessage("[Error] Failed to allocate model options.");
+        return nullptr;
+    }
     if (!m_settings.device.isEmpty()) {
         aicore_gaussian_options_set_device(
                 opts, m_settings.device.toStdString().c_str());
@@ -170,6 +220,7 @@ bool FreeSplatterWorker::runReconstruct() {
 
     QStringList effectivePaths = m_settings.inputPaths;
     QString bgTmpDir;
+    TemporaryDirGuard bgTmpCleanup;
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
     if (m_settings.removeBackground) {
@@ -179,6 +230,7 @@ bool FreeSplatterWorker::runReconstruct() {
                 "/freesplatter_bg_" +
                 QUuid::createUuid().toString(QUuid::Id128);
         QDir().mkpath(bgTmpDir);
+        bgTmpCleanup.setPath(bgTmpDir);
         QStringList processed;
         for (int i = 0; i < effectivePaths.size(); ++i) {
             cv::Mat img = cv::imread(effectivePaths[i].toStdString());
@@ -332,10 +384,6 @@ bool FreeSplatterWorker::runReconstruct() {
     }
 
     aicore_gaussian_free_floats(gaussians);
-
-    if (!bgTmpDir.isEmpty()) {
-        QDir(bgTmpDir).removeRecursively();
-    }
 
     emit progressUpdate(100, 100);
     emit resultReady(result);

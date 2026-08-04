@@ -7,31 +7,128 @@
 
 #include "aicore/runtime_capi.h"
 
+#include <algorithm>
 #include <atomic>
+#include <cctype>
+#include <memory>
 #include <mutex>
+#include <new>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+#include "aicore/backend_capi.h"
 
 namespace {
 
 std::mutex g_inference_mutex;
-std::atomic<bool> g_cancel_requested{false};
 thread_local bool g_inference_lock_held = false;
+thread_local std::vector<aicore_cancel_token*> g_cancel_scope_stack;
+
+std::mutex g_device_queues_mutex;
+std::unordered_map<std::string, std::shared_ptr<std::mutex>> g_device_queues;
+thread_local std::shared_ptr<std::mutex> g_device_queue_held;
+
+std::string lowercase(const char* raw) {
+    std::string value = raw && raw[0] ? raw : "auto";
+    std::transform(
+            value.begin(), value.end(), value.begin(),
+            [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    return value;
+}
+
+std::string device_queue_key(const char* device) {
+    std::string request = lowercase(device);
+    if (request == "auto" || request == "gpu") {
+        const int count = aicore_device_count();
+        for (int i = 0; i < count; ++i) {
+            const aicore_device_info* info = aicore_device_at(i);
+            if (info && info->id && std::string(info->id) != "auto" &&
+                std::string(info->id) != "cpu" &&
+                aicore_device_available(info->id)) {
+                request = info->id;
+                break;
+            }
+        }
+        if (request == "auto" || request == "gpu") request = "cpu";
+    }
+    if (request == "mtl") request = "metal";
+    if (request == "cuda:0" || request == "vulkan:0" || request == "metal:0") {
+        request.resize(request.find(':'));
+    }
+    return request;
+}
+
+std::shared_ptr<std::mutex> device_queue(const char* device) {
+    const std::string key = device_queue_key(device);
+    std::lock_guard<std::mutex> lock(g_device_queues_mutex);
+    std::shared_ptr<std::mutex>& queue = g_device_queues[key];
+    if (!queue) queue = std::make_shared<std::mutex>();
+    return queue;
+}
 
 }  // namespace
 
+struct aicore_cancel_token {
+    std::atomic<bool> requested{false};
+};
+
+namespace {
+aicore_cancel_token g_legacy_cancel_token;
+}
+
+AICORE_CAPI aicore_cancel_token* aicore_cancel_token_new(void) {
+    return new (std::nothrow) aicore_cancel_token();
+}
+
+AICORE_CAPI void aicore_cancel_token_free(aicore_cancel_token* token) {
+    g_cancel_scope_stack.erase(std::remove(g_cancel_scope_stack.begin(),
+                                           g_cancel_scope_stack.end(), token),
+                               g_cancel_scope_stack.end());
+    delete token;
+}
+
+AICORE_CAPI void aicore_cancel_token_reset(aicore_cancel_token* token) {
+    if (token) token->requested.store(false, std::memory_order_release);
+}
+
+AICORE_CAPI void aicore_cancel_token_request(aicore_cancel_token* token) {
+    if (token) token->requested.store(true, std::memory_order_release);
+}
+
+AICORE_CAPI int aicore_cancel_token_requested(
+        const aicore_cancel_token* token) {
+    return token && token->requested.load(std::memory_order_acquire) ? 1 : 0;
+}
+
+AICORE_CAPI void aicore_cancel_scope_begin(aicore_cancel_token* token) {
+    if (token) g_cancel_scope_stack.push_back(token);
+}
+
+AICORE_CAPI void aicore_cancel_scope_end(aicore_cancel_token* token) {
+    if (!g_cancel_scope_stack.empty() && g_cancel_scope_stack.back() == token) {
+        g_cancel_scope_stack.pop_back();
+    }
+}
+
 AICORE_CAPI void aicore_cancel_begin(void) {
-    g_cancel_requested.store(false, std::memory_order_release);
+    aicore_cancel_token_reset(&g_legacy_cancel_token);
+    aicore_cancel_scope_begin(&g_legacy_cancel_token);
 }
 
 AICORE_CAPI void aicore_cancel_end(void) {
-    g_cancel_requested.store(false, std::memory_order_release);
+    aicore_cancel_token_reset(&g_legacy_cancel_token);
+    aicore_cancel_scope_end(&g_legacy_cancel_token);
 }
 
 AICORE_CAPI void aicore_cancel_request(void) {
-    g_cancel_requested.store(true, std::memory_order_release);
+    aicore_cancel_token_request(&g_legacy_cancel_token);
 }
 
 AICORE_CAPI int aicore_cancel_requested(void) {
-    return g_cancel_requested.load(std::memory_order_acquire) ? 1 : 0;
+    return aicore_cancel_token_requested(g_cancel_scope_stack.empty()
+                                                 ? &g_legacy_cancel_token
+                                                 : g_cancel_scope_stack.back());
 }
 
 AICORE_CAPI int aicore_inference_lock(void) {
@@ -50,4 +147,26 @@ AICORE_CAPI int aicore_inference_try_lock(void) {
     if (!g_inference_mutex.try_lock()) return -1;
     g_inference_lock_held = true;
     return 0;
+}
+
+AICORE_CAPI int aicore_device_task_lock(const char* device) {
+    if (g_device_queue_held) return -1;
+    std::shared_ptr<std::mutex> queue = device_queue(device);
+    queue->lock();
+    g_device_queue_held = std::move(queue);
+    return 0;
+}
+
+AICORE_CAPI int aicore_device_task_try_lock(const char* device) {
+    if (g_device_queue_held) return -1;
+    std::shared_ptr<std::mutex> queue = device_queue(device);
+    if (!queue->try_lock()) return -1;
+    g_device_queue_held = std::move(queue);
+    return 0;
+}
+
+AICORE_CAPI void aicore_device_task_unlock(void) {
+    if (!g_device_queue_held) return;
+    g_device_queue_held->unlock();
+    g_device_queue_held.reset();
 }

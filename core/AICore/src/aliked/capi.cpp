@@ -68,7 +68,7 @@ struct aicore_aliked_ctx {
     std::string last_error;
 };
 
-AICORE_CAPI int aicore_aliked_abi_version(void) { return 1; }
+AICORE_CAPI int aicore_aliked_abi_version(void) { return 2; }
 
 AICORE_CAPI aicore_aliked_options* aicore_aliked_options_new(void) {
     return new aicore_aliked_options();
@@ -138,6 +138,10 @@ AICORE_CAPI aicore_aliked_ctx* aicore_aliked_load_opts(
 
 AICORE_CAPI void aicore_aliked_free(aicore_aliked_ctx* ctx) { delete ctx; }
 
+AICORE_CAPI int aicore_aliked_is_ready(const aicore_aliked_ctx* ctx) {
+    return ctx != nullptr && ctx->extractor != nullptr ? 1 : 0;
+}
+
 AICORE_CAPI const char* aicore_aliked_last_error(const aicore_aliked_ctx* ctx) {
     if (ctx == nullptr) {
         return "null context";
@@ -167,6 +171,21 @@ AICORE_CAPI int aicore_aliked_extract_rgb(aicore_aliked_ctx* ctx,
         ctx->last_error = ctx->extractor->Error();
         return -1;
     }
+    // A Vulkan session rebuilds transient ggml graphs after every extract.
+    // Some drivers can return an empty score map on the first submission even
+    // though the backend reports success. Retry once after the extractor has
+    // completed its normal Vulkan cleanup; a genuinely featureless image
+    // remains a valid empty result after the retry.
+    if (features.keypoints.empty() &&
+        ctx->device.find("Vulkan") != std::string::npos) {
+        lightglue::Features retry;
+        if (!ctx->extractor->ExtractFromRgb(rgb, width, height, row_stride,
+                                            &retry)) {
+            ctx->last_error = ctx->extractor->Error();
+            return -1;
+        }
+        features = std::move(retry);
+    }
     fill_features(features, out);
     return 0;
 }
@@ -183,6 +202,18 @@ AICORE_CAPI char* aicore_aliked_info_json(aicore_aliked_ctx* ctx) {
 
 AICORE_CAPI char* aicore_aliked_model_cache_dir(void) {
     return dup_cstr(aicore::aliked_model_cache_dir());
+}
+
+AICORE_CAPI int aicore_aliked_quantize(const char* input_gguf,
+                                       const char* output_gguf,
+                                       const char* type) {
+    if (input_gguf == nullptr || output_gguf == nullptr || type == nullptr) {
+        return -1;
+    }
+    std::string error;
+    return lightglue::QuantizeAlikedModel(input_gguf, output_gguf, type, &error)
+                   ? 0
+                   : -1;
 }
 
 AICORE_CAPI void aicore_aliked_free_string(char* s) { std::free(s); }

@@ -118,7 +118,7 @@ and the [unified test suite](https://github.com/Asher-1/ACloudViewer/tree/main/a
 ## SIBR Viewer — 3D Gaussian Splatting & Novel View Synthesis
 
 <p align="center">
-  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/SIBR_viewer.png">
+  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qSIBR/images/SIBR_viewer.png">
 </p>
 
 ACloudViewer integrates the **SIBR framework** (System for Image-Based Rendering) as a built-in plugin,
@@ -155,16 +155,22 @@ Five GUI plugins share one native inference library — **`libAICore.so`** ([ggm
 <table>
 <tr>
 <td width="33%" align="center">
-<img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/qDA3.png" width="100%">
+<img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qDA3/images/qDA3.png" width="100%">
 <br><sub><b>Depth Anything V3</b> — depth maps &amp; 3D unprojection from a single photo</sub>
 </td>
 <td width="33%" align="center">
-<img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/qLightGlue.png" width="100%">
+<img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qLightGlue/images/qLightGlue.png" width="100%">
 <br><sub><b>LightGlue</b> — SIFT / ALIKED matching with live visualization</sub>
 </td>
 <td width="33%" align="center">
-<img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/qFreeSplatter.png" width="100%">
-<br><sub><b>FreeSplatter</b> — sparse-view 3D Gaussian reconstruction, optional qSIBR preview</sub>
+<div style="display:flex;gap:6px;"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qFreeSplatter/images/qFreeSplatter.png" width="49%"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qFreeSplatter/images/qFreeSplatter_video.png" width="49%"></div>
+<br><sub><b>qFreeSplatter</b> — sparse-view 3D Gaussian reconstruction and guided multi-view Face Capture</sub>
+</td>
+</tr>
+<tr>
+<td width="33%" align="center">
+<div style="display:flex;gap:6px;"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qFaceDetect/images/qFaceDetect.png" width="49%"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qFaceDetect/images/qFaceDetect_video.png" width="49%"></div>
+<br><sub><b>qFaceDetect</b> — registry authentication, face recognition, and live multi-face video</sub>
 </td>
 </tr>
 </table>

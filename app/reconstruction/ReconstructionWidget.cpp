@@ -9,6 +9,7 @@
 
 #include <ecvViewManager.h>
 
+#include <QMetaObject>
 #include <QTimer>
 
 #include "MainWindow.h"
@@ -552,31 +553,51 @@ void ReconstructionWidget::CreateControllers() {
     mapper_controller_->AddCallback(
             IncrementalMapperController::INITIAL_IMAGE_PAIR_REG_CALLBACK,
             [this]() {
-                if (!mapper_controller_->IsStopped()) {
-                    action_render_now_->trigger();
-                }
+                QMetaObject::invokeMethod(
+                        this,
+                        [this]() {
+                            if (!mapper_controller_->IsStopped()) {
+                                action_render_now_->trigger();
+                            }
+                        },
+                        Qt::QueuedConnection);
             });
     mapper_controller_->AddCallback(
             IncrementalMapperController::NEXT_IMAGE_REG_CALLBACK, [this]() {
-                if (!mapper_controller_->IsStopped()) {
-                    action_render_->trigger();
-                }
+                QMetaObject::invokeMethod(
+                        this,
+                        [this]() {
+                            if (!mapper_controller_->IsStopped()) {
+                                action_render_->trigger();
+                            }
+                        },
+                        Qt::QueuedConnection);
             });
     mapper_controller_->AddCallback(
             IncrementalMapperController::LAST_IMAGE_REG_CALLBACK, [this]() {
-                if (!mapper_controller_->IsStopped()) {
-                    action_render_now_->trigger();
-                }
+                QMetaObject::invokeMethod(
+                        this,
+                        [this]() {
+                            if (!mapper_controller_->IsStopped()) {
+                                action_render_now_->trigger();
+                            }
+                        },
+                        Qt::QueuedConnection);
             });
     mapper_controller_->AddCallback(
             IncrementalMapperController::FINISHED_CALLBACK, [this]() {
-                if (!mapper_controller_->IsStopped()) {
-                    action_render_now_->trigger();
-                    action_reconstruction_finish_->trigger();
-                }
-                if (reconstruction_manager_.Size() == 0) {
-                    action_reconstruction_reset_->trigger();
-                }
+                QMetaObject::invokeMethod(
+                        this,
+                        [this]() {
+                            if (!mapper_controller_->IsStopped()) {
+                                action_render_now_->trigger();
+                                action_reconstruction_finish_->trigger();
+                            }
+                            if (reconstruction_manager_.Size() == 0) {
+                                action_reconstruction_reset_->trigger();
+                            }
+                        },
+                        Qt::QueuedConnection);
             });
 }
 

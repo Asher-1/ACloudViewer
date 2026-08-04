@@ -468,6 +468,34 @@ bool AddInPlaceGpu(internal::Backend *backend,
                    const GpuTensor &other,
                    std::string *error,
                    const char *cache_key = nullptr) {
+#if defined(AICORE_VULKAN_ALIKED)
+    if (backend != nullptr && backend->IsVulkan()) {
+        std::vector<float> lhs;
+        std::vector<float> rhs;
+        if (!accum->DownloadNchw(backend, &lhs, accum->c, accum->h, accum->w,
+                                 error) ||
+            !other.DownloadNchw(backend, &rhs, other.c, other.h, other.w,
+                                error) ||
+            lhs.size() != rhs.size()) {
+            if (error != nullptr && error->empty()) {
+                *error = "Vulkan residual add shape mismatch";
+            }
+            return false;
+        }
+#if defined(_OPENMP)
+#pragma omp parallel for schedule(static)
+#endif
+        for (int64_t i = 0; i < static_cast<int64_t>(lhs.size()); ++i) {
+            lhs[static_cast<size_t>(i)] += rhs[static_cast<size_t>(i)];
+        }
+        if (!accum->UploadNchw(backend, lhs, accum->c, accum->h, accum->w,
+                               error)) {
+            return false;
+        }
+        FlushGpuPipeline(backend);
+        return true;
+    }
+#endif
     if (!UseCudaCustomKernels(backend)) {
         return RunAddGpu(backend, accum, other, error, cache_key);
     }
@@ -583,15 +611,45 @@ bool ResBlockForwardGpu(GpuPipelineCache *compute,
     GpuTensor identity_buf;
     const GpuTensor *identity = &input;
     if (tensors.count(prefix + "_downsample_weight") > 0) {
+        const std::vector<float> &down_w =
+                RequireTensor(tensors, prefix + "_downsample_weight", error);
         const std::vector<float> &down_b =
                 RequireTensor(tensors, prefix + "_downsample_bias", error);
-        if (!ConvGpu(runner, input,
-                     RequireTensor(tensors, prefix + "_downsample_weight",
-                                   error),
-                     oc, 1, 1, &down_b, 0, 1, &identity_buf,
-                     (prefix + ".downsample").c_str(), error)) {
+#if defined(AICORE_VULKAN_ALIKED)
+        if (backend != nullptr && backend->IsVulkan()) {
+            std::vector<float> input_nchw;
+            if (!input.DownloadNchw(backend, &input_nchw, ic, input.h, input.w,
+                                    error)) {
+                return false;
+            }
+            std::vector<float> identity_nchw;
+            int32_t identity_h = 0;
+            int32_t identity_w = 0;
+            Conv2d(input_nchw, ic, input.h, input.w, down_w, oc, 1, 1, &down_b,
+                   0, 1, &identity_nchw, &identity_h, &identity_w);
+            if (!GpuTensor::Allocate(backend, identity_w, identity_h, oc,
+                                     &identity_buf, error) ||
+                !identity_buf.UploadNchw(backend, identity_nchw, oc, identity_h,
+                                         identity_w, error)) {
+                return false;
+            }
+        } else
+#endif
+                if (!ConvGpu(runner, input, down_w, oc, 1, 1, &down_b, 0, 1,
+                             &identity_buf, (prefix + ".downsample").c_str(),
+                             error)) {
             return false;
         }
+#if defined(AICORE_VULKAN_ALIKED)
+        if (backend != nullptr && backend->IsVulkan() && DkdDebugEnabled()) {
+            BarrierGpuPipeline(backend);
+            if (!LogBackboneStage(backend, identity_buf, oc, identity_buf.h,
+                                  identity_buf.w,
+                                  (prefix + ".identity").c_str(), error)) {
+                return false;
+            }
+        }
+#endif
         identity = &identity_buf;
     } else if (ic != oc) {
         error->assign("residual channel mismatch without downsample for " +

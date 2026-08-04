@@ -64,7 +64,7 @@ Cache: `~/cloudViewer_data/extract/lightglue_models/` (or `aicore_lightglue_mode
 
 ## Download — ALIKED extractor
 
-Cache: `~/cloudViewer_data/extract/aliked_models/` (or `aicore_aliked_model_cache_dir()`)
+Cache: `~/cloudViewer_data/extract/lightglue_models/` (same directory as matcher models)
 
 Place the extractor GGUF with the **same quant suffix** as the selected matcher (e.g. F16 matcher → F16 extractor). Build from [LightGlue-GGML](https://github.com/Asher-1/LightGlue-GGML) or copy prebuilt artifacts into cache.
 
@@ -72,6 +72,7 @@ Place the extractor GGUF with the **same quant suffix** as the selected matcher 
 |------|-------|----------------|-------|
 | `aliked-n16rot-f32.gguf` | F32 | ~2.7 MB | parity reference |
 | `aliked-n16rot-f16.gguf` | F16 | ~1.4 MB | recommended for CUDA |
+| `aliked-n16rot-q8_0.gguf` | Q8_0 | ~0.7 MB | smallest, good recall |
 
 GGUF key: `aliked` · 128-D descriptors · default resize long edge 1024 · DKD + SDDH postprocess metadata embedded.
 

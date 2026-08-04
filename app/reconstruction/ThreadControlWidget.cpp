@@ -105,8 +105,11 @@ void ThreadControlWidget::StartThread(const QString& progress_text,
     progress_bar_->show();
     progress_bar_->raise();
 
-    thread_->AddCallback(Thread::FINISHED_CALLBACK,
-                         [this]() { finished_action_->trigger(); });
+    thread_->AddCallback(Thread::FINISHED_CALLBACK, [this]() {
+        QMetaObject::invokeMethod(
+                this, [this]() { finished_action_->trigger(); },
+                Qt::QueuedConnection);
+    });
     thread_->Start();
 }
 

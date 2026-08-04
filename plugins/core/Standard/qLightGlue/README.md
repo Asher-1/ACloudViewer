@@ -47,7 +47,7 @@ make -j4 QLIGHTGLUE_PLUGIN
 | Family | Extractor | Model GGUF | Cache directory |
 |--------|-----------|------------|-----------------|
 | SIFT LightGlue | OpenCV RootSIFT | `sift-lightglue-{f16,q8_0,f32}.gguf` | `~/cloudViewer_data/extract/lightglue_models/` |
-| ALIKED LightGlue | `aliked-n16rot-{f16,f32}.gguf` | `aliked-lightglue-{f16,q8_0,f32}.gguf` | `lightglue_models/` + `aliked_models/` |
+| ALIKED LightGlue | `aliked-n16rot-{f16,q8_0,f32}.gguf` | `aliked-lightglue-{f16,q8_0,f32}.gguf` | `~/cloudViewer_data/extract/lightglue_models/` |
 
 ### Pipeline (COLMAP-aligned)
 

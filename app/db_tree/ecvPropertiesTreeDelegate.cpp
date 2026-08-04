@@ -2767,15 +2767,6 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
                         } else {
                             refreshActiveDisplayLikeUpdateScreen();
                         }
-
-                        if (checked && view) {
-                            AxesGridProperties verify;
-                            view->getDataAxesGridProperties(viewID, verify);
-                            CVLog::PrintDebug(
-                                    "[AxesGrid] POST-REDRAW: "
-                                    "visible=%d showGrid=%d",
-                                    verify.visible, verify.showGrid);
-                        }
                     });
             break;
         }

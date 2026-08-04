@@ -18,6 +18,7 @@
 #include <QImageReader>
 #include <QMap>
 #include <QMessageBox>
+#include <QPlainTextEdit>
 #include <QSettings>
 #include <QVBoxLayout>
 
@@ -44,9 +45,6 @@ FaceRegistryWidget::FaceRegistryWidget(QWidget* parent) : QWidget(parent) {
     auto* main = new QVBoxLayout(this);
     FaceDetectUi::setupCompactMainLayout(main);
 
-    auto* testRow = new QHBoxLayout;
-    testRow->setContentsMargins(0, 0, 0, 0);
-    testRow->setSpacing(6);
     m_testDataBtn = new QPushButton(tr("Use test data"), this);
     m_testDataBtn->setToolTip(tr(
             "Download FriendsFaces sample pack, register gallery identities, "
@@ -58,9 +56,6 @@ FaceRegistryWidget::FaceRegistryWidget(QWidget* parent) : QWidget(parent) {
             "authentication."));
     connect(m_testDataBtn, &QPushButton::clicked, this,
             &FaceRegistryWidget::testDataRequested);
-    testRow->addWidget(m_testDataBtn, 0);
-    testRow->addStretch(1);
-    main->addLayout(testRow);
 
     auto* dbGroup = new QGroupBox(tr("Face database"), this);
     auto* dbLayout = new QGridLayout(dbGroup);
@@ -110,10 +105,10 @@ FaceRegistryWidget::FaceRegistryWidget(QWidget* parent) : QWidget(parent) {
     dbLayout->addWidget(FaceDetectUi::makeFormLabel(tr("Detector GGUF:")), 1,
                         0);
     dbLayout->addWidget(m_modelCombo, 1, 1);
-    dbLayout->addWidget(FaceDetectUi::makeFormLabel(tr("Device:")), 1, 2);
-    dbLayout->addWidget(m_deviceCombo, 1, 3);
-    dbLayout->addWidget(FaceDetectUi::makeFormLabel(tr("Threads:")), 2, 0);
-    dbLayout->addWidget(m_threadsSpin, 2, 1, Qt::AlignLeft);
+    dbLayout->addWidget(FaceDetectUi::makeFormLabel(tr("Device:")), 2, 0);
+    dbLayout->addWidget(m_deviceCombo, 2, 1);
+    dbLayout->addWidget(FaceDetectUi::makeFormLabel(tr("Threads:")), 2, 2);
+    dbLayout->addWidget(m_threadsSpin, 2, 3, Qt::AlignLeft);
 
     m_dbStatusLabel = new QLabel(tr("—"), dbGroup);
     m_dbStatusLabel->setWordWrap(true);
@@ -141,7 +136,7 @@ FaceRegistryWidget::FaceRegistryWidget(QWidget* parent) : QWidget(parent) {
 
     m_nameEdit = new QLineEdit(regGroup);
     m_nameEdit->setPlaceholderText(tr("Person name"));
-    m_nameEdit->setMaximumWidth(200);
+    m_nameEdit->setMaximumWidth(320);
     regLayout->addWidget(FaceDetectUi::makeFormLabel(tr("Name:")), 1, 0);
     regLayout->addWidget(m_nameEdit, 1, 1, Qt::AlignLeft);
 
@@ -214,10 +209,14 @@ FaceRegistryWidget::FaceRegistryWidget(QWidget* parent) : QWidget(parent) {
     authActionRow->addStretch();
     authLayout->addLayout(authActionRow, 2, 0, 1, 4);
 
-    m_authResultLabel = new QLabel(tr("—"), authGroup);
-    m_authResultLabel->setWordWrap(true);
-    m_authResultLabel->setSizePolicy(QSizePolicy::Preferred,
-                                     QSizePolicy::Maximum);
+    m_authResultLabel = new QPlainTextEdit(authGroup);
+    m_authResultLabel->setReadOnly(true);
+    m_authResultLabel->setUndoRedoEnabled(false);
+    m_authResultLabel->setLineWrapMode(QPlainTextEdit::WidgetWidth);
+    m_authResultLabel->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    m_authResultLabel->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_authResultLabel->setPlainText(tr("—"));
+    m_authResultLabel->setFixedHeight(88);
     m_authResultLabel->setStyleSheet(
             "padding: 2px 4px; border-radius: 3px; background: palette(base); "
             "border: 1px solid palette(mid); font-size: 11px;");
@@ -235,8 +234,11 @@ FaceRegistryWidget::FaceRegistryWidget(QWidget* parent) : QWidget(parent) {
     m_entryList = new QListWidget(listGroup);
     m_entryList->setAlternatingRowColors(true);
     m_entryList->setIconSize(QSize(40, 40));
-    m_entryList->setMinimumHeight(64);
-    m_entryList->setMaximumHeight(120);
+    m_entryList->setUniformItemSizes(true);
+    m_entryList->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+    m_entryList->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    m_entryList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_entryList->setFixedHeight(168);
     listLayout->addWidget(m_entryList);
 
     auto* listBtnRow = new QHBoxLayout;
@@ -246,6 +248,7 @@ FaceRegistryWidget::FaceRegistryWidget(QWidget* parent) : QWidget(parent) {
             &FaceRegistryWidget::onRemove);
     connect(clearBtn, &QPushButton::clicked, this,
             &FaceRegistryWidget::onClear);
+    listBtnRow->addWidget(m_testDataBtn);
     listBtnRow->addWidget(removeBtn);
     listBtnRow->addWidget(clearBtn);
     listBtnRow->addStretch();
@@ -283,7 +286,7 @@ void FaceRegistryWidget::showVerifySummary(int faceCount,
                                            int matchedCount,
                                            float threshold) {
     if (!m_authResultLabel || faceCount <= 0) return;
-    m_authResultLabel->setText(
+    m_authResultLabel->setPlainText(
             tr("Detected %1 face(s), %2 matched (threshold %3)")
                     .arg(faceCount)
                     .arg(matchedCount)
@@ -746,7 +749,7 @@ bool FaceRegistryWidget::embedImage(const QString& imagePath,
         return false;
     }
 
-    FaceDetectInferenceGuard guard;
+    FaceDetectInferenceGuard guard(m_device);
     if (!m_embedContext.ensureLoaded(path, m_device, m_threadCount)) {
         if (err) *err = tr("Failed to load face model.");
         return false;
@@ -823,7 +826,7 @@ void FaceRegistryWidget::authenticateFromImagePath(const QString& imagePath) {
         return;
     }
 
-    FaceDetectInferenceGuard guard;
+    FaceDetectInferenceGuard guard(m_device);
     if (!m_embedContext.ensureLoaded(modelPath, m_device, m_threadCount)) {
         emit logMessage(tr("[Registry] Failed to load face model."));
         return;
@@ -861,7 +864,7 @@ void FaceRegistryWidget::authenticateFromImagePath(const QString& imagePath) {
             const QString distText =
                     nearest ? QString::number(nearest->distance, 'f', 3)
                             : QStringLiteral("?");
-            m_authResultLabel->setText(
+            m_authResultLabel->setPlainText(
                     tr("NO MATCH (threshold %1, %2)")
                             .arg(thresh, 0, 'f', 2)
                             .arg(FaceDetectEmbed::formatNoMatchLabel(
@@ -887,7 +890,7 @@ void FaceRegistryWidget::authenticateFromImagePath(const QString& imagePath) {
                     FaceDetectEmbed::annotateLabeledFaces(rgb, drawFaces),
                     tr("Auth: %1").arg(match->entry.name));
         }
-        m_authResultLabel->setText(
+        m_authResultLabel->setPlainText(
                 tr("MATCH: %1  ·  ID %2  ·  distance %3")
                         .arg(match->entry.name, match->entry.id.left(8))
                         .arg(match->distance, 0, 'f', 4));
@@ -999,8 +1002,8 @@ void FaceRegistryWidget::authenticateFromImagePath(const QString& imagePath) {
                     .arg(matched)
                     .arg(minScore, 0, 'f', 2)
                     .arg(thresh, 0, 'f', 2);
-    m_authResultLabel->setText(summary + QStringLiteral("\n") +
-                               lines.join(QStringLiteral("\n")));
+    m_authResultLabel->setPlainText(summary + QStringLiteral("\n") +
+                                    lines.join(QStringLiteral("\n")));
     if (exportAuthResultToDb() && !rgb.isNull() && !drawFaces.empty()) {
         emit authResultImageReady(
                 FaceDetectEmbed::annotateLabeledFaces(rgb, drawFaces), summary);

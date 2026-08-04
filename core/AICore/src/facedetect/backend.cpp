@@ -124,6 +124,8 @@ std::vector<ggml_backend_buffer_t> collect_weight_buffers(ggml_cgraph* gf) {
 }  // namespace
 
 struct Backend::Impl {
+    std::vector<aicore::runtime::BackendLease> gpu_leases;
+    aicore::runtime::BackendLease cpu_lease;
     std::vector<ggml_backend_t> gpu_backends;
     ggml_backend_t backend = nullptr;
     ggml_backend_t cpu_backend = nullptr;
@@ -176,8 +178,13 @@ struct Backend::Impl {
 // so add_graph_input()/capture_graph_output() can route registrations. compute
 // is not re-entrant on a single thread, so a single pointer suffices.
 static thread_local Backend* t_active = nullptr;
+// Bound by the C API for the duration of a context operation. It is separate
+// from t_active, which only exists while Backend::compute builds a graph.
+static thread_local Backend* t_bound_backend = nullptr;
 
-Backend::Backend(int n_threads) : impl_(new Impl()) {
+Backend::Backend(int n_threads, const std::string& device_request)
+    : impl_(new Impl()) {
+    n_threads_ = n_threads > 0 ? n_threads : 1;
     ggml_common::load_backends_once();
 
     // Persistent-graph cache capacity (number of distinct input shapes / call
@@ -188,28 +195,30 @@ Backend::Backend(int n_threads) : impl_(new Impl()) {
         impl_->cache_cap = v >= 0 ? (size_t)v : impl_->cache_cap;
     }
 
-    // Optional override via FACEDETECT_DEVICE: "cpu" forces CPU; a device name
-    // selects that registry device (case-insensitive); unset auto-picks the
-    // first GPU/IGPU device.
+    // Explicit context requests never mutate process environment. The legacy
+    // empty request still honours FACEDETECT_DEVICE for direct C++ users.
     const char* force = std::getenv("FACEDETECT_DEVICE");
-    const std::string want = force ? force : "";
-    const bool force_cpu = want == "cpu" || want == "CPU";
-
-    auto iequals = [](const std::string& a, const std::string& b) {
-        if (a.size() != b.size()) return false;
-        for (size_t i = 0; i < a.size(); ++i)
-            if (std::tolower((unsigned char)a[i]) !=
-                std::tolower((unsigned char)b[i]))
-                return false;
-        return true;
-    };
+    const std::string want =
+            !device_request.empty() ? device_request : (force ? force : "auto");
+    const bool force_cpu = ggml_common::to_lower(want) == "cpu";
 
     if (!force_cpu) {
-        if (want.empty()) {
-            ggml_common::GpuBackendGroup group =
-                    ggml_common::resolve_gpu_group("auto");
-            if (group.primary()) {
-                impl_->gpu_backends = std::move(group.gpus);
+        ggml_common::GpuBackendGroup group =
+                ggml_common::resolve_gpu_group(want);
+        if (group.primary()) {
+            for (size_t i = 0; i < group.gpus.size(); ++i) {
+                aicore::runtime::BackendLease lease =
+                        aicore::runtime::adopt_backend_lease(
+                                group.gpus[i], group.names[i], n_threads_);
+                group.gpus[i] = nullptr;
+                if (!lease) {
+                    FD_LOG("fd::Backend: failed to acquire GPU backend lease");
+                    break;
+                }
+                impl_->gpu_backends.push_back(lease.handle());
+                impl_->gpu_leases.push_back(std::move(lease));
+            }
+            if (!impl_->gpu_backends.empty()) {
                 impl_->backend = impl_->gpu_backends.front();
                 device_name_ = group.primary_name();
                 if (impl_->gpu_backends.size() > 1) {
@@ -220,80 +229,61 @@ Backend::Backend(int n_threads) : impl_(new Impl()) {
                 impl_->use_sched = true;
                 FD_LOG("fd::Backend using device: %s", device_name_.c_str());
             }
-        } else {
-            for (size_t i = 0; i < ggml_backend_dev_count(); ++i) {
-                ggml_backend_dev_t dev = ggml_backend_dev_get(i);
-                const auto type = ggml_backend_dev_type(dev);
-                const char* name = ggml_backend_dev_name(dev);
-                if (!name || !iequals(want, name)) continue;
-                if (type != GGML_BACKEND_DEVICE_TYPE_GPU &&
-                    type != GGML_BACKEND_DEVICE_TYPE_IGPU) {
-                    continue;
-                }
-                if (ggml_backend_t be = ggml_backend_dev_init(dev, nullptr)) {
-                    impl_->gpu_backends = {be};
-                    impl_->backend = be;
-                    device_name_ = name;
-                    impl_->use_sched = true;
-                    FD_LOG("fd::Backend using device: %s",
-                           device_name_.c_str());
-                    break;
-                }
-            }
-            if (!impl_->backend)
-                FD_LOG("fd::Backend: FACEDETECT_DEVICE=%s not found; falling "
-                       "back to CPU",
-                       want.c_str());
+        } else if (ggml_common::to_lower(want) != "auto") {
+            FD_LOG("fd::Backend: requested device %s not found; falling back "
+                   "to CPU",
+                   want.c_str());
         }
     }
     if (!impl_->backend) {
-        impl_->backend = ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_CPU,
-                                                   nullptr);
-        device_name_ = "cpu";
+        impl_->cpu_lease = aicore::runtime::acquire_backend_lease(
+                "cpu", n_threads_, nullptr);
+        impl_->backend = impl_->cpu_lease.handle();
+        device_name_ = impl_->cpu_lease.device();
     }
     if (!impl_->backend) {
         FD_LOG("backend init returned null");
         return;
     }
     if (impl_->use_sched) {
-        impl_->cpu_backend = ggml_backend_init_by_type(
-                GGML_BACKEND_DEVICE_TYPE_CPU, nullptr);
+        impl_->cpu_lease = aicore::runtime::acquire_backend_lease(
+                "cpu", n_threads_, nullptr);
+        impl_->cpu_backend = impl_->cpu_lease.handle();
         if (!impl_->cpu_backend) {
             FD_LOG("fd::Backend: CPU fallback init failed; disabling sched");
             impl_->use_sched = false;
         }
     }
-    set_n_threads(n_threads);
 }
 
 Backend::~Backend() {
     if (impl_) {
-        for (Impl::GraphEntry& e : impl_->cache) {
-            if (e.galloc) ggml_gallocr_free(e.galloc);
-            if (e.ctx) ggml_free(e.ctx);
+        {
+            const auto backend_lock = lock();
+            for (Impl::GraphEntry& e : impl_->cache) {
+                if (e.galloc) ggml_gallocr_free(e.galloc);
+                if (e.ctx) ggml_free(e.ctx);
+            }
+            if (impl_->scratch) ggml_free(impl_->scratch);
+            if (impl_->sched) ggml_backend_sched_free(impl_->sched);
         }
         impl_->cache.clear();
-        if (impl_->scratch) ggml_free(impl_->scratch);
-        if (impl_->sched) ggml_backend_sched_free(impl_->sched);
-        if (impl_->cpu_backend) ggml_backend_free(impl_->cpu_backend);
-        for (ggml_backend_t gpu : impl_->gpu_backends) {
-            if (gpu) ggml_backend_free(gpu);
-        }
         impl_->gpu_backends.clear();
         impl_->backend = nullptr;
+        impl_->cpu_backend = nullptr;
+        impl_->gpu_leases.clear();
+        impl_->cpu_lease.reset();
         delete impl_;
         impl_ = nullptr;
     }
 }
 
 void Backend::set_n_threads(int n_threads) {
-    n_threads_ = n_threads > 0 ? n_threads : 1;
-    if (impl_ && impl_->backend &&
-        ggml_common::is_cpu_backend(impl_->backend)) {
-        ggml_common::set_cpu_threads(impl_->backend, n_threads_);
-    }
-    if (impl_ && impl_->cpu_backend) {
-        ggml_common::set_cpu_threads(impl_->cpu_backend, n_threads_);
+    const int requested = n_threads > 0 ? n_threads : 1;
+    if (requested != n_threads_) {
+        FD_LOG("fd::Backend: CPU thread count is fixed when the session is "
+               "created; create a new session to use %d threads",
+               requested);
     }
 }
 
@@ -301,8 +291,16 @@ ggml_backend_t Backend::handle() const {
     return impl_ ? impl_->backend : nullptr;
 }
 
+aicore::runtime::BackendLeaseLock Backend::lock() const {
+    if (!impl_) return {};
+    std::vector<aicore::runtime::BackendLease> leases = impl_->gpu_leases;
+    if (impl_->cpu_lease) leases.push_back(impl_->cpu_lease);
+    return aicore::runtime::lock_backend_leases(leases);
+}
+
 void Backend::invalidate_weights_buffer(ggml_backend_buffer_t buf) {
     if (!impl_ || !buf) return;
+    const auto backend_lock = lock();
     for (size_t i = 0; i < impl_->cache.size();) {
         Impl::GraphEntry& e = impl_->cache[i];
         const bool refs = std::find(e.weight_bufs.begin(), e.weight_bufs.end(),
@@ -334,6 +332,7 @@ bool Backend::compute(const std::function<ggml_tensor*(ggml_context*)>& build,
         FD_LOG("Backend::compute called on an uninitialised backend");
         return false;
     }
+    const auto backend_lock = lock();
     const struct ggml_init_params params = {
             /* .mem_size   = */ ggml_tensor_overhead() * kGraphSize +
                     ggml_graph_overhead_custom(kGraphSize, false),
@@ -653,7 +652,42 @@ int default_n_threads() {
 }
 }  // namespace
 
+struct BackendLease::State {
+    State(const std::string& device, int threads) : backend(threads, device) {}
+
+    Backend backend;
+    std::mutex mutex;
+};
+
+Backend& BackendLease::backend() const { return state_->backend; }
+
+const char* BackendLease::device_name() const {
+    return state_ ? state_->backend.device_name() : "cpu";
+}
+
+BackendLease acquire_backend_lease(const std::string& device_request,
+                                   int n_threads) {
+    const int threads = n_threads > 0 ? n_threads : default_n_threads();
+    const std::string request =
+            device_request.empty() ? "auto" : device_request;
+    std::shared_ptr<BackendLease::State> state =
+            std::make_shared<BackendLease::State>(request, threads);
+    return BackendLease(std::move(state));
+}
+
+ScopedBackendBinding::ScopedBackendBinding(const BackendLease& lease)
+    : previous_(t_bound_backend) {
+    if (lease.state_) {
+        lock_ = std::unique_lock<std::mutex>(lease.state_->mutex);
+        device_lock_ = lease.state_->backend.lock();
+        t_bound_backend = &lease.state_->backend;
+    }
+}
+
+ScopedBackendBinding::~ScopedBackendBinding() { t_bound_backend = previous_; }
+
 Backend& global_backend() {
+    if (t_bound_backend) return *t_bound_backend;
     register_process_shutdown_hook();
     if (!g_backend) g_backend = std::make_unique<Backend>(default_n_threads());
     return *g_backend;
@@ -680,6 +714,7 @@ void invalidate_graph_cache_for_weights(ggml_backend_buffer_t buf) {
 void ensure_weights_realized(const ModelLoader& ml) {
     if (ml.weights_realized()) return;
     ModelLoader& mut = const_cast<ModelLoader&>(ml);
+    const auto backend_lock = global_backend().lock();
     mut.realize_weights(global_backend().handle());
 }
 

@@ -110,6 +110,7 @@ public:
         DA3QuantType da3_sparse_quant_type = DA3QuantType::Q8_0;
         std::string da3_sparse_model_path;
         std::string da3_sparse_metric_model_path;
+        std::string da3_device = "auto";
 
         // DA3 stereo-step model (when stereo_mode == DA3_DEPTH_INFERENCE;
         // nested only)
@@ -134,6 +135,9 @@ public:
             ReconstructionManager* reconstruction_manager);
 
     void Stop() override;
+    const DA3VramCapWarning& da3VramCapWarning() const {
+        return da3_vram_warning_;
+    }
 
 protected:
     virtual void RunDenseMapper();
@@ -173,6 +177,7 @@ private:
     // StereoFusion on DA3 priors only (DA3_SKIP_GEOMETRIC_REFINE=1).
     bool da3_skip_geometric_refine_ = false;
     DA3MultiviewCache da3_multiview_cache_;
+    DA3VramCapWarning da3_vram_warning_;
 
     std::unique_ptr<Thread> feature_extractor_;
     std::unique_ptr<Thread> exhaustive_matcher_;

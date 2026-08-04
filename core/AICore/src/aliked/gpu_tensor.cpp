@@ -46,8 +46,12 @@ bool CopyScoreToVulkanScratch(internal::Backend *backend,
         return false;
     }
     AlikedVulkanDkdScratch *scratch = cache->vulkan_dkd_scratch();
-    const char *host_pin = std::getenv("LIGHTGLUE_ALIKED_SCORE_HOST_PIN");
-    if (host_pin != nullptr && host_pin[0] != '0') {
+    // Score maps are small, while the custom dense-copy path has exhibited
+    // zero-filled output for cropped Vulkan views on NVIDIA drivers. Keep the
+    // correctness path as the default and retain the device copy only as an
+    // explicit diagnostic opt-in.
+    const char *device_pin = std::getenv("LIGHTGLUE_ALIKED_SCORE_DEVICE_PIN");
+    if (device_pin == nullptr || device_pin[0] == '0') {
         std::vector<float> nchw;
         if (!score->DownloadNchw(backend, &nchw, 1, h, w, error)) {
             return false;
@@ -172,7 +176,13 @@ bool GpuTensor::Allocate(internal::Backend *backend,
     out->buffer = ggml_backend_alloc_ctx_tensors(out->ctx, backend->handle);
     if (out->buffer == nullptr) {
         if (error) {
-            *error = "failed to allocate GPU tensor buffer";
+            const size_t bytes = static_cast<size_t>(width) *
+                                 static_cast<size_t>(height) *
+                                 static_cast<size_t>(channels) * sizeof(float);
+            *error = "failed to allocate GPU tensor buffer (" +
+                     std::to_string(width) + "x" + std::to_string(height) +
+                     "x" + std::to_string(channels) + ", " +
+                     std::to_string(bytes) + " bytes)";
         }
         out->Release();
         return false;

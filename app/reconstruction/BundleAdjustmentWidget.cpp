@@ -7,6 +7,8 @@
 
 #include "BundleAdjustmentWidget.h"
 
+#include <QMetaObject>
+
 #include "ReconstructionWidget.h"
 #include "ThreadControlWidget.h"
 #include "controllers/bundle_adjustment.h"
@@ -73,8 +75,11 @@ void BundleAdjustmentWidget::Run() {
     WriteOptions();
 
     Thread* thread = new BundleAdjustmentController(*options_, reconstruction_);
-    thread->AddCallback(Thread::FINISHED_CALLBACK,
-                        [this]() { render_action_->trigger(); });
+    thread->AddCallback(Thread::FINISHED_CALLBACK, [this]() {
+        QMetaObject::invokeMethod(
+                this, [this]() { render_action_->trigger(); },
+                Qt::QueuedConnection);
+    });
 
     // Normalize scene for numerical stability and
     // to avoid large scale changes in viewer.

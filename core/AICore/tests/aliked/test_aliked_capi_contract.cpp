@@ -17,13 +17,15 @@
 static int failures = 0;
 
 int main() {
-    AICORE_CHECK(aicore_aliked_abi_version() >= 1);
+    AICORE_CHECK(aicore_aliked_abi_version() >= 2);
+    AICORE_CHECK(aicore_aliked_quantize(nullptr, nullptr, nullptr) != 0);
 
     aicore_aliked_free(nullptr);
     aicore_aliked_options_free(nullptr);
     aicore_aliked_free_string(nullptr);
 
     AICORE_CHECK(aicore_aliked_load_opts(nullptr, nullptr) == nullptr);
+    AICORE_CHECK(aicore_aliked_is_ready(nullptr) == 0);
     AICORE_CHECK(aicore_aliked_info_json(nullptr) != nullptr);
 
     aicore_aliked_options* opts = aicore_aliked_options_new();

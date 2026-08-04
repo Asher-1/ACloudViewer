@@ -17,6 +17,7 @@
 #include <QFileInfo>
 #include <QMainWindow>
 #include <QMessageBox>
+#include <QUuid>
 
 #include "ecvPersistentSettings.h"
 
@@ -103,7 +104,7 @@ QStringList qDeepLSD::selectedDbImageNames() const {
 
 bool qDeepLSD::resolveInputPath(const QString& rawPath,
                                 QString& outPath,
-                                QString* errorMsg) const {
+                                QString* errorMsg) {
     outPath.clear();
     if (rawPath.startsWith(QStringLiteral("db://"))) {
         const QString name = rawPath.mid(5);
@@ -116,13 +117,15 @@ bool qDeepLSD::resolveInputPath(const QString& rawPath,
         }
         const QString tmpDir = DeepLSDDialog::modelCacheDir() + "/../tmp";
         QDir().mkpath(tmpDir);
-        outPath = tmpDir + "/" + name + ".png";
+        outPath = tmpDir + "/deeplsd-" +
+                  QUuid::createUuid().toString(QUuid::WithoutBraces) + ".png";
         if (!img->data().save(outPath)) {
             if (errorMsg) {
                 *errorMsg = tr("Failed to export DB image: %1").arg(name);
             }
             return false;
         }
+        m_stagedInputFiles << outPath;
         return true;
     }
     if (QFile::exists(rawPath)) {
@@ -133,6 +136,13 @@ bool qDeepLSD::resolveInputPath(const QString& rawPath,
         *errorMsg = tr("Input file not found: %1").arg(rawPath);
     }
     return false;
+}
+
+void qDeepLSD::clearStagedInputFiles() {
+    for (const QString& path : m_stagedInputFiles) {
+        QFile::remove(path);
+    }
+    m_stagedInputFiles.clear();
 }
 
 void qDeepLSD::refreshDbImages() {
@@ -191,6 +201,12 @@ void qDeepLSD::executeTask(const DeepLSDDialog::Settings& settings) {
         m_worker->deleteLater();
         m_worker = nullptr;
     }
+    clearStagedInputFiles();
+
+    if (settings.modelPath.isEmpty()) {
+        m_dialog->appendLog(tr("[Error] Model required."));
+        return;
+    }
 
     QString resolvedPath;
     QString err;
@@ -198,11 +214,6 @@ void qDeepLSD::executeTask(const DeepLSDDialog::Settings& settings) {
         m_dialog->appendLog(err);
         return;
     }
-    if (settings.modelPath.isEmpty()) {
-        m_dialog->appendLog(tr("[Error] Model required."));
-        return;
-    }
-
     QString workerDevice = settings.device;
 #ifdef AICore_ENABLED
     if (aicore_warmup_backend(workerDevice.toUtf8().constData()) != 0) {
@@ -235,10 +246,7 @@ void qDeepLSD::executeTask(const DeepLSDDialog::Settings& settings) {
 }
 
 void qDeepLSD::cancelTask() {
-#ifdef AICore_ENABLED
-    aicore_cancel_request();
-#endif
-    if (m_worker && m_worker->isRunning()) m_worker->requestInterruption();
+    if (m_worker && m_worker->isRunning()) m_worker->requestTaskCancel();
 }
 
 void qDeepLSD::onResultReady(const DeepLSDRunResult& result) {
@@ -352,5 +360,6 @@ void qDeepLSD::onTaskFinished(bool success) {
         m_worker->deleteLater();
         m_worker = nullptr;
     }
+    clearStagedInputFiles();
     if (!success) m_dialog->appendLog(tr("[Error] Task failed."));
 }

@@ -12,10 +12,11 @@
 #include "aicore/runtime_capi.h"
 #endif
 
-FaceDetectInferenceGuard::FaceDetectInferenceGuard() {
+FaceDetectInferenceGuard::FaceDetectInferenceGuard(const QString& device) {
 #ifdef AICore_ENABLED
-    aicore_inference_lock();
-    aicore_cancel_begin();
+    m_cancelToken = aicore_cancel_token_new();
+    aicore_device_task_lock(device.toUtf8().constData());
+    aicore_cancel_scope_begin(m_cancelToken);
     m_active = true;
 #endif
 }
@@ -23,9 +24,10 @@ FaceDetectInferenceGuard::FaceDetectInferenceGuard() {
 FaceDetectInferenceGuard::~FaceDetectInferenceGuard() {
 #ifdef AICore_ENABLED
     if (m_active) {
-        aicore_cancel_end();
-        aicore_inference_unlock();
+        aicore_cancel_scope_end(m_cancelToken);
+        aicore_device_task_unlock();
     }
+    aicore_cancel_token_free(m_cancelToken);
 #endif
 }
 
@@ -72,11 +74,15 @@ bool FaceDetectModelContext::load(const QString& modelPath,
                                   int threads) {
     release();
     aicore_facedetect_options* opts = aicore_facedetect_options_new();
+    if (!opts) return false;
     aicore_facedetect_options_set_device(opts, device.toUtf8().constData());
     aicore_facedetect_options_set_threads(opts, threads);
     m_ctx = aicore_facedetect_load_opts(modelPath.toUtf8().constData(), opts);
     aicore_facedetect_options_free(opts);
-    if (!m_ctx) return false;
+    if (!aicore_facedetect_is_ready(m_ctx)) {
+        release();
+        return false;
+    }
     m_modelPath = modelPath;
     m_device = device;
     m_threads = threads;

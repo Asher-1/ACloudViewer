@@ -189,13 +189,14 @@ __global__ void BlockTopKKernel(const float *nms,
     }
 }
 
-bool PartialSortTopK(const float *nms,
-                     thrust::device_vector<float> *block_keys,
-                     thrust::device_vector<int32_t> *block_indices,
-                     thrust::device_vector<float> &keys,
-                     thrust::device_vector<int32_t> &indices,
-                     int32_t count,
-                     int32_t keep) {
+[[maybe_unused]] bool PartialSortTopK(
+        const float *nms,
+        thrust::device_vector<float> *block_keys,
+        thrust::device_vector<int32_t> *block_indices,
+        thrust::device_vector<float> &keys,
+        thrust::device_vector<int32_t> &indices,
+        int32_t count,
+        int32_t keep) {
     const int32_t candidates = kTopKBlockCount * kTopKLocal;
     BlockTopKKernel<<<kTopKBlockCount, 1>>>(
             nms, count, kTopKLocal,
@@ -1212,47 +1213,25 @@ bool AlikedCudaRunDkd(ggml_backend_t backend,
 
     std::vector<int32_t> indices;
     if (top_k > 0) {
-        const int32_t keep = std::min(top_k, count);
-        if (scratch != nullptr) {
-            if (!PartialSortTopK(nms, &scratch->impl->block_keys,
-                                 &scratch->impl->block_indices,
-                                 scratch->impl->keys, scratch->impl->indices,
-                                 count, keep)) {
-                if (scratch == nullptr) {
-                    cudaFree(nms);
-                    cudaFree(tmp_a);
-                    cudaFree(tmp_b);
-                    cudaFree(tmp_c);
-                }
-                return false;
+        std::vector<float> nms_host(static_cast<size_t>(count));
+        cudaMemcpy(nms_host.data(), nms,
+                   static_cast<size_t>(count) * sizeof(float),
+                   cudaMemcpyDeviceToHost);
+        std::vector<std::pair<float, int32_t>> scored;
+        scored.reserve(static_cast<size_t>(count));
+        for (int32_t i = 0; i < count; ++i) {
+            if (nms_host[static_cast<size_t>(i)] > scores_th) {
+                scored.emplace_back(nms_host[static_cast<size_t>(i)], i);
             }
-            indices.resize(static_cast<size_t>(keep));
-            cudaMemcpy(indices.data(),
-                       thrust::raw_pointer_cast(scratch->impl->indices.data()),
-                       static_cast<size_t>(keep) * sizeof(int32_t),
-                       cudaMemcpyDeviceToHost);
-        } else {
-            thrust::device_vector<float> block_keys(
-                    static_cast<size_t>(kTopKBlockCount * kTopKLocal));
-            thrust::device_vector<int32_t> block_indices(
-                    static_cast<size_t>(kTopKBlockCount * kTopKLocal));
-            thrust::device_vector<float> d_keys(
-                    static_cast<size_t>(kTopKBlockCount * kTopKLocal));
-            thrust::device_vector<int32_t> d_indices(
-                    static_cast<size_t>(kTopKBlockCount * kTopKLocal));
-            if (!PartialSortTopK(nms, &block_keys, &block_indices, d_keys,
-                                 d_indices, count, keep)) {
-                cudaFree(nms);
-                cudaFree(tmp_a);
-                cudaFree(tmp_b);
-                cudaFree(tmp_c);
-                return false;
-            }
-            indices.resize(static_cast<size_t>(keep));
-            cudaMemcpy(indices.data(),
-                       thrust::raw_pointer_cast(d_indices.data()),
-                       static_cast<size_t>(keep) * sizeof(int32_t),
-                       cudaMemcpyDeviceToHost);
+        }
+        const int32_t keep =
+                std::min(top_k, static_cast<int32_t>(scored.size()));
+        std::partial_sort(
+                scored.begin(), scored.begin() + keep, scored.end(),
+                [](const auto &a, const auto &b) { return a.first > b.first; });
+        indices.reserve(static_cast<size_t>(keep));
+        for (int32_t i = 0; i < keep; ++i) {
+            indices.push_back(scored[static_cast<size_t>(i)].second);
         }
     } else {
         std::vector<float> nms_host(static_cast<size_t>(count));

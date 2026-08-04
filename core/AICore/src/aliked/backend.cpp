@@ -8,7 +8,6 @@
 #include "backend.h"
 
 #include <ggml-backend.h>
-#include <ggml-cpu.h>
 
 #include "../common/ggml_backend_utils.hpp"
 
@@ -21,8 +20,6 @@
 #include <cctype>
 #include <cstdlib>
 #include <cstring>
-#include <fstream>
-#include <thread>
 #include <vector>
 
 namespace lightglue::internal {
@@ -35,16 +32,6 @@ std::string Lower(std::string value) {
     return value;
 }
 
-int DefaultThreadCount() {
-    unsigned logical = std::max(1u, std::thread::hardware_concurrency());
-    std::ifstream smt("/sys/devices/system/cpu/smt/active");
-    int active = 0;
-    if (smt >> active && active == 1) {
-        logical = std::max(1u, logical / 2);
-    }
-    return static_cast<int>(logical);
-}
-
 bool VulkanSchedEnabledByEnv() {
     const char *env = std::getenv("LIGHTGLUE_ALIKED_VULKAN_SCHED");
     if (env == nullptr || env[0] == '\0') {
@@ -54,86 +41,25 @@ bool VulkanSchedEnabledByEnv() {
            Lower(env) != "off";
 }
 
-void SetCpuThreads(ggml_backend_t backend, int count) {
-    ggml_backend_reg_t registry =
-            ggml_backend_dev_backend_reg(ggml_backend_get_device(backend));
-    auto fn = reinterpret_cast<ggml_backend_set_n_threads_t>(
-            ggml_backend_reg_get_proc_address(registry,
-                                              "ggml_backend_set_n_threads"));
-    if (fn != nullptr) {
-        fn(backend, count);
-    }
-}
-
-void LoadBackends() {
-    static const bool loaded = [] {
-        ggml_backend_load_all();
-        return true;
-    }();
-    (void)loaded;
-}
-
 }  // namespace
 
 bool Backend::Init(const std::string &request, int num_threads) {
     Release();
-    LoadBackends();
+    const int threads =
+            num_threads > 0
+                    ? num_threads
+                    : static_cast<int>(ggml_common::default_cpu_threads());
+    lease = aicore::runtime::acquire_backend_lease(
+            request.empty() ? "auto" : request, threads, &error);
+    if (!lease) return false;
+    handle = lease.handle();
+    device = lease.device();
 
-    const size_t colon = request.find(':');
-    const std::string name = Lower(
-            colon == std::string::npos ? request : request.substr(0, colon));
-    const int wanted_index = colon == std::string::npos
-                                     ? 0
-                                     : std::atoi(request.c_str() + colon + 1);
-
-    if (name.empty() || name == "cpu") {
-        handle = ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_CPU,
-                                           nullptr);
-        if (handle == nullptr) {
-            error = "failed to initialize the ggml CPU backend";
-            return false;
-        }
-        device = "cpu";
-        SetCpuThreads(handle,
-                      num_threads > 0 ? num_threads : DefaultThreadCount());
-
-    } else if (name == "gpu" || name == "cuda" || name == "vulkan") {
-        int index = 0;
-        for (size_t i = 0; i < ggml_backend_dev_count(); ++i) {
-            ggml_backend_dev_t dev = ggml_backend_dev_get(i);
-            if (ggml_backend_dev_type(dev) != GGML_BACKEND_DEVICE_TYPE_GPU) {
-                continue;
-            }
-            if (name != "gpu") {
-                const char *registry = ggml_backend_reg_name(
-                        ggml_backend_dev_backend_reg(dev));
-                if (registry == nullptr || Lower(registry) != name) {
-                    continue;
-                }
-            }
-            if (index++ != wanted_index) {
-                continue;
-            }
-            handle = ggml_backend_dev_init(dev, nullptr);
-            if (handle != nullptr) {
-                device = ggml_backend_dev_name(dev);
-                break;
-            }
-        }
-        if (handle == nullptr) {
-            error = "no usable '" + name +
-                    "' backend; enable the corresponding CMake option and "
-                    "check the "
-                    "driver";
-            return false;
-        }
-    } else {
-        error = "unknown device '" + request +
-                "' (expected cpu, gpu, cuda, or vulkan)";
-        return false;
+    {
+        const auto backend_lock = Lock();
+        allocator =
+                ggml_gallocr_new(ggml_backend_get_default_buffer_type(handle));
     }
-
-    allocator = ggml_gallocr_new(ggml_backend_get_default_buffer_type(handle));
     if (allocator == nullptr) {
         error = "failed to create the ggml graph allocator";
         Release();
@@ -147,15 +73,15 @@ bool Backend::Init(const std::string &request, int num_threads) {
 #endif
 
     if (IsVulkan() && VulkanSchedEnabledByEnv()) {
-        cpu_backend = ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_CPU,
-                                                nullptr);
+        cpu_lease =
+                aicore::runtime::acquire_backend_lease("cpu", threads, &error);
+        cpu_backend = cpu_lease.handle();
         if (cpu_backend == nullptr) {
             error = "failed to initialize CPU backend for Vulkan scheduler";
             Release();
             return false;
         }
-        SetCpuThreads(cpu_backend,
-                      num_threads > 0 ? num_threads : DefaultThreadCount());
+        const auto scheduler_lock = Lock();
         std::vector<ggml_backend_t> backs = {handle, cpu_backend};
         std::vector<ggml_backend_buffer_type_t> bufts = {
                 ggml_backend_get_default_buffer_type(handle),
@@ -185,6 +111,7 @@ bool Backend::SchedRunGraph(ggml_cgraph *graph,
         }
         return false;
     }
+    const auto backend_lock = Lock();
     ggml_backend_sched_reset(sched);
     if (before_alloc) {
         before_alloc();
@@ -245,7 +172,15 @@ bool Backend::IsVulkan() const {
     return registry != nullptr && Lower(registry) == "vulkan";
 }
 
+aicore::runtime::BackendLeaseLock Backend::Lock() const {
+    std::vector<aicore::runtime::BackendLease> leases;
+    if (lease) leases.push_back(lease);
+    if (cpu_lease) leases.push_back(cpu_lease);
+    return aicore::runtime::lock_backend_leases(leases);
+}
+
 void Backend::Release() {
+    const auto backend_lock = Lock();
 #if defined(AICORE_VULKAN_ALIKED)
     if (IsVulkan() && handle != nullptr) {
         lightglue::aliked_internal::VkAlikedQueueIdle(handle);
@@ -260,14 +195,10 @@ void Backend::Release() {
         ggml_gallocr_free(allocator);
         allocator = nullptr;
     }
-    if (cpu_backend != nullptr) {
-        ggml_backend_free(cpu_backend);
-        cpu_backend = nullptr;
-    }
-    if (handle != nullptr) {
-        ggml_backend_free(handle);
-        handle = nullptr;
-    }
+    cpu_backend = nullptr;
+    handle = nullptr;
+    cpu_lease.reset();
+    lease.reset();
     use_sched = false;
     device.clear();
     error.clear();

@@ -250,6 +250,7 @@ bool ModelLoader::offload_weights(Backend& be) {
     // change).
     if (!be.is_offloading()) return true;
     if (device_ctx_) return true;  // idempotent
+    const auto backend_lock = be.lock();
     ggml_backend_t backend = be.handle();
     if (!backend || !ctx_) {
         DA_ERR("offload_weights: null backend/ctx");

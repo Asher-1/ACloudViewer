@@ -9,13 +9,15 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "aicore/aliked_capi.h"
 #include "aicore/deeplsd_capi.h"
 
 int main(int argc, char** argv) {
     if (argc != 5) {
-        std::fprintf(stderr,
-                     "usage: %s deeplsd input.gguf output.gguf f16|q8_0\n",
-                     argv[0]);
+        std::fprintf(
+                stderr,
+                "usage: %s aliked|deeplsd input.gguf output.gguf f16|q8_0\n",
+                argv[0]);
         return 2;
     }
     const char* module = argv[1];
@@ -25,8 +27,11 @@ int main(int argc, char** argv) {
     int rc = -1;
     if (std::strcmp(module, "deeplsd") == 0) {
         rc = aicore_deeplsd_quantize(input, output, type);
+    } else if (std::strcmp(module, "aliked") == 0) {
+        rc = aicore_aliked_quantize(input, output, type);
     } else {
-        std::fprintf(stderr, "unknown module: %s (want deeplsd)\n", module);
+        std::fprintf(stderr, "unknown module: %s (want aliked or deeplsd)\n",
+                     module);
         return 2;
     }
     if (rc != 0) {

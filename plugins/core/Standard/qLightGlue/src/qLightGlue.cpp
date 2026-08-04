@@ -29,6 +29,7 @@
 #include <QMessageBox>
 #include <QSettings>
 #include <QStandardPaths>
+#include <QUuid>
 
 #include "ecvPersistentSettings.h"
 #include "feature_extractor.h"
@@ -156,7 +157,7 @@ QImage qLightGlue::loadImageForPath(const QString& path) const {
 
 bool qLightGlue::resolveInputPaths(const QStringList& rawPaths,
                                    QStringList& outPaths,
-                                   QString* errorMsg) const {
+                                   QString* errorMsg) {
     outPaths.clear();
     const QString tmpDir = LightGlueDialog::modelCacheDir() + "/../tmp";
     QDir().mkpath(tmpDir);
@@ -171,13 +172,16 @@ bool qLightGlue::resolveInputPaths(const QStringList& rawPaths,
                 }
                 return false;
             }
-            const QString tmpPath = tmpDir + "/" + name + ".png";
+            const QString tmpPath =
+                    tmpDir + "/lightglue-" +
+                    QUuid::createUuid().toString(QUuid::WithoutBraces) + ".png";
             if (!img->data().save(tmpPath)) {
                 if (errorMsg) {
                     *errorMsg = tr("Failed to export DB image: %1").arg(name);
                 }
                 return false;
             }
+            m_stagedInputFiles << tmpPath;
             outPaths << tmpPath;
         } else if (QFile::exists(raw)) {
             outPaths << raw;
@@ -189,6 +193,13 @@ bool qLightGlue::resolveInputPaths(const QStringList& rawPaths,
         }
     }
     return true;
+}
+
+void qLightGlue::clearStagedInputFiles() {
+    for (const QString& path : m_stagedInputFiles) {
+        QFile::remove(path);
+    }
+    m_stagedInputFiles.clear();
 }
 
 void qLightGlue::refreshDbImages() {
@@ -228,6 +239,7 @@ void qLightGlue::executeTask(const LightGlueDialog::Settings& settings) {
         m_worker->deleteLater();
         m_worker = nullptr;
     }
+    clearStagedInputFiles();
 
     m_lastResult = {};
     m_currentSettings = settings;
@@ -245,16 +257,6 @@ void qLightGlue::executeTask(const LightGlueDialog::Settings& settings) {
                     tr("[Error] Select exactly two images for matching."));
             return;
         }
-        m_originalInputPaths = settings.inputPaths;
-        QStringList resolvedPaths;
-        QString err;
-        if (!resolveInputPaths(settings.inputPaths, resolvedPaths, &err)) {
-            m_dialog->appendLog("[Error] " + err);
-            return;
-        }
-        resolvedSettings.inputPaths = resolvedPaths;
-        m_dialog->appendLog(tr("[LG] Resolved 2 input images for matching."));
-
 #ifndef QLIGHTGLUE_HAS_OPENCV
         if (resolvedSettings.matcherType == 1) {
             m_dialog->appendLog(
@@ -262,6 +264,16 @@ void qLightGlue::executeTask(const LightGlueDialog::Settings& settings) {
             return;
         }
 #endif
+        m_originalInputPaths = settings.inputPaths;
+        QStringList resolvedPaths;
+        QString err;
+        if (!resolveInputPaths(settings.inputPaths, resolvedPaths, &err)) {
+            clearStagedInputFiles();
+            m_dialog->appendLog("[Error] " + err);
+            return;
+        }
+        resolvedSettings.inputPaths = resolvedPaths;
+        m_dialog->appendLog(tr("[LG] Resolved 2 input images for matching."));
     } else {
         m_originalInputPaths.clear();
     }
@@ -308,11 +320,8 @@ void qLightGlue::executeTask(const LightGlueDialog::Settings& settings) {
 }
 
 void qLightGlue::cancelTask() {
-#ifdef AICore_ENABLED
-    aicore_cancel_request();
-#endif
     if (m_worker && m_worker->isRunning()) {
-        m_worker->requestInterruption();
+        m_worker->requestTaskCancel();
         m_dialog->appendLog(tr("[LG] Cancel requested..."));
     }
 }
@@ -424,11 +433,7 @@ void qLightGlue::onTaskFinished(bool success) {
         m_worker = nullptr;
     }
 
-    const QString tmpDir = LightGlueDialog::modelCacheDir() + "/../tmp";
-    QDir tmp(tmpDir);
-    if (tmp.exists()) {
-        tmp.removeRecursively();
-    }
+    clearStagedInputFiles();
 
     if (m_app) {
         m_app->updateUI();

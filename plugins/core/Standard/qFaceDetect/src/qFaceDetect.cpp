@@ -15,6 +15,7 @@
 #include <QFile>
 #include <QMainWindow>
 #include <QMessageBox>
+#include <QUuid>
 
 #include "ecvPersistentSettings.h"
 
@@ -82,7 +83,7 @@ QStringList qFaceDetect::selectedDbImageNames() const {
 
 bool qFaceDetect::resolveInputPath(const QString& rawPath,
                                    QString& outPath,
-                                   QString* errorMsg) const {
+                                   QString* errorMsg) {
     outPath.clear();
     if (rawPath.startsWith(QStringLiteral("db://"))) {
         const QString name = rawPath.mid(5);
@@ -95,13 +96,15 @@ bool qFaceDetect::resolveInputPath(const QString& rawPath,
         }
         const QString tmpDir = FaceDetectDialog::modelCacheDir() + "/../tmp";
         QDir().mkpath(tmpDir);
-        outPath = tmpDir + "/" + name + ".png";
+        outPath = tmpDir + "/facedetect-" +
+                  QUuid::createUuid().toString(QUuid::WithoutBraces) + ".png";
         if (!img->data().save(outPath)) {
             if (errorMsg) {
                 *errorMsg = tr("Failed to export DB image: %1").arg(name);
             }
             return false;
         }
+        m_stagedInputFiles << outPath;
         return true;
     }
     if (QFile::exists(rawPath)) {
@@ -112,6 +115,13 @@ bool qFaceDetect::resolveInputPath(const QString& rawPath,
         *errorMsg = tr("Input file not found: %1").arg(rawPath);
     }
     return false;
+}
+
+void qFaceDetect::clearStagedInputFiles() {
+    for (const QString& path : m_stagedInputFiles) {
+        QFile::remove(path);
+    }
+    m_stagedInputFiles.clear();
 }
 
 void qFaceDetect::refreshDbImages() {
@@ -176,10 +186,17 @@ void qFaceDetect::executeTask(const FaceDetectDialog::Settings& settings) {
         m_worker->deleteLater();
         m_worker = nullptr;
     }
+    clearStagedInputFiles();
+
+    if (settings.modelPath.isEmpty()) {
+        m_dialog->appendLog(tr("[Error] Model required."));
+        return;
+    }
 
     QString resolvedPath;
     QString err;
     if (!resolveInputPath(settings.inputPath, resolvedPath, &err)) {
+        clearStagedInputFiles();
         m_dialog->appendLog(err);
         return;
     }
@@ -190,15 +207,11 @@ void qFaceDetect::executeTask(const FaceDetectDialog::Settings& settings) {
     if (!settings.secondInputPath.isEmpty()) {
         QString resolvedSecond;
         if (!resolveInputPath(settings.secondInputPath, resolvedSecond, &err)) {
+            clearStagedInputFiles();
             m_dialog->appendLog(err);
             return;
         }
         workerSettings.secondInputPath = resolvedSecond;
-    }
-
-    if (settings.modelPath.isEmpty()) {
-        m_dialog->appendLog(tr("[Error] Model required."));
-        return;
     }
 
     QString workerDevice = settings.device;
@@ -241,20 +254,25 @@ void qFaceDetect::executeTask(const FaceDetectDialog::Settings& settings) {
 }
 
 void qFaceDetect::cancelTask() {
-#ifdef AICore_ENABLED
-    aicore_cancel_request();
-#endif
-    if (m_worker && m_worker->isRunning()) m_worker->requestInterruption();
+    if (m_worker && m_worker->isRunning()) m_worker->requestTaskCancel();
 }
 
 void qFaceDetect::onResultReady(const FaceDetectRunResult& result) {
     if (!m_app) return;
 
     if (m_currentSettings.mode == FaceDetectDialog::Mode::Verify) {
-        m_dialog->appendLog(
+        const bool distanceOk =
+                result.verifyDistance <= m_currentSettings.verifyThreshold;
+        const bool antiSpoofVeto = m_currentSettings.antiSpoof && distanceOk &&
+                                   result.verifyMatched == 0;
+        QString summary =
                 tr("[FaceDetect] Verify complete — distance %1, matched=%2")
                         .arg(result.verifyDistance, 0, 'f', 4)
-                        .arg(result.verifyMatched));
+                        .arg(result.verifyMatched);
+        if (antiSpoofVeto) {
+            summary += tr(" (distance passed but rejected by anti-spoof)");
+        }
+        m_dialog->appendLog(summary);
         if (!result.resultJson.isEmpty()) {
             m_dialog->appendLog(
                     tr("[FaceDetect] Verify JSON:\n%1")
@@ -396,5 +414,6 @@ void qFaceDetect::onTaskFinished(bool success) {
         m_worker->deleteLater();
         m_worker = nullptr;
     }
+    clearStagedInputFiles();
     if (!success) m_dialog->appendLog(tr("[Error] Task failed."));
 }

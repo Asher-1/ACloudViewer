@@ -75,7 +75,8 @@ QImage cropFaceRgb(const QImage& rgb, const FaceDetectBox& face) {
     const int h =
             std::min(rgb.height() - y, static_cast<int>(face.y2 - face.y1));
     if (w <= 8 || h <= 8) return {};
-    return rgb.copy(x, y, w, h).convertToFormat(QImage::Format_RGB888);
+    // .copy() preserves format — if source is RGB888, crop is too.
+    return rgb.copy(x, y, w, h);
 }
 
 std::vector<FaceDetectBox> parseDetectJson(const QByteArray& json) {
@@ -546,7 +547,9 @@ bool embedFaceBoxFromFrame(aicore_facedetect_ctx* ctx,
 QImage annotateDetect(const QImage& source,
                       const std::vector<FaceDetectBox>& faces,
                       float minDetectionScore) {
-    QImage rgb = source.convertToFormat(QImage::Format_RGB32);
+    // Draw directly on source — avoids expensive convertToFormat(RGB32) copy.
+    // QPainter supports RGB888 natively in Qt 5+.
+    QImage rgb = source;
     QPainter painter(&rgb);
     painter.setRenderHint(QPainter::Antialiasing, true);
 
@@ -603,7 +606,7 @@ QImage annotateDetect(const QImage& source,
 QImage annotateAnalyze(const QImage& source,
                        const std::vector<FaceDetectBox>& faces,
                        float minDetectionScore) {
-    QImage rgb = source.convertToFormat(QImage::Format_RGB32);
+    QImage rgb = source;
     QPainter painter(&rgb);
     painter.setRenderHint(QPainter::Antialiasing, true);
 
@@ -713,7 +716,8 @@ QImage annotateRecognize(const QImage& source,
                          const std::vector<FaceDetectBox>& faces,
                          const QVector<QString>& labels,
                          float minDetectionScore) {
-    QImage rgb = source.convertToFormat(QImage::Format_RGB32);
+    // Draw directly on source — avoids expensive convertToFormat(RGB32) copy.
+    QImage rgb = source;
     QPainter painter(&rgb);
     painter.setRenderHint(QPainter::Antialiasing, true);
 
