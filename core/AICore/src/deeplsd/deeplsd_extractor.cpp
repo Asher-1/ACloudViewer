@@ -10,7 +10,6 @@
 #include <ggml.h>
 
 #include <algorithm>
-#include <cctype>
 #include <cmath>
 #include <memory>
 #include <string>
@@ -18,60 +17,11 @@
 
 #include "deeplsd.hpp"
 #include "deeplsd_line_detect.hpp"
+#include "ggml_backend_registry.hpp"
 #include "gguf_loader.hpp"
 
 namespace deeplsd {
 namespace {
-
-std::string Lower(std::string value) {
-    for (char &c : value) {
-        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-    }
-    return value;
-}
-
-void LoadBackends() {
-    static const bool loaded = [] {
-        ggml_backend_load_all();
-        return true;
-    }();
-    (void)loaded;
-}
-
-ggml_backend_t CreateBackend(const std::string &device, std::string *error) {
-    LoadBackends();
-    const std::string name = Lower(device);
-    if (name.empty() || name == "cpu") {
-        return ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_CPU, nullptr);
-    }
-    if (name == "cuda" || name == "vulkan" || name == "gpu") {
-        for (size_t i = 0; i < ggml_backend_dev_count(); ++i) {
-            ggml_backend_dev_t dev = ggml_backend_dev_get(i);
-            if (ggml_backend_dev_type(dev) != GGML_BACKEND_DEVICE_TYPE_GPU) {
-                continue;
-            }
-            if (name != "gpu") {
-                const char *registry = ggml_backend_reg_name(
-                        ggml_backend_dev_backend_reg(dev));
-                if (registry == nullptr || Lower(registry) != name) {
-                    continue;
-                }
-            }
-            ggml_backend_t backend = ggml_backend_dev_init(dev, nullptr);
-            if (backend != nullptr) {
-                return backend;
-            }
-        }
-        if (error) {
-            *error = "no usable backend: " + device;
-        }
-        return nullptr;
-    }
-    if (error) {
-        *error = "unknown device: " + device;
-    }
-    return nullptr;
-}
 
 ggml_tensor *ConvReluBn(ggml_context *ctx,
                         ggml_tensor *input,
@@ -236,11 +186,15 @@ public:
         if (!LoadGguf(options_.model_path, &weights_, &init_error_)) {
             return;
         }
-        backend_ = CreateBackend(options_.device, &init_error_);
-        if (backend_ == nullptr && init_error_.empty()) {
-            init_error_ = "failed to init backend";
+        backend_lease_ = aicore::runtime::acquire_backend_lease(
+                options_.device, options_.num_threads, &init_error_);
+        backend_ = backend_lease_.handle();
+        if (backend_ == nullptr) {
+            if (init_error_.empty()) init_error_ = "failed to init backend";
             return;
         }
+        device_ = backend_lease_.device();
+        const auto backend_lock = backend_lease_.lock();
         galloc_ = ggml_gallocr_new(
                 ggml_backend_get_default_buffer_type(backend_));
         if (galloc_ == nullptr && init_error_.empty()) {
@@ -252,9 +206,8 @@ public:
         if (galloc_ != nullptr) {
             ggml_gallocr_free(galloc_);
         }
-        if (backend_ != nullptr) {
-            ggml_backend_free(backend_);
-        }
+        backend_ = nullptr;
+        backend_lease_.reset();
     }
 
     bool ExtractFromGray(const uint8_t *gray,
@@ -304,7 +257,7 @@ public:
         return true;
     }
 
-    const std::string &Device() const override { return options_.device; }
+    const std::string &Device() const override { return device_; }
     const std::string &Error() const override {
         return error_.empty() ? init_error_ : error_;
     }
@@ -316,6 +269,7 @@ private:
                   std::vector<float> *df,
                   std::vector<float> *angle,
                   std::string *error) {
+        const auto backend_lock = backend_lease_.lock();
         if (!Require(weights_, "backbone_block1_0_weight", error)) {
             return false;
         }
@@ -489,8 +443,10 @@ private:
 
     DeepLSDOptions options_;
     TensorMap weights_;
+    aicore::runtime::BackendLease backend_lease_;
     ggml_backend_t backend_ = nullptr;
     ggml_gallocr_t galloc_ = nullptr;
+    std::string device_;
     std::string init_error_;
     std::string error_;
 };

@@ -59,6 +59,12 @@ public:
     };
 
     struct Settings {
+        struct IdentityInput {
+            QString id;
+            QString name;
+            QStringList inputPaths;
+        };
+
         Mode mode = Mode::Reconstruct;
         QString modelPath;
         QStringList inputPaths;
@@ -70,6 +76,9 @@ public:
         bool estimatePoses = false;
         bool removeBackground = false;
         int maxViews = 0;  // 0 = auto (Scene:2, Object-3DGS:16, Object-2DGS:24)
+        QString identityId;
+        QString identityName;
+        QList<IdentityInput> identityInputs;
     };
 
     explicit FreeSplatterDialog(QWidget* parent = nullptr);
@@ -150,6 +159,7 @@ private:
     QSpinBox* m_threads = nullptr;
     QSpinBox* m_maxViewsSpin = nullptr;
     QStringList m_inputPaths;
+    QList<Settings::IdentityInput> m_identityInputs;
     QDoubleSpinBox* m_opacityThreshold = nullptr;
     QComboBox* m_exportFieldModeCombo = nullptr;
     QLabel* m_exportFieldLabel = nullptr;
@@ -184,11 +194,15 @@ private:
     QString m_downloadTargetFilename;
     bool m_taskRunning = false;
     bool m_hasResult = false;
+    QString m_lastTaskError;
 
     QHash<QString, QImage> m_dbPreviews;
 
     // --- Face capture tab (conditional on HAS_OPENCV_FACE_CAPTURE) ---
     QTabWidget* m_inputTabWidget = nullptr;
+    QWidget* m_imagesTab = nullptr;
+    QScrollArea* m_faceCaptureScroll = nullptr;
+    int m_activeInputTabHeight = -1;
     FaceCaptureWidget* m_faceCaptureWidget = nullptr;
     QPushButton* m_faceStartBtn = nullptr;
     QPushButton* m_faceStopBtn = nullptr;

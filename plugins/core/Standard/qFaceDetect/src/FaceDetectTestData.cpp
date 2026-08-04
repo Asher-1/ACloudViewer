@@ -43,7 +43,7 @@ namespace {
 constexpr const char* kZipUrl =
         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
         "qFaceDetect/friends_faces.zip";
-constexpr const char* kZipMd5 = "723d96a758abfcaa96eeed0a4b986b0a";
+constexpr const char* kZipMd5 = "1d1ffebb97edac790b55c6f0f3c9d9fc";
 constexpr const char* kZipFileName = "friends_faces.zip";
 constexpr const char* kBundleFolder = "friends_faces";
 

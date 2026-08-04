@@ -14,6 +14,7 @@
 #include "DA3Dialog.h"
 
 struct aicore_depth_ctx;
+struct aicore_cancel_token;
 
 struct DA3DepthResult {
     QString sourceName;
@@ -45,10 +46,12 @@ class DA3Worker : public QThread {
 public:
     explicit DA3Worker(const DA3Dialog::Settings& settings,
                        QObject* parent = nullptr);
+    ~DA3Worker() override;
 
     /** Call from the GUI thread after the worker finishes (ggml/CUDA teardown).
      */
     void releaseContextOnMainThread();
+    void requestTaskCancel();
 
 signals:
     void logMessage(const QString& msg);
@@ -83,4 +86,5 @@ private:
 
     DA3Dialog::Settings m_settings;
     aicore_depth_ctx* m_pendingCtx = nullptr;
+    aicore_cancel_token* m_cancelToken = nullptr;
 };

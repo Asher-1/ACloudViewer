@@ -163,16 +163,17 @@ installers under `util/`. Linux/Windows CI packages must contain `ggml-vulkan`;
 macOS packages use Metal only (no Vulkan backend). `libAICore` itself must have
 no hard Vulkan loader dependency.
 
-**ALIKED Vulkan (qLightGlue):** custom ggml-vulkan shaders are not edited in the
-fetched ggml tree. They live in
-`3rdparty/ggml/patches/aliked/0001-vulkan-aliked-custom-compute.patch` (plus
-`0002` header install, `0003` `get_proc_address`) and apply at `ext_ggml`
-configure time. With `AICore_USE_VULKAN=ON`, AICore defines `AICORE_VULKAN_ALIKED`
-and resolves `ggml_vulkan_aliked_*` at runtime via
-`src/aliked/vulkan_aliked_dispatch.cpp` (`ggml_backend_reg_get_proc_address` /
-`dlsym`) — no link-time dependency on `libggml-vulkan.so`. Regenerate the main
-patch from LightGlue-GGML after ggml changes:
-`3rdparty/ggml/patches/export_aliked_patch.sh [path/to/third_party/ggml]`.
+**ALIKED Vulkan (qLightGlue):** custom ggml-vulkan shaders are applied through
+the canonical single patch
+`3rdparty/ggml/patches/aliked_merged/0001-vulkan-aliked.patch`. With
+`AICore_USE_VULKAN=ON`, AICore defines `AICORE_VULKAN_ALIKED` and resolves
+`ggml_vulkan_aliked_*` at runtime through
+`src/aliked/vulkan/vulkan_aliked_dispatch.cpp` -- no link-time dependency on
+`libggml-vulkan.so`. Regenerate and clean-replay the patch after ggml changes:
+`3rdparty/ggml/patches/export_merged_aliked_patches.sh`.
+
+The current runtime/session ownership map and migration plan are documented in
+[`ARCHITECTURE.md`](ARCHITECTURE.md).
 
 Real model performance runs are manual through
 `.github/workflows/aicore-vulkan-hardware.yml`. Linux runners use the labels
@@ -244,6 +245,7 @@ ggml's internal `GGML_*` names during configure.
 | `AICore_USE_METAL` | Apple: ON, else OFF | Build Metal backend (macOS Auto default) |
 | `AICore_USE_VULKAN` | Linux/Win: ON, macOS: OFF | Build Vulkan backend (configure fails if SDK/glslc missing) |
 | `AICore_USE_CUDA` | OFF | Developer CUDA backend (not `BUILD_CUDA_MODULE`) |
+| `AICore_USE_CUDNN` | OFF | FaceDetect cuDNN conv2d acceleration (requires CUDA + cuDNN) |
 | `AICore_USE_SYCL` | OFF | Developer Intel SYCL backend |
 | `AICore_SYCL_USE_DNN` | ON | oneDNN kernels in SYCL backend (requires `AICore_USE_SYCL=ON`) |
 | `AICore_USE_OPENCL` | OFF | Developer OpenCL backend (legacy/Adreno) |

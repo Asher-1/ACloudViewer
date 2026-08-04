@@ -2,8 +2,12 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
+
+#include "../common/ggml_backend_registry.hpp"
 
 struct ggml_context;
 struct ggml_tensor;
@@ -34,11 +38,11 @@ class ModelLoader;
 // `fd::add_graph_input(...)`; Backend defers the copy until after alloc.
 class Backend {
 public:
-    // Construct a backend with `n_threads` CPU worker threads (<=0 -> 1). The
-    // device is auto-picked (first GPU/IGPU, else CPU) unless FACEDETECT_DEVICE
-    // overrides it ("cpu", or a registry device name like "CUDA0"). The gallocr
-    // is created lazily on the first compute and reused afterwards.
-    explicit Backend(int n_threads);
+    // Construct a backend with `n_threads` CPU worker threads (<=0 -> 1). An
+    // empty device request keeps the legacy FACEDETECT_DEVICE behaviour;
+    // context-owned callers pass an explicit request (auto/cpu/cuda/vulkan).
+    // The gallocr is created lazily on the first compute and reused afterwards.
+    explicit Backend(int n_threads, const std::string& device_request = {});
     ~Backend();
 
     Backend(const Backend&) = delete;
@@ -54,6 +58,7 @@ public:
     // The underlying ggml backend. Exposed so the loader can give its weight
     // tensors a backend buffer over the SAME backend graphs run on.
     ggml_backend_t handle() const;
+    aicore::runtime::BackendLeaseLock lock() const;
 
     // --- Multi-model graph-cache safety (see backend.cpp). ----------------------
     // Drop every persistent graph-cache entry that references `buf` (a freed
@@ -87,6 +92,49 @@ private:
     std::string device_name_ = "cpu";
 };
 
+// A reference-counted Session entry. Each public context gets private graph
+// storage; the underlying physical ggml handle is shared through
+// aicore::runtime::BackendLease inside Backend.
+class BackendLease {
+public:
+    struct State;
+
+    BackendLease() = default;
+
+    explicit operator bool() const { return static_cast<bool>(state_); }
+    Backend& backend() const;
+    const char* device_name() const;
+
+private:
+    std::shared_ptr<State> state_;
+
+    explicit BackendLease(std::shared_ptr<State> state) : state_(std::move(state)) {}
+    friend BackendLease acquire_backend_lease(const std::string&, int);
+    friend class ScopedBackendBinding;
+};
+
+// Acquire a private FaceDetect Session. It is released when the final context
+// lease is destroyed, while its physical backend may remain leased elsewhere.
+BackendLease acquire_backend_lease(const std::string& device_request,
+                                   int n_threads);
+
+// Binds a context-owned backend to existing face graph helpers and serializes
+// only work using that backend. This keeps the legacy graph implementation
+// source-compatible while removing global backend selection from the C API.
+class ScopedBackendBinding {
+public:
+    explicit ScopedBackendBinding(const BackendLease& lease);
+    ~ScopedBackendBinding();
+
+    ScopedBackendBinding(const ScopedBackendBinding&) = delete;
+    ScopedBackendBinding& operator=(const ScopedBackendBinding&) = delete;
+
+private:
+    Backend* previous_ = nullptr;
+    std::unique_lock<std::mutex> lock_;
+    aicore::runtime::BackendLeaseLock device_lock_;
+};
+
 // Register a host-backed graph input for the active Backend::compute build
 // phase. Marks `t` as a ggml graph input and records that `nbytes` from `host`
 // must be copied into `t` AFTER the graph is allocated. Must be called from
@@ -114,9 +162,10 @@ ggml_tensor* clone_weight_opt(ggml_context* ctx, const ModelLoader& ml, const ch
 // process-global Backend. Idempotent; called automatically by clone_weight.
 void ensure_weights_realized(const ModelLoader& ml);
 
-// Process-global Backend, lazily created on first use. The model graphs + the
-// loader's weight realization all run on this one backend (so weight buffers are
-// compatible with the graphs that reference them).
+// Legacy process-global Backend, lazily created for direct C++ callers. C API
+// contexts use BackendLease instead. While a ScopedBackendBinding is active,
+// this returns its context-owned backend so existing graph helpers stay ABI
+// compatible.
 Backend& global_backend();
 
 // Set the CPU worker-thread count on the process-global backend.

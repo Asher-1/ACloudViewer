@@ -11,6 +11,7 @@
 #include <ecvStdPluginInterface.h>
 
 #include <QByteArray>
+#include <QList>
 #include <memory>
 
 #include "FreeSplatterDialog.h"
@@ -64,7 +65,8 @@ private:
     QStringList selectedDbImageNames() const;
     bool resolveInputPaths(const QStringList& rawPaths,
                            QStringList& outPaths,
-                           QString* errorMsg) const;
+                           QString* errorMsg);
+    void clearStagedInputFiles();
     QByteArray buildSibrCamerasJson(const FreeSplatterResult& result,
                                     float opacityThreshold = 0.05f);
     bool warmupInferenceBackend(const QString& device, QString* logMsg) const;
@@ -78,6 +80,7 @@ private:
     QTimer* m_inferenceHeartbeat = nullptr;
     int m_inferenceElapsedSeconds = 0;
     FreeSplatterDialog::Settings m_currentSettings;
+    QStringList m_stagedInputFiles;
     ccHObject::Container m_selectedEntities;
 
     FreeSplatterResult m_lastResult;
@@ -87,4 +90,6 @@ private:
 #endif
     ccPointCloud* m_lastDbCloud = nullptr;
     ccHObject* m_lastDbCameraGroup = nullptr;
+    QList<FreeSplatterDialog::Settings> m_pendingIdentityTasks;
+    bool m_identityBatchCancelled = false;
 };

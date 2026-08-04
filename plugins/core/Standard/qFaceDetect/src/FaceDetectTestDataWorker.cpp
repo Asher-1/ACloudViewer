@@ -252,7 +252,7 @@ void FaceDetectTestDataWorker::run() {
     }
 
     progress.report(progress.completed(), tr("Loading face model…"));
-    FaceDetectInferenceGuard inferenceGuard;
+    FaceDetectInferenceGuard inferenceGuard(job.device);
     FaceDetectModelContext modelCtx;
     if (!modelCtx.load(job.modelPath, job.device, job.threads)) {
         emit logMessage(tr("[Test data] Failed to load face model."));

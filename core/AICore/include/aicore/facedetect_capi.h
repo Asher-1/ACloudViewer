@@ -32,6 +32,8 @@ AICORE_CAPI void aicore_facedetect_options_set_threads(
 AICORE_CAPI aicore_facedetect_ctx* aicore_facedetect_load_opts(
         const char* gguf_path, const aicore_facedetect_options* opts);
 AICORE_CAPI void aicore_facedetect_free(aicore_facedetect_ctx* ctx);
+/** Returns 1 only when the context owns a successfully loaded model. */
+AICORE_CAPI int aicore_facedetect_is_ready(const aicore_facedetect_ctx* ctx);
 AICORE_CAPI const char* aicore_facedetect_last_error(
         const aicore_facedetect_ctx* ctx);
 
@@ -103,6 +105,17 @@ AICORE_CAPI int aicore_facedetect_embed_rgb_landmarks(
         const float* landmarks_xy10,
         float** out_vec,
         int* out_dim);
+
+/** Compute a row-major query_count x gallery_count cosine-distance matrix.
+ *  Every input row must already be finite and L2-normalized. This allocation-
+ *  free API is intended for cached face registries and frame-level multi-face
+ *  assignment. Returns 0 on success, -1 for invalid input. */
+AICORE_CAPI int aicore_facedetect_cosine_distance_matrix(const float* queries,
+                                                         int query_count,
+                                                         const float* gallery,
+                                                         int gallery_count,
+                                                         int dim,
+                                                         float* out_distances);
 
 /** Cosine distance + match between two images (threshold <=0 → pack default).
  */

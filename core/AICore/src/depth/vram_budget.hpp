@@ -23,11 +23,10 @@ struct GpuMemoryInfo {
 
 GpuMemoryInfo query_gpu_memory(const Backend& be);
 
-// Cap preprocess long-edge for a *single-view* GIANT nested graph (backbone +
-// DPT head). Uses free VRAM, not view count. Returns `requested` unchanged on
-// CPU or when VRAM query is unavailable.
-// `device_name` is used to apply backend-specific limits (e.g. Metal's slow
-// conv_transpose_2d caps more aggressively than CUDA).
+// Preserve the caller-selected preprocessing long edge. Backend-specific
+// implicit caps change model inputs and therefore invalidate CPU/GPU parity.
+// A device that cannot allocate the requested graph must report an allocation
+// failure; callers can then explicitly select a smaller task resolution.
 int cap_resize_target_for_vram(int requested,
                                bool nested_metric,
                                const GpuMemoryInfo& mem,

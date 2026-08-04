@@ -62,7 +62,13 @@ void ApplyVulkanAlikedPerfDefaults() {
         setenv("LIGHTGLUE_ALIKED_VULKAN_COMPUTE", "1", 0);
     }
     if (std::getenv("LIGHTGLUE_ALIKED_VULKAN_SDDH") == nullptr) {
-        setenv("LIGHTGLUE_ALIKED_VULKAN_SDDH", "1", 0);
+        // The scalar Vulkan SDDH shader is slower than the parity-preserving
+        // OpenMP fallback and can stall repeated large dispatches.
+        setenv("LIGHTGLUE_ALIKED_VULKAN_SDDH", "0", 0);
+    }
+    if (std::getenv("LIGHTGLUE_ALIKED_VULKAN_GPU_UPSAMPLE") == nullptr) {
+        // The custom path remains opt-in until its layout parity gate passes.
+        setenv("LIGHTGLUE_ALIKED_VULKAN_GPU_UPSAMPLE", "0", 0);
     }
     if (std::getenv("LIGHTGLUE_ALIKED_VULKAN_SCHED") == nullptr) {
         // Legacy sched path paused; 0015 fence/buffer pin is the parity
@@ -76,15 +82,15 @@ void ApplyVulkanAlikedPerfDefaults() {
     }
     if (std::getenv("LIGHTGLUE_ALIKED_VULKAN_SDDH_SINGLE") == nullptr &&
         std::getenv("LIGHTGLUE_ALIKED_VULKAN_SDDH_CHUNK") == nullptr) {
-        // Default single-dispatch SDDH; opt-in SINGLE=0 + CHUNK for batched
-        // experiments.
+        // Settings for explicit LIGHTGLUE_ALIKED_VULKAN_SDDH=1 experiments.
         setenv("LIGHTGLUE_ALIKED_VULKAN_SDDH_SINGLE", "1", 0);
         setenv("LIGHTGLUE_ALIKED_VULKAN_SDDH_CHUNK", "16", 0);
     }
     if (std::getenv("LIGHTGLUE_ALIKED_VULKAN_POST") == nullptr) {
-        // GPU DKD/NMS on device after PrepareScoreMapForDkd (0014); opt-out
-        // POST=0.
-        setenv("LIGHTGLUE_ALIKED_VULKAN_POST", "1", 0);
+        // The custom Vulkan DKD path does not yet satisfy the strict CPU/CUDA
+        // parity gate. The CPU postprocess keeps the Vulkan CNN output exact
+        // while remaining below the end-to-end latency target.
+        setenv("LIGHTGLUE_ALIKED_VULKAN_POST", "0", 0);
     }
 #endif
 }

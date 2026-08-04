@@ -10,18 +10,21 @@
 #include <QString>
 
 struct aicore_facedetect_ctx;
+struct aicore_cancel_token;
 
-/** Serializes AICore inference (lock + cancel bracket) for UI-thread callers.
+/** Binds a synchronous caller to one resolved device queue and cancel scope.
  */
 class FaceDetectInferenceGuard {
 public:
-    FaceDetectInferenceGuard();
+    explicit FaceDetectInferenceGuard(
+            const QString& device = QStringLiteral("auto"));
     ~FaceDetectInferenceGuard();
     FaceDetectInferenceGuard(const FaceDetectInferenceGuard&) = delete;
     FaceDetectInferenceGuard& operator=(const FaceDetectInferenceGuard&) =
             delete;
 
 private:
+    aicore_cancel_token* m_cancelToken = nullptr;
     bool m_active = false;
 };
 

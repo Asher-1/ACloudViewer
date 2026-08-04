@@ -81,13 +81,6 @@ std::vector<float> ComputeNormalsFromDepthWithIntrinsics(const float* depth,
                                                          float cx,
                                                          float cy);
 
-// Estimate per-pixel surface normals from a depth map via central finite
-// differences in pixel space (legacy fallback).
-std::vector<float> ComputeNormalsFromDepth(const float* depth, int w, int h) {
-    return ComputeNormalsFromDepthWithIntrinsics(depth, w, h, 1.0f, 1.0f, 0.0f,
-                                                 0.0f);
-}
-
 // Normals in COLMAP camera frame (x-right, y-down, z-forward) using calibrated
 // intrinsics and 3-point cross products on back-projected surface points.
 std::vector<float> ComputeNormalsFromDepthWithIntrinsics(const float* depth,
@@ -681,10 +674,8 @@ void LogDA3InferenceDevice(aicore_depth_ctx* ctx, const char* requested_device) 
 }
 
 aicore_depth_ctx* LoadDA3Context(const DA3Config& config, int n_threads) {
-    const char* requested_device = std::getenv("DA_DEVICE");
-    if (!requested_device || requested_device[0] == '\0') {
-        requested_device = "auto";
-    }
+    const char* requested_device =
+            config.device.empty() ? "auto" : config.device.c_str();
     aicore_depth_ctx* ctx = nullptr;
     if (config.model_type != DA3ModelType::NESTED_METRIC &&
         config.model_type != DA3ModelType::NESTED_ANYVIEW) {
@@ -700,11 +691,15 @@ aicore_depth_ctx* LoadDA3Context(const DA3Config& config, int n_threads) {
 
         if (config.model_type == DA3ModelType::NESTED_ANYVIEW) {
             anyview_path = DA3DepthController::ResolveModelPath(config);
-            metric_path =
-                config.metric_model_path.empty()
-                    ? DA3DepthController::ResolveModelPath(
-                          DA3Config{DA3ModelType::NESTED_METRIC, DA3QuantType::F32})
-                    : config.metric_model_path;
+            if (config.metric_model_path.empty()) {
+                DA3Config metric_config;
+                metric_config.model_type = DA3ModelType::NESTED_METRIC;
+                metric_config.quant_type = DA3QuantType::F32;
+                metric_path =
+                        DA3DepthController::ResolveModelPath(metric_config);
+            } else {
+                metric_path = config.metric_model_path;
+            }
         } else {
             // NESTED_METRIC UI option selects the metric-branch GGUF; anyview is required.
             metric_path = DA3DepthController::ResolveModelPath(config);
@@ -785,8 +780,8 @@ std::vector<float> UpsampleDepthGuided(const float* src, int src_w, int src_h,
         const size_t n = static_cast<size_t>(src_w) * static_cast<size_t>(src_h);
         return std::vector<float>(src, src + n);
     }
-    if (!guide_rgb || guide_rgb->Width() != static_cast<size_t>(dst_w) ||
-        guide_rgb->Height() != static_cast<size_t>(dst_h)) {
+    if (!guide_rgb || guide_rgb->Width() != dst_w ||
+        guide_rgb->Height() != dst_h) {
         return UpsampleDepthBilinear(src, src_w, src_h, dst_w, dst_h);
     }
 
@@ -914,7 +909,9 @@ void WriteStereoFusionConfig(const std::string& stereo_path,
 }
 
 bool RunDepthPoseMulti(aicore_depth_ctx* ctx, const std::vector<std::string>& image_paths,
-                       DepthPoseMultiResult& result, int max_image_size) {
+                       DepthPoseMultiResult& result, int max_image_size,
+                       const std::function<bool()>& is_cancelled,
+                       DA3VramCapWarning* vram_warning) {
     if (!ctx || image_paths.empty()) {
         return false;
     }
@@ -924,7 +921,21 @@ bool RunDepthPoseMulti(aicore_depth_ctx* ctx, const std::vector<std::string>& im
         ComputeDA3ImgResizeTarget(image_paths, max_image_size);
     int target = aicore_depth_cap_img_resize_target(ctx, requested);
     if (target < requested) {
-        DA3NoteVramCap(requested, target);
+        if (vram_warning) {
+            const double ratio = static_cast<double>(target) /
+                                 static_cast<double>(requested);
+            constexpr double kWarnRatio = 0.70;
+            constexpr int kWarnAbsoluteCap = 800;
+            if (ratio < kWarnRatio || target <= kWarnAbsoluteCap) {
+                vram_warning->active = true;
+                vram_warning->requested = requested;
+                vram_warning->capped = target;
+                RECON_LOG_WARN(
+                        "WARNING: DA3 GPU memory pressure - preprocess "
+                        "resolution capped %d -> %d px.\n",
+                        requested, target);
+            }
+        }
         RECON_LOG_DEBUG("DA3: VRAM-safe img_resize_target %zu -> %zu (single-view peak, not view count)\n", requested, target);
     }
 
@@ -944,6 +955,11 @@ bool RunDepthPoseMulti(aicore_depth_ctx* ctx, const std::vector<std::string>& im
 
         bool oom = false;
         for (int i = 0; i < N; ++i) {
+            if (is_cancelled && is_cancelled()) {
+                RECON_LOG_DEBUG("DA3: cancelled before view %d/%d\n", i + 1,
+                                N);
+                return false;
+            }
             RECON_LOG_DEBUG("DA3: infer view %d/%d\n", i + 1, N);
 
             int h = 0;
@@ -2298,7 +2314,9 @@ void DA3DepthController::Run() {
         }
         if (!GenerateDepthMaps(multiview_cache_in_)) {
             success_ = false;
-            RECON_LOG_ERROR("ERROR: DA3 depth inference failed. If you see CUDA OOM, "                          "try: lower max image size, Q4_K quant, or "                          "DA_DEVICE=cpu ./ACloudViewer\n");
+            RECON_LOG_ERROR("ERROR: DA3 depth inference failed. If you see CUDA OOM, "
+                            "try a lower max image size, Q4_K quant, or select "
+                            "CPU in the DA3 device control.\n");
         }
     }
 }
@@ -2370,7 +2388,9 @@ bool DA3DepthController::GenerateSparseModel() {
 
     const std::string sparse_path = JoinPaths(output_path_, "sparse", "0");
     if (cache_stereo) {
-        if (!RunDepthPoseMulti(ctx, abs_paths, multi, config_.max_image_size)) {
+        if (!RunDepthPoseMulti(ctx, abs_paths, multi, config_.max_image_size,
+                               [this]() { return IsStopped(); },
+                               &vram_cap_warning_)) {
             LOG(ERROR) << "DA3: aicore_depth_depth_pose_multi failed: "
                        << aicore_depth_last_error(ctx);
             RECON_LOG_ERROR("ERROR: DA3 multiview depth failed: %s\n", aicore_depth_last_error(ctx));
@@ -2513,7 +2533,9 @@ bool DA3DepthController::GenerateDepthMaps(
             progress_cb_(0, N, "DA3 multiview metric depth");
         }
 
-        if (!RunDepthPoseMulti(ctx, image_paths, multi, config_.max_image_size)) {
+        if (!RunDepthPoseMulti(ctx, image_paths, multi, config_.max_image_size,
+                               [this]() { return IsStopped(); },
+                               &vram_cap_warning_)) {
             LOG(ERROR) << "DA3: aicore_depth_depth_pose_multi failed: "
                        << aicore_depth_last_error(ctx);
             RECON_LOG_ERROR("ERROR: DA3 multiview depth failed: %s\n", aicore_depth_last_error(ctx));
@@ -2559,43 +2581,14 @@ bool DA3DepthController::GenerateDepthMaps(
 #endif  // AICore_ENABLED
 }
 
-namespace {
-
-DA3VramCapWarning g_da3_vram_warning;
-
-}  // namespace
-
-void DA3ClearVramCapWarning() { g_da3_vram_warning = {}; }
-
-const DA3VramCapWarning& DA3PeekVramCapWarning() { return g_da3_vram_warning; }
-
-void DA3NoteVramCap(int requested, int capped) {
-    if (requested <= 0 || capped >= requested) {
-        return;
-    }
-    const double ratio = static_cast<double>(capped) / static_cast<double>(requested);
-    constexpr double kWarnRatio = 0.70;
-    constexpr int kWarnAbsoluteCap = 800;
-    if (ratio >= kWarnRatio && capped > kWarnAbsoluteCap) {
-        return;
-    }
-    g_da3_vram_warning.active = true;
-    g_da3_vram_warning.requested = requested;
-    g_da3_vram_warning.capped = capped;
-    RECON_LOG_WARN(
-            "WARNING: DA3 GPU memory pressure — preprocess resolution capped %d "
-            "-> %d px (close other GPU apps for higher depth quality).\n",
-            requested, capped);
-}
-
-std::string DA3VramCapWarningMessage() {
-    if (!g_da3_vram_warning.active) {
+std::string DA3VramCapWarningMessage(const DA3VramCapWarning& warning) {
+    if (!warning.active) {
         return {};
     }
     return StringPrintf(
         "GPU memory pressure reduced DA3 inference resolution from %d to %d px. "
         "Close other GPU applications and re-run for higher depth quality.",
-        g_da3_vram_warning.requested, g_da3_vram_warning.capped);
+        warning.requested, warning.capped);
 }
 
 }  // namespace colmap

@@ -32,6 +32,7 @@ struct FaceAuthMatch {
 class FaceRegistryStore {
 public:
     explicit FaceRegistryStore(const QString& dbPath);
+    ~FaceRegistryStore();
 
     bool open();
     /** Close and reopen on a new SQLite path (same object, thread-safe). */
@@ -57,7 +58,7 @@ public:
     static float cosineDistance(const std::vector<float>& a,
                                 const std::vector<float>& b);
 
-    QString path() const { return m_path; }
+    QString path() const;
 
 private:
     bool ensureSchema();
@@ -67,7 +68,7 @@ private:
     bool reloadFromDbUnlocked();
     void rebuildCache();
     static std::vector<float> normalizeEmbedding(const std::vector<float>& in);
-    bool migrateLegacyJson() const;
+    bool migrateLegacyJson(bool databaseExisted) const;
 
     QString m_path;
     std::vector<FaceRegistryEntry> m_entries;

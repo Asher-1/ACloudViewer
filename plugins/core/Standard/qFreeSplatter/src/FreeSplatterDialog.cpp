@@ -19,9 +19,12 @@
 #include <QFrame>
 #include <QGridLayout>
 #include <QGroupBox>
+#include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QMessageBox>
+#include <QScreen>
 #include <QSettings>
+#include <QStyle>
 #include <QTabBar>
 #include <QTimer>
 #include <QVBoxLayout>
@@ -43,6 +46,9 @@ static const int kThumbRemoveBtnH = 20;
 static const int kThumbTileSpacing = 8;
 static const int kThumbStripHeight =
         kThumbSize + kThumbCaptionH + kThumbRemoveBtnH + kThumbTileSpacing;
+// The capture form is deliberately scrollable.  Keeping the viewport bounded
+// avoids making the reconstruction dialog taller than a typical desktop.
+static const int kFaceCaptureViewportMaxHeight = 560;
 
 namespace {
 
@@ -133,7 +139,10 @@ QString FreeSplatterDialog::formatFileSize(qint64 bytes) {
 
 FreeSplatterDialog::FreeSplatterDialog(QWidget* parent) : QDialog(parent) {
     setWindowTitle("FreeSplatter 3D Reconstruction");
-    setMinimumWidth(560);
+    // The capture form has two rows of paired controls.  Keep enough width to
+    // show those rows rather than introducing a horizontal scroll bar.
+    setMinimumWidth(800);
+    setMinimumHeight(0);
     setupUi();
     m_downloader = new ecvModelDownloader(this);
     connect(m_downloader, &ecvModelDownloader::logMessage, this,
@@ -180,7 +189,7 @@ void FreeSplatterDialog::setAppInterface(ecvMainAppInterface* app) {
 void FreeSplatterDialog::setupUi() {
     auto* mainLayout = new QVBoxLayout(this);
     mainLayout->setSpacing(4);
-    mainLayout->setSizeConstraint(QLayout::SetMinimumSize);
+    mainLayout->setSizeConstraint(QLayout::SetNoConstraint);
 
     // --- Model & Mode (merged into one group) ---
     auto* modelGroup = new QGroupBox("Model");
@@ -283,8 +292,8 @@ void FreeSplatterDialog::setupUi() {
 
     // ---- Tab 0: Images ----
     {
-        auto* imagesTab = new QWidget;
-        auto* imagesLayout = new QVBoxLayout(imagesTab);
+        m_imagesTab = new QWidget;
+        auto* imagesLayout = new QVBoxLayout(m_imagesTab);
         imagesLayout->setContentsMargins(2, 2, 2, 2);
         imagesLayout->setSpacing(2);
 
@@ -379,20 +388,37 @@ void FreeSplatterDialog::setupUi() {
                     adaptTabWidgetHeight();
                 });
 
-        m_inputTabWidget->addTab(imagesTab, tr("Images"));
+        m_inputTabWidget->addTab(m_imagesTab, tr("Images"));
     }
 
     // ---- Tab 1: Face Capture ----
     if (FaceCaptureWidget::isAvailable()) {
         auto* faceTab = new QWidget;
         auto* faceLayout = new QVBoxLayout(faceTab);
-        faceLayout->setContentsMargins(4, 4, 4, 4);
-        faceLayout->setSpacing(4);
+        faceLayout->setContentsMargins(0, 0, 0, 0);
 
         m_faceCaptureWidget = new FaceCaptureWidget(faceTab);
-        faceLayout->addWidget(m_faceCaptureWidget, 1);
+        m_faceCaptureScroll = new QScrollArea(faceTab);
+        m_faceCaptureScroll->setWidgetResizable(true);
+        m_faceCaptureScroll->setFrameShape(QFrame::NoFrame);
+        m_faceCaptureScroll->setHorizontalScrollBarPolicy(
+                Qt::ScrollBarAlwaysOff);
+        m_faceCaptureScroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+        m_faceCaptureScroll->setSizePolicy(QSizePolicy::Expanding,
+                                           QSizePolicy::Expanding);
+        // Keep the complete capture form as the scroll area's widget.  The
+        // viewport may shrink on small displays, but it must never collapse
+        // the form to zero height.
+        m_faceCaptureWidget->setSizePolicy(QSizePolicy::Expanding,
+                                           QSizePolicy::Preferred);
+        m_faceCaptureScroll->setMinimumHeight(280);
+        m_faceCaptureScroll->setMaximumHeight(kFaceCaptureViewportMaxHeight);
+        m_faceCaptureScroll->setWidget(m_faceCaptureWidget);
+        faceLayout->addWidget(m_faceCaptureScroll, 1);
 
         auto* faceBtnLayout = new QHBoxLayout;
+        faceBtnLayout->setContentsMargins(0, 0, 0, 0);
+        faceBtnLayout->setSpacing(6);
         m_faceStartBtn = new QPushButton(tr("Start Capture"));
         m_faceStopBtn = new QPushButton(tr("Stop Capture"));
         m_faceStopBtn->setEnabled(false);
@@ -401,7 +427,6 @@ void FreeSplatterDialog::setupUi() {
         for (QPushButton* btn :
              {m_faceStartBtn, m_faceStopBtn, m_faceResetBtn}) {
             btn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-            btn->setMaximumWidth(140);
         }
         faceBtnLayout->addWidget(m_faceStartBtn);
         faceBtnLayout->addWidget(m_faceStopBtn);
@@ -458,23 +483,39 @@ void FreeSplatterDialog::setupUi() {
         m_inputTabWidget->addTab(faceTab, tr("Face Capture"));
     }
 
-    connect(m_inputTabWidget, &QTabWidget::currentChanged, this,
-            [this](int) { adaptTabWidgetHeight(); });
+    connect(m_inputTabWidget, &QTabWidget::currentChanged, this, [this](int) {
+        // QTabWidget updates its stacked-page geometry after this signal.
+        // Deferring avoids reading the previous page's height on a quick tab
+        // switch, which previously kept the Images tab at Face Capture size.
+        QTimer::singleShot(0, this, [this]() { adaptTabWidgetHeight(); });
+    });
     ioMainLayout->addWidget(m_inputTabWidget);
 
     // --- Output settings (compact dual-column) ---
     auto* outputGrid = new QGridLayout;
+    outputGrid->setContentsMargins(0, 2, 0, 0);
+    outputGrid->setHorizontalSpacing(8);
     outputGrid->setVerticalSpacing(2);
+    outputGrid->setColumnMinimumWidth(0, 74);
+    outputGrid->setColumnMinimumWidth(2, 64);
+    outputGrid->setColumnStretch(1, 1);
+    outputGrid->setColumnStretch(3, 1);
     int row = 0;
 
-    outputGrid->addWidget(new QLabel("Opacity:"), row, 0);
+    auto* opacityLabel = new QLabel("Opacity:");
+    opacityLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    outputGrid->addWidget(opacityLabel, row, 0);
     m_opacityThreshold = new QDoubleSpinBox;
     m_opacityThreshold->setRange(0.0, 1.0);
     m_opacityThreshold->setSingleStep(0.01);
     m_opacityThreshold->setValue(0.05);
     m_opacityThreshold->setToolTip("Prune gaussians with opacity <= threshold");
+    m_opacityThreshold->setMinimumWidth(120);
+    m_opacityThreshold->setSizePolicy(QSizePolicy::Expanding,
+                                      QSizePolicy::Fixed);
     outputGrid->addWidget(m_opacityThreshold, row, 1);
     m_exportFieldLabel = new QLabel("Export:");
+    m_exportFieldLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     outputGrid->addWidget(m_exportFieldLabel, row, 2);
     m_exportFieldModeCombo = new QComboBox;
     m_exportFieldModeCombo->addItem(tr("Basic \u2014 XYZ+RGB+Opacity"),
@@ -484,6 +525,9 @@ void FreeSplatterDialog::setupUi() {
     m_exportFieldModeCombo->setToolTip(
             tr("Basic: XYZ + RGB + Opacity.\n"
                "Full: also SH, scale scalar fields and thin-axis normals."));
+    m_exportFieldModeCombo->setMinimumWidth(190);
+    m_exportFieldModeCombo->setSizePolicy(QSizePolicy::Expanding,
+                                          QSizePolicy::Fixed);
     outputGrid->addWidget(m_exportFieldModeCombo, row, 3);
 
     row++;
@@ -491,11 +535,13 @@ void FreeSplatterDialog::setupUi() {
     m_addToDbCheck->setChecked(true);
     m_addToDbCheck->setToolTip(
             "Add colored point cloud to the database tree after inference.");
-    outputGrid->addWidget(m_addToDbCheck, row, 0, 1, 2);
+    outputGrid->addWidget(m_addToDbCheck, row, 0, 1, 2,
+                          Qt::AlignLeft | Qt::AlignVCenter);
     m_estimatePosesCheck = new QCheckBox("Estimate poses");
     m_estimatePosesCheck->setChecked(false);
     m_estimatePosesCheck->setToolTip("Estimate camera poses (multi-view)");
-    outputGrid->addWidget(m_estimatePosesCheck, row, 2, 1, 2);
+    outputGrid->addWidget(m_estimatePosesCheck, row, 2, 1, 2,
+                          Qt::AlignLeft | Qt::AlignVCenter);
 
     row++;
     m_removeBgCheck = new QCheckBox("Remove background (Object model)");
@@ -585,17 +631,49 @@ void FreeSplatterDialog::setupUi() {
 void FreeSplatterDialog::adaptTabWidgetHeight() {
     if (!m_inputTabWidget) return;
     const int idx = m_inputTabWidget->currentIndex();
-    for (int i = 0; i < m_inputTabWidget->count(); ++i) {
-        QWidget* w = m_inputTabWidget->widget(i);
-        if (!w) continue;
-        QSizePolicy sp = w->sizePolicy();
-        sp.setVerticalPolicy(i == idx ? QSizePolicy::Preferred
-                                      : QSizePolicy::Ignored);
-        w->setSizePolicy(sp);
+    QWidget* current = m_inputTabWidget->widget(idx);
+    if (!current) return;
+
+    const int tabChrome = m_inputTabWidget->tabBar()->sizeHint().height() +
+                          2 * m_inputTabWidget->style()->pixelMetric(
+                                      QStyle::PM_DefaultFrameWidth);
+    int contentHeight = current->minimumSizeHint().height();
+    if (current == m_imagesTab) {
+        // An empty image tab needs only its commands and thumbnail strip.
+        contentHeight = qBound(150, contentHeight, 210);
+    } else {
+        const QScreen* screen =
+                QGuiApplication::screenAt(frameGeometry().center());
+        const int available =
+                screen ? screen->availableGeometry().height() : 800;
+        // A QScrollArea reports only its viewport minimum.  Use the actual
+        // form's size hint so the first capture controls stay visible, then
+        // constrain the viewport to the current screen and retain scrolling
+        // for the rest of the form.
+        const int formHeight =
+                m_faceCaptureWidget ? m_faceCaptureWidget->sizeHint().height()
+                                    : contentHeight;
+        const int dialogChrome = height() - m_inputTabWidget->height();
+        const int viewportBudget =
+                std::max(280, available - std::max(220, dialogChrome) - 32);
+        contentHeight = std::min(
+                formHeight,
+                std::min(viewportBudget, kFaceCaptureViewportMaxHeight));
     }
-    m_inputTabWidget->setMinimumHeight(0);
-    m_inputTabWidget->setMaximumHeight(QWIDGETSIZE_MAX);
+    const int targetHeight = tabChrome + contentHeight;
+    m_inputTabWidget->setFixedHeight(targetHeight);
     m_inputTabWidget->updateGeometry();
+
+    if (isVisible() && m_activeInputTabHeight >= 0 &&
+        targetHeight != m_activeInputTabHeight) {
+        const QScreen* screen =
+                QGuiApplication::screenAt(frameGeometry().center());
+        const int available =
+                screen ? screen->availableGeometry().height() : 800;
+        const int requested = height() + targetHeight - m_activeInputTabHeight;
+        resize(width(), qBound(360, requested, available - 20));
+    }
+    m_activeInputTabHeight = targetHeight;
 }
 
 void FreeSplatterDialog::refreshModelList() { populateModelCombo(); }
@@ -927,7 +1005,13 @@ void FreeSplatterDialog::refreshThumbnailStrip() {
 }
 
 void FreeSplatterDialog::addInputPaths(const QStringList& paths, bool replace) {
-    if (replace) m_inputPaths.clear();
+    if (replace) {
+        m_inputPaths.clear();
+        if (!m_identityInputs.isEmpty() &&
+            paths != m_identityInputs.front().inputPaths) {
+            m_identityInputs.clear();
+        }
+    }
     for (const QString& p : paths) {
         if (p.isEmpty()) continue;
         if (!m_inputPaths.contains(p)) m_inputPaths.append(p);
@@ -1173,14 +1257,23 @@ void FreeSplatterDialog::onModeChanged(int index) {
 void FreeSplatterDialog::setRunning(bool running) {
     m_taskRunning = running;
     if (running) {
+        m_lastTaskError.clear();
         m_taskStatusLabel->setText(tr("Starting..."));
+        m_taskStatusLabel->setStyleSheet("font-weight: bold; color: #0066cc;");
         m_taskStatusLabel->setVisible(true);
         m_progressBar->setVisible(true);
         m_progressBar->setRange(0, 100);
         m_progressBar->setValue(0);
     } else {
-        m_taskStatusLabel->clear();
-        m_taskStatusLabel->setVisible(false);
+        if (m_lastTaskError.isEmpty()) {
+            m_taskStatusLabel->clear();
+            m_taskStatusLabel->setVisible(false);
+        } else {
+            m_taskStatusLabel->setText(m_lastTaskError);
+            m_taskStatusLabel->setStyleSheet(
+                    "font-weight: bold; color: #b91c1c;");
+            m_taskStatusLabel->setVisible(true);
+        }
         m_progressBar->setVisible(false);
         m_progressBar->setRange(0, 100);
         m_progressBar->setValue(0);
@@ -1192,6 +1285,7 @@ void FreeSplatterDialog::setRunning(bool running) {
 void FreeSplatterDialog::setTaskStage(const QString& stage, int percent) {
     if (!m_taskStatusLabel) return;
     m_taskStatusLabel->setText(stage);
+    m_taskStatusLabel->setStyleSheet("font-weight: bold; color: #0066cc;");
     m_taskStatusLabel->setVisible(true);
     m_progressBar->setVisible(true);
     if (percent >= 0) {
@@ -1226,11 +1320,24 @@ FreeSplatterDialog::Settings FreeSplatterDialog::getSettings() const {
     s.estimatePoses = m_estimatePosesCheck->isChecked();
     s.removeBackground = m_removeBgCheck && m_removeBgCheck->isChecked();
     s.maxViews = m_maxViewsSpin ? m_maxViewsSpin->value() : 0;
+    s.identityInputs = m_identityInputs;
+    if (!m_identityInputs.isEmpty()) {
+        s.identityId = m_identityInputs.front().id;
+        s.identityName = m_identityInputs.front().name;
+    }
     return s;
 }
 
 void FreeSplatterDialog::appendLog(const QString& msg) {
     aicore_inference_log::log(msg);
+    if (!m_taskStatusLabel || !msg.startsWith(QStringLiteral("[Error]"))) {
+        return;
+    }
+    // The generic task-failed message follows the actionable backend/input
+    // error. Preserve the first concrete reason until the next run starts.
+    if (m_lastTaskError.isEmpty()) {
+        m_lastTaskError = msg.mid(QStringLiteral("[Error]").size()).trimmed();
+    }
 }
 
 void FreeSplatterDialog::setProgress(int current, int total) {
@@ -1378,6 +1485,7 @@ void FreeSplatterDialog::onFaceStopCamera() {
 void FreeSplatterDialog::onFaceReset() {
     if (!m_faceCaptureWidget) return;
     m_faceCaptureWidget->resetCapture();
+    m_identityInputs.clear();
     if (m_faceResetBtn) m_faceResetBtn->setEnabled(false);
 }
 
@@ -1396,15 +1504,36 @@ void FreeSplatterDialog::onFaceCaptureComplete() {
 
     const QString tmpDir =
             QDir::tempPath() + QStringLiteral("/freesplatter_face_capture");
-    const QStringList saved = m_faceCaptureWidget->exportCapturedImages(tmpDir);
-    if (saved.isEmpty()) {
+    const std::vector<FaceCaptureWidget::IdentityImageBatch> batches =
+            m_faceCaptureWidget->exportCapturedIdentityImages(tmpDir);
+    if (batches.empty()) {
         appendLog(tr("[Error] Failed to export captured face images"));
         return;
     }
 
+    m_identityInputs.clear();
+    for (const FaceCaptureWidget::IdentityImageBatch& batch : batches) {
+        if (batch.paths.size() < minCaptures) {
+            appendLog(tr("[FaceCapture] Identity %1 has only %2/%3 captures")
+                              .arg(batch.name)
+                              .arg(batch.paths.size())
+                              .arg(minCaptures));
+            return;
+        }
+        Settings::IdentityInput input;
+        input.id = batch.id;
+        input.name = batch.name;
+        input.inputPaths = batch.paths;
+        m_identityInputs.push_back(std::move(input));
+    }
+
+    const QStringList saved = m_identityInputs.front().inputPaths;
+
     addInputPaths(saved, true);
-    appendLog(tr("[FaceCapture] %1 face images captured and added to input")
-                      .arg(saved.size()));
+    appendLog(tr("[FaceCapture] Prepared %1 identities / %2 face images for "
+                 "separate reconstruction")
+                      .arg(m_identityInputs.size())
+                      .arg(m_faceCaptureWidget->capturedCount()));
 
     m_faceCaptureWidget->stopCamera();
 

@@ -42,7 +42,8 @@ private:
     bool warmupInferenceBackend(const QString& device, QString* logMsg) const;
     bool resolveInputPaths(const QStringList& rawPaths,
                            QStringList& outPaths,
-                           QString* errorMsg) const;
+                           QString* errorMsg);
+    void clearStagedInputFiles();
     void refreshDbImages();
     ccImage* findDbImage(const QString& name) const;
     QStringList selectedDbImageNames() const;
@@ -55,5 +56,6 @@ private:
     LightGlueDialog::Settings m_currentSettings;
     LightGlueRunResult m_lastResult;
     QStringList m_originalInputPaths;
+    QStringList m_stagedInputFiles;
     ccHObject::Container m_selectedEntities;
 };

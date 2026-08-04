@@ -113,6 +113,7 @@ struct CV_DB_LIB_API ecvViewContext {
 
     QPoint lastMousePos;
     QPoint lastMouseMovePos;
+    QPoint lastMousePressPos;  // position where the last button press occurred
     bool mouseMoved = false;
     bool mouseButtonPressed = false;
     bool touchInProgress = false;
@@ -180,6 +181,7 @@ struct CV_DB_LIB_API ecvViewContext {
         lastClickTime_ticks = 0;
         lastMousePos = QPoint();
         lastMouseMovePos = QPoint();
+        lastMousePressPos = QPoint();
         lastPickedPoint = CCVector3(0, 0, 0);
         lastPointIndex = -1;
         lastPickedId.clear();

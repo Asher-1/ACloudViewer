@@ -9,7 +9,7 @@ Each family ships **F16 (recommended)**, **Q8_0 (smaller)**, and **F32 (referenc
 | Family | Pipeline | Extractor | GGUF weights | Default cache |
 |--------|----------|-----------|--------------|---------------|
 | **SIFT LightGlue** | RootSIFT → LightGlue matcher | OpenCV RootSIFT (C++) | `sift-lightglue-*.gguf` | `~/cloudViewer_data/extract/lightglue_models/` |
-| **ALIKED LightGlue** | ALIKED → LightGlue matcher | AICore GGML (`aliked-n16rot-*.gguf`) | `aliked-lightglue-*.gguf` + matching extractor | `lightglue_models/` + `aliked_models/` |
+| **ALIKED LightGlue** | ALIKED → LightGlue matcher | AICore GGML (`aliked-n16rot-*.gguf`) | `aliked-lightglue-*.gguf` + matching extractor | `~/cloudViewer_data/extract/lightglue_models/` |
 
 Default downloads (first **Run**):
 
@@ -92,8 +92,7 @@ Example outputs: `build_app/bin/libAICore.so`, `build_app/bin/plugins/libQLIGHTG
 
 | Content | Default directory |
 |---------|-------------------|
-| LightGlue matchers (`sift-*`, `aliked-*`) | `$HOME/cloudViewer_data/extract/lightglue_models` |
-| ALIKED extractors (`aliked-n16rot-*`) | `$HOME/cloudViewer_data/extract/aliked_models` |
+| LightGlue matchers (`sift-*`, `aliked-lightglue-*`) + ALIKED extractors (`aliked-n16rot-*`) | `$HOME/cloudViewer_data/extract/lightglue_models` |
 | Override root | `CLOUDVIEWER_DATA_ROOT` → `<root>/extract/<subdir>/` |
 
 ## DB tree integration

@@ -119,16 +119,26 @@ Results land directly in the DB tree and plug into reconstruction, COLMAP, and S
 
    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:20px; margin:28px 0;">
      <figure style="margin:0; text-align:center;">
-       <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/qDA3.png" alt="Depth Anything V3" style="width:100%; border-radius:8px; border:1px solid rgba(0,0,0,.08);">
+       <img src="_static/plugin-assets/qDA3/qDA3.png" alt="Depth Anything V3" style="width:100%; border-radius:8px; border:1px solid rgba(0,0,0,.08);">
        <figcaption style="margin-top:10px; font-size:.9em; color:#475569;"><strong>Depth Anything V3</strong> — depth maps &amp; 3D unprojection from a single photo</figcaption>
      </figure>
      <figure style="margin:0; text-align:center;">
-       <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/qLightGlue.png" alt="LightGlue Feature Matching" style="width:100%; border-radius:8px; border:1px solid rgba(0,0,0,.08);">
+       <img src="_static/plugin-assets/qLightGlue/qLightGlue.png" alt="LightGlue Feature Matching" style="width:100%; border-radius:8px; border:1px solid rgba(0,0,0,.08);">
        <figcaption style="margin-top:10px; font-size:.9em; color:#475569;"><strong>LightGlue</strong> — SIFT / ALIKED matching with live visualization</figcaption>
      </figure>
      <figure style="margin:0; text-align:center;">
-       <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/docs/images/qFreeSplatter.png" alt="FreeSplatter 3D Reconstruction" style="width:100%; border-radius:8px; border:1px solid rgba(0,0,0,.08);">
-       <figcaption style="margin-top:10px; font-size:.9em; color:#475569;"><strong>FreeSplatter</strong> — sparse-view 3D Gaussian reconstruction, optional qSIBR preview</figcaption>
+       <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+         <img src="_static/plugin-assets/qFreeSplatter/qFreeSplatter.png" alt="FreeSplatter 3D Reconstruction" style="width:100%; border-radius:8px; border:1px solid rgba(0,0,0,.08);">
+         <img src="_static/plugin-assets/qFreeSplatter/qFreeSplatter_video.png" alt="qFreeSplatter guided face capture" style="width:100%; border-radius:8px; border:1px solid rgba(0,0,0,.08);">
+       </div>
+       <figcaption style="margin-top:10px; font-size:.9em; color:#475569;"><strong>qFreeSplatter</strong> — sparse-view 3D Gaussian reconstruction and guided multi-view Face Capture, with optional qSIBR preview</figcaption>
+     </figure>
+     <figure style="margin:0; text-align:center;">
+       <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+         <img src="_static/plugin-assets/qFaceDetect/qFaceDetect.png" alt="qFaceDetect registry recognition" style="width:100%; border-radius:8px; border:1px solid rgba(0,0,0,.08);">
+         <img src="_static/plugin-assets/qFaceDetect/qFaceDetect_video.png" alt="qFaceDetect live recognition" style="width:100%; border-radius:8px; border:1px solid rgba(0,0,0,.08);">
+       </div>
+       <figcaption style="margin-top:10px; font-size:.9em; color:#475569;"><strong>qFaceDetect</strong> — identity registry, verification, and live multi-face recognition in one plugin</figcaption>
      </figure>
    </div>
 

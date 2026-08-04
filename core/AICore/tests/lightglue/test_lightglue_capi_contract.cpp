@@ -26,6 +26,7 @@ int main() {
 
     AICORE_CHECK(aicore_lightglue_load(nullptr, 1) == nullptr);
     AICORE_CHECK(aicore_lightglue_load_opts(nullptr, nullptr) == nullptr);
+    AICORE_CHECK(aicore_lightglue_is_ready(nullptr) == 0);
     AICORE_CHECK(aicore_lightglue_info_json(nullptr) == nullptr);
 
     aicore_lightglue_options* opts = aicore_lightglue_options_new();

@@ -104,6 +104,10 @@ AICORE_CAPI aicore_deeplsd_ctx* aicore_deeplsd_load_opts(
 
 AICORE_CAPI void aicore_deeplsd_free(aicore_deeplsd_ctx* ctx) { delete ctx; }
 
+AICORE_CAPI int aicore_deeplsd_is_ready(const aicore_deeplsd_ctx* ctx) {
+    return ctx != nullptr && ctx->extractor != nullptr ? 1 : 0;
+}
+
 AICORE_CAPI const char* aicore_deeplsd_last_error(
         const aicore_deeplsd_ctx* ctx) {
     return ctx != nullptr && !ctx->last_error.empty() ? ctx->last_error.c_str()

@@ -134,7 +134,8 @@ public:
                              const std::vector<std::string>& image_names,
                              const std::string& dir, bool binary = true);
 private:
-    explicit Engine(const std::string& device) : be_(device) {}
+    explicit Engine(const std::string& device, int n_threads)
+        : be_(device, n_threads) {}
     // Fused single-image depth: backbone feats + DPT head built into ONE ggml graph
     // (feats stay device-resident — no GPU->host->GPU round-trip). Parity-exact with
     // the unfused path. cat_token=true only; depth_native_image falls back to unfused

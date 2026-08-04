@@ -2,6 +2,8 @@
 
 Run [face-detect.cpp](https://github.com/mudler/face-detect.cpp) **GGUF model packs** in ACloudViewer (C++ / [ggml](https://github.com/ggml-org/ggml)) for SCRFD/YuNet face detection, ArcFace/SFace recognition, age/gender analysis, and identity verification.
 
+![qFaceDetect registry and recognition workflow](../../_static/plugin-assets/qFaceDetect/qFaceDetect.png)
+
 ## Architecture
 
 ```
@@ -55,6 +57,8 @@ Requires system **libjpeg** (e.g. `libjpeg-dev` on Ubuntu).
 | **Detect** | Face boxes + 5 SCRFD keypoints drawn on source image |
 | **Analyze** | Detect + predicted age and gender (M/F) per face |
 | **Verify** | Cosine distance between primary faces in two images; optional MiniFASNet anti-spoof veto |
+
+![qFaceDetect live multi-face recognition](../../_static/plugin-assets/qFaceDetect/qFaceDetect_video.png)
 
 Default verify threshold: **0.35** (insightface buffalo convention).
 

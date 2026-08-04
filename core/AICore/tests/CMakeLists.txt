@@ -34,6 +34,18 @@ function(aicore_add_common_test name)
     _aicore_test_common(${name})
 endfunction()
 
+function(aicore_add_common_capi_test name)
+    add_executable(${name} common/${name}.cpp)
+    target_link_libraries(${name} PRIVATE AICore)
+    _aicore_capi_link(${name})
+    _aicore_test_common(${name})
+    if(NOT MSVC)
+        target_compile_options(${name} PRIVATE -fPIC)
+        target_link_options(${name} PRIVATE "-no-pie")
+    endif()
+    set_tests_properties(${name} PROPERTIES LABELS "capi")
+endfunction()
+
 function(aicore_add_depth_test name)
     add_executable(${name} depth/${name}.cpp)
     target_link_libraries(${name} PRIVATE AICore_test)
@@ -148,6 +160,7 @@ endfunction()
 if(TARGET AICore_test)
     # White-box tests compile private AICore implementation sources.
     aicore_add_common_test(test_data_root)
+    aicore_add_common_test(test_backend_registry)
     aicore_add_depth_test(test_gguf_keys)
     aicore_add_depth_test(test_path_util)
     aicore_add_depth_test(test_compute_mode)
@@ -212,10 +225,14 @@ if(TARGET AICore_test)
 endif()
 
 # --- depth (C API / libAICore) ---
+aicore_add_common_capi_test(test_runtime_capi_contract)
 aicore_add_depth_capi_test(test_depth_capi_contract)
 aicore_add_depth_capi_test(test_image_depth)
 aicore_add_depth_capi_test(test_depth_capi_load)
 set_tests_properties(test_depth_capi_load PROPERTIES LABELS "capi;model")
+aicore_add_depth_capi_test(test_depth_capi_backend_parity)
+set_tests_properties(test_depth_capi_backend_parity
+    PROPERTIES LABELS "capi;model;gpu;parity")
 
 # --- gaussian (C API / libAICore) ---
 aicore_add_gaussian_capi_test(test_gaussian_capi_contract)
@@ -223,6 +240,9 @@ aicore_add_gaussian_capi_test(test_gaussian_capi_load)
 set_tests_properties(test_gaussian_capi_load PROPERTIES LABELS "capi;model")
 
 aicore_add_lightglue_capi_test(test_lightglue_capi_contract)
+aicore_add_lightglue_capi_test(test_lightglue_aliked_e2e)
+set_tests_properties(test_lightglue_aliked_e2e
+    PROPERTIES LABELS "capi;model;gpu;e2e")
 
 aicore_add_aliked_capi_test(test_aliked_capi_contract)
 aicore_add_aliked_capi_test(test_aliked_capi_parity)
@@ -239,6 +259,9 @@ if(TARGET AICore_test)
 endif()
 aicore_add_facedetect_capi_test(test_facedetect_embed_capi)
 set_tests_properties(test_facedetect_embed_capi PROPERTIES LABELS "capi;model")
+aicore_add_facedetect_capi_test(test_facedetect_match_capi)
+aicore_add_facedetect_capi_test(test_facedetect_contexts_capi)
+set_tests_properties(test_facedetect_contexts_capi PROPERTIES LABELS "capi;model")
 
 add_test(
     NAME test_aicore_public_headers
@@ -259,12 +282,14 @@ if(UNIX AND NOT APPLE)
 endif()
 
 set(_aicore_contract_targets
+    test_runtime_capi_contract
     test_depth_capi_contract
     test_image_depth
     test_depth_capi_load
     test_gaussian_capi_contract
     test_gaussian_capi_load
     test_lightglue_capi_contract
+    test_lightglue_aliked_e2e
     test_aliked_capi_contract
     test_aliked_capi_parity
     test_aliked_e2e_smoke

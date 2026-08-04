@@ -716,13 +716,13 @@ bool RunSddhVulkan(const GpuTensor &feature_map,
     FlushGpuPipeline(backend);
 
     const ggml_tensor *feat = feature_map.tensor;
-    if (scratch->feature_contig.tensor != nullptr) {
+    if (!IsContiguousWhcn(feature_map.tensor, fw, fh, descriptor_dim) &&
+        scratch->feature_contig.tensor != nullptr) {
         if (VkAlikedDenseCopyWhcn(backend->handle, feature_map.tensor,
                                   scratch->feature_contig.tensor, fw, fh,
                                   descriptor_dim)) {
             feat = scratch->feature_contig.tensor;
-        } else if (!IsContiguousWhcn(feature_map.tensor, fw, fh,
-                                     descriptor_dim)) {
+        } else {
             if (error) {
                 *error = "SDDH feature map is not contiguous WHCN";
             }
@@ -750,7 +750,8 @@ bool RunSddhVulkan(const GpuTensor &feature_map,
 
 #if defined(AICORE_VULKAN_ALIKED)
 bool UseVulkanCompute(internal::Backend *backend) {
-    if (std::getenv("LIGHTGLUE_ALIKED_VULKAN_COMPUTE") == nullptr) {
+    const char *env = std::getenv("LIGHTGLUE_ALIKED_VULKAN_COMPUTE");
+    if (env == nullptr || env[0] == '0') {
         return false;
     }
     return backend != nullptr && backend->IsVulkan() &&
@@ -766,7 +767,6 @@ bool UseVulkanGpuUpsample(internal::Backend *backend) {
     if (env != nullptr) {
         return env[0] != '0';
     }
-    // VkAliked upsample can deadlock during first shader compile; opt-in only.
     return false;
 }
 
@@ -804,7 +804,8 @@ bool UseVulkanSddh(internal::Backend *backend) {
     if (env != nullptr) {
         return env[0] != '0';
     }
-    // VkAliked SDDH shader currently triggers device-lost; opt-in only.
+    // The scalar shader is retained for diagnostics; the exact CPU fallback is
+    // faster and more reliable on current Vulkan drivers.
     return false;
 }
 #endif
@@ -941,6 +942,10 @@ bool RunDkdDispatch(const GpuTensor &score_map,
     }
     const DkdOutput cpu = RunDkd(score_nchw, sh, sw, options, sw, sh);
     const int32_t count = static_cast<int32_t>(cpu.scores.size());
+    if (count == 0) {
+        result->count = 0;
+        return true;
+    }
     if (!GpuTensor::Allocate(backend, count * 2, 1, 1, &result->keypoints_norm,
                              error)) {
         return false;

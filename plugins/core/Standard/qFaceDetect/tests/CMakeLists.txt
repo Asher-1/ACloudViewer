@@ -10,13 +10,14 @@ add_executable(test_qfacedetect_embed_helpers test_embed_helpers.cpp
 target_include_directories(test_qfacedetect_embed_helpers PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../include
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/core/include
+    ${CMAKE_SOURCE_DIR}/core/AICore/include
 )
 
 find_package(Threads REQUIRED)
 
 target_link_libraries(test_qfacedetect_embed_helpers PRIVATE
     CVCoreLib
+    AICore
     Qt${QT_VERSION_MAJOR}::Core
     Qt${QT_VERSION_MAJOR}::Gui
     Qt${QT_VERSION_MAJOR}::Sql

@@ -2,11 +2,15 @@
 
 ![Plugin icon](images/qFreeSplatter.svg)
 
+![qFreeSplatter plugin](images/qFreeSplatter.png)
+
 Turn ordinary photos into **3D Gaussian splatting** point clouds — no camera poses and no Python runtime. Distribution builds use Vulkan/CPU on Linux/Windows and Metal/CPU on macOS.
 
 > **Build index:** see [plugins/README.md](../../README.md) (shares `libAICore.so` with qDA3).
 
 User guide (Sphinx): [docs/guides/plugins/qFreeSplatter.md](../../../../docs/guides/plugins/qFreeSplatter.md)
+
+![qFreeSplatter guided face capture](images/qFreeSplatter_video.png)
 
 ---
 

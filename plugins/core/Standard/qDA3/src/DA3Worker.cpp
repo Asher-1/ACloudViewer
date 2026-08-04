@@ -32,6 +32,9 @@ void fillResolvedDevice(DA3DepthResult& res, aicore_depth_ctx* ctx) {
 
 DA3Worker::DA3Worker(const DA3Dialog::Settings& settings, QObject* parent)
     : QThread(parent), m_settings(settings) {
+#ifdef AICore_ENABLED
+    m_cancelToken = aicore_cancel_token_new();
+#endif
     static bool registered = false;
     if (!registered) {
         qRegisterMetaType<DA3DepthResult>("DA3DepthResult");
@@ -40,14 +43,27 @@ DA3Worker::DA3Worker(const DA3Dialog::Settings& settings, QObject* parent)
     }
 }
 
+DA3Worker::~DA3Worker() {
+#ifdef AICore_ENABLED
+    aicore_cancel_token_free(m_cancelToken);
+#endif
+}
+
+void DA3Worker::requestTaskCancel() {
+#ifdef AICore_ENABLED
+    aicore_cancel_token_request(m_cancelToken);
+#endif
+    requestInterruption();
+}
+
 void DA3Worker::run() {
 #ifndef AICore_ENABLED
     emit logMessage("[Error] DA3 not enabled at build time.");
     emit taskFinished(false);
     return;
 #else
-    aicore_inference_lock();
-    aicore_cancel_begin();
+    aicore_device_task_lock(m_settings.device.toUtf8().constData());
+    aicore_cancel_scope_begin(m_cancelToken);
     bool ok = false;
     emit progressUpdate(0, 100);
     switch (m_settings.mode) {
@@ -79,8 +95,8 @@ void DA3Worker::run() {
             emit logMessage("[Error] Unknown mode.");
             break;
     }
-    aicore_cancel_end();
-    aicore_inference_unlock();
+    aicore_cancel_scope_end(m_cancelToken);
+    aicore_device_task_unlock();
     emit taskFinished(ok);
 #endif
 }

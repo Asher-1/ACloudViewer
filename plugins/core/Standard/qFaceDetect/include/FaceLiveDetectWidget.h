@@ -16,6 +16,7 @@
 #include <QSpinBox>
 #include <QThread>
 #include <QTimer>
+#include <QVector>
 #include <QWidget>
 #include <memory>
 
@@ -93,6 +94,7 @@ public:
     QString deviceId() const;
     int threadCount() const;
     QString resolveModelPath() const;
+    QPushButton* testDataButton() const { return m_testDataBtn; }
 
     void loadSettings();
     void saveSettings() const;
@@ -129,10 +131,9 @@ private:
     void updateThresholdUi();
     void updateRegistryUi();
     void updateModelPathFromCombo();
-    void submitInferJob(const QImage& displayRgb,
-                        const QImage& inferRgb,
-                        float inferScale);
+    void submitInferJob(const QImage& inferRgb, float inferScale);
     void shutdownInferThread();
+    void drawLiveOverlay(QImage& frame);
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
     cv::VideoCapture m_capture;
@@ -166,12 +167,17 @@ private:
     QTimer* m_frameTimer = nullptr;
     bool m_streamActive = false;
     bool m_camerasEnumerated = false;
-    int m_inferSkip = 0;
     bool m_inferBusy = false;
+    quint64 m_streamGeneration = 0;
 
     QThread* m_inferThread = nullptr;
     FaceLiveDetectInferWorker* m_inferWorker = nullptr;
 
     FaceDetectRunResult m_lastSnapshot;
     bool m_hasSnapshot = false;
+
+    // Cached overlay data — drawn on every frame to prevent flicker.
+    std::vector<FaceDetectBox> m_overlayFaces;
+    QVector<QString> m_overlayLabels;
+    QSize m_overlayInferSize;
 };

@@ -11,10 +11,15 @@
 #include <ecvPointCloud.h>
 
 #include <QApplication>
+#include <QCoreApplication>
 #include <QMessageBox>
+#include <QMetaObject>
+#include <QPointer>
 #include <QProgressDialog>
 #include <QShowEvent>
+#include <QtConcurrent/QtConcurrentRun>
 #include <filesystem>
+#include <memory>
 #include <set>
 
 #include "MainWindow.h"
@@ -24,6 +29,10 @@
 #include "retrieval/resources.h"
 #include "ui/da3_reconstruction_ui_bindings.h"
 #include "util/download.h"
+
+#ifdef AICore_ENABLED
+#include "aicore/backend_capi.h"
+#endif
 
 namespace cloudViewer {
 
@@ -134,6 +143,24 @@ AutomaticReconstructionWidget::AutomaticReconstructionWidget(
     colmap::DA3ReconstructionUiBindings::InitStereoModeComboBox(
             stereo_mode_cb_);
     grid_layout_->addWidget(stereo_mode_cb_, grid_layout_->rowCount() - 1, 1);
+
+    auto* da3_device_label = new QLabel(tr("DA3 device"), this);
+    da3_device_label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    grid_layout_->addWidget(da3_device_label, grid_layout_->rowCount(), 0);
+    da3_device_cb_ = new QComboBox(this);
+#ifdef AICore_ENABLED
+    for (int i = 0; i < aicore_device_count(); ++i) {
+        const aicore_device_info* device = aicore_device_at(i);
+        if (device && device->id) {
+            da3_device_cb_->addItem(QString::fromUtf8(device->label),
+                                    QString::fromUtf8(device->id));
+        }
+    }
+#endif
+    if (da3_device_cb_->count() == 0) {
+        da3_device_cb_->addItem(tr("Auto"), QStringLiteral("auto"));
+    }
+    grid_layout_->addWidget(da3_device_cb_, grid_layout_->rowCount() - 1, 1);
 
     da3_sparse_model_label_ = new QLabel(tr("DA3 sparse model"), this);
     da3_sparse_model_label_->setFont(font());
@@ -283,6 +310,123 @@ AutomaticReconstructionWidget::AutomaticReconstructionWidget(
             &AutomaticReconstructionWidget::RenderResult, Qt::QueuedConnection);
 }
 
+AutomaticReconstructionWidget::~AutomaticReconstructionWidget() {
+    if (download_cancelled_) {
+        download_cancelled_->store(true, std::memory_order_relaxed);
+    }
+}
+
+void AutomaticReconstructionWidget::startBackgroundDownload(
+        const QString& title,
+        const QString& initial_label,
+        DownloadOperation operation) {
+    if (download_watcher_) return;
+
+    download_cancelled_ = std::make_shared<std::atomic_bool>(false);
+    auto* progress =
+            new QProgressDialog(initial_label, tr("Cancel"), 0, 100, this);
+    progress->setWindowModality(Qt::ApplicationModal);
+    progress->setWindowTitle(title);
+    progress->setAutoClose(false);
+    progress->setAutoReset(false);
+    progress->setMinimumDuration(0);
+    progress->show();
+
+    const std::shared_ptr<std::atomic_bool> cancelled = download_cancelled_;
+    connect(progress, &QProgressDialog::canceled, this, [cancelled]() {
+        cancelled->store(true, std::memory_order_relaxed);
+    });
+
+    auto* watcher = new QFutureWatcher<DownloadResult>(this);
+    download_watcher_ = watcher;
+    const QPointer<AutomaticReconstructionWidget> widget_guard(this);
+    const QPointer<QProgressDialog> progress_guard(progress);
+    QCoreApplication* const application = QCoreApplication::instance();
+    connect(watcher, &QFutureWatcher<DownloadResult>::finished, this,
+            [this, watcher, progress_guard]() {
+                const DownloadResult result = watcher->result();
+                if (progress_guard) {
+                    progress_guard->close();
+                    progress_guard->deleteLater();
+                }
+                watcher->deleteLater();
+                if (download_watcher_ == watcher) {
+                    download_watcher_ = nullptr;
+                    download_cancelled_.reset();
+                }
+                if (result.canceled) {
+                    QMessageBox::information(
+                            this, tr("Download Canceled"),
+                            tr("The download was canceled. Reconstruction was "
+                               "not started."));
+                    return;
+                }
+                if (!result.error.isEmpty()) {
+                    QMessageBox::critical(this, tr("Download Failed"),
+                                          result.error);
+                    return;
+                }
+                // Re-evaluate the cache on the GUI thread before starting the
+                // controller. This also updates the model-path options.
+                Run();
+            });
+
+    watcher->setFuture(QtConcurrent::run([operation = std::move(operation),
+                                          cancelled, widget_guard,
+                                          progress_guard,
+                                          application]() -> DownloadResult {
+        DownloadResult result;
+        const DownloadProgress progress_callback = [widget_guard,
+                                                    progress_guard,
+                                                    application](
+                                                           int64_t downloaded,
+                                                           int64_t total) {
+            if (!application) return;
+            QMetaObject::invokeMethod(
+                    application,
+                    [widget_guard, progress_guard, downloaded, total]() {
+                        if (!widget_guard || !progress_guard) {
+                            return;
+                        }
+                        const double downloaded_mb =
+                                static_cast<double>(downloaded) /
+                                (1024.0 * 1024.0);
+                        if (total > 0) {
+                            const int percent =
+                                    static_cast<int>(downloaded * 100 / total);
+                            progress_guard->setValue(percent);
+                            progress_guard->setLabelText(
+                                    QObject::tr("Downloading... %1 MB / %2 MB "
+                                                "(%3%)")
+                                            .arg(downloaded_mb, 0, 'f', 1)
+                                            .arg(static_cast<double>(total) /
+                                                         (1024.0 * 1024.0),
+                                                 0, 'f', 1)
+                                            .arg(percent));
+                        } else {
+                            progress_guard->setValue(0);
+                            progress_guard->setLabelText(
+                                    QObject::tr("Downloading... %1 MB")
+                                            .arg(downloaded_mb, 0, 'f', 1));
+                        }
+                    },
+                    Qt::QueuedConnection);
+        };
+        try {
+            if (operation(*cancelled, progress_callback).empty()) {
+                result.canceled = cancelled->load(std::memory_order_relaxed);
+                if (!result.canceled) {
+                    result.error =
+                            QObject::tr("The download did not produce a file.");
+                }
+            }
+        } catch (const std::exception& e) {
+            result.error = QString::fromUtf8(e.what());
+        }
+        return result;
+    }));
+}
+
 void AutomaticReconstructionWidget::Run() {
     WriteOptions();
 
@@ -395,6 +539,8 @@ void AutomaticReconstructionWidget::Run() {
     options_.da3_stereo_quant_type =
             colmap::DA3ReconstructionUiBindings::QuantTypeFromComboText(
                     da3_stereo_quant_cb_->currentText());
+    options_.da3_device =
+            da3_device_cb_->currentData().toString().toStdString();
 
     options_.da3_force_recompute =
             da3_ui_controls_.da3_force_recompute_cb &&
@@ -462,84 +608,37 @@ void AutomaticReconstructionWidget::Run() {
                     QMessageBox::Yes | QMessageBox::No);
             if (answer != QMessageBox::Yes) return;
 
-            for (auto& m : needed) {
+            std::vector<std::pair<std::string, std::filesystem::path>> jobs;
+            std::set<std::string> seen_targets;
+            for (const auto& m : needed) {
                 const auto target =
                         std::filesystem::path(cache_dir) / m.filename;
-                if (std::filesystem::exists(target)) {
-                    if (m.dest_path) *m.dest_path = target.string();
-                    continue;
+                if (seen_targets.insert(target.string()).second &&
+                    !std::filesystem::exists(target)) {
+                    jobs.emplace_back(m.url, target);
                 }
-
-                QProgressDialog progress_dialog(
-                        tr("Downloading %1...")
-                                .arg(QString::fromStdString(m.filename)),
-                        tr("Cancel"), 0, 100, this);
-                progress_dialog.setWindowModality(Qt::ApplicationModal);
-                progress_dialog.setWindowTitle(tr("Downloading DA3 Model"));
-                progress_dialog.setAutoClose(false);
-                progress_dialog.setAutoReset(false);
-                progress_dialog.setMinimumDuration(0);
-                progress_dialog.show();
-                QApplication::processEvents();
-
-                bool download_canceled = false;
-                colmap::DownloadProgressCallback progress_callback =
-                        [&progress_dialog, &download_canceled](
-                                int64_t downloaded, int64_t total) {
-                            QApplication::processEvents();
-                            if (progress_dialog.wasCanceled()) {
-                                download_canceled = true;
-                                return;
+            }
+            if (!jobs.empty()) {
+                startBackgroundDownload(
+                        tr("Downloading DA3 Model"),
+                        tr("Downloading %1...").arg(names.front()),
+                        [jobs = std::move(jobs)](
+                                std::atomic_bool& canceled,
+                                const DownloadProgress& progress)
+                                -> std::string {
+                            std::string downloaded_path;
+                            for (const auto& job : jobs) {
+                                downloaded_path = colmap::DownloadAndCacheFile(
+                                        job.first, job.second, progress,
+                                        [&canceled]() {
+                                            return canceled.load(
+                                                    std::memory_order_relaxed);
+                                        });
+                                if (downloaded_path.empty()) return {};
                             }
-                            if (total > 0) {
-                                int percent = static_cast<int>(
-                                        (downloaded * 100) / total);
-                                progress_dialog.setValue(percent);
-                                double dl_mb = static_cast<double>(downloaded) /
-                                               (1024.0 * 1024.0);
-                                double tot_mb = static_cast<double>(total) /
-                                                (1024.0 * 1024.0);
-                                progress_dialog.setLabelText(
-                                        tr("Downloading...\n%1 MB / %2 MB "
-                                           "(%3%)")
-                                                .arg(dl_mb, 0, 'f', 1)
-                                                .arg(tot_mb, 0, 'f', 1)
-                                                .arg(percent));
-                            }
-                            QApplication::processEvents();
-                        };
-
-                try {
-                    auto target = std::filesystem::path(cache_dir) / m.filename;
-                    std::string downloaded_path = colmap::DownloadAndCacheFile(
-                            m.url, target, progress_callback);
-                    progress_dialog.close();
-
-                    if (download_canceled || downloaded_path.empty()) {
-                        QMessageBox::warning(
-                                this, tr("Download Canceled"),
-                                tr("DA3 model download was canceled."));
-                        return;
-                    }
-
-                    if (m.dest_path) {
-                        *m.dest_path = target.string();
-                    }
-                    for (auto& other : needed) {
-                        if (other.filename == m.filename && other.dest_path &&
-                            other.dest_path != m.dest_path) {
-                            *other.dest_path = target.string();
-                        }
-                    }
-                } catch (const std::exception& e) {
-                    progress_dialog.close();
-                    QMessageBox::critical(
-                            this, tr("Download Failed"),
-                            tr("Failed to download DA3 model '%1': %2")
-                                    .arg(QString::fromStdString(m.filename))
-                                    .arg(e.what()));
-                    return;
-                }
+                            return downloaded_path;
+                        });
+                return;
             }
 #else
             QStringList names;
@@ -573,80 +672,18 @@ void AutomaticReconstructionWidget::Run() {
             LOG(INFO) << "Using cached vocabulary tree file: " << cached_path;
             options_.vocab_tree_path = cached_path.string();
         } else {
-            // File doesn't exist, show download progress dialog
-            QProgressDialog progress_dialog(
-                    tr("Downloading vocabulary tree..."), tr("Cancel"), 0, 100,
-                    this);
-            progress_dialog.setWindowModality(Qt::ApplicationModal);
-            progress_dialog.setWindowTitle(tr("Downloading"));
-            progress_dialog.setAutoClose(false);
-            progress_dialog.setAutoReset(false);
-            progress_dialog.setMinimumDuration(0);
-            progress_dialog.show();
-            QApplication::processEvents();
-
-            bool download_canceled = false;
-            colmap::DownloadProgressCallback progress_callback =
-                    [&progress_dialog, &download_canceled](int64_t downloaded,
-                                                           int64_t total) {
-                        QApplication::processEvents();
-                        if (progress_dialog.wasCanceled()) {
-                            download_canceled = true;
-                            return;
-                        }
-
-                        if (total > 0) {
-                            int percent = static_cast<int>((downloaded * 100) /
-                                                           total);
-                            progress_dialog.setValue(percent);
-
-                            // Update label with size information
-                            double downloaded_mb =
-                                    static_cast<double>(downloaded) /
-                                    (1024.0 * 1024.0);
-                            double total_mb = static_cast<double>(total) /
-                                              (1024.0 * 1024.0);
-                            progress_dialog.setLabelText(
-                                    tr("Downloading vocabulary tree...\n%1 MB "
-                                       "/ %2 MB (%3%)")
-                                            .arg(downloaded_mb, 0, 'f', 2)
-                                            .arg(total_mb, 0, 'f', 2)
-                                            .arg(percent));
-                        } else {
-                            progress_dialog.setValue(0);
-                            double downloaded_mb =
-                                    static_cast<double>(downloaded) /
-                                    (1024.0 * 1024.0);
-                            progress_dialog.setLabelText(
-                                    tr("Downloading vocabulary tree...\n%1 MB")
-                                            .arg(downloaded_mb, 0, 'f', 2));
-                        }
-                        QApplication::processEvents();
-                    };
-
-            try {
-                std::string downloaded_path = colmap::DownloadAndCacheFile(
-                        vocab_tree_path, progress_callback);
-                progress_dialog.close();
-
-                if (download_canceled || downloaded_path.empty()) {
-                    QMessageBox::warning(
-                            this, tr("Download Canceled"),
-                            tr("Vocabulary tree download was canceled. Please "
-                               "provide a local path."));
-                    return;
-                }
-
-                // Update options with the downloaded path
-                options_.vocab_tree_path = downloaded_path;
-            } catch (const std::exception& e) {
-                progress_dialog.close();
-                QMessageBox::critical(
-                        this, tr("Download Failed"),
-                        tr("Failed to download vocabulary tree: %1")
-                                .arg(e.what()));
-                return;
-            }
+            startBackgroundDownload(
+                    tr("Downloading vocabulary tree"),
+                    tr("Downloading vocabulary tree..."),
+                    [uri = vocab_tree_path](std::atomic_bool& canceled,
+                                            const DownloadProgress& progress) {
+                        return colmap::DownloadAndCacheFile(
+                                uri, progress, [&canceled]() {
+                                    return canceled.load(
+                                            std::memory_order_relaxed);
+                                });
+                    });
+            return;
         }
 #else
         QMessageBox::warning(this, tr("Download Disabled"),
@@ -666,14 +703,31 @@ void AutomaticReconstructionWidget::Run() {
                     options_, &main_window_->reconstruction_manager_);
 
     controller->AddCallback(Thread::FINISHED_CALLBACK, [this, controller]() {
-        fused_points_ = controller->fused_points_;
-        meshing_paths_ = controller->meshing_paths_;
-        textured_paths_ = controller->textured_paths_;
-        texturing_success_ = controller->texturing_success_;
-        controller->fused_points_.clear();
-        controller->meshing_paths_.clear();
-        controller->textured_paths_.clear();
-        render_result_->trigger();
+        struct Results {
+            std::vector<std::vector<colmap::PlyPoint>> fusedPoints;
+            std::vector<std::string> meshingPaths;
+            std::vector<std::string> texturedPaths;
+            bool texturingSuccess = false;
+            colmap::DA3VramCapWarning vramWarning;
+        };
+        auto results = std::make_shared<Results>();
+        results->fusedPoints = std::move(controller->fused_points_);
+        results->meshingPaths = std::move(controller->meshing_paths_);
+        results->texturedPaths = std::move(controller->textured_paths_);
+        results->texturingSuccess = controller->texturing_success_;
+        results->vramWarning = controller->da3VramCapWarning();
+
+        QMetaObject::invokeMethod(
+                this,
+                [this, results]() {
+                    fused_points_ = std::move(results->fusedPoints);
+                    meshing_paths_ = std::move(results->meshingPaths);
+                    textured_paths_ = std::move(results->texturedPaths);
+                    texturing_success_ = results->texturingSuccess;
+                    da3_vram_warning_ = results->vramWarning;
+                    render_result_->trigger();
+                },
+                Qt::QueuedConnection);
     });
 
     thread_control_widget_->StartThread("Reconstructing...", true, controller);
@@ -705,6 +759,12 @@ void AutomaticReconstructionWidget::showEvent(QShowEvent* event) {
     // Call base class showEvent to read all options (including the default
     // value)
     OptionsWidget::showEvent(event);
+
+    const int device_index = da3_device_cb_->findData(
+            QString::fromStdString(options_.da3_device));
+    if (device_index >= 0) {
+        da3_device_cb_->setCurrentIndex(device_index);
+    }
 
     applyAICoreUiAvailability();
 
@@ -743,7 +803,8 @@ void AutomaticReconstructionWidget::RenderResult() {
     }
 
     if (options_.dense) {
-        const std::string vram_warning = DA3VramCapWarningMessage();
+        const std::string vram_warning =
+                DA3VramCapWarningMessage(da3_vram_warning_);
         if (!vram_warning.empty()) {
             QMessageBox::warning(
                     this, tr("DA3 GPU memory"),

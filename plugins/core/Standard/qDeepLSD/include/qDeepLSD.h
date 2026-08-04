@@ -41,12 +41,14 @@ private:
     QStringList selectedDbImageNames() const;
     bool resolveInputPath(const QString& rawPath,
                           QString& outPath,
-                          QString* errorMsg) const;
+                          QString* errorMsg);
+    void clearStagedInputFiles();
     void refreshDbImages();
 
     QAction* m_action = nullptr;
     DeepLSDDialog* m_dialog = nullptr;
     DeepLSDWorker* m_worker = nullptr;
     DeepLSDDialog::Settings m_currentSettings;
+    QStringList m_stagedInputFiles;
     ccHObject::Container m_selectedEntities;
 };

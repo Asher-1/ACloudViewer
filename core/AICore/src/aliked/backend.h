@@ -12,11 +12,16 @@
 #include <functional>
 #include <string>
 
+#include "../common/ggml_backend_registry.hpp"
+
 struct ggml_cgraph;
 
 namespace lightglue::internal {
 
 struct Backend {
+    aicore::runtime::BackendLease lease;
+    aicore::runtime::BackendLease cpu_lease;
+    // Non-owning aliases retained for the existing ALIKED ggml/Vulkan code.
     ggml_backend_t handle = nullptr;
     ggml_backend_t cpu_backend = nullptr;
     ggml_backend_sched_t sched = nullptr;
@@ -30,6 +35,7 @@ struct Backend {
     bool IsGpu() const;
     bool IsCuda() const;
     bool IsVulkan() const;
+    aicore::runtime::BackendLeaseLock Lock() const;
     bool HasSched() const { return use_sched && sched != nullptr; }
     // Vulkan [gpu, cpu] scheduler: reset → optional pin → alloc → inputs →
     // compute → sync.

@@ -40,6 +40,7 @@
 #include <QSettings>
 #include <QStandardPaths>
 #include <QTimer>
+#include <QUuid>
 #include <cmath>
 #include <limits>
 #include <memory>
@@ -616,7 +617,14 @@ QString buildGaussianExportBaseName(
     const QString modelQuant =
             ecvPluginDbNaming::modelTagFromFilename(settings.modelPath, 24);
 
-    QString source = ecvPluginDbNaming::sanitizeSegment(result.sourceName);
+    QString source;
+    if (!settings.identityName.isEmpty()) {
+        source = ecvPluginDbNaming::sanitizeSegment(
+                settings.identityName + QLatin1Char('_') +
+                settings.identityId.left(12));
+    } else {
+        source = ecvPluginDbNaming::sanitizeSegment(result.sourceName);
+    }
     if (source.isEmpty()) source = QStringLiteral("run");
 
     QString name = QStringLiteral("FS_%1_%2_%3_%4")
@@ -734,7 +742,7 @@ QStringList qFreeSplatter::selectedDbImageNames() const {
 
 bool qFreeSplatter::resolveInputPaths(const QStringList& rawPaths,
                                       QStringList& outPaths,
-                                      QString* errorMsg) const {
+                                      QString* errorMsg) {
     outPaths.clear();
     const QString tmpDir = FreeSplatterDialog::modelCacheDir() + "/../tmp";
     QDir().mkpath(tmpDir);
@@ -749,14 +757,16 @@ bool qFreeSplatter::resolveInputPaths(const QStringList& rawPaths,
                 }
                 return false;
             }
-            const QString safeName = name;
-            const QString tmpPath = tmpDir + "/" + safeName + ".png";
+            const QString tmpPath =
+                    tmpDir + "/freesplatter-" +
+                    QUuid::createUuid().toString(QUuid::WithoutBraces) + ".png";
             if (!img->data().save(tmpPath)) {
                 if (errorMsg) {
                     *errorMsg = tr("Failed to export DB image: %1").arg(name);
                 }
                 return false;
             }
+            m_stagedInputFiles << tmpPath;
             outPaths << tmpPath;
         } else if (QFile::exists(raw)) {
             outPaths << raw;
@@ -768,6 +778,13 @@ bool qFreeSplatter::resolveInputPaths(const QStringList& rawPaths,
         }
     }
     return true;
+}
+
+void qFreeSplatter::clearStagedInputFiles() {
+    for (const QString& path : m_stagedInputFiles) {
+        QFile::remove(path);
+    }
+    m_stagedInputFiles.clear();
 }
 
 void qFreeSplatter::onWorkerProgress(int current, int total) {
@@ -895,6 +912,7 @@ void qFreeSplatter::executeTask(const FreeSplatterDialog::Settings& settings) {
         m_worker->deleteLater();
         m_worker = nullptr;
     }
+    clearStagedInputFiles();
 
     m_lastResult = {};
     m_lastPlyBytes.clear();
@@ -907,7 +925,42 @@ void qFreeSplatter::executeTask(const FreeSplatterDialog::Settings& settings) {
         m_dialog->enableResultButtons(false);
     }
 
-    FreeSplatterDialog::Settings resolvedSettings = settings;
+    const auto failBeforeStart = [this](const QString& message) {
+        clearStagedInputFiles();
+        m_pendingIdentityTasks.clear();
+        m_identityBatchCancelled = false;
+        if (m_dialog) {
+            m_dialog->appendLog("[Error] " + message);
+            m_dialog->setProgress(0, 100);
+            m_dialog->setTaskStage(tr("Failed."), 0);
+            m_dialog->setRunning(false);
+            m_dialog->enableResultButtons(false);
+        }
+    };
+
+    FreeSplatterDialog::Settings requestedSettings = settings;
+    if (!settings.identityInputs.isEmpty()) {
+        m_pendingIdentityTasks.clear();
+        m_identityBatchCancelled = false;
+        for (const auto& identity : settings.identityInputs) {
+            FreeSplatterDialog::Settings task = settings;
+            task.identityInputs.clear();
+            task.identityId = identity.id;
+            task.identityName = identity.name;
+            task.inputPaths = identity.inputPaths;
+            m_pendingIdentityTasks.push_back(std::move(task));
+        }
+        if (m_pendingIdentityTasks.isEmpty()) {
+            failBeforeStart(tr("No valid identity reconstruction tasks."));
+            return;
+        }
+        requestedSettings = m_pendingIdentityTasks.takeFirst();
+        m_dialog->appendLog(
+                tr("[FS] Starting identity reconstruction batch (%1 people).")
+                        .arg(settings.identityInputs.size()));
+    }
+
+    FreeSplatterDialog::Settings resolvedSettings = requestedSettings;
 
     if (resolvedSettings.mode == FreeSplatterDialog::Mode::Reconstruct &&
         !resolvedSettings.inputPaths.isEmpty()) {
@@ -915,7 +968,7 @@ void qFreeSplatter::executeTask(const FreeSplatterDialog::Settings& settings) {
         QString err;
         if (!resolveInputPaths(resolvedSettings.inputPaths, resolvedPaths,
                                &err)) {
-            m_dialog->appendLog("[Error] " + err);
+            failBeforeStart(err);
             return;
         }
         resolvedSettings.inputPaths = resolvedPaths;
@@ -940,19 +993,24 @@ void qFreeSplatter::executeTask(const FreeSplatterDialog::Settings& settings) {
     }
 
     if (resolvedSettings.modelPath.isEmpty()) {
-        m_dialog->appendLog("[Error] Please select a GGUF model file.");
+        failBeforeStart(tr("Please select a GGUF model file."));
         return;
     }
 
     if (resolvedSettings.mode == FreeSplatterDialog::Mode::Reconstruct &&
         resolvedSettings.inputPaths.isEmpty()) {
-        m_dialog->appendLog(
-                "[Error] No input images. Use File/Folder, check DB images, "
-                "or select ccImage entities in the DB tree.");
+        failBeforeStart(
+                tr("No input images. Use File/Folder, check DB images, or "
+                   "select ccImage entities in the DB tree."));
         return;
     }
 
     m_currentSettings = resolvedSettings;
+    if (!resolvedSettings.identityName.isEmpty()) {
+        m_dialog->appendLog(tr("[FS] Reconstructing identity: %1 [%2]")
+                                    .arg(resolvedSettings.identityName,
+                                         resolvedSettings.identityId.left(12)));
+    }
 
 #ifdef HAS_QSIBR
     m_dialog->appendLog(tr(
@@ -1007,11 +1065,10 @@ void qFreeSplatter::executeTask(const FreeSplatterDialog::Settings& settings) {
 }
 
 void qFreeSplatter::cancelTask() {
-#ifdef AICore_ENABLED
-    aicore_cancel_request();
-#endif
+    m_identityBatchCancelled = true;
+    m_pendingIdentityTasks.clear();
     if (m_worker && m_worker->isRunning()) {
-        m_worker->requestInterruption();
+        m_worker->requestTaskCancel();
         m_dialog->appendLog("[FS] Cancel requested...");
     }
 }
@@ -1143,6 +1200,12 @@ ccPointCloud* qFreeSplatter::buildResultPointCloud(
     cloud->setMetaData(QStringLiteral("FS/Width"), result.width);
     cloud->setMetaData(QStringLiteral("FS/Height"), result.height);
     cloud->setMetaData(QStringLiteral("FS/SHDegree"), result.shDegree);
+    if (!m_currentSettings.identityId.isEmpty()) {
+        cloud->setMetaData(QStringLiteral("FS/IdentityId"),
+                           m_currentSettings.identityId);
+        cloud->setMetaData(QStringLiteral("FS/IdentityName"),
+                           m_currentSettings.identityName);
+    }
 
     return cloud;
 }
@@ -1379,9 +1442,13 @@ void qFreeSplatter::onTaskFinished(bool success) {
             m_dialog->enableResultButtons(false);
         }
     }
-    m_dialog->setRunning(false);
-    if (success) {
-        m_dialog->enableResultButtons(!m_lastResult.gaussians.isEmpty());
+    const bool hasNextIdentity = success && !m_identityBatchCancelled &&
+                                 !m_pendingIdentityTasks.isEmpty();
+    if (!hasNextIdentity) {
+        m_dialog->setRunning(false);
+        if (success) {
+            m_dialog->enableResultButtons(!m_lastResult.gaussians.isEmpty());
+        }
     }
     if (m_worker) {
         m_worker->releaseContextOnMainThread();
@@ -1389,11 +1456,17 @@ void qFreeSplatter::onTaskFinished(bool success) {
         m_worker = nullptr;
     }
 
-    const QString tmpDir = FreeSplatterDialog::modelCacheDir() + "/../tmp";
-    QDir tmp(tmpDir);
-    if (tmp.exists()) {
-        tmp.removeRecursively();
+    if (hasNextIdentity) {
+        const FreeSplatterDialog::Settings next =
+                m_pendingIdentityTasks.takeFirst();
+        m_dialog->appendLog(tr("[FS] Continuing identity batch: %1 remaining.")
+                                    .arg(m_pendingIdentityTasks.size() + 1));
+        QTimer::singleShot(0, this, [this, next]() { executeTask(next); });
+        return;
     }
+    if (!success) m_pendingIdentityTasks.clear();
+
+    clearStagedInputFiles();
 
     if (m_app) {
         m_app->updateUI();

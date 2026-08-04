@@ -41,6 +41,8 @@ AICORE_CAPI aicore_depth_ctx* aicore_depth_load_nested_device(
         int n_threads,
         const char* device);
 AICORE_CAPI void aicore_depth_free(aicore_depth_ctx* ctx); /* safe on NULL */
+/** True only when a context has a loaded depth engine. */
+AICORE_CAPI int aicore_depth_is_ready(const aicore_depth_ctx* ctx);
 /* malloc'd JSON describing model config; free via aicore_depth_free_string. */
 AICORE_CAPI char* aicore_depth_info_json(aicore_depth_ctx* ctx);
 AICORE_CAPI void aicore_depth_free_string(char* s);

@@ -87,3 +87,10 @@ if(AICore_ENABLED AND TARGET AICore)
     # always define AICore_ENABLED when compiling this static library's .cc files.
     target_compile_definitions(${COLMAP_LIB_NAME} PUBLIC AICore_ENABLED)
 endif()
+
+# The embedded reconstruction widgets use QFutureWatcher/QtConcurrent for
+# cancellable model downloads. Keep this dependency explicit for both Qt 5
+# and Qt 6 builds instead of relying on the application target transitively.
+if (GUI_ENABLED AND TARGET Qt::Concurrent)
+    target_link_libraries(${COLMAP_LIB_NAME} PUBLIC Qt::Concurrent)
+endif()

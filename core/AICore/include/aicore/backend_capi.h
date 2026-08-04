@@ -26,6 +26,14 @@ typedef struct {
     int is_default;    /* 1 if this entry should be pre-selected in UI */
 } aicore_device_info;
 
+enum aicore_backend_capability {
+    AICORE_BACKEND_CAP_COMPUTE = 1u << 0,
+    AICORE_BACKEND_CAP_GPU = 1u << 1,
+    AICORE_BACKEND_CAP_TASK_CANCEL = 1u << 2,
+    AICORE_BACKEND_CAP_MULTI_DEVICE = 1u << 3,
+    AICORE_BACKEND_CAP_CUDNN_CONV2D = 1u << 4,
+};
+
 /* Backend API ABI version. Increment when this header's binary contract
    changes. */
 AICORE_CAPI int aicore_backend_abi_version(void);
@@ -46,6 +54,10 @@ AICORE_CAPI const char* aicore_auto_device_order(void);
    device accepts "auto", "cpu", "gpu", or a backend id such as
    "vulkan:1". */
 AICORE_CAPI int aicore_device_available(const char* device);
+
+/* Capability bitmask for a concrete device or "auto". Returns 0 when the
+   request cannot be resolved. */
+AICORE_CAPI unsigned int aicore_device_capabilities(const char* device);
 
 /* ---- backend lifecycle ---- */
 

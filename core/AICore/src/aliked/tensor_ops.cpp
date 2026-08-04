@@ -10,8 +10,16 @@
 #include <algorithm>
 #include <cmath>
 
+#if defined(_OPENMP)
+#include <omp.h>
+#endif
+
 namespace lightglue::aliked_internal {
 namespace {
+
+#if defined(_OPENMP)
+int CpuTensorThreads() { return std::min(8, omp_get_max_threads()); }
+#endif
 
 inline int32_t IndexNchw(
         int32_t c, int32_t y, int32_t x, int32_t h, int32_t w) {
@@ -204,7 +212,12 @@ void UpsampleBilinear(const std::vector<float> &input,
         return;
     }
 
-    const std::vector<float> src = input;
+    std::vector<float> src_copy;
+    const std::vector<float> *src = &input;
+    if (output == &input) {
+        src_copy = input;
+        src = &src_copy;
+    }
     output->assign(static_cast<size_t>(c) * out_h * out_w, 0.0f);
     const float scale_h = out_h > 1 ? static_cast<float>(h - 1) /
                                               static_cast<float>(out_h - 1)
@@ -212,13 +225,53 @@ void UpsampleBilinear(const std::vector<float> &input,
     const float scale_w = out_w > 1 ? static_cast<float>(w - 1) /
                                               static_cast<float>(out_w - 1)
                                     : 0.0f;
+    struct AxisSample {
+        int32_t lo;
+        int32_t hi;
+        float low_weight;
+        float high_weight;
+    };
+    std::vector<AxisSample> ys(static_cast<size_t>(out_h));
+    std::vector<AxisSample> xs(static_cast<size_t>(out_w));
+    for (int32_t oy = 0; oy < out_h; ++oy) {
+        const float pos = std::min(std::max(oy * scale_h, 0.0f),
+                                   static_cast<float>(h - 1));
+        const int32_t lo = static_cast<int32_t>(std::floor(pos));
+        const float high_weight = pos - static_cast<float>(lo);
+        ys[static_cast<size_t>(oy)] = {lo, std::min(lo + 1, h - 1),
+                                       1.0f - high_weight, high_weight};
+    }
+    for (int32_t ox = 0; ox < out_w; ++ox) {
+        const float pos = std::min(std::max(ox * scale_w, 0.0f),
+                                   static_cast<float>(w - 1));
+        const int32_t lo = static_cast<int32_t>(std::floor(pos));
+        const float high_weight = pos - static_cast<float>(lo);
+        xs[static_cast<size_t>(ox)] = {lo, std::min(lo + 1, w - 1),
+                                       1.0f - high_weight, high_weight};
+    }
+
+#if defined(_OPENMP)
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(CpuTensorThreads())
+#endif
     for (int32_t ch = 0; ch < c; ++ch) {
         for (int32_t oy = 0; oy < out_h; ++oy) {
+            const AxisSample &sy = ys[static_cast<size_t>(oy)];
+            const size_t src_ch = static_cast<size_t>(ch) * h * w;
+            const size_t dst_row =
+                    (static_cast<size_t>(ch) * out_h + oy) * out_w;
             for (int32_t ox = 0; ox < out_w; ++ox) {
-                const float in_y = oy * scale_h;
-                const float in_x = ox * scale_w;
-                (*output)[IndexNchw(ch, oy, ox, out_h, out_w)] =
-                        BilinearSample(src, c, h, w, ch, in_y, in_x);
+                const AxisSample &sx = xs[static_cast<size_t>(ox)];
+                const size_t row0 = src_ch + static_cast<size_t>(sy.lo) * w;
+                const size_t row1 = src_ch + static_cast<size_t>(sy.hi) * w;
+                const float v00 = (*src)[row0 + sx.lo];
+                const float v01 = (*src)[row0 + sx.hi];
+                const float v10 = (*src)[row1 + sx.lo];
+                const float v11 = (*src)[row1 + sx.hi];
+                (*output)[dst_row + ox] = sy.low_weight * sx.low_weight * v00 +
+                                          sy.low_weight * sx.high_weight * v01 +
+                                          sy.high_weight * sx.low_weight * v10 +
+                                          sy.high_weight * sx.high_weight * v11;
             }
         }
     }

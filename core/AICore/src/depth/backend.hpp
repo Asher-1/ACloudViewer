@@ -1,5 +1,6 @@
 #pragma once
 #include "aicore/export.h"
+#include "ggml_backend_registry.hpp"
 #include "ggml.h"
 #include "ggml-backend.h"
 #include <functional>
@@ -29,7 +30,7 @@ class Backend {
 public:
     // auto priority: macOS Metal -> CPU; elsewhere Vulkan -> CPU. Optional
     // developer devices remain available only when explicitly requested.
-    explicit Backend(const std::string& device = "auto");
+    explicit Backend(const std::string& device = "auto", int n_threads = 1);
     ~Backend();
     Backend(const Backend&) = delete;
     Backend& operator=(const Backend&) = delete;
@@ -46,6 +47,9 @@ public:
     // The underlying ggml backend handle (GPU or CPU). Exposed so the loader can
     // allocate + upload the offloaded weights onto the SAME backend graphs run on.
     ggml_backend_t handle() const;
+    // Locks every physical backend participating in this session. The caller
+    // keeps graph allocators and scheduler private to this Backend instance.
+    aicore::runtime::BackendLeaseLock lock() const;
 
     // Register a 1-D F32 input tensor; data is copied into `pool` and uploaded
     // AFTER graph allocation. Returns the graph leaf tensor.

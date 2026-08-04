@@ -5,8 +5,13 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <QFile>
+#include <QSqlDatabase>
+#include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QThread>
+#include <QUuid>
+#include <QVariant>
 #include <atomic>
 #include <cmath>
 #include <thread>
@@ -167,6 +172,76 @@ static void test_registry_concurrent_read() {
     FD_CHECK(reader_ok.load());
 }
 
+static void test_registry_migrates_legacy_json() {
+    QTemporaryDir tmp;
+    FD_CHECK(tmp.isValid());
+    QFile legacy(tmp.filePath(QStringLiteral("face_registry.json")));
+    FD_CHECK(legacy.open(QIODevice::WriteOnly));
+    const QByteArray json =
+            R"({"entries":[{"id":"legacy-id","name":"Legacy User","model":"arcface","created":"2024-01-01T00:00:00Z","embedding":[1,0,0,0]}]})";
+    FD_CHECK(legacy.write(json) == json.size());
+    legacy.close();
+
+    FaceRegistryStore store(tmp.filePath(QStringLiteral("registry.db")));
+    FD_CHECK(store.open());
+    const auto entries = store.entries();
+    FD_CHECK(entries.size() == 1);
+    if (!entries.empty()) {
+        FD_CHECK(entries.front().id == QStringLiteral("legacy-id"));
+    }
+    FD_CHECK(QFile::exists(
+            tmp.filePath(QStringLiteral("face_registry.json.migrated"))));
+}
+
+static void test_registry_rejects_invalid_embeddings() {
+    QTemporaryDir tmp;
+    FD_CHECK(tmp.isValid());
+    const QString dbPath = tmp.filePath(QStringLiteral("registry.db"));
+    FaceRegistryStore store(dbPath);
+    FD_CHECK(store.open());
+
+    FaceRegistryEntry empty;
+    empty.name = QStringLiteral("Empty");
+    FD_CHECK(!store.addEntry(std::move(empty)));
+
+    FaceRegistryEntry nonFinite;
+    nonFinite.name = QStringLiteral("Non finite");
+    nonFinite.embedding = {1.f, std::nanf("")};
+    FD_CHECK(!store.addEntry(std::move(nonFinite)));
+}
+
+static void test_registry_ignores_malformed_blob() {
+    QTemporaryDir tmp;
+    FD_CHECK(tmp.isValid());
+    const QString dbPath = tmp.filePath(QStringLiteral("registry.db"));
+    const QString connection =
+            QStringLiteral("malformed_test_") + QUuid::createUuid().toString();
+    {
+        QSqlDatabase db = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),
+                                                    connection);
+        db.setDatabaseName(dbPath);
+        FD_CHECK(db.open());
+        QSqlQuery query(db);
+        FD_CHECK(query.exec(QStringLiteral(
+                "CREATE TABLE faces (id TEXT PRIMARY KEY,name TEXT NOT NULL,"
+                "model TEXT,dim INTEGER NOT NULL,created TEXT,"
+                "embedding BLOB NOT NULL,thumb BLOB)")));
+        query.prepare(QStringLiteral(
+                "INSERT INTO faces(id,name,dim,embedding) VALUES(?,?,?,?)"));
+        query.addBindValue(QStringLiteral("bad"));
+        query.addBindValue(QStringLiteral("Bad blob"));
+        query.addBindValue(1);
+        query.addBindValue(QByteArray("abc", 3));
+        FD_CHECK(query.exec());
+        db.close();
+    }
+    QSqlDatabase::removeDatabase(connection);
+
+    FaceRegistryStore store(dbPath);
+    FD_CHECK(store.open());
+    FD_CHECK(store.entries().empty());
+}
+
 int main() {
     test_parse_detect_json();
     test_parse_analyze_json();
@@ -176,6 +251,9 @@ int main() {
     test_format_labels();
     test_registry_store_match();
     test_registry_concurrent_read();
+    test_registry_migrates_legacy_json();
+    test_registry_rejects_invalid_embeddings();
+    test_registry_ignores_malformed_blob();
 
     if (g_test_failures == 0) {
         std::fprintf(stderr, "test_qfacedetect_embed_helpers ok\n");

@@ -16,6 +16,7 @@
 #include <iostream>
 #include <memory>
 
+#include "../common/gguf_weight_quantize.hpp"
 #include "aliked_gpu_ops.hpp"
 #include "aliked_stage_bench.hpp"
 #include "backend.h"
@@ -765,10 +766,11 @@ public:
             } else {
                 device_ = backend_.device;
                 if (backend_.IsGpu()) {
+                    const auto backend_lock = backend_.Lock();
                     gpu_cache_ = std::make_unique<GpuPipelineCache>(&backend_);
 #if defined(AICORE_VULKAN_ALIKED)
                     if (backend_.IsVulkan()) {
-                        ClearCachedGpuOpGraphs();
+                        ClearCachedGpuOpGraphs(&backend_);
                     }
 #endif
                     if (!gpu_cache_->Warmup(tensors_, &init_error_)) {
@@ -782,6 +784,7 @@ public:
     }
 
     ~AlikedFeatureExtractorImpl() override {
+        const auto backend_lock = backend_.Lock();
 #if defined(AICORE_VULKAN_ALIKED)
         if (backend_.IsVulkan()) {
             EndVulkanExtract(&backend_, gpu_cache_.get());
@@ -790,12 +793,22 @@ public:
             ggml_backend_synchronize(backend_.handle);
         }
 #endif
+        if (backend_.IsGpu() && !backend_.IsVulkan()) {
+            FlushGpuPipeline(&backend_);
+            ClearCachedGpuOpGraphs(&backend_);
+        }
+        gpu_cache_.reset();
     }
 
     bool RewarmVulkanBackendIfRequested() {
 #if defined(AICORE_VULKAN_ALIKED)
-        if (!backend_.IsVulkan() ||
-            std::getenv("LIGHTGLUE_ALIKED_VULKAN_FRESH_EXTRACT") == nullptr) {
+        if (!backend_.IsVulkan()) {
+            return true;
+        }
+        const char *fresh_env =
+                std::getenv("LIGHTGLUE_ALIKED_VULKAN_FRESH_EXTRACT");
+        const bool fresh_extract = fresh_env == nullptr || fresh_env[0] != '0';
+        if (!fresh_extract || vulkan_extract_count_++ == 0) {
             return true;
         }
         FlushGpuPipeline(&backend_);
@@ -826,6 +839,10 @@ public:
             error_ = "null features output";
             return false;
         }
+        // ALIKED's cached Vulkan graphs and custom kernels are session-private,
+        // but their ggml queue is shared process-wide. Serialize the complete
+        // extraction instead of only individual graph submits.
+        const auto backend_lock = backend_.Lock();
 
         std::vector<float> resized;
         int32_t resized_w = 0;
@@ -867,10 +884,6 @@ public:
 #endif
             const bool persistent_graph =
                     std::getenv("LIGHTGLUE_ALIKED_PERSISTENT_GRAPH") != nullptr;
-#if defined(AICORE_VULKAN_ALIKED)
-            VulkanExtractScope vk_scope;
-            vk_scope.Begin(&backend_, gpu_cache_.get());
-#endif
             GpuPipelineCache stack_cache(&backend_);
             GpuPipelineCache *extract_cache = gpu_cache_.get();
             const bool reuse_gpu_extract_cache = persistent_graph;
@@ -882,6 +895,12 @@ public:
             } else if (!gpu_cache_->EnsureComputeLinked(&error_)) {
                 return false;
             }
+#if defined(AICORE_VULKAN_ALIKED)
+            // Declared after stack_cache so the Vulkan queue is drained before
+            // any temporary graph tensors and buffers are destroyed.
+            VulkanExtractScope vk_scope;
+            vk_scope.Begin(&backend_, extract_cache);
+#endif
             // Cached ggml graphs re-bind via ggml_gallocr_alloc_graph
             // immediately before each graph_compute (shared allocator holds one
             // graph only).
@@ -929,12 +948,15 @@ public:
             std::vector<float> kpts_host(static_cast<size_t>(gpu_kpts.count) *
                                          2);
             std::vector<float> scores_host(static_cast<size_t>(gpu_kpts.count));
-            BarrierGpuPipeline(&backend_);
-            ggml_backend_tensor_get(gpu_kpts.keypoints_norm.tensor,
-                                    kpts_host.data(), 0,
-                                    kpts_host.size() * sizeof(float));
-            ggml_backend_tensor_get(gpu_kpts.scores.tensor, scores_host.data(),
-                                    0, scores_host.size() * sizeof(float));
+            if (gpu_kpts.count > 0) {
+                BarrierGpuPipeline(&backend_);
+                ggml_backend_tensor_get(gpu_kpts.keypoints_norm.tensor,
+                                        kpts_host.data(), 0,
+                                        kpts_host.size() * sizeof(float));
+                ggml_backend_tensor_get(gpu_kpts.scores.tensor,
+                                        scores_host.data(), 0,
+                                        scores_host.size() * sizeof(float));
+            }
             if (std::getenv("LIGHTGLUE_ALIKED_TRACE")) {
                 const size_t n = kpts_host.size();
                 size_t bad = 0;
@@ -952,7 +974,7 @@ public:
                 std::cerr << "\n";
             }
 
-            {
+            if (gpu_kpts.count > 0) {
                 StageBench bench("sddh");
                 if (!RunSddhDispatch(
                             gpu_maps.feature, descriptor_dim_,
@@ -993,9 +1015,12 @@ public:
                           << dkd_out.keypoints_norm[0] << ","
                           << dkd_out.keypoints_norm[1] << ")\n";
             }
-            ggml_backend_tensor_get(gpu_desc.tensor, descriptors.data(), 0,
-                                    static_cast<size_t>(count) *
-                                            descriptor_dim_ * sizeof(float));
+            if (count > 0) {
+                ggml_backend_tensor_get(gpu_desc.tensor, descriptors.data(), 0,
+                                        static_cast<size_t>(count) *
+                                                descriptor_dim_ *
+                                                sizeof(float));
+            }
         } else if (!ExtractDenseMap(tensors_, resized, resized_w, resized_h,
                                     resized_h, resized_w, &feature_map,
                                     &score_map, &error_,
@@ -1075,6 +1100,7 @@ private:
     int32_t descriptor_dim_ = 128;
     internal::Backend backend_;
     std::unique_ptr<GpuPipelineCache> gpu_cache_;
+    uint64_t vulkan_extract_count_ = 0;
     std::string device_ = "cpu-ref";
     std::string init_error_;
     std::string error_;
@@ -1111,14 +1137,8 @@ bool QuantizeAlikedModel(const std::string &input_gguf,
                          const std::string &output_gguf,
                          const std::string &type,
                          std::string *error) {
-    (void)input_gguf;
-    (void)output_gguf;
-    (void)type;
-    if (error != nullptr) {
-        *error = "ALIKED quantize is not implemented yet; use "
-                 "convert_aliked_to_gguf.py";
-    }
-    return false;
+    return aicore::common::quantize_gguf_weights(input_gguf, output_gguf, type,
+                                                 error);
 }
 
 bool DumpAlikedDcnParity(const AlikedExtractionOptions &options,
@@ -1165,6 +1185,7 @@ bool DumpAlikedDcnParity(const AlikedExtractionOptions &options,
         return false;
     }
 
+    const auto backend_lock = backend.Lock();
     GpuPipelineCache cache(&backend);
     if (!cache.Warmup(tensors, error)) {
         return false;

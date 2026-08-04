@@ -40,6 +40,7 @@ private slots:
 
 private:
     void refreshDbImages();
+    void clearStagedInputFiles();
     ccImage* findDbImage(const QString& name) const;
     bool warmupInferenceBackend(const QString& device, QString* logMsg) const;
     static bool saveDepthAsImage(const DA3DepthResult& result,
@@ -49,6 +50,7 @@ private:
     DA3Dialog* m_dialog = nullptr;
     DA3Worker* m_worker = nullptr;
     DA3Dialog::Settings m_currentSettings;
+    QStringList m_stagedInputFiles;
     ccHObject::Container m_selectedEntities;
 
     DA3DepthResult m_lastDepthResult;

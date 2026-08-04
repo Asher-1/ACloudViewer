@@ -60,6 +60,7 @@ bool model::load(const std::string &gguf_path,
         error = be.error;
         return false;
     }
+    const auto backend_lock = be.lock();
     if (!map_tensors() || !realize_weights()) {
         return false;
     }
@@ -195,6 +196,7 @@ bool model::forward(const float *images,
                     int32_t n_views,
                     std::vector<float> &out,
                     const tap_sink &sink) {
+    const auto backend_lock = be.lock();
     const hparams &h = file.hp;
     int64_t N = n_views;
     const int64_t D = h.n_embd;                       // 1024

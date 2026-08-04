@@ -4,6 +4,8 @@ DeepLSD wireframe line extraction for ACloudViewer — **native C++ GGML**.
 
 **User guide:** [docs/guides/plugins/qDeepLSD.md](../../../docs/guides/plugins/qDeepLSD.md)
 
+![qDeepLSD line extraction](images/qDeepLSD.png)
+
 ```
 Image → AICore DeepLSD GGML → df + angle → AFM + LSD → line segments → DB tree
 ```

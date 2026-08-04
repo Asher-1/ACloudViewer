@@ -28,6 +28,22 @@
 DeepLSDWorker::DeepLSDWorker(const Settings& settings, QObject* parent)
     : QThread(parent), m_settings(settings) {
     qRegisterMetaType<DeepLSDRunResult>("DeepLSDRunResult");
+#ifdef AICore_ENABLED
+    m_cancelToken = aicore_cancel_token_new();
+#endif
+}
+
+DeepLSDWorker::~DeepLSDWorker() {
+#ifdef AICore_ENABLED
+    aicore_cancel_token_free(m_cancelToken);
+#endif
+}
+
+void DeepLSDWorker::requestTaskCancel() {
+    requestInterruption();
+#ifdef AICore_ENABLED
+    aicore_cancel_token_request(m_cancelToken);
+#endif
 }
 
 void DeepLSDWorker::releaseContextOnMainThread() {
@@ -263,11 +279,11 @@ void DeepLSDWorker::run() {
     emit logMessage("[Error] AICore not enabled.");
     emit taskFinished(false);
 #else
-    aicore_inference_lock();
-    aicore_cancel_begin();
+    aicore_device_task_lock(m_settings.device.toUtf8().constData());
+    aicore_cancel_scope_begin(m_cancelToken);
     const bool ok = runExtract();
-    aicore_cancel_end();
-    aicore_inference_unlock();
+    aicore_cancel_scope_end(m_cancelToken);
+    aicore_device_task_unlock();
     emit taskFinished(ok);
 #endif
 }

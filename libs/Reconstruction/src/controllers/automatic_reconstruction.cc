@@ -787,6 +787,7 @@ void AutomaticReconstructionController::RunDA3SparseMapper() {
   da3_config.model_path = options_.da3_sparse_model_path;
   da3_config.metric_model_path = options_.da3_sparse_metric_model_path;
   da3_config.num_threads = options_.num_threads;
+  da3_config.device = options_.da3_device;
   da3_config.sparse_mode = SparseModelMode::DA3_DEPTH_POSE;
 
   if (da3_config.model_path.empty()) {
@@ -808,6 +809,7 @@ void AutomaticReconstructionController::RunDA3SparseMapper() {
   da3_controller.Start();
   da3_controller.Wait();
   active_thread_ = nullptr;
+  da3_vram_warning_ = da3_controller.vramCapWarning();
 
   // Read back the generated sparse model
   if (ExistsDir(sparse_0)) {
@@ -829,8 +831,6 @@ void AutomaticReconstructionController::RunDA3DepthMaps() {
     return;
   }
 
-  DA3ClearVramCapWarning();
-
   RECON_LOG_DEBUG("========================================\n");
   if (da3_patchmatch_refine_) {
     RECON_LOG_DEBUG("Running DA3 metric depth priors (PatchMatch refine follows)\n");
@@ -845,6 +845,7 @@ void AutomaticReconstructionController::RunDA3DepthMaps() {
   da3_config.model_path = options_.da3_stereo_model_path;
   da3_config.metric_model_path = options_.da3_stereo_metric_model_path;
   da3_config.num_threads = options_.num_threads;
+  da3_config.device = options_.da3_device;
   da3_config.max_image_size = option_manager_.patch_match_stereo->max_image_size;
   da3_config.stereo_mode = StereoPipelineMode::DA3_DEPTH_INFERENCE;
 
@@ -947,6 +948,9 @@ void AutomaticReconstructionController::RunDA3DepthMaps() {
       da3_controller.Start();
       da3_controller.Wait();
       active_thread_ = nullptr;
+      if (da3_controller.vramCapWarning().active) {
+        da3_vram_warning_ = da3_controller.vramCapWarning();
+      }
 
       if (!da3_controller.Success()) {
         RECON_LOG_ERROR("ERROR: DA3 depth map generation failed for dense/%zu. Dense fusion will be skipped.\n", i);

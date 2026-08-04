@@ -9,7 +9,6 @@
 
 #include <chrono>
 #include <cmath>
-#include <cstdlib>
 #include <cstring>
 #include <string>
 
@@ -30,13 +29,15 @@
 namespace aicore {
 namespace depth {
 std::unique_ptr<Engine> Engine::load(const std::string& path, int n_threads) {
-    const char* device = std::getenv("DA_DEVICE");
-    return load_device(path, n_threads, device ? device : "auto");
+    // Device selection is explicit at the task/session boundary. Keep this
+    // legacy overload deterministic instead of consulting process environment.
+    return load_device(path, n_threads, "auto");
 }
 std::unique_ptr<Engine> Engine::load_device(const std::string& path,
                                             int n_threads,
                                             const std::string& device) {
-    std::unique_ptr<Engine> e(new Engine(device));
+    std::unique_ptr<Engine> e(
+            new Engine(device, n_threads > 0 ? n_threads : 1));
     if (e->be_.has_error()) {
         DA_ERR("engine: backend init failed: %s", e->be_.error().c_str());
         return nullptr;
@@ -45,7 +46,6 @@ std::unique_ptr<Engine> Engine::load_device(const std::string& path,
         DA_ERR("engine: load failed");
         return nullptr;
     }
-    e->be_.set_n_threads(n_threads > 0 ? n_threads : 1);
     if (!e->ml_.offload_weights(e->be_)) {
         DA_ERR("engine: offload failed");
         return nullptr;
@@ -58,9 +58,7 @@ std::unique_ptr<Engine> Engine::load_device(const std::string& path,
 std::unique_ptr<Engine> Engine::load_nested(const std::string& anyview_gguf,
                                             const std::string& metric_gguf,
                                             int n_threads) {
-    const char* device = std::getenv("DA_DEVICE");
-    return load_nested_device(anyview_gguf, metric_gguf, n_threads,
-                              device ? device : "auto");
+    return load_nested_device(anyview_gguf, metric_gguf, n_threads, "auto");
 }
 std::unique_ptr<Engine> Engine::load_nested_device(
         const std::string& anyview_gguf,

@@ -2,6 +2,8 @@
 
 Turn ordinary photos into **3D Gaussian splatting** point clouds — **no camera poses and no Python required**. Shares `libAICore.so` with qDA3 (ggml inference for [FreeSplatter](https://github.com/TencentARC/FreeSplatter)).
 
+![qFreeSplatter guided face capture](../../_static/plugin-assets/qFreeSplatter/qFreeSplatter_video.png)
+
 ## Workflow
 
 ```
@@ -57,6 +59,8 @@ Optional: **Estimate poses** (PnP), **Opacity threshold**, Basic/Full PLY fields
 ### Face Capture tab
 
 Shown when OpenCV is built with **videoio + objdetect** (`BUILD_OPENCV=ON` → `HAS_OPENCV_FACE_CAPTURE` in the plugin). Uses the webcam to capture **five guided face angles** (front, ±45°, ±15° pitch), crops to 512×512, adds them to the input list, and can auto-start reconstruction when the **Object** model is ready.
+
+The capture tab keeps each selected identity's frames together and sends that complete identity batch in one FreeSplatter forward pass. It does not fuse independent two-view outputs: FreeSplatter's transformer receives all selected views together, matching the upstream multi-view execution model.
 
 | Control | Description |
 |---------|-------------|

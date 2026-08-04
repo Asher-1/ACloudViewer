@@ -25,6 +25,7 @@ int main() {
 
     AICORE_CHECK(aicore_gaussian_load(nullptr, 1) == nullptr);
     AICORE_CHECK(aicore_gaussian_load_opts(nullptr, nullptr) == nullptr);
+    AICORE_CHECK(aicore_gaussian_is_ready(nullptr) == 0);
     AICORE_CHECK(aicore_gaussian_info_json(nullptr) == nullptr);
 
     aicore_gaussian_options* opts = aicore_gaussian_options_new();

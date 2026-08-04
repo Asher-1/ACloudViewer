@@ -273,6 +273,7 @@ public:
         return curCtx().viewportParams;
     }
     QPoint& curLastMousePos() { return curCtx().lastMousePos; }
+    QPoint& curLastMousePressPos() { return curCtx().lastMousePressPos; }
     QPoint& curLastMouseMovePos() { return curCtx().lastMouseMovePos; }
     bool& curMouseMoved() { return curCtx().mouseMoved; }
     bool& curMouseButtonPressed() { return curCtx().mouseButtonPressed; }

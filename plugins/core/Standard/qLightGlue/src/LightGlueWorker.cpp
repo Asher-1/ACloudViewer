@@ -13,6 +13,7 @@
 #include <QElapsedTimer>
 #include <QFileInfo>
 #include <QImage>
+#include <QStringList>
 #include <cmath>
 #include <cstring>
 #include <vector>
@@ -36,6 +37,22 @@ LightGlueWorker::LightGlueWorker(const Settings& settings, QObject* parent)
         qRegisterMetaType<LightGlueRunResult>("LightGlueRunResult");
         registered = true;
     }
+#ifdef AICore_ENABLED
+    m_cancelToken = aicore_cancel_token_new();
+#endif
+}
+
+LightGlueWorker::~LightGlueWorker() {
+#ifdef AICore_ENABLED
+    aicore_cancel_token_free(m_cancelToken);
+#endif
+}
+
+void LightGlueWorker::requestTaskCancel() {
+    requestInterruption();
+#ifdef AICore_ENABLED
+    aicore_cancel_token_request(m_cancelToken);
+#endif
 }
 
 void LightGlueWorker::releaseContextOnMainThread() {
@@ -60,27 +77,71 @@ QString resolvedDeviceFromInfoJson(char* info, void (*freeFn)(char*)) {
 
 QString resolve_aliked_extractor_gguf(const QString& matcher_model_path) {
     QFileInfo matcher(matcher_model_path);
-    QString stem = matcher.fileName();
-    stem.replace(QStringLiteral("aliked-lightglue"),
-                 QStringLiteral("aliked-n16rot"));
-    char* cache = aicore_aliked_model_cache_dir();
-    QString base;
-    if (cache) {
-        base = QString::fromUtf8(cache);
-        aicore_aliked_free_string(cache);
-    } else {
-        base = QDir::homePath() +
-               QStringLiteral("/cloudViewer_data/extract/aliked_models");
+
+    // Derive the base extractor stem
+    // (e.g. aliked-lightglue-q8_0.gguf → aliked-n16rot-q8_0.gguf)
+    QString baseStem = matcher.fileName();
+    baseStem.replace(QStringLiteral("aliked-lightglue"),
+                     QStringLiteral("aliked-n16rot"));
+
+    // Build ordered list of quantization variants to try.
+    // The dialog downloads f16 (see alikedExtractorFilenameForMatcher),
+    // so f16 is the preferred variant when the exact match is absent.
+    QStringList stems;
+    stems << baseStem;
+
+    auto withQuant = [&](const QString& from, const QString& to) -> QString {
+        QString s = baseStem;
+        s.replace(from, to);
+        return s;
+    };
+    const QString f16 =
+            withQuant(QStringLiteral("-q8_0"), QStringLiteral("-f16"));
+    if (f16 != baseStem && !stems.contains(f16)) stems << f16;
+    const QString f16b =
+            withQuant(QStringLiteral("-f32"), QStringLiteral("-f16"));
+    if (f16b != baseStem && !stems.contains(f16b)) stems << f16b;
+    const QString q80 =
+            withQuant(QStringLiteral("-f16"), QStringLiteral("-q8_0"));
+    if (q80 != baseStem && !stems.contains(q80)) stems << q80;
+    const QString f32 =
+            withQuant(QStringLiteral("-f16"), QStringLiteral("-f32"));
+    if (f32 != baseStem && !stems.contains(f32)) stems << f32;
+
+    // Resolve model cache directory — same as matcher models
+    // (lightglue_models/).
+    const QString base = matcher.absolutePath();
+
+    // Try each variant in cache dir, then sibling dir
+    for (const QString& stem : stems) {
+        const QString cached = QDir(base).filePath(stem);
+        if (QFileInfo(cached).isFile()) return cached;
     }
-    const QString cached = QDir(base).filePath(stem);
-    if (QFileInfo(cached).isFile()) {
-        return cached;
+    for (const QString& stem : stems) {
+        const QString sibling = matcher.absoluteDir().filePath(stem);
+        if (QFileInfo(sibling).isFile()) return sibling;
     }
-    const QString sibling = matcher.absoluteDir().filePath(stem);
-    if (QFileInfo(sibling).isFile()) {
-        return sibling;
-    }
-    return cached;
+
+    // Return preferred path (not found) — caller will report error or
+    // the dialog's ensureAlikedExtractorAvailable will trigger download.
+    return QDir(base).filePath(stems.first());
+}
+
+/// Map a resolved ggml device name (e.g. "CUDA0", "Vulkan") back to the
+/// canonical device string understood by all AICore backends ("cuda",
+/// "vulkan", "metal", "cpu").  Falls back to @p fallback when the name
+/// cannot be mapped.
+QString canonicalDeviceFromResolved(const QString& resolved,
+                                    const QString& fallback) {
+    const QString lower = resolved.toLower();
+    if (lower.contains(QStringLiteral("cuda"))) return QStringLiteral("cuda");
+    if (lower.contains(QStringLiteral("vulkan")))
+        return QStringLiteral("vulkan");
+    if (lower.contains(QStringLiteral("metal"))) return QStringLiteral("metal");
+    if (lower.contains(QStringLiteral("opencl")))
+        return QStringLiteral("opencl");
+    if (lower.contains(QStringLiteral("cpu"))) return QStringLiteral("cpu");
+    return fallback;
 }
 
 bool extract_feature_pair(const LightGlueWorker::Settings& settings,
@@ -275,7 +336,22 @@ bool LightGlueWorker::runMatch() {
     }
 
     emit progressUpdate(20, 100);
-    emit logMessage("[LG] Extracting RootSIFT features (OpenCV)...");
+
+    // Resolve the device for ALIKED feature extraction from the already-
+    // loaded LightGlue context.  The context resolves "auto" / "gpu" to a
+    // concrete backend (e.g. "CUDA0"); we map that back to the canonical
+    // form ("cuda") so the ALIKED extractor — whose backend may not
+    // understand "auto" — receives an explicit device string.
+    {
+        char* info = aicore_lightglue_info_json(ctx);
+        const QString resolved =
+                resolvedDeviceFromInfoJson(info, aicore_lightglue_free_string);
+        m_settings.device =
+                canonicalDeviceFromResolved(resolved, m_settings.device);
+    }
+
+    emit logMessage("[LG] Extracting features (device=" + m_settings.device +
+                    QStringLiteral(")..."));
 
     lightglue_plugin::OwnedFeatures f0;
     lightglue_plugin::OwnedFeatures f1;
@@ -285,6 +361,9 @@ bool LightGlueWorker::runMatch() {
                                 .arg(extractLog));
         m_pendingCtx = ctx;
         return false;
+    }
+    if (!extractLog.isEmpty()) {
+        emit logMessage(extractLog);
     }
 
     emit progressUpdate(45, 100);
@@ -362,11 +441,11 @@ void LightGlueWorker::run() {
     emit taskFinished(false);
     return;
 #else
-    aicore_inference_lock();
-    aicore_cancel_begin();
+    aicore_device_task_lock(m_settings.device.toUtf8().constData());
+    aicore_cancel_scope_begin(m_cancelToken);
     if (isInterruptionRequested() || aicore_cancel_requested()) {
-        aicore_cancel_end();
-        aicore_inference_unlock();
+        aicore_cancel_scope_end(m_cancelToken);
+        aicore_device_task_unlock();
         emit taskFinished(false);
         return;
     }
@@ -379,8 +458,8 @@ void LightGlueWorker::run() {
             ok = runModelInfo();
             break;
     }
-    aicore_cancel_end();
-    aicore_inference_unlock();
+    aicore_cancel_scope_end(m_cancelToken);
+    aicore_device_task_unlock();
     emit taskFinished(ok);
 #endif
 }

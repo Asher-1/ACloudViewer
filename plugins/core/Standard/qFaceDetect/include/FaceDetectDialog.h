@@ -11,6 +11,7 @@
 #include <QComboBox>
 #include <QDialog>
 #include <QDoubleSpinBox>
+#include <QHash>
 #include <QImage>
 #include <QLabel>
 #include <QLineEdit>
@@ -103,6 +104,7 @@ private slots:
     void setupMatchThresholdLinks();
     void applyMinDetectionScoreToAllTabs(double value);
     void setupMinScoreLinks();
+    void cacheTabViewportHeights();
 
 protected:
     void closeEvent(QCloseEvent* event) override;
@@ -156,6 +158,7 @@ private:
     void cancelDownload();
     void updateImagePreview();
     void updateSecondImagePreview();
+    void updateActiveTabViewportHeight();
     void loadBatchSettings();
     void saveBatchSettings() const;
 
@@ -218,6 +221,8 @@ private:
     bool m_testPostFillBatchImage = false;
     bool m_testClearExistingEntries = true;
     bool m_autoRunAfterDownload = false;
+    int m_activeTabHeight = -1;
+    QHash<const QWidget*, int> m_tabViewportHeights;
 
     static constexpr int kTestDataOverallMax = 1000;
     static constexpr int kTestDataDownloadShare =

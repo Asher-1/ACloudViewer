@@ -47,7 +47,7 @@ bool RunCropWhcnGpu(internal::Backend *backend, const GpuTensor &input,
                     int32_t pad_top, int32_t pad_left, int32_t out_h, int32_t out_w,
                     GpuTensor *output, std::string *error);
 
-void ClearCachedGpuOpGraphs();
+void ClearCachedGpuOpGraphs(internal::Backend *backend = nullptr);
 
 // Re-bind shared backend gallocr for all cached ggml op graphs (Vulkan extract).
 void RebindAllCachedGgmlOpGraphs(internal::Backend *backend);

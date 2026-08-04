@@ -77,6 +77,29 @@ def _sync_plugin_docs(app):
     print(f"[conf.py] Synced {copied} plugin READMEs → {dest_root}")
 
 
+def _sync_plugin_showcase_assets(app):
+    """Stage plugin-owned showcase images for the standalone Sphinx site."""
+    srcdir = app.srcdir if app else current_file_dir
+    repo_root = os.path.abspath(os.path.join(srcdir, "..", ".."))
+    asset_root = os.path.join(srcdir, "_static", "plugin-assets")
+    assets = {
+        "qDA3": ("qDA3.png",),
+        "qDeepLSD": ("qDeepLSD.png",),
+        "qFaceDetect": ("qFaceDetect.png", "qFaceDetect_video.png"),
+        "qFreeSplatter": ("qFreeSplatter.png", "qFreeSplatter_video.png"),
+        "qLightGlue": ("qLightGlue.png",),
+        "qSIBR": ("SIBR_viewer.png",),
+    }
+    for plugin, names in assets.items():
+        source_dir = os.path.join(repo_root, "plugins", "core", "Standard",
+                                  plugin, "images")
+        target_dir = os.path.join(asset_root, plugin)
+        os.makedirs(target_dir, exist_ok=True)
+        for name in names:
+            shutil.copy2(os.path.join(source_dir, name),
+                         os.path.join(target_dir, name))
+
+
 def _sync_guides_plugins(app):
     """Copy committed user guides from docs/guides/plugins/ into Sphinx srcdir."""
     srcdir = app.srcdir if app else current_file_dir
@@ -526,6 +549,7 @@ def setup(app):
     """Sphinx setup function to connect autodoc events and plugin doc sync."""
     app.connect("builder-inited", _sync_plugin_docs)
     app.connect("builder-inited", _sync_guides_plugins)
+    app.connect("builder-inited", _sync_plugin_showcase_assets)
     app.connect("build-finished", _cleanup_plugin_docs)
     app.connect("build-finished", _cleanup_guides_plugins)
     app.connect("autodoc-skip-member", skip)

@@ -7,6 +7,9 @@
 
 #include "DenseReconstructionWidget.h"
 
+#include <QMetaObject>
+#include <memory>
+
 #include "ReconstructionWidget.h"
 #include "base/undistortion.h"
 #include "controllers/texturing_controller.h"
@@ -474,7 +477,9 @@ void DenseReconstructionWidget::Undistort() {
             new COLMAPUndistorter(UndistortCameraOptions(), reconstruction_,
                                   *options_->image_path, workspace_path);
     undistorter->AddCallback(Thread::FINISHED_CALLBACK, [this]() {
-        refresh_workspace_action_->trigger();
+        QMetaObject::invokeMethod(
+                this, [this]() { refresh_workspace_action_->trigger(); },
+                Qt::QueuedConnection);
     });
     thread_control_widget_->StartThread("Undistorting...", true, undistorter);
 }
@@ -488,8 +493,11 @@ void DenseReconstructionWidget::Stereo() {
 #ifdef CUDA_ENABLED
     mvs::PatchMatchController* processor = new mvs::PatchMatchController(
             *options_->patch_match_stereo, workspace_path, "COLMAP", "");
-    processor->AddCallback(Thread::FINISHED_CALLBACK,
-                           [this]() { refresh_workspace_action_->trigger(); });
+    processor->AddCallback(Thread::FINISHED_CALLBACK, [this]() {
+        QMetaObject::invokeMethod(
+                this, [this]() { refresh_workspace_action_->trigger(); },
+                Qt::QueuedConnection);
+    });
     thread_control_widget_->StartThread("Stereo...", true, processor);
 #else
     QMessageBox::critical(this, "",
@@ -512,14 +520,27 @@ void DenseReconstructionWidget::Fusion() {
     } else {
         QMessageBox::critical(
                 this, "", tr("All images must be processed prior to fusion"));
+        return;
     }
 
     mvs::StereoFusion* fuser = new mvs::StereoFusion(
             *options_->stereo_fusion, workspace_path, "COLMAP", "", input_type);
     fuser->AddCallback(Thread::FINISHED_CALLBACK, [this, fuser]() {
-        fused_points_ = fuser->GetFusedPoints();
-        fused_points_visibility_ = fuser->GetFusedPointsVisibility();
-        write_fused_points_action_->trigger();
+        struct FusionResults {
+            std::vector<PlyPoint> points;
+            std::vector<std::vector<int>> visibility;
+        };
+        auto results = std::make_shared<FusionResults>();
+        results->points = fuser->GetFusedPoints();
+        results->visibility = fuser->GetFusedPointsVisibility();
+        QMetaObject::invokeMethod(
+                this,
+                [this, results]() {
+                    fused_points_ = std::move(results->points);
+                    fused_points_visibility_ = std::move(results->visibility);
+                    write_fused_points_action_->trigger();
+                },
+                Qt::QueuedConnection);
     });
     thread_control_widget_->StartThread("Fusion...", true, fuser);
 }
@@ -647,8 +668,13 @@ void DenseReconstructionWidget::Texturing() {
                     *options_->texturing, *reconstruction_,
                     *options_->image_path, workspace_path);
     texturingTool->AddCallback(Thread::FINISHED_CALLBACK, [this]() {
-        out_mesh_path_ = options_->texturing->textured_file_path;
-        show_meshing_info_action_->trigger();
+        QMetaObject::invokeMethod(
+                this,
+                [this]() {
+                    out_mesh_path_ = options_->texturing->textured_file_path;
+                    show_meshing_info_action_->trigger();
+                },
+                Qt::QueuedConnection);
     });
     thread_control_widget_->StartThread("Texturing...", true, texturingTool);
 }

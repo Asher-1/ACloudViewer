@@ -82,6 +82,10 @@ struct DA3Config {
 
     int num_threads = -1;
 
+    // Requested AICore backend for this reconstruction task. This is explicit
+    // task state, rather than a process environment setting.
+    std::string device = "auto";
+
     // COLMAP PatchMatch max_image_size; when >0, DA3 preprocess longest side
     // is aligned to min(image long edge, max_image_size).
     int max_image_size = -1;
@@ -180,10 +184,7 @@ struct DA3VramCapWarning {
     int capped = 0;
 };
 
-void DA3ClearVramCapWarning();
-const DA3VramCapWarning& DA3PeekVramCapWarning();
-std::string DA3VramCapWarningMessage();
-void DA3NoteVramCap(int requested, int capped);
+std::string DA3VramCapWarningMessage(const DA3VramCapWarning& warning);
 
 // Controller for running DA3 depth estimation on a set of images and producing
 // a COLMAP-compatible sparse model or depth maps for dense reconstruction.
@@ -252,6 +253,9 @@ public:
     static std::string ResolveModelPath(const DA3Config& config);
 
     bool Success() const { return success_; }
+    const DA3VramCapWarning& vramCapWarning() const {
+        return vram_cap_warning_;
+    }
 
 protected:
     void Run() override;
@@ -270,6 +274,7 @@ private:
     bool export_photometric_prior_ = false;
     int export_max_image_size_ = -1;
     bool fast_depth_export_ = false;
+    DA3VramCapWarning vram_cap_warning_;
 };
 
 }  // namespace colmap

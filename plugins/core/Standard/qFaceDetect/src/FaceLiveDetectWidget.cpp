@@ -11,9 +11,11 @@
 #include <QDir>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QFontMetrics>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
+#include <QPainter>
 #include <QSettings>
 #include <QtMath>
 
@@ -104,8 +106,10 @@ void FaceLiveDetectWidget::setupUi() {
 
     m_previewLabel = new ecvClickableImageLabel(this);
     m_previewLabel->setMinimumSize(480, 300);
-    m_previewLabel->setSizePolicy(QSizePolicy::Expanding,
-                                  QSizePolicy::Expanding);
+    // Frames may have different source dimensions. Keep the preview geometry
+    // stable so playing a video does not change the parent tab's size hint.
+    m_previewLabel->setFixedHeight(300);
+    m_previewLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     m_previewLabel->setStyleSheet(
             "border: 1px solid palette(mid); background: #111; color: #888;");
     m_previewLabel->setText(tr("Live preview"));
@@ -158,10 +162,10 @@ void FaceLiveDetectWidget::setupUi() {
             });
     grid->addWidget(FaceDetectUi::makeFormLabel(tr("Detector GGUF:")), 0, 0);
     grid->addWidget(m_modelCombo, 0, 1);
-    grid->addWidget(FaceDetectUi::makeFormLabel(tr("Device:")), 0, 2);
-    grid->addWidget(m_deviceCombo, 0, 3);
-    grid->addWidget(FaceDetectUi::makeFormLabel(tr("Threads:")), 1, 0);
-    grid->addWidget(m_threadsSpin, 1, 1, Qt::AlignLeft);
+    grid->addWidget(FaceDetectUi::makeFormLabel(tr("Device:")), 1, 0);
+    grid->addWidget(m_deviceCombo, 1, 1);
+    grid->addWidget(FaceDetectUi::makeFormLabel(tr("Threads:")), 1, 2);
+    grid->addWidget(m_threadsSpin, 1, 3, Qt::AlignLeft);
 
     m_modeCombo = new QComboBox(settingsGroup);
     m_modeCombo->addItem(tr("Detect faces only"),
@@ -170,8 +174,8 @@ void FaceLiveDetectWidget::setupUi() {
                          static_cast<int>(StreamMode::Recognize));
     connect(m_modeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &FaceLiveDetectWidget::onStreamModeChanged);
-    grid->addWidget(FaceDetectUi::makeFormLabel(tr("Mode:")), 1, 2);
-    grid->addWidget(m_modeCombo, 1, 3);
+    grid->addWidget(FaceDetectUi::makeFormLabel(tr("Mode:")), 2, 0);
+    grid->addWidget(m_modeCombo, 2, 1);
 
     m_sourceCombo = new QComboBox(settingsGroup);
     m_sourceCombo->addItem(tr("Live camera"),
@@ -180,17 +184,14 @@ void FaceLiveDetectWidget::setupUi() {
                            static_cast<int>(InputSource::VideoFile));
     connect(m_sourceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &FaceLiveDetectWidget::onSourceChanged);
-    grid->addWidget(FaceDetectUi::makeFormLabel(tr("Source:")), 2, 0);
-    grid->addWidget(m_sourceCombo, 2, 1);
+    grid->addWidget(FaceDetectUi::makeFormLabel(tr("Source:")), 2, 2);
+    grid->addWidget(m_sourceCombo, 2, 3);
 
     m_minScoreLabel = new QLabel(tr("Min score:"), settingsGroup);
     m_minDetectionScore = FaceDetectUi::makeMinDetectionScoreSpin(
             settingsGroup,
             tr("Faces below this detection score are drawn in red and excluded "
                "from capture/export."));
-    grid->addWidget(m_minScoreLabel, 3, 0);
-    grid->addWidget(m_minDetectionScore, 3, 1, Qt::AlignLeft);
-
     m_matchDistLabel = new QLabel(tr("Match dist:"), settingsGroup);
     m_recognizeThreshold = new QDoubleSpinBox(settingsGroup);
     m_recognizeThreshold->setRange(0.05, 1.0);
@@ -199,6 +200,8 @@ void FaceLiveDetectWidget::setupUi() {
     FaceDetectUi::makeCompactDoubleSpin(m_recognizeThreshold);
     m_recognizeThreshold->setToolTip(
             tr("Max cosine distance for registry match (lower = stricter)."));
+    grid->addWidget(m_minScoreLabel, 3, 0);
+    grid->addWidget(m_minDetectionScore, 3, 1, Qt::AlignLeft);
     grid->addWidget(m_matchDistLabel, 3, 2);
     grid->addWidget(m_recognizeThreshold, 3, 3, Qt::AlignLeft);
 
@@ -286,7 +289,6 @@ void FaceLiveDetectWidget::setupUi() {
         }
     });
     vidLayout->addWidget(m_videoPathEdit, 1);
-    vidLayout->addWidget(m_testDataBtn);
     vidLayout->addWidget(browse);
     m_videoRow->setVisible(false);
 
@@ -754,14 +756,12 @@ void FaceLiveDetectWidget::selectVideoFileSource() {
     if (idx >= 0) m_sourceCombo->setCurrentIndex(idx);
 }
 
-void FaceLiveDetectWidget::submitInferJob(const QImage& displayRgb,
-                                          const QImage& inferRgb,
+void FaceLiveDetectWidget::submitInferJob(const QImage& inferRgb,
                                           float inferScale) {
     if (!m_inferWorker || m_inferBusy) return;
     m_inferBusy = true;
 
     FaceLiveDetectInferWorker::Job job;
-    job.displayRgb = displayRgb;
     job.inferRgb = inferRgb;
     job.inferScale = inferScale;
     job.modelPath = m_config.modelPath;
@@ -776,6 +776,7 @@ void FaceLiveDetectWidget::submitInferJob(const QImage& displayRgb,
                              ? FaceLiveDetectInferWorker::StreamMode::Recognize
                              : FaceLiveDetectInferWorker::StreamMode::Detect;
     job.registry = m_config.registry;
+    job.generation = m_streamGeneration;
 
     QMetaObject::invokeMethod(m_inferWorker, "runJob", Qt::QueuedConnection,
                               Q_ARG(FaceLiveDetectInferWorker::Job, job));
@@ -783,6 +784,7 @@ void FaceLiveDetectWidget::submitInferJob(const QImage& displayRgb,
 
 void FaceLiveDetectWidget::onInferComplete(
         FaceLiveDetectInferWorker::Result result) {
+    if (result.generation != m_streamGeneration) return;
     m_inferBusy = false;
     if (!m_streamActive) return;
     if (!result.ok) {
@@ -794,13 +796,17 @@ void FaceLiveDetectWidget::onInferComplete(
     m_hasSnapshot = true;
     if (m_captureBtn) m_captureBtn->setEnabled(!result.snapshot.faces.empty());
 
-    QImage display = result.displayImage;
-    if (display.isNull() && !result.snapshot.annotatedImage.isNull()) {
-        display = result.snapshot.annotatedImage;
-    }
-    if (!display.isNull()) {
-        m_lastSnapshot.annotatedImage = display;
-        m_previewLabel->setPreviewImage(display, m_previewLabel->size());
+    // Cache overlay data for persistent display (prevents flicker).
+    // snapshot.faces are at display resolution (same as annotatedImage).
+    m_overlayFaces = result.snapshot.faces;
+    m_overlayInferSize = result.snapshot.annotatedImage.size();
+    m_overlayLabels = result.labels;
+
+    // Keep annotated image in snapshot for batch / export consumers,
+    // but do NOT push it to the preview label — drawLiveOverlay handles
+    // all live rendering and avoids double-drawing / flicker.
+    if (!result.snapshot.annotatedImage.isNull()) {
+        m_lastSnapshot.annotatedImage = result.snapshot.annotatedImage;
     }
 
     emit snapshotUpdated(m_lastSnapshot);
@@ -845,36 +851,98 @@ void FaceLiveDetectWidget::processFrame() {
     QImage rgb = cvMatToQImage(frame);
     if (rgb.isNull()) return;
 
-    QImage display = rgb;
-    if (m_inferSkip <= 0) {
-        if (!m_inferBusy) {
-            constexpr int kMaxInferDim = 640;
-            QImage inferRgb = rgb;
-            float inferScale = 1.f;
-            const int maxDim = std::max(rgb.width(), rgb.height());
-            if (maxDim > kMaxInferDim) {
-                inferScale = static_cast<float>(kMaxInferDim) / maxDim;
-                inferRgb = rgb.scaled(
-                        static_cast<int>(std::lround(rgb.width() * inferScale)),
-                        static_cast<int>(
-                                std::lround(rgb.height() * inferScale)),
-                        Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-            }
-            submitInferJob(rgb, inferRgb, inferScale);
+    // Submit inference when worker is idle (m_inferBusy throttles naturally).
+    if (!m_inferBusy) {
+        constexpr int kMaxInferDim = 640;
+        QImage inferRgb = rgb;
+        float inferScale = 1.f;
+        const int maxDim = std::max(rgb.width(), rgb.height());
+        if (maxDim > kMaxInferDim) {
+            inferScale = static_cast<float>(kMaxInferDim) / maxDim;
+            inferRgb = rgb.scaled(
+                    static_cast<int>(std::lround(rgb.width() * inferScale)),
+                    static_cast<int>(std::lround(rgb.height() * inferScale)),
+                    Qt::IgnoreAspectRatio, Qt::FastTransformation);
         }
-        const bool video = m_sourceCombo &&
-                           m_sourceCombo->currentData().toInt() ==
-                                   static_cast<int>(InputSource::VideoFile);
-        m_inferSkip = video ? 4 : 2;
-    } else {
-        --m_inferSkip;
-        if (m_hasSnapshot && !m_lastSnapshot.annotatedImage.isNull()) {
-            display = m_lastSnapshot.annotatedImage;
-        }
+        submitInferJob(inferRgb, inferScale);
     }
 
-    m_previewLabel->setPreviewImage(display, m_previewLabel->size());
+    // Scale to display size FIRST — then draw overlay on the smaller image.
+    // QPainter works on ~display pixels instead of full-res (5-10x faster).
+    QImage display = rgb.scaled(m_previewLabel->size(), Qt::KeepAspectRatio,
+                                Qt::FastTransformation);
+    drawLiveOverlay(display);
+    m_previewLabel->setPixmap(QPixmap::fromImage(display));
 #endif
+}
+
+void FaceLiveDetectWidget::drawLiveOverlay(QImage& frame) {
+    if (m_overlayFaces.empty() || m_overlayInferSize.isEmpty()) return;
+    if (frame.isNull()) return;
+
+    const qreal sx = static_cast<qreal>(frame.width()) /
+                     static_cast<qreal>(m_overlayInferSize.width());
+    const qreal sy = static_cast<qreal>(frame.height()) /
+                     static_cast<qreal>(m_overlayInferSize.height());
+
+    QPainter painter(&frame);
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    const bool isRecognize = (m_config.streamMode == StreamMode::Recognize);
+    const int fontSize = std::max(9, frame.height() / 55);
+    const int pad = std::max(3, frame.height() / 160);
+    QFont font(QStringLiteral("sans-serif"), fontSize);
+    font.setBold(true);
+    painter.setFont(font);
+    const QFontMetrics fm(font);
+    const int textHeight = fm.height();
+    const int penW = std::max(2, frame.height() / 240);
+
+    for (int i = 0; i < static_cast<int>(m_overlayFaces.size()); ++i) {
+        const auto& face = m_overlayFaces[i];
+        const QRectF box(face.x1 * sx, face.y1 * sy, (face.x2 - face.x1) * sx,
+                         (face.y2 - face.y1) * sy);
+
+        // Face rectangle
+        QPen pen(isRecognize ? QColor(0, 200, 255) : QColor(0, 255, 0));
+        pen.setWidth(penW);
+        painter.setPen(pen);
+        painter.setBrush(Qt::NoBrush);
+        painter.drawRoundedRect(box, 2.0, 2.0);
+
+        // Label text
+        QString text;
+        if (isRecognize && i < m_overlayLabels.size() &&
+            !m_overlayLabels[i].isEmpty()) {
+            text = m_overlayLabels[i];
+        } else if (face.score > 0.f) {
+            text = QString::number(face.score, 'f', 2);
+        }
+        if (text.isEmpty()) continue;
+
+        // Text-width-adaptive background, clamped to image bounds
+        const qreal textW = fm.horizontalAdvance(text);
+        qreal bgW = textW + 2.0 * pad;
+        bgW = qBound(bgW, box.width(), static_cast<qreal>(frame.width()));
+        const qreal bgH = textHeight + 2.0 * pad;
+
+        qreal bgX = box.x();
+        qreal bgY = box.y() - bgH;
+        // Clamp horizontal
+        if (bgX + bgW > frame.width()) bgX = frame.width() - bgW;
+        if (bgX < 0.0) bgX = 0.0;
+        // If not enough room above box, place below top edge
+        if (bgY < 0.0) bgY = box.y() + penW;
+
+        const QRectF bgRect(bgX, bgY, bgW, bgH);
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(QColor(0, 0, 0, 180));
+        painter.drawRoundedRect(bgRect, 2.0, 2.0);
+        painter.setPen(Qt::white);
+        painter.drawText(
+                QRectF(bgX + pad, bgY + pad, bgW - 2.0 * pad, bgH - 2.0 * pad),
+                Qt::AlignLeft | Qt::AlignVCenter, text);
+    }
 }
 
 bool FaceLiveDetectWidget::startCamera(int deviceIndex) {
@@ -908,7 +976,6 @@ bool FaceLiveDetectWidget::startCamera(int deviceIndex) {
     m_capture.set(cv::CAP_PROP_FRAME_WIDTH, 640);
     m_capture.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
     m_streamActive = true;
-    m_inferSkip = 0;
     m_frameTimer->setInterval(33);
     m_frameTimer->start();
     m_statusLabel->setText(tr("Camera active"));
@@ -939,7 +1006,6 @@ bool FaceLiveDetectWidget::startVideoFile(const QString& path) {
         return false;
     }
     m_streamActive = true;
-    m_inferSkip = 0;
     m_frameTimer->setInterval(66);
     m_frameTimer->start();
     m_statusLabel->setText(tr("Playing video"));
@@ -952,6 +1018,7 @@ bool FaceLiveDetectWidget::startVideoFile(const QString& path) {
 }
 
 void FaceLiveDetectWidget::stopStream() {
+    ++m_streamGeneration;
     if (m_frameTimer) m_frameTimer->stop();
 #ifdef HAS_OPENCV_FACE_CAPTURE
     if (m_capture.isOpened()) m_capture.release();
@@ -962,6 +1029,9 @@ void FaceLiveDetectWidget::stopStream() {
     }
     m_inferBusy = false;
     m_hasSnapshot = false;
+    m_overlayFaces.clear();
+    m_overlayLabels.clear();
+    m_overlayInferSize = QSize();
     if (m_captureBtn) m_captureBtn->setEnabled(false);
 }
 

@@ -25,6 +25,11 @@ if( PLUGIN_STANDARD_QFREESPLATTER )
 
     # Link to libAICore.so — ggml is PRIVATE inside AICore, not needed here
     target_link_libraries(${PROJECT_NAME} AICore)
+    if(TARGET Qt::Sql)
+        target_link_libraries(${PROJECT_NAME} Qt::Sql)
+    elseif(TARGET Qt5::Sql)
+        target_link_libraries(${PROJECT_NAME} Qt5::Sql)
+    endif()
     if(MSVC)
         target_compile_definitions(${PROJECT_NAME} PRIVATE _USE_MATH_DEFINES)
     endif()

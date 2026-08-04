@@ -26,6 +26,7 @@
 #include <vector>
 
 #include "aicore/aliked_capi.h"
+#include "aicore/backend_capi.h"
 #include "aicore/lightglue_capi.h"
 
 namespace {
@@ -90,14 +91,39 @@ bool ExtractOnce(const char* gguf,
 }
 
 bool FeaturesLookValid(const aicore_lightglue_features& f) {
-    if (f.n_keypoints <= 0 || f.descriptor_dim <= 0 ||
+    if (f.n_keypoints <= 0 || f.descriptor_dim <= 0 || f.keypoints == nullptr ||
         f.descriptors == nullptr) {
         return false;
+    }
+    for (int32_t i = 0; i < f.n_keypoints; ++i) {
+        if (!std::isfinite(f.keypoints[i].x) ||
+            !std::isfinite(f.keypoints[i].y)) {
+            return false;
+        }
+        for (int32_t j = 0; j < i; ++j) {
+            const float dx = f.keypoints[i].x - f.keypoints[j].x;
+            const float dy = f.keypoints[i].y - f.keypoints[j].y;
+            if (dx * dx + dy * dy <= 1.0e-8f) {
+                return false;
+            }
+        }
     }
     const size_t nd = static_cast<size_t>(f.n_keypoints) *
                       static_cast<size_t>(f.descriptor_dim);
     for (size_t i = 0; i < nd; ++i) {
         if (!std::isfinite(f.descriptors[i])) {
+            return false;
+        }
+    }
+    for (int32_t i = 0; i < f.n_keypoints; ++i) {
+        double norm2 = 0.0;
+        for (int32_t d = 0; d < f.descriptor_dim; ++d) {
+            const float value =
+                    f.descriptors[static_cast<size_t>(i) * f.descriptor_dim +
+                                  d];
+            norm2 += static_cast<double>(value) * value;
+        }
+        if (norm2 <= 0.0) {
             return false;
         }
     }
@@ -167,10 +193,15 @@ int main(int argc, char** argv) {
     }
 
     if (!ExtractOnce(gguf, "vulkan", image, max_kpts, resize, &vk, &err)) {
-        std::fprintf(stderr, "SKIP: Vulkan extract failed (no GPU?): %s\n",
-                     err.c_str());
+        if (!aicore_device_available("vulkan")) {
+            std::fprintf(stderr, "SKIP: Vulkan backend unavailable: %s\n",
+                         err.c_str());
+            aicore_lightglue_free_features(&cpu);
+            return 77;
+        }
+        std::fprintf(stderr, "FAIL: Vulkan extract failed: %s\n", err.c_str());
         aicore_lightglue_free_features(&cpu);
-        return 77;
+        return 1;
     }
     if (!FeaturesLookValid(vk)) {
         std::fprintf(stderr,

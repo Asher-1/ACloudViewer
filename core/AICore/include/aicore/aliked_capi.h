@@ -36,6 +36,8 @@ AICORE_CAPI void aicore_aliked_options_set_resize_long_edge(
 AICORE_CAPI aicore_aliked_ctx* aicore_aliked_load_opts(
         const char* gguf_path, const aicore_aliked_options* opts);
 AICORE_CAPI void aicore_aliked_free(aicore_aliked_ctx* ctx);
+/** True only after a context owns a successfully initialized extractor. */
+AICORE_CAPI int aicore_aliked_is_ready(const aicore_aliked_ctx* ctx);
 AICORE_CAPI const char* aicore_aliked_last_error(const aicore_aliked_ctx* ctx);
 
 /** Extract from RGB888 row-major image. Output packed into lightglue features.
@@ -50,6 +52,10 @@ AICORE_CAPI int aicore_aliked_extract_rgb(aicore_aliked_ctx* ctx,
 AICORE_CAPI char* aicore_aliked_info_json(aicore_aliked_ctx* ctx);
 AICORE_CAPI void aicore_aliked_free_string(char* s);
 AICORE_CAPI char* aicore_aliked_model_cache_dir(void);
+/* Quantize eligible convolution / linear weights to f16 or q8_0. */
+AICORE_CAPI int aicore_aliked_quantize(const char* input_gguf,
+                                       const char* output_gguf,
+                                       const char* type);
 
 #ifdef __cplusplus
 }

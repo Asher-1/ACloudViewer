@@ -28,6 +28,7 @@
 #include <QMessageBox>
 #include <QSettings>
 #include <QStandardPaths>
+#include <QUuid>
 #include <algorithm>
 #include <cmath>
 
@@ -137,6 +138,7 @@ void qDA3::executeTask(const DA3Dialog::Settings& settings) {
         m_worker->deleteLater();
         m_worker = nullptr;
     }
+    clearStagedInputFiles();
 
     m_hasDepthResult = false;
     m_allDepthResults.clear();
@@ -149,8 +151,11 @@ void qDA3::executeTask(const DA3Dialog::Settings& settings) {
         if (img && !img->data().isNull()) {
             QString tmpDir = DA3Dialog::modelCacheDir() + "/../tmp";
             QDir().mkpath(tmpDir);
-            QString tmpPath = tmpDir + "/" + settings.dbImageName + ".png";
+            const QString tmpPath =
+                    tmpDir + "/da3-" +
+                    QUuid::createUuid().toString(QUuid::WithoutBraces) + ".png";
             if (img->data().save(tmpPath)) {
+                m_stagedInputFiles << tmpPath;
                 resolvedSettings.inputPaths = QStringList() << tmpPath;
                 m_dialog->appendLog(tr("[DA3] Using DB image: %1 (%2x%3)")
                                             .arg(settings.dbImageName)
@@ -170,6 +175,7 @@ void qDA3::executeTask(const DA3Dialog::Settings& settings) {
 
     if (resolvedSettings.modelPath.isEmpty() &&
         resolvedSettings.mode != DA3Dialog::Mode::Quantize) {
+        clearStagedInputFiles();
         m_dialog->appendLog("[Error] Please select a GGUF model file.");
         return;
     }
@@ -232,12 +238,16 @@ void qDA3::executeTask(const DA3Dialog::Settings& settings) {
     m_worker->start();
 }
 
+void qDA3::clearStagedInputFiles() {
+    for (const QString& path : m_stagedInputFiles) {
+        QFile::remove(path);
+    }
+    m_stagedInputFiles.clear();
+}
+
 void qDA3::cancelTask() {
-#ifdef AICore_ENABLED
-    aicore_cancel_request();
-#endif
     if (m_worker && m_worker->isRunning()) {
-        m_worker->requestInterruption();
+        m_worker->requestTaskCancel();
         m_dialog->appendLog("[DA3] Cancel requested...");
     }
 }
@@ -593,12 +603,7 @@ void qDA3::onTaskFinished(bool success) {
         m_worker = nullptr;
     }
 
-    // Clean up temporary files created for DB image export
-    const QString tmpDir = DA3Dialog::modelCacheDir() + "/../tmp";
-    QDir tmp(tmpDir);
-    if (tmp.exists()) {
-        tmp.removeRecursively();
-    }
+    clearStagedInputFiles();
 
     if (m_app) {
         m_app->updateUI();

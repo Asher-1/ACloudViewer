@@ -73,6 +73,8 @@ AICORE_CAPI aicore_lightglue_ctx* aicore_lightglue_load(const char* gguf_path,
 AICORE_CAPI aicore_lightglue_ctx* aicore_lightglue_load_opts(
         const char* gguf_path, const aicore_lightglue_options* opts);
 AICORE_CAPI void aicore_lightglue_free(aicore_lightglue_ctx* ctx);
+/** True only after a context owns a successfully initialized matcher. */
+AICORE_CAPI int aicore_lightglue_is_ready(const aicore_lightglue_ctx* ctx);
 AICORE_CAPI const char* aicore_lightglue_last_error(
         const aicore_lightglue_ctx* ctx);
 

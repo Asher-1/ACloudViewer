@@ -2233,7 +2233,9 @@ void VtkDisplayTools::getDataAxesGridProperties(const QString& viewID,
                                                 AxesGridProperties& props,
                                                 int viewport) const {
     std::string id = CVTools::FromQString(viewID);
-    VtkVis* vis = findVisByActorId(id);
+    // Imported scene groups (notably GLB roots) may not own a VTK actor. The
+    // axes actor is still stored in the effective view under the group's ID.
+    VtkVis* vis = findVisByActorIdOrActive(id);
     if (!vis) {
         props = AxesGridProperties();
         return;

@@ -140,13 +140,20 @@ bool has_device(const char* device) {
     if (requested == "cpu") return true;
     if (requested == "auto") {
         std::string resolved;
-        if (ggml_common::find_auto_backend(resolved)) return true;
-        return ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_CPU,
-                                         nullptr) != nullptr;
+        if (ggml_backend_t be = ggml_common::find_auto_backend(resolved)) {
+            ggml_backend_free(be);
+            return true;
+        }
+        ggml_backend_t cpu = ggml_backend_init_by_type(
+                GGML_BACKEND_DEVICE_TYPE_CPU, nullptr);
+        if (cpu) ggml_backend_free(cpu);
+        return cpu != nullptr;
     }
     if (requested == "gpu") {
         std::string resolved;
-        return ggml_common::find_gpu_backend("gpu", 0, resolved) != nullptr;
+        ggml_backend_t be = ggml_common::find_gpu_backend("gpu", 0, resolved);
+        if (be) ggml_backend_free(be);
+        return be != nullptr;
     }
 
     std::string parsed_name;
@@ -154,11 +161,35 @@ bool has_device(const char* device) {
     ggml_common::parse_device(requested, parsed_name, want_idx);
     if (parsed_name.empty() || parsed_name == "auto") {
         std::string resolved;
-        return ggml_common::find_auto_backend(resolved) != nullptr;
+        ggml_backend_t be = ggml_common::find_auto_backend(resolved);
+        if (be) ggml_backend_free(be);
+        return be != nullptr;
     }
     std::string resolved;
-    return ggml_common::find_gpu_backend(parsed_name, want_idx, resolved) !=
-           nullptr;
+    ggml_backend_t be =
+            ggml_common::find_gpu_backend(parsed_name, want_idx, resolved);
+    if (be) ggml_backend_free(be);
+    return be != nullptr;
+}
+
+std::string resolved_backend_id(const char* device) {
+    const std::string requested =
+            ggml_common::to_lower(device && device[0] ? device : "auto");
+    std::string name;
+    int index = 0;
+    ggml_common::parse_device(requested, name, index);
+    if (name.empty() || name == "auto" || name == "gpu") {
+        for (const char* const* p = ggml_common::auto_backend_ids(); *p; ++p) {
+            std::string resolved;
+            ggml_backend_t be = ggml_common::find_gpu_backend(*p, 0, resolved);
+            if (be) {
+                ggml_backend_free(be);
+                return *p;
+            }
+        }
+        return "cpu";
+    }
+    return name;
 }
 
 }  // namespace
@@ -220,6 +251,21 @@ AICORE_CAPI int aicore_device_available(const char* device) {
         g_last_error = "backend discovery failed";
         return 0;
     }
+}
+
+AICORE_CAPI unsigned int aicore_device_capabilities(const char* device) {
+    if (!has_device(device)) return 0;
+    const std::string backend = resolved_backend_id(device);
+    unsigned int caps =
+            AICORE_BACKEND_CAP_COMPUTE | AICORE_BACKEND_CAP_TASK_CANCEL;
+    if (backend != "cpu") {
+        caps |= AICORE_BACKEND_CAP_GPU;
+        caps |= AICORE_BACKEND_CAP_MULTI_DEVICE;
+    }
+#if defined(FACEDETECT_GGML_CUDNN)
+    if (backend == "cuda") caps |= AICORE_BACKEND_CAP_CUDNN_CONV2D;
+#endif
+    return caps;
 }
 
 AICORE_CAPI int aicore_warmup_backend(const char* device) {

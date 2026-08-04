@@ -8,10 +8,14 @@
 #include <string>
 #include <vector>
 
+#include "ggml_backend_registry.hpp"
+
 namespace aicore {
 namespace gaussian {
 
 struct engine_backend {
+    std::vector<aicore::runtime::BackendLease> gpu_leases;
+    aicore::runtime::BackendLease cpu_lease;
     std::vector<ggml_backend_t> gpu_backends;
     ggml_backend_t be = nullptr;
     ggml_backend_t cpu_be = nullptr;
@@ -30,6 +34,7 @@ struct engine_backend {
     ~engine_backend() { release(); }
 
     bool is_cpu() const;
+    aicore::runtime::BackendLeaseLock lock() const;
 };
 
 } // namespace gaussian

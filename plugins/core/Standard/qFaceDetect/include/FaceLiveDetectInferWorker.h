@@ -10,6 +10,8 @@
 #include <QImage>
 #include <QObject>
 #include <QString>
+#include <QVector>
+#include <QtGlobal>
 #include <atomic>
 
 #include "FaceDetectWorker.h"
@@ -25,7 +27,6 @@ public:
 
     struct Job {
         QImage inferRgb;
-        QImage displayRgb;
         float inferScale = 1.f;
         QString modelPath;
         QString device;
@@ -34,13 +35,17 @@ public:
         float matchThreshold = 0.52f;
         StreamMode streamMode = StreamMode::Detect;
         FaceRegistryStore* registry = nullptr;
+        quint64 generation = 0;
     };
 
     struct Result {
         FaceDetectRunResult snapshot;
         QImage displayImage;
+        QVector<QString>
+                labels;  // recognize-mode labels (parallel to snapshot.faces)
         int identifiedCount = 0;
         bool ok = false;
+        quint64 generation = 0;
     };
 
     explicit FaceLiveDetectInferWorker(QObject* parent = nullptr);
@@ -60,6 +65,8 @@ private:
 
     aicore_facedetect_ctx* m_ctx = nullptr;
     QString m_loadedModelPath;
+    QString m_loadedDevice;
+    int m_loadedThreads = 0;
 #endif
 };
 

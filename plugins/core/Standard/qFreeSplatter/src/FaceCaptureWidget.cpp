@@ -22,16 +22,24 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QMessageBox>
 #include <QPainter>
 #include <QPen>
 #include <QPixmap>
+#include <QResizeEvent>
 #include <QScrollArea>
 #include <QSettings>
+#include <QSqlDatabase>
+#include <QSqlError>
+#include <QSqlQuery>
 #include <QStandardPaths>
 #include <QTemporaryFile>
+#include <QUuid>
 #include <algorithm>
+#include <cmath>
 #include <cstring>
 
+#include "aicore/runtime_capi.h"
 #include "ecvPersistentSettings.h"
 
 namespace {
@@ -50,6 +58,39 @@ QString facedetectModelCacheDir() {
 QString facedetectCachePath(const QString& filename) {
     return facedetectModelCacheDir() + QLatin1Char('/') + filename;
 }
+
+/// Default registry DB path following qFaceDetect convention:
+/// face_registry_<model_stem>.db under the model cache directory.
+/// Falls back to face_registry.db when no GGUF model is selected.
+QString defaultRegistryDbPath(const QString& detectorModelFilename) {
+    const QString baseDir = facedetectModelCacheDir();
+    if (detectorModelFilename.isEmpty() ||
+        detectorModelFilename == QStringLiteral("opencv")) {
+        return baseDir + QStringLiteral("/face_registry.db");
+    }
+    const QString stem = QFileInfo(detectorModelFilename).completeBaseName();
+    if (stem.isEmpty()) {
+        return baseDir + QStringLiteral("/face_registry.db");
+    }
+    return baseDir + QStringLiteral("/face_registry_%1.db").arg(stem);
+}
+
+class AICoreInferenceGuard {
+public:
+    AICoreInferenceGuard() {
+        m_cancelToken = aicore_cancel_token_new();
+        aicore_device_task_lock("auto");
+        aicore_cancel_scope_begin(m_cancelToken);
+    }
+    ~AICoreInferenceGuard() {
+        aicore_cancel_scope_end(m_cancelToken);
+        aicore_device_task_unlock();
+        aicore_cancel_token_free(m_cancelToken);
+    }
+
+private:
+    aicore_cancel_token* m_cancelToken = nullptr;
+};
 
 }  // namespace
 
@@ -100,17 +141,45 @@ FaceCaptureWidget::FaceCaptureWidget(QWidget* parent) : QWidget(parent) {
     m_ggmlLoadWatcher = new QFutureWatcher<aicore_facedetect_ctx*>(this);
     connect(m_ggmlLoadWatcher,
             &QFutureWatcher<aicore_facedetect_ctx*>::finished, this, [this]() {
+                if (!m_ggmlModelLoading) return;
                 m_ggmlModelLoading = false;
                 aicore_facedetect_ctx* ctx = m_ggmlLoadWatcher->result();
-                if (ctx == nullptr) {
+                const QString loadedPath = m_pendingGgmlPath;
+                m_pendingGgmlPath.clear();
+                const QString requestedPath =
+                        facedetectCachePath(currentGgmlFilename());
+                if (m_detectorKind != DetectorKind::Ggml ||
+                    loadedPath != requestedPath) {
+                    if (ctx) aicore_facedetect_free(ctx);
+                    if (m_detectorKind == DetectorKind::Ggml &&
+                        !currentGgmlFilename().isEmpty() &&
+                        ecvModelDownloader::isValidCachedFile(requestedPath)) {
+                        scheduleGgmlModelLoad(requestedPath);
+                    }
+                    return;
+                }
+                if (!aicore_facedetect_is_ready(ctx)) {
+                    QString detail;
+                    if (ctx) {
+                        if (const char* error =
+                                    aicore_facedetect_last_error(ctx)) {
+                            detail = QString::fromUtf8(error);
+                        }
+                        aicore_facedetect_free(ctx);
+                    }
                     m_statusLabel->setText(
                             tr("Failed to load face detector model"));
-                    emit cameraError(tr("Failed to load face detector GGUF"));
+                    emit cameraError(
+                            detail.isEmpty()
+                                    ? tr("Failed to load face detector GGUF")
+                                    : tr("Failed to load face detector GGUF: "
+                                         "%1")
+                                              .arg(detail));
                     return;
                 }
                 releaseGgmlModel();
                 m_ggmlCtx = ctx;
-                m_loadedGgmlPath = facedetectCachePath(currentGgmlFilename());
+                m_loadedGgmlPath = loadedPath;
                 emit logMessage(
                         tr("[FaceCapture] Loaded face detector: %1")
                                 .arg(QFileInfo(m_loadedGgmlPath).fileName()));
@@ -121,6 +190,12 @@ FaceCaptureWidget::FaceCaptureWidget(QWidget* parent) : QWidget(parent) {
                                          "overlay")
                                     : tr("Camera active — detecting faces"));
                 }
+                if (m_detectorKind == DetectorKind::Ggml &&
+                    !currentGgmlFilename().isEmpty() &&
+                    requestedPath != m_loadedGgmlPath &&
+                    ecvModelDownloader::isValidCachedFile(requestedPath)) {
+                    scheduleGgmlModelLoad(requestedPath);
+                }
             });
 }
 
@@ -128,6 +203,13 @@ FaceCaptureWidget::~FaceCaptureWidget() {
     stopCamera();
     if (m_ggmlLoadWatcher && m_ggmlLoadWatcher->isRunning()) {
         m_ggmlLoadWatcher->waitForFinished();
+    }
+    if (m_ggmlLoadWatcher && m_ggmlModelLoading) {
+        if (aicore_facedetect_ctx* ctx = m_ggmlLoadWatcher->result()) {
+            aicore_facedetect_free(ctx);
+        }
+        m_ggmlModelLoading = false;
+        m_pendingGgmlPath.clear();
     }
     releaseGgmlModel();
 }
@@ -147,25 +229,24 @@ void FaceCaptureWidget::setupUi() {
 
     m_previewLabel = new ecvClickableImageLabel(this);
     m_previewLabel->setMinimumSize(320, 180);
-    m_previewLabel->setSizePolicy(QSizePolicy::Expanding,
-                                  QSizePolicy::Expanding);
+    m_previewLabel->setFixedHeight(180);
+    m_previewLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     m_previewLabel->setStyleSheet(
             QStringLiteral("QLabel { background-color: #1a1a1a; "
                            "border: 1px solid #444; border-radius: 4px; }"));
     m_previewLabel->setText(tr("Camera preview"));
-    mainLayout->addWidget(m_previewLabel, 1);
+    mainLayout->addWidget(m_previewLabel);
 
     m_angleLabel = new QLabel(this);
     m_angleLabel->setAlignment(Qt::AlignCenter);
+    m_angleLabel->hide();
     mainLayout->addWidget(m_angleLabel);
 
     m_statusLabel = new QLabel(this);
     m_statusLabel->setAlignment(Qt::AlignCenter);
+    m_statusLabel->setWordWrap(false);
+    m_statusLabel->setFixedHeight(m_statusLabel->fontMetrics().height() + 2);
     mainLayout->addWidget(m_statusLabel);
-
-    m_captureProgressLabel = new QLabel(this);
-    m_captureProgressLabel->setAlignment(Qt::AlignCenter);
-    mainLayout->addWidget(m_captureProgressLabel);
 
     m_captureProgress = new QProgressBar(this);
     m_captureProgress->setTextVisible(true);
@@ -173,18 +254,40 @@ void FaceCaptureWidget::setupUi() {
     m_captureProgress->setValue(0);
     mainLayout->addWidget(m_captureProgress);
 
-    auto* galleryScroll = new QScrollArea(this);
-    galleryScroll->setWidgetResizable(true);
-    galleryScroll->setFixedHeight(56);
-    galleryScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    galleryScroll->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    galleryScroll->setFrameShape(QFrame::NoFrame);
-    m_capturedGalleryRow = new QWidget(galleryScroll);
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    // Keep the action adjacent to the video state. A file source has no camera
+    // device to select, but must still offer the same explicit Capture action.
+    m_cameraControlsRow = new QWidget(this);
+    auto* controlsLayout = new QHBoxLayout(m_cameraControlsRow);
+    controlsLayout->setContentsMargins(0, 0, 0, 0);
+    controlsLayout->setSpacing(6);
+    m_cameraDeviceLabel = new QLabel(tr("Device:"), m_cameraControlsRow);
+    controlsLayout->addWidget(m_cameraDeviceLabel);
+
+    m_cameraCombo = new QComboBox(m_cameraControlsRow);
+    m_cameraCombo->addItem(tr("Default (0)"), 0);
+    controlsLayout->addWidget(m_cameraCombo, 1);
+
+    m_captureBtn = new QPushButton(tr("Capture"), m_cameraControlsRow);
+    m_captureBtn->setEnabled(false);
+    controlsLayout->addWidget(m_captureBtn);
+    mainLayout->addWidget(m_cameraControlsRow);
+#endif
+
+    m_capturedGalleryScroll = new QScrollArea(this);
+    m_capturedGalleryScroll->setWidgetResizable(true);
+    m_capturedGalleryScroll->setFixedHeight(56);
+    m_capturedGalleryScroll->setHorizontalScrollBarPolicy(
+            Qt::ScrollBarAsNeeded);
+    m_capturedGalleryScroll->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_capturedGalleryScroll->setFrameShape(QFrame::NoFrame);
+    m_capturedGalleryScroll->setVisible(false);
+    m_capturedGalleryRow = new QWidget(m_capturedGalleryScroll);
     auto* galleryLayout = new QHBoxLayout(m_capturedGalleryRow);
     galleryLayout->setContentsMargins(0, 0, 0, 0);
     galleryLayout->setSpacing(4);
-    galleryScroll->setWidget(m_capturedGalleryRow);
-    mainLayout->addWidget(galleryScroll);
+    m_capturedGalleryScroll->setWidget(m_capturedGalleryRow);
+    mainLayout->addWidget(m_capturedGalleryScroll);
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
     auto* detectorInputRow = new QHBoxLayout();
@@ -226,6 +329,17 @@ void FaceCaptureWidget::setupUi() {
                "completes. Angle guides cycle until this count is reached."));
     settingsRow->addWidget(m_minCapturesSpin);
 
+    settingsRow->addWidget(new QLabel(tr("Max distance:"), this));
+    m_maxDistanceSpin = new QDoubleSpinBox(this);
+    m_maxDistanceSpin->setRange(0.01, 2.0);
+    m_maxDistanceSpin->setSingleStep(0.05);
+    m_maxDistanceSpin->setDecimals(2);
+    m_maxDistanceSpin->setValue(kDefaultSamePersonMaxDistance);
+    m_maxDistanceSpin->setToolTip(
+            tr("Cosine distance threshold for matching the same person across "
+               "frames and registry identities. Lower = stricter matching."));
+    settingsRow->addWidget(m_maxDistanceSpin);
+
     settingsRow->addWidget(new QLabel(tr("Face pick:"), this));
     m_faceStrategyCombo = new QComboBox(this);
     m_faceStrategyCombo->addItem(
@@ -254,6 +368,42 @@ void FaceCaptureWidget::setupUi() {
     connect(m_faceStrategyCombo,
             QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             [this](int) { saveFaceCaptureSettings(); });
+
+    auto* registryPathRow = new QHBoxLayout();
+    registryPathRow->setSpacing(6);
+    registryPathRow->addWidget(new QLabel(tr("Face registry:"), this));
+    m_registryPathEdit = new QLineEdit(this);
+    m_registryPathEdit->setPlaceholderText(tr("qFaceDetect registry database"));
+    registryPathRow->addWidget(m_registryPathEdit, 1);
+    auto* browseRegistryBtn = new QPushButton(tr("Browse..."), this);
+    auto* reloadRegistryBtn = new QPushButton(tr("Reload"), this);
+    registryPathRow->addWidget(browseRegistryBtn);
+    registryPathRow->addWidget(reloadRegistryBtn);
+    mainLayout->addLayout(registryPathRow);
+
+    m_registryFilterEdit = new QLineEdit(this);
+    m_registryFilterEdit->setPlaceholderText(
+            tr("Filter registered identities by id or name"));
+    mainLayout->addWidget(m_registryFilterEdit);
+    m_registryList = new QListWidget(this);
+    m_registryList->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    m_registryList->setMaximumHeight(96);
+    m_registryList->setAlternatingRowColors(true);
+    mainLayout->addWidget(m_registryList);
+    m_registryStatusLabel = new QLabel(this);
+    mainLayout->addWidget(m_registryStatusLabel);
+
+    connect(browseRegistryBtn, &QPushButton::clicked, this,
+            &FaceCaptureWidget::onBrowseRegistry);
+    connect(reloadRegistryBtn, &QPushButton::clicked, this,
+            &FaceCaptureWidget::reloadRegistry);
+    connect(m_registryPathEdit, &QLineEdit::editingFinished, this, [this]() {
+        m_registryPathUserChosen = true;
+        saveFaceCaptureSettings();
+        reloadRegistry();
+    });
+    connect(m_registryFilterEdit, &QLineEdit::textChanged, this,
+            &FaceCaptureWidget::filterRegistry);
 #else
     auto* detectorLayout = new QHBoxLayout();
     detectorLayout->addWidget(new QLabel(tr("Face detector:"), this));
@@ -295,21 +445,6 @@ void FaceCaptureWidget::setupUi() {
                 saveFaceCaptureSettings();
             });
 
-    m_cameraControlsRow = new QWidget(this);
-    auto* controlsLayout = new QHBoxLayout(m_cameraControlsRow);
-    controlsLayout->setContentsMargins(0, 0, 0, 0);
-    controlsLayout->addWidget(new QLabel(tr("Device:"), this));
-
-    m_cameraCombo = new QComboBox(this);
-    m_cameraCombo->addItem(tr("Default (0)"), 0);
-    controlsLayout->addWidget(m_cameraCombo, 1);
-
-    m_captureBtn = new QPushButton(tr("Capture"), this);
-    m_captureBtn->setEnabled(false);
-    controlsLayout->addWidget(m_captureBtn);
-
-    mainLayout->addWidget(m_cameraControlsRow);
-
     m_frameTimer = new QTimer(this);
     m_frameTimer->setInterval(30);
 
@@ -335,6 +470,20 @@ void FaceCaptureWidget::setupUi() {
 #endif
 }
 
+void FaceCaptureWidget::resizeEvent(QResizeEvent* event) {
+    QWidget::resizeEvent(event);
+    if (!m_previewLabel) return;
+
+    // The camera image remains legible while the surrounding form scrolls on
+    // short displays.  Limit its height so a wide desktop does not make the
+    // capture controls unnecessarily far away.
+    const int previewWidth = std::max(320, contentsRect().width() - 8);
+    const int previewHeight = qBound(180, previewWidth * 9 / 16, 360);
+    if (m_previewLabel->height() != previewHeight) {
+        m_previewLabel->setFixedHeight(previewHeight);
+    }
+}
+
 void FaceCaptureWidget::onSourceChanged(int index) {
     if (!m_sourceCombo) return;
     m_inputSource =
@@ -343,7 +492,13 @@ void FaceCaptureWidget::onSourceChanged(int index) {
         m_videoFileRow->setVisible(m_inputSource == InputSource::VideoFile);
     }
     if (m_cameraControlsRow) {
-        m_cameraControlsRow->setVisible(m_inputSource == InputSource::Camera);
+        m_cameraControlsRow->setVisible(true);
+    }
+    if (m_cameraDeviceLabel) {
+        m_cameraDeviceLabel->setVisible(m_inputSource == InputSource::Camera);
+    }
+    if (m_cameraCombo) {
+        m_cameraCombo->setVisible(m_inputSource == InputSource::Camera);
     }
     if (m_cameraActive) {
         stopCapture();
@@ -372,6 +527,141 @@ void FaceCaptureWidget::onBrowseVideoFile() {
     m_videoFilePath = path;
 }
 
+void FaceCaptureWidget::onBrowseRegistry() {
+    const QString current =
+            m_registryPathEdit
+                    ? QFileInfo(m_registryPathEdit->text()).absolutePath()
+                    : facedetectModelCacheDir();
+    const QString path = QFileDialog::getOpenFileName(
+            this, tr("Select qFaceDetect registry"), current,
+            tr("SQLite databases (*.db *.sqlite *.sqlite3);;All files (*.*)"));
+    if (path.isEmpty()) return;
+    m_registryPathUserChosen = true;
+    m_registryPathEdit->setText(path);
+    saveFaceCaptureSettings();
+    reloadRegistry();
+}
+
+std::vector<float> FaceCaptureWidget::normalizeEmbedding(
+        const std::vector<float>& embedding) {
+    double norm2 = 0.0;
+    for (float value : embedding) {
+        if (!std::isfinite(value)) return {};
+        norm2 += static_cast<double>(value) * value;
+    }
+    if (embedding.empty() || norm2 <= 0.0) return {};
+    const float inv = static_cast<float>(1.0 / std::sqrt(norm2));
+    std::vector<float> normalized(embedding.size());
+    for (size_t i = 0; i < embedding.size(); ++i) {
+        normalized[i] = embedding[i] * inv;
+    }
+    return normalized;
+}
+
+void FaceCaptureWidget::reloadRegistry() {
+    m_registryIdentities.clear();
+    if (m_registryList) m_registryList->clear();
+    const QString path = m_registryPathEdit
+                                 ? m_registryPathEdit->text().trimmed()
+                                 : QString();
+    if (path.isEmpty() || !QFileInfo(path).isFile()) {
+        if (m_registryStatusLabel) {
+            m_registryStatusLabel->setText(tr("No face registry loaded"));
+        }
+        return;
+    }
+
+    const QString connection =
+            QStringLiteral("qfs_face_registry_") +
+            QUuid::createUuid().toString(QUuid::WithoutBraces);
+    QString error;
+    {
+        QSqlDatabase db = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),
+                                                    connection);
+        db.setConnectOptions(QStringLiteral("QSQLITE_OPEN_READONLY"));
+        db.setDatabaseName(path);
+        if (!db.open()) {
+            error = db.lastError().text();
+        } else {
+            QSqlQuery query(db);
+            if (!query.exec(QStringLiteral(
+                        "SELECT id,name,model,dim,embedding FROM faces "
+                        "ORDER BY name COLLATE NOCASE,id"))) {
+                error = query.lastError().text();
+            } else {
+                while (query.next()) {
+                    RegistryIdentity identity;
+                    identity.id = query.value(0).toString();
+                    identity.name = query.value(1).toString();
+                    identity.modelFile = query.value(2).toString();
+                    const int dim = query.value(3).toInt();
+                    const QByteArray blob = query.value(4).toByteArray();
+                    if (identity.id.isEmpty() || identity.name.isEmpty() ||
+                        dim <= 0 || blob.size() != dim * int(sizeof(float))) {
+                        continue;
+                    }
+                    identity.embedding.resize(static_cast<size_t>(dim));
+                    std::memcpy(identity.embedding.data(), blob.constData(),
+                                static_cast<size_t>(blob.size()));
+                    identity.embedding = normalizeEmbedding(identity.embedding);
+                    if (!identity.embedding.empty()) {
+                        m_registryIdentities.push_back(std::move(identity));
+                    }
+                }
+            }
+            db.close();
+        }
+    }
+    QSqlDatabase::removeDatabase(connection);
+
+    if (!error.isEmpty()) {
+        if (m_registryStatusLabel) {
+            m_registryStatusLabel->setText(
+                    tr("Registry load failed: %1").arg(error));
+        }
+        return;
+    }
+
+    if (m_registryList) {
+        for (size_t i = 0; i < m_registryIdentities.size(); ++i) {
+            const RegistryIdentity& identity = m_registryIdentities[i];
+            auto* item = new QListWidgetItem(
+                    QStringLiteral("%1  [%2]")
+                            .arg(identity.name, identity.id.left(12)),
+                    m_registryList);
+            item->setData(Qt::UserRole, static_cast<int>(i));
+            item->setToolTip(tr("id: %1\nmodel: %2\ndimension: %3")
+                                     .arg(identity.id, identity.modelFile)
+                                     .arg(identity.embedding.size()));
+        }
+    }
+    filterRegistry(m_registryFilterEdit ? m_registryFilterEdit->text()
+                                        : QString());
+    if (m_registryStatusLabel) {
+        m_registryStatusLabel->setText(
+                tr("%1 registered identities; select one or more to track")
+                        .arg(m_registryIdentities.size()));
+    }
+}
+
+void FaceCaptureWidget::filterRegistry(const QString& text) {
+    if (!m_registryList) return;
+    const QString needle = text.trimmed();
+    for (int row = 0; row < m_registryList->count(); ++row) {
+        QListWidgetItem* item = m_registryList->item(row);
+        const int index = item->data(Qt::UserRole).toInt();
+        const bool match =
+                index >= 0 &&
+                static_cast<size_t>(index) < m_registryIdentities.size() &&
+                (needle.isEmpty() ||
+                 m_registryIdentities[index].id.contains(needle,
+                                                         Qt::CaseInsensitive) ||
+                 m_registryIdentities[index].name.contains(
+                         needle, Qt::CaseInsensitive));
+        item->setHidden(!match);
+    }
+}
+
 int FaceCaptureWidget::selectedCameraIndex() const {
     if (!m_cameraCombo) return 0;
     return m_cameraCombo->currentData().toInt();
@@ -388,6 +678,7 @@ QString FaceCaptureWidget::videoFilePath() const {
 bool FaceCaptureWidget::startVideoFile(const QString& path) {
 #ifdef HAS_OPENCV_FACE_CAPTURE
     if (path.isEmpty()) return false;
+    if (!configureDetectorForRegistrySelection()) return false;
     m_inputSource = InputSource::VideoFile;
     m_videoFilePath = path;
     if (m_videoPathEdit) m_videoPathEdit->setText(path);
@@ -435,6 +726,13 @@ void FaceCaptureWidget::releaseGpuResources() {
     stopCamera();
     if (m_ggmlLoadWatcher && m_ggmlLoadWatcher->isRunning()) {
         m_ggmlLoadWatcher->waitForFinished();
+    }
+    if (m_ggmlLoadWatcher && m_ggmlModelLoading) {
+        if (aicore_facedetect_ctx* ctx = m_ggmlLoadWatcher->result()) {
+            aicore_facedetect_free(ctx);
+        }
+        m_ggmlModelLoading = false;
+        m_pendingGgmlPath.clear();
     }
     releaseGgmlModel();
 #endif
@@ -507,6 +805,14 @@ void FaceCaptureWidget::onDetectorComboChanged(int index) {
         m_detectorKind = DetectorKind::None;
     }
 
+    // When the user has not manually chosen a registry path, auto-switch
+    // to the model-specific default so the DB matches the active detector.
+    if (!m_registryPathUserChosen && m_registryPathEdit) {
+        const QString newDefault = defaultRegistryDbPath(data);
+        m_registryPathEdit->setText(newDefault);
+        reloadRegistry();
+    }
+
     if (m_cameraActive) {
         stopCamera();
         startCamera(m_pendingCameraIndex);
@@ -522,7 +828,8 @@ QString FaceCaptureWidget::currentGgmlFilename() const {
 
 bool FaceCaptureWidget::detectorReady() const {
     if (m_detectorKind == DetectorKind::OpenCV) return m_cascadeLoaded;
-    if (m_detectorKind == DetectorKind::Ggml) return m_ggmlCtx != nullptr;
+    if (m_detectorKind == DetectorKind::Ggml)
+        return aicore_facedetect_is_ready(m_ggmlCtx) != 0;
     return false;
 }
 
@@ -585,13 +892,16 @@ bool FaceCaptureWidget::loadGgmlModel(const QString& path) {
 
     releaseGgmlModel();
 
+    AICoreInferenceGuard guard;
     aicore_facedetect_options* opts = aicore_facedetect_options_new();
+    if (!opts) return false;
     aicore_facedetect_options_set_device(opts, "auto");
     aicore_facedetect_options_set_threads(opts, 0);
     m_ggmlCtx = aicore_facedetect_load_opts(path.toUtf8().constData(), opts);
     aicore_facedetect_options_free(opts);
 
-    if (!m_ggmlCtx) {
+    if (!aicore_facedetect_is_ready(m_ggmlCtx)) {
+        releaseGgmlModel();
         emit logMessage(tr("[FaceCapture] Failed to load GGUF: %1").arg(path));
         return false;
     }
@@ -607,11 +917,14 @@ void FaceCaptureWidget::scheduleGgmlModelLoad(const QString& path) {
     if (m_ggmlLoadWatcher && m_ggmlLoadWatcher->isRunning()) return;
 
     m_ggmlModelLoading = true;
+    m_pendingGgmlPath = path;
     m_statusLabel->setText(tr("Loading face detector model..."));
     m_ggmlLoadWatcher->setFuture(
             QtConcurrent::run([path]() -> aicore_facedetect_ctx* {
+                AICoreInferenceGuard guard;
                 aicore_facedetect_options* opts =
                         aicore_facedetect_options_new();
+                if (!opts) return nullptr;
                 aicore_facedetect_options_set_device(opts, "auto");
                 aicore_facedetect_options_set_threads(opts, 0);
                 aicore_facedetect_ctx* ctx = aicore_facedetect_load_opts(
@@ -629,10 +942,20 @@ bool FaceCaptureWidget::loadCascade() {
             ":/CC/plugin/qFreeSplatter/"
             "data/haarcascade_frontalface_alt2.xml");
     if (QFile::exists(qrcPath)) {
-        const QString tmpDir =
-                QStandardPaths::writableLocation(QStandardPaths::TempLocation);
+        // Keep the bundled cascade in the per-user application data directory.
+        // A shared system temp path can race between processes and is cleaned
+        // unpredictably by the OS. AppLocalDataLocation maps to the native
+        // cache/data location on Linux, Windows, and macOS.
+        QString cacheDir = QStandardPaths::writableLocation(
+                QStandardPaths::AppLocalDataLocation);
+        if (cacheDir.isEmpty()) {
+            cacheDir = QCoreApplication::applicationDirPath() +
+                       QStringLiteral("/cloudViewer_data");
+        }
+        cacheDir += QStringLiteral("/qFreeSplatter");
+        QDir().mkpath(cacheDir);
         const QString tmpPath =
-                tmpDir + QStringLiteral("/cv_haarcascade_frontalface_alt2.xml");
+                cacheDir + QStringLiteral("/haarcascade_frontalface_alt2.xml");
         if (!QFile::exists(tmpPath)) {
             QFile::copy(qrcPath, tmpPath);
             QFile::setPermissions(
@@ -684,6 +1007,7 @@ bool FaceCaptureWidget::loadCascade() {
 bool FaceCaptureWidget::startCamera(int deviceIndex) {
 #ifdef HAS_OPENCV_FACE_CAPTURE
     m_pendingCameraIndex = deviceIndex;
+    if (!configureDetectorForRegistrySelection()) return false;
 
     if (m_detectorKind == DetectorKind::Ggml) {
         if (!ensureGgmlModelReady()) {
@@ -790,25 +1114,135 @@ void FaceCaptureWidget::startGuidedCapture(
         const std::vector<CaptureAngle>& angles) {
     resetCapture();
     m_targetAngles = angles;
+
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    // Validate registry when identity tracking is requested.
+    const bool needsRegistry =
+            m_registryList && !m_registryList->selectedItems().isEmpty();
+    if (needsRegistry && m_registryIdentities.empty()) {
+        const QString registryPath =
+                m_registryPathEdit ? m_registryPathEdit->text().trimmed()
+                                   : QString();
+        const bool pathMissing =
+                registryPath.isEmpty() || !QFileInfo(registryPath).isFile();
+        if (pathMissing) {
+            QMessageBox::warning(
+                    this, tr("Face Registry Required"),
+                    tr("No face registry database is configured.\n\n"
+                       "Please use the <b>qFaceDetect</b> plugin to register "
+                       "faces first, then set the registry path here.\n\n"
+                       "Identity-based tracking and reconstruction depend on "
+                       "a pre-registered face database."));
+        } else {
+            QMessageBox::warning(
+                    this, tr("Face Registry Empty or Invalid"),
+                    tr("The face registry at:\n%1\n\n"
+                       "contains no identities compatible with the current "
+                       "detector model.\n\n"
+                       "Please use the <b>qFaceDetect</b> plugin to register "
+                       "faces with the same detector model, or select a "
+                       "different registry database.")
+                            .arg(registryPath));
+        }
+        emit logMessage(
+                tr("[FaceCapture] Aborted: face registry dependency not "
+                   "satisfied — use qFaceDetect to register faces first."));
+        return;
+    }
+
+    if (m_registryList && !m_registryList->selectedItems().isEmpty()) {
+        for (QListWidgetItem* item : m_registryList->selectedItems()) {
+            const int index = item->data(Qt::UserRole).toInt();
+            if (index < 0 ||
+                static_cast<size_t>(index) >= m_registryIdentities.size()) {
+                continue;
+            }
+            const RegistryIdentity& identity = m_registryIdentities[index];
+            if (identity.modelFile != currentGgmlFilename()) continue;
+            IdentityTrack track;
+            track.identity = identity;
+            m_identityTracks.push_back(std::move(track));
+        }
+        if (m_identityTracks.empty()) {
+            m_statusLabel->setText(
+                    tr("Selected registry identities do not match the active "
+                       "FaceDetect model"));
+            emit cameraError(m_statusLabel->text());
+            return;
+        }
+        emit logMessage(
+                tr("[FaceCapture] Tracking %1 selected registry identities")
+                        .arg(m_identityTracks.size()));
+    }
+#endif
     m_capturingMode = true;
     m_currentAngleIndex = currentGuideAngleIndex();
 
     if (m_captureBtn) {
+#ifdef HAS_OPENCV_FACE_CAPTURE
+        // Registry tracks are captured independently after a stable identity
+        // match. A generic manual capture has no identity owner and would be
+        // silently excluded from the reconstruction batches.
+        m_captureBtn->setEnabled(m_cameraActive && m_identityTracks.empty());
+#else
         m_captureBtn->setEnabled(m_cameraActive);
+#endif
     }
 
     const int target = minCapturesBeforeComplete();
     if (!m_targetAngles.empty()) {
-        m_angleLabel->setText(
+        setAngleGuideText(
                 tr("Angle: %1 (capture 1/%2)")
                         .arg(angleToString(m_targetAngles[static_cast<size_t>(
                                 m_currentAngleIndex)]))
                         .arg(target));
     } else {
-        m_angleLabel->setText(tr("Capture face snapshots (1/%1)").arg(target));
+        setAngleGuideText(tr("Capture face snapshots (1/%1)").arg(target));
     }
     m_statusLabel->setText(tr("Position your face and capture each angle"));
     updateCaptureProgressUi();
+}
+
+bool FaceCaptureWidget::configureDetectorForRegistrySelection() {
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    if (!m_registryList || m_registryList->selectedItems().isEmpty())
+        return true;
+    QString model;
+    for (QListWidgetItem* item : m_registryList->selectedItems()) {
+        const int index = item->data(Qt::UserRole).toInt();
+        if (index < 0 ||
+            static_cast<size_t>(index) >= m_registryIdentities.size()) {
+            continue;
+        }
+        const QString entryModel = m_registryIdentities[index].modelFile;
+        if (entryModel.isEmpty()) continue;
+        if (model.isEmpty()) {
+            model = entryModel;
+        } else if (model != entryModel) {
+            const QString message =
+                    tr("Selected identities use different embedding models; "
+                       "select identities registered with one model");
+            m_statusLabel->setText(message);
+            emit cameraError(message);
+            return false;
+        }
+    }
+    if (model.isEmpty()) return true;
+    const int detectorIndex = m_detectorCombo->findData(model);
+    if (detectorIndex < 0) {
+        const QString message =
+                tr("Registry model is unavailable: %1").arg(model);
+        m_statusLabel->setText(message);
+        emit cameraError(message);
+        return false;
+    }
+    if (m_detectorCombo->currentIndex() != detectorIndex) {
+        m_detectorCombo->setCurrentIndex(detectorIndex);
+    }
+    return true;
+#else
+    return false;
+#endif
 }
 
 void FaceCaptureWidget::captureCurrentFrame() {
@@ -831,11 +1265,14 @@ void FaceCaptureWidget::captureCurrentFrame() {
         return;
     }
 
-    cv::Mat frame;
-    if (!m_camera.read(frame) || frame.empty()) {
-        emit cameraError(tr("Failed to read frame from camera"));
+    const cv::Mat& sourceFrame = detectorReady() && m_lastFaceRect.width > 0
+                                         ? m_lastDetectedFrame
+                                         : m_latestFrame;
+    if (sourceFrame.empty()) {
+        emit cameraError(tr("No captured frame is available"));
         return;
     }
+    const cv::Mat frame = sourceFrame.clone();
 
     const int angleCount = std::max(1, static_cast<int>(m_targetAngles.size()));
     const int angleIdx = static_cast<int>(m_capturedFrames.size()) % angleCount;
@@ -880,7 +1317,7 @@ void FaceCaptureWidget::captureCurrentFrame() {
     if (index >= target) {
         m_capturingMode = false;
         if (m_captureBtn) m_captureBtn->setEnabled(false);
-        m_angleLabel->setText(tr("Capture complete"));
+        setAngleGuideText(tr("Capture complete"));
         emit captureComplete();
         return;
     }
@@ -889,14 +1326,14 @@ void FaceCaptureWidget::captureCurrentFrame() {
     if (!m_targetAngles.empty()) {
         const auto nextAngle =
                 m_targetAngles[static_cast<size_t>(m_currentAngleIndex)];
-        m_angleLabel->setText(tr("Angle: %1 (capture %2/%3)")
-                                      .arg(angleToString(nextAngle))
-                                      .arg(index + 1)
-                                      .arg(target));
+        setAngleGuideText(tr("Angle: %1 (capture %2/%3)")
+                                  .arg(angleToString(nextAngle))
+                                  .arg(index + 1)
+                                  .arg(target));
     } else {
-        m_angleLabel->setText(tr("Capture face snapshots (%1/%2)")
-                                      .arg(index + 1)
-                                      .arg(target));
+        setAngleGuideText(tr("Capture face snapshots (%1/%2)")
+                                  .arg(index + 1)
+                                  .arg(target));
     }
     if (m_captureBtn) m_captureBtn->setEnabled(false);
 #endif
@@ -914,11 +1351,13 @@ void FaceCaptureWidget::resetCapture() {
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
     m_lastFaceRect = cv::Rect();
+    m_latestFrame.release();
+    m_lastDetectedFrame.release();
     m_lastFaceScore = 0.f;
 #endif
 
     if (m_captureBtn) m_captureBtn->setEnabled(false);
-    if (m_angleLabel) m_angleLabel->setText(QString());
+    setAngleGuideText(QString());
     refreshCapturedGallery();
     updateCaptureProgressUi();
     if (m_statusLabel) {
@@ -930,6 +1369,16 @@ void FaceCaptureWidget::resetCapture() {
 
 std::vector<FaceCaptureWidget::CapturedFrame>
 FaceCaptureWidget::capturedFrames() const {
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    if (!m_identityTracks.empty()) {
+        std::vector<CapturedFrame> frames;
+        for (const IdentityTrack& track : m_identityTracks) {
+            frames.insert(frames.end(), track.frames.begin(),
+                          track.frames.end());
+        }
+        return frames;
+    }
+#endif
     return m_capturedFrames;
 }
 
@@ -959,12 +1408,65 @@ QStringList FaceCaptureWidget::exportCapturedImages(
     return paths;
 }
 
+std::vector<FaceCaptureWidget::IdentityImageBatch>
+FaceCaptureWidget::exportCapturedIdentityImages(
+        const QString& outputDir) const {
+    std::vector<IdentityImageBatch> batches;
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    for (const IdentityTrack& track : m_identityTracks) {
+        IdentityImageBatch batch;
+        batch.id = track.identity.id;
+        batch.name = track.identity.name;
+        QString segment = track.identity.name + QLatin1Char('_') +
+                          track.identity.id.left(12);
+        for (QChar& c : segment) {
+            if (!c.isLetterOrNumber() && c != QLatin1Char('-') &&
+                c != QLatin1Char('_')) {
+                c = QLatin1Char('_');
+            }
+        }
+        QDir dir(QDir(outputDir).filePath(segment));
+        if (!dir.exists() && !dir.mkpath(QStringLiteral("."))) continue;
+        for (size_t i = 0; i < track.frames.size(); ++i) {
+            const CapturedFrame& frame = track.frames[i];
+            if (!frame.valid || frame.croppedFace.isNull()) continue;
+            const QString path = dir.filePath(
+                    QStringLiteral("face_%1.png")
+                            .arg(static_cast<int>(i), 2, 10, QChar('0')));
+            if (frame.croppedFace.save(path, "PNG"))
+                batch.paths.push_back(path);
+        }
+        if (!batch.paths.isEmpty()) batches.push_back(std::move(batch));
+    }
+#endif
+    if (batches.empty()) {
+        IdentityImageBatch anonymous;
+        anonymous.name = tr("Anonymous");
+        anonymous.paths = exportCapturedImages(outputDir);
+        if (!anonymous.paths.isEmpty()) batches.push_back(std::move(anonymous));
+    }
+    return batches;
+}
+
 int FaceCaptureWidget::capturedCount() const {
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    if (!m_identityTracks.empty()) {
+        int total = 0;
+        for (const IdentityTrack& track : m_identityTracks) {
+            total += static_cast<int>(track.frames.size());
+        }
+        return total;
+    }
+#endif
     return static_cast<int>(m_capturedFrames.size());
 }
 
 int FaceCaptureWidget::targetCount() const {
-    return minCapturesBeforeComplete();
+    int identities = 1;
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    identities = std::max(1, static_cast<int>(m_identityTracks.size()));
+#endif
+    return minCapturesBeforeComplete() * identities;
 }
 
 float FaceCaptureWidget::minDetectionScore() const {
@@ -973,6 +1475,11 @@ float FaceCaptureWidget::minDetectionScore() const {
 
 int FaceCaptureWidget::minCapturesBeforeComplete() const {
     return m_minCapturesSpin ? m_minCapturesSpin->value() : 2;
+}
+
+float FaceCaptureWidget::maxSamePersonDistance() const {
+    return m_maxDistanceSpin ? static_cast<float>(m_maxDistanceSpin->value())
+                             : kDefaultSamePersonMaxDistance;
 }
 
 FaceCaptureWidget::FacePickStrategy FaceCaptureWidget::facePickStrategy()
@@ -999,34 +1506,68 @@ void FaceCaptureWidget::processFrame() {
             return;
         }
     }
+    m_latestFrame = frame.clone();
 
     QImage preview = cvMatToQImage(frame);
-    if (!preview.isNull()) {
-        m_previewLabel->setPreviewImage(preview, m_previewLabel->size());
+
+    if (!m_identityTracks.empty() && detectorReady() &&
+        m_detectorKind == DetectorKind::Ggml && !m_ggmlModelLoading) {
+        if (m_ggmlFrameSkip <= 0) {
+            const std::vector<ScoredFace> faces = detectFacesGgml(frame);
+            processRegistryIdentities(frame, faces, &preview);
+            m_ggmlFrameSkip = kGgmlDetectInterval;
+            m_lastDetectedFrame = frame.clone();
+        } else {
+            --m_ggmlFrameSkip;
+            QPainter painter(&preview);
+            painter.setPen(QPen(QColor(0, 200, 255), 3));
+            for (const IdentityTrack& track : m_identityTracks) {
+                if (track.lastRect.width > 0) {
+                    painter.drawRect(track.lastRect.x, track.lastRect.y,
+                                     track.lastRect.width,
+                                     track.lastRect.height);
+                }
+            }
+        }
+        if (m_capturingMode && !m_targetAngles.empty()) {
+            drawAngleGuide(preview, m_targetAngles[static_cast<size_t>(
+                                            currentGuideAngleIndex())]);
+        }
+        if (!preview.isNull()) {
+            m_previewLabel->setPixmap(QPixmap::fromImage(
+                    preview.scaled(m_previewLabel->size(), Qt::KeepAspectRatio,
+                                   Qt::FastTransformation)));
+        }
+        return;
     }
 
     cv::Rect faceRect;
+    bool freshDetection = false;
     if (detectorReady() && !m_ggmlModelLoading) {
         if (m_detectorKind == DetectorKind::Ggml) {
             if (m_ggmlFrameSkip <= 0) {
                 faceRect = detectFaceGgml(frame);
                 m_ggmlFrameSkip = kGgmlDetectInterval;
+                freshDetection = true;
             } else {
                 --m_ggmlFrameSkip;
                 if (m_lastFaceRect.width > 0) faceRect = m_lastFaceRect;
             }
         } else {
             faceRect = detectFaceOpenCv(frame);
+            freshDetection = true;
         }
 
         if (faceRect.width > 0 && faceRect.height > 0) {
             ++m_consecutiveDetections;
             m_lastFaceRect = faceRect;
+            if (freshDetection) m_lastDetectedFrame = frame.clone();
             emit faceDetected(QRect(faceRect.x, faceRect.y, faceRect.width,
                                     faceRect.height));
         } else {
             m_consecutiveDetections = 0;
             m_lastFaceRect = cv::Rect();
+            m_lastDetectedFrame.release();
             m_lastFaceScore = 0.f;
             emit faceNotDetected();
         }
@@ -1041,7 +1582,9 @@ void FaceCaptureWidget::processFrame() {
             drawAngleGuide(preview,
                            m_targetAngles[static_cast<size_t>(guideIdx)]);
         }
-        m_previewLabel->setPreviewImage(preview, m_previewLabel->size());
+        m_previewLabel->setPixmap(QPixmap::fromImage(
+                preview.scaled(m_previewLabel->size(), Qt::KeepAspectRatio,
+                               Qt::FastTransformation)));
     }
 
     if (m_capturingMode) {
@@ -1169,6 +1712,7 @@ std::vector<FaceCaptureWidget::ScoredFace> FaceCaptureWidget::detectFacesGgml(
 
     if (!rgb.isContinuous()) rgb = rgb.clone();
 
+    AICoreInferenceGuard guard;
     char* json = aicore_facedetect_detect_rgb_json(m_ggmlCtx, rgb.data,
                                                    rgb.cols, rgb.rows);
     if (!json) return out;
@@ -1193,7 +1737,26 @@ std::vector<FaceCaptureWidget::ScoredFace> FaceCaptureWidget::detectFacesGgml(
         const int h = static_cast<int>(
                 std::ceil(box.at(3).toDouble() - box.at(1).toDouble()));
         if (w <= 0 || h <= 0) continue;
-        out.push_back({cv::Rect(x, y, w, h), score});
+        ScoredFace face;
+        face.rect = cv::Rect(x, y, w, h);
+        face.score = score;
+        const QJsonArray landmarks =
+                obj.value(QStringLiteral("landmarks")).toArray();
+        if (landmarks.size() >= 5) {
+            face.hasLandmarks = true;
+            for (int k = 0; k < 5; ++k) {
+                const QJsonArray point = landmarks.at(k).toArray();
+                if (point.size() < 2) {
+                    face.hasLandmarks = false;
+                    break;
+                }
+                face.landmarks[k * 2] =
+                        static_cast<float>(point.at(0).toDouble());
+                face.landmarks[k * 2 + 1] =
+                        static_cast<float>(point.at(1).toDouble());
+            }
+        }
+        out.push_back(face);
     }
     return out;
 }
@@ -1231,6 +1794,7 @@ bool FaceCaptureWidget::embedFaceCrop(const cv::Mat& frame,
 
     float* vec = nullptr;
     int dim = 0;
+    AICoreInferenceGuard guard;
     if (aicore_facedetect_embed_rgb(m_ggmlCtx, rgb.data, rgb.cols, rgb.rows,
                                     0.f, &vec, &dim) != 0 ||
         vec == nullptr || dim <= 0) {
@@ -1241,18 +1805,235 @@ bool FaceCaptureWidget::embedFaceCrop(const cv::Mat& frame,
     return true;
 }
 
+bool FaceCaptureWidget::embedScoredFace(const cv::Mat& frame,
+                                        const ScoredFace& face,
+                                        std::vector<float>* embedding) {
+    if (!embedding || !m_ggmlCtx || frame.empty()) return false;
+    if (!face.hasLandmarks) {
+        return embedFaceCrop(frame, face.rect, embedding);
+    }
+
+    cv::Mat rgb;
+    if (frame.channels() == 1)
+        cv::cvtColor(frame, rgb, cv::COLOR_GRAY2RGB);
+    else if (frame.channels() == 3)
+        cv::cvtColor(frame, rgb, cv::COLOR_BGR2RGB);
+    else if (frame.channels() == 4)
+        cv::cvtColor(frame, rgb, cv::COLOR_BGRA2RGB);
+    else
+        return false;
+    if (!rgb.isContinuous()) rgb = rgb.clone();
+
+    float* vec = nullptr;
+    int dim = 0;
+    AICoreInferenceGuard guard;
+    if (aicore_facedetect_embed_rgb_landmarks(m_ggmlCtx, rgb.data, rgb.cols,
+                                              rgb.rows, face.landmarks, &vec,
+                                              &dim) != 0 ||
+        vec == nullptr || dim <= 0) {
+        return false;
+    }
+    embedding->assign(vec, vec + dim);
+    aicore_facedetect_free_vec(vec);
+    *embedding = normalizeEmbedding(*embedding);
+    return !embedding->empty();
+}
+
+bool FaceCaptureWidget::captureIdentityFrame(IdentityTrack* track,
+                                             const cv::Mat& frame,
+                                             const cv::Rect& rect) {
+    if (!track || frame.empty() || rect.width <= 0) return false;
+    const int target = minCapturesBeforeComplete();
+    if (static_cast<int>(track->frames.size()) >= target) return false;
+
+    const int angleCount = std::max(1, static_cast<int>(m_targetAngles.size()));
+    const int angleIndex = static_cast<int>(track->frames.size()) % angleCount;
+    CapturedFrame captured;
+    captured.image = cvMatToQImage(frame);
+    captured.croppedFace = cropAndResizeFace(frame, rect, 512);
+    captured.angle = m_targetAngles.empty()
+                             ? CaptureAngle::Front
+                             : m_targetAngles[static_cast<size_t>(angleIndex)];
+    captured.faceRect = QRect(rect.x, rect.y, rect.width, rect.height);
+    captured.valid = !captured.croppedFace.isNull();
+    if (!captured.valid) return false;
+
+    track->frames.push_back(std::move(captured));
+    track->consecutiveDetections = 0;
+    track->cooldown = kPostCaptureCooldown;
+    emit logMessage(
+            tr("[FaceCapture] Captured %1 [%2] %3/%4")
+                    .arg(track->identity.name, track->identity.id.left(12))
+                    .arg(track->frames.size())
+                    .arg(target));
+    emit frameCaptured(capturedCount(), targetCount());
+    refreshCapturedGallery();
+    updateCaptureProgressUi();
+    return true;
+}
+
+bool FaceCaptureWidget::processRegistryIdentities(
+        const cv::Mat& frame,
+        const std::vector<ScoredFace>& faces,
+        QImage* preview) {
+    if (m_identityTracks.empty() || !m_ggmlCtx || frame.empty()) return false;
+
+    std::vector<const ScoredFace*> candidates;
+    std::vector<float> queryMatrix;
+    const int dim = static_cast<int>(
+            m_identityTracks.front().identity.embedding.size());
+    for (const ScoredFace& face : faces) {
+        if (face.score < minDetectionScore()) continue;
+        std::vector<float> embedding;
+        if (!embedScoredFace(frame, face, &embedding) ||
+            static_cast<int>(embedding.size()) != dim) {
+            continue;
+        }
+        candidates.push_back(&face);
+        queryMatrix.insert(queryMatrix.end(), embedding.begin(),
+                           embedding.end());
+    }
+
+    std::vector<float> gallery;
+    gallery.reserve(m_identityTracks.size() * static_cast<size_t>(dim));
+    for (const IdentityTrack& track : m_identityTracks) {
+        if (static_cast<int>(track.identity.embedding.size()) != dim) {
+            return false;
+        }
+        gallery.insert(gallery.end(), track.identity.embedding.begin(),
+                       track.identity.embedding.end());
+    }
+
+    struct Pair {
+        int face = -1;
+        int identity = -1;
+        float distance = 1.f;
+    };
+    std::vector<Pair> pairs;
+    if (!candidates.empty()) {
+        std::vector<float> distances(candidates.size() *
+                                     m_identityTracks.size());
+        if (aicore_facedetect_cosine_distance_matrix(
+                    queryMatrix.data(), static_cast<int>(candidates.size()),
+                    gallery.data(), static_cast<int>(m_identityTracks.size()),
+                    dim, distances.data()) == 0) {
+            for (size_t f = 0; f < candidates.size(); ++f) {
+                for (size_t i = 0; i < m_identityTracks.size(); ++i) {
+                    const float distance =
+                            distances[f * m_identityTracks.size() + i];
+                    if (distance <= maxSamePersonDistance()) {
+                        pairs.push_back({static_cast<int>(f),
+                                         static_cast<int>(i), distance});
+                    }
+                }
+            }
+        }
+    }
+    std::sort(pairs.begin(), pairs.end(), [](const Pair& a, const Pair& b) {
+        return a.distance < b.distance;
+    });
+
+    std::vector<int> assignedFace(m_identityTracks.size(), -1);
+    std::vector<bool> faceUsed(candidates.size(), false);
+    for (const Pair& pair : pairs) {
+        if (assignedFace[static_cast<size_t>(pair.identity)] >= 0 ||
+            faceUsed[static_cast<size_t>(pair.face)]) {
+            continue;
+        }
+        assignedFace[static_cast<size_t>(pair.identity)] = pair.face;
+        faceUsed[static_cast<size_t>(pair.face)] = true;
+        m_identityTracks[static_cast<size_t>(pair.identity)].lastDistance =
+                pair.distance;
+    }
+
+    const int trigger = m_inputSource == InputSource::VideoFile
+                                ? kVideoAutoCaptureTrigger
+                                : kAutoCaptureTrigger;
+    bool anyMatched = false;
+    for (size_t i = 0; i < m_identityTracks.size(); ++i) {
+        IdentityTrack& track = m_identityTracks[i];
+        if (track.cooldown > 0) --track.cooldown;
+        const int faceIndex = assignedFace[i];
+        if (faceIndex < 0) {
+            track.consecutiveDetections = 0;
+            track.lastRect = cv::Rect();
+            continue;
+        }
+        const ScoredFace& face = *candidates[static_cast<size_t>(faceIndex)];
+        anyMatched = true;
+        track.lastRect = face.rect;
+        ++track.consecutiveDetections;
+
+        if (preview && !preview->isNull()) {
+            QPainter painter(preview);
+            painter.setPen(QPen(QColor(0, 200, 255), 3));
+            painter.drawRect(face.rect.x, face.rect.y, face.rect.width,
+                             face.rect.height);
+            const QString label = QStringLiteral("%1 d=%2")
+                                          .arg(track.identity.name)
+                                          .arg(track.lastDistance, 0, 'f', 3);
+            painter.fillRect(
+                    face.rect.x, std::max(0, face.rect.y - 22),
+                    std::max(
+                            90,
+                            painter.fontMetrics().horizontalAdvance(label) + 8),
+                    22, QColor(0, 0, 0, 180));
+            painter.setPen(Qt::white);
+            painter.drawText(face.rect.x + 4, std::max(16, face.rect.y - 6),
+                             label);
+        }
+
+        if (m_capturingMode && track.cooldown == 0 &&
+            track.consecutiveDetections >= trigger) {
+            captureIdentityFrame(&track, frame, face.rect);
+        }
+    }
+
+    if (m_capturingMode) {
+        const int target = minCapturesBeforeComplete();
+        const bool complete = std::all_of(
+                m_identityTracks.begin(), m_identityTracks.end(),
+                [target](const IdentityTrack& track) {
+                    return static_cast<int>(track.frames.size()) >= target;
+                });
+        if (complete) {
+            m_capturingMode = false;
+            if (m_captureBtn) m_captureBtn->setEnabled(false);
+            setAngleGuideText(tr("Capture complete for all identities"));
+            emit captureComplete();
+        } else {
+            m_statusLabel->setText(
+                    anyMatched
+                            ? tr("Tracking selected identities: %1/%2 captures")
+                                      .arg(capturedCount())
+                                      .arg(targetCount())
+                            : tr("Selected identities not found in this "
+                                 "frame"));
+        }
+    }
+    return anyMatched;
+}
+
 float FaceCaptureWidget::embeddingDistance(const std::vector<float>& a,
                                            const std::vector<float>& b) const {
     if (a.size() != b.size() || a.empty()) return 1.0f;
     double dot = 0.0;
-    for (size_t i = 0; i < a.size(); ++i)
+    double normA = 0.0;
+    double normB = 0.0;
+    for (size_t i = 0; i < a.size(); ++i) {
         dot += static_cast<double>(a[i]) * b[i];
-    return static_cast<float>(1.0 - dot);
+        normA += static_cast<double>(a[i]) * a[i];
+        normB += static_cast<double>(b[i]) * b[i];
+    }
+    if (normA <= 0.0 || normB <= 0.0) return 1.0f;
+    const double cosine = dot / std::sqrt(normA * normB);
+    return static_cast<float>(1.0 - std::clamp(cosine, -1.0, 1.0));
 }
 
 void FaceCaptureWidget::resetIdentityTrack() {
     m_referenceEmbedding.clear();
     m_hasReferenceEmbedding = false;
+    m_identityTracks.clear();
 }
 
 cv::Rect FaceCaptureWidget::pickFace(const cv::Mat& frame,
@@ -1305,7 +2086,7 @@ cv::Rect FaceCaptureWidget::pickFace(const cv::Mat& frame,
                                      return a.rect.area() < b.rect.area();
                                  });
         if (seedIt == candidates.end()) return cv::Rect();
-        if (embedFaceCrop(frame, seedIt->rect, &m_referenceEmbedding)) {
+        if (embedScoredFace(frame, *seedIt, &m_referenceEmbedding)) {
             m_hasReferenceEmbedding = true;
         }
         m_lastFaceScore = seedIt->score;
@@ -1313,10 +2094,10 @@ cv::Rect FaceCaptureWidget::pickFace(const cv::Mat& frame,
     }
 
     const ScoredFace* best = nullptr;
-    float bestDistance = kSamePersonMaxDistance;
+    float bestDistance = maxSamePersonDistance();
     for (const ScoredFace& face : candidates) {
         std::vector<float> emb;
-        if (!embedFaceCrop(frame, face.rect, &emb)) continue;
+        if (!embedScoredFace(frame, face, &emb)) continue;
         const float dist = embeddingDistance(m_referenceEmbedding, emb);
         if (dist < bestDistance) {
             bestDistance = dist;
@@ -1427,20 +2208,31 @@ void FaceCaptureWidget::drawAngleGuide(QImage& image, CaptureAngle angle) {
 
 int FaceCaptureWidget::currentGuideAngleIndex() const {
     const int angleCount = std::max(1, static_cast<int>(m_targetAngles.size()));
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    if (!m_identityTracks.empty()) {
+        size_t fewest = m_identityTracks.front().frames.size();
+        for (const IdentityTrack& track : m_identityTracks) {
+            fewest = std::min(fewest, track.frames.size());
+        }
+        return static_cast<int>(fewest) % angleCount;
+    }
+#endif
     return static_cast<int>(m_capturedFrames.size()) % angleCount;
 }
 
 void FaceCaptureWidget::updateCaptureProgressUi() {
     const int captured = capturedCount();
-    const int target = minCapturesBeforeComplete();
+    const int target = targetCount();
     if (m_captureProgress) {
         m_captureProgress->setMaximum(target);
         m_captureProgress->setValue(std::min(captured, target));
     }
-    if (m_captureProgressLabel) {
-        m_captureProgressLabel->setText(
-                tr("Captured %1/%2 faces").arg(captured).arg(target));
-    }
+}
+
+void FaceCaptureWidget::setAngleGuideText(const QString& text) {
+    if (!m_angleLabel) return;
+    m_angleLabel->setText(text);
+    m_angleLabel->setVisible(!text.isEmpty());
 }
 
 void FaceCaptureWidget::refreshCapturedGallery() {
@@ -1454,8 +2246,12 @@ void FaceCaptureWidget::refreshCapturedGallery() {
         delete item;
     }
 
-    for (size_t i = 0; i < m_capturedFrames.size(); ++i) {
-        const CapturedFrame& frame = m_capturedFrames[i];
+    const std::vector<CapturedFrame> frames = capturedFrames();
+    if (m_capturedGalleryScroll) {
+        m_capturedGalleryScroll->setVisible(!frames.empty());
+    }
+    for (size_t i = 0; i < frames.size(); ++i) {
+        const CapturedFrame& frame = frames[i];
         if (!frame.valid || frame.croppedFace.isNull()) continue;
 
         auto* thumb = new QLabel(m_capturedGalleryRow);
@@ -1494,6 +2290,14 @@ void FaceCaptureWidget::loadFaceCaptureSettings() {
                 settings.value(QStringLiteral("faceMinCaptures"), 2).toInt());
         m_minCapturesSpin->blockSignals(false);
     }
+    if (m_maxDistanceSpin) {
+        m_maxDistanceSpin->blockSignals(true);
+        m_maxDistanceSpin->setValue(
+                settings.value(QStringLiteral("faceMaxDistance"),
+                               kDefaultSamePersonMaxDistance)
+                        .toDouble());
+        m_maxDistanceSpin->blockSignals(false);
+    }
     if (m_faceStrategyCombo) {
         m_faceStrategyCombo->blockSignals(true);
         const int strategy =
@@ -1517,9 +2321,17 @@ void FaceCaptureWidget::loadFaceCaptureSettings() {
         m_videoPathEdit->blockSignals(false);
         m_videoFilePath = videoPath;
     }
+    const QString defaultPath = defaultRegistryDbPath(currentGgmlFilename());
+    const QString savedRegistryPath =
+            settings.value(QStringLiteral("faceRegistryPath")).toString();
+    m_registryPathUserChosen = !savedRegistryPath.isEmpty();
+    const QString registryPath =
+            m_registryPathUserChosen ? savedRegistryPath : defaultPath;
+    if (m_registryPathEdit) m_registryPathEdit->setText(registryPath);
 #endif
 
     settings.endGroup();
+    reloadRegistry();
     updateCaptureProgressUi();
 }
 
@@ -1536,11 +2348,25 @@ void FaceCaptureWidget::saveFaceCaptureSettings() {
         settings.setValue(QStringLiteral("faceMinCaptures"),
                           m_minCapturesSpin->value());
     }
+    if (m_maxDistanceSpin) {
+        settings.setValue(QStringLiteral("faceMaxDistance"),
+                          m_maxDistanceSpin->value());
+    }
     if (m_faceStrategyCombo) {
         settings.setValue(QStringLiteral("faceStrategy"),
                           m_faceStrategyCombo->currentData());
     }
     settings.setValue(QStringLiteral("faceVideoPath"), videoFilePath());
+    if (m_registryPathEdit) {
+        const QString path = m_registryPathEdit->text().trimmed();
+        // Only persist the path when the user explicitly chose it;
+        // otherwise clear so the default follows the active detector model.
+        if (m_registryPathUserChosen && !path.isEmpty()) {
+            settings.setValue(QStringLiteral("faceRegistryPath"), path);
+        } else {
+            settings.remove(QStringLiteral("faceRegistryPath"));
+        }
+    }
 #endif
 
     settings.endGroup();

@@ -171,6 +171,7 @@ private:
     bool m_downloadInProgress = false;
     bool m_taskRunning = false;
     bool m_autoRunAfterDownload = false;
+    bool m_alikedExtractorPendingDownload = false;
     QString m_downloadTargetFilename;
     QString m_lastSelectedModel;
 

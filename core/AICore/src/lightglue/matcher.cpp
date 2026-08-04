@@ -454,6 +454,7 @@ public:
             error_ = backend_.error;
             return false;
         }
+        const auto backend_lock = backend_.lock();
         if (!MapWeights() || !RealizeWeights()) {
             return false;
         }
@@ -491,6 +492,7 @@ public:
         }
         result->matches0.assign(image1.keypoints.size(), -1);
         result->mscores0.assign(image1.keypoints.size(), 0.0f);
+        const auto backend_lock = backend_.lock();
         if (!ValidateFeatures(image1, "image1") ||
             !ValidateFeatures(image2, "image2")) {
             return false;
@@ -508,7 +510,8 @@ public:
         const int64_t head_dim = dim / heads;
         const int64_t position_dim = file_.hp.add_scale_orientation ? 4 : 2;
         bool fused_attention =
-                !backend_.is_cpu() || std::max(tokens0, tokens1) > 256;
+                backend_.supports_fused_attention() ||
+                (backend_.is_cpu() && std::max(tokens0, tokens1) > 256);
         if (const char *mode = std::getenv("LIGHTGLUE_ATTENTION")) {
             fused_attention = std::string(mode) != "manual";
         }

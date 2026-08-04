@@ -8,6 +8,7 @@
 #include "FaceRegistryStore.h"
 
 #include <QBuffer>
+#include <QCryptographicHash>
 #include <QDateTime>
 #include <QDir>
 #include <QFile>
@@ -24,12 +25,17 @@
 #include <cstring>
 #include <shared_mutex>
 
+#include "aicore/facedetect_capi.h"
+
 namespace {
 
 QString connectionNameForPath(const QString& path) {
     // Each thread needs its own QSQLITE connection (names are process-global).
-    return QStringLiteral("face_registry_") + QString::number(qHash(path)) +
-           QLatin1Char('_') +
+    const QByteArray pathHash = QCryptographicHash::hash(
+            QFileInfo(path).absoluteFilePath().toUtf8(),
+            QCryptographicHash::Sha256);
+    return QStringLiteral("face_registry_") +
+           QString::fromLatin1(pathHash.toHex()) + QLatin1Char('_') +
            QString::number(
                    reinterpret_cast<quintptr>(QThread::currentThreadId()));
 }
@@ -41,12 +47,26 @@ QByteArray embeddingToBlob(const std::vector<float>& v) {
 }
 
 std::vector<float> embeddingFromBlob(const QByteArray& bytes) {
+    if (bytes.isEmpty() ||
+        bytes.size() % static_cast<int>(sizeof(float)) != 0) {
+        return {};
+    }
     std::vector<float> out(bytes.size() / static_cast<int>(sizeof(float)));
     if (!out.empty()) {
         std::memcpy(out.data(), bytes.constData(),
                     static_cast<size_t>(bytes.size()));
     }
     return out;
+}
+
+bool isValidEmbedding(const std::vector<float>& embedding) {
+    double normSquared = 0.0;
+    for (float value : embedding) {
+        if (!std::isfinite(value)) return false;
+        normSquared += static_cast<double>(value) * value;
+    }
+    return !embedding.empty() && std::isfinite(normSquared) &&
+           normSquared > 0.0;
 }
 
 QByteArray imageToBlob(const QImage& img) {
@@ -70,6 +90,8 @@ QImage imageFromBlob(const QByteArray& bytes) {
 
 FaceRegistryStore::FaceRegistryStore(const QString& dbPath) : m_path(dbPath) {}
 
+FaceRegistryStore::~FaceRegistryStore() { close(); }
+
 bool FaceRegistryStore::open() {
     std::unique_lock lock(m_mutex);
     return openUnlocked();
@@ -77,6 +99,7 @@ bool FaceRegistryStore::open() {
 
 bool FaceRegistryStore::openUnlocked() {
     if (m_open) return true;
+    const bool databaseExisted = QFileInfo::exists(m_path);
     QDir().mkpath(QFileInfo(m_path).absolutePath());
 
     const QString conn = connectionNameForPath(m_path);
@@ -89,8 +112,8 @@ bool FaceRegistryStore::openUnlocked() {
         if (!QSqlDatabase::database(conn).open()) return false;
     }
 
-    migrateLegacyJson();
     if (!ensureSchema()) return false;
+    if (!migrateLegacyJson(databaseExisted)) return false;
     if (!reloadFromDbUnlocked()) return false;
     m_open = true;
     return true;
@@ -100,7 +123,10 @@ void FaceRegistryStore::close() {
     std::unique_lock lock(m_mutex);
     const QString conn = connectionNameForPath(m_path);
     if (QSqlDatabase::contains(conn)) {
-        QSqlDatabase::database(conn).close();
+        {
+            QSqlDatabase db = QSqlDatabase::database(conn, false);
+            db.close();
+        }
         QSqlDatabase::removeDatabase(conn);
     }
     m_entries.clear();
@@ -113,7 +139,10 @@ void FaceRegistryStore::rebind(const QString& dbPath) {
     std::unique_lock lock(m_mutex);
     const QString oldConn = connectionNameForPath(m_path);
     if (QSqlDatabase::contains(oldConn)) {
-        QSqlDatabase::database(oldConn).close();
+        {
+            QSqlDatabase db = QSqlDatabase::database(oldConn, false);
+            db.close();
+        }
         QSqlDatabase::removeDatabase(oldConn);
     }
     m_path = dbPath;
@@ -134,6 +163,11 @@ std::vector<FaceRegistryEntry> FaceRegistryStore::entries() const {
     return m_entries;
 }
 
+QString FaceRegistryStore::path() const {
+    std::shared_lock lock(m_mutex);
+    return m_path;
+}
+
 bool FaceRegistryStore::ensureSchema() {
     QSqlQuery q(QSqlDatabase::database(connectionNameForPath(m_path)));
     return q.exec(
@@ -148,10 +182,10 @@ bool FaceRegistryStore::ensureSchema() {
                            ")"));
 }
 
-bool FaceRegistryStore::migrateLegacyJson() const {
+bool FaceRegistryStore::migrateLegacyJson(bool databaseExisted) const {
     const QString jsonPath = QFileInfo(m_path).absolutePath() +
                              QStringLiteral("/face_registry.json");
-    if (!QFile::exists(jsonPath) || QFile::exists(m_path)) {
+    if (!QFile::exists(jsonPath) || databaseExisted) {
         return true;
     }
 
@@ -160,26 +194,9 @@ bool FaceRegistryStore::migrateLegacyJson() const {
     const QJsonDocument doc = QJsonDocument::fromJson(f.readAll());
     if (!doc.isObject()) return false;
 
-    QDir().mkpath(QFileInfo(m_path).absolutePath());
     const QString conn = connectionNameForPath(m_path);
-    if (!QSqlDatabase::contains(conn)) {
-        QSqlDatabase db =
-                QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), conn);
-        db.setDatabaseName(m_path);
-        if (!db.open()) return false;
-    }
-
-    QSqlQuery q(QSqlDatabase::database(conn));
-    q.exec(
-            QStringLiteral("CREATE TABLE IF NOT EXISTS faces ("
-                           "  id TEXT PRIMARY KEY,"
-                           "  name TEXT NOT NULL,"
-                           "  model TEXT,"
-                           "  dim INTEGER NOT NULL,"
-                           "  created TEXT,"
-                           "  embedding BLOB NOT NULL,"
-                           "  thumb BLOB"
-                           ")"));
+    QSqlDatabase db = QSqlDatabase::database(conn, false);
+    if (!db.isOpen() || !db.transaction()) return false;
 
     const QJsonArray arr =
             doc.object().value(QStringLiteral("entries")).toArray();
@@ -196,7 +213,7 @@ bool FaceRegistryStore::migrateLegacyJson() const {
         for (const QJsonValue& ev : embArr) {
             emb.push_back(static_cast<float>(ev.toDouble()));
         }
-        if (emb.empty()) continue;
+        if (!isValidEmbedding(emb)) continue;
 
         QSqlQuery ins(QSqlDatabase::database(conn));
         ins.prepare(QStringLiteral(
@@ -211,10 +228,16 @@ bool FaceRegistryStore::migrateLegacyJson() const {
         ins.addBindValue(embeddingToBlob(emb));
         ins.addBindValue(QByteArray::fromBase64(
                 o.value(QStringLiteral("thumb_b64")).toString().toLatin1()));
-        ins.exec();
+        if (!ins.exec()) {
+            db.rollback();
+            return false;
+        }
     }
 
-    QFile::rename(jsonPath, jsonPath + QStringLiteral(".migrated"));
+    if (!db.commit()) return false;
+    const QString migratedPath = jsonPath + QStringLiteral(".migrated");
+    if (QFile::exists(migratedPath)) QFile::remove(migratedPath);
+    if (!QFile::rename(jsonPath, migratedPath)) return false;
     return true;
 }
 
@@ -240,7 +263,9 @@ bool FaceRegistryStore::reloadFromDbUnlocked() {
         e.createdUtc = q.value(4).toString();
         e.embedding = embeddingFromBlob(q.value(5).toByteArray());
         e.thumbnail = imageFromBlob(q.value(6).toByteArray());
-        if (!e.id.isEmpty() && !e.embedding.empty()) {
+        if (!e.id.isEmpty() && e.embedDim > 0 &&
+            e.embedDim == static_cast<int>(e.embedding.size()) &&
+            isValidEmbedding(e.embedding)) {
             m_entries.push_back(std::move(e));
         }
     }
@@ -278,6 +303,10 @@ void FaceRegistryStore::rebuildCache() {
 bool FaceRegistryStore::addEntry(FaceRegistryEntry entry) {
     std::unique_lock lock(m_mutex);
     if (!m_open && !openUnlocked()) return false;
+    entry.name = entry.name.trimmed();
+    if (entry.name.isEmpty() || !isValidEmbedding(entry.embedding)) {
+        return false;
+    }
     if (entry.id.isEmpty()) {
         entry.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
     }
@@ -285,9 +314,7 @@ bool FaceRegistryStore::addEntry(FaceRegistryEntry entry) {
         entry.createdUtc =
                 QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
     }
-    if (entry.embedDim <= 0) {
-        entry.embedDim = static_cast<int>(entry.embedding.size());
-    }
+    entry.embedDim = static_cast<int>(entry.embedding.size());
 
     QSqlQuery q(QSqlDatabase::database(connectionNameForPath(m_path)));
     q.prepare(
@@ -308,9 +335,11 @@ bool FaceRegistryStore::addEntry(FaceRegistryEntry entry) {
 bool FaceRegistryStore::updateEntry(const QString& id, const QString& name) {
     std::unique_lock lock(m_mutex);
     if (!m_open && !openUnlocked()) return false;
+    const QString normalizedName = name.trimmed();
+    if (id.isEmpty() || normalizedName.isEmpty()) return false;
     QSqlQuery q(QSqlDatabase::database(connectionNameForPath(m_path)));
     q.prepare(QStringLiteral("UPDATE faces SET name=? WHERE id=?"));
-    q.addBindValue(name);
+    q.addBindValue(normalizedName);
     q.addBindValue(id);
     if (!q.exec()) return false;
     return reloadFromDbUnlocked();
@@ -359,19 +388,21 @@ std::optional<FaceAuthMatch> FaceRegistryStore::bestMatch(
     }
 
     const std::vector<float> qn = normalizeEmbedding(query);
+    const size_t rowCount = m_cacheEmb.size() / static_cast<size_t>(m_cacheDim);
+    std::vector<float> distances(rowCount);
+    if (aicore_facedetect_cosine_distance_matrix(
+                qn.data(), 1, m_cacheEmb.data(), static_cast<int>(rowCount),
+                m_cacheDim, distances.data()) != 0) {
+        return std::nullopt;
+    }
+
     std::optional<FaceAuthMatch> best;
     size_t cachedRow = 0;
     for (const FaceRegistryEntry& e : m_entries) {
         if (static_cast<int>(e.embedding.size()) != m_cacheDim) {
             continue;
         }
-        const float* row_emb =
-                m_cacheEmb.data() + cachedRow * static_cast<size_t>(m_cacheDim);
-        double dot = 0.0;
-        for (int i = 0; i < m_cacheDim; ++i) {
-            dot += static_cast<double>(qn[static_cast<size_t>(i)]) * row_emb[i];
-        }
-        const float dist = static_cast<float>(1.0 - dot);
+        const float dist = distances[cachedRow];
         if (dist <= maxDistance && (!best || dist < best->distance)) {
             best = FaceAuthMatch{e, dist};
         }
@@ -390,19 +421,21 @@ std::optional<FaceAuthMatch> FaceRegistryStore::nearestMatch(
     }
 
     const std::vector<float> qn = normalizeEmbedding(query);
+    const size_t rowCount = m_cacheEmb.size() / static_cast<size_t>(m_cacheDim);
+    std::vector<float> distances(rowCount);
+    if (aicore_facedetect_cosine_distance_matrix(
+                qn.data(), 1, m_cacheEmb.data(), static_cast<int>(rowCount),
+                m_cacheDim, distances.data()) != 0) {
+        return std::nullopt;
+    }
+
     std::optional<FaceAuthMatch> best;
     size_t cachedRow = 0;
     for (const FaceRegistryEntry& e : m_entries) {
         if (static_cast<int>(e.embedding.size()) != m_cacheDim) {
             continue;
         }
-        const float* row_emb =
-                m_cacheEmb.data() + cachedRow * static_cast<size_t>(m_cacheDim);
-        double dot = 0.0;
-        for (int i = 0; i < m_cacheDim; ++i) {
-            dot += static_cast<double>(qn[static_cast<size_t>(i)]) * row_emb[i];
-        }
-        const float dist = static_cast<float>(1.0 - dot);
+        const float dist = distances[cachedRow];
         if (!best || dist < best->distance) {
             best = FaceAuthMatch{e, dist};
         }

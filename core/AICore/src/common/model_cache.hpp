@@ -21,7 +21,8 @@ inline std::string deeplsd_model_cache_dir() {
 }
 
 inline std::string aliked_model_cache_dir() {
-    return extract_model_dir("aliked_models");
+    // ALIKED extractor models share the same cache as LightGlue matcher models.
+    return extract_model_dir("lightglue_models");
 }
 
 inline std::string facedetect_model_cache_dir() {
