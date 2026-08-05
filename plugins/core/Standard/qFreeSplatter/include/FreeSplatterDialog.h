@@ -90,6 +90,9 @@ public:
     void setTaskStage(const QString& stage, int percent = -1);
     void setRunning(bool running);
     void enableResultButtons(bool hasResult);
+    // Captured face frames are task-private biometric data. The controller
+    // calls this after the final identity task has consumed them.
+    void clearFaceCaptureTransientInputs();
 
     void setDbImages(const QList<DbImageEntry>& images);
     void applyDbTreeSelection(const QStringList& imageNames);
@@ -160,6 +163,7 @@ private:
     QSpinBox* m_maxViewsSpin = nullptr;
     QStringList m_inputPaths;
     QList<Settings::IdentityInput> m_identityInputs;
+    QString m_faceCaptureExportDir;
     QDoubleSpinBox* m_opacityThreshold = nullptr;
     QComboBox* m_exportFieldModeCombo = nullptr;
     QLabel* m_exportFieldLabel = nullptr;
@@ -211,4 +215,5 @@ private:
     void onFaceStopCamera();
     void onFaceReset();
     void onFaceCaptureComplete();
+    void clearFaceCaptureExportDir();
 };

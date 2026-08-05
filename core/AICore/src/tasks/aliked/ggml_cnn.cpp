@@ -20,17 +20,12 @@
 #endif
 
 #include <cmath>
-#include <cstdlib>
 #include <memory>
 
 namespace lightglue::aliked_internal {
 namespace {
 
 constexpr int64_t kMaxGraphNodes = 4096;
-
-bool VulkanForceCpuConv() {
-    return std::getenv("LIGHTGLUE_ALIKED_VULKAN_CPU_CONV") != nullptr;
-}
 
 internal::Backend *VulkanCpuConvBackend() {
     static std::unique_ptr<internal::Backend> cpu_backend;
@@ -485,7 +480,7 @@ bool GgmlConvRunner::RunGraphDevice(ggml_tensor *kernel,
         return false;
     }
 
-    if (backend_->IsVulkan() && VulkanForceCpuConv()) {
+    if (backend_->IsVulkan() && backend_->vulkan_config.force_cpu_conv) {
         internal::Backend *cpu_backend = VulkanCpuConvBackend();
         if (cpu_backend == nullptr) {
             if (error) {

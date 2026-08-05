@@ -35,16 +35,22 @@ class AICoreInferenceGuard {
 public:
     AICoreInferenceGuard(aicore_cancel_token* token, const QString& device)
         : m_token(token) {
-        aicore_device_task_lock(device.toUtf8().constData());
+        m_locked = aicore_device_task_lock_cancelable(
+                           device.toUtf8().constData(), m_token) == 0;
+        if (!m_locked) return;
         aicore_cancel_scope_begin(m_token);
     }
     ~AICoreInferenceGuard() {
+        if (!m_locked) return;
         aicore_cancel_scope_end(m_token);
         aicore_device_task_unlock();
     }
 
+    bool locked() const { return m_locked; }
+
 private:
     aicore_cancel_token* m_token = nullptr;
+    bool m_locked = false;
 };
 #endif
 
@@ -94,6 +100,10 @@ void FreeSplatterWorker::run() {
     return;
 #else
     AICoreInferenceGuard inferenceGuard(m_cancelToken, m_settings.device);
+    if (!inferenceGuard.locked()) {
+        emit taskFinished(false);
+        return;
+    }
     bool ok = false;
     switch (m_settings.mode) {
         case Mode::Reconstruct:

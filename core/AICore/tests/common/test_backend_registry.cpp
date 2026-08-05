@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-#include "../../src/facedetect/backend.hpp"
+#include "facedetect/backend.hpp"
 #include "ggml_backend_registry.hpp"
 
 namespace {

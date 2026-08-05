@@ -18,7 +18,7 @@
     - OpenGlLegacy: CloudCompare native pose with local -Z forward.
     Legacy display flip (x,-y,-z) helpers below are only for old OpenGL display
     paths — not for VTK DB rendering. Web .splat export keeps its own flip in
-    core/AICore/src/gaussian/splat.h (antimatter15 viewer convention). */
+    core/AICore/src/tasks/gaussian/splat.h (antimatter15 viewer convention). */
 namespace ecvCameraSensorDisplay {
 
 constexpr float kBaseCameraWidth = 1024.0f;

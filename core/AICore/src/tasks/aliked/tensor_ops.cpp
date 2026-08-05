@@ -85,6 +85,9 @@ void BatchNorm2d(const std::vector<float> &input,
                  std::vector<float> *output) {
     output->resize(input.size());
     const int32_t spatial = h * w;
+#if defined(_OPENMP)
+#pragma omp parallel for schedule(static) num_threads(CpuTensorThreads())
+#endif
     for (int32_t ch = 0; ch < c; ++ch) {
         const float inv_std =
                 1.0f / std::sqrt(var[static_cast<size_t>(ch)] + kBnEps);
@@ -100,8 +103,13 @@ void BatchNorm2d(const std::vector<float> &input,
 }
 
 void ApplySelu(std::vector<float> *tensor) {
-    for (float &value : *tensor) {
-        value = Selu(value);
+    const int64_t count = static_cast<int64_t>(tensor->size());
+#if defined(_OPENMP)
+#pragma omp parallel for schedule(static) num_threads(CpuTensorThreads())
+#endif
+    for (int64_t i = 0; i < count; ++i) {
+        (*tensor)[static_cast<size_t>(i)] =
+                Selu((*tensor)[static_cast<size_t>(i)]);
     }
 }
 
@@ -119,6 +127,10 @@ void AvgPool2d(const std::vector<float> &input,
     *ow = (w - kw) / stride + 1;
     output->assign(static_cast<size_t>(c) * (*oh) * (*ow), 0.0f);
     const float norm = 1.0f / static_cast<float>(kh * kw);
+#if defined(_OPENMP)
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(CpuTensorThreads())
+#endif
     for (int32_t ch = 0; ch < c; ++ch) {
         for (int32_t oy = 0; oy < *oh; ++oy) {
             for (int32_t ox = 0; ox < *ow; ++ox) {
@@ -285,6 +297,9 @@ void ConcatChannel(const std::vector<float> &a,
                    int32_t w,
                    std::vector<float> *output) {
     output->assign(static_cast<size_t>(ca + cb) * h * w, 0.0f);
+#if defined(_OPENMP)
+#pragma omp parallel for schedule(static) num_threads(CpuTensorThreads())
+#endif
     for (int32_t ch = 0; ch < ca; ++ch) {
         for (int32_t y = 0; y < h; ++y) {
             for (int32_t x = 0; x < w; ++x) {
@@ -293,6 +308,9 @@ void ConcatChannel(const std::vector<float> &a,
             }
         }
     }
+#if defined(_OPENMP)
+#pragma omp parallel for schedule(static) num_threads(CpuTensorThreads())
+#endif
     for (int32_t ch = 0; ch < cb; ++ch) {
         for (int32_t y = 0; y < h; ++y) {
             for (int32_t x = 0; x < w; ++x) {
@@ -308,6 +326,9 @@ void L2NormalizeChannels(std::vector<float> *tensor,
                          int32_t h,
                          int32_t w) {
     const int32_t spatial = h * w;
+#if defined(_OPENMP)
+#pragma omp parallel for schedule(static) num_threads(CpuTensorThreads())
+#endif
     for (int32_t i = 0; i < spatial; ++i) {
         float norm = 0.0f;
         for (int32_t ch = 0; ch < c; ++ch) {
@@ -322,8 +343,13 @@ void L2NormalizeChannels(std::vector<float> *tensor,
 }
 
 void Sigmoid(std::vector<float> *tensor) {
-    for (float &value : *tensor) {
-        value = 1.0f / (1.0f + std::exp(-value));
+    const int64_t count = static_cast<int64_t>(tensor->size());
+#if defined(_OPENMP)
+#pragma omp parallel for schedule(static) num_threads(CpuTensorThreads())
+#endif
+    for (int64_t i = 0; i < count; ++i) {
+        const size_t index = static_cast<size_t>(i);
+        (*tensor)[index] = 1.0f / (1.0f + std::exp(-(*tensor)[index]));
     }
 }
 

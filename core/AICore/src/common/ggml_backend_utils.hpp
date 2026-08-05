@@ -335,10 +335,14 @@ inline std::string resolve_device_request(const std::string& device_req) {
     std::string name;
     int want_idx = 0;
     parse_device(device_req, name, want_idx);
+    const auto with_index = [want_idx](const std::string& family) {
+        return want_idx > 0 ? family + ":" + std::to_string(want_idx)
+                            : family;
+    };
     if (name.empty() || name == "auto") {
         for (const char* const* p = auto_backend_ids(); *p; ++p) {
             std::string resolved;
-            if (find_gpu_backend(*p, want_idx, resolved)) return *p;
+            if (find_gpu_backend(*p, want_idx, resolved)) return with_index(*p);
         }
         return "cpu";
     }
@@ -351,7 +355,7 @@ inline std::string resolve_device_request(const std::string& device_req) {
     }
     if (name == "cpu") return "cpu";
     std::string resolved;
-    if (find_gpu_backend(name, want_idx, resolved)) return name;
+    if (find_gpu_backend(name, want_idx, resolved)) return with_index(name);
     return "cpu";
 }
 

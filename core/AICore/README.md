@@ -134,9 +134,12 @@ No legacy aliases (`da_capi_*`, `fs_capi_*`, `DA3ImageDepth`, …).
 core/AICore/
   include/aicore/     ← sole public headers
   src/common/         aicore::locate_data_root, extract_model_dir
-  src/depth/          aicore::depth
-  src/gaussian/       aicore::gaussian
-  src/lightglue/      aicore::lightglue
+  src/tasks/depth/    aicore::depth
+  src/tasks/gaussian/ aicore::gaussian
+  src/tasks/lightglue/ aicore::lightglue
+  src/tasks/aliked/   ALIKED feature extraction
+  src/tasks/deeplsd/  DeepLSD line extraction
+  src/tasks/facedetect/ face detection and embedding
   tests/common/       shared data-path tests
   tests/depth/
   tests/gaussian/
@@ -168,7 +171,7 @@ the canonical single patch
 `3rdparty/ggml/patches/aliked_merged/0001-vulkan-aliked.patch`. With
 `AICore_USE_VULKAN=ON`, AICore defines `AICORE_VULKAN_ALIKED` and resolves
 `ggml_vulkan_aliked_*` at runtime through
-`src/aliked/vulkan/vulkan_aliked_dispatch.cpp` -- no link-time dependency on
+`src/tasks/aliked/vulkan/vulkan_aliked_dispatch.cpp` -- no link-time dependency on
 `libggml-vulkan.so`. Regenerate and clean-replay the patch after ggml changes:
 `3rdparty/ggml/patches/export_merged_aliked_patches.sh`.
 

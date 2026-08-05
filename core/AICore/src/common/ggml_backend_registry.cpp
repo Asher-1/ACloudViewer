@@ -70,6 +70,11 @@ Candidate create_candidate(const std::string& request,
         *error = "no usable '" + (name.empty() ? request : name) +
                  "' device (backend built and runtime driver present?)";
     }
+    if (candidate.handle != nullptr) {
+        // Match public UI/task IDs (cuda, cuda:1, vulkan, metal) instead of
+        // backend-specific display names such as CUDA0.
+        candidate.device = ggml_common::resolve_device_request(request);
+    }
     return candidate;
 }
 

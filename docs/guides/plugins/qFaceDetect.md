@@ -16,7 +16,7 @@ GUI (FaceDetect dialog) ──► libAICore (facedetect_capi) ──► GGML CNN
 | Component | Path |
 |-----------|------|
 | Inference library | `core/AICore/` → `libAICore.so` |
-| GGML face-detect engine | `core/AICore/src/facedetect/` |
+| GGML face-detect engine | `core/AICore/src/tasks/facedetect/` |
 | Plugin | `plugins/core/Standard/qFaceDetect/` |
 
 ## Enable and build

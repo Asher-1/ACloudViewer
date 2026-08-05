@@ -1,9 +1,13 @@
 # AICore: Unified AI inference core library
 # Capability modules (not plugin names):
-#   src/depth/    — multi-view monocular depth (DA3-family GGUF)
-#   src/gaussian/ — image-to-3D Gaussian splatting (FreeSplatter-family GGUF)
-#   src/lightglue/ — sparse feature matching (LightGlue GGUF)
-#   src/common/   — shared utilities (data paths, ggml helpers, logging)
+# Capability modules live under src/tasks/ (inference task implementations).
+#   src/tasks/depth/      — multi-view monocular depth (DA3-family GGUF)
+#   src/tasks/gaussian/   — image-to-3D Gaussian splatting (FreeSplatter-family GGUF)
+#   src/tasks/lightglue/  — sparse feature matching (LightGlue GGUF)
+#   src/tasks/aliked/     — ALIKED feature extraction
+#   src/tasks/deeplsd/    — DeepLSD line extraction
+#   src/tasks/facedetect/ — face detection, alignment, embedding
+#   src/common/           — shared utilities (data paths, ggml helpers, logging)
 #
 # Build:   libAICore.so
 # Exports: all public headers under include/aicore/
@@ -21,18 +25,19 @@ if(NOT TARGET 3rdparty_ggml)
 endif()
 
 project(AICore
-    DESCRIPTION "Unified AI inference core — depth + gaussian + lightglue"
+    DESCRIPTION "Unified AI inference core — depth + gaussian + lightglue + aliked + deeplsd + facedetect"
     LANGUAGES CXX
 )
 
 set(AICORE_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(AICORE_COMMON_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/common)
-set(AICORE_DEPTH_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/depth)
-set(AICORE_GAUSSIAN_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/gaussian)
-set(AICORE_LIGHTGLUE_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/lightglue)
-set(AICORE_DEEPLSD_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/deeplsd)
-set(AICORE_ALIKED_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/aliked)
-set(AICORE_FACEDETECT_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/facedetect)
+set(AICORE_TASKS_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks)
+set(AICORE_DEPTH_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/depth)
+set(AICORE_GAUSSIAN_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/gaussian)
+set(AICORE_LIGHTGLUE_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/lightglue)
+set(AICORE_DEEPLSD_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/deeplsd)
+set(AICORE_ALIKED_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/aliked)
+set(AICORE_FACEDETECT_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/facedetect)
 
 if(NOT EXISTS ${AICORE_DEPTH_SRC_DIR}/engine.cpp)
     message(WARNING "AICore: depth module not found at ${AICORE_DEPTH_SRC_DIR}")
@@ -126,6 +131,7 @@ target_include_directories(${PROJECT_NAME}
         $<INSTALL_INTERFACE:include/AICore>
     PRIVATE
         ${AICORE_COMMON_SRC_DIR}
+        ${AICORE_TASKS_SRC_DIR}
         ${AICORE_DEPTH_SRC_DIR}
         ${AICORE_GAUSSIAN_SRC_DIR}
         ${AICORE_LIGHTGLUE_SRC_DIR}
@@ -381,6 +387,7 @@ if(AICore_BUILD_TESTS)
         target_include_directories(AICore_test PUBLIC
             $<BUILD_INTERFACE:${AICORE_INC_DIR}>
             $<BUILD_INTERFACE:${AICORE_COMMON_SRC_DIR}>
+            $<BUILD_INTERFACE:${AICORE_TASKS_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_DEPTH_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_GAUSSIAN_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_LIGHTGLUE_SRC_DIR}>
@@ -411,7 +418,7 @@ if(AICore_BUILD_TESTS)
     message(STATUS "AICore: contract tests enabled")
 endif()
 
-message(STATUS "AICore (SHARED): depth + gaussian + lightglue + deeplsd + facedetect, ggml linked once")
+message(STATUS "AICore (SHARED): tasks/depth + tasks/gaussian + tasks/lightglue + tasks/deeplsd + tasks/facedetect, ggml linked once")
 
 add_executable(aicore_gguf_quantize tools/aicore_gguf_quantize.cpp)
 target_link_libraries(aicore_gguf_quantize PRIVATE AICore)

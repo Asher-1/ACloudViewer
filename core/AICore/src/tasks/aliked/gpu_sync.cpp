@@ -7,7 +7,8 @@
 
 #include "gpu_sync.hpp"
 
-#include <cstdlib>
+#include <cstdio>
+#include <exception>
 #include <string>
 
 #if defined(AICORE_VULKAN_ALIKED)
@@ -29,11 +30,7 @@ bool VulkanDeferGpuSync(internal::Backend *backend) {
     if (backend == nullptr || !backend->IsVulkan()) {
         return false;
     }
-    const char *env = std::getenv("LIGHTGLUE_ALIKED_VULKAN_DEFER_SYNC");
-    if (env != nullptr) {
-        return env[0] != '0';
-    }
-    return true;
+    return backend->vulkan_config.defer_sync;
 #else
     (void)backend;
     return false;
@@ -44,54 +41,28 @@ void SyncBackendRaw(internal::Backend *backend) {
     if (backend == nullptr || backend->handle == nullptr) {
         return;
     }
-    ggml_backend_synchronize(backend->handle);
+    try {
+        ggml_backend_synchronize(backend->handle);
 #if defined(AICORE_CUDA_ALIKED)
-    if (backend->IsCuda()) {
-        cudaDeviceSynchronize();
-    }
+        if (backend->IsCuda()) {
+            cudaDeviceSynchronize();
+        }
 #endif
+    } catch (const std::exception &e) {
+        std::fprintf(stderr, "[vk-aliked] synchronize: %s\n", e.what());
+    } catch (...) {
+        std::fprintf(stderr,
+                     "[vk-aliked] synchronize failed with unknown exception\n");
+    }
 }
 
 }  // namespace
 
 void ApplyVulkanAlikedPerfDefaults() {
 #if defined(AICORE_VULKAN_ALIKED)
-    // Parity-gated full GPU path — no manual env required for GUI / C API
-    // users. Opt-out any flag with =0 (e.g. LIGHTGLUE_ALIKED_VULKAN_COMPUTE=0).
-    if (std::getenv("LIGHTGLUE_ALIKED_VULKAN_COMPUTE") == nullptr) {
-        setenv("LIGHTGLUE_ALIKED_VULKAN_COMPUTE", "1", 0);
-    }
-    if (std::getenv("LIGHTGLUE_ALIKED_VULKAN_SDDH") == nullptr) {
-        // The scalar Vulkan SDDH shader is slower than the parity-preserving
-        // OpenMP fallback and can stall repeated large dispatches.
-        setenv("LIGHTGLUE_ALIKED_VULKAN_SDDH", "0", 0);
-    }
-    if (std::getenv("LIGHTGLUE_ALIKED_VULKAN_GPU_UPSAMPLE") == nullptr) {
-        // The custom path remains opt-in until its layout parity gate passes.
-        setenv("LIGHTGLUE_ALIKED_VULKAN_GPU_UPSAMPLE", "0", 0);
-    }
-    if (std::getenv("LIGHTGLUE_ALIKED_VULKAN_SCHED") == nullptr) {
-        // Legacy sched path paused; 0015 fence/buffer pin is the parity
-        // baseline.
-        setenv("LIGHTGLUE_ALIKED_VULKAN_SCHED", "0", 0);
-    }
-    if (std::getenv("LIGHTGLUE_ALIKED_VULKAN_DEFER_SYNC") == nullptr) {
-        // Correctness first: defer-sync caused score/descriptor readback races
-        // on same-ctx multi-extract. Opt-in DEFER_SYNC=1 for experiments.
-        setenv("LIGHTGLUE_ALIKED_VULKAN_DEFER_SYNC", "0", 0);
-    }
-    if (std::getenv("LIGHTGLUE_ALIKED_VULKAN_SDDH_SINGLE") == nullptr &&
-        std::getenv("LIGHTGLUE_ALIKED_VULKAN_SDDH_CHUNK") == nullptr) {
-        // Settings for explicit LIGHTGLUE_ALIKED_VULKAN_SDDH=1 experiments.
-        setenv("LIGHTGLUE_ALIKED_VULKAN_SDDH_SINGLE", "1", 0);
-        setenv("LIGHTGLUE_ALIKED_VULKAN_SDDH_CHUNK", "16", 0);
-    }
-    if (std::getenv("LIGHTGLUE_ALIKED_VULKAN_POST") == nullptr) {
-        // The custom Vulkan DKD path does not yet satisfy the strict CPU/CUDA
-        // parity gate. The CPU postprocess keeps the Vulkan CNN output exact
-        // while remaining below the end-to-end latency target.
-        setenv("LIGHTGLUE_ALIKED_VULKAN_POST", "0", 0);
-    }
+    // Defaults are encoded at each use site. This compatibility entry point
+    // intentionally has no process-environment side effect: contexts created
+    // concurrently must not change one another's execution policy.
 #endif
 }
 

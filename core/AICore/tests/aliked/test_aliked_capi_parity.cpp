@@ -18,6 +18,7 @@
 // Skip (77): missing assets or backend unavailable
 
 #include <QImage>
+#include <QImageReader>
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -53,15 +54,22 @@ struct ExtractResult {
     bool ok = false;
 };
 
-bool LoadRgbImage(const char* path, RgbImage* out) {
+bool LoadRgbImage(const char* path, int32_t resize_long_edge, RgbImage* out) {
     if (path == nullptr || out == nullptr) {
         return false;
     }
-    QImage img(QString::fromUtf8(path));
+    QImageReader reader(QString::fromUtf8(path));
+    reader.setAutoTransform(true);
+    QImage img = reader.read();
     if (img.isNull()) {
         return false;
     }
     QImage rgb = img.convertToFormat(QImage::Format_RGB888);
+    if (resize_long_edge > 0 &&
+        std::max(rgb.width(), rgb.height()) > resize_long_edge) {
+        rgb = rgb.scaled(resize_long_edge, resize_long_edge,
+                         Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    }
     out->width = rgb.width();
     out->height = rgb.height();
     out->rgb.resize(static_cast<size_t>(out->width) * out->height * 3);
@@ -241,6 +249,38 @@ bool CompareParity(const ExtractResult& ref,
     kpt_errors.reserve(static_cast<size_t>(test.count));
     desc_cos.reserve(static_cast<size_t>(test.count));
 
+    // ALIKED returns its selected points in deterministic score order.  Use
+    // that normal path first: it makes the 2048-point strict regression cheap
+    // enough to run routinely.  Keep the one-to-one fallback below for a
+    // future backend whose selection order legitimately differs.
+    for (int32_t i = 0; i < test.count; ++i) {
+        const float tx = test.keypoints[static_cast<size_t>(i) * 2];
+        const float ty = test.keypoints[static_cast<size_t>(i) * 2 + 1];
+        const float rx = ref.keypoints[static_cast<size_t>(i) * 2];
+        const float ry = ref.keypoints[static_cast<size_t>(i) * 2 + 1];
+        kpt_errors.push_back(KptDistance(tx, ty, rx, ry));
+        const float* tdesc =
+                test.descriptors.data() +
+                static_cast<size_t>(i) * static_cast<size_t>(test.dim);
+        const float* rdesc =
+                ref.descriptors.data() +
+                static_cast<size_t>(i) * static_cast<size_t>(ref.dim);
+        desc_cos.push_back(DescCosine(tdesc, rdesc, test.dim));
+    }
+    std::sort(kpt_errors.begin(), kpt_errors.end());
+    std::sort(desc_cos.begin(), desc_cos.end());
+    const float direct_kpt_median = kpt_errors[kpt_errors.size() / 2];
+    const float direct_desc_median = desc_cos[desc_cos.size() / 2];
+    if (direct_kpt_median <= kKptMedianTolPx &&
+        direct_desc_median >= kDescCosMedianTol) {
+        *out_kpt_median = direct_kpt_median;
+        *out_desc_median = direct_desc_median;
+        return true;
+    }
+
+    kpt_errors.clear();
+    desc_cos.clear();
+
     std::vector<bool> matched(static_cast<size_t>(ref.count), false);
     for (int32_t i = 0; i < test.count; ++i) {
         const float tx = test.keypoints[static_cast<size_t>(i) * 2];
@@ -338,20 +378,26 @@ int main(int argc, char** argv) {
     }
     std::fclose(f);
 
+    const int32_t max_kpts = (argc >= 4) ? std::atoi(argv[3]) : 1024;
+    const int32_t resize = (argc >= 5) ? std::atoi(argv[4]) : 1024;
+
     RgbImage image;
-    if (!LoadRgbImage(image_path, &image)) {
+    if (!LoadRgbImage(image_path, resize, &image)) {
         std::fprintf(stderr, "SKIP: failed to load image: %s\n", image_path);
         return 77;
     }
-
-    const int32_t max_kpts = (argc >= 4) ? std::atoi(argv[3]) : 1024;
-    const int32_t resize = (argc >= 5) ? std::atoi(argv[4]) : 1024;
 
     std::fprintf(stderr, "ALIKED parity: gguf=%s image=%s kpts=%d resize=%d\n",
                  gguf, image_path, max_kpts, resize);
 
     const char* only = std::getenv("AICORE_TEST_DEVICE");
     const char* bench_only = std::getenv("AICORE_ALIKED_BENCH_ONLY");
+    // "all" is the portable CTest spelling for a CPU reference plus every
+    // available GPU backend. Keep an empty selector equivalent for callers
+    // that predate this spelling.
+    if (only != nullptr && std::strcmp(only, "all") == 0) {
+        only = nullptr;
+    }
     if (only != nullptr && only[0] != '\0' && std::strcmp(only, "cpu") == 0 &&
         bench_only == nullptr) {
         std::fprintf(stderr,
@@ -369,8 +415,8 @@ int main(int argc, char** argv) {
         if (!FeaturesLookValid(gpu, only)) {
             return 1;
         }
-        std::printf("%s: kpts=%d median_ms=%.2f (bench-only)\n", only,
-                    gpu.count, gpu.median_ms);
+        std::fprintf(stderr, "%s: kpts=%d median_ms=%.2f (bench-only)\n", only,
+                     gpu.count, gpu.median_ms);
         return 0;
     }
 
@@ -383,29 +429,34 @@ int main(int argc, char** argv) {
     if (!FeaturesLookValid(cpu, "cpu")) {
         return 1;
     }
-    std::printf("cpu: kpts=%d median_ms=%.2f\n", cpu.count, cpu.median_ms);
+    std::fprintf(stderr, "cpu: kpts=%d median_ms=%.2f\n", cpu.count,
+                 cpu.median_ms);
 
     if (const char* dump = std::getenv("AICORE_DUMP_AKOUT_CPU")) {
         if (WriteAkout(dump, cpu, resize, resize)) {
-            std::printf("wrote cpu akout: %s\n", dump);
+            std::fprintf(stderr, "wrote cpu akout: %s\n", dump);
         }
     }
 
     int failures = 0;
+    int available_backends = 0;
     const char* backends[] = {"cuda", "vulkan"};
     for (const char* backend : backends) {
         if (only != nullptr && only[0] != '\0' &&
             std::strcmp(only, backend) != 0) {
             continue;
         }
+        if (!aicore_device_available(backend)) {
+            std::fprintf(stderr, "SKIP backend=%s (backend unavailable)\n",
+                         backend);
+            continue;
+        }
+        ++available_backends;
         const ExtractResult gpu = ExtractTimed(gguf, backend, image, max_kpts,
                                                resize, BenchRuns(3));
         if (!gpu.ok) {
-            if (!aicore_device_available(backend)) {
-                std::printf("SKIP backend=%s (backend unavailable)\n", backend);
-                continue;
-            }
-            std::printf("FAIL backend=%s (load or extract failed)\n", backend);
+            std::fprintf(stderr, "FAIL backend=%s (load or extract failed)\n",
+                         backend);
             ++failures;
             continue;
         }
@@ -414,30 +465,46 @@ int main(int argc, char** argv) {
             continue;
         }
 
+        std::fprintf(stderr,
+                     "%s raw: kpts=%d dim=%d median_ms=%.2f (cpu kpts=%d "
+                     "dim=%d)\n",
+                     backend, gpu.count, gpu.dim, gpu.median_ms, cpu.count,
+                     cpu.dim);
+
         float kpt_med = 0.0f;
         float cos_med = 0.0f;
         if (!CompareParity(cpu, gpu, &kpt_med, &cos_med)) {
-            std::printf("FAIL backend=%s parity compare failed\n", backend);
+            std::fprintf(stderr, "FAIL backend=%s parity compare failed\n",
+                         backend);
             ++failures;
             continue;
         }
 
-        std::printf(
+        std::fprintf(
+                stderr,
                 "%s: kpts=%d median_ms=%.2f kpt_med=%.4fpx desc_cos_med=%.4f\n",
                 backend, gpu.count, gpu.median_ms, kpt_med, cos_med);
 
         if (const char* dump_env = std::getenv("AICORE_DUMP_AKOUT_GPU")) {
             if (WriteAkout(dump_env, gpu, resize, resize)) {
-                std::printf("wrote gpu akout: %s\n", dump_env);
+                std::fprintf(stderr, "wrote gpu akout: %s\n", dump_env);
             }
         }
 
         if (kpt_med > kKptMedianTolPx || cos_med < kDescCosMedianTol) {
-            std::printf("FAIL backend=%s parity gate (kpt<=%.4f cos>=%.4f)\n",
-                        backend, kKptMedianTolPx, kDescCosMedianTol);
+            std::fprintf(stderr,
+                         "FAIL backend=%s parity gate (kpt<=%.4f cos>=%.4f)\n",
+                         backend, kKptMedianTolPx, kDescCosMedianTol);
             ++failures;
         }
     }
 
+    // A selected device that was never exercised is not a green parity
+    // result.  CTest maps 77 to SKIP, leaving GPU-less CI deterministic while
+    // preventing a missing driver from masquerading as a successful run.
+    if (available_backends == 0) {
+        std::fprintf(stderr, "SKIP: no requested GPU backend was available\n");
+        return 77;
+    }
     return failures > 0 ? 1 : 0;
 }

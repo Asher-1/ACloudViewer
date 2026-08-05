@@ -9,6 +9,8 @@
 // LightGlue match. The default "auto" device reproduces the GUI contract.
 
 #include <QImage>
+#include <QImageReader>
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -26,11 +28,22 @@ struct RgbImage {
     int32_t height = 0;
 };
 
-bool LoadRgb(const char* path, RgbImage* out) {
+bool LoadRgb(const char* path, int max_resize, RgbImage* out) {
     if (path == nullptr || out == nullptr) return false;
-    const QImage input(QString::fromUtf8(path));
+    QImageReader reader(QString::fromUtf8(path));
+    reader.setAutoTransform(true);
+    const QImage input = reader.read();
     if (input.isNull()) return false;
-    const QImage rgb = input.convertToFormat(QImage::Format_RGB888);
+    QImage rgb = input.convertToFormat(QImage::Format_RGB888);
+    // Match qLightGlue's production path exactly.  It applies EXIF rotation
+    // and Qt's smooth resize before passing bytes to the ALIKED C API.
+    if (max_resize > 0) {
+        const int max_dim = std::max(rgb.width(), rgb.height());
+        if (max_dim > max_resize) {
+            rgb = rgb.scaled(max_resize, max_resize, Qt::KeepAspectRatio,
+                             Qt::SmoothTransformation);
+        }
+    }
     out->width = rgb.width();
     out->height = rgb.height();
     out->pixels.resize(static_cast<size_t>(out->width) * out->height * 3);
@@ -93,25 +106,17 @@ int main(int argc, char** argv) {
 
     RgbImage rgb0;
     RgbImage rgb1;
-    if (!LoadRgb(image0, &rgb0) || !LoadRgb(image1, &rgb1)) {
+    if (!LoadRgb(image0, resize, &rgb0) || !LoadRgb(image1, resize, &rgb1)) {
         std::fprintf(stderr, "FAIL: unable to load input images\n");
         return 1;
     }
 
     aicore_lightglue_features features0{};
     aicore_lightglue_features features1{};
-    std::string error;
-    if (!Extract(extractor, device, rgb0, max_keypoints, resize, &features0,
-                 &error) ||
-        !Extract(extractor, device, rgb1, max_keypoints, resize, &features1,
-                 &error)) {
-        std::fprintf(stderr, "FAIL: ALIKED extraction (%s): %s\n", device,
-                     error.c_str());
-        aicore_lightglue_free_features(&features0);
-        aicore_lightglue_free_features(&features1);
-        return 1;
-    }
 
+    // qLightGlue creates the matcher first to resolve the selected device,
+    // then creates one ALIKED context per image. Keep this order here: a
+    // reverse-order test misses shared-backend lifetime regressions.
     aicore_lightglue_options* options = aicore_lightglue_options_new();
     aicore_lightglue_options_set_device(options, device);
     aicore_lightglue_options_set_matcher_type(options, 2);
@@ -128,6 +133,22 @@ int main(int argc, char** argv) {
         aicore_lightglue_free(ctx);
         return 1;
     }
+
+    std::string error;
+    if (!Extract(extractor, device, rgb0, max_keypoints, resize, &features0,
+                 &error) ||
+        !Extract(extractor, device, rgb1, max_keypoints, resize, &features1,
+                 &error)) {
+        std::fprintf(stderr, "FAIL: ALIKED extraction (%s): %s\n", device,
+                     error.c_str());
+        aicore_lightglue_free_features(&features0);
+        aicore_lightglue_free_features(&features1);
+        aicore_lightglue_free(ctx);
+        return 1;
+    }
+    std::printf("ALIKED extracted: device=%s features=%d/%d dim=%d/%d\n",
+                device, features0.n_keypoints, features1.n_keypoints,
+                features0.descriptor_dim, features1.descriptor_dim);
 
     aicore_lightglue_match* matches = nullptr;
     int32_t match_count = 0;

@@ -194,7 +194,51 @@ std::string resolved_backend_id(const char* device) {
 
 }  // namespace
 
-AICORE_CAPI int aicore_backend_abi_version(void) { return 1; }
+namespace {
+
+bool FillModelDeviceInfo(enum aicore_model_kind model,
+                         aicore_model_device_info* info) {
+    if (info == nullptr || info->struct_size < sizeof(*info)) return false;
+    uint64_t minimum = 0;
+    uint64_t recommended = 0;
+    switch (model) {
+        case AICORE_MODEL_DEPTH:
+            minimum = 512ull * 1024 * 1024;
+            recommended = 2ull * 1024 * 1024 * 1024;
+            break;
+        case AICORE_MODEL_GAUSSIAN:
+            minimum = 512ull * 1024 * 1024;
+            recommended = 1536ull * 1024 * 1024;
+            break;
+        case AICORE_MODEL_ALIKED:
+        case AICORE_MODEL_LIGHTGLUE:
+            minimum = 256ull * 1024 * 1024;
+            recommended = 768ull * 1024 * 1024;
+            break;
+        case AICORE_MODEL_DEEPLSD:
+        case AICORE_MODEL_FACEDETECT:
+            minimum = 128ull * 1024 * 1024;
+            recommended = 512ull * 1024 * 1024;
+            break;
+        default:
+            return false;
+    }
+    info->abi_version = 1;
+    info->capabilities =
+            AICORE_MODEL_CAP_FULL_GRAPH | AICORE_MODEL_CAP_TASK_CANCEL |
+            AICORE_MODEL_CAP_CPU_FALLBACK | AICORE_MODEL_CAP_DYNAMIC_INPUT;
+    info->precision = AICORE_MODEL_PRECISION_FP32 |
+                      AICORE_MODEL_PRECISION_QUANTIZED_WEIGHTS;
+    info->min_working_set_bytes = minimum;
+    info->recommended_working_set_bytes = recommended;
+    info->max_input_width = 0;
+    info->max_input_height = 0;
+    return true;
+}
+
+}  // namespace
+
+AICORE_CAPI int aicore_backend_abi_version(void) { return 2; }
 
 AICORE_CAPI int aicore_device_count(void) {
     try {
@@ -266,6 +310,26 @@ AICORE_CAPI unsigned int aicore_device_capabilities(const char* device) {
     if (backend == "cuda") caps |= AICORE_BACKEND_CAP_CUDNN_CONV2D;
 #endif
     return caps;
+}
+
+AICORE_CAPI int aicore_model_device_info_query(
+        enum aicore_model_kind model,
+        const char* device,
+        aicore_model_device_info* out_info) {
+    if (!out_info || out_info->struct_size < sizeof(*out_info)) {
+        g_last_error = "invalid aicore_model_device_info output struct";
+        return -1;
+    }
+    if (!has_device(device)) {
+        g_last_error = "requested AICore device is unavailable";
+        return -1;
+    }
+    if (!FillModelDeviceInfo(model, out_info)) {
+        g_last_error = "unknown AICore model kind";
+        return -1;
+    }
+    g_last_error.clear();
+    return 0;
 }
 
 AICORE_CAPI int aicore_warmup_backend(const char* device) {

@@ -469,6 +469,9 @@ bool AddInPlaceGpu(internal::Backend *backend,
                    std::string *error,
                    const char *cache_key = nullptr) {
 #if defined(AICORE_VULKAN_ALIKED)
+    // The generic Vulkan add graph is not yet covered for the dynamic shapes
+    // used by every ALIKED residual block. Keep the numerically proven host
+    // bridge until the explicit Vulkan batch path has strict parity coverage.
     if (backend != nullptr && backend->IsVulkan()) {
         std::vector<float> lhs;
         std::vector<float> rhs;

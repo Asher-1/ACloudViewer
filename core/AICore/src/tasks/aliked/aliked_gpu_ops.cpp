@@ -750,12 +750,8 @@ bool RunSddhVulkan(const GpuTensor &feature_map,
 
 #if defined(AICORE_VULKAN_ALIKED)
 bool UseVulkanCompute(internal::Backend *backend) {
-    const char *env = std::getenv("LIGHTGLUE_ALIKED_VULKAN_COMPUTE");
-    if (env == nullptr || env[0] == '0') {
-        return false;
-    }
     return backend != nullptr && backend->IsVulkan() &&
-           VkAlikedAvailable(backend->handle);
+           backend->vulkan_config.compute && VkAlikedAvailable(backend->handle);
 }
 
 bool UseVulkanGpuUpsample(internal::Backend *backend) {
@@ -763,11 +759,7 @@ bool UseVulkanGpuUpsample(internal::Backend *backend) {
         !VkAlikedAvailable(backend->handle)) {
         return false;
     }
-    const char *env = std::getenv("LIGHTGLUE_ALIKED_VULKAN_GPU_UPSAMPLE");
-    if (env != nullptr) {
-        return env[0] != '0';
-    }
-    return false;
+    return backend->vulkan_config.gpu_upsample;
 }
 
 bool UseVulkanDcn(internal::Backend *backend) {
@@ -775,11 +767,7 @@ bool UseVulkanDcn(internal::Backend *backend) {
         !VkAlikedAvailable(backend->handle)) {
         return false;
     }
-    const char *env = std::getenv("LIGHTGLUE_ALIKED_VULKAN_DCN");
-    if (env != nullptr) {
-        return env[0] != '0';
-    }
-    return true;
+    return backend->vulkan_config.dcn;
 }
 
 bool UseVulkanPostprocess(internal::Backend *backend) {
@@ -787,12 +775,8 @@ bool UseVulkanPostprocess(internal::Backend *backend) {
         !VkAlikedAvailable(backend->handle)) {
         return false;
     }
-    const char *env = std::getenv("LIGHTGLUE_ALIKED_VULKAN_POST");
-    if (env != nullptr) {
-        return env[0] != '0';
-    }
-    // VkAliked DKD is fast but parity is not yet gated; opt-in only.
-    return false;
+    // VkAliked DKD is opt-in until parity gates cover all drivers.
+    return backend->vulkan_config.postprocess;
 }
 
 bool UseVulkanSddh(internal::Backend *backend) {
@@ -800,13 +784,9 @@ bool UseVulkanSddh(internal::Backend *backend) {
         !VkAlikedAvailable(backend->handle)) {
         return false;
     }
-    const char *env = std::getenv("LIGHTGLUE_ALIKED_VULKAN_SDDH");
-    if (env != nullptr) {
-        return env[0] != '0';
-    }
     // The scalar shader is retained for diagnostics; the exact CPU fallback is
     // faster and more reliable on current Vulkan drivers.
-    return false;
+    return backend->vulkan_config.sddh;
 }
 #endif
 
@@ -822,9 +802,11 @@ AlikedCustomOpBackend DetectCustomOpBackend(internal::Backend *backend) {
         return AlikedCustomOpBackend::kVulkanCompute;
     }
 #endif
+#if defined(AICORE_VULKAN_ALIKED)
     if (backend->IsVulkan()) {
         return AlikedCustomOpBackend::kVulkanBridge;
     }
+#endif
     return AlikedCustomOpBackend::kCpu;
 }
 
@@ -870,10 +852,20 @@ bool DcnConvBnDispatch(GpuPipelineCache *cache,
 #endif
 #if defined(AICORE_VULKAN_ALIKED)
         case AlikedCustomOpBackend::kVulkanCompute:
-            return DcnConvBnVulkan(cache, input, offset_w, offset_b, regular_w,
-                                   oc, gamma, beta, mean, var, cache_prefix,
-                                   output, error);
+            // Compute availability alone does not qualify the custom DCN
+            // implementation.  Respect the session capability gate here as
+            // well as in the bridge path; otherwise `compute=true` silently
+            // bypasses a disabled DCN and can corrupt ALIKED score maps.
+            if (UseVulkanDcn(cache->backend())) {
+                return DcnConvBnVulkan(cache, input, offset_w, offset_b,
+                                       regular_w, oc, gamma, beta, mean, var,
+                                       cache_prefix, output, error);
+            }
+            return DcnConvBnCpuBridge(cache, input, offset_w, offset_b,
+                                      regular_w, oc, gamma, beta, mean, var,
+                                      cache_prefix, output, error);
 #endif
+#if defined(AICORE_VULKAN_ALIKED)
         case AlikedCustomOpBackend::kVulkanBridge:
             if (UseVulkanDcn(cache->backend())) {
                 return DcnConvBnVulkan(cache, input, offset_w, offset_b,
@@ -883,6 +875,7 @@ bool DcnConvBnDispatch(GpuPipelineCache *cache,
             return DcnConvBnCpuBridge(cache, input, offset_w, offset_b,
                                       regular_w, oc, gamma, beta, mean, var,
                                       cache_prefix, output, error);
+#endif
         default:
             if (error) {
                 *error = "DCN dispatch requires GPU backend";

@@ -14,7 +14,7 @@
 static int failures = 0;
 
 int main() {
-    AICORE_CHECK(aicore_backend_abi_version() == 1);
+    AICORE_CHECK(aicore_backend_abi_version() >= 2);
     AICORE_CHECK(aicore_device_count() >= 2);
     AICORE_CHECK(aicore_device_at(0) != nullptr);
     AICORE_CHECK(std::strcmp(aicore_device_at(0)->id, "auto") == 0);
@@ -25,6 +25,15 @@ int main() {
     AICORE_CHECK(aicore_warmup_backend("blas") != 0);
     AICORE_CHECK(aicore_warmup_backend("not-a-backend") != 0);
     AICORE_CHECK(aicore_backend_last_error()[0] != '\0');
+
+    aicore_model_device_info depthInfo{};
+    depthInfo.struct_size = sizeof(depthInfo);
+    AICORE_CHECK(aicore_model_device_info_query(AICORE_MODEL_DEPTH, "cpu",
+                                                &depthInfo) == 0);
+    AICORE_CHECK((depthInfo.capabilities & AICORE_MODEL_CAP_FULL_GRAPH) != 0);
+    AICORE_CHECK((depthInfo.precision & AICORE_MODEL_PRECISION_FP32) != 0);
+    AICORE_CHECK(depthInfo.recommended_working_set_bytes >=
+                 depthInfo.min_working_set_bytes);
 
     AICORE_CHECK(aicore_depth_abi_version() >= 5);
 

@@ -84,11 +84,13 @@ QString resolve_aliked_extractor_gguf(const QString& matcher_model_path) {
     baseStem.replace(QStringLiteral("aliked-lightglue"),
                      QStringLiteral("aliked-n16rot"));
 
-    // Build ordered list of quantization variants to try.
-    // The dialog downloads f16 (see alikedExtractorFilenameForMatcher),
-    // so f16 is the preferred variant when the exact match is absent.
+    // Build the ordered list of extractor variants.  The matcher may be q8,
+    // but the extractor is a small model and the dialog deliberately ships
+    // f16 for it.  Prefer that validated f16 artifact over an exact q8 name:
+    // selecting q8 here made the Vulkan extractor produce descriptors that
+    // disagreed with CPU/CUDA, even though the f16 extractor was present.
+    // The LightGlue matcher still uses the model selected by the user.
     QStringList stems;
-    stems << baseStem;
 
     auto withQuant = [&](const QString& from, const QString& to) -> QString {
         QString s = baseStem;
@@ -97,10 +99,11 @@ QString resolve_aliked_extractor_gguf(const QString& matcher_model_path) {
     };
     const QString f16 =
             withQuant(QStringLiteral("-q8_0"), QStringLiteral("-f16"));
-    if (f16 != baseStem && !stems.contains(f16)) stems << f16;
     const QString f16b =
             withQuant(QStringLiteral("-f32"), QStringLiteral("-f16"));
-    if (f16b != baseStem && !stems.contains(f16b)) stems << f16b;
+    if (!stems.contains(f16)) stems << f16;
+    if (!stems.contains(f16b)) stems << f16b;
+    if (!stems.contains(baseStem)) stems << baseStem;
     const QString q80 =
             withQuant(QStringLiteral("-f16"), QStringLiteral("-q8_0"));
     if (q80 != baseStem && !stems.contains(q80)) stems << q80;
@@ -441,7 +444,11 @@ void LightGlueWorker::run() {
     emit taskFinished(false);
     return;
 #else
-    aicore_device_task_lock(m_settings.device.toUtf8().constData());
+    if (aicore_device_task_lock_cancelable(
+                m_settings.device.toUtf8().constData(), m_cancelToken) != 0) {
+        emit taskFinished(false);
+        return;
+    }
     aicore_cancel_scope_begin(m_cancelToken);
     if (isInterruptionRequested() || aicore_cancel_requested()) {
         aicore_cancel_scope_end(m_cancelToken);

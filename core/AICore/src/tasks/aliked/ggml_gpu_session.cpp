@@ -32,15 +32,6 @@ constexpr int64_t kMaxGraphNodes = 512;
 constexpr float kSeluScale = 1.050700987f;
 constexpr float kSeluAlpha = 1.67326324f;
 
-bool VulkanSchedTailOnlyByEnv() {
-    const char *env = std::getenv("LIGHTGLUE_ALIKED_VULKAN_SCHED_TAIL");
-    if (env == nullptr || env[0] == '\0') {
-        return false;
-    }
-    return std::strcmp(env, "0") != 0 && std::strcmp(env, "false") != 0 &&
-           std::strcmp(env, "off") != 0;
-}
-
 void PinTensorToGpu(internal::Backend *backend, ggml_tensor *tensor) {
     if (backend == nullptr || !backend->HasSched() || tensor == nullptr) {
         return;
@@ -285,7 +276,7 @@ bool GgmlGpuSession::RunScoreHeadSchedGraph(
         }
         return false;
     }
-    if (VulkanSchedTailOnlyByEnv() && layers.size() > 1) {
+    if (backend_->vulkan_config.scheduler_tail_only && layers.size() > 1) {
         std::vector<ConvChainSpec> prefix(layers.begin(), layers.end() - 1);
         const ConvChainSpec &tail = layers.back();
         GpuTensor mid;

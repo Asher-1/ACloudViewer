@@ -78,6 +78,15 @@ AICORE_LEGACY_API AICORE_CAPI int aicore_inference_try_lock(void);
  * supported. */
 AICORE_CAPI int aicore_device_task_lock(const char* device);
 
+/**
+ * Acquire a resolved-device queue while observing \p token. Returns 0 after
+ * acquisition, 1 when the token was cancelled while waiting, and -1 on an
+ * invalid nested acquisition. The caller owns the matching unlock only after
+ * a zero return value.
+ */
+AICORE_CAPI int aicore_device_task_lock_cancelable(
+        const char* device, const aicore_cancel_token* token);
+
 /** Try to acquire a device queue. Returns 0 if acquired, -1 when busy. */
 AICORE_CAPI int aicore_device_task_try_lock(const char* device);
 

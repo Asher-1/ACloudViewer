@@ -62,7 +62,11 @@ void DA3Worker::run() {
     emit taskFinished(false);
     return;
 #else
-    aicore_device_task_lock(m_settings.device.toUtf8().constData());
+    if (aicore_device_task_lock_cancelable(
+                m_settings.device.toUtf8().constData(), m_cancelToken) != 0) {
+        emit taskFinished(false);
+        return;
+    }
     aicore_cancel_scope_begin(m_cancelToken);
     bool ok = false;
     emit progressUpdate(0, 100);
