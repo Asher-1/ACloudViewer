@@ -14,8 +14,8 @@ GUI (DeepLSD dialog) ──► libAICore (deeplsd_capi) ──► GGML CNN ─�
 | Component | Path |
 |-----------|------|
 | Inference library | `core/AICore/` → `libAICore.so` |
-| GGML DeepLSD CNN | `core/AICore/src/deeplsd/` |
-| LSD post-process | `core/AICore/src/deeplsd/deeplsd_line_detect.cpp` (pytlsd / LSD) |
+| GGML DeepLSD CNN | `core/AICore/src/tasks/deeplsd/` |
+| LSD post-process | `core/AICore/src/tasks/deeplsd/deeplsd_line_detect.cpp` (pytlsd / LSD) |
 | Plugin | `plugins/core/Standard/qDeepLSD/` |
 
 The GGML path outputs **distance + angle fields**; line segments are extracted in C++ with the same AFM-guided LSD pipeline used in DeepLSD-GGML validation scripts.

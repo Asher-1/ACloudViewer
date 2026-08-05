@@ -5,7 +5,10 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <atomic>
+#include <chrono>
 #include <cstdio>
+#include <thread>
 
 #include "aicore/runtime_capi.h"
 
@@ -57,6 +60,27 @@ int main() {
         return Fail("CPU task queue was not released");
     }
     aicore_device_task_unlock();
+
+    // A queued task must be cancelable before it obtains the physical device
+    // lock. This prevents Stop from being held hostage by another session.
+    if (aicore_device_task_lock("cpu") != 0) {
+        return Fail("CPU task queue acquisition for cancel test failed");
+    }
+    aicore_cancel_token* queued = aicore_cancel_token_new();
+    if (!queued) return Fail("queued token allocation failed");
+    std::atomic<int> queuedResult{-2};
+    std::thread waiter([&]() {
+        queuedResult.store(aicore_device_task_lock_cancelable("cpu", queued));
+    });
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    aicore_cancel_token_request(queued);
+    waiter.join();
+    aicore_device_task_unlock();
+    if (queuedResult.load() != 1) {
+        aicore_cancel_token_free(queued);
+        return Fail("queued task did not observe cancellation");
+    }
+    aicore_cancel_token_free(queued);
 
     aicore_cancel_token_free(inner);
     aicore_cancel_token_free(outer);

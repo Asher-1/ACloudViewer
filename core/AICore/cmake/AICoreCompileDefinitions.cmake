@@ -20,7 +20,7 @@ function(aicore_apply_compile_definitions target)
     endif()
     if(AICore_CUDA_ENABLED)
         target_compile_definitions(${target} PRIVATE AICORE_AUTO_INCLUDE_CUDA)
-        # core/AICore/src/aliked/aliked_cuda.cu custom DCN/DKD/SDDH kernels
+        # core/AICore/src/tasks/aliked/aliked_cuda.cu custom DCN/DKD/SDDH kernels
         target_compile_definitions(${target} PRIVATE AICORE_CUDA_ALIKED)
     endif()
     if(AICore_VULKAN_ENABLED)

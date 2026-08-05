@@ -72,20 +72,20 @@ sequenceDiagram
 
 ### ALIKED and LightGlue
 
-`src/aliked/` owns an extractor backend and a `GpuPipelineCache` per context.
+`src/tasks/aliked/` owns an extractor backend and a `GpuPipelineCache` per context.
 Vulkan custom operations are resolved dynamically through
 `vulkan/vulkan_aliked_dispatch.cpp`. Large Vulkan sessions currently rebuild
 the backend between repeated extractions because ggml Vulkan convolution state
 is not reliable after a 1024-pixel extraction. This is a correctness guard, not
 the final performance design.
 
-`src/lightglue/` owns matcher state per context. qLightGlue composes two ALIKED
+`src/tasks/lightglue/` owns matcher state per context. qLightGlue composes two ALIKED
 extractions with one LightGlue match while keeping the public feature format
 backend-neutral.
 
 ### FaceDetect
 
-`src/facedetect/` supports YuNet/SCRFD detection, aligned SFace/ArcFace
+`src/tasks/facedetect/` supports YuNet/SCRFD detection, aligned SFace/ArcFace
 embeddings, dense landmarks, age/gender, and anti-spoofing. CUDA conv nodes are
 explicitly named `facedetect.cudnn.*`, so the shared ggml CUDA backend applies
 cuDNN only to FaceDetect graphs.
@@ -97,7 +97,7 @@ active Session; it does not identify process-global mutable model state.
 
 ### Depth and Gaussian
 
-`src/depth/` uses a context-owned `depth::Engine`; `src/gaussian/` uses a
+`src/tasks/depth/` uses a context-owned `depth::Engine`; `src/tasks/gaussian/` uses a
 context-owned model. Both poll the runtime cancellation API at graph or batch
 boundaries. They still implement different internal backend wrappers and error
 reporting conventions.
@@ -210,9 +210,9 @@ Migration order:
 | Device aliases or auto order | `src/common/ggml_backend_utils.hpp`, `src/common/backend_capi.cpp` |
 | Public capability bit | `include/aicore/backend_capi.h`, `src/common/backend_capi.cpp`, contract tests |
 | Cancellation behavior | `include/aicore/runtime_capi.h`, `src/common/runtime_capi.cpp` |
-| New model C API | `include/aicore/<model>_capi.h`, `src/<model>/capi.cpp`, `tests/<model>/` |
-| ALIKED Vulkan operation | `src/aliked/vulkan/`, merged ggml patch exporter, ALIKED parity tests |
-| FaceDetect CUDA/cuDNN | `src/facedetect/graph_ops.cpp`, `src/facedetect/antispoof_graph.cpp`, `patches/cuda_cudnn/` |
+| New model C API | `include/aicore/<model>_capi.h`, `src/tasks/<model>/capi.cpp`, `tests/<model>/` |
+| ALIKED Vulkan operation | `src/tasks/aliked/vulkan/`, merged ggml patch exporter, ALIKED parity tests |
+| FaceDetect CUDA/cuDNN | `src/tasks/facedetect/graph_ops.cpp`, `src/tasks/facedetect/antispoof_graph.cpp`, `patches/cuda_cudnn/` |
 | Plugin task integration | Plugin worker class plus `runtime_capi.h`; use a caller-owned cancel token |
 
 ## Verification

@@ -20,7 +20,7 @@ cmake -DBUILD_GUI=ON \
 make -j4 QFACEDETECT_PLUGIN
 ```
 
-Face-detect GGML sources live in `core/AICore/src/facedetect/` (in-tree port of [face-detect.cpp](https://github.com/mudler/face-detect.cpp)).
+Face-detect GGML sources live in `core/AICore/src/tasks/facedetect/` (in-tree port of [face-detect.cpp](https://github.com/mudler/face-detect.cpp)).
 
 Requires system **libjpeg** (e.g. `libjpeg-dev` on Ubuntu).
 

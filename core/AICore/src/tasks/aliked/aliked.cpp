@@ -16,13 +16,13 @@
 #include <iostream>
 #include <memory>
 
-#include "../common/gguf_weight_quantize.hpp"
 #include "aliked_gpu_ops.hpp"
 #include "aliked_stage_bench.hpp"
 #include "backend.h"
 #include "deform_conv.hpp"
 #include "ggml_cnn.hpp"
 #include "ggml_gpu_ops.hpp"
+#include "gguf_weight_quantize.hpp"
 #include "gpu_pipeline.hpp"
 #include "gpu_pipeline_cache.hpp"
 #include "gpu_postprocess.hpp"
@@ -805,10 +805,8 @@ public:
         if (!backend_.IsVulkan()) {
             return true;
         }
-        const char *fresh_env =
-                std::getenv("LIGHTGLUE_ALIKED_VULKAN_FRESH_EXTRACT");
-        const bool fresh_extract = fresh_env == nullptr || fresh_env[0] != '0';
-        if (!fresh_extract || vulkan_extract_count_++ == 0) {
+        if (!backend_.vulkan_config.fresh_extract ||
+            vulkan_extract_count_++ == 0) {
             return true;
         }
         FlushGpuPipeline(&backend_);
@@ -857,6 +855,10 @@ public:
         GpuKeypointResult gpu_kpts;
         GpuTensor gpu_desc;
 
+        // Vulkan enters the full GPU pipeline path with VulkanExtractScope
+        // RAII guarding queue drain, RewarmVulkanBackendIfRequested for
+        // per-extract backend re-init, and BarrierGpuPipeline/VkAlikedQueueIdle
+        // sync points throughout ExtractDenseMapGpuVram, DKD, and SDDH.
         const bool gpu_path = options_.use_ggml_cnn && backend_.IsGpu() &&
                               init_error_.empty() && gpu_cache_ != nullptr;
 
@@ -1149,16 +1151,6 @@ bool DumpAlikedDcnParity(const AlikedExtractionOptions &options,
                          const std::string &output_dump,
                          std::string *error) {
     ClearAlikedDcnParityEntries();
-#if defined(_WIN32)
-    _putenv_s("LIGHTGLUE_ALIKED_VULKAN_COMPUTE", "1");
-#else
-    setenv("LIGHTGLUE_ALIKED_VULKAN_COMPUTE", "1", 1);
-    if (std::getenv("LIGHTGLUE_ALIKED_DCN_DEBUG") == nullptr &&
-        std::getenv("LIGHTGLUE_ALIKED_FORCE_DCN_DEBUG") != nullptr) {
-        setenv("LIGHTGLUE_ALIKED_DCN_DEBUG", "1", 1);
-    }
-#endif
-
     AlikedExtractionOptions opts = options;
     opts.use_ggml_cnn = true;
     if (opts.device.empty()) {

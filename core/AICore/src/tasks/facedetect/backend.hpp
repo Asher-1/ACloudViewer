@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-#include "../common/ggml_backend_registry.hpp"
+#include "ggml_backend_registry.hpp"
 
 struct ggml_context;
 struct ggml_tensor;

@@ -10,10 +10,12 @@
 #include <algorithm>
 #include <atomic>
 #include <cctype>
+#include <chrono>
 #include <memory>
 #include <mutex>
 #include <new>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 
@@ -53,8 +55,19 @@ std::string device_queue_key(const char* device) {
         if (request == "auto" || request == "gpu") request = "cpu";
     }
     if (request == "mtl") request = "metal";
-    if (request == "cuda:0" || request == "vulkan:0" || request == "metal:0") {
-        request.resize(request.find(':'));
+    for (const char* family : {"cuda", "vulkan", "metal"}) {
+        const std::string name(family);
+        if (request == name + ":0" || request == name + "0") {
+            return name;
+        }
+        if (request.size() > name.size() &&
+            request.compare(0, name.size(), name) == 0) {
+            const std::string suffix = request.substr(name.size());
+            if (!suffix.empty() &&
+                suffix.find_first_not_of("0123456789") == std::string::npos) {
+                return name + ":" + suffix;
+            }
+        }
     }
     return request;
 }
@@ -153,6 +166,22 @@ AICORE_CAPI int aicore_device_task_lock(const char* device) {
     if (g_device_queue_held) return -1;
     std::shared_ptr<std::mutex> queue = device_queue(device);
     queue->lock();
+    g_device_queue_held = std::move(queue);
+    return 0;
+}
+
+AICORE_CAPI int aicore_device_task_lock_cancelable(
+        const char* device, const aicore_cancel_token* token) {
+    if (g_device_queue_held) return -1;
+    std::shared_ptr<std::mutex> queue = device_queue(device);
+    while (!queue->try_lock()) {
+        if (aicore_cancel_token_requested(token)) return 1;
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+    if (aicore_cancel_token_requested(token)) {
+        queue->unlock();
+        return 1;
+    }
     g_device_queue_held = std::move(queue);
     return 0;
 }

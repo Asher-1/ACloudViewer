@@ -1467,6 +1467,9 @@ void qFreeSplatter::onTaskFinished(bool success) {
     if (!success) m_pendingIdentityTasks.clear();
 
     clearStagedInputFiles();
+    // Face-capture exports are a private, job-scoped cache. They must remain
+    // available while another selected identity is queued, then be removed.
+    if (m_dialog) m_dialog->clearFaceCaptureTransientInputs();
 
     if (m_app) {
         m_app->updateUI();

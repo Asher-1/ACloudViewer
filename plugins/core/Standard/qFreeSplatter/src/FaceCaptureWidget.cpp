@@ -77,24 +77,31 @@ QString defaultRegistryDbPath(const QString& detectorModelFilename) {
 
 class AICoreInferenceGuard {
 public:
-    AICoreInferenceGuard() {
-        m_cancelToken = aicore_cancel_token_new();
-        aicore_device_task_lock("auto");
+    AICoreInferenceGuard(aicore_cancel_token* cancelToken,
+                         const QString& device)
+        : m_cancelToken(cancelToken) {
+        m_locked = aicore_device_task_lock_cancelable(
+                           device.toUtf8().constData(), m_cancelToken) == 0;
+        if (!m_locked) return;
         aicore_cancel_scope_begin(m_cancelToken);
     }
     ~AICoreInferenceGuard() {
+        if (!m_locked) return;
         aicore_cancel_scope_end(m_cancelToken);
         aicore_device_task_unlock();
-        aicore_cancel_token_free(m_cancelToken);
     }
+
+    bool locked() const { return m_locked; }
 
 private:
     aicore_cancel_token* m_cancelToken = nullptr;
+    bool m_locked = false;
 };
 
 }  // namespace
 
 FaceCaptureWidget::FaceCaptureWidget(QWidget* parent) : QWidget(parent) {
+    m_inferenceCancelToken = aicore_cancel_token_new();
     m_downloader = new ecvModelDownloader(this);
     connect(m_downloader, &ecvModelDownloader::logMessage, this,
             &FaceCaptureWidget::logMessage);
@@ -200,6 +207,7 @@ FaceCaptureWidget::FaceCaptureWidget(QWidget* parent) : QWidget(parent) {
 }
 
 FaceCaptureWidget::~FaceCaptureWidget() {
+    requestInferenceCancel();
     stopCamera();
     if (m_ggmlLoadWatcher && m_ggmlLoadWatcher->isRunning()) {
         m_ggmlLoadWatcher->waitForFinished();
@@ -212,6 +220,8 @@ FaceCaptureWidget::~FaceCaptureWidget() {
         m_pendingGgmlPath.clear();
     }
     releaseGgmlModel();
+    aicore_cancel_token_free(m_inferenceCancelToken);
+    m_inferenceCancelToken = nullptr;
 }
 
 bool FaceCaptureWidget::isAvailable() {
@@ -678,6 +688,11 @@ QString FaceCaptureWidget::videoFilePath() const {
 bool FaceCaptureWidget::startVideoFile(const QString& path) {
 #ifdef HAS_OPENCV_FACE_CAPTURE
     if (path.isEmpty()) return false;
+    // Cancel and drain the previous session before issuing any work for the
+    // new video. Doing this after scheduleGgmlModelLoad would cancel the new
+    // model load through the shared task token.
+    stopCapture();
+    aicore_cancel_token_reset(m_inferenceCancelToken);
     if (!configureDetectorForRegistrySelection()) return false;
     m_inputSource = InputSource::VideoFile;
     m_videoFilePath = path;
@@ -695,7 +710,6 @@ bool FaceCaptureWidget::startVideoFile(const QString& path) {
         loadCascade();
     }
 
-    stopCapture();
     if (!m_camera.open(path.toStdString(), cv::CAP_FFMPEG) &&
         !m_camera.open(path.toStdString(), cv::CAP_ANY)) {
         const QString err =
@@ -719,10 +733,38 @@ bool FaceCaptureWidget::startVideoFile(const QString& path) {
 #endif
 }
 
-void FaceCaptureWidget::stopCapture() { stopCamera(); }
+void FaceCaptureWidget::stopCapture() {
+    requestInferenceCancel();
+    stopCamera();
+}
+
+void FaceCaptureWidget::requestInferenceCancel() {
+    aicore_cancel_token_request(m_inferenceCancelToken);
+}
+
+void FaceCaptureWidget::setInferenceDevice(const QString& device) {
+    const QString normalized =
+            device.isEmpty() ? QStringLiteral("auto") : device;
+    if (normalized == m_inferenceDevice) return;
+    requestInferenceCancel();
+    if (m_ggmlLoadWatcher && m_ggmlLoadWatcher->isRunning()) {
+        m_ggmlLoadWatcher->waitForFinished();
+        if (aicore_facedetect_ctx* ctx = m_ggmlLoadWatcher->result()) {
+            aicore_facedetect_free(ctx);
+        }
+        m_ggmlModelLoading = false;
+        m_pendingGgmlPath.clear();
+    }
+    m_inferenceDevice = normalized;
+    releaseGgmlModel();
+    if (m_cameraActive && m_detectorKind == DetectorKind::Ggml) {
+        scheduleGgmlModelLoad(facedetectCachePath(currentGgmlFilename()));
+    }
+}
 
 void FaceCaptureWidget::releaseGpuResources() {
 #ifdef HAS_OPENCV_FACE_CAPTURE
+    requestInferenceCancel();
     stopCamera();
     if (m_ggmlLoadWatcher && m_ggmlLoadWatcher->isRunning()) {
         m_ggmlLoadWatcher->waitForFinished();
@@ -892,10 +934,13 @@ bool FaceCaptureWidget::loadGgmlModel(const QString& path) {
 
     releaseGgmlModel();
 
-    AICoreInferenceGuard guard;
+    aicore_cancel_token_reset(m_inferenceCancelToken);
+    AICoreInferenceGuard guard(m_inferenceCancelToken, m_inferenceDevice);
+    if (!guard.locked()) return false;
     aicore_facedetect_options* opts = aicore_facedetect_options_new();
     if (!opts) return false;
-    aicore_facedetect_options_set_device(opts, "auto");
+    aicore_facedetect_options_set_device(
+            opts, m_inferenceDevice.toUtf8().constData());
     aicore_facedetect_options_set_threads(opts, 0);
     m_ggmlCtx = aicore_facedetect_load_opts(path.toUtf8().constData(), opts);
     aicore_facedetect_options_free(opts);
@@ -917,15 +962,19 @@ void FaceCaptureWidget::scheduleGgmlModelLoad(const QString& path) {
     if (m_ggmlLoadWatcher && m_ggmlLoadWatcher->isRunning()) return;
 
     m_ggmlModelLoading = true;
+    aicore_cancel_token_reset(m_inferenceCancelToken);
     m_pendingGgmlPath = path;
     m_statusLabel->setText(tr("Loading face detector model..."));
-    m_ggmlLoadWatcher->setFuture(
-            QtConcurrent::run([path]() -> aicore_facedetect_ctx* {
-                AICoreInferenceGuard guard;
+    m_ggmlLoadWatcher->setFuture(QtConcurrent::run(
+            [path, token = m_inferenceCancelToken,
+             device = m_inferenceDevice]() -> aicore_facedetect_ctx* {
+                AICoreInferenceGuard guard(token, device);
+                if (!guard.locked()) return nullptr;
                 aicore_facedetect_options* opts =
                         aicore_facedetect_options_new();
                 if (!opts) return nullptr;
-                aicore_facedetect_options_set_device(opts, "auto");
+                aicore_facedetect_options_set_device(
+                        opts, device.toUtf8().constData());
                 aicore_facedetect_options_set_threads(opts, 0);
                 aicore_facedetect_ctx* ctx = aicore_facedetect_load_opts(
                         path.toUtf8().constData(), opts);
@@ -1006,6 +1055,8 @@ bool FaceCaptureWidget::loadCascade() {
 
 bool FaceCaptureWidget::startCamera(int deviceIndex) {
 #ifdef HAS_OPENCV_FACE_CAPTURE
+    stopCapture();
+    aicore_cancel_token_reset(m_inferenceCancelToken);
     m_pendingCameraIndex = deviceIndex;
     if (!configureDetectorForRegistrySelection()) return false;
 
@@ -1024,8 +1075,6 @@ bool FaceCaptureWidget::startCamera(int deviceIndex) {
                        "capture without detection"));
         }
     }
-
-    stopCamera();
 
     if (!m_camerasEnumerated && m_cameraCombo) {
         m_camerasEnumerated = true;
@@ -1712,7 +1761,8 @@ std::vector<FaceCaptureWidget::ScoredFace> FaceCaptureWidget::detectFacesGgml(
 
     if (!rgb.isContinuous()) rgb = rgb.clone();
 
-    AICoreInferenceGuard guard;
+    AICoreInferenceGuard guard(m_inferenceCancelToken, m_inferenceDevice);
+    if (!guard.locked()) return out;
     char* json = aicore_facedetect_detect_rgb_json(m_ggmlCtx, rgb.data,
                                                    rgb.cols, rgb.rows);
     if (!json) return out;
@@ -1794,7 +1844,8 @@ bool FaceCaptureWidget::embedFaceCrop(const cv::Mat& frame,
 
     float* vec = nullptr;
     int dim = 0;
-    AICoreInferenceGuard guard;
+    AICoreInferenceGuard guard(m_inferenceCancelToken, m_inferenceDevice);
+    if (!guard.locked()) return false;
     if (aicore_facedetect_embed_rgb(m_ggmlCtx, rgb.data, rgb.cols, rgb.rows,
                                     0.f, &vec, &dim) != 0 ||
         vec == nullptr || dim <= 0) {
@@ -1826,7 +1877,8 @@ bool FaceCaptureWidget::embedScoredFace(const cv::Mat& frame,
 
     float* vec = nullptr;
     int dim = 0;
-    AICoreInferenceGuard guard;
+    AICoreInferenceGuard guard(m_inferenceCancelToken, m_inferenceDevice);
+    if (!guard.locked()) return false;
     if (aicore_facedetect_embed_rgb_landmarks(m_ggmlCtx, rgb.data, rgb.cols,
                                               rgb.rows, face.landmarks, &vec,
                                               &dim) != 0 ||

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../backend.h"
+#include "backend.h"
 
 #include "gpu_tensor.hpp"
 #include "postprocess.hpp"

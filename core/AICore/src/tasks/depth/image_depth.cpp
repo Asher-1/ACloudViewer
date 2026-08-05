@@ -6,12 +6,14 @@
 // ----------------------------------------------------------------------------
 
 #include <QDir>
+#include <QStandardPaths>
 #include <QTemporaryFile>
 #include <cstring>
 
 #include "aicore/backend_capi.h"
 #include "aicore/depth_capi.h"
 #include "aicore/depth_image.h"
+#include "aicore/runtime_capi.h"
 
 namespace aicore {
 namespace depth {
@@ -20,19 +22,28 @@ namespace {
 bool loadContext(const QString& model_path,
                  const QString& metric_model_path,
                  int n_threads,
+                 const QString& device,
                  aicore_depth_ctx*& ctx) {
     const int threads = n_threads > 0 ? n_threads : 1;
-    ctx = metric_model_path.isEmpty()
-                  ? aicore_depth_load(model_path.toUtf8().constData(), threads)
-                  : aicore_depth_load_nested(
-                            model_path.toUtf8().constData(),
-                            metric_model_path.toUtf8().constData(), threads);
+    if (metric_model_path.isEmpty()) {
+        ctx = aicore_depth_load_device(model_path.toUtf8().constData(), threads,
+                                       device.toUtf8().constData());
+    } else {
+        ctx = aicore_depth_load_nested_device(
+                model_path.toUtf8().constData(),
+                metric_model_path.toUtf8().constData(), threads,
+                device.toUtf8().constData());
+    }
     return ctx != nullptr;
 }
 
 bool writeTempPng(const QImage& image, QTemporaryFile& tmp) {
     if (image.isNull()) return false;
-    tmp.setFileTemplate(QDir::tempPath() + "/aicore_depth_image_XXXXXX.png");
+    QString cache =
+            QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+    if (cache.isEmpty()) cache = QDir::tempPath();
+    QDir().mkpath(cache + QStringLiteral("/aicore_depth"));
+    tmp.setFileTemplate(cache + "/aicore_depth/image_XXXXXX.png");
     if (!tmp.open()) return false;
     if (!image.save(&tmp, "PNG")) return false;
     tmp.close();
@@ -41,18 +52,49 @@ bool writeTempPng(const QImage& image, QTemporaryFile& tmp) {
 
 }  // namespace
 
-bool ImageDepth::isAvailable() { return aicore_device_available("cpu") != 0; }
+class ImageDepthTaskScope {
+public:
+    ImageDepthTaskScope(const QString& device, aicore_cancel_token* external)
+        : token_(external), owns_(external == nullptr) {
+        if (owns_) token_ = aicore_cancel_token_new();
+        if (!token_) return;
+        locked_ = aicore_device_task_lock_cancelable(
+                          device.toUtf8().constData(), token_) == 0;
+        if (locked_) aicore_cancel_scope_begin(token_);
+    }
+    ~ImageDepthTaskScope() {
+        if (locked_) {
+            aicore_cancel_scope_end(token_);
+            aicore_device_task_unlock();
+        }
+        if (owns_) aicore_cancel_token_free(token_);
+    }
+    bool active() const { return locked_; }
+
+private:
+    aicore_cancel_token* token_ = nullptr;
+    bool owns_ = false;
+    bool locked_ = false;
+};
+
+bool ImageDepth::isAvailable(const QString& device) {
+    return aicore_device_available(device.toUtf8().constData()) != 0;
+}
 
 bool ImageDepth::estimateDepth(const QImage& image,
                                const QString& model_path,
                                int n_threads,
                                ImageDepthResult& out,
-                               const QString& metric_model_path) {
+                               const QString& metric_model_path,
+                               const QString& device,
+                               aicore_cancel_token* cancel_token) {
+    ImageDepthTaskScope task(device, cancel_token);
+    if (!task.active()) return false;
     QTemporaryFile tmp;
     if (!writeTempPng(image, tmp)) return false;
 
     aicore_depth_ctx* ctx = nullptr;
-    if (!loadContext(model_path, metric_model_path, n_threads, ctx))
+    if (!loadContext(model_path, metric_model_path, n_threads, device, ctx))
         return false;
 
     int h = 0, w = 0;
@@ -76,12 +118,16 @@ bool ImageDepth::estimateDepthAndPose(const QImage& image,
                                       const QString& model_path,
                                       int n_threads,
                                       ImageDepthResult& out,
-                                      const QString& metric_model_path) {
+                                      const QString& metric_model_path,
+                                      const QString& device,
+                                      aicore_cancel_token* cancel_token) {
+    ImageDepthTaskScope task(device, cancel_token);
+    if (!task.active()) return false;
     QTemporaryFile tmp;
     if (!writeTempPng(image, tmp)) return false;
 
     aicore_depth_ctx* ctx = nullptr;
-    if (!loadContext(model_path, metric_model_path, n_threads, ctx))
+    if (!loadContext(model_path, metric_model_path, n_threads, device, ctx))
         return false;
 
     int h = 0, w = 0, is_metric = 0;

@@ -398,6 +398,15 @@ void FreeSplatterDialog::setupUi() {
         faceLayout->setContentsMargins(0, 0, 0, 0);
 
         m_faceCaptureWidget = new FaceCaptureWidget(faceTab);
+        m_faceCaptureWidget->setInferenceDevice(
+                m_deviceCombo ? m_deviceCombo->currentData().toString()
+                              : QStringLiteral("auto"));
+        connect(m_deviceCombo,
+                QOverload<int>::of(&QComboBox::currentIndexChanged),
+                m_faceCaptureWidget, [this](int) {
+                    m_faceCaptureWidget->setInferenceDevice(
+                            m_deviceCombo->currentData().toString());
+                });
         m_faceCaptureScroll = new QScrollArea(faceTab);
         m_faceCaptureScroll->setWidgetResizable(true);
         m_faceCaptureScroll->setFrameShape(QFrame::NoFrame);
@@ -1159,6 +1168,7 @@ void FreeSplatterDialog::closeEvent(QCloseEvent* event) {
     if (m_faceCaptureWidget) {
         m_faceCaptureWidget->releaseGpuResources();
     }
+    clearFaceCaptureExportDir();
     QDialog::closeEvent(event);
 }
 
@@ -1479,6 +1489,7 @@ void FreeSplatterDialog::onFaceStartCamera() {
 
 void FreeSplatterDialog::onFaceStopCamera() {
     if (!m_faceCaptureWidget) return;
+    m_faceCaptureWidget->requestInferenceCancel();
     m_faceCaptureWidget->stopCamera();
 }
 
@@ -1486,6 +1497,7 @@ void FreeSplatterDialog::onFaceReset() {
     if (!m_faceCaptureWidget) return;
     m_faceCaptureWidget->resetCapture();
     m_identityInputs.clear();
+    clearFaceCaptureExportDir();
     if (m_faceResetBtn) m_faceResetBtn->setEnabled(false);
 }
 
@@ -1502,10 +1514,19 @@ void FreeSplatterDialog::onFaceCaptureComplete() {
         return;
     }
 
-    const QString tmpDir =
-            QDir::tempPath() + QStringLiteral("/freesplatter_face_capture");
+    clearFaceCaptureExportDir();
+    QString cacheRoot =
+            QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+    if (cacheRoot.isEmpty()) {
+        cacheRoot = QStandardPaths::writableLocation(
+                QStandardPaths::AppLocalDataLocation);
+    }
+    m_faceCaptureExportDir = QDir(cacheRoot).filePath(
+            QStringLiteral("qFreeSplatter/face_capture/") +
+            QUuid::createUuid().toString(QUuid::Id128));
     const std::vector<FaceCaptureWidget::IdentityImageBatch> batches =
-            m_faceCaptureWidget->exportCapturedIdentityImages(tmpDir);
+            m_faceCaptureWidget->exportCapturedIdentityImages(
+                    m_faceCaptureExportDir);
     if (batches.empty()) {
         appendLog(tr("[Error] Failed to export captured face images"));
         return;
@@ -1545,4 +1566,27 @@ void FreeSplatterDialog::onFaceCaptureComplete() {
         appendLog(tr("[FaceCapture] Auto-starting reconstruction..."));
         onRun();
     }
+}
+
+void FreeSplatterDialog::clearFaceCaptureExportDir() {
+    if (m_faceCaptureExportDir.isEmpty()) return;
+    QDir(m_faceCaptureExportDir).removeRecursively();
+    m_faceCaptureExportDir.clear();
+}
+
+void FreeSplatterDialog::clearFaceCaptureTransientInputs() {
+    const QString exportedRoot = m_faceCaptureExportDir;
+    clearFaceCaptureExportDir();
+    if (exportedRoot.isEmpty()) return;
+    m_identityInputs.clear();
+    for (auto it = m_inputPaths.begin(); it != m_inputPaths.end();) {
+        if (it->startsWith(exportedRoot)) {
+            it = m_inputPaths.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    refreshThumbnailStrip();
+    updateImageCountStatus();
+    updateRunButtonState();
 }

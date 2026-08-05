@@ -240,7 +240,7 @@ cmake --build . --target AICore -j$(nproc)
 
 g++ -std=c++17 -O2 \
   plugins/core/Standard/qDA3/tests/test_capi.cpp \
-  -I core/AICore/include -I core/AICore/src/depth \
+  -I core/AICore/include -I core/AICore/src/tasks/depth \
   -L build_app/bin -lAICore -Wl,-rpath,build_app/bin \
   -o build_app/bin/plugins/test_capi
 

@@ -11,6 +11,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <exception>
 #include <mutex>
 
 #if defined(AICORE_VULKAN_ALIKED) && (defined(__linux__) || defined(__APPLE__))
@@ -119,6 +120,21 @@ struct VulkanAlikedApi {
 std::mutex g_api_mutex;
 VulkanAlikedApi g_api;
 
+template <typename Call>
+bool CallVulkanNoThrow(const char *operation, Call &&call) {
+    try {
+        return call();
+    } catch (const std::exception &e) {
+        std::fprintf(stderr, "[vk-aliked] %s failed: %s\n", operation,
+                     e.what());
+    } catch (...) {
+        std::fprintf(stderr,
+                     "[vk-aliked] %s failed with an unknown exception\n",
+                     operation);
+    }
+    return false;
+}
+
 template <typename Fn>
 Fn ResolveFn(ggml_backend_reg_t reg, const char *name) {
     if (reg != nullptr) {
@@ -196,7 +212,10 @@ void LogVkAlikedProbe(ggml_backend_t backend) {
                  g_api.dense_copy != nullptr, g_api.deform_conv != nullptr);
     if (g_api.available != nullptr && backend != nullptr) {
         std::fprintf(stderr, "[vk-aliked] runtime=%d\n",
-                     g_api.available(backend) ? 1 : 0);
+                     CallVulkanNoThrow("availability probe",
+                                       [&] { return g_api.available(backend); })
+                             ? 1
+                             : 0);
     }
 }
 
@@ -209,7 +228,9 @@ bool VkAlikedAvailable(ggml_backend_t backend) {
 #else
     EnsureResolved(backend);
     LogVkAlikedProbe(backend);
-    return g_api.available != nullptr && g_api.available(backend);
+    return g_api.available != nullptr && CallVulkanNoThrow("availability", [&] {
+               return g_api.available(backend);
+           });
 #endif
 }
 
@@ -230,7 +251,9 @@ bool VkAlikedWhcnToNchw(ggml_backend_t backend,
 #else
     EnsureResolved(backend);
     return g_api.whcn_to_nchw != nullptr &&
-           g_api.whcn_to_nchw(backend, whcn, nchw, c, h, w);
+           CallVulkanNoThrow("whcn_to_nchw", [&] {
+               return g_api.whcn_to_nchw(backend, whcn, nchw, c, h, w);
+           });
 #endif
 }
 
@@ -251,7 +274,9 @@ bool VkAlikedNchwToWhcn(ggml_backend_t backend,
 #else
     EnsureResolved(backend);
     return g_api.nchw_to_whcn != nullptr &&
-           g_api.nchw_to_whcn(backend, nchw, whcn, c, h, w);
+           CallVulkanNoThrow("nchw_to_whcn", [&] {
+               return g_api.nchw_to_whcn(backend, nchw, whcn, c, h, w);
+           });
 #endif
 }
 
@@ -271,8 +296,9 @@ bool VkAlikedDenseCopyWhcn(ggml_backend_t backend,
     return false;
 #else
     EnsureResolved(backend);
-    return g_api.dense_copy != nullptr &&
-           g_api.dense_copy(backend, src, dst, w, h, c);
+    return g_api.dense_copy != nullptr && CallVulkanNoThrow("dense_copy", [&] {
+               return g_api.dense_copy(backend, src, dst, w, h, c);
+           });
 #endif
 }
 
@@ -290,8 +316,9 @@ bool VkAlikedClampInplace(ggml_backend_t backend,
     return false;
 #else
     EnsureResolved(backend);
-    return g_api.clamp != nullptr &&
-           g_api.clamp(backend, data, count, min_value, max_value);
+    return g_api.clamp != nullptr && CallVulkanNoThrow("clamp", [&] {
+               return g_api.clamp(backend, data, count, min_value, max_value);
+           });
 #endif
 }
 
@@ -309,8 +336,9 @@ bool VkAlikedL2NormInplace(ggml_backend_t backend,
     return false;
 #else
     EnsureResolved(backend);
-    return g_api.l2norm != nullptr &&
-           g_api.l2norm(backend, data, channels, h, w);
+    return g_api.l2norm != nullptr && CallVulkanNoThrow("l2norm", [&] {
+               return g_api.l2norm(backend, data, channels, h, w);
+           });
 #endif
 }
 
@@ -347,8 +375,11 @@ bool VkAlikedDeformConv2d(ggml_backend_t backend,
 #else
     EnsureResolved(backend);
     return g_api.deform_conv != nullptr &&
-           g_api.deform_conv(backend, input, offset, weight, bias, output, ic,
-                             ih, iw, oc, kh, kw, pad, layout);
+           CallVulkanNoThrow("deform_conv", [&] {
+               return g_api.deform_conv(backend, input, offset, weight, bias,
+                                        output, ic, ih, iw, oc, kh, kw, pad,
+                                        layout);
+           });
 #endif
 }
 
@@ -392,10 +423,12 @@ bool VkAlikedRunDkd(ggml_backend_t backend,
     return false;
 #else
     EnsureResolved(backend);
-    return g_api.run_dkd != nullptr &&
-           g_api.run_dkd(backend, score_map, h, w, radius, top_k, scores_th,
-                         n_limit, keypoints_norm, scores, out_count, nms, tmp_a,
-                         tmp_b, tmp_c, block_keys, block_indices, indices_dev);
+    return g_api.run_dkd != nullptr && CallVulkanNoThrow("dkd", [&] {
+               return g_api.run_dkd(backend, score_map, h, w, radius, top_k,
+                                    scores_th, n_limit, keypoints_norm, scores,
+                                    out_count, nms, tmp_a, tmp_b, tmp_c,
+                                    block_keys, block_indices, indices_dev);
+           });
 #endif
 }
 
@@ -437,11 +470,13 @@ bool VkAlikedRunSddh(ggml_backend_t backend,
     return false;
 #else
     EnsureResolved(backend);
-    return g_api.run_sddh != nullptr &&
-           g_api.run_sddh(backend, feature_map, dim, h, w, keypoints_norm,
-                          count, kernel_size, n_pos, offset_0_w, offset_0_b,
-                          offset_2_w, offset_2_b, sf_conv_w, agg_weights,
-                          workspace, descriptors);
+    return g_api.run_sddh != nullptr && CallVulkanNoThrow("sddh", [&] {
+               return g_api.run_sddh(backend, feature_map, dim, h, w,
+                                     keypoints_norm, count, kernel_size, n_pos,
+                                     offset_0_w, offset_0_b, offset_2_w,
+                                     offset_2_b, sf_conv_w, agg_weights,
+                                     workspace, descriptors);
+           });
 #endif
 }
 
@@ -465,8 +500,10 @@ bool VkAlikedUpsampleBilinear(ggml_backend_t backend,
     return false;
 #else
     EnsureResolved(backend);
-    return g_api.upsample != nullptr &&
-           g_api.upsample(backend, input, output, ic, ih, iw, out_h, out_w);
+    return g_api.upsample != nullptr && CallVulkanNoThrow("upsample", [&] {
+               return g_api.upsample(backend, input, output, ic, ih, iw, out_h,
+                                     out_w);
+           });
 #endif
 }
 
@@ -477,11 +514,14 @@ bool VkAlikedQueueIdle(ggml_backend_t backend) {
 #else
     EnsureResolved(backend);
     if (g_api.queue_idle != nullptr) {
-        return g_api.queue_idle(backend);
+        return CallVulkanNoThrow("queue_idle",
+                                 [&] { return g_api.queue_idle(backend); });
     }
     if (backend != nullptr) {
-        ggml_backend_synchronize(backend);
-        return true;
+        return CallVulkanNoThrow("backend_synchronize", [&] {
+            ggml_backend_synchronize(backend);
+            return true;
+        });
     }
     return false;
 #endif

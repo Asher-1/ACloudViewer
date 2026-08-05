@@ -16,6 +16,7 @@
 #include <vector>
 
 class ccCameraSensor;
+struct aicore_cancel_token;
 
 //! Generic image
 class CV_DB_LIB_API ccImage : public ccHObject {
@@ -99,14 +100,18 @@ public:
     bool estimateDepth(const QString& model_path,
                        int n_threads,
                        DepthResult& out,
-                       const QString& metric_model_path = QString()) const;
+                       const QString& metric_model_path = QString(),
+                       const QString& device = QStringLiteral("auto"),
+                       aicore_cancel_token* cancel_token = nullptr) const;
 
     //! Estimates depth + camera pose from the loaded image.
     bool estimateDepthAndPose(
             const QString& model_path,
             int n_threads,
             DepthResult& out,
-            const QString& metric_model_path = QString()) const;
+            const QString& metric_model_path = QString(),
+            const QString& device = QStringLiteral("auto"),
+            aicore_cancel_token* cancel_token = nullptr) const;
 
     //! Returns true when built with AICore and libAICore.so is linked.
     static bool isAICoreAvailable();

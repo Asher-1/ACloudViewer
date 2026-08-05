@@ -15,7 +15,11 @@
 FaceDetectInferenceGuard::FaceDetectInferenceGuard(const QString& device) {
 #ifdef AICore_ENABLED
     m_cancelToken = aicore_cancel_token_new();
-    aicore_device_task_lock(device.toUtf8().constData());
+    if (!m_cancelToken ||
+        aicore_device_task_lock_cancelable(device.toUtf8().constData(),
+                                           m_cancelToken) != 0) {
+        return;
+    }
     aicore_cancel_scope_begin(m_cancelToken);
     m_active = true;
 #endif

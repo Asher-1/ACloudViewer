@@ -9,7 +9,7 @@
 
 #include <ggml-backend.h>
 
-#include "../common/ggml_backend_utils.hpp"
+#include "ggml_backend_utils.hpp"
 
 #if defined(AICORE_VULKAN_ALIKED)
 #include "gpu_sync.hpp"
@@ -18,8 +18,10 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <exception>
 #include <vector>
 
 namespace lightglue::internal {
@@ -32,13 +34,43 @@ std::string Lower(std::string value) {
     return value;
 }
 
-bool VulkanSchedEnabledByEnv() {
-    const char *env = std::getenv("LIGHTGLUE_ALIKED_VULKAN_SCHED");
-    if (env == nullptr || env[0] == '\0') {
-        return false;
-    }
+bool EnvEnabled(const char *name, bool default_value) {
+    const char *env = std::getenv(name);
+    if (env == nullptr || env[0] == '\0') return default_value;
     return std::strcmp(env, "0") != 0 && Lower(env) != "false" &&
            Lower(env) != "off";
+}
+
+VulkanAlikedConfig SnapshotVulkanConfig() {
+    VulkanAlikedConfig config;
+    config.initialized = true;
+    // The custom Vulkan ALIKED kernels are not parity-qualified yet.  The
+    // regular ggml graph still executes on Vulkan; this only selects the
+    // exact CPU bridge for ALIKED's custom operators.  Do not let a process
+    // environment variable re-enable an unqualified path in a GUI session.
+    config.compute = false;
+    // The current custom command-buffer implementation for these two stages
+    // has not completed its lifecycle/parity qualification. Do not expose a
+    // process-environment escape hatch that can make a GUI session lose its
+    // Vulkan device. The future batch API will opt in through Session config.
+    config.gpu_upsample = false;
+    // Per-stage DCN values alone are insufficient: they still destabilize
+    // cross-image LightGlue matching. Keep the exact CPU bridge until the
+    // full extractor-and-matcher parity suite qualifies this path.
+    config.dcn = false;
+    config.postprocess = EnvEnabled("LIGHTGLUE_ALIKED_VULKAN_POST", false);
+    config.sddh = false;
+    config.defer_sync = EnvEnabled("LIGHTGLUE_ALIKED_VULKAN_DEFER_SYNC", false);
+    config.scheduler = EnvEnabled("LIGHTGLUE_ALIKED_VULKAN_SCHED", false);
+    config.scheduler_tail_only =
+            EnvEnabled("LIGHTGLUE_ALIKED_VULKAN_SCHED_TAIL", false);
+    config.fresh_extract =
+            EnvEnabled("LIGHTGLUE_ALIKED_VULKAN_FRESH_EXTRACT", true);
+    // Vulkan convolution accumulation changes detector scores at dynamic
+    // aspect ratios. Keep the exact bridge until a representative parity
+    // matrix qualifies every convolution shape used by ALIKED.
+    config.force_cpu_conv = true;
+    return config;
 }
 
 }  // namespace
@@ -54,6 +86,11 @@ bool Backend::Init(const std::string &request, int num_threads) {
     if (!lease) return false;
     handle = lease.handle();
     device = lease.device();
+    // Rewarming a Vulkan backend belongs to the same Session and preserves
+    // its original policy even when another component changes its env.
+    if (IsVulkan() && !vulkan_config.initialized) {
+        vulkan_config = SnapshotVulkanConfig();
+    }
 
     {
         const auto backend_lock = Lock();
@@ -66,13 +103,7 @@ bool Backend::Init(const std::string &request, int num_threads) {
         return false;
     }
 
-#if defined(AICORE_VULKAN_ALIKED)
-    if (IsVulkan()) {
-        lightglue::aliked_internal::ApplyVulkanAlikedPerfDefaults();
-    }
-#endif
-
-    if (IsVulkan() && VulkanSchedEnabledByEnv()) {
+    if (IsVulkan() && vulkan_config.scheduler) {
         cpu_lease =
                 aicore::runtime::acquire_backend_lease("cpu", threads, &error);
         cpu_backend = cpu_lease.handle();
@@ -183,8 +214,18 @@ void Backend::Release() {
     const auto backend_lock = Lock();
 #if defined(AICORE_VULKAN_ALIKED)
     if (IsVulkan() && handle != nullptr) {
-        lightglue::aliked_internal::VkAlikedQueueIdle(handle);
-        ggml_backend_synchronize(handle);
+        try {
+            lightglue::aliked_internal::VkAlikedQueueIdle(handle);
+            ggml_backend_synchronize(handle);
+        } catch (const std::exception &e) {
+            // A lost device cannot be recovered in-place. Destruction must
+            // still release host resources without terminating the GUI.
+            std::fprintf(stderr, "[vk-aliked] backend release: %s\n", e.what());
+        } catch (...) {
+            std::fprintf(stderr,
+                         "[vk-aliked] backend release failed with unknown "
+                         "exception\n");
+        }
     }
 #endif
     if (sched != nullptr) {

@@ -24,6 +24,7 @@
 #include <QtConcurrent>
 
 #include "aicore/facedetect_capi.h"
+#include "aicore/runtime_capi.h"
 #include "ecvClickableImageLabel.h"
 #include "ecvModelDownloader.h"
 
@@ -104,6 +105,11 @@ public:
 
     /** Stop stream and free GGUF face detector (dialog close / GPU cleanup). */
     void releaseGpuResources();
+
+    /** The capture detector follows the parent reconstruction device choice. */
+    void setInferenceDevice(const QString& device);
+    QString inferenceDevice() const { return m_inferenceDevice; }
+    void requestInferenceCancel();
 
     void refreshDetectorList();
 
@@ -253,6 +259,8 @@ private:
 
     ecvModelDownloader* m_downloader = nullptr;
     aicore_facedetect_ctx* m_ggmlCtx = nullptr;
+    aicore_cancel_token* m_inferenceCancelToken = nullptr;
+    QString m_inferenceDevice = QStringLiteral("auto");
     QString m_loadedGgmlPath;
     QString m_pendingGgmlPath;
 

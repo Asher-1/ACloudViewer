@@ -12,11 +12,28 @@
 #include <functional>
 #include <string>
 
-#include "../common/ggml_backend_registry.hpp"
+#include "ggml_backend_registry.hpp"
 
 struct ggml_cgraph;
 
 namespace lightglue::internal {
+
+// Vulkan execution policy is sampled when an ALIKED session is created.  It
+// must never be read from or written to the process environment during graph
+// execution: multiple contexts can then coexist with deterministic policies.
+struct VulkanAlikedConfig {
+    bool initialized = false;
+    bool compute = true;
+    bool gpu_upsample = false;
+    bool dcn = true;
+    bool postprocess = false;
+    bool sddh = false;
+    bool defer_sync = false;
+    bool scheduler = false;
+    bool scheduler_tail_only = false;
+    bool fresh_extract = true;
+    bool force_cpu_conv = false;
+};
 
 struct Backend {
     aicore::runtime::BackendLease lease;
@@ -27,6 +44,7 @@ struct Backend {
     ggml_backend_sched_t sched = nullptr;
     ggml_gallocr_t allocator = nullptr;
     bool use_sched = false;
+    VulkanAlikedConfig vulkan_config;
     std::string device;
     std::string error;
 

@@ -13,6 +13,8 @@
 
 #include "aicore/export.h"
 
+struct aicore_cancel_token;
+
 namespace aicore {
 namespace depth {
 
@@ -30,20 +32,24 @@ struct AICORE_CXX_API ImageDepthResult {
 //! Qt image helpers for the depth module. Inference lives in libAICore.so.
 class AICORE_CXX_API ImageDepth {
 public:
-    static bool isAvailable();
+    static bool isAvailable(const QString& device = QStringLiteral("auto"));
 
     static bool estimateDepth(const QImage& image,
                               const QString& model_path,
                               int n_threads,
                               ImageDepthResult& out,
-                              const QString& metric_model_path = QString());
+                              const QString& metric_model_path = QString(),
+                              const QString& device = QStringLiteral("auto"),
+                              aicore_cancel_token* cancel_token = nullptr);
 
     static bool estimateDepthAndPose(
             const QImage& image,
             const QString& model_path,
             int n_threads,
             ImageDepthResult& out,
-            const QString& metric_model_path = QString());
+            const QString& metric_model_path = QString(),
+            const QString& device = QStringLiteral("auto"),
+            aicore_cancel_token* cancel_token = nullptr);
 };
 
 }  // namespace depth

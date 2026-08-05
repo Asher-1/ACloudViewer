@@ -216,19 +216,24 @@ void copyDepthResult(const aicore::depth::ImageDepthResult& src,
 bool ccImage::estimateDepth(const QString& model_path,
                             int n_threads,
                             DepthResult& out,
-                            const QString& metric_model_path) const {
+                            const QString& metric_model_path,
+                            const QString& device,
+                            aicore_cancel_token* cancel_token) const {
 #ifndef AICore_ENABLED
     Q_UNUSED(model_path);
     Q_UNUSED(n_threads);
     Q_UNUSED(out);
     Q_UNUSED(metric_model_path);
+    Q_UNUSED(device);
+    Q_UNUSED(cancel_token);
     return false;
 #else
     if (m_image.isNull()) return false;
 
     aicore::depth::ImageDepthResult result;
     if (!aicore::depth::ImageDepth::estimateDepth(
-                m_image, model_path, n_threads, result, metric_model_path)) {
+                m_image, model_path, n_threads, result, metric_model_path,
+                device, cancel_token)) {
         return false;
     }
     copyDepthResult(result, out);
@@ -239,19 +244,24 @@ bool ccImage::estimateDepth(const QString& model_path,
 bool ccImage::estimateDepthAndPose(const QString& model_path,
                                    int n_threads,
                                    DepthResult& out,
-                                   const QString& metric_model_path) const {
+                                   const QString& metric_model_path,
+                                   const QString& device,
+                                   aicore_cancel_token* cancel_token) const {
 #ifndef AICore_ENABLED
     Q_UNUSED(model_path);
     Q_UNUSED(n_threads);
     Q_UNUSED(out);
     Q_UNUSED(metric_model_path);
+    Q_UNUSED(device);
+    Q_UNUSED(cancel_token);
     return false;
 #else
     if (m_image.isNull()) return false;
 
     aicore::depth::ImageDepthResult result;
     if (!aicore::depth::ImageDepth::estimateDepthAndPose(
-                m_image, model_path, n_threads, result, metric_model_path)) {
+                m_image, model_path, n_threads, result, metric_model_path,
+                device, cancel_token)) {
         return false;
     }
     copyDepthResult(result, out);

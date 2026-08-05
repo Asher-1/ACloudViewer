@@ -18,6 +18,7 @@
 // Skip (77): missing assets or backend unavailable
 
 #include <QImage>
+#include <QImageReader>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -41,7 +42,9 @@ bool LoadRgbImage(const char* path, RgbImage* out) {
     if (path == nullptr || out == nullptr) {
         return false;
     }
-    QImage img(QString::fromUtf8(path));
+    QImageReader reader(QString::fromUtf8(path));
+    reader.setAutoTransform(true);
+    QImage img = reader.read();
     if (img.isNull()) {
         return false;
     }
@@ -130,15 +133,6 @@ bool FeaturesLookValid(const aicore_lightglue_features& f) {
     return true;
 }
 
-void ClearVulkanEnvOverrides() {
-    unsetenv("LIGHTGLUE_ALIKED_VULKAN_COMPUTE");
-    unsetenv("LIGHTGLUE_ALIKED_VULKAN_SDDH");
-    unsetenv("LIGHTGLUE_ALIKED_VULKAN_SCHED");
-    unsetenv("LIGHTGLUE_ALIKED_VULKAN_POST");
-    unsetenv("LIGHTGLUE_ALIKED_DKD_DEBUG");
-    unsetenv("LIGHTGLUE_ALIKED_DCN_DEBUG");
-}
-
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -174,8 +168,6 @@ int main(int argc, char** argv) {
 
     const int32_t max_kpts = (argc >= 4) ? std::atoi(argv[3]) : 256;
     const int32_t resize = (argc >= 5) ? std::atoi(argv[4]) : 512;
-
-    ClearVulkanEnvOverrides();
 
     aicore_lightglue_features cpu{};
     aicore_lightglue_features vk{};

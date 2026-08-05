@@ -20,7 +20,7 @@ cmake -DBUILD_GUI=ON \
 make -j4 QDEEPLSD_PLUGIN
 ```
 
-DeepLSD GGML sources live in `core/AICore/src/deeplsd/` (in-tree, no external repo path).
+DeepLSD GGML sources live in `core/AICore/src/tasks/deeplsd/` (in-tree, no external repo path).
 
 ## Models
 
