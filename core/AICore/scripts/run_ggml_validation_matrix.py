@@ -54,10 +54,7 @@ def main() -> int:
         "--images",
         nargs="+",
         default=[
-            str(
-                Path.home()
-                / ".cursor/projects/home-ludahai-develop-code-github-ACloudViewer/assets/example-65c22ba6-267e-47c8-8747-d75c3a249d6e.png"
-            ),
+            str(ROOT / "examples/test_data/image/00000.png"),
         ],
     )
     args = parser.parse_args()

@@ -62,7 +62,7 @@ git push origin main
 **For documentation updates**:
 ```bash
 # 1. Edit source files or code
-vim docs/source/intro.rst
+vim docs/source/getting_started/introduction.rst
 # or modify Python docstrings
 
 # 2. Commit and push

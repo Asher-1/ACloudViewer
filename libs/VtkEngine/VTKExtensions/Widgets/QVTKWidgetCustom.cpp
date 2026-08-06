@@ -7,6 +7,8 @@
 
 #include "QVTKWidgetCustom.h"
 
+#include <QtCompat.h>
+
 #include "VtkUtils/rendererslayoutalgo.h"
 #include "VtkUtils/utils.h"
 #include "VtkUtils/vtkutils.h"
@@ -1070,8 +1072,8 @@ void QVTKWidgetCustom::mousePressEvent(QMouseEvent* event) {
     curMouseMoved() = false;
     curMouseButtonPressed() = true;
     curIgnoreMouseReleaseEvent() = false;
-    curLastMousePos() = event->pos();
-    curLastMousePressPos() = event->pos();
+    curLastMousePos() = qtCompatMouseEventPosInt(event);
+    curLastMousePressPos() = qtCompatMouseEventPosInt(event);
 
     if (handleCameraOrientationMouse(event, QEvent::MouseButtonPress)) {
         event->accept();
@@ -1083,7 +1085,7 @@ void QVTKWidgetCustom::mousePressEvent(QMouseEvent* event) {
 
     if (isSignalOnlyInteraction(curInteractionFlags())) {
         m_signalOnlyButtons = event->buttons() | event->button();
-        curLastMousePos() = event->pos();
+        curLastMousePos() = qtCompatMouseEventPosInt(event);
         curMouseButtonPressed() = true;
 
         const Qt::MouseButtons btns = m_signalOnlyButtons;
@@ -1579,9 +1581,11 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                 (ecvGenericGLDisplay::FromWidget(this) == displayTarget());
 
         if (isActiveWidget) {
-            curLastMouseMovePos() = event->pos();
-            if (m_ownerView) emit m_ownerView->mousePosChanged(event->pos());
-            emit mousePosChanged(event->pos());
+            curLastMouseMovePos() = qtCompatMouseEventPosInt(event);
+            if (m_ownerView)
+                emit m_ownerView->mousePosChanged(
+                        qtCompatMouseEventPosInt(event));
+            emit mousePosChanged(qtCompatMouseEventPosInt(event));
 
             if (curInteractionFlags() &
                 ecvGenericGLDisplay::INTERACT_SIG_MOUSE_MOVED) {
@@ -1602,7 +1606,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
         }
 
         curMouseMoved() = true;
-        curLastMousePos() = event->pos();
+        curLastMousePos() = qtCompatMouseEventPosInt(event);
         event->accept();
         return;
     }
@@ -1621,7 +1625,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
         if (event->buttons() != Qt::NoButton) {
             updateScaleBarIfNeeded();
             curMouseMoved() = true;
-            curLastMousePos() = event->pos();
+            curLastMousePos() = qtCompatMouseEventPosInt(event);
             event->accept();
             return;
         }
@@ -1662,9 +1666,10 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
     const bool isActiveWidget =
             (ecvGenericGLDisplay::FromWidget(this) == displayTarget());
     if (isActiveWidget) {
-        curLastMouseMovePos() = event->pos();
-        if (m_ownerView) emit m_ownerView->mousePosChanged(event->pos());
-        emit mousePosChanged(event->pos());
+        curLastMouseMovePos() = qtCompatMouseEventPosInt(event);
+        if (m_ownerView)
+            emit m_ownerView->mousePosChanged(qtCompatMouseEventPosInt(event));
+        emit mousePosChanged(qtCompatMouseEventPosInt(event));
     }
 
     if ((curInteractionFlags() &
@@ -1946,7 +1951,8 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
                 bool directCameraRotationApplied = false;
                 switch (rotationMode) {
                     case BubbleViewMode: {
-                        QPoint posDelta = curLastMousePos() - event->pos();
+                        QPoint posDelta = curLastMousePos() -
+                                          qtCompatMouseEventPosInt(event);
 
                         if (std::abs(posDelta.x()) != 0) {
                             double delta_deg =
@@ -2025,7 +2031,7 @@ void QVTKWidgetCustom::mouseMoveEvent(QMouseEvent* event) {
     }
 
     curMouseMoved() = true;
-    curLastMousePos() = event->pos();
+    curLastMousePos() = qtCompatMouseEventPosInt(event);
     if (!m_labelClickedOnPress && !vtkHandledInteraction) {
         if (m_ownerView) emit m_ownerView->cameraParamChanged();
         emit cameraParamChanged();
@@ -2143,7 +2149,8 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
     // consumes mouse-move events internally (e.g. trackball rotation)
     // without our mouseMoveEvent override being invoked.
     const int mouseMovedDist =
-            (event->pos() - curLastMousePressPos()).manhattanLength();
+            (qtCompatMouseEventPosInt(event) - curLastMousePressPos())
+                    .manhattanLength();
     const bool isClick = (mouseMovedDist <= CLICK_DRAG_THRESHOLD_PX);
 
     // reset to default state
@@ -2270,7 +2277,7 @@ void QVTKWidgetCustom::mouseReleaseEvent(QMouseEvent* event) {
                     // first test if the user has clicked on a particular
                     // item on the screen
                     if (!ecvDisplayTools::ProcessClickableItems(x, y)) {
-                        curLastMousePos() = event->pos();
+                        curLastMousePos() = qtCompatMouseEventPosInt(event);
                         if (m_ownerView) {
                             m_ownerView->startDeferredPicking();
                         } else if (auto* dtPick = ecvViewManager::instance()

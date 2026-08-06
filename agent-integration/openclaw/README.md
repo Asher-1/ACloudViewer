@@ -62,7 +62,7 @@ pip install cli-anything-acloudviewer
 
 ### Cursor / Claude Code (MCP)
 
-See [../mcp/README.md](../mcp/README.md). Example `.cursor/mcp.json`:
+See [../mcp/README.md](../mcp/README.md). Example `.agents/mcp.json`:
 
 ```json
 {

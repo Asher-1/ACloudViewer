@@ -29,9 +29,11 @@
 #include <QResizeEvent>
 #include <QScrollArea>
 #include <QSettings>
+#ifdef HAS_OPENCV_FACE_CAPTURE
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QSqlQuery>
+#endif
 #include <QStandardPaths>
 #include <QTemporaryFile>
 #include <QUuid>

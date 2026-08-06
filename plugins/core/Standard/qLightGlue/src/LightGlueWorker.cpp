@@ -393,6 +393,57 @@ bool LightGlueWorker::runMatch() {
         return false;
     }
 
+    // Robustness across machines: the ggml Vulkan backend can emit a
+    // degenerate (all-zero) assignment for the LightGlue matcher on some GPUs,
+    // collapsing every keypoint to 0 mutual matches even though CPU/CUDA
+    // produce correct matches (cpu/cuda yield ~160 matches for the same pair).
+    // This is a backend numerical-correctness quirk, NOT a model-precision
+    // issue — f16/q8/f32 all exhibit it on Vulkan. When a GPU run returns 0
+    // matches, transparently retry the matcher on CPU. Features are host-side
+    // and backend-independent, so they are reused as-is.
+    if (matchRet == 0 && n_matches == 0 &&
+        aicore_is_gpu_device(m_settings.device.toUtf8().constData())) {
+        emit logMessage(
+                QStringLiteral("[LG] 0 matches on %1 — retrying matcher on CPU "
+                               "(ggml GPU backend workaround).")
+                        .arg(m_settings.device));
+        if (matches) aicore_lightglue_free_matches(matches);
+        matches = nullptr;
+        aicore_lightglue_free(ctx);
+        ctx = nullptr;
+
+        aicore_lightglue_options* cpuOpts = aicore_lightglue_options_new();
+        aicore_lightglue_options_set_device(cpuOpts, "cpu");
+        aicore_lightglue_options_set_threads(cpuOpts, m_settings.threads);
+        aicore_lightglue_options_set_min_score(cpuOpts, m_settings.minScore);
+        aicore_lightglue_options_set_matcher_type(cpuOpts,
+                                                  m_settings.matcherType);
+        ctx = aicore_lightglue_load_opts(
+                m_settings.modelPath.toStdString().c_str(), cpuOpts);
+        aicore_lightglue_options_free(cpuOpts);
+        if (!ctx) {
+            emit logMessage("[Error] CPU matcher fallback failed to load.");
+            m_pendingCtx = nullptr;
+            return false;
+        }
+        if (const char* err = aicore_lightglue_last_error(ctx)) {
+            emit logMessage(
+                    QString("[Error] CPU matcher fallback: %1").arg(err));
+            m_pendingCtx = ctx;
+            return false;
+        }
+        const int cpuRet = aicore_lightglue_run_match(ctx, &f0.view, &f1.view,
+                                                      &matches, &n_matches);
+        emit progressUpdate(94, 100);
+        if (cpuRet != 0) {
+            const char* matchErr = aicore_lightglue_last_error(ctx);
+            emit logMessage(QString("[Error] CPU matcher fallback failed: %1")
+                                    .arg(matchErr ? matchErr : "unknown"));
+            m_pendingCtx = ctx;
+            return false;
+        }
+    }
+
     LightGlueRunResult result;
     result.imagePath0 = m_settings.inputPaths[0];
     result.imagePath1 = m_settings.inputPaths[1];

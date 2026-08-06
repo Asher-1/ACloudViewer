@@ -107,7 +107,7 @@ const translations = {
         'download.python_step1_note': '💡 Due to file size exceeding PyPI limits, manual download is required',
         'download.python_step2_title': 'Install Wheel File',
         'download.python_step2_example': 'Example:',
-        'download.python_support_note': 'Supports Python 3.10-3.12 | Ubuntu 20.04+, macOS 10.15+, Windows 10+ (64-bit)',
+        'download.python_support_note': 'Supports Python 3.10-3.13 | Ubuntu 20.04+, macOS 10.15+, Windows 10+ (64-bit)',
         
         // Quick Start Section
         'quickstart.title': 'Quick Start',
@@ -328,7 +328,7 @@ const translations = {
         'download.python_step1_note': '💡 由于文件体积超过 PyPI 限制，需手动下载安装',
         'download.python_step2_title': '安装 Wheel 文件',
         'download.python_step2_example': '示例：',
-        'download.python_support_note': '支持 Python 3.10-3.12 | Ubuntu 20.04+, macOS 10.15+, Windows 10+ (64-bit)',
+        'download.python_support_note': '支持 Python 3.10-3.13 | Ubuntu 20.04+, macOS 10.15+, Windows 10+ (64-bit)',
         
         // 快速开始部分
         'quickstart.title': '快速开始',

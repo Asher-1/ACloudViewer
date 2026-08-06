@@ -8,7 +8,7 @@
 
 ## 安装
 
-从 Skill Market 下载并解压到 `~/.cursor/skills/infinite-qa-mode/`
+从 Skill Market 下载并解压到 `~/.agents/skills/infinite-qa-mode/`
 
 ## 使用
 

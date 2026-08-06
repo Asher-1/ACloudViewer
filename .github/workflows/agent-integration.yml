@@ -7,14 +7,14 @@ on:
     paths:
       - 'agent-integration/**'
       - 'plugins/core/Standard/qJSonRPCPlugin/**'
-      - '.cursor/mcp.json'
+      - '.agents/mcp.json'
       - '.github/workflows/agent-integration.yml'
   pull_request:
     types: [opened, reopened, synchronize]
     paths:
       - 'agent-integration/**'
       - 'plugins/core/Standard/qJSonRPCPlugin/**'
-      - '.cursor/mcp.json'
+      - '.agents/mcp.json'
       - '.github/workflows/agent-integration.yml'
 
 concurrency:

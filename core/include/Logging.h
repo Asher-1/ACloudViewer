@@ -145,7 +145,7 @@ public:
             std::ostringstream msg;
 #ifndef _WIN32
             msg << fmt::sprintf("%c[%d;%dm", 0x1B, highlight_text,
-                                (int)text_color + 30);
+                                static_cast<int>(text_color) + 30);
 #endif
             msg << text;
 #ifndef _WIN32

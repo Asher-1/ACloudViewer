@@ -1,6 +1,6 @@
 # AGENTS.md — ACloudViewer Guide
 
-Reference layout: Use this file when you need a **full-repo map** (build, modules, conventions). For scoped rules, also read `.cursor/rules/*.mdc`.
+Reference layout: Use this file when you need a **full-repo map** (build, modules, conventions). For scoped rules, also read `.agents/rules/*.mdc`.
 
 ## Project Overview
 
@@ -285,12 +285,12 @@ New AICore / reconstruction code may use `snake_case` for functions and `PascalC
 - Standard: `plugins/core/Standard/<Name>/` — `CMakeLists.txt`, `info.json`, `.qrc`, `README.md`
 - I/O: `plugins/core/IO/<Name>/`
 - Register with `AddPlugin(NAME ...)`; link `CVCoreLib`, `CVPluginAPI`, `CVPluginStub`
-- Scoped Cursor rules: `.cursor/rules/acloudviewer-plugin-dev.mdc`
+- Scoped Cursor rules: `.agents/rules/acloudviewer-plugin-dev.mdc`
 
 ### Agent integration
 
 - RPC methods: `category.action` in `JsonRPCPlugin::execute()`; update `rpcMethodsList()`
-- Scoped rules: `.cursor/rules/acloudviewer-agent-dev.mdc`
+- Scoped rules: `.agents/rules/acloudviewer-agent-dev.mdc`
 
 ### Formatting
 

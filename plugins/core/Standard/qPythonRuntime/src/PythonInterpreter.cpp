@@ -248,9 +248,45 @@ void PythonInterpreter::initialize(const PythonConfig &config)
         m_config = config.pythonCompatiblePaths();
         PyStatus status;
 
+        // Force UTF-8 mode (PEP 540) before the interpreter is initialized.
+        // utf8_mode lives on PyPreConfig (not PyConfig), so it must be set via
+        // pre-initialization to avoid filesystem-encoding failures in isolated
+        // mode when the locale is not set (e.g. init_fs_encoding codec errors).
+        PyPreConfig preConfig;
+        PyPreConfig_InitIsolatedConfig(&preConfig);
+        preConfig.utf8_mode = 1;
+        status = Py_PreInitialize(&preConfig);
+        if (PyStatus_Exception(status))
+        {
+            throw std::runtime_error(status.err_msg);
+        }
+
         PyConfig pyConfig;
         PyConfig_InitPythonConfig(&pyConfig);
         pyConfig.isolated = 1;
+        // Explicitly ignore the host environment (pyenv, PYTHONHOME, PYTHONPATH,
+        // ...) so "Bundled" mode always uses the install-path python.
+        pyConfig.use_environment = 0;
+
+        // Anchor stdlib discovery to the bundled/home python executable. Without
+        // this, PyConfig_Read derives the module search path from the host
+        // executable/environment, which can leak the machine's (pyenv) python
+        // into the interpreter and break init_fs_encoding (encodings codec).
+        // Only needed on POSIX bundled layouts (bin/python + lib/pythonX.Y);
+        // Windows bundled uses Lib/DLLs and its own program_name handling.
+#ifndef Q_OS_WINDOWS
+        if (const wchar_t *pythonHome = m_config.pythonHome();
+            pythonHome != nullptr && *pythonHome != L'\0')
+        {
+            const std::wstring programName = std::wstring(pythonHome) + L"/bin/python";
+            status = PyConfig_SetString(&pyConfig, &pyConfig.program_name, programName.c_str());
+            if (PyStatus_Exception(status))
+            {
+                PyConfig_Clear(&pyConfig);
+                throw std::runtime_error(status.err_msg);
+            }
+        }
+#endif
 
         status = PyConfig_SetString(&pyConfig, &pyConfig.home, m_config.pythonHome());
         if (PyStatus_Exception(status))
