@@ -11,6 +11,7 @@
 #include <ggml-backend.h>
 
 #include "gpu_sync.hpp"
+#include "gpu_tensor.hpp"
 #include "tensor_ops.hpp"
 #if defined(AICORE_VULKAN_ALIKED)
 #include "vulkan/vulkan_aliked_dispatch.hpp"

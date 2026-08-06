@@ -34,7 +34,7 @@ Merged patch (2026-08-03):
 
 The old 14-patch incremental chain was removed. Several later patches contained
 malformed multi-hunk context and duplicate merged numbering. Regenerate the
-single patch from a dirty ggml v0.17.0 reference tree with:
+single patch from a dirty ggml v0.18.1 reference tree with:
 
 ```bash
 3rdparty/ggml/patches/export_merged_aliked_patches.sh [path/to/LightGlue-GGML/third_party/ggml]

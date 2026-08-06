@@ -313,7 +313,7 @@ verify_environment() {
 mkdir -p "${ACLOUDVIEWER_LOCAL_ROOT}"
 install_spirv_headers
 if needs_bundled_vulkan_headers; then
-    echo "System Vulkan headers are too old for ggml 0.17; installing LunarG SDK ${VULKAN_SDK_VERSION}."
+    echo "System Vulkan headers are too old for ggml 0.18; installing LunarG SDK ${VULKAN_SDK_VERSION}."
     install_vulkan_sdk_tarball
 fi
 write_env_script

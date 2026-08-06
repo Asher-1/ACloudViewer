@@ -14,6 +14,7 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QPlainTextEdit>
+#include <QProgressBar>
 #include <QPushButton>
 #include <QSpinBox>
 #include <QVector>
@@ -103,6 +104,9 @@ private:
     static QString registryPathForModel(const QString& baseDir,
                                         const QString& modelFilename);
     void updateAuthPreview();
+    /** Disable action buttons + show busy status during synchronous inference.
+     */
+    void setProcessing(bool busy, const QString& busyHint = {});
 
     FaceRegistryStore m_store{QStringLiteral("")};
     QString m_modelPath;
@@ -111,6 +115,7 @@ private:
     float m_minDetectionScore = 0.5f;
     bool m_registryPathUserChosen = false;
     bool m_syncingModelControls = false;
+    QString m_statusLabelSavedText;
 
     QComboBox* m_modelCombo = nullptr;
     QComboBox* m_deviceCombo = nullptr;
@@ -127,6 +132,9 @@ private:
     QPlainTextEdit* m_authResultLabel = nullptr;
     QLabel* m_dbStatusLabel = nullptr;
     ecvClickableImageLabel* m_authPreviewLabel = nullptr;
+    QPushButton* m_registerBtn = nullptr;
+    QPushButton* m_authBtn = nullptr;
+    QProgressBar* m_progressBar = nullptr;
 
 #ifdef AICore_ENABLED
     FaceDetectModelContext m_embedContext;

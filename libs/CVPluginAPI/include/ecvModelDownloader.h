@@ -24,17 +24,31 @@ public:
     struct Request {
         QString url;
         QString destPath;
-        /** Reject cached files smaller than this (bytes). Default 1 MiB. */
-        qint64 minValidBytes = 1024 * 1024;
+        // Validation policy for the downloaded file. Both fields apply:
+        //   1. the file must be at least minBytes long (floor for
+        //      detecting truncated/empty responses), and
+        //   2. when requireGgufMagic is true, the first four bytes must
+        //      be the GGUF magic ("GGUF") — this is the canonical way to
+        //      tell a real model file from an HTML error page or an
+        //      empty/truncated download.
+        // minBytes default is 64 KiB: large enough to reject empty/HTML
+        // pages, small enough to admit the smallest ALIKED
+        // (aliked-n16rot-q8_0.gguf is ~714 KiB on disk).
+        qint64 minBytes = 64 * 1024;
+        bool requireGgufMagic = true;
     };
 
     explicit ecvModelDownloader(QObject* parent = nullptr);
     ~ecvModelDownloader() override;
 
+    /** Returns true if the file exists, meets minBytes, and (when
+     *  requireGgufMagic is true) starts with the GGUF magic bytes. */
     static bool isValidCachedFile(const QString& path,
-                                  qint64 minBytes = 1024 * 1024);
+                                  qint64 minBytes = 64 * 1024,
+                                  bool requireGgufMagic = true);
     static void removeInvalidCacheFile(const QString& path,
-                                       qint64 minBytes = 1024 * 1024);
+                                       qint64 minBytes = 64 * 1024,
+                                       bool requireGgufMagic = true);
 
     /** Human-readable size (B / KB / MB / GB). */
     static QString formatFileSize(qint64 bytes);
@@ -62,5 +76,6 @@ private:
     QString m_tmpPath;
     QString m_destPath;
     qint64 m_minValidBytes = 0;
+    bool m_requireGgufMagic = true;
     bool m_busy = false;
 };

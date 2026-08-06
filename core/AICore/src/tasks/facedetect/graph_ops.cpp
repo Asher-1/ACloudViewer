@@ -239,32 +239,6 @@ ggml_tensor* conv2d(ggml_context* ctx,
     const bool use_wino = wino && !dconv;
     const bool prefer_f4 = use_wino && winograd_f4_scope();
 
-    // CUDA + cuDNN: emit GGML_OP_CONV_2D (ggml_conv_2d_direct) instead of
-    // ggml_conv_2d's im2col + cuBLAS/cutlass SGEMM. ggml-cuda routes that op to
-    // a cuDNN implicit-GEMM (cudnn-conv.cu): the convolution is streamed from
-    // the NCHW activations with NO im2col global-memory spill (that one im2col
-    // kernel is ~50% of SCRFD detect's GPU time, nsys). ggml's conv tensors are
-    // already in cuDNN NCHW order, so consecutive convs stay NCHW with zero
-    // transpose tax. On GPU the CPU kernels (winograd/directconv/direct) are
-    // all gated off, so this captures every detector/recognizer conv (3x3
-    // backbone/neck/head stems and the 1x1 lateral/shortcut convs alike). The
-    // output layout [W,H,OC,N] matches ggml_conv_2d, so the bias-add + relu
-    // epilogue below is unchanged. A/B: FACEDETECT_CONV=im2col forces the
-    // legacy path (never emit the op); the kernel-level kill switch
-    // GGML_CUDA_USE_CUDNN=0 makes ggml-cuda fall back to the native conv on the
-    // same binary.
-    bool cudnn = false;
-#ifdef FACEDETECT_GGML_CUDNN
-    cudnn = !backend_is_cpu();
-    if (const char* mode = std::getenv("FACEDETECT_CONV")) {
-        if (!std::strcmp(mode, "im2col"))
-            cudnn = false;
-        else if (!std::strcmp(mode, "cudnn"))
-            cudnn = !backend_is_cpu();
-        // "auto" (or anything else) keeps the CUDA default above.
-    }
-#endif
-
     ggml_tensor* B = clone_weight_opt(ctx, ml, b);
     // Bias+ReLU fusion: for relu-activated Winograd convs, fold bias + max(0,x)
     // into the winograd output (inverse) transform store, removing the separate
@@ -278,13 +252,7 @@ ggml_tensor* conv2d(ggml_context* ctx,
     else if (use_wino)
         x = winograd_conv3x3(ctx, W, x, pad, prefer_f4,
                              wino_fused ? B : nullptr, relu);
-    else if (cudnn) {
-        x = ggml_conv_2d_direct(ctx, W, x, stride, stride, pad, pad, 1, 1);
-        // The unified ggml-cuda backend is shared by ALIKED, depth and
-        // Gaussian sessions. Mark only FaceDetect's explicit cuDNN nodes so
-        // the backend does not globally hijack unrelated GGML_OP_CONV_2D ops.
-        ggml_set_name(x, "facedetect.cudnn.conv2d");
-    } else if (direct)
+    else if (direct)
         x = ggml_conv_2d_direct(ctx, W, x, stride, stride, pad, pad, 1, 1);
     else
         x = ggml_conv_2d(ctx, W, x, stride, stride, pad, pad, 1, 1);

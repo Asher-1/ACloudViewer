@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Export the complete ALIKED Vulkan delta from a patched ggml v0.17.0 source
+# Export the complete ALIKED Vulkan delta from a patched ggml v0.18.1 source
 # tree, then prove that applying it to a clean tree recreates the same diff.
 #
 # Produces: aliked_merged/0001-vulkan-aliked.patch
@@ -9,7 +9,7 @@ set -euo pipefail
 PATCHES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${PATCHES_DIR}/../../.." && pwd)"
 REF_GGML="${1:-${GGML_PATCHED_SOURCE:-${REPO_ROOT}/build_app/ggml/src/ext_ggml}}"
-BASE_ARCHIVE="${GGML_V017_ARCHIVE:-${REPO_ROOT}/3rdparty_downloads/ggml/v0.17.0.tar.gz}"
+BASE_ARCHIVE="${GGML_V0181_ARCHIVE:-${REPO_ROOT}/3rdparty_downloads/ggml/v0.18.1.tar.gz}"
 OUT_DIR="${PATCHES_DIR}/aliked_merged"
 OUT_PATCH="${OUT_DIR}/0001-vulkan-aliked.patch"
 
@@ -18,7 +18,7 @@ if [[ ! -d "${REF_GGML}" ]]; then
     exit 1
 fi
 if [[ ! -f "${BASE_ARCHIVE}" ]]; then
-    echo "error: ggml v0.17.0 archive required at ${BASE_ARCHIVE}" >&2
+    echo "error: ggml v0.18.1 archive required at ${BASE_ARCHIVE}" >&2
     exit 1
 fi
 
@@ -90,4 +90,4 @@ if ! diff -qr --exclude='.git' "${WORKDIR}/reference" "${WORKDIR}/verify" >/dev/
 fi
 
 echo "wrote ${OUT_PATCH} ($(wc -l < "${OUT_PATCH}") lines)"
-echo "OK: clean v0.17.0 + merged patch matches selected ALIKED sources in ${REF_GGML}"
+echo "OK: clean v0.18.1 + merged patch matches selected ALIKED sources in ${REF_GGML}"

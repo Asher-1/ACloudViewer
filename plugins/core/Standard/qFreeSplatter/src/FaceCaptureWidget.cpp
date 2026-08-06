@@ -30,9 +30,11 @@
 #include <QScrollArea>
 #include <QSettings>
 #ifdef HAS_OPENCV_FACE_CAPTURE
+#if defined(HAS_QT_SQL)
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QSqlQuery>
+#endif
 #endif
 #include <QStandardPaths>
 #include <QTemporaryFile>
@@ -211,6 +213,10 @@ FaceCaptureWidget::FaceCaptureWidget(QWidget* parent) : QWidget(parent) {
 FaceCaptureWidget::~FaceCaptureWidget() {
     requestInferenceCancel();
     stopCamera();
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    // Ensure camera is released on destruction
+    if (m_camera.isOpened()) m_camera.release();
+#endif
     if (m_ggmlLoadWatcher && m_ggmlLoadWatcher->isRunning()) {
         m_ggmlLoadWatcher->waitForFinished();
     }
@@ -583,6 +589,7 @@ void FaceCaptureWidget::reloadRegistry() {
         return;
     }
 
+#if defined(HAS_OPENCV_FACE_CAPTURE) && defined(HAS_QT_SQL)
     const QString connection =
             QStringLiteral("qfs_face_registry_") +
             QUuid::createUuid().toString(QUuid::WithoutBraces);
@@ -633,6 +640,14 @@ void FaceCaptureWidget::reloadRegistry() {
         }
         return;
     }
+#else
+    if (m_registryStatusLabel) {
+        m_registryStatusLabel->setText(
+                tr("Registry loading requires Qt SQL support (not available in "
+                   "this build)."));
+    }
+    return;
+#endif
 
     if (m_registryList) {
         for (size_t i = 0; i < m_registryIdentities.size(); ++i) {
@@ -690,6 +705,20 @@ QString FaceCaptureWidget::videoFilePath() const {
 bool FaceCaptureWidget::startVideoFile(const QString& path) {
 #ifdef HAS_OPENCV_FACE_CAPTURE
     if (path.isEmpty()) return false;
+
+    // Resume from paused state if same video
+    if (m_videoPaused && m_camera.isOpened() && m_videoFilePath == path &&
+        m_inputSource == InputSource::VideoFile) {
+        m_videoPaused = false;
+        m_cameraActive = true;
+        m_ggmlFrameSkip = 0;
+        aicore_cancel_token_reset(m_inferenceCancelToken);
+        m_frameTimer->start();
+        m_statusLabel->setText(tr("Resuming video"));
+        emit cameraStarted();
+        return true;
+    }
+
     // Cancel and drain the previous session before issuing any work for the
     // new video. Doing this after scheduleGgmlModelLoad would cancel the new
     // model load through the shared task token.
@@ -732,6 +761,22 @@ bool FaceCaptureWidget::startVideoFile(const QString& path) {
 #else
     Q_UNUSED(path);
     return false;
+#endif
+}
+
+void FaceCaptureWidget::restartVideoFile() {
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    if (!m_camera.isOpened() || m_videoFilePath.isEmpty()) return;
+    m_camera.set(cv::CAP_PROP_POS_FRAMES, 0);
+    if (!m_cameraActive) {
+        m_videoPaused = false;
+        m_cameraActive = true;
+        m_ggmlFrameSkip = 0;
+        aicore_cancel_token_reset(m_inferenceCancelToken);
+        m_frameTimer->start();
+        m_statusLabel->setText(tr("Restarted video"));
+        emit cameraStarted();
+    }
 #endif
 }
 
@@ -1144,7 +1189,16 @@ void FaceCaptureWidget::stopCamera() {
     if (m_frameTimer) m_frameTimer->stop();
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
-    if (m_camera.isOpened()) m_camera.release();
+    // For video files: pause (don't release) so we can resume from same
+    // position
+    if (m_inputSource == InputSource::VideoFile && m_camera.isOpened()) {
+        // Just pause — keep camera open for resume
+        m_videoPaused = true;
+    } else if (m_camera.isOpened()) {
+        m_camera.release();
+        m_videoFilePath.clear();
+        m_videoPaused = false;
+    }
 #endif
 
     if (m_cameraActive) {
@@ -1391,7 +1445,20 @@ void FaceCaptureWidget::captureCurrentFrame() {
 }
 
 void FaceCaptureWidget::resetCapture() {
-    resetIdentityTrack();
+    // Reset capture progress but preserve identity tracking setup.
+    // Identity tracks represent the user's tracking intent (which registered
+    // persons to follow) — clearing them would force the user to re-select
+    // identities after every reset.  Only per-track progress is cleared.
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    for (auto& track : m_identityTracks) {
+        track.frames.clear();
+        track.cooldown = 0;
+        track.consecutiveDetections = 0;
+        track.lastRect = cv::Rect();
+        track.lastDistance = 1.f;
+    }
+#endif
+
     m_targetAngles.clear();
     m_capturedFrames.clear();
     m_currentAngleIndex = 0;

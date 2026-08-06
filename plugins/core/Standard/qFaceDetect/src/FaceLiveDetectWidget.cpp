@@ -8,6 +8,7 @@
 #include "FaceLiveDetectWidget.h"
 
 #include <QCoreApplication>
+#include <QDateTime>
 #include <QDir>
 #include <QFileDialog>
 #include <QFileInfo>
@@ -74,6 +75,26 @@ FaceLiveDetectWidget::FaceLiveDetectWidget(QWidget* parent) : QWidget(parent) {
             &QObject::deleteLater);
     connect(m_inferWorker, &FaceLiveDetectInferWorker::inferComplete, this,
             &FaceLiveDetectWidget::onInferComplete, Qt::QueuedConnection);
+    connect(
+            m_inferWorker, &FaceLiveDetectInferWorker::modelPreloadComplete,
+            this,
+            [this](bool ok) {
+                m_preloadingModel = false;
+                if (m_preloadProgress) {
+                    m_preloadProgress->setMaximum(100);
+                    m_preloadProgress->setValue(0);
+                    m_preloadProgress->setTextVisible(false);
+                }
+                if (!ok || !m_streamActive) {
+                    if (!ok && m_statusLabel) {
+                        m_statusLabel->setText(
+                                tr("Model loading failed (check model path)."));
+                    }
+                    return;
+                }
+                beginFrameProcessing();
+            },
+            Qt::QueuedConnection);
     m_inferThread->start();
 
     m_frameTimer = new QTimer(this);
@@ -86,6 +107,10 @@ FaceLiveDetectWidget::FaceLiveDetectWidget(QWidget* parent) : QWidget(parent) {
 FaceLiveDetectWidget::~FaceLiveDetectWidget() {
     saveSettings();
     stopStream();
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    // Ensure capture is released on destruction
+    if (m_capture.isOpened()) m_capture.release();
+#endif
     shutdownInferThread();
 }
 
@@ -114,6 +139,24 @@ void FaceLiveDetectWidget::setupUi() {
             "border: 1px solid palette(mid); background: #111; color: #888;");
     m_previewLabel->setText(tr("Live preview"));
     main->addWidget(m_previewLabel, 1);
+
+    m_preloadProgress = new QProgressBar(this);
+    m_preloadProgress->setFixedHeight(18);
+    m_preloadProgress->setTextVisible(false);
+    m_preloadProgress->setMaximum(100);
+    m_preloadProgress->setValue(0);
+    m_preloadProgress->setSizePolicy(QSizePolicy::Expanding,
+                                     QSizePolicy::Fixed);
+    main->addWidget(m_preloadProgress);
+
+    m_videoPositionProgress = new QProgressBar(this);
+    m_videoPositionProgress->setFixedHeight(16);
+    m_videoPositionProgress->setTextVisible(false);
+    m_videoPositionProgress->setMaximum(100);
+    m_videoPositionProgress->setValue(0);
+    m_videoPositionProgress->setSizePolicy(QSizePolicy::Expanding,
+                                           QSizePolicy::Fixed);
+    main->addWidget(m_videoPositionProgress);
 
     auto* settingsGroup = new QGroupBox(tr("Stream settings"), this);
     auto* grid = new QGridLayout(settingsGroup);
@@ -780,6 +823,7 @@ void FaceLiveDetectWidget::submitInferJob(const QImage& inferRgb,
 
     QMetaObject::invokeMethod(m_inferWorker, "runJob", Qt::QueuedConnection,
                               Q_ARG(FaceLiveDetectInferWorker::Job, job));
+    m_inferSubmitTime.start();
 }
 
 void FaceLiveDetectWidget::onInferComplete(
@@ -787,6 +831,12 @@ void FaceLiveDetectWidget::onInferComplete(
     if (result.generation != m_streamGeneration) return;
     m_inferBusy = false;
     if (!m_streamActive) return;
+
+    // Calculate inference latency.
+    m_lastInferLatencyMs =
+            m_inferSubmitTime.isValid() ? m_inferSubmitTime.elapsed() : 0;
+    m_overlayTimestampMs = QDateTime::currentMSecsSinceEpoch();
+
     if (!result.ok) {
         m_statusLabel->setText(tr("Inference failed (check model path)."));
         return;
@@ -815,18 +865,21 @@ void FaceLiveDetectWidget::onInferComplete(
         const int identified = result.identifiedCount;
         const int total = static_cast<int>(result.snapshot.faces.size());
         m_statusLabel->setText(
-                tr("Recognize — %1 face(s), %2 identified, %3 unknown, "
-                   "match dist ≤ %4")
+                tr("Recognize \u2014 %1 face(s), %2 identified, %3 unknown, "
+                   "match dist \u2264 %4, latency %5 ms")
                         .arg(total)
                         .arg(identified)
                         .arg(total - identified)
-                        .arg(m_config.recognizeMaxDistance, 0, 'f', 2));
+                        .arg(m_config.recognizeMaxDistance, 0, 'f', 2)
+                        .arg(m_lastInferLatencyMs));
     } else {
         m_statusLabel->setText(
-                tr("Detect — %1 above min score (%2 detected), min score %3")
+                tr("Detect \u2014 %1 above min score (%2 detected), "
+                   "min score %3, latency %4 ms")
                         .arg(result.snapshot.faces.size())
                         .arg(result.snapshot.totalDetected)
-                        .arg(m_config.minDetectionScore, 0, 'f', 2));
+                        .arg(m_config.minDetectionScore, 0, 'f', 2)
+                        .arg(m_lastInferLatencyMs));
     }
 }
 
@@ -846,6 +899,13 @@ void FaceLiveDetectWidget::processFrame() {
         } else {
             return;
         }
+    }
+
+    // Update video position progress bar.
+    if (m_videoPositionProgress && m_totalVideoFrames > 0) {
+        const int curFrame =
+                static_cast<int>(m_capture.get(cv::CAP_PROP_POS_FRAMES));
+        m_videoPositionProgress->setValue(curFrame);
     }
 
     QImage rgb = cvMatToQImage(frame);
@@ -885,6 +945,18 @@ void FaceLiveDetectWidget::drawLiveOverlay(QImage& frame) {
     const qreal sy = static_cast<qreal>(frame.height()) /
                      static_cast<qreal>(m_overlayInferSize.height());
 
+    // Overlay freshness: opacity decreases as overlay ages.
+    // 0–200 ms → full opacity;  200–1000 ms → linear fade to 0.4;  >1 s → 0.4.
+    const qint64 now = QDateTime::currentMSecsSinceEpoch();
+    const qint64 ageMs =
+            (m_overlayTimestampMs > 0) ? (now - m_overlayTimestampMs) : 0;
+    qreal overlayAlpha = 1.0;
+    if (ageMs > 200) {
+        overlayAlpha = qBound(0.4, 1.0 - (ageMs - 200) / 800.0, 1.0);
+    }
+    const int penAlpha = static_cast<int>(255 * overlayAlpha);
+    const int bgAlpha = static_cast<int>(180 * overlayAlpha);
+
     QPainter painter(&frame);
     painter.setRenderHint(QPainter::Antialiasing);
 
@@ -904,7 +976,8 @@ void FaceLiveDetectWidget::drawLiveOverlay(QImage& frame) {
                          (face.y2 - face.y1) * sy);
 
         // Face rectangle
-        QPen pen(isRecognize ? QColor(0, 200, 255) : QColor(0, 255, 0));
+        QPen pen(isRecognize ? QColor(0, 200, 255, penAlpha)
+                             : QColor(0, 255, 0, penAlpha));
         pen.setWidth(penW);
         painter.setPen(pen);
         painter.setBrush(Qt::NoBrush);
@@ -936,12 +1009,33 @@ void FaceLiveDetectWidget::drawLiveOverlay(QImage& frame) {
 
         const QRectF bgRect(bgX, bgY, bgW, bgH);
         painter.setPen(Qt::NoPen);
-        painter.setBrush(QColor(0, 0, 0, 180));
+        painter.setBrush(QColor(0, 0, 0, bgAlpha));
         painter.drawRoundedRect(bgRect, 2.0, 2.0);
-        painter.setPen(Qt::white);
+        painter.setPen(QColor(255, 255, 255, penAlpha));
         painter.drawText(
                 QRectF(bgX + pad, bgY + pad, bgW - 2.0 * pad, bgH - 2.0 * pad),
                 Qt::AlignLeft | Qt::AlignVCenter, text);
+    }
+
+    // "Processing\u2026" indicator while inference is running.
+    if (m_inferBusy) {
+        const int indFont = std::max(9, frame.height() / 60);
+        QFont ifont(QStringLiteral("sans-serif"), indFont);
+        ifont.setItalic(true);
+        painter.setFont(ifont);
+        const QFontMetrics ifm(ifont);
+        const QString indText = tr("Processing\u2026");
+        const qreal tw = ifm.horizontalAdvance(indText);
+        const qreal th = ifm.height();
+        const qreal px = frame.width() - tw - 8;
+        const qreal py = frame.height() - 6;
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(QColor(0, 0, 0, 160));
+        painter.drawRoundedRect(QRectF(px - 4, py - th - 2, tw + 8, th + 4),
+                                3.0, 3.0);
+        painter.setPen(QColor(255, 200, 60));
+        painter.drawText(QRectF(px, py - th, tw, th),
+                         Qt::AlignLeft | Qt::AlignVCenter, indText);
     }
 }
 
@@ -976,10 +1070,23 @@ bool FaceLiveDetectWidget::startCamera(int deviceIndex) {
     m_capture.set(cv::CAP_PROP_FRAME_WIDTH, 640);
     m_capture.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
     m_streamActive = true;
-    m_frameTimer->setInterval(33);
-    m_frameTimer->start();
-    m_statusLabel->setText(tr("Camera active"));
+    m_statusLabel->setText(tr("Camera active \u2014 loading model\u2026"));
     emit streamStarted();
+
+    // Start frame timer immediately so camera frames display right away.
+    beginFrameProcessing();
+
+    // Preload model before starting frame timer so first frame has overlay.
+    if (m_preloadProgress) {
+        m_preloadProgress->setMaximum(0);  // indeterminate
+        m_preloadProgress->setTextVisible(true);
+        m_preloadProgress->setFormat(tr("Loading model\u2026"));
+        m_preloadingModel = true;
+    }
+    QMetaObject::invokeMethod(
+            m_inferWorker, "preloadModel", Qt::QueuedConnection,
+            Q_ARG(QString, m_config.modelPath), Q_ARG(QString, m_config.device),
+            Q_ARG(int, m_config.threads));
     return true;
 #else
     Q_UNUSED(deviceIndex);
@@ -989,6 +1096,18 @@ bool FaceLiveDetectWidget::startCamera(int deviceIndex) {
 
 bool FaceLiveDetectWidget::startVideoFile(const QString& path) {
 #ifdef HAS_OPENCV_FACE_CAPTURE
+    // Resume from paused state if same video
+    if (m_videoPaused && m_capture.isOpened() && m_videoFilePath == path) {
+        m_videoPaused = false;
+        m_streamActive = true;
+        m_inferBusy = false;
+        beginFrameProcessing();
+        m_statusLabel->setText(tr("Resuming video"));
+        emit streamStarted();
+        return true;
+    }
+
+    // Stop previous stream (release capture if different video)
     stopStream();
     if (m_config.modelPath.isEmpty() ||
         !QFileInfo::exists(m_config.modelPath)) {
@@ -996,6 +1115,7 @@ bool FaceLiveDetectWidget::startVideoFile(const QString& path) {
                 tr("[Live] Set a detector GGUF on the Image / Batch tab."));
         return false;
     }
+    m_videoFilePath = path;
     if (!m_capture.open(path.toStdString(), cv::CAP_FFMPEG) &&
         !m_capture.open(path.toStdString(), cv::CAP_ANY)) {
         const QString err =
@@ -1006,10 +1126,35 @@ bool FaceLiveDetectWidget::startVideoFile(const QString& path) {
         return false;
     }
     m_streamActive = true;
-    m_frameTimer->setInterval(66);
-    m_frameTimer->start();
-    m_statusLabel->setText(tr("Playing video"));
+    m_totalVideoFrames =
+            static_cast<int>(m_capture.get(cv::CAP_PROP_FRAME_COUNT));
+    if (m_videoPositionProgress) {
+        m_videoPositionProgress->setMaximum(
+                m_totalVideoFrames > 0 ? m_totalVideoFrames : 100);
+        m_videoPositionProgress->setValue(0);
+        m_videoPositionProgress->setTextVisible(m_totalVideoFrames > 0);
+        m_videoPositionProgress->setFormat(
+                m_totalVideoFrames > 0 ? tr("Frame %v / %m") : tr("Frame %v"));
+    }
+    m_statusLabel->setText(tr("Video opened \u2014 loading model\u2026"));
     emit streamStarted();
+
+    // Start frame timer immediately so video frames display right away.
+    // Inference runs in parallel — early frames show without overlay until
+    // the model finishes loading.
+    beginFrameProcessing();
+
+    // Preload model before starting frame timer so first frame has overlay.
+    if (m_preloadProgress) {
+        m_preloadProgress->setMaximum(0);  // indeterminate
+        m_preloadProgress->setTextVisible(true);
+        m_preloadProgress->setFormat(tr("Loading model\u2026"));
+        m_preloadingModel = true;
+    }
+    QMetaObject::invokeMethod(
+            m_inferWorker, "preloadModel", Qt::QueuedConnection,
+            Q_ARG(QString, m_config.modelPath), Q_ARG(QString, m_config.device),
+            Q_ARG(int, m_config.threads));
     return true;
 #else
     Q_UNUSED(path);
@@ -1017,12 +1162,71 @@ bool FaceLiveDetectWidget::startVideoFile(const QString& path) {
 #endif
 }
 
+void FaceLiveDetectWidget::restartVideoFile() {
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    if (!m_capture.isOpened() || m_videoFilePath.isEmpty()) return;
+    m_capture.set(cv::CAP_PROP_POS_FRAMES, 0);
+    if (m_videoPositionProgress) {
+        m_videoPositionProgress->setValue(0);
+    }
+    if (!m_streamActive) {
+        m_videoPaused = false;
+        m_streamActive = true;
+        m_inferBusy = false;
+        beginFrameProcessing();
+        m_statusLabel->setText(tr("Restarted video"));
+        emit streamStarted();
+    }
+#endif
+}
+
+void FaceLiveDetectWidget::beginFrameProcessing() {
+    if (!m_streamActive) return;
+    const int interval =
+            (m_sourceCombo && m_sourceCombo->currentData().toInt() ==
+                                      static_cast<int>(InputSource::VideoFile))
+                    ? 66
+                    : 33;
+    m_frameTimer->setInterval(interval);
+    m_frameTimer->start();
+    if (m_sourceCombo && m_sourceCombo->currentData().toInt() ==
+                                 static_cast<int>(InputSource::VideoFile)) {
+        m_statusLabel->setText(tr("Playing video"));
+    } else {
+        m_statusLabel->setText(tr("Camera active"));
+    }
+}
+
 void FaceLiveDetectWidget::stopStream() {
     ++m_streamGeneration;
     if (m_frameTimer) m_frameTimer->stop();
+    m_preloadingModel = false;
+    if (m_preloadProgress) {
+        m_preloadProgress->setMaximum(100);
+        m_preloadProgress->setValue(0);
+        m_preloadProgress->setTextVisible(false);
+    }
+    // For video files: pause (don't release) so we can resume from same
+    // position
+    const bool isVideoFile =
+            (m_sourceCombo && m_sourceCombo->currentData().toInt() ==
+                                      static_cast<int>(InputSource::VideoFile));
 #ifdef HAS_OPENCV_FACE_CAPTURE
-    if (m_capture.isOpened()) m_capture.release();
+    if (isVideoFile && m_capture.isOpened()) {
+        // Just pause — keep capture open for resume
+        m_videoPaused = true;
+    } else if (m_capture.isOpened()) {
+        m_capture.release();
+        m_videoFilePath.clear();
+        m_videoPaused = false;
+    }
 #endif
+    m_totalVideoFrames = 0;
+    if (m_videoPositionProgress) {
+        m_videoPositionProgress->setMaximum(100);
+        m_videoPositionProgress->setValue(0);
+        m_videoPositionProgress->setTextVisible(false);
+    }
     if (m_streamActive) {
         m_streamActive = false;
         emit streamStopped();
@@ -1032,6 +1236,9 @@ void FaceLiveDetectWidget::stopStream() {
     m_overlayFaces.clear();
     m_overlayLabels.clear();
     m_overlayInferSize = QSize();
+    m_lastInferLatencyMs = 0;
+    m_overlayTimestampMs = 0;
+    m_inferSubmitTime = QElapsedTimer();
     if (m_captureBtn) m_captureBtn->setEnabled(false);
 }
 

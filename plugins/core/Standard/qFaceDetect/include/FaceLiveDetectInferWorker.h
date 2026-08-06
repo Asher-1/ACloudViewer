@@ -53,9 +53,13 @@ public:
 public slots:
     void runJob(FaceLiveDetectInferWorker::Job job);
     void releaseModel();
+    void preloadModel(const QString& modelPath,
+                      const QString& device,
+                      int threads);
 
 signals:
     void inferComplete(FaceLiveDetectInferWorker::Result result);
+    void modelPreloadComplete(bool ok);
 
 private:
 #ifdef AICore_ENABLED

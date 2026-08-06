@@ -135,10 +135,14 @@ int main(int argc, char** argv) {
     }
 
     std::string error;
-    if (!Extract(extractor, device, rgb0, max_keypoints, resize, &features0,
-                 &error) ||
-        !Extract(extractor, device, rgb1, max_keypoints, resize, &features1,
-                 &error)) {
+    auto t_extract0 = std::chrono::steady_clock::now();
+    const bool ok0 = Extract(extractor, device, rgb0, max_keypoints, resize,
+                             &features0, &error);
+    auto t_extract1 = std::chrono::steady_clock::now();
+    const bool ok1 = Extract(extractor, device, rgb1, max_keypoints, resize,
+                             &features1, &error);
+    auto t_extract2 = std::chrono::steady_clock::now();
+    if (!ok0 || !ok1) {
         std::fprintf(stderr, "FAIL: ALIKED extraction (%s): %s\n", device,
                      error.c_str());
         aicore_lightglue_free_features(&features0);
@@ -146,14 +150,22 @@ int main(int argc, char** argv) {
         aicore_lightglue_free(ctx);
         return 1;
     }
-    std::printf("ALIKED extracted: device=%s features=%d/%d dim=%d/%d\n",
-                device, features0.n_keypoints, features1.n_keypoints,
-                features0.descriptor_dim, features1.descriptor_dim);
+    std::printf(
+            "ALIKED extracted: device=%s features=%d/%d dim=%d/%d "
+            "extract0=%.1fms extract1=%.1fms\n",
+            device, features0.n_keypoints, features1.n_keypoints,
+            features0.descriptor_dim, features1.descriptor_dim,
+            std::chrono::duration<double, std::milli>(t_extract1 - t_extract0)
+                    .count(),
+            std::chrono::duration<double, std::milli>(t_extract2 - t_extract1)
+                    .count());
 
     aicore_lightglue_match* matches = nullptr;
     int32_t match_count = 0;
+    auto t_match_a = std::chrono::steady_clock::now();
     const int rc = aicore_lightglue_run_match(ctx, &features0, &features1,
                                               &matches, &match_count);
+    auto t_match_b = std::chrono::steady_clock::now();
     if (rc != 0 || match_count <= 0) {
         std::fprintf(stderr, "FAIL: LightGlue match (%s): count=%d error=%s\n",
                      device, match_count, aicore_lightglue_last_error(ctx));
@@ -166,9 +178,11 @@ int main(int argc, char** argv) {
 
     std::printf(
             "qLightGlue core e2e PASS: device=%s features=%d/%d matches=%d "
-            "resize=%d\n",
+            "resize=%d match=%.1fms\n",
             device, features0.n_keypoints, features1.n_keypoints, match_count,
-            resize);
+            resize,
+            std::chrono::duration<double, std::milli>(t_match_b - t_match_a)
+                    .count());
     aicore_lightglue_free_matches(matches);
     aicore_lightglue_free_features(&features0);
     aicore_lightglue_free_features(&features1);

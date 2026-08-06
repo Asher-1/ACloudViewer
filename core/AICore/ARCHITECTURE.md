@@ -25,7 +25,7 @@ flowchart LR
     CAPI --> SESS[Opaque model contexts]
     SESS --> GGML[Private ggml core]
     GGML --> CPU[CPU backend]
-    GGML --> CUDA[CUDA and cuDNN]
+    GGML --> CUDA[CUDA backend]
     GGML --> VK[Vulkan]
     GGML --> METAL[Metal]
 ```
@@ -86,9 +86,7 @@ backend-neutral.
 ### FaceDetect
 
 `src/tasks/facedetect/` supports YuNet/SCRFD detection, aligned SFace/ArcFace
-embeddings, dense landmarks, age/gender, and anti-spoofing. CUDA conv nodes are
-explicitly named `facedetect.cudnn.*`, so the shared ggml CUDA backend applies
-cuDNN only to FaceDetect graphs.
+embeddings, dense landmarks, age/gender, and anti-spoofing.
 
 Every FaceDetect context owns a Session with a compatible graph cache and
 leases a physical backend from the common registry. The implementation retains
@@ -212,7 +210,7 @@ Migration order:
 | Cancellation behavior | `include/aicore/runtime_capi.h`, `src/common/runtime_capi.cpp` |
 | New model C API | `include/aicore/<model>_capi.h`, `src/tasks/<model>/capi.cpp`, `tests/<model>/` |
 | ALIKED Vulkan operation | `src/tasks/aliked/vulkan/`, merged ggml patch exporter, ALIKED parity tests |
-| FaceDetect CUDA/cuDNN | `src/tasks/facedetect/graph_ops.cpp`, `src/tasks/facedetect/antispoof_graph.cpp`, `patches/cuda_cudnn/` |
+| FaceDetect CUDA | `src/tasks/facedetect/graph_ops.cpp`, `src/tasks/facedetect/antispoof_graph.cpp` |
 | Plugin task integration | Plugin worker class plus `runtime_capi.h`; use a caller-owned cancel token |
 
 ## Verification

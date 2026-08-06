@@ -71,6 +71,7 @@ public:
 
     bool startCamera(int deviceIndex = 0);
     bool startVideoFile(const QString& path);
+    void restartVideoFile();
     void stopCamera();
     void stopCapture();
     bool isCameraActive() const;
@@ -266,6 +267,7 @@ private:
 
     QTimer* m_frameTimer = nullptr;
     bool m_cameraActive = false;
+    bool m_videoPaused = false;  // video paused (not released) for resume
     InputSource m_inputSource = InputSource::Camera;
     QString m_videoFilePath;
     bool m_cascadeLoaded = false;

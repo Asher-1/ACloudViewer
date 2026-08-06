@@ -141,7 +141,6 @@ cmake --build . --config Release --target install
 | `AICore_USE_METAL` | Apple: ON, else OFF | Metal backend (Apple only; macOS Auto default) |
 | `AICore_USE_VULKAN` | Linux/Win: ON, macOS: OFF | **ON:** build Vulkan backend; configure **fails** if glslc/Vulkan/SPIR-V deps missing |
 | `AICore_USE_CUDA` | OFF | Developer CUDA backend (independent of `BUILD_CUDA_MODULE`). When ON, Auto becomes **CUDA → Vulkan → CPU** on Linux/Windows |
-| `AICore_USE_CUDNN` | OFF | FaceDetect cuDNN implicit-GEMM conv2d; requires `AICore_USE_CUDA=ON` and system cuDNN development files |
 | `AICore_USE_SYCL` | OFF | Intel GPU backend; requires oneAPI compiler and a validated runtime bundle |
 | `AICore_SYCL_USE_DNN` | ON | oneDNN kernels in SYCL backend (requires `AICore_USE_SYCL=ON`) |
 | `AICore_USE_OPENCL` | OFF | Legacy/Adreno developer opt-in; not part of desktop distributions |

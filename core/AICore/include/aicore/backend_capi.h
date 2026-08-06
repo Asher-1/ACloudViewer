@@ -33,7 +33,6 @@ enum aicore_backend_capability {
     AICORE_BACKEND_CAP_GPU = 1u << 1,
     AICORE_BACKEND_CAP_TASK_CANCEL = 1u << 2,
     AICORE_BACKEND_CAP_MULTI_DEVICE = 1u << 3,
-    AICORE_BACKEND_CAP_CUDNN_CONV2D = 1u << 4,
 };
 
 /* Model/device capability query. This is deliberately model-level rather

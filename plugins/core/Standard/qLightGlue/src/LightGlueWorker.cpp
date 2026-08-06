@@ -84,50 +84,21 @@ QString resolve_aliked_extractor_gguf(const QString& matcher_model_path) {
     baseStem.replace(QStringLiteral("aliked-lightglue"),
                      QStringLiteral("aliked-n16rot"));
 
-    // Build the ordered list of extractor variants.  The matcher may be q8,
-    // but the extractor is a small model and the dialog deliberately ships
-    // f16 for it.  Prefer that validated f16 artifact over an exact q8 name:
-    // selecting q8 here made the Vulkan extractor produce descriptors that
-    // disagreed with CPU/CUDA, even though the f16 extractor was present.
-    // The LightGlue matcher still uses the model selected by the user.
-    QStringList stems;
-
-    auto withQuant = [&](const QString& from, const QString& to) -> QString {
-        QString s = baseStem;
-        s.replace(from, to);
-        return s;
-    };
-    const QString f16 =
-            withQuant(QStringLiteral("-q8_0"), QStringLiteral("-f16"));
-    const QString f16b =
-            withQuant(QStringLiteral("-f32"), QStringLiteral("-f16"));
-    if (!stems.contains(f16)) stems << f16;
-    if (!stems.contains(f16b)) stems << f16b;
-    if (!stems.contains(baseStem)) stems << baseStem;
-    const QString q80 =
-            withQuant(QStringLiteral("-f16"), QStringLiteral("-q8_0"));
-    if (q80 != baseStem && !stems.contains(q80)) stems << q80;
-    const QString f32 =
-            withQuant(QStringLiteral("-f16"), QStringLiteral("-f32"));
-    if (f32 != baseStem && !stems.contains(f32)) stems << f32;
-
-    // Resolve model cache directory — same as matcher models
-    // (lightglue_models/).
+    // End-to-end matching must run the extractor and the matcher at the SAME
+    // quantization so the descriptor domain is consistent with the model the
+    // user picked. Only the exact-suffix extractor is acceptable; a missing
+    // artifact must surface as an error instead of silently mixing precisions
+    // (the dialog's ensureModelAvailable will prompt the download).
     const QString base = matcher.absolutePath();
 
-    // Try each variant in cache dir, then sibling dir
-    for (const QString& stem : stems) {
-        const QString cached = QDir(base).filePath(stem);
-        if (QFileInfo(cached).isFile()) return cached;
-    }
-    for (const QString& stem : stems) {
-        const QString sibling = matcher.absoluteDir().filePath(stem);
-        if (QFileInfo(sibling).isFile()) return sibling;
-    }
+    // Look in the cache dir, then the matcher's sibling directory
+    const QString cached = QDir(base).filePath(baseStem);
+    if (QFileInfo(cached).isFile()) return cached;
+    const QString sibling = matcher.absoluteDir().filePath(baseStem);
+    if (QFileInfo(sibling).isFile()) return sibling;
 
-    // Return preferred path (not found) — caller will report error or
-    // the dialog's ensureAlikedExtractorAvailable will trigger download.
-    return QDir(base).filePath(stems.first());
+    // Not found — caller will report error or download via the dialog.
+    return cached;
 }
 
 /// Map a resolved ggml device name (e.g. "CUDA0", "Vulkan") back to the

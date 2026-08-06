@@ -202,6 +202,13 @@ ggml_tensor *LinearForward(ggml_context *context,
                            const Linear &linear,
                            ggml_tensor *input) {
     ggml_tensor *output = ggml_mul_mat(context, linear.weight, input);
+    // Force fp32 accumulation for every Linear weight. The ggml Vulkan
+    // backend defaults to an fp16 accumulator, which loses precision in the
+    // 128-dim dot products that feed the assignment similarity matrix and
+    // corrupts the soft-max/argmax mutual check (0 matches). CPU/CUDA always
+    // accumulate in fp32, so this makes the Vulkan path parity with them.
+    // Applies to quantized AND f16/f32 weights.
+    ggml_mul_mat_set_prec(output, GGML_PREC_F32);
     if (linear.bias != nullptr) {
         output = ggml_add(context, output, linear.bias);
     }
@@ -339,6 +346,10 @@ Encoding PositionalEncoding(ggml_context *context,
                             int64_t head_dim,
                             int64_t tokens) {
     ggml_tensor *projected = ggml_mul_mat(context, weight, positions);
+    // Same fp32-accumulation requirement as LinearForward: the fp16 Vulkan
+    // accumulator loses too much precision for quantized AND f16 positional
+    // weights, destabilizing downstream matching.
+    ggml_mul_mat_set_prec(projected, GGML_PREC_F32);
     return {RepeatPairs(context, ggml_cos(context, projected), head_dim / 2,
                         tokens),
             RepeatPairs(context, ggml_sin(context, projected), head_dim / 2,
@@ -604,6 +615,12 @@ public:
         projected1 = ggml_scale(context, projected1, projection_scale);
         ggml_tensor *similarity = ggml_mul_mat(
                 context, projected1, projected0);  // [tokens1, tokens0]
+        // Force fp32 accumulation for the assignment similarity matrix. The
+        // attention scores above set GGML_PREC_F32; this op must too. On the
+        // ggml Vulkan backend the default (fp16) accumulator loses precision
+        // in the 128-dim dot products, which corrupts the soft-max/argmax
+        // mutual check and yields 0 matches (while CPU/CUDA give ~150+).
+        ggml_mul_mat_set_prec(similarity, GGML_PREC_F32);
         tap(similarity, "similarity");
 
         ggml_tensor *scores0 =
@@ -898,15 +915,36 @@ private:
     }
 
     bool RealizeWeights() {
-        bool expand_f16_for_cpu = false;
+        // Expand F16 weights to F32 for the CPU backend AND for the
+        // ggml-vulkan backend. On Vulkan the F16 matmul output is itself
+        // F16 and the GGML_PREC_F32 accumulator (set in LinearForward) only
+        // widens the FMA — it cannot recover information already lost when
+        // the F16 weight tensor was bound as the F16 input. The resulting
+        // assignment scores lose enough precision that the soft-max/argmax
+        // mutual check collapses to 0 matches. The f32 widening matches
+        // CPU/CUDA outputs and unlocks Vulkan matching on the f16 model.
+        bool expand_f16_for_backend = false;
         if (backend_.is_cpu()) {
             for (int64_t i = 0; i < file_.TensorCount(); ++i) {
                 const ggml_tensor *tensor =
                         ggml_get_tensor(file_.Context(), file_.TensorName(i));
-                expand_f16_for_cpu =
-                        expand_f16_for_cpu || tensor->type == GGML_TYPE_F16;
+                expand_f16_for_backend =
+                        expand_f16_for_backend || tensor->type == GGML_TYPE_F16;
+            }
+        } else {
+            const std::string &dev = backend_.device;
+            const bool is_vulkan = dev.find("Vulkan") != std::string::npos ||
+                                   dev.find("vulkan") != std::string::npos;
+            if (is_vulkan) {
+                for (int64_t i = 0; i < file_.TensorCount(); ++i) {
+                    const ggml_tensor *tensor = ggml_get_tensor(
+                            file_.Context(), file_.TensorName(i));
+                    expand_f16_for_backend = expand_f16_for_backend ||
+                                             tensor->type == GGML_TYPE_F16;
+                }
             }
         }
+        const bool expand_f16_for_cpu = expand_f16_for_backend;
         if (backend_.is_cpu() && !expand_f16_for_cpu) {
             void *base = ggml_get_mem_buffer(file_.Context());
             const size_t size = ggml_get_mem_size(file_.Context());

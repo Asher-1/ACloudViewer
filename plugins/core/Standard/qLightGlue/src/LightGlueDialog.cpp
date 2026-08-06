@@ -134,15 +134,29 @@ LightGlueDialog::LightGlueDialog(QWidget* parent) : QDialog(parent) {
                 Q_UNUSED(dest);
                 m_downloadInProgress = false;
                 m_downloadLabel->setVisible(false);
-                populateModelCombo(m_downloadTargetFilename);
-
                 if (m_downloadTargetFilename.startsWith(
                             QStringLiteral("aliked-n16rot"))) {
-                    // ALIKED extractor download finished
-                    appendLog(tr("[OK] Downloaded ALIKED extractor: %1")
-                                      .arg(dest));
+                    // ALIKED extractor download finished. The combo only
+                    // lists matcher filenames, so refresh while keeping the
+                    // current matcher selection (m_lastSelectedModel).
+                    populateModelCombo(m_lastSelectedModel);
+                    if (ok) {
+                        appendLog(tr("[OK] Downloaded ALIKED extractor: %1")
+                                          .arg(dest));
+                    } else {
+                        appendLog(tr("[Error] ALIKED extractor download "
+                                     "failed: %1")
+                                          .arg(dest));
+                    }
                     m_alikedExtractorPendingDownload = false;
                 } else {
+                    populateModelCombo(m_downloadTargetFilename);
+                    if (ok) {
+                        appendLog(tr("[OK] Downloaded model: %1").arg(dest));
+                    } else {
+                        appendLog(tr("[Error] Model download failed: %1")
+                                          .arg(dest));
+                    }
                     selectModelByFilename(m_downloadTargetFilename);
                     // Matcher download finished; if ALIKED extractor is
                     // also needed, start that download now.
@@ -1028,12 +1042,14 @@ QString LightGlueDialog::alikedExtractorCacheDir() {
 
 QString LightGlueDialog::alikedExtractorFilenameForMatcher(
         const QString& matcherFilename) {
+    // Derive the extractor GGUF from the matcher while keeping the SAME
+    // quantization suffix (f16/q8_0/f32). Matching must run extractor and
+    // matcher at the same precision so the descriptor domain is consistent;
+    // previously the q8_0 matcher was silently downgraded to an f16 extractor,
+    // which mixes precisions and is not what a user selecting q8_0 expects.
     QString stem = matcherFilename;
     stem.replace(QStringLiteral("aliked-lightglue"),
                  QStringLiteral("aliked-n16rot"));
-    if (stem.contains(QStringLiteral("-q8_0"))) {
-        stem.replace(QStringLiteral("-q8_0"), QStringLiteral("-f16"));
-    }
     return stem;
 }
 

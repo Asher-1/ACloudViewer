@@ -430,15 +430,18 @@ void FreeSplatterDialog::setupUi() {
         faceBtnLayout->setSpacing(6);
         m_faceStartBtn = new QPushButton(tr("Start Capture"));
         m_faceStopBtn = new QPushButton(tr("Stop Capture"));
+        m_faceRestartBtn = new QPushButton(tr("Restart"));
         m_faceStopBtn->setEnabled(false);
+        m_faceRestartBtn->setEnabled(false);
         m_faceResetBtn = new QPushButton(tr("Reset"));
         m_faceResetBtn->setEnabled(false);
-        for (QPushButton* btn :
-             {m_faceStartBtn, m_faceStopBtn, m_faceResetBtn}) {
+        for (QPushButton* btn : {m_faceStartBtn, m_faceStopBtn,
+                                 m_faceRestartBtn, m_faceResetBtn}) {
             btn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         }
         faceBtnLayout->addWidget(m_faceStartBtn);
         faceBtnLayout->addWidget(m_faceStopBtn);
+        faceBtnLayout->addWidget(m_faceRestartBtn);
         faceBtnLayout->addWidget(m_faceResetBtn);
         faceLayout->addLayout(faceBtnLayout);
 
@@ -446,6 +449,8 @@ void FreeSplatterDialog::setupUi() {
                 &FreeSplatterDialog::onFaceStartCamera);
         connect(m_faceStopBtn, &QPushButton::clicked, this,
                 &FreeSplatterDialog::onFaceStopCamera);
+        connect(m_faceRestartBtn, &QPushButton::clicked, this,
+                &FreeSplatterDialog::onFaceRestart);
         connect(m_faceResetBtn, &QPushButton::clicked, this,
                 &FreeSplatterDialog::onFaceReset);
         connect(m_faceCaptureWidget, &FaceCaptureWidget::captureComplete, this,
@@ -464,6 +469,7 @@ void FreeSplatterDialog::setupUi() {
                                 FaceCaptureWidget::CaptureAngle::Down15,
                         });
                     } else {
+                        m_faceRestartBtn->setEnabled(true);
                         m_faceCaptureWidget->startGuidedCapture({
                                 FaceCaptureWidget::CaptureAngle::Front,
                                 FaceCaptureWidget::CaptureAngle::Left45,
@@ -479,6 +485,12 @@ void FreeSplatterDialog::setupUi() {
                 [this]() {
                     m_faceStartBtn->setEnabled(true);
                     m_faceStopBtn->setEnabled(false);
+                    // Restart stays enabled if video is paused (can restart)
+                    if (m_faceCaptureWidget &&
+                        m_faceCaptureWidget->inputSource() !=
+                                FaceCaptureWidget::InputSource::VideoFile) {
+                        m_faceRestartBtn->setEnabled(false);
+                    }
                 });
         connect(m_faceCaptureWidget, &FaceCaptureWidget::frameCaptured, this,
                 [this](int idx, int total) {
@@ -1491,6 +1503,11 @@ void FreeSplatterDialog::onFaceStopCamera() {
     if (!m_faceCaptureWidget) return;
     m_faceCaptureWidget->requestInferenceCancel();
     m_faceCaptureWidget->stopCamera();
+}
+
+void FreeSplatterDialog::onFaceRestart() {
+    if (!m_faceCaptureWidget) return;
+    m_faceCaptureWidget->restartVideoFile();
 }
 
 void FreeSplatterDialog::onFaceReset() {
