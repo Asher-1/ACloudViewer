@@ -306,9 +306,6 @@ AICORE_CAPI unsigned int aicore_device_capabilities(const char* device) {
         caps |= AICORE_BACKEND_CAP_GPU;
         caps |= AICORE_BACKEND_CAP_MULTI_DEVICE;
     }
-#if defined(FACEDETECT_GGML_CUDNN)
-    if (backend == "cuda") caps |= AICORE_BACKEND_CAP_CUDNN_CONV2D;
-#endif
     return caps;
 }
 

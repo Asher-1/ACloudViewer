@@ -410,7 +410,7 @@ RUN tar -xvf eigen-3.4.0.tar.gz && \
     
 # Install metslib for pcl
 WORKDIR /opt
-RUN wget https://www.coin-or.org/download/source/metslib/metslib-0.5.3.tgz -O "/opt/metslib-0.5.3.tgz"
+RUN wget https://github.com/Asher-1/cloudViewer_downloads/releases/download/docker_files/metslib-0.5.3.tgz -O "/opt/metslib-0.5.3.tgz"
 RUN tar -xvf metslib-0.5.3.tgz && \
     cd metslib-0.5.3 && \
     sh ./configure && \
@@ -422,7 +422,7 @@ RUN tar -xvf metslib-0.5.3.tgz && \
 
 # Install laszip
 WORKDIR /opt
-RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/laszip-src-3.4.3.tar.gz -O "/opt/laszip-src-3.4.3.tar.gz"
+RUN wget https://github.com/Asher-1/cloudViewer_downloads/releases/download/docker_files/laszip-src-3.4.3.tar.gz -O "/opt/laszip-src-3.4.3.tar.gz"
 RUN tar -xvf laszip-src-3.4.3.tar.gz && \
     cd laszip-src-3.4.3 && \
     mkdir -p build && cd build && \
@@ -435,7 +435,7 @@ RUN tar -xvf laszip-src-3.4.3.tar.gz && \
 
 # Install xerces-c
 WORKDIR /opt
-RUN wget https://archive.apache.org/dist/xerces/c/3/sources/xerces-c-3.2.3.zip -O "/opt/xerces-c-3.2.3.zip"
+RUN wget https://github.com/Asher-1/cloudViewer_downloads/releases/download/docker_files/xerces-c-3.2.3.zip -O "/opt/xerces-c-3.2.3.zip"
 RUN unzip xerces-c-3.2.3.zip \
     && cd ./xerces-c-3.2.3 \
     && chmod +x configure \

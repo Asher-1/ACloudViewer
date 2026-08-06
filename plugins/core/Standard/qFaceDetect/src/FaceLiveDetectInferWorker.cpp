@@ -230,3 +230,31 @@ void FaceLiveDetectInferWorker::runJob(FaceLiveDetectInferWorker::Job job) {
     emit inferComplete(result);
 #endif
 }
+
+void FaceLiveDetectInferWorker::preloadModel(const QString& modelPath,
+                                             const QString& device,
+                                             int threads) {
+#ifdef AICore_ENABLED
+    if (modelPath.isEmpty() || !QFileInfo::exists(modelPath)) {
+        emit modelPreloadComplete(false);
+        return;
+    }
+    // Already loaded with the same configuration — nothing to do.
+    if (aicore_facedetect_is_ready(m_ctx) && m_loadedModelPath == modelPath &&
+        m_loadedDevice == device && m_loadedThreads == threads) {
+        emit modelPreloadComplete(true);
+        return;
+    }
+    Job dummy;
+    dummy.modelPath = modelPath;
+    dummy.device = device;
+    dummy.threads = threads;
+    const bool ok = ensureModel(dummy);
+    emit modelPreloadComplete(ok);
+#else
+    Q_UNUSED(modelPath);
+    Q_UNUSED(device);
+    Q_UNUSED(threads);
+    emit modelPreloadComplete(false);
+#endif
+}

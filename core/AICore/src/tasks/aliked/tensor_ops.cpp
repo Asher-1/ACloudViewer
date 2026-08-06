@@ -46,29 +46,43 @@ void Conv2d(const std::vector<float> &input,
     *oh = (ih + 2 * pad - kh) / stride + 1;
     *ow = (iw + 2 * pad - kw) / stride + 1;
     output->assign(static_cast<size_t>(oc) * (*oh) * (*ow), 0.0f);
-
+    const int32_t OY = *oh;
+    const int32_t OX = *ow;
+    const size_t spatial = static_cast<size_t>(OY) * static_cast<size_t>(OX);
+    // ALIKED on CPU: this 6-level nested loop is the dominant cost.
+    // Parallelize over (output-channel, output-row) — each iteration is
+    // independent and the input scratchpad fits in L2/L3 cache. We use
+    // collapse(2) so the OpenMP runtime can schedule work onto the available
+    // cores without overhead per channel.
+#if defined(_OPENMP)
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(CpuTensorThreads())
+#endif
     for (int32_t o = 0; o < oc; ++o) {
-        for (int32_t oy = 0; oy < *oh; ++oy) {
-            for (int32_t ox = 0; ox < *ow; ++ox) {
-                float sum = bias ? (*bias)[o] : 0.0f;
+        for (int32_t oy = 0; oy < OY; ++oy) {
+            const float bias_v = bias ? (*bias)[o] : 0.0f;
+            const size_t w_o_off = static_cast<size_t>(o) * ic * kh * kw;
+            for (int32_t ox = 0; ox < OX; ++ox) {
+                float sum = bias_v;
                 for (int32_t i = 0; i < ic; ++i) {
+                    const size_t w_oi_off =
+                            w_o_off + static_cast<size_t>(i) * kh * kw;
                     for (int32_t ky = 0; ky < kh; ++ky) {
+                        const int32_t iy = oy * stride + ky - pad;
+                        if (iy < 0 || iy >= ih) continue;
+                        const size_t src_iy_off =
+                                static_cast<size_t>(i) * ih * iw +
+                                static_cast<size_t>(iy) * iw;
                         for (int32_t kx = 0; kx < kw; ++kx) {
-                            const int32_t iy = oy * stride + ky - pad;
                             const int32_t ix = ox * stride + kx - pad;
-                            if (iy < 0 || ix < 0 || iy >= ih || ix >= iw) {
-                                continue;
-                            }
-                            const size_t widx =
-                                    static_cast<size_t>(o) * ic * kh * kw +
-                                    static_cast<size_t>(i) * kh * kw + ky * kw +
-                                    kx;
-                            sum += src[IndexNchw(i, iy, ix, ih, iw)] *
-                                   weight[widx];
+                            if (ix < 0 || ix >= iw) continue;
+                            sum += src[src_iy_off + ix] *
+                                   weight[w_oi_off + ky * kw + kx];
                         }
                     }
                 }
-                (*output)[IndexNchw(o, oy, ox, *oh, *ow)] = sum;
+                (*output)[static_cast<size_t>(o) * spatial +
+                          static_cast<size_t>(oy) * OX + ox] = sum;
             }
         }
     }

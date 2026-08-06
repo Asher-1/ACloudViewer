@@ -93,6 +93,7 @@ private slots:
     void onDbListActivated(QListWidgetItem* item);
     void onLiveStart();
     void onLiveStop();
+    void onLiveRestart();
     void onLiveCapture(const FaceDetectRunResult& result);
     void onAuthResultImageReady(const QImage& annotated,
                                 const QString& summary);
@@ -168,6 +169,7 @@ private:
     FaceRegistryWidget* m_registryWidget = nullptr;
     QPushButton* m_liveStartBtn = nullptr;
     QPushButton* m_liveStopBtn = nullptr;
+    QPushButton* m_liveRestartBtn = nullptr;
 
     QComboBox* m_modelCombo = nullptr;
     QComboBox* m_landmarkModelCombo = nullptr;

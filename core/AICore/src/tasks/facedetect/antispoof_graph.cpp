@@ -283,17 +283,7 @@ ggml_tensor* build_node(
                 B = clone_weight(ctx, ml, (prefix + n.in[2]).c_str());
         }
         if (n.group == 1) {
-#ifdef FACEDETECT_GGML_CUDNN
-            if (!backend_is_cpu()) {
-                x = ggml_conv_2d_direct(ctx, W, x, n.stride, n.stride, n.pad,
-                                        n.pad, 1, 1);
-                ggml_set_name(x, "facedetect.cudnn.conv2d");
-            } else
-#endif
-            {
-                x = ggml_conv_2d(ctx, W, x, n.stride, n.stride, n.pad, n.pad, 1,
-                                 1);
-            }
+            x = ggml_conv_2d(ctx, W, x, n.stride, n.stride, n.pad, n.pad, 1, 1);
         } else if (W->ne[2] ==
                    1)  // depthwise (1 in-channel/group): ne [KW,KH,1,C]
             x = ggml_conv_2d_dw_direct(ctx, W, x, n.stride, n.stride, n.pad,

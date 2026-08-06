@@ -22,12 +22,8 @@ if( PLUGIN_STANDARD_QFACEDETECT )
 
     target_link_libraries(${PROJECT_NAME} AICore)
 
-    if(TARGET Qt::Sql)
-        target_link_libraries(${PROJECT_NAME} Qt::Sql)
-    else()
-        find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Sql)
-        target_link_libraries(${PROJECT_NAME} Qt${QT_VERSION_MAJOR}::Sql)
-    endif()
+    # Qt::Sql is guaranteed by root find_package (CMakeExternalLibs.cmake)
+    target_link_libraries(${PROJECT_NAME} Qt::Sql)
 
     if(TARGET 3rdparty_opencv)
         target_link_libraries(${PROJECT_NAME} 3rdparty_opencv)

@@ -146,11 +146,15 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
         auto* liveBtnRow = new QHBoxLayout;
         m_liveStartBtn = new QPushButton(tr("Start"));
         m_liveStopBtn = new QPushButton(tr("Stop"));
+        m_liveRestartBtn = new QPushButton(tr("Restart"));
         m_liveStopBtn->setEnabled(false);
+        m_liveRestartBtn->setEnabled(false);
         connect(m_liveStartBtn, &QPushButton::clicked, this,
                 &FaceDetectDialog::onLiveStart);
         connect(m_liveStopBtn, &QPushButton::clicked, this,
                 &FaceDetectDialog::onLiveStop);
+        connect(m_liveRestartBtn, &QPushButton::clicked, this,
+                &FaceDetectDialog::onLiveRestart);
         connect(m_liveWidget, &FaceLiveDetectWidget::logMessage, this,
                 &FaceDetectDialog::appendLog);
         connect(m_liveWidget, &FaceLiveDetectWidget::captureToDbRequested, this,
@@ -159,16 +163,30 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
                 [this]() {
                     if (m_liveStartBtn) m_liveStartBtn->setEnabled(false);
                     if (m_liveStopBtn) m_liveStopBtn->setEnabled(true);
+                    if (m_liveRestartBtn && m_liveWidget &&
+                        m_liveWidget->inputSource() ==
+                                FaceLiveDetectWidget::InputSource::VideoFile) {
+                        m_liveRestartBtn->setEnabled(true);
+                    }
                 });
         connect(m_liveWidget, &FaceLiveDetectWidget::streamStopped, this,
                 [this]() {
                     if (m_liveStartBtn) m_liveStartBtn->setEnabled(true);
                     if (m_liveStopBtn) m_liveStopBtn->setEnabled(false);
+                    // Restart stays enabled if video is paused (can restart)
+                    if (m_liveRestartBtn &&
+                        (!m_liveWidget ||
+                         m_liveWidget->inputSource() !=
+                                 FaceLiveDetectWidget::InputSource::
+                                         VideoFile)) {
+                        m_liveRestartBtn->setEnabled(false);
+                    }
                 });
         auto* liveTestDataBtn = m_liveWidget->testDataButton();
         liveBtnRow->addWidget(liveTestDataBtn);
         liveBtnRow->addWidget(m_liveStartBtn);
         liveBtnRow->addWidget(m_liveStopBtn);
+        liveBtnRow->addWidget(m_liveRestartBtn);
         liveBtnRow->addStretch();
         liveLayout->addLayout(liveBtnRow);
         connect(m_liveWidget, &FaceLiveDetectWidget::streamModeChanged, this,
@@ -232,9 +250,11 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
     outer->addWidget(m_downloadLabel);
 
     m_progress = new QProgressBar(this);
-    m_progress->setTextVisible(true);
-    m_progress->setFormat(tr("%p%"));
-    m_progress->setVisible(false);
+    m_progress->setFixedHeight(16);
+    m_progress->setTextVisible(false);
+    m_progress->setMaximum(100);
+    m_progress->setValue(0);
+    m_progress->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     outer->addWidget(m_progress);
 
     m_testDataWorker = new FaceDetectTestDataWorker(this);
@@ -328,7 +348,9 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
                     }
                     if (m_progress && !m_testDataDownloadInProgress &&
                         !m_downloadInProgress && !m_testDataProcessing) {
-                        m_progress->setVisible(false);
+                        m_progress->setValue(0);
+                        m_progress->setTextVisible(false);
+                        m_progress->setMaximum(100);
                     }
                 });
             });
@@ -376,12 +398,13 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
                     !m_progress) {
                     return;
                 }
-                if (m_progress) m_progress->setVisible(true);
+                // m_progress is always visible (reserved space)
                 if (m_downloadLabel) m_downloadLabel->setVisible(true);
                 m_progress->setMaximum(kTestDataOverallMax);
+                m_progress->setTextVisible(true);
+                m_progress->setFormat(tr("%p%"));
                 m_progress->setValue(static_cast<int>(
                         received * kTestDataDownloadShare / total));
-                m_progress->setFormat(tr("%p%"));
                 if (m_downloadLabel) {
                     m_downloadLabel->setText(
                             tr("Downloading FriendsFaces test data — %1")
@@ -402,7 +425,6 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
                 if (!ok) {
                     setTestDataBusy(false);
                     if (m_downloadLabel) m_downloadLabel->setVisible(false);
-                    if (m_progress) m_progress->setVisible(false);
                     appendLog(tr("[Test data] Download failed."));
                     return;
                 }
@@ -410,7 +432,6 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
                     QFile::remove(dest);
                     setTestDataBusy(false);
                     if (m_downloadLabel) m_downloadLabel->setVisible(false);
-                    if (m_progress) m_progress->setVisible(false);
                     appendLog(tr(
                             "[Test data] Download rejected: friends_faces.zip "
                             "failed MD5 integrity check (incomplete or "
@@ -1003,13 +1024,34 @@ void FaceDetectDialog::appendLog(const QString& msg) {
 }
 
 void FaceDetectDialog::setProgress(int current, int total) {
+    if (!m_progress) return;
     m_progress->setMaximum(total);
     m_progress->setValue(current);
+    m_progress->setTextVisible(true);
+    m_progress->setFormat(tr("%p%"));
 }
 
 void FaceDetectDialog::setRunning(bool running) {
     m_runBtn->setEnabled(!running);
     m_cancelBtn->setEnabled(running);
+    if (m_progress) {
+        if (running) {
+            m_progress->setMaximum(100);
+            m_progress->setValue(0);
+            m_progress->setTextVisible(true);
+            m_progress->setFormat(tr("%p%"));
+        } else {
+            // Keep showing 100 % briefly, then reset to idle.
+            QTimer::singleShot(1200, this, [this]() {
+                if (m_progress && m_runBtn->isEnabled() &&
+                    !m_cancelBtn->isEnabled()) {
+                    m_progress->setValue(0);
+                    m_progress->setTextVisible(false);
+                    m_progress->setMaximum(100);
+                }
+            });
+        }
+    }
 }
 
 void FaceDetectDialog::setDbImages(const QList<DbImageEntry>& images) {
@@ -1328,6 +1370,10 @@ void FaceDetectDialog::onLiveStop() {
     if (m_liveWidget) m_liveWidget->stopStream();
 }
 
+void FaceDetectDialog::onLiveRestart() {
+    if (m_liveWidget) m_liveWidget->restartVideoFile();
+}
+
 void FaceDetectDialog::onLiveCapture(const FaceDetectRunResult& result) {
     emit liveCaptureReady(result);
 }
@@ -1360,7 +1406,29 @@ void FaceDetectDialog::onAuthResultImageReady(const QImage& annotated,
     emit authVisualizationReady(annotated, summary);
 }
 
-void FaceDetectDialog::onModeChanged(int) { updateModeUi(); }
+void FaceDetectDialog::onModeChanged(int) {
+    updateModeUi();
+    // Mode changes toggle visibility of extra rows (Verify: second image +
+    // options; DenseLandmarks: landmark model).  Re-measure content so the
+    // tab viewport expands instead of compressing the newly visible widgets.
+    //
+    // Defer measurement via singleShot(0) so the layout engine fully
+    // processes visibility propagation across all platforms/styles before
+    // we read minimumSizeHint().  This mirrors the existing deferred
+    // measurement used for tab switching (see currentChanged handler).
+    if (m_tabWidget && m_batchTab) {
+        // Invalidate the cached height so updateActiveTabViewportHeight
+        // falls back to a fresh minimumSizeHint() if called before the
+        // deferred re-measurement completes.
+        m_tabViewportHeights.remove(m_batchTab);
+        QTimer::singleShot(0, this, [this]() {
+            if (!m_batchTab || !m_tabWidget) return;
+            const int freshHeight = m_batchTab->minimumSizeHint().height();
+            m_tabViewportHeights.insert(m_batchTab, freshHeight);
+            updateActiveTabViewportHeight();
+        });
+    }
+}
 
 bool FaceDetectDialog::ensureModelAvailable() {
     const QString path = resolveModelPath();
@@ -1773,7 +1841,8 @@ void FaceDetectDialog::updateTestDataProgress(int current,
         m_downloadLabel->setText(label);
     }
     if (m_progress) {
-        m_progress->setVisible(true);
+        m_progress->setTextVisible(true);
+        m_progress->setFormat(tr("%p%"));
         m_progress->setMaximum(kTestDataOverallMax);
         if (total > 0) {
             const int span = kTestDataOverallMax - m_testDataPostProgressBase;
@@ -1894,7 +1963,9 @@ void FaceDetectDialog::startFriendsTestDataDownload(bool fillRegistry,
                 tr("[Test data] Removed cached friends_faces.zip (MD5 "
                    "mismatch)."));
     }
-    ecvModelDownloader::removeInvalidCacheFile(zipPath, 30 * 1024 * 1024);
+    ecvModelDownloader::removeInvalidCacheFile(
+            zipPath, 30 * 1024 * 1024,
+            false /* GGUF magic not relevant for zip */);
     m_testDataDownloadInProgress = true;
     setTestDataBusy(true);
     if (m_downloadLabel) {
@@ -1902,17 +1973,18 @@ void FaceDetectDialog::startFriendsTestDataDownload(bool fillRegistry,
         m_downloadLabel->setText(tr("Downloading FriendsFaces test data …"));
     }
     if (m_progress) {
-        m_progress->setVisible(true);
         m_progress->setMaximum(kTestDataOverallMax);
-        m_progress->setValue(0);
+        m_progress->setTextVisible(true);
         m_progress->setFormat(tr("%p%"));
+        m_progress->setValue(0);
     }
     appendLog(tr("[Test data] Downloading friends_faces.zip ..."));
 
     ecvModelDownloader::Request req;
     req.url = FaceDetectTestData::downloadUrl();
     req.destPath = FaceDetectTestData::zipPath();
-    req.minValidBytes = 30 * 1024 * 1024;
+    req.minBytes = 30 * 1024 * 1024;
+    req.requireGgufMagic = false; /* zip archive, not a GGUF */
     m_testDataDownloader->download(req);
 }
 
@@ -1950,8 +2022,9 @@ void FaceDetectDialog::ensureFriendsTestData(bool fillRegistry,
                     tr("Extracting cached FriendsFaces archive…"));
         }
         if (m_progress) {
-            m_progress->setVisible(true);
             m_progress->setMaximum(0);
+            m_progress->setTextVisible(true);
+            m_progress->setFormat(tr("Loading…"));
         }
         startTestDataPostProcess(
                 bundle, fillRegistry, fillLiveVideo, fillBatchImage, true,

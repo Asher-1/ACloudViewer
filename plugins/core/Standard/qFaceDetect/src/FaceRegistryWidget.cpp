@@ -117,6 +117,14 @@ FaceRegistryWidget::FaceRegistryWidget(QWidget* parent) : QWidget(parent) {
     m_dbStatusLabel->setStyleSheet(
             "color: palette(mid); font-size: 11px; padding: 0;");
     dbLayout->addWidget(m_dbStatusLabel, 3, 0, 1, 4);
+
+    m_progressBar = new QProgressBar(dbGroup);
+    m_progressBar->setFixedHeight(16);
+    m_progressBar->setTextVisible(false);
+    m_progressBar->setMaximum(100);
+    m_progressBar->setValue(0);
+    m_progressBar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    dbLayout->addWidget(m_progressBar, 4, 0, 1, 4);
     main->addWidget(dbGroup);
 
     auto* regGroup = new QGroupBox(tr("Register face"), this);
@@ -141,6 +149,7 @@ FaceRegistryWidget::FaceRegistryWidget(QWidget* parent) : QWidget(parent) {
     regLayout->addWidget(m_nameEdit, 1, 1, Qt::AlignLeft);
 
     auto* registerBtn = new QPushButton(tr("Register to database"), regGroup);
+    m_registerBtn = registerBtn;
     connect(registerBtn, &QPushButton::clicked, this,
             &FaceRegistryWidget::onRegister);
     regLayout->addWidget(registerBtn, 1, 2, 1, 2, Qt::AlignRight);
@@ -191,6 +200,7 @@ FaceRegistryWidget::FaceRegistryWidget(QWidget* parent) : QWidget(parent) {
     authLayout->addLayout(threshRow, 1, 0, 1, 4);
 
     auto* authBtn = new QPushButton(tr("Run authentication"), authGroup);
+    m_authBtn = authBtn;
     connect(authBtn, &QPushButton::clicked, this,
             &FaceRegistryWidget::onAuthenticate);
 
@@ -782,10 +792,12 @@ void FaceRegistryWidget::onRegister() {
         emit logMessage(tr("[Registry] Name and image required."));
         return;
     }
+    setProcessing(true, tr("Registering…"));
     QImageReader reader(path);
     reader.setAutoTransform(true);
     const QImage thumb = reader.read();
     registerFromImagePath(path, thumb);
+    setProcessing(false);
 }
 
 void FaceRegistryWidget::registerFromImagePath(const QString& imagePath,
@@ -811,7 +823,9 @@ void FaceRegistryWidget::onAuthenticate() {
         emit logMessage(tr("[Registry] Probe image required."));
         return;
     }
+    setProcessing(true, tr("Authenticating…"));
     authenticateFromImagePath(path);
+    setProcessing(false);
 }
 
 void FaceRegistryWidget::authenticateFromImagePath(const QString& imagePath) {
@@ -1046,4 +1060,35 @@ void FaceRegistryWidget::onClear() {
     saveSettings();
     emit registryChanged();
     emit logMessage(tr("[Registry] Cleared."));
+}
+
+void FaceRegistryWidget::setProcessing(bool busy, const QString& busyHint) {
+    if (m_registerBtn) m_registerBtn->setEnabled(!busy);
+    if (m_authBtn) m_authBtn->setEnabled(!busy);
+    if (busy) {
+        if (m_dbStatusLabel) {
+            m_statusLabelSavedText = m_dbStatusLabel->text();
+            if (!busyHint.isEmpty()) {
+                m_dbStatusLabel->setText(busyHint);
+            }
+        }
+        if (m_progressBar) {
+            m_progressBar->setMaximum(0);  // indeterminate
+            m_progressBar->setTextVisible(true);
+            m_progressBar->setFormat(busyHint.isEmpty() ? tr("Processing…")
+                                                        : busyHint);
+        }
+        setCursor(Qt::WaitCursor);
+    } else {
+        unsetCursor();
+        if (m_dbStatusLabel && !m_statusLabelSavedText.isEmpty()) {
+            m_dbStatusLabel->setText(m_statusLabelSavedText);
+            m_statusLabelSavedText.clear();
+        }
+        if (m_progressBar) {
+            m_progressBar->setMaximum(100);
+            m_progressBar->setValue(0);
+            m_progressBar->setTextVisible(false);
+        }
+    }
 }

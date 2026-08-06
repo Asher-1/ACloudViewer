@@ -10,12 +10,14 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QIODevice>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QSslConfiguration>
 #include <QSslError>
 #include <QSslSocket>
+#include <cstring>
 
 ecvModelDownloader::ecvModelDownloader(QObject* parent) : QObject(parent) {
     m_net = new QNetworkAccessManager(this);
@@ -23,16 +25,36 @@ ecvModelDownloader::ecvModelDownloader(QObject* parent) : QObject(parent) {
 
 ecvModelDownloader::~ecvModelDownloader() { cancel(); }
 
+// GGUF file format magic. The first 4 bytes of every valid GGUF file are
+// the ASCII characters "GGUF" (0x46475547 in little-endian). Validating
+// against this magic — instead of guessing a per-model size floor — lets
+// us accept the smallest quantized ALIKED extractor (~714 KiB) while
+// still rejecting truncated/empty/HTML responses.
+static constexpr const char kGgufMagic[4] = {'G', 'G', 'U', 'F'};
+
+static bool hasGgufMagic(const QString& path) {
+    QFile f(path);
+    if (!f.open(QIODevice::ReadOnly)) return false;
+    char head[4] = {0, 0, 0, 0};
+    const qint64 read = f.read(head, sizeof(head));
+    f.close();
+    if (read != sizeof(head)) return false;
+    return std::memcmp(head, kGgufMagic, sizeof(kGgufMagic)) == 0;
+}
+
 bool ecvModelDownloader::isValidCachedFile(const QString& path,
-                                           qint64 minBytes) {
+                                           qint64 minBytes,
+                                           bool requireGgufMagic) {
     const QFileInfo fi(path);
-    return fi.isFile() && fi.size() >= minBytes;
+    if (!fi.isFile() || fi.size() < minBytes) return false;
+    if (requireGgufMagic && !hasGgufMagic(path)) return false;
+    return true;
 }
 
 void ecvModelDownloader::removeInvalidCacheFile(const QString& path,
-                                                qint64 minBytes) {
-    const QFileInfo fi(path);
-    if (fi.exists() && fi.size() < minBytes) {
+                                                qint64 minBytes,
+                                                bool requireGgufMagic) {
+    if (!isValidCachedFile(path, minBytes, requireGgufMagic)) {
         QFile::remove(path);
     }
 }
@@ -103,8 +125,8 @@ void ecvModelDownloader::download(const Request& request) {
     }
 
     m_destPath = request.destPath;
-    m_minValidBytes =
-            request.minValidBytes > 0 ? request.minValidBytes : 1024 * 1024;
+    m_minValidBytes = request.minBytes > 0 ? request.minBytes : 64 * 1024;
+    m_requireGgufMagic = request.requireGgufMagic;
     m_tmpPath = m_destPath + QStringLiteral(".part");
 
     QDir().mkpath(QFileInfo(m_destPath).absolutePath());
@@ -158,10 +180,28 @@ void ecvModelDownloader::download(const Request& request) {
             if (!ok) {
                 emit logMessage(
                         tr("[Download] Failed to finalize %1").arg(m_destPath));
-            } else if (!isValidCachedFile(m_destPath, m_minValidBytes)) {
-                emit logMessage(
-                        tr("[Download] File too small after download: %1")
-                                .arg(m_destPath));
+            } else if (!isValidCachedFile(m_destPath, m_minValidBytes,
+                                          m_requireGgufMagic)) {
+                // Surface the actual reason (too small vs wrong magic) so
+                // operators can distinguish a truncated connection from a
+                // genuine 200-with-wrong-content response (e.g. a captive
+                // portal HTML page masquerading as the model).
+                const QFileInfo fi(m_destPath);
+                if (!fi.exists()) {
+                    emit logMessage(tr("[Download] Output file missing after "
+                                       "rename: %1")
+                                            .arg(m_destPath));
+                } else if (fi.size() < m_minValidBytes) {
+                    emit logMessage(
+                            tr("[Download] File too small after download: "
+                               "%1 (%2 bytes, need >= %3)")
+                                    .arg(m_destPath)
+                                    .arg(fi.size())
+                                    .arg(m_minValidBytes));
+                } else {
+                    emit logMessage(tr("[Download] File lacks GGUF magic: %1")
+                                            .arg(m_destPath));
+                }
                 QFile::remove(m_destPath);
                 ok = false;
             }

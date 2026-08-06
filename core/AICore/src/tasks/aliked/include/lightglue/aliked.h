@@ -41,6 +41,11 @@ public:
                                 Features *features) = 0;
     virtual const std::string &Error() const = 0;
     virtual const std::string &Device() const = 0;
+
+    // Notify the extractor that a device-lost event occurred (e.g. Vulkan
+    // vk::DeviceLostError).  The implementation should flag the backend for
+    // re-initialization on the next ExtractFromRgb call.
+    virtual void MarkDeviceLost() {}
 };
 
 std::unique_ptr<AlikedFeatureExtractor> CreateAlikedFeatureExtractor(

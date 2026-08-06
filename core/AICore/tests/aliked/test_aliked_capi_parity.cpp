@@ -188,7 +188,11 @@ bool FeaturesLookValid(const ExtractResult& result, const char* device) {
     if (!result.ok || count == 0 || dim == 0 ||
         result.keypoints.size() != count * 2 ||
         result.descriptors.size() != count * dim) {
-        std::fprintf(stderr, "FAIL: %s returned malformed features\n", device);
+        std::fprintf(stderr,
+                     "FAIL: %s returned malformed features ok=%d count=%d "
+                     "dim=%d kp_size=%zu desc_size=%zu\n",
+                     device, result.ok ? 1 : 0, result.count, result.dim,
+                     result.keypoints.size(), result.descriptors.size());
         return false;
     }
 

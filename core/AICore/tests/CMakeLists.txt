@@ -320,9 +320,10 @@ function(aicore_configure_model_test_assets)
         "AICORE_TEST_GAUSSIAN_GGUF=${_root}/freesplatter_models/freesplatter-scene-q8_0.gguf"
         "AICORE_TEST_GAUSSIAN_IMAGE_0=${_root}/lightglue_test_images/sacre_coeur1.jpg"
         "AICORE_TEST_GAUSSIAN_IMAGE_1=${_root}/lightglue_test_images/sacre_coeur2.jpg"
-        # qLightGlue intentionally uses f16 ALIKED extraction even with a q8
-        # matcher, so this is the actual GUI baseline rather than f32 only.
-        "AICORE_TEST_ALIKED_GGUF=${_root}/lightglue_models/aliked-n16rot-f16.gguf"
+        # qLightGlue runs the ALIKED extractor and LightGlue matcher at the
+        # SAME quantization the user selected, so the q8_0 matcher pairs with
+        # the q8_0 extractor (the current GUI end-to-end baseline).
+        "AICORE_TEST_ALIKED_GGUF=${_root}/lightglue_models/aliked-n16rot-q8_0.gguf"
         "AICORE_TEST_ALIKED_IMAGE=${_root}/lightglue_test_images/sacre_coeur1.jpg"
         "AICORE_TEST_LIGHTGLUE_GGUF=${_root}/lightglue_models/aliked-lightglue-q8_0.gguf"
         "AICORE_TEST_LIGHTGLUE_IMAGE0=${_root}/lightglue_test_images/sacre_coeur1.jpg"

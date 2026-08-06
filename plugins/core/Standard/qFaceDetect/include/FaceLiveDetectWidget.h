@@ -9,9 +9,11 @@
 
 #include <QComboBox>
 #include <QDoubleSpinBox>
+#include <QElapsedTimer>
 #include <QImage>
 #include <QLabel>
 #include <QLineEdit>
+#include <QProgressBar>
 #include <QPushButton>
 #include <QSpinBox>
 #include <QThread>
@@ -57,6 +59,7 @@ public:
 
     bool startCamera(int deviceIndex = 0);
     bool startVideoFile(const QString& path);
+    void restartVideoFile();
     void stopStream();
     bool isActive() const;
 
@@ -134,6 +137,7 @@ private:
     void submitInferJob(const QImage& inferRgb, float inferScale);
     void shutdownInferThread();
     void drawLiveOverlay(QImage& frame);
+    void beginFrameProcessing();
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
     cv::VideoCapture m_capture;
@@ -159,6 +163,9 @@ private:
     QWidget* m_registryRow = nullptr;
     QLineEdit* m_registryPathEdit = nullptr;
     QPushButton* m_captureBtn = nullptr;
+    QProgressBar* m_preloadProgress = nullptr;
+    QProgressBar* m_videoPositionProgress = nullptr;
+    int m_totalVideoFrames = 0;
 
     bool m_videoPathUserChosen = false;
     bool m_registryPathUserChosen = false;
@@ -166,8 +173,11 @@ private:
 
     QTimer* m_frameTimer = nullptr;
     bool m_streamActive = false;
+    bool m_videoPaused = false;  // video paused (not released) for resume
+    QString m_videoFilePath;     // path of currently opened video
     bool m_camerasEnumerated = false;
     bool m_inferBusy = false;
+    bool m_preloadingModel = false;
     quint64 m_streamGeneration = 0;
 
     QThread* m_inferThread = nullptr;
@@ -180,4 +190,9 @@ private:
     std::vector<FaceDetectBox> m_overlayFaces;
     QVector<QString> m_overlayLabels;
     QSize m_overlayInferSize;
+
+    // Inference timing — for latency display.
+    QElapsedTimer m_inferSubmitTime;
+    qint64 m_lastInferLatencyMs = 0;
+    qint64 m_overlayTimestampMs = 0;  // ms since epoch of last infer complete
 };

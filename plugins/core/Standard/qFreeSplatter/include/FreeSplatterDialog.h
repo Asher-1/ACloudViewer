@@ -210,9 +210,11 @@ private:
     FaceCaptureWidget* m_faceCaptureWidget = nullptr;
     QPushButton* m_faceStartBtn = nullptr;
     QPushButton* m_faceStopBtn = nullptr;
+    QPushButton* m_faceRestartBtn = nullptr;
     QPushButton* m_faceResetBtn = nullptr;
     void onFaceStartCamera();
     void onFaceStopCamera();
+    void onFaceRestart();
     void onFaceReset();
     void onFaceCaptureComplete();
     void clearFaceCaptureExportDir();

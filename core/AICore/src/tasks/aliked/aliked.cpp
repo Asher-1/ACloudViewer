@@ -787,10 +787,30 @@ public:
         const auto backend_lock = backend_.Lock();
 #if defined(AICORE_VULKAN_ALIKED)
         if (backend_.IsVulkan()) {
-            EndVulkanExtract(&backend_, gpu_cache_.get());
+            try {
+                EndVulkanExtract(&backend_, gpu_cache_.get());
+            } catch (const std::exception &e) {
+                std::fprintf(stderr, "[vk-aliked] ~dtor EndVulkanExtract: %s\n",
+                             e.what());
+            } catch (...) {
+                std::fprintf(stderr,
+                             "[vk-aliked] ~dtor EndVulkanExtract unknown "
+                             "exception\n");
+            }
             gpu_cache_.reset();
-            VkAlikedQueueIdle(backend_.handle);
-            ggml_backend_synchronize(backend_.handle);
+            try {
+                VkAlikedQueueIdle(backend_.handle);
+                ggml_backend_synchronize(backend_.handle);
+            } catch (const std::exception &e) {
+                // A lost device cannot be recovered.  Swallow the exception
+                // so the destructor completes and releases host resources.
+                std::fprintf(stderr, "[vk-aliked] ~dtor synchronize: %s\n",
+                             e.what());
+            } catch (...) {
+                std::fprintf(stderr,
+                             "[vk-aliked] ~dtor synchronize failed with "
+                             "unknown exception\n");
+            }
         }
 #endif
         if (backend_.IsGpu() && !backend_.IsVulkan()) {
@@ -809,6 +829,35 @@ public:
             vulkan_extract_count_++ == 0) {
             return true;
         }
+        return DoRewarm();
+#else
+        return true;
+#endif
+    }
+
+    // Force a full backend re-initialization after DeviceLost detection.
+    bool ForceRewarmOnDeviceLost() {
+#if defined(AICORE_VULKAN_ALIKED)
+        if (!backend_.IsVulkan()) return true;
+        std::fprintf(stderr,
+                     "[vk-aliked] device-lost detected; forcing full backend "
+                     "re-init\n");
+        if (!DoRewarm()) {
+            // Re-init failed; keep the flag armed so the next call retries
+            // the full recovery instead of silently falling back to CPU.
+            device_lost_ = true;
+            return false;
+        }
+        device_lost_ = false;
+        return true;
+#else
+        return true;
+#endif
+    }
+
+private:
+#if defined(AICORE_VULKAN_ALIKED)
+    bool DoRewarm() {
         FlushGpuPipeline(&backend_);
         gpu_cache_.reset();
         backend_.Release();
@@ -818,11 +867,10 @@ public:
         }
         gpu_cache_ = std::make_unique<GpuPipelineCache>(&backend_);
         return gpu_cache_->Warmup(tensors_, &error_);
-#else
-        return true;
-#endif
     }
+#endif
 
+public:
     bool ExtractFromRgb(const uint8_t *rgb,
                         int32_t width,
                         int32_t height,
@@ -841,6 +889,16 @@ public:
         // but their ggml queue is shared process-wide. Serialize the complete
         // extraction instead of only individual graph submits.
         const auto backend_lock = backend_.Lock();
+
+        // Recover from a prior DeviceLost: the Vulkan device is dead, so
+        // force a full backend re-init before attempting extraction.
+#if defined(AICORE_VULKAN_ALIKED)
+        if (device_lost_) {
+            if (!ForceRewarmOnDeviceLost()) {
+                return false;
+            }
+        }
+#endif
 
         std::vector<float> resized;
         int32_t resized_w = 0;
@@ -884,8 +942,14 @@ public:
                 SetDkdDebugCpuRefs(cpu_refs);
             }
 #endif
-            const bool persistent_graph =
-                    std::getenv("LIGHTGLUE_ALIKED_PERSISTENT_GRAPH") != nullptr;
+            // Persistent cache by default: the previous "fresh-cache-per-
+            // extract" path caused NVIDIA TDR / vk::ErrorDeviceLost on
+            // repeated inference because the ggml/DCN/SDDH weight tensors
+            // were allocated, used, and freed in a tight loop. Operators can
+            // still opt into the per-extract fresh cache via the env var.
+            const bool fresh_cache =
+                    std::getenv("LIGHTGLUE_ALIKED_FRESH_CACHE") != nullptr;
+            const bool persistent_graph = !fresh_cache;
             GpuPipelineCache stack_cache(&backend_);
             GpuPipelineCache *extract_cache = gpu_cache_.get();
             const bool reuse_gpu_extract_cache = persistent_graph;
@@ -1095,6 +1159,7 @@ public:
 
     const std::string &Error() const override { return error_; }
     const std::string &Device() const override { return device_; }
+    void MarkDeviceLost() override { device_lost_ = true; }
 
 private:
     AlikedExtractionOptions options_;
@@ -1103,6 +1168,7 @@ private:
     internal::Backend backend_;
     std::unique_ptr<GpuPipelineCache> gpu_cache_;
     uint64_t vulkan_extract_count_ = 0;
+    bool device_lost_ = false;
     std::string device_ = "cpu-ref";
     std::string init_error_;
     std::string error_;

@@ -75,8 +75,8 @@ ggml's `GGML_BACKEND_DL` requires shared ggml core libraries. This is why the
 distribution contains private ggml runtime files instead of embedding a static
 ggml copy into every consumer. The loader uses local scope and validates the
 backend API version before registration. See the upstream
-[ggml build configuration](https://github.com/ggml-org/ggml/blob/v0.17.0/CMakeLists.txt)
-and [backend loader](https://github.com/ggml-org/ggml/blob/v0.17.0/src/ggml-backend-reg.cpp).
+[ggml build configuration](https://github.com/ggml-org/ggml/blob/v0.18.1/CMakeLists.txt)
+and [backend loader](https://github.com/ggml-org/ggml/blob/v0.18.1/src/ggml-backend-reg.cpp).
 
 ### Platform policy
 
@@ -248,7 +248,6 @@ ggml's internal `GGML_*` names during configure.
 | `AICore_USE_METAL` | Apple: ON, else OFF | Build Metal backend (macOS Auto default) |
 | `AICore_USE_VULKAN` | Linux/Win: ON, macOS: OFF | Build Vulkan backend (configure fails if SDK/glslc missing) |
 | `AICore_USE_CUDA` | OFF | Developer CUDA backend (not `BUILD_CUDA_MODULE`) |
-| `AICore_USE_CUDNN` | OFF | FaceDetect cuDNN conv2d acceleration (requires CUDA + cuDNN) |
 | `AICore_USE_SYCL` | OFF | Developer Intel SYCL backend |
 | `AICore_SYCL_USE_DNN` | ON | oneDNN kernels in SYCL backend (requires `AICore_USE_SYCL=ON`) |
 | `AICore_USE_OPENCL` | OFF | Developer OpenCL backend (legacy/Adreno) |

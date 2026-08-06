@@ -64,12 +64,23 @@ VulkanAlikedConfig SnapshotVulkanConfig() {
     config.scheduler = EnvEnabled("LIGHTGLUE_ALIKED_VULKAN_SCHED", false);
     config.scheduler_tail_only =
             EnvEnabled("LIGHTGLUE_ALIKED_VULKAN_SCHED_TAIL", false);
+    // Rebuilding the Vulkan backend on every extract tears down and recreates
+    // the vk device, which (a) re-triggers NVIDIA TDR/device-lost on concurrent
+    // submits and (b) re-runs the full GPU warmup, dominating end-to-end
+    // latency. The backend is session-persistent by default; an operator can
+    // still opt into per-extract rewarming for debugging.
     config.fresh_extract =
-            EnvEnabled("LIGHTGLUE_ALIKED_VULKAN_FRESH_EXTRACT", true);
-    // Vulkan convolution accumulation changes detector scores at dynamic
-    // aspect ratios. Keep the exact bridge until a representative parity
-    // matrix qualifies every convolution shape used by ALIKED.
-    config.force_cpu_conv = true;
+            EnvEnabled("LIGHTGLUE_ALIKED_VULKAN_FRESH_EXTRACT", false);
+    // The ggml-vulkan conv2d path on NVIDIA CoopMat2 devices is NOT safe for
+    // ALIKED's precision-sensitive convs: the COOPMAT2 path hard-codes an fp16
+    // accumulator (corrupts F32 conv score maps), and routing F32 convs through
+    // the scalar _unroll pipeline is non-deterministic (spurious correct/wrong
+    // outputs across runs) because the fp32 shmem layout collides with the
+    // fp16-tuned spec constants. CPU bridge is the only parity-qualified path
+    // (stable 0.001px / cos=1.0 for f32 & f16). Keep it the default; operators
+    // may opt into the GPU path only for controlled experiments.
+    config.force_cpu_conv =
+            EnvEnabled("LIGHTGLUE_ALIKED_VULKAN_FORCE_CPU_CONV", true);
     return config;
 }
 

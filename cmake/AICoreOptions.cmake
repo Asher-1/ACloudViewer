@@ -65,9 +65,6 @@ option(AICore_USE_VULKAN
 option(AICore_USE_CUDA
     "Build AICore CUDA inference backend (developer opt-in; not BUILD_CUDA_MODULE)"
     OFF)
-option(AICore_USE_CUDNN
-    "Use cuDNN implicit-GEMM for FaceDetect conv2d (requires AICore_USE_CUDA=ON)"
-    OFF)
 option(AICore_USE_SYCL
     "Build AICore SYCL inference backend (Intel oneAPI; developer opt-in)"
     OFF)
@@ -113,7 +110,6 @@ function(aicore_sync_options_to_ggml)
     _aicore_clear_stale_ggml_cache(GGML_USE_METAL AICore_USE_METAL)
     _aicore_clear_stale_ggml_cache(GGML_USE_VULKAN AICore_USE_VULKAN)
     _aicore_clear_stale_ggml_cache(GGML_USE_CUDA AICore_USE_CUDA)
-    _aicore_clear_stale_ggml_cache(GGML_USE_CUDNN AICore_USE_CUDNN)
     _aicore_clear_stale_ggml_cache(GGML_USE_SYCL AICore_USE_SYCL)
     _aicore_clear_stale_ggml_cache(GGML_SYCL_USE_DNN AICore_SYCL_USE_DNN)
     _aicore_clear_stale_ggml_cache(GGML_USE_OPENCL AICore_USE_OPENCL)
@@ -124,10 +120,6 @@ function(aicore_sync_options_to_ggml)
     if(AICore_BUNDLE_CUDA_RUNTIME AND NOT AICore_USE_CUDA)
         message(FATAL_ERROR
             "AICore_BUNDLE_CUDA_RUNTIME=ON requires AICore_USE_CUDA=ON")
-    endif()
-    if(AICore_USE_CUDNN AND NOT AICore_USE_CUDA)
-        message(FATAL_ERROR
-            "AICore_USE_CUDNN=ON requires AICore_USE_CUDA=ON")
     endif()
     if(NOT AICore_OPENCL_TARGET_VERSION MATCHES "^(120|200|300)$")
         message(FATAL_ERROR
@@ -140,8 +132,6 @@ function(aicore_sync_options_to_ggml)
         "Internal: synced from AICore_USE_VULKAN" FORCE)
     set(GGML_USE_CUDA ${AICore_USE_CUDA} CACHE BOOL
         "Internal: synced from AICore_USE_CUDA" FORCE)
-    set(GGML_USE_CUDNN ${AICore_USE_CUDNN} CACHE BOOL
-        "Internal: synced from AICore_USE_CUDNN" FORCE)
     set(GGML_USE_SYCL ${AICore_USE_SYCL} CACHE BOOL
         "Internal: synced from AICore_USE_SYCL" FORCE)
     set(GGML_SYCL_USE_DNN ${AICore_SYCL_USE_DNN} CACHE BOOL
@@ -162,7 +152,7 @@ function(aicore_sync_options_to_ggml)
         "Internal: ggml tinyBLAS CPU matmul (llamafile)" FORCE)
 
     mark_as_advanced(
-        GGML_USE_METAL GGML_USE_VULKAN GGML_USE_CUDA GGML_USE_CUDNN GGML_USE_SYCL GGML_SYCL_USE_DNN
+        GGML_USE_METAL GGML_USE_VULKAN GGML_USE_CUDA GGML_USE_SYCL GGML_SYCL_USE_DNN
         GGML_USE_OPENCL GGML_BUNDLE_CUDA_RUNTIME GGML_OPENCL_TARGET_VERSION
         GGML_CPU_ALL_VARIANTS GGML_BUILD_SHARED GGML_USE_LLAMAFILE)
 endfunction()

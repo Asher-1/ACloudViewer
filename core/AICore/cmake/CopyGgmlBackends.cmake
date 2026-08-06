@@ -54,7 +54,7 @@ function(ggml_copy_core_shared_libs src_dir dest_dir lib_prefix lib_suffix)
                 continue()
             endif()
             get_filename_component(_name "${_path}" NAME)
-            # Match both Linux (libggml.so.0.17.0) and macOS (libggml.0.17.0.dylib)
+            # Match both Linux (libggml.so.0.18.1) and macOS (libggml.0.18.1.dylib)
             if(_name MATCHES "${_lib_suffix_regex}\\.[0-9]+\\.[0-9]+\\.[0-9]+$"
                OR _name MATCHES "\\.[0-9]+\\.[0-9]+\\.[0-9]+${_lib_suffix_regex}$")
                 if(IS_SYMLINK "${_path}")
@@ -91,13 +91,13 @@ function(ggml_copy_core_shared_libs src_dir dest_dir lib_prefix lib_suffix)
             "${_path}" "${dest_dir}/${_name}")
         message(STATUS "CopyGgmlBackends: ${_name}")
 
-        # Linux: libggml.so.0.17.0 → soname libggml.so.0 → link libggml.so
+        # Linux: libggml.so.0.18.1 → soname libggml.so.0 → link libggml.so
         if(_name MATCHES "^${lib_prefix}(ggml-base|ggml)${_lib_suffix_regex}\\.([0-9]+)\\.[0-9]+\\.[0-9]+$")
             set(_soname_major "${CMAKE_MATCH_2}")
             set(_base_name "${CMAKE_MATCH_1}")
             set(_soname "${lib_prefix}${_base_name}${lib_suffix}.${_soname_major}")
             set(_link_name "${lib_prefix}${_base_name}${lib_suffix}")
-        # macOS: libggml.0.17.0.dylib → soname libggml.0.dylib → link libggml.dylib
+        # macOS: libggml.0.18.1.dylib → soname libggml.0.dylib → link libggml.dylib
         elseif(_name MATCHES "^${lib_prefix}(ggml-base|ggml)\\.([0-9]+)\\.[0-9]+\\.[0-9]+${_lib_suffix_regex}$")
             set(_soname_major "${CMAKE_MATCH_2}")
             set(_base_name "${CMAKE_MATCH_1}")
