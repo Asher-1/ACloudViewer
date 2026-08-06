@@ -70,8 +70,8 @@ Point Cloud Registration
    threshold = 0.02
    reg_p2p = cv3d.pipelines.registration.registration_icp(
        source_down, target_down, threshold,
-       cv3d.geometry.Tranformation.identity(4),
-       cv3d.pipelines.registration.TransformationEstimationPointToPoint())
+       init=np.identity(4),
+       estimation_method=cv3d.pipelines.registration.TransformationEstimationPointToPoint())
 
    print(f"Fitness: {reg_p2p.fitness}")
    print(f"RMSE: {reg_p2p.inlier_rmse}")

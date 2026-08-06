@@ -313,6 +313,11 @@ if (UNIX AND NOT APPLE)
 endif()
 list(APPEND QT_PLUGINS_PATH_LIST "${QT_PLUGINS_PATH}/iconengines")
 list(APPEND QT_PLUGINS_PATH_LIST "${QT_PLUGINS_PATH}/imageformats")
+# SQL database drivers (e.g. libqsqlite.so) are required by qFaceDetect's
+# face registry (FaceRegistryStore opens a QSQLITE connection). Without this
+# folder the registry DB cannot be opened and 'use test data' reports
+# "Failed to open registry". Deploy it on every platform.
+list(APPEND QT_PLUGINS_PATH_LIST "${QT_PLUGINS_PATH}/sqldrivers")
 
 message(STATUS "QT_PLUGINS_PATH_LIST: " ${QT_PLUGINS_PATH_LIST})
 

@@ -45,7 +45,7 @@ System Requirements
 Minimum Requirements
 ~~~~~~~~~~~~~~~~~~~~
 
-- **OS**: Ubuntu 20.04+, macOS 10.15+, Windows 10+
+- **OS**: Ubuntu 20.04+, macOS 13+ (Intel or Apple Silicon), Windows 10/11+
 - **CPU**: 8+ cores recommended
 - **RAM**: 16 GB+ recommended
 - **Disk**: 20 GB free space

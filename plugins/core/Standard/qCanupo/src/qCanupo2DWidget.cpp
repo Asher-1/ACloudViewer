@@ -191,13 +191,13 @@ void qCanupo2DWidget::mousePressEvent(QMouseEvent* event) {
     if (event->button() == Qt::MiddleButton) {
         // Middle button: always pan
         m_panning = true;
-        m_lastMousePos = event->pos();
+        m_lastMousePos = qtCompatMouseEventPosInt(event);
         setCursor(Qt::ClosedHandCursor);
     } else if (event->button() == Qt::LeftButton) {
         if (event->modifiers() & Qt::ShiftModifier) {
             // Shift+Left: alternate pan mode (for users without middle button)
             m_panning = true;
-            m_lastMousePos = event->pos();
+            m_lastMousePos = qtCompatMouseEventPosInt(event);
             setCursor(Qt::ClosedHandCursor);
         } else {
             // Left click: add/select boundary vertex
@@ -221,10 +221,10 @@ void qCanupo2DWidget::mouseReleaseEvent(QMouseEvent* event) {
 
 void qCanupo2DWidget::mouseMoveEvent(QMouseEvent* event) {
     if (m_panning) {
-        QPoint delta = event->pos() - m_lastMousePos;
+        QPoint delta = qtCompatMouseEventPosInt(event) - m_lastMousePos;
         m_centerX -= delta.x() / m_scale;
         m_centerY += delta.y() / m_scale;
-        m_lastMousePos = event->pos();
+        m_lastMousePos = qtCompatMouseEventPosInt(event);
         update();
     } else {
         emit mouseMoved(event->x(), event->y(), event->buttons());

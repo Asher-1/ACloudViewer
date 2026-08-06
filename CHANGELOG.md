@@ -54,7 +54,7 @@ v3.9.5-Beta (Asher) - 08/04/2026
       - No dependency on cloudViewer Python package or open3d
     - CLI harness: 15 processing commands (subsample, normals, ICP, SOR, C2C/C2M distance, etc.)
     - OpenClaw skill configuration (openclaw-skill.json)
-    - Cursor IDE MCP configuration (.cursor/mcp.json)
+    - Cursor IDE MCP configuration (.agents/mcp.json)
     - Unified 5-level test suite (33 integration tests + 21 harness tests)
     - GitHub Actions CI workflow for agent-integration tests (Level 1/2/5)
     - Python package: cli-anything-acloudviewer (CLI: cli-anything-acloudviewer,

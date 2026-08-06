@@ -104,7 +104,7 @@ cli-anything-acloudviewer-mcp --mode headless  # force headless
 
 ### 5. Cursor IDE Integration
 
-A `.cursor/mcp.json` is provided for one-click MCP integration in Cursor:
+A `.agents/mcp.json` is provided for one-click MCP integration in Cursor:
 
 ```json
 {

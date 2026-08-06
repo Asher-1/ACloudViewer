@@ -679,13 +679,29 @@ ExternalProject_Add(ext_ggml
     ${_GGML_EXTERNAL_DEPENDS_ARGS}
 )
 
-# ALIKED patch adds include/ggml-vulkan-aliked.h; 0002 adds it to GGML_PUBLIC_HEADERS.
+# ALIKED patch (aliked_merged/0001-vulkan-aliked.patch) adds include/ggml-vulkan-aliked.h
+# and adds it to GGML_PUBLIC_HEADERS.
 # Copy after install so existing build trees pick up the header without a full ggml refetch.
 if(_GGML_VULKAN_ENABLED)
+    # Generate a helper script at configure time (before the ExternalProject runs)
+    # so we can check file existence.  <SOURCE_DIR>/<INSTALL_DIR> are
+    # ExternalProject build-time tokens that cannot be used inside -P scripts,
+    # so we compute the concrete paths here.
+    set(_aliked_src "${CMAKE_CURRENT_BINARY_DIR}/ggml/src/ext_ggml/include/ggml-vulkan-aliked.h")
+    set(_aliked_dst "${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/include/ggml-vulkan-aliked.h")
+    set(_aliked_script "${CMAKE_CURRENT_BINARY_DIR}/ggml_install_aliked_header.cmake")
+    file(WRITE "${_aliked_script}"
+        "if(EXISTS \"${_aliked_src}\")\n"
+        "    get_filename_component(_aliked_dst_dir \"${_aliked_dst}\" DIRECTORY)\n"
+        "    file(MAKE_DIRECTORY \"${_aliked_dst_dir}\")\n"
+        "    execute_process(COMMAND \"${CMAKE_COMMAND}\" -E copy_if_different\n"
+        "        \"${_aliked_src}\" \"${_aliked_dst}\")\n"
+        "    message(STATUS \"Installed ggml-vulkan-aliked.h\")\n"
+        "else()\n"
+        "    message(STATUS \"ggml-vulkan-aliked.h not found in ggml source; skipping (ALIKED Vulkan fallback to CPU)\")\n"
+        "endif()\n")
     ExternalProject_Add_Step(ext_ggml install_aliked_vulkan_header
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "<SOURCE_DIR>/include/ggml-vulkan-aliked.h"
-            "<INSTALL_DIR>/include/ggml-vulkan-aliked.h"
+        COMMAND "${CMAKE_COMMAND}" -P "${_aliked_script}"
         DEPENDEES install
         COMMENT "Installing ggml-vulkan-aliked.h for AICore ALIKED Vulkan"
     )

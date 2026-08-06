@@ -426,8 +426,8 @@ class TestLevel1_CppPlugin:
             assert method in h, f"Missing declaration: {method}"
 
     def test_level1_cursor_mcp_config_exists(self):
-        mcp_json = REPO_ROOT / ".cursor" / "mcp.json"
-        assert mcp_json.exists(), "Missing .cursor/mcp.json"
+        mcp_json = REPO_ROOT / ".agents" / "mcp.json"
+        assert mcp_json.exists(), "Missing .agents/mcp.json"
         data = json.loads(_read_repo_text(mcp_json))
         assert "mcpServers" in data
         assert "acloudviewer" in data["mcpServers"]

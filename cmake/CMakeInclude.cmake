@@ -76,8 +76,21 @@ function(cloudViewer_install_ext)
     # install() scripts. Normalize once here for all platforms (forward slashes
     # are accepted on Windows by CMake and Ninja/MSBuild).
     if(_install_src)
+        # Preserve a trailing slash on DIRECTORY sources: install(DIRECTORY)
+        # treats "dir/" as "copy contents of dir into DEST", while "dir" means
+        # "copy dir itself under DEST". file(TO_CMAKE_PATH) strips trailing
+        # slashes, which silently turned every content-copy into a nested copy
+        # (e.g. stdlib landing in lib/python3.11/python3.11). Re-append it.
+        if(_install_src MATCHES "/+$")
+            set(_src_trailing_slash TRUE)
+        else()
+            set(_src_trailing_slash FALSE)
+        endif()
         file(TO_CMAKE_PATH "${_install_src}" _install_src)
         string(REPLACE "\\" "/" _install_src "${_install_src}")
+        if(_src_trailing_slash AND NOT _install_src MATCHES "/$")
+            string(APPEND _install_src "/")
+        endif()
     endif()
     if(_install_dest)
         file(TO_CMAKE_PATH "${_install_dest}" _install_dest)

@@ -209,6 +209,31 @@ void PythonConfig::initBundled()
     initFromLocation(pythonEnvDirPath);
 }
 
+void PythonConfig::initBundledFromLayout(const QString &prefix)
+{
+    m_type = Type::Bundled;
+    m_pythonHome = prefix;
+
+#if defined(Q_OS_WINDOWS)
+    // Windows bundled layout mirrors the Windows python install: DLLs + Lib.
+    m_pythonPath = QString("%1/DLLs;%1/Lib;%1/Lib/site-packages;").arg(m_pythonHome);
+#else
+    // POSIX bundled layout: stdlib lives directly under <home>/lib/pythonX.Y
+    // (matches cloudViewer_install_python_dir on Linux and bundle_slim.py on
+    // macOS). <home>/bin must come first so the bundled python wins over any
+    // host python on PATH.
+    m_pythonPath = QString("%1/bin;%1/lib/python%2.%3;%1/lib/python%2.%3/lib-dynload;"
+                           "%1/lib/python%2.%3/site-packages;")
+                       .arg(m_pythonHome)
+                       .arg(PythonVersion.versionMajor)
+                       .arg(PythonVersion.versionMinor);
+#endif
+
+#if defined(USE_EMBEDDED_MODULES)
+    m_pythonPath.append(BundledSitePackagesPath());
+#endif
+}
+
 void PythonConfig::initFromLocation(const QString &prefix)
 {
     QDir envRoot(prefix);
@@ -252,32 +277,13 @@ void PythonConfig::initFromLocation(const QString &prefix)
         }
     }
     else
-#if defined(Q_OS_WIN32) || defined(Q_OS_MACOS)
     {
-        QString pythonExePath = PathToPythonExecutableInEnv(Type::Bundled, prefix);
-        initFromPythonExecutable(pythonExePath);
-        if (m_pythonHome.isEmpty() && m_pythonPath.isEmpty())
-        {
-            qDebug() << "Failed to get paths info from python executable at (bundled)"
-                     << pythonExePath;
-            initVenv(envRoot.path());
-        }
-        else
-        {
-            m_type = Type::Bundled;
-        }
+        // Bundled env: derive paths directly from the flat install layout.
+        // Do NOT run the bundled python to discover paths — a pyenv/conda
+        // --prefix build reports the HOST prefix, leaking the host python
+        // into Bundled mode and breaking isolation (init_fs_encoding).
+        initBundledFromLayout(envRoot.path());
     }
-#else
-    {
-        m_pythonHome = envRoot.path();
-        m_pythonPath = QString("%1/DLLs;%1/lib;%1/Lib;%1/Lib/site-packages;").arg(m_pythonHome);
-        m_type = Type::Bundled;
-
-#if defined(USE_EMBEDDED_MODULES)
-        m_pythonPath.append(BundledSitePackagesPath());
-#endif
-    }
-#endif
 }
 
 void PythonConfig::initCondaEnv(const QString &condaPrefix)
