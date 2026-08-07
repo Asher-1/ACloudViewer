@@ -72,7 +72,9 @@ int main() {
     if (!embedPath(ctx, image, 0.f, &embPathA) ||
         !embedPath(ctx, image, 0.f, &embPathB)) {
         std::fprintf(stderr, "embed_path failed: %s\n",
-                     aicore_facedetect_last_error(ctx) ?: "(null)");
+                     (aicore_facedetect_last_error(ctx)
+                              ? aicore_facedetect_last_error(ctx)
+                              : "(null)"));
         aicore_facedetect_free(ctx);
         return 1;
     }
@@ -96,7 +98,9 @@ int main() {
     char* detJson = aicore_facedetect_detect_rgb_json(ctx, rgb, w, h);
     if (!detJson) {
         std::fprintf(stderr, "detect_rgb_json failed: %s\n",
-                     aicore_facedetect_last_error(ctx) ?: "(null)");
+                     (aicore_facedetect_last_error(ctx)
+                              ? aicore_facedetect_last_error(ctx)
+                              : "(null)"));
         aicore_facedetect_free_vec(reinterpret_cast<float*>(rgb));
         aicore_facedetect_free(ctx);
         return 1;
@@ -164,7 +168,9 @@ int main() {
     aicore_facedetect_free_vec(reinterpret_cast<float*>(rgb));
     if (rc != 0 || !embLmk || dimLmk <= 0) {
         std::fprintf(stderr, "embed_rgb_landmarks failed: %s\n",
-                     aicore_facedetect_last_error(ctx) ?: "(null)");
+                     (aicore_facedetect_last_error(ctx)
+                              ? aicore_facedetect_last_error(ctx)
+                              : "(null)"));
         aicore_facedetect_free(ctx);
         return 1;
     }

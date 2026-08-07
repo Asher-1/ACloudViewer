@@ -945,6 +945,15 @@ private:
         // garbage/false matches that vary across runs and backends (while the
         // f16/f32 models are stable). The ALIKED extractor already dequantizes
         // Q8_0 via CopyTensor, so this makes the matcher symmetric with it.
+        //
+        // NOTE: the dequantized F32 weights themselves are correct and
+        // deterministic (verified by read-back), and the CUDA backend yields
+        // q8 results equal to f32 (both 8 matches, deterministic). The native
+        // f32 matcher is ALSO non-deterministic on Vulkan (e.g.
+        // 8/328/156/179 across identical runs), so this is a pre-existing
+        // ggml-vulkan backend race on the async device, not a q8 dequant
+        // defect. q8 remains recommended on CUDA/CPU; Prefer the f16/f32
+        // models on Vulkan only if the driver is known stable.
         bool expand_f16_for_backend = false;
         bool dequant_q8_for_backend = false;
         const bool is_cpu = backend_.is_cpu();

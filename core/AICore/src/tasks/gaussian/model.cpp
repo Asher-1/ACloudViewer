@@ -211,9 +211,10 @@ bool model::forward(const float *images,
     const float scale = 1.0f / std::sqrt((float)dh);  // 1/8
     const float eps = h.ln_eps;
 
-    // Vulkan FA kernel asserts ne01 < 65536.  Metal is patched
-    // (apply_metal_fa_large_seq.py) to remove the assert and auto-tune
-    // command-buffer splitting, so only non-Apple GPU backends need capping.
+    // Vulkan FA kernel asserts ne01 < 65536.  Metal is patched (see
+    // 3rdparty/ggml/patches/manifest.yaml: metal_merged) to remove the
+    // assert and auto-tune command-buffer splitting, so only non-Apple GPU
+    // backends need capping.
 #ifndef __APPLE__
     static constexpr int64_t kMaxFASeq = 65535;
     std::vector<float> subsampled_buf;

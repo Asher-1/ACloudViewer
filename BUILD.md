@@ -369,8 +369,8 @@ Linux path. Use one platform script; all write the same env variable names.
 | Platform | One-shot setup | Env file (source before `cmake`) |
 |----------|----------------|----------------------------------|
 | **Linux** | `util/install_deps_ubuntu.sh assume-yes` | `~/.local/share/acloudviewer/acloudviewer-vulkan-env.sh` |
-| **Linux** (Vulkan only) | `util/install_vulkan_env.sh` | same |
-| **Windows** | `.\util\install_vulkan_sdk_windows.ps1` | `%LOCALAPPDATA%\acloudviewer\acloudviewer-vulkan-env.ps1` |
+| **Linux** (Vulkan only) | `util/vulkan/install_vulkan_env.sh` | same |
+| **Windows** | `.\util\vulkan\install_vulkan_sdk_windows.ps1` | `%LOCALAPPDATA%\acloudviewer\acloudviewer-vulkan-env.ps1` |
 
 macOS builds use **Metal + CPU only**; no Vulkan SDK setup is required or supported.
 See [compiling-cloudviewer-macos.md](docs/guides/compiling_doc/compiling-cloudviewer-macos.md).
@@ -382,11 +382,11 @@ Shared variables set by all scripts: `VULKAN_SDK`, `ACLOUDVIEWER_GLSLC`,
 automatically; no manual `-DVulkan_*` flags after setup.
 
 **Linux glslc note:** LunarG SDK **headers** are used on 20.04/22.04, but SDK
-`bin/glslc` often requires GLIBC 2.34+ and fails on focal. `install_vulkan_linux.sh`
+`bin/glslc` often requires GLIBC 2.34+ and fails on focal. `util/vulkan/install_vulkan_linux.sh`
 prefers SDK `glslc` when runnable, otherwise apt `glslc` or a pinned local shaderc
 build (`~/.local/bin/glslc`).
 
-**Conda Docker deps:** `Dockerfile_deps_conda` runs the same `install_vulkan_env.sh`
+**Conda Docker deps:** `Dockerfile_deps_conda` runs the same `util/vulkan/install_vulkan_env.sh`
 as other Linux images (with `ACLOUDVIEWER_UPDATE_BASHRC=0` in containers).
 
 ### Build-time vs runtime dependencies (all platforms)
@@ -408,17 +408,17 @@ does **not** include the Vulkan SDK; it includes precompiled SPIR-V inside
 
 ```bash
 # Linux
-util/install_vulkan_env.sh
+util/vulkan/install_vulkan_env.sh
 # or Linux full deps:
 util/install_deps_ubuntu.sh assume-yes
 
 # Windows (PowerShell)
-.\util\install_vulkan_sdk_windows.ps1
+.\util\vulkan\install_vulkan_sdk_windows.ps1
 ```
 
 Optional: skip shell profile hooks — Linux:
-`ACLOUDVIEWER_UPDATE_BASHRC=0 util/install_vulkan_env.sh`; Windows:
-`.\util\install_vulkan_sdk_windows.ps1 -SkipProfile`
+`ACLOUDVIEWER_UPDATE_BASHRC=0 util/vulkan/install_vulkan_env.sh`; Windows:
+`.\util\vulkan\install_vulkan_sdk_windows.ps1 -SkipProfile`
 
 The helper writes `acloudviewer-vulkan-env.sh` (or `.ps1` on Windows) and,
 by default, installs a hook at the **top** of `~/.bashrc` and `~/.profile`
@@ -434,7 +434,7 @@ source ~/.local/share/acloudviewer/acloudviewer-vulkan-env.sh   # recommended in
 # or open a new interactive terminal (login/interactive bash reads the top hook)
 ```
 
-Re-run `util/install_vulkan_env.sh` to migrate an older bottom-of-bashrc hook.
+Re-run `util/vulkan/install_vulkan_env.sh` to migrate an older bottom-of-bashrc hook.
 
 Typical local configure/build after setup:
 

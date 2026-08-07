@@ -366,8 +366,10 @@ void FaceDetectTestDataWorker::run() {
             }
 
             if (!ok) {
-                err = QString::fromUtf8(aicore_facedetect_last_error(ctx)
-                                                ?: "embed failed");
+                err = QString::fromUtf8(
+                        aicore_facedetect_last_error(ctx)
+                                ? aicore_facedetect_last_error(ctx)
+                                : "embed failed");
             }
             if (ok && registeredPath != imagePath) {
                 emit logMessage(

@@ -60,7 +60,7 @@ struct MatchingOptions {
     FeatureMatcherType type = FeatureMatcherType::kAuto;
     std::string device = "cpu";
     int32_t num_threads = 0;
-    double min_score = 0.1;
+    double min_score = 0.5;
 
     bool check(std::string* error = nullptr) const;
 };

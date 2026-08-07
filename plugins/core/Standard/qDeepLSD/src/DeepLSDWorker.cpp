@@ -214,9 +214,10 @@ bool DeepLSDWorker::runExtract() {
                 ctx, loaded.processed.constBits(), loaded.processed.width(),
                 loaded.processed.height(), loaded.processed.bytesPerLine(),
                 &segs, &seg_count, &df, &ang, &ow, &oh) != 0) {
-        emit logMessage(
-                QString("[Error] Extract failed: %1")
-                        .arg(aicore_deeplsd_last_error(ctx) ?: "unknown"));
+        emit logMessage(QString("[Error] Extract failed: %1")
+                                .arg(aicore_deeplsd_last_error(ctx)
+                                             ? aicore_deeplsd_last_error(ctx)
+                                             : "unknown"));
         m_pendingCtx = ctx;
         return false;
     }

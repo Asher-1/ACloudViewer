@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Apply ordered unified-diff patches to a fetched ggml source tree.
 
-All ggml source modifications in ACloudViewer must be checked in as *.patch
-files under this directory and listed in manifest.yaml. Legacy Python mutators
-(apply_metal_*.py) remain for upstream drift tolerance but new work must use
-git-apply patches.
+All ggml source modifications in ACloudViewer are checked in as *.patch
+files under this directory and listed in manifest.yaml. The former in-place
+Python mutators (apply_cpu_all_variants_compiler_checks.py,
+apply_metal_conv_transpose_opt.py, apply_metal_fa_large_seq.py) were converted
+into unified-diff patches so the fetched tree is byte-reproducible on every
+platform. New work must add *.patch files to manifest.yaml.
 
 Idempotency:
   - GNU `patch -p1 -N` skips hunks already applied (safe in ExternalProject trees

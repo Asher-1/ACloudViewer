@@ -76,6 +76,16 @@ if(BUILD_OPENCV)
             "calib3d=${_opencv_calib3d} video=OFF")
 endif()
 
+# OpenCV's bundled OpenEXR/Imath (BUILD_OPENEXR=ON) still uses deprecated C++11
+# dynamic exception specifications (throw(...)). Newer GCC/Clang flag this with
+# -Wdeprecated, and warnings-as-errors environments escalate it into a hard
+# failure (Ubuntu wheel CI). Downgrade that specific warning for the OpenCV
+# 3rdparty build only; it stays fatal for CloudViewer's own code.
+set(_opencv_ext_cxx_flags "")
+if(NOT MSVC)
+    set(_opencv_ext_cxx_flags "-Wno-error=deprecated")
+endif()
+
 ExternalProject_Add(ext_opencv
         PREFIX opencv
         URL https://github.com/opencv/opencv/archive/${OPENCV_VERSION_FILE}
@@ -87,6 +97,7 @@ ExternalProject_Add(ext_opencv
         INSTALL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}
         CMAKE_ARGS
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+            -DCMAKE_CXX_FLAGS=${_opencv_ext_cxx_flags}
             ${ExternalProject_CMAKE_ARGS_hidden}
             # -DBUILD_SHARED_LIBS=$<$<PLATFORM_ID:Linux>:ON:OFF>
             -DBUILD_SHARED_LIBS=${SHARED_BUILD_OPENCV}

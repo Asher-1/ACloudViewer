@@ -72,7 +72,10 @@ typedef struct {
 } aicore_model_device_info;
 
 /* Backend API ABI version. Increment when this header's binary contract
-   changes. */
+   changes. This is the single source of truth: the implementation returns it
+   (see aicore_backend_abi_version) and runtime checkers must stay in sync
+   (tests/depth/test_depth_capi_contract.cpp, util/check_aicore_runtime.py). */
+#define AICORE_BACKEND_ABI_VERSION 2
 AICORE_CAPI int aicore_backend_abi_version(void);
 
 /* Number of entries returned by aicore_device_at. Only devices successfully
