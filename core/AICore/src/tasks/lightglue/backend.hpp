@@ -23,6 +23,10 @@ struct engine_backend {
     ~engine_backend() { release(); }
 
     bool is_cpu() const;
+    bool is_vulkan() const {
+        return device.find("Vulkan") != std::string::npos ||
+               device.find("vulkan") != std::string::npos;
+    }
     bool supports_fused_attention() const;
     std::unique_lock<std::recursive_mutex> lock() const { return lease.lock(); }
 };

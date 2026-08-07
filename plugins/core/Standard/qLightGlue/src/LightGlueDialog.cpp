@@ -256,7 +256,7 @@ void LightGlueDialog::setupUi() {
     m_minScore = new QDoubleSpinBox;
     m_minScore->setRange(0.0, 1.0);
     m_minScore->setSingleStep(0.05);
-    m_minScore->setValue(0.1);
+    m_minScore->setValue(0.5);
     m_minScore->setToolTip(
             tr("Filter exported matches by confidence score (0–1)."));
     minScoreLayout->addWidget(m_minScore);

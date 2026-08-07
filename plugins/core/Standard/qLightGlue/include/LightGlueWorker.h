@@ -50,7 +50,7 @@ public:
         QStringList inputPaths;
         int threads = 0;
         QString device = "auto";
-        double minScore = 0.1;
+        double minScore = 0.5;
         int matcherType = 2;
         int maxKeypoints = 2048;
         int maxResize = 640;

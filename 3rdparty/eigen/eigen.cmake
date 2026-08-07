@@ -17,6 +17,13 @@ ExternalProject_Add(ext_eigen
             -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
             -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
             -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+            # Eigen is consumed header-only; skip its test/doc/packaging infra.
+            # This avoids the BLAS/library try_compile checks that fail under
+            # the MSVC generator with "<bindir> is not an absolute path".
+            -DEIGEN_BUILD_TESTING=OFF
+            -DEIGEN_BUILD_DOC=OFF
+            -DEIGEN_BUILD_PKGCONFIG=OFF
+            -BUILD_TESTING=OFF
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>)
 
 ExternalProject_Get_Property(ext_eigen INSTALL_DIR)

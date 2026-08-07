@@ -650,7 +650,16 @@ public:
         ggml_tensor *device_best0 = nullptr;
         ggml_tensor *device_mutual1 = nullptr;
         ggml_tensor *device_best_score0 = nullptr;
-        if (backend_.is_cpu()) {
+        // First-principles: ggml-vulkan's ggml_argmax is broken for the
+        // F16 (256x256) assignment matrix — empirically returns index 0
+        // for every row, which collapses the mutual check to 0 matches.
+        // CUDA's argmax is correct, so the GPU fast-path stays there. The
+        // Vulkan path downloads the small 64K-element scores matrix and
+        // does argmax / mutual / gather on the host, where the same fix
+        // we use on the CPU backend is well-tested.
+        const bool argmax_on_device =
+                !(backend_.is_vulkan() || backend_.is_cpu());
+        if (backend_.is_cpu() || !argmax_on_device) {
             ggml_set_output(scores);
             ggml_build_forward_expand(graph, scores);
         } else {
@@ -733,7 +742,12 @@ public:
         }
         const auto profile_compute = std::chrono::steady_clock::now();
 
-        if (backend_.is_cpu()) {
+        if (backend_.is_cpu() || !argmax_on_device) {
+            // Vulkan path: see argmax_on_device comment above — we routed
+            // the assignment through the CPU branch because ggml-vulkan's
+            // argmax is broken for the F16 (256x256) log_assignment matrix.
+            // The 64K-element scores tensor is small enough that the host
+            // round-trip is cheaper than the previous 0-matches regression.
             std::vector<float> host_scores(
                     static_cast<size_t>(tokens0 * tokens1));
             ggml_backend_tensor_get(scores, host_scores.data(), 0,
@@ -923,29 +937,37 @@ private:
         // assignment scores lose enough precision that the soft-max/argmax
         // mutual check collapses to 0 matches. The f32 widening matches
         // CPU/CUDA outputs and unlocks Vulkan matching on the f16 model.
+        // F16 weights are widened to F32 on the CPU and Vulkan backends (see
+        // below). Q8_0 block-quantized weights additionally need to be
+        // dequantized to F32 on GPU backends: the assignment-score dot
+        // products are only 128 dims, and the ggml GPU quantized matmul path
+        // is neither precise enough nor deterministic there, producing
+        // garbage/false matches that vary across runs and backends (while the
+        // f16/f32 models are stable). The ALIKED extractor already dequantizes
+        // Q8_0 via CopyTensor, so this makes the matcher symmetric with it.
         bool expand_f16_for_backend = false;
-        if (backend_.is_cpu()) {
-            for (int64_t i = 0; i < file_.TensorCount(); ++i) {
-                const ggml_tensor *tensor =
-                        ggml_get_tensor(file_.Context(), file_.TensorName(i));
-                expand_f16_for_backend =
-                        expand_f16_for_backend || tensor->type == GGML_TYPE_F16;
+        bool dequant_q8_for_backend = false;
+        const bool is_cpu = backend_.is_cpu();
+        const std::string &dev = backend_.device;
+        const bool is_vulkan =
+                dev.find("Vulkan") != std::string::npos ||
+                dev.find("vulkan") != std::string::npos;
+        for (int64_t i = 0; i < file_.TensorCount(); ++i) {
+            const ggml_tensor *tensor =
+                    ggml_get_tensor(file_.Context(), file_.TensorName(i));
+            const bool is_f16 = tensor->type == GGML_TYPE_F16;
+            const bool is_q8 = tensor->type == GGML_TYPE_Q8_0;
+            if (is_f16 && (is_cpu || is_vulkan)) {
+                expand_f16_for_backend = true;
             }
-        } else {
-            const std::string &dev = backend_.device;
-            const bool is_vulkan = dev.find("Vulkan") != std::string::npos ||
-                                   dev.find("vulkan") != std::string::npos;
-            if (is_vulkan) {
-                for (int64_t i = 0; i < file_.TensorCount(); ++i) {
-                    const ggml_tensor *tensor = ggml_get_tensor(
-                            file_.Context(), file_.TensorName(i));
-                    expand_f16_for_backend = expand_f16_for_backend ||
-                                             tensor->type == GGML_TYPE_F16;
-                }
+            if (is_q8 && !is_cpu) {
+                dequant_q8_for_backend = true;
             }
         }
         const bool expand_f16_for_cpu = expand_f16_for_backend;
-        if (backend_.is_cpu() && !expand_f16_for_cpu) {
+        const bool needs_full_copy = expand_f16_for_backend ||
+                                     dequant_q8_for_backend;
+        if (backend_.is_cpu() && !needs_full_copy) {
             void *base = ggml_get_mem_buffer(file_.Context());
             const size_t size = ggml_get_mem_size(file_.Context());
             weight_buffer_ = ggml_backend_cpu_buffer_from_ptr(base, size);
@@ -974,10 +996,16 @@ private:
         for (int64_t i = 0; i < file_.TensorCount(); ++i) {
             ggml_tensor *source =
                     ggml_get_tensor(file_.Context(), file_.TensorName(i));
-            const ggml_type target_type =
-                    expand_f16_for_cpu && source->type == GGML_TYPE_F16
-                            ? GGML_TYPE_F32
-                            : source->type;
+            const ggml_type target_type = [&]() {
+                if (expand_f16_for_cpu && source->type == GGML_TYPE_F16) {
+                    return GGML_TYPE_F32;
+                }
+                if (dequant_q8_for_backend &&
+                    source->type == GGML_TYPE_Q8_0) {
+                    return GGML_TYPE_F32;
+                }
+                return source->type;
+            }();
             ggml_tensor *target = ggml_new_tensor(device_context_, target_type,
                                                   GGML_MAX_DIMS, source->ne);
             ggml_set_name(target, file_.TensorName(i));
@@ -1002,6 +1030,30 @@ private:
                 ggml_fp16_to_fp32_row(
                         static_cast<const ggml_fp16_t *>(source->data),
                         values.data(), static_cast<int64_t>(values.size()));
+                ggml_backend_tensor_set(target, values.data(), 0,
+                                        values.size() * sizeof(float));
+            } else if (source->type == GGML_TYPE_Q8_0 &&
+                       target->type == GGML_TYPE_F32) {
+                // Q8_0 block layout: { ggml_fp16_t d (scale), int8_t qs[32] }.
+                std::vector<float> values(
+                        static_cast<size_t>(ggml_nelements(source)));
+                const size_t block_bytes = ggml_type_size(GGML_TYPE_Q8_0);
+                const int64_t block_elems = ggml_blck_size(GGML_TYPE_Q8_0);
+                const size_t num_blocks = values.size() / block_elems;
+                const uint8_t *raw =
+                        static_cast<const uint8_t *>(source->data);
+                for (size_t b = 0; b < num_blocks; ++b) {
+                    const uint8_t *bp = raw + b * block_bytes;
+                    ggml_fp16_t d_half;
+                    std::memcpy(&d_half, bp, sizeof(ggml_fp16_t));
+                    const float scale = ggml_fp16_to_fp32(d_half);
+                    const int8_t *qs = reinterpret_cast<const int8_t *>(
+                            bp + sizeof(ggml_fp16_t));
+                    const size_t base = b * block_elems;
+                    for (int64_t j = 0; j < block_elems; ++j) {
+                        values[base + j] = scale * qs[j];
+                    }
+                }
                 ggml_backend_tensor_set(target, values.data(), 0,
                                         values.size() * sizeof(float));
             } else {
