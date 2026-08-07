@@ -949,9 +949,8 @@ private:
         bool dequant_q8_for_backend = false;
         const bool is_cpu = backend_.is_cpu();
         const std::string &dev = backend_.device;
-        const bool is_vulkan =
-                dev.find("Vulkan") != std::string::npos ||
-                dev.find("vulkan") != std::string::npos;
+        const bool is_vulkan = dev.find("Vulkan") != std::string::npos ||
+                               dev.find("vulkan") != std::string::npos;
         for (int64_t i = 0; i < file_.TensorCount(); ++i) {
             const ggml_tensor *tensor =
                     ggml_get_tensor(file_.Context(), file_.TensorName(i));
@@ -965,8 +964,8 @@ private:
             }
         }
         const bool expand_f16_for_cpu = expand_f16_for_backend;
-        const bool needs_full_copy = expand_f16_for_backend ||
-                                     dequant_q8_for_backend;
+        const bool needs_full_copy =
+                expand_f16_for_backend || dequant_q8_for_backend;
         if (backend_.is_cpu() && !needs_full_copy) {
             void *base = ggml_get_mem_buffer(file_.Context());
             const size_t size = ggml_get_mem_size(file_.Context());
@@ -1000,8 +999,7 @@ private:
                 if (expand_f16_for_cpu && source->type == GGML_TYPE_F16) {
                     return GGML_TYPE_F32;
                 }
-                if (dequant_q8_for_backend &&
-                    source->type == GGML_TYPE_Q8_0) {
+                if (dequant_q8_for_backend && source->type == GGML_TYPE_Q8_0) {
                     return GGML_TYPE_F32;
                 }
                 return source->type;
@@ -1040,8 +1038,7 @@ private:
                 const size_t block_bytes = ggml_type_size(GGML_TYPE_Q8_0);
                 const int64_t block_elems = ggml_blck_size(GGML_TYPE_Q8_0);
                 const size_t num_blocks = values.size() / block_elems;
-                const uint8_t *raw =
-                        static_cast<const uint8_t *>(source->data);
+                const uint8_t *raw = static_cast<const uint8_t *>(source->data);
                 for (size_t b = 0; b < num_blocks; ++b) {
                     const uint8_t *bp = raw + b * block_bytes;
                     ggml_fp16_t d_half;
