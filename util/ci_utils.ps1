@@ -395,8 +395,16 @@ function Build-GuiApp {
     New-Item -ItemType Directory -Force -Path "build"
     Push-Location "build"
 
+    # Only use conda/system Eigen when a conda env (pinned eigen=3.4.*) is
+    # active. Otherwise keep the ext_eigen download-build so non-conda builds
+    # are unaffected. On the Windows CI runner conda is always set up, so this
+    # reliably routes to the prebuilt Eigen instead of the ext_eigen
+    # download/configure step that fails under MSVC.
+    $useSystemEigen3 = if ($env:EIGEN_ROOT_DIR) { "ON" } else { "OFF" }
+
     $cmakeGuiOptions = @(
         "-DEIGEN3_ROOT_DIR=$env:EIGEN_ROOT_DIR",
+        "-DUSE_SYSTEM_EIGEN3=$useSystemEigen3",
         "-DBUILD_SHARED_LIBS=$env:BUILD_SHARED_LIBS",
         "-DDEVELOPER_BUILD=$env:DEVELOPER_BUILD",
         "-DSTATIC_WINDOWS_RUNTIME=$env:STATIC_RUNTIME",

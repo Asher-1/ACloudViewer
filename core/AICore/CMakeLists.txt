@@ -148,7 +148,16 @@ add_dependencies(${PROJECT_NAME} 3rdparty_ggml)
 target_link_libraries(${PROJECT_NAME} PRIVATE 3rdparty_ggml PRIVATE 3rdparty_jpeg)
 find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
-    target_link_libraries(${PROJECT_NAME} PRIVATE OpenMP::OpenMP_CXX)
+    if(MSVC)
+        # MSVC's default /openmp is OpenMP 2.0, which does NOT support
+        # '#pragma omp simd' or the 'collapse' clause (C7660/C4849). The
+        # built-in /openmp:experimental enables them (no optional LLVM
+        # component required), so the ALIKED SIMD/collapse kernels keep their
+        # full performance on Windows instead of being disabled.
+        target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/openmp:experimental>)
+    else()
+        target_link_libraries(${PROJECT_NAME} PRIVATE OpenMP::OpenMP_CXX)
+    endif()
 endif()
 # Consumers link only AICore; propagate ggml core .so paths (no include dirs) so
 # executables resolve libggml alongside libAICore. Backend MODULE libs remain
@@ -402,7 +411,12 @@ if(AICore_BUILD_TESTS)
         endif()
         find_package(OpenMP)
         if(OpenMP_CXX_FOUND)
-            target_link_libraries(AICore_test PUBLIC OpenMP::OpenMP_CXX)
+            if(MSVC)
+                # Same as AICore: enable SIMD/collapse via /openmp:experimental.
+                target_compile_options(AICore_test PUBLIC $<$<COMPILE_LANGUAGE:CXX>:/openmp:experimental>)
+            else()
+                target_link_libraries(AICore_test PUBLIC OpenMP::OpenMP_CXX)
+            endif()
         endif()
         target_compile_definitions(AICore_test PUBLIC AICore_ENABLED)
         aicore_apply_compile_definitions(AICore_test)
