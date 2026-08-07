@@ -43,6 +43,28 @@ alwaysApply: false
 - E2E tests in `tests/test_full_e2e.py` — GUI tests gated by `ACLOUDVIEWER_E2E_GUI=1`
 - Run tests: `pytest cli_anything/acloudviewer/tests/ -v`
 
+## AI 操作者必读（agent 通过 CLI/MCP 控制 ACloudViewer）
+
+本仓库对 AI/自动化脚本暴露三套受控接口，**一律经 `agent-integration/` 工具链，禁止猜二进制参数**：
+
+| 接口 | 方式 | 适用 |
+|------|------|------|
+| CLI Harness | `cli-anything-acloudviewer` | headless 处理 / GUI 走 RPC |
+| MCP Server | `cli-anything-acloudviewer-mcp` | OpenClaw / Cursor / Claude Code |
+| JSON-RPC | WebSocket `ws://localhost:6001` | 实时 GUI 控制（需 qJSonRPCPlugin） |
+
+常用命令速查（headless 无需 GUI）：
+```bash
+cli-anything-acloudviewer info
+cli-anything-acloudviewer convert in.ply out.obj
+cli-anything-acloudviewer process subsample in.ply -o out.ply --voxel-size 0.05
+cli-anything-acloudviewer process poisson-recon in.ply -o mesh.ply --depth 8
+cli-anything-acloudviewer reconstruct auto ./imgs -w ./ws --quality high
+```
+- `--mode headless` 直接调二进制，最稳（Windows 下避免 `auto` 模式挂起）。
+- 完整清单：`agent-integration/docs/CLI-QUICK-REFERENCE.md` 与 `agent-integration/docs/COMMAND-MAPPING.md`。
+- **运行 qPythonRuntime Python 脚本**：GUI 面板手动运行；headless 用 `ACloudViewer -SILENT -PYTHON_SCRIPT x.py`。
+
 ## File Locations
 
 | Component | Path |

@@ -43,32 +43,34 @@ index 82e9480..b2c9e5b 100644
          endif()
      elseif(GGML_SYSTEM_ARCH STREQUAL "ARM")
          if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-@@ -425,7 +448,28 @@ if (GGML_CPU_ALL_VARIANTS)
+@@ -425,7 +448,30 @@ if (GGML_CPU_ALL_VARIANTS)
          elseif (APPLE)
              ggml_add_cpu_backend_variant(apple_m1             DOTPROD)
              ggml_add_cpu_backend_variant(apple_m2_m3          DOTPROD MATMUL_INT8)
 -            ggml_add_cpu_backend_variant(apple_m4             DOTPROD MATMUL_INT8 NOSVE SME)
-+            # apple_m4 uses +nosve+sme; some compilers define __ARM_FEATURE_SVE
-+            # via streaming SVE (SME) but reject non-streaming intrinsics in vec.h.
-+            # Detect the conflict: if __ARM_FEATURE_SVE is defined with +nosve+sme,
-+            # the SVE code paths in vec.h/quants.c will be active but cannot compile.
++            # apple_m4 uses +nosve+sme.  With +sme some toolchains (Apple clang)
++            # define __ARM_FEATURE_SVE via streaming SVE, but +nosve forbids the
++            # non-streaming SVE intrinsics that vec.h/quants.c rely on (e.g.
++            # svexpa_f32 -> "needs target feature sve").  Don't guess from macros:
++            # actually try to compile the exact intrinsic that fails and only add
++            # the apple_m4 variant when it builds cleanly.
 +            include(CheckCXXSourceCompiles)
 +            set(_CMAKE_REQUIRED_FLAGS_SAVE "${CMAKE_REQUIRED_FLAGS}")
 +            set(CMAKE_REQUIRED_FLAGS "-march=armv9.2-a+dotprod+i8mm+nosve+sme")
 +            check_cxx_source_compiles("
++                #include <arm_sve.h>
 +                int main() {
-+                #if defined(__ARM_FEATURE_SVE)
-+                    // Conflict: SVE feature macro active but +nosve prevents SVE intrinsics
-+                    return fail_on_purpose;
-+                #endif
++                    svuint32_t v = svdup_n_u32(1u);
++                    svfloat32_t r = svexpa_f32(v);
++                    (void)r;
 +                    return 0;
 +                }
-+            " GGML_CXX_APPLE_M4_NOSVE_OK)
++            " GGML_CXX_APPLE_M4_SVEXPA_OK)
 +            set(CMAKE_REQUIRED_FLAGS "${_CMAKE_REQUIRED_FLAGS_SAVE}")
-+            if (GGML_CXX_APPLE_M4_NOSVE_OK)
++            if (GGML_CXX_APPLE_M4_SVEXPA_OK)
 +                ggml_add_cpu_backend_variant(apple_m4             DOTPROD MATMUL_INT8 NOSVE SME)
 +            else()
-+                message(STATUS "Skipping apple_m4 CPU backend: __ARM_FEATURE_SVE conflicts with +nosve+sme")
++                message(STATUS "Skipping apple_m4 CPU backend: svexpa_f32 cannot compile with +nosve+sme")
 +            endif()
          else()
              message(FATAL_ERROR "Unsupported ARM target OS: ${CMAKE_SYSTEM_NAME}")
