@@ -92,6 +92,13 @@ ExternalProject_Add(ext_opencv
         URL_MD5 ${OPENCV_MD5}
         DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/opencv"
         UPDATE_COMMAND ""
+        # FFmpeg 8.x compatibility: avcodec_close and av_stream_get_side_data
+        # were removed in FFmpeg 7/8.  CMake script is cross-platform (Linux,
+        # macOS, Windows) and idempotent (dry-run guard).
+        PATCH_COMMAND ${CMAKE_COMMAND}
+            -DSRC_DIR=<SOURCE_DIR>
+            -DPATCH_FILE=${CloudViewer_3RDPARTY_DIR}/opencv/patches/0001-ffmpeg8-compat.patch
+            -P ${CloudViewer_3RDPARTY_DIR}/opencv/patches/apply_ffmpeg8_patch.cmake
         BUILD_IN_SOURCE OFF
         BUILD_ALWAYS 0
         INSTALL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}
