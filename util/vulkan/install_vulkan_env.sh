@@ -2,7 +2,7 @@
 # Cross-platform entry point for ggml Vulkan *build* dependencies.
 #
 # Linux/macOS: run this script.
-# Windows:     .\\util\\install_vulkan_sdk_windows.ps1
+# Windows:     .\\util\\vulkan\\install_vulkan_sdk_windows.ps1
 
 set -euo pipefail
 
@@ -18,7 +18,7 @@ case "$(uname -s)" in
         ;;
     *)
         echo "Unsupported platform for ${0}." >&2
-        echo "On Windows run: .\\util\\install_vulkan_sdk_windows.ps1" >&2
+        echo "On Windows run: .\\util\\vulkan\\install_vulkan_sdk_windows.ps1" >&2
         exit 1
         ;;
 esac

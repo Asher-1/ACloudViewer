@@ -27,7 +27,7 @@ deps=(
     libsdl2-dev
     ninja-build
     libxi-dev
-    # ggml Vulkan: loader + CI/runtime smoke (headers/glslc/SPIR-V via install_vulkan_env.sh)
+    # ggml Vulkan: loader + CI/runtime smoke (headers/glslc/SPIR-V via util/vulkan/install_vulkan_env.sh)
     libvulkan-dev      # system libvulkan.so loader (runtime on end-user GPU)
     vulkan-tools       # vulkaninfo — used by CI docker_test / local smoke
     mesa-vulkan-drivers # lavapipe ICD — headless Vulkan smoke on CI runners
@@ -100,8 +100,8 @@ fi
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [[ -n "${ACLOUDVIEWER_SKIP_VULKAN_SETUP:-}" ]]; then
     echo "Skipping ggml Vulkan setup (ACLOUDVIEWER_SKIP_VULKAN_SETUP is set)."
-elif [[ -x "${script_dir}/install_vulkan_env.sh" ]]; then
-    bash "${script_dir}/install_vulkan_env.sh"
+elif [[ -x "${script_dir}/vulkan/install_vulkan_env.sh" ]]; then
+    bash "${script_dir}/vulkan/install_vulkan_env.sh"
 else
-    echo "WARNING: ${script_dir}/install_vulkan_env.sh not found; skipping Vulkan setup." >&2
+    echo "WARNING: ${script_dir}/vulkan/install_vulkan_env.sh not found; skipping Vulkan setup." >&2
 fi

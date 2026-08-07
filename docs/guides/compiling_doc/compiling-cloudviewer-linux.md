@@ -50,7 +50,7 @@
 | **CMake**        | ≥ 3.20                                         |
 | **Python**       | 3.10 – 3.13                                    |
 | **Compiler**     | GCC ≥ 9 or Clang (provided by `install_deps`)  |
-| **AICore GPU (default)** | **Vulkan** — `AICore_USE_VULKAN=ON` on Linux (CMake default); run `util/install_vulkan_env.sh` or `install_deps_ubuntu.sh` for build-time SDK/glslc |
+| **AICore GPU (default)** | **Vulkan** — `AICore_USE_VULKAN=ON` on Linux (CMake default); run `util/vulkan/install_vulkan_env.sh` or `install_deps_ubuntu.sh` for build-time SDK/glslc |
 | **GPU (optional)** | CUDA toolkit ≥ 11.8 for optional `-DAICore_USE_CUDA=ON` / `-DBUILD_CUDA_MODULE=ON` |
 
 ---
@@ -75,7 +75,7 @@ utils/install_deps_ubuntu.sh assume-yes
 
 This script installs all required system packages (`xorg-dev`, `libglu1-mesa-dev`,
 `ninja-build`, `libtbb-dev`, `libvulkan-dev`, etc.), adjusts clang/libc++ versions per
-Ubuntu release, and runs `util/install_vulkan_env.sh` to install the **Vulkan build
+Ubuntu release, and runs `util/vulkan/install_vulkan_env.sh` to install the **Vulkan build
 environment** (LunarG SDK headers, `glslc`, SPIR-V headers) used by AICore/qDA3.
 
 Reload the generated env in new shells before `cmake`:
@@ -619,7 +619,7 @@ to CPU).
 
 ```bash
 # One-shot setup (also run by install_deps_ubuntu.sh)
-util/install_vulkan_env.sh
+util/vulkan/install_vulkan_env.sh
 source "${HOME}/.local/share/acloudviewer/acloudviewer-vulkan-env.sh"
 
 cmake -DAICore_ENABLED=ON \
@@ -707,6 +707,6 @@ Set `-DGLIBCXX_USE_CXX11_ABI=OFF` (or `ON`) to match the frameworks you depend o
 | `lrelease: undefined symbol: _ZdlPvm` or wrong Qt tools used (Conda) | CMake found a standalone Qt (e.g. `/opt/Qt`) instead of the Conda Qt. Set `-DCMAKE_PREFIX_PATH=$CONDA_PREFIX` (**not** `$CONDA_PREFIX/lib`). Delete `build_app/` and re-run cmake |
 | Segfault on `import cloudViewer` | ABI mismatch — see [CXX ABI compatibility](#cxx-abi-compatibility) |
 | CUDA not detected | Install CUDA toolkit and verify `nvcc -V` works |
-| `AICore_USE_VULKAN=ON but Vulkan dependencies are missing` (ggml may print `GGML_USE_VULKAN` internally) | Run `util/install_vulkan_env.sh`, then `source ~/.local/share/acloudviewer/acloudviewer-vulkan-env.sh` before `cmake` |
+| `AICore_USE_VULKAN=ON but Vulkan dependencies are missing` (ggml may print `GGML_USE_VULKAN` internally) | Run `util/vulkan/install_vulkan_env.sh`, then `source ~/.local/share/acloudviewer/acloudviewer-vulkan-env.sh` before `cmake` |
 | `libggml-vulkan.so` missing in wheel | Reconfigure with `-DAICore_USE_VULKAN=ON` and rebuild; do not use `without_vulkan` in `ci_utils.sh` |
 | `clang: not found` on Ubuntu 20.04 | Run `install_deps_ubuntu.sh` — it installs version-specific clang |

@@ -53,7 +53,7 @@ COPY . ${ACloudViewer_DEV}/ACloudViewer
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 
 # Refresh Vulkan build env when repo scripts change (deps_conda layer also runs install_vulkan_env).
-RUN ACLOUDVIEWER_UPDATE_BASHRC=0 ./util/install_vulkan_env.sh --skip-bashrc
+RUN ACLOUDVIEWER_UPDATE_BASHRC=0 ./util/vulkan/install_vulkan_env.sh --skip-bashrc
 
 RUN mkdir -p ${ACloudViewer_INSTALL}
 

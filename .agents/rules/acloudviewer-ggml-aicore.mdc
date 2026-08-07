@@ -5,9 +5,9 @@ globs:
   - core/AICore/**
   - docker/docker_test.sh
   - docker/test_wheel_runtime.sh
-  - util/install_vulkan_linux.sh
-  - util/install_vulkan_sdk_windows.ps1
-  - util/acloudviewer_vulkan_env_common.sh
+  - util/vulkan/install_vulkan_linux.sh
+  - util/vulkan/install_vulkan_sdk_windows.ps1
+  - util/vulkan/acloudviewer_vulkan_env_common.sh
 alwaysApply: false
 ---
 
@@ -46,12 +46,12 @@ alwaysApply: false
 
 ### Linux CI
 - Ubuntu focal (20.04): GLIBC too old for LunarG SDK binaries; shaderc is built from source
-- `install_vulkan_linux.sh` captures glslc path via command substitution — build output MUST go to stderr
+- `util/vulkan/install_vulkan_linux.sh` captures glslc path via command substitution — build output MUST go to stderr
 - Docker CI runners have no GPU; Vulkan device check is graceful (CPU-only is acceptable)
 - `docker_test.sh` and `test_wheel_runtime.sh` run `check_aicore_runtime.py` without `--expect-device vulkan`
 
 ### Windows CI
-- `PATCH_COMMAND` uses a generated Python script (`ggml_run_patches.py`) to avoid `cmd /c` quoting issues
+- All ggml source modifications are unified-diff files listed in `3rdparty/ggml/patches/manifest.yaml` and applied by `apply_ggml_patches.py` (`patch -p1 -N`); no in-place Python mutators
 - `CMAKE_COMMAND` on CI contains spaces (e.g., `C:/Program Files/...`) — never pass it to cmd shell
 
 ## Key CMake Variables

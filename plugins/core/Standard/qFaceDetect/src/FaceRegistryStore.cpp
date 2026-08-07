@@ -21,6 +21,7 @@
 #include <QSqlQuery>
 #include <QThread>
 #include <QUuid>
+#include <QVariant>
 #include <cmath>
 #include <cstring>
 #include <shared_mutex>

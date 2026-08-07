@@ -40,7 +40,7 @@
 | **Python**         | 3.10 – 3.12 (via Conda)                                             |
 | **Conda**          | Miniconda or Anaconda                                               |
 | **Git**            | https://git-scm.com/download/win                                    |
-| **AICore GPU (default)** | **Vulkan** — `AICore_USE_VULKAN=ON` on Windows (CMake default); run `.\util\install_vulkan_sdk_windows.ps1` before configure |
+| **AICore GPU (default)** | **Vulkan** — `AICore_USE_VULKAN=ON` on Windows (CMake default); run `.\util\vulkan\install_vulkan_sdk_windows.ps1` before configure |
 | **GPU (optional)** | CUDA toolkit ≥ 11.8 for optional `-DAICore_USE_CUDA=ON` / `-DBUILD_CUDA_MODULE=ON` |
 
 ---
@@ -84,7 +84,7 @@ Install the **Vulkan build environment** for AICore (LunarG SDK, `glslc`, SPIR-V
 End-user installers bundle `libggml-vulkan.so` only — not the full SDK.
 
 ```powershell
-.\util\install_vulkan_sdk_windows.ps1
+.\util\vulkan\install_vulkan_sdk_windows.ps1
 . "$env:LOCALAPPDATA\acloudviewer\acloudviewer-vulkan-env.ps1"
 ```
 
@@ -326,7 +326,7 @@ On Windows, **AICore Auto device order is Vulkan → CPU**. CMake defaults
 `-DAICore_USE_VULKAN=ON` when `AICore_ENABLED=ON`.
 
 ```powershell
-.\util\install_vulkan_sdk_windows.ps1
+.\util\vulkan\install_vulkan_sdk_windows.ps1
 . "$env:LOCALAPPDATA\acloudviewer\acloudviewer-vulkan-env.ps1"
 
 cmake -DAICore_ENABLED=ON `
@@ -344,9 +344,9 @@ cmake -DAICore_ENABLED=ON `
 CPU-only build: `-DAICore_USE_VULKAN=OFF`. `util\ci_utils.ps1` wheel helpers default
 Vulkan ON unless you pass `without_vulkan`.
 
-GitHub Actions Windows CI runs `util\install_vulkan_sdk_windows.ps1` (silent
+GitHub Actions Windows CI runs `util\vulkan\install_vulkan_sdk_windows.ps1` (silent
 LunarG installer; required for SDK **1.4.313+** where 7z extract no longer
-includes `Include\`) then `util\sync_vulkan_env_from_sdk.ps1`. macOS CI builds
+includes `Include\`) then `util\vulkan\sync_vulkan_env_from_sdk.ps1`. macOS CI builds
 AICore with **Metal + CPU only** (Vulkan is unsupported on macOS). Local builds
 can use the same Windows scripts.
 
@@ -398,6 +398,6 @@ cmake --build . --target install-pip-package --config Release --parallel $env:NP
 | `setup_conda_env.ps1` script fails | Verify `$env:CONDA_PREFIX` is set: `echo $env:CONDA_PREFIX` |
 | Qt not found by CMake | Run `.\scripts\setup_conda_env.ps1` to set `CONDA_LIB_DIR` and `EIGEN_ROOT_DIR` |
 | CUDA not detected | Install CUDA toolkit and verify `nvcc -V` in PowerShell |
-| `AICore_USE_VULKAN=ON but Vulkan dependencies are missing` (ggml may print `GGML_USE_VULKAN` internally) | Run `.\util\install_vulkan_sdk_windows.ps1`, then dot-source `acloudviewer-vulkan-env.ps1` before `cmake` |
+| `AICore_USE_VULKAN=ON but Vulkan dependencies are missing` (ggml may print `GGML_USE_VULKAN` internally) | Run `.\util\vulkan\install_vulkan_sdk_windows.ps1`, then dot-source `acloudviewer-vulkan-env.ps1` before `cmake` |
 | `parallel` flag ignored | Use `/m:N` for MSBuild or `--parallel N` for `cmake --build` |
 | Long path errors | Enable Win32 long paths: `New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Value 1` |

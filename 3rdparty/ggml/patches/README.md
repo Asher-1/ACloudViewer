@@ -19,10 +19,23 @@ the extracted tree by hand.** All changes must live here as reviewable artifacts
 
 ## Apply order at configure time
 
-1. `apply_ggml_patches.py` — **manifest `*.patch` files (required for new work)**
-2. Legacy idempotent Python mutators (Metal FA, conv_transpose, CPU variants)
+All modifications are applied in a single step by `apply_ggml_patches.py`,
+which reads `manifest.yaml` and applies each `*.patch` with `patch -p1 -N`.
+Manifest order is authoritative. (Former in-place Python mutators — Metal FA,
+conv_transpose, CPU variants — have been converted to `.patch` files.)
 
-Migrate legacy scripts to `.patch` files when touching the same code paths.
+## Patch inventory
+
+| Patch | Purpose |
+|-------|---------|
+| `aliked_merged/0001-vulkan-aliked.patch` | ALIKED Vulkan extraction (see below) |
+| `msvc_vulkan/0001-msvc-vulkan-hpp-compat.patch` | MSVC `__faststorefence` intrinsic compat |
+| `cpu_all_variants/0001-cpu-all-variants-compiler-checks.patch` | Gate CPU ALL_VARIANTS BF16/AMX/AVX-VNNI + apple_m4 SVE/SME behind compiler checks (inert when `GGML_CPU_ALL_VARIANTS=OFF`) |
+| `metal_merged/0001-metal-optimizations.patch` | Metal conv_transpose_2d IC-parallel tree reduction + flash-attn large-sequence support (inert when Metal OFF) |
+
+The CPU and Metal patches are inert on platforms where their feature is
+disabled, so the single unconditional manifest keeps the fetched tree
+byte-reproducible across all platforms.
 
 ## ALIKED Vulkan (AICore / qLightGlue)
 

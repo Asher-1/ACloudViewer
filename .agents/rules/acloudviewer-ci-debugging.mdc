@@ -6,8 +6,8 @@ globs:
   - util/ci_utils.sh
   - util/ci_utils.ps1
   - util/install_deps_ubuntu.sh
-  - util/install_vulkan_linux.sh
-  - util/install_vulkan_sdk_windows.ps1
+  - util/vulkan/install_vulkan_linux.sh
+  - util/vulkan/install_vulkan_sdk_windows.ps1
   - scripts/build_macos.sh
   - scripts/build_macos_app.sh
   - scripts/build_macos_whl.sh
@@ -39,7 +39,7 @@ alwaysApply: false
 ## Common Failure Patterns
 
 ### "glslc is missing after setup" (Ubuntu focal/CUDA focal)
-- Root cause: `install_vulkan_linux.sh` captures build stdout in command substitution
+- Root cause: `util/vulkan/install_vulkan_linux.sh` captures build stdout in command substitution
 - Fix: All verbose build output in `resolve_glslc()` MUST go to stderr (`>&2`)
 - The function uses `printf '%s\n' "<path>"` to return the glslc path via stdout
 
@@ -50,7 +50,7 @@ alwaysApply: false
 
 ### "'C:/Program' is not recognized" (Windows)
 - Root cause: `PATCH_COMMAND` passed to `cmd /c` shell breaks on spaces in paths
-- Fix: `ggml.cmake` generates a Python runner script (`ggml_run_patches.py`) that calls patch scripts directly
+- Fix: `ggml.cmake` runs a single Python script `apply_ggml_patches.py` that applies each patch from `patches/manifest.yaml` with `patch -p1 -N` (no `cmd /c` shell, no generated runner)
 - Never use `cmd /c` with chained `&&` for patch commands
 
 ### OMP crash on macOS
@@ -61,7 +61,7 @@ alwaysApply: false
 ### macOS build with Vulkan flags
 - `AICore_USE_VULKAN` defaults to OFF on macOS via `_ci_default_aicore_use_vulkan()` in `ci_utils.sh`
 - macOS CI MUST NOT pass `with_vulkan` to build functions
-- `install_vulkan_env.sh` exits with error on Darwin
+- `util/vulkan/install_vulkan_env.sh` exits with error on Darwin
 
 ## Shell Script Conventions
 
@@ -92,7 +92,7 @@ Dockerfile.ci layer order:
 5. Always test changes locally before pushing:
    ```bash
    # Test install_vulkan_linux.sh logic
-   bash -x util/install_vulkan_linux.sh assume-yes 2>&1 | tail -20
+   bash -x util/vulkan/install_vulkan_linux.sh assume-yes 2>&1 | tail -20
    
    # Test docker_test.sh Vulkan check logic (dry run)
    bash -n docker/docker_test.sh

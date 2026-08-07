@@ -339,13 +339,13 @@ if(GGML_USE_VULKAN)
         string(JOIN ", " _GGML_VULKAN_MISSING_TEXT ${_GGML_VULKAN_MISSING})
         if(WIN32)
             set(_GGML_VULKAN_SETUP_HINT
-                "Run: .\\util\\install_vulkan_sdk_windows.ps1 (or . \$env:LOCALAPPDATA\\acloudviewer\\acloudviewer-vulkan-env.ps1)")
+                "Run: .\\util\\vulkan\\install_vulkan_sdk_windows.ps1 (or . \$env:LOCALAPPDATA\\acloudviewer\\acloudviewer-vulkan-env.ps1)")
         elseif(APPLE)
             set(_GGML_VULKAN_SETUP_HINT
                 "Vulkan is not supported on macOS; use Metal (-DAICore_USE_VULKAN=OFF)")
         else()
             set(_GGML_VULKAN_SETUP_HINT
-                "Run: util/install_deps_ubuntu.sh assume-yes or util/install_vulkan_env.sh")
+                "Run: util/install_deps_ubuntu.sh assume-yes or util/vulkan/install_vulkan_env.sh")
         endif()
         message(FATAL_ERROR
             "AICore_USE_VULKAN=ON but Vulkan dependencies are missing: "
@@ -606,50 +606,27 @@ else()
     endif()
 endif()
 
-set(_GGML_PATCH_SCRIPTS
+# All ggml source modifications are declared in patches/manifest.yaml and
+# applied as unified-diff files (patch -p1 -N) by apply_ggml_patches.py.
+# Every patch is inert on platforms where its feature is disabled (CPU
+# ALL_VARIANTS block / Metal backend files), so a single unconditional manifest
+# keeps the fetched tree byte-reproducible across platforms.
+set(_GGML_PATCH_SCRIPT
     "${CMAKE_CURRENT_LIST_DIR}/patches/apply_ggml_patches.py")
-if(GGML_CPU_ALL_VARIANTS)
-    list(APPEND _GGML_PATCH_SCRIPTS
-        "${CMAKE_CURRENT_LIST_DIR}/patches/apply_cpu_all_variants_compiler_checks.py")
+if(NOT Python3_EXECUTABLE)
+    find_package(Python3 QUIET COMPONENTS Interpreter)
 endif()
-if(APPLE AND _GGML_METAL_ENABLED)
-    list(APPEND _GGML_PATCH_SCRIPTS
-        "${CMAKE_CURRENT_LIST_DIR}/patches/apply_metal_conv_transpose_opt.py"
-        "${CMAKE_CURRENT_LIST_DIR}/patches/apply_metal_fa_large_seq.py")
-endif()
-if(_GGML_PATCH_SCRIPTS)
-    if(NOT Python3_EXECUTABLE)
-        find_package(Python3 QUIET COMPONENTS Interpreter)
-    endif()
-    if(Python3_EXECUTABLE)
-        set(_ggml_patch_python "${Python3_EXECUTABLE}")
-    else()
-        find_program(_ggml_patch_python NAMES python3 python)
-    endif()
-    if(NOT _ggml_patch_python)
-        message(WARNING "ggml: Python not found — patch scripts will not be applied")
-        set(_GGML_PATCH_COMMAND "")
-    else()
-        list(LENGTH _GGML_PATCH_SCRIPTS _num_patches)
-        if(_num_patches EQUAL 1)
-            list(GET _GGML_PATCH_SCRIPTS 0 _single_patch)
-            set(_GGML_PATCH_COMMAND "${_ggml_patch_python}"
-                "${_single_patch}" "<SOURCE_DIR>")
-        else()
-            set(_GGML_PATCH_RUNNER "${CMAKE_CURRENT_BINARY_DIR}/ggml_run_patches.py")
-            set(_runner_content "import subprocess, sys\n")
-            foreach(_script IN LISTS _GGML_PATCH_SCRIPTS)
-                string(REPLACE "\\" "/" _script_fwd "${_script}")
-                string(APPEND _runner_content
-                    "subprocess.check_call([sys.executable, r'${_script_fwd}', sys.argv[1]])\n")
-            endforeach()
-            file(WRITE "${_GGML_PATCH_RUNNER}" "${_runner_content}")
-            set(_GGML_PATCH_COMMAND "${_ggml_patch_python}"
-                "${_GGML_PATCH_RUNNER}" "<SOURCE_DIR>")
-        endif()
-    endif()
+if(Python3_EXECUTABLE)
+    set(_ggml_patch_python "${Python3_EXECUTABLE}")
 else()
+    find_program(_ggml_patch_python NAMES python3 python)
+endif()
+if(NOT _ggml_patch_python)
+    message(WARNING "ggml: Python not found — manifest patches will not be applied")
     set(_GGML_PATCH_COMMAND "")
+else()
+    set(_GGML_PATCH_COMMAND "${_ggml_patch_python}"
+        "${_GGML_PATCH_SCRIPT}" "<SOURCE_DIR>")
 endif()
 
 set(_GGML_EXTERNAL_DEPENDS_ARGS)

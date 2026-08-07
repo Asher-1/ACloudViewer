@@ -238,7 +238,9 @@ bool FillModelDeviceInfo(enum aicore_model_kind model,
 
 }  // namespace
 
-AICORE_CAPI int aicore_backend_abi_version(void) { return 2; }
+AICORE_CAPI int aicore_backend_abi_version(void) {
+    return AICORE_BACKEND_ABI_VERSION;
+}
 
 AICORE_CAPI int aicore_device_count(void) {
     try {

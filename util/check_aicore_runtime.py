@@ -10,7 +10,17 @@ from __future__ import annotations
 
 import argparse
 import ctypes
+import re
 from pathlib import Path
+
+# Single source of truth for the expected ABI version is the macro
+# AICORE_BACKEND_ABI_VERSION in core/AICore/include/aicore/backend_capi.h.
+# This script reads that header instead of hardcoding the number, so bumping
+# the version in the header can never silently desync this checker.
+_DEFAULT_ABI_HEADER = (Path(__file__).resolve().parent.parent /
+                       "core/AICore/include/aicore/backend_capi.h")
+_ABI_VERSION_RE = re.compile(
+    r"^\s*#define\s+AICORE_BACKEND_ABI_VERSION\s+(\d+)\s*$", re.MULTILINE)
 
 
 class Device(ctypes.Structure):
@@ -21,9 +31,18 @@ class Device(ctypes.Structure):
     ]
 
 
+def expected_abi_version(header: Path) -> int:
+    """Parse AICORE_BACKEND_ABI_VERSION from the C header."""
+    match = _ABI_VERSION_RE.search(header.read_text(encoding="utf-8"))
+    if not match:
+        raise RuntimeError(f"AICORE_BACKEND_ABI_VERSION not found in {header}")
+    return int(match.group(1))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("aicore", type=Path)
+    parser.add_argument("--abi-header", type=Path, default=_DEFAULT_ABI_HEADER)
     parser.add_argument("--expect-device", action="append", default=[])
     args = parser.parse_args()
 
@@ -35,8 +54,12 @@ def main() -> int:
     library.aicore_device_available.argtypes = [ctypes.c_char_p]
     library.aicore_device_available.restype = ctypes.c_int
 
-    if library.aicore_backend_abi_version() != 1:
-        raise RuntimeError("unexpected AICore backend ABI")
+    expected = expected_abi_version(args.abi_header)
+    if library.aicore_backend_abi_version() != expected:
+        raise RuntimeError(
+            f"unexpected AICore backend ABI: got "
+            f"{library.aicore_backend_abi_version()}, expected {expected} "
+            f"(see {args.abi_header})")
 
     devices: list[tuple[str, str]] = []
     for index in range(library.aicore_device_count()):

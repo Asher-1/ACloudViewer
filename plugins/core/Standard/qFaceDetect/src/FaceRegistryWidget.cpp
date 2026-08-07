@@ -773,7 +773,9 @@ bool FaceRegistryWidget::embedImage(const QString& imagePath,
     if (!ok && err) {
         *err = tr("Embedding failed: %1")
                        .arg(aicore_facedetect_last_error(m_embedContext.get())
-                                    ?: "no face detected");
+                                    ? aicore_facedetect_last_error(
+                                              m_embedContext.get())
+                                    : "no face detected");
     }
     return ok;
 #else
@@ -867,9 +869,11 @@ void FaceRegistryWidget::authenticateFromImagePath(const QString& imagePath) {
         std::vector<float> emb;
         if (!FaceDetectEmbed::embedImagePathWithFallback(ctx, imagePath, &emb,
                                                          minScore)) {
-            emit logMessage(tr("[Registry] %1")
-                                    .arg(aicore_facedetect_last_error(ctx)
-                                                 ?: tr("Embedding failed")));
+            emit logMessage(
+                    tr("[Registry] %1")
+                            .arg(aicore_facedetect_last_error(ctx)
+                                         ? aicore_facedetect_last_error(ctx)
+                                         : tr("Embedding failed")));
             return;
         }
         const auto match = m_store.bestMatch(emb, thresh);

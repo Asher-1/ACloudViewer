@@ -30,7 +30,7 @@ else
 fi
 _ci_utils_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
-source "${_ci_utils_dir}/acloudviewer_vulkan_env_common.sh"
+source "${_ci_utils_dir}/vulkan/acloudviewer_vulkan_env_common.sh"
 
 _ci_load_vulkan_build_env() {
     if [[ "${AICore_USE_VULKAN:-OFF}" != "ON" ]]; then

@@ -299,9 +299,11 @@ bool FaceDetectWorker::runInference() {
                     ctx, m_settings.inputPath, m_settings.secondInputPath,
                     m_settings.verifyThreshold, m_settings.antiSpoof ? 1 : 0,
                     m_settings.minDetectionScore, &dist, &verified)) {
-            emit logMessage(QString("[Error] Verify failed: %1")
-                                    .arg(aicore_facedetect_last_error(ctx)
-                                                 ?: "unknown"));
+            emit logMessage(
+                    QString("[Error] Verify failed: %1")
+                            .arg(aicore_facedetect_last_error(ctx)
+                                         ? aicore_facedetect_last_error(ctx)
+                                         : "unknown"));
             m_pendingCtx = ctx;
             m_pendingLandmarkCtx = landmark_ctx;
             return false;
@@ -369,9 +371,11 @@ bool FaceDetectWorker::runInference() {
             result.mode = QStringLiteral("detect");
         }
         if (json == nullptr) {
-            emit logMessage(QString("[Error] Inference failed: %1")
-                                    .arg(aicore_facedetect_last_error(ctx)
-                                                 ?: "unknown"));
+            emit logMessage(
+                    QString("[Error] Inference failed: %1")
+                            .arg(aicore_facedetect_last_error(ctx)
+                                         ? aicore_facedetect_last_error(ctx)
+                                         : "unknown"));
             m_pendingCtx = ctx;
             m_pendingLandmarkCtx = landmark_ctx;
             return false;

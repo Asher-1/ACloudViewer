@@ -14,7 +14,7 @@
 static int failures = 0;
 
 int main() {
-    AICORE_CHECK(aicore_backend_abi_version() >= 2);
+    AICORE_CHECK(aicore_backend_abi_version() >= AICORE_BACKEND_ABI_VERSION);
     AICORE_CHECK(aicore_device_count() >= 2);
     AICORE_CHECK(aicore_device_at(0) != nullptr);
     AICORE_CHECK(std::strcmp(aicore_device_at(0)->id, "auto") == 0);
