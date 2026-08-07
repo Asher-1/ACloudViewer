@@ -52,19 +52,20 @@ index 82e9480..b2c9e5b 100644
 +            # define __ARM_FEATURE_SVE via streaming SVE, but +nosve forbids the
 +            # non-streaming SVE intrinsics that vec.h/quants.c rely on (e.g.
 +            # svexpa_f32 -> "needs target feature sve").
-+            # The reliable detection is to check whether __ARM_FEATURE_SVE is
-+            # defined: if it is, vec.h will activate SVE code paths that cannot
-+            # compile under +nosve.  Testing the intrinsic directly via
-+            # check_cxx_source_compiles is unreliable because some Apple Clang
-+            # versions compile svexpa_f32 in isolation but fail inside vec.h.
++            # Checking __ARM_FEATURE_SVE alone is unreliable because some Apple
++            # Clang versions do NOT define it with +sme+nosve, yet the actual
++            # ggml compilation still activates SVE code paths (via transitive
++            # includes or other feature macros).  The reliable test is to try
++            # compiling the offending intrinsic directly with <arm_sve.h>.
 +            include(CheckCXXSourceCompiles)
 +            set(_CMAKE_REQUIRED_FLAGS_SAVE "${CMAKE_REQUIRED_FLAGS}")
 +            set(CMAKE_REQUIRED_FLAGS "-march=armv9.2-a+dotprod+i8mm+nosve+sme")
 +            check_cxx_source_compiles("
++                #include <arm_sve.h>
 +                int main() {
-+                #if defined(__ARM_FEATURE_SVE)
-+                    return fail_on_purpose;
-+                #endif
++                    svuint32_t v = svdup_n_u32(0);
++                    svfloat32_t r = svexpa_f32(v);
++                    (void)r;
 +                    return 0;
 +                }
 +            " GGML_CXX_APPLE_M4_NOSVE_OK)
@@ -72,7 +73,7 @@ index 82e9480..b2c9e5b 100644
 +            if (GGML_CXX_APPLE_M4_NOSVE_OK)
 +                ggml_add_cpu_backend_variant(apple_m4             DOTPROD MATMUL_INT8 NOSVE SME)
 +            else()
-+                message(STATUS "Skipping apple_m4 CPU backend: __ARM_FEATURE_SVE conflicts with +nosve+sme")
++                message(STATUS "Skipping apple_m4 CPU backend: SVE intrinsics unavailable with +nosve+sme")
 +            endif()
          else()
              message(FATAL_ERROR "Unsupported ARM target OS: ${CMAKE_SYSTEM_NAME}")
