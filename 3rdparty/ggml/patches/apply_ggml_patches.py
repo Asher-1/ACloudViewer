@@ -24,8 +24,33 @@ from pathlib import Path
 
 try:
     import yaml
-except ImportError:  # pragma: no cover
+except ImportError:
     yaml = None
+
+
+def _parse_manifest_fallback(text: str) -> list[str]:
+    """Minimal parser for manifest.yaml when PyYAML is unavailable.
+
+    Handles the simple format used by this project:
+        patches:
+          - file: path/to/patch.patch
+            note: description
+          - file: another/patch.patch
+    """
+    result: list[str] = []
+    in_patches = False
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("#") or not stripped:
+            continue
+        if stripped == "patches:":
+            in_patches = True
+            continue
+        if in_patches and stripped.startswith("- file:"):
+            path = stripped[len("- file:"):].strip().strip('"').strip("'")
+            if path:
+                result.append(path)
+    return result
 
 
 def _run(cmd: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess:
@@ -72,18 +97,18 @@ def load_manifest(manifest_path: Path) -> list[Path]:
     if not manifest_path.is_file():
         return []
 
-    if yaml is None:
-        print("[ggml-patch] PyYAML not available; skipping manifest patches")
-        return []
-
-    data = yaml.safe_load(manifest_path.read_text(encoding="utf-8")) or {}
+    manifest_text = manifest_path.read_text(encoding="utf-8")
     patches_dir = manifest_path.parent
-    out: list[Path] = []
-    for entry in data.get("patches", []):
-        if isinstance(entry, str):
-            out.append(patches_dir / entry)
-        elif isinstance(entry, dict) and "file" in entry:
-            out.append(patches_dir / entry["file"])
+
+    if yaml is not None:
+        data = yaml.safe_load(manifest_text) or {}
+        files = [e["file"] for e in data.get("patches", []) if isinstance(e, dict) and "file" in e]
+        files += [e for e in data.get("patches", []) if isinstance(e, str)]
+    else:
+        print("[ggml-patch] PyYAML not available; using fallback parser")
+        files = _parse_manifest_fallback(manifest_text)
+
+    out: list[Path] = [patches_dir / f for f in files]
     return out
 
 

@@ -103,16 +103,18 @@ DeepLSDDialog::DeepLSDDialog(QWidget* parent) : QDialog(parent) {
             });
     connect(m_downloader, &ecvModelDownloader::finished, this,
             [this](bool ok, const QString& dest) {
+                const QString finishedFilename = QFileInfo(dest).fileName();
                 m_downloadInProgress = false;
                 m_downloadLabel->setVisible(false);
                 if (ok) {
                     appendLog(tr("[OK] Downloaded model: %1").arg(dest));
-                    populateModelCombo();
+                    populateModelCombo(finishedFilename);
                     if (m_autoRunAfterDownload) {
                         m_autoRunAfterDownload = false;
                         onRun();
                     }
                 } else {
+                    populateModelCombo(finishedFilename);
                     m_autoRunAfterDownload = false;
                 }
             });
@@ -282,19 +284,38 @@ void DeepLSDDialog::setupUi() {
     main->addLayout(btnRow);
 }
 
-void DeepLSDDialog::populateModelCombo() {
-    m_modelCombo->clear();
+void DeepLSDDialog::populateModelCombo(const QString& keepFilename) {
     const QString cache = modelCacheDir();
+    QString selected = keepFilename;
+    if (selected.isEmpty() && m_modelCombo && m_modelCombo->count() > 0) {
+        selected = m_modelCombo->currentData().toString();
+    }
+
+    m_modelCombo->blockSignals(true);
+    m_modelCombo->clear();
     for (const auto& m : builtinModels()) {
         const QFileInfo fi(cache + "/" + m.filename);
         const QString suffix =
                 isValidCachedGguf(fi)
-                        ? QString(" [%1] ✓").arg(formatFileSize(fi.size()))
+                        ? QString(" [%1] \u2713").arg(formatFileSize(fi.size()))
                         : QString(" [download]");
         m_modelCombo->addItem(m.displayName + suffix, m.filename);
     }
     m_modelCombo->addItem(tr("Custom..."), "CUSTOM");
+    selectModelByFilename(selected);
+    m_modelCombo->blockSignals(false);
     onModelComboChanged(m_modelCombo->currentIndex());
+}
+
+bool DeepLSDDialog::selectModelByFilename(const QString& filename) {
+    if (!m_modelCombo || filename.isEmpty()) return false;
+    for (int i = 0; i < m_modelCombo->count(); ++i) {
+        if (m_modelCombo->itemData(i).toString() == filename) {
+            m_modelCombo->setCurrentIndex(i);
+            return true;
+        }
+    }
+    return false;
 }
 
 void DeepLSDDialog::refreshModelList() { populateModelCombo(); }

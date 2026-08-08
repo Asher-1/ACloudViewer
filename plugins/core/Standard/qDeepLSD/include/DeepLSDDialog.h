@@ -83,7 +83,8 @@ private slots:
 
 private:
     void setupUi();
-    void populateModelCombo();
+    void populateModelCombo(const QString& keepFilename = QString());
+    bool selectModelByFilename(const QString& filename);
     QString resolveModelPath() const;
     bool ensureModelAvailable();
     void startDownload(const DeepLSDBuiltinModel& model);

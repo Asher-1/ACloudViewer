@@ -47,7 +47,7 @@ public:
         int threads = 0;
         QString device = "auto";
         Mode mode = Mode::Detect;
-        float verifyThreshold = 0.52f;
+        float verifyThreshold = 0.65f;
         float minDetectionScore = 0.5f;
         bool antiSpoof = false;
         bool addAnnotatedImageToDb = true;
@@ -142,8 +142,9 @@ private:
     enum class TestDataRegistryMode { Cancel, Append, Overwrite };
     TestDataRegistryMode confirmTestDataRegistryMode() const;
     void setupBatchTab(QWidget* batchTab);
-    void populateModelCombo();
-    void populateLandmarkModelCombo();
+    void populateModelCombo(const QString& keepFilename = QString());
+    void populateLandmarkModelCombo(const QString& keepFilename = QString());
+    bool selectModelByFilename(QComboBox* combo, const QString& filename);
     void updateModeUi();
     void syncLandmarkPathFromCombo();
     void selectDefaultLandmarkModel();
@@ -153,8 +154,15 @@ private:
     QString defaultLandmarkModelPathOnDisk() const;
     QString resolveModelPath() const;
     QString resolveLandmarkModelPath() const;
+    /** Resolve landmark filename from combo / default — never returns empty
+     *  when catalog has an entry (used to trigger auto-download). */
+    QString resolveLandmarkModelFilename() const;
     QString defaultLandmarkModelFilename() const;
     bool ensureModelAvailable();
+    /** Check only the face detector model is downloaded and ready.
+     *  Skips the Dense-Landmarks landmark-model check — used by the Live tab
+     *  which only supports Detect / Recognize, never DenseLandmarks. */
+    bool ensureDetectorAvailable();
     void startDownload(const aicore_facedetect_model_entry* model);
     void cancelDownload();
     void updateImagePreview();

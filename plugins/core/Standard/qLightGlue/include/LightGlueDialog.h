@@ -24,6 +24,8 @@
 #include "ecvClickableImageLabel.h"
 #include "ecvModelDownloader.h"
 
+class ecvTestDataRepository;
+
 class ecvMainAppInterface;
 
 struct LightGlueBuiltinModel {
@@ -98,6 +100,7 @@ private slots:
     void onRun();
     void onCancel();
     void onExportMatches();
+    void onUseTestData();
 
 private:
     void setupUi();
@@ -162,6 +165,7 @@ private:
     QLabel* m_downloadLabel = nullptr;
     QLabel* m_taskStatusLabel = nullptr;
     QProgressBar* m_progress = nullptr;
+    QPushButton* m_useTestDataBtn = nullptr;
     QPushButton* m_runBtn = nullptr;
     QPushButton* m_cancelBtn = nullptr;
     QPushButton* m_exportBtn = nullptr;
@@ -170,6 +174,7 @@ private:
     ecvModelDownloader* m_downloader = nullptr;
     bool m_downloadInProgress = false;
     bool m_taskRunning = false;
+    bool m_testDataInProgress = false;
     bool m_autoRunAfterDownload = false;
     bool m_alikedExtractorPendingDownload = false;
     QString m_downloadTargetFilename;

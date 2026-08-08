@@ -64,7 +64,7 @@ public:
         int threads = 0;
         QString device = "auto";
         Mode mode = Mode::Detect;
-        float verifyThreshold = 0.52f;
+        float verifyThreshold = 0.65f;
         float minDetectionScore = 0.5f;
         bool antiSpoof = false;
     };

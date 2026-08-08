@@ -32,7 +32,7 @@ public:
         QString device;
         int threads = 0;
         float minDetectionScore = 0.5f;
-        float matchThreshold = 0.52f;
+        float matchThreshold = 0.65f;
         StreamMode streamMode = StreamMode::Detect;
         FaceRegistryStore* registry = nullptr;
         quint64 generation = 0;

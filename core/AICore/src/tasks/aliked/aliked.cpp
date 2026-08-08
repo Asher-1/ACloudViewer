@@ -816,6 +816,15 @@ public:
         if (backend_.IsGpu() && !backend_.IsVulkan()) {
             FlushGpuPipeline(&backend_);
             ClearCachedGpuOpGraphs(&backend_);
+            // Extra synchronize before freeing Metal resources.
+            // gpu_cache_.reset() calls ggml_backend_buffer_free on Metal
+            // buffers that may still be referenced by completed command
+            // buffers.  While Metal uses reference counting (so this is
+            // usually safe), an extra synchronize ensures the Metal queue
+            // is fully drained before any buffer deallocation.
+            if (backend_.handle) {
+                ggml_backend_synchronize(backend_.handle);
+            }
         }
         gpu_cache_.reset();
     }

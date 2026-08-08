@@ -22,6 +22,8 @@
 #include "ecvClickableImageLabel.h"
 #include "ecvModelDownloader.h"
 
+class ecvTestDataRepository;
+
 class ecvMainAppInterface;
 
 struct DA3BuiltinModel {
@@ -99,6 +101,7 @@ private slots:
     void onBrowseCustomMetricModel();
     void onDbImageSelected(int index);
     void onExportAllDepths();
+    void onUseTestData();
 
 private:
     void setupUi();
@@ -154,6 +157,7 @@ private:
 
     QProgressBar* m_progressBar = nullptr;
     QLabel* m_downloadLabel = nullptr;
+    QPushButton* m_useTestDataBtn = nullptr;
     QPushButton* m_runBtn = nullptr;
     QPushButton* m_cancelBtn = nullptr;
     QPushButton* m_exportDepthBtn = nullptr;
@@ -165,5 +169,6 @@ private:
     QVector<DA3BuiltinModel> m_downloadQueue;
     bool m_autoRunAfterDownload = false;
     bool m_downloadInProgress = false;
+    bool m_testDataInProgress = false;
     QString m_downloadTargetFilename;
 };

@@ -1,8 +1,6 @@
-diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index 82e9480..b2c9e5b 100644
---- a/src/CMakeLists.txt
-+++ b/src/CMakeLists.txt
-@@ -392,13 +392,36 @@ if (GGML_CPU_ALL_VARIANTS)
+--- a/src/CMakeLists.txt	2026-08-04 16:44:52
++++ b/src/CMakeLists.txt	2026-08-08 09:53:51
+@@ -392,13 +392,36 @@
              # MSVC 2022 doesn't support BF16 intrinsics without `/arch:AVX10.1` ?!
              # https://learn.microsoft.com/en-us/cpp/intrinsics/x64-amd64-intrinsics-list?view=msvc-170
              # https://learn.microsoft.com/en-us/cpp/build/reference/arch-x64?view=msvc-170
@@ -15,8 +13,9 @@ index 82e9480..b2c9e5b 100644
 +            else()
 +                message(STATUS "Skipping cooperlake/zen4 CPU backends: compiler lacks -mavx512bf16")
 +            endif()
-+        endif()
-+        if (NOT MSVC)
+         endif()
+-        ggml_add_cpu_backend_variant(alderlake          SSE42 AVX F16C FMA AVX2 BMI2 AVX_VNNI)
+         if (NOT MSVC)
 +            check_cxx_compiler_flag("-mavxvnni" GGML_CXX_SUPPORTS_AVX_VNNI)
 +            if (GGML_CXX_SUPPORTS_AVX_VNNI)
 +                ggml_add_cpu_backend_variant(alderlake          SSE42 AVX F16C FMA AVX2 BMI2 AVX_VNNI)
@@ -25,9 +24,8 @@ index 82e9480..b2c9e5b 100644
 +            endif()
 +        else()
 +            ggml_add_cpu_backend_variant(alderlake          SSE42 AVX F16C FMA AVX2 BMI2 AVX_VNNI)
-         endif()
--        ggml_add_cpu_backend_variant(alderlake          SSE42 AVX F16C FMA AVX2 BMI2 AVX_VNNI)
-         if (NOT MSVC)
++        endif()
++        if (NOT MSVC)
              # MSVC doesn't support AMX
 -            ggml_add_cpu_backend_variant(sapphirerapids SSE42 AVX F16C FMA AVX2 BMI2 AVX512 AVX512_VBMI AVX512_VNNI AVX512_BF16 AMX_TILE AMX_INT8)
 +            if (NOT DEFINED GGML_CXX_SUPPORTS_AVX512_BF16)
@@ -43,38 +41,21 @@ index 82e9480..b2c9e5b 100644
          endif()
      elseif(GGML_SYSTEM_ARCH STREQUAL "ARM")
          if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-@@ -425,7 +448,32 @@ if (GGML_CPU_ALL_VARIANTS)
+@@ -425,7 +448,16 @@
          elseif (APPLE)
              ggml_add_cpu_backend_variant(apple_m1             DOTPROD)
              ggml_add_cpu_backend_variant(apple_m2_m3          DOTPROD MATMUL_INT8)
 -            ggml_add_cpu_backend_variant(apple_m4             DOTPROD MATMUL_INT8 NOSVE SME)
-+            # apple_m4 uses +nosve+sme.  With +sme some toolchains (Apple clang)
-+            # define __ARM_FEATURE_SVE via streaming SVE, but +nosve forbids the
-+            # non-streaming SVE intrinsics that vec.h/quants.c rely on (e.g.
-+            # svexpa_f32 -> "needs target feature sve").
-+            # Checking __ARM_FEATURE_SVE alone is unreliable because some Apple
-+            # Clang versions do NOT define it with +sme+nosve, yet the actual
-+            # ggml compilation still activates SVE code paths (via transitive
-+            # includes or other feature macros).  The reliable test is to try
-+            # compiling the offending intrinsic directly with <arm_sve.h>.
-+            include(CheckCXXSourceCompiles)
-+            set(_CMAKE_REQUIRED_FLAGS_SAVE "${CMAKE_REQUIRED_FLAGS}")
-+            set(CMAKE_REQUIRED_FLAGS "-march=armv9.2-a+dotprod+i8mm+nosve+sme")
-+            check_cxx_source_compiles("
-+                #include <arm_sve.h>
-+                int main() {
-+                    svuint32_t v = svdup_n_u32(0);
-+                    svfloat32_t r = svexpa_f32(v);
-+                    (void)r;
-+                    return 0;
-+                }
-+            " GGML_CXX_APPLE_M4_NOSVE_OK)
-+            set(CMAKE_REQUIRED_FLAGS "${_CMAKE_REQUIRED_FLAGS_SAVE}")
-+            if (GGML_CXX_APPLE_M4_NOSVE_OK)
-+                ggml_add_cpu_backend_variant(apple_m4             DOTPROD MATMUL_INT8 NOSVE SME)
-+            else()
-+                message(STATUS "Skipping apple_m4 CPU backend: SVE intrinsics unavailable with +nosve+sme")
-+            endif()
++            # NOTE: apple_m4 variant (+nosve+sme) removed.
++            # Apple Clang's handling of +nosve+sme is unreliable across versions:
++            # some versions define __ARM_FEATURE_SVE via streaming SVE (+sme) but
++            # +nosve forbids the non-streaming SVE intrinsics (svexpa_f32 etc.)
++            # that vec.h uses.  This cannot be detected reliably at CMake time
++            # (check_cxx_source_compiles may pass while actual ggml build fails).
++            # M4 Macs fall back to apple_m2_m3 (DOTPROD + MATMUL_INT8) with
++            # negligible performance difference.
++            # See: GitHub CI macOS-14 runner (M1, Xcode 15.4/16.x) fails with
++            # "'svexpa_f32' needs target feature sve" when apple_m4 is enabled.
          else()
              message(FATAL_ERROR "Unsupported ARM target OS: ${CMAKE_SYSTEM_NAME}")
          endif()
