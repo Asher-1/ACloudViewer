@@ -434,8 +434,10 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
                 }
                 if (!ecvTestDataRepository::verifyZipIntegrity(
                             dest,
-                            ecvTestDataRepository::getDatasetInfo(kFriends).expectedMd5,
-                            ecvTestDataRepository::getDatasetInfo(kFriends).expectedSize)) {
+                            ecvTestDataRepository::getDatasetInfo(kFriends)
+                                    .expectedMd5,
+                            ecvTestDataRepository::getDatasetInfo(kFriends)
+                                    .expectedSize)) {
                     QFile::remove(dest);
                     setTestDataBusy(false);
                     if (m_downloadLabel) m_downloadLabel->setVisible(false);
@@ -829,8 +831,9 @@ void FaceDetectDialog::populateModelCombo(const QString& keepFilename) {
                            QString::fromUtf8(m->filename));
         const QString suffix =
                 isValidCachedGguf(fi)
-                        ? QString(" [%1] \u2713").arg(
-                                  ecvModelDownloader::formatFileSize(fi.size()))
+                        ? QString(" [%1] \u2713")
+                                  .arg(ecvModelDownloader::formatFileSize(
+                                          fi.size()))
                         : QString(" [download]");
         m_modelCombo->addItem(QCoreApplication::translate("FaceDetectModels",
                                                           m->display_name) +
@@ -845,7 +848,7 @@ void FaceDetectDialog::populateModelCombo(const QString& keepFilename) {
 }
 
 bool FaceDetectDialog::selectModelByFilename(QComboBox* combo,
-                                              const QString& filename) {
+                                             const QString& filename) {
     if (!combo || filename.isEmpty()) return false;
     for (int i = 0; i < combo->count(); ++i) {
         if (combo->itemData(i).toString() == filename) {
@@ -888,8 +891,9 @@ void FaceDetectDialog::populateLandmarkModelCombo(const QString& keepFilename) {
         const QFileInfo fi(cache + QLatin1Char('/') + fn);
         const QString suffix =
                 isValidCachedGguf(fi)
-                        ? QString(" [%1] \u2713").arg(
-                                  ecvModelDownloader::formatFileSize(fi.size()))
+                        ? QString(" [%1] \u2713")
+                                  .arg(ecvModelDownloader::formatFileSize(
+                                          fi.size()))
                         : QString(" [download]");
         m_landmarkModelCombo->addItem(
                 QCoreApplication::translate("FaceDetectModels",
@@ -1500,8 +1504,7 @@ bool FaceDetectDialog::ensureModelAvailable() {
     if (mode != Mode::DenseLandmarks) return true;
 
     const QString landmarkPath = resolveLandmarkModelPath();
-    if (!landmarkPath.isEmpty() &&
-        QFile::exists(landmarkPath) &&
+    if (!landmarkPath.isEmpty() && QFile::exists(landmarkPath) &&
         isValidCachedGguf(QFileInfo(landmarkPath))) {
         return true;
     }
@@ -2082,9 +2085,10 @@ void FaceDetectDialog::ensureFriendsTestData(bool fillRegistry,
             m_progress->setTextVisible(true);
             m_progress->setFormat(tr("Loading…"));
         }
-        startTestDataPostProcess(
-                bundle, fillRegistry, fillLiveVideo, fillBatchImage, true,
-                ecvTestDataRepository::zipPath(kFriends), m_testClearExistingEntries);
+        startTestDataPostProcess(bundle, fillRegistry, fillLiveVideo,
+                                 fillBatchImage, true,
+                                 ecvTestDataRepository::zipPath(kFriends),
+                                 m_testClearExistingEntries);
         return;
     }
     startFriendsTestDataDownload(fillRegistry, fillLiveVideo, fillBatchImage);

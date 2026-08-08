@@ -26,7 +26,6 @@
 #include <QJsonObject>
 #include <QMessageBox>
 #include <QMouseEvent>
-#include <QTimer>
 #include <QPainter>
 #include <QPen>
 #include <QPixmap>
@@ -34,6 +33,7 @@
 #include <QScrollArea>
 #include <QSettings>
 #include <QShowEvent>
+#include <QTimer>
 #ifdef HAS_OPENCV_FACE_CAPTURE
 #if defined(HAS_QT_SQL)
 #include <QSqlDatabase>
@@ -314,9 +314,8 @@ void FaceCaptureWidget::setupUi() {
     m_videoSeekSlider->installEventFilter(this);
     m_videoSeekSlider->setMouseTracking(true);
 
-    connect(m_videoSeekSlider, &QSlider::sliderPressed, this, [this]() {
-        m_userSeeking = true;
-    });
+    connect(m_videoSeekSlider, &QSlider::sliderPressed, this,
+            [this]() { m_userSeeking = true; });
     connect(m_videoSeekSlider, &QSlider::sliderReleased, this, [this]() {
         m_userSeeking = false;
         // Explicitly perform the seek now that m_userSeeking is false.
@@ -328,8 +327,9 @@ void FaceCaptureWidget::setupUi() {
     });
     connect(m_videoSeekSlider, &QSlider::valueChanged, this,
             &FaceCaptureWidget::onVideoSeekSliderChanged);
-    connect(m_playbackSpeedCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &FaceCaptureWidget::onPlaybackSpeedChanged);
+    connect(m_playbackSpeedCombo,
+            QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            &FaceCaptureWidget::onPlaybackSpeedChanged);
 #endif
 
     m_angleLabel = new QLabel(this);
@@ -592,8 +592,8 @@ void FaceCaptureWidget::showEvent(QShowEvent* event) {
     // Restore video controls visibility when the widget is shown again
     // (e.g., after minimize/restore or plugin reopen).
 #ifdef HAS_OPENCV_FACE_CAPTURE
-    const bool videoLoaded = m_camera.isOpened() &&
-                             m_inputSource == InputSource::VideoFile;
+    const bool videoLoaded =
+            m_camera.isOpened() && m_inputSource == InputSource::VideoFile;
     if (m_videoControlsRow) m_videoControlsRow->setVisible(videoLoaded);
     if (m_videoSeekSlider) m_videoSeekSlider->setEnabled(videoLoaded);
     if (m_playbackSpeedCombo) m_playbackSpeedCombo->setEnabled(videoLoaded);
@@ -665,8 +665,9 @@ void FaceCaptureWidget::onVideoSeekSliderChanged(int value) {
     }
     m_camera.set(cv::CAP_PROP_POS_FRAMES, value);
     // Reset detection throttle so detection resumes immediately after seek.
-    // Without this, a backward seek would make curFrameNum < m_lastDetectedFrameNum,
-    // causing the video-time delta to be negative and timeForDetection=false forever.
+    // Without this, a backward seek would make curFrameNum <
+    // m_lastDetectedFrameNum, causing the video-time delta to be negative and
+    // timeForDetection=false forever.
     m_lastDetectedFrameNum = value;
     // When the timer is not running (video paused / stopped) the preview
     // label would otherwise keep showing the old frame.  Read the frame at
@@ -721,12 +722,13 @@ void FaceCaptureWidget::updateVideoTimeLabel(int frameIndex) {
         const int s = sec % 60;
         if (h > 0)
             return QStringLiteral("%1:%2:%3")
-                    .arg(h).arg(m, 2, 10, QLatin1Char('0'))
+                    .arg(h)
+                    .arg(m, 2, 10, QLatin1Char('0'))
                     .arg(s, 2, 10, QLatin1Char('0'));
-        return QStringLiteral("%1:%2")
-                .arg(m).arg(s, 2, 10, QLatin1Char('0'));
+        return QStringLiteral("%1:%2").arg(m).arg(s, 2, 10, QLatin1Char('0'));
     };
-    m_videoTimeLabel->setText(fmt(totalSec) + QStringLiteral(" / ") + fmt(totalAllSec));
+    m_videoTimeLabel->setText(fmt(totalSec) + QStringLiteral(" / ") +
+                              fmt(totalAllSec));
 }
 
 void FaceCaptureWidget::showSeekPreview(int frameIndex) {
@@ -737,8 +739,10 @@ void FaceCaptureWidget::showSeekPreview(int frameIndex) {
 
     // Open preview capture if not already open (independent decode path)
     if (!m_previewCapture.isOpened()) {
-        if (!m_previewCapture.open(m_videoFilePath.toStdString(), cv::CAP_FFMPEG) &&
-            !m_previewCapture.open(m_videoFilePath.toStdString(), cv::CAP_ANY)) {
+        if (!m_previewCapture.open(m_videoFilePath.toStdString(),
+                                   cv::CAP_FFMPEG) &&
+            !m_previewCapture.open(m_videoFilePath.toStdString(),
+                                   cv::CAP_ANY)) {
             return;  // silently fail — preview is non-critical
         }
     }
@@ -758,15 +762,15 @@ void FaceCaptureWidget::showSeekPreview(int frameIndex) {
         if (m_videoSeekSlider && m_previewLabel) {
             const int sliderWidth = m_videoSeekSlider->width();
             const int range = m_totalVideoFrames - 1;
-            const int handleX = (range > 0)
-                    ? static_cast<int>(
-                              static_cast<qint64>(frameIndex) * (sliderWidth - 1) / range)
-                    : 0;
+            const int handleX =
+                    (range > 0)
+                            ? static_cast<int>(static_cast<qint64>(frameIndex) *
+                                               (sliderWidth - 1) / range)
+                            : 0;
             // Map slider handle position to preview label coordinates.
             const QPoint sliderGlobal =
                     m_videoSeekSlider->mapToGlobal(QPoint(handleX, 0));
-            const QPoint localPos =
-                    m_previewLabel->mapFromGlobal(sliderGlobal);
+            const QPoint localPos = m_previewLabel->mapFromGlobal(sliderGlobal);
             // Center horizontally on the handle, place just above the slider.
             const int previewW = m_seekPreviewLabel->width();
             const int previewH = m_seekPreviewLabel->height();
@@ -800,67 +804,71 @@ void FaceCaptureWidget::closePreviewCapture() {
 bool FaceCaptureWidget::eventFilter(QObject* obj, QEvent* event) {
     if (obj == m_videoSeekSlider && m_totalVideoFrames > 0) {
         switch (event->type()) {
-        case QEvent::MouseButtonPress: {
-            // Click-to-seek: when the user clicks on the slider track (not
-            // just the handle), seek immediately to the clicked position.
-            auto* me = static_cast<QMouseEvent*>(event);
-            if (me->button() == Qt::LeftButton) {
-                const int sliderWidth = m_videoSeekSlider->width();
-                if (sliderWidth > 0) {
-                    const int frame = static_cast<int>(
-                            me->pos().x() * (m_totalVideoFrames - 1) / sliderWidth);
-                    const int clamped = qBound(0, frame, m_totalVideoFrames - 1);
-                    // Show preview at clicked position
-                    showSeekPreview(clamped);
-                    // Seek main capture
-                    if (m_camera.isOpened() && m_inputSource == InputSource::VideoFile) {
-                        m_camera.set(cv::CAP_PROP_POS_FRAMES, clamped);
-                    }
-                    // Update slider value
-                    m_videoSeekSlider->blockSignals(true);
-                    m_videoSeekSlider->setValue(clamped);
-                    m_videoSeekSlider->blockSignals(false);
-                    updateVideoTimeLabel(clamped);
-                    // Update preview display (important when paused).
-                    if (!m_frameTimer->isActive()) {
-                        cv::Mat frame;
-                        if (m_camera.read(frame) && !frame.empty()) {
-                            QImage img = cvMatToQImage(frame);
-                            m_previewLabel->setPixmap(QPixmap::fromImage(
-                                    img.scaled(m_previewLabel->size(),
-                                               Qt::KeepAspectRatio,
-                                               Qt::FastTransformation)));
+            case QEvent::MouseButtonPress: {
+                // Click-to-seek: when the user clicks on the slider track (not
+                // just the handle), seek immediately to the clicked position.
+                auto* me = static_cast<QMouseEvent*>(event);
+                if (me->button() == Qt::LeftButton) {
+                    const int sliderWidth = m_videoSeekSlider->width();
+                    if (sliderWidth > 0) {
+                        const int frame = static_cast<int>(
+                                me->pos().x() * (m_totalVideoFrames - 1) /
+                                sliderWidth);
+                        const int clamped =
+                                qBound(0, frame, m_totalVideoFrames - 1);
+                        // Show preview at clicked position
+                        showSeekPreview(clamped);
+                        // Seek main capture
+                        if (m_camera.isOpened() &&
+                            m_inputSource == InputSource::VideoFile) {
+                            m_camera.set(cv::CAP_PROP_POS_FRAMES, clamped);
                         }
+                        // Update slider value
+                        m_videoSeekSlider->blockSignals(true);
+                        m_videoSeekSlider->setValue(clamped);
+                        m_videoSeekSlider->blockSignals(false);
+                        updateVideoTimeLabel(clamped);
+                        // Update preview display (important when paused).
+                        if (!m_frameTimer->isActive()) {
+                            cv::Mat frame;
+                            if (m_camera.read(frame) && !frame.empty()) {
+                                QImage img = cvMatToQImage(frame);
+                                m_previewLabel->setPixmap(QPixmap::fromImage(
+                                        img.scaled(m_previewLabel->size(),
+                                                   Qt::KeepAspectRatio,
+                                                   Qt::FastTransformation)));
+                            }
+                        }
+                        // Preview stays visible until Leave event or next drag.
+                        // Do NOT use QTimer::singleShot to auto-hide — it would
+                        // dismiss the preview while the mouse is still on the
+                        // slider.
                     }
-                    // Preview stays visible until Leave event or next drag.
-                    // Do NOT use QTimer::singleShot to auto-hide — it would
-                    // dismiss the preview while the mouse is still on the slider.
                 }
+                break;
             }
-            break;
-        }
-        case QEvent::MouseMove: {
-            auto* me = static_cast<QMouseEvent*>(event);
-            // Throttle hover preview to ~15fps (66ms interval)
-            const qint64 now = QDateTime::currentMSecsSinceEpoch();
-            if (!m_userSeeking && now - m_lastPreviewTimeMs < 66)
-                return QWidget::eventFilter(obj, event);
-            m_lastPreviewTimeMs = now;
+            case QEvent::MouseMove: {
+                auto* me = static_cast<QMouseEvent*>(event);
+                // Throttle hover preview to ~15fps (66ms interval)
+                const qint64 now = QDateTime::currentMSecsSinceEpoch();
+                if (!m_userSeeking && now - m_lastPreviewTimeMs < 66)
+                    return QWidget::eventFilter(obj, event);
+                m_lastPreviewTimeMs = now;
 
-            // Map mouse x to frame index
-            const int sliderWidth = m_videoSeekSlider->width();
-            if (sliderWidth <= 0) break;
-            const int frame = static_cast<int>(
-                    me->pos().x() * (m_totalVideoFrames - 1) / sliderWidth);
-            showSeekPreview(qBound(0, frame, m_totalVideoFrames - 1));
-            break;
-        }
-        case QEvent::Leave:
-            if (!m_userSeeking && m_seekPreviewLabel)
-                m_seekPreviewLabel->setVisible(false);
-            break;
-        default:
-            break;
+                // Map mouse x to frame index
+                const int sliderWidth = m_videoSeekSlider->width();
+                if (sliderWidth <= 0) break;
+                const int frame = static_cast<int>(
+                        me->pos().x() * (m_totalVideoFrames - 1) / sliderWidth);
+                showSeekPreview(qBound(0, frame, m_totalVideoFrames - 1));
+                break;
+            }
+            case QEvent::Leave:
+                if (!m_userSeeking && m_seekPreviewLabel)
+                    m_seekPreviewLabel->setVisible(false);
+                break;
+            default:
+                break;
         }
     }
     return QWidget::eventFilter(obj, event);
@@ -1033,8 +1041,7 @@ void FaceCaptureWidget::setVideoFilePath(const QString& path) {
 
 void FaceCaptureWidget::setInputSource(InputSource source) {
     if (m_sourceCombo) {
-        const int idx =
-                m_sourceCombo->findData(static_cast<int>(source));
+        const int idx = m_sourceCombo->findData(static_cast<int>(source));
         if (idx >= 0) m_sourceCombo->setCurrentIndex(idx);
     }
 }
@@ -1068,14 +1075,16 @@ bool FaceCaptureWidget::startVideoFile(const QString& path) {
     aicore_cancel_token_reset(m_inferenceCancelToken);
     qInfo() << "[FaceCaptureWidget] Configuring detector...";
     if (!configureDetectorForRegistrySelection()) {
-        qWarning() << "[FaceCaptureWidget] configureDetectorForRegistrySelection failed";
+        qWarning() << "[FaceCaptureWidget] "
+                      "configureDetectorForRegistrySelection failed";
         return false;
     }
     m_inputSource = InputSource::VideoFile;
     m_videoFilePath = path;
     if (m_videoPathEdit) m_videoPathEdit->setText(path);
 
-    qInfo() << "[FaceCaptureWidget] Detector kind:" << static_cast<int>(m_detectorKind);
+    qInfo() << "[FaceCaptureWidget] Detector kind:"
+            << static_cast<int>(m_detectorKind);
     if (m_detectorKind == DetectorKind::Ggml) {
         if (!ensureGgmlModelReady()) {
             m_statusLabel->setText(
@@ -1100,15 +1109,18 @@ bool FaceCaptureWidget::startVideoFile(const QString& path) {
         return false;
     }
 
-    qInfo() << "[FaceCaptureWidget] Video opened successfully, starting frame timer...";
+    qInfo() << "[FaceCaptureWidget] Video opened successfully, starting frame "
+               "timer...";
     m_cameraActive = true;
     m_ggmlFrameSkip = 0;
     m_lastDetectedFrameNum = 0;
 
     // Initialize video seek slider
-    m_totalVideoFrames = static_cast<int>(m_camera.get(cv::CAP_PROP_FRAME_COUNT));
+    m_totalVideoFrames =
+            static_cast<int>(m_camera.get(cv::CAP_PROP_FRAME_COUNT));
     m_videoFps = m_camera.get(cv::CAP_PROP_FPS);
-    if (m_videoFps <= 0) m_videoFps = 30.0;  // fallback for codecs that don't report FPS
+    if (m_videoFps <= 0)
+        m_videoFps = 30.0;  // fallback for codecs that don't report FPS
     if (m_videoSeekSlider) {
         m_videoSeekSlider->blockSignals(true);
         m_videoSeekSlider->setRange(0, std::max(0, m_totalVideoFrames - 1));
@@ -1123,7 +1135,8 @@ bool FaceCaptureWidget::startVideoFile(const QString& path) {
     if (m_videoControlsRow) m_videoControlsRow->setVisible(true);
     updateVideoTimeLabel(0);
 
-    // Set timer interval from video FPS × speed (ensures 1 tick ≈ 1 video frame).
+    // Set timer interval from video FPS × speed (ensures 1 tick ≈ 1 video
+    // frame).
     m_frameTimer->setInterval(computeTimerInterval());
     m_frameTimer->start();
     m_statusLabel->setText(tr("Playing video — preview + face overlay"));
@@ -2040,7 +2053,8 @@ void FaceCaptureWidget::processFrame() {
 
     // Update video seek slider and time label
     if (m_inputSource == InputSource::VideoFile && !m_userSeeking) {
-        const int curFrame = static_cast<int>(m_camera.get(cv::CAP_PROP_POS_FRAMES));
+        const int curFrame =
+                static_cast<int>(m_camera.get(cv::CAP_PROP_POS_FRAMES));
         if (m_videoSeekSlider && m_totalVideoFrames > 0) {
             m_videoSeekSlider->blockSignals(true);
             m_videoSeekSlider->setValue(curFrame);
@@ -2064,7 +2078,8 @@ void FaceCaptureWidget::processFrame() {
             // Video-time throttle: detect every kGgmlDetectInterval frames of
             // video content, regardless of playback speed.
             const double videoTimeMs = curFrameNum / m_videoFps * 1000.0;
-            const double thresholdMs = kGgmlDetectInterval / m_videoFps * 1000.0;
+            const double thresholdMs =
+                    kGgmlDetectInterval / m_videoFps * 1000.0;
             if (videoTimeMs - (m_lastDetectedFrameNum / m_videoFps * 1000.0) >=
                 thresholdMs - 1.0) {  // -1ms tolerance for FP rounding
                 return true;

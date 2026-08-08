@@ -6,7 +6,6 @@
 // ----------------------------------------------------------------------------
 
 #include "ecvTestDataRepository.h"
-#include "ecvModelDownloader.h"
 
 #include <QCryptographicHash>
 #include <QDir>
@@ -14,6 +13,8 @@
 #include <QFile>
 #include <QFileInfo>
 #include <functional>
+
+#include "ecvModelDownloader.h"
 
 extern "C" {
 #include "ioapi.h"
@@ -34,8 +35,7 @@ constexpr const char* kMonstreeExtractDir = "dataset_monstree";
 constexpr const char* kMonstreeDownloadUrl =
         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
         "reconstruction_data/dataset_monstree.zip";
-constexpr const char* kMonstreeExpectedMd5 =
-        "10730009514e2db7b47d16f75627561c";
+constexpr const char* kMonstreeExpectedMd5 = "10730009514e2db7b47d16f75627561c";
 constexpr qint64 kMonstreeExpectedSize = 100 * 1024 * 1024;  // ~100 MB
 
 // FriendsFaces dataset
@@ -44,8 +44,7 @@ constexpr const char* kFriendsExtractDir = "friends_faces";
 constexpr const char* kFriendsDownloadUrl =
         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
         "qFaceDetect/friends_faces.zip";
-constexpr const char* kFriendsExpectedMd5 =
-        "1d1ffebb97edac790b55c6f0f3c9d9fc";
+constexpr const char* kFriendsExpectedMd5 = "1d1ffebb97edac790b55c6f0f3c9d9fc";
 constexpr qint64 kFriendsExpectedSize = 30 * 1024 * 1024;  // ~30 MB
 
 }  // namespace
@@ -80,8 +79,8 @@ QString ecvTestDataRepository::extractPath(Dataset kind) {
 // Dataset metadata
 // ----------------------------------------------------------------------------
 
-ecvTestDataRepository::DatasetInfo
-ecvTestDataRepository::getDatasetInfo(Dataset kind) {
+ecvTestDataRepository::DatasetInfo ecvTestDataRepository::getDatasetInfo(
+        Dataset kind) {
     switch (kind) {
         case Dataset::Monstree:
             return {kind,
@@ -114,8 +113,7 @@ ecvTestDataRepository& ecvTestDataRepository::instance() {
 }
 
 ecvTestDataRepository::ecvTestDataRepository(QObject* parent)
-    : QObject(parent),
-      m_downloader(new ecvModelDownloader(this)) {
+    : QObject(parent), m_downloader(new ecvModelDownloader(this)) {
     connect(m_downloader, &ecvModelDownloader::progress, this,
             &ecvTestDataRepository::onDownloaderProgress);
     connect(m_downloader, &ecvModelDownloader::finished, this,
@@ -129,8 +127,8 @@ ecvTestDataRepository::~ecvTestDataRepository() = default;
 // ----------------------------------------------------------------------------
 
 bool ecvTestDataRepository::verifyZipIntegrity(const QString& zipPath,
-                                                const QString& expectedMd5,
-                                                qint64 expectedMinSize) {
+                                               const QString& expectedMd5,
+                                               qint64 expectedMinSize) {
     if (zipPath.isEmpty() || !QFileInfo::exists(zipPath)) return false;
 
     const QFileInfo fi(zipPath);
@@ -155,7 +153,8 @@ bool ecvTestDataRepository::verifyZipIntegrity(const QString& zipPath,
 }
 
 bool ecvTestDataRepository::isDatasetAvailable(Dataset kind) const {
-    // Check extract dir FIRST — dataset may be extracted even if zip was deleted
+    // Check extract dir FIRST — dataset may be extracted even if zip was
+    // deleted
     const QString extract = extractPath(kind);
     if (QDir(extract).exists()) return true;
 
@@ -201,14 +200,13 @@ void ecvTestDataRepository::startDownload(Dataset kind) {
     }
 
     m_downloadInProgress = true;
-    emit downloadLogMessage(
-            QStringLiteral("[Info] Downloading %1 dataset...")
-                    .arg(info.displayName));
+    emit downloadLogMessage(QStringLiteral("[Info] Downloading %1 dataset...")
+                                    .arg(info.displayName));
 
     ecvModelDownloader::Request request;
     request.url = info.downloadUrl;
     request.destPath = destPath;
-    request.minBytes = 1024 * 1024;  // At least 1 MB
+    request.minBytes = 1024 * 1024;    // At least 1 MB
     request.requireGgufMagic = false;  // Not a GGUF file
 
     m_downloader->download(request);
@@ -222,7 +220,7 @@ void ecvTestDataRepository::cancelDownload() {
 }
 
 void ecvTestDataRepository::onDownloaderProgress(qint64 received,
-                                                  qint64 total) {
+                                                 qint64 total) {
     if (total <= 0) return;
     const int percent = static_cast<int>((received * 100) / total);
     const QString status =
@@ -234,7 +232,7 @@ void ecvTestDataRepository::onDownloaderProgress(qint64 received,
 }
 
 void ecvTestDataRepository::onDownloaderFinished(bool ok,
-                                                  const QString& destPath) {
+                                                 const QString& destPath) {
     m_downloadInProgress = false;
     const auto info = getDatasetInfo(m_currentDataset);
 
@@ -418,12 +416,12 @@ int ecvTestDataRepository::zipEntryCount(const QString& zipPath) {
 }
 
 bool ecvTestDataRepository::extractZip(const QString& zipPath,
-                                        const QString& extractDir,
-                                        const ExtractProgressFn& onProgress) {
+                                       const QString& extractDir,
+                                       const ExtractProgressFn& onProgress) {
     if (zipPath.isEmpty() || !QFileInfo::exists(zipPath)) return false;
     QDir().mkpath(extractDir);
-    return extractFromZipFile(QFileInfo(zipPath).absoluteFilePath(),
-                              extractDir, onProgress);
+    return extractFromZipFile(QFileInfo(zipPath).absoluteFilePath(), extractDir,
+                              onProgress);
 }
 
 bool ecvTestDataRepository::extractDataset(Dataset kind) {
@@ -518,13 +516,12 @@ QString ecvTestDataRepository::findFriendsVideo(const QString& bundleRoot) {
         return QFileInfo(knownRel).absoluteFilePath();
 
     // Fall back to recursive search in query/ subdirectory
-    const QString videoDir =
-            QDir(bundleRoot).filePath(QStringLiteral("query"));
+    const QString videoDir = QDir(bundleRoot).filePath(QStringLiteral("query"));
     if (!QDir(videoDir).exists()) return {};
 
     const QStringList patterns = {
-            QStringLiteral("*.mp4"),  QStringLiteral("*.mov"),
-            QStringLiteral("*.avi"),  QStringLiteral("*.mkv"),
+            QStringLiteral("*.mp4"), QStringLiteral("*.mov"),
+            QStringLiteral("*.avi"), QStringLiteral("*.mkv"),
             QStringLiteral("*.webm")};
 
     QDirIterator it(videoDir, patterns, QDir::Files,

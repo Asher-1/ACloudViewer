@@ -226,7 +226,8 @@ private:
     void drawAngleGuide(QImage& image, CaptureAngle angle);
 
     cv::VideoCapture m_camera;
-    cv::VideoCapture m_previewCapture;  // independent decode path for scrub/hover preview
+    cv::VideoCapture m_previewCapture;  // independent decode path for
+                                        // scrub/hover preview
     cv::CascadeClassifier m_faceCascade;
     cv::Rect m_lastFaceRect;
     cv::Mat m_latestFrame;
@@ -254,7 +255,8 @@ private:
     QComboBox* m_playbackSpeedCombo = nullptr;
     QWidget* m_videoControlsRow = nullptr;
     QLabel* m_videoTimeLabel = nullptr;
-    QLabel* m_seekPreviewLabel = nullptr;   // thumbnail above slider during scrub/hover
+    QLabel* m_seekPreviewLabel =
+            nullptr;  // thumbnail above slider during scrub/hover
     QComboBox* m_detectorCombo = nullptr;
     QDoubleSpinBox* m_minScoreSpin = nullptr;
     QSpinBox* m_minCapturesSpin = nullptr;
@@ -287,7 +289,7 @@ private:
     InputSource m_inputSource = InputSource::Camera;
     QString m_videoFilePath;
     int m_totalVideoFrames = 0;
-    double m_videoFps = 0.0;         // cached FPS from CAP_PROP_FPS
+    double m_videoFps = 0.0;  // cached FPS from CAP_PROP_FPS
     double m_playbackSpeed = 1.0;
     int m_baseTimerInterval = 30;
     bool m_userSeeking = false;
@@ -298,7 +300,8 @@ private:
     bool m_autoStartAfterDownload = false;
     int m_pendingCameraIndex = 0;
     int m_ggmlFrameSkip = 0;
-    int m_lastDetectedFrameNum = 0;  // video frame number of last detection (for video-time throtting)
+    int m_lastDetectedFrameNum = 0;  // video frame number of last detection
+                                     // (for video-time throtting)
     bool m_ggmlModelLoading = false;
     QFutureWatcher<aicore_facedetect_ctx*>* m_ggmlLoadWatcher = nullptr;
 

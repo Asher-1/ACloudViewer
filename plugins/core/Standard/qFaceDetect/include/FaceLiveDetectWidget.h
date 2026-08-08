@@ -149,7 +149,8 @@ private:
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
     cv::VideoCapture m_capture;
-    cv::VideoCapture m_previewCapture;  // independent decode path for scrub/hover preview
+    cv::VideoCapture m_previewCapture;  // independent decode path for
+                                        // scrub/hover preview
 #endif
 
     Config m_config;
@@ -177,13 +178,15 @@ private:
     QComboBox* m_playbackSpeedCombo = nullptr;
     QWidget* m_videoControlsRow = nullptr;
     QLabel* m_videoTimeLabel = nullptr;
-    QLabel* m_seekPreviewLabel = nullptr;   // thumbnail above slider during scrub/hover
+    QLabel* m_seekPreviewLabel =
+            nullptr;  // thumbnail above slider during scrub/hover
     int m_totalVideoFrames = 0;
-    double m_videoFps = 0.0;         // cached FPS from CAP_PROP_FPS
+    double m_videoFps = 0.0;  // cached FPS from CAP_PROP_FPS
     double m_playbackSpeed = 1.0;
     int m_baseTimerInterval = 33;
     bool m_userSeeking = false;
-    int m_sliderUpdateSkip = 0;     // suppress processFrame slider updates after user seek
+    int m_sliderUpdateSkip =
+            0;  // suppress processFrame slider updates after user seek
     qint64 m_lastPreviewTimeMs = 0;  // throttle hover preview updates
 
     bool m_videoPathUserChosen = false;
@@ -209,8 +212,10 @@ private:
     std::vector<FaceDetectBox> m_overlayFaces;
     QVector<QString> m_overlayLabels;
     QSize m_overlayInferSize;
-    qint64 m_overlayFrameNum = 0;     // video frame number when overlay was generated
-    qint64 m_lastSubmitFrameNum = 0;  // video frame number of last inference submission
+    qint64 m_overlayFrameNum =
+            0;  // video frame number when overlay was generated
+    qint64 m_lastSubmitFrameNum =
+            0;  // video frame number of last inference submission
 
     // Inference timing — for latency display.
     QElapsedTimer m_inferSubmitTime;

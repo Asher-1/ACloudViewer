@@ -172,17 +172,16 @@ FreeSplatterDialog::FreeSplatterDialog(QWidget* parent) : QDialog(parent) {
             &FreeSplatterDialog::appendLog);
     connect(&repo, &ecvTestDataRepository::downloadFinished, this,
             [this](bool success, ecvTestDataRepository::Dataset kind) {
-                onTestDataDownloadFinished(
-                        success, static_cast<int>(kind));
+                onTestDataDownloadFinished(success, static_cast<int>(kind));
             });
     connect(&repo, &ecvTestDataRepository::extractionFinished, this,
             [this](bool success, ecvTestDataRepository::Dataset kind) {
-                onTestDataExtractionFinished(
-                        success, static_cast<int>(kind));
+                onTestDataExtractionFinished(success, static_cast<int>(kind));
             });
     connect(&repo, &ecvTestDataRepository::extractionProgress, this,
             [this](int current, int total) {
-                if (m_testDataDownloadInProgress && m_progressBar && total > 0) {
+                if (m_testDataDownloadInProgress && m_progressBar &&
+                    total > 0) {
                     if (m_progressBar->maximum() != total) {
                         m_progressBar->setRange(0, total);
                     }
@@ -655,7 +654,8 @@ void FreeSplatterDialog::setupUi() {
             tr("Auto-download sample data for the active input tab"));
     connect(testDataBtn, &QPushButton::clicked, this, [this]() {
         // Determine which input tab is active
-        const int tabIndex = m_inputTabWidget ? m_inputTabWidget->currentIndex() : 0;
+        const int tabIndex =
+                m_inputTabWidget ? m_inputTabWidget->currentIndex() : 0;
         if (tabIndex == 1 && m_faceCaptureWidget) {
             // Face Capture tab → FriendsFaces video
             ensureFriendsTestData();
@@ -1540,8 +1540,9 @@ void FreeSplatterDialog::onRun() {
 
 void FreeSplatterDialog::onFaceStartCamera() {
     if (!m_faceCaptureWidget) return;
-    appendLog(tr("[FaceCapture] Start clicked, inputSource=%1")
-                      .arg(static_cast<int>(m_faceCaptureWidget->inputSource())));
+    appendLog(
+            tr("[FaceCapture] Start clicked, inputSource=%1")
+                    .arg(static_cast<int>(m_faceCaptureWidget->inputSource())));
     if (m_faceCaptureWidget->inputSource() ==
         FaceCaptureWidget::InputSource::VideoFile) {
         const QString path = m_faceCaptureWidget->videoFilePath();
