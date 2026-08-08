@@ -14,8 +14,9 @@
 #include "ecvMainAppInterface.h"
 
 // Qt
-#include <QComboBox>
 #include <cvFileDialog.h>
+
+#include <QComboBox>
 #include <QFileInfo>
 #include <QMainWindow>
 #include <QMessageBox>
@@ -644,7 +645,7 @@ void qM3C2Dialog::loadParamsFromFile() {
                         .toString();
 
         filename = cvFileDialog::getOpenFileName(this, "Load M3C2 parameters",
-                                                currentPath, "*.txt");
+                                                 currentPath, "*.txt");
         if (filename.isEmpty()) return;
 
         // we update current file path

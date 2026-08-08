@@ -8,8 +8,9 @@
 #include <array>
 
 // Qt
-#include <QCheckBox>
 #include <cvFileDialog.h>
+
+#include <QCheckBox>
 #include <QFileInfo>
 #include <QIntValidator>
 
@@ -43,7 +44,6 @@
 #include "ccPinchNodeTool.h"
 #include "ccSNECloud.h"
 #include "ccThicknessTool.h"
-
 #include "ccTopologyTool.h"
 #include "ccTraceTool.h"
 

@@ -8,13 +8,13 @@
 #include "FreeSplatterDialog.h"
 
 #include <CVLog.h>
+#include <cvFileDialog.h>
 
 #include <QCloseEvent>
 #include <QCryptographicHash>
 #include <QDir>
 #include <QDirIterator>
 #include <QFile>
-#include <cvFileDialog.h>
 #include <QFileInfo>
 #include <QFontMetrics>
 #include <QFrame>
@@ -1147,9 +1147,9 @@ void FreeSplatterDialog::onBrowseCustomModel() {
     const QString lastDir =
             settings.value("qFreeSplatter/lastModelDir", QDir::homePath())
                     .toString();
-    QString path =
-            cvFileDialog::getOpenFileName(this, "Select GGUF Model", lastDir,
-                                         "GGUF Models (*.gguf);;All Files (*)");
+    QString path = cvFileDialog::getOpenFileName(
+            this, "Select GGUF Model", lastDir,
+            "GGUF Models (*.gguf);;All Files (*)");
     if (path.isEmpty()) return;
     settings.setValue("qFreeSplatter/lastModelDir",
                       QFileInfo(path).absolutePath());
@@ -1468,8 +1468,8 @@ void FreeSplatterDialog::onBrowseFolder() {
     const QString lastDir =
             settings.value("qFreeSplatter/lastImageFolder", QDir::homePath())
                     .toString();
-    QString dir = cvFileDialog::getExistingDirectory(this, "Select Image Folder",
-                                                    lastDir);
+    QString dir = cvFileDialog::getExistingDirectory(
+            this, "Select Image Folder", lastDir);
     if (dir.isEmpty()) return;
 
     settings.setValue("qFreeSplatter/lastImageFolder", dir);

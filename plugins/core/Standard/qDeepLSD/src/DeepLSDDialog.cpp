@@ -8,10 +8,10 @@
 #include "DeepLSDDialog.h"
 
 #include <CVLog.h>
+#include <cvFileDialog.h>
 
 #include <QCloseEvent>
 #include <QDir>
-#include <cvFileDialog.h>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
@@ -347,16 +347,13 @@ void DeepLSDDialog::saveSettings() {
     settings.setValue(prefix + "/device",
                       m_deviceCombo->currentData().toString());
     settings.setValue(prefix + "/threads", m_threads->value());
-    settings.setValue(prefix + "/minSegmentScore",
-                      m_minSegmentScore->value());
-    settings.setValue(prefix + "/addLineViz",
-                      m_addLineVizCheck->isChecked());
+    settings.setValue(prefix + "/minSegmentScore", m_minSegmentScore->value());
+    settings.setValue(prefix + "/addLineViz", m_addLineVizCheck->isChecked());
     settings.setValue(prefix + "/addDistanceOverlay",
                       m_addDistanceOverlayCheck->isChecked());
     settings.setValue(prefix + "/exportPolylines",
                       m_exportPolylinesCheck->isChecked());
-    settings.setValue(prefix + "/imagePath",
-                      m_imagePath->text().trimmed());
+    settings.setValue(prefix + "/imagePath", m_imagePath->text().trimmed());
 }
 
 void DeepLSDDialog::restoreSettings() {
@@ -405,8 +402,7 @@ void DeepLSDDialog::restoreSettings() {
                 settings.value(prefix + "/exportPolylines").toBool());
     }
 
-    const QString imagePath =
-            settings.value(prefix + "/imagePath").toString();
+    const QString imagePath = settings.value(prefix + "/imagePath").toString();
     if (!imagePath.isEmpty()) {
         m_imagePath->setText(imagePath);
     }

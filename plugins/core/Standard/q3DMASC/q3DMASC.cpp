@@ -21,8 +21,9 @@
 #include <ecvProgressDialog.h>
 
 // Qt
-#include <QApplication>
 #include <cvFileDialog.h>
+
+#include <QApplication>
 #include <QMessageBox>
 #include <QSettings>
 #include <QtCore>

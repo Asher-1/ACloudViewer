@@ -1144,7 +1144,9 @@ void ccPropertiesTreeDelegate::fillWithLineSet(
     addSeparator(tr("Line set"));
 
     appendRow(ITEM(tr("Points")),
-              ITEM(QLocale(QLocale::English).toString(static_cast<qulonglong>(_obj->points_.size()))));
+              ITEM(QLocale(QLocale::English)
+                           .toString(static_cast<qulonglong>(
+                                   _obj->points_.size()))));
 
     appendRow(ITEM(tr("Segments")),
               ITEM(QLocale(QLocale::English).toString(_obj->segmentCount())));

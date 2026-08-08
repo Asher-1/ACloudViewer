@@ -10,9 +10,9 @@
 // Qt
 #include <CVLog.h>
 #include <QtCompat.h>
+#include <cvFileDialog.h>
 
 #include <QDateTime>
-#include <cvFileDialog.h>
 #include <QMessageBox>
 #include <QSettings>
 #include <QStandardPaths>

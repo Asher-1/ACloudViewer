@@ -8,12 +8,12 @@
 #include "FaceDetectDialog.h"
 
 #include <CVLog.h>
+#include <cvFileDialog.h>
 
 #include <QCloseEvent>
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
-#include <cvFileDialog.h>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QGuiApplication>

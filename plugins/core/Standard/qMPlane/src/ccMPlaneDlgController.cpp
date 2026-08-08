@@ -14,7 +14,6 @@
 
 // Qt
 #include <QtCompat.h>
-
 #include <cvFileDialog.h>
 constexpr char const *MPLANE_PLANE_NAME = "Fitting-plane";
 

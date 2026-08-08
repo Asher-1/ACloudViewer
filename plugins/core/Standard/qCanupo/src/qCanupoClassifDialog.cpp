@@ -16,9 +16,10 @@
 #include <ecvPointCloud.h>
 
 // Qt
+#include <cvFileDialog.h>
+
 #include <QApplication>
 #include <QComboBox>
-#include <cvFileDialog.h>
 #include <QFileInfo>
 #include <QMainWindow>
 #include <QPushButton>
@@ -217,7 +218,7 @@ void qCanupoClassifDialog::browseMscFile() {
                     .toString();
 
     QString filename = cvFileDialog::getOpenFileName(this, "Load MSC file",
-                                                    currentPath, "*.msc");
+                                                     currentPath, "*.msc");
     if (filename.isEmpty()) return;
 
     // we update current file path
@@ -236,7 +237,7 @@ void qCanupoClassifDialog::browseClassifierFile() {
                     .toString();
 
     filename = cvFileDialog::getOpenFileName(this, "Load classifier file",
-                                            currentPath, "*.prm");
+                                             currentPath, "*.prm");
     if (filename.isEmpty()) return;
 
     // we update current file path

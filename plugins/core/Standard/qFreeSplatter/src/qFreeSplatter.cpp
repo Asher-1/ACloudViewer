@@ -21,6 +21,7 @@
 #ifdef HAS_QSIBR
 #include <ecvPluginManager.h>
 #endif
+#include <cvFileDialog.h>
 #include <ecvPointCloud.h>
 #include <ecvScalarField.h>
 #include <ecvViewManager.h>
@@ -28,7 +29,6 @@
 #include <QAction>
 #include <QDir>
 #include <QFile>
-#include <cvFileDialog.h>
 #include <QFileInfo>
 #include <QHash>
 #include <QJsonArray>

@@ -8,9 +8,9 @@
 #include "LasOpenDialog.h"
 
 // Qt
-#include <cvFileDialog.h>
 #include <QLocale>
 #include <algorithm>
+#include <cvFileDialog.h>
 constexpr int TILLING_TAB_INDEX = 1;
 
 static QListWidgetItem* CreateItem(const char* name)

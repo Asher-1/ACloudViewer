@@ -9,12 +9,12 @@
 
 #include <CVLog.h>
 #include <QtCompat.h>
+#include <cvFileDialog.h>
 
 #include <QCloseEvent>
 #include <QDir>
 #include <QDirIterator>
 #include <QFile>
-#include <cvFileDialog.h>
 #include <QFileInfo>
 #include <QGridLayout>
 #include <QGroupBox>
@@ -921,8 +921,8 @@ void DA3Dialog::onBrowseFolder() {
     QSettings settings;
     const QString lastDir =
             settings.value("qDA3/lastImageFolder", QDir::homePath()).toString();
-    QString dir = cvFileDialog::getExistingDirectory(this, "Select Image Folder",
-                                                    lastDir);
+    QString dir = cvFileDialog::getExistingDirectory(
+            this, "Select Image Folder", lastDir);
     if (dir.isEmpty()) return;
 
     settings.setValue("qDA3/lastImageFolder", dir);

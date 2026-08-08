@@ -7,6 +7,7 @@
 
 #include "qSIBR.h"
 
+#include <cvFileDialog.h>
 #include <ecvCommandLineInterface.h>
 #include <ecvHObjectCaster.h>
 #include <ecvMainAppInterface.h>
@@ -15,7 +16,6 @@
 #include <QApplication>
 #include <QDateTime>
 #include <QDir>
-#include <cvFileDialog.h>
 #include <QFileInfo>
 #include <QMainWindow>
 #include <QMenu>
@@ -731,7 +731,7 @@ void qSIBR::launchCropFromCenter() {
     auto* win = m_app ? m_app->getMainWindow() : nullptr;
     QString inputFile =
             cvFileDialog::getOpenFileName(win, tr("Select Image List File"),
-                                         QString(), tr("Text files (*.txt)"));
+                                          QString(), tr("Text files (*.txt)"));
     if (inputFile.isEmpty()) return;
     QString outputPath = cvFileDialog::getExistingDirectory(
             win, tr("Select Output Directory"), QString(),

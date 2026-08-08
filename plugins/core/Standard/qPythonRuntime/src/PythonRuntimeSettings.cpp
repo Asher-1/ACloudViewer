@@ -12,7 +12,6 @@
 #include <ui_PythonRuntimeSettings.h>
 
 #include <QDialogButtonBox>
-#include <cvFileDialog.h>
 #include <QIcon>
 #include <QLineEdit>
 #include <QMessageBox>
@@ -20,6 +19,7 @@
 #include <QSettings>
 #include <QStringListModel>
 #include <QtGlobal>
+#include <cvFileDialog.h>
 
 #include <memory>
 /// Simple Dialog that displays a Line Edit with a button next to it

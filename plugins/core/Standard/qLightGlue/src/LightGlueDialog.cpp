@@ -8,11 +8,11 @@
 #include "LightGlueDialog.h"
 
 #include <CVLog.h>
+#include <cvFileDialog.h>
 
 #include <QCloseEvent>
 #include <QDir>
 #include <QDirIterator>
-#include <cvFileDialog.h>
 #include <QFileInfo>
 #include <QFrame>
 #include <QGridLayout>

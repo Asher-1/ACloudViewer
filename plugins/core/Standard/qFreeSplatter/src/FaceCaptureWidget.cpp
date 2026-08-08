@@ -11,12 +11,13 @@
 #include <opencv2/core/utils/logger.hpp>
 #endif
 
+#include <cvFileDialog.h>
+
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QDebug>
 #include <QDir>
 #include <QFile>
-#include <cvFileDialog.h>
 #include <QFileInfo>
 #include <QFont>
 #include <QFrame>
