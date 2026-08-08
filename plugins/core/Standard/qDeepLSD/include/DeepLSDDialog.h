@@ -56,6 +56,8 @@ public:
 
     void setAppInterface(ecvMainAppInterface* app);
     Settings getSettings() const;
+    void saveSettings();
+    void restoreSettings();
     void appendLog(const QString& msg);
     void setProgress(int current, int total);
     void setRunning(bool running);

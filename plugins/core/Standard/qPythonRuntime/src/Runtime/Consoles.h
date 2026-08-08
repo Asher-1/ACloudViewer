@@ -102,18 +102,26 @@ class ccConsoleOutput
     }
 
   private:
+    /// Creates a print function that captures 'prefix' by value (not 'this'),
+    /// so the object can be safely moved (e.g. via py::cast with move policy)
+    /// without leaving a dangling 'this' in the lambda.
+    static std::function<void(const QString &)> makePrintFn(const QString &prefix)
+    {
+        return [prefix](const QString &message)
+        {
+            if (prefix.isEmpty())
+            {
+                CVLog::Print(message);
+            }
+            else
+            {
+                CVLog::Print(prefix + message);
+            }
+        };
+    }
+
     const QString m_prefix;
-    ConsoleWrapper m_output{[this](const QString &message)
-                            {
-                                if (m_prefix.isEmpty())
-                                {
-                                    CVLog::Print(message);
-                                }
-                                else
-                                {
-                                    CVLog::Print(m_prefix + message);
-                                }
-                            }};
+    ConsoleWrapper m_output{makePrintFn(m_prefix)};
 };
 
 /// Writes messages to the QListWidget given
@@ -123,7 +131,7 @@ class ListWidgetConsole
     ListWidgetConsole(QListWidget *view, const Qt::GlobalColor color) : m_view(view), m_brush(color)
     {
     }
-    ListWidgetConsole(QListWidget *view, const QColor &color) : m_view(view), m_brush() {}
+    ListWidgetConsole(QListWidget *view, const QColor &color) : m_view(view), m_brush(color) {}
     explicit ListWidgetConsole(QListWidget *view) : m_view(view), m_brush() {}
 
     void write(const char *messagePart)
@@ -148,27 +156,36 @@ class ListWidgetConsole
     }
 
   private:
+    /// Creates a print function that captures 'view' and 'brush' by value
+    /// (not 'this'), so the object can be safely moved (e.g. via py::cast
+    /// with move policy) without leaving a dangling 'this' in the lambda.
+    static std::function<void(const QString &)>
+    makePrintFn(QListWidget *view, const QBrush &brush, const QString &prefix)
+    {
+        return [view, brush, prefix](const QString &message)
+        {
+            if (view)
+            {
+                auto *messageItem = new QListWidgetItem(message);
+                messageItem->setForeground(brush);
+                view->addItem(messageItem);
+            }
+            else
+            {
+                if (prefix.isEmpty())
+                {
+                    CVLog::Print(message);
+                }
+                else
+                {
+                    CVLog::Print(prefix + message);
+                }
+            }
+        };
+    }
+
     QListWidget *m_view;
     QBrush m_brush;
     QString m_prefix;
-    ConsoleWrapper m_output{[this](const QString &message)
-                            {
-                                if (m_view)
-                                {
-                                    auto *messageItem = new QListWidgetItem(message);
-                                    messageItem->setForeground(m_brush);
-                                    m_view->addItem(messageItem);
-                                }
-                                else
-                                {
-                                    if (m_prefix.isEmpty())
-                                    {
-                                        CVLog::Print(message);
-                                    }
-                                    else
-                                    {
-                                        CVLog::Print(m_prefix + message);
-                                    }
-                                }
-                            }};
+    ConsoleWrapper m_output{makePrintFn(m_view, m_brush, m_prefix)};
 };

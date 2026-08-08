@@ -8,14 +8,13 @@
 #include "LASOpenDlg.h"
 
 // Qt
-#include <QFileDialog>
+#include <cvFileDialog.h>
 #include <QFileInfo>
 #include <QMessageBox>
 
 // System
 #include <assert.h>
 #include <string.h>
-
 LASOpenDlg::LASOpenDlg(QWidget* parent)
     : QDialog(parent), Ui::OpenLASFileDialog(), m_autoSkip(false) {
     setupUi(this);
@@ -45,7 +44,7 @@ void LASOpenDlg::onApplyAll() {
 }
 
 void LASOpenDlg::onBrowse() {
-    QString outputPath = QFileDialog::getExistingDirectory(
+    QString outputPath = cvFileDialog::getExistingDirectory(
             this, "Output path", outputPathLineEdit->text());
     if (outputPath.isEmpty()) {
         // cancelled

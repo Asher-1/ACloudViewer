@@ -102,7 +102,7 @@ def load_release_packages() -> list[str]:
 
 
 def required_runtime_imports() -> tuple[str, ...]:
-    return ("numpy", "pip", "setuptools", "tqdm", "invoke", "typing_extensions")
+    return ("numpy", "pip", "setuptools", "tqdm", "invoke", "typing_extensions", "laspy")
 
 
 def _package_paths(src: Path, pkg: str) -> list[Path]:

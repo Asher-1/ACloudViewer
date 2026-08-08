@@ -10,13 +10,12 @@
 #include "ecvFileUtils.h"
 
 // Qt
-#include <QFileDialog>
+#include <cvFileDialog.h>
 #include <QFileInfo>
 #include <QSettings>
 
 // System
 #include <assert.h>
-
 DxfProfilesExportDlg::DxfProfilesExportDlg(QWidget* parent)
     : QDialog(parent, Qt::Tool), Ui::DxfProfilesExportDlg() {
     setupUi(this);
@@ -121,7 +120,7 @@ void DxfProfilesExportDlg::browseVertFile() {
     QString filter("Vertical profiles (*.dxf)");
 
     // open file loading dialog
-    QString filename = QFileDialog::getSaveFileName(
+    QString filename = cvFileDialog::getSaveFileName(
             0, "Select output file", vertOutputFileLineEdit->text(), filter);
 
     if (filename.isEmpty()) return;
@@ -138,7 +137,7 @@ void DxfProfilesExportDlg::browseHorizFile() {
     QString filter("Horizontal profiles (*.dxf)");
 
     // open file loading dialog
-    QString filename = QFileDialog::getSaveFileName(
+    QString filename = cvFileDialog::getSaveFileName(
             0, "Select output file", horizOutputFileLineEdit->text(), filter);
 
     if (filename.isEmpty()) return;

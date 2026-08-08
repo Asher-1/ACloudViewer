@@ -11,7 +11,7 @@
 
 #include <QCloseEvent>
 #include <QDir>
-#include <QFileDialog>
+#include <cvFileDialog.h>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
@@ -23,7 +23,6 @@
 #include "aicore/deeplsd_capi.h"
 #include "aicore/inference_log.h"
 #include "ecvModelDownloader.h"
-
 static const char* kDownloadBase =
         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
         "DeepLSD/";
@@ -121,6 +120,7 @@ DeepLSDDialog::DeepLSDDialog(QWidget* parent) : QDialog(parent) {
     CVLog::Print(QString("[DeepLSD] Model cache: %1").arg(modelCacheDir()));
     aicore_inference_log::log_backend_probe(QStringLiteral("DeepLSD"));
     populateModelCombo();
+    restoreSettings();
 }
 
 void DeepLSDDialog::setAppInterface(ecvMainAppInterface* app) { m_app = app; }
@@ -337,6 +337,81 @@ DeepLSDDialog::Settings DeepLSDDialog::getSettings() const {
     return s;
 }
 
+void DeepLSDDialog::saveSettings() {
+    QSettings settings;
+    const QString prefix = QStringLiteral("qDeepLSD");
+    settings.setValue(prefix + "/modelFilename",
+                      m_modelCombo->currentData().toString());
+    settings.setValue(prefix + "/customModelPath",
+                      m_customModelPath->text().trimmed());
+    settings.setValue(prefix + "/device",
+                      m_deviceCombo->currentData().toString());
+    settings.setValue(prefix + "/threads", m_threads->value());
+    settings.setValue(prefix + "/minSegmentScore",
+                      m_minSegmentScore->value());
+    settings.setValue(prefix + "/addLineViz",
+                      m_addLineVizCheck->isChecked());
+    settings.setValue(prefix + "/addDistanceOverlay",
+                      m_addDistanceOverlayCheck->isChecked());
+    settings.setValue(prefix + "/exportPolylines",
+                      m_exportPolylinesCheck->isChecked());
+    settings.setValue(prefix + "/imagePath",
+                      m_imagePath->text().trimmed());
+}
+
+void DeepLSDDialog::restoreSettings() {
+    QSettings settings;
+    const QString prefix = QStringLiteral("qDeepLSD");
+
+    const QString modelFilename =
+            settings.value(prefix + "/modelFilename").toString();
+    if (!modelFilename.isEmpty()) {
+        selectModelByFilename(modelFilename);
+    }
+
+    const QString customModelPath =
+            settings.value(prefix + "/customModelPath").toString();
+    if (!customModelPath.isEmpty()) {
+        m_customModelPath->setText(customModelPath);
+    }
+
+    const QString device = settings.value(prefix + "/device").toString();
+    if (!device.isEmpty()) {
+        for (int i = 0; i < m_deviceCombo->count(); ++i) {
+            if (m_deviceCombo->itemData(i).toString() == device) {
+                m_deviceCombo->setCurrentIndex(i);
+                break;
+            }
+        }
+    }
+
+    if (settings.contains(prefix + "/threads")) {
+        m_threads->setValue(settings.value(prefix + "/threads").toInt());
+    }
+    if (settings.contains(prefix + "/minSegmentScore")) {
+        m_minSegmentScore->setValue(
+                settings.value(prefix + "/minSegmentScore").toDouble());
+    }
+    if (settings.contains(prefix + "/addLineViz")) {
+        m_addLineVizCheck->setChecked(
+                settings.value(prefix + "/addLineViz").toBool());
+    }
+    if (settings.contains(prefix + "/addDistanceOverlay")) {
+        m_addDistanceOverlayCheck->setChecked(
+                settings.value(prefix + "/addDistanceOverlay").toBool());
+    }
+    if (settings.contains(prefix + "/exportPolylines")) {
+        m_exportPolylinesCheck->setChecked(
+                settings.value(prefix + "/exportPolylines").toBool());
+    }
+
+    const QString imagePath =
+            settings.value(prefix + "/imagePath").toString();
+    if (!imagePath.isEmpty()) {
+        m_imagePath->setText(imagePath);
+    }
+}
+
 QString DeepLSDDialog::resolveModelPath() const {
     const QString data = m_modelCombo->currentData().toString();
     if (data == "CUSTOM") return m_customModelPath->text().trimmed();
@@ -424,7 +499,7 @@ void DeepLSDDialog::onBrowseImage() {
     const QString lastDir =
             settings.value("qDeepLSD/lastImageFileDir", QDir::homePath())
                     .toString();
-    const QString path = QFileDialog::getOpenFileName(
+    const QString path = cvFileDialog::getOpenFileName(
             this, tr("Select image"), lastDir,
             tr("Images (*.png *.jpg *.jpeg *.bmp *.tif *.tiff *.webp)"));
     if (path.isEmpty()) return;
@@ -437,7 +512,7 @@ void DeepLSDDialog::onBrowseCustomModel() {
     QSettings settings;
     const QString lastDir =
             settings.value("qDeepLSD/lastModelDir", modelCacheDir()).toString();
-    const QString path = QFileDialog::getOpenFileName(
+    const QString path = cvFileDialog::getOpenFileName(
             this, tr("Select GGUF"), lastDir, tr("GGUF (*.gguf)"));
     if (path.isEmpty()) return;
     settings.setValue("qDeepLSD/lastModelDir", QFileInfo(path).absolutePath());
@@ -554,6 +629,7 @@ void DeepLSDDialog::onRun() {
 void DeepLSDDialog::onCancel() { emit cancelRequested(); }
 
 void DeepLSDDialog::closeEvent(QCloseEvent* event) {
+    saveSettings();
     onCancel();
     QDialog::closeEvent(event);
 }

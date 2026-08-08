@@ -1,6 +1,7 @@
 
 target_sources( ${PROJECT_NAME}
 	PRIVATE
+		${CMAKE_CURRENT_LIST_DIR}/cvFileDialog.cpp
 		${CMAKE_CURRENT_LIST_DIR}/ecvClickableImageLabel.cpp
 		${CMAKE_CURRENT_LIST_DIR}/ecvModelDownloader.cpp
 		${CMAKE_CURRENT_LIST_DIR}/ecvColorScaleEditorDlg.cpp

@@ -46,6 +46,9 @@ macro(colmap_add_app PROJECT_ROOT_PATH APP_NAME TARGET_NAME)
             COMMAND ${CMAKE_COMMAND} -E copy ${RESOURCE_FILES} "$<TARGET_BUNDLE_DIR:${TARGET_NAME}>/${RESOURCE_DIR_NAME}"
             COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_BUNDLE_DIR:${TARGET_NAME}>/Contents/Frameworks"
             COMMAND "${mac_deploy_qt}" "$<TARGET_BUNDLE_DIR:${TARGET_NAME}>" -verbose=1
+            # Remove libqsqlpsql.dylib which uses private macOS APIs (libpq)
+            # and is not Mac App Store compliant.
+            COMMAND ${CMAKE_COMMAND} -E remove "$<TARGET_BUNDLE_DIR:${TARGET_NAME}>/Contents/PlugIns/sqldrivers/libqsqlpsql.dylib"
             VERBATIM
             )
 

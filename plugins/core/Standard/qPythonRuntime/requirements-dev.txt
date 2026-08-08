@@ -1,5 +1,6 @@
 numpy>=1.18.0
 pybind11>=3.0
+laspy>=2.0
 sphinx==5.0.2
 sphinx-rtd-theme
 breathe

@@ -22,7 +22,7 @@
 #include <QAction>
 #include <QDir>
 #include <QFile>
-#include <QFileDialog>
+#include <cvFileDialog.h>
 #include <QFileInfo>
 #include <QMainWindow>
 #include <QMessageBox>
@@ -33,7 +33,6 @@
 #include <cmath>
 
 #include "ecvPersistentSettings.h"
-
 qDA3::qDA3(QObject* parent)
     : QObject(parent), ccStdPluginInterface(":/CC/plugin/qDA3/info.json") {
     ecvPS::registerSettingsGroup(QStringLiteral("qDA3"));
@@ -643,7 +642,7 @@ void qDA3::exportDepthMap() {
     }
 
     QSettings settings;
-    const QString path = QFileDialog::getSaveFileName(
+    const QString path = cvFileDialog::getSaveFileName(
             m_dialog, tr("Save Depth Map"),
             ecvPS::browseDir(settings, QStringLiteral("qDA3"),
                              QStringLiteral("lastExportDir"),

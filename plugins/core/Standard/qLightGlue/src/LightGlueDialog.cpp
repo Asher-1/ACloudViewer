@@ -12,7 +12,7 @@
 #include <QCloseEvent>
 #include <QDir>
 #include <QDirIterator>
-#include <QFileDialog>
+#include <cvFileDialog.h>
 #include <QFileInfo>
 #include <QFrame>
 #include <QGridLayout>
@@ -29,7 +29,6 @@
 #include "ecvModelDownloader.h"
 #include "ecvTestDataRepository.h"
 #include "feature_extractor.h"
-
 static const char* kDownloadBase =
         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
         "LightGlue/";
@@ -866,7 +865,7 @@ void LightGlueDialog::onBrowseSlotImage() {
     const QString lastDir =
             settings.value("qLightGlue/lastImageFileDir", QDir::homePath())
                     .toString();
-    const QString path = QFileDialog::getOpenFileName(
+    const QString path = cvFileDialog::getOpenFileName(
             this, tr("Select Image %1").arg(slot + 1), lastDir,
             imageFileDialogFilter());
     if (path.isEmpty()) return;
@@ -975,7 +974,7 @@ void LightGlueDialog::onBrowseFile() {
     const QString lastDir =
             settings.value("qLightGlue/lastImageFileDir", QDir::homePath())
                     .toString();
-    const QStringList paths = QFileDialog::getOpenFileNames(
+    const QStringList paths = cvFileDialog::getOpenFileNames(
             this, tr("Select Image(s)"), lastDir, imageFileDialogFilter());
     if (paths.isEmpty()) return;
 
@@ -1009,7 +1008,7 @@ void LightGlueDialog::onBrowseFolder() {
     const QString lastDir =
             settings.value("qLightGlue/lastImageFolder", QDir::homePath())
                     .toString();
-    const QString dir = QFileDialog::getExistingDirectory(
+    const QString dir = cvFileDialog::getExistingDirectory(
             this, tr("Select Image Folder"), lastDir);
     if (dir.isEmpty()) return;
 
@@ -1034,7 +1033,7 @@ void LightGlueDialog::onBrowseCustomModel() {
     const QString lastDir =
             settings.value("qLightGlue/lastModelDir", modelCacheDir())
                     .toString();
-    const QString path = QFileDialog::getOpenFileName(
+    const QString path = cvFileDialog::getOpenFileName(
             this, tr("Select GGUF model"), lastDir,
             tr("GGUF models (*.gguf);;All files (*)"));
     if (path.isEmpty()) return;

@@ -20,7 +20,7 @@
 #include <QAction>
 #include <QDir>
 #include <QFile>
-#include <QFileDialog>
+#include <cvFileDialog.h>
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -458,7 +458,7 @@ void qLightGlue::onExportMatches() {
                              QStringLiteral("lastExportDir"),
                              QStandardPaths::writableLocation(
                                      QStandardPaths::DocumentsLocation));
-    const QString path = QFileDialog::getSaveFileName(
+    const QString path = cvFileDialog::getSaveFileName(
             m_dialog, tr("Export matches"),
             lastDir + QLatin1Char('/') + defaultName,
             tr("JSON files (*.json);;All files (*)"));

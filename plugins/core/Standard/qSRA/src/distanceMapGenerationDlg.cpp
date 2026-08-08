@@ -40,7 +40,7 @@
 #include <QCloseEvent>
 #include <QColorDialog>
 #include <QFile>
-#include <QFileDialog>
+#include <cvFileDialog.h>
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QLocale>
@@ -53,7 +53,6 @@
 #include <assert.h>
 
 #include <algorithm>
-
 static QImage CreateColorScaleBarImage(ccColorScale::Shared colorScale,
                                        unsigned steps,
                                        int height = 256) {
@@ -1058,7 +1057,7 @@ void DistanceMapGenerationDlg::exportMapAsGrid() {
 
     // open file saving dialog
     QString filename =
-            QFileDialog::getSaveFileName(0, "Select output file", path, filter);
+            cvFileDialog::getSaveFileName(0, "Select output file", path, filter);
     if (filename.isEmpty()) return;
 
     // save current export path to persistent settings
@@ -1087,7 +1086,7 @@ void DistanceMapGenerationDlg::exportMapAsImage() {
     QString path = settings.value("exportPath", ecvFileUtils::defaultDocPath())
                            .toString();
 
-    QString filename = QFileDialog::getSaveFileName(this, "Select output file",
+    QString filename = cvFileDialog::getSaveFileName(this, "Select output file",
                                                     path, "Image file (*.png)");
     if (filename.isEmpty()) return;
 
@@ -1223,7 +1222,7 @@ void DistanceMapGenerationDlg::loadOverlaySymbols() {
     QString filter("Symbols (*.txt)");
 
     // open file loading dialog
-    QString filename = QFileDialog::getOpenFileName(0, "Select symbols file",
+    QString filename = cvFileDialog::getOpenFileName(0, "Select symbols file",
                                                     path, filter);
     if (filename.isEmpty()) return;
 

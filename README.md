@@ -328,9 +328,9 @@ Basically, you have to:
 
 <a href="https://www.star-history.com/?repos=Asher-1%2FACloudViewer&type=date&legend=top-left">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=Asher-1/ACloudViewer&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=Asher-1/ACloudViewer&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Asher-1/ACloudViewer&type=date&legend=top-left" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=Asher-1/ACloudViewer&type=date&theme=dark&legend=top-left&sealed_token=xOg1m_uF2wlk5OvfhJb3qcLLyip3ZfuKuMANnVmW9FyJaokgswH8NdFi-maimTqxb9Fg3Axe5WwmI3qIFsR6b4buaQEcv168M7N4-pCzY2IqwVkGxp9WhmFmFNdHRbdrSvp63ecnx-gixg81ShqHbSgWxc_wSpBOy-3fa0HcbMLXc15jUCgdXb8gwEHO" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=Asher-1/ACloudViewer&type=date&legend=top-left&sealed_token=xOg1m_uF2wlk5OvfhJb3qcLLyip3ZfuKuMANnVmW9FyJaokgswH8NdFi-maimTqxb9Fg3Axe5WwmI3qIFsR6b4buaQEcv168M7N4-pCzY2IqwVkGxp9WhmFmFNdHRbdrSvp63ecnx-gixg81ShqHbSgWxc_wSpBOy-3fa0HcbMLXc15jUCgdXb8gwEHO" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Asher-1/ACloudViewer&type=date&legend=top-left&sealed_token=xOg1m_uF2wlk5OvfhJb3qcLLyip3ZfuKuMANnVmW9FyJaokgswH8NdFi-maimTqxb9Fg3Axe5WwmI3qIFsR6b4buaQEcv168M7N4-pCzY2IqwVkGxp9WhmFmFNdHRbdrSvp63ecnx-gixg81ShqHbSgWxc_wSpBOy-3fa0HcbMLXc15jUCgdXb8gwEHO" />
  </picture>
 </a>
 

@@ -13,8 +13,8 @@
 #include "ecvMainAppInterface.h"
 
 // Qt
+#include <cvFileDialog.h>
 #include <QtWidgets>
-
 static QString RecentFilesKey()
 {
     return QStringLiteral("recentFileList");
@@ -69,7 +69,7 @@ void PythonEditor::newFile()
 void PythonEditor::promptForFileToOpen()
 {
     const QString fileName =
-        QFileDialog::getOpenFileName(this, "Open Python Script", QString(), "Python Script (*.py)");
+        cvFileDialog::getOpenFileName(this, "Open Python Script", QString(), "Python Script (*.py)");
     if (!fileName.isEmpty())
     {
         openFile(fileName);
@@ -78,7 +78,7 @@ void PythonEditor::promptForFileToOpen()
 
 void PythonEditor::promptForFolderToOpen()
 {
-    const QString folderName = QFileDialog::getExistingDirectory(this, "Open folder");
+    const QString folderName = cvFileDialog::getExistingDirectory(this, "Open folder");
     if (!folderName.isEmpty())
     {
         projectBrowser->show();

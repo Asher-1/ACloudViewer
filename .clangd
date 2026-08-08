@@ -1,0 +1,13 @@
+CompileFlags:
+  CompilationDatabase: /Users/asher/develop/code/github/ACloudViewer
+  Add:
+    - "-std=c++17"
+    - "-DQT_CORE_LIB"
+    - "-DQT_WIDGETS_LIB"
+    - "-DQT_GUI_LIB"
+    - "-DAICore_ENABLED"
+    - "-I/Users/asher/develop/code/github/ACloudViewer/libs/CVPluginAPI/include"
+
+Diagnostics:
+  Suppress:
+    - "pp_file_not_found"

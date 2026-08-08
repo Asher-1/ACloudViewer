@@ -8,10 +8,9 @@
 #include "LasOpenDialog.h"
 
 // Qt
-#include <QFileDialog>
+#include <cvFileDialog.h>
 #include <QLocale>
 #include <algorithm>
-
 constexpr int TILLING_TAB_INDEX = 1;
 
 static QListWidgetItem* CreateItem(const char* name)
@@ -245,7 +244,7 @@ LasTilingOptions LasOpenDialog::tilingOptions() const
 
 void LasOpenDialog::onBrowseTilingOutputDir()
 {
-	const QString outputDir = QFileDialog::getExistingDirectory(this, "Select output directory for tiles");
+	const QString outputDir = cvFileDialog::getExistingDirectory(this, "Select output directory for tiles");
 	tilingOutputPathLineEdit->setText(outputDir);
 }
 

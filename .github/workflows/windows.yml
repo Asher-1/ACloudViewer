@@ -178,9 +178,43 @@ jobs:
           & "${{ env.SRC_DIR }}\scripts\build_win_app.ps1" `
             -PythonVersion "${{ matrix.python_version }}" `
             -ACloudViewerInstall "${{ env.INSTALL_DIR }}"
-          
+
+          # === Diagnostic: dump installer-related state ===
+          Write-Host "=== Diagnostic: installer search ==="
+          Write-Host "INSTALL_DIR contents (*.exe):"
+          Get-ChildItem "${{ env.INSTALL_DIR }}" -Filter "*.exe" -Recurse -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $_" }
+          $deployDir = Join-Path "${{ env.INSTALL_DIR }}" "deploy"
+          Write-Host "deploy directory exists: $(Test-Path $deployDir)"
+          if (Test-Path $deployDir) {
+            Write-Host "deploy tree (depth 3):"
+            Get-ChildItem $deployDir -Recurse -Depth 2 -ErrorAction SilentlyContinue | ForEach-Object {
+              $rel = $_.FullName.Substring($deployDir.Length)
+              Write-Host "  $rel"
+            }
+          }
+          $configXml = Join-Path "$deployDir" "config\config_win.xml"
+          Write-Host "config_win.xml exists: $(Test-Path $configXml)"
+          if (Test-Path $configXml) {
+            Write-Host "config_win.xml Version/Title:"
+            Select-String -Path $configXml -Pattern "Version|Title" | ForEach-Object { Write-Host "  $_" }
+          }
+          $pkgData = Join-Path "$deployDir" "packages\ACloudViewer\data"
+          Write-Host "packages/ACloudViewer/data exists: $(Test-Path $pkgData)"
+          if (Test-Path $pkgData) {
+            Write-Host "  data children: $((Get-ChildItem $pkgData | Measure-Object).Count) items"
+          }
+          # === End diagnostic ===
+
           # Extract package installer name for subsequent steps
-          $PACKAGE_INSTALLER_NAME = (Get-ChildItem (Join-Path "${{ env.INSTALL_DIR }}" "ACloudViewer-*.exe")).Name
+          $installers = Get-ChildItem (Join-Path "${{ env.INSTALL_DIR }}" "ACloudViewer-*.exe") -ErrorAction SilentlyContinue
+          if (-not $installers) {
+            Write-Error "No ACloudViewer-*.exe installer found in ${{ env.INSTALL_DIR }}"
+            Write-Host "Listing install directory contents:"
+            Get-ChildItem "${{ env.INSTALL_DIR }}" -Recurse -Filter "*.exe" | Select-Object FullName
+            exit 1
+          }
+          $PACKAGE_INSTALLER_NAME = $installers[0].Name
+          Write-Host "Found installer: $PACKAGE_INSTALLER_NAME"
           echo "PACKAGE_INSTALLER_NAME=$PACKAGE_INSTALLER_NAME" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Run C++ unit tests

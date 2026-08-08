@@ -24,7 +24,7 @@
 // Qt
 #include <QApplication>
 #include <QElapsedTimer>
-#include <QFileDialog>
+#include <cvFileDialog.h>
 #include <QFileInfo>
 #include <QMessageBox>
 #include <QProgressDialog>
@@ -36,7 +36,6 @@
 // standard includes
 #include <iomanip>
 #include <vector>
-
 namespace {
 
 QString outputFormatFromFilename(
@@ -1047,10 +1046,10 @@ void qAnimationDlg::onCodecChanged(int index) {
 
 void qAnimationDlg::onBrowseButtonClicked() {
 #ifdef QFFMPEG_SUPPORT
-    QString filename = QFileDialog::getSaveFileName(
+    QString filename = cvFileDialog::getSaveFileName(
             this, tr("Output animation file"), outputFileLineEdit->text());
 #else
-    QString filename = QFileDialog::getExistingDirectory(
+    QString filename = cvFileDialog::getExistingDirectory(
             this, tr("Open Directory"), outputFileLineEdit->text(),
             QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
 #endif
@@ -1064,7 +1063,7 @@ void qAnimationDlg::onBrowseButtonClicked() {
 }
 
 void qAnimationDlg::onBrowseTexturesButtonClicked() {
-    QString texturePath = QFileDialog::getExistingDirectory(
+    QString texturePath = cvFileDialog::getExistingDirectory(
             this, tr("Input textures Directory"),
             inputTexturesPathLineEdit->text(),
             QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);

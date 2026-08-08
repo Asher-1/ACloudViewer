@@ -15,7 +15,7 @@
 #include <QApplication>
 #include <QDateTime>
 #include <QDir>
-#include <QFileDialog>
+#include <cvFileDialog.h>
 #include <QFileInfo>
 #include <QMainWindow>
 #include <QMenu>
@@ -25,7 +25,6 @@
 #include "SIBROptionsDialog.h"
 #include "SIBRViewerThread.h"
 #include "qSIBRCommands.h"
-
 qSIBR::qSIBR(QObject* parent)
     : QObject(parent), ccStdPluginInterface(":/CC/plugin/qSIBR/info.json") {}
 
@@ -472,7 +471,7 @@ void qSIBR::launchRemoteGaussianViewer() {
 }
 
 void qSIBR::launchDatasetTool(const QString& toolName) {
-    QString datasetPath = QFileDialog::getExistingDirectory(
+    QString datasetPath = cvFileDialog::getExistingDirectory(
             m_app ? m_app->getMainWindow() : nullptr,
             tr("Select Dataset Directory"), QString(),
             QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
@@ -685,7 +684,7 @@ void qSIBR::launchDistordCrop() { launchDatasetTool("distordCrop"); }
 
 void qSIBR::launchTextureMesh() {
     auto* win = m_app ? m_app->getMainWindow() : nullptr;
-    QString datasetPath = QFileDialog::getExistingDirectory(
+    QString datasetPath = cvFileDialog::getExistingDirectory(
             win, tr("Select Dataset Directory"), QString(),
             QFileDialog::ShowDirsOnly);
     if (datasetPath.isEmpty()) return;
@@ -699,14 +698,14 @@ void qSIBR::launchTextureMesh() {
 
     QStringList args = {"--path", datasetPath};
     if (meshReply == QMessageBox::Yes) {
-        QString meshPath = QFileDialog::getOpenFileName(
+        QString meshPath = cvFileDialog::getOpenFileName(
                 win, tr("Select Mesh File"), datasetPath,
                 tr("Meshes (*.ply *.obj *.off)"));
         if (meshPath.isEmpty()) return;
         args << "--mesh" << meshPath;
     }
 
-    QString outputPath = QFileDialog::getSaveFileName(
+    QString outputPath = cvFileDialog::getSaveFileName(
             win, tr("Output Texture Image"), datasetPath + "/texture.png",
             tr("Images (*.png *.jpg)"));
     if (outputPath.isEmpty()) return;
@@ -716,11 +715,11 @@ void qSIBR::launchTextureMesh() {
 
 void qSIBR::launchUnwrapMesh() {
     auto* win = m_app ? m_app->getMainWindow() : nullptr;
-    QString meshPath = QFileDialog::getOpenFileName(
+    QString meshPath = cvFileDialog::getOpenFileName(
             win, tr("Select Mesh to Unwrap"), QString(),
             tr("Meshes (*.ply *.obj *.off)"));
     if (meshPath.isEmpty()) return;
-    QString outputPath = QFileDialog::getSaveFileName(
+    QString outputPath = cvFileDialog::getSaveFileName(
             win, tr("Output Unwrapped Mesh"), meshPath + ".unwrapped.obj",
             tr("OBJ (*.obj)"));
     if (outputPath.isEmpty()) return;
@@ -731,10 +730,10 @@ void qSIBR::launchUnwrapMesh() {
 void qSIBR::launchCropFromCenter() {
     auto* win = m_app ? m_app->getMainWindow() : nullptr;
     QString inputFile =
-            QFileDialog::getOpenFileName(win, tr("Select Image List File"),
+            cvFileDialog::getOpenFileName(win, tr("Select Image List File"),
                                          QString(), tr("Text files (*.txt)"));
     if (inputFile.isEmpty()) return;
-    QString outputPath = QFileDialog::getExistingDirectory(
+    QString outputPath = cvFileDialog::getExistingDirectory(
             win, tr("Select Output Directory"), QString(),
             QFileDialog::ShowDirsOnly);
     if (outputPath.isEmpty()) return;
@@ -745,11 +744,11 @@ void qSIBR::launchCropFromCenter() {
 
 void qSIBR::launchCameraConverter() {
     auto* win = m_app ? m_app->getMainWindow() : nullptr;
-    QString inputPath = QFileDialog::getExistingDirectory(
+    QString inputPath = cvFileDialog::getExistingDirectory(
             win, tr("Select Input Camera Directory"), QString(),
             QFileDialog::ShowDirsOnly);
     if (inputPath.isEmpty()) return;
-    QString outputPath = QFileDialog::getSaveFileName(
+    QString outputPath = cvFileDialog::getSaveFileName(
             win, tr("Output Camera File"), inputPath + "/cameras_out.txt",
             tr("Text files (*.txt);;Bundle files (*.out)"));
     if (outputPath.isEmpty()) return;
@@ -759,15 +758,15 @@ void qSIBR::launchCameraConverter() {
 
 void qSIBR::launchAlignMeshes() {
     auto* win = m_app ? m_app->getMainWindow() : nullptr;
-    QString refPath = QFileDialog::getExistingDirectory(
+    QString refPath = cvFileDialog::getExistingDirectory(
             win, tr("Select Reference Scene"), QString(),
             QFileDialog::ShowDirsOnly);
     if (refPath.isEmpty()) return;
-    QString alignPath = QFileDialog::getExistingDirectory(
+    QString alignPath = cvFileDialog::getExistingDirectory(
             win, tr("Select Scene to Align"), QString(),
             QFileDialog::ShowDirsOnly);
     if (alignPath.isEmpty()) return;
-    QString outPath = QFileDialog::getExistingDirectory(
+    QString outPath = cvFileDialog::getExistingDirectory(
             win, tr("Select Output Directory"), QString(),
             QFileDialog::ShowDirsOnly);
     if (outPath.isEmpty()) return;

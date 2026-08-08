@@ -196,7 +196,7 @@ endfunction()
 
 # Packages that must exist in the build Python env when minimal copy is enabled.
 function(get_python_release_required_imports OUT_VAR)
-    set(_imports numpy pip setuptools tqdm invoke typing_extensions)
+    set(_imports numpy pip setuptools tqdm invoke typing_extensions laspy)
     set(${OUT_VAR} "${_imports}" PARENT_SCOPE)
 endfunction()
 

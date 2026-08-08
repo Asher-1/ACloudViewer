@@ -13,7 +13,7 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
-#include <QFileDialog>
+#include <cvFileDialog.h>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QGuiApplication>
@@ -1219,7 +1219,7 @@ void FaceDetectDialog::onBrowseImage() {
     const QString lastDir =
             settings.value("qFaceDetect/lastImageFileDir", QDir::homePath())
                     .toString();
-    const QString path = QFileDialog::getOpenFileName(
+    const QString path = cvFileDialog::getOpenFileName(
             this, tr("Select image"), lastDir,
             tr("Images (*.png *.jpg *.jpeg *.bmp *.tif *.tiff *.webp)"));
     if (path.isEmpty()) return;
@@ -1234,7 +1234,7 @@ void FaceDetectDialog::onBrowseSecondImage() {
     const QString lastDir =
             settings.value("qFaceDetect/lastImageFileDir", QDir::homePath())
                     .toString();
-    const QString path = QFileDialog::getOpenFileName(
+    const QString path = cvFileDialog::getOpenFileName(
             this, tr("Select second image"), lastDir,
             tr("Images (*.png *.jpg *.jpeg *.bmp *.tif *.tiff *.webp)"));
     if (path.isEmpty()) return;
@@ -1248,7 +1248,7 @@ void FaceDetectDialog::onBrowseCustomModel() {
     const QString lastDir =
             settings.value("qFaceDetect/lastModelDir", modelCacheDir())
                     .toString();
-    const QString path = QFileDialog::getOpenFileName(
+    const QString path = cvFileDialog::getOpenFileName(
             this, tr("Select GGUF"), lastDir, tr("GGUF (*.gguf)"));
     if (path.isEmpty()) return;
     settings.setValue("qFaceDetect/lastModelDir",
@@ -1262,7 +1262,7 @@ void FaceDetectDialog::onBrowseCustomLandmarkModel() {
     const QString lastDir =
             settings.value("qFaceDetect/lastModelDir", modelCacheDir())
                     .toString();
-    const QString path = QFileDialog::getOpenFileName(
+    const QString path = cvFileDialog::getOpenFileName(
             this, tr("Select landmark GGUF"), lastDir, tr("GGUF (*.gguf)"));
     if (path.isEmpty()) return;
     settings.setValue("qFaceDetect/lastModelDir",

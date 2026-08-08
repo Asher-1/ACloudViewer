@@ -14,7 +14,7 @@
 #include <QDir>
 #include <QDirIterator>
 #include <QFile>
-#include <QFileDialog>
+#include <cvFileDialog.h>
 #include <QFileInfo>
 #include <QGridLayout>
 #include <QGroupBox>
@@ -630,7 +630,7 @@ void DA3Dialog::onBrowseCustomModel() {
     const QString lastDir =
             ecvPS::browseDir(settings, QStringLiteral("qDA3"),
                              QStringLiteral("lastModelDir"), modelCacheDir());
-    const QString path = QFileDialog::getOpenFileName(
+    const QString path = cvFileDialog::getOpenFileName(
             this, tr("Select GGUF Model"), lastDir,
             tr("GGUF Models (*.gguf);;All Files (*)"));
     if (path.isEmpty()) return;
@@ -644,7 +644,7 @@ void DA3Dialog::onBrowseCustomMetricModel() {
     const QString lastDir =
             ecvPS::browseDir(settings, QStringLiteral("qDA3"),
                              QStringLiteral("lastModelDir"), modelCacheDir());
-    const QString path = QFileDialog::getOpenFileName(
+    const QString path = cvFileDialog::getOpenFileName(
             this, tr("Select Metric Model"), lastDir,
             tr("GGUF Models (*.gguf);;All Files (*)"));
     if (path.isEmpty()) return;
@@ -881,7 +881,7 @@ void DA3Dialog::onBrowseFile() {
 
     auto mode = static_cast<Mode>(m_modeCombo->currentData().toInt());
     if (mode == Mode::DepthMultiView || mode == Mode::Reconstruct) {
-        QStringList paths = QFileDialog::getOpenFileNames(
+        QStringList paths = cvFileDialog::getOpenFileNames(
                 this, "Select Image(s)", lastDir, imageFileDialogFilter());
         if (paths.isEmpty()) return;
 
@@ -904,7 +904,7 @@ void DA3Dialog::onBrowseFile() {
         m_inputPath->setText(accepted.join(";"));
         appendLog(tr("[Info] Added %1 file(s).").arg(accepted.size()));
     } else {
-        QString path = QFileDialog::getOpenFileName(
+        QString path = cvFileDialog::getOpenFileName(
                 this, "Select Input Image", lastDir, imageFileDialogFilter());
         if (path.isEmpty()) return;
         if (!isSupportedImageFile(path)) {
@@ -921,7 +921,7 @@ void DA3Dialog::onBrowseFolder() {
     QSettings settings;
     const QString lastDir =
             settings.value("qDA3/lastImageFolder", QDir::homePath()).toString();
-    QString dir = QFileDialog::getExistingDirectory(this, "Select Image Folder",
+    QString dir = cvFileDialog::getExistingDirectory(this, "Select Image Folder",
                                                     lastDir);
     if (dir.isEmpty()) return;
 
@@ -946,7 +946,7 @@ void DA3Dialog::onExportAllDepths() {
         const QString lastDir = ecvPS::browseDir(
                 settings, QStringLiteral("qDA3"),
                 QStringLiteral("lastOutputDir"), QDir::homePath());
-        dir = QFileDialog::getExistingDirectory(
+        dir = cvFileDialog::getExistingDirectory(
                 this, tr("Select Output Directory for Depth Maps"), lastDir);
         if (dir.isEmpty()) return;
         ecvPS::saveBrowseDir(settings, QStringLiteral("qDA3"),
@@ -961,7 +961,7 @@ void DA3Dialog::onBrowseOutput() {
     const QString lastDir =
             ecvPS::browseDir(settings, QStringLiteral("qDA3"),
                              QStringLiteral("lastOutputDir"), QDir::homePath());
-    const QString dir = QFileDialog::getExistingDirectory(
+    const QString dir = cvFileDialog::getExistingDirectory(
             this, tr("Select Output Directory"), lastDir);
     if (dir.isEmpty()) return;
     ecvPS::saveBrowseDir(settings, QStringLiteral("qDA3"),

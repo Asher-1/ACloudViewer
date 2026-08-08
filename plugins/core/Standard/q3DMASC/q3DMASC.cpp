@@ -22,12 +22,11 @@
 
 // Qt
 #include <QApplication>
-#include <QFileDialog>
+#include <cvFileDialog.h>
 #include <QMessageBox>
 #include <QSettings>
 #include <QtCore>
 #include <QtGui>
-
 q3DMASCPlugin::q3DMASCPlugin(QObject* parent /*=0*/)
     : QObject(parent),
       ccStdPluginInterface(":/CC/plugin/q3DMASCPlugin/info.json"),
@@ -99,7 +98,7 @@ void q3DMASCPlugin::doClassifyAction() {
                 settings.value("FilePath",
                                QCoreApplication::applicationDirPath())
                         .toString();
-        inputFilename = QFileDialog::getOpenFileName(
+        inputFilename = cvFileDialog::getOpenFileName(
                 m_app->getMainWindow(), "Load 3DMASC classifier file",
                 inputPath, "*.txt");
         if (inputFilename.isNull()) {
@@ -250,7 +249,7 @@ void q3DMASCPlugin::doTrainAction() {
                 settings.value("FilePath",
                                QCoreApplication::applicationDirPath())
                         .toString();
-        inputFilename = QFileDialog::getOpenFileName(
+        inputFilename = cvFileDialog::getOpenFileName(
                 m_app->getMainWindow(), "Load 3DMASC training file", inputPath,
                 "*.txt");
         if (inputFilename.isNull()) {
@@ -798,7 +797,7 @@ void q3DMASCPlugin::doTrainAction() {
                                            QCoreApplication::
                                                    applicationDirPath())
                                     .toString();
-                    outputFilename = QFileDialog::getSaveFileName(
+                    outputFilename = cvFileDialog::getSaveFileName(
                             m_app->getMainWindow(), "Save 3DMASC classifier",
                             outputPath, "*.txt");
                     if (outputFilename.isNull()) {

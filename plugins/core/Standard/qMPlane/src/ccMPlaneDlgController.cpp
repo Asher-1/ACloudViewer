@@ -15,8 +15,7 @@
 // Qt
 #include <QtCompat.h>
 
-#include "qfiledialog.h"
-
+#include <cvFileDialog.h>
 constexpr char const *MPLANE_PLANE_NAME = "Fitting-plane";
 
 ccMPlaneDlgController::ccMPlaneDlgController(ecvMainAppInterface *app)
@@ -111,7 +110,7 @@ void ccMPlaneDlgController::onNormalCheckBoxClicked(bool checked) {
 }
 
 void ccMPlaneDlgController::onSaveButtonClicked() {
-    QString fileName = QFileDialog::getSaveFileName(
+    QString fileName = cvFileDialog::getSaveFileName(
             m_dialog, tr("Save Measurements"), "",
             tr("Comma-separated values (*.csv);;All Files (*)"));
     QFile file(fileName);
