@@ -64,9 +64,12 @@ class PythonPlugin final : public QObject, public ccStdPluginInterface
 
     // Script list function
     void addScriptAction();
+    void addScriptFromFolderAction();
     void addScript(QString path);
     void executeScript(QString path);
     void removeScript(QString name, QAction *self);
+    void removeAllScripts();
+    void saveScriptList();
 
     void populatePluginSubMenu();
 
@@ -104,7 +107,9 @@ class PythonPlugin final : public QObject, public ccStdPluginInterface
 
     /// Variable for script list submenu
     QAction *m_addScript{nullptr};
+    QAction *m_addScriptFolder{nullptr};
     QMenu *m_removeScript{nullptr};
+    QAction *m_removeAllScripts{nullptr};
     std::map<QString, QAction *> m_scriptList;
     QStringList m_savedPath;
     QString m_saveFilePath;

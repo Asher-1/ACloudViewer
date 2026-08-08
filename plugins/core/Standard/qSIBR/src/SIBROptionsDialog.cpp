@@ -10,7 +10,7 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDialogButtonBox>
-#include <QFileDialog>
+#include <cvFileDialog.h>
 #include <QFormLayout>
 #include <QGroupBox>
 #include <QLabel>
@@ -231,14 +231,14 @@ SIBRViewerOptions SIBROptionsDialog::getOptions() const {
 }
 
 void SIBROptionsDialog::browseDatasetPath() {
-    QString dir = QFileDialog::getExistingDirectory(
+    QString dir = cvFileDialog::getExistingDirectory(
             this, tr("Select Dataset Directory"), m_datasetPath->text(),
             QFileDialog::ShowDirsOnly);
     if (!dir.isEmpty()) m_datasetPath->setText(dir);
 }
 
 void SIBROptionsDialog::browseModelPath() {
-    QString dir = QFileDialog::getExistingDirectory(
+    QString dir = cvFileDialog::getExistingDirectory(
             this, tr("Select Model Directory"),
             m_modelPath ? m_modelPath->text() : "", QFileDialog::ShowDirsOnly);
     if (!dir.isEmpty() && m_modelPath) m_modelPath->setText(dir);

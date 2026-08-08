@@ -1,11 +1,15 @@
 import pycc
+import os
 
 CC = pycc.GetInstance()
 
 params = pycc.FileIOFilter.LoadParameters()
 params.parentWidget = CC.getMainWindow()
 
-path = r"/home/asher/develop/code/github/CloudViewer/ACloudViewer/plugins/core/Standard/qPythonRuntime/tests/data/a_cloud.bin"
+# Use the test data file shipped with the plugin
+_script_dir = os.path.dirname(os.path.abspath(__file__))
+path = os.path.join(_script_dir, "..", "tests", "data", "a_cloud.bin")
+path = os.path.normpath(path)
 
 
 # This automatically adds the loaded entities

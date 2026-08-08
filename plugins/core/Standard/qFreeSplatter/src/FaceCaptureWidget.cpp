@@ -16,7 +16,7 @@
 #include <QDebug>
 #include <QDir>
 #include <QFile>
-#include <QFileDialog>
+#include <cvFileDialog.h>
 #include <QFileInfo>
 #include <QFont>
 #include <QFrame>
@@ -639,7 +639,7 @@ void FaceCaptureWidget::onBrowseVideoFile() {
     const QString lastDir =
             ecvPS::browseDir(settings, QStringLiteral("qFreeSplatter"),
                              QStringLiteral("lastVideoDir"), QDir::homePath());
-    const QString path = QFileDialog::getOpenFileName(
+    const QString path = cvFileDialog::getOpenFileName(
             this, tr("Select video file"), lastDir,
             tr("Video files (*.mp4 *.avi *.mkv *.mov *.webm *.m4v *.wmv *.ts "
                "*.mpg *.mpeg);;All files (*.*)"));
@@ -879,7 +879,7 @@ void FaceCaptureWidget::onBrowseRegistry() {
             m_registryPathEdit
                     ? QFileInfo(m_registryPathEdit->text()).absolutePath()
                     : facedetectModelCacheDir();
-    const QString path = QFileDialog::getOpenFileName(
+    const QString path = cvFileDialog::getOpenFileName(
             this, tr("Select qFaceDetect registry"), current,
             tr("SQLite databases (*.db *.sqlite *.sqlite3);;All files (*.*)"));
     if (path.isEmpty()) return;

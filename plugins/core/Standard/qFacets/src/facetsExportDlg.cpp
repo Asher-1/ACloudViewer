@@ -8,11 +8,10 @@
 #include "facetsExportDlg.h"
 
 // Qt
-#include <QFileDialog>
+#include <cvFileDialog.h>
 
 // System
 #include <assert.h>
-
 FacetsExportDlg::FacetsExportDlg(IOMode mode, QWidget* parent)
     : QDialog(parent, Qt::Tool), Ui::FacetsExportDlg(), m_mode(mode) {
     setupUi(this);
@@ -36,7 +35,7 @@ void FacetsExportDlg::browseDestination() {
     }
 
     // open file saving dialog
-    QString outputFilename = QFileDialog::getSaveFileName(
+    QString outputFilename = cvFileDialog::getSaveFileName(
             0, "Select destination", destinationPathLineEdit->text(),
             saveFileFilter);
 

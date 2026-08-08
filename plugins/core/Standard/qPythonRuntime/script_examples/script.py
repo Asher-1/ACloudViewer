@@ -1,6 +1,7 @@
 import numpy as np
 import pycc
 import cccorelib
+import os
 
 CC = pycc.GetInstance()
 
@@ -11,7 +12,16 @@ def main():
     params = pycc.FileIOFilter.LoadParameters()
     params.parentWidget = CC.getMainWindow()
 
-    hierObj = CC.loadFile(r"/home/asher/develop/data/cloud/cloud/las/LPine1_demo.laz", params)
+    # Use the test data file shipped with the plugin
+    _script_dir = os.path.dirname(os.path.abspath(__file__))
+    _test_file = os.path.normpath(
+        os.path.join(_script_dir, "..", "tests", "data", "a_cloud.bin")
+    )
+    if not os.path.isfile(_test_file):
+        print(f"Test file not found: {_test_file}")
+        print("Please place a .bin/.las file and update the path.")
+        return
+    hierObj = CC.loadFile(_test_file, params)
     print(hierObj, "is hierarchy obj:", hierObj.isHierarchy(), "is enabled ?:", hierObj.isEnabled())
 
     obj = hierObj.getChild(0)

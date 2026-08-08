@@ -9,7 +9,7 @@
 
 #include <QCoreApplication>
 #include <QDir>
-#include <QFileDialog>
+#include <cvFileDialog.h>
 #include <QFileInfo>
 #include <QGridLayout>
 #include <QGroupBox>
@@ -35,6 +35,7 @@
 
 #include "ecvModelDownloader.h"
 #include "ecvPersistentSettings.h"
+
 namespace {
 
 constexpr int kAuthPreviewSize = 96;
@@ -707,7 +708,7 @@ void FaceRegistryWidget::onBrowseRegistryDb() {
             settings.value(QStringLiteral("qFaceDetect/lastRegistryDir"),
                            FaceDetectEmbed::modelCacheDir())
                     .toString();
-    const QString path = QFileDialog::getSaveFileName(
+    const QString path = cvFileDialog::getSaveFileName(
             this, tr("Face registry database"),
             lastDir + QStringLiteral("/face_registry.db"),
             tr("SQLite database (*.db);;All files (*.*)"));
@@ -723,7 +724,7 @@ void FaceRegistryWidget::onBrowseRegisterImage() {
     const QString lastDir = ecvPS::browseDir(
             settings, QStringLiteral("qFaceDetect"),
             QStringLiteral("lastImageFileDir"), QDir::homePath());
-    const QString path = QFileDialog::getOpenFileName(
+    const QString path = cvFileDialog::getOpenFileName(
             this, tr("Select registration image"), lastDir,
             tr("Images (*.png *.jpg *.jpeg *.bmp *.webp)"));
     if (path.isEmpty()) return;
@@ -737,7 +738,7 @@ void FaceRegistryWidget::onBrowseAuthImage() {
     const QString lastDir = ecvPS::browseDir(
             settings, QStringLiteral("qFaceDetect"),
             QStringLiteral("lastImageFileDir"), QDir::homePath());
-    const QString path = QFileDialog::getOpenFileName(
+    const QString path = cvFileDialog::getOpenFileName(
             this, tr("Select probe image"), lastDir,
             tr("Images (*.png *.jpg *.jpeg *.bmp *.webp)"));
     if (path.isEmpty()) return;

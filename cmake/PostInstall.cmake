@@ -444,7 +444,22 @@ if (${PACKAGE} STREQUAL "ON") # package
         set(SHELL_CMD "${PACKAGE_TOOL} -c ${CONFIG_FILE_PATH} -p ${DEPLOY_PACKAGES_PATH} ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}")
         message(STATUS "Package with command: " ${SHELL_CMD})
         execute_process(COMMAND ${PACKAGE_TOOL} -c ${CONFIG_FILE_PATH} -p ${DEPLOY_PACKAGES_PATH} ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}
-                        WORKING_DIRECTORY ${MAIN_WORKING_DIRECTORY})
+                        WORKING_DIRECTORY ${MAIN_WORKING_DIRECTORY}
+                        RESULT_VARIABLE _ifw_result
+                        OUTPUT_VARIABLE _ifw_stdout
+                        ERROR_VARIABLE _ifw_stderr)
+        if(_ifw_stdout)
+            message(STATUS "${PACKAGE_TOOL} stdout: ${_ifw_stdout}")
+        endif()
+        if(_ifw_stderr)
+            message(WARNING "${PACKAGE_TOOL} stderr: ${_ifw_stderr}")
+        endif()
+        if(_ifw_result)
+            message(FATAL_ERROR "${PACKAGE_TOOL} failed with code ${_ifw_result}. Installer not created.")
+        endif()
+        if(NOT EXISTS "${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}")
+            message(FATAL_ERROR "${PACKAGE_TOOL} did not produce expected output: ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}")
+        endif()
         message(STATUS "${MAIN_APP_NAME} Installer Package ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH} created.")
     endif()
 else() # Do not package

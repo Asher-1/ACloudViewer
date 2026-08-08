@@ -28,7 +28,7 @@
 #include <QAction>
 #include <QDir>
 #include <QFile>
-#include <QFileDialog>
+#include <cvFileDialog.h>
 #include <QFileInfo>
 #include <QHash>
 #include <QJsonArray>
@@ -1549,7 +1549,7 @@ void qFreeSplatter::onExportPlyRequested() {
     const QString defaultPath =
             lastExportDir.isEmpty() ? defaultName
                                     : QDir(lastExportDir).filePath(defaultName);
-    const QString path = QFileDialog::getSaveFileName(
+    const QString path = cvFileDialog::getSaveFileName(
             m_dialog, tr("Export Point Cloud (PLY)"), defaultPath,
             tr("PLY files (*.ply)"));
     if (path.isEmpty()) return;

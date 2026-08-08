@@ -14,7 +14,7 @@
 #include <QDir>
 #include <QDirIterator>
 #include <QFile>
-#include <QFileDialog>
+#include <cvFileDialog.h>
 #include <QFileInfo>
 #include <QFontMetrics>
 #include <QFrame>
@@ -40,7 +40,6 @@
 #include "ecvClickableImageLabel.h"
 #include "ecvModelDownloader.h"
 #include "ecvTestDataRepository.h"
-
 static const char* kDownloadBase =
         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
         "3dgs/";
@@ -1149,7 +1148,7 @@ void FreeSplatterDialog::onBrowseCustomModel() {
             settings.value("qFreeSplatter/lastModelDir", QDir::homePath())
                     .toString();
     QString path =
-            QFileDialog::getOpenFileName(this, "Select GGUF Model", lastDir,
+            cvFileDialog::getOpenFileName(this, "Select GGUF Model", lastDir,
                                          "GGUF Models (*.gguf);;All Files (*)");
     if (path.isEmpty()) return;
     settings.setValue("qFreeSplatter/lastModelDir",
@@ -1440,7 +1439,7 @@ void FreeSplatterDialog::onBrowseFile() {
     const QString lastDir =
             settings.value("qFreeSplatter/lastImageFileDir", QDir::homePath())
                     .toString();
-    QStringList paths = QFileDialog::getOpenFileNames(
+    QStringList paths = cvFileDialog::getOpenFileNames(
             this, "Select Image(s)", lastDir, imageFileDialogFilter());
     if (paths.isEmpty()) return;
 
@@ -1469,7 +1468,7 @@ void FreeSplatterDialog::onBrowseFolder() {
     const QString lastDir =
             settings.value("qFreeSplatter/lastImageFolder", QDir::homePath())
                     .toString();
-    QString dir = QFileDialog::getExistingDirectory(this, "Select Image Folder",
+    QString dir = cvFileDialog::getExistingDirectory(this, "Select Image Folder",
                                                     lastDir);
     if (dir.isEmpty()) return;
 

@@ -10,7 +10,7 @@
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QDir>
-#include <QFileDialog>
+#include <cvFileDialog.h>
 #include <QFileInfo>
 #include <QFontMetrics>
 #include <QGridLayout>
@@ -327,7 +327,7 @@ void FaceLiveDetectWidget::setupUi() {
                 settings.value(QStringLiteral("qFaceDetect/lastRegistryDir"),
                                FaceDetectEmbed::modelCacheDir())
                         .toString();
-        const QString path = QFileDialog::getOpenFileName(
+        const QString path = cvFileDialog::getOpenFileName(
                 this, tr("Face registry database"), lastDir,
                 tr("SQLite database (*.db);;All files (*.*)"));
         if (path.isEmpty()) return;
@@ -857,7 +857,7 @@ void FaceLiveDetectWidget::onBrowseVideo() {
             lastDir = QFileInfo(manual).absolutePath();
         }
     }
-    const QString path = QFileDialog::getOpenFileName(
+    const QString path = cvFileDialog::getOpenFileName(
             this, tr("Select video"), lastDir,
             tr("Video (*.mp4 *.avi *.mkv *.mov *.webm *.m4v)"));
     if (path.isEmpty()) return;

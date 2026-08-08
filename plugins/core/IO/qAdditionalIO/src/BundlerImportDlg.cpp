@@ -9,7 +9,7 @@
 
 // Qt
 #include <QDoubleSpinBox>
-#include <QFileDialog>
+#include <cvFileDialog.h>
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QPushButton>
@@ -19,7 +19,6 @@
 // system
 #include <assert.h>
 #include <stdio.h>
-
 // CV_DB_LIB
 #include <ecvGLMatrix.h>
 
@@ -233,7 +232,7 @@ QString BundlerImportDlg::getAltKeypointsFilename() const {
 }
 
 void BundlerImportDlg::browseImageListFilename() {
-    QString imageListFilename = QFileDialog::getOpenFileName(
+    QString imageListFilename = cvFileDialog::getOpenFileName(
             this, "Open image list file", imageListFilePathLineEdit->text(),
             "Image list (*.txt)");
 
@@ -242,7 +241,7 @@ void BundlerImportDlg::browseImageListFilename() {
 }
 
 void BundlerImportDlg::browseAltKeypointsFilename() {
-    QString altKeypointsFilename = QFileDialog::getOpenFileName(
+    QString altKeypointsFilename = cvFileDialog::getOpenFileName(
             this, "Open alternative keypoints file",
             altKeypointsFilePathLineEdit->text(), "Cloud/mesh (*.*)");
 

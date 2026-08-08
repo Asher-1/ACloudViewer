@@ -21,7 +21,7 @@
 // Qt
 #include <QApplication>
 #include <QColor>
-#include <QFileDialog>
+#include <cvFileDialog.h>
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QMessageBox>
@@ -32,7 +32,6 @@
 #include <assert.h>
 
 #include <cmath>
-
 static bool s_firstDisplay = true;
 
 qCanupo2DViewDialog::qCanupo2DViewDialog(
@@ -324,7 +323,7 @@ void qCanupo2DViewDialog::saveClassifier() {
             settings.value("MscCurrentPath", QApplication::applicationDirPath())
                     .toString();
 
-    QString filename = QFileDialog::getSaveFileName(this, "Save Classifier",
+    QString filename = cvFileDialog::getSaveFileName(this, "Save Classifier",
                                                     currentPath, "*.prm");
     if (filename.isEmpty()) return;
 
