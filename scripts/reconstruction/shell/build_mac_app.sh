@@ -69,6 +69,12 @@ install_name_tool -change @rpath/libtbbmalloc.dylib /usr/local/lib/libtbbmalloc.
 echo "Linking dynamic libraries"
 /usr/local/opt/qt/bin/macdeployqt "$BASE_PATH/COLMAP.app"
 
+# Remove PostgreSQL SQL driver plugin which links against libpq
+# (uses private macOS APIs, not Mac App Store compliant).
+# Uses shell glob to tolerate different names across Qt distributions.
+echo "Removing non-App-Store-compliant psql SQL driver plugin"
+rm -f "$BASE_PATH/COLMAP.app/Contents/PlugIns/sqldrivers/"*psql*
+
 echo "Wrapping binary"
 cat <<EOM >"$BASE_PATH/COLMAP.app/Contents/MacOS/colmap_gui.sh"
 #!/bin/bash

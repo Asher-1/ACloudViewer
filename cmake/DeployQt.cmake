@@ -76,6 +76,10 @@ function( DeployQt )
 				COMMAND ${CMAKE_COMMAND} -E make_directory "${temp_dir}"
 				COMMAND ${CMAKE_COMMAND} -E copy_directory ${app_path} ${temp_app_path}
 				COMMAND "${mac_deploy_qt}" ${temp_app_path} -verbose=1
+				# Remove PostgreSQL SQL driver plugin which links against libpq
+				# (uses private macOS APIs, not Mac App Store compliant).
+				# cmake -E remove never fails if the file doesn't exist.
+				COMMAND ${CMAKE_COMMAND} -E remove "${temp_app_path}/Contents/PlugIns/sqldrivers/libqsqlpsql.dylib"
 				VERBATIM
 		)
 

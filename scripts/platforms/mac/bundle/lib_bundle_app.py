@@ -175,6 +175,7 @@ class CCBundler:
         libs_found, libs_ex_found, libs_in_cv_plugins, libs_in_plugins = self._collect_dependencies()
         self._embed_libraries(libs_found, libs_ex_found, libs_in_cv_plugins, libs_in_plugins)
         self._repair_qt_version_mismatch()
+        self._remove_non_compliant_plugins()
 
         # output debug files if needed
         if self.config.output_dependencies:
@@ -187,6 +188,28 @@ class CCBundler:
                     Path.cwd() / "macos_bundle_warnings.json", "w", encoding="utf-8",
             ) as f:
                 json.dump(self.warnings, f, sort_keys=True, indent=4)
+
+    def _remove_non_compliant_plugins(self) -> None:
+        """Remove Qt plugins that use private macOS APIs.
+
+        macdeployqt may copy the PostgreSQL SQL driver into PlugIns/sqldrivers/,
+        but it links against libpq which uses private APIs (e.g.
+        getaddrinfo_a) that are not Mac App Store compliant.
+        Only psql-related plugins are removed; other SQL drivers
+        (e.g. libqsqlite) are kept as they are needed by plugins
+        such as qFreeSplatter and face detection for DB read/write.
+        Uses glob to tolerate different plugin names across Qt distributions.
+        """
+        sql_dir = self.config.plugin_path / "sqldrivers"
+        if sql_dir.is_dir():
+            for plugin in sql_dir.glob("*psql*"):
+                plugin.unlink()
+                logger.info("Removed non-Mac-App-Store-compliant plugin: %s", plugin.name)
+        # Also remove any stray libpq dylibs that may have been
+        # copied into Frameworks by _embed_libraries
+        for dylib in self.config.frameworks_path.glob("libpq*.dylib"):
+            logger.info("Removed non-compliant dependency from Frameworks: %s", dylib.name)
+            dylib.unlink()
 
     def _repair_qt_version_mismatch(self) -> None:
         """Replace Qt libs whose version doesn't match QtCore.
