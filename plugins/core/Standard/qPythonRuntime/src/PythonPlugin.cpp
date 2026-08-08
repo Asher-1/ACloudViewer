@@ -28,9 +28,9 @@
 #define signals Q_SIGNALS
 #include <QDialog>
 #include <QFile>
-#include <cvFileDialog.h>
 #include <QSettings>
 #include <algorithm>
+#include <cvFileDialog.h>
 #include <ecvCommandLineInterface.h>
 // Useful link:
 // https://docs.python.org/3/c-api/init.html#initialization-finalization-and-threads
@@ -232,10 +232,8 @@ QList<QAction *> PythonPlugin::getActions()
         m_addScriptFolder = new QAction("Add Scripts from Folder...");
         m_addScriptFolder->setToolTip("Add all Python scripts from a folder (recursive)");
         m_addScriptFolder->setIcon(QIcon(ADD_PYSCRIPT_ICON_PATH));
-        connect(m_addScriptFolder,
-                &QAction::triggered,
-                this,
-                &PythonPlugin::addScriptFromFolderAction);
+        connect(
+            m_addScriptFolder, &QAction::triggered, this, &PythonPlugin::addScriptFromFolderAction);
         m_addScriptFolder->setEnabled(true);
 
         m_removeScript = new QMenu("Remove Script");
@@ -270,8 +268,7 @@ QList<QAction *> PythonPlugin::getActions()
             const QFileInfo fi(path);
             if (!fi.exists())
             {
-                plgWarning() << "Skipping missing script from saved list:"
-                             << path;
+                plgWarning() << "Skipping missing script from saved list:" << path;
                 continue;
             }
 
@@ -282,8 +279,7 @@ QList<QAction *> PythonPlugin::getActions()
             }
             catch (const std::exception &e)
             {
-                plgWarning() << "Skipping script \"" << path
-                             << "\" due to error:" << e.what();
+                plgWarning() << "Skipping script \"" << path << "\" due to error:" << e.what();
             }
         }
 
@@ -352,11 +348,11 @@ void PythonPlugin::addScriptAction()
     const QString lastDir =
         settings->value(QStringLiteral("LastAddScriptDir"), QDir::homePath()).toString();
 
-    const QStringList filePaths = cvFileDialog::getOpenFileNames(
-        m_drawScriptRegister,
-        QStringLiteral("Select Python Script(s)"),
-        lastDir,
-        QStringLiteral("Python Script (*.py)"));
+    const QStringList filePaths =
+        cvFileDialog::getOpenFileNames(m_drawScriptRegister,
+                                       QStringLiteral("Select Python Script(s)"),
+                                       lastDir,
+                                       QStringLiteral("Python Script (*.py)"));
     if (filePaths.isEmpty())
         return;
 
@@ -399,7 +395,9 @@ void PythonPlugin::addScript(QString path)
     // If the path is a directory, recursively find all .py files inside it
     if (fi.isDir())
     {
-        QDirIterator it(path, QStringList() << QStringLiteral("*.py"), QDir::Files,
+        QDirIterator it(path,
+                        QStringList() << QStringLiteral("*.py"),
+                        QDir::Files,
                         QDirIterator::Subdirectories);
         while (it.hasNext())
         {

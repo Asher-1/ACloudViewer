@@ -19,9 +19,10 @@
 #include <ecvPolyline.h>
 
 // Qt
+#include <cvFileDialog.h>
+
 #include <QApplication>
 #include <QColor>
-#include <cvFileDialog.h>
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QMessageBox>
@@ -324,7 +325,7 @@ void qCanupo2DViewDialog::saveClassifier() {
                     .toString();
 
     QString filename = cvFileDialog::getSaveFileName(this, "Save Classifier",
-                                                    currentPath, "*.prm");
+                                                     currentPath, "*.prm");
     if (filename.isEmpty()) return;
 
     Classifier classifier = m_classifier;

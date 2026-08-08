@@ -7,10 +7,11 @@
 
 #include "SIBROptionsDialog.h"
 
+#include <cvFileDialog.h>
+
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDialogButtonBox>
-#include <cvFileDialog.h>
 #include <QFormLayout>
 #include <QGroupBox>
 #include <QLabel>

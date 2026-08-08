@@ -13,6 +13,7 @@
 #include "aicore/runtime_capi.h"
 #endif
 
+#include <cvFileDialog.h>
 #include <ecvImage.h>
 #include <ecvMainAppInterface.h>
 #include <ecvPluginDbNaming.h>
@@ -20,7 +21,6 @@
 #include <QAction>
 #include <QDir>
 #include <QFile>
-#include <cvFileDialog.h>
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>

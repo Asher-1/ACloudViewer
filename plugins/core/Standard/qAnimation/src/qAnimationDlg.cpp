@@ -22,9 +22,10 @@
 #include <ecvViewManager.h>
 
 // Qt
+#include <cvFileDialog.h>
+
 #include <QApplication>
 #include <QElapsedTimer>
-#include <cvFileDialog.h>
 #include <QFileInfo>
 #include <QMessageBox>
 #include <QProgressDialog>

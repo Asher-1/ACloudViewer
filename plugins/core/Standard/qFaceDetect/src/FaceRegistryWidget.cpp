@@ -7,9 +7,10 @@
 
 #include "FaceRegistryWidget.h"
 
+#include <cvFileDialog.h>
+
 #include <QCoreApplication>
 #include <QDir>
-#include <cvFileDialog.h>
 #include <QFileInfo>
 #include <QGridLayout>
 #include <QGroupBox>

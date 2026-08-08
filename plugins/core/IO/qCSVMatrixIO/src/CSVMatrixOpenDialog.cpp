@@ -11,6 +11,7 @@
 
 // Qt
 #include <cvFileDialog.h>
+
 #include <QFileInfo>
 #include <QSettings>
 CSVMatrixOpenDialog::CSVMatrixOpenDialog(QWidget* parent /*=0*/)

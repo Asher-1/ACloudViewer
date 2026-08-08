@@ -7,10 +7,11 @@
 
 #include "FaceLiveDetectWidget.h"
 
+#include <cvFileDialog.h>
+
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QDir>
-#include <cvFileDialog.h>
 #include <QFileInfo>
 #include <QFontMetrics>
 #include <QGridLayout>

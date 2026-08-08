@@ -6,8 +6,8 @@
 // ----------------------------------------------------------------------------
 
 #include <QDir>
-#include <cvFileDialog.h>
 #include <QtWidgets>
+#include <cvFileDialog.h>
 
 #include "CodeEditor.h"
 #include "PythonHighlighter.h"

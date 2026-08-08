@@ -8,8 +8,9 @@
 #include "BundlerImportDlg.h"
 
 // Qt
-#include <QDoubleSpinBox>
 #include <cvFileDialog.h>
+
+#include <QDoubleSpinBox>
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QPushButton>
