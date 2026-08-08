@@ -15,6 +15,7 @@
 #include <QLineEdit>
 #include <QProgressBar>
 #include <QPushButton>
+#include <QSlider>
 #include <QSpinBox>
 #include <QThread>
 #include <QTimer>
@@ -45,7 +46,7 @@ public:
         float minDetectionScore = 0.5f;
         FaceDetectWorker::Mode mode = FaceDetectWorker::Mode::Detect;
         StreamMode streamMode = StreamMode::Detect;
-        float recognizeMaxDistance = 0.52f;
+        float recognizeMaxDistance = 0.65f;
         FaceRegistryStore* registry = nullptr;
     };
 
@@ -128,6 +129,8 @@ private slots:
     void onStreamModeChanged(int index);
     void processFrame();
     void onInferComplete(FaceLiveDetectInferWorker::Result result);
+    void onVideoSeekSliderChanged(int value);
+    void onPlaybackSpeedChanged(int index);
 
 private:
     void setupUi();
@@ -138,9 +141,15 @@ private:
     void shutdownInferThread();
     void drawLiveOverlay(QImage& frame);
     void beginFrameProcessing();
+    void updateVideoTimeLabel(int frameIndex);
+    void showSeekPreview(int frameIndex);
+    void closePreviewCapture();
+    bool eventFilter(QObject* obj, QEvent* event) override;
+    void showEvent(QShowEvent* event) override;
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
     cv::VideoCapture m_capture;
+    cv::VideoCapture m_previewCapture;  // independent decode path for scrub/hover preview
 #endif
 
     Config m_config;
@@ -164,8 +173,18 @@ private:
     QLineEdit* m_registryPathEdit = nullptr;
     QPushButton* m_captureBtn = nullptr;
     QProgressBar* m_preloadProgress = nullptr;
-    QProgressBar* m_videoPositionProgress = nullptr;
+    QSlider* m_videoSeekSlider = nullptr;
+    QComboBox* m_playbackSpeedCombo = nullptr;
+    QWidget* m_videoControlsRow = nullptr;
+    QLabel* m_videoTimeLabel = nullptr;
+    QLabel* m_seekPreviewLabel = nullptr;   // thumbnail above slider during scrub/hover
     int m_totalVideoFrames = 0;
+    double m_videoFps = 0.0;         // cached FPS from CAP_PROP_FPS
+    double m_playbackSpeed = 1.0;
+    int m_baseTimerInterval = 33;
+    bool m_userSeeking = false;
+    int m_sliderUpdateSkip = 0;     // suppress processFrame slider updates after user seek
+    qint64 m_lastPreviewTimeMs = 0;  // throttle hover preview updates
 
     bool m_videoPathUserChosen = false;
     bool m_registryPathUserChosen = false;
@@ -190,9 +209,14 @@ private:
     std::vector<FaceDetectBox> m_overlayFaces;
     QVector<QString> m_overlayLabels;
     QSize m_overlayInferSize;
+    qint64 m_overlayFrameNum = 0;     // video frame number when overlay was generated
+    qint64 m_lastSubmitFrameNum = 0;  // video frame number of last inference submission
 
     // Inference timing — for latency display.
     QElapsedTimer m_inferSubmitTime;
     qint64 m_lastInferLatencyMs = 0;
     qint64 m_overlayTimestampMs = 0;  // ms since epoch of last infer complete
+
+    /// Compute timer interval from video FPS and playback speed.
+    int computeTimerInterval() const;
 };

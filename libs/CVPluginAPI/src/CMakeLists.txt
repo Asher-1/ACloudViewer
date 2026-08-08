@@ -11,4 +11,5 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/ecvPickingHub.cpp
 		${CMAKE_CURRENT_LIST_DIR}/ecvPersistentSettings.cpp
 		${CMAKE_CURRENT_LIST_DIR}/ecvRenderToFileDlg.cpp
+		${CMAKE_CURRENT_LIST_DIR}/ecvTestDataRepository.cpp
 )

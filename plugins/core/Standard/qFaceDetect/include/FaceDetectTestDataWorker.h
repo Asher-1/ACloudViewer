@@ -26,7 +26,7 @@ public:
         QString device = QStringLiteral("auto");
         int threads = 0;
         float minDetectionScore = 0.5f;
-        float authThreshold = 0.52f;
+        float authThreshold = 0.65f;
         bool extractZipFirst = false;
         QString zipPath;
         QString extractParentDir;

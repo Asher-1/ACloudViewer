@@ -2,6 +2,8 @@
 description: Rules for ggml ExternalProject, AICore build, and backend loading on all platforms
 globs:
   - 3rdparty/ggml/**
+  - build/ggml/**
+  - build_app/ggml/**
   - core/AICore/**
   - docker/docker_test.sh
   - docker/test_wheel_runtime.sh
@@ -12,6 +14,29 @@ alwaysApply: false
 ---
 
 # ACloudViewer ggml / AICore Build Rules
+
+## ⚠️ ggml 源码修改规则（强制）
+
+**绝对禁止直接修改构建目录中的 ggml 源码文件**（`build/ggml/`、`build_app/ggml/` 等）。
+所有对 ggml 源码的修改必须通过 patch 文件管理，流程如下：
+
+1. **本地修改**：在 `build/` 或 `build_app/` 的 ggml 源码副本中进行修改和验证
+2. **生成 patch**：用 `diff -ruN` 或 `git diff` 对比原始 ggml 源码与修改后的版本，生成 unified diff
+3. **存放 patch**：将 patch 文件放入 `3rdparty/ggml/patches/<子目录>/0001-描述.patch`
+4. **注册 patch**：在 `3rdparty/ggml/patches/manifest.yaml` 中添加条目（顺序重要）
+5. **构建验证**：清理构建目录后重新构建，确认 `apply_ggml_patches.py` 正确应用补丁
+
+```
+3rdparty/ggml/patches/
+├── manifest.yaml                        # 注册所有 patch（顺序重要）
+├── apply_ggml_patches.py                # 构建时自动应用
+├── aliked_merged/0001-vulkan-aliked.patch
+├── cpu_all_variants/0001-*.patch
+├── metal_merged/0001-metal-optimizations.patch
+└── msvc_vulkan/0001-*.patch
+```
+
+**原因**：ggml 是 ExternalProject，每次干净构建都从 tarball 重新提取。直接修改构建目录的文件在 CI 或他人构建时不会生效——只有 patch 文件才会被应用。
 
 ## ggml ExternalProject Architecture
 
@@ -51,7 +76,6 @@ alwaysApply: false
 - `docker_test.sh` and `test_wheel_runtime.sh` run `check_aicore_runtime.py` without `--expect-device vulkan`
 
 ### Windows CI
-- All ggml source modifications are unified-diff files listed in `3rdparty/ggml/patches/manifest.yaml` and applied by `apply_ggml_patches.py` (`patch -p1 -N`); no in-place Python mutators
 - `CMAKE_COMMAND` on CI contains spaces (e.g., `C:/Program Files/...`) — never pass it to cmd shell
 
 ## Key CMake Variables

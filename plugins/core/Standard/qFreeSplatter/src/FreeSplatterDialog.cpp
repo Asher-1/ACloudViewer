@@ -10,6 +10,7 @@
 #include <CVLog.h>
 
 #include <QCloseEvent>
+#include <QCryptographicHash>
 #include <QDir>
 #include <QDirIterator>
 #include <QFile>
@@ -28,6 +29,9 @@
 #include <QTabBar>
 #include <QTimer>
 #include <QVBoxLayout>
+#include <cstdio>
+#include <cstdlib>
+#include <string>
 
 #include "FaceCaptureWidget.h"
 #include "aicore/backend_capi.h"
@@ -35,6 +39,7 @@
 #include "aicore/inference_log.h"
 #include "ecvClickableImageLabel.h"
 #include "ecvModelDownloader.h"
+#include "ecvTestDataRepository.h"
 
 static const char* kDownloadBase =
         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
@@ -119,8 +124,11 @@ QVector<FreeSplatterBuiltinModel> FreeSplatterDialog::builtinModels() {
 QString FreeSplatterDialog::modelCacheDir() {
     char* dir = aicore_gaussian_model_cache_dir();
     if (!dir) {
-        return QDir::homePath() +
-               QStringLiteral("/cloudViewer_data/extract/freesplatter_models");
+        // Fallback: ~/cloudViewer_data/extract/freesplatter_models
+        return QDir(QDir(QDir(QDir::homePath())
+                                 .filePath(QStringLiteral("cloudViewer_data")))
+                            .filePath(QStringLiteral("extract")))
+                .filePath(QStringLiteral("freesplatter_models"));
     }
     QString result = QString::fromUtf8(dir);
     aicore_gaussian_free_string(dir);
@@ -147,6 +155,43 @@ FreeSplatterDialog::FreeSplatterDialog(QWidget* parent) : QDialog(parent) {
     m_downloader = new ecvModelDownloader(this);
     connect(m_downloader, &ecvModelDownloader::logMessage, this,
             &FreeSplatterDialog::appendLog);
+
+    // Connect to the shared test data repository
+    auto& repo = ecvTestDataRepository::instance();
+    connect(&repo, &ecvTestDataRepository::downloadProgress, this,
+            [this](int percent, const QString& statusText) {
+                if (m_testDataDownloadInProgress && m_progressBar &&
+                    m_progressBar->maximum() > 0) {
+                    m_progressBar->setValue(percent);
+                }
+                if (m_testDataDownloadInProgress && m_downloadLabel) {
+                    m_downloadLabel->setText(statusText);
+                }
+            });
+    connect(&repo, &ecvTestDataRepository::downloadLogMessage, this,
+            &FreeSplatterDialog::appendLog);
+    connect(&repo, &ecvTestDataRepository::downloadFinished, this,
+            [this](bool success, ecvTestDataRepository::Dataset kind) {
+                onTestDataDownloadFinished(
+                        success, static_cast<int>(kind));
+            });
+    connect(&repo, &ecvTestDataRepository::extractionFinished, this,
+            [this](bool success, ecvTestDataRepository::Dataset kind) {
+                onTestDataExtractionFinished(
+                        success, static_cast<int>(kind));
+            });
+    connect(&repo, &ecvTestDataRepository::extractionProgress, this,
+            [this](int current, int total) {
+                if (m_testDataDownloadInProgress && m_progressBar && total > 0) {
+                    if (m_progressBar->maximum() != total) {
+                        m_progressBar->setRange(0, total);
+                    }
+                    m_progressBar->setValue(current);
+                    m_progressBar->setFormat(tr("Extracting... %v/%m"));
+                    m_progressBar->setTextVisible(true);
+                }
+            });
+
     connect(m_downloader, &ecvModelDownloader::progress, this,
             [this](qint64 received, qint64 total) {
                 if (total > 0) {
@@ -276,7 +321,7 @@ void FreeSplatterDialog::setupUi() {
                "Trained with up to 32 views; more views = better quality.\n"
                "O(N\u00b2) compute scaling; 16 views \u2248 30-60s on Metal."));
     runtimeLayout->addWidget(m_maxViewsSpin);
-    modelLayout->addWidget(runtimeRow, 3, 0, 1, 4);
+    modelLayout->addWidget(runtimeRow, 4, 0, 1, 4);
 
     mainLayout->addWidget(modelGroup);
 
@@ -604,6 +649,22 @@ void FreeSplatterDialog::setupUi() {
 
     // --- Buttons ---
     auto* btnLayout = new QHBoxLayout;
+
+    auto* testDataBtn = new QPushButton("Use test data");
+    testDataBtn->setToolTip(
+            tr("Auto-download sample data for the active input tab"));
+    connect(testDataBtn, &QPushButton::clicked, this, [this]() {
+        // Determine which input tab is active
+        const int tabIndex = m_inputTabWidget ? m_inputTabWidget->currentIndex() : 0;
+        if (tabIndex == 1 && m_faceCaptureWidget) {
+            // Face Capture tab → FriendsFaces video
+            ensureFriendsTestData();
+        } else {
+            // Images tab (default) → Monstree reconstruction images
+            ensureMonstreeTestData();
+        }
+    });
+    btnLayout->addWidget(testDataBtn);
     btnLayout->addStretch();
 
     m_runBtn = new QPushButton("Run");
@@ -1479,15 +1540,21 @@ void FreeSplatterDialog::onRun() {
 
 void FreeSplatterDialog::onFaceStartCamera() {
     if (!m_faceCaptureWidget) return;
+    appendLog(tr("[FaceCapture] Start clicked, inputSource=%1")
+                      .arg(static_cast<int>(m_faceCaptureWidget->inputSource())));
     if (m_faceCaptureWidget->inputSource() ==
         FaceCaptureWidget::InputSource::VideoFile) {
         const QString path = m_faceCaptureWidget->videoFilePath();
+        appendLog(tr("[FaceCapture] Video path: %1").arg(path));
         if (path.isEmpty() || !QFileInfo::exists(path)) {
             appendLog(tr("[FaceCapture] Select a valid video file first."));
             return;
         }
+        appendLog(tr("[FaceCapture] Calling startVideoFile..."));
         if (!m_faceCaptureWidget->startVideoFile(path)) {
             appendLog(tr("[FaceCapture] Failed to start video playback."));
+        } else {
+            appendLog(tr("[FaceCapture] Video started successfully."));
         }
         return;
     }
@@ -1606,4 +1673,190 @@ void FreeSplatterDialog::clearFaceCaptureTransientInputs() {
     refreshThumbnailStrip();
     updateImageCountStatus();
     updateRunButtonState();
+}
+
+// ---------------------------------------------------------------------------
+// Test data (FriendsFaces / Monstree) — via shared ecvTestDataRepository
+// ---------------------------------------------------------------------------
+
+using TestDataRepo = ecvTestDataRepository;
+using TestDataset = ecvTestDataRepository::Dataset;
+
+void FreeSplatterDialog::ensureFriendsTestData() {
+    if (m_testDataDownloadInProgress) {
+        appendLog(tr("[Test data] Download already in progress."));
+        return;
+    }
+    if (m_downloadInProgress) {
+        appendLog(tr("[Test data] Wait for model download to finish first."));
+        return;
+    }
+
+    auto& repo = TestDataRepo::instance();
+    const TestDataset kind = TestDataset::FriendsFaces;
+
+    // 1. Check if bundle is already extracted
+    const QString bundleRoot = TestDataRepo::extractPath(kind);
+    if (QDir(bundleRoot).exists()) {
+        const QString video = TestDataRepo::findFriendsVideo(bundleRoot);
+        if (!video.isEmpty() && m_faceCaptureWidget) {
+            m_faceCaptureWidget->setInputSource(
+                    FaceCaptureWidget::InputSource::VideoFile);
+            m_faceCaptureWidget->setVideoFilePath(video);
+            appendLog(tr("[Test data] Loaded video: %1").arg(video));
+            return;
+        }
+    }
+
+    // 2. Check if zip is already cached
+    if (repo.isDatasetAvailable(kind)) {
+        appendLog(tr("[Test data] Extracting cached FriendsFaces archive..."));
+        m_progressBar->setMaximum(0);
+        m_progressBar->setTextVisible(true);
+        m_progressBar->setFormat(tr("Extracting..."));
+        m_progressBar->setValue(0);
+        m_progressBar->setVisible(true);
+        m_downloadLabel->setVisible(true);
+        m_downloadLabel->setText(tr("Extracting FriendsFaces test data..."));
+        m_testDataDownloadInProgress = true;
+        m_testDataDatasetKind = static_cast<int>(kind);
+        repo.extractDataset(kind);
+        return;
+    }
+
+    // 3. Download the zip
+    m_testDataDownloadInProgress = true;
+    m_testDataDatasetKind = static_cast<int>(kind);
+    m_downloadLabel->setVisible(true);
+    m_downloadLabel->setText(tr("Downloading FriendsFaces test data..."));
+    m_progressBar->setRange(0, 100);
+    m_progressBar->setTextVisible(true);
+    m_progressBar->setFormat(tr("%p%"));
+    m_progressBar->setValue(0);
+    m_progressBar->setVisible(true);
+    repo.startDownload(kind);
+}
+
+void FreeSplatterDialog::ensureMonstreeTestData() {
+    if (m_testDataDownloadInProgress) {
+        appendLog(tr("[Test data] Download already in progress."));
+        return;
+    }
+    if (m_downloadInProgress) {
+        appendLog(tr("[Test data] Wait for model download to finish first."));
+        return;
+    }
+
+    auto& repo = TestDataRepo::instance();
+    const TestDataset kind = TestDataset::Monstree;
+
+    // 1. Check if bundle is already extracted
+    const QString bundleRoot = TestDataRepo::extractPath(kind);
+    if (QDir(bundleRoot).exists()) {
+        const QStringList images = TestDataRepo::getMonstreeImages(bundleRoot);
+        if (!images.isEmpty()) {
+            addInputPaths(images, true /* replace */);
+            appendLog(tr("[Test data] Loaded %1 images from Monstree dataset")
+                              .arg(images.size()));
+            return;
+        }
+    }
+
+    // 2. Check if zip is already cached
+    if (repo.isDatasetAvailable(kind)) {
+        appendLog(tr("[Test data] Extracting cached Monstree archive..."));
+        m_progressBar->setMaximum(0);
+        m_progressBar->setTextVisible(true);
+        m_progressBar->setFormat(tr("Extracting..."));
+        m_progressBar->setValue(0);
+        m_progressBar->setVisible(true);
+        m_downloadLabel->setVisible(true);
+        m_downloadLabel->setText(tr("Extracting Monstree test data..."));
+        m_testDataDownloadInProgress = true;
+        m_testDataDatasetKind = static_cast<int>(kind);
+        repo.extractDataset(kind);
+        return;
+    }
+
+    // 3. Download the zip
+    m_testDataDownloadInProgress = true;
+    m_testDataDatasetKind = static_cast<int>(kind);
+    m_downloadLabel->setVisible(true);
+    m_downloadLabel->setText(tr("Downloading Monstree test data..."));
+    m_progressBar->setRange(0, 100);
+    m_progressBar->setTextVisible(true);
+    m_progressBar->setFormat(tr("%p%"));
+    m_progressBar->setValue(0);
+    m_progressBar->setVisible(true);
+    repo.startDownload(kind);
+}
+
+void FreeSplatterDialog::onTestDataDownloadFinished(bool success, int kind) {
+    if (!m_testDataDownloadInProgress) return;
+
+    if (!success) {
+        appendLog(tr("[Test data] Download failed."));
+        m_testDataDownloadInProgress = false;
+        m_downloadLabel->setVisible(false);
+        m_progressBar->setRange(0, 100);
+        m_progressBar->setVisible(false);
+        return;
+    }
+
+    // Download succeeded — now extract
+    const auto dataset = static_cast<TestDataset>(kind);
+    const QString label = (dataset == TestDataset::Monstree)
+                                  ? QStringLiteral("Monstree")
+                                  : QStringLiteral("FriendsFaces");
+    appendLog(tr("[Test data] Extracting..."));
+    m_downloadLabel->setText(tr("Extracting %1 test data...").arg(label));
+    m_progressBar->setRange(0, 0);  // indeterminate / busy
+    m_progressBar->setFormat(tr("Extracting..."));
+
+    TestDataRepo::instance().extractDataset(dataset);
+}
+
+void FreeSplatterDialog::onTestDataExtractionFinished(bool success, int kind) {
+    if (!m_testDataDownloadInProgress) return;
+    m_testDataDownloadInProgress = false;
+
+    if (!success) {
+        appendLog(tr("[Test data] Failed to extract zip archive."));
+        m_downloadLabel->setVisible(false);
+        m_progressBar->setRange(0, 100);
+        m_progressBar->setVisible(false);
+        return;
+    }
+
+    loadTestDataAfterExtract(kind);
+
+    m_downloadLabel->setVisible(false);
+    m_progressBar->setRange(0, 100);
+    m_progressBar->setVisible(false);
+}
+
+void FreeSplatterDialog::loadTestDataAfterExtract(int kind) {
+    const auto dataset = static_cast<TestDataset>(kind);
+    const QString bundleRoot = TestDataRepo::extractPath(dataset);
+
+    if (dataset == TestDataset::Monstree) {
+        const QStringList images = TestDataRepo::getMonstreeImages(bundleRoot);
+        if (!images.isEmpty()) {
+            addInputPaths(images, true);
+            appendLog(tr("[Test data] Loaded %1 images from Monstree dataset")
+                              .arg(images.size()));
+        } else {
+            appendLog(tr("[Test data] No images found in bundle."));
+        }
+    } else {
+        const QString video = TestDataRepo::findFriendsVideo(bundleRoot);
+        if (!video.isEmpty() && m_faceCaptureWidget) {
+            m_faceCaptureWidget->setInputSource(
+                    FaceCaptureWidget::InputSource::VideoFile);
+            m_faceCaptureWidget->setVideoFilePath(video);
+            appendLog(tr("[Test data] Loaded video: %1").arg(video));
+        } else {
+            appendLog(tr("[Test data] Could not find video in bundle."));
+        }
+    }
 }

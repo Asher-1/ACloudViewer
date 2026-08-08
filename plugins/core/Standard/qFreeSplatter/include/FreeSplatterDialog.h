@@ -200,6 +200,10 @@ private:
     bool m_hasResult = false;
     QString m_lastTaskError;
 
+    // --- Test data download state ---
+    bool m_testDataDownloadInProgress = false;
+    int m_testDataDatasetKind = -1;  // ecvTestDataRepository::Dataset
+
     QHash<QString, QImage> m_dbPreviews;
 
     // --- Face capture tab (conditional on HAS_OPENCV_FACE_CAPTURE) ---
@@ -218,4 +222,11 @@ private:
     void onFaceReset();
     void onFaceCaptureComplete();
     void clearFaceCaptureExportDir();
+
+    // --- Test data: FriendsFaces (video) + Monstree (images) ---
+    void ensureFriendsTestData();
+    void ensureMonstreeTestData();
+    void onTestDataDownloadFinished(bool success, int kind);
+    void onTestDataExtractionFinished(bool success, int kind);
+    void loadTestDataAfterExtract(int kind);
 };

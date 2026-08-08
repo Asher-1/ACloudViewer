@@ -16,6 +16,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/ecvPluginDbNaming.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvQtHelpers.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvRenderToFileDlg.h
+		${CMAKE_CURRENT_LIST_DIR}/ecvTestDataRepository.h
 )
 
 target_include_directories( ${PROJECT_NAME}

@@ -18,34 +18,12 @@
 #include <QJsonObject>
 #include <QSet>
 #include <QSettings>
-#include <cstdio>
-#include <cstdlib>
-#include <string>
 
 #include "FaceRegistryStore.h"
-
-extern "C" {
-#include "unzip.h"
-}
-
-#ifdef __APPLE__
-#define FOPEN_FUNC(filename, mode) fopen(filename, mode)
-#else
-#define FOPEN_FUNC(filename, mode) fopen64(filename, mode)
-#endif
-
-#define WRITEBUFFERSIZE (8192)
 
 namespace FaceDetectTestData {
 
 namespace {
-
-constexpr const char* kZipUrl =
-        "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
-        "qFaceDetect/friends_faces.zip";
-constexpr const char* kZipMd5 = "1d1ffebb97edac790b55c6f0f3c9d9fc";
-constexpr const char* kZipFileName = "friends_faces.zip";
-constexpr const char* kBundleFolder = "friends_faces";
 
 QString absPathIfExists(const QString& path) {
     return QFileInfo::exists(path) ? QFileInfo(path).absoluteFilePath()
@@ -208,11 +186,13 @@ void fillHeuristics(const QString& root, FaceDetectFriendsBundle* out) {
 }
 
 QString locateBundleRoot() {
-    const QString base = extractDir();
-    const QString primary =
-            QDir(base).filePath(QString::fromLatin1(kBundleFolder));
+    // Use ecvTestDataRepository for the expected extract path
+    const QString primary = ecvTestDataRepository::extractPath(
+            ecvTestDataRepository::Dataset::FriendsFaces);
     if (QDir(primary).exists()) return primary;
 
+    // Fallback: search for any bundle with manifest or video+images
+    const QString base = ecvTestDataRepository::extractDir();
     QDirIterator it(base, QDir::Dirs | QDir::NoDotAndDotDot,
                     QDirIterator::Subdirectories);
     while (it.hasNext()) {
@@ -229,211 +209,21 @@ QString locateBundleRoot() {
     return {};
 }
 
-// Cross-platform ZIP extraction — logic copied from
-// libs/cloudViewer/utility/ExtractZIP.cpp (miniunz / minizip).
-bool mkpathStd(const std::string& path) {
-    return QDir().mkpath(QString::fromStdString(path));
-}
-
-int extractCurrentZipEntry(unzFile uf,
-                           const std::string& extract_dir,
-                           const std::string& password) {
-    char filename_inzip[256];
-    char* filename_withoutpath;
-    char* p;
-    int err = UNZ_OK;
-    FILE* fout = nullptr;
-    void* buf;
-    uInt size_buf;
-
-    unz_file_info64 file_info;
-    err = unzGetCurrentFileInfo64(uf, &file_info, filename_inzip,
-                                  sizeof(filename_inzip), nullptr, 0, nullptr,
-                                  0);
-    if (err != UNZ_OK) return err;
-
-    size_buf = WRITEBUFFERSIZE;
-    buf = malloc(size_buf);
-    if (buf == nullptr) return UNZ_INTERNALERROR;
-
-    p = filename_withoutpath = filename_inzip;
-    while ((*p) != '\0') {
-        if (((*p) == '/') || ((*p) == '\\')) {
-            filename_withoutpath = p + 1;
-        }
-        p++;
-    }
-
-    if ((*filename_withoutpath) == '\0') {
-        const std::string dir_path = extract_dir + "/" + filename_inzip;
-        if (!mkpathStd(dir_path)) {
-            free(buf);
-            return UNZ_ERRNO;
-        }
-    } else {
-        const char* write_filename = filename_inzip;
-
-        if (password.empty()) {
-            err = unzOpenCurrentFilePassword(uf, nullptr);
-        } else {
-            err = unzOpenCurrentFilePassword(uf, password.c_str());
-        }
-        if (err != UNZ_OK) {
-            free(buf);
-            return err;
-        }
-
-        const std::string file_path =
-                extract_dir + "/" + static_cast<std::string>(write_filename);
-        const size_t slash = file_path.find_last_of("/\\");
-        if (slash != std::string::npos) {
-            const std::string parent = file_path.substr(0, slash);
-            if (!parent.empty()) {
-                mkpathStd(parent);
-            }
-        }
-        fout = FOPEN_FUNC(file_path.c_str(), "wb");
-
-        if (fout == nullptr) {
-            mkpathStd(extract_dir);
-            fout = FOPEN_FUNC(file_path.c_str(), "wb");
-        }
-
-        if (fout == nullptr) {
-            unzCloseCurrentFile(uf);
-            free(buf);
-            return UNZ_ERRNO;
-        }
-
-        do {
-            err = unzReadCurrentFile(uf, buf, size_buf);
-            if (err < 0) break;
-            if (err > 0) {
-                if (fwrite(buf, static_cast<size_t>(err), 1, fout) != 1) {
-                    err = UNZ_ERRNO;
-                    break;
-                }
-            }
-        } while (err > 0);
-
-        fclose(fout);
-
-        if (err == UNZ_OK) {
-            err = unzCloseCurrentFile(uf);
-        } else {
-            unzCloseCurrentFile(uf);
-        }
-    }
-
-    free(buf);
-    return err;
-}
-
-int zipEntryCountFromFile(const std::string& file_path) {
-    if (file_path.empty()) return 0;
-    unzFile uf = unzOpen64(file_path.c_str());
-    if (uf == nullptr) return 0;
-    unz_global_info64 gi;
-    const int err = unzGetGlobalInfo64(uf, &gi);
-    unzClose(uf);
-    return err == UNZ_OK ? static_cast<int>(gi.number_entry) : 0;
-}
-
-bool extractFromZipFile(
-        const std::string& file_path,
-        const std::string& extract_dir,
-        const FaceDetectTestData::ExtractProgressFn& onProgress) {
-    if (file_path.empty()) return false;
-
-    unzFile uf = unzOpen64(file_path.c_str());
-    if (uf == nullptr) return false;
-
-    unz_global_info64 gi;
-    int err = unzGetGlobalInfo64(uf, &gi);
-    if (err != UNZ_OK) {
-        unzClose(uf);
-        return false;
-    }
-
-    const int totalEntries = static_cast<int>(gi.number_entry);
-    const std::string password;
-    for (uLong i = 0; i < gi.number_entry; ++i) {
-        err = extractCurrentZipEntry(uf, extract_dir, password);
-        if (err != UNZ_OK) {
-            unzClose(uf);
-            return false;
-        }
-
-        if (onProgress && totalEntries > 0) {
-            onProgress(static_cast<int>(i + 1), totalEntries);
-        }
-
-        if ((i + 1) < gi.number_entry) {
-            err = unzGoToNextFile(uf);
-            if (err != UNZ_OK) {
-                unzClose(uf);
-                return false;
-            }
-        }
-    }
-
-    unzClose(uf);
-    return true;
-}
-
 }  // namespace
 
-QString cloudViewerDataRoot() {
-    return QDir::homePath() + QStringLiteral("/cloudViewer_data");
-}
+// Path and verification functions are now inline in the header,
+// delegating to ecvTestDataRepository for cross-plugin consistency.
 
-QString downloadDir() {
-    return cloudViewerDataRoot() + QStringLiteral("/download");
-}
-
-QString extractDir() {
-    return cloudViewerDataRoot() + QStringLiteral("/extract");
-}
-
-QString zipPath() {
-    return QDir(downloadDir()).filePath(QString::fromLatin1(kZipFileName));
-}
-
-QString downloadUrl() { return QString::fromLatin1(kZipUrl); }
-
-QString expectedZipMd5() { return QString::fromLatin1(kZipMd5); }
-
-bool verifyZipFile(const QString& zipPath) {
-    if (zipPath.isEmpty()) return false;
-    QFile file(zipPath);
-    if (!file.open(QIODevice::ReadOnly)) return false;
-    QCryptographicHash hash(QCryptographicHash::Md5);
-    if (hash.addData(&file) <= 0) return false;
-    return hash.result().toHex() == expectedZipMd5().toLatin1().toLower();
-}
-
-bool isZipCached(qint64 minBytes) {
-    const QFileInfo fi(zipPath());
-    if (!fi.isFile() || fi.size() < minBytes) return false;
-    return verifyZipFile(fi.absoluteFilePath());
-}
-
+// zipEntryCount and extractZip delegate to ecvTestDataRepository
+// to avoid duplicating minizip extraction logic.
 int zipEntryCount(const QString& zipPath) {
-    if (zipPath.isEmpty() || !QFileInfo::exists(zipPath)) return 0;
-    return zipEntryCountFromFile(
-            QFileInfo(zipPath).absoluteFilePath().toStdString());
+    return ecvTestDataRepository::zipEntryCount(zipPath);
 }
 
 bool extractZip(const QString& zipPath,
                 const QString& extractParentDir,
                 const ExtractProgressFn& onProgress) {
-    if (zipPath.isEmpty() || !QFileInfo::exists(zipPath)) return false;
-    QDir().mkpath(extractParentDir);
-
-    return extractFromZipFile(
-            QFileInfo(zipPath).absoluteFilePath().toStdString(),
-            QFileInfo(extractParentDir).absoluteFilePath().toStdString(),
-            onProgress);
+    return ecvTestDataRepository::extractZip(zipPath, extractParentDir, onProgress);
 }
 
 QVector<FaceDetectGalleryEntry> loadGalleryEntries(const QString& bundleRoot) {
@@ -697,7 +487,7 @@ QString discoverRegistryDbPath(const QString& modelFilename) {
 
     // Broader scan: any registry DB under cloudViewer_data/extract (not only
     // friends_faces bundle root).
-    const QString extractRoot = extractDir();
+    const QString extractRoot = ecvTestDataRepository::extractDir();
     QString bestMatch;
     int bestCount = 0;
     QDirIterator it(extractRoot, {QStringLiteral("face_registry_*.db")},

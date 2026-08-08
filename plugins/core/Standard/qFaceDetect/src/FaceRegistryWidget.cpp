@@ -171,7 +171,7 @@ FaceRegistryWidget::FaceRegistryWidget(QWidget* parent) : QWidget(parent) {
     m_authThreshold = new QDoubleSpinBox(authGroup);
     m_authThreshold->setRange(0.05, 1.0);
     m_authThreshold->setSingleStep(0.01);
-    m_authThreshold->setValue(0.52);
+    m_authThreshold->setValue(0.65);
     m_authThreshold->setToolTip(
             tr("Maximum cosine distance for a match (lower = stricter)."));
     m_minDetectionScoreSpin = FaceDetectUi::makeMinDetectionScoreSpin(
@@ -562,7 +562,7 @@ void FaceRegistryWidget::setAuthThreshold(float value) {
 
 float FaceRegistryWidget::authThreshold() const {
     return m_authThreshold ? static_cast<float>(m_authThreshold->value())
-                           : 0.52f;
+                           : 0.65f;
 }
 
 QString FaceRegistryWidget::resolveModelPath() const { return m_modelPath; }
@@ -634,7 +634,7 @@ void FaceRegistryWidget::loadSettings() {
         }
     }
     const double thresh =
-            settings.value(QStringLiteral("qFaceDetect/matchThreshold"), 0.52)
+            settings.value(QStringLiteral("qFaceDetect/matchThreshold"), 0.65)
                     .toDouble();
     const double minScore =
             settings.value(QStringLiteral("qFaceDetect/minDetectionScore"),

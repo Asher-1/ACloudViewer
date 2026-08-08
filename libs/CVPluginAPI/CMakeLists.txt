@@ -22,6 +22,11 @@ target_link_libraries( ${PROJECT_NAME}
 	Qt::Network
 )
 
+# zlib + minizip for cross-platform zip extraction (ecvTestDataRepository)
+include( ${CMAKE_SOURCE_DIR}/plugins/cmake/PluginZlibMinizip.cmake )
+cloudviewer_plugin_link_zlib_minizip(${PROJECT_NAME}
+	PLUGIN_NAME CVPluginAPI)
+
 target_compile_definitions( ${PROJECT_NAME} PRIVATE CVPLUGIN_API_LIBRARY_BUILD )
 
 set_target_properties( ${PROJECT_NAME} PROPERTIES

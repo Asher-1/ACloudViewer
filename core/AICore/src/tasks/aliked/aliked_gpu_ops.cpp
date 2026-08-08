@@ -876,6 +876,11 @@ bool DcnConvBnDispatch(GpuPipelineCache *cache,
                                       regular_w, oc, gamma, beta, mean, var,
                                       cache_prefix, output, error);
 #endif
+        case AlikedCustomOpBackend::kCpu:
+            // Metal / CPU / any GPU without native DCN → CPU bridge fallback.
+            return DcnConvBnCpuBridge(cache, input, offset_w, offset_b,
+                                      regular_w, oc, gamma, beta, mean, var,
+                                      cache_prefix, output, error);
         default:
             if (error) {
                 *error = "DCN dispatch requires GPU backend";

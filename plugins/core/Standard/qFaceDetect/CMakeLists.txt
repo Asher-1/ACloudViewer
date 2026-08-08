@@ -30,9 +30,6 @@ if( PLUGIN_STANDARD_QFACEDETECT )
         target_compile_definitions(${PROJECT_NAME} PRIVATE HAS_OPENCV_FACE_CAPTURE)
     endif()
 
-    cloudviewer_plugin_link_zlib_minizip(${PROJECT_NAME}
-        PLUGIN_NAME qFaceDetect)
-
     if(MSVC)
         target_compile_definitions(${PROJECT_NAME} PRIVATE _USE_MATH_DEFINES)
     endif()

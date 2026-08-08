@@ -16,9 +16,14 @@
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
+#include <QMouseEvent>
 #include <QPainter>
 #include <QSettings>
+#include <QShowEvent>
+#include <QTimer>
 #include <QtMath>
+
+#include <cmath>
 
 #include "FaceDetectEmbedHelpers.h"
 #include "FaceDetectTestData.h"
@@ -149,14 +154,75 @@ void FaceLiveDetectWidget::setupUi() {
                                      QSizePolicy::Fixed);
     main->addWidget(m_preloadProgress);
 
-    m_videoPositionProgress = new QProgressBar(this);
-    m_videoPositionProgress->setFixedHeight(16);
-    m_videoPositionProgress->setTextVisible(false);
-    m_videoPositionProgress->setMaximum(100);
-    m_videoPositionProgress->setValue(0);
-    m_videoPositionProgress->setSizePolicy(QSizePolicy::Expanding,
-                                           QSizePolicy::Fixed);
-    main->addWidget(m_videoPositionProgress);
+    // Video playback controls: seek slider + speed + time label
+    m_videoControlsRow = new QWidget(this);
+    auto* videoCtrlMainLayout = new QVBoxLayout(m_videoControlsRow);
+    videoCtrlMainLayout->setContentsMargins(0, 0, 0, 0);
+    videoCtrlMainLayout->setSpacing(2);
+
+    // Seek preview thumbnail — child of m_previewLabel so it overlays on
+    // the video area without affecting the controls layout.
+    m_seekPreviewLabel = new QLabel(m_previewLabel);
+    m_seekPreviewLabel->setFixedSize(160, 90);
+    m_seekPreviewLabel->setVisible(false);
+    m_seekPreviewLabel->setStyleSheet(
+            QStringLiteral("QLabel { border: 1px solid #444; "
+                           "background: #1a1a1a; }"));
+    m_seekPreviewLabel->setAlignment(Qt::AlignCenter);
+    m_seekPreviewLabel->raise();
+
+    auto* sliderRow = new QWidget(m_videoControlsRow);
+    auto* videoCtrlLayout = new QHBoxLayout(sliderRow);
+    videoCtrlLayout->setContentsMargins(0, 0, 0, 0);
+
+    m_videoSeekSlider = new QSlider(Qt::Horizontal, m_videoControlsRow);
+    m_videoSeekSlider->setRange(0, 0);
+    m_videoSeekSlider->setEnabled(false);
+    videoCtrlLayout->addWidget(m_videoSeekSlider, 1);
+
+    m_videoTimeLabel = new QLabel(QStringLiteral("0:00"), m_videoControlsRow);
+    m_videoTimeLabel->setMinimumWidth(110);
+    m_videoTimeLabel->setAlignment(Qt::AlignCenter);
+    videoCtrlLayout->addWidget(m_videoTimeLabel);
+
+    m_playbackSpeedCombo = new QComboBox(m_videoControlsRow);
+    m_playbackSpeedCombo->addItems(
+            {QStringLiteral("0.25\u00d7"), QStringLiteral("0.5\u00d7"),
+             QStringLiteral("1\u00d7"), QStringLiteral("2\u00d7"),
+             QStringLiteral("4\u00d7")});
+    m_playbackSpeedCombo->setCurrentIndex(2);  // 1\u00d7 default
+    m_playbackSpeedCombo->setFixedWidth(70);
+    m_playbackSpeedCombo->setEnabled(false);  // disabled until video loaded
+    videoCtrlLayout->addWidget(m_playbackSpeedCombo);
+
+    videoCtrlMainLayout->addWidget(sliderRow);
+    m_videoControlsRow->setVisible(false);  // Hidden until video file is loaded
+    main->addWidget(m_videoControlsRow);
+
+    // Install event filter for hover preview on slider
+    m_videoSeekSlider->installEventFilter(this);
+    m_videoSeekSlider->setMouseTracking(true);
+
+    connect(m_videoSeekSlider, &QSlider::sliderPressed, this, [this]() {
+        m_userSeeking = true;
+    });
+    connect(m_videoSeekSlider, &QSlider::sliderReleased, this, [this]() {
+        m_userSeeking = false;
+        // Explicitly perform the seek now that m_userSeeking is false.
+        // We cannot rely on valueChanged firing after sliderReleased —
+        // if the slider value was already set during the drag, valueChanged
+        // will not fire again, and the seek would never happen.
+        onVideoSeekSliderChanged(m_videoSeekSlider->value());
+        // Suppress processFrame slider updates for the next 2 ticks so the
+        // video has time to seek to the new position before processFrame
+        // starts overwriting the slider value again.
+        m_sliderUpdateSkip = 2;
+        if (m_seekPreviewLabel) m_seekPreviewLabel->setVisible(false);
+    });
+    connect(m_videoSeekSlider, &QSlider::valueChanged, this,
+            &FaceLiveDetectWidget::onVideoSeekSliderChanged);
+    connect(m_playbackSpeedCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &FaceLiveDetectWidget::onPlaybackSpeedChanged);
 
     auto* settingsGroup = new QGroupBox(tr("Stream settings"), this);
     auto* grid = new QGridLayout(settingsGroup);
@@ -239,7 +305,7 @@ void FaceLiveDetectWidget::setupUi() {
     m_recognizeThreshold = new QDoubleSpinBox(settingsGroup);
     m_recognizeThreshold->setRange(0.05, 1.0);
     m_recognizeThreshold->setSingleStep(0.01);
-    m_recognizeThreshold->setValue(0.52);
+    m_recognizeThreshold->setValue(0.65);
     FaceDetectUi::makeCompactDoubleSpin(m_recognizeThreshold);
     m_recognizeThreshold->setToolTip(
             tr("Max cosine distance for registry match (lower = stricter)."));
@@ -355,6 +421,20 @@ void FaceLiveDetectWidget::setupUi() {
 
     if (!isAvailable()) setEnabled(false);
     updateThresholdUi();
+}
+
+void FaceLiveDetectWidget::showEvent(QShowEvent* event) {
+    QWidget::showEvent(event);
+    // Restore video controls visibility when the widget is shown again
+    // (e.g., after minimize/restore or plugin reopen).
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    const bool videoLoaded = m_capture.isOpened() &&
+                             m_sourceCombo && m_sourceCombo->currentData().toInt() ==
+                                 static_cast<int>(InputSource::VideoFile);
+    if (m_videoControlsRow) m_videoControlsRow->setVisible(videoLoaded);
+    if (m_videoSeekSlider) m_videoSeekSlider->setEnabled(videoLoaded);
+    if (m_playbackSpeedCombo) m_playbackSpeedCombo->setEnabled(videoLoaded);
+#endif
 }
 
 void FaceLiveDetectWidget::setConfig(const Config& config) {
@@ -601,7 +681,7 @@ void FaceLiveDetectWidget::loadSettings() {
                            settings.value(
                                    QStringLiteral(
                                            "qFaceDetect/liveMatchDistance"),
-                                   0.52))
+                                   0.65))
                     .toDouble();
     const int source = settings.value(QStringLiteral("qFaceDetect/liveSource"),
                                       static_cast<int>(InputSource::Camera))
@@ -759,6 +839,9 @@ void FaceLiveDetectWidget::onSourceChanged(int index) {
     const bool video = kind == static_cast<int>(InputSource::VideoFile);
     if (m_videoRow) m_videoRow->setVisible(video);
     if (m_cameraRow) m_cameraRow->setVisible(!video);
+    // Hide playback controls in camera mode — they are meaningless for live
+    // capture and would only distract from the camera preview.
+    if (m_videoControlsRow) m_videoControlsRow->setVisible(video);
     if (m_streamActive) stopStream();
 }
 
@@ -784,6 +867,237 @@ void FaceLiveDetectWidget::onBrowseVideo() {
     if (m_videoPathEdit) m_videoPathEdit->setText(path);
     m_videoPathUserChosen = true;
     saveSettings();
+}
+
+void FaceLiveDetectWidget::onVideoSeekSliderChanged(int value) {
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    if (!m_capture.isOpened()) return;
+    if (m_sourceCombo && m_sourceCombo->currentData().toInt() !=
+                                 static_cast<int>(InputSource::VideoFile))
+        return;
+    if (m_userSeeking) {
+        // During drag: show preview thumbnail via independent decode path
+        showSeekPreview(value);
+        // Update time label to show target position (only when timer is
+        // inactive; during playback processFrame overwrites it each tick).
+        if (!m_frameTimer->isActive()) {
+            updateVideoTimeLabel(value);
+        }
+        return;
+    }
+    m_capture.set(cv::CAP_PROP_POS_FRAMES, value);
+    // Reset inference throttle so detection resumes immediately after seek.
+    // Without this, a backward seek would make curFrameNum < m_lastSubmitFrameNum,
+    // causing the video-time delta to be negative and shouldSubmit=false forever.
+    m_lastSubmitFrameNum = value;
+    // When the timer is not running (video paused / stopped) the preview
+    // label would otherwise keep showing the old frame.  Read the frame at
+    // the new position and push it to the display so the user gets immediate
+    // visual feedback after seeking.
+    if (!m_frameTimer->isActive()) {
+        cv::Mat frame;
+        if (m_capture.read(frame) && !frame.empty()) {
+            QImage rgb = cvMatToQImage(frame);
+            if (!rgb.isNull()) {
+                QImage display = rgb.scaled(m_previewLabel->size(),
+                                            Qt::KeepAspectRatio,
+                                            Qt::FastTransformation);
+                drawLiveOverlay(display);
+                m_previewLabel->setPixmap(QPixmap::fromImage(display));
+            }
+        }
+    }
+#endif
+}
+
+void FaceLiveDetectWidget::onPlaybackSpeedChanged(int index) {
+    // Speed values: 0.25, 0.5, 1.0, 2.0, 4.0
+    static constexpr double speeds[] = {0.25, 0.5, 1.0, 2.0, 4.0};
+    if (index < 0 || index >= 5) return;
+    m_playbackSpeed = speeds[index];
+    // Recompute timer interval from video FPS × speed.
+    if (m_frameTimer) {
+        m_frameTimer->setInterval(computeTimerInterval());
+    }
+}
+
+int FaceLiveDetectWidget::computeTimerInterval() const {
+    // For video files: match the video's native frame rate × playback speed.
+    // This ensures one timer tick ≈ one video frame advance.
+    const bool isVideo =
+            m_sourceCombo && m_sourceCombo->currentData().toInt() ==
+                                 static_cast<int>(InputSource::VideoFile);
+    if (isVideo && m_videoFps > 0) {
+        const double interval = 1000.0 / (m_videoFps * m_playbackSpeed);
+        return std::max(1, static_cast<int>(std::lround(interval)));
+    }
+    // For camera: base interval adjusted by speed.
+    return std::max(1, static_cast<int>(m_baseTimerInterval / m_playbackSpeed));
+}
+
+void FaceLiveDetectWidget::updateVideoTimeLabel(int frameIndex) {
+    if (!m_videoTimeLabel) return;
+    if (m_totalVideoFrames <= 0) {
+        m_videoTimeLabel->setText(QStringLiteral("0:00"));
+        return;
+    }
+    const double fps = m_videoFps > 0 ? m_videoFps : 30.0;
+    const int totalSec = static_cast<int>(frameIndex / fps);
+    const int totalAllSec = static_cast<int>(m_totalVideoFrames / fps);
+    auto fmt = [](int sec) -> QString {
+        const int h = sec / 3600;
+        const int m = (sec % 3600) / 60;
+        const int s = sec % 60;
+        if (h > 0)
+            return QStringLiteral("%1:%2:%3")
+                    .arg(h).arg(m, 2, 10, QLatin1Char('0'))
+                    .arg(s, 2, 10, QLatin1Char('0'));
+        return QStringLiteral("%1:%2")
+                .arg(m).arg(s, 2, 10, QLatin1Char('0'));
+    };
+    m_videoTimeLabel->setText(fmt(totalSec) + QStringLiteral(" / ") + fmt(totalAllSec));
+}
+
+void FaceLiveDetectWidget::showSeekPreview(int frameIndex) {
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    if (m_videoFilePath.isEmpty() || m_totalVideoFrames <= 0) return;
+    if (frameIndex < 0) frameIndex = 0;
+    if (frameIndex >= m_totalVideoFrames) frameIndex = m_totalVideoFrames - 1;
+
+    // Open preview capture if not already open (independent decode path)
+    if (!m_previewCapture.isOpened()) {
+        if (!m_previewCapture.open(m_videoFilePath.toStdString(), cv::CAP_FFMPEG) &&
+            !m_previewCapture.open(m_videoFilePath.toStdString(), cv::CAP_ANY)) {
+            return;  // silently fail — preview is non-critical
+        }
+    }
+
+    m_previewCapture.set(cv::CAP_PROP_POS_FRAMES, frameIndex);
+    cv::Mat frame;
+    if (!m_previewCapture.read(frame) || frame.empty()) return;
+
+    // Scale to thumbnail size (160×90)
+    cv::Mat thumb;
+    cv::resize(frame, thumb, cv::Size(160, 90), 0, 0, cv::INTER_AREA);
+    QImage img = cvMatToQImage(thumb);
+    if (m_seekPreviewLabel) {
+        m_seekPreviewLabel->setPixmap(QPixmap::fromImage(img));
+        // Position the thumbnail centered above the slider handle,
+        // overlaying on the video preview area (like modern video players).
+        if (m_videoSeekSlider && m_previewLabel) {
+            const int sliderWidth = m_videoSeekSlider->width();
+            const int range = m_totalVideoFrames - 1;
+            const int handleX = (range > 0)
+                    ? static_cast<int>(
+                              static_cast<qint64>(frameIndex) * (sliderWidth - 1) / range)
+                    : 0;
+            // Map slider handle position to preview label coordinates.
+            const QPoint sliderGlobal =
+                    m_videoSeekSlider->mapToGlobal(QPoint(handleX, 0));
+            const QPoint localPos =
+                    m_previewLabel->mapFromGlobal(sliderGlobal);
+            // Center horizontally on the handle, place just above the slider.
+            const int previewW = m_seekPreviewLabel->width();
+            const int previewH = m_seekPreviewLabel->height();
+            int x = localPos.x() - previewW / 2;
+            int y = localPos.y() - previewH - 4;
+            // Clamp within preview bounds.
+            x = qBound(0, x, m_previewLabel->width() - previewW);
+            y = qMax(0, y);
+            m_seekPreviewLabel->move(x, y);
+        }
+        m_seekPreviewLabel->raise();
+        m_seekPreviewLabel->setVisible(true);
+    }
+#else
+    Q_UNUSED(frameIndex);
+#endif
+}
+
+void FaceLiveDetectWidget::closePreviewCapture() {
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    if (m_previewCapture.isOpened()) {
+        m_previewCapture.release();
+    }
+#endif
+    if (m_seekPreviewLabel) {
+        m_seekPreviewLabel->clear();
+        m_seekPreviewLabel->setVisible(false);
+    }
+}
+
+bool FaceLiveDetectWidget::eventFilter(QObject* obj, QEvent* event) {
+    if (obj == m_videoSeekSlider && m_totalVideoFrames > 0) {
+        switch (event->type()) {
+        case QEvent::MouseButtonPress: {
+            // Click-to-seek: when the user clicks on the slider track (not
+            // just the handle), seek immediately to the clicked position.
+            auto* me = static_cast<QMouseEvent*>(event);
+            if (me->button() == Qt::LeftButton) {
+                const int sliderWidth = m_videoSeekSlider->width();
+                if (sliderWidth > 0) {
+                    const int frame = static_cast<int>(
+                            me->pos().x() * (m_totalVideoFrames - 1) / sliderWidth);
+                    const int clamped = qBound(0, frame, m_totalVideoFrames - 1);
+                    // Show preview at clicked position
+                    showSeekPreview(clamped);
+                    // Seek main capture
+                    if (m_capture.isOpened()) {
+                        m_capture.set(cv::CAP_PROP_POS_FRAMES, clamped);
+                    }
+                    // Update slider value
+                    m_videoSeekSlider->blockSignals(true);
+                    m_videoSeekSlider->setValue(clamped);
+                    m_videoSeekSlider->blockSignals(false);
+                    updateVideoTimeLabel(clamped);
+                    // Update preview display (important when paused).
+                    if (!m_frameTimer->isActive()) {
+                        cv::Mat frame;
+                        if (m_capture.read(frame) && !frame.empty()) {
+                            QImage rgb = cvMatToQImage(frame);
+                            if (!rgb.isNull()) {
+                                QImage display = rgb.scaled(
+                                        m_previewLabel->size(),
+                                        Qt::KeepAspectRatio,
+                                        Qt::FastTransformation);
+                                drawLiveOverlay(display);
+                                m_previewLabel->setPixmap(
+                                        QPixmap::fromImage(display));
+                            }
+                        }
+                    }
+                    // Preview stays visible until Leave event or next drag.
+                    // Do NOT use QTimer::singleShot to auto-hide — it would
+                    // dismiss the preview while the mouse is still on the slider.
+                }
+            }
+            break;
+        }
+        case QEvent::MouseMove: {
+            auto* me = static_cast<QMouseEvent*>(event);
+            // Throttle hover preview to ~15fps (66ms interval)
+            const qint64 now = QDateTime::currentMSecsSinceEpoch();
+            if (!m_userSeeking && now - m_lastPreviewTimeMs < 66)
+                return QWidget::eventFilter(obj, event);
+            m_lastPreviewTimeMs = now;
+
+            // Map mouse x to frame index
+            const int sliderWidth = m_videoSeekSlider->width();
+            if (sliderWidth <= 0) break;
+            const int frame = static_cast<int>(
+                    me->pos().x() * (m_totalVideoFrames - 1) / sliderWidth);
+            showSeekPreview(qBound(0, frame, m_totalVideoFrames - 1));
+            break;
+        }
+        case QEvent::Leave:
+            if (!m_userSeeking && m_seekPreviewLabel)
+                m_seekPreviewLabel->setVisible(false);
+            break;
+        default:
+            break;
+        }
+    }
+    return QWidget::eventFilter(obj, event);
 }
 
 void FaceLiveDetectWidget::setVideoFilePath(const QString& path,
@@ -828,8 +1142,12 @@ void FaceLiveDetectWidget::submitInferJob(const QImage& inferRgb,
 
 void FaceLiveDetectWidget::onInferComplete(
         FaceLiveDetectInferWorker::Result result) {
-    if (result.generation != m_streamGeneration) return;
+    // Always reset the busy flag first — even for stale results.
+    // If we return early (generation mismatch) without resetting, m_inferBusy
+    // stays true forever and no new inference jobs are ever submitted,
+    // effectively freezing the detection overlay until a manual stop+start.
     m_inferBusy = false;
+    if (result.generation != m_streamGeneration) return;
     if (!m_streamActive) return;
 
     // Calculate inference latency.
@@ -851,6 +1169,8 @@ void FaceLiveDetectWidget::onInferComplete(
     m_overlayFaces = result.snapshot.faces;
     m_overlayInferSize = result.snapshot.annotatedImage.size();
     m_overlayLabels = result.labels;
+    // Record which video frame this overlay corresponds to.
+    m_overlayFrameNum = m_lastSubmitFrameNum;
 
     // Keep annotated image in snapshot for batch / export consumers,
     // but do NOT push it to the preview label — drawLiveOverlay handles
@@ -891,6 +1211,16 @@ void FaceLiveDetectWidget::processFrame() {
         if (m_sourceCombo && m_sourceCombo->currentData().toInt() ==
                                      static_cast<int>(InputSource::VideoFile)) {
             m_capture.set(cv::CAP_PROP_POS_FRAMES, 0);
+            // Reset inference throttle so the first frame after loop is not
+            // spuriously treated as "not enough video time has elapsed".
+            m_lastSubmitFrameNum = 0;
+            m_sliderUpdateSkip = 0;
+            if (m_videoSeekSlider) {
+                m_videoSeekSlider->blockSignals(true);
+                m_videoSeekSlider->setValue(0);
+                m_videoSeekSlider->blockSignals(false);
+            }
+            updateVideoTimeLabel(0);
             if (!m_capture.read(frame) || frame.empty()) {
                 stopStream();
                 m_statusLabel->setText(tr("Video finished"));
@@ -901,30 +1231,62 @@ void FaceLiveDetectWidget::processFrame() {
         }
     }
 
-    // Update video position progress bar.
-    if (m_videoPositionProgress && m_totalVideoFrames > 0) {
+    // Update video seek slider and time label
+    if (m_sourceCombo && m_sourceCombo->currentData().toInt() ==
+                                 static_cast<int>(InputSource::VideoFile) &&
+        !m_userSeeking) {
         const int curFrame =
                 static_cast<int>(m_capture.get(cv::CAP_PROP_POS_FRAMES));
-        m_videoPositionProgress->setValue(curFrame);
+        // Skip slider updates immediately after a user seek so the video
+        // has time to reach the target position.
+        if (m_sliderUpdateSkip > 0) {
+            --m_sliderUpdateSkip;
+        } else if (m_videoSeekSlider && m_totalVideoFrames > 0) {
+            m_videoSeekSlider->blockSignals(true);
+            m_videoSeekSlider->setValue(curFrame);
+            m_videoSeekSlider->blockSignals(false);
+        }
+        updateVideoTimeLabel(curFrame);
     }
 
     QImage rgb = cvMatToQImage(frame);
     if (rgb.isNull()) return;
 
-    // Submit inference when worker is idle (m_inferBusy throttles naturally).
+    // Get current video frame number for sync tracking.
+    const bool isVideoFile =
+            m_sourceCombo && m_sourceCombo->currentData().toInt() ==
+                                 static_cast<int>(InputSource::VideoFile);
+    const int curFrameNum =
+            isVideoFile ? static_cast<int>(
+                    m_capture.get(cv::CAP_PROP_POS_FRAMES))
+                        : 0;
+
+    // Submit inference throttled by video-time, not wall-clock.
+    // At any playback speed, submit once per ~2 video frames of content.
     if (!m_inferBusy) {
-        constexpr int kMaxInferDim = 640;
-        QImage inferRgb = rgb;
-        float inferScale = 1.f;
-        const int maxDim = std::max(rgb.width(), rgb.height());
-        if (maxDim > kMaxInferDim) {
-            inferScale = static_cast<float>(kMaxInferDim) / maxDim;
-            inferRgb = rgb.scaled(
-                    static_cast<int>(std::lround(rgb.width() * inferScale)),
-                    static_cast<int>(std::lround(rgb.height() * inferScale)),
-                    Qt::IgnoreAspectRatio, Qt::FastTransformation);
+        const bool shouldSubmit = [&]() -> bool {
+            if (!isVideoFile || m_videoFps <= 0) return true;  // camera: every tick
+            // Throttle: submit when ≥2 video frames have elapsed since last submit.
+            const double videoTimeMs = curFrameNum / m_videoFps * 1000.0;
+            const double lastSubmitMs = m_lastSubmitFrameNum / m_videoFps * 1000.0;
+            const double thresholdMs = 2.0 / m_videoFps * 1000.0;  // 2 frames
+            return (videoTimeMs - lastSubmitMs) >= thresholdMs - 1.0;
+        }();
+        if (shouldSubmit) {
+            constexpr int kMaxInferDim = 640;
+            QImage inferRgb = rgb;
+            float inferScale = 1.f;
+            const int maxDim = std::max(rgb.width(), rgb.height());
+            if (maxDim > kMaxInferDim) {
+                inferScale = static_cast<float>(kMaxInferDim) / maxDim;
+                inferRgb = rgb.scaled(
+                        static_cast<int>(std::lround(rgb.width() * inferScale)),
+                        static_cast<int>(std::lround(rgb.height() * inferScale)),
+                        Qt::IgnoreAspectRatio, Qt::FastTransformation);
+            }
+            m_lastSubmitFrameNum = curFrameNum;
+            submitInferJob(inferRgb, inferScale);
         }
-        submitInferJob(inferRgb, inferScale);
     }
 
     // Scale to display size FIRST — then draw overlay on the smaller image.
@@ -946,10 +1308,15 @@ void FaceLiveDetectWidget::drawLiveOverlay(QImage& frame) {
                      static_cast<qreal>(m_overlayInferSize.height());
 
     // Overlay freshness: opacity decreases as overlay ages.
+    // Use speed-adjusted age so the overlay fades proportionally to how much
+    // video content has passed, not just wall-clock time.
+    // At 4× speed, 200ms wall-clock = 800ms of video content → fade faster.
     // 0–200 ms → full opacity;  200–1000 ms → linear fade to 0.4;  >1 s → 0.4.
     const qint64 now = QDateTime::currentMSecsSinceEpoch();
-    const qint64 ageMs =
+    const qint64 wallClockAgeMs =
             (m_overlayTimestampMs > 0) ? (now - m_overlayTimestampMs) : 0;
+    const qint64 ageMs = static_cast<qint64>(
+            wallClockAgeMs * std::max(1.0, m_playbackSpeed));
     qreal overlayAlpha = 1.0;
     if (ageMs > 200) {
         overlayAlpha = qBound(0.4, 1.0 - (ageMs - 200) / 800.0, 1.0);
@@ -1109,6 +1476,7 @@ bool FaceLiveDetectWidget::startVideoFile(const QString& path) {
 
     // Stop previous stream (release capture if different video)
     stopStream();
+    closePreviewCapture();
     if (m_config.modelPath.isEmpty() ||
         !QFileInfo::exists(m_config.modelPath)) {
         emit logMessage(
@@ -1128,14 +1496,21 @@ bool FaceLiveDetectWidget::startVideoFile(const QString& path) {
     m_streamActive = true;
     m_totalVideoFrames =
             static_cast<int>(m_capture.get(cv::CAP_PROP_FRAME_COUNT));
-    if (m_videoPositionProgress) {
-        m_videoPositionProgress->setMaximum(
-                m_totalVideoFrames > 0 ? m_totalVideoFrames : 100);
-        m_videoPositionProgress->setValue(0);
-        m_videoPositionProgress->setTextVisible(m_totalVideoFrames > 0);
-        m_videoPositionProgress->setFormat(
-                m_totalVideoFrames > 0 ? tr("Frame %v / %m") : tr("Frame %v"));
+    m_videoFps = m_capture.get(cv::CAP_PROP_FPS);
+    if (m_videoFps <= 0) m_videoFps = 30.0;  // fallback for codecs that don't report FPS
+    if (m_videoSeekSlider) {
+        m_videoSeekSlider->blockSignals(true);
+        m_videoSeekSlider->setRange(0, std::max(0, m_totalVideoFrames - 1));
+        m_videoSeekSlider->setValue(0);
+        m_videoSeekSlider->setEnabled(m_totalVideoFrames > 0);
+        m_videoSeekSlider->blockSignals(false);
     }
+    if (m_playbackSpeedCombo) {
+        m_playbackSpeedCombo->setEnabled(true);
+    }
+    // Show playback controls now that a video is loaded.
+    if (m_videoControlsRow) m_videoControlsRow->setVisible(true);
+    updateVideoTimeLabel(0);
     m_statusLabel->setText(tr("Video opened \u2014 loading model\u2026"));
     emit streamStarted();
 
@@ -1166,9 +1541,15 @@ void FaceLiveDetectWidget::restartVideoFile() {
 #ifdef HAS_OPENCV_FACE_CAPTURE
     if (!m_capture.isOpened() || m_videoFilePath.isEmpty()) return;
     m_capture.set(cv::CAP_PROP_POS_FRAMES, 0);
-    if (m_videoPositionProgress) {
-        m_videoPositionProgress->setValue(0);
+    // Reset inference throttle so detection resumes immediately after restart.
+    m_lastSubmitFrameNum = 0;
+    m_sliderUpdateSkip = 0;
+    if (m_videoSeekSlider) {
+        m_videoSeekSlider->blockSignals(true);
+        m_videoSeekSlider->setValue(0);
+        m_videoSeekSlider->blockSignals(false);
     }
+    updateVideoTimeLabel(0);
     if (!m_streamActive) {
         m_videoPaused = false;
         m_streamActive = true;
@@ -1182,12 +1563,15 @@ void FaceLiveDetectWidget::restartVideoFile() {
 
 void FaceLiveDetectWidget::beginFrameProcessing() {
     if (!m_streamActive) return;
-    const int interval =
-            (m_sourceCombo && m_sourceCombo->currentData().toInt() ==
-                                      static_cast<int>(InputSource::VideoFile))
-                    ? 66
-                    : 33;
-    m_frameTimer->setInterval(interval);
+    // Use video FPS × speed for video files; camera uses base interval.
+    const bool isVideo =
+            m_sourceCombo && m_sourceCombo->currentData().toInt() ==
+                                 static_cast<int>(InputSource::VideoFile);
+    if (isVideo) {
+        m_frameTimer->setInterval(computeTimerInterval());
+    } else {
+        m_frameTimer->setInterval(m_baseTimerInterval);
+    }
     m_frameTimer->start();
     if (m_sourceCombo && m_sourceCombo->currentData().toInt() ==
                                  static_cast<int>(InputSource::VideoFile)) {
@@ -1219,13 +1603,26 @@ void FaceLiveDetectWidget::stopStream() {
         m_capture.release();
         m_videoFilePath.clear();
         m_videoPaused = false;
+        closePreviewCapture();
     }
 #endif
-    m_totalVideoFrames = 0;
-    if (m_videoPositionProgress) {
-        m_videoPositionProgress->setMaximum(100);
-        m_videoPositionProgress->setValue(0);
-        m_videoPositionProgress->setTextVisible(false);
+    // For video files that are paused (not released), keep the slider and
+    // metadata intact so the user can still seek and preview.
+    const bool videoStillLoaded =
+            isVideoFile && m_capture.isOpened() && !m_videoFilePath.isEmpty();
+    if (!videoStillLoaded) {
+        m_totalVideoFrames = 0;
+        if (m_videoSeekSlider) {
+            m_videoSeekSlider->blockSignals(true);
+            m_videoSeekSlider->setRange(0, 0);
+            m_videoSeekSlider->setValue(0);
+            m_videoSeekSlider->setEnabled(false);
+            m_videoSeekSlider->blockSignals(false);
+        }
+        if (m_playbackSpeedCombo) {
+            m_playbackSpeedCombo->setEnabled(false);
+        }
+        updateVideoTimeLabel(0);
     }
     if (m_streamActive) {
         m_streamActive = false;
@@ -1236,9 +1633,13 @@ void FaceLiveDetectWidget::stopStream() {
     m_overlayFaces.clear();
     m_overlayLabels.clear();
     m_overlayInferSize = QSize();
+    m_overlayFrameNum = 0;
+    m_lastSubmitFrameNum = 0;
+    m_sliderUpdateSkip = 0;
     m_lastInferLatencyMs = 0;
     m_overlayTimestampMs = 0;
     m_inferSubmitTime = QElapsedTimer();
+    if (m_seekPreviewLabel) m_seekPreviewLabel->setVisible(false);
     if (m_captureBtn) m_captureBtn->setEnabled(false);
 }
 

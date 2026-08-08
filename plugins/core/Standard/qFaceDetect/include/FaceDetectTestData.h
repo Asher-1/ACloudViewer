@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include "ecvTestDataRepository.h"
+
 #include <QString>
 #include <QVector>
 #include <functional>
@@ -36,16 +38,6 @@ struct FaceDetectFriendsBundle {
 };
 
 namespace FaceDetectTestData {
-
-QString cloudViewerDataRoot();
-QString downloadDir();
-QString extractDir();
-QString zipPath();
-QString downloadUrl();
-/** Lowercase hex MD5 of the official friends_faces.zip release. */
-QString expectedZipMd5();
-/** Size + MD5 check; false when missing, truncated, or corrupted. */
-bool verifyZipFile(const QString& zipPath);
 
 /** True when extract folder contains a usable bundle (manifest or heuristics).
  */
@@ -82,8 +74,6 @@ QVector<FaceDetectGalleryEntry> registrationEntriesForBundle(
 /** Default registry DB path under bundle: face_registry_<model>.db */
 QString registryPathForModel(const QString& bundleRoot,
                              const QString& modelFilename);
-
-bool isZipCached(qint64 minBytes = 30 * 1024 * 1024);
 
 /** True when path lives under the FriendsFaces sample bundle. */
 bool isFriendsBundlePath(const QString& path);

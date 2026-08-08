@@ -11,6 +11,6 @@ patches:
   - file: msvc_vulkan/0001-msvc-vulkan-hpp-compat.patch
     note: MSVC compatibility for Vulkan-Hpp __faststorefence intrinsic
   - file: cpu_all_variants/0001-cpu-all-variants-compiler-checks.patch
-    note: "Gate CPU ALL_VARIANTS BF16/AMX/AVX-VNNI and apple_m4 SVE/SME variants behind compiler-flag checks (inert when GGML_CPU_ALL_VARIANTS=OFF)"
+    note: "Gate CPU ALL_VARIANTS BF16/AMX/AVX-VNNI variants behind compiler-flag checks; remove apple_m4 (+nosve+sme unreliable on Apple Clang); inert when GGML_CPU_ALL_VARIANTS=OFF"
   - file: metal_merged/0001-metal-optimizations.patch
     note: "Metal optimizations: conv_transpose_2d parallelized over IC with tree reduction, and flash-attn large-sequence support (relax ne01 assert, raise MAX_COMMAND_BUFFERS to 64, auto-tune n_cb/n_main); inert when Metal is OFF"

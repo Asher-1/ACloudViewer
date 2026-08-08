@@ -123,6 +123,17 @@ function( AddPlugin )
 					$<TARGET_FILE:${PLUGIN_TARGET}>
 					${PLUGINS_OUTPUT_DIR}
 		)
+
+		# Also copy directly into the .app bundle so that rebuilding a
+		# plugin without rebuilding the main app target still updates
+		# the dylib that the running application loads.
+		set( _APP_BUNDLE_PLUGINS "${CMAKE_BINARY_DIR}/bin/${MAIN_APP_NAME}.app/Contents/cvPlugins" )
+		add_custom_command( TARGET ${PLUGIN_TARGET} POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E make_directory "${_APP_BUNDLE_PLUGINS}"
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different
+				$<TARGET_FILE:${PLUGIN_TARGET}>
+				"${_APP_BUNDLE_PLUGINS}/"
+		)
 	endif()
 
 	message( STATUS "Added ${ADD_PLUGIN_TYPE} plugin: ${ADD_PLUGIN_NAME}")

@@ -30,6 +30,7 @@
 #include "ecvClickableImageLabel.h"
 #include "ecvModelDownloader.h"
 #include "ecvPersistentSettings.h"
+#include "ecvTestDataRepository.h"
 
 namespace {
 
@@ -441,6 +442,14 @@ void DA3Dialog::setupUi() {
     // --- Buttons ---
     auto* btnLayout = new QHBoxLayout;
     btnLayout->addStretch();
+
+    m_useTestDataBtn = new QPushButton("Use test data");
+    m_useTestDataBtn->setToolTip(
+            "Load Monstree multi-view test images for depth estimation.\n"
+            "Downloads on first use, then cached locally.");
+    connect(m_useTestDataBtn, &QPushButton::clicked, this,
+            &DA3Dialog::onUseTestData);
+    btnLayout->addWidget(m_useTestDataBtn);
 
     m_runBtn = new QPushButton("Run");
     m_runBtn->setDefault(true);
@@ -963,4 +972,116 @@ void DA3Dialog::onBrowseOutput() {
 void DA3Dialog::onRun() {
     if (!ensureAllModelsAvailable()) return;
     emit runRequested(getSettings());
+}
+
+void DA3Dialog::onUseTestData() {
+    using TestDataset = ecvTestDataRepository::Dataset;
+    auto& repo = ecvTestDataRepository::instance();
+    const TestDataset kind = TestDataset::Monstree;
+
+    // Check if already extracted
+    const QString bundleRoot = ecvTestDataRepository::extractPath(kind);
+    if (QDir(bundleRoot).exists()) {
+        const QStringList images =
+                ecvTestDataRepository::getMonstreeImages(bundleRoot);
+        if (!images.isEmpty()) {
+            m_inputPath->setText(images.join(";"));
+            appendLog(tr("[Test data] Loaded %1 images from Monstree dataset")
+                              .arg(images.size()));
+            return;
+        }
+    }
+
+    // Check if zip is cached
+    if (repo.isDatasetAvailable(kind)) {
+        appendLog(tr("[Test data] Extracting cached Monstree archive..."));
+        m_testDataInProgress = true;
+        m_useTestDataBtn->setEnabled(false);
+        m_progressBar->setRange(0, 100);
+        m_progressBar->setValue(0);
+        m_progressBar->setFormat(tr("Extracting... %p%"));
+        m_progressBar->setVisible(true);
+        repo.extractDataset(kind);
+        return;
+    }
+
+    // Need to download
+    if (m_testDataInProgress || m_downloadInProgress) {
+        appendLog(tr("[Test data] Another operation is in progress."));
+        return;
+    }
+
+    appendLog(tr("[Test data] Downloading Monstree dataset..."));
+    m_testDataInProgress = true;
+    m_useTestDataBtn->setEnabled(false);
+    m_progressBar->setRange(0, 100);
+    m_progressBar->setValue(0);
+    m_progressBar->setFormat(tr("Downloading... %p%"));
+    m_progressBar->setVisible(true);
+
+    // Progress connections
+    auto onDownloadProgress = [this](int percent, const QString& status) {
+        if (m_testDataInProgress && m_progressBar) {
+            m_progressBar->setValue(percent);
+            m_progressBar->setFormat(tr("Downloading... %p%"));
+        }
+    };
+    auto onExtractionProgress = [this](int current, int total) {
+        if (m_testDataInProgress && m_progressBar && total > 0) {
+            if (m_progressBar->maximum() != total) {
+                m_progressBar->setRange(0, total);
+            }
+            m_progressBar->setValue(current);
+            m_progressBar->setFormat(tr("Extracting... %v/%m"));
+        }
+    };
+
+    // One-shot connections
+    auto onFinished = [this, &repo, kind](bool success,
+                                          ecvTestDataRepository::Dataset) {
+        if (!m_testDataInProgress) return;
+        if (!success) {
+            appendLog(tr("[Test data] Download failed."));
+            m_testDataInProgress = false;
+            m_useTestDataBtn->setEnabled(true);
+            m_progressBar->setVisible(false);
+            return;
+        }
+        appendLog(tr("[Test data] Extracting..."));
+        m_progressBar->setValue(0);
+        m_progressBar->setFormat(tr("Extracting... %p%"));
+        repo.extractDataset(kind);
+    };
+    auto onExtracted = [this, kind](bool success,
+                                    ecvTestDataRepository::Dataset) {
+        if (!m_testDataInProgress) return;
+        m_testDataInProgress = false;
+        m_useTestDataBtn->setEnabled(true);
+        m_progressBar->setVisible(false);
+        if (!success) {
+            appendLog(tr("[Test data] Extraction failed."));
+            return;
+        }
+        const QString root =
+                ecvTestDataRepository::extractPath(kind);
+        const QStringList images =
+                ecvTestDataRepository::getMonstreeImages(root);
+        if (!images.isEmpty()) {
+            m_inputPath->setText(images.join(";"));
+            appendLog(tr("[Test data] Loaded %1 images from Monstree dataset")
+                              .arg(images.size()));
+        } else {
+            appendLog(tr("[Test data] No images found in bundle."));
+        }
+    };
+
+    connect(&repo, &ecvTestDataRepository::downloadProgress, this,
+            onDownloadProgress);
+    connect(&repo, &ecvTestDataRepository::extractionProgress, this,
+            onExtractionProgress);
+    connect(&repo,
+            &ecvTestDataRepository::downloadFinished, this, onFinished);
+    connect(&repo,
+            &ecvTestDataRepository::extractionFinished, this, onExtracted);
+    repo.startDownload(kind);
 }

@@ -17,6 +17,7 @@
 #include <QProgressBar>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QSlider>
 #include <QSpinBox>
 #include <QTimer>
 #include <QVBoxLayout>
@@ -81,6 +82,7 @@ public:
     InputSource inputSource() const { return m_inputSource; }
     int selectedCameraIndex() const;
     QString videoFilePath() const;
+    void setVideoFilePath(const QString& path);
 
     void startGuidedCapture(const std::vector<CaptureAngle>& angles);
     void captureCurrentFrame();
@@ -110,6 +112,7 @@ public:
     /** The capture detector follows the parent reconstruction device choice. */
     void setInferenceDevice(const QString& device);
     QString inferenceDevice() const { return m_inferenceDevice; }
+    void setInputSource(InputSource source);
     void requestInferenceCancel();
 
     void refreshDetectorList();
@@ -134,9 +137,12 @@ private slots:
     void onBrowseRegistry();
     void reloadRegistry();
     void filterRegistry(const QString& text);
+    void onVideoSeekSliderChanged(int value);
+    void onPlaybackSpeedChanged(int index);
 
 private:
     void resizeEvent(QResizeEvent* event) override;
+    void showEvent(QShowEvent* event) override;
 
     enum class DetectorKind { None, OpenCV, Ggml };
 
@@ -158,6 +164,10 @@ private:
     void loadFaceCaptureSettings();
     void saveFaceCaptureSettings();
     bool configureDetectorForRegistrySelection();
+    void updateVideoTimeLabel(int frameIndex);
+    void showSeekPreview(int frameIndex);
+    void closePreviewCapture();
+    bool eventFilter(QObject* obj, QEvent* event) override;
     static std::vector<float> normalizeEmbedding(
             const std::vector<float>& embedding);
 
@@ -216,6 +226,7 @@ private:
     void drawAngleGuide(QImage& image, CaptureAngle angle);
 
     cv::VideoCapture m_camera;
+    cv::VideoCapture m_previewCapture;  // independent decode path for scrub/hover preview
     cv::CascadeClassifier m_faceCascade;
     cv::Rect m_lastFaceRect;
     cv::Mat m_latestFrame;
@@ -239,6 +250,11 @@ private:
     QWidget* m_videoFileRow = nullptr;
     QLineEdit* m_videoPathEdit = nullptr;
     QPushButton* m_browseVideoBtn = nullptr;
+    QSlider* m_videoSeekSlider = nullptr;
+    QComboBox* m_playbackSpeedCombo = nullptr;
+    QWidget* m_videoControlsRow = nullptr;
+    QLabel* m_videoTimeLabel = nullptr;
+    QLabel* m_seekPreviewLabel = nullptr;   // thumbnail above slider during scrub/hover
     QComboBox* m_detectorCombo = nullptr;
     QDoubleSpinBox* m_minScoreSpin = nullptr;
     QSpinBox* m_minCapturesSpin = nullptr;
@@ -270,12 +286,19 @@ private:
     bool m_videoPaused = false;  // video paused (not released) for resume
     InputSource m_inputSource = InputSource::Camera;
     QString m_videoFilePath;
+    int m_totalVideoFrames = 0;
+    double m_videoFps = 0.0;         // cached FPS from CAP_PROP_FPS
+    double m_playbackSpeed = 1.0;
+    int m_baseTimerInterval = 30;
+    bool m_userSeeking = false;
+    qint64 m_lastPreviewTimeMs = 0;  // throttle hover preview updates
     bool m_cascadeLoaded = false;
     bool m_camerasEnumerated = false;
     bool m_downloadInProgress = false;
     bool m_autoStartAfterDownload = false;
     int m_pendingCameraIndex = 0;
     int m_ggmlFrameSkip = 0;
+    int m_lastDetectedFrameNum = 0;  // video frame number of last detection (for video-time throtting)
     bool m_ggmlModelLoading = false;
     QFutureWatcher<aicore_facedetect_ctx*>* m_ggmlLoadWatcher = nullptr;
 
@@ -294,4 +317,7 @@ private:
     static constexpr int kPostCaptureCooldown = 45;
     static constexpr int kNoCascadeAutoInterval = 90;
     static constexpr int kGgmlDetectInterval = 2;
+
+    /// Compute timer interval from video FPS and playback speed.
+    int computeTimerInterval() const;
 };
