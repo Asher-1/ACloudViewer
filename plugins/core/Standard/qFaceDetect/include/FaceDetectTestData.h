@@ -7,11 +7,11 @@
 
 #pragma once
 
-#include "ecvTestDataRepository.h"
-
 #include <QString>
 #include <QVector>
 #include <functional>
+
+#include "ecvTestDataRepository.h"
 
 /** One gallery enrollment image parsed from FriendsFaces label.txt. */
 struct FaceDetectGalleryEntry {

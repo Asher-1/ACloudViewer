@@ -38,19 +38,19 @@ class CVPLUGIN_LIB_API ecvTestDataRepository : public QObject {
 public:
     /** Available test datasets. */
     enum class Dataset {
-        Monstree,      ///< Monstree dataset for image-based reconstruction
-        FriendsFaces   ///< FriendsFaces video for face capture
+        Monstree,     ///< Monstree dataset for image-based reconstruction
+        FriendsFaces  ///< FriendsFaces video for face capture
     };
 
     /** Dataset metadata. */
     struct DatasetInfo {
         Dataset kind;
-        QString displayName;      ///< Human-readable name
-        QString zipFileName;      ///< Name of the zip file
-        QString extractDirName;   ///< Directory name after extraction
-        QString downloadUrl;      ///< Remote URL
-        QString expectedMd5;      ///< Expected MD5 hash
-        qint64 expectedSize;      ///< Expected file size in bytes
+        QString displayName;     ///< Human-readable name
+        QString zipFileName;     ///< Name of the zip file
+        QString extractDirName;  ///< Directory name after extraction
+        QString downloadUrl;     ///< Remote URL
+        QString expectedMd5;     ///< Expected MD5 hash
+        qint64 expectedSize;     ///< Expected file size in bytes
     };
 
     /** Returns the singleton instance. */
@@ -156,7 +156,8 @@ signals:
     /** Emitted during extraction with progress (current, total entries). */
     void extractionProgress(int current, int total);
 
-    /** Emitted when extraction completes. success=false if extraction failed. */
+    /** Emitted when extraction completes. success=false if extraction failed.
+     */
     void extractionFinished(bool success, Dataset kind);
 
 private slots:

@@ -1062,8 +1062,7 @@ void DA3Dialog::onUseTestData() {
             appendLog(tr("[Test data] Extraction failed."));
             return;
         }
-        const QString root =
-                ecvTestDataRepository::extractPath(kind);
+        const QString root = ecvTestDataRepository::extractPath(kind);
         const QStringList images =
                 ecvTestDataRepository::getMonstreeImages(root);
         if (!images.isEmpty()) {
@@ -1079,9 +1078,8 @@ void DA3Dialog::onUseTestData() {
             onDownloadProgress);
     connect(&repo, &ecvTestDataRepository::extractionProgress, this,
             onExtractionProgress);
-    connect(&repo,
-            &ecvTestDataRepository::downloadFinished, this, onFinished);
-    connect(&repo,
-            &ecvTestDataRepository::extractionFinished, this, onExtracted);
+    connect(&repo, &ecvTestDataRepository::downloadFinished, this, onFinished);
+    connect(&repo, &ecvTestDataRepository::extractionFinished, this,
+            onExtracted);
     repo.startDownload(kind);
 }

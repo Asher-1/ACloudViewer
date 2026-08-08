@@ -223,7 +223,8 @@ int zipEntryCount(const QString& zipPath) {
 bool extractZip(const QString& zipPath,
                 const QString& extractParentDir,
                 const ExtractProgressFn& onProgress) {
-    return ecvTestDataRepository::extractZip(zipPath, extractParentDir, onProgress);
+    return ecvTestDataRepository::extractZip(zipPath, extractParentDir,
+                                             onProgress);
 }
 
 QVector<FaceDetectGalleryEntry> loadGalleryEntries(const QString& bundleRoot) {
