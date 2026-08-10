@@ -723,9 +723,8 @@ bool CommandFlipTriangles::process(ccCommandLineInterface& cmd) {
 
     if (cmd.meshes().empty()) {
         return cmd.error(
-                QObject::tr(
-                        "No mesh loaded (be sure to open one with \"-%1 "
-                        "[mesh filename]\" before \"-%2\")")
+                QObject::tr("No mesh loaded (be sure to open one with \"-%1 "
+                            "[mesh filename]\" before \"-%2\")")
                         .arg(COMMAND_OPEN, COMMAND_FLIP_TRIANGLES));
     }
 
