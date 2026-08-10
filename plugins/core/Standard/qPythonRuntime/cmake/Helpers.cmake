@@ -47,6 +47,15 @@ function(setup_python_env)
     PARENT_SCOPE
   )
 
+  # Windows conda/pyenv paths from site.getsitepackages() contain backslashes
+  # (e.g. C:\Users\runner\...). Emitted verbatim into the generated
+  # cmake_install.cmake, a backslash sequence like \U is treated as a CMake
+  # unicode escape and aborts install with "file(): Syntax error in cmake
+  # code". Normalize to forward slashes once at the source so every downstream
+  # install() (raw or via cloudViewer_install_ext) is safe.
+  file(TO_CMAKE_PATH "${PYTHON_SITELIB}" PYTHON_SITELIB)
+  file(TO_CMAKE_PATH "${PYTHON_BASE_PREFIX}" PYTHON_BASE_PREFIX)
+
   # For pyenv-based Python, we need to find the actual library directory
   # which may be different from the site-packages parent directory
   if (UNIX AND NOT WIN32)
