@@ -14,9 +14,6 @@ ARG PACKAGE
 ARG QT_BASE_DIR
 ARG CI
 ARG PREBUILD_DEPS_ONLY=OFF
-# docker_build.sh / prebuild-deps.yml pass BUILD_JOBS (2 for CUDA, 4 for CPU)
-# to cap parallelism; the deps script uses it for make -j. Default 4.
-ARG BUILD_JOBS=4
 
 RUN if [ -z "${DEVELOPER_BUILD}"      ]; then echo "Error: ARG DEVELOPER_BUILD      not specified."; exit 1; fi \
  && if [ -z "${CMAKE_VERSION}"        ]; then echo "Error: ARG CMAKE_VERSION        not specified."; exit 1; fi \
