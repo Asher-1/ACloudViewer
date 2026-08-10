@@ -65,6 +65,18 @@ jobs:
           remove-docker-images: 'true'
           build-mount-path: '/var/lib/docker'
           build-mount-path-ownership: 'root:root'
+      # maximize-build-space with build-mount-path=/var/lib/docker remounts
+      # Docker's data root onto a fresh LVM filesystem while dockerd is running,
+      # but does NOT restart the daemon. dockerd/buildkit then still reference
+      # overlay2 layers from the old (now hidden) mount, so the next `docker build`
+      # fails immediately with:
+      #   failed to prepare ... symlink ../<hash>/diff .../overlay2/l/...: no such file or directory
+      # Restarting docker re-initializes overlay2 on the new mount and clears the
+      # stale layer cache. (Verified against all three Ubuntu matrix jobs.)
+      - name: Restart docker after remounting /var/lib/docker
+        run: |
+          sudo systemctl restart docker
+          docker info >/dev/null 2>&1 || sudo service docker restart
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Check whether the tarball already exists
