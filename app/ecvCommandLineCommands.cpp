@@ -714,6 +714,51 @@ bool CommandInvertNormal::process(ccCommandLineInterface& cmd) {
     return true;
 }
 
+CommandFlipTriangles::CommandFlipTriangles()
+    : ccCommandLineInterface::Command(QObject::tr("Flip triangles"),
+                                      COMMAND_FLIP_TRIANGLES) {}
+
+bool CommandFlipTriangles::process(ccCommandLineInterface& cmd) {
+    cmd.print(QObject::tr("[FLIP TRIANGLES]"));
+
+    if (cmd.meshes().empty()) {
+        return cmd.error(
+                QObject::tr(
+                        "No mesh loaded (be sure to open one with \"-%1 "
+                        "[mesh filename]\" before \"-%2\")")
+                        .arg(COMMAND_OPEN, COMMAND_FLIP_TRIANGLES));
+    }
+
+    bool warningIssued = false;
+    for (CLMeshDesc& thisMeshDesc : cmd.meshes()) {
+        ccMesh* mesh = ccHObjectCaster::ToMesh(thisMeshDesc.mesh);
+        if (!mesh) {
+            assert(false);
+            continue;
+        }
+
+        if (!mesh->isA(CV_TYPES::MESH)) {
+            if (!warningIssued) {
+                cmd.warning(QObject::tr(
+                        "[Flip triangles] Works only on real meshes!"));
+                warningIssued = true;
+            }
+            continue;
+        }
+
+        mesh->flipTriangles();
+
+        if (cmd.autoSaveMode()) {
+            QString errorStr = cmd.exportEntity(thisMeshDesc, "_FLIPPED_TRI");
+            if (!errorStr.isEmpty()) {
+                return cmd.error(errorStr);
+            }
+        }
+    }
+
+    return true;
+}
+
 CommandOctreeNormal::CommandOctreeNormal()
     : ccCommandLineInterface::Command(
               QObject::tr("Compute normals with octree"),

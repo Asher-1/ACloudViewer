@@ -60,6 +60,12 @@ struct CommandInvertNormal : public ccCommandLineInterface::Command {
     bool process(ccCommandLineInterface& cmd) override;
 };
 
+struct CommandFlipTriangles : public ccCommandLineInterface::Command {
+    CommandFlipTriangles();
+
+    bool process(ccCommandLineInterface& cmd) override;
+};
+
 struct CommandConvertNormalsToDipAndDipDir
     : public ccCommandLineInterface::Command {
     CommandConvertNormalsToDipAndDipDir();
