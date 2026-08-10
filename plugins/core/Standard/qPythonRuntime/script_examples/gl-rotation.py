@@ -8,7 +8,13 @@ import cccorelib
 import math
 
 
-entity = pycc.GetInstance().getSelectedEntities()[0]
+CC = pycc.GetInstance()
+
+entities = CC.getSelectedEntities()
+if not entities:
+    raise RuntimeError("No entity selected. Select an entity first.")
+
+entity = entities[0]
 
 # Rotating the entity around its center
 # Rotation always happen in OpenGL`s origin which is probably not

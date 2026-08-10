@@ -18,3 +18,10 @@ class HelloWorldAuto(pycc.PythonPluginInterface):
 
     def getActions(self):
         return [pycc.Action(name="Hello World", target=hello_world, icon=(ICON_BYTES, "PNG"))]
+
+
+if __name__ == "__main__":
+    # This module defines a plugin that is normally autodiscovered through the
+    # "cloudviewer.plugins" entry point. When run directly as a script there is
+    # no menu to click, so invoke the action to show it works.
+    hello_world()

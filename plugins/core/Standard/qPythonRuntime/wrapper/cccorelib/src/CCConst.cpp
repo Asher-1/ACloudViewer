@@ -35,7 +35,7 @@ void define_CCConst(py::module &cccorelib)
         .value("CHAMFER_111", CHAMFER_DISTANCE_TYPE::CHAMFER_111)
         .value("CHAMFER_345", CHAMFER_DISTANCE_TYPE::CHAMFER_345);
 
-    py::enum_<CV_LOCAL_MODEL_TYPES>(cccorelib, "CV_LOCAL_MODEL_MIN_SIZE")
+    py::enum_<CV_LOCAL_MODEL_TYPES>(cccorelib, "CV_LOCAL_MODEL_TYPES")
         .value("NO_MODEL", CV_LOCAL_MODEL_TYPES::NO_MODEL)
         .value("LS", CV_LOCAL_MODEL_TYPES::LS)
         .value("TRI", CV_LOCAL_MODEL_TYPES::TRI)

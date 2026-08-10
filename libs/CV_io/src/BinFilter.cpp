@@ -535,7 +535,6 @@ CC_FILE_ERROR BinFilter::LoadFileV2(QFile& in,
         CVLog::Error(QString("Failed to read file (file position: %1 / %2")
                              .arg(in.pos())
                              .arg(in.size()));
-
         if (!root->isA(CV_TYPES::HIERARCHY_OBJECT) ||
             root->getChildrenNumber() != 0) {
             ContinueAfterError(forceLoadAfterError, true);

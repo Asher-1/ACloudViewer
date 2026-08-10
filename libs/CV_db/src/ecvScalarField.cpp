@@ -305,9 +305,28 @@ bool ccScalarField::toFile(QFile& out, short dataVersion) const {
     if (out.write(m_name, 256) < 0) return WriteError();
 
     // data (dataVersion>=20)
-    if (!ccSerializationHelper::GenericArrayToFile<ScalarType, 1, ScalarType>(
-                *this, out))
-        return WriteError();
+    // The BIN header declares scalar fields as 32-bit floats
+    // (DF_SCALAR_VAL_32_BITS), matching the format written by CloudCompare.
+    // When built with 64-bit scalars (ScalarType == double) we must still emit
+    // float values so the file stays readable by CloudCompare and by our own
+    // reader (which now converts float -> ScalarType on load).
+    {
+        bool result = false;
+        if (sizeof(ScalarType) == sizeof(float)) {
+            result = ccSerializationHelper::GenericArrayToFile<ScalarType, 1,
+                                                               ScalarType>(
+                    *this, out);
+        } else {
+            std::vector<float> floatBuffer;
+            floatBuffer.reserve(currentSize());
+            for (unsigned i = 0; i < currentSize(); ++i) {
+                floatBuffer.push_back(static_cast<float>(getValue(i)));
+            }
+            result = ccSerializationHelper::GenericArrayToFile<float, 1, float>(
+                    floatBuffer, out);
+        }
+        if (!result) return WriteError();
+    }
 
     // displayed values & saturation boundaries (dataVersion>=20)
     double dValue = (double)m_displayRange.start();
@@ -415,9 +434,14 @@ bool ccScalarField::fromFile(QFile& in,
                 (flags & ccSerializableObject::DF_SCALAR_VAL_32_BITS);
         if (fileScalarIsFloat)  // file is 'float'
         {
-            result = ccSerializationHelper::GenericArrayFromFile<ScalarType, 1,
-                                                                 ScalarType>(
-                    *this, in, dataVersion, sfDescription);
+            // the file stores 'float' scalar values; read them as float and
+            // convert to ScalarType (which may be 'double' if built with
+            // 64-bit scalars). Reading directly as ScalarType would consume
+            // twice the bytes for float files written by CloudCompare and
+            // desync the rest of the file.
+            result = ccSerializationHelper::GenericArrayFromTypedFile<
+                    ScalarType, 1, ScalarType, float>(*this, in, dataVersion,
+                                                      sfDescription);
         } else  // file is 'double'
         {
             // we load it as float, but apply an automatic offset (based on the
