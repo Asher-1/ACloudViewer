@@ -13,6 +13,10 @@ ARG BUILD_PYTORCH_OPS
 ARG PACKAGE
 ARG QT_BASE_DIR
 ARG CI
+ARG PREBUILD_DEPS_ONLY=OFF
+# docker_build.sh / prebuild-deps.yml pass BUILD_JOBS (2 for CUDA, 4 for CPU)
+# to cap parallelism; the deps script uses it for make -j. Default 4.
+ARG BUILD_JOBS=4
 
 RUN if [ -z "${DEVELOPER_BUILD}"      ]; then echo "Error: ARG DEVELOPER_BUILD      not specified."; exit 1; fi \
  && if [ -z "${CMAKE_VERSION}"        ]; then echo "Error: ARG CMAKE_VERSION        not specified."; exit 1; fi \
@@ -34,6 +38,7 @@ ENV BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
 ENV BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
 ENV PACKAGE=${PACKAGE}
 ENV QT_BASE_DIR=${QT_BASE_DIR}
+ENV PREBUILD_DEPS_ONLY=${PREBUILD_DEPS_ONLY}
 
 ENV VTK_VERSION=9.3.1
 ENV PCL_VERSION=1.14.1
@@ -218,97 +223,21 @@ WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 # ACloudViewer C++ dependencies
 RUN ./util/install_deps_ubuntu.sh assume-yes
 
-# ACloudViewer PCL+VTK dependencies
-
-# Update eigen to 3.4+
-WORKDIR /opt
-RUN mv -f /usr/include/eigen3 /usr/include/eigen337.bak
-RUN wget https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz -O "/opt/eigen-3.4.0.tar.gz"
-RUN tar -xvf eigen-3.4.0.tar.gz && \
-    cd eigen-3.4.0 && \
-    mkdir -p build && cd build && \
-    cmake .. && \
-    make install "-j$(nproc)" \
-    && ldconfig \
-    && rm -rf /opt/eigen-3.4.0 \
-    && rm -rf /opt/eigen-3.4.0.tar.gz
-    
-# Install metslib for pcl
-WORKDIR /opt
-RUN wget https://www.coin-or.org/download/source/metslib/metslib-0.5.3.tgz -O "/opt/metslib-0.5.3.tgz"
-RUN tar -xvf metslib-0.5.3.tgz && \
-    cd metslib-0.5.3 && \
-    sh ./configure && \
-    make && \
-    make install \
-    && ldconfig \
-    && rm -rf /opt/metslib-0.5.3 \
-    && rm -rf /opt/metslib-0.5.3.tgz
-
-# Install laszip
-WORKDIR /opt
-RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/laszip-src-3.4.3.tar.gz -O "/opt/laszip-src-3.4.3.tar.gz"
-RUN tar -xvf laszip-src-3.4.3.tar.gz && \
-    cd laszip-src-3.4.3 && \
-    mkdir -p build && cd build && \
-    cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5 .. && \
-    make "-j$(nproc)" && \
-    make install "-j$(nproc)" \
-    && ldconfig \
-    && rm -rf /opt/laszip-src-3.4.3 \
-    && rm -rf /opt/laszip-src-3.4.3.zip
-
-# Install xerces-c
-WORKDIR /opt
-RUN wget https://archive.apache.org/dist/xerces/c/3/sources/xerces-c-3.2.3.zip -O "/opt/xerces-c-3.2.3.zip"
-RUN unzip xerces-c-3.2.3.zip \
-    && cd ./xerces-c-3.2.3 \
-    && chmod +x configure \
-    && ./configure --prefix=/usr \
-    && make \
-    && make install \
-    && make clean \
-    && rm -rf /opt/xerces-c-3.2.3 \
-    && rm -rf /opt/xerces-c-3.2.3.zip
-
-# Install vtk
-WORKDIR /opt
-RUN wget https://vtk.org/files/release/9.3/VTK-${VTK_VERSION}.tar.gz -O "/opt/VTK-${VTK_VERSION}.tar.gz"
-RUN tar -zxvf VTK-${VTK_VERSION}.tar.gz && \
-    cd VTK-${VTK_VERSION} && \
-    mkdir -p build && cd build && \
-    cmake   -DCMAKE_BUILD_TYPE=RELEASE \
-            -DVTK_GROUP_ENABLE_Qt=YES \
-            -DVTK_MODULE_ENABLE_VTK_GUISupportQt=YES \
-            -DVTK_MODULE_ENABLE_VTK_GUISupportQtQuick=YES \
-            -DVTK_MODULE_ENABLE_VTK_GUISupportQtSQL=YES \
-            -DVTK_MODULE_ENABLE_VTK_RenderingQt=YES \
-            -DVTK_MODULE_ENABLE_VTK_ViewsQt=YES \
-            -DVTK_QT_VERSION:STRING=5 \
-            -DBUILD_SHARED_LIBS:BOOL=ON \
-            -DQT_QMAKE_EXECUTABLE:PATH=${QT_DIR}/bin/qmake \
-            -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake .. && \
-    make "-j$(nproc)" && \
-    make install "-j$(nproc)" && ldconfig && \
-    rm -rf /opt/VTK-${VTK_VERSION} /opt/VTK-${VTK_VERSION}.tar.gz
-
-# Install pcl
-WORKDIR /opt
-RUN wget https://github.com/PointCloudLibrary/pcl/releases/download/pcl-${PCL_VERSION}/source.zip -O "/opt/pcl-${PCL_VERSION}.zip"
-RUN unzip pcl-${PCL_VERSION}.zip && \
-    cd pcl && \
-    mkdir -p build && cd build && \
-    cmake   -DCMAKE_BUILD_TYPE=RELEASE \
-            -DBUILD_GPU=OFF \
-            -DBUILD_apps=OFF \
-            -DBUILD_examples=OFF \
-            -DBUILD_surface_on_nurbs=ON \
-            -DPCL_ENABLE_MARCHNATIVE=OFF \
-            -DQT_QMAKE_EXECUTABLE:PATH=${QT_DIR}/bin/qmake \
-            -DCMAKE_PREFIX_PATH:PATH=${QT_DIR}/lib/cmake .. && \
-    make "-j$(nproc)" && \
-    make install "-j$(nproc)" && ldconfig && \
-    rm -rf /opt/pcl /opt/pcl-${PCL_VERSION}.zip
+# ACloudViewer C++ dependencies (eigen / metslib / laszip / xerces-c / VTK / PCL)
+# Built once per Ubuntu release and published as a prebuilt tarball
+# (see .github/workflows/prebuild-deps.yml and docker/build_vtk_pcl_deps.sh) so
+# normal CI downloads + extracts it instead of recompiling. Source-compiling
+# these six deps is the slowest, most memory/disk-hungry part of the Docker CI
+# build and the main driver of the runner OOM "hosted runner lost communication
+# with the server" errors.
+# - PREBUILD_DEPS_ONLY=ON  : build from source + package /out/<tarball> (prebuild job)
+# - PREBUILD_DEPS_ONLY=OFF : download the prebuilt tarball; fall back to source if not published
+WORKDIR ${ACloudViewer_DEV}/ACloudViewer
+RUN if [ "${PREBUILD_DEPS_ONLY}" = "ON" ]; then \
+        bash ./docker/build_vtk_pcl_deps.sh prebuild "${BUILD_JOBS}" "${QT_DIR}" "${VTK_VERSION}" "${PCL_VERSION}"; \
+    else \
+        bash ./docker/build_vtk_pcl_deps.sh consume "${BUILD_JOBS}" "${QT_DIR}" "${VTK_VERSION}" "${PCL_VERSION}"; \
+    fi
 
 # save disk space
 RUN rm -rf /var/lib/apt/lists/*
@@ -316,10 +245,13 @@ RUN rm -rf /var/lib/apt/lists/*
 RUN mkdir -p ${ACloudViewer_INSTALL}
 
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer
-# Build ACloudViewer app installer
-RUN echo "Start Build ACloudViewer apps installer..."                                   \
-    && rm -rf ${ACloudViewer_BUILD}/*                                                   \
-    && WITH_RDB=ON ./docker/build_gui_app.sh ${PYTHON_VERSION} ${BUILD_CUDA_MODULE}
+# Build ACloudViewer app installer (skipped in PREBUILD_DEPS_ONLY mode — the
+# prebuild job stops after packaging the deps into /out)
+RUN if [ "${PREBUILD_DEPS_ONLY}" = "OFF" ]; then \
+        echo "Start Build ACloudViewer apps installer..." \
+        && rm -rf ${ACloudViewer_BUILD}/* \
+        && WITH_RDB=ON ./docker/build_gui_app.sh ${PYTHON_VERSION} ${BUILD_CUDA_MODULE}; \
+    fi
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 
 RUN echo "Docker ci build done."
