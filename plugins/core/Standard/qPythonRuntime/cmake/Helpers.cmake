@@ -458,27 +458,25 @@ function(copy_linux_python_env INSTALL_DIR)
 endfunction()
 
 function(copy_python_dll)
-  message(
-    STATUS
-    "Python DLL: = ${PYTHON_BASE_PREFIX}/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}.dll"
-  )
+  # Reuse cloudViewer_install_ext (as install_python_libraries and the DLLs
+  # installer already do) instead of a raw install(FILES ...). It normalizes
+  # Windows backslash paths internally (file(TO_CMAKE_PATH) + \ -> /): on the
+  # GitHub-hosted runner PYTHON_BASE_PREFIX is C:\Users\runner\... whose \U is
+  # a CMake unicode escape that, if emitted verbatim into the generated
+  # cmake_install.cmake, aborts with "Syntax error in cmake code" at install
+  # time. It also applies consistent permissions and per-config destination
+  # suffixing.
   if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     message(STATUS "Debug build")
-    install(
-      FILES "${PYTHON_BASE_PREFIX}/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}_d.dll"
-      # install the python3 base dll as well because some libs will try to
-      # find it (PySide and PyQT for example)
-      "${PYTHON_BASE_PREFIX}/python${Python_VERSION_MAJOR}_d.dll"
-      DESTINATION ${CC_PYTHON_INSTALL_DIR}
-    )
+    cloudViewer_install_ext(FILES "${PYTHON_BASE_PREFIX}/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}_d.dll" "${CC_PYTHON_INSTALL_DIR}" "")
+    # install the python3 base dll as well because some libs will try to
+    # find it (PySide and PyQT for example)
+    cloudViewer_install_ext(FILES "${PYTHON_BASE_PREFIX}/python${Python_VERSION_MAJOR}_d.dll" "${CC_PYTHON_INSTALL_DIR}" "")
   else()
-    install(
-      FILES "${PYTHON_BASE_PREFIX}/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}.dll"
-      # install the python3 base dll as well because some libs will try to
-      # find it (PySide and PyQT for example)
-      "${PYTHON_BASE_PREFIX}/python${PYTHON_VERSION_MAJOR}.dll"
-      DESTINATION ${CC_PYTHON_INSTALL_DIR}
-    )
+    cloudViewer_install_ext(FILES "${PYTHON_BASE_PREFIX}/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}.dll" "${CC_PYTHON_INSTALL_DIR}" "")
+    # install the python3 base dll as well because some libs will try to
+    # find it (PySide and PyQT for example)
+    cloudViewer_install_ext(FILES "${PYTHON_BASE_PREFIX}/python${PYTHON_VERSION_MAJOR}.dll" "${CC_PYTHON_INSTALL_DIR}" "")
   endif()
 endfunction()
 

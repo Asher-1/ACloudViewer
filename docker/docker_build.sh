@@ -138,6 +138,16 @@ ci_build() {
     echo "[ci_build()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
     echo "[ci_build()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
 
+    # Cap build parallelism to avoid OOM on memory-constrained GitHub runners.
+    # CUDA compiles (nvcc) are memory-hungry: default to 2 jobs. CPU builds can
+    # afford more (4). Respect an explicit BUILD_JOBS override if set.
+    if [ "${BUILD_CUDA_MODULE:-OFF}" = "ON" ]; then
+        BUILD_JOBS="${BUILD_JOBS:-2}"
+    else
+        BUILD_JOBS="${BUILD_JOBS:-4}"
+    fi
+    echo "[ci_build()] BUILD_JOBS=${BUILD_JOBS}"
+
     pushd "${HOST_CLOUDVIEWER_ROOT}"
     docker build \
         --build-arg BASE_IMAGE="${BASE_IMAGE}" \
@@ -149,6 +159,7 @@ ci_build() {
         --build-arg BUILD_CUDA_MODULE="${BUILD_CUDA_MODULE}" \
         --build-arg BUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
+        --build-arg BUILD_JOBS="${BUILD_JOBS}" \
         --build-arg PACKAGE="ON" \
         --build-arg CI="${CI:-}" \
         -t "${DOCKER_TAG}" \
