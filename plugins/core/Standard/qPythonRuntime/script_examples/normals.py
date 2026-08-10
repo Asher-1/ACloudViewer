@@ -1,7 +1,13 @@
 import pycc
 import cccorelib
 
-pc = pycc.GetInstance().getSelectedEntities()[0]
+CC = pycc.GetInstance()
+
+entities = CC.getSelectedEntities()
+if not entities:
+    raise RuntimeError("No entity selected. Select a point cloud first.")
+
+pc = entities[0]
 
 
 progress = pycc.ccProgressDialog()

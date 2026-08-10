@@ -15,10 +15,10 @@ Using ccMesh
 .. literalinclude:: ../script_examples/creating_a_mesh.py
     :language: Python
 
-Loading a file
---------------
+Loading and saving a file
+-------------------------
 
-.. literalinclude:: ../script_examples/loading_a_file.py
+.. literalinclude:: ../script_examples/loading_and_saving.py
     :language: Python
 
 Scalar Field

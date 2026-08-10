@@ -35,6 +35,8 @@ def merge(clouds):
 def main():
     CC = pycc.GetInstance()
     clouds = CC.getSelectedEntities()
+    if not clouds:
+        raise RuntimeError("No entity selected. Select at least one point cloud.")
 
     merged_cloud = merge(clouds)
     CC.addToDB(merged_cloud)

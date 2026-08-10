@@ -25,3 +25,11 @@ class HelloWorld(pycc.PythonPluginInterface):
 				icon=(ICON_BYTES, "PNG")
 			)
         ]
+
+
+if __name__ == "__main__":
+    # This file is a plugin definition: when loaded as a plugin, `HelloWorld`
+    # is registered and its "Hello World" action appears in the plugin menu.
+    # When run directly as a script there is no menu to click, so we invoke the
+    # action here to show that it works.
+    hello_world()

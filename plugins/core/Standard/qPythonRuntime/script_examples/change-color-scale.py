@@ -1,6 +1,14 @@
 import pycc
 
-pc = pycc.GetInstance().getSelectedEntities()[0]
+CC = pycc.GetInstance()
+
+entities = CC.getSelectedEntities()
+if not entities:
+    raise RuntimeError("No entity selected. Select a point cloud first.")
+
+pc = entities[0]
+if pc.getNumberOfScalarFields() == 0:
+    raise RuntimeError("The selected entity has no scalar field to change the color scale of.")
 
 sf = pc.getScalarField(0)
 
