@@ -1,0 +1,128 @@
+name: Prebuild Ubuntu deps (VTK/PCL)
+permissions:
+  contents: write
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: prebuild-deps-${{ github.ref }}
+  cancel-in-progress: true
+
+# Builds the heavy source-compiled dependency layer (eigen / metslib / laszip /
+# xerces-c / VTK / PCL) ONCE per Ubuntu release and publishes it as a versioned
+# tarball on the ACloudViewer `ubuntu-prebuild-deps` release. Normal CI (ubuntu.yml,
+# ubuntu-cuda.yml) then downloads + extracts this tarball instead of recompiling,
+# which removes the slowest, most memory/disk-hungry part of the build and avoids
+# the runner OOM "hosted runner lost communication with the server" failures.
+#
+# The tarball is built by reusing the SAME Dockerfile.ci with PREBUILD_DEPS_ONLY=ON,
+# so the generated artifact is byte-identical to what a source build produces
+# (guaranteed environment/ABI consistency). One tarball per Ubuntu version is
+# consumed by BOTH the CPU and CUDA builds of that version (VTK/PCL are pure-CPU
+# libs; their ABI depends only on the Ubuntu release, not on CUDA).
+#
+# Publishing: uploaded to the ACloudViewer release (works with GITHUB_TOKEN, no PAT
+# needed). To host them under Asher-1/cloudViewer_downloads instead, download the
+# artifact and push it there manually (GITHUB_TOKEN cannot write to another repo).
+
+env:
+  # Keep in sync with docker/Dockerfile.ci ENV VTK_VERSION / PCL_VERSION.
+  VTK_VERSION: "9.3.1"
+  PCL_VERSION: "1.14.1"
+  CMAKE_VERSION: cmake-3.29.2-linux-x86_64
+  QT_BASE_DIR: /usr/lib/x86_64-linux-gnu/qt5
+  RELEASE_TAG: ubuntu-prebuild-deps
+
+jobs:
+  prebuild:
+    name: ${{ matrix.codename }} (ubuntu ${{ matrix.ubuntu_version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - codename: focal
+            ubuntu_version: "20.04"
+          - codename: jammy
+            ubuntu_version: "22.04"
+          - codename: noble
+            ubuntu_version: "24.04"
+    env:
+      BASE_IMAGE: ubuntu:${{ matrix.ubuntu_version }}
+      DOCKER_TAG: cloudviewer-prebuild-deps:${{ matrix.codename }}
+      TARBALL: vtk-pcl-deps-${{ matrix.codename }}-vtk9.3.1-pcl1.14.1.tar.gz
+    steps:
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 10240
+          swap-size-mb: 4096
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          remove-docker-images: 'true'
+          build-mount-path: '/var/lib/docker'
+          build-mount-path-ownership: 'root:root'
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Check whether the tarball already exists
+        id: check
+        run: |
+          # Idempotent: skip the (expensive) rebuild if the asset is already
+          # published for this Ubuntu version + dep versions.
+          if gh release view "$RELEASE_TAG" \
+              --repo Asher-1/ACloudViewer \
+              --json assets --jq ".assets[].name" 2>/dev/null | grep -qx "$TARBALL"; then
+            echo "Tarball '$TARBALL' already published; skipping rebuild."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Docker build (prebuild deps)
+        if: steps.check.outputs.skip != 'true'
+        run: |
+          set -o pipefail
+          docker build \
+            --build-arg BASE_IMAGE="${BASE_IMAGE}" \
+            --build-arg QT_BASE_DIR="${QT_BASE_DIR}" \
+            --build-arg DEVELOPER_BUILD=ON \
+            --build-arg CMAKE_VERSION="${CMAKE_VERSION}" \
+            --build-arg PYTHON_VERSION=3.12 \
+            --build-arg BUILD_SHARED_LIBS=OFF \
+            --build-arg BUILD_CUDA_MODULE=OFF \
+            --build-arg BUILD_TENSORFLOW_OPS=OFF \
+            --build-arg BUILD_PYTORCH_OPS=OFF \
+            --build-arg PACKAGE=OFF \
+            --build-arg BUILD_JOBS=2 \
+            --build-arg PREBUILD_DEPS_ONLY=ON \
+            --build-arg CI=true \
+            -t "${DOCKER_TAG}" \
+            -f docker/Dockerfile.ci .
+      - name: Extract packaged tarball
+        if: steps.check.outputs.skip != 'true'
+        run: |
+          docker run --rm -v "${PWD}:/host" "${DOCKER_TAG}" \
+            bash -c "cp /out/${TARBALL} /host/ && ls -lh /host/${TARBALL}"
+      - name: Upload tarball artifact
+        if: steps.check.outputs.skip != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.TARBALL }}
+          path: ${{ env.TARBALL }}
+      - name: Publish to ACloudViewer release
+        if: steps.check.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Create the dedicated release tag on first run, then add/replace the asset.
+          gh release create "$RELEASE_TAG" --repo Asher-1/ACloudViewer \
+            --title "Ubuntu prebuilt deps (VTK/PCL)" --notes "Prebuilt dependency layer per Ubuntu release." \
+            --latest=false 2>/dev/null || true
+          gh release upload "$RELEASE_TAG" "$TARBALL" --repo Asher-1/ACloudViewer --clobber
+          echo "Published ${TARBALL} to $RELEASE_TAG"
+          echo "To also host it under Asher-1/cloudViewer_downloads, download this artifact and push it there manually:"
+          echo "  gh release upload <tag> --repo Asher-1/cloudViewer_downloads ${TARBALL}"
