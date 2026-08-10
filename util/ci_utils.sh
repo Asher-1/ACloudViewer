@@ -21,12 +21,18 @@ if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then # Validate input coming from GHA inpu
     DEVELOPER_BUILD="ON"
 fi
 BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS:-OFF}
-NPROC=${NPROC:-$(getconf _NPROCESSORS_ONLN)} # POSIX: MacOS + Linux
-if [[ "$(uname)" == "Darwin" ]]; then
-    # macOS CI runners have limited RAM (~7 GB); cap at NPROC to avoid OOM
-    NPROC=$((NPROC > 4 ? 4 : NPROC))
-else
-    NPROC=$((NPROC + 2))
+# Respect an explicit NPROC (used to cap parallelism / avoid OOM on CI, e.g.
+# the CUDA build pins NPROC=2 on 4-core runners). Only compute a default when
+# the caller did not already provide one — otherwise the +2 oversubscription
+# below would double with build_gui_app.sh and push a 4-core runner to -j8.
+if [[ -z "${NPROC:-}" ]]; then
+    NPROC=$(getconf _NPROCESSORS_ONLN) # POSIX: MacOS + Linux
+    if [[ "$(uname)" == "Darwin" ]]; then
+        # macOS CI runners have limited RAM (~7 GB); cap at 4 to avoid OOM
+        NPROC=$((NPROC > 4 ? 4 : NPROC))
+    else
+        NPROC=$((NPROC + 2))
+    fi
 fi
 _ci_utils_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
