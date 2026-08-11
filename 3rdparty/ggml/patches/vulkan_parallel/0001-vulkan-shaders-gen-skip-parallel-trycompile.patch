@@ -1,0 +1,9 @@
+--- a/src/ggml-vulkan/CMakeLists.txt
++++ b/src/ggml-vulkan/CMakeLists.txt
+@@ -180,4 +180,6 @@ include(ExternalProject)
+         CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/$<CONFIG>
+                    -DCMAKE_INSTALL_BINDIR=.
+                    -DCMAKE_BUILD_TYPE=$<CONFIG>
++                   -DCMAKE_C_ABI_COMPILED=1
++                   -DCMAKE_CXX_ABI_COMPILED=1
+                    ${VULKAN_SHADER_GEN_CMAKE_ARGS}
