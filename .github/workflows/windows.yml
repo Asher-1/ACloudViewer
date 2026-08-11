@@ -229,6 +229,14 @@ jobs:
           $installRoot = "${{ env.INSTALL_DIR }}"
           Write-Host "Install root: $installRoot"
 
+          # The installer (and thus the installed ggml-cuda module) is only
+          # produced by the Release build step; Debug matrix combos skip that
+          # step, so no install root exists here. Treat as skip, not failure.
+          if (-not (Test-Path $installRoot)) {
+            Write-Warning "Install root '$installRoot' not found (installer is only built in Release config); skipping verification"
+            exit 0
+          }
+
           # 1) Find ggml-cuda module DLL
           $ggmlCuda = Get-ChildItem -Recurse $installRoot -Filter "ggml-cuda*.dll" `
             | Select-Object -First 1 -ExpandProperty FullName

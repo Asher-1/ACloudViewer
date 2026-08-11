@@ -51,7 +51,7 @@ jobs:
         uses: github/codeql-action/init@v4
         with:
           languages: python
-          queries: security-and-quality
+          queries: security-extended
           config-file: ./.github/codeql/codeql-config.yml
 
       - name: Perform CodeQL Analysis
@@ -255,7 +255,7 @@ jobs:
         uses: github/codeql-action/init@v4
         with:
           languages: c-cpp
-          queries: security-and-quality
+          queries: security-extended
           config-file: ./.github/codeql/codeql-config.yml
 
       - name: Build

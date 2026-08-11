@@ -24,6 +24,22 @@
 // system
 #include <cassert>
 
+#ifndef _WIN32
+#include <fcntl.h>
+#include <unistd.h>
+#endif  // !_WIN32
+
+//! Open an output file with safe (non-world-writable) permissions.
+static FILE* openOutputFile(const QString& path) {
+#ifdef _WIN32
+    return fopen(qPrintable(path), "wt");
+#else
+    int fd = ::open(qPrintable(path), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (fd < 0) return nullptr;
+    return ::fdopen(fd, "wt");
+#endif  // _WIN32
+}
+
 DepthMapFileFilter::DepthMapFileFilter()
     : FileIOFilter({"_Depth Map Filter",
                     DEFAULT_PRIORITY,  // priority
@@ -117,7 +133,7 @@ CC_FILE_ERROR DepthMapFileFilter::saveToFile(const QString& filename,
     }
 
     // opening file
-    FILE* fp = fopen(qPrintable(filename), "wt");
+    FILE* fp = openOutputFile(filename);
     if (!fp) {
         CVLog::Error(QString("[DepthMap] Can't open file '%1' for writing!")
                              .arg(filename));

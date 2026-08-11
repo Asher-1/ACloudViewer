@@ -11,8 +11,24 @@
 #include <cmath>
 #include <cstdio>
 
+#ifndef _WIN32
+#include <fcntl.h>
+#include <unistd.h>
+#endif  // !_WIN32
+
 namespace aicore {
 namespace depth {
+
+//! Open an output file with safe (non-world-writable) permissions.
+static std::FILE* open_output_file(const std::string& path) {
+#ifdef _WIN32
+    return std::fopen(path.c_str(), "wb");
+#else
+    int fd = ::open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (fd < 0) return nullptr;
+    return ::fdopen(fd, "wb");
+#endif  // _WIN32
+}
 
 bool write_gaussian_ply(const std::string& path, const Gaussians& g) {
     const int N = g.N;
@@ -22,7 +38,7 @@ bool write_gaussian_ply(const std::string& path, const Gaussians& g) {
         (int)g.harmonics.size() != N * 3 * 9)
         return false;
 
-    std::FILE* f = std::fopen(path.c_str(), "wb");
+    std::FILE* f = open_output_file(path);
     if (!f) return false;
 
     std::fprintf(f, "ply\n");

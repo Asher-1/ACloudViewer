@@ -23,14 +23,14 @@ Inert when GGML_CUDA_FORCE_MMQ is OFF (the original link logic is
 preserved unchanged).
 
 ---
- src/ggml-cuda/CMakeLists.txt | 32 ++++++++++++++++++++++++--------
- 1 file changed, 24 insertions(+), 8 deletions(-)
+ src/ggml-cuda/CMakeLists.txt | 28 +++++++++++++++++++++++++---
+ 1 file changed, 25 insertions(+), 3 deletions(-)
 
 diff --git a/src/ggml-cuda/CMakeLists.txt b/src/ggml-cuda/CMakeLists.txt
-index 9b56b7e..f7d0dcc 100644
+index d3953ee..bb074ad 100644
 --- a/src/ggml-cuda/CMakeLists.txt
 +++ b/src/ggml-cuda/CMakeLists.txt
-@@ -163,16 +163,32 @@ if (CUDAToolkit_FOUND)
+@@ -163,17 +163,39 @@ if (CUDAToolkit_FOUND)
              if (GGML_CUDA_CUB_3DOT2)
                  target_link_libraries(ggml-cuda PRIVATE  CCCL::CCCL)
              endif()

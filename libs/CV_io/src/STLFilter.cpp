@@ -32,6 +32,22 @@
 // System
 #include <string.h>
 
+#ifndef _WIN32
+#include <fcntl.h>
+#include <unistd.h>
+#endif  // !_WIN32
+
+//! Open an output file with safe (non-world-writable) permissions.
+static FILE* openOutputFile(const QString& path) {
+#ifdef _WIN32
+    return fopen(qPrintable(path), "wb");
+#else
+    int fd = ::open(qPrintable(path), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (fd < 0) return nullptr;
+    return ::fdopen(fd, "wb");
+#endif  // _WIN32
+}
+
 STLFilter::STLFilter()
     : FileIOFilter({"_STL Filter",
                     10.0f,  // priority
@@ -77,7 +93,7 @@ CC_FILE_ERROR STLFilter::saveToFile(ccHObject* entity,
     }
 
     // try to open file for saving
-    FILE* theFile = fopen(qPrintable(filename), "wb");
+    FILE* theFile = openOutputFile(filename);
     if (!theFile) return CC_FERR_WRITING;
 
     CC_FILE_ERROR result = CC_FERR_NO_ERROR;
