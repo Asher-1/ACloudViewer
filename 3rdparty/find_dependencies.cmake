@@ -1101,9 +1101,10 @@ if (NOT USE_SYSTEM_JPEG)
             LIBRARIES    ${JPEG_TURBO_LIBRARIES}
             DEPENDS      ext_turbojpeg
             )
-    # Not added to global PRIVATE_TARGETS — only AICore links it explicitly.
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_jpeg)
 else()
-    # System JPEG also only used by AICore — linked explicitly.
+    # System JPEG also used by CloudViewer (tio/FileJPG.cpp) and AICore.
+    list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM 3rdparty_jpeg)
 endif()
 
 # jsoncpp: always compile from source to avoid ABI issues.
