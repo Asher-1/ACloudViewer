@@ -7,10 +7,10 @@
 
 #include <QDir>
 #include <QtWidgets>
+#include <cvFileDialog.h>
 
 #include "CodeEditor.h"
 #include "PythonHighlighter.h"
-
 static const char *const INDENT_STRING = "    ";
 
 static const char *const PYTHON_COMMENT_STR = "# ";
@@ -217,7 +217,7 @@ bool CodeEditor::save()
 
 bool CodeEditor::saveAs()
 {
-    QString fileName = QFileDialog::getSaveFileName(this, tr("Save As"), m_curFile);
+    QString fileName = cvFileDialog::getSaveFileName(this, tr("Save As"), m_curFile);
     if (fileName.isEmpty())
         return false;
 

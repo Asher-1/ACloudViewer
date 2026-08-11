@@ -27,6 +27,7 @@
 
 // CV_DB_LIB
 #include <CVLog.h>
+#include <LineSet.h>
 #include <ecv2DLabel.h>
 #include <ecv2DViewportLabel.h>
 #include <ecv2DViewportObject.h>
@@ -109,6 +110,108 @@ void refreshActiveDisplayLikeUpdateScreen() {
     }
 }
 
+void refreshOpacityPreview(ecvGenericGLDisplay* preferredView = nullptr) {
+    ecvGenericGLDisplay* view = preferredView;
+    if (!view) {
+        view = ecvViewManager::instance().getEffectiveView();
+    }
+    if (view) {
+        view->renderScene();
+    }
+}
+
+bool isOpacityFolder(const ccHObject* obj) { return obj && obj->isGroup(); }
+
+bool isLineEntity(const ccHObject* obj) {
+    return obj && (obj->isKindOf(CV_TYPES::POLY_LINE) ||
+                   obj->isKindOf(CV_TYPES::LINESET));
+}
+
+bool isOpacityRenderable(const ccHObject* obj) {
+    return obj && obj->isEnabled() &&
+           (obj->isKindOf(CV_TYPES::POINT_CLOUD) ||
+            obj->isKindOf(CV_TYPES::MESH) ||
+            obj->isKindOf(CV_TYPES::PRIMITIVE) || isLineEntity(obj) ||
+            obj->isKindOf(CV_TYPES::FACET));
+}
+
+ENTITY_TYPE opacityEntityType(const ccHObject* obj) {
+    if (!obj) {
+        return ENTITY_TYPE::ECV_POINT_CLOUD;
+    }
+    if (obj->isKindOf(CV_TYPES::POINT_CLOUD)) {
+        return ENTITY_TYPE::ECV_POINT_CLOUD;
+    }
+    if (obj->isKindOf(CV_TYPES::MESH) || obj->isKindOf(CV_TYPES::PRIMITIVE) ||
+        obj->isKindOf(CV_TYPES::FACET)) {
+        return ENTITY_TYPE::ECV_MESH;
+    }
+    if (isLineEntity(obj)) {
+        return ENTITY_TYPE::ECV_LINES_3D;
+    }
+    return ENTITY_TYPE::ECV_POINT_CLOUD;
+}
+
+ecvGenericGLDisplay* applyLightIntensityToObjects(ccHObject* obj,
+                                                  double intensity,
+                                                  ecvGenericGLDisplay* view,
+                                                  bool triggerRender) {
+    if (!obj || !view) {
+        return nullptr;
+    }
+
+    ecvGenericGLDisplay* previewView = nullptr;
+    if (isOpacityRenderable(obj)) {
+        const QString viewID = obj->getViewId();
+        if (!viewID.isEmpty()) {
+            view->setObjectLightIntensity(viewID, intensity, triggerRender);
+            previewView = view;
+        }
+    }
+
+    for (unsigned i = 0; i < obj->getChildrenNumber(); ++i) {
+        if (auto* childView = applyLightIntensityToObjects(
+                    obj->getChild(i), intensity, view, triggerRender)) {
+            previewView = childView;
+        }
+    }
+    return previewView;
+}
+
+ecvGenericGLDisplay* applyOpacityToVtkOnly(ccHObject* obj,
+                                           float opacity,
+                                           ecvGenericGLDisplay* defaultView) {
+    if (!obj) {
+        return nullptr;
+    }
+
+    ecvGenericGLDisplay* previewView = nullptr;
+    if (isOpacityRenderable(obj)) {
+        PROPERTY_PARAM param(obj, static_cast<double>(opacity));
+        param.entityType = opacityEntityType(obj);
+        param.viewId = obj->getViewId();
+        param.viewport = 0;
+
+        ecvGenericGLDisplay* targetView =
+                const_cast<ecvGenericGLDisplay*>(obj->getDisplay());
+        if (!targetView) {
+            targetView = defaultView;
+        }
+        if (targetView) {
+            targetView->changeEntityProperties(param);
+            previewView = targetView;
+        }
+    }
+
+    for (unsigned i = 0; i < obj->getChildrenNumber(); ++i) {
+        if (auto* childView = applyOpacityToVtkOnly(obj->getChild(i), opacity,
+                                                    defaultView)) {
+            previewView = childView;
+        }
+    }
+    return previewView;
+}
+
 void fillDrawContextFromEffectiveView(CC_DRAW_CONTEXT& context) {
     if (auto* v = ecvViewManager::instance().getEffectiveView()) {
         v->getContext(context);
@@ -173,10 +276,20 @@ ccPropertiesTreeDelegate::ccPropertiesTreeDelegate(QStandardItemModel* model,
       m_model(model),
       m_view(view),
       m_viewer(nullptr),
-      m_lastFocusItemRole(OBJECT_NO_PROPERTY) {
+      m_lastFocusItemRole(OBJECT_NO_PROPERTY),
+      m_pendingOpacityValue(-1),
+      m_pendingLightIntensity(-1.0),
+      m_lastPreviewView(nullptr) {
     // Note: Selection properties are now handled by cvFindDataDockWidget,
     // a standalone dock widget that is decoupled from the properties tree.
     assert(m_model && m_view);
+
+    // ParaView pqView::render() coalesces StillRender requests with a 1 ms
+    // timer.
+    m_viewPropertyRenderTimer.setSingleShot(true);
+    m_viewPropertyRenderTimer.setInterval(1);
+    connect(&m_viewPropertyRenderTimer, &QTimer::timeout, this,
+            [this]() { refreshOpacityPreview(m_lastPreviewView); });
 }
 
 ccPropertiesTreeDelegate::~ccPropertiesTreeDelegate() { unbind(); }
@@ -279,8 +392,11 @@ void ccPropertiesTreeDelegate::fillModel(ccHObject* hObject) {
     // Per-view representation overrides
     fillWithPerViewProperties();
 
-    // View properties (ParaView-style) - added right after ECV Object section
-    if (m_currentObject->getViewId().length() > 0) {
+    // View properties (ParaView-style) - added right after ECV Object section.
+    // ccImage is a pure 2D overlay with its own Alpha control;
+    // Light/Opacity/AxesGrid do not apply (matching CloudCompare).
+    if (m_currentObject->getViewId().length() > 0 &&
+        !m_currentObject->isA(CV_TYPES::IMAGE)) {
         fillWithViewProperties();
     }
 
@@ -300,6 +416,8 @@ void ccPropertiesTreeDelegate::fillModel(ccHObject* hObject) {
         fillWithFacet(ccHObjectCaster::ToFacet(m_currentObject));
     } else if (m_currentObject->isA(CV_TYPES::POLY_LINE)) {
         fillWithPolyline(ccHObjectCaster::ToPolyline(m_currentObject));
+    } else if (m_currentObject->isA(CV_TYPES::LINESET)) {
+        fillWithLineSet(ccHObjectCaster::ToLineSet(m_currentObject));
     } else if (m_currentObject->isA(CV_TYPES::POINT_OCTREE)) {
         fillWithPointOctree(ccHObjectCaster::ToOctree(m_currentObject));
     } else if (m_currentObject->isA(CV_TYPES::POINT_KDTREE)) {
@@ -334,7 +452,7 @@ void ccPropertiesTreeDelegate::fillModel(ccHObject* hObject) {
     if (m_currentObject->isKindOf(CV_TYPES::POINT_CLOUD) ||
         m_currentObject->isKindOf(CV_TYPES::MESH) ||
         m_currentObject->isKindOf(CV_TYPES::FACET) ||
-        m_currentObject->isKindOf(CV_TYPES::POLY_LINE) ||
+        isLineEntity(m_currentObject) ||
         m_currentObject->isKindOf(CV_TYPES::SENSOR)) {
         addSeparator(tr("Transformation history"));
         appendWideRow(PERSISTENT_EDITOR(OBJECT_HISTORY_MATRIX_EDITOR));
@@ -464,9 +582,9 @@ void ccPropertiesTreeDelegate::fillWithViewProperties() {
         bool isRenderable = (m_currentObject->isKindOf(CV_TYPES::POINT_CLOUD) ||
                              m_currentObject->isKindOf(CV_TYPES::MESH) ||
                              m_currentObject->isKindOf(CV_TYPES::PRIMITIVE) ||
-                             m_currentObject->isKindOf(CV_TYPES::POLY_LINE) ||
+                             isLineEntity(m_currentObject) ||
                              m_currentObject->isKindOf(CV_TYPES::FACET));
-        bool isFolder = (m_currentObject->getChildrenNumber() > 0);
+        bool isFolder = isOpacityFolder(m_currentObject);
 
         if (isRenderable || isFolder) {
             appendRow(ITEM(tr("Opacity")), PERSISTENT_EDITOR(OBJECT_OPACITY),
@@ -488,7 +606,7 @@ void ccPropertiesTreeDelegate::fillWithViewProperties() {
                            m_currentObject->isA(CV_TYPES::VIEWPORT_2D_OBJECT) ||
                            m_currentObject->isA(CV_TYPES::VIEWPORT_2D_LABEL));
         bool isImage = m_currentObject->isKindOf(CV_TYPES::IMAGE);
-        bool isPolyline = m_currentObject->isKindOf(CV_TYPES::POLY_LINE);
+        bool isLineLike = isLineEntity(m_currentObject);
         bool isArray = (m_currentObject->isA(CV_TYPES::NORMAL_INDEXES_ARRAY) ||
                         m_currentObject->isA(CV_TYPES::TEX_COORDS_ARRAY) ||
                         m_currentObject->isA(CV_TYPES::NORMALS_ARRAY) ||
@@ -502,10 +620,18 @@ void ccPropertiesTreeDelegate::fillWithViewProperties() {
             hasValidBBox = bbox.isValid();
         }
 
-        if (isPolyline) {
-            ccPolyline* polyline = ccHObjectCaster::ToPolyline(m_currentObject);
-            if (polyline) {
-                if (polyline->size() <= 1 || polyline->is2DMode()) {
+        if (isLineLike) {
+            if (m_currentObject->isKindOf(CV_TYPES::POLY_LINE)) {
+                ccPolyline* polyline =
+                        ccHObjectCaster::ToPolyline(m_currentObject);
+                if (polyline &&
+                    (polyline->size() <= 1 || polyline->is2DMode())) {
+                    hasValidBBox = false;
+                }
+            } else if (m_currentObject->isKindOf(CV_TYPES::LINESET)) {
+                cloudViewer::geometry::LineSet* lineSet =
+                        ccHObjectCaster::ToLineSet(m_currentObject);
+                if (lineSet && (!lineSet->HasLines() || lineSet->is2DMode())) {
                     hasValidBBox = false;
                 }
             } else {
@@ -580,9 +706,12 @@ void ccPropertiesTreeDelegate::fillWithHObject(ccHObject* _obj) {
                   CHECKABLE_ITEM(normShown, OBJECT_NORMALS_SHOWN));
     }
 
-    // name in 3D
-    appendRow(ITEM(tr("Show name (in 3D)")),
-              CHECKABLE_ITEM(_obj->nameShownIn3D(), OBJECT_NAME_IN_3D));
+    // name in 3D — not applicable to IMAGE (pure 2D overlay, matching
+    // CloudCompare which does not expose this property for ccImage)
+    if (!_obj->isA(CV_TYPES::IMAGE)) {
+        appendRow(ITEM(tr("Show name (in 3D)")),
+                  CHECKABLE_ITEM(_obj->nameShownIn3D(), OBJECT_NAME_IN_3D));
+    }
 
     // color source
     if (_obj->hasColors() || _obj->hasScalarFields())
@@ -1002,6 +1131,32 @@ void ccPropertiesTreeDelegate::fillWithPolyline(ccPolyline* _obj) {
               true);
 
     // global shift & scale
+    fillWithShifted(_obj);
+}
+
+void ccPropertiesTreeDelegate::fillWithLineSet(
+        cloudViewer::geometry::LineSet* _obj) {
+    assert(_obj && m_model);
+    if (!_obj || !m_model) {
+        return;
+    }
+
+    addSeparator(tr("Line set"));
+
+    appendRow(ITEM(tr("Points")),
+              ITEM(QLocale(QLocale::English)
+                           .toString(static_cast<qulonglong>(
+                                   _obj->points_.size()))));
+
+    appendRow(ITEM(tr("Segments")),
+              ITEM(QLocale(QLocale::English).toString(_obj->segmentCount())));
+
+    appendRow(ITEM(tr("Length")),
+              ITEM(QLocale(QLocale::English).toString(_obj->computeLength())));
+
+    appendRow(ITEM(tr("Line width")), PERSISTENT_EDITOR(OBJECT_POLYLINE_WIDTH),
+              true);
+
     fillWithShifted(_obj);
 }
 
@@ -1700,6 +1855,10 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
                     [self](double value) {
                         self->lightIntensityChanged(value);
                     });
+            connect(slider, &QSlider::sliderReleased, self,
+                    &ccPropertiesTreeDelegate::lightIntensityCommit);
+            connect(spinBox, &QDoubleSpinBox::editingFinished, self,
+                    &ccPropertiesTreeDelegate::lightIntensityCommit);
 
             layout->addWidget(slider, 1);
             layout->addWidget(spinBox, 0);
@@ -1758,6 +1917,10 @@ QWidget* ccPropertiesTreeDelegate::createEditor(
                     [self](double value) {
                         self->opacityChanged(static_cast<int>(value * 100));
                     });
+            connect(slider, &QSlider::sliderReleased, self,
+                    &ccPropertiesTreeDelegate::opacityCommit);
+            connect(spinBox, &QDoubleSpinBox::editingFinished, self,
+                    &ccPropertiesTreeDelegate::opacityCommit);
 
             layout->addWidget(slider, 1);   // Stretch factor 1
             layout->addWidget(spinBox, 0);  // Fixed size
@@ -2415,11 +2578,42 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
             double intensity = 1.0;
             if (auto* view = ecvViewManager::instance().getEffectiveView()) {
                 if (m_currentObject) {
-                    QString viewID = m_currentObject->getViewId();
-                    if (!viewID.isEmpty()) {
-                        intensity = view->getObjectLightIntensity(viewID);
+                    if (isOpacityFolder(m_currentObject)) {
+                        double totalIntensity = 0.0;
+                        int renderableCount = 0;
+
+                        std::function<void(ccHObject*)> collectIntensity =
+                                [&collectIntensity, &totalIntensity,
+                                 &renderableCount, view](ccHObject* obj) {
+                                    if (!obj || !obj->isEnabled()) return;
+
+                                    if (isOpacityRenderable(obj)) {
+                                        const QString viewID = obj->getViewId();
+                                        if (!viewID.isEmpty()) {
+                                            totalIntensity +=
+                                                    view->getObjectLightIntensity(
+                                                            viewID);
+                                            renderableCount++;
+                                        }
+                                    }
+
+                                    for (unsigned i = 0;
+                                         i < obj->getChildrenNumber(); ++i) {
+                                        collectIntensity(obj->getChild(i));
+                                    }
+                                };
+
+                        collectIntensity(m_currentObject);
+                        if (renderableCount > 0) {
+                            intensity = totalIntensity / renderableCount;
+                        }
                     } else {
-                        intensity = view->getLightIntensity();
+                        QString viewID = m_currentObject->getViewId();
+                        if (!viewID.isEmpty()) {
+                            intensity = view->getObjectLightIntensity(viewID);
+                        } else {
+                            intensity = view->getLightIntensity();
+                        }
                     }
                 }
             }
@@ -2453,9 +2647,8 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
                 }
             }
 
-            if (m_currentObject->getChildrenNumber() > 0) {
-                // This is a folder - calculate average opacity from renderable
-                // children
+            if (isOpacityFolder(m_currentObject)) {
+                // Folder/group: average opacity from renderable descendants
                 float totalOpacity = 0.0f;
                 int renderableCount = 0;
 
@@ -2468,7 +2661,7 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
                             if (obj->isKindOf(CV_TYPES::POINT_CLOUD) ||
                                 obj->isKindOf(CV_TYPES::MESH) ||
                                 obj->isKindOf(CV_TYPES::PRIMITIVE) ||
-                                obj->isKindOf(CV_TYPES::POLY_LINE) ||
+                                isLineEntity(obj) ||
                                 obj->isKindOf(CV_TYPES::FACET)) {
                                 totalOpacity += obj->getOpacity();
                                 renderableCount++;
@@ -2576,15 +2769,6 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
                         } else {
                             refreshActiveDisplayLikeUpdateScreen();
                         }
-
-                        if (checked && view) {
-                            AxesGridProperties verify;
-                            view->getDataAxesGridProperties(viewID, verify);
-                            CVLog::PrintDebug(
-                                    "[AxesGrid] POST-REDRAW: "
-                                    "visible=%d showGrid=%d",
-                                    verify.visible, verify.showGrid);
-                        }
                     });
             break;
         }
@@ -2678,8 +2862,15 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
         }
         case OBJECT_POLYLINE_WIDTH: {
             ccPolyline* poly = ccHObjectCaster::ToPolyline(m_currentObject);
-            assert(poly);
-            SetComboBoxIndex(editor, static_cast<int>(poly->getWidth()));
+            cloudViewer::geometry::LineSet* lineSet =
+                    poly ? nullptr
+                         : ccHObjectCaster::ToLineSet(m_currentObject);
+            assert(poly || lineSet);
+            if (poly) {
+                SetComboBoxIndex(editor, static_cast<int>(poly->getWidth()));
+            } else if (lineSet) {
+                SetComboBoxIndex(editor, static_cast<int>(lineSet->getWidth()));
+            }
             break;
         }
         case OBJECT_COLOR_SOURCE: {
@@ -3135,6 +3326,13 @@ void ccPropertiesTreeDelegate::updateDisplay() {
         // 2D labels use QPainter overlay in paintGL(); property changes
         // (show 2D panel, show legend) must trigger a VTK widget repaint.
         else if (object->isKindOf(CV_TYPES::LABEL_2D)) {
+            if (object->isEnabled()) {
+                objectIsDisplayed = true;
+            }
+        }
+        // ccImage renders through VTK 2D overlay; property changes (alpha)
+        // must trigger a redraw.
+        else if (object->isA(CV_TYPES::IMAGE)) {
             if (object->isEnabled()) {
                 objectIsDisplayed = true;
             }
@@ -3606,33 +3804,61 @@ void ccPropertiesTreeDelegate::imageAlphaChanged(int val) {
             param.viewId = image->getViewId();
             param.viewport = 0;
             view->changeEntityProperties(param);
+            view->renderScene();
         }
     }
 }
 
-void ccPropertiesTreeDelegate::opacityChanged(int val) {
-    if (!m_currentObject) return;
+ecvGenericGLDisplay* ccPropertiesTreeDelegate::applyOpacityPreview(int val) {
+    if (!m_currentObject) {
+        return nullptr;
+    }
+
+    const float opacity = val / 100.0f;
+    auto* defaultView = ecvViewManager::instance().getEffectiveView();
+
+    if (isOpacityFolder(m_currentObject)) {
+        return applyOpacityToVtkOnly(m_currentObject, opacity, defaultView);
+    }
+
+    if (!isOpacityRenderable(m_currentObject)) {
+        return nullptr;
+    }
+
+    PROPERTY_PARAM param(m_currentObject, static_cast<double>(opacity));
+    param.entityType = opacityEntityType(m_currentObject);
+    param.viewId = m_currentObject->getViewId();
+    param.viewport = 0;
+
+    ecvGenericGLDisplay* targetView =
+            const_cast<ecvGenericGLDisplay*>(m_currentObject->getDisplay());
+    if (!targetView) {
+        targetView = defaultView;
+    }
+    if (targetView) {
+        targetView->changeEntityProperties(param);
+    }
+    return targetView;
+}
+
+ecvGenericGLDisplay* ccPropertiesTreeDelegate::applyOpacityValue(int val) {
+    ecvGenericGLDisplay* previewView = nullptr;
+    if (!m_currentObject) {
+        return previewView;
+    }
 
     // Convert slider value [0, 100] to opacity [0.0, 1.0]
     float opacity = val / 100.0f;
 
-    // Check if this is a folder with children
-    if (m_currentObject->getChildrenNumber() > 0) {
-        // For folders, apply opacity to all renderable children recursively
+    if (isOpacityFolder(m_currentObject)) {
         auto* folderView = ecvViewManager::instance().getEffectiveView();
         std::function<void(ccHObject*, float)> applyOpacityRecursive =
-                [&applyOpacityRecursive, folderView](ccHObject* obj, float op) {
+                [&applyOpacityRecursive, folderView, &previewView](
+                        ccHObject* obj, float op) {
                     if (!obj || !obj->isEnabled()) return;
 
-                    bool isRenderable = (obj->isKindOf(CV_TYPES::POINT_CLOUD) ||
-                                         obj->isKindOf(CV_TYPES::MESH) ||
-                                         obj->isKindOf(CV_TYPES::PRIMITIVE) ||
-                                         obj->isKindOf(CV_TYPES::POLY_LINE) ||
-                                         obj->isKindOf(CV_TYPES::FACET));
-
-                    if (isRenderable) {
+                    if (isOpacityRenderable(obj)) {
                         if (std::abs(obj->getOpacity() - op) >= 0.001f) {
-                            // Per-view: also update the active view's rep
                             if (folderView) {
                                 auto* rep = ecvRepresentationManager::instance()
                                                     .ensureRepresentation(
@@ -3646,21 +3872,8 @@ void ccPropertiesTreeDelegate::opacityChanged(int val) {
 
                             obj->setOpacity(op);
 
-                            ENTITY_TYPE entityType =
-                                    ENTITY_TYPE::ECV_POINT_CLOUD;
-                            if (obj->isKindOf(CV_TYPES::POINT_CLOUD)) {
-                                entityType = ENTITY_TYPE::ECV_POINT_CLOUD;
-                            } else if (obj->isKindOf(CV_TYPES::MESH) ||
-                                       obj->isKindOf(CV_TYPES::PRIMITIVE)) {
-                                entityType = ENTITY_TYPE::ECV_MESH;
-                            } else if (obj->isKindOf(CV_TYPES::POLY_LINE)) {
-                                entityType = ENTITY_TYPE::ECV_LINES_3D;
-                            } else if (obj->isKindOf(CV_TYPES::FACET)) {
-                                entityType = ENTITY_TYPE::ECV_MESH;
-                            }
-
                             PROPERTY_PARAM param(obj, static_cast<double>(op));
-                            param.entityType = entityType;
+                            param.entityType = opacityEntityType(obj);
                             param.viewId = obj->getViewId();
                             param.viewport = 0;
 
@@ -3672,6 +3885,7 @@ void ccPropertiesTreeDelegate::opacityChanged(int val) {
                             }
                             if (objView) {
                                 objView->changeEntityProperties(param);
+                                previewView = objView;
                             }
                         }
                     }
@@ -3682,21 +3896,21 @@ void ccPropertiesTreeDelegate::opacityChanged(int val) {
                 };
 
         applyOpacityRecursive(m_currentObject, opacity);
-        refreshActiveDisplayLikeUpdateScreen();
+        if (!previewView) {
+            previewView = folderView;
+        }
 
         CVLog::PrintVerbose(
-                QString("[ccPropertiesTreeDelegate::opacityChanged] "
+                QString("[ccPropertiesTreeDelegate::applyOpacityValue] "
                         "Set opacity to %1 for folder '%2' and all renderable "
                         "children")
                         .arg(opacity)
                         .arg(m_currentObject->getName()));
     } else {
         if (std::abs(m_currentObject->getOpacity() - opacity) < 0.001f) {
-            return;
+            return previewView;
         }
 
-        // Per-view: store opacity in the active view's representation
-        // so different views can have different opacity for the same object.
         auto* activeView = ecvViewManager::instance().getEffectiveView();
         if (activeView) {
             auto* rep =
@@ -3711,21 +3925,8 @@ void ccPropertiesTreeDelegate::opacityChanged(int val) {
 
         m_currentObject->setOpacity(opacity);
 
-        ENTITY_TYPE entityType = ENTITY_TYPE::ECV_POINT_CLOUD;
-
-        if (m_currentObject->isKindOf(CV_TYPES::POINT_CLOUD)) {
-            entityType = ENTITY_TYPE::ECV_POINT_CLOUD;
-        } else if (m_currentObject->isKindOf(CV_TYPES::MESH) ||
-                   m_currentObject->isKindOf(CV_TYPES::PRIMITIVE)) {
-            entityType = ENTITY_TYPE::ECV_MESH;
-        } else if (m_currentObject->isKindOf(CV_TYPES::POLY_LINE)) {
-            entityType = ENTITY_TYPE::ECV_LINES_3D;
-        } else if (m_currentObject->isKindOf(CV_TYPES::FACET)) {
-            entityType = ENTITY_TYPE::ECV_MESH;
-        }
-
         PROPERTY_PARAM param(m_currentObject, static_cast<double>(opacity));
-        param.entityType = entityType;
+        param.entityType = opacityEntityType(m_currentObject);
         param.viewId = m_currentObject->getViewId();
         param.viewport = 0;
 
@@ -3736,21 +3937,44 @@ void ccPropertiesTreeDelegate::opacityChanged(int val) {
         }
         if (targetView) {
             targetView->changeEntityProperties(param);
+            previewView = targetView;
         }
 
-        // Opacity is a display property -- do NOT mark the entity for
-        // a full geometry/texture redraw (setRedrawFlagRecursive) because
-        // the texture pipeline re-applies material alpha and overwrites
-        // the user opacity.  changeEntityProperties already updated the
-        // VTK actor property; just trigger a lightweight VTK re-render.
-        refreshActiveDisplayLikeUpdateScreen();
-
         CVLog::PrintVerbose(
-                QString("[ccPropertiesTreeDelegate::opacityChanged] "
+                QString("[ccPropertiesTreeDelegate::applyOpacityValue] "
                         "Set opacity to %1 for object '%2'")
                         .arg(opacity)
                         .arg(m_currentObject->getName()));
     }
+
+    return previewView;
+}
+
+void ccPropertiesTreeDelegate::opacityChanged(int val) {
+    if (!m_currentObject) {
+        return;
+    }
+
+    // ParaView-style live preview: VTK actor only + coalesced render.
+    m_pendingOpacityValue = val;
+    m_lastPreviewView = applyOpacityPreview(val);
+    m_viewPropertyRenderTimer.start();
+}
+
+void ccPropertiesTreeDelegate::opacityCommit() {
+    m_viewPropertyRenderTimer.stop();
+    if (!m_currentObject) {
+        m_pendingOpacityValue = -1;
+        m_lastPreviewView = nullptr;
+        return;
+    }
+
+    if (m_pendingOpacityValue >= 0) {
+        applyOpacityValue(m_pendingOpacityValue);
+    }
+    refreshActiveDisplayLikeUpdateScreen();
+    m_pendingOpacityValue = -1;
+    m_lastPreviewView = nullptr;
 }
 
 void ccPropertiesTreeDelegate::perViewOpacityChanged(int val) {
@@ -3800,7 +4024,7 @@ void ccPropertiesTreeDelegate::applySensorViewport() {
     assert(sensor);
 
     if (sensor->applyViewport()) {
-        CVLog::Print(tr("[ApplySensorViewport] Viewport applied"));
+        CVLog::PrintDebug(tr("[ApplySensorViewport] Viewport applied"));
     }
 }
 
@@ -3987,11 +4211,16 @@ void ccPropertiesTreeDelegate::polyineWidthChanged(int size) {
     if (!m_currentObject) return;
 
     ccPolyline* polyline = ccHObjectCaster::ToPolyline(m_currentObject);
-    assert(polyline);
+    cloudViewer::geometry::LineSet* lineSet =
+            polyline ? nullptr : ccHObjectCaster::ToLineSet(m_currentObject);
 
     if (polyline &&
         polyline->getWidth() != static_cast<PointCoordinateType>(size)) {
         polyline->setWidth(static_cast<PointCoordinateType>(size));
+        updateCurrentEntity(false);
+    } else if (lineSet &&
+               lineSet->getWidth() != static_cast<PointCoordinateType>(size)) {
+        lineSet->setWidth(static_cast<PointCoordinateType>(size));
         updateCurrentEntity(false);
     }
 }
@@ -4101,24 +4330,77 @@ void ccPropertiesTreeDelegate::updateCurrentEntity(bool redraw /* = true*/) {
 
 // ParaView-style View Properties implementation
 
-void ccPropertiesTreeDelegate::lightIntensityChanged(double intensity) {
+void ccPropertiesTreeDelegate::applyLightIntensityPreview(double intensity) {
     auto* view = ecvViewManager::instance().getEffectiveView();
-    if (!view) {
+    if (!view || !m_currentObject) {
         return;
     }
 
-    if (m_currentObject) {
-        // Per-object: apply light intensity to the selected object only
-        QString viewID = m_currentObject->getViewId();
+    if (isOpacityFolder(m_currentObject)) {
+        m_lastPreviewView = applyLightIntensityToObjects(
+                m_currentObject, intensity, view, false);
+        return;
+    }
+
+    if (isOpacityRenderable(m_currentObject)) {
+        const QString viewID = m_currentObject->getViewId();
         if (!viewID.isEmpty()) {
-            view->setObjectLightIntensity(viewID, intensity);
+            view->setObjectLightIntensity(viewID, intensity, false);
+            m_lastPreviewView = view;
             return;
         }
     }
 
-    // Fallback: global light intensity (headlight)
     view->setLightIntensity(intensity);
+    m_lastPreviewView = view;
+}
+
+void ccPropertiesTreeDelegate::applyLightIntensityValue(double intensity) {
+    auto* view = ecvViewManager::instance().getEffectiveView();
+    if (!view || !m_currentObject) {
+        return;
+    }
+
+    if (isOpacityFolder(m_currentObject)) {
+        applyLightIntensityToObjects(m_currentObject, intensity, view, false);
+        return;
+    }
+
+    if (isOpacityRenderable(m_currentObject)) {
+        const QString viewID = m_currentObject->getViewId();
+        if (!viewID.isEmpty()) {
+            view->setObjectLightIntensity(viewID, intensity, false);
+            return;
+        }
+    }
+
+    view->setLightIntensity(intensity);
+}
+
+void ccPropertiesTreeDelegate::lightIntensityChanged(double intensity) {
+    if (!m_currentObject) {
+        return;
+    }
+
+    m_pendingLightIntensity = intensity;
+    applyLightIntensityPreview(intensity);
+    m_viewPropertyRenderTimer.start();
+}
+
+void ccPropertiesTreeDelegate::lightIntensityCommit() {
+    m_viewPropertyRenderTimer.stop();
+    if (!m_currentObject) {
+        m_pendingLightIntensity = -1.0;
+        m_lastPreviewView = nullptr;
+        return;
+    }
+
+    if (m_pendingLightIntensity >= 0.0) {
+        applyLightIntensityValue(m_pendingLightIntensity);
+    }
     refreshActiveDisplayLikeUpdateScreen();
+    m_pendingLightIntensity = -1.0;
+    m_lastPreviewView = nullptr;
 }
 
 void ccPropertiesTreeDelegate::dataAxesGridEditRequested() {

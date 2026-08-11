@@ -14,4 +14,7 @@
 class AssimpGltf final : public IoAbstractLoader {
 public:
     AssimpGltf();
+
+protected:
+    unsigned int _assimpPostProcessFlags() const override;
 };

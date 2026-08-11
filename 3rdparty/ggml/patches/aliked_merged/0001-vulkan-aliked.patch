@@ -1,0 +1,1818 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index e5556c8..9be4f20 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -336,6 +336,7 @@ set(GGML_PUBLIC_HEADERS
+     include/ggml-virtgpu.h
+     include/ggml-sycl.h
+     include/ggml-vulkan.h
++    include/ggml-vulkan-aliked.h
+     include/ggml-webgpu.h
+     include/ggml-zendnn.h
+     include/ggml-openvino.h
+diff --git a/include/ggml-vulkan-aliked.h b/include/ggml-vulkan-aliked.h
+new file mode 100644
+index 0000000..3d47f9f
+--- /dev/null
++++ b/include/ggml-vulkan-aliked.h
+@@ -0,0 +1,70 @@
++#pragma once
++
++#include "ggml-backend.h"
++#include "ggml.h"
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++// Returns true when ALIKED Vulkan compute pipelines are available on this backend.
++GGML_BACKEND_API bool ggml_vulkan_aliked_available(ggml_backend_t backend);
++
++// Drain VkAliked + ggml compute queues; reset open compute_ctx / descriptor idx.
++// Call at extract boundaries to avoid stale command buffers across custom ops.
++GGML_BACKEND_API bool ggml_vulkan_aliked_queue_idle(ggml_backend_t backend);
++
++GGML_BACKEND_API bool ggml_vulkan_aliked_whcn_to_nchw(ggml_backend_t backend,
++                                                      const ggml_tensor *whcn,
++                                                      ggml_tensor *nchw, int32_t c,
++                                                      int32_t h, int32_t w);
++
++GGML_BACKEND_API bool ggml_vulkan_aliked_nchw_to_whcn(ggml_backend_t backend,
++                                                      const ggml_tensor *nchw,
++                                                      ggml_tensor *whcn, int32_t c,
++                                                      int32_t h, int32_t w);
++
++// Copy WHCN tensor to dense WHCN (handles gallocr padded strides on src).
++GGML_BACKEND_API bool ggml_vulkan_aliked_dense_copy_whcn(ggml_backend_t backend,
++                                                         const ggml_tensor *src,
++                                                         ggml_tensor *dst, int32_t w,
++                                                         int32_t h, int32_t c);
++
++GGML_BACKEND_API bool ggml_vulkan_aliked_clamp_inplace(ggml_backend_t backend,
++                                                       ggml_tensor *data, size_t count,
++                                                       float min_value, float max_value);
++
++GGML_BACKEND_API bool ggml_vulkan_aliked_l2norm_inplace(
++    ggml_backend_t backend, ggml_tensor *data, int32_t channels, int32_t h,
++    int32_t w);
++
++GGML_BACKEND_API bool ggml_vulkan_aliked_deform_conv2d(
++    ggml_backend_t backend, const ggml_tensor *input, const ggml_tensor *offset,
++    const ggml_tensor *weight, const ggml_tensor *bias, ggml_tensor *output,
++    int32_t ic, int32_t ih, int32_t iw, int32_t oc, int32_t kh, int32_t kw,
++    int32_t pad, int32_t layout);
++
++// Scratch tensors (nms/tmp_a/tmp_b/tmp_c/block_keys/block_indices) must be pre-allocated
++// GpuTensors on the same backend. indices_dev is optional host-side index buffer upload target.
++GGML_BACKEND_API bool ggml_vulkan_aliked_run_dkd(
++    ggml_backend_t backend, const ggml_tensor *score_map, int32_t h, int32_t w,
++    int32_t radius, int32_t top_k, float scores_th, int32_t n_limit,
++    ggml_tensor *keypoints_norm, ggml_tensor *scores, int32_t *out_count,
++    ggml_tensor *nms, ggml_tensor *tmp_a, ggml_tensor *tmp_b, ggml_tensor *tmp_c,
++    ggml_tensor *block_keys, ggml_tensor *block_indices, ggml_tensor *indices_dev);
++
++GGML_BACKEND_API bool ggml_vulkan_aliked_run_sddh(
++    ggml_backend_t backend, const ggml_tensor *feature_map, int32_t dim, int32_t h,
++    int32_t w, const ggml_tensor *keypoints_norm, int32_t count, int32_t kernel_size,
++    int32_t n_pos, const ggml_tensor *offset_0_w, const ggml_tensor *offset_0_b,
++    const ggml_tensor *offset_2_w, const ggml_tensor *offset_2_b,
++    const ggml_tensor *sf_conv_w, const ggml_tensor *agg_weights,
++    ggml_tensor *workspace, ggml_tensor *descriptors);
++
++GGML_BACKEND_API bool ggml_vulkan_aliked_upsample_bilinear(
++    ggml_backend_t backend, const ggml_tensor *input, ggml_tensor *output, int32_t ic,
++    int32_t ih, int32_t iw, int32_t out_h, int32_t out_w);
++
++#ifdef __cplusplus
++}
++#endif
+diff --git a/src/ggml-vulkan/ggml-vulkan-aliked.inc.cpp b/src/ggml-vulkan/ggml-vulkan-aliked.inc.cpp
+new file mode 100644
+index 0000000..62ca76e
+--- /dev/null
++++ b/src/ggml-vulkan/ggml-vulkan-aliked.inc.cpp
+@@ -0,0 +1,754 @@
++// ALIKED custom Vulkan compute — included at end of ggml-vulkan.cpp for internal API access.
++
++#include "ggml-vulkan-aliked.h"
++
++#include <algorithm>
++#include <array>
++#include <cstring>
++#include <mutex>
++#include <unordered_map>
++#include <vector>
++
++namespace {
++
++constexpr int32_t kTopKBlockCount = 256;
++constexpr int32_t kTopKLocal = 32;
++constexpr int32_t kSddhBatchSize = 64;
++constexpr int32_t kSddhFinishChunk = 16; // batches per Vulkan submit when SINGLE=0
++
++static int32_t vk_aliked_sddh_batch_size() {
++    const char *env = std::getenv("LIGHTGLUE_ALIKED_VULKAN_SDDH_BATCH");
++    if (env != nullptr && env[0] != '\0') {
++        return std::max(1, std::atoi(env));
++    }
++    return kSddhBatchSize;
++}
++
++static int32_t vk_aliked_sddh_finish_chunk() {
++    const char *env = std::getenv("LIGHTGLUE_ALIKED_VULKAN_SDDH_CHUNK");
++    if (env != nullptr && env[0] != '\0') {
++        const int32_t value = std::max(1, std::atoi(env));
++        return value;
++    }
++    return kSddhFinishChunk;
++}
++
++static bool vk_aliked_sddh_single_submit() {
++    const char *env = std::getenv("LIGHTGLUE_ALIKED_VULKAN_SDDH_SINGLE");
++    if (env != nullptr) {
++        return env[0] != '0';
++    }
++    // One dispatch for all keypoints avoids multi-batch push-constant races (512 kpts).
++    return true;
++}
++
++struct vk_aliked_push_deform {
++    uint32_t ic, ih, iw, oc, kh, kw, pad, has_bias;
++    uint32_t mem_layout;
++    uint32_t input_off, offset_off, weight_off, bias_off, output_off;
++};
++
++struct vk_aliked_push_layout {
++    uint32_t c, h, w, mode;
++};
++
++struct vk_aliked_push_dense_copy {
++    uint32_t w, h, c;
++    uint32_t src_nb0, src_nb1, src_nb2;
++    uint32_t src_off;
++};
++
++struct vk_aliked_push_clamp {
++    uint32_t count;
++    float min_val;
++    float max_val;
++};
++
++struct vk_aliked_push_l2norm {
++    uint32_t channels, h, w, data_off;
++    uint32_t nb0, nb1, nb2;
++};
++
++struct vk_aliked_push_max_pool {
++    uint32_t h, w;
++    int32_t pad;
++    uint32_t input_off, output_off;
++};
++
++struct vk_aliked_push_dkd_elem {
++    uint32_t count, h, w, radius, op;
++    uint32_t a_off, b_off, c_off, d_off;
++};
++
++struct vk_aliked_push_block_topk {
++    uint32_t count, num_blocks, k_local;
++    uint32_t nms_off, keys_off, indices_off;
++};
++
++struct vk_aliked_push_dkd_refine {
++    uint32_t count, h, w, radius;
++    uint32_t score_off, indices_off, keypoints_off, scores_off;
++};
++
++struct vk_aliked_push_sddh {
++    uint32_t dim, h, w, count, kernel_size, n_pos;
++    uint32_t feature_off, kpt_off, workspace_off, desc_off;
++    uint32_t k_offset, batch_count;
++    uint32_t src_nb0, src_nb1, src_nb2;
++    uint32_t off0_w, off0_b, off2_w, off2_b, sf_w, agg_w;
++};
++
++struct vk_aliked_push_upsample {
++    uint32_t ic, ih, iw, out_h, out_w, src_off, dst_off;
++};
++
++struct vk_aliked_pipelines {
++    vk_pipeline deform_conv;
++    vk_pipeline layout_convert;
++    vk_pipeline dense_copy;
++    vk_pipeline clamp;
++    vk_pipeline l2norm;
++    vk_pipeline max_pool;
++    vk_pipeline dkd_elem;
++    vk_pipeline block_topk;
++    vk_pipeline dkd_refine;
++    vk_pipeline sddh;
++    vk_pipeline upsample_bilinear;
++    bool ready = false;
++};
++
++static std::mutex g_aliked_mtx;
++static std::unordered_map<vk_device, vk_aliked_pipelines> g_aliked;
++
++static vk_pipeline vk_aliked_make_pipeline(vk_device &device, const char *name,
++                                           size_t spv_len, const void *spv_data,
++                                           uint32_t param_count, uint32_t push_size,
++                                           std::array<uint32_t, 3> wg_denoms) {
++    vk_pipeline pipeline = std::make_shared<vk_pipeline_struct>();
++    pipeline->name = name;
++    pipeline->parameter_count = param_count;
++    pipeline->push_constant_size = push_size;
++    pipeline->wg_denoms = wg_denoms;
++    pipeline->initialized = true;
++    ggml_vk_create_pipeline_func(device, pipeline, spv_len, spv_data, "main", param_count,
++                                 wg_denoms, {}, false, false, 0);
++    return pipeline;
++}
++
++static vk_aliked_pipelines &vk_aliked_ensure(ggml_backend_vk_context *ctx) {
++    std::lock_guard<std::mutex> guard(g_aliked_mtx);
++    vk_aliked_pipelines &state = g_aliked[ctx->device];
++    if (state.ready) {
++        return state;
++    }
++    vk_device device = ctx->device;
++    state.deform_conv =
++        vk_aliked_make_pipeline(device, "aliked_deform_conv_f32", aliked_deform_conv_f32_len,
++                                aliked_deform_conv_f32_data, 5, sizeof(vk_aliked_push_deform),
++                                {16, 16, 1});
++    state.layout_convert = vk_aliked_make_pipeline(
++        device, "aliked_layout_convert_f32", aliked_layout_convert_f32_len,
++        aliked_layout_convert_f32_data, 2, sizeof(vk_aliked_push_layout), {16, 1, 1});
++    state.dense_copy = vk_aliked_make_pipeline(device, "aliked_dense_copy_f32",
++                                               aliked_dense_copy_f32_len,
++                                               aliked_dense_copy_f32_data, 2,
++                                               sizeof(vk_aliked_push_dense_copy),
++                                               {16, 8, 1});
++    state.clamp = vk_aliked_make_pipeline(device, "aliked_clamp_f32", aliked_clamp_f32_len,
++                                          aliked_clamp_f32_data, 1, sizeof(vk_aliked_push_clamp),
++                                          {256, 1, 1});
++    state.l2norm = vk_aliked_make_pipeline(
++        device, "aliked_l2norm_f32", aliked_l2norm_f32_len,
++        aliked_l2norm_f32_data, 1, sizeof(vk_aliked_push_l2norm), {256, 1, 1});
++    state.max_pool = vk_aliked_make_pipeline(device, "aliked_max_pool_f32", aliked_max_pool_f32_len,
++                                             aliked_max_pool_f32_data, 2,
++                                             sizeof(vk_aliked_push_max_pool), {16, 16, 1});
++    state.dkd_elem = vk_aliked_make_pipeline(device, "aliked_dkd_elem_f32", aliked_dkd_elem_f32_len,
++                                             aliked_dkd_elem_f32_data, 4,
++                                             sizeof(vk_aliked_push_dkd_elem), {256, 1, 1});
++    state.block_topk = vk_aliked_make_pipeline(
++        device, "aliked_block_topk_f32", aliked_block_topk_f32_len, aliked_block_topk_f32_data, 3,
++        sizeof(vk_aliked_push_block_topk), {1, 1, 1});
++    state.dkd_refine = vk_aliked_make_pipeline(
++        device, "aliked_dkd_refine_f32", aliked_dkd_refine_f32_len, aliked_dkd_refine_f32_data, 4,
++        sizeof(vk_aliked_push_dkd_refine), {1, 1, 1});
++    state.sddh = vk_aliked_make_pipeline(device, "aliked_sddh_f32", aliked_sddh_f32_len,
++                                         aliked_sddh_f32_data, 10, sizeof(vk_aliked_push_sddh),
++                                         {1, 1, 1});
++    state.upsample_bilinear = vk_aliked_make_pipeline(
++        device, "aliked_upsample_bilinear_f32", aliked_upsample_bilinear_f32_len,
++        aliked_upsample_bilinear_f32_data, 2, sizeof(vk_aliked_push_upsample), {16, 16, 1});
++    state.ready = true;
++    return state;
++}
++
++static ggml_backend_vk_context *vk_aliked_ctx(ggml_backend_t backend) {
++    if (backend == nullptr || !ggml_backend_is_vk(backend)) {
++        return nullptr;
++    }
++    return static_cast<ggml_backend_vk_context *>(backend->context);
++}
++
++static uint32_t vk_aliked_misalign_floats(ggml_backend_vk_context *ctx, const ggml_tensor *t) {
++    if (t == nullptr || t->buffer == nullptr) {
++        return 0;
++    }
++    return get_misalign_bytes(ctx, t) / sizeof(float);
++}
++
++static vk_subbuffer vk_aliked_subbuf(ggml_backend_vk_context *ctx, const ggml_tensor *t) {
++    return ggml_vk_tensor_subbuffer(ctx, t, true);
++}
++
++template <typename PushT>
++static void vk_aliked_dispatch1(ggml_backend_vk_context *ctx, vk_pipeline &pipe,
++                                  std::initializer_list<vk_subbuffer> bufs, const PushT &pc,
++                                  std::array<uint32_t, 3> elements, bool request_descriptor = true) {
++    if (request_descriptor) {
++        ggml_pipeline_request_descriptor_sets(ctx, pipe, 1);
++    }
++    vk_context subctx = ggml_vk_get_compute_ctx(ctx);
++    std::vector<vk::DescriptorBufferInfo> infos;
++    infos.reserve(bufs.size());
++    for (const auto &sb : bufs) {
++        infos.push_back({sb.buffer->buffer, sb.offset, sb.size});
++    }
++
++    const uint32_t wg0 = CEIL_DIV(elements[0], pipe->wg_denoms[0]);
++    const uint32_t wg1 = CEIL_DIV(elements[1], pipe->wg_denoms[1]);
++    const uint32_t wg2 = CEIL_DIV(elements[2], pipe->wg_denoms[2]);
++    GGML_ASSERT(infos.size() == pipe->parameter_count);
++    GGML_ASSERT(pipe->push_constant_size == push_constant_size(pc));
++
++    vk::DescriptorSet &descriptor_set = ctx->descriptor_sets[ctx->descriptor_set_idx++];
++    vk::WriteDescriptorSet write_descriptor_set{
++        descriptor_set, 0, 0, pipe->parameter_count, vk::DescriptorType::eStorageBuffer,
++        nullptr, infos.data()};
++    ctx->device->device.updateDescriptorSets({write_descriptor_set}, {});
++
++    subctx->s->buffer->buf.pushConstants(pipe->layout, vk::ShaderStageFlagBits::eCompute, 0,
++                                         push_constant_size(pc), push_constant_data(pc));
++    subctx->s->buffer->buf.bindPipeline(vk::PipelineBindPoint::eCompute, pipe->pipeline);
++    subctx->s->buffer->buf.bindDescriptorSets(vk::PipelineBindPoint::eCompute, pipe->layout, 0,
++                                              {descriptor_set}, {});
++    subctx->s->buffer->buf.dispatch(wg0, wg1, wg2);
++}
++
++static void vk_aliked_compute_barrier(ggml_backend_vk_context *ctx) {
++    if (ctx->compute_ctx.expired()) {
++        return;
++    }
++    vk_context subctx = ctx->compute_ctx.lock();
++    subctx->s->buffer->buf.pipelineBarrier(
++        subctx->p->q->stage_flags, subctx->p->q->stage_flags, {},
++        vk::MemoryBarrier(vk::AccessFlagBits::eShaderWrite,
++                          vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite),
++        {}, {});
++}
++
++static void vk_aliked_finish(ggml_backend_vk_context *ctx) {
++    if (!ctx->compute_ctx.expired()) {
++        vk_context subctx = ctx->compute_ctx.lock();
++        ggml_vk_ctx_end(subctx);
++        ggml_vk_submit(subctx, ctx->fence);
++        ctx->submit_pending = true;
++        ctx->compute_ctx.reset();
++    }
++    ggml_vk_synchronize(ctx);
++    ctx->descriptor_set_idx = 0;
++}
++
++static bool vk_aliked_layout_convert(ggml_backend_t backend, const ggml_tensor *src,
++                                     ggml_tensor *dst, int32_t c, int32_t h, int32_t w,
++                                     uint32_t mode) {
++    ggml_backend_vk_context *ctx = vk_aliked_ctx(backend);
++    if (ctx == nullptr) {
++        return false;
++    }
++    ggml_backend_synchronize(backend);
++    vk_aliked_pipelines &pipes = vk_aliked_ensure(ctx);
++    vk_aliked_push_layout pc{static_cast<uint32_t>(c), static_cast<uint32_t>(h),
++                             static_cast<uint32_t>(w), mode};
++    vk_aliked_dispatch1(ctx, pipes.layout_convert,
++                        {vk_aliked_subbuf(ctx, src), vk_aliked_subbuf(ctx, dst)}, pc,
++                        {static_cast<uint32_t>(w), static_cast<uint32_t>(h),
++                         static_cast<uint32_t>(c)});
++    vk_aliked_finish(ctx);
++    return true;
++}
++
++static bool vk_aliked_max_pool(ggml_backend_vk_context *ctx, vk_aliked_pipelines &pipes,
++                               const ggml_tensor *input, ggml_tensor *output, int32_t h,
++                               int32_t w, int32_t pad) {
++    vk_aliked_push_max_pool pc{static_cast<uint32_t>(h), static_cast<uint32_t>(w), pad,
++                               vk_aliked_misalign_floats(ctx, input),
++                               vk_aliked_misalign_floats(ctx, output)};
++    vk_aliked_dispatch1(ctx, pipes.max_pool,
++                        {vk_aliked_subbuf(ctx, input), vk_aliked_subbuf(ctx, output)}, pc,
++                        {static_cast<uint32_t>(w), static_cast<uint32_t>(h), 1});
++    return true;
++}
++
++static bool vk_aliked_dkd_elem(ggml_backend_vk_context *ctx, vk_aliked_pipelines &pipes,
++                               uint32_t op, const ggml_tensor *a, const ggml_tensor *b,
++                               ggml_tensor *c, ggml_tensor *d, int32_t h, int32_t w,
++                               int32_t count, int32_t radius) {
++    vk_aliked_push_dkd_elem pc{
++        static_cast<uint32_t>(count), static_cast<uint32_t>(h),
++        static_cast<uint32_t>(w), static_cast<uint32_t>(radius), op,
++        vk_aliked_misalign_floats(ctx, a), vk_aliked_misalign_floats(ctx, b),
++        vk_aliked_misalign_floats(ctx, c), vk_aliked_misalign_floats(ctx, d)};
++    if (op == 5) {
++        vk_aliked_dispatch1(ctx, pipes.dkd_elem, {vk_aliked_subbuf(ctx, a), vk_aliked_subbuf(ctx, b),
++                                                  vk_aliked_subbuf(ctx, c), vk_aliked_subbuf(ctx, d)},
++                            pc, {static_cast<uint32_t>(w), static_cast<uint32_t>(h), 1});
++    } else {
++        vk_aliked_dispatch1(ctx, pipes.dkd_elem, {vk_aliked_subbuf(ctx, a), vk_aliked_subbuf(ctx, b),
++                                                  vk_aliked_subbuf(ctx, c), vk_aliked_subbuf(ctx, d)},
++                            pc, {static_cast<uint32_t>(count), 1, 1});
++    }
++    return true;
++}
++
++static bool vk_aliked_simple_nms(ggml_backend_vk_context *ctx, vk_aliked_pipelines &pipes,
++                                 const ggml_tensor *scores, ggml_tensor *nms,
++                                 ggml_tensor *tmp_a, ggml_tensor *tmp_b, ggml_tensor *tmp_c,
++                                 int32_t h, int32_t w, int32_t radius) {
++    const int32_t count = h * w;
++    if (!vk_aliked_max_pool(ctx, pipes, scores, tmp_a, h, w, radius)) {
++        return false;
++    }
++    if (!vk_aliked_dkd_elem(ctx, pipes, 0, scores, tmp_a, tmp_b, tmp_c, h, w, count, radius)) {
++        return false;
++    }
++    if (!vk_aliked_dkd_elem(ctx, pipes, 6, scores, scores, nms, tmp_c, h, w, count, radius)) {
++        return false;
++    }
++    vk_aliked_finish(ctx);
++    for (int iter = 0; iter < 2; ++iter) {
++        if (!vk_aliked_max_pool(ctx, pipes, tmp_b, tmp_a, h, w, radius)) {
++            return false;
++        }
++        if (!vk_aliked_dkd_elem(ctx, pipes, 1, tmp_a, tmp_a, tmp_c, tmp_c, h, w, count, radius)) {
++            return false;
++        }
++        if (!vk_aliked_dkd_elem(ctx, pipes, 2, tmp_c, tmp_c, nms, nms, h, w, count, radius)) {
++            return false;
++        }
++        if (!vk_aliked_max_pool(ctx, pipes, nms, tmp_a, h, w, radius)) {
++            return false;
++        }
++        if (!vk_aliked_dkd_elem(ctx, pipes, 3, tmp_a, tmp_c, nms, tmp_b, h, w, count, radius)) {
++            return false;
++        }
++        vk_aliked_finish(ctx);
++    }
++    if (!vk_aliked_dkd_elem(ctx, pipes, 4, scores, tmp_b, nms, tmp_c, h, w, count, radius)) {
++        return false;
++    }
++    vk_aliked_finish(ctx);
++    return true;
++}
++
++static bool vk_aliked_block_topk(ggml_backend_vk_context *ctx, vk_aliked_pipelines &pipes,
++                                 const ggml_tensor *nms, ggml_tensor *block_keys,
++                                 ggml_tensor *block_indices, int32_t count) {
++    vk_aliked_push_block_topk pc{static_cast<uint32_t>(count),
++                                 static_cast<uint32_t>(kTopKBlockCount),
++                                 static_cast<uint32_t>(kTopKLocal),
++                                 vk_aliked_misalign_floats(ctx, nms),
++                                 vk_aliked_misalign_floats(ctx, block_keys),
++                                 vk_aliked_misalign_floats(ctx, block_indices)};
++    vk_aliked_dispatch1(ctx, pipes.block_topk,
++                        {vk_aliked_subbuf(ctx, nms), vk_aliked_subbuf(ctx, block_keys),
++                         vk_aliked_subbuf(ctx, block_indices)},
++                        pc, {static_cast<uint32_t>(kTopKBlockCount), 1, 1});
++    return true;
++}
++
++static bool vk_aliked_use_gpu_topk() {
++    const char *env = std::getenv("LIGHTGLUE_ALIKED_VULKAN_DKD_GPU_TOPK");
++    return env != nullptr && env[0] != '0';
++}
++
++static bool vk_aliked_topk_indices_gpu(ggml_backend_t backend, ggml_backend_vk_context *ctx,
++                                       vk_aliked_pipelines &pipes, const ggml_tensor *nms,
++                                       ggml_tensor *block_keys, ggml_tensor *block_indices,
++                                       int32_t count, int32_t keep,
++                                       std::vector<int32_t> *indices) {
++    if (indices == nullptr || block_keys == nullptr || block_indices == nullptr ||
++        keep <= 0) {
++        return false;
++    }
++    if (!vk_aliked_block_topk(ctx, pipes, nms, block_keys, block_indices, count)) {
++        return false;
++    }
++    vk_aliked_finish(ctx);
++    ggml_backend_synchronize(backend);
++
++    const int32_t candidates = kTopKBlockCount * kTopKLocal;
++    std::vector<float> keys_host(static_cast<size_t>(candidates));
++    std::vector<float> idx_host(static_cast<size_t>(candidates));
++    ggml_backend_tensor_get(block_keys, keys_host.data(), 0,
++                            keys_host.size() * sizeof(float));
++    ggml_backend_tensor_get(block_indices, idx_host.data(), 0,
++                            idx_host.size() * sizeof(float));
++
++    std::vector<std::pair<float, int32_t>> scored(static_cast<size_t>(candidates));
++    for (int32_t i = 0; i < candidates; ++i) {
++        const float idx_f = idx_host[static_cast<size_t>(i)];
++        scored[static_cast<size_t>(i)] = {keys_host[static_cast<size_t>(i)],
++                                          static_cast<int32_t>(idx_f)};
++    }
++    const int32_t n = std::min(keep, candidates);
++    std::partial_sort(scored.begin(), scored.begin() + n, scored.end(),
++                      [](const auto &a, const auto &b) { return a.first > b.first; });
++    indices->clear();
++    indices->reserve(static_cast<size_t>(n));
++    for (int32_t i = 0; i < n; ++i) {
++        indices->push_back(scored[static_cast<size_t>(i)].second);
++    }
++    return static_cast<int32_t>(indices->size()) > 0;
++}
++
++} // namespace
++
++bool ggml_vulkan_aliked_available(ggml_backend_t backend) {
++    return vk_aliked_ctx(backend) != nullptr;
++}
++
++bool ggml_vulkan_aliked_queue_idle(ggml_backend_t backend) {
++    ggml_backend_vk_context *ctx = vk_aliked_ctx(backend);
++    if (ctx == nullptr) {
++        return false;
++    }
++    vk_aliked_finish(ctx);
++    ggml_backend_synchronize(backend);
++    return true;
++}
++
++bool ggml_vulkan_aliked_whcn_to_nchw(ggml_backend_t backend, const ggml_tensor *whcn,
++                                     ggml_tensor *nchw, int32_t c, int32_t h, int32_t w) {
++    return vk_aliked_layout_convert(backend, whcn, nchw, c, h, w, 0);
++}
++
++bool ggml_vulkan_aliked_dense_copy_whcn(ggml_backend_t backend, const ggml_tensor *src,
++                                        ggml_tensor *dst, int32_t w, int32_t h, int32_t c) {
++    ggml_backend_vk_context *ctx = vk_aliked_ctx(backend);
++    if (ctx == nullptr || src == nullptr || dst == nullptr || w <= 0 || h <= 0 || c <= 0) {
++        return false;
++    }
++    if (src->ne[0] != w || src->ne[1] != h || src->ne[2] != c || dst->ne[0] != w ||
++        dst->ne[1] != h || dst->ne[2] != c) {
++        return false;
++    }
++    ggml_backend_synchronize(backend);
++    vk_aliked_pipelines &pipes = vk_aliked_ensure(ctx);
++    vk_aliked_push_dense_copy pc{
++        static_cast<uint32_t>(w), static_cast<uint32_t>(h), static_cast<uint32_t>(c),
++        static_cast<uint32_t>(src->nb[0]), static_cast<uint32_t>(src->nb[1]),
++        static_cast<uint32_t>(src->nb[2]), vk_aliked_misalign_floats(ctx, src)};
++    vk_aliked_dispatch1(ctx, pipes.dense_copy,
++                        {vk_aliked_subbuf(ctx, src), vk_aliked_subbuf(ctx, dst)}, pc,
++                        {static_cast<uint32_t>(w), static_cast<uint32_t>(h),
++                         static_cast<uint32_t>(c)});
++    vk_aliked_finish(ctx);
++    return true;
++}
++
++bool ggml_vulkan_aliked_nchw_to_whcn(ggml_backend_t backend, const ggml_tensor *nchw,
++                                     ggml_tensor *whcn, int32_t c, int32_t h, int32_t w) {
++    return vk_aliked_layout_convert(backend, nchw, whcn, c, h, w, 1);
++}
++
++bool ggml_vulkan_aliked_upsample_bilinear(ggml_backend_t backend, const ggml_tensor *input,
++                                          ggml_tensor *output, int32_t ic, int32_t ih,
++                                          int32_t iw, int32_t out_h, int32_t out_w) {
++    ggml_backend_vk_context *ctx = vk_aliked_ctx(backend);
++    if (ctx == nullptr || input == nullptr || output == nullptr) {
++        return false;
++    }
++    ggml_backend_synchronize(backend);
++    vk_aliked_pipelines &pipes = vk_aliked_ensure(ctx);
++    vk_aliked_push_upsample pc{static_cast<uint32_t>(ic), static_cast<uint32_t>(ih),
++                               static_cast<uint32_t>(iw), static_cast<uint32_t>(out_h),
++                               static_cast<uint32_t>(out_w),
++                               vk_aliked_misalign_floats(ctx, input),
++                               vk_aliked_misalign_floats(ctx, output)};
++    vk_aliked_dispatch1(ctx, pipes.upsample_bilinear,
++                        {vk_aliked_subbuf(ctx, input), vk_aliked_subbuf(ctx, output)}, pc,
++                        {static_cast<uint32_t>(out_w), static_cast<uint32_t>(out_h),
++                         static_cast<uint32_t>(ic)});
++    vk_aliked_finish(ctx);
++    return true;
++}
++
++bool ggml_vulkan_aliked_clamp_inplace(ggml_backend_t backend, ggml_tensor *data, size_t count,
++                                      float min_value, float max_value) {
++    ggml_backend_vk_context *ctx = vk_aliked_ctx(backend);
++    if (ctx == nullptr) {
++        return false;
++    }
++    ggml_backend_synchronize(backend);
++    vk_aliked_pipelines &pipes = vk_aliked_ensure(ctx);
++    vk_aliked_push_clamp pc{static_cast<uint32_t>(count), min_value, max_value};
++    vk_aliked_dispatch1(ctx, pipes.clamp, {vk_aliked_subbuf(ctx, data)}, pc,
++                        {static_cast<uint32_t>(count), 1, 1});
++    vk_aliked_finish(ctx);
++    return true;
++}
++
++bool ggml_vulkan_aliked_l2norm_inplace(ggml_backend_t backend,
++                                       ggml_tensor *data, int32_t channels,
++                                       int32_t h, int32_t w) {
++    ggml_backend_vk_context *ctx = vk_aliked_ctx(backend);
++    if (ctx == nullptr || data == nullptr || channels <= 0 || h <= 0 || w <= 0) {
++        return false;
++    }
++    ggml_backend_synchronize(backend);
++    vk_aliked_pipelines &pipes = vk_aliked_ensure(ctx);
++    vk_aliked_push_l2norm pc{
++        static_cast<uint32_t>(channels), static_cast<uint32_t>(h),
++        static_cast<uint32_t>(w), vk_aliked_misalign_floats(ctx, data),
++        static_cast<uint32_t>(data->nb[0]), static_cast<uint32_t>(data->nb[1]),
++        static_cast<uint32_t>(data->nb[2])};
++    vk_aliked_dispatch1(ctx, pipes.l2norm, {vk_aliked_subbuf(ctx, data)}, pc,
++                        {static_cast<uint32_t>(h * w), 1, 1});
++    vk_aliked_finish(ctx);
++    ggml_backend_synchronize(backend);
++    return true;
++}
++
++bool ggml_vulkan_aliked_deform_conv2d(ggml_backend_t backend, const ggml_tensor *input,
++                                      const ggml_tensor *offset, const ggml_tensor *weight,
++                                      const ggml_tensor *bias, ggml_tensor *output, int32_t ic,
++                                      int32_t ih, int32_t iw, int32_t oc, int32_t kh, int32_t kw,
++                                      int32_t pad, int32_t layout) {
++    ggml_backend_vk_context *ctx = vk_aliked_ctx(backend);
++    if (ctx == nullptr) {
++        return false;
++    }
++    ggml_backend_synchronize(backend);
++    vk_aliked_pipelines &pipes = vk_aliked_ensure(ctx);
++    vk_subbuffer sb_bias = bias ? vk_aliked_subbuf(ctx, bias) : vk_aliked_subbuf(ctx, weight);
++    vk_aliked_push_deform pc{
++        static_cast<uint32_t>(ic), static_cast<uint32_t>(ih),
++        static_cast<uint32_t>(iw), static_cast<uint32_t>(oc),
++        static_cast<uint32_t>(kh), static_cast<uint32_t>(kw),
++        static_cast<uint32_t>(pad), bias ? 1u : 0u,
++        static_cast<uint32_t>(layout),
++        vk_aliked_misalign_floats(ctx, input),
++        vk_aliked_misalign_floats(ctx, offset),
++        vk_aliked_misalign_floats(ctx, weight),
++        bias ? vk_aliked_misalign_floats(ctx, bias) : 0u,
++        vk_aliked_misalign_floats(ctx, output)};
++    vk_aliked_dispatch1(ctx, pipes.deform_conv,
++                        {vk_aliked_subbuf(ctx, input), vk_aliked_subbuf(ctx, offset),
++                         vk_aliked_subbuf(ctx, weight), sb_bias, vk_aliked_subbuf(ctx, output)},
++                        pc, {static_cast<uint32_t>(iw), static_cast<uint32_t>(ih),
++                             static_cast<uint32_t>(oc)});
++    vk_aliked_finish(ctx);
++    return true;
++}
++
++bool ggml_vulkan_aliked_run_dkd(ggml_backend_t backend, const ggml_tensor *score_map, int32_t h,
++                                int32_t w, int32_t radius, int32_t top_k, float scores_th,
++                                int32_t n_limit, ggml_tensor *keypoints_norm,
++                                ggml_tensor *scores, int32_t *out_count, ggml_tensor *nms,
++                                ggml_tensor *tmp_a, ggml_tensor *tmp_b, ggml_tensor *tmp_c,
++                                ggml_tensor *block_keys, ggml_tensor *block_indices,
++                                ggml_tensor *indices_dev) {
++    ggml_backend_vk_context *ctx = vk_aliked_ctx(backend);
++    if (ctx == nullptr || out_count == nullptr) {
++        return false;
++    }
++    const int32_t count = h * w;
++    ggml_backend_synchronize(backend);
++    ctx->descriptor_set_idx = 0;
++    vk_aliked_pipelines &pipes = vk_aliked_ensure(ctx);
++    ggml_vulkan_aliked_queue_idle(backend);
++
++    if (!vk_aliked_simple_nms(ctx, pipes, score_map, nms, tmp_a, tmp_b, tmp_c, h, w, radius)) {
++        return false;
++    }
++    ggml_backend_synchronize(backend);
++
++    if (!vk_aliked_dkd_elem(ctx, pipes, 5, nms, nms, nms, tmp_c, h, w, count, radius)) {
++        return false;
++    }
++    vk_aliked_finish(ctx);
++    ggml_backend_synchronize(backend);
++
++    std::vector<int32_t> indices;
++    if (top_k > 0) {
++        const int32_t keep = std::min(top_k, count);
++        if (vk_aliked_use_gpu_topk() && block_keys != nullptr && block_indices != nullptr &&
++            vk_aliked_topk_indices_gpu(backend, ctx, pipes, nms, block_keys, block_indices,
++                                       count, keep, &indices)) {
++            // GPU block_topk path (CUDA-equivalent, opt-in).
++        } else {
++            std::vector<float> nms_host(static_cast<size_t>(count));
++            ggml_backend_tensor_get(nms, nms_host.data(), 0, nms_host.size() * sizeof(float));
++            std::vector<std::pair<float, int32_t>> scored;
++            scored.reserve(static_cast<size_t>(count));
++            for (int32_t i = 0; i < count; ++i) {
++                scored.emplace_back(nms_host[static_cast<size_t>(i)], i);
++            }
++            std::partial_sort(scored.begin(), scored.begin() + keep, scored.end(),
++                              [](const auto &a, const auto &b) { return a.first > b.first; });
++            indices.reserve(static_cast<size_t>(keep));
++            for (int32_t i = 0; i < keep; ++i) {
++                indices.push_back(scored[static_cast<size_t>(i)].second);
++            }
++        }
++    } else {
++        std::vector<float> nms_host(static_cast<size_t>(count));
++        ggml_backend_tensor_get(nms, nms_host.data(), 0, nms_host.size() * sizeof(float));
++        float threshold = scores_th;
++        if (scores_th > 0.0f) {
++            bool any = false;
++            for (float value : nms_host) {
++                if (value > threshold) {
++                    any = true;
++                    break;
++                }
++            }
++            if (!any) {
++                threshold = 0.0f;
++                for (float value : nms_host) {
++                    threshold += value;
++                }
++                threshold /= static_cast<float>(count);
++            }
++        } else {
++            threshold = 0.0f;
++            for (float value : nms_host) {
++                threshold += value;
++            }
++            threshold /= static_cast<float>(count);
++        }
++        std::vector<float> score_host(static_cast<size_t>(count));
++        ggml_backend_tensor_get(score_map, score_host.data(), 0, score_host.size() * sizeof(float));
++        std::vector<std::pair<float, int32_t>> scored;
++        for (int32_t i = 0; i < count; ++i) {
++            if (nms_host[static_cast<size_t>(i)] > threshold) {
++                scored.emplace_back(score_host[static_cast<size_t>(i)], i);
++            }
++        }
++        std::sort(scored.begin(), scored.end(),
++                  [](const auto &a, const auto &b) { return a.first > b.first; });
++        if (static_cast<int32_t>(scored.size()) > n_limit) {
++            scored.resize(static_cast<size_t>(n_limit));
++        }
++        indices.reserve(scored.size());
++        for (const auto &entry : scored) {
++            indices.push_back(entry.second);
++        }
++    }
++
++    const int32_t kpt_count = static_cast<int32_t>(indices.size());
++    *out_count = kpt_count;
++    if (kpt_count == 0) {
++        return true;
++    }
++
++    std::vector<float> indices_f(static_cast<size_t>(indices.size()));
++    for (size_t i = 0; i < indices.size(); ++i) {
++        indices_f[i] = static_cast<float>(indices[static_cast<size_t>(i)]);
++    }
++    ggml_backend_tensor_set(indices_dev, indices_f.data(), 0, indices_f.size() * sizeof(float));
++    ggml_backend_synchronize(backend);
++
++    vk_aliked_push_dkd_refine rpc{
++        static_cast<uint32_t>(kpt_count), static_cast<uint32_t>(h),
++        static_cast<uint32_t>(w), static_cast<uint32_t>(radius),
++        vk_aliked_misalign_floats(ctx, score_map),
++        vk_aliked_misalign_floats(ctx, indices_dev),
++        vk_aliked_misalign_floats(ctx, keypoints_norm),
++        vk_aliked_misalign_floats(ctx, scores)};
++    vk_aliked_dispatch1(ctx, pipes.dkd_refine,
++                        {vk_aliked_subbuf(ctx, score_map), vk_aliked_subbuf(ctx, indices_dev),
++                         vk_aliked_subbuf(ctx, keypoints_norm), vk_aliked_subbuf(ctx, scores)},
++                        rpc, {static_cast<uint32_t>(kpt_count), 1, 1});
++    vk_aliked_finish(ctx);
++    ggml_backend_synchronize(backend);
++    return true;
++}
++
++bool ggml_vulkan_aliked_run_sddh(
++    ggml_backend_t backend, const ggml_tensor *feature_map, int32_t dim, int32_t h, int32_t w,
++    const ggml_tensor *keypoints_norm, int32_t count, int32_t kernel_size, int32_t n_pos,
++    const ggml_tensor *offset_0_w, const ggml_tensor *offset_0_b, const ggml_tensor *offset_2_w,
++    const ggml_tensor *offset_2_b, const ggml_tensor *sf_conv_w, const ggml_tensor *agg_weights,
++    ggml_tensor *workspace, ggml_tensor *descriptors) {
++    ggml_backend_vk_context *ctx = vk_aliked_ctx(backend);
++    if (ctx == nullptr || count <= 0) {
++        return false;
++    }
++    ggml_backend_synchronize(backend);
++    ctx->descriptor_set_idx = 0;
++    vk_aliked_pipelines &pipes = vk_aliked_ensure(ctx);
++    const uint32_t feature_off = vk_aliked_misalign_floats(ctx, feature_map);
++    const uint32_t kpt_off = vk_aliked_misalign_floats(ctx, keypoints_norm);
++    const uint32_t workspace_off = vk_aliked_misalign_floats(ctx, workspace);
++    const uint32_t desc_off = vk_aliked_misalign_floats(ctx, descriptors);
++    const uint32_t off0_w = vk_aliked_misalign_floats(ctx, offset_0_w);
++    const uint32_t off0_b = vk_aliked_misalign_floats(ctx, offset_0_b);
++    const uint32_t off2_w = vk_aliked_misalign_floats(ctx, offset_2_w);
++    const uint32_t off2_b = vk_aliked_misalign_floats(ctx, offset_2_b);
++    const uint32_t sf_w = vk_aliked_misalign_floats(ctx, sf_conv_w);
++    const uint32_t agg_w = vk_aliked_misalign_floats(ctx, agg_weights);
++
++    const int32_t batch_size = vk_aliked_sddh_batch_size();
++    const int32_t num_batches = (count + batch_size - 1) / batch_size;
++
++    auto dispatch_batch = [&](int32_t start, int32_t batch) {
++        vk_aliked_push_sddh pc{static_cast<uint32_t>(dim), static_cast<uint32_t>(h),
++                               static_cast<uint32_t>(w), static_cast<uint32_t>(count),
++                               static_cast<uint32_t>(kernel_size), static_cast<uint32_t>(n_pos),
++                               feature_off, kpt_off, workspace_off, desc_off,
++                               static_cast<uint32_t>(start), static_cast<uint32_t>(batch),
++                               static_cast<uint32_t>(feature_map->nb[0]),
++                               static_cast<uint32_t>(feature_map->nb[1]),
++                               static_cast<uint32_t>(feature_map->nb[2]),
++                               off0_w, off0_b, off2_w, off2_b, sf_w, agg_w};
++        vk_aliked_dispatch1(
++            ctx, pipes.sddh,
++            {vk_aliked_subbuf(ctx, feature_map), vk_aliked_subbuf(ctx, keypoints_norm),
++             vk_aliked_subbuf(ctx, offset_0_w), vk_aliked_subbuf(ctx, offset_0_b),
++             vk_aliked_subbuf(ctx, offset_2_w), vk_aliked_subbuf(ctx, offset_2_b),
++             vk_aliked_subbuf(ctx, sf_conv_w), vk_aliked_subbuf(ctx, agg_weights),
++             vk_aliked_subbuf(ctx, workspace), vk_aliked_subbuf(ctx, descriptors)},
++            pc, {static_cast<uint32_t>(batch), 1, 1}, false);
++    };
++
++    const bool single_dispatch = vk_aliked_sddh_single_submit() || num_batches <= 1;
++    if (single_dispatch) {
++        ggml_pipeline_request_descriptor_sets(ctx, pipes.sddh, 1);
++        dispatch_batch(0, count);
++        vk_aliked_finish(ctx);
++    } else {
++        const int32_t finish_chunk = vk_aliked_sddh_finish_chunk();
++        for (int32_t chunk = 0; chunk < num_batches; chunk += finish_chunk) {
++            const int32_t chunk_batches =
++                std::min(finish_chunk, num_batches - chunk);
++            ggml_pipeline_request_descriptor_sets(ctx, pipes.sddh,
++                                                  static_cast<uint32_t>(chunk_batches));
++            for (int32_t b = 0; b < chunk_batches; ++b) {
++                const int32_t batch_idx = chunk + b;
++                const int32_t start = batch_idx * batch_size;
++                const int32_t batch = std::min(batch_size, count - start);
++                if (b > 0) {
++                    vk_aliked_compute_barrier(ctx);
++                }
++                dispatch_batch(start, batch);
++            }
++            if (chunk + finish_chunk < num_batches) {
++                vk_aliked_compute_barrier(ctx);
++            }
++            vk_aliked_finish(ctx);
++        }
++    }
++    ggml_backend_synchronize(backend);
++    return true;
++}
+diff --git a/src/ggml-vulkan/ggml-vulkan.cpp b/src/ggml-vulkan/ggml-vulkan.cpp
+index c3fd436..a405a28 100644
+--- a/src/ggml-vulkan/ggml-vulkan.cpp
++++ b/src/ggml-vulkan/ggml-vulkan.cpp
+@@ -18160,11 +18160,35 @@ static ggml_backend_dev_t ggml_backend_vk_reg_get_device(ggml_backend_reg_t reg,
+     return devices[device];
+ }
+ 
++#include "ggml-vulkan-aliked.h"
++
++static void * ggml_backend_vk_get_proc_address(ggml_backend_reg_t reg, const char * name) {
++    if (name == nullptr) {
++        return nullptr;
++    }
++#define GGML_VK_ALIKED_PROC(sym) \
++    if (strcmp(name, #sym) == 0) { return reinterpret_cast<void *>(sym); }
++    GGML_VK_ALIKED_PROC(ggml_vulkan_aliked_available)
++    GGML_VK_ALIKED_PROC(ggml_vulkan_aliked_queue_idle)
++    GGML_VK_ALIKED_PROC(ggml_vulkan_aliked_whcn_to_nchw)
++    GGML_VK_ALIKED_PROC(ggml_vulkan_aliked_nchw_to_whcn)
++    GGML_VK_ALIKED_PROC(ggml_vulkan_aliked_dense_copy_whcn)
++    GGML_VK_ALIKED_PROC(ggml_vulkan_aliked_clamp_inplace)
++    GGML_VK_ALIKED_PROC(ggml_vulkan_aliked_l2norm_inplace)
++    GGML_VK_ALIKED_PROC(ggml_vulkan_aliked_deform_conv2d)
++    GGML_VK_ALIKED_PROC(ggml_vulkan_aliked_run_dkd)
++    GGML_VK_ALIKED_PROC(ggml_vulkan_aliked_run_sddh)
++    GGML_VK_ALIKED_PROC(ggml_vulkan_aliked_upsample_bilinear)
++#undef GGML_VK_ALIKED_PROC
++    return nullptr;
++    GGML_UNUSED(reg);
++}
++
+ static const struct ggml_backend_reg_i ggml_backend_vk_reg_i = {
+     /* .get_name         = */ ggml_backend_vk_reg_get_name,
+     /* .get_device_count = */ ggml_backend_vk_reg_get_device_count,
+     /* .get_device       = */ ggml_backend_vk_reg_get_device,
+-    /* .get_proc_address = */ NULL,
++    /* .get_proc_address = */ ggml_backend_vk_get_proc_address,
+ };
+ 
+ ggml_backend_reg_t ggml_backend_vk_reg() {
+@@ -19060,4 +19084,6 @@ static void ggml_vk_check_results_1(ggml_backend_vk_context * ctx, ggml_cgraph *
+ }
+ #endif
+ 
++#include "ggml-vulkan-aliked.inc.cpp"
++
+ GGML_BACKEND_DL_IMPL(ggml_backend_vk_reg)
+diff --git a/src/ggml-vulkan/vulkan-shaders/aliked_block_topk.comp b/src/ggml-vulkan/vulkan-shaders/aliked_block_topk.comp
+new file mode 100644
+index 0000000..3c13add
+--- /dev/null
++++ b/src/ggml-vulkan/vulkan-shaders/aliked_block_topk.comp
+@@ -0,0 +1,60 @@
++#version 450
++
++layout(push_constant) uniform parameter {
++    uint count;
++    uint num_blocks;
++    uint k_local;
++    uint nms_off;
++    uint keys_off;
++    uint indices_off;
++} p;
++
++layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
++
++layout(binding = 0) readonly buffer Nms { float data_nms[]; };
++layout(binding = 1) writeonly buffer BlockKeys { float block_keys[]; };
++layout(binding = 2) writeonly buffer BlockIndices { float data_block_indices[]; };
++
++void insert_local_topk(float value, float index, inout float keys[32], inout float indices[32]) {
++    if (value <= keys[p.k_local - 1u]) {
++        return;
++    }
++    keys[p.k_local - 1u] = value;
++    indices[p.k_local - 1u] = index;
++    for (uint j = p.k_local - 1u; j > 0u; --j) {
++        if (keys[j] > keys[j - 1u]) {
++            float tk = keys[j - 1u];
++            keys[j - 1u] = keys[j];
++            keys[j] = tk;
++            float ti = indices[j - 1];
++            indices[j - 1] = indices[j];
++            indices[j] = ti;
++        } else {
++            break;
++        }
++    }
++}
++
++void main() {
++    uint block = gl_WorkGroupID.x;
++    if (block >= p.num_blocks) {
++        return;
++    }
++
++    float keys[32];
++    float indices[32];
++    for (uint i = 0u; i < p.k_local; ++i) {
++        keys[i] = -3.402823466e+38;
++        indices[i] = -1.0;
++    }
++
++    for (uint i = block; i < p.count; i += p.num_blocks) {
++        insert_local_topk(data_nms[p.nms_off + i], float(i), keys, indices);
++    }
++
++    for (uint i = 0u; i < p.k_local; ++i) {
++        uint out_idx = block * p.k_local + i;
++        block_keys[p.keys_off + out_idx] = keys[i];
++        data_block_indices[p.indices_off + out_idx] = indices[i];
++    }
++}
+diff --git a/src/ggml-vulkan/vulkan-shaders/aliked_clamp.comp b/src/ggml-vulkan/vulkan-shaders/aliked_clamp.comp
+new file mode 100644
+index 0000000..a6c212a
+--- /dev/null
++++ b/src/ggml-vulkan/vulkan-shaders/aliked_clamp.comp
+@@ -0,0 +1,19 @@
++#version 450
++
++layout(push_constant) uniform parameter {
++    uint count;
++    float min_val;
++    float max_val;
++} p;
++
++layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
++
++layout(binding = 0) buffer Data { float data[]; };
++
++void main() {
++    uint i = gl_GlobalInvocationID.x;
++    if (i >= p.count) {
++        return;
++    }
++    data[i] = clamp(data[i], p.min_val, p.max_val);
++}
+diff --git a/src/ggml-vulkan/vulkan-shaders/aliked_deform_conv.comp b/src/ggml-vulkan/vulkan-shaders/aliked_deform_conv.comp
+new file mode 100644
+index 0000000..44c463f
+--- /dev/null
++++ b/src/ggml-vulkan/vulkan-shaders/aliked_deform_conv.comp
+@@ -0,0 +1,123 @@
++#version 450
++
++layout(push_constant) uniform parameter {
++    uint ic;
++    uint ih;
++    uint iw;
++    uint oc;
++    uint kh;
++    uint kw;
++    uint pad;
++    uint has_bias;
++    uint mem_layout; // 0 = NCHW, 1 = WHCN
++    uint input_off;
++    uint offset_off;
++    uint weight_off;
++    uint bias_off;
++    uint output_off;
++} p;
++
++layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
++
++layout(binding = 0) readonly buffer Input { float data_in[]; };
++layout(binding = 1) readonly buffer Offset { float data_off[]; };
++layout(binding = 2) readonly buffer Weight { float data_w[]; };
++layout(binding = 3) readonly buffer Bias { float data_bias[]; };
++layout(binding = 4) writeonly buffer Output { float data_out[]; };
++
++int index_whcn(int x, int y, int c) {
++    return x + y * int(p.iw) + c * int(p.ih * p.iw);
++}
++
++int index_nchw(int c, int y, int x) {
++    return c * int(p.ih * p.iw) + y * int(p.iw) + x;
++}
++
++float bilinear_sample_whcn(int c, float y, float x) {
++    if (y <= -1.0 || y >= float(p.ih) || x <= -1.0 || x >= float(p.iw)) {
++        return 0.0;
++    }
++    int y0 = int(floor(y));
++    int x0 = int(floor(x));
++    int y1 = y0 + 1;
++    int x1 = x0 + 1;
++    float ly = y - float(y0);
++    float lx = x - float(x0);
++    float hy = 1.0 - ly;
++    float hx = 1.0 - lx;
++
++    float v00 = (y0 >= 0 && y0 < int(p.ih) && x0 >= 0 && x0 < int(p.iw))
++        ? data_in[p.input_off + index_whcn(x0, y0, c)] : 0.0;
++    float v01 = (y0 >= 0 && y0 < int(p.ih) && x1 >= 0 && x1 < int(p.iw))
++        ? data_in[p.input_off + index_whcn(x1, y0, c)] : 0.0;
++    float v10 = (y1 >= 0 && y1 < int(p.ih) && x0 >= 0 && x0 < int(p.iw))
++        ? data_in[p.input_off + index_whcn(x0, y1, c)] : 0.0;
++    float v11 = (y1 >= 0 && y1 < int(p.ih) && x1 >= 0 && x1 < int(p.iw))
++        ? data_in[p.input_off + index_whcn(x1, y1, c)] : 0.0;
++
++    return hy * hx * v00 + hy * lx * v01 + ly * hx * v10 + ly * lx * v11;
++}
++
++float bilinear_sample_nchw(int c, float y, float x) {
++    if (y <= -1.0 || y >= float(p.ih) || x <= -1.0 || x >= float(p.iw)) {
++        return 0.0;
++    }
++    int y0 = int(floor(y));
++    int x0 = int(floor(x));
++    int y1 = y0 + 1;
++    int x1 = x0 + 1;
++    float ly = y - float(y0);
++    float lx = x - float(x0);
++    float hy = 1.0 - ly;
++    float hx = 1.0 - lx;
++
++    float v00 = (y0 >= 0 && y0 < int(p.ih) && x0 >= 0 && x0 < int(p.iw))
++        ? data_in[p.input_off + index_nchw(c, y0, x0)] : 0.0;
++    float v01 = (y0 >= 0 && y0 < int(p.ih) && x1 >= 0 && x1 < int(p.iw))
++        ? data_in[p.input_off + index_nchw(c, y0, x1)] : 0.0;
++    float v10 = (y1 >= 0 && y1 < int(p.ih) && x0 >= 0 && x0 < int(p.iw))
++        ? data_in[p.input_off + index_nchw(c, y1, x0)] : 0.0;
++    float v11 = (y1 >= 0 && y1 < int(p.ih) && x1 >= 0 && x1 < int(p.iw))
++        ? data_in[p.input_off + index_nchw(c, y1, x1)] : 0.0;
++
++    return hy * hx * v00 + hy * lx * v01 + ly * hx * v10 + ly * lx * v11;
++}
++
++float bilinear_sample(int c, float y, float x) {
++    if (p.mem_layout == 1u) {
++        return bilinear_sample_whcn(c, y, x);
++    }
++    return bilinear_sample_nchw(c, y, x);
++}
++
++void main() {
++    uint ox = gl_GlobalInvocationID.x;
++    uint oy = gl_GlobalInvocationID.y;
++    uint o = gl_GlobalInvocationID.z;
++    if (ox >= p.iw || oy >= p.ih || o >= p.oc) {
++        return;
++    }
++
++    float sum = (p.has_bias != 0u) ? data_bias[p.bias_off + o] : 0.0;
++    for (uint i = 0u; i < p.ic; ++i) {
++        for (uint ky = 0u; ky < p.kh; ++ky) {
++            for (uint kx = 0u; kx < p.kw; ++kx) {
++                uint k_idx = ky * p.kw + kx;
++                uint off_c_y = k_idx * 2u + 0u;
++                uint off_c_x = k_idx * 2u + 1u;
++                float sample_y = float(int(oy) - int(p.pad) + int(ky)) +
++                    data_off[p.offset_off + (p.mem_layout == 1u
++                        ? index_whcn(int(ox), int(oy), int(off_c_y))
++                        : index_nchw(int(off_c_y), int(oy), int(ox)))];
++                float sample_x = float(int(ox) - int(p.pad) + int(kx)) +
++                    data_off[p.offset_off + (p.mem_layout == 1u
++                        ? index_whcn(int(ox), int(oy), int(off_c_x))
++                        : index_nchw(int(off_c_x), int(oy), int(ox)))];
++                uint widx = o * p.ic * p.kh * p.kw + i * p.kh * p.kw + ky * p.kw + kx;
++                sum += bilinear_sample(int(i), sample_y, sample_x) * data_w[p.weight_off + widx];
++            }
++        }
++    }
++    data_out[p.output_off + (p.mem_layout == 1u ? index_whcn(int(ox), int(oy), int(o))
++                           : index_nchw(int(o), int(oy), int(ox)))] = sum;
++}
+diff --git a/src/ggml-vulkan/vulkan-shaders/aliked_dense_copy.comp b/src/ggml-vulkan/vulkan-shaders/aliked_dense_copy.comp
+new file mode 100644
+index 0000000..921922c
+--- /dev/null
++++ b/src/ggml-vulkan/vulkan-shaders/aliked_dense_copy.comp
+@@ -0,0 +1,32 @@
++#version 450
++
++layout(push_constant) uniform parameter {
++    uint w;
++    uint h;
++    uint c;
++    uint src_nb0;
++    uint src_nb1;
++    uint src_nb2;
++    uint src_off;
++} p;
++
++layout(local_size_x = 16, local_size_y = 8, local_size_z = 1) in;
++
++layout(binding = 0) readonly buffer Src { float data_src[]; };
++layout(binding = 1) writeonly buffer Dst { float data_dst[]; };
++
++float read_src(uint x, uint y, uint ch) {
++    uint byte_off = x * p.src_nb0 + y * p.src_nb1 + ch * p.src_nb2;
++    return data_src[p.src_off + byte_off / 4u];
++}
++
++void main() {
++    uint x = gl_GlobalInvocationID.x;
++    uint y = gl_GlobalInvocationID.y;
++    uint ch = gl_GlobalInvocationID.z;
++    if (x >= p.w || y >= p.h || ch >= p.c) {
++        return;
++    }
++    uint dst_idx = x + y * p.w + ch * p.h * p.w;
++    data_dst[dst_idx] = read_src(x, y, ch);
++}
+diff --git a/src/ggml-vulkan/vulkan-shaders/aliked_dkd_elem.comp b/src/ggml-vulkan/vulkan-shaders/aliked_dkd_elem.comp
+new file mode 100644
+index 0000000..956acaa
+--- /dev/null
++++ b/src/ggml-vulkan/vulkan-shaders/aliked_dkd_elem.comp
+@@ -0,0 +1,63 @@
++#version 450
++
++// op: 0 compare_equal_mask, 1 threshold_positive, 2 suppress_scores,
++//     3 update_max_mask, 4 apply_max_mask, 5 zero_border, 6 copy
++
++layout(push_constant) uniform parameter {
++    uint count;
++    uint h;
++    uint w;
++    uint radius;
++    uint op;
++    uint a_off;
++    uint b_off;
++    uint c_off;
++    uint d_off;
++} p;
++
++layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
++
++layout(binding = 0) readonly buffer A { float data_a[]; };
++layout(binding = 1) readonly buffer B { float data_b[]; };
++layout(binding = 2) buffer C { float data_c[]; };
++layout(binding = 3) buffer D { float data_d[]; };
++
++void main() {
++    uint i = gl_GlobalInvocationID.x;
++    if (p.op == 5u) {
++        uint x = gl_GlobalInvocationID.x;
++        uint y = gl_GlobalInvocationID.y;
++        if (x >= p.w || y >= p.h) {
++            return;
++        }
++        uint idx = y * p.w + x;
++        if (y < p.radius || x < p.radius || y >= p.h - p.radius || x >= p.w - p.radius) {
++            data_c[p.c_off + idx] = 0.0;
++        }
++        return;
++    }
++
++    if (i >= p.count) {
++        return;
++    }
++
++    if (p.op == 0u) {
++        data_c[p.c_off + i] = abs(data_a[p.a_off + i] - data_b[p.b_off + i]) <= 1e-6 ? 1.0 : 0.0;
++    } else if (p.op == 1u) {
++        data_c[p.c_off + i] = data_a[p.a_off + i] > 0.0 ? 1.0 : 0.0;
++    } else if (p.op == 2u) {
++        if (data_a[p.a_off + i] > 0.0) {
++            data_c[p.c_off + i] = 0.0;
++        }
++    } else if (p.op == 3u) {
++        if (abs(data_c[p.c_off + i] - data_a[p.a_off + i]) <= 1e-6) {
++            data_d[p.d_off + i] = 1.0;
++        } else if (data_b[p.b_off + i] <= 0.0) {
++            data_d[p.d_off + i] = 0.0;
++        }
++    } else if (p.op == 4u) {
++        data_c[p.c_off + i] = data_b[p.b_off + i] > 0.0 ? data_a[p.a_off + i] : 0.0;
++    } else if (p.op == 6u) {
++        data_c[p.c_off + i] = data_a[p.a_off + i];
++    }
++}
+diff --git a/src/ggml-vulkan/vulkan-shaders/aliked_dkd_refine.comp b/src/ggml-vulkan/vulkan-shaders/aliked_dkd_refine.comp
+new file mode 100644
+index 0000000..098bf89
+--- /dev/null
++++ b/src/ggml-vulkan/vulkan-shaders/aliked_dkd_refine.comp
+@@ -0,0 +1,122 @@
++#version 450
++
++const float kDkdTemperature = 0.1;
++
++layout(push_constant) uniform parameter {
++    uint count;
++    uint h;
++    uint w;
++    uint radius;
++    uint score_off;
++    uint indices_off;
++    uint keypoints_off;
++    uint scores_off;
++} p;
++
++layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
++
++layout(binding = 0) readonly buffer ScoreMap { float score_map[]; };
++layout(binding = 1) readonly buffer Indices { float indices[]; };
++layout(binding = 2) writeonly buffer KeypointsNorm { float keypoints_norm[]; };
++layout(binding = 3) writeonly buffer ScoresOut { float scores_out[]; };
++
++bool is_finite(float v) {
++    return (v == v) && abs(v) < 1e30;
++}
++
++bool is_valid_sample(float y, float x) {
++    return is_finite(y) && is_finite(x) && y > -1.0 && y < float(p.h) && x > -1.0 && x < float(p.w);
++}
++
++float bilinear_sample_score(float y, float x) {
++    if (!is_valid_sample(y, x)) {
++        return 0.0;
++    }
++    int y0 = int(floor(y));
++    int x0 = int(floor(x));
++    int y1 = min(y0 + 1, int(p.h) - 1);
++    int x1 = min(x0 + 1, int(p.w) - 1);
++    float ly = y - float(y0);
++    float lx = x - float(x0);
++    float hy = 1.0 - ly;
++    float hx = 1.0 - lx;
++
++    float v00 = score_map[p.score_off + uint(y0) * p.w + uint(x0)];
++    float v01 = score_map[p.score_off + uint(y0) * p.w + uint(x1)];
++    float v10 = score_map[p.score_off + uint(y1) * p.w + uint(x0)];
++    float v11 = score_map[p.score_off + uint(y1) * p.w + uint(x1)];
++    return hy * hx * v00 + hy * lx * v01 + ly * hx * v10 + ly * lx * v11;
++}
++
++void main() {
++    uint k = gl_WorkGroupID.x;
++    if (k >= p.count) {
++        return;
++    }
++
++    int index = int(indices[p.indices_off + k]);
++    int x_nms = index % int(p.w);
++    int y_nms = index / int(p.w);
++    int kernel = int(p.radius) * 2 + 1;
++    int kernel_area = kernel * kernel;
++
++    float patch_scores[25];
++    float hw_grid[50];
++    int idx = 0;
++    for (int ky = -int(p.radius); ky <= int(p.radius); ++ky) {
++        for (int kx = -int(p.radius); kx <= int(p.radius); ++kx) {
++            int py = clamp(y_nms + ky, 0, int(p.h) - 1);
++            int px = clamp(x_nms + kx, 0, int(p.w) - 1);
++            patch_scores[idx] = score_map[p.score_off + uint(py) * p.w + uint(px)];
++            hw_grid[idx * 2 + 0] = float(kx);
++            hw_grid[idx * 2 + 1] = float(ky);
++            ++idx;
++        }
++    }
++
++    float max_v = patch_scores[0];
++    for (int i = 1; i < kernel_area; ++i) {
++        max_v = max(max_v, patch_scores[i]);
++    }
++
++    float exp_sum = 0.0;
++    float x_exp[25];
++    for (int i = 0; i < kernel_area; ++i) {
++        x_exp[i] = exp((patch_scores[i] - max_v) / kDkdTemperature);
++        exp_sum += x_exp[i];
++    }
++    exp_sum = max(exp_sum, 1e-12);
++
++    float residual_x = 0.0;
++    float residual_y = 0.0;
++    for (int i = 0; i < kernel_area; ++i) {
++        float weight = x_exp[i] / exp_sum;
++        residual_x += weight * hw_grid[i * 2 + 0];
++        residual_y += weight * hw_grid[i * 2 + 1];
++    }
++
++    float wh_x = float(p.w - 1u);
++    float wh_y = float(p.h - 1u);
++    if (!is_finite(wh_x) || !is_finite(wh_y) || wh_x <= 0.0 || wh_y <= 0.0) {
++        keypoints_norm[p.keypoints_off + k * 2u + 0u] = 0.0;
++        keypoints_norm[p.keypoints_off + k * 2u + 1u] = 0.0;
++        scores_out[p.scores_off + k] = 0.0;
++        return;
++    }
++
++    float x = (float(x_nms) + residual_x) / wh_x * 2.0 - 1.0;
++    float y = (float(y_nms) + residual_y) / wh_y * 2.0 - 1.0;
++    if (!is_finite(x) || !is_finite(y)) {
++        keypoints_norm[p.keypoints_off + k * 2u + 0u] = 0.0;
++        keypoints_norm[p.keypoints_off + k * 2u + 1u] = 0.0;
++        scores_out[p.scores_off + k] = 0.0;
++        return;
++    }
++
++    keypoints_norm[p.keypoints_off + k * 2u + 0u] = x;
++    keypoints_norm[p.keypoints_off + k * 2u + 1u] = y;
++
++    float sample_x = (x + 1.0) * 0.5 * wh_x;
++    float sample_y = (y + 1.0) * 0.5 * wh_y;
++    scores_out[p.scores_off + k] = bilinear_sample_score(sample_y, sample_x);
++}
+diff --git a/src/ggml-vulkan/vulkan-shaders/aliked_l2norm.comp b/src/ggml-vulkan/vulkan-shaders/aliked_l2norm.comp
+new file mode 100644
+index 0000000..f3c3925
+--- /dev/null
++++ b/src/ggml-vulkan/vulkan-shaders/aliked_l2norm.comp
+@@ -0,0 +1,37 @@
++#version 450
++
++layout(push_constant) uniform parameter {
++    uint channels;
++    uint h;
++    uint w;
++    uint data_off;
++    uint nb0;
++    uint nb1;
++    uint nb2;
++} p;
++
++layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
++
++layout(binding = 0) buffer Data { float data[]; };
++
++void main() {
++    uint spatial_idx = gl_GlobalInvocationID.x;
++    uint spatial = p.h * p.w;
++    if (spatial_idx >= spatial) {
++        return;
++    }
++
++    uint x = spatial_idx % p.w;
++    uint y = spatial_idx / p.w;
++    float norm2 = 0.0;
++    for (uint c = 0u; c < p.channels; ++c) {
++        uint byte_off = x * p.nb0 + y * p.nb1 + c * p.nb2;
++        float value = data[p.data_off + byte_off / 4u];
++        norm2 += value * value;
++    }
++    float norm = sqrt(max(norm2, 1e-12));
++    for (uint c = 0u; c < p.channels; ++c) {
++        uint byte_off = x * p.nb0 + y * p.nb1 + c * p.nb2;
++        data[p.data_off + byte_off / 4u] /= norm;
++    }
++}
+diff --git a/src/ggml-vulkan/vulkan-shaders/aliked_layout_convert.comp b/src/ggml-vulkan/vulkan-shaders/aliked_layout_convert.comp
+new file mode 100644
+index 0000000..77f3dee
+--- /dev/null
++++ b/src/ggml-vulkan/vulkan-shaders/aliked_layout_convert.comp
+@@ -0,0 +1,37 @@
++#version 450
++
++layout(push_constant) uniform parameter {
++    uint c;
++    uint h;
++    uint w;
++    uint mode; // 0: WHCN->NCHW, 1: NCHW->WHCN
++} p;
++
++layout(local_size_x = 16, local_size_y = 1, local_size_z = 1) in;
++
++layout(binding = 0) readonly buffer Src { float data_src[]; };
++layout(binding = 1) writeonly buffer Dst { float data_dst[]; };
++
++int index_nchw(int ch, int y, int x) {
++    return ch * int(p.h * p.w) + y * int(p.w) + x;
++}
++
++int index_whcn(int x, int y, int ch) {
++    return x + y * int(p.w) + ch * int(p.h * p.w);
++}
++
++void main() {
++    uint x = gl_GlobalInvocationID.x;
++    uint y = gl_GlobalInvocationID.y;
++    uint ch = gl_GlobalInvocationID.z;
++    if (x >= p.w || y >= p.h || ch >= p.c) {
++        return;
++    }
++    if (p.mode == 0u) {
++        data_dst[index_nchw(int(ch), int(y), int(x))] =
++            data_src[index_whcn(int(x), int(y), int(ch))];
++    } else {
++        data_dst[index_whcn(int(x), int(y), int(ch))] =
++            data_src[index_nchw(int(ch), int(y), int(x))];
++    }
++}
+diff --git a/src/ggml-vulkan/vulkan-shaders/aliked_max_pool.comp b/src/ggml-vulkan/vulkan-shaders/aliked_max_pool.comp
+new file mode 100644
+index 0000000..459bb3a
+--- /dev/null
++++ b/src/ggml-vulkan/vulkan-shaders/aliked_max_pool.comp
+@@ -0,0 +1,34 @@
++#version 450
++
++layout(push_constant) uniform parameter {
++    uint h;
++    uint w;
++    int pad;
++    uint input_off;
++    uint output_off;
++} p;
++
++layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
++
++layout(binding = 0) readonly buffer Input { float data_in[]; };
++layout(binding = 1) writeonly buffer Output { float data_out[]; };
++
++void main() {
++    uint x = gl_GlobalInvocationID.x;
++    uint y = gl_GlobalInvocationID.y;
++    if (x >= p.w || y >= p.h) {
++        return;
++    }
++
++    float best = -3.402823466e+38;
++    for (int ky = -p.pad; ky <= p.pad; ++ky) {
++        for (int kx = -p.pad; kx <= p.pad; ++kx) {
++            int iy = int(y) + ky;
++            int ix = int(x) + kx;
++            if (iy >= 0 && ix >= 0 && iy < int(p.h) && ix < int(p.w)) {
++                best = max(best, data_in[p.input_off + uint(iy) * p.w + uint(ix)]);
++            }
++        }
++    }
++    data_out[p.output_off + y * p.w + x] = best;
++}
+diff --git a/src/ggml-vulkan/vulkan-shaders/aliked_sddh.comp b/src/ggml-vulkan/vulkan-shaders/aliked_sddh.comp
+new file mode 100644
+index 0000000..091dc66
+--- /dev/null
++++ b/src/ggml-vulkan/vulkan-shaders/aliked_sddh.comp
+@@ -0,0 +1,246 @@
++#version 450
++
++const float kSeluScale = 1.050700987;
++const float kSeluAlpha = 1.67326324;
++
++layout(push_constant) uniform parameter {
++    uint dim;
++    uint h;
++    uint w;
++    uint count;
++    uint kernel_size;
++    uint n_pos;
++    uint feature_off;
++    uint kpt_off;
++    uint workspace_off;
++    uint desc_off;
++    uint k_offset;
++    uint batch_count;
++    uint src_nb0;
++    uint src_nb1;
++    uint src_nb2;
++    uint off0_w;
++    uint off0_b;
++    uint off2_w;
++    uint off2_b;
++    uint sf_w;
++    uint agg_w;
++} p;
++
++layout(local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
++
++layout(binding = 0) readonly buffer FeatureMap { float feature_map[]; };
++layout(binding = 1) readonly buffer KeypointsNorm { float keypoints_norm[]; };
++layout(binding = 2) readonly buffer Offset0W { float offset_0_w[]; };
++layout(binding = 3) readonly buffer Offset0B { float offset_0_b[]; };
++layout(binding = 4) readonly buffer Offset2W { float offset_2_w[]; };
++layout(binding = 5) readonly buffer Offset2B { float offset_2_b[]; };
++layout(binding = 6) readonly buffer SfConvW { float sf_conv_w[]; };
++layout(binding = 7) readonly buffer AggWeights { float agg_weights[]; };
++layout(binding = 8) buffer Workspace { float workspace[]; };
++layout(binding = 9) buffer Descriptors { float descriptors[]; };
++
++shared float norm_partial[128];
++
++float selu(float x) {
++    return x > 0.0 ? kSeluScale * x : kSeluScale * kSeluAlpha * (exp(x) - 1.0);
++}
++
++bool is_finite(float v) {
++    return (v == v) && abs(v) < 1e30;
++}
++
++bool is_valid_sample(float py, float px) {
++    return is_finite(py) && is_finite(px) && py > -1.0 && py < float(p.h) && px > -1.0 && px < float(p.w);
++}
++
++float read_feature(int c, int y, int x) {
++    if (c < 0 || uint(c) >= p.dim || y < 0 || uint(y) >= p.h || x < 0 ||
++        uint(x) >= p.w) {
++        return 0.0;
++    }
++    uint byte_off = uint(x) * p.src_nb0 + uint(y) * p.src_nb1 + uint(c) * p.src_nb2;
++    return feature_map[p.feature_off + byte_off / 4u];
++}
++
++float bilinear_sample_feature(int c, float py, float px) {
++    if (!is_finite(py) || !is_finite(px) || p.h <= 0u || p.w <= 0u) {
++        return 0.0;
++    }
++    float clamped_y = clamp(py, 0.0, float(p.h - 1u));
++    float clamped_x = clamp(px, 0.0, float(p.w - 1u));
++    int y0 = int(floor(clamped_y));
++    int x0 = int(floor(clamped_x));
++    int y1 = min(y0 + 1, int(p.h) - 1);
++    int x1 = min(x0 + 1, int(p.w) - 1);
++    float ly = clamped_y - float(y0);
++    float lx = clamped_x - float(x0);
++    float hy = 1.0 - ly;
++    float hx = 1.0 - lx;
++
++    float v00 = read_feature(c, y0, x0);
++    float v01 = read_feature(c, y0, x1);
++    float v10 = read_feature(c, y1, x0);
++    float v11 = read_feature(c, y1, x1);
++    return hy * hx * v00 + hy * lx * v01 + ly * hx * v10 + ly * lx * v11;
++}
++
++void main() {
++    uint local_k = gl_WorkGroupID.x;
++    if (local_k >= p.batch_count) {
++        return;
++    }
++    uint k = p.k_offset + local_k;
++    uint lane = gl_LocalInvocationID.x;
++    uint lanes = gl_WorkGroupSize.x;
++
++    float x_norm = keypoints_norm[p.kpt_off + k * 2u + 0u];
++    float y_norm = keypoints_norm[p.kpt_off + k * 2u + 1u];
++    if (!is_finite(x_norm) || !is_finite(y_norm)) {
++        for (uint c = lane; c < p.dim; c += lanes) {
++            descriptors[p.desc_off + k * p.dim + c] = 0.0;
++        }
++        return;
++    }
++
++    uint patch_size = p.dim * p.kernel_size * p.kernel_size;
++    uint stride = patch_size + 64u + p.dim * 3u;
++    uint base = p.workspace_off + k * stride;
++
++    float wh_x = max(float(p.w - 1u), 1.0);
++    float wh_y = max(float(p.h - 1u), 1.0);
++    float max_offset = float(max(p.h, p.w)) / 4.0;
++    int pad = int(p.kernel_size / 2u);
++
++    float x_wh = (x_norm / 2.0 + 0.5) * float(p.w - 1u);
++    float y_wh = (y_norm / 2.0 + 0.5) * float(p.h - 1u);
++
++    if (p.kernel_size > 1u) {
++        int x0 = clamp(int(round(x_wh)) - pad, 0, max(int(p.w) - int(p.kernel_size), 0));
++        int y0 = clamp(int(round(y_wh)) - pad, 0, max(int(p.h) - int(p.kernel_size), 0));
++        for (uint c = lane; c < p.dim; c += lanes) {
++            for (uint ky = 0u; ky < p.kernel_size; ++ky) {
++                for (uint kx = 0u; kx < p.kernel_size; ++kx) {
++                    workspace[base + c * p.kernel_size * p.kernel_size + ky * p.kernel_size + kx] =
++                        read_feature(int(c), y0 + int(ky), x0 + int(kx));
++                }
++            }
++        }
++    } else {
++        int xi = clamp(int(round(x_wh)), 0, int(p.w) - 1);
++        int yi = clamp(int(round(y_wh)), 0, int(p.h) - 1);
++        for (uint c = lane; c < p.dim; c += lanes) {
++            workspace[base + c] = read_feature(int(c), yi, xi);
++        }
++    }
++
++    memoryBarrierBuffer();
++    barrier();
++
++    uint off_raw_base = base + patch_size;
++    uint off_final_base = off_raw_base + 32u;
++    uint sampled_base = off_final_base + 32u;
++    uint transformed_base = sampled_base + p.dim;
++    uint desc_base = transformed_base + p.dim;
++
++    for (uint oc = lane; oc < 32u; oc += lanes) {
++        float sum = offset_0_b[p.off0_b + oc];
++        for (uint ic = 0u; ic < p.dim; ++ic) {
++            for (uint ky = 0u; ky < p.kernel_size; ++ky) {
++                for (uint kx = 0u; kx < p.kernel_size; ++kx) {
++                    uint widx = oc * p.dim * p.kernel_size * p.kernel_size +
++                        ic * p.kernel_size * p.kernel_size + ky * p.kernel_size + kx;
++                    sum += workspace[base + ic * p.kernel_size * p.kernel_size + ky * p.kernel_size + kx] *
++                        offset_0_w[p.off0_w + widx];
++                }
++            }
++        }
++        workspace[off_raw_base + oc] = selu(sum);
++    }
++
++    memoryBarrierBuffer();
++    barrier();
++
++    for (uint oc = lane; oc < 32u; oc += lanes) {
++        float sum = offset_2_b[p.off2_b + oc];
++        for (uint ic = 0u; ic < 32u; ++ic) {
++            sum += workspace[off_raw_base + ic] *
++                offset_2_w[p.off2_w + oc * 32u + ic];
++        }
++        workspace[off_final_base + oc] = sum;
++    }
++
++    memoryBarrierBuffer();
++    barrier();
++
++    for (uint c = lane; c < p.dim; c += lanes) {
++        workspace[desc_base + c] = 0.0;
++    }
++
++    memoryBarrierBuffer();
++    barrier();
++
++    for (uint pos = 0u; pos < p.n_pos; ++pos) {
++        float raw_off_x = workspace[off_final_base + pos];
++        float raw_off_y = workspace[off_final_base + p.n_pos + pos];
++        if (!is_finite(raw_off_x) || !is_finite(raw_off_y)) {
++            continue;
++        }
++        float off_x = clamp(raw_off_x, -max_offset, max_offset);
++        float off_y = clamp(raw_off_y, -max_offset, max_offset);
++        float sample_x = (x_wh + off_x) / wh_x * 2.0 - 1.0;
++        float sample_y = (y_wh + off_y) / wh_y * 2.0 - 1.0;
++        if (!is_finite(sample_x) || !is_finite(sample_y)) {
++            continue;
++        }
++        float px = (sample_x + 1.0) * 0.5 * wh_x;
++        float py = (sample_y + 1.0) * 0.5 * wh_y;
++
++        for (uint c = lane; c < p.dim; c += lanes) {
++            workspace[sampled_base + c] = bilinear_sample_feature(int(c), py, px);
++        }
++
++        memoryBarrierBuffer();
++        barrier();
++
++        for (uint c = lane; c < p.dim; c += lanes) {
++            float value = 0.0;
++            for (uint ic = 0u; ic < p.dim; ++ic) {
++                value += workspace[sampled_base + ic] *
++                    sf_conv_w[p.sf_w + c * p.dim + ic];
++            }
++            workspace[transformed_base + c] = selu(value);
++        }
++
++        memoryBarrierBuffer();
++        barrier();
++
++        for (uint c = lane; c < p.dim; c += lanes) {
++            for (uint ic = 0u; ic < p.dim; ++ic) {
++                workspace[desc_base + c] += workspace[transformed_base + ic] *
++                    agg_weights[p.agg_w + pos * p.dim * p.dim + ic * p.dim + c];
++            }
++        }
++
++        memoryBarrierBuffer();
++        barrier();
++    }
++
++    float lane_norm = 0.0;
++    for (uint c = lane; c < p.dim; c += lanes) {
++        float value = workspace[desc_base + c];
++        lane_norm += value * value;
++    }
++    norm_partial[lane] = lane_norm;
++    barrier();
++    for (uint stride = lanes / 2u; stride > 0u; stride /= 2u) {
++        if (lane < stride) {
++            norm_partial[lane] += norm_partial[lane + stride];
++        }
++        barrier();
++    }
++    float norm = sqrt(max(norm_partial[0], 1e-12));
++    for (uint c = lane; c < p.dim; c += lanes) {
++        descriptors[p.desc_off + k * p.dim + c] = workspace[desc_base + c] / norm;
++    }
++}
+diff --git a/src/ggml-vulkan/vulkan-shaders/aliked_upsample_bilinear.comp b/src/ggml-vulkan/vulkan-shaders/aliked_upsample_bilinear.comp
+new file mode 100644
+index 0000000..0e270d6
+--- /dev/null
++++ b/src/ggml-vulkan/vulkan-shaders/aliked_upsample_bilinear.comp
+@@ -0,0 +1,59 @@
++#version 450
++
++// WHCN bilinear upsample — matches ALIKED UpsampleBilinear / CUDA UpsampleBilinearKernel.
++layout(push_constant) uniform parameter {
++    uint ic;
++    uint ih;
++    uint iw;
++    uint out_h;
++    uint out_w;
++    uint src_off;
++    uint dst_off;
++} p;
++
++layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
++
++layout(binding = 0) readonly buffer Src { float data_src[]; };
++layout(binding = 1) writeonly buffer Dst { float data_dst[]; };
++
++int whcn_index(int x, int y, int ch, int h, int w) {
++    return x + y * w + ch * h * w;
++}
++
++float sample_at(int x, int y, int ch) {
++    return data_src[p.src_off + uint(whcn_index(x, y, ch, int(p.ih), int(p.iw)))];
++}
++
++void main() {
++    uint ox = gl_GlobalInvocationID.x;
++    uint oy = gl_GlobalInvocationID.y;
++    uint ch = gl_GlobalInvocationID.z;
++    if (ox >= p.out_w || oy >= p.out_h || ch >= p.ic) {
++        return;
++    }
++
++    float scale_y = p.out_h > 1u ? float(p.ih - 1u) / float(p.out_h - 1u) : 0.0;
++    float scale_x = p.out_w > 1u ? float(p.iw - 1u) / float(p.out_w - 1u) : 0.0;
++    float in_y = float(oy) * scale_y;
++    float in_x = float(ox) * scale_x;
++    in_y = clamp(in_y, 0.0, float(p.ih - 1u));
++    in_x = clamp(in_x, 0.0, float(p.iw - 1u));
++
++    int y0 = int(floor(in_y));
++    int x0 = int(floor(in_x));
++    int y1 = min(y0 + 1, int(p.ih) - 1);
++    int x1 = min(x0 + 1, int(p.iw) - 1);
++    float ly = in_y - float(y0);
++    float lx = in_x - float(x0);
++    float hy = 1.0 - ly;
++    float hx = 1.0 - lx;
++
++    int c = int(ch);
++    float v00 = sample_at(x0, y0, c);
++    float v01 = sample_at(x1, y0, c);
++    float v10 = sample_at(x0, y1, c);
++    float v11 = sample_at(x1, y1, c);
++    float v = hy * hx * v00 + hy * lx * v01 + ly * hx * v10 + ly * lx * v11;
++
++    data_dst[p.dst_off + uint(whcn_index(int(ox), int(oy), c, int(p.out_h), int(p.out_w)))] = v;
++}
+diff --git a/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp b/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
+index 58d347b..677a288 100644
+--- a/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
++++ b/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
+@@ -1138,6 +1138,19 @@ void process_shaders() {
+ 
+     string_to_spv("topk_moe_f32", "topk_moe.comp", {});
+ 
++    // ALIKED custom compute (LightGlue-GGML Phase 5d)
++    string_to_spv("aliked_deform_conv_f32", "aliked_deform_conv.comp", {});
++    string_to_spv("aliked_layout_convert_f32", "aliked_layout_convert.comp", {});
++    string_to_spv("aliked_dense_copy_f32", "aliked_dense_copy.comp", {});
++    string_to_spv("aliked_clamp_f32", "aliked_clamp.comp", {});
++    string_to_spv("aliked_l2norm_f32", "aliked_l2norm.comp", {});
++    string_to_spv("aliked_max_pool_f32", "aliked_max_pool.comp", {});
++    string_to_spv("aliked_dkd_elem_f32", "aliked_dkd_elem.comp", {});
++    string_to_spv("aliked_block_topk_f32", "aliked_block_topk.comp", {});
++    string_to_spv("aliked_dkd_refine_f32", "aliked_dkd_refine.comp", {});
++    string_to_spv("aliked_sddh_f32", "aliked_sddh.comp", {});
++    string_to_spv("aliked_upsample_bilinear_f32", "aliked_upsample_bilinear.comp", {});
++
+     for (auto &c : compiles) {
+         c.wait();
+     }

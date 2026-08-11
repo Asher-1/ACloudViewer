@@ -10,9 +10,9 @@
 // Qt
 #include <CVLog.h>
 #include <QtCompat.h>
+#include <cvFileDialog.h>
 
 #include <QDateTime>
-#include <QFileDialog>
 #include <QMessageBox>
 #include <QSettings>
 #include <QStandardPaths>
@@ -22,7 +22,6 @@
 #include <assert.h>
 
 #include <iostream>
-
 static const int FeatureImportanceColumn = 1;
 
 Train3DMASCDialog::Train3DMASCDialog(QWidget* parent /*=nullptr*/)
@@ -183,7 +182,7 @@ void Train3DMASCDialog::onExportResults(QString filePath /*=""*/) {
     QString outputPath =
             settings.value("FilePath", QCoreApplication::applicationDirPath())
                     .toString();
-    QString outputFilename = QFileDialog::getSaveFileName(
+    QString outputFilename = cvFileDialog::getSaveFileName(
             this, "Export feature importance matrix", outputPath, "*.csv");
     if (outputFilename.isNull()) {
         // process cancelled by the user
@@ -234,6 +233,9 @@ bool Train3DMASCDialog::openTraceFile() {
     QDir parameterDir = QDir(info.path());
 
     QFileDialog dialog(this);
+#ifdef Q_OS_MACOS
+    dialog.setOption(QFileDialog::DontUseNativeDialog);
+#endif
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
     // Qt5.15+ and Qt6: Use new API (DirectoryOnly is deprecated)
     dialog.setFileMode(QFileDialog::Directory);

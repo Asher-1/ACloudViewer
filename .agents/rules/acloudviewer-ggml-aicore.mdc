@@ -1,0 +1,115 @@
+---
+description: Rules for ggml ExternalProject, AICore build, and backend loading on all platforms
+globs:
+  - 3rdparty/ggml/**
+  - build/ggml/**
+  - build_app/ggml/**
+  - core/AICore/**
+  - docker/docker_test.sh
+  - docker/test_wheel_runtime.sh
+  - util/vulkan/install_vulkan_linux.sh
+  - util/vulkan/install_vulkan_sdk_windows.ps1
+  - util/vulkan/acloudviewer_vulkan_env_common.sh
+alwaysApply: false
+---
+
+# ACloudViewer ggml / AICore Build Rules
+
+## ⚠️ ggml 源码修改规则（强制）
+
+**绝对禁止直接修改构建目录中的 ggml 源码文件**（`build/ggml/`、`build_app/ggml/` 等）。
+所有对 ggml 源码的修改必须通过 patch 文件管理，流程如下：
+
+1. **本地修改**：在 `build/` 或 `build_app/` 的 ggml 源码副本中进行修改和验证
+2. **生成 patch**：用 `diff -ruN` 或 `git diff` 对比原始 ggml 源码与修改后的版本，生成 unified diff
+3. **存放 patch**：将 patch 文件放入 `3rdparty/ggml/patches/<子目录>/0001-描述.patch`
+4. **注册 patch**：在 `3rdparty/ggml/patches/manifest.yaml` 中添加条目（顺序重要）
+5. **构建验证**：清理构建目录后重新构建，确认 `apply_ggml_patches.py` 正确应用补丁
+
+```
+3rdparty/ggml/patches/
+├── manifest.yaml                        # 注册所有 patch（顺序重要）
+├── apply_ggml_patches.py                # 构建时自动应用
+├── aliked_merged/0001-vulkan-aliked.patch
+├── cpu_all_variants/0001-*.patch
+├── metal_merged/0001-metal-optimizations.patch
+└── msvc_vulkan/0001-*.patch
+```
+
+**原因**：ggml 是 ExternalProject，每次干净构建都从 tarball 重新提取。直接修改构建目录的文件在 CI 或他人构建时不会生效——只有 patch 文件才会被应用。
+
+## ggml ExternalProject Architecture
+
+- ggml is built via CMake `ExternalProject_Add(ext_ggml ...)` in `3rdparty/ggml/ggml.cmake`
+- Config changes to `ggml.cmake` require `cmake ..` reconfigure AND deleting the ext_ggml stamp:
+  ```bash
+  rm -f build_app/ggml/src/ext_ggml-stamp/ext_ggml-{install,done}
+  cmake --build build_app --target ext_ggml -j4
+  ```
+- ggml backends (cpu, metal, vulkan, cuda) are MODULE libraries (`.so` even on macOS)
+- `GGML_BACKEND_DL=ON` (shared mode): backends are `dlopen`'d at runtime, NOT linked into AICore
+- `libAICore.{so,dylib}` only links `libggml.{so,dylib}` + `libggml-base.{so,dylib}`
+- `PATCH_COMMAND` uses a generated Python runner script to avoid shell quoting issues on Windows
+
+## Platform Backend Support
+
+| Platform | Default GPU | Auto Order | Vulkan | Metal | CUDA |
+|----------|------------|------------|--------|-------|------|
+| macOS | Metal | Metal → CPU | OFF (unsupported) | ON | OFF |
+| Linux | Vulkan | Vulkan → CPU | ON | OFF | Optional |
+| Windows | Vulkan | Vulkan → CPU | ON | OFF | Optional |
+
+## Platform-Specific Backend Issues
+
+### macOS
+- Metal is native and preferred; **Vulkan is NOT supported** (MoltenVK SPIR-V→MSL translation fails for ggml compute shaders)
+- `AICore_USE_VULKAN` defaults to OFF on macOS and must not be enabled
+- `_ci_default_aicore_use_vulkan()` in `ci_utils.sh` returns OFF for Darwin
+- MODULE libraries get NO `LC_RPATH` by default; `fix_macos_rpath` step adds `@loader_path`
+- OpenMP MUST be OFF for ggml on Apple (`-DGGML_OPENMP=OFF`) to prevent duplicate libomp crash
+- `libAICore.dylib` already links `libomp.dylib` from conda; a second copy from ggml-cpu aborts
+
+### Linux CI
+- Ubuntu focal (20.04): GLIBC too old for LunarG SDK binaries; shaderc is built from source
+- `util/vulkan/install_vulkan_linux.sh` captures glslc path via command substitution — build output MUST go to stderr
+- Docker CI runners have no GPU; Vulkan device check is graceful (CPU-only is acceptable)
+- `docker_test.sh` and `test_wheel_runtime.sh` run `check_aicore_runtime.py` without `--expect-device vulkan`
+
+### Windows CI
+- `CMAKE_COMMAND` on CI contains spaces (e.g., `C:/Program Files/...`) — never pass it to cmd shell
+
+## Key CMake Variables
+
+| Variable | Purpose |
+|----------|---------|
+| `AICore_ENABLED` | Master switch for AICore (auto-enables ggml) |
+| `AICore_USE_VULKAN` | Request Vulkan backend (auto OFF on macOS) |
+| `GGML_USE_VULKAN` | Internal: Vulkan backend build flag |
+| `GGML_VULKAN_ENABLED` | Read-only: ON when all Vulkan deps found |
+| `GGML_USE_METAL` | Request Metal backend (macOS only) |
+| `GGML_OPENMP` | OpenMP in ggml-cpu (OFF on Apple) |
+| `GGML_CPU_ALL_VARIANTS` | Build per-ISA CPU modules |
+| `GGML_BUILD_SHARED` | Dynamic backend loading mode |
+
+## CopyGgmlBackends.cmake
+
+- Copies backend `.so` files from ExternalProject install dir to `build_app/bin/`
+- Handles versioned symlinks for core libs (libggml.so.0 → libggml.so.0.17.0)
+- Uses `COPY_CORE_SHARED` / `COPY_BACKEND_MODULES` / `REQUESTED_FILES_PIPE` modes
+- Stale backends are cleaned before copy (prevents old `.so` files lingering)
+
+## Debugging Backend Loading
+
+```bash
+# Check what backends are loaded at runtime
+# (run ACloudViewer, look for "load_backend:" lines in console)
+
+# Verify rpath (macOS):
+otool -l libggml-metal.so | grep -A3 LC_RPATH
+
+# Test dlopen:
+python3 -c "import ctypes; ctypes.CDLL('./libggml-metal.so')"
+
+# Check OpenMP linkage (macOS, should show nothing):
+otool -L libggml-cpu.so | grep omp
+```

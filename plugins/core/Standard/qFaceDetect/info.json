@@ -1,0 +1,14 @@
+{
+  "type": "Standard",
+  "core": true,
+  "name": "Face Detect",
+  "icon": ":/CC/plugin/qFaceDetect/images/qFaceDetect.svg",
+  "description": "InsightFace-style face detection, recognition, age/gender, and verify via GGML.",
+  "authors": [{ "name": "ACloudViewer Contributors" }],
+  "maintainers": [{ "name": "ACloudViewer Team" }],
+  "references": [
+    { "text": "face-detect.cpp: https://github.com/mudler/face-detect.cpp" },
+    { "text": "Models: https://github.com/Asher-1/cloudViewer_downloads/releases/tag/qFaceDetect" },
+    { "text": "Face_AI (InsightFace REST): https://github.com/Asher-1/Face_AI" }
+  ]
+}

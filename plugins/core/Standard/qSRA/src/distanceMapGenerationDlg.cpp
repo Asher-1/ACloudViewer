@@ -36,11 +36,12 @@
 #include <ecvScalarField.h>
 
 // Qt
+#include <cvFileDialog.h>
+
 #include <QApplication>
 #include <QCloseEvent>
 #include <QColorDialog>
 #include <QFile>
-#include <QFileDialog>
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QLocale>
@@ -53,7 +54,6 @@
 #include <assert.h>
 
 #include <algorithm>
-
 static QImage CreateColorScaleBarImage(ccColorScale::Shared colorScale,
                                        unsigned steps,
                                        int height = 256) {
@@ -1057,8 +1057,8 @@ void DistanceMapGenerationDlg::exportMapAsGrid() {
     QString filter("Grid file (*.csv)");
 
     // open file saving dialog
-    QString filename =
-            QFileDialog::getSaveFileName(0, "Select output file", path, filter);
+    QString filename = cvFileDialog::getSaveFileName(0, "Select output file",
+                                                     path, filter);
     if (filename.isEmpty()) return;
 
     // save current export path to persistent settings
@@ -1087,8 +1087,8 @@ void DistanceMapGenerationDlg::exportMapAsImage() {
     QString path = settings.value("exportPath", ecvFileUtils::defaultDocPath())
                            .toString();
 
-    QString filename = QFileDialog::getSaveFileName(this, "Select output file",
-                                                    path, "Image file (*.png)");
+    QString filename = cvFileDialog::getSaveFileName(
+            this, "Select output file", path, "Image file (*.png)");
     if (filename.isEmpty()) return;
 
     settings.setValue("exportPath", QFileInfo(filename).absolutePath());
@@ -1223,8 +1223,8 @@ void DistanceMapGenerationDlg::loadOverlaySymbols() {
     QString filter("Symbols (*.txt)");
 
     // open file loading dialog
-    QString filename = QFileDialog::getOpenFileName(0, "Select symbols file",
-                                                    path, filter);
+    QString filename = cvFileDialog::getOpenFileName(0, "Select symbols file",
+                                                     path, filter);
     if (filename.isEmpty()) return;
 
     QFileInfo fileInfo(filename);

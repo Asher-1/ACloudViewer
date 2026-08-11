@@ -31,7 +31,9 @@ from cloudViewer._build_config import _build_config
 MAIN_LIB_PATH = Path(__file__).parent / "lib"
 
 if sys.platform == "win32":  # Unix: Use rpath to find libraries
-    _win32_dll_dir = os.add_dll_directory(str(Path(__file__).parent))
+    # Keep handles alive for the process lifetime. AICore loads optional ggml
+    # backends lazily, long after this module has finished importing.
+    _win32_dll_dirs = [os.add_dll_directory(str(Path(__file__).parent))]
 
 # Cache for loaded libraries to prevent duplicate loading
 _loaded_libs_cache = {}
@@ -314,6 +316,25 @@ def _filter_qt_paths(paths, path_separator=':'):
     return filtered_paths
 
 
+def _apply_linux_reconstruction_gui_env():
+    """Avoid Qt OpenGL + NVIDIA driver resets (Xid 13 → SIGTERM/Terminated)."""
+    if sys.platform != 'linux':
+        return
+    if not _build_config.get('BUILD_RECONSTRUCTION'):
+        return
+    if not _build_config.get('AICore_ENABLED'):
+        return
+    if os.environ.get('ACV_QT_USE_NATIVE_OPENGL') is not None:
+        return
+    if os.environ.get('QT_OPENGL') is None:
+        os.environ['QT_OPENGL'] = 'software'
+    # QT_OPENGL=software alone still hits the NVIDIA GL stack on many drivers.
+    # Force Mesa llvmpipe so COLMAP Qt and later DA3 Vulkan do not share NV GL.
+    os.environ.setdefault('LIBGL_ALWAYS_SOFTWARE', '1')
+    os.environ.setdefault('GALLIUM_DRIVER', 'llvmpipe')
+    os.environ.setdefault('__GLX_VENDOR_LIBRARY_NAME', 'mesa')
+
+
 def _setup_library_paths_early(lib_path):
     """
     Set up library search paths for all platforms BEFORE loading any libraries.
@@ -455,6 +476,9 @@ def _setup_linux_libraries():
 
     # 5. Load project-specific core libraries
     try_load_cdll('libCVCoreLib*')
+    # AICore uses a loader-relative RPATH and owns loading its private ggml
+    # core/backend libraries. Do not ctypes-preload libAICore/libggml here:
+    # early ggml/Vulkan init races COLMAP Qt OpenGL in run_graphical_gui().
     try_load_cdll('libCV_DB_LIB*')
     try_load_cdll('libCV_IO_LIB*')
 
@@ -496,6 +520,8 @@ if _build_config["BUILD_GUI"] and not (find_library('c++abi') or
 if os.path.exists(MAIN_LIB_PATH):
     LIB_PATH = str(MAIN_LIB_PATH)
 
+    _apply_linux_reconstruction_gui_env()
+
     # Set up library paths FIRST to prevent loading system Qt libraries
     # This must be done before loading any libraries to avoid version conflicts
     _setup_library_paths_early(LIB_PATH)
@@ -511,6 +537,7 @@ if os.path.exists(MAIN_LIB_PATH):
 
     if sys.platform == "win32":
         # Windows: Set PATH and Qt plugin paths
+        _win32_dll_dirs.append(os.add_dll_directory(LIB_PATH))
         _setup_path(LIB_PATH,
                     path_separator=';',
                     env_var='path',
@@ -551,7 +578,7 @@ if _build_config["BUILD_CUDA_MODULE"]:
                     break
 
             if cuda_bin_path:
-                os.add_dll_directory(cuda_bin_path)
+                _win32_dll_dirs.append(os.add_dll_directory(cuda_bin_path))
 
         # Check CUDA availability without importing CUDA pybind symbols to
         # prevent "symbol already registered" errors if first import fails.
@@ -733,8 +760,6 @@ def _jupyter_nbextension_paths():
     }]
 
 
-if sys.platform == "win32":
-    _win32_dll_dir.close()
 del (os, re, sys, CDLL, load_cdll, try_load_cdll, find_library, Path, warnings,
      _insert_pybind_names, _loaded_libs_cache, _detect_qt_version,
      _load_qt_library, _load_qt_libraries, _qt_version_cache, _setup_path,

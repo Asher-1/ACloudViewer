@@ -7,14 +7,14 @@ on:
     paths:
       - 'agent-integration/**'
       - 'plugins/core/Standard/qJSonRPCPlugin/**'
-      - '.cursor/mcp.json'
+      - '.agents/mcp.json'
       - '.github/workflows/agent-integration.yml'
   pull_request:
     types: [opened, reopened, synchronize]
     paths:
       - 'agent-integration/**'
       - 'plugins/core/Standard/qJSonRPCPlugin/**'
-      - '.cursor/mcp.json'
+      - '.agents/mcp.json'
       - '.github/workflows/agent-integration.yml'
 
 concurrency:
@@ -52,6 +52,8 @@ jobs:
 
       - name: Install agent harness
         run: |
+          # Pin MCP SDK <2.0 — v2.0 removed Server.list_tools() used by mcp_server.py
+          pip install "mcp>=1.0,<2.0"
           pip install -e "_cli-anything/acloudviewer/agent-harness[dev]"
 
       - name: Verify CLI entry point

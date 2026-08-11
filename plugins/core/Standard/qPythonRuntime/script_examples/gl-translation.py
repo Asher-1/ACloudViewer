@@ -4,10 +4,15 @@ It's an OpenGL translation, so coordinates are not changed, its just visual
 """
 import pycc
 import cccorelib
-import math
 
 
-entity = pycc.GetInstance().getSelectedEntities()[0]
+CC = pycc.GetInstance()
+
+entities = CC.getSelectedEntities()
+if not entities:
+    raise RuntimeError("No entity selected. Select an entity first.")
+
+entity = entities[0]
 
 # Translating the entity
 

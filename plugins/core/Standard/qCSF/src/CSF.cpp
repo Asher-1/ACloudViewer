@@ -61,7 +61,7 @@ bool CSF::readPointsFromFile(std::string filename) {
     return true;
 }
 
-// CSF主程序 dofiltering
+// CSF main filtering entry point.
 bool CSF::do_filtering(std::vector<int>& groundIndexes,
                        std::vector<int>& offGroundIndexes,
                        bool exportClothMesh,

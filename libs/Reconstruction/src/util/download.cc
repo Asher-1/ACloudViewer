@@ -93,7 +93,7 @@ size_t WriteCurlData(char* buf,
 // Structure to hold progress callback and cancel flag
 struct ProgressData {
   DownloadProgressCallback callback;
-  bool* canceled;
+  DownloadCancelCallback cancel_callback;
 };
 
 int CurlProgressCallback(void* clientp,
@@ -104,7 +104,8 @@ int CurlProgressCallback(void* clientp,
   ProgressData* progress_data = static_cast<ProgressData*>(clientp);
   
   // Check if download was canceled
-  if (progress_data && progress_data->canceled && *progress_data->canceled) {
+  if (progress_data && progress_data->cancel_callback &&
+      progress_data->cancel_callback()) {
     return 1;  // Return non-zero to cancel download
   }
   
@@ -112,8 +113,9 @@ int CurlProgressCallback(void* clientp,
     // Call the user-provided callback (convert curl_off_t to int64_t)
     progress_data->callback(static_cast<int64_t>(dlnow), static_cast<int64_t>(dltotal));
     
-    // Check again after callback (user might have canceled)
-    if (progress_data->canceled && *progress_data->canceled) {
+    // Check again after the progress update so a UI cancel request can abort
+    // this transfer without pumping the GUI event loop on the worker thread.
+    if (progress_data->cancel_callback && progress_data->cancel_callback()) {
       return 1;  // Return non-zero to cancel download
     }
   } else {
@@ -209,7 +211,8 @@ std::optional<std::string> GetEnvSafe(const char* key) {
 
 std::optional<std::string> DownloadFile(
     const std::string& url,
-    DownloadProgressCallback progress_callback) {
+    DownloadProgressCallback progress_callback,
+    DownloadCancelCallback cancel_callback) {
   std::cout << "Downloading file from: " << url << std::endl;
 
   CurlHandle handle;
@@ -222,8 +225,7 @@ std::optional<std::string> DownloadFile(
   curl_easy_setopt(handle.ptr, CURLOPT_WRITEDATA, &data_stream);
 
   // Enable progress callback for download progress display
-  bool canceled = false;
-  ProgressData progress_data{progress_callback, &canceled};
+  ProgressData progress_data{progress_callback, std::move(cancel_callback)};
   curl_easy_setopt(handle.ptr, CURLOPT_XFERINFOFUNCTION, CurlProgressCallback);
   curl_easy_setopt(handle.ptr, CURLOPT_XFERINFODATA, &progress_data);
   curl_easy_setopt(handle.ptr, CURLOPT_NOPROGRESS, 0L);
@@ -250,7 +252,7 @@ std::optional<std::string> DownloadFile(
   }
   
   // Check if download was canceled
-  if (canceled || code == CURLE_ABORTED_BY_CALLBACK) {
+  if (code == CURLE_ABORTED_BY_CALLBACK) {
     std::cerr << "WARNING: Download was canceled by user" << std::endl;
     return std::nullopt;
   }
@@ -319,17 +321,30 @@ std::optional<std::filesystem::path> HomeDir() {
 
 std::string DownloadAndCacheFile(
     const std::string& uri,
-    DownloadProgressCallback progress_callback) {
+    DownloadProgressCallback progress_callback,
+    DownloadCancelCallback cancel_callback) {
   const std::vector<std::string> parts = StringSplit(uri, ";");
-  CHECK_EQ(parts.size(), 3)
-      << "Invalid URI format. Expected: <url>;<name>;<sha256>";
+  if (parts.size() != 3) {
+    throw std::runtime_error(
+        "Invalid URI format (got " + std::to_string(parts.size()) +
+        " part(s), expected 3). Expected: <url>;<name>;<sha256>. "
+        "Received: " + uri);
+  }
 
   const std::string& url = parts[0];
-  CHECK(!url.empty());
+  if (url.empty()) {
+    throw std::runtime_error("URI has empty URL component: " + uri);
+  }
   const std::string& name = parts[1];
-  CHECK(!name.empty());
+  if (name.empty()) {
+    throw std::runtime_error("URI has empty name component: " + uri);
+  }
   const std::string& sha256 = parts[2];
-  CHECK_EQ(sha256.size(), 64);
+  if (sha256.size() != 64) {
+    throw std::runtime_error(
+        "URI has invalid SHA256 (length " + std::to_string(sha256.size()) +
+        ", expected 64): " + uri);
+  }
 
   std::filesystem::path download_cache_dir;
   if (download_cache_dir_overwrite.has_value()) {
@@ -351,16 +366,22 @@ std::string DownloadAndCacheFile(
     std::cout << "File already cached. Using cached file at: " << path << std::endl;
     std::vector<char> blob;
     ReadBinaryBlob(path.string(), &blob);
-    CHECK_EQ(ComputeSHA256(std::string_view(blob.data(), blob.size())), sha256)
-        << "The cached file does not match the expected SHA256";
+    if (ComputeSHA256(std::string_view(blob.data(), blob.size())) != sha256) {
+      throw std::runtime_error("The cached file does not match the expected SHA256: " +
+                               path.string());
+    }
   } else {
     std::cout << "File not found in cache. Downloading from: " << url << std::endl;
     std::cout << "Cache directory: " << download_cache_dir << std::endl;
     std::cout << "Cache file path: " << path << std::endl;
-    const std::optional<std::string> blob = DownloadFile(url, progress_callback);
-    CHECK(blob.has_value()) << "Failed to download file";
-    CHECK_EQ(ComputeSHA256(std::string_view(blob->data(), blob->size())), sha256)
-        << "The downloaded file does not match the expected SHA256";
+    const std::optional<std::string> blob =
+        DownloadFile(url, progress_callback, cancel_callback);
+    if (!blob.has_value()) {
+      return {};
+    }
+    if (ComputeSHA256(std::string_view(blob->data(), blob->size())) != sha256) {
+      throw std::runtime_error("The downloaded file does not match the expected SHA256");
+    }
     std::cout << "Caching file at: " << path << std::endl;
     std::vector<char> blob_vec(blob->begin(), blob->end());
     WriteBinaryBlob(path.string(), blob_vec);
@@ -368,6 +389,39 @@ std::string DownloadAndCacheFile(
   }
 
   return path.string();
+}
+
+std::string DownloadAndCacheFile(
+    const std::string& url,
+    const std::filesystem::path& target_path,
+    DownloadProgressCallback progress_callback,
+    DownloadCancelCallback cancel_callback) {
+  if (std::filesystem::exists(target_path)) {
+    std::cout << "File already cached. Using cached file at: " << target_path
+              << std::endl;
+    return target_path.string();
+  }
+
+  std::filesystem::create_directories(target_path.parent_path());
+
+  std::cout << "Downloading from: " << url << std::endl;
+  std::cout << "Target path: " << target_path << std::endl;
+  const std::optional<std::string> blob =
+      DownloadFile(url, progress_callback, cancel_callback);
+  if (!blob.has_value()) {
+    return "";
+  }
+
+  std::ofstream ofs(target_path.string(),
+                    std::ios::binary | std::ios::trunc);
+  if (!ofs) {
+    LOG(ERROR) << "Cannot write to " << target_path;
+    return "";
+  }
+  ofs.write(blob->data(), static_cast<std::streamsize>(blob->size()));
+  ofs.close();
+  std::cout << "File successfully cached at: " << target_path << std::endl;
+  return target_path.string();
 }
 
 void OverwriteDownloadCacheDir(std::filesystem::path path) {
@@ -424,6 +478,14 @@ std::filesystem::path GetCachedFilePath(const std::string& uri) {
 
 std::filesystem::path MaybeDownloadAndCacheFile(const std::string& uri) {
   if (!IsURI(uri)) {
+    return uri;
+  }
+  const auto parts = StringSplit(uri, ";");
+  if (parts.size() != 3) {
+    LOG(WARNING) << "URI starts with http(s):// but does not match "
+                    "<url>;<name>;<sha256> format (got "
+                 << parts.size() << " part(s)). Treating as local path: "
+                 << uri;
     return uri;
   }
 #ifdef COLMAP_DOWNLOAD_ENABLED

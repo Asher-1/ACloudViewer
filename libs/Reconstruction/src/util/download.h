@@ -29,6 +29,10 @@ bool IsURI(const std::string& uri);
 using DownloadProgressCallback =
         std::function<void(int64_t downloaded, int64_t total)>;
 
+// Return true to abort the active transfer. The callback runs on the download
+// thread and must not touch GUI objects directly.
+using DownloadCancelCallback = std::function<bool()>;
+
 // Download file from server. Supports any protocol supported by Curl.
 // Automatically follows redirects. Returns null in case of failure. Notice that
 // this function is not suitable for large files that don't fit easily into
@@ -37,7 +41,8 @@ using DownloadProgressCallback =
 // progress_callback: Optional callback function to report download progress.
 std::optional<std::string> DownloadFile(
         const std::string& url,
-        DownloadProgressCallback progress_callback = nullptr);
+        DownloadProgressCallback progress_callback = nullptr,
+        DownloadCancelCallback cancel_callback = nullptr);
 
 // Computes SHA256 digest for given string.
 std::string ComputeSHA256(const std::string_view& str);
@@ -50,7 +55,18 @@ std::string ComputeSHA256(const std::string_view& str);
 // progress_callback: Optional callback function to report download progress.
 std::string DownloadAndCacheFile(
         const std::string& uri,
-        DownloadProgressCallback progress_callback = nullptr);
+        DownloadProgressCallback progress_callback = nullptr,
+        DownloadCancelCallback cancel_callback = nullptr);
+
+// Downloads a file from `url` and saves it to `target_path`.
+// No SHA256 verification is performed. If the file already exists at
+// `target_path` the download is skipped and the existing path is returned.
+// Returns the target path on success, empty string on failure.
+std::string DownloadAndCacheFile(
+        const std::string& url,
+        const std::filesystem::path& target_path,
+        DownloadProgressCallback progress_callback = nullptr,
+        DownloadCancelCallback cancel_callback = nullptr);
 
 // Overwrites the default download cache directory at $HOME/.cache/colmap/.
 void OverwriteDownloadCacheDir(std::filesystem::path path);

@@ -12,10 +12,9 @@
 #include "Resources.h"
 #include "WaitingSpinnerWidget.h"
 
-#include <QFileDialog>
 #include <QResizeEvent>
 #include <QStyle>
-
+#include <cvFileDialog.h>
 FileRunner::FileRunner(PythonInterpreter *interp, QWidget *parent)
     : QDialog(parent), m_interpreter(interp), m_busyWidget(nullptr), m_ui(new Ui::FileRunner)
 
@@ -35,10 +34,10 @@ FileRunner::FileRunner(PythonInterpreter *interp, QWidget *parent)
 
 void FileRunner::selectFile()
 {
-    m_filePath = QFileDialog::getOpenFileName(this,
-                                              QStringLiteral("Select Python Script"),
-                                              QString(),
-                                              QStringLiteral("Python Script (*.py)"));
+    m_filePath = cvFileDialog::getOpenFileName(this,
+                                               QStringLiteral("Select Python Script"),
+                                               QString(),
+                                               QStringLiteral("Python Script (*.py)"));
     m_ui->filePathLabel->setText(m_filePath);
     m_ui->runFileBtn->setEnabled(!m_filePath.isEmpty());
 }

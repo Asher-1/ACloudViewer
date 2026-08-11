@@ -37,4 +37,6 @@ target_link_libraries( QMPLANE_PLUGIN_TESTS CVCoreLib )
 target_link_libraries( QMPLANE_PLUGIN_TESTS CV_DB_LIB )
 target_link_libraries( QMPLANE_PLUGIN_TESTS CV_IO_LIB )
 
+cloudviewer_set_bin_runtime_output_directory(QMPLANE_PLUGIN_TESTS)
+
 install( TARGETS QMPLANE_PLUGIN_TESTS DESTINATION ${ACloudViewer_DEST_FOLDER})

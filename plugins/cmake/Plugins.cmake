@@ -1,5 +1,7 @@
 set( CV_PLUGIN_TARGET_LIST "" CACHE INTERNAL "Internal plugin list" )
 
+include( PluginZlibMinizip )
+
 # AddPlugin should be called once for each plugin.
 # This function sets up a target for the plugin, sets up default properties, and sets the target
 # to link to the necessary libraries.
@@ -97,6 +99,8 @@ function( AddPlugin )
 		CVPluginStub
 	)
 
+	cloudviewer_set_plugin_module_output_directory(${PLUGIN_TARGET})
+
 	# Propagate OpenMP support to all plugins so that #if defined(_OPENMP)
 	# code paths are active.  Core libraries link 3rdparty_openmp PRIVATELY,
 	# so plugins must link it explicitly.
@@ -118,6 +122,17 @@ function( AddPlugin )
 				${CMAKE_COMMAND} -E copy_if_different
 					$<TARGET_FILE:${PLUGIN_TARGET}>
 					${PLUGINS_OUTPUT_DIR}
+		)
+
+		# Also copy directly into the .app bundle so that rebuilding a
+		# plugin without rebuilding the main app target still updates
+		# the dylib that the running application loads.
+		set( _APP_BUNDLE_PLUGINS "${CMAKE_BINARY_DIR}/bin/${MAIN_APP_NAME}.app/Contents/cvPlugins" )
+		add_custom_command( TARGET ${PLUGIN_TARGET} POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E make_directory "${_APP_BUNDLE_PLUGINS}"
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different
+				$<TARGET_FILE:${PLUGIN_TARGET}>
+				"${_APP_BUNDLE_PLUGINS}/"
 		)
 	endif()
 

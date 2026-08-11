@@ -30,3 +30,14 @@ class CountPlugin(pycc.PythonPluginInterface):
 
     def printSelectedEntities(self):
         print(f"Selected Entities: {self.app.getSelectedEntities()}")
+
+
+if __name__ == "__main__":
+    # This module defines a plugin that is normally loaded through the plugin
+    # framework (its "Print Count" / "Print Selected Entities" actions then show
+    # up in the plugin menu). When run directly as a script there is no menu to
+    # click, so instantiate the plugin and trigger its counter action to show
+    # that it works.
+    _plugin = CountPlugin()
+    _plugin.printCount()
+    _plugin.printCount()

@@ -288,6 +288,9 @@ namespace sibr
 
 		static std::vector<InputCamera::Ptr> loadJSON(const std::string& jsonPath, const float zNear = 0.01f, const float zFar = 1000.0f);
 
+		/** Load cameras from an in-memory cameras.json payload (same schema as loadJSON). */
+		static std::vector<InputCamera::Ptr> loadJSONFromString(const std::string& jsonContent, const float zNear = 0.01f, const float zFar = 1000.0f);
+
 		/** Load cameras from a bundle file.
 		* \param bundlerPath path to the bundle file.
 		* \param zNear default near-plane value to use

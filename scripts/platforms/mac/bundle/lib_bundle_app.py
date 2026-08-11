@@ -11,12 +11,24 @@ import subprocess
 import sys
 from pathlib import Path
 
+_BUNDLE_DIR = Path(__file__).resolve().parent
+if str(_BUNDLE_DIR) not in sys.path:
+    sys.path.insert(0, str(_BUNDLE_DIR))
+
+from bundle_slim import (
+    copy_python_env_filtered,
+    copy_python_env_minimal,
+    should_skip_cuda_runtime_lib,
+)
+
 logger = logging.getLogger(__name__)
 
 
 class CCAppBundleConfig:
     output_dependencies: bool
     embed_python: bool
+    python_minimal: bool
+    python_full: bool
 
     app_name: str
     cc_bin_path: Path
@@ -37,6 +49,9 @@ class CCAppBundleConfig:
             extra_pathlib: Path,
             output_dependencies: bool,
             embed_python: bool,
+            python_minimal: bool = True,
+            python_full: bool = False,
+            python_prefix: Path = None,
     ) -> None:
         """Construct a configuration.
 
@@ -47,11 +62,14 @@ class CCAppBundleConfig:
             output_dependencies (bool): boolean that control the level of debug. If true some extra
             files will be created (macos_bundle_warnings.json macos_bundle_dependencies.json).
             embed_python (bool): Whether python should be embedded into the bundle or not.
+            python_prefix (Path): Explicit Python prefix (overrides sys.exec_prefix).
 
         """
         self.app_name = app_name
         self.extra_pathlib = extra_pathlib
         self.output_dependencies = output_dependencies
+        self.python_minimal = python_minimal and not python_full
+        self.python_full = python_full
         self.bundle_abs_path = (install_path / (self.app_name + ".app")).absolute()
         self.cc_bin_path = self.bundle_abs_path / "Contents" / "MacOS" / app_name
         self.frameworks_path = self.bundle_abs_path / "Contents" / "Frameworks"
@@ -64,7 +82,7 @@ class CCAppBundleConfig:
         else:
             self.embed_python = False
         if embed_python:
-            self._query_python()
+            self._query_python(python_prefix)
             self.embedded_python_rootpath = self.bundle_abs_path / "Contents" / "Resources" / "python"
             self.embedded_python_path = self.embedded_python_rootpath / "bin"
             self.embedded_python_binary = self.embedded_python_path / "python"
@@ -87,11 +105,44 @@ class CCAppBundleConfig:
         )
         return res
 
-    def _query_python(self):
-        """Query for python paths and configuration."""
+    def _query_python(self, python_prefix: Path = None):
+        """Query for python paths and configuration.
+
+        When python_prefix is supplied (from --python_prefix), it overrides
+        sys.exec_prefix so that the correct Python env is bundled even when
+        make install is run from a different conda env.
+        """
+        prefix = Path(python_prefix) if python_prefix else Path(sys.exec_prefix)
+
         self.python_version = f"{sys.version_info.major}.{sys.version_info.minor}"
-        self.base_python_binary = Path(sys.exec_prefix) / "bin" / "python"
-        self.base_python_libs = Path(sys.exec_prefix) / "lib" / f"python{self.python_version}"
+
+        # When using an explicit prefix, detect the actual Python version
+        # from the lib/ directory in case it differs from the running Python.
+        if python_prefix:
+            lib_dir = prefix / "lib"
+            if lib_dir.is_dir():
+                for d in sorted(lib_dir.iterdir(), reverse=True):
+                    if d.is_dir() and d.name.startswith("python3."):
+                        self.python_version = d.name.replace("python", "")
+                        break
+
+        # Resolve the actual python binary: bin/python, bin/python3, or bin/python<ver>
+        bin_dir = prefix / "bin"
+        candidates = [
+            bin_dir / "python",
+            bin_dir / "python3",
+            bin_dir / f"python{self.python_version}",
+        ]
+        self.base_python_binary = None
+        for c in candidates:
+            if c.exists():
+                self.base_python_binary = c
+                break
+        if self.base_python_binary is None:
+            self.base_python_binary = bin_dir / "python"
+            logger.warning("Python binary not found at %s; bundling may fail", bin_dir)
+
+        self.base_python_libs = prefix / "lib" / f"python{self.python_version}"
 
 
 class CCBundler:
@@ -118,28 +169,101 @@ class CCBundler:
 
     def bundle(self) -> None:
         """Bundle the dependencies into the .app"""
-        if config.embed_python:
+        if self.config.embed_python:
             self._embed_python()
 
         libs_found, libs_ex_found, libs_in_cv_plugins, libs_in_plugins = self._collect_dependencies()
         self._embed_libraries(libs_found, libs_ex_found, libs_in_cv_plugins, libs_in_plugins)
+        self._repair_qt_version_mismatch()
+        self._remove_non_compliant_plugins()
 
         # output debug files if needed
         if self.config.output_dependencies:
-            logger.info("write debug files (macos_bundle_dependencies.json and macos_bundle_warnings.json)")
+            logger.info("write debug files")
             with open(
-                    Path.cwd() / "macos_bundle_dependencies.json",
-                    "w",
-                    encoding="utf-8",
+                    Path.cwd() / "macos_bundle_dependencies.json", "w", encoding="utf-8",
             ) as f:
                 json.dump(self.dependencies, f, sort_keys=True, indent=4)
-
             with open(
-                    Path.cwd() / "macos_bundle_warnings.json",
-                    "w",
-                    encoding="utf-8",
+                    Path.cwd() / "macos_bundle_warnings.json", "w", encoding="utf-8",
             ) as f:
                 json.dump(self.warnings, f, sort_keys=True, indent=4)
+
+    def _remove_non_compliant_plugins(self) -> None:
+        """Remove Qt plugins that use private macOS APIs.
+
+        macdeployqt may copy the PostgreSQL SQL driver into PlugIns/sqldrivers/,
+        but it links against libpq which uses private APIs (e.g.
+        getaddrinfo_a) that are not Mac App Store compliant.
+        Only psql-related plugins are removed; other SQL drivers
+        (e.g. libqsqlite) are kept as they are needed by plugins
+        such as qFreeSplatter and face detection for DB read/write.
+        Uses glob to tolerate different plugin names across Qt distributions.
+        """
+        sql_dir = self.config.plugin_path / "sqldrivers"
+        if sql_dir.is_dir():
+            for plugin in sql_dir.glob("*psql*"):
+                plugin.unlink()
+                logger.info("Removed non-Mac-App-Store-compliant plugin: %s", plugin.name)
+        # Also remove any stray libpq dylibs that may have been
+        # copied into Frameworks by _embed_libraries
+        for dylib in self.config.frameworks_path.glob("libpq*.dylib"):
+            logger.info("Removed non-compliant dependency from Frameworks: %s", dylib.name)
+            dylib.unlink()
+
+    def _repair_qt_version_mismatch(self) -> None:
+        """Replace Qt libs whose version doesn't match QtCore.
+
+        macdeployqt may copy Qt plugin dependencies (DBus, Qml, Quick,
+        Svg, VirtualKeyboard) from a different Qt installation, causing
+        'Cannot mix incompatible Qt library' crashes at startup.
+        """
+        import re
+        fw = self.config.frameworks_path
+        core = fw / "libQt5Core.5.dylib"
+        if not core.is_file():
+            return
+
+        def _qt_current_version(lib: Path) -> str | None:
+            out = subprocess.run(
+                ["otool", "-L", str(lib)],
+                capture_output=True, text=True, check=False,
+            ).stdout
+            for line in out.splitlines():
+                m = re.search(r"current version (\d+\.\d+\.\d+)", line)
+                if m:
+                    return m.group(1)
+            return None
+
+        target_ver = _qt_current_version(core)
+        if not target_ver:
+            return
+        logger.info("Qt target version (from QtCore): %s", target_ver)
+
+        qt_src_dir = self.config.extra_pathlib
+        replaced = 0
+        for qt_lib in fw.glob("libQt5*.dylib"):
+            ver = _qt_current_version(qt_lib)
+            if ver and ver != target_ver:
+                src = qt_src_dir / qt_lib.name
+                if not src.is_file():
+                    src_glob = list(qt_src_dir.glob(qt_lib.stem + ".*dylib"))
+                    src = src_glob[0] if src_glob else None
+                if src and src.is_file():
+                    src_ver = _qt_current_version(src)
+                    if src_ver == target_ver:
+                        logger.info("Replacing %s (%s -> %s)", qt_lib.name, ver, target_ver)
+                        shutil.copy2(src, qt_lib)
+                        subprocess.run(
+                            ["install_name_tool", "-add_rpath", "@loader_path", str(qt_lib)],
+                            stdout=subprocess.PIPE, check=False,
+                        )
+                        replaced += 1
+                    else:
+                        logger.warning("Source %s version %s also mismatches target %s", src.name, src_ver, target_ver)
+                else:
+                    logger.warning("No replacement found for %s (version %s)", qt_lib.name, ver)
+        logger.info("Qt version repair: replaced %d libraries", replaced)
 
     def _get_lib_dependencies(self, mainlib: Path) -> tuple[list[str], list[str]]:
         """List dependencies of mainlib (using otool -L).
@@ -260,11 +384,8 @@ class CCBundler:
         return abs_paths
 
     def _copy_python_env(self) -> None:
-        """Copy python environment.
-
-        Ideally this should be handled by CCPython-Runtime CMake script like in Windows.
-        """
-        logger.info("Python: copy distribution in package")
+        """Copy python environment into the app bundle (minimal by default)."""
+        logger.info("Python: copy distribution in package (minimal=%s, full=%s)", self.config.python_minimal, self.config.python_full)
         try:
             if self.config.embedded_python_path.exists():
                 print(f"Start to remvoe old bundle python binary path: {self.config.embedded_python_path}")
@@ -279,10 +400,34 @@ class CCBundler:
                 "Python dir already exists in bundle, please clean your bundle and rerun this script",
             )
             sys.exit(1)
-        shutil.copytree(self.config.base_python_libs, self.config.embedded_python_lib)
+
         python_version_name = self.config.embedded_python_lib.name
-        CCBundler.create_symlink(f"{python_version_name}/site-packages", "site-packages", self.config.embedded_python_libpath)
-        shutil.copy2(self.config.base_python_binary, self.config.embedded_python_binary)
+        if self.config.python_minimal:
+            copy_python_env_minimal(
+                self.config.base_python_libs,
+                self.config.base_python_binary,
+                self.config.embedded_python_lib,
+                self.config.embedded_python_binary,
+                self.config.embedded_python_libpath,
+                python_version_name,
+            )
+        elif self.config.python_full:
+            shutil.copytree(self.config.base_python_libs, self.config.embedded_python_lib)
+            CCBundler.create_symlink(
+                f"{python_version_name}/site-packages",
+                "site-packages",
+                self.config.embedded_python_libpath,
+            )
+            shutil.copy2(self.config.base_python_binary, self.config.embedded_python_binary)
+        else:
+            copy_python_env_filtered(
+                self.config.base_python_libs,
+                self.config.base_python_binary,
+                self.config.embedded_python_lib,
+                self.config.embedded_python_binary,
+                self.config.embedded_python_libpath,
+                python_version_name,
+            )
 
     def _embed_python(self) -> None:
         """Embed python distribution dependencies in site-packages.
@@ -299,6 +444,14 @@ class CCBundler:
         python_libs = set()  # Lib in python dir
 
         self._copy_python_env()
+        for lib in self.config.embedded_python_libpath.glob("libpython*.dylib"):
+            if lib.is_file():
+                libs_to_check.append(lib)
+                python_libs.add(lib)
+        for lib in self.config.embedded_python_libpath.glob("libpython*.so*"):
+            if lib.is_file():
+                libs_to_check.append(lib)
+                python_libs.add(lib)
         # --- enumerate all libs inside the dir
         # Path.walk() is python 3.12+
         for root, _, files in os.walk(self.config.embedded_python_lib):
@@ -336,9 +489,19 @@ class CCBundler:
                     for abs_rp in abs_rpaths:
                         abs_lib = abs_rp / lib
                         if abs_lib.is_file():
+                            if should_skip_cuda_runtime_lib(abs_lib):
+                                logger.info("Skip NVIDIA CUDA runtime dependency: %s", abs_lib)
+                                break
                             if abs_lib not in libs_to_check and abs_lib not in libs_found:
                                 libs_to_check.append(abs_lib)
                             break
+
+        # With GGML_BACKEND_DL, backend modules (libggml-metal.so, etc.)
+        # are loaded at runtime and NOT in the otool dependency chain.
+        # Discover them alongside libAICore.dylib so they get bundled.
+        # libAICore may already be resolved in Frameworks (not the install dir),
+        # so also search its rpath-resolved directories and extra_pathlib.
+        self._discover_ggml_backends(libs_found)
 
         logger.info("lib_ex_found to add to Frameworks: %i", len(lib_ex_found))
         logger.info("libs_found to add to Frameworks: %i", len(libs_found))
@@ -346,7 +509,10 @@ class CCBundler:
         libs_in_framework = set(self.config.frameworks_path.iterdir())
         added_to_framework_count = 0
         for lib in libs_found:
-            if lib == self.config.embedded_python_binary:  # if it's the Python binary we continue
+            if lib == self.config.embedded_python_binary:
+                continue
+            if should_skip_cuda_runtime_lib(lib):
+                logger.info("Skip NVIDIA CUDA runtime in Frameworks: %s", lib)
                 continue
             base = self.config.frameworks_path / lib.name
             if base not in libs_in_framework and lib not in python_libs:
@@ -372,6 +538,53 @@ class CCBundler:
                 ["install_name_tool", "-add_rpath", rpath, str(file)],
                 check=False,
             )
+
+    def _discover_ggml_backends(self, libs_found: set[Path]) -> None:
+        """Find ggml backend MODULE libs that are dlopen'd at runtime.
+
+        They are not in the otool dependency chain.  Search order:
+        1. Same directory as the resolved libAICore path
+        2. Rpath-resolved directories of libAICore
+        3. Install prefix lib dir (derived from app bundle path)
+        4. extra_pathlib (conda/install lib dir)
+        """
+        aicore_path: Path | None = None
+        for lib in list(libs_found):
+            if lib.name.startswith("libAICore"):
+                aicore_path = lib
+                break
+        if aicore_path is None:
+            return
+
+        search_dirs: list[Path] = [aicore_path.parent]
+        rpaths = CCBundler._get_rpath(aicore_path)
+        search_dirs.extend(CCBundler._convert_rpaths(aicore_path, rpaths))
+        # Derive install prefix lib dir: <prefix>/bin/<app>/<app>.app → <prefix>/lib
+        install_lib = self.config.bundle_abs_path.parent.parent.parent / "lib"
+        if install_lib.is_dir() and install_lib not in search_dirs:
+            search_dirs.append(install_lib)
+        if self.config.extra_pathlib not in search_dirs:
+            search_dirs.append(self.config.extra_pathlib)
+
+        added = 0
+        for search_dir in search_dirs:
+            if not search_dir.is_dir():
+                continue
+            for pattern in ("libggml-*.so", "libggml-*.dylib"):
+                for ggml_mod in search_dir.glob(pattern):
+                    if not ggml_mod.is_file() or ggml_mod.is_symlink():
+                        continue
+                    if ggml_mod in libs_found:
+                        continue
+                    if should_skip_cuda_runtime_lib(ggml_mod):
+                        continue
+                    # Skip core shared libs (already handled by otool chain)
+                    if ggml_mod.name.startswith("libggml.") or ggml_mod.name.startswith("libggml-base."):
+                        continue
+                    logger.info("Adding ggml backend module: %s", ggml_mod)
+                    libs_found.add(ggml_mod)
+                    added += 1
+        logger.info("ggml backend modules discovered: %d", added)
 
     def _collect_dependencies(self):
         """Collect dependencies of ACloudViewer binary and QT libs
@@ -458,6 +671,9 @@ class CCBundler:
                 for abs_rp in abs_search_paths:
                     abslib_path = abs_rp / dependency
                     if abslib_path.is_file():
+                        if should_skip_cuda_runtime_lib(abslib_path):
+                            logger.info("Skip NVIDIA CUDA runtime dependency: %s", abslib_path)
+                            break
                         if abslib_path not in libs_to_check and abslib_path not in libs_found:
                             # if this lib was not checked for dependencies yet, we append it to the list of lib to check
                             libs_to_check.append(abslib_path)
@@ -466,6 +682,10 @@ class CCBundler:
             # TODO: handle lib_ex here
             # for dependency in lib_ex:...
             # TODO: add to libTOcheck executable_path/dep
+
+        # With GGML_BACKEND_DL, backend modules (libggml-metal.so, etc.)
+        # are loaded at runtime and NOT in the otool dependency chain.
+        self._discover_ggml_backends(libs_found)
 
         return libs_found, lib_ex_found, libs_in_cv_plugins, libs_in_plugins
 
@@ -496,6 +716,9 @@ class CCBundler:
         nb_libs_added = 0
         for lib in libs_found:
             if lib == self.config.cc_bin_path:
+                continue
+            if should_skip_cuda_runtime_lib(lib):
+                logger.info("Skip NVIDIA CUDA runtime in Frameworks: %s", lib)
                 continue
             base = self.config.frameworks_path / lib.name
             if (base not in libs_in_frameworks) and (lib not in libs_in_plugins) and (lib not in libs_in_cv_plugins):
@@ -608,6 +831,23 @@ if __name__ == "__main__":
         action="store_true",
     )
     parser.add_argument(
+        "--python_minimal",
+        help="Embed stdlib + requirements-release.txt only (default when --embed_python)",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+    )
+    parser.add_argument(
+        "--python_full",
+        help="Embed the entire active Python prefix (can be multi-GB; dev only)",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--python_prefix",
+        help="Python prefix to bundle (overrides sys.exec_prefix). "
+             "Pass the conda env or pyenv prefix used at configure time.",
+        type=Path,
+    )
+    parser.add_argument(
         "--output_dependencies",
         help="Output a json files in order to debug dependency graph",
         action="store_true",
@@ -632,6 +872,9 @@ if __name__ == "__main__":
         extra_pathlib,
         arguments.output_dependencies,
         arguments.embed_python,
+        python_minimal=arguments.python_minimal,
+        python_full=arguments.python_full,
+        python_prefix=arguments.python_prefix,
     )
 
     bundler = CCBundler(config)

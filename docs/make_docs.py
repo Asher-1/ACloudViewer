@@ -74,6 +74,28 @@ def _update_file(src, dst):
     shutil.copy2(src, dst)
 
 
+def copy_plugin_showcase_assets(pwd, html_dir):
+    """Copy plugin-owned landing images into the deployable HTML tree."""
+    assets = {
+        "qDA3": ("qDA3.png",),
+        "qDeepLSD": ("qDeepLSD.png",),
+        "qFaceDetect": ("qFaceDetect.png", "qFaceDetect_video.png"),
+        "qFreeSplatter": ("qFreeSplatter.png", "qFreeSplatter_video.png"),
+        "qLightGlue": ("qLightGlue.png",),
+        "qSIBR": ("SIBR_viewer.png",),
+    }
+    source_root = Path(pwd).parent / "plugins" / "core" / "Standard"
+    destination_root = Path(html_dir) / "plugin-assets"
+    for plugin, names in assets.items():
+        target_dir = destination_root / plugin
+        target_dir.mkdir(parents=True, exist_ok=True)
+        for name in names:
+            source = source_root / plugin / "images" / name
+            if not source.is_file():
+                raise FileNotFoundError(f"Missing plugin showcase asset: {source}")
+            shutil.copy2(source, target_dir / name)
+
+
 def get_git_short_hash():
     """Get the short git hash for version information."""
     try:
@@ -1168,6 +1190,7 @@ def main():
     if args.sphinx:
         sdb = SphinxDocsBuilder(pwd, html_output_dir, args.is_release, args.parallel)
         sdb.run()
+        copy_plugin_showcase_assets(pwd, os.path.join(html_output_dir, "html"))
     else:
         print("ℹ️  Sphinx build disabled, use --sphinx to enable")
 
@@ -1198,4 +1221,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-

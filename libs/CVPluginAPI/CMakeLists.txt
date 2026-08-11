@@ -19,11 +19,18 @@ target_include_directories( ${PROJECT_NAME} PUBLIC "${STUB_INCLUDES}" )
 target_link_libraries( ${PROJECT_NAME}
 	CV_DB_LIB
 	CV_IO_LIB
+	Qt::Network
 )
+
+# zlib + minizip for cross-platform zip extraction (ecvTestDataRepository)
+include( ${CMAKE_SOURCE_DIR}/plugins/cmake/PluginZlibMinizip.cmake )
+cloudviewer_plugin_link_zlib_minizip(${PROJECT_NAME}
+	PLUGIN_NAME CVPluginAPI)
 
 target_compile_definitions( ${PROJECT_NAME} PRIVATE CVPLUGIN_API_LIBRARY_BUILD )
 
 set_target_properties( ${PROJECT_NAME} PROPERTIES
+	AUTOMOC ON
 	AUTOUIC ON # FIXME Remove after everything has moved to targets and we can set it globally
 	CXX_VISIBILITY_PRESET hidden
 )

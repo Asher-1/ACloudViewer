@@ -55,6 +55,47 @@ function(copy_rename_files src_dir src_name dst_dir dst_name)
     )
 endfunction()
 
+# macOS: ggml backend MODULE libs (.so) are dlopen'd at runtime and may not
+# be inside the .app bundle after macdeployqt + lib_bundle_app.py runs.
+# Core shared libs (.dylib) may also be missing if lib_bundle_app.py
+# didn't discover them via otool (since they're loaded by dlopen).
+# Explicitly copy them from the install lib dir into each deploy app's
+# Frameworks directory so the DMG is self-contained.
+function(ensure_ggml_backends_in_app app_frameworks_dir install_lib_dir module_suffix)
+    if(NOT IS_DIRECTORY "${install_lib_dir}" OR NOT IS_DIRECTORY "${app_frameworks_dir}")
+        return()
+    endif()
+    # Collect both backend modules (.so on macOS) and core shared libs (.dylib)
+    file(GLOB _ggml_modules "${install_lib_dir}/libggml-*${module_suffix}")
+    file(GLOB _ggml_dylibs  "${install_lib_dir}/libggml*.dylib")
+    list(APPEND _ggml_all ${_ggml_modules} ${_ggml_dylibs})
+    list(REMOVE_DUPLICATES _ggml_all)
+    set(_added 0)
+    foreach(_mod IN LISTS _ggml_all)
+        if(NOT EXISTS "${_mod}" OR IS_DIRECTORY "${_mod}")
+            continue()
+        endif()
+        # Skip symlinks: resolve the real path and skip if different
+        # (compatible with CMake < 3.28 which lacks IS_SYMLINK)
+        get_filename_component(_realpath "${_mod}" REALPATH)
+        if(NOT "${_realpath}" STREQUAL "${_mod}")
+            continue()
+        endif()
+        get_filename_component(_name "${_mod}" NAME)
+        set(_dst "${app_frameworks_dir}/${_name}")
+        if(NOT EXISTS "${_dst}")
+            file(COPY "${_mod}" DESTINATION "${app_frameworks_dir}"
+                 FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+                                  GROUP_READ GROUP_EXECUTE
+                                  WORLD_READ WORLD_EXECUTE)
+            math(EXPR _added "${_added} + 1")
+        endif()
+    endforeach()
+    if(_added GREATER 0)
+        message(STATUS "PostInstall: copied ${_added} ggml backend(s) into ${app_frameworks_dir}")
+    endif()
+endfunction()
+
 # 1. Config
 ## update ACloudViewer version and build time
 replace_version_in_file("${CONFIG_FILE_PATH}")
@@ -76,10 +117,21 @@ endif()
 
 # 2. Deploy
 set(SOURCE_BIN_PATH ${CMAKE_INSTALL_PREFIX}/${CloudViewer_INSTALL_BIN_DIR})
+if (APPLE AND GGML_MODULE_SUFFIX)
+    set(_GGML_SRC_DIR "${CMAKE_INSTALL_PREFIX}/${CloudViewer_INSTALL_LIB_DIR}")
+endif()
 ## deploy ACloudViewer
 file(COPY "${SOURCE_BIN_PATH}/${MAIN_APP_NAME}/${MAIN_APP_NAME}${APP_EXTENSION}"
     DESTINATION "${MAIN_DEPLOY_PATH}"
     USE_SOURCE_PERMISSIONS)
+if (APPLE AND GGML_MODULE_SUFFIX)
+    ensure_ggml_backends_in_app(
+        "${MAIN_DEPLOY_PATH}/${MAIN_APP_NAME}${APP_EXTENSION}/Contents/${LIBS_FOLDER_NAME}"
+        "${_GGML_SRC_DIR}" "${GGML_MODULE_SUFFIX}")
+    ensure_ggml_backends_in_app(
+        "${SOURCE_BIN_PATH}/${MAIN_APP_NAME}/${MAIN_APP_NAME}${APP_EXTENSION}/Contents/${LIBS_FOLDER_NAME}"
+        "${_GGML_SRC_DIR}" "${GGML_MODULE_SUFFIX}")
+endif()
 if (UNIX AND NOT APPLE)
     # deploy libs, plugins and translations for ACloudViewer
     file(COPY 
@@ -155,6 +207,19 @@ if (UNIX AND NOT APPLE)
                     ${EXTERNAL_LIB_DIR2}
                     WORKING_DIRECTORY ${BUILD_LIB_PATH})
 
+    if(AICore_BUNDLE_CUDA_RUNTIME AND AICore_CUDA_ENABLED)
+        set(_bundled_cuda_src "${CMAKE_INSTALL_PREFIX}/${LIBS_FOLDER_NAME}/cuda-runtime")
+        set(_bundled_cuda_dst "${DEPLOY_LIB_PATH}/cuda-runtime")
+        if(EXISTS "${_bundled_cuda_src}")
+            file(COPY "${_bundled_cuda_src}/"
+                DESTINATION "${_bundled_cuda_dst}"
+                USE_SOURCE_PERMISSIONS)
+            message(STATUS "Deployed bundled CUDA runtime to ${_bundled_cuda_dst}")
+        else()
+            message(WARNING "AICore_BUNDLE_CUDA_RUNTIME=ON but ${_bundled_cuda_src} is missing")
+        endif()
+    endif()
+
 elseif (WIN32)
     # deploy plugins and translations for ACloudViewer
     file(COPY 
@@ -207,24 +272,18 @@ elseif (WIN32)
         COMMAND ${POWERSHELL_PATH} -ExecutionPolicy Bypass 
                 -Command "& '${PACK_SCRIPTS}' '${SOURCE_BIN_PATH}/${MAIN_APP_NAME}' '${DEPLOY_LIB_PATH}' @(${PS_SEARCH_PATHS}) -Recursive"
     )
-endif()
 
-## deploy SIBR plugin runtime assets for macOS (.app bundle)
-if (APPLE)
-    set(_sibr_macos_dest "${MAIN_DEPLOY_PATH}/${MAIN_APP_NAME}.app/Contents/MacOS")
-    foreach(_sibr_asset shaders sibr_resources)
-        set(_sibr_asset_path "${SOURCE_BIN_PATH}/${_sibr_asset}")
-        if(EXISTS "${_sibr_asset_path}")
-            file(COPY "${_sibr_asset_path}"
-                DESTINATION "${_sibr_macos_dest}"
+    if(AICore_BUNDLE_CUDA_RUNTIME AND AICore_CUDA_ENABLED)
+        set(_bundled_cuda_src "${CMAKE_INSTALL_PREFIX}/${LIBS_FOLDER_NAME}/cuda-runtime")
+        set(_bundled_cuda_dst "${DEPLOY_LIB_PATH}/cuda-runtime")
+        if(EXISTS "${_bundled_cuda_src}")
+            file(COPY "${_bundled_cuda_src}/"
+                DESTINATION "${_bundled_cuda_dst}"
                 USE_SOURCE_PERMISSIONS)
+            message(STATUS "Deployed bundled CUDA runtime to ${_bundled_cuda_dst}")
+        else()
+            message(WARNING "AICore_BUNDLE_CUDA_RUNTIME=ON but ${_bundled_cuda_src} is missing")
         endif()
-    endforeach()
-    set(_ibr_ini "${SOURCE_BIN_PATH}/ibr_resources.ini")
-    if(EXISTS "${_ibr_ini}")
-        file(COPY "${_ibr_ini}"
-            DESTINATION "${_sibr_macos_dest}"
-            USE_SOURCE_PERMISSIONS)
     endif()
 endif()
 
@@ -233,6 +292,14 @@ if (${BUILD_GUI} STREQUAL "ON")
     file(COPY "${SOURCE_BIN_PATH}/${CLOUDVIEWER_APP_NAME}/${CLOUDVIEWER_APP_NAME}${APP_EXTENSION}"
         DESTINATION "${CLOUDVIEWER_DEPLOY_PATH}"
         USE_SOURCE_PERMISSIONS)
+    if (APPLE AND GGML_MODULE_SUFFIX)
+        ensure_ggml_backends_in_app(
+            "${CLOUDVIEWER_DEPLOY_PATH}/${CLOUDVIEWER_APP_NAME}${APP_EXTENSION}/Contents/${LIBS_FOLDER_NAME}"
+            "${_GGML_SRC_DIR}" "${GGML_MODULE_SUFFIX}")
+        ensure_ggml_backends_in_app(
+            "${SOURCE_BIN_PATH}/${CLOUDVIEWER_APP_NAME}/${CLOUDVIEWER_APP_NAME}${APP_EXTENSION}/Contents/${LIBS_FOLDER_NAME}"
+            "${_GGML_SRC_DIR}" "${GGML_MODULE_SUFFIX}")
+    endif()
     if ((WIN32 OR UNIX) AND NOT APPLE)
         file(COPY "${SOURCE_BIN_PATH}/${CLOUDVIEWER_APP_NAME}/resources"
                 DESTINATION "${CLOUDVIEWER_DEPLOY_PATH}"
@@ -244,6 +311,14 @@ if (${BUILD_RECONSTRUCTION} STREQUAL "ON")
     file(COPY "${SOURCE_BIN_PATH}/${COLMAP_APP_NAME}/${COLMAP_APP_NAME}${APP_EXTENSION}"
                 DESTINATION "${COLMAP_DEPLOY_PATH}"
                 USE_SOURCE_PERMISSIONS)
+    if (APPLE AND GGML_MODULE_SUFFIX)
+        ensure_ggml_backends_in_app(
+            "${COLMAP_DEPLOY_PATH}/${COLMAP_APP_NAME}${APP_EXTENSION}/Contents/${LIBS_FOLDER_NAME}"
+            "${_GGML_SRC_DIR}" "${GGML_MODULE_SUFFIX}")
+        ensure_ggml_backends_in_app(
+            "${SOURCE_BIN_PATH}/${COLMAP_APP_NAME}/${COLMAP_APP_NAME}${APP_EXTENSION}/Contents/${LIBS_FOLDER_NAME}"
+            "${_GGML_SRC_DIR}" "${GGML_MODULE_SUFFIX}")
+    endif()
 
     if (UNIX AND NOT APPLE)
         # for Colmap deps
@@ -274,14 +349,119 @@ endif()
 set(OUTPUT_CLOUDVIEWER_PACKAGE_PATH ${CMAKE_INSTALL_PREFIX}/${ACLOUDVIEWER_PACKAGE_NAME}.${PACKAGE_EXTENSION})
 if (${PACKAGE} STREQUAL "ON") # package
     set(PACKAGE_TOOL "binarycreator")
-    set(SHELL_CMD "${PACKAGE_TOOL} -c ${CONFIG_FILE_PATH} -p ${DEPLOY_PACKAGES_PATH} ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}")
-    message(STATUS "Package with command: " ${SHELL_CMD})
-    execute_process(COMMAND ${PACKAGE_TOOL} -c ${CONFIG_FILE_PATH} -p ${DEPLOY_PACKAGES_PATH} ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}
-                    WORKING_DIRECTORY ${MAIN_WORKING_DIRECTORY})
-    message(STATUS "${MAIN_APP_NAME} Installer Package ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH} created.")
-    # execute_process(COMMAND zip -r ${CMAKE_INSTALL_PREFIX}/${ACLOUDVIEWER_PACKAGE_NAME}.zip ${DEPLOY_ROOT_PATH}
-    #                 WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX})
-    # message(STATUS "Package ${CMAKE_INSTALL_PREFIX}/${ACLOUDVIEWER_PACKAGE_NAME}.zip created")
+    if (APPLE)
+        # Qt IFW ≥4.x on macOS may create a nested app bundle where
+        # CFBundleExecutable points to a directory instead of a binary.
+        # Work around: create the .app first, fix the bundle, then wrap in DMG.
+        set(_QTIFW_APP_PATH "${CMAKE_INSTALL_PREFIX}/${ACLOUDVIEWER_PACKAGE_NAME}.app")
+        set(_QTIFW_BUNDLE_EXE "${ACLOUDVIEWER_PACKAGE_NAME}")
+        message(STATUS "Creating macOS installer app: ${_QTIFW_APP_PATH}")
+        execute_process(COMMAND ${PACKAGE_TOOL}
+            -c ${CONFIG_FILE_PATH} -p ${DEPLOY_PACKAGES_PATH}
+            "${_QTIFW_APP_PATH}"
+            WORKING_DIRECTORY ${MAIN_WORKING_DIRECTORY}
+            RESULT_VARIABLE _QTIFW_RESULT)
+        if(_QTIFW_RESULT)
+            message(FATAL_ERROR "binarycreator failed with code ${_QTIFW_RESULT}")
+        endif()
+
+        # Fix nested bundle: if CFBundleExecutable is a directory (Qt IFW bug),
+        # flatten it by moving the inner installerbase binary to the expected path.
+        set(_BUNDLE_MACOS "${_QTIFW_APP_PATH}/Contents/MacOS")
+        set(_BUNDLE_EXE "${_BUNDLE_MACOS}/${_QTIFW_BUNDLE_EXE}")
+        if(IS_DIRECTORY "${_BUNDLE_EXE}")
+            # Find the real binary inside the nested bundle
+            set(_NESTED_BIN "${_BUNDLE_EXE}/Contents/MacOS/installerbase")
+            if(NOT EXISTS "${_NESTED_BIN}")
+                file(GLOB _NESTED_BIN "${_BUNDLE_EXE}/Contents/MacOS/*")
+                list(GET _NESTED_BIN 0 _NESTED_BIN)
+            endif()
+            if(EXISTS "${_NESTED_BIN}")
+                message(STATUS "Fixing nested Qt IFW bundle: ${_NESTED_BIN} -> ${_BUNDLE_EXE}")
+                set(_TMP_BIN "${_BUNDLE_MACOS}/_installerbase_tmp")
+                file(COPY "${_NESTED_BIN}" DESTINATION "${_BUNDLE_MACOS}"
+                     FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+                     GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+                get_filename_component(_NESTED_NAME "${_NESTED_BIN}" NAME)
+                file(RENAME "${_BUNDLE_MACOS}/${_NESTED_NAME}" "${_TMP_BIN}")
+                file(REMOVE_RECURSE "${_BUNDLE_EXE}")
+                # Also remove the .QaTwuZ temporary directory if present
+                file(GLOB _QTIFW_TEMPS "${_BUNDLE_MACOS}/${_QTIFW_BUNDLE_EXE}.*")
+                foreach(_tmp IN LISTS _QTIFW_TEMPS)
+                    if(IS_DIRECTORY "${_tmp}")
+                        file(REMOVE_RECURSE "${_tmp}")
+                    endif()
+                endforeach()
+                file(RENAME "${_TMP_BIN}" "${_BUNDLE_EXE}")
+                message(STATUS "Fixed macOS installer bundle executable")
+            else()
+                message(WARNING "Cannot fix nested bundle: no binary found under ${_BUNDLE_EXE}")
+            endif()
+        endif()
+
+        # Ad-hoc sign the installer app
+        execute_process(COMMAND codesign --deep --force -s - --timestamp "${_QTIFW_APP_PATH}"
+            RESULT_VARIABLE _SIGN_RESULT)
+        if(_SIGN_RESULT)
+            message(WARNING "Ad-hoc signing failed (code ${_SIGN_RESULT}), installer may not launch on some macOS versions")
+        endif()
+
+        # Create compressed DMG from the fixed app bundle.
+        # Detach any leftover mounts and pause briefly so codesign/Spotlight
+        # release file handles (avoids "Resource busy" on CI runners).
+        message(STATUS "Creating DMG: ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}")
+        file(REMOVE "${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}")
+        execute_process(COMMAND hdiutil detach "/Volumes/${ACLOUDVIEWER_PACKAGE_NAME}"
+                        ERROR_QUIET OUTPUT_QUIET RESULT_VARIABLE _DETACH_IGNORE)
+        execute_process(COMMAND ${CMAKE_COMMAND} -E sleep 2)
+        set(_DMG_RETRIES 3)
+        set(_DMG_RESULT 1)
+        foreach(_try RANGE 1 ${_DMG_RETRIES})
+            execute_process(COMMAND hdiutil create
+                -volname "${ACLOUDVIEWER_PACKAGE_NAME}"
+                -srcfolder "${_QTIFW_APP_PATH}"
+                -ov -format UDZO
+                "${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}"
+                RESULT_VARIABLE _DMG_RESULT)
+            if(NOT _DMG_RESULT)
+                break()
+            endif()
+            message(WARNING "hdiutil create attempt ${_try}/${_DMG_RETRIES} failed, retrying...")
+            execute_process(COMMAND ${CMAKE_COMMAND} -E sleep 3)
+        endforeach()
+        if(_DMG_RESULT)
+            message(FATAL_ERROR "hdiutil create failed after ${_DMG_RETRIES} attempts (code ${_DMG_RESULT})")
+        endif()
+        message(STATUS "${MAIN_APP_NAME} Installer Package ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH} created.")
+
+        # Remove the intermediate .app bundle now that the DMG is ready
+        if(EXISTS "${_QTIFW_APP_PATH}")
+            message(STATUS "Removing intermediate app bundle: ${_QTIFW_APP_PATH}")
+            file(REMOVE_RECURSE "${_QTIFW_APP_PATH}")
+        endif()
+    else()
+        # Linux / Windows: create installer directly
+        set(SHELL_CMD "${PACKAGE_TOOL} -c ${CONFIG_FILE_PATH} -p ${DEPLOY_PACKAGES_PATH} ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}")
+        message(STATUS "Package with command: " ${SHELL_CMD})
+        execute_process(COMMAND ${PACKAGE_TOOL} -c ${CONFIG_FILE_PATH} -p ${DEPLOY_PACKAGES_PATH} ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}
+                        WORKING_DIRECTORY ${MAIN_WORKING_DIRECTORY}
+                        RESULT_VARIABLE _ifw_result
+                        OUTPUT_VARIABLE _ifw_stdout
+                        ERROR_VARIABLE _ifw_stderr)
+        if(_ifw_stdout)
+            message(STATUS "${PACKAGE_TOOL} stdout: ${_ifw_stdout}")
+        endif()
+        if(_ifw_stderr)
+            message(WARNING "${PACKAGE_TOOL} stderr: ${_ifw_stderr}")
+        endif()
+        if(_ifw_result)
+            message(FATAL_ERROR "${PACKAGE_TOOL} failed with code ${_ifw_result}. Installer not created.")
+        endif()
+        if(NOT EXISTS "${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}")
+            message(FATAL_ERROR "${PACKAGE_TOOL} did not produce expected output: ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}")
+        endif()
+        message(STATUS "${MAIN_APP_NAME} Installer Package ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH} created.")
+    endif()
 else() # Do not package
     message(STATUS "Continue to publish installer package: cd ${MAIN_WORKING_DIRECTORY}.")
     message(STATUS "Then please execute: ${PACKAGE_TOOL} -c ${CONFIG_FILE_PATH} -p packages ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}")

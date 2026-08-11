@@ -2,7 +2,7 @@
   "name": "acloudviewer",
   "display_name": "ACloudViewer",
   "version": "3.1.0",
-  "description": "Comprehensive 3D point cloud and mesh processing toolkit with 97 MCP tools — file I/O, processing, distance computation, ICP registration, mesh reconstruction, Colmap SfM/MVS reconstruction, SIBR pipelines, scene management, and viewport control. Supports both headless CLI and GUI modes via JSON-RPC.",
+  "description": "Comprehensive 3D point cloud and mesh processing toolkit with 178 MCP tools — file I/O, processing, distance computation, ICP registration, mesh reconstruction, Colmap SfM/MVS reconstruction, SIBR pipelines, PCL/plugin processing, scene management, and viewport control. Supports both headless CLI and GUI modes via JSON-RPC.",
   "author": "ACloudViewer Contributors",
   "homepage": "https://asher-1.github.io/ACloudViewer",
   "repository": "https://github.com/Asher-1/CLI-Anything",
@@ -15,12 +15,20 @@
     "type": "stdio"
   },
   "install": {
-    "pip": "cli-anything-acloudviewer"
+    "pip": "cli-anything-acloudviewer",
+    "git_subdir": "acloudviewer/agent-harness"
   },
   "requires": {
     "binary": "ACloudViewer desktop application (headless CLI or GUI mode with JSON-RPC plugin)"
   },
-  "tools_count": 97,
+  "tools_count": 178,
+  "cli_anything": {
+    "hub": "https://asher-1.github.io/CLI-Anything/",
+    "agent_catalog": "https://asher-1.github.io/CLI-Anything/SKILL.txt",
+    "skill_md_package": "acloudviewer/agent-harness/cli_anything/acloudviewer/skills/SKILL.md",
+    "skill_md_hub": "skills/cli-anything-acloudviewer/SKILL.md",
+    "entry_point": "cli-anything-acloudviewer"
+  },
   "tool_categories": {
     "file_io": ["open_file", "convert_format", "batch_convert", "list_formats", "export_entity"],
     "processing": ["subsample", "compute_normals", "sor_filter", "crop", "density", "curvature", "roughness", "color_banding", "stat_test", "rasterize", "cross_section"],
@@ -28,11 +36,13 @@
     "normals": ["octree_normals", "orient_normals_mst", "invert_normals", "clear_normals", "normals_to_dip", "normals_to_sfs", "cloud_remove_normals_gui", "cloud_invert_normals_gui"],
     "distance": ["c2c_distance", "c2m_distance"],
     "registration": ["icp_registration"],
-    "geometry": ["extract_connected_components", "approx_density", "feature", "moment", "best_fit_plane", "closest_point_set"],
+    "geometry": ["extract_connected_components", "approx_density", "geometric_feature", "moment", "best_fit_plane", "closest_point_set"],
     "mesh_reconstruction": ["delaunay", "sample_mesh"],
     "mesh_operations": ["mesh_volume", "extract_vertices", "flip_triangles", "mesh_simplify", "mesh_smooth", "mesh_subdivide", "mesh_sample_points", "mesh_extract_vertices_gui", "mesh_flip_triangles_gui", "mesh_volume_gui"],
     "merge": ["merge_clouds", "merge_meshes", "cloud_merge_gui", "mesh_merge_gui"],
     "cleanup": ["remove_rgb", "remove_scan_grids", "match_centers", "drop_global_shift", "cloud_remove_rgb"],
+    "plugin_processing": ["pcv", "compass_export", "sra", "csf", "ransac", "m3c2", "canupo", "facets", "hough_normals", "poisson_recon", "cork_boolean", "voxfall", "classify_3dmasc", "treeiso", "cloud_layers", "animation", "mplane", "auto_seg", "manual_seg", "python_script"],
+    "pcl_processing": ["pcl_sor", "pcl_normal_estimation", "pcl_mls", "pcl_euclidean_cluster", "pcl_sac_segmentation", "pcl_region_growing", "pcl_marching_cubes", "pcl_greedy_triangulation", "pcl_poisson_recon", "pcl_convex_hull", "pcl_don_segmentation", "pcl_mincut_segmentation", "pcl_fast_global_registration", "pcl_extract_sift", "pcl_projection_filter", "pcl_general_filters", "pcl_template_alignment", "pcl_correspondence_matching"],
     "colmap_reconstruction": ["colmap_auto_reconstruct", "colmap_extract_features", "colmap_match_features", "colmap_sparse_reconstruct", "colmap_dense_stereo", "colmap_stereo_fusion", "colmap_poisson_mesh", "colmap_model_converter", "colmap_undistort", "colmap_delaunay_mesh", "colmap_image_texturer", "colmap_analyze_model", "colmap_run"],
     "sibr_tools": ["sibr_viewer", "sibr_tool", "sibr_prepare_colmap", "sibr_texture_mesh", "sibr_unwrap_mesh", "sibr_tonemapper", "sibr_align_meshes", "sibr_camera_converter", "sibr_nvm_to_sibr", "sibr_crop_from_center", "sibr_clipping_planes", "sibr_distord_crop"],
     "scene": ["scene_list", "scene_info", "scene_remove", "scene_set_visible", "scene_select", "scene_clear"],

@@ -113,10 +113,17 @@ public:
 
     QLabel* statusbar_status_label;
 
+    ~ModelViewerWidget() override;
+
 protected:
     void initializeGL() override;
     void resizeGL(int width, int height) override;
     void paintGL() override;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    void cleanupGL() override;
+#else
+    void cleanupGL();
+#endif
 
 private:
     void mousePressEvent(QMouseEvent* event) override;

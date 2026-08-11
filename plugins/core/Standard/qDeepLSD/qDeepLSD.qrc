@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/CC/plugin/qDeepLSD">
+        <file>info.json</file>
+        <file>images/qDeepLSD.svg</file>
+    </qresource>
+</RCC>

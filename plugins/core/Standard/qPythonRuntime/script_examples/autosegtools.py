@@ -8,10 +8,8 @@ CC = pycc.GetInstance()
 
 def main():
     if not CC.haveSelection():
-        entities = CC.dbRootObject()
-        pc = entities.getChild(0).getChild(0)
-    else:
-        pc = CC.getSelectedEntities()[0]
+        raise RuntimeError("No entity selected. Select a point cloud first.")
+    pc = CC.getSelectedEntities()[0]
 
     print(pc, pc.size())
 

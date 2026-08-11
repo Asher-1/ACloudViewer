@@ -6,6 +6,8 @@
 > ./docker/build-release.sh        # system-packages build
 > ./docker/build-release-conda.sh  # conda-based build
 > ```
+>
+> **AI plugins (qDA3 / qDeepLSD / qFaceDetect / qFreeSplatter / qLightGlue):** see [docs/guides/plugins/](../../guides/plugins/README.md) for usage; enable with `-DAICore_ENABLED=ON -DAICore_USE_VULKAN=ON` (Linux default) plus `-DPLUGIN_STANDARD_QDA3=ON -DPLUGIN_STANDARD_QDEEPLSD=ON -DPLUGIN_STANDARD_QFACEDETECT=ON -DPLUGIN_STANDARD_QFREESPLATTER=ON -DPLUGIN_STANDARD_QLIGHTGLUE=ON`.
 
 ---
 
@@ -32,6 +34,7 @@
     - [C++ library](#c-library)
     - [Python library](#python-library)
   - [Compilation Options Reference](#compilation-options-reference)
+    - [Vulkan / AICore GPU (default)](#vulkan--aicore-gpu-default)
     - [CUDA / GPU](#cuda--gpu)
     - [ML Module (PyTorch / TensorFlow)](#ml-module-pytorch--tensorflow)
     - [CXX ABI compatibility](#cxx-abi-compatibility)
@@ -47,7 +50,8 @@
 | **CMake**        | ≥ 3.20                                         |
 | **Python**       | 3.10 – 3.13                                    |
 | **Compiler**     | GCC ≥ 9 or Clang (provided by `install_deps`)  |
-| **GPU (optional)** | CUDA toolkit ≥ 11.8 for GPU builds           |
+| **AICore GPU (default)** | **Vulkan** — `AICore_USE_VULKAN=ON` on Linux (CMake default); run `util/vulkan/install_vulkan_env.sh` or `install_deps_ubuntu.sh` for build-time SDK/glslc |
+| **GPU (optional)** | CUDA toolkit ≥ 11.8 for optional `-DAICore_USE_CUDA=ON` / `-DBUILD_CUDA_MODULE=ON` |
 
 ---
 
@@ -55,6 +59,12 @@
 
 > Use this path if you do **not** want or need Conda. All dependencies come from
 > `apt` and `pyenv`. This is the recommended path for CI and clean environments.
+>
+> **Do NOT use Option A if you have a Conda environment activated.**
+> Conda Python ships shared libraries (`.so`) while this path resolves `pyenv`
+> static libraries (`.a`). Using `-DBUILD_WITH_CONDA=OFF` with a Conda Python
+> will fail with *"Cannot find the library …/libpythonX.Y.a"*.
+> If you are using Conda, skip to **[Option B](#option-b--build-with-conda)**.
 
 ### A1. Install system dependencies
 
@@ -64,7 +74,15 @@ utils/install_deps_ubuntu.sh assume-yes
 ```
 
 This script installs all required system packages (`xorg-dev`, `libglu1-mesa-dev`,
-`ninja-build`, `libtbb-dev`, etc.) and adjusts clang/libc++ versions per Ubuntu release.
+`ninja-build`, `libtbb-dev`, `libvulkan-dev`, etc.), adjusts clang/libc++ versions per
+Ubuntu release, and runs `util/vulkan/install_vulkan_env.sh` to install the **Vulkan build
+environment** (LunarG SDK headers, `glslc`, SPIR-V headers) used by AICore/qDA3.
+
+Reload the generated env in new shells before `cmake`:
+
+```bash
+source "${HOME}/.local/share/acloudviewer/acloudviewer-vulkan-env.sh"
+```
 
 If CMake later complains about missing packages, also run:
 
@@ -116,6 +134,9 @@ QT_DIR="/usr/lib/x86_64-linux-gnu/qt5"
 
 cd ACloudViewer
 mkdir -p build_app && cd build_app
+
+# AICore (qDA3 / qFreeSplatter / qLightGlue): Vulkan is ON by default on Linux.
+source "${HOME}/.local/share/acloudviewer/acloudviewer-vulkan-env.sh"
 
 cmake \
     -DDEVELOPER_BUILD=OFF \
@@ -170,6 +191,7 @@ cmake \
     -DPLUGIN_STANDARD_MASONRY_QAUTO_SEG=ON \
     -DPLUGIN_STANDARD_MASONRY_QMANUAL_SEG=ON \
     -DPLUGIN_STANDARD_QANIMATION=ON \
+    -DPLUGIN_STANDARD_QBROOM=ON \
     -DQANIMATION_WITH_FFMPEG_SUPPORT=ON \
     -DPLUGIN_STANDARD_QCANUPO=ON \
     -DPLUGIN_STANDARD_QCOLORIMETRIC_SEGMENTER=ON \
@@ -189,6 +211,15 @@ cmake \
     -DPLUGIN_STANDARD_QVOXFALL=ON \
     -DPLUGIN_STANDARD_G3POINT=ON \
     -DPLUGIN_STANDARD_QSIBR=ON \
+    -DAICore_ENABLED=ON \
+    -DAICore_USE_VULKAN=ON \
+    -DAICore_USE_CUDA=ON \
+    -DAICore_BUNDLE_CUDA_RUNTIME=ON \
+    -DPLUGIN_STANDARD_QDA3=ON \
+    -DPLUGIN_STANDARD_QDEEPLSD=ON \
+    -DPLUGIN_STANDARD_QFACEDETECT=ON \
+    -DPLUGIN_STANDARD_QFREESPLATTER=ON \
+    -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
     -DPLUGIN_PYTHON=ON \
     -DBUILD_PYTHON_MODULE=ON \
     ..
@@ -220,6 +251,8 @@ curl -fsSL https://deb.nodesource.com/setup_25.x | sudo bash - \
 
 mkdir -p build && cd build
 
+source "${HOME}/.local/share/acloudviewer/acloudviewer-vulkan-env.sh"
+
 cmake \
     -DDEVELOPER_BUILD=OFF \
     -DCMAKE_BUILD_TYPE=Release \
@@ -244,6 +277,10 @@ cmake \
     -DBUILD_WEBRTC=ON \
     -DBUILD_JUPYTER_EXTENSION=ON \
     -DBUILD_RECONSTRUCTION=ON \
+    -DAICore_ENABLED=ON \
+    -DAICore_USE_VULKAN=ON \
+    -DAICore_USE_CUDA=ON \
+    -DAICore_BUNDLE_CUDA_RUNTIME=ON \
     -DBUILD_OPENCV=OFF \
     -DBUILD_BENCHMARKS=OFF \
     -DBUILD_COMMON_CUDA_ARCHS=ON \
@@ -281,6 +318,12 @@ utils/install_deps_ubuntu.sh assume-yes
 
 ### B2. Create the Conda environment
 
+> **Important:** The default `conda_cloudViewer.yml` ships with `python=3.8`.
+> ACloudViewer requires **Python 3.10 – 3.13**. The `sed` command below
+> replaces `3.8` with your chosen version. If you already have a `cloudViewer`
+> Conda env with Python < 3.10, remove it first
+> (`conda env remove -n cloudViewer`) and recreate it.
+
 ```bash
 PYTHON_VERSION=3.12
 cp .ci/conda_cloudViewer.yml /tmp/conda_cloudViewer.yml
@@ -297,7 +340,13 @@ export PATH="$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cma
 ### B3. Build the APP (GUI + CLI)
 
 > **Note:** Qt 6 is only supported on Ubuntu 24.04+. On 20.04/22.04 set `-DUSE_QT6=OFF`.
-```
+>
+> **Note:** Conda builds **must** use `-DBUILD_WITH_CONDA=ON -DCONDA_PREFIX=$CONDA_PREFIX
+> -DCMAKE_PREFIX_PATH=$CONDA_PREFIX`. Do **not** copy the Option A cmake block
+> (which uses `-DBUILD_WITH_CONDA=OFF` and explicit `Python3_LIBRARY` paths).
+> Using `$CONDA_PREFIX/lib` instead of `$CONDA_PREFIX` for `CMAKE_PREFIX_PATH`
+> will cause CMake to miss the Conda Qt and pick up any system/standalone Qt
+> installation (e.g. `/opt/Qt`), leading to ABI mismatches at build time.
 
 ```bash
 CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/ >/dev/null 2>&1 && pwd)"
@@ -309,13 +358,15 @@ python -m pip install -r \
 cd ACloudViewer
 mkdir -p build_app && cd build_app
 
+source "${HOME}/.local/share/acloudviewer/acloudviewer-vulkan-env.sh"
+
 cmake \
     -DDEVELOPER_BUILD=OFF \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=~/install \
     -DBUILD_WITH_CONDA=ON \
     -DCONDA_PREFIX=$CONDA_PREFIX \
-    -DCMAKE_PREFIX_PATH=$CONDA_PREFIX/lib \
+    -DCMAKE_PREFIX_PATH=$CONDA_PREFIX \
     -DBUILD_UNIT_TESTS=ON \
     -DBUILD_BENCHMARKS=ON \
     -DWITH_OPENMP=ON \
@@ -361,6 +412,7 @@ cmake \
     -DPLUGIN_STANDARD_MASONRY_QAUTO_SEG=ON \
     -DPLUGIN_STANDARD_MASONRY_QMANUAL_SEG=ON \
     -DPLUGIN_STANDARD_QANIMATION=ON \
+    -DPLUGIN_STANDARD_QBROOM=ON \
     -DQANIMATION_WITH_FFMPEG_SUPPORT=ON \
     -DPLUGIN_STANDARD_QCANUPO=ON \
     -DPLUGIN_STANDARD_QCOLORIMETRIC_SEGMENTER=ON \
@@ -380,6 +432,15 @@ cmake \
     -DPLUGIN_STANDARD_QVOXFALL=ON \
     -DPLUGIN_STANDARD_G3POINT=ON \
     -DPLUGIN_STANDARD_QSIBR=ON \
+    -DAICore_ENABLED=ON \
+    -DAICore_USE_VULKAN=ON \
+    -DAICore_USE_CUDA=ON \
+    -DAICore_BUNDLE_CUDA_RUNTIME=ON \
+    -DPLUGIN_STANDARD_QDA3=ON \
+    -DPLUGIN_STANDARD_QDEEPLSD=ON \
+    -DPLUGIN_STANDARD_QFACEDETECT=ON \
+    -DPLUGIN_STANDARD_QFREESPLATTER=ON \
+    -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
     -DPLUGIN_PYTHON=ON \
     -DBUILD_PYTHON_MODULE=ON \
     ..
@@ -418,13 +479,15 @@ export CLOUDVIEWER_ML_ROOT=~/develop/code/github/CloudViewer-ML
 cd ACloudViewer
 mkdir -p build && cd build
 
+source "${HOME}/.local/share/acloudviewer/acloudviewer-vulkan-env.sh"
+
 cmake \
     -DDEVELOPER_BUILD=OFF \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=~/install \
     -DBUILD_WITH_CONDA=ON \
     -DCONDA_PREFIX=$CONDA_PREFIX \
-    -DCMAKE_PREFIX_PATH=$CONDA_PREFIX/lib \
+    -DCMAKE_PREFIX_PATH=$CONDA_PREFIX \
     -DBUILD_LIBREALSENSE=ON \
     -DBUILD_AZURE_KINECT=ON \
     -DWITH_OPENMP=ON \
@@ -439,6 +502,10 @@ cmake \
     -DBUILD_FILAMENT_FROM_SOURCE=OFF \
     -DBUILD_WEBRTC=ON \
     -DBUILD_JUPYTER_EXTENSION=ON \
+    -DAICore_ENABLED=ON \
+    -DAICore_USE_VULKAN=ON \
+    -DAICore_USE_CUDA=ON \
+    -DAICore_BUNDLE_CUDA_RUNTIME=ON \
     -DBUILD_RECONSTRUCTION=ON \
     -DBUILD_OPENCV=OFF \
     -DBUILD_BENCHMARKS=OFF \
@@ -458,6 +525,9 @@ make -j"$(nproc)" install-pip-package
 
 python3 -c "import cloudViewer as cv3d; print(cv3d.__version__)"
 ```
+
+> **Note:** `util/ci_utils.sh` also defaults `AICore_USE_VULKAN=ON` on Linux when you
+> use `build_pip_package` / wheel helpers (`without_vulkan` disables it).
 
 ---
 
@@ -539,6 +609,42 @@ python -c "import cloudViewer; print(cloudViewer.__version__)"
 
 ## Compilation Options Reference
 
+### Vulkan / AICore GPU (default)
+
+On Linux, **AICore Auto device order is Vulkan → CPU**. CMake defaults
+`-DAICore_USE_VULKAN=ON` when `AICore_ENABLED=ON`. Build-time tools (LunarG Vulkan SDK
+headers, `glslc`, SPIR-V headers) are **not** shipped in the installer; only
+`libggml-vulkan.so` is bundled. End users need a working Vulkan ICD/driver (or fall back
+to CPU).
+
+```bash
+# One-shot setup (also run by install_deps_ubuntu.sh)
+util/vulkan/install_vulkan_env.sh
+source "${HOME}/.local/share/acloudviewer/acloudviewer-vulkan-env.sh"
+
+cmake -DAICore_ENABLED=ON \
+      -DAICore_USE_VULKAN=ON \
+      -DAICore_USE_CUDA=ON \
+      -DAICore_BUNDLE_CUDA_RUNTIME=ON \
+      -DPLUGIN_STANDARD_QDA3=ON \
+      -DPLUGIN_STANDARD_QDEEPLSD=ON \
+      -DPLUGIN_STANDARD_QFACEDETECT=ON \
+      -DPLUGIN_STANDARD_QFREESPLATTER=ON \
+      -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
+      ..
+```
+
+CPU-only machine (no Vulkan SDK): `-DAICore_USE_VULKAN=OFF`.
+
+Optional explicit CUDA for ggml (developer builds, not the portable Auto path):
+
+```bash
+cmake -DAICore_USE_CUDA=ON ..
+```
+
+See [BUILD.md](../../../BUILD.md) for build-time vs runtime dependency tables and
+`AICore_BUNDLE_CUDA_RUNTIME` (opt-in driver-only CUDA redist, OFF in CI).
+
 ### CUDA / GPU
 
 ```bash
@@ -597,6 +703,10 @@ Set `-DGLIBCXX_USE_CXX11_ABI=OFF` (or `ON`) to match the frameworks you depend o
 | `find_package` cannot find Qt5 | `sudo apt install qtbase5-dev`, then set `QT_DIR` to your Qt path (e.g. `/usr/lib/x86_64-linux-gnu/qt5`, `/opt/qt515`, or `/opt/Qt/5.15.2/gcc_64`) |
 | Missing `libXxf86vm` or `libudev` | `sudo apt install libxxf86vm-dev libudev-dev` |
 | `Python3_LIBRARY` not found | Provide explicit `-DPython3_EXECUTABLE` / `-DPython3_LIBRARY` (see [Option A](#a3-build-the-app-gui--cli)) |
+| `Cannot find the library "…/libpythonX.Y.a"` (Conda) | You used `-DBUILD_WITH_CONDA=OFF` with a Conda Python. Use [Option B](#option-b--build-with-conda) with `-DBUILD_WITH_CONDA=ON`. Also ensure your Conda env has Python >= 3.10 (see [B2](#b2-create-the-conda-environment)) |
+| `lrelease: undefined symbol: _ZdlPvm` or wrong Qt tools used (Conda) | CMake found a standalone Qt (e.g. `/opt/Qt`) instead of the Conda Qt. Set `-DCMAKE_PREFIX_PATH=$CONDA_PREFIX` (**not** `$CONDA_PREFIX/lib`). Delete `build_app/` and re-run cmake |
 | Segfault on `import cloudViewer` | ABI mismatch — see [CXX ABI compatibility](#cxx-abi-compatibility) |
 | CUDA not detected | Install CUDA toolkit and verify `nvcc -V` works |
+| `AICore_USE_VULKAN=ON but Vulkan dependencies are missing` (ggml may print `GGML_USE_VULKAN` internally) | Run `util/vulkan/install_vulkan_env.sh`, then `source ~/.local/share/acloudviewer/acloudviewer-vulkan-env.sh` before `cmake` |
+| `libggml-vulkan.so` missing in wheel | Reconfigure with `-DAICore_USE_VULKAN=ON` and rebuild; do not use `without_vulkan` in `ci_utils.sh` |
 | `clang: not found` on Ubuntu 20.04 | Run `install_deps_ubuntu.sh` — it installs version-specific clang |

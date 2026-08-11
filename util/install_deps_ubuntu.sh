@@ -27,6 +27,12 @@ deps=(
     libsdl2-dev
     ninja-build
     libxi-dev
+    # ggml Vulkan: loader + CI/runtime smoke (headers/glslc/SPIR-V via util/vulkan/install_vulkan_env.sh)
+    libvulkan-dev      # system libvulkan.so loader (runtime on end-user GPU)
+    vulkan-tools       # vulkaninfo — used by CI docker_test / local smoke
+    mesa-vulkan-drivers # lavapipe ICD — headless Vulkan smoke on CI runners
+    # Compute shaders
+    glslang-tools
     # ML
     libtbb-dev
     # Headless rendering
@@ -70,5 +76,32 @@ if [ "$(uname -m)" == "aarch64" ]; then
 fi
 
 echo "apt-get install ${deps[*]}"
-$SUDO apt-get update
-$SUDO apt-get install ${APT_CONFIRM} ${deps[*]}
+apt_update_with_retry() {
+    local attempt
+    for attempt in 1 2 3; do
+        if $SUDO apt-get update --fix-missing; then
+            return 0
+        fi
+        echo "apt-get update failed (attempt ${attempt}/3), retrying..." >&2
+        sleep 2
+    done
+    return 1
+}
+apt_update_with_retry
+if apt-cache show glslc >/dev/null 2>&1; then
+    deps+=("glslc")
+fi
+if ! $SUDO apt-get install ${APT_CONFIRM} --fix-missing ${deps[*]}; then
+    echo "apt-get install failed, refreshing indexes and retrying once..." >&2
+    apt_update_with_retry
+    $SUDO apt-get install ${APT_CONFIRM} --fix-missing ${deps[*]}
+fi
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -n "${ACLOUDVIEWER_SKIP_VULKAN_SETUP:-}" ]]; then
+    echo "Skipping ggml Vulkan setup (ACLOUDVIEWER_SKIP_VULKAN_SETUP is set)."
+elif [[ -x "${script_dir}/vulkan/install_vulkan_env.sh" ]]; then
+    bash "${script_dir}/vulkan/install_vulkan_env.sh"
+else
+    echo "WARNING: ${script_dir}/vulkan/install_vulkan_env.sh not found; skipping Vulkan setup." >&2
+fi

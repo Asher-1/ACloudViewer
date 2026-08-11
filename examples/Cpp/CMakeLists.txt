@@ -23,8 +23,8 @@ macro(cloudViewer_add_example EXAMPLE_CPP_NAME)
 
     set_target_properties(${EXAMPLE_CPP_NAME} PROPERTIES
             FOLDER "examples/cpp/"
-            RUNTIME_OUTPUT_DIRECTORY "${EXAMPLE_BIN_DIR}"
             )
+    cloudviewer_set_examples_runtime_output_directory(${EXAMPLE_CPP_NAME})
 
     if (NOT BUILD_EXAMPLES)
         set_target_properties(${EXAMPLE_CPP_NAME} PROPERTIES EXCLUDE_FROM_ALL TRUE)

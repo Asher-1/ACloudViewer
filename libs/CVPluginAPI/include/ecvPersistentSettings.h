@@ -7,12 +7,13 @@
 
 #pragma once
 
-#include "CVPluginAPI.h"
-
-// Qt
+#include <QFileInfo>
+#include <QSettings>
 #include <QString>
 
-//! Persistent settings key (to be used with QSettings)
+#include "CVPluginAPI.h"
+
+//! Persistent settings keys and QSettings helpers (app + plugins).
 class CVPLUGIN_LIB_API ecvPS {
 public:
     static inline const QString LoadFile() {
@@ -105,5 +106,51 @@ public:
     }
     static inline const QString AppStyle() {
         return QStringLiteral("AppStyle");
+    }
+
+    /** Register a QSettings group prefix (e.g. "qDA3") for
+     * resetAllRegistered(). */
+    static void registerSettingsGroup(const QString& groupPrefix);
+
+    /** Clear every group registered via registerSettingsGroup(). */
+    static void resetAllRegistered();
+
+    static inline QString settingsKey(const QString& groupPrefix,
+                                      const QString& key) {
+        return groupPrefix + QLatin1Char('/') + key;
+    }
+
+    static inline QString browseDir(QSettings& settings,
+                                    const QString& groupPrefix,
+                                    const QString& key,
+                                    const QString& fallback) {
+        return settings.value(settingsKey(groupPrefix, key), fallback)
+                .toString();
+    }
+
+    static inline void saveBrowseDir(QSettings& settings,
+                                     const QString& groupPrefix,
+                                     const QString& key,
+                                     const QString& fileOrDirPath) {
+        if (fileOrDirPath.isEmpty()) return;
+        settings.setValue(settingsKey(groupPrefix, key),
+                          QFileInfo(fileOrDirPath).absolutePath());
+    }
+
+    static inline QString browseFile(QSettings& settings,
+                                     const QString& groupPrefix,
+                                     const QString& key,
+                                     const QString& fallback) {
+        return settings.value(settingsKey(groupPrefix, key), fallback)
+                .toString();
+    }
+
+    static inline void saveBrowseFile(QSettings& settings,
+                                      const QString& groupPrefix,
+                                      const QString& key,
+                                      const QString& filePath) {
+        if (filePath.isEmpty()) return;
+        settings.setValue(settingsKey(groupPrefix, key),
+                          QFileInfo(filePath).absoluteFilePath());
     }
 };

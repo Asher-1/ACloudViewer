@@ -8,11 +8,10 @@
 #include "profileImportDlg.h"
 
 // Qt
-#include <QFileDialog>
+#include <cvFileDialog.h>
 
 // System
 #include <assert.h>
-
 ProfileImportDlg::ProfileImportDlg(QWidget* parent)
     : QDialog(parent, Qt::Tool), Ui::ProfileImportDlg() {
     setupUi(this);
@@ -29,7 +28,7 @@ void ProfileImportDlg::browseFile() {
     QString filter("2D profile (*.txt)");
 
     // open file loading dialog
-    QString filename = QFileDialog::getOpenFileName(
+    QString filename = cvFileDialog::getOpenFileName(
             0, "Select profile file", getFilename(), filter
 #if defined(Q_OS_WIN) && defined(_DEBUG)
             ,

@@ -1,0 +1,25 @@
+{
+  "type": "Standard",
+  "core": true,
+  "name": "LightGlue Feature Matching",
+  "icon": ":/CC/plugin/qLightGlue/images/qLightGlue.svg",
+  "description": "LightGlue sparse feature matcher using ggml inference. Matches ALIKED/SIFT keypoint descriptors from LGINP01 fixtures with COLMAP-compatible output semantics.",
+  "authors": [
+    {
+      "name": "ACloudViewer Contributors"
+    }
+  ],
+  "maintainers": [
+    {
+      "name": "ACloudViewer Team"
+    }
+  ],
+  "references": [
+    {
+      "text": "LightGlue: https://github.com/cvg/LightGlue"
+    },
+    {
+      "text": "LightGlue-GGML: https://github.com/Asher-1/LightGlue-GGML"
+    }
+  ]
+}

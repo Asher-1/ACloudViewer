@@ -1,0 +1,16 @@
+# Ordered ggml unified-diff patches applied at ExternalProject fetch time.
+# Add new entries here; do not edit fetched ggml sources in-place.
+# All modifications go through these unified-diff files (applied with
+# `patch -p1 -N`) so the fetched tree is byte-reproducible on every platform.
+# Previously this was split across legacy Python mutators; those have been
+# converted to patches (see apply_ggml_patches.py header).
+#
+patches:
+  - file: aliked_merged/0001-vulkan-aliked.patch
+    note: ALIKED Vulkan extraction (compute, DCN, SDDH, DKD, public C API, shader registration)
+  - file: msvc_vulkan/0001-msvc-vulkan-hpp-compat.patch
+    note: MSVC compatibility for Vulkan-Hpp __faststorefence intrinsic
+  - file: cpu_all_variants/0001-cpu-all-variants-compiler-checks.patch
+    note: "Gate CPU ALL_VARIANTS BF16/AMX/AVX-VNNI variants behind compiler-flag checks; remove apple_m4 (+nosve+sme unreliable on Apple Clang); inert when GGML_CPU_ALL_VARIANTS=OFF"
+  - file: metal_merged/0001-metal-optimizations.patch
+    note: "Metal optimizations: conv_transpose_2d parallelized over IC with tree reduction, and flash-attn large-sequence support (relax ne01 assert, raise MAX_COMMAND_BUFFERS to 64, auto-tune n_cb/n_main); inert when Metal is OFF"

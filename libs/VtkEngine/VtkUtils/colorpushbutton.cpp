@@ -15,13 +15,13 @@ namespace Widgets {
 
 /*!
  * \class ColorPushButton
- * \brief ColorPushButton, 是对QtColorPicker的扩展.
+ * \brief ColorPushButton, an extension of QtColorPicker.
  * \ingroup Pictureui
  */
 
 /*!
- * \brief 构造拾色器按钮类, 初始化拾色器按钮.
- * \param parent, 父窗口
+ * \brief Constructs the color picker button and initializes it.
+ * \param parent Parent widget
  */
 ColorPushButton::ColorPushButton(QWidget *parent) : QtColorPicker(parent) {
     QStringList color_names = ColorComboBox::defaultColorNames();

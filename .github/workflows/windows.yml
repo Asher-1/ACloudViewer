@@ -41,6 +41,7 @@ env:
   INSTALL_DIR: "C:\\dev\\cloudViewer_install"
   NPROC: 8
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
+  VULKAN_SDK_VERSION: 1.4.350.0
 
 jobs:
   windows:
@@ -107,6 +108,19 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
+      - name: Install Vulkan SDK
+        shell: powershell
+        run: |
+          # LunarG silent install -> $GITHUB_WORKSPACE/VULKAN_SDK/{Include,Bin,Lib,...}
+          # Do not use humbletim 7z extract on SDK >= 1.4.313 (Include/ missing).
+          $sdkRoot = Join-Path $env:GITHUB_WORKSPACE 'VULKAN_SDK'
+          New-Item -ItemType Directory -Force -Path $sdkRoot | Out-Null
+          .\util\vulkan\install_vulkan_sdk_windows.ps1 -InstallRoot $sdkRoot -SkipProfile
+
+      - name: Sync ACloudViewer Vulkan env
+        shell: powershell
+        run: .\util\vulkan\sync_vulkan_env_from_sdk.ps1
+
       - name: Set up python version
         run: |
           (Get-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}) -replace "3.8", "${{ matrix.python_version }}" | Set-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
@@ -164,9 +178,43 @@ jobs:
           & "${{ env.SRC_DIR }}\scripts\build_win_app.ps1" `
             -PythonVersion "${{ matrix.python_version }}" `
             -ACloudViewerInstall "${{ env.INSTALL_DIR }}"
-          
+
+          # === Diagnostic: dump installer-related state ===
+          Write-Host "=== Diagnostic: installer search ==="
+          Write-Host "INSTALL_DIR contents (*.exe):"
+          Get-ChildItem "${{ env.INSTALL_DIR }}" -Filter "*.exe" -Recurse -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $_" }
+          $deployDir = Join-Path "${{ env.INSTALL_DIR }}" "deploy"
+          Write-Host "deploy directory exists: $(Test-Path $deployDir)"
+          if (Test-Path $deployDir) {
+            Write-Host "deploy tree (depth 3):"
+            Get-ChildItem $deployDir -Recurse -Depth 2 -ErrorAction SilentlyContinue | ForEach-Object {
+              $rel = $_.FullName.Substring($deployDir.Length)
+              Write-Host "  $rel"
+            }
+          }
+          $configXml = Join-Path "$deployDir" "config\config_win.xml"
+          Write-Host "config_win.xml exists: $(Test-Path $configXml)"
+          if (Test-Path $configXml) {
+            Write-Host "config_win.xml Version/Title:"
+            Select-String -Path $configXml -Pattern "Version|Title" | ForEach-Object { Write-Host "  $_" }
+          }
+          $pkgData = Join-Path "$deployDir" "packages\ACloudViewer\data"
+          Write-Host "packages/ACloudViewer/data exists: $(Test-Path $pkgData)"
+          if (Test-Path $pkgData) {
+            Write-Host "  data children: $((Get-ChildItem $pkgData | Measure-Object).Count) items"
+          }
+          # === End diagnostic ===
+
           # Extract package installer name for subsequent steps
-          $PACKAGE_INSTALLER_NAME = (Get-ChildItem (Join-Path "${{ env.INSTALL_DIR }}" "ACloudViewer-*.exe")).Name
+          $installers = Get-ChildItem (Join-Path "${{ env.INSTALL_DIR }}" "ACloudViewer-*.exe") -ErrorAction SilentlyContinue
+          if (-not $installers) {
+            Write-Error "No ACloudViewer-*.exe installer found in ${{ env.INSTALL_DIR }}"
+            Write-Host "Listing install directory contents:"
+            Get-ChildItem "${{ env.INSTALL_DIR }}" -Recurse -Filter "*.exe" | Select-Object FullName
+            exit 1
+          }
+          $PACKAGE_INSTALLER_NAME = $installers[0].Name
+          Write-Host "Found installer: $PACKAGE_INSTALLER_NAME"
           echo "PACKAGE_INSTALLER_NAME=$PACKAGE_INSTALLER_NAME" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Run C++ unit tests
@@ -495,6 +543,21 @@ jobs:
 
       - name: Checkout source code
         uses: actions/checkout@v4
+
+      - name: Install Vulkan SDK
+        shell: powershell
+        working-directory: ${{ env.SRC_DIR }}
+        run: |
+          # LunarG silent install -> $GITHUB_WORKSPACE/VULKAN_SDK/{Include,Bin,Lib,...}
+          # Do not use humbletim 7z extract on SDK >= 1.4.313 (Include/ missing).
+          $sdkRoot = Join-Path $env:GITHUB_WORKSPACE 'VULKAN_SDK'
+          New-Item -ItemType Directory -Force -Path $sdkRoot | Out-Null
+          .\util\vulkan\install_vulkan_sdk_windows.ps1 -InstallRoot $sdkRoot -SkipProfile
+
+      - name: Sync ACloudViewer Vulkan env
+        shell: powershell
+        working-directory: ${{ env.SRC_DIR }}
+        run: .\util\vulkan\sync_vulkan_env_from_sdk.ps1
 
       - name: Checkout CloudViewer-ML source code
         uses: actions/checkout@v4

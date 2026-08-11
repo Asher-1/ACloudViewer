@@ -172,6 +172,11 @@ private:
                                   ":/Resources/images/dbPolylineSymbol.png")),
                           {}});
 
+        const int lineSetIndex = mIconList.count();
+        mIconList.append({QIcon(QStringLiteral(
+                                  ":/Resources/images/dbLineSetSymbol.png")),
+                          {}});
+
         const int circleIndex = mIconList.count();
         mIconList.append(
                 {QIcon(QStringLiteral(":/Resources/images/dbCircle.png")), {}});
@@ -246,6 +251,7 @@ private:
                     {CV_TYPES::MESH_GROUP, subMeshIndex},
                     {CV_TYPES::SUB_MESH, subMeshIndex},
                     {CV_TYPES::POLY_LINE, polyLineIndex},
+                    {CV_TYPES::LINESET, lineSetIndex},
                     {CV_TYPES::CIRCLE, circleIndex},
                     {CV_TYPES::POINT_OCTREE, octreeIndex},
                     {CV_TYPES::CALIBRATED_IMAGE, calibratedImageIndex},
@@ -1355,10 +1361,11 @@ void ccDBRoot::changeSelection(const QItemSelection& selected,
 
     updatePropertiesView();
 
+    // Apply interaction-mode / camera adjustments before the single redraw.
+    emit selectionChanged();
+
     ecvViewManager::instance().setRedrawRecursive(false);
     MainWindow::TheInstance()->refreshAll(false, true);
-
-    emit selectionChanged();
 }
 
 void ccDBRoot::unselectEntity(ccHObject* obj) {
@@ -1650,6 +1657,8 @@ size_t ccDBRoot::getSelectedEntities(ccHObject::Container& selectedEntities,
                 if (obj->isKindOf(CV_TYPES::CIRCLE)) {
                     info->circleCount++;
                 }
+            } else if (obj->isKindOf(CV_TYPES::LINESET)) {
+                info->lineSetCount++;
             } else if (obj->isKindOf(CV_TYPES::SENSOR)) {
                 info->sensorCount++;
                 if (obj->isKindOf(CV_TYPES::GBL_SENSOR)) info->gblSensorCount++;
@@ -1707,6 +1716,8 @@ Qt::ItemFlags ccDBRoot::flags(const QModelIndex& index) const {
             if (polyVertices != poly->getParent()) {
                 defaultFlags |= (Qt::ItemIsDragEnabled | Qt::ItemIsDropEnabled);
             }
+        } else if (item->isKindOf(CV_TYPES::LINESET)) {
+            defaultFlags |= (Qt::ItemIsDragEnabled | Qt::ItemIsDropEnabled);
         } else if (item->isKindOf(CV_TYPES::VIEWPORT_2D_OBJECT)) {
             defaultFlags |= Qt::ItemIsDragEnabled;
         }
@@ -2230,6 +2241,7 @@ void ccDBRoot::selectByTypeAndName() {
     ccSelectChildrenDlg scDlg(MainWindow::TheInstance());
     scDlg.addType(tr("Point cloud"), CV_TYPES::POINT_CLOUD);
     scDlg.addType(tr("Poly-line"), CV_TYPES::POLY_LINE);
+    scDlg.addType(tr("Line set"), CV_TYPES::LINESET);
     scDlg.addType(tr("Mesh"), CV_TYPES::MESH);
     scDlg.addType(tr("  Sub-mesh"), CV_TYPES::SUB_MESH);
     scDlg.addType(tr("  Primitive"), CV_TYPES::PRIMITIVE);

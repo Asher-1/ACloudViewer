@@ -158,6 +158,8 @@
     <addaction name="actionGlobalShiftSettings"/>
     <addaction name="separator"/>
     <addaction name="actionShortcutSettings"/>
+    <addaction name="separator"/>
+    <addaction name="actionLogManager"/>
    </widget>
    <widget class="QMenu" name="menuDisplay">
     <property name="title">
@@ -214,6 +216,7 @@
     <addaction name="actionZoomAndCenter"/>
     <addaction name="actionGlobalZoom"/>
     <addaction name="actionResetGUIElementsPos"/>
+    <addaction name="actionResetRegisteredSettings"/>
     <addaction name="actionToggleOrientationMarker"/>
     <addaction name="actionAutoPickPivot"/>
     <addaction name="actionShowPivot"/>
@@ -1389,7 +1392,7 @@ QTreeView::branch:open:has-children:has-siblings  {
   <action name="actionResetGUIElementsPos">
    <property name="icon">
     <iconset resource="../MainWindow.qrc">
-     <normaloff>:/Resources/images/refresh.png</normaloff>:/Resources/images/refresh.png</iconset>
+     <normaloff>:/Resources/images/svg/pqResetUI.svg</normaloff>:/Resources/images/svg/pqResetUI.svg</iconset>
    </property>
    <property name="text">
     <string>reset all GUI element positions</string>
@@ -1399,6 +1402,27 @@ QTreeView::branch:open:has-children:has-siblings  {
    </property>
    <property name="statusTip">
     <string>reset all GUI element positions (after restart)</string>
+   </property>
+  </action>
+  <action name="actionResetRegisteredSettings">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/pqResetSettings.svg</normaloff>:/Resources/images/svg/pqResetSettings.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Reset registered settings</string>
+   </property>
+   <property name="toolTip">
+    <string>Clear saved plugin settings (browse paths, etc.) to defaults (Ctrl+Shift+R)</string>
+   </property>
+   <property name="statusTip">
+    <string>Clear saved plugin settings (browse paths, etc.) to defaults (Ctrl+Shift+R)</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+R</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ShortcutContext::ApplicationShortcut</enum>
    </property>
   </action>
   <action name="actionSaveCustomLayout">
@@ -3078,6 +3102,21 @@ QTreeView::branch:open:has-children:has-siblings  {
    </property>
    <property name="statusTip">
     <string>Configure keyboard shortcuts</string>
+   </property>
+  </action>
+  <action name="actionLogManager">
+   <property name="icon">
+    <iconset resource="../MainWindow.qrc">
+     <normaloff>:/Resources/images/svg/logManager.svg</normaloff>:/Resources/images/svg/logManager.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Log Manager...</string>
+   </property>
+   <property name="toolTip">
+    <string>View and manage application log files</string>
+   </property>
+   <property name="statusTip">
+    <string>View and manage application log files</string>
    </property>
   </action>
   <action name="GrayThemeAction">

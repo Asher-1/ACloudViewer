@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/CC/plugin/qFaceDetect">
+        <file>info.json</file>
+        <file>images/qFaceDetect.svg</file>
+    </qresource>
+</RCC>

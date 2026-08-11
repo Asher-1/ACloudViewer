@@ -34,7 +34,7 @@ Which platforms are supported?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - **Linux**: Ubuntu 20.04+, other distributions
-- **macOS**: macOS 10.15+ (Intel and Apple Silicon)
+- **macOS**: macOS 13+ (Intel and Apple Silicon)
 - **Windows**: Windows 10+ (64-bit)
 
 What are the system requirements?

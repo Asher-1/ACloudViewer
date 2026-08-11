@@ -14,9 +14,6 @@ ARG PACKAGE
 ARG QT_BASE_DIR
 ARG CI
 ARG PREBUILD_DEPS_ONLY=OFF
-# docker_build.sh / prebuild-deps.yml pass BUILD_JOBS (2 for CUDA, 4 for CPU)
-# to cap parallelism; the deps script uses it for make -j. Default 4.
-ARG BUILD_JOBS=4
 
 RUN if [ -z "${DEVELOPER_BUILD}"      ]; then echo "Error: ARG DEVELOPER_BUILD      not specified."; exit 1; fi \
  && if [ -z "${CMAKE_VERSION}"        ]; then echo "Error: ARG CMAKE_VERSION        not specified."; exit 1; fi \
@@ -211,7 +208,14 @@ RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/
 RUN unzip QtIFW-4.6.1-linux-amd.zip && rm -rf QtIFW-4.6.1-linux-amd.zip
 ENV PATH="/root/QtIFW-4.6.1-linux-amd/bin:$PATH"
 
-ENV ACloudViewer_DEV=/root \
+# Cap build parallelism to avoid OOM on memory-constrained GitHub runners.
+# docker_build.sh passes BUILD_JOBS (2 for CUDA, 4 for CPU). NPROC drives the
+# main ACloudViewer build (build_gui_app.sh / ci_utils.sh) and must not exceed
+# the host memory, otherwise the runner can be starved/OOM-killed and GitHub
+# reports "The hosted runner lost communication with the server".
+ARG BUILD_JOBS=4
+ENV NPROC=${BUILD_JOBS} \
+    ACloudViewer_DEV=/root \
     ACloudViewer_BUILD=/root/ACloudViewer/build \
     ACloudViewer_INSTALL=/root/install
 
@@ -221,7 +225,7 @@ COPY . ${ACloudViewer_DEV}/ACloudViewer
 WORKDIR ${ACloudViewer_DEV}/ACloudViewer
 
 # ACloudViewer C++ dependencies
-RUN ./util/install_deps_ubuntu.sh assume-yes
+RUN ACLOUDVIEWER_UPDATE_BASHRC=0 ./util/install_deps_ubuntu.sh assume-yes
 
 # ACloudViewer C++ dependencies (eigen / metslib / laszip / xerces-c / VTK / PCL)
 # Built once per Ubuntu release and published as a prebuilt tarball

@@ -19,6 +19,11 @@ add_subdirectory( qTreeIso )
 add_subdirectory( qVoxFall )
 add_subdirectory( qPythonRuntime )
 add_subdirectory( qSIBR )
+add_subdirectory( qDA3 )
+add_subdirectory( qFaceDetect )
+add_subdirectory( qFreeSplatter )
+add_subdirectory( qLightGlue )
+add_subdirectory( qDeepLSD )
 
 #plugins integrated as submodules
 set( submod_plugins

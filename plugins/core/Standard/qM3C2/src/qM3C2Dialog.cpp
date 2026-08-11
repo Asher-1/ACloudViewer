@@ -14,14 +14,14 @@
 #include "ecvMainAppInterface.h"
 
 // Qt
+#include <cvFileDialog.h>
+
 #include <QComboBox>
-#include <QFileDialog>
 #include <QFileInfo>
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QThread>
 #include <algorithm>
-
 static bool s_firstTimeInit = true;
 
 /*** HELPERS ***/
@@ -644,8 +644,8 @@ void qM3C2Dialog::loadParamsFromFile() {
                 settings.value("currentPath", ecvFileUtils::defaultDocPath())
                         .toString();
 
-        filename = QFileDialog::getOpenFileName(this, "Load M3C2 parameters",
-                                                currentPath, "*.txt");
+        filename = cvFileDialog::getOpenFileName(this, "Load M3C2 parameters",
+                                                 currentPath, "*.txt");
         if (filename.isEmpty()) return;
 
         // we update current file path
@@ -680,7 +680,7 @@ void qM3C2Dialog::saveParamsToFile() {
                 settings.value("currentPath", ecvFileUtils::defaultDocPath())
                         .toString();
 
-        filename = QFileDialog::getSaveFileName(
+        filename = cvFileDialog::getSaveFileName(
                 this, "Save M3C2 parameters",
                 currentPath + QString("/m3c2_params.txt"), "*.txt");
         if (filename.isEmpty()) return;

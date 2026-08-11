@@ -7,18 +7,32 @@
 
 #include "AutomaticReconstructionWidget.h"
 
+#include <ecvImage.h>
 #include <ecvPointCloud.h>
 
 #include <QApplication>
+#include <QCoreApplication>
 #include <QMessageBox>
+#include <QMetaObject>
+#include <QPointer>
 #include <QProgressDialog>
 #include <QShowEvent>
+#include <QtConcurrent/QtConcurrentRun>
+#include <filesystem>
+#include <memory>
+#include <set>
 
 #include "MainWindow.h"
 #include "ReconstructionWidget.h"
 #include "ThreadControlWidget.h"
+#include "controllers/da3_depth_controller.h"
 #include "retrieval/resources.h"
+#include "ui/da3_reconstruction_ui_bindings.h"
 #include "util/download.h"
+
+#ifdef AICore_ENABLED
+#include "aicore/backend_capi.h"
+#endif
 
 namespace cloudViewer {
 
@@ -70,8 +84,9 @@ AutomaticReconstructionWidget::AutomaticReconstructionWidget(
 
     AddOptionBool(&options_.single_camera, "Shared intrinsics");
     AddOptionBool(&options_.sparse, "Sparse model");
-    AddOptionBool(&options_.dense, "Dense model");
-    AddOptionBool(&options_.texturing, "Mesh texturing");
+    dense_cb_ = AddOptionBool(&options_.dense, "Dense model");
+    meshing_cb_ = AddOptionBool(&options_.meshing, "Surface meshing");
+    texturing_cb_ = AddOptionBool(&options_.texturing, "Mesh texturing");
     AddOptionBool(&options_.autoVisualization, "Auto visualization");
 
     QLabel* mesher_label = new QLabel(tr("Mesher"), this);
@@ -85,11 +100,203 @@ AutomaticReconstructionWidget::AutomaticReconstructionWidget(
     mesher_cb_->setCurrentIndex(0);
     grid_layout_->addWidget(mesher_cb_, grid_layout_->rowCount() - 1, 1);
 
+    connect(meshing_cb_, &QCheckBox::toggled, mesher_cb_, &QWidget::setEnabled);
+    connect(meshing_cb_, &QCheckBox::toggled, texturing_cb_,
+            [this](bool meshing_enabled) {
+                texturing_cb_->setEnabled(meshing_enabled);
+                if (!meshing_enabled) {
+                    texturing_cb_->blockSignals(true);
+                    texturing_cb_->setChecked(false);
+                    texturing_cb_->blockSignals(false);
+                }
+            });
+    mesher_cb_->setEnabled(meshing_cb_->isChecked());
+    texturing_cb_->setEnabled(meshing_cb_->isChecked());
+
+    AddSpacer();
+
+    // --- DA3 (Depth Anything V3) options ---
+    QLabel* sparse_mode_label = new QLabel(tr("Sparse mode"), this);
+    sparse_mode_label->setFont(font());
+    sparse_mode_label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    grid_layout_->addWidget(sparse_mode_label, grid_layout_->rowCount(), 0);
+
+    sparse_mode_cb_ = new QComboBox(this);
+    colmap::DA3ReconstructionUiBindings::InitSparseModeComboBox(
+            sparse_mode_cb_);
+    grid_layout_->addWidget(sparse_mode_cb_, grid_layout_->rowCount() - 1, 1);
+
+    da3_hybrid_hint_label_ = new QLabel(this);
+    da3_hybrid_hint_label_->setWordWrap(true);
+    da3_hybrid_hint_label_->setStyleSheet(
+            "color: palette(mid); font-size: 11px;");
+    da3_hybrid_hint_label_->hide();
+    grid_layout_->addWidget(da3_hybrid_hint_label_, grid_layout_->rowCount(),
+                            1);
+
+    QLabel* stereo_mode_label = new QLabel(tr("Stereo mode"), this);
+    stereo_mode_label->setFont(font());
+    stereo_mode_label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    grid_layout_->addWidget(stereo_mode_label, grid_layout_->rowCount(), 0);
+
+    stereo_mode_cb_ = new QComboBox(this);
+    colmap::DA3ReconstructionUiBindings::InitStereoModeComboBox(
+            stereo_mode_cb_);
+    grid_layout_->addWidget(stereo_mode_cb_, grid_layout_->rowCount() - 1, 1);
+
+    auto* da3_device_label = new QLabel(tr("DA3 device"), this);
+    da3_device_label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    grid_layout_->addWidget(da3_device_label, grid_layout_->rowCount(), 0);
+    da3_device_cb_ = new QComboBox(this);
+#ifdef AICore_ENABLED
+    for (int i = 0; i < aicore_device_count(); ++i) {
+        const aicore_device_info* device = aicore_device_at(i);
+        if (device && device->id) {
+            da3_device_cb_->addItem(QString::fromUtf8(device->label),
+                                    QString::fromUtf8(device->id));
+        }
+    }
+#endif
+    if (da3_device_cb_->count() == 0) {
+        da3_device_cb_->addItem(tr("Auto"), QStringLiteral("auto"));
+    }
+    grid_layout_->addWidget(da3_device_cb_, grid_layout_->rowCount() - 1, 1);
+
+    da3_sparse_model_label_ = new QLabel(tr("DA3 sparse model"), this);
+    da3_sparse_model_label_->setFont(font());
+    da3_sparse_model_label_->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    grid_layout_->addWidget(da3_sparse_model_label_, grid_layout_->rowCount(),
+                            0);
+
+    da3_sparse_model_cb_ = new QComboBox(this);
+    colmap::DA3ReconstructionUiBindings::InitSparseModelComboBox(
+            da3_sparse_model_cb_);
+    grid_layout_->addWidget(da3_sparse_model_cb_, grid_layout_->rowCount() - 1,
+                            1);
+
+    da3_sparse_quant_label_ = new QLabel(tr("DA3 sparse quant"), this);
+    da3_sparse_quant_label_->setFont(font());
+    da3_sparse_quant_label_->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    grid_layout_->addWidget(da3_sparse_quant_label_, grid_layout_->rowCount(),
+                            0);
+
+    da3_sparse_quant_cb_ = new QComboBox(this);
+    grid_layout_->addWidget(da3_sparse_quant_cb_, grid_layout_->rowCount() - 1,
+                            1);
+
+    da3_stereo_model_label_ = new QLabel(tr("DA3 stereo model"), this);
+    da3_stereo_model_label_->setFont(font());
+    da3_stereo_model_label_->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    grid_layout_->addWidget(da3_stereo_model_label_, grid_layout_->rowCount(),
+                            0);
+
+    da3_stereo_model_cb_ = new QComboBox(this);
+    colmap::DA3ReconstructionUiBindings::InitStereoModelComboBox(
+            da3_stereo_model_cb_);
+    grid_layout_->addWidget(da3_stereo_model_cb_, grid_layout_->rowCount() - 1,
+                            1);
+
+    da3_stereo_quant_label_ = new QLabel(tr("DA3 stereo quant"), this);
+    da3_stereo_quant_label_->setFont(font());
+    da3_stereo_quant_label_->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    grid_layout_->addWidget(da3_stereo_quant_label_, grid_layout_->rowCount(),
+                            0);
+
+    da3_stereo_quant_cb_ = new QComboBox(this);
+    grid_layout_->addWidget(da3_stereo_quant_cb_, grid_layout_->rowCount() - 1,
+                            1);
+
+    da3_ui_controls_.da3_force_recompute_label =
+            new QLabel(tr("DA3 force recompute"), this);
+    da3_ui_controls_.da3_force_recompute_label->setFont(font());
+    da3_ui_controls_.da3_force_recompute_label->setAlignment(Qt::AlignRight |
+                                                             Qt::AlignVCenter);
+    grid_layout_->addWidget(da3_ui_controls_.da3_force_recompute_label,
+                            grid_layout_->rowCount(), 0);
+
+    da3_ui_controls_.da3_force_recompute_cb =
+            new QCheckBox(tr("Ignore cached sparse/stereo outputs"), this);
+    grid_layout_->addWidget(da3_ui_controls_.da3_force_recompute_cb,
+                            grid_layout_->rowCount() - 1, 1);
+
+    da3_ui_controls_.da3_skip_geometric_refine_label =
+            new QLabel(tr("Skip geometric refine"), this);
+    da3_ui_controls_.da3_skip_geometric_refine_label->setFont(font());
+    da3_ui_controls_.da3_skip_geometric_refine_label->setAlignment(
+            Qt::AlignRight | Qt::AlignVCenter);
+    grid_layout_->addWidget(da3_ui_controls_.da3_skip_geometric_refine_label,
+                            grid_layout_->rowCount(), 0);
+
+    da3_ui_controls_.da3_skip_geometric_refine_cb = new QCheckBox(
+            tr("Fuse DA3 priors directly (auto-fallback if sparse)"), this);
+    grid_layout_->addWidget(da3_ui_controls_.da3_skip_geometric_refine_cb,
+                            grid_layout_->rowCount() - 1, 1);
+
+    da3_ui_controls_.sparse_mode_cb = sparse_mode_cb_;
+    da3_ui_controls_.stereo_mode_cb = stereo_mode_cb_;
+    da3_ui_controls_.da3_sparse_model_cb = da3_sparse_model_cb_;
+    da3_ui_controls_.da3_sparse_quant_cb = da3_sparse_quant_cb_;
+    da3_ui_controls_.da3_stereo_model_cb = da3_stereo_model_cb_;
+    da3_ui_controls_.da3_stereo_quant_cb = da3_stereo_quant_cb_;
+    da3_ui_controls_.da3_sparse_model_label = da3_sparse_model_label_;
+    da3_ui_controls_.da3_sparse_quant_label = da3_sparse_quant_label_;
+    da3_ui_controls_.da3_stereo_model_label = da3_stereo_model_label_;
+    da3_ui_controls_.da3_stereo_quant_label = da3_stereo_quant_label_;
+    da3_ui_controls_.da3_hybrid_hint_label = da3_hybrid_hint_label_;
+    da3_ui_controls_.dense_cb = dense_cb_;
+    colmap::DA3ReconstructionUiBindings::Install(da3_ui_controls_, this);
+
+    AddOptionFilePath(&options_.da3_sparse_model_path,
+                      "DA3 sparse model path<br>(optional, auto-download)");
+    AddOptionFilePath(&options_.da3_stereo_model_path,
+                      "DA3 stereo model path<br>(optional, auto-download)");
+
     AddSpacer();
 
     AddOptionInt(&options_.num_threads, "num_threads", -1);
-    AddOptionBool(&options_.use_gpu, "GPU");
+    da3_ui_controls_.use_gpu_cb = AddOptionBool(&options_.use_gpu, "GPU");
+    da3_ui_controls_.use_gpu = &options_.use_gpu;
     AddOptionText(&options_.gpu_index, "gpu_index");
+
+    fused_point_filter_label_ = new QLabel(tr("Fused point filter"), this);
+    fused_point_filter_label_->setFont(font());
+    fused_point_filter_label_->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    grid_layout_->addWidget(fused_point_filter_label_, grid_layout_->rowCount(),
+                            0);
+
+    fused_point_filter_cb_ = new QCheckBox(
+            tr("Voxel downsample + statistical outlier removal"), this);
+    grid_layout_->addWidget(fused_point_filter_cb_,
+                            grid_layout_->rowCount() - 1, 1);
+
+    fused_voxel_size_label_ = new QLabel(tr("Fused voxel size (m)"), this);
+    fused_voxel_size_label_->setFont(font());
+    fused_voxel_size_label_->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    grid_layout_->addWidget(fused_voxel_size_label_, grid_layout_->rowCount(),
+                            0);
+
+    fused_voxel_size_spin_ = new QDoubleSpinBox(this);
+    fused_voxel_size_spin_->setDecimals(3);
+    fused_voxel_size_spin_->setRange(0.001, 1.0);
+    fused_voxel_size_spin_->setSingleStep(0.005);
+    fused_voxel_size_spin_->setValue(0.02);
+    grid_layout_->addWidget(fused_voxel_size_spin_,
+                            grid_layout_->rowCount() - 1, 1);
+
+    connect(fused_point_filter_cb_, &QCheckBox::toggled, fused_voxel_size_spin_,
+            &QWidget::setEnabled);
+    connect(fused_point_filter_cb_, &QCheckBox::toggled,
+            fused_voxel_size_label_, &QWidget::setEnabled);
+    fused_voxel_size_spin_->setEnabled(false);
+    fused_voxel_size_label_->setEnabled(false);
+
+    da3_ui_controls_.fused_point_filter_cb = fused_point_filter_cb_;
+    da3_ui_controls_.fused_voxel_size_spin = fused_voxel_size_spin_;
+    da3_ui_controls_.fused_voxel_size_label = fused_voxel_size_label_;
+    colmap::DA3ReconstructionUiBindings::ApplyDa3FusedPointFilterDefaults(
+            da3_ui_controls_);
+
+    applyAICoreUiAvailability();
 
     AddSpacer();
 
@@ -101,6 +308,123 @@ AutomaticReconstructionWidget::AutomaticReconstructionWidget(
     render_result_ = new QAction(this);
     connect(render_result_, &QAction::triggered, this,
             &AutomaticReconstructionWidget::RenderResult, Qt::QueuedConnection);
+}
+
+AutomaticReconstructionWidget::~AutomaticReconstructionWidget() {
+    if (download_cancelled_) {
+        download_cancelled_->store(true, std::memory_order_relaxed);
+    }
+}
+
+void AutomaticReconstructionWidget::startBackgroundDownload(
+        const QString& title,
+        const QString& initial_label,
+        DownloadOperation operation) {
+    if (download_watcher_) return;
+
+    download_cancelled_ = std::make_shared<std::atomic_bool>(false);
+    auto* progress =
+            new QProgressDialog(initial_label, tr("Cancel"), 0, 100, this);
+    progress->setWindowModality(Qt::ApplicationModal);
+    progress->setWindowTitle(title);
+    progress->setAutoClose(false);
+    progress->setAutoReset(false);
+    progress->setMinimumDuration(0);
+    progress->show();
+
+    const std::shared_ptr<std::atomic_bool> cancelled = download_cancelled_;
+    connect(progress, &QProgressDialog::canceled, this, [cancelled]() {
+        cancelled->store(true, std::memory_order_relaxed);
+    });
+
+    auto* watcher = new QFutureWatcher<DownloadResult>(this);
+    download_watcher_ = watcher;
+    const QPointer<AutomaticReconstructionWidget> widget_guard(this);
+    const QPointer<QProgressDialog> progress_guard(progress);
+    QCoreApplication* const application = QCoreApplication::instance();
+    connect(watcher, &QFutureWatcher<DownloadResult>::finished, this,
+            [this, watcher, progress_guard]() {
+                const DownloadResult result = watcher->result();
+                if (progress_guard) {
+                    progress_guard->close();
+                    progress_guard->deleteLater();
+                }
+                watcher->deleteLater();
+                if (download_watcher_ == watcher) {
+                    download_watcher_ = nullptr;
+                    download_cancelled_.reset();
+                }
+                if (result.canceled) {
+                    QMessageBox::information(
+                            this, tr("Download Canceled"),
+                            tr("The download was canceled. Reconstruction was "
+                               "not started."));
+                    return;
+                }
+                if (!result.error.isEmpty()) {
+                    QMessageBox::critical(this, tr("Download Failed"),
+                                          result.error);
+                    return;
+                }
+                // Re-evaluate the cache on the GUI thread before starting the
+                // controller. This also updates the model-path options.
+                Run();
+            });
+
+    watcher->setFuture(QtConcurrent::run([operation = std::move(operation),
+                                          cancelled, widget_guard,
+                                          progress_guard,
+                                          application]() -> DownloadResult {
+        DownloadResult result;
+        const DownloadProgress progress_callback = [widget_guard,
+                                                    progress_guard,
+                                                    application](
+                                                           int64_t downloaded,
+                                                           int64_t total) {
+            if (!application) return;
+            QMetaObject::invokeMethod(
+                    application,
+                    [widget_guard, progress_guard, downloaded, total]() {
+                        if (!widget_guard || !progress_guard) {
+                            return;
+                        }
+                        const double downloaded_mb =
+                                static_cast<double>(downloaded) /
+                                (1024.0 * 1024.0);
+                        if (total > 0) {
+                            const int percent =
+                                    static_cast<int>(downloaded * 100 / total);
+                            progress_guard->setValue(percent);
+                            progress_guard->setLabelText(
+                                    QObject::tr("Downloading... %1 MB / %2 MB "
+                                                "(%3%)")
+                                            .arg(downloaded_mb, 0, 'f', 1)
+                                            .arg(static_cast<double>(total) /
+                                                         (1024.0 * 1024.0),
+                                                 0, 'f', 1)
+                                            .arg(percent));
+                        } else {
+                            progress_guard->setValue(0);
+                            progress_guard->setLabelText(
+                                    QObject::tr("Downloading... %1 MB")
+                                            .arg(downloaded_mb, 0, 'f', 1));
+                        }
+                    },
+                    Qt::QueuedConnection);
+        };
+        try {
+            if (operation(*cancelled, progress_callback).empty()) {
+                result.canceled = cancelled->load(std::memory_order_relaxed);
+                if (!result.canceled) {
+                    result.error =
+                            QObject::tr("The download did not produce a file.");
+                }
+            }
+        } catch (const std::exception& e) {
+            result.error = QString::fromUtf8(e.what());
+        }
+        return result;
+    }));
 }
 
 void AutomaticReconstructionWidget::Run() {
@@ -115,6 +439,9 @@ void AutomaticReconstructionWidget::Run() {
         QMessageBox::critical(this, "", tr("Invalid image folder"));
         return;
     }
+
+    colmap::DA3ReconstructionUiBindings::ApplyHybridDenseTooltips(
+            da3_ui_controls_, options_.image_path);
 
     switch (data_type_cb_->currentIndex()) {
         case 0:
@@ -170,6 +497,164 @@ void AutomaticReconstructionWidget::Run() {
             break;
     }
 
+    // DA3 sparse model mode
+    switch (sparse_mode_cb_->currentIndex()) {
+        case 0:
+            options_.sparse_mode = colmap::SparseModelMode::COLMAP_NATIVE;
+            break;
+        case 1:
+            options_.sparse_mode = colmap::SparseModelMode::DA3_DEPTH_POSE;
+            break;
+        default:
+            options_.sparse_mode = colmap::SparseModelMode::COLMAP_NATIVE;
+            break;
+    }
+
+    // DA3 stereo pipeline mode
+    switch (stereo_mode_cb_->currentIndex()) {
+        case 0:
+            options_.stereo_mode =
+                    colmap::StereoPipelineMode::COLMAP_PATCH_MATCH;
+            break;
+        case 1:
+            options_.stereo_mode =
+                    colmap::StereoPipelineMode::DA3_DEPTH_INFERENCE;
+            break;
+        default:
+            options_.stereo_mode =
+                    colmap::StereoPipelineMode::COLMAP_PATCH_MATCH;
+            break;
+    }
+
+    options_.da3_sparse_model_type =
+            colmap::DA3ReconstructionUiBindings::SparseModelTypeFromIndex(
+                    da3_sparse_model_cb_->currentIndex());
+    options_.da3_sparse_quant_type =
+            colmap::DA3ReconstructionUiBindings::QuantTypeFromComboText(
+                    da3_sparse_quant_cb_->currentText());
+
+    options_.da3_stereo_model_type =
+            colmap::DA3ReconstructionUiBindings::StereoModelTypeFromIndex(
+                    da3_stereo_model_cb_->currentIndex());
+    options_.da3_stereo_quant_type =
+            colmap::DA3ReconstructionUiBindings::QuantTypeFromComboText(
+                    da3_stereo_quant_cb_->currentText());
+    options_.da3_device =
+            da3_device_cb_->currentData().toString().toStdString();
+
+    options_.da3_force_recompute =
+            da3_ui_controls_.da3_force_recompute_cb &&
+            da3_ui_controls_.da3_force_recompute_cb->isChecked();
+    options_.da3_skip_geometric_refine =
+            da3_ui_controls_.da3_skip_geometric_refine_cb &&
+            da3_ui_controls_.da3_skip_geometric_refine_cb->isChecked();
+
+    options_.fused_point_filter.enabled =
+            fused_point_filter_cb_ && fused_point_filter_cb_->isChecked();
+    options_.fused_point_filter.voxel_size =
+            fused_voxel_size_spin_ ? fused_voxel_size_spin_->value() : 0.02;
+    options_.fused_point_filter.sor_enabled = true;
+
+    if (options_.stereo_mode ==
+                colmap::StereoPipelineMode::DA3_DEPTH_INFERENCE &&
+        options_.sparse_mode != colmap::SparseModelMode::DA3_DEPTH_POSE) {
+        QMessageBox::information(
+                this, tr("DA3 stereo"),
+                tr("DA3 depth inference works best with DA3 (depth+pose) "
+                   "sparse mode "
+                   "for consistent camera poses. Continuing with the current "
+                   "sparse/stereo model selection."));
+    }
+
+    const bool uses_da3_sparse =
+            options_.sparse_mode == colmap::SparseModelMode::DA3_DEPTH_POSE;
+    const bool uses_da3_stereo =
+            options_.stereo_mode ==
+            colmap::StereoPipelineMode::DA3_DEPTH_INFERENCE;
+    if (uses_da3_sparse || uses_da3_stereo) {
+        std::string cache_dir = colmap::DA3ModelCacheDir();
+        std::filesystem::create_directories(cache_dir);
+
+        std::vector<colmap::DA3ModelCacheNeed> needed;
+        if (uses_da3_sparse) {
+            colmap::CollectDA3ModelCacheNeeds(
+                    cache_dir, options_.da3_sparse_model_type,
+                    options_.da3_sparse_quant_type,
+                    options_.da3_sparse_model_path,
+                    options_.da3_sparse_metric_model_path, needed);
+        }
+        if (uses_da3_stereo) {
+            colmap::CollectDA3ModelCacheNeeds(
+                    cache_dir, options_.da3_stereo_model_type,
+                    options_.da3_stereo_quant_type,
+                    options_.da3_stereo_model_path,
+                    options_.da3_stereo_metric_model_path, needed);
+        }
+
+        if (!needed.empty()) {
+#ifdef COLMAP_DOWNLOAD_ENABLED
+            QStringList names;
+            std::set<std::string> seen_names;
+            for (const auto& m : needed) {
+                if (seen_names.insert(m.filename).second) {
+                    names << QString::fromStdString(m.filename);
+                }
+            }
+            auto answer = QMessageBox::question(
+                    this, tr("Download DA3 Model(s)"),
+                    tr("The following DA3 model(s) are not cached locally:\n\n"
+                       "  %1\n\nDownload them now?")
+                            .arg(names.join("\n  ")),
+                    QMessageBox::Yes | QMessageBox::No);
+            if (answer != QMessageBox::Yes) return;
+
+            std::vector<std::pair<std::string, std::filesystem::path>> jobs;
+            std::set<std::string> seen_targets;
+            for (const auto& m : needed) {
+                const auto target =
+                        std::filesystem::path(cache_dir) / m.filename;
+                if (seen_targets.insert(target.string()).second &&
+                    !std::filesystem::exists(target)) {
+                    jobs.emplace_back(m.url, target);
+                }
+            }
+            if (!jobs.empty()) {
+                startBackgroundDownload(
+                        tr("Downloading DA3 Model"),
+                        tr("Downloading %1...").arg(names.front()),
+                        [jobs = std::move(jobs)](
+                                std::atomic_bool& canceled,
+                                const DownloadProgress& progress)
+                                -> std::string {
+                            std::string downloaded_path;
+                            for (const auto& job : jobs) {
+                                downloaded_path = colmap::DownloadAndCacheFile(
+                                        job.first, job.second, progress,
+                                        [&canceled]() {
+                                            return canceled.load(
+                                                    std::memory_order_relaxed);
+                                        });
+                                if (downloaded_path.empty()) return {};
+                            }
+                            return downloaded_path;
+                        });
+                return;
+            }
+#else
+            QStringList names;
+            for (const auto& m : needed)
+                names << QString::fromStdString(m.filename);
+            QMessageBox::warning(
+                    this, tr("DA3 Model Not Found"),
+                    tr("DA3 model(s) not found and download support is "
+                       "disabled:\n  %1\nPlease provide the model path "
+                       "manually.")
+                            .arg(names.join("\n  ")));
+            return;
+#endif
+        }
+    }
+
     // Check if vocab_tree_path is a URI and needs to be downloaded
     std::string vocab_tree_path = options_.vocab_tree_path;
     if (vocab_tree_path.empty()) {
@@ -187,80 +672,18 @@ void AutomaticReconstructionWidget::Run() {
             LOG(INFO) << "Using cached vocabulary tree file: " << cached_path;
             options_.vocab_tree_path = cached_path.string();
         } else {
-            // File doesn't exist, show download progress dialog
-            QProgressDialog progress_dialog(
-                    tr("Downloading vocabulary tree..."), tr("Cancel"), 0, 100,
-                    this);
-            progress_dialog.setWindowModality(Qt::ApplicationModal);
-            progress_dialog.setWindowTitle(tr("Downloading"));
-            progress_dialog.setAutoClose(false);
-            progress_dialog.setAutoReset(false);
-            progress_dialog.setMinimumDuration(0);
-            progress_dialog.show();
-            QApplication::processEvents();
-
-            bool download_canceled = false;
-            colmap::DownloadProgressCallback progress_callback =
-                    [&progress_dialog, &download_canceled](int64_t downloaded,
-                                                           int64_t total) {
-                        QApplication::processEvents();
-                        if (progress_dialog.wasCanceled()) {
-                            download_canceled = true;
-                            return;
-                        }
-
-                        if (total > 0) {
-                            int percent = static_cast<int>((downloaded * 100) /
-                                                           total);
-                            progress_dialog.setValue(percent);
-
-                            // Update label with size information
-                            double downloaded_mb =
-                                    static_cast<double>(downloaded) /
-                                    (1024.0 * 1024.0);
-                            double total_mb = static_cast<double>(total) /
-                                              (1024.0 * 1024.0);
-                            progress_dialog.setLabelText(
-                                    tr("Downloading vocabulary tree...\n%1 MB "
-                                       "/ %2 MB (%3%)")
-                                            .arg(downloaded_mb, 0, 'f', 2)
-                                            .arg(total_mb, 0, 'f', 2)
-                                            .arg(percent));
-                        } else {
-                            progress_dialog.setValue(0);
-                            double downloaded_mb =
-                                    static_cast<double>(downloaded) /
-                                    (1024.0 * 1024.0);
-                            progress_dialog.setLabelText(
-                                    tr("Downloading vocabulary tree...\n%1 MB")
-                                            .arg(downloaded_mb, 0, 'f', 2));
-                        }
-                        QApplication::processEvents();
-                    };
-
-            try {
-                std::string downloaded_path = colmap::DownloadAndCacheFile(
-                        vocab_tree_path, progress_callback);
-                progress_dialog.close();
-
-                if (download_canceled || downloaded_path.empty()) {
-                    QMessageBox::warning(
-                            this, tr("Download Canceled"),
-                            tr("Vocabulary tree download was canceled. Please "
-                               "provide a local path."));
-                    return;
-                }
-
-                // Update options with the downloaded path
-                options_.vocab_tree_path = downloaded_path;
-            } catch (const std::exception& e) {
-                progress_dialog.close();
-                QMessageBox::critical(
-                        this, tr("Download Failed"),
-                        tr("Failed to download vocabulary tree: %1")
-                                .arg(e.what()));
-                return;
-            }
+            startBackgroundDownload(
+                    tr("Downloading vocabulary tree"),
+                    tr("Downloading vocabulary tree..."),
+                    [uri = vocab_tree_path](std::atomic_bool& canceled,
+                                            const DownloadProgress& progress) {
+                        return colmap::DownloadAndCacheFile(
+                                uri, progress, [&canceled]() {
+                                    return canceled.load(
+                                            std::memory_order_relaxed);
+                                });
+                    });
+            return;
         }
 #else
         QMessageBox::warning(this, tr("Download Disabled"),
@@ -280,17 +703,49 @@ void AutomaticReconstructionWidget::Run() {
                     options_, &main_window_->reconstruction_manager_);
 
     controller->AddCallback(Thread::FINISHED_CALLBACK, [this, controller]() {
-        fused_points_ = controller->fused_points_;
-        meshing_paths_ = controller->meshing_paths_;
-        textured_paths_ = controller->textured_paths_;
-        texturing_success_ = controller->texturing_success_;
-        controller->fused_points_.clear();
-        controller->meshing_paths_.clear();
-        controller->textured_paths_.clear();
-        render_result_->trigger();
+        struct Results {
+            std::vector<std::vector<colmap::PlyPoint>> fusedPoints;
+            std::vector<std::string> meshingPaths;
+            std::vector<std::string> texturedPaths;
+            bool texturingSuccess = false;
+            colmap::DA3VramCapWarning vramWarning;
+        };
+        auto results = std::make_shared<Results>();
+        results->fusedPoints = std::move(controller->fused_points_);
+        results->meshingPaths = std::move(controller->meshing_paths_);
+        results->texturedPaths = std::move(controller->textured_paths_);
+        results->texturingSuccess = controller->texturing_success_;
+        results->vramWarning = controller->da3VramCapWarning();
+
+        QMetaObject::invokeMethod(
+                this,
+                [this, results]() {
+                    fused_points_ = std::move(results->fusedPoints);
+                    meshing_paths_ = std::move(results->meshingPaths);
+                    textured_paths_ = std::move(results->texturedPaths);
+                    texturing_success_ = results->texturingSuccess;
+                    da3_vram_warning_ = results->vramWarning;
+                    render_result_->trigger();
+                },
+                Qt::QueuedConnection);
     });
 
     thread_control_widget_->StartThread("Reconstructing...", true, controller);
+}
+
+void AutomaticReconstructionWidget::applyAICoreUiAvailability() {
+    const bool available = ccImage::isAICoreAvailable();
+    colmap::DA3ReconstructionUiBindings::SetAICoreAvailable(da3_ui_controls_,
+                                                            available);
+    if (available) {
+        ShowOption(&options_.da3_sparse_model_path);
+        ShowOption(&options_.da3_stereo_model_path);
+        colmap::DA3ReconstructionUiBindings::ApplyPreferDa3Defaults(
+                da3_ui_controls_);
+    } else {
+        HideOption(&options_.da3_sparse_model_path);
+        HideOption(&options_.da3_stereo_model_path);
+    }
 }
 
 void AutomaticReconstructionWidget::showEvent(QShowEvent* event) {
@@ -304,6 +759,18 @@ void AutomaticReconstructionWidget::showEvent(QShowEvent* event) {
     // Call base class showEvent to read all options (including the default
     // value)
     OptionsWidget::showEvent(event);
+
+    const int device_index = da3_device_cb_->findData(
+            QString::fromStdString(options_.da3_device));
+    if (device_index >= 0) {
+        da3_device_cb_->setCurrentIndex(device_index);
+    }
+
+    applyAICoreUiAvailability();
+
+    colmap::DA3ReconstructionUiBindings::ApplyHybridDenseTooltips(
+            da3_ui_controls_, options_.image_path);
+    colmap::DA3ReconstructionUiBindings::Sync(da3_ui_controls_);
 
     // Double-check: if UI is still empty after ReadOptions, set it explicitly
     // This handles the case where options_.vocab_tree_path was empty before
@@ -336,6 +803,13 @@ void AutomaticReconstructionWidget::RenderResult() {
     }
 
     if (options_.dense) {
+        const std::string vram_warning =
+                DA3VramCapWarningMessage(da3_vram_warning_);
+        if (!vram_warning.empty()) {
+            QMessageBox::warning(
+                    this, tr("DA3 GPU memory"),
+                    tr("%1").arg(QString::fromStdString(vram_warning)));
+        }
         if (options_.autoVisualization) {
             // add dense point cloud
             if (!fused_points_.empty()) {
@@ -349,13 +823,21 @@ void AutomaticReconstructionWidget::RenderResult() {
                             new ccPointCloud(QString("%1-denseCloud").arg(i));
                     if (cloud) {
                         unsigned nPoints =
-                                static_cast<unsigned>(fused_points_.size());
+                                static_cast<unsigned>(fused_points_[i].size());
                         if (nPoints > 0 &&
                             cloud->reserveThePointsTable(nPoints)) {
                             if (cloud->reserveTheRGBTable()) {
                                 for (const auto& point : fused_points_[i]) {
-                                    cloud->addPoint(CCVector3(point.x, point.y,
-                                                              point.z));
+                                    // Keep COLMAP world coordinates — same
+                                    // frame as textured / Delaunay meshes from
+                                    // addToDBAuto().
+                                    cloud->addPoint(CCVector3(
+                                            static_cast<PointCoordinateType>(
+                                                    point.x),
+                                            static_cast<PointCoordinateType>(
+                                                    point.y),
+                                            static_cast<PointCoordinateType>(
+                                                    point.z)));
                                     cloud->addRGBColor(ecvColor::Rgb(
                                             point.r, point.g, point.b));
                                 }

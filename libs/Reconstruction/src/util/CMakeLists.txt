@@ -44,6 +44,7 @@ COLMAP_ADD_SOURCES(
     opengl_utils.h opengl_utils.cc
     option_manager.h option_manager.cc
     ply.h ply.cc
+    ply_point_filter.h ply_point_filter.cc
     random.h random.cc
     sqlite3_utils.h
     string.h string.cc

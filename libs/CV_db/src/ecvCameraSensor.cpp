@@ -11,8 +11,13 @@
 #include <cmath>
 #include <cstring>
 
+#include "ecvCameraSensorDisplayUtils.h"
+
 // LOCAL
+#include "ecvDisplayTools.h"
 #include "ecvDrawContext.h"
+#include "ecvHObject.h"
+#include "ecvHObjectCaster.h"
 #include "ecvImage.h"
 #include "ecvMesh.h"
 #include "ecvPointCloud.h"
@@ -31,8 +36,44 @@
 #include <QImage>
 
 #include "ecvGenericGLDisplay.h"
+#include "ecvViewportParameters.h"
 
 namespace {
+
+float localImagePlaneZ(ccCameraSensor::PoseFrame frame, double positiveDepth) {
+    return (frame == ccCameraSensor::PoseFrame::VtkColmap)
+                   ? static_cast<float>(positiveDepth)
+                   : -static_cast<float>(positiveDepth);
+}
+
+PointCoordinateType frustumOrientationSign(ccCameraSensor::PoseFrame frame,
+                                           PointCoordinateType scale) {
+    const PointCoordinateType axisSign = scale / std::abs(scale);
+    return (frame == ccCameraSensor::PoseFrame::VtkColmap) ? axisSign
+                                                           : -axisSign;
+}
+
+double localViewDepth(ccCameraSensor::PoseFrame frame, double localZ) {
+    return (frame == ccCameraSensor::PoseFrame::VtkColmap) ? localZ : -localZ;
+}
+
+PointCoordinateType localViewDepthCoord(ccCameraSensor::PoseFrame frame,
+                                        PointCoordinateType depth) {
+    return (frame == ccCameraSensor::PoseFrame::VtkColmap) ? depth : -depth;
+}
+
+void applySensorDrawTransform(CC_DRAW_CONTEXT& ctx,
+                              const ccIndexedTransformation& sensorPos) {
+    ccGLMatrix sensorMat;
+    std::memcpy(sensorMat.data(), sensorPos.data(), 16 * sizeof(float));
+
+    if (ctx.hasGLTransAccum) {
+        ctx.glTransAccum = ctx.glTransAccum * sensorMat;
+    } else {
+        ctx.glTransAccum = sensorMat;
+    }
+    ctx.hasGLTransAccum = true;
+}
 
 void removeObjectFromDisplays(const ccHObject* obj) {
     if (!obj) return;
@@ -59,6 +100,24 @@ void hideShowObjectOnDisplays(const ccHObject* obj, bool visible) {
         context.display = view;
         view->hideShowEntities(context);
     }
+}
+
+ecvGenericGLDisplay* resolveViewDisplay(ecvGenericGLDisplay* display) {
+    if (display && display->viewContext()) {
+        return display;
+    }
+    if (ecvGenericGLDisplay* view =
+                ecvViewManager::instance().getEffectiveView()) {
+        if (view->viewContext()) {
+            return view;
+        }
+    }
+    for (ecvGenericGLDisplay* view : ecvViewManager::instance().getAllViews()) {
+        if (view && view->viewContext()) {
+            return view;
+        }
+    }
+    return display;
 }
 
 }  // namespace
@@ -235,7 +294,9 @@ ccCameraSensor::ccCameraSensor(const ccCameraSensor& sensor)
     : ccSensor(sensor),
       m_plane_color(ecvColor::red),
       m_projectionMatrix(sensor.m_projectionMatrix),
-      m_projectionMatrixIsValid(false) {
+      m_projectionMatrixIsValid(false),
+      m_applyViewportVFov_rad(sensor.m_applyViewportVFov_rad),
+      m_poseFrame(sensor.m_poseFrame) {
     setIntrinsicParameters(sensor.m_intrinsicParams);
 
     // distortion params
@@ -281,6 +342,16 @@ ccCameraSensor::ccCameraSensor(const ccCameraSensor& sensor)
 
 ccCameraSensor::~ccCameraSensor() {}
 
+void ccCameraSensor::setPoseFrame(PoseFrame frame) {
+    if (m_poseFrame == frame) {
+        return;
+    }
+    m_poseFrame = frame;
+    m_frustumInfos.isComputed = false;
+    m_geometryDirty = true;
+    setRedraw(true);
+}
+
 ccBBox ccCameraSensor::getOwnBB(bool withGLFeatures /*=false*/) {
     if (!withGLFeatures) {
         return ccBBox();
@@ -293,6 +364,7 @@ ccBBox ccCameraSensor::getOwnBB(bool withGLFeatures /*=false*/) {
     }
 
     CCVector3 upperLeftPoint = computeUpperLeftPoint();
+    const float planeZ = localImagePlaneZ(m_poseFrame, upperLeftPoint.z);
 
     ccPointCloud cloud;
     if (!cloud.reserve(5)) {
@@ -301,14 +373,10 @@ ccBBox ccCameraSensor::getOwnBB(bool withGLFeatures /*=false*/) {
     }
 
     cloud.addPoint(CCVector3(0, 0, 0));
-    cloud.addPoint(
-            CCVector3(upperLeftPoint.x, upperLeftPoint.y, -upperLeftPoint.z));
-    cloud.addPoint(
-            CCVector3(-upperLeftPoint.x, upperLeftPoint.y, -upperLeftPoint.z));
-    cloud.addPoint(
-            CCVector3(-upperLeftPoint.x, -upperLeftPoint.y, -upperLeftPoint.z));
-    cloud.addPoint(
-            CCVector3(upperLeftPoint.x, -upperLeftPoint.y, -upperLeftPoint.z));
+    cloud.addPoint(CCVector3(upperLeftPoint.x, upperLeftPoint.y, planeZ));
+    cloud.addPoint(CCVector3(-upperLeftPoint.x, upperLeftPoint.y, planeZ));
+    cloud.addPoint(CCVector3(-upperLeftPoint.x, -upperLeftPoint.y, planeZ));
+    cloud.addPoint(CCVector3(upperLeftPoint.x, -upperLeftPoint.y, planeZ));
 
     // add frustum corners if necessary
     if (m_frustumInfos.isComputed &&
@@ -335,13 +403,17 @@ ccBBox ccCameraSensor::getOwnFitBB(ccGLMatrix& trans) {
     trans = sensorPos;
 
     CCVector3 upperLeftPoint = computeUpperLeftPoint();
+    const float planeZ = localImagePlaneZ(m_poseFrame, upperLeftPoint.z);
+    if (m_poseFrame == PoseFrame::VtkColmap) {
+        return ccBBox(CCVector3(-upperLeftPoint.x, -upperLeftPoint.y, 0.0f),
+                      CCVector3(upperLeftPoint.x, upperLeftPoint.y, planeZ));
+    }
     if (upperLeftPoint.z > 0) {
         return ccBBox(-upperLeftPoint,
                       CCVector3(upperLeftPoint.x, upperLeftPoint.y, 0));
-    } else {
-        return ccBBox(CCVector3(upperLeftPoint.x, upperLeftPoint.y, 0),
-                      -upperLeftPoint);
     }
+    return ccBBox(CCVector3(upperLeftPoint.x, upperLeftPoint.y, 0),
+                  -upperLeftPoint);
 }
 
 void ccCameraSensor::setVertFocal_pix(float vertFocal_pix) {
@@ -367,16 +439,13 @@ void ccCameraSensor::setIntrinsicParameters(const IntrinsicParameters& params) {
 }
 
 bool ccCameraSensor::applyViewport() {
-    ecvGenericGLDisplay* view = getDisplay();
-    if (!view) view = ecvViewManager::instance().getEffectiveView();
+    ecvGenericGLDisplay* view = resolveViewDisplay(getDisplay());
+    if (!view) {
+        view = ecvViewManager::instance().getEffectiveView();
+    }
     if (!view || !view->asWidget()) {
         CVLog::Warning(
                 "[ccCameraSensor::applyViewport] No associated display!");
-        return false;
-    }
-
-    ccIndexedTransformation trans;
-    if (!getActiveAbsoluteTransformation(trans)) {
         return false;
     }
 
@@ -385,47 +454,103 @@ bool ccCameraSensor::applyViewport() {
         return false;
     }
 
-    float fov_deg = cloudViewer::RadiansToDegrees(m_intrinsicParams.vFOV_rad);
-
-    ecvViewportParameters viewParams = view->getViewportParameters();
-    viewParams.fov_deg = fov_deg;
-    viewParams.zFar = static_cast<double>(m_intrinsicParams.zFar_mm);
-    viewParams.zNear = static_cast<double>(m_intrinsicParams.zNear_mm);
-
-    CCVector3 upperLeftPointd = computeUpperLeftPoint();
-
-    // pos
-    CCVector3 camC = trans.getTranslationAsVec3D();
-    viewParams.setCameraCenter(CCVector3d::fromArray(camC));
-
-    int flag = 1;
-    if (upperLeftPointd.z > 0) {
-        flag = 1;
-    } else {
-        flag = -1;
-    }
-
-    // up
-    CCVector3 upDir = flag * trans.getColumnAsVec3D(1);
-    upDir.normalize();
-    if (cloudViewer::LessThanEpsilon(std::fabs(upDir.norm()))) {
-        CVLog::Warning(
-                "[ccCameraSensor::applyViewport] Viewing dir is parallel to "
-                "the plane Y!");
+    ccIndexedTransformation trans;
+    if (!getActiveAbsoluteTransformation(trans)) {
         return false;
     }
-    viewParams.up = CCVector3d::fromArray(upDir);
 
-    // focal
-    CCVector3 viewDir = flag * trans.getColumnAsVec3D(2);
-    CCVector3 focal3D = camC - viewDir;
-    viewParams.focal = CCVector3d::fromArray(focal3D);
-    viewParams.setPivotPoint(viewParams.focal, true);
+    // Match CloudCompare ccCameraSensor::applyViewport (aspect-aware FOV).
+    const double sensorAR = static_cast<double>(m_intrinsicParams.arrayWidth) /
+                            m_intrinsicParams.arrayHeight;
+    const QSize screenSize = view->asWidget()->size();
+    const double screenAR = screenSize.height() > 0
+                                    ? static_cast<double>(screenSize.width()) /
+                                              screenSize.height()
+                                    : 1.0;
+    const float viewport_vfov_rad = m_applyViewportVFov_rad > 0.0f
+                                            ? m_applyViewportVFov_rad
+                                            : m_intrinsicParams.vFOV_rad;
+    const double fOV_rad =
+            2.0 * std::atan(std::tan(viewport_vfov_rad / 2.0) * screenAR *
+                            (screenAR >= sensorAR ? 1.0 : sensorAR));
+    const float fov_deg =
+            static_cast<float>(cloudViewer::RadiansToDegrees(fOV_rad));
 
-    view->setViewportParameters(viewParams);
-    { ecvRedrawScope scope; }
+    // Match CloudCompare ccCameraSensor::applyViewport: route through
+    // setupProjectiveViewport so viewer-based perspective, pivot, and VTK
+    // focal-point sync stay consistent (avoids empty view after apply).
+    // Derive viewport from cam2world using the sensor pose frame (+Z forward
+    // for VtkColmap / COLMAP, -Z forward for OpenGlLegacy).
+    ccGLMatrixd cameraMatrix =
+            ecvCameraSensorDisplay::Cam2WorldToViewportCameraMatrix(
+                    ccGLMatrixd(trans.data()), getPoseFrame());
+    const CCVector3d cameraPos = cameraMatrix.getTranslationAsVec3D();
 
+    auto refineViewerFocalDistance = [&](ecvViewContext& ctx) {
+        if (ccHObject* root = ecvViewManager::instance().globalDBRoot()) {
+            const ccBBox sceneBB = root->getBB_recursive();
+            if (sceneBB.isValid()) {
+                const CCVector3d sceneCenter = sceneBB.getCenter();
+                CCVector3d viewDir = ctx.viewportParams.getViewDir();
+                viewDir.normalize();
+                double focalDist = viewDir.dot(sceneCenter - cameraPos);
+                if (focalDist < 1e-3) {
+                    focalDist = (sceneCenter - cameraPos).normd();
+                }
+                if (focalDist < 1e-3) {
+                    focalDist = 1.0;
+                }
+                ctx.viewportParams.setFocalDistance(focalDist);
+                ctx.viewportParams.focal = cameraPos + viewDir * focalDist;
+            }
+        }
+    };
+
+    if (ecvViewContext* ctx = view->viewContext()) {
+        ctx->appliedViewportSensorId = getUniqueID();
+    }
+    removeViewportGizmoActors(view);
+
+    if (ecvViewContext* ctx = view->viewContext()) {
+        ecvDisplayTools::SetupProjectiveViewport(*ctx, cameraMatrix, fov_deg);
+        refineViewerFocalDistance(*ctx);
+        view->setViewportParameters(ctx->viewportParams);
+        if (QWidget* w = view->asWidget()) w->update();
+        view->redraw(false, true);
+        view->updateApplyViewportPreviewOverlay(getUniqueID());
+    } else {
+        ecvViewManager::instance().sharedSetupProjectiveViewport(
+                cameraMatrix, fov_deg, 1.0f, true, false);
+        if (ecvGenericGLDisplay* ev =
+                    ecvViewManager::instance().getEffectiveView()) {
+            if (ecvViewContext* ctx = ev->viewContext()) {
+                refineViewerFocalDistance(*ctx);
+                ev->setViewportParameters(ctx->viewportParams);
+            }
+            if (QWidget* w = ev->asWidget()) w->update();
+            ev->redraw(false, true);
+            ev->updateApplyViewportPreviewOverlay(getUniqueID());
+        }
+    }
     return true;
+}
+
+void ccCameraSensor::removeViewportGizmoActors(ecvGenericGLDisplay* display) {
+    if (!display) {
+        return;
+    }
+
+    CC_DRAW_CONTEXT context;
+    context.display = display;
+    context.removeViewID = getViewId();
+    context.removeEntityType = getEntityType();
+    display->removeEntities(context);
+
+    if (m_frustumInfos.frustumHull) {
+        context.removeViewID = m_frustumInfos.frustumHull->getViewId();
+        context.removeEntityType = m_frustumInfos.frustumHull->getEntityType();
+        display->removeEntities(context);
+    }
 }
 
 bool ccCameraSensor::getProjectionMatrix(ccGLMatrix& matrix) {
@@ -539,12 +664,16 @@ bool ccCameraSensor::toFile_MeOnly(QFile& out, short dataVersion) const {
     outStream << m_frustumInfos.center.y;
     outStream << m_frustumInfos.center.z;
 
+    // Pose frame + apply-viewport FOV (dataVersion >= 50)
+    outStream << static_cast<uint32_t>(m_poseFrame);
+    outStream << m_applyViewportVFov_rad;
+
     return true;
 }
 
 short ccCameraSensor::minimumFileVersion_MeOnly() const {
-    // Camera sensor with intrinsic/distortion params requires version 43+
-    return std::max(static_cast<short>(43),
+    // Camera sensor with pose frame requires version 50+
+    return std::max(static_cast<short>(50),
                     ccSensor::minimumFileVersion_MeOnly());
 }
 
@@ -669,6 +798,18 @@ bool ccCameraSensor::fromFile_MeOnly(QFile& in,
         }
     }
 
+    if (dataVersion >= 50) {
+        uint32_t poseFrame = 0;
+        inStream >> poseFrame;
+        inStream >> m_applyViewportVFov_rad;
+        if (poseFrame <= static_cast<uint32_t>(PoseFrame::VtkColmap)) {
+            m_poseFrame = static_cast<PoseFrame>(poseFrame);
+        } else {
+            m_poseFrame = PoseFrame::OpenGlLegacy;
+        }
+        m_geometryDirty = true;
+    }
+
     return true;
 }
 
@@ -736,8 +877,8 @@ bool ccCameraSensor::fromLocalCoordToImageCoord(
 
     // We test if the point is in front or behind the sensor ? If it is behind
     // (or in the center of the sensor i.e. depth = 0), we can't project!
-    double depth = -static_cast<double>(
-            localCoord.z);  // warning: the camera looks backward!
+    double depth =
+            localViewDepth(m_poseFrame, static_cast<double>(localCoord.z));
 #define BACK_POINTS_CULLING
 #ifdef BACK_POINTS_CULLING
     if (depth < FLT_EPSILON) return false;
@@ -810,9 +951,9 @@ bool ccCameraSensor::fromImageCoordToLocalCoord(
     CCVector3d p = p2 / factor;
 
     // perspective
-    localCoord =
-            CCVector3(static_cast<PointCoordinateType>(p.x * depth),
-                      static_cast<PointCoordinateType>(p.y * depth), -depth);
+    localCoord = CCVector3(static_cast<PointCoordinateType>(p.x * depth),
+                           static_cast<PointCoordinateType>(p.y * depth),
+                           localViewDepthCoord(m_poseFrame, depth));
 
     return true;
 }
@@ -1201,9 +1342,10 @@ bool ccCameraSensor::isGlobalCoordInFrustum(
     const float& z = localCoord.z;
     const float& n = m_intrinsicParams.zNear_mm;
     const float& f = m_intrinsicParams.zFar_mm;
+    const double depth = localViewDepth(m_poseFrame, static_cast<double>(z));
 
-    return (-z <= f && -z > n && std::abs(f + z) >= FLT_EPSILON &&
-            std::abs(n + z) >= FLT_EPSILON);
+    return (depth <= f && depth > n && std::abs(f - depth) >= FLT_EPSILON &&
+            std::abs(depth - n) >= FLT_EPSILON);
 }
 
 CCVector3 ccCameraSensor::computeUpperLeftPoint() const {
@@ -1241,15 +1383,15 @@ bool ccCameraSensor::computeFrustumCorners() {
     const float& zNear = m_intrinsicParams.zNear_mm;
     const float& zFar = m_intrinsicParams.zFar_mm;
 
-    // compute points of frustum in image coordinate system (warning: in the
-    // system, z=-z)
+    // Frustum corners in the sensor local frame (+Z forward for VtkColmap).
     if (!m_frustumInfos.initFrustumCorners()) {
         CVLog::Warning(
                 "[ccCameraSensor::computeFrustumCorners] Not enough memory!");
         return false;
     }
 
-    PointCoordinateType orientation = -PC_ONE * m_scale / std::abs(m_scale);
+    PointCoordinateType orientation =
+            frustumOrientationSign(m_poseFrame, m_scale);
 
     // DO NOT MODIFY THE ORDER OF THE CORNERS!! A LOT OF CODE DEPENDS OF THIS
     // ORDER!!
@@ -1426,17 +1568,19 @@ bool ccCameraSensor::computeGlobalPlaneCoefficients(
 void ccCameraSensor::updateData() {
     CCVector3d upperLeftPointd =
             CCVector3d::fromArray(computeUpperLeftPoint().data());
+    const double planeZ = static_cast<double>(
+            localImagePlaneZ(m_poseFrame, upperLeftPointd.z));
 
     // near plane
     m_nearPlane.clear();
-    m_nearPlane.points_.push_back(Eigen::Vector3d(
-            upperLeftPointd.x, upperLeftPointd.y, -upperLeftPointd.z));
-    m_nearPlane.points_.push_back(Eigen::Vector3d(
-            -upperLeftPointd.x, upperLeftPointd.y, -upperLeftPointd.z));
-    m_nearPlane.points_.push_back(Eigen::Vector3d(
-            -upperLeftPointd.x, -upperLeftPointd.y, -upperLeftPointd.z));
-    m_nearPlane.points_.push_back(Eigen::Vector3d(
-            upperLeftPointd.x, -upperLeftPointd.y, -upperLeftPointd.z));
+    m_nearPlane.points_.push_back(
+            Eigen::Vector3d(upperLeftPointd.x, upperLeftPointd.y, planeZ));
+    m_nearPlane.points_.push_back(
+            Eigen::Vector3d(-upperLeftPointd.x, upperLeftPointd.y, planeZ));
+    m_nearPlane.points_.push_back(
+            Eigen::Vector3d(-upperLeftPointd.x, -upperLeftPointd.y, planeZ));
+    m_nearPlane.points_.push_back(
+            Eigen::Vector3d(upperLeftPointd.x, -upperLeftPointd.y, planeZ));
     m_nearPlane.lines_.push_back(Eigen::Vector2i(0, 1));
     m_nearPlane.lines_.push_back(Eigen::Vector2i(1, 2));
     m_nearPlane.lines_.push_back(Eigen::Vector2i(2, 3));
@@ -1445,14 +1589,14 @@ void ccCameraSensor::updateData() {
     // side lines
     m_sideLines.clear();
     m_sideLines.points_.push_back(Eigen::Vector3d(0.0, 0.0, 0.0));
-    m_sideLines.points_.push_back(Eigen::Vector3d(
-            upperLeftPointd.x, upperLeftPointd.y, -upperLeftPointd.z));
-    m_sideLines.points_.push_back(Eigen::Vector3d(
-            -upperLeftPointd.x, upperLeftPointd.y, -upperLeftPointd.z));
-    m_sideLines.points_.push_back(Eigen::Vector3d(
-            -upperLeftPointd.x, -upperLeftPointd.y, -upperLeftPointd.z));
-    m_sideLines.points_.push_back(Eigen::Vector3d(
-            upperLeftPointd.x, -upperLeftPointd.y, -upperLeftPointd.z));
+    m_sideLines.points_.push_back(
+            Eigen::Vector3d(upperLeftPointd.x, upperLeftPointd.y, planeZ));
+    m_sideLines.points_.push_back(
+            Eigen::Vector3d(-upperLeftPointd.x, upperLeftPointd.y, planeZ));
+    m_sideLines.points_.push_back(
+            Eigen::Vector3d(-upperLeftPointd.x, -upperLeftPointd.y, planeZ));
+    m_sideLines.points_.push_back(
+            Eigen::Vector3d(upperLeftPointd.x, -upperLeftPointd.y, planeZ));
     m_sideLines.lines_.push_back(Eigen::Vector2i(0, 1));
     m_sideLines.lines_.push_back(Eigen::Vector2i(0, 2));
     m_sideLines.lines_.push_back(Eigen::Vector2i(0, 3));
@@ -1467,35 +1611,36 @@ void ccCameraSensor::updateData() {
     // arrow
     m_arrow.clear();
     m_arrow.points_.push_back(
-            Eigen::Vector3d(-baseHalfWidth, baseHeight, -upperLeftPointd.z));
+            Eigen::Vector3d(-baseHalfWidth, baseHeight, planeZ));
     m_arrow.points_.push_back(
-            Eigen::Vector3d(baseHalfWidth, baseHeight, -upperLeftPointd.z));
-    m_arrow.points_.push_back(Eigen::Vector3d(baseHalfWidth, upperLeftPointd.y,
-                                              -upperLeftPointd.z));
-    m_arrow.points_.push_back(Eigen::Vector3d(-baseHalfWidth, upperLeftPointd.y,
-                                              -upperLeftPointd.z));
+            Eigen::Vector3d(baseHalfWidth, baseHeight, planeZ));
+    m_arrow.points_.push_back(
+            Eigen::Vector3d(baseHalfWidth, upperLeftPointd.y, planeZ));
+    m_arrow.points_.push_back(
+            Eigen::Vector3d(-baseHalfWidth, upperLeftPointd.y, planeZ));
     m_arrow.lines_.push_back(Eigen::Vector2i(0, 1));
     m_arrow.lines_.push_back(Eigen::Vector2i(1, 2));
     m_arrow.lines_.push_back(Eigen::Vector2i(2, 3));
     m_arrow.lines_.push_back(Eigen::Vector2i(3, 0));
     m_arrow.points_.push_back(
-            Eigen::Vector3d(-arrowHalfWidth, baseHeight, -upperLeftPointd.z));
+            Eigen::Vector3d(-arrowHalfWidth, baseHeight, planeZ));
     m_arrow.points_.push_back(
-            Eigen::Vector3d(arrowHalfWidth, baseHeight, -upperLeftPointd.z));
-    m_arrow.points_.push_back(
-            Eigen::Vector3d(0, arrowHeight, -upperLeftPointd.z));
+            Eigen::Vector3d(arrowHalfWidth, baseHeight, planeZ));
+    m_arrow.points_.push_back(Eigen::Vector3d(0, arrowHeight, planeZ));
     m_arrow.lines_.push_back(Eigen::Vector2i(4, 5));
     m_arrow.lines_.push_back(Eigen::Vector2i(5, 6));
     m_arrow.lines_.push_back(Eigen::Vector2i(6, 4));
 
     // axis (for test)
     {
-        double l = std::abs(upperLeftPointd.z) / 2.0;
+        const double l = std::abs(upperLeftPointd.z) / 2.0;
+        const double viewAxisZ =
+                static_cast<double>(localImagePlaneZ(m_poseFrame, l));
         m_axis.clear();
         m_axis.points_.push_back(Eigen::Vector3d(0.0, 0.0, 0.0));
         m_axis.points_.push_back(Eigen::Vector3d(l, 0.0, 0.0));
         m_axis.points_.push_back(Eigen::Vector3d(0.0, l, 0.0));
-        m_axis.points_.push_back(Eigen::Vector3d(0.0, 0.0, -l));
+        m_axis.points_.push_back(Eigen::Vector3d(0.0, 0.0, viewAxisZ));
 
         // right vector
         m_axis.lines_.push_back(Eigen::Vector2i(0, 1));
@@ -1518,6 +1663,13 @@ void ccCameraSensor::drawMeOnly(CC_DRAW_CONTEXT& context) {
         return;
     }
 
+    if (ecvViewContext* vctx = context.display->viewContext()) {
+        if (vctx->isAppliedViewportPreview(getUniqueID())) {
+            context.display->updateApplyViewportPreviewOverlay(getUniqueID());
+            return;
+        }
+    }
+
     CC_DRAW_CONTEXT cameraContext = context;
     cameraContext.drawingFlags &= (~CC_ENTITY_PICKING);
     cameraContext.currentLineWidth = 1;
@@ -1530,13 +1682,11 @@ void ccCameraSensor::drawMeOnly(CC_DRAW_CONTEXT& context) {
         return;
     }
 
-    bool transformChanged = std::memcmp(m_cachedTransformData, sensorPos.data(),
-                                        16 * sizeof(double)) != 0;
-
-    if (m_geometryDirty || transformChanged) {
+    if (m_geometryDirty) {
         updateData();
 
         if (m_frustumInfos.drawFrustum || m_frustumInfos.drawSidePlanes) {
+            m_frustumInfos.isComputed = false;
             computeFrustumCorners();
 
             if (m_frustumInfos.frustumCorners &&
@@ -1566,38 +1716,19 @@ void ccCameraSensor::drawMeOnly(CC_DRAW_CONTEXT& context) {
                 }
 
                 if (m_frustumInfos.drawSidePlanes) {
-                    if (!m_frustumInfos.frustumHull &&
-                        m_frustumInfos.initFrustumHull()) {
-                        if (m_frustumInfos.isComputed) {
-                            m_frustumInfos.frustumCorners
-                                    ->applyRigidTransformation(sensorPos);
-                        }
-                        m_frustumInfos.frustumHull->setTempColor(m_color);
-                        m_frustumInfos.frustumHull->showWired(false);
-                        m_frustumInfos.frustumHull->enableStippling(true);
-                        m_frustumInfos.frustumHull->setOpacity(
-                                cameraContext.opacity);
-                        cameraContext.defaultMeshColor = m_color;
-                        cameraContext.meshRenderingMode =
-                                MESH_RENDERING_MODE::ECV_SURFACE_MODE;
-                        cameraContext.viewID =
-                                m_frustumInfos.frustumHull->getViewId();
-                        context.display->draw(cameraContext,
-                                              m_frustumInfos.frustumHull);
+                    if (!m_frustumInfos.frustumHull) {
+                        m_frustumInfos.initFrustumHull();
+                    }
+                    if (m_frustumInfos.frustumHull) {
+                        m_frustumInfos.frustumHull->setDisplay(getDisplay());
+                        m_frustumInfos.frustumHull->setRedraw(true);
                     }
                 }
             }
         }
 
-        Eigen::Matrix4d transformation = ccGLMatrixd::ToEigenMatrix4(sensorPos);
-        m_nearPlane.Transform(transformation);
-        m_sideLines.Transform(transformation);
-        m_arrow.Transform(transformation);
-        m_axis.Transform(transformation);
-
-        std::memcpy(m_cachedTransformData, sensorPos.data(),
-                    16 * sizeof(double));
         m_geometryDirty = false;
+        setRedraw(true);
     }
 
     m_nearPlane.setTempColor(getPlaneColor());
@@ -1611,9 +1742,27 @@ void ccCameraSensor::drawMeOnly(CC_DRAW_CONTEXT& context) {
         context.display->hideShowEntities(cameraContext);
     }
 
+    if (m_frustumInfos.drawSidePlanes && m_frustumInfos.frustumHull &&
+        context.visible) {
+        CC_DRAW_CONTEXT frustumContext = cameraContext;
+        frustumContext.drawingFlags &= (~CC_ENTITY_PICKING);
+        frustumContext.defaultMeshColor = getPlaneColor();
+        frustumContext.opacity = 0.2f;
+        frustumContext.meshRenderingMode =
+                MESH_RENDERING_MODE::ECV_SURFACE_MODE;
+        frustumContext.viewID = m_frustumInfos.frustumHull->getViewId();
+        applySensorDrawTransform(frustumContext, sensorPos);
+        m_frustumInfos.frustumHull->setTempColor(m_color);
+        m_frustumInfos.frustumHull->showWired(false);
+        m_frustumInfos.frustumHull->enableStippling(true);
+        m_frustumInfos.frustumHull->setOpacity(frustumContext.opacity);
+        context.display->draw(frustumContext, m_frustumInfos.frustumHull);
+    }
+
     cameraContext.visible = context.visible;
     cameraContext.viewID = context.viewID;
     cameraContext.defaultMeshColor = getPlaneColor();
+    applySensorDrawTransform(cameraContext, sensorPos);
     context.display->draw(cameraContext, this);
 }
 
@@ -2744,5 +2893,42 @@ void ccOctreeFrustumIntersector::computeFrustumIntersectionWithOctree(
                         std::pair<unsigned, CCVector3>(currentIndice, *vec);
             }
         }
+    }
+}
+
+void clearAppliedViewportCameraPreview(ecvGenericGLDisplay* targetView) {
+    auto clearOne = [](ecvGenericGLDisplay* view) {
+        if (!view) {
+            return;
+        }
+        ecvViewContext* ctx = view->viewContext();
+        if (!ctx || !ctx->hasAppliedViewportPreview()) {
+            return;
+        }
+
+        const unsigned sensorId = ctx->appliedViewportSensorId;
+        ctx->appliedViewportSensorId = 0;
+        ctx->minVtkNearClip = 0.0;
+
+        view->removeApplyViewportPreviewOverlay(sensorId);
+
+        if (ccHObject* root = ecvViewManager::instance().globalDBRoot()) {
+            if (ccHObject* obj = root->find(sensorId)) {
+                if (ccCameraSensor* sensor =
+                            ccHObjectCaster::ToCameraSensor(obj)) {
+                    sensor->setRedraw(true);
+                }
+            }
+        }
+        view->redraw(false, true);
+    };
+
+    if (targetView) {
+        clearOne(targetView);
+        return;
+    }
+
+    for (ecvGenericGLDisplay* view : ecvViewManager::instance().getAllViews()) {
+        clearOne(view);
     }
 }

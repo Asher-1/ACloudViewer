@@ -28,6 +28,7 @@
     - [C++ library](#c-library)
     - [Python library](#python-library)
   - [Compilation Options Reference](#compilation-options-reference)
+    - [AICore GPU (Metal, default)](#aicore-gpu-metal-default)
     - [OpenMP on macOS](#openmp-on-macos)
     - [ML Module (PyTorch)](#ml-module-pytorch)
     - [CUDA / GPU](#cuda--gpu)
@@ -44,6 +45,7 @@
 | **CMake**        | ≥ 3.20 (`brew install cmake`)                     |
 | **Python**       | 3.10 – 3.12 (via Conda)                           |
 | **Conda**        | Miniconda or Anaconda                              |
+| **AICore GPU (default)** | **Metal → CPU** (Vulkan is not supported on macOS) |
 | **Homebrew**     | https://brew.sh                                    |
 
 ---
@@ -92,6 +94,9 @@ export PATH="$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cma
 > The example below matches that default. To experiment locally, add
 > `-DPLUGIN_STANDARD_QSIBR=ON`.
 
+> **AICore note:** macOS uses **Metal** for GPU acceleration (Auto order: Metal -> CPU).
+> Vulkan is not supported on macOS due to MoltenVK translation limitations.
+
 ```bash
 CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/ >/dev/null 2>&1 && pwd)"
 
@@ -108,7 +113,7 @@ cmake \
     -DCMAKE_INSTALL_PREFIX=~/ACloudViewer/install \
     -DBUILD_WITH_CONDA=ON \
     -DCONDA_PREFIX=$CONDA_PREFIX \
-    -DCMAKE_PREFIX_PATH=$CONDA_PREFIX/lib \
+    -DCMAKE_PREFIX_PATH=$CONDA_PREFIX \
     -DBUILD_UNIT_TESTS=ON \
     -DBUILD_BENCHMARKS=OFF \
     -DWITH_OPENMP=ON \
@@ -154,6 +159,7 @@ cmake \
     -DPLUGIN_STANDARD_MASONRY_QAUTO_SEG=ON \
     -DPLUGIN_STANDARD_MASONRY_QMANUAL_SEG=ON \
     -DPLUGIN_STANDARD_QANIMATION=ON \
+    -DPLUGIN_STANDARD_QBROOM=ON \
     -DQANIMATION_WITH_FFMPEG_SUPPORT=ON \
     -DPLUGIN_STANDARD_QCANUPO=ON \
     -DPLUGIN_STANDARD_QCOLORIMETRIC_SEGMENTER=ON \
@@ -173,6 +179,12 @@ cmake \
     -DPLUGIN_STANDARD_QVOXFALL=ON \
     -DPLUGIN_STANDARD_G3POINT=ON \
     -DPLUGIN_STANDARD_QSIBR=OFF \
+    -DAICore_ENABLED=ON \
+    -DPLUGIN_STANDARD_QDA3=ON \
+    -DPLUGIN_STANDARD_QDEEPLSD=ON \
+    -DPLUGIN_STANDARD_QFACEDETECT=ON \
+    -DPLUGIN_STANDARD_QFREESPLATTER=ON \
+    -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
     -DPLUGIN_PYTHON=ON \
     -DBUILD_PYTHON_MODULE=ON \
     ..
@@ -235,7 +247,7 @@ cmake \
     -DCMAKE_INSTALL_PREFIX=~/ACloudViewer/install \
     -DBUILD_WITH_CONDA=ON \
     -DCONDA_PREFIX=$CONDA_PREFIX \
-    -DCMAKE_PREFIX_PATH=$CONDA_PREFIX/lib \
+    -DCMAKE_PREFIX_PATH=$CONDA_PREFIX \
     -DBUILD_SHARED_LIBS=OFF \
     -DBUILD_UNIT_TESTS=ON \
     -DBUILD_LIBREALSENSE=ON \
@@ -254,6 +266,7 @@ cmake \
     -DBUILD_FILAMENT_FROM_SOURCE=OFF \
     -DBUILD_WEBRTC=OFF \
     -DBUILD_JUPYTER_EXTENSION=OFF \
+    -DAICore_ENABLED=ON \
     -DBUILD_RECONSTRUCTION=ON \
     -DBUILD_CUDA_MODULE=OFF \
     -DBUILD_PYTORCH_OPS=ON \
@@ -350,6 +363,28 @@ python -c "import cloudViewer; print(cloudViewer.__version__)"
 
 ## Compilation Options Reference
 
+### AICore GPU (Metal, default)
+
+macOS uses **Metal** as its native GPU backend. The AICore Auto device order is
+**Metal → CPU**.  Vulkan is **not supported** on macOS due to MoltenVK SPIR-V
+translation limitations that cause inference crashes.
+
+```bash
+cmake -DAICore_ENABLED=ON ..
+# Metal + CPU are automatically enabled; no Vulkan setup needed.
+```
+
+#### Platform ggml Backend Support
+
+| Platform | Default GPU | Auto Device Order | Vulkan | Metal | CUDA | Notes |
+|----------|------------|-------------------|--------|-------|------|-------|
+| **macOS** | Metal | Metal → CPU | OFF (unsupported) | ON | OFF (unsupported since 10.14+) | MoltenVK translation limitations prevent Vulkan use |
+| **Linux** | Vulkan | Vulkan → CPU | ON | OFF | Optional (`-DAICore_USE_CUDA=ON`) | CUDA takes priority when enabled: CUDA → Vulkan → CPU |
+| **Windows** | Vulkan | Vulkan → CPU | ON | OFF | Optional (`-DAICore_USE_CUDA=ON`) | Same priority as Linux |
+
+See [BUILD.md](../../../BUILD.md) for cross-platform AICore backend notes.
+
+
 ### OpenMP on macOS
 
 The default Apple Clang does **not** support OpenMP. Workaround:
@@ -377,7 +412,8 @@ make -j"$(sysctl -n hw.logicalcpu)" install-pip-package
 
 ### CUDA / GPU
 
-macOS does **not** support CUDA since macOS 10.14+. Set `-DBUILD_CUDA_MODULE=OFF`.
+macOS does **not** support CUDA since macOS 10.14+. Set `-DBUILD_CUDA_MODULE=OFF` and
+do not enable `-DAICore_USE_CUDA=ON`.
 
 ---
 

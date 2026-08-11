@@ -76,6 +76,10 @@ function( DeployQt )
 				COMMAND ${CMAKE_COMMAND} -E make_directory "${temp_dir}"
 				COMMAND ${CMAKE_COMMAND} -E copy_directory ${app_path} ${temp_app_path}
 				COMMAND "${mac_deploy_qt}" ${temp_app_path} -verbose=1
+				# Remove PostgreSQL SQL driver plugin which links against libpq
+				# (uses private macOS APIs, not Mac App Store compliant).
+				# cmake -E remove never fails if the file doesn't exist.
+				COMMAND ${CMAKE_COMMAND} -E remove "${temp_app_path}/Contents/PlugIns/sqldrivers/libqsqlpsql.dylib"
 				VERBATIM
 		)
 
@@ -88,7 +92,15 @@ function( DeployQt )
 		set(PACK_SCRIPTS_PATH "${PROJECT_ROOT_PATH}/scripts/platforms/mac/bundle/lib_bundle_app.py")
 		set(APP_SIGN_SCRIPT_PATH "${PROJECT_ROOT_PATH}/scripts/platforms/mac/bundle/signature_app.py")
 		if (PLUGIN_PYTHON AND BUILD_PYTHON_MODULE)
-			install(CODE "execute_process(COMMAND python ${PACK_SCRIPTS_PATH} ${name} ${INSTALL_DEPLOY_PATH} --embed_python)")
+			# Resolve the Python prefix that was configured at CMake time so the
+			# bundler embeds the correct Python even when make install is run
+			# from a different conda env or system Python.
+			execute_process(
+				COMMAND "${Python3_EXECUTABLE}" -c "import sys; print(sys.exec_prefix, end='')"
+				OUTPUT_VARIABLE _PY_BUNDLE_PREFIX
+				OUTPUT_STRIP_TRAILING_WHITESPACE
+			)
+			install(CODE "execute_process(COMMAND python ${PACK_SCRIPTS_PATH} ${name} ${INSTALL_DEPLOY_PATH} --embed_python --python_prefix \"${_PY_BUNDLE_PREFIX}\")")
 			install(CODE "execute_process(COMMAND python ${APP_SIGN_SCRIPT_PATH} ${name} ${INSTALL_DEPLOY_PATH} --embed_python)")
 		else()
 			install(CODE "execute_process(COMMAND python ${PACK_SCRIPTS_PATH} ${name} ${INSTALL_DEPLOY_PATH})")

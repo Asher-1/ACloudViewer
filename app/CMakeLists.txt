@@ -159,7 +159,7 @@ target_link_libraries(${PROJECT_NAME}
         Qt::PrintSupport
         )
 
-if (CVCORELIB_USE_QT_CONCURRENT)
+if (TARGET Qt::Concurrent)
     target_link_libraries(${PROJECT_NAME}
             Qt::Concurrent
             )

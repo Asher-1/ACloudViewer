@@ -788,8 +788,10 @@ public:  // Main 3D layer drawing methods
             dt->setObjectLightIntensity(viewID, intensity);
         UpdateScreen();
     }
-    inline void setObjectLightIntensity(const QString& /*viewID*/,
-                                        double /*intensity*/) override {}
+    inline void setObjectLightIntensity(
+            const QString& /*viewID*/,
+            double /*intensity*/,
+            bool /*triggerRender*/ = true) override {}
 
     /// Get light intensity for a specific object
     /// @param viewID The view ID of the target object
@@ -1483,15 +1485,15 @@ public:  // Main interface accessors
         if (auto* dt = ecvViewManager::instance().displayTools())
             dt->saveCameraParameters(file);
     }
-    inline virtual void saveCameraParameters(
-            const std::string& file) { /* do nothing */ }
+    inline void saveCameraParameters(
+            const std::string& file) override { /* do nothing */ }
 
     inline static void LoadCameraParameters(const std::string& file) {
         if (auto* dt = ecvViewManager::instance().displayTools())
             dt->loadCameraParameters(file);
     }
-    inline virtual void loadCameraParameters(
-            const std::string& file) { /* do nothing */ }
+    inline void loadCameraParameters(
+            const std::string& file) override { /* do nothing */ }
 
     inline static void ShowOrientationMarker() {
         if (auto* dt = ecvViewManager::instance().displayTools())
@@ -1842,10 +1844,10 @@ public:  // visualization matrix transformation
                                      viewport);
         return QImage();
     }
-    inline virtual QImage renderToImage(int zoomFactor = 1,
-                                        bool renderOverlayItems = false,
-                                        bool silent = false,
-                                        int viewport = 0) {
+    inline QImage renderToImage(int zoomFactor = 1,
+                                bool renderOverlayItems = false,
+                                bool silent = false,
+                                int viewport = 0) override {
         return QImage(); /* do nothing */
     }
 

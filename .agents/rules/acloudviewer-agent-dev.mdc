@@ -1,0 +1,75 @@
+---
+description: Rules for developing ACloudViewer agent integration (JSON-RPC, MCP, CLI)
+globs:
+  - plugins/core/Standard/qJSonRPCPlugin/**
+  - agent-integration/**
+alwaysApply: false
+---
+
+# ACloudViewer Agent Integration Development Rules
+
+## JSON-RPC Plugin (C++)
+
+- All new RPC methods MUST be added to:
+  1. The dispatch table in `JsonRPCPlugin::execute()` in `JsonRPCPlugin.cpp`
+  2. Method declarations in `JsonRPCPlugin.h`
+  3. The `rpcMethodsList()` introspection method
+- Method naming convention: `category.action` (e.g., `cloud.computeNormals`, `view.screenshot`)
+- All methods MUST return `JsonRPCResult::success(...)` or `JsonRPCResult::error(code, message)`
+- Entity lookups use `findEntityById(m_app->dbRootObject(), entityId)`
+- After visual changes, always call `redraw()` to update the viewport
+- Use `ecvMainAppInterface` methods for app interaction, not direct MainWindow access
+- The WebSocket server listens on port 6001 by default
+
+## MCP Server (Python)
+
+- MCP tools are defined in `acloudviewer/agent-harness/cli_anything/acloudviewer/mcp_server.py`
+- Each tool needs: a `Tool()` definition in `list_tools()` AND a handler in `call_tool()`
+- The backend (`ACloudViewerBackend`) supports dual mode: GUI (RPC) and headless (Python API)
+- New headless processing methods go in `utils/acloudviewer_backend.py`
+- New GUI-only methods should use `self._rpc.call("method.name", params)`
+
+## CLI Harness (Python Click)
+
+- CLI commands are in `acloudviewer_cli.py` using Click groups
+- All commands should use the `@handle_error` decorator
+- Output goes through `output()` which respects `--json` flag
+- Session mutations require `sess.snapshot("description")` before changes
+- Command groups: `scene`, `view`, `process`, `session`
+
+## Testing
+
+- Unit tests in `tests/test_core.py` — no external dependencies
+- E2E tests in `tests/test_full_e2e.py` — GUI tests gated by `ACLOUDVIEWER_E2E_GUI=1`
+- Run tests: `pytest cli_anything/acloudviewer/tests/ -v`
+
+## AI 操作者必读（agent 通过 CLI/MCP 控制 ACloudViewer）
+
+本仓库对 AI/自动化脚本暴露三套受控接口，**一律经 `agent-integration/` 工具链，禁止猜二进制参数**：
+
+| 接口 | 方式 | 适用 |
+|------|------|------|
+| CLI Harness | `cli-anything-acloudviewer` | headless 处理 / GUI 走 RPC |
+| MCP Server | `cli-anything-acloudviewer-mcp` | OpenClaw / Cursor / Claude Code |
+| JSON-RPC | WebSocket `ws://localhost:6001` | 实时 GUI 控制（需 qJSonRPCPlugin） |
+
+常用命令速查（headless 无需 GUI）：
+```bash
+cli-anything-acloudviewer info
+cli-anything-acloudviewer convert in.ply out.obj
+cli-anything-acloudviewer process subsample in.ply -o out.ply --voxel-size 0.05
+cli-anything-acloudviewer process poisson-recon in.ply -o mesh.ply --depth 8
+cli-anything-acloudviewer reconstruct auto ./imgs -w ./ws --quality high
+```
+- `--mode headless` 直接调二进制，最稳（Windows 下避免 `auto` 模式挂起）。
+- 完整清单：`agent-integration/docs/CLI-QUICK-REFERENCE.md` 与 `agent-integration/docs/COMMAND-MAPPING.md`。
+- **运行 qPythonRuntime Python 脚本**：GUI 面板手动运行；headless 用 `ACloudViewer -SILENT -PYTHON_SCRIPT x.py`。
+
+## File Locations
+
+| Component | Path |
+|-----------|------|
+| JSON-RPC Plugin | `plugins/core/Standard/qJSonRPCPlugin/` |
+| Integration Docs | `agent-integration/` |
+| CLI Harness | `(CLI-Anything repo)/acloudviewer/agent-harness/` |
+| MCP Server | `(CLI-Anything repo)/acloudviewer/agent-harness/cli_anything/acloudviewer/mcp_server.py` |

@@ -28,7 +28,6 @@ env:
   NPROC: 4
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
   BUILD_CUDA_MODULE: OFF
-
 jobs:
   MacOS:
     permissions:

@@ -15,8 +15,8 @@ Complete guide for building ACloudViewer from source code on different platforms
 | Platform | Version | Compiler |
 |----------|---------|----------|
 | Ubuntu | 20.04+ | GCC 9+, Clang 10+ |
-| macOS | 10.14+ | XCode 8.0+ |
-| Windows | 10 (64-bit) | Visual Studio 2022+ |
+| macOS | 13+ (Intel or Apple Silicon) | Xcode CLI (`xcode-select --install`) |
+| Windows | 10/11 (64-bit) | Visual Studio 2022+ |
 
 ### Build Tools
 

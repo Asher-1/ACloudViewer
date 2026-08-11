@@ -10,10 +10,10 @@
 #include "ecvFileUtils.h"
 
 // Qt
-#include <QFileDialog>
+#include <cvFileDialog.h>
+
 #include <QFileInfo>
 #include <QSettings>
-
 CSVMatrixOpenDialog::CSVMatrixOpenDialog(QWidget* parent /*=0*/)
     : QDialog(parent), Ui::CSVMatrixOpenDlg() {
     setupUi(this);
@@ -32,7 +32,7 @@ CSVMatrixOpenDialog::CSVMatrixOpenDialog(QWidget* parent /*=0*/)
 }
 
 void CSVMatrixOpenDialog::browseTextureFile() {
-    QString inputFilename = QFileDialog::getOpenFileName(
+    QString inputFilename = cvFileDialog::getOpenFileName(
             this, "Texture file", textureFilenameLineEdit->text(), "*.*");
     if (inputFilename.isEmpty()) return;
 

@@ -206,6 +206,13 @@ if (NOT ${BUILD_RECONSTRUCTION})
     set(BUILD_COLMAP_GUI OFF)
 endif()
 
+# AVX-512 instruction set (default OFF for binary portability — most consumer
+# CPUs lack AVX-512; GPU inference makes CPU SIMD width largely irrelevant)
+option(ENABLE_AVX512 "Enable AVX-512 instructions (requires compatible CPU)"    OFF)
+
+# AICore: all AICore_* options — see cmake/AICoreOptions.cmake
+include(cmake/AICoreOptions.cmake)
+
 option(PACKAGE "Package the build results with zip or not"                      OFF)
 
 # VTK ENGINE SUPPORT
@@ -712,7 +719,7 @@ if (USE_SIMD)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SSE_FLAGS_STR}")
     endif ()
 
-    if (UNIX AND NOT APPLE)
+    if (UNIX AND NOT APPLE AND NOT ENABLE_AVX512)
         # Disable AVX512 for Linux to fix "Illegal instruction" issues
         # when binaries are compiled on newer CPUs but run on older ones
         # AVX and AVX2 are widely supported and should be kept enabled
@@ -722,6 +729,8 @@ if (USE_SIMD)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${AVX512_DISABLE_FLAGS}")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${AVX512_DISABLE_FLAGS}")
         message(STATUS "Disabled AVX512 for compatibility (AVX/AVX2 remain enabled)")
+    elseif(ENABLE_AVX512)
+        message(STATUS "AVX-512 enabled by user (ENABLE_AVX512=ON)")
     endif()
 
     message(STATUS "Enabling SIMD support")
@@ -752,16 +761,7 @@ include(AllSupport)
 
 SET(PROJECT_ROOT_PATH "${PROJECT_SOURCE_DIR}")
 
-if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
-    if (MSVC)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/Debug)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/Release)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_BINARY_DIR}/bin/RelWithDebInfo)
-    else ()
-        SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-    endif ()
-endif ()
+cloudviewer_apply_dev_runtime_bin_layout()
 
 add_subdirectory(core)
 
@@ -775,43 +775,13 @@ endif ()
 # Internal libs used by both ACloudViewer and cloudViewer python package
 add_subdirectory(libs)
 
-# Examples
-if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
-    if (MSVC)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/examples/Debug)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/examples/Release)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_BINARY_DIR}/bin/examples/RelWithDebInfo)
-    else ()
-        SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-    endif ()
-endif ()
 add_subdirectory(examples)
 
-# load plugins (potentially used by ACloudViewer app)
-if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
-    if (MSVC)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/Debug/plugins)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/Release/plugins)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_BINARY_DIR}/bin/RelWithDebInfo/plugins)
-    else ()
-        SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/plugins)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/plugins)
-    endif ()
-endif ()
+cloudviewer_apply_dev_plugin_lib_layout()
 add_subdirectory(plugins)
 
-# ACloudViewer app
-if (CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING)
-    if (MSVC)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/Debug)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/Release)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_BINARY_DIR}/bin/RelWithDebInfo)
-    else ()
-        SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-        SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-    endif ()
-endif ()
+# ACloudViewer app — restore bin/ layout after plugins/ (Unix LIBRARY may be bin/plugins).
+cloudviewer_apply_dev_runtime_bin_layout()
 
 # ACloudViewer app
 add_subdirectory(app)
@@ -860,6 +830,9 @@ add_custom_target(apply-cpp-style
         )
 
 include(CloudViewerPrintConfigurationSummary)
+if(AICore_ENABLED)
+    aicore_sync_results_from_ggml()
+endif()
 cloudViewer_print_configuration_summary()
 
 ### Generate CHANGELOG.txt from CHANGELOG.md
@@ -992,6 +965,11 @@ endif()
 
 message(STATUS "CMAKE_INSTALL_PATH: " ${CMAKE_INSTALL_PREFIX})
 message(STATUS "ACLOUDVIEWER_PACKAGE_NAME: " ${ACLOUDVIEWER_PACKAGE_NAME})
+# AICore CUDA bundle + ggml backend module suffix (see cmake/AICoreRuntimeLayout.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/AICoreRuntimeLayout.cmake)
+if(NOT DEFINED AICore_CUDA_ENABLED)
+    set(AICore_CUDA_ENABLED OFF)
+endif()
 # for libs deps
 install(CODE "set(BUILD_LIB_PATH \"${CMAKE_RUNTIME_OUTPUT_DIRECTORY}\")")
 install(CODE "set(EXTERNAL_INSTALL_DIRS \"${EXTERNAL_INSTALL_DIRS}\")")
@@ -1009,10 +987,42 @@ install(CODE "set(MAIN_APP_NAME \"${MAIN_APP_NAME}\")")
 install(CODE "set(COLMAP_APP_NAME \"${COLMAP_APP_NAME}\")")
 install(CODE "set(CLOUDVIEWER_APP_NAME \"${CLOUDVIEWER_APP_NAME}\")")
 install(CODE "set(CloudViewer_INSTALL_BIN_DIR \"${CloudViewer_INSTALL_BIN_DIR}\")")
+install(CODE "set(CloudViewer_INSTALL_LIB_DIR \"${CloudViewer_INSTALL_LIB_DIR}\")")
 install(CODE "set(PACK_SCRIPTS_PATH \"${PACK_SCRIPTS_PATH}\")")
 install(CODE "set(DEPLOY_ROOT_PATH \"${DEPLOY_ROOT_PATH}\")")
 install(CODE "set(ACLOUDVIEWER_PACKAGE_NAME \"${ACLOUDVIEWER_PACKAGE_NAME}\")")
 install(CODE "set(PACKAGE \"${PACKAGE}\")")
+install(CODE "set(AICore_CUDA_ENABLED \"${AICore_CUDA_ENABLED}\")")
+install(CODE "set(AICore_BUNDLE_CUDA_RUNTIME \"${AICore_BUNDLE_CUDA_RUNTIME}\")")
+install(CODE "set(GGML_MODULE_SUFFIX \"${GGML_MODULE_SUFFIX}\")")
+install(CODE "set(CMAKE_SHARED_LIBRARY_PREFIX \"${CMAKE_SHARED_LIBRARY_PREFIX}\")")
+if(AICore_BUNDLE_CUDA_RUNTIME AND AICore_CUDA_ENABLED)
+    set(_bundle_extra_lib_dirs "")
+    if(CUDAToolkit_FOUND)
+        if(WIN32 AND CUDAToolkit_BIN_DIR)
+            set(_bundle_extra_lib_dirs "${CUDAToolkit_BIN_DIR}")
+        elseif(CUDAToolkit_LIBRARY_DIR)
+            set(_bundle_extra_lib_dirs "${CUDAToolkit_LIBRARY_DIR}")
+        endif()
+    endif()
+    install(CODE "
+        set(_ggml_cuda_module \"${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}ggml-cuda${GGML_MODULE_SUFFIX}\")
+        set(_cuda_runtime_dest \"${CMAKE_INSTALL_PREFIX}/${CloudViewer_INSTALL_LIB_DIR}/cuda-runtime\")
+        set(_bundle_extra \"${_bundle_extra_lib_dirs}\")
+        execute_process(
+            COMMAND \"${CMAKE_COMMAND}\"
+                -DGGML_CUDA_MODULE=\${_ggml_cuda_module}
+                -DDEST_DIR=\${_cuda_runtime_dest}
+                -DPACK_SCRIPTS_PATH=${CMAKE_CURRENT_SOURCE_DIR}/scripts/platforms
+                -DEXTRA_LIB_DIRS=\${_bundle_extra}
+                -P \"${CMAKE_CURRENT_SOURCE_DIR}/cmake/BundleGgmlCudaRuntime.cmake\"
+            RESULT_VARIABLE _bundle_cuda_result
+        )
+        if(NOT _bundle_cuda_result EQUAL 0)
+            message(FATAL_ERROR \"Failed to bundle ggml CUDA runtime into \${_cuda_runtime_dest}\")
+        endif()
+    ")
+endif()
 # call cmake script to deploy
 install(SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/cmake/PostInstall.cmake")
 install(CODE "MESSAGE(\"${MAIN_APP_NAME}\.${CLOUDVIEWER_VERSION} install successfully.\")")

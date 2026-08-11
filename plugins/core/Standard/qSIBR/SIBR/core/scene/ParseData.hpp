@@ -80,6 +80,9 @@ namespace sibr{
 
 		void getParsedGaussianData(const std::string& dataset_path);
 
+		/** Populate Gaussian-scene metadata from an in-memory cameras.json payload. */
+		void getParsedGaussianDataFromJSON(const std::string& camerasJson);
+
 		void getParsedBlenderData(const std::string& dataset_path);
 
 		void getParsedChunkedData(const std::string& dataset_path);

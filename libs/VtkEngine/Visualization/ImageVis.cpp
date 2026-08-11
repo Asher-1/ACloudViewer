@@ -185,6 +185,7 @@ vtkSmartPointer<vtkRenderer> ImageVis::getRender() { return this->ren_; }
 
 void ImageVis::setRender(vtkSmartPointer<vtkRenderer> render) {
     this->ren_ = render;
+    slice_->SetUseBounds(false);
     this->ren_->AddViewProp(slice_);
 }
 
@@ -414,8 +415,13 @@ void ImageVis::addRGBImage(const QImage& qimage,
         slice_->SetVisibility(0);
     }
 
-    setImageInteractorStyle();
+    // Only install image pan/zoom interactor while in 2D image mode; otherwise
+    // a redraw during refreshAll would clobber the active 3D trackball style.
+    if (m_imageInteraction2D) {
+        setImageInteractorStyle();
+    }
 
+    imageSlice->SetUseBounds(0);
     if (ren_) {
         ren_->AddViewProp(imageSlice);
     }
@@ -670,6 +676,47 @@ void ImageVis::updateImageScales() {
     }
 }
 
+void ImageVis::restoreMainInteractorStyle() {
+    if (!interactor_) return;
+
+    auto* current = interactor_->GetInteractorStyle();
+    if (!vtkInteractorStyleImage::SafeDownCast(current)) return;
+
+    if (m_originalInteractorStyle) {
+        interactor_->SetInteractorStyle(m_originalInteractorStyle);
+    }
+}
+
+void ImageVis::setImageInteractionMode(bool is2D) {
+    if (!is2D) {
+        restoreMainInteractorStyle();
+    }
+
+    if (m_imageInteraction2D == is2D) {
+        return;
+    }
+
+    m_imageInteraction2D = is2D;
+    refreshAllImageSliceTransforms();
+
+    if (is2D && !m_imageInfoMap.empty()) {
+        setImageInteractorStyle();
+    }
+}
+
+void ImageVis::fitImagesToWindow() { refreshAllImageSliceTransforms(); }
+
+void ImageVis::refreshAllImageSliceTransforms() {
+    for (auto& pair : m_imageInfoMap) {
+        if (pair.second.imageSlice && pair.second.originalWidth > 0 &&
+            pair.second.originalHeight > 0) {
+            updateImageSliceTransform(pair.second.imageSlice,
+                                      pair.second.originalWidth,
+                                      pair.second.originalHeight);
+        }
+    }
+}
+
 void ImageVis::updateImageSliceTransform(vtkImageSlice* imageSlice,
                                          unsigned width,
                                          unsigned height) {
@@ -693,6 +740,16 @@ void ImageVis::updateImageSliceTransform(vtkImageSlice* imageSlice,
         mapper->Update();
     }
 
+    // In 3D mode do not touch camera or clipping — VtkVis recomputes clipping
+    // every frame from GeometryBounds that includes this image plane
+    // (ParaView vtkImageSliceRepresentation + BUG #13534 pattern).
+    if (!m_imageInteraction2D) {
+        if (imageSlice) {
+            imageSlice->Modified();
+        }
+        return;
+    }
+
     vtkCamera* camera = ren_->GetActiveCamera();
     if (camera) {
         double pos[3] = {0.0, 0.0, 0.0};
@@ -707,10 +764,16 @@ void ImageVis::updateImageSliceTransform(vtkImageSlice* imageSlice,
         camera->SetViewUp(0.0, 1.0, 0.0);
         camera->SetFocalPoint(xc, yc, 0.0);
         camera->SetPosition(xc, yc, zd);
-        camera->SetParallelScale(0.5 * height);
+        const double aspect_win = static_cast<double>(winSize[0]) / winSize[1];
+        const double aspect_img = static_cast<double>(width) / height;
+        double parallelScale = 0.5 * height;
+        if (aspect_win > aspect_img) {
+            parallelScale = 0.5 * height;
+        } else {
+            parallelScale = 0.5 * width / aspect_win;
+        }
+        camera->SetParallelScale(parallelScale);
         camera->ParallelProjectionOn();
-
-        ren_->ResetCameraClippingRange();
     }
 
     if (imageSlice) {

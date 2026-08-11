@@ -42,6 +42,8 @@
 	<true/>
 	<key>NSHumanReadableCopyright</key>
 	<string>© EDF R&amp;D / TELECOM ParisTech (ENST-TSI)</string>
+	<key>NSCameraUsageDescription</key>
+	<string>ACloudViewer uses the camera for face capture in FreeSplatter 3D reconstruction.</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>

@@ -12,7 +12,6 @@
 #include <ui_PythonRuntimeSettings.h>
 
 #include <QDialogButtonBox>
-#include <QFileDialog>
 #include <QIcon>
 #include <QLineEdit>
 #include <QMessageBox>
@@ -20,9 +19,9 @@
 #include <QSettings>
 #include <QStringListModel>
 #include <QtGlobal>
+#include <cvFileDialog.h>
 
 #include <memory>
-
 /// Simple Dialog that displays a Line Edit with a button next to it
 /// to let the user select a path to a directory
 class PathVariableInputDialog final : public QDialog
@@ -62,7 +61,7 @@ class PathVariableInputDialog final : public QDialog
   private:
     void handleSelectPath()
     {
-        QString selectedDir = QFileDialog::getExistingDirectory(
+        QString selectedDir = cvFileDialog::getExistingDirectory(
             this,
             tr("Select a path to add"),
             QString(),
@@ -223,7 +222,7 @@ void PythonRuntimeSettings::handleEnvComboBoxChange(const QString &envTypeName)
 
 void PythonRuntimeSettings::handleSelectLocalEnv()
 {
-    QString selectedDir = QFileDialog::getExistingDirectory(this, "Python Environment Root");
+    QString selectedDir = cvFileDialog::getExistingDirectory(this, "Python Environment Root");
     if (!selectedDir.isEmpty())
     {
         PythonConfig config;

@@ -23,6 +23,7 @@
 # include <core/graphics/Texture.hpp>
 #include <cuda_runtime.h>
 #include <cuda_gl_interop.h>
+#include <cstdint>
 #include <functional>
 # include "GaussianSurfaceRenderer.hpp"
 
@@ -54,6 +55,11 @@ namespace sibr {
 		 */
 		GaussianView(const sibr::BasicIBRScene::Ptr& ibrScene, uint render_w, uint render_h, const char* file, bool* message_read, int sh_degree, bool white_bg = false, bool useInterop = true, int device = 0);
 
+		/** Same as file constructor but loads PLY bytes from memory (no disk I/O). */
+		GaussianView(const sibr::BasicIBRScene::Ptr& ibrScene, uint render_w, uint render_h,
+		             const uint8_t* plyData, size_t plySize, bool* message_read, int sh_degree,
+		             bool white_bg = false, bool useInterop = true, int device = 0);
+
 		/** Replace the current scene.
 		 *\param newScene the new scene to render */
 		void setScene(const sibr::BasicIBRScene::Ptr & newScene);
@@ -78,6 +84,10 @@ namespace sibr {
 
 		/** \return a reference to the scene */
 		const std::shared_ptr<sibr::BasicIBRScene> & getScene() const { return _scene; }
+
+		int splatCount() const { return count; }
+		const sibr::Vector3f& sceneMin() const { return _scenemin; }
+		const sibr::Vector3f& sceneMax() const { return _scenemax; }
 
 		virtual ~GaussianView() override;
 

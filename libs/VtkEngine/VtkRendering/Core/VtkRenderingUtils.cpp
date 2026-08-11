@@ -40,6 +40,8 @@
 
 // VTK
 #include <VTKExtensions/Views/vtkPVAxesActor.h>
+#include <ecvDisplayTools.h>
+#include <ecvViewManager.h>
 #include <vtkAbstractWidget.h>
 #include <vtkActor.h>
 #include <vtkAnnotatedCubeActor.h>
@@ -61,6 +63,29 @@
 #include <list>
 
 namespace VtkRendering {
+namespace {
+
+CCVector3d lineSetPointToWorld(const cloudViewer::geometry::LineSet& lineset,
+                               const Eigen::Vector3d& p) {
+    if (!lineset.is2DMode()) {
+        return CCVector3d(p.x(), p.y(), p.z());
+    }
+
+    const CCVector3 local(static_cast<PointCoordinateType>(p.x()),
+                          static_cast<PointCoordinateType>(p.y()),
+                          static_cast<PointCoordinateType>(p.z()));
+    CCVector3d out;
+    ecvGenericGLDisplay* disp = lineset.getDisplay();
+    if (!disp) disp = ecvViewManager::instance().getEffectiveView();
+    if (auto* dt = dynamic_cast<ecvDisplayTools*>(disp)) {
+        dt->toWorldPoint(local, out);
+    } else {
+        out = CCVector3d::fromArray(local.u);
+    }
+    return out;
+}
+
+}  // namespace
 
 // =====================================================================
 // VTK Actor Creation
@@ -133,10 +158,11 @@ static vtkSmartPointer<vtkPoints> GetVtkPointsFromLineSet(
             static_cast<vtkIdType>(2 * lineset.lines_.size()));
     for (std::size_t i = 0; i < lineset.lines_.size(); ++i) {
         auto segment = lineset.GetLineCoordinate(i);
-        linePoints->SetPoint(static_cast<vtkIdType>(2 * i),
-                             segment.first.data());
-        linePoints->SetPoint(static_cast<vtkIdType>(2 * i + 1),
-                             segment.second.data());
+        const CCVector3d p0 = lineSetPointToWorld(lineset, segment.first);
+        const CCVector3d p1 = lineSetPointToWorld(lineset, segment.second);
+        linePoints->SetPoint(static_cast<vtkIdType>(2 * i), p0.x, p0.y, p0.z);
+        linePoints->SetPoint(static_cast<vtkIdType>(2 * i + 1), p1.x, p1.y,
+                             p1.z);
     }
     return linePoints;
 }
@@ -149,7 +175,7 @@ static bool GetVtkPointsAndLinesFromLineSet(
     if (!points || !lines) return false;
 
     bool has_color = false;
-    if (lineset.hasColors()) {
+    if (lineset.HasColors()) {
         has_color = true;
         colors->SetNumberOfComponents(3);
         colors->SetName("Colors");
@@ -159,8 +185,9 @@ static bool GetVtkPointsAndLinesFromLineSet(
 
     points->SetNumberOfPoints(static_cast<vtkIdType>(lineset.points_.size()));
     for (std::size_t i = 0; i < lineset.points_.size(); ++i) {
-        Eigen::Vector3d p = lineset.points_[i];
-        points->SetPoint(static_cast<vtkIdType>(i), p.data());
+        const CCVector3d world =
+                lineSetPointToWorld(lineset, lineset.points_[i]);
+        points->SetPoint(static_cast<vtkIdType>(i), world.x, world.y, world.z);
     }
 
     for (std::size_t i = 0; i < lineset.lines_.size(); ++i) {

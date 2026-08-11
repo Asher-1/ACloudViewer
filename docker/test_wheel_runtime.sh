@@ -210,6 +210,48 @@ echo "Starting $WHEEL_TYPE wheel test..."
 test_wheel "$WHEEL_FILE"
 TEST_EXIT_CODE=$?
 
+echo "Verifying packaged AICore runtime..."
+AICORE_LIB_DIR=$(python - <<'PY'
+import pathlib
+import cloudViewer
+print(pathlib.Path(cloudViewer.__file__).resolve().parent / "lib")
+PY
+)
+test -f "$AICORE_LIB_DIR/libAICore.so"
+test -n "$(ls "$AICORE_LIB_DIR"/libggml-cpu*.so 2>/dev/null)"
+test ! -e "$AICORE_LIB_DIR/libggml-blas.so"
+# GPU backend modules (Vulkan, Metal, CUDA) are optional and depend on
+# build configuration.  Validate them via _build_config in Python instead
+# of hardcoding file paths.
+python -c "
+import pathlib, cloudViewer as cv
+root = pathlib.Path(cv.__file__).resolve().parent / 'lib'
+bc = cv._build_config
+for backend, flag in [('vulkan','AICore_VULKAN_ENABLED'),('metal','AICore_METAL_ENABLED'),('cuda','AICore_CUDA_ENABLED')]:
+    if bc.get(flag, False):
+        found = list(root.glob(f'*ggml-{backend}*'))
+        assert found, f'ggml {backend} module missing from {root} (build_config {flag}=True)'
+        print(f'  {backend}: {found}')
+    else:
+        print(f'  {backend}: not built (skipped)')
+"
+if readelf -d "$AICORE_LIB_DIR/libAICore.so" \
+    | grep -Eq 'NEEDED.*(libcuda|libcudart|libcublas|libvulkan)'; then
+    echo "Error: libAICore.so has a hard GPU dependency" >&2
+    exit 1
+fi
+if ! readelf -d "$AICORE_LIB_DIR/libAICore.so" \
+    | grep -Eq 'RUNPATH.*\$ORIGIN'; then
+    echo "Error: libAICore.so is not loader-relative" >&2
+    exit 1
+fi
+
+# Validate AICore ABI and baseline devices (CPU).  GPU device availability
+# depends on the runtime environment; Docker CI has no real GPU, so we never
+# require specific accelerator devices here.
+python "$CLOUDVIEWER_SOURCE_ROOT/util/check_aicore_runtime.py" \
+    "$AICORE_LIB_DIR/libAICore.so"
+
 # Explicit cleanup before exit (trap will also handle it)
 cd "$ORIGINAL_DIR" 2>/dev/null || cd / 2>/dev/null || true
 if [ -n "$TEST_DIR" ] && [ -d "$TEST_DIR" ] && [[ "$TEST_DIR" == /tmp/* ]]; then

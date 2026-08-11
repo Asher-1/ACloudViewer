@@ -37,9 +37,20 @@ namespace colmap {
 
 TrianglePainter::TrianglePainter() : num_geoms_(0) {}
 
-TrianglePainter::~TrianglePainter() {
-  vao_.destroy();
-  vbo_.destroy();
+TrianglePainter::~TrianglePainter() = default;
+
+void TrianglePainter::Release() {
+  if (vao_.isCreated()) {
+    vao_.destroy();
+  }
+  if (vbo_.isCreated()) {
+    vbo_.destroy();
+  }
+  if (shader_program_.isLinked()) {
+    shader_program_.release();
+    shader_program_.removeAllShaders();
+  }
+  num_geoms_ = 0;
 }
 
 void TrianglePainter::Setup() {

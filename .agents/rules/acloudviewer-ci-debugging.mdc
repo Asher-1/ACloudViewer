@@ -1,0 +1,99 @@
+---
+description: Rules for debugging CI failures across Ubuntu, macOS, and Windows platforms
+globs:
+  - .github/workflows/**
+  - docker/**
+  - util/ci_utils.sh
+  - util/ci_utils.ps1
+  - util/install_deps_ubuntu.sh
+  - util/vulkan/install_vulkan_linux.sh
+  - util/vulkan/install_vulkan_sdk_windows.ps1
+  - scripts/build_macos.sh
+  - scripts/build_macos_app.sh
+  - scripts/build_macos_whl.sh
+  - scripts/build_win.py
+alwaysApply: false
+---
+
+# ACloudViewer CI Debugging Rules
+
+## CI Matrix
+
+| Platform | Workflow | Docker | Key Issues |
+|----------|----------|--------|------------|
+| Ubuntu focal (20.04) | `ubuntu.yml` | `Dockerfile.ci` | Old GLIBC, shaderc from source |
+| Ubuntu jammy (22.04) | `ubuntu.yml` | `Dockerfile.ci` | CPU-only runner, no Vulkan device |
+| Ubuntu noble (24.04) | `ubuntu.yml` | `Dockerfile.ci` | Qt6, CPU-only runner |
+| macOS | `macos.yml` | None | Metal only (no Vulkan), OpenMP OFF, qSIBR OFF |
+| Windows | `windows.yml` | None | Path spaces, Python patch runner |
+| CUDA variants | `ubuntu.yml` | `Dockerfile.ci` | focal+jammy+noble with CUDA |
+
+## Platform GPU Backend Policy
+
+| Platform | GPU Backend | Vulkan | Notes |
+|----------|------------|--------|-------|
+| macOS | Metal | OFF (unsupported) | MoltenVK fails for ggml SPIR-V shaders |
+| Linux | Vulkan | ON | CPU-only in Docker CI (graceful fallback) |
+| Windows | Vulkan | ON | Patch scripts use Python runner for quoting |
+
+## Common Failure Patterns
+
+### "glslc is missing after setup" (Ubuntu focal/CUDA focal)
+- Root cause: `util/vulkan/install_vulkan_linux.sh` captures build stdout in command substitution
+- Fix: All verbose build output in `resolve_glslc()` MUST go to stderr (`>&2`)
+- The function uses `printf '%s\n' "<path>"` to return the glslc path via stdout
+
+### "required device 'vulkan' is unavailable" (Ubuntu Docker)
+- Root cause: CPU-only CI runners load libggml-vulkan.so but have no Vulkan ICD
+- Fix: `docker_test.sh` and `test_wheel_runtime.sh` run `check_aicore_runtime.py` **without** `--expect-device vulkan`
+- Docker CI is CPU-only; Vulkan device availability is never required
+
+### "'C:/Program' is not recognized" (Windows)
+- Root cause: `PATCH_COMMAND` passed to `cmd /c` shell breaks on spaces in paths
+- Fix: `ggml.cmake` runs a single Python script `apply_ggml_patches.py` that applies each patch from `patches/manifest.yaml` with `patch -p1 -N` (no `cmd /c` shell, no generated runner)
+- Never use `cmd /c` with chained `&&` for patch commands
+
+### OMP crash on macOS
+- Root cause: Duplicate libomp.dylib loading (host vs ggml-cpu)
+- Fix: `GGML_OPENMP=OFF` on Apple in ggml.cmake
+- Verify: `otool -L libggml-cpu.so | grep omp` should show nothing
+
+### macOS build with Vulkan flags
+- `AICore_USE_VULKAN` defaults to OFF on macOS via `_ci_default_aicore_use_vulkan()` in `ci_utils.sh`
+- macOS CI MUST NOT pass `with_vulkan` to build functions
+- `util/vulkan/install_vulkan_env.sh` exits with error on Darwin
+
+## Shell Script Conventions
+
+- CI scripts use `set -euo pipefail`; any unguarded failure exits the build
+- `find` in command substitution: always append `2>/dev/null` for missing dirs
+- Build output that could pollute a captured variable: redirect to `>&2`
+- Graceful checks pattern: `if condition; then action; else echo "WARNING: ..."; fallback; fi`
+
+## Docker Build Layers
+
+```
+Dockerfile.ci layer order:
+  1. Base image (Ubuntu + optional CUDA)
+  2. System packages (apt)
+  3. install_deps_ubuntu.sh (C++ deps, Vulkan, shaderc)  ← focal glslc failure here
+  4. Conda / Python setup
+  5. CMake configure
+  6. CMake build
+  7. Tests (docker_test.sh)  ← AICore runtime check here (CPU-only OK)
+```
+
+## Debugging Workflow
+
+1. Read the CI log bottom-up: find the FIRST error, not the last cascade
+2. Check if the error is in Docker build (layer number) or test phase
+3. For Docker build failures: the script runs with `set -euo pipefail` in `/bin/bash -o pipefail`
+4. For test failures: check `docker_test.sh` function (`cpp_test_only` vs `cpp_python_command_tools_test`)
+5. Always test changes locally before pushing:
+   ```bash
+   # Test install_vulkan_linux.sh logic
+   bash -x util/vulkan/install_vulkan_linux.sh assume-yes 2>&1 | tail -20
+   
+   # Test docker_test.sh Vulkan check logic (dry run)
+   bash -n docker/docker_test.sh
+   ```

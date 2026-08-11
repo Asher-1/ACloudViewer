@@ -2,7 +2,12 @@ import pycc
 import cccorelib
 
 CC = pycc.GetInstance()
-pc_to_crop = CC.getSelectedEntities()[0]
+
+entities = CC.getSelectedEntities()
+if not entities:
+    raise RuntimeError("No entity selected. Select a point cloud first.")
+
+pc_to_crop = entities[0]
 bbMin, bbMax = cccorelib.CCVector3(), cccorelib.CCVector3()
 pc_to_crop.getBoundingBox(bbMin, bbMax)
 print(f"Min {bbMin}, Max: {bbMax}")

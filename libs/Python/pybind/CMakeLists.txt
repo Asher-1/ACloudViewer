@@ -88,10 +88,8 @@ if (BUILD_RECONSTRUCTION)
 endif ()
 
 # At `make`: cloudViewer.so (or the equivalents) will be created at
-# PYTHON_COMPILED_MODULE_DIR. The default location is
-# `build/lib/${CMAKE_BUILD_TYPE}/Python/{cpu|cuda}`
-set(PYTHON_COMPILED_MODULE_DIR
-        "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Python/$<IF:$<BOOL:${BUILD_CUDA_MODULE}>,cuda,cpu>")
+# PYTHON_COMPILED_MODULE_DIR: build/lib/<Config>/Python/{cpu|cuda}
+cloudviewer_get_python_compiled_module_dir(PYTHON_COMPILED_MODULE_DIR)
 
 # Set BUILD_RPATH to find tbb (and a shared libCloudViewer). We don't install through cmake.
 # if (APPLE)
@@ -218,6 +216,22 @@ file(GENERATE
 
 set(BUILD_BIN_PATH "${CMAKE_BINARY_DIR}/bin")
 set(CUSTOM_BUILD_TYPE "${CMAKE_BUILD_TYPE}")
+set(PYTHON_PACKAGE_DEPENDS ${GENERATED_OUTPUTS})
+list(APPEND PYTHON_PACKAGE_DEPENDS pybind)
+if(BUILD_TENSORFLOW_OPS)
+    list(APPEND PYTHON_PACKAGE_DEPENDS cloudViewer_tf_ops)
+endif()
+if(BUILD_PYTORCH_OPS)
+    list(APPEND PYTHON_PACKAGE_DEPENDS cloudViewer_torch_ops)
+endif()
+if(AICore_ENABLED AND TARGET AICore)
+    list(APPEND PYTHON_PACKAGE_DEPENDS AICore)
+endif()
+if(TARGET ext_ggml)
+    list(APPEND PYTHON_PACKAGE_DEPENDS ext_ggml)
+endif()
+# Contract tests run separately in CI (util/ci_utils.*); do not gate wheel
+# packaging on ctest — parallel make + jobserver caused macOS wheel failures.
 add_custom_target(python-package
         COMMAND ${CMAKE_COMMAND}
         -DPYTHON_PACKAGE_SRC_DIR=${PYTHON_PACKAGE_SRC_DIR}
@@ -238,6 +252,17 @@ add_custom_target(python-package
         -DBUNDLE_CLOUDVIEWER_ML=${BUNDLE_CLOUDVIEWER_ML}
         -DCLOUDVIEWER_ML_ROOT=${CLOUDVIEWER_ML_ROOT}
         -DBUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}
+        -DAICore_ENABLED=${AICore_ENABLED}
+        -DGGML_DYNAMIC_BACKENDS=${GGML_DYNAMIC_BACKENDS}
+        "-DGGML_RUNTIME_LIB_DIR=${GGML_RUNTIME_LIB_DIR}"
+        "-DGGML_BACKEND_DIR=${GGML_BACKEND_DIR}"
+        "-DGGML_BACKEND_MODULE_FILES=${GGML_BACKEND_MODULE_FILES}"
+        "-DGGML_GPU_BACKEND_MODULE_FILES=${GGML_GPU_BACKEND_MODULE_FILES}"
+        "-DGGML_CPU_ALL_VARIANTS=${GGML_CPU_ALL_VARIANTS}"
+        "-DAICORE_COPY_GGML_SCRIPT=${CMAKE_SOURCE_DIR}/core/AICore/cmake/CopyGgmlBackends.cmake"
+        "-DGGML_MODULE_SUFFIX=${GGML_MODULE_SUFFIX}"
+        "-DCMAKE_SHARED_LIBRARY_PREFIX=${CMAKE_SHARED_LIBRARY_PREFIX}"
+        "-DCMAKE_SHARED_LIBRARY_SUFFIX=${CMAKE_SHARED_LIBRARY_SUFFIX}"
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
         -DBUILD_GUI=${BUILD_GUI}
         -DBUILD_RECONSTRUCTION=${BUILD_RECONSTRUCTION}
@@ -253,7 +278,7 @@ add_custom_target(python-package
         -DPYPI_PACKAGE_NAME=${PYPI_PACKAGE_NAME}
         -P ${CMAKE_CURRENT_SOURCE_DIR}/make_python_package.cmake
         VERBATIM
-        DEPENDS ${GENERATED_OUTPUTS}
+        DEPENDS ${PYTHON_PACKAGE_DEPENDS}
         )
 
 # Use `make pip-package` to create the pip package in the build directory

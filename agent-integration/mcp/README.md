@@ -24,7 +24,7 @@ cli-anything-acloudviewer-mcp --mode gui --rpc-url ws://localhost:6001
 
 ## Agent Framework Configuration
 
-### Cursor IDE (`.cursor/mcp.json`)
+### Cursor IDE (`.agents/mcp.json`)
 
 ```json
 {

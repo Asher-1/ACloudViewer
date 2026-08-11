@@ -322,6 +322,13 @@ public:
     virtual void removeEntities(const ccGLDrawContext& context) {
         Q_UNUSED(context);
     }
+    //! Screen-space viewport frame while apply-viewport preview is active.
+    virtual void updateApplyViewportPreviewOverlay(unsigned sensorId) {
+        Q_UNUSED(sensorId);
+    }
+    virtual void removeApplyViewportPreviewOverlay(unsigned sensorId) {
+        Q_UNUSED(sensorId);
+    }
     virtual void changeEntityProperties(PROPERTY_PARAM& param) {
         Q_UNUSED(param);
     }
@@ -428,9 +435,11 @@ public:
         return 1.0;
     }
     virtual void setObjectLightIntensity(const QString& viewID,
-                                         double intensity) {
+                                         double intensity,
+                                         bool triggerRender = true) {
         Q_UNUSED(viewID);
         Q_UNUSED(intensity);
+        Q_UNUSED(triggerRender);
     }
     virtual double getLightIntensity() const { return 1.0; }
     virtual void setLightIntensity(double intensity) { Q_UNUSED(intensity); }

@@ -216,6 +216,8 @@ bool ContextBasedFeature::prepare(
                                         sqrt(pow(P->x - sumQ.x / kNN, 2.0) +
                                              pow(P->y - sumQ.y / kNN, 2.0)));
                                 break;
+                            default:
+                                break;
                         }
                     }
 

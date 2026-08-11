@@ -20,12 +20,12 @@
 
 // qcc_io
 #include <ImageFileFilter.h>
+#include <cvFileDialog.h>
 
 #include <QSettings>
 
 #include "AnglesCustomPlot.h"
 #include "WolmanCustomPlot.h"
-
 G3PointPlots::G3PointPlots(QString title, QWidget* parent)
     : QWidget(parent), ui(new Ui::G3PointPlots) {
     ui->setupUi(this);
@@ -137,8 +137,8 @@ void G3PointPlots::onExportToCSV() {
     currentPath += QString("/") + currentWidget->windowTitle() + ".csv";
 
     // ask for a filename
-    QString filename = QFileDialog::getSaveFileName(this, "Select output file",
-                                                    currentPath, "*.csv");
+    QString filename = cvFileDialog::getSaveFileName(this, "Select output file",
+                                                     currentPath, "*.csv");
     if (filename.isEmpty()) {
         // process cancelled by user
         return;

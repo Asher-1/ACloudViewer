@@ -162,6 +162,15 @@ case "${MODE}" in
         ;;
     consume)
         if wget -q --tries=3 "${URL}" -O /tmp/vtk-pcl-deps.tar.gz; then
+            # Match the source build (build_all_deps): the apt-installed system
+            # Eigen (e.g. 3.3.7 on Ubuntu 20.04/22.04) at /usr/include/eigen3 must
+            # be moved aside so the prebuilt Eigen 3.4.0 from /usr/local wins,
+            # exactly as it does after a source build. Without this, both
+            # /usr/include/eigen3 and /usr/local/include/eigen3 exist and
+            # find_package(Eigen3) / #include <Eigen/...> can resolve to the old
+            # system headers, breaking the ABI the prebuilt VTK/PCL were compiled
+            # against. `|| true` keeps consume non-breaking if the dir is absent.
+            mv -f /usr/include/eigen3 /usr/include/eigen337.bak || true
             tar -xzf /tmp/vtk-pcl-deps.tar.gz -C /
             ldconfig || true
             rm -f /tmp/vtk-pcl-deps.tar.gz

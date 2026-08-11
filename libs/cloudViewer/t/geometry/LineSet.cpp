@@ -163,6 +163,18 @@ geometry::LineSet LineSet::FromLegacy(
         lineset.SetLineColors(
                 core::eigen_converter::EigenVector3dVectorToTensor(
                         lineset_legacy.colors_, float_dtype, device));
+    } else if (lineset_legacy.colorsShown() && lineset_legacy.HasLines()) {
+        // PaintUniformColor clears colors_ and stores the uniform color in
+        // m_rgbColor (via setColor/getColor). Create per-line colors from
+        // the uniform color so that the tensor-based LineSet has 'colors'.
+        const auto &rgb = lineset_legacy.getColor();
+        const Eigen::Vector3d uniform_color(rgb.r / 255.0, rgb.g / 255.0,
+                                            rgb.b / 255.0);
+        const std::vector<Eigen::Vector3d> colors(lineset_legacy.lines_.size(),
+                                                  uniform_color);
+        lineset.SetLineColors(
+                core::eigen_converter::EigenVector3dVectorToTensor(
+                        colors, float_dtype, device));
     }
     return lineset;
 }

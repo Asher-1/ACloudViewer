@@ -26,17 +26,85 @@ set(OPENCV_CONTRIB_SOURCE_DIR "${SOURCE_DIR}/modules")
 
 set(SHARED_BUILD_OPENCV ON)
 
+# --- OpenCV optional modules (plugin consumers → BUILD_opencv_* / WITH_*) ---
+# Base (always when BUILD_OPENCV): core, imgproc, imgcodecs, highgui
+#
+# features2d + flann : qLightGlue (cv::SIFT in feature_extractor.cpp)
+# videoio            : qSIBR (VideoCapture files), qFreeSplatter, qFaceDetect
+# WITH_FFMPEG        : MP4/file demux for videoio consumers
+# WITH_V4L           : live webcam (qFreeSplatter, qFaceDetect only — not qSIBR)
+# objdetect+calib3d  : qFreeSplatter Haar fallback, qManualCalib
+# ml                 : q3DMASC
+# opencv_video       : OFF — qSIBR VideoUtils.cpp (optflow/LK) excluded from build
+
+set(_opencv_features2d OFF)
+if(PLUGIN_STANDARD_QLIGHTGLUE)
+    set(_opencv_features2d ON)
+endif()
+
+set(_opencv_videoio OFF)
+if(PLUGIN_STANDARD_QSIBR OR PLUGIN_STANDARD_QFREESPLATTER
+        OR PLUGIN_STANDARD_QFACEDETECT)
+    set(_opencv_videoio ON)
+endif()
+
+set(_opencv_videoio_ffmpeg OFF)
+if(_opencv_videoio)
+    # All current videoio plugins read container files (MP4/AVI).
+    set(_opencv_videoio_ffmpeg ON)
+endif()
+
+set(_opencv_videoio_v4l OFF)
+if(PLUGIN_STANDARD_QFREESPLATTER OR PLUGIN_STANDARD_QFACEDETECT)
+    set(_opencv_videoio_v4l ON)
+endif()
+
+set(_opencv_objdetect OFF)
+if(PLUGIN_STANDARD_QMANUAL_CALIB OR PLUGIN_STANDARD_QFREESPLATTER)
+    set(_opencv_objdetect ON)
+endif()
+# objdetect requires calib3d in OpenCV 4.7+ (ArUco was moved from contrib)
+set(_opencv_calib3d OFF)
+if(PLUGIN_STANDARD_QMANUAL_CALIB OR _opencv_objdetect)
+    set(_opencv_calib3d ON)
+endif()
+
+if(BUILD_OPENCV)
+    message(STATUS "OpenCV modules: features2d=${_opencv_features2d} "
+            "videoio=${_opencv_videoio} ffmpeg=${_opencv_videoio_ffmpeg} "
+            "v4l=${_opencv_videoio_v4l} objdetect=${_opencv_objdetect} "
+            "calib3d=${_opencv_calib3d} video=OFF")
+endif()
+
+# OpenCV's bundled OpenEXR/Imath (BUILD_OPENEXR=ON) still uses deprecated C++11
+# dynamic exception specifications (throw(...)). Newer GCC/Clang flag this with
+# -Wdeprecated, and warnings-as-errors environments escalate it into a hard
+# failure (Ubuntu wheel CI). Downgrade that specific warning for the OpenCV
+# 3rdparty build only; it stays fatal for CloudViewer's own code.
+set(_opencv_ext_cxx_flags "")
+if(NOT MSVC)
+    set(_opencv_ext_cxx_flags "-Wno-error=deprecated")
+endif()
+
 ExternalProject_Add(ext_opencv
         PREFIX opencv
         URL https://github.com/opencv/opencv/archive/${OPENCV_VERSION_FILE}
         URL_MD5 ${OPENCV_MD5}
         DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/opencv"
         UPDATE_COMMAND ""
+        # FFmpeg 8.x compatibility: avcodec_close and av_stream_get_side_data
+        # were removed in FFmpeg 7/8.  CMake script is cross-platform (Linux,
+        # macOS, Windows) and idempotent (dry-run guard).
+        PATCH_COMMAND ${CMAKE_COMMAND}
+            -DSRC_DIR=<SOURCE_DIR>
+            -DPATCH_FILE=${CloudViewer_3RDPARTY_DIR}/opencv/patches/0001-ffmpeg8-compat.patch
+            -P ${CloudViewer_3RDPARTY_DIR}/opencv/patches/apply_ffmpeg8_patch.cmake
         BUILD_IN_SOURCE OFF
         BUILD_ALWAYS 0
         INSTALL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}
         CMAKE_ARGS
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+            -DCMAKE_CXX_FLAGS=${_opencv_ext_cxx_flags}
             ${ExternalProject_CMAKE_ARGS_hidden}
             # -DBUILD_SHARED_LIBS=$<$<PLATFORM_ID:Linux>:ON:OFF>
             -DBUILD_SHARED_LIBS=${SHARED_BUILD_OPENCV}
@@ -47,27 +115,27 @@ ExternalProject_Add(ext_opencv
             -DCMAKE_POSITION_INDEPENDENT_CODE=ON
             -DOPENCV_FORCE_3RDPARTY_BUILD=ON
             -DWITH_TBB=OFF
-            -DWITH_FFMPEG=OFF
+            -DWITH_FFMPEG=$<IF:$<BOOL:${_opencv_videoio_ffmpeg}>,ON,OFF>
             -DBUILD_JASPER=ON
-            -DBUILD_JPEG=ON            #编译opencv 3rdparty自带的libjpeg
-            -DBUILD_PNG=$<IF:$<PLATFORM_ID:Darwin>,OFF,ON>            #macOS使用系统libpng避免SDK冲突，其他平台使用内置版本
-            -DBUILD_TIFF=ON            #编译opencv 3rdparty自带的libtiff
-            -DBUILD_ZLIB=$<IF:$<PLATFORM_ID:Darwin>,OFF,ON>           #macOS使用系统zlib避免SDK冲突，其他平台使用内置版本
-            -DBUILD_WEBP=ON            #编译opencv 3rdparty自带的libwebp
-            -DBUILD_OPENEXR=ON         #编译opencv 3rdparty自带的openexr
-            # -DBUILD_PROTOBUF=OFF      #编译opencv 3rdparty自带的libprotobuf
+            -DBUILD_JPEG=ON            # Build OpenCV bundled libjpeg from 3rdparty
+            -DBUILD_PNG=$<IF:$<PLATFORM_ID:Darwin>,OFF,ON>            # macOS: use system libpng to avoid SDK conflicts; other platforms: bundled version
+            -DBUILD_TIFF=ON            # Build OpenCV bundled libtiff from 3rdparty
+            -DBUILD_ZLIB=$<IF:$<PLATFORM_ID:Darwin>,OFF,ON>           # macOS: use system zlib to avoid SDK conflicts; other platforms: bundled version
+            -DBUILD_WEBP=ON            # Build OpenCV bundled libwebp from 3rdparty
+            -DBUILD_OPENEXR=ON         # Build OpenCV bundled openexr from 3rdparty
+            # -DBUILD_PROTOBUF=OFF      # Build OpenCV bundled libprotobuf from 3rdparty
             # -DWITH_OPENEXR=ON  # Build error on IlmBase includes without "OpenEXR/" prefix
             -DBUILD_opencv_world=ON
             -DBUILD_opencv_core=ON
             -DBUILD_opencv_highgui=ON
             -DBUILD_opencv_imgcodecs=ON
             -DBUILD_opencv_imgproc=ON
-            -DBUILD_opencv_features2d=${PLUGIN_STANDARD_QSIBR}
-            -DBUILD_opencv_flann=${PLUGIN_STANDARD_QSIBR}
+            -DBUILD_opencv_features2d=${_opencv_features2d}
+            -DBUILD_opencv_flann=${_opencv_features2d}
             # -DBUILD_opencv_hdf=OFF
             -DBUILD_opencv_xfeatures2d=OFF
             -DBUILD_opencv_photo=OFF
-            -DBUILD_opencv_calib3d=OFF
+            -DBUILD_opencv_calib3d=${_opencv_calib3d}
             -DBUILD_JAVA=OFF
             -DBUILD_opencv_sfm=OFF # disabled ceres dependence compiling issues [only support 1.x.x for ceres]
             -DBUILD_opencv_apps=OFF
@@ -81,23 +149,24 @@ ExternalProject_Add(ext_opencv
             -DBUILD_opencv_js=OFF
             -DBUILD_opencv_dnn=OFF
             -DBUILD_opencv_ml=${PLUGIN_STANDARD_3DMASC}
-            -DBUILD_opencv_objdetect=OFF
+            -DBUILD_opencv_objdetect=${_opencv_objdetect}
             -DBUILD_opencv_xobjdetect=OFF
             -DBUILD_opencv_dnn_objdetect=OFF
             -DBUILD_opencv_optflow=OFF
             -DBUILD_opencv_stitching=OFF
             -DBUILD_opencv_ts=OFF
-            -DBUILD_opencv_video=${PLUGIN_STANDARD_QSIBR}
-            -DBUILD_opencv_videoio=${PLUGIN_STANDARD_QSIBR}
+            -DBUILD_opencv_video=OFF
+            -DBUILD_opencv_videoio=${_opencv_videoio}
             -DBUILD_opencv_stereo=OFF
             -DBUILD_opencv_legacy=OFF
             -DWITH_GSTREAMER=OFF
             -DWITH_GTK=OFF
             -DWITH_GTK_2_X=OFF
-            -DWITH_V4L=OFF
+            -DWITH_V4L=$<IF:$<BOOL:${_opencv_videoio_v4l}>,ON,OFF>
             -DWITH_CAROTENE=OFF
             -DWITH_OPENGL=OFF
             -DWITH_OPENCL=OFF
+            -DWITH_VULKAN=OFF
             -DWITH_LAPACK=OFF
             -DENABLE_PRECOMPILED_HEADERS=OFF
             -DINSTALL_C_EXAMPLES=OFF

@@ -149,6 +149,16 @@ class PythonConfig final
     /// Initialize the paths to point to where the Python
     /// environment was bundled on installation
     void initBundled();
+    /// Initialize the bundled Python paths directly from the known flat
+    /// install layout (NO subprocess query). This is essential for isolation:
+    /// querying the bundled python executable would inherit the host
+    /// (pyenv/conda) prefix when the bundled binary was built with a fixed
+    /// --prefix, defeating Bundled-mode isolation.
+    ///
+    /// Layout (must match the packaging scripts):
+    ///   - POSIX: <home>/bin + <home>/lib/pythonX.Y/{stdlib,lib-dynload,site-packages}
+    ///   - Windows: <home>/DLLs + <home>/Lib + <home>/Lib/site-packages
+    void initBundledFromLayout(const QString &prefix);
     /// Initialize from the path to an environment.
     /// Will try to guess if the environment is a conda env
     /// or a python venv

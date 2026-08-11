@@ -151,7 +151,8 @@ ENV PATH="/opt/QtIFW-4.6.1-linux-amd/bin:$PATH"
 
 # C++ dependencies
 WORKDIR /opt
-COPY ./util/install_deps_ubuntu.sh /opt
+COPY ./util/install_deps_ubuntu.sh /opt/
+COPY ./util/vulkan /opt/vulkan/
 RUN /opt/install_deps_ubuntu.sh assume-yes
 
 # ACloudViewer Jupyter dependencies

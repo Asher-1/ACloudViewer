@@ -20,5 +20,6 @@ dependencies:
   - pip: # for python plugins
     - numpy>=1.26.4
     - pybind11>=2.6.0
+    - laspy>=2.0
     - pywin32
     - typing_extensions

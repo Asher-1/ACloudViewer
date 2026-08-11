@@ -22,5 +22,8 @@ public:
 protected:
     explicit IoAbstractLoader(const FileIOFilter::FilterInfo &info);
 
+    /** Assimp post-process flags; override per format when needed. */
+    virtual unsigned int _assimpPostProcessFlags() const;
+
     virtual void _postProcess(ccHObject &ioContainer);
 };

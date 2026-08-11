@@ -8,8 +8,9 @@
 #include <array>
 
 // Qt
+#include <cvFileDialog.h>
+
 #include <QCheckBox>
-#include <QFileDialog>
 #include <QFileInfo>
 #include <QIntValidator>
 
@@ -4041,7 +4042,7 @@ void ccCompass::exportToSVG() {
     constexpr float zoom = 2.0f;  // TODO: create popup box
 
     // get filename for the svg file
-    QString filename = QFileDialog::getSaveFileName(
+    QString filename = cvFileDialog::getSaveFileName(
             m_dlg, tr("SVG Output file"), "", tr("SVG files (*.svg)"));
     if (filename.isEmpty()) {
         return;
@@ -4057,7 +4058,7 @@ void ccCompass::exportToSVG() {
 // export interpretations to csv or xml
 void ccCompass::onSave() {
     // get output file path
-    QString filename = QFileDialog::getSaveFileName(
+    QString filename = cvFileDialog::getSaveFileName(
             m_dlg, tr("Output file"), "",
             tr("CSV files (*.csv *.txt);;XML (*.xml)"));
     if (filename.isEmpty()) {

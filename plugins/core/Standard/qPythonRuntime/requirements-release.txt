@@ -1,5 +1,9 @@
 numpy>=1.18.0
 pybind11>=3.0
+laspy>=2.0
 tqdm
 invoke
 typing_extensions
+pip
+setuptools
+wheel

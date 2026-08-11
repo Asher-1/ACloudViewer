@@ -9,6 +9,8 @@
 #include <projects/gaussianviewer/renderer/GaussianView.hpp>
 #include <core/graphics/GUI.hpp>
 #include <algorithm>
+#include <fstream>
+#include <sstream>
 #include <thread>
 #include <boost/asio.hpp>
 #include <rasterizer.h>
@@ -54,21 +56,18 @@ float inverse_sigmoid(const float m1) { return log(m1 / (1.0f - m1)); }
 #define CUDA_SAFE_CALL(A) A
 #endif
 
-// Load the Gaussians from the given file.
+// Load the Gaussians from the given stream.
 template <int D>
-int loadPly(const char* filename,
-            std::vector<Pos>& pos,
-            std::vector<SHs<3>>& shs,
-            std::vector<float>& opacities,
-            std::vector<Scale>& scales,
-            std::vector<Rot>& rot,
-            sibr::Vector3f& minn,
-            sibr::Vector3f& maxx) {
-    std::ifstream infile(filename, std::ios_base::binary);
-
+int loadPlyFromStream(std::istream& infile,
+                      std::vector<Pos>& pos,
+                      std::vector<SHs<3>>& shs,
+                      std::vector<float>& opacities,
+                      std::vector<Scale>& scales,
+                      std::vector<Rot>& rot,
+                      sibr::Vector3f& minn,
+                      sibr::Vector3f& maxx) {
     if (!infile.good())
-        SIBR_ERR << "Unable to find model's PLY file, attempted:\n"
-                 << filename << std::endl;
+        SIBR_ERR << "Unable to read Gaussian PLY data from stream" << std::endl;
 
     // "Parse" header (it has to be a specific format anyway)
     std::string buff;
@@ -162,6 +161,45 @@ int loadPly(const char* filename,
         }
     }
     return count;
+}
+
+// Load the Gaussians from the given file.
+template <int D>
+int loadPly(const char* filename,
+            std::vector<Pos>& pos,
+            std::vector<SHs<3>>& shs,
+            std::vector<float>& opacities,
+            std::vector<Scale>& scales,
+            std::vector<Rot>& rot,
+            sibr::Vector3f& minn,
+            sibr::Vector3f& maxx) {
+    std::ifstream infile(filename, std::ios_base::binary);
+
+    if (!infile.good())
+        SIBR_ERR << "Unable to find model's PLY file, attempted:\n"
+                 << filename << std::endl;
+
+    return loadPlyFromStream<D>(infile, pos, shs, opacities, scales, rot, minn,
+                                maxx);
+}
+
+template <int D>
+int loadPlyFromMemory(const uint8_t* data,
+                      size_t size,
+                      std::vector<Pos>& pos,
+                      std::vector<SHs<3>>& shs,
+                      std::vector<float>& opacities,
+                      std::vector<Scale>& scales,
+                      std::vector<Rot>& rot,
+                      sibr::Vector3f& minn,
+                      sibr::Vector3f& maxx) {
+    if (!data || size == 0)
+        SIBR_ERR << "Empty in-memory Gaussian PLY buffer" << std::endl;
+
+    std::string buf(reinterpret_cast<const char*>(data), size);
+    std::istringstream infile(buf, std::ios_base::binary);
+    return loadPlyFromStream<D>(infile, pos, shs, opacities, scales, rot, minn,
+                                maxx);
 }
 
 void savePly(const char* filename,
@@ -321,6 +359,12 @@ sibr::GaussianView::GaussianView(const sibr::BasicIBRScene::Ptr& ibrScene,
                         "CUDA devices!";
     }
     CUDA_SAFE_CALL_ALWAYS(cudaSetDevice(device));
+
+    // Drain pending work and clear sticky errors left by other CUDA users
+    // (e.g. ggml/AICore inference that ran on the same device).
+    cudaDeviceSynchronize();
+    cudaGetLastError();
+
     cudaDeviceProp prop;
     CUDA_SAFE_CALL_ALWAYS(cudaGetDeviceProperties(&prop, device));
     if (prop.major < 7) {
@@ -366,6 +410,47 @@ sibr::GaussianView::GaussianView(const sibr::BasicIBRScene::Ptr& ibrScene,
     _boxmax = _scenemax;
 
     int P = count;
+
+    // --- VRAM budget check: clamp resolution if free VRAM is tight. ---
+    {
+        const size_t perSplatBytes = sizeof(Pos) + sizeof(Rot) +
+                                     sizeof(SHs<3>) + sizeof(float) +
+                                     sizeof(Scale) + 2 * sizeof(int);
+        const size_t perPixelBytes =
+                3 * sizeof(float) + sizeof(float) + sizeof(uint32_t);
+        const size_t splatVram = perSplatBytes * P;
+        const size_t fixedVram =
+                2 * sizeof(sibr::Matrix4f) + 6 * sizeof(float) +
+                static_cast<size_t>(render_w) * render_h * 3 * sizeof(float);
+        size_t totalEstimate = splatVram + perPixelBytes * render_w * render_h +
+                               fixedVram + 128 * 1024 * 1024;
+
+        size_t freeMem = 0, totalMem = 0;
+        cudaMemGetInfo(&freeMem, &totalMem);
+        SIBR_LOG << "VRAM: " << (freeMem >> 20) << " / " << (totalMem >> 20)
+                 << " MiB free | need ~" << (totalEstimate >> 20) << " MiB for "
+                 << P << " splats @ " << render_w << "x" << render_h
+                 << std::endl;
+
+        if (totalEstimate > freeMem && freeMem > splatVram + fixedVram) {
+            const size_t budgetForPixels = freeMem - splatVram - fixedVram;
+            const float aspect = static_cast<float>(render_w) / render_h;
+            const uint maxPixels =
+                    static_cast<uint>(budgetForPixels / perPixelBytes);
+            uint newH = static_cast<uint>(std::sqrt(maxPixels / aspect));
+            uint newW = static_cast<uint>(newH * aspect);
+            newW = std::max(640u, newW & ~15u);
+            newH = std::max(360u, newH & ~15u);
+            SIBR_WRG << "VRAM tight: clamping render resolution from "
+                     << render_w << "x" << render_h << " to " << newW << "x"
+                     << newH << std::endl;
+            render_w = newW;
+            render_h = newH;
+            _resolution = sibr::Vector2i(render_w, render_h);
+            _copyRenderer->width() = render_w;
+            _copyRenderer->height() = render_h;
+        }
+    }
 
     // Allocate and fill the GPU data
     CUDA_SAFE_CALL_ALWAYS(cudaMalloc((void**)&pos_cuda, sizeof(Pos) * P));
@@ -418,13 +503,234 @@ sibr::GaussianView::GaussianView(const sibr::BasicIBRScene::Ptr& ibrScene,
                      << cudaGetErrorString(cudaGetLastError())
                      << ". Please rerun in Debug to find the exact line!";
         }
-        cudaGraphicsGLRegisterBuffer(&imageBufferCuda, imageBuffer,
-                                     cudaGraphicsRegisterFlagsWriteDiscard);
-        useInterop &= (cudaGetLastError() == cudaSuccess);
+        cudaError_t interopErr = cudaGraphicsGLRegisterBuffer(
+                &imageBufferCuda, imageBuffer,
+                cudaGraphicsRegisterFlagsWriteDiscard);
+        if (interopErr != cudaSuccess) {
+            SIBR_WRG << "CUDA-GL interop registration failed: "
+                     << cudaGetErrorString(interopErr)
+                     << " (falling back to host-copy path)" << std::endl;
+            useInterop = false;
+        } else {
+            SIBR_LOG << "CUDA-GL interop: registered GL buffer " << imageBuffer
+                     << " for " << render_w << "x" << render_h << " ("
+                     << (render_w * render_h * 3 * sizeof(float) >> 20)
+                     << " MiB)" << std::endl;
+        }
     }
     if (!useInterop) {
         fallback_bytes.resize(render_w * render_h * 3 * sizeof(float));
         cudaMalloc(&fallbackBufferCuda, fallback_bytes.size());
+        if (fallbackBufferCuda) {
+            SIBR_LOG << "CUDA fallback buffer allocated: "
+                     << (fallback_bytes.size() >> 20) << " MiB" << std::endl;
+        } else {
+            SIBR_ERR << "Failed to allocate CUDA fallback buffer ("
+                     << (fallback_bytes.size() >> 20) << " MiB)" << std::endl;
+        }
+        _interop_failed = true;
+    }
+
+    geomBufferFunc = resizeFunctional(&geomPtr, allocdGeom);
+    binningBufferFunc = resizeFunctional(&binningPtr, allocdBinning);
+    imgBufferFunc = resizeFunctional(&imgPtr, allocdImg);
+}
+
+sibr::GaussianView::GaussianView(const sibr::BasicIBRScene::Ptr& ibrScene,
+                                 uint render_w,
+                                 uint render_h,
+                                 const uint8_t* plyData,
+                                 size_t plySize,
+                                 bool* messageRead,
+                                 int sh_degree,
+                                 bool white_bg,
+                                 bool useInterop,
+                                 int device)
+    : _scene(ibrScene),
+      _dontshow(messageRead),
+      _sh_degree(sh_degree),
+      sibr::ViewBase(render_w, render_h) {
+    int num_devices;
+    CUDA_SAFE_CALL_ALWAYS(cudaGetDeviceCount(&num_devices));
+    _device = device;
+    if (device >= num_devices) {
+        if (num_devices == 0)
+            SIBR_ERR << "No CUDA devices detected!";
+        else
+            SIBR_ERR << "Provided device index exceeds number of available "
+                        "CUDA devices!";
+    }
+    CUDA_SAFE_CALL_ALWAYS(cudaSetDevice(device));
+
+    // Drain pending work and clear sticky errors left by other CUDA users
+    // (e.g. ggml/AICore inference that ran on the same device).
+    cudaDeviceSynchronize();
+    cudaGetLastError();
+
+    cudaDeviceProp prop;
+    CUDA_SAFE_CALL_ALWAYS(cudaGetDeviceProperties(&prop, device));
+    if (prop.major < 7) {
+        SIBR_ERR << "Sorry, need at least compute capability 7.0+!";
+    }
+
+    _pointbasedrenderer.reset(new PointBasedRenderer());
+    _copyRenderer = new BufferCopyRenderer();
+    _copyRenderer->flip() = true;
+    _copyRenderer->width() = render_w;
+    _copyRenderer->height() = render_h;
+
+    std::vector<uint> imgs_ulr;
+    const auto& cams = ibrScene->cameras()->inputCameras();
+    for (size_t cid = 0; cid < cams.size(); ++cid) {
+        if (cams[cid]->isActive()) {
+            imgs_ulr.push_back(uint(cid));
+        }
+    }
+    _scene->cameras()->debugFlagCameraAsUsed(imgs_ulr);
+
+    std::vector<Pos> pos;
+    std::vector<Rot> rot;
+    std::vector<Scale> scale;
+    std::vector<float> opacity;
+    std::vector<SHs<3>> shs;
+    if (sh_degree == 0) {
+        count = loadPlyFromMemory<0>(plyData, plySize, pos, shs, opacity, scale,
+                                     rot, _scenemin, _scenemax);
+    } else if (sh_degree == 1) {
+        count = loadPlyFromMemory<1>(plyData, plySize, pos, shs, opacity, scale,
+                                     rot, _scenemin, _scenemax);
+    } else if (sh_degree == 2) {
+        count = loadPlyFromMemory<2>(plyData, plySize, pos, shs, opacity, scale,
+                                     rot, _scenemin, _scenemax);
+    } else if (sh_degree == 3) {
+        count = loadPlyFromMemory<3>(plyData, plySize, pos, shs, opacity, scale,
+                                     rot, _scenemin, _scenemax);
+    }
+
+    _boxmin = _scenemin;
+    _boxmax = _scenemax;
+
+    int P = count;
+
+    // --- VRAM budget check: clamp resolution if free VRAM is tight. ---
+    // Per-splat GPU data: Pos + Rot + SHs<3> + float + Scale + 2*int(rects)
+    const size_t perSplatBytes = sizeof(Pos) + sizeof(Rot) + sizeof(SHs<3>) +
+                                 sizeof(float) + sizeof(Scale) +
+                                 2 * sizeof(int);
+    // Per-pixel render buffers: out_color(3f) + accum_alpha(f) + n_contrib(u32)
+    const size_t perPixelBytes =
+            3 * sizeof(float) + sizeof(float) + sizeof(uint32_t);
+    const size_t splatVram = perSplatBytes * P;
+    size_t pixelVram = perPixelBytes * render_w * render_h;
+    // Fixed overhead: view/proj/cam_pos/bg matrices + interop or fallback buf
+    const size_t fixedVram =
+            2 * sizeof(sibr::Matrix4f) + 6 * sizeof(float) +
+            static_cast<size_t>(render_w) * render_h * 3 * sizeof(float);
+    size_t totalEstimate = splatVram + pixelVram + fixedVram;
+    // Add 128 MB headroom for CUDA driver + rasterizer scratch.
+    totalEstimate += 128 * 1024 * 1024;
+
+    size_t freeMem = 0, totalMem = 0;
+    cudaMemGetInfo(&freeMem, &totalMem);
+    SIBR_LOG << "VRAM: " << (freeMem >> 20) << " / " << (totalMem >> 20)
+             << " MiB free | need ~" << (totalEstimate >> 20) << " MiB for "
+             << P << " splats @ " << render_w << "x" << render_h << std::endl;
+
+    if (totalEstimate > freeMem && freeMem > splatVram + fixedVram) {
+        // Clamp resolution to fit remaining VRAM after splat data.
+        const size_t budgetForPixels = freeMem - splatVram - fixedVram;
+        const float aspect = static_cast<float>(render_w) / render_h;
+        const uint maxPixels =
+                static_cast<uint>(budgetForPixels / perPixelBytes);
+        uint newH = static_cast<uint>(std::sqrt(maxPixels / aspect));
+        uint newW = static_cast<uint>(newH * aspect);
+        // Round down to multiples of 16 (CUDA tile size).
+        newW = std::max(640u, newW & ~15u);
+        newH = std::max(360u, newH & ~15u);
+        SIBR_WRG << "VRAM tight: clamping render resolution from " << render_w
+                 << "x" << render_h << " to " << newW << "x" << newH
+                 << std::endl;
+        render_w = newW;
+        render_h = newH;
+        _resolution = sibr::Vector2i(render_w, render_h);
+        _copyRenderer->width() = render_w;
+        _copyRenderer->height() = render_h;
+        pixelVram = perPixelBytes * render_w * render_h;
+    }
+
+    CUDA_SAFE_CALL_ALWAYS(cudaMalloc((void**)&pos_cuda, sizeof(Pos) * P));
+    CUDA_SAFE_CALL_ALWAYS(cudaMemcpy(pos_cuda, pos.data(), sizeof(Pos) * P,
+                                     cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL_ALWAYS(cudaMalloc((void**)&rot_cuda, sizeof(Rot) * P));
+    CUDA_SAFE_CALL_ALWAYS(cudaMemcpy(rot_cuda, rot.data(), sizeof(Rot) * P,
+                                     cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL_ALWAYS(cudaMalloc((void**)&shs_cuda, sizeof(SHs<3>) * P));
+    CUDA_SAFE_CALL_ALWAYS(cudaMemcpy(shs_cuda, shs.data(), sizeof(SHs<3>) * P,
+                                     cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL_ALWAYS(cudaMalloc((void**)&opacity_cuda, sizeof(float) * P));
+    CUDA_SAFE_CALL_ALWAYS(cudaMemcpy(opacity_cuda, opacity.data(),
+                                     sizeof(float) * P,
+                                     cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL_ALWAYS(cudaMalloc((void**)&scale_cuda, sizeof(Scale) * P));
+    CUDA_SAFE_CALL_ALWAYS(cudaMemcpy(scale_cuda, scale.data(),
+                                     sizeof(Scale) * P,
+                                     cudaMemcpyHostToDevice));
+
+    CUDA_SAFE_CALL_ALWAYS(
+            cudaMalloc((void**)&view_cuda, sizeof(sibr::Matrix4f)));
+    CUDA_SAFE_CALL_ALWAYS(
+            cudaMalloc((void**)&proj_cuda, sizeof(sibr::Matrix4f)));
+    CUDA_SAFE_CALL_ALWAYS(cudaMalloc((void**)&cam_pos_cuda, 3 * sizeof(float)));
+    CUDA_SAFE_CALL_ALWAYS(
+            cudaMalloc((void**)&background_cuda, 3 * sizeof(float)));
+    CUDA_SAFE_CALL_ALWAYS(cudaMalloc((void**)&rect_cuda, 2 * P * sizeof(int)));
+
+    float bg[3] = {white_bg ? 1.f : 0.f, white_bg ? 1.f : 0.f,
+                   white_bg ? 1.f : 0.f};
+    CUDA_SAFE_CALL_ALWAYS(cudaMemcpy(background_cuda, bg, 3 * sizeof(float),
+                                     cudaMemcpyHostToDevice));
+
+    gData = new GaussianData(P, (float*)pos.data(), (float*)rot.data(),
+                             (float*)scale.data(), opacity.data(),
+                             (float*)shs.data());
+
+    _gaussianRenderer = new GaussianSurfaceRenderer();
+
+    glCreateBuffers(1, &imageBuffer);
+    glNamedBufferStorage(imageBuffer, render_w * render_h * 3 * sizeof(float),
+                         nullptr, GL_DYNAMIC_STORAGE_BIT);
+
+    if (useInterop) {
+        if (cudaPeekAtLastError() != cudaSuccess) {
+            SIBR_ERR << "A CUDA error occurred in setup:"
+                     << cudaGetErrorString(cudaGetLastError())
+                     << ". Please rerun in Debug to find the exact line!";
+        }
+        cudaError_t interopErr = cudaGraphicsGLRegisterBuffer(
+                &imageBufferCuda, imageBuffer,
+                cudaGraphicsRegisterFlagsWriteDiscard);
+        if (interopErr != cudaSuccess) {
+            SIBR_WRG << "CUDA-GL interop registration failed: "
+                     << cudaGetErrorString(interopErr)
+                     << " (falling back to host-copy path)" << std::endl;
+            useInterop = false;
+        } else {
+            SIBR_LOG << "CUDA-GL interop: registered GL buffer " << imageBuffer
+                     << " for " << render_w << "x" << render_h << " ("
+                     << (render_w * render_h * 3 * sizeof(float) >> 20)
+                     << " MiB)" << std::endl;
+        }
+    }
+    if (!useInterop) {
+        fallback_bytes.resize(render_w * render_h * 3 * sizeof(float));
+        cudaMalloc(&fallbackBufferCuda, fallback_bytes.size());
+        if (fallbackBufferCuda) {
+            SIBR_LOG << "CUDA fallback buffer allocated: "
+                     << (fallback_bytes.size() >> 20) << " MiB" << std::endl;
+        } else {
+            SIBR_ERR << "Failed to allocate CUDA fallback buffer ("
+                     << (fallback_bytes.size() >> 20) << " MiB)" << std::endl;
+        }
         _interop_failed = true;
     }
 
@@ -617,7 +923,10 @@ void sibr::GaussianView::onGUI() {
 }
 
 sibr::GaussianView::~GaussianView() {
-    // Cleanup
+    cudaSetDevice(_device);
+    cudaDeviceSynchronize();
+    cudaGetLastError();
+
     cudaFree(pos_cuda);
     cudaFree(rot_cuda);
     cudaFree(scale_cuda);

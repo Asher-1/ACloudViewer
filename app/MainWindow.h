@@ -419,6 +419,7 @@ private slots:
     void changeLanguage();
     void doActionGlobalShiftSeetings();
     void doActionResetGUIElementsPos();
+    void doActionResetRegisteredSettings();
     void doActionRestoreWindowOnStartup(bool state);
     void doActionSaveCustomLayout();
     void doActionRestoreDefaultLayout();

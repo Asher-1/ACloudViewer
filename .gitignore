@@ -227,6 +227,8 @@ docs/source/tutorial/**/*.pcd
 docs/source/tutorial/**/*.json
 docs/source/tutorial/**/*.splat
 docs/source/plugins/
+docs/source/guides/plugins/
+docs/source/_static/plugin-assets/
 docs/source/python_api/
 docs/source/python_example
 docs/source/conf.py
@@ -264,4 +266,3 @@ docs-output/
 *.cu text eol=lf
 agent-integration/examples/test_data
 .trae/
-AGENTS.md

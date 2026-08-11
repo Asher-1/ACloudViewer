@@ -1,0 +1,28 @@
+diff --git a/src/ggml-vulkan/ggml-vulkan-aliked.inc.cpp b/src/ggml-vulkan/ggml-vulkan-aliked.inc.cpp
+--- a/src/ggml-vulkan/ggml-vulkan-aliked.inc.cpp
++++ b/src/ggml-vulkan/ggml-vulkan-aliked.inc.cpp
+@@ -1,5 +1,15 @@
+ // ALIKED custom Vulkan compute — included at end of ggml-vulkan.cpp for internal API access.
+ 
++// MSVC compatibility: <windows.h> (included earlier in ggml-vulkan.cpp) defines
++// MemoryBarrier as a macro expanding to __faststorefence().  This corrupts
++// vk::MemoryBarrier(...) into vk::__faststorefence()(...) which does not exist.
++// Save, undefine, and restore around this translation unit.
++#if defined(_MSC_VER) && defined(MemoryBarrier)
++#pragma push_macro("MemoryBarrier")
++#undef MemoryBarrier
++#define ALIKED_RESTORE_MEMORY_BARRIER 1
++#endif
++
+ #include "ggml-vulkan-aliked.h"
+ 
+ #include <algorithm>
+@@ -752,3 +762,8 @@
+     ggml_backend_synchronize(backend);
+     return true;
+ }
++
++#if defined(ALIKED_RESTORE_MEMORY_BARRIER)
++#pragma pop_macro("MemoryBarrier")
++#undef ALIKED_RESTORE_MEMORY_BARRIER
++#endif

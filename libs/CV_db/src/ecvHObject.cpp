@@ -16,6 +16,7 @@
 #include <ecvRedrawScope.h>
 #include <ecvViewManager.h>
 
+#include "LineSet.h"
 #include "ecv2DLabel.h"
 #include "ecv2DViewportLabel.h"
 #include "ecvBox.h"
@@ -160,9 +161,12 @@ ccHObject::ccHObject(const ccHObject& object)
 ccHObject::~ccHObject() {
     m_isDeleting = true;
 
-    // Clean up per-view representations so that the representation
-    // manager does not hold dangling entity pointers after deletion.
-    ecvRepresentationManager::instance().removeRepresentationsForEntity(this);
+    // Guard: during process exit the singleton may already be destroyed
+    // (static destruction order); accessing it would crash in QHash.
+    if (ecvRepresentationManager::isAlive()) {
+        ecvRepresentationManager::instance().removeRepresentationsForEntity(
+                this);
+    }
 
     // process dependencies
     for (std::map<ccHObject*, int>::const_iterator it = m_dependencies.begin();
@@ -909,6 +913,12 @@ void ccHObject::setLineWidthRecursive(PointCoordinateType with) {
         ccPolyline* poly = ccHObjectCaster::ToPolyline(this);
         if (poly && poly->getWidth() != with) {
             poly->setWidth(with);
+        }
+    } else if (this->isKindOf(CV_TYPES::LINESET)) {
+        cloudViewer::geometry::LineSet* lineSet =
+                ccHObjectCaster::ToLineSet(this);
+        if (lineSet && lineSet->getWidth() != with) {
+            lineSet->setWidth(with);
         }
     }
 
@@ -1784,7 +1794,13 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
             drawNameIn3D();
         }
     } else if (!shouldDrawName && isDisplayedIn(context.display)) {
-        if (!isKindOf(CV_TYPES::LABEL_2D)) {
+        // IMAGE entities render through a dedicated 2D overlay (ImageVis)
+        // keyed by the same viewID.  The removeWidgets(WIDGET_T2D) call
+        // would cascade into removeEntities(ECV_TEXT2D) which blindly
+        // removes any 2D layer with that viewID — including the image
+        // layer.  Skip the cleanup for IMAGE since they never create
+        // T2D/RECTANGLE_2D widgets.
+        if (!isKindOf(CV_TYPES::LABEL_2D) && !isKindOf(CV_TYPES::IMAGE)) {
             WIDGETS_PARAMETER wpTxt(WIDGETS_TYPE::WIDGET_T2D, getViewId());
             wpTxt.context.display = mergeDisplay(context.display, this);
             if (wpTxt.context.display)
@@ -1815,7 +1831,7 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
         if (ecvGenericGLDisplay* axesDisp =
                     mergeDisplay(context.display, this)) {
             AxesGridProperties axesGridProps;
-            axesDisp->getDataAxesGridProperties(context.viewID, axesGridProps);
+            axesDisp->getDataAxesGridProperties(getViewId(), axesGridProps);
             if (axesGridProps.visible) {
                 shouldShowBB =
                         false;  // Force hide BBox when axes grid is visible

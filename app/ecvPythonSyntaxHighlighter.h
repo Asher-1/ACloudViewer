@@ -13,6 +13,7 @@
 
 #include <QRegularExpression>
 #include <QSyntaxHighlighter>
+#include <QTextCharFormat>
 
 class ecvPythonSyntaxHighlighter : public QSyntaxHighlighter {
     Q_OBJECT

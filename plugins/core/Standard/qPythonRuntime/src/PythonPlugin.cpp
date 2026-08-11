@@ -18,6 +18,8 @@
 #include "Utilities.h"
 
 #include <QDesktopServices>
+#include <QDir>
+#include <QDirIterator>
 #include <QMessageBox>
 #include <QUrl>
 #include <pybind11/pytypes.h>
@@ -26,11 +28,10 @@
 #define signals Q_SIGNALS
 #include <QDialog>
 #include <QFile>
-#include <QFileDialog>
 #include <QSettings>
 #include <algorithm>
+#include <cvFileDialog.h>
 #include <ecvCommandLineInterface.h>
-
 // Useful link:
 // https://docs.python.org/3/c-api/init.html#initialization-finalization-and-threads
 PythonPlugin::PythonPlugin(QObject *parent)
@@ -127,8 +128,11 @@ static std::unique_ptr<QSettings> LoadSettings()
 
 void PythonPlugin::stop()
 {
+    saveScriptList();
+}
 
-    // On software exit, the script list needs to be saved in a txt file
+void PythonPlugin::saveScriptList()
+{
     std::unique_ptr<QSettings> settings = LoadSettings();
     settings->setValue(QStringLiteral("RegisterListPath"), m_savedPath);
 }
@@ -219,18 +223,33 @@ QList<QAction *> PythonPlugin::getActions()
         m_drawScriptRegister->setEnabled(true);
         m_drawScriptRegister->setIcon(QIcon(PYSCRIPTS_REGISTER_ICON_PATH));
 
-        m_addScript = new QAction("Add Script");
-        m_addScript->setToolTip("Add Script");
+        m_addScript = new QAction("Add Script(s)...");
+        m_addScript->setToolTip("Add Python script files");
         m_addScript->setIcon(QIcon(ADD_PYSCRIPT_ICON_PATH));
         connect(m_addScript, &QAction::triggered, this, &PythonPlugin::addScriptAction);
         m_addScript->setEnabled(true);
+
+        m_addScriptFolder = new QAction("Add Scripts from Folder...");
+        m_addScriptFolder->setToolTip("Add all Python scripts from a folder (recursive)");
+        m_addScriptFolder->setIcon(QIcon(ADD_PYSCRIPT_ICON_PATH));
+        connect(
+            m_addScriptFolder, &QAction::triggered, this, &PythonPlugin::addScriptFromFolderAction);
+        m_addScriptFolder->setEnabled(true);
 
         m_removeScript = new QMenu("Remove Script");
         m_removeScript->setIcon(QIcon(REMOVE_PYSCRIPT_ICON_PATH));
         m_removeScript->setToolTip("Remove Script");
         m_removeScript->setEnabled(false);
 
+        m_removeAllScripts = new QAction("Remove All Scripts");
+        m_removeAllScripts->setToolTip("Remove all registered scripts");
+        m_removeAllScripts->setIcon(QIcon(REMOVE_PYSCRIPT_ICON_PATH));
+        connect(m_removeAllScripts, &QAction::triggered, this, &PythonPlugin::removeAllScripts);
+        m_removeScript->addAction(m_removeAllScripts);
+        m_removeScript->addSeparator();
+
         m_drawScriptRegister->addAction(m_addScript);
+        m_drawScriptRegister->addAction(m_addScriptFolder);
         m_drawScriptRegister->addMenu(m_removeScript);
         m_drawScriptRegister->addSeparator();
 
@@ -238,13 +257,36 @@ QList<QAction *> PythonPlugin::getActions()
         QStringList loaded_paths =
             settings->value(QStringLiteral("RegisterListPath")).value<QStringList>();
 
-        for (QString path : loaded_paths)
+        QStringList validPaths;
+        validPaths.reserve(loaded_paths.size());
+
+        for (const QString &path : loaded_paths)
         {
-            QFileInfo fi(path);
+            if (path.isEmpty())
+                continue;
+
+            const QFileInfo fi(path);
             if (!fi.exists())
-                plgPrint() << "Script registered \"" << path << "\" doesn't exist.";
-            else
+            {
+                plgWarning() << "Skipping missing script from saved list:" << path;
+                continue;
+            }
+
+            try
+            {
                 addScript(path);
+                validPaths.push_back(path);
+            }
+            catch (const std::exception &e)
+            {
+                plgWarning() << "Skipping script \"" << path << "\" due to error:" << e.what();
+            }
+        }
+
+        // If some paths were dropped, update QSettings to remove stale entries
+        if (validPaths.size() != loaded_paths.size())
+        {
+            settings->setValue(QStringLiteral("RegisterListPath"), validPaths);
         }
     }
 
@@ -302,11 +344,45 @@ void PythonPlugin::addScriptAction()
     if (m_scriptList.empty())
         m_removeScript->setEnabled(true);
 
-    QString filePath = QFileDialog::getOpenFileName(m_drawScriptRegister,
-                                                    QStringLiteral("Select Python Script"),
-                                                    QString(),
-                                                    QStringLiteral("Python Script (*.py)"));
-    addScript(filePath);
+    std::unique_ptr<QSettings> settings = LoadSettings();
+    const QString lastDir =
+        settings->value(QStringLiteral("LastAddScriptDir"), QDir::homePath()).toString();
+
+    const QStringList filePaths =
+        cvFileDialog::getOpenFileNames(m_drawScriptRegister,
+                                       QStringLiteral("Select Python Script(s)"),
+                                       lastDir,
+                                       QStringLiteral("Python Script (*.py)"));
+    if (filePaths.isEmpty())
+        return;
+
+    settings->setValue(QStringLiteral("LastAddScriptDir"),
+                       QFileInfo(filePaths.first()).absolutePath());
+    for (const QString &filePath : filePaths)
+    {
+        addScript(filePath);
+    }
+}
+
+void PythonPlugin::addScriptFromFolderAction()
+{
+    if (m_scriptList.empty())
+        m_removeScript->setEnabled(true);
+
+    std::unique_ptr<QSettings> settings = LoadSettings();
+    const QString lastDir =
+        settings->value(QStringLiteral("LastAddScriptFolderDir"), QDir::homePath()).toString();
+
+    const QString folderPath = cvFileDialog::getExistingDirectory(
+        m_drawScriptRegister,
+        QStringLiteral("Select Folder to Search for Python Scripts"),
+        lastDir,
+        QFileDialog::ShowDirsOnly);
+    if (folderPath.isEmpty())
+        return;
+
+    settings->setValue(QStringLiteral("LastAddScriptFolderDir"), folderPath);
+    addScript(folderPath);
 }
 
 void PythonPlugin::addScript(QString path)
@@ -315,6 +391,24 @@ void PythonPlugin::addScript(QString path)
         m_removeScript->setEnabled(true);
 
     QFileInfo fi(path);
+
+    // If the path is a directory, recursively find all .py files inside it
+    if (fi.isDir())
+    {
+        QDirIterator it(path,
+                        QStringList() << QStringLiteral("*.py"),
+                        QDir::Files,
+                        QDirIterator::Subdirectories);
+        while (it.hasNext())
+        {
+            const QString pyFile = it.next();
+            // Skip files starting with '__' (e.g. __init__.py)
+            if (QFileInfo(pyFile).baseName().startsWith(QLatin1String("__")))
+                continue;
+            addScript(pyFile);
+        }
+        return;
+    }
 
     // Doesn't add if file doesn't exist or if it's already present.
     if (!fi.exists() || m_savedPath.contains(path))
@@ -352,6 +446,7 @@ void PythonPlugin::addScript(QString path)
 
     // prepare to save script list
     m_savedPath.push_back(path);
+    saveScriptList();
 }
 
 void PythonPlugin::executeScript(QString path)
@@ -369,7 +464,53 @@ void PythonPlugin::removeScript(QString name, QAction *self)
     delete script;
     delete self;
     if (m_scriptList.empty())
+    {
         m_removeScript->setEnabled(false);
+        m_savedPath.clear();
+    }
+    saveScriptList();
+}
+
+void PythonPlugin::removeAllScripts()
+{
+    // Collect actions to remove (avoid modifying containers while iterating)
+    std::vector<QAction *> scriptActions;
+    std::vector<QAction *> removeActions;
+    scriptActions.reserve(m_scriptList.size());
+    removeActions.reserve(m_scriptList.size());
+
+    for (auto &[name, action] : m_scriptList)
+    {
+        scriptActions.push_back(action);
+    }
+
+    // The remove actions are the ones in m_removeScript that are not m_removeAllScripts
+    for (QAction *action : m_removeScript->actions())
+    {
+        if (action != m_removeAllScripts && action->isSeparator() == false)
+        {
+            removeActions.push_back(action);
+        }
+    }
+
+    // Remove all script actions from the Script Register menu
+    for (QAction *action : scriptActions)
+    {
+        m_drawScriptRegister->removeAction(action);
+        delete action;
+    }
+
+    // Remove all individual remove actions from the Remove Script menu
+    for (QAction *action : removeActions)
+    {
+        m_removeScript->removeAction(action);
+        delete action;
+    }
+
+    m_scriptList.clear();
+    m_savedPath.clear();
+    m_removeScript->setEnabled(false);
+    saveScriptList();
 }
 
 void PythonPlugin::handlePluginActionClicked(bool)

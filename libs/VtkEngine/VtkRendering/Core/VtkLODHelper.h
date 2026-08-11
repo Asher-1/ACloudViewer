@@ -22,7 +22,7 @@ class vtkQuadricClustering;
 namespace VtkRendering {
 
 /// Default values aligned with ParaView RenderViewSettings.
-constexpr double kDefaultLODRenderingThresholdMB = 20.0;
+constexpr double kDefaultLODRenderingThresholdMB = 50.0;
 constexpr double kDefaultLODResolution = 0.5;
 constexpr double kDefaultStillUpdateRate = 0.002;
 constexpr double kDefaultInteractiveUpdateRate = 5.0;

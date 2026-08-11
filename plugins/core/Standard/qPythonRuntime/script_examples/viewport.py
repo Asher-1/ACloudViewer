@@ -3,7 +3,11 @@ import cccorelib
 
 CC = pycc.GetInstance()
 
-pc = CC.getSelectedEntities()[0]
+entities = CC.getSelectedEntities()
+if not entities:
+    raise RuntimeError("No entity selected. Select a point cloud first.")
+
+pc = entities[0]
 
 bbMin, bbMax = cccorelib.CCVector3(), cccorelib.CCVector3()
 pc.getBoundingBox(bbMin, bbMax)

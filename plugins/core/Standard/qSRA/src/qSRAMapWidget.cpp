@@ -332,12 +332,12 @@ void qSRAMapWidget::paintEvent(QPaintEvent* /*event*/) {
 void qSRAMapWidget::mousePressEvent(QMouseEvent* event) {
     if (event->button() == Qt::MiddleButton) {
         m_panning = true;
-        m_lastMousePos = event->pos();
+        m_lastMousePos = qtCompatMouseEventPosInt(event);
         setCursor(Qt::ClosedHandCursor);
     } else if (event->button() == Qt::LeftButton &&
                (event->modifiers() & Qt::ShiftModifier)) {
         m_panning = true;
-        m_lastMousePos = event->pos();
+        m_lastMousePos = qtCompatMouseEventPosInt(event);
         setCursor(Qt::ClosedHandCursor);
     }
 }
@@ -351,10 +351,10 @@ void qSRAMapWidget::mouseReleaseEvent(QMouseEvent* /*event*/) {
 
 void qSRAMapWidget::mouseMoveEvent(QMouseEvent* event) {
     if (m_panning) {
-        const QPoint delta = event->pos() - m_lastMousePos;
+        const QPoint delta = qtCompatMouseEventPosInt(event) - m_lastMousePos;
         m_centerX -= delta.x() / m_scale;
         m_centerY += delta.y() / m_scale;
-        m_lastMousePos = event->pos();
+        m_lastMousePos = qtCompatMouseEventPosInt(event);
         update();
         emit viewChanged();
     }

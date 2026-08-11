@@ -181,19 +181,19 @@ public:
 
         // component count (dataVersion>=20)
         ::uint8_t componentCount = static_cast<::uint8_t>(N);
-        if (out.write((const char*)&componentCount, 1) < 0)
+        if (out.write(reinterpret_cast<const char*>(&componentCount), 1) < 0)
             return ccSerializableObject::WriteError();
 
         // element count = array size (dataVersion>=20)
         ::uint32_t elementCount = static_cast<::uint32_t>(data.size());
-        if (out.write((const char*)&elementCount, 4) < 0)
+        if (out.write(reinterpret_cast<const char*>(&elementCount), 4) < 0)
             return ccSerializableObject::WriteError();
 
         // array data (dataVersion>=20)
         {
             // DGM: do it by chunks, in case it's too big to be processed by the
             // system
-            const char* _data = (const char*)data.data();
+            const char* _data = reinterpret_cast<const char*>(data.data());
             qint64 byteCount = static_cast<qint64>(elementCount);
             byteCount *= sizeof(Type);
             while (byteCount != 0) {
@@ -252,7 +252,7 @@ public:
                 assert(sizeof(ComponentType) * N == sizeof(Type));
                 qint64 byteCount = static_cast<qint64>(data.size()) *
                                    (sizeof(ComponentType) * N);
-                char* dest = (char*)data.data();
+                char* dest = reinterpret_cast<char*>(data.data());
                 while (byteCount > 0) {
                     qint64 chunkSize = std::min(MaxElementPerChunk, byteCount);
                     if (in.read(dest, chunkSize) < 0) {
@@ -309,13 +309,15 @@ public:
             // we must convert each element, value by value!
             FileComponentType dummyArray[N]{0};
 
-            ComponentType* _data = (ComponentType*)data.data();
+            ComponentType* _data =
+                    reinterpret_cast<ComponentType*>(data.data());
 
             size_t elementSize = sizeof(FileComponentType) * N;
 
             if (_autoOffset) {
                 // read the first element
-                if (in.read((char*)dummyArray, elementSize) >= 0) {
+                if (in.read(reinterpret_cast<char*>(dummyArray), elementSize) >=
+                    0) {
                     for (unsigned k = 0; k < N; ++k) {
                         _autoOffset[k] = dummyArray[k];
                         *_data++ = 0;
@@ -326,7 +328,8 @@ public:
 
                 // read the next elements
                 for (unsigned i = 1; i < elementCount; ++i) {
-                    if (in.read((char*)dummyArray, elementSize) >= 0) {
+                    if (in.read(reinterpret_cast<char*>(dummyArray),
+                                elementSize) >= 0) {
                         for (unsigned k = 0; k < N; ++k) {
                             *_data++ = static_cast<ComponentType>(
                                     dummyArray[k] - _autoOffset[k]);
@@ -338,7 +341,7 @@ public:
             } else {
                 // no automatic offset
                 for (unsigned i = 0; i < elementCount; ++i) {
-                    if (in.read((char*)dummyArray,
+                    if (in.read(reinterpret_cast<char*>(dummyArray),
                                 sizeof(FileComponentType) * N) >= 0) {
                         for (unsigned k = 0; k < N; ++k) {
                             *_data++ =
@@ -364,11 +367,11 @@ protected:
         if (dataVersion < 20) return ccSerializableObject::CorruptError();
 
         // component count (dataVersion>=20)
-        if (in.read((char*)&componentCount, 1) < 0)
+        if (in.read(reinterpret_cast<char*>(&componentCount), 1) < 0)
             return ccSerializableObject::ReadError();
 
         // element count = array size (dataVersion>=20)
-        if (in.read((char*)&elementCount, 4) < 0)
+        if (in.read(reinterpret_cast<char*>(&elementCount), 4) < 0)
             return ccSerializableObject::ReadError();
 
         return true;

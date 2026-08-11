@@ -11,6 +11,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/ecvBBox.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvBox.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvCameraSensor.h
+		${CMAKE_CURRENT_LIST_DIR}/ecvCameraSensorDisplayUtils.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvChunk.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvCircle.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvClipBox.h
