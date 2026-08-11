@@ -217,6 +217,71 @@ jobs:
           Write-Host "Found installer: $PACKAGE_INSTALLER_NAME"
           echo "PACKAGE_INSTALLER_NAME=$PACKAGE_INSTALLER_NAME" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
+      - name: Verify ggml-cuda module has no hard CUDA toolkit dependency (Windows)
+        # This step verifies that libggml-cuda.dll only depends on cudart64_*.dll
+        # (which is bundled via AICore_BUNDLE_CUDA_RUNTIME) and nvcuda.dll (NVIDIA
+        # driver).  FORCE_MMQ must eliminate cuBLAS dependency so that CUDA runtime
+        # DLLs from the CUDA toolkit can be bundled into cuda-runtime/, making the
+        # installed ACloudViewer work on any host with only the NVIDIA driver.
+        if: ${{ matrix.BUILD_CUDA_MODULE == 'ON' }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $installRoot = "${{ env.INSTALL_DIR }}"
+          Write-Host "Install root: $installRoot"
+
+          # 1) Find ggml-cuda module DLL
+          $ggmlCuda = Get-ChildItem -Recurse $installRoot -Filter "ggml-cuda*.dll" `
+            | Select-Object -First 1 -ExpandProperty FullName
+          if (-not $ggmlCuda) {
+            Write-Warning "ggml-cuda module not found below $installRoot; skipping"
+            exit 0
+          }
+          Write-Host "Found ggml-cuda module: $ggmlCuda"
+
+          # 2) Use dumpbin to inspect DLL dependencies
+          $dumpbin = (Get-Command dumpbin -ErrorAction SilentlyContinue).Source
+          if (-not $dumpbin) {
+            Write-Warning "dumpbin not found; skipping verification"
+            exit 0
+          }
+          $deps = & $dumpbin /dependents $ggmlCuda `
+            | Select-String '\.dll$' `
+            | ForEach-Object { $_.ToString().Trim() }
+          Write-Host "--- DLL dependencies of $(Split-Path $ggmlCuda -Leaf) ---"
+          Write-Host ($deps -join "`n")
+
+          # 3) Check for banned CUDA toolkit DLLs
+          $hasCuBLAS = $false
+          $hasCudart = $false
+          foreach ($dll in $deps) {
+            if ($dll -like "cublas*.dll") {
+              $hasCuBLAS = $true
+              Write-Host "::warning::$dll detected (FORCE_MMQ should eliminate cuBLAS)"
+            }
+            if ($dll -like "cudart64_*.dll") { $hasCudart = $true }
+          }
+          if ($hasCuBLAS) {
+            Write-Error "ggml-cuda module has cuBLAS dependency — FORCE_MMQ should eliminate this"
+            exit 1
+          }
+          if ($hasCudart) {
+            Write-Host "OK: cudart dependency is present and will be bundled"
+          }
+
+          # 4) Verify cuda-runtime bundle directory exists
+          $cudaRuntimeDirs = Get-ChildItem -Recurse -Directory $installRoot `
+            -Filter "cuda-runtime" -ErrorAction SilentlyContinue
+          if ($cudaRuntimeDirs) {
+            foreach ($dir in $cudaRuntimeDirs) {
+              Write-Host "--- CUDA runtime bundle at $($dir.FullName) ---"
+              Get-ChildItem $dir.FullName | ForEach-Object { Write-Host "  $($_.Name)" }
+            }
+          } else {
+            Write-Warning "cuda-runtime/ directory not found (AICore_BUNDLE_CUDA_RUNTIME may be OFF)"
+          }
+
+          Write-Host "OK: ggml-cuda module dependency verification complete"
+
       - name: Run C++ unit tests
         if: ${{ matrix.CONFIG == 'Release' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
         working-directory: ${{ env.SRC_DIR }}\build

@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Bundle dependency .so files for Qt IFW deploy (Linux).
-# NVIDIA CUDA runtime libraries are NOT copied by default — same policy as
-# scripts/platforms/windows/pack_windows.ps1 Should-Filter.
-# Opt-in driver-only CUDA: cmake -DAICore_BUNDLE_CUDA_RUNTIME=ON copies runtime
-# libs via scripts/platforms/linux/bundle_cuda_runtime.sh into lib/cuda-runtime/.
+# NVIDIA CUDA runtime libraries are NOT copied.
+# AICore_BUNDLE_CUDA_RUNTIME is no-op on Linux: cudart_static + FORCE_MMQ
+# eliminate all dynamic CUDA toolkit dependencies (no libcudart.so.* at
+# runtime). The option is only meaningful on Windows.
 
 should_exclude_lib() {
     local base_name="$1"

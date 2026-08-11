@@ -1,0 +1,77 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: ACloudViewer Build <build@acloudviewer.io>
+Date: Tue, 11 Aug 2026 18:20:00 +0800
+Subject: [PATCH] Force MMQ and static cudart for self-contained CUDA backend
+
+When GGML_CUDA_FORCE_MMQ=ON all quantized matmul operations use the MMQ
+kernels instead of cuBLAS.  This patch removes the cuBLAS link dependency
+and switches to CUDA::cudart_static so that libggml-cuda.so has no
+DT_NEEDED on libcudart.so.12 / libcublas.so.12.  GPU acceleration then
+works on any host with an NVIDIA driver (libcuda.so.1) alone.
+
+The same applies to the GGML_STATIC path (used when legacy static-linking
+mode is enabled): skip cublas_static/cublasLt_static when FORCE_MMQ.
+
+On Windows, CUDA::cudart_static is not available from FindCUDAToolkit
+(MSVC CRT model conflict: cudart_static uses /MT while the project
+uses /MD), so the dynamic backend path falls back to CUDA::cudart.
+The CUDA backend on Windows is a MODULE library loaded at runtime,
+so the dynamic dependency on cudart64_*.dll is only activated when
+CUDA inference is actually requested (not at application startup).
+
+Inert when GGML_CUDA_FORCE_MMQ is OFF (the original link logic is
+preserved unchanged).
+
+---
+ src/ggml-cuda/CMakeLists.txt | 32 ++++++++++++++++++++++++--------
+ 1 file changed, 24 insertions(+), 8 deletions(-)
+
+diff --git a/src/ggml-cuda/CMakeLists.txt b/src/ggml-cuda/CMakeLists.txt
+index 9b56b7e..f7d0dcc 100644
+--- a/src/ggml-cuda/CMakeLists.txt
++++ b/src/ggml-cuda/CMakeLists.txt
+@@ -163,16 +163,32 @@ if (CUDAToolkit_FOUND)
+             if (GGML_CUDA_CUB_3DOT2)
+                 target_link_libraries(ggml-cuda PRIVATE  CCCL::CCCL)
+             endif()
++            # When FORCE_MMQ is ON, no cuBLAS is needed — MMQ kernels handle
++            # all quantized matmul operations without external BLAS.
++            # Also switch to cudart_static for driver-only self-containment.
+             if (CUDAToolkit_VERSION VERSION_GREATER_EQUAL "10.1")
+-                target_link_libraries(ggml-cuda PRIVATE  CUDA::cudart_static CUDA::cublas_static CUDA::cublasLt_static)
++                if (GGML_CUDA_FORCE_MMQ)
++                    target_link_libraries(ggml-cuda PRIVATE  CUDA::cudart_static)
++                else()
++                    target_link_libraries(ggml-cuda PRIVATE  CUDA::cudart_static CUDA::cublas_static CUDA::cublasLt_static)
++                endif()
+             else()
+-                target_link_libraries(ggml-cuda PRIVATE  CUDA::cudart_static CUDA::cublas_static)
++                if (GGML_CUDA_FORCE_MMQ)
++                    target_link_libraries(ggml-cuda PRIVATE  CUDA::cudart_static)
++                else()
++                    target_link_libraries(ggml-cuda PRIVATE  CUDA::cudart_static CUDA::cublas_static)
++                endif()
+             endif()
+         endif()
+     else()
+         if (GGML_CUDA_CUB_3DOT2)
+             target_link_libraries(ggml-cuda PRIVATE  CCCL::CCCL)
+         endif()
+-        target_link_libraries(ggml-cuda PRIVATE CUDA::cudart CUDA::cublas)
++        # Dynamic backend mode (default Release path): FORCE_MMQ eliminates
++        # the cuBLAS dependency and switches to static cudart.
++        if (GGML_CUDA_FORCE_MMQ)
++            if(WIN32)
++                # Windows: no CUDA::cudart_static (MSVC CRT conflict /MT vs /MD).
++                target_link_libraries(ggml-cuda PRIVATE CUDA::cudart)
++            else()
++                target_link_libraries(ggml-cuda PRIVATE CUDA::cudart_static)
++            endif()
++        else()
++            target_link_libraries(ggml-cuda PRIVATE CUDA::cudart CUDA::cublas)
++        endif()
+     endif()
+ 
+     if (GGML_CUDA_NO_VMM)
+-- 
+2.34.1

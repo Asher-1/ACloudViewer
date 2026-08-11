@@ -208,6 +208,11 @@ if (UNIX AND NOT APPLE)
                     WORKING_DIRECTORY ${BUILD_LIB_PATH})
 
     if(AICore_BUNDLE_CUDA_RUNTIME AND AICore_CUDA_ENABLED)
+        message(DEPRECATION
+            "AICore_BUNDLE_CUDA_RUNTIME=ON is no longer needed on Linux: "
+            "cudart_static + FORCE_MMQ eliminate all dynamic CUDA toolkit "
+            "dependencies. This option is retained for Windows compatibility "
+            "and will be removed in a future major version.")
         set(_bundled_cuda_src "${CMAKE_INSTALL_PREFIX}/${LIBS_FOLDER_NAME}/cuda-runtime")
         set(_bundled_cuda_dst "${DEPLOY_LIB_PATH}/cuda-runtime")
         if(EXISTS "${_bundled_cuda_src}")

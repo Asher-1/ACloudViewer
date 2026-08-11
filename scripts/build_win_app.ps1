@@ -96,7 +96,7 @@ if ($env:ONLY_BUILD_CUDA -eq "ON") {
     Write-Host "Start to build GUI package with CUDA only..."
     Write-Host ""
     $env:BUILD_CUDA_MODULE = "ON"
-    $cudaBuildOptions = $buildOptions + @("with_cuda")
+    $cudaBuildOptions = $buildOptions + @("with_cuda", "with_aicore_cuda", "bundle_cuda_runtime")
     Build-GuiApp -options $cudaBuildOptions
     Write-Host ""
 } else {
@@ -111,7 +111,7 @@ if ($env:ONLY_BUILD_CUDA -eq "ON") {
         Write-Host "Start to build GUI package with CUDA..."
         Write-Host ""
         $env:BUILD_CUDA_MODULE = "ON"
-        $cudaBuildOptions = $buildOptions + @("with_cuda")
+        $cudaBuildOptions = $buildOptions + @("with_cuda", "with_aicore_cuda", "bundle_cuda_runtime")
         Build-GuiApp -options $cudaBuildOptions
         Write-Host ""
     }

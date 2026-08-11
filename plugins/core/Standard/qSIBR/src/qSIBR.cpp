@@ -25,6 +25,37 @@
 #include "SIBROptionsDialog.h"
 #include "SIBRViewerThread.h"
 #include "qSIBRCommands.h"
+
+#ifdef SIBR_HAS_CUDA
+#include <cuda_runtime.h>
+#ifdef _MSC_VER
+#include <excpt.h>
+#endif
+
+namespace {
+// Probe CUDA availability without crashing when it is missing.
+// - Linux: the runtime is statically linked into the plugin, the call simply
+//   returns an error code when no NVIDIA driver / GPU is present.
+// - Windows: the runtime DLL is delay-loaded (/DELAYLOAD), so calling into it
+//   without a CUDA toolkit raises a SEH exception; __try/__except keeps this
+//   probe in a C-only function (no C++ objects that need unwinding).
+bool sibrCudaRuntimeAvailable() {
+#ifdef _MSC_VER
+    __try {
+        int deviceCount = 0;
+        return cudaGetDeviceCount(&deviceCount) == cudaSuccess &&
+               deviceCount > 0;
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        return false;
+    }
+#else
+    int deviceCount = 0;
+    return cudaGetDeviceCount(&deviceCount) == cudaSuccess && deviceCount > 0;
+#endif
+}
+}  // namespace
+#endif
+
 qSIBR::qSIBR(QObject* parent)
     : QObject(parent), ccStdPluginInterface(":/CC/plugin/qSIBR/info.json") {}
 
@@ -188,6 +219,17 @@ void qSIBR::launchInMemoryGaussianViewer(QByteArray plyBytes,
                                          QByteArray camerasJson,
                                          int shDegree) {
 #ifdef SIBR_HAS_CUDA
+    // Same CUDA availability probe as launchGaussianViewer: the viewer thread
+    // would otherwise hit the delay-loaded CUDA DLL / driver on Windows.
+    if (!sibrCudaRuntimeAvailable()) {
+        if (m_app) {
+            m_app->dispToConsole(
+                    tr("[SIBR] CUDA not available - the 3D Gaussian Splatting "
+                       "viewer requires a CUDA-capable GPU and driver"),
+                    ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
+        }
+        return;
+    }
     if (plyBytes.isEmpty() || camerasJson.isEmpty()) {
         if (m_app) {
             m_app->dispToConsole(
@@ -383,6 +425,20 @@ void qSIBR::launchPointBasedViewer() {
 
 void qSIBR::launchGaussianViewer() {
 #ifdef SIBR_HAS_CUDA
+    // The CUDA runtime is statically linked (Linux) or delay-loaded (Windows),
+    // so the plugin itself always loads; only the Gaussian viewer needs a
+    // usable CUDA device. Probe it here for a clean error message instead of
+    // failing deep inside SIBR.
+    if (!sibrCudaRuntimeAvailable()) {
+        if (m_app) {
+            m_app->dispToConsole(
+                    tr("[SIBR] CUDA not available - the 3D Gaussian Splatting "
+                       "viewer requires a CUDA-capable GPU and driver (and the "
+                       "CUDA toolkit runtime on Windows)"),
+                    ecvMainAppInterface::ERR_CONSOLE_MESSAGE);
+        }
+        return;
+    }
     SIBROptionsDialog dlg(SIBROptionsDialog::GaussianSplatting,
                           m_app ? m_app->getMainWindow() : nullptr);
     if (!m_selectedEntities.empty()) {

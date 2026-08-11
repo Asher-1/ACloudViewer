@@ -13,3 +13,5 @@ paths-ignore:
   - '**/third_party'
   - '**/thirdparty'
   - 'plugins/core/Standard/qSIBR/3rdparty'
+  # Vendored third-party SIBR library (Inria) embedded in qSIBR - not first-party code
+  - 'plugins/core/Standard/qSIBR/SIBR'

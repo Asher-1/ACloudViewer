@@ -100,7 +100,7 @@ if [ "${ONLY_BUILD_CUDA}" = "ON" ]; then
     echo "Start to build GUI package with CUDA..."
     echo
     export BUILD_CUDA_MODULE=ON
-    build_gui_app ${BUILD_OPTIONS}
+    build_gui_app ${BUILD_OPTIONS} with_aicore_cuda
     echo
 else
     echo "Start to build GUI package with only CPU..."
@@ -114,7 +114,7 @@ else
         echo "Start to build GUI package with CUDA..."
         echo
         export BUILD_CUDA_MODULE=ON
-        build_gui_app ${BUILD_OPTIONS}
+        build_gui_app ${BUILD_OPTIONS} with_aicore_cuda
         echo
     fi
 fi

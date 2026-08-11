@@ -102,8 +102,15 @@ if(GGML_USE_CUDA)
         message(STATUS "ggml: CUDA architectures = native (fallback)")
     endif()
     list(APPEND GGML_CMAKE_ARGS -DGGML_CUDA_NCCL=OFF)
+    # Force MMQ (matrix-multiply quantized) kernels instead of cuBLAS so that
+    # libggml-cuda.so has no DT_NEEDED on libcublas.so.12 / libcublasLt.so.12.
+    # Combined with the companion patch to ggml-cuda/CMakeLists.txt that also
+    # switches to CUDA::cudart_static, GPU acceleration works on driver-only
+    # machines (no CUDA toolkit install needed). See:
+    #   patches/cuda_mmq/0001-cuda-mmq-force-static.patch
+    list(APPEND GGML_CMAKE_ARGS -DGGML_CUDA_FORCE_MMQ=ON)
     set(_GGML_CUDA_ENABLED ON)
-    message(STATUS "ggml: CUDA backend enabled")
+    message(STATUS "ggml: CUDA backend enabled (FORCE_MMQ, no cuBLAS dyn dep)")
 else()
     list(APPEND GGML_CMAKE_ARGS -DGGML_CUDA=OFF)
 endif()

@@ -75,7 +75,10 @@ option(AICore_USE_OPENCL
     "Build AICore OpenCL inference backend (legacy/Adreno developer opt-in)"
     OFF)
 option(AICore_BUNDLE_CUDA_RUNTIME
-    "Redist CUDA runtime libs into installer for driver-only targets (requires AICore_USE_CUDA=ON)"
+    "Redist CUDA runtime libs into installer for driver-only targets (requires AICore_USE_CUDA=ON).\
+Note: Linux users no longer need this — cudart_static + FORCE_MMQ eliminate dynamic\
+dependency on libcudart.so.* / libcublas.so.*. Option kept for backward compatibility\
+and for Windows where cudart_static is unavailable (MSVC CRT model conflict)."
     OFF)
 set(AICore_OPENCL_TARGET_VERSION "200" CACHE STRING
     "OpenCL host API target for AICore (120, 200, or 300)")
