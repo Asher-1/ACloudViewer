@@ -140,12 +140,14 @@ cmake --build . --config Release --target install
 | `GGML_ENABLED` | (internal) | Auto-synced from `AICore_ENABLED`; not a separate user switch |
 | `AICore_USE_METAL` | Apple: ON, else OFF | Metal backend (Apple only; macOS Auto default) |
 | `AICore_USE_VULKAN` | Linux/Win: ON, macOS: OFF | **ON:** build Vulkan backend; configure **fails** if glslc/Vulkan/SPIR-V deps missing |
-| `AICore_USE_CUDA` | OFF | Developer CUDA backend (independent of `BUILD_CUDA_MODULE`). When ON, Auto becomes **CUDA → Vulkan → CPU** on Linux/Windows |
+| `AICore_USE_CUDA` | OFF | Developer CUDA backend (independent of `BUILD_CUDA_MODULE`). When ON, Auto becomes **CUDA → Vulkan → CPU** on Linux/Windows. |
+| | | **Linux:** `libggml-cuda.so` links `CUDA::cudart_static` (no DT_NEEDED on `libcudart.so.*`). FORCE_MMQ routes quantized matmul through MMQ kernels, but ggml hardwires **non-quantized matmul to cuBLAS**, so `libcublas.so.*` is still a DT_NEEDED dependency. **Driver-only machines need the bundled runtime**: add `-DAICore_BUNDLE_CUDA_RUNTIME=ON` to ship `libcublas.so.*` under `lib/cuda-runtime/` (auto-added to `LD_LIBRARY_PATH` by `ACloudViewer.sh`). |
+| | | **Windows:** `cudart_static` not available (MSVC CRT `/MT` vs `/MD` conflict). Falls back to dynamic `CUDA::cudart` via PRIVATE link. Use `AICore_BUNDLE_CUDA_RUNTIME=ON` to bundle cudart64_*.dll (and any other CUDA DLLs detected by dumpbin) into `lib/cuda-runtime/` inside the installer. `ACloudViewer.bat` auto-adds this dir to `%PATH%`. **Result: no CUDA toolkit needed on target machine — only the NVIDIA driver (nvcuda.dll).** |
 | `AICore_USE_SYCL` | OFF | Intel GPU backend; requires oneAPI compiler and a validated runtime bundle |
 | `AICore_SYCL_USE_DNN` | ON | oneDNN kernels in SYCL backend (requires `AICore_USE_SYCL=ON`) |
 | `AICore_USE_OPENCL` | OFF | Legacy/Adreno developer opt-in; not part of desktop distributions |
 | `AICore_OPENCL_TARGET_VERSION` | 200 | OpenCL host API target: 120, 200, or 300 |
-| `AICore_BUNDLE_CUDA_RUNTIME` | OFF | **`option()`** in `cmake/AICoreOptions.cmake`: redist CUDA runtime (`lib/cuda-runtime/`) into installer; **requires `AICore_USE_CUDA=ON`**; not in GitHub CI |
+| `AICore_BUNDLE_CUDA_RUNTIME` | OFF | **`option()`** in `cmake/AICoreOptions.cmake`: redist CUDA runtime into installer; **requires `AICore_USE_CUDA=ON`**. Bundles `libcublas.so.*` (Linux) / cudart64_*.dll + cublas64_*.dll etc. (Windows) into `lib/cuda-runtime/` for **driver-only deployment** — required on both platforms since `libggml-cuda.so` always links cuBLAS. `ACloudViewer.sh` / `ACloudViewer.bat` auto-add this dir to `LD_LIBRARY_PATH` / `%PATH%`. |
 | `AICore_CPU_ALL_VARIANTS` | OFF | Build all ggml CPU ISA variants (`libggml-cpu-*.so`; compiler-adaptive; CI release/wheel default ON). Matches [llama.cpp release](https://github.com/ggml-org/llama.cpp/blob/master/.github/workflows/release.yml) flags: `-DGGML_BACKEND_DL=ON -DGGML_NATIVE=OFF -DGGML_CPU_ALL_VARIANTS=ON`. Older GCC (e.g. Ubuntu 20.04) skips BF16/AMX/VNNI variants automatically. |
 | `AICore_METAL_ENABLED` | (auto) | Read-only: ON when Metal backend was built |
 | `AICore_VULKAN_ENABLED` | (auto) | Read-only: ON when Vulkan backend was built |
@@ -479,10 +481,11 @@ driver. macOS uses Metal + CPU only.
 - `libCV_DB_LIB` links AICore for the existing `ccImage` Qt adapter. COLMAP,
   pybind, qDA3, and qFreeSplatter otherwise use the public AICore API directly.
 - CUDA is a developer backend: add `-DAICore_USE_CUDA=ON` explicitly.
-- For **driver-only** CUDA installers (no CUDA Toolkit on target machines), also add
-  `-DAICore_BUNDLE_CUDA_RUNTIME=ON` when packaging. Runtime libs land in
-  `lib/cuda-runtime/`; `libcuda.so.1` still comes from the NVIDIA driver.
-  GitHub CI **never** enables this by default.
+> **Linux & Windows:** For driver-only CUDA installers, add
+> `-DAICore_BUNDLE_CUDA_RUNTIME=ON` to bundle CUDA runtime libs into
+> `lib/cuda-runtime/`. Required on both platforms: `libggml-cuda.so` still
+> links `libcublas.so.*` (ggml hardwires non-quantized matmul to cuBLAS),
+> and cudart is dynamic on Windows.
 - qFreeSplatter **Visualize** button requires `-DPLUGIN_STANDARD_QSIBR=ON` (Linux/Windows; **not supported on macOS** by default).
 - **PostInstall** copies qSIBR runtime assets (`shaders/`, `sibr_resources/`, `ibr_resources.ini`) on **Linux and Windows only** when those directories exist in the build tree.
 
@@ -575,17 +578,22 @@ cmake -DDEVELOPER_BUILD=OFF \
 cmake --build . --config Release --target install
 ```
 
-> **Linux/Windows installer (`PACKAGE=ON`):** release packages contain
+> **Linux installer (`PACKAGE=ON`):** release packages contain
 > Vulkan/CPU when their build tools are available. CUDA is excluded unless
-> explicitly requested with `AICore_USE_CUDA=ON`. By default NVIDIA runtime
-> libraries are **not** bundled (target machines need a matching CUDA Toolkit, or
-> use Vulkan/CPU Auto). Opt-in driver-only CUDA: `-DAICore_BUNDLE_CUDA_RUNTIME=ON`
-> (custom builds only; not GitHub CI). Vulkan users need only a compatible GPU
-> driver/ICD.
+> explicitly requested with `AICore_USE_CUDA=ON`. For driver-only CUDA
+> deployment add `-DAICore_BUNDLE_CUDA_RUNTIME=ON`: `cudart_static` removes the
+> `libcudart.so.*` dependency, but `libggml-cuda.so` still links `libcublas.so.*`
+> (non-quantized matmul is hardwired to cuBLAS), which gets bundled into
+> `lib/cuda-runtime/`. Vulkan users need only a compatible GPU driver/ICD.
+>
+> **Windows installer (`PACKAGE=ON`):** Same defaults. For driver-only CUDA
+> deployment, add `-DAICore_BUNDLE_CUDA_RUNTIME=ON` to bundle cudart64_*.dll
+> into `lib/cuda-runtime/`. Target machines need only a compatible NVIDIA
+> driver (provides `nvcuda.dll`) — no CUDA Toolkit required.
 
-**Custom CUDA installer (driver-only, not CI default):**
+**Windows: Custom CUDA installer (driver-only, not CI default):**
 
-```bash
+```cmake
 cmake -DDEVELOPER_BUILD=OFF \
       -DAICore_ENABLED=ON \
       -DAICore_USE_CUDA=ON \
@@ -595,24 +603,24 @@ cmake -DDEVELOPER_BUILD=OFF \
 cmake --build . --config Release --target install
 ```
 
-Or via `ci_utils.sh`:
-
-```bash
-source util/ci_utils.sh
-build_gui_app with_conda package_installer with_aicore_cuda bundle_cuda_runtime
-```
-
-Windows (`util/ci_utils.ps1` — same option names):
+Windows CI helper:
 
 ```powershell
 . util\ci_utils.ps1
 Build-GuiApp with_conda package_installer with_aicore_cuda bundle_cuda_runtime
 ```
 
-Both helpers pass `-DAICore_USE_CUDA` and `-DAICore_BUNDLE_CUDA_RUNTIME` to CMake when those options are set.
+Both `ci_utils.sh` and `ci_utils.ps1` accept `bundle_cuda_runtime` as an option.
+On Linux it bundles `libcublas.so.*` (and any other CUDA libs that
+`libggml-cuda.so` pulls in) into `lib/cuda-runtime/`:
+```bash
+# Linux (CUDA driver-only installer):
+build_gui_app with_conda package_installer with_aicore_cuda bundle_cuda_runtime
+```
 
-Target machines need a compatible **NVIDIA driver** (provides `libcuda.so.1`) whose
-version meets the bundled CUDA runtime major version. No CUDA Toolkit install required.
+> **End result on both platforms:** Target machines need only a compatible NVIDIA
+> driver whose version meets the CUDA major version used at build time. No CUDA
+> Toolkit install required.
 
 > **Python plugin (`PLUGIN_PYTHON=ON`):** By default only a **minimal** embedded runtime is installed (`PLUGIN_PYTHON_COPY_MINIMAL_ENV=ON`): Python stdlib + packages listed in `plugins/core/Standard/qPythonRuntime/requirements-release.txt`. It does **not** copy your entire pyenv/conda `site-packages` (which can be several GB if torch/Jupyter/etc. are installed). For release installers, point CMake at a **clean** interpreter:
 >

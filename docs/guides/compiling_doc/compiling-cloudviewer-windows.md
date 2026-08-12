@@ -1,6 +1,6 @@
 # Building ACloudViewer from Source on Windows
 
-> **Automated build script:** [`scripts/build_win.py`](../../../scripts/build_win.py)
+> **Automated build script:** `[scripts/build_win.py](../../../scripts/build_win.py)`
 >
 > ```powershell
 > python .\scripts\build_win.py
@@ -32,16 +32,18 @@
 
 ## Prerequisites
 
-| Item               | Requirement                                                         |
-| ------------------ | ------------------------------------------------------------------- |
-| **OS**             | Windows 10/11 (64-bit)                                              |
-| **Visual Studio**  | 2022 (with "Desktop development with C++" workload)                 |
-| **CMake**          | ≥ 3.20 (bundled with VS or standalone)                              |
-| **Python**         | 3.10 – 3.12 (via Conda)                                             |
-| **Conda**          | Miniconda or Anaconda                                               |
-| **Git**            | https://git-scm.com/download/win                                    |
+
+| Item                     | Requirement                                                                                                                         |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| **OS**                   | Windows 10/11 (64-bit)                                                                                                              |
+| **Visual Studio**        | 2022 (with "Desktop development with C++" workload)                                                                                 |
+| **CMake**                | ≥ 3.20 (bundled with VS or standalone)                                                                                              |
+| **Python**               | 3.10 – 3.12 (via Conda)                                                                                                             |
+| **Conda**                | Miniconda or Anaconda                                                                                                               |
+| **Git**                  | [https://git-scm.com/download/win](https://git-scm.com/download/win)                                                                |
 | **AICore GPU (default)** | **Vulkan** — `AICore_USE_VULKAN=ON` on Windows (CMake default); run `.\util\vulkan\install_vulkan_sdk_windows.ps1` before configure |
-| **GPU (optional)** | CUDA toolkit ≥ 11.8 for optional `-DAICore_USE_CUDA=ON` / `-DBUILD_CUDA_MODULE=ON` |
+| **GPU (optional)**       | CUDA toolkit ≥ 11.8 for optional `-DAICore_USE_CUDA=ON` / `-DBUILD_CUDA_MODULE=ON`                                                  |
+
 
 ---
 
@@ -130,8 +132,8 @@ cmake -G $env:GENERATOR -A $env:ARCHITECTURE `
     -DPLUGIN_IO_QMESH=ON `
     -DPLUGIN_IO_QPDAL=OFF `
     -DPLUGIN_IO_QPHOTOSCAN=ON `
-    -DPLUGIN_IO_QRDB=ON `
-    -DPLUGIN_IO_QRDB_FETCH_DEPENDENCY=ON `
+    -DPLUGIN_IO_QRDB=OFF `
+    -DPLUGIN_IO_QRDB_FETCH_DEPENDENCY=OFF `
     -DPLUGIN_IO_QFBX=ON `
     -DPLUGIN_IO_QSTEP=OFF `
     -DPLUGIN_STANDARD_QCORK=ON `
@@ -391,13 +393,16 @@ cmake --build . --target install-pip-package --config Release --parallel $env:NP
 
 ## Troubleshooting
 
-| Symptom | Fix |
-| ------- | --- |
-| `MSBUILD : error MSB1009: Project file does not exist` | Ensure you run `cmake ..` from inside the `build` directory |
-| Conda env not found after `conda activate` | Restart PowerShell or run `conda init powershell` first |
-| `setup_conda_env.ps1` script fails | Verify `$env:CONDA_PREFIX` is set: `echo $env:CONDA_PREFIX` |
-| Qt not found by CMake | Run `.\scripts\setup_conda_env.ps1` to set `CONDA_LIB_DIR` and `EIGEN_ROOT_DIR` |
-| CUDA not detected | Install CUDA toolkit and verify `nvcc -V` in PowerShell |
-| `AICore_USE_VULKAN=ON but Vulkan dependencies are missing` (ggml may print `GGML_USE_VULKAN` internally) | Run `.\util\vulkan\install_vulkan_sdk_windows.ps1`, then dot-source `acloudviewer-vulkan-env.ps1` before `cmake` |
-| `parallel` flag ignored | Use `/m:N` for MSBuild or `--parallel N` for `cmake --build` |
-| Long path errors | Enable Win32 long paths: `New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Value 1` |
+
+| Symptom                                                                                                  | Fix                                                                                                                                     |
+| -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `MSBUILD : error MSB1009: Project file does not exist`                                                   | Ensure you run `cmake ..` from inside the `build` directory                                                                             |
+| Conda env not found after `conda activate`                                                               | Restart PowerShell or run `conda init powershell` first                                                                                 |
+| `setup_conda_env.ps1` script fails                                                                       | Verify `$env:CONDA_PREFIX` is set: `echo $env:CONDA_PREFIX`                                                                             |
+| Qt not found by CMake                                                                                    | Run `.\scripts\setup_conda_env.ps1` to set `CONDA_LIB_DIR` and `EIGEN_ROOT_DIR`                                                         |
+| CUDA not detected                                                                                        | Install CUDA toolkit and verify `nvcc -V` in PowerShell                                                                                 |
+| `AICore_USE_VULKAN=ON but Vulkan dependencies are missing` (ggml may print `GGML_USE_VULKAN` internally) | Run `.\util\vulkan\install_vulkan_sdk_windows.ps1`, then dot-source `acloudviewer-vulkan-env.ps1` before `cmake`                        |
+| `parallel` flag ignored                                                                                  | Use `/m:N` for MSBuild or `--parallel N` for `cmake --build`                                                                            |
+| Long path errors                                                                                         | Enable Win32 long paths: `New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Value 1` |
+
+

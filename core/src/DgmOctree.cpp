@@ -3630,12 +3630,12 @@ unsigned DgmOctree::executeFunctionForAllCellsAtLevel(
                     progressCb->setMethodTitle(functionTitle);
                 }
                 char buffer[512];
-                sprintf(buffer,
-                        "Octree level %i\nCells: %u\nMean population: %3.2f "
-                        "(+/-%3.2f)\nMax population: %u",
-                        level, cellCount, m_averageCellPopulation[level],
-                        m_stdDevCellPopulation[level],
-                        m_maxCellPopulation[level]);
+                snprintf(buffer, sizeof(buffer),
+                         "Octree level %i\nCells: %u\nMean population: %3.2f "
+                         "(+/-%3.2f)\nMax population: %u",
+                         level, cellCount, m_averageCellPopulation[level],
+                         m_stdDevCellPopulation[level],
+                         m_maxCellPopulation[level]);
                 progressCb->setInfo(buffer);
             }
             progressCb->update(0);
@@ -3747,7 +3747,8 @@ unsigned DgmOctree::executeFunctionForAllCellsAtLevel(
                     progressCb->setMethodTitle(functionTitle);
                 }
                 char buffer[512];
-                sprintf(buffer,
+                snprintf(
+                        buffer, sizeof(buffer),
                         "Octree level %i\nCells: %i\nAverage population: %3.2f "
                         "(+/-%3.2f)\nMax population: %u",
                         level, static_cast<int>(cells.size()),
@@ -3865,19 +3866,19 @@ unsigned DgmOctree::executeFunctionForAllCellsStartingAtLevel(
                     progressCb->setMethodTitle(functionTitle);
                 }
                 char buffer[1024];
-                sprintf(buffer,
-                        "Octree levels %i - %i\nCells: %i - %i\nAverage "
-                        "population: %3.2f (+/-%3.2f) - %3.2f (+/-%3.2f)\nMax "
-                        "population: %u - %u",
-                        startingLevel, MAX_OCTREE_LEVEL,
-                        getCellNumber(startingLevel),
-                        getCellNumber(MAX_OCTREE_LEVEL),
-                        m_averageCellPopulation[startingLevel],
-                        m_stdDevCellPopulation[startingLevel],
-                        m_averageCellPopulation[MAX_OCTREE_LEVEL],
-                        m_stdDevCellPopulation[MAX_OCTREE_LEVEL],
-                        m_maxCellPopulation[startingLevel],
-                        m_maxCellPopulation[MAX_OCTREE_LEVEL]);
+                snprintf(buffer, sizeof(buffer),
+                         "Octree levels %i - %i\nCells: %i - %i\nAverage "
+                         "population: %3.2f (+/-%3.2f) - %3.2f (+/-%3.2f)\nMax "
+                         "population: %u - %u",
+                         startingLevel, MAX_OCTREE_LEVEL,
+                         getCellNumber(startingLevel),
+                         getCellNumber(MAX_OCTREE_LEVEL),
+                         m_averageCellPopulation[startingLevel],
+                         m_stdDevCellPopulation[startingLevel],
+                         m_averageCellPopulation[MAX_OCTREE_LEVEL],
+                         m_stdDevCellPopulation[MAX_OCTREE_LEVEL],
+                         m_maxCellPopulation[startingLevel],
+                         m_maxCellPopulation[MAX_OCTREE_LEVEL]);
                 progressCb->setInfo(buffer);
             }
             progressCb->update(0);

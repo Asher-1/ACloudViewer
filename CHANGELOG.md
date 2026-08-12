@@ -3,6 +3,14 @@ ACloudViewer Version History
 
 v3.9.5-Beta (Asher) - 08/04/2026
 --------------------------------
+- CUDA deployment: ggml-cuda backend uses FORCE_MMQ + cudart_static on Linux
+    - libAICore.so has zero dynamic dependency on libcudart.so.* / libcublas.so.*
+    - GPU inference works on any host with only the NVIDIA driver (no CUDA toolkit)
+    - qSIBR plugin follows the same cudart_static strategy (already established)
+    - Windows: falls back to dynamic CUDA::cudart (no static cudart in MSVC CRT model)
+    - CI: AICore_USE_CUDA=ON automatically when building with CUDA_MODULE flag
+- CI: add DT_NEEDED regression guard for libAICore.so (VerifyNoDynamicCuda.cmake)
+- Remove dead duplicate qSIBR/cmake/VerifyNoDynamicCudart.cmake (superseded by common cmake/VerifyNoDynamicCuda.cmake)
 - Multi-window system (ref: ParaView multi-view architecture, CloudCompare ccGLWindow per-view state):
     - Add multiple 3D windows support with independent per-view rendering state
       (camera, interaction, picking, viewport parameters per window)

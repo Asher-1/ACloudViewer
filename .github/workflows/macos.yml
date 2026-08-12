@@ -104,6 +104,7 @@ jobs:
       - name: Config and build APP
         shell: bash -l {0}
         run: |
+          set -o pipefail
           export PATH="${HOME}/QtIFW-4.6.1-darwin/bin:$PATH"
           export PATH="/usr/local/var/homebrew/linked/ccache/libexec:$PATH"
           export PKG_CONFIG_PATH="$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
@@ -115,12 +116,26 @@ jobs:
           ccache -s
           echo "Start to build GUI package On MacOS..."
           source util/ci_utils.sh
-          build_gui_app with_conda package_installer
+          # Tee the full build log to a file so it can be uploaded as an
+          # artifact below (GitHub truncates very long step logs in the UI).
+          build_gui_app with_conda package_installer 2>&1 | tee /tmp/macos-build.log
           ccache -s
 
           CLOUDVIEWER_VERSION_FULL="$(grep -F CLOUDVIEWER_VERSION_FULL build/CMakeCache.txt | cut -f2 -d'=')"
           DEVEL_PKG_NAME="$(basename ${{ env.INSTALL_DIR }}/ACloudViewer-${CLOUDVIEWER_VERSION_FULL}*.dmg)"
           echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" >> $GITHUB_ENV
+
+      - name: Upload build log
+        # Persist the full build log (GitHub truncates very long step logs in
+        # the UI). if: always() + continue-on-error: upload even when the build
+        # failed, so it can be inspected.
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-build-log-${{ runner.arch }}
+          path: /tmp/macos-build.log
+          if-no-files-found: ignore
 
       - name: Upload ACloudViewer app to GitHub artifacts
         uses: actions/upload-artifact@v4
@@ -334,6 +349,7 @@ jobs:
       - name: Config and build Wheel
         shell: bash -l {0}
         run: |
+          set -o pipefail
           export PATH="/usr/local/var/homebrew/linked/ccache/libexec:$PATH"
           export PKG_CONFIG_PATH="$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
           export PATH="$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/pkgconfig:$CONDA_PREFIX/lib/cmake:$PATH"
@@ -343,11 +359,25 @@ jobs:
           ccache -s
           echo "Start to build wheel package On MacOS..."
           source util/ci_utils.sh
-          build_mac_wheel with_conda build_realsense
+          # Tee the full build log to a file so it can be uploaded as an
+          # artifact below (GitHub truncates very long step logs in the UI).
+          build_mac_wheel with_conda build_realsense 2>&1 | tee /tmp/macos-wheel-build.log
           ccache -s
 
           PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/cloudviewer*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
+
+      - name: Upload build log
+        # Persist the full build log (GitHub truncates very long step logs in
+        # the UI). if: always() + continue-on-error: upload even when the build
+        # failed, so it can be inspected.
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-wheel-build-log-py${{ matrix.python_version }}
+          path: /tmp/macos-wheel-build.log
+          if-no-files-found: ignore
 
       - name: Upload Wheel to GitHub artifacts
         uses: actions/upload-artifact@v4
@@ -355,7 +385,7 @@ jobs:
           name: ${{ env.PIP_PKG_NAME }}
           path: build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
-       
+      
       - name: Update devel release
         if: ${{ github.ref == 'refs/heads/main' }}
         env:

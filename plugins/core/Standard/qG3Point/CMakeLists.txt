@@ -45,7 +45,7 @@ if ( PLUGIN_STANDARD_G3POINT )
 
 	# Get the latest commit hash
 	execute_process(
-		COMMAND git describe
+		COMMAND git describe --always
 		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 		OUTPUT_VARIABLE GIT_TAG_G3POINT
 		OUTPUT_STRIP_TRAILING_WHITESPACE)

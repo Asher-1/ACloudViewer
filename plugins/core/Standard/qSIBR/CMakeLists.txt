@@ -174,9 +174,36 @@ if(PLUGIN_STANDARD_QSIBR)
 
     # CUDA for Gaussian Splatting (use global BUILD_CUDA_MODULE)
     set(SIBR_HAS_CUDA OFF)
-    if(BUILD_CUDA_MODULE AND TARGET CUDA::cudart)
+    set(SIBR_CUDA_RUNTIME "")
+    if(BUILD_CUDA_MODULE AND (TARGET CUDA::cudart OR TARGET CUDA::cudart_static))
         set(SIBR_HAS_CUDA ON)
-        message(STATUS "qSIBR: CUDA available via BUILD_CUDA_MODULE")
+        # Link the CUDA runtime STATICALLY on UNIX so that libQSIBR_PLUGIN.so
+        # has no DT_NEEDED on libcudart.so.X. The plugin then loads on machines
+        # without a CUDA toolkit installed; the NVIDIA driver (libcuda.so.1) is
+        # dlopen'd by cudart itself only when CUDA APIs are actually called, so
+        # even driver-less machines can load the plugin (only the Gaussian
+        # viewer reports an error). This matches the project-wide
+        # BUILD_WITH_CUDA_STATIC policy already used for 3rdparty_cublas.
+        # Windows ships no static cudart: keep the shared runtime but delay-load
+        # it (/DELAYLOAD) so the plugin does NOT hard-depend on cudart64_*.dll
+        # either - it loads on machines without a CUDA toolkit and the Gaussian
+        # viewer reports a clean error (probed via SEH in qSIBR.cpp).
+        if(WIN32)
+            set(SIBR_CUDA_RUNTIME CUDA::cudart)
+            get_target_property(_sibr_cudart_loc CUDA::cudart IMPORTED_LOCATION)
+            if(NOT _sibr_cudart_loc)
+                get_target_property(_sibr_cudart_loc CUDA::cudart IMPORTED_IMPLIB)
+            endif()
+            if(_sibr_cudart_loc)
+                get_filename_component(_sibr_cudart_dll "${_sibr_cudart_loc}" NAME)
+                target_link_options(${PROJECT_NAME} PRIVATE "/DELAYLOAD:${_sibr_cudart_dll}")
+                target_link_libraries(${PROJECT_NAME} delayimp)
+                message(STATUS "qSIBR: Windows - delay-loading ${_sibr_cudart_dll}")
+            endif()
+        else()
+            set(SIBR_CUDA_RUNTIME CUDA::cudart_static)
+        endif()
+        message(STATUS "qSIBR: CUDA available via BUILD_CUDA_MODULE (runtime: ${SIBR_CUDA_RUNTIME})")
     endif()
 
     # =============================================
@@ -464,7 +491,7 @@ if(PLUGIN_STANDARD_QSIBR)
         target_include_directories(CudaRasterizer PRIVATE
             "${SIBR_CUDA_RASTERIZER_DIR}/third_party/glm"
         )
-        target_link_libraries(CudaRasterizer PUBLIC CUDA::cudart)
+        target_link_libraries(CudaRasterizer PUBLIC ${SIBR_CUDA_RUNTIME})
         set_target_properties(CudaRasterizer PROPERTIES
             CUDA_STANDARD 14
             POSITION_INDEPENDENT_CODE ON
@@ -487,7 +514,7 @@ if(PLUGIN_STANDARD_QSIBR)
                 sibr_system sibr_view sibr_assets sibr_renderer
                 ${SIBR_BOOST_LIBS} ${SIBR_GLEW_LIBS} ${SIBR_OPENGL_LIBS}
                 ${SIBR_OPENCV_LIBS} ${SIBR_GLFW_LIBS}
-                CudaRasterizer CUDA::cudart
+                CudaRasterizer ${SIBR_CUDA_RUNTIME}
             )
             target_compile_definitions(sibr_gaussian PUBLIC
                 BOOST_ALL_DYN_LINK EIGEN_INITIALIZE_MATRICES_BY_ZERO SIBR_HAS_CUDA
@@ -623,7 +650,7 @@ if(PLUGIN_STANDARD_QSIBR)
             sibr_add_app(SIBR_gaussianViewer_app
                 "${SIBR_SRC_DIR}/projects/gaussianviewer/apps/gaussianViewer")
             target_link_libraries(SIBR_gaussianViewer_app PRIVATE
-                ${SIBR_COMMON_APP_LIBS} CUDA::cudart CUDA::cuda_driver)
+                ${SIBR_COMMON_APP_LIBS} ${SIBR_CUDA_RUNTIME} CUDA::cuda_driver)
             list(APPEND SIBR_APP_TARGETS SIBR_gaussianViewer_app)
         endif()
 
@@ -740,6 +767,22 @@ if(PLUGIN_STANDARD_QSIBR)
         )
     elseif(WIN32)
         target_link_libraries(${PROJECT_NAME} ws2_32 shlwapi)
+    endif()
+
+    # =============================================
+    # Post-link verification
+    # =============================================
+    # Regression guard: the plugin .so must never hard-depend on the CUDA
+    # runtime shared library, otherwise it fails to load on machines without
+    # a CUDA toolkit installed ("libcudart.so.12: cannot open shared object").
+    # Runs after every link of the plugin on UNIX where the runtime is static.
+    if(UNIX AND SIBR_HAS_CUDA)
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND}
+                -DTARGET_FILE=$<TARGET_FILE:${PROJECT_NAME}>
+                                -P ${CMAKE_SOURCE_DIR}/cmake/VerifyNoDynamicCuda.cmake
+            COMMENT "Verifying qSIBR plugin has no dynamic CUDA library dependency"
+            VERBATIM)
     endif()
 
     # =============================================

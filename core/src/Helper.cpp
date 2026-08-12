@@ -285,7 +285,13 @@ void Sleep(int milliseconds) {
 
 std::string GetCurrentTimeStamp() {
     std::time_t t = std::time(nullptr);
-    return fmt::format("{:%Y-%m-%d-%H-%M-%S}", *std::localtime(&t));
+    std::tm tm{};
+#ifdef _WIN32
+    localtime_s(&tm, &t);
+#else
+    localtime_r(&t, &tm);
+#endif  // _WIN32
+    return fmt::format("{:%Y-%m-%d-%H-%M-%S}", tm);
 }
 
 }  // namespace utility

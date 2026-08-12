@@ -112,7 +112,7 @@ void DeepSemanticSegmentation::compute(
         } catch (py::error_already_set const& pythonErr) {
             // close Python Interpreter
             py::finalize_interpreter();
-            CVLog::Error(pythonErr.what());
+            CVLog::Error("%s", pythonErr.what());
             return;
         } catch (...) {
             // close Python Interpreter

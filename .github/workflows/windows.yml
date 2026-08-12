@@ -177,7 +177,14 @@ jobs:
           # Call build script with named parameters
           & "${{ env.SRC_DIR }}\scripts\build_win_app.ps1" `
             -PythonVersion "${{ matrix.python_version }}" `
-            -ACloudViewerInstall "${{ env.INSTALL_DIR }}"
+            -ACloudViewerInstall "${{ env.INSTALL_DIR }}" 2>&1 | `
+            Tee-Object -FilePath "${{ runner.temp }}\windows-build.log"
+          # Propagate build exit code (exit N in .ps1 sets $LASTEXITCODE,
+          # but the Tee-Object pipeline above resets the step exit code)
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "build_win_app.ps1 failed with exit code $LASTEXITCODE"
+              exit $LASTEXITCODE
+          }
 
           # === Diagnostic: dump installer-related state ===
           Write-Host "=== Diagnostic: installer search ==="
@@ -257,6 +264,17 @@ jobs:
           }
           
           Write-Host "C++ unit tests passed successfully."
+      - name: Upload build log
+        # Persist the full build log (GitHub truncates very long step logs in
+        # the UI). if: always() + continue-on-error: upload even when the build
+        # failed, so it can be inspected.
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build-log-${{ matrix.CONFIG }}-cuda${{ matrix.BUILD_CUDA_MODULE }}
+          path: ${{ runner.temp }}\windows-build.log
+          if-no-files-found: ignore
       - name: Upload ACloudViewer to GitHub artifacts
         if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'OFF' && matrix.CONFIG == 'Release' }}
         uses: actions/upload-artifact@v4
@@ -602,13 +620,32 @@ jobs:
           & "${{ env.SRC_DIR }}\scripts\build_win_wheel.ps1" `
             -PythonVersion "${{ matrix.python_version }}" `
             -ACloudViewerInstall "${{ env.INSTALL_DIR }}" `
-            -CloudViewerMLRoot "${{ env.CLOUDVIEWER_ML_ROOT }}"
+            -CloudViewerMLRoot "${{ env.CLOUDVIEWER_ML_ROOT }}" 2>&1 | `
+            Tee-Object -FilePath "${{ runner.temp }}\windows-wheel-build.log"
+          # Propagate build exit code (exit N in .ps1 sets $LASTEXITCODE,
+          # but the Tee-Object pipeline above resets the step exit code)
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "build_win_wheel.ps1 failed with exit code $LASTEXITCODE"
+              exit $LASTEXITCODE
+          }
 
           $PIP_PKG_NAME=(Get-ChildItem (Join-Path "${{ env.INSTALL_DIR }}" "cloudviewer-*.whl")).Name
           $PIP_CPU_PKG_NAME=(Get-ChildItem (Join-Path "${{ env.INSTALL_DIR }}" "cloudviewer_cpu*.whl")).Name
           echo "PIP_PKG_NAME=$PIP_PKG_NAME"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "PIP_CPU_PKG_NAME=$PIP_CPU_PKG_NAME"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
+      - name: Upload build log
+        # Persist the full build log (GitHub truncates very long step logs in
+        # the UI). if: always() + continue-on-error: upload even when the build
+        # failed, so it can be inspected.
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-wheel-build-log-py${{ matrix.python_version }}-cuda${{ matrix.BUILD_CUDA_MODULE }}
+          path: ${{ runner.temp }}\windows-wheel-build.log
+          if-no-files-found: ignore
+      
       - name: Upload Wheel to GitHub artifacts
         uses: actions/upload-artifact@v4
         with:

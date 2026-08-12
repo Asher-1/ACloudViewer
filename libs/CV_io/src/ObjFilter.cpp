@@ -1066,8 +1066,9 @@ CC_FILE_ERROR ObjFilter::loadFile(const QString& filename,
                     QStringList errors;
                     if (ccMaterialSet::ParseMTL(mtlPath, mtlFilename,
                                                 *materials, errors)) {
-                        CVLog::Print("[OBJ] %i materials loaded",
-                                     materials->size() - oldSize);
+                        CVLog::Print(
+                                "[OBJ] %i materials loaded",
+                                static_cast<int>(materials->size() - oldSize));
                         materialsLoadFailed = false;
 
                         // Store MTL filename (with extension) for
@@ -1219,7 +1220,8 @@ CC_FILE_ERROR ObjFilter::loadFile(const QString& filename,
             }
 
             // create sub-meshes if necessary
-            CVLog::Print("[OBJ] 1 mesh loaded - %i group(s)", groups.size());
+            CVLog::Print("[OBJ] 1 mesh loaded - %i group(s)",
+                         static_cast<int>(groups.size()));
             if (groups.size() > 1) {
                 for (size_t i = 0; i < groups.size(); ++i) {
                     const QString& groupName = groups[i].second;

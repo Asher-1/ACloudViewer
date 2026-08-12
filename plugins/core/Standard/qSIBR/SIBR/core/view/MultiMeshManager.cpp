@@ -282,11 +282,18 @@ void PointShader::initShader(const std::string& name,
                              const std::string& geom) {
     ColorMeshShader::initShader(name, vert, frag, geom);
     radius.init(shader, "radius");
+    use_mesh_color.init(shader, "use_mesh_color");
 }
 
 void PointShader::setUniforms(const Camera& eye, const MeshData& data) {
     ColorMeshShader::setUniforms(eye, data);
     radius.set(data.radius);
+    // Keep the historical alpha_points.frag behavior: points always use
+    // per-vertex colors (upstream commented out the user_color usage, and
+    // MeshData defaults to ColorMode::USER_DEFINED). use_mesh_color is
+    // only pinned to true so the uniform stays live in the shader and the
+    // GLParameter "user_color does not exist" warning is gone.
+    use_mesh_color.set(true);
 }
 
 void PointShader::render(const Camera& eye, const MeshData& data) {

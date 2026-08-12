@@ -492,11 +492,9 @@ void Window::size(int w, int h) {
     Vector2i s = size();
 
     if (s[0] != w || s[1] != h)
-        SIBR_WRG << "Attempting to resize the window to an unsuported "
-                    "resolution "
-                    "(w = "
-                 << w << ", h = " << h << " ), using w = " << s[0]
-                 << ", h = " << s[1] << " instead." << std::endl;
+        SIBR_LOG << "Resize request (w = " << w << ", h = " << h
+                 << ") adjusted by the window manager/compositor to " << s[0]
+                 << " x " << s[1] << "; using actual size." << std::endl;
 
     // TT : should be the right thing to do, but might brake some old stuff
     viewport(Viewport(0.f, 0.f, (float)(s[0]), (float)(s[1])));

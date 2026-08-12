@@ -639,11 +639,20 @@ CPU-only machine (no Vulkan SDK): `-DAICore_USE_VULKAN=OFF`.
 Optional explicit CUDA for ggml (developer builds, not the portable Auto path):
 
 ```bash
-cmake -DAICore_USE_CUDA=ON ..
+cmake -DAICore_USE_CUDA=ON -DAICore_BUNDLE_CUDA_RUNTIME=ON ..
 ```
 
-See [BUILD.md](../../../BUILD.md) for build-time vs runtime dependency tables and
-`AICore_BUNDLE_CUDA_RUNTIME` (opt-in driver-only CUDA redist, OFF in CI).
+See [BUILD.md](../../../BUILD.md) for build-time vs runtime dependency tables.
+`AICore_BUNDLE_CUDA_RUNTIME=ON` bundles `libcublas.so.*` under
+`lib/cuda-runtime/` so the installer runs on driver-only machines: `cudart_static`
+eliminates `libcudart.so.*`, but ggml hardwires non-quantized matmul to cuBLAS,
+so `libggml-cuda.so` always needs `libcublas.so.*` at runtime. `ACloudViewer.sh`
+auto-adds the bundled dir to `LD_LIBRARY_PATH`.
+
+> **Portable deployment on Linux**: With `-DAICore_USE_CUDA=ON` +
+> `-DAICore_BUNDLE_CUDA_RUNTIME=ON`, the only runtime requirement is the NVIDIA
+> driver plus the bundled `lib/cuda-runtime/` (no CUDA Toolkit). See
+> [CUDA / GPU](#cuda--gpu) below.
 
 ### CUDA / GPU
 

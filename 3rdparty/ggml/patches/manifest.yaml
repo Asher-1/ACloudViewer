@@ -14,3 +14,7 @@ patches:
     note: "Gate CPU ALL_VARIANTS BF16/AMX/AVX-VNNI variants behind compiler-flag checks; remove apple_m4 (+nosve+sme unreliable on Apple Clang); inert when GGML_CPU_ALL_VARIANTS=OFF"
   - file: metal_merged/0001-metal-optimizations.patch
     note: "Metal optimizations: conv_transpose_2d parallelized over IC with tree reduction, and flash-attn large-sequence support (relax ne01 assert, raise MAX_COMMAND_BUFFERS to 64, auto-tune n_cb/n_main); inert when Metal is OFF"
+  - file: cuda_mmq/0001-cuda-mmq-force-static.patch
+    note: "Force MMQ kernels and static cudart when GGML_CUDA_FORCE_MMQ=ON; removes cuBLAS/cublasLt link dependency so libggml-cuda.so needs only libcuda.so.1 (NVIDIA driver); inert when GGML_CUDA_FORCE_MMQ=OFF"
+  - file: vulkan_parallel/0001-vulkan-shaders-gen-skip-parallel-trycompile.patch
+    note: "vulkan-shaders-gen: pre-seed CMAKE_C/CXX_ABI_COMPILED=1 so the nested configure skips the ABI/works try_compile, removing the MSBuild parallel file-lock race (MSB3491) on .lastbuildstate"

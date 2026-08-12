@@ -616,7 +616,8 @@ ICPRegistrationTools::RESULT_TYPE ICPRegistrationTools::Register(
                     if (progressCb->textCanBeEdited()) {
                         progressCb->setMethodTitle("Clouds registration");
                         char buffer[256];
-                        sprintf(buffer, "Initial RMS = %f\n", rms);
+                        snprintf(buffer, sizeof(buffer), "Initial RMS = %f\n",
+                                 rms);
                         progressCb->setInfo(buffer);
                     }
                     progressCb->update(0);
@@ -682,7 +683,8 @@ ICPRegistrationTools::RESULT_TYPE ICPRegistrationTools::Register(
                 if (progressCb) {
                     if (progressCb->textCanBeEdited()) {
                         char buffer[256];
-                        sprintf(buffer, "RMS = %f [-%f]\n", rms, deltaRMS);
+                        snprintf(buffer, sizeof(buffer), "RMS = %f [-%f]\n",
+                                 rms, deltaRMS);
                         progressCb->setInfo(buffer);
                     }
                     if (iteration == 1) {

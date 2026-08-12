@@ -10,6 +10,9 @@ fi
 LD_LIBRARY_PATH="$dirname:$dirname/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
 # Bundled CUDA runtime (AICore_BUNDLE_CUDA_RUNTIME=ON): driver-only deployment.
+# libggml-cuda.so needs libcublas.so.* (non-quantized matmul is hardwired to
+# cuBLAS in ggml); bundled libs under lib/cuda-runtime must come first so the
+# shipped .so resolves them instead of the target machine's toolkit.
 if [ -d "$dirname/lib/cuda-runtime" ]; then
 	LD_LIBRARY_PATH="$dirname/lib/cuda-runtime:$LD_LIBRARY_PATH"
 fi

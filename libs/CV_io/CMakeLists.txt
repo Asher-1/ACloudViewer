@@ -44,6 +44,14 @@ if (OPTION_USE_GDAL)
     target_link_GDAL(${PROJECT_NAME})
 endif ()
 
+# ImageIO.cpp calls libjpeg (jpeg_*) functions but does not link JPEG itself.
+# Link the 3rdparty_jpeg (libjpeg-turbo) target when available, else system JPEG.
+if (TARGET 3rdparty_jpeg)
+    target_link_libraries(${PROJECT_NAME} PRIVATE 3rdparty_jpeg)
+elseif (TARGET JPEG::JPEG)
+    target_link_libraries(${PROJECT_NAME} PRIVATE JPEG::JPEG)
+endif ()
+
 # contrib. libraries support
 target_link_contrib(${PROJECT_NAME})
 

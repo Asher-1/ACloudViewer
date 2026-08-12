@@ -14,7 +14,7 @@ jupyter
 ipywidgets>=7.6.0
 pygments>=2.7.4
 jupyter_packaging~=0.12
-jupyterlab>=3.0.0,==3.*
+jupyterlab==4.*
 mitsuba~=3.4.1
 configargparse
 nbformat

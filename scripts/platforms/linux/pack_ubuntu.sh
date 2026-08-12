@@ -1,10 +1,12 @@
 #!/bin/bash
 
 # Bundle dependency .so files for Qt IFW deploy (Linux).
-# NVIDIA CUDA runtime libraries are NOT copied by default — same policy as
-# scripts/platforms/windows/pack_windows.ps1 Should-Filter.
-# Opt-in driver-only CUDA: cmake -DAICore_BUNDLE_CUDA_RUNTIME=ON copies runtime
-# libs via scripts/platforms/linux/bundle_cuda_runtime.sh into lib/cuda-runtime/.
+# NVIDIA CUDA runtime libraries are NOT copied here: the dedicated
+# bundle_cuda_runtime.sh (AICore_BUNDLE_CUDA_RUNTIME=ON) ships them into
+# lib/cuda-runtime/ so the installer works on driver-only machines.
+# libggml-cuda.so always needs libcublas.so.* at runtime (ggml hardwires
+# non-quantized matmul to cuBLAS), so keep AICore_BUNDLE_CUDA_RUNTIME=ON
+# for CUDA-enabled installers.
 
 should_exclude_lib() {
     local base_name="$1"

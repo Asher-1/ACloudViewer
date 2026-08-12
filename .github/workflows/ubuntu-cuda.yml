@@ -170,6 +170,7 @@ jobs:
           name: ubuntu-cuda-build-log-${{ matrix.CI_CONFIG }}
           path: /tmp/ubuntu-cuda-build.log
           if-no-files-found: ignore
+
       - name: Upload package to GitHub artifacts
         if: ${{ env.BUILD_PACKAGE == 'true' }}
         uses: actions/upload-artifact@v4
@@ -277,6 +278,28 @@ jobs:
       - name: Install agent harness
         run: |
           pip install -e "_cli-anything/acloudviewer/agent-harness[dev]"
+
+      - name: Verify qSIBR plugin has no hard CUDA runtime dependency
+        # This job runs on a plain GitHub runner (no CUDA toolkit installed),
+        # i.e. exactly the target deployment environment. If libQSIBR_PLUGIN.so
+        # hard-depends on libcudart.so it would fail to load there with
+        # "libcudart.so.12: cannot open shared object file". The CUDA runtime
+        # is linked statically (CUDA::cudart_static), so the DT_NEEDED list
+        # must not contain libcudart.
+        run: |
+          command -v readelf >/dev/null || { echo "readelf not available; skipping"; exit 0; }
+          PLUGIN="$HOME/ACloudViewer/plugins/libQSIBR_PLUGIN.so"
+          if [ ! -f "$PLUGIN" ]; then
+            echo "qSIBR plugin not installed; skipping verification"
+            exit 0
+          fi
+          echo "--- DT_NEEDED of $PLUGIN ---"
+          readelf -d "$PLUGIN" | grep NEEDED || true
+          if readelf -d "$PLUGIN" | grep -q "libcudart"; then
+            echo "::error::$PLUGIN hard-depends on libcudart.so and cannot load on machines without a CUDA toolkit"
+            exit 1
+          fi
+          echo "OK: $PLUGIN has no dynamic libcudart dependency"
 
       - name: Level 3 — Headless processing tests
         run: |

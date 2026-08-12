@@ -61,6 +61,7 @@ namespace sibr {
 		GLuniform<float> 	_paramAlpha; ///< Alpha uniform.
 		GLuniform<int>		_paramRadius; ///< Radius uniform.
 		GLuniform<Vector3f>	_paramUserColor;
+		GLuniform<bool>		_paramUseMeshColor; ///< Use vertex colors instead of user_color.
 	};
 
 } /*namespace sibr*/ 

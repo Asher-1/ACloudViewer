@@ -80,7 +80,15 @@ if(NOT EXISTS ${AICORE_FACEDETECT_SRC_DIR}/model.cpp)
     message(FATAL_ERROR "AICore: missing FaceDetect module at ${AICORE_FACEDETECT_SRC_DIR}")
 endif()
 
-find_package(JPEG REQUIRED)
+# JPEG: FaceDetect decodes JPEG via the bundled libjpeg-turbo only. Never
+# call find_package(JPEG) here — that searches a system-installed JPEG, whose
+# headers (/usr/include/jpeglib.h) and ABI may mismatch the vendored build.
+# 3rdparty_jpeg (created by 3rdparty/find_dependencies.cmake) carries both the
+# include dirs and the static lib, and is linked below.
+if(NOT TARGET 3rdparty_jpeg)
+    message(FATAL_ERROR "AICore requires the 3rdparty_jpeg target (bundled libjpeg-turbo); "
+                        "3rdparty/find_dependencies.cmake must run before core/AICore")
+endif()
 
 add_library(${PROJECT_NAME} SHARED
     ${AICORE_COMMON_SOURCES} ${AICORE_COMMON_HEADERS}
@@ -145,6 +153,8 @@ target_include_directories(${PROJECT_NAME}
 
 add_dependencies(${PROJECT_NAME} 3rdparty_ggml)
 # Build: ggml headers/targets stay PRIVATE (see AICore/README.md).
+# JPEG comes exclusively from the project-internal 3rdparty_jpeg (libjpeg-turbo)
+# target — no system JPEG is ever searched or linked.
 target_link_libraries(${PROJECT_NAME} PRIVATE 3rdparty_ggml PRIVATE 3rdparty_jpeg)
 find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
@@ -187,7 +197,16 @@ aicore_apply_compile_definitions(${PROJECT_NAME})
 
 if(AICore_CUDA_ENABLED)
     target_sources(${PROJECT_NAME} PRIVATE ${AICORE_ALIKED_SRC_DIR}/cuda/aliked_cuda.cu)
-    if(TARGET CUDA::cudart)
+    # Static-link the CUDA runtime (cudart) on UNIX so libAICore.so has no
+    # DT_NEEDED on libcudart.so.X and loads on machines without a CUDA toolkit.
+    # This is the same strategy as the qSIBR plugin (see qSIBR/CMakeLists.txt).
+    # On Windows, NVIDIA does not ship a static cudart, so fall through to the
+    # dynamic CUDA::cudart target (the ALIKED CUDA path is guarded by a runtime
+    # ggml_backend_is_cuda() check, so the dlopen-proof cudart dependency is
+    # acceptable during developer bring-up).
+    if(TARGET CUDA::cudart_static AND UNIX)
+        target_link_libraries(${PROJECT_NAME} PRIVATE CUDA::cudart_static)
+    elseif(TARGET CUDA::cudart)
         target_link_libraries(${PROJECT_NAME} PRIVATE CUDA::cudart)
     endif()
     set_property(TARGET ${PROJECT_NAME} PROPERTY CUDA_SEPARABLE_COMPILATION ON)

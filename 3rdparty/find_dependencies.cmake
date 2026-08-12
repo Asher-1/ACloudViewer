@@ -709,6 +709,7 @@ function(copy_shared_library ext_target)
             if (WIN32)
                 add_custom_command(TARGET ${ext_target}
                     POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>"
                     COMMAND ${CMAKE_COMMAND} -E
                     copy_if_different ${arg_LIB_DIR}/${library_filename} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/${library_filename}"
                 )

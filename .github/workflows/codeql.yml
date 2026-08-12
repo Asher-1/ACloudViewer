@@ -51,7 +51,7 @@ jobs:
         uses: github/codeql-action/init@v4
         with:
           languages: python
-          queries: security-and-quality
+          queries: security-extended
           config-file: ./.github/codeql/codeql-config.yml
 
       - name: Perform CodeQL Analysis
@@ -74,6 +74,7 @@ jobs:
             -**/3rdparty_downloads/**
             -**/third_party/**
             -**/thirdparty/**
+            -plugins/core/Standard/qSIBR/SIBR/**
           input: sarif-results/python.sarif
           output: sarif-results/python.sarif
 
@@ -254,7 +255,7 @@ jobs:
         uses: github/codeql-action/init@v4
         with:
           languages: c-cpp
-          queries: security-and-quality
+          queries: security-extended
           config-file: ./.github/codeql/codeql-config.yml
 
       - name: Build
@@ -282,6 +283,7 @@ jobs:
             -**/3rdparty_downloads/**
             -**/third_party/**
             -**/thirdparty/**
+            -plugins/core/Standard/qSIBR/SIBR/**
           input: sarif-results/cpp.sarif
           output: sarif-results/cpp.sarif
 

@@ -102,8 +102,16 @@ if(GGML_USE_CUDA)
         message(STATUS "ggml: CUDA architectures = native (fallback)")
     endif()
     list(APPEND GGML_CMAKE_ARGS -DGGML_CUDA_NCCL=OFF)
+    # Force MMQ (matrix-multiply quantized) kernels instead of cuBLAS so that
+    # libggml-cuda.so's quantized path avoids cuBLAS.  However, the non-quantized
+    # matmul path (F32/F16/BF16) still calls cuBLAS directly, so libcublas.so.*
+    # remains a DT_NEEDED dependency.  Combined with the companion patch to
+    # ggml-cuda/CMakeLists.txt that switches to CUDA::cudart_static, the only
+    # shared CUDA toolkit dependency left is libcublas.so.* (bundled by
+    # AICore_BUNDLE_CUDA_RUNTIME on Windows and now Linux too).
+    list(APPEND GGML_CMAKE_ARGS -DGGML_CUDA_FORCE_MMQ=ON)
     set(_GGML_CUDA_ENABLED ON)
-    message(STATUS "ggml: CUDA backend enabled")
+    message(STATUS "ggml: CUDA backend enabled (FORCE_MMQ, static cudart, dynamic cublas)")
 else()
     list(APPEND GGML_CMAKE_ARGS -DGGML_CUDA=OFF)
 endif()

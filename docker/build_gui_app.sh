@@ -100,7 +100,11 @@ if [ "${ONLY_BUILD_CUDA}" = "ON" ]; then
     echo "Start to build GUI package with CUDA..."
     echo
     export BUILD_CUDA_MODULE=ON
-    build_gui_app ${BUILD_OPTIONS}
+    # ggml CUDA backend (with_aicore_cuda) is disabled in CI: it hard-links
+    # cuBLAS whose major version must match the build CUDA toolkit, and the
+    # bundled runtime raises the target-machine driver floor. Keep CloudViewer
+    # core CUDA (with_cuda) for qSIBR etc.
+    build_gui_app ${BUILD_OPTIONS} with_cuda
     echo
 else
     echo "Start to build GUI package with only CPU..."
@@ -114,7 +118,8 @@ else
         echo "Start to build GUI package with CUDA..."
         echo
         export BUILD_CUDA_MODULE=ON
-        build_gui_app ${BUILD_OPTIONS}
+        # ggml CUDA backend disabled in CI (see comment above).
+        build_gui_app ${BUILD_OPTIONS} with_cuda
         echo
     fi
 fi

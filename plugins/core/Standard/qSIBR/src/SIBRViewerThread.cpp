@@ -133,6 +133,7 @@ public:
         _mvp.init(_shader, "mvp");
         _alpha.init(_shader, "alpha");
         _radius.init(_shader, "radius");
+        _useMeshColor.init(_shader, "use_mesh_color");
 
         auto& proxy = _scene->proxies()->proxy();
         if (!proxy.hasColors() && proxy.vertices().size() > 0) {
@@ -166,6 +167,7 @@ public:
             _mvp.set(eye.viewproj());
             _alpha.set(1.0f);
             _radius.set(_pointSize);
+            _useMeshColor.set(true);
             proxy.render_points();
             _shader.end();
             glDisable(GL_PROGRAM_POINT_SIZE);
@@ -188,6 +190,7 @@ private:
     sibr::GLuniform<sibr::Matrix4f> _mvp;
     sibr::GLuniform<float> _alpha;
     sibr::GLuniform<int> _radius;
+    sibr::GLuniform<bool> _useMeshColor;
     int _pointSize;
     uint64_t _frameCount = 0;
 };
