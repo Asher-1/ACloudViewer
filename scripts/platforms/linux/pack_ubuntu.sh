@@ -1,10 +1,12 @@
 #!/bin/bash
 
 # Bundle dependency .so files for Qt IFW deploy (Linux).
-# NVIDIA CUDA runtime libraries are NOT copied.
-# AICore_BUNDLE_CUDA_RUNTIME is no-op on Linux: cudart_static + FORCE_MMQ
-# eliminate all dynamic CUDA toolkit dependencies (no libcudart.so.* at
-# runtime). The option is only meaningful on Windows.
+# NVIDIA CUDA runtime libraries are NOT copied here: the dedicated
+# bundle_cuda_runtime.sh (AICore_BUNDLE_CUDA_RUNTIME=ON) ships them into
+# lib/cuda-runtime/ so the installer works on driver-only machines.
+# libggml-cuda.so always needs libcublas.so.* at runtime (ggml hardwires
+# non-quantized matmul to cuBLAS), so keep AICore_BUNDLE_CUDA_RUNTIME=ON
+# for CUDA-enabled installers.
 
 should_exclude_lib() {
     local base_name="$1"

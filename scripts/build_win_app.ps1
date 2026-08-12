@@ -96,7 +96,11 @@ if ($env:ONLY_BUILD_CUDA -eq "ON") {
     Write-Host "Start to build GUI package with CUDA only..."
     Write-Host ""
     $env:BUILD_CUDA_MODULE = "ON"
-    $cudaBuildOptions = $buildOptions + @("with_cuda", "with_aicore_cuda", "bundle_cuda_runtime")
+    # ggml CUDA backend (with_aicore_cuda) is disabled in CI: it hard-links
+    # cuBLAS whose major version must match the build CUDA toolkit, and the
+    # bundled runtime raises the target-machine driver floor. Keep CloudViewer
+    # core CUDA (with_cuda) for qSIBR etc.
+    $cudaBuildOptions = $buildOptions + @("with_cuda")
     Build-GuiApp -options $cudaBuildOptions
     Write-Host ""
 } else {
@@ -111,7 +115,8 @@ if ($env:ONLY_BUILD_CUDA -eq "ON") {
         Write-Host "Start to build GUI package with CUDA..."
         Write-Host ""
         $env:BUILD_CUDA_MODULE = "ON"
-        $cudaBuildOptions = $buildOptions + @("with_cuda", "with_aicore_cuda", "bundle_cuda_runtime")
+        # ggml CUDA backend disabled in CI (see comment above).
+        $cudaBuildOptions = $buildOptions + @("with_cuda")
         Build-GuiApp -options $cudaBuildOptions
         Write-Host ""
     }

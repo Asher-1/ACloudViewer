@@ -208,11 +208,12 @@ if (UNIX AND NOT APPLE)
                     WORKING_DIRECTORY ${BUILD_LIB_PATH})
 
     if(AICore_BUNDLE_CUDA_RUNTIME AND AICore_CUDA_ENABLED)
-        message(DEPRECATION
-            "AICore_BUNDLE_CUDA_RUNTIME=ON is no longer needed on Linux: "
-            "cudart_static + FORCE_MMQ eliminate all dynamic CUDA toolkit "
-            "dependencies. This option is retained for Windows compatibility "
-            "and will be removed in a future major version.")
+        message(STATUS
+            "AICore_BUNDLE_CUDA_RUNTIME bundles libcublas.so.* into the "
+            "installer so CUDA inference works on driver-only machines. "
+            "Without this, the shipped libggml-cuda.so will silently fail" 
+            "to load on machines without the CUDA toolkit (missing "
+            "libcublas.so.11).")
         set(_bundled_cuda_src "${CMAKE_INSTALL_PREFIX}/${LIBS_FOLDER_NAME}/cuda-runtime")
         set(_bundled_cuda_dst "${DEPLOY_LIB_PATH}/cuda-runtime")
         if(EXISTS "${_bundled_cuda_src}")

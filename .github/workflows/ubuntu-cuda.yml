@@ -170,6 +170,7 @@ jobs:
           name: ubuntu-cuda-build-log-${{ matrix.CI_CONFIG }}
           path: /tmp/ubuntu-cuda-build.log
           if-no-files-found: ignore
+
       - name: Upload package to GitHub artifacts
         if: ${{ env.BUILD_PACKAGE == 'true' }}
         uses: actions/upload-artifact@v4
@@ -299,27 +300,6 @@ jobs:
             exit 1
           fi
           echo "OK: $PLUGIN has no dynamic libcudart dependency"
-
-      - name: Verify libAICore.so has no hard CUDA toolkit dependency
-        # Same regression guard as VerifyNoDynamicCuda.cmake in the CMake build.
-        # libAICore.so links cudart_statically (no DT_NEEDED on libcudart.so.*)
-        # and uses MMQ kernels instead of cuBLAS (no DT_NEEDED on
-        # libcublas.so.*).  This ensures GPU inference works on machines that
-        # have only the NVIDIA driver (libcuda.so.1) but no CUDA toolkit.
-        run: |
-          command -v readelf >/dev/null || { echo "readelf not available; skipping"; exit 0; }
-          AICORE_LIB=$(find "$HOME/ACloudViewer" -name "libAICore.so" -type f 2>/dev/null | head -1)
-          if [ -z "$AICORE_LIB" ]; then
-            echo "libAICore.so not found; skipping verification"
-            exit 0
-          fi
-          echo "--- DT_NEEDED of $AICORE_LIB ---"
-          readelf -d "$AICORE_LIB" | grep NEEDED || true
-          if readelf -d "$AICORE_LIB" | grep -qE "libcudart|libcublas"; then
-            echo "::error::$AICORE_LIB hard-depends on CUDA toolkit shared libraries and cannot load on machines without a CUDA toolkit"
-            exit 1
-          fi
-          echo "OK: $AICORE_LIB has no dynamic CUDA toolkit dependency"
 
       - name: Level 3 — Headless processing tests
         run: |

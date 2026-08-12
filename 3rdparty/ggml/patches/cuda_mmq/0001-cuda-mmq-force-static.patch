@@ -4,17 +4,24 @@ Date: Tue, 11 Aug 2026 18:20:00 +0800
 Subject: [PATCH] Force MMQ and static cudart for self-contained CUDA backend
 
 When GGML_CUDA_FORCE_MMQ=ON all quantized matmul operations use the MMQ
-kernels instead of cuBLAS.  This patch removes the cuBLAS link dependency
-and switches to CUDA::cudart_static so that libggml-cuda.so has no
-DT_NEEDED on libcudart.so.12 / libcublas.so.12.  GPU acceleration then
-works on any host with an NVIDIA driver (libcuda.so.1) alone.
+kernels instead of cuBLAS.  This patch switches to CUDA::cudart_static
+so that libggml-cuda.so has no DT_NEEDED on libcudart.so.12.  GPU
+acceleration on a driver-only machine still requires the CUDA toolkit
+(libcublas.so.*) because ggml's non-quantized matmul path (F32/F16/BF16)
+calls cuBLAS directly; this is not behind the FORCE_MMQ ifdef.
 
-The same applies to the GGML_STATIC path (used when legacy static-linking
-mode is enabled): skip cublas_static/cublasLt_static when FORCE_MMQ.
+For the GGML_STATIC path (legacy static-linking mode): skip
+cublas_static/cublasLt_static when FORCE_MMQ (their symbols are resolved
+at final link).
 
 On Windows, CUDA::cudart_static is not available from FindCUDAToolkit
 (MSVC CRT model conflict: cudart_static uses /MT while the project
 uses /MD), so the dynamic backend path falls back to CUDA::cudart.
+cuBLAS must stay linked on Windows: FORCE_MMQ only prefers MMQ kernels
+at runtime, the cuBLAS code path is still compiled in, and the Windows
+DLL linker requires every symbol to resolve (otherwise LNK2019/LNK1120
+on cublasCreate_v2 et al.). cublas64_*.dll / cublasLt64_*.dll are
+redistributed via bundle_cuda_runtime.ps1 (AICore_BUNDLE_CUDA_RUNTIME).
 The CUDA backend on Windows is a MODULE library loaded at runtime,
 so the dynamic dependency on cudart64_*.dll is only activated when
 CUDA inference is actually requested (not at application startup).
@@ -23,14 +30,14 @@ Inert when GGML_CUDA_FORCE_MMQ is OFF (the original link logic is
 preserved unchanged).
 
 ---
- src/ggml-cuda/CMakeLists.txt | 28 +++++++++++++++++++++++++---
- 1 file changed, 25 insertions(+), 3 deletions(-)
+ src/ggml-cuda/CMakeLists.txt | 34 +++++++++++++++++++++++++++++---
+ 1 file changed, 31 insertions(+), 3 deletions(-)
 
 diff --git a/src/ggml-cuda/CMakeLists.txt b/src/ggml-cuda/CMakeLists.txt
 index d3953ee..bb074ad 100644
 --- a/src/ggml-cuda/CMakeLists.txt
 +++ b/src/ggml-cuda/CMakeLists.txt
-@@ -163,17 +163,39 @@ if (CUDAToolkit_FOUND)
+@@ -163,17 +163,45 @@ if (CUDAToolkit_FOUND)
              if (GGML_CUDA_CUB_3DOT2)
                  target_link_libraries(ggml-cuda PRIVATE  CCCL::CCCL)
              endif()
@@ -58,14 +65,20 @@ index d3953ee..bb074ad 100644
              target_link_libraries(ggml-cuda PRIVATE  CCCL::CCCL)
          endif()
 -        target_link_libraries(ggml-cuda PRIVATE CUDA::cudart CUDA::cublas)
-+        # Dynamic backend mode (default Release path): FORCE_MMQ eliminates
-+        # the cuBLAS dependency and switches to static cudart.
++        # Dynamic backend mode (default Release path): FORCE_MMQ switches
++        # to static cudart for driver-only self-containment, but cuBLAS must
++        # stay linked: non-quantized matmul (F32/F16/BF16) always calls cuBLAS
++        # and is not behind the GGML_CUDA_FORCE_MMQ ifdef in ggml source.
 +        if (GGML_CUDA_FORCE_MMQ)
 +            if(WIN32)
 +                # Windows: no CUDA::cudart_static (MSVC CRT conflict /MT vs /MD).
-+                target_link_libraries(ggml-cuda PRIVATE CUDA::cudart)
++                # Keep CUDA::cublas: FORCE_MMQ only prefers MMQ kernels at runtime
++                # while the cuBLAS code path is still compiled; the Windows DLL
++                # linker requires all symbols to resolve. cublas64_*.dll is
++                # bundled via bundle_cuda_runtime.ps1.
++                target_link_libraries(ggml-cuda PRIVATE CUDA::cudart CUDA::cublas)
 +            else()
-+                target_link_libraries(ggml-cuda PRIVATE CUDA::cudart_static)
++                target_link_libraries(ggml-cuda PRIVATE CUDA::cudart_static CUDA::cublas)
 +            endif()
 +        else()
 +            target_link_libraries(ggml-cuda PRIVATE CUDA::cudart CUDA::cublas)

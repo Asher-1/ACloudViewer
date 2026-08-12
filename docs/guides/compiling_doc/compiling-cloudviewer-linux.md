@@ -214,6 +214,7 @@ cmake \
     -DAICore_ENABLED=ON \
     -DAICore_USE_VULKAN=ON \
     -DAICore_USE_CUDA=ON \
+    -DAICore_BUNDLE_CUDA_RUNTIME=ON \
     -DPLUGIN_STANDARD_QDA3=ON \
     -DPLUGIN_STANDARD_QDEEPLSD=ON \
     -DPLUGIN_STANDARD_QFACEDETECT=ON \
@@ -279,6 +280,7 @@ cmake \
     -DAICore_ENABLED=ON \
     -DAICore_USE_VULKAN=ON \
     -DAICore_USE_CUDA=ON \
+    -DAICore_BUNDLE_CUDA_RUNTIME=ON \
     -DBUILD_OPENCV=OFF \
     -DBUILD_BENCHMARKS=OFF \
     -DBUILD_COMMON_CUDA_ARCHS=ON \
@@ -433,6 +435,7 @@ cmake \
     -DAICore_ENABLED=ON \
     -DAICore_USE_VULKAN=ON \
     -DAICore_USE_CUDA=ON \
+    -DAICore_BUNDLE_CUDA_RUNTIME=ON \
     -DPLUGIN_STANDARD_QDA3=ON \
     -DPLUGIN_STANDARD_QDEEPLSD=ON \
     -DPLUGIN_STANDARD_QFACEDETECT=ON \
@@ -502,6 +505,7 @@ cmake \
     -DAICore_ENABLED=ON \
     -DAICore_USE_VULKAN=ON \
     -DAICore_USE_CUDA=ON \
+    -DAICore_BUNDLE_CUDA_RUNTIME=ON \
     -DBUILD_RECONSTRUCTION=ON \
     -DBUILD_OPENCV=OFF \
     -DBUILD_BENCHMARKS=OFF \
@@ -621,6 +625,7 @@ source "${HOME}/.local/share/acloudviewer/acloudviewer-vulkan-env.sh"
 cmake -DAICore_ENABLED=ON \
       -DAICore_USE_VULKAN=ON \
       -DAICore_USE_CUDA=ON \
+      -DAICore_BUNDLE_CUDA_RUNTIME=ON \
       -DPLUGIN_STANDARD_QDA3=ON \
       -DPLUGIN_STANDARD_QDEEPLSD=ON \
       -DPLUGIN_STANDARD_QFACEDETECT=ON \
@@ -634,17 +639,20 @@ CPU-only machine (no Vulkan SDK): `-DAICore_USE_VULKAN=OFF`.
 Optional explicit CUDA for ggml (developer builds, not the portable Auto path):
 
 ```bash
-cmake -DAICore_USE_CUDA=ON ..
+cmake -DAICore_USE_CUDA=ON -DAICore_BUNDLE_CUDA_RUNTIME=ON ..
 ```
 
 See [BUILD.md](../../../BUILD.md) for build-time vs runtime dependency tables.
-`AICore_BUNDLE_CUDA_RUNTIME` is **no-op on Linux** (cudart_static + FORCE_MMQ
-eliminate all dynamic CUDA toolkit dependencies). The option has no effect;
-it is retained for Windows only where cudart64_*.dll is bundled into the
-installer.
+`AICore_BUNDLE_CUDA_RUNTIME=ON` bundles `libcublas.so.*` under
+`lib/cuda-runtime/` so the installer runs on driver-only machines: `cudart_static`
+eliminates `libcudart.so.*`, but ggml hardwires non-quantized matmul to cuBLAS,
+so `libggml-cuda.so` always needs `libcublas.so.*` at runtime. `ACloudViewer.sh`
+auto-adds the bundled dir to `LD_LIBRARY_PATH`.
 
-> **Portable deployment on Linux**: With `-DAICore_USE_CUDA=ON`, the only
-> runtime requirement is the NVIDIA driver (no CUDA Toolkit). See [CUDA / GPU](#cuda--gpu) below.
+> **Portable deployment on Linux**: With `-DAICore_USE_CUDA=ON` +
+> `-DAICore_BUNDLE_CUDA_RUNTIME=ON`, the only runtime requirement is the NVIDIA
+> driver plus the bundled `lib/cuda-runtime/` (no CUDA Toolkit). See
+> [CUDA / GPU](#cuda--gpu) below.
 
 ### CUDA / GPU
 

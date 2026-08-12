@@ -134,26 +134,27 @@ jobs:
       # `docker/docker_build.sh xxx` command to execute locally.
       - name: Docker build
         run: |
+          set -o pipefail
           echo "DEVELOPER_BUILD is $DEVELOPER_BUILD"
           
           # Clean up before build to ensure maximum space
           docker system prune -f --volumes || true
           if [ "${{ env.PYTHON_VERSION }}" = "3.10" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
-            docker/docker_build.sh cuda_wheel_py310_dev
+            docker/docker_build.sh cuda_wheel_py310_dev 2>&1 | tee /tmp/ubuntu-wheel-build.log
           elif [ "${{ env.PYTHON_VERSION }}" = "3.11" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
-            docker/docker_build.sh cuda_wheel_py311_dev
+            docker/docker_build.sh cuda_wheel_py311_dev 2>&1 | tee /tmp/ubuntu-wheel-build.log
           elif [ "${{ env.PYTHON_VERSION }}" = "3.12" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
-            docker/docker_build.sh cuda_wheel_py312_dev
+            docker/docker_build.sh cuda_wheel_py312_dev 2>&1 | tee /tmp/ubuntu-wheel-build.log
           elif [ "${{ env.PYTHON_VERSION }}" = "3.13" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
-            docker/docker_build.sh cuda_wheel_py313_dev
+            docker/docker_build.sh cuda_wheel_py313_dev 2>&1 | tee /tmp/ubuntu-wheel-build.log
           elif [ "${{ env.PYTHON_VERSION }}" = "3.10" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
-            docker/docker_build.sh cuda_wheel_py310
+            docker/docker_build.sh cuda_wheel_py310 2>&1 | tee /tmp/ubuntu-wheel-build.log
           elif [ "${{ env.PYTHON_VERSION }}" = "3.11" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
-            docker/docker_build.sh cuda_wheel_py311
+            docker/docker_build.sh cuda_wheel_py311 2>&1 | tee /tmp/ubuntu-wheel-build.log
           elif [ "${{ env.PYTHON_VERSION }}" = "3.12" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
-            docker/docker_build.sh cuda_wheel_py312
+            docker/docker_build.sh cuda_wheel_py312 2>&1 | tee /tmp/ubuntu-wheel-build.log
           elif [ "${{ env.PYTHON_VERSION }}" = "3.13" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
-            docker/docker_build.sh cuda_wheel_py313
+            docker/docker_build.sh cuda_wheel_py313 2>&1 | tee /tmp/ubuntu-wheel-build.log
           fi
           PIP_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/cloudviewer-[0-9]*.whl)"
           PIP_CPU_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/cloudviewer_cpu*.whl)"
@@ -168,6 +169,18 @@ jobs:
           # Show final disk usage
           df -h
           docker system df
+
+      - name: Upload Docker build log
+        # Persist the full build log (GitHub truncates very long step logs in
+        # the UI). if: always() + continue-on-error: upload even when the build
+        # failed, so it can be inspected.
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: ubuntu-wheel-build-log-py${{ matrix.python_version }}
+          path: /tmp/ubuntu-wheel-build.log
+          if-no-files-found: ignore
 
       - name: Upload Wheel to GitHub artifacts
         uses: actions/upload-artifact@v4
