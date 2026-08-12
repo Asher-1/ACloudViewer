@@ -18,6 +18,7 @@ PointBasedRenderer::PointBasedRenderer() {
     _paramAlpha.init(_shader, "alpha");
     _paramRadius.init(_shader, "radius");
     _paramUserColor.init(_shader, "user_color");
+    _paramUseMeshColor.init(_shader, "use_mesh_color");
 }
 
 void PointBasedRenderer::meshToDevice(const Mesh& mesh) {
@@ -36,6 +37,7 @@ void PointBasedRenderer::process(const Mesh& mesh,
     _paramAlpha.set(float(1.0));
     _paramRadius.set(3);
     _paramUserColor.set(Vector3f(.1, .1, 1.0));
+    _paramUseMeshColor.set(true);
 
     mesh.render_points();
     _shader.end();
@@ -57,6 +59,7 @@ void PointBasedRenderer::process(const Mesh& mesh,
     _paramAlpha.set(float(1.0));
     _paramRadius.set(2);
     _paramUserColor.set(Vector3f(.1, .1, 1.0));
+    _paramUseMeshColor.set(true);
     mesh.render_points();
     _shader.end();
     dst.unbind();

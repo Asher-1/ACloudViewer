@@ -112,6 +112,7 @@ namespace sibr {
 
 	protected:
 		GLuniform<int> radius; ///< Point screenspace radius.
+		GLuniform<bool> use_mesh_color; ///< Use vertex colors instead of user_color.
 	};
 
 	/** Shader wrapper for sending mesh display options to the GPU (while avoiding duplicated uniforms) .
