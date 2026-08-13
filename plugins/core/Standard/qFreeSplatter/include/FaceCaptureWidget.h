@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <QAtomicInt>
 #include <QComboBox>
 #include <QDoubleSpinBox>
 #include <QFutureWatcher>
@@ -14,11 +15,13 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
+#include <QMutex>
 #include <QProgressBar>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QSlider>
 #include <QSpinBox>
+#include <QThread>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QWidget>
@@ -225,12 +228,10 @@ private:
     void drawOverlay(QImage& image, const cv::Rect& faceRect);
     void drawAngleGuide(QImage& image, CaptureAngle angle);
 
-    cv::VideoCapture m_camera;
     cv::VideoCapture m_previewCapture;  // independent decode path for
                                         // scrub/hover preview
     cv::CascadeClassifier m_faceCascade;
     cv::Rect m_lastFaceRect;
-    cv::Mat m_latestFrame;
     cv::Mat m_lastDetectedFrame;
     float m_lastFaceScore = 0.f;
 #endif
@@ -276,6 +277,19 @@ private:
     std::vector<IdentityTrack> m_identityTracks;
 #endif
 
+    // VideoFrameReader: reads cv::VideoCapture frames on a background thread
+    // so that OpenCV's MSMF/DirectShow backend (Windows) does not block the
+    // Qt main thread, which would cause stuttering / UI freezes.
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    QThread* m_frameReaderThread = nullptr;
+    QObject* m_frameReader = nullptr;
+    cv::Mat m_latestFrame;  // most recently decoded frame (GUI thread)
+    QMutex m_frameMutex;    // guards m_latestFrame
+    bool m_frameReaderReady = false;  // background reader has opened source
+    QAtomicInt m_frameReaderRunning{0};
+    QAtomicInt m_frameReaderSeekTo{-1};
+#endif
+
     ecvModelDownloader* m_downloader = nullptr;
     aicore_facedetect_ctx* m_ggmlCtx = nullptr;
     aicore_cancel_token* m_inferenceCancelToken = nullptr;
@@ -284,6 +298,7 @@ private:
     QString m_pendingGgmlPath;
 
     QTimer* m_frameTimer = nullptr;
+    QTimer* m_frameReadTimer = nullptr;  // drives background frame reader
     bool m_cameraActive = false;
     bool m_videoPaused = false;  // video paused (not released) for resume
     InputSource m_inputSource = InputSource::Camera;

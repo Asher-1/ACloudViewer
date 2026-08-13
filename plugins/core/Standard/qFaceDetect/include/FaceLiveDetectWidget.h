@@ -7,12 +7,14 @@
 
 #pragma once
 
+#include <QAtomicInt>
 #include <QComboBox>
 #include <QDoubleSpinBox>
 #include <QElapsedTimer>
 #include <QImage>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMutex>
 #include <QProgressBar>
 #include <QPushButton>
 #include <QSlider>
@@ -148,7 +150,6 @@ private:
     void showEvent(QShowEvent* event) override;
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
-    cv::VideoCapture m_capture;
     cv::VideoCapture m_previewCapture;  // independent decode path for
                                         // scrub/hover preview
 #endif
@@ -194,6 +195,20 @@ private:
     bool m_syncingModelControls = false;
 
     QTimer* m_frameTimer = nullptr;
+    QTimer* m_frameReadTimer = nullptr;  // drives background frame reader
+    // VideoFrameReader: reads cv::VideoCapture frames on a background thread
+    // so that OpenCV's MSMF/DirectShow backend (Windows) does not block the
+    // Qt main thread, which would cause stuttering / UI freezes.
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    QThread* m_frameReaderThread = nullptr;
+    QObject* m_frameReader = nullptr;
+    cv::Mat m_latestFrame;  // most recently decoded frame (GUI thread)
+    QMutex m_frameMutex;    // guards m_latestFrame
+    bool m_frameReaderReady = false;  // background reader has opened source
+    QAtomicInt m_frameReaderRunning{0};
+    QAtomicInt m_frameReaderSeekTo{-1};
+#endif
+
     bool m_streamActive = false;
     bool m_videoPaused = false;  // video paused (not released) for resume
     QString m_videoFilePath;     // path of currently opened video
