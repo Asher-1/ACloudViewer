@@ -74,6 +74,8 @@ jobs:
             -**/3rdparty_downloads/**
             -**/third_party/**
             -**/thirdparty/**
+            -build/**
+            -build_app/**
             -plugins/core/Standard/qSIBR/SIBR/**
           input: sarif-results/python.sarif
           output: sarif-results/python.sarif
@@ -283,6 +285,8 @@ jobs:
             -**/3rdparty_downloads/**
             -**/third_party/**
             -**/thirdparty/**
+            -build/**
+            -build_app/**
             -plugins/core/Standard/qSIBR/SIBR/**
           input: sarif-results/cpp.sarif
           output: sarif-results/cpp.sarif

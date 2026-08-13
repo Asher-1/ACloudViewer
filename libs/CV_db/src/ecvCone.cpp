@@ -109,9 +109,11 @@ bool ccCone::buildUp() {
         if (!singlePointBottom) {
             for (unsigned i = 0; i < steps; ++i) {
                 CCVector3 P(bottomCenter.x +
-                                    cos(angle_rad_step * i) * m_bottomRadius,
+                                    cos(static_cast<double>(angle_rad_step) *
+                                        i) * m_bottomRadius,
                             bottomCenter.y +
-                                    sin(angle_rad_step * i) * m_bottomRadius,
+                                    sin(static_cast<double>(angle_rad_step) *
+                                        i) * m_bottomRadius,
                             bottomCenter.z);
                 verts->addPoint(P);
             }
@@ -119,9 +121,12 @@ bool ccCone::buildUp() {
         // top surface
         if (!singlePointTop) {
             for (unsigned i = 0; i < steps; ++i) {
-                CCVector3 P(topCenter.x + cos(angle_rad_step * i) * m_topRadius,
-                            topCenter.y + sin(angle_rad_step * i) * m_topRadius,
-                            topCenter.z);
+                CCVector3 P(
+                        topCenter.x + cos(static_cast<double>(angle_rad_step) *
+                                          i) * m_topRadius,
+                        topCenter.y + sin(static_cast<double>(angle_rad_step) *
+                                          i) * m_topRadius,
+                        topCenter.z);
                 verts->addPoint(P);
             }
         }
@@ -129,8 +134,8 @@ bool ccCone::buildUp() {
         {
             for (unsigned i = 0; i < steps; ++i) {
                 // slope
-                CCVector3 u(-sin(angle_rad_step * i), cos(angle_rad_step * i),
-                            0);
+                CCVector3 u(-sin(static_cast<double>(angle_rad_step) * i),
+                            cos(static_cast<double>(angle_rad_step) * i), 0);
                 CCVector3 v(bottomCenter.x - topCenter.x +
                                     u.y * (m_bottomRadius - m_topRadius),
                             bottomCenter.y - topCenter.y -

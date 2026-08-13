@@ -77,8 +77,11 @@ bool ccDisc::buildUp() {
             static_cast<PointCoordinateType>(2.0 * M_PI) / steps;
     // bottom surface
     for (unsigned i = 0; i < steps; ++i) {
-        CCVector3 P(center.x + cos(angle_rad_step * i) * m_radius,
-                    center.y + sin(angle_rad_step * i) * m_radius, center.z);
+        CCVector3 P(center.x + cos(static_cast<double>(angle_rad_step) * i) *
+                                       m_radius,
+                    center.y + sin(static_cast<double>(angle_rad_step) * i) *
+                                       m_radius,
+                    center.z);
         verts->addPoint(P);
     }
 

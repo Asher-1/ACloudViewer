@@ -607,10 +607,8 @@ cloudAttributesDescriptor prepareCloud(
                     cloudDesc.scalarIndexes.push_back(i);
                     cloudDesc.scalarFields.push_back(sf);
                 } else {
-                    CVLog::Warning(
-                            "Failed to add scalar field #%i to cloud #%i! "
-                            "(skipped)",
-                            sfIndex);
+                    CVLog::Warning("Failed to add scalar field #%i! (skipped)",
+                                   sfIndex);
                     sf->release();
                     sf = nullptr;
                 }

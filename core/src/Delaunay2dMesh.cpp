@@ -247,8 +247,11 @@ bool Delaunay2dMesh::removeOuterTriangles(
     m_numberOfTriangles = lastValidIndex;
     if (m_numberOfTriangles) {
         // shouldn't fail as m_numberOfTriangles is smaller!
-        m_triIndexes = static_cast<int*>(
-                realloc(m_triIndexes, sizeof(int) * 3 * m_numberOfTriangles));
+        int* new_triIndexes = new int[3 * m_numberOfTriangles];
+        memcpy(new_triIndexes, m_triIndexes,
+               sizeof(int) * 3 * m_numberOfTriangles);
+        delete[] m_triIndexes;
+        m_triIndexes = new_triIndexes;
     } else {
         // no triangle left!
         delete[] m_triIndexes;
@@ -289,8 +292,11 @@ bool Delaunay2dMesh::removeTrianglesWithEdgesLongerThan(
         m_numberOfTriangles = lastValidIndex;
         if (m_numberOfTriangles != 0) {
             // shouldn't fail as m_numberOfTriangles is smaller than before!
-            m_triIndexes = static_cast<int*>(realloc(
-                    m_triIndexes, sizeof(int) * 3 * m_numberOfTriangles));
+            int* new_triIndexes = new int[3 * m_numberOfTriangles];
+            memcpy(new_triIndexes, m_triIndexes,
+                   sizeof(int) * 3 * m_numberOfTriangles);
+            delete[] m_triIndexes;
+            m_triIndexes = new_triIndexes;
         } else  // no more triangles?!
         {
             delete m_triIndexes;

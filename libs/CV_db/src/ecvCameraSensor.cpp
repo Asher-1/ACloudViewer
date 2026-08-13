@@ -23,7 +23,6 @@
 #include "ecvPointCloud.h"
 #include "ecvRedrawScope.h"
 #include "ecvViewManager.h"
-
 // CV_CORE_LIB
 #include <ConjugateGradient.h>
 
@@ -1119,10 +1118,13 @@ bool ccCameraSensor::computeUncertainty(const CCVector2& pixel,
 
             // computes uncertainty
             sigma.x = static_cast<ScalarType>(
-                    std::abs(factor * (pixel.x - c[0]) / horizFocal_pix));
+                    std::abs(static_cast<double>(factor) * (pixel.x - c[0]) /
+                             horizFocal_pix));
             sigma.y = static_cast<ScalarType>(
-                    std::abs(factor * (pixel.y - c[1]) / verFocal_pix));
-            sigma.z = static_cast<ScalarType>(std::abs(factor * mu));
+                    std::abs(static_cast<double>(factor) * (pixel.y - c[1]) /
+                             verFocal_pix));
+            sigma.z = static_cast<ScalarType>(
+                    std::abs(static_cast<double>(factor) * mu));
 
             return true;
         }

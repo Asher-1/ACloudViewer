@@ -12,6 +12,12 @@ paths-ignore:
   - '**/3rdparty_downloads'
   - '**/third_party'
   - '**/thirdparty'
+  # Build artifacts — CMake FetchContent downloads vendored third-party code
+  # into build/_deps/ (e.g. ext_imgui, ext_glfw). Exclude them from analysis.
+  - 'build'
+  - 'build_app'
+  - '**/build/**'
+  - '**/build_app/**'
   - 'plugins/core/Standard/qSIBR/3rdparty'
   # Vendored third-party SIBR library (Inria) embedded in qSIBR - not first-party code
   - 'plugins/core/Standard/qSIBR/SIBR'
