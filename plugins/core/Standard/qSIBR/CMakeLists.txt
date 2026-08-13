@@ -219,12 +219,16 @@ if(PLUGIN_STANDARD_QSIBR)
                 if(_sibr_cudart_dlls)
                     list(GET _sibr_cudart_dlls 0 _sibr_cudart_dll_path)
                     get_filename_component(_sibr_cudart_dll_name "${_sibr_cudart_dll_path}" NAME)
-                    # Copy DLL to build output directory so it is available
-                    # during development (before install packaging).
-                    configure_file("${_sibr_cudart_dll_path}"
-                        "${CMAKE_BINARY_DIR}/bin/${_sibr_cudart_dll_name}" COPYONLY)
-                    # Install alongside the plugin binary
-                    install(FILES "${_sibr_cudart_dll_path}" DESTINATION bin)
+                    # Install cudart next to ACloudViewer.exe so the packaged
+                    # app finds it at load time (the DLL is not in the import
+                    # table thanks to /DELAYLOAD, but the nvcc fatbin register
+                    # runs during static initialization and still needs it).
+                    # No configure-time copy: on MSVC it landed in bin/ instead
+                    # of bin/<Config>/, and the plugin output dir is not on the
+                    # Windows DLL search path anyway; dev machines have
+                    # CUDA_PATH\bin on PATH.
+                    install(FILES "${_sibr_cudart_dll_path}"
+                        DESTINATION ${ACloudViewer_DEST_FOLDER})
                     message(STATUS "qSIBR: Windows - found ${_sibr_cudart_dll_name}")
                 else()
                     message(WARNING "qSIBR: Windows - cudart64_*.dll not found in ${_sibr_cuda_bin}")

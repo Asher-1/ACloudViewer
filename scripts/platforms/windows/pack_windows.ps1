@@ -243,9 +243,12 @@ foreach ($match in $ggmlMatches) {
 
 # cudart64_*.dll is delay-loaded by qSIBR and won't appear in dumpbin
 # output either. Search the provided search paths explicitly.
+# Note: -Include only filters when -Recurse is given (or the path ends in a
+# wildcard); without it -Include is ignored and the whole directory would be
+# returned (directories included) and copied over.
 $cudartPattern = "cudart64_*.dll"
 foreach ($searchPath in $DependencySearchPaths) {
-    $cudartMatches = Get-ChildItem -Path $searchPath -Include $cudartPattern -ErrorAction SilentlyContinue
+    $cudartMatches = Get-ChildItem -Path $searchPath -Recurse -Include $cudartPattern -ErrorAction SilentlyContinue
     foreach ($match in $cudartMatches) {
         $targetPath = Join-Path $OutputFolder $match.Name
         if (-not (Test-Path $targetPath)) {
