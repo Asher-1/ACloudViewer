@@ -8,7 +8,7 @@ function( export_VTK_dlls ) # 1 argument: ARGV0 = destination directory
 		while( NOT (last_dir STREQUAL "lib") )
 			get_filename_component(VTK_DIR ${VTK_DIR} PATH)
 			get_filename_component(last_dir ${VTK_DIR} NAME)
-		endwhile(condition)
+		endwhile()
 		
 		set(VTK_BINARY_DIR "")
 		if (last_dir STREQUAL "lib")
@@ -32,7 +32,7 @@ function( export_VTK_dlls ) # 1 argument: ARGV0 = destination directory
 			endforeach()
 			
 			#release DLLs
-			cloudViewer_install_files("${vtk_release_dlls}" "${ARGV0}") #mind the quotes!
+			cloudViewer_install_files("${vtk_release_dlls}" "${ARGV0}" 0) #mind the quotes!
 
 			#debug DLLs
 			if( CMAKE_CONFIGURATION_TYPES )

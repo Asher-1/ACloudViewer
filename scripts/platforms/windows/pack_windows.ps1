@@ -220,4 +220,39 @@ foreach ($file in $files) {
     Process-File $file.FullName
 }
 
+# ---- Second pass: explicitly copy runtime-loaded modules ----
+# ggml backend modules (ggml-cpu-x64.dll, ggml-vulkan.dll, ...) are loaded
+# at runtime via LoadLibrary/dlopen, so dumpbin /dependents never sees them.
+# File names depend on build options: with AICore_CPU_ALL_VARIANTS=ON (the
+# CI release default) ggml emits per-ISA modules ggml-cpu-x64.dll /
+# ggml-cpu-avx2.dll / ... instead of a single ggml-cpu.dll, and GPU backends
+# (cuda/vulkan/opencl/metal/sycl/...) only exist when enabled. Glob ggml*.dll
+# instead of hard-coding names so every compiled ggml lib is bundled,
+# forward/backward compatible with any backend combination.
+$ggmlMatches = Get-ChildItem -Path $SourceFolder -Recurse -Include "ggml*.dll" -ErrorAction SilentlyContinue
+if (-not $ggmlMatches) {
+    Write-Warning "No ggml DLLs found under $SourceFolder - AICore will have no backends at runtime"
+}
+foreach ($match in $ggmlMatches) {
+    $targetPath = Join-Path $OutputFolder $match.Name
+    if (-not (Test-Path $targetPath)) {
+        Copy-Item $match.FullName $targetPath -Force
+        Write-Host "Copy (ggml backend): $($match.FullName) -> $targetPath"
+    }
+}
+
+# cudart64_*.dll is delay-loaded by qSIBR and won't appear in dumpbin
+# output either. Search the provided search paths explicitly.
+$cudartPattern = "cudart64_*.dll"
+foreach ($searchPath in $DependencySearchPaths) {
+    $cudartMatches = Get-ChildItem -Path $searchPath -Include $cudartPattern -ErrorAction SilentlyContinue
+    foreach ($match in $cudartMatches) {
+        $targetPath = Join-Path $OutputFolder $match.Name
+        if (-not (Test-Path $targetPath)) {
+            Copy-Item $match.FullName $targetPath -Force
+            Write-Host "Copy (CUDA runtime): $($match.FullName) -> $targetPath"
+        }
+    }
+}
+
 Write-Host "Finish deploy $OutputFolder"

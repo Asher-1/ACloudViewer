@@ -37,6 +37,11 @@ if(PLUGIN_STANDARD_QSIBR)
     endif()
 
     # Boost
+    # Suppress FindBoost policy warning (CMP0167: FindBoost module removed in
+    # CMake 4.x; project-wide cmake_minimum_required may predate this policy).
+    if(POLICY CMP0167)
+        cmake_policy(SET CMP0167 OLD)
+    endif()
     if(TARGET 3rdparty_boost)
         set(SIBR_BOOST_LIBS 3rdparty_boost)
     else()
@@ -188,17 +193,47 @@ if(PLUGIN_STANDARD_QSIBR)
         # it (/DELAYLOAD) so the plugin does NOT hard-depend on cudart64_*.dll
         # either - it loads on machines without a CUDA toolkit and the Gaussian
         # viewer reports a clean error (probed via SEH in qSIBR.cpp).
+        # The CUDA::cudart IMPORTED_LOCATION points to the import library (.lib)
+        # on Windows, but /DELAYLOAD expects the actual DLL name (cudart64_*.dll).
+        # We resolve the DLL via CUDA_TOOLKIT_ROOT_DIR/bin/ and copy it so the
+        # installer bundles it alongside the plugin.
         if(WIN32)
             set(SIBR_CUDA_RUNTIME CUDA::cudart)
-            get_target_property(_sibr_cudart_loc CUDA::cudart IMPORTED_LOCATION)
-            if(NOT _sibr_cudart_loc)
-                get_target_property(_sibr_cudart_loc CUDA::cudart IMPORTED_IMPLIB)
+            set(_sibr_cudart_dll_name "")
+            # Find cudart DLL in CUDA toolkit bin directory
+            if(DEFINED ENV{CUDA_PATH})
+                set(_sibr_cuda_bin "$ENV{CUDA_PATH}/bin")
+            elseif(CUDA_TOOLKIT_ROOT_DIR)
+                set(_sibr_cuda_bin "${CUDA_TOOLKIT_ROOT_DIR}/bin")
+            else()
+                # Fall back to walking up from the import lib path
+                get_target_property(_sibr_cudart_implib CUDA::cudart IMPORTED_IMPLIB)
+                if(_sibr_cudart_implib)
+                    get_filename_component(_sibr_cuda_libdir "${_sibr_cudart_implib}" DIRECTORY)
+                    get_filename_component(_sibr_cuda_root "${_sibr_cuda_libdir}" DIRECTORY)
+                    set(_sibr_cuda_bin "${_sibr_cuda_root}/bin")
+                endif()
             endif()
-            if(_sibr_cudart_loc)
-                get_filename_component(_sibr_cudart_dll "${_sibr_cudart_loc}" NAME)
-                target_link_options(${PROJECT_NAME} PRIVATE "/DELAYLOAD:${_sibr_cudart_dll}")
+            if(_sibr_cuda_bin)
+                file(GLOB _sibr_cudart_dlls "${_sibr_cuda_bin}/cudart64_*.dll")
+                if(_sibr_cudart_dlls)
+                    list(GET _sibr_cudart_dlls 0 _sibr_cudart_dll_path)
+                    get_filename_component(_sibr_cudart_dll_name "${_sibr_cudart_dll_path}" NAME)
+                    # Copy DLL to build output directory so it is available
+                    # during development (before install packaging).
+                    configure_file("${_sibr_cudart_dll_path}"
+                        "${CMAKE_BINARY_DIR}/bin/${_sibr_cudart_dll_name}" COPYONLY)
+                    # Install alongside the plugin binary
+                    install(FILES "${_sibr_cudart_dll_path}" DESTINATION bin)
+                    message(STATUS "qSIBR: Windows - found ${_sibr_cudart_dll_name}")
+                else()
+                    message(WARNING "qSIBR: Windows - cudart64_*.dll not found in ${_sibr_cuda_bin}")
+                endif()
+            endif()
+            if(_sibr_cudart_dll_name)
+                target_link_options(${PROJECT_NAME} PRIVATE "/DELAYLOAD:${_sibr_cudart_dll_name}")
                 target_link_libraries(${PROJECT_NAME} delayimp)
-                message(STATUS "qSIBR: Windows - delay-loading ${_sibr_cudart_dll}")
+                message(STATUS "qSIBR: Windows - delay-loading ${_sibr_cudart_dll_name}")
             endif()
         else()
             set(SIBR_CUDA_RUNTIME CUDA::cudart_static)
