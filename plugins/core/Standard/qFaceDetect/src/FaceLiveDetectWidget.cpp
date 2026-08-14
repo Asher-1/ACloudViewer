@@ -1186,10 +1186,10 @@ void FaceLiveDetectWidget::showSeekPreview(int frameIndex) {
             const QString path = m_videoFilePath;
             // Snapshot the generation: results decoded for a previous video
             // must not be painted over the new one.
-            const int gen = m_previewGeneration.loadRelaxed();
+            const int gen = m_previewGeneration.load();
             m_seekPreviewWatcher->setFuture(QtConcurrent::run(
                     [this, path, frameIndex, gen]() -> QPair<int, QPixmap> {
-                        if (gen != m_previewGeneration.loadRelaxed()) {
+                        if (gen != m_previewGeneration.load()) {
                             return {frameIndex, QPixmap()};
                         }
                         QMutexLocker lock(&m_previewMutex);

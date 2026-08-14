@@ -1,19 +1,49 @@
 # BundleGgmlCudaRuntime.cmake
 # Invoke with cmake -P; required variables:
-#   GGML_CUDA_MODULE  path to libggml-cuda shared module
-#   DEST_DIR          output directory (lib/cuda-runtime)
-#   PACK_SCRIPTS_PATH repo scripts/platforms root
+#   GGML_CUDA_BASE_DIR  build output base directory (e.g. build/bin)
+#   GGML_CUDA_NAME      module filename (e.g. ggml-cuda.dll or libggml-cuda.so)
+#   DEST_DIR            output directory (lib/cuda-runtime)
+#   PACK_SCRIPTS_PATH   repo scripts/platforms root
 # Optional:
-#   EXTRA_LIB_DIRS    semicolon-separated search paths (CUDA toolkit lib dirs)
+#   GGML_CUDA_EXT_DIR   ggml ExternalProject install runtime dir (fallback search)
+#   EXTRA_LIB_DIRS      semicolon-separated search paths (CUDA toolkit lib dirs)
+#   GGML_CUDA_MODULE    legacy: explicit full path (backward compat)
 
-# execute_process passes -D values without a shell; quoted -DVAR=\"path\" leaves
-# literal quote characters in GGML_CUDA_MODULE and breaks EXISTS checks.
-if(GGML_CUDA_MODULE MATCHES "^\"(.*)\"$")
-    set(GGML_CUDA_MODULE "${CMAKE_MATCH_1}")
+# --- Locate the ggml-cuda module ---
+# Search candidate paths: multi-config generators put it in <base>/<Config>/,
+# single-config generators put it directly in <base>/.
+if(GGML_CUDA_MODULE)
+    # Legacy mode: caller provided the full path directly.
+    if(GGML_CUDA_MODULE MATCHES "^\"(.*)\"$")
+        set(GGML_CUDA_MODULE "${CMAKE_MATCH_1}")
+    endif()
+elseif(GGML_CUDA_BASE_DIR AND GGML_CUDA_NAME)
+    set(_candidate_dirs "${GGML_CUDA_BASE_DIR}")
+    foreach(_cfg IN ITEMS Release Debug RelWithDebInfo MinSizeRel)
+        list(APPEND _candidate_dirs "${GGML_CUDA_BASE_DIR}/${_cfg}")
+    endforeach()
+    # ggml ExternalProject install dir (covers CHANGE_TARGET_GENERATION_PATH_FOR_DEBUGGING=OFF
+    # on Linux where AICore lands in build/lib/<Config>/ instead of build/bin/)
+    if(GGML_CUDA_EXT_DIR)
+        list(APPEND _candidate_dirs "${GGML_CUDA_EXT_DIR}")
+    endif()
+    set(GGML_CUDA_MODULE "")
+    foreach(_dir IN LISTS _candidate_dirs)
+        set(_candidate "${_dir}/${GGML_CUDA_NAME}")
+        if(EXISTS "${_candidate}")
+            set(GGML_CUDA_MODULE "${_candidate}")
+            message(STATUS "BundleGgmlCudaRuntime: found ${_candidate}")
+            break()
+        endif()
+    endforeach()
 endif()
 
 if(NOT GGML_CUDA_MODULE OR NOT EXISTS "${GGML_CUDA_MODULE}")
-    message(FATAL_ERROR "BundleGgmlCudaRuntime: GGML_CUDA_MODULE missing: ${GGML_CUDA_MODULE}")
+    message(FATAL_ERROR "BundleGgmlCudaRuntime: ggml-cuda module not found.\n"
+        "  Searched in: ${_candidate_dirs}\n"
+        "  GGML_CUDA_BASE_DIR=${GGML_CUDA_BASE_DIR}\n"
+        "  GGML_CUDA_NAME=${GGML_CUDA_NAME}\n"
+        "  GGML_CUDA_MODULE=${GGML_CUDA_MODULE}")
 endif()
 if(NOT DEST_DIR)
     message(FATAL_ERROR "BundleGgmlCudaRuntime: DEST_DIR is required")

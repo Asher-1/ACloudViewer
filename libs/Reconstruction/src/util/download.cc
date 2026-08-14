@@ -59,6 +59,7 @@
 #include <curl/easy.h>
 // clang-format on
 
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>
@@ -70,12 +71,16 @@
 #include <optional>
 #include <sstream>
 #include <string_view>
+#include <thread>
 #include <vector>
 
 #ifndef _MSC_VER
 extern "C" {
 extern char** environ;
 }
+#else
+#include <windows.h>
+#include <winreg.h>
 #endif
 
 namespace colmap {
@@ -209,81 +214,198 @@ std::optional<std::string> GetEnvSafe(const char* key) {
 
 }  // namespace
 
+#ifdef _MSC_VER
+// Detect Windows system proxy from environment variables or IE/registry
+// settings.  libcurl does NOT auto-detect Windows system proxy, which causes
+// CURLE_COULDNT_CONNECT (code 7) when the machine requires a proxy to reach
+// the internet (e.g. corporate networks, GitHub access in some regions).
+std::optional<std::string> DetectWindowsSystemProxy() {
+  // 1. Standard proxy environment variables (set by user or scripts).
+  for (const char* key :
+       {"https_proxy", "HTTPS_PROXY", "http_proxy", "HTTP_PROXY"}) {
+    auto val = GetEnvSafe(key);
+    if (val.has_value() && !val->empty()) return *val;
+  }
+
+  // 2. Internet Explorer / WinHTTP system proxy (registry).
+  HKEY hKey = nullptr;
+  if (RegOpenKeyExA(
+          HKEY_CURRENT_USER,
+          "Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings",
+          0, KEY_READ, &hKey) != ERROR_SUCCESS) {
+    return std::nullopt;
+  }
+
+  DWORD proxy_enable = 0;
+  DWORD buf_size = sizeof(DWORD);
+  RegQueryValueExA(hKey, "ProxyEnable", nullptr, nullptr,
+                   reinterpret_cast<LPBYTE>(&proxy_enable), &buf_size);
+
+  if (proxy_enable == 0) {
+    RegCloseKey(hKey);
+    return std::nullopt;
+  }
+
+  char proxy_server[1024] = {};
+  buf_size = sizeof(proxy_server);
+  DWORD type = 0;
+  LONG rc = RegQueryValueExA(hKey, "ProxyServer", nullptr, &type,
+                             reinterpret_cast<LPBYTE>(proxy_server), &buf_size);
+  RegCloseKey(hKey);
+
+  if (rc != ERROR_SUCCESS || buf_size == 0) return std::nullopt;
+
+  std::string proxy_str(proxy_server);
+
+  // Multi-protocol format: "http=x:port;https=y:port" or plain "host:port".
+  auto extract = [](const std::string& s,
+                    const std::string& prefix) -> std::optional<std::string> {
+    auto pos = s.find(prefix);
+    if (pos == std::string::npos) return std::nullopt;
+    auto start = pos + prefix.size();
+    auto end = s.find(';', start);
+    std::string val =
+        (end == std::string::npos) ? s.substr(start) : s.substr(start, end - start);
+    return val.empty() ? std::nullopt : std::optional<std::string>(val);
+  };
+
+  if (auto p = extract(proxy_str, "https=")) return p;
+  if (auto p = extract(proxy_str, "http=")) return p;
+
+  // Plain "host:port" (no protocol prefix) — use directly.
+  if (proxy_str.find('=') == std::string::npos && !proxy_str.empty()) {
+    return proxy_str;
+  }
+
+  return std::nullopt;
+}
+#endif  // _MSC_VER
+
 std::optional<std::string> DownloadFile(
     const std::string& url,
     DownloadProgressCallback progress_callback,
     DownloadCancelCallback cancel_callback) {
   std::cout << "Downloading file from: " << url << std::endl;
 
-  CurlHandle handle;
-  CHECK_NOTNULL(handle.ptr);
-
-  curl_easy_setopt(handle.ptr, CURLOPT_URL, url.c_str());
-  curl_easy_setopt(handle.ptr, CURLOPT_FOLLOWLOCATION, 1L);
-  curl_easy_setopt(handle.ptr, CURLOPT_WRITEFUNCTION, &WriteCurlData);
-  std::ostringstream data_stream;
-  curl_easy_setopt(handle.ptr, CURLOPT_WRITEDATA, &data_stream);
-
-  // Enable progress callback for download progress display
-  ProgressData progress_data{progress_callback, std::move(cancel_callback)};
-  curl_easy_setopt(handle.ptr, CURLOPT_XFERINFOFUNCTION, CurlProgressCallback);
-  curl_easy_setopt(handle.ptr, CURLOPT_XFERINFODATA, &progress_data);
-  curl_easy_setopt(handle.ptr, CURLOPT_NOPROGRESS, 0L);
-
-  // Respect SSL_CERT_FILE and SSL_CERT_DIR environment variables for
-  // cross-distribution compatibility (e.g., Ubuntu vs RHEL-based systems).
-  const std::optional<std::string> ssl_cert_file = GetEnvSafe("SSL_CERT_FILE");
-  if (ssl_cert_file.has_value() && !ssl_cert_file->empty()) {
-    VLOG(2) << "Using SSL_CERT_FILE: " << *ssl_cert_file;
-    curl_easy_setopt(handle.ptr, CURLOPT_CAINFO, ssl_cert_file->c_str());
+  // Detect system proxy once (Windows only).
+#ifdef _MSC_VER
+  const std::optional<std::string> system_proxy = DetectWindowsSystemProxy();
+  if (system_proxy.has_value()) {
+    std::cout << "Detected system proxy: " << *system_proxy << std::endl;
   }
-  const std::optional<std::string> ssl_cert_dir = GetEnvSafe("SSL_CERT_DIR");
-  if (ssl_cert_dir.has_value() && !ssl_cert_dir->empty()) {
-    VLOG(2) << "Using SSL_CERT_DIR: " << *ssl_cert_dir;
-    curl_easy_setopt(handle.ptr, CURLOPT_CAPATH, ssl_cert_dir->c_str());
-  }
+#endif
 
-  const CURLcode code = curl_easy_perform(handle.ptr);
-  
-  // Print newline after progress bar (only if using default callback)
-  // Use std::cout for normal log output
-  if (!progress_callback) {
-    std::cout << std::endl;  // Move to next line after progress bar
-  }
-  
-  // Check if download was canceled
-  if (code == CURLE_ABORTED_BY_CALLBACK) {
-    std::cerr << "WARNING: Download was canceled by user" << std::endl;
-    return std::nullopt;
-  }
-  
-  if (code != CURLE_OK) {
-    if (code == CURLE_SSL_CACERT_BADFILE || code == CURLE_SSL_CACERT) {
-      std::cerr << "ERROR: Curl SSL certificate error (code " << code
-                << "). Try setting SSL_CERT_FILE to point to your system's "
-                   "CA certificate bundle (e.g., "
-                   "SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt on "
-                   "Ubuntu/Debian)." << std::endl;
-    } else {
-      std::cerr << "ERROR: Curl failed to perform request with code: " << code
-                << " (" << curl_easy_strerror(code) << ")" << std::endl;
+  // Retry up to 3 times for transient connection errors (e.g. CURLE_COULDNT_CONNECT).
+  constexpr int kMaxAttempts = 3;
+
+  for (int attempt = 1; attempt <= kMaxAttempts; ++attempt) {
+    CurlHandle handle;
+    CHECK_NOTNULL(handle.ptr);
+
+    curl_easy_setopt(handle.ptr, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(handle.ptr, CURLOPT_FOLLOWLOCATION, 1L);
+    curl_easy_setopt(handle.ptr, CURLOPT_WRITEFUNCTION, &WriteCurlData);
+    std::ostringstream data_stream;
+    curl_easy_setopt(handle.ptr, CURLOPT_WRITEDATA, &data_stream);
+
+    // Connection / transfer timeouts prevent indefinite hangs.
+    curl_easy_setopt(handle.ptr, CURLOPT_CONNECTTIMEOUT, 30L);
+    curl_easy_setopt(handle.ptr, CURLOPT_LOW_SPEED_LIMIT, 1L);
+    curl_easy_setopt(handle.ptr, CURLOPT_LOW_SPEED_TIME, 60L);
+
+    // Apply system proxy on Windows.
+#ifdef _MSC_VER
+    if (system_proxy.has_value()) {
+      curl_easy_setopt(handle.ptr, CURLOPT_PROXY, system_proxy->c_str());
+      curl_easy_setopt(handle.ptr, CURLOPT_HTTPPROXYTUNNEL, 1L);
     }
-    return std::nullopt;
+#endif
+
+    // Progress / cancel callback.
+    ProgressData progress_data{progress_callback, cancel_callback};
+    curl_easy_setopt(handle.ptr, CURLOPT_XFERINFOFUNCTION, CurlProgressCallback);
+    curl_easy_setopt(handle.ptr, CURLOPT_XFERINFODATA, &progress_data);
+    curl_easy_setopt(handle.ptr, CURLOPT_NOPROGRESS, 0L);
+
+    // Respect SSL_CERT_FILE and SSL_CERT_DIR environment variables for
+    // cross-distribution compatibility (e.g., Ubuntu vs RHEL-based systems).
+    const std::optional<std::string> ssl_cert_file = GetEnvSafe("SSL_CERT_FILE");
+    if (ssl_cert_file.has_value() && !ssl_cert_file->empty()) {
+      VLOG(2) << "Using SSL_CERT_FILE: " << *ssl_cert_file;
+      curl_easy_setopt(handle.ptr, CURLOPT_CAINFO, ssl_cert_file->c_str());
+    }
+    const std::optional<std::string> ssl_cert_dir = GetEnvSafe("SSL_CERT_DIR");
+    if (ssl_cert_dir.has_value() && !ssl_cert_dir->empty()) {
+      VLOG(2) << "Using SSL_CERT_DIR: " << *ssl_cert_dir;
+      curl_easy_setopt(handle.ptr, CURLOPT_CAPATH, ssl_cert_dir->c_str());
+    }
+
+    const CURLcode code = curl_easy_perform(handle.ptr);
+
+    // Print newline after progress bar (only if using default callback)
+    if (!progress_callback) {
+      std::cout << std::endl;
+    }
+
+    // Canceled — do not retry.
+    if (code == CURLE_ABORTED_BY_CALLBACK) {
+      std::cerr << "WARNING: Download was canceled by user" << std::endl;
+      return std::nullopt;
+    }
+
+    if (code != CURLE_OK) {
+      const bool retryable =
+          (code == CURLE_COULDNT_CONNECT ||
+           code == CURLE_COULDNT_RESOLVE_HOST ||
+           code == CURLE_OPERATION_TIMEDOUT);
+
+      if (retryable && attempt < kMaxAttempts) {
+        const int delay = attempt * 5;
+        std::cerr << "WARNING: Download attempt " << attempt << " failed (code "
+                  << code << ": " << curl_easy_strerror(code)
+                  << "). Retrying in " << delay << "s..." << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(delay));
+        continue;
+      }
+
+      if (code == CURLE_SSL_CACERT_BADFILE || code == CURLE_SSL_CACERT) {
+        std::cerr << "ERROR: Curl SSL certificate error (code " << code
+                  << "). Try setting SSL_CERT_FILE to point to your system's "
+                     "CA certificate bundle (e.g., "
+                     "SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt on "
+                     "Ubuntu/Debian)." << std::endl;
+      } else {
+        std::cerr << "ERROR: Curl failed to perform request with code: " << code
+                  << " (" << curl_easy_strerror(code) << ")" << std::endl;
+#ifdef _MSC_VER
+        if (code == CURLE_COULDNT_CONNECT && !system_proxy.has_value()) {
+          std::cerr << "HINT: If your network requires a proxy, set the "
+                       "https_proxy environment variable or configure the "
+                       "system proxy in Internet Settings." << std::endl;
+        }
+#endif
+      }
+      return std::nullopt;
+    }
+
+    long response_code = 0;
+    curl_easy_getinfo(handle.ptr, CURLINFO_RESPONSE_CODE, &response_code);
+    if (response_code != 0 && (response_code < 200 || response_code >= 300)) {
+      std::cerr << "ERROR: Request failed with status: " << response_code
+                << std::endl;
+      return std::nullopt;
+    }
+
+    std::string data_str = data_stream.str();
+    std::cout << "Downloaded " << data_str.size() << " bytes ("
+              << std::fixed << std::setprecision(2)
+              << static_cast<double>(data_str.size()) / (1024.0 * 1024.0)
+              << " MB)" << std::endl;
+
+    return data_str;
   }
 
-  long response_code = 0;
-  curl_easy_getinfo(handle.ptr, CURLINFO_RESPONSE_CODE, &response_code);
-  if (response_code != 0 && (response_code < 200 || response_code >= 300)) {
-    std::cerr << "ERROR: Request failed with status: " << response_code << std::endl;
-    return std::nullopt;
-  }
-
-  std::string data_str = data_stream.str();
-  std::cout << "Downloaded " << data_str.size() << " bytes ("
-            << std::fixed << std::setprecision(2)
-            << static_cast<double>(data_str.size()) / (1024.0 * 1024.0) << " MB)" << std::endl;
-
-  return data_str;
+  return std::nullopt;
 }
 
 std::string ComputeSHA256(const std::string_view& str) {
