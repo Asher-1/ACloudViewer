@@ -75,6 +75,9 @@ public:
     void enableExportButtons(bool hasResults);
 
     void setDbImages(const QStringList& imageNames);
+    // Select the first matching entry in the DB combo (single-image
+    // dialog) from a DB tree selection.
+    void applyDbTreeSelection(const QStringList& imageNames);
 
     static QString modelCacheDir();
     void refreshModelList();

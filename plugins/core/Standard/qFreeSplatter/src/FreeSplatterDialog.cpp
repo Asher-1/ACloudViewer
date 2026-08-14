@@ -54,6 +54,17 @@ static const int kThumbStripHeight =
 // avoids making the reconstruction dialog taller than a typical desktop.
 static const int kFaceCaptureViewportMaxHeight = 560;
 
+// Qt logical coordinates already scale with the active style/font metrics
+// (tab bar heights, size hints, ...), but plain integer clamps do NOT.
+// On a 150%% Windows scaling the logical DPI is 144, so a 220 px chrome
+// estimate must become 330 px.  Multiply every hardcoded pixel by this
+// factor to stay correct across resolutions and per-monitor DPI.
+static int dpiScaled(int px) {
+    const QScreen* screen = QGuiApplication::primaryScreen();
+    const qreal dpi = screen ? screen->logicalDotsPerInch() : 96.0;
+    return qMax(px, qRound(px * dpi / 96.0));
+}
+
 namespace {
 
 bool isSupportedImageFile(const QString& filePath) {
@@ -403,8 +414,13 @@ void FreeSplatterDialog::setupUi() {
         dbCol->setSpacing(4);
         m_dbImageList = new QListWidget;
         m_dbImageList->setSelectionMode(QAbstractItemView::ExtendedSelection);
+        // Fixed single-line rows (qDeepLSD style): word-wrapped rows would
+        // inflate the list height and get clipped by the tab viewport.
+        m_dbImageList->setWordWrap(false);
+        m_dbImageList->setUniformItemSizes(true);
+        m_dbImageList->setTextElideMode(Qt::ElideMiddle);
         m_dbImageList->setMinimumHeight(72);
-        m_dbImageList->setMaximumHeight(120);
+        m_dbImageList->setMaximumHeight(220);
         m_dbImageList->setAlternatingRowColors(true);
         m_dbImageList->setToolTip(
                 tr("ccImage entities from the DB tree \u2014 check/uncheck to "
@@ -428,7 +444,12 @@ void FreeSplatterDialog::setupUi() {
                     m_dbToggleBtn->setArrowType(checked ? Qt::DownArrow
                                                         : Qt::RightArrow);
                     m_dbContentWidget->setVisible(checked);
-                    adaptTabWidgetHeight();
+                    // Defer the height re-measure: the layout engine must
+                    // process the visibility change before minimumSizeHint()
+                    // reports the new height.  Synchronous reads during the
+                    // signal handler return stale values on every platform.
+                    QTimer::singleShot(0, this,
+                                       [this]() { adaptTabWidgetHeight(); });
                 });
 
         m_inputTabWidget->addTab(m_imagesTab, tr("Images"));
@@ -463,14 +484,15 @@ void FreeSplatterDialog::setupUi() {
         // the form to zero height.
         m_faceCaptureWidget->setSizePolicy(QSizePolicy::Expanding,
                                            QSizePolicy::Preferred);
-        m_faceCaptureScroll->setMinimumHeight(280);
-        m_faceCaptureScroll->setMaximumHeight(kFaceCaptureViewportMaxHeight);
+        m_faceCaptureScroll->setMinimumHeight(dpiScaled(280));
+        m_faceCaptureScroll->setMaximumHeight(
+                dpiScaled(kFaceCaptureViewportMaxHeight));
         m_faceCaptureScroll->setWidget(m_faceCaptureWidget);
         faceLayout->addWidget(m_faceCaptureScroll, 1);
 
-        auto* faceBtnLayout = new QHBoxLayout;
-        faceBtnLayout->setContentsMargins(0, 0, 0, 0);
-        faceBtnLayout->setSpacing(6);
+        // Buttons are created here but NOT added to faceLayout.
+        // They belong in the bottom action bar alongside Run/Visualize/
+        // Export — the tab-switch handler moves them into view there.
         m_faceStartBtn = new QPushButton(tr("Start Capture"));
         m_faceStopBtn = new QPushButton(tr("Stop Capture"));
         m_faceRestartBtn = new QPushButton(tr("Restart"));
@@ -482,11 +504,6 @@ void FreeSplatterDialog::setupUi() {
                                  m_faceRestartBtn, m_faceResetBtn}) {
             btn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         }
-        faceBtnLayout->addWidget(m_faceStartBtn);
-        faceBtnLayout->addWidget(m_faceStopBtn);
-        faceBtnLayout->addWidget(m_faceRestartBtn);
-        faceBtnLayout->addWidget(m_faceResetBtn);
-        faceLayout->addLayout(faceBtnLayout);
 
         connect(m_faceStartBtn, &QPushButton::clicked, this,
                 &FreeSplatterDialog::onFaceStartCamera);
@@ -502,25 +519,37 @@ void FreeSplatterDialog::setupUi() {
                 [this]() {
                     m_faceStartBtn->setEnabled(false);
                     m_faceStopBtn->setEnabled(true);
+                    const bool fresh =
+                            m_faceCaptureWidget->capturedCount() == 0;
                     if (m_faceCaptureWidget->inputSource() ==
                         FaceCaptureWidget::InputSource::Camera) {
-                        m_faceCaptureWidget->startGuidedCapture({
-                                FaceCaptureWidget::CaptureAngle::Front,
-                                FaceCaptureWidget::CaptureAngle::Left45,
-                                FaceCaptureWidget::CaptureAngle::Right45,
-                                FaceCaptureWidget::CaptureAngle::Up15,
-                                FaceCaptureWidget::CaptureAngle::Down15,
-                        });
+                        // Fresh start: begin guided capture from scratch.
+                        // Resume after Stop: keep already-collected faces.
+                        if (fresh) {
+                            m_faceCaptureWidget->startGuidedCapture({
+                                    FaceCaptureWidget::CaptureAngle::Front,
+                                    FaceCaptureWidget::CaptureAngle::Left45,
+                                    FaceCaptureWidget::CaptureAngle::Right45,
+                                    FaceCaptureWidget::CaptureAngle::Up15,
+                                    FaceCaptureWidget::CaptureAngle::Down15,
+                            });
+                        } else {
+                            m_faceCaptureWidget->resumeCapture();
+                        }
                     } else {
                         m_faceRestartBtn->setEnabled(true);
-                        m_faceCaptureWidget->startGuidedCapture({
-                                FaceCaptureWidget::CaptureAngle::Front,
-                                FaceCaptureWidget::CaptureAngle::Left45,
-                                FaceCaptureWidget::CaptureAngle::Right45,
-                                FaceCaptureWidget::CaptureAngle::Left90,
-                                FaceCaptureWidget::CaptureAngle::Right90,
-                                FaceCaptureWidget::CaptureAngle::Up15,
-                        });
+                        if (fresh) {
+                            m_faceCaptureWidget->startGuidedCapture({
+                                    FaceCaptureWidget::CaptureAngle::Front,
+                                    FaceCaptureWidget::CaptureAngle::Left45,
+                                    FaceCaptureWidget::CaptureAngle::Right45,
+                                    FaceCaptureWidget::CaptureAngle::Left90,
+                                    FaceCaptureWidget::CaptureAngle::Right90,
+                                    FaceCaptureWidget::CaptureAngle::Up15,
+                            });
+                        } else {
+                            m_faceCaptureWidget->resumeCapture();
+                        }
                         m_faceResetBtn->setEnabled(true);
                     }
                 });
@@ -547,12 +576,32 @@ void FreeSplatterDialog::setupUi() {
         m_inputTabWidget->addTab(faceTab, tr("Face Capture"));
     }
 
-    connect(m_inputTabWidget, &QTabWidget::currentChanged, this, [this](int) {
-        // QTabWidget updates its stacked-page geometry after this signal.
-        // Deferring avoids reading the previous page's height on a quick tab
-        // switch, which previously kept the Images tab at Face Capture size.
-        QTimer::singleShot(0, this, [this]() { adaptTabWidgetHeight(); });
-    });
+    connect(m_inputTabWidget, &QTabWidget::currentChanged, this,
+            [this](int tabIndex) {
+                // Face Capture tab (index 1): hide reconstruct action buttons
+                // (Run, Visualize, Export, Cancel, Close) and show the
+                // capture-specific buttons (Start/Stop/Restart/Reset) in the
+                // same bottom-bar position.  Images tab (index 0): reverse.
+                const bool isFaceTab = (tabIndex == 1 && m_faceCaptureWidget);
+                if (m_runBtn) m_runBtn->setVisible(!isFaceTab);
+#ifdef HAS_QSIBR
+                if (m_visualizeBtn) m_visualizeBtn->setVisible(!isFaceTab);
+#endif
+                if (m_exportPlyBtn) m_exportPlyBtn->setVisible(!isFaceTab);
+                if (m_cancelBtn) m_cancelBtn->setVisible(!isFaceTab);
+                if (m_closeBtn) m_closeBtn->setVisible(!isFaceTab);
+                if (m_faceStartBtn) m_faceStartBtn->setVisible(isFaceTab);
+                if (m_faceStopBtn) m_faceStopBtn->setVisible(isFaceTab);
+                if (m_faceRestartBtn) m_faceRestartBtn->setVisible(isFaceTab);
+                if (m_faceResetBtn) m_faceResetBtn->setVisible(isFaceTab);
+
+                // QTabWidget updates its stacked-page geometry after this
+                // signal. Deferring avoids reading the previous page's height
+                // on a quick tab switch, which previously kept the Images tab
+                // at Face Capture size.
+                QTimer::singleShot(0, this,
+                                   [this]() { adaptTabWidgetHeight(); });
+            });
     ioMainLayout->addWidget(m_inputTabWidget);
 
     // --- Output settings (compact dual-column) ---
@@ -648,7 +697,7 @@ void FreeSplatterDialog::setupUi() {
     // --- Buttons ---
     auto* btnLayout = new QHBoxLayout;
 
-    auto* testDataBtn = new QPushButton("Use test data");
+    auto* testDataBtn = new QPushButton(QStringLiteral("🧪  Try sample data"));
     testDataBtn->setToolTip(
             tr("Auto-download sample data for the active input tab"));
     connect(testDataBtn, &QPushButton::clicked, this, [this]() {
@@ -701,6 +750,20 @@ void FreeSplatterDialog::setupUi() {
     connect(m_closeBtn, &QPushButton::clicked, this, &QDialog::close);
     btnLayout->addWidget(m_closeBtn);
 
+    // Face capture buttons sit in the same bottom action bar, replacing
+    // Run/Visualize/Export/Cancel/Close when the Face Capture tab is active.
+    // They start hidden — the tab-switch handler shows them on demand.
+    if (FaceCaptureWidget::isAvailable()) {
+        btnLayout->addWidget(m_faceStartBtn);
+        btnLayout->addWidget(m_faceStopBtn);
+        btnLayout->addWidget(m_faceRestartBtn);
+        btnLayout->addWidget(m_faceResetBtn);
+        m_faceStartBtn->setVisible(false);
+        m_faceStopBtn->setVisible(false);
+        m_faceRestartBtn->setVisible(false);
+        m_faceResetBtn->setVisible(false);
+    }
+
     mainLayout->addLayout(btnLayout);
 
     onModeChanged(0);
@@ -721,7 +784,9 @@ void FreeSplatterDialog::adaptTabWidgetHeight() {
     int contentHeight = current->minimumSizeHint().height();
     if (current == m_imagesTab) {
         // An empty image tab needs only its commands and thumbnail strip.
-        contentHeight = qBound(150, contentHeight, 210);
+        // The clamps are DPI-scaled — on Windows 150%% scaling the raw 150..210
+        // range would leave blank space and clip the strip.
+        contentHeight = qBound(dpiScaled(150), contentHeight, dpiScaled(210));
     } else {
         const QScreen* screen =
                 QGuiApplication::screenAt(frameGeometry().center());
@@ -735,11 +800,15 @@ void FreeSplatterDialog::adaptTabWidgetHeight() {
                 m_faceCaptureWidget ? m_faceCaptureWidget->sizeHint().height()
                                     : contentHeight;
         const int dialogChrome = height() - m_inputTabWidget->height();
+        // 220 px is a conservative estimate for title bar + action buttons
+        // + margins; scale it with DPI like every other clamp.
         const int viewportBudget =
-                std::max(280, available - std::max(220, dialogChrome) - 32);
+                std::max(dpiScaled(280),
+                         available - std::max(dpiScaled(220), dialogChrome) -
+                                 dpiScaled(32));
         contentHeight = std::min(
-                formHeight,
-                std::min(viewportBudget, kFaceCaptureViewportMaxHeight));
+                formHeight, std::min(viewportBudget,
+                                     dpiScaled(kFaceCaptureViewportMaxHeight)));
     }
     const int targetHeight = tabChrome + contentHeight;
     m_inputTabWidget->setFixedHeight(targetHeight);
@@ -752,9 +821,30 @@ void FreeSplatterDialog::adaptTabWidgetHeight() {
         const int available =
                 screen ? screen->availableGeometry().height() : 800;
         const int requested = height() + targetHeight - m_activeInputTabHeight;
-        resize(width(), qBound(360, requested, available - 20));
+        resize(width(),
+               qBound(dpiScaled(360), requested, available - dpiScaled(20)));
     }
     m_activeInputTabHeight = targetHeight;
+}
+
+void FreeSplatterDialog::changeEvent(QEvent* event) {
+    QDialog::changeEvent(event);
+    // Screen change (Windows per-monitor DPI: moved to another display,
+    // scale factor changed).  Hardcoded DPI-scaled clamps must be
+    // recomputed, and setFixedHeight must be re-applied — otherwise the
+    // tab content is clipped or the dialog keeps the old monitor's size.
+    if (event->type() == QEvent::ScreenChangeInternal) {
+        QTimer::singleShot(0, this, [this]() {
+            // The scroll viewport cap is a hardcoded pixel that must
+            // follow the new DPI, otherwise the capture form is clipped.
+            if (m_faceCaptureScroll) {
+                m_faceCaptureScroll->setMaximumHeight(
+                        dpiScaled(kFaceCaptureViewportMaxHeight));
+            }
+            adaptTabWidgetHeight();
+            update();
+        });
+    }
 }
 
 void FreeSplatterDialog::refreshModelList() { populateModelCombo(); }
@@ -1263,6 +1353,7 @@ void FreeSplatterDialog::setDbImages(const QList<DbImageEntry>& images) {
             m_dbPreviews.insert(entry.name, entry.preview);
             auto* item = new QListWidgetItem(entry.name);
             item->setData(Qt::UserRole, entry.name);
+            item->setToolTip(entry.name);
             item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
             const QString dbPath = QString("db://%1").arg(entry.name);
             item->setCheckState(m_inputPaths.contains(dbPath) ? Qt::Checked
@@ -1281,6 +1372,9 @@ void FreeSplatterDialog::setDbImages(const QList<DbImageEntry>& images) {
     }
     m_dbImageList->blockSignals(false);
     refreshThumbnailStrip();
+    // The list content changed the tab's minimumSizeHint — re-adapt so the
+    // viewport grows to fit the loaded entries instead of clipping them.
+    QTimer::singleShot(0, this, [this]() { adaptTabWidgetHeight(); });
 }
 
 void FreeSplatterDialog::applyDbTreeSelection(const QStringList& imageNames) {
@@ -1579,9 +1673,41 @@ void FreeSplatterDialog::onFaceRestart() {
 
 void FreeSplatterDialog::onFaceReset() {
     if (!m_faceCaptureWidget) return;
-    m_faceCaptureWidget->resetCapture();
+    // 1. Clear collected faces + transient reconstruction inputs.
     m_identityInputs.clear();
     clearFaceCaptureExportDir();
+    m_faceCaptureWidget->resetCapture();
+
+    // 2. Restart playback from frame 0 (video) and automatically begin a
+    //    fresh guided capture session — Reset must not leave capture stopped.
+    if (m_faceCaptureWidget->inputSource() ==
+        FaceCaptureWidget::InputSource::VideoFile) {
+        const QString path = m_faceCaptureWidget->videoFilePath();
+        if (!path.isEmpty() && QFileInfo::exists(path)) {
+            m_faceCaptureWidget->restartVideoFile();
+            m_faceCaptureWidget->startGuidedCapture({
+                    FaceCaptureWidget::CaptureAngle::Front,
+                    FaceCaptureWidget::CaptureAngle::Left45,
+                    FaceCaptureWidget::CaptureAngle::Right45,
+                    FaceCaptureWidget::CaptureAngle::Left90,
+                    FaceCaptureWidget::CaptureAngle::Right90,
+                    FaceCaptureWidget::CaptureAngle::Up15,
+            });
+        }
+    } else {
+        m_faceCaptureWidget->startGuidedCapture({
+                FaceCaptureWidget::CaptureAngle::Front,
+                FaceCaptureWidget::CaptureAngle::Left45,
+                FaceCaptureWidget::CaptureAngle::Right45,
+                FaceCaptureWidget::CaptureAngle::Up15,
+                FaceCaptureWidget::CaptureAngle::Down15,
+        });
+    }
+
+    // 3. Button state: capture is now active again.
+    if (m_faceStartBtn) m_faceStartBtn->setEnabled(false);
+    if (m_faceStopBtn) m_faceStopBtn->setEnabled(true);
+    if (m_faceRestartBtn) m_faceRestartBtn->setEnabled(true);
     if (m_faceResetBtn) m_faceResetBtn->setEnabled(false);
 }
 

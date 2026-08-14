@@ -141,6 +141,19 @@ ecvApplicationBase::ecvApplicationBase(int &argc,
                 }
             }
         }
+#ifdef Q_OS_WIN
+        // On Windows the default 'windowsvista' style has poor dark-theme
+        // support and inconsistent widget sizing.  'Fusion' renders
+        // identically across all platforms and handles palette/stylesheet
+        // changes correctly.  Apply it as the default when the user has
+        // never explicitly saved a style preference.
+        if (styleKey.isEmpty()) {
+            QStyle *fusion = QStyleFactory::create(QStringLiteral("Fusion"));
+            if (fusion) {
+                setStyle(fusion);
+            }
+        }
+#endif
     }
     settings.endGroup();
 

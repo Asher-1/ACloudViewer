@@ -443,10 +443,18 @@ void DA3Dialog::setupUi() {
     auto* btnLayout = new QHBoxLayout;
     btnLayout->addStretch();
 
-    m_useTestDataBtn = new QPushButton("Use test data");
+    m_useTestDataBtn =
+            new QPushButton(QStringLiteral("\U0001f9ea  Try sample data"));
     m_useTestDataBtn->setToolTip(
             "Load Monstree multi-view test images for depth estimation.\n"
             "Downloads on first use, then cached locally.");
+    // Prominent teal accent — consistent with qFreeSplatter / qFaceDetect.
+    m_useTestDataBtn->setStyleSheet(
+            "QPushButton { background: #00897b; color: white; font-weight: "
+            "bold; border: none; border-radius: 4px; padding: 5px 12px; }"
+            "QPushButton:hover { background: #00796b; }"
+            "QPushButton:pressed { background: #00695c; }"
+            "QPushButton:disabled { background: #b2dfdb; color: #e0f2f1; }");
     connect(m_useTestDataBtn, &QPushButton::clicked, this,
             &DA3Dialog::onUseTestData);
     btnLayout->addWidget(m_useTestDataBtn);
@@ -779,6 +787,18 @@ void DA3Dialog::setDbImages(const QStringList& imageNames) {
         }
     }
     m_dbImageCombo->blockSignals(false);
+}
+
+void DA3Dialog::applyDbTreeSelection(const QStringList& imageNames) {
+    if (imageNames.isEmpty()) return;
+    // The dialog is single-image: select the first usable ccImage from
+    // the DB tree selection.
+    const QString name = imageNames.first();
+    const int idx = m_dbImageCombo->findData(name);
+    if (idx >= 0) {
+        m_dbImageCombo->setCurrentIndex(idx);
+        appendLog(tr("[Info] Assigned DB image '%1'.").arg(name));
+    }
 }
 
 void DA3Dialog::onDbImageSelected(int index) {

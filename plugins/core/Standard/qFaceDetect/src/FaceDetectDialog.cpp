@@ -44,6 +44,20 @@ constexpr auto kFriends = ecvTestDataRepository::Dataset::FriendsFaces;
 
 const int kThumbSize = FaceDetectUi::kCompactPreviewSize;
 constexpr int kTabViewportMinHeight = 280;
+// QListWidgetItem data role carrying the full-resolution ccImage for the
+// click-to-enlarge preview (the 24 px icon is only for list display).
+constexpr int kDbFullImageRole = Qt::UserRole + 1;
+
+// Qt logical coordinates scale with the active style/font metrics, but
+// plain integer clamps do NOT.  On Windows 150%% scaling the logical DPI
+// is 144, so a 280 px minimum must become 420 px.  Scale every hardcoded
+// pixel so tab viewport math stays correct across resolutions and
+// per-monitor DPI (1080p@100%% vs 4K@150%%).
+static int dpiScaled(int px) {
+    const QScreen* screen = QGuiApplication::primaryScreen();
+    const qreal dpi = screen ? screen->logicalDotsPerInch() : 96.0;
+    return qMax(px, qRound(px * dpi / 96.0));
+}
 
 bool isSupportedImageFile(const QString& filePath) {
     static const QStringList extensions = {
@@ -74,8 +88,8 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
     FaceDetectTestData::purgeFriendsPathsFromSettings();
 
     setWindowTitle(tr("Face Detect"));
-    setMinimumWidth(720);
-    setMinimumHeight(420);
+    setMinimumWidth(760);
+    setMinimumHeight(520);
     setSizeGripEnabled(false);
 
     QSettings settings;
@@ -505,17 +519,34 @@ void FaceDetectDialog::updateActiveTabViewportHeight() {
             content, content->minimumSizeHint().height());
     // Use the construction-time layout minimum, not a live preview's
     // pixmap-driven size hint. The active page owns its overflow.
-    const int contentHeight = std::max(kTabViewportMinHeight, cachedHeight);
+    const int contentHeight =
+            std::max(dpiScaled(kTabViewportMinHeight), cachedHeight);
     const int targetHeight = tabChrome + contentHeight;
 
     m_tabWidget->setFixedHeight(targetHeight);
     m_tabWidget->updateGeometry();
     if (isVisible() && m_activeTabHeight >= 0 &&
         targetHeight != m_activeTabHeight) {
-        resize(width(),
-               std::max(420, height() + targetHeight - m_activeTabHeight));
+        resize(width(), std::max(dpiScaled(420),
+                                 height() + targetHeight - m_activeTabHeight));
     }
     m_activeTabHeight = targetHeight;
+}
+
+void FaceDetectDialog::changeEvent(QEvent* event) {
+    QDialog::changeEvent(event);
+    // Windows per-monitor DPI: moving to a differently-scaled display (or
+    // changing the scale factor) invalidates BOTH the cached
+    // minimumSizeHint values and the hardcoded clamps.  Re-cache and
+    // re-measure so the active tab never shows clipped content or stale
+    // height from the previous monitor.
+    if (event->type() == QEvent::ScreenChangeInternal) {
+        QTimer::singleShot(0, this, [this]() {
+            cacheTabViewportHeights();
+            updateActiveTabViewportHeight();
+            update();
+        });
+    }
 }
 
 void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
@@ -523,7 +554,7 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
     auto* main = new QVBoxLayout(batchTab);
     FaceDetectUi::setupCompactMainLayout(main);
 
-    auto* testDataBtn = new QPushButton(tr("Use test data"));
+    auto* testDataBtn = new QPushButton(tr("\U0001f9ea  Try sample data"));
     testDataBtn->setToolTip(tr(
             "Download FriendsFaces sample pack and fill batch image path "
             "(does not register identities — use Registry / Auth tab for "
@@ -531,6 +562,15 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
             "Downloads the FriendsFaces sample pack and fills the batch image "
             "path (group photo). Does not register identities — use "
             "Registry / Auth for enrollment and authentication."));
+    // Prominent teal accent button — same style as the FreeSplatter test data
+    // button — guides first-time users to try bundled sample data.
+    testDataBtn->setStyleSheet(
+            "QPushButton { background: #00897b; color: white; font-weight: "
+            "bold; border: none; border-radius: 4px; padding: 5px 12px; }"
+            "QPushButton:hover { background: #00796b; }"
+            "QPushButton:pressed { background: #00695c; }"
+            "QPushButton:disabled { background: #b2dfdb; color: #e0f2f1; }");
+
     connect(testDataBtn, &QPushButton::clicked, this,
             [this]() { ensureFriendsTestData(false, false, true); });
 
@@ -677,8 +717,14 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
     m_imagePath = new QLineEdit;
     m_imagePath->setPlaceholderText(
             tr("Image file path or db://EntityName from DB tree"));
+    // Long db:// entity names get truncated inside the line edit; the
+    // tooltip always shows the complete path.
+    m_imagePath->setToolTip(m_imagePath->placeholderText());
     connect(m_imagePath, &QLineEdit::textChanged, this,
-            [this](const QString&) { updateImagePreview(); });
+            [this](const QString& text) {
+                if (m_imagePath) m_imagePath->setToolTip(text);
+                updateImagePreview();
+            });
     connect(m_imagePath, &QLineEdit::editingFinished, this, [this]() {
         if (!m_imagePath) return;
         const QString path = m_imagePath->text().trimmed();
@@ -779,13 +825,31 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
     ioLayout->addLayout(dbHeader);
 
     m_dbContentWidget = new QWidget;
+    m_dbContentWidget->setSizePolicy(QSizePolicy::Expanding,
+                                     QSizePolicy::Preferred);
     auto* dbLayout = new QVBoxLayout(m_dbContentWidget);
     m_dbImageList = new QListWidget;
+    // Layout mirrors qDeepLSD's DB Source Images: fixed single-line rows
+    // (no word wrap) so row heights stay stable inside the tab viewport.
+    // Word-wrapped rows inflate the list's height requirement, and since
+    // the tab viewport height is measured before images arrive, the list
+    // ends up clipped mid-row — the "squeezed" bug reported.
+    m_dbImageList->setSizePolicy(QSizePolicy::Expanding,
+                                 QSizePolicy::Expanding);
+    m_dbImageList->setAlternatingRowColors(true);
+    m_dbImageList->setWordWrap(false);
+    m_dbImageList->setUniformItemSizes(true);
+    // Long db:// entity names elide in the middle; hover shows the full
+    // name via the per-item tooltip.
+    m_dbImageList->setTextElideMode(Qt::ElideMiddle);
+    // Height follows content (clamped below): an empty list collapses,
+    // a full list scrolls instead of being squeezed.
+    m_dbImageList->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
     m_dbImageList->setMinimumHeight(80);
-    m_dbImageList->setMaximumHeight(140);
+    m_dbImageList->setMaximumHeight(220);
     connect(m_dbImageList, &QListWidget::itemActivated, this,
             &FaceDetectDialog::onDbListActivated);
-    dbLayout->addWidget(m_dbImageList);
+    dbLayout->addWidget(m_dbImageList, 1);
     auto* refreshBtn = new QPushButton(tr("Refresh DB Images"));
     connect(refreshBtn, &QPushButton::clicked, this,
             &FaceDetectDialog::refreshDbImagesRequested);
@@ -811,7 +875,6 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
     btnRow->addWidget(m_runBtn);
     btnRow->addWidget(m_cancelBtn);
     main->addLayout(btnRow);
-    main->addStretch(1);
 }
 
 void FaceDetectDialog::populateModelCombo(const QString& keepFilename) {
@@ -1106,18 +1169,36 @@ void FaceDetectDialog::setDbImages(const QList<DbImageEntry>& images) {
     m_dbImageList->clear();
     if (images.isEmpty()) {
         m_dbToggleBtn->setText(tr("DB Source Images (optional)"));
+        m_dbToggleBtn->setChecked(false);
         return;
     }
     for (const auto& entry : images) {
         auto* item = new QListWidgetItem(entry.name);
+        item->setToolTip(entry.name);
         if (!entry.preview.isNull()) {
+            // Small 24px thumbnail — a 48px icon would squeeze the text out
+            // of view, which is the "severely compressed" bug reported.
             item->setIcon(QIcon(QPixmap::fromImage(entry.preview)
-                                        .scaled(48, 48, Qt::KeepAspectRatio,
+                                        .scaled(24, 24, Qt::KeepAspectRatio,
                                                 Qt::SmoothTransformation)));
+            // Keep the FULL-RESOLUTION image for the preview component so
+            // clicking the thumbnail enlarges the original, not a 24 px
+            // upscaled blur.
+            item->setData(kDbFullImageRole, entry.preview);
         }
         m_dbImageList->addItem(item);
     }
     m_dbToggleBtn->setText(tr("DB Source Images (%1)").arg(images.size()));
+    // Auto-expand: without setChecked(true) the panel stays collapsed and
+    // the loaded images are invisible — the "can't see contents" bug.
+    m_dbToggleBtn->setChecked(true);
+    // The tab viewport height was measured while the list was still empty;
+    // re-measure now that items exist, or the list is clipped to the
+    // empty-list height (the "squeezed" bug).
+    QTimer::singleShot(0, this, [this]() {
+        cacheTabViewportHeights();
+        updateActiveTabViewportHeight();
+    });
 }
 
 void FaceDetectDialog::applyDbTreeSelection(const QStringList& imageNames) {
@@ -1138,6 +1219,17 @@ void FaceDetectDialog::updateImagePreview() {
     if (path.startsWith(QStringLiteral("db://"))) {
         for (int i = 0; i < m_dbImageList->count(); ++i) {
             if (m_dbImageList->item(i)->text() == path.mid(5)) {
+                // Use the stored full-resolution image so the enlarged
+                // preview shows the original pixels (not the 24 px icon).
+                const QVariant full =
+                        m_dbImageList->item(i)->data(kDbFullImageRole);
+                if (full.canConvert<QImage>()) {
+                    const QImage fullImg = full.value<QImage>();
+                    if (!fullImg.isNull()) {
+                        m_previewLabel->setPreviewImage(fullImg, kThumbSize);
+                        return;
+                    }
+                }
                 const QIcon icon = m_dbImageList->item(i)->icon();
                 if (!icon.isNull()) {
                     m_previewLabel->setPreviewPixmap(

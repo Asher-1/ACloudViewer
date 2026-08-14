@@ -109,6 +109,10 @@ signals:
 
 protected:
     void closeEvent(QCloseEvent* event) override;
+    // Re-adapt tab heights when the dialog moves to a screen with a
+    // different DPI (Windows multi-monitor scaling) — hardcoded pixel
+    // clamps must be recomputed.
+    void changeEvent(QEvent* event) override;
 
 private slots:
     void onBrowseFile();

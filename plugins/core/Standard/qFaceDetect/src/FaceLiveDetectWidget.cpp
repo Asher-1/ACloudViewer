@@ -15,16 +15,20 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QFontMetrics>
+#include <QFutureWatcher>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QMouseEvent>
+#include <QMutex>
 #include <QPainter>
 #include <QPixmapCache>
 #include <QSettings>
 #include <QShowEvent>
 #include <QTimer>
+#include <QtConcurrent>
 #include <QtMath>
+#include <atomic>
 #include <cmath>
 
 #include "FaceDetectEmbedHelpers.h"
@@ -47,11 +51,20 @@ namespace {
 #ifdef HAS_OPENCV_FACE_CAPTURE
 QImage cvMatToQImage(const cv::Mat& mat) {
     if (mat.empty()) return {};
+
+    if (mat.channels() == 3) {
+        // Single deep copy: interpret the BGR buffer as RGB888 and swap
+        // R/B once.  rgbSwapped() returns a self-owned image, so no
+        // second .copy() is needed (cvtColor + copy was 2 full-frame
+        // copies per frame).
+        return QImage(mat.data, mat.cols, mat.rows, static_cast<int>(mat.step),
+                      QImage::Format_RGB888)
+                .rgbSwapped();
+    }
+
     cv::Mat rgb;
     if (mat.channels() == 1) {
         cv::cvtColor(mat, rgb, cv::COLOR_GRAY2RGB);
-    } else if (mat.channels() == 3) {
-        cv::cvtColor(mat, rgb, cv::COLOR_BGR2RGB);
     } else if (mat.channels() == 4) {
         cv::cvtColor(mat, rgb, cv::COLOR_BGRA2RGB);
     } else {
@@ -126,9 +139,19 @@ public:
 
 public slots:
     void readFrame() {
-        if (!m_cap.isOpened()) return;
+        // Reentrancy guard: on Windows the MSMF/DirectShow backend can take
+        // 50-200 ms per read().  If the UI timer keeps firing faster than
+        // that, queued readFrame calls would pile up and the video would
+        // race ahead / lag behind indefinitely.  Drop redundant reads.
+        if (m_reading.exchange(true)) return;
+        if (!m_cap.isOpened()) {
+            m_reading = false;
+            return;
+        }
         cv::Mat frame;
-        if (!m_cap.read(frame) || frame.empty()) {
+        const bool ok = m_cap.read(frame) && !frame.empty();
+        m_reading = false;
+        if (!ok) {
             emit frameReadFailed();
             return;
         }
@@ -150,6 +173,7 @@ signals:
 
 private:
     cv::VideoCapture m_cap;
+    std::atomic<bool> m_reading{false};
 };
 #endif
 
@@ -200,6 +224,13 @@ FaceLiveDetectWidget::FaceLiveDetectWidget(QWidget* parent) : QWidget(parent) {
             &FaceLiveDetectWidget::processFrame);
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
+    // Async seek-preview decode (Windows MSMF seek/read must not run on
+    // the UI thread — it would freeze the slider and the playing video).
+    m_seekPreviewWatcher = new QFutureWatcher<QPair<int, QPixmap>>(this);
+    connect(m_seekPreviewWatcher,
+            &QFutureWatcher<QPair<int, QPixmap>>::finished, this,
+            &FaceLiveDetectWidget::onSeekPreviewReady);
+
     // Background frame reader: reads frames on a dedicated thread so
     // OpenCV's MSMF/DirectShow backend (Windows) does not block the UI.
     // cv::Mat must be registered so queued frameReady() deliveries work
@@ -218,7 +249,10 @@ FaceLiveDetectWidget::FaceLiveDetectWidget(QWidget* parent) : QWidget(parent) {
             &VideoFrameReader::frameReady, this,
             [this](const cv::Mat& rgbFrame, int frameIndex) {
                 QMutexLocker lock(&m_frameMutex);
-                rgbFrame.copyTo(m_latestFrame);
+                // Shallow copy (refcount bump): the signal argument owns
+                // the decoded buffer exclusively after delivery, so the
+                // member can share it without a full-frame deep copy.
+                m_latestFrame = rgbFrame;
                 m_frameReaderSeekTo.store(frameIndex);
             });
     connect(static_cast<VideoFrameReader*>(m_frameReader),
@@ -532,9 +566,17 @@ void FaceLiveDetectWidget::setupUi() {
     vidLayout->setContentsMargins(0, 0, 0, 0);
     m_videoPathEdit = new QLineEdit(m_videoRow);
     auto* browse = FaceDetectUi::makeBrowseButton(tr("Browse…"), m_videoRow);
-    m_testDataBtn = new QPushButton(tr("Use test data"), m_videoRow);
+    m_testDataBtn =
+            new QPushButton(tr("\U0001f9ea  Try sample data"), m_videoRow);
     m_testDataBtn->setToolTip(
             tr("Download FriendsFaces sample video and load it here."));
+    // Prominent teal accent — consistent with qFreeSplatter / batch tab.
+    m_testDataBtn->setStyleSheet(
+            "QPushButton { background: #00897b; color: white; font-weight: "
+            "bold; border: none; border-radius: 4px; padding: 5px 12px; }"
+            "QPushButton:hover { background: #00796b; }"
+            "QPushButton:pressed { background: #00695c; }"
+            "QPushButton:disabled { background: #b2dfdb; color: #e0f2f1; }");
     connect(browse, &QPushButton::clicked, this,
             &FaceLiveDetectWidget::onBrowseVideo);
     connect(m_testDataBtn, &QPushButton::clicked, this,
@@ -1125,39 +1167,53 @@ void FaceLiveDetectWidget::showSeekPreview(int frameIndex) {
     if (!m_seekPreviewLabel) return;
 
     // Check QPixmapCache first — avoids re-decoding the same frame.
+    // Key includes a path hash so different videos of equal length do not
+    // collide (length-only keys showed the old video's frame).
     const QString cacheKey = QStringLiteral("qld_seekpreview_%1_%2")
-                                     .arg(m_videoFilePath.size())
+                                     .arg(qHash(m_videoFilePath))
                                      .arg(frameIndex);
     QPixmap cached;
     if (QPixmapCache::find(cacheKey, &cached)) {
         m_seekPreviewLabel->setPixmap(cached);
     } else {
-        // Open preview capture if not already open (independent decode path)
-        if (!m_previewCapture.isOpened()) {
-            if (!m_previewCapture.open(m_videoFilePath.toStdString(),
-                                       cv::CAP_FFMPEG) &&
-                !m_previewCapture.open(m_videoFilePath.toStdString(),
-                                       cv::CAP_ANY)) {
-                return;  // silently fail — preview is non-critical
-            }
-        }
-
-        m_previewCapture.set(cv::CAP_PROP_POS_FRAMES, frameIndex);
-        cv::Mat frame;
-        if (!m_previewCapture.read(frame) || frame.empty()) return;
-
-        // Scale to thumbnail size (160×90)
-        cv::Mat thumb;
-        cv::resize(frame, thumb, cv::Size(160, 90), 0, 0, cv::INTER_AREA);
-        QImage img = cvMatToQImage(thumb);
-        QPixmap pixmap = QPixmap::fromImage(img);
-        QPixmapCache::insert(cacheKey, pixmap);
-        m_seekPreviewLabel->setPixmap(pixmap);
-
-        // Limit cache size: periodic trim.
-        static int s_cacheCheckCounter = 0;
-        if (++s_cacheCheckCounter % 50 == 0 && QPixmapCache::cacheLimit() > 0) {
-            QPixmapCache::setCacheLimit(32768);  // 32 MB cap
+        // ASYNC decode: Windows MSMF/DirectShow seek+read() can block for
+        // 100 ms+ — doing it synchronously here would freeze the slider AND
+        // the playing video (the main thread is shared).  Decode on the
+        // global thread pool; the mutex serializes access to the shared
+        // preview capture, and only the LATEST request wins.
+        m_pendingPreviewFrame = frameIndex;
+        if (m_seekPreviewWatcher && !m_seekPreviewWatcher->isRunning()) {
+            const QString path = m_videoFilePath;
+            // Snapshot the generation: results decoded for a previous video
+            // must not be painted over the new one.
+            const int gen = m_previewGeneration.loadRelaxed();
+            m_seekPreviewWatcher->setFuture(QtConcurrent::run(
+                    [this, path, frameIndex, gen]() -> QPair<int, QPixmap> {
+                        if (gen != m_previewGeneration.loadRelaxed()) {
+                            return {frameIndex, QPixmap()};
+                        }
+                        QMutexLocker lock(&m_previewMutex);
+                        if (!m_previewCapture.isOpened()) {
+                            if (!m_previewCapture.open(path.toStdString(),
+                                                       cv::CAP_FFMPEG) &&
+                                !m_previewCapture.open(path.toStdString(),
+                                                       cv::CAP_ANY)) {
+                                return {frameIndex, QPixmap()};
+                            }
+                        }
+                        m_previewCapture.set(cv::CAP_PROP_POS_FRAMES,
+                                             frameIndex);
+                        cv::Mat frame;
+                        if (!m_previewCapture.read(frame) || frame.empty()) {
+                            return {frameIndex, QPixmap()};
+                        }
+                        // Scale to thumbnail size (160×90)
+                        cv::Mat thumb;
+                        cv::resize(frame, thumb, cv::Size(160, 90), 0, 0,
+                                   cv::INTER_AREA);
+                        return {frameIndex,
+                                QPixmap::fromImage(cvMatToQImage(thumb))};
+                    }));
         }
     }
 
@@ -1191,10 +1247,46 @@ void FaceLiveDetectWidget::showSeekPreview(int frameIndex) {
 #endif
 }
 
+void FaceLiveDetectWidget::onSeekPreviewReady() {
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    if (!m_seekPreviewWatcher || !m_seekPreviewLabel) return;
+    const QPair<int, QPixmap> result = m_seekPreviewWatcher->result();
+    if (result.second.isNull()) return;
+    // Cache under the frame that was ACTUALLY decoded, not the latest
+    // slider position (they differ while the user keeps dragging).
+    const QString cacheKey = QStringLiteral("qld_seekpreview_%1_%2")
+                                     .arg(qHash(m_videoFilePath))
+                                     .arg(result.first);
+    QPixmapCache::insert(cacheKey, result.second);
+    // Only paint if this result still matches the latest request.
+    if (m_seekPreviewLabel->isVisible() &&
+        result.first == m_pendingPreviewFrame) {
+        m_seekPreviewLabel->setPixmap(result.second);
+    }
+
+    // Limit cache size: periodic trim.
+    static int s_cacheCheckCounter = 0;
+    if (++s_cacheCheckCounter % 50 == 0 && QPixmapCache::cacheLimit() > 0) {
+        QPixmapCache::setCacheLimit(32768);  // 32 MB cap
+    }
+#endif
+}
+
 void FaceLiveDetectWidget::closePreviewCapture() {
 #ifdef HAS_OPENCV_FACE_CAPTURE
-    if (m_previewCapture.isOpened()) {
-        m_previewCapture.release();
+    // Invalidate in-flight async previews from the current video.
+    m_previewGeneration.fetchAndAddRelaxed(1);
+    // Cancel any pending async decode, then release under the mutex so we
+    // never destroy the capture while a worker is reading it.
+    if (m_seekPreviewWatcher) {
+        m_seekPreviewWatcher->future().cancel();
+        m_seekPreviewWatcher->waitForFinished();
+    }
+    {
+        QMutexLocker lock(&m_previewMutex);
+        if (m_previewCapture.isOpened()) {
+            m_previewCapture.release();
+        }
     }
 #endif
     if (m_seekPreviewLabel) {
@@ -1399,14 +1491,32 @@ void FaceLiveDetectWidget::onInferComplete(
 
 void FaceLiveDetectWidget::processFrame() {
 #ifdef HAS_OPENCV_FACE_CAPTURE
-    if (!m_streamActive || !m_frameReaderReady) return;
+    // Pipeline safety: every early-return path must re-queue the next
+    // background read, otherwise the pipeline stalls permanently.
+    // Use a scope guard so all paths are covered.
+    auto queueNextRead = [this]() {
+        if (m_frameReaderReady && m_streamActive) {
+            QMetaObject::invokeMethod(m_frameReader, "readFrame",
+                                      Qt::QueuedConnection);
+        }
+    };
+
+    if (!m_streamActive || !m_frameReaderReady) {
+        queueNextRead();
+        return;
+    }
 
     cv::Mat frame;
     int curFrameNumForSlider = 0;
     {
         QMutexLocker lock(&m_frameMutex);
-        if (m_latestFrame.empty()) return;
-        m_latestFrame.copyTo(frame);
+        if (m_latestFrame.empty()) {
+            queueNextRead();
+            return;
+        }
+        // O(1) swap instead of a full-frame deep copy: the member hands
+        // ownership to the local, the next frameReady repopulates it.
+        std::swap(frame, m_latestFrame);
         curFrameNumForSlider = m_frameReaderSeekTo.load();
     }
 
@@ -1428,7 +1538,10 @@ void FaceLiveDetectWidget::processFrame() {
     }
 
     QImage rgb = cvMatToQImage(frame);
-    if (rgb.isNull()) return;
+    if (rgb.isNull()) {
+        queueNextRead();
+        return;
+    }
 
     // Get current video frame number for sync tracking.
     const int curFrameNum = curFrameNumForSlider;
@@ -1475,6 +1588,9 @@ void FaceLiveDetectWidget::processFrame() {
                                 Qt::FastTransformation);
     drawLiveOverlay(display);
     m_previewLabel->setPixmap(QPixmap::fromImage(display));
+
+    // Pipeline: after processing this frame, trigger the next background read.
+    queueNextRead();
 #endif
 }
 
@@ -1724,10 +1840,20 @@ bool FaceLiveDetectWidget::startVideoFile(const QString& path) {
 void FaceLiveDetectWidget::restartVideoFile() {
 #ifdef HAS_OPENCV_FACE_CAPTURE
     if (!m_frameReaderReady || m_videoFilePath.isEmpty()) return;
+
+    // Reset ALL inference state so the pipeline restarts fresh:
+    // - Bump streamGeneration to invalidate stale async inference results
+    // - Clear overlays so old boxes/labels disappear immediately
+    // - Force m_inferBusy=false so new inference can be submitted
+    ++m_streamGeneration;
+    m_overlayFaces.clear();
+    m_overlayLabels.clear();
+    m_overlayInferSize = QSize();
+    m_inferBusy = false;
+
     QMetaObject::invokeMethod(m_frameReader, "seekToFrame",
                               Qt::QueuedConnection, Q_ARG(int, 0));
-    // Reset inference throttle so detection resumes immediately after restart.
-    m_lastSubmitFrameNum = 0;
+    m_lastSubmitFrameNum = -1;  // -1 forces submission on the very first frame
     m_sliderUpdateSkip = 0;
     if (m_videoSeekSlider) {
         m_videoSeekSlider->blockSignals(true);
@@ -1735,14 +1861,17 @@ void FaceLiveDetectWidget::restartVideoFile() {
         m_videoSeekSlider->blockSignals(false);
     }
     updateVideoTimeLabel(0);
-    if (!m_streamActive) {
-        m_videoPaused = false;
-        m_streamActive = true;
-        m_inferBusy = false;
-        beginFrameProcessing();
-        m_statusLabel->setText(tr("Restarted video"));
-        emit streamStarted();
-    }
+
+    // Always restart the pipeline even if streamActive is still true:
+    // the seek invalidates the current frame position, so we stop the
+    // timer and re-enter beginFrameProcessing to queue a fresh read.
+    if (m_frameTimer) m_frameTimer->stop();
+    m_videoPaused = false;
+    m_streamActive = true;
+    m_inferBusy = false;
+    beginFrameProcessing();
+    m_statusLabel->setText(tr("Restarted video"));
+    emit streamStarted();
 #endif
 }
 
@@ -1753,12 +1882,14 @@ void FaceLiveDetectWidget::beginFrameProcessing() {
             m_sourceCombo && m_sourceCombo->currentData().toInt() ==
                                      static_cast<int>(InputSource::VideoFile);
     const int interval = isVideo ? computeTimerInterval() : m_baseTimerInterval;
-    if (m_frameReadTimer) {
-        m_frameReadTimer->setInterval(interval);
-        m_frameReadTimer->start();
-    }
     m_frameTimer->setInterval(interval);
     m_frameTimer->start();
+    // Queue the first background read — subsequent reads are triggered
+    // by processFrame to maintain pipeline backpressure.
+    if (m_frameReaderReady) {
+        QMetaObject::invokeMethod(m_frameReader, "readFrame",
+                                  Qt::QueuedConnection);
+    }
     if (isVideo) {
         m_statusLabel->setText(tr("Playing video"));
     } else {

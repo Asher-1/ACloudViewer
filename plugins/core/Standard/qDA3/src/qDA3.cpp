@@ -45,6 +45,36 @@ qDA3::qDA3(QObject* parent)
 
 void qDA3::onNewSelection(const ccHObject::Container& selectedEntities) {
     m_selectedEntities = selectedEntities;
+    if (!m_dialog || !m_dialog->isVisible()) return;
+
+    const QStringList names = selectedDbImageNames();
+    if (!names.isEmpty()) {
+        m_dialog->applyDbTreeSelection(names);
+    }
+}
+
+QStringList qDA3::selectedDbImageNames() const {
+    QStringList names;
+    for (ccHObject* obj : m_selectedEntities) {
+        if (!obj) continue;
+        if (obj->isA(CV_TYPES::IMAGE)) {
+            ccImage* img = dynamic_cast<ccImage*>(obj);
+            if (!img || img->data().isNull()) continue;
+            names.append(obj->getName());
+        } else if (obj->isGroup()) {
+            // Selecting a folder/group in the DB tree collects every
+            // usable ccImage inside it (recursively).
+            ccHObject::Container images;
+            obj->filterChildren(images, true, CV_TYPES::IMAGE, false);
+            for (ccHObject* child : images) {
+                if (!child) continue;
+                ccImage* img = dynamic_cast<ccImage*>(child);
+                if (!img || img->data().isNull()) continue;
+                names.append(child->getName());
+            }
+        }
+    }
+    return names;
 }
 
 QList<QAction*> qDA3::getActions() { return {m_action}; }
@@ -61,9 +91,12 @@ void qDA3::refreshDbImages() {
 
     QStringList names;
     for (ccHObject* obj : images) {
-        if (obj && obj->isEnabled()) {
-            names.append(obj->getName());
-        }
+        if (!obj || !obj->isEnabled()) continue;
+        ccImage* img = dynamic_cast<ccImage*>(obj);
+        // Skip images without pixel data — selecting an empty ccImage
+        // would fail at inference time with a confusing error.
+        if (!img || img->data().isNull()) continue;
+        names.append(obj->getName());
     }
     m_dialog->setDbImages(names);
 }
@@ -147,26 +180,30 @@ void qDA3::executeTask(const DA3Dialog::Settings& settings) {
 
     if (!settings.dbImageName.isEmpty()) {
         ccImage* img = findDbImage(settings.dbImageName);
-        if (img && !img->data().isNull()) {
-            QString tmpDir = DA3Dialog::modelCacheDir() + "/../tmp";
-            QDir().mkpath(tmpDir);
-            const QString tmpPath =
-                    tmpDir + "/da3-" +
-                    QUuid::createUuid().toString(QUuid::WithoutBraces) + ".png";
-            if (img->data().save(tmpPath)) {
-                m_stagedInputFiles << tmpPath;
-                resolvedSettings.inputPaths = QStringList() << tmpPath;
-                m_dialog->appendLog(tr("[DA3] Using DB image: %1 (%2x%3)")
-                                            .arg(settings.dbImageName)
-                                            .arg(img->getW())
-                                            .arg(img->getH()));
-            } else {
-                m_dialog->appendLog(tr("[Error] Failed to export DB image: %1")
-                                            .arg(settings.dbImageName));
-                return;
-            }
+        if (!img) {
+            m_dialog->appendLog(tr("[Error] DB image not found: %1")
+                                        .arg(settings.dbImageName));
+            return;
+        }
+        if (img->data().isNull()) {
+            m_dialog->appendLog(tr("[Error] DB image has no pixel data: %1")
+                                        .arg(settings.dbImageName));
+            return;
+        }
+        QString tmpDir = DA3Dialog::modelCacheDir() + "/../tmp";
+        QDir().mkpath(tmpDir);
+        const QString tmpPath =
+                tmpDir + "/da3-" +
+                QUuid::createUuid().toString(QUuid::WithoutBraces) + ".png";
+        if (img->data().save(tmpPath)) {
+            m_stagedInputFiles << tmpPath;
+            resolvedSettings.inputPaths = QStringList() << tmpPath;
+            m_dialog->appendLog(tr("[DA3] Using DB image: %1 (%2x%3)")
+                                        .arg(settings.dbImageName)
+                                        .arg(img->getW())
+                                        .arg(img->getH()));
         } else {
-            m_dialog->appendLog(tr("[Error] DB image not found or empty: %1")
+            m_dialog->appendLog(tr("[Error] Failed to export DB image: %1")
                                         .arg(settings.dbImageName));
             return;
         }

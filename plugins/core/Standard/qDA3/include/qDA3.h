@@ -42,6 +42,9 @@ private:
     void refreshDbImages();
     void clearStagedInputFiles();
     ccImage* findDbImage(const QString& name) const;
+    // Collect usable ccImage names from the DB tree selection: direct
+    // ccImage picks plus recursive scan of selected groups/folders.
+    QStringList selectedDbImageNames() const;
     bool warmupInferenceBackend(const QString& device, QString* logMsg) const;
     static bool saveDepthAsImage(const DA3DepthResult& result,
                                  const QString& path);

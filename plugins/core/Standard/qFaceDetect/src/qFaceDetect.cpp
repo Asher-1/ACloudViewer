@@ -73,10 +73,25 @@ ccImage* qFaceDetect::findDbImage(const QString& name) const {
 QStringList qFaceDetect::selectedDbImageNames() const {
     QStringList names;
     for (ccHObject* obj : m_selectedEntities) {
-        if (!obj || !obj->isA(CV_TYPES::IMAGE)) continue;
-        ccImage* img = dynamic_cast<ccImage*>(obj);
-        if (img && isFaceDetectOutputImage(img)) continue;
-        names.append(obj->getName());
+        if (!obj) continue;
+        if (obj->isA(CV_TYPES::IMAGE)) {
+            ccImage* img = dynamic_cast<ccImage*>(obj);
+            if (!img || img->data().isNull()) continue;
+            if (isFaceDetectOutputImage(img)) continue;
+            names.append(obj->getName());
+        } else if (obj->isGroup()) {
+            // Selecting a folder/group in the DB tree collects every
+            // usable ccImage inside it (recursively).
+            ccHObject::Container images;
+            obj->filterChildren(images, true, CV_TYPES::IMAGE, false);
+            for (ccHObject* child : images) {
+                if (!child) continue;
+                ccImage* img = dynamic_cast<ccImage*>(child);
+                if (!img || img->data().isNull()) continue;
+                if (isFaceDetectOutputImage(img)) continue;
+                names.append(child->getName());
+            }
+        }
     }
     return names;
 }
@@ -88,9 +103,17 @@ bool qFaceDetect::resolveInputPath(const QString& rawPath,
     if (rawPath.startsWith(QStringLiteral("db://"))) {
         const QString name = rawPath.mid(5);
         ccImage* img = findDbImage(name);
-        if (!img || img->data().isNull()) {
+        if (!img) {
             if (errorMsg) {
-                *errorMsg = tr("DB image not found or empty: %1").arg(name);
+                *errorMsg = tr("DB image not found: %1").arg(name);
+            }
+            return false;
+        }
+        if (img->data().isNull()) {
+            // Entity exists but carries no pixel data (e.g. a stale/empty
+            // ccImage) — list filters it out, so give a clear message.
+            if (errorMsg) {
+                *errorMsg = tr("DB image has no pixel data: %1").arg(name);
             }
             return false;
         }
@@ -137,7 +160,11 @@ void qFaceDetect::refreshDbImages() {
     for (ccHObject* obj : images) {
         if (!obj || !obj->isEnabled()) continue;
         ccImage* img = dynamic_cast<ccImage*>(obj);
-        if (!img || isFaceDetectOutputImage(img)) continue;
+        // Skip output images AND images without pixel data — selecting an
+        // empty ccImage would fail at inference time with a confusing
+        // "not found or empty" error.
+        if (!img || img->data().isNull() || isFaceDetectOutputImage(img))
+            continue;
         FaceDetectDialog::DbImageEntry entry;
         entry.name = obj->getName();
         entry.preview = img->data();

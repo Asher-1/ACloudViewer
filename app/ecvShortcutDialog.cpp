@@ -178,6 +178,74 @@ ecvShortcutDialog::ecvShortcutDialog(const QList<QAction*>& actions,
       m_allActions(actions) {
     m_ui->setupUi(this);
 
+    // Detect dark vs light theme.  On some systems the global
+    // QDarkStyleSheet::Dark stylesheet overrides local QSS, so we
+    // apply QSS DIRECTLY on each child widget (not on 'this') to
+    // guarantee it takes effect.
+    const QColor baseColor = palette().base().color();
+    const int lum = baseColor.red() * 299 + baseColor.green() * 587 +
+                    baseColor.blue() * 114;
+    const bool isDarkTheme = (lum < 128 * 1000);
+
+    m_ui->tableWidget->setAlternatingRowColors(true);
+
+    if (isDarkTheme) {
+        // Dark theme: explicit non-black colors with visible row contrast.
+        // Pure black base (#000000) on many GNOME/QDarkStyle themes makes
+        // alternating rows invisible; we override per-widget to guarantee
+        // a professional appearance.
+        m_ui->tableWidget->setStyleSheet(QStringLiteral(
+                "QTableWidget { "
+                "  gridline-color: #444; "
+                "  background: #1e1e1e; "
+                "  alternate-background-color: #2d2d2d; "
+                "  selection-background-color: #264f78; "
+                "  selection-color: #ffffff; "
+                "  color: #e0e0e0; "
+                "  border: 1px solid #555;"
+                "} "
+                "QTableWidget::item { padding: 3px 6px; } "
+                "QHeaderView::section { "
+                "  background: #3c3c3c; color: #e0e0e0; "
+                "  border: 1px solid #555; padding: 5px 6px; font-weight: bold;"
+                "} "
+                "QTableCornerButton::section { "
+                "  background: #3c3c3c; border: 1px solid #555;"
+                "}"));
+        m_ui->searchLineEdit->setStyleSheet(QStringLiteral(
+                "QLineEdit { "
+                "  padding: 4px 8px; border: 1px solid #555; "
+                "  border-radius: 4px; background: #3c3c3c; color: #e0e0e0;"
+                "}"));
+    } else {
+        // Light theme: palette values have natural contrast.
+        // Use palette() which adapts to the current OS theme.
+        m_ui->tableWidget->setStyleSheet(QStringLiteral(
+                "QTableWidget { "
+                "  gridline-color: palette(mid); "
+                "  alternate-background-color: palette(alternateBase); "
+                "  selection-background-color: palette(highlight); "
+                "  selection-color: palette(highlightedText); "
+                "  color: palette(text); "
+                "  border: 1px solid palette(mid);"
+                "} "
+                "QTableWidget::item { padding: 3px 6px; } "
+                "QHeaderView::section { "
+                "  background: palette(button); color: palette(buttonText); "
+                "  border: 1px solid palette(mid); padding: 5px 6px; "
+                "  font-weight: bold;"
+                "} "
+                "QTableCornerButton::section { "
+                "  background: palette(button); border: 1px solid palette(mid);"
+                "}"));
+        m_ui->searchLineEdit->setStyleSheet(QStringLiteral(
+                "QLineEdit { "
+                "  padding: 4px 8px; border: 1px solid palette(mid); "
+                "  border-radius: 4px; background: palette(base); "
+                "  color: palette(text);"
+                "}"));
+    }
+
     const auto vtkDefs = vtkDefaultShortcuts();
     m_ui->tableWidget->setRowCount(actions.count() + vtkDefs.size());
     m_ui->tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -515,11 +583,26 @@ void ecvShortcutDialog::refreshConflictHighlighting() {
         if (!it.value().isEmpty()) externalSeqs.insert(it.value().toString());
     }
 
-    QColor conflictBg(120, 40, 40);
-    QColor normalBg;
+    // Use palette-derived colors for conflict highlighting so they are
+    // readable on both light and dark themes.  We check luminance and
+    // pick a red-tinged background that stands out against both schemes.
+    const QColor baseColor = palette().base().color();
+    const int luminance = baseColor.red() * 299 + baseColor.green() * 587 +
+                          baseColor.blue() * 114;
+    const bool isDarkTheme = (luminance < 128 * 1000);
+    // light theme: soft pink,   dark theme: muted brick
+    const QColor conflictBg =
+            isDarkTheme ? QColor(130, 50, 50) : QColor(255, 210, 210);
+    // IMPORTANT: never use a transparent/default QColor() here — on some
+    // platforms a zero-alpha brush renders as SOLID BLACK, which is exactly
+    // the "black table" bug reported.  Use the actual row colors instead.
+    const QPalette tablePalette = m_ui->tableWidget->palette();
+    const QColor rowBgEven = tablePalette.base().color();
+    const QColor rowBgOdd = tablePalette.alternateBase().color();
     int conflictCount = 0;
 
     for (int i = 0; i < m_ui->tableWidget->rowCount(); i++) {
+        const QColor& normalBg = (i % 2 == 0) ? rowBgEven : rowBgOdd;
         m_ui->tableWidget->item(i, ACTION_NAME_COLUMN)->setBackground(normalBg);
         m_ui->tableWidget->item(i, KEY_SEQUENCE_COLUMN)
                 ->setBackground(normalBg);
@@ -542,14 +625,15 @@ void ecvShortcutDialog::refreshConflictHighlighting() {
     if (m_conflictLabel) {
         if (conflictCount > 0) {
             m_conflictLabel->setText(
-                    tr("<span style='color:#ff6666;'>%1 shortcut "
-                       "conflict(s) detected. Conflicting rows are "
-                       "highlighted in red.</span>")
+                    tr("%1 shortcut conflict(s) detected. Conflicting "
+                       "rows are highlighted.")
                             .arg(conflictCount));
+            m_conflictLabel->setStyleSheet(
+                    "color: palette(highlight); font-weight: bold;");
         } else {
-            m_conflictLabel->setText(
-                    tr("<span style='color:#66ff66;'>No shortcut "
-                       "conflicts detected.</span>"));
+            m_conflictLabel->setText(tr("No shortcut conflicts detected."));
+            m_conflictLabel->setStyleSheet(
+                    "color: palette(mid); font-style: italic;");
         }
     }
 }

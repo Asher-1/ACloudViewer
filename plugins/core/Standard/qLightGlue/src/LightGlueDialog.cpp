@@ -443,10 +443,17 @@ void LightGlueDialog::setupUi() {
     mainLayout->addWidget(m_progress);
 
     auto* actionRow = new QHBoxLayout;
-    m_useTestDataBtn = new QPushButton(tr("Use test data"));
+    m_useTestDataBtn = new QPushButton(tr("\U0001f9ea  Try sample data"));
     m_useTestDataBtn->setToolTip(
             tr("Load Monstree multi-view test images for matching.\n"
                "Downloads on first use, then cached locally."));
+    // Prominent teal accent — consistent with qFreeSplatter / qFaceDetect.
+    m_useTestDataBtn->setStyleSheet(
+            "QPushButton { background: #00897b; color: white; font-weight: "
+            "bold; border: none; border-radius: 4px; padding: 5px 12px; }"
+            "QPushButton:hover { background: #00796b; }"
+            "QPushButton:pressed { background: #00695c; }"
+            "QPushButton:disabled { background: #b2dfdb; color: #e0f2f1; }");
     connect(m_useTestDataBtn, &QPushButton::clicked, this,
             &LightGlueDialog::onUseTestData);
     actionRow->addWidget(m_useTestDataBtn);
