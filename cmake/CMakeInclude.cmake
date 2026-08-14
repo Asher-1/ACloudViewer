@@ -14,6 +14,10 @@ function(cloudViewer_install_files) # 2 (or 3) arguments:
     set(valid_files "")
     foreach(file_path ${ARGV0})
         if(EXISTS "${file_path}")
+            # Normalize Windows backslashes to forward slashes so CMake
+            # does not misinterpret \P, \S, etc. as escape sequences in
+            # the generated cmake_install.cmake.
+            file(TO_CMAKE_PATH "${file_path}" file_path)
             list(APPEND valid_files "${file_path}")
         else()
             message(WARNING "File does not exist, skipping: ${file_path}")

@@ -28,6 +28,9 @@ function( export_PCL_dlls ) # 1 argument: ARGV0 = destination directory
 		if( CMAKE_CONFIGURATION_TYPES )
 			file( GLOB pcl_debug_dlls ${PCL_DIR}/bin/*${PCL_DEBUG_SUFFIX}.dll  )
 			foreach( filename ${pcl_debug_dlls} )
+				# Normalize Windows backslashes to forward slashes so CMake
+				# does not misinterpret escape sequences in cmake_install.cmake.
+				file(TO_CMAKE_PATH "${filename}" filename)
 				install( FILES ${filename} CONFIGURATIONS Debug DESTINATION ${ARGV0}_debug )
 			endforeach()
 		endif()

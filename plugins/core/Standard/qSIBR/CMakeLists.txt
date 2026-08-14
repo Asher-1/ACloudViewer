@@ -202,7 +202,8 @@ if(PLUGIN_STANDARD_QSIBR)
             set(_sibr_cudart_dll_name "")
             # Find cudart DLL in CUDA toolkit bin directory
             if(DEFINED ENV{CUDA_PATH})
-                set(_sibr_cuda_bin "$ENV{CUDA_PATH}/bin")
+                file(TO_CMAKE_PATH "$ENV{CUDA_PATH}" _sibr_cuda_bin)
+                set(_sibr_cuda_bin "${_sibr_cuda_bin}/bin")
             elseif(CUDA_TOOLKIT_ROOT_DIR)
                 set(_sibr_cuda_bin "${CUDA_TOOLKIT_ROOT_DIR}/bin")
             else()
@@ -218,6 +219,10 @@ if(PLUGIN_STANDARD_QSIBR)
                 file(GLOB _sibr_cudart_dlls "${_sibr_cuda_bin}/cudart64_*.dll")
                 if(_sibr_cudart_dlls)
                     list(GET _sibr_cudart_dlls 0 _sibr_cudart_dll_path)
+                    # Normalize Windows backslashes to forward slashes so CMake
+                    # does not misinterpret \P, \N, etc. as escape sequences in
+                    # the generated cmake_install.cmake (e.g. "\Program").
+                    file(TO_CMAKE_PATH "${_sibr_cudart_dll_path}" _sibr_cudart_dll_path)
                     get_filename_component(_sibr_cudart_dll_name "${_sibr_cudart_dll_path}" NAME)
                     # Install cudart next to ACloudViewer.exe so the packaged
                     # app finds it at load time (the DLL is not in the import
@@ -847,11 +852,16 @@ if(PLUGIN_STANDARD_QSIBR)
     function(sibr_install_shaders SRC_DIR SUBFOLDER)
         file(GLOB _shader_files "${SRC_DIR}/*.frag" "${SRC_DIR}/*.vert" "${SRC_DIR}/*.geom"
                                 "${SRC_DIR}/*.fp" "${SRC_DIR}/*.vp" "${SRC_DIR}/*.gp")
+        # Normalize Windows backslashes to forward slashes so CMake does not
+        # misinterpret them as escape sequences in cmake_install.cmake.
+        set(_normalized "")
         foreach(_sf ${_shader_files})
-            get_filename_component(_sf_name ${_sf} NAME)
-            configure_file(${_sf} "${SIBR_BIN_DIR}/shaders/${SUBFOLDER}/${_sf_name}" COPYONLY)
+            file(TO_CMAKE_PATH "${_sf}" _sf_norm)
+            list(APPEND _normalized "${_sf_norm}")
+            get_filename_component(_sf_name "${_sf_norm}" NAME)
+            configure_file("${_sf_norm}" "${SIBR_BIN_DIR}/shaders/${SUBFOLDER}/${_sf_name}" COPYONLY)
         endforeach()
-        install(FILES ${_shader_files} DESTINATION bin/shaders/${SUBFOLDER})
+        install(FILES ${_normalized} DESTINATION bin/shaders/${SUBFOLDER})
     endfunction()
 
     sibr_install_shaders("${SIBR_SRC_DIR}/core/renderer/shaders" "core")
@@ -865,11 +875,16 @@ if(PLUGIN_STANDARD_QSIBR)
     # Uses sibr_resources/ to avoid conflict with ACloudViewer's own resources/ directory.
     function(sibr_install_resources SRC_DIR SUBFOLDER)
         file(GLOB _rsc_files "${SRC_DIR}/*.ini" "${SRC_DIR}/*.json")
+        # Normalize Windows backslashes to forward slashes so CMake does not
+        # misinterpret them as escape sequences in cmake_install.cmake.
+        set(_normalized "")
         foreach(_rf ${_rsc_files})
-            get_filename_component(_rf_name ${_rf} NAME)
-            configure_file(${_rf} "${SIBR_BIN_DIR}/sibr_resources/${SUBFOLDER}/${_rf_name}" COPYONLY)
+            file(TO_CMAKE_PATH "${_rf}" _rf_norm)
+            list(APPEND _normalized "${_rf_norm}")
+            get_filename_component(_rf_name "${_rf_norm}" NAME)
+            configure_file("${_rf_norm}" "${SIBR_BIN_DIR}/sibr_resources/${SUBFOLDER}/${_rf_name}" COPYONLY)
         endforeach()
-        install(FILES ${_rsc_files} DESTINATION bin/sibr_resources/${SUBFOLDER})
+        install(FILES ${_normalized} DESTINATION bin/sibr_resources/${SUBFOLDER})
     endfunction()
 
     sibr_install_resources("${SIBR_SRC_DIR}/core/graphics/resources" "core")
