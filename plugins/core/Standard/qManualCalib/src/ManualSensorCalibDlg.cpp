@@ -1497,11 +1497,10 @@ void ManualSensorCalibDlg::processSliderLoad() {
     auto reader = m_bagReader;
     const auto calibConfig = m_calibConfig;
 
-    QFuture<SliderFrameData> future =
-            QtConcurrent::run([reader, percent, needImages, needCloud,
-                               cameraTopics, allCameraTopics, cloudTopics,
-                               viewMode, bev_mode, allow_cloud_ref, calibConfig]()
-                                      -> SliderFrameData {
+    QFuture<SliderFrameData> future = QtConcurrent::run(
+            [reader, percent, needImages, needCloud, cameraTopics,
+             allCameraTopics, cloudTopics, viewMode, bev_mode, allow_cloud_ref,
+             calibConfig]() -> SliderFrameData {
                 SliderFrameData data;
 
                 if (!reader || !reader->isOpen()) return data;
