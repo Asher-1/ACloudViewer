@@ -61,13 +61,7 @@ void qLightGlue::onNewSelection(const ccHObject::Container& selectedEntities) {
     m_selectedEntities = selectedEntities;
     if (!m_dialog || !m_dialog->isVisible()) return;
 
-    QStringList imageNames;
-    for (ccHObject* obj : selectedEntities) {
-        if (!obj || !obj->isA(CV_TYPES::IMAGE)) continue;
-        ccImage* img = dynamic_cast<ccImage*>(obj);
-        if (img && isLightGlueOutputImage(img)) continue;
-        imageNames.append(obj->getName());
-    }
+    const QStringList imageNames = selectedDbImageNames();
     if (!imageNames.isEmpty()) {
         m_dialog->applyDbTreeSelection(imageNames);
     }
@@ -139,10 +133,25 @@ ccImage* qLightGlue::findDbImage(const QString& name) const {
 QStringList qLightGlue::selectedDbImageNames() const {
     QStringList names;
     for (ccHObject* obj : m_selectedEntities) {
-        if (!obj || !obj->isA(CV_TYPES::IMAGE)) continue;
-        ccImage* img = dynamic_cast<ccImage*>(obj);
-        if (img && isLightGlueOutputImage(img)) continue;
-        names.append(obj->getName());
+        if (!obj) continue;
+        if (obj->isA(CV_TYPES::IMAGE)) {
+            ccImage* img = dynamic_cast<ccImage*>(obj);
+            if (!img || img->data().isNull()) continue;
+            if (isLightGlueOutputImage(img)) continue;
+            names.append(obj->getName());
+        } else if (obj->isGroup()) {
+            // Selecting a folder/group in the DB tree collects every
+            // usable ccImage inside it (recursively).
+            ccHObject::Container images;
+            obj->filterChildren(images, true, CV_TYPES::IMAGE, false);
+            for (ccHObject* child : images) {
+                if (!child) continue;
+                ccImage* img = dynamic_cast<ccImage*>(child);
+                if (!img || img->data().isNull()) continue;
+                if (isLightGlueOutputImage(img)) continue;
+                names.append(child->getName());
+            }
+        }
     }
     return names;
 }
@@ -166,9 +175,15 @@ bool qLightGlue::resolveInputPaths(const QStringList& rawPaths,
         if (raw.startsWith("db://")) {
             const QString name = raw.mid(5);
             ccImage* img = findDbImage(name);
-            if (!img || img->data().isNull()) {
+            if (!img) {
                 if (errorMsg) {
-                    *errorMsg = tr("DB image not found or empty: %1").arg(name);
+                    *errorMsg = tr("DB image not found: %1").arg(name);
+                }
+                return false;
+            }
+            if (img->data().isNull()) {
+                if (errorMsg) {
+                    *errorMsg = tr("DB image has no pixel data: %1").arg(name);
                 }
                 return false;
             }
@@ -217,7 +232,11 @@ void qLightGlue::refreshDbImages() {
     for (ccHObject* obj : images) {
         if (!obj || !obj->isEnabled()) continue;
         ccImage* img = dynamic_cast<ccImage*>(obj);
-        if (!img || isLightGlueOutputImage(img)) continue;
+        // Skip output images AND images without pixel data — selecting an
+        // empty ccImage would fail at inference time with a confusing
+        // "not found or empty" error.
+        if (!img || img->data().isNull() || isLightGlueOutputImage(img))
+            continue;
         LightGlueDialog::DbImageEntry entry;
         entry.name = obj->getName();
         entry.preview = img->data();

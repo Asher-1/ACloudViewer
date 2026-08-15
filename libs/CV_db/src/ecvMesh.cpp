@@ -4296,10 +4296,12 @@ bool ccMesh::getColorFromMaterial(unsigned triIndex,
         return false;
     }
 
-    double x = (T1 ? T1->tx * w.u[0] : 0.0) + (T2 ? T2->tx * w.u[1] : 0.0) +
-               (T3 ? T3->tx * w.u[2] : 0.0);
-    double y = (T1 ? T1->ty * w.u[0] : 0.0) + (T2 ? T2->ty * w.u[1] : 0.0) +
-               (T3 ? T3->ty * w.u[2] : 0.0);
+    double x = (T1 ? static_cast<double>(T1->tx) * w.u[0] : 0.0) +
+               (T2 ? static_cast<double>(T2->tx) * w.u[1] : 0.0) +
+               (T3 ? static_cast<double>(T3->tx) * w.u[2] : 0.0);
+    double y = (T1 ? static_cast<double>(T1->ty) * w.u[0] : 0.0) +
+               (T2 ? static_cast<double>(T2->ty) * w.u[1] : 0.0) +
+               (T3 ? static_cast<double>(T3->ty) * w.u[2] : 0.0);
 
     // DGM: we mut handle texture coordinates below 0 or above 1 (i.e.
     // repetition) if (x < 0 || x > 1.0 || y < 0 || y > 1.0)

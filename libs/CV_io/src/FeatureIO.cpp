@@ -25,7 +25,8 @@ bool ReadMatrixXdFromBINFile(FILE *file, Eigen::MatrixXd &mat) {
         return false;
     }
     mat.resize(rows, cols);
-    if (fread(mat.data(), sizeof(double), rows * cols, file) < rows * cols) {
+    const size_t total = static_cast<size_t>(rows) * static_cast<size_t>(cols);
+    if (fread(mat.data(), sizeof(double), total, file) < total) {
         cloudViewer::utility::LogWarning("Read BIN failed: unexpected EOF.");
         return false;
     }
@@ -43,7 +44,8 @@ bool WriteMatrixXdToBINFile(FILE *file, const Eigen::MatrixXd &mat) {
         cloudViewer::utility::LogWarning("Write BIN failed: unexpected error.");
         return false;
     }
-    if (fwrite(mat.data(), sizeof(double), rows * cols, file) < rows * cols) {
+    const size_t total = static_cast<size_t>(rows) * static_cast<size_t>(cols);
+    if (fwrite(mat.data(), sizeof(double), total, file) < total) {
         cloudViewer::utility::LogWarning("Write BIN failed: unexpected error.");
         return false;
     }

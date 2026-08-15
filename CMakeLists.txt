@@ -1005,13 +1005,21 @@ if(AICore_BUNDLE_CUDA_RUNTIME AND AICore_CUDA_ENABLED)
             set(_bundle_extra_lib_dirs "${CUDAToolkit_LIBRARY_DIR}")
         endif()
     endif()
+    # POST_BUILD copies ggml-cuda next to libAICore:
+    #   MSVC  → build/bin/<Config>/ggml-cuda.dll  (multi-config)
+    #   Linux → build/bin/ggml-cuda.so             (single-config, flat)
+    # BundleGgmlCudaRuntime.cmake searches all candidate paths.
     install(CODE "
-        set(_ggml_cuda_module \"${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}ggml-cuda${GGML_MODULE_SUFFIX}\")
+        set(_ggml_cuda_base_dir \"${CMAKE_RUNTIME_OUTPUT_DIRECTORY}\")
+        set(_ggml_cuda_ext_dir \"${GGML_RUNTIME_LIB_DIR}\")
+        set(_ggml_cuda_name \"${CMAKE_SHARED_LIBRARY_PREFIX}ggml-cuda${GGML_MODULE_SUFFIX}\")
         set(_cuda_runtime_dest \"${CMAKE_INSTALL_PREFIX}/${CloudViewer_INSTALL_LIB_DIR}/cuda-runtime\")
         set(_bundle_extra \"${_bundle_extra_lib_dirs}\")
         execute_process(
             COMMAND \"${CMAKE_COMMAND}\"
-                -DGGML_CUDA_MODULE=\${_ggml_cuda_module}
+                -DGGML_CUDA_BASE_DIR=\${_ggml_cuda_base_dir}
+                -DGGML_CUDA_EXT_DIR=\${_ggml_cuda_ext_dir}
+                -DGGML_CUDA_NAME=\${_ggml_cuda_name}
                 -DDEST_DIR=\${_cuda_runtime_dest}
                 -DPACK_SCRIPTS_PATH=${CMAKE_CURRENT_SOURCE_DIR}/scripts/platforms
                 -DEXTRA_LIB_DIRS=\${_bundle_extra}

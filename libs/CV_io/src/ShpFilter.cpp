@@ -233,7 +233,10 @@ static bool areVerticesCounterClockwise(
         CCVector3 P2;
         vertices->getPoint(i, P1);
         vertices->getPoint((i + 1) % realNumPoints, P2);
-        sum += (P2.u[dim1] - P2.u[dim1]) * (P2.u[dim2] + P1.u[dim2]);
+        sum += (static_cast<double>(P2.u[dim1]) -
+                static_cast<double>(P1.u[dim1])) *
+               (static_cast<double>(P2.u[dim2]) +
+                static_cast<double>(P1.u[dim2]));
     }
 
     // negative sum = counter-clockwise

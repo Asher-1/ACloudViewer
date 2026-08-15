@@ -35,6 +35,11 @@ ENV BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
 ENV PACKAGE=${PACKAGE}
 ENV QT_BASE_DIR=${QT_BASE_DIR}
 
+# Suppress CMake policy CMP0175 warning (add_custom_command(TARGET) DEPENDS
+# is deprecated; the translation build no longer uses it, but the old CMake
+# version in this Docker image may still emit the warning).
+ENV CMAKE_POLICY_DEFAULT_CMP0175=NEW
+
 # Env vars for the nvidia-container-runtime.
 ENV NVIDIA_VISIBLE_DEVICES=all
 ENV NVIDIA_DRIVER_CAPABILITIES=all

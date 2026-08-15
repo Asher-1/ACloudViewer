@@ -373,7 +373,8 @@ PointCoordinateType ccNormalVectors::GuessBestRadius(
                     bestRadius = radius;
                 }
 
-                double slope = (radius * radius - lastRadius * lastRadius) /
+                double slope = (static_cast<double>(radius) * radius -
+                                static_cast<double>(lastRadius) * lastRadius) /
                                (meanPop - lastMeanPop);
                 PointCoordinateType newSquareRadius =
                         lastRadius * lastRadius +

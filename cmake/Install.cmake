@@ -269,6 +269,9 @@ function( _InstallFiles )
 	set( existing_files "" )
 	foreach( file ${files} )
 		if( EXISTS "${file}" )
+			# Normalize Windows backslashes to forward slashes so CMake
+			# does not misinterpret escape sequences in cmake_install.cmake.
+			file(TO_CMAKE_PATH "${file}" file)
 			list( APPEND existing_files "${file}" )
 		else()
 			message( STATUS "Skipping non-existent file: ${file}" )

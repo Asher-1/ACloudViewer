@@ -264,7 +264,7 @@ ccPointCloud* ccPointCloud::From(const ccPointCloud* sourceCloud,
 void UpdateGridIndexes(const std::vector<int>& newIndexMap,
                        std::vector<ccPointCloud::Grid::Shared>& grids) {
     for (ccPointCloud::Grid::Shared& scanGrid : grids) {
-        unsigned cellCount = scanGrid->w * scanGrid->h;
+        const size_t cellCount = static_cast<size_t>(scanGrid->w) * scanGrid->h;
         scanGrid->validCount = 0;
         scanGrid->minValidIndex = -1;
         scanGrid->maxValidIndex = -1;
@@ -1027,7 +1027,8 @@ const ccPointCloud& ccPointCloud::append(ccPointCloud* addedCloud,
                     Grid::Shared grid(new Grid(*otherGrid));
                     {
                         // then update the indexes
-                        unsigned cellCount = grid->w * grid->h;
+                        const size_t cellCount =
+                                static_cast<size_t>(grid->w) * grid->h;
                         int* _gridIndex = grid->indexes.data();
                         for (size_t j = 0; j < cellCount; ++j, ++_gridIndex) {
                             if (*_gridIndex >= 0) {
@@ -4521,7 +4522,7 @@ void ccPointCloud::Grid::setIndex(unsigned row, unsigned col, int index) {
     assert(row < h);
     assert(col < w);
     assert(!indexes.empty());
-    indexes[row * w + col] = index;
+    indexes[static_cast<size_t>(row) * w + col] = index;
 }
 
 void ccPointCloud::Grid::setColor(unsigned row,
@@ -4530,7 +4531,7 @@ void ccPointCloud::Grid::setColor(unsigned row,
     assert(row < h);
     assert(col < w);
     assert(!colors.empty());
-    colors[row * w + col] = rgb;
+    colors[static_cast<size_t>(row) * w + col] = rgb;
 }
 
 void ccPointCloud::Grid::updateMinAndMaxValidIndexes() {
@@ -4565,7 +4566,8 @@ QImage ccPointCloud::Grid::toImage() const {
         QImage image(w, h, QImage::Format_ARGB32);
         for (unsigned j = 0; j < h; ++j) {
             for (unsigned i = 0; i < w; ++i) {
-                const ecvColor::Rgb& col = colors[j * w + i];
+                const ecvColor::Rgb& col =
+                        colors[static_cast<size_t>(j) * w + i];
                 image.setPixel(i, j, qRgb(col.r, col.g, col.b));
             }
         }
@@ -5307,7 +5309,8 @@ bool ccPointCloud::computeNormalsWithGrids(double minTriangleAngle_deg /*=1.0*/,
             continue;
         }
         if (!scanGrid || scanGrid->h == 0 || scanGrid->w == 0 ||
-            scanGrid->indexes.size() != scanGrid->h * scanGrid->w) {
+            scanGrid->indexes.size() !=
+                    static_cast<size_t>(scanGrid->h) * scanGrid->w) {
             // invalid grid
             CVLog::Warning(QString("[computeNormalsWithGrids] Grid structure "
                                    "#%i is invalid")
@@ -5335,11 +5338,18 @@ bool ccPointCloud::computeNormalsWithGrids(double minTriangleAngle_deg /*=1.0*/,
             for (int i = 0; i < static_cast<int>(scanGrid->w) - 1; ++i) {
                 // form the triangles with the nearest neighbors
                 // and accumulate the corresponding normals
-                const int& v0 = scanGrid->indexes[j * scanGrid->w + i];
-                const int& v1 = scanGrid->indexes[j * scanGrid->w + (i + 1)];
-                const int& v2 = scanGrid->indexes[(j + 1) * scanGrid->w + i];
-                const int& v3 =
-                        scanGrid->indexes[(j + 1) * scanGrid->w + (i + 1)];
+                const int& v0 =
+                        scanGrid->indexes[static_cast<size_t>(j) * scanGrid->w +
+                                          i];
+                const int& v1 =
+                        scanGrid->indexes[static_cast<size_t>(j) * scanGrid->w +
+                                          (i + 1)];
+                const int& v2 = scanGrid->indexes[static_cast<size_t>(j + 1) *
+                                                          scanGrid->w +
+                                                  i];
+                const int& v3 = scanGrid->indexes[static_cast<size_t>(j + 1) *
+                                                          scanGrid->w +
+                                                  (i + 1)];
 
                 bool topo[4] = {v0 >= 0, v1 >= 0, v2 >= 0, v3 >= 0};
 
@@ -5516,7 +5526,8 @@ bool ccPointCloud::orientNormalsWithGrids(ecvProgressDialog* pDlg /*=0*/) {
             continue;
         }
         if (!scanGrid || scanGrid->h == 0 || scanGrid->w == 0 ||
-            scanGrid->indexes.size() != scanGrid->h * scanGrid->w) {
+            scanGrid->indexes.size() !=
+                    static_cast<size_t>(scanGrid->h) * scanGrid->w) {
             // invalid grid
             CVLog::Warning(QString("[orientNormalsWithGrids] Grid structure "
                                    "#%i is invalid")

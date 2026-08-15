@@ -47,7 +47,7 @@ FaceRegistryWidget::FaceRegistryWidget(QWidget* parent) : QWidget(parent) {
     auto* main = new QVBoxLayout(this);
     FaceDetectUi::setupCompactMainLayout(main);
 
-    m_testDataBtn = new QPushButton(tr("Use test data"), this);
+    m_testDataBtn = new QPushButton(tr("\U0001f9ea  Try sample data"), this);
     m_testDataBtn->setToolTip(tr(
             "Download FriendsFaces sample pack, register gallery identities, "
             "then fill registry fields.\n\n"
@@ -56,6 +56,13 @@ FaceRegistryWidget::FaceRegistryWidget(QWidget* parent) : QWidget(parent) {
             "with curated gallery frontals (e.g. Joey00030.jpg), fills the "
             "registry DB path, and sets the group-photo probe for "
             "authentication."));
+    // Prominent teal accent — consistent with qFreeSplatter / batch tab.
+    m_testDataBtn->setStyleSheet(
+            "QPushButton { background: #00897b; color: white; font-weight: "
+            "bold; border: none; border-radius: 4px; padding: 5px 12px; }"
+            "QPushButton:hover { background: #00796b; }"
+            "QPushButton:pressed { background: #00695c; }"
+            "QPushButton:disabled { background: #b2dfdb; color: #e0f2f1; }");
     connect(m_testDataBtn, &QPushButton::clicked, this,
             &FaceRegistryWidget::testDataRequested);
 

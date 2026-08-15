@@ -30,6 +30,9 @@ static const char* kDownloadBase =
 namespace {
 
 const int kThumbSize = 96;
+// QListWidgetItem data role carrying the full-resolution ccImage for the
+// click-to-enlarge preview (the 48 px icon is only for list display).
+constexpr int kDbFullImageRole = Qt::UserRole + 1;
 
 bool isSupportedImageFile(const QString& filePath) {
     static const QStringList extensions = {
@@ -440,6 +443,8 @@ void DeepLSDDialog::setDbImages(const QList<DbImageEntry>& images) {
             item->setIcon(QIcon(QPixmap::fromImage(entry.preview)
                                         .scaled(48, 48, Qt::KeepAspectRatio,
                                                 Qt::SmoothTransformation)));
+            // Full-resolution image for the click-to-enlarge preview.
+            item->setData(kDbFullImageRole, entry.preview);
         }
         m_dbImageList->addItem(item);
     }
@@ -464,6 +469,17 @@ void DeepLSDDialog::updateImagePreview() {
     if (path.startsWith(QStringLiteral("db://"))) {
         for (int i = 0; i < m_dbImageList->count(); ++i) {
             if (m_dbImageList->item(i)->text() == path.mid(5)) {
+                // Use the stored full-resolution image so the enlarged
+                // preview shows the original pixels (not the 48 px icon).
+                const QVariant full =
+                        m_dbImageList->item(i)->data(kDbFullImageRole);
+                if (full.canConvert<QImage>()) {
+                    const QImage fullImg = full.value<QImage>();
+                    if (!fullImg.isNull()) {
+                        m_previewLabel->setPreviewImage(fullImg, kThumbSize);
+                        return;
+                    }
+                }
                 const QIcon icon = m_dbImageList->item(i)->icon();
                 if (!icon.isNull()) {
                     m_previewLabel->setPreviewPixmap(

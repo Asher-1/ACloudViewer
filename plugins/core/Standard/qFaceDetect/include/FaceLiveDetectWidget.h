@@ -7,12 +7,15 @@
 
 #pragma once
 
+#include <QAtomicInt>
 #include <QComboBox>
 #include <QDoubleSpinBox>
 #include <QElapsedTimer>
+#include <QFutureWatcher>
 #include <QImage>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMutex>
 #include <QProgressBar>
 #include <QPushButton>
 #include <QSlider>
@@ -22,6 +25,7 @@
 #include <QVector>
 #include <QWidget>
 #include <memory>
+#include <utility>
 
 #include "FaceDetectWorker.h"
 #include "FaceLiveDetectInferWorker.h"
@@ -143,14 +147,28 @@ private:
     void beginFrameProcessing();
     void updateVideoTimeLabel(int frameIndex);
     void showSeekPreview(int frameIndex);
+    // Async seek-preview decode: Windows MSMF/DirectShow seek+read can
+    // block for 100ms+ — running it on the UI thread would freeze both the
+    // slider and the playing video.
+    void onSeekPreviewReady();
     void closePreviewCapture();
     bool eventFilter(QObject* obj, QEvent* event) override;
     void showEvent(QShowEvent* event) override;
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
-    cv::VideoCapture m_capture;
     cv::VideoCapture m_previewCapture;  // independent decode path for
-                                        // scrub/hover preview
+                                        // scrub/hover preview (worker thread
+                                        // only, guarded by m_previewMutex)
+    QMutex m_previewMutex;
+    // Async decode result carries the decoded frame index so the cache key
+    // matches the actual frame (not the latest slider position).
+    QFutureWatcher<QPair<int, QPixmap>>* m_seekPreviewWatcher = nullptr;
+    // Latest frame the slider asked for; a stale async result is ignored.
+    int m_pendingPreviewFrame = -1;
+    // Bumped every time the video changes; async preview results from an
+    // older video are discarded (frame numbers can collide across videos).
+    // Atomic: read from the decode worker thread, written on the UI thread.
+    QAtomicInt m_previewGeneration{0};
 #endif
 
     Config m_config;
@@ -194,6 +212,20 @@ private:
     bool m_syncingModelControls = false;
 
     QTimer* m_frameTimer = nullptr;
+    QTimer* m_frameReadTimer = nullptr;  // drives background frame reader
+    // VideoFrameReader: reads cv::VideoCapture frames on a background thread
+    // so that OpenCV's MSMF/DirectShow backend (Windows) does not block the
+    // Qt main thread, which would cause stuttering / UI freezes.
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    QThread* m_frameReaderThread = nullptr;
+    QObject* m_frameReader = nullptr;
+    cv::Mat m_latestFrame;  // most recently decoded frame (GUI thread)
+    QMutex m_frameMutex;    // guards m_latestFrame
+    bool m_frameReaderReady = false;  // background reader has opened source
+    QAtomicInt m_frameReaderRunning{0};
+    QAtomicInt m_frameReaderSeekTo{-1};
+#endif
+
     bool m_streamActive = false;
     bool m_videoPaused = false;  // video paused (not released) for resume
     QString m_videoFilePath;     // path of currently opened video

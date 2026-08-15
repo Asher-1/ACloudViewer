@@ -109,6 +109,10 @@ private slots:
 
 protected:
     void closeEvent(QCloseEvent* event) override;
+    // Re-measure tab viewport heights when the dialog moves to a screen
+    // with a different DPI (Windows per-monitor scaling) — the cached
+    // minimumSizeHint values and hardcoded clamps must be recomputed.
+    void changeEvent(QEvent* event) override;
 
 private:
     void syncRegistryConfig();

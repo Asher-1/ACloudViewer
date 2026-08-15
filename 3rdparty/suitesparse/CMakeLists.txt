@@ -233,8 +233,20 @@ ELSE()
 		file(GLOB lapack_blas_windows_dll 	"${CMAKE_SOURCE_DIR}/lapack_windows/${PATH_WORD_SIZE}/*.dll")
 		if(lapack_blas_windows_dll AND lapack_blas_windows_libs)
 			set(SuiteSparse_LAPACK_BLAS_LIB_DIR "lib${LIB_POSTFIX}/lapack_blas_windows") ## used in UseSuiteSparse*.cmake
-			install(FILES 		${lapack_blas_windows_libs}
-								${lapack_blas_windows_dll}
+			# Normalize Windows backslashes to forward slashes so CMake does not
+			# misinterpret escape sequences in cmake_install.cmake.
+			set(_normalized_libs "")
+			foreach(_lib ${lapack_blas_windows_libs})
+				file(TO_CMAKE_PATH "${_lib}" _lib_norm)
+				list(APPEND _normalized_libs "${_lib_norm}")
+			endforeach()
+			set(_normalized_dlls "")
+			foreach(_dll ${lapack_blas_windows_dll})
+				file(TO_CMAKE_PATH "${_dll}" _dll_norm)
+				list(APPEND _normalized_dlls "${_dll_norm}")
+			endforeach()
+			install(FILES ${_normalized_libs}
+					${_normalized_dlls}
 					DESTINATION ${SuiteSparse_LAPACK_BLAS_LIB_DIR}
 			)
 		endif()

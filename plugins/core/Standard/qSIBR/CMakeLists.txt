@@ -37,6 +37,11 @@ if(PLUGIN_STANDARD_QSIBR)
     endif()
 
     # Boost
+    # Suppress FindBoost policy warning (CMP0167: FindBoost module removed in
+    # CMake 4.x; project-wide cmake_minimum_required may predate this policy).
+    if(POLICY CMP0167)
+        cmake_policy(SET CMP0167 OLD)
+    endif()
     if(TARGET 3rdparty_boost)
         set(SIBR_BOOST_LIBS 3rdparty_boost)
     else()
@@ -188,17 +193,56 @@ if(PLUGIN_STANDARD_QSIBR)
         # it (/DELAYLOAD) so the plugin does NOT hard-depend on cudart64_*.dll
         # either - it loads on machines without a CUDA toolkit and the Gaussian
         # viewer reports a clean error (probed via SEH in qSIBR.cpp).
+        # The CUDA::cudart IMPORTED_LOCATION points to the import library (.lib)
+        # on Windows, but /DELAYLOAD expects the actual DLL name (cudart64_*.dll).
+        # We resolve the DLL via CUDA_TOOLKIT_ROOT_DIR/bin/ and copy it so the
+        # installer bundles it alongside the plugin.
         if(WIN32)
             set(SIBR_CUDA_RUNTIME CUDA::cudart)
-            get_target_property(_sibr_cudart_loc CUDA::cudart IMPORTED_LOCATION)
-            if(NOT _sibr_cudart_loc)
-                get_target_property(_sibr_cudart_loc CUDA::cudart IMPORTED_IMPLIB)
+            set(_sibr_cudart_dll_name "")
+            # Find cudart DLL in CUDA toolkit bin directory
+            if(DEFINED ENV{CUDA_PATH})
+                file(TO_CMAKE_PATH "$ENV{CUDA_PATH}" _sibr_cuda_bin)
+                set(_sibr_cuda_bin "${_sibr_cuda_bin}/bin")
+            elseif(CUDA_TOOLKIT_ROOT_DIR)
+                set(_sibr_cuda_bin "${CUDA_TOOLKIT_ROOT_DIR}/bin")
+            else()
+                # Fall back to walking up from the import lib path
+                get_target_property(_sibr_cudart_implib CUDA::cudart IMPORTED_IMPLIB)
+                if(_sibr_cudart_implib)
+                    get_filename_component(_sibr_cuda_libdir "${_sibr_cudart_implib}" DIRECTORY)
+                    get_filename_component(_sibr_cuda_root "${_sibr_cuda_libdir}" DIRECTORY)
+                    set(_sibr_cuda_bin "${_sibr_cuda_root}/bin")
+                endif()
             endif()
-            if(_sibr_cudart_loc)
-                get_filename_component(_sibr_cudart_dll "${_sibr_cudart_loc}" NAME)
-                target_link_options(${PROJECT_NAME} PRIVATE "/DELAYLOAD:${_sibr_cudart_dll}")
+            if(_sibr_cuda_bin)
+                file(GLOB _sibr_cudart_dlls "${_sibr_cuda_bin}/cudart64_*.dll")
+                if(_sibr_cudart_dlls)
+                    list(GET _sibr_cudart_dlls 0 _sibr_cudart_dll_path)
+                    # Normalize Windows backslashes to forward slashes so CMake
+                    # does not misinterpret \P, \N, etc. as escape sequences in
+                    # the generated cmake_install.cmake (e.g. "\Program").
+                    file(TO_CMAKE_PATH "${_sibr_cudart_dll_path}" _sibr_cudart_dll_path)
+                    get_filename_component(_sibr_cudart_dll_name "${_sibr_cudart_dll_path}" NAME)
+                    # Install cudart next to ACloudViewer.exe so the packaged
+                    # app finds it at load time (the DLL is not in the import
+                    # table thanks to /DELAYLOAD, but the nvcc fatbin register
+                    # runs during static initialization and still needs it).
+                    # No configure-time copy: on MSVC it landed in bin/ instead
+                    # of bin/<Config>/, and the plugin output dir is not on the
+                    # Windows DLL search path anyway; dev machines have
+                    # CUDA_PATH\bin on PATH.
+                    install(FILES "${_sibr_cudart_dll_path}"
+                        DESTINATION ${ACloudViewer_DEST_FOLDER})
+                    message(STATUS "qSIBR: Windows - found ${_sibr_cudart_dll_name}")
+                else()
+                    message(WARNING "qSIBR: Windows - cudart64_*.dll not found in ${_sibr_cuda_bin}")
+                endif()
+            endif()
+            if(_sibr_cudart_dll_name)
+                target_link_options(${PROJECT_NAME} PRIVATE "/DELAYLOAD:${_sibr_cudart_dll_name}")
                 target_link_libraries(${PROJECT_NAME} delayimp)
-                message(STATUS "qSIBR: Windows - delay-loading ${_sibr_cudart_dll}")
+                message(STATUS "qSIBR: Windows - delay-loading ${_sibr_cudart_dll_name}")
             endif()
         else()
             set(SIBR_CUDA_RUNTIME CUDA::cudart_static)
@@ -808,11 +852,16 @@ if(PLUGIN_STANDARD_QSIBR)
     function(sibr_install_shaders SRC_DIR SUBFOLDER)
         file(GLOB _shader_files "${SRC_DIR}/*.frag" "${SRC_DIR}/*.vert" "${SRC_DIR}/*.geom"
                                 "${SRC_DIR}/*.fp" "${SRC_DIR}/*.vp" "${SRC_DIR}/*.gp")
+        # Normalize Windows backslashes to forward slashes so CMake does not
+        # misinterpret them as escape sequences in cmake_install.cmake.
+        set(_normalized "")
         foreach(_sf ${_shader_files})
-            get_filename_component(_sf_name ${_sf} NAME)
-            configure_file(${_sf} "${SIBR_BIN_DIR}/shaders/${SUBFOLDER}/${_sf_name}" COPYONLY)
+            file(TO_CMAKE_PATH "${_sf}" _sf_norm)
+            list(APPEND _normalized "${_sf_norm}")
+            get_filename_component(_sf_name "${_sf_norm}" NAME)
+            configure_file("${_sf_norm}" "${SIBR_BIN_DIR}/shaders/${SUBFOLDER}/${_sf_name}" COPYONLY)
         endforeach()
-        install(FILES ${_shader_files} DESTINATION bin/shaders/${SUBFOLDER})
+        install(FILES ${_normalized} DESTINATION bin/shaders/${SUBFOLDER})
     endfunction()
 
     sibr_install_shaders("${SIBR_SRC_DIR}/core/renderer/shaders" "core")
@@ -826,11 +875,16 @@ if(PLUGIN_STANDARD_QSIBR)
     # Uses sibr_resources/ to avoid conflict with ACloudViewer's own resources/ directory.
     function(sibr_install_resources SRC_DIR SUBFOLDER)
         file(GLOB _rsc_files "${SRC_DIR}/*.ini" "${SRC_DIR}/*.json")
+        # Normalize Windows backslashes to forward slashes so CMake does not
+        # misinterpret them as escape sequences in cmake_install.cmake.
+        set(_normalized "")
         foreach(_rf ${_rsc_files})
-            get_filename_component(_rf_name ${_rf} NAME)
-            configure_file(${_rf} "${SIBR_BIN_DIR}/sibr_resources/${SUBFOLDER}/${_rf_name}" COPYONLY)
+            file(TO_CMAKE_PATH "${_rf}" _rf_norm)
+            list(APPEND _normalized "${_rf_norm}")
+            get_filename_component(_rf_name "${_rf_norm}" NAME)
+            configure_file("${_rf_norm}" "${SIBR_BIN_DIR}/sibr_resources/${SUBFOLDER}/${_rf_name}" COPYONLY)
         endforeach()
-        install(FILES ${_rsc_files} DESTINATION bin/sibr_resources/${SUBFOLDER})
+        install(FILES ${_normalized} DESTINATION bin/sibr_resources/${SUBFOLDER})
     endfunction()
 
     sibr_install_resources("${SIBR_SRC_DIR}/core/graphics/resources" "core")
