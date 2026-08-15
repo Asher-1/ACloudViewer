@@ -1,0 +1,18 @@
+{
+  "type": "Standard",
+  "core": true,
+  "name": "Manual Calibration Tools",
+  "icon": ":/CC/plugin/qManualCalib/images/qManualCalib.svg",
+  "description": "Manual sensor extrinsic calibration and AVM view adjustment tools for autonomous driving.",
+  "authors": [
+    {
+      "name": "ACloudViewer Contributors"
+    }
+  ],
+  "maintainers": [
+    {
+      "name": "ACloudViewer Team"
+    }
+  ],
+  "references": []
+}

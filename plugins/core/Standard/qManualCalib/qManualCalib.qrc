@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/CC/plugin/qManualCalib">
+        <file>info.json</file>
+        <file>images/qManualCalib.svg</file>
+        <file>images/sensorCalibIcon.svg</file>
+        <file>images/avmAdjustIcon.svg</file>
+    </qresource>
+</RCC>

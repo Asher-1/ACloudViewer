@@ -304,6 +304,22 @@ v3.9.5-Beta (Asher) - 08/04/2026
         download/cache (SIFT / ALIKED matcher weights), match visualization in DB tree,
         JSON export, Model Info mode
       - CMake: `PLUGIN_STANDARD_QLIGHTGLUE=ON` + `AICore_ENABLED=ON` + `BUILD_OPENCV=ON`
+    - Add qManualCalib plugin: manual multi-sensor extrinsic calibration
+      (sensor / AVM / LiDAR-camera fusion)
+      - **Manual Sensor Calibration** dialog: Load Config (cameras/lidars/ground `.cfg`)
+        → Load Bag → 6-DOF per-sensor extrinsic fine-tune → Save Config / export
+      - Bird's Eye View (BEV) stitching with distance-weighted alpha fusion;
+        CUDA / OpenCL / CPU remap backends
+      - LiDAR-Camera fusion with depth coloring; BEV / LiDAR Projection / Single Frame modes
+      - Native ROS Bag v2.0 reader (BZ2/LZ4), multi-bag Flat / Nested / SingleFile layout
+        auto-discovery, topic-group time sync, HEVC/H.264 online camera decode (FFmpeg)
+      - **“use test data”** button (Sensor Calibration & AVM Adjust dialogs):
+        one-click download/cache/extract of sample bag + configs from
+        `cloudViewer_downloads` into `~/cloudViewer_data/extract/qcalib_test_data/`
+        with a live Qt download/extract progress bar; custom user data still
+        supported via Load Config / Load Bag
+      - Optional CLI tools (`MCALIB_BUILD_TOOLS`) and `test_bag_reader` (`MCALIB_BUILD_TESTS`)
+      - CMake: `PLUGIN_STANDARD_QMANUAL_CALIB=ON` + `BUILD_OPENCV=ON`
   
 - New features:
     - Unified AICore inference core (`core/AICore` → `libAICore.so`)

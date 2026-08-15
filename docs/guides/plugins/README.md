@@ -30,6 +30,7 @@ cmake -B build_app \
   -DPLUGIN_STANDARD_QDEEPLSD=ON \
   -DPLUGIN_STANDARD_QFACEDETECT=ON \
   -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
+  -DPLUGIN_STANDARD_QMANUAL_CALIB=ON \
   -DPLUGIN_STANDARD_QFREESPLATTER=ON \
   -DPLUGIN_STANDARD_QSIBR=ON \
   -DBUILD_RECONSTRUCTION=ON \
@@ -38,8 +39,27 @@ cmake -B build_app \
 cmake --build build_app --target ACloudViewer QDA3_PLUGIN QFACEDETECT_PLUGIN QFREESPLATTER_PLUGIN -j$(nproc)
 ```
 
-## More resources
+## 标定插件（qManualCalib）
 
-- Full plugin READMEs (developer details, tests, C API): [`plugins/core/Standard/qDA3/README.md`](../../../plugins/core/Standard/qDA3/README.md), [`plugins/core/Standard/qDeepLSD/README.md`](../../../plugins/core/Standard/qDeepLSD/README.md), [`plugins/core/Standard/qFaceDetect/README.md`](../../../plugins/core/Standard/qFaceDetect/README.md), [`plugins/core/Standard/qLightGlue/README.md`](../../../plugins/core/Standard/qLightGlue/README.md), [`plugins/core/Standard/qFreeSplatter/README.md`](../../../plugins/core/Standard/qFreeSplatter/README.md)
-- Plugin catalog: [`plugins/README.md`](../../../plugins/README.md)
-- Sphinx doc build syncs the above READMEs into `docs/source/plugins/` (see `docs/source/conf.py`)
+非 AICore 插件，示例数据随源码 `tests/data/` 集成，无需额外下载。
+
+| 插件 | 文档 | CMake 选项 |
+|------|------|------------|
+| **qManualCalib** | [qManualCalib 使用指南](qManualCalib.md) | `PLUGIN_STANDARD_QMANUAL_CALIB` |
+
+```bash
+cmake -B build_app \
+  -DBUILD_GUI=ON \
+  -DBUILD_OPENCV=ON \
+  -DPLUGIN_STANDARD_QMANUAL_CALIB=ON \
+  .
+
+cmake --build build_app --target QMANUAL_CALIB_PLUGIN ACloudViewer -j$(nproc)
+```
+
+## 更多资料
+
+- 插件目录完整 README（开发者细节、测试、C API）：[`plugins/core/Standard/qDA3/README.md`](../../../plugins/core/Standard/qDA3/README.md)、[`plugins/core/Standard/qDeepLSD/README.md`](../../../plugins/core/Standard/qDeepLSD/README.md)、[`plugins/core/Standard/qFaceDetect/README.md`](../../../plugins/core/Standard/qFaceDetect/README.md)、[`plugins/core/Standard/qLightGlue/README.md`](../../../plugins/core/Standard/qLightGlue/README.md)、[`plugins/core/Standard/qFreeSplatter/README.md`](../../../plugins/core/Standard/qFreeSplatter/README.md)
+- qManualCalib 开发者 README：[`plugins/core/Standard/qManualCalib/README.md`](../../../plugins/core/Standard/qManualCalib/README.md)
+- 插件总索引：[`plugins/README.md`](../../../plugins/README.md)
+- Sphinx 构建时会将上述 README 同步到 `docs/source/plugins/`（见 `docs/source/conf.py`）

@@ -106,10 +106,13 @@ Write-Host "Using dumpbin: $global:DumpbinPath"
 # ensure output folder exists
 New-Item -ItemType Directory -Force -Path $OutputFolder | Out-Null
 
-# Do NOT bundle NVIDIA CUDA runtime DLLs into the installer by default
-# (libcublas/cudart are large and version-locked). GPU features require a
-# matching CUDA install on the target machine unless AICore_BUNDLE_CUDA_RUNTIME=ON
-# (custom builds; copies into lib/cuda-runtime/ via bundle_cuda_runtime.ps1).
+# Filter CUDA runtime DLLs from the dependency scanner (cudart64_*.dll,
+# cublas64_*.dll, ... are version-locked and large). cudart64_*.dll is
+# nevertheless bundled explicitly into lib/cuda-runtime/ by PostInstall.cmake
+# on CUDA builds - CUDA plugins need it at static-initialization time and it
+# is small (~0.5 MB) and minor-version compatible; the full runtime set
+# (cublas etc. for ggml-cuda inference) is only bundled when
+# AICore_BUNDLE_CUDA_RUNTIME=ON via bundle_cuda_runtime.ps1.
 # Linux equivalent: scripts/platforms/linux/pack_ubuntu.sh should_exclude_lib().
 
 function Should-Filter {
@@ -241,8 +244,8 @@ foreach ($match in $ggmlMatches) {
     }
 }
 
-# cudart64_*.dll is delay-loaded by qSIBR and won't appear in dumpbin
-# output either. Search the provided search paths explicitly.
+# cudart64_*.dll is delay-loaded by qSIBR/qManualCalib and won't appear in
+# dumpbin output either. Search the provided search paths explicitly.
 # Note: -Include only filters when -Recurse is given (or the path ends in a
 # wildcard); without it -Include is ignored and the whole directory would be
 # returned (directories included) and copied over.

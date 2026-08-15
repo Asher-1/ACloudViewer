@@ -19,7 +19,7 @@ Main deliverables:
 
 Agent control: JSON-RPC WebSocket plugin, MCP server, CLI harness — see `agent-integration/README.md`.
 
-> **AI 操作 ACloudViewer（重要）**：所有面向 AI / 自动化脚本的 CLI 交互，**必须**通过 `agent-integration/` 提供的 `cli-anything-acloudviewer` 工具链（headless 直接调用二进制，GUI 走 JSON-RPC）。**不要**直接猜二进制参数。先读 `agent-integration/README.md` 与 `agent-integration/docs/CLI-QUICK-REFERENCE.md`。安装：`pip install git+https://github.com/Asher-1/CLI-Anything.git#subdirectory=acloudviewer/agent-harness`（本机已装 v3.1.0）。
+> **AI / automation must use the agent toolchain (important)**: all CLI interaction aimed at AI agents or automation scripts **must** go through the `cli-anything-acloudviewer` toolchain provided by `agent-integration/` (headless: calls the binary directly; GUI: goes through JSON-RPC). **Do not** guess binary arguments. Read `agent-integration/README.md` and `agent-integration/docs/CLI-QUICK-REFERENCE.md` first. Install: `pip install git+https://github.com/Asher-1/CLI-Anything.git#subdirectory=acloudviewer/agent-harness` (v3.1.0 installed on this machine).
 
 ## Directory Structure
 
@@ -293,18 +293,18 @@ New AICore / reconstruction code may use `snake_case` for functions and `PascalC
 
 - RPC methods: `category.action` in `JsonRPCPlugin::execute()`; update `rpcMethodsList()`
 - Scoped rules: `.agents/rules/acloudviewer-agent-dev.mdc`
-- **三套接口**（详见 `agent-integration/README.md`）：
-  - **JSON-RPC**（WebSocket 6001，GUI 实时控制）— 插件 `qJSonRPCPlugin`，`PLUGIN_STANDARD_QJSONRPC=ON`
-  - **MCP Server**（stdio，供 OpenClaw/Cursor/Claude Code）— `cli-anything-acloudviewer-mcp`
-  - **CLI Harness**（Click，headless 直接调二进制 / GUI 走 RPC）— `cli-anything-acloudviewer`
-- **CLI 常用操作**（headless 无需 GUI）：
-  - `cli-anything-acloudviewer info` / `formats` — 环境与格式
-  - `cli-anything-acloudviewer convert in.ply out.obj` — 格式转换
-  - `cli-anything-acloudviewer process <op> in.ply -o out.ply` — 55+ 处理算子（subsample/normals/crop/icp/csf/ransac/m3c2/canupo/poisson/cork 等）
-  - `cli-anything-acloudviewer reconstruct auto ./imgs -w ./ws` — COLMAP 重建
-  - `cli-anything-acloudviewer view screenshot out.png` — GUI 截图（需 GUI）
-  - `cli-anything-acloudviewer --json scene list` — GUI 场景树
-- **运行 Python 脚本（qPythonRuntime）**：GUI 模式下在插件面板手动运行；CLI 可用 `ACloudViewer -SILENT -PYTHON_SCRIPT x.py`（headless）。脚本示例见 `plugins/core/Standard/qPythonRuntime/script_examples/`
+- **Three interfaces** (see `agent-integration/README.md`):
+  - **JSON-RPC** (WebSocket 6001, real-time GUI control) — plugin `qJSonRPCPlugin`, `PLUGIN_STANDARD_QJSONRPC=ON`
+  - **MCP Server** (stdio, for OpenClaw/Cursor/Claude Code) — `cli-anything-acloudviewer-mcp`
+  - **CLI Harness** (Click, headless calls the binary directly / GUI via RPC) — `cli-anything-acloudviewer`
+- **Common CLI operations** (headless, no GUI needed):
+  - `cli-anything-acloudviewer info` / `formats` — environment and formats
+  - `cli-anything-acloudviewer convert in.ply out.obj` — format conversion
+  - `cli-anything-acloudviewer process <op> in.ply -o out.ply` — 55+ processing ops (subsample/normals/crop/icp/csf/ransac/m3c2/canupo/poisson/cork, etc.)
+  - `cli-anything-acloudviewer reconstruct auto ./imgs -w ./ws` — COLMAP reconstruction
+  - `cli-anything-acloudviewer view screenshot out.png` — GUI screenshot (requires GUI)
+  - `cli-anything-acloudviewer --json scene list` — GUI scene tree
+- **Running Python scripts (qPythonRuntime)**: run manually from the plugin panel in GUI mode; in CLI use `ACloudViewer -SILENT -PYTHON_SCRIPT x.py` (headless). Script examples: `plugins/core/Standard/qPythonRuntime/script_examples/`
 
 ### Formatting
 

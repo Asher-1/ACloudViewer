@@ -21,6 +21,8 @@ dependencies:
   - vulkan-loader
   - shaderc # glslc, used only while embedding ggml Vulkan shaders
   - spirv-headers
+  - opencl-headers # qManualCalib bev_stitch OpenCL BEV remap headers
+  - khronos-opencl-icd-loader # OpenCL.lib + OpenCL.dll for linking on Windows
   - pip: # for python plugins
     - numpy==1.26.4
     - pybind11>=2.6.0
