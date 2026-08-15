@@ -249,6 +249,7 @@ Expand the `INSTALL` group in CMake GUI to enable plugins:
 | qLightGlue              | PLUGIN_STANDARD_QLIGHTGLUE               | OFF           | Sparse matching — **SIFT/ALIKED LightGlue** via GGUF ([README](plugins/core/Standard/qLightGlue/README.md)). Requires `AICore_ENABLED=ON`. |
 | qDeepLSD                | PLUGIN_STANDARD_QDEEPLSD                 | OFF           | DeepLSD wireframe extraction (df/angle GGUF) ([README](plugins/core/Standard/qDeepLSD/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/deeplsd`). |
 | qFaceDetect             | PLUGIN_STANDARD_QFACEDETECT              | OFF           | face-detect.cpp — SCRFD/YuNet detection, ArcFace/SFace verify, age/gender ([README](plugins/core/Standard/qFaceDetect/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/facedetect`). |
+| qManualCalib            | PLUGIN_STANDARD_QMANUAL_CALIB            | OFF           | Manual sensor extrinsic calibration and AVM view adjustment — ROS bag v2.0, BEV, LiDAR projection ([README](plugins/core/Standard/qManualCalib/README.md), [DATA_CARD](plugins/core/Standard/qManualCalib/tests/data/DATA_CARD.md)). Requires `BUILD_OPENCV=ON`. |
 
 > 📖 **Plugin catalog:** [plugins/README.md](plugins/README.md) — per-plugin README index and AICore build recipes.
 
@@ -328,6 +329,7 @@ cmake -DBUILD_CUDA_MODULE=ON \
       -DPLUGIN_STANDARD_QFACEDETECT=ON \
       -DPLUGIN_STANDARD_QFREESPLATTER=ON \
       -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
+      -DPLUGIN_STANDARD_QMANUAL_CALIB=ON \
       ..
 cmake --build . --config Release
 ```
@@ -345,6 +347,7 @@ cmake -DBUILD_GUI=ON \
       -DPLUGIN_STANDARD_QFACEDETECT=ON \
       -DPLUGIN_STANDARD_QFREESPLATTER=ON \
       -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
+      -DPLUGIN_STANDARD_QMANUAL_CALIB=ON \
       ..
 cmake --build . --config Release --target ACloudViewer
 ```

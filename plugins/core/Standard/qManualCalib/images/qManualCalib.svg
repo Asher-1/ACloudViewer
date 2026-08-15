@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Main calibration target -->
+  <circle cx="32" cy="28" r="18" stroke="#2196F3" stroke-width="2" fill="none"/>
+  <circle cx="32" cy="28" r="10" stroke="#2196F3" stroke-width="1.5" fill="none"/>
+  <circle cx="32" cy="28" r="3" fill="#F44336"/>
+  <!-- Crosshairs -->
+  <line x1="32" y1="6" x2="32" y2="16" stroke="#2196F3" stroke-width="2" stroke-linecap="round"/>
+  <line x1="32" y1="40" x2="32" y2="50" stroke="#2196F3" stroke-width="2" stroke-linecap="round"/>
+  <line x1="10" y1="28" x2="20" y2="28" stroke="#2196F3" stroke-width="2" stroke-linecap="round"/>
+  <line x1="44" y1="28" x2="54" y2="28" stroke="#2196F3" stroke-width="2" stroke-linecap="round"/>
+  <!-- Wrench (manual adjustment) -->
+  <path d="M48 50 L54 56 L58 52 L52 46" stroke="#FF9800" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="46" cy="48" r="4" stroke="#FF9800" stroke-width="2" fill="none"/>
+  <!-- Camera icon -->
+  <rect x="4" y="50" width="16" height="10" rx="2" fill="#4CAF50" opacity="0.85"/>
+  <circle cx="12" cy="55" r="3" fill="white" opacity="0.9"/>
+  <rect x="8" y="48" width="8" height="3" rx="1" fill="#4CAF50" opacity="0.85"/>
+</svg>

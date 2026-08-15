@@ -152,6 +152,7 @@ cmakeGuiOptions=(
                 -DPLUGIN_STANDARD_QFACEDETECT=ON
                 -DPLUGIN_STANDARD_QFREESPLATTER=ON
                 -DPLUGIN_STANDARD_QLIGHTGLUE=ON
+                -DPLUGIN_STANDARD_QMANUAL_CALIB=ON
                 -DPLUGIN_PYTHON=ON
                 -DBUILD_PYTHON_MODULE=ON
                 -DPLUGIN_STANDARD_QSRA=ON

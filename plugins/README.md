@@ -48,6 +48,7 @@ cmake -DBUILD_GUI=ON \
       -DPLUGIN_STANDARD_QFACEDETECT=ON \
       -DPLUGIN_STANDARD_QFREESPLATTER=ON \
       -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
+      -DPLUGIN_STANDARD_QMANUAL_CALIB=ON \
       -DPLUGIN_STANDARD_QSIBR=ON \
       ..
 ```
@@ -85,6 +86,7 @@ cmake -DBUILD_GUI=ON \
 | qSRA | [core/Standard/qSRA/README.md](core/Standard/qSRA/README.md) |
 | qTreeIso | [core/Standard/qTreeIso/README.md](core/Standard/qTreeIso/README.md) |
 | qVoxFall | [core/Standard/qVoxFall/README.md](core/Standard/qVoxFall/README.md) |
+| qManualCalib | [core/Standard/qManualCalib/README.md](core/Standard/qManualCalib/README.md) |
 
 Submodule plugins (when present): qColorimetricSegmenter, qMasonry, qMPlane, qJSonRPCPlugin, qG3Point.
 

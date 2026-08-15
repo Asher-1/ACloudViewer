@@ -1,0 +1,16 @@
+# 车辆配置更新脚本依赖包
+# Python版本要求: >= 3.8
+
+# Excel文件读取
+pandas>=1.3.0
+openpyxl>=3.0.0
+
+# Proto配置文件解析
+protobuf>=3.19.0,<4.0.0
+
+# GUI界面 (PyQt5)
+PyQt5>=5.15.0
+
+# 3D可视化
+pyqtgraph>=0.12.0
+PyOpenGL>=3.1.0

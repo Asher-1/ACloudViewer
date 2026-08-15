@@ -36,7 +36,7 @@ constexpr const char* kMonstreeDownloadUrl =
         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
         "reconstruction_data/dataset_monstree.zip";
 constexpr const char* kMonstreeExpectedMd5 = "10730009514e2db7b47d16f75627561c";
-constexpr qint64 kMonstreeExpectedSize = 100 * 1024 * 1024;  // ~100 MB
+constexpr qint64 kMonstreeExpectedSize = 200 * 1024 * 1024;  // ~206.2 MB
 
 // FriendsFaces dataset
 constexpr const char* kFriendsZipName = "friends_faces.zip";
@@ -45,7 +45,17 @@ constexpr const char* kFriendsDownloadUrl =
         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
         "qFaceDetect/friends_faces.zip";
 constexpr const char* kFriendsExpectedMd5 = "1d1ffebb97edac790b55c6f0f3c9d9fc";
-constexpr qint64 kFriendsExpectedSize = 30 * 1024 * 1024;  // ~30 MB
+constexpr qint64 kFriendsExpectedSize = 30 * 1024 * 1024;  // ~35 MB
+
+// qManualCalib sample dataset
+constexpr const char* kMcalibZipName = "qcalib_test_data.zip";
+constexpr const char* kMcalibExtractDir = "qcalib_test_data";
+constexpr const char* kMcalibDownloadUrl =
+        "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
+        "qManualCalib/qcalib_test_data.zip";
+constexpr const char* kMcalibExpectedMd5 = "04a458cdd48fc88ae5c878062ca94a80";
+constexpr qint64 kMcalibExpectedSize =
+        20 * 1024 * 1024;  // ~20 MB (zip ~21.8 MB)
 
 }  // namespace
 
@@ -98,6 +108,14 @@ ecvTestDataRepository::DatasetInfo ecvTestDataRepository::getDatasetInfo(
                     QString::fromLatin1(kFriendsDownloadUrl),
                     QString::fromLatin1(kFriendsExpectedMd5),
                     kFriendsExpectedSize};
+        case Dataset::ManualCalib:
+            return {kind,
+                    QStringLiteral("ManualCalib"),
+                    QString::fromLatin1(kMcalibZipName),
+                    QString::fromLatin1(kMcalibExtractDir),
+                    QString::fromLatin1(kMcalibDownloadUrl),
+                    QString::fromLatin1(kMcalibExpectedMd5),
+                    kMcalibExpectedSize};
     }
     Q_UNREACHABLE();
     return {};
@@ -537,4 +555,36 @@ QString ecvTestDataRepository::findFriendsVideo(const QString& bundleRoot) {
         if (best.isEmpty()) best = QFileInfo(path).absoluteFilePath();
     }
     return best;
+}
+
+QString ecvTestDataRepository::getManualCalibBagPath(
+        const QString& bundleRoot) {
+    if (bundleRoot.isEmpty()) return {};
+
+    // The sample ROS bag is expected under <root>/bags/sample_aligned.bag
+    const QString bagDir = QDir(bundleRoot).filePath(QStringLiteral("bags"));
+    if (!QDir(bagDir).exists()) return {};
+
+    const QStringList patterns = {QStringLiteral("*.bag")};
+    QDirIterator it(bagDir, patterns, QDir::Files);
+    while (it.hasNext()) {
+        const QString path = it.next();
+        const QString fileName = QFileInfo(path).fileName();
+        if (fileName.startsWith(QLatin1Char('.'))) continue;
+        // Prefer the aligned sample bag when present
+        if (fileName.contains(QStringLiteral("sample"), Qt::CaseInsensitive))
+            return QFileInfo(path).absoluteFilePath();
+        return QFileInfo(path).absoluteFilePath();
+    }
+    return {};
+}
+
+QString ecvTestDataRepository::getManualCalibConfigDir(
+        const QString& bundleRoot) {
+    if (bundleRoot.isEmpty()) return {};
+
+    const QString configDir =
+            QDir(bundleRoot).filePath(QStringLiteral("configs"));
+    if (QDir(configDir).exists()) return QDir(configDir).absolutePath();
+    return {};
 }

@@ -38,8 +38,10 @@ class CVPLUGIN_LIB_API ecvTestDataRepository : public QObject {
 public:
     /** Available test datasets. */
     enum class Dataset {
-        Monstree,     ///< Monstree dataset for image-based reconstruction
-        FriendsFaces  ///< FriendsFaces video for face capture
+        Monstree,      ///< Monstree dataset for image-based reconstruction
+        FriendsFaces,  ///< FriendsFaces video for face capture
+        ManualCalib    ///< qManualCalib sample ROS bag + sensor calibration
+                       ///< configs
     };
 
     /** Dataset metadata. */
@@ -142,6 +144,20 @@ public:
      * @return Absolute path to the video file, or empty if not found
      */
     static QString findFriendsVideo(const QString& bundleRoot);
+
+    /**
+     * @brief Return the sample ROS bag path in the qManualCalib dataset.
+     * @param bundleRoot Path to the extracted dataset root
+     * @return Absolute path to the bag file, or empty if not found
+     */
+    static QString getManualCalibBagPath(const QString& bundleRoot);
+
+    /**
+     * @brief Return the config directory path in the qManualCalib dataset.
+     * @param bundleRoot Path to the extracted dataset root
+     * @return Absolute path to the configs directory, or empty if not found
+     */
+    static QString getManualCalibConfigDir(const QString& bundleRoot);
 
 signals:
     /** Emitted during download with progress (0-100). */

@@ -291,6 +291,36 @@ elseif (WIN32)
             message(WARNING "AICore_BUNDLE_CUDA_RUNTIME=ON but ${_bundled_cuda_src} is missing")
         endif()
     endif()
+
+    # Always bundle cudart64_*.dll on Windows CUDA builds, independent of
+    # AICore_BUNDLE_CUDA_RUNTIME: CUDA plugins (qManualCalib, qSIBR) compile
+    # .cu fat binaries whose __sti____cudaRegisterAll registers the binary
+    # during DLL static initialization - before any SEH probe - so a CUDA
+    # plugin fails to load without the cudart DLL. cudart64_12.dll is small
+    # (~0.5 MB), minor-version compatible within a CUDA major release, and
+    # does not require the NVIDIA driver at load time (the driver is dlopen'd
+    # only when CUDA APIs are actually called), so shipping it in
+    # lib/cuda-runtime/ (added to PATH by ACloudViewer.bat) lets CUDA builds
+    # load on any Windows machine; machines without an NVIDIA driver simply
+    # fall back to OpenCL/CPU. nvcuda.dll is NOT bundled (driver-owned).
+    if(BUILD_CUDA_MODULE)
+        # find_package(CUDAToolkit) is not usable here (install(SCRIPT) runs in
+        # script mode where add_library is not scriptable), so locate the DLL
+        # via the standard CUDA_PATH environment variable (set by the toolkit
+        # installer and by the Jimver/cuda-toolkit GitHub action).
+        set(_cudart_src "")
+        if(DEFINED ENV{CUDA_PATH})
+            file(GLOB _cudart_src "$ENV{CUDA_PATH}/bin/cudart64_*.dll")
+        endif()
+        if(_cudart_src)
+            set(_cudart_dst_dir "${DEPLOY_LIB_PATH}/cuda-runtime")
+            file(MAKE_DIRECTORY "${_cudart_dst_dir}")
+            file(COPY "${_cudart_src}" DESTINATION "${_cudart_dst_dir}" USE_SOURCE_PERMISSIONS)
+            message(STATUS "Bundled cudart runtime into ${_cudart_dst_dir} for CUDA plugin load")
+        else()
+            message(WARNING "BUILD_CUDA_MODULE=ON but cudart64_*.dll not found; CUDA plugins (qManualCalib/qSIBR) will fail to load on machines without the CUDA toolkit")
+        endif()
+    endif()
 endif()
 
 ## deploy CloudViewer

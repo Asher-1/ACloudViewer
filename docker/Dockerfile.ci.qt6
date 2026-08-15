@@ -84,6 +84,9 @@ RUN apt-get clean && apt-get update --fix-missing -y \
         apt-file \
         net-tools \
         mesa-utils \
+        # for OpenCL (qManualCalib bev_stitch BEV remap backend)
+        opencl-headers \
+        ocl-icd-opencl-dev \
         # reference cloudViewer
         libzstd-dev \
         zlib1g \

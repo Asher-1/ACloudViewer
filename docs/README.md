@@ -261,6 +261,7 @@ Documentation is automatically built and deployed via GitHub Actions:
   - [qFaceDetect — Face Detection & Recognition](guides/plugins/qFaceDetect.md)
   - [qLightGlue — Feature Matching](guides/plugins/qLightGlue.md)
   - [qFreeSplatter — 3D Gaussian Splatting](guides/plugins/qFreeSplatter.md)
+  - [qManualCalib — Manual Calibration](guides/plugins/qManualCalib.md)
 - **Python API** → `/documentation/python_api/index.html`
 - **C++ API** → `/documentation/cpp_api/index.html`
 - **Tutorials** → `/documentation/tutorial/index.html`
