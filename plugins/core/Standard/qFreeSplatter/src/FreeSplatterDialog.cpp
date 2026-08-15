@@ -25,9 +25,11 @@
 #include <QMessageBox>
 #include <QScreen>
 #include <QSettings>
+#include <QStandardPaths>
 #include <QStyle>
 #include <QTabBar>
 #include <QTimer>
+#include <QUuid>
 #include <QVBoxLayout>
 #include <cstdio>
 #include <cstdlib>
@@ -786,7 +788,8 @@ void FreeSplatterDialog::adaptTabWidgetHeight() {
         // An empty image tab needs only its commands and thumbnail strip.
         // The clamps are DPI-scaled — on Windows 150%% scaling the raw 150..210
         // range would leave blank space and clip the strip.
-        contentHeight = qBound(dpiScaled(150), contentHeight, dpiScaled(210));
+        contentHeight =
+                qBound(dpiScaled(150), contentHeight, dpiScaled(210));
     } else {
         const QScreen* screen =
                 QGuiApplication::screenAt(frameGeometry().center());
@@ -807,8 +810,8 @@ void FreeSplatterDialog::adaptTabWidgetHeight() {
                          available - std::max(dpiScaled(220), dialogChrome) -
                                  dpiScaled(32));
         contentHeight = std::min(
-                formHeight, std::min(viewportBudget,
-                                     dpiScaled(kFaceCaptureViewportMaxHeight)));
+                formHeight,
+                std::min(viewportBudget, dpiScaled(kFaceCaptureViewportMaxHeight)));
     }
     const int targetHeight = tabChrome + contentHeight;
     m_inputTabWidget->setFixedHeight(targetHeight);
@@ -1733,7 +1736,7 @@ void FreeSplatterDialog::onFaceCaptureComplete() {
     }
     m_faceCaptureExportDir = QDir(cacheRoot).filePath(
             QStringLiteral("qFreeSplatter/face_capture/") +
-            QUuid::createUuid().toString(QUuid::Id128));
+            QUuid::createUuid().toString(QUuid::WithoutBraces));
     const std::vector<FaceCaptureWidget::IdentityImageBatch> batches =
             m_faceCaptureWidget->exportCapturedIdentityImages(
                     m_faceCaptureExportDir);
