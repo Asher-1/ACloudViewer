@@ -25,6 +25,8 @@ add_subdirectory( qFaceDetect )
 add_subdirectory( qFreeSplatter )
 add_subdirectory( qLightGlue )
 add_subdirectory( qDeepLSD )
+add_subdirectory( qRFDetr )
+add_subdirectory( qRMBG )
 
 #plugins integrated as submodules
 set( submod_plugins

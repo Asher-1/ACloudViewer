@@ -249,6 +249,8 @@ Expand the `INSTALL` group in CMake GUI to enable plugins:
 | qLightGlue              | PLUGIN_STANDARD_QLIGHTGLUE               | OFF           | Sparse matching — **SIFT/ALIKED LightGlue** via GGUF ([README](plugins/core/Standard/qLightGlue/README.md)). Requires `AICore_ENABLED=ON`. |
 | qDeepLSD                | PLUGIN_STANDARD_QDEEPLSD                 | OFF           | DeepLSD wireframe extraction (df/angle GGUF) ([README](plugins/core/Standard/qDeepLSD/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/deeplsd`). |
 | qFaceDetect             | PLUGIN_STANDARD_QFACEDETECT              | OFF           | face-detect.cpp — SCRFD/YuNet detection, ArcFace/SFace verify, age/gender ([README](plugins/core/Standard/qFaceDetect/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/facedetect`). |
+| qRFDetr                 | PLUGIN_STANDARD_QRFDETR                  | OFF           | RF-DETR real-time object detection/segmentation, COCO 80 classes, GGUF ([README](plugins/core/Standard/qRFDetr/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/rfdetr`). |
+| qRMBG                   | PLUGIN_STANDARD_QRMBG                    | OFF           | RMBG-2.0 (BiRefNet-Swin-L) background removal, transparent RGBA output, GGUF ([README](plugins/core/Standard/qRMBG/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/rmbg`). |
 
 > 📖 **Plugin catalog:** [plugins/README.md](plugins/README.md) — per-plugin README index and AICore build recipes.
 
@@ -328,13 +330,15 @@ cmake -DBUILD_CUDA_MODULE=ON \
       -DPLUGIN_STANDARD_QFACEDETECT=ON \
       -DPLUGIN_STANDARD_QFREESPLATTER=ON \
       -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
+      -DPLUGIN_STANDARD_QRFDETR=ON \
+      -DPLUGIN_STANDARD_QRMBG=ON \
       ..
 cmake --build . --config Release
 ```
 
-#### AICore (qDA3 + qDeepLSD + qFaceDetect + qFreeSplatter + qLightGlue) Build
+#### AICore (qDA3 + qDeepLSD + qFaceDetect + qFreeSplatter + qLightGlue + qRFDetr + qRMBG) Build
 
-Builds `libAICore.so` (shared ggml inference core for DA3, DeepLSD, FaceDetect, FreeSplatter, and LightGlue) and the selected GUI plugins. Runtime **Auto** uses Metal → CPU on macOS and Vulkan → CPU on Linux/Windows by default. When `-DAICore_USE_CUDA=ON` and the CUDA backend is built, Auto becomes **CUDA → Vulkan → CPU** on Linux/Windows. SYCL remains explicit-only. CUDA is only enabled by `-DAICore_USE_CUDA=ON`; the unrelated CloudViewer `BUILD_CUDA_MODULE` option no longer adds CUDA to distributed AICore packages.
+Builds `libAICore.so` (shared ggml inference core for DA3, DeepLSD, FaceDetect, FreeSplatter, LightGlue, RFDetr, and RMBG) and the selected GUI plugins. Runtime **Auto** uses Metal → CPU on macOS and Vulkan → CPU on Linux/Windows by default. When `-DAICore_USE_CUDA=ON` and the CUDA backend is built, Auto becomes **CUDA → Vulkan → CPU** on Linux/Windows. SYCL remains explicit-only. CUDA is only enabled by `-DAICore_USE_CUDA=ON`; the unrelated CloudViewer `BUILD_CUDA_MODULE` option no longer adds CUDA to distributed AICore packages.
 
 ```bash
 cmake -DBUILD_GUI=ON \
@@ -345,6 +349,8 @@ cmake -DBUILD_GUI=ON \
       -DPLUGIN_STANDARD_QFACEDETECT=ON \
       -DPLUGIN_STANDARD_QFREESPLATTER=ON \
       -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
+      -DPLUGIN_STANDARD_QRFDETR=ON \
+      -DPLUGIN_STANDARD_QRMBG=ON \
       ..
 cmake --build . --config Release --target ACloudViewer
 ```
@@ -649,6 +655,8 @@ build_gui_app with_conda package_installer with_aicore_cuda bundle_cuda_runtime
 - **[qDA3 Plugin](plugins/core/Standard/qDA3/README.md)** - Depth Anything V3 build, models, and Automatic Reconstruction integration
 - **[qFreeSplatter Plugin](plugins/core/Standard/qFreeSplatter/README.md)** - FreeSplatter 3D Gaussian Splatting, models, and SIBR export
 - **[qLightGlue Plugin](plugins/core/Standard/qLightGlue/README.md)** - SIFT/ALIKED LightGlue matching (GGUF)
+- **[qRFDetr Plugin](plugins/core/Standard/qRFDetr/README.md)** - RF-DETR object detection/segmentation (GGUF)
+- **[qRMBG Plugin](plugins/core/Standard/qRMBG/README.md)** - RMBG-2.0 background removal (GGUF)
 
 ---
 

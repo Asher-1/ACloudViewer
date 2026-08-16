@@ -9,7 +9,17 @@
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
 
-VideoFrameReader::VideoFrameReader(QObject* parent) : QObject(parent) {}
+VideoFrameReader::VideoFrameReader(QObject* parent) : QObject(parent) {
+#ifdef HAS_LIBMPV
+    if (MpvFrameSource::available()) {
+        m_source = std::make_unique<MpvFrameSource>();
+    } else {
+        m_source = std::make_unique<OpenCVFrameSource>();
+    }
+#else
+    m_source = std::make_unique<OpenCVFrameSource>();
+#endif
+}
 
 VideoFrameReader::~VideoFrameReader() {
     release();
@@ -17,48 +27,51 @@ VideoFrameReader::~VideoFrameReader() {
 
 bool VideoFrameReader::openVideo(const std::string& path, int backend) {
     release();
-    return m_cap.open(path, backend) || m_cap.open(path, cv::CAP_ANY);
+    if (m_source->openVideo(path, backend)) return true;
+#ifdef HAS_LIBMPV
+    // The mpv backend could not open the file (unsupported container /
+    // missing demuxer) — retry with the OpenCV path for this file.
+    if (dynamic_cast<MpvFrameSource*>(m_source.get())) {
+        m_source = std::make_unique<OpenCVFrameSource>();
+        return m_source->openVideo(path, backend);
+    }
+#endif
+    return false;
 }
 
 bool VideoFrameReader::openCamera(int deviceIndex, int backend) {
     release();
-    m_cap.open(deviceIndex, backend);
-    if (m_cap.isOpened()) {
-        m_cap.set(cv::CAP_PROP_FRAME_WIDTH, 640);
-        m_cap.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
+#ifdef HAS_LIBMPV
+    // Cameras are always handled by OpenCV (mpv has no camera input).
+    if (dynamic_cast<MpvFrameSource*>(m_source.get())) {
+        m_source = std::make_unique<OpenCVFrameSource>();
     }
-    return m_cap.isOpened();
+#endif
+    return m_source->openCamera(deviceIndex, backend);
 }
 
 bool VideoFrameReader::isOpened() const {
-    return m_cap.isOpened();
+    return m_source ? m_source->isOpened() : false;
 }
 
 int64_t VideoFrameReader::getFrameCount() const {
-    return m_cap.isOpened() ? static_cast<int64_t>(
-                                      m_cap.get(cv::CAP_PROP_FRAME_COUNT))
-                            : 0;
+    return m_source ? m_source->frameCount() : 0;
 }
 
 double VideoFrameReader::getFps() const {
-    return m_cap.isOpened() ? m_cap.get(cv::CAP_PROP_FPS) : 0.0;
+    return m_source ? m_source->fps() : 0.0;
 }
 
 int VideoFrameReader::getFrameWidth() const {
-    return m_cap.isOpened()
-                   ? static_cast<int>(m_cap.get(cv::CAP_PROP_FRAME_WIDTH))
-                   : 0;
+    return m_source ? m_source->width() : 0;
 }
 
 int VideoFrameReader::getFrameHeight() const {
-    return m_cap.isOpened()
-                   ? static_cast<int>(m_cap.get(cv::CAP_PROP_FRAME_HEIGHT))
-                   : 0;
+    return m_source ? m_source->height() : 0;
 }
 
 int VideoFrameReader::currentFrameNum() const {
-    return m_cap.isOpened() ? static_cast<int>(m_cap.get(cv::CAP_PROP_POS_FRAMES))
-                            : 0;
+    return m_lastFrameIndex;
 }
 
 void VideoFrameReader::readFrame() {
@@ -67,31 +80,47 @@ void VideoFrameReader::readFrame() {
     // that, queued readFrame calls would pile up and the video would
     // race ahead / lag behind indefinitely.  Drop redundant reads.
     if (m_reading.exchange(true)) return;
-    if (!m_cap.isOpened()) {
+    if (!m_source || !m_source->isOpened()) {
         m_reading = false;
         return;
     }
     cv::Mat frame;
-    const bool ok = m_cap.read(frame) && !frame.empty();
+    int64_t frameIndex = 0;
+    const IFrameSource::ReadResult result = m_source->read(frame, &frameIndex);
     m_reading = false;
-    if (!ok) {
-        emit frameReadFailed();
-        return;
+
+    switch (result) {
+        case IFrameSource::ReadResult::Ok:
+            m_lastFrameIndex = static_cast<int>(frameIndex);
+            // Emit the raw BGR frame.  Downstream consumers (cvMatToQImage /
+            // detection) perform the single BGR->RGB conversion; converting
+            // here would double-swap the channels and corrupt colors.
+            emit frameReady(frame, static_cast<int>(frameIndex));
+            break;
+        case IFrameSource::ReadResult::NoFrame:
+            // Backend (mpv) is clock-driven and has nothing new yet — the
+            // pipeline keeps ticking and will pick the frame up next call.
+            break;
+        case IFrameSource::ReadResult::Eof:
+            emit frameReadFailed();
+            break;
     }
-    // Emit the raw OpenCV frame (BGR).  Downstream consumers
-    // (cvMatToQImage / detection) perform the single BGR->RGB conversion;
-    // converting here would double-swap the channels and corrupt colors.
-    emit frameReady(frame, currentFrameNum());
 }
 
 void VideoFrameReader::seekToFrame(int frameIndex) {
-    if (m_cap.isOpened()) {
-        m_cap.set(cv::CAP_PROP_POS_FRAMES, frameIndex);
-    }
+    if (m_source) m_source->seekToFrame(frameIndex);
+}
+
+void VideoFrameReader::setPaused(bool paused) {
+    if (m_source) m_source->setPaused(paused);
+}
+
+void VideoFrameReader::setPlaybackSpeed(double speed) {
+    if (m_source) m_source->setSpeed(speed);
 }
 
 void VideoFrameReader::release() {
-    if (m_cap.isOpened()) m_cap.release();
+    if (m_source) m_source->release();
 }
 
 #endif  // HAS_OPENCV_FACE_CAPTURE

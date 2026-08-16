@@ -220,6 +220,18 @@ bool FillModelDeviceInfo(enum aicore_model_kind model,
             minimum = 128ull * 1024 * 1024;
             recommended = 512ull * 1024 * 1024;
             break;
+        case AICORE_MODEL_RFDETR:
+            // RF-DETR F16 (e.g. base) is ~64 MB; working set dominated by the
+            // ~2 GB of intermediate tensors at 640x640 (compact gallocr reuse
+            // shrinks the live footprint, but the scratch still needs headroom).
+            minimum = 512ull * 1024 * 1024;
+            recommended = 2ull * 1024 * 1024 * 1024;
+            break;
+        case AICORE_MODEL_RMBG:
+            // BiRefNet-Swin-L at 1024x1024: encoder activations dominate.
+            minimum = 512ull * 1024 * 1024;
+            recommended = 1536ull * 1024 * 1024;
+            break;
         default:
             return false;
     }

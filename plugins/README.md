@@ -35,6 +35,8 @@ Four GUI plugins link **`libAICore.so`**, which bundles DA3, DeepLSD, FaceDetect
 | **qFaceDetect** | `PLUGIN_STANDARD_QFACEDETECT` | [docs/guides/plugins/qFaceDetect.md](../docs/guides/plugins/qFaceDetect.md) | [qFaceDetect/README.md](core/Standard/qFaceDetect/README.md) |
 | **qLightGlue** | `PLUGIN_STANDARD_QLIGHTGLUE` | [docs/guides/plugins/qLightGlue.md](../docs/guides/plugins/qLightGlue.md) | [qLightGlue/README.md](core/Standard/qLightGlue/README.md) |
 | **qFreeSplatter** | `PLUGIN_STANDARD_QFREESPLATTER` | [docs/guides/plugins/qFreeSplatter.md](../docs/guides/plugins/qFreeSplatter.md) | [qFreeSplatter/README.md](core/Standard/qFreeSplatter/README.md) |
+| **qRFDetr** | `PLUGIN_STANDARD_QRFDETR` | [docs/guides/plugins/qRFDetr.md](../docs/guides/plugins/qRFDetr.md) | [qRFDetr/README.md](core/Standard/qRFDetr/README.md) |
+| **qRMBG** | `PLUGIN_STANDARD_QRMBG` | [docs/guides/plugins/qRMBG.md](../docs/guides/plugins/qRMBG.md) | [qRMBG/README.md](core/Standard/qRMBG/README.md) |
 
 **Core library:** enable with `-DAICore_ENABLED=ON` (auto-enables `GGML_ENABLED`).
 
@@ -48,6 +50,8 @@ cmake -DBUILD_GUI=ON \
       -DPLUGIN_STANDARD_QFACEDETECT=ON \
       -DPLUGIN_STANDARD_QFREESPLATTER=ON \
       -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
+      -DPLUGIN_STANDARD_QRFDETR=ON \
+      -DPLUGIN_STANDARD_QRMBG=ON \
       -DPLUGIN_STANDARD_QSIBR=ON \
       ..
 ```

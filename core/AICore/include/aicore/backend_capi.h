@@ -46,6 +46,8 @@ enum aicore_model_kind {
     AICORE_MODEL_LIGHTGLUE = 4,
     AICORE_MODEL_DEEPLSD = 5,
     AICORE_MODEL_FACEDETECT = 6,
+    AICORE_MODEL_RFDETR = 7,
+    AICORE_MODEL_RMBG = 8,
 };
 
 enum aicore_model_capability {

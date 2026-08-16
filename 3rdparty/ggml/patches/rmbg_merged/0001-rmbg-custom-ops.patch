@@ -1,0 +1,1693 @@
+diff --git a/include/ggml.h b/include/ggml.h
+index 35f0c44e..c66030db 100644
+--- a/include/ggml.h
++++ b/include/ggml.h
+@@ -226,7 +226,7 @@
+ #define GGML_MAX_OP_PARAMS      64
+ 
+ #ifndef GGML_MAX_NAME
+-#   define GGML_MAX_NAME        64
++#   define GGML_MAX_NAME        128
+ #endif
+ 
+ #define GGML_DEFAULT_N_THREADS  4
+diff --git a/src/ggml-cuda/CMakeLists.txt b/src/ggml-cuda/CMakeLists.txt
+index d3953eee..c567b918 100644
+--- a/src/ggml-cuda/CMakeLists.txt
++++ b/src/ggml-cuda/CMakeLists.txt
+@@ -129,6 +129,15 @@ if (CUDAToolkit_FOUND)
+                              ${GGML_SOURCES_CUDA}
+                             )
+ 
++    find_path(RMBG_CUDNN_INCLUDE_DIR cudnn.h HINTS /usr/local/cudnn/include)
++    find_library(RMBG_CUDNN_LIBRARY cudnn HINTS /usr/local/cudnn/lib64)
++    if (RMBG_CUDNN_INCLUDE_DIR AND RMBG_CUDNN_LIBRARY)
++        message(STATUS "Enabling optional RMBG cuDNN convolution path")
++        target_include_directories(ggml-cuda PRIVATE ${RMBG_CUDNN_INCLUDE_DIR})
++        target_link_libraries(ggml-cuda PRIVATE ${RMBG_CUDNN_LIBRARY})
++        target_compile_definitions(ggml-cuda PRIVATE GGML_CUDA_RMBG_CUDNN)
++    endif()
++
+     add_compile_definitions(GGML_CUDA_PEER_MAX_BATCH_SIZE=${GGML_CUDA_PEER_MAX_BATCH_SIZE})
+ 
+     if (GGML_CUDA_GRAPHS)
+diff --git a/src/ggml-cuda/ggml-cuda.cu b/src/ggml-cuda/ggml-cuda.cu
+index d22b5657..e35386d2 100644
+--- a/src/ggml-cuda/ggml-cuda.cu
++++ b/src/ggml-cuda/ggml-cuda.cu
+@@ -40,6 +40,7 @@
+ #include "ggml-cuda/pool2d.cuh"
+ #include "ggml-cuda/quantize.cuh"
+ #include "ggml-cuda/rope.cuh"
++#include "ggml-cuda/rmbg-deform-im2col.cuh"
+ #include "ggml-cuda/roll.cuh"
+ #include "ggml-cuda/scale.cuh"
+ #include "ggml-cuda/snake.cuh"
+@@ -2347,6 +2348,28 @@ static bool ggml_cuda_compute_forward(ggml_backend_cuda_context & ctx, struct gg
+         case GGML_OP_FILL:
+             ggml_cuda_op_fill(ctx, dst);
+             break;
++        case GGML_OP_CUSTOM:
++            if (ggml_cuda_is_rmbg_deform_im2col(dst)) {
++                ggml_cuda_op_rmbg_deform_im2col(ctx, dst);
++                break;
++            }
++            if (ggml_cuda_is_rmbg_conv2d(dst)) {
++                ggml_cuda_op_rmbg_conv2d(ctx, dst);
++                break;
++            }
++            if (ggml_cuda_is_rmbg_swin_attention(dst)) {
++                ggml_cuda_op_rmbg_swin_attention(ctx, dst);
++                break;
++            }
++            if (ggml_cuda_is_rmbg_patch_merge(dst)) {
++                ggml_cuda_op_rmbg_patch_merge(ctx, dst);
++                break;
++            }
++            if (ggml_cuda_is_rmbg_image_patches(dst)) {
++                ggml_cuda_op_rmbg_image_patches(ctx, dst);
++                break;
++            }
++            return false;
+         case GGML_OP_LIGHTNING_INDEXER:
+             ggml_cuda_lightning_indexer(ctx, dst);
+             break;
+@@ -4730,6 +4753,49 @@ static bool ggml_backend_cuda_device_supports_op(ggml_backend_dev_t dev, const g
+     }
+ 
+     switch (op->op) {
++        case GGML_OP_CUSTOM:
++            if (ggml_cuda_is_rmbg_deform_im2col(op)) {
++                return op->type == GGML_TYPE_F32 && op->src[0] && op->src[1] && op->src[2] &&
++                       op->src[0]->type == GGML_TYPE_F32 && op->src[1]->type == GGML_TYPE_F32 &&
++                       op->src[2]->type == GGML_TYPE_F32 && ggml_is_contiguous(op->src[0]) &&
++                       ggml_is_contiguous(op->src[1]) && ggml_is_contiguous(op->src[2]);
++            }
++            if (ggml_cuda_is_rmbg_conv2d(op)) {
++                return op->type == GGML_TYPE_F32 && op->src[0] && op->src[1] &&
++                       op->src[0]->type == GGML_TYPE_F32 && op->src[1]->type == GGML_TYPE_F32 &&
++                       ggml_is_contiguous(op->src[0]) && ggml_is_contiguous(op->src[1]);
++            }
++            if (ggml_cuda_is_rmbg_swin_attention(op)) {
++                if (op->type != GGML_TYPE_F32 || !ggml_is_contiguous(op)) {
++                    return false;
++                }
++                for (int i = 0; i < 6; ++i) {
++                    if (!op->src[i] || op->src[i]->type != GGML_TYPE_F32 ||
++                            !ggml_is_contiguous(op->src[i])) {
++                        return false;
++                    }
++                }
++                const int64_t channels = op->src[0]->ne[0];
++                return channels % 32 == 0 && op->src[1]->ne[0] == channels &&
++                       op->src[1]->ne[1] == 3 * channels &&
++                       op->src[3]->ne[0] == channels && op->src[3]->ne[1] == channels;
++            }
++            if (ggml_cuda_is_rmbg_patch_merge(op)) {
++                if (op->type != GGML_TYPE_F32 || !ggml_is_contiguous(op)) {
++                    return false;
++                }
++                if (!op->src[0] || op->src[0]->type != GGML_TYPE_F32 ||
++                        !ggml_is_contiguous(op->src[0])) return false;
++                const int64_t channels = op->src[0]->ne[0];
++                return channels > 0 && op->ne[0] == 4 * channels;
++            }
++            if (ggml_cuda_is_rmbg_image_patches(op)) {
++                return op->type == GGML_TYPE_F32 && op->src[0] &&
++                       op->src[0]->type == GGML_TYPE_F32 && ggml_is_contiguous(op) &&
++                       ggml_is_contiguous(op->src[0]) && op->src[0]->ne[2] == 3 &&
++                       op->ne[0] == 3;
++            }
++            return false;
+         case GGML_OP_UNARY:
+             switch (ggml_get_unary_op(op)) {
+                 case GGML_UNARY_OP_ABS:
+diff --git a/src/ggml-cuda/rmbg-deform-im2col.cu b/src/ggml-cuda/rmbg-deform-im2col.cu
+new file mode 100644
+index 00000000..8e439ce1
+--- /dev/null
++++ b/src/ggml-cuda/rmbg-deform-im2col.cu
+@@ -0,0 +1,525 @@
++#include "rmbg-deform-im2col.cuh"
++
++#include <cstdio>
++#include <cstring>
++#include <cmath>
++
++#ifdef GGML_CUDA_RMBG_CUDNN
++#include <cudnn.h>
++#endif
++
++namespace {
++
++constexpr const char * kOpName = "rmbg_deform_im2col";
++constexpr const char * kConvName = "rmbg_conv2d_";
++constexpr const char * kSwinAttentionName = "rmbg_swin_attn_";
++constexpr const char * kPatchMergeName = "rmbg_patch_merge_";
++constexpr const char * kImagePatchesName = "rmbg_image_patches_";
++
++__device__ __forceinline__ float sample_bilinear(
++        const float * input, int w, int h, int hw, int channel, float y, float x) {
++    const int y0 = (int) floorf(y);
++    const int x0 = (int) floorf(x);
++    const int y1 = y0 + 1;
++    const int x1 = x0 + 1;
++    const float dy = y - (float) y0;
++    const float dx = x - (float) x0;
++    const int base = channel * hw;
++    float value = 0.0f;
++    if ((unsigned) y0 < (unsigned) h && (unsigned) x0 < (unsigned) w) {
++        value += input[base + y0 * w + x0] * (1.0f - dy) * (1.0f - dx);
++    }
++    if ((unsigned) y0 < (unsigned) h && (unsigned) x1 < (unsigned) w) {
++        value += input[base + y0 * w + x1] * (1.0f - dy) * dx;
++    }
++    if ((unsigned) y1 < (unsigned) h && (unsigned) x0 < (unsigned) w) {
++        value += input[base + y1 * w + x0] * dy * (1.0f - dx);
++    }
++    if ((unsigned) y1 < (unsigned) h && (unsigned) x1 < (unsigned) w) {
++        value += input[base + y1 * w + x1] * dy * dx;
++    }
++    return value;
++}
++
++#ifdef GGML_CUDA_RMBG_CUDNN
++
++#define CUDNN_CHECK(expr) do { \
++    const cudnnStatus_t status_ = (expr); \
++    GGML_ASSERT(status_ == CUDNN_STATUS_SUCCESS); \
++} while (0)
++
++struct CudnnHandle {
++    cudnnHandle_t value = nullptr;
++    CudnnHandle() { CUDNN_CHECK(cudnnCreate(&value)); }
++    ~CudnnHandle() { if (value) cudnnDestroy(value); }
++};
++
++static void rmbg_cudnn_conv2d(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
++    const ggml_tensor * kernel = dst->src[0];
++    const ggml_tensor * input = dst->src[1];
++    int stride = 0, pad = 0;
++    GGML_ASSERT(std::sscanf(ggml_get_name(dst), "rmbg_conv2d_s%d_p%d", &stride, &pad) == 2);
++    thread_local CudnnHandle handle;
++    CUDNN_CHECK(cudnnSetStream(handle.value, ctx.stream()));
++
++    cudnnTensorDescriptor_t x_desc = nullptr, y_desc = nullptr;
++    cudnnFilterDescriptor_t w_desc = nullptr;
++    cudnnConvolutionDescriptor_t conv_desc = nullptr;
++    CUDNN_CHECK(cudnnCreateTensorDescriptor(&x_desc));
++    CUDNN_CHECK(cudnnCreateTensorDescriptor(&y_desc));
++    CUDNN_CHECK(cudnnCreateFilterDescriptor(&w_desc));
++    CUDNN_CHECK(cudnnCreateConvolutionDescriptor(&conv_desc));
++    CUDNN_CHECK(cudnnSetTensor4dDescriptor(x_desc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT,
++        (int) input->ne[3], (int) input->ne[2], (int) input->ne[1], (int) input->ne[0]));
++    CUDNN_CHECK(cudnnSetTensor4dDescriptor(y_desc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT,
++        (int) dst->ne[3], (int) dst->ne[2], (int) dst->ne[1], (int) dst->ne[0]));
++    CUDNN_CHECK(cudnnSetFilter4dDescriptor(w_desc, CUDNN_DATA_FLOAT, CUDNN_TENSOR_NCHW,
++        (int) kernel->ne[3], (int) kernel->ne[2], (int) kernel->ne[1], (int) kernel->ne[0]));
++    CUDNN_CHECK(cudnnSetConvolution2dDescriptor(conv_desc, pad, pad, stride, stride, 1, 1,
++        CUDNN_CROSS_CORRELATION, CUDNN_DATA_FLOAT));
++    CUDNN_CHECK(cudnnSetConvolutionMathType(conv_desc, CUDNN_FMA_MATH));
++    constexpr size_t max_workspace = 512ull * 1024 * 1024;
++    cudnnConvolutionFwdAlgoPerf_t perf[8];
++    int returned = 0;
++    CUDNN_CHECK(cudnnGetConvolutionForwardAlgorithm_v7(handle.value, x_desc, w_desc,
++        conv_desc, y_desc, 8, &returned, perf));
++    cudnnConvolutionFwdAlgo_t algorithm = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
++    size_t workspace_size = 0;
++    for (int i = 0; i < returned; ++i) {
++        if (perf[i].status == CUDNN_STATUS_SUCCESS && perf[i].memory <= max_workspace) {
++            algorithm = perf[i].algo;
++            workspace_size = perf[i].memory;
++            break;
++        }
++    }
++    ggml_cuda_pool_alloc<uint8_t> workspace(ctx.pool());
++    if (workspace_size) workspace.alloc(workspace_size);
++    const float alpha = 1.f, beta = 0.f;
++    CUDNN_CHECK(cudnnConvolutionForward(handle.value, &alpha, x_desc, input->data,
++        w_desc, kernel->data, conv_desc, algorithm, workspace.ptr, workspace_size,
++        &beta, y_desc, dst->data));
++    CUDNN_CHECK(cudnnDestroyConvolutionDescriptor(conv_desc));
++    CUDNN_CHECK(cudnnDestroyFilterDescriptor(w_desc));
++    CUDNN_CHECK(cudnnDestroyTensorDescriptor(y_desc));
++    CUDNN_CHECK(cudnnDestroyTensorDescriptor(x_desc));
++}
++
++#endif
++
++// For one output location and kernel tap, offsets and modulation are shared by
++// every input channel.  Keep the CK-major destination layout while computing
++// those values once per channel tile.
++__global__ void rmbg_deform_im2col_tiled_kernel(
++        const float * input, const float * offset, const float * modulator,
++        float * dst, int w, int h, int channels, int kw, int kh,
++        int channel_tiles) {
++    extern __shared__ float shared[];
++    float * ys = shared;
++    float * xs = ys + kw * kh;
++    float * masks = xs + kw * kh;
++
++    const int k_count = kw * kh;
++    const int channel_tile = blockDim.x / k_count;
++    const int block = (int) blockIdx.x;
++    const int p = block / channel_tiles;
++    const int c_base = (block - p * channel_tiles) * channel_tile;
++    const int tid = (int) threadIdx.x;
++    const int64_t hw = (int64_t) w * h;
++
++    for (int k = tid; k < k_count; k += blockDim.x) {
++        const int y_base = p / w;
++        const int x_base = p - y_base * w;
++        const int ky = k / kw;
++        const int kx = k - ky * kw;
++        ys[k] = (float) (y_base + ky - kh / 2) + offset[p + hw * (2 * k)];
++        xs[k] = (float) (x_base + kx - kw / 2) + offset[p + hw * (2 * k + 1)];
++        masks[k] = 2.0f / (1.0f + expf(-modulator[p + hw * k]));
++    }
++    __syncthreads();
++
++    const int c = c_base + tid / k_count;
++    const int k = tid - (tid / k_count) * k_count;
++    if (c < channels && k < k_count) {
++        dst[((int64_t) p * channels + c) * k_count + k] =
++            sample_bilinear(input, w, h, (int) hw, c, ys[k], xs[k]) * masks[k];
++    }
++}
++
++__device__ __forceinline__ int rmbg_swin_region(int x, int limit, int window, int shift) {
++    if (x < limit - window) {
++        return 0;
++    }
++    return x < limit - shift ? 1 : 2;
++}
++
++__global__ void rmbg_swin_qkv_split_kernel(
++        const float * qkv, const float * bias, float * q, float * k, float * v,
++        int C, int N, int heads, int nW) {
++    const int64_t total = (int64_t) C * N * nW;
++    for (int64_t index = (int64_t) blockIdx.x * blockDim.x + threadIdx.x;
++         index < total; index += (int64_t) blockDim.x * gridDim.x) {
++        const int channel = (int) (index % C);
++        const int token = (int) ((index / C) % N);
++        const int win = (int) (index / ((int64_t) C * N));
++        const int head = channel / 32;
++        const int lane = channel % 32;
++        const int64_t dst_index = lane + 32ll * (token + N * (head + heads * win));
++        const int64_t src_index = channel + (int64_t) 3 * C * (token + N * win);
++        q[dst_index] = qkv[src_index] + bias[channel];
++        k[dst_index] = qkv[src_index + C] + bias[channel + C];
++        v[dst_index] = qkv[src_index + 2 * C] + bias[channel + 2 * C];
++    }
++}
++
++__global__ void rmbg_swin_merge_heads_kernel(
++        const float * head_output, float * attended, int C, int N, int heads, int nW) {
++    const int64_t total = (int64_t) C * N * nW;
++    for (int64_t index = (int64_t) blockIdx.x * blockDim.x + threadIdx.x;
++         index < total; index += (int64_t) blockDim.x * gridDim.x) {
++        const int channel = (int) (index % C);
++        const int token = (int) ((index / C) % N);
++        const int win = (int) (index / ((int64_t) C * N));
++        const int head = channel / 32;
++        const int lane = channel % 32;
++        const int64_t src_index = lane + 32ll * (token + N * (head + heads * win));
++        attended[index] = head_output[src_index];
++    }
++}
++
++// QK and AV stay in cuBLAS; this kernel fuses relative-position bias,
++// shifted-window masking and softmax in one pass over the logits.
++__global__ void rmbg_swin_masked_softmax_kernel(
++        float * logits, const float * rpb,
++        int N, int heads, int Hp, int Wp, int ws, int shift) {
++    const int query_index = (int) blockIdx.x;
++    const int batch = query_index / N;
++    const int q = query_index - batch * N;
++    const int head = batch % heads;
++    const int win = batch / heads;
++    const int lane = (int) threadIdx.x;
++    float * row = logits + (int64_t) N * N * batch + (int64_t) N * q;
++    const int windows_w = Wp / ws;
++    const int wh = (win / windows_w) * ws;
++    const int ww = (win % windows_w) * ws;
++    const int qregion = shift == 0 ? 0 :
++        rmbg_swin_region(wh + q / ws, Hp, ws, shift) * 3 +
++        rmbg_swin_region(ww + q % ws, Wp, ws, shift);
++
++    float max_logit = -INFINITY;
++    for (int k = lane; k < N; k += 32) {
++        float value = row[k] + rpb[k + N * (q + N * head)];
++        if (shift != 0) {
++            const int kregion = rmbg_swin_region(wh + k / ws, Hp, ws, shift) * 3 +
++                rmbg_swin_region(ww + k % ws, Wp, ws, shift);
++            if (qregion != kregion) {
++                value -= 100.0f;
++            }
++        }
++        row[k] = value;
++        max_logit = fmaxf(max_logit, value);
++    }
++#pragma unroll
++    for (int offset = 16; offset > 0; offset >>= 1) {
++        max_logit = fmaxf(max_logit, __shfl_down_sync(0xffffffffu, max_logit, offset));
++    }
++    max_logit = __shfl_sync(0xffffffffu, max_logit, 0);
++    float sum = 0.0f;
++    for (int k = lane; k < N; k += 32) {
++        const float e = expf(row[k] - max_logit);
++        row[k] = e;
++        sum += e;
++    }
++#pragma unroll
++    for (int offset = 16; offset > 0; offset >>= 1) {
++        sum += __shfl_down_sync(0xffffffffu, sum, offset);
++    }
++    sum = __shfl_sync(0xffffffffu, sum, 0);
++    const float inv_sum = 1.0f / sum;
++    for (int k = lane; k < N; k += 32) {
++        row[k] *= inv_sum;
++    }
++}
++
++__global__ void rmbg_swin_pack_kernel(
++        const float * input, float * packed, int C, int H, int W,
++        int Hp, int Wp, int ws, int shift, int nW) {
++    const int64_t total = (int64_t) C * ws * ws * nW;
++    for (int64_t index = (int64_t) blockIdx.x * blockDim.x + threadIdx.x;
++         index < total; index += (int64_t) blockDim.x * gridDim.x) {
++        const int c = (int) (index % C);
++        const int t = (int) ((index / C) % (ws * ws));
++        const int win = (int) (index / ((int64_t) C * ws * ws));
++        const int wh = (win / (Wp / ws)) * ws;
++        const int ww = (win % (Wp / ws)) * ws;
++        const int sh = (wh + t / ws + shift) % Hp;
++        const int sw = (ww + t % ws + shift) % Wp;
++        packed[index] = (sh < H && sw < W) ? input[c + (int64_t) C * (sh * W + sw)] : 0.0f;
++    }
++}
++
++__global__ void rmbg_swin_bias_kernel(float * data, const float * bias, int rows, int cols) {
++    const int64_t total = (int64_t) rows * cols;
++    for (int64_t index = (int64_t) blockIdx.x * blockDim.x + threadIdx.x;
++         index < total; index += (int64_t) blockDim.x * gridDim.x) {
++        data[index] += bias[index % rows];
++    }
++}
++
++__global__ void rmbg_swin_unpack_kernel(
++        const float * packed, float * output, int C, int H, int W,
++        int Hp, int Wp, int ws, int shift) {
++    const int64_t total = (int64_t) C * H * W;
++    const int windows_w = Wp / ws;
++    for (int64_t index = (int64_t) blockIdx.x * blockDim.x + threadIdx.x;
++         index < total; index += (int64_t) blockDim.x * gridDim.x) {
++        const int c = (int) (index % C);
++        const int pos = (int) (index / C);
++        const int h = pos / W;
++        const int w = pos - h * W;
++        const int rh = (h - shift + Hp) % Hp;
++        const int rw = (w - shift + Wp) % Wp;
++        const int win = (rh / ws) * windows_w + rw / ws;
++        const int t = (rh % ws) * ws + rw % ws;
++        output[index] = packed[c + (int64_t) C * (t + ws * ws * win)];
++    }
++}
++
++// The four source positions are fixed by Swin patch merge. This avoids loading a
++// dynamic index tensor while preserving the exact gathered values for GGML LayerNorm.
++__global__ void rmbg_patch_merge_gather_kernel(
++        const float * input, float * merged, int C, int H, int W) {
++    const int row = (int) blockIdx.x;
++    const int out_w = W / 2;
++    const int oh = row / out_w;
++    const int ow = row - oh * out_w;
++    const int positions[4] = {
++        (2 * oh) * W + 2 * ow,
++        (2 * oh + 1) * W + 2 * ow,
++        (2 * oh) * W + 2 * ow + 1,
++        (2 * oh + 1) * W + 2 * ow + 1,
++    };
++    for (int j = (int) threadIdx.x; j < 4 * C; j += (int) blockDim.x) {
++        const int group = j / C;
++        const int channel = j - group * C;
++        merged[j + (int64_t) 4 * C * row] = input[channel + (int64_t) C * positions[group]];
++    }
++}
++
++__global__ void rmbg_image_patches_kernel(
++        const float * image, float * gathered,
++        int image_w, int patch_h, int patch_w, int gh, int gw) {
++    const int G = gh * gw;
++    const int P = patch_h * patch_w;
++    const int64_t total = (int64_t) 3 * G * P;
++    for (int64_t index = (int64_t) blockIdx.x * blockDim.x + threadIdx.x;
++         index < total; index += (int64_t) blockDim.x * gridDim.x) {
++        const int channel = (int) (index % 3);
++        const int grid_pos = (int) ((index / 3) % G);
++        const int patch_pos = (int) (index / ((int64_t) 3 * G));
++        const int hg = grid_pos / gw;
++        const int wg = grid_pos - hg * gw;
++        const int hi = patch_pos / patch_w;
++        const int wi = patch_pos - hi * patch_w;
++        const int source = (hg * patch_h + hi) * image_w + wg * patch_w + wi;
++        gathered[index] = image[source + (int64_t) image_w * patch_h * gh * channel];
++    }
++}
++
++static void rmbg_swin_gemm(ggml_backend_cuda_context & ctx,
++        const float * weight, const float * input, float * output,
++        int out_rows, int cols, int in_rows) {
++    const float alpha = 1.0f, beta = 0.0f;
++    CUBLAS_CHECK(cublasSetStream(ctx.cublas_handle(), ctx.stream()));
++    CUBLAS_CHECK(cublasSgemm(ctx.cublas_handle(), CUBLAS_OP_T, CUBLAS_OP_N,
++        out_rows, cols, in_rows, &alpha, weight, in_rows, input, in_rows,
++        &beta, output, out_rows));
++}
++
++} // namespace
++
++bool ggml_cuda_is_rmbg_deform_im2col(const ggml_tensor * dst) {
++    return dst && dst->op == GGML_OP_CUSTOM &&
++           std::strncmp(ggml_get_name(dst), kOpName, std::strlen(kOpName)) == 0;
++}
++
++void ggml_cuda_op_rmbg_deform_im2col(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
++    const ggml_tensor * input = dst->src[0];
++    const ggml_tensor * offset = dst->src[1];
++    const ggml_tensor * modulator = dst->src[2];
++    GGML_ASSERT(input && offset && modulator);
++    GGML_ASSERT(input->type == GGML_TYPE_F32 && offset->type == GGML_TYPE_F32 &&
++                modulator->type == GGML_TYPE_F32 && dst->type == GGML_TYPE_F32);
++    GGML_ASSERT(ggml_is_contiguous(input) && ggml_is_contiguous(offset) &&
++                ggml_is_contiguous(modulator) && ggml_is_contiguous(dst));
++
++    const int w = (int) input->ne[0];
++    const int h = (int) input->ne[1];
++    const int channels = (int) input->ne[2];
++    const int k_count = (int) modulator->ne[2];
++    const int kw = (int) sqrtf((float) k_count);
++    const int kh = k_count / kw;
++    const int threads = 256;
++    const int channel_tile = threads / k_count;
++    GGML_ASSERT(channel_tile > 0);
++    const int channel_tiles = (channels + channel_tile - 1) / channel_tile;
++    const int64_t blocks = (int64_t) w * h * channel_tiles;
++    const size_t shared_bytes = 3ull * k_count * sizeof(float);
++    GGML_ASSERT(blocks <= INT_MAX);
++    rmbg_deform_im2col_tiled_kernel<<<(int) blocks, threads, shared_bytes, ctx.stream()>>>(
++        (const float *) input->data, (const float *) offset->data,
++        (const float *) modulator->data, (float *) dst->data,
++        w, h, channels, kw, kh, channel_tiles);
++}
++
++bool ggml_cuda_is_rmbg_conv2d(const ggml_tensor * dst) {
++#ifdef GGML_CUDA_RMBG_CUDNN
++    return dst && dst->op == GGML_OP_CUSTOM &&
++           std::strncmp(ggml_get_name(dst), kConvName, std::strlen(kConvName)) == 0;
++#else
++    GGML_UNUSED(dst);
++    return false;
++#endif
++}
++
++void ggml_cuda_op_rmbg_conv2d(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
++#ifdef GGML_CUDA_RMBG_CUDNN
++    rmbg_cudnn_conv2d(ctx, dst);
++#else
++    GGML_UNUSED(ctx);
++    GGML_UNUSED(dst);
++    GGML_ABORT("RMBG cuDNN convolution was not compiled");
++#endif
++}
++
++bool ggml_cuda_is_rmbg_swin_attention(const ggml_tensor * dst) {
++    return dst && dst->op == GGML_OP_CUSTOM &&
++           std::strncmp(ggml_get_name(dst), kSwinAttentionName,
++                        std::strlen(kSwinAttentionName)) == 0;
++}
++
++void ggml_cuda_op_rmbg_swin_attention(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
++    const ggml_tensor * input = dst->src[0];
++    const ggml_tensor * qkv_weight = dst->src[1];
++    const ggml_tensor * qkv_bias = dst->src[2];
++    const ggml_tensor * proj_weight = dst->src[3];
++    const ggml_tensor * proj_bias = dst->src[4];
++    const ggml_tensor * rpb = dst->src[5];
++    GGML_ASSERT(input && qkv_weight && qkv_bias && proj_weight && proj_bias && rpb);
++    GGML_ASSERT(input->type == GGML_TYPE_F32 && qkv_weight->type == GGML_TYPE_F32 &&
++                qkv_bias->type == GGML_TYPE_F32 && proj_weight->type == GGML_TYPE_F32 &&
++                proj_bias->type == GGML_TYPE_F32 && rpb->type == GGML_TYPE_F32 &&
++                dst->type == GGML_TYPE_F32);
++
++    int H = 0, W = 0, shift = 0;
++    GGML_ASSERT(std::sscanf(ggml_get_name(dst), "rmbg_swin_attn_h%d_w%d_sh%d",
++                            &H, &W, &shift) == 3);
++    constexpr int ws = 12;
++    constexpr int N = ws * ws;
++    const int C = (int) input->ne[0];
++    const int heads = C / 32;
++    const int Hp = H + (ws - H % ws) % ws;
++    const int Wp = W + (ws - W % ws) % ws;
++    const int nW = (Hp / ws) * (Wp / ws);
++    const int cols = N * nW;
++    GGML_ASSERT(C % 32 == 0 && input->ne[1] == (int64_t) H * W);
++    GGML_ASSERT(qkv_weight->ne[0] == C && qkv_weight->ne[1] == 3 * C);
++    GGML_ASSERT(proj_weight->ne[0] == C && proj_weight->ne[1] == C);
++    GGML_ASSERT(rpb->ne[0] == N && rpb->ne[1] == N && rpb->ne[2] == heads);
++
++    ggml_cuda_pool_alloc<float> packed(ctx.pool(), (size_t) C * cols);
++    ggml_cuda_pool_alloc<float> qkv(ctx.pool(), (size_t) 3 * C * cols);
++    ggml_cuda_pool_alloc<float> q(ctx.pool(), (size_t) C * cols);
++    ggml_cuda_pool_alloc<float> k(ctx.pool(), (size_t) C * cols);
++    ggml_cuda_pool_alloc<float> v(ctx.pool(), (size_t) C * cols);
++    ggml_cuda_pool_alloc<float> logits(ctx.pool(), (size_t) N * N * heads * nW);
++    ggml_cuda_pool_alloc<float> head_output(ctx.pool(), (size_t) C * cols);
++    ggml_cuda_pool_alloc<float> attended(ctx.pool(), (size_t) C * cols);
++    ggml_cuda_pool_alloc<float> projected(ctx.pool(), (size_t) C * cols);
++    constexpr int threads = 256;
++    const int pack_blocks = (int) std::min<int64_t>(
++        ((int64_t) C * cols + threads - 1) / threads, 65535);
++    rmbg_swin_pack_kernel<<<pack_blocks, threads, 0, ctx.stream()>>>(
++        (const float *) input->data, packed.get(), C, H, W, Hp, Wp, ws, shift, nW);
++
++    rmbg_swin_gemm(ctx, (const float *) qkv_weight->data, packed.get(), qkv.get(),
++                   3 * C, cols, C);
++    const int qkv_blocks = (int) std::min<int64_t>(
++        ((int64_t) C * cols + threads - 1) / threads, 65535);
++    rmbg_swin_qkv_split_kernel<<<qkv_blocks, threads, 0, ctx.stream()>>>(
++        qkv.get(), (const float *) qkv_bias->data, q.get(), k.get(), v.get(),
++        C, N, heads, nW);
++
++    const int batches = nW * heads;
++    const float scale = 1.0f / std::sqrt(32.0f);
++    const float one = 1.0f;
++    const float zero = 0.0f;
++    CUBLAS_CHECK(cublasSetStream(ctx.cublas_handle(), ctx.stream()));
++    CUBLAS_CHECK(cublasSgemmStridedBatched(ctx.cublas_handle(), CUBLAS_OP_T, CUBLAS_OP_N,
++        N, N, 32, &scale, k.get(), 32, (long long) 32 * N,
++        q.get(), 32, (long long) 32 * N, &zero, logits.get(), N,
++        (long long) N * N, batches));
++    rmbg_swin_masked_softmax_kernel<<<batches * N, 32, 0, ctx.stream()>>>(
++        logits.get(), (const float *) rpb->data, N, heads, Hp, Wp, ws, shift);
++    CUBLAS_CHECK(cublasSgemmStridedBatched(ctx.cublas_handle(), CUBLAS_OP_N, CUBLAS_OP_N,
++        32, N, N, &one, v.get(), 32, (long long) 32 * N,
++        logits.get(), N, (long long) N * N, &zero, head_output.get(), 32,
++        (long long) 32 * N, batches));
++    rmbg_swin_merge_heads_kernel<<<qkv_blocks, threads, 0, ctx.stream()>>>(
++        head_output.get(), attended.get(), C, N, heads, nW);
++
++    rmbg_swin_gemm(ctx, (const float *) proj_weight->data, attended.get(), projected.get(),
++                   C, cols, C);
++    const int proj_blocks = (int) std::min<int64_t>(
++        ((int64_t) C * cols + threads - 1) / threads, 65535);
++    rmbg_swin_bias_kernel<<<proj_blocks, threads, 0, ctx.stream()>>>(
++        projected.get(), (const float *) proj_bias->data, C, cols);
++    rmbg_swin_unpack_kernel<<<pack_blocks, threads, 0, ctx.stream()>>>(
++        projected.get(), (float *) dst->data, C, H, W, Hp, Wp, ws, shift);
++}
++
++bool ggml_cuda_is_rmbg_patch_merge(const ggml_tensor * dst) {
++    return dst && dst->op == GGML_OP_CUSTOM &&
++           std::strncmp(ggml_get_name(dst), kPatchMergeName,
++                        std::strlen(kPatchMergeName)) == 0;
++}
++
++void ggml_cuda_op_rmbg_patch_merge(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
++    const ggml_tensor * input = dst->src[0];
++    GGML_ASSERT(input);
++    int H = 0, W = 0;
++    GGML_ASSERT(std::sscanf(ggml_get_name(dst), "rmbg_patch_merge_h%d_w%d", &H, &W) == 2);
++    const int C = (int) input->ne[0];
++    const int rows = (H / 2) * (W / 2);
++    GGML_ASSERT(input->type == GGML_TYPE_F32 && dst->type == GGML_TYPE_F32 &&
++                input->ne[1] == (int64_t) H * W && H % 2 == 0 && W % 2 == 0 &&
++                dst->ne[0] == 4 * C && dst->ne[1] == rows);
++    rmbg_patch_merge_gather_kernel<<<rows, 256, 0, ctx.stream()>>>(
++        (const float *) input->data, (float *) dst->data, C, H, W);
++}
++
++bool ggml_cuda_is_rmbg_image_patches(const ggml_tensor * dst) {
++    return dst && dst->op == GGML_OP_CUSTOM &&
++           std::strncmp(ggml_get_name(dst), kImagePatchesName,
++                        std::strlen(kImagePatchesName)) == 0;
++}
++
++void ggml_cuda_op_rmbg_image_patches(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
++    const ggml_tensor * image = dst->src[0];
++    GGML_ASSERT(image && image->type == GGML_TYPE_F32 && dst->type == GGML_TYPE_F32);
++    int patch_h = 0, patch_w = 0;
++    GGML_ASSERT(std::sscanf(ggml_get_name(dst), "rmbg_image_patches_ph%d_pw%d",
++                            &patch_h, &patch_w) == 2);
++    const int image_w = (int) image->ne[0];
++    const int image_h = (int) image->ne[1];
++    const int gh = image_h / patch_h;
++    const int gw = image_w / patch_w;
++    const int G = gh * gw;
++    const int P = patch_h * patch_w;
++    GGML_ASSERT(image->ne[2] == 3 && image_h % patch_h == 0 && image_w % patch_w == 0 &&
++                dst->ne[0] == 3 && dst->ne[1] == (int64_t) G * P);
++    constexpr int threads = 256;
++    const int blocks = (int) std::min<int64_t>(((int64_t) 3 * G * P + threads - 1) / threads, 65535);
++    rmbg_image_patches_kernel<<<blocks, threads, 0, ctx.stream()>>>(
++        (const float *) image->data, (float *) dst->data,
++        image_w, patch_h, patch_w, gh, gw);
++}
+diff --git a/src/ggml-cuda/rmbg-deform-im2col.cuh b/src/ggml-cuda/rmbg-deform-im2col.cuh
+new file mode 100644
+index 00000000..75c8e2f5
+--- /dev/null
++++ b/src/ggml-cuda/rmbg-deform-im2col.cuh
+@@ -0,0 +1,14 @@
++#pragma once
++
++#include "common.cuh"
++
++bool ggml_cuda_is_rmbg_deform_im2col(const ggml_tensor * dst);
++void ggml_cuda_op_rmbg_deform_im2col(ggml_backend_cuda_context & ctx, ggml_tensor * dst);
++bool ggml_cuda_is_rmbg_conv2d(const ggml_tensor * dst);
++void ggml_cuda_op_rmbg_conv2d(ggml_backend_cuda_context & ctx, ggml_tensor * dst);
++bool ggml_cuda_is_rmbg_swin_attention(const ggml_tensor * dst);
++void ggml_cuda_op_rmbg_swin_attention(ggml_backend_cuda_context & ctx, ggml_tensor * dst);
++bool ggml_cuda_is_rmbg_patch_merge(const ggml_tensor * dst);
++void ggml_cuda_op_rmbg_patch_merge(ggml_backend_cuda_context & ctx, ggml_tensor * dst);
++bool ggml_cuda_is_rmbg_image_patches(const ggml_tensor * dst);
++void ggml_cuda_op_rmbg_image_patches(ggml_backend_cuda_context & ctx, ggml_tensor * dst);
+diff --git a/src/ggml-vulkan/ggml-vulkan.cpp b/src/ggml-vulkan/ggml-vulkan.cpp
+index 49fd6e0b..06300444 100644
+--- a/src/ggml-vulkan/ggml-vulkan.cpp
++++ b/src/ggml-vulkan/ggml-vulkan.cpp
+@@ -865,6 +865,13 @@ struct vk_device_struct {
+     vk_pipeline pipeline_get_rows[GGML_TYPE_COUNT];
+     vk_pipeline pipeline_get_rows_f32[GGML_TYPE_COUNT];
+     vk_pipeline pipeline_get_rows_back_f32;
++    vk_pipeline pipeline_rmbg_gather_f32;
++    vk_pipeline pipeline_rmbg_deform_im2col_f32;
++    vk_pipeline pipeline_rmbg_deform_project_f32;
++    vk_pipeline pipeline_rmbg_deform_project_cm1;
++    vk_pipeline pipeline_rmbg_affine_relu_f32;
++    vk_pipeline pipeline_rmbg_swin_windows_f32;
++    vk_pipeline pipeline_rmbg_swin_qkv_layout_f32;
+     vk_pipeline pipeline_acc_f32;
+     vk_pipeline pipeline_set_f32;
+ 
+@@ -1614,6 +1621,74 @@ struct vk_op_im2col_push_constants {
+     uint32_t batch_IC;
+ };
+ 
++struct vk_op_rmbg_gather_push_constants {
++    uint32_t a_offset;
++    uint32_t d_offset;
++    uint32_t channels;
++    uint32_t height;
++    uint32_t width;
++    uint32_t patch_h;
++    uint32_t patch_w;
++    uint32_t kind;
++};
++
++struct vk_op_rmbg_deform_im2col_push_constants {
++    uint32_t a_offset;
++    uint32_t b_offset;
++    uint32_t c_offset;
++    uint32_t d_offset;
++    uint32_t width;
++    uint32_t height;
++    uint32_t channels;
++    uint32_t kernel_w;
++    uint32_t kernel_h;
++};
++
++struct vk_op_rmbg_deform_project_push_constants {
++    uint32_t a_offset;
++    uint32_t b_offset;
++    uint32_t c_offset;
++    uint32_t r_offset;
++    uint32_t bias_offset;
++    uint32_t d_offset;
++    uint32_t width;
++    uint32_t height;
++    uint32_t channels;
++    uint32_t out_channels;
++    uint32_t kernel_w;
++    uint32_t kernel_h;
++};
++
++struct vk_op_rmbg_affine_relu_push_constants {
++    uint32_t a_offset;
++    uint32_t b_offset;
++    uint32_t c_offset;
++    uint32_t d_offset;
++    uint32_t width;
++    uint32_t height;
++    uint32_t channels;
++};
++
++struct vk_op_rmbg_swin_windows_push_constants {
++    uint32_t a_offset;
++    uint32_t d_offset;
++    uint32_t channels;
++    uint32_t height;
++    uint32_t width;
++    uint32_t shift;
++    uint32_t kind;
++};
++
++struct vk_op_rmbg_swin_qkv_layout_push_constants {
++    uint32_t a_offset;
++    uint32_t b_offset;
++    uint32_t d_offset;
++    uint32_t tokens;
++    uint32_t heads;
++    uint32_t windows;
++    uint32_t kind;
++};
++
+ struct vk_op_im2col_3d_push_constants {
+     uint64_t dst_addr;
+     uint32_t nb10;
+@@ -3627,7 +3702,11 @@ static vk_fa_tuning_params get_fa_tuning_params_coopmat2(const vk_device& device
+ }
+ 
+ static vk_fa_tuning_params get_fa_tuning_params(const vk_device& device, uint32_t hsk, uint32_t hsv, uint32_t n_rows, uint32_t n_kv, ggml_type k_type, ggml_type v_type, bool f32acc) {
+-    FaCodePath path = device->coopmat2 ? FA_COOPMAT2 :
++    // The cooperative-matrix modules use F16/BF16 multiplicands.  F32 K/V is
++    // still useful for accuracy-sensitive attention, but must run through the
++    // scalar module whose packed-F32 decode path preserves those inputs.
++    FaCodePath path = (k_type == GGML_TYPE_F32 || v_type == GGML_TYPE_F32) ? FA_SCALAR :
++                      device->coopmat2 ? FA_COOPMAT2 :
+                       device->coopmat1_fa_support ? FA_COOPMAT1 : FA_SCALAR;
+ 
+     if (path == FA_COOPMAT2 && k_type == GGML_TYPE_BF16 && !device->coopmat2_bf16_support) {
+@@ -4272,7 +4351,10 @@ static void ggml_vk_load_shaders(vk_device& device, vk_pipeline requested) {
+ #endif
+             name = aligned ? "flash_attn_f32_f16_aligned" : "flash_attn_f32_f16";
+         } else {
+-            if (device->fp16) {
++            if (fa.first.k_type == GGML_TYPE_F32 || fa.first.v_type == GGML_TYPE_F32) {
++                spv_data = flash_attn_f32_f16_fp32_data;
++                spv_size = flash_attn_f32_f16_fp32_len;
++            } else if (device->fp16) {
+                 if (device->dot2_f16) {
+                     if (f32acc) { spv_data = flash_attn_f32_f16_dot2_data;        spv_size = flash_attn_f32_f16_dot2_len; }
+                     else        { spv_data = flash_attn_f32_f16_dot2_f16acc_data; spv_size = flash_attn_f32_f16_dot2_f16acc_len; }
+@@ -5228,6 +5310,21 @@ static void ggml_vk_load_shaders(vk_device& device, vk_pipeline requested) {
+     ggml_vk_create_pipeline(device, device->pipeline_get_rows_f32[GGML_TYPE_MXFP4],   "get_rows_mxfp4_f32",   get_rows_mxfp4_f32_len,   get_rows_mxfp4_f32_data,   "main", 3, sizeof(vk_op_binary_push_constants), {1024, 1, 1}, {}, 1);
+     ggml_vk_create_pipeline(device, device->pipeline_get_rows_f32[GGML_TYPE_NVFP4],   "get_rows_nvfp4_f32",   get_rows_nvfp4_f32_len,   get_rows_nvfp4_f32_data,   "main", 3, sizeof(vk_op_binary_push_constants), {1024, 1, 1}, {}, 1);
+     ggml_vk_create_pipeline(device, device->pipeline_get_rows_back_f32, "get_rows_back_f32", get_rows_back_f32_len, get_rows_back_f32_data, "main", 3, sizeof(vk_op_binary_push_constants), {256, 1, 1}, {}, 1, true);
++    ggml_vk_create_pipeline(device, device->pipeline_rmbg_gather_f32, "rmbg_gather_f32", rmbg_gather_f32_len, rmbg_gather_f32_data, "main", 2, sizeof(vk_op_rmbg_gather_push_constants), {256, 1, 1}, {}, 1);
++    ggml_vk_create_pipeline(device, device->pipeline_rmbg_deform_im2col_f32, "rmbg_deform_im2col_f32", rmbg_deform_im2col_f32_len, rmbg_deform_im2col_f32_data, "main", 4, sizeof(vk_op_rmbg_deform_im2col_push_constants), {256, 1, 1}, {}, 1);
++    ggml_vk_create_pipeline(device, device->pipeline_rmbg_deform_project_f32, "rmbg_deform_project_f32", rmbg_deform_project_f32_len, rmbg_deform_project_f32_data, "main", 6, sizeof(vk_op_rmbg_deform_project_push_constants), {64, 1, 1}, {}, 1);
++#if defined(VK_KHR_cooperative_matrix) && defined(GGML_VULKAN_COOPMAT_GLSLC_SUPPORT)
++    if (device->coopmat_support_16x16x16_f32acc && device->subgroup_require_full_support) {
++        ggml_vk_create_pipeline(device, device->pipeline_rmbg_deform_project_cm1,
++            "rmbg_deform_project_cm1", rmbg_deform_project_cm1_len,
++            rmbg_deform_project_cm1_data, "main", 6,
++            sizeof(vk_op_rmbg_deform_project_push_constants), {256, 1, 1},
++            {device->subgroup_size}, 1, true, true, device->subgroup_size);
++    }
++#endif
++    ggml_vk_create_pipeline(device, device->pipeline_rmbg_affine_relu_f32, "rmbg_affine_relu_f32", rmbg_affine_relu_f32_len, rmbg_affine_relu_f32_data, "main", 4, sizeof(vk_op_rmbg_affine_relu_push_constants), {256, 1, 1}, {}, 1);
++    ggml_vk_create_pipeline(device, device->pipeline_rmbg_swin_windows_f32, "rmbg_swin_windows_f32", rmbg_swin_windows_f32_len, rmbg_swin_windows_f32_data, "main", 2, sizeof(vk_op_rmbg_swin_windows_push_constants), {256, 1, 1}, {}, 1);
++    ggml_vk_create_pipeline(device, device->pipeline_rmbg_swin_qkv_layout_f32, "rmbg_swin_qkv_layout_f32", rmbg_swin_qkv_layout_f32_len, rmbg_swin_qkv_layout_f32_data, "main", 3, sizeof(vk_op_rmbg_swin_qkv_layout_push_constants), {256, 1, 1}, {}, 1);
+ 
+     ggml_vk_create_pipeline(device, device->pipeline_matmul_split_k_reduce, "split_k_reduce", split_k_reduce_len, split_k_reduce_data, "main", 2, 2 * sizeof(uint32_t), {256 * 4, 1, 1}, {}, 1);
+     ggml_vk_create_pipeline(device, device->pipeline_flash_attn_split_k_reduce, "fa_split_k_reduce", fa_split_k_reduce_len, fa_split_k_reduce_data, "main", 3, sizeof(vk_op_flash_attn_split_k_reduce_push_constants), {1, device->subgroup_size, 1}, {device->subgroup_size}, 1, true);
+@@ -12023,6 +12120,254 @@ static void ggml_vk_get_rows_back(ggml_backend_vk_context * ctx, vk_context& sub
+     });
+ }
+ 
++static bool ggml_vk_is_rmbg_patch_merge(const ggml_tensor * dst) {
++    return dst && dst->op == GGML_OP_CUSTOM &&
++           std::strncmp(ggml_get_name(dst), "rmbg_patch_merge_", 17) == 0;
++}
++
++static bool ggml_vk_is_rmbg_image_patches(const ggml_tensor * dst) {
++    return dst && dst->op == GGML_OP_CUSTOM &&
++           std::strncmp(ggml_get_name(dst), "rmbg_image_patches_", 19) == 0;
++}
++
++static bool ggml_vk_is_rmbg_deform_im2col(const ggml_tensor * dst) {
++    return dst && dst->op == GGML_OP_CUSTOM &&
++           std::strcmp(ggml_get_name(dst), "rmbg_deform_im2col") == 0;
++}
++
++static bool ggml_vk_is_rmbg_deform_project(const ggml_tensor * dst) {
++    return dst && dst->op == GGML_OP_CUSTOM &&
++           std::strcmp(ggml_get_name(dst), "rmbg_deform_project") == 0;
++}
++
++static bool ggml_vk_is_rmbg_deform_project_cm1(const ggml_tensor * dst) {
++    return dst && dst->op == GGML_OP_CUSTOM &&
++           std::strcmp(ggml_get_name(dst), "rmbg_deform_project_cm1") == 0;
++}
++
++static bool ggml_vk_is_rmbg_affine_relu(const ggml_tensor * dst) {
++    return dst && dst->op == GGML_OP_CUSTOM &&
++           std::strcmp(ggml_get_name(dst), "rmbg_affine_relu") == 0;
++}
++
++static bool ggml_vk_is_rmbg_swin_window_pack(const ggml_tensor * dst) {
++    return dst && dst->op == GGML_OP_CUSTOM &&
++           std::strncmp(ggml_get_name(dst), "rmbg_swin_pack_", 15) == 0;
++}
++
++static bool ggml_vk_is_rmbg_swin_window_unpack(const ggml_tensor * dst) {
++    return dst && dst->op == GGML_OP_CUSTOM &&
++           std::strncmp(ggml_get_name(dst), "rmbg_swin_unpack_", 17) == 0;
++}
++
++static bool ggml_vk_is_rmbg_swin_qkv_layout(const ggml_tensor * dst) {
++    return dst && dst->op == GGML_OP_CUSTOM &&
++           std::strncmp(ggml_get_name(dst), "rmbg_swin_qkv_layout_k", 22) == 0;
++}
++
++static void ggml_vk_rmbg_gather(ggml_backend_vk_context * ctx, vk_context& subctx,
++                                 const ggml_tensor * src0, ggml_tensor * dst) {
++    GGML_ASSERT(src0 && src0->type == GGML_TYPE_F32 && dst->type == GGML_TYPE_F32);
++    GGML_ASSERT(ggml_is_contiguous(src0) && ggml_is_contiguous(dst));
++
++    int height = 0;
++    int width = 0;
++    int patch_h = 0;
++    int patch_w = 0;
++    const bool patch_merge = ggml_vk_is_rmbg_patch_merge(dst);
++    const bool image_patches = ggml_vk_is_rmbg_image_patches(dst);
++    GGML_ASSERT(patch_merge || image_patches);
++    if (patch_merge) {
++        GGML_ASSERT(std::sscanf(ggml_get_name(dst), "rmbg_patch_merge_h%d_w%d", &height, &width) == 2);
++    } else {
++        GGML_ASSERT(std::sscanf(ggml_get_name(dst), "rmbg_image_patches_ph%d_pw%d", &patch_h, &patch_w) == 2);
++        height = (int) src0->ne[1];
++        width = (int) src0->ne[0];
++    }
++    GGML_ASSERT(height > 0 && width > 0 && (patch_merge || (patch_h > 0 && patch_w > 0)));
++
++    ggml_pipeline_request_descriptor_sets(ctx, ctx->device->pipeline_rmbg_gather_f32, 1);
++    const vk_subbuffer src0_buf = ggml_vk_tensor_subbuffer(ctx, src0, true);
++    const vk_subbuffer dst_buf = ggml_vk_tensor_subbuffer(ctx, dst, true);
++    const vk_op_rmbg_gather_push_constants pc {
++        (uint32_t) (get_misalign_bytes(ctx, src0) / sizeof(float)),
++        (uint32_t) (get_misalign_bytes(ctx, dst) / sizeof(float)),
++        (uint32_t) (patch_merge ? src0->ne[0] : src0->ne[2]),
++        (uint32_t) height, (uint32_t) width,
++        (uint32_t) patch_h, (uint32_t) patch_w, patch_merge ? 0u : 1u,
++    };
++    ggml_vk_dispatch_pipeline(ctx, subctx, ctx->device->pipeline_rmbg_gather_f32,
++                              {src0_buf, dst_buf}, pc,
++                              {(uint32_t) ggml_nelements(dst), 1, 1});
++}
++
++static void ggml_vk_rmbg_deform_im2col(ggml_backend_vk_context * ctx, vk_context& subctx,
++                                         const ggml_tensor * input, const ggml_tensor * offset,
++                                         const ggml_tensor * modulator, ggml_tensor * dst) {
++    GGML_ASSERT(input && offset && modulator && input->type == GGML_TYPE_F32 &&
++                offset->type == GGML_TYPE_F32 && modulator->type == GGML_TYPE_F32 &&
++                dst->type == GGML_TYPE_F32);
++    GGML_ASSERT(ggml_is_contiguous(input) && ggml_is_contiguous(offset) &&
++                ggml_is_contiguous(modulator) && ggml_is_contiguous(dst));
++    const uint32_t width = input->ne[0];
++    const uint32_t height = input->ne[1];
++    const uint32_t channels = input->ne[2];
++    const uint32_t kernel = modulator->ne[2];
++    const uint32_t kernel_w = (uint32_t) std::sqrt((double) kernel);
++    GGML_ASSERT(width && height && channels && kernel_w && kernel % kernel_w == 0);
++    GGML_ASSERT(offset->ne[0] == input->ne[0] && offset->ne[1] == input->ne[1] &&
++                offset->ne[2] == 2 * kernel && modulator->ne[0] == input->ne[0] &&
++                modulator->ne[1] == input->ne[1] && dst->ne[0] == channels * kernel &&
++                dst->ne[1] == width * height);
++
++    ggml_pipeline_request_descriptor_sets(ctx, ctx->device->pipeline_rmbg_deform_im2col_f32, 1);
++    const vk_op_rmbg_deform_im2col_push_constants pc {
++        (uint32_t) (get_misalign_bytes(ctx, input) / sizeof(float)),
++        (uint32_t) (get_misalign_bytes(ctx, offset) / sizeof(float)),
++        (uint32_t) (get_misalign_bytes(ctx, modulator) / sizeof(float)),
++        (uint32_t) (get_misalign_bytes(ctx, dst) / sizeof(float)),
++        width, height, channels, kernel_w, kernel / kernel_w,
++    };
++    ggml_vk_dispatch_pipeline(ctx, subctx, ctx->device->pipeline_rmbg_deform_im2col_f32,
++                              {ggml_vk_tensor_subbuffer(ctx, input, true),
++                               ggml_vk_tensor_subbuffer(ctx, offset, true),
++                               ggml_vk_tensor_subbuffer(ctx, modulator, true),
++                               ggml_vk_tensor_subbuffer(ctx, dst, true)},
++                              pc, {(uint32_t) ggml_nelements(dst), 1, 1});
++}
++
++static void ggml_vk_rmbg_deform_project(ggml_backend_vk_context * ctx, vk_context& subctx,
++                                          const ggml_tensor * input, const ggml_tensor * offset,
++                                          const ggml_tensor * modulator, const ggml_tensor * regular,
++                                          const ggml_tensor * bias, ggml_tensor * dst) {
++    GGML_ASSERT(input && offset && modulator && regular && bias &&
++                input->type == GGML_TYPE_F32 && offset->type == GGML_TYPE_F32 &&
++                modulator->type == GGML_TYPE_F32 && regular->type == GGML_TYPE_F16 &&
++                bias->type == GGML_TYPE_F32 && dst->type == GGML_TYPE_F32 &&
++                ggml_is_contiguous(input) && ggml_is_contiguous(offset) &&
++                ggml_is_contiguous(modulator) && ggml_is_contiguous(regular) &&
++                ggml_is_contiguous(bias) && ggml_is_contiguous(dst));
++    const uint32_t width = input->ne[0], height = input->ne[1], channels = input->ne[2];
++    const uint32_t kernel_w = regular->ne[0], kernel_h = regular->ne[1];
++    const uint32_t kernel = kernel_w * kernel_h, out_channels = regular->ne[3];
++    GGML_ASSERT(width && height && channels && kernel && kernel <= 9 &&
++                regular->ne[2] == channels && offset->ne[0] == width && offset->ne[1] == height &&
++                offset->ne[2] == 2 * kernel && modulator->ne[0] == width &&
++                modulator->ne[1] == height && modulator->ne[2] == kernel &&
++                dst->ne[0] == width && dst->ne[1] == height && dst->ne[2] == out_channels &&
++                bias->ne[0] == out_channels);
++
++    const bool coopmat = ggml_vk_is_rmbg_deform_project_cm1(dst);
++    vk_pipeline & pipeline = coopmat
++        ? ctx->device->pipeline_rmbg_deform_project_cm1
++        : ctx->device->pipeline_rmbg_deform_project_f32;
++    GGML_ASSERT(pipeline);
++    ggml_pipeline_request_descriptor_sets(ctx, pipeline, 1);
++    const vk_op_rmbg_deform_project_push_constants pc {
++        (uint32_t) (get_misalign_bytes(ctx, input) / sizeof(float)),
++        (uint32_t) (get_misalign_bytes(ctx, offset) / sizeof(float)),
++        (uint32_t) (get_misalign_bytes(ctx, modulator) / sizeof(float)),
++        (uint32_t) (get_misalign_bytes(ctx, regular) / sizeof(uint16_t)),
++        (uint32_t) (get_misalign_bytes(ctx, bias) / sizeof(float)),
++        (uint32_t) (get_misalign_bytes(ctx, dst) / sizeof(float)),
++        width, height, channels, out_channels, kernel_w, kernel_h,
++    };
++    ggml_vk_dispatch_pipeline(ctx, subctx, pipeline,
++                              {ggml_vk_tensor_subbuffer(ctx, input, true),
++                               ggml_vk_tensor_subbuffer(ctx, offset, true),
++                               ggml_vk_tensor_subbuffer(ctx, modulator, true),
++                               ggml_vk_tensor_subbuffer(ctx, regular, true),
++                               ggml_vk_tensor_subbuffer(ctx, bias, true),
++                               ggml_vk_tensor_subbuffer(ctx, dst, true)},
++                              // Each 256-thread CM1 workgroup produces a 16-position by
++                              // 128-channel tile (eight subgroups). dispatch_pipeline
++                              // converts elements to groups through wg_denoms.
++                              pc, coopmat ? std::array<uint32_t, 3>{width * height * 16u,
++                                      out_channels / 128u, 1u}
++                                  : std::array<uint32_t, 3>{width * height * 64u, 1u, 1u});
++}
++
++static void ggml_vk_rmbg_affine_relu(ggml_backend_vk_context * ctx, vk_context& subctx,
++                                      const ggml_tensor * input, const ggml_tensor * scale,
++                                      const ggml_tensor * shift, ggml_tensor * dst) {
++    GGML_ASSERT(input && scale && shift && input->type == GGML_TYPE_F32 &&
++                scale->type == GGML_TYPE_F32 && shift->type == GGML_TYPE_F32 &&
++                dst->type == GGML_TYPE_F32 && ggml_is_contiguous(input) &&
++                ggml_is_contiguous(scale) && ggml_is_contiguous(shift) && ggml_is_contiguous(dst));
++    GGML_ASSERT(input->ne[3] == 1 && dst->ne[0] == input->ne[0] && dst->ne[1] == input->ne[1] &&
++                dst->ne[2] == input->ne[2] && dst->ne[3] == 1 && scale->ne[2] == input->ne[2] &&
++                shift->ne[2] == input->ne[2]);
++    ggml_pipeline_request_descriptor_sets(ctx, ctx->device->pipeline_rmbg_affine_relu_f32, 1);
++    const vk_op_rmbg_affine_relu_push_constants pc {
++        (uint32_t) (get_misalign_bytes(ctx, input) / sizeof(float)),
++        (uint32_t) (get_misalign_bytes(ctx, scale) / sizeof(float)),
++        (uint32_t) (get_misalign_bytes(ctx, shift) / sizeof(float)),
++        (uint32_t) (get_misalign_bytes(ctx, dst) / sizeof(float)),
++        (uint32_t) input->ne[0], (uint32_t) input->ne[1], (uint32_t) input->ne[2],
++    };
++    ggml_vk_dispatch_pipeline(ctx, subctx, ctx->device->pipeline_rmbg_affine_relu_f32,
++                              {ggml_vk_tensor_subbuffer(ctx, input, true),
++                               ggml_vk_tensor_subbuffer(ctx, scale, true),
++                               ggml_vk_tensor_subbuffer(ctx, shift, true),
++                               ggml_vk_tensor_subbuffer(ctx, dst, true)},
++                              pc, {(uint32_t) ggml_nelements(dst), 1, 1});
++}
++
++static void ggml_vk_rmbg_swin_windows(ggml_backend_vk_context * ctx, vk_context& subctx,
++                                        const ggml_tensor * src0, ggml_tensor * dst) {
++    GGML_ASSERT(src0 && src0->type == GGML_TYPE_F32 && dst->type == GGML_TYPE_F32 &&
++                ggml_is_contiguous(src0) && ggml_is_contiguous(dst));
++    int height = 0;
++    int width = 0;
++    int shift = 0;
++    const bool pack = ggml_vk_is_rmbg_swin_window_pack(dst);
++    const bool unpack = ggml_vk_is_rmbg_swin_window_unpack(dst);
++    GGML_ASSERT(pack || unpack);
++    const char * pattern = pack ? "rmbg_swin_pack_h%d_w%d_sh%d" : "rmbg_swin_unpack_h%d_w%d_sh%d";
++    GGML_ASSERT(std::sscanf(ggml_get_name(dst), pattern, &height, &width, &shift) == 3);
++    GGML_ASSERT(height > 0 && width > 0 && (shift == 0 || shift == 6));
++    const uint32_t channels = pack ? src0->ne[0] : dst->ne[0];
++    GGML_ASSERT(channels && src0->ne[0] == channels && dst->ne[0] == channels);
++
++    ggml_pipeline_request_descriptor_sets(ctx, ctx->device->pipeline_rmbg_swin_windows_f32, 1);
++    const vk_op_rmbg_swin_windows_push_constants pc {
++        (uint32_t) (get_misalign_bytes(ctx, src0) / sizeof(float)),
++        (uint32_t) (get_misalign_bytes(ctx, dst) / sizeof(float)),
++        channels, (uint32_t) height, (uint32_t) width, (uint32_t) shift, pack ? 0u : 1u,
++    };
++    ggml_vk_dispatch_pipeline(ctx, subctx, ctx->device->pipeline_rmbg_swin_windows_f32,
++                              {ggml_vk_tensor_subbuffer(ctx, src0, true),
++                               ggml_vk_tensor_subbuffer(ctx, dst, true)},
++                              pc, {(uint32_t) ggml_nelements(dst), 1, 1});
++}
++
++static void ggml_vk_rmbg_swin_qkv_layout(ggml_backend_vk_context * ctx, vk_context& subctx,
++                                           const ggml_tensor * qkv, const ggml_tensor * bias,
++                                           ggml_tensor * dst) {
++    GGML_ASSERT(qkv && bias && qkv->type == GGML_TYPE_F32 && bias->type == GGML_TYPE_F32 &&
++                dst->type == GGML_TYPE_F32 && ggml_is_contiguous(qkv) &&
++                ggml_is_contiguous(bias) && ggml_is_contiguous(dst));
++    int kind = -1;
++    GGML_ASSERT(std::sscanf(ggml_get_name(dst), "rmbg_swin_qkv_layout_k%d", &kind) == 1 &&
++                kind >= 0 && kind < 3);
++    GGML_ASSERT(dst->ne[0] == 32 && qkv->ne[0] == 3 * dst->ne[0] * dst->ne[2] &&
++                qkv->ne[1] == dst->ne[1] && qkv->ne[2] == dst->ne[3] &&
++                bias->ne[0] == qkv->ne[0]);
++
++    ggml_pipeline_request_descriptor_sets(ctx, ctx->device->pipeline_rmbg_swin_qkv_layout_f32, 1);
++    const vk_op_rmbg_swin_qkv_layout_push_constants pc {
++        (uint32_t) (get_misalign_bytes(ctx, qkv) / sizeof(float)),
++        (uint32_t) (get_misalign_bytes(ctx, bias) / sizeof(float)),
++        (uint32_t) (get_misalign_bytes(ctx, dst) / sizeof(float)),
++        (uint32_t) dst->ne[1], (uint32_t) dst->ne[2], (uint32_t) dst->ne[3], (uint32_t) kind,
++    };
++    ggml_vk_dispatch_pipeline(ctx, subctx, ctx->device->pipeline_rmbg_swin_qkv_layout_f32,
++                              {ggml_vk_tensor_subbuffer(ctx, qkv, true),
++                               ggml_vk_tensor_subbuffer(ctx, bias, true),
++                               ggml_vk_tensor_subbuffer(ctx, dst, true)},
++                              pc, {(uint32_t) ggml_nelements(dst), 1, 1});
++}
++
+ static void ggml_vk_acc(ggml_backend_vk_context * ctx, vk_context& subctx, const ggml_tensor * src0, const ggml_tensor * src1, ggml_tensor * dst) {
+     const uint32_t src0_type_size = ggml_type_size(src0->type);
+     const uint32_t src1_type_size = ggml_type_size(src1->type);
+@@ -14962,6 +15307,24 @@ static bool ggml_vk_build_graph(ggml_backend_vk_context * ctx, ggml_cgraph * cgr
+     case GGML_OP_GET_ROWS_BACK:
+         ggml_vk_get_rows_back(ctx, compute_ctx, src0, src1, node);
+ 
++        break;
++    case GGML_OP_CUSTOM:
++        if (ggml_vk_is_rmbg_deform_im2col(node)) {
++            ggml_vk_rmbg_deform_im2col(ctx, compute_ctx, src0, src1, src2, node);
++        } else if (ggml_vk_is_rmbg_deform_project(node) ||
++                   ggml_vk_is_rmbg_deform_project_cm1(node)) {
++            ggml_vk_rmbg_deform_project(ctx, compute_ctx, src0, src1, src2, src3, node->src[4], node);
++        } else if (ggml_vk_is_rmbg_affine_relu(node)) {
++            ggml_vk_rmbg_affine_relu(ctx, compute_ctx, src0, src1, src2, node);
++        } else if (ggml_vk_is_rmbg_swin_window_pack(node) ||
++                   ggml_vk_is_rmbg_swin_window_unpack(node)) {
++            ggml_vk_rmbg_swin_windows(ctx, compute_ctx, src0, node);
++        } else if (ggml_vk_is_rmbg_swin_qkv_layout(node)) {
++            ggml_vk_rmbg_swin_qkv_layout(ctx, compute_ctx, src0, src1, node);
++        } else {
++            ggml_vk_rmbg_gather(ctx, compute_ctx, src0, node);
++        }
++
+         break;
+     case GGML_OP_ADD:
+         if (ctx->num_additional_fused_ops) {
+@@ -17497,6 +17860,66 @@ static bool ggml_backend_vk_device_supports_op(ggml_backend_dev_t dev, const ggm
+     }
+ 
+     switch (op->op) {
++        case GGML_OP_CUSTOM:
++            if (!(ggml_vk_is_rmbg_patch_merge(op) || ggml_vk_is_rmbg_image_patches(op) ||
++                  ggml_vk_is_rmbg_deform_im2col(op) || ggml_vk_is_rmbg_swin_window_pack(op) ||
++                  ggml_vk_is_rmbg_swin_window_unpack(op) || ggml_vk_is_rmbg_swin_qkv_layout(op) ||
++                  ggml_vk_is_rmbg_deform_project(op) || ggml_vk_is_rmbg_deform_project_cm1(op) ||
++                  ggml_vk_is_rmbg_affine_relu(op))) {
++                return false;
++            }
++            if (!op->src[0] || op->src[0]->type != GGML_TYPE_F32 || op->type != GGML_TYPE_F32 ||
++                !ggml_is_contiguous(op->src[0]) || !ggml_is_contiguous(op)) {
++                return false;
++            }
++            if (ggml_vk_is_rmbg_deform_im2col(op)) {
++                return op->src[1] && op->src[2] && op->src[1]->type == GGML_TYPE_F32 &&
++                    op->src[2]->type == GGML_TYPE_F32 && ggml_is_contiguous(op->src[1]) &&
++                    ggml_is_contiguous(op->src[2]);
++            }
++            if (ggml_vk_is_rmbg_deform_project(op) || ggml_vk_is_rmbg_deform_project_cm1(op)) {
++                const bool valid = op->src[1] && op->src[2] && op->src[3] && op->src[4] &&
++                    op->src[1]->type == GGML_TYPE_F32 && op->src[2]->type == GGML_TYPE_F32 &&
++                    op->src[3]->type == GGML_TYPE_F16 && op->src[4]->type == GGML_TYPE_F32 &&
++                    ggml_is_contiguous(op->src[1]) && ggml_is_contiguous(op->src[2]) &&
++                    ggml_is_contiguous(op->src[3]) && ggml_is_contiguous(op->src[4]) &&
++                    op->src[3]->ne[0] * op->src[3]->ne[1] <= 9 &&
++                    op->src[3]->ne[2] == op->src[0]->ne[2] &&
++                    op->ne[0] == op->src[0]->ne[0] && op->ne[1] == op->src[0]->ne[1] &&
++                    op->ne[2] == op->src[3]->ne[3] && op->src[4]->ne[0] == op->ne[2];
++                if (!valid || !ggml_vk_is_rmbg_deform_project_cm1(op)) return valid;
++                const uint64_t k = op->src[3]->ne[0] * op->src[3]->ne[1] * op->src[3]->ne[2];
++                const uint64_t hw = op->ne[0] * op->ne[1];
++                const bool eligible = device->pipeline_rmbg_deform_project_cm1 &&
++                    op->src[3]->ne[0] == 3 && op->src[3]->ne[1] == 3 &&
++                    (k % 16) == 0 && (hw % 16) == 0 && (op->ne[2] % 128) == 0;
++                return eligible;
++            }
++            if (ggml_vk_is_rmbg_affine_relu(op)) {
++                return op->src[1] && op->src[2] && op->src[1]->type == GGML_TYPE_F32 &&
++                    op->src[2]->type == GGML_TYPE_F32 && ggml_is_contiguous(op->src[1]) &&
++                    ggml_is_contiguous(op->src[2]) && op->ne[3] == 1 && op->src[0]->ne[3] == 1 &&
++                    op->ne[0] == op->src[0]->ne[0] && op->ne[1] == op->src[0]->ne[1] &&
++                    op->ne[2] == op->src[0]->ne[2] && op->src[1]->ne[2] == op->ne[2] &&
++                    op->src[2]->ne[2] == op->ne[2];
++            }
++            if (ggml_vk_is_rmbg_swin_window_pack(op)) {
++                return op->ne[0] == op->src[0]->ne[0] && op->ne[1] == 144;
++            }
++            if (ggml_vk_is_rmbg_swin_window_unpack(op)) {
++                return op->ne[0] == op->src[0]->ne[0] && op->src[0]->ne[1] == 144;
++            }
++            if (ggml_vk_is_rmbg_swin_qkv_layout(op)) {
++                return op->src[1] && op->src[1]->type == GGML_TYPE_F32 &&
++                    ggml_is_contiguous(op->src[1]) && op->ne[0] == 32 &&
++                    op->src[0]->ne[0] == 3 * op->ne[0] * op->ne[2] &&
++                    op->src[0]->ne[1] == op->ne[1] && op->src[0]->ne[2] == op->ne[3] &&
++                    op->src[1]->ne[0] == op->src[0]->ne[0];
++            }
++            if (ggml_vk_is_rmbg_patch_merge(op)) {
++                return op->ne[0] == 4 * op->src[0]->ne[0];
++            }
++            return op->src[0]->ne[2] == 3 && op->ne[0] == 3;
+         case GGML_OP_UNARY:
+             switch (ggml_get_unary_op(op)) {
+                 case GGML_UNARY_OP_EXP:
+diff --git a/src/ggml-vulkan/vulkan-shaders/rmbg_affine_relu.comp b/src/ggml-vulkan/vulkan-shaders/rmbg_affine_relu.comp
+new file mode 100644
+index 00000000..4b1959c7
+--- /dev/null
++++ b/src/ggml-vulkan/vulkan-shaders/rmbg_affine_relu.comp
+@@ -0,0 +1,28 @@
++#version 450
++
++// Fused BatchNorm affine transform and ReLU for decoder feature maps.
++layout (push_constant) uniform parameter {
++    uint a_offset;
++    uint b_offset;
++    uint c_offset;
++    uint d_offset;
++    uint width;
++    uint height;
++    uint channels;
++} p;
++
++layout (binding = 0) readonly buffer A { float data_a[]; };
++layout (binding = 1) readonly buffer B { float data_b[]; };
++layout (binding = 2) readonly buffer C { float data_c[]; };
++layout (binding = 3) writeonly buffer D { float data_d[]; };
++
++layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
++
++void main() {
++    const uint idx = gl_GlobalInvocationID.x;
++    const uint total = p.width * p.height * p.channels;
++    if (idx >= total) return;
++    const uint channel = idx / (p.width * p.height);
++    data_d[p.d_offset + idx] = max(0.0, data_a[p.a_offset + idx] * data_b[p.b_offset + channel] +
++                                         data_c[p.c_offset + channel]);
++}
+diff --git a/src/ggml-vulkan/vulkan-shaders/rmbg_deform_im2col.comp b/src/ggml-vulkan/vulkan-shaders/rmbg_deform_im2col.comp
+new file mode 100644
+index 00000000..7c44b068
+--- /dev/null
++++ b/src/ggml-vulkan/vulkan-shaders/rmbg_deform_im2col.comp
+@@ -0,0 +1,59 @@
++#version 450
++
++// RMBG deformable sampling is indexed independently for every output element.
++// Materializing it with generic graph nodes creates a C*K by H*W tensor through
++// many layout and gather operations. This computes the identical bilinear sample
++// directly into that tensor, retaining F32 arithmetic for the parity path.
++layout (push_constant) uniform parameter {
++    uint a_offset;
++    uint b_offset;
++    uint c_offset;
++    uint d_offset;
++    uint width;
++    uint height;
++    uint channels;
++    uint kernel_w;
++    uint kernel_h;
++} p;
++
++layout (binding = 0) readonly buffer A { float data_a[]; };
++layout (binding = 1) readonly buffer B { float data_b[]; };
++layout (binding = 2) readonly buffer C { float data_c[]; };
++layout (binding = 3) writeonly buffer D { float data_d[]; };
++
++layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
++
++float sample_input(const int y, const int x, const uint channel) {
++    if (y < 0 || y >= int(p.height) || x < 0 || x >= int(p.width)) return 0.0;
++    const uint hw = p.height * p.width;
++    return data_a[p.a_offset + uint(x) + p.width * uint(y) + hw * channel];
++}
++
++void main() {
++    const uint idx = gl_GlobalInvocationID.x;
++    const uint hw = p.height * p.width;
++    const uint kernel = p.kernel_h * p.kernel_w;
++    const uint total = hw * p.channels * kernel;
++    if (idx >= total) return;
++
++    const uint kc = idx % (p.channels * kernel);
++    const uint pos = idx / (p.channels * kernel);
++    const uint k = kc % kernel;
++    const uint channel = kc / kernel;
++    const uint y_base = pos / p.width;
++    const uint x_base = pos - y_base * p.width;
++    const float y = float(y_base) + float(k / p.kernel_w) - float(p.kernel_h / 2u) +
++        data_b[p.b_offset + pos + hw * (2u * k)];
++    const float x = float(x_base) + float(k % p.kernel_w) - float(p.kernel_w / 2u) +
++        data_b[p.b_offset + pos + hw * (2u * k + 1u)];
++    const int y0 = int(floor(y));
++    const int x0 = int(floor(x));
++    const float dy = y - float(y0);
++    const float dx = x - float(x0);
++    float value = sample_input(y0, x0, channel) * (1.0 - dy) * (1.0 - dx);
++    value += sample_input(y0, x0 + 1, channel) * (1.0 - dy) * dx;
++    value += sample_input(y0 + 1, x0, channel) * dy * (1.0 - dx);
++    value += sample_input(y0 + 1, x0 + 1, channel) * dy * dx;
++    const float modulator = data_c[p.c_offset + pos + hw * k];
++    data_d[p.d_offset + idx] = value * (2.0 / (1.0 + exp(-modulator)));
++}
+diff --git a/src/ggml-vulkan/vulkan-shaders/rmbg_deform_project.comp b/src/ggml-vulkan/vulkan-shaders/rmbg_deform_project.comp
+new file mode 100644
+index 00000000..0967554d
+--- /dev/null
++++ b/src/ggml-vulkan/vulkan-shaders/rmbg_deform_project.comp
+@@ -0,0 +1,103 @@
++#version 450
++
++// One workgroup owns one spatial position. It creates only a small C-tile of
++// bilinear samples in shared memory, then projects it directly to output
++// channels. No C*K by H*W column matrix is materialized.
++layout (push_constant) uniform parameter {
++    uint a_offset;
++    uint b_offset;
++    uint c_offset;
++    uint r_offset;
++    uint bias_offset;
++    uint d_offset;
++    uint width;
++    uint height;
++    uint channels;
++    uint out_channels;
++    uint kernel_w;
++    uint kernel_h;
++} p;
++
++layout (binding = 0) readonly buffer A { float data_a[]; };
++layout (binding = 1) readonly buffer B { float data_b[]; };
++layout (binding = 2) readonly buffer C { float data_c[]; };
++// F16 checkpoint weights stay compact. They are expanded only at the F32
++// multiply, so the sampler is bandwidth-limited by activations rather than
++// an unnecessary F32 weight copy.
++layout (binding = 3) readonly buffer R { uint data_r[]; };
++layout (binding = 4) readonly buffer Bias { float data_bias[]; };
++layout (binding = 5) writeonly buffer D { float data_d[]; };
++
++layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
++
++const uint CHANNEL_TILE = 8u;
++const uint MAX_KERNEL = 9u;
++shared float sample_y[MAX_KERNEL];
++shared float sample_x[MAX_KERNEL];
++shared float sample_mask[MAX_KERNEL];
++shared float samples[CHANNEL_TILE * MAX_KERNEL];
++
++float load_input(int y, int x, uint channel) {
++    if (y < 0 || y >= int(p.height) || x < 0 || x >= int(p.width)) return 0.0;
++    return data_a[p.a_offset + uint(x) + p.width * uint(y) +
++                  p.width * p.height * channel];
++}
++
++float sample_bilinear(float y, float x, uint channel) {
++    const int y0 = int(floor(y));
++    const int x0 = int(floor(x));
++    const float dy = y - float(y0);
++    const float dx = x - float(x0);
++    float value = load_input(y0, x0, channel) * (1.0 - dy) * (1.0 - dx);
++    value += load_input(y0, x0 + 1, channel) * (1.0 - dy) * dx;
++    value += load_input(y0 + 1, x0, channel) * dy * (1.0 - dx);
++    value += load_input(y0 + 1, x0 + 1, channel) * dy * dx;
++    return value;
++}
++
++float load_weight(uint index) {
++    const uint packed = data_r[(p.r_offset + index) / 2u];
++    const vec2 values = unpackHalf2x16(packed);
++    return ((p.r_offset + index) & 1u) == 0u ? values.x : values.y;
++}
++
++void main() {
++    const uint position = gl_WorkGroupID.x;
++    const uint tid = gl_LocalInvocationID.x;
++    const uint hw = p.width * p.height;
++    const uint kernel = p.kernel_w * p.kernel_h;
++    if (position >= hw || kernel > MAX_KERNEL) return;
++
++    if (tid < kernel) {
++        const uint y_base = position / p.width;
++        const uint x_base = position - y_base * p.width;
++        sample_y[tid] = float(y_base) + float(tid / p.kernel_w) - float(p.kernel_h / 2u) +
++            data_b[p.b_offset + position + hw * (2u * tid)];
++        sample_x[tid] = float(x_base) + float(tid % p.kernel_w) - float(p.kernel_w / 2u) +
++            data_b[p.b_offset + position + hw * (2u * tid + 1u)];
++        sample_mask[tid] = 2.0 / (1.0 + exp(-data_c[p.c_offset + position + hw * tid]));
++    }
++    barrier();
++
++    for (uint out_channel = tid; out_channel < p.out_channels; out_channel += 64u) {
++        float sum = data_bias[p.bias_offset + out_channel];
++        for (uint channel_base = 0u; channel_base < p.channels; channel_base += CHANNEL_TILE) {
++            const uint tile_channels = min(CHANNEL_TILE, p.channels - channel_base);
++            for (uint i = tid; i < tile_channels * kernel; i += 64u) {
++                const uint channel = channel_base + i / kernel;
++                const uint tap = i % kernel;
++                samples[i] = sample_bilinear(sample_y[tap], sample_x[tap], channel) * sample_mask[tap];
++            }
++            barrier();
++            for (uint local_channel = 0u; local_channel < tile_channels; ++local_channel) {
++                const uint channel = channel_base + local_channel;
++                for (uint tap = 0u; tap < kernel; ++tap) {
++                    const uint weight_index = tap + kernel * (channel + p.channels * out_channel);
++                    sum += samples[local_channel * kernel + tap] * load_weight(weight_index);
++                }
++            }
++            barrier();
++        }
++        data_d[p.d_offset + position + hw * out_channel] = sum;
++    }
++}
+diff --git a/src/ggml-vulkan/vulkan-shaders/rmbg_deform_project_cm1.comp b/src/ggml-vulkan/vulkan-shaders/rmbg_deform_project_cm1.comp
+new file mode 100644
+index 00000000..4cd30d02
+--- /dev/null
++++ b/src/ggml-vulkan/vulkan-shaders/rmbg_deform_project_cm1.comp
+@@ -0,0 +1,125 @@
++#version 450
++
++#extension GL_EXT_shader_16bit_storage : require
++#extension GL_EXT_shader_explicit_arithmetic_types_float16 : require
++#extension GL_KHR_cooperative_matrix : require
++#extension GL_KHR_memory_scope_semantics : require
++#extension GL_KHR_shader_subgroup_basic : require
++
++// The input samples are produced directly into a 16x16 F16 shared tile.
++// F16 is only the tile transport type; cooperative multiply accumulates F32.
++layout (push_constant) uniform parameter {
++    uint a_offset;
++    uint b_offset;
++    uint c_offset;
++    uint r_offset;
++    uint bias_offset;
++    uint d_offset;
++    uint width;
++    uint height;
++    uint channels;
++    uint out_channels;
++    uint kernel_w;
++    uint kernel_h;
++} p;
++
++layout (binding = 0) readonly buffer A { float data_a[]; };
++layout (binding = 1) readonly buffer B { float data_b[]; };
++layout (binding = 2) readonly buffer C { float data_c[]; };
++layout (binding = 3) readonly buffer R { float16_t data_r[]; };
++layout (binding = 4) readonly buffer Bias { float data_bias[]; };
++layout (binding = 5) writeonly buffer D { float data_d[]; };
++
++layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
++
++const uint TILE = 16u;
++const uint OUTPUT_TILES = 8u;
++// Cooperative-matrix loads use the same vec4-packed F16 layout as ggml's
++// established CM1 convolution and Flash Attention kernels.
++shared f16vec4 samples[TILE * TILE / 4u]; // [K tile, spatial-position]
++shared f16vec4 weights[OUTPUT_TILES * TILE * TILE / 4u];
++shared float projection[OUTPUT_TILES * TILE * TILE];
++
++float load_input(int y, int x, uint channel) {
++    if (y < 0 || y >= int(p.height) || x < 0 || x >= int(p.width)) return 0.0;
++    const uint hw = p.width * p.height;
++    return data_a[p.a_offset + uint(x) + p.width * uint(y) + hw * channel];
++}
++
++float sample_bilinear(uint position, uint channel, uint tap) {
++    const uint hw = p.width * p.height;
++    const uint y_base = position / p.width;
++    const uint x_base = position - y_base * p.width;
++    const float y = float(y_base) + float(tap / 3u) - 1.0 +
++        data_b[p.b_offset + position + hw * (2u * tap)];
++    const float x = float(x_base) + float(tap % 3u) - 1.0 +
++        data_b[p.b_offset + position + hw * (2u * tap + 1u)];
++    const int y0 = int(floor(y));
++    const int x0 = int(floor(x));
++    const float dy = y - float(y0);
++    const float dx = x - float(x0);
++    float value = load_input(y0,     x0,     channel) * (1.0 - dy) * (1.0 - dx);
++    value +=      load_input(y0,     x0 + 1, channel) * (1.0 - dy) * dx;
++    value +=      load_input(y0 + 1, x0,     channel) * dy * (1.0 - dx);
++    value +=      load_input(y0 + 1, x0 + 1, channel) * dy * dx;
++    const float modulator = data_c[p.c_offset + position + hw * tap];
++    return value * (2.0 / (1.0 + exp(-modulator)));
++}
++
++void main() {
++    const uint tile_position = gl_WorkGroupID.x * TILE;
++    const uint subgroup = gl_SubgroupID;
++    const uint tile_output = (gl_WorkGroupID.y * OUTPUT_TILES + subgroup) * TILE;
++    const uint tid = gl_LocalInvocationID.x;
++    const uint subgroup_tid = gl_SubgroupInvocationID;
++    const uint hw = p.width * p.height;
++    const uint k_total = p.channels * 9u;
++
++    coopmat<float, gl_ScopeSubgroup, TILE, TILE, gl_MatrixUseAccumulator> sum =
++        coopmat<float, gl_ScopeSubgroup, TILE, TILE, gl_MatrixUseAccumulator>(0.0);
++
++    // k_total is a multiple of 16 for the eligible RMBG 3x3 layers.
++    for (uint k_base = 0; k_base < k_total; k_base += TILE) {
++        // The first subgroup produces the shared sample tile once.  All eight
++        // projection subgroups consume it for disjoint output-channel tiles.
++        if (subgroup == 0u) {
++            for (uint i = subgroup_tid; i < TILE * TILE / 4u; i += 32u) {
++                const uint scalar = 4u * i;
++                const uint k = k_base + scalar / TILE;
++                const uint position = tile_position + scalar % TILE;
++                samples[i] = f16vec4(
++                    float16_t(sample_bilinear(position + 0u, k / 9u, k % 9u)),
++                    float16_t(sample_bilinear(position + 1u, k / 9u, k % 9u)),
++                    float16_t(sample_bilinear(position + 2u, k / 9u, k % 9u)),
++                    float16_t(sample_bilinear(position + 3u, k / 9u, k % 9u)));
++            }
++        }
++        for (uint i = subgroup_tid; i < TILE * TILE / 4u; i += 32u) {
++            const uint scalar = 4u * i;
++            const uint out_channel = tile_output + scalar / TILE;
++            const uint weight_base = p.r_offset + out_channel * k_total + k_base + scalar % TILE;
++            weights[subgroup * (TILE * TILE / 4u) + i] =
++                f16vec4(data_r[weight_base + 0u], data_r[weight_base + 1u],
++                        data_r[weight_base + 2u], data_r[weight_base + 3u]);
++        }
++        barrier();
++
++        coopmat<float16_t, gl_ScopeSubgroup, TILE, TILE, gl_MatrixUseA> weight;
++        coopmat<float16_t, gl_ScopeSubgroup, TILE, TILE, gl_MatrixUseB> sample_mat;
++        coopMatLoad(weight, weights, subgroup * (TILE * TILE / 4u), TILE / 4u,
++                    gl_CooperativeMatrixLayoutRowMajor);
++        coopMatLoad(sample_mat, samples, 0, TILE / 4u, gl_CooperativeMatrixLayoutRowMajor);
++        sum = coopMatMulAdd(weight, sample_mat, sum);
++        barrier();
++    }
++
++    coopMatStore(sum, projection, subgroup * TILE * TILE, TILE,
++                 gl_CooperativeMatrixLayoutRowMajor);
++    barrier();
++    for (uint i = subgroup_tid; i < TILE * TILE; i += 32u) {
++        const uint out_channel = tile_output + i / TILE;
++        const uint position = tile_position + i % TILE;
++        data_d[p.d_offset + position + hw * out_channel] =
++            projection[subgroup * TILE * TILE + i] + data_bias[p.bias_offset + out_channel];
++    }
++}
+diff --git a/src/ggml-vulkan/vulkan-shaders/rmbg_gather.comp b/src/ggml-vulkan/vulkan-shaders/rmbg_gather.comp
+new file mode 100644
+index 00000000..6cbfbca4
+--- /dev/null
++++ b/src/ggml-vulkan/vulkan-shaders/rmbg_gather.comp
+@@ -0,0 +1,60 @@
++#version 450
++
++// Exact F32 gathers used by RMBG's patch embedding and Swin patch merge. The
++// indices are implicit in the tensor shape, so this avoids a device index
++// tensor and a generic GET_ROWS dispatch without changing any values.
++layout (push_constant) uniform parameter {
++    uint a_offset;
++    uint d_offset;
++    uint channels;
++    uint height;
++    uint width;
++    uint patch_h;
++    uint patch_w;
++    uint kind;
++} p;
++
++layout (binding = 0) readonly buffer A { float data_a[]; };
++layout (binding = 1) writeonly buffer D { float data_d[]; };
++
++layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
++
++void main() {
++    const uint idx = gl_GlobalInvocationID.x;
++
++    if (p.kind == 0u) {
++        const uint row_width = p.width / 2u;
++        const uint row = idx / (4u * p.channels);
++        const uint component = idx - row * 4u * p.channels;
++        const uint group = component / p.channels;
++        const uint channel = component - group * p.channels;
++        if (row >= (p.height / 2u) * row_width) return;
++
++        const uint oh = row / row_width;
++        const uint ow = row - oh * row_width;
++        const uint positions[4] = uint[4](
++            (2u * oh) * p.width + 2u * ow,
++            (2u * oh + 1u) * p.width + 2u * ow,
++            (2u * oh) * p.width + 2u * ow + 1u,
++            (2u * oh + 1u) * p.width + 2u * ow + 1u);
++        data_d[p.d_offset + idx] = data_a[p.a_offset + channel + p.channels * positions[group]];
++        return;
++    }
++
++    const uint grid_h = p.height / p.patch_h;
++    const uint grid_w = p.width / p.patch_w;
++    const uint grid_count = grid_h * grid_w;
++    const uint patch_count = p.patch_h * p.patch_w;
++    const uint total = p.channels * grid_count * patch_count;
++    if (idx >= total) return;
++
++    const uint channel = idx % p.channels;
++    const uint grid_pos = (idx / p.channels) % grid_count;
++    const uint patch_pos = idx / (p.channels * grid_count);
++    const uint gh = grid_pos / grid_w;
++    const uint gw = grid_pos - gh * grid_w;
++    const uint hi = patch_pos / p.patch_w;
++    const uint wi = patch_pos - hi * p.patch_w;
++    const uint source = (gh * p.patch_h + hi) * p.width + gw * p.patch_w + wi;
++    data_d[p.d_offset + idx] = data_a[p.a_offset + source + p.width * p.height * channel];
++}
+diff --git a/src/ggml-vulkan/vulkan-shaders/rmbg_swin_qkv_layout.comp b/src/ggml-vulkan/vulkan-shaders/rmbg_swin_qkv_layout.comp
+new file mode 100644
+index 00000000..f5fb8884
+--- /dev/null
++++ b/src/ggml-vulkan/vulkan-shaders/rmbg_swin_qkv_layout.comp
+@@ -0,0 +1,37 @@
++#version 450
++
++// QKV bias, split, and head-major layout in one strict-F32 pass. Destination
++// is [head_dim=32, token=144, head, window], matching ggml MUL_MAT inputs.
++layout (push_constant) uniform parameter {
++    uint a_offset;
++    uint b_offset;
++    uint d_offset;
++    uint tokens;
++    uint heads;
++    uint windows;
++    uint kind;
++} p;
++
++layout (binding = 0) readonly buffer A { float data_a[]; };
++layout (binding = 1) readonly buffer B { float data_b[]; };
++layout (binding = 2) writeonly buffer D { float data_d[]; };
++
++layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
++
++const uint HEAD_DIM = 32u;
++
++void main() {
++    const uint idx = gl_GlobalInvocationID.x;
++    const uint total = HEAD_DIM * p.tokens * p.heads * p.windows;
++    if (idx >= total) return;
++
++    const uint lane = idx % HEAD_DIM;
++    const uint token = (idx / HEAD_DIM) % p.tokens;
++    const uint head = (idx / (HEAD_DIM * p.tokens)) % p.heads;
++    const uint window = idx / (HEAD_DIM * p.tokens * p.heads);
++    const uint channels = HEAD_DIM * p.heads;
++    const uint channel = lane + HEAD_DIM * head;
++    const uint qkv_channel = channel + p.kind * channels;
++    const uint source = qkv_channel + 3u * channels * (token + p.tokens * window);
++    data_d[p.d_offset + idx] = data_a[p.a_offset + source] + data_b[p.b_offset + qkv_channel];
++}
+diff --git a/src/ggml-vulkan/vulkan-shaders/rmbg_swin_windows.comp b/src/ggml-vulkan/vulkan-shaders/rmbg_swin_windows.comp
+new file mode 100644
+index 00000000..9b21cd45
+--- /dev/null
++++ b/src/ggml-vulkan/vulkan-shaders/rmbg_swin_windows.comp
+@@ -0,0 +1,57 @@
++#version 450
++
++// Exact Swin-L window transform. The destination layout is C x 144 x nWindows
++// for pack and C x (H*W) for unpack. Window coordinates and shifted padding are
++// implicit, so no index tensors or generic GET_ROWS dispatches are required.
++layout (push_constant) uniform parameter {
++    uint a_offset;
++    uint d_offset;
++    uint channels;
++    uint height;
++    uint width;
++    uint shift;
++    uint kind;
++} p;
++
++layout (binding = 0) readonly buffer A { float data_a[]; };
++layout (binding = 1) writeonly buffer D { float data_d[]; };
++
++layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
++
++const uint WINDOW = 12u;
++const uint TOKENS = WINDOW * WINDOW;
++
++void main() {
++    const uint idx = gl_GlobalInvocationID.x;
++    const uint hp = ((p.height + WINDOW - 1u) / WINDOW) * WINDOW;
++    const uint wp = ((p.width + WINDOW - 1u) / WINDOW) * WINDOW;
++    const uint windows_w = wp / WINDOW;
++
++    if (p.kind == 0u) {
++        const uint windows = (hp / WINDOW) * windows_w;
++        const uint total = p.channels * TOKENS * windows;
++        if (idx >= total) return;
++        const uint channel = idx % p.channels;
++        const uint t = (idx / p.channels) % TOKENS;
++        const uint window = idx / (p.channels * TOKENS);
++        const uint rh = (window / windows_w) * WINDOW + t / WINDOW;
++        const uint rw = (window % windows_w) * WINDOW + t % WINDOW;
++        const uint sh = (rh + p.shift) % hp;
++        const uint sw = (rw + p.shift) % wp;
++        data_d[p.d_offset + idx] = (sh < p.height && sw < p.width)
++            ? data_a[p.a_offset + channel + p.channels * (sh * p.width + sw)] : 0.0;
++        return;
++    }
++
++    const uint total = p.channels * p.height * p.width;
++    if (idx >= total) return;
++    const uint channel = idx % p.channels;
++    const uint pos = idx / p.channels;
++    const uint h = pos / p.width;
++    const uint w = pos - h * p.width;
++    const uint rh = (h + hp - p.shift) % hp;
++    const uint rw = (w + wp - p.shift) % wp;
++    const uint window = (rh / WINDOW) * windows_w + rw / WINDOW;
++    const uint t = (rh % WINDOW) * WINDOW + rw % WINDOW;
++    data_d[p.d_offset + idx] = data_a[p.a_offset + channel + p.channels * (t + TOKENS * window)];
++}
+diff --git a/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp b/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
+index 3e6b3957..982ae898 100644
+--- a/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
++++ b/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
+@@ -791,6 +791,15 @@ void process_shaders() {
+     }
+ 
+     string_to_spv("get_rows_i32", "get_rows.comp", {{"TEMP_TYPE", "uint"}, {"A_TYPE", "uint"}, {"B_TYPE", "int"}, {"D_TYPE", "uint"}});
++    string_to_spv("rmbg_gather_f32", "rmbg_gather.comp", {});
++    string_to_spv("rmbg_deform_im2col_f32", "rmbg_deform_im2col.comp", {});
++    string_to_spv("rmbg_deform_project_f32", "rmbg_deform_project.comp", {});
++#if defined(GGML_VULKAN_COOPMAT_GLSLC_SUPPORT)
++    string_to_spv("rmbg_deform_project", "rmbg_deform_project_cm1.comp", {}, true, true);
++#endif
++    string_to_spv("rmbg_affine_relu_f32", "rmbg_affine_relu.comp", {});
++    string_to_spv("rmbg_swin_windows_f32", "rmbg_swin_windows.comp", {});
++    string_to_spv("rmbg_swin_qkv_layout_f32", "rmbg_swin_qkv_layout.comp", {});
+ 
+     string_to_spv("mul_mat_vec_p021_f16_f32_subgroup_add", "mul_mat_vec_p021.comp", {{"A_TYPE", "float16_t"}, {"A_TYPEV4", "f16vec4"}, {"B_TYPE", "float"}, {"B_TYPEV4", "vec4"}, {"D_TYPE", "float"}, {"USE_SUBGROUP_ADD", "1"}});
+     string_to_spv("mul_mat_vec_p021_f16_f32",              "mul_mat_vec_p021.comp", {{"A_TYPE", "float16_t"}, {"A_TYPEV4", "f16vec4"}, {"B_TYPE", "float"}, {"B_TYPEV4", "vec4"}, {"D_TYPE", "float"}});

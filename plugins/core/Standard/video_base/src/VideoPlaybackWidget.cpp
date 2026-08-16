@@ -44,6 +44,28 @@ namespace {
 // Playback speed presets (kept in sync with the speed combo box).
 constexpr double kSpeedPresets[] = {0.25, 0.5, 1.0, 2.0, 4.0};
 constexpr int kSpeedPresetCount = 5;
+
+// Drains decoded frames until the capture position reaches `target` (used
+// by the seek-preview worker).  Mirrors VideoFrameReader::readFrame()'s
+// exact-seek alignment: FFmpeg backends land on a keyframe boundary and
+// decode forward, so VFR videos or B-frame reordering can land a few frames
+// short.  Bounded so a backend that cannot report POS_FRAMES degrades to
+// returning the first decoded frame.
+bool grabToExactFrame(cv::VideoCapture& cap, int target, cv::Mat& out) {
+    if (!cap.read(out) || out.empty()) return false;
+    int64_t pos =
+            static_cast<int64_t>(cap.get(cv::CAP_PROP_POS_FRAMES));
+    int guard = 0;
+    while (pos >= 0 && pos < target && guard < 30) {
+        if (!cap.grab()) return false;
+        pos = static_cast<int64_t>(cap.get(cv::CAP_PROP_POS_FRAMES));
+        ++guard;
+    }
+    if (guard > 0) {
+        if (!cap.retrieve(out) || out.empty()) return false;
+    }
+    return true;
+}
 #endif
 }  // namespace
 
@@ -143,11 +165,11 @@ void VideoPlaybackWidget::setPreviewFixedHeight(int height) {
     m_previewFixedHeight = height;
     if (!m_previewLabel) return;
     if (height > 0) {
-        m_previewLabel->setFixedHeight(height);
+        m_previewLabel->setMinimumHeight(height);
     } else {
         const int previewWidth = std::max(320, contentsRect().width() - 8);
         const int previewHeight = qBound(180, previewWidth * 9 / 16, 360);
-        m_previewLabel->setFixedHeight(previewHeight);
+        m_previewLabel->setMinimumHeight(previewHeight);
     }
 }
 
@@ -158,16 +180,20 @@ bool VideoPlaybackWidget::videoFileLoaded() const {
 void VideoPlaybackWidget::setupUi() {
     m_mainLayout = new QVBoxLayout(this);
     m_mainLayout->setContentsMargins(4, 4, 4, 4);
-    m_mainLayout->setSpacing(4);
+    m_mainLayout->setSpacing(6);
 
     m_previewLabel = new ecvClickableImageLabel(this);
     m_previewLabel->setMinimumSize(320, 180);
-    m_previewLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    m_previewLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     m_previewLabel->setStyleSheet(
             QStringLiteral("QLabel { background-color: #1a1a1a; "
                            "border: 1px solid #444; border-radius: 4px; }"));
     m_previewLabel->setText(tr("Video preview"));
     m_mainLayout->addWidget(m_previewLabel, 1);
+
+    // Fixed gap between the video preview and the controls below so the
+    // input / camera comboboxes never visually invade the display area.
+    m_mainLayout->addSpacing(8);
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
     // Seek preview thumbnail — child of m_previewLabel so it overlays on
@@ -190,19 +216,20 @@ void VideoPlaybackWidget::setupUi() {
     m_sourceCombo->addItem(tr("Video file"), static_cast<int>(InputSource::VideoFile));
     sourceLayout->addWidget(new QLabel(tr("Input:"), sourceRow));
     sourceLayout->addWidget(m_sourceCombo, 1);
-    m_mainLayout->addWidget(sourceRow);
+    // (addWidget moved below slider, see after m_videoControlsRow)
     connect(m_sourceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &VideoPlaybackWidget::onSourceChangedInternal);
 
     // Camera device row (visible in camera mode).
     m_cameraRow = new QWidget(this);
+    m_cameraRow->setVisible(false);  // hidden until camera source selected
     auto* camLayout = new QHBoxLayout(m_cameraRow);
     camLayout->setContentsMargins(0, 0, 0, 0);
     m_cameraCombo = new QComboBox(m_cameraRow);
     m_cameraCombo->addItem(tr("Default (0)"), 0);
     camLayout->addWidget(new QLabel(tr("Camera:"), m_cameraRow));
     camLayout->addWidget(m_cameraCombo, 1);
-    m_mainLayout->addWidget(m_cameraRow);
+    // (addWidget moved below slider, see after m_videoControlsRow)
     connect(m_cameraCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, [this](int) {
                 if (!m_streamActive || m_inputSource != InputSource::Camera) {
@@ -224,7 +251,7 @@ void VideoPlaybackWidget::setupUi() {
     vidLayout->addWidget(m_videoPathEdit, 1);
     vidLayout->addWidget(browseBtn);
     m_videoRow->setVisible(false);
-    m_mainLayout->addWidget(m_videoRow);
+    // (addWidget moved below slider, see after m_videoControlsRow)
     connect(browseBtn, &QPushButton::clicked, this,
             &VideoPlaybackWidget::onBrowseVideoFile);
     connect(m_videoPathEdit, &QLineEdit::textChanged, this,
@@ -263,6 +290,12 @@ void VideoPlaybackWidget::setupUi() {
     videoCtrlMainLayout->addWidget(sliderRow);
     m_videoControlsRow->setVisible(false);  // hidden until a video is loaded
     m_mainLayout->addWidget(m_videoControlsRow);
+
+    // Input/camera/video rows (below slider, so seek preview overlays
+    // the preview area without being occluded by input controls).
+    m_mainLayout->addWidget(sourceRow);
+    m_mainLayout->addWidget(m_cameraRow);
+    m_mainLayout->addWidget(m_videoRow);
 
     // Install event filter for hover/click preview on slider
     m_videoSeekSlider->installEventFilter(this);
@@ -559,8 +592,11 @@ void VideoPlaybackWidget::stopStream() {
     // position.  The background reader keeps its video open.
     const bool isVideoFile = m_inputSource == InputSource::VideoFile;
     if (isVideoFile && m_frameReaderReady) {
-        // Just pause — keep reader open for resume
+        // Just pause — keep reader open for resume.  The mpv backend
+        // pauses A/V playback via the pause property; OpenCV ignores it.
         m_videoPaused = true;
+        QMetaObject::invokeMethod(m_frameReader, "setPaused",
+                                  Qt::QueuedConnection, Q_ARG(bool, true));
     } else if (m_frameReaderReady) {
         // Release background reader for camera mode
         QMetaObject::invokeMethod(m_frameReader, "release",
@@ -608,6 +644,9 @@ void VideoPlaybackWidget::resumePlayback() {
     if (!m_videoPaused || !m_frameReaderReady) return;
     m_videoPaused = false;
     m_streamActive = true;
+    // mpv backend: resume A/V playback; OpenCV ignores this.
+    QMetaObject::invokeMethod(m_frameReader, "setPaused",
+                              Qt::QueuedConnection, Q_ARG(bool, false));
     onStreamResumed();
     beginFrameProcessing();
     emit streamStarted();
@@ -640,6 +679,12 @@ void VideoPlaybackWidget::setPlaybackSpeed(double speed) {
     const int interval = computeTimerInterval();
     if (m_frameReadTimer) m_frameReadTimer->setInterval(interval);
     if (m_frameTimer) m_frameTimer->setInterval(interval);
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    // mpv backend: apply the speed to the A/V clock; OpenCV ignores it
+    // (pacing stays with the widget timers above).
+    QMetaObject::invokeMethod(m_frameReader, "setPlaybackSpeed",
+                              Qt::QueuedConnection, Q_ARG(double, speed));
+#endif
 }
 
 VideoPlaybackWidget::InputSource VideoPlaybackWidget::inputSource() const {
@@ -928,7 +973,7 @@ void VideoPlaybackWidget::showSeekPreview(int frameIndex) {
         // the playing video (the main thread is shared).  Decode on the
         // global thread pool; the mutex serializes access to the shared
         // preview capture, and only the LATEST request wins.
-        m_pendingPreviewFrame = frameIndex;
+        m_pendingPreviewFrame.storeRelaxed(frameIndex);
         if (m_seekPreviewWatcher && !m_seekPreviewWatcher->isRunning()) {
             const QString path = m_videoFilePath;
             // Snapshot the generation: results decoded for a previous video
@@ -941,24 +986,39 @@ void VideoPlaybackWidget::showSeekPreview(int frameIndex) {
                         }
                         QMutexLocker lock(&m_previewMutex);
                         if (!m_previewCapture.isOpened()) {
-                            if (!m_previewCapture.open(path.toStdString(),
-                                                       cv::CAP_FFMPEG) &&
+                            // The preview capture stays open for the whole
+                            // video session (released only by
+                            // closePreviewCapture() on stop / source switch
+                            // / destruction): opening a file + initializing
+                            // the decoder costs 50-200 ms on Windows, which
+                            // is what made hover scrubbing stutter.
+                            if (!OpenCVFrameSource::openVideoWithHw(
+                                        m_previewCapture, path.toStdString(),
+                                        cv::CAP_FFMPEG) &&
                                 !m_previewCapture.open(path.toStdString(),
                                                        cv::CAP_ANY)) {
                                 return {frameIndex, QPixmap()};
                             }
+                            m_previewCapture.set(cv::CAP_PROP_BUFFERSIZE, 1);
                         }
-                        m_previewCapture.set(cv::CAP_PROP_POS_FRAMES,
-                                             frameIndex);
+                        // Follow the LATEST drag position: while the user
+                        // keeps scrubbing, decoding the stale request is
+                        // wasted work that delays the preview catching up.
+                        const int target =
+                                m_pendingPreviewFrame.loadRelaxed() >= 0
+                                        ? m_pendingPreviewFrame.loadRelaxed()
+                                        : frameIndex;
+                        m_previewCapture.set(cv::CAP_PROP_POS_FRAMES, target);
                         cv::Mat frame;
-                        if (!m_previewCapture.read(frame) || frame.empty()) {
-                            return {frameIndex, QPixmap()};
+                        if (!grabToExactFrame(m_previewCapture, target,
+                                              frame)) {
+                            return {target, QPixmap()};
                         }
                         // Scale to thumbnail size (160×90)
                         cv::Mat thumb;
                         cv::resize(frame, thumb, cv::Size(160, 90), 0, 0,
                                    cv::INTER_AREA);
-                        return {frameIndex,
+                        return {target,
                                 QPixmap::fromImage(cvMatToQImage(thumb))};
                     }));
         }
@@ -1007,7 +1067,7 @@ void VideoPlaybackWidget::onSeekPreviewReady() {
     QPixmapCache::insert(cacheKey, result.second);
     // Only paint if this result still matches the latest request.
     if (m_seekPreviewLabel->isVisible() &&
-        result.first == m_pendingPreviewFrame) {
+        result.first == m_pendingPreviewFrame.loadRelaxed()) {
         m_seekPreviewLabel->setPixmap(result.second);
     }
 

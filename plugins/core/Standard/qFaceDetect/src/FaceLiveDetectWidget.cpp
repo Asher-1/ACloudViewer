@@ -763,6 +763,18 @@ void FaceLiveDetectWidget::onInferComplete(
 
     emit snapshotUpdated(m_lastSnapshot);
 
+    // Refresh the preview immediately so the overlay (boxes / labels)
+    // appears as soon as inference completes, instead of waiting for
+    // the next decoded frame.  Without this, slow inference (common on
+    // CPU) could delay the first visible result by seconds.
+    if (!m_lastDisplayFrame.isNull() && !m_overlayFaces.empty()) {
+        QImage refreshed = m_lastDisplayFrame.copy();
+        drawLiveOverlay(refreshed);
+        if (m_previewLabel) {
+            m_previewLabel->setPixmap(QPixmap::fromImage(refreshed));
+        }
+    }
+
     if (m_config.streamMode == StreamMode::Recognize) {
         const int identified = result.identifiedCount;
         const int total = static_cast<int>(result.snapshot.faces.size());
@@ -831,6 +843,9 @@ void FaceLiveDetectWidget::onFrameDecoded(cv::Mat& frame, int frameIndex) {
 
 void FaceLiveDetectWidget::onDisplayFrame(QImage& display, int frameIndex) {
     Q_UNUSED(frameIndex);
+    // Cache the display frame so onInferComplete can redraw the overlay
+    // immediately without waiting for the next frame to arrive.
+    m_lastDisplayFrame = display;
     drawLiveOverlay(display);
 }
 
@@ -918,27 +933,6 @@ void FaceLiveDetectWidget::drawLiveOverlay(QImage& frame) {
         painter.drawText(
                 QRectF(bgX + pad, bgY + pad, bgW - 2.0 * pad, bgH - 2.0 * pad),
                 Qt::AlignLeft | Qt::AlignVCenter, text);
-    }
-
-    // "Processing\u2026" indicator while inference is running.
-    if (m_inferBusy) {
-        const int indFont = std::max(9, frame.height() / 60);
-        QFont ifont(QStringLiteral("sans-serif"), indFont);
-        ifont.setItalic(true);
-        painter.setFont(ifont);
-        const QFontMetrics ifm(ifont);
-        const QString indText = tr("Processing\u2026");
-        const qreal tw = QTCOMPAT_FONTMETRICS_WIDTH(ifm, indText);
-        const qreal th = ifm.height();
-        const qreal px = frame.width() - tw - 8;
-        const qreal py = frame.height() - 6;
-        painter.setPen(Qt::NoPen);
-        painter.setBrush(QColor(0, 0, 0, 160));
-        painter.drawRoundedRect(QRectF(px - 4, py - th - 2, tw + 8, th + 4),
-                                3.0, 3.0);
-        painter.setPen(QColor(255, 200, 60));
-        painter.drawText(QRectF(px, py - th, tw, th),
-                         Qt::AlignLeft | Qt::AlignVCenter, indText);
     }
 }
 

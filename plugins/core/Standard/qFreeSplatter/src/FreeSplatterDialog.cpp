@@ -601,6 +601,12 @@ void FreeSplatterDialog::setupUi() {
                 // signal. Deferring avoids reading the previous page's height
                 // on a quick tab switch, which previously kept the Images tab
                 // at Face Capture size.
+                // Mark the whole tab widget dirty right away: on Windows the
+                // deferred height fix-up re-renders the page area without
+                // clearing the previous page's pixels, leaving the two pages
+                // visually stacked. update() schedules a full repaint that
+                // erases stale content before the resize lands.
+                m_inputTabWidget->update();
                 QTimer::singleShot(0, this,
                                    [this]() { adaptTabWidgetHeight(); });
             });
@@ -816,6 +822,11 @@ void FreeSplatterDialog::adaptTabWidgetHeight() {
     const int targetHeight = tabChrome + contentHeight;
     m_inputTabWidget->setFixedHeight(targetHeight);
     m_inputTabWidget->updateGeometry();
+    // Windows only: with setDocumentMode(true) + QWindowsStyle the page area
+    // is not fully cleared when the fixed height changes after a tab switch,
+    // so the previous page's pixels stay visible (both tabs appear stacked).
+    // Force a synchronous full repaint to wipe the stale page content.
+    m_inputTabWidget->repaint();
 
     if (isVisible() && m_activeInputTabHeight >= 0 &&
         targetHeight != m_activeInputTabHeight) {

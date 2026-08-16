@@ -187,4 +187,5 @@ private:
     QElapsedTimer m_inferSubmitTime;
     qint64 m_lastInferLatencyMs = 0;
     qint64 m_overlayTimestampMs = 0;  // ms since epoch of last infer complete
+    QImage m_lastDisplayFrame;  // cached for overlay refresh after inference
 };

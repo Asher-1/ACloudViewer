@@ -1,3 +1,11 @@
+<!--
+ * @Author: ludahai ludahai19@163.com
+ * @Date: 2026-08-15 13:34:32
+ * @LastEditors: ludahai ludahai19@163.com
+ * @LastEditTime: 2026-08-16 11:48:21
+ * @FilePath: /ACloudViewer/docs/guides/plugins/README.md
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+-->
 # AI inference plugins (AICore)
 
 ACloudViewer provides five AI plugins through the unified inference library **`libAICore.so`** (ggml). **No Python/PyTorch runtime is required.**
@@ -31,6 +39,8 @@ cmake -B build_app \
   -DPLUGIN_STANDARD_QFACEDETECT=ON \
   -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
   -DPLUGIN_STANDARD_QFREESPLATTER=ON \
+  -DPLUGIN_STANDARD_QRFDETR=ON \
+  -DPLUGIN_STANDARD_QRMBG=ON \
   -DPLUGIN_STANDARD_QSIBR=ON \
   -DBUILD_RECONSTRUCTION=ON \
   .

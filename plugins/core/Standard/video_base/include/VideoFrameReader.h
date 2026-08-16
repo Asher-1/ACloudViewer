@@ -4,11 +4,15 @@
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
-// VideoFrameReader: owns a cv::VideoCapture on a dedicated QThread so that
-// OpenCV's MSMF/DirectShow backend (Windows) does not block the Qt main
-// thread during read() calls.  Communicates frames as BGR cv::Mat via an
-// emitted signal for direct use by downstream consumers (face detection,
+// VideoFrameReader: QObject shell that owns an IFrameSource on a dedicated
+// QThread so that decode (OpenCV MSMF/DirectShow, or the libmpv render
+// loop) never blocks the Qt main thread.  Frames travel as BGR cv::Mat via
+// an emitted signal for direct use by downstream consumers (face detection,
 // model inference, display).
+//
+// Backend selection: MpvFrameSource (audio + hardware decode) when built
+// with libmpv and available; OpenCVFrameSource otherwise.  A failed mpv
+// open falls back to OpenCV for that file; cameras always use OpenCV.
 //
 // Part of the video_base module shared by qFreeSplatter / qFaceDetect and
 // any future plugin that needs camera / video-file input.
@@ -19,10 +23,18 @@
 #include <QObject>
 
 #include <atomic>
+#include <memory>
 #include <string>
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
 #include <opencv2/videoio.hpp>
+
+#include "IFrameSource.h"
+#include "OpenCVFrameSource.h"
+
+#ifdef HAS_LIBMPV
+#include "MpvFrameSource.h"
+#endif
 
 class VideoFrameReader : public QObject {
     Q_OBJECT
@@ -31,7 +43,10 @@ public:
     ~VideoFrameReader() override;
 
     // Open a video file; falls back to CAP_ANY when the requested backend
-    // cannot handle the container/codec.
+    // cannot handle the container/codec.  Best-effort hardware-accelerated
+    // decode (VAAPI on Linux / D3D11 on Windows, OpenCV >= 4.5.2) is tried
+    // first; with libmpv the mpv backend is preferred and falls back to
+    // OpenCV when it cannot open the file.
     bool openVideo(const std::string& path, int backend = cv::CAP_ANY);
 
     // Open a camera device; requests 640x480 to keep decode cost bounded.
@@ -51,11 +66,20 @@ public slots:
     // 50-200 ms per read().  If the UI timer keeps firing faster than
     // that, queued readFrame calls would pile up and the video would
     // race ahead / lag behind indefinitely.  Drop redundant reads.
+    // With the mpv backend a call may also find no new frame yet (mpv is
+    // clock-driven); that is reported silently as a no-op.
     void readFrame();
 
     // Seek to a frame index (queued calls are serialized on the reader
-    // thread, so no mutex is needed here).
+    // thread, so no mutex is needed here).  Exact frame alignment is
+    // enforced by the backend (OpenCV drains frames; mpv uses hr-seek).
     void seekToFrame(int frameIndex);
+
+    // Playback controls forwarded to backends that support them (mpv).
+    // No-ops for the OpenCV backend, whose pacing is done by the widget
+    // timers.
+    void setPaused(bool paused);
+    void setPlaybackSpeed(double speed);
 
     // Release the underlying capture (invoked from the GUI thread when
     // stopping the reader thread).
@@ -72,8 +96,9 @@ signals:
     void frameReadFailed();
 
 private:
-    cv::VideoCapture m_cap;
+    std::unique_ptr<IFrameSource> m_source;
     std::atomic<bool> m_reading{false};
+    int m_lastFrameIndex = 0;  // frame number of the last emitted frame
 };
 
 #else  // !HAS_OPENCV_FACE_CAPTURE

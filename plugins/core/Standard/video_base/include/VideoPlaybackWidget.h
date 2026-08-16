@@ -98,8 +98,9 @@ public:
     // <settingsPrefix>/lastVideoDir (ecvPS convention).
     QString browseVideoFile(const QString& settingsPrefix);
 
-    // >0: fixed preview height (e.g. qFaceDetect 300px).
-    // 0 / negative: 16:9 adaptive height clamped to [180, 360].
+    // Sets a minimum preview height.  >0: fixed minimum; 0/negative: 16:9
+    // adaptive minimum clamped to [180, 360].  The widget can still grow
+    // vertically — it is no longer locked to a fixed height.
     void setPreviewFixedHeight(int height);
 
 signals:
@@ -199,7 +200,9 @@ private:
     // matches the actual frame (not the latest slider position).
     QFutureWatcher<QPair<int, QPixmap>>* m_seekPreviewWatcher = nullptr;
     // Latest frame the slider asked for; a stale async result is ignored.
-    int m_pendingPreviewFrame = -1;
+    // Atomic: written on the UI thread (showSeekPreview), read by the
+    // QtConcurrent worker so it can jump to the newest drag position.
+    QAtomicInt m_pendingPreviewFrame{-1};
     // Bumped every time the video changes; async preview results from an
     // older video are discarded (frame numbers can collide across videos).
     // Atomic: read from the decode worker thread, written on the UI thread.

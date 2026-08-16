@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/CC/plugin/qRFDetr">
+        <file>info.json</file>
+        <file>images/qRFDetr.svg</file>
+    </qresource>
+</RCC>

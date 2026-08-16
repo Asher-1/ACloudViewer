@@ -12,15 +12,13 @@
 // Vendored public-domain single-header decoder. Used for PNG/BMP and as a
 // fallback for any non-JPEG input. JPEG goes through libjpeg-turbo instead (see
 // below) so the decode matches cv2.imread (insightface's loader) bit-for-bit.
-#define STB_IMAGE_IMPLEMENTATION
-#define STBI_ONLY_JPEG
-#define STBI_ONLY_PNG
-#define STBI_ONLY_BMP
-#define STBI_NO_STDIO_GIF  // (no-op guard; GIF disabled by not enabling it)
+// The implementation lives once in src/common/stb_impl.cpp (shared with the
+// rfdetr / rmbg tasks); this file includes the shared header in
+// declaration-only mode.
 #include <cstdio>
 #include <cstring>
 
-#include "stb_image.h"
+#include "stb/stb_image.h"
 
 #if FACEDETECT_HAVE_LIBJPEG
 #include <csetjmp>

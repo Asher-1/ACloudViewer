@@ -29,6 +29,7 @@
     - [Python library](#python-library)
   - [Compilation Options Reference](#compilation-options-reference)
     - [AICore GPU (Metal, default)](#aicore-gpu-metal-default)
+      - [Platform ggml Backend Support](#platform-ggml-backend-support)
     - [OpenMP on macOS](#openmp-on-macos)
     - [ML Module (PyTorch)](#ml-module-pytorch)
     - [CUDA / GPU](#cuda--gpu)
@@ -185,6 +186,8 @@ cmake \
     -DPLUGIN_STANDARD_QFACEDETECT=ON \
     -DPLUGIN_STANDARD_QFREESPLATTER=ON \
     -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
+    -DPLUGIN_STANDARD_QRFDETR=ON \
+    -DPLUGIN_STANDARD_QRMBG=ON \
     -DPLUGIN_PYTHON=ON \
     -DBUILD_PYTHON_MODULE=ON \
     ..

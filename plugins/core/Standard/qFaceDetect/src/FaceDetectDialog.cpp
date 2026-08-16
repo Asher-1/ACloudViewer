@@ -834,8 +834,7 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
     // Word-wrapped rows inflate the list's height requirement, and since
     // the tab viewport height is measured before images arrive, the list
     // ends up clipped mid-row — the "squeezed" bug reported.
-    m_dbImageList->setSizePolicy(QSizePolicy::Expanding,
-                                 QSizePolicy::Expanding);
+    m_dbImageList->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     m_dbImageList->setAlternatingRowColors(true);
     m_dbImageList->setWordWrap(false);
     m_dbImageList->setUniformItemSizes(true);
@@ -844,7 +843,8 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
     m_dbImageList->setTextElideMode(Qt::ElideMiddle);
     // Height follows content (clamped below): an empty list collapses,
     // a full list scrolls instead of being squeezed.
-    m_dbImageList->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+    m_dbImageList->setSizeAdjustPolicy(
+            QAbstractScrollArea::AdjustToContents);
     m_dbImageList->setMinimumHeight(80);
     m_dbImageList->setMaximumHeight(220);
     connect(m_dbImageList, &QListWidget::itemActivated, this,
@@ -875,6 +875,7 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
     btnRow->addWidget(m_runBtn);
     btnRow->addWidget(m_cancelBtn);
     main->addLayout(btnRow);
+    
 }
 
 void FaceDetectDialog::populateModelCombo(const QString& keepFilename) {
@@ -1497,6 +1498,18 @@ void FaceDetectDialog::onLiveStart() {
             appendLog(tr("[Live] Failed to start video."));
         }
         return;
+    }
+    // Fallback: if the user set a video path via test data but the source
+    // combo hasn't caught up (async test-data download / race), use it.
+    {
+        const QString path = m_liveWidget->videoFilePath();
+        if (!path.isEmpty() && QFile::exists(path)) {
+            m_liveWidget->selectVideoFileSource();
+            if (!m_liveWidget->startVideoFile(path)) {
+                appendLog(tr("[Live] Failed to start video."));
+            }
+            return;
+        }
     }
     const int camIdx = m_liveWidget->selectedCameraIndex();
     if (camIdx < 0) {

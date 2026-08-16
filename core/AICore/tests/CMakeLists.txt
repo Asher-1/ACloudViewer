@@ -170,6 +170,30 @@ function(aicore_add_facedetect_capi_test name)
     set_tests_properties(${name} PROPERTIES LABELS "capi")
 endfunction()
 
+function(aicore_add_rfdetr_capi_test name)
+    add_executable(${name} rfdetr/${name}.cpp)
+    target_link_libraries(${name} PRIVATE AICore)
+    _aicore_capi_link(${name})
+    _aicore_test_common(${name})
+    if(NOT MSVC)
+        target_compile_options(${name} PRIVATE -fPIC)
+        target_link_options(${name} PRIVATE "-no-pie")
+    endif()
+    set_tests_properties(${name} PROPERTIES LABELS "capi")
+endfunction()
+
+function(aicore_add_rmbg_capi_test name)
+    add_executable(${name} rmbg/${name}.cpp)
+    target_link_libraries(${name} PRIVATE AICore)
+    _aicore_capi_link(${name})
+    _aicore_test_common(${name})
+    if(NOT MSVC)
+        target_compile_options(${name} PRIVATE -fPIC)
+        target_link_options(${name} PRIVATE "-no-pie")
+    endif()
+    set_tests_properties(${name} PROPERTIES LABELS "capi")
+endfunction()
+
 function(aicore_add_aliked_capi_test name)
     add_executable(${name} aliked/${name}.cpp)
     target_link_libraries(${name} PRIVATE AICore)
@@ -300,6 +324,9 @@ aicore_add_facedetect_capi_test(test_facedetect_match_capi)
 aicore_add_facedetect_capi_test(test_facedetect_contexts_capi)
 set_tests_properties(test_facedetect_contexts_capi PROPERTIES LABELS "capi;model")
 
+aicore_add_rfdetr_capi_test(test_rfdetr_capi_contract)
+aicore_add_rmbg_capi_test(test_rmbg_capi_contract)
+
 add_test(
     NAME test_aicore_public_headers
     COMMAND ${CMAKE_COMMAND}
@@ -334,7 +361,9 @@ function(aicore_configure_model_test_assets)
         # friends1 is the fixture with stable 5-point landmarks. A cropped
         # single-face image is not suitable for this alignment contract.
         "AICORE_TEST_FACEDETECT_IMAGE=${_root}/friends_faces/query/friends1.jpg"
-        "AICORE_TEST_FACEDETECT_DEVICE=${AICORE_TEST_DEVICE}")
+        "AICORE_TEST_FACEDETECT_DEVICE=${AICORE_TEST_DEVICE}"
+        "AICORE_TEST_RFDETR_GGUF=${_root}/rfdetr_models/rfdetr-base-f16.gguf"
+        "AICORE_TEST_RMBG_GGUF=${_root}/rmbg_models/rmbg_f16.gguf")
     if(AICORE_TEST_AUTO_DOWNLOAD)
         # This fixture is only selected by asset-dependent CTests. It is not a
         # build dependency, so compiling ACloudViewer cannot trigger I/O.

@@ -7,6 +7,8 @@
 #   src/tasks/aliked/     — ALIKED feature extraction
 #   src/tasks/deeplsd/    — DeepLSD line extraction
 #   src/tasks/facedetect/ — face detection, alignment, embedding
+#   src/tasks/rfdetr/     — RF-DETR object detection / segmentation
+#   src/tasks/rmbg/       — RMBG-2.0 background removal (foundational matte)
 #   src/common/           — shared utilities (data paths, ggml helpers, logging)
 #
 # Build:   libAICore.so
@@ -25,7 +27,7 @@ if(NOT TARGET 3rdparty_ggml)
 endif()
 
 project(AICore
-    DESCRIPTION "Unified AI inference core — depth + gaussian + lightglue + aliked + deeplsd + facedetect"
+    DESCRIPTION "Unified AI inference core — depth + gaussian + lightglue + aliked + deeplsd + facedetect + rfdetr + rmbg"
     LANGUAGES CXX
 )
 
@@ -38,6 +40,8 @@ set(AICORE_LIGHTGLUE_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/lightglue)
 set(AICORE_DEEPLSD_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/deeplsd)
 set(AICORE_ALIKED_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/aliked)
 set(AICORE_FACEDETECT_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/facedetect)
+set(AICORE_RFDETR_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/rfdetr)
+set(AICORE_RMBG_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/rmbg)
 
 if(NOT EXISTS ${AICORE_DEPTH_SRC_DIR}/engine.cpp)
     message(WARNING "AICore: depth module not found at ${AICORE_DEPTH_SRC_DIR}")
@@ -68,6 +72,8 @@ file(GLOB LIGHTGLUE_HEADERS ${AICORE_LIGHTGLUE_SRC_DIR}/*.hpp)
 file(GLOB AICORE_DEEPLSD_SOURCES ${AICORE_DEEPLSD_SRC_DIR}/*.cpp)
 file(GLOB AICORE_ALIKED_SOURCES ${AICORE_ALIKED_SRC_DIR}/*.cpp)
 file(GLOB AICORE_FACEDETECT_SOURCES ${AICORE_FACEDETECT_SRC_DIR}/*.cpp)
+file(GLOB AICORE_RFDETR_SOURCES ${AICORE_RFDETR_SRC_DIR}/*.cpp)
+file(GLOB AICORE_RMBG_SOURCES ${AICORE_RMBG_SRC_DIR}/*.cpp)
 file(GLOB AICORE_API_HEADERS ${AICORE_INC_DIR}/aicore/*.h)
 
 if(NOT EXISTS ${AICORE_DEEPLSD_SRC_DIR}/deeplsd_extractor.cpp)
@@ -78,6 +84,12 @@ if(NOT EXISTS ${AICORE_ALIKED_SRC_DIR}/aliked.cpp)
 endif()
 if(NOT EXISTS ${AICORE_FACEDETECT_SRC_DIR}/model.cpp)
     message(FATAL_ERROR "AICore: missing FaceDetect module at ${AICORE_FACEDETECT_SRC_DIR}")
+endif()
+if(NOT EXISTS ${AICORE_RFDETR_SRC_DIR}/rfdetr_model.cpp)
+    message(FATAL_ERROR "AICore: missing RF-DETR module at ${AICORE_RFDETR_SRC_DIR}")
+endif()
+if(NOT EXISTS ${AICORE_RMBG_SRC_DIR}/rmbg_graph.cpp)
+    message(FATAL_ERROR "AICore: missing RMBG module at ${AICORE_RMBG_SRC_DIR}")
 endif()
 
 # JPEG: FaceDetect decodes JPEG via the bundled libjpeg-turbo only. Never
@@ -98,6 +110,8 @@ add_library(${PROJECT_NAME} SHARED
     ${AICORE_DEEPLSD_SOURCES}
     ${AICORE_ALIKED_SOURCES}
     ${AICORE_FACEDETECT_SOURCES}
+    ${AICORE_RFDETR_SOURCES}
+    ${AICORE_RMBG_SOURCES}
     ${AICORE_API_HEADERS}
 )
 
@@ -149,6 +163,8 @@ target_include_directories(${PROJECT_NAME}
         ${AICORE_ALIKED_SRC_DIR}/vulkan
         ${AICORE_ALIKED_SRC_DIR}/include
         ${AICORE_FACEDETECT_SRC_DIR}
+        ${AICORE_RFDETR_SRC_DIR}
+        ${AICORE_RMBG_SRC_DIR}
 )
 
 add_dependencies(${PROJECT_NAME} 3rdparty_ggml)
@@ -394,6 +410,8 @@ if(AICore_BUILD_TESTS)
             ${GAUSSIAN_SOURCES}
             ${LIGHTGLUE_SOURCES}
             ${AICORE_FACEDETECT_SOURCES}
+            ${AICORE_RFDETR_SOURCES}
+            ${AICORE_RMBG_SOURCES}
         )
         list(FILTER AICORE_TEST_SOURCES EXCLUDE REGEX
              ".*/(capi|image_depth)\\.cpp$")
@@ -417,6 +435,8 @@ if(AICore_BUILD_TESTS)
             $<BUILD_INTERFACE:${AICORE_GAUSSIAN_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_LIGHTGLUE_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_FACEDETECT_SRC_DIR}>
+            $<BUILD_INTERFACE:${AICORE_RFDETR_SRC_DIR}>
+            $<BUILD_INTERFACE:${AICORE_RMBG_SRC_DIR}>
         )
         add_dependencies(AICore_test 3rdparty_ggml)
         target_link_libraries(AICore_test PUBLIC 3rdparty_ggml CVCoreLib)
@@ -448,7 +468,7 @@ if(AICore_BUILD_TESTS)
     message(STATUS "AICore: contract tests enabled")
 endif()
 
-message(STATUS "AICore (SHARED): tasks/depth + tasks/gaussian + tasks/lightglue + tasks/deeplsd + tasks/facedetect, ggml linked once")
+message(STATUS "AICore (SHARED): tasks/depth + tasks/gaussian + tasks/lightglue + tasks/deeplsd + tasks/facedetect + tasks/rfdetr + tasks/rmbg, ggml linked once")
 
 add_executable(aicore_gguf_quantize tools/aicore_gguf_quantize.cpp)
 target_link_libraries(aicore_gguf_quantize PRIVATE AICore)

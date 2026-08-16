@@ -29,4 +29,12 @@ inline std::string facedetect_model_cache_dir() {
     return extract_model_dir("facedetect_models");
 }
 
+inline std::string rfdetr_model_cache_dir() {
+    return extract_model_dir("rfdetr_models");
+}
+
+inline std::string rmbg_model_cache_dir() {
+    return extract_model_dir("rmbg_models");
+}
+
 }  // namespace aicore
