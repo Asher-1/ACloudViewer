@@ -25,7 +25,7 @@ CLOUDVIEWER_BUILD_DIR=${CLOUDVIEWER_SOURCE_ROOT}/build
 export CLOUDVIEWER_ML_ROOT=/Users/asher/develop/code/github/CloudViewer-ML
 
 MACOS_APP_BUILD_SHELL=${CLOUDVIEWER_SOURCE_ROOT}/scripts/build_macos_app.sh
-if ! find "$ACloudViewer_INSTALL" -maxdepth 1 -name "ACloudViewer*.dmg" | grep -q .; then
+if ! find "$ACloudViewer_INSTALL" -maxdepth 1 -name "ACloudViewer-*.dmg" | grep -q .; then
     echo "Start building ACloudViewer app with python3.12"
     rm -rf ${CLOUDVIEWER_BUILD_DIR}/* && ${MACOS_APP_BUILD_SHELL} 3.12
 else

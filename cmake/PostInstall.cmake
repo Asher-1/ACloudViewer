@@ -60,7 +60,7 @@ endfunction()
 # Core shared libs (.dylib) may also be missing if lib_bundle_app.py
 # didn't discover them via otool (since they're loaded by dlopen).
 # Explicitly copy them from the install lib dir into each deploy app's
-# Frameworks directory so the DMG is self-contained.
+# Frameworks directory so the app bundle is self-contained.
 function(ensure_ggml_backends_in_app app_frameworks_dir install_lib_dir module_suffix)
     if(NOT IS_DIRECTORY "${install_lib_dir}" OR NOT IS_DIRECTORY "${app_frameworks_dir}")
         return()
@@ -354,26 +354,47 @@ endif()
 ## 3. Package
 set(OUTPUT_CLOUDVIEWER_PACKAGE_PATH ${CMAKE_INSTALL_PREFIX}/${ACLOUDVIEWER_PACKAGE_NAME}.${PACKAGE_EXTENSION})
 if (${PACKAGE} STREQUAL "ON") # package
-    set(PACKAGE_TOOL "binarycreator")
+    # PACKAGE_TOOL is set by install(CODE) from CMakeLists.txt find_program().
+    # Fallback to "binarycreator" only if it wasn't resolved at configure time.
+    if (NOT PACKAGE_TOOL OR PACKAGE_TOOL MATCHES "-NOTFOUND$")
+        set(PACKAGE_TOOL "binarycreator")
+    endif()
     if (APPLE)
-        # Qt IFW ≥4.x on macOS may create a nested app bundle where
-        # CFBundleExecutable points to a directory instead of a binary.
-        # Work around: create the .app first, fix the bundle, then wrap in DMG.
+        # Create the Qt IFW installer .app, then wrap in a DMG.
+        # The IFW installerbase is a .app bundle (with Frameworks embedded via
+        # macdeployqt), so binarycreator creates a nested bundle that we flatten.
         set(_QTIFW_APP_PATH "${CMAKE_INSTALL_PREFIX}/${ACLOUDVIEWER_PACKAGE_NAME}.app")
         set(_QTIFW_BUNDLE_EXE "${ACLOUDVIEWER_PACKAGE_NAME}")
-        message(STATUS "Creating macOS installer app: ${_QTIFW_APP_PATH}")
+        message(STATUS "Running: ${PACKAGE_TOOL} -c ${CONFIG_FILE_PATH} -p ${DEPLOY_PACKAGES_PATH} ${_QTIFW_APP_PATH}")
+        message(STATUS "  Working directory: ${MAIN_WORKING_DIRECTORY}")
         execute_process(COMMAND ${PACKAGE_TOOL}
             -c ${CONFIG_FILE_PATH} -p ${DEPLOY_PACKAGES_PATH}
             "${_QTIFW_APP_PATH}"
             WORKING_DIRECTORY ${MAIN_WORKING_DIRECTORY}
-            RESULT_VARIABLE _QTIFW_RESULT)
+            RESULT_VARIABLE _QTIFW_RESULT
+            OUTPUT_VARIABLE _QTIFW_STDOUT
+            ERROR_VARIABLE _QTIFW_STDERR)
+        if(_QTIFW_STDOUT)
+            message(STATUS "binarycreator stdout: ${_QTIFW_STDOUT}")
+        endif()
+        if(_QTIFW_STDERR)
+            message(WARNING "binarycreator stderr: ${_QTIFW_STDERR}")
+        endif()
         if(_QTIFW_RESULT)
-            message(FATAL_ERROR "binarycreator failed with code ${_QTIFW_RESULT}")
+            message(FATAL_ERROR
+                "binarycreator failed!\n"
+                "  Command: ${PACKAGE_TOOL} -c ${CONFIG_FILE_PATH} -p ${DEPLOY_PACKAGES_PATH} ${_QTIFW_APP_PATH}\n"
+                "  Working directory: ${MAIN_WORKING_DIRECTORY}\n"
+                "  Exit code: ${_QTIFW_RESULT}\n"
+                "  stderr: ${_QTIFW_STDERR}")
         endif()
 
-        # Fix nested bundle: if CFBundleExecutable is a directory (Qt IFW bug),
-        # flatten it by moving the inner installerbase binary to the expected path.
+        # Fix nested bundle: if CFBundleExecutable is a directory (Qt IFW creates
+        # a nested .app when the IFW installerbase is itself a .app bundle).
+        # Flatten by moving the inner binary to the expected path AND promoting
+        # Frameworks/PlugIns from the nested bundle to the top-level .app.
         set(_BUNDLE_MACOS "${_QTIFW_APP_PATH}/Contents/MacOS")
+        set(_BUNDLE_CONTENTS "${_QTIFW_APP_PATH}/Contents")
         set(_BUNDLE_EXE "${_BUNDLE_MACOS}/${_QTIFW_BUNDLE_EXE}")
         if(IS_DIRECTORY "${_BUNDLE_EXE}")
             # Find the real binary inside the nested bundle
@@ -384,6 +405,22 @@ if (${PACKAGE} STREQUAL "ON") # package
             endif()
             if(EXISTS "${_NESTED_BIN}")
                 message(STATUS "Fixing nested Qt IFW bundle: ${_NESTED_BIN} -> ${_BUNDLE_EXE}")
+
+                # Promote Frameworks/ from nested bundle to top-level .app
+                set(_NESTED_FW "${_BUNDLE_EXE}/Contents/Frameworks")
+                if(IS_DIRECTORY "${_NESTED_FW}")
+                    message(STATUS "Promoting Frameworks/ from nested bundle to ${_BUNDLE_CONTENTS}/Frameworks/")
+                    file(COPY "${_NESTED_FW}" DESTINATION "${_BUNDLE_CONTENTS}")
+                endif()
+
+                # Promote PlugIns/ from nested bundle to top-level .app
+                set(_NESTED_PLUGINS "${_BUNDLE_EXE}/Contents/PlugIns")
+                if(IS_DIRECTORY "${_NESTED_PLUGINS}")
+                    message(STATUS "Promoting PlugIns/ from nested bundle to ${_BUNDLE_CONTENTS}/PlugIns/")
+                    file(COPY "${_NESTED_PLUGINS}" DESTINATION "${_BUNDLE_CONTENTS}")
+                endif()
+
+                # Move the inner binary to the expected path
                 set(_TMP_BIN "${_BUNDLE_MACOS}/_installerbase_tmp")
                 file(COPY "${_NESTED_BIN}" DESTINATION "${_BUNDLE_MACOS}"
                      FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
@@ -412,39 +449,137 @@ if (${PACKAGE} STREQUAL "ON") # package
             message(WARNING "Ad-hoc signing failed (code ${_SIGN_RESULT}), installer may not launch on some macOS versions")
         endif()
 
-        # Create compressed DMG from the fixed app bundle.
-        # Detach any leftover mounts and pause briefly so codesign/Spotlight
-        # release file handles (avoids "Resource busy" on CI runners).
-        message(STATUS "Creating DMG: ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}")
-        file(REMOVE "${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}")
-        execute_process(COMMAND hdiutil detach "/Volumes/${ACLOUDVIEWER_PACKAGE_NAME}"
-                        ERROR_QUIET OUTPUT_QUIET RESULT_VARIABLE _DETACH_IGNORE)
-        execute_process(COMMAND ${CMAKE_COMMAND} -E sleep 2)
-        set(_DMG_RETRIES 3)
-        set(_DMG_RESULT 1)
-        foreach(_try RANGE 1 ${_DMG_RETRIES})
-            execute_process(COMMAND hdiutil create
-                -volname "${ACLOUDVIEWER_PACKAGE_NAME}"
-                -srcfolder "${_QTIFW_APP_PATH}"
-                -ov -format UDZO
-                "${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}"
-                RESULT_VARIABLE _DMG_RESULT)
-            if(NOT _DMG_RESULT)
-                break()
-            endif()
-            message(WARNING "hdiutil create attempt ${_try}/${_DMG_RETRIES} failed, retrying...")
-            execute_process(COMMAND ${CMAKE_COMMAND} -E sleep 3)
-        endforeach()
-        if(_DMG_RESULT)
-            message(FATAL_ERROR "hdiutil create failed after ${_DMG_RETRIES} attempts (code ${_DMG_RESULT})")
-        endif()
-        message(STATUS "${MAIN_APP_NAME} Installer Package ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH} created.")
+        # ── Create a polished DMG with background, icon, and Finder layout ──
+        set(_DMG_PATH "${CMAKE_INSTALL_PREFIX}/${ACLOUDVIEWER_PACKAGE_NAME}.dmg")
+        set(_DMG_VOL_NAME "${ACLOUDVIEWER_PACKAGE_NAME}")
+        set(_DMG_RW_PATH "${CMAKE_INSTALL_PREFIX}/.tmp_installer_rw.dmg")
+        set(_DMG_STAGING "${CMAKE_INSTALL_PREFIX}/.dmg_staging")
 
-        # Remove the intermediate .app bundle now that the DMG is ready
-        if(EXISTS "${_QTIFW_APP_PATH}")
-            message(STATUS "Removing intermediate app bundle: ${_QTIFW_APP_PATH}")
-            file(REMOVE_RECURSE "${_QTIFW_APP_PATH}")
+        # Locate DMG resources (background image + volume icon)
+        # Config files are deployed to ${DEPLOY_ROOT_PATH}/config/ during install
+        set(_DMG_RES_DIR "${MAIN_WORKING_DIRECTORY}/config")
+
+        # 1. Build staging directory with .app + background
+        file(REMOVE_RECURSE "${_DMG_STAGING}")
+        file(MAKE_DIRECTORY "${_DMG_STAGING}/.background")
+        file(COPY "${_QTIFW_APP_PATH}" DESTINATION "${_DMG_STAGING}")
+
+        # Ensure the installer .app has the correct icon in its Resources.
+        # IFW's Info.plist references CFBundleIconFile as <PackageName>.icns,
+        # so we must copy the icon with that exact name.
+        set(_STAGING_APP_RES "${_DMG_STAGING}/${ACLOUDVIEWER_PACKAGE_NAME}.app/Contents/Resources")
+        set(_STAGING_APP_PLIST "${_DMG_STAGING}/${ACLOUDVIEWER_PACKAGE_NAME}.app/Contents/Info.plist")
+        set(_DMG_ICON_SRC "${_DMG_RES_DIR}/logo_256.icns")
+        if(EXISTS "${_DMG_ICON_SRC}" AND IS_DIRECTORY "${_STAGING_APP_RES}")
+            # Extract the actual CFBundleIconFile name from Info.plist
+            file(READ "${_STAGING_APP_PLIST}" _PLIST_CONTENT)
+            string(REGEX MATCH "<key>CFBundleIconFile</key>[ \t\n]*<string>([^<]+)</string>" _ICON_MATCH "${_PLIST_CONTENT}")
+            if(CMAKE_MATCH_1)
+                set(_ICON_FILENAME "${CMAKE_MATCH_1}")
+            else()
+                # Fallback: use package name
+                set(_ICON_FILENAME "${ACLOUDVIEWER_PACKAGE_NAME}.icns")
+            endif()
+            file(COPY "${_DMG_ICON_SRC}" DESTINATION "${_STAGING_APP_RES}")
+            file(RENAME "${_STAGING_APP_RES}/logo_256.icns" "${_STAGING_APP_RES}/${_ICON_FILENAME}")
+            # Re-sign so Finder picks up the new icon
+            execute_process(COMMAND codesign --deep --force -s - "${_DMG_STAGING}/${ACLOUDVIEWER_PACKAGE_NAME}.app"
+                OUTPUT_QUIET ERROR_QUIET)
+            message(STATUS "DMG: refreshed .app icon as ${_ICON_FILENAME} (from ${_DMG_ICON_SRC})")
         endif()
+
+        # Copy background image if available
+        set(_DMG_BG "${_DMG_RES_DIR}/dmg_background.png")
+        if(EXISTS "${_DMG_BG}")
+            file(COPY "${_DMG_BG}" DESTINATION "${_DMG_STAGING}/.background")
+            message(STATUS "DMG background: ${_DMG_BG}")
+        endif()
+
+        # 2. Use dmgbuild to create a polished DMG with background, icon positions, and window size.
+        #    dmgbuild handles the full flow: create writable DMG → mount → AppleScript layout →
+        #    unmount → convert to compressed read-only. This is the only reliable way to get
+        #    Finder beautification on modern macOS (where .DS_Store injection alone doesn't work).
+        set(_APP_NAME_IN_DMG "${ACLOUDVIEWER_PACKAGE_NAME}.app")
+        set(_DMGBUILD_SETTINGS "${CMAKE_INSTALL_PREFIX}/.tmp_dmgbuild_settings.py")
+
+        # Find Python with dmgbuild package
+        set(_PYTHON_CMD "${_PYTHON_EXECUTABLE}")
+        if(NOT _PYTHON_CMD)
+            find_program(_PYTHON_CMD python3)
+        endif()
+        set(_DMGBUILD_OK FALSE)
+
+        if(_PYTHON_CMD AND EXISTS "${_DMG_BG}")
+            # Write dmgbuild settings file
+            # Note: dmgbuild automatically copies the background image into the DMG
+            # as '.background.png'. We only need to specify the installer .app in 'files'.
+            # Window size matches the background image (640x360) so it fills perfectly.
+            # No Applications symlink: this is an installer DMG, users double-click the .app.
+            file(WRITE "${_DMGBUILD_SETTINGS}"
+                "import os\n"
+                "appname = '${_APP_NAME_IN_DMG}'\n"
+                "icon_size = 96\n"
+                "window_rect = ((200, 100), (640, 440))\n"
+                "background = '${_DMG_STAGING}/.background/dmg_background.png'\n"
+                "show_status_bar = False\n"
+                "show_toolbar = False\n"
+                "show_sidebar = False\n"
+                "show_pathbar = False\n"
+                "files = ['${_DMG_STAGING}/${_APP_NAME_IN_DMG}']\n"
+                "icon_locations = {\n"
+                "    appname: (320, 120),\n"
+                "    '.background': (1000, 200),\n"
+                "}\n")
+
+            # First detach any stale volumes with the same name
+            execute_process(COMMAND hdiutil detach "/Volumes/${_DMG_VOL_NAME}" -force OUTPUT_QUIET ERROR_QUIET)
+            foreach(_suffix 1 2 3)
+                execute_process(COMMAND hdiutil detach "/Volumes/${_DMG_VOL_NAME} ${_suffix}" -force OUTPUT_QUIET ERROR_QUIET)
+            endforeach()
+
+            # Run dmgbuild
+            message(STATUS "DMG: running dmgbuild to create polished DMG: ${_DMG_PATH}")
+            execute_process(
+                COMMAND "${_PYTHON_CMD}" -m dmgbuild
+                    -s "${_DMGBUILD_SETTINGS}"
+                    "${_DMG_VOL_NAME}"
+                    "${_DMG_PATH}"
+                RESULT_VARIABLE _DMGBUILD_RESULT
+                OUTPUT_VARIABLE _DMGBUILD_STDOUT
+                ERROR_VARIABLE _DMGBUILD_STDERR
+                TIMEOUT 120)
+            file(REMOVE "${_DMGBUILD_SETTINGS}")
+
+            if(_DMGBUILD_RESULT EQUAL 0)
+                message(STATUS "DMG: dmgbuild succeeded: ${_DMGBUILD_STDOUT}")
+                set(_DMGBUILD_OK TRUE)
+            else()
+                message(STATUS "DMG: dmgbuild failed (code ${_DMGBUILD_RESULT}): ${_DMGBUILD_STDERR}")
+                message(STATUS "DMG: falling back to plain hdiutil approach")
+                set(_DMGBUILD_OK FALSE)
+            endif()
+        endif()
+
+        # Fallback: plain hdiutil approach (no beautification, but functional DMG)
+        if(NOT _DMGBUILD_OK)
+            message(STATUS "Creating plain DMG (no beautification): ${_DMG_PATH}")
+            execute_process(COMMAND
+                hdiutil create -srcfolder "${_DMG_STAGING}"
+                -volname "${_DMG_VOL_NAME}" -ov -format UDZO "${_DMG_PATH}"
+                RESULT_VARIABLE _DMG_RESULT
+                OUTPUT_VARIABLE _DMG_STDOUT ERROR_VARIABLE _DMG_STDERR)
+            if(_DMG_RESULT)
+                message(FATAL_ERROR "hdiutil create failed:\n  code: ${_DMG_RESULT}\n  stderr: ${_DMG_STDERR}")
+            endif()
+        endif()
+
+        # 3. Cleanup temporary files
+        file(REMOVE_RECURSE "${_DMG_STAGING}")
+        file(REMOVE "${_DMG_RW_PATH}")
+        file(REMOVE_RECURSE "${_QTIFW_APP_PATH}")
+
+        message(STATUS "${MAIN_APP_NAME} Installer DMG created: ${_DMG_PATH}")
+        message(STATUS "Open the DMG and double-click the .app to launch the installer.")
     else()
         # Linux / Windows: create installer directly
         set(SHELL_CMD "${PACKAGE_TOOL} -c ${CONFIG_FILE_PATH} -p ${DEPLOY_PACKAGES_PATH} ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}")
@@ -461,7 +596,12 @@ if (${PACKAGE} STREQUAL "ON") # package
             message(WARNING "${PACKAGE_TOOL} stderr: ${_ifw_stderr}")
         endif()
         if(_ifw_result)
-            message(FATAL_ERROR "${PACKAGE_TOOL} failed with code ${_ifw_result}. Installer not created.")
+            message(FATAL_ERROR
+                "${PACKAGE_TOOL} failed!\n"
+                "  Command: ${SHELL_CMD}\n"
+                "  Working directory: ${MAIN_WORKING_DIRECTORY}\n"
+                "  Exit code: ${_ifw_result}\n"
+                "  stderr: ${_ifw_stderr}")
         endif()
         if(NOT EXISTS "${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}")
             message(FATAL_ERROR "${PACKAGE_TOOL} did not produce expected output: ${OUTPUT_CLOUDVIEWER_PACKAGE_PATH}")

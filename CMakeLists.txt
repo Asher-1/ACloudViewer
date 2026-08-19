@@ -944,6 +944,24 @@ if (NOT APPLE)
 endif()
 set(ACLOUDVIEWER_PACKAGE_NAME "${MAIN_APP_NAME}-${CLOUDVIEWER_VERSION_FULL}-${MACHINE_NAME}-${ACLOUDVIEWER_DEVICE}-${ARC_NAME}")
 
+# Locate binarycreator at configure time so we can pass the full path to
+# PostInstall.cmake.  Falls back to bare "binarycreator" (PATH lookup) at
+# install time if not found here.
+find_program(PACKAGE_TOOL binarycreator
+    HINTS
+        # Static IFW paths (preferred — self-contained, zero @rpath deps)
+        "$ENV{HOME}/opt/Qt/QtIFW-4.6.1-darwin-ARM64-static/bin"
+        "$ENV{HOME}/QtIFW-4.6.1-darwin-ARM64-static/bin"
+        # Legacy dynamic IFW paths (fallback)
+        "$ENV{HOME}/opt/Qt/QtIFW-4.6.1-darwin-ARM64/bin"
+        "$ENV{HOME}/QtIFW-4.6.1-darwin-ARM64/bin"
+        "C:/QtIFW-4.6.1-win/bin"
+        "/root/QtIFW-4.6.1-linux-amd/bin"
+)
+if (PACKAGE AND PACKAGE_TOOL)
+    message(STATUS "binarycreator: ${PACKAGE_TOOL}")
+endif()
+
 # for ACloudViewer
 foreach( filename ${main_documents_list} )
     cloudViewer_install_ext( FILES ${filename} "${ACLOUDVIEWER_INSTALL_PATH}" "" )
@@ -991,11 +1009,17 @@ install(CODE "set(CloudViewer_INSTALL_LIB_DIR \"${CloudViewer_INSTALL_LIB_DIR}\"
 install(CODE "set(PACK_SCRIPTS_PATH \"${PACK_SCRIPTS_PATH}\")")
 install(CODE "set(DEPLOY_ROOT_PATH \"${DEPLOY_ROOT_PATH}\")")
 install(CODE "set(ACLOUDVIEWER_PACKAGE_NAME \"${ACLOUDVIEWER_PACKAGE_NAME}\")")
+# Pass full binarycreator path to PostInstall.cmake when found at configure time.
+# When not found, PostInstall.cmake falls back to bare "binarycreator" (PATH lookup).
+if (PACKAGE_TOOL AND NOT PACKAGE_TOOL MATCHES "-NOTFOUND$")
+    install(CODE "set(PACKAGE_TOOL \"${PACKAGE_TOOL}\")")
+endif()
 install(CODE "set(PACKAGE \"${PACKAGE}\")")
 install(CODE "set(AICore_CUDA_ENABLED \"${AICore_CUDA_ENABLED}\")")
 install(CODE "set(AICore_BUNDLE_CUDA_RUNTIME \"${AICore_BUNDLE_CUDA_RUNTIME}\")")
 install(CODE "set(GGML_MODULE_SUFFIX \"${GGML_MODULE_SUFFIX}\")")
 install(CODE "set(CMAKE_SHARED_LIBRARY_PREFIX \"${CMAKE_SHARED_LIBRARY_PREFIX}\")")
+install(CODE "set(_PYTHON_EXECUTABLE \"${Python3_EXECUTABLE}\")")
 if(AICore_BUNDLE_CUDA_RUNTIME AND AICore_CUDA_ENABLED)
     set(_bundle_extra_lib_dirs "")
     if(CUDAToolkit_FOUND)

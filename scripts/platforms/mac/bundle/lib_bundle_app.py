@@ -508,20 +508,28 @@ class CCBundler:
 
         libs_in_framework = set(self.config.frameworks_path.iterdir())
         added_to_framework_count = 0
+        overwritten_framework_count = 0
         for lib in libs_found:
             if lib == self.config.embedded_python_binary:
                 continue
             if should_skip_cuda_runtime_lib(lib):
                 logger.info("Skip NVIDIA CUDA runtime in Frameworks: %s", lib)
                 continue
+            if lib in python_libs:
+                continue
             base = self.config.frameworks_path / lib.name
-            if base not in libs_in_framework and lib not in python_libs:
+            if base not in libs_in_framework:
                 shutil.copy2(
                     lib,
                     self.config.frameworks_path,
                 )  # copy libs that are not in framework yet
                 added_to_framework_count = added_to_framework_count + 1
+            elif not base.samefile(lib):
+                # Overwrite stale library with freshly resolved version
+                shutil.copy2(lib, self.config.frameworks_path)
+                overwritten_framework_count = overwritten_framework_count + 1
         logger.info("libs added to Frameworks: %i", added_to_framework_count)
+        logger.info("libs overwritten in Frameworks (stale refresh): %i", overwritten_framework_count)
 
         logger.info(" --- Python libs: set rpath to Frameworks, nb libs: %i", len(python_libs))
 
@@ -714,6 +722,7 @@ class CCBundler:
         libs_in_frameworks = set(self.config.frameworks_path.iterdir())
 
         nb_libs_added = 0
+        nb_libs_overwritten = 0
         for lib in libs_found:
             if lib == self.config.cc_bin_path:
                 continue
@@ -721,10 +730,20 @@ class CCBundler:
                 logger.info("Skip NVIDIA CUDA runtime in Frameworks: %s", lib)
                 continue
             base = self.config.frameworks_path / lib.name
-            if (base not in libs_in_frameworks) and (lib not in libs_in_plugins) and (lib not in libs_in_cv_plugins):
+            if (lib in libs_in_plugins) or (lib in libs_in_cv_plugins):
+                continue
+            if base not in libs_in_frameworks:
                 shutil.copy2(lib, self.config.frameworks_path)
                 nb_libs_added += 1
+            elif not base.samefile(lib):
+                # Overwrite stale library with the freshly resolved version.
+                # This handles incremental builds where Frameworks already contains
+                # a library from a previous install but the new build added symbols
+                # (e.g. ccDrawableObject::addToDisplay) that the old copy lacks.
+                shutil.copy2(lib, self.config.frameworks_path)
+                nb_libs_overwritten += 1
         logger.info("number of libs added to Frameworks: %i", nb_libs_added)
+        logger.info("number of libs overwritten in Frameworks (stale refresh): %i", nb_libs_overwritten)
 
         # --- ajout des rpath pour les libraries du framework : framework et cvPlugins
         logger.info(" --- Frameworks libs: add rpath to Frameworks")

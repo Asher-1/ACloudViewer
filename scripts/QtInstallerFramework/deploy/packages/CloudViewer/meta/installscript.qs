@@ -45,7 +45,10 @@ Component.prototype.createOperations = function()
 			component.createOperations();
 			
 			if (installer.value("os") == "mac") {
-				// no need to make shortcut on macos
+				// Refresh Finder icon cache after installation
+				component.addOperation("Execute", "touch", "@TargetDir@/CloudViewer.app");
+				component.addOperation("Execute", "/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister",
+					"-f", "@TargetDir@/CloudViewer.app");
 			} else if (installer.value("os") === "x11") {
 				/*************************************** Path variable reference ****************************************
 				Built-in variables

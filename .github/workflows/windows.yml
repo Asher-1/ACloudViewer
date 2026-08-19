@@ -137,7 +137,8 @@ jobs:
       - name: Install dependencies
         # deploy QtIFW for installer and deploy 3rdparty_downloads.zip for fast building on windows
         run: |
-          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/QtIFW-4.6.1-win.zip" -OutFile "C:\QtIFW-4.6.1-win.zip"
+          # Deploy QtIFW for installer packaging (pre-built, hosted on cloudViewer_downloads).
+          Invoke-WebRequest -Uri "https://github.com/Asher-1/cloudViewer_downloads/releases/download/qt-ifw/QtIFW-4.6.1-win.zip" -OutFile "C:\QtIFW-4.6.1-win.zip"
           Expand-Archive "C:\QtIFW-4.6.1-win.zip" "C:\" -Force && Remove-Item "C:\QtIFW-4.6.1-win.zip"
           $env:PATH = "C:\QtIFW-4.6.1-win\bin;$env:PATH"
           echo $env:PATH
