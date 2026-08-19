@@ -134,9 +134,7 @@ public:
     bool openVideo(const std::string&, int = 0) override { return false; }
     bool openCamera(int, int = 0) override { return false; }
     bool isOpened() const override { return false; }
-    ReadResult read(cv::Mat&, int64_t*) override {
-        return ReadResult::NoFrame;
-    }
+    ReadResult read(cv::Mat&, int64_t*) override { return ReadResult::NoFrame; }
     bool seekToFrame(int) override { return false; }
     int64_t frameCount() const override { return 0; }
     double fps() const override { return 0.0; }

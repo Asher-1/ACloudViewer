@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "common.hpp"
 
 #include <atomic>
@@ -8,31 +15,41 @@
 
 namespace {
 
-std::mutex          g_log_mutex;
-rfdetr_log_cb       g_log_cb       = nullptr;
-void*               g_log_user     = nullptr;
+std::mutex g_log_mutex;
+rfdetr_log_cb g_log_cb = nullptr;
+void* g_log_user = nullptr;
 
 }  // namespace
 
 extern "C" const char* rfdetr_status_str(rfdetr_status s) {
     switch (s) {
-        case RFDETR_OK:                  return "ok";
-        case RFDETR_ERR_INVALID_ARG:     return "invalid argument";
-        case RFDETR_ERR_FILE_NOT_FOUND:  return "file not found";
-        case RFDETR_ERR_IO:              return "i/o error";
-        case RFDETR_ERR_OUT_OF_MEMORY:   return "out of memory";
-        case RFDETR_ERR_DECODE:          return "image decode error";
-        case RFDETR_ERR_MODEL_FORMAT:    return "model format error";
-        case RFDETR_ERR_MODEL_LOAD:      return "model load error";
-        case RFDETR_ERR_INFERENCE:       return "inference error";
-        case RFDETR_ERR_NOT_IMPLEMENTED: return "not implemented";
+        case RFDETR_OK:
+            return "ok";
+        case RFDETR_ERR_INVALID_ARG:
+            return "invalid argument";
+        case RFDETR_ERR_FILE_NOT_FOUND:
+            return "file not found";
+        case RFDETR_ERR_IO:
+            return "i/o error";
+        case RFDETR_ERR_OUT_OF_MEMORY:
+            return "out of memory";
+        case RFDETR_ERR_DECODE:
+            return "image decode error";
+        case RFDETR_ERR_MODEL_FORMAT:
+            return "model format error";
+        case RFDETR_ERR_MODEL_LOAD:
+            return "model load error";
+        case RFDETR_ERR_INFERENCE:
+            return "inference error";
+        case RFDETR_ERR_NOT_IMPLEMENTED:
+            return "not implemented";
     }
     return "unknown error";
 }
 
 extern "C" void rfdetr_set_log_callback(rfdetr_log_cb cb, void* user_data) {
     std::lock_guard<std::mutex> lk(g_log_mutex);
-    g_log_cb   = cb;
+    g_log_cb = cb;
     g_log_user = user_data;
 }
 

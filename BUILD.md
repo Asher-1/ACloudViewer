@@ -251,6 +251,7 @@ Expand the `INSTALL` group in CMake GUI to enable plugins:
 | qFaceDetect             | PLUGIN_STANDARD_QFACEDETECT              | OFF           | face-detect.cpp — SCRFD/YuNet detection, ArcFace/SFace verify, age/gender ([README](plugins/core/Standard/qFaceDetect/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/facedetect`). |
 | qRFDetr                 | PLUGIN_STANDARD_QRFDETR                  | OFF           | RF-DETR real-time object detection/segmentation, COCO 80 classes, GGUF ([README](plugins/core/Standard/qRFDetr/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/rfdetr`). |
 | qRMBG                   | PLUGIN_STANDARD_QRMBG                    | OFF           | RMBG-2.0 (BiRefNet-Swin-L) background removal, transparent RGBA output, GGUF ([README](plugins/core/Standard/qRMBG/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/rmbg`). |
+| qYOLO                   | PLUGIN_STANDARD_QYOLO                    | OFF           | YOLO object detection (COCO 80) + metric depth, GGUF ([README](plugins/core/Standard/qYOLO/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/yolo`). |
 
 > 📖 **Plugin catalog:** [plugins/README.md](plugins/README.md) — per-plugin README index and AICore build recipes.
 
@@ -332,6 +333,7 @@ cmake -DBUILD_CUDA_MODULE=ON \
       -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
       -DPLUGIN_STANDARD_QRFDETR=ON \
       -DPLUGIN_STANDARD_QRMBG=ON \
+      -DPLUGIN_STANDARD_QYOLO=ON \
       ..
 cmake --build . --config Release
 ```
@@ -351,6 +353,7 @@ cmake -DBUILD_GUI=ON \
       -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
       -DPLUGIN_STANDARD_QRFDETR=ON \
       -DPLUGIN_STANDARD_QRMBG=ON \
+      -DPLUGIN_STANDARD_QYOLO=ON \
       ..
 cmake --build . --config Release --target ACloudViewer
 ```

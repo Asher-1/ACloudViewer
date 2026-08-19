@@ -10,6 +10,14 @@
 #ifdef HAS_OPENCV_FACE_CAPTURE
 
 VideoFrameReader::VideoFrameReader(QObject* parent) : QObject(parent) {
+    resetSource();
+}
+
+void VideoFrameReader::resetSource() {
+    if (m_consumerDriven) {
+        m_source = std::make_unique<OpenCVFrameSource>();
+        return;
+    }
 #ifdef HAS_LIBMPV
     if (MpvFrameSource::available()) {
         m_source = std::make_unique<MpvFrameSource>();
@@ -21,12 +29,18 @@ VideoFrameReader::VideoFrameReader(QObject* parent) : QObject(parent) {
 #endif
 }
 
-VideoFrameReader::~VideoFrameReader() {
+VideoFrameReader::~VideoFrameReader() { release(); }
+
+void VideoFrameReader::setConsumerDriven(bool enabled) {
+    if (m_consumerDriven == enabled && m_source) return;
     release();
+    m_consumerDriven = enabled;
+    resetSource();
 }
 
 bool VideoFrameReader::openVideo(const std::string& path, int backend) {
     release();
+    resetSource();
     if (m_source->openVideo(path, backend)) return true;
 #ifdef HAS_LIBMPV
     // The mpv backend could not open the file (unsupported container /
@@ -70,9 +84,7 @@ int VideoFrameReader::getFrameHeight() const {
     return m_source ? m_source->height() : 0;
 }
 
-int VideoFrameReader::currentFrameNum() const {
-    return m_lastFrameIndex;
-}
+int VideoFrameReader::currentFrameNum() const { return m_lastFrameIndex; }
 
 void VideoFrameReader::readFrame() {
     // Reentrancy guard: on Windows the MSMF/DirectShow backend can take
@@ -117,6 +129,28 @@ void VideoFrameReader::setPaused(bool paused) {
 
 void VideoFrameReader::setPlaybackSpeed(double speed) {
     if (m_source) m_source->setSpeed(speed);
+}
+
+void VideoFrameReader::startClockReading(int intervalMs) {
+    // Slot runs on the reader thread, so the timer lives and fires there —
+    // decode stays off the UI thread and open/seek/release slots remain
+    // deliverable between ticks.
+    if (!m_clockTimer) {
+        m_clockTimer = new QTimer(this);
+        m_clockTimer->setTimerType(Qt::CoarseTimer);
+        connect(m_clockTimer, &QTimer::timeout, this,
+                &VideoFrameReader::readFrame);
+    }
+    m_clockTimer->setInterval(std::max(1, intervalMs));
+    if (!m_clockTimer->isActive()) m_clockTimer->start();
+}
+
+void VideoFrameReader::stopClockReading() {
+    if (m_clockTimer) m_clockTimer->stop();
+}
+
+void VideoFrameReader::setClockInterval(int intervalMs) {
+    if (m_clockTimer) m_clockTimer->setInterval(std::max(1, intervalMs));
 }
 
 void VideoFrameReader::release() {

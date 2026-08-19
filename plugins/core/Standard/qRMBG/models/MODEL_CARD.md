@@ -13,15 +13,23 @@
 
 ## Files
 
+All three quantization variants are published in the `trellis2-ggml` release
+(sizes measured from the release assets):
+
 | Filename            | Size (approx.) | Format | Notes                          |
 |---------------------|----------------|--------|--------------------------------|
-| `rmbg_f16.gguf`     | ~650 MB        | GGUF   | Unified single file: encoder + decoder, F16 |
+| `rmbg_f32.gguf`     | ~840 MB        | GGUF   | Unified single file: encoder + decoder, F32 reference |
+| `rmbg_f16.gguf`     | ~420 MB        | GGUF   | Unified single file: encoder + decoder, F16 (recommended) |
+| `rmbg_q8.gguf`      | ~245 MB        | GGUF   | Unified single file: encoder + decoder, 8-bit quant |
 
 ## Download
 
-Mirror hosted by ACloudViewer:
+Mirror hosted by ACloudViewer (`trellis2-ggml` release):
 
-`https://github.com/Asher-1/cloudViewer_downloads/releases/download/trellis2-ggml/rmbg_f16.gguf`
+`https://github.com/Asher-1/cloudViewer_downloads/releases/download/trellis2-ggml/rmbg_<f32|f16|q8>.gguf`
+
+> Note: `rmbg_q8_0.gguf` / `rmbg_q4_K.gguf` are **not** published upstream; the
+> model combo only lists entries that exist on the release.
 
 The model cache directory is `rmbg_models/` (see `aicore_rmbg_model_cache_dir`).
 

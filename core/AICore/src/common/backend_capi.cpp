@@ -223,7 +223,8 @@ bool FillModelDeviceInfo(enum aicore_model_kind model,
         case AICORE_MODEL_RFDETR:
             // RF-DETR F16 (e.g. base) is ~64 MB; working set dominated by the
             // ~2 GB of intermediate tensors at 640x640 (compact gallocr reuse
-            // shrinks the live footprint, but the scratch still needs headroom).
+            // shrinks the live footprint, but the scratch still needs
+            // headroom).
             minimum = 512ull * 1024 * 1024;
             recommended = 2ull * 1024 * 1024 * 1024;
             break;

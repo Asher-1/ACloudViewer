@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "postprocess.hpp"
 
 #include <algorithm>
@@ -7,7 +14,10 @@
 #include <new>
 #include <vector>
 
-extern "C" void rfdetr_bbox_cxcywh_to_xyxy(const float in[4], int img_w, int img_h, float out[4]) {
+extern "C" void rfdetr_bbox_cxcywh_to_xyxy(const float in[4],
+                                           int img_w,
+                                           int img_h,
+                                           float out[4]) {
     const float cx = in[0], cy = in[1], w = in[2], h = in[3];
     float x1 = (cx - 0.5f * w) * (float)img_w;
     float y1 = (cy - 0.5f * h) * (float)img_h;
@@ -35,26 +45,32 @@ inline float sigmoidf(float x) {
 struct Candidate {
     uint32_t query;
     uint32_t class_id;
-    float    score;
+    float score;
 };
 
 }  // namespace
 
 extern "C" void rfdetr_select_detections(const float* class_logits,
                                          const float* bbox_cxcywh,
-                                         size_t num_queries, size_t num_classes,
-                                         float threshold, uint32_t top_k,
-                                         const uint32_t* class_filter, size_t class_filter_len,
-                                         int img_w, int img_h,
-                                         rfdetr_detection** out_detections, size_t* out_n) {
+                                         size_t num_queries,
+                                         size_t num_classes,
+                                         float threshold,
+                                         uint32_t top_k,
+                                         const uint32_t* class_filter,
+                                         size_t class_filter_len,
+                                         int img_w,
+                                         int img_h,
+                                         rfdetr_detection** out_detections,
+                                         size_t* out_n) {
     *out_detections = nullptr;
     *out_n = 0;
 
-    if (!class_logits || !bbox_cxcywh || num_queries == 0 || num_classes == 0) return;
+    if (!class_logits || !bbox_cxcywh || num_queries == 0 || num_classes == 0)
+        return;
 
     try {
-        /* Fast-membership lookup for the class filter. For small allowlists this
-         * linear scan is fine; revisit if num_classes grows. */
+        /* Fast-membership lookup for the class filter. For small allowlists
+         * this linear scan is fine; revisit if num_classes grows. */
         auto class_allowed = [&](uint32_t cid) -> bool {
             if (!class_filter || class_filter_len == 0) return true;
             for (size_t i = 0; i < class_filter_len; ++i) {
@@ -67,14 +83,17 @@ extern "C" void rfdetr_select_detections(const float* class_logits,
         cands.reserve(num_queries);
 
         for (size_t q = 0; q < num_queries; ++q) {
-            /* Take argmax over classes after sigmoid (DETR convention: per-class
-             * sigmoid, not softmax across classes). */
+            /* Take argmax over classes after sigmoid (DETR convention:
+             * per-class sigmoid, not softmax across classes). */
             const float* row = class_logits + q * num_classes;
             uint32_t best_c = 0;
-            float    best_s = -1.0f;
+            float best_s = -1.0f;
             for (size_t c = 0; c < num_classes; ++c) {
                 float s = sigmoidf(row[c]);
-                if (s > best_s) { best_s = s; best_c = (uint32_t)c; }
+                if (s > best_s) {
+                    best_s = s;
+                    best_c = (uint32_t)c;
+                }
             }
             if (best_s <= threshold) continue;
             if (!class_allowed(best_c)) continue;
@@ -83,28 +102,32 @@ extern "C" void rfdetr_select_detections(const float* class_logits,
 
         /* Sort by score descending. */
         std::sort(cands.begin(), cands.end(),
-                  [](const Candidate& a, const Candidate& b) { return a.score > b.score; });
+                  [](const Candidate& a, const Candidate& b) {
+                      return a.score > b.score;
+                  });
 
         if (top_k > 0 && cands.size() > top_k) cands.resize(top_k);
         if (cands.empty()) return;
 
-        auto* out = (rfdetr_detection*)std::calloc(cands.size(), sizeof(rfdetr_detection));
+        auto* out = (rfdetr_detection*)std::calloc(cands.size(),
+                                                   sizeof(rfdetr_detection));
         if (!out) return;
 
         for (size_t i = 0; i < cands.size(); ++i) {
             const auto& c = cands[i];
-            out[i].class_id   = c.class_id;
+            out[i].class_id = c.class_id;
             out[i].class_name = nullptr;
-            out[i].score      = c.score;
+            out[i].score = c.score;
             float box[4];
-            rfdetr_bbox_cxcywh_to_xyxy(bbox_cxcywh + c.query * 4, img_w, img_h, box);
+            rfdetr_bbox_cxcywh_to_xyxy(bbox_cxcywh + c.query * 4, img_w, img_h,
+                                       box);
             out[i].x1 = box[0];
             out[i].y1 = box[1];
             out[i].x2 = box[2];
             out[i].y2 = box[3];
         }
         *out_detections = out;
-        *out_n          = cands.size();
+        *out_n = cands.size();
     } catch (const std::bad_alloc&) {
         *out_detections = nullptr;
         *out_n = 0;
@@ -128,10 +151,13 @@ namespace {
  * and write a uint8 0/255 buffer.  Uses the same align_corners=False
  * convention as torch's F.interpolate (matches ggml_interpolate).
  *
- * Returns a heap-allocated (caller-owned) uint8 buffer of size dst_w * dst_h. */
+ * Returns a heap-allocated (caller-owned) uint8 buffer of size dst_w * dst_h.
+ */
 uint8_t* upsample_and_threshold_mask(const float* src,
-                                     int src_w, int src_h,
-                                     int dst_w, int dst_h,
+                                     int src_w,
+                                     int src_h,
+                                     int dst_w,
+                                     int dst_h,
                                      float threshold) {
     auto* out = (uint8_t*)std::calloc((size_t)dst_w * dst_h, sizeof(uint8_t));
     if (!out) return nullptr;
@@ -165,15 +191,14 @@ uint8_t* upsample_and_threshold_mask(const float* src,
             x1 = std::clamp(x1, 0, src_w - 1);
             const float dxf = std::clamp(x - (float)x0, 0.0f, 1.0f);
 
-            /* src is (W, H) row-major-on-W layout from ggml's per-query slice. */
+            /* src is (W, H) row-major-on-W layout from ggml's per-query slice.
+             */
             const float a = src[(size_t)y0 * src_w + x0];
             const float b = src[(size_t)y0 * src_w + x1];
             const float c = src[(size_t)y1 * src_w + x0];
             const float d = src[(size_t)y1 * src_w + x1];
-            const float v = a * (1 - dxf) * (1 - dyf) +
-                            b * dxf * (1 - dyf) +
-                            c * (1 - dxf) * dyf +
-                            d * dxf * dyf;
+            const float v = a * (1 - dxf) * (1 - dyf) + b * dxf * (1 - dyf) +
+                            c * (1 - dxf) * dyf + d * dxf * dyf;
             out[(size_t)dy * dst_w + dx] = (sigmoidf(v) > threshold) ? 255 : 0;
         }
     }
@@ -183,26 +208,31 @@ uint8_t* upsample_and_threshold_mask(const float* src,
 }  // namespace
 
 extern "C" void rfdetr_select_detections_with_masks(
-    const float* class_logits,
-    const float* bbox_cxcywh,
-    const float* masks_logits, int mask_w, int mask_h, float mask_threshold,
-    size_t num_queries, size_t num_classes,
-    float threshold, uint32_t top_k,
-    const uint32_t* class_filter, size_t class_filter_len,
-    int img_w, int img_h,
-    rfdetr_detection** out_detections, size_t* out_n) {
+        const float* class_logits,
+        const float* bbox_cxcywh,
+        const float* masks_logits,
+        int mask_w,
+        int mask_h,
+        float mask_threshold,
+        size_t num_queries,
+        size_t num_classes,
+        float threshold,
+        uint32_t top_k,
+        const uint32_t* class_filter,
+        size_t class_filter_len,
+        int img_w,
+        int img_h,
+        rfdetr_detection** out_detections,
+        size_t* out_n) {
     *out_detections = nullptr;
     *out_n = 0;
 
     /* First do the regular selection (without masks). */
     rfdetr_detection* base = nullptr;
     size_t base_n = 0;
-    rfdetr_select_detections(class_logits, bbox_cxcywh,
-                             num_queries, num_classes,
-                             threshold, top_k,
-                             class_filter, class_filter_len,
-                             img_w, img_h,
-                             &base, &base_n);
+    rfdetr_select_detections(class_logits, bbox_cxcywh, num_queries,
+                             num_classes, threshold, top_k, class_filter,
+                             class_filter_len, img_w, img_h, &base, &base_n);
     if (!base || base_n == 0) {
         *out_detections = base;
         *out_n = base_n;
@@ -240,15 +270,23 @@ extern "C" void rfdetr_select_detections_with_masks(
         }
         return false;
     };
-    struct Cand { uint32_t query; uint32_t cls; float score; };
+    struct Cand {
+        uint32_t query;
+        uint32_t cls;
+        float score;
+    };
     std::vector<Cand> cands;
     cands.reserve(num_queries);
     for (size_t q = 0; q < num_queries; ++q) {
         const float* row = class_logits + q * num_classes;
-        uint32_t best_c = 0; float best_s = -1.0f;
+        uint32_t best_c = 0;
+        float best_s = -1.0f;
         for (size_t c = 0; c < num_classes; ++c) {
             float s = sigmoidf(row[c]);
-            if (s > best_s) { best_s = s; best_c = (uint32_t)c; }
+            if (s > best_s) {
+                best_s = s;
+                best_c = (uint32_t)c;
+            }
         }
         if (best_s <= threshold) continue;
         if (!class_allowed(best_c)) continue;
@@ -264,11 +302,18 @@ extern "C" void rfdetr_select_detections_with_masks(
     for (size_t i = 0; i < base_n && i < cands.size(); ++i) {
         const uint32_t q = cands[i].query;
         const float* src = masks_logits + q * plane;
+        /* Keep masks at model resolution (mask_w x mask_h, e.g. 640x640)
+         * instead of upsampling to the original frame: the display path
+         * (plugin drawDetections / rfdetr_render) stretches them over the
+         * frame, and removing the full-frame bilinear upsample + PNG encode
+         * of a 2M-pixel buffer per detection cuts 10-80 ms off every frame
+         * of video inference. Same-size sampling below is exact
+         * (sf_x == sf_y == 1 => v == src[dx]) so nothing is lost. */
         uint8_t* upsampled = upsample_and_threshold_mask(
-            src, mask_w, mask_h, img_w, img_h, mask_threshold);
-        base[i].mask        = upsampled;
-        base[i].mask_width  = upsampled ? img_w : 0;
-        base[i].mask_height = upsampled ? img_h : 0;
+                src, mask_w, mask_h, mask_w, mask_h, mask_threshold);
+        base[i].mask = upsampled;
+        base[i].mask_width = upsampled ? mask_w : 0;
+        base[i].mask_height = upsampled ? mask_h : 0;
     }
 
     *out_detections = base;

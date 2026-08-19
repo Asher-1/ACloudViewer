@@ -6,7 +6,7 @@
 // ----------------------------------------------------------------------------
 
 // Qt-based image I/O implementation for FreeSplatter.
-// Replaces stb_image with QImage for loading, center-cropping, and resizing.
+// QImage-based loading, center-cropping, and resizing.
 #include "image_io.hpp"
 
 #include <QImage>

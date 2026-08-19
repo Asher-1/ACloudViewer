@@ -46,7 +46,7 @@ Example outputs: `build_app/bin/libAICore.so`, `build_app/bin/plugins/libQRMBG_P
 
 ### Image tab
 
-1. Select the model (`rmbg_f16.gguf`, unified encoder + decoder).
+1. Select the model (default `rmbg_f16.gguf`; f32 / q8 variants are also offered in the combo).
 2. Set **Device** (`Auto` / CUDA / Vulkan / CPU) and **Threads** (0 = auto).
 3. Pick an input image from disk or the DB tree (collapsible DB list, or select in the main DB tree).
 4. Click **Run** — the model downloads from cloudViewer_downloads on first use.
@@ -59,20 +59,22 @@ the result over a checkerboard so removed background is clearly visible.
 ### Live (camera / video) tab
 
 1. Start the camera or open a video file (reuses `video_base` playback).
-2. Inference is throttled to every 5th video frame; the preview shows the background-removed result in real time over a checkerboard.
+2. Playback is inference-paced: a decoded frame is displayed only after its background-removal result has been drawn, so the preview always matches the current frame over the checkerboard.
 3. **Capture** stores the current RGBA snapshot into the DB tree.
 
 ## Models
 
-Official weights: [cloudViewer_downloads trellis2-ggml release](https://github.com/Asher-1/cloudViewer_downloads/releases/tag/trellis2-ggml) — unified F16 GGUF (encoder + decoder).
+Official weights: [cloudViewer_downloads trellis2-ggml release](https://github.com/Asher-1/cloudViewer_downloads/releases/tag/trellis2-ggml) — unified encoder + decoder GGUF in three quantizations.
 
 | Filename | Size (approx.) | Notes |
 |----------|----------------|-------|
-| `rmbg_f16.gguf` | ~650 MB | BiRefNet-Swin-L, 1024×1024 input |
+| `rmbg_f16.gguf` | ~420 MB | BiRefNet-Swin-L, 1024×1024 input (**default**) |
+| `rmbg_f32.gguf` | ~840 MB | float32 reference |
+| `rmbg_q8.gguf`  | ~245 MB | 8-bit quant, smallest download |
 
 Model cache directory: `rmbg_models/`.
 
-See [MODEL_CARD.md](../../../plugins/core/Standard/qRMBG/models/MODEL_CARD.md) for download links and licensing.
+See [MODEL_CARD.md](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qRMBG/models/MODEL_CARD.md) for download links and licensing.
 
 ## Backends
 

@@ -7,24 +7,21 @@
 
 #pragma once
 
-#include <QAtomicInt>
 #include <QElapsedTimer>
-#include <QFutureWatcher>
 #include <QImage>
 #include <QString>
 #include <QThread>
 #include <QWidget>
 
+#include "RMBGLiveInferWorker.h"
 #include "RMBGModelCatalog.h"
 #include "VideoPlaybackWidget.h"
 
 class QComboBox;
 class QLabel;
 class QSpinBox;
-struct aicore_cancel_token;
-struct aicore_rmbg_ctx;
 
-/** Live camera / video preview with throttled RMBG-2.0 background removal.
+/** Live camera / video preview with inference-paced background removal.
  *  The playback panel (preview, source selection, seek/speed controls and
  *  the background decode pipeline) is inherited from VideoPlaybackWidget;
  *  this widget only adds the model controls, inference thread and the
@@ -37,6 +34,9 @@ public:
         QString modelPath;
         QString device = QStringLiteral("auto");
         int threads = 0;
+        /** Pixels with alpha below this value become fully transparent
+         *  (0.0 disables the threshold pass). */
+        float alphaThreshold = 0.5f;
     };
 
     explicit RMBGLiveWidget(QWidget* parent = nullptr);
@@ -83,7 +83,7 @@ public slots:
     void captureSnapshotToDb();
 
 private slots:
-    void onInferComplete(const RMBGRunResult& result);
+    void onInferComplete(RMBGLiveInferWorker::Result result);
 
 protected:
     // ---- video_base hooks -------------------------------------------------
@@ -99,12 +99,19 @@ protected:
 private:
     void setupUi();
     void updateModelPathFromCombo();
-    void submitInferJob(const QImage& inferRgb);
+    void submitInferJob(const QImage& rgb);
     void shutdownInferThread();
+    /** Checkerboard-composite the current display frame with the latest
+     *  inference alpha mask (preview resolution — ~0.5 ms per frame). */
+    void applyLiveComposite(QImage& display);
+    /** Repaint the cached display frame with the freshest mask (called when
+     *  an inference result arrives between decoded frames). */
+    void repaintLivePreview();
+    /** Drop the live overlay (stream reset / loop / stop). */
+    void clearLiveOverlay();
 
     Config m_config;
-    ecvClickableImageLabel* m_previewLabel = nullptr;  // cached base accessor
-    QLabel* m_statusLabel = nullptr;                   // cached base accessor
+    QLabel* m_statusLabel = nullptr;  // cached base accessor
     QComboBox* m_modelCombo = nullptr;
     QComboBox* m_deviceCombo = nullptr;
     QSpinBox* m_threadsSpin = nullptr;
@@ -114,16 +121,19 @@ private:
     bool m_inferBusy = false;
     quint64 m_streamGeneration = 0;
 
-    struct InferJob;
-    QFutureWatcher<RMBGRunResult>* m_inferWatcher = nullptr;
+    QThread* m_inferThread = nullptr;
+    RMBGLiveInferWorker* m_inferWorker = nullptr;
 
     RMBGRunResult m_lastSnapshot;
     bool m_hasSnapshot = false;
 
-    // Cached result — composited over the display frame to prevent flicker.
-    QImage m_overlayRgba;
-    qint64 m_overlayFrameNum = 0;  // video frame when the result was generated
-    qint64 m_lastSubmitFrameNum = 0;
+    // Live overlay state: playback is clock-driven (smooth at the video's
+    // frame rate) while inference runs asynchronously on its own pace; the
+    // freshest alpha mask is composited onto the current display frame.
+    QImage m_lastDisplayFrame;  // preview-resolution frame before overlay
+    QImage m_lastResultImage;   // full-res RGBA result (mask source)
+    QImage m_liveMask;          // alpha mask scaled to the display size
+
     QElapsedTimer m_inferSubmitTime;
     qint64 m_lastInferLatencyMs = -1;
 };

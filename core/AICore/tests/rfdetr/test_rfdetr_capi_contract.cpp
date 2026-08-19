@@ -30,6 +30,8 @@ int main() {
     AICORE_CHECK(aicore_rfdetr_is_ready(nullptr) == 0);
     AICORE_CHECK(aicore_rfdetr_last_error(nullptr) == nullptr);
     AICORE_CHECK(aicore_rfdetr_detection_count(nullptr) == -1);
+    AICORE_CHECK(aicore_rfdetr_detection_mask(nullptr, 0, nullptr, 0, nullptr,
+                                              nullptr) == -1);
     AICORE_CHECK(aicore_rfdetr_detection_mask_png(nullptr, 0, nullptr, 0) ==
                  -1);
 
@@ -40,13 +42,13 @@ int main() {
     aicore_rfdetr_options_set_threads(opts, 1);
 
     // Loading a nonexistent file must fail cleanly and report an error.
-    aicore_rfdetr_ctx* ctx = aicore_rfdetr_load_opts(
-            "/nonexistent/rfdetr-model.gguf", opts);
+    aicore_rfdetr_ctx* ctx =
+            aicore_rfdetr_load_opts("/nonexistent/rfdetr-model.gguf", opts);
     AICORE_CHECK(ctx != nullptr);  // ctx is allocated; engine inside is null
     AICORE_CHECK(aicore_rfdetr_is_ready(ctx) == 0);
     AICORE_CHECK(aicore_rfdetr_last_error(ctx) != nullptr);
-    AICORE_CHECK(aicore_rfdetr_detect_path_json(
-                         ctx, "/nonexistent/image.png", 0.5f, 300) == nullptr);
+    AICORE_CHECK(aicore_rfdetr_detect_path_json(ctx, "/nonexistent/image.png",
+                                                0.5f, 300) == nullptr);
     aicore_rfdetr_free(ctx);
     aicore_rfdetr_options_free(opts);
 
@@ -57,18 +59,19 @@ int main() {
     uint8_t* rgb = nullptr;
     int32_t w = 0;
     int32_t h = 0;
-    AICORE_CHECK(aicore_rfdetr_load_path_rgb("/nonexistent/image.png", &rgb,
-                                             &w, &h) == -1);
+    AICORE_CHECK(aicore_rfdetr_load_path_rgb("/nonexistent/image.png", &rgb, &w,
+                                             &h) == -1);
 
     // Model catalog contract.
-    AICORE_CHECK(aicore_rfdetr_model_count() > 0);
-    AICORE_CHECK(aicore_rfdetr_detection_model_count() > 0);
-    AICORE_CHECK(aicore_rfdetr_segmentation_model_count() > 0);
+    // 44 models = 11 variants (5 detection + 6 segmentation) x 4 quants
+    // (f32, f16, q8_0, q4_K).
+    AICORE_CHECK(aicore_rfdetr_model_count() == 44);
+    AICORE_CHECK(aicore_rfdetr_detection_model_count() == 20);
+    AICORE_CHECK(aicore_rfdetr_segmentation_model_count() == 24);
     AICORE_CHECK(aicore_rfdetr_detection_model_count() +
                          aicore_rfdetr_segmentation_model_count() ==
                  aicore_rfdetr_model_count());
-    const aicore_rfdetr_model_entry* first =
-            aicore_rfdetr_model_at(0);
+    const aicore_rfdetr_model_entry* first = aicore_rfdetr_model_at(0);
     AICORE_CHECK(first != nullptr && first->filename != nullptr &&
                  first->download_url != nullptr);
     AICORE_CHECK(aicore_rfdetr_model_at(-1) == nullptr);

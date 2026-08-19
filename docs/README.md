@@ -271,7 +271,7 @@ Documentation is automatically built and deployed via GitHub Actions:
 - [Building Documentation](automation/BUILDING_DOCS.md)
 - [Deployment Guide](automation/DEPLOYMENT.md)
 - [Version Management](guides/VERSION_MANAGEMENT.md)
-- [Agent Integration](../agent-integration/README.md) — AI agent control via JSON-RPC, MCP, CLI
+- [Agent Integration](https://github.com/Asher-1/ACloudViewer/blob/main/agent-integration/README.md) — AI agent control via JSON-RPC, MCP, CLI
 - **Build Functions** → `util/ci_utils.sh`
 
 ### For Maintainers
@@ -361,11 +361,11 @@ ACloudViewer provides an agent integration module for AI-powered automation:
 - **CLI Harness** — 15 processing commands for headless batch processing
 
 Documentation:
-- [Agent Integration README](../agent-integration/README.md)
-- [MCP Server Reference](../agent-integration/mcp/README.md)
-- [CLI Command Reference](../agent-integration/cli/README.md)
-- [JSON-RPC API Reference](../agent-integration/docs/JSON-RPC-API.md)
-- [Testing Guide](../agent-integration/docs/TESTING.md)
+- [Agent Integration README](https://github.com/Asher-1/ACloudViewer/blob/main/agent-integration/README.md)
+- [MCP Server Reference](https://github.com/Asher-1/ACloudViewer/blob/main/agent-integration/mcp/README.md)
+- [CLI Command Reference](https://github.com/Asher-1/ACloudViewer/blob/main/agent-integration/cli/README.md)
+- [JSON-RPC API Reference](https://github.com/Asher-1/ACloudViewer/blob/main/agent-integration/docs/JSON-RPC-API.md)
+- [Testing Guide](https://github.com/Asher-1/ACloudViewer/blob/main/agent-integration/docs/TESTING.md)
 - [CLI-Anything Hub](https://asher-1.github.io/CLI-Anything/) — browse and install agent tools
 
 ## 🔗 Related Links

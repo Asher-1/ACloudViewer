@@ -7,7 +7,6 @@
 
 #include "RMBGWorker.h"
 
-#include <QElapsedTimer>
 #include <QFileInfo>
 #include <QImage>
 
@@ -69,7 +68,8 @@ bool RMBGWorker::runInference() {
         emit logMessage(tr("[RMBG] Failed to allocate options."));
         return false;
     }
-    aicore_rmbg_options_set_device(opts, m_settings.device.toUtf8().constData());
+    aicore_rmbg_options_set_device(opts,
+                                   m_settings.device.toUtf8().constData());
     aicore_rmbg_options_set_threads(opts, m_settings.threads);
 
     emit logMessage(tr("[RMBG] Loading model: %1 (device=%2, threads=%3)")
@@ -93,6 +93,8 @@ bool RMBGWorker::runInference() {
     RMBGRunResult result;
     char* info = aicore_rmbg_info_json(m_pendingCtx);
     if (info) {
+        const QString infoStr = QString::fromUtf8(info);
+        emit modelInfoReady(infoStr);
         RMBGHelpers::parseInfoJson(QByteArray(info), &result);
         aicore_rmbg_free_string(info);
     }
@@ -120,33 +122,53 @@ bool RMBGWorker::runInference() {
         const QImage rgb = input.convertToFormat(QImage::Format_RGB888);
         emit progressUpdate(0, 1);
 
-        QElapsedTimer timer;
-        timer.start();
+        QByteArray packedRgb;
+        const uchar* rgbData = RMBGHelpers::packedRgb888Data(rgb, &packedRgb);
+        if (!rgbData) {
+            emit logMessage(tr("[RMBG] Failed to pack the RGB input."));
+            return false;
+        }
         aicore_cancel_scope_begin(m_cancelToken);
-        uint8_t* png = nullptr;
-        int pngLen = 0;
-        const int rc = aicore_rmbg_remove_background_rgb(
-                m_pendingCtx, rgb.constBits(), rgb.width(), rgb.height(),
-                &png, &pngLen);
+        uint8_t* rgba = nullptr;
+        int32_t outW = 0, outH = 0;
+        int rgbaLen = 0;
+        const int rc = aicore_rmbg_remove_background_rgba(
+                m_pendingCtx, rgbData, rgb.width(), rgb.height(), &rgba, &outW,
+                &outH, &rgbaLen);
         aicore_cancel_scope_end(m_cancelToken);
-        const double ms = static_cast<double>(timer.elapsed());
-
-        if (rc != 0 || !png || pngLen <= 0) {
+        if (rc != 0 || !rgba || rgbaLen <= 0) {
             const char* err = aicore_rmbg_last_error(m_pendingCtx);
             emit logMessage(tr("[RMBG] Inference failed: %1")
                                     .arg(err ? QString::fromUtf8(err)
                                              : tr("unknown error")));
-            if (png) aicore_rmbg_free_buffer(png);
+            if (rgba) aicore_rmbg_free_buffer(rgba);
+            return false;
+        }
+        aicore_rmbg_timings timings{};
+        if (aicore_rmbg_last_timings(m_pendingCtx, &timings) == 0) {
+            result.preprocessMs = timings.preprocess_ms;
+            result.runtimeMs = timings.inference_ms;
+            result.postprocessMs = timings.postprocess_ms;
+            result.totalRuntimeMs = timings.total_ms;
+        }
+
+        // Raw RGBA composite at original resolution — no PNG round-trip (a
+        // PNG encode+decode round-trip was ~50 ms per frame). QImage takes
+        // over the malloc'd API buffer via a free() cleanup function, so no
+        // second full-frame copy; converting once to ARGB32 up front lets
+        // thresholding and stats reuse the same buffer.
+        QImage wrapped(
+                rgba, outW, outH, outW * 4, QImage::Format_RGBA8888,
+                [](void* info) { std::free(info); }, rgba);
+        result.resultImage = wrapped.convertToFormat(QImage::Format_ARGB32);
+        if (result.resultImage.isNull()) {
+            emit logMessage(tr("[RMBG] Failed to wrap the result buffer."));
             return false;
         }
 
-        result.resultImage = QImage::fromData(
-                QByteArray(reinterpret_cast<const char*>(png), pngLen),
-                "PNG");
-        aicore_rmbg_free_buffer(png);
-        if (result.resultImage.isNull()) {
-            emit logMessage(tr("[RMBG] Failed to decode result PNG."));
-            return false;
+        if (m_settings.alphaThreshold > 0.0f) {
+            result.resultImage = RMBGHelpers::applyAlphaThreshold(
+                    result.resultImage, m_settings.alphaThreshold);
         }
 
         RMBGHelpers::computeAlphaStats(result.resultImage, &result.alphaMean,
@@ -154,16 +176,16 @@ bool RMBGWorker::runInference() {
         result.imagePath = m_settings.inputPath;
         result.imageName = QFileInfo(m_settings.inputPath).fileName();
         result.modelPath = m_settings.modelPath;
-        result.runtimeMs = ms;
         if (result.resolvedDevice.isEmpty()) {
             result.resolvedDevice = m_settings.device;
         }
 
-        emit logMessage(tr("[RMBG] Removed background in %1 ms (%2)")
-                                .arg(ms, 0, 'f', 1)
-                                .arg(RMBGHelpers::formatAlphaStats(
-                                        result.alphaMean,
-                                        result.foregroundRatio)));
+        emit logMessage(
+                tr("[RMBG] Removed background: graph %1 ms, total %2 ms (%3)")
+                        .arg(result.runtimeMs, 0, 'f', 1)
+                        .arg(result.totalRuntimeMs, 0, 'f', 1)
+                        .arg(RMBGHelpers::formatAlphaStats(
+                                result.alphaMean, result.foregroundRatio)));
         emit progressUpdate(1, 1);
         emit resultReady(result);
     }

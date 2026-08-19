@@ -12,7 +12,6 @@
 #include <QString>
 #include <QStringList>
 #include <QVector>
-
 #include <cstdint>
 
 /** Result envelope of one RMBG-2.0 background removal. */
@@ -21,7 +20,11 @@ struct RMBGRunResult {
     QString imageName;
     /** RGBA image with the background removed (transparent pixels). */
     QImage resultImage;
+    /** Graph-only inference time, directly comparable with upstream RMBG. */
     double runtimeMs = 0.0;
+    double preprocessMs = 0.0;
+    double postprocessMs = 0.0;
+    double totalRuntimeMs = 0.0;
     /** Mean alpha over the image (0..1); 1.0 = fully opaque. */
     double alphaMean = 0.0;
     /** Fraction of pixels with alpha >= 128 (foreground coverage). */
@@ -29,6 +32,7 @@ struct RMBGRunResult {
     QString modelVariant;
     int inputSize = 0;
     QString backend;
+    QString mathProfile;
     QString resolvedDevice;
     QString modelPath;
     QByteArray infoJson;
@@ -55,14 +59,30 @@ bool findModelByFilename(const QString& filename, RMBGModelEntry* out);
 /** Model cache directory for qRMBG (aicore_rmbg_model_cache_dir). */
 QString modelCacheDir();
 
+/** Build the user-facing catalog label without duplicating a quantization
+ *  note that is already part of displayName. */
+QString modelDisplayLabel(const RMBGModelEntry& entry);
+
+/** Return tightly packed RGB888 pixels for AICore's stride-less C API.
+ *  scratch owns the returned bytes only when QImage row padding is present. */
+const uchar* packedRgb888Data(const QImage& image, QByteArray* scratch);
+
 /** Parse the AICore RMBG info JSON into a run result. Returns true on
  *  success. */
 bool parseInfoJson(const QByteArray& json, RMBGRunResult* out);
 
 /** Alpha statistics over the RGBA result image. Pure pixel logic — unit
  *  tested without AICore. */
-void computeAlphaStats(const QImage& rgba, double* alphaMean,
+void computeAlphaStats(const QImage& rgba,
+                       double* alphaMean,
                        double* foregroundRatio);
+
+/** Binary threshold over the alpha channel: pixels with alpha <
+ *  threshold*255 become fully transparent, others keep their alpha.
+ *  Returns a copy; the input is left untouched. threshold is clamped to
+ *  [0,1]; 0 disables the pass-through (no-op). Pure pixel logic — unit
+ *  tested without AICore. */
+QImage applyAlphaThreshold(const QImage& rgba, float threshold);
 
 /** Render a checkerboard pattern of the given size (transparent preview
  *  background). */

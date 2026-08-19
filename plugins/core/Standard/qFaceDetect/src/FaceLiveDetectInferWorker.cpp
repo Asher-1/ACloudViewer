@@ -115,7 +115,6 @@ bool FaceLiveDetectInferWorker::runDetectJob(const Job& job, Result* out) {
                                  Qt::IgnoreAspectRatio, Qt::FastTransformation);
     }
     out->snapshot.annotatedImage = annotated;
-    out->displayImage = annotated;
 
     // Scale boxes to display coordinates for snapshot consumers.
     FaceDetectEmbed::scaleFaceBoxes(&out->snapshot.faces, job.inferScale);
@@ -205,7 +204,6 @@ bool FaceLiveDetectInferWorker::runRecognizeJob(const Job& job, Result* out) {
                                  Qt::IgnoreAspectRatio, Qt::FastTransformation);
     }
     out->snapshot.annotatedImage = annotated;
-    out->displayImage = annotated;
 
     // Scale boxes to display coordinates for snapshot consumers.
     FaceDetectEmbed::scaleFaceBoxes(&out->snapshot.faces, job.inferScale);

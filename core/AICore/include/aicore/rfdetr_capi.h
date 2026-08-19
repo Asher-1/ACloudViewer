@@ -31,9 +31,9 @@ typedef struct aicore_rfdetr_options aicore_rfdetr_options;
 AICORE_CAPI aicore_rfdetr_options* aicore_rfdetr_options_new(void);
 AICORE_CAPI void aicore_rfdetr_options_free(aicore_rfdetr_options* opts);
 AICORE_CAPI void aicore_rfdetr_options_set_device(aicore_rfdetr_options* opts,
-                                                 const char* device);
+                                                  const char* device);
 AICORE_CAPI void aicore_rfdetr_options_set_threads(aicore_rfdetr_options* opts,
-                                                  int n_threads);
+                                                   int n_threads);
 
 /** Load an RF-DETR GGUF (detection or segmentation variant). Returns NULL on
  *  failure; inspect aicore_rfdetr_last_error() for the reason. */
@@ -60,8 +60,9 @@ AICORE_CAPI int aicore_rfdetr_load_path_rgb(const char* image_path,
  *   "detections":[{"class_id":N,"class_name":"..","score":F,
  *                  "box":[x1,y1,x2,y2]}, ...]}
  *  Boxes are in original-image pixel coordinates. For segmentation models the
- *  per-detection binary mask can be fetched via
- *  aicore_rfdetr_detection_mask_png() after this call. */
+ *  per-detection binary mask can be fetched via aicore_rfdetr_detection_mask()
+ *  (raw bytes, preferred) or aicore_rfdetr_detection_mask_png() after this
+ *  call. */
 AICORE_CAPI char* aicore_rfdetr_detect_path_json(aicore_rfdetr_ctx* ctx,
                                                  const char* image_path,
                                                  float threshold,
@@ -77,11 +78,28 @@ AICORE_CAPI char* aicore_rfdetr_detect_rgb_json(aicore_rfdetr_ctx* ctx,
  *  detect has run or the model has no segmentation head; -1 on invalid ctx. */
 AICORE_CAPI int aicore_rfdetr_detection_count(const aicore_rfdetr_ctx* ctx);
 
+/** Raw thresholded binary mask (0/255, row-major) of detection \p index, at
+ *  the MODEL resolution (e.g. 640x640 — masks are no longer upsampled to the
+ *  image size; display code stretches them over the frame). Two-call sizing:
+ *  pass NULL/0 to get the required byte length (>=1), then pass a buffer of
+ *  that size. \p out_width / \p out_height receive the mask dimensions and
+ *  may be NULL. Returns the required size, 0 when the model has no
+ *  segmentation head or the detection has no mask, and -1 on invalid args. */
+AICORE_CAPI int aicore_rfdetr_detection_mask(aicore_rfdetr_ctx* ctx,
+                                             int index,
+                                             unsigned char* buf,
+                                             int buf_size,
+                                             int32_t* out_width,
+                                             int32_t* out_height);
+
 /** PNG-encoded binary mask (0=background, 255=foreground) of detection
- *  \p index, at the ORIGINAL image resolution. Two-call sizing: pass NULL/0 to
- *  get the required byte length (>=1), then pass a buffer of that size.
- *  Returns the required size, 0 when the model has no segmentation head or the
- *  detection has no mask, and -1 on invalid arguments. */
+ *  \p index, at the MODEL resolution (same geometry as
+ *  aicore_rfdetr_detection_mask; the PNG form is encoded on demand for
+ *  metadata/export callers — the hot video path should use the raw API).
+ *  Two-call sizing: pass NULL/0 to get the required byte length (>=1), then
+ *  pass a buffer of that size. Returns the required size, 0 when the model
+ *  has no segmentation head or the detection has no mask, and -1 on invalid
+ *  arguments. */
 AICORE_CAPI int aicore_rfdetr_detection_mask_png(aicore_rfdetr_ctx* ctx,
                                                  int index,
                                                  unsigned char* buf,
@@ -90,12 +108,18 @@ AICORE_CAPI int aicore_rfdetr_detection_mask_png(aicore_rfdetr_ctx* ctx,
 /** Model introspection. */
 AICORE_CAPI const char* aicore_rfdetr_context_variant(
         const aicore_rfdetr_ctx* ctx);
-AICORE_CAPI uint32_t aicore_rfdetr_context_image_size(
-        const aicore_rfdetr_ctx* ctx);
-AICORE_CAPI uint32_t aicore_rfdetr_context_num_classes(
-        const aicore_rfdetr_ctx* ctx);
+AICORE_CAPI uint32_t
+aicore_rfdetr_context_image_size(const aicore_rfdetr_ctx* ctx);
+AICORE_CAPI uint32_t
+aicore_rfdetr_context_num_classes(const aicore_rfdetr_ctx* ctx);
 AICORE_CAPI int aicore_rfdetr_context_has_segmentation(
         const aicore_rfdetr_ctx* ctx);
+/** Backend-RESOLVED device name ("CUDA0", "Vulkan0", "cpu", ...).
+ * Differs from the requested device when the GPU lease can't be acquired —
+ * surfaces silent CPU fallbacks. Owned by ctx; copy before freeing. */
+AICORE_CAPI const char* aicore_rfdetr_context_device(aicore_rfdetr_ctx* ctx);
+/** Effective CPU thread count after the auto (<=0) resolution. */
+AICORE_CAPI int aicore_rfdetr_context_threads(aicore_rfdetr_ctx* ctx);
 
 AICORE_CAPI char* aicore_rfdetr_info_json(aicore_rfdetr_ctx* ctx);
 AICORE_CAPI int aicore_rfdetr_warmup_backend(const char* device);
@@ -113,16 +137,15 @@ typedef struct aicore_rfdetr_model_entry {
 } aicore_rfdetr_model_entry;
 
 AICORE_CAPI int aicore_rfdetr_model_count(void);
-AICORE_CAPI const aicore_rfdetr_model_entry* aicore_rfdetr_model_at(
-        int index);
+AICORE_CAPI const aicore_rfdetr_model_entry* aicore_rfdetr_model_at(int index);
 AICORE_CAPI int aicore_rfdetr_detection_model_count(void);
-AICORE_CAPI const aicore_rfdetr_model_entry*
-aicore_rfdetr_detection_model_at(int index);
+AICORE_CAPI const aicore_rfdetr_model_entry* aicore_rfdetr_detection_model_at(
+        int index);
 AICORE_CAPI int aicore_rfdetr_segmentation_model_count(void);
 AICORE_CAPI const aicore_rfdetr_model_entry*
 aicore_rfdetr_segmentation_model_at(int index);
-AICORE_CAPI const aicore_rfdetr_model_entry*
-aicore_rfdetr_model_by_filename(const char* filename);
+AICORE_CAPI const aicore_rfdetr_model_entry* aicore_rfdetr_model_by_filename(
+        const char* filename);
 AICORE_CAPI const char* aicore_rfdetr_model_download_base(void);
 
 #ifdef __cplusplus

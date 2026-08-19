@@ -180,7 +180,7 @@ private:
     qint64 m_overlayFrameNum =
             0;  // video frame number when overlay was generated
     qint64 m_lastSubmitFrameNum =
-            0;  // video frame number of last inference submission
+            0;              // video frame number of last inference submission
     QSize m_lastFrameSize;  // original frame size of the last decode
 
     // Inference timing — for latency display.

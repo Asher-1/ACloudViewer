@@ -6,19 +6,18 @@
 // ----------------------------------------------------------------------------
 
 #include "backend.hpp"
-#include "common.hpp"
-
-#include "aicore/runtime_capi.h"
-
-#include "ggml.h"
-#include "ggml-alloc.h"
-#include "ggml-backend.h"
-#include "ggml_backend_utils.hpp"
 
 #include <algorithm>
 #include <cstring>
 #include <string>
 #include <vector>
+
+#include "aicore/runtime_capi.h"
+#include "common.hpp"
+#include "ggml-alloc.h"
+#include "ggml-backend.h"
+#include "ggml.h"
+#include "ggml_backend_utils.hpp"
 
 namespace rfdetr {
 
@@ -34,7 +33,9 @@ ggml_backend_buffer_type_t backend_ctx_weight_buft(const BackendCtx& ctx) {
 BackendCtx init_backend_ctx(int n_threads,
                             const std::string& device_request,
                             rfdetr_status* out_status) {
-    auto set = [&](rfdetr_status s) { if (out_status) *out_status = s; };
+    auto set = [&](rfdetr_status s) {
+        if (out_status) *out_status = s;
+    };
 
     BackendCtx ctx{};
     ctx.n_threads = (n_threads > 0) ? n_threads : 1;
@@ -59,8 +60,8 @@ BackendCtx init_backend_ctx(int n_threads,
             if (ctx.gpu_lease) {
                 ctx.gpu = ctx.gpu_lease.handle();
                 ctx.device_name = ctx.gpu_lease.device();
-                rfdetr_logf(RFDETR_LOG_INFO,
-                            "GPU backend: %s", ctx.device_name.c_str());
+                rfdetr_logf(RFDETR_LOG_INFO, "GPU backend: %s",
+                            ctx.device_name.c_str());
             } else {
                 rfdetr_logf(RFDETR_LOG_WARN,
                             "failed to acquire GPU backend lease; using CPU");
@@ -74,8 +75,8 @@ BackendCtx init_backend_ctx(int n_threads,
 
     // CPU backend: needed both as the fallback and as the sched's CPU half.
     std::string cpu_error;
-    ctx.cpu_lease = aicore::runtime::acquire_backend_lease(
-            "cpu", ctx.n_threads, &cpu_error);
+    ctx.cpu_lease = aicore::runtime::acquire_backend_lease("cpu", ctx.n_threads,
+                                                           &cpu_error);
     ctx.cpu = ctx.cpu_lease.handle();
     if (!ctx.cpu) {
         rfdetr_logf(RFDETR_LOG_ERROR, "CPU backend init failed: %s",
@@ -139,7 +140,8 @@ void free_backend_ctx(BackendCtx& ctx) {
     ctx.device_name.clear();
 }
 
-bool backend_ctx_graph_alloc(BackendCtx& ctx, ::ggml_cgraph* graph,
+bool backend_ctx_graph_alloc(BackendCtx& ctx,
+                             ::ggml_cgraph* graph,
                              int which_graph) {
     if (ctx.sched) {
         ggml_backend_sched_reset(ctx.sched);
@@ -151,11 +153,9 @@ bool backend_ctx_graph_alloc(BackendCtx& ctx, ::ggml_cgraph* graph,
         return true;
     }
     /* CPU path: persistent gallocr per graph. */
-    ggml_gallocr_t* slot =
-            (which_graph == 0) ? &ctx.galloc_a : &ctx.galloc_b;
+    ggml_gallocr_t* slot = (which_graph == 0) ? &ctx.galloc_a : &ctx.galloc_b;
     if (!*slot) {
-        *slot = ggml_gallocr_new(
-                ggml_backend_get_default_buffer_type(ctx.cpu));
+        *slot = ggml_gallocr_new(ggml_backend_get_default_buffer_type(ctx.cpu));
         if (!*slot) {
             rfdetr_logf(RFDETR_LOG_ERROR,
                         "backend_ctx_graph_alloc: gallocr_new failed");
@@ -170,7 +170,8 @@ bool backend_ctx_graph_alloc(BackendCtx& ctx, ::ggml_cgraph* graph,
     return true;
 }
 
-int backend_ctx_graph_compute(BackendCtx& ctx, ::ggml_cgraph* graph,
+int backend_ctx_graph_compute(BackendCtx& ctx,
+                              ::ggml_cgraph* graph,
                               int which_graph) {
     (void)which_graph;
     if (aicore_cancel_requested()) {

@@ -18,6 +18,7 @@
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QSettings>
+#include <QTimer>
 #include <QUuid>
 
 #include "ecvPersistentSettings.h"
@@ -38,13 +39,23 @@ bool isRMBGOutputImage(const ccImage* img) {
 }  // namespace
 
 qRMBG::qRMBG(QObject* parent)
-    : QObject(parent),
-      ccStdPluginInterface(":/CC/plugin/qRMBG/info.json") {
+    : QObject(parent), ccStdPluginInterface(":/CC/plugin/qRMBG/info.json") {
     ecvPS::registerSettingsGroup(QStringLiteral("qRMBG"));
+    qRegisterMetaType<RMBGRunResult>("RMBGRunResult");
+    qRegisterMetaType<RMBGDialog::Settings>("RMBGDialog::Settings");
     m_action = new QAction(tr("RMBG Remove Background"), this);
     m_action->setToolTip(tr("RMBG-2.0 background removal (GGML)"));
     m_action->setIcon(QIcon(":/CC/plugin/qRMBG/images/qRMBG.svg"));
     connect(m_action, &QAction::triggered, this, &qRMBG::showDialog);
+
+    m_inferenceHeartbeat = new QTimer(this);
+    m_inferenceHeartbeat->setInterval(10000);
+    connect(m_inferenceHeartbeat, &QTimer::timeout, this, [this]() {
+        if (!m_worker || !m_worker->isRunning() || !m_dialog) return;
+        m_inferenceElapsedSeconds += 10;
+        m_dialog->appendLog(tr("[RMBG] Task is running (%1 s elapsed)...")
+                                    .arg(m_inferenceElapsedSeconds));
+    });
 }
 
 QList<QAction*> qRMBG::getActions() { return {m_action}; }
@@ -166,9 +177,10 @@ void qRMBG::refreshDbImages() {
 void qRMBG::showDialog() {
     if (!m_app) return;
     if (!m_dialog) {
-        m_dialog = new RMBGDialog(static_cast<QWidget*>(m_app->getMainWindow()));
-        connect(m_dialog, &RMBGDialog::runRequested, this,
-                &qRMBG::executeTask);
+        m_dialog =
+                new RMBGDialog(static_cast<QWidget*>(m_app->getMainWindow()));
+        m_dialog->setAppInterface(m_app);
+        connect(m_dialog, &RMBGDialog::runRequested, this, &qRMBG::executeTask);
         connect(m_dialog, &RMBGDialog::cancelRequested, this,
                 &qRMBG::cancelTask);
         connect(m_dialog, &RMBGDialog::refreshDbImagesRequested, this,
@@ -236,18 +248,23 @@ void qRMBG::executeTask(const RMBGDialog::Settings& settings) {
     ws.inputPath = workerSettings.inputPath;
     ws.threads = settings.threads;
     ws.device = workerDevice;
+    ws.alphaThreshold = settings.alphaThreshold;
 
     m_currentSettings = settings;
     m_worker = new RMBGWorker(ws, this);
-    connect(m_worker, &RMBGWorker::logMessage, m_dialog,
-            &RMBGDialog::appendLog);
-    connect(m_worker, &RMBGWorker::progressUpdate, m_dialog,
-            &RMBGDialog::setProgress);
-    connect(m_worker, &RMBGWorker::resultReady, this,
-            &qRMBG::onResultReady);
-    connect(m_worker, &RMBGWorker::taskFinished, this,
-            &qRMBG::onTaskFinished);
+    connect(m_worker, &RMBGWorker::logMessage, m_dialog, &RMBGDialog::appendLog,
+            Qt::QueuedConnection);
+    connect(m_worker, &RMBGWorker::progressUpdate, this,
+            &qRMBG::onWorkerProgress, Qt::QueuedConnection);
+    connect(m_worker, &RMBGWorker::resultReady, this, &qRMBG::onResultReady,
+            Qt::QueuedConnection);
+    connect(m_worker, &RMBGWorker::taskFinished, this, &qRMBG::onTaskFinished,
+            Qt::QueuedConnection);
+    connect(m_worker, &RMBGWorker::modelInfoReady, m_dialog,
+            &RMBGDialog::appendLog, Qt::QueuedConnection);
     m_dialog->setRunning(true);
+    m_inferenceElapsedSeconds = 0;
+    m_inferenceHeartbeat->start();
     m_worker->start();
 }
 
@@ -280,15 +297,18 @@ void qRMBG::addResultToDb(const RMBGRunResult& result,
             result.resolvedDevice.isEmpty() ? settings.device
                                             : result.resolvedDevice);
     const QString name = ecvPluginDbNaming::makeUnique(
-            QStringLiteral("RMBG_%1_%2")
-                    .arg(sourceLabel, deviceTag),
-            m_app);
+            QStringLiteral("RMBG_%1_%2").arg(sourceLabel, deviceTag), m_app);
     auto* img = new ccImage(result.resultImage, name);
     img->setMetaData(QStringLiteral("RMBG"), true);
     img->setMetaData(QStringLiteral("RMBG/AlphaMean"), result.alphaMean);
     img->setMetaData(QStringLiteral("RMBG/ForegroundRatio"),
                      result.foregroundRatio);
     img->setMetaData(QStringLiteral("Runtime (ms)"), result.runtimeMs);
+    img->setMetaData(QStringLiteral("RMBG/Preprocess (ms)"),
+                     result.preprocessMs);
+    img->setMetaData(QStringLiteral("RMBG/Postprocess (ms)"),
+                     result.postprocessMs);
+    img->setMetaData(QStringLiteral("RMBG/Total (ms)"), result.totalRuntimeMs);
     if (!result.imagePath.isEmpty()) {
         img->setMetaData(QStringLiteral("Source"), result.imagePath);
     } else {
@@ -299,6 +319,10 @@ void qRMBG::addResultToDb(const RMBGRunResult& result,
     }
     if (!result.backend.isEmpty()) {
         img->setMetaData(QStringLiteral("Backend"), result.backend);
+    }
+    if (!result.mathProfile.isEmpty()) {
+        img->setMetaData(QStringLiteral("RMBG/MathProfile"),
+                         result.mathProfile);
     }
     img->setMetaData(QStringLiteral("Model"),
                      QFileInfo(settings.modelPath).fileName());
@@ -313,8 +337,7 @@ void qRMBG::addResultToDb(const RMBGRunResult& result,
 
 void qRMBG::saveResultPng(const RMBGRunResult& result,
                           const QString& sourceLabel) {
-    if (result.resultImage.isNull() ||
-        m_currentSettings.savePngDir.isEmpty()) {
+    if (result.resultImage.isNull() || m_currentSettings.savePngDir.isEmpty()) {
         return;
     }
     QDir dir(m_currentSettings.savePngDir);
@@ -324,11 +347,11 @@ void qRMBG::saveResultPng(const RMBGRunResult& result,
         return;
     }
     const QString base = QFileInfo(result.imageName).completeBaseName();
-    QString filePath = dir.filePath(
-            QStringLiteral("RMBG_%1_%2.png")
-                    .arg(base.isEmpty() ? sourceLabel : base)
-                    .arg(QDateTime::currentDateTime().toString(
-                            QStringLiteral("yyyyMMdd_HHmmss"))));
+    QString filePath =
+            dir.filePath(QStringLiteral("RMBG_%1_%2.png")
+                                 .arg(base.isEmpty() ? sourceLabel : base)
+                                 .arg(QDateTime::currentDateTime().toString(
+                                         QStringLiteral("yyyyMMdd_HHmmss"))));
     if (result.resultImage.save(filePath)) {
         m_dialog->appendLog(tr("[RMBG] Saved PNG: %1").arg(filePath));
     } else {
@@ -337,7 +360,9 @@ void qRMBG::saveResultPng(const RMBGRunResult& result,
 }
 
 void qRMBG::onTaskFinished(bool success) {
+    m_inferenceHeartbeat->stop();
     m_dialog->setRunning(false);
+    m_dialog->enableResultButtons(success);
     if (m_worker) {
         m_worker->releaseContextOnMainThread();
         m_worker->deleteLater();
@@ -345,4 +370,21 @@ void qRMBG::onTaskFinished(bool success) {
     }
     clearStagedInputFiles();
     if (!success) m_dialog->appendLog(tr("[Error] Task failed."));
+}
+
+void qRMBG::onWorkerProgress(int current, int total) {
+    if (!m_dialog) return;
+    m_dialog->setProgress(current, total);
+    const int pct = total > 0 ? (current * 100 / total) : 0;
+    QString stage;
+    if (pct < 25) {
+        stage = tr("Loading GGUF model...");
+    } else if (pct < 75) {
+        stage = tr("Running inference... (%1%)").arg(pct);
+    } else if (pct < 100) {
+        stage = tr("Processing result...");
+    } else {
+        stage = tr("Done.");
+    }
+    m_dialog->setTaskStage(stage, pct);
 }

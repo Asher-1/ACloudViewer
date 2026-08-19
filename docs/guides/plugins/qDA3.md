@@ -109,5 +109,5 @@ aicore_depth_free(ctx);
 
 ## Further reading
 
-- Full plugin README (tests, parity, scripts): [`plugins/core/Standard/qDA3/README.md`](../../../plugins/core/Standard/qDA3/README.md)
+- Full plugin README (tests, parity, scripts): [`plugins/core/Standard/qDA3/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qDA3/README.md)
 - [Depth Anything 3](https://github.com/DepthAnything/Depth-Anything-V3) · [depth-anything.cpp](https://github.com/mudler/depth-anything.cpp)

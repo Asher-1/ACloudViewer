@@ -19,7 +19,15 @@ bool decode_preprocess_rgb(const uint8_t * rgb, int rgb_w, int rgb_h, int size,
                            std::vector<uint8_t> & original_rgba, int & width, int & height,
                            std::vector<float> & input_nchw, std::string & err);
 
-bool encode_result_png(const std::vector<uint8_t> & original_rgba, int width, int height,
+/* Bicubic-upsample the float alpha matte (values in [0,1]) to the original
+ * resolution and write it in-place into the 4th byte of each RGBA pixel of
+ * `rgba` (must be width*height*4). This is the shared composite step behind
+ * encode_result_png and the raw-RGBA C API. */
+bool compose_alpha(std::vector<uint8_t> & rgba, int width, int height,
+                   const std::vector<float> & alpha, int alpha_width, int alpha_height,
+                   std::string & err);
+
+bool encode_result_png(std::vector<uint8_t> & rgba, int width, int height,
                        const std::vector<float> & alpha, int alpha_width, int alpha_height,
                        std::vector<uint8_t> & png, std::string & err);
 

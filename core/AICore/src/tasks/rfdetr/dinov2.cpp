@@ -1,11 +1,18 @@
-#include "dinov2.hpp"
-#include "trace.hpp"
-#include "common.hpp"
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#include "ggml.h"
+#include "dinov2.hpp"
 
 #include <cmath>
 #include <string>
+
+#include "common.hpp"
+#include "ggml.h"
+#include "trace.hpp"
 
 namespace rfdetr {
 
@@ -14,8 +21,10 @@ namespace {
 /* layer_norm_eps for HF DinoV2-with-registers (matches the upstream config). */
 constexpr float kLnEps = 1e-6f;
 
-ggml_tensor* layer_norm_eps(ggml_context* ctx, ggml_tensor* x,
-                            ggml_tensor* weight, ggml_tensor* bias) {
+ggml_tensor* layer_norm_eps(ggml_context* ctx,
+                            ggml_tensor* x,
+                            ggml_tensor* weight,
+                            ggml_tensor* bias) {
     ggml_tensor* y = ggml_norm(ctx, x, kLnEps);
     y = ggml_mul(ctx, y, weight);
     y = ggml_add(ctx, y, bias);
@@ -32,15 +41,20 @@ ggml_tensor* layer_norm_eps(ggml_context* ctx, ggml_tensor* x,
  *   bo ne = (dim,)
  *
  * Returns ne = (dim, T, B, 1). */
-ggml_tensor* sdpa_attention(ggml_context* ctx, ggml_tensor* x,
-                            ggml_tensor* Wq, ggml_tensor* bq,
-                            ggml_tensor* Wk, ggml_tensor* bk,
-                            ggml_tensor* Wv, ggml_tensor* bv,
-                            ggml_tensor* Wo, ggml_tensor* bo,
+ggml_tensor* sdpa_attention(ggml_context* ctx,
+                            ggml_tensor* x,
+                            ggml_tensor* Wq,
+                            ggml_tensor* bq,
+                            ggml_tensor* Wk,
+                            ggml_tensor* bk,
+                            ggml_tensor* Wv,
+                            ggml_tensor* bv,
+                            ggml_tensor* Wo,
+                            ggml_tensor* bo,
                             int n_heads) {
     const int dim = (int)x->ne[0];
-    const int T   = (int)x->ne[1];
-    const int B   = (int)x->ne[2];
+    const int T = (int)x->ne[1];
+    const int B = (int)x->ne[2];
     const int head_dim = dim / n_heads;
 
     /* Project Q/K/V. mul_mat with W (dim, dim) and x (dim, T, B) yields
@@ -90,9 +104,12 @@ ggml_tensor* sdpa_attention(ggml_context* ctx, ggml_tensor* x,
 
 /* Position-wise MLP: x → fc1 → exact-erf GELU → fc2. nn.GELU() default is
  * the exact erf form, matching ggml_gelu_erf. */
-ggml_tensor* mlp_block(ggml_context* ctx, ggml_tensor* x,
-                       ggml_tensor* W1, ggml_tensor* b1,
-                       ggml_tensor* W2, ggml_tensor* b2) {
+ggml_tensor* mlp_block(ggml_context* ctx,
+                       ggml_tensor* x,
+                       ggml_tensor* W1,
+                       ggml_tensor* b1,
+                       ggml_tensor* W2,
+                       ggml_tensor* b2) {
     ggml_tensor* h = ggml_mul_mat(ctx, W1, x);
     h = ggml_add(ctx, h, b1);
     h = ggml_gelu_erf(ctx, h);
@@ -133,7 +150,8 @@ bool is_windowed_block(const Config& cfg, uint32_t i) {
  *     -> reshape (dim, win_side, n_ww, inf_side)
  *                                            (split w into win_side, n_ww)
  *     -> permute(0, 1, 3, 2)                (swap h and n_ww outer axes)
- *     -> ne (dim, win_side, inf_side, n_ww)  fast→slow: d, w_in, h_in_full, n_ww
+ *     -> ne (dim, win_side, inf_side, n_ww)  fast→slow: d, w_in, h_in_full,
+ * n_ww
  *     -> reshape (dim*win_side*win_side, n_hw, n_ww)
  *        (further split inf_side into n_hw outer × win_side inner)
  *     -> permute(0, 2, 1, 3)                (swap n_hw and n_ww order)
@@ -143,13 +161,15 @@ bool is_windowed_block(const Config& cfg, uint32_t i) {
  * token = h_inner*win_side + w_inner. This matches the embeddings produced
  * by HF's permute(0, 2, 1, 3, 4).
  */
-ggml_tensor* window_partition_patches(ggml_context* ctx, ggml_tensor* patches,
-                                      int inf_side, int num_windows) {
-    const int dim         = (int)patches->ne[0];
-    const int n_per_side  = num_windows;
-    const int win_side    = inf_side / num_windows;
-    const int t_per_win   = win_side * win_side;
-    const int n_windows   = num_windows * num_windows;
+ggml_tensor* window_partition_patches(ggml_context* ctx,
+                                      ggml_tensor* patches,
+                                      int inf_side,
+                                      int num_windows) {
+    const int dim = (int)patches->ne[0];
+    const int n_per_side = num_windows;
+    const int win_side = inf_side / num_windows;
+    const int t_per_win = win_side * win_side;
+    const int n_windows = num_windows * num_windows;
 
     /* patches ne = (dim, inf_side*inf_side). Tokens are row-major in (h, w):
      * t = h*inf_side + w, so memory layout dim-fastest gives
@@ -157,7 +177,8 @@ ggml_tensor* window_partition_patches(ggml_context* ctx, ggml_tensor* patches,
     ggml_tensor* g = ggml_reshape_3d(ctx, patches, dim, inf_side, inf_side);
     /* g ne = (dim, inf_side=w, inf_side=h), fast→slow d, w, h. */
 
-    /* Split w into (win_side=w_in, n_per_side=w_out): ne (dim, win_side, n_ww, inf_side=h). */
+    /* Split w into (win_side=w_in, n_per_side=w_out): ne (dim, win_side, n_ww,
+     * inf_side=h). */
     g = ggml_reshape_4d(ctx, g, dim, win_side, n_per_side, inf_side);
     /* fast→slow: d, w_in, w_out, h. */
 
@@ -169,7 +190,8 @@ ggml_tensor* window_partition_patches(ggml_context* ctx, ggml_tensor* patches,
      *   out.ne[3] = n_ww    (in axis 2)
      * → permute(0, 1, 3, 2). */
     g = ggml_cont(ctx, ggml_permute(ctx, g, 0, 1, 3, 2));
-    /* g ne = (dim, win_side, inf_side, n_ww), fast→slow d, w_in, h_full, w_out. */
+    /* g ne = (dim, win_side, inf_side, n_ww), fast→slow d, w_in, h_full, w_out.
+     */
 
     /* Further split h_full = h_in * n_hw. Currently fast→slow d, w_in, h_full,
      * w_out. We want fast→slow d, w_in, h_in, h_out, w_out, so split h_full as
@@ -177,7 +199,8 @@ ggml_tensor* window_partition_patches(ggml_context* ctx, ggml_tensor* patches,
      * n_hw, n_ww) - but ggml is 4D only. Collapse outer block:
      *   ne = (dim*win_side, h_full=inf_side, n_ww, 1)   keeps layout
      *   then ne = (dim*win_side, win_side, n_hw, n_ww). */
-    g = ggml_reshape_4d(ctx, g, dim * win_side, win_side, n_per_side, n_per_side);
+    g = ggml_reshape_4d(ctx, g, dim * win_side, win_side, n_per_side,
+                        n_per_side);
     /* fast→slow: (d, w_in)=DW, h_in, h_out, w_out. */
 
     /* Permute swap h_out and w_out outer order: axes (0, 1, 3, 2).
@@ -203,11 +226,13 @@ ggml_tensor* window_partition_patches(ggml_context* ctx, ggml_tensor* patches,
 /* Reverse window-partition: undo the per-window pack so the spatial grid is
  * recovered. Input ne = (dim, T_p, n_windows); output ne = (dim, inf_side^2)
  * in the same dim-fastest layout used pre-partition. */
-ggml_tensor* window_unpartition_patches(ggml_context* ctx, ggml_tensor* w,
-                                        int inf_side, int num_windows) {
-    const int dim         = (int)w->ne[0];
-    const int n_per_side  = num_windows;
-    const int win_side    = inf_side / num_windows;
+ggml_tensor* window_unpartition_patches(ggml_context* ctx,
+                                        ggml_tensor* w,
+                                        int inf_side,
+                                        int num_windows) {
+    const int dim = (int)w->ne[0];
+    const int n_per_side = num_windows;
+    const int win_side = inf_side / num_windows;
 
     /* Inverse: window_partition does (in order)
      *   (dim, inf*inf)
@@ -219,14 +244,16 @@ ggml_tensor* window_unpartition_patches(ggml_context* ctx, ggml_tensor* w,
      *   reshape (dim, t_per_win, n_windows)
      *
      * Reverse each step. */
-    ggml_tensor* g = ggml_reshape_4d(ctx, w, dim * win_side, win_side, n_per_side, n_per_side);
+    ggml_tensor* g = ggml_reshape_4d(ctx, w, dim * win_side, win_side,
+                                     n_per_side, n_per_side);
     /* (d, w_in), h_in, w_out, h_out. */
 
     g = ggml_cont(ctx, ggml_permute(ctx, g, 0, 1, 3, 2));
     /* (d, w_in), h_in, h_out, w_out. */
 
     g = ggml_reshape_4d(ctx, g, dim, win_side, inf_side, n_per_side);
-    /* (d, w_in, h_full, w_out) where h_full = h_in fast + h_out slow → fast→slow d,w_in,h_in,h_out,w_out. */
+    /* (d, w_in, h_full, w_out) where h_full = h_in fast + h_out slow →
+     * fast→slow d,w_in,h_in,h_out,w_out. */
 
     g = ggml_cont(ctx, ggml_permute(ctx, g, 0, 1, 3, 2));
     /* (d, w_in, w_out, h_full). */
@@ -265,11 +292,13 @@ ggml_tensor* window_unpartition_patches(ggml_context* ctx, ggml_tensor* w,
  * Equivalent: compute the windowed pos_embed (windowed patch pos_embed plus
  * broadcasted CLS pos_embed) and add to windowed token tensor. We do that
  * here. */
-ggml_tensor* build_windowed_pos_embed(ggml_context* ctx, const Model& m,
-                                      int inf_side, int num_windows) {
+ggml_tensor* build_windowed_pos_embed(ggml_context* ctx,
+                                      const Model& m,
+                                      int inf_side,
+                                      int num_windows) {
     const int dim = (int)m.config.backbone.dim;
     const int n_per_side = num_windows;
-    const int n_windows  = n_per_side * n_per_side;
+    const int n_windows = n_per_side * n_per_side;
 
     ggml_tensor* pe = m.backbone_pos_embed_interp;
     /* pe ne = (dim, 1 + inf_side*inf_side). */
@@ -281,12 +310,13 @@ ggml_tensor* build_windowed_pos_embed(ggml_context* ctx, const Model& m,
     ggml_tensor* patches = ggml_view_2d(ctx, pe, dim, inf_side * inf_side,
                                         /*nb1*/ pe->nb[1],
                                         /*offset*/ pe->nb[1]);
-    cls     = ggml_cont(ctx, cls);
+    cls = ggml_cont(ctx, cls);
     patches = ggml_cont(ctx, patches);
 
-    /* Window-partition the patch pos embedding (mirrors window_partition_patches
-     * but using a different source). */
-    ggml_tensor* pw = window_partition_patches(ctx, patches, inf_side, num_windows);
+    /* Window-partition the patch pos embedding (mirrors
+     * window_partition_patches but using a different source). */
+    ggml_tensor* pw =
+            window_partition_patches(ctx, patches, inf_side, num_windows);
     /* pw ne = (dim, t_per_win, n_windows). */
 
     /* Broadcast CLS to (dim, 1, n_windows) via ggml_repeat_4d. */
@@ -303,7 +333,8 @@ ggml_tensor* build_windowed_pos_embed(ggml_context* ctx, const Model& m,
 ggml_tensor* fetch(const Model& m, const std::string& name) {
     auto it = m.tensors.find(name);
     if (it == m.tensors.end()) {
-        rfdetr_logf(RFDETR_LOG_ERROR, "dinov2: missing tensor '%s'", name.c_str());
+        rfdetr_logf(RFDETR_LOG_ERROR, "dinov2: missing tensor '%s'",
+                    name.c_str());
         return nullptr;
     }
     return it->second;
@@ -311,27 +342,29 @@ ggml_tensor* fetch(const Model& m, const std::string& name) {
 
 }  // namespace
 
-BackboneOutput dinov2_forward(ggml_context* ctx, const Model& m,
+BackboneOutput dinov2_forward(ggml_context* ctx,
+                              const Model& m,
                               ggml_tensor* input) {
     BackboneOutput out;
 
-    const int dim         = (int)m.config.backbone.dim;
-    const int patch_size  = (int)m.config.patch_size;
+    const int dim = (int)m.config.backbone.dim;
+    const int patch_size = (int)m.config.patch_size;
     const int num_windows = (int)m.config.backbone.num_windows;
-    const int depth       = (int)m.config.backbone.depth;
-    const int n_heads     = (int)m.config.backbone.heads;
-    const int image_side  = (int)m.config.image_size;
-    const int inf_side    = image_side / patch_size;
-    const int win_side    = inf_side / num_windows;
-    const int t_per_win   = win_side * win_side;
-    const int T_full      = t_per_win + 1;
-    const int n_windows   = num_windows * num_windows;
+    const int depth = (int)m.config.backbone.depth;
+    const int n_heads = (int)m.config.backbone.heads;
+    const int image_side = (int)m.config.image_size;
+    const int inf_side = image_side / patch_size;
+    const int win_side = inf_side / num_windows;
+    const int t_per_win = win_side * win_side;
+    const int T_full = t_per_win + 1;
+    const int n_windows = num_windows * num_windows;
     (void)dim;
 
     if (inf_side * patch_size != image_side ||
         win_side * num_windows != inf_side) {
         rfdetr_logf(RFDETR_LOG_ERROR,
-                    "dinov2_forward: image_size %d, patch_size %d, num_windows %d not compatible",
+                    "dinov2_forward: image_size %d, patch_size %d, num_windows "
+                    "%d not compatible",
                     image_side, patch_size, num_windows);
         return out;
     }
@@ -373,7 +406,8 @@ BackboneOutput dinov2_forward(ggml_context* ctx, const Model& m,
     /* --- 2. Prepend CLS, add pos_embed (interpolated). ---
      *
      * In HF flow: tokens (1, N, dim) → cat with cls (1, 1, dim) → (1, N+1, dim)
-     * → add pos_embed (1, N+1, dim, bicubic-interpolated). Then window-partition.
+     * → add pos_embed (1, N+1, dim, bicubic-interpolated). Then
+     * window-partition.
      *
      * Equivalent and easier for windowing: window-partition the patch tokens
      * first (no CLS), then add the windowed pos_embed (which already has CLS
@@ -390,13 +424,16 @@ BackboneOutput dinov2_forward(ggml_context* ctx, const Model& m,
     ggml_tensor* cls_token = fetch(m, "backbone.cls_token");
     if (!cls_token) return out;
 
-    ggml_tensor* windowed_patches = window_partition_patches(ctx, tokens, inf_side, num_windows);
+    ggml_tensor* windowed_patches =
+            window_partition_patches(ctx, tokens, inf_side, num_windows);
     /* windowed_patches ne = (dim, T_p, n_windows). */
 
     /* CLS broadcast: cls_token ne = (dim,). Reshape to (dim, 1, 1) then
      * repeat to (dim, 1, n_windows). */
-    ggml_tensor* cls_3d = ggml_reshape_3d(ctx, cls_token, cls_token->ne[0], 1, 1);
-    ggml_tensor* cls_b = ggml_repeat_4d(ctx, cls_3d, cls_token->ne[0], 1, n_windows, 1);
+    ggml_tensor* cls_3d =
+            ggml_reshape_3d(ctx, cls_token, cls_token->ne[0], 1, 1);
+    ggml_tensor* cls_b =
+            ggml_repeat_4d(ctx, cls_3d, cls_token->ne[0], 1, n_windows, 1);
 
     /* Concat along axis 1: (dim, 1, n_windows) ⊕ (dim, T_p, n_windows) →
      * (dim, T_p+1, n_windows). */
@@ -431,27 +468,27 @@ BackboneOutput dinov2_forward(ggml_context* ctx, const Model& m,
 
     for (int i = 0; i < depth; ++i) {
         const std::string p = "backbone.blocks." + std::to_string(i) + ".";
-        ggml_tensor* n1w  = fetch(m, p + "norm1.weight");
-        ggml_tensor* n1b  = fetch(m, p + "norm1.bias");
-        ggml_tensor* qW   = fetch(m, p + "attn.q.weight");
-        ggml_tensor* qB   = fetch(m, p + "attn.q.bias");
-        ggml_tensor* kW   = fetch(m, p + "attn.k.weight");
-        ggml_tensor* kB   = fetch(m, p + "attn.k.bias");
-        ggml_tensor* vW   = fetch(m, p + "attn.v.weight");
-        ggml_tensor* vB   = fetch(m, p + "attn.v.bias");
-        ggml_tensor* oW   = fetch(m, p + "attn.proj.weight");
-        ggml_tensor* oB   = fetch(m, p + "attn.proj.bias");
-        ggml_tensor* ls1  = fetch(m, p + "layer_scale1");
-        ggml_tensor* n2w  = fetch(m, p + "norm2.weight");
-        ggml_tensor* n2b  = fetch(m, p + "norm2.bias");
-        ggml_tensor* f1W  = fetch(m, p + "mlp.fc1.weight");
-        ggml_tensor* f1B  = fetch(m, p + "mlp.fc1.bias");
-        ggml_tensor* f2W  = fetch(m, p + "mlp.fc2.weight");
-        ggml_tensor* f2B  = fetch(m, p + "mlp.fc2.bias");
-        ggml_tensor* ls2  = fetch(m, p + "layer_scale2");
-        if (!n1w || !n1b || !qW || !qB || !kW || !kB || !vW || !vB ||
-            !oW || !oB || !ls1 || !n2w || !n2b || !f1W || !f1B || !f2W ||
-            !f2B || !ls2) {
+        ggml_tensor* n1w = fetch(m, p + "norm1.weight");
+        ggml_tensor* n1b = fetch(m, p + "norm1.bias");
+        ggml_tensor* qW = fetch(m, p + "attn.q.weight");
+        ggml_tensor* qB = fetch(m, p + "attn.q.bias");
+        ggml_tensor* kW = fetch(m, p + "attn.k.weight");
+        ggml_tensor* kB = fetch(m, p + "attn.k.bias");
+        ggml_tensor* vW = fetch(m, p + "attn.v.weight");
+        ggml_tensor* vB = fetch(m, p + "attn.v.bias");
+        ggml_tensor* oW = fetch(m, p + "attn.proj.weight");
+        ggml_tensor* oB = fetch(m, p + "attn.proj.bias");
+        ggml_tensor* ls1 = fetch(m, p + "layer_scale1");
+        ggml_tensor* n2w = fetch(m, p + "norm2.weight");
+        ggml_tensor* n2b = fetch(m, p + "norm2.bias");
+        ggml_tensor* f1W = fetch(m, p + "mlp.fc1.weight");
+        ggml_tensor* f1B = fetch(m, p + "mlp.fc1.bias");
+        ggml_tensor* f2W = fetch(m, p + "mlp.fc2.weight");
+        ggml_tensor* f2B = fetch(m, p + "mlp.fc2.bias");
+        ggml_tensor* ls2 = fetch(m, p + "layer_scale2");
+        if (!n1w || !n1b || !qW || !qB || !kW || !kB || !vW || !vB || !oW ||
+            !oB || !ls1 || !n2w || !n2b || !f1W || !f1B || !f2W || !f2B ||
+            !ls2) {
             return out;
         }
 
@@ -470,8 +507,9 @@ BackboneOutput dinov2_forward(ggml_context* ctx, const Model& m,
              * unified sequence. After attention, reshape back to windowed. */
             const int T_long = T_full * n_windows;
             ggml_tensor* h2 = ggml_reshape_3d(ctx, h, h->ne[0], T_long, 1);
-            h2 = sdpa_attention(ctx, h2, qW, qB, kW, kB, vW, vB, oW, oB, n_heads);
-            h  = ggml_reshape_3d(ctx, h2, h2->ne[0], T_full, n_windows);
+            h2 = sdpa_attention(ctx, h2, qW, qB, kW, kB, vW, vB, oW, oB,
+                                n_heads);
+            h = ggml_reshape_3d(ctx, h2, h2->ne[0], T_full, n_windows);
         }
 
         /* Layer scale 1: multiply by per-channel gamma. ls1 ne = (dim,)
@@ -503,15 +541,16 @@ BackboneOutput dinov2_forward(ggml_context* ctx, const Model& m,
             }
             /* Strip CLS — view tokens 1..T_full. */
             const int dim_ne = (int)nrm->ne[0];
-            ggml_tensor* patches_only = ggml_view_3d(ctx, nrm,
-                /*ne0*/ dim_ne, /*ne1*/ t_per_win, /*ne2*/ n_windows,
-                /*nb1*/ nrm->nb[1], /*nb2*/ nrm->nb[2],
-                /*offset bytes*/ nrm->nb[1]);
+            ggml_tensor* patches_only = ggml_view_3d(
+                    ctx, nrm,
+                    /*ne0*/ dim_ne, /*ne1*/ t_per_win, /*ne2*/ n_windows,
+                    /*nb1*/ nrm->nb[1], /*nb2*/ nrm->nb[2],
+                    /*offset bytes*/ nrm->nb[1]);
             patches_only = ggml_cont(ctx, patches_only);
 
             /* Un-window: (dim, T_p, n_windows) → (dim, inf_side*inf_side). */
             ggml_tensor* flat_patches = window_unpartition_patches(
-                ctx, patches_only, inf_side, num_windows);
+                    ctx, patches_only, inf_side, num_windows);
 
             /* Reshape to (W_p, H_p, dim, 1) for downstream conv-style code.
              * `flat_patches` ne = (dim, inf*inf); reshape to (dim, w, h) and
@@ -526,13 +565,14 @@ BackboneOutput dinov2_forward(ggml_context* ctx, const Model& m,
              * → input axis 2 (h) goes to output position 1 (ax2=1)
              * → input axis 3 (1) stays at position 3   (ax3=3) */
             ggml_tensor* spatial_d_first = ggml_reshape_3d(
-                ctx, flat_patches, dim_ne, inf_side, inf_side);
+                    ctx, flat_patches, dim_ne, inf_side, inf_side);
             /* fast→slow d, w, h. */
-            ggml_tensor* spatial = ggml_cont(ctx, ggml_permute(
-                ctx, spatial_d_first, 2, 0, 1, 3));
+            ggml_tensor* spatial = ggml_cont(
+                    ctx, ggml_permute(ctx, spatial_d_first, 2, 0, 1, 3));
             /* ne (w=inf_side, h=inf_side, dim, 1), fast→slow w, h, d, 1. */
 
-            publish("backbone.multiscale.level" + std::to_string(level), spatial);
+            publish("backbone.multiscale.level" + std::to_string(level),
+                    spatial);
             out.multi_scale[level] = spatial;
         }
     }

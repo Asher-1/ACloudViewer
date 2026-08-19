@@ -6,7 +6,7 @@
 // ----------------------------------------------------------------------------
 
 // C API embed consistency: detect landmarks + embed_rgb_landmarks must match
-// embed_path on the same libjpeg-loaded buffer (InsightFace recognize path).
+// embed_path on the same Qt-decoded RGB buffer (InsightFace recognize path).
 // SKIP (77) when AICORE_TEST_FACEDETECT_GGUF or AICORE_TEST_FACEDETECT_IMAGE
 // unset.
 

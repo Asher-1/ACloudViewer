@@ -344,6 +344,7 @@ Large downloads: [cloudViewer_downloads](https://github.com/Asher-1/cloudViewer_
 | qFreeSplatter | `PLUGIN_STANDARD_QFREESPLATTER` | 3D Gaussian splats; optional qSIBR viewer |
 | qRFDetr | `PLUGIN_STANDARD_QRFDETR` | RF-DETR detection/segmentation (GGUF); needs `AICore_ENABLED` |
 | qRMBG | `PLUGIN_STANDARD_QRMBG` | RMBG-2.0 background removal (GGUF); needs `AICore_ENABLED` |
+| qYOLO | `PLUGIN_STANDARD_QYOLO` | YOLO detection + metric depth (GGUF); needs `AICore_ENABLED` |
 | qManualCalib | `PLUGIN_STANDARD_QMANUAL_CALIB` | Sensor/AVM calibration; sample data in-tree |
 | qSIBR | `PLUGIN_STANDARD_QSIBR` | Gaussian / ULR viewers (CUDA, Linux/Win) |
 | qJSonRPCPlugin | `PLUGIN_STANDARD_QJSONRPC` | Agent WebSocket API |

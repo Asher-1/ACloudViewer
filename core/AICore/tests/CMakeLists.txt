@@ -182,6 +182,43 @@ function(aicore_add_rfdetr_capi_test name)
     set_tests_properties(${name} PROPERTIES LABELS "capi")
 endfunction()
 
+function(aicore_add_rfdetr_whitebox_test name)
+    if(NOT TARGET AICore_test)
+        return()
+    endif()
+    add_executable(${name} rfdetr/${name}.cpp)
+    target_link_libraries(${name} PRIVATE AICore_test)
+    # NOTE: must be the real src/tasks/rfdetr directory and must come before
+    # the include dirs propagated by AICore_test (which list depth/, facedetect/,
+    # gaussian/ first): image_io.hpp, model_loader.hpp and backend.hpp exist in
+    # several task directories and would otherwise resolve to the wrong task.
+    target_include_directories(${name} PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/rfdetr)
+    _aicore_test_common(${name})
+    set_tests_properties(${name} PROPERTIES LABELS "whitebox")
+endfunction()
+
+# Manual perf probe (NOT a ctest — needs a local GGUF, run by hand):
+#   bench_rfdetr_perf <model.gguf> [device] [threads] [srcW] [srcH] [iters]
+# Same whitebox linking rules as the tests above, minus add_test().
+function(aicore_add_rfdetr_perf_bench)
+    if(NOT TARGET AICore_test)
+        return()
+    endif()
+    add_executable(bench_rfdetr_perf rfdetr/bench_rfdetr_perf.cpp)
+    target_link_libraries(bench_rfdetr_perf PRIVATE AICore_test)
+    target_include_directories(bench_rfdetr_perf PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/rfdetr)
+    if(NOT MSVC)
+        target_compile_options(bench_rfdetr_perf PRIVATE -Wall -Wextra)
+    endif()
+    target_include_directories(bench_rfdetr_perf PRIVATE ${AICORE_TEST_INC})
+    include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/AICoreCompileDefinitions.cmake)
+    aicore_apply_compile_definitions(bench_rfdetr_perf)
+    set_target_properties(bench_rfdetr_perf PROPERTIES POSITION_INDEPENDENT_CODE ON)
+    cloudviewer_set_aicore_test_runtime_layout(bench_rfdetr_perf)
+endfunction()
+
 function(aicore_add_rmbg_capi_test name)
     add_executable(${name} rmbg/${name}.cpp)
     target_link_libraries(${name} PRIVATE AICore)
@@ -324,8 +361,14 @@ aicore_add_facedetect_capi_test(test_facedetect_match_capi)
 aicore_add_facedetect_capi_test(test_facedetect_contexts_capi)
 set_tests_properties(test_facedetect_contexts_capi PROPERTIES LABELS "capi;model")
 
+aicore_add_rfdetr_whitebox_test(test_rfdetr_preprocess)
+aicore_add_rfdetr_whitebox_test(test_rfdetr_two_stage_mask)
+aicore_add_rfdetr_perf_bench()
 aicore_add_rfdetr_capi_test(test_rfdetr_capi_contract)
 aicore_add_rmbg_capi_test(test_rmbg_capi_contract)
+aicore_add_rmbg_capi_test(test_rmbg_capi_performance)
+set_tests_properties(test_rmbg_capi_performance PROPERTIES
+    LABELS "capi;model;gpu;performance")
 
 add_test(
     NAME test_aicore_public_headers
@@ -385,7 +428,8 @@ function(aicore_configure_model_test_assets)
             test_lightglue_aliked_e2e
             test_deeplsd_capi_load
             test_facedetect_embed_capi
-            test_facedetect_contexts_capi)
+            test_facedetect_contexts_capi
+            test_rmbg_capi_performance)
         if(TEST ${_test})
             set_tests_properties(${_test} PROPERTIES ENVIRONMENT "${_env}")
             if(AICORE_TEST_AUTO_DOWNLOAD)
@@ -465,7 +509,9 @@ set(_aicore_contract_targets
     test_aliked_capi_contract
     test_aliked_capi_parity
     test_aliked_e2e_smoke
-    test_deeplsd_capi_contract)
+    test_deeplsd_capi_contract
+    test_rmbg_capi_contract
+    test_rmbg_capi_performance)
 set(_aicore_contract_model_exclude)
 if(NOT AICORE_TEST_ENABLE_MODEL_TESTS)
     list(APPEND _aicore_contract_model_exclude -LE "model|gpu|e2e")
@@ -480,3 +526,29 @@ add_custom_target(aicore-contract-tests
     COMMENT "Running AICore public contract tests"
     VERBATIM
 )
+
+# --- Catalog vs release asset consistency (network; CI only) ---------------
+# The catalog can be self-consistent while individual entries 404 on the
+# release (historical rmbg_q4_K.gguf regression). Dump every catalog URL and
+# HEAD-check it against GitHub so drift fails the build instead of the user's
+# first download. Kept out of the "capi" label so offline/contract runs stay
+# network-free.
+add_executable(test_catalog_dump_urls catalog_dump_urls.cpp)
+target_link_libraries(test_catalog_dump_urls PRIVATE AICore)
+_aicore_capi_link(test_catalog_dump_urls)
+_aicore_test_common(test_catalog_dump_urls)
+if(NOT MSVC)
+    target_compile_options(test_catalog_dump_urls PRIVATE -fPIC)
+    target_link_options(test_catalog_dump_urls PRIVATE "-no-pie")
+endif()
+
+find_package(Python3 COMPONENTS Interpreter QUIET)
+if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
+    add_test(
+        NAME test_catalog_remote_assets
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/check_catalog_assets.py
+                $<TARGET_FILE:test_catalog_dump_urls>)
+    set_tests_properties(test_catalog_remote_assets PROPERTIES
+        LABELS "catalog-remote" TIMEOUT 300)
+endif()

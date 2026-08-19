@@ -118,7 +118,10 @@ std::vector<FaceDetectBox> parse_dense_json(const QByteArray& json) {
 QImage draw_dense_annotations(const QImage& source,
                               const std::vector<FaceDetectBox>& faces,
                               float minDetectionScore) {
-    QImage rgb = source.convertToFormat(QImage::Format_RGB32);
+    // Draw directly on source — QPainter paints on RGB888 natively in Qt 5+
+    // (same as annotateDetect/annotateRecognize); the extra RGB32 conversion
+    // here used to copy the whole frame for nothing.
+    QImage rgb = source;
     QPainter painter(&rgb);
     painter.setRenderHint(QPainter::Antialiasing, true);
 

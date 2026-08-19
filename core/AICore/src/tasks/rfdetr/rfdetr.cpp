@@ -1,11 +1,11 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "rfdetr.h"
-#include "backend.hpp"
-#include "common.hpp"
-#include "model_loader.hpp"
-#include "rfdetr_model.hpp"
-#include "postprocess.hpp"
-#include "image_io.hpp"
-#include "ggml-backend.h"
 
 #include <cstdlib>
 #include <new>
@@ -13,29 +13,49 @@
 #include <thread>
 #include <vector>
 
+#include "backend.hpp"
+#include "common.hpp"
+#include "ggml-backend.h"
+#include "image_io.hpp"
+#include "model_loader.hpp"
+#include "postprocess.hpp"
+#include "rfdetr_model.hpp"
+
 namespace {
 /* Resolve the requested thread count for the CPU backend:
  *   - n > 0  → use n
- *   - n == 0 → auto: std::thread::hardware_concurrency() (clamped to >= 1)
+ *   - n == 0 → auto: physical-core estimate = hardware_concurrency()/2
  *   - n < 0  → clamp to 1
- */
+ *
+ * The auto case deliberately does NOT use hardware_concurrency() as-is:
+ * that counts SMT logical cores, and oversubscribing ggml's CPU matmuls
+ * past the physical cores collapses throughput (memory-bandwidth + cache
+ * contention). Measured on 16C/32T (Ryzen 5950X-class), rfdetr-base f16,
+ * 1920x1080 input: T=16 → 353 ms median vs T=32 → 5836 ms — a 16.6×
+ * regression; the upstream rf-detr.cpp benchmark shows the same collapse
+ * (BACKENDS.md: T=24 → 296.5 ms vs T=32 → 4704.1 ms). On SMT-less CPUs
+ * the halving is merely conservative, never catastrophic. */
 int resolve_n_threads(int n) {
     if (n > 0) return n;
     unsigned hc = std::thread::hardware_concurrency();
     if (hc == 0) hc = 1;
-    return (int)hc;
+    const unsigned physical = hc / 2;
+    return (int)(physical > 0 ? physical : 1);
 }
 }  // namespace
 
 /* Opaque struct — defined here so external callers can only hold pointers. */
 struct rfdetr_context {
-    rfdetr::Model*      model     = nullptr;
-    rfdetr::BackendCtx  bctx      {};
-    int                 n_threads = 1;
+    rfdetr::Model* model = nullptr;
+    rfdetr::BackendCtx bctx{};
+    int n_threads = 1;
 };
 
-extern "C" rfdetr_context* rfdetr_init(const rfdetr_params* params, rfdetr_status* out_status) {
-    auto set = [&](rfdetr_status s) { if (out_status) *out_status = s; };
+extern "C" rfdetr_context* rfdetr_init(const rfdetr_params* params,
+                                       rfdetr_status* out_status) {
+    auto set = [&](rfdetr_status s) {
+        if (out_status) *out_status = s;
+    };
 
     if (!params || !params->model_path) {
         set(RFDETR_ERR_INVALID_ARG);
@@ -93,15 +113,15 @@ extern "C" rfdetr_context* rfdetr_init(const rfdetr_params* params, rfdetr_statu
         set(RFDETR_ERR_OUT_OF_MEMORY);
         return nullptr;
     }
-    ctx->model     = m;
-    ctx->bctx      = bctx;
+    ctx->model = m;
+    ctx->bctx = bctx;
     ctx->n_threads = n_threads;
 
-    rfdetr_logf(RFDETR_LOG_INFO, "rfdetr_init: loaded variant=%s, num_classes=%u, num_queries=%u, n_threads=%d",
-                m->config.variant.c_str(),
-                m->config.num_classes,
-                m->config.num_queries,
-                n_threads);
+    rfdetr_logf(RFDETR_LOG_INFO,
+                "rfdetr_init: loaded variant=%s, num_classes=%u, "
+                "num_queries=%u, n_threads=%d",
+                m->config.variant.c_str(), m->config.num_classes,
+                m->config.num_queries, n_threads);
 
     set(RFDETR_OK);
     return ctx;
@@ -120,8 +140,9 @@ extern "C" rfdetr_status rfdetr_detect(rfdetr_context* ctx,
                                        rfdetr_detection** out_detections,
                                        size_t* out_n) {
     if (out_detections) *out_detections = nullptr;
-    if (out_n)          *out_n = 0;
-    if (!ctx || !img || !params || !out_detections || !out_n) return RFDETR_ERR_INVALID_ARG;
+    if (out_n) *out_n = 0;
+    if (!ctx || !img || !params || !out_detections || !out_n)
+        return RFDETR_ERR_INVALID_ARG;
     if (!ctx->model || !ctx->bctx.cpu) return RFDETR_ERR_INVALID_ARG;
 
     const rfdetr::Config& cfg = ctx->model->config;
@@ -130,9 +151,9 @@ extern "C" rfdetr_status rfdetr_detect(rfdetr_context* ctx,
     /* 1. Preprocess image to F32 (img_size × img_size × 3 × 1) */
     float* px_data = nullptr;
     int px_w = 0, px_h = 0;
-    rfdetr_status pp_st = rfdetr_preprocess(img, img_size, img_size,
-                                            cfg.preprocess_mean, cfg.preprocess_std,
-                                            &px_data, &px_w, &px_h);
+    rfdetr_status pp_st = rfdetr_preprocess(
+            img, img_size, img_size, cfg.preprocess_mean, cfg.preprocess_std,
+            cfg.preprocess_bilinear_no_antialias, &px_data, &px_w, &px_h);
     if (pp_st != RFDETR_OK) {
         rfdetr_logf(RFDETR_LOG_ERROR, "rfdetr_detect: preprocess failed");
         return pp_st;
@@ -140,8 +161,8 @@ extern "C" rfdetr_status rfdetr_detect(rfdetr_context* ctx,
 
     /* 2. Full forward (2 graphs internally: backbone+projector+two_stage,
      *    then CPU top-K + decoder + heads). Returns host-side outputs. */
-    rfdetr::ForwardOutput fout = rfdetr::rfdetr_model_forward(
-        *ctx->model, px_data, px_w, ctx->bctx);
+    rfdetr::ForwardOutput fout =
+            rfdetr::rfdetr_model_forward(*ctx->model, px_data, px_w, ctx->bctx);
     std::free(px_data);
     px_data = nullptr;
     if (fout.class_logits.empty() || fout.bbox_cxcywh.empty()) {
@@ -154,20 +175,20 @@ extern "C" rfdetr_status rfdetr_detect(rfdetr_context* ctx,
      * i.e. row-major (query, class) — what rfdetr_select_detections expects. */
     if (!fout.masks.empty()) {
         rfdetr_select_detections_with_masks(
-            fout.class_logits.data(), fout.bbox_cxcywh.data(),
-            fout.masks.data(), fout.mask_w, fout.mask_h, /*mask_threshold*/ 0.5f,
-            (size_t)fout.num_queries, (size_t)fout.num_classes,
-            params->threshold, params->top_k,
-            params->class_filter, params->class_filter_len,
-            rfdetr_image_width(img), rfdetr_image_height(img),
-            out_detections, out_n);
+                fout.class_logits.data(), fout.bbox_cxcywh.data(),
+                fout.masks.data(), fout.mask_w, fout.mask_h,
+                /*mask_threshold*/ 0.5f, (size_t)fout.num_queries,
+                (size_t)fout.num_classes, params->threshold, params->top_k,
+                params->class_filter, params->class_filter_len,
+                rfdetr_image_width(img), rfdetr_image_height(img),
+                out_detections, out_n);
     } else {
-        rfdetr_select_detections(fout.class_logits.data(), fout.bbox_cxcywh.data(),
-                                 (size_t)fout.num_queries, (size_t)fout.num_classes,
-                                 params->threshold, params->top_k,
-                                 params->class_filter, params->class_filter_len,
-                                 rfdetr_image_width(img), rfdetr_image_height(img),
-                                 out_detections, out_n);
+        rfdetr_select_detections(
+                fout.class_logits.data(), fout.bbox_cxcywh.data(),
+                (size_t)fout.num_queries, (size_t)fout.num_classes,
+                params->threshold, params->top_k, params->class_filter,
+                params->class_filter_len, rfdetr_image_width(img),
+                rfdetr_image_height(img), out_detections, out_n);
     }
 
     /* 4. Attach class names from the loaded config (best-effort) */
@@ -199,11 +220,26 @@ uint32_t rfdetr_context_num_queries(const rfdetr_context* ctx) {
 uint32_t rfdetr_context_num_classes(const rfdetr_context* ctx) {
     return (ctx && ctx->model) ? ctx->model->config.num_classes : 0;
 }
+int rfdetr_context_n_threads(const rfdetr_context* ctx) {
+    return ctx ? ctx->n_threads : 0;
+}
+
+const char* rfdetr_context_device_name(const rfdetr_context* ctx) {
+    /* The backend-resolved device (e.g. "CUDA0", "Vulkan0", "cpu"), which
+     * can differ from the request when a GPU lease can't be acquired — the
+     * caller surfaces it so silent CPU fallbacks are visible. */
+    return (ctx && !ctx->bctx.device_name.empty())
+                   ? ctx->bctx.device_name.c_str()
+                   : "";
+}
+
 size_t rfdetr_context_n_tensors(const rfdetr_context* ctx) {
     return (ctx && ctx->model) ? ctx->model->tensors.size() : 0;
 }
 int rfdetr_context_has_segmentation(const rfdetr_context* ctx) {
-    return (ctx && ctx->model) ? (ctx->model->config.has_segmentation_head ? 1 : 0) : 0;
+    return (ctx && ctx->model)
+                   ? (ctx->model->config.has_segmentation_head ? 1 : 0)
+                   : 0;
 }
 
 }  // extern "C"

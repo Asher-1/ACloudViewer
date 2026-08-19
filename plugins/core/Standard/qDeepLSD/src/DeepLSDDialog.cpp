@@ -33,6 +33,7 @@ const int kThumbSize = 96;
 // QListWidgetItem data role carrying the full-resolution ccImage for the
 // click-to-enlarge preview (the 48 px icon is only for list display).
 constexpr int kDbFullImageRole = Qt::UserRole + 1;
+constexpr const char* kDeepLSDTestImage = "deeplsd_examples.jpg";
 
 bool isSupportedImageFile(const QString& filePath) {
     static const QStringList extensions = {
@@ -120,6 +121,56 @@ DeepLSDDialog::DeepLSDDialog(QWidget* parent) : QDialog(parent) {
                     m_autoRunAfterDownload = false;
                 }
             });
+
+    auto& testDataRepo = ecvTestDataRepository::instance();
+    connect(&testDataRepo, &ecvTestDataRepository::downloadProgress, this,
+            [this](int percent, const QString& statusText) {
+                if (!m_testDataDownloadInProgress) return;
+                m_progress->setRange(0, 100);
+                m_progress->setValue(percent);
+                m_downloadLabel->setText(statusText);
+                m_downloadLabel->setVisible(true);
+            });
+    connect(&testDataRepo, &ecvTestDataRepository::downloadLogMessage, this,
+            [this](const QString& message) {
+                if (m_testDataDownloadInProgress) appendLog(message);
+            });
+    connect(&testDataRepo, &ecvTestDataRepository::downloadFinished, this,
+            [this](bool success, ecvTestDataRepository::Dataset kind) {
+                if (!m_testDataDownloadInProgress ||
+                    kind != ecvTestDataRepository::Dataset::ObjectsDetection) {
+                    return;
+                }
+                if (!success) {
+                    m_testDataDownloadInProgress = false;
+                    m_testDataBtn->setEnabled(true);
+                    m_downloadLabel->setVisible(false);
+                    return;
+                }
+                m_downloadLabel->setText(tr("Extracting test data..."));
+                ecvTestDataRepository::instance().extractDataset(kind);
+            });
+    connect(&testDataRepo, &ecvTestDataRepository::extractionProgress, this,
+            [this](int current, int total) {
+                if (!m_testDataDownloadInProgress || total <= 0) return;
+                m_progress->setRange(0, total);
+                m_progress->setValue(current);
+            });
+    connect(&testDataRepo, &ecvTestDataRepository::extractionFinished, this,
+            [this](bool success, ecvTestDataRepository::Dataset kind) {
+                if (!m_testDataDownloadInProgress ||
+                    kind != ecvTestDataRepository::Dataset::ObjectsDetection) {
+                    return;
+                }
+                m_testDataDownloadInProgress = false;
+                m_testDataBtn->setEnabled(true);
+                m_downloadLabel->setVisible(false);
+                if (success) {
+                    loadTestImage();
+                } else {
+                    appendLog(tr("[Test data] Extraction failed."));
+                }
+            });
     CVLog::Print(QString("[DeepLSD] Model cache: %1").arg(modelCacheDir()));
     aicore_inference_log::log_backend_probe(QStringLiteral("DeepLSD"));
     populateModelCombo();
@@ -200,8 +251,14 @@ void DeepLSDDialog::setupUi() {
             tr("Pick an image file (last folder is remembered)."));
     connect(browseImg, &QPushButton::clicked, this,
             &DeepLSDDialog::onBrowseImage);
+    m_testDataBtn = new QPushButton(tr("Use test data"));
+    m_testDataBtn->setToolTip(
+            tr("Load deeplsd_examples.jpg from the shared test-data cache"));
+    connect(m_testDataBtn, &QPushButton::clicked, this,
+            &DeepLSDDialog::onUseTestData);
     pathRow->addWidget(m_imagePath, 1);
     pathRow->addWidget(browseImg);
+    pathRow->addWidget(m_testDataBtn);
     ioLayout->addLayout(pathRow);
 
     m_previewLabel = new ecvClickableImageLabel;
@@ -579,6 +636,56 @@ void DeepLSDDialog::onModelComboChanged(int index) {
 void DeepLSDDialog::onDbListActivated(QListWidgetItem* item) {
     if (!item) return;
     m_imagePath->setText(QStringLiteral("db://") + item->text());
+}
+
+void DeepLSDDialog::onUseTestData() {
+    if (m_testDataDownloadInProgress) return;
+    if (m_downloadInProgress) {
+        appendLog(tr("[Test data] Wait for the model download to finish."));
+        return;
+    }
+
+    const auto kind = ecvTestDataRepository::Dataset::ObjectsDetection;
+    if (!ecvTestDataRepository::findDatasetFile(
+                 kind, QString::fromLatin1(kDeepLSDTestImage))
+                 .isEmpty()) {
+        loadTestImage();
+        return;
+    }
+
+    auto& repo = ecvTestDataRepository::instance();
+    if (repo.isDownloadInProgress()) {
+        appendLog(tr("[Test data] Another test-data download is running."));
+        return;
+    }
+
+    m_testDataDownloadInProgress = true;
+    m_testDataBtn->setEnabled(false);
+    m_downloadLabel->setVisible(true);
+    const auto info = ecvTestDataRepository::getDatasetInfo(kind);
+    if (ecvTestDataRepository::verifyZipIntegrity(
+                ecvTestDataRepository::zipPath(kind), info.expectedMd5,
+                info.expectedSize)) {
+        m_downloadLabel->setText(tr("Extracting cached test data..."));
+        repo.extractDataset(kind);
+        return;
+    }
+
+    m_downloadLabel->setText(tr("Downloading shared test data..."));
+    repo.startDownload(kind);
+}
+
+void DeepLSDDialog::loadTestImage() {
+    const QString path = ecvTestDataRepository::findDatasetFile(
+            ecvTestDataRepository::Dataset::ObjectsDetection,
+            QString::fromLatin1(kDeepLSDTestImage));
+    if (path.isEmpty()) {
+        appendLog(tr("[Test data] deeplsd_examples.jpg was not found."));
+        return;
+    }
+    m_imagePath->setText(path);
+    updateImagePreview();
+    appendLog(tr("[Test data] Loaded %1").arg(path));
 }
 
 bool DeepLSDDialog::ensureModelAvailable() {

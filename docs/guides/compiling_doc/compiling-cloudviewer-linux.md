@@ -1,6 +1,6 @@
 # Building ACloudViewer from Source on Linux (Ubuntu)
 
-> **Quick start with Docker?** See [docker/README.md](../../../docker/README.md) — no local setup required.
+> **Quick start with Docker?** See [docker/README.md](https://github.com/Asher-1/ACloudViewer/blob/main/docker/README.md) — no local setup required.
 >
 > ```bash
 > ./docker/build-release.sh        # system-packages build
@@ -222,6 +222,7 @@ cmake \
     -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
     -DPLUGIN_STANDARD_QRFDETR=ON \
     -DPLUGIN_STANDARD_QRMBG=ON \
+    -DPLUGIN_STANDARD_QYOLO=ON \
     -DPLUGIN_PYTHON=ON \
     -DBUILD_PYTHON_MODULE=ON \
     ..
@@ -445,6 +446,7 @@ cmake \
     -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
     -DPLUGIN_STANDARD_QRFDETR=ON \
     -DPLUGIN_STANDARD_QRMBG=ON \
+    -DPLUGIN_STANDARD_QYOLO=ON \
     -DPLUGIN_PYTHON=ON \
     -DBUILD_PYTHON_MODULE=ON \
     ..
@@ -637,6 +639,7 @@ cmake -DAICore_ENABLED=ON \
       -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
       -DPLUGIN_STANDARD_QRFDETR=ON \
       -DPLUGIN_STANDARD_QRMBG=ON \
+      -DPLUGIN_STANDARD_QYOLO=ON \
       ..
 ```
 
@@ -648,7 +651,7 @@ Optional explicit CUDA for ggml (developer builds, not the portable Auto path):
 cmake -DAICore_USE_CUDA=ON -DAICore_BUNDLE_CUDA_RUNTIME=ON ..
 ```
 
-See [BUILD.md](../../../BUILD.md) for build-time vs runtime dependency tables.
+See [BUILD.md](https://github.com/Asher-1/ACloudViewer/blob/main/BUILD.md) for build-time vs runtime dependency tables.
 `AICore_BUNDLE_CUDA_RUNTIME=ON` bundles `libcublas.so.*` under
 `lib/cuda-runtime/` so the installer runs on driver-only machines: `cudart_static`
 eliminates `libcudart.so.*`, but ggml hardwires non-quantized matmul to cuBLAS,

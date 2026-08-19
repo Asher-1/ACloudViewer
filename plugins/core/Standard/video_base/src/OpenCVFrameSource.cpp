@@ -12,9 +12,10 @@
 #include <opencv2/core/utils/logger.hpp>
 
 #if !defined(_WIN32)
-#include <cstdio>
 #include <fcntl.h>
 #include <unistd.h>
+
+#include <cstdio>
 #endif
 
 namespace {
@@ -23,29 +24,29 @@ namespace {
 // Suppresses noisy libva / FFmpeg hw-acceleration errors on systems
 // without GPU drivers (headless servers, VMs, containers).
 class StderrGuard {
- public:
-  StderrGuard() {
+public:
+    StderrGuard() {
 #if !defined(_WIN32)
-    fflush(stderr);
-    m_saved = dup(STDERR_FILENO);
-    m_devnull = open("/dev/null", O_WRONLY);
-    if (m_devnull >= 0) dup2(m_devnull, STDERR_FILENO);
+        fflush(stderr);
+        m_saved = dup(STDERR_FILENO);
+        m_devnull = open("/dev/null", O_WRONLY);
+        if (m_devnull >= 0) dup2(m_devnull, STDERR_FILENO);
 #endif
-  }
-  ~StderrGuard() {
-#if !defined(_WIN32)
-    if (m_saved >= 0) {
-      dup2(m_saved, STDERR_FILENO);
-      close(m_saved);
     }
-    if (m_devnull >= 0) close(m_devnull);
-#endif
-  }
-
- private:
+    ~StderrGuard() {
 #if !defined(_WIN32)
-  int m_saved = -1;
-  int m_devnull = -1;
+        if (m_saved >= 0) {
+            dup2(m_saved, STDERR_FILENO);
+            close(m_saved);
+        }
+        if (m_devnull >= 0) close(m_devnull);
+#endif
+    }
+
+private:
+#if !defined(_WIN32)
+    int m_saved = -1;
+    int m_devnull = -1;
 #endif
 };
 
@@ -72,21 +73,23 @@ bool readToExactFrame(cv::VideoCapture& cap, int target, cv::Mat& out) {
 }  // namespace
 
 bool OpenCVFrameSource::openVideoWithHw(cv::VideoCapture& cap,
-                                        const std::string& path, int backend) {
+                                        const std::string& path,
+                                        int backend) {
     // Best-effort hardware-accelerated decode: OpenCV >= 4.5.2 exposes
     // CAP_PROP_HW_ACCELERATION (VAAPI on Linux, D3D11 on Windows — both
     // provided by the OS/driver, so no extra runtime to ship).  When the
     // driver or codec is unsupported, OpenCV falls back to software
     // internally; older OpenCV builds skip this block entirely.
 #if defined(CV_VERSION_MAJOR) && \
-    (CV_VERSION_MAJOR > 4 || (CV_VERSION_MAJOR == 4 && CV_VERSION_MINOR >= 5))
+        (CV_VERSION_MAJOR > 4 || \
+         (CV_VERSION_MAJOR == 4 && CV_VERSION_MINOR >= 5))
     if (backend == cv::CAP_FFMPEG || backend == cv::CAP_ANY) {
         // Suppress libva / FFmpeg hw-acceleration stderr noise — on
         // systems without VAAPI/D3D11 drivers the probe prints errors
         // that are harmless (OpenCV falls back to software decode).
         StderrGuard guard;
-        cap.open(path, backend, {cv::CAP_PROP_HW_ACCELERATION,
-                                 cv::VIDEO_ACCELERATION_ANY});
+        cap.open(path, backend,
+                 {cv::CAP_PROP_HW_ACCELERATION, cv::VIDEO_ACCELERATION_ANY});
         if (cap.isOpened()) return true;
     }
 #else
@@ -125,9 +128,7 @@ bool OpenCVFrameSource::openCamera(int deviceIndex, int backendHint) {
     return m_cap.isOpened();
 }
 
-bool OpenCVFrameSource::isOpened() const {
-    return m_cap.isOpened();
-}
+bool OpenCVFrameSource::isOpened() const { return m_cap.isOpened(); }
 
 IFrameSource::ReadResult OpenCVFrameSource::read(cv::Mat& out,
                                                  int64_t* frameIndex) {

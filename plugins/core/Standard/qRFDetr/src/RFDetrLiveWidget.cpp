@@ -11,30 +11,27 @@
 #include <QDir>
 #include <QDoubleSpinBox>
 #include <QFileInfo>
+#include <QFont>
 #include <QFormLayout>
-#include <QFutureWatcher>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QProgressBar>
-#include <QPushButton>
+#include <QMetaObject>
+#include <QPainter>
 #include <QSettings>
+#include <QSizePolicy>
 #include <QSpinBox>
 #include <QThread>
-#include <QtConcurrent/QtConcurrentRun>
 
+#include "RFDetrLiveInferWorker.h"
 #include "RFDetrModelCatalog.h"
 #include "ecvPersistentSettings.h"
 
 #ifdef AICore_ENABLED
 #include "aicore/backend_capi.h"
 #include "aicore/rfdetr_capi.h"
-#include "aicore/runtime_capi.h"
 #endif
 
 namespace {
-
-constexpr int kInferEveryNthFrame = 5;   // video throttle
-constexpr int kMaxInferWidth = 1280;     // downscale very large frames
 
 QString formatLatency(qint64 ms) {
     return ms >= 0 ? QStringLiteral("%1 ms").arg(ms) : QStringLiteral("--");
@@ -42,73 +39,28 @@ QString formatLatency(qint64 ms) {
 
 }  // namespace
 
-struct RFDetrLiveWidget::InferJob {
-    QImage rgb;        // RGB888 copy at inference resolution
-    float scale = 1.0f;  // original->rgb scale
-    quint64 generation = 0;
-    QString modelPath;
-    QString device;
-    int threads = 0;
-    float threshold = 0.5f;
-    uint32_t topK = 300;
-
-    RFDetrRunResult run() const;
-};
-
-RFDetrRunResult RFDetrLiveWidget::InferJob::run() const {
-    RFDetrRunResult result;
-    result.resolvedDevice = device;
-#ifdef AICore_ENABLED
-    aicore_rfdetr_options* opts = aicore_rfdetr_options_new();
-    if (!opts) return result;
-    aicore_rfdetr_options_set_device(opts, device.toUtf8().constData());
-    aicore_rfdetr_options_set_threads(opts, threads);
-    aicore_rfdetr_ctx* ctx = aicore_rfdetr_load_opts(
-            modelPath.toUtf8().constData(), opts);
-    aicore_rfdetr_options_free(opts);
-    if (!ctx || !aicore_rfdetr_is_ready(ctx)) {
-        if (ctx) aicore_rfdetr_free(ctx);
-        return result;
-    }
-    QElapsedTimer timer;
-    timer.start();
-    char* json = aicore_rfdetr_detect_rgb_json(
-            ctx, rgb.constBits(), rgb.width(), rgb.height(), threshold, topK);
-    const double ms = static_cast<double>(timer.elapsed());
-    if (json) {
-        RFDetrHelpers::parseDetectionsJson(QByteArray(json), &result);
-        aicore_rfdetr_free_string(json);
-    }
-    if (aicore_rfdetr_context_has_segmentation(ctx)) {
-        const int n = aicore_rfdetr_detection_count(ctx);
-        for (int i = 0; i < n; ++i) {
-            const int len = aicore_rfdetr_detection_mask_png(ctx, i, nullptr, 0);
-            if (len <= 0) continue;
-            QByteArray png;
-            png.resize(len);
-            if (aicore_rfdetr_detection_mask_png(
-                        ctx, i, reinterpret_cast<unsigned char*>(png.data()),
-                        len) == len) {
-                result.detections[i].maskPng = png;
-            }
-        }
-    }
-    aicore_rfdetr_free(ctx);
-    result.runtimeMs = ms;
-    result.modelPath = modelPath;
-    result.resolvedDevice = device;
-    result.imageName = QStringLiteral("live");
-#endif
-    return result;
-}
-
 RFDetrLiveWidget::RFDetrLiveWidget(QWidget* parent)
     : VideoPlaybackWidget(parent) {
+    // ClockDriven (default): the decode clock advances the video and the
+    // display tick paints the newest frame with the latest cached detections.
+    // Inference runs as an async side branch — it must not pace the display
+    // (the old ConsumerDriven handshake capped playback at the inference
+    // rate and broke playback speed control).
     setupUi();
     setPreviewFixedHeight(300);
+
+    m_inferThread = new QThread(this);
+    m_inferWorker = new RFDetrLiveInferWorker;
+    m_inferWorker->moveToThread(m_inferThread);
+    connect(m_inferThread, &QThread::finished, m_inferWorker,
+            &QObject::deleteLater);
+    connect(m_inferWorker, &RFDetrLiveInferWorker::inferComplete, this,
+            &RFDetrLiveWidget::onInferComplete, Qt::QueuedConnection);
+    m_inferThread->start();
 }
 
 RFDetrLiveWidget::~RFDetrLiveWidget() {
+    stopStream();
     shutdownInferThread();
 }
 
@@ -116,9 +68,7 @@ bool RFDetrLiveWidget::isAvailable() {
     return VideoPlaybackWidget::isAvailable();
 }
 
-void RFDetrLiveWidget::setConfig(const Config& config) {
-    m_config = config;
-}
+void RFDetrLiveWidget::setConfig(const Config& config) { m_config = config; }
 
 void RFDetrLiveWidget::setVideoFilePath(const QString& path, bool userChosen) {
     VideoPlaybackWidget::setVideoFilePath(path);
@@ -126,7 +76,6 @@ void RFDetrLiveWidget::setVideoFilePath(const QString& path, bool userChosen) {
 }
 
 void RFDetrLiveWidget::setupUi() {
-    m_previewLabel = previewLabel();
     m_statusLabel = statusLabel();
 
     auto* controls = new QHBoxLayout;
@@ -134,8 +83,11 @@ void RFDetrLiveWidget::setupUi() {
 
     controls->addWidget(new QLabel(tr("Model:"), this));
     m_modelCombo = new QComboBox(this);
-    m_modelCombo->setMinimumWidth(200);
-    controls->addWidget(m_modelCombo);
+    m_modelCombo->setMinimumContentsLength(20);
+    m_modelCombo->setSizeAdjustPolicy(
+            QComboBox::AdjustToMinimumContentsLengthWithIcon);
+    m_modelCombo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    controls->addWidget(m_modelCombo, 1);
 
     controls->addWidget(new QLabel(tr("Device:"), this));
     m_deviceCombo = new QComboBox(this);
@@ -162,11 +114,14 @@ void RFDetrLiveWidget::setupUi() {
     connect(m_modelCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, [this](int) { updateModelPathFromCombo(); });
     connect(m_deviceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, [this](int) {
-                emit deviceSelectionChanged(deviceId());
-            });
+            this, [this](int) { emit deviceSelectionChanged(deviceId()); });
     connect(m_threadsSpin, QOverload<int>::of(&QSpinBox::valueChanged), this,
             [this](int v) { emit threadCountChanged(v); });
+    connect(m_thresholdSpin,
+            QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+            [this](double threshold) {
+                m_config.threshold = static_cast<float>(threshold);
+            });
 }
 
 QString RFDetrLiveWidget::modelFilename() const {
@@ -183,15 +138,46 @@ int RFDetrLiveWidget::threadCount() const {
 }
 
 QString RFDetrLiveWidget::resolveModelPath() const {
-    const QString filename = modelFilename();
-    if (filename.isEmpty()) return QString();
+    const QString selection = modelFilename();
+    if (selection.isEmpty()) return QString();
+    const QFileInfo selectedFile(selection);
+    if (selectedFile.isAbsolute()) return selectedFile.absoluteFilePath();
     const QString dir = RFDetrHelpers::modelCacheDir();
     if (dir.isEmpty()) return QString();
-    return dir + QDir::separator() + filename;
+    return QDir(dir).filePath(selection);
 }
 
 void RFDetrLiveWidget::setModelPath(const QString& path) {
     m_config.modelPath = path;
+    // Sync the internal combo: select the matching entry or add a custom one.
+    if (m_modelCombo) {
+        const QString normalizedPath = QFileInfo(path).absoluteFilePath();
+        int idx = -1;
+        for (int i = 0; i < m_modelCombo->count(); ++i) {
+            const QString stored = m_modelCombo->itemData(i).toString();
+            const QString candidate =
+                    QFileInfo(stored).isAbsolute()
+                            ? QFileInfo(stored).absoluteFilePath()
+                            : QDir(RFDetrHelpers::modelCacheDir())
+                                      .absoluteFilePath(stored);
+            if (candidate == normalizedPath) {
+                idx = i;
+                break;
+            }
+        }
+        if (idx >= 0) {
+            m_syncingModelControls = true;
+            m_modelCombo->setCurrentIndex(idx);
+            m_syncingModelControls = false;
+        } else if (!path.isEmpty() && QFileInfo::exists(path)) {
+            m_syncingModelControls = true;
+            m_modelCombo->blockSignals(true);
+            m_modelCombo->addItem(QFileInfo(path).fileName(), path);
+            m_modelCombo->setCurrentIndex(m_modelCombo->count() - 1);
+            m_modelCombo->blockSignals(false);
+            m_syncingModelControls = false;
+        }
+    }
 }
 
 void RFDetrLiveWidget::setDevice(const QString& device) {
@@ -237,21 +223,28 @@ void RFDetrLiveWidget::syncModelControlsFrom(const QComboBox* modelCombo,
                                              const QComboBox* deviceCombo,
                                              const QSpinBox* threadsSpin) {
     if (!modelCombo || !deviceCombo || !threadsSpin) return;
-    rebuildModelCombo(QStringList(), QStringList(), QString());
+    const QString currentModel = modelCombo->currentData().toString();
+    const QString currentDevice = deviceCombo->currentData().toString();
     m_syncingModelControls = true;
     m_modelCombo->clear();
     for (int i = 0; i < modelCombo->count(); ++i) {
-        m_modelCombo->addItem(modelCombo->itemText(i),
-                              modelCombo->itemData(i));
+        m_modelCombo->addItem(modelCombo->itemText(i), modelCombo->itemData(i));
     }
     m_deviceCombo->clear();
     for (int i = 0; i < deviceCombo->count(); ++i) {
         m_deviceCombo->addItem(deviceCombo->itemText(i),
                                deviceCombo->itemData(i));
     }
+    const int modelIndex = m_modelCombo->findData(currentModel);
+    if (modelIndex >= 0) m_modelCombo->setCurrentIndex(modelIndex);
+    const int deviceIndex = m_deviceCombo->findData(currentDevice);
+    if (deviceIndex >= 0) m_deviceCombo->setCurrentIndex(deviceIndex);
     m_threadsSpin->setRange(threadsSpin->minimum(), threadsSpin->maximum());
     m_threadsSpin->setValue(threadsSpin->value());
     m_syncingModelControls = false;
+    m_config.device = deviceId();
+    m_config.threads = threadCount();
+    updateModelPathFromCombo();
 }
 
 void RFDetrLiveWidget::updateModelPathFromCombo() {
@@ -263,8 +256,8 @@ void RFDetrLiveWidget::updateModelPathFromCombo() {
 void RFDetrLiveWidget::loadSettings() {
     QSettings settings;
     settings.beginGroup(QStringLiteral("qRFDetr/live"));
-    m_thresholdSpin->setValue(settings.value(
-            QStringLiteral("threshold"), 0.5).toDouble());
+    m_thresholdSpin->setValue(
+            settings.value(QStringLiteral("threshold"), 0.5).toDouble());
     m_threadsSpin->setValue(
             settings.value(QStringLiteral("threads"), 0).toInt());
     settings.endGroup();
@@ -284,15 +277,17 @@ bool RFDetrLiveWidget::onPrepareStream() {
     // Model must exist before the stream starts.
     if (m_config.modelPath.isEmpty() ||
         !QFileInfo::exists(m_config.modelPath)) {
-        emit logMessage(tr("[RF-DETR] Model not available — download it in "
-                           "the Image tab first."));
+        emit logMessage(
+                tr("[RF-DETR] Model not available — download it in "
+                   "the Image tab first."));
         return false;
     }
 #ifdef AICore_ENABLED
-    if (aicore_rfdetr_warmup_backend(
-                m_config.device.toUtf8().constData()) != 0) {
-        emit logMessage(tr("[RF-DETR] Backend unavailable, falling back to "
-                           "CPU for this stream."));
+    if (aicore_rfdetr_warmup_backend(m_config.device.toUtf8().constData()) !=
+        0) {
+        emit logMessage(
+                tr("[RF-DETR] Backend unavailable, falling back to "
+                   "CPU for this stream."));
         m_config.device = QStringLiteral("cpu");
     }
 #endif
@@ -300,149 +295,289 @@ bool RFDetrLiveWidget::onPrepareStream() {
 }
 
 void RFDetrLiveWidget::onFrameDecoded(cv::Mat& frame, int frameIndex) {
-    // Throttle: run inference every kInferEveryNthFrame video frames (and on
-    // every camera frame — camera fps is already low enough).
-    const bool isVideo = inputSource() == InputSource::VideoFile;
-    if (isVideo && (frameIndex % kInferEveryNthFrame != 0)) return;
+    Q_UNUSED(frameIndex);
+    // Inference paces itself: frames decoded while the worker is busy are
+    // skipped (the overlay lags 1-2 frames behind, imperceptible at preview
+    // size). The RGB conversion only runs when a job is actually submitted —
+    // it is a full-frame copy.
     if (m_inferBusy) return;
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
-    const QImage rgb = VideoPlaybackWidget::cvMatToQImage(frame)
-                               .convertToFormat(QImage::Format_RGB888);
+    const QImage rgb =
+            VideoPlaybackWidget::cvMatToQImage(frame).convertToFormat(
+                    QImage::Format_RGB888);
 #else
     QImage rgb(frame.cols, frame.rows, QImage::Format_RGB888);
 #endif
     if (rgb.isNull()) return;
 
-    // Downscale very large frames to bound inference time.
-    QImage inferRgb = rgb;
-    float scale = 1.0f;
-    if (inferRgb.width() > kMaxInferWidth) {
-        scale = static_cast<float>(kMaxInferWidth) / inferRgb.width();
-        inferRgb = inferRgb.scaledToWidth(kMaxInferWidth, Qt::SmoothTransformation);
-    }
-
-    m_inferBusy = true;
-    m_lastSubmitFrameNum = frameIndex;
-    m_lastFrameSize = QSize(frame.cols, frame.rows);
-    m_inferSubmitTime.restart();
-
-    auto* job = new InferJob;
-    job->rgb = inferRgb;
-    job->scale = scale;
-    job->generation = m_streamGeneration;
-    job->modelPath = m_config.modelPath;
-    job->device = m_config.device;
-    job->threads = m_config.threads;
-    job->threshold = m_config.threshold;
-    job->topK = m_config.topK;
-
-    if (m_inferWatcher) {
-        m_inferWatcher->disconnect(this);
-        m_inferWatcher->deleteLater();
-        m_inferWatcher = nullptr;
-    }
-    m_inferWatcher = new QFutureWatcher<RFDetrRunResult>(this);
-    connect(m_inferWatcher, &QFutureWatcher<RFDetrRunResult>::finished, this,
-            [this]() {
-                if (!m_inferWatcher) return;
-                onInferComplete(m_inferWatcher->result());
-            });
-    m_inferWatcher->setFuture(QtConcurrent::run([job]() {
-        const RFDetrRunResult result = job->run();
-        delete job;
-        return result;
-    }));
-}
-
-void RFDetrLiveWidget::onInferComplete(const RFDetrRunResult& result) {
-    m_inferBusy = false;
-    m_lastInferLatencyMs =
-            m_inferSubmitTime.isValid() ? m_inferSubmitTime.elapsed() : -1;
-
-    if (result.detections.isEmpty() && result.modelVariant.isEmpty()) {
-        emit logMessage(tr("[RF-DETR] Live inference failed (model load or "
-                           "backend error)."));
-        return;
-    }
-
-    // Cache overlay + snapshot at the ORIGINAL frame resolution so
-    // drawLiveOverlay can scale coordinates exactly.
-    m_overlayDetections = result.detections;
-    m_overlayFrameNum = m_lastSubmitFrameNum;
-    m_lastSnapshot = result;
-    m_hasSnapshot = true;
-    m_statusLabel->setText(tr("Objects: %1 | infer %2")
-                                   .arg(result.detections.size())
-                                   .arg(formatLatency(m_lastInferLatencyMs)));
-    emit snapshotUpdated(result);
+    // AICore owns model-size preprocessing. Keeping the decoded resolution
+    // here preserves one coordinate space for pixels, boxes, masks and DB
+    // metadata, and avoids an extra resampling pass for small objects.
+    // Implicit-shared copy — annotated rendering at capture time reuses it.
+    m_lastSourceFrame = rgb;
+    submitInferJob(rgb);
 }
 
 void RFDetrLiveWidget::onDisplayFrame(QImage& display, int frameIndex) {
-    (void)frameIndex;
+    Q_UNUSED(frameIndex);
+    // Cache the pre-overlay frame (implicit sharing; the QPainter blit in
+    // drawLiveOverlay detaches `display`, leaving the cache untouched) so
+    // onInferComplete can repaint immediately with fresh detections.
+    m_lastDisplayFrame = display;
     drawLiveOverlay(display);
 }
 
-void RFDetrLiveWidget::drawLiveOverlay(QImage& frame) {
-    if (m_overlayDetections.isEmpty() || m_lastFrameSize.isEmpty()) return;
-    // Coordinates from AICore are in inference-RGB pixels; scale them to the
-    // display frame (which is the original decode resolution).
-    const float sx = static_cast<float>(frame.width()) / m_lastFrameSize.width();
-    const float sy =
-            static_cast<float>(frame.height()) / m_lastFrameSize.height();
-    QVector<RFDetrDetection> scaled;
-    scaled.reserve(m_overlayDetections.size());
-    for (const RFDetrDetection& d : m_overlayDetections) {
-        RFDetrDetection s = d;
-        s.x1 *= sx;
-        s.y1 *= sy;
-        s.x2 *= sx;
-        s.y2 *= sy;
-        scaled.append(s);
+void RFDetrLiveWidget::submitInferJob(const QImage& rgb) {
+    if (!m_inferWorker || m_inferBusy) return;
+    m_inferBusy = true;
+    m_inferSubmitTime.restart();
+
+    RFDetrLiveInferWorker::Job job;
+    job.rgb = rgb;
+    job.generation = m_streamGeneration;
+    job.modelPath = m_config.modelPath;
+    job.device = m_config.device;
+    job.threads = m_config.threads;
+    job.threshold = m_config.threshold;
+    job.topK = m_config.topK;
+    QMetaObject::invokeMethod(m_inferWorker, "runJob", Qt::QueuedConnection,
+                              Q_ARG(RFDetrLiveInferWorker::Job, job));
+}
+
+void RFDetrLiveWidget::onInferComplete(RFDetrLiveInferWorker::Result result) {
+    m_inferBusy = false;
+    // Wall-clock submit→complete: displayed as the e2e number so the user
+    // can compare it against the model latency (infer). It includes
+    // queued-connection hops and GUI-thread congestion, so a large gap
+    // signals pipeline stalls, not model slowness.
+    m_lastInferLatencyMs =
+            m_inferSubmitTime.isValid() ? m_inferSubmitTime.elapsed() : -1;
+
+    if (result.generation != m_streamGeneration || !isActive()) {
+        return;
     }
-    RFDetrHelpers::drawDetections(&frame, scaled, 0.3f, 2);
+
+    if (!result.ok) {
+        emit logMessage(
+                tr("[RF-DETR] Live inference failed: %1").arg(result.error));
+        return;
+    }
+
+    // A device switch (e.g. the requested GPU lease failed and rfdetr fell
+    // back to CPU) is worth a log line — it is the number one cause of
+    // "latency is way higher than the benchmark" reports.
+    if (result.snapshot.resolvedDevice != m_lastResolvedDevice) {
+        emit logMessage(tr("[RF-DETR] Inference device: %1")
+                                .arg(result.snapshot.resolvedDevice));
+        m_lastResolvedDevice = result.snapshot.resolvedDevice;
+    }
+
+    m_lastSnapshot = result.snapshot;
+    m_hasSnapshot = true;
+    // Show BOTH latencies so the user can distinguish a slow model from a
+    // congested pipeline:
+    //   infer = MODEL latency (preprocess + forward + postprocess inside
+    //          aicore_rfdetr_detect_rgb_json) — the same scope the upstream
+    //          rf-detr.cpp benchmark measures.
+    //   e2e  = submit→complete wall clock — includes queued-connection hops
+    //          (GUI→worker→GUI) and GUI-thread congestion. A large gap
+    //          between infer and e2e signals pipeline stalls, not model
+    //          slowness; a high infer signals a slow backend (CPU fallback,
+    //          SMT thread oversubscription, etc.).
+    const qint64 modelMs =
+            result.snapshot.runtimeMs >= 0.0
+                    ? static_cast<qint64>(result.snapshot.runtimeMs)
+                    : m_lastInferLatencyMs;
+    m_statusLabel->setText(tr("Objects: %1 | infer %2 / e2e %3 (%4)")
+                                   .arg(result.snapshot.detections.size())
+                                   .arg(formatLatency(modelMs))
+                                   .arg(formatLatency(m_lastInferLatencyMs))
+                                   .arg(result.snapshot.resolvedDevice));
+    emit snapshotUpdated(result.snapshot);
+    // New detections: update overlay data and invalidate the layer cache;
+    // the immediate repaint below rebuilds it at preview resolution.
+    m_overlayDetections = result.snapshot.detections;
+    m_overlaySourceSize = m_lastSourceFrame.size();
+    ++m_overlayGeneration;
+    repaintLivePreview();
+}
+
+void RFDetrLiveWidget::rebuildOverlayLayer(const QSize& displaySize) {
+    m_overlayLayer = QImage();
+    if (m_overlayDetections.isEmpty() || m_overlaySourceSize.isEmpty() ||
+        displaySize.isEmpty()) {
+        return;
+    }
+
+    // Same rendering semantics as RFDetrHelpers::drawDetections, but on the
+    // small preview image with coordinates scaled from the source pixel
+    // space; masks stretch over the full rect in both spaces.
+    QImage layer(displaySize, QImage::Format_ARGB32_Premultiplied);
+    layer.fill(Qt::transparent);
+    const qreal sx = static_cast<qreal>(displaySize.width()) /
+                     static_cast<qreal>(m_overlaySourceSize.width());
+    const qreal sy = static_cast<qreal>(displaySize.height()) /
+                     static_cast<qreal>(m_overlaySourceSize.height());
+
+    QPainter p(&layer);
+    p.setRenderHint(QPainter::Antialiasing, false);
+
+    // Pass 1: mask tints — raw Grayscale8 masks wrapped zero-copy, tinted
+    // once per rebuild and stretched with a single SIMD blit per detection.
+    for (const RFDetrDetection& d : m_overlayDetections) {
+        if (d.maskRaw.isEmpty() || d.maskWidth <= 0 || d.maskHeight <= 0)
+            continue;
+        const QImage mask(reinterpret_cast<const uchar*>(d.maskRaw.constData()),
+                          d.maskWidth, d.maskHeight, d.maskWidth,
+                          QImage::Format_Grayscale8);
+        if (mask.isNull()) continue;
+
+        QImage tinted(mask.size(), QImage::Format_ARGB32_Premultiplied);
+        const QRgb tintRgb =
+                QColor(RFDetrHelpers::classColor(d.classId)).rgba();
+        for (int y = 0; y < mask.height(); ++y) {
+            const uchar* mrow = mask.constScanLine(y);
+            QRgb* trow = reinterpret_cast<QRgb*>(tinted.scanLine(y));
+            for (int x = 0; x < mask.width(); ++x) {
+                trow[x] = mrow[x] >= 128 ? tintRgb : 0;
+            }
+        }
+        p.setOpacity(0.3f);
+        p.drawImage(layer.rect(), tinted);
+        p.setOpacity(1.0);
+    }
+
+    // Pass 2: boxes + labels, scaled from the source pixel space.
+    QFont font = p.font();
+    font.setPixelSize(std::max(12, displaySize.height() / 60));
+    p.setFont(font);
+    for (const RFDetrDetection& d : m_overlayDetections) {
+        const QColor color(RFDetrHelpers::classColor(d.classId));
+        QPen pen(color);
+        pen.setWidth(2);
+        p.setPen(pen);
+        p.drawRect(QRectF(d.x1 * sx, d.y1 * sy, (d.x2 - d.x1) * sx,
+                          (d.y2 - d.y1) * sy));
+
+        const QString label = QStringLiteral("%1 %2")
+                                      .arg(d.className)
+                                      .arg(d.score, 0, 'f', 2);
+        const QRectF labelRect(d.x1 * sx, d.y1 * sy - font.pixelSize() - 6,
+                               std::max(20, label.size() * font.pixelSize()),
+                               font.pixelSize() + 6);
+        const QRectF bg = labelRect.adjusted(0, 0, 4, 2);
+        p.fillRect(bg.intersected(QRectF(0, 0, displaySize.width(),
+                                         displaySize.height())),
+                   color);
+        p.setPen(Qt::white);
+        p.drawText(labelRect.adjusted(2, 3, -2, -2), label);
+        p.setPen(pen);
+    }
+    p.end();
+
+    m_overlayLayer = layer;
+    m_overlayLayerSize = displaySize;
+    m_overlayRenderedGeneration = m_overlayGeneration;
+}
+
+void RFDetrLiveWidget::drawLiveOverlay(QImage& frame) {
+    if (frame.isNull() || m_overlayDetections.isEmpty()) return;
+    // Rebuild only when the detections changed or the preview was resized;
+    // every display tick then pays just one premultiplied blit.
+    if (m_overlayLayer.isNull() || m_overlayLayerSize != frame.size() ||
+        m_overlayRenderedGeneration != m_overlayGeneration) {
+        rebuildOverlayLayer(frame.size());
+        if (m_overlayLayer.isNull()) return;
+    }
+    QPainter p(&frame);
+    p.drawImage(0, 0, m_overlayLayer);
+    p.end();
+}
+
+void RFDetrLiveWidget::repaintLivePreview() {
+    if (m_lastDisplayFrame.isNull() || !previewLabel()) return;
+    // m_lastDisplayFrame is already scaled to the preview label by the
+    // base-class pipeline — overlay and swap directly.
+    QImage frame = m_lastDisplayFrame;
+    drawLiveOverlay(frame);
+    previewLabel()->setPixmap(QPixmap::fromImage(frame));
+}
+
+void RFDetrLiveWidget::clearLiveOverlay() {
+    m_lastSourceFrame = QImage();
+    m_overlayDetections.clear();
+    m_overlaySourceSize = QSize();
+    m_overlayLayer = QImage();
 }
 
 void RFDetrLiveWidget::onVideoLooped() {
-    // Overlays from the previous loop iteration may be stale; keep them —
-    // they still describe the same video content.
+    ++m_streamGeneration;
+    m_hasSnapshot = false;
+    clearLiveOverlay();
 }
 
 void RFDetrLiveWidget::onStreamReset() {
-    m_overlayDetections.clear();
+    ++m_streamGeneration;
     m_hasSnapshot = false;
+    clearLiveOverlay();
 }
 
 void RFDetrLiveWidget::onStreamResumed() {
-    m_overlayDetections.clear();
+    ++m_streamGeneration;
+    m_hasSnapshot = false;
+    clearLiveOverlay();
 }
 
 void RFDetrLiveWidget::onStreamStopping() {
-    m_overlayDetections.clear();
+    ++m_streamGeneration;
     m_hasSnapshot = false;
+    clearLiveOverlay();
 }
 
 void RFDetrLiveWidget::onSourceChanged(InputSource source) {
-    (void)source;
-    m_overlayDetections.clear();
+    Q_UNUSED(source);
+    ++m_streamGeneration;
+    m_hasSnapshot = false;
+    clearLiveOverlay();
 }
 
 void RFDetrLiveWidget::captureSnapshotToDb() {
     if (!m_hasSnapshot || m_lastSnapshot.detections.isEmpty()) return;
+    // Annotated rendering is deferred to capture time (the live preview only
+    // needs the downscaled overlay layer). qRFDetr's DB export requires
+    // annotatedImage — render it once here from the cached source frame.
+    if (m_lastSnapshot.annotatedImage.isNull() && !m_lastSourceFrame.isNull()) {
+        QImage annotated = m_lastSourceFrame;
+        RFDetrHelpers::drawDetections(&annotated, m_lastSnapshot.detections,
+                                      0.3f, 2);
+        m_lastSnapshot.annotatedImage = annotated;
+    }
     emit captureToDbRequested(m_lastSnapshot);
 }
 
 void RFDetrLiveWidget::shutdownInferThread() {
-    if (m_inferWatcher) {
-        m_inferWatcher->disconnect(this);
-        m_inferWatcher->waitForFinished();
-        m_inferWatcher->deleteLater();
-        m_inferWatcher = nullptr;
+    if (!m_inferWorker || !m_inferThread) {
+        return;
     }
-    if (m_inferThread) {
-        m_inferThread->quit();
-        m_inferThread->wait(2000);
-        delete m_inferThread;
-        m_inferThread = nullptr;
-    }
+    // QThread::finished is emitted from the worker thread itself during its
+    // teardown. Because m_inferWorker lives on that thread, the queued
+    // deleteLater connection is delivered as a DIRECT call before the event
+    // loop stops draining — the worker is deleted before wait() returns, and
+    // the explicit delete below then dereferences freed memory (segfault on
+    // app exit). Drop the connection first so this function is the sole
+    // owner of the worker's lifetime.
+    disconnect(m_inferThread, &QThread::finished, m_inferWorker,
+               &QObject::deleteLater);
+    // releaseModel runs synchronously on the worker thread, so quit() below is
+    // guaranteed to end the event loop; wait() can therefore never time out
+    // (its upper bound is the single in-flight inference, which cannot be
+    // interrupted). A bounded wait here would instead risk destroying a
+    // still-running QThread from the widget destructor.
+    QMetaObject::invokeMethod(m_inferWorker, "releaseModel",
+                              Qt::BlockingQueuedConnection);
+    m_inferThread->quit();
+    m_inferThread->wait();
+    delete m_inferWorker;
+    m_inferWorker = nullptr;
 }

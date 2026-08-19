@@ -1,15 +1,22 @@
-#include "decoder.hpp"
-#include "transformer_ops.hpp"
-#include "trace.hpp"
-#include "common.hpp"
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#include "ggml.h"
+#include "decoder.hpp"
 
 #include <cmath>
 #include <cstdint>
 #include <cstring>
 #include <string>
 #include <vector>
+
+#include "common.hpp"
+#include "ggml.h"
+#include "trace.hpp"
+#include "transformer_ops.hpp"
 
 namespace rfdetr {
 
@@ -18,14 +25,17 @@ namespace {
 ggml_tensor* fetch(const Model& m, const std::string& name) {
     auto it = m.tensors.find(name);
     if (it == m.tensors.end()) {
-        rfdetr_logf(RFDETR_LOG_ERROR, "decoder: missing tensor '%s'", name.c_str());
+        rfdetr_logf(RFDETR_LOG_ERROR, "decoder: missing tensor '%s'",
+                    name.c_str());
         return nullptr;
     }
     return it->second;
 }
 
-ggml_tensor* linear(ggml_context* ctx, ggml_tensor* x,
-                    ggml_tensor* W, ggml_tensor* b) {
+ggml_tensor* linear(ggml_context* ctx,
+                    ggml_tensor* x,
+                    ggml_tensor* W,
+                    ggml_tensor* b) {
     ggml_tensor* y = ggml_mul_mat(ctx, W, x);
     y = ggml_add(ctx, y, b);
     return y;
@@ -42,20 +52,27 @@ ggml_tensor* linear(ggml_context* ctx, ggml_tensor* x,
  *
  * Output ne = (dim, N_q). */
 ggml_tensor* self_attn_packed(ggml_context* ctx,
-                              ggml_tensor* qk_in, ggml_tensor* v_in,
-                              ggml_tensor* W_in_proj, ggml_tensor* b_in_proj,
-                              ggml_tensor* W_out_proj, ggml_tensor* b_out_proj,
+                              ggml_tensor* qk_in,
+                              ggml_tensor* v_in,
+                              ggml_tensor* W_in_proj,
+                              ggml_tensor* b_in_proj,
+                              ggml_tensor* W_out_proj,
+                              ggml_tensor* b_out_proj,
                               int n_heads) {
     const int dim = (int)qk_in->ne[0];
     const int N_q = (int)qk_in->ne[1];
     const int head_dim = dim / n_heads;
 
     /* Slice in_proj weight: ne = (dim, 3*dim). Views into rows [0..dim),
-     * [dim..2dim), [2dim..3dim) along ne[1]. Offset is row_index * row_stride. */
+     * [dim..2dim), [2dim..3dim) along ne[1]. Offset is row_index * row_stride.
+     */
     const size_t W_row_size = W_in_proj->nb[1];
-    ggml_tensor* Wq = ggml_view_2d(ctx, W_in_proj, dim, dim, W_row_size, (size_t)0       * W_row_size);
-    ggml_tensor* Wk = ggml_view_2d(ctx, W_in_proj, dim, dim, W_row_size, (size_t)dim     * W_row_size);
-    ggml_tensor* Wv = ggml_view_2d(ctx, W_in_proj, dim, dim, W_row_size, (size_t)(2*dim) * W_row_size);
+    ggml_tensor* Wq = ggml_view_2d(ctx, W_in_proj, dim, dim, W_row_size,
+                                   (size_t)0 * W_row_size);
+    ggml_tensor* Wk = ggml_view_2d(ctx, W_in_proj, dim, dim, W_row_size,
+                                   (size_t)dim * W_row_size);
+    ggml_tensor* Wv = ggml_view_2d(ctx, W_in_proj, dim, dim, W_row_size,
+                                   (size_t)(2 * dim) * W_row_size);
 
     /* Materialize so mul_mat sees contiguous (dim, dim) tensors. */
     Wq = ggml_cont(ctx, Wq);
@@ -64,9 +81,12 @@ ggml_tensor* self_attn_packed(ggml_context* ctx,
 
     /* Slice bias: ne = (3*dim,). */
     const size_t b_esz = ggml_element_size(b_in_proj);
-    ggml_tensor* bq = ggml_view_1d(ctx, b_in_proj, dim, (size_t)0       * dim * b_esz);
-    ggml_tensor* bk = ggml_view_1d(ctx, b_in_proj, dim, (size_t)1       * dim * b_esz);
-    ggml_tensor* bv = ggml_view_1d(ctx, b_in_proj, dim, (size_t)2       * dim * b_esz);
+    ggml_tensor* bq =
+            ggml_view_1d(ctx, b_in_proj, dim, (size_t)0 * dim * b_esz);
+    ggml_tensor* bk =
+            ggml_view_1d(ctx, b_in_proj, dim, (size_t)1 * dim * b_esz);
+    ggml_tensor* bv =
+            ggml_view_1d(ctx, b_in_proj, dim, (size_t)2 * dim * b_esz);
     bq = ggml_cont(ctx, bq);
     bk = ggml_cont(ctx, bk);
     bv = ggml_cont(ctx, bv);
@@ -74,7 +94,7 @@ ggml_tensor* self_attn_packed(ggml_context* ctx,
     /* Projections. */
     ggml_tensor* q = ggml_add(ctx, ggml_mul_mat(ctx, Wq, qk_in), bq);
     ggml_tensor* k = ggml_add(ctx, ggml_mul_mat(ctx, Wk, qk_in), bk);
-    ggml_tensor* v = ggml_add(ctx, ggml_mul_mat(ctx, Wv, v_in),  bv);
+    ggml_tensor* v = ggml_add(ctx, ggml_mul_mat(ctx, Wv, v_in), bv);
 
     /* Reshape per-head. */
     q = ggml_reshape_3d(ctx, q, head_dim, n_heads, N_q);
@@ -108,13 +128,14 @@ ggml_tensor* self_attn_packed(ggml_context* ctx,
  *
  * Inputs (via dst->src[]):
  *   src[0]: value      ne = (head_dim, n_heads, H*W, 1)    — pre-permuted value
- *   src[1]: sampling_locations  ne = (2, n_points, n_heads, NQ)  xy fastest, [0,1]
- *   src[2]: attention_weights   ne = (n_points, n_heads, NQ)     softmaxed
+ *   src[1]: sampling_locations  ne = (2, n_points, n_heads, NQ)  xy fastest,
+ * [0,1] src[2]: attention_weights   ne = (n_points, n_heads, NQ)     softmaxed
  *
  * Output:
  *   dst ne = (head_dim * n_heads, NQ, 1, 1)    — packed (h, d) along ne[0]
  *     with d outer-of-h, i.e. flat[d + h*head_dim] for head h dim d. (Matches
- *     torch's transpose+reshape view at the end of ms_deform_attn_core_pytorch.)
+ *     torch's transpose+reshape view at the end of
+ * ms_deform_attn_core_pytorch.)
  *
  * Single level (n_levels=1) — rfdetr-base only uses P4. */
 struct DefAttnArgs {
@@ -131,19 +152,21 @@ void def_attn_op(ggml_tensor* dst, int ith, int nth, void* userdata) {
     const int n_points = a->n_points;
     const int head_dim = a->head_dim;
 
-    const ggml_tensor* value    = dst->src[0];
-    const ggml_tensor* sloc     = dst->src[1];
-    const ggml_tensor* aw       = dst->src[2];
+    const ggml_tensor* value = dst->src[0];
+    const ggml_tensor* sloc = dst->src[1];
+    const ggml_tensor* aw = dst->src[2];
 
     const int64_t NQ = dst->ne[1];
-    const float* val_data  = (const float*)value->data;
+    const float* val_data = (const float*)value->data;
     const float* sloc_data = (const float*)sloc->data;
-    const float* aw_data   = (const float*)aw->data;
-    float* dst_data        = (float*)dst->data;
+    const float* aw_data = (const float*)aw->data;
+    float* dst_data = (float*)dst->data;
 
     /* Strides (in elements, not bytes). */
-    const size_t val_stride_h = (size_t)head_dim;                 // per-head stride along ne[1]
-    const size_t val_stride_i = (size_t)head_dim * (size_t)n_heads; // per-token stride along ne[2]
+    const size_t val_stride_h =
+            (size_t)head_dim;  // per-head stride along ne[1]
+    const size_t val_stride_i =
+            (size_t)head_dim * (size_t)n_heads;  // per-token stride along ne[2]
     const size_t sloc_stride_p = 2;
     const size_t sloc_stride_h = (size_t)2 * (size_t)n_points;
     const size_t sloc_stride_q = (size_t)2 * (size_t)n_points * (size_t)n_heads;
@@ -158,17 +181,18 @@ void def_attn_op(ggml_tensor* dst, int ith, int nth, void* userdata) {
 
         for (int h = 0; h < n_heads; ++h) {
             for (int p = 0; p < n_points; ++p) {
-                const float sx = sloc_data[
-                    (size_t)q * sloc_stride_q + (size_t)h * sloc_stride_h +
-                    (size_t)p * sloc_stride_p + 0];
-                const float sy = sloc_data[
-                    (size_t)q * sloc_stride_q + (size_t)h * sloc_stride_h +
-                    (size_t)p * sloc_stride_p + 1];
-                const float w_attn = aw_data[
-                    (size_t)q * aw_stride_q + (size_t)h * aw_stride_h + (size_t)p];
+                const float sx = sloc_data[(size_t)q * sloc_stride_q +
+                                           (size_t)h * sloc_stride_h +
+                                           (size_t)p * sloc_stride_p + 0];
+                const float sy = sloc_data[(size_t)q * sloc_stride_q +
+                                           (size_t)h * sloc_stride_h +
+                                           (size_t)p * sloc_stride_p + 1];
+                const float w_attn =
+                        aw_data[(size_t)q * aw_stride_q +
+                                (size_t)h * aw_stride_h + (size_t)p];
 
-                /* sampling_locations in [0,1]; bilinear with align_corners=False:
-                 *   ix = sx*W - 0.5,  iy = sy*H - 0.5
+                /* sampling_locations in [0,1]; bilinear with
+                 * align_corners=False: ix = sx*W - 0.5,  iy = sy*H - 0.5
                  * Padding mode = zeros: corners outside image contribute 0. */
                 const float ix = sx * (float)W - 0.5f;
                 const float iy = sy * (float)H - 0.5f;
@@ -183,7 +207,8 @@ void def_attn_op(ggml_tensor* dst, int ith, int nth, void* userdata) {
 
                 auto safe_token = [&](int xi, int yi) -> int {
                     if (xi < 0 || xi >= W || yi < 0 || yi >= H) return -1;
-                    return yi * W + xi;  /* h outer, w inner — matches token order */
+                    return yi * W +
+                           xi; /* h outer, w inner — matches token order */
                 };
                 const int t00 = safe_token(ix0, iy0);
                 const int t10 = safe_token(ix1, iy0);
@@ -193,13 +218,22 @@ void def_attn_op(ggml_tensor* dst, int ith, int nth, void* userdata) {
                 const float* head_slot = val_data + (size_t)h * val_stride_h;
                 for (int d = 0; d < head_dim; ++d) {
                     float s = 0.0f;
-                    if (t00 >= 0) s += wx0 * wy0 * head_slot[(size_t)t00 * val_stride_i + d];
-                    if (t10 >= 0) s += wx1 * wy0 * head_slot[(size_t)t10 * val_stride_i + d];
-                    if (t01 >= 0) s += wx0 * wy1 * head_slot[(size_t)t01 * val_stride_i + d];
-                    if (t11 >= 0) s += wx1 * wy1 * head_slot[(size_t)t11 * val_stride_i + d];
+                    if (t00 >= 0)
+                        s += wx0 * wy0 *
+                             head_slot[(size_t)t00 * val_stride_i + d];
+                    if (t10 >= 0)
+                        s += wx1 * wy0 *
+                             head_slot[(size_t)t10 * val_stride_i + d];
+                    if (t01 >= 0)
+                        s += wx0 * wy1 *
+                             head_slot[(size_t)t01 * val_stride_i + d];
+                    if (t11 >= 0)
+                        s += wx1 * wy1 *
+                             head_slot[(size_t)t11 * val_stride_i + d];
                     /* Output is packed (d + h*head_dim) — matches torch's
                      * reshape(B, n_heads*head_dim, NQ) after transpose. */
-                    out_q[(size_t)h * (size_t)head_dim + (size_t)d] += w_attn * s;
+                    out_q[(size_t)h * (size_t)head_dim + (size_t)d] +=
+                            w_attn * s;
                 }
             }
         }
@@ -219,23 +253,32 @@ void def_attn_op(ggml_tensor* dst, int ith, int nth, void* userdata) {
  *
  * Output: ne = (dim, NQ). */
 ggml_tensor* cross_attn_deformable(ggml_context* ctx,
-                                   ggml_tensor* query_in, ggml_tensor* memory,
-                                   ggml_tensor* ref_xy, ggml_tensor* ref_wh,
-                                   ggml_tensor* W_so, ggml_tensor* b_so,
-                                   ggml_tensor* W_aw, ggml_tensor* b_aw,
-                                   ggml_tensor* W_vp, ggml_tensor* b_vp,
-                                   ggml_tensor* W_op, ggml_tensor* b_op,
-                                   int n_heads, int n_points,
-                                   int H, int W,
+                                   ggml_tensor* query_in,
+                                   ggml_tensor* memory,
+                                   ggml_tensor* ref_xy,
+                                   ggml_tensor* ref_wh,
+                                   ggml_tensor* W_so,
+                                   ggml_tensor* b_so,
+                                   ggml_tensor* W_aw,
+                                   ggml_tensor* b_aw,
+                                   ggml_tensor* W_vp,
+                                   ggml_tensor* b_vp,
+                                   ggml_tensor* W_op,
+                                   ggml_tensor* b_op,
+                                   int n_heads,
+                                   int n_points,
+                                   int H,
+                                   int W,
                                    DefAttnArgs* args_userdata) {
     const int dim = (int)query_in->ne[0];
-    const int NQ  = (int)query_in->ne[1];
+    const int NQ = (int)query_in->ne[1];
     const int N_in = (int)memory->ne[1];
     const int head_dim = dim / n_heads;
 
     /* sampling_offsets: Linear(dim, n_heads*L*n_points*2). For L=1:
      *   raw ne = (n_heads*n_points*2, NQ).
-     *   Reshape to (2, n_points, n_heads, NQ) (xy fastest, then p, then h, then q). */
+     *   Reshape to (2, n_points, n_heads, NQ) (xy fastest, then p, then h, then
+     * q). */
     ggml_tensor* so_raw = linear(ctx, query_in, W_so, b_so);
     ggml_tensor* so = ggml_reshape_4d(ctx, so_raw, 2, n_points, n_heads, NQ);
 
@@ -259,7 +302,8 @@ ggml_tensor* cross_attn_deformable(ggml_context* ctx,
     aw = ggml_soft_max(ctx, aw);
 
     /* value: Linear(dim, dim) over memory. ne = (dim, N_in).
-     *   Reshape to (head_dim, n_heads, N_in) — torch transpose+view equivalent. */
+     *   Reshape to (head_dim, n_heads, N_in) — torch transpose+view equivalent.
+     */
     ggml_tensor* val = linear(ctx, memory, W_vp, b_vp);
     val = ggml_reshape_3d(ctx, val, head_dim, n_heads, N_in);
     val = ggml_cont(ctx, val);
@@ -267,7 +311,7 @@ ggml_tensor* cross_attn_deformable(ggml_context* ctx,
     /* Make sure the inputs to the custom op are contiguous (the op walks raw
      * pointers; non-contiguous views would silently produce wrong results). */
     sloc = ggml_cont(ctx, sloc);
-    aw   = ggml_cont(ctx, aw);
+    aw = ggml_cont(ctx, aw);
 
     args_userdata->H = H;
     args_userdata->W = W;
@@ -275,14 +319,12 @@ ggml_tensor* cross_attn_deformable(ggml_context* ctx,
     args_userdata->n_points = n_points;
     args_userdata->head_dim = head_dim;
 
-    ggml_tensor* inputs[3] = { val, sloc, aw };
-    ggml_tensor* sampled = ggml_custom_4d(
-        ctx, GGML_TYPE_F32,
-        /*ne0*/ dim, /*ne1*/ NQ, /*ne2*/ 1, /*ne3*/ 1,
-        inputs, /*n_args*/ 3,
-        def_attn_op,
-        /*n_tasks*/ GGML_N_TASKS_MAX,
-        (void*)args_userdata);
+    ggml_tensor* inputs[3] = {val, sloc, aw};
+    ggml_tensor* sampled =
+            ggml_custom_4d(ctx, GGML_TYPE_F32,
+                           /*ne0*/ dim, /*ne1*/ NQ, /*ne2*/ 1, /*ne3*/ 1,
+                           inputs, /*n_args*/ 3, def_attn_op,
+                           /*n_tasks*/ GGML_N_TASKS_MAX, (void*)args_userdata);
 
     /* Output projection. */
     ggml_tensor* out = ggml_mul_mat(ctx, W_op, sampled);
@@ -290,57 +332,61 @@ ggml_tensor* cross_attn_deformable(ggml_context* ctx,
     return out;
 }
 
-ggml_tensor* decoder_layer(ggml_context* ctx, const Model& m,
-                           ggml_tensor* tgt, ggml_tensor* memory,
+ggml_tensor* decoder_layer(ggml_context* ctx,
+                           const Model& m,
+                           ggml_tensor* tgt,
+                           ggml_tensor* memory,
                            ggml_tensor* query_pos,
-                           ggml_tensor* ref_xy, ggml_tensor* ref_wh,
-                           int layer_idx, int H, int W,
+                           ggml_tensor* ref_xy,
+                           ggml_tensor* ref_wh,
+                           int layer_idx,
+                           int H,
+                           int W,
                            DefAttnArgs* args_userdata) {
     const std::string p = "decoder.layers." + std::to_string(layer_idx) + ".";
     auto get = [&](const char* suffix) -> ggml_tensor* {
         return fetch(m, p + suffix);
     };
 
-    ggml_tensor* W_ip   = get("self_attn.in_proj.weight");
-    ggml_tensor* b_ip   = get("self_attn.in_proj.bias");
-    ggml_tensor* W_op   = get("self_attn.out_proj.weight");
-    ggml_tensor* b_op   = get("self_attn.out_proj.bias");
-    ggml_tensor* n1w    = get("norm1.weight");
-    ggml_tensor* n1b    = get("norm1.bias");
-    ggml_tensor* W_so   = get("cross_attn.sampling_offsets.weight");
-    ggml_tensor* b_so   = get("cross_attn.sampling_offsets.bias");
-    ggml_tensor* W_aw   = get("cross_attn.attention_weights.weight");
-    ggml_tensor* b_aw   = get("cross_attn.attention_weights.bias");
-    ggml_tensor* W_vp   = get("cross_attn.value_proj.weight");
-    ggml_tensor* b_vp   = get("cross_attn.value_proj.bias");
-    ggml_tensor* W_cop  = get("cross_attn.output_proj.weight");
-    ggml_tensor* b_cop  = get("cross_attn.output_proj.bias");
-    ggml_tensor* n2w    = get("norm2.weight");
-    ggml_tensor* n2b    = get("norm2.bias");
-    ggml_tensor* W_l1   = get("linear1.weight");
-    ggml_tensor* b_l1   = get("linear1.bias");
-    ggml_tensor* W_l2   = get("linear2.weight");
-    ggml_tensor* b_l2   = get("linear2.bias");
-    ggml_tensor* n3w    = get("norm3.weight");
-    ggml_tensor* n3b    = get("norm3.bias");
+    ggml_tensor* W_ip = get("self_attn.in_proj.weight");
+    ggml_tensor* b_ip = get("self_attn.in_proj.bias");
+    ggml_tensor* W_op = get("self_attn.out_proj.weight");
+    ggml_tensor* b_op = get("self_attn.out_proj.bias");
+    ggml_tensor* n1w = get("norm1.weight");
+    ggml_tensor* n1b = get("norm1.bias");
+    ggml_tensor* W_so = get("cross_attn.sampling_offsets.weight");
+    ggml_tensor* b_so = get("cross_attn.sampling_offsets.bias");
+    ggml_tensor* W_aw = get("cross_attn.attention_weights.weight");
+    ggml_tensor* b_aw = get("cross_attn.attention_weights.bias");
+    ggml_tensor* W_vp = get("cross_attn.value_proj.weight");
+    ggml_tensor* b_vp = get("cross_attn.value_proj.bias");
+    ggml_tensor* W_cop = get("cross_attn.output_proj.weight");
+    ggml_tensor* b_cop = get("cross_attn.output_proj.bias");
+    ggml_tensor* n2w = get("norm2.weight");
+    ggml_tensor* n2b = get("norm2.bias");
+    ggml_tensor* W_l1 = get("linear1.weight");
+    ggml_tensor* b_l1 = get("linear1.bias");
+    ggml_tensor* W_l2 = get("linear2.weight");
+    ggml_tensor* b_l2 = get("linear2.bias");
+    ggml_tensor* n3w = get("norm3.weight");
+    ggml_tensor* n3b = get("norm3.bias");
 
-    if (!W_ip || !b_ip || !W_op || !b_op || !n1w || !n1b ||
-        !W_so || !b_so || !W_aw || !b_aw || !W_vp || !b_vp ||
-        !W_cop || !b_cop || !n2w || !n2b ||
+    if (!W_ip || !b_ip || !W_op || !b_op || !n1w || !n1b || !W_so || !b_so ||
+        !W_aw || !b_aw || !W_vp || !b_vp || !W_cop || !b_cop || !n2w || !n2b ||
         !W_l1 || !b_l1 || !W_l2 || !b_l2 || !n3w || !n3b) {
         return nullptr;
     }
 
     const std::string pub = "decoder.layer." + std::to_string(layer_idx) + ".";
 
-    const int sa_heads  = (int)m.config.decoder.self_attn_heads;
-    const int ca_heads  = (int)m.config.decoder.cross_attn_heads;
-    const int n_points  = (int)m.config.decoder.cross_attn_n_points;
+    const int sa_heads = (int)m.config.decoder.self_attn_heads;
+    const int ca_heads = (int)m.config.decoder.cross_attn_heads;
+    const int n_points = (int)m.config.decoder.cross_attn_n_points;
 
     /* ---- Self-attention ---- */
     ggml_tensor* qk_input = ggml_add(ctx, tgt, query_pos);
-    ggml_tensor* sa = self_attn_packed(ctx, qk_input, tgt,
-                                       W_ip, b_ip, W_op, b_op, sa_heads);
+    ggml_tensor* sa = self_attn_packed(ctx, qk_input, tgt, W_ip, b_ip, W_op,
+                                       b_op, sa_heads);
     publish(pub + "self_attn.output", sa);
 
     /* Post-LN: tgt = norm1(tgt + sa) */
@@ -351,9 +397,8 @@ ggml_tensor* decoder_layer(ggml_context* ctx, const Model& m,
     /* ---- Deformable cross-attention ---- */
     ggml_tensor* ca_query = ggml_add(ctx, x, query_pos);
     ggml_tensor* ca = cross_attn_deformable(
-        ctx, ca_query, memory, ref_xy, ref_wh,
-        W_so, b_so, W_aw, b_aw, W_vp, b_vp, W_cop, b_cop,
-        ca_heads, n_points, H, W, args_userdata);
+            ctx, ca_query, memory, ref_xy, ref_wh, W_so, b_so, W_aw, b_aw, W_vp,
+            b_vp, W_cop, b_cop, ca_heads, n_points, H, W, args_userdata);
     publish(pub + "cross_attn.output", ca);
 
     /* Post-LN: tgt = norm2(tgt + ca) */
@@ -380,8 +425,10 @@ ggml_tensor* decoder_layer(ggml_context* ctx, const Model& m,
 
 }  // namespace
 
-void compute_query_sine_embed(const float* refpoints, int num_queries,
-                              int d_half, float* out) {
+void compute_query_sine_embed(const float* refpoints,
+                              int num_queries,
+                              int d_half,
+                              float* out) {
     /* Matches gen_sineembed_for_position(pos_tensor, dim=128) for 4D refpoints
      * with concat order [pos_y, pos_x, pos_w, pos_h].
      *
@@ -395,21 +442,24 @@ void compute_query_sine_embed(const float* refpoints, int num_queries,
     const float TWO_PI = 6.28318530717958647692f;
     std::vector<float> inv_dim_t((size_t)d_half);
     for (int k = 0; k < d_half; ++k) {
-        /* dim_t = 10000 ** (2 * (k // 2) / d_half). Use logf+expf for accuracy. */
-        const int kk = (k / 2) * 2;  /* 2*(k//2) */
-        inv_dim_t[(size_t)k] = std::exp(-std::log(10000.0f) * (float)kk / (float)d_half);
+        /* dim_t = 10000 ** (2 * (k // 2) / d_half). Use logf+expf for accuracy.
+         */
+        const int kk = (k / 2) * 2; /* 2*(k//2) */
+        inv_dim_t[(size_t)k] =
+                std::exp(-std::log(10000.0f) * (float)kk / (float)d_half);
     }
     /* Order of components in `out`: [y, x, w, h]. Input refpoints order is
      * [cx, cy, w, h] (the LWDETR convention). So component index -> refpoint
      * coord index: y→1, x→0, w→2, h→3. */
-    const int comp_to_rp[4] = { 1, 0, 2, 3 };
+    const int comp_to_rp[4] = {1, 0, 2, 3};
     for (int q = 0; q < num_queries; ++q) {
         for (int c = 0; c < 4; ++c) {
             const float v = refpoints[q * 4 + comp_to_rp[c]] * TWO_PI;
-            float* out_block = out + (size_t)q * 4 * d_half + (size_t)c * d_half;
+            float* out_block =
+                    out + (size_t)q * 4 * d_half + (size_t)c * d_half;
             for (int k = 0; k < d_half; k += 2) {
                 const float arg = v * inv_dim_t[(size_t)k];
-                out_block[k]     = std::sin(arg);
+                out_block[k] = std::sin(arg);
                 out_block[k + 1] = std::cos(arg);
             }
         }
@@ -417,13 +467,15 @@ void compute_query_sine_embed(const float* refpoints, int num_queries,
 }
 
 static ggml_tensor* decoder_forward_impl(
-    ggml_context* ctx, const Model& m,
-    ggml_tensor* tgt,
-    ggml_tensor* memory,
-    ggml_tensor* refpoints,
-    ggml_tensor* query_pos,
-    int memory_H, int memory_W,
-    ggml_tensor** out_per_layer /* may be nullptr */) {
+        ggml_context* ctx,
+        const Model& m,
+        ggml_tensor* tgt,
+        ggml_tensor* memory,
+        ggml_tensor* refpoints,
+        ggml_tensor* query_pos,
+        int memory_H,
+        int memory_W,
+        ggml_tensor** out_per_layer /* may be nullptr */) {
     if (!tgt || !memory || !refpoints || !query_pos) {
         rfdetr_logf(RFDETR_LOG_ERROR, "decoder_forward: null input");
         return nullptr;
@@ -447,13 +499,15 @@ static ggml_tensor* decoder_forward_impl(
      * needs cont because downstream broadcast-multiply via reshape expects
      * a contiguous source. */
     const size_t rp_row_size = refpoints->nb[1];
-    const size_t rp_esz      = ggml_element_size(refpoints);
-    ggml_tensor* ref_xy = ggml_cont(ctx, ggml_view_2d(
-        ctx, refpoints, /*ne0*/ 2, /*ne1*/ NQ,
-        /*nb1*/ rp_row_size, /*offset*/ (size_t)0 * rp_esz));
-    ggml_tensor* ref_wh = ggml_cont(ctx, ggml_view_2d(
-        ctx, refpoints, /*ne0*/ 2, /*ne1*/ NQ,
-        /*nb1*/ rp_row_size, /*offset*/ (size_t)2 * rp_esz));
+    const size_t rp_esz = ggml_element_size(refpoints);
+    ggml_tensor* ref_xy =
+            ggml_cont(ctx, ggml_view_2d(ctx, refpoints, /*ne0*/ 2, /*ne1*/ NQ,
+                                        /*nb1*/ rp_row_size,
+                                        /*offset*/ (size_t)0 * rp_esz));
+    ggml_tensor* ref_wh =
+            ggml_cont(ctx, ggml_view_2d(ctx, refpoints, /*ne0*/ 2, /*ne1*/ NQ,
+                                        /*nb1*/ rp_row_size,
+                                        /*offset*/ (size_t)2 * rp_esz));
 
     /* The DefAttnArgs userdata lives one per layer. Store them in
      * static thread-local storage so their address remains valid for the life
@@ -462,7 +516,8 @@ static ggml_tensor* decoder_forward_impl(
      * NOTE: this means decoder_forward is not safe to call concurrently from
      * the same thread before the previous graph completes — that's fine for
      * the single-threaded inference path. */
-    static thread_local DefAttnArgs tls_args[8];  // 8 layers max; seg-xlarge uses 6
+    static thread_local DefAttnArgs
+            tls_args[8];  // 8 layers max; seg-xlarge uses 6
 
     ggml_tensor* nfw = fetch(m, "decoder.norm.weight");
     ggml_tensor* nfb = fetch(m, "decoder.norm.bias");
@@ -470,8 +525,8 @@ static ggml_tensor* decoder_forward_impl(
 
     ggml_tensor* x = tgt;
     for (uint32_t i = 0; i < m.config.decoder.layers; ++i) {
-        x = decoder_layer(ctx, m, x, memory, query_pos, ref_xy, ref_wh,
-                          (int)i, memory_H, memory_W, &tls_args[i]);
+        x = decoder_layer(ctx, m, x, memory, query_pos, ref_xy, ref_wh, (int)i,
+                          memory_H, memory_W, &tls_args[i]);
         if (!x) return nullptr;
 
         /* For seg models, publish each layer's post-norm output. Matches
@@ -497,24 +552,27 @@ static ggml_tensor* decoder_forward_impl(
     return x;
 }
 
-ggml_tensor* decoder_forward(ggml_context* ctx, const Model& m,
+ggml_tensor* decoder_forward(ggml_context* ctx,
+                             const Model& m,
                              ggml_tensor* tgt,
                              ggml_tensor* memory,
                              ggml_tensor* refpoints,
                              ggml_tensor* query_pos,
-                             int memory_H, int memory_W) {
+                             int memory_H,
+                             int memory_W) {
     return decoder_forward_impl(ctx, m, tgt, memory, refpoints, query_pos,
                                 memory_H, memory_W, /*out_per_layer*/ nullptr);
 }
 
-ggml_tensor* decoder_forward_with_intermediates(
-    ggml_context* ctx, const Model& m,
-    ggml_tensor* tgt,
-    ggml_tensor* memory,
-    ggml_tensor* refpoints,
-    ggml_tensor* query_pos,
-    int memory_H, int memory_W,
-    ggml_tensor** out_per_layer) {
+ggml_tensor* decoder_forward_with_intermediates(ggml_context* ctx,
+                                                const Model& m,
+                                                ggml_tensor* tgt,
+                                                ggml_tensor* memory,
+                                                ggml_tensor* refpoints,
+                                                ggml_tensor* query_pos,
+                                                int memory_H,
+                                                int memory_W,
+                                                ggml_tensor** out_per_layer) {
     if (!out_per_layer) {
         rfdetr_logf(RFDETR_LOG_ERROR,
                     "decoder_forward_with_intermediates: null out_per_layer");

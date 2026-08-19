@@ -48,6 +48,7 @@ signals:
     void progressUpdate(int current, int total);
     void resultReady(const RFDetrRunResult& result);
     void taskFinished(bool success);
+    void modelInfoReady(const QString& info);
 
 protected:
     void run() override;

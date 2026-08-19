@@ -7,27 +7,22 @@
 
 #pragma once
 
-#include <QAtomicInt>
 #include <QElapsedTimer>
-#include <QFutureWatcher>
 #include <QImage>
 #include <QString>
 #include <QThread>
-#include <QVector>
 #include <QWidget>
 
+#include "RFDetrLiveInferWorker.h"
 #include "RFDetrModelCatalog.h"
 #include "VideoPlaybackWidget.h"
 
 class QComboBox;
 class QDoubleSpinBox;
 class QLabel;
-class QProgressBar;
 class QSpinBox;
-struct aicore_cancel_token;
-struct aicore_rfdetr_ctx;
 
-/** Live camera / video preview with throttled RF-DETR inference.
+/** Live camera / video preview with inference-paced RF-DETR rendering.
  *  The playback panel (preview, source selection, seek/speed controls and
  *  the background decode pipeline) is inherited from VideoPlaybackWidget;
  *  this widget only adds the model controls, inference thread and overlays. */
@@ -87,7 +82,7 @@ public slots:
     void captureSnapshotToDb();
 
 private slots:
-    void onInferComplete(const RFDetrRunResult& result);
+    void onInferComplete(RFDetrLiveInferWorker::Result result);
 
 protected:
     // ---- video_base hooks -------------------------------------------------
@@ -103,14 +98,15 @@ protected:
 private:
     void setupUi();
     void updateModelPathFromCombo();
-    void submitInferJob(const QImage& inferRgb, float inferScale);
-    void shutdownInferThread();
+    void submitInferJob(const QImage& rgb);
+    void rebuildOverlayLayer(const QSize& displaySize);
     void drawLiveOverlay(QImage& frame);
+    void repaintLivePreview();
+    void clearLiveOverlay();
+    void shutdownInferThread();
 
     Config m_config;
-    ecvClickableImageLabel* m_previewLabel = nullptr;  // cached base accessor
-    QLabel* m_statusLabel = nullptr;                   // cached base accessor
-    QProgressBar* m_preloadProgress = nullptr;
+    QLabel* m_statusLabel = nullptr;  // cached base accessor
     QComboBox* m_modelCombo = nullptr;
     QComboBox* m_deviceCombo = nullptr;
     QSpinBox* m_threadsSpin = nullptr;
@@ -120,23 +116,32 @@ private:
     bool m_videoPathUserChosen = false;
     bool m_syncingModelControls = false;
     bool m_inferBusy = false;
-    bool m_preloadingModel = false;
     quint64 m_streamGeneration = 0;
 
     QThread* m_inferThread = nullptr;
-    struct InferJob;
-    InferJob* m_inferJob = nullptr;
-    QFutureWatcher<RFDetrRunResult>* m_inferWatcher = nullptr;
+    RFDetrLiveInferWorker* m_inferWorker = nullptr;
 
     RFDetrRunResult m_lastSnapshot;
     bool m_hasSnapshot = false;
 
-    // Cached overlay data — drawn on every frame to prevent flicker.
-    QVector<RFDetrDetection> m_overlayDetections;
-    QSize m_overlayInferSize;
-    qint64 m_overlayFrameNum = 0;  // video frame when overlay was generated
-    qint64 m_lastSubmitFrameNum = 0;
-    QSize m_lastFrameSize;  // original frame size of the last decode
     QElapsedTimer m_inferSubmitTime;
-    qint64 m_lastInferLatencyMs = 0;
+    qint64 m_lastInferLatencyMs = -1;
+    // Last backend-RESOLVED device reported by the worker ("CUDA0", "cpu",
+    // ...); a change logs once so silent CPU fallbacks are visible.
+    QString m_lastResolvedDevice;
+
+    // ---- live overlay state (ClockDriven decoupling) ----------------------
+    // The display tick paints the newest frame plus a cached overlay layer
+    // (boxes/masks at preview resolution); inference completions only bump
+    // m_overlayGeneration and trigger a repaint. Inference no longer paces
+    // the display, and the full-resolution annotated image is rendered once
+    // at capture time from m_lastSourceFrame.
+    QImage m_lastDisplayFrame;  // preview-size frame from the display tick
+    QImage m_lastSourceFrame;   // full-res frame of the last submitted job
+    QVector<RFDetrDetection> m_overlayDetections;
+    QSize m_overlaySourceSize;  // pixel space of m_overlayDetections coords
+    quint64 m_overlayGeneration = 0;          // bumped on new detections
+    quint64 m_overlayRenderedGeneration = 0;  // layer's detections generation
+    QSize m_overlayLayerSize;
+    QImage m_overlayLayer;  // preview-size transparent overlay cache
 };

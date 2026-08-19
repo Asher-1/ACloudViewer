@@ -36,7 +36,8 @@ public:
 
     // Shared by VideoPlaybackWidget for the seek-preview capture: opens
     // `cap` with the same best-effort HW-accelerated path as openVideo().
-    static bool openVideoWithHw(cv::VideoCapture& cap, const std::string& path,
+    static bool openVideoWithHw(cv::VideoCapture& cap,
+                                const std::string& path,
                                 int backend);
 
 private:

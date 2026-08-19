@@ -30,7 +30,6 @@
 #include <QPixmap>
 #include <QString>
 #include <QWidget>
-
 #include <memory>
 #include <vector>
 
@@ -55,6 +54,7 @@ class VideoPlaybackWidget : public QWidget {
 
 public:
     enum class InputSource { Camera, VideoFile };
+    enum class FrameAdvanceMode { ClockDriven, ConsumerDriven };
 
     explicit VideoPlaybackWidget(QWidget* parent = nullptr);
     ~VideoPlaybackWidget() override;
@@ -72,6 +72,12 @@ public:
     void setPlaybackSpeed(double speed);
     double playbackSpeed() const { return m_playbackSpeed; }
     bool isActive() const { return m_streamActive; }
+
+    // ConsumerDriven mode decodes exactly one frame, then waits for the
+    // subclass to call completeFrameProcessing(). Set before starting a
+    // stream; playbackSpeed does not pace this mode because inference does.
+    void setFrameAdvanceMode(FrameAdvanceMode mode);
+    FrameAdvanceMode frameAdvanceMode() const { return m_frameAdvanceMode; }
 
     InputSource inputSource() const;
     int selectedCameraIndex() const;
@@ -144,6 +150,11 @@ protected:
     // return false to abort the start (e.g. missing model / settings).
     virtual bool onPrepareStream();
 
+    // Acknowledge a ConsumerDriven frame. If processedImage is non-null it is
+    // scaled into the preview before the next decode is requested. Every
+    // deferred success/failure path must call this exactly once.
+    void completeFrameProcessing(const QImage& processedImage = QImage());
+
     // ---- UI accessors for subclasses --------------------------------------
 
     ecvClickableImageLabel* previewLabel() const { return m_previewLabel; }
@@ -172,6 +183,14 @@ protected:
 private:
     void setupUi();
     void setupFrameReader();
+
+    // Scale a decoded BGR frame to the preview label (KeepAspectRatio) in
+    // the cv domain first and convert the small result — converting the
+    // full-resolution frame only to shrink it right after costs a full-frame
+    // rgbSwapped copy plus a full-frame Qt scale per displayed frame.
+    // INTER_AREA also downscales with fewer artifacts than Qt's
+    // FastTransformation nearest-neighbour.
+    QImage scaledDisplayImage(const cv::Mat& frame) const;
 
     void onSourceChangedInternal(int index);
     void onBrowseVideoFile();
@@ -235,12 +254,17 @@ private:
     QVBoxLayout* m_mainLayout = nullptr;
 
     // Playback state
-    QTimer* m_frameTimer = nullptr;
-    QTimer* m_frameReadTimer = nullptr;  // drives background frame reader
+    QTimer* m_frameTimer = nullptr;  // UI-side display tick
     bool m_streamActive = false;
     bool m_videoPaused = false;  // video paused (not released) for resume
+    FrameAdvanceMode m_frameAdvanceMode = FrameAdvanceMode::ClockDriven;
+    bool m_waitingForConsumer = false;
     InputSource m_inputSource = InputSource::Camera;
+    // The path displayed/selected by the caller can change while the reader
+    // still owns a paused video. Keep the actual open source separate so a
+    // new selection is never mistaken for a resume of the old file.
     QString m_videoFilePath;
+    QString m_openVideoPath;
     int m_totalVideoFrames = 0;
     double m_videoFps = 0.0;  // cached FPS from CAP_PROP_FPS
     double m_playbackSpeed = 1.0;

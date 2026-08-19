@@ -20,9 +20,10 @@ the extracted tree by hand.** All changes must live here as reviewable artifacts
 ## Apply order at configure time
 
 All modifications are applied in a single step by `apply_ggml_patches.py`,
-which reads `manifest.yaml` and applies each `*.patch` with `patch -p1 -N`.
-Manifest order is authoritative. (Former in-place Python mutators — Metal FA,
-conv_transpose, CPU variants — have been converted to `.patch` files.)
+which reads `manifest.yaml` and validates/applies each `*.patch` with
+`git apply`. A reverse check makes the operation idempotent. Manifest order is
+authoritative. (Former in-place Python mutators — Metal FA, conv_transpose, CPU
+variants — have been converted to `.patch` files.)
 
 ## Patch inventory
 

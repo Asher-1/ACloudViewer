@@ -615,12 +615,63 @@ else()
 endif()
 
 # All ggml source modifications are declared in patches/manifest.yaml and
-# applied as unified-diff files (patch -p1 -N) by apply_ggml_patches.py.
+# validated/applied as unified diffs by git in apply_ggml_patches.py.
 # Every patch is inert on platforms where its feature is disabled (CPU
 # ALL_VARIANTS block / Metal backend files), so a single unconditional manifest
 # keeps the fetched tree byte-reproducible across platforms.
 set(_GGML_PATCH_SCRIPT
     "${CMAKE_CURRENT_LIST_DIR}/patches/apply_ggml_patches.py")
+set(_GGML_PATCH_MANIFEST
+    "${CMAKE_CURRENT_LIST_DIR}/patches/manifest.yaml")
+file(GLOB_RECURSE _GGML_PATCH_FILES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_LIST_DIR}/patches/*.patch")
+list(SORT _GGML_PATCH_FILES)
+set(_GGML_PATCH_INPUTS
+    "${_GGML_PATCH_SCRIPT}"
+    "${_GGML_PATCH_MANIFEST}"
+    ${_GGML_PATCH_FILES})
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    ${_GGML_PATCH_INPUTS})
+
+# ExternalProject's patch stamp does not depend on patch file contents. Track a
+# content signature explicitly; when it changes, discard only ggml's generated
+# source/build/stamp trees so the verified archive is extracted and every patch
+# is replayed from a pristine source tree.
+set(_GGML_PATCH_SIGNATURE_PAYLOAD
+    "ggml=${GGML_VERSION};archive=${GGML_SHA256}")
+foreach(_patch_input IN LISTS _GGML_PATCH_INPUTS)
+    file(SHA256 "${_patch_input}" _patch_input_sha256)
+    string(APPEND _GGML_PATCH_SIGNATURE_PAYLOAD
+        ";${_patch_input}=${_patch_input_sha256}")
+endforeach()
+string(SHA256 _GGML_PATCH_SIGNATURE "${_GGML_PATCH_SIGNATURE_PAYLOAD}")
+set(_GGML_PATCH_SIGNATURE_FILE
+    "${CMAKE_CURRENT_BINARY_DIR}/ggml-patch-signature.txt")
+set(_GGML_PREVIOUS_PATCH_SIGNATURE "")
+if(EXISTS "${_GGML_PATCH_SIGNATURE_FILE}")
+    file(READ "${_GGML_PATCH_SIGNATURE_FILE}"
+        _GGML_PREVIOUS_PATCH_SIGNATURE)
+    string(STRIP "${_GGML_PREVIOUS_PATCH_SIGNATURE}"
+        _GGML_PREVIOUS_PATCH_SIGNATURE)
+endif()
+if(NOT _GGML_PREVIOUS_PATCH_SIGNATURE STREQUAL _GGML_PATCH_SIGNATURE)
+    if(_GGML_PREVIOUS_PATCH_SIGNATURE)
+        message(STATUS
+            "ggml: patch inputs changed; refreshing fetched source tree")
+    elseif(EXISTS "${CMAKE_CURRENT_BINARY_DIR}/ggml/src/ext_ggml")
+        message(STATUS
+            "ggml: initializing patch signature; refreshing fetched source tree")
+    endif()
+    file(REMOVE_RECURSE
+        "${CMAKE_CURRENT_BINARY_DIR}/ggml/src/ext_ggml"
+        "${CMAKE_CURRENT_BINARY_DIR}/ggml/src/ext_ggml-build"
+        "${CMAKE_CURRENT_BINARY_DIR}/ggml/src/ext_ggml-stamp")
+    file(REMOVE
+        "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/ext_ggml-complete")
+    file(WRITE "${_GGML_PATCH_SIGNATURE_FILE}"
+        "${_GGML_PATCH_SIGNATURE}\n")
+endif()
+
 if(NOT Python3_EXECUTABLE)
     find_package(Python3 QUIET COMPONENTS Interpreter)
 endif()
@@ -630,12 +681,14 @@ else()
     find_program(_ggml_patch_python NAMES python3 python)
 endif()
 if(NOT _ggml_patch_python)
-    message(WARNING "ggml: Python not found — manifest patches will not be applied")
-    set(_GGML_PATCH_COMMAND "")
-else()
-    set(_GGML_PATCH_COMMAND "${_ggml_patch_python}"
-        "${_GGML_PATCH_SCRIPT}" "<SOURCE_DIR>")
+    message(FATAL_ERROR
+        "ggml: Python is required to apply patches/manifest.yaml")
 endif()
+find_package(Git REQUIRED)
+set(_GGML_PATCH_COMMAND
+    "${CMAKE_COMMAND}" -E env "ACV_GIT_EXECUTABLE=${GIT_EXECUTABLE}"
+    "${_ggml_patch_python}" "${_GGML_PATCH_SCRIPT}" "<SOURCE_DIR>"
+    "${_GGML_PATCH_MANIFEST}")
 
 set(_GGML_EXTERNAL_DEPENDS_ARGS)
 if(_GGML_EXTERNAL_DEPENDS)

@@ -11,6 +11,7 @@
 #include <ecvStdPluginInterface.h>
 
 #include <QAction>
+#include <QTimer>
 
 #include "RFDetrDialog.h"
 #include "RFDetrWorker.h"
@@ -35,6 +36,7 @@ private slots:
     void cancelTask();
     void onResultReady(const RFDetrRunResult& result);
     void onTaskFinished(bool success);
+    void onWorkerProgress(int current, int total);
 
 private:
     ccImage* findDbImage(const QString& name) const;
@@ -51,6 +53,8 @@ private:
     QAction* m_action = nullptr;
     RFDetrDialog* m_dialog = nullptr;
     RFDetrWorker* m_worker = nullptr;
+    QTimer* m_inferenceHeartbeat = nullptr;
+    int m_inferenceElapsedSeconds = 0;
     RFDetrDialog::Settings m_currentSettings;
     QStringList m_stagedInputFiles;
     ccHObject::Container m_selectedEntities;

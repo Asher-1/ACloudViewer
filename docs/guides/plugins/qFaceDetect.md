@@ -75,7 +75,7 @@ Official weights: [cloudViewer_downloads qFaceDetect release](https://github.com
 | **yunet-sface** | **Apache-2.0** commercial use |
 | **landmarks-2d106-1k3d68** | Dense landmarks only (not for this dialog — see MODEL_CARD) |
 
-See [MODEL_CARD.md](../../../plugins/core/Standard/qFaceDetect/models/MODEL_CARD.md) for download links and licensing.
+See [MODEL_CARD.md](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qFaceDetect/models/MODEL_CARD.md) for download links and licensing.
 
 ### DB export options
 
@@ -123,7 +123,7 @@ aicore_facedetect_options_free(opts);
 
 ## Further reading
 
-- Developer README (build targets): [`plugins/core/Standard/qFaceDetect/README.md`](../../../plugins/core/Standard/qFaceDetect/README.md)
+- Developer README (build targets): [`plugins/core/Standard/qFaceDetect/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qFaceDetect/README.md)
 - [face-detect.cpp](https://github.com/mudler/face-detect.cpp)
 - [Asher-1/Face_AI](https://github.com/Asher-1/Face_AI) — related InsightFace REST API (ONNX/TensorRT)
 - [insightface](https://github.com/deepinsight/insightface) (original models)

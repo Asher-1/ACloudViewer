@@ -1,11 +1,23 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "birefnet_decoder.hpp"
 #include "nn_ops.hpp"
 
 namespace rmbg {
 
-static bool mul_scl_cat(std::vector<float> & full, const std::vector<float> & half_up,
-                        int Cf, int Ch, int H, int W, std::string & err) {
-    if ((int) full.size() != Cf * H * W || (int) half_up.size() != Ch * H * W) {
+static bool mul_scl_cat(std::vector<float>& full,
+                        const std::vector<float>& half_up,
+                        int Cf,
+                        int Ch,
+                        int H,
+                        int W,
+                        std::string& err) {
+    if ((int)full.size() != Cf * H * W || (int)half_up.size() != Ch * H * W) {
         err = "mul_scl_cat shape mismatch";
         return false;
     }
@@ -15,11 +27,14 @@ static bool mul_scl_cat(std::vector<float> & full, const std::vector<float> & ha
     return true;
 }
 
-bool forward_encoder_4scale(const std::vector<float> & nchw_in, int H, int W,
-                            SwinBackboneForward & bb,
-                            Encoder4ScaleOutput & out,
-                            std::string & err) {
-    if (!bb.forward_bb_four_scales(nchw_in, H, W, out.x1, out.x2, out.x3, out.x4, err))
+bool forward_encoder_4scale(const std::vector<float>& nchw_in,
+                            int H,
+                            int W,
+                            SwinBackboneForward& bb,
+                            Encoder4ScaleOutput& out,
+                            std::string& err) {
+    if (!bb.forward_bb_four_scales(nchw_in, H, W, out.x1, out.x2, out.x3,
+                                   out.x4, err))
         return false;
 
     const int h4 = H / 32, w4 = W / 32;
@@ -30,7 +45,8 @@ bool forward_encoder_4scale(const std::vector<float> & nchw_in, int H, int W,
     std::vector<float> half_in;
     bilinear_resize_nchw(nchw_in, 1, 3, H, W, H / 2, W / 2, half_in);
     Encoder4ScaleOutput half;
-    if (!bb.forward_bb_four_scales(half_in, H / 2, W / 2, half.x1, half.x2, half.x3, half.x4, err))
+    if (!bb.forward_bb_four_scales(half_in, H / 2, W / 2, half.x1, half.x2,
+                                   half.x3, half.x4, err))
         return false;
 
     std::vector<float> u1, u2, u3, u4;
@@ -59,4 +75,4 @@ bool forward_encoder_4scale(const std::vector<float> & nchw_in, int H, int W,
     return true;
 }
 
-} // namespace rmbg
+}  // namespace rmbg

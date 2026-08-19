@@ -30,6 +30,9 @@ public:
         QString inputPath;
         int threads = 0;
         QString device = QStringLiteral("auto");
+        /** Pixels with alpha below this value become fully transparent
+         *  (0.0 disables the threshold pass). */
+        float alphaThreshold = 0.5f;
     };
 
     explicit RMBGWorker(const Settings& settings, QObject* parent = nullptr);
@@ -45,6 +48,7 @@ signals:
     void progressUpdate(int current, int total);
     void resultReady(const RMBGRunResult& result);
     void taskFinished(bool success);
+    void modelInfoReady(const QString& info);
 
 protected:
     void run() override;

@@ -951,25 +951,16 @@ public:
                 SetDkdDebugCpuRefs(cpu_refs);
             }
 #endif
-            // Persistent cache by default: the previous "fresh-cache-per-
-            // extract" path caused NVIDIA TDR / vk::ErrorDeviceLost on
-            // repeated inference because the ggml/DCN/SDDH weight tensors
-            // were allocated, used, and freed in a tight loop. Operators can
-            // still opt into the per-extract fresh cache via the env var.
-            const bool fresh_cache =
-                    std::getenv("LIGHTGLUE_ALIKED_FRESH_CACHE") != nullptr;
-            const bool persistent_graph = !fresh_cache;
+            // Keep graph and transient allocator state scoped to one
+            // extraction.  The persistent cache owns warm weights, but its
+            // cached compute graphs retain tensor/allocator bindings from the
+            // previous invocation. Reusing those graphs makes the second
+            // extraction produce an empty score map on CUDA and Vulkan.
             GpuPipelineCache stack_cache(&backend_);
-            GpuPipelineCache *extract_cache = gpu_cache_.get();
-            const bool reuse_gpu_extract_cache = persistent_graph;
-            if (!reuse_gpu_extract_cache) {
-                if (!stack_cache.ShareWarmStateFrom(*gpu_cache_, &error_)) {
-                    return false;
-                }
-                extract_cache = &stack_cache;
-            } else if (!gpu_cache_->EnsureComputeLinked(&error_)) {
+            if (!stack_cache.ShareWarmStateFrom(*gpu_cache_, &error_)) {
                 return false;
             }
+            GpuPipelineCache *extract_cache = &stack_cache;
 #if defined(AICORE_VULKAN_ALIKED)
             // Declared after stack_cache so the Vulkan queue is drained before
             // any temporary graph tensors and buffers are destroyed.

@@ -10,7 +10,7 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "compute_mode.hpp"
+#include "ggml-backend.h"
 #include "winograd.hpp"
 
 namespace aicore {
@@ -47,9 +47,12 @@ ggml_tensor* conv2d(ggml_context* ctx,
     // CUDA the mul_mat kernel (cuBLAS-class) is ~2x faster than the basic
     // ggml_conv_2d_direct CUDA kernel (measured on GB10: head 119ms vs 253ms),
     // and the Winograd custom op is CPU-only (would force GPU<->CPU
-    // round-trips). On CPU (gpu_mode() false) Winograd stays the auto default
-    // for 3x3 — CPU path unchanged.
-    const bool gpu = aicore::depth::gpu_mode();
+    // round-trips). Host-backed weights keep the CPU path unchanged.
+    // A process-global GPU flag is incorrect when CPU and accelerator Engine
+    // instances coexist. Offloaded model weights carry the authoritative
+    // backend buffer, so select the graph path from the actual weight tensor.
+    const bool gpu = w != nullptr && w->buffer != nullptr &&
+                     !ggml_backend_buffer_is_host(w->buffer);
     bool use_wino = wino_ok && !gpu;  // winograd: CPU 3x3 only
     bool direct =
             !gpu &&

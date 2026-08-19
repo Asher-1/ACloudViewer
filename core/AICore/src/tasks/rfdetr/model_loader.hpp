@@ -32,6 +32,11 @@ struct Config {
     std::vector<std::string> class_names;
     float preprocess_mean[3] = {0, 0, 0};
     float preprocess_std[3]  = {1, 1, 1};
+    /* Optional in format v2 for backward compatibility. Newly converted
+     * RF-DETR >=1.9 models set this true; GGUFs without the
+     * rfdetr.preprocess.resize_mode key keep the legacy resize (Qt-based
+     * SmoothTransformation here) so their established outputs do not change. */
+    bool preprocess_bilinear_no_antialias = false;
 
     struct {
         uint32_t dim                  = 0;
@@ -66,9 +71,10 @@ struct Config {
     } two_stage;
 
     /* Segmentation head: present only on RFDETRSeg* variants. When
-     * `has_segmentation_head` is true, the model has 35 additional tensors
-     * under `segmentation_head.*` and the forward pass emits per-query masks
-     * at (H / mask_downsample_ratio, W / mask_downsample_ratio). */
+     * `has_segmentation_head` is true, the model has additional tensors
+     * (11 shared plus 6 per decoder layer) under `segmentation_head.*` and
+     * the forward pass emits per-query masks at
+     * (H / mask_downsample_ratio, W / mask_downsample_ratio). */
     bool has_segmentation_head    = false;
     uint32_t mask_downsample_ratio = 4;
 };
@@ -134,6 +140,16 @@ rfdetr_status model_realize_weights(Model& m, ::ggml_backend_t backend);
 /* Build the list of *expected* tensor names for a given variant config. Used
  * by both `model_validate_tensors` and the test-fixture generator. */
 std::vector<std::string> expected_tensor_names(const Config& cfg);
+
+/* Count the segmentation-head blocks actually present in `m.tensors`, by
+ * probing `segmentation_head.blocks.N.dwconv.weight` for N = 0, 1, 2, ...
+ * until one is missing. Returns 0 for detection models.
+ *
+ * A correctly converted seg model has exactly `config.decoder.layers` blocks
+ * (one DepthwiseConvBlock per decoder layer: 4 for nano/small, 5 for
+ * medium/large, 6 for xlarge/2xlarge). Fewer means the file was produced
+ * before the seg-head block-count fix and its masks are wrong. */
+uint32_t count_segmentation_blocks(const Model& m);
 
 }  // namespace rfdetr
 

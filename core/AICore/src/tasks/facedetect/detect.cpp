@@ -66,7 +66,7 @@ std::vector<Detection> scrfd_detect(const ModelLoader& ml, const Image& img) {
     const int S = (int)c.det_input_size;    // 640
     const int na = (int)c.det_num_anchors;  // 2
 
-    // Production preprocess: stb-decoded source -> aspect-preserving letterbox
+    // Production preprocess: decoded RGB source -> aspect-preserving letterbox
     // into the square detector input. det_scale maps decoded boxes back to
     // source pixels (== reference's float(new_h)/orig_h).
     Image lb;

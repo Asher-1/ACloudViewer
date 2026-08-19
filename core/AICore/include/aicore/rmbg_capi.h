@@ -30,12 +30,22 @@ AICORE_CAPI int aicore_rmbg_abi_version(void);
 typedef struct aicore_rmbg_ctx aicore_rmbg_ctx;
 typedef struct aicore_rmbg_options aicore_rmbg_options;
 
+/** Timings for the most recent successful inference request. inference_ms is
+ *  the graph->forward() interval used by the upstream RMBG benchmark; total_ms
+ *  additionally includes input decoding/preprocessing and output encoding. */
+typedef struct aicore_rmbg_timings {
+    double preprocess_ms;
+    double inference_ms;
+    double postprocess_ms;
+    double total_ms;
+} aicore_rmbg_timings;
+
 AICORE_CAPI aicore_rmbg_options* aicore_rmbg_options_new(void);
 AICORE_CAPI void aicore_rmbg_options_free(aicore_rmbg_options* opts);
 AICORE_CAPI void aicore_rmbg_options_set_device(aicore_rmbg_options* opts,
-                                               const char* device);
+                                                const char* device);
 AICORE_CAPI void aicore_rmbg_options_set_threads(aicore_rmbg_options* opts,
-                                                int n_threads);
+                                                 int n_threads);
 
 /** Load the unified RMBG-2.0 GGUF (encoder + decoder in one file). Returns
  *  NULL on failure; inspect aicore_rmbg_last_error() for the reason. */
@@ -45,6 +55,9 @@ AICORE_CAPI void aicore_rmbg_free(aicore_rmbg_ctx* ctx);
 /** Returns 1 only when the context owns a successfully loaded model. */
 AICORE_CAPI int aicore_rmbg_is_ready(const aicore_rmbg_ctx* ctx);
 AICORE_CAPI const char* aicore_rmbg_last_error(const aicore_rmbg_ctx* ctx);
+/** Copy the most recent successful request timings into out_timings. */
+AICORE_CAPI int aicore_rmbg_last_timings(const aicore_rmbg_ctx* ctx,
+                                         aicore_rmbg_timings* out_timings);
 
 AICORE_CAPI void aicore_rmbg_free_string(char* s);
 AICORE_CAPI void aicore_rmbg_free_buffer(void* p);
@@ -65,6 +78,21 @@ AICORE_CAPI int aicore_rmbg_remove_background_rgb(aicore_rmbg_ctx* ctx,
                                                   int32_t height,
                                                   uint8_t** out_png,
                                                   int* out_len);
+
+/** Remove background from an in-memory RGB buffer and return the raw RGBA
+ *  composite (HWC, 4 bytes/pixel, alpha blended, at the ORIGINAL resolution)
+ *  instead of PNG bytes — the in-memory consumer path (GUI preview), which
+ *  skips a PNG encode/decode round-trip. \p out_rgba is allocated by the
+ *  callee (size \p out_len = out_width*out_height*4) and must be released
+ *  with aicore_rmbg_free_buffer. Returns 0 on success. */
+AICORE_CAPI int aicore_rmbg_remove_background_rgba(aicore_rmbg_ctx* ctx,
+                                                   const uint8_t* rgb,
+                                                   int32_t width,
+                                                   int32_t height,
+                                                   uint8_t** out_rgba,
+                                                   int32_t* out_width,
+                                                   int32_t* out_height,
+                                                   int* out_len);
 
 /** Raw 8-bit alpha matte (0 = background, 255 = foreground) at the ORIGINAL
  *  image resolution, row-major. out_alpha is allocated by the callee and must

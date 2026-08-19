@@ -11,10 +11,12 @@
 #include <ecvMainAppInterface.h>
 #include <ecvPluginDbNaming.h>
 
+#include <QBuffer>
 #include <QDir>
 #include <QFile>
 #include <QMainWindow>
 #include <QMessageBox>
+#include <QTimer>
 #include <QUuid>
 
 #include "ecvPersistentSettings.h"
@@ -35,14 +37,24 @@ bool isRFDetrOutputImage(const ccImage* img) {
 }  // namespace
 
 qRFDetr::qRFDetr(QObject* parent)
-    : QObject(parent),
-      ccStdPluginInterface(":/CC/plugin/qRFDetr/info.json") {
+    : QObject(parent), ccStdPluginInterface(":/CC/plugin/qRFDetr/info.json") {
     ecvPS::registerSettingsGroup(QStringLiteral("qRFDetr"));
+    qRegisterMetaType<RFDetrRunResult>("RFDetrRunResult");
+    qRegisterMetaType<RFDetrDialog::Settings>("RFDetrDialog::Settings");
     m_action = new QAction(tr("RF-DETR Detect"), this);
     m_action->setToolTip(
             tr("RF-DETR real-time object detection / segmentation (GGML)"));
     m_action->setIcon(QIcon(":/CC/plugin/qRFDetr/images/qRFDetr.svg"));
     connect(m_action, &QAction::triggered, this, &qRFDetr::showDialog);
+
+    m_inferenceHeartbeat = new QTimer(this);
+    m_inferenceHeartbeat->setInterval(10000);
+    connect(m_inferenceHeartbeat, &QTimer::timeout, this, [this]() {
+        if (!m_worker || !m_worker->isRunning() || !m_dialog) return;
+        m_inferenceElapsedSeconds += 10;
+        m_dialog->appendLog(tr("[RF-DETR] Task is running (%1 s elapsed)...")
+                                    .arg(m_inferenceElapsedSeconds));
+    });
 }
 
 QList<QAction*> qRFDetr::getActions() { return {m_action}; }
@@ -164,7 +176,9 @@ void qRFDetr::refreshDbImages() {
 void qRFDetr::showDialog() {
     if (!m_app) return;
     if (!m_dialog) {
-        m_dialog = new RFDetrDialog(static_cast<QWidget*>(m_app->getMainWindow()));
+        m_dialog =
+                new RFDetrDialog(static_cast<QWidget*>(m_app->getMainWindow()));
+        m_dialog->setAppInterface(m_app);
         connect(m_dialog, &RFDetrDialog::runRequested, this,
                 &qRFDetr::executeTask);
         connect(m_dialog, &RFDetrDialog::cancelRequested, this,
@@ -239,14 +253,18 @@ void qRFDetr::executeTask(const RFDetrDialog::Settings& settings) {
     m_currentSettings = settings;
     m_worker = new RFDetrWorker(ws, this);
     connect(m_worker, &RFDetrWorker::logMessage, m_dialog,
-            &RFDetrDialog::appendLog);
-    connect(m_worker, &RFDetrWorker::progressUpdate, m_dialog,
-            &RFDetrDialog::setProgress);
-    connect(m_worker, &RFDetrWorker::resultReady, this,
-            &qRFDetr::onResultReady);
+            &RFDetrDialog::appendLog, Qt::QueuedConnection);
+    connect(m_worker, &RFDetrWorker::progressUpdate, this,
+            &qRFDetr::onWorkerProgress, Qt::QueuedConnection);
+    connect(m_worker, &RFDetrWorker::resultReady, this, &qRFDetr::onResultReady,
+            Qt::QueuedConnection);
     connect(m_worker, &RFDetrWorker::taskFinished, this,
-            &qRFDetr::onTaskFinished);
+            &qRFDetr::onTaskFinished, Qt::QueuedConnection);
+    connect(m_worker, &RFDetrWorker::modelInfoReady, m_dialog,
+            &RFDetrDialog::appendLog, Qt::QueuedConnection);
     m_dialog->setRunning(true);
+    m_inferenceElapsedSeconds = 0;
+    m_inferenceHeartbeat->start();
     m_worker->start();
 }
 
@@ -275,9 +293,7 @@ void qRFDetr::addResultToDb(const RFDetrRunResult& result,
             result.resolvedDevice.isEmpty() ? settings.device
                                             : result.resolvedDevice);
     const QString name = ecvPluginDbNaming::makeUnique(
-            QStringLiteral("RFDetr_%1_%2")
-                    .arg(sourceLabel, deviceTag),
-            m_app);
+            QStringLiteral("RFDetr_%1_%2").arg(sourceLabel, deviceTag), m_app);
     auto* img = new ccImage(result.annotatedImage, name);
     img->setMetaData(QStringLiteral("RFDetr"), true);
     img->setMetaData(QStringLiteral("RFDetr/Model"), result.modelVariant);
@@ -301,8 +317,7 @@ void qRFDetr::addResultToDb(const RFDetrRunResult& result,
                          QString::fromUtf8(result.resultJson));
     }
     for (int i = 0; i < static_cast<int>(result.detections.size()); ++i) {
-        const RFDetrDetection& d =
-                result.detections[static_cast<size_t>(i)];
+        const RFDetrDetection& d = result.detections[static_cast<size_t>(i)];
         const QString prefix = QStringLiteral("RFDetr/Det%1/").arg(i + 1);
         img->setMetaData(prefix + QStringLiteral("class_id"),
                          static_cast<qlonglong>(d.classId));
@@ -315,6 +330,20 @@ void qRFDetr::addResultToDb(const RFDetrRunResult& result,
                                  .arg(d.y1, 0, 'f', 2)
                                  .arg(d.x2, 0, 'f', 2)
                                  .arg(d.y2, 0, 'f', 2));
+        if (!d.maskRaw.isEmpty() && d.maskWidth > 0 && d.maskHeight > 0) {
+            // The live/video path carries raw mask bytes; re-encode PNG here
+            // (one-shot, on the export click) for the DB metadata.
+            const QImage mask(
+                    reinterpret_cast<const uchar*>(d.maskRaw.constData()),
+                    d.maskWidth, d.maskHeight, d.maskWidth,
+                    QImage::Format_Grayscale8);
+            QByteArray pngBytes;
+            QBuffer buffer(&pngBytes);
+            buffer.open(QIODevice::WriteOnly);
+            if (mask.save(&buffer, "PNG")) {
+                img->setMetaData(prefix + QStringLiteral("mask_png"), pngBytes);
+            }
+        }
     }
     m_app->addToDB(img, true, true, false, true);
     m_app->setSelectedInDB(img, true);
@@ -322,7 +351,9 @@ void qRFDetr::addResultToDb(const RFDetrRunResult& result,
 }
 
 void qRFDetr::onTaskFinished(bool success) {
+    m_inferenceHeartbeat->stop();
     m_dialog->setRunning(false);
+    m_dialog->enableResultButtons(success);
     if (m_worker) {
         m_worker->releaseContextOnMainThread();
         m_worker->deleteLater();
@@ -330,4 +361,21 @@ void qRFDetr::onTaskFinished(bool success) {
     }
     clearStagedInputFiles();
     if (!success) m_dialog->appendLog(tr("[Error] Task failed."));
+}
+
+void qRFDetr::onWorkerProgress(int current, int total) {
+    if (!m_dialog) return;
+    m_dialog->setProgress(current, total);
+    const int pct = total > 0 ? (current * 100 / total) : 0;
+    QString stage;
+    if (pct < 25) {
+        stage = tr("Loading GGUF model...");
+    } else if (pct < 75) {
+        stage = tr("Running inference... (%1%)").arg(pct);
+    } else if (pct < 100) {
+        stage = tr("Processing result...");
+    } else {
+        stage = tr("Done.");
+    }
+    m_dialog->setTaskStage(stage, pct);
 }

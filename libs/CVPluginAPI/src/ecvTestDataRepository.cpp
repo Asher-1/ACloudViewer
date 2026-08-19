@@ -47,6 +47,16 @@ constexpr const char* kFriendsDownloadUrl =
 constexpr const char* kFriendsExpectedMd5 = "1d1ffebb97edac790b55c6f0f3c9d9fc";
 constexpr qint64 kFriendsExpectedSize = 30 * 1024 * 1024;  // ~30 MB
 
+// Shared object detection / background removal / line detection samples
+constexpr const char* kObjectsDetectionZipName = "objects_detection_data.zip";
+constexpr const char* kObjectsDetectionExtractDir = "objects_detection_data";
+constexpr const char* kObjectsDetectionDownloadUrl =
+        "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
+        "objects_detection_data/objects_detection_data.zip";
+constexpr const char* kObjectsDetectionExpectedMd5 =
+        "4900906590f31d17c1af5a82d49fc98b";
+constexpr qint64 kObjectsDetectionExpectedSize = 61488929;
+
 }  // namespace
 
 // ----------------------------------------------------------------------------
@@ -75,6 +85,33 @@ QString ecvTestDataRepository::extractPath(Dataset kind) {
     return QDir(extractDir()).filePath(info.extractDirName);
 }
 
+QString ecvTestDataRepository::findDatasetFile(Dataset kind,
+                                               const QString& fileName) {
+    if (fileName.isEmpty() || QFileInfo(fileName).fileName() != fileName) {
+        return {};
+    }
+
+    const QString root = extractPath(kind);
+    if (!QDir(root).exists()) return {};
+
+    const QString direct = QDir(root).filePath(fileName);
+    if (QFileInfo(direct).isFile()) {
+        return QFileInfo(direct).absoluteFilePath();
+    }
+
+    QString match;
+    QDirIterator it(root, QStringList{fileName}, QDir::Files,
+                    QDirIterator::Subdirectories);
+    while (it.hasNext()) {
+        const QString candidate = QFileInfo(it.next()).absoluteFilePath();
+        if (!match.isEmpty()) {
+            return {};  // Ambiguous archive contents must not pick arbitrarily.
+        }
+        match = candidate;
+    }
+    return match;
+}
+
 // ----------------------------------------------------------------------------
 // Dataset metadata
 // ----------------------------------------------------------------------------
@@ -98,6 +135,14 @@ ecvTestDataRepository::DatasetInfo ecvTestDataRepository::getDatasetInfo(
                     QString::fromLatin1(kFriendsDownloadUrl),
                     QString::fromLatin1(kFriendsExpectedMd5),
                     kFriendsExpectedSize};
+        case Dataset::ObjectsDetection:
+            return {kind,
+                    QStringLiteral("ObjectsDetection"),
+                    QString::fromLatin1(kObjectsDetectionZipName),
+                    QString::fromLatin1(kObjectsDetectionExtractDir),
+                    QString::fromLatin1(kObjectsDetectionDownloadUrl),
+                    QString::fromLatin1(kObjectsDetectionExpectedMd5),
+                    kObjectsDetectionExpectedSize};
     }
     Q_UNREACHABLE();
     return {};
@@ -153,10 +198,36 @@ bool ecvTestDataRepository::verifyZipIntegrity(const QString& zipPath,
 }
 
 bool ecvTestDataRepository::isDatasetAvailable(Dataset kind) const {
-    // Check extract dir FIRST — dataset may be extracted even if zip was
-    // deleted
+    // A directory alone is not a valid cache marker: an interrupted extract
+    // leaves the root behind. Validate the files that each consumer needs so
+    // a partial cache can fall through to the intact zip or a fresh download.
     const QString extract = extractPath(kind);
-    if (QDir(extract).exists()) return true;
+    bool extractedComplete = false;
+    switch (kind) {
+        case Dataset::Monstree:
+            extractedComplete = !getMonstreeImages(extract).isEmpty();
+            break;
+        case Dataset::FriendsFaces:
+            extractedComplete = !findFriendsVideo(extract).isEmpty();
+            break;
+        case Dataset::ObjectsDetection: {
+            const QStringList required = {
+                    QStringLiteral("bus.jpg"),
+                    QStringLiteral("000000397133.jpg"),
+                    QStringLiteral("deeplsd_examples.jpg"),
+                    QStringLiteral("supervision_demo.mp4"),
+                    QStringLiteral("traffic.mp4")};
+            extractedComplete = true;
+            for (const QString& fileName : required) {
+                if (findDatasetFile(kind, fileName).isEmpty()) {
+                    extractedComplete = false;
+                    break;
+                }
+            }
+            break;
+        }
+    }
+    if (extractedComplete) return true;
 
     // Check if a valid zip is cached
     const auto info = getDatasetInfo(kind);
@@ -429,9 +500,10 @@ bool ecvTestDataRepository::extractDataset(Dataset kind) {
     const QString zip = zipPath(kind);
     const QString extract = extractDir();
 
-    if (!QFileInfo::exists(zip)) {
+    if (!verifyZipIntegrity(zip, info.expectedMd5, info.expectedSize)) {
         emit downloadLogMessage(
-                QStringLiteral("[Error] Zip file not found: %1").arg(zip));
+                QStringLiteral("[Error] Zip file is missing or invalid: %1")
+                        .arg(zip));
         emit extractionFinished(false, kind);
         return false;
     }

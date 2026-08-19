@@ -190,7 +190,7 @@ float sceneMaxExtentFromBBox(const ccBBox& bbox) {
 bool computeAdaptiveSceneExtent(const FreeSplatterResult& result,
                                 float opacityThreshold,
                                 float& outExtent) {
-    if (result.gaussians.isEmpty() || result.nViews < 1 || result.height < 1 ||
+    if (result.gaussians || result.nViews < 1 || result.height < 1 ||
         result.width < 1 || result.gaussianChannels < 16) {
         return false;
     }
@@ -204,7 +204,7 @@ bool computeAdaptiveSceneExtent(const FreeSplatterResult& result,
     double cz = 0.0;
     int valid = 0;
     for (int64_t i = 0; i < count; ++i) {
-        const float* g = result.gaussians.constData() + i * gc;
+        const float* g = result.gaussians.get() + i * gc;
         if (g[15] <= opacityThreshold) continue;
         cx += g[0];
         cy += g[1];
@@ -221,7 +221,7 @@ bool computeAdaptiveSceneExtent(const FreeSplatterResult& result,
     std::vector<float> radii;
     radii.reserve(static_cast<size_t>(valid));
     for (int64_t i = 0; i < count; ++i) {
-        const float* g = result.gaussians.constData() + i * gc;
+        const float* g = result.gaussians.get() + i * gc;
         if (g[15] <= opacityThreshold) continue;
         const double dx = g[0] - cx;
         const double dy = g[1] - cy;
@@ -319,7 +319,7 @@ ccCameraSensor* buildCameraSensorFromPose(const float* rowMajorCam2world,
 bool buildGaussianDisplayBBox(const FreeSplatterResult& result,
                               float opacityThreshold,
                               ccBBox& out) {
-    if (result.gaussians.isEmpty() || result.nViews < 1 || result.height < 1 ||
+    if (result.gaussians || result.nViews < 1 || result.height < 1 ||
         result.width < 1 || result.gaussianChannels < 16) {
         return false;
     }
@@ -336,7 +336,7 @@ bool buildGaussianDisplayBBox(const FreeSplatterResult& result,
     int valid = 0;
 
     for (int64_t i = 0; i < count; ++i) {
-        const float* g = result.gaussians.constData() + i * gc;
+        const float* g = result.gaussians.get() + i * gc;
         if (g[15] <= opacityThreshold) continue;
         const float x = g[0];
         const float y = g[1];
@@ -365,7 +365,7 @@ bool computeGaussianBounds(const FreeSplatterResult& result,
                            float& cy,
                            float& cz,
                            float& radius) {
-    if (result.gaussians.isEmpty() || result.nViews < 1 || result.height < 1 ||
+    if (result.gaussians || result.nViews < 1 || result.height < 1 ||
         result.width < 1 || result.gaussianChannels < 16) {
         return false;
     }
@@ -382,7 +382,7 @@ bool computeGaussianBounds(const FreeSplatterResult& result,
     int valid = 0;
 
     for (int64_t i = 0; i < count; ++i) {
-        const float* g = result.gaussians.constData() + i * gc;
+        const float* g = result.gaussians.get() + i * gc;
         if (g[15] <= opacityThreshold) continue;
         const float x = g[0];
         const float y = g[1];
@@ -421,11 +421,11 @@ SceneCameras resolveSceneCameras(const FreeSplatterResult& result,
         return cameras;
     }
 
-    if (!boundsOrbitOnly && result.nViews >= 2 && !result.gaussians.isEmpty()) {
+    if (!boundsOrbitOnly && result.nViews >= 2 && result.gaussians) {
         cameras.cam2world.resize(result.nViews * 16);
         float focal = 0.0f;
         if (aicore_gaussian_estimate_poses(
-                    result.gaussians.constData(), result.nViews, result.height,
+                    result.gaussians.get(), result.nViews, result.height,
                     result.width, result.gaussianChannels, opacityThreshold,
                     cameras.cam2world.data(), &focal) == 0) {
             cameras.hasPoses = true;
@@ -825,7 +825,7 @@ void qFreeSplatter::onWorkerProgress(int current, int total) {
 QByteArray qFreeSplatter::buildSibrCamerasJson(const FreeSplatterResult& result,
                                                float opacityThreshold) {
 #ifdef HAS_QSIBR
-    if (result.gaussians.isEmpty() || result.nViews < 1) return {};
+    if (result.gaussians || result.nViews < 1) return {};
 
     // Orbit cameras from scene bounds — robust initial framing for SIBR.
     const SceneCameras sceneCams =
@@ -1098,7 +1098,7 @@ ccPointCloud* qFreeSplatter::buildResultPointCloud(
         int* validCountOut) const {
     const int N = result.nViews * result.height * result.width;
     const int gc = result.gaussianChannels;
-    const float* g = result.gaussians.constData();
+    const float* g = result.gaussians.get();
     if (gc < 16) return nullptr;
 
     std::vector<int> validIndices;
@@ -1379,7 +1379,7 @@ void qFreeSplatter::onResultReady(const FreeSplatterResult& result) {
     }
 
     const int gc = result.gaussianChannels;
-    const float* g = result.gaussians.constData();
+    const float* g = result.gaussians.get();
     const float opThr = m_currentSettings.opacityThreshold;
 
     m_lastPlyBytes.clear();
@@ -1395,7 +1395,7 @@ void qFreeSplatter::onResultReady(const FreeSplatterResult& result) {
         aicore_gaussian_free_bytes(plyBytes);
     }
 
-    const bool hasResult = !result.gaussians.isEmpty();
+    const bool hasResult = !result.gaussians;
     if (hasResult) {
         m_dialog->enableResultButtons(true);
     }
@@ -1464,7 +1464,7 @@ void qFreeSplatter::onTaskFinished(bool success) {
     if (!hasNextIdentity) {
         m_dialog->setRunning(false);
         if (success) {
-            m_dialog->enableResultButtons(!m_lastResult.gaussians.isEmpty());
+            m_dialog->enableResultButtons(m_lastResult.gaussianCount > 0);
         }
     }
     if (m_worker) {
@@ -1535,7 +1535,7 @@ void qFreeSplatter::onVisualizeRequested() {
 #endif
 
 void qFreeSplatter::onExportPlyRequested() {
-    if (m_lastResult.gaussians.isEmpty()) {
+    if (m_lastResult.gaussianCount == 0) {
         QMessageBox::information(m_dialog, "FreeSplatter",
                                  "No result available to export.");
         return;

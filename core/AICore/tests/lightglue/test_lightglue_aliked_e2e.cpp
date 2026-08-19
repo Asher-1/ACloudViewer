@@ -119,6 +119,10 @@ int main(int argc, char** argv) {
     // reverse-order test misses shared-backend lifetime regressions.
     aicore_lightglue_options* options = aicore_lightglue_options_new();
     aicore_lightglue_options_set_device(options, device);
+    // This GGUF exports 0.1 as its filtering configuration. The product
+    // default remains 0.5; keep the fixture-specific setting explicit so the
+    // test does not redefine the UI/API policy.
+    aicore_lightglue_options_set_min_score(options, 0.1);
     aicore_lightglue_options_set_matcher_type(options, 2);
     aicore_lightglue_ctx* ctx = aicore_lightglue_load_opts(matcher, options);
     aicore_lightglue_options_free(options);

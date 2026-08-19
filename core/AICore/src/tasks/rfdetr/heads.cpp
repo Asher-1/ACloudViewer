@@ -1,10 +1,17 @@
-#include "heads.hpp"
-#include "trace.hpp"
-#include "common.hpp"
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#include "ggml.h"
+#include "heads.hpp"
 
 #include <string>
+
+#include "common.hpp"
+#include "ggml.h"
+#include "trace.hpp"
 
 namespace rfdetr {
 
@@ -13,14 +20,17 @@ namespace {
 ggml_tensor* fetch(const Model& m, const std::string& name) {
     auto it = m.tensors.find(name);
     if (it == m.tensors.end()) {
-        rfdetr_logf(RFDETR_LOG_ERROR, "heads: missing tensor '%s'", name.c_str());
+        rfdetr_logf(RFDETR_LOG_ERROR, "heads: missing tensor '%s'",
+                    name.c_str());
         return nullptr;
     }
     return it->second;
 }
 
-ggml_tensor* linear(ggml_context* ctx, ggml_tensor* x,
-                    ggml_tensor* W, ggml_tensor* b) {
+ggml_tensor* linear(ggml_context* ctx,
+                    ggml_tensor* x,
+                    ggml_tensor* W,
+                    ggml_tensor* b) {
     ggml_tensor* y = ggml_mul_mat(ctx, W, x);
     y = ggml_add(ctx, y, b);
     return y;
@@ -28,7 +38,8 @@ ggml_tensor* linear(ggml_context* ctx, ggml_tensor* x,
 
 }  // namespace
 
-ggml_tensor* class_head_forward(ggml_context* ctx, const Model& m,
+ggml_tensor* class_head_forward(ggml_context* ctx,
+                                const Model& m,
                                 ggml_tensor* decoder_out) {
     ggml_tensor* W = fetch(m, "heads.class_embed.weight");
     ggml_tensor* b = fetch(m, "heads.class_embed.bias");
@@ -39,7 +50,8 @@ ggml_tensor* class_head_forward(ggml_context* ctx, const Model& m,
     return logits;
 }
 
-ggml_tensor* bbox_head_forward(ggml_context* ctx, const Model& m,
+ggml_tensor* bbox_head_forward(ggml_context* ctx,
+                               const Model& m,
                                ggml_tensor* decoder_out) {
     ggml_tensor* W0 = fetch(m, "heads.bbox_embed.layers.0.weight");
     ggml_tensor* b0 = fetch(m, "heads.bbox_embed.layers.0.bias");

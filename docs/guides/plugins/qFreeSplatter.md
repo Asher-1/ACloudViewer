@@ -78,7 +78,7 @@ The capture tab keeps each selected identity's frames together and sends that co
 
 GGML detector packs (Buffalo L/M/S/SC, AntelopeV2, YuNet+SFace) are listed by `aicore_facedetect_detector_model_at()` in `core/AICore/include/aicore/facedetect_capi.h`. Cache: `~/cloudViewer_data/extract/facedetect_models` (shared with qFaceDetect). **`PLUGIN_STANDARD_QFACEDETECT` is not required** — Face Capture links AICore directly.
 
-Recommended: **Object** model + **Buffalo L** or **Buffalo SC** detector for tighter face boxes before splatting. For licensing, prefer **YuNet + SFace** (Apache-2.0). Pack details: [qFaceDetect MODEL_CARD](../../../plugins/core/Standard/qFaceDetect/models/MODEL_CARD.md).
+Recommended: **Object** model + **Buffalo L** or **Buffalo SC** detector for tighter face boxes before splatting. For licensing, prefer **YuNet + SFace** (Apache-2.0). Pack details: [qFaceDetect MODEL_CARD](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qFaceDetect/models/MODEL_CARD.md).
 
 ### Inference device (Auto)
 
@@ -116,6 +116,6 @@ ctest -LE model   # fast tests without GGUF assets
 
 ## Further reading
 
-- Full plugin README: [`plugins/core/Standard/qFreeSplatter/README.md`](../../../plugins/core/Standard/qFreeSplatter/README.md)
-- Face detector GGUF packs: [qFaceDetect user guide](qFaceDetect.md) · [MODEL_CARD](../../../plugins/core/Standard/qFaceDetect/models/MODEL_CARD.md)
+- Full plugin README: [`plugins/core/Standard/qFreeSplatter/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qFreeSplatter/README.md)
+- Face detector GGUF packs: [qFaceDetect user guide](qFaceDetect.md) · [MODEL_CARD](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qFaceDetect/models/MODEL_CARD.md)
 - [FreeSplatter](https://github.com/TencentARC/FreeSplatter) · [free-splatter.cpp](https://github.com/LocalAI-io/free-splatter.cpp)

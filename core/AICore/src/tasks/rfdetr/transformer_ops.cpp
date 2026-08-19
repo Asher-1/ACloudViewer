@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "transformer_ops.hpp"
 
 #include "ggml.h"
@@ -12,8 +19,10 @@ namespace rfdetr::ops {
  * over the token axis via ggml_can_repeat.
  *
  * eps = 1e-5 matches PyTorch's default torch.nn.LayerNorm. */
-ggml_tensor* layer_norm(ggml_context* ctx, ggml_tensor* x,
-                        ggml_tensor* weight, ggml_tensor* bias) {
+ggml_tensor* layer_norm(ggml_context* ctx,
+                        ggml_tensor* x,
+                        ggml_tensor* weight,
+                        ggml_tensor* bias) {
     constexpr float eps = 1e-5f;
     ggml_tensor* y = ggml_norm(ctx, x, eps);
     y = ggml_mul(ctx, y, weight);

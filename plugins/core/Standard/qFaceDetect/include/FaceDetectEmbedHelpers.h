@@ -46,6 +46,9 @@ std::vector<FaceDetectBox> parseAnalyzeJson(const QByteArray& json);
 std::vector<FaceDetectBox> parseDenseJson(const QByteArray& json);
 void filterFacesByScore(std::vector<FaceDetectBox>* faces, float minScore);
 void scaleFaceBoxes(std::vector<FaceDetectBox>* faces, float scale);
+/** Translate all boxes (and their 5 landmarks) by (dx, dy) — used to undo a
+ * padded-crop offset after detection. */
+void offsetFaceBoxes(std::vector<FaceDetectBox>* faces, float dx, float dy);
 
 QString formatMatchLabel(const QString& name, float distance);
 QString formatNoMatchLabel(float nearestDistance,

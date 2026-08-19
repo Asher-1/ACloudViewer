@@ -11,7 +11,6 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "compute_mode.hpp"
 #include "ggml_extend.hpp"
 namespace aicore {
 namespace depth {

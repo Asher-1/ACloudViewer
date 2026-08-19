@@ -1,7 +1,7 @@
 # Ordered ggml unified-diff patches applied at ExternalProject fetch time.
 # Add new entries here; do not edit fetched ggml sources in-place.
-# All modifications go through these unified-diff files (applied with
-# `patch -p1 -N`) so the fetched tree is byte-reproducible on every platform.
+# All modifications go through these unified-diff files (validated and applied
+# with `git apply`) so the fetched tree is byte-reproducible on every platform.
 # Previously this was split across legacy Python mutators; those have been
 # converted to patches (see apply_ggml_patches.py header).
 #
@@ -19,6 +19,8 @@ patches:
   - file: vulkan_parallel/0001-vulkan-shaders-gen-skip-parallel-trycompile.patch
     note: "vulkan-shaders-gen: pre-seed CMAKE_C/CXX_ABI_COMPILED=1 so the nested configure skips the ABI/works try_compile, removing the MSBuild parallel file-lock race (MSB3491) on .lastbuildstate"
   - file: rmbg_merged/0001-rmbg-custom-ops.patch
-    note: "RMBG background-removal custom ops: GGML_MAX_NAME 64->128, CUDA deform-im2col/conv2d/swin-attention/patch-merge/image-patches kernels, Vulkan shaders (rmbg_*.comp) + dispatch; cuDNN conv path is optional and inert when cudnn.h is absent; CPU/Metal fall back to vanilla ggml ops"
+    note: "RMBG background-removal custom ops: fused CUDA layer-norm/affine/deform/conv/Swin kernels plus Vulkan scalar direct-conv, named CM1 matmul selection, Flash attention and task dispatch; cuDNN remains optional; CPU/Metal fall back to vanilla ggml ops"
   - file: rfdetr_merged/0001-ggml-cpu-fold-broadcast-iterations.patch
     note: "RF-DETR CPU perf: fold broadcast iterations into the llamafile sgemm epilogue loop; inert when GGML_LLAMAFILE=OFF"
+  - file: yolo_merged/0001-yolo-ggml-backend-integration.patch
+    note: "YOLO GPU ops: ggml_conv_2d_direct_bias_silu API (ggml.h/ggml.c), CUDA direct/dw/transpose conv + pool/upscale/scale kernels, Vulkan F16 conv2d pipeline; merged against the aliked/rmbg/vulkan_parallel chain so only YOLO-specific hunks remain"

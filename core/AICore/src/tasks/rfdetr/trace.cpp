@@ -1,19 +1,25 @@
-#include "trace.hpp"
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#include "ggml.h"
+#include "trace.hpp"
 
 #include <cstring>
 #include <stdexcept>
 
+#include "ggml.h"
+
 namespace rfdetr {
 
 namespace {
-thread_local trace_cb tls_cb;  // thread-local so concurrent contexts don't clash
+thread_local trace_cb
+        tls_cb;  // thread-local so concurrent contexts don't clash
 }
 
-void set_trace_callback(trace_cb cb) {
-    tls_cb = std::move(cb);
-}
+void set_trace_callback(trace_cb cb) { tls_cb = std::move(cb); }
 
 void publish(const std::string& name, const ggml_tensor* t) {
     if (tls_cb) {

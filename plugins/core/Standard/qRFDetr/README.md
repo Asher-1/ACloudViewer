@@ -42,9 +42,27 @@ See [models/MODEL_CARD.md](models/MODEL_CARD.md). Default download:
 
 [`rfdetr-base-f16.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/RF-DETR-GGUF/rfdetr-base-f16.gguf)
 
-Eight variants (nano → large, detection + segmentation) on
+Eleven variants (5 detection: nano → large; 6 segmentation: seg-nano →
+seg-2xlarge), each in 4 quantizations (f32 / f16 / q8_0 / q4_K) — 44 models
+total — on
 [cloudViewer_downloads RF-DETR-GGUF](https://github.com/Asher-1/cloudViewer_downloads/releases/tag/RF-DETR-GGUF)
 are listed in the model combo.
+
+## Performance
+
+Median latency per image (upstream rf-detr.cpp benchmark, 2026-08-19,
+Ryzen 9 5950X + RTX 3060, end-to-end; full 44-model matrix in
+[MODEL_CARD.md](models/MODEL_CARD.md)):
+
+- nano 13 ms → base 27 ms → large 39 ms on CUDA (fastest config per variant);
+  seg variants 36–197 ms (seg-2xlarge peaks on Vulkan f16).
+- GPU backends run 11–17× faster than CPU (CUDA f16 ÷ CPU f16 =
+  0.06×–0.07×).
+- f16 (the default) is the fastest CPU variant: 137.2 ms vs 142.8 (f32) /
+  148.0 (q8_0) at T=8, 1.86× smaller than f32, and 56/56 detections match
+  f32 at IoU ≥ 0.95.
+- q4_K is the only quantization with measured recall loss (80–92%);
+  f16 and q8_0 stay at 100%.
 
 ## Usage
 
@@ -59,9 +77,10 @@ are listed in the model combo.
 
 ### Live (camera / video) tab
 
-Play a video file or use the camera; inference is throttled (every 5th video
-frame) and detections are overlaid live. Snapshot the current annotated frame
-into the DB tree with the capture button.
+Play a video file or use the camera. Playback is inference-paced: each decoded
+frame is displayed only after its detections have been drawn, so boxes cannot
+drift onto a later frame. Snapshot the current annotated frame into the DB tree
+with the capture button.
 
 ## Outputs
 
@@ -69,3 +88,7 @@ into the DB tree with the capture button.
   per-detection class / score / box, count, runtime, device and model filename.
 - Segmentation models store the per-detection PNG masks inside the metadata
   (`RFDetr/DetN/…`) as well.
+
+## References
+
+- [Rf-Detr-GGML](https://github.com/Asher-1/rf-detr-ggml) (upstream ggml)

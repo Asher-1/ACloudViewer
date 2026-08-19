@@ -2,16 +2,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
   <rect x="2" y="2" width="60" height="60" rx="10" fill="#1e3a5f"/>
   <!-- detection box -->
-  <rect x="10" y="22" width="36" height="28" rx="2" fill="none" stroke="#ffcc00" stroke-width="3"/>
+  <rect x="9" y="24" width="34" height="26" rx="2" fill="none" stroke="#ffcc00" stroke-width="3"/>
   <!-- label tag -->
-  <rect x="10" y="12" width="26" height="10" rx="2" fill="#ffcc00"/>
-  <text x="23" y="20" font-family="sans-serif" font-size="8" font-weight="bold" fill="#1e3a5f" text-anchor="middle">DET</text>
+  <rect x="6" y="10" width="40" height="12" rx="2" fill="#ffcc00"/>
+  <text x="26" y="19" font-family="sans-serif" font-size="7" font-weight="bold" fill="#1e3a5f" text-anchor="middle">RF-DETR</text>
   <!-- small secondary box -->
-  <rect x="34" y="36" width="18" height="16" rx="2" fill="none" stroke="#4fc3f7" stroke-width="2.5"/>
+  <rect x="34" y="38" width="16" height="14" rx="2" fill="none" stroke="#4fc3f7" stroke-width="2"/>
   <!-- crosshair -->
-  <circle cx="54" cy="14" r="6" fill="none" stroke="#4fc3f7" stroke-width="2"/>
-  <line x1="54" y1="4" x2="54" y2="8" stroke="#4fc3f7" stroke-width="2"/>
-  <line x1="54" y1="20" x2="54" y2="24" stroke="#4fc3f7" stroke-width="2"/>
-  <line x1="44" y1="14" x2="48" y2="14" stroke="#4fc3f7" stroke-width="2"/>
-  <line x1="60" y1="14" x2="64" y2="14" stroke="#4fc3f7" stroke-width="2"/>
+  <circle cx="54" cy="14" r="5" fill="none" stroke="#4fc3f7" stroke-width="2"/>
+  <line x1="54" y1="5" x2="54" y2="8" stroke="#4fc3f7" stroke-width="2"/>
+  <line x1="54" y1="20" x2="54" y2="23" stroke="#4fc3f7" stroke-width="2"/>
+  <line x1="45" y1="14" x2="48" y2="14" stroke="#4fc3f7" stroke-width="2"/>
+  <line x1="60" y1="14" x2="62" y2="14" stroke="#4fc3f7" stroke-width="2"/>
 </svg>

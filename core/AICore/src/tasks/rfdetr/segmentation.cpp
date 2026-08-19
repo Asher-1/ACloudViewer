@@ -1,11 +1,19 @@
-#include "segmentation.hpp"
-#include "trace.hpp"
-#include "common.hpp"
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#include "ggml.h"
+#include "segmentation.hpp"
 
 #include <cmath>
 #include <string>
+#include <vector>
+
+#include "common.hpp"
+#include "ggml.h"
+#include "trace.hpp"
 
 namespace rfdetr {
 
@@ -16,8 +24,8 @@ constexpr float kLnEps = 1e-6f;
 ggml_tensor* fetch(const Model& m, const std::string& name) {
     auto it = m.tensors.find(name);
     if (it == m.tensors.end()) {
-        rfdetr_logf(RFDETR_LOG_ERROR,
-                    "segmentation: missing tensor '%s'", name.c_str());
+        rfdetr_logf(RFDETR_LOG_ERROR, "segmentation: missing tensor '%s'",
+                    name.c_str());
         return nullptr;
     }
     return it->second;
@@ -28,8 +36,10 @@ ggml_tensor* fetch(const Model& m, const std::string& name) {
  *   x ne = (W, H, C, B)  →  norm over C  →  ne = (W, H, C, B).
  *
  * ggml_norm normalizes over ne[0], so we permute to bring C to ne[0]. */
-ggml_tensor* channel_layer_norm(ggml_context* ctx, ggml_tensor* x,
-                                ggml_tensor* weight, ggml_tensor* bias) {
+ggml_tensor* channel_layer_norm(ggml_context* ctx,
+                                ggml_tensor* x,
+                                ggml_tensor* weight,
+                                ggml_tensor* bias) {
     /* (W, H, C, B) → (C, W, H, B). */
     ggml_tensor* y = ggml_cont(ctx, ggml_permute(ctx, x, 1, 2, 0, 3));
     y = ggml_norm(ctx, y, kLnEps);
@@ -66,9 +76,12 @@ ggml_tensor* channel_layer_norm(ggml_context* ctx, ggml_tensor* x,
  * permuting C to ne[0]. */
 ggml_tensor* depthwise_conv_block(ggml_context* ctx,
                                   ggml_tensor* x,
-                                  ggml_tensor* dw_w, ggml_tensor* dw_b,
-                                  ggml_tensor* n_w,  ggml_tensor* n_b,
-                                  ggml_tensor* pw_w, ggml_tensor* pw_b) {
+                                  ggml_tensor* dw_w,
+                                  ggml_tensor* dw_b,
+                                  ggml_tensor* n_w,
+                                  ggml_tensor* n_b,
+                                  ggml_tensor* pw_w,
+                                  ggml_tensor* pw_b) {
     ggml_tensor* shortcut = x;
 
     /* 1. Depthwise 3x3 conv (stride 1, padding 1).
@@ -122,10 +135,14 @@ ggml_tensor* depthwise_conv_block(ggml_context* ctx,
  *
  * Input ne = (C, NQ, 1)  (channel-first as decoder output is). The norm and
  * linears all operate on ne[0]=C directly — no permute needed. */
-ggml_tensor* mlp_block(ggml_context* ctx, ggml_tensor* x,
-                       ggml_tensor* n_w, ggml_tensor* n_b,
-                       ggml_tensor* l0_w, ggml_tensor* l0_b,
-                       ggml_tensor* l2_w, ggml_tensor* l2_b) {
+ggml_tensor* mlp_block(ggml_context* ctx,
+                       ggml_tensor* x,
+                       ggml_tensor* n_w,
+                       ggml_tensor* n_b,
+                       ggml_tensor* l0_w,
+                       ggml_tensor* l0_b,
+                       ggml_tensor* l2_w,
+                       ggml_tensor* l2_b) {
     ggml_tensor* shortcut = x;
     ggml_tensor* y = ggml_norm(ctx, x, kLnEps);
     y = ggml_mul(ctx, y, n_w);
@@ -148,8 +165,10 @@ ggml_tensor* mlp_block(ggml_context* ctx, ggml_tensor* x,
  *   weight ne = (1, 1, 256, 256)  →  squeezed view of shape (256, 256)
  *   x ne = (W, H, C, B)           →  Linear over C → (W, H, C', B)
  */
-ggml_tensor* spatial_features_proj_1x1(ggml_context* ctx, ggml_tensor* x,
-                                       ggml_tensor* w, ggml_tensor* b) {
+ggml_tensor* spatial_features_proj_1x1(ggml_context* ctx,
+                                       ggml_tensor* x,
+                                       ggml_tensor* w,
+                                       ggml_tensor* b) {
     /* Build a 2D view of the 1x1 conv kernel.
      *   torch shape: (out=256, in=256, kh=1, kw=1)
      *   ggml ne   : (kw=1, kh=1, in=256, out=256)
@@ -166,24 +185,18 @@ ggml_tensor* spatial_features_proj_1x1(ggml_context* ctx, ggml_tensor* x,
 
 }  // namespace
 
-ggml_tensor* segmentation_forward(
-    ggml_context* ctx,
-    const Model& m,
-    ggml_tensor* spatial_features,
-    ggml_tensor* const* query_features_per_layer,
-    int n_layers,
-    int image_h, int image_w,
-    int mask_downsample_ratio) {
+ggml_tensor* segmentation_forward(ggml_context* ctx,
+                                  const Model& m,
+                                  ggml_tensor* spatial_features,
+                                  ggml_tensor* const* query_features_per_layer,
+                                  int n_layers,
+                                  int image_h,
+                                  int image_w,
+                                  int mask_downsample_ratio) {
     if (!spatial_features || !query_features_per_layer || n_layers <= 0 ||
         mask_downsample_ratio <= 0) {
         rfdetr_logf(RFDETR_LOG_ERROR, "segmentation_forward: invalid args");
         return nullptr;
-    }
-    if (n_layers != 4) {
-        rfdetr_logf(RFDETR_LOG_WARN,
-                    "segmentation_forward: n_layers=%d, but SegmentationHead "
-                    "has exactly 4 blocks. Will iterate min(n_layers, 4).",
-                    n_layers);
     }
 
     const int target_h = image_h / mask_downsample_ratio;
@@ -194,26 +207,28 @@ ggml_tensor* segmentation_forward(
      *    target_w)` with mode="bilinear", align_corners=False — matches
      *    ggml_interpolate(GGML_SCALE_MODE_BILINEAR) when ALIGN_CORNERS is
      *    NOT set (default for F.interpolate). */
-    ggml_tensor* spatial = ggml_interpolate(
-        ctx, spatial_features,
-        /*ne0*/ (int64_t)target_w,
-        /*ne1*/ (int64_t)target_h,
-        /*ne2*/ spatial_features->ne[2],
-        /*ne3*/ spatial_features->ne[3],
-        (uint32_t)GGML_SCALE_MODE_BILINEAR);
+    ggml_tensor* spatial = ggml_interpolate(ctx, spatial_features,
+                                            /*ne0*/ (int64_t)target_w,
+                                            /*ne1*/ (int64_t)target_h,
+                                            /*ne2*/ spatial_features->ne[2],
+                                            /*ne3*/ spatial_features->ne[3],
+                                            (uint32_t)GGML_SCALE_MODE_BILINEAR);
     publish("seg.spatial_features.resized", spatial);
 
     /* 2. Fetch all per-block weights up-front so we fail fast if any are
-     *    missing. */
+     *    missing. SegmentationHead has one DepthwiseConvBlock per decoder
+     *    layer (n_layers), not a fixed count. */
     struct BlockW {
         ggml_tensor *dw_w, *dw_b, *n_w, *n_b, *pw_w, *pw_b;
-    } bw[4];
-    for (int b = 0; b < 4; ++b) {
-        const std::string p = "segmentation_head.blocks." + std::to_string(b) + ".";
+    };
+    std::vector<BlockW> bw((size_t)n_layers);
+    for (int b = 0; b < n_layers; ++b) {
+        const std::string p =
+                "segmentation_head.blocks." + std::to_string(b) + ".";
         bw[b].dw_w = fetch(m, p + "dwconv.weight");
         bw[b].dw_b = fetch(m, p + "dwconv.bias");
-        bw[b].n_w  = fetch(m, p + "norm.weight");
-        bw[b].n_b  = fetch(m, p + "norm.bias");
+        bw[b].n_w = fetch(m, p + "norm.weight");
+        bw[b].n_b = fetch(m, p + "norm.bias");
         bw[b].pw_w = fetch(m, p + "pwconv1.weight");
         bw[b].pw_b = fetch(m, p + "pwconv1.bias");
         if (!bw[b].dw_w || !bw[b].dw_b || !bw[b].n_w || !bw[b].n_b ||
@@ -221,36 +236,47 @@ ggml_tensor* segmentation_forward(
             return nullptr;
         }
     }
-    ggml_tensor* sf_proj_w = fetch(m, "segmentation_head.spatial_features_proj.weight");
-    ggml_tensor* sf_proj_b = fetch(m, "segmentation_head.spatial_features_proj.bias");
-    ggml_tensor* qf_n_w = fetch(m, "segmentation_head.query_features_block.norm_in.weight");
-    ggml_tensor* qf_n_b = fetch(m, "segmentation_head.query_features_block.norm_in.bias");
-    ggml_tensor* qf_l0_w = fetch(m, "segmentation_head.query_features_block.layers.0.weight");
-    ggml_tensor* qf_l0_b = fetch(m, "segmentation_head.query_features_block.layers.0.bias");
-    ggml_tensor* qf_l2_w = fetch(m, "segmentation_head.query_features_block.layers.2.weight");
-    ggml_tensor* qf_l2_b = fetch(m, "segmentation_head.query_features_block.layers.2.bias");
-    ggml_tensor* qf_proj_w = fetch(m, "segmentation_head.query_features_proj.weight");
-    ggml_tensor* qf_proj_b = fetch(m, "segmentation_head.query_features_proj.bias");
+    ggml_tensor* sf_proj_w =
+            fetch(m, "segmentation_head.spatial_features_proj.weight");
+    ggml_tensor* sf_proj_b =
+            fetch(m, "segmentation_head.spatial_features_proj.bias");
+    ggml_tensor* qf_n_w =
+            fetch(m, "segmentation_head.query_features_block.norm_in.weight");
+    ggml_tensor* qf_n_b =
+            fetch(m, "segmentation_head.query_features_block.norm_in.bias");
+    ggml_tensor* qf_l0_w =
+            fetch(m, "segmentation_head.query_features_block.layers.0.weight");
+    ggml_tensor* qf_l0_b =
+            fetch(m, "segmentation_head.query_features_block.layers.0.bias");
+    ggml_tensor* qf_l2_w =
+            fetch(m, "segmentation_head.query_features_block.layers.2.weight");
+    ggml_tensor* qf_l2_b =
+            fetch(m, "segmentation_head.query_features_block.layers.2.bias");
+    ggml_tensor* qf_proj_w =
+            fetch(m, "segmentation_head.query_features_proj.weight");
+    ggml_tensor* qf_proj_b =
+            fetch(m, "segmentation_head.query_features_proj.bias");
     ggml_tensor* seg_bias = fetch(m, "segmentation_head.bias");
-    if (!sf_proj_w || !sf_proj_b || !qf_n_w || !qf_n_b || !qf_l0_w || !qf_l0_b ||
-        !qf_l2_w || !qf_l2_b || !qf_proj_w || !qf_proj_b || !seg_bias) {
+    if (!sf_proj_w || !sf_proj_b || !qf_n_w || !qf_n_b || !qf_l0_w ||
+        !qf_l0_b || !qf_l2_w || !qf_l2_b || !qf_proj_w || !qf_proj_b ||
+        !seg_bias) {
         return nullptr;
     }
 
-    /* 3. Iterate 4 blocks. The number of query streams is N (always 4 in
-     *    practice). If fewer were provided we cap iteration. */
-    const int n_iter = (n_layers < 4) ? n_layers : 4;
+    /* 3. Iterate all n_layers blocks, one per decoder layer, pairing 1:1
+     *    with query_features_per_layer exactly as PyTorch's
+     *    zip(self.blocks, query_features) does. */
     ggml_tensor* masks_final = nullptr;
-    for (int b = 0; b < n_iter; ++b) {
-        spatial = depthwise_conv_block(ctx, spatial,
-                                       bw[b].dw_w, bw[b].dw_b,
-                                       bw[b].n_w,  bw[b].n_b,
-                                       bw[b].pw_w, bw[b].pw_b);
+    for (int b = 0; b < n_layers; ++b) {
+        spatial = depthwise_conv_block(ctx, spatial, bw[b].dw_w, bw[b].dw_b,
+                                       bw[b].n_w, bw[b].n_b, bw[b].pw_w,
+                                       bw[b].pw_b);
         publish("seg.block." + std::to_string(b) + ".spatial_out", spatial);
 
-        ggml_tensor* spatial_proj = spatial_features_proj_1x1(
-            ctx, spatial, sf_proj_w, sf_proj_b);
-        publish("seg.block." + std::to_string(b) + ".spatial_proj", spatial_proj);
+        ggml_tensor* spatial_proj =
+                spatial_features_proj_1x1(ctx, spatial, sf_proj_w, sf_proj_b);
+        publish("seg.block." + std::to_string(b) + ".spatial_proj",
+                spatial_proj);
 
         /* qf forward: query_features_block (MLP) then query_features_proj
          * (Linear 256→256). qf ne = (C, NQ, 1). */
@@ -260,9 +286,7 @@ ggml_tensor* segmentation_forward(
                         "segmentation_forward: null query_features[%d]", b);
             return nullptr;
         }
-        ggml_tensor* qfm = mlp_block(ctx, qf,
-                                     qf_n_w, qf_n_b,
-                                     qf_l0_w, qf_l0_b,
+        ggml_tensor* qfm = mlp_block(ctx, qf, qf_n_w, qf_n_b, qf_l0_w, qf_l0_b,
                                      qf_l2_w, qf_l2_b);
         ggml_tensor* qf_proj = ggml_mul_mat(ctx, qf_proj_w, qfm);
         qf_proj = ggml_add(ctx, qf_proj, qf_proj_b);
@@ -293,7 +317,8 @@ ggml_tensor* segmentation_forward(
         const int64_t H = spatial_proj->ne[1];
         const int64_t C = spatial_proj->ne[2];
         /* (W, H, C, 1) → (C, W, H, 1) → (C, W*H, 1). */
-        ggml_tensor* sp_perm = ggml_cont(ctx, ggml_permute(ctx, spatial_proj, 1, 2, 0, 3));
+        ggml_tensor* sp_perm =
+                ggml_cont(ctx, ggml_permute(ctx, spatial_proj, 1, 2, 0, 3));
         ggml_tensor* sp_flat = ggml_reshape_3d(ctx, sp_perm, C, W * H, 1);
         ggml_tensor* mask = ggml_mul_mat(ctx, sp_flat, qf_proj);
         /* mask ne = (W*H, NQ, 1). Add scalar bias (broadcast). */
@@ -302,7 +327,7 @@ ggml_tensor* segmentation_forward(
         mask = ggml_reshape_4d(ctx, mask, W, H, qf_proj->ne[1], 1);
         publish("seg.masks." + std::to_string(b), mask);
 
-        if (b == n_iter - 1) {
+        if (b == n_layers - 1) {
             masks_final = mask;
         }
     }

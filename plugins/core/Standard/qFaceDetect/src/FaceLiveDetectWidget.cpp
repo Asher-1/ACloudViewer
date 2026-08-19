@@ -19,8 +19,8 @@
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
-#include <QMutex>
 #include <QMouseEvent>
+#include <QMutex>
 #include <QPainter>
 #include <QPixmapCache>
 #include <QSettings>
@@ -109,13 +109,29 @@ FaceLiveDetectWidget::~FaceLiveDetectWidget() {
 }
 
 void FaceLiveDetectWidget::shutdownInferThread() {
-    if (m_inferWorker && m_inferThread) {
-        QMetaObject::invokeMethod(m_inferWorker, "releaseModel",
-                                  Qt::BlockingQueuedConnection);
-        m_inferThread->quit();
-        m_inferThread->wait(3000);
-        m_inferWorker = nullptr;
+    if (!m_inferWorker || !m_inferThread) {
+        return;
     }
+    // QThread::finished is emitted from the worker thread itself during its
+    // teardown. Because m_inferWorker lives on that thread, the queued
+    // deleteLater connection is delivered as a DIRECT call before the event
+    // loop stops draining — ownership of the worker is then split between
+    // this function and the deferred-delete machinery. Drop the connection
+    // first so this function is the sole owner of the worker's lifetime (the
+    // same contract as the qRMBG/qRFDetr live widgets).
+    disconnect(m_inferThread, &QThread::finished, m_inferWorker,
+               &QObject::deleteLater);
+    // releaseModel runs synchronously on the worker thread, so quit() below is
+    // guaranteed to end the event loop; wait() can therefore never time out
+    // (its upper bound is the single in-flight inference, which cannot be
+    // interrupted). A bounded wait here would instead risk leaking the worker
+    // when the wait times out early.
+    QMetaObject::invokeMethod(m_inferWorker, "releaseModel",
+                              Qt::BlockingQueuedConnection);
+    m_inferThread->quit();
+    m_inferThread->wait();
+    delete m_inferWorker;
+    m_inferWorker = nullptr;
 }
 
 void FaceLiveDetectWidget::setupUi() {
@@ -805,9 +821,6 @@ void FaceLiveDetectWidget::onFrameDecoded(cv::Mat& frame, int frameIndex) {
 
     // Submit inference throttled by video-time, not wall-clock.
     // At any playback speed, submit once per ~2 video frames of content.
-    QImage rgb = VideoPlaybackWidget::cvMatToQImage(frame);
-    if (rgb.isNull()) return;
-
     if (!m_inferBusy) {
         const bool isVideoFile = inputSource() == InputSource::VideoFile;
         const bool shouldSubmit = [&]() -> bool {
@@ -822,6 +835,11 @@ void FaceLiveDetectWidget::onFrameDecoded(cv::Mat& frame, int frameIndex) {
             return (videoTimeMs - lastSubmitMs) >= thresholdMs - 1.0;
         }();
         if (shouldSubmit) {
+            // Convert only when a job is actually submitted — cvMatToQImage
+            // is a full-frame BGR→RGB copy; on busy-inference or throttled
+            // frames the conversion is pure waste.
+            QImage rgb = VideoPlaybackWidget::cvMatToQImage(frame);
+            if (rgb.isNull()) return;
             constexpr int kMaxInferDim = 640;
             QImage inferRgb = rgb;
             float inferScale = 1.f;
@@ -1033,4 +1051,3 @@ void FaceLiveDetectWidget::captureSnapshotToDb() {
     }
     emit captureToDbRequested(m_lastSnapshot);
 }
-

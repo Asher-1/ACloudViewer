@@ -26,6 +26,9 @@
 #include "RFDetrWorker.h"
 #include "ecvClickableImageLabel.h"
 #include "ecvModelDownloader.h"
+#include "ecvTestDataRepository.h"
+
+class ecvMainAppInterface;
 
 class RFDetrDialog : public QDialog {
     Q_OBJECT
@@ -49,10 +52,13 @@ public:
     explicit RFDetrDialog(QWidget* parent = nullptr);
     ~RFDetrDialog() override;
 
+    void setAppInterface(ecvMainAppInterface* app);
     Settings getSettings() const;
     void appendLog(const QString& msg);
     void setProgress(int current, int total);
+    void setTaskStage(const QString& stage, int percent = -1);
     void setRunning(bool running);
+    void enableResultButtons(bool hasResult);
     void setDbImages(const QList<DbImageEntry>& images);
     void applyDbTreeSelection(const QStringList& imageNames);
     void refreshModelList();
@@ -74,6 +80,7 @@ private slots:
     void onDbListActivated(QListWidgetItem* item);
     void onLiveStart();
     void onLiveStop();
+    void onLiveRestart();
     void onLiveCapture(const RFDetrRunResult& result);
 
 protected:
@@ -81,23 +88,39 @@ protected:
     void changeEvent(QEvent* event) override;
 
 private:
+    enum class PendingAction { None, Run, LiveStart };
+    enum class TestDataTarget { None, Image, Video };
+
     void setupUi();
     void loadSettings();
     void saveSettings() const;
     void populateModelCombo(const QString& keepFilename = QString());
     bool selectModelByFilename(const QString& filename);
     QString resolveModelPath() const;
-    bool ensureModelAvailable();
+    bool ensureModelAvailable(PendingAction action);
     void startDownload(const RFDetrModelEntry& model);
     void cancelDownload();
     void updateImagePreview();
+    void startLiveStream();
     void adaptTabWidgetHeight();
+
+    void requestTestData(TestDataTarget target);
+    bool loadRequestedTestData();
+    void onTestDataDownloadFinished(bool success,
+                                    ecvTestDataRepository::Dataset kind);
+    void onTestDataExtractionFinished(bool success,
+                                      ecvTestDataRepository::Dataset kind);
+    void setTestDataControlsEnabled(bool enabled);
 
     QTabWidget* m_tabWidget = nullptr;
     QWidget* m_imageTab = nullptr;
+    QWidget* m_liveTab = nullptr;
     RFDetrLiveWidget* m_liveWidget = nullptr;
     QPushButton* m_liveStartBtn = nullptr;
     QPushButton* m_liveStopBtn = nullptr;
+    QPushButton* m_liveRestartBtn = nullptr;
+    QPushButton* m_testDataBtn = nullptr;
+    QComboBox* m_testVideoCombo = nullptr;
 
     QComboBox* m_modelCombo = nullptr;
     QLineEdit* m_customModelPath = nullptr;
@@ -112,15 +135,22 @@ private:
     QProgressBar* m_progress = nullptr;
     QPushButton* m_runBtn = nullptr;
     QPushButton* m_cancelBtn = nullptr;
+    QPushButton* m_imageTestDataBtn = nullptr;
     QCheckBox* m_addAnnotatedCheck = nullptr;
     QToolButton* m_dbToggleBtn = nullptr;
     QWidget* m_dbContentWidget = nullptr;
     QListWidget* m_dbImageList = nullptr;
-    QLabel* m_hintLabel = nullptr;
-
     ecvModelDownloader* m_downloader = nullptr;
+    ecvMainAppInterface* m_app = nullptr;
     bool m_downloadInProgress = false;
-    bool m_autoRunAfterDownload = false;
+    PendingAction m_pendingActionAfterDownload = PendingAction::None;
+    bool m_taskRunning = false;
+    QString m_lastTaskError;
     QString m_downloadTargetFilename;
     int m_activeTabHeight = -1;
+
+    bool m_testDataDownloadInProgress = false;
+    TestDataTarget m_pendingTestDataTarget = TestDataTarget::None;
+
+    QLabel* m_taskStatusLabel = nullptr;
 };

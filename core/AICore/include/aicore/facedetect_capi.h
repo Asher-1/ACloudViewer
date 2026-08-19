@@ -40,8 +40,8 @@ AICORE_CAPI const char* aicore_facedetect_last_error(
 AICORE_CAPI void aicore_facedetect_free_string(char* s);
 AICORE_CAPI void aicore_facedetect_free_vec(float* v);
 
-/** Load image as tightly-packed RGB (cv2.imread / libjpeg parity). Caller frees
- *  \p out_rgb with aicore_facedetect_free_vec (same allocator). */
+/** Load an image through Qt as tightly-packed RGB. Caller frees \p out_rgb
+ *  with aicore_facedetect_free_vec (same allocator). */
 AICORE_CAPI int aicore_facedetect_load_path_rgb(const char* image_path,
                                                 uint8_t** out_rgb,
                                                 int32_t* out_width,

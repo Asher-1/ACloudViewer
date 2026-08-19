@@ -27,9 +27,9 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QMutex>
 #include <QMessageBox>
 #include <QMouseEvent>
+#include <QMutex>
 #include <QPainter>
 #include <QPen>
 #include <QPixmap>
@@ -595,14 +595,16 @@ void FaceCaptureWidget::resumeCapture() {
     const int index = static_cast<int>(m_capturedFrames.size());
     const int target = minCapturesBeforeComplete();
     if (!m_targetAngles.empty()) {
-        setAngleGuideText(tr("Angle: %1 (capture %2/%3)")
-                                  .arg(angleToString(m_targetAngles[static_cast<size_t>(
-                                          m_currentAngleIndex)]))
+        setAngleGuideText(
+                tr("Angle: %1 (capture %2/%3)")
+                        .arg(angleToString(m_targetAngles[static_cast<size_t>(
+                                m_currentAngleIndex)]))
+                        .arg(index + 1)
+                        .arg(target));
+    } else {
+        setAngleGuideText(tr("Capture face snapshots (%1/%2)")
                                   .arg(index + 1)
                                   .arg(target));
-    } else {
-        setAngleGuideText(
-                tr("Capture face snapshots (%1/%2)").arg(index + 1).arg(target));
     }
     updateCaptureProgressUi();
 }
@@ -1399,14 +1401,21 @@ void FaceCaptureWidget::onFrameDecoded(cv::Mat& frame, int frameIndex) {
     // playback speeds: at any speed, detection runs once per
     // ~kGgmlDetectInterval video frames of content.
     const bool timeForDetection = [&]() -> bool {
+        // After a stream reset (restart / reset button), no detection has
+        // run yet — force immediate detection on the very first frame so
+        // the overlay appears without a one-frame gap.
+        if (m_lastDetectedFrameNum < 0) return true;
         if (inputSource() == InputSource::VideoFile && videoFps() > 0) {
             // Video-time throttle: detect every kGgmlDetectInterval frames of
             // video content, regardless of playback speed.
+            // Also handle backwards frame index (after seek / restart): if
+            // the current frame is before the last detected frame, a seek
+            // occurred and we should detect immediately.
+            if (frameIndex < m_lastDetectedFrameNum) return true;
             const double videoTimeMs = frameIndex / videoFps() * 1000.0;
             const double thresholdMs =
                     kGgmlDetectInterval / videoFps() * 1000.0;
-            if (videoTimeMs -
-                        (m_lastDetectedFrameNum / videoFps() * 1000.0) >=
+            if (videoTimeMs - (m_lastDetectedFrameNum / videoFps() * 1000.0) >=
                 thresholdMs - 1.0) {  // -1ms tolerance for FP rounding
                 return true;
             }
@@ -1453,7 +1462,13 @@ void FaceCaptureWidget::onFrameDecoded(cv::Mat& frame, int frameIndex) {
         if (faceRect.width > 0 && faceRect.height > 0) {
             ++m_consecutiveDetections;
             m_lastFaceRect = faceRect;
-            if (freshDetection) m_lastDetectedFrame = frame.clone();
+            if (freshDetection && m_capturingMode) {
+                // Keep the detected frame only while capturing —
+                // captureCurrentFrame needs a frame matching m_lastFaceRect.
+                // Outside capture mode the per-frame full-res clone is pure
+                // waste (OpenCV detects on every frame).
+                m_lastDetectedFrame = frame.clone();
+            }
             emit faceDetected(QRect(faceRect.x, faceRect.y, faceRect.width,
                                     faceRect.height));
         } else {
@@ -1600,15 +1615,37 @@ std::vector<FaceCaptureWidget::ScoredFace> FaceCaptureWidget::detectFacesOpenCv(
     std::vector<ScoredFace> out;
     if (m_faceCascade.empty() || frame.empty()) return out;
 
+    // Downscale large frames before cascade detection — detectMultiScale on
+    // a full 1080p frame costs ~20-40 ms while a ≤640px copy is ~5-10 ms.
+    // Boxes are mapped back to full-res coordinates below, so callers keep
+    // working in original-frame space (m_lastFaceRect, capture crops).
+    constexpr int kOpenCvDetectMaxDim = 640;
+    const int maxDim = std::max(frame.cols, frame.rows);
+    const float scale =
+            maxDim > kOpenCvDetectMaxDim
+                    ? static_cast<float>(kOpenCvDetectMaxDim) / maxDim
+                    : 1.f;
+    cv::Mat detectFrame = frame;
+    if (scale < 1.f) {
+        cv::resize(frame, detectFrame, cv::Size(), scale, scale,
+                   cv::INTER_AREA);
+    }
+
     cv::Mat gray;
-    cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
+    cv::cvtColor(detectFrame, gray, cv::COLOR_BGR2GRAY);
     cv::equalizeHist(gray, gray);
 
     std::vector<cv::Rect> faces;
     m_faceCascade.detectMultiScale(gray, faces, 1.1, 5, 0, cv::Size(80, 80));
     out.reserve(faces.size());
+    const float inv = 1.f / scale;
     for (const cv::Rect& rect : faces) {
-        out.push_back({rect, 1.0f});
+        const cv::Rect fullRes(
+                static_cast<int>(std::lround(rect.x * inv)),
+                static_cast<int>(std::lround(rect.y * inv)),
+                static_cast<int>(std::lround(rect.width * inv)),
+                static_cast<int>(std::lround(rect.height * inv)));
+        out.push_back({fullRes, 1.0f});
     }
     return out;
 }
@@ -1794,8 +1831,7 @@ bool FaceCaptureWidget::captureIdentityFrame(IdentityTrack* track,
 }
 
 bool FaceCaptureWidget::processRegistryIdentities(
-        const cv::Mat& frame,
-        const std::vector<ScoredFace>& faces) {
+        const cv::Mat& frame, const std::vector<ScoredFace>& faces) {
     if (m_identityTracks.empty() || !m_ggmlCtx || frame.empty()) return false;
 
     std::vector<const ScoredFace*> candidates;

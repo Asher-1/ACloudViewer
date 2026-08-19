@@ -1,6 +1,6 @@
 # Building ACloudViewer from Source on macOS
 
-> **Automated build script:** [`scripts/build_macos.sh`](../../../scripts/build_macos.sh)
+> **Automated build script:** [`scripts/build_macos.sh`](https://github.com/Asher-1/ACloudViewer/blob/main/scripts/build_macos.sh)
 >
 > ```bash
 > ./scripts/build_macos.sh 2>&1 | tee build.log
@@ -188,6 +188,7 @@ cmake \
     -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
     -DPLUGIN_STANDARD_QRFDETR=ON \
     -DPLUGIN_STANDARD_QRMBG=ON \
+    -DPLUGIN_STANDARD_QYOLO=ON \
     -DPLUGIN_PYTHON=ON \
     -DBUILD_PYTHON_MODULE=ON \
     ..
@@ -385,7 +386,7 @@ cmake -DAICore_ENABLED=ON ..
 | **Linux** | Vulkan | Vulkan → CPU | ON | OFF | Optional (`-DAICore_USE_CUDA=ON`) | CUDA takes priority when enabled: CUDA → Vulkan → CPU |
 | **Windows** | Vulkan | Vulkan → CPU | ON | OFF | Optional (`-DAICore_USE_CUDA=ON`) | Same priority as Linux |
 
-See [BUILD.md](../../../BUILD.md) for cross-platform AICore backend notes.
+See [BUILD.md](https://github.com/Asher-1/ACloudViewer/blob/main/BUILD.md) for cross-platform AICore backend notes.
 
 
 ### OpenMP on macOS

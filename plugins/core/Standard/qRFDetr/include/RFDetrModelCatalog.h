@@ -12,7 +12,6 @@
 #include <QString>
 #include <QStringList>
 #include <QVector>
-
 #include <cstdint>
 
 /** Single parsed detection (from the AICore RF-DETR JSON envelope). */
@@ -24,8 +23,12 @@ struct RFDetrDetection {
     float y1 = 0.0f;
     float x2 = 0.0f;
     float y2 = 0.0f;
-    /** PNG-encoded binary mask (empty for detection-only models). */
-    QByteArray maskPng;
+    /** Raw thresholded mask (0/255, row-major) at model resolution — empty
+     *  for detection-only models. Consumed directly by drawDetections (no
+     *  PNG round-trip); the DB export path re-encodes PNG on demand. */
+    QByteArray maskRaw;
+    int maskWidth = 0;
+    int maskHeight = 0;
 };
 
 /** Result envelope of one RF-DETR inference. */
@@ -71,6 +74,14 @@ bool findModelByFilename(const QString& filename, RFDetrModelEntry* out);
 /** Model cache directory for qRFDetr (aicore_rfdetr_model_cache_dir). */
 QString modelCacheDir();
 
+/** Build the user-facing catalog label without duplicating a quantization
+ *  note that is already part of displayName. */
+QString modelDisplayLabel(const RFDetrModelEntry& entry);
+
+/** Return tightly packed RGB888 pixels for AICore's stride-less C API.
+ *  scratch owns the returned bytes only when QImage row padding is present. */
+const uchar* packedRgb888Data(const QImage& image, QByteArray* scratch);
+
 /** Parse the AICore RF-DETR JSON envelope into a run result. Returns true on
  *  success; the envelope's detections array may be empty (no objects). */
 bool parseDetectionsJson(const QByteArray& json, RFDetrRunResult* out);
@@ -78,8 +89,10 @@ bool parseDetectionsJson(const QByteArray& json, RFDetrRunResult* out);
 /** Draw bounding boxes + class/score labels (and the per-detection mask tint
  *  when the detection carries one) onto the image. Pure pixel logic — unit
  *  tested without AICore. */
-void drawDetections(QImage* image, const QVector<RFDetrDetection>& detections,
-                    float maskAlpha = 0.35f, int thickness = 3);
+void drawDetections(QImage* image,
+                    const QVector<RFDetrDetection>& detections,
+                    float maskAlpha = 0.35f,
+                    int thickness = 3);
 
 /** Deterministic per-class palette (20 colors, BGR-friendly). */
 QRgb classColor(uint32_t classId);

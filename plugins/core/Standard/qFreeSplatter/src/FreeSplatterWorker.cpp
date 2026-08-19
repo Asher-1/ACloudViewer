@@ -371,8 +371,12 @@ bool FreeSplatterWorker::runReconstruct() {
     result.width = W;
     result.gaussianChannels = gc;
     result.shDegree = geom.sh_degree;
-    result.gaussians.resize(static_cast<int>(n_out));
-    std::copy(gaussians, gaussians + n_out, result.gaussians.begin());
+    // Transfer ownership of the AICore output buffer directly — no second
+    // full-size copy (~350 MB for a 24-view 2DGS object run). shared_ptr
+    // refcounts across the queued signal; the buffer must NOT be freed here.
+    result.gaussianCount = n_out;
+    result.gaussians =
+            std::shared_ptr<float>(gaussians, aicore_gaussian_free_floats);
     result.resolvedDevice = devLabel;
     result.runtimeMs = inferTimer.elapsed();
 
@@ -380,8 +384,8 @@ bool FreeSplatterWorker::runReconstruct() {
         emit logMessage("[FS] Estimating camera poses...");
         result.cam2world.resize(n * 16);
         float focal = 0.0f;
-        ret = aicore_gaussian_estimate_poses(gaussians, n, H, W, gc,
-                                             m_settings.opacityThreshold,
+        ret = aicore_gaussian_estimate_poses(result.gaussians.get(), n, H, W,
+                                             gc, m_settings.opacityThreshold,
                                              result.cam2world.data(), &focal);
         if (ret == 0) {
             result.hasPoses = true;
@@ -392,8 +396,6 @@ bool FreeSplatterWorker::runReconstruct() {
             emit logMessage("[Warning] Pose estimation failed (non-fatal).");
         }
     }
-
-    aicore_gaussian_free_floats(gaussians);
 
     emit progressUpdate(100, 100);
     emit resultReady(result);

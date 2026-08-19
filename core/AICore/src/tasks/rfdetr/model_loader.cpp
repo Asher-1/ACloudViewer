@@ -1,12 +1,11 @@
-#include "model_loader.hpp"
-#include "common.hpp"
-#include "rfdetr.h"
-#include "two_stage.hpp"
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
-#include "ggml.h"
-#include "ggml-alloc.h"
-#include "ggml-backend.h"
-#include "gguf.h"
+#include "model_loader.hpp"
 
 #include <cmath>
 #include <cstdio>
@@ -15,6 +14,14 @@
 #include <new>
 #include <string>
 #include <vector>
+
+#include "common.hpp"
+#include "ggml-alloc.h"
+#include "ggml-backend.h"
+#include "ggml.h"
+#include "gguf.h"
+#include "rfdetr.h"
+#include "two_stage.hpp"
 
 namespace rfdetr {
 
@@ -51,7 +58,9 @@ bool get_f32_array(gguf_context* g, const char* key, float* out, size_t n) {
     return true;
 }
 
-bool get_i32_array(gguf_context* g, const char* key, std::vector<uint32_t>& out) {
+bool get_i32_array(gguf_context* g,
+                   const char* key,
+                   std::vector<uint32_t>& out) {
     const int64_t kid = gguf_find_key(g, key);
     if (kid < 0) return false;
     size_t n = gguf_get_arr_n(g, kid);
@@ -61,7 +70,9 @@ bool get_i32_array(gguf_context* g, const char* key, std::vector<uint32_t>& out)
     return true;
 }
 
-bool get_str_array(gguf_context* g, const char* key, std::vector<std::string>& out) {
+bool get_str_array(gguf_context* g,
+                   const char* key,
+                   std::vector<std::string>& out) {
     const int64_t kid = gguf_find_key(g, key);
     if (kid < 0) return false;
     size_t n = gguf_get_arr_n(g, kid);
@@ -114,9 +125,10 @@ bool get_bool(gguf_context* g, const char* key, bool& out) {
  *   K(x) = ((A|x| - 5A)|x| + 8A)|x| - 4A              for 1 <= |x| < 2
  *   K(x) = 0                                          otherwise
  * with A = -0.5 for antialias=True. */
-void bicubic_resample_patch_grid(const float* src, int src_side, int dim,
-                                 float* dst, int dst_side) {
-    constexpr float A = -0.5f;  // antialias=True path uses Keys, not Catmull-Rom
+void bicubic_resample_patch_grid(
+        const float* src, int src_side, int dim, float* dst, int dst_side) {
+    constexpr float A =
+            -0.5f;  // antialias=True path uses Keys, not Catmull-Rom
     auto kernel = [](float x) -> float {
         const float ax = std::fabs(x);
         if (ax < 1.0f) {
@@ -132,8 +144,8 @@ void bicubic_resample_patch_grid(const float* src, int src_side, int dim,
      * The max possible support count is ceil(2*max(scale,1))*2 + 1, but for
      * upsample (scale<1) the support is 2.0 → at most 4 taps. We size for
      * upsample only here because rfdetr-base always upsamples (37 → 40). */
-    auto fill_taps = [&](int dst_n, int src_n,
-                         std::vector<float>& w_out, std::vector<int>& idx_out,
+    auto fill_taps = [&](int dst_n, int src_n, std::vector<float>& w_out,
+                         std::vector<int>& idx_out,
                          std::vector<int>& size_out) {
         const float scale_d = (float)src_n / (float)dst_n;
         /* PyTorch's AA path uses `double` internally for indices/weights,
@@ -141,8 +153,8 @@ void bicubic_resample_patch_grid(const float* src, int src_side, int dim,
          * which is equivalent to floor(x + 0.5) for non-negative x — i.e.
          * rounding to nearest. We mimic that. */
         const float invscale = scale_d >= 1.0f ? 1.0f / scale_d : 1.0f;
-        const float support  = scale_d >= 1.0f ? 2.0f * scale_d : 2.0f;
-        const int   max_taps = (int)std::ceil(support) * 2 + 1;
+        const float support = scale_d >= 1.0f ? 2.0f * scale_d : 2.0f;
+        const int max_taps = (int)std::ceil(support) * 2 + 1;
         w_out.assign((size_t)dst_n * (size_t)max_taps, 0.0f);
         idx_out.assign((size_t)dst_n * (size_t)max_taps, 0);
         size_out.assign(dst_n, 0);
@@ -156,7 +168,8 @@ void bicubic_resample_patch_grid(const float* src, int src_side, int dim,
             const int xsize = std::min(std::max(xsize_unclipped, 0), max_taps);
             float total = 0.0f;
             for (int j = 0; j < xsize; ++j) {
-                const float w = kernel(((float)j + (float)xmin - center + 0.5f) * invscale);
+                const float w = kernel(
+                        ((float)j + (float)xmin - center + 0.5f) * invscale);
                 w_out[(size_t)o * (size_t)max_taps + (size_t)j] = w;
                 idx_out[(size_t)o * (size_t)max_taps + (size_t)j] = xmin + j;
                 total += w;
@@ -172,16 +185,17 @@ void bicubic_resample_patch_grid(const float* src, int src_side, int dim,
     };
 
     std::vector<float> wx, wy;
-    std::vector<int>   ix, iy;
-    std::vector<int>   sx, sy;
+    std::vector<int> ix, iy;
+    std::vector<int> sx, sy;
     const float scale_d = (float)src_side / (float)dst_side;
     const float support_d = scale_d >= 1.0f ? 2.0f * scale_d : 2.0f;
-    const int   max_taps = (int)std::ceil(support_d) * 2 + 1;
+    const int max_taps = (int)std::ceil(support_d) * 2 + 1;
     fill_taps(dst_side, src_side, wx, ix, sx);
     fill_taps(dst_side, src_side, wy, iy, sy);
 
-    /* For each (oy, ox) output pixel: sum_{ky, kx} wy[ky] * wx[kx] * src[iy[ky], ix[kx], d]
-     * for every d. Loop ordering keeps the dim accumulator hot. */
+    /* For each (oy, ox) output pixel: sum_{ky, kx} wy[ky] * wx[kx] *
+     * src[iy[ky], ix[kx], d] for every d. Loop ordering keeps the dim
+     * accumulator hot. */
     for (int oy = 0; oy < dst_side; ++oy) {
         for (int ox = 0; ox < dst_side; ++ox) {
             float* dst_row = dst + ((size_t)oy * dst_side + (size_t)ox) * dim;
@@ -190,14 +204,19 @@ void bicubic_resample_patch_grid(const float* src, int src_side, int dim,
             const int nx = sx[ox];
             for (int ky = 0; ky < ny; ++ky) {
                 const int sy_i = iy[(size_t)oy * (size_t)max_taps + (size_t)ky];
-                const float w_y = wy[(size_t)oy * (size_t)max_taps + (size_t)ky];
+                const float w_y =
+                        wy[(size_t)oy * (size_t)max_taps + (size_t)ky];
                 if (w_y == 0.0f) continue;
                 for (int kx = 0; kx < nx; ++kx) {
-                    const int sx_i = ix[(size_t)ox * (size_t)max_taps + (size_t)kx];
-                    const float w_x = wx[(size_t)ox * (size_t)max_taps + (size_t)kx];
+                    const int sx_i =
+                            ix[(size_t)ox * (size_t)max_taps + (size_t)kx];
+                    const float w_x =
+                            wx[(size_t)ox * (size_t)max_taps + (size_t)kx];
                     if (w_x == 0.0f) continue;
                     const float w = w_x * w_y;
-                    const float* sp = src + ((size_t)sy_i * src_side + (size_t)sx_i) * dim;
+                    const float* sp =
+                            src +
+                            ((size_t)sy_i * src_side + (size_t)sx_i) * dim;
                     for (int d = 0; d < dim; ++d) {
                         dst_row[d] += w * sp[d];
                     }
@@ -210,19 +229,24 @@ void bicubic_resample_patch_grid(const float* src, int src_side, int dim,
 }  // namespace
 
 Model* model_load(const std::string& path, rfdetr_status* out_status) {
-    auto set = [&](rfdetr_status s) { if (out_status) *out_status = s; };
+    auto set = [&](rfdetr_status s) {
+        if (out_status) *out_status = s;
+    };
 
     if (!file_exists(path)) {
-        rfdetr_logf(RFDETR_LOG_ERROR, "model_load: file not found '%s'", path.c_str());
+        rfdetr_logf(RFDETR_LOG_ERROR, "model_load: file not found '%s'",
+                    path.c_str());
         set(RFDETR_ERR_FILE_NOT_FOUND);
         return nullptr;
     }
 
     ggml_context* gctx = nullptr;
-    gguf_init_params init_params{ /* no_alloc */ true, /* ctx */ &gctx };
+    gguf_init_params init_params{/* no_alloc */ true, /* ctx */ &gctx};
     gguf_context* gguf = gguf_init_from_file(path.c_str(), init_params);
     if (!gguf) {
-        rfdetr_logf(RFDETR_LOG_ERROR, "model_load: gguf_init_from_file failed for '%s'", path.c_str());
+        rfdetr_logf(RFDETR_LOG_ERROR,
+                    "model_load: gguf_init_from_file failed for '%s'",
+                    path.c_str());
         set(RFDETR_ERR_MODEL_FORMAT);
         return nullptr;
     }
@@ -238,7 +262,8 @@ Model* model_load(const std::string& path, rfdetr_status* out_status) {
     // Format version
     std::string fmt;
     if (!get_str(gguf, "rfdetr.format.version", fmt) || fmt != kFormatVersion) {
-        return fail(RFDETR_ERR_MODEL_FORMAT, "unsupported rfdetr.format.version");
+        return fail(RFDETR_ERR_MODEL_FORMAT,
+                    "unsupported rfdetr.format.version");
     }
 
     Model* m = new (std::nothrow) Model();
@@ -249,60 +274,99 @@ Model* model_load(const std::string& path, rfdetr_status* out_status) {
     m->path = path;
 
     auto& c = m->config;
-    if (!get_str(gguf, "rfdetr.variant",     c.variant))     return fail(RFDETR_ERR_MODEL_FORMAT, "rfdetr.variant missing");
-    if (!get_u32(gguf, "rfdetr.image_size",  c.image_size))  return fail(RFDETR_ERR_MODEL_FORMAT, "rfdetr.image_size missing");
-    if (!get_u32(gguf, "rfdetr.patch_size",  c.patch_size))  return fail(RFDETR_ERR_MODEL_FORMAT, "rfdetr.patch_size missing");
-    if (!get_u32(gguf, "rfdetr.num_queries", c.num_queries)) return fail(RFDETR_ERR_MODEL_FORMAT, "rfdetr.num_queries missing");
-    if (!get_u32(gguf, "rfdetr.group_detr",  c.group_detr))  return fail(RFDETR_ERR_MODEL_FORMAT, "rfdetr.group_detr missing");
-    if (!get_u32(gguf, "rfdetr.num_classes", c.num_classes)) return fail(RFDETR_ERR_MODEL_FORMAT, "rfdetr.num_classes missing");
+    if (!get_str(gguf, "rfdetr.variant", c.variant))
+        return fail(RFDETR_ERR_MODEL_FORMAT, "rfdetr.variant missing");
+    if (!get_u32(gguf, "rfdetr.image_size", c.image_size))
+        return fail(RFDETR_ERR_MODEL_FORMAT, "rfdetr.image_size missing");
+    if (!get_u32(gguf, "rfdetr.patch_size", c.patch_size))
+        return fail(RFDETR_ERR_MODEL_FORMAT, "rfdetr.patch_size missing");
+    if (!get_u32(gguf, "rfdetr.num_queries", c.num_queries))
+        return fail(RFDETR_ERR_MODEL_FORMAT, "rfdetr.num_queries missing");
+    if (!get_u32(gguf, "rfdetr.group_detr", c.group_detr))
+        return fail(RFDETR_ERR_MODEL_FORMAT, "rfdetr.group_detr missing");
+    if (!get_u32(gguf, "rfdetr.num_classes", c.num_classes))
+        return fail(RFDETR_ERR_MODEL_FORMAT, "rfdetr.num_classes missing");
     if (!get_str_array(gguf, "rfdetr.class_names", c.class_names))
         return fail(RFDETR_ERR_MODEL_FORMAT, "rfdetr.class_names missing");
     if (c.class_names.size() != c.num_classes)
-        return fail(RFDETR_ERR_MODEL_FORMAT, "class_names length != num_classes");
+        return fail(RFDETR_ERR_MODEL_FORMAT,
+                    "class_names length != num_classes");
 
     if (!get_f32_array(gguf, "rfdetr.preprocess.mean", c.preprocess_mean, 3))
-        return fail(RFDETR_ERR_MODEL_FORMAT, "rfdetr.preprocess.mean missing or wrong shape");
+        return fail(RFDETR_ERR_MODEL_FORMAT,
+                    "rfdetr.preprocess.mean missing or wrong shape");
     if (!get_f32_array(gguf, "rfdetr.preprocess.std", c.preprocess_std, 3))
-        return fail(RFDETR_ERR_MODEL_FORMAT, "rfdetr.preprocess.std missing or wrong shape");
+        return fail(RFDETR_ERR_MODEL_FORMAT,
+                    "rfdetr.preprocess.std missing or wrong shape");
 
-    if (!get_u32(gguf, "rfdetr.backbone.dim",                   c.backbone.dim)         ||
-        !get_u32(gguf, "rfdetr.backbone.depth",                 c.backbone.depth)       ||
-        !get_u32(gguf, "rfdetr.backbone.heads",                 c.backbone.heads)       ||
-        !get_u32(gguf, "rfdetr.backbone.ffn_dim",               c.backbone.ffn_dim)     ||
-        !get_u32(gguf, "rfdetr.backbone.num_windows",           c.backbone.num_windows) ||
-        !get_u32(gguf, "rfdetr.backbone.pos_embed_train_size",  c.backbone.pos_embed_train_size))
+    /* Absent key means legacy: every GGUF converted before this key existed
+     * must keep producing exactly the outputs it produced before. Wire-format
+     * values match scripts/convert_rfdetr_to_gguf.py: "bilinear_no_antialias"
+     * for RF-DETR >=1.9, "legacy_stb" for the old resize convention. */
+    std::string resize_mode;
+    if (get_str(gguf, "rfdetr.preprocess.resize_mode", resize_mode)) {
+        if (resize_mode == "bilinear_no_antialias") {
+            c.preprocess_bilinear_no_antialias = true;
+        } else if (resize_mode == "legacy_stb") {
+            c.preprocess_bilinear_no_antialias = false;
+        } else {
+            return fail(RFDETR_ERR_MODEL_FORMAT,
+                        "unsupported rfdetr.preprocess.resize_mode");
+        }
+    }
+
+    if (!get_u32(gguf, "rfdetr.backbone.dim", c.backbone.dim) ||
+        !get_u32(gguf, "rfdetr.backbone.depth", c.backbone.depth) ||
+        !get_u32(gguf, "rfdetr.backbone.heads", c.backbone.heads) ||
+        !get_u32(gguf, "rfdetr.backbone.ffn_dim", c.backbone.ffn_dim) ||
+        !get_u32(gguf, "rfdetr.backbone.num_windows", c.backbone.num_windows) ||
+        !get_u32(gguf, "rfdetr.backbone.pos_embed_train_size",
+                 c.backbone.pos_embed_train_size))
         return fail(RFDETR_ERR_MODEL_FORMAT, "rfdetr.backbone.* incomplete");
-    if (!get_i32_array(gguf, "rfdetr.backbone.global_attn_indices", c.backbone.global_attn_indices))
-        return fail(RFDETR_ERR_MODEL_FORMAT, "rfdetr.backbone.global_attn_indices missing");
-    if (!get_i32_array(gguf, "rfdetr.backbone.out_feature_indices", c.backbone.out_feature_indices))
-        return fail(RFDETR_ERR_MODEL_FORMAT, "rfdetr.backbone.out_feature_indices missing");
+    if (!get_i32_array(gguf, "rfdetr.backbone.global_attn_indices",
+                       c.backbone.global_attn_indices))
+        return fail(RFDETR_ERR_MODEL_FORMAT,
+                    "rfdetr.backbone.global_attn_indices missing");
+    if (!get_i32_array(gguf, "rfdetr.backbone.out_feature_indices",
+                       c.backbone.out_feature_indices))
+        return fail(RFDETR_ERR_MODEL_FORMAT,
+                    "rfdetr.backbone.out_feature_indices missing");
 
-    if (!get_u32(gguf, "rfdetr.projector.in_dim",         c.projector.in_dim)         ||
-        !get_u32(gguf, "rfdetr.projector.out_dim",        c.projector.out_dim)        ||
-        !get_u32(gguf, "rfdetr.projector.bottleneck_dim", c.projector.bottleneck_dim) ||
-        !get_u32(gguf, "rfdetr.projector.n_bottlenecks",  c.projector.n_bottlenecks))
+    if (!get_u32(gguf, "rfdetr.projector.in_dim", c.projector.in_dim) ||
+        !get_u32(gguf, "rfdetr.projector.out_dim", c.projector.out_dim) ||
+        !get_u32(gguf, "rfdetr.projector.bottleneck_dim",
+                 c.projector.bottleneck_dim) ||
+        !get_u32(gguf, "rfdetr.projector.n_bottlenecks",
+                 c.projector.n_bottlenecks))
         return fail(RFDETR_ERR_MODEL_FORMAT, "rfdetr.projector.* incomplete");
 
-    if (!get_u32(gguf, "rfdetr.decoder.layers",              c.decoder.layers)              ||
-        !get_u32(gguf, "rfdetr.decoder.model_dim",           c.decoder.model_dim)           ||
-        !get_u32(gguf, "rfdetr.decoder.ffn_dim",             c.decoder.ffn_dim)             ||
-        !get_u32(gguf, "rfdetr.decoder.self_attn_heads",     c.decoder.self_attn_heads)     ||
-        !get_u32(gguf, "rfdetr.decoder.cross_attn_heads",    c.decoder.cross_attn_heads)    ||
-        !get_u32(gguf, "rfdetr.decoder.cross_attn_n_levels", c.decoder.cross_attn_n_levels) ||
-        !get_u32(gguf, "rfdetr.decoder.cross_attn_n_points", c.decoder.cross_attn_n_points))
+    if (!get_u32(gguf, "rfdetr.decoder.layers", c.decoder.layers) ||
+        !get_u32(gguf, "rfdetr.decoder.model_dim", c.decoder.model_dim) ||
+        !get_u32(gguf, "rfdetr.decoder.ffn_dim", c.decoder.ffn_dim) ||
+        !get_u32(gguf, "rfdetr.decoder.self_attn_heads",
+                 c.decoder.self_attn_heads) ||
+        !get_u32(gguf, "rfdetr.decoder.cross_attn_heads",
+                 c.decoder.cross_attn_heads) ||
+        !get_u32(gguf, "rfdetr.decoder.cross_attn_n_levels",
+                 c.decoder.cross_attn_n_levels) ||
+        !get_u32(gguf, "rfdetr.decoder.cross_attn_n_points",
+                 c.decoder.cross_attn_n_points))
         return fail(RFDETR_ERR_MODEL_FORMAT, "rfdetr.decoder.* incomplete");
 
     if (!get_u32(gguf, "rfdetr.two_stage.n_groups", c.two_stage.n_groups))
-        return fail(RFDETR_ERR_MODEL_FORMAT, "rfdetr.two_stage.n_groups missing");
+        return fail(RFDETR_ERR_MODEL_FORMAT,
+                    "rfdetr.two_stage.n_groups missing");
 
     /* Segmentation head (optional). Pretrained detection variants converted
      * before the seg field was added simply lack the key — that's not an
      * error, just leaves has_segmentation_head=false. */
-    if (!get_bool(gguf, "rfdetr.has_segmentation_head", c.has_segmentation_head)) {
+    if (!get_bool(gguf, "rfdetr.has_segmentation_head",
+                  c.has_segmentation_head)) {
         c.has_segmentation_head = false;
     }
     if (c.has_segmentation_head) {
-        if (!get_u32(gguf, "rfdetr.mask_downsample_ratio", c.mask_downsample_ratio)) {
+        if (!get_u32(gguf, "rfdetr.mask_downsample_ratio",
+                     c.mask_downsample_ratio)) {
             return fail(RFDETR_ERR_MODEL_FORMAT,
                         "rfdetr.mask_downsample_ratio missing for seg model");
         }
@@ -325,20 +389,19 @@ Model* model_load(const std::string& path, rfdetr_status* out_status) {
     /* Pre-allocate a slot for the bicubic-interpolated pos_embed in a
      * separate ggml_context (gguf's meta ctx has a tight memory pool sized
      * for the loaded tensor descriptors only). */
-    const int64_t inf_patches_per_side =
-        (int64_t)(c.image_size / c.patch_size);
+    const int64_t inf_patches_per_side = (int64_t)(c.image_size / c.patch_size);
     const int64_t inf_tokens = inf_patches_per_side * inf_patches_per_side + 1;
     {
         ggml_init_params ep{};
-        ep.mem_size   = ggml_tensor_overhead() * 8;
+        ep.mem_size = ggml_tensor_overhead() * 8;
         ep.mem_buffer = nullptr;
-        ep.no_alloc   = true;
+        ep.no_alloc = true;
         m->extras_ctx = ggml_init(ep);
-        if (!m->extras_ctx) return fail(RFDETR_ERR_MODEL_LOAD, "alloc extras_ctx");
+        if (!m->extras_ctx)
+            return fail(RFDETR_ERR_MODEL_LOAD, "alloc extras_ctx");
     }
     ggml_tensor* pe_interp = ggml_new_tensor_2d(
-        m->extras_ctx, GGML_TYPE_F32,
-        (int64_t)c.backbone.dim, inf_tokens);
+            m->extras_ctx, GGML_TYPE_F32, (int64_t)c.backbone.dim, inf_tokens);
     if (!pe_interp) return fail(RFDETR_ERR_MODEL_LOAD, "alloc pe_interp");
     ggml_set_name(pe_interp, "backbone.pos_embed.interp");
     m->backbone_pos_embed_interp = pe_interp;
@@ -347,7 +410,7 @@ Model* model_load(const std::string& path, rfdetr_status* out_status) {
      * only on the spatial grid (40x40 for rfdetr-base at 560 px). */
     const int64_t inf_n = inf_patches_per_side * inf_patches_per_side;
     ggml_tensor* prop = ggml_new_tensor_2d(m->extras_ctx, GGML_TYPE_F32,
-                                            /*ne0*/ 4, /*ne1*/ inf_n);
+                                           /*ne0*/ 4, /*ne1*/ inf_n);
     if (!prop) return fail(RFDETR_ERR_MODEL_LOAD, "alloc proposals_grid");
     ggml_set_name(prop, "two_stage.proposals.grid");
     m->proposals_grid = prop;
@@ -374,7 +437,8 @@ rfdetr_status model_realize_weights(Model& m, ggml_backend_t backend) {
         return RFDETR_ERR_INVALID_ARG;
     }
     if (m.path.empty()) {
-        rfdetr_logf(RFDETR_LOG_ERROR, "model_realize_weights: model has no stashed path");
+        rfdetr_logf(RFDETR_LOG_ERROR,
+                    "model_realize_weights: model has no stashed path");
         return RFDETR_ERR_MODEL_LOAD;
     }
 
@@ -382,13 +446,15 @@ rfdetr_status model_realize_weights(Model& m, ggml_backend_t backend) {
      * supplied backend. */
     m.weights = ggml_backend_alloc_ctx_tensors(m.meta, backend);
     if (!m.weights) {
-        rfdetr_logf(RFDETR_LOG_ERROR, "model_realize_weights: backend alloc failed");
+        rfdetr_logf(RFDETR_LOG_ERROR,
+                    "model_realize_weights: backend alloc failed");
         return RFDETR_ERR_MODEL_LOAD;
     }
 
     FILE* fp = std::fopen(m.path.c_str(), "rb");
     if (!fp) {
-        rfdetr_logf(RFDETR_LOG_ERROR, "model_realize_weights: open failed: %s", m.path.c_str());
+        rfdetr_logf(RFDETR_LOG_ERROR, "model_realize_weights: open failed: %s",
+                    m.path.c_str());
         ggml_backend_buffer_free(m.weights);
         m.weights = nullptr;
         return RFDETR_ERR_MODEL_LOAD;
@@ -403,7 +469,9 @@ rfdetr_status model_realize_weights(Model& m, ggml_backend_t backend) {
         const size_t offset = data_offset + gguf_get_tensor_offset(m.gguf, i);
         ggml_tensor* t = ggml_get_tensor(m.meta, name);
         if (!t) {
-            rfdetr_logf(RFDETR_LOG_ERROR, "model_realize_weights: tensor '%s' missing in ctx", name);
+            rfdetr_logf(RFDETR_LOG_ERROR,
+                        "model_realize_weights: tensor '%s' missing in ctx",
+                        name);
             std::fclose(fp);
             ggml_backend_buffer_free(m.weights);
             m.weights = nullptr;
@@ -414,7 +482,8 @@ rfdetr_status model_realize_weights(Model& m, ggml_backend_t backend) {
 
         if (std::fseek(fp, (long)offset, SEEK_SET) != 0 ||
             std::fread(buf.data(), 1, nbytes, fp) != nbytes) {
-            rfdetr_logf(RFDETR_LOG_ERROR, "model_realize_weights: read failed for '%s'", name);
+            rfdetr_logf(RFDETR_LOG_ERROR,
+                        "model_realize_weights: read failed for '%s'", name);
             std::fclose(fp);
             ggml_backend_buffer_free(m.weights);
             m.weights = nullptr;
@@ -448,23 +517,24 @@ rfdetr_status model_realize_weights(Model& m, ggml_backend_t backend) {
     {
         auto it_pe = m.tensors.find("backbone.pos_embed");
         if (it_pe == m.tensors.end() || !m.backbone_pos_embed_interp) {
-            rfdetr_logf(RFDETR_LOG_ERROR,
-                        "model_realize_weights: missing backbone.pos_embed slot");
+            rfdetr_logf(
+                    RFDETR_LOG_ERROR,
+                    "model_realize_weights: missing backbone.pos_embed slot");
             return RFDETR_ERR_MODEL_LOAD;
         }
         ggml_tensor* pe = it_pe->second;
-        const int dim       = (int)m.config.backbone.dim;
+        const int dim = (int)m.config.backbone.dim;
         const int train_side = (int)m.config.backbone.pos_embed_train_size;
-        const int inf_side   = (int)(m.config.image_size / m.config.patch_size);
+        const int inf_side = (int)(m.config.image_size / m.config.patch_size);
         const int n_train_tokens = train_side * train_side + 1;
-        const int n_inf_tokens   = inf_side   * inf_side   + 1;
+        const int n_inf_tokens = inf_side * inf_side + 1;
 
         if ((int64_t)pe->ne[0] != dim || (int64_t)pe->ne[1] != n_train_tokens) {
             rfdetr_logf(RFDETR_LOG_ERROR,
                         "model_realize_weights: pos_embed shape mismatch "
                         "ne=(%lld, %lld), expected (%d, %d)",
-                        (long long)pe->ne[0], (long long)pe->ne[1],
-                        dim, n_train_tokens);
+                        (long long)pe->ne[0], (long long)pe->ne[1], dim,
+                        n_train_tokens);
             return RFDETR_ERR_MODEL_LOAD;
         }
 
@@ -477,48 +547,47 @@ rfdetr_status model_realize_weights(Model& m, ggml_backend_t backend) {
         if (pe->type == GGML_TYPE_F32) {
             ggml_backend_tensor_get(pe, pe_raw.data(), 0, ggml_nbytes(pe));
         } else if (pe->type == GGML_TYPE_F16) {
-            std::vector<ggml_fp16_t> pe_half((size_t)dim * (size_t)n_train_tokens);
+            std::vector<ggml_fp16_t> pe_half((size_t)dim *
+                                             (size_t)n_train_tokens);
             ggml_backend_tensor_get(pe, pe_half.data(), 0, ggml_nbytes(pe));
             ggml_fp16_to_fp32_row(pe_half.data(), pe_raw.data(), pe_raw.size());
         } else {
-            rfdetr_logf(RFDETR_LOG_ERROR,
-                        "model_realize_weights: pos_embed has unsupported dtype %d "
-                        "(expected F32 or F16)",
-                        (int)pe->type);
+            rfdetr_logf(
+                    RFDETR_LOG_ERROR,
+                    "model_realize_weights: pos_embed has unsupported dtype %d "
+                    "(expected F32 or F16)",
+                    (int)pe->type);
             return RFDETR_ERR_MODEL_LOAD;
         }
 
         std::vector<float> pe_out((size_t)dim * (size_t)n_inf_tokens);
         /* Copy CLS pos embedding (token 0) unchanged. */
-        std::memcpy(pe_out.data(), pe_raw.data(),
-                    (size_t)dim * sizeof(float));
+        std::memcpy(pe_out.data(), pe_raw.data(), (size_t)dim * sizeof(float));
 
         if (train_side == inf_side) {
-            std::memcpy(pe_out.data() + (size_t)dim, pe_raw.data() + (size_t)dim,
+            std::memcpy(pe_out.data() + (size_t)dim,
+                        pe_raw.data() + (size_t)dim,
                         (size_t)dim * train_side * train_side * sizeof(float));
         } else {
             bicubic_resample_patch_grid(
-                pe_raw.data() + (size_t)dim,   /* skip CLS row */
-                train_side, dim,
-                pe_out.data() + (size_t)dim,
-                inf_side);
+                    pe_raw.data() + (size_t)dim, /* skip CLS row */
+                    train_side, dim, pe_out.data() + (size_t)dim, inf_side);
         }
 
-        ggml_backend_tensor_set(m.backbone_pos_embed_interp, pe_out.data(),
-                                0, pe_out.size() * sizeof(float));
+        ggml_backend_tensor_set(m.backbone_pos_embed_interp, pe_out.data(), 0,
+                                pe_out.size() * sizeof(float));
     }
 
     /* Populate the two-stage proposal grid. wh = 0.05 * 2^lvl, lvl=0 for the
      * single P4 level rfdetr-base uses. */
     if (m.proposals_grid) {
-        const int inf_side =
-            (int)(m.config.image_size / m.config.patch_size);
+        const int inf_side = (int)(m.config.image_size / m.config.patch_size);
         const size_t n = (size_t)inf_side * (size_t)inf_side;
         std::vector<float> grid(n * 4);
         compute_proposal_grid(inf_side, inf_side, /*wh_value*/ 0.05f,
                               grid.data());
-        ggml_backend_tensor_set(m.proposals_grid, grid.data(),
-                                0, grid.size() * sizeof(float));
+        ggml_backend_tensor_set(m.proposals_grid, grid.data(), 0,
+                                grid.size() * sizeof(float));
     }
 
     return RFDETR_OK;
@@ -589,8 +658,10 @@ std::vector<std::string> expected_tensor_names(const Config& cfg) {
         names.emplace_back("two_stage.enc_out_class_embed." + gi + ".bias");
         for (int j = 0; j < 3; ++j) {
             const std::string ji = std::to_string(j);
-            names.emplace_back("two_stage.enc_out_bbox_embed." + gi + ".layers." + ji + ".weight");
-            names.emplace_back("two_stage.enc_out_bbox_embed." + gi + ".layers." + ji + ".bias");
+            names.emplace_back("two_stage.enc_out_bbox_embed." + gi +
+                               ".layers." + ji + ".weight");
+            names.emplace_back("two_stage.enc_out_bbox_embed." + gi +
+                               ".layers." + ji + ".bias");
         }
     }
 
@@ -646,8 +717,12 @@ std::vector<std::string> expected_tensor_names(const Config& cfg) {
 
     // --- Segmentation head (RFDETRSeg* variants only) ---
     if (cfg.has_segmentation_head) {
-        for (int b = 0; b < 4; ++b) {
-            const std::string p = "segmentation_head.blocks." + std::to_string(b) + ".";
+        // SegmentationHead builds one DepthwiseConvBlock per decoder layer
+        // (rfdetr.models.heads.segmentation.SegmentationHead): 4 for
+        // nano/small, 5 for medium/large, 6 for xlarge/2xlarge.
+        for (uint32_t b = 0; b < cfg.decoder.layers; ++b) {
+            const std::string p =
+                    "segmentation_head.blocks." + std::to_string(b) + ".";
             names.emplace_back(p + "dwconv.weight");
             names.emplace_back(p + "dwconv.bias");
             names.emplace_back(p + "norm.weight");
@@ -657,12 +732,18 @@ std::vector<std::string> expected_tensor_names(const Config& cfg) {
         }
         names.emplace_back("segmentation_head.spatial_features_proj.weight");
         names.emplace_back("segmentation_head.spatial_features_proj.bias");
-        names.emplace_back("segmentation_head.query_features_block.norm_in.weight");
-        names.emplace_back("segmentation_head.query_features_block.norm_in.bias");
-        names.emplace_back("segmentation_head.query_features_block.layers.0.weight");
-        names.emplace_back("segmentation_head.query_features_block.layers.0.bias");
-        names.emplace_back("segmentation_head.query_features_block.layers.2.weight");
-        names.emplace_back("segmentation_head.query_features_block.layers.2.bias");
+        names.emplace_back(
+                "segmentation_head.query_features_block.norm_in.weight");
+        names.emplace_back(
+                "segmentation_head.query_features_block.norm_in.bias");
+        names.emplace_back(
+                "segmentation_head.query_features_block.layers.0.weight");
+        names.emplace_back(
+                "segmentation_head.query_features_block.layers.0.bias");
+        names.emplace_back(
+                "segmentation_head.query_features_block.layers.2.weight");
+        names.emplace_back(
+                "segmentation_head.query_features_block.layers.2.bias");
         names.emplace_back("segmentation_head.query_features_proj.weight");
         names.emplace_back("segmentation_head.query_features_proj.bias");
         names.emplace_back("segmentation_head.bias");
@@ -671,7 +752,58 @@ std::vector<std::string> expected_tensor_names(const Config& cfg) {
     return names;
 }
 
+uint32_t count_segmentation_blocks(const Model& m) {
+    if (!m.config.has_segmentation_head) return 0;
+    uint32_t n = 0;
+    for (;;) {
+        const std::string k = "segmentation_head.blocks." + std::to_string(n) +
+                              ".dwconv.weight";
+        if (m.tensors.find(k) == m.tensors.end()) break;
+        ++n;
+    }
+    return n;
+}
+
 rfdetr_status model_validate_tensors(const Model& m) {
+    /* Reject GGUFs converted before the seg-head block-count fix. Without
+     * this the failure surfaces as a bare "missing tensor" naming an
+     * implementation detail, which tells the user nothing about the cause or
+     * the remedy. */
+    if (m.config.has_segmentation_head) {
+        const uint32_t have = count_segmentation_blocks(m);
+        if (have == 0 && m.config.decoder.layers > 0) {
+            /* No seg tensors at all. The stale-file diagnosis below would be
+             * a confident guess at the wrong cause, so say only what is known.
+             */
+            rfdetr_logf(
+                    RFDETR_LOG_ERROR,
+                    "model_validate_tensors: the metadata declares a "
+                    "segmentation head, which needs %u head block(s) for %u "
+                    "decoder layers, but this file has 0 of them: no "
+                    "segmentation_head.blocks.* tensors are present at all. "
+                    "The conversion did not complete, or the metadata does "
+                    "not match the weights.",
+                    m.config.decoder.layers, m.config.decoder.layers);
+            return RFDETR_ERR_MODEL_LOAD;
+        }
+        if (have < m.config.decoder.layers) {
+            rfdetr_logf(
+                    RFDETR_LOG_ERROR,
+                    "model_validate_tensors: this segmentation GGUF has %u "
+                    "head block(s) but the model has %u decoder layers and "
+                    "needs one block per layer. It was converted before the "
+                    "segmentation-head block-count fix and its masks are "
+                    "incorrect. Delete the file and re-download it from the "
+                    "RF-DETR-GGUF release (the published assets have been "
+                    "re-converted), or re-convert it with the upstream "
+                    "rf-detr.cpp converter "
+                    "(scripts/convert_rfdetr_to_gguf.py in the rf-detr.cpp "
+                    "repository).",
+                    have, m.config.decoder.layers);
+            return RFDETR_ERR_MODEL_LOAD;
+        }
+    }
+
     const auto expected = expected_tensor_names(m.config);
     std::vector<std::string> missing;
     for (const auto& n : expected) {
@@ -680,9 +812,10 @@ rfdetr_status model_validate_tensors(const Model& m) {
         }
     }
     if (!missing.empty()) {
-        rfdetr_logf(RFDETR_LOG_ERROR,
-                    "model_validate_tensors: %zu missing tensor(s); first: '%s'",
-                    missing.size(), missing.front().c_str());
+        rfdetr_logf(
+                RFDETR_LOG_ERROR,
+                "model_validate_tensors: %zu missing tensor(s); first: '%s'",
+                missing.size(), missing.front().c_str());
         return RFDETR_ERR_MODEL_LOAD;
     }
     return RFDETR_OK;

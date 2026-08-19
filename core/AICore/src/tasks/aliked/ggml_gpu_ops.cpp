@@ -1008,7 +1008,11 @@ bool RunCropWhcnGpu(internal::Backend *backend,
     }
 
 #if defined(AICORE_VULKAN_ALIKED)
-    if (backend != nullptr && backend->IsVulkan() &&
+    // The custom dense-copy shader is qualified for the small single-channel
+    // score map only. Large multi-channel feature crops have intermittently
+    // returned zero-filled regions on NVIDIA Vulkan drivers; use the host
+    // round-trip below for that correctness-sensitive path.
+    if (input.c == 1 && backend != nullptr && backend->IsVulkan() &&
         VkAlikedAvailable(backend->handle)) {
         if (!GpuTensor::Allocate(backend, out_w, out_h, input.c, output,
                                  error)) {
@@ -1035,7 +1039,8 @@ bool RunCropWhcnGpu(internal::Backend *backend,
     }
 #endif
 
-    if (backend != nullptr && backend->IsGpu()) {
+    if (backend != nullptr && backend->IsGpu() &&
+        !(backend->IsVulkan() && input.c > 1)) {
         const int32_t ic = input.c;
         const char *cache_key = "crop_whcn";
         return RunGraphWithInput(

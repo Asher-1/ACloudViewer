@@ -15,7 +15,6 @@
 #include "cam_pose.hpp"
 #include "colmap_export.hpp"
 #include "common.hpp"
-#include "compute_mode.hpp"
 #include "dino_backbone.hpp"
 #include "dpt_head.hpp"
 #include "gs_adapter.hpp"
@@ -50,9 +49,6 @@ std::unique_ptr<Engine> Engine::load_device(const std::string& path,
         DA_ERR("engine: offload failed");
         return nullptr;
     }
-    // Route graph builders to GPU-friendly standard ops iff weights are
-    // device-resident.
-    aicore::depth::set_gpu_mode(e->be_.is_offloading());
     return e;
 }
 std::unique_ptr<Engine> Engine::load_nested(const std::string& anyview_gguf,

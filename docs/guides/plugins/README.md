@@ -1,11 +1,3 @@
-<!--
- * @Author: ludahai ludahai19@163.com
- * @Date: 2026-08-15 13:34:32
- * @LastEditors: ludahai ludahai19@163.com
- * @LastEditTime: 2026-08-16 11:48:21
- * @FilePath: /ACloudViewer/docs/guides/plugins/README.md
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
--->
 # AI inference plugins (AICore)
 
 ACloudViewer provides five AI plugins through the unified inference library **`libAICore.so`** (ggml). **No Python/PyTorch runtime is required.**
@@ -41,6 +33,7 @@ cmake -B build_app \
   -DPLUGIN_STANDARD_QFREESPLATTER=ON \
   -DPLUGIN_STANDARD_QRFDETR=ON \
   -DPLUGIN_STANDARD_QRMBG=ON \
+  -DPLUGIN_STANDARD_QYOLO=ON \
   -DPLUGIN_STANDARD_QSIBR=ON \
   -DBUILD_RECONSTRUCTION=ON \
   .
@@ -50,6 +43,6 @@ cmake --build build_app --target ACloudViewer QDA3_PLUGIN QFACEDETECT_PLUGIN QFR
 
 ## More resources
 
-- Full plugin READMEs (developer details, tests, C API): [`plugins/core/Standard/qDA3/README.md`](../../../plugins/core/Standard/qDA3/README.md), [`plugins/core/Standard/qDeepLSD/README.md`](../../../plugins/core/Standard/qDeepLSD/README.md), [`plugins/core/Standard/qFaceDetect/README.md`](../../../plugins/core/Standard/qFaceDetect/README.md), [`plugins/core/Standard/qLightGlue/README.md`](../../../plugins/core/Standard/qLightGlue/README.md), [`plugins/core/Standard/qFreeSplatter/README.md`](../../../plugins/core/Standard/qFreeSplatter/README.md)
-- Plugin catalog: [`plugins/README.md`](../../../plugins/README.md)
+- Full plugin READMEs (developer details, tests, C API): [`plugins/core/Standard/qDA3/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qDA3/README.md), [`plugins/core/Standard/qDeepLSD/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qDeepLSD/README.md), [`plugins/core/Standard/qFaceDetect/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qFaceDetect/README.md), [`plugins/core/Standard/qLightGlue/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qLightGlue/README.md), [`plugins/core/Standard/qFreeSplatter/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qFreeSplatter/README.md)
+- Plugin catalog: [`plugins/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/README.md)
 - Sphinx doc build syncs the above READMEs into `docs/source/plugins/` (see `docs/source/conf.py`)

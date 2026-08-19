@@ -11,7 +11,6 @@
 
 #include <cstdio>
 #include <cstring>
-
 #include <opencv2/imgproc.hpp>
 
 namespace {
@@ -62,9 +61,7 @@ MpvFrameSource::~MpvFrameSource() {
     }
 }
 
-bool MpvFrameSource::available() {
-    return kHasSwRender;
-}
+bool MpvFrameSource::available() { return kHasSwRender; }
 
 bool MpvFrameSource::isOpened() const {
     return m_opened.load(std::memory_order_acquire);
@@ -183,7 +180,8 @@ void MpvFrameSource::mpvThreadMain() {
     // The render context must be created, rendered and freed on this same
     // thread (libmpv constraint for the render API).
     mpv_render_param initParams[] = {
-            {MPV_RENDER_PARAM_API_TYPE, const_cast<char*>(MPV_RENDER_API_TYPE_SW)},
+            {MPV_RENDER_PARAM_API_TYPE,
+             const_cast<char*>(MPV_RENDER_API_TYPE_SW)},
             {0, nullptr},
     };
     if (mpv_render_context_create(&m_renderCtx, m_mpv, initParams) < 0) {
@@ -198,9 +196,8 @@ void MpvFrameSource::mpvThreadMain() {
         if (ev && ev->event_id == MPV_EVENT_SHUTDOWN) break;
         if (ev) onMpvEvent(ev);
 
-        if (m_renderCtx &&
-            (m_renderPending.exchange(false) ||
-             mpv_render_context_update(m_renderCtx) > 0)) {
+        if (m_renderCtx && (m_renderPending.exchange(false) ||
+                            mpv_render_context_update(m_renderCtx) > 0)) {
             renderFrame();
         }
     }
@@ -225,14 +222,12 @@ void MpvFrameSource::onMpvEvent(mpv_event* ev) {
             break;
         }
         case MPV_EVENT_END_FILE: {
-            const auto* end =
-                    static_cast<mpv_event_end_file*>(ev->data);
+            const auto* end = static_cast<mpv_event_end_file*>(ev->data);
             if (end->reason == MPV_END_FILE_REASON_EOF) {
                 // Ignore stale END_FILE events queued before a seek: the
                 // eof-reached property reflects the actual playback state.
                 char* eofProp = mpv_get_property_string(m_mpv, "eof-reached");
-                const bool atEof =
-                        eofProp && std::strcmp(eofProp, "yes") == 0;
+                const bool atEof = eofProp && std::strcmp(eofProp, "yes") == 0;
                 mpv_free(eofProp);
                 if (atEof) m_eof.store(true, std::memory_order_release);
             } else if (end->reason == MPV_END_FILE_REASON_ERROR) {
@@ -282,9 +277,8 @@ void MpvFrameSource::renderFrame() {
         std::lock_guard<std::mutex> lock(m_frameMutex);
         m_latestFrame = bgra.clone();
         const double fps = m_fps.load(std::memory_order_acquire);
-        m_latestFrameIndex =
-                fps > 0.0 ? static_cast<int64_t>(pts * fps + 0.5)
-                          : m_latestFrameIndex + 1;
+        m_latestFrameIndex = fps > 0.0 ? static_cast<int64_t>(pts * fps + 0.5)
+                                       : m_latestFrameIndex + 1;
     }
     m_width.store(static_cast<int>(w), std::memory_order_release);
     m_height.store(static_cast<int>(h), std::memory_order_release);

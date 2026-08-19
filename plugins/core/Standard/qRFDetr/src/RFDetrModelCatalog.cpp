@@ -14,7 +14,6 @@
 #include <QPainter>
 #include <QPen>
 #include <QThread>
-
 #include <cmath>
 #include <cstring>
 
@@ -88,6 +87,30 @@ QString modelCacheDir() {
     return QString();
 }
 
+QString modelDisplayLabel(const RFDetrModelEntry& entry) {
+    QString label = entry.displayName;
+    if (!entry.quantNote.isEmpty() && !label.contains(entry.quantNote)) {
+        label += QStringLiteral(" ") + QChar(0x2014) + QStringLiteral(" ") +
+                 entry.quantNote;
+    }
+    return label;
+}
+
+const uchar* packedRgb888Data(const QImage& image, QByteArray* scratch) {
+    if (!scratch || image.isNull() || image.format() != QImage::Format_RGB888)
+        return nullptr;
+    scratch->clear();
+    const int rowBytes = image.width() * 3;
+    if (image.bytesPerLine() == rowBytes) return image.constBits();
+
+    scratch->resize(rowBytes * image.height());
+    for (int y = 0; y < image.height(); ++y) {
+        std::memcpy(scratch->data() + y * rowBytes, image.constScanLine(y),
+                    static_cast<size_t>(rowBytes));
+    }
+    return reinterpret_cast<const uchar*>(scratch->constData());
+}
+
 bool filenameIsSegmentation(const QString& filename) {
     const QString lower = filename.toLower();
     return lower.contains(QStringLiteral("seg"));
@@ -118,8 +141,7 @@ bool parseDetectionsJson(const QByteArray& json, RFDetrRunResult* out) {
         det.className = d.value(QStringLiteral("class_name")).toString();
         det.score = static_cast<float>(
                 d.value(QStringLiteral("score")).toDouble(0.0));
-        const QJsonArray box =
-                d.value(QStringLiteral("box")).toArray();
+        const QJsonArray box = d.value(QStringLiteral("box")).toArray();
         if (box.size() == 4) {
             det.x1 = static_cast<float>(box.at(0).toDouble(0.0));
             det.y1 = static_cast<float>(box.at(1).toDouble(0.0));
@@ -135,13 +157,13 @@ bool parseDetectionsJson(const QByteArray& json, RFDetrRunResult* out) {
 QRgb classColor(uint32_t classId) {
     // COCO-consistent deterministic palette (BGR order from OpenCV heritage).
     static const QRgb kPalette[20] = {
-            qRgb(220, 20, 60),    qRgb(119, 11, 32),   qRgb(0, 0, 142),
-            qRgb(0, 0, 230),      qRgb(106, 0, 228),   qRgb(0, 60, 100),
-            qRgb(0, 80, 100),     qRgb(0, 0, 70),      qRgb(0, 0, 192),
-            qRgb(250, 170, 30),   qRgb(100, 170, 30),  qRgb(220, 220, 0),
-            qRgb(175, 116, 175),  qRgb(250, 0, 30),    qRgb(165, 42, 42),
-            qRgb(255, 77, 255),   qRgb(0, 226, 252),   qRgb(182, 182, 255),
-            qRgb(0, 82, 0),       qRgb(120, 166, 157),
+            qRgb(220, 20, 60),   qRgb(119, 11, 32),   qRgb(0, 0, 142),
+            qRgb(0, 0, 230),     qRgb(106, 0, 228),   qRgb(0, 60, 100),
+            qRgb(0, 80, 100),    qRgb(0, 0, 70),      qRgb(0, 0, 192),
+            qRgb(250, 170, 30),  qRgb(100, 170, 30),  qRgb(220, 220, 0),
+            qRgb(175, 116, 175), qRgb(250, 0, 30),    qRgb(165, 42, 42),
+            qRgb(255, 77, 255),  qRgb(0, 226, 252),   qRgb(182, 182, 255),
+            qRgb(0, 82, 0),      qRgb(120, 166, 157),
     };
     return kPalette[classId % 20];
 }
@@ -154,30 +176,44 @@ void drawDetections(QImage* image,
     const int w = image->width();
     const int h = image->height();
 
+    // Convert to packed ARGB32 before QPainter starts so the painter stays
+    // bound to a stable data block for the whole call, and the mask tint
+    // below can premultiply-blend through a single scaled blit per detection.
+    if (image->format() != QImage::Format_ARGB32) {
+        *image = image->convertToFormat(QImage::Format_ARGB32);
+    }
+
     QPainter p(image);
     p.setRenderHint(QPainter::Antialiasing, false);
 
-    // Pass 1: tint masked regions (segmentation models).
+    // Pass 1: tint masked regions (segmentation models). Masks are stored at
+    // model resolution (e.g. 640x640 — the AICore postprocess no longer
+    // upsamples them; the preprocess stretches the input the same way).
+    // Raw mask bytes are wrapped as a zero-copy Grayscale8 view (no PNG
+    // decode), then tinted and let QPainter scale to the frame: one
+    // SIMD-optimized blit per detection replaces both the full-frame
+    // per-pixel C++ loop and the unsafe scanLine() writes while the painter
+    // is active (undefined behavior).
     for (const RFDetrDetection& d : detections) {
-        if (d.maskPng.isEmpty()) continue;
-        const QImage mask = QImage::fromData(d.maskPng, "PNG");
-        if (mask.isNull() || mask.width() != w || mask.height() != h) continue;
-        const QColor tint(classColor(d.classId));
-        for (int y = 0; y < h; ++y) {
-            const uchar* row = mask.constScanLine(y);
-            for (int x = 0; x < w; ++x) {
-                if (row[x] < 128) continue;
-                const QRgb px = image->pixel(x, y);
-                image->setPixel(
-                        x, y,
-                        qRgb(static_cast<int>(tint.red() * maskAlpha +
-                                              qRed(px) * (1.0 - maskAlpha)),
-                             static_cast<int>(tint.green() * maskAlpha +
-                                              qGreen(px) * (1.0 - maskAlpha)),
-                             static_cast<int>(tint.blue() * maskAlpha +
-                                              qBlue(px) * (1.0 - maskAlpha))));
+        if (d.maskRaw.isEmpty() || d.maskWidth <= 0 || d.maskHeight <= 0)
+            continue;
+        const QImage mask(reinterpret_cast<const uchar*>(d.maskRaw.constData()),
+                          d.maskWidth, d.maskHeight, d.maskWidth,
+                          QImage::Format_Grayscale8);
+        if (mask.isNull()) continue;
+
+        QImage tinted(mask.size(), QImage::Format_ARGB32_Premultiplied);
+        const QRgb tintRgb = QColor(classColor(d.classId)).rgba();
+        for (int y = 0; y < mask.height(); ++y) {
+            const uchar* mrow = mask.constScanLine(y);
+            QRgb* trow = reinterpret_cast<QRgb*>(tinted.scanLine(y));
+            for (int x = 0; x < mask.width(); ++x) {
+                trow[x] = mrow[x] >= 128 ? tintRgb : 0;
             }
         }
+        p.setOpacity(maskAlpha);
+        p.drawImage(QRect(0, 0, w, h), tinted);
+        p.setOpacity(1.0);
     }
 
     // Pass 2: boxes + labels.
@@ -191,7 +227,7 @@ void drawDetections(QImage* image,
         p.setPen(pen);
         p.drawRect(QRectF(d.x1, d.y1, d.x2 - d.x1, d.y2 - d.y1));
 
-        const QString label = QStringLiteral("%1 %.2f")
+        const QString label = QStringLiteral("%1 %2")
                                       .arg(d.className)
                                       .arg(d.score, 0, 'f', 2);
         const QRect labelRect(static_cast<int>(d.x1),

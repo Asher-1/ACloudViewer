@@ -70,7 +70,8 @@ bool RFDetrWorker::runInference() {
         emit logMessage(tr("[RF-DETR] Failed to allocate options."));
         return false;
     }
-    aicore_rfdetr_options_set_device(opts, m_settings.device.toUtf8().constData());
+    aicore_rfdetr_options_set_device(opts,
+                                     m_settings.device.toUtf8().constData());
     aicore_rfdetr_options_set_threads(opts, m_settings.threads);
 
     emit logMessage(tr("[RF-DETR] Loading model: %1 (device=%2, threads=%3)")
@@ -91,11 +92,19 @@ bool RFDetrWorker::runInference() {
         return false;
     }
 
-    emit logMessage(tr("[RF-DETR] Model loaded: variant=%1, classes=%2")
-                            .arg(QString::fromUtf8(
-                                    aicore_rfdetr_context_variant(m_pendingCtx)))
-                            .arg(aicore_rfdetr_context_num_classes(
-                                    m_pendingCtx)));
+    emit logMessage(
+            tr("[RF-DETR] Model loaded: variant=%1, classes=%2")
+                    .arg(QString::fromUtf8(
+                            aicore_rfdetr_context_variant(m_pendingCtx)))
+                    .arg(aicore_rfdetr_context_num_classes(m_pendingCtx)));
+    {
+        const QString info =
+                QStringLiteral("{\"variant\":\"%1\",\"num_classes\":%2}")
+                        .arg(QString::fromUtf8(
+                                aicore_rfdetr_context_variant(m_pendingCtx)))
+                        .arg(aicore_rfdetr_context_num_classes(m_pendingCtx));
+        emit modelInfoReady(info);
+    }
     emit progressUpdate(1, 1);
 
     if (aicore_cancel_token_requested(m_cancelToken)) {
@@ -116,9 +125,15 @@ bool RFDetrWorker::runInference() {
 
         QElapsedTimer timer;
         timer.start();
+        QByteArray packedRgb;
+        const uchar* rgbData = RFDetrHelpers::packedRgb888Data(rgb, &packedRgb);
+        if (!rgbData) {
+            emit logMessage(tr("[RF-DETR] Failed to pack the RGB input."));
+            return false;
+        }
         aicore_cancel_scope_begin(m_cancelToken);
         char* json = aicore_rfdetr_detect_rgb_json(
-                m_pendingCtx, rgb.constBits(), rgb.width(), rgb.height(),
+                m_pendingCtx, rgbData, rgb.width(), rgb.height(),
                 m_settings.threshold, m_settings.topK);
         aicore_cancel_scope_end(m_cancelToken);
         const double ms = static_cast<double>(timer.elapsed());
@@ -136,7 +151,12 @@ bool RFDetrWorker::runInference() {
         result.imageName = QFileInfo(m_settings.inputPath).fileName();
         result.modelPath = m_settings.modelPath;
         result.runtimeMs = ms;
-        result.resolvedDevice = m_settings.device;
+        // Backend-resolved device (may differ from the request when the GPU
+        // lease failed and rfdetr fell back to CPU).
+        const char* resolvedDevice = aicore_rfdetr_context_device(m_pendingCtx);
+        result.resolvedDevice = (resolvedDevice && resolvedDevice[0])
+                                        ? QString::fromUtf8(resolvedDevice)
+                                        : m_settings.device;
         if (!RFDetrHelpers::parseDetectionsJson(QByteArray(json), &result)) {
             aicore_rfdetr_free_string(json);
             emit logMessage(tr("[RF-DETR] Failed to parse detection JSON."));
@@ -144,20 +164,24 @@ bool RFDetrWorker::runInference() {
         }
         aicore_rfdetr_free_string(json);
 
-        // Fetch per-detection masks for segmentation models.
+        // Fetch per-detection masks for segmentation models (raw bytes — no
+        // PNG encode/decode round-trip; sizing also returns the dimensions).
         if (aicore_rfdetr_context_has_segmentation(m_pendingCtx)) {
             const int n = aicore_rfdetr_detection_count(m_pendingCtx);
             for (int i = 0; i < n; ++i) {
-                const int len = aicore_rfdetr_detection_mask_png(
-                        m_pendingCtx, i, nullptr, 0);
+                int32_t mw = 0, mh = 0;
+                const int len = aicore_rfdetr_detection_mask(
+                        m_pendingCtx, i, nullptr, 0, &mw, &mh);
                 if (len <= 0) continue;
-                QByteArray png;
-                png.resize(len);
-                if (aicore_rfdetr_detection_mask_png(
+                QByteArray raw;
+                raw.resize(len);
+                if (aicore_rfdetr_detection_mask(
                             m_pendingCtx, i,
-                            reinterpret_cast<unsigned char*>(png.data()),
-                            len) == len) {
-                    result.detections[i].maskPng = png;
+                            reinterpret_cast<unsigned char*>(raw.data()), len,
+                            &mw, &mh) == len) {
+                    result.detections[i].maskRaw = raw;
+                    result.detections[i].maskWidth = mw;
+                    result.detections[i].maskHeight = mh;
                 }
             }
         }

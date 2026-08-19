@@ -234,6 +234,20 @@ void scaleFaceBoxes(std::vector<FaceDetectBox>* faces, float scale) {
     }
 }
 
+void offsetFaceBoxes(std::vector<FaceDetectBox>* faces, float dx, float dy) {
+    if (!faces) return;
+    for (FaceDetectBox& box : *faces) {
+        box.x1 += dx;
+        box.x2 += dx;
+        box.y1 += dy;
+        box.y2 += dy;
+        for (int i = 0; i < 5; ++i) {
+            box.landmarks[i][0] += dx;
+            box.landmarks[i][1] += dy;
+        }
+    }
+}
+
 QString formatMatchLabel(const QString& name, float distance) {
     return QStringLiteral("%1 (d=%2)").arg(name).arg(distance, 0, 'f', 3);
 }
@@ -279,20 +293,17 @@ QImage loadRgbForInference(const QString& path) {
         return {};
     }
 
-    QImage img(w, h, QImage::Format_RGB888);
-    const int rowBytes = w * 3;
-    const size_t totalBytes =
-            static_cast<size_t>(rowBytes) * static_cast<size_t>(h);
-    if (img.bytesPerLine() == rowBytes) {
-        std::memcpy(img.bits(), rgb, totalBytes);
-    } else {
-        for (int y = 0; y < h; ++y) {
-            std::memcpy(img.scanLine(y),
-                        rgb + static_cast<size_t>(y) * rowBytes,
-                        static_cast<size_t>(rowBytes));
-        }
+    // Take over the malloc'd AICore buffer directly (AICore allocates with
+    // std::malloc) — QImage frees it via the cleanup callback on destruction.
+    // This removes a full-frame memcpy + free on every registry embed.
+    QImage img(
+            rgb, w, h, w * 3, QImage::Format_RGB888,
+            [](void* p) { std::free(p); }, rgb);
+    if (img.isNull()) {
+        // Cleanup was never installed on a failed wrap — release manually.
+        std::free(rgb);
+        return {};
     }
-    aicore_facedetect_free_vec(reinterpret_cast<float*>(rgb));
     return img;
 }
 
@@ -343,19 +354,6 @@ bool faceBoxHasLandmarks(const FaceDetectBox& box) {
     return false;
 }
 
-void offsetFaceBoxes(std::vector<FaceDetectBox>* faces, float dx, float dy) {
-    if (!faces) return;
-    for (FaceDetectBox& box : *faces) {
-        box.x1 += dx;
-        box.y1 += box.x2 += dx;
-        box.y2 += dy;
-        for (int i = 0; i < 5; ++i) {
-            box.landmarks[i][0] += dx;
-            box.landmarks[i][1] += dy;
-        }
-    }
-}
-
 bool embedRgbLandmarks(aicore_facedetect_ctx* ctx,
                        const QImage& rgb,
                        const FaceDetectBox& box,
@@ -391,17 +389,19 @@ bool tryDetectAlignedEmbed(aicore_facedetect_ctx* ctx,
                            const QImage& rgb,
                            float minDetectionScore,
                            std::vector<float>* out,
-                           const QString& logTag,
-                           int faceCount) {
+                           const QString& logTag) {
     if (rgb.isNull()) return false;
-    if (const FaceDetectBox* primary = pickPrimaryFaceBox(
-                detectBoxesFromRgb(ctx, rgb), minDetectionScore)) {
+    // Detect exactly once per image — callers used to run a second full
+    // detect inference just to fill the log's face count.
+    const std::vector<FaceDetectBox> boxes = detectBoxesFromRgb(ctx, rgb);
+    if (const FaceDetectBox* primary =
+                pickPrimaryFaceBox(boxes, minDetectionScore)) {
         if (embedFaceBoxFromFrame(ctx, rgb, *primary, minDetectionScore, out)) {
             CVLog::Print(QString("[FaceDetect] embed %1: detect-aligned "
                                  "(score=%2, %3 face(s))")
                                  .arg(logTag)
                                  .arg(primary->score, 0, 'f', 3)
-                                 .arg(faceCount));
+                                 .arg(boxes.size()));
             return true;
         }
     }
@@ -491,9 +491,7 @@ bool embedImagePathDetectAligned(aicore_facedetect_ctx* ctx,
     const QString fileName = QFileInfo(path).fileName();
     QImage rgb = loadRgbForInference(path);
 
-    if (tryDetectAlignedEmbed(
-                ctx, rgb, minDetectionScore, out, fileName,
-                static_cast<int>(detectBoxesFromRgb(ctx, rgb).size()))) {
+    if (tryDetectAlignedEmbed(ctx, rgb, minDetectionScore, out, fileName)) {
         return true;
     }
 

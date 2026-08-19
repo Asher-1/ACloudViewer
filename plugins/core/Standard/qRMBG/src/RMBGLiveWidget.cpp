@@ -11,28 +11,30 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QFormLayout>
-#include <QFutureWatcher>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QPushButton>
+#include <QMetaObject>
+#include <QPainter>
 #include <QSettings>
+#include <QSizePolicy>
 #include <QSpinBox>
 #include <QThread>
-#include <QtConcurrent/QtConcurrentRun>
+#include <algorithm>
 
+#include "RMBGLiveInferWorker.h"
 #include "RMBGModelCatalog.h"
 #include "ecvPersistentSettings.h"
+
+#ifdef HAS_OPENCV_FACE_CAPTURE
+#include <opencv2/imgproc.hpp>
+#endif
 
 #ifdef AICore_ENABLED
 #include "aicore/backend_capi.h"
 #include "aicore/rmbg_capi.h"
-#include "aicore/runtime_capi.h"
 #endif
 
 namespace {
-
-constexpr int kInferEveryNthFrame = 5;   // video throttle
-constexpr int kMaxInferWidth = 1280;     // downscale very large frames
 
 QString formatLatency(qint64 ms) {
     return ms >= 0 ? QStringLiteral("%1 ms").arg(ms) : QStringLiteral("--");
@@ -40,68 +42,26 @@ QString formatLatency(qint64 ms) {
 
 }  // namespace
 
-struct RMBGLiveWidget::InferJob {
-    QImage rgb;        // RGB888 copy at inference resolution
-    quint64 generation = 0;
-    QString modelPath;
-    QString device;
-    int threads = 0;
-
-    RMBGRunResult run() const;
-};
-
-RMBGRunResult RMBGLiveWidget::InferJob::run() const {
-    RMBGRunResult result;
-    result.resolvedDevice = device;
-#ifdef AICore_ENABLED
-    aicore_rmbg_options* opts = aicore_rmbg_options_new();
-    if (!opts) return result;
-    aicore_rmbg_options_set_device(opts, device.toUtf8().constData());
-    aicore_rmbg_options_set_threads(opts, threads);
-    aicore_rmbg_ctx* ctx = aicore_rmbg_load_opts(
-            modelPath.toUtf8().constData(), opts);
-    aicore_rmbg_options_free(opts);
-    if (!ctx || !aicore_rmbg_is_ready(ctx)) {
-        if (ctx) aicore_rmbg_free(ctx);
-        return result;
-    }
-    char* info = aicore_rmbg_info_json(ctx);
-    if (info) {
-        RMBGHelpers::parseInfoJson(QByteArray(info), &result);
-        aicore_rmbg_free_string(info);
-    }
-
-    QElapsedTimer timer;
-    timer.start();
-    uint8_t* png = nullptr;
-    int pngLen = 0;
-    const int rc = aicore_rmbg_remove_background_rgb(
-            ctx, rgb.constBits(), rgb.width(), rgb.height(), &png, &pngLen);
-    const double ms = static_cast<double>(timer.elapsed());
-    if (rc == 0 && png && pngLen > 0) {
-        result.resultImage = QImage::fromData(
-                QByteArray(reinterpret_cast<const char*>(png), pngLen),
-                "PNG");
-        aicore_rmbg_free_buffer(png);
-        RMBGHelpers::computeAlphaStats(result.resultImage, &result.alphaMean,
-                                       &result.foregroundRatio);
-    }
-    aicore_rmbg_free(ctx);
-    result.runtimeMs = ms;
-    result.modelPath = modelPath;
-    result.imageName = QStringLiteral("live");
-    if (result.resolvedDevice.isEmpty()) result.resolvedDevice = device;
-#endif
-    return result;
-}
-
-RMBGLiveWidget::RMBGLiveWidget(QWidget* parent)
-    : VideoPlaybackWidget(parent) {
+RMBGLiveWidget::RMBGLiveWidget(QWidget* parent) : VideoPlaybackWidget(parent) {
+    // Clock-driven playback: the video advances at its native frame rate
+    // (× speed) while inference runs asynchronously and its alpha mask is
+    // composited onto the live frames — decoupling display smoothness from
+    // inference latency.
     setupUi();
     setPreviewFixedHeight(300);
+
+    m_inferThread = new QThread(this);
+    m_inferWorker = new RMBGLiveInferWorker;
+    m_inferWorker->moveToThread(m_inferThread);
+    connect(m_inferThread, &QThread::finished, m_inferWorker,
+            &QObject::deleteLater);
+    connect(m_inferWorker, &RMBGLiveInferWorker::inferComplete, this,
+            &RMBGLiveWidget::onInferComplete, Qt::QueuedConnection);
+    m_inferThread->start();
 }
 
 RMBGLiveWidget::~RMBGLiveWidget() {
+    stopStream();
     shutdownInferThread();
 }
 
@@ -109,9 +69,7 @@ bool RMBGLiveWidget::isAvailable() {
     return VideoPlaybackWidget::isAvailable();
 }
 
-void RMBGLiveWidget::setConfig(const Config& config) {
-    m_config = config;
-}
+void RMBGLiveWidget::setConfig(const Config& config) { m_config = config; }
 
 void RMBGLiveWidget::setVideoFilePath(const QString& path, bool userChosen) {
     VideoPlaybackWidget::setVideoFilePath(path);
@@ -119,7 +77,6 @@ void RMBGLiveWidget::setVideoFilePath(const QString& path, bool userChosen) {
 }
 
 void RMBGLiveWidget::setupUi() {
-    m_previewLabel = previewLabel();
     m_statusLabel = statusLabel();
 
     auto* controls = new QHBoxLayout;
@@ -127,8 +84,11 @@ void RMBGLiveWidget::setupUi() {
 
     controls->addWidget(new QLabel(tr("Model:"), this));
     m_modelCombo = new QComboBox(this);
-    m_modelCombo->setMinimumWidth(200);
-    controls->addWidget(m_modelCombo);
+    m_modelCombo->setMinimumContentsLength(20);
+    m_modelCombo->setSizeAdjustPolicy(
+            QComboBox::AdjustToMinimumContentsLengthWithIcon);
+    m_modelCombo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    controls->addWidget(m_modelCombo, 1);
 
     controls->addWidget(new QLabel(tr("Device:"), this));
     m_deviceCombo = new QComboBox(this);
@@ -148,9 +108,7 @@ void RMBGLiveWidget::setupUi() {
     connect(m_modelCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, [this](int) { updateModelPathFromCombo(); });
     connect(m_deviceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, [this](int) {
-                emit deviceSelectionChanged(deviceId());
-            });
+            this, [this](int) { emit deviceSelectionChanged(deviceId()); });
     connect(m_threadsSpin, QOverload<int>::of(&QSpinBox::valueChanged), this,
             [this](int v) { emit threadCountChanged(v); });
 }
@@ -169,15 +127,46 @@ int RMBGLiveWidget::threadCount() const {
 }
 
 QString RMBGLiveWidget::resolveModelPath() const {
-    const QString filename = modelFilename();
-    if (filename.isEmpty()) return QString();
+    const QString selection = modelFilename();
+    if (selection.isEmpty()) return QString();
+    const QFileInfo selectedFile(selection);
+    if (selectedFile.isAbsolute()) return selectedFile.absoluteFilePath();
     const QString dir = RMBGHelpers::modelCacheDir();
     if (dir.isEmpty()) return QString();
-    return dir + QDir::separator() + filename;
+    return QDir(dir).filePath(selection);
 }
 
 void RMBGLiveWidget::setModelPath(const QString& path) {
     m_config.modelPath = path;
+    // Sync the internal combo: select the matching entry or add a custom one.
+    if (m_modelCombo) {
+        const QString normalizedPath = QFileInfo(path).absoluteFilePath();
+        int idx = -1;
+        for (int i = 0; i < m_modelCombo->count(); ++i) {
+            const QString stored = m_modelCombo->itemData(i).toString();
+            const QString candidate =
+                    QFileInfo(stored).isAbsolute()
+                            ? QFileInfo(stored).absoluteFilePath()
+                            : QDir(RMBGHelpers::modelCacheDir())
+                                      .absoluteFilePath(stored);
+            if (candidate == normalizedPath) {
+                idx = i;
+                break;
+            }
+        }
+        if (idx >= 0) {
+            m_syncingModelControls = true;
+            m_modelCombo->setCurrentIndex(idx);
+            m_syncingModelControls = false;
+        } else if (!path.isEmpty() && QFileInfo::exists(path)) {
+            m_syncingModelControls = true;
+            m_modelCombo->blockSignals(true);
+            m_modelCombo->addItem(QFileInfo(path).fileName(), path);
+            m_modelCombo->setCurrentIndex(m_modelCombo->count() - 1);
+            m_modelCombo->blockSignals(false);
+            m_syncingModelControls = false;
+        }
+    }
 }
 
 void RMBGLiveWidget::setDevice(const QString& device) {
@@ -223,20 +212,27 @@ void RMBGLiveWidget::syncModelControlsFrom(const QComboBox* modelCombo,
                                            const QComboBox* deviceCombo,
                                            const QSpinBox* threadsSpin) {
     if (!modelCombo || !deviceCombo || !threadsSpin) return;
+    const QString currentModel = modelCombo->currentData().toString();
+    const QString currentDevice = deviceCombo->currentData().toString();
     m_syncingModelControls = true;
     m_modelCombo->clear();
     for (int i = 0; i < modelCombo->count(); ++i) {
-        m_modelCombo->addItem(modelCombo->itemText(i),
-                              modelCombo->itemData(i));
+        m_modelCombo->addItem(modelCombo->itemText(i), modelCombo->itemData(i));
     }
     m_deviceCombo->clear();
     for (int i = 0; i < deviceCombo->count(); ++i) {
         m_deviceCombo->addItem(deviceCombo->itemText(i),
                                deviceCombo->itemData(i));
     }
+    const int modelIndex = m_modelCombo->findData(currentModel);
+    if (modelIndex >= 0) m_modelCombo->setCurrentIndex(modelIndex);
+    const int deviceIndex = m_deviceCombo->findData(currentDevice);
+    if (deviceIndex >= 0) m_deviceCombo->setCurrentIndex(deviceIndex);
     m_threadsSpin->setRange(threadsSpin->minimum(), threadsSpin->maximum());
     m_threadsSpin->setValue(threadsSpin->value());
     m_syncingModelControls = false;
+    m_config.device = deviceId();
+    m_config.threads = threadCount();
     updateModelPathFromCombo();
 }
 
@@ -267,15 +263,16 @@ bool RMBGLiveWidget::onPrepareStream() {
     // Model must exist before the stream starts.
     if (m_config.modelPath.isEmpty() ||
         !QFileInfo::exists(m_config.modelPath)) {
-        emit logMessage(tr("[RMBG] Model not available — download it in "
-                           "the Image tab first."));
+        emit logMessage(
+                tr("[RMBG] Model not available — download it in "
+                   "the Image tab first."));
         return false;
     }
 #ifdef AICore_ENABLED
-    if (aicore_rmbg_warmup_backend(
-                m_config.device.toUtf8().constData()) != 0) {
-        emit logMessage(tr("[RMBG] Backend unavailable, falling back to "
-                           "CPU for this stream."));
+    if (aicore_rmbg_warmup_backend(m_config.device.toUtf8().constData()) != 0) {
+        emit logMessage(
+                tr("[RMBG] Backend unavailable, falling back to "
+                   "CPU for this stream."));
         m_config.device = QStringLiteral("cpu");
     }
 #endif
@@ -283,116 +280,218 @@ bool RMBGLiveWidget::onPrepareStream() {
 }
 
 void RMBGLiveWidget::onFrameDecoded(cv::Mat& frame, int frameIndex) {
-    // Throttle: run inference every kInferEveryNthFrame video frames (and on
-    // every camera frame — camera fps is already low enough).
-    const bool isVideo = inputSource() == InputSource::VideoFile;
-    if (isVideo && (frameIndex % kInferEveryNthFrame != 0)) return;
+    Q_UNUSED(frameIndex);
+    // Inference paces itself: frames decoded while the worker is busy are
+    // skipped (the overlay lags 1-2 frames behind, imperceptible for a
+    // background-removal preview).  The RGB conversion only runs when a job
+    // is actually submitted — it is a full-frame copy.
     if (m_inferBusy) return;
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
-    const QImage rgb = VideoPlaybackWidget::cvMatToQImage(frame)
+    // The model resamples its input to a fixed square (input_size, e.g.
+    // 1024x1024) regardless of the source resolution, so frames larger
+    // than this edge only inflate the preprocess (full-frame RGBA +
+    // normalize), the postprocess (bicubic alpha upsample) and the
+    // cross-thread copies — inference time itself is unchanged.  Downscale
+    // once in the cv domain (INTER_AREA) before the RGB copy: the alpha
+    // matte never carries more than input_size^2 real detail, so the mask
+    // quality is identical.  Captured snapshots are capped at this edge.
+    constexpr int kInferMaxEdge = 1280;
+    cv::Mat inferFrame = frame;
+    cv::Mat downscaled;
+    if (std::max(frame.cols, frame.rows) > kInferMaxEdge) {
+        const double scale = static_cast<double>(kInferMaxEdge) /
+                             std::max(frame.cols, frame.rows);
+        cv::resize(frame, downscaled,
+                   cv::Size(cvRound(frame.cols * scale),
+                            cvRound(frame.rows * scale)),
+                   0, 0, cv::INTER_AREA);
+        inferFrame = downscaled;
+    }
+    const QImage rgb = VideoPlaybackWidget::cvMatToQImage(inferFrame)
                                .convertToFormat(QImage::Format_RGB888);
 #else
     QImage rgb(frame.cols, frame.rows, QImage::Format_RGB888);
 #endif
     if (rgb.isNull()) return;
 
-    // Downscale very large frames to bound inference time.
-    QImage inferRgb = rgb;
-    if (inferRgb.width() > kMaxInferWidth) {
-        inferRgb = inferRgb.scaledToWidth(kMaxInferWidth,
-                                          Qt::SmoothTransformation);
-    }
-
-    m_inferBusy = true;
-    m_lastSubmitFrameNum = frameIndex;
-    m_inferSubmitTime.restart();
-
-    auto* job = new InferJob;
-    job->rgb = inferRgb;
-    job->generation = m_streamGeneration;
-    job->modelPath = m_config.modelPath;
-    job->device = m_config.device;
-    job->threads = m_config.threads;
-
-    if (m_inferWatcher) {
-        m_inferWatcher->disconnect(this);
-        m_inferWatcher->deleteLater();
-        m_inferWatcher = nullptr;
-    }
-    m_inferWatcher = new QFutureWatcher<RMBGRunResult>(this);
-    connect(m_inferWatcher, &QFutureWatcher<RMBGRunResult>::finished, this,
-            [this]() {
-                if (!m_inferWatcher) return;
-                onInferComplete(m_inferWatcher->result());
-            });
-    m_inferWatcher->setFuture(QtConcurrent::run([job]() {
-        const RMBGRunResult result = job->run();
-        delete job;
-        return result;
-    }));
+    // AICore owns model-size preprocessing. inferFrame keeps the decoded
+    // aspect ratio; the foreground result aligns with the displayed frame.
+    submitInferJob(rgb);
 }
 
-void RMBGLiveWidget::onInferComplete(const RMBGRunResult& result) {
+void RMBGLiveWidget::onDisplayFrame(QImage& display, int frameIndex) {
+    Q_UNUSED(frameIndex);
+    // Cache the pre-overlay frame (implicit sharing; the QPainter work in
+    // applyLiveComposite detaches `display`, leaving the cache untouched)
+    // so onInferComplete can repaint immediately with a fresh mask.
+    m_lastDisplayFrame = display;
+    applyLiveComposite(display);
+}
+
+void RMBGLiveWidget::submitInferJob(const QImage& rgb) {
+    if (!m_inferWorker || m_inferBusy) return;
+    m_inferBusy = true;
+    m_inferSubmitTime.restart();
+    // First inference after a stream start can take tens of seconds on CPU
+    // (model load + graph warmup); without an in-progress hint that silence
+    // reads as "inference never runs".
+    if (m_statusLabel) {
+        m_statusLabel->setText(tr("inferring…"));
+    }
+
+    RMBGLiveInferWorker::Job job;
+    job.rgb = rgb;
+    job.modelPath = m_config.modelPath;
+    job.device = m_config.device;
+    job.threads = m_config.threads;
+    job.alphaThreshold = m_config.alphaThreshold;
+    job.generation = m_streamGeneration;
+    QMetaObject::invokeMethod(m_inferWorker, "runJob", Qt::QueuedConnection,
+                              Q_ARG(RMBGLiveInferWorker::Job, job));
+}
+
+void RMBGLiveWidget::onInferComplete(RMBGLiveInferWorker::Result result) {
     m_inferBusy = false;
     m_lastInferLatencyMs =
             m_inferSubmitTime.isValid() ? m_inferSubmitTime.elapsed() : -1;
 
-    if (result.resultImage.isNull()) {
-        emit logMessage(tr("[RMBG] Live inference failed (model load or "
-                           "backend error)."));
+    if (result.generation != m_streamGeneration) {
+        // The stream looped / re-seeked while inference was running: the
+        // mask belongs to a stale frame position and must not be composited.
+        // Report it instead of dropping silently — slow CPU inference plus
+        // a short looping clip makes every result stale, which previously
+        // looked like "inference never runs".
+        if (result.ok && m_statusLabel) {
+            m_statusLabel->setText(
+                    tr("mask dropped — stream advanced (infer %1)")
+                            .arg(formatLatency(m_lastInferLatencyMs)));
+        }
+        return;
+    }
+    if (!isActive()) {
         return;
     }
 
-    // Cache the RGBA result; onDisplayFrame composites it over the current
-    // frame at the ORIGINAL frame resolution.
-    m_overlayRgba = result.resultImage;
-    m_overlayFrameNum = m_lastSubmitFrameNum;
-    m_lastSnapshot = result;
+    if (!result.ok) {
+        // Full message goes to the log (appendLog); the live status line
+        // mirrors the failure so the preview itself explains why no mask
+        // is being composited.
+        if (m_statusLabel) {
+            m_statusLabel->setText(
+                    tr("inference failed — %1").arg(result.error));
+        }
+        emit logMessage(
+                tr("[RMBG] Live inference failed: %1").arg(result.error));
+        return;
+    }
+
+    m_lastSnapshot = result.snapshot;
     m_hasSnapshot = true;
-    m_statusLabel->setText(tr("bg removed | infer %1")
-                                   .arg(formatLatency(m_lastInferLatencyMs)));
-    emit snapshotUpdated(result);
+    // New mask: re-extract at display resolution on the next composite.
+    m_lastResultImage = result.snapshot.resultImage;
+    m_liveMask = QImage();
+    // Surface the post-threshold foreground ratio (computed by the worker
+    // after applyAlphaThreshold, i.e. exactly what the preview shows). With
+    // the 0.5 default an uncooperative scene (e.g. aerial traffic footage)
+    // can have its whole low-confidence mask cut away, and a full
+    // checkerboard preview then looks exactly like "inference produced
+    // nothing" — the percentage tells the two cases apart and points at
+    // the remedy.
+    const double fgPct = result.snapshot.foregroundRatio * 100.0;
+    m_statusLabel->setText(
+            fgPct < 1.0 ? tr("no foreground (%1%) — lower Alpha Threshold | "
+                             "infer %2")
+                                  .arg(fgPct, 0, 'f', 1)
+                                  .arg(formatLatency(m_lastInferLatencyMs))
+                        : tr("bg removed | fg %1% | infer %2")
+                                  .arg(fgPct, 0, 'f', 1)
+                                  .arg(formatLatency(m_lastInferLatencyMs)));
+    emit snapshotUpdated(result.snapshot);
+    repaintLivePreview();
 }
 
-void RMBGLiveWidget::onDisplayFrame(QImage& display, int frameIndex) {
-    (void)frameIndex;
-    if (m_overlayRgba.isNull()) return;
+void RMBGLiveWidget::applyLiveComposite(QImage& display) {
+    if (m_lastResultImage.isNull() || display.isNull()) return;
 
-    // Scale the RGBA result (original decode resolution) to the display
-    // frame, then composite it over a checkerboard background.
-    QImage scaled = m_overlayRgba;
-    if (scaled.size() != display.size()) {
-        scaled = scaled.scaled(display.size(), Qt::IgnoreAspectRatio,
-                               Qt::SmoothTransformation);
+    // Lazily scale the result to the display size and extract its alpha
+    // channel. Thresholding was already applied by the worker on the
+    // full-res alpha, so the mask carries the final cut-out.
+    // Order matters: scaling an existing Format_Alpha8 image drops its
+    // alpha data (verified on Qt 5.15 — every mask pixel becomes 0, so the
+    // preview showed nothing but checkerboard). Scale in the ARGB domain
+    // first, convert to Alpha8 afterwards.
+    if (m_liveMask.isNull() || m_liveMask.size() != display.size()) {
+        m_liveMask = m_lastResultImage
+                             .scaled(display.size(), Qt::IgnoreAspectRatio,
+                                     Qt::SmoothTransformation)
+                             .convertToFormat(QImage::Format_Alpha8);
+        if (m_liveMask.isNull()) return;
     }
-    const QImage composite = RMBGHelpers::compositeOnCheckerboard(scaled);
-    if (composite.size() == display.size()) {
-        display = composite.copy();
+
+    // Checkerboard backdrop at preview resolution (cached pattern), with
+    // the mask-stamped frame blitted on top — a few tenths of a millisecond
+    // at preview size, versus a full-res composite + smooth downscale per
+    // inference frame in the old pipeline.
+    QImage out = RMBGHelpers::makeCheckerboard(display.size());
+    QImage fg = display.convertToFormat(QImage::Format_ARGB32);
+    for (int y = 0; y < fg.height(); ++y) {
+        QRgb* frow = reinterpret_cast<QRgb*>(fg.scanLine(y));
+        const uchar* mrow = m_liveMask.constScanLine(y);
+        for (int x = 0; x < fg.width(); ++x) {
+            frow[x] = (frow[x] & 0x00ffffffu) |
+                      (static_cast<quint32>(mrow[x]) << 24);
+        }
     }
+    QPainter p(&out);
+    p.drawImage(0, 0, fg);
+    p.end();
+    display = out;
+}
+
+void RMBGLiveWidget::repaintLivePreview() {
+    if (m_lastDisplayFrame.isNull() || !previewLabel()) return;
+    // m_lastDisplayFrame is already scaled to the preview label by the
+    // base-class pipeline — composite and swap directly.
+    QImage frame = m_lastDisplayFrame;
+    applyLiveComposite(frame);
+    previewLabel()->setPixmap(QPixmap::fromImage(frame));
+}
+
+void RMBGLiveWidget::clearLiveOverlay() {
+    m_lastResultImage = QImage();
+    m_liveMask = QImage();
 }
 
 void RMBGLiveWidget::onVideoLooped() {
-    // The cached result still describes the same video content — keep it.
+    ++m_streamGeneration;
+    m_hasSnapshot = false;
+    clearLiveOverlay();
 }
 
 void RMBGLiveWidget::onStreamReset() {
-    m_overlayRgba = QImage();
+    ++m_streamGeneration;
     m_hasSnapshot = false;
+    clearLiveOverlay();
 }
 
 void RMBGLiveWidget::onStreamResumed() {
-    m_overlayRgba = QImage();
+    ++m_streamGeneration;
+    m_hasSnapshot = false;
+    clearLiveOverlay();
 }
 
 void RMBGLiveWidget::onStreamStopping() {
-    m_overlayRgba = QImage();
+    ++m_streamGeneration;
     m_hasSnapshot = false;
+    clearLiveOverlay();
 }
 
 void RMBGLiveWidget::onSourceChanged(InputSource source) {
-    (void)source;
-    m_overlayRgba = QImage();
+    Q_UNUSED(source);
+    ++m_streamGeneration;
+    m_hasSnapshot = false;
+    clearLiveOverlay();
 }
 
 void RMBGLiveWidget::captureSnapshotToDb() {
@@ -401,10 +500,25 @@ void RMBGLiveWidget::captureSnapshotToDb() {
 }
 
 void RMBGLiveWidget::shutdownInferThread() {
-    if (m_inferWatcher) {
-        m_inferWatcher->disconnect(this);
-        m_inferWatcher->waitForFinished();
-        m_inferWatcher->deleteLater();
-        m_inferWatcher = nullptr;
-    }
+    if (!m_inferWorker || !m_inferThread) return;
+    // QThread::finished is emitted from the worker thread itself during its
+    // teardown. Because m_inferWorker lives on that thread, the queued
+    // deleteLater connection is delivered as a DIRECT call before the event
+    // loop stops draining — the worker is deleted before wait() returns, and
+    // the explicit delete below then dereferences freed memory (segfault on
+    // app exit). Drop the connection first so this function is the sole
+    // owner of the worker's lifetime.
+    disconnect(m_inferThread, &QThread::finished, m_inferWorker,
+               &QObject::deleteLater);
+    // releaseModel runs synchronously on the worker thread, so quit() below is
+    // guaranteed to end the event loop; wait() can therefore never time out
+    // (its upper bound is the single in-flight inference, which cannot be
+    // interrupted). A bounded wait here would instead risk destroying a
+    // still-running QThread from the widget destructor.
+    QMetaObject::invokeMethod(m_inferWorker, "releaseModel",
+                              Qt::BlockingQueuedConnection);
+    m_inferThread->quit();
+    m_inferThread->wait();
+    delete m_inferWorker;
+    m_inferWorker = nullptr;
 }

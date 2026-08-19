@@ -7,14 +7,13 @@
 
 #include "VideoPlaybackWidget.h"
 
-#include "VideoFrameReader.h"
-
 #include <QtCompat.h>
 #include <cvFileDialog.h>
 #include <ecvPersistentSettings.h>
 
 #include <QComboBox>
 #include <QDateTime>
+#include <QFileInfo>
 #include <QFutureWatcher>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -30,9 +29,10 @@
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QtConcurrent>
-
 #include <algorithm>
 #include <cmath>
+
+#include "VideoFrameReader.h"
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
 #include <opencv2/core/utils/logger.hpp>
@@ -45,6 +45,12 @@ namespace {
 constexpr double kSpeedPresets[] = {0.25, 0.5, 1.0, 2.0, 4.0};
 constexpr int kSpeedPresetCount = 5;
 
+QString normalizedVideoPath(const QString& path) {
+    const QString trimmed = path.trimmed();
+    return trimmed.isEmpty() ? QString()
+                             : QFileInfo(trimmed).absoluteFilePath();
+}
+
 // Drains decoded frames until the capture position reaches `target` (used
 // by the seek-preview worker).  Mirrors VideoFrameReader::readFrame()'s
 // exact-seek alignment: FFmpeg backends land on a keyframe boundary and
@@ -53,8 +59,7 @@ constexpr int kSpeedPresetCount = 5;
 // returning the first decoded frame.
 bool grabToExactFrame(cv::VideoCapture& cap, int target, cv::Mat& out) {
     if (!cap.read(out) || out.empty()) return false;
-    int64_t pos =
-            static_cast<int64_t>(cap.get(cv::CAP_PROP_POS_FRAMES));
+    int64_t pos = static_cast<int64_t>(cap.get(cv::CAP_PROP_POS_FRAMES));
     int guard = 0;
     while (pos >= 0 && pos < target && guard < 30) {
         if (!cap.grab()) return false;
@@ -74,25 +79,39 @@ VideoPlaybackWidget::VideoPlaybackWidget(QWidget* parent) : QWidget(parent) {
     setupFrameReader();
     if (m_statusLabel) {
         m_statusLabel->setText(
-                isAvailable()
-                        ? tr("Ready \u2014 choose a source, then start playback")
-                        : tr("Video input unavailable (build with OpenCV "
-                             "videoio)"));
+                isAvailable() ? tr("Ready \u2014 choose a source, then start "
+                                   "playback")
+                              : tr("Video input unavailable (build with OpenCV "
+                                   "videoio)"));
     }
 }
 
 VideoPlaybackWidget::~VideoPlaybackWidget() {
     stopStream();
 #ifdef HAS_OPENCV_FACE_CAPTURE
-    // Clean up background frame reader thread
-    m_frameReaderRunning.store(0);
-    m_frameReaderReady = false;
-    if (m_frameReadTimer) m_frameReadTimer->stop();
-    if (m_frameReaderThread && m_frameReaderThread->isRunning()) {
-        QMetaObject::invokeMethod(m_frameReader, "release",
-                                  Qt::QueuedConnection);
-        m_frameReaderThread->quit();
-        m_frameReaderThread->wait(2000);
+    // Tear down the background frame reader. QThread::finished is emitted
+    // from the reader thread itself while m_frameReader lives on that same
+    // thread, so the finished→deleteLater connection (setupFrameReader) is
+    // delivered as a DIRECT call during the thread teardown — the same
+    // affinity trap that double-deleted the RMBG live inference worker. Drop
+    // the connection first: this destructor is the sole owner of the
+    // reader's lifetime.
+    if (m_frameReaderThread && m_frameReader) {
+        disconnect(m_frameReaderThread, &QThread::finished, m_frameReader,
+                   &QObject::deleteLater);
+        if (m_frameReaderThread->isRunning()) {
+            QMetaObject::invokeMethod(m_frameReader, "release",
+                                      Qt::QueuedConnection);
+            m_frameReaderThread->quit();
+            // Unbounded wait: the queued release() is handled before the
+            // queued quit(), so the only upper bound is a single in-flight
+            // read. A timed-out wait() would instead fall through and
+            // destroy the still-running QThread (parented to this widget)
+            // below — qFatal "Destroyed while thread is still running".
+            m_frameReaderThread->wait();
+        }
+        delete m_frameReader;
+        m_frameReader = nullptr;
     }
     {
         QMutexLocker lock(&m_frameMutex);
@@ -119,8 +138,8 @@ QImage VideoPlaybackWidget::cvMatToQImage(const cv::Mat& mat) {
         // R/B once.  rgbSwapped() returns a self-owned image, so no
         // second .copy() is needed (cvtColor + copy was 2 full-frame
         // copies per frame).
-        return QImage(mat.data, mat.cols, mat.rows,
-                      static_cast<int>(mat.step), QImage::Format_RGB888)
+        return QImage(mat.data, mat.cols, mat.rows, static_cast<int>(mat.step),
+                      QImage::Format_RGB888)
                 .rgbSwapped();
     }
 
@@ -184,7 +203,8 @@ void VideoPlaybackWidget::setupUi() {
 
     m_previewLabel = new ecvClickableImageLabel(this);
     m_previewLabel->setMinimumSize(320, 180);
-    m_previewLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    m_previewLabel->setSizePolicy(QSizePolicy::Expanding,
+                                  QSizePolicy::Expanding);
     m_previewLabel->setStyleSheet(
             QStringLiteral("QLabel { background-color: #1a1a1a; "
                            "border: 1px solid #444; border-radius: 4px; }"));
@@ -212,8 +232,10 @@ void VideoPlaybackWidget::setupUi() {
     auto* sourceLayout = new QHBoxLayout(sourceRow);
     sourceLayout->setContentsMargins(0, 0, 0, 0);
     m_sourceCombo = new QComboBox(sourceRow);
-    m_sourceCombo->addItem(tr("Live camera"), static_cast<int>(InputSource::Camera));
-    m_sourceCombo->addItem(tr("Video file"), static_cast<int>(InputSource::VideoFile));
+    m_sourceCombo->addItem(tr("Live camera"),
+                           static_cast<int>(InputSource::Camera));
+    m_sourceCombo->addItem(tr("Video file"),
+                           static_cast<int>(InputSource::VideoFile));
     sourceLayout->addWidget(new QLabel(tr("Input:"), sourceRow));
     sourceLayout->addWidget(m_sourceCombo, 1);
     // (addWidget moved below slider, see after m_videoControlsRow)
@@ -255,7 +277,11 @@ void VideoPlaybackWidget::setupUi() {
     connect(browseBtn, &QPushButton::clicked, this,
             &VideoPlaybackWidget::onBrowseVideoFile);
     connect(m_videoPathEdit, &QLineEdit::textChanged, this,
-            [this](const QString& text) { m_videoFilePath = text.trimmed(); });
+            [this](const QString& text) {
+                m_videoFilePath = normalizedVideoPath(text);
+            });
+    connect(m_videoPathEdit, &QLineEdit::editingFinished, this,
+            [this]() { setVideoFilePath(m_videoPathEdit->text()); });
 
     // Playback controls: seek slider + time label + speed (video files only).
     m_videoControlsRow = new QWidget(this);
@@ -340,9 +366,6 @@ void VideoPlaybackWidget::setupFrameReader() {
     connect(m_frameTimer, &QTimer::timeout, this,
             &VideoPlaybackWidget::processFrame);
 
-    m_frameReadTimer = new QTimer(this);
-    // m_frameReadTimer interval will be set when video/camera starts.
-
     // Async seek-preview decode (Windows MSMF seek/read must not run on
     // the UI thread — it would freeze the slider and the playing video).
     m_seekPreviewWatcher = new QFutureWatcher<QPair<int, QPixmap>>(this);
@@ -360,20 +383,24 @@ void VideoPlaybackWidget::setupFrameReader() {
     m_frameReader->moveToThread(m_frameReaderThread);
     connect(m_frameReaderThread, &QThread::finished, m_frameReader,
             &QObject::deleteLater);
-    connect(m_frameReadTimer, &QTimer::timeout, m_frameReader,
-            &VideoFrameReader::readFrame);
     connect(m_frameReader, &VideoFrameReader::frameReady, this,
             [this](const cv::Mat& rgbFrame, int frameIndex) {
-                QMutexLocker lock(&m_frameMutex);
-                // Shallow copy (refcount bump): the signal argument owns
-                // the decoded buffer exclusively after delivery, so the
-                // member can share it without a full-frame deep copy.
-                m_latestFrame = rgbFrame;
-                m_frameReaderSeekTo.store(frameIndex);
+                {
+                    QMutexLocker lock(&m_frameMutex);
+                    // Shallow copy (refcount bump): the signal argument owns
+                    // the decoded buffer exclusively after delivery, so the
+                    // member can share it without a full-frame deep copy.
+                    m_latestFrame = rgbFrame;
+                    m_frameReaderSeekTo.store(frameIndex);
+                }
+                if (m_streamActive &&
+                    m_frameAdvanceMode == FrameAdvanceMode::ConsumerDriven &&
+                    !m_waitingForConsumer) {
+                    QTimer::singleShot(0, this, [this]() { processFrame(); });
+                }
             });
     connect(m_frameReader, &VideoFrameReader::frameReadFailed, this, [this]() {
         // Video end-of-file: loop back to start.
-        // Camera transient failures are ignored (retry on next tick).
         if (m_inputSource == InputSource::VideoFile && m_frameReaderReady &&
             !m_userSeeking) {
             QMetaObject::invokeMethod(m_frameReader, "seekToFrame",
@@ -387,6 +414,22 @@ void VideoPlaybackWidget::setupFrameReader() {
             }
             updateVideoTimeLabel(0);
             onVideoLooped();
+            if (m_frameAdvanceMode == FrameAdvanceMode::ConsumerDriven) {
+                queueNextRead();
+            }
+        } else if (m_inputSource == InputSource::Camera &&
+                   m_frameAdvanceMode == FrameAdvanceMode::ConsumerDriven &&
+                   m_frameReaderReady && m_streamActive) {
+            // Clock-driven streams retry on the next timer tick. Consumer-
+            // driven streams have no timer, so explicitly recover from a
+            // transient camera read failure without creating a busy loop.
+            QTimer::singleShot(m_baseTimerInterval, this, [this]() {
+                if (m_inputSource == InputSource::Camera &&
+                    m_frameAdvanceMode == FrameAdvanceMode::ConsumerDriven &&
+                    m_frameReaderReady && m_streamActive) {
+                    queueNextRead();
+                }
+            });
         }
     });
     m_frameReaderThread->start();
@@ -397,14 +440,42 @@ void VideoPlaybackWidget::setupFrameReader() {
 // Subclass hooks (default no-ops)
 // ---------------------------------------------------------------------------
 
-void VideoPlaybackWidget::onFrameDecoded(cv::Mat& /*frame*/, int /*frameIndex*/) {}
-void VideoPlaybackWidget::onDisplayFrame(QImage& /*display*/, int /*frameIndex*/) {}
+void VideoPlaybackWidget::onFrameDecoded(cv::Mat& /*frame*/,
+                                         int /*frameIndex*/) {}
+void VideoPlaybackWidget::onDisplayFrame(QImage& /*display*/,
+                                         int /*frameIndex*/) {}
 void VideoPlaybackWidget::onVideoLooped() {}
 void VideoPlaybackWidget::onStreamReset() {}
 void VideoPlaybackWidget::onStreamResumed() {}
 void VideoPlaybackWidget::onStreamStopping() {}
 bool VideoPlaybackWidget::onPrepareStream() { return true; }
 void VideoPlaybackWidget::onSourceChanged(InputSource /*source*/) {}
+
+void VideoPlaybackWidget::setFrameAdvanceMode(FrameAdvanceMode mode) {
+    if (m_streamActive || m_videoPaused) {
+        emit logMessage(
+                tr("Frame advance mode can only change while stopped."));
+        return;
+    }
+    m_frameAdvanceMode = mode;
+}
+
+void VideoPlaybackWidget::completeFrameProcessing(
+        const QImage& processedImage) {
+    if (m_frameAdvanceMode != FrameAdvanceMode::ConsumerDriven ||
+        !m_waitingForConsumer) {
+        return;
+    }
+
+    m_waitingForConsumer = false;
+    if (!processedImage.isNull() && m_previewLabel) {
+        const QImage display = processedImage.scaled(m_previewLabel->size(),
+                                                     Qt::KeepAspectRatio,
+                                                     Qt::SmoothTransformation);
+        m_previewLabel->setPixmap(QPixmap::fromImage(display));
+    }
+    if (m_streamActive) queueNextRead();
+}
 
 // ---------------------------------------------------------------------------
 // Playback control
@@ -465,9 +536,20 @@ bool VideoPlaybackWidget::startCamera(int deviceIndex) {
     }
 
     if (!onPrepareStream()) return false;
+    onStreamReset();
 
     auto* reader = static_cast<VideoFrameReader*>(m_frameReader);
-    if (!reader->openCamera(deviceIndex, cv::CAP_ANY)) {
+    bool opened = false;
+    const bool consumerDriven =
+            m_frameAdvanceMode == FrameAdvanceMode::ConsumerDriven;
+    QMetaObject::invokeMethod(
+            reader,
+            [reader, consumerDriven, deviceIndex, &opened]() {
+                reader->setConsumerDriven(consumerDriven);
+                opened = reader->openCamera(deviceIndex, cv::CAP_ANY);
+            },
+            Qt::BlockingQueuedConnection);
+    if (!opened) {
         m_frameReaderReady = false;
         m_streamActive = false;
         const QString error =
@@ -476,6 +558,8 @@ bool VideoPlaybackWidget::startCamera(int deviceIndex) {
         emit streamError(error);
         return false;
     }
+    m_openVideoPath.clear();
+    m_videoPaused = false;
     m_frameReaderReady = true;
     m_streamActive = true;
     m_statusLabel->setText(tr("Camera active"));
@@ -490,10 +574,12 @@ bool VideoPlaybackWidget::startCamera(int deviceIndex) {
 
 bool VideoPlaybackWidget::startVideoFile(const QString& path) {
 #ifdef HAS_OPENCV_FACE_CAPTURE
-    if (path.isEmpty()) return false;
+    const QString requestedPath = normalizedVideoPath(path);
+    if (requestedPath.isEmpty()) return false;
 
     // Resume from paused state if same video
-    if (m_videoPaused && m_frameReaderReady && m_videoFilePath == path &&
+    if (m_videoPaused && m_frameReaderReady &&
+        m_openVideoPath == requestedPath &&
         m_inputSource == InputSource::VideoFile) {
         resumePlayback();
         m_statusLabel->setText(tr("Resuming video"));
@@ -506,29 +592,52 @@ bool VideoPlaybackWidget::startVideoFile(const QString& path) {
     closePreviewCapture();
 
     if (!onPrepareStream()) return false;
+    onStreamReset();
 
     m_inputSource = InputSource::VideoFile;
-    m_videoFilePath = path;
-    if (m_videoPathEdit) m_videoPathEdit->setText(path);
+    m_videoFilePath = requestedPath;
+    if (m_videoPathEdit) m_videoPathEdit->setText(requestedPath);
 
     auto* reader = static_cast<VideoFrameReader*>(m_frameReader);
-    if (!reader->openVideo(path.toStdString(), cv::CAP_FFMPEG) &&
-        !reader->openVideo(path.toStdString(), cv::CAP_ANY)) {
+    bool opened = false;
+    qint64 frameCount = 0;
+    double fps = 0.0;
+    const bool consumerDriven =
+            m_frameAdvanceMode == FrameAdvanceMode::ConsumerDriven;
+    const std::string requestedPathUtf8 = requestedPath.toStdString();
+    m_openVideoPath.clear();
+    QMetaObject::invokeMethod(
+            reader,
+            [reader, consumerDriven, requestedPathUtf8, &opened, &frameCount,
+             &fps]() {
+                reader->setConsumerDriven(consumerDriven);
+                opened = reader->openVideo(requestedPathUtf8, cv::CAP_FFMPEG) ||
+                         reader->openVideo(requestedPathUtf8, cv::CAP_ANY);
+                if (opened) {
+                    frameCount = reader->getFrameCount();
+                    fps = reader->getFps();
+                }
+            },
+            Qt::BlockingQueuedConnection);
+    if (!opened) {
         const QString err =
                 tr("Failed to open video (rebuild OpenCV with FFmpeg / "
                    "WITH_FFMPEG=ON): %1")
-                        .arg(path);
+                        .arg(requestedPath);
         m_statusLabel->setText(err);
         emit streamError(err);
         m_frameReaderReady = false;
+        m_videoPaused = false;
         return false;
     }
+    m_openVideoPath = requestedPath;
+    m_videoPaused = false;
     m_frameReaderReady = true;
     m_streamActive = true;
 
     // Initialize video seek slider from background reader metadata
-    m_totalVideoFrames = static_cast<int>(reader->getFrameCount());
-    m_videoFps = reader->getFps();
+    m_totalVideoFrames = static_cast<int>(frameCount);
+    m_videoFps = fps;
     if (m_videoFps <= 0)
         m_videoFps = 30.0;  // fallback for codecs that don't report FPS
     if (m_videoSeekSlider) {
@@ -556,10 +665,24 @@ bool VideoPlaybackWidget::startVideoFile(const QString& path) {
 
 void VideoPlaybackWidget::restartVideoFile() {
 #ifdef HAS_OPENCV_FACE_CAPTURE
-    if (!m_frameReaderReady || m_videoFilePath.isEmpty()) return;
+    const QString requestedPath = normalizedVideoPath(m_videoFilePath);
+    if (requestedPath.isEmpty()) return;
+    if (!m_frameReaderReady || m_openVideoPath != requestedPath) {
+        startVideoFile(requestedPath);
+        return;
+    }
 
     // Reset ALL stream state so the pipeline restarts fresh.
     onStreamReset();
+
+    // Clear any stale decoded frame — the reader's clock may have delivered
+    // a frame from the old position (near EOF) between the seek being queued
+    // and being processed.  Consuming it would poison the subclass's
+    // frame-index-based throttle (frame index jumps backwards after seek).
+    {
+        QMutexLocker lock(&m_frameMutex);
+        m_latestFrame.release();
+    }
 
     QMetaObject::invokeMethod(m_frameReader, "seekToFrame",
                               Qt::QueuedConnection, Q_ARG(int, 0));
@@ -585,9 +708,12 @@ void VideoPlaybackWidget::restartVideoFile() {
 
 void VideoPlaybackWidget::stopStream() {
     if (m_frameTimer) m_frameTimer->stop();
-    if (m_frameReadTimer) m_frameReadTimer->stop();
-
+    m_waitingForConsumer = false;
 #ifdef HAS_OPENCV_FACE_CAPTURE
+    // Halt the decode clock before pausing/releasing so no further frames
+    // are decoded while the stream tears down.
+    QMetaObject::invokeMethod(m_frameReader, "stopClockReading",
+                              Qt::QueuedConnection);
     // For video files: pause (don't release) so we can resume from same
     // position.  The background reader keeps its video open.
     const bool isVideoFile = m_inputSource == InputSource::VideoFile;
@@ -603,6 +729,7 @@ void VideoPlaybackWidget::stopStream() {
                                   Qt::QueuedConnection);
         m_frameReaderReady = false;
         m_videoFilePath.clear();
+        m_openVideoPath.clear();
         m_videoPaused = false;
         closePreviewCapture();
         {
@@ -615,7 +742,7 @@ void VideoPlaybackWidget::stopStream() {
     // For video files that are paused (not released), keep the slider and
     // metadata intact so the user can still seek and preview.
     const bool videoStillLoaded =
-            isVideoFile && m_frameReaderReady && !m_videoFilePath.isEmpty();
+            isVideoFile && m_frameReaderReady && !m_openVideoPath.isEmpty();
     if (!videoStillLoaded) {
         m_totalVideoFrames = 0;
         if (m_videoSeekSlider) {
@@ -645,8 +772,8 @@ void VideoPlaybackWidget::resumePlayback() {
     m_videoPaused = false;
     m_streamActive = true;
     // mpv backend: resume A/V playback; OpenCV ignores this.
-    QMetaObject::invokeMethod(m_frameReader, "setPaused",
-                              Qt::QueuedConnection, Q_ARG(bool, false));
+    QMetaObject::invokeMethod(m_frameReader, "setPaused", Qt::QueuedConnection,
+                              Q_ARG(bool, false));
     onStreamResumed();
     beginFrameProcessing();
     emit streamStarted();
@@ -655,9 +782,19 @@ void VideoPlaybackWidget::resumePlayback() {
 void VideoPlaybackWidget::seekToFrame(int frameIndex) {
 #ifdef HAS_OPENCV_FACE_CAPTURE
     if (!m_frameReaderReady || m_inputSource != InputSource::VideoFile) return;
+    onStreamReset();
+    m_waitingForConsumer = false;
+    {
+        QMutexLocker lock(&m_frameMutex);
+        m_latestFrame.release();
+    }
     QMetaObject::invokeMethod(m_frameReader, "seekToFrame",
                               Qt::QueuedConnection, Q_ARG(int, frameIndex));
     m_currentFrameNum = frameIndex;
+    if (m_streamActive &&
+        m_frameAdvanceMode == FrameAdvanceMode::ConsumerDriven) {
+        queueNextRead();
+    }
 #else
     Q_UNUSED(frameIndex);
 #endif
@@ -674,14 +811,20 @@ void VideoPlaybackWidget::setPlaybackSpeed(double speed) {
         m_playbackSpeedCombo->setCurrentIndex(index);
         m_playbackSpeedCombo->blockSignals(false);
     }
-    // Recompute BOTH timers: m_frameReadTimer drives the background reader
-    // (the actual video read rate) and m_frameTimer drives display/inference.
+    // Recompute both clocks for clock-driven playback: the UI tick and the
+    // reader-thread decode clock advance at fps × speed.  Consumer-driven
+    // mode intentionally advances only when its subclass completes
+    // inference, but the decode interval is still tracked for a later
+    // switch back.  Camera pacing ignores the speed (base interval).
+    const bool isVideo = m_inputSource == InputSource::VideoFile;
     const int interval = computeTimerInterval();
-    if (m_frameReadTimer) m_frameReadTimer->setInterval(interval);
-    if (m_frameTimer) m_frameTimer->setInterval(interval);
+    if (m_frameTimer && isVideo) m_frameTimer->setInterval(interval);
 #ifdef HAS_OPENCV_FACE_CAPTURE
+    QMetaObject::invokeMethod(
+            m_frameReader, "setClockInterval", Qt::QueuedConnection,
+            Q_ARG(int, isVideo ? interval : m_baseTimerInterval));
     // mpv backend: apply the speed to the A/V clock; OpenCV ignores it
-    // (pacing stays with the widget timers above).
+    // (pacing stays with the decode clock above).
     QMetaObject::invokeMethod(m_frameReader, "setPlaybackSpeed",
                               Qt::QueuedConnection, Q_ARG(double, speed));
 #endif
@@ -705,9 +848,14 @@ QString VideoPlaybackWidget::videoFilePath() const {
 }
 
 void VideoPlaybackWidget::setVideoFilePath(const QString& path) {
-    m_videoFilePath = path;
+    const QString requestedPath = normalizedVideoPath(path);
+    if (m_streamActive && m_inputSource == InputSource::VideoFile &&
+        !m_openVideoPath.isEmpty() && m_openVideoPath != requestedPath) {
+        stopStream();
+    }
+    m_videoFilePath = requestedPath;
     if (m_videoPathEdit) {
-        m_videoPathEdit->setText(path);
+        m_videoPathEdit->setText(requestedPath);
     }
 }
 
@@ -733,16 +881,31 @@ void VideoPlaybackWidget::setInputSource(InputSource source) {
 
 void VideoPlaybackWidget::beginFrameProcessing() {
     if (!m_streamActive) return;
+    m_waitingForConsumer = false;
     // Use video FPS × speed for video files; camera uses base interval.
     const bool isVideo = m_inputSource == InputSource::VideoFile;
     const int interval = isVideo ? computeTimerInterval() : m_baseTimerInterval;
     m_frameTimer->setInterval(interval);
-    m_frameTimer->start();
-    // Queue the first background read — subsequent reads are triggered
-    // by processFrame to maintain pipeline backpressure.
-    if (m_frameReaderReady) {
-        QMetaObject::invokeMethod(m_frameReader, "readFrame",
-                                  Qt::QueuedConnection);
+    if (m_frameAdvanceMode == FrameAdvanceMode::ClockDriven) {
+        m_frameTimer->start();
+        // Clock-paced decode: the reader thread decodes at the playback
+        // frame rate in parallel with UI-side consumption.  This is what
+        // makes playback speed effective — the video timeline advances on
+        // the decode clock, while the UI tick consumes the newest decoded
+        // frame (dropping frames when processing is slower than the clock).
+        if (m_frameReaderReady) {
+            QMetaObject::invokeMethod(m_frameReader, "startClockReading",
+                                      Qt::QueuedConnection,
+                                      Q_ARG(int, interval));
+        }
+    } else {
+        m_frameTimer->stop();
+        // Consumer-driven mode decodes one frame per request (the subclass's
+        // inference completion drives advancement).
+        if (m_frameReaderReady) {
+            QMetaObject::invokeMethod(m_frameReader, "readFrame",
+                                      Qt::QueuedConnection);
+        }
     }
     if (isVideo) {
         m_statusLabel->setText(tr("Playing video"));
@@ -762,10 +925,12 @@ void VideoPlaybackWidget::queueNextRead() {
 
 void VideoPlaybackWidget::processFrame() {
 #ifdef HAS_OPENCV_FACE_CAPTURE
-    // Pipeline safety: every early-return path must re-queue the next
-    // background read, otherwise the pipeline stalls permanently.
+    // Clock-driven decode is self-pacing (startClockReading); a missing
+    // frame simply means the decode clock has not delivered yet — keep the
+    // previous pixmap and wait for the next tick.  Consumer-driven mode has
+    // no clock, so its early-return paths must re-queue a background read
+    // or the pipeline would stall permanently.
     if (!m_streamActive || !m_frameReaderReady) {
-        queueNextRead();
         return;
     }
 
@@ -774,7 +939,6 @@ void VideoPlaybackWidget::processFrame() {
     {
         QMutexLocker lock(&m_frameMutex);
         if (m_latestFrame.empty()) {
-            queueNextRead();
             return;
         }
         // O(1) swap instead of a full-frame deep copy: the member hands
@@ -800,25 +964,55 @@ void VideoPlaybackWidget::processFrame() {
         updateVideoTimeLabel(curFrameNum);
     }
 
+    // Consumer-driven callers own frame completion from this point onward.
+    if (m_frameAdvanceMode == FrameAdvanceMode::ConsumerDriven) {
+        m_waitingForConsumer = true;
+    }
+
     // Subclass inference / detection hook (raw BGR frame, GUI thread).
     onFrameDecoded(frame, curFrameNum);
 
-    QImage rgb = cvMatToQImage(frame);
-    if (rgb.isNull()) {
-        queueNextRead();
+    if (m_frameAdvanceMode == FrameAdvanceMode::ConsumerDriven) {
         return;
     }
 
-    // Scale to display size FIRST — then the subclass draws overlays on the
-    // smaller image.  QPainter works on ~display pixels instead of full-res
-    // (5-10x faster).
-    QImage display = rgb.scaled(m_previewLabel->size(), Qt::KeepAspectRatio,
-                                Qt::FastTransformation);
+    // Display path: scale in the cv domain first, then convert — the
+    // previous pipeline converted the full-resolution frame (full-frame
+    // rgbSwapped copy) and immediately shrank it with a full-frame Qt
+    // scale. Scaling first also lets the subclass overlay hooks paint on an
+    // INTER_AREA result instead of nearest-neighbour.
+    QImage display = scaledDisplayImage(frame);
+    if (display.isNull()) {
+        return;
+    }
+
     onDisplayFrame(display, curFrameNum);
     m_previewLabel->setPixmap(QPixmap::fromImage(display));
+#endif
+}
 
-    // Pipeline: after processing this frame, trigger the next background read.
-    queueNextRead();
+QImage VideoPlaybackWidget::scaledDisplayImage(const cv::Mat& frame) const {
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    if (frame.empty() || !m_previewLabel) return QImage();
+    // QSize::scaled shares its arithmetic with QImage::scaled(
+    // KeepAspectRatio), so the output size (and therefore subclass overlay
+    // coordinate scaling) is identical to the previous
+    // rgb.scaled(previewLabel->size(), KeepAspectRatio) pipeline.
+    const QSize target =
+            QSize(frame.cols, frame.rows)
+                    .scaled(m_previewLabel->size(), Qt::KeepAspectRatio);
+    if (target.isEmpty()) return QImage();
+    cv::Mat scaled;
+    if (target.width() != frame.cols || target.height() != frame.rows) {
+        cv::resize(frame, scaled, cv::Size(target.width(), target.height()), 0,
+                   0, cv::INTER_AREA);
+    } else {
+        scaled = frame;  // shallow — Mat refcount bump only
+    }
+    return cvMatToQImage(scaled);
+#else
+    Q_UNUSED(frame);
+    return QImage();
 #endif
 }
 
@@ -839,7 +1033,14 @@ int VideoPlaybackWidget::computeTimerInterval() const {
 
 void VideoPlaybackWidget::onSourceChangedInternal(int index) {
     if (!m_sourceCombo) return;
-    m_inputSource = static_cast<InputSource>(m_sourceCombo->itemData(index).toInt());
+    const InputSource nextSource =
+            static_cast<InputSource>(m_sourceCombo->itemData(index).toInt());
+    // Stop while the old source is still selected. stopStream() uses the
+    // source type to decide whether it can pause or must release the reader.
+    if (m_streamActive && m_inputSource != nextSource) {
+        stopStream();
+    }
+    m_inputSource = nextSource;
 
     if (m_videoRow) {
         m_videoRow->setVisible(m_inputSource == InputSource::VideoFile);
@@ -869,8 +1070,7 @@ void VideoPlaybackWidget::onSourceChangedInternal(int index) {
 void VideoPlaybackWidget::onBrowseVideoFile() {
     const QString path = browseVideoFile(QStringLiteral("video_base"));
     if (path.isEmpty()) return;
-    if (m_videoPathEdit) m_videoPathEdit->setText(path);
-    m_videoFilePath = path;
+    setVideoFilePath(path);
 }
 
 // ---------------------------------------------------------------------------
@@ -890,30 +1090,11 @@ void VideoPlaybackWidget::onVideoSeekSliderChanged(int value) {
         }
         return;
     }
-    // Forward seek to background reader
-    QMetaObject::invokeMethod(m_frameReader, "seekToFrame",
-                              Qt::QueuedConnection, Q_ARG(int, value));
-    m_currentFrameNum = value;
-    // When the timer is not running (video paused / stopped) the preview
-    // label would otherwise keep showing the old frame.  Read the cached
-    // frame and push it to the display.
-    if (m_frameTimer && !m_frameTimer->isActive()) {
-        cv::Mat frame;
-        {
-            QMutexLocker lock(&m_frameMutex);
-            if (!m_latestFrame.empty()) m_latestFrame.copyTo(frame);
-        }
-        if (!frame.empty()) {
-            QImage rgb = cvMatToQImage(frame);
-            if (!rgb.isNull()) {
-                QImage display =
-                        rgb.scaled(m_previewLabel->size(), Qt::KeepAspectRatio,
-                                   Qt::FastTransformation);
-                onDisplayFrame(display, value);
-                m_previewLabel->setPixmap(QPixmap::fromImage(display));
-            }
-        }
-    }
+    // Use the public seek path so subclasses can invalidate in-flight
+    // inference and consumer-driven playback can request the target frame.
+    // Repainting m_latestFrame here would show the pre-seek frame under the
+    // new timestamp and can make overlays appear temporally misaligned.
+    seekToFrame(value);
 #endif
 }
 
@@ -1174,12 +1355,8 @@ bool VideoPlaybackWidget::eventFilter(QObject* obj, QEvent* event) {
                                     m_latestFrame.copyTo(frame);
                             }
                             if (!frame.empty()) {
-                                QImage rgb = cvMatToQImage(frame);
-                                if (!rgb.isNull()) {
-                                    QImage display = rgb.scaled(
-                                            m_previewLabel->size(),
-                                            Qt::KeepAspectRatio,
-                                            Qt::FastTransformation);
+                                QImage display = scaledDisplayImage(frame);
+                                if (!display.isNull()) {
                                     onDisplayFrame(display, clamped);
                                     m_previewLabel->setPixmap(
                                             QPixmap::fromImage(display));
