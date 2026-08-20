@@ -99,7 +99,18 @@ Component.prototype.componentSelectionPageEntered = function()
     }
     var dir = installer.value("TargetDir");
     if (installer.fileExists(dir) && installer.fileExists(dir + maintenance_name)) {
-        installer.execute(dir + maintenance_name, "--script=" + dir + "/scripts/auto_uninstall.qs");
+        // maintenancetool is self-contained (static Qt IFW, like the official
+        // x86_64 builds). A dynamic-Qt maintenancetool (old ARM64 IFW) lacks
+        // @rpath/libQt5*.dylib and dies with SIGABRT at launch; guard against
+        // a non-zero exit so the install wizard continues instead of failing.
+        var uninstallOK = installer.execute(dir + maintenance_name, "--script=" + dir + "/scripts/auto_uninstall.qs");
+        if (!uninstallOK) {
+            console.log("WARNING: Auto-uninstall of the existing installation failed (exit code != 0).");
+            gui.messageBox(QMessageBox.Warning, "ACloudViewer",
+                "Failed to uninstall the existing ACloudViewer automatically.\n" +
+                "Please uninstall it manually before installing the new version.",
+                QMessageBox.Ok);
+        }
     }
 }
 
@@ -116,8 +127,11 @@ Component.prototype.createOperations = function()
 		component.createOperations();
 
         if (installer.value("os") == "mac") {
-            // no need to make shortcut on macos
-		} else if (installer.value("os") === "x11") {
+            // Refresh Finder icon cache after installation
+            component.addOperation("Execute", "touch", "@TargetDir@/ACloudViewer.app");
+            component.addOperation("Execute", "/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister",
+                "-f", "@TargetDir@/ACloudViewer.app");
+        } else if (installer.value("os") === "x11") {
 			/*************************************** Path variable reference ****************************************
 			Built-in variables
 			TargetDir   Target installation directory, chosen by the user
@@ -191,6 +205,10 @@ Component.prototype.installationFinishedPageIsShown = function()
     try {
         if (installer.isInstaller() && installer.status == QInstaller.Success) {
             installer.addWizardPageItem( component, "ReadMeCheckBoxForm", QInstaller.InstallationFinished );
+            // LaunchCheckBoxForm is macOS-only (Linux/Windows use <RunProgram> in config.xml)
+            if (installer.value("os") == "mac") {
+                installer.addWizardPageItem( component, "LaunchCheckBoxForm", QInstaller.InstallationFinished );
+            }
         }
     } catch(e) {
         console.log(e);
@@ -204,6 +222,14 @@ Component.prototype.installationFinished = function()
             var checkboxForm = component.userInterface( "ReadMeCheckBoxForm" );
             if (checkboxForm && checkboxForm.readMeCheckBox.checked) {
                 QDesktopServices.openUrl("file:///" + installer.value("TargetDir") + "/CHANGELOG.txt");
+            }
+
+            // Auto-launch on macOS if user checked the launch checkbox
+            if (installer.value("os") == "mac") {
+                var launchForm = component.userInterface( "LaunchCheckBoxForm" );
+                if (launchForm && launchForm.launchCheckBox.checked) {
+                    QDesktopServices.openUrl("file:///" + installer.value("TargetDir") + "/ACloudViewer.app");
+                }
             }
         }
     } catch(e) {

@@ -20,6 +20,58 @@
 
 
 # MacOS
+
+> **NOTE (ARM64 static build):** The official pre-built QtIFW binaries are
+> x86_64 only and link Qt **statically** (~38 MB installerbase, zero @rpath deps).
+> For Apple Silicon CI we must build a native ARM64 IFW ourselves — and it MUST
+> also be statically linked. The previous ARM64 IFW used conda's *shared* Qt:
+> the generated `maintenancetool` then died at launch with
+> `dyld: Library not loaded: @rpath/libQt5Widgets.5.dylib` (SIGABRT) whenever the
+> installer auto-uninstalled an existing installation — see
+> [installscript.qs](deploy/packages/ACloudViewer/meta/installscript.qs).
+>
+> Use the static package `QtIFW-4.6.1-darwin-ARM64-static.zip` (uploaded to
+> `cloudViewer_downloads/releases/tag/qt-ifw`), built by:
+>
+> **Build recipe** (one-time, local macOS ARM64):
+> ```bash
+> bash scripts/platforms/mac/build_static_qt_ifw.sh
+> # Outputs:
+> #   ~/opt/Qt/QtIFW-4.6.1-darwin-ARM64-static/bin/{binarycreator,installerbase,...}
+> #   ~/opt/Qt/QtIFW-4.6.1-darwin-ARM64-static.zip
+> gh release upload qt-ifw --repo Asher-1/cloudViewer_downloads \
+>     ~/opt/Qt/QtIFW-4.6.1-darwin-ARM64-static.zip --clobber
+> ```
+>
+> The script builds **static Qt 5.15.14** (qtbase + qtdeclarative + qttools only,
+> all 3rdparty libs bundled: zlib/png/jpeg/pcre2/harfbuzz/freetype/sqlite), then
+> builds **IFW 4.6.1** against it, and finally verifies with `otool -L` that no
+> binary carries `@rpath`, `/opt/homebrew` or `/Users/...` dependencies — so the
+> installer .app and its `maintenancetool` run on any macOS machine.
+>
+> Manual recipe (what the script automates):
+> ```bash
+> # 1. Download + build static Qt 5.15.14 (qtbase, qtdeclarative, qttools)
+> #    ./configure -static -release -no-opengl -no-icu -no-dbus \
+> #      -qt-libjpeg -qt-libpng -qt-pcre -qt-zlib -qt-freetype -qt-harfbuzz \
+> #      -sql-sqlite -nomake examples -nomake tests -prefix ~/opt/Qt/qt-5.15.14-static
+> # 2. Download IFW 4.6.1 source
+> curl -L https://download.qt.io/official_releases/qt-installer-framework/4.6.1/installer-framework-everywhere-src-4.6.1.tar.xz | tar xJ
+> # 3. Patch: comment out requires(!cross_compile) in installerfw.pro
+> # 4. export PATH=~/opt/Qt/qt-5.15.14-static/bin:$PATH && qmake -r
+> #    sed -i '' 's/-framework AGL //g' $(find . -name Makefile)
+> # 5. make -j$(sysctl -n hw.logicalcpu)
+> # 6. Verify: otool -L bin/binarycreator must show NO @rpath / /opt/ deps
+> # 7. Assemble bin/ (+ translations/), zip -r -y QtIFW-4.6.1-darwin-ARM64-static.zip
+> # 8. gh release upload qt-ifw --repo Asher-1/cloudViewer_downloads QtIFW-4.6.1-darwin-ARM64-static.zip
+> ```
+>
+> **Why static?** With a static IFW, `binarycreator` produces a self-contained
+> installer .app and, equally important, a self-contained `maintenancetool`
+> (IFW generates it by copying `installerbase`, so static installerbase ⇒ static
+> maintenancetool). No `Contents/Frameworks` bundling or rpath fixing is needed
+> anywhere in the pipeline.
+
 1，put ACloudViewer.app in: [data](./deploy/packages/ACloudViewer/data)
 
 2，put CloudViewer.app data in: [data](./deploy/packages/CloudViewer/data)
@@ -28,7 +80,18 @@
 
 4, modify [config.xml](./deploy/config/config_mac.xml) and [package.xml](./deploy/packages/ACloudViewer/meta/package.xml)
 
-5, cd [WORKSPACE](./deploy) && binarycreator -c config/config_mac.xml -p packages ACloudViewer-3.9.1-2024-10-24-ARM64.dmg
+5, Automated packaging via `make install` (configured in `cmake/PostInstall.cmake`):
+   - Runs `binarycreator` to create the installer .app
+   - Fixes nested bundle (Qt IFW creates nested .app when installerbase is a .app bundle)
+   - Ad-hoc code signs the installer app
+   - Uses `dmgbuild` (Python package, requires conda env with `dmgbuild>=1.6.0`) to create
+     a polished DMG with custom background image, correct icon position, and matching window size
+   - Falls back to plain `hdiutil` if dmgbuild is unavailable (functional DMG, no beautification)
+
+   Manual alternative (if needed):
+   ```bash
+   cd [WORKSPACE](./deploy) && binarycreator -c config/config_mac.xml -p packages ACloudViewer-3.9.5-ARM64.dmg
+   ```
 
 
 # MacOS some commands

@@ -32,7 +32,7 @@ test -f docker_files/Miniconda3-latest-Linux-x86_64.sh || \
 	wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O "docker_files/Miniconda3-latest-Linux-x86_64.sh"
 
 test -f docker_files/QtIFW-4.6.1-linux-amd.zip || \
-	wget "https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/QtIFW-4.6.1-linux-amd.zip" -O "docker_files/QtIFW-4.6.1-linux-amd.zip"
+	wget "https://github.com/Asher-1/cloudViewer_downloads/releases/download/qt-ifw/QtIFW-4.6.1-linux-amd.zip" -O "docker_files/QtIFW-4.6.1-linux-amd.zip"
 
 if [ "$BUILD_WITH_CONDA" != "ON" ]; then
 	DOCKER_FILE_POSFIX=""

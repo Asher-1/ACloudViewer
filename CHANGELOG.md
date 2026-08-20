@@ -82,6 +82,9 @@ v3.9.5-Beta (Asher) - 08/04/2026
     - CI: fix macOS agent-integration to use Qt IFW silent install from DMG
     - CI: add missing Qt XCB runtime dependencies for Ubuntu agent-integration jobs
       (libxcb-icccm4, libxcb-image0, libxcb-keysyms1, libxcb-render-util0, libxcb-xkb1, libxkbcommon-x11-0)
+    - macOS: use dmgbuild for polished installer DMG (background image, correct icon
+      position, window size matching background); fallback to plain hdiutil if unavailable
+    - macOS: auto-launch ACloudViewer.app after installation when launch checkbox is checked
     - CI: fix Windows, macOS, and Ubuntu-focal test issues
     - Expand agent-integration docs: CLI-QUICK-REFERENCE with full command catalog,
       COMMAND-MAPPING with CLI↔MCP↔RPC cross-reference tables (including PCV, Compass,

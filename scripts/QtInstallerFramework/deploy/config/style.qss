@@ -4,6 +4,17 @@ QWidget
     background-color: rgb(65, 65, 65);
 }
 
+/* Explicit styling for input widgets to prevent white-on-white
+   text in macOS light theme (native style overrides QWidget bg) */
+QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, QDoubleSpinBox, QComboBox
+{
+    color: white;
+    background-color: rgb(65, 65, 65);
+    border: 1px solid rgb(90, 90, 90);
+    border-radius: 3px;
+    padding: 2px;
+}
+
 QTabWidget
 {
     color: white;

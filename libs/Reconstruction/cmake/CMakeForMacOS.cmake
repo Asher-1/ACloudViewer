@@ -44,6 +44,11 @@ macro(colmap_add_app PROJECT_ROOT_PATH APP_NAME TARGET_NAME)
             # copy the resource files into the bundle
             COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_BUNDLE_DIR:${TARGET_NAME}>/${RESOURCE_DIR_NAME}"
             COMMAND ${CMAKE_COMMAND} -E copy ${RESOURCE_FILES} "$<TARGET_BUNDLE_DIR:${TARGET_NAME}>/${RESOURCE_DIR_NAME}"
+            # Remove stale Frameworks from incremental builds so that
+            # macdeployqt + lib_bundle_app.py always start from a clean state.
+            # Without this, lib_bundle_app.py's "skip if exists" logic would
+            # keep outdated project libs (e.g. missing newly added symbols).
+            COMMAND ${CMAKE_COMMAND} -E remove_directory "$<TARGET_BUNDLE_DIR:${TARGET_NAME}>/Contents/Frameworks"
             COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_BUNDLE_DIR:${TARGET_NAME}>/Contents/Frameworks"
             COMMAND "${mac_deploy_qt}" "$<TARGET_BUNDLE_DIR:${TARGET_NAME}>" -verbose=1
             # Remove PostgreSQL SQL driver plugin which links against libpq

@@ -371,9 +371,9 @@ RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
  && tar -C /opt -xf ${CMAKE_VERSION}.tar.gz \
  && cmake --version
 
-# deploy package installer
+# deploy package installer (pre-built QtIFW, hosted on cloudViewer_downloads)
 WORKDIR /root
-RUN wget https://raw.githubusercontent.com/Asher-1/CloudViewerUpdate/main/tools/QtIFW-4.6.1-linux-amd.zip -O "/root/QtIFW-4.6.1-linux-amd.zip"
+RUN wget https://github.com/Asher-1/cloudViewer_downloads/releases/download/qt-ifw/QtIFW-4.6.1-linux-amd.zip -O "/root/QtIFW-4.6.1-linux-amd.zip"
 RUN unzip QtIFW-4.6.1-linux-amd.zip && rm -rf QtIFW-4.6.1-linux-amd.zip
 ENV PATH="/root/QtIFW-4.6.1-linux-amd/bin:$PATH"
 

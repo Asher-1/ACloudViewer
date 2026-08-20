@@ -13,6 +13,7 @@
     <UserInterfaces>
 		<UserInterface>targetwidget.ui</UserInterface>
 		<UserInterface>readmecheckboxform.ui</UserInterface>
+		<UserInterface>launchcheckboxform.ui</UserInterface>
         <UserInterface>registerfilecheckboxform.ui</UserInterface>
 	</UserInterfaces>
 	<Translations>
