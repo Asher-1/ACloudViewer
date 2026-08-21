@@ -35,8 +35,10 @@ struct YOLODepthStats {
     long long validPixels = 0;
 };
 
-/** Binary instance mask of one segmented detection (canvas coordinates,
- *  one byte per pixel: 0 = background, 1 = foreground). */
+/** Binary instance mask of one segmented detection (source-image pixels,
+ *  full image size, one byte per pixel: 0 = background, 1 = foreground).
+ *  AICore remaps masks from the letterbox canvas to the original image
+ *  space, so they align 1:1 with the detection boxes. */
 struct YOLOSegMask {
     QByteArray bits;  // w * h bytes
     int w = 0;

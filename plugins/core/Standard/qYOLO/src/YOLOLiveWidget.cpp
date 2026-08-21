@@ -21,6 +21,7 @@
 #include <QSizePolicy>
 #include <QSpinBox>
 #include <QThread>
+#include <algorithm>
 #include <cstring>
 
 #include "YOLOLiveInferWorker.h"
@@ -601,13 +602,26 @@ void YOLOLiveWidget::rebuildOverlayLayer(const QSize& displaySize) {
         const QString label = QStringLiteral("%1 %2")
                                       .arg(d.className)
                                       .arg(d.score, 0, 'f', 2);
-        const QRectF labelRect(d.x1 * sx, d.y1 * sy - font.pixelSize() - 6,
-                               std::max(20, label.size() * font.pixelSize()),
-                               font.pixelSize() + 6);
-        const QRectF bg = labelRect.adjusted(0, 0, 4, 2);
-        p.fillRect(bg.intersected(QRectF(0, 0, displaySize.width(),
-                                         displaySize.height())),
-                   color);
+        // Keep the banner fully inside the preview (same rule as
+        // YOLOHelpers::drawDetections): clamp horizontally, flip below the
+        // box top when the box hugs the top edge.
+        QRect labelRect(static_cast<int>(d.x1 * sx),
+                        static_cast<int>(d.y1 * sy) - font.pixelSize() - 6,
+                        std::max(20, label.size() * font.pixelSize()),
+                        font.pixelSize() + 6);
+        labelRect.setWidth(std::min(
+                labelRect.width(), std::max(20, displaySize.width() - 4)));
+        labelRect.moveLeft(std::clamp(
+                labelRect.left(), 2,
+                std::max(2, displaySize.width() - labelRect.width() - 2)));
+        if (labelRect.top() < 2) {
+            labelRect.moveTop(static_cast<int>(d.y1 * sy) + 2);
+        }
+        labelRect.moveTop(std::min(
+                labelRect.top(), std::max(2, displaySize.height() -
+                                                     labelRect.height() -
+                                                     2)));
+        p.fillRect(labelRect.adjusted(0, 0, 4, 2), color);
         p.setPen(Qt::white);
         p.drawText(labelRect.adjusted(2, 3, -2, -2), label);
         p.setPen(pen);

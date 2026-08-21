@@ -106,6 +106,7 @@ int main() {
     AICORE_CHECK(seg == nullptr);
     AICORE_CHECK(aicore_yolo_seg_det_count(nullptr) == 0);
     AICORE_CHECK(aicore_yolo_seg_det_at(nullptr, 0).score == 0.0f);
+    AICORE_CHECK(aicore_yolo_seg_det_class_name(nullptr, 0) == nullptr);
     AICORE_CHECK(aicore_yolo_seg_mask_at(nullptr, 0).data == nullptr);
 
     // Host-weight memory management: no engine loaded -> both must fail

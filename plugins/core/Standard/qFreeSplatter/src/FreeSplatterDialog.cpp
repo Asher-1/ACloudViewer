@@ -708,6 +708,13 @@ void FreeSplatterDialog::setupUi() {
     auto* testDataBtn = new QPushButton(QStringLiteral("🧪  Try sample data"));
     testDataBtn->setToolTip(
             tr("Auto-download sample data for the active input tab"));
+    // Prominent teal accent — consistent with qYOLO / qDA3 / qFaceDetect.
+    testDataBtn->setStyleSheet(
+            "QPushButton { background: #00897b; color: white; font-weight: "
+            "bold; border: none; border-radius: 4px; padding: 5px 12px; }"
+            "QPushButton:hover { background: #00796b; }"
+            "QPushButton:pressed { background: #00695c; }"
+            "QPushButton:disabled { background: #b2dfdb; color: #e0f2f1; }");
     connect(testDataBtn, &QPushButton::clicked, this, [this]() {
         // Determine which input tab is active
         const int tabIndex =

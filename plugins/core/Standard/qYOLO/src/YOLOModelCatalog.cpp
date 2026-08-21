@@ -246,10 +246,25 @@ void drawDetections(QImage* image,
         const QString label = QStringLiteral("%1 %2")
                                       .arg(d.className)
                                       .arg(d.score, 0, 'f', 2);
-        const QRect labelRect(static_cast<int>(d.x1),
-                              static_cast<int>(d.y1) - font.pixelSize() - 6,
-                              std::max(20, label.size() * font.pixelSize()),
-                              font.pixelSize() + 6);
+        // Anchor the banner above the box top, then keep it fully inside
+        // the image: clamp horizontally, and flip below the box top when
+        // the box hugs the top edge (the painter has no clipping here, so
+        // off-canvas text would simply be invisible).
+        QRect labelRect(static_cast<int>(d.x1),
+                        static_cast<int>(d.y1) - font.pixelSize() - 6,
+                        std::max(20, label.size() * font.pixelSize()),
+                        font.pixelSize() + 6);
+        labelRect.setWidth(std::min(
+                labelRect.width(), std::max(20, image->width() - 4)));
+        labelRect.moveLeft(std::clamp(
+                labelRect.left(), 2,
+                std::max(2, image->width() - labelRect.width() - 2)));
+        if (labelRect.top() < 2) {
+            labelRect.moveTop(static_cast<int>(d.y1) + 2);
+        }
+        labelRect.moveTop(std::min(
+                labelRect.top(),
+                std::max(2, image->height() - labelRect.height() - 2)));
         const QRect bg = labelRect.adjusted(0, 0, 4, 2);
         p.fillRect(bg.intersected(image->rect()), color);
         p.setPen(Qt::white);
@@ -271,9 +286,9 @@ void drawSegmentation(QImage* image,
     const int imgW = image->width();
     const int imgH = image->height();
 
-    // Mask pixels live in the letterboxed canvas space (imgsz x imgsz); a
-    // straight scale to the source image keeps the tint aligned with the
-    // boxes at preview sizes — the same mapping the live overlay uses.
+    // Masks already live in the source-image space (AICore unscales them
+    // from the letterbox canvas); a straight scale to the image keeps the
+    // tint aligned with the boxes.
     for (int i = 0; i < masks.size(); ++i) {
         const YOLOSegMask& mask = masks[static_cast<size_t>(i)];
         if (mask.w <= 0 || mask.h <= 0 ||

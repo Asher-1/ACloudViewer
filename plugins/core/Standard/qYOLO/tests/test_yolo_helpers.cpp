@@ -255,6 +255,71 @@ TEST(YOLOHelpers, DrawDetectionsSmoke) {
     YOLOHelpers::drawDetections(nullptr, dets);
 }
 
+TEST(YOLOHelpers, DrawDetectionsLabelStaysInsideImage) {
+    QImage img(100, 100, QImage::Format_RGB888);
+    img.fill(Qt::black);
+
+    // Box hugging the top edge: the banner anchor (above the box) would
+    // land at a negative y, i.e. fully off-canvas. The fixed logic flips
+    // the banner below the box top.
+    YOLODetection top;
+    top.classId = 1;
+    top.className = QStringLiteral("top");
+    top.score = 0.9f;
+    top.x1 = 40;
+    top.y1 = 2;
+    top.x2 = 60;
+    top.y2 = 30;
+
+    // Box hugging the left edge: the banner anchor x = 0 would render the
+    // text half-off-canvas; it must be clamped inside the image.
+    YOLODetection left;
+    left.classId = 2;
+    left.className = QStringLiteral("left");
+    left.score = 0.8f;
+    left.x1 = 0;
+    left.y1 = 40;
+    left.x2 = 20;
+    left.y2 = 60;
+
+    QVector<YOLODetection> dets{top, left};
+    YOLOHelpers::drawDetections(&img, dets);
+
+    const auto nearColor = [](QRgb px, QRgb ref) {
+        return qAbs(qRed(px) - qRed(ref)) < 40 &&
+               qAbs(qGreen(px) - qGreen(ref)) < 40 &&
+               qAbs(qBlue(px) - qBlue(ref)) < 40;
+    };
+    const QRgb c1 = YOLOHelpers::classColor(1);
+    const QRgb c2 = YOLOHelpers::classColor(2);
+
+    // The flipped banner of `top` renders below the box top (y >= 4); its
+    // right-hand blank region (beyond the white text) must be on-canvas.
+    bool bannerInsideTop = false;
+    for (int y = 6; y < 16 && !bannerInsideTop; ++y) {
+        for (int x = 62; x < 90; ++x) {
+            if (nearColor(img.pixel(x, y), c1)) {
+                bannerInsideTop = true;
+                break;
+            }
+        }
+    }
+    EXPECT_TRUE(bannerInsideTop);
+
+    // The banner of `left` is clamped to x >= 2; its blank region right of
+    // the text must be visible at the box's y range.
+    bool bannerInsideLeft = false;
+    for (int y = 22; y < 32 && !bannerInsideLeft; ++y) {
+        for (int x = 68; x < 90; ++x) {
+            if (nearColor(img.pixel(x, y), c2)) {
+                bannerInsideLeft = true;
+                break;
+            }
+        }
+    }
+    EXPECT_TRUE(bannerInsideLeft);
+}
+
 TEST(YOLOHelpers, DrawSegmentationTintAndClipping) {
     QImage img(120, 90, QImage::Format_RGB888);
     img.fill(Qt::black);

@@ -35,6 +35,18 @@ const int kThumbSize = 96;
 constexpr int kDbFullImageRole = Qt::UserRole + 1;
 constexpr const char* kDeepLSDTestImage = "deeplsd_examples.jpg";
 
+// Prominent teal accent shared by the other AI plugins (qYOLO / qRMBG /
+// qRFDetr / qLightGlue): the sample-data action is a primary affordance,
+// not a secondary path-row button.
+void styleSampleDataButton(QPushButton* button) {
+    button->setStyleSheet(
+            "QPushButton { background: #00897b; color: white; font-weight: "
+            "bold; border: none; border-radius: 4px; padding: 5px 12px; }"
+            "QPushButton:hover { background: #00796b; }"
+            "QPushButton:pressed { background: #00695c; }"
+            "QPushButton:disabled { background: #b2dfdb; color: #e0f2f1; }");
+}
+
 bool isSupportedImageFile(const QString& filePath) {
     static const QStringList extensions = {
             QStringLiteral("png"),  QStringLiteral("jpg"),
@@ -251,14 +263,8 @@ void DeepLSDDialog::setupUi() {
             tr("Pick an image file (last folder is remembered)."));
     connect(browseImg, &QPushButton::clicked, this,
             &DeepLSDDialog::onBrowseImage);
-    m_testDataBtn = new QPushButton(tr("Use test data"));
-    m_testDataBtn->setToolTip(
-            tr("Load deeplsd_examples.jpg from the shared test-data cache"));
-    connect(m_testDataBtn, &QPushButton::clicked, this,
-            &DeepLSDDialog::onUseTestData);
     pathRow->addWidget(m_imagePath, 1);
     pathRow->addWidget(browseImg);
-    pathRow->addWidget(m_testDataBtn);
     ioLayout->addLayout(pathRow);
 
     m_previewLabel = new ecvClickableImageLabel;
@@ -333,12 +339,19 @@ void DeepLSDDialog::setupUi() {
     main->addWidget(m_progress);
 
     auto* btnRow = new QHBoxLayout;
+    m_testDataBtn = new QPushButton(tr("\U0001f9ea  Try sample data"));
+    styleSampleDataButton(m_testDataBtn);
+    m_testDataBtn->setToolTip(
+            tr("Load deeplsd_examples.jpg from the shared test-data cache"));
+    connect(m_testDataBtn, &QPushButton::clicked, this,
+            &DeepLSDDialog::onUseTestData);
     m_runBtn = new QPushButton(tr("Run"));
     m_cancelBtn = new QPushButton(tr("Cancel"));
     m_cancelBtn->setEnabled(false);
     connect(m_runBtn, &QPushButton::clicked, this, &DeepLSDDialog::onRun);
     connect(m_cancelBtn, &QPushButton::clicked, this, &DeepLSDDialog::onCancel);
     btnRow->addStretch();
+    btnRow->addWidget(m_testDataBtn);
     btnRow->addWidget(m_runBtn);
     btnRow->addWidget(m_cancelBtn);
     main->addLayout(btnRow);

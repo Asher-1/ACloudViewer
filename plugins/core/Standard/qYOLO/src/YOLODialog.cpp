@@ -86,33 +86,6 @@ void YOLODialog::setupUi() {
     m_tabWidget = new QTabWidget(this);
     rootLayout->addWidget(m_tabWidget);
 
-    // Shared inference parameters (device / threads) live OUTSIDE the task
-    // tabs: they are runtime properties, while each tab owns its model
-    // combo + thresholds (which DO differ per task).
-    auto* sharedParams = new QHBoxLayout;
-    sharedParams->setSpacing(6);
-    sharedParams->addWidget(new QLabel(tr("Device:"), this));
-    m_deviceCombo = new QComboBox(this);
-#ifdef AICore_ENABLED
-    const int nDev = aicore_device_count();
-    for (int i = 0; i < nDev; ++i) {
-        const aicore_device_info* dev = aicore_device_at(i);
-        if (!dev || !dev->id) continue;
-        m_deviceCombo->addItem(QString::fromUtf8(dev->label),
-                               QString::fromUtf8(dev->id));
-        if (dev->is_default) m_deviceCombo->setCurrentIndex(i);
-    }
-#endif
-    sharedParams->addWidget(m_deviceCombo);
-    sharedParams->addWidget(new QLabel(tr("Threads:"), this));
-    m_threads = new QSpinBox(this);
-    m_threads->setRange(0, 64);
-    m_threads->setValue(0);
-    m_threads->setToolTip(tr("0 = auto"));
-    sharedParams->addWidget(m_threads);
-    sharedParams->addStretch();
-    rootLayout->addLayout(sharedParams);
-
     // ---- Per-task tabs (each with its own model combo + thresholds) -----
     const QStringList taskOrder = {QStringLiteral("detect"),
                                    QStringLiteral("segment"),
@@ -154,6 +127,33 @@ void YOLODialog::setupUi() {
                                         QSizePolicy::Fixed);
         modelRow->addWidget(panel.modelCombo, 1);
         configCol->addLayout(modelRow);
+
+        // Runtime params row: device / threads — rendered inside the tab,
+        // directly under the model row they configure (shared values kept
+        // in sync across tabs below).
+        auto* paramsRow = new QHBoxLayout;
+        paramsRow->setSpacing(6);
+        paramsRow->addWidget(makeParamLabel(tr("Device:"), panel.tab));
+        panel.deviceCombo = new QComboBox(panel.tab);
+#ifdef AICore_ENABLED
+        const int nDev = aicore_device_count();
+        for (int i = 0; i < nDev; ++i) {
+            const aicore_device_info* dev = aicore_device_at(i);
+            if (!dev || !dev->id) continue;
+            panel.deviceCombo->addItem(QString::fromUtf8(dev->label),
+                                       QString::fromUtf8(dev->id));
+            if (dev->is_default) panel.deviceCombo->setCurrentIndex(i);
+        }
+#endif
+        paramsRow->addWidget(panel.deviceCombo);
+        paramsRow->addWidget(makeParamLabel(tr("Threads:"), panel.tab));
+        panel.threads = new QSpinBox(panel.tab);
+        panel.threads->setRange(0, 64);
+        panel.threads->setValue(0);
+        panel.threads->setToolTip(tr("0 = auto"));
+        paramsRow->addWidget(panel.threads);
+        paramsRow->addStretch();
+        configCol->addLayout(paramsRow);
 
         // Threshold row: Conf / IoU / Top-K (hidden for metric-depth models,
         // which have no detection thresholds).
@@ -220,15 +220,6 @@ void YOLODialog::setupUi() {
             onBrowseImage();
         });
         inputRow->addWidget(browseBtn);
-        panel.testDataBtn =
-                new QPushButton(tr("\U0001f9ea  Try sample data"), panel.tab);
-        styleSampleDataButton(panel.testDataBtn);
-        panel.testDataBtn->setToolTip(
-                tr("Load images/000000397133.jpg from the shared test-data "
-                   "cache"));
-        connect(panel.testDataBtn, &QPushButton::clicked, this,
-                [this]() { requestTestData(TestDataTarget::Image); });
-        inputRow->addWidget(panel.testDataBtn);
         configCol->addLayout(inputRow);
 
         // DB image picker (collapsible).
@@ -302,7 +293,7 @@ void YOLODialog::setupUi() {
 
         layout->addLayout(contentRow);
 
-        // Action row: add-to-DB + Run / Cancel.
+        // Action row: add-to-DB + sample data + Run / Cancel.
         auto* actionRow = new QHBoxLayout;
         actionRow->setSpacing(6);
         panel.addAnnotatedCheck =
@@ -310,6 +301,15 @@ void YOLODialog::setupUi() {
         panel.addAnnotatedCheck->setChecked(true);
         actionRow->addWidget(panel.addAnnotatedCheck);
         actionRow->addStretch();
+        panel.testDataBtn =
+                new QPushButton(tr("\U0001f9ea  Try sample data"), panel.tab);
+        styleSampleDataButton(panel.testDataBtn);
+        panel.testDataBtn->setToolTip(
+                tr("Load images/000000397133.jpg from the shared test-data "
+                   "cache"));
+        connect(panel.testDataBtn, &QPushButton::clicked, this,
+                [this]() { requestTestData(TestDataTarget::Image); });
+        actionRow->addWidget(panel.testDataBtn);
         panel.runBtn = new QPushButton(tr("Run"), panel.tab);
         panel.runBtn->setDefault(i == 0);
         actionRow->addWidget(panel.runBtn);
@@ -391,16 +391,35 @@ void YOLODialog::setupUi() {
     });
 
     // The Live tab lists ALL catalog models (any task) and shares the
-    // device/threads controls with the batch tabs.
+    // device/threads controls with the batch tabs (each task tab renders
+    // its own instance; any change propagates to the other panels and to
+    // the Live widget).
     m_liveWidget->populateAllModels();
-    m_liveWidget->rebuildDeviceCombo(m_deviceCombo);
-    connect(m_deviceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            m_liveWidget, [this](int) {
-                m_liveWidget->setDevice(
-                        m_deviceCombo->currentData().toString());
-            });
-    connect(m_threads, QOverload<int>::of(&QSpinBox::valueChanged),
-            m_liveWidget, [this](int v) { m_liveWidget->setThreads(v); });
+    if (!m_panels.isEmpty()) {
+        m_liveWidget->rebuildDeviceCombo(m_panels[0].deviceCombo);
+    }
+    for (YOLOTaskPanel& panel : m_panels) {
+        connect(panel.deviceCombo,
+                QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+                [this, &panel](int) {
+                    const QString device =
+                            panel.deviceCombo->currentData().toString();
+                    for (YOLOTaskPanel& other : m_panels) {
+                        if (&other == &panel) continue;
+                        const int idx = other.deviceCombo->findData(device);
+                        if (idx >= 0) other.deviceCombo->setCurrentIndex(idx);
+                    }
+                    m_liveWidget->setDevice(device);
+                });
+        connect(panel.threads, QOverload<int>::of(&QSpinBox::valueChanged),
+                this, [this, &panel](int v) {
+                    for (YOLOTaskPanel& other : m_panels) {
+                        if (&other == &panel) continue;
+                        other.threads->setValue(v);
+                    }
+                    m_liveWidget->setThreads(v);
+                });
+    }
     connect(m_liveWidget, &YOLOLiveWidget::modelSelectionChanged, this,
             [this](const QString& filename) {
                 // Keep the matching batch tab's model in sync so the two
@@ -413,14 +432,21 @@ void YOLODialog::setupUi() {
             });
     connect(m_liveWidget, &YOLOLiveWidget::deviceSelectionChanged, this,
             [this](const QString& device) {
-                const int index = m_deviceCombo->findData(device);
-                if (index >= 0 && index != m_deviceCombo->currentIndex()) {
-                    m_deviceCombo->setCurrentIndex(index);
+                for (YOLOTaskPanel& panel : m_panels) {
+                    const int index = panel.deviceCombo->findData(device);
+                    if (index >= 0 &&
+                        index != panel.deviceCombo->currentIndex()) {
+                        panel.deviceCombo->setCurrentIndex(index);
+                    }
                 }
             });
     connect(m_liveWidget, &YOLOLiveWidget::threadCountChanged, this,
             [this](int threads) {
-                if (m_threads->value() != threads) m_threads->setValue(threads);
+                for (YOLOTaskPanel& panel : m_panels) {
+                    if (panel.threads->value() != threads) {
+                        panel.threads->setValue(threads);
+                    }
+                }
             });
     connect(m_liveWidget, &YOLOLiveWidget::captureToDbRequested, this,
             &YOLODialog::onLiveCapture);
@@ -554,9 +580,12 @@ void YOLODialog::loadSettings() {
     const QString device =
             settings.value(QStringLiteral("device"), QStringLiteral("auto"))
                     .toString();
-    const int idx = m_deviceCombo->findData(device);
-    if (idx >= 0) m_deviceCombo->setCurrentIndex(idx);
-    m_threads->setValue(settings.value(QStringLiteral("threads"), 0).toInt());
+    const int threads = settings.value(QStringLiteral("threads"), 0).toInt();
+    for (YOLOTaskPanel& panel : m_panels) {
+        const int idx = panel.deviceCombo->findData(device);
+        if (idx >= 0) panel.deviceCombo->setCurrentIndex(idx);
+        panel.threads->setValue(threads);
+    }
     settings.endGroup();
 }
 
@@ -581,9 +610,13 @@ void YOLODialog::saveSettings() const {
         settings.setValue(QStringLiteral("imagePath/") + tasks[i],
                           panel.imagePath->text());
     }
-    settings.setValue(QStringLiteral("device"),
-                      m_deviceCombo->currentData().toString());
-    settings.setValue(QStringLiteral("threads"), m_threads->value());
+    // Device/threads are shared across the task panels (kept in sync);
+    // persist from the first panel.
+    if (!m_panels.isEmpty()) {
+        settings.setValue(QStringLiteral("device"),
+                          m_panels[0].deviceCombo->currentData().toString());
+        settings.setValue(QStringLiteral("threads"), m_panels[0].threads->value());
+    }
     settings.endGroup();
 }
 
@@ -694,6 +727,33 @@ QString YOLODialog::resolveModelPath() const {
 }
 
 bool YOLODialog::ensureModelAvailable(PendingAction action) {
+    // The Live tab has its own model combo (all catalog models) and is not
+    // one of the task panels. Resolve against the live widget's model when
+    // it is the active tab — checking the batch panel here would silently
+    // no-op (currentTaskPanel() == nullptr) and Start would do nothing.
+    if (m_tabWidget && m_tabWidget->currentWidget() == m_liveTab) {
+        if (!m_liveWidget) return false;
+        const QString filename = m_liveWidget->modelFilename();
+        if (filename.isEmpty()) {
+            appendLog(tr("[YOLO] Select a model first."));
+            return false;
+        }
+        if (!QFileInfo::exists(m_liveWidget->resolveModelPath())) {
+            YOLOModelEntry entry;
+            if (!YOLOHelpers::findModelByFilename(filename, &entry)) {
+                appendLog(tr("[YOLO] Model file not found: %1").arg(filename));
+                return false;
+            }
+            m_pendingActionAfterDownload = action;
+            appendLog(tr("[YOLO] Model missing — downloading %1; it will "
+                         "start automatically when ready.")
+                              .arg(filename));
+            startDownload(entry);
+            return false;
+        }
+        return true;
+    }
+
     YOLOTaskPanel* panel = currentTaskPanel();
     if (!panel) return false;
     const QString filename = panel->modelCombo->currentData().toString();
@@ -806,8 +866,8 @@ YOLODialog::Settings YOLODialog::getSettings() const {
     if (!panel) return s;
     s.modelPath = panel->modelPath();
     s.inputPath = panel->imagePath->text();
-    s.device = m_deviceCombo->currentData().toString();
-    s.threads = m_threads->value();
+    s.device = panel->deviceCombo->currentData().toString();
+    s.threads = panel->threads->value();
     s.confThres = static_cast<float>(panel->conf->value());
     s.iouThres = static_cast<float>(panel->iou->value());
     s.topK = static_cast<uint32_t>(panel->topK->value());

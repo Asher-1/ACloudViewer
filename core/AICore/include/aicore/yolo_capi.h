@@ -280,7 +280,10 @@ typedef struct aicore_yolo_detection {
     int32_t class_id;
 } aicore_yolo_detection;
 
-/** Non-owning view of a plane (mask, depth). */
+/** Non-owning view of a plane (segment mask, depth). Mask data is a
+ *  full-size source-image bitmap (width x height, 1 byte per pixel:
+ *  0 = background, 1 = foreground), already unscaled from the model's
+ *  letterbox canvas so it aligns 1:1 with the detection boxes. */
 typedef struct aicore_yolo_plane_view {
     const void* data;
     int32_t width;
@@ -305,6 +308,13 @@ AICORE_CAPI int aicore_yolo_seg_det_count(
 /** Get the i-th detection (shallow copy). */
 AICORE_CAPI aicore_yolo_detection
 aicore_yolo_seg_det_at(const aicore_yolo_segment_result* res, int index);
+
+/** Class name of the i-th detection (owned by the result; copy the string
+ *  before aicore_yolo_seg_result_free). Returns NULL when the index is out
+ *  of range or the model declares no names for this class — callers should
+ *  fall back to "class <id>". */
+AICORE_CAPI const char* aicore_yolo_seg_det_class_name(
+        const aicore_yolo_segment_result* res, int index);
 
 /** Get the mask for the i-th detection (borrowed; valid while res lives). */
 AICORE_CAPI aicore_yolo_plane_view

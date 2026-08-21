@@ -28,34 +28,6 @@
 #include "tasks/yolo/yolo_image.hpp"
 #include "tasks/yolo/yolo_postprocess.hpp"
 
-namespace {
-
-using aicore::capi::dup_cstr;
-using aicore::capi::json_escape;
-
-// Load an image file and hand the tightly-packed RGB buffer to f(rgb, w, h).
-// The buffer is freed before returning; f must not keep a pointer to it.
-template <class F>
-auto with_path_rgb(const char* image_path,
-                   aicore_yolo_ctx* ctx,
-                   F&& f) -> decltype(f(nullptr, 0, 0)) {
-    QImage img(QString::fromUtf8(image_path));
-    if (img.isNull()) {
-        ctx->last_error = std::string("failed to load image: ") + image_path;
-        return decltype(f(nullptr, 0, 0))();
-    }
-    aicore::capi::PackedRgb packed = aicore::capi::qimage_to_packed_rgb(img);
-    if (packed.data == nullptr) {
-        ctx->last_error = "out of memory decoding image";
-        return decltype(f(nullptr, 0, 0))();
-    }
-    auto result = f(packed.data, packed.width, packed.height);
-    std::free(packed.data);
-    return result;
-}
-
-}  // namespace
-
 struct aicore_yolo_ctx {
     yolo::Session* engine = nullptr;
     std::string model_path;
@@ -111,7 +83,39 @@ struct aicore_yolo_segment_result {
     // Canvas-space mask data (absolute coordinates), also stored per-mask
     int canvas_w = 0;
     int canvas_h = 0;
+    // Class-name table copied from the session's model metadata, so
+    // aicore_yolo_seg_det_class_name stays valid for the result's lifetime
+    // (the typed API has no ctx handle to query after the call).
+    std::vector<std::string> class_names;
 };
+
+using aicore::capi::dup_cstr;
+using aicore::capi::json_escape;
+
+namespace {
+
+// Load an image file and hand the tightly-packed RGB buffer to f(rgb, w, h).
+// The buffer is freed before returning; f must not keep a pointer to it.
+template <class F>
+auto with_path_rgb(const char* image_path,
+                   aicore_yolo_ctx* ctx,
+                   F&& f) -> decltype(f(nullptr, 0, 0)) {
+    QImage img(QString::fromUtf8(image_path));
+    if (img.isNull()) {
+        ctx->last_error = std::string("failed to load image: ") + image_path;
+        return decltype(f(nullptr, 0, 0))();
+    }
+    aicore::capi::PackedRgb packed = aicore::capi::qimage_to_packed_rgb(img);
+    if (packed.data == nullptr) {
+        ctx->last_error = "out of memory decoding image";
+        return decltype(f(nullptr, 0, 0))();
+    }
+    auto result = f(packed.data, packed.width, packed.height);
+    std::free(packed.data);
+    return result;
+}
+
+}  // namespace
 
 AICORE_CAPI int aicore_yolo_abi_version(void) { return 2; }
 
@@ -635,6 +639,13 @@ AICORE_CAPI aicore_yolo_segment_result* aicore_yolo_seg_rgb(
         // Unscale boxes to original image coordinates
         yolo::unscale_boxes(dets, info);
 
+        // Masks follow the boxes into the original image space: the canvas
+        // windows compose_masks produced would overlay the wrong region on
+        // the source image (canvas dims differ from source dims, and the
+        // window origins are lost across the C API). Full-size source masks
+        // make the typed result directly drawable at 1:1 with the boxes.
+        yolo::unscale_masks(masks, info, width, height);
+
         auto* res = new (std::nothrow) aicore_yolo_segment_result();
         if (!res) {
             ctx->last_error = "YOLO out of memory for segment result";
@@ -644,6 +655,9 @@ AICORE_CAPI aicore_yolo_segment_result* aicore_yolo_seg_rgb(
         res->masks = std::move(masks);
         res->canvas_w = info.imgsz_w;
         res->canvas_h = info.imgsz_h;
+        // Copy the model's class table so seg_det_class_name can serve
+        // names for the whole result lifetime (no ctx dependency).
+        res->class_names = s->model.meta.class_names;
         const double postprocess_ms = yolo::ms_since(t0);
         ctx->timings =
                 aicore_yolo_timings{preprocess_ms, inference_ms, postprocess_ms,
@@ -677,6 +691,19 @@ aicore_yolo_seg_det_at(const aicore_yolo_segment_result* res, int index) {
         det.class_id = d.class_id;
     }
     return det;
+}
+
+AICORE_CAPI const char* aicore_yolo_seg_det_class_name(
+        const aicore_yolo_segment_result* res, int index) {
+    if (res == nullptr || index < 0 || index >= (int)res->dets.size()) {
+        return nullptr;
+    }
+    const int cid = res->dets[index].class_id;
+    if (cid < 0 || cid >= (int)res->class_names.size()) {
+        return nullptr;
+    }
+    const std::string& name = res->class_names[cid];
+    return name.empty() ? nullptr : name.c_str();
 }
 
 AICORE_CAPI aicore_yolo_plane_view

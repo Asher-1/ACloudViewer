@@ -149,6 +149,60 @@ void unscale_boxes(std::vector<Detection>& dets, const LetterboxInfo& info) {
     }
 }
 
+void unscale_masks(std::vector<SegMask>& masks,
+                   const LetterboxInfo& info,
+                   int image_w,
+                   int image_h) {
+    if (image_w <= 0 || image_h <= 0) return;
+    // Source pixel (x, y) sits at canvas coordinate
+    // floor((p + 0.5) * scale - 0.5) + pad (inverse of the letterbox resize
+    // sampling in letterbox_image); subtracting the window origin gives the
+    // position inside mask.bits. Rounding is the same convention as
+    // unscale_boxes, so the tint stays aligned with the boxes. Window loop
+    // bounds below are a linear bounding box only — pixels mapping outside
+    // the window are skipped, never clamped (clamping would smear the
+    // window's edge row over the whole padded band above it).
+    for (auto& mask : masks) {
+        if (mask.w <= 0 || mask.h <= 0 ||
+            mask.bits.size() < (size_t)mask.w * mask.h) {
+            continue;
+        }
+        const int ix0 = std::clamp(
+                (int)std::floor((mask.x - info.pad_w) / info.scale), 0,
+                image_w - 1);
+        const int iy0 = std::clamp(
+                (int)std::floor((mask.y - info.pad_h) / info.scale), 0,
+                image_h - 1);
+        const int ix1 = std::clamp(
+                (int)std::ceil((mask.x + mask.w - info.pad_w) / info.scale), 0,
+                image_w);
+        const int iy1 = std::clamp(
+                (int)std::ceil((mask.y + mask.h - info.pad_h) / info.scale), 0,
+                image_h);
+        std::vector<uint8_t> full((size_t)image_w * image_h, 0);
+        for (int y = iy0; y < iy1; ++y) {
+            const int cy = (int)std::floor((y + 0.5f) * info.scale - 0.5f) +
+                           info.pad_h - mask.y;
+            if (cy < 0 || cy >= mask.h) continue;
+            const size_t srcRow = (size_t)cy * mask.w;
+            const size_t dstRow = (size_t)y * image_w;
+            for (int x = ix0; x < ix1; ++x) {
+                const int cx = (int)std::floor((x + 0.5f) * info.scale - 0.5f) +
+                               info.pad_w - mask.x;
+                if (cx < 0 || cx >= mask.w) continue;
+                if (mask.bits[srcRow + cx]) {
+                    full[dstRow + x] = 1;
+                }
+            }
+        }
+        mask.bits = std::move(full);
+        mask.x = 0;
+        mask.y = 0;
+        mask.w = image_w;
+        mask.h = image_h;
+    }
+}
+
 std::vector<float> restore_depth(const std::vector<float>& depth,
                                  int depth_w,
                                  int depth_h,

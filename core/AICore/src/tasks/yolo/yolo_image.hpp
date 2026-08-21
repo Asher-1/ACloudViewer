@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "tasks/yolo/yolo_common.hpp"
+#include "tasks/yolo/yolo_postprocess.hpp"
 
 
 namespace yolo {
@@ -39,6 +40,15 @@ void letterbox_image(const Image& img, int imgsz, LetterboxInfo& info,
 
 // Map boxes from the letterboxed canvas back to original image pixels.
 void unscale_boxes(std::vector<Detection>& dets, const LetterboxInfo& info);
+
+// Remap instance masks from the letterbox-canvas space back to the source
+// image space. compose_masks() emits one canvas-space window per instance
+// (SegMask.x/y/w/h); consumers that overlay masks on the original image
+// need source-space pixels. Each mask becomes a full-size image_w x image_h
+// bitmap (x = y = 0) sampled nearest-neighbor from its canvas window, so
+// the result aligns 1:1 with boxes already processed by unscale_boxes().
+void unscale_masks(std::vector<SegMask>& masks, const LetterboxInfo& info,
+                   int image_w, int image_h);
 
 // Restore a model-resolution depth map to the original image size, matching
 // DepthPredictor's bilinear resize, letterbox crop, and final resize.

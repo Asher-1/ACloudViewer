@@ -401,6 +401,20 @@ aicore_add_yolo_capi_test(test_yolo_capi_contract)
 set_tests_properties(test_yolo_capi_contract PROPERTIES
     LABELS "capi")
 
+# YOLO geometry whitebox test (no GGUF assets: mask unscale / letterbox
+# inverse mapping — see tests/yolo/test_yolo_unscale_masks.cpp).
+function(aicore_add_yolo_whitebox_test name)
+    if(NOT TARGET AICore_test)
+        return()
+    endif()
+    add_executable(${name} yolo/${name}.cpp)
+    target_link_libraries(${name} PRIVATE AICore_test)
+    _aicore_test_common(${name})
+    set_tests_properties(${name} PROPERTIES LABELS "whitebox")
+endfunction()
+
+aicore_add_yolo_whitebox_test(test_yolo_unscale_masks)
+
 add_test(
     NAME test_aicore_public_headers
     COMMAND ${CMAKE_COMMAND}

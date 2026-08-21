@@ -269,11 +269,15 @@ bool YOLOWorker::runSegment(const QImage& rgb, const uchar* rgbData) {
             result.masks.append(mask);
         }
     }
-    // Class names are not exposed by the typed API; fall back to the
-    // deterministic palette label so boxes still render with a caption.
+    // The typed API exposes the model's class table; fall back to the
+    // deterministic palette label only when the model declares no names.
     for (int i = 0; i < result.detections.size(); ++i) {
+        const char* name = aicore_yolo_seg_det_class_name(seg, i);
         result.detections[i].className =
-                QStringLiteral("class %1").arg(result.detections[i].classId);
+                (name != nullptr && name[0] != '\0')
+                        ? QString::fromUtf8(name)
+                        : QStringLiteral("class %1")
+                                  .arg(result.detections[i].classId);
     }
     result.totalDetected = n;
     aicore_yolo_seg_result_free(seg);

@@ -31,13 +31,18 @@
 class ecvMainAppInterface;
 
 /** One task-tab panel: its own model combo (filtered on the tab's task),
- *  threshold row, image input and Run button. A dialog owns three of these
- *  (detect / segment / depth); the Live tab reuses all models. */
+ *  runtime params (device / threads), threshold row, image input and Run
+ *  button. A dialog owns three of these (detect / segment / depth); the
+ *  Live tab reuses all models. The per-panel device/threads controls are
+ *  kept in sync across panels (they are shared runtime parameters rendered
+ *  inside every tab, next to the model they configure). */
 struct YOLOTaskPanel {
     QString task;  // "detect" | "segment" | "depth"
 
     QWidget* tab = nullptr;
     QComboBox* modelCombo = nullptr;
+    QComboBox* deviceCombo = nullptr;
+    QSpinBox* threads = nullptr;
     QLineEdit* customModelPath = nullptr;
     QWidget* customModelRow = nullptr;
     QWidget* thresholdRow = nullptr;  // Conf/IoU/Top-K (hidden for depth)
@@ -165,8 +170,6 @@ private:
 
     QLineEdit* m_customModelPath = nullptr;
     QWidget* m_customModelRow = nullptr;
-    QComboBox* m_deviceCombo = nullptr;
-    QSpinBox* m_threads = nullptr;
     QLineEdit* m_imagePath = nullptr;
     ecvClickableImageLabel* m_previewLabel = nullptr;
     QLabel* m_downloadLabel = nullptr;

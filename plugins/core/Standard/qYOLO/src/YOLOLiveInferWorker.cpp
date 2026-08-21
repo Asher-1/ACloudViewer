@@ -230,9 +230,13 @@ void YOLOLiveInferWorker::runJobImpl(YOLOLiveInferWorker::Job job) {
             }
         }
         for (int i = 0; i < result.detect.detections.size(); ++i) {
+            const char* name = aicore_yolo_seg_det_class_name(seg, i);
             result.detect.detections[i].className =
-                    QStringLiteral("class %1")
-                            .arg(result.detect.detections[i].classId);
+                    (name != nullptr && name[0] != '\0')
+                            ? QString::fromUtf8(name)
+                            : QStringLiteral("class %1")
+                                      .arg(result.detect.detections[i]
+                                                   .classId);
         }
         result.detect.totalDetected = n;
         result.detect.task = QStringLiteral("segment");
