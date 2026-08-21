@@ -25,11 +25,23 @@ CPU and Metal fall back to vanilla ggml operators automatically.
 
 ### Backend profiles and timing
 
-CUDA and Vulkan use the upstream optimized graph and kernels by default. Set
-`RMBG_STRICT_MATH=1` for the strict CUDA path, or select a Vulkan profile with
-`RMBG_VULKAN_MODE=optimized|strict|unsafe-fast`. `unsafe-fast` enables all
-available Vulkan fast-math paths and should only be used after validating
-output parity on the target GPU.
+CUDA and Vulkan use the upstream optimized graph and kernels by default. The
+math profile and per-kernel switches are **explicit options**, not environment
+variables (AICore no longer reads `RMBG_VULKAN_MODE`, `RMBG_STRICT_MATH`,
+`RMBG_VULKAN_STRICT`, `RMBG_VULKAN_FAST`, `RMBG_VK_*` / `GGML_VK_*` — see
+`core/AICore/src/common/ggml_env_bridge.hpp`, the single sanctioned bridge
+that translates explicit options into the ggml-side variables before a
+backend instance is created):
+
+- `aicore_rmbg_options_set_math_profile("default"|"optimized"|"strict"|"fast"|"unsafe-fast")`
+  selects the preset (default "optimized", the historical default behavior).
+- Per-kernel fine-tuning setters: `set_cuda_f16_gemm`, `set_cuda_f16_min_stage`,
+  `set_cuda_nn_gemm`, `set_vulkan_direct_conv`, `set_vulkan_qkv_layout`,
+  `set_vulkan_deform_project("off"|"on"|"coop")`,
+  `set_vulkan_flash_attn("off"|"on"|"coop"|"coop0..3")`.
+
+`unsafe-fast` enables all available Vulkan fast-math paths and should only be
+used after validating output parity on the target GPU.
 
 The reported `Runtime (ms)` is only `graph->forward()`, matching the upstream
 benchmark. Separate preprocess, postprocess and total values are stored in the

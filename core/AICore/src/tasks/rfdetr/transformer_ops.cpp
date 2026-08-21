@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "transformer_ops.hpp"
+#include "tasks/rfdetr/transformer_ops.hpp"
 
 #include "ggml.h"
 

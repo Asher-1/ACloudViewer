@@ -143,7 +143,7 @@ QString FreeSplatterDialog::modelCacheDir() {
                 .filePath(QStringLiteral("freesplatter_models"));
     }
     QString result = QString::fromUtf8(dir);
-    aicore_gaussian_free_string(dir);
+    aicore_gaussian_free_buffer(dir);
     return result;
 }
 

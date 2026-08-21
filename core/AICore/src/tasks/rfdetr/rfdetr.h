@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef RFDETR_H
-#define RFDETR_H
+#pragma once
 
 #include <stddef.h>
 #include <stdint.h>
@@ -194,5 +193,3 @@ rfdetr_status rfdetr_render(const rfdetr_image* img,
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
-
-#endif /* RFDETR_H */

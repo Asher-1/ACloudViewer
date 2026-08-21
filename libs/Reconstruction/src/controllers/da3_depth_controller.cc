@@ -676,15 +676,24 @@ void LogDA3InferenceDevice(aicore_depth_ctx* ctx, const char* requested_device) 
 aicore_depth_ctx* LoadDA3Context(const DA3Config& config, int n_threads) {
     const char* requested_device =
             config.device.empty() ? "auto" : config.device.c_str();
+    // AICore depth ABI v6: options-based loading (device / threads are set
+    // on an opaque options handle instead of flat load_*_device arguments).
+    aicore_depth_options* opts = aicore_depth_options_new();
+    if (!opts) {
+        RECON_LOG_ERROR("ERROR: DA3 failed to allocate load options\n");
+        return nullptr;
+    }
+    aicore_depth_options_set_threads(opts, n_threads);
+    aicore_depth_options_set_device(opts, requested_device);
     aicore_depth_ctx* ctx = nullptr;
     if (config.model_type != DA3ModelType::NESTED_METRIC &&
         config.model_type != DA3ModelType::NESTED_ANYVIEW) {
         const std::string model_path = DA3DepthController::ResolveModelPath(config);
         if (model_path.empty()) {
+            aicore_depth_options_free(opts);
             return nullptr;
         }
-        ctx = aicore_depth_load_device(model_path.c_str(), n_threads,
-                                       requested_device);
+        ctx = aicore_depth_load_opts(model_path.c_str(), opts);
     } else {
         std::string anyview_path;
         std::string metric_path;
@@ -713,12 +722,13 @@ aicore_depth_ctx* LoadDA3Context(const DA3Config& config, int n_threads) {
         }
 
         if (anyview_path.empty() || metric_path.empty()) {
+            aicore_depth_options_free(opts);
             return nullptr;
         }
-        ctx = aicore_depth_load_nested_device(anyview_path.c_str(),
-                                              metric_path.c_str(), n_threads,
-                                              requested_device);
+        ctx = aicore_depth_load_nested_opts(anyview_path.c_str(),
+                                            metric_path.c_str(), opts);
     }
+    aicore_depth_options_free(opts);
     if (ctx) {
         LogDA3InferenceDevice(ctx, requested_device);
     }
@@ -965,15 +975,11 @@ bool RunDepthPoseMulti(aicore_depth_ctx* ctx, const std::vector<std::string>& im
             int h = 0;
             int w = 0;
             float* depth_ptr = nullptr;
-            float ext[12] = {};
-            float intr[9] = {};
-            int is_metric = 0;
+            aicore_depth_dense_result dense{};
             if (aicore_depth_depth_dense(
-                    ctx, image_paths[static_cast<size_t>(i)].c_str(), &h, &w,
-                    &depth_ptr, nullptr, nullptr, ext, intr, &is_metric) != 0) {
-                if (depth_ptr) {
-                    aicore_depth_free_floats(depth_ptr);
-                }
+                    ctx, image_paths[static_cast<size_t>(i)].c_str(), &dense) !=
+                0) {
+                aicore_depth_dense_result_free(&dense);
                 const std::string err = aicore_depth_last_error(ctx);
                 LOG(ERROR) << "DA3: per-view inference failed for "
                            << image_paths[static_cast<size_t>(i)] << ": "
@@ -985,8 +991,11 @@ bool RunDepthPoseMulti(aicore_depth_ctx* ctx, const std::vector<std::string>& im
                 aicore_depth_release_gpu_working_memory(ctx);
                 break;
             }
+            h = dense.height;
+            w = dense.width;
+            depth_ptr = dense.depth;
             if (h <= 0 || w <= 0 || !depth_ptr) {
-                aicore_depth_free_floats(depth_ptr);
+                aicore_depth_dense_result_free(&dense);
                 LOG(ERROR) << "DA3: empty depth for view " << i;
                 aicore_depth_release_gpu_working_memory(ctx);
                 oom = true;
@@ -997,7 +1006,7 @@ bool RunDepthPoseMulti(aicore_depth_ctx* ctx, const std::vector<std::string>& im
                 result.h = h;
                 result.w = w;
             } else if (h != result.h || w != result.w) {
-                aicore_depth_free_floats(depth_ptr);
+                aicore_depth_dense_result_free(&dense);
                 LOG(ERROR) << "DA3: view " << i << " size mismatch (" << w << "x"
                            << h << " vs " << result.w << "x" << result.h << ")";
                 return false;
@@ -1005,13 +1014,13 @@ bool RunDepthPoseMulti(aicore_depth_ctx* ctx, const std::vector<std::string>& im
 
             const size_t per_view =
                 static_cast<size_t>(h) * static_cast<size_t>(w);
-            result.depth.insert(result.depth.end(), depth_ptr,
-                                depth_ptr + per_view);
-            std::memcpy(result.ext.data() + static_cast<size_t>(i) * 12, ext,
-                        12 * sizeof(float));
-            std::memcpy(result.intr.data() + static_cast<size_t>(i) * 9, intr,
-                        9 * sizeof(float));
-            aicore_depth_free_floats(depth_ptr);
+            result.depth.insert(result.depth.end(), dense.depth,
+                                dense.depth + per_view);
+            std::memcpy(result.ext.data() + static_cast<size_t>(i) * 12,
+                        dense.ext, 12 * sizeof(float));
+            std::memcpy(result.intr.data() + static_cast<size_t>(i) * 9,
+                        dense.intr, 9 * sizeof(float));
+            aicore_depth_dense_result_free(&dense);
             aicore_depth_release_gpu_working_memory(ctx);
         }
 
@@ -1054,10 +1063,17 @@ bool WriteDenseSparseFromMultiview(
         cnames[static_cast<size_t>(i)] = image_names[static_cast<size_t>(i)].c_str();
     }
 
+    aicore_depth_multiview_data data{};
+    data.n_views = multi.n;
+    data.height = multi.h;
+    data.width = multi.w;
+    data.depth = multi.depth.data();
+    data.ext = multi.ext.data();
+    data.intr = multi.intr.data();
+
     if (aicore_depth_write_colmap_from_multiview(
-            ctx, cpaths.data(), cnames.data(), multi.n, multi.depth.data(),
-            multi.ext.data(), multi.intr.data(), multi.h, multi.w,
-            sparse_dir.c_str(), 1) != 0) {
+            ctx, cpaths.data(), cnames.data(), &data, sparse_dir.c_str(), 1) !=
+        0) {
         LOG(ERROR) << "DA3: failed to sync dense sparse model: "
                    << aicore_depth_last_error(ctx);
         RECON_LOG_ERROR("ERROR: DA3 dense sparse sync failed: %s\n", aicore_depth_last_error(ctx));
@@ -2187,7 +2203,7 @@ std::string DA3ModelCacheDir() {
     char* dir = aicore_depth_model_cache_dir();
     if (!dir) return ".cache/da3_models";
     std::string result(dir);
-    aicore_depth_free_string(dir);
+    aicore_depth_free_buffer(dir);
     return result;
 #else
     return ".cache/da3_models";
@@ -2397,9 +2413,15 @@ bool DA3DepthController::GenerateSparseModel() {
             aicore_depth_free(ctx);
             return false;
         }
+        aicore_depth_multiview_data data{};
+        data.n_views = N;
+        data.height = multi.h;
+        data.width = multi.w;
+        data.depth = multi.depth.data();
+        data.ext = multi.ext.data();
+        data.intr = multi.intr.data();
         if (aicore_depth_write_colmap_from_multiview(
-                ctx, cpaths.data(), cnames.data(), N, multi.depth.data(),
-                multi.ext.data(), multi.intr.data(), multi.h, multi.w,
+                ctx, cpaths.data(), cnames.data(), &data,
                 sparse_path.c_str(), 1) != 0) {
             LOG(ERROR) << "DA3: aicore_depth_write_colmap_from_multiview failed: "
                        << aicore_depth_last_error(ctx);

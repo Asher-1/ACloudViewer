@@ -173,7 +173,7 @@ aicore_gaussian_ctx* FreeSplatterWorker::loadModel() {
     if (char* infoJ = aicore_gaussian_info_json(ctx)) {
         const QJsonObject mi =
                 QJsonDocument::fromJson(QByteArray(infoJ)).object();
-        aicore_gaussian_free_string(infoJ);
+        aicore_gaussian_free_buffer(infoJ);
         const QString resolved = mi.value(QStringLiteral("device")).toString();
         aicore_inference_log::log_device_resolved(QStringLiteral("FS"),
                                                   resolved);
@@ -218,7 +218,7 @@ bool FreeSplatterWorker::runReconstruct() {
                                 .arg(use2dgs ? "2DGS" : "3DGS")
                                 .arg(geom.sh_degree)
                                 .arg(shRes ? "+residual" : ""));
-        aicore_gaussian_free_string(infoJ);
+        aicore_gaussian_free_buffer(infoJ);
     } else {
         emit logMessage(
                 QString("[FS] Model: %1x%2, %3 gaussian channels, SH degree %4")
@@ -309,7 +309,7 @@ bool FreeSplatterWorker::runReconstruct() {
         const QString resolvedDevice =
                 modelInfo.value(QStringLiteral("device")).toString();
         if (!resolvedDevice.isEmpty()) devLabel = resolvedDevice;
-        aicore_gaussian_free_string(info);
+        aicore_gaussian_free_buffer(info);
     }
     emit logMessage(
             QString("[FS] [3/4] Running inference on %1 image(s) [%2]...")
@@ -343,7 +343,7 @@ bool FreeSplatterWorker::runReconstruct() {
         emit logMessage(QString("[Error] Inference failed: %1")
                                 .arg(err ? err : "unknown"));
         if (gaussians) {
-            aicore_gaussian_free_floats(gaussians);
+            aicore_gaussian_free_buffer(gaussians);
         }
         stashContext(ctx);
         return false;
@@ -376,7 +376,7 @@ bool FreeSplatterWorker::runReconstruct() {
     // refcounts across the queued signal; the buffer must NOT be freed here.
     result.gaussianCount = n_out;
     result.gaussians =
-            std::shared_ptr<float>(gaussians, aicore_gaussian_free_floats);
+            std::shared_ptr<float>(gaussians, aicore_gaussian_free_buffer);
     result.resolvedDevice = devLabel;
     result.runtimeMs = inferTimer.elapsed();
 
@@ -384,8 +384,12 @@ bool FreeSplatterWorker::runReconstruct() {
         emit logMessage("[FS] Estimating camera poses...");
         result.cam2world.resize(n * 16);
         float focal = 0.0f;
-        ret = aicore_gaussian_estimate_poses(result.gaussians.get(), n, H, W,
-                                             gc, m_settings.opacityThreshold,
+        aicore_gaussian_geometry geom{};
+        geom.image_height = H;
+        geom.image_width = W;
+        geom.gaussian_channels = gc;
+        ret = aicore_gaussian_estimate_poses(&geom, result.gaussians.get(), n,
+                                             m_settings.opacityThreshold,
                                              result.cam2world.data(), &focal);
         if (ret == 0) {
             result.hasPoses = true;
@@ -418,7 +422,7 @@ bool FreeSplatterWorker::runModelInfo() {
     char* info = aicore_gaussian_info_json(ctx);
     if (info) {
         emit modelInfoReady(QString::fromUtf8(info));
-        aicore_gaussian_free_string(info);
+        aicore_gaussian_free_buffer(info);
         emit progressUpdate(100, 100);
         stashContext(ctx);
         return true;

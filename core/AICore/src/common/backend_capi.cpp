@@ -15,7 +15,7 @@
 #include <utility>
 #include <vector>
 
-#include "ggml_backend_utils.hpp"
+#include "common/ggml_backend_utils.hpp"
 
 #if defined(AICORE_CUDA_STATIC_LINKED)
 #include <cuda_runtime.h>

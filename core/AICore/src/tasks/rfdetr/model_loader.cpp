@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "model_loader.hpp"
+#include "tasks/rfdetr/model_loader.hpp"
 
 #include <cmath>
 #include <cstdio>
@@ -15,13 +15,13 @@
 #include <string>
 #include <vector>
 
-#include "common.hpp"
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
 #include "ggml.h"
 #include "gguf.h"
-#include "rfdetr.h"
-#include "two_stage.hpp"
+#include "tasks/rfdetr/common.hpp"
+#include "tasks/rfdetr/rfdetr.h"
+#include "tasks/rfdetr/two_stage.hpp"
 
 namespace rfdetr {
 

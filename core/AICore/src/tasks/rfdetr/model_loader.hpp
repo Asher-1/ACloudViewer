@@ -1,7 +1,8 @@
-#ifndef RFDETR_MODEL_LOADER_HPP
-#define RFDETR_MODEL_LOADER_HPP
+#pragma once
 
-#include "rfdetr.h"
+
+#include "tasks/rfdetr/rfdetr.h"
+
 
 #include <cstdint>
 #include <string>
@@ -152,5 +153,3 @@ std::vector<std::string> expected_tensor_names(const Config& cfg);
 uint32_t count_segmentation_blocks(const Model& m);
 
 }  // namespace rfdetr
-
-#endif

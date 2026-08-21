@@ -19,59 +19,42 @@
 
 #include "aicore/backend_capi.h"
 #include "aicore/yolo_capi.h"
-#include "backend.hpp"
-#include "ggml_backend_utils.hpp"
-#include "model_cache.hpp"
-#include "yolo_graph.hpp"
-#include "yolo_image.hpp"
-#include "yolo_postprocess.hpp"
+#include "common/capi_utils.hpp"
+#include "common/ggml_backend_registry.hpp"
+#include "common/ggml_backend_utils.hpp"
+#include "common/model_cache.hpp"
+#include "tasks/yolo/backend.hpp"
+#include "tasks/yolo/yolo_graph.hpp"
+#include "tasks/yolo/yolo_image.hpp"
+#include "tasks/yolo/yolo_postprocess.hpp"
 
 namespace {
 
-char* dup_cstr(const std::string& s) {
-    char* out = static_cast<char*>(std::malloc(s.size() + 1));
-    if (out != nullptr) {
-        std::memcpy(out, s.c_str(), s.size() + 1);
-    }
-    return out;
-}
+using aicore::capi::dup_cstr;
+using aicore::capi::json_escape;
 
-// JSON-escape a class name (COCO labels are plain ASCII, but models converted
-// from other taxonomies may carry quotes / backslashes).
-std::string json_escape(const std::string& s) {
-    std::string out;
-    out.reserve(s.size() + 8);
-    for (char c : s) {
-        switch (c) {
-            case '"':
-                out += "\\\"";
-                break;
-            case '\\':
-                out += "\\\\";
-                break;
-            case '\n':
-                out += "\\n";
-                break;
-            case '\r':
-                out += "\\r";
-                break;
-            case '\t':
-                out += "\\t";
-                break;
-            default:
-                out += c;
-                break;
-        }
+// Load an image file and hand the tightly-packed RGB buffer to f(rgb, w, h).
+// The buffer is freed before returning; f must not keep a pointer to it.
+template <class F>
+auto with_path_rgb(const char* image_path,
+                   aicore_yolo_ctx* ctx,
+                   F&& f) -> decltype(f(nullptr, 0, 0)) {
+    QImage img(QString::fromUtf8(image_path));
+    if (img.isNull()) {
+        ctx->last_error = std::string("failed to load image: ") + image_path;
+        return decltype(f(nullptr, 0, 0))();
     }
-    return out;
+    aicore::capi::PackedRgb packed = aicore::capi::qimage_to_packed_rgb(img);
+    if (packed.data == nullptr) {
+        ctx->last_error = "out of memory decoding image";
+        return decltype(f(nullptr, 0, 0))();
+    }
+    auto result = f(packed.data, packed.width, packed.height);
+    std::free(packed.data);
+    return result;
 }
 
 }  // namespace
-
-struct aicore_yolo_options {
-    std::string device = "auto";
-    int32_t threads = 0;
-};
 
 struct aicore_yolo_ctx {
     yolo::Session* engine = nullptr;
@@ -79,6 +62,20 @@ struct aicore_yolo_ctx {
     std::string device;
     int32_t threads = 0;
     std::string last_error;
+
+    // Detection thresholds: the single configuration point for detect and
+    // segment calls (defaults 0.25 / 0.7 / model max_det). Seeded from the
+    // options struct at load; adjustable at runtime via
+    // aicore_yolo_set_detect_thresholds without rebuilding the context.
+    float conf_thres = 0.25f;
+    float iou_thres = 0.7f;
+    uint32_t top_k = 0;
+
+    // Per-stage wall-clock timings of the most recent inference call
+    // (mirrors the upstream ultralytics-ggml bench fields; surfaced through
+    // aicore_yolo_last_timings for 1:1 latency comparisons).
+    aicore_yolo_timings timings{};
+    bool has_timings = false;
 
     // Statistics of the most recent depth call (surfaced through
     // aicore_yolo_last_depth_json; the float map itself is handed to the
@@ -93,7 +90,30 @@ struct aicore_yolo_ctx {
     DepthStats depth;
 };
 
-AICORE_CAPI int aicore_yolo_abi_version(void) { return 1; }
+struct aicore_yolo_options {
+    aicore::capi::CommonOptions common;
+    float conf_thres = 0.25f;
+    float iou_thres = 0.7f;
+    uint32_t top_k = 0;
+    // Mirrors the yolo::SessionOptions debug/tuning fields (complete bridge;
+    // defaults equal the SessionOptions defaults).
+    int log_level = 1;  // 0=DEBUG,1=INFO,2=WARN,3=ERROR
+    int input_w = 0;    // 0: square imgsz from GGUF metadata
+    int input_h = 0;
+    bool keep_all_ops = false;
+    bool profile_ops = false;
+    bool profile_gaps = false;
+};
+
+struct aicore_yolo_segment_result {
+    std::vector<yolo::Detection> dets;
+    std::vector<yolo::SegMask> masks;
+    // Canvas-space mask data (absolute coordinates), also stored per-mask
+    int canvas_w = 0;
+    int canvas_h = 0;
+};
+
+AICORE_CAPI int aicore_yolo_abi_version(void) { return 2; }
 
 AICORE_CAPI aicore_yolo_options* aicore_yolo_options_new(void) {
     return new (std::nothrow) aicore_yolo_options();
@@ -105,12 +125,74 @@ AICORE_CAPI void aicore_yolo_options_free(aicore_yolo_options* opts) {
 
 AICORE_CAPI void aicore_yolo_options_set_device(aicore_yolo_options* opts,
                                                 const char* device) {
-    if (opts != nullptr && device != nullptr) opts->device = device;
+    if (opts != nullptr) aicore::capi::set_device(opts->common, device);
 }
 
 AICORE_CAPI void aicore_yolo_options_set_threads(aicore_yolo_options* opts,
                                                  int n_threads) {
-    if (opts != nullptr) opts->threads = n_threads;
+    if (opts != nullptr) aicore::capi::set_threads(opts->common, n_threads);
+}
+
+AICORE_CAPI void aicore_yolo_options_set_conf_thres(aicore_yolo_options* opts,
+                                                    float conf_thres) {
+    if (opts != nullptr && conf_thres > 0.0f && conf_thres < 1.0f)
+        opts->conf_thres = conf_thres;
+}
+
+AICORE_CAPI void aicore_yolo_options_set_iou_thres(aicore_yolo_options* opts,
+                                                   float iou_thres) {
+    if (opts != nullptr && iou_thres > 0.0f && iou_thres < 1.0f)
+        opts->iou_thres = iou_thres;
+}
+
+AICORE_CAPI void aicore_yolo_options_set_top_k(aicore_yolo_options* opts,
+                                               uint32_t top_k) {
+    if (opts != nullptr) opts->top_k = top_k;
+}
+
+AICORE_CAPI void aicore_yolo_options_set_log_level(aicore_yolo_options* opts,
+                                                   int log_level) {
+    if (opts == nullptr) return;
+    if (log_level < 0 || log_level > 3) return;  // invalid keeps current
+    opts->log_level = log_level;
+}
+
+AICORE_CAPI void aicore_yolo_options_set_input_size(aicore_yolo_options* opts,
+                                                    int width,
+                                                    int height) {
+    if (opts == nullptr) return;
+    if (width <= 0 || height <= 0) {  // 0/invalid clears to model default
+        opts->input_w = 0;
+        opts->input_h = 0;
+        return;
+    }
+    opts->input_w = width;
+    opts->input_h = height;
+}
+
+AICORE_CAPI void aicore_yolo_options_set_keep_all_ops(aicore_yolo_options* opts,
+                                                      int enabled) {
+    if (opts != nullptr && enabled >= 0) opts->keep_all_ops = enabled != 0;
+}
+
+AICORE_CAPI void aicore_yolo_options_set_profile_ops(aicore_yolo_options* opts,
+                                                     int enabled) {
+    if (opts != nullptr && enabled >= 0) opts->profile_ops = enabled != 0;
+}
+
+AICORE_CAPI void aicore_yolo_options_set_profile_gaps(aicore_yolo_options* opts,
+                                                      int enabled) {
+    if (opts != nullptr && enabled >= 0) opts->profile_gaps = enabled != 0;
+}
+
+AICORE_CAPI float aicore_yolo_options_get_conf_thres(
+        const aicore_yolo_options* opts) {
+    return opts != nullptr ? opts->conf_thres : 0.25f;
+}
+
+AICORE_CAPI float aicore_yolo_options_get_iou_thres(
+        const aicore_yolo_options* opts) {
+    return opts != nullptr ? opts->iou_thres : 0.7f;
 }
 
 AICORE_CAPI aicore_yolo_ctx* aicore_yolo_load_opts(
@@ -120,12 +202,28 @@ AICORE_CAPI aicore_yolo_ctx* aicore_yolo_load_opts(
     if (ctx == nullptr) return nullptr;
 
     ctx->model_path = gguf_path;
-    ctx->device = opts != nullptr ? opts->device : "auto";
-    ctx->threads = opts != nullptr ? opts->threads : 0;
+    ctx->device = opts != nullptr ? opts->common.device : "auto";
+    ctx->threads = opts != nullptr ? opts->common.threads : 0;
+    if (opts != nullptr) {
+        ctx->conf_thres = opts->conf_thres;
+        ctx->iou_thres = opts->iou_thres;
+        ctx->top_k = opts->top_k;
+    }
 
     try {
-        ctx->engine =
-                yolo::create_session(gguf_path, ctx->threads, ctx->device);
+        yolo::SessionOptions sopts;
+        if (opts != nullptr) {
+            sopts.threads = opts->common.threads;
+            sopts.input_w = opts->input_w;
+            sopts.input_h = opts->input_h;
+            sopts.log_level = opts->log_level;
+            sopts.keep_all_ops = opts->keep_all_ops;
+            sopts.profile_ops = opts->profile_ops;
+            sopts.profile_gaps = opts->profile_gaps;
+        } else {
+            sopts.threads = ctx->threads;
+        }
+        ctx->engine = yolo::create_session(gguf_path, ctx->device, sopts);
         if (ctx->engine == nullptr) {
             ctx->last_error = "failed to load YOLO GGUF";
         }
@@ -150,9 +248,7 @@ AICORE_CAPI const char* aicore_yolo_last_error(const aicore_yolo_ctx* ctx) {
                                                       : nullptr;
 }
 
-AICORE_CAPI void aicore_yolo_free_string(char* s) { std::free(s); }
-
-AICORE_CAPI void aicore_yolo_free_vec(float* v) { std::free(v); }
+AICORE_CAPI void aicore_yolo_free_buffer(void* p) { std::free(p); }
 
 AICORE_CAPI int aicore_yolo_load_path_rgb(const char* image_path,
                                           uint8_t** out_rgb,
@@ -167,24 +263,11 @@ AICORE_CAPI int aicore_yolo_load_path_rgb(const char* image_path,
     *out_height = 0;
     QImage img(QString::fromUtf8(image_path));
     if (img.isNull()) return -1;
-    QImage rgb = img.convertToFormat(QImage::Format_RGB888);
-    const size_t nbytes = static_cast<size_t>(rgb.width()) *
-                          static_cast<size_t>(rgb.height()) * 3;
-    uint8_t* buf = static_cast<uint8_t*>(std::malloc(nbytes));
-    if (buf == nullptr) return -1;
-    const int stride = rgb.bytesPerLine();
-    if (stride == rgb.width() * 3) {
-        std::memcpy(buf, rgb.constBits(), nbytes);
-    } else {
-        for (int y = 0; y < rgb.height(); ++y) {
-            std::memcpy(buf + static_cast<size_t>(y) * rgb.width() * 3,
-                        rgb.constScanLine(y),
-                        static_cast<size_t>(rgb.width()) * 3);
-        }
-    }
-    *out_rgb = buf;
-    *out_width = rgb.width();
-    *out_height = rgb.height();
+    aicore::capi::PackedRgb packed = aicore::capi::qimage_to_packed_rgb(img);
+    if (packed.data == nullptr) return -1;
+    *out_rgb = packed.data;
+    *out_width = packed.width;
+    *out_height = packed.height;
     return 0;
 }
 
@@ -198,9 +281,6 @@ char* run_detect(aicore_yolo_ctx* ctx,
                  const uint8_t* rgb,
                  int32_t width,
                  int32_t height,
-                 float conf_thres,
-                 float iou_thres,
-                 uint32_t top_k,
                  int* out_rc) {
     *out_rc = -1;
     yolo::Session* s = ctx->engine;
@@ -215,6 +295,8 @@ char* run_detect(aicore_yolo_ctx* ctx,
     ctx->depth.valid = false;
 
     try {
+        const auto t_e2e = yolo::Clock::now();
+        auto t0 = yolo::Clock::now();
         yolo::LetterboxInfo info;
         std::vector<float> canvas;
         yolo::letterbox_image(yolo::Image{width, height, rgb},
@@ -223,6 +305,9 @@ char* run_detect(aicore_yolo_ctx* ctx,
             ctx->last_error = "graph rebuild for the letterbox canvas failed";
             return nullptr;
         }
+        const double preprocess_ms = yolo::ms_since(t0);
+
+        t0 = yolo::Clock::now();
         if (!yolo::session_run(s, canvas.data())) {
             ctx->last_error = "YOLO inference failed";
             return nullptr;
@@ -233,16 +318,20 @@ char* run_detect(aicore_yolo_ctx* ctx,
             ctx->last_error = "output readback failed";
             return nullptr;
         }
+        const double inference_ms = yolo::ms_since(t0);
+
+        t0 = yolo::Clock::now();
         yolo::PostprocConfig cfg;
-        cfg.conf_thres =
-                conf_thres > 0.0f && conf_thres < 1.0f ? conf_thres : 0.25f;
-        cfg.iou_thres = iou_thres > 0.0f && iou_thres < 1.0f ? iou_thres : 0.7f;
-        cfg.max_det = top_k > 0 ? (int)top_k : s->model.meta.max_det;
+        cfg.conf_thres = ctx->conf_thres;
+        cfg.iou_thres = ctx->iou_thres;
+        cfg.max_det = ctx->top_k > 0 ? (int)ctx->top_k : s->model.meta.max_det;
         std::vector<yolo::Detection> dets =
                 yolo::postprocess(raw, no, na, s->model.meta, s->anchors.data(),
                                   s->anchor_strides.data(), cfg);
         yolo::unscale_boxes(dets, info);
+        const double postprocess_ms = yolo::ms_since(t0);
 
+        t0 = yolo::Clock::now();
         const auto& names = s->model.meta.class_names;
         std::ostringstream o;
         o << "{\"model\":\"" << json_escape(s->model.meta.name) << "\","
@@ -265,8 +354,14 @@ char* run_detect(aicore_yolo_ctx* ctx,
               << d.y2 << "]}";
         }
         o << "]}";
+        char* json = dup_cstr(o.str());
+        const double json_ms = yolo::ms_since(t0);
+        const double e2e_ms = yolo::ms_since(t_e2e);
+        ctx->timings = aicore_yolo_timings{preprocess_ms, inference_ms,
+                                           postprocess_ms, json_ms, e2e_ms};
+        ctx->has_timings = true;
         *out_rc = 0;
-        return dup_cstr(o.str());
+        return json;
     } catch (const std::bad_alloc&) {
         ctx->last_error = "YOLO out of memory in post-processing";
         return nullptr;
@@ -296,6 +391,8 @@ float* run_depth(aicore_yolo_ctx* ctx,
     }
 
     try {
+        const auto t_e2e = yolo::Clock::now();
+        auto t0 = yolo::Clock::now();
         yolo::LetterboxInfo info;
         std::vector<float> canvas;
         yolo::letterbox_image(yolo::Image{width, height, rgb},
@@ -304,6 +401,9 @@ float* run_depth(aicore_yolo_ctx* ctx,
             ctx->last_error = "graph rebuild for the letterbox canvas failed";
             return nullptr;
         }
+        const double preprocess_ms = yolo::ms_since(t0);
+
+        t0 = yolo::Clock::now();
         if (!yolo::session_run(s, canvas.data())) {
             ctx->last_error = "YOLO inference failed";
             return nullptr;
@@ -314,6 +414,9 @@ float* run_depth(aicore_yolo_ctx* ctx,
             ctx->last_error = "depth readback failed";
             return nullptr;
         }
+        const double inference_ms = yolo::ms_since(t0);
+
+        t0 = yolo::Clock::now();
         std::vector<float> restored =
                 yolo::restore_depth(model_depth, dw, dh, info, width, height);
         if (restored.empty()) {
@@ -363,6 +466,11 @@ float* run_depth(aicore_yolo_ctx* ctx,
         std::memcpy(out, restored.data(), restored.size() * sizeof(float));
         if (out_width != nullptr) *out_width = width;
         if (out_height != nullptr) *out_height = height;
+        const double postprocess_ms = yolo::ms_since(t0);
+        ctx->timings =
+                aicore_yolo_timings{preprocess_ms, inference_ms, postprocess_ms,
+                                    0.0, yolo::ms_since(t_e2e)};
+        ctx->has_timings = true;
         return out;
     } catch (const std::bad_alloc&) {
         ctx->last_error = "YOLO out of memory in depth post-processing";
@@ -376,49 +484,54 @@ float* run_depth(aicore_yolo_ctx* ctx,
 }  // namespace
 
 AICORE_CAPI char* aicore_yolo_detect_path_json(aicore_yolo_ctx* ctx,
-                                               const char* image_path,
-                                               float conf_thres,
-                                               float iou_thres,
-                                               uint32_t top_k) {
+                                               const char* image_path) {
     if (ctx == nullptr || ctx->engine == nullptr || image_path == nullptr) {
         return nullptr;
     }
-    QImage img(QString::fromUtf8(image_path));
-    if (img.isNull()) {
-        ctx->last_error = std::string("failed to load image: ") + image_path;
-        return nullptr;
-    }
-    QImage rgb = img.convertToFormat(QImage::Format_RGB888);
-    std::vector<uint8_t> packed;
-    const int w = rgb.width(), h = rgb.height();
-    packed.resize((size_t)w * h * 3);
-    if (rgb.bytesPerLine() == w * 3) {
-        std::memcpy(packed.data(), rgb.constBits(), packed.size());
-    } else {
-        for (int y = 0; y < h; ++y) {
-            std::memcpy(packed.data() + (size_t)y * w * 3, rgb.constScanLine(y),
-                        (size_t)w * 3);
-        }
-    }
-    int rc = -1;
-    return run_detect(ctx, packed.data(), w, h, conf_thres, iou_thres, top_k,
-                      &rc);
+    return with_path_rgb(image_path, ctx,
+                         [&](const uint8_t* rgb, int w, int h) {
+                             int rc = -1;
+                             return run_detect(ctx, rgb, w, h, &rc);
+                         });
 }
 
 AICORE_CAPI char* aicore_yolo_detect_rgb_json(aicore_yolo_ctx* ctx,
                                               const uint8_t* rgb,
                                               int32_t width,
-                                              int32_t height,
-                                              float conf_thres,
-                                              float iou_thres,
-                                              uint32_t top_k) {
+                                              int32_t height) {
     if (ctx == nullptr || ctx->engine == nullptr) return nullptr;
     int rc = -1;
     /* Borrow (no copy): the caller's buffer must stay alive for the whole
      * call, which the synchronous C API contract guarantees (preprocess
      * only reads from it). Saves a full-frame copy per detection call. */
-    return run_detect(ctx, rgb, width, height, conf_thres, iou_thres, top_k,
-                      &rc);
+    return run_detect(ctx, rgb, width, height, &rc);
+}
+
+/** Runtime threshold update without rebuilding the context (validated: out
+ *  of range values keep the previous value). */
+AICORE_CAPI void aicore_yolo_set_detect_thresholds(aicore_yolo_ctx* ctx,
+                                                   float conf_thres,
+                                                   float iou_thres,
+                                                   uint32_t top_k) {
+    if (ctx == nullptr) return;
+    if (conf_thres > 0.0f && conf_thres < 1.0f) ctx->conf_thres = conf_thres;
+    if (iou_thres > 0.0f && iou_thres < 1.0f) ctx->iou_thres = iou_thres;
+    ctx->top_k = top_k;
+}
+
+/** Drop the host-side copies of the model weights (halves the host memory
+ *  footprint; the device weight buffer is untouched, so inference keeps
+ *  working). Reload on demand with aicore_yolo_ensure_host_weights. */
+AICORE_CAPI int aicore_yolo_release_host_weights(aicore_yolo_ctx* ctx) {
+    if (ctx == nullptr || ctx->engine == nullptr) return -1;
+    return yolo::session_release_host_weights(ctx->engine) ? 0 : -1;
+}
+
+/** Reload released host weight copies from the GGUF file (no-op when they
+ *  are present). Returns 0 on success, -1 when the GGUF cannot be reopened. */
+AICORE_CAPI int aicore_yolo_ensure_host_weights(aicore_yolo_ctx* ctx) {
+    if (ctx == nullptr || ctx->engine == nullptr) return -1;
+    return yolo::session_ensure_host_weights(ctx->engine) ? 0 : -1;
 }
 
 AICORE_CAPI float* aicore_yolo_depth_path(aicore_yolo_ctx* ctx,
@@ -428,24 +541,10 @@ AICORE_CAPI float* aicore_yolo_depth_path(aicore_yolo_ctx* ctx,
     if (ctx == nullptr || ctx->engine == nullptr || image_path == nullptr) {
         return nullptr;
     }
-    QImage img(QString::fromUtf8(image_path));
-    if (img.isNull()) {
-        ctx->last_error = std::string("failed to load image: ") + image_path;
-        return nullptr;
-    }
-    QImage rgb = img.convertToFormat(QImage::Format_RGB888);
-    std::vector<uint8_t> packed;
-    const int w = rgb.width(), h = rgb.height();
-    packed.resize((size_t)w * h * 3);
-    if (rgb.bytesPerLine() == w * 3) {
-        std::memcpy(packed.data(), rgb.constBits(), packed.size());
-    } else {
-        for (int y = 0; y < h; ++y) {
-            std::memcpy(packed.data() + (size_t)y * w * 3, rgb.constScanLine(y),
-                        (size_t)w * 3);
-        }
-    }
-    return run_depth(ctx, packed.data(), w, h, out_width, out_height);
+    return with_path_rgb(
+            image_path, ctx, [&](const uint8_t* rgb, int w, int h) {
+                return run_depth(ctx, rgb, w, h, out_width, out_height);
+            });
 }
 
 AICORE_CAPI float* aicore_yolo_depth_rgb(aicore_yolo_ctx* ctx,
@@ -458,6 +557,143 @@ AICORE_CAPI float* aicore_yolo_depth_rgb(aicore_yolo_ctx* ctx,
     if (out_width != nullptr) *out_width = 0;
     if (out_height != nullptr) *out_height = 0;
     return run_depth(ctx, rgb, width, height, out_width, out_height);
+}
+
+// ---- Segment result (typed API) ----
+
+AICORE_CAPI aicore_yolo_segment_result* aicore_yolo_seg_rgb(
+        aicore_yolo_ctx* ctx,
+        const uint8_t* rgb,
+        int32_t width,
+        int32_t height) {
+    if (ctx == nullptr || ctx->engine == nullptr || rgb == nullptr ||
+        width <= 0 || height <= 0) {
+        return nullptr;
+    }
+    yolo::Session* s = ctx->engine;
+    if (s->model.meta.task != "segment") {
+        ctx->last_error =
+                "model is not a segment model (task=" + s->model.meta.task +
+                ")";
+        return nullptr;
+    }
+
+    try {
+        const auto t_e2e = yolo::Clock::now();
+        auto t0 = yolo::Clock::now();
+        yolo::LetterboxInfo info;
+        std::vector<float> canvas;
+        yolo::letterbox_image(yolo::Image{width, height, rgb},
+                              s->model.meta.imgsz, info, canvas);
+
+        // Canvas resize if needed
+        if (!yolo::session_ensure_canvas(s, info.imgsz_w, info.imgsz_h)) {
+            ctx->last_error = "graph rebuild failed";
+            return nullptr;
+        }
+        const double preprocess_ms = yolo::ms_since(t0);
+
+        t0 = yolo::Clock::now();
+        if (!yolo::session_run(s, canvas.data())) {
+            ctx->last_error = "YOLO segment inference failed";
+            return nullptr;
+        }
+
+        // Read detect output
+        std::vector<float> raw;
+        int no = 0, na = 0;
+        if (!yolo::session_read_output(s, raw, no, na)) {
+            ctx->last_error = "output readback failed";
+            return nullptr;
+        }
+        const double inference_ms = yolo::ms_since(t0);
+
+        t0 = yolo::Clock::now();
+        // Read proto output — counted as postprocess, mirroring the upstream
+        // bench (proto readback + mask composition belong to post_ms).
+        std::vector<float> proto;
+        int nm = 0, proto_w = 0, proto_h = 0;
+        if (!yolo::session_read_proto(s, proto, nm, proto_w, proto_h)) {
+            ctx->last_error = "proto readback failed";
+            return nullptr;
+        }
+
+        // Postprocess
+        yolo::PostprocConfig cfg;
+        cfg.conf_thres = ctx->conf_thres;
+        cfg.iou_thres = ctx->iou_thres;
+        cfg.max_det = ctx->top_k > 0 ? (int)ctx->top_k : s->model.meta.max_det;
+        std::vector<yolo::Detection> dets =
+                yolo::postprocess(raw, no, na, s->model.meta, s->anchors.data(),
+                                  s->anchor_strides.data(), cfg);
+
+        // Compose masks (before unscale_boxes — masks are in canvas coords)
+        std::vector<yolo::SegMask> masks = yolo::compose_masks(
+                dets, raw, na, s->model.meta, proto, proto_w, proto_h,
+                info.imgsz_w, info.imgsz_h);
+
+        // Unscale boxes to original image coordinates
+        yolo::unscale_boxes(dets, info);
+
+        auto* res = new (std::nothrow) aicore_yolo_segment_result();
+        if (!res) {
+            ctx->last_error = "YOLO out of memory for segment result";
+            return nullptr;
+        }
+        res->dets = std::move(dets);
+        res->masks = std::move(masks);
+        res->canvas_w = info.imgsz_w;
+        res->canvas_h = info.imgsz_h;
+        const double postprocess_ms = yolo::ms_since(t0);
+        ctx->timings =
+                aicore_yolo_timings{preprocess_ms, inference_ms, postprocess_ms,
+                                    0.0, yolo::ms_since(t_e2e)};
+        ctx->has_timings = true;
+        return res;
+    } catch (const std::bad_alloc&) {
+        ctx->last_error = "YOLO out of memory in segment post-processing";
+        return nullptr;
+    } catch (const std::exception& e) {
+        ctx->last_error = std::string("YOLO segment error: ") + e.what();
+        return nullptr;
+    }
+}
+
+AICORE_CAPI int aicore_yolo_seg_det_count(
+        const aicore_yolo_segment_result* res) {
+    return res != nullptr ? (int)res->dets.size() : 0;
+}
+
+AICORE_CAPI aicore_yolo_detection
+aicore_yolo_seg_det_at(const aicore_yolo_segment_result* res, int index) {
+    aicore_yolo_detection det = {};
+    if (res != nullptr && index >= 0 && index < (int)res->dets.size()) {
+        const auto& d = res->dets[index];
+        det.x1 = d.x1;
+        det.y1 = d.y1;
+        det.x2 = d.x2;
+        det.y2 = d.y2;
+        det.score = d.score;
+        det.class_id = d.class_id;
+    }
+    return det;
+}
+
+AICORE_CAPI aicore_yolo_plane_view
+aicore_yolo_seg_mask_at(const aicore_yolo_segment_result* res, int index) {
+    aicore_yolo_plane_view view = {};
+    if (res != nullptr && index >= 0 && index < (int)res->masks.size()) {
+        const auto& m = res->masks[index];
+        view.data = m.bits.data();
+        view.width = m.w;
+        view.height = m.h;
+        view.row_stride_bytes = (size_t)m.w;
+    }
+    return view;
+}
+
+AICORE_CAPI void aicore_yolo_seg_result_free(aicore_yolo_segment_result* res) {
+    delete res;
 }
 
 AICORE_CAPI char* aicore_yolo_last_depth_json(aicore_yolo_ctx* ctx) {
@@ -553,11 +789,26 @@ AICORE_CAPI char* aicore_yolo_info_json(aicore_yolo_ctx* ctx) {
     return dup_cstr(o.str());
 }
 
+AICORE_CAPI int aicore_yolo_last_timings(const aicore_yolo_ctx* ctx,
+                                         aicore_yolo_timings* out_timings) {
+    if (ctx == nullptr || out_timings == nullptr || !ctx->has_timings) {
+        return -1;
+    }
+    *out_timings = ctx->timings;
+    return 0;
+}
+
 AICORE_CAPI int aicore_yolo_warmup_backend(const char* device) {
     return aicore_warmup_backend(device != nullptr ? device : "auto");
 }
 
-AICORE_CAPI void aicore_yolo_shutdown(void) {}
+AICORE_CAPI void aicore_yolo_shutdown(void) {
+    // Reclaims process-wide backend registry entries whose owners are gone
+    // (expired leases). Live contexts are never touched. There is no other
+    // process-global YOLO state to release; ggml backends themselves are
+    // registered for the process lifetime by ggml_backend_load_all.
+    aicore::runtime::purge_inactive_backend_leases();
+}
 
 AICORE_CAPI char* aicore_yolo_model_cache_dir(void) {
     return dup_cstr(aicore::yolo_model_cache_dir());

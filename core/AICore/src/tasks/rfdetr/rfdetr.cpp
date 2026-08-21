@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "rfdetr.h"
+#include "tasks/rfdetr/rfdetr.h"
 
 #include <cstdlib>
 #include <new>
@@ -13,13 +13,13 @@
 #include <thread>
 #include <vector>
 
-#include "backend.hpp"
-#include "common.hpp"
 #include "ggml-backend.h"
-#include "image_io.hpp"
-#include "model_loader.hpp"
-#include "postprocess.hpp"
-#include "rfdetr_model.hpp"
+#include "tasks/rfdetr/backend.hpp"
+#include "tasks/rfdetr/common.hpp"
+#include "tasks/rfdetr/image_io.hpp"
+#include "tasks/rfdetr/model_loader.hpp"
+#include "tasks/rfdetr/postprocess.hpp"
+#include "tasks/rfdetr/rfdetr_model.hpp"
 
 namespace {
 /* Resolve the requested thread count for the CPU backend:

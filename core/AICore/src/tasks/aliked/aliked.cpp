@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "lightglue/aliked.h"
+#include "tasks/aliked/include/lightglue/aliked.h"
 
 #include <ggml-backend.h>
 
@@ -16,25 +16,28 @@
 #include <iostream>
 #include <memory>
 
-#include "aliked_gpu_ops.hpp"
-#include "aliked_stage_bench.hpp"
-#include "backend.h"
-#include "deform_conv.hpp"
-#include "ggml_cnn.hpp"
-#include "ggml_gpu_ops.hpp"
-#include "gguf_weight_quantize.hpp"
-#include "gpu_pipeline.hpp"
-#include "gpu_pipeline_cache.hpp"
-#include "gpu_postprocess.hpp"
-#include "gpu_sync.hpp"
-#include "gpu_tensor.hpp"
-#include "model_weights.hpp"
-#include "score_debug.hpp"
+#include "common/gguf_weight_quantize.hpp"
+#include "tasks/aliked/aliked_common.hpp"
+#include "tasks/aliked/aliked_gpu_ops.hpp"
+#include "tasks/aliked/aliked_stage_bench.hpp"
+#include "tasks/aliked/backend.h"
+#include "tasks/aliked/deform_conv.hpp"
+#include "tasks/aliked/ggml_cnn.hpp"
+#include "tasks/aliked/ggml_gpu_ops.hpp"
+#include "tasks/aliked/gpu_pipeline.hpp"
+#include "tasks/aliked/gpu_pipeline_cache.hpp"
+#include "tasks/aliked/gpu_postprocess.hpp"
+#include "tasks/aliked/gpu_sync.hpp"
+#include "tasks/aliked/gpu_tensor.hpp"
+#include "tasks/aliked/model_weights.hpp"
+#include "tasks/aliked/score_debug.hpp"
+
 #if defined(AICORE_VULKAN_ALIKED)
-#include "vulkan/vulkan_aliked_dispatch.hpp"
+#include "tasks/aliked/vulkan/vulkan_aliked_dispatch.hpp"
+
 #endif
-#include "postprocess.hpp"
-#include "tensor_ops.hpp"
+#include "tasks/aliked/postprocess.hpp"
+#include "tasks/aliked/tensor_ops.hpp"
 
 namespace lightglue {
 namespace {
@@ -790,12 +793,9 @@ public:
             try {
                 EndVulkanExtract(&backend_, gpu_cache_.get());
             } catch (const std::exception &e) {
-                std::fprintf(stderr, "[vk-aliked] ~dtor EndVulkanExtract: %s\n",
-                             e.what());
+                ALIKED_LOG_ERR("~dtor EndVulkanExtract: %s", e.what());
             } catch (...) {
-                std::fprintf(stderr,
-                             "[vk-aliked] ~dtor EndVulkanExtract unknown "
-                             "exception\n");
+                ALIKED_LOG_ERR("~dtor EndVulkanExtract unknown exception");
             }
             gpu_cache_.reset();
             try {
@@ -804,12 +804,11 @@ public:
             } catch (const std::exception &e) {
                 // A lost device cannot be recovered.  Swallow the exception
                 // so the destructor completes and releases host resources.
-                std::fprintf(stderr, "[vk-aliked] ~dtor synchronize: %s\n",
-                             e.what());
+                ALIKED_LOG_ERR("~dtor synchronize: %s", e.what());
             } catch (...) {
-                std::fprintf(stderr,
-                             "[vk-aliked] ~dtor synchronize failed with "
-                             "unknown exception\n");
+                ALIKED_LOG_ERR(
+                        "~dtor synchronize failed with unknown "
+                        "exception");
             }
         }
 #endif
@@ -848,9 +847,7 @@ public:
     bool ForceRewarmOnDeviceLost() {
 #if defined(AICORE_VULKAN_ALIKED)
         if (!backend_.IsVulkan()) return true;
-        std::fprintf(stderr,
-                     "[vk-aliked] device-lost detected; forcing full backend "
-                     "re-init\n");
+        ALIKED_LOG_WARN("device-lost detected; forcing full backend re-init");
         if (!DoRewarm()) {
             // Re-init failed; keep the flag armed so the next call retries
             // the full recovery instead of silently falling back to CPU.
@@ -1023,22 +1020,6 @@ public:
                                         scores_host.data(), 0,
                                         scores_host.size() * sizeof(float));
             }
-            if (std::getenv("LIGHTGLUE_ALIKED_TRACE")) {
-                const size_t n = kpts_host.size();
-                size_t bad = 0;
-                for (size_t i = 0; i < n; ++i) {
-                    if (!std::isfinite(kpts_host[i])) {
-                        ++bad;
-                    }
-                }
-                std::cerr << "dkd kpts count=" << gpu_kpts.count
-                          << " non_finite=" << bad;
-                if (gpu_kpts.count > 0) {
-                    std::cerr << " k0=(" << kpts_host[0] << "," << kpts_host[1]
-                              << ")";
-                }
-                std::cerr << "\n";
-            }
 
             if (gpu_kpts.count > 0) {
                 StageBench bench("sddh");
@@ -1076,11 +1057,6 @@ public:
                 FlushGpuPipeline(&backend_);
             }
 #endif
-            if (std::getenv("LIGHTGLUE_ALIKED_TRACE") && count > 0) {
-                std::cerr << "dkd kpts post-sddh k0=("
-                          << dkd_out.keypoints_norm[0] << ","
-                          << dkd_out.keypoints_norm[1] << ")\n";
-            }
             if (count > 0) {
                 ggml_backend_tensor_get(gpu_desc.tensor, descriptors.data(), 0,
                                         static_cast<size_t>(count) *

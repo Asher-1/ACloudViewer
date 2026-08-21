@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "antispoof_graph.hpp"
+#include "tasks/facedetect/antispoof_graph.hpp"
 
 #include <algorithm>
 #include <array>
@@ -18,16 +18,16 @@
 #include <unordered_set>
 #include <vector>
 
-#include "align.hpp"
-#include "backend.hpp"
-#include "common.hpp"
-#include "detect.hpp"
 #include "ggml-backend.h"
 #include "ggml.h"
-#include "graph_ops.hpp"
-#include "model.hpp"
-#include "model_loader.hpp"
-#include "preprocess.hpp"
+#include "tasks/facedetect/align.hpp"
+#include "tasks/facedetect/backend.hpp"
+#include "tasks/facedetect/common.hpp"
+#include "tasks/facedetect/detect.hpp"
+#include "tasks/facedetect/graph_ops.hpp"
+#include "tasks/facedetect/model.hpp"
+#include "tasks/facedetect/model_loader.hpp"
+#include "tasks/facedetect/preprocess.hpp"
 
 namespace fd {
 
@@ -486,18 +486,11 @@ std::vector<float> run_onnx_graph(const ModelLoader& ml,
                         bn_alias;  // BN.out -> conv.out
                 std::unordered_set<std::string>
                         fuse_convs;  // conv.out, CPU fuse
-                // A/B overrides (parity-neutral; both default ON where
-                // applicable):
-                //   FACEDETECT_NO_BN_FOLD    - keep BN as live nodes (disables
-                //   fold+fuse) FACEDETECT_NO_PRELU_FUSE - keep the separate
-                //   bias-add + PReLU nodes
-                const bool no_fold =
-                        std::getenv("FACEDETECT_NO_BN_FOLD") != nullptr;
-                const bool no_fuse =
-                        std::getenv("FACEDETECT_NO_PRELU_FUSE") != nullptr;
+                // BN fold + PReLU fuse are the settled defaults (parity-
+                // neutral). The historical FACEDETECT_NO_BN_FOLD /
+                // FACEDETECT_NO_PRELU_FUSE A/B overrides are removed.
                 const bool cpu = backend_is_cpu();
                 for (const Node& n : nodes) {
-                    if (no_fold) break;
                     if (n.op != "BatchNormalization" || n.in.size() < 5)
                         continue;
                     auto pit = producer.find(n.in[0]);
@@ -511,7 +504,7 @@ std::vector<float> run_onnx_graph(const ModelLoader& ml,
                     // (c) that consumer is a PReLU reading the BN output
                     // directly. The SFace/MobileFaceNet stack is uniformly
                     // Conv->BN->PReLU, so every fold also fuses.
-                    if (cpu && !no_fuse && consumers[n.out] == 1) {
+                    if (cpu && consumers[n.out] == 1) {
                         auto cit = consumer_node.find(n.out);
                         if (cit != consumer_node.end() &&
                             cit->second->op == "PRelu" &&

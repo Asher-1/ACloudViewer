@@ -5,9 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "rmbg.hpp"
-#include "rmbg_graph.hpp"
-#include "rmbg_preprocess.hpp"
+#include "tasks/rmbg/rmbg.hpp"
+#include "tasks/rmbg/rmbg_graph.hpp"
+#include "tasks/rmbg/rmbg_preprocess.hpp"
 
 namespace rmbg {
 

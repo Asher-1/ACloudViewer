@@ -73,6 +73,9 @@ bool YOLOWorker::runInference() {
     aicore_yolo_options_set_device(opts,
                                    m_settings.device.toUtf8().constData());
     aicore_yolo_options_set_threads(opts, m_settings.threads);
+    aicore_yolo_options_set_conf_thres(opts, m_settings.confThres);
+    aicore_yolo_options_set_iou_thres(opts, m_settings.iouThres);
+    aicore_yolo_options_set_top_k(opts, m_settings.topK);
 
     emit logMessage(tr("[YOLO] Loading model: %1 (device=%2, threads=%3)")
                             .arg(QFileInfo(m_settings.modelPath).fileName(),
@@ -139,11 +142,14 @@ bool YOLOWorker::runInference() {
         return false;
     }
 
-    // The loaded model decides the path: a detect GGUF yields boxes, a depth
-    // GGUF yields a metric depth map — there is no user-side task switch
-    // that could disagree with the model.
+    // The loaded model decides the path: a detect GGUF yields boxes, a
+    // segment GGUF yields boxes + instance masks, a depth GGUF yields a
+    // metric depth map — there is no user-side task switch that could
+    // disagree with the model.
     const bool ok = (task == QStringLiteral("depth")) ? runDepth(rgb, rgbData)
-                                                      : runDetect(rgb, rgbData);
+                    : (task == QStringLiteral("segment"))
+                            ? runSegment(rgb, rgbData)
+                            : runDetect(rgb, rgbData);
     emit progressUpdate(1, 1);
     return ok;
 }
@@ -152,9 +158,8 @@ bool YOLOWorker::runDetect(const QImage& rgb, const uchar* rgbData) {
     QElapsedTimer timer;
     timer.start();
     aicore_cancel_scope_begin(m_cancelToken);
-    char* json = aicore_yolo_detect_rgb_json(
-            m_pendingCtx, rgbData, rgb.width(), rgb.height(),
-            m_settings.confThres, m_settings.iouThres, m_settings.topK);
+    char* json = aicore_yolo_detect_rgb_json(m_pendingCtx, rgbData, rgb.width(),
+                                             rgb.height());
     aicore_cancel_scope_end(m_cancelToken);
     const double ms = static_cast<double>(timer.elapsed());
 
@@ -170,6 +175,7 @@ bool YOLOWorker::runDetect(const QImage& rgb, const uchar* rgbData) {
     result.imagePath = m_settings.inputPath;
     result.imageName = QFileInfo(m_settings.inputPath).fileName();
     result.modelPath = m_settings.modelPath;
+    result.task = QStringLiteral("detect");
     result.runtimeMs = ms;
     // Backend-resolved device (may differ from the request when the GPU
     // lease failed and yolo fell back to CPU).
@@ -178,11 +184,11 @@ bool YOLOWorker::runDetect(const QImage& rgb, const uchar* rgbData) {
                                     ? QString::fromUtf8(resolvedDevice)
                                     : m_settings.device;
     if (!YOLOHelpers::parseDetectionsJson(QByteArray(json), &result)) {
-        aicore_yolo_free_string(json);
+        aicore_yolo_free_buffer(json);
         emit logMessage(tr("[YOLO] Failed to parse detection JSON."));
         return false;
     }
-    aicore_yolo_free_string(json);
+    aicore_yolo_free_buffer(json);
 
     // Annotated image (boxes + labels) for DB export.
     QImage annotated = rgb;
@@ -200,8 +206,95 @@ bool YOLOWorker::runDetect(const QImage& rgb, const uchar* rgbData) {
     return true;
 }
 
+bool YOLOWorker::runSegment(const QImage& rgb, const uchar* rgbData) {
+    QElapsedTimer timer;
+    timer.start();
+    aicore_cancel_scope_begin(m_cancelToken);
+    aicore_yolo_segment_result* seg = aicore_yolo_seg_rgb(
+            m_pendingCtx, rgbData, rgb.width(), rgb.height());
+    aicore_cancel_scope_end(m_cancelToken);
+    const double ms = static_cast<double>(timer.elapsed());
+
+    if (!seg) {
+        const char* err = aicore_yolo_last_error(m_pendingCtx);
+        emit logMessage(tr("[YOLO] Segmentation failed: %1")
+                                .arg(err ? QString::fromUtf8(err)
+                                         : tr("unknown error")));
+        return false;
+    }
+
+    YOLORunResult result;
+    result.imagePath = m_settings.inputPath;
+    result.imageName = QFileInfo(m_settings.inputPath).fileName();
+    result.modelPath = m_settings.modelPath;
+    result.task = QStringLiteral("segment");
+    result.runtimeMs = ms;
+    const char* resolvedDevice = aicore_yolo_context_device(m_pendingCtx);
+    result.resolvedDevice = (resolvedDevice && resolvedDevice[0])
+                                    ? QString::fromUtf8(resolvedDevice)
+                                    : m_settings.device;
+    result.modelVariant =
+            QString::fromUtf8(aicore_yolo_context_model_name(m_pendingCtx));
+    result.imageSize =
+            static_cast<int>(aicore_yolo_context_image_size(m_pendingCtx));
+    result.numClasses =
+            static_cast<int>(aicore_yolo_context_num_classes(m_pendingCtx));
+    result.end2end = aicore_yolo_context_end2end(m_pendingCtx) != 0;
+
+    // Typed segment result: detections + per-instance masks.
+    const int n = aicore_yolo_seg_det_count(seg);
+    result.detections.reserve(n > 0 ? n : 0);
+    result.masks.reserve(n > 0 ? n : 0);
+    for (int i = 0; i < n; ++i) {
+        const aicore_yolo_detection det = aicore_yolo_seg_det_at(seg, i);
+        YOLODetection d;
+        d.classId = det.class_id;
+        d.x1 = det.x1;
+        d.y1 = det.y1;
+        d.x2 = det.x2;
+        d.y2 = det.y2;
+        d.score = det.score;
+        result.detections.append(d);
+
+        const aicore_yolo_plane_view view = aicore_yolo_seg_mask_at(seg, i);
+        if (view.data != nullptr && view.width > 0 && view.height > 0) {
+            YOLOSegMask mask;
+            mask.w = view.width;
+            mask.h = view.height;
+            // Deep copy: the segment result is freed below and QByteArray
+            // (const char*, int) allocates owned storage.
+            mask.bits = QByteArray(
+                    static_cast<const char*>(view.data),
+                    static_cast<int>(view.row_stride_bytes) * view.height);
+            result.masks.append(mask);
+        }
+    }
+    // Class names are not exposed by the typed API; fall back to the
+    // deterministic palette label so boxes still render with a caption.
+    for (int i = 0; i < result.detections.size(); ++i) {
+        result.detections[i].className =
+                QStringLiteral("class %1").arg(result.detections[i].classId);
+    }
+    result.totalDetected = n;
+    aicore_yolo_seg_result_free(seg);
+
+    // Annotated image: translucent per-class mask tint + boxes/labels.
+    QImage annotated = rgb;
+    YOLOHelpers::drawSegmentation(&annotated, result.masks, result.detections);
+    result.annotatedImage = annotated;
+
+    emit logMessage(
+            tr("[YOLO] %1 segment(s) in %2 ms (model=%3, conf=%4, iou=%5)")
+                    .arg(n)
+                    .arg(ms, 0, 'f', 1)
+                    .arg(result.modelVariant)
+                    .arg(m_settings.confThres, 0, 'f', 2)
+                    .arg(m_settings.iouThres, 0, 'f', 2));
+    emit resultReady(result);
+    return true;
+}
+
 bool YOLOWorker::runDepth(const QImage& rgb, const uchar* rgbData) {
-    Q_UNUSED(rgb);
     QElapsedTimer timer;
     timer.start();
     int32_t depthW = 0, depthH = 0;
@@ -212,7 +305,7 @@ bool YOLOWorker::runDepth(const QImage& rgb, const uchar* rgbData) {
     const double ms = static_cast<double>(timer.elapsed());
 
     if (!depth || depthW <= 0 || depthH <= 0) {
-        if (depth) aicore_yolo_free_vec(depth);
+        if (depth) aicore_yolo_free_buffer(depth);
         const char* err = aicore_yolo_last_error(m_pendingCtx);
         emit logMessage(tr("[YOLO] Depth inference failed: %1")
                                 .arg(err ? QString::fromUtf8(err)
@@ -229,7 +322,7 @@ bool YOLOWorker::runDepth(const QImage& rgb, const uchar* rgbData) {
     result.height = depthH;
     result.depthMap =
             QVector<float>(depth, depth + static_cast<size_t>(depthW) * depthH);
-    aicore_yolo_free_vec(depth);
+    aicore_yolo_free_buffer(depth);
     result.modelVariant =
             QString::fromUtf8(aicore_yolo_context_model_name(m_pendingCtx));
     result.imageSize =
@@ -242,7 +335,7 @@ bool YOLOWorker::runDepth(const QImage& rgb, const uchar* rgbData) {
     // Statistics envelope (min/max/mean/p95 over valid pixels).
     if (char* statsJson = aicore_yolo_last_depth_json(m_pendingCtx)) {
         result.resultJson = QByteArray(statsJson);
-        aicore_yolo_free_string(statsJson);
+        aicore_yolo_free_buffer(statsJson);
         YOLOHelpers::parseDepthStatsJson(result.resultJson, &result.stats);
     }
 

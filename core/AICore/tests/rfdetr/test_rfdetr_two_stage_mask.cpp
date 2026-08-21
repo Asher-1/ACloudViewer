@@ -40,11 +40,11 @@
 #include <string>
 #include <vector>
 
-#include "backend.hpp"
-#include "common/test_macros.hpp"
-#include "model_loader.hpp"
-#include "trace.hpp"
-#include "two_stage.hpp"
+#include "tasks/rfdetr/backend.hpp"
+#include "tasks/rfdetr/model_loader.hpp"
+#include "tasks/rfdetr/trace.hpp"
+#include "tasks/rfdetr/two_stage.hpp"
+#include "tests/common/test_macros.hpp"
 
 static int failures = 0;
 

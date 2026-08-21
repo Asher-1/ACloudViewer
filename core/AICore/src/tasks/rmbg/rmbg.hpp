@@ -17,7 +17,10 @@
 #include <vector>
 
 #include "ggml-backend.h"
-#include "ggml_backend_registry.hpp"
+#include "common/ggml_backend_registry.hpp"
+
+#include "tasks/rmbg/rmbg_graph.hpp"
+
 
 namespace rmbg {
 
@@ -45,13 +48,21 @@ struct Model {
     bool graph_ready = false;
 };
 
-// Must run before the requested ggml backend is initialized. The RMBG load
-// path calls it automatically; backend-only warmup callers use it directly.
-void configure_backend_profile(const char *device);
+// Normalize a math profile name to one of
+// "default" | "optimized" | "strict" | "fast" | "unsafe-fast"
+// (unknown/empty -> "optimized", the historical default).
+std::string normalize_math_profile(const char *profile);
 
+// Load a unified RMBG-2.0 GGUF. `math_profile` selects the Vulkan/CUDA math
+// configuration (replaces the RMBG_* environment variables); the implied
+// ggml-side environment overrides are queued through the AICore env bridge
+// before the backend registers. `graph_options` carries the fine-tuning
+// switches; the profile always wins for the flow-defining fields.
 bool load_gguf(const char *path,
                const char *device,
                int n_threads,
+               const char *math_profile,
+               const GraphOptions &graph_options,
                Model &out,
                std::string &err);
 void free_model(Model &m);

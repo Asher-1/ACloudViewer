@@ -2,7 +2,8 @@
 #include <vector>
 
 #include "align.hpp"  // fd::Landmarks5
-#include "image_io.hpp"
+#include "tasks/facedetect/image_io.hpp"
+
 
 namespace fd {
 

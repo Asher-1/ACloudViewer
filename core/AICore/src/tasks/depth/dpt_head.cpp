@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "dpt_head.hpp"
+#include "tasks/depth/dpt_head.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -15,9 +15,9 @@
 #include <string>
 #include <tuple>
 
-#include "dpt_blocks.hpp"
-#include "ggml_extend.hpp"
-#include "uv_posembed.hpp"
+#include "common/ggml_extend.hpp"
+#include "tasks/depth/dpt_blocks.hpp"
+#include "tasks/depth/uv_posembed.hpp"
 
 namespace aicore {
 namespace depth {

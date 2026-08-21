@@ -7,19 +7,12 @@
 
 // Qt-based image I/O implementation for FreeSplatter.
 // QImage-based loading, center-cropping, and resizing.
-#include "image_io.hpp"
+#include "tasks/gaussian/image_io.hpp"
 
 #include <QImage>
 #include <QImageReader>
 #include <algorithm>
 #include <cstring>
-
-#ifdef AICore_HAS_CVLOG
-#include "CVLog.h"
-#include "CVTools.h"
-#else
-#define CVLog_warning(...)
-#endif
 
 namespace aicore {
 namespace gaussian {

@@ -5,13 +5,13 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "align.hpp"
+#include "tasks/facedetect/align.hpp"
 
 #include <array>
 #include <cmath>
 #include <vector>
 
-#include "common.hpp"
+#include "tasks/facedetect/common.hpp"
 
 namespace fd {
 

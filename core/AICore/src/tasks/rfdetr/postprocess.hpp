@@ -1,7 +1,8 @@
-#ifndef RFDETR_POSTPROCESS_HPP
-#define RFDETR_POSTPROCESS_HPP
+#pragma once
 
-#include "rfdetr.h"
+
+#include "tasks/rfdetr/rfdetr.h"
+
 #include <cstddef>
 #include <cstdint>
 #include <vector>
@@ -70,6 +71,4 @@ void rfdetr_select_detections_with_masks(
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

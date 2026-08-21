@@ -57,6 +57,7 @@ function(_aicore_test_common name)
         target_compile_options(${name} PRIVATE -Wall -Wextra)
     endif()
     target_include_directories(${name} PRIVATE ${AICORE_TEST_INC})
+    target_include_directories(${name} PRIVATE ${AICORE_TEST_INC}/..)
     include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/AICoreCompileDefinitions.cmake)
     aicore_apply_compile_definitions(${name})
     set_target_properties(${name} PROPERTIES POSITION_INDEPENDENT_CODE ON)
@@ -361,6 +362,11 @@ aicore_add_facedetect_capi_test(test_facedetect_match_capi)
 aicore_add_facedetect_capi_test(test_facedetect_contexts_capi)
 set_tests_properties(test_facedetect_contexts_capi PROPERTIES LABELS "capi;model")
 
+# FaceDetect C API contract test (no GGUF assets: ABI, catalog, lifecycle,
+# null guards — see tests/facedetect/test_facedetect_capi_contract.cpp).
+aicore_add_facedetect_capi_test(test_facedetect_capi_contract)
+set_tests_properties(test_facedetect_capi_contract PROPERTIES LABELS "capi")
+
 aicore_add_rfdetr_whitebox_test(test_rfdetr_preprocess)
 aicore_add_rfdetr_whitebox_test(test_rfdetr_two_stage_mask)
 aicore_add_rfdetr_perf_bench()
@@ -369,6 +375,31 @@ aicore_add_rmbg_capi_test(test_rmbg_capi_contract)
 aicore_add_rmbg_capi_test(test_rmbg_capi_performance)
 set_tests_properties(test_rmbg_capi_performance PROPERTIES
     LABELS "capi;model;gpu;performance")
+
+# YOLO C API performance benchmark (upstream ultralytics-ggml bench matrix
+# counterpart; see tests/yolo/test_yolo_capi_performance.cpp header for the
+# timing contract). Skips (77) without AICORE_TEST_YOLO_* assets.
+function(aicore_add_yolo_capi_test name)
+    add_executable(${name} yolo/${name}.cpp)
+    target_link_libraries(${name} PRIVATE AICore)
+    _aicore_capi_link(${name})
+    _aicore_test_common(${name})
+    if(NOT MSVC)
+        target_compile_options(${name} PRIVATE -fPIC)
+        target_link_options(${name} PRIVATE "-no-pie")
+    endif()
+    set_tests_properties(${name} PROPERTIES LABELS "capi")
+endfunction()
+
+aicore_add_yolo_capi_test(test_yolo_capi_performance)
+set_tests_properties(test_yolo_capi_performance PROPERTIES
+    LABELS "capi;model;gpu;performance")
+
+# YOLO C API contract test (no GGUF assets: ABI, options, catalog, null
+# guards, model-free error paths — see tests/yolo/test_yolo_capi_contract.cpp).
+aicore_add_yolo_capi_test(test_yolo_capi_contract)
+set_tests_properties(test_yolo_capi_contract PROPERTIES
+    LABELS "capi")
 
 add_test(
     NAME test_aicore_public_headers
@@ -497,6 +528,14 @@ if(UNIX AND NOT APPLE)
     set_tests_properties(test_no_legacy_symbols PROPERTIES LABELS "capi")
 endif()
 
+# --- Env hygiene: getenv/setenv only in the sanctioned bridge ---
+add_test(
+    NAME test_no_env_getenv
+    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/check_no_env_getenv.sh
+            ${CMAKE_CURRENT_SOURCE_DIR}/../src
+)
+set_tests_properties(test_no_env_getenv PROPERTIES LABELS "capi")
+
 set(_aicore_contract_targets
     test_runtime_capi_contract
     test_depth_capi_contract
@@ -511,7 +550,8 @@ set(_aicore_contract_targets
     test_aliked_e2e_smoke
     test_deeplsd_capi_contract
     test_rmbg_capi_contract
-    test_rmbg_capi_performance)
+    test_rmbg_capi_performance
+    test_yolo_capi_performance)
 set(_aicore_contract_model_exclude)
 if(NOT AICORE_TEST_ENABLE_MODEL_TESTS)
     list(APPEND _aicore_contract_model_exclude -LE "model|gpu|e2e")

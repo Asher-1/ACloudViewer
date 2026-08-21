@@ -36,7 +36,7 @@ public:
     };
 
     struct Result {
-        YOLORunResult detect;   // valid when task == "detect"
+        YOLORunResult detect;   // valid when task == "detect" or "segment"
         YOLODepthResult depth;  // valid when task == "depth"
         QString task;
         QString error;
@@ -63,8 +63,8 @@ private:
     QString m_loadedModelPath;
     QString m_loadedDevice;
     int m_loadedThreads = 0;
-    /* Task of the loaded context ("detect" | "depth"), cached at load time
-     * so each Result knows which payload it carries. */
+    /* Task of the loaded context ("detect" | "segment" | "depth"), cached
+     * at load time so each Result knows which payload it carries. */
     QString m_loadedTask;
     /* Backend-RESOLVED device of the loaded context ("CUDA0", "cpu", ...);
      * differs from m_loadedDevice when the GPU lease failed. */

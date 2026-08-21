@@ -5,17 +5,20 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "backend.hpp"
+#include "tasks/yolo/backend.hpp"
 
+#include <algorithm>
+#include <chrono>
 #include <cstring>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "aicore/runtime_capi.h"
+#include "common/ggml_backend_utils.hpp"
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
 #include "ggml.h"
-#include "ggml_backend_utils.hpp"
 
 namespace yolo {
 
@@ -52,6 +55,13 @@ BackendCtx init_backend_ctx(int n_threads, const std::string& device_request) {
             if (ctx.gpu_lease) {
                 ctx.gpu = ctx.gpu_lease.handle();
                 ctx.device_name = ctx.gpu_lease.device();
+                /* Resolve the backend family once from the lease's device
+                 * name. yolo_graph keys its f16 / q8 data-flow decisions on
+                 * these runtime flags (see BackendCtx) instead of the
+                 * compile-time macros used by the upstream port. */
+                const std::string dev = ggml_common::to_lower(ctx.device_name);
+                ctx.is_cuda = dev.find("cuda") != std::string::npos;
+                ctx.is_vulkan = dev.find("vulkan") != std::string::npos;
                 YOLO_LOG_INFO("GPU backend: %s", ctx.device_name.c_str());
             } else {
                 YOLO_LOG_WARN("failed to acquire GPU backend lease; using CPU");
@@ -96,6 +106,7 @@ BackendCtx init_backend_ctx(int n_threads, const std::string& device_request) {
                     "ggml_backend_sched_new failed; falling back to CPU-only");
             ctx.gpu_lease.reset();
             ctx.gpu = nullptr;
+            ctx.is_cuda = ctx.is_vulkan = false;
         }
     }
 
@@ -116,6 +127,7 @@ void free_backend_ctx(BackendCtx& ctx) {
     }
     ctx.gpu = nullptr;
     ctx.cpu = nullptr;
+    ctx.is_cuda = ctx.is_vulkan = false;
     ctx.gpu_lease.reset();
     ctx.cpu_lease.reset();
     ctx.device_name.clear();
@@ -151,6 +163,7 @@ bool backend_ctx_graph_alloc(BackendCtx& ctx,
             ctx.sched = nullptr;
             ctx.gpu_lease.reset();
             ctx.gpu = nullptr;
+            ctx.is_cuda = ctx.is_vulkan = false;
         } else {
             ggml_backend_sched_reset(ctx.sched);
             // Pin input/output AFTER reset, before alloc_graph.
@@ -203,6 +216,71 @@ int backend_ctx_graph_compute(BackendCtx& ctx, ::ggml_cgraph* graph) {
     ggml_status st = ggml_backend_graph_compute(ctx.cpu, graph);
     ggml_backend_synchronize(ctx.cpu);
     return (int)st;
+}
+
+// ---- Op profiling (scheduler eval callback) ----
+
+namespace {
+struct OpStat {
+    int count = 0;
+    double total_ms = 0.0;
+};
+std::unordered_map<std::string, OpStat> g_op_stats;
+bool g_op_profiling = false;
+int g_op_iters = 0;
+std::chrono::steady_clock::time_point g_op_t0;
+
+std::string op_profile_key(const ggml_tensor* t) {
+    std::string k = ggml_op_desc(t);
+    if (t->src[0] && t->src[0]->name[0]) {
+        k += ' ';
+        k += t->src[0]->name;
+    }
+    char buf[48];
+    std::snprintf(buf, sizeof buf, " [%lldx%lldx%lld]", (long long)t->ne[0],
+                  (long long)t->ne[1], (long long)t->ne[2]);
+    k += buf;
+    return k;
+}
+
+bool op_profile_eval_cb(ggml_tensor* t, bool ask, void*) {
+    if (ask) return true;
+    const auto now = std::chrono::steady_clock::now();
+    const double ms =
+            std::chrono::duration<double, std::milli>(now - g_op_t0).count();
+    g_op_t0 = now;
+    OpStat& st = g_op_stats[op_profile_key(t)];
+    st.count++;
+    st.total_ms += ms;
+    return true;
+}
+}  // namespace
+
+void backend_print_op_profile() {
+    if (g_op_stats.empty()) return;
+    std::vector<std::pair<std::string, OpStat>> rows(g_op_stats.begin(),
+                                                     g_op_stats.end());
+    std::sort(rows.begin(), rows.end(), [](const auto& a, const auto& b) {
+        return a.second.total_ms > b.second.total_ms;
+    });
+    std::fprintf(stderr, "[op profile] total_ms   calls   avg_us  op\n");
+    for (const auto& [key, st] : rows) {
+        const double avg_us =
+                st.count > 0 ? st.total_ms * 1000.0 / st.count : 0.0;
+        std::fprintf(stderr, "[op profile] %9.2f %7d %8.1f  %s\n", st.total_ms,
+                     st.count, avg_us, key.c_str());
+    }
+}
+
+void backend_enable_op_profile(BackendCtx& ctx) {
+    if (!ctx.sched || !ctx.gpu || g_op_profiling) return;
+    g_op_profiling = true;
+    ggml_backend_sched_set_eval_callback(ctx.sched, op_profile_eval_cb,
+                                         nullptr);
+}
+
+const char* backend_name(const BackendCtx& ctx) {
+    return ctx.device_name.empty() ? "cpu" : ctx.device_name.c_str();
 }
 
 }  // namespace yolo

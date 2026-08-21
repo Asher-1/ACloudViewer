@@ -15,6 +15,9 @@
 #include "ggml-cpu.h"
 #endif
 
+#include "common/ggml_env_bridge.hpp"
+
+
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
@@ -69,6 +72,8 @@ inline void parse_device(const std::string& req, std::string& name, int& index) 
 // On macOS app bundles the executable is inside Contents/MacOS/ while backend
 // dylibs live alongside libAICore.dylib, so we resolve our own dylib's
 // directory and pass it to ggml_backend_load_all_from_path().
+// Registers that the backends are loaded so later ggml env overrides (see
+// aicore::apply_ggml_env_overrides) can warn about the snapshot semantics.
 inline void load_backends_once() {
     static const bool done = [] {
 #if defined(AICORE_BACKEND_DL)
@@ -125,6 +130,7 @@ inline void load_backends_once() {
                     ggml_backend_reg_name(ggml_backend_dev_backend_reg(dev)));
         }
 #endif
+        aicore::mark_ggml_backends_loaded();
         return true;
     }();
     (void)done;
@@ -200,13 +206,13 @@ inline ggml_backend_t find_integrated_gpu_backend(std::string& resolved_name) {
     return nullptr;
 }
 
-// Runtime auto-pick follows the release/developer order configured at build time.
-// When AICore_CUDA was built (AICORE_AUTO_INCLUDE_CUDA), CUDA precedes Vulkan on
-// Linux/Windows so Auto and explicit "cuda" agree on the same backend.
+// Runtime auto-pick follows the build's backend order. When a CUDA backend
+// was built (AICORE_CUDA_BUILT), CUDA precedes Vulkan on Linux/Windows so Auto
+// and explicit "cuda" agree on the same backend family.
 inline const char* const* auto_backend_ids() {
 #if defined(__APPLE__)
     static const char* kOrder[] = {"metal", nullptr};
-#elif defined(AICORE_AUTO_INCLUDE_CUDA)
+#elif defined(AICORE_CUDA_BUILT)
     static const char* kOrder[] = {"cuda", "vulkan", nullptr};
 #else
     static const char* kOrder[] = {"vulkan", nullptr};

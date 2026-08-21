@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "backend.hpp"
+#include "tasks/rfdetr/backend.hpp"
 
 #include <algorithm>
 #include <cstring>
@@ -13,11 +13,11 @@
 #include <vector>
 
 #include "aicore/runtime_capi.h"
-#include "common.hpp"
+#include "common/ggml_backend_utils.hpp"
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
 #include "ggml.h"
-#include "ggml_backend_utils.hpp"
+#include "tasks/rfdetr/common.hpp"
 
 namespace rfdetr {
 

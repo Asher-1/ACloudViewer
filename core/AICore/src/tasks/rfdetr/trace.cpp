@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "trace.hpp"
+#include "tasks/rfdetr/trace.hpp"
 
 #include <cstring>
 #include <stdexcept>

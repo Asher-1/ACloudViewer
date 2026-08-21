@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-#include "types.hpp"
+#include "tasks/lightglue/types.hpp"
 
 namespace aicore {
 namespace lightglue {

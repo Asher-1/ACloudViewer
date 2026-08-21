@@ -14,18 +14,11 @@
 #include <utility>
 
 #include "aicore/aliked_capi.h"
-#include "lightglue/aliked.h"
-#include "model_cache.hpp"
+#include "common/capi_utils.hpp"
+#include "common/model_cache.hpp"
+#include "tasks/aliked/include/lightglue/aliked.h"
 
 namespace {
-
-char* dup_cstr(const std::string& s) {
-    char* out = static_cast<char*>(std::malloc(s.size() + 1));
-    if (out != nullptr) {
-        std::memcpy(out, s.c_str(), s.size() + 1);
-    }
-    return out;
-}
 
 enum class FeatureState { kValid, kEmpty, kInvalid };
 
@@ -120,6 +113,8 @@ bool fill_features(const lightglue::Features& src,
 }
 
 }  // namespace
+
+using aicore::capi::dup_cstr;
 
 struct aicore_aliked_options {
     std::string device = "cpu";
@@ -289,9 +284,9 @@ AICORE_CAPI char* aicore_aliked_model_cache_dir(void) {
     return dup_cstr(aicore::aliked_model_cache_dir());
 }
 
-AICORE_CAPI int aicore_aliked_quantize(const char* input_gguf,
-                                       const char* output_gguf,
-                                       const char* type) {
+AICORE_CAPI int aicore_aliked_quantize_gguf(const char* input_gguf,
+                                            const char* output_gguf,
+                                            const char* type) {
     if (input_gguf == nullptr || output_gguf == nullptr || type == nullptr) {
         return -1;
     }
@@ -301,4 +296,4 @@ AICORE_CAPI int aicore_aliked_quantize(const char* input_gguf,
                    : -1;
 }
 
-AICORE_CAPI void aicore_aliked_free_string(char* s) { std::free(s); }
+AICORE_CAPI void aicore_aliked_free_buffer(void* p) { std::free(p); }

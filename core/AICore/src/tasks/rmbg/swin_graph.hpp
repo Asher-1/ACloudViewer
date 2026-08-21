@@ -1,6 +1,7 @@
 #pragma once
 #include "ggml-backend.h"
-#include "swin_backbone.hpp"
+#include "tasks/rmbg/swin_backbone.hpp"
+
 #include <string>
 #include <vector>
 

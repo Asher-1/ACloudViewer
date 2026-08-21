@@ -75,7 +75,7 @@ QString DeepLSDDialog::modelCacheDir() {
     char* dir = aicore_deeplsd_model_cache_dir();
     if (dir) {
         QString result = QString::fromUtf8(dir);
-        aicore_deeplsd_free_string(dir);
+        aicore_deeplsd_free_buffer(dir);
         return result;
     }
     return QDir::homePath() +

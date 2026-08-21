@@ -96,7 +96,7 @@ bool RMBGWorker::runInference() {
         const QString infoStr = QString::fromUtf8(info);
         emit modelInfoReady(infoStr);
         RMBGHelpers::parseInfoJson(QByteArray(info), &result);
-        aicore_rmbg_free_string(info);
+        aicore_rmbg_free_buffer(info);
     }
     emit logMessage(tr("[RMBG] Model loaded: %1 (backend=%2, input=%3)")
                             .arg(result.modelVariant.isEmpty()

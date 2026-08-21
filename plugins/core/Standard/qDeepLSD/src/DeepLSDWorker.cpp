@@ -197,7 +197,7 @@ bool DeepLSDWorker::runExtract() {
     if (char* info = aicore_deeplsd_info_json(ctx)) {
         const QJsonObject obj =
                 QJsonDocument::fromJson(QByteArray(info)).object();
-        aicore_deeplsd_free_string(info);
+        aicore_deeplsd_free_buffer(info);
         const QString resolved = obj.value(QStringLiteral("device")).toString();
         aicore_inference_log::log_device_resolved(QStringLiteral("DeepLSD"),
                                                   resolved);
@@ -243,7 +243,7 @@ bool DeepLSDWorker::runExtract() {
     if (char* info = aicore_deeplsd_info_json(ctx)) {
         const QJsonObject obj =
                 QJsonDocument::fromJson(QByteArray(info)).object();
-        aicore_deeplsd_free_string(info);
+        aicore_deeplsd_free_buffer(info);
         result.resolvedDevice = obj.value(QStringLiteral("device")).toString();
     }
     result.lineVisualization =

@@ -1,7 +1,8 @@
-#ifndef RFDETR_SEGMENTATION_HPP
-#define RFDETR_SEGMENTATION_HPP
+#pragma once
 
-#include "model_loader.hpp"
+
+#include "tasks/rfdetr/model_loader.hpp"
+
 
 struct ggml_context;
 struct ggml_tensor;
@@ -62,5 +63,3 @@ ggml_tensor* segmentation_forward(
     int mask_downsample_ratio);
 
 }  // namespace rfdetr
-
-#endif

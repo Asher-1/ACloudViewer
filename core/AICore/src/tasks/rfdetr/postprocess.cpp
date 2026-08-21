@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "postprocess.hpp"
+#include "tasks/rfdetr/postprocess.hpp"
 
 #include <algorithm>
 #include <cmath>

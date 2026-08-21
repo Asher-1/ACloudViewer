@@ -5,15 +5,15 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "model_loader.hpp"
+#include "tasks/depth/model_loader.hpp"
 
 #include <utility>
 
-#include "backend.hpp"
-#include "common.hpp"
-#include "compute_mode.hpp"
-#include "depth_gguf_keys.h"
 #include "ggml-backend.h"
+#include "tasks/depth/backend.hpp"
+#include "tasks/depth/common.hpp"
+#include "tasks/depth/compute_mode.hpp"
+#include "tasks/depth/depth_gguf_keys.h"
 
 namespace aicore {
 namespace depth {

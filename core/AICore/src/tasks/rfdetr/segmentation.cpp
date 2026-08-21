@@ -5,15 +5,15 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "segmentation.hpp"
+#include "tasks/rfdetr/segmentation.hpp"
 
 #include <cmath>
 #include <string>
 #include <vector>
 
-#include "common.hpp"
 #include "ggml.h"
-#include "trace.hpp"
+#include "tasks/rfdetr/common.hpp"
+#include "tasks/rfdetr/trace.hpp"
 
 namespace rfdetr {
 

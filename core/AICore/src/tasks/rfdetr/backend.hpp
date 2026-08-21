@@ -1,5 +1,5 @@
-#ifndef RFDETR_BACKEND_HPP
-#define RFDETR_BACKEND_HPP
+#pragma once
+
 
 // ----------------------------------------------------------------------------
 // -                        CloudViewer: www.cloudViewer.org                  -
@@ -15,12 +15,14 @@
 // Linux/Windows, Metal -> CPU on macOS) and every physical backend handle is
 // shared process-wide through the lease registry.
 
-#include "rfdetr.h"
+#include "tasks/rfdetr/rfdetr.h"
+
 
 #include <cstdint>
 #include <string>
 
-#include "ggml_backend_registry.hpp"
+#include "common/ggml_backend_registry.hpp"
+
 
 struct ggml_backend;
 typedef struct ggml_backend* ggml_backend_t;
@@ -116,5 +118,3 @@ int /* ggml_status */ backend_ctx_graph_compute(BackendCtx& ctx,
                                                 int which_graph);
 
 }  // namespace rfdetr
-
-#endif

@@ -36,11 +36,11 @@ bool embedPath(aicore_facedetect_ctx* ctx,
     int dim = 0;
     const int rc = aicore_facedetect_embed_path(ctx, path, minDet, &vec, &dim);
     if (rc != 0 || !vec || dim <= 0) {
-        if (vec) aicore_facedetect_free_vec(vec);
+        if (vec) aicore_facedetect_free_buffer(vec);
         return false;
     }
     out->assign(vec, vec + dim);
-    aicore_facedetect_free_vec(vec);
+    aicore_facedetect_free_buffer(vec);
     return true;
 }
 
@@ -101,7 +101,7 @@ int main() {
                      (aicore_facedetect_last_error(ctx)
                               ? aicore_facedetect_last_error(ctx)
                               : "(null)"));
-        aicore_facedetect_free_vec(reinterpret_cast<float*>(rgb));
+        aicore_facedetect_free_buffer(reinterpret_cast<float*>(rgb));
         aicore_facedetect_free(ctx);
         return 1;
     }
@@ -111,7 +111,7 @@ int main() {
     bool haveLmk = false;
     float bestArea = 0.f;
     const std::string json(detJson);
-    aicore_facedetect_free_string(detJson);
+    aicore_facedetect_free_buffer(detJson);
 
     size_t searchFrom = 0;
     while (true) {
@@ -156,7 +156,7 @@ int main() {
 
     if (!haveLmk) {
         std::fprintf(stderr, "no landmarks in detect json\n");
-        aicore_facedetect_free_vec(reinterpret_cast<float*>(rgb));
+        aicore_facedetect_free_buffer(reinterpret_cast<float*>(rgb));
         aicore_facedetect_free(ctx);
         return 1;
     }
@@ -165,7 +165,7 @@ int main() {
     int dimLmk = 0;
     const int rc = aicore_facedetect_embed_rgb_landmarks(
             ctx, rgb, w, h, landmarks, &embLmk, &dimLmk);
-    aicore_facedetect_free_vec(reinterpret_cast<float*>(rgb));
+    aicore_facedetect_free_buffer(reinterpret_cast<float*>(rgb));
     if (rc != 0 || !embLmk || dimLmk <= 0) {
         std::fprintf(stderr, "embed_rgb_landmarks failed: %s\n",
                      (aicore_facedetect_last_error(ctx)
@@ -178,7 +178,7 @@ int main() {
     const float crossDist =
             cosineDistance(embPathA.data(), embLmk,
                            std::min(static_cast<int>(embPathA.size()), dimLmk));
-    aicore_facedetect_free_vec(embLmk);
+    aicore_facedetect_free_buffer(embLmk);
     aicore_facedetect_free(ctx);
 
     if (crossDist > 0.05f) {

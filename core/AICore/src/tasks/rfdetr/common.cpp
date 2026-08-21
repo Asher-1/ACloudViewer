@@ -5,13 +5,15 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "common.hpp"
+#include "tasks/rfdetr/common.hpp"
 
 #include <atomic>
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
 #include <mutex>
+
+#include "common/aicore_log.hpp"
 
 namespace {
 
@@ -63,6 +65,25 @@ void rfdetr_internal_log(rfdetr_log_level lvl, const char* msg) {
     }
     if (cb && msg) {
         cb(lvl, msg, ud);
+        return;
+    }
+    // No external callback registered: fall back to the shared AICore log
+    // gate (CVLog when built into ACloudViewer, stderr otherwise).
+    if (!msg) return;
+    switch (lvl) {
+        case RFDETR_LOG_ERROR:
+            AICORE_LOG_ERROR("[rfdetr] ", "%s", msg);
+            break;
+        case RFDETR_LOG_WARN:
+            AICORE_LOG_WARN("[rfdetr] ", "%s", msg);
+            break;
+        case RFDETR_LOG_DEBUG:
+            AICORE_LOG_DEBUG("[rfdetr] ", "%s", msg);
+            break;
+        case RFDETR_LOG_INFO:
+        default:
+            AICORE_LOG_PRINT("[rfdetr] ", "%s", msg);
+            break;
     }
 }
 

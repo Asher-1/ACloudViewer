@@ -27,10 +27,11 @@ namespace YOLOHelpers {
 QVector<YOLOModelEntry> catalogModels() {
     QVector<YOLOModelEntry> out;
 #ifdef AICore_ENABLED
-    const int n = aicore_yolo_model_count();
+    const int n = aicore_yolo_model_count(AICORE_YOLO_ROLE_ANY);
     out.reserve(n > 0 ? n : 0);
     for (int i = 0; i < n; ++i) {
-        const aicore_yolo_model_entry* e = aicore_yolo_model_at(i);
+        const aicore_yolo_model_entry* e =
+                aicore_yolo_model_at(i, AICORE_YOLO_ROLE_ANY);
         if (!e || !e->filename) continue;
         YOLOModelEntry entry;
         entry.filename = QString::fromUtf8(e->filename);
@@ -38,6 +39,7 @@ QVector<YOLOModelEntry> catalogModels() {
         entry.displayName = QString::fromUtf8(e->display_name);
         entry.quantNote = QString::fromUtf8(e->quant_note);
         entry.licenseNote = QString::fromUtf8(e->license_note);
+        entry.task = QString::fromUtf8(e->task ? e->task : "detect");
         entry.depthCapable = e->depth_capable != 0;
         entry.end2end = e->end2end != 0;
         out.append(entry);
@@ -49,19 +51,28 @@ QVector<YOLOModelEntry> catalogModels() {
 }
 
 QVector<YOLOModelEntry> detectionModels() {
-    QVector<YOLOModelEntry> out;
-    const QVector<YOLOModelEntry> all = catalogModels();
-    for (const YOLOModelEntry& e : all) {
-        if (!e.depthCapable) out.append(e);
-    }
-    return out;
+    return taskModels(QStringLiteral("detect"));
+}
+
+QVector<YOLOModelEntry> segmentModels() {
+    return taskModels(QStringLiteral("segment"));
 }
 
 QVector<YOLOModelEntry> depthModels() {
+    return taskModels(QStringLiteral("depth"));
+}
+
+QVector<YOLOModelEntry> taskModels(const QString& task) {
     QVector<YOLOModelEntry> out;
     const QVector<YOLOModelEntry> all = catalogModels();
     for (const YOLOModelEntry& e : all) {
-        if (e.depthCapable) out.append(e);
+        // taskModels filters on the GGUF task, so the pure-detect tab never
+        // offers a segment model and vice versa; unknown tasks fall back to
+        // the detect bucket for catalog forward-compatibility.
+        if (e.task.isEmpty() ? task == QStringLiteral("detect")
+                             : e.task == task) {
+            out.append(e);
+        }
     }
     return out;
 }
@@ -82,7 +93,7 @@ QString modelCacheDir() {
     char* dir = aicore_yolo_model_cache_dir();
     if (dir) {
         const QString out = QString::fromUtf8(dir);
-        aicore_yolo_free_string(dir);
+        aicore_yolo_free_buffer(dir);
         return out;
     }
 #else
@@ -246,6 +257,60 @@ void drawDetections(QImage* image,
         p.setPen(pen);
     }
     p.end();
+}
+
+void drawSegmentation(QImage* image,
+                      const QVector<YOLOSegMask>& masks,
+                      const QVector<YOLODetection>& detections,
+                      int thickness) {
+    if (image == nullptr || image->isNull() || masks.isEmpty()) return;
+    if (image->format() != QImage::Format_ARGB32) {
+        *image = image->convertToFormat(QImage::Format_ARGB32);
+    }
+
+    const int imgW = image->width();
+    const int imgH = image->height();
+
+    // Mask pixels live in the letterboxed canvas space (imgsz x imgsz); a
+    // straight scale to the source image keeps the tint aligned with the
+    // boxes at preview sizes — the same mapping the live overlay uses.
+    for (int i = 0; i < masks.size(); ++i) {
+        const YOLOSegMask& mask = masks[static_cast<size_t>(i)];
+        if (mask.w <= 0 || mask.h <= 0 ||
+            mask.bits.size() < static_cast<qint64>(mask.w) * mask.h) {
+            continue;
+        }
+        // Grayscale view over a COPY of the mask bytes: QImage requires the
+        // backing buffer to be 32-bit aligned, and QByteArray's offset is
+        // not guaranteed to be (Qt 6 debug builds assert on misalignment).
+        QImage maskImage(mask.w, mask.h, QImage::Format_Grayscale8);
+        std::memcpy(maskImage.bits(), mask.bits.constData(),
+                    static_cast<size_t>(mask.w) * mask.h);
+        if (maskImage.isNull()) continue;
+        maskImage = maskImage.scaled(imgW, imgH, Qt::IgnoreAspectRatio,
+                                     Qt::FastTransformation);
+        const QColor tint = i < detections.size()
+                                    ? QColor(classColor(detections[i].classId))
+                                    : QColor(220, 220, 220);
+
+        // Alpha-blend the tint over the foreground mask pixels (no painter
+        // needed — a straight per-pixel pass over the downscaled mask).
+        for (int y = 0; y < imgH; ++y) {
+            const uchar* src = maskImage.constScanLine(y);
+            uchar* dst = image->scanLine(y);
+            for (int x = 0; x < imgW; ++x) {
+                if (src[x] == 0) continue;
+                const int d = x * 4;
+                dst[d] = static_cast<uchar>((dst[d] * 2 + tint.blue()) / 3);
+                dst[d + 1] =
+                        static_cast<uchar>((dst[d + 1] * 2 + tint.green()) / 3);
+                dst[d + 2] =
+                        static_cast<uchar>((dst[d + 2] * 2 + tint.red()) / 3);
+            }
+        }
+    }
+
+    drawDetections(image, detections, thickness);
 }
 
 QImage depthColorImage(const float* depth,

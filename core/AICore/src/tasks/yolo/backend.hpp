@@ -1,5 +1,5 @@
-#ifndef YOLO_BACKEND_HPP
-#define YOLO_BACKEND_HPP
+#pragma once
+
 
 // ----------------------------------------------------------------------------
 // -                        CloudViewer: www.cloudViewer.org                  -
@@ -22,8 +22,10 @@
 #include <cstdint>
 #include <string>
 
-#include "ggml_backend_registry.hpp"
-#include "yolo_common.hpp"
+#include "common/ggml_backend_registry.hpp"
+
+#include "tasks/yolo/yolo_common.hpp"
+
 
 struct ggml_backend;
 typedef struct ggml_backend* ggml_backend_t;
@@ -54,6 +56,16 @@ struct BackendCtx {
     ggml_backend_t gpu = nullptr; /* lease handle; null on CPU-only builds */
     int n_threads = 1;
 
+    /* Resolved backend FAMILY of the active GPU handle, detected at runtime
+     * from the lease's device name ("CUDA0" / "Vulkan0 (…)" / "Metal").
+     * This replaces the upstream YOLO_USE_CUDA / YOLO_USE_VULKAN
+     * compile-time dispatch: in a dynamic-backend build the actual device
+     * is only known after the lease resolves, so per-backend data-flow
+     * choices (f16 casts, q8 direct conv) must key off these flags, never
+     * off compile-time macros. Both stay false for CPU / Metal sessions. */
+    bool is_cuda = false;
+    bool is_vulkan = false;
+
     /* Persistent graph allocator for the CPU-only path (keeps the compute
      * scratch buffer alive across inferences; the sched owns allocation on
      * GPU builds). Lazily created on first use, freed in free_backend_ctx. */
@@ -68,11 +80,20 @@ struct BackendCtx {
 };
 
 /* Initialize the compute backend bundle. Creates (or leases) a CPU backend
- * and optionally a GPU backend + scheduler for \p device_request
+ * and optionally a GPU backend + scheduler for p device_request
  * ("auto" | "cpu" | "cuda" | "vulkan" | "metal" | ...).
  *
  * On failure returns an empty BackendCtx (all members nullptr). */
 BackendCtx init_backend_ctx(int n_threads, const std::string& device_request);
+
+/* Install the per-op profiling callback on the scheduler (GPU builds).
+ * Every node is then dispatched and synced individually: the printed table
+ * is useful for relative shares, not absolute latency. */
+void backend_enable_op_profile(BackendCtx& ctx);
+
+/* Dump the collected per-op profile (total_ms / calls / avg_us) to stderr.
+ * Call from free_session() when profiling was enabled. */
+void backend_print_op_profile();
 
 /* Release a BackendCtx. Safe to call on a zero-initialized struct. */
 void free_backend_ctx(BackendCtx& ctx);
@@ -106,6 +127,7 @@ bool backend_ctx_graph_alloc(BackendCtx& ctx, ::ggml_cgraph* graph,
 int /* ggml_status */ backend_ctx_graph_compute(BackendCtx& ctx,
                                                 ::ggml_cgraph* graph);
 
-}  // namespace yolo
+/* Resolved backend display name ("Vulkan0 (NVIDIA...)" or "cpu"). */
+const char* backend_name(const BackendCtx& ctx);
 
-#endif
+}  // namespace yolo

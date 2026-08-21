@@ -115,7 +115,7 @@ QVector<DA3BuiltinModel> DA3Dialog::builtinMetricModels() {
 QString DA3Dialog::modelCacheDir() {
     char* dir = aicore_depth_model_cache_dir();
     QString result = QString::fromUtf8(dir);
-    aicore_depth_free_string(dir);
+    aicore_depth_free_buffer(dir);
     return result;
 }
 

@@ -17,7 +17,7 @@
  *   tests/<cap>/                  ABI tests; optional private white-box tests
  *
  * Naming rules (all modules follow the same pattern):
- *   C API:     aicore_<cap>_<verb>   e.g. aicore_depth_load,
+ *   C API:     aicore_<cap>_<verb>   e.g. aicore_depth_load_opts,
  * aicore_gaussian_run Context:   aicore_<cap>_ctx C++ NS:    aicore::<cap>
  *   Export:    AICORE_CAPI (C) / AICORE_CXX_API (C++ classes)
  *

@@ -13,7 +13,7 @@
 #include <cstring>
 
 #include "aicore/rmbg_capi.h"
-#include "common/test_macros.hpp"
+#include "tests/common/test_macros.hpp"
 
 static int failures = 0;
 
@@ -23,7 +23,7 @@ int main() {
     // Null-safe teardown / lifecycle.
     aicore_rmbg_free(nullptr);
     aicore_rmbg_options_free(nullptr);
-    aicore_rmbg_free_string(nullptr);
+    aicore_rmbg_free_buffer(nullptr);
     aicore_rmbg_free_buffer(nullptr);
 
     AICORE_CHECK(aicore_rmbg_load_opts(nullptr, nullptr) == nullptr);
@@ -38,6 +38,21 @@ int main() {
     AICORE_CHECK(opts != nullptr);
     aicore_rmbg_options_set_device(opts, "cpu");
     aicore_rmbg_options_set_threads(opts, 1);
+    // Fine-tuning switches must be no-ops on NULL and accept valid values.
+    aicore_rmbg_options_set_math_profile(opts, "fast");
+    aicore_rmbg_options_set_cuda_f16_gemm(opts, 1);
+    aicore_rmbg_options_set_cuda_f16_min_stage(opts, 2);
+    aicore_rmbg_options_set_cuda_nn_gemm(opts, 1);
+    aicore_rmbg_options_set_vulkan_qkv_layout(opts, 1);
+    aicore_rmbg_options_set_vulkan_deform_project(opts, "on");
+    aicore_rmbg_options_set_vulkan_flash_attn(opts, "scalar");
+    aicore_rmbg_options_set_math_profile(nullptr, "fast");
+    aicore_rmbg_options_set_cuda_f16_gemm(nullptr, 1);
+    aicore_rmbg_options_set_cuda_f16_min_stage(nullptr, 2);
+    aicore_rmbg_options_set_cuda_nn_gemm(nullptr, 1);
+    aicore_rmbg_options_set_vulkan_qkv_layout(nullptr, 1);
+    aicore_rmbg_options_set_vulkan_deform_project(nullptr, "on");
+    aicore_rmbg_options_set_vulkan_flash_attn(nullptr, "scalar");
 
     // Loading a nonexistent file must fail cleanly and report an error.
     aicore_rmbg_ctx* ctx =
@@ -118,7 +133,11 @@ int main() {
 
     char* dir = aicore_rmbg_model_cache_dir();
     AICORE_CHECK(dir != nullptr && std::strlen(dir) > 0);
-    aicore_rmbg_free_string(dir);
+    aicore_rmbg_free_buffer(dir);
+
+    // Shutdown is idempotent and must not disturb later warmups.
+    aicore_rmbg_shutdown();
+    aicore_rmbg_shutdown();
 
     if (failures == 0) {
         std::printf("[rmbg] contract test passed\n");

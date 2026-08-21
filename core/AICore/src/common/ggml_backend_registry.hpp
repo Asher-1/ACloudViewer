@@ -76,5 +76,10 @@ BackendLease adopt_backend_lease(ggml_backend_t backend,
 // remain alive while the returned lock object is in scope.
 BackendLeaseLock lock_backend_leases(const std::vector<BackendLease>& leases);
 
+// Drops registry entries whose owners are gone (no live context holds the
+// backend). Live sessions are never touched; this only reclaims the key table
+// memory of expired leases. Used by the per-task *shutdown entry points.
+void purge_inactive_backend_leases();
+
 }  // namespace runtime
 }  // namespace aicore

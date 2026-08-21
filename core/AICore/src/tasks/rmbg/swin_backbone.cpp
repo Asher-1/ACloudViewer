@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "swin_backbone.hpp"
+#include "tasks/rmbg/swin_backbone.hpp"
 
 #include <algorithm>
 #include <cmath>

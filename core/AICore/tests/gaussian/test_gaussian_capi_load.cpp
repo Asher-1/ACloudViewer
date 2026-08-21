@@ -9,7 +9,7 @@
 #include <cstring>
 
 #include "aicore/gaussian_capi.h"
-#include "common/test_macros.hpp"
+#include "tests/common/test_macros.hpp"
 
 static int failures = 0;
 
@@ -36,7 +36,7 @@ int main() {
     char* json = aicore_gaussian_info_json(ctx);
     AICORE_CHECK(json != nullptr &&
                  std::strstr(json, "architecture") != nullptr);
-    aicore_gaussian_free_string(json);
+    aicore_gaussian_free_buffer(json);
 
     const char* image0 = std::getenv("AICORE_TEST_GAUSSIAN_IMAGE_0");
     const char* image1 = std::getenv("AICORE_TEST_GAUSSIAN_IMAGE_1");
@@ -47,7 +47,7 @@ int main() {
         AICORE_CHECK(aicore_gaussian_run_paths(ctx, paths, 2, &output,
                                                &output_count) == 0);
         AICORE_CHECK(output != nullptr && output_count > 0);
-        aicore_gaussian_free_floats(output);
+        aicore_gaussian_free_buffer(output);
         std::fprintf(stderr,
                      "gaussian inference ok: device=%s output=%zu floats\n",
                      device, output_count);

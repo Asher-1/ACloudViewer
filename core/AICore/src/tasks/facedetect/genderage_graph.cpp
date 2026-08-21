@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "genderage_graph.hpp"
+#include "tasks/facedetect/genderage_graph.hpp"
 
 #include <algorithm>
 #include <array>
@@ -13,14 +13,14 @@
 #include <stdexcept>
 #include <string>
 
-#include "align.hpp"
-#include "backend.hpp"
-#include "common.hpp"
-#include "detect.hpp"
 #include "ggml.h"
-#include "graph_ops.hpp"
-#include "model_loader.hpp"
-#include "preprocess.hpp"
+#include "tasks/facedetect/align.hpp"
+#include "tasks/facedetect/backend.hpp"
+#include "tasks/facedetect/common.hpp"
+#include "tasks/facedetect/detect.hpp"
+#include "tasks/facedetect/graph_ops.hpp"
+#include "tasks/facedetect/model_loader.hpp"
+#include "tasks/facedetect/preprocess.hpp"
 
 namespace fd {
 

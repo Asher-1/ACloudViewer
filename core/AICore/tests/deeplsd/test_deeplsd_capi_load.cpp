@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "aicore/deeplsd_capi.h"
-#include "common/test_macros.hpp"
+#include "tests/common/test_macros.hpp"
 
 static int failures = 0;
 
@@ -52,7 +52,7 @@ int main() {
 
     char* json = aicore_deeplsd_info_json(ctx);
     AICORE_CHECK(json != nullptr && std::strstr(json, "deeplsd") != nullptr);
-    aicore_deeplsd_free_string(json);
+    aicore_deeplsd_free_buffer(json);
 
     std::free(df);
     std::free(ang);

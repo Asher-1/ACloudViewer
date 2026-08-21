@@ -16,15 +16,17 @@
 
 #include "aicore/backend_capi.h"
 #include "aicore/depth_capi.h"
-#include "colmap_export.hpp"
-#include "engine.hpp"
-#include "ggml_backend_utils.hpp"
-#include "glb_export.hpp"
-#include "image_io.hpp"
-#include "path_util.hpp"
-#include "preprocess.hpp"
-#include "quantize.hpp"
-#include "reconstruct.hpp"
+#include "common/capi_utils.hpp"
+#include "common/ggml_backend_utils.hpp"
+#include "tasks/depth/colmap_export.hpp"
+#include "tasks/depth/engine.hpp"
+#include "tasks/depth/glb_export.hpp"
+#include "tasks/depth/image_io.hpp"
+#include "tasks/depth/path_util.hpp"
+#include "tasks/depth/preprocess.hpp"
+#include "tasks/depth/quantize.hpp"
+#include "tasks/depth/reconstruct.hpp"
+
 #if defined(AICORE_CUDA_STATIC_LINKED)
 #include <cuda_runtime.h>
 #endif
@@ -34,44 +36,27 @@ struct aicore_depth_ctx {
     std::string last_error;
 };
 
-static char* dup_cstr(const std::string& s) {
-    char* p = (char*)std::malloc(s.size() + 1);
-    if (p) std::memcpy(p, s.c_str(), s.size() + 1);
-    return p;
-}
-// Minimal JSON string escaping for interpolated values (quotes, backslash,
-// controls).
-static std::string json_escape(const std::string& s) {
-    std::string o;
-    o.reserve(s.size() + 2);
-    for (char ch : s) {
-        switch (ch) {
-            case '"':
-                o += "\\\"";
-                break;
-            case '\\':
-                o += "\\\\";
-                break;
-            case '\n':
-                o += "\\n";
-                break;
-            case '\r':
-                o += "\\r";
-                break;
-            case '\t':
-                o += "\\t";
-                break;
-            default:
-                if ((unsigned char)ch < 0x20) {
-                    char b[8];
-                    std::snprintf(b, sizeof(b), "\\u%04x", ch);
-                    o += b;
-                } else
-                    o += ch;
-        }
+struct aicore_depth_options {
+    aicore::capi::CommonOptions common;
+    bool use_fused_graph = true;
+    bool force_joint_multiview = false;
+    bool profile_logging = false;
+    bool keep_graph_buffers = false;
+
+    aicore::depth::EngineOptions to_engine_options() const {
+        aicore::depth::EngineOptions e;
+        e.device = common.device;
+        e.n_threads = common.threads;
+        e.use_fused_graph = use_fused_graph;
+        e.force_joint_multiview = force_joint_multiview;
+        e.profile_logging = profile_logging;
+        e.keep_graph_buffers = keep_graph_buffers;
+        return e;
     }
-    return o;
-}
+};
+
+using aicore::capi::dup_cstr;
+using aicore::capi::json_escape;
 // Best-effort metric detection from the checkpoint name: metric/nested/mono
 // variants produce metric-scale depth; relative DualDPT
 // (base/giant/large/small) do not. Unknown -> 0.
@@ -107,45 +92,56 @@ static bool capi_run_nested(aicore_depth_ctx* c,
 }
 
 extern "C" {
-AICORE_CAPI int aicore_depth_abi_version(void) { return 5; }
-AICORE_CAPI aicore_depth_ctx* aicore_depth_load(const char* path,
-                                                int n_threads) {
+AICORE_CAPI int aicore_depth_abi_version(void) { return 7; }
+AICORE_CAPI aicore_depth_options* aicore_depth_options_new(void) {
+    return new (std::nothrow) aicore_depth_options();
+}
+AICORE_CAPI void aicore_depth_options_free(aicore_depth_options* opts) {
+    delete opts;
+}
+AICORE_CAPI void aicore_depth_options_set_device(aicore_depth_options* opts,
+                                                 const char* device) {
+    if (opts) aicore::capi::set_device(opts->common, device);
+}
+AICORE_CAPI void aicore_depth_options_set_threads(aicore_depth_options* opts,
+                                                  int n_threads) {
+    if (opts) aicore::capi::set_threads(opts->common, n_threads);
+}
+AICORE_CAPI void aicore_depth_options_set_fused_graph(
+        aicore_depth_options* opts, int enabled) {
+    if (opts && enabled >= 0) opts->use_fused_graph = enabled != 0;
+}
+AICORE_CAPI void aicore_depth_options_set_force_joint_multiview(
+        aicore_depth_options* opts, int enabled) {
+    if (opts && enabled >= 0) opts->force_joint_multiview = enabled != 0;
+}
+AICORE_CAPI void aicore_depth_options_set_profile_logging(
+        aicore_depth_options* opts, int enabled) {
+    if (opts && enabled >= 0) opts->profile_logging = enabled != 0;
+}
+AICORE_CAPI void aicore_depth_options_set_keep_graph_buffers(
+        aicore_depth_options* opts, int enabled) {
+    if (opts && enabled >= 0) opts->keep_graph_buffers = enabled != 0;
+}
+AICORE_CAPI aicore_depth_ctx* aicore_depth_load_opts(
+        const char* path, const aicore_depth_options* opts) {
     if (!path) return nullptr;
-    auto e = aicore::depth::Engine::load(path, n_threads);
+    aicore::depth::EngineOptions eo;
+    if (opts) eo = opts->to_engine_options();
+    auto e = aicore::depth::Engine::load(path, eo);
     if (!e) return nullptr;
     auto* c = new aicore_depth_ctx();
     c->engine = std::move(e);
     return c;
 }
-AICORE_CAPI aicore_depth_ctx* aicore_depth_load_device(const char* path,
-                                                       int n_threads,
-                                                       const char* device) {
-    if (!path) return nullptr;
-    auto e = aicore::depth::Engine::load_device(
-            path, n_threads, device && device[0] ? device : "auto");
-    if (!e) return nullptr;
-    auto* c = new aicore_depth_ctx();
-    c->engine = std::move(e);
-    return c;
-}
-AICORE_CAPI aicore_depth_ctx* aicore_depth_load_nested(const char* anyview,
-                                                       const char* metric,
-                                                       int n_threads) {
-    if (!anyview || !metric) return nullptr;
-    auto e = aicore::depth::Engine::load_nested(anyview, metric, n_threads);
-    if (!e) return nullptr;
-    auto* c = new aicore_depth_ctx();
-    c->engine = std::move(e);
-    return c;
-}
-AICORE_CAPI aicore_depth_ctx* aicore_depth_load_nested_device(
+AICORE_CAPI aicore_depth_ctx* aicore_depth_load_nested_opts(
         const char* anyview,
         const char* metric,
-        int n_threads,
-        const char* device) {
+        const aicore_depth_options* opts) {
     if (!anyview || !metric) return nullptr;
-    auto e = aicore::depth::Engine::load_nested_device(
-            anyview, metric, n_threads, device && device[0] ? device : "auto");
+    aicore::depth::EngineOptions eo;
+    if (opts) eo = opts->to_engine_options();
+    auto e = aicore::depth::Engine::load_nested(anyview, metric, eo);
     if (!e) return nullptr;
     auto* c = new aicore_depth_ctx();
     c->engine = std::move(e);
@@ -169,7 +165,7 @@ AICORE_CAPI char* aicore_depth_info_json(aicore_depth_ctx* c) {
                     ",\"num_heads\":" + std::to_string(cfg.num_heads) + "}";
     return dup_cstr(j);
 }
-AICORE_CAPI void aicore_depth_free_string(char* s) { std::free(s); }
+AICORE_CAPI void aicore_depth_free_buffer(void* p) { std::free(p); }
 AICORE_CAPI const char* aicore_depth_last_error(aicore_depth_ctx* c) {
     return c ? c->last_error.c_str() : "";
 }
@@ -211,7 +207,6 @@ AICORE_CAPI float* aicore_depth_depth_path(aicore_depth_ctx* c,
     if (out_w) *out_w = W;
     return p;
 }
-AICORE_CAPI void aicore_depth_free_floats(float* p) { std::free(p); }
 AICORE_CAPI int aicore_depth_pose_path(aicore_depth_ctx* c,
                                        const char* image_path,
                                        float out_ext[12],
@@ -238,88 +233,6 @@ AICORE_CAPI int aicore_depth_pose_path(aicore_depth_ctx* c,
     if (out_ext) std::memcpy(out_ext, ext.data(), 12 * sizeof(float));
     if (out_intr) std::memcpy(out_intr, intr.data(), 9 * sizeof(float));
     return 0;
-}
-AICORE_CAPI float* aicore_depth_depth_pose_multi(aicore_depth_ctx* c,
-                                                 const char** image_paths,
-                                                 int n_images,
-                                                 int* out_h,
-                                                 int* out_w,
-                                                 int* out_n,
-                                                 float* out_ext,
-                                                 float* out_intr) {
-    if (!c || !c->engine || !image_paths || n_images <= 0) {
-        if (c) c->last_error = "depth_multi: bad args";
-        return nullptr;
-    }
-    std::vector<aicore::depth::Image> imgs(n_images);
-    for (int i = 0; i < n_images; ++i) {
-        if (!image_paths[i] ||
-            !aicore::depth::load_image_rgb(image_paths[i], imgs[i])) {
-            c->last_error = "depth_multi: load image failed";
-            return nullptr;
-        }
-    }
-    int H = 0, W = 0;
-    const int n = n_images;
-    if (c->engine->is_nested()) {
-        std::vector<aicore::depth::NestedOut> nested;
-        if (!c->engine->depth_metric_multi(imgs, nested, H, W)) {
-            c->last_error = "depth_multi: nested failed";
-            return nullptr;
-        }
-        if ((int)nested.size() != n) {
-            c->last_error = "depth_multi: view count mismatch";
-            return nullptr;
-        }
-        const size_t per_view = (size_t)H * W;
-        float* p = (float*)std::malloc((size_t)n * per_view * sizeof(float));
-        if (!p) {
-            c->last_error = "depth_multi: oom";
-            return nullptr;
-        }
-        for (int i = 0; i < n; ++i) {
-            std::memcpy(p + (size_t)i * per_view, nested[i].depth.data(),
-                        per_view * sizeof(float));
-            if (out_ext)
-                std::memcpy(out_ext + (size_t)i * 12,
-                            nested[i].extrinsics.data(), 12 * sizeof(float));
-            if (out_intr)
-                std::memcpy(out_intr + (size_t)i * 9,
-                            nested[i].intrinsics.data(), 9 * sizeof(float));
-        }
-        if (out_h) *out_h = H;
-        if (out_w) *out_w = W;
-        if (out_n) *out_n = n;
-        return p;
-    }
-
-    std::vector<aicore::depth::ViewResult> views;
-    if (!c->engine->depth_pose_multi(imgs, views, H, W)) {
-        c->last_error = "depth_multi: failed";
-        return nullptr;
-    }
-    const int n_views = (int)views.size();
-    const size_t per_pixels = (size_t)H * W;
-    float* p =
-            (float*)std::malloc((size_t)n_views * per_pixels * sizeof(float));
-    if (!p) {
-        c->last_error = "depth_multi: oom";
-        return nullptr;
-    }
-    for (int i = 0; i < n_views; ++i) {
-        std::memcpy(p + (size_t)i * per_pixels, views[i].depth.data(),
-                    per_pixels * sizeof(float));
-        if (out_ext)
-            std::memcpy(out_ext + (size_t)i * 12, views[i].ext.data(),
-                        12 * sizeof(float));
-        if (out_intr)
-            std::memcpy(out_intr + (size_t)i * 9, views[i].intr.data(),
-                        9 * sizeof(float));
-    }
-    if (out_h) *out_h = H;
-    if (out_w) *out_w = W;
-    if (out_n) *out_n = n_views;
-    return p;
 }
 
 // Shared single-image export prep: run native depth+pose, capture processed
@@ -463,19 +376,21 @@ AICORE_CAPI int aicore_depth_write_colmap_from_multiview(
         aicore_depth_ctx* c,
         const char** image_paths,
         const char** image_names,
-        int n_images,
-        const float* depth,
-        const float* ext,
-        const float* intr,
-        int h,
-        int w,
+        const aicore_depth_multiview_data* data,
         const char* out_dir,
         int binary) {
-    if (!c || !c->engine || !image_paths || !depth || !ext || !intr ||
-        n_images <= 0 || h <= 0 || w <= 0 || !out_dir) {
+    if (!c || !c->engine || !image_paths || !data || !data->depth ||
+        !data->ext || !data->intr || data->n_views <= 0 || data->height <= 0 ||
+        data->width <= 0 || !out_dir) {
         if (c) c->last_error = "write_colmap_from_multiview: bad args";
         return -1;
     }
+    const int n_images = data->n_views;
+    const int h = data->height;
+    const int w = data->width;
+    const float* depth = data->depth;
+    const float* ext = data->ext;
+    const float* intr = data->intr;
     std::vector<aicore::depth::Image> imgs(static_cast<size_t>(n_images));
     std::vector<std::string> names(static_cast<size_t>(n_images));
     for (int i = 0; i < n_images; ++i) {
@@ -546,16 +461,16 @@ AICORE_CAPI int aicore_depth_write_colmap_from_multiview(
     }
     return 0;
 }
-AICORE_CAPI int aicore_depth_depth_dense(aicore_depth_ctx* c,
-                                         const char* image_path,
-                                         int* out_h,
-                                         int* out_w,
-                                         float** out_depth,
-                                         float** out_conf,
-                                         float** out_sky,
-                                         float out_ext[12],
-                                         float out_intr[9],
-                                         int* out_is_metric) {
+static int run_dense_impl(aicore_depth_ctx* c,
+                          const char* image_path,
+                          int* out_h,
+                          int* out_w,
+                          float** out_depth,
+                          float** out_conf,
+                          float** out_sky,
+                          float out_ext[12],
+                          float out_intr[9],
+                          int* out_is_metric) {
     if (!c || !c->engine || !image_path) {
         if (c) c->last_error = "depth_dense: bad args";
         return -1;
@@ -685,6 +600,130 @@ AICORE_CAPI int aicore_depth_depth_dense(aicore_depth_ctx* c,
         *out_is_metric = capi_is_metric(c->engine->config()) ? 1 : 0;
     return 0;
 }
+
+AICORE_CAPI int aicore_depth_depth_dense(aicore_depth_ctx* c,
+                                         const char* image_path,
+                                         aicore_depth_dense_result* out) {
+    if (!out) return -1;
+    std::memset(out, 0, sizeof(*out));
+    return run_dense_impl(c, image_path, &out->height, &out->width, &out->depth,
+                          &out->conf, &out->sky, out->ext, out->intr,
+                          &out->is_metric);
+}
+
+AICORE_CAPI void aicore_depth_dense_result_free(aicore_depth_dense_result* r) {
+    if (!r) return;
+    std::free(r->depth);
+    std::free(r->conf);
+    std::free(r->sky);
+    r->depth = r->conf = r->sky = nullptr;
+    r->width = r->height = 0;
+}
+
+AICORE_CAPI int aicore_depth_depth_pose_multi(
+        aicore_depth_ctx* c,
+        const char** image_paths,
+        int n_images,
+        aicore_depth_multiview_result* out) {
+    if (!out) return -1;
+    std::memset(out, 0, sizeof(*out));
+    if (!c || !c->engine || !image_paths || n_images <= 0) {
+        if (c) c->last_error = "depth_multi: bad args";
+        return -1;
+    }
+    std::vector<aicore::depth::Image> imgs(n_images);
+    for (int i = 0; i < n_images; ++i) {
+        if (!image_paths[i] ||
+            !aicore::depth::load_image_rgb(image_paths[i], imgs[i])) {
+            c->last_error = "depth_multi: load image failed";
+            return -1;
+        }
+    }
+    int H = 0, W = 0;
+    const int n = n_images;
+    if (c->engine->is_nested()) {
+        std::vector<aicore::depth::NestedOut> nested;
+        if (!c->engine->depth_metric_multi(imgs, nested, H, W)) {
+            c->last_error = "depth_multi: nested failed";
+            return -1;
+        }
+        if ((int)nested.size() != n) {
+            c->last_error = "depth_multi: view count mismatch";
+            return -1;
+        }
+        const size_t per_view = (size_t)H * W;
+        float* p = (float*)std::malloc((size_t)n * per_view * sizeof(float));
+        float* ext = (float*)std::malloc((size_t)n * 12 * sizeof(float));
+        float* intr = (float*)std::malloc((size_t)n * 9 * sizeof(float));
+        if (!p || !ext || !intr) {
+            std::free(p);
+            std::free(ext);
+            std::free(intr);
+            c->last_error = "depth_multi: oom";
+            return -1;
+        }
+        for (int i = 0; i < n; ++i) {
+            std::memcpy(p + (size_t)i * per_view, nested[i].depth.data(),
+                        per_view * sizeof(float));
+            std::memcpy(ext + (size_t)i * 12, nested[i].extrinsics.data(),
+                        12 * sizeof(float));
+            std::memcpy(intr + (size_t)i * 9, nested[i].intrinsics.data(),
+                        9 * sizeof(float));
+        }
+        out->depth = p;
+        out->ext = ext;
+        out->intr = intr;
+        out->width = W;
+        out->height = H;
+        out->n_views = n;
+        return 0;
+    }
+
+    std::vector<aicore::depth::ViewResult> views;
+    if (!c->engine->depth_pose_multi(imgs, views, H, W)) {
+        c->last_error = "depth_multi: failed";
+        return -1;
+    }
+    const int n_views = (int)views.size();
+    const size_t per_pixels = (size_t)H * W;
+    float* p =
+            (float*)std::malloc((size_t)n_views * per_pixels * sizeof(float));
+    float* ext = (float*)std::malloc((size_t)n_views * 12 * sizeof(float));
+    float* intr = (float*)std::malloc((size_t)n_views * 9 * sizeof(float));
+    if (!p || !ext || !intr) {
+        std::free(p);
+        std::free(ext);
+        std::free(intr);
+        c->last_error = "depth_multi: oom";
+        return -1;
+    }
+    for (int i = 0; i < n_views; ++i) {
+        std::memcpy(p + (size_t)i * per_pixels, views[i].depth.data(),
+                    per_pixels * sizeof(float));
+        std::memcpy(ext + (size_t)i * 12, views[i].ext.data(),
+                    12 * sizeof(float));
+        std::memcpy(intr + (size_t)i * 9, views[i].intr.data(),
+                    9 * sizeof(float));
+    }
+    out->depth = p;
+    out->ext = ext;
+    out->intr = intr;
+    out->width = W;
+    out->height = H;
+    out->n_views = n_views;
+    return 0;
+}
+
+AICORE_CAPI void aicore_depth_multiview_result_free(
+        aicore_depth_multiview_result* r) {
+    if (!r) return;
+    std::free(r->depth);
+    std::free(r->ext);
+    std::free(r->intr);
+    r->depth = r->ext = r->intr = nullptr;
+    r->width = r->height = r->n_views = 0;
+}
+
 AICORE_CAPI int aicore_depth_points(aicore_depth_ctx* c,
                                     const char* image_path,
                                     float conf_thresh,
@@ -741,7 +780,6 @@ AICORE_CAPI int aicore_depth_points(aicore_depth_ctx* c,
     if (out_n) *out_n = (int)n;
     return 0;
 }
-AICORE_CAPI void aicore_depth_free_bytes(unsigned char* p) { std::free(p); }
 AICORE_CAPI char* aicore_depth_model_cache_dir(void) {
     return dup_cstr(aicore::depth::default_model_cache_dir());
 }
@@ -803,7 +841,9 @@ AICORE_CAPI int aicore_depth_reconstruct_path(const char* gguf_path,
     *out_w = 0;
     *out_n = 0;
 
-    auto eng = aicore::depth::Engine::load(gguf_path, n_threads);
+    aicore::depth::EngineOptions eo;
+    eo.n_threads = n_threads;
+    auto eng = aicore::depth::Engine::load(gguf_path, eo);
     if (!eng) {
         return -1;
     }

@@ -23,8 +23,8 @@
 #include <cstdlib>
 #include <vector>
 
-#include "common/test_macros.hpp"
-#include "image_io.hpp"
+#include "tasks/rfdetr/image_io.hpp"
+#include "tests/common/test_macros.hpp"
 
 static int failures = 0;
 

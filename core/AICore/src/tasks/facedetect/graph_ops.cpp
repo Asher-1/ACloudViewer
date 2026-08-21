@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "graph_ops.hpp"
+#include "tasks/facedetect/graph_ops.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -16,12 +16,12 @@
 #include <unordered_map>
 #include <vector>
 
-#include "backend.hpp"
-#include "directconv.hpp"
 #include "ggml-backend.h"
 #include "ggml.h"
-#include "model_loader.hpp"
-#include "winograd.hpp"
+#include "tasks/facedetect/backend.hpp"
+#include "tasks/facedetect/directconv.hpp"
+#include "tasks/facedetect/model_loader.hpp"
+#include "tasks/facedetect/winograd.hpp"
 
 namespace fd {
 
@@ -131,19 +131,13 @@ ggml_tensor* conv2d(ggml_context* ctx,
     // im2col + mul_mat (cuBLAS-class) kernel beats the basic direct CUDA conv,
     // so keep im2col there too. Mirrors depth-anything.cpp's da::conv2d
     // device-aware routing, with the extra thread-count gate this model's
-    // smaller feature maps need. A/B override via FACEDETECT_CONV: "direct" |
-    // "im2col" | "auto" (default).
+    // smaller feature maps need. The historical FACEDETECT_CONV override
+    // (direct|im2col|auto) was an A/B scaffold and is removed; the routing
+    // below is the auto default that won those experiments.
     constexpr int kDirectConvMinThreads = 8;  // bandwidth-saturation crossover
     const bool kgt1 = (W->ne[0] > 1 || W->ne[1] > 1);
-    bool direct = backend_is_cpu() && kgt1 &&
-                  global_backend().n_threads() >= kDirectConvMinThreads;
-    if (const char* mode = std::getenv("FACEDETECT_CONV")) {
-        if (!std::strcmp(mode, "direct"))
-            direct = true;
-        else if (!std::strcmp(mode, "im2col"))
-            direct = false;
-        // "auto" (or anything else) keeps the device+thread default above.
-    }
+    const bool direct = backend_is_cpu() && kgt1 &&
+                        global_backend().n_threads() >= kDirectConvMinThreads;
 
     // AVX2/AVX-512 Winograd F(2x2,3x3) for 3x3 stride-1 pad-1 convs, which
     // dominate BOTH the SCRFD detector (backbone/neck/head 3x3 stems) and the
@@ -165,19 +159,13 @@ ggml_tensor* conv2d(ggml_context* ctx,
     // flat), so 14 is the optimum: best-or-tied at 8t for both models AND a
     // large 1t win. It does not regress SCRFD - detect improves at every thread
     // count - so the recognizer and detector share one lowered threshold (no
-    // per-context gate needed).
+    // per-context gate needed). The historical FACEDETECT_WINOGRAD override
+    // (on|off|auto) was an A/B scaffold and is removed.
     constexpr int64_t kWinoMinSize = 14;
     const bool k3 = (W->ne[0] == 3 && W->ne[1] == 3 && W->ne[2] == x->ne[2]);
     const bool s1p1 = (stride == 1 && pad == 1);
     const int64_t inMin = std::min(x->ne[0], x->ne[1]);
-    bool wino = backend_is_cpu() && k3 && s1p1 && inMin >= kWinoMinSize;
-    if (const char* wmode = std::getenv("FACEDETECT_WINOGRAD")) {
-        if (!std::strcmp(wmode, "on"))
-            wino = backend_is_cpu() && k3 && s1p1;
-        else if (!std::strcmp(wmode, "off"))
-            wino = false;
-        // "auto" (or anything else) keeps the size-gated default above.
-    }
+    const bool wino = backend_is_cpu() && k3 && s1p1 && inMin >= kWinoMinSize;
 
     // PROBE: route the SCRFD detector's large early maps (320/160/80, where
     // ~88% of detector FLOPs sit) through F(4x4,3x3) instead of F(2x2). F4 does
@@ -223,18 +211,6 @@ ggml_tensor* conv2d(ggml_context* ctx,
     const bool dconv_shape =
             inMin <= kDConvMaxSpatial && x->ne[2] >= kDConvMinChannels;
     bool dconv = wino && !winograd_f4_scope() && dconv_shape;
-    if (const char* cmode = std::getenv("FACEDETECT_CONV")) {
-        if (!std::strcmp(cmode, "winograd"))
-            dconv = false;
-        else if (!std::strcmp(cmode, "directconv"))
-            dconv = wino;  // force all eligible
-        else if (!std::strcmp(cmode, "direct") ||
-                 !std::strcmp(cmode, "im2col")) {
-            dconv = false;
-            wino = false;
-        }
-        // "auto" (or anything else) keeps the shape-gated default above.
-    }
     if (dconv && (W->type != GGML_TYPE_F32 || x->ne[3] != 1)) dconv = false;
     const bool use_wino = wino && !dconv;
     const bool prefer_f4 = use_wino && winograd_f4_scope();

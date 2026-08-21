@@ -22,16 +22,17 @@
 
 #include "aicore/backend_capi.h"
 #include "aicore/gaussian_capi.h"
-#include "backend.hpp"
-#include "ggml_backend_utils.hpp"
-#include "image.h"
-#include "image_io.hpp"
-#include "model.h"
-#include "options.h"
-#include "path_util.hpp"
-#include "ply_export.hpp"
-#include "pose.h"
-#include "splat.h"
+#include "common/capi_utils.hpp"
+#include "common/ggml_backend_utils.hpp"
+#include "tasks/gaussian/backend.hpp"
+#include "tasks/gaussian/image.h"
+#include "tasks/gaussian/image_io.hpp"
+#include "tasks/gaussian/model.h"
+#include "tasks/gaussian/options.h"
+#include "tasks/gaussian/path_util.hpp"
+#include "tasks/gaussian/ply_export.hpp"
+#include "tasks/gaussian/pose.h"
+#include "tasks/gaussian/splat.h"
 
 #if defined(AICORE_CUDA_STATIC_LINKED)
 #include <cuda_runtime.h>
@@ -54,7 +55,7 @@ struct aicore_gaussian_ctx {
 
 extern "C" {
 
-AICORE_CAPI int aicore_gaussian_abi_version(void) { return 1; }
+AICORE_CAPI int aicore_gaussian_abi_version(void) { return 2; }
 
 // ---- options builder ----
 
@@ -172,8 +173,7 @@ AICORE_CAPI int aicore_gaussian_run(aicore_gaussian_ctx* ctx,
     return 0;
 }
 
-AICORE_CAPI void aicore_gaussian_free_floats(float* p) { free(p); }
-AICORE_CAPI void aicore_gaussian_free_bytes(unsigned char* p) { free(p); }
+AICORE_CAPI void aicore_gaussian_free_buffer(void* p) { free(p); }
 
 // ---- inference from image files ----
 
@@ -204,17 +204,20 @@ AICORE_CAPI int aicore_gaussian_run_paths(aicore_gaussian_ctx* ctx,
 
 // ---- pose recovery ----
 
-AICORE_CAPI int aicore_gaussian_estimate_poses(const float* gaussians,
-                                               int32_t n_views,
-                                               int32_t height,
-                                               int32_t width,
-                                               int32_t gaussian_channels,
-                                               float opacity_threshold,
-                                               float* cam2world_out,
-                                               float* focal_out) {
-    if (!gaussians || !cam2world_out || n_views < 1 || height < 1 ||
-        width < 1 || gaussian_channels < 16)
+AICORE_CAPI int aicore_gaussian_estimate_poses(
+        const aicore_gaussian_geometry* geom,
+        const float* gaussians,
+        int32_t n_views,
+        float opacity_threshold,
+        float* cam2world_out,
+        float* focal_out) {
+    if (!geom || !gaussians || !cam2world_out || n_views < 1 ||
+        geom->image_height < 1 || geom->image_width < 1 ||
+        geom->gaussian_channels < 16)
         return -1;
+    const int height = geom->image_height;
+    const int width = geom->image_width;
+    const int gaussian_channels = geom->gaussian_channels;
     const int P = height * width;
     std::vector<std::vector<float>> pts, ops;
     std::vector<const float*> pptr, optr;
@@ -254,41 +257,38 @@ AICORE_CAPI int aicore_gaussian_estimate_poses(const float* gaussians,
 
 // ---- PLY export ----
 
-AICORE_CAPI int aicore_gaussian_export_ply(const float* gaussians,
+AICORE_CAPI int aicore_gaussian_export_ply(const aicore_gaussian_geometry* geom,
+                                           const float* gaussians,
                                            int32_t n_views,
-                                           int32_t height,
-                                           int32_t width,
-                                           int32_t gaussian_channels,
-                                           int32_t sh_degree,
                                            float opacity_threshold,
                                            const char* out_ply) {
-    if (!gaussians || !out_ply) return -1;
+    if (!geom || !gaussians || !out_ply) return -1;
     std::string err;
-    if (!aicore::gaussian::export_ply_sibr(gaussians, n_views, height, width,
-                                           gaussian_channels, sh_degree,
-                                           opacity_threshold, out_ply, err)) {
+    if (!aicore::gaussian::export_ply_sibr(
+                gaussians, n_views, geom->image_height, geom->image_width,
+                geom->gaussian_channels, geom->sh_degree, opacity_threshold,
+                out_ply, err)) {
         return -1;
     }
     return 0;
 }
 
-AICORE_CAPI int aicore_gaussian_export_ply_bytes(const float* gaussians,
-                                                 int32_t n_views,
-                                                 int32_t height,
-                                                 int32_t width,
-                                                 int32_t gaussian_channels,
-                                                 int32_t sh_degree,
-                                                 float opacity_threshold,
-                                                 unsigned char** out_bytes,
-                                                 size_t* out_size) {
-    if (!gaussians || !out_bytes || !out_size) return -1;
+AICORE_CAPI int aicore_gaussian_export_ply_bytes(
+        const aicore_gaussian_geometry* geom,
+        const float* gaussians,
+        int32_t n_views,
+        float opacity_threshold,
+        unsigned char** out_bytes,
+        size_t* out_size) {
+    if (!geom || !gaussians || !out_bytes || !out_size) return -1;
     *out_bytes = nullptr;
     *out_size = 0;
     std::vector<uint8_t> buf;
     std::string err;
     if (!aicore::gaussian::export_ply_sibr_to_buffer(
-                gaussians, n_views, height, width, gaussian_channels, sh_degree,
-                opacity_threshold, buf, err)) {
+                gaussians, n_views, geom->image_height, geom->image_width,
+                geom->gaussian_channels, geom->sh_degree, opacity_threshold,
+                buf, err)) {
         return -1;
     }
     if (buf.empty()) return -1;
@@ -315,13 +315,14 @@ AICORE_CAPI int aicore_gaussian_run_and_export_ply(aicore_gaussian_ctx* ctx,
         return -1;
     }
 
-    const int gc = ctx->m.hp().gaussian_channels;
-    const int H = ctx->m.hp().image_size;
-    const int W = ctx->m.hp().image_size;
-    const int sh_deg = ctx->m.hp().sh_degree;
-    int ret = aicore_gaussian_export_ply(gaussians, n_images, H, W, gc, sh_deg,
+    aicore_gaussian_geometry geom{};
+    geom.image_height = ctx->m.hp().image_size;
+    geom.image_width = ctx->m.hp().image_size;
+    geom.gaussian_channels = ctx->m.hp().gaussian_channels;
+    geom.sh_degree = ctx->m.hp().sh_degree;
+    int ret = aicore_gaussian_export_ply(&geom, gaussians, n_images,
                                          opacity_threshold, out_ply);
-    aicore_gaussian_free_floats(gaussians);
+    aicore_gaussian_free_buffer(gaussians);
     return ret;
 }
 
@@ -338,17 +339,8 @@ AICORE_CAPI int aicore_gaussian_warmup_backend(const char* device) {
 // ---- model cache directory ----
 
 AICORE_CAPI char* aicore_gaussian_model_cache_dir(void) {
-    std::string dir = aicore::gaussian::default_model_cache_dir();
-    char* result = static_cast<char*>(std::malloc(dir.size() + 1));
-    if (result) {
-        std::strcpy(result, dir.c_str());
-    }
-    return result;
+    return aicore::capi::dup_cstr(aicore::gaussian::default_model_cache_dir());
 }
-
-AICORE_CAPI void aicore_gaussian_free_string(char* s) { free(s); }
-
-// ---- model info ----
 
 AICORE_CAPI char* aicore_gaussian_info_json(aicore_gaussian_ctx* ctx) {
     if (!ctx) return nullptr;
@@ -374,9 +366,7 @@ AICORE_CAPI char* aicore_gaussian_info_json(aicore_gaussian_ctx* ctx) {
                   hp.image_size, hp.in_channels, hp.gaussian_channels,
                   hp.sh_degree, hp.sh_residual ? "true" : "false",
                   hp.use_2dgs ? "true" : "false", ctx->m.be.device.c_str());
-    char* result = (char*)malloc(std::strlen(buf) + 1);
-    if (result) std::strcpy(result, buf);
-    return result;
+    return aicore::capi::dup_cstr(buf);
 }
 
 // ---- CLI helpers (accumulate / parallax) ------------------------------------
@@ -567,14 +557,16 @@ AICORE_CAPI int aicore_gaussian_export_cloud_splat(
     return stream ? 0 : -1;
 }
 
-AICORE_CAPI int aicore_gaussian_pair_parallax(const float* gaussians,
-                                              int32_t n_views,
-                                              int32_t height,
-                                              int32_t width,
-                                              int32_t gc,
-                                              float opacity_threshold,
-                                              aicore_gaussian_parallax* out) {
-    if (!gaussians || !out || n_views < 2) return -1;
+AICORE_CAPI int aicore_gaussian_pair_parallax(
+        const aicore_gaussian_geometry* geom,
+        const float* gaussians,
+        int32_t n_views,
+        float opacity_threshold,
+        aicore_gaussian_parallax* out) {
+    if (!geom || !gaussians || !out || n_views < 2) return -1;
+    const int height = geom->image_height;
+    const int width = geom->image_width;
+    const int gc = geom->gaussian_channels;
     const int P = height * width;
     std::vector<std::vector<float>> pts, ops;
     std::vector<const float*> pptr, optr;
@@ -594,10 +586,12 @@ AICORE_CAPI int aicore_gaussian_pair_parallax(const float* gaussians,
 }
 
 AICORE_CAPI aicore_gaussian_accumulator* aicore_gaussian_accumulator_new(
-        int height, int width, float opacity_threshold) {
+        const aicore_gaussian_geometry* geom, float opacity_threshold) {
+    if (!geom) return nullptr;
     try {
         return new aicore_gaussian_accumulator{
-                aicore::gaussian::pose::Accumulator(height, width,
+                aicore::gaussian::pose::Accumulator(geom->image_height,
+                                                    geom->image_width,
                                                     opacity_threshold)};
     } catch (...) {
         return nullptr;
@@ -654,27 +648,26 @@ AICORE_CAPI int aicore_gaussian_accumulator_fuse(
     return (*out && *n_out > 0) ? 0 : -1;
 }
 
-AICORE_CAPI int aicore_gaussian_tree_overlap(const float** pairs,
-                                             int n_pairs,
-                                             int gc,
-                                             int height,
-                                             int width,
-                                             float opacity_threshold,
-                                             int block,
-                                             int overlap,
-                                             int max_levels,
-                                             float layout_spacing,
-                                             int per_node_cap,
-                                             aicore_gaussian_point** out,
-                                             size_t* n_out,
-                                             int* n_nodes_out) {
-    if (!pairs || n_pairs < 1 || !out || !n_out) return -1;
+AICORE_CAPI int aicore_gaussian_tree_overlap(
+        const float** pairs,
+        int n_pairs,
+        const aicore_gaussian_geometry* geom,
+        float opacity_threshold,
+        const aicore_gaussian_merge_options* merge_opts,
+        aicore_gaussian_point** out,
+        size_t* n_out,
+        int* n_nodes_out) {
+    if (!pairs || n_pairs < 1 || !geom || !out || !n_out) return -1;
+    const aicore_gaussian_merge_options def{};
+    if (merge_opts == nullptr) merge_opts = &def;
     std::vector<aicore::gaussian::pose::AccumPoint> cloud =
             aicore::gaussian::pose::tree_accumulate_overlap(
-                    std::vector<const float*>(pairs, pairs + n_pairs), height,
-                    width, gc, opacity_threshold, block, overlap, 0.02, 300, 0,
-                    nullptr, max_levels, layout_spacing, n_nodes_out,
-                    per_node_cap);
+                    std::vector<const float*>(pairs, pairs + n_pairs),
+                    geom->image_height, geom->image_width,
+                    geom->gaussian_channels, opacity_threshold,
+                    merge_opts->block, merge_opts->overlap, 0.02, 300, 0,
+                    nullptr, merge_opts->max_levels, merge_opts->layout_spacing,
+                    n_nodes_out, merge_opts->per_node_cap);
     copy_accum_points(cloud, out, n_out);
     return (*out && *n_out > 0) ? 0 : -1;
 }

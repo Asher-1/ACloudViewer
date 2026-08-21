@@ -61,6 +61,7 @@ private:
 #ifdef AICore_ENABLED
     bool runInference();
     bool runDetect(const QImage& rgb, const uchar* rgbData);
+    bool runSegment(const QImage& rgb, const uchar* rgbData);
     bool runDepth(const QImage& rgb, const uchar* rgbData);
 #endif
 

@@ -56,7 +56,7 @@ QString modelCacheDir() {
     char* dir = aicore_rmbg_model_cache_dir();
     if (dir) {
         const QString out = QString::fromUtf8(dir);
-        aicore_rmbg_free_string(dir);
+        aicore_rmbg_free_buffer(dir);
         return out;
     }
 #else

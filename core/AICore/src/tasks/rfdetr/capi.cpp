@@ -15,59 +15,22 @@
 
 #include "aicore/backend_capi.h"
 #include "aicore/rfdetr_capi.h"
-#include "backend.hpp"
-#include "common.hpp"
-#include "ggml_backend_utils.hpp"
-#include "image_io.hpp"
-#include "model_cache.hpp"
-#include "rfdetr.h"
-#include "rfdetr_model.hpp"
+#include "common/capi_utils.hpp"
+#include "common/ggml_backend_utils.hpp"
+#include "common/model_cache.hpp"
+#include "tasks/rfdetr/backend.hpp"
+#include "tasks/rfdetr/common.hpp"
+#include "tasks/rfdetr/image_io.hpp"
+#include "tasks/rfdetr/rfdetr.h"
+#include "tasks/rfdetr/rfdetr_model.hpp"
 
-namespace {
+namespace {}  // namespace
 
-char* dup_cstr(const std::string& s) {
-    char* out = static_cast<char*>(std::malloc(s.size() + 1));
-    if (out != nullptr) {
-        std::memcpy(out, s.c_str(), s.size() + 1);
-    }
-    return out;
-}
-
-// JSON-escape a class name (COCO labels are plain ASCII, but models converted
-// from other taxonomies may carry quotes / backslashes).
-std::string json_escape(const std::string& s) {
-    std::string out;
-    out.reserve(s.size() + 8);
-    for (char c : s) {
-        switch (c) {
-            case '"':
-                out += "\\\"";
-                break;
-            case '\\':
-                out += "\\\\";
-                break;
-            case '\n':
-                out += "\\n";
-                break;
-            case '\r':
-                out += "\\r";
-                break;
-            case '\t':
-                out += "\\t";
-                break;
-            default:
-                out += c;
-                break;
-        }
-    }
-    return out;
-}
-
-}  // namespace
+using aicore::capi::dup_cstr;
+using aicore::capi::json_escape;
 
 struct aicore_rfdetr_options {
-    std::string device = "auto";
-    int32_t threads = 0;
+    aicore::capi::CommonOptions common;
 };
 
 struct aicore_rfdetr_ctx {
@@ -105,12 +68,12 @@ AICORE_CAPI void aicore_rfdetr_options_free(aicore_rfdetr_options* opts) {
 
 AICORE_CAPI void aicore_rfdetr_options_set_device(aicore_rfdetr_options* opts,
                                                   const char* device) {
-    if (opts != nullptr && device != nullptr) opts->device = device;
+    if (opts != nullptr) aicore::capi::set_device(opts->common, device);
 }
 
 AICORE_CAPI void aicore_rfdetr_options_set_threads(aicore_rfdetr_options* opts,
                                                    int n_threads) {
-    if (opts != nullptr) opts->threads = n_threads;
+    if (opts != nullptr) aicore::capi::set_threads(opts->common, n_threads);
 }
 
 AICORE_CAPI aicore_rfdetr_ctx* aicore_rfdetr_load_opts(
@@ -120,8 +83,8 @@ AICORE_CAPI aicore_rfdetr_ctx* aicore_rfdetr_load_opts(
     if (ctx == nullptr) return nullptr;
 
     ctx->model_path = gguf_path;
-    ctx->device = opts != nullptr ? opts->device : "auto";
-    ctx->threads = opts != nullptr ? opts->threads : 0;
+    ctx->device = opts != nullptr ? opts->common.device : "auto";
+    ctx->threads = opts != nullptr ? opts->common.threads : 0;
 
     try {
         rfdetr_params p{};
@@ -155,9 +118,7 @@ AICORE_CAPI const char* aicore_rfdetr_last_error(const aicore_rfdetr_ctx* ctx) {
                                                       : nullptr;
 }
 
-AICORE_CAPI void aicore_rfdetr_free_string(char* s) { std::free(s); }
-
-AICORE_CAPI void aicore_rfdetr_free_vec(float* v) { std::free(v); }
+AICORE_CAPI void aicore_rfdetr_free_buffer(void* p) { std::free(p); }
 
 AICORE_CAPI int aicore_rfdetr_load_path_rgb(const char* image_path,
                                             uint8_t** out_rgb,

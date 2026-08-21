@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "directconv.hpp"
+#include "tasks/facedetect/directconv.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -51,38 +51,22 @@ namespace fd {
 namespace {
 
 // A/B knob for the stride>1 register-tiled flat downsample path. Default ON;
-// set FACEDETECT_DCONV_STRIDE2=col to force the legacy per-column path (one zmm
-// accumulator) for honest before/after benchmarking in a single binary.
-static bool dconv_stride2_flat() {
-    static const bool flat = [] {
-        const char* e = std::getenv("FACEDETECT_DCONV_STRIDE2");
-        return !(e && (!std::strcmp(e, "col") || !std::strcmp(e, "0")));
-    }();
-    return flat;
-}
+// The flat path is the benchmark winner; the historical
+// FACEDETECT_DCONV_STRIDE2=col override (per-column path) was an A/B scaffold
+// and is removed.
+static bool dconv_stride2_flat() { return true; }
 
 #if defined(FD_DCONV_HAVE_AVX512)
 // Cached decision: run the AVX-512 microkernel? True only when the running CPU
-// advertises avx512f+bw+vl (so zmm code never executes on an AVX2-only host)
-// AND the FACEDETECT_DISABLE_AVX512 test hook is unset (shared with
-// winograd.cpp; forcing it lets us exercise + parity-check the AVX2 fallback on
-// an AVX-512 box). FACEDETECT_DCONV_VERBOSE prints the one-time selection for
-// ship-safety proofs.
+// advertises avx512f+bw+vl (so zmm code never executes on an AVX2-only host).
+// The historical FACEDETECT_DISABLE_AVX512 / FACEDETECT_DCONV_VERBOSE test
+// hooks were A/B scaffolding and are removed.
 static bool dconv_use_avx512() {
     static const bool use512 = [] {
-        const char* off = std::getenv("FACEDETECT_DISABLE_AVX512");
-        const bool disabled = off && off[0] != '\0' && off[0] != '0';
         const bool supported = __builtin_cpu_supports("avx512f") &&
                                __builtin_cpu_supports("avx512bw") &&
                                __builtin_cpu_supports("avx512vl");
-        const bool sel = supported && !disabled;
-        if (std::getenv("FACEDETECT_DCONV_VERBOSE"))
-            std::fprintf(stderr,
-                         "[directconv] microkernel: %s (avx512 supported=%d, "
-                         "disabled=%d)\n",
-                         sel ? "AVX-512(16c)" : "AVX2(8c)", (int)supported,
-                         (int)disabled);
-        return sel;
+        return supported;
     }();
     return use512;
 }
@@ -1337,11 +1321,9 @@ static void bconv3x3_compute(ggml_tensor* dst,
         // recovery), while 14x14 -- whose interior is exactly 12 and already
         // fills one full per-row strip -- and the larger 28x28/56x56 stages
         // keep the (already-saturated) per-row path. Parity is bit-identical
-        // either way.
-        static const int flat_maxw = [] {
-            const char* e = std::getenv("FACEDETECT_DCONV_FLAT_MAXW");
-            return (e && *e) ? atoi(e) : 13;
-        }();
+        // either way. (The historical FACEDETECT_DCONV_FLAT_MAXW override was
+        // an A/B scaffold and is removed; 13 is the settled winner.)
+        static const int flat_maxw = 13;
         if (Wout <= flat_maxw) {
             const int npairs = (OCB + 1) / 2;
             const int Npix = Wout * Hout;

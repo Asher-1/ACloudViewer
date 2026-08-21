@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "yunet_graph.hpp"
+#include "tasks/facedetect/yunet_graph.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -15,11 +15,11 @@
 #include <vector>
 
 #include "antispoof_graph.hpp"  // run_onnx_graph_multi (shared ONNX-graph interpreter)
-#include "backend.hpp"
-#include "common.hpp"
-#include "detect.hpp"
-#include "model_loader.hpp"
-#include "preprocess.hpp"
+#include "tasks/facedetect/backend.hpp"
+#include "tasks/facedetect/common.hpp"
+#include "tasks/facedetect/detect.hpp"
+#include "tasks/facedetect/model_loader.hpp"
+#include "tasks/facedetect/preprocess.hpp"
 
 namespace fd {
 

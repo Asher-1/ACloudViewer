@@ -5,13 +5,13 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "projector.hpp"
+#include "tasks/rfdetr/projector.hpp"
 
 #include <string>
 
-#include "common.hpp"
 #include "ggml.h"
-#include "trace.hpp"
+#include "tasks/rfdetr/common.hpp"
+#include "tasks/rfdetr/trace.hpp"
 
 namespace rfdetr {
 

@@ -13,8 +13,12 @@
 int main() {
     const char* gguf = std::getenv("DA_TEST_GGUF");
     if (!gguf) return 77;
-    if (aicore_depth_abi_version() < 5) return 1;
-    aicore_depth_ctx* c = aicore_depth_load(gguf, 1);
+    if (aicore_depth_abi_version() < 6) return 1;
+    aicore_depth_options* opts = aicore_depth_options_new();
+    if (!opts) return 1;
+    aicore_depth_options_set_threads(opts, 1);
+    aicore_depth_ctx* c = aicore_depth_load_opts(gguf, opts);
+    aicore_depth_options_free(opts);
     if (!c) {
         std::fprintf(stderr, "load failed\n");
         return 1;
@@ -23,7 +27,7 @@ int main() {
     bool ok = j && std::strstr(j, "embed_dim");
     std::fprintf(stderr, "info json: %s -> %s\n", j ? j : "(null)",
                  ok ? "OK" : "FAIL");
-    aicore_depth_free_string(j);
+    aicore_depth_free_buffer(j);
     // Export wrappers (best-effort): exercise glb + colmap on the native
     // fixture.
     const char* png = std::getenv("DA_TEST_NATIVE_PNG");

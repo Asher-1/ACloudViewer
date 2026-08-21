@@ -281,7 +281,7 @@ bool FaceDetectWorker::runInference() {
     if (char* info = aicore_facedetect_info_json(ctx)) {
         const QJsonObject obj =
                 QJsonDocument::fromJson(QByteArray(info)).object();
-        aicore_facedetect_free_string(info);
+        aicore_facedetect_free_buffer(info);
         result.resolvedDevice = obj.value(QStringLiteral("device")).toString();
         aicore_inference_log::log_device_resolved(QStringLiteral("FaceDetect"),
                                                   result.resolvedDevice);
@@ -384,7 +384,7 @@ bool FaceDetectWorker::runInference() {
             return false;
         }
         const QByteArray payload(json);
-        aicore_facedetect_free_string(json);
+        aicore_facedetect_free_buffer(json);
         result.resultJson = payload;
 
         if (m_settings.mode == Mode::DenseLandmarks) {

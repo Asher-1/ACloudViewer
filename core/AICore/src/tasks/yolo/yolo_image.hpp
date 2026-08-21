@@ -1,5 +1,5 @@
-#ifndef YOLO_IMAGE_HPP
-#define YOLO_IMAGE_HPP
+#pragma once
+
 
 // ----------------------------------------------------------------------------
 // -                        CloudViewer: www.cloudViewer.org                  -
@@ -16,7 +16,8 @@
 
 #include <vector>
 
-#include "yolo_common.hpp"
+#include "tasks/yolo/yolo_common.hpp"
+
 
 namespace yolo {
 
@@ -46,5 +47,3 @@ std::vector<float> restore_depth(const std::vector<float>& depth, int depth_w,
                                  int image_w, int image_h);
 
 }  // namespace yolo
-
-#endif

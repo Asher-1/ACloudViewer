@@ -5,10 +5,11 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "image_io.hpp"
+#include "tasks/rfdetr/image_io.hpp"
 
-#include "common.hpp"
-#include "visualize.hpp"
+#include "common/capi_utils.hpp"
+#include "tasks/rfdetr/common.hpp"
+#include "tasks/rfdetr/visualize.hpp"
 
 // Qt-based image I/O (matching the gaussian task pattern).
 // Qt-based image loading, writing, and resizing.
@@ -35,25 +36,27 @@ rfdetr_image* qimage_to_rfdetr(const QImage& img, rfdetr_status* out_status) {
         set(RFDETR_ERR_DECODE);
         return nullptr;
     }
-    const int w = img.width();
-    const int h = img.height();
-    QImage rgb = img.convertToFormat(QImage::Format_RGB888);
+    aicore::capi::PackedRgb packed = aicore::capi::qimage_to_packed_rgb(img);
+    if (packed.data == nullptr) {
+        set(RFDETR_ERR_OUT_OF_MEMORY);
+        return nullptr;
+    }
 
     rfdetr_image* out = new (std::nothrow) rfdetr_image();
     if (!out) {
+        std::free(packed.data);
         set(RFDETR_ERR_OUT_OF_MEMORY);
         return nullptr;
     }
     try {
-        out->width = w;
-        out->height = h;
+        out->width = packed.width;
+        out->height = packed.height;
         out->channels = 3;
-        out->rgb.resize((size_t)w * h * 3);
-        for (int y = 0; y < h; ++y) {
-            memcpy(out->rgb.data() + (size_t)y * w * 3, rgb.constScanLine(y),
-                   w * 3);
-        }
+        out->rgb.assign(packed.data,
+                        packed.data + (size_t)packed.width * packed.height * 3);
+        std::free(packed.data);
     } catch (const std::bad_alloc&) {
+        std::free(packed.data);
         delete out;
         set(RFDETR_ERR_OUT_OF_MEMORY);
         return nullptr;

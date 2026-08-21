@@ -1,7 +1,8 @@
-#ifndef RFDETR_DINOV2_HPP
-#define RFDETR_DINOV2_HPP
+#pragma once
 
-#include "model_loader.hpp"
+
+#include "tasks/rfdetr/model_loader.hpp"
+
 
 #include <array>
 
@@ -68,5 +69,3 @@ BackboneOutput dinov2_forward(ggml_context* ctx, const Model& m,
                               ggml_tensor* input);
 
 }  // namespace rfdetr
-
-#endif

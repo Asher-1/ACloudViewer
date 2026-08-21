@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "nn_ops.hpp"
+#include "tasks/rmbg/nn_ops.hpp"
 
 #include <algorithm>
 #include <cmath>

@@ -1,5 +1,5 @@
-#ifndef YOLO_COMMON_HPP
-#define YOLO_COMMON_HPP
+#pragma once
+
 
 // ----------------------------------------------------------------------------
 // -                        CloudViewer: www.cloudViewer.org                  -
@@ -15,26 +15,49 @@
 // written relicensing decision is recorded (see
 // ultralytics-ggml-integration-plan.md §5).
 
+#include <chrono>
 #include <cstdint>
 #include <map>
 #include <string>
 #include <vector>
+
+#include "common/aicore_log.hpp"
 
 #include "ggml.h"
 
 namespace yolo {
 
 // Logging -------------------------------------------------------------------
+// Routes through aicore_log.hpp, which forwards to CVLog when the AICore
+// target is built with AICore_HAS_CVLOG (ACloudViewer Console) and falls
+// back to stderr otherwise. Runtime level filtering lives in the shared
+// aicore_log_at() gate (AICORE_LOG_LEVEL_*); there is no task-private level
+// enum or thread-local state.
 
-enum class LogLevel { DEBUG = 0, INFO = 1, WARN = 2, ERROR = 3 };
+void logf(int level, const char* fmt, ...);
+void set_log_level(int level);
+int get_log_level();
 
-void logf(LogLevel level, const char* fmt, ...);
-extern int g_log_level;
+#define YOLO_LOG_DEBUG(...)                                                    \
+    ::yolo::logf(AICORE_LOG_LEVEL_DEBUG, __VA_ARGS__)
+#define YOLO_LOG_INFO(...)                                                     \
+    ::yolo::logf(AICORE_LOG_LEVEL_INFO, __VA_ARGS__)
+#define YOLO_LOG_WARN(...)                                                     \
+    ::yolo::logf(AICORE_LOG_LEVEL_WARN, __VA_ARGS__)
+#define YOLO_LOG_ERROR(...)                                                    \
+    ::yolo::logf(AICORE_LOG_LEVEL_ERROR, __VA_ARGS__)
 
-#define YOLO_LOG_DEBUG(...) ::yolo::logf(::yolo::LogLevel::DEBUG, __VA_ARGS__)
-#define YOLO_LOG_INFO(...) ::yolo::logf(::yolo::LogLevel::INFO, __VA_ARGS__)
-#define YOLO_LOG_WARN(...) ::yolo::logf(::yolo::LogLevel::WARN, __VA_ARGS__)
-#define YOLO_LOG_ERROR(...) ::yolo::logf(::yolo::LogLevel::ERROR, __VA_ARGS__)
+// SessionOptions: explicit typed configuration (no env vars) -----------------
+
+struct SessionOptions {
+    int threads = 0;             // <=0: hardware default
+    int input_w = 0;             // 0: square imgsz stored in the GGUF metadata
+    int input_h = 0;
+    int log_level = 1;           // 0=DEBUG,1=INFO,2=WARN,3=ERROR
+    bool keep_all_ops = false;   // debug: keep every op output alive
+    bool profile_ops = false;    // debug: per-op wall-time table
+    bool profile_gaps = false;   // debug: per-stage timing on stderr
+};
 
 // Detection result -----------------------------------------------------------
 
@@ -42,6 +65,7 @@ struct Detection {
     float x1, y1, x2, y2;  // pixels in the original input image
     float score;           // max class probability after sigmoid
     int class_id;
+    int anchor = -1;       // index into the raw [no, na] output; -1 = not tracked
 };
 
 // Letterbox geometry shared by detect (box unscaling) and depth (canvas
@@ -60,9 +84,10 @@ struct LetterboxInfo {
 
 struct ModelMeta {
     std::string name;
-    std::string task;  // "detect" | "depth"
+    std::string task;  // "detect" | "segment" | "depth"
     std::string dtype;
     int nc = 80;
+    int nm = 0;          // mask prototypes (0 for detect/depth)
     int nl = 3;
     int imgsz = 640;
     int reg_max = 16;
@@ -99,24 +124,50 @@ struct OpDef {
 // Host-side weight: ggml_type + raw block data + logical shape (torch order).
 // The host copy is kept for the context lifetime so the graph can be rebuilt
 // when the letterbox canvas (graph input shape) changes without re-reading
-// the GGUF file.
+// the GGUF file. Once the device weight buffer exists, rebuilds reuse that
+// buffer and never touch the host copy, so callers may drop the host copy
+// via session_release_host_weights / aicore_yolo_release_host_weights to
+// halve the memory footprint; session_ensure_host_weights reloads it from
+// the GGUF on demand.
 struct HostTensor {
     std::vector<uint8_t> data;
-    ggml_type type = GGML_TYPE_F32;
-    int64_t ne[4] = {1, 1, 1, 1};  // ggml order: ne[0] fastest
+    ggml_type type = GGML_TYPE_F32;   // current (possibly backend-preprocessed)
+    ggml_type file_type = GGML_TYPE_F32;  // original type stored in the GGUF
+    int64_t ne[4] = {1, 1, 1, 1};     // ggml order: ne[0] fastest
     std::string name;
+    size_t file_offset = 0;  // absolute GGUF file offset (for on-demand reload)
 };
 
 struct ModelDef {
     ModelMeta meta;
     std::vector<OpDef> ops;
     std::map<std::string, HostTensor> tensors;
+    std::string gguf_path;  // source file (for on-demand host weight reload)
 
     // Flattened per-level head info, taken from the single detect op.
     bool has_detect = false;
     int detect_op_index = -1;
 };
 
-}  // namespace yolo
+// Timing helper ---------------------------------------------------------------
 
-#endif
+struct Clock {
+    std::chrono::steady_clock::time_point t0;
+    Clock() : t0(std::chrono::steady_clock::now()) {}
+    double ms_since() const {
+        return std::chrono::duration<double, std::milli>(
+                   std::chrono::steady_clock::now() - t0)
+                .count();
+    }
+    static std::chrono::steady_clock::time_point now() {
+        return std::chrono::steady_clock::now();
+    }
+};
+
+inline double ms_since(std::chrono::steady_clock::time_point t) {
+    return std::chrono::duration<double, std::milli>(
+                   std::chrono::steady_clock::now() - t)
+            .count();
+}
+
+}  // namespace yolo

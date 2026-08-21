@@ -13,7 +13,9 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QFontMetrics>
 #include <QFormLayout>
+#include <QGridLayout>
 #include <QHBoxLayout>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -24,6 +26,7 @@
 #include <QScrollArea>
 #include <QSettings>
 #include <QSizePolicy>
+#include <QTimer>
 #include <QVBoxLayout>
 
 #include "ecvClickableImageLabel.h"
@@ -51,12 +54,14 @@ void styleSampleDataButton(QPushButton* button) {
 }  // namespace
 
 YOLODialog::YOLODialog(QWidget* parent) : QDialog(parent) {
-    setWindowTitle(tr("YOLO Detect & Depth"));
-    setMinimumSize(680, 560);
+    setWindowTitle(tr("YOLO Detect, Segment & Depth"));
     setupUi();
     populateModelCombo();
     loadSettings();
     m_liveWidget->loadSettings();
+    // Content-driven minimum (font / DPI aware) instead of hard-coded
+    // pixels, so the dialog adapts to any platform and screen resolution.
+    setMinimumSize(minimumSizeHint());
 }
 
 YOLODialog::~YOLODialog() {
@@ -64,48 +69,30 @@ YOLODialog::~YOLODialog() {
     m_liveWidget->saveSettings();
 }
 
+QString YOLOTaskPanel::modelPath() const {
+    const QString filename =
+            modelCombo ? modelCombo->currentData().toString() : QString();
+    if (filename.isEmpty()) return QString();
+    if (QFileInfo::exists(filename)) return filename;
+    const QString dir = YOLOHelpers::modelCacheDir();
+    if (dir.isEmpty()) return QString();
+    return dir + QDir::separator() + filename;
+}
+
 void YOLODialog::setupUi() {
     auto* rootLayout = new QVBoxLayout(this);
+    rootLayout->setContentsMargins(6, 6, 6, 6);
+    rootLayout->setSpacing(4);
     m_tabWidget = new QTabWidget(this);
     rootLayout->addWidget(m_tabWidget);
 
-    // ---- Image tab --------------------------------------------------------
-    m_imageTab = new QWidget(this);
-    auto* imageLayout = new QVBoxLayout(m_imageTab);
-
-    // Task selector: filters the model list (detection vs metric depth).
-    // The loaded model remains the single source of truth for the actual
-    // inference path — this combo only narrows what the user can pick.
-    auto* taskRow = new QHBoxLayout;
-    taskRow->addWidget(new QLabel(tr("Task:"), m_imageTab));
-    m_taskCombo = new QComboBox(m_imageTab);
-    m_taskCombo->addItem(tr("Object detection"), QStringLiteral("detect"));
-    m_taskCombo->addItem(tr("Metric depth"), QStringLiteral("depth"));
-    taskRow->addWidget(m_taskCombo);
-    taskRow->addWidget(new QLabel(tr("Model:"), m_imageTab));
-    m_modelCombo = new QComboBox(m_imageTab);
-    m_modelCombo->setMinimumContentsLength(26);
-    m_modelCombo->setSizeAdjustPolicy(
-            QComboBox::AdjustToMinimumContentsLengthWithIcon);
-    m_modelCombo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    taskRow->addWidget(m_modelCombo, 1);
-    imageLayout->addLayout(taskRow);
-
-    m_customModelRow = new QWidget(m_imageTab);
-    auto* customRow = new QHBoxLayout(m_customModelRow);
-    customRow->setContentsMargins(0, 0, 0, 0);
-    customRow->addWidget(new QLabel(tr("Custom GGUF:"), m_customModelRow));
-    m_customModelPath = new QLineEdit(m_customModelRow);
-    customRow->addWidget(m_customModelPath, 1);
-    auto* browseCustomBtn = new QPushButton(tr("Browse…"), m_customModelRow);
-    connect(browseCustomBtn, &QPushButton::clicked, this,
-            &YOLODialog::onBrowseCustomModel);
-    customRow->addWidget(browseCustomBtn);
-    imageLayout->addWidget(m_customModelRow);
-
-    auto* runRow = new QHBoxLayout;
-    runRow->addWidget(new QLabel(tr("Device:"), m_imageTab));
-    m_deviceCombo = new QComboBox(m_imageTab);
+    // Shared inference parameters (device / threads) live OUTSIDE the task
+    // tabs: they are runtime properties, while each tab owns its model
+    // combo + thresholds (which DO differ per task).
+    auto* sharedParams = new QHBoxLayout;
+    sharedParams->setSpacing(6);
+    sharedParams->addWidget(new QLabel(tr("Device:"), this));
+    m_deviceCombo = new QComboBox(this);
 #ifdef AICore_ENABLED
     const int nDev = aicore_device_count();
     for (int i = 0; i < nDev; ++i) {
@@ -116,121 +103,243 @@ void YOLODialog::setupUi() {
         if (dev->is_default) m_deviceCombo->setCurrentIndex(i);
     }
 #endif
-    runRow->addWidget(m_deviceCombo);
-
-    runRow->addWidget(new QLabel(tr("Threads:"), m_imageTab));
-    m_threads = new QSpinBox(m_imageTab);
+    sharedParams->addWidget(m_deviceCombo);
+    sharedParams->addWidget(new QLabel(tr("Threads:"), this));
+    m_threads = new QSpinBox(this);
     m_threads->setRange(0, 64);
     m_threads->setValue(0);
     m_threads->setToolTip(tr("0 = auto"));
-    runRow->addWidget(m_threads);
+    sharedParams->addWidget(m_threads);
+    sharedParams->addStretch();
+    rootLayout->addLayout(sharedParams);
 
-    runRow->addWidget(new QLabel(tr("Conf:"), m_imageTab));
-    m_conf = new QDoubleSpinBox(m_imageTab);
-    m_conf->setRange(0.01, 1.0);
-    m_conf->setSingleStep(0.05);
-    m_conf->setValue(0.25);
-    m_conf->setToolTip(tr("Confidence threshold (detect models)"));
-    runRow->addWidget(m_conf);
+    // ---- Per-task tabs (each with its own model combo + thresholds) -----
+    const QStringList taskOrder = {QStringLiteral("detect"),
+                                   QStringLiteral("segment"),
+                                   QStringLiteral("depth")};
+    const QStringList tabTitles = {tr("Object Detection"),
+                                   tr("Instance Segmentation"),
+                                   tr("Metric Depth")};
 
-    runRow->addWidget(new QLabel(tr("IoU:"), m_imageTab));
-    m_iou = new QDoubleSpinBox(m_imageTab);
-    m_iou->setRange(0.1, 1.0);
-    m_iou->setSingleStep(0.05);
-    m_iou->setValue(0.7);
-    m_iou->setToolTip(tr("NMS IoU threshold (detect models)"));
-    runRow->addWidget(m_iou);
+    auto makeParamLabel = [this](const QString& text, QWidget* parent) {
+        auto* label = new QLabel(text, parent);
+        label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+        return label;
+    };
 
-    runRow->addWidget(new QLabel(tr("Top-K:"), m_imageTab));
-    m_topK = new QSpinBox(m_imageTab);
-    m_topK->setRange(1, 1000);
-    m_topK->setValue(300);
-    runRow->addWidget(m_topK);
-    runRow->addStretch();
-    imageLayout->addLayout(runRow);
+    for (int i = 0; i < taskOrder.size(); ++i) {
+        YOLOTaskPanel panel;
+        panel.task = taskOrder[i];
+        panel.tab = new QWidget(this);
+        auto* layout = new QVBoxLayout(panel.tab);
+        layout->setContentsMargins(4, 4, 4, 4);
+        layout->setSpacing(4);
 
-    auto* inputRow = new QHBoxLayout;
-    inputRow->addWidget(new QLabel(tr("Image:"), m_imageTab));
-    m_imagePath = new QLineEdit(m_imageTab);
-    inputRow->addWidget(m_imagePath, 1);
-    auto* browseBtn = new QPushButton(tr("Browse…"), m_imageTab);
-    connect(browseBtn, &QPushButton::clicked, this, &YOLODialog::onBrowseImage);
-    m_imageTestDataBtn =
-            new QPushButton(tr("\U0001f9ea  Try sample data"), m_imageTab);
-    styleSampleDataButton(m_imageTestDataBtn);
-    m_imageTestDataBtn->setToolTip(
-            tr("Load images/000000397133.jpg from the shared test-data cache"));
-    connect(m_imageTestDataBtn, &QPushButton::clicked, this,
-            [this]() { requestTestData(TestDataTarget::Image); });
-    inputRow->addWidget(browseBtn);
-    imageLayout->addLayout(inputRow);
+        // Two-column body: config controls on the left, preview on the
+        // right, so the dialog stays compact along both axes.
+        auto* contentRow = new QHBoxLayout;
+        contentRow->setSpacing(8);
+        auto* configCol = new QVBoxLayout;
+        configCol->setSpacing(4);
 
-    // DB image picker (collapsible).
-    m_dbToggleBtn = new QToolButton(m_imageTab);
-    m_dbToggleBtn->setText(tr("DB images ▾"));
-    m_dbToggleBtn->setCheckable(true);
-    m_dbToggleBtn->setChecked(false);
-    imageLayout->addWidget(m_dbToggleBtn, 0, Qt::AlignLeft);
-    m_dbContentWidget = new QWidget(m_imageTab);
-    auto* dbLayout = new QVBoxLayout(m_dbContentWidget);
-    dbLayout->setContentsMargins(0, 0, 0, 0);
-    m_dbImageList = new QListWidget(m_dbContentWidget);
-    m_dbImageList->setIconSize(QSize(48, 48));
-    m_dbImageList->setMaximumHeight(140);
-    dbLayout->addWidget(m_dbImageList);
-    m_dbContentWidget->setVisible(false);
-    imageLayout->addWidget(m_dbContentWidget);
-    connect(m_dbToggleBtn, &QToolButton::toggled, this, [this](bool on) {
-        m_dbContentWidget->setVisible(on);
-        if (on) emit refreshDbImagesRequested();
-    });
-    connect(m_dbImageList, &QListWidget::itemActivated, this,
-            &YOLODialog::onDbListActivated);
-    connect(m_dbImageList, &QListWidget::itemClicked, this,
-            &YOLODialog::onDbListActivated);
+        // Model row: label + combo (filtered to this task's catalog).
+        auto* modelRow = new QHBoxLayout;
+        modelRow->setSpacing(6);
+        modelRow->addWidget(makeParamLabel(tr("Model:"), panel.tab));
+        panel.modelCombo = new QComboBox(panel.tab);
+        panel.modelCombo->setMinimumContentsLength(16);
+        panel.modelCombo->setSizeAdjustPolicy(
+                QComboBox::AdjustToMinimumContentsLengthWithIcon);
+        panel.modelCombo->setSizePolicy(QSizePolicy::Expanding,
+                                        QSizePolicy::Fixed);
+        modelRow->addWidget(panel.modelCombo, 1);
+        configCol->addLayout(modelRow);
 
-    m_previewLabel = new ecvClickableImageLabel(m_imageTab);
-    m_previewLabel->setFixedSize(kThumbSize, kThumbSize);
-    m_previewLabel->setStyleSheet(
-            "border: 1px solid palette(mid); background: palette(base);");
-    m_previewLabel->setText(tr("Preview"));
-    imageLayout->addWidget(
-            ecvClickableImageLabel::wrapWithTapToPreviewHint(m_previewLabel));
+        // Threshold row: Conf / IoU / Top-K (hidden for metric-depth models,
+        // which have no detection thresholds).
+        panel.thresholdRow = new QWidget(panel.tab);
+        auto* thresholdLayout = new QHBoxLayout(panel.thresholdRow);
+        thresholdLayout->setContentsMargins(0, 0, 0, 0);
+        thresholdLayout->setSpacing(4);
+        thresholdLayout->addWidget(makeParamLabel(tr("Conf:"), panel.tab));
+        panel.conf = new QDoubleSpinBox(panel.tab);
+        panel.conf->setRange(0.01, 1.0);
+        panel.conf->setSingleStep(0.05);
+        panel.conf->setValue(0.25);
+        panel.conf->setToolTip(
+                tr("Confidence threshold (detect/segment models)"));
+        thresholdLayout->addWidget(panel.conf);
+        thresholdLayout->addWidget(makeParamLabel(tr("IoU:"), panel.tab));
+        panel.iou = new QDoubleSpinBox(panel.tab);
+        panel.iou->setRange(0.1, 1.0);
+        panel.iou->setSingleStep(0.05);
+        panel.iou->setValue(0.7);
+        panel.iou->setToolTip(tr("NMS IoU threshold (detect/segment models)"));
+        thresholdLayout->addWidget(panel.iou);
+        thresholdLayout->addWidget(makeParamLabel(tr("Top-K:"), panel.tab));
+        panel.topK = new QSpinBox(panel.tab);
+        panel.topK->setRange(1, 1000);
+        panel.topK->setValue(300);
+        thresholdLayout->addWidget(panel.topK);
+        thresholdLayout->addStretch();
+        configCol->addWidget(panel.thresholdRow);
 
-    m_downloadLabel = new QLabel(this);
-    m_downloadLabel->setWordWrap(true);
-    m_downloadLabel->setVisible(false);
+        // Custom GGUF row (shown only when a non-catalog file is picked).
+        panel.customModelRow = new QWidget(panel.tab);
+        auto* customRow = new QHBoxLayout(panel.customModelRow);
+        customRow->setContentsMargins(0, 0, 0, 0);
+        customRow->setSpacing(6);
+        customRow->addWidget(
+                new QLabel(tr("Custom GGUF:"), panel.customModelRow));
+        panel.customModelPath = new QLineEdit(panel.customModelRow);
+        customRow->addWidget(panel.customModelPath, 1);
+        auto* browseCustomBtn =
+                new QPushButton(tr("Browse…"), panel.customModelRow);
+        connect(browseCustomBtn, &QPushButton::clicked, this, [this]() {
+            // The browse dialog stores into the ACTIVE panel's line edit.
+            YOLOTaskPanel* active = currentTaskPanel();
+            if (!active) return;
+            m_customModelPath = active->customModelPath;
+            m_customModelRow = active->customModelRow;
+            onBrowseCustomModel();
+        });
+        customRow->addWidget(browseCustomBtn);
+        configCol->addWidget(panel.customModelRow);
 
-    m_taskStatusLabel = new QLabel(m_imageTab);
-    m_taskStatusLabel->setVisible(false);
-    m_taskStatusLabel->setStyleSheet("font-weight: bold; color: #0066cc;");
-    imageLayout->addWidget(m_taskStatusLabel);
+        // Input row: image path + browse + sample-data button.
+        auto* inputRow = new QHBoxLayout;
+        inputRow->setSpacing(6);
+        inputRow->addWidget(makeParamLabel(tr("Image:"), panel.tab));
+        panel.imagePath = new QLineEdit(panel.tab);
+        inputRow->addWidget(panel.imagePath, 1);
+        auto* browseBtn = new QPushButton(tr("Browse…"), panel.tab);
+        connect(browseBtn, &QPushButton::clicked, this, [this]() {
+            YOLOTaskPanel* active = currentTaskPanel();
+            if (!active) return;
+            m_imagePath = active->imagePath;
+            onBrowseImage();
+        });
+        inputRow->addWidget(browseBtn);
+        panel.testDataBtn =
+                new QPushButton(tr("\U0001f9ea  Try sample data"), panel.tab);
+        styleSampleDataButton(panel.testDataBtn);
+        panel.testDataBtn->setToolTip(
+                tr("Load images/000000397133.jpg from the shared test-data "
+                   "cache"));
+        connect(panel.testDataBtn, &QPushButton::clicked, this,
+                [this]() { requestTestData(TestDataTarget::Image); });
+        inputRow->addWidget(panel.testDataBtn);
+        configCol->addLayout(inputRow);
 
-    auto* actionRow = new QHBoxLayout;
-    m_addAnnotatedCheck =
-            new QCheckBox(tr("Add annotated image to DB"), m_imageTab);
-    m_addAnnotatedCheck->setChecked(true);
-    actionRow->addWidget(m_addAnnotatedCheck);
-    actionRow->addStretch();
-    actionRow->addWidget(m_imageTestDataBtn);
-    m_runBtn = new QPushButton(tr("Run"), m_imageTab);
-    m_runBtn->setDefault(true);
-    actionRow->addWidget(m_runBtn);
-    m_cancelBtn = new QPushButton(tr("Cancel"), m_imageTab);
-    m_cancelBtn->setEnabled(false);
-    actionRow->addWidget(m_cancelBtn);
-    imageLayout->addLayout(actionRow);
+        // DB image picker (collapsible).
+        panel.dbToggleBtn = new QToolButton(panel.tab);
+        panel.dbToggleBtn->setText(tr("DB images ▾"));
+        panel.dbToggleBtn->setCheckable(true);
+        panel.dbToggleBtn->setChecked(false);
+        configCol->addWidget(panel.dbToggleBtn, 0, Qt::AlignLeft);
+        panel.dbContentWidget = new QWidget(panel.tab);
+        auto* dbLayout = new QVBoxLayout(panel.dbContentWidget);
+        dbLayout->setContentsMargins(0, 0, 0, 0);
+        dbLayout->setSpacing(4);
+        panel.dbImageList = new QListWidget(panel.dbContentWidget);
+        panel.dbImageList->setIconSize(QSize(48, 48));
+        // ~8 rows, scaled with the dialog font instead of fixed pixels.
+        panel.dbImageList->setMaximumHeight(panel.tab->fontMetrics().height() *
+                                            8);
+        dbLayout->addWidget(panel.dbImageList);
+        auto* dbBtnRow = new QHBoxLayout;
+        auto* refreshDbBtn =
+                new QPushButton(tr("Refresh"), panel.dbContentWidget);
+        refreshDbBtn->setToolTip(
+                tr("Reload the ccImage list from the DB tree"));
+        connect(refreshDbBtn, &QPushButton::clicked, this,
+                [this]() { emit refreshDbImagesRequested(); });
+        dbBtnRow->addWidget(refreshDbBtn);
+        dbBtnRow->addStretch();
+        dbLayout->addLayout(dbBtnRow);
+        panel.dbContentWidget->setVisible(false);
+        configCol->addWidget(panel.dbContentWidget);
+        configCol->addStretch();
+        connect(panel.dbToggleBtn, &QToolButton::toggled, this,
+                [this](bool on) {
+                    YOLOTaskPanel* active = currentTaskPanel();
+                    if (!active) return;
+                    active->dbContentWidget->setVisible(on);
+                    if (on) emit refreshDbImagesRequested();
+                    // Auto-grow the dialog so the expanded DB list stays
+                    // fully visible; never shrink a user-resized dialog.
+                    QTimer::singleShot(0, this, [this]() {
+                        const QSize hint = sizeHint();
+                        resize(qMax(width(), hint.width()),
+                               qMax(height(), hint.height()));
+                    });
+                });
+        connect(panel.dbImageList, &QListWidget::itemActivated, this,
+                &YOLODialog::onDbListActivated);
+        connect(panel.dbImageList, &QListWidget::itemClicked, this,
+                &YOLODialog::onDbListActivated);
 
-    m_tabWidget->addTab(m_imageTab, tr("Image"));
+        contentRow->addLayout(configCol, 1);
+
+        // Right column: preview thumbnail (top-aligned). The thumbnail size
+        // is in logical pixels (Qt scales it by devicePixelRatio), while all
+        // text-adjacent sizes stay font-relative for cross-platform fit.
+        auto* previewCol = new QVBoxLayout;
+        previewCol->setSpacing(4);
+        panel.previewLabel = new ecvClickableImageLabel(panel.tab);
+        panel.previewLabel->setFixedSize(kThumbSize, kThumbSize);
+        panel.previewLabel->setStyleSheet(
+                "border: 1px solid palette(mid); background: palette(base);");
+        panel.previewLabel->setText(tr("Preview"));
+        previewCol->addWidget(panel.previewLabel);
+        auto* previewHint = new QLabel(tr("Tap to preview"), panel.tab);
+        previewHint->setAlignment(Qt::AlignCenter);
+        previewHint->setStyleSheet(
+                QStringLiteral("color: palette(mid); font-size: 11px;"));
+        previewCol->addWidget(previewHint);
+        previewCol->addStretch();
+        contentRow->addLayout(previewCol);
+
+        layout->addLayout(contentRow);
+
+        // Action row: add-to-DB + Run / Cancel.
+        auto* actionRow = new QHBoxLayout;
+        actionRow->setSpacing(6);
+        panel.addAnnotatedCheck =
+                new QCheckBox(tr("Add annotated image to DB"), panel.tab);
+        panel.addAnnotatedCheck->setChecked(true);
+        actionRow->addWidget(panel.addAnnotatedCheck);
+        actionRow->addStretch();
+        panel.runBtn = new QPushButton(tr("Run"), panel.tab);
+        panel.runBtn->setDefault(i == 0);
+        actionRow->addWidget(panel.runBtn);
+        panel.cancelBtn = new QPushButton(tr("Cancel"), panel.tab);
+        panel.cancelBtn->setEnabled(false);
+        actionRow->addWidget(panel.cancelBtn);
+        layout->addLayout(actionRow);
+
+        connect(panel.modelCombo,
+                QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+                &YOLODialog::onModelComboChanged);
+        connect(panel.runBtn, &QPushButton::clicked, this, &YOLODialog::onRun);
+        connect(panel.cancelBtn, &QPushButton::clicked, this,
+                &YOLODialog::onCancel);
+
+        m_panels.append(panel);
+        m_tabWidget->addTab(panel.tab, tabTitles[i]);
+    }
 
     // ---- Live (camera / video) tab ----------------------------------------
     m_liveTab = new QWidget(this);
     auto* liveLayout = new QVBoxLayout(m_liveTab);
+    liveLayout->setContentsMargins(4, 4, 4, 4);
+    liveLayout->setSpacing(4);
     m_liveWidget = new YOLOLiveWidget(m_liveTab);
     liveLayout->addWidget(m_liveWidget, 1);
 
     // Playback controls live in the Live tab itself (mirrors qFaceDetect).
     auto* liveBtnRow = new QHBoxLayout;
+    liveBtnRow->setSpacing(6);
     m_testVideoCombo = new QComboBox(m_liveTab);
     m_testVideoCombo->addItem(QStringLiteral("traffic.mp4"),
                               QStringLiteral("traffic.mp4"));
@@ -256,12 +365,6 @@ void YOLODialog::setupUi() {
 
     m_tabWidget->addTab(m_liveTab, tr("Live (camera / video)"));
 
-    connect(m_taskCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, [this](int) { populateModelCombo(); });
-    connect(m_modelCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &YOLODialog::onModelComboChanged);
-    connect(m_runBtn, &QPushButton::clicked, this, &YOLODialog::onRun);
-    connect(m_cancelBtn, &QPushButton::clicked, this, &YOLODialog::onCancel);
     connect(m_liveStartBtn, &QPushButton::clicked, this,
             &YOLODialog::onLiveStart);
     connect(m_liveStopBtn, &QPushButton::clicked, this,
@@ -287,11 +390,10 @@ void YOLODialog::setupUi() {
         }
     });
 
-    // Keep the live tab's model/device/threads controls in sync.
-    m_liveWidget->syncModelControlsFrom(m_modelCombo, m_deviceCombo, m_threads);
-    connect(m_modelCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            m_liveWidget,
-            [this](int) { m_liveWidget->setModelPath(resolveModelPath()); });
+    // The Live tab lists ALL catalog models (any task) and shares the
+    // device/threads controls with the batch tabs.
+    m_liveWidget->populateAllModels();
+    m_liveWidget->rebuildDeviceCombo(m_deviceCombo);
     connect(m_deviceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             m_liveWidget, [this](int) {
                 m_liveWidget->setDevice(
@@ -301,12 +403,13 @@ void YOLODialog::setupUi() {
             m_liveWidget, [this](int v) { m_liveWidget->setThreads(v); });
     connect(m_liveWidget, &YOLOLiveWidget::modelSelectionChanged, this,
             [this](const QString& filename) {
-                const int index = m_modelCombo->findData(filename);
-                if (index < 0 || index == m_modelCombo->currentIndex()) return;
-                const bool restartStream = m_liveWidget->isActive();
-                if (restartStream) m_liveWidget->stopStream();
-                m_modelCombo->setCurrentIndex(index);
-                if (restartStream) onLiveStart();
+                // Keep the matching batch tab's model in sync so the two
+                // surfaces don't drift, but do NOT force a tab switch.
+                YOLOTaskPanel* panel = panelForFilename(filename);
+                if (panel && panel->modelCombo) {
+                    const int idx = panel->modelCombo->findData(filename);
+                    if (idx >= 0) panel->modelCombo->setCurrentIndex(idx);
+                }
             });
     connect(m_liveWidget, &YOLOLiveWidget::deviceSelectionChanged, this,
             [this](const QString& device) {
@@ -361,14 +464,21 @@ void YOLODialog::setupUi() {
                 }
             });
 
-    // Download / task progress — shared by both tabs so a model fetch
-    // started from the Live tab stays visible.
-    rootLayout->addWidget(m_downloadLabel);
+    // Download / task progress — shared by all tabs so a model fetch started
+    // from any tab stays visible.
+    rootLayout->addWidget(m_downloadLabel = new QLabel(this));
+    m_downloadLabel->setWordWrap(true);
+    m_downloadLabel->setVisible(false);
     m_progress = new QProgressBar(this);
     m_progress->setRange(0, 100);
     m_progress->setValue(0);
     m_progress->setVisible(false);
     rootLayout->addWidget(m_progress);
+
+    m_taskStatusLabel = new QLabel(this);
+    m_taskStatusLabel->setVisible(false);
+    m_taskStatusLabel->setStyleSheet("font-weight: bold; color: #0066cc;");
+    rootLayout->addWidget(m_taskStatusLabel);
 
     // Shared test data repository.
     auto& repo = ecvTestDataRepository::instance();
@@ -407,130 +517,191 @@ void YOLODialog::setAppInterface(ecvMainAppInterface* app) { m_app = app; }
 void YOLODialog::loadSettings() {
     QSettings settings;
     settings.beginGroup(QStringLiteral("qYOLO"));
-    const QString task =
-            settings.value(QStringLiteral("task"), QStringLiteral("detect"))
-                    .toString();
-    const int taskIdx = m_taskCombo->findData(task);
-    if (taskIdx >= 0) {
-        m_taskCombo->blockSignals(true);
-        m_taskCombo->setCurrentIndex(taskIdx);
-        m_taskCombo->blockSignals(false);
+    const QStringList tasks = {QStringLiteral("detect"),
+                               QStringLiteral("segment"),
+                               QStringLiteral("depth")};
+    for (int i = 0; i < m_panels.size() && i < tasks.size(); ++i) {
+        YOLOTaskPanel& panel = m_panels[i];
+        const QString modelFilename =
+                settings.value(QStringLiteral("modelFilename/") + tasks[i])
+                        .toString();
+        if (!modelFilename.isEmpty()) {
+            const int idx = panel.modelCombo->findData(modelFilename);
+            if (idx >= 0) panel.modelCombo->setCurrentIndex(idx);
+        }
+        panel.conf->setValue(
+                settings.value(QStringLiteral("conf/") + tasks[i], 0.25)
+                        .toDouble());
+        panel.iou->setValue(
+                settings.value(QStringLiteral("iou/") + tasks[i], 0.7)
+                        .toDouble());
+        panel.topK->setValue(
+                settings.value(QStringLiteral("topK/") + tasks[i], 300)
+                        .toInt());
+        panel.addAnnotatedCheck->setChecked(
+                settings.value(QStringLiteral("addAnnotated/") + tasks[i], true)
+                        .toBool());
+        const QString imagePath =
+                settings.value(QStringLiteral("imagePath/") + tasks[i])
+                        .toString();
+        if (!imagePath.isEmpty()) {
+            panel.imagePath->setText(imagePath);
+            m_imagePath = panel.imagePath;
+            m_previewLabel = panel.previewLabel;
+            updateImagePreview();
+        }
     }
-    const QString modelFilename =
-            settings.value(QStringLiteral("modelFilename")).toString();
-    selectModelByFilename(modelFilename);
     const QString device =
             settings.value(QStringLiteral("device"), QStringLiteral("auto"))
                     .toString();
     const int idx = m_deviceCombo->findData(device);
     if (idx >= 0) m_deviceCombo->setCurrentIndex(idx);
     m_threads->setValue(settings.value(QStringLiteral("threads"), 0).toInt());
-    m_conf->setValue(settings.value(QStringLiteral("conf"), 0.25).toDouble());
-    m_iou->setValue(settings.value(QStringLiteral("iou"), 0.7).toDouble());
-    m_topK->setValue(settings.value(QStringLiteral("topK"), 300).toInt());
-    const QString imagePath =
-            settings.value(QStringLiteral("imagePath")).toString();
-    if (!imagePath.isEmpty()) {
-        m_imagePath->setText(imagePath);
-        updateImagePreview();
-    }
-    m_addAnnotatedCheck->setChecked(
-            settings.value(QStringLiteral("addAnnotated"), true).toBool());
     settings.endGroup();
 }
 
 void YOLODialog::saveSettings() const {
     QSettings settings;
     settings.beginGroup(QStringLiteral("qYOLO"));
-    settings.setValue(QStringLiteral("task"),
-                      m_taskCombo->currentData().toString());
-    settings.setValue(QStringLiteral("modelFilename"),
-                      m_modelCombo->currentData().toString());
+    const QStringList tasks = {QStringLiteral("detect"),
+                               QStringLiteral("segment"),
+                               QStringLiteral("depth")};
+    for (int i = 0; i < m_panels.size() && i < tasks.size(); ++i) {
+        const YOLOTaskPanel& panel = m_panels[i];
+        settings.setValue(QStringLiteral("modelFilename/") + tasks[i],
+                          panel.modelCombo->currentData().toString());
+        settings.setValue(QStringLiteral("conf/") + tasks[i],
+                          panel.conf->value());
+        settings.setValue(QStringLiteral("iou/") + tasks[i],
+                          panel.iou->value());
+        settings.setValue(QStringLiteral("topK/") + tasks[i],
+                          panel.topK->value());
+        settings.setValue(QStringLiteral("addAnnotated/") + tasks[i],
+                          panel.addAnnotatedCheck->isChecked());
+        settings.setValue(QStringLiteral("imagePath/") + tasks[i],
+                          panel.imagePath->text());
+    }
     settings.setValue(QStringLiteral("device"),
                       m_deviceCombo->currentData().toString());
     settings.setValue(QStringLiteral("threads"), m_threads->value());
-    settings.setValue(QStringLiteral("conf"), m_conf->value());
-    settings.setValue(QStringLiteral("iou"), m_iou->value());
-    settings.setValue(QStringLiteral("topK"), m_topK->value());
-    settings.setValue(QStringLiteral("imagePath"), m_imagePath->text());
-    settings.setValue(QStringLiteral("addAnnotated"),
-                      m_addAnnotatedCheck->isChecked());
     settings.endGroup();
 }
 
 QString YOLODialog::modelCacheDir() { return YOLOHelpers::modelCacheDir(); }
 
 void YOLODialog::populateModelCombo(const QString& keepFilename) {
-    // The task combo narrows the catalog: detection models vs depth models.
-    const bool depthMode =
-            (m_taskCombo->currentData().toString() == QStringLiteral("depth"));
-    const QVector<YOLOModelEntry> models =
-            depthMode ? YOLOHelpers::depthModels()
-                      : YOLOHelpers::detectionModels();
-    m_modelCombo->blockSignals(true);
-    m_modelCombo->clear();
-    for (const YOLOModelEntry& e : models) {
-        m_modelCombo->addItem(YOLOHelpers::modelDisplayLabel(e), e.filename);
+    // Each task panel lists only its own task's catalog models.
+    const QStringList tasks = {QStringLiteral("detect"),
+                               QStringLiteral("segment"),
+                               QStringLiteral("depth")};
+    for (int i = 0; i < m_panels.size() && i < tasks.size(); ++i) {
+        YOLOTaskPanel& panel = m_panels[i];
+        const QVector<YOLOModelEntry> models =
+                YOLOHelpers::taskModels(tasks[i]);
+        panel.modelCombo->blockSignals(true);
+        panel.modelCombo->clear();
+        for (const YOLOModelEntry& e : models) {
+            panel.modelCombo->addItem(YOLOHelpers::modelDisplayLabel(e),
+                                      e.filename);
+        }
+        if (!keepFilename.isEmpty()) {
+            const int idx = panel.modelCombo->findData(keepFilename);
+            if (idx >= 0) panel.modelCombo->setCurrentIndex(idx);
+        }
+        panel.modelCombo->blockSignals(false);
+        // Signals were blocked above, so the currentIndexChanged handler
+        // would not run — apply the visibility directly.
+        applyPanelVisibility(panel);
     }
-    if (!keepFilename.isEmpty()) {
-        const int idx = m_modelCombo->findData(keepFilename);
-        if (idx >= 0) m_modelCombo->setCurrentIndex(idx);
-    }
-    m_modelCombo->blockSignals(false);
     if (m_liveWidget) {
-        m_liveWidget->syncModelControlsFrom(m_modelCombo, m_deviceCombo,
-                                            m_threads);
+        // Keep the Live tab's all-model list fresh too (it may be open).
+        m_liveWidget->populateAllModels(keepFilename);
     }
-    onModelComboChanged(m_modelCombo->currentIndex());
 }
 
 bool YOLODialog::selectModelByFilename(const QString& filename) {
     if (filename.isEmpty()) return false;
-    const int idx = m_modelCombo->findData(filename);
-    if (idx < 0) return false;
-    m_modelCombo->setCurrentIndex(idx);
-    return true;
+    for (YOLOTaskPanel& panel : m_panels) {
+        const int idx = panel.modelCombo->findData(filename);
+        if (idx >= 0) {
+            panel.modelCombo->setCurrentIndex(idx);
+            return true;
+        }
+    }
+    return false;
 }
 
 void YOLODialog::refreshModelList() {
-    const QString keep = m_modelCombo->currentData().toString();
+    const QString keep =
+            currentTaskPanel() && currentTaskPanel()->modelCombo
+                    ? currentTaskPanel()->modelCombo->currentData().toString()
+                    : QString();
     populateModelCombo(keep);
 }
 
-void YOLODialog::onModelComboChanged(int index) {
-    const QString filename = m_modelCombo->itemData(index).toString();
+YOLOTaskPanel* YOLODialog::currentTaskPanel() const {
+    return panelForTab(m_tabWidget->currentWidget());
+}
+
+YOLOTaskPanel* YOLODialog::panelForTab(QWidget* tab) const {
+    for (const YOLOTaskPanel& panel : m_panels) {
+        if (panel.tab == tab) {
+            // const_cast: callers expect a mutable panel (they set controls).
+            return const_cast<YOLOTaskPanel*>(&panel);
+        }
+    }
+    return nullptr;
+}
+
+YOLOTaskPanel* YOLODialog::panelForFilename(const QString& filename) const {
+    for (const YOLOTaskPanel& panel : m_panels) {
+        if (panel.modelCombo->findData(filename) >= 0) {
+            return const_cast<YOLOTaskPanel*>(&panel);
+        }
+    }
+    return nullptr;
+}
+
+void YOLODialog::onModelComboChanged(int /*index*/) {
+    // The sender is one of the task panels' model combos; map back to the
+    // owning panel by the signal origin. When invoked programmatically
+    // (sender() == nullptr, e.g. from populateModelCombo) the caller uses
+    // applyPanelVisibility() directly instead.
+    QComboBox* combo = qobject_cast<QComboBox*>(sender());
+    for (YOLOTaskPanel& p : m_panels) {
+        if (p.modelCombo == combo) {
+            applyPanelVisibility(p);
+            return;
+        }
+    }
+}
+
+void YOLODialog::applyPanelVisibility(YOLOTaskPanel& panel) {
+    const QString filename = panel.modelCombo->currentData().toString();
     const bool isCustom =
             filename.isEmpty() ||
             filename.endsWith(QStringLiteral(".gguf")) &&
                     !YOLOHelpers::findModelByFilename(filename, nullptr);
-    m_customModelRow->setVisible(isCustom);
+    panel.customModelRow->setVisible(isCustom);
 
-    // Conf/IoU only apply to detection models — grey them out for depth.
-    YOLOModelEntry entry;
-    const bool isDepth = YOLOHelpers::findModelByFilename(filename, &entry) &&
-                         entry.depthCapable;
-    m_conf->setEnabled(!isDepth);
-    m_iou->setEnabled(!isDepth);
-
-    m_liveWidget->setModelPath(resolveModelPath());
+    // Threshold row visible for detect/segment, hidden for depth.
+    panel.thresholdRow->setVisible(panel.task != QStringLiteral("depth"));
 }
 
 QString YOLODialog::resolveModelPath() const {
-    const QString filename = m_modelCombo->currentData().toString();
-    if (filename.isEmpty()) return QString();
-    if (QFileInfo::exists(filename)) return filename;
-    const QString dir = YOLOHelpers::modelCacheDir();
-    if (dir.isEmpty()) return QString();
-    return dir + QDir::separator() + filename;
+    const YOLOTaskPanel* panel = currentTaskPanel();
+    return panel ? panel->modelPath() : QString();
 }
 
 bool YOLODialog::ensureModelAvailable(PendingAction action) {
-    const QString filename = m_modelCombo->currentData().toString();
+    YOLOTaskPanel* panel = currentTaskPanel();
+    if (!panel) return false;
+    const QString filename = panel->modelCombo->currentData().toString();
     if (filename.isEmpty()) {
         appendLog(tr("[YOLO] Select a model first."));
         return false;
     }
-    if (!QFileInfo::exists(resolveModelPath())) {
+    if (!QFileInfo::exists(panel->modelPath())) {
         YOLOModelEntry entry;
         if (!YOLOHelpers::findModelByFilename(filename, &entry)) {
             appendLog(tr("[YOLO] Model file not found: %1").arg(filename));
@@ -582,11 +753,13 @@ void YOLODialog::onBrowseCustomModel() {
             this, tr("Select YOLO GGUF model"), lastDir,
             tr("GGUF models (*.gguf);;All files (*)"));
     if (path.isEmpty()) return;
-    m_customModelPath->setText(path);
-    m_customModelRow->setVisible(true);
-    m_modelCombo->setCurrentIndex(-1);
-    m_modelCombo->addItem(QFileInfo(path).fileName(), path);
-    m_modelCombo->setCurrentIndex(m_modelCombo->count() - 1);
+    YOLOTaskPanel* panel = currentTaskPanel();
+    if (!panel) return;
+    if (m_customModelPath) m_customModelPath->setText(path);
+    if (m_customModelRow) m_customModelRow->setVisible(true);
+    panel->modelCombo->setCurrentIndex(-1);
+    panel->modelCombo->addItem(QFileInfo(path).fileName(), path);
+    panel->modelCombo->setCurrentIndex(panel->modelCombo->count() - 1);
     m_liveWidget->setModelPath(path);
 }
 
@@ -600,13 +773,14 @@ void YOLODialog::onBrowseImage() {
             tr("Images (*.png *.jpg *.jpeg *.bmp *.tif *.tiff *.webp);;All "
                "files (*)"));
     if (path.isEmpty()) return;
-    m_imagePath->setText(path);
+    if (m_imagePath) m_imagePath->setText(path);
     ecvPS::saveBrowseDir(settings, QStringLiteral("qYOLO"),
                          QStringLiteral("lastImageFileDir"), path);
     updateImagePreview();
 }
 
 void YOLODialog::updateImagePreview() {
+    if (!m_imagePath || !m_previewLabel) return;
     const QImage img(m_imagePath->text());
     if (img.isNull()) {
         m_previewLabel->clearPreview();
@@ -628,14 +802,16 @@ void YOLODialog::onCancel() {
 
 YOLODialog::Settings YOLODialog::getSettings() const {
     Settings s;
-    s.modelPath = resolveModelPath();
-    s.inputPath = m_imagePath->text();
+    YOLOTaskPanel* panel = currentTaskPanel();
+    if (!panel) return s;
+    s.modelPath = panel->modelPath();
+    s.inputPath = panel->imagePath->text();
     s.device = m_deviceCombo->currentData().toString();
     s.threads = m_threads->value();
-    s.confThres = static_cast<float>(m_conf->value());
-    s.iouThres = static_cast<float>(m_iou->value());
-    s.topK = static_cast<uint32_t>(m_topK->value());
-    s.addAnnotatedImageToDb = m_addAnnotatedCheck->isChecked();
+    s.confThres = static_cast<float>(panel->conf->value());
+    s.iouThres = static_cast<float>(panel->iou->value());
+    s.topK = static_cast<uint32_t>(panel->topK->value());
+    s.addAnnotatedImageToDb = panel->addAnnotatedCheck->isChecked();
     return s;
 }
 
@@ -678,6 +854,10 @@ void YOLODialog::enableResultButtons(bool /*hasResult*/) {
 
 void YOLODialog::setRunning(bool running) {
     m_taskRunning = running;
+    for (YOLOTaskPanel& panel : m_panels) {
+        panel.runBtn->setEnabled(!running);
+        panel.cancelBtn->setEnabled(running);
+    }
     if (running) {
         m_lastTaskError.clear();
         m_taskStatusLabel->setText(tr("Starting..."));
@@ -700,29 +880,38 @@ void YOLODialog::setRunning(bool running) {
         m_progress->setRange(0, 100);
         m_progress->setValue(0);
     }
-    m_runBtn->setEnabled(!running);
-    m_cancelBtn->setEnabled(running);
 }
 
 void YOLODialog::setDbImages(const QList<DbImageEntry>& images) {
-    m_dbImageList->clear();
-    for (const DbImageEntry& e : images) {
-        auto* item = new QListWidgetItem(QIcon(QPixmap::fromImage(e.preview)),
-                                         e.name, m_dbImageList);
-        item->setData(Qt::UserRole, e.name);
+    for (YOLOTaskPanel& panel : m_panels) {
+        panel.dbImageList->clear();
+        for (const DbImageEntry& e : images) {
+            auto* item =
+                    new QListWidgetItem(QIcon(QPixmap::fromImage(e.preview)),
+                                        e.name, panel.dbImageList);
+            item->setData(Qt::UserRole, e.name);
+        }
     }
 }
 
 void YOLODialog::applyDbTreeSelection(const QStringList& imageNames) {
     if (imageNames.isEmpty()) return;
-    m_imagePath->setText(QStringLiteral("db://") + imageNames.first());
+    YOLOTaskPanel* panel = currentTaskPanel();
+    if (!panel) return;
+    panel->imagePath->setText(QStringLiteral("db://") + imageNames.first());
+    m_imagePath = panel->imagePath;
+    m_previewLabel = panel->previewLabel;
     updateImagePreview();
 }
 
 void YOLODialog::onDbListActivated(QListWidgetItem* item) {
     if (!item) return;
-    m_imagePath->setText(QStringLiteral("db://") +
-                         item->data(Qt::UserRole).toString());
+    YOLOTaskPanel* panel = currentTaskPanel();
+    if (!panel) return;
+    panel->imagePath->setText(QStringLiteral("db://") +
+                              item->data(Qt::UserRole).toString());
+    m_imagePath = panel->imagePath;
+    m_previewLabel = panel->previewLabel;
     updateImagePreview();
 }
 
@@ -738,9 +927,8 @@ void YOLODialog::startLiveStream() {
     config.modelPath = m_liveWidget->resolveModelPath();
     config.device = m_liveWidget->deviceId();
     config.threads = m_liveWidget->threadCount();
-    config.confThres = static_cast<float>(m_conf->value());
-    config.iouThres = static_cast<float>(m_iou->value());
-    config.topK = static_cast<uint32_t>(m_topK->value());
+    // Thresholds are read from the Live widget's own (adaptive) controls —
+    // they stay visible/hidden according to the selected model's task.
     m_liveWidget->setConfig(config);
 
     if (m_liveWidget->inputSource() == YOLOLiveWidget::InputSource::VideoFile) {
@@ -844,9 +1032,14 @@ bool YOLODialog::loadRequestedTestData() {
     if (path.isEmpty()) return false;
 
     if (m_pendingTestDataTarget == TestDataTarget::Image) {
-        m_imagePath->setText(path);
-        updateImagePreview();
-        appendLog(tr("[Test data] Loaded image: %1").arg(path));
+        YOLOTaskPanel* panel = currentTaskPanel();
+        if (panel) {
+            panel->imagePath->setText(path);
+            m_imagePath = panel->imagePath;
+            m_previewLabel = panel->previewLabel;
+            updateImagePreview();
+            appendLog(tr("[Test data] Loaded image: %1").arg(path));
+        }
     } else if (m_pendingTestDataTarget == TestDataTarget::Video &&
                m_liveWidget) {
         m_liveWidget->setInputSource(YOLOLiveWidget::InputSource::VideoFile);
@@ -909,7 +1102,9 @@ void YOLODialog::onTestDataExtractionFinished(
 }
 
 void YOLODialog::setTestDataControlsEnabled(bool enabled) {
-    if (m_imageTestDataBtn) m_imageTestDataBtn->setEnabled(enabled);
+    for (YOLOTaskPanel& panel : m_panels) {
+        if (panel.testDataBtn) panel.testDataBtn->setEnabled(enabled);
+    }
     if (m_testDataBtn) m_testDataBtn->setEnabled(enabled);
     if (m_testVideoCombo) m_testVideoCombo->setEnabled(enabled);
 }

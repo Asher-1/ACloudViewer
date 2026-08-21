@@ -81,6 +81,14 @@ matmul to cuBLAS), so driver-only Linux/Windows installers need this ON to ship\
 libcublas.so.* next to the app; without it the CUDA backend silently fails to load\
 on machines that only have the NVIDIA driver installed."
     OFF)
+option(AICore_CUDA_FORCE_MMQ
+    "Force ggml-cuda MMQ kernels instead of cuBLAS for quantized matmul.\
+OFF (default): performance-parity with upstream ggml/ultralytics-ggml builds\
+(cuBLAS stays linked, so libggml-cuda.so has a libcublas DT_NEEDED — driver-only\
+deployments must also set AICore_BUNDLE_CUDA_RUNTIME=ON).\
+ON: self-contained libggml-cuda.so (no libcudart/libcublas DT_NEEDED) at the\
+cost of slower small conv/matmul kernels (see core/AICore/docs/cuda_graph_parity.md)."
+    OFF)
 set(AICore_OPENCL_TARGET_VERSION "200" CACHE STRING
     "OpenCL host API target for AICore (120, 200, or 300)")
 set_property(CACHE AICore_OPENCL_TARGET_VERSION PROPERTY STRINGS 120 200 300)
@@ -118,6 +126,7 @@ function(aicore_sync_options_to_ggml)
     _aicore_clear_stale_ggml_cache(GGML_SYCL_USE_DNN AICore_SYCL_USE_DNN)
     _aicore_clear_stale_ggml_cache(GGML_USE_OPENCL AICore_USE_OPENCL)
     _aicore_clear_stale_ggml_cache(GGML_BUNDLE_CUDA_RUNTIME AICore_BUNDLE_CUDA_RUNTIME)
+    _aicore_clear_stale_ggml_cache(GGML_CUDA_FORCE_MMQ AICore_CUDA_FORCE_MMQ)
     _aicore_clear_stale_ggml_cache(GGML_OPENCL_TARGET_VERSION AICore_OPENCL_TARGET_VERSION)
     _aicore_clear_stale_ggml_cache(GGML_CPU_ALL_VARIANTS AICore_CPU_ALL_VARIANTS)
 
@@ -144,6 +153,8 @@ function(aicore_sync_options_to_ggml)
         "Internal: synced from AICore_USE_OPENCL" FORCE)
     set(GGML_BUNDLE_CUDA_RUNTIME ${AICore_BUNDLE_CUDA_RUNTIME} CACHE BOOL
         "Internal: synced from AICore_BUNDLE_CUDA_RUNTIME" FORCE)
+    set(GGML_CUDA_FORCE_MMQ ${AICore_CUDA_FORCE_MMQ} CACHE BOOL
+        "Internal: synced from AICore_CUDA_FORCE_MMQ" FORCE)
     set(GGML_OPENCL_TARGET_VERSION ${AICore_OPENCL_TARGET_VERSION} CACHE STRING
         "Internal: synced from AICore_OPENCL_TARGET_VERSION" FORCE)
     set(GGML_CPU_ALL_VARIANTS ${AICore_CPU_ALL_VARIANTS} CACHE BOOL
@@ -157,7 +168,8 @@ function(aicore_sync_options_to_ggml)
 
     mark_as_advanced(
         GGML_USE_METAL GGML_USE_VULKAN GGML_USE_CUDA GGML_USE_SYCL GGML_SYCL_USE_DNN
-        GGML_USE_OPENCL GGML_BUNDLE_CUDA_RUNTIME GGML_OPENCL_TARGET_VERSION
+        GGML_USE_OPENCL GGML_BUNDLE_CUDA_RUNTIME GGML_CUDA_FORCE_MMQ
+        GGML_OPENCL_TARGET_VERSION
         GGML_CPU_ALL_VARIANTS GGML_BUILD_SHARED GGML_USE_LLAMAFILE)
 endfunction()
 

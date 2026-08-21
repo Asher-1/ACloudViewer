@@ -163,7 +163,7 @@ void RFDetrLiveInferWorker::runJobImpl(RFDetrLiveInferWorker::Job job) {
     }
 
     const QByteArray payload(json);
-    aicore_rfdetr_free_string(json);
+    aicore_rfdetr_free_buffer(json);
     if (!RFDetrHelpers::parseDetectionsJson(payload, &result.snapshot)) {
         result.error = tr("Failed to parse detection output.");
         emit inferComplete(result);

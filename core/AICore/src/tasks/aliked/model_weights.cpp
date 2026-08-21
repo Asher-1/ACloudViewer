@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "model_weights.hpp"
+#include "tasks/aliked/model_weights.hpp"
 
 #include <ggml.h>
 #include <gguf.h>

@@ -21,7 +21,6 @@ class QComboBox;
 class QDoubleSpinBox;
 class QLabel;
 class QSpinBox;
-
 /** Live camera / video preview with inference-paced YOLO rendering. Detect
  *  models overlay boxes; metric-depth models blend a turbo colorized depth
  *  layer over the frame (the task follows the selected model). The playback
@@ -62,6 +61,9 @@ public:
     void rebuildModelCombo(const QStringList& labels,
                            const QStringList& filenames,
                            const QString& currentFilename);
+    /** Populate the model combo with ALL catalog models (every task), for
+     *  the Live tab that must run any model type. */
+    void populateAllModels(const QString& keepFilename = QString());
     void rebuildDeviceCombo(const QComboBox* sourceDeviceCombo);
     void setModelPath(const QString& path);
     void setDevice(const QString& device);
@@ -106,6 +108,10 @@ protected:
 private:
     void setupUi();
     void updateModelPathFromCombo();
+    /** Show/hide the detection-threshold controls (Conf/IoU/Top-K) based on
+     *  the selected model's task: depth models have no thresholds, detect /
+     *  segment models do. Called on every model change. */
+    void updateThresholdVisibility();
     void submitInferJob(const QImage& rgb);
     void rebuildOverlayLayer(const QSize& displaySize);
     void drawLiveOverlay(QImage& frame);
@@ -120,6 +126,10 @@ private:
     QSpinBox* m_threadsSpin = nullptr;
     QDoubleSpinBox* m_confSpin = nullptr;
     QDoubleSpinBox* m_iouSpin = nullptr;
+    QSpinBox* m_topKSpin = nullptr;
+    // Threshold row labels (hidden for depth models, which have no
+    // detection thresholds).
+    QList<QWidget*> m_thresholdWidgets;
 
     bool m_videoPathUserChosen = false;
     bool m_syncingModelControls = false;
@@ -150,6 +160,7 @@ private:
     QImage m_lastDisplayFrame;  // preview-size frame from the display tick
     QImage m_lastSourceFrame;   // full-res frame of the last submitted job
     QVector<YOLODetection> m_overlayDetections;
+    QVector<YOLOSegMask> m_overlayMasks;  // instance masks (segment only)
     QSize m_overlaySourceSize;   // pixel space of m_overlayDetections coords
     QImage m_overlayDepthImage;  // colorized depth at source resolution
     quint64 m_overlayGeneration = 0;          // bumped on new results

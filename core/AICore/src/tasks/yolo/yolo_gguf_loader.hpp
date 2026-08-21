@@ -1,5 +1,5 @@
-#ifndef YOLO_GGUF_LOADER_HPP
-#define YOLO_GGUF_LOADER_HPP
+#pragma once
+
 
 // ----------------------------------------------------------------------------
 // -                        CloudViewer: www.cloudViewer.org                  -
@@ -15,7 +15,8 @@
 #include <memory>
 #include <string>
 
-#include "yolo_common.hpp"
+#include "tasks/yolo/yolo_common.hpp"
+
 
 namespace yolo {
 
@@ -27,5 +28,3 @@ ModelMeta read_gguf_meta(const std::string& path);
 std::unique_ptr<ModelDef> load_gguf(const std::string& path);
 
 }  // namespace yolo
-
-#endif

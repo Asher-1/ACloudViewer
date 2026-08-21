@@ -21,6 +21,7 @@
 #include <QSizePolicy>
 #include <QSpinBox>
 #include <QThread>
+#include <cstring>
 
 #include "YOLOLiveInferWorker.h"
 #include "YOLOModelCatalog.h"
@@ -80,50 +81,70 @@ void YOLOLiveWidget::setVideoFilePath(const QString& path, bool userChosen) {
 void YOLOLiveWidget::setupUi() {
     m_statusLabel = statusLabel();
 
+    // Row 1: model selection (takes all spare width).
     auto* controls = new QHBoxLayout;
-    controls->setContentsMargins(0, 4, 0, 0);
+    controls->setContentsMargins(0, 2, 0, 0);
+    controls->setSpacing(4);
 
     controls->addWidget(new QLabel(tr("Model:"), this));
     m_modelCombo = new QComboBox(this);
-    m_modelCombo->setMinimumContentsLength(20);
+    m_modelCombo->setMinimumContentsLength(16);
     m_modelCombo->setSizeAdjustPolicy(
             QComboBox::AdjustToMinimumContentsLengthWithIcon);
     m_modelCombo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     controls->addWidget(m_modelCombo, 1);
+    mainLayout()->insertLayout(0, controls);
 
-    controls->addWidget(new QLabel(tr("Device:"), this));
+    // Row 2: runtime parameters (device / threads).
+    auto* paramsRow = new QHBoxLayout;
+    paramsRow->setSpacing(4);
+    paramsRow->addWidget(new QLabel(tr("Device:"), this));
     m_deviceCombo = new QComboBox(this);
-    controls->addWidget(m_deviceCombo);
-
-    controls->addWidget(new QLabel(tr("Threads:"), this));
+    paramsRow->addWidget(m_deviceCombo);
+    paramsRow->addWidget(new QLabel(tr("Threads:"), this));
     m_threadsSpin = new QSpinBox(this);
     m_threadsSpin->setRange(0, 64);
     m_threadsSpin->setValue(0);
     m_threadsSpin->setToolTip(tr("0 = auto"));
-    controls->addWidget(m_threadsSpin);
+    paramsRow->addWidget(m_threadsSpin);
+    paramsRow->addStretch();
+    mainLayout()->insertLayout(1, paramsRow);
 
-    controls->addWidget(new QLabel(tr("Conf:"), this));
+    // Row 3: detection thresholds (hidden for depth models).
+    auto* thresholdRow = new QHBoxLayout;
+    thresholdRow->setSpacing(4);
+    auto* confLabel = new QLabel(tr("Conf:"), this);
+    thresholdRow->addWidget(confLabel);
     m_confSpin = new QDoubleSpinBox(this);
     m_confSpin->setRange(0.01, 1.0);
     m_confSpin->setSingleStep(0.05);
     m_confSpin->setValue(0.25);
-    m_confSpin->setToolTip(tr("Confidence threshold (detect models)"));
-    controls->addWidget(m_confSpin);
-
-    controls->addWidget(new QLabel(tr("IoU:"), this));
+    m_confSpin->setToolTip(tr("Confidence threshold (detect/segment models)"));
+    thresholdRow->addWidget(m_confSpin);
+    auto* iouLabel = new QLabel(tr("IoU:"), this);
+    thresholdRow->addWidget(iouLabel);
     m_iouSpin = new QDoubleSpinBox(this);
     m_iouSpin->setRange(0.1, 1.0);
     m_iouSpin->setSingleStep(0.05);
     m_iouSpin->setValue(0.7);
-    m_iouSpin->setToolTip(tr("NMS IoU threshold (detect models)"));
-    controls->addWidget(m_iouSpin);
-
-    controls->addStretch();
-    mainLayout()->insertLayout(0, controls);
+    m_iouSpin->setToolTip(tr("NMS IoU threshold (detect/segment models)"));
+    thresholdRow->addWidget(m_iouSpin);
+    auto* topKLabel = new QLabel(tr("Top-K:"), this);
+    thresholdRow->addWidget(topKLabel);
+    m_topKSpin = new QSpinBox(this);
+    m_topKSpin->setRange(1, 1000);
+    m_topKSpin->setValue(300);
+    m_topKSpin->setToolTip(tr("Max detections per frame"));
+    thresholdRow->addWidget(m_topKSpin);
+    thresholdRow->addStretch();
+    mainLayout()->insertLayout(2, thresholdRow);
 
     // Model selection mirrors the batch tab.
     connect(m_modelCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, [this](int) { updateModelPathFromCombo(); });
+            this, [this](int) {
+                updateModelPathFromCombo();
+                updateThresholdVisibility();
+            });
     connect(m_deviceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, [this](int) { emit deviceSelectionChanged(deviceId()); });
     connect(m_threadsSpin, QOverload<int>::of(&QSpinBox::valueChanged), this,
@@ -136,6 +157,15 @@ void YOLOLiveWidget::setupUi() {
             this, [this](double iou) {
                 m_config.iouThres = static_cast<float>(iou);
             });
+    connect(m_topKSpin, QOverload<int>::of(&QSpinBox::valueChanged), this,
+            [this](int k) { m_config.topK = static_cast<uint32_t>(k); });
+
+    // Threshold controls + labels share visibility: depth models have no
+    // detection thresholds, detect/segment models do.
+    m_thresholdWidgets = {
+            confLabel, m_confSpin, iouLabel, m_iouSpin, topKLabel, m_topKSpin,
+    };
+    updateThresholdVisibility();
 }
 
 QString YOLOLiveWidget::modelFilename() const {
@@ -219,6 +249,40 @@ void YOLOLiveWidget::rebuildModelCombo(const QStringList& labels,
     if (idx >= 0) m_modelCombo->setCurrentIndex(idx);
     m_syncingModelControls = false;
     updateModelPathFromCombo();
+    updateThresholdVisibility();
+}
+
+void YOLOLiveWidget::populateAllModels(const QString& keepFilename) {
+    const QVector<YOLOModelEntry> all = YOLOHelpers::catalogModels();
+    m_syncingModelControls = true;
+    m_modelCombo->clear();
+    for (const YOLOModelEntry& e : all) {
+        m_modelCombo->addItem(YOLOHelpers::modelDisplayLabel(e), e.filename);
+    }
+    if (!keepFilename.isEmpty()) {
+        const int idx = m_modelCombo->findData(keepFilename);
+        if (idx >= 0) m_modelCombo->setCurrentIndex(idx);
+    }
+    m_syncingModelControls = false;
+    updateModelPathFromCombo();
+    updateThresholdVisibility();
+}
+
+void YOLOLiveWidget::updateThresholdVisibility() {
+    // Depth models produce a depth map, not detections — hide the
+    // detection-threshold row. The task follows the selected model entry.
+    YOLOModelEntry entry;
+    const bool isDepth =
+            YOLOHelpers::findModelByFilename(modelFilename(), &entry) &&
+            entry.task == QStringLiteral("depth");
+    for (QWidget* w : m_thresholdWidgets) {
+        if (w) w->setVisible(!isDepth);
+    }
+    // A hidden depth spin keeps its value; restoring the row shows the last
+    // detection thresholds, which matches the batch tab behavior.
+    m_config.confThres = static_cast<float>(m_confSpin->value());
+    m_config.iouThres = static_cast<float>(m_iouSpin->value());
+    m_config.topK = static_cast<uint32_t>(m_topKSpin->value());
 }
 
 void YOLOLiveWidget::rebuildDeviceCombo(const QComboBox* sourceDeviceCombo) {
@@ -273,6 +337,7 @@ void YOLOLiveWidget::loadSettings() {
     m_confSpin->setValue(
             settings.value(QStringLiteral("conf"), 0.25).toDouble());
     m_iouSpin->setValue(settings.value(QStringLiteral("iou"), 0.7).toDouble());
+    m_topKSpin->setValue(settings.value(QStringLiteral("topK"), 300).toInt());
     m_threadsSpin->setValue(
             settings.value(QStringLiteral("threads"), 0).toInt());
     settings.endGroup();
@@ -283,6 +348,7 @@ void YOLOLiveWidget::saveSettings() const {
     settings.beginGroup(QStringLiteral("qYOLO/live"));
     settings.setValue(QStringLiteral("conf"), m_confSpin->value());
     settings.setValue(QStringLiteral("iou"), m_iouSpin->value());
+    settings.setValue(QStringLiteral("topK"), m_topKSpin->value());
     settings.setValue(QStringLiteral("threads"), m_threadsSpin->value());
     settings.endGroup();
 }
@@ -398,6 +464,7 @@ void YOLOLiveWidget::onInferComplete(YOLOLiveInferWorker::Result result) {
         // scales it to preview size on rebuild.
         m_lastDepth = result.depth;
         m_overlayDetections.clear();
+        m_overlayMasks.clear();
         m_overlayDepthImage = YOLOHelpers::depthColorImage(
                 result.depth.depthMap.constData(), result.depth.width,
                 result.depth.height, result.depth.stats.minDepth,
@@ -436,6 +503,7 @@ void YOLOLiveWidget::onInferComplete(YOLOLiveInferWorker::Result result) {
     // the immediate repaint below rebuilds it at preview resolution.
     m_overlayDepthImage = QImage();
     m_overlayDetections = result.detect.detections;
+    m_overlayMasks = result.detect.masks;  // empty for pure-detect models
     m_overlaySourceSize = m_lastSourceFrame.size();
     ++m_overlayGeneration;
     repaintLivePreview();
@@ -464,13 +532,17 @@ void YOLOLiveWidget::rebuildOverlayLayer(const QSize& displaySize) {
         return;
     }
 
-    if (m_overlayDetections.isEmpty() || m_overlaySourceSize.isEmpty()) {
+    if (!m_overlayDetections.isEmpty() || !m_overlayMasks.isEmpty()) {
+        if (m_overlaySourceSize.isEmpty()) {
+            return;
+        }
+    } else {
         return;
     }
 
-    // Same rendering semantics as YOLOHelpers::drawDetections, but on the
-    // small preview image with coordinates scaled from the source pixel
-    // space.
+    // Same rendering semantics as YOLOHelpers::drawDetections /
+    // drawSegmentation, but on the small preview image with coordinates
+    // scaled from the source pixel space.
     QImage layer(displaySize, QImage::Format_ARGB32_Premultiplied);
     layer.fill(Qt::transparent);
     const qreal sx = static_cast<qreal>(displaySize.width()) /
@@ -480,6 +552,39 @@ void YOLOLiveWidget::rebuildOverlayLayer(const QSize& displaySize) {
 
     QPainter p(&layer);
     p.setRenderHint(QPainter::Antialiasing, false);
+
+    // Segment masks: translucent per-class tint, scaled to the display size
+    // (same mapping as YOLOHelpers::drawSegmentation).
+    if (!m_overlayMasks.isEmpty()) {
+        for (int i = 0; i < m_overlayMasks.size(); ++i) {
+            const YOLOSegMask& mask = m_overlayMasks[static_cast<size_t>(i)];
+            if (mask.w <= 0 || mask.h <= 0 ||
+                mask.bits.size() < static_cast<qint64>(mask.w) * mask.h) {
+                continue;
+            }
+            QImage maskImage(mask.w, mask.h, QImage::Format_Grayscale8);
+            std::memcpy(maskImage.bits(), mask.bits.constData(),
+                        static_cast<size_t>(mask.w) * mask.h);
+            maskImage = maskImage.scaled(
+                    displaySize.width(), displaySize.height(),
+                    Qt::IgnoreAspectRatio, Qt::FastTransformation);
+            const QColor tint =
+                    i < m_overlayDetections.size()
+                            ? QColor(YOLOHelpers::classColor(
+                                      m_overlayDetections[i].classId))
+                            : QColor(220, 220, 220);
+            for (int y = 0; y < displaySize.height(); ++y) {
+                const uchar* src = maskImage.constScanLine(y);
+                QRgb* dst = reinterpret_cast<QRgb*>(layer.scanLine(y));
+                for (int x = 0; x < displaySize.width(); ++x) {
+                    if (src[x] == 0) continue;
+                    // 2/3 alpha blend over the transparent layer (the blit
+                    // below composites the result over the frame).
+                    dst[x] = qRgba(tint.red(), tint.green(), tint.blue(), 170);
+                }
+            }
+        }
+    }
 
     // Boxes + labels, scaled from the source pixel space.
     QFont font = p.font();
@@ -543,6 +648,7 @@ void YOLOLiveWidget::repaintLivePreview() {
 void YOLOLiveWidget::clearLiveOverlay() {
     m_lastSourceFrame = QImage();
     m_overlayDetections.clear();
+    m_overlayMasks.clear();
     m_overlaySourceSize = QSize();
     m_overlayDepthImage = QImage();
     m_overlayLayer = QImage();
@@ -603,10 +709,18 @@ void YOLOLiveWidget::captureSnapshotToDb() {
         return;
     }
 
-    if (m_lastSnapshot.detections.isEmpty()) return;
+    if (m_lastSnapshot.detections.isEmpty() && m_lastSnapshot.masks.isEmpty()) {
+        return;
+    }
     if (m_lastSnapshot.annotatedImage.isNull()) {
         QImage annotated = m_lastSourceFrame;
-        YOLOHelpers::drawDetections(&annotated, m_lastSnapshot.detections, 2);
+        if (!m_lastSnapshot.masks.isEmpty()) {
+            YOLOHelpers::drawSegmentation(&annotated, m_lastSnapshot.masks,
+                                          m_lastSnapshot.detections, 2);
+        } else {
+            YOLOHelpers::drawDetections(&annotated, m_lastSnapshot.detections,
+                                        2);
+        }
         m_lastSnapshot.annotatedImage = annotated;
     }
     emit captureToDbRequested(m_lastSnapshot);

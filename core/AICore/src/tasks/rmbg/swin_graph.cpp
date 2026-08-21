@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "swin_graph.hpp"
+#include "tasks/rmbg/swin_graph.hpp"
 
 #include <cmath>
 #include <cstring>

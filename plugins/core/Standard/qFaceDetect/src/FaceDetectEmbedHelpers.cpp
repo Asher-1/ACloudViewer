@@ -31,7 +31,7 @@ QString modelCacheDir() {
     char* dir = aicore_facedetect_model_cache_dir();
     if (dir) {
         const QString result = QString::fromUtf8(dir);
-        aicore_facedetect_free_string(dir);
+        aicore_facedetect_free_buffer(dir);
         return result;
     }
 #endif
@@ -289,7 +289,7 @@ QImage loadRgbForInference(const QString& path) {
     const int rc = aicore_facedetect_load_path_rgb(path.toUtf8().constData(),
                                                    &rgb, &w, &h);
     if (rc != 0 || rgb == nullptr || w <= 0 || h <= 0) {
-        if (rgb) aicore_facedetect_free_vec(reinterpret_cast<float*>(rgb));
+        if (rgb) aicore_facedetect_free_buffer(reinterpret_cast<float*>(rgb));
         return {};
     }
 
@@ -339,7 +339,7 @@ std::vector<FaceDetectBox> detectBoxesFromRgb(aicore_facedetect_ctx* ctx,
     if (!bytes) return {};
     char* json = aicore_facedetect_detect_rgb_json(ctx, bytes, w, h);
     const QByteArray payload = json ? QByteArray(json) : QByteArray();
-    if (json) aicore_facedetect_free_string(json);
+    if (json) aicore_facedetect_free_buffer(json);
     return parseDetectJson(payload);
 }
 
@@ -378,10 +378,10 @@ bool embedRgbLandmarks(aicore_facedetect_ctx* ctx,
                                                          landmarks, &vec, &dim);
     if (rc == 0 && vec && dim > 0) {
         out->assign(vec, vec + dim);
-        aicore_facedetect_free_vec(vec);
+        aicore_facedetect_free_buffer(vec);
         return true;
     }
-    if (vec) aicore_facedetect_free_vec(vec);
+    if (vec) aicore_facedetect_free_buffer(vec);
     return false;
 }
 
@@ -428,10 +428,10 @@ bool embedCropWithFallback(aicore_facedetect_ctx* ctx,
                                                    &vec, &dim);
         if (rc == 0 && vec && dim > 0) {
             out->assign(vec, vec + dim);
-            aicore_facedetect_free_vec(vec);
+            aicore_facedetect_free_buffer(vec);
             return true;
         }
-        if (vec) aicore_facedetect_free_vec(vec);
+        if (vec) aicore_facedetect_free_buffer(vec);
         return false;
     };
 
@@ -453,10 +453,10 @@ bool embedImagePathWithFallback(aicore_facedetect_ctx* ctx,
                 ctx, path.toUtf8().constData(), minScore, &vec, &dim);
         if (rc == 0 && vec && dim > 0) {
             out->assign(vec, vec + dim);
-            aicore_facedetect_free_vec(vec);
+            aicore_facedetect_free_buffer(vec);
             return true;
         }
-        if (vec) aicore_facedetect_free_vec(vec);
+        if (vec) aicore_facedetect_free_buffer(vec);
     }
     QImage rgb = loadRgbForInference(path);
     if (rgb.isNull()) return false;

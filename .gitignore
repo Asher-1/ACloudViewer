@@ -157,6 +157,8 @@ node_modules/
 *.*~
 *.log
 docker_build*.log
+# ctest output directory (Temporary/LastTest.log, CTestCostData.txt)
+/Testing/
 # Local configs
 _vimrc_local.vim
 .vs/
@@ -248,6 +250,8 @@ docs/_build_cmake/
 /docker_cache/
 docs-output/
 *docs.tar.gz
+# Symlinked per-platform CMake compile database (see root CMakeLists.txt)
+/compile_commands.json
 # regard all text file as the LF
 * text=auto
 # specific file type setting

@@ -1,7 +1,8 @@
-#ifndef RFDETR_IMAGE_IO_HPP
-#define RFDETR_IMAGE_IO_HPP
+#pragma once
 
-#include "rfdetr.h"
+
+#include "tasks/rfdetr/rfdetr.h"
+
 
 #include <cstdint>
 #include <vector>
@@ -73,6 +74,4 @@ bool rfdetr_encode_gray_png(const uint8_t* data, int width, int height,
  * semantics. Returns nullptr on invalid arguments / OOM. */
 rfdetr_image* rfdetr_image_borrow_rgb(const uint8_t* rgb, int width,
                                       int height, rfdetr_status* out_status);
-#endif
-
 #endif

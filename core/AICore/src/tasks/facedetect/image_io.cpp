@@ -5,14 +5,15 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "image_io.hpp"
+#include "tasks/facedetect/image_io.hpp"
 
 #include <QImage>
 #include <cstring>
 #include <limits>
 #include <utility>
 
-#include "common.hpp"
+#include "common/capi_utils.hpp"
+#include "tasks/facedetect/common.hpp"
 
 namespace fd {
 namespace {
@@ -35,21 +36,19 @@ bool load_image_rgb(const std::string& path, Image& out) {
         return false;
     }
 
-    const QImage rgb = decoded.convertToFormat(QImage::Format_RGB888);
-    size_t byteCount = 0;
-    if (rgb.isNull() || !rgbSize(rgb.width(), rgb.height(), &byteCount)) {
+    aicore::capi::PackedRgb packed =
+            aicore::capi::qimage_to_packed_rgb(decoded);
+    if (packed.data == nullptr) {
         return false;
     }
+    const size_t byteCount =
+            static_cast<size_t>(packed.width) * packed.height * 3;
 
     Image result;
-    result.width = rgb.width();
-    result.height = rgb.height();
-    result.rgb.resize(byteCount);
-    const size_t rowBytes = static_cast<size_t>(result.width) * 3;
-    for (int y = 0; y < result.height; ++y) {
-        std::memcpy(result.rgb.data() + static_cast<size_t>(y) * rowBytes,
-                    rgb.constScanLine(y), rowBytes);
-    }
+    result.width = packed.width;
+    result.height = packed.height;
+    result.rgb.assign(packed.data, packed.data + byteCount);
+    std::free(packed.data);
     out = std::move(result);
     return true;
 }

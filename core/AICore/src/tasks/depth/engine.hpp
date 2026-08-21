@@ -1,10 +1,15 @@
 #pragma once
 #include "aicore/export.h"
-#include "model_loader.hpp"
-#include "backend.hpp"
-#include "image_io.hpp"
-#include "gs_adapter.hpp"
-#include "nested.hpp"
+#include "tasks/depth/model_loader.hpp"
+
+#include "tasks/depth/backend.hpp"
+
+#include "tasks/depth/image_io.hpp"
+
+#include "tasks/depth/gs_adapter.hpp"
+
+#include "tasks/depth/nested.hpp"
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -13,6 +18,23 @@
 namespace aicore {
 namespace depth {
 enum class TaskMode { DEPTH, DEPTH_POSE, MULTIVIEW, RECONSTRUCT, NESTED_METRIC };
+
+// Explicit engine configuration. Replaces the former DA_FUSED /
+// DA3_FORCE_JOINT_MV / DA_PROFILE environment variables; every default
+// reproduces the historical "environment unset" behavior exactly. Device
+// selection is explicit task/session state, never process environment.
+struct EngineOptions {
+    std::string device = "auto";          // backend family or instance name
+    int n_threads = 0;                    // 0 -> backend default
+    bool use_fused_graph = true;          // DA_FUSED unset == true
+    bool force_joint_multiview = false;   // DA3_FORCE_JOINT_MV unset == false
+    bool profile_logging = false;         // DA_PROFILE unset == false
+    // Keep the persistent gallocr/sched high-water between compute() calls
+    // (faster for repeated same-shape inference, e.g. video frames) instead
+    // of dropping it after every graph (the default keeps VRAM at the single
+    // graph peak).
+    bool keep_graph_buffers = false;
+};
 
 // Per-view result of the multi-view pipeline.
 struct ViewResult {
@@ -23,21 +45,16 @@ struct ViewResult {
 
 class Engine {
 public:
-    static std::unique_ptr<Engine> load(const std::string& gguf_path, int n_threads);
-    static std::unique_ptr<Engine> load_device(const std::string& gguf_path,
-                                               int n_threads,
-                                               const std::string& device);
+    static std::unique_ptr<Engine> load(const std::string& gguf_path,
+                                        const EngineOptions& options);
     // Nested metric: loads BOTH the anyview (GIANT) GGUF and the metric (ViT-L
     // + DPT/sky) GGUF. depth_metric() then runs both branches + alignment.
     static std::unique_ptr<Engine> load_nested(const std::string& anyview_gguf,
-                                               const std::string& metric_gguf, int n_threads);
-    static std::unique_ptr<Engine> load_nested_device(
-            const std::string& anyview_gguf,
-            const std::string& metric_gguf,
-            int n_threads,
-            const std::string& device);
+                                               const std::string& metric_gguf,
+                                               const EngineOptions& options);
     const Config& config() const { return ml_.config(); }
     const std::string& device_name() const { return be_.device_name(); }
+    const EngineOptions& options() const { return options_; }
     // Override preprocess longest-side target (multiple of patch_size recommended).
     void set_img_resize_target(uint32_t target);
     // True iff this engine was created via load_nested() (anyview + metric
@@ -107,8 +124,8 @@ public:
     bool depth_pose_path(const std::string& image_path, std::vector<float>& depth, std::vector<float>& conf,
                          std::array<float,12>& ext, std::array<float,9>& intr, int& H, int& W);
     // Multi-view depth+pose: default is sequential single-view inference on one
-    // Backend (VRAM peak O(1) in view count). Set DA3_FORCE_JOINT_MV=1 to use
-    // cross-view global attention (small sets only).
+    // Backend (VRAM peak O(1) in view count). options.force_joint_multiview
+    // enables cross-view global attention (small sets only).
     bool depth_pose_multi(const std::vector<Image>& imgs, std::vector<ViewResult>& out, int& H, int& W);
     // Full 3D-Gaussian reconstruction (DA3-GIANT only): backbone -> depth + cam
     // pose + GSDPT raw_gs -> GaussianAdapter -> world-space Gaussians (N=H*W).
@@ -134,13 +151,17 @@ public:
                              const std::vector<std::string>& image_names,
                              const std::string& dir, bool binary = true);
 private:
-    explicit Engine(const std::string& device, int n_threads)
-        : be_(device, n_threads) {}
+    explicit Engine(const EngineOptions& options)
+        : be_(options.device,
+              options.n_threads > 0 ? options.n_threads : 1,
+              options.keep_graph_buffers),
+          options_(options) {}
     // Fused single-image depth: backbone feats + DPT head built into ONE ggml graph
     // (feats stay device-resident — no GPU->host->GPU round-trip). Parity-exact with
     // the unfused path. cat_token=true only; depth_native_image falls back to unfused
-    // otherwise or when DA_FUSED=0. The unfused variant keeps the original two-graph
-    // path (used by ctest's separate backbone/head gates, A/B, and as fallback).
+    // otherwise or when options_.use_fused_graph is false. The unfused variant keeps
+    // the original two-graph path (used by ctest's separate backbone/head gates, A/B,
+    // and as fallback).
     bool depth_native_fused(const Image& img, std::vector<float>& depth_out,
                             std::vector<float>& conf_out, int& H, int& W);
     bool depth_native_unfused(const Image& img, std::vector<float>& depth_out,
@@ -148,7 +169,8 @@ private:
     // Lazy GPU upload for the metric branch (nested models only).
     bool ensure_metric_gpu();
     bool ensure_anyview_gpu();
-    // Optional joint multiview (forward_mv); gated by DA3_FORCE_JOINT_MV.
+    // Optional joint multiview (forward_mv); gated by
+    // options_.force_joint_multiview.
     bool depth_pose_multi_joint(const std::vector<Image>& imgs,
                                 std::vector<ViewResult>& out, int& H, int& W);
     bool depth_metric_multi_joint(const std::vector<Image>& imgs,
@@ -158,6 +180,7 @@ private:
     Backend be_;
     ModelLoader ml_;
     std::unique_ptr<ModelLoader> metric_ml_;
+    EngineOptions options_;
 };
 } // namespace depth
 } // namespace aicore

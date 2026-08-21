@@ -74,12 +74,12 @@ int main(int argc, char** argv) {
     char* info = aicore_rmbg_info_json(ctx);
     if (!info || !std::strstr(info, "\"math_profile\":")) {
         std::fprintf(stderr, "[rmbg-perf] missing math_profile in info JSON\n");
-        aicore_rmbg_free_string(info);
+        aicore_rmbg_free_buffer(info);
         aicore_rmbg_free(ctx);
         return 1;
     }
     std::printf("[rmbg-perf] info=%s\n", info);
-    aicore_rmbg_free_string(info);
+    aicore_rmbg_free_buffer(info);
 
     std::vector<uint8_t> rgb((size_t)kInputSize * kInputSize * 3);
     for (int y = 0; y < kInputSize; ++y) {

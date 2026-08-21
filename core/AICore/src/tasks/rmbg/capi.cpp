@@ -17,21 +17,17 @@
 
 #include "aicore/backend_capi.h"
 #include "aicore/rmbg_capi.h"
-#include "ggml_backend_utils.hpp"
-#include "model_cache.hpp"
-#include "rmbg.hpp"
-#include "rmbg_graph.hpp"
-#include "rmbg_preprocess.hpp"
+#include "common/capi_utils.hpp"
+#include "common/ggml_backend_registry.hpp"
+#include "common/ggml_backend_utils.hpp"
+#include "common/model_cache.hpp"
+#include "tasks/rmbg/rmbg.hpp"
+#include "tasks/rmbg/rmbg_graph.hpp"
+#include "tasks/rmbg/rmbg_preprocess.hpp"
 
 namespace {
 
-char* dup_cstr(const std::string& s) {
-    char* out = static_cast<char*>(std::malloc(s.size() + 1));
-    if (out != nullptr) {
-        std::memcpy(out, s.c_str(), s.size() + 1);
-    }
-    return out;
-}
+using aicore::capi::dup_cstr;
 
 bool read_file_bytes(const char* path,
                      std::vector<uint8_t>& out,
@@ -53,8 +49,12 @@ bool read_file_bytes(const char* path,
 }  // namespace
 
 struct aicore_rmbg_options {
-    std::string device = "auto";
-    int32_t threads = 0;
+    aicore::capi::CommonOptions common;
+    // Math profile: "default" | "optimized" | "strict" | "fast" |
+    // "unsafe-fast" (normalized in load; empty -> "optimized").
+    std::string math_profile;
+    // Fine-tuning switches beyond the profile (see rmbg_graph.hpp).
+    rmbg::GraphOptions graph;
 };
 
 struct aicore_rmbg_ctx {
@@ -79,12 +79,64 @@ AICORE_CAPI void aicore_rmbg_options_free(aicore_rmbg_options* opts) {
 
 AICORE_CAPI void aicore_rmbg_options_set_device(aicore_rmbg_options* opts,
                                                 const char* device) {
-    if (opts != nullptr && device != nullptr) opts->device = device;
+    if (opts != nullptr) aicore::capi::set_device(opts->common, device);
 }
 
 AICORE_CAPI void aicore_rmbg_options_set_threads(aicore_rmbg_options* opts,
                                                  int n_threads) {
-    if (opts != nullptr) opts->threads = n_threads;
+    if (opts != nullptr) aicore::capi::set_threads(opts->common, n_threads);
+}
+
+AICORE_CAPI void aicore_rmbg_options_set_math_profile(aicore_rmbg_options* opts,
+                                                      const char* profile) {
+    if (opts != nullptr && profile != nullptr) opts->math_profile = profile;
+}
+
+AICORE_CAPI void aicore_rmbg_options_set_cuda_f16_gemm(
+        aicore_rmbg_options* opts, int enable) {
+    if (opts != nullptr) opts->graph.cuda_f16_gemm = enable != 0;
+}
+
+AICORE_CAPI void aicore_rmbg_options_set_cuda_f16_min_stage(
+        aicore_rmbg_options* opts, int stage) {
+    if (opts != nullptr) opts->graph.cuda_f16_min_stage = stage;
+}
+
+AICORE_CAPI void aicore_rmbg_options_set_cuda_nn_gemm(aicore_rmbg_options* opts,
+                                                      int enable) {
+    if (opts != nullptr) opts->graph.cuda_nn_gemm = enable != 0;
+}
+
+AICORE_CAPI void aicore_rmbg_options_set_vulkan_qkv_layout(
+        aicore_rmbg_options* opts, int enable) {
+    if (opts != nullptr) opts->graph.vulkan_qkv_layout = enable != 0;
+}
+
+AICORE_CAPI void aicore_rmbg_options_set_vulkan_deform_project(
+        aicore_rmbg_options* opts, const char* mode) {
+    if (opts == nullptr || mode == nullptr) return;
+    opts->graph.vulkan_deform_project_coop = std::strcmp(mode, "coop") == 0;
+    opts->graph.vulkan_deform_project =
+            opts->graph.vulkan_deform_project_coop ||
+            std::strcmp(mode, "off") != 0;
+}
+
+AICORE_CAPI void aicore_rmbg_options_set_vulkan_flash_attn(
+        aicore_rmbg_options* opts, const char* mode) {
+    if (opts == nullptr || mode == nullptr) return;
+    if (std::strcmp(mode, "off") == 0) {
+        opts->graph.vulkan_flash_attn = false;
+        opts->graph.vulkan_flash_coop = false;
+        opts->graph.vulkan_flash_coop_stage = -1;
+        return;
+    }
+    opts->graph.vulkan_flash_attn = true;
+    opts->graph.vulkan_flash_coop =
+            std::strncmp(mode, "coop", 4) == 0 && mode[0] != '\0';
+    opts->graph.vulkan_flash_coop_stage =
+            opts->graph.vulkan_flash_coop && mode[4] != '\0'
+                    ? std::atoi(mode + 4)
+                    : -1;
 }
 
 AICORE_CAPI aicore_rmbg_ctx* aicore_rmbg_load_opts(
@@ -94,12 +146,17 @@ AICORE_CAPI aicore_rmbg_ctx* aicore_rmbg_load_opts(
     if (ctx == nullptr) return nullptr;
 
     ctx->model_path = gguf_path;
-    ctx->device = opts != nullptr ? opts->device : "auto";
-    ctx->threads = opts != nullptr ? opts->threads : 0;
+    ctx->device = opts != nullptr ? opts->common.device : "auto";
+    ctx->threads = opts != nullptr ? opts->common.threads : 0;
+    const char* profile = opts != nullptr && !opts->math_profile.empty()
+                                  ? opts->math_profile.c_str()
+                                  : nullptr;
+    const rmbg::GraphOptions graph_opts =
+            opts != nullptr ? opts->graph : rmbg::GraphOptions{};
 
     std::string err;
-    if (!rmbg::load_gguf(gguf_path, ctx->device.c_str(), ctx->threads,
-                         ctx->model, err)) {
+    if (!rmbg::load_gguf(gguf_path, ctx->device.c_str(), ctx->threads, profile,
+                         graph_opts, ctx->model, err)) {
         ctx->last_error = "failed to load RMBG-2.0 GGUF: " + err;
     }
     return ctx;
@@ -128,8 +185,6 @@ AICORE_CAPI int aicore_rmbg_last_timings(const aicore_rmbg_ctx* ctx,
     *out_timings = ctx->timings;
     return 0;
 }
-
-AICORE_CAPI void aicore_rmbg_free_string(char* s) { std::free(s); }
 
 AICORE_CAPI void aicore_rmbg_free_buffer(void* p) { std::free(p); }
 
@@ -405,11 +460,19 @@ AICORE_CAPI char* aicore_rmbg_info_json(aicore_rmbg_ctx* ctx) {
 }
 
 AICORE_CAPI int aicore_rmbg_warmup_backend(const char* device) {
-    rmbg::configure_backend_profile(device != nullptr ? device : "auto");
+    /* No profile configuration here anymore: warmup only registers backends.
+     * The math profile is per-load (aicore_rmbg_options_set_math_profile)
+     * and its ggml env overrides are queued inside load_gguf before the
+     * backends register — the warmup path has nothing to add. */
     return aicore_warmup_backend(device != nullptr ? device : "auto");
 }
 
-AICORE_CAPI void aicore_rmbg_shutdown(void) {}
+AICORE_CAPI void aicore_rmbg_shutdown(void) {
+    // Reclaims process-wide backend registry entries whose owners are gone
+    // (expired leases). Live contexts are never touched; ggml backends stay
+    // registered for the process lifetime.
+    aicore::runtime::purge_inactive_backend_leases();
+}
 
 AICORE_CAPI char* aicore_rmbg_model_cache_dir(void) {
     return dup_cstr(aicore::rmbg_model_cache_dir());

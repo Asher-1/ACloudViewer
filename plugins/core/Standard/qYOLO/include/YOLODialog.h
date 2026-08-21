@@ -30,6 +30,33 @@
 
 class ecvMainAppInterface;
 
+/** One task-tab panel: its own model combo (filtered on the tab's task),
+ *  threshold row, image input and Run button. A dialog owns three of these
+ *  (detect / segment / depth); the Live tab reuses all models. */
+struct YOLOTaskPanel {
+    QString task;  // "detect" | "segment" | "depth"
+
+    QWidget* tab = nullptr;
+    QComboBox* modelCombo = nullptr;
+    QLineEdit* customModelPath = nullptr;
+    QWidget* customModelRow = nullptr;
+    QWidget* thresholdRow = nullptr;  // Conf/IoU/Top-K (hidden for depth)
+    QDoubleSpinBox* conf = nullptr;
+    QDoubleSpinBox* iou = nullptr;
+    QSpinBox* topK = nullptr;
+    QLineEdit* imagePath = nullptr;
+    ecvClickableImageLabel* previewLabel = nullptr;
+    QPushButton* runBtn = nullptr;
+    QPushButton* cancelBtn = nullptr;
+    QPushButton* testDataBtn = nullptr;
+    QCheckBox* addAnnotatedCheck = nullptr;
+    QToolButton* dbToggleBtn = nullptr;
+    QWidget* dbContentWidget = nullptr;
+    QListWidget* dbImageList = nullptr;
+
+    QString modelPath() const;  // resolved path of modelCombo's selection
+};
+
 class YOLODialog : public QDialog {
     Q_OBJECT
 
@@ -106,6 +133,8 @@ private:
     void updateImagePreview();
     void startLiveStream();
     void adaptTabWidgetHeight();
+    /** Update custom-row / threshold-row visibility of one task panel. */
+    void applyPanelVisibility(YOLOTaskPanel& panel);
 
     void requestTestData(TestDataTarget target);
     bool loadRequestedTestData();
@@ -115,8 +144,14 @@ private:
                                       ecvTestDataRepository::Dataset kind);
     void setTestDataControlsEnabled(bool enabled);
 
+    /** The task panel of the currently active tab. */
+    YOLOTaskPanel* currentTaskPanel() const;
+    /** Find the panel whose tab is `tab`. */
+    YOLOTaskPanel* panelForTab(QWidget* tab) const;
+    /** Find the panel whose model combo lists `filename` (may be nullptr). */
+    YOLOTaskPanel* panelForFilename(const QString& filename) const;
+
     QTabWidget* m_tabWidget = nullptr;
-    QWidget* m_imageTab = nullptr;
     QWidget* m_liveTab = nullptr;
     YOLOLiveWidget* m_liveWidget = nullptr;
     QPushButton* m_liveStartBtn = nullptr;
@@ -125,23 +160,18 @@ private:
     QPushButton* m_testDataBtn = nullptr;
     QComboBox* m_testVideoCombo = nullptr;
 
-    QComboBox* m_taskCombo = nullptr;  // "detect" | "depth" filter
-    QComboBox* m_modelCombo = nullptr;
+    // One panel per task (index 0=detect, 1=segment, 2=depth).
+    QVector<YOLOTaskPanel> m_panels;
+
     QLineEdit* m_customModelPath = nullptr;
     QWidget* m_customModelRow = nullptr;
     QComboBox* m_deviceCombo = nullptr;
     QSpinBox* m_threads = nullptr;
-    QDoubleSpinBox* m_conf = nullptr;
-    QDoubleSpinBox* m_iou = nullptr;
-    QSpinBox* m_topK = nullptr;
     QLineEdit* m_imagePath = nullptr;
     ecvClickableImageLabel* m_previewLabel = nullptr;
     QLabel* m_downloadLabel = nullptr;
     QProgressBar* m_progress = nullptr;
-    QPushButton* m_runBtn = nullptr;
-    QPushButton* m_cancelBtn = nullptr;
     QPushButton* m_imageTestDataBtn = nullptr;
-    QCheckBox* m_addAnnotatedCheck = nullptr;
     QToolButton* m_dbToggleBtn = nullptr;
     QWidget* m_dbContentWidget = nullptr;
     QListWidget* m_dbImageList = nullptr;

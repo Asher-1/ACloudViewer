@@ -5,11 +5,15 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "yolo_image.hpp"
+#include "tasks/yolo/yolo_image.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+
+#if defined(_OPENMP)
+#include <omp.h>
+#endif
 
 namespace yolo {
 
@@ -104,6 +108,14 @@ void letterbox_image(const Image& img,
         wx[x] = sx - ix0;
     }
 
+    // Each output row writes disjoint positions, so the resize loop is
+    // embarrassingly parallel; OpenMP mirrors the upstream yolo-cli path
+    // (which measures ~0.4 ms preprocess vs ~2.7 ms single-threaded here).
+    // Cap at 8 threads: the row workload is small, so oversubscribing the
+    // thread pool costs more in wakeup/sync than it saves.
+#if defined(_OPENMP)
+#pragma omp parallel for schedule(static) num_threads(8) if (new_h >= 64)
+#endif
     for (int y = 0; y < new_h; y++) {
         const float sy = (y + 0.5f) * fy - 0.5f;
         const int iy0 = (int)std::floor(sy);

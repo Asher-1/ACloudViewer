@@ -64,7 +64,7 @@ QString facedetectModelCacheDir() {
     char* dir = aicore_facedetect_model_cache_dir();
     if (dir) {
         QString result = QString::fromUtf8(dir);
-        aicore_facedetect_free_string(dir);
+        aicore_facedetect_free_buffer(dir);
         return result;
     }
     return QDir::homePath() +
@@ -1674,7 +1674,7 @@ std::vector<FaceCaptureWidget::ScoredFace> FaceCaptureWidget::detectFacesGgml(
     if (!json) return out;
 
     const QJsonDocument doc = QJsonDocument::fromJson(QByteArray(json));
-    aicore_facedetect_free_string(json);
+    aicore_facedetect_free_buffer(json);
     if (!doc.isObject()) return out;
 
     const QJsonArray faces =
@@ -1758,7 +1758,7 @@ bool FaceCaptureWidget::embedFaceCrop(const cv::Mat& frame,
         return false;
     }
     embedding->assign(vec, vec + dim);
-    aicore_facedetect_free_vec(vec);
+    aicore_facedetect_free_buffer(vec);
     return true;
 }
 
@@ -1792,7 +1792,7 @@ bool FaceCaptureWidget::embedScoredFace(const cv::Mat& frame,
         return false;
     }
     embedding->assign(vec, vec + dim);
-    aicore_facedetect_free_vec(vec);
+    aicore_facedetect_free_buffer(vec);
     *embedding = normalizeEmbedding(*embedding);
     return !embedding->empty();
 }

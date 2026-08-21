@@ -78,7 +78,7 @@ QString modelCacheDir() {
     char* dir = aicore_rfdetr_model_cache_dir();
     if (dir) {
         const QString out = QString::fromUtf8(dir);
-        aicore_rfdetr_free_string(dir);
+        aicore_rfdetr_free_buffer(dir);
         return out;
     }
 #else

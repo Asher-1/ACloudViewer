@@ -12,116 +12,102 @@
 
 #include <algorithm>
 #include <cctype>
-#include <cstdlib>
 #include <cstring>
 #include <filesystem>
 #include <memory>
 
+#include "common/ggml_backend_utils.hpp"
+#include "common/ggml_env_bridge.hpp"
 #include "ggml-backend.h"
-#include "ggml_backend_utils.hpp"
 #include "gguf.h"
-#include "rmbg.hpp"
-#include "rmbg_graph.hpp"
-#include "swin_backbone.hpp"
+#include "tasks/rmbg/rmbg.hpp"
+#include "tasks/rmbg/rmbg_graph.hpp"
+#include "tasks/rmbg/swin_backbone.hpp"
 
 namespace rmbg {
 
 static std::string lower(std::string value);
 
-static void set_env(const char *key, const char *value) {
-#ifdef _WIN32
-    _putenv_s(key, value);
-#else
-    setenv(key, value, 1);
-#endif
-}
+namespace {
 
-static void clear_env(const char *key) {
-#ifdef _WIN32
-    _putenv_s(key, "");
-#else
-    unsetenv(key);
-#endif
-}
+// Coopmat matmul whitelist of the "optimized" profile (historical default
+// written into RMBG_VK_COOPMAT_MATMUL before the env bridge existed).
+constexpr const char *kOptimizedCoopmatWhitelist =
+        "bb_layers_0,bb_layers_1,bb_layers_2,bb_layers_3,sq0_,db4_,db3_,db2_"
+        ",db1_";
 
-static bool env_enabled(const char *key) {
-    const char *value = std::getenv(key);
-    return value && value[0] && std::strcmp(value, "0") != 0;
-}
-
-static void configure_vulkan_math() {
-    const char *requested = std::getenv("RMBG_VULKAN_MODE");
-    std::string mode = lower(requested ? requested : "");
-    if (mode.empty()) {
-        mode = env_enabled("RMBG_VULKAN_STRICT") ||
-                               env_enabled("RMBG_STRICT_MATH")
-                       ? "strict"
-               : env_enabled("RMBG_VULKAN_FAST") ? "unsafe-fast"
-                                                 : "optimized";
-    }
-    if (mode != "strict" && mode != "unsafe-fast" && mode != "fast" &&
-        mode != "optimized") {
-        mode = "optimized";
-    }
-    set_env("RMBG_VULKAN_MODE", mode.c_str());
-
-    if (mode == "strict") {
-        set_env("GGML_VK_DISABLE_F16", "1");
-        set_env("GGML_VK_DISABLE_COOPMAT", "1");
-        set_env("GGML_VK_DISABLE_COOPMAT2", "1");
-        set_env("GGML_VK_DISABLE_INTEGER_DOT_PRODUCT", "1");
-        clear_env("RMBG_VK_DIRECT_CONV");
-        clear_env("RMBG_VK_SCALAR_DIRECT_CONV");
-        clear_env("RMBG_VK_COOPMAT_MATMUL");
-        return;
-    }
-
-    if (mode == "unsafe-fast" || mode == "fast") {
-        clear_env("GGML_VK_DISABLE_F16");
-        clear_env("GGML_VK_DISABLE_COOPMAT");
-        clear_env("GGML_VK_DISABLE_COOPMAT2");
-        clear_env("GGML_VK_DISABLE_INTEGER_DOT_PRODUCT");
-        clear_env("RMBG_VK_DIRECT_CONV");
-        clear_env("RMBG_VK_SCALAR_DIRECT_CONV");
-        clear_env("RMBG_VK_COOPMAT_MATMUL");
-        return;
-    }
-
-    set_env("GGML_VK_DISABLE_F16", "1");
-    clear_env("GGML_VK_DISABLE_COOPMAT");
-    set_env("GGML_VK_DISABLE_COOPMAT2", "1");
-    set_env("GGML_VK_DISABLE_INTEGER_DOT_PRODUCT", "1");
-    set_env("RMBG_VK_DIRECT_CONV", "1");
-    set_env("RMBG_VK_SCALAR_DIRECT_CONV", "1");
-    const char *whitelist = std::getenv("RMBG_VK_COOPMAT_MATMUL");
-    if (!whitelist || !whitelist[0]) {
-        set_env("RMBG_VK_COOPMAT_MATMUL",
-                "bb_layers_0,bb_layers_1,bb_layers_2,bb_layers_3,sq0_,db4_,"
-                "db3_,db2_,db1_");
-    }
-}
-
-void configure_backend_profile(const char *device) {
-    const std::string requested = lower(device ? device : "auto");
+// Apply the ggml-side environment overrides implied by a math profile.
+// Device-aware, mirroring the historical configure_backend_profile():
+// the Vulkan switches are only meaningful when a Vulkan backend may load,
+// the cuBLAS TF32 switch only for CUDA-bound requests. Runs BEFORE
+// pick_backend() so instances created during device resolution see the
+// values.
+void apply_profile_env(const std::string &profile,
+                       const std::string &requested) {
+    aicore::GgmlEnvOverrides env;
     const bool generic_gpu = requested == "gpu";
-    const bool strict_math = env_enabled("RMBG_STRICT_MATH");
-    if (strict_math && (requested == "auto" || generic_gpu ||
-                        requested.rfind("cuda", 0) == 0)) {
-        // Set RMBG_STRICT_MATH=1 for bit-stable FP32 GEMMs. The default keeps
-        // cuBLAS TF32 enabled; its measured alpha error remains below 1.4e-3.
-        set_env("NVIDIA_TF32_OVERRIDE", "0");
+    const bool may_vulkan = requested == "auto" || generic_gpu ||
+                            requested.rfind("vulkan", 0) == 0;
+    const bool may_cuda = requested == "auto" || generic_gpu ||
+                          requested.rfind("cuda", 0) == 0;
+    if (may_vulkan) {
+        if (profile == "strict") {
+            env.vk_disable_f16 = true;
+            env.vk_disable_coopmat = true;
+            env.vk_disable_coopmat2 = true;
+            env.vk_disable_integer_dot_product = true;
+            env.rmbg_vk_scalar_direct_conv = false;
+            env.rmbg_vk_coopmat_matmul = std::string("");
+        } else if (profile == "fast" || profile == "unsafe-fast") {
+            env.vk_disable_f16 = false;
+            env.vk_disable_coopmat = false;
+            env.vk_disable_coopmat2 = false;
+            env.vk_disable_integer_dot_product = false;
+            env.rmbg_vk_scalar_direct_conv = false;
+            env.rmbg_vk_coopmat_matmul = std::string("");
+        } else {  // "optimized" (default)
+            env.vk_disable_f16 = true;
+            env.vk_disable_coopmat = false;
+            env.vk_disable_coopmat2 = true;
+            env.vk_disable_integer_dot_product = true;
+            env.rmbg_vk_scalar_direct_conv = true;
+            env.rmbg_vk_coopmat_matmul =
+                    std::string(kOptimizedCoopmatWhitelist);
+        }
     }
-    if (requested == "auto" || generic_gpu ||
-        requested.rfind("vulkan", 0) == 0) {
-        configure_vulkan_math();
+    if (profile == "strict" && may_cuda) {
+        // Bit-stable FP32 GEMMs. The default keeps cuBLAS TF32 enabled; its
+        // measured alpha error remains below 1.4e-3.
+        env.nvidia_tf32_override = false;
+    }
+    aicore::apply_ggml_env_overrides(env);
+}
+
+// Profile-driven graph fields. The caller's fine-tuning fields (qkv layout,
+// flash attention, cuda f16/nn gemm, ...) are kept; the profile always wins
+// for the flow-defining switches, exactly like the historical configure
+// step overwriting the RMBG_VK_DIRECT_CONV variable.
+void apply_profile_to_graph(const std::string &profile, GraphOptions &opts) {
+    if (profile == "strict") {
+        opts.vulkan_direct_conv = false;
+        opts.vk_f16_disabled = true;
+        opts.strict_math = true;
+    } else if (profile == "fast" || profile == "unsafe-fast") {
+        opts.vulkan_direct_conv = false;
+        opts.vk_f16_disabled = false;
+        opts.strict_math = false;
+    } else if (profile == "optimized") {
+        opts.vulkan_direct_conv = true;
+        opts.vk_f16_disabled = true;
+        opts.strict_math = false;
+    } else {  // "default" (no Vulkan/CUDA acceleration)
+        opts.vulkan_direct_conv = false;
+        opts.vk_f16_disabled = false;
+        opts.strict_math = false;
     }
 }
 
-static std::string lower(std::string value) {
-    std::transform(value.begin(), value.end(), value.begin(),
-                   [](unsigned char c) { return (char)std::tolower(c); });
-    return value;
-}
+}  // namespace
 
 // Acquire a process-shared backend lease for the requested device. "auto"
 // resolves through the AICore runtime (CUDA -> Vulkan -> CPU on
@@ -131,8 +117,6 @@ static bool pick_backend(const char *device,
                          aicore::runtime::BackendLease &lease,
                          std::string &backend_name,
                          std::string &err) {
-    configure_backend_profile(device);
-
     ggml_common::load_backends_once();
     const std::string requested = lower(device && device[0] ? device : "auto");
     if (requested == "cpu") {
@@ -157,9 +141,27 @@ static bool pick_backend(const char *device,
     return true;
 }
 
+static std::string lower(std::string value) {
+    std::transform(value.begin(), value.end(), value.begin(),
+                   [](unsigned char c) { return (char)std::tolower(c); });
+    return value;
+}
+
+std::string normalize_math_profile(const char *profile) {
+    std::string mode = lower(profile ? profile : "");
+    if (mode.empty()) mode = "optimized";
+    if (mode != "strict" && mode != "unsafe-fast" && mode != "fast" &&
+        mode != "optimized" && mode != "default") {
+        mode = "optimized";
+    }
+    return mode;
+}
+
 bool load_gguf(const char *path,
                const char *device,
                int n_threads,
+               const char *math_profile,
+               const GraphOptions &user_graph_options,
                Model &out,
                std::string &err) {
     if (!path || !path[0]) {
@@ -167,6 +169,12 @@ bool load_gguf(const char *path,
         return false;
     }
     free_model(out);
+
+    const std::string profile = normalize_math_profile(math_profile);
+    const std::string requested = lower(device && device[0] ? device : "auto");
+    // The ggml env overrides must be applied before the backend instances
+    // are created (pick_backend below resolves the device).
+    apply_profile_env(profile, requested);
 
     WeightMap weights;
     if (!weights.load_gguf(path, err)) return false;
@@ -214,18 +222,20 @@ bool load_gguf(const char *path,
     out.backend = out.lease.handle();
     const std::string resolved_backend = lower(out.backend_name);
     if (resolved_backend.find("vulkan") != std::string::npos) {
-        const char *mode = std::getenv("RMBG_VULKAN_MODE");
-        out.math_profile = mode && mode[0] ? mode : "optimized";
+        out.math_profile = profile;
     } else if (resolved_backend.find("cuda") != std::string::npos) {
-        out.math_profile =
-                env_enabled("RMBG_STRICT_MATH") ? "strict" : "optimized";
+        out.math_profile = profile == "strict" ? "strict" : "optimized";
     } else {
         out.math_profile = "default";
     }
     out.n_threads = n_threads;
 
+    GraphOptions graph_options = user_graph_options;
+    apply_profile_to_graph(profile, graph_options);
+
     std::unique_ptr<RmbgDeviceGraph> graph(new RmbgDeviceGraph);
-    if (!graph->init(out.backend, weights, out.cfg.input_size, err)) {
+    if (!graph->init(out.backend, weights, out.cfg.input_size, graph_options,
+                     err)) {
         graph.reset();
         out.lease.reset();
         out.backend = nullptr;

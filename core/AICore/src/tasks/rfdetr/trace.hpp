@@ -1,5 +1,5 @@
-#ifndef RFDETR_TRACE_HPP
-#define RFDETR_TRACE_HPP
+#pragma once
+
 
 #include <cstdint>
 #include <functional>
@@ -40,5 +40,3 @@ std::vector<float> copy_tensor_to_f32(const ggml_tensor* t);
 std::vector<int64_t> tensor_shape(const ggml_tensor* t);
 
 }  // namespace rfdetr
-
-#endif

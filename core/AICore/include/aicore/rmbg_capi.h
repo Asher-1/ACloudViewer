@@ -25,6 +25,8 @@
 extern "C" {
 #endif
 
+/** Returns the ABI version of the RMBG C API (bump on breaking ABI
+ *  changes). */
 AICORE_CAPI int aicore_rmbg_abi_version(void);
 
 typedef struct aicore_rmbg_ctx aicore_rmbg_ctx;
@@ -40,26 +42,74 @@ typedef struct aicore_rmbg_timings {
     double total_ms;
 } aicore_rmbg_timings;
 
+/** Creates a default options struct (device "auto", threads 0 = backend
+ *  default). Release with aicore_rmbg_options_free. */
 AICORE_CAPI aicore_rmbg_options* aicore_rmbg_options_new(void);
+/** Releases an options struct created by aicore_rmbg_options_new. */
 AICORE_CAPI void aicore_rmbg_options_free(aicore_rmbg_options* opts);
+/** Selects the inference device: NULL or "auto", "cpu", "gpu", "vulkan"
+ *  (optionally ":N"), "cuda" (Linux/Windows). */
 AICORE_CAPI void aicore_rmbg_options_set_device(aicore_rmbg_options* opts,
                                                 const char* device);
+/** CPU thread count; <= 0 picks the backend default. */
 AICORE_CAPI void aicore_rmbg_options_set_threads(aicore_rmbg_options* opts,
                                                  int n_threads);
+
+/** Select the math profile (default "optimized"): one of "default",
+ *  "optimized", "strict", "fast", "unsafe-fast".
+ *  "optimized" — historical default: Vulkan coopmat whitelist + scalar
+ *                 direct conv + F32 flash attention, cuBLAS TF32 on.
+ *  "strict"    — bit-stable FP32 (disables coopmat/dot-product/TF32).
+ *  "fast"/"unsafe-fast" — every fast path enabled (no F16 guard rails).
+ *  Replaces the RMBG_VULKAN_MODE / RMBG_STRICT_MATH / RMBG_VULKAN_*
+ *  environment variables of the upstream port. */
+AICORE_CAPI void aicore_rmbg_options_set_math_profile(aicore_rmbg_options* opts,
+                                                      const char* profile);
+
+/** Fine-tuning switches (all default to the historical behavior; the math
+ *  profile always wins for the flow-defining switches these cannot
+ *  override). enable != 0 turns the switch on. */
+/** CUDA: F16-in/FP32-accumulate GEMMs for the Swin MLP layers (opt-in;
+ *  was RMBG_CUDA_F16_GEMM). */
+AICORE_CAPI void aicore_rmbg_options_set_cuda_f16_gemm(
+        aicore_rmbg_options* opts, int enable);
+/** CUDA: minimum Swin stage the F16 GEMM path applies to (default 2; was
+ *  RMBG_CUDA_F16_MIN_STAGE). */
+AICORE_CAPI void aicore_rmbg_options_set_cuda_f16_min_stage(
+        aicore_rmbg_options* opts, int stage);
+/** CUDA: pre-transposed NN weights for the Swin QKV/projection GEMMs
+ *  (opt-in; was RMBG_CUDA_NN_GEMM). */
+AICORE_CAPI void aicore_rmbg_options_set_cuda_nn_gemm(aicore_rmbg_options* opts,
+                                                      int enable);
+/** Vulkan: fused QKV layout conv (default on; was RMBG_VK_QKV_LAYOUT). */
+AICORE_CAPI void aicore_rmbg_options_set_vulkan_qkv_layout(
+        aicore_rmbg_options* opts, int enable);
+/** Vulkan: fused deformable projection conv. mode: "off" (default), "on",
+ *  "coop" (was RMBG_VK_DEFORM_PROJECT). */
+AICORE_CAPI void aicore_rmbg_options_set_vulkan_deform_project(
+        aicore_rmbg_options* opts, const char* mode);
+/** Vulkan: Swin attention kernel. mode: "off" (materialized scores),
+ *  "scalar" (F32 flash, default), "coop" / "coop0".."coop3" (F16
+ *  cooperative flash for all / one stage; was RMBG_VK_FLASH_ATTN). */
+AICORE_CAPI void aicore_rmbg_options_set_vulkan_flash_attn(
+        aicore_rmbg_options* opts, const char* mode);
 
 /** Load the unified RMBG-2.0 GGUF (encoder + decoder in one file). Returns
  *  NULL on failure; inspect aicore_rmbg_last_error() for the reason. */
 AICORE_CAPI aicore_rmbg_ctx* aicore_rmbg_load_opts(
         const char* gguf_path, const aicore_rmbg_options* opts);
+/** Releases a context returned by aicore_rmbg_load_opts; safe on NULL. */
 AICORE_CAPI void aicore_rmbg_free(aicore_rmbg_ctx* ctx);
 /** Returns 1 only when the context owns a successfully loaded model. */
 AICORE_CAPI int aicore_rmbg_is_ready(const aicore_rmbg_ctx* ctx);
+/** Returns the last error message of the context (empty when none). */
 AICORE_CAPI const char* aicore_rmbg_last_error(const aicore_rmbg_ctx* ctx);
 /** Copy the most recent successful request timings into out_timings. */
 AICORE_CAPI int aicore_rmbg_last_timings(const aicore_rmbg_ctx* ctx,
                                          aicore_rmbg_timings* out_timings);
 
-AICORE_CAPI void aicore_rmbg_free_string(char* s);
+/** Releases any buffer returned by an aicore_rmbg_* function (string, PNG
+ *  bytes, RGBA or alpha matte; unified entry point). Safe on NULL. */
 AICORE_CAPI void aicore_rmbg_free_buffer(void* p);
 
 /** Remove background from an image file. \p out_png receives PNG-encoded RGBA
@@ -106,9 +156,15 @@ AICORE_CAPI int aicore_rmbg_alpha_mat_rgb(aicore_rmbg_ctx* ctx,
                                           int32_t* out_width,
                                           int32_t* out_height);
 
+/** Returns a JSON summary of the loaded model. Caller frees with
+ *  aicore_rmbg_free_buffer. */
 AICORE_CAPI char* aicore_rmbg_info_json(aicore_rmbg_ctx* ctx);
+/** Warms up the backend for `device`; returns 0 on success. */
 AICORE_CAPI int aicore_rmbg_warmup_backend(const char* device);
+/** Releases process-wide RMBG backend resources (idempotent). */
 AICORE_CAPI void aicore_rmbg_shutdown(void);
+/** Returns the local model cache directory. Caller frees with
+ *  aicore_rmbg_free_buffer. */
 AICORE_CAPI char* aicore_rmbg_model_cache_dir(void);
 
 /** Published GGUF catalog (cloudViewer_downloads trellis2-ggml release). */
@@ -120,10 +176,15 @@ typedef struct aicore_rmbg_model_entry {
     const char* license_note;
 } aicore_rmbg_model_entry;
 
+/** Number of published catalog entries. */
 AICORE_CAPI int aicore_rmbg_model_count(void);
+/** Returns the catalog entry at `index` (NULL when out of range). */
 AICORE_CAPI const aicore_rmbg_model_entry* aicore_rmbg_model_at(int index);
+/** Returns the catalog entry whose filename matches (NULL when not
+ *  found). */
 AICORE_CAPI const aicore_rmbg_model_entry* aicore_rmbg_model_by_filename(
         const char* filename);
+/** Returns the base URL of the published model release. */
 AICORE_CAPI const char* aicore_rmbg_model_download_base(void);
 
 #ifdef __cplusplus

@@ -424,10 +424,13 @@ SceneCameras resolveSceneCameras(const FreeSplatterResult& result,
     if (!boundsOrbitOnly && result.nViews >= 2 && result.gaussians) {
         cameras.cam2world.resize(result.nViews * 16);
         float focal = 0.0f;
+        aicore_gaussian_geometry geom{};
+        geom.image_height = result.height;
+        geom.image_width = result.width;
+        geom.gaussian_channels = result.gaussianChannels;
         if (aicore_gaussian_estimate_poses(
-                    result.gaussians.get(), result.nViews, result.height,
-                    result.width, result.gaussianChannels, opacityThreshold,
-                    cameras.cam2world.data(), &focal) == 0) {
+                    &geom, result.gaussians.get(), result.nViews,
+                    opacityThreshold, cameras.cam2world.data(), &focal) == 0) {
             cameras.hasPoses = true;
             cameras.focal = focal > 0 ? focal : 500.0f;
             return cameras;
@@ -1386,13 +1389,17 @@ void qFreeSplatter::onResultReady(const FreeSplatterResult& result) {
     unsigned char* plyBytes = nullptr;
     size_t plySize = 0;
     const int shDegree = result.shDegree > 0 ? result.shDegree : 1;
-    if (aicore_gaussian_export_ply_bytes(g, result.nViews, result.height,
-                                         result.width, gc, shDegree, opThr,
+    aicore_gaussian_geometry geom{};
+    geom.image_height = result.height;
+    geom.image_width = result.width;
+    geom.gaussian_channels = gc;
+    geom.sh_degree = shDegree;
+    if (aicore_gaussian_export_ply_bytes(&geom, g, result.nViews, opThr,
                                          &plyBytes, &plySize) == 0 &&
         plyBytes && plySize > 0) {
         m_lastPlyBytes = QByteArray(reinterpret_cast<const char*>(plyBytes),
                                     static_cast<int>(plySize));
-        aicore_gaussian_free_bytes(plyBytes);
+        aicore_gaussian_free_buffer(plyBytes);
     }
 
     const bool hasResult = !result.gaussians;

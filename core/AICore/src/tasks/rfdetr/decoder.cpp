@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "decoder.hpp"
+#include "tasks/rfdetr/decoder.hpp"
 
 #include <cmath>
 #include <cstdint>
@@ -13,10 +13,10 @@
 #include <string>
 #include <vector>
 
-#include "common.hpp"
 #include "ggml.h"
-#include "trace.hpp"
-#include "transformer_ops.hpp"
+#include "tasks/rfdetr/common.hpp"
+#include "tasks/rfdetr/trace.hpp"
+#include "tasks/rfdetr/transformer_ops.hpp"
 
 namespace rfdetr {
 

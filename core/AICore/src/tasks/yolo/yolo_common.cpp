@@ -5,25 +5,25 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "yolo_common.hpp"
+#include "tasks/yolo/yolo_common.hpp"
 
 #include <cstdarg>
 #include <cstdio>
 
 namespace yolo {
 
-int g_log_level = (int)LogLevel::INFO;
+void set_log_level(int level) { aicore_set_log_level(level); }
+int get_log_level() { return aicore_get_log_level(); }
 
-void logf(LogLevel level, const char* fmt, ...) {
-    if ((int)level < g_log_level) return;
-    static const char* kPrefix[] = {"[YOLO][debug]", "[YOLO][info]",
-                                    "[YOLO][warn]", "[YOLO][error]"};
-    std::fprintf(stderr, "%s ", kPrefix[(int)level]);
+void logf(int level, const char* fmt, ...) {
+    char buf[1024];
     va_list ap;
     va_start(ap, fmt);
-    std::vfprintf(stderr, fmt, ap);
+    std::vsnprintf(buf, sizeof(buf), fmt, ap);
     va_end(ap);
-    std::fprintf(stderr, "\n");
+    // Forward through the shared AICore log gate (CVLog when built into
+    // ACloudViewer, stderr otherwise) with runtime level filtering.
+    aicore_log_at(level, "[YOLO] ", "%s", buf);
 }
 
 }  // namespace yolo

@@ -98,7 +98,7 @@ QString LightGlueDialog::modelCacheDir() {
                QStringLiteral("/cloudViewer_data/extract/lightglue_models");
     }
     QString result = QString::fromUtf8(dir);
-    aicore_lightglue_free_string(dir);
+    aicore_lightglue_free_buffer(dir);
     return result;
 }
 

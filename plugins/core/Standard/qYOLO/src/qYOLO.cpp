@@ -42,9 +42,10 @@ qYOLO::qYOLO(QObject* parent)
     qRegisterMetaType<YOLORunResult>("YOLORunResult");
     qRegisterMetaType<YOLODepthResult>("YOLODepthResult");
     qRegisterMetaType<YOLODialog::Settings>("YOLODialog::Settings");
-    m_action = new QAction(tr("YOLO Detect & Depth"), this);
+    m_action = new QAction(tr("YOLO Detect, Segment & Depth"), this);
     m_action->setToolTip(
-            tr("YOLO real-time object detection / metric depth (GGML)"));
+            tr("YOLO real-time object detection / segmentation / metric "
+               "depth (GGML)"));
     m_action->setIcon(QIcon(":/CC/plugin/qYOLO/images/qYOLO.svg"));
     connect(m_action, &QAction::triggered, this, &qYOLO::showDialog);
 
@@ -316,10 +317,12 @@ void qYOLO::addResultToDb(const YOLORunResult& result,
             QStringLiteral("YOLO_%1_%2").arg(sourceLabel, deviceTag), m_app);
     auto* img = new ccImage(result.annotatedImage, name);
     img->setMetaData(QStringLiteral("YOLO"), true);
-    img->setMetaData(QStringLiteral("YOLO/Task"), QStringLiteral("detect"));
+    img->setMetaData(QStringLiteral("YOLO/Task"), result.task);
     img->setMetaData(QStringLiteral("YOLO/Model"), result.modelVariant);
     img->setMetaData(QStringLiteral("YOLO/Count"),
                      static_cast<qlonglong>(result.detections.size()));
+    img->setMetaData(QStringLiteral("YOLO/MaskCount"),
+                     static_cast<qlonglong>(result.masks.size()));
     img->setMetaData(QStringLiteral("Runtime (ms)"), result.runtimeMs);
     if (!result.imagePath.isEmpty()) {
         img->setMetaData(QStringLiteral("Source"), result.imagePath);

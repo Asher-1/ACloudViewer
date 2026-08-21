@@ -13,7 +13,7 @@
 #include <cstring>
 
 #include "aicore/rfdetr_capi.h"
-#include "common/test_macros.hpp"
+#include "tests/common/test_macros.hpp"
 
 static int failures = 0;
 
@@ -23,8 +23,8 @@ int main() {
     // Null-safe teardown / lifecycle.
     aicore_rfdetr_free(nullptr);
     aicore_rfdetr_options_free(nullptr);
-    aicore_rfdetr_free_string(nullptr);
-    aicore_rfdetr_free_vec(nullptr);
+    aicore_rfdetr_free_buffer(nullptr);
+    aicore_rfdetr_free_buffer(nullptr);
 
     AICORE_CHECK(aicore_rfdetr_load_opts(nullptr, nullptr) == nullptr);
     AICORE_CHECK(aicore_rfdetr_is_ready(nullptr) == 0);
@@ -86,12 +86,41 @@ int main() {
                  std::strstr(aicore_rfdetr_model_download_base(),
                              "RF-DETR-GGUF") != nullptr);
 
+    // Role-tagged catalog accessors.
+    const aicore_rfdetr_model_entry* det0 = aicore_rfdetr_detection_model_at(0);
+    AICORE_CHECK(det0 != nullptr && det0->segmentation_capable == 0);
+    AICORE_CHECK(aicore_rfdetr_detection_model_at(20) == nullptr);
+    const aicore_rfdetr_model_entry* seg0 =
+            aicore_rfdetr_segmentation_model_at(0);
+    AICORE_CHECK(seg0 != nullptr && seg0->segmentation_capable == 1);
+    AICORE_CHECK(aicore_rfdetr_segmentation_model_at(24) == nullptr);
+
+    // Model-free introspection on a ctx with no loaded model.
+    aicore_rfdetr_ctx* empty_ctx =
+            aicore_rfdetr_load_opts("/nonexistent/rfdetr.gguf", nullptr);
+    AICORE_CHECK(empty_ctx != nullptr);
+    AICORE_CHECK(aicore_rfdetr_is_ready(empty_ctx) == 0);
+    AICORE_CHECK(aicore_rfdetr_context_variant(empty_ctx) != nullptr);
+    AICORE_CHECK(aicore_rfdetr_context_image_size(empty_ctx) == 0);
+    AICORE_CHECK(aicore_rfdetr_context_num_classes(empty_ctx) == 0);
+    AICORE_CHECK(aicore_rfdetr_context_has_segmentation(empty_ctx) == 0);
+    AICORE_CHECK(aicore_rfdetr_context_device(empty_ctx) != nullptr);
+    // No model loaded -> no engine -> threads must read as 0.
+    AICORE_CHECK(aicore_rfdetr_context_threads(empty_ctx) == 0);
+    // info_json returns NULL without a loaded model (no metadata to serialize);
+    // free_string must accept NULL.
+    char* info = aicore_rfdetr_info_json(empty_ctx);
+    aicore_rfdetr_free_buffer(info);
+    aicore_rfdetr_free(empty_ctx);
+
     // Device enumeration / warmup.
     AICORE_CHECK(aicore_rfdetr_warmup_backend("cpu") == 0);
+    aicore_rfdetr_shutdown();
+    aicore_rfdetr_shutdown();  // idempotent
 
     char* dir = aicore_rfdetr_model_cache_dir();
     AICORE_CHECK(dir != nullptr && std::strlen(dir) > 0);
-    aicore_rfdetr_free_string(dir);
+    aicore_rfdetr_free_buffer(dir);
 
     if (failures == 0) {
         std::printf("[rfdetr] contract test passed\n");

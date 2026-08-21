@@ -1,7 +1,8 @@
-#ifndef RFDETR_DECODER_HPP
-#define RFDETR_DECODER_HPP
+#pragma once
 
-#include "model_loader.hpp"
+
+#include "tasks/rfdetr/model_loader.hpp"
+
 
 struct ggml_context;
 struct ggml_tensor;
@@ -98,5 +99,3 @@ void compute_query_sine_embed(const float* refpoints, int num_queries,
                               int d_half, float* out);
 
 }  // namespace rfdetr
-
-#endif

@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "rmbg_preprocess.hpp"
+#include "tasks/rmbg/rmbg_preprocess.hpp"
 
 // Qt-based image decode/encode (matching the gaussian task pattern).
 // QImage/QBuffer-based image decoding and encoding.

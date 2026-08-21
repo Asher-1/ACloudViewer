@@ -35,7 +35,7 @@
 
 namespace {
 const int kThumbSize = 96;
-constexpr const char* kRMBGTestImage = "000000397133.jpg";
+constexpr const char* kRMBGTestImage = "000000252219.jpg";
 
 void styleSampleDataButton(QPushButton* button) {
     button->setStyleSheet(
@@ -135,7 +135,7 @@ void RMBGDialog::setupUi() {
             new QPushButton(tr("\U0001f9ea  Try sample data"), m_imageTab);
     styleSampleDataButton(m_imageTestDataBtn);
     m_imageTestDataBtn->setToolTip(
-            tr("Load images/000000397133.jpg from the shared test-data cache"));
+            tr("Load images/000000252219.jpg from the shared test-data cache"));
     connect(m_imageTestDataBtn, &QPushButton::clicked, this,
             [this]() { requestTestData(TestDataTarget::Image); });
     inputRow->addWidget(browseBtn);
@@ -154,6 +154,14 @@ void RMBGDialog::setupUi() {
     m_dbImageList->setIconSize(QSize(48, 48));
     m_dbImageList->setMaximumHeight(140);
     dbLayout->addWidget(m_dbImageList);
+    auto* dbBtnRow = new QHBoxLayout;
+    auto* refreshDbBtn = new QPushButton(tr("Refresh"), m_dbContentWidget);
+    refreshDbBtn->setToolTip(tr("Reload the ccImage list from the DB tree"));
+    connect(refreshDbBtn, &QPushButton::clicked, this,
+            [this]() { emit refreshDbImagesRequested(); });
+    dbBtnRow->addWidget(refreshDbBtn);
+    dbBtnRow->addStretch();
+    dbLayout->addLayout(dbBtnRow);
     m_dbContentWidget->setVisible(false);
     imageLayout->addWidget(m_dbContentWidget);
     connect(m_dbToggleBtn, &QToolButton::toggled, this, [this](bool on) {

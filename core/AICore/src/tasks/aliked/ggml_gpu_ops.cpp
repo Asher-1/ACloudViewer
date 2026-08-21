@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "ggml_gpu_ops.hpp"
+#include "tasks/aliked/ggml_gpu_ops.hpp"
 
 #include <ggml-alloc.h>
 #include <ggml-backend.h>
@@ -17,11 +17,11 @@
 #include <string>
 #include <unordered_map>
 
-#include "gpu_pipeline_cache.hpp"
-#include "gpu_sync.hpp"
-#include "gpu_tensor.hpp"
-#include "tensor_ops.hpp"
-#include "vulkan/vulkan_aliked_dispatch.hpp"
+#include "tasks/aliked/gpu_pipeline_cache.hpp"
+#include "tasks/aliked/gpu_sync.hpp"
+#include "tasks/aliked/gpu_tensor.hpp"
+#include "tasks/aliked/tensor_ops.hpp"
+#include "tasks/aliked/vulkan/vulkan_aliked_dispatch.hpp"
 
 namespace lightglue::aliked_internal {
 namespace {

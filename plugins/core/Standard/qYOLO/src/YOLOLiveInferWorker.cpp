@@ -161,7 +161,7 @@ void YOLOLiveInferWorker::runJobImpl(YOLOLiveInferWorker::Job job) {
                                              job.rgb.height(), &dw, &dh);
         result.depth.runtimeMs = static_cast<double>(timer.elapsed());
         if (!depth || dw <= 0 || dh <= 0) {
-            if (depth) aicore_yolo_free_vec(depth);
+            if (depth) aicore_yolo_free_buffer(depth);
             const char* message = aicore_yolo_last_error(m_ctx);
             result.error = message ? QString::fromUtf8(message)
                                    : tr("YOLO depth inference failed.");
@@ -170,12 +170,12 @@ void YOLOLiveInferWorker::runJobImpl(YOLOLiveInferWorker::Job job) {
         }
         result.depth.depthMap =
                 QVector<float>(depth, depth + static_cast<size_t>(dw) * dh);
-        aicore_yolo_free_vec(depth);
+        aicore_yolo_free_buffer(depth);
         result.depth.width = dw;
         result.depth.height = dh;
         if (char* statsJson = aicore_yolo_last_depth_json(m_ctx)) {
             result.depth.resultJson = QByteArray(statsJson);
-            aicore_yolo_free_string(statsJson);
+            aicore_yolo_free_buffer(statsJson);
             YOLOHelpers::parseDepthStatsJson(result.depth.resultJson,
                                              &result.depth.stats);
         }
@@ -187,12 +187,72 @@ void YOLOLiveInferWorker::runJobImpl(YOLOLiveInferWorker::Job job) {
         return;
     }
 
+    if (result.task == QStringLiteral("segment")) {
+        // Instance segmentation: typed detections + per-instance masks.
+        QElapsedTimer timer;
+        timer.start();
+        aicore_yolo_set_detect_thresholds(m_ctx, job.confThres, job.iouThres,
+                                          job.topK);
+        aicore_yolo_segment_result* seg = aicore_yolo_seg_rgb(
+                m_ctx, rgb, job.rgb.width(), job.rgb.height());
+        result.detect.runtimeMs = static_cast<double>(timer.elapsed());
+        if (!seg) {
+            const char* message = aicore_yolo_last_error(m_ctx);
+            result.error = message ? QString::fromUtf8(message)
+                                   : tr("YOLO segmentation failed.");
+            emit inferComplete(result);
+            return;
+        }
+
+        const int n = aicore_yolo_seg_det_count(seg);
+        result.detect.detections.reserve(n > 0 ? n : 0);
+        result.detect.masks.reserve(n > 0 ? n : 0);
+        for (int i = 0; i < n; ++i) {
+            const aicore_yolo_detection det = aicore_yolo_seg_det_at(seg, i);
+            YOLODetection d;
+            d.classId = det.class_id;
+            d.x1 = det.x1;
+            d.y1 = det.y1;
+            d.x2 = det.x2;
+            d.y2 = det.y2;
+            d.score = det.score;
+            result.detect.detections.append(d);
+
+            const aicore_yolo_plane_view view = aicore_yolo_seg_mask_at(seg, i);
+            if (view.data != nullptr && view.width > 0 && view.height > 0) {
+                YOLOSegMask mask;
+                mask.w = view.width;
+                mask.h = view.height;
+                mask.bits = QByteArray(
+                        static_cast<const char*>(view.data),
+                        static_cast<int>(view.row_stride_bytes) * view.height);
+                result.detect.masks.append(mask);
+            }
+        }
+        for (int i = 0; i < result.detect.detections.size(); ++i) {
+            result.detect.detections[i].className =
+                    QStringLiteral("class %1")
+                            .arg(result.detect.detections[i].classId);
+        }
+        result.detect.totalDetected = n;
+        result.detect.task = QStringLiteral("segment");
+        aicore_yolo_seg_result_free(seg);
+
+        result.detect.modelPath = job.modelPath;
+        result.detect.resolvedDevice = m_resolvedDevice;
+        result.detect.imageName = QStringLiteral("live");
+        result.ok = true;
+        emit inferComplete(result);
+        return;
+    }
+
     // Detect: JSON envelope.
     QElapsedTimer timer;
     timer.start();
+    aicore_yolo_set_detect_thresholds(m_ctx, job.confThres, job.iouThres,
+                                      job.topK);
     char* json = aicore_yolo_detect_rgb_json(m_ctx, rgb, job.rgb.width(),
-                                             job.rgb.height(), job.confThres,
-                                             job.iouThres, job.topK);
+                                             job.rgb.height());
     result.detect.runtimeMs = static_cast<double>(timer.elapsed());
     if (!json) {
         const char* message = aicore_yolo_last_error(m_ctx);
@@ -203,7 +263,7 @@ void YOLOLiveInferWorker::runJobImpl(YOLOLiveInferWorker::Job job) {
     }
 
     const QByteArray payload(json);
-    aicore_yolo_free_string(json);
+    aicore_yolo_free_buffer(json);
     if (!YOLOHelpers::parseDetectionsJson(payload, &result.detect)) {
         result.error = tr("Failed to parse detection output.");
         emit inferComplete(result);

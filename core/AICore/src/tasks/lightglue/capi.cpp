@@ -18,8 +18,9 @@
 
 #include "aicore/backend_capi.h"
 #include "aicore/lightglue_capi.h"
-#include "path_util.hpp"
-#include "types.hpp"
+#include "common/capi_utils.hpp"
+#include "tasks/lightglue/path_util.hpp"
+#include "tasks/lightglue/types.hpp"
 
 namespace {
 
@@ -59,13 +60,9 @@ aicore::lightglue::Features to_native(const aicore_lightglue_features* in) {
     return out;
 }
 
-char* dup_cstr(const std::string& s) {
-    char* out = static_cast<char*>(std::malloc(s.size() + 1));
-    if (out) std::strcpy(out, s.c_str());
-    return out;
-}
-
 }  // namespace
+
+using aicore::capi::dup_cstr;
 
 struct aicore_lightglue_options {
     aicore::lightglue::MatchingOptions o;
@@ -79,7 +76,7 @@ struct aicore_lightglue_ctx {
 
 extern "C" {
 
-AICORE_CAPI int aicore_lightglue_abi_version(void) { return 1; }
+AICORE_CAPI int aicore_lightglue_abi_version(void) { return 2; }
 
 AICORE_CAPI aicore_lightglue_options* aicore_lightglue_options_new(void) {
     return new aicore_lightglue_options();
@@ -136,13 +133,6 @@ static aicore_lightglue_ctx* load_internal(
         ctx->error = err.empty() ? "failed to load LightGlue model" : err;
     }
     return ctx;
-}
-
-AICORE_CAPI aicore_lightglue_ctx* aicore_lightglue_load(const char* gguf_path,
-                                                        int n_threads) {
-    aicore_lightglue_options opts{};
-    opts.o.num_threads = n_threads;
-    return load_internal(gguf_path, &opts);
 }
 
 AICORE_CAPI aicore_lightglue_ctx* aicore_lightglue_load_opts(
@@ -203,7 +193,7 @@ AICORE_CAPI char* aicore_lightglue_info_json(aicore_lightglue_ctx* ctx) {
     return dup_cstr(buf);
 }
 
-AICORE_CAPI void aicore_lightglue_free_string(char* s) { std::free(s); }
+AICORE_CAPI void aicore_lightglue_free_buffer(void* p) { std::free(p); }
 
 AICORE_CAPI int aicore_lightglue_run_match(
         aicore_lightglue_ctx* ctx,
@@ -327,9 +317,9 @@ AICORE_CAPI void aicore_lightglue_free_features(
     features->n_keypoints = 0;
 }
 
-AICORE_CAPI int aicore_lightglue_quantize(const char* input_gguf,
-                                          const char* output_gguf,
-                                          const char* type) {
+AICORE_CAPI int aicore_lightglue_quantize_gguf(const char* input_gguf,
+                                               const char* output_gguf,
+                                               const char* type) {
     if (!input_gguf || !output_gguf || !type) return -1;
     std::string err;
     if (!aicore::lightglue::quantize_model(input_gguf, output_gguf, type,

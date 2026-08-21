@@ -28,7 +28,7 @@ int main(int argc, char** argv) {
     if (std::strcmp(module, "deeplsd") == 0) {
         rc = aicore_deeplsd_quantize(input, output, type);
     } else if (std::strcmp(module, "aliked") == 0) {
-        rc = aicore_aliked_quantize(input, output, type);
+        rc = aicore_aliked_quantize_gguf(input, output, type);
     } else {
         std::fprintf(stderr, "unknown module: %s (want aliked or deeplsd)\n",
                      module);

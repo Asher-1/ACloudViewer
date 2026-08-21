@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "winograd.hpp"
+#include "tasks/facedetect/winograd.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -51,23 +51,14 @@ namespace {
 // host) AND the FACEDETECT_DISABLE_AVX512 test hook is unset (forcing it lets
 // us exercise + parity-check the AVX2 fallback on an AVX-512 box).
 // __builtin_cpu_* reads the CPUID feature bits the C runtime fills in before
-// main; checked once. FACEDETECT_WINO_VERBOSE prints the one-time selection for
-// ship-safety proofs.
+// main; checked once. The historical FACEDETECT_DISABLE_AVX512 /
+// FACEDETECT_WINO_VERBOSE overrides were A/B scaffolding and are removed.
 static bool wino_use_avx512() {
     static const bool use512 = [] {
-        const char* off = std::getenv("FACEDETECT_DISABLE_AVX512");
-        const bool disabled = off && off[0] != '\0' && off[0] != '0';
         const bool supported = __builtin_cpu_supports("avx512f") &&
                                __builtin_cpu_supports("avx512bw") &&
                                __builtin_cpu_supports("avx512vl");
-        const bool sel = supported && !disabled;
-        if (std::getenv("FACEDETECT_WINO_VERBOSE"))
-            std::fprintf(
-                    stderr,
-                    "[winograd] GEMM microkernel: %s (avx512 supported=%d, "
-                    "disabled=%d)\n",
-                    sel ? "AVX-512" : "AVX2", (int)supported, (int)disabled);
-        return sel;
+        return supported;
     }();
     return use512;
 }
@@ -87,16 +78,10 @@ static bool wino_use_avx512() {
 enum class Mode { F2, F2B, F4 };
 
 // `prefer_f4` is the per-conv hint from the caller (set only for SCRFD's large
-// early maps). The FACEDETECT_WINO env, if set, forces ONE mode globally and
-// wins over the hint (A/B harness). With the env unset the hint decides: F4 for
-// the large maps, F2B (parity-exact) everywhere else.
+// early maps): F4 for the large maps, F2B (parity-exact) everywhere else. The
+// historical FACEDETECT_WINO global override (f2|f2b|f4) was an A/B harness
+// and is removed.
 static Mode parse_mode(bool prefer_f4) {
-    const char* m = std::getenv("FACEDETECT_WINO");
-    if (m) {
-        if (!std::strcmp(m, "f2")) return Mode::F2;
-        if (!std::strcmp(m, "f2b")) return Mode::F2B;
-        if (!std::strcmp(m, "f4")) return Mode::F4;
-    }
     return prefer_f4 ? Mode::F4 : Mode::F2B;
 }
 

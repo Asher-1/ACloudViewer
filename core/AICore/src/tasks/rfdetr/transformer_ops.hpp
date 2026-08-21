@@ -1,5 +1,5 @@
-#ifndef RFDETR_TRANSFORMER_OPS_HPP
-#define RFDETR_TRANSFORMER_OPS_HPP
+#pragma once
+
 
 struct ggml_context;
 struct ggml_tensor;
@@ -13,5 +13,3 @@ ggml_tensor* layer_norm(ggml_context* ctx, ggml_tensor* x,
                         ggml_tensor* weight, ggml_tensor* bias);
 
 }  // namespace rfdetr::ops
-
-#endif

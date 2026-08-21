@@ -98,7 +98,7 @@ bool RMBGLiveInferWorker::ensureModel(const Job& job, QString* error) {
     char* info = aicore_rmbg_info_json(m_ctx);
     if (info) {
         RMBGHelpers::parseInfoJson(QByteArray(info), &m_info);
-        aicore_rmbg_free_string(info);
+        aicore_rmbg_free_buffer(info);
     }
     return true;
 }

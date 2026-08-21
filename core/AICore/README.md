@@ -176,7 +176,7 @@ the canonical single patch
 `3rdparty/ggml/patches/export_merged_aliked_patches.sh`.
 
 The current runtime/session ownership map and migration plan are documented in
-[`ARCHITECTURE.md`](ARCHITECTURE.md).
+[`ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 Real model performance runs are manual through
 `.github/workflows/aicore-vulkan-hardware.yml`. Linux runners use the labels

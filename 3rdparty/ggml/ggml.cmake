@@ -102,16 +102,13 @@ if(GGML_USE_CUDA)
         message(STATUS "ggml: CUDA architectures = native (fallback)")
     endif()
     list(APPEND GGML_CMAKE_ARGS -DGGML_CUDA_NCCL=OFF)
-    # Force MMQ (matrix-multiply quantized) kernels instead of cuBLAS so that
-    # libggml-cuda.so's quantized path avoids cuBLAS.  However, the non-quantized
-    # matmul path (F32/F16/BF16) still calls cuBLAS directly, so libcublas.so.*
-    # remains a DT_NEEDED dependency.  Combined with the companion patch to
-    # ggml-cuda/CMakeLists.txt that switches to CUDA::cudart_static, the only
-    # shared CUDA toolkit dependency left is libcublas.so.* (bundled by
-    # AICore_BUNDLE_CUDA_RUNTIME on Windows and now Linux too).
-    list(APPEND GGML_CMAKE_ARGS -DGGML_CUDA_FORCE_MMQ=ON)
+    # FORCE_MMQ is synced from AICore_CUDA_FORCE_MMQ (default OFF = upstream
+    # performance parity; ON = self-contained libggml-cuda.so without cuBLAS
+    # DT_NEEDED for driver-only deployments). The companion patch in
+    # 3rdparty/ggml/patches/cuda_mmq/ is inert when GGML_CUDA_FORCE_MMQ=OFF.
+    list(APPEND GGML_CMAKE_ARGS -DGGML_CUDA_FORCE_MMQ=${GGML_CUDA_FORCE_MMQ})
     set(_GGML_CUDA_ENABLED ON)
-    message(STATUS "ggml: CUDA backend enabled (FORCE_MMQ, static cudart, dynamic cublas)")
+    message(STATUS "ggml: CUDA backend enabled (FORCE_MMQ=${GGML_CUDA_FORCE_MMQ}, static cudart)")
 else()
     list(APPEND GGML_CMAKE_ARGS -DGGML_CUDA=OFF)
 endif()
@@ -355,9 +352,12 @@ if(GGML_USE_VULKAN)
             set(_GGML_VULKAN_SETUP_HINT
                 "Run: util/install_deps_ubuntu.sh assume-yes or util/vulkan/install_vulkan_env.sh")
         endif()
-        message(FATAL_ERROR
+        message(WARNING
             "AICore_USE_VULKAN=ON but Vulkan dependencies are missing: "
-            "${_GGML_VULKAN_MISSING_TEXT}. ${_GGML_VULKAN_SETUP_HINT}")
+            "${_GGML_VULKAN_MISSING_TEXT}. Vulkan backend disabled. "
+            "${_GGML_VULKAN_SETUP_HINT}")
+        list(APPEND GGML_CMAKE_ARGS -DGGML_VULKAN=OFF)
+        set(_GGML_VULKAN_ENABLED OFF)
     endif()
 else()
     list(APPEND GGML_CMAKE_ARGS -DGGML_VULKAN=OFF)

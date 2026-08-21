@@ -5,16 +5,16 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "detect.hpp"
+#include "tasks/facedetect/detect.hpp"
 
 #include <algorithm>
 #include <numeric>
 
-#include "backend.hpp"
-#include "common.hpp"
-#include "model_loader.hpp"
-#include "scrfd_graph.hpp"
-#include "yunet_graph.hpp"
+#include "tasks/facedetect/backend.hpp"
+#include "tasks/facedetect/common.hpp"
+#include "tasks/facedetect/model_loader.hpp"
+#include "tasks/facedetect/scrfd_graph.hpp"
+#include "tasks/facedetect/yunet_graph.hpp"
 
 namespace fd {
 

@@ -1,8 +1,10 @@
-#ifndef RFDETR_PROJECTOR_HPP
-#define RFDETR_PROJECTOR_HPP
+#pragma once
 
-#include "dinov2.hpp"
-#include "model_loader.hpp"
+
+#include "tasks/rfdetr/dinov2.hpp"
+
+#include "tasks/rfdetr/model_loader.hpp"
+
 
 struct ggml_context;
 struct ggml_tensor;
@@ -27,5 +29,3 @@ ggml_tensor* projector_forward(ggml_context* ctx, const Model& m,
                                const BackboneOutput& bb);
 
 }  // namespace rfdetr
-
-#endif

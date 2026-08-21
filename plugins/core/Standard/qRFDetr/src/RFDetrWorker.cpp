@@ -158,11 +158,11 @@ bool RFDetrWorker::runInference() {
                                         ? QString::fromUtf8(resolvedDevice)
                                         : m_settings.device;
         if (!RFDetrHelpers::parseDetectionsJson(QByteArray(json), &result)) {
-            aicore_rfdetr_free_string(json);
+            aicore_rfdetr_free_buffer(json);
             emit logMessage(tr("[RF-DETR] Failed to parse detection JSON."));
             return false;
         }
-        aicore_rfdetr_free_string(json);
+        aicore_rfdetr_free_buffer(json);
 
         // Fetch per-detection masks for segmentation models (raw bytes — no
         // PNG encode/decode round-trip; sizing also returns the dimensions).

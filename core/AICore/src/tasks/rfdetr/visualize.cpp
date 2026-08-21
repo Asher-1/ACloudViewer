@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "visualize.hpp"
+#include "tasks/rfdetr/visualize.hpp"
 
 #include <algorithm>
 #include <cmath>

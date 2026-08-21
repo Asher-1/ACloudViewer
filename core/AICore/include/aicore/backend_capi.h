@@ -78,6 +78,7 @@ typedef struct {
    (see aicore_backend_abi_version) and runtime checkers must stay in sync
    (tests/depth/test_depth_capi_contract.cpp, util/check_aicore_runtime.py). */
 #define AICORE_BACKEND_ABI_VERSION 2
+/** Returns AICORE_BACKEND_ABI_VERSION (see the macro doc above). */
 AICORE_CAPI int aicore_backend_abi_version(void);
 
 /* Number of entries returned by aicore_device_at. Only devices successfully

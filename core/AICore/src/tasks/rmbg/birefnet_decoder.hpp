@@ -2,7 +2,8 @@
 #include <string>
 #include <vector>
 
-#include "swin_backbone.hpp"
+#include "tasks/rmbg/swin_backbone.hpp"
+
 
 namespace rmbg {
 

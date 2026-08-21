@@ -5,14 +5,14 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "dinov2.hpp"
+#include "tasks/rfdetr/dinov2.hpp"
 
 #include <cmath>
 #include <string>
 
-#include "common.hpp"
 #include "ggml.h"
-#include "trace.hpp"
+#include "tasks/rfdetr/common.hpp"
+#include "tasks/rfdetr/trace.hpp"
 
 namespace rfdetr {
 

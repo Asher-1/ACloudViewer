@@ -162,6 +162,14 @@ void RFDetrDialog::setupUi() {
     m_dbImageList->setIconSize(QSize(48, 48));
     m_dbImageList->setMaximumHeight(140);
     dbLayout->addWidget(m_dbImageList);
+    auto* dbBtnRow = new QHBoxLayout;
+    auto* refreshDbBtn = new QPushButton(tr("Refresh"), m_dbContentWidget);
+    refreshDbBtn->setToolTip(tr("Reload the ccImage list from the DB tree"));
+    connect(refreshDbBtn, &QPushButton::clicked, this,
+            [this]() { emit refreshDbImagesRequested(); });
+    dbBtnRow->addWidget(refreshDbBtn);
+    dbBtnRow->addStretch();
+    dbLayout->addLayout(dbBtnRow);
     m_dbContentWidget->setVisible(false);
     imageLayout->addWidget(m_dbContentWidget);
     connect(m_dbToggleBtn, &QToolButton::toggled, this, [this](bool on) {

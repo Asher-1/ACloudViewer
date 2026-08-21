@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "yolo_gguf_loader.hpp"
+#include "tasks/yolo/yolo_gguf_loader.hpp"
 
 #include <cstring>
 
@@ -44,6 +44,7 @@ static void parse_meta(const gguf_context* g, ModelMeta& meta) {
     meta.task = str_or(g, "yolo.task", "detect");
     meta.dtype = str_or(g, "yolo.dtype", "?");
     meta.nc = (int)key_or(g, "yolo.nc", 80);
+    meta.nm = (int)key_or(g, "yolo.nm", 0);
     meta.nl = (int)key_or(g, "yolo.nl", 3);
     meta.imgsz = (int)key_or(g, "yolo.imgsz", 640);
 
@@ -91,6 +92,7 @@ std::unique_ptr<ModelDef> load_gguf(const std::string& path) {
     }
 
     auto model = std::make_unique<ModelDef>();
+    model->gguf_path = path;
 
     // ---- metadata ----
     parse_meta(g, model->meta);
@@ -176,7 +178,7 @@ std::unique_ptr<ModelDef> load_gguf(const std::string& path) {
                     break;
             }
         }
-        if (op.type == "detect") {
+        if (op.type == "detect" || op.type == "segment") {
             model->has_detect = true;
             model->detect_op_index = (int)i;
             model->meta.reg_max =
@@ -187,7 +189,7 @@ std::unique_ptr<ModelDef> load_gguf(const std::string& path) {
                     (int)key_or(g, (prefix + ".max_det").c_str(), 300);
         }
     }
-    if ((model->meta.task == "detect" && !model->has_detect) ||
+    if ((model->meta.task != "depth" && !model->has_detect) ||
         (model->meta.task == "depth" && model->ops.back().type != "depth")) {
         YOLO_LOG_ERROR("op graph does not contain the declared %s output",
                        model->meta.task.c_str());
@@ -195,8 +197,15 @@ std::unique_ptr<ModelDef> load_gguf(const std::string& path) {
         ggml_free(weight_ctx);
         return nullptr;
     }
-    if (model->meta.task != "detect" && model->meta.task != "depth") {
+    if (model->meta.task != "detect" && model->meta.task != "depth" &&
+        model->meta.task != "segment") {
         YOLO_LOG_ERROR("unsupported task: %s", model->meta.task.c_str());
+        gguf_free(g);
+        ggml_free(weight_ctx);
+        return nullptr;
+    }
+    if (model->meta.task == "segment" && model->meta.nm <= 0) {
+        YOLO_LOG_ERROR("segment model without yolo.nm prototypes");
         gguf_free(g);
         ggml_free(weight_ctx);
         return nullptr;
@@ -211,6 +220,7 @@ std::unique_ptr<ModelDef> load_gguf(const std::string& path) {
 
     // ---- tensors: reference the mapped ggml context data ----
     const int64_t n_tensors = gguf_get_n_tensors(g);
+    const size_t data_offset = gguf_get_data_offset(g);
     for (int64_t t = 0; t < n_tensors; t++) {
         const char* name = gguf_get_tensor_name(g, t);
         ggml_tensor* cur = ggml_get_tensor(weight_ctx, name);
@@ -223,16 +233,21 @@ std::unique_ptr<ModelDef> load_gguf(const std::string& path) {
         HostTensor ht;
         ht.name = name;
         ht.type = cur->type;
+        ht.file_type = cur->type;
         for (int d = 0; d < 4; d++) ht.ne[d] = cur->ne[d];
         ht.data.resize(ggml_nbytes(cur));
         memcpy(ht.data.data(), cur->data, ggml_nbytes(cur));
+        // Absolute file offset for the on-demand reload path
+        // (session_ensure_host_weights after a release).
+        ht.file_offset = data_offset + gguf_get_tensor_offset(g, t);
         model->tensors[name] = std::move(ht);
     }
 
     YOLO_LOG_INFO(
-            "loaded %s: %lld ops, %lld tensors, dtype=%s, nc=%d, end2end=%d",
+            "loaded %s: %lld ops, %lld tensors, dtype=%s, nc=%d, nm=%d, "
+            "end2end=%d",
             path.c_str(), (long long)n_ops, (long long)n_tensors,
-            model->meta.dtype.c_str(), model->meta.nc,
+            model->meta.dtype.c_str(), model->meta.nc, model->meta.nm,
             (int)model->meta.end2end);
 
     gguf_free(g);

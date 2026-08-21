@@ -115,21 +115,36 @@ TEST(YOLOHelpers, FilenameIsDepthDepth) {
 }
 
 TEST(YOLOHelpers, CatalogMirror) {
-    // 33 models = 11 variants (10 detection + 1 depth) x 3 quants
-    // (f32, f16, q8_0), mirroring the AICore catalog.
+    // 63 models = 21 variants (10 detection + 10 segmentation + 1 depth)
+    // x 3 quants (f32, f16, q8_0), mirroring the AICore catalog.
     const QVector<YOLOModelEntry> all = YOLOHelpers::catalogModels();
-    ASSERT_EQ(all.size(), 33);
+    ASSERT_EQ(all.size(), 63);
+    // Each task tab filters on the GGUF task: pure detect / segment / depth.
     EXPECT_EQ(YOLOHelpers::detectionModels().size(), 30);
+    EXPECT_EQ(YOLOHelpers::segmentModels().size(), 30);
     EXPECT_EQ(YOLOHelpers::depthModels().size(), 3);
+    EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("detect")).size(), 30);
+    EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("segment")).size(), 30);
+    EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("depth")).size(), 3);
     EXPECT_TRUE(all.size() == YOLOHelpers::detectionModels().size() +
+                                      YOLOHelpers::segmentModels().size() +
                                       YOLOHelpers::depthModels().size());
     for (const YOLOModelEntry& e : YOLOHelpers::depthModels()) {
         EXPECT_TRUE(e.depthCapable);
+        EXPECT_EQ(e.task, QStringLiteral("depth"));
+    }
+    for (const YOLOModelEntry& e : YOLOHelpers::detectionModels()) {
+        EXPECT_EQ(e.task, QStringLiteral("detect"));
+    }
+    for (const YOLOModelEntry& e : YOLOHelpers::segmentModels()) {
+        EXPECT_EQ(e.task, QStringLiteral("segment"));
+        EXPECT_FALSE(e.depthCapable);
     }
 
     bool foundV8Nano = false;
     bool found26Nano = false;
     bool foundDepth = false;
+    bool foundSeg = false;
     for (const YOLOModelEntry& e : all) {
         EXPECT_FALSE(e.filename.isEmpty());
         EXPECT_TRUE(e.downloadUrl.startsWith(QStringLiteral("https://")));
@@ -139,26 +154,36 @@ TEST(YOLOHelpers, CatalogMirror) {
             foundV8Nano = true;
             EXPECT_FALSE(e.end2end);  // YOLOv8: classic NMS head
             EXPECT_FALSE(e.depthCapable);
+            EXPECT_EQ(e.task, QStringLiteral("detect"));
         }
         if (e.filename == QStringLiteral("yolo26n-f16.gguf")) {
             found26Nano = true;
             EXPECT_TRUE(e.end2end);  // YOLO26: end-to-end head
             EXPECT_FALSE(e.depthCapable);
+            EXPECT_EQ(e.task, QStringLiteral("detect"));
         }
         if (e.filename == QStringLiteral("yolo26n-depth-f16.gguf")) {
             foundDepth = true;
             EXPECT_TRUE(e.end2end);
             EXPECT_TRUE(e.depthCapable);
+            EXPECT_EQ(e.task, QStringLiteral("depth"));
+        }
+        if (e.filename == QStringLiteral("yolov8n-seg-f16.gguf")) {
+            foundSeg = true;
+            EXPECT_EQ(e.task, QStringLiteral("segment"));
+            EXPECT_FALSE(e.depthCapable);
         }
     }
     EXPECT_TRUE(foundV8Nano);
     EXPECT_TRUE(found26Nano);
     EXPECT_TRUE(foundDepth);
+    EXPECT_TRUE(foundSeg);
 
     YOLOModelEntry entry;
     EXPECT_TRUE(YOLOHelpers::findModelByFilename(
             QStringLiteral("yolov8n-f16.gguf"), &entry));
     EXPECT_TRUE(entry.displayName.contains(QStringLiteral("YOLOv8 Nano")));
+    EXPECT_EQ(entry.task, QStringLiteral("detect"));
     EXPECT_FALSE(YOLOHelpers::findModelByFilename(
             QStringLiteral("does-not-exist.gguf"), nullptr));
 }
@@ -228,6 +253,54 @@ TEST(YOLOHelpers, DrawDetectionsSmoke) {
 
     // Null image is a no-op.
     YOLOHelpers::drawDetections(nullptr, dets);
+}
+
+TEST(YOLOHelpers, DrawSegmentationTintAndClipping) {
+    QImage img(120, 90, QImage::Format_RGB888);
+    img.fill(Qt::black);
+
+    // One detection with a full-canvas mask (2x2, every pixel foreground)
+    // scaled to the 120x90 image, plus a second with an empty mask.
+    YOLODetection d;
+    d.classId = 0;
+    d.className = QStringLiteral("person");
+    d.score = 0.9f;
+    d.x1 = 0;
+    d.y1 = 0;
+    d.x2 = 119;
+    d.y2 = 89;
+
+    YOLOSegMask full;
+    full.w = 2;
+    full.h = 2;
+    full.bits = QByteArray("\x01\x01\x01\x01", 4);
+    YOLOSegMask empty;
+    empty.w = 2;
+    empty.h = 2;
+    empty.bits = QByteArray("\x00\x00\x00\x00", 4);
+
+    QVector<YOLOSegMask> masks{full, empty};
+    QVector<YOLODetection> dets{d, d};
+    YOLOHelpers::drawSegmentation(&img, masks, dets);
+    EXPECT_EQ(img.format(), QImage::Format_ARGB32);  // converted in place
+
+    // Foreground mask pixels are tinted away from pure black.
+    const QRgb fg = img.pixel(10, 10);
+    EXPECT_TRUE(qRed(fg) != 0 || qGreen(fg) != 0 || qBlue(fg) != 0);
+
+    // Undersized mask data is skipped (no crash, image untouched there).
+    YOLOSegMask bad;
+    bad.w = 100;
+    bad.h = 100;
+    bad.bits = QByteArray("\x01", 1);  // 1 byte < 100*100
+    QVector<YOLOSegMask> badMasks{bad};
+    YOLOHelpers::drawSegmentation(&img, badMasks, dets);
+
+    // Null image / empty masks are no-ops.
+    YOLOHelpers::drawSegmentation(nullptr, masks, dets);
+    QImage untouched(4, 4, QImage::Format_RGB888);
+    untouched.fill(Qt::black);
+    YOLOHelpers::drawSegmentation(&untouched, {}, {});
 }
 
 TEST(YOLOHelpers, DepthColorImageTurboRamp) {

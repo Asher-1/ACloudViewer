@@ -93,6 +93,11 @@ endif()
 
 include(CMakeDependentOption)
 
+# Always emit compile_commands.json so clangd (and other C++ language
+# servers) work out of the box without needing
+# -DCMAKE_EXPORT_COMPILE_COMMANDS=ON.  This is pure metadata output — it
+# has no effect on compilation, linking or CI.
+option(CMAKE_EXPORT_COMPILE_COMMANDS "Generate compile_commands.json for clangd / language servers" OFF)
 # ACloudViewer build options
 option(BUILD_SHARED_LIBS "Build shared libraries"                               OFF)
 option(BUILD_EXAMPLES "Build CloudViewer example programs"                      ON )
@@ -1058,3 +1063,30 @@ endif()
 # call cmake script to deploy
 install(SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/cmake/PostInstall.cmake")
 install(CODE "MESSAGE(\"${MAIN_APP_NAME}\.${CLOUDVIEWER_VERSION} install successfully.\")")
+
+# Make compile_commands.json discoverable at the repo root so clangd (and
+# other C++ language servers) work out of the box on every platform, even
+# when the build dir name differs (build_app on Linux/Windows, build on
+# macOS). On Windows the .clangd CompilationDatabase: build_app covers the
+# common layout directly; on Linux/macOS a repo-root symlink bridges the
+# dir-name gap. The symlink is re-created on each configure so it always
+# points at the current build tree.
+if(CMAKE_EXPORT_COMPILE_COMMANDS AND NOT WIN32)
+    set(_cc_link "${CMAKE_CURRENT_SOURCE_DIR}/compile_commands.json")
+    if(IS_SYMLINK "${_cc_link}")
+        file(REMOVE "${_cc_link}")
+    endif()
+    if(NOT EXISTS "${_cc_link}")
+        execute_process(
+            COMMAND "${CMAKE_COMMAND}" -E create_symlink
+                    "${CMAKE_CURRENT_BINARY_DIR}/compile_commands.json"
+                    "${_cc_link}"
+            RESULT_VARIABLE _cc_link_result)
+        if(NOT _cc_link_result EQUAL 0)
+            message(WARNING
+                "Could not symlink compile_commands.json to the repo root; "
+                "point your C++ language server at "
+                "${CMAKE_CURRENT_BINARY_DIR} manually.")
+        endif()
+    endif()
+endif()

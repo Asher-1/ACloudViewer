@@ -14,7 +14,7 @@ ACloudViewer provides five AI plugins through the unified inference library **`l
 
 - `-DAICore_ENABLED=ON` (build `core/AICore` → `libAICore.so`)
 - GUI: `-DBUILD_GUI=ON`
-- **qFaceDetect:** system libjpeg (e.g. `libjpeg-dev` on Ubuntu)
+- **qFaceDetect:** image decode via Qt built-in codecs (no system libjpeg needed)
 - **qDA3 + automatic reconstruction:** `-DBUILD_RECONSTRUCTION=ON`
 - **FreeSplatter one-click Visualize:** `-DPLUGIN_STANDARD_QSIBR=ON` (Linux/Windows; macOS CI disables qSIBR by default)
 - **FreeSplatter Face Capture tab:** `-DBUILD_OPENCV=ON` (webcam + Haar or GGML face detector via AICore; GGUF packs from [qFaceDetect release](https://github.com/Asher-1/cloudViewer_downloads/releases/tag/qFaceDetect))

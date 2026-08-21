@@ -5,8 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "birefnet_decoder.hpp"
-#include "nn_ops.hpp"
+#include "tasks/rmbg/birefnet_decoder.hpp"
+#include "tasks/rmbg/nn_ops.hpp"
 
 namespace rmbg {
 

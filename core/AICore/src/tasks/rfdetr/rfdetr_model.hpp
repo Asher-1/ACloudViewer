@@ -1,8 +1,10 @@
-#ifndef RFDETR_MODEL_HPP
-#define RFDETR_MODEL_HPP
+#pragma once
 
-#include "model_loader.hpp"
-#include "backend.hpp"
+
+#include "tasks/rfdetr/model_loader.hpp"
+
+#include "tasks/rfdetr/backend.hpp"
+
 
 #include <cstdint>
 #include <vector>
@@ -60,5 +62,3 @@ ForwardOutput rfdetr_model_forward(const Model& m,
                                    ggml_backend_t backend);
 
 }  // namespace rfdetr
-
-#endif

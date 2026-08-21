@@ -1,7 +1,8 @@
-#ifndef RFDETR_TWO_STAGE_HPP
-#define RFDETR_TWO_STAGE_HPP
+#pragma once
 
-#include "model_loader.hpp"
+
+#include "tasks/rfdetr/model_loader.hpp"
+
 
 struct ggml_context;
 struct ggml_tensor;
@@ -57,5 +58,3 @@ TwoStageOutput two_stage_forward(ggml_context* ctx, const Model& m,
 void compute_proposal_grid(int width, int height, float wh_value, float* out);
 
 }  // namespace rfdetr
-
-#endif

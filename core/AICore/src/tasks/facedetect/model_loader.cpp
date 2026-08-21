@@ -5,19 +5,19 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "model_loader.hpp"
+#include "tasks/facedetect/model_loader.hpp"
 
 #include <cstring>
 #include <utility>
 #include <vector>
 
-#include "backend.hpp"
-#include "common.hpp"
+#include "common/ggml_backend_utils.hpp"
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
 #include "ggml.h"
-#include "ggml_backend_utils.hpp"
 #include "gguf.h"
+#include "tasks/facedetect/backend.hpp"
+#include "tasks/facedetect/common.hpp"
 namespace fd {
 
 // --- KV helpers (tolerant: return the default when a key is absent) ----------

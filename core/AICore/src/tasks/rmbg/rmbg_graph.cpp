@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "rmbg_graph.hpp"
+#include "tasks/rmbg/rmbg_graph.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -54,6 +54,7 @@ struct GraphBuilder {
     ggml_context *stat = nullptr;
     ggml_context *ctx = nullptr;
     ggml_backend_t backend = nullptr;
+    const GraphOptions &opts;  // explicit per-session switches (no env vars)
     bool use_cuda_custom = false;
     bool use_backend_custom = false;
     bool use_vulkan_custom = false;
@@ -70,47 +71,34 @@ struct GraphBuilder {
     GraphBuilder(ggml_context *stat_,
                  ggml_context *ctx_,
                  ggml_backend_t backend_,
-                 const WeightMap &weights_)
-        : stat(stat_), ctx(ctx_), backend(backend_), weights(weights_) {
+                 const WeightMap &weights_,
+                 const GraphOptions &options_)
+        : stat(stat_),
+          ctx(ctx_),
+          backend(backend_),
+          weights(weights_),
+          opts(options_) {
         const char *name = ggml_backend_name(backend);
         use_cuda_custom = name && std::strstr(name, "CUDA");
         use_backend_custom = name && (std::strstr(name, "CUDA") ||
                                       std::strstr(name, "Vulkan"));
         use_vulkan_custom = name && std::strstr(name, "Vulkan");
-        const char *direct_conv = std::getenv("RMBG_VK_DIRECT_CONV");
-        use_vulkan_direct_conv = use_vulkan_custom && direct_conv &&
-                                 direct_conv[0] &&
-                                 std::strcmp(direct_conv, "0") != 0;
+        use_vulkan_direct_conv = use_vulkan_custom && opts.vulkan_direct_conv;
         is_cpu_backend = name && std::strstr(name, "CPU");
         // F16-in/FP32-accumulate GEMMs for the Swin MLP linear layers.  The
         // 10-bit FP16 mantissa matches TF32 precision while GeForce tensor
-        // cores run FP16 at twice the TF32 rate.  Strict mode (RMBG_STRICT_MATH
-        // or NVIDIA_TF32_OVERRIDE=0) keeps pure FP32; RMBG_CUDA_F16_GEMM=0
-        // opts out of the fast path.
-        const char *strict = std::getenv("RMBG_STRICT_MATH");
-        const char *tf32 = std::getenv("NVIDIA_TF32_OVERRIDE");
-        const bool strict_math =
-                (strict && strict[0] && std::strcmp(strict, "0") != 0) ||
-                (tf32 && tf32[0] == '0');
-        const char *f16env = std::getenv("RMBG_CUDA_F16_GEMM");
-        // F16 activations measured max|d| = 3.5e-3 (all stages) and 3.46e-3
-        // (stages >= 2 only) — both above the 2e-3 parity gate because Swin-L
-        // MLP hidden activations carry outliers that F16 rounding amplifies
-        // across 18 stacked stage-2 blocks.  Disabled by default; opt in with
-        // RMBG_CUDA_F16_GEMM=1 for experimentation on tolerance-friendly uses.
-        const bool f16_enabled = f16env && f16env[0] && f16env[0] != '0';
-        use_f16_gemm = use_cuda_custom && !strict_math && f16_enabled;
-        const char *min_stage_env = std::getenv("RMBG_CUDA_F16_MIN_STAGE");
-        f16_min_stage =
-                min_stage_env ? std::max(0, std::atoi(min_stage_env)) : 2;
+        // cores run FP16 at twice the TF32 rate.  Strict mode keeps pure
+        // FP32; the f16 GEMM path is an explicit opt-in (see GraphOptions,
+        // which replaced the RMBG_* environment variables).
+        use_f16_gemm =
+                use_cuda_custom && !opts.strict_math && opts.cuda_f16_gemm;
+        f16_min_stage = std::max(0, opts.cuda_f16_min_stage);
         // Pre-transposed NN weights for the Swin QKV/projection GEMMs.
         // Measured on RTX 3060: fast (TF32) mode is bit-identical either way,
         // and strict (FP32) gains only ~6 ms (643 -> 637 ms) because the TN
         // 128x64 kernel already saturates the K-width weight-load path.  With
         // ~1/3 extra Swin weight memory it stays opt-in.
-        const char *nn_env = std::getenv("RMBG_CUDA_NN_GEMM");
-        use_nn_gemm =
-                use_cuda_custom && nn_env && nn_env[0] && nn_env[0] != '0';
+        use_nn_gemm = use_cuda_custom && opts.cuda_nn_gemm;
     }
 
     ggml_tensor *weight(const std::string &name) {
@@ -563,12 +551,8 @@ struct GraphBuilder {
         // fused shader still accepts one so its writeback is uniform; a static
         // zero vector preserves the bias-free operator exactly.
         if (!regular_bias && regular) regular_bias = zeros(regular->ne[3]);
-        const char *deform_project_env = std::getenv("RMBG_VK_DEFORM_PROJECT");
-        const bool deform_project_enabled =
-                deform_project_env && std::strcmp(deform_project_env, "0") != 0;
-        const bool deform_project_coop =
-                deform_project_env &&
-                std::strcmp(deform_project_env, "coop") == 0;
+        const bool deform_project_enabled = opts.vulkan_deform_project;
+        const bool deform_project_coop = opts.vulkan_deform_project_coop;
         // F16 exists only as a static CM multiplicand copy; F32 fallback
         // continues to use the source tensor without a conversion node.
         ggml_tensor *fused_regular =
@@ -963,9 +947,7 @@ struct GraphBuilder {
             ggml_set_name(q, "rmbg_swin_qkv_layout_k0");
             ggml_set_name(k, "rmbg_swin_qkv_layout_k1");
             ggml_set_name(v, "rmbg_swin_qkv_layout_k2");
-            const char *qkv_layout_env = std::getenv("RMBG_VK_QKV_LAYOUT");
-            const bool qkv_layout_enabled =
-                    !qkv_layout_env || std::strcmp(qkv_layout_env, "0") != 0;
+            const bool qkv_layout_enabled = opts.vulkan_qkv_layout;
             const bool can_fuse_qkv_layout =
                     qkv_layout_enabled && use_backend_custom &&
                     ggml_backend_supports_op(backend, q) &&
@@ -993,26 +975,19 @@ struct GraphBuilder {
             // Cooperative matrices need F16 K/V on current Vulkan devices, so
             // they are an explicit opt-in until the endpoint parity gate says
             // their input rounding is acceptable for a given model.
-            const bool disable_vk_f16 =
-                    std::getenv("GGML_VK_DISABLE_F16") != nullptr;
-            const char *flash_env = std::getenv("RMBG_VK_FLASH_ATTN");
-            const bool flash_disabled =
-                    flash_env && std::strcmp(flash_env, "0") == 0;
+            const bool disable_vk_f16 = opts.vk_f16_disabled;
+            const bool flash_disabled = !opts.vulkan_flash_attn;
             // `coop`, or `coop0` ... `coop3`, enables the F16 cooperative
             // kernel for all or one Swin stage.  The staged spelling makes it
             // possible to allocate a model's endpoint-error budget from data,
             // rather than assuming every attention block is equally tolerant.
-            const bool coop_requested =
-                    flash_env && std::strncmp(flash_env, "coop", 4) == 0;
-            const int coop_stage = coop_requested && flash_env[4] != '\0'
-                                           ? std::atoi(flash_env + 4)
-                                           : -1;
+            const bool coop_requested = opts.vulkan_flash_coop;
+            const int coop_stage = opts.vulkan_flash_coop_stage;
             const bool flash_coop =
                     coop_requested && (coop_stage < 0 || coop_stage == stage);
             // F32 scalar Flash is the Vulkan default: it measured ~35 ms
             // faster than the batched QK/softmax/AV path and stays valid in
-            // strict mode.  RMBG_VK_FLASH_ATTN=0 restores the materialized
-            // score tensor.  Only the cooperative variant needs device F16.
+            // strict mode.  Only the cooperative variant needs device F16.
             const bool use_flash = use_vulkan_custom && !flash_disabled &&
                                    (!disable_vk_f16 || !flash_coop);
             ggml_tensor *swin_mask = nullptr;
@@ -1272,6 +1247,7 @@ RmbgDeviceGraph::~RmbgDeviceGraph() = default;
 bool RmbgDeviceGraph::init(ggml_backend_t backend,
                            const WeightMap &weights,
                            int input_size,
+                           const GraphOptions &options,
                            std::string &err) {
     impl_.reset(new Impl);
     if (!backend) {
@@ -1297,7 +1273,8 @@ bool RmbgDeviceGraph::init(ggml_backend_t backend,
         return false;
     }
 
-    GraphBuilder b(impl_->ctx_static, impl_->ctx_compute, backend, weights);
+    GraphBuilder b(impl_->ctx_static, impl_->ctx_compute, backend, weights,
+                   options);
     impl_->input = ggml_new_tensor_4d(impl_->ctx_compute, GGML_TYPE_F32,
                                       input_size, input_size, 3, 1);
     ggml_set_name(impl_->input, "rmbg_input");

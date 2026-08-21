@@ -1,8 +1,10 @@
-#ifndef RFDETR_VISUALIZE_HPP
-#define RFDETR_VISUALIZE_HPP
+#pragma once
 
-#include "rfdetr.h"
-#include "image_io.hpp"
+
+#include "tasks/rfdetr/rfdetr.h"
+
+#include "tasks/rfdetr/image_io.hpp"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,6 +35,4 @@ void rfdetr_visualize_overlay_mask(rfdetr_image* img, rfdetr_detection det, floa
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

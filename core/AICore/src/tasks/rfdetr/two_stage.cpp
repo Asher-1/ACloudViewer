@@ -5,14 +5,14 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "two_stage.hpp"
+#include "tasks/rfdetr/two_stage.hpp"
 
 #include <string>
 
-#include "common.hpp"
 #include "ggml.h"
-#include "trace.hpp"
-#include "transformer_ops.hpp"
+#include "tasks/rfdetr/common.hpp"
+#include "tasks/rfdetr/trace.hpp"
+#include "tasks/rfdetr/transformer_ops.hpp"
 
 namespace rfdetr {
 

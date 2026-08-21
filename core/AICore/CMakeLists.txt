@@ -149,6 +149,7 @@ target_include_directories(${PROJECT_NAME}
         $<BUILD_INTERFACE:${AICORE_INC_DIR}>
         $<INSTALL_INTERFACE:include/AICore>
     PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${AICORE_COMMON_SRC_DIR}
         ${AICORE_TASKS_SRC_DIR}
         ${AICORE_DEPTH_SRC_DIR}
@@ -425,6 +426,7 @@ if(AICore_BUILD_TESTS)
         )
         target_include_directories(AICore_test PUBLIC
             $<BUILD_INTERFACE:${AICORE_INC_DIR}>
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
             $<BUILD_INTERFACE:${AICORE_COMMON_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_TASKS_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_DEPTH_SRC_DIR}>

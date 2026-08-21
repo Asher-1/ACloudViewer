@@ -1,7 +1,8 @@
-#ifndef RFDETR_HEADS_HPP
-#define RFDETR_HEADS_HPP
+#pragma once
 
-#include "model_loader.hpp"
+
+#include "tasks/rfdetr/model_loader.hpp"
+
 
 struct ggml_context;
 struct ggml_tensor;
@@ -35,5 +36,3 @@ ggml_tensor* bbox_head_forward(ggml_context* ctx, const Model& m,
                                ggml_tensor* decoder_out);
 
 }  // namespace rfdetr
-
-#endif

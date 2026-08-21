@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
-#include "image_io.hpp"
+#include "tasks/facedetect/image_io.hpp"
+
 
 struct ggml_context;
 struct ggml_tensor;

@@ -195,12 +195,17 @@ Header: `core/AICore/include/aicore/depth_capi.h`
 ```c
 #include "aicore/depth_capi.h"
 
-aicore_depth_ctx* ctx = aicore_depth_load("model.gguf", 8);
-int h, w, is_metric;
-float *depth, *conf, ext[12], intr[9];
-aicore_depth_depth_dense(ctx, "photo.jpg", &h, &w, &depth, &conf, NULL,
-                         ext, intr, &is_metric);
-aicore_depth_free_floats(depth);
+aicore_depth_options* opts = aicore_depth_options_new();
+aicore_depth_options_set_threads(opts, 8);
+aicore_depth_options_set_device(opts, "auto");
+aicore_depth_ctx* ctx = aicore_depth_load_opts("model.gguf", opts);
+aicore_depth_options_free(opts);
+int rc;
+aicore_depth_dense_result dense{};
+rc = aicore_depth_depth_dense(ctx, "photo.jpg", &dense);
+/* dense.depth [H*W], dense.conf, dense.ext[12], dense.intr[9],
+   dense.is_metric (see aicore_depth_dense_result) */
+aicore_depth_dense_result_free(&dense);
 aicore_depth_free(ctx);
 ```
 

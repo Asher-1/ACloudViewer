@@ -35,12 +35,22 @@ struct YOLODepthStats {
     long long validPixels = 0;
 };
 
+/** Binary instance mask of one segmented detection (canvas coordinates,
+ *  one byte per pixel: 0 = background, 1 = foreground). */
+struct YOLOSegMask {
+    QByteArray bits;  // w * h bytes
+    int w = 0;
+    int h = 0;
+};
+
 /** Result envelope of one YOLO detect inference. */
 struct YOLORunResult {
     QString imagePath;
     QString imageName;
     QImage annotatedImage;
     QVector<YOLODetection> detections;
+    QVector<YOLOSegMask> masks;  // valid when the model task is "segment"
+    QString task;                // "detect" | "segment" of the model
     double runtimeMs = 0.0;
     int totalDetected = 0;
     QString modelVariant;
@@ -79,6 +89,10 @@ struct YOLOModelEntry {
     QString displayName;
     QString quantNote;
     QString licenseNote;
+    // GGUF task: "detect" | "segment" | "depth". The model combo of each
+    // task tab is filtered on this field, so a detect tab never offers a
+    // segment model (and vice versa).
+    QString task;
     bool depthCapable = false;
     bool end2end = false;
 };
@@ -87,10 +101,14 @@ namespace YOLOHelpers {
 
 /** Enumerate the published catalog from AICore. */
 QVector<YOLOModelEntry> catalogModels();
-/** All detection-capable catalog entries (depth_capable == false). */
+/** All pure object-detection catalog entries (task == "detect"). */
 QVector<YOLOModelEntry> detectionModels();
-/** All depth-capable catalog entries. */
+/** All instance-segmentation catalog entries (task == "segment"). */
+QVector<YOLOModelEntry> segmentModels();
+/** All metric-depth catalog entries (task == "depth"). */
 QVector<YOLOModelEntry> depthModels();
+/** Filter the full catalog on a task string ("detect"|"segment"|"depth"). */
+QVector<YOLOModelEntry> taskModels(const QString& task);
 /** Lookup by GGUF filename; returns false when unknown. */
 bool findModelByFilename(const QString& filename, YOLOModelEntry* out);
 
@@ -117,6 +135,14 @@ bool parseDepthStatsJson(const QByteArray& json, YOLODepthStats* out);
 void drawDetections(QImage* image,
                     const QVector<YOLODetection>& detections,
                     int thickness = 3);
+
+/** Draw instance masks as a translucent per-class tint over the image,
+ *  then the detection boxes/labels on top. masks and detections are
+ *  index-aligned (mask i belongs to detection i). */
+void drawSegmentation(QImage* image,
+                      const QVector<YOLOSegMask>& masks,
+                      const QVector<YOLODetection>& detections,
+                      int thickness = 2);
 
 /** Turbo-style colorization of a metric depth map (near = blue, far = red;
  *  same mapping as drawDepthLegend). When minDepth >= maxDepth the valid

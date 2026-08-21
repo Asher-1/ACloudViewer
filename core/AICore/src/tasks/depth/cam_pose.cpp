@@ -5,12 +5,12 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "cam_pose.hpp"
+#include "tasks/depth/cam_pose.hpp"
 
 #include <algorithm>
 #include <cmath>
 
-#include "ggml_extend.hpp"
+#include "common/ggml_extend.hpp"
 
 namespace aicore {
 namespace depth {

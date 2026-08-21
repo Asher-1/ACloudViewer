@@ -5,9 +5,31 @@
 #include <vector>
 
 #include "ggml-backend.h"
-#include "swin_backbone.hpp"
+#include "tasks/rmbg/swin_backbone.hpp"
+
 
 namespace rmbg {
+
+// Explicit per-session graph options. Every field replaces one of the
+// RMBG_* / GGML_VK_* environment variables the upstream port read at graph
+// build time; defaults reproduce the historical "optimized" profile
+// bit-for-bit (see aicore_rmbg_options in rmbg_capi.h for the C ABI).
+struct GraphOptions {
+    // Vulkan data flow.
+    bool vulkan_direct_conv = true;   // was RMBG_VK_DIRECT_CONV=1 (optimized)
+    bool vulkan_qkv_layout = true;    // was RMBG_VK_QKV_LAYOUT (default on)
+    bool vulkan_flash_attn = true;    // was RMBG_VK_FLASH_ATTN (F32 scalar)
+    bool vulkan_flash_coop = false;   // was RMBG_VK_FLASH_ATTN=coop[N] opt-in
+    int vulkan_flash_coop_stage = -1; // -1 = all stages; 0..3 = one stage
+    bool vulkan_deform_project = false;  // was RMBG_VK_DEFORM_PROJECT (off)
+    bool vulkan_deform_project_coop = false;  // "coop" spelling
+    bool vk_f16_disabled = true;      // was GGML_VK_DISABLE_F16 (optimized)
+    // CUDA data flow.
+    bool strict_math = false;         // was RMBG_STRICT_MATH / TF32_OVERRIDE=0
+    bool cuda_f16_gemm = false;       // was RMBG_CUDA_F16_GEMM (default off)
+    int cuda_f16_min_stage = 2;       // was RMBG_CUDA_F16_MIN_STAGE
+    bool cuda_nn_gemm = false;        // was RMBG_CUDA_NN_GEMM (default off)
+};
 
 class RmbgDeviceGraph {
 public:
@@ -17,7 +39,7 @@ public:
     RmbgDeviceGraph & operator=(const RmbgDeviceGraph &) = delete;
 
     bool init(ggml_backend_t backend, const WeightMap & weights, int input_size,
-              std::string & err);
+              const GraphOptions & options, std::string & err);
     bool forward(const std::vector<float> & input_nchw, std::vector<float> & alpha,
                  std::string & err);
 
