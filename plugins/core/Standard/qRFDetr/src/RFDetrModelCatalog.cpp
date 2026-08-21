@@ -239,8 +239,8 @@ void drawDetections(QImage* image,
                         static_cast<int>(d.y1) - font.pixelSize() - 6,
                         std::max(20, label.size() * font.pixelSize()),
                         font.pixelSize() + 6);
-        labelRect.setWidth(std::min(
-                labelRect.width(), std::max(20, image->width() - 4)));
+        labelRect.setWidth(
+                std::min(labelRect.width(), std::max(20, image->width() - 4)));
         labelRect.moveLeft(std::clamp(
                 labelRect.left(), 2,
                 std::max(2, image->width() - labelRect.width() - 2)));

@@ -19,13 +19,13 @@
 
 namespace {
 
-#define CHECK(cond)                                                     \
-    do {                                                                \
-        if (!(cond)) {                                                  \
+#define CHECK(cond)                                                      \
+    do {                                                                 \
+        if (!(cond)) {                                                   \
             std::fprintf(stderr, "FAIL %s:%d: %s\n", __FILE__, __LINE__, \
-                         #cond);                                        \
-            return 1;                                                   \
-        }                                                               \
+                         #cond);                                         \
+            return 1;                                                    \
+        }                                                                \
     } while (0)
 
 // Source pixel (x, y) -> canvas window coordinate, mirroring the sampling
@@ -105,15 +105,15 @@ int runCase2() {
     CHECK(xRight == 166);
     const int yMid = (yTop + yBottom) / 2;
     const int xMid = 80;
-    CHECK(masks[0].bits[yMid * 640 + xMid] == 1);    // interior
-    CHECK(masks[0].bits[yTop * 640 + xMid] == 1);    // top edge inside
-    CHECK(masks[0].bits[yBottom * 640 + xMid] == 1); // bottom edge inside
+    CHECK(masks[0].bits[yMid * 640 + xMid] == 1);     // interior
+    CHECK(masks[0].bits[yTop * 640 + xMid] == 1);     // top edge inside
+    CHECK(masks[0].bits[yBottom * 640 + xMid] == 1);  // bottom edge inside
     if (yTop > 0) CHECK(masks[0].bits[(yTop - 1) * 640 + xMid] == 0);
     if (yBottom < 426) CHECK(masks[0].bits[(yBottom + 1) * 640 + xMid] == 0);
-    CHECK(masks[0].bits[yMid * 640 + 0] == 1);      // x starts at the left
+    CHECK(masks[0].bits[yMid * 640 + 0] == 1);  // x starts at the left
     CHECK(masks[0].bits[yMid * 640 + xRight] == 1);
     if (xRight < 639) CHECK(masks[0].bits[yMid * 640 + xRight + 1] == 0);
-    CHECK(masks[0].bits[0] == 0);              // padded top rows -> nothing
+    CHECK(masks[0].bits[0] == 0);                // padded top rows -> nothing
     CHECK(masks[0].bits[426 * 640 + 639] == 0);  // outside the window
     return 0;
 }

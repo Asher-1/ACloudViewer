@@ -615,7 +615,8 @@ void YOLODialog::saveSettings() const {
     if (!m_panels.isEmpty()) {
         settings.setValue(QStringLiteral("device"),
                           m_panels[0].deviceCombo->currentData().toString());
-        settings.setValue(QStringLiteral("threads"), m_panels[0].threads->value());
+        settings.setValue(QStringLiteral("threads"),
+                          m_panels[0].threads->value());
     }
     settings.endGroup();
 }

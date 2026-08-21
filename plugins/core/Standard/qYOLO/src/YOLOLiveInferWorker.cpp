@@ -235,8 +235,7 @@ void YOLOLiveInferWorker::runJobImpl(YOLOLiveInferWorker::Job job) {
                     (name != nullptr && name[0] != '\0')
                             ? QString::fromUtf8(name)
                             : QStringLiteral("class %1")
-                                      .arg(result.detect.detections[i]
-                                                   .classId);
+                                      .arg(result.detect.detections[i].classId);
         }
         result.detect.totalDetected = n;
         result.detect.task = QStringLiteral("segment");

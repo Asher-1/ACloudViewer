@@ -167,12 +167,12 @@ void unscale_masks(std::vector<SegMask>& masks,
             mask.bits.size() < (size_t)mask.w * mask.h) {
             continue;
         }
-        const int ix0 = std::clamp(
-                (int)std::floor((mask.x - info.pad_w) / info.scale), 0,
-                image_w - 1);
-        const int iy0 = std::clamp(
-                (int)std::floor((mask.y - info.pad_h) / info.scale), 0,
-                image_h - 1);
+        const int ix0 =
+                std::clamp((int)std::floor((mask.x - info.pad_w) / info.scale),
+                           0, image_w - 1);
+        const int iy0 =
+                std::clamp((int)std::floor((mask.y - info.pad_h) / info.scale),
+                           0, image_h - 1);
         const int ix1 = std::clamp(
                 (int)std::ceil((mask.x + mask.w - info.pad_w) / info.scale), 0,
                 image_w);
