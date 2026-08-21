@@ -178,15 +178,86 @@ TEST(RFDetrHelpers, DrawDetectionsSmoke) {
     RFDetrHelpers::drawDetections(nullptr, dets);
 }
 
+TEST(RFDetrHelpers, DrawDetectionsLabelStaysInsideImage) {
+    QImage img(100, 100, QImage::Format_RGB888);
+    img.fill(Qt::black);
+
+    // Box hugging the top edge: the banner anchor (above the box) would
+    // land at a negative y, i.e. fully off-canvas. The fixed logic flips
+    // the banner below the box top.
+    RFDetrDetection top;
+    top.classId = 1;
+    top.className = QStringLiteral("top");
+    top.score = 0.9f;
+    top.x1 = 40;
+    top.y1 = 2;
+    top.x2 = 60;
+    top.y2 = 30;
+
+    // Box hugging the left edge: the banner anchor x = 0 would render the
+    // text half-off-canvas; it must be clamped inside the image.
+    RFDetrDetection left;
+    left.classId = 2;
+    left.className = QStringLiteral("left");
+    left.score = 0.8f;
+    left.x1 = 0;
+    left.y1 = 40;
+    left.x2 = 20;
+    left.y2 = 60;
+
+    QVector<RFDetrDetection> dets{top, left};
+    RFDetrHelpers::drawDetections(&img, dets);
+
+    const auto nearColor = [](QRgb px, QRgb ref) {
+        return qAbs(qRed(px) - qRed(ref)) < 40 &&
+               qAbs(qGreen(px) - qGreen(ref)) < 40 &&
+               qAbs(qBlue(px) - qBlue(ref)) < 40;
+    };
+    const QRgb c1 = RFDetrHelpers::classColor(1);
+    const QRgb c2 = RFDetrHelpers::classColor(2);
+
+    // The flipped banner of `top` renders below the box top (y >= 4); its
+    // right-hand blank region (beyond the white text) must be on-canvas.
+    bool bannerInsideTop = false;
+    for (int y = 6; y < 16 && !bannerInsideTop; ++y) {
+        for (int x = 62; x < 90; ++x) {
+            if (nearColor(img.pixel(x, y), c1)) {
+                bannerInsideTop = true;
+                break;
+            }
+        }
+    }
+    EXPECT_TRUE(bannerInsideTop);
+
+    // The banner of `left` is clamped to x >= 2; its blank region right of
+    // the text must be visible at the box's y range.
+    bool bannerInsideLeft = false;
+    for (int y = 22; y < 32 && !bannerInsideLeft; ++y) {
+        for (int x = 68; x < 90; ++x) {
+            if (nearColor(img.pixel(x, y), c2)) {
+                bannerInsideLeft = true;
+                break;
+            }
+        }
+    }
+    EXPECT_TRUE(bannerInsideLeft);
+}
+
 TEST(RFDetrHelpers, DrawMaskTintFromRawBytes) {
     // A tiny raw mask (0/255, row-major, model resolution) must be tinted
     // over the frame without a PNG round-trip (the AICore video path hands
     // raw bytes; drawDetections wraps them as a zero-copy Grayscale8 view).
-    QImage img(16, 16, QImage::Format_ARGB32);
+    QImage img(64, 64, QImage::Format_ARGB32);
     img.fill(Qt::black);
 
     RFDetrDetection d;
     d.classId = 1;
+    // Box placed clear of the mask blob (which scales to the top-left
+    // 32x32) so its label banner does not overlap the background probe.
+    d.x1 = 32;
+    d.y1 = 32;
+    d.x2 = 55;
+    d.y2 = 55;
     d.maskWidth = 4;
     d.maskHeight = 4;
     d.maskRaw = QByteArray(16, char(0));
@@ -209,8 +280,9 @@ TEST(RFDetrHelpers, DrawMaskTintFromRawBytes) {
     EXPECT_EQ(qGreen(tinted), qGreen(expected));
     EXPECT_EQ(qBlue(tinted), qBlue(expected));
 
-    // Outside the mask blob (frame pixel 8,8) stays untouched.
-    const QRgb bg = img.pixel(8, 8);
+    // Outside the mask blob and clear of the box border + label banner
+    // (frame pixel 60,60: bottom-right corner, away from all overlays).
+    const QRgb bg = img.pixel(60, 60);
     EXPECT_EQ(qRed(bg), 0);
     EXPECT_EQ(qGreen(bg), 0);
     EXPECT_EQ(qBlue(bg), 0);
