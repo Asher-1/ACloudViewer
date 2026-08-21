@@ -35,7 +35,7 @@
 
 namespace {
 const int kThumbSize = 96;
-constexpr const char* kRMBGTestImage = "000000252219.jpg";
+constexpr const char* kRMBGTestImage = "friends1.jpg";
 
 void styleSampleDataButton(QPushButton* button) {
     button->setStyleSheet(
@@ -135,7 +135,7 @@ void RMBGDialog::setupUi() {
             new QPushButton(tr("\U0001f9ea  Try sample data"), m_imageTab);
     styleSampleDataButton(m_imageTestDataBtn);
     m_imageTestDataBtn->setToolTip(
-            tr("Load images/000000252219.jpg from the shared test-data cache"));
+            tr("Load friends1.jpg from the FriendsFaces test-data cache"));
     connect(m_imageTestDataBtn, &QPushButton::clicked, this,
             [this]() { requestTestData(TestDataTarget::Image); });
     inputRow->addWidget(browseBtn);
@@ -235,15 +235,13 @@ void RMBGDialog::setupUi() {
     // Playback controls live in the Live tab itself (mirrors qFaceDetect).
     auto* liveBtnRow = new QHBoxLayout;
     m_testVideoCombo = new QComboBox(m_liveTab);
-    m_testVideoCombo->addItem(QStringLiteral("traffic.mp4"),
-                              QStringLiteral("traffic.mp4"));
-    m_testVideoCombo->addItem(QStringLiteral("supervision_demo.mp4"),
-                              QStringLiteral("supervision_demo.mp4"));
+    m_testVideoCombo->addItem(QStringLiteral("friends_demo.mp4"),
+                              QStringLiteral("friends_demo.mp4"));
     m_testDataBtn =
             new QPushButton(tr("\U0001f9ea  Try sample data"), m_liveTab);
     styleSampleDataButton(m_testDataBtn);
     m_testDataBtn->setToolTip(
-            tr("Load the selected video from the shared test-data cache"));
+            tr("Load the selected video from the FriendsFaces test-data cache"));
     m_liveStartBtn = new QPushButton(tr("Start"), m_liveTab);
     m_liveStopBtn = new QPushButton(tr("Stop"), m_liveTab);
     m_liveRestartBtn = new QPushButton(tr("Restart"), m_liveTab);
@@ -790,7 +788,7 @@ void RMBGDialog::requestTestData(TestDataTarget target) {
         return;
     }
 
-    const auto kind = ecvTestDataRepository::Dataset::ObjectsDetection;
+    const auto kind = ecvTestDataRepository::Dataset::FriendsFaces;
     const auto info = ecvTestDataRepository::getDatasetInfo(kind);
     m_testDataDownloadInProgress = true;
     setTestDataControlsEnabled(false);
@@ -805,14 +803,14 @@ void RMBGDialog::requestTestData(TestDataTarget target) {
         return;
     }
 
-    m_downloadLabel->setText(tr("Downloading object detection test data..."));
+    m_downloadLabel->setText(tr("Downloading FriendsFaces test data..."));
     m_progress->setRange(0, 100);
     m_progress->setValue(0);
     repo.startDownload(kind);
 }
 
 bool RMBGDialog::loadRequestedTestData() {
-    const auto kind = ecvTestDataRepository::Dataset::ObjectsDetection;
+    const auto kind = ecvTestDataRepository::Dataset::FriendsFaces;
     QString fileName;
     if (m_pendingTestDataTarget == TestDataTarget::Image) {
         fileName = QString::fromLatin1(kRMBGTestImage);
@@ -842,7 +840,7 @@ bool RMBGDialog::loadRequestedTestData() {
 void RMBGDialog::onTestDataDownloadFinished(
         bool success, ecvTestDataRepository::Dataset kind) {
     if (!m_testDataDownloadInProgress ||
-        kind != ecvTestDataRepository::Dataset::ObjectsDetection) {
+        kind != ecvTestDataRepository::Dataset::FriendsFaces) {
         return;
     }
     if (!success) {
@@ -855,7 +853,7 @@ void RMBGDialog::onTestDataDownloadFinished(
         return;
     }
 
-    m_downloadLabel->setText(tr("Extracting object detection test data..."));
+    m_downloadLabel->setText(tr("Extracting FriendsFaces test data..."));
     m_progress->setRange(0, 0);
     ecvTestDataRepository::instance().extractDataset(kind);
 }
@@ -863,7 +861,7 @@ void RMBGDialog::onTestDataDownloadFinished(
 void RMBGDialog::onTestDataExtractionFinished(
         bool success, ecvTestDataRepository::Dataset kind) {
     if (!m_testDataDownloadInProgress ||
-        kind != ecvTestDataRepository::Dataset::ObjectsDetection) {
+        kind != ecvTestDataRepository::Dataset::FriendsFaces) {
         return;
     }
     m_testDataDownloadInProgress = false;
