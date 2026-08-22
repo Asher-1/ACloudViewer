@@ -295,6 +295,11 @@ void DeepLSDDialog::setupUi() {
             tr("Double-click a ccImage from the DB tree to use as input."));
     connect(m_dbImageList, &QListWidget::itemActivated, this,
             &DeepLSDDialog::onDbListActivated);
+    // Single-click also assigns and refreshes the preview thumbnail, so the
+    // shown image always follows the highlighted browser entry (same
+    // behaviour as qRFDetr/qRMBG/qYOLO).
+    connect(m_dbImageList, &QListWidget::itemClicked, this,
+            &DeepLSDDialog::onDbListActivated);
     dbLayout->addWidget(m_dbImageList);
     auto* refreshBtn = new QPushButton(tr("Refresh DB Images"));
     refreshBtn->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);

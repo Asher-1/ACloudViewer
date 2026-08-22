@@ -202,6 +202,7 @@ void YOLODialog::setupUi() {
             YOLOTaskPanel* active = currentTaskPanel();
             if (!active) return;
             m_imagePath = active->imagePath;
+            m_previewLabel = active->previewLabel;
             onBrowseImage();
         });
         inputRow->addWidget(browseBtn);

@@ -889,6 +889,11 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
     m_dbImageList->setMaximumHeight(ecvAICoreUi::dbListMaxHeight());
     connect(m_dbImageList, &QListWidget::itemActivated, this,
             &FaceDetectDialog::onDbListActivated);
+    // Single-click also assigns and refreshes the preview thumbnail, so the
+    // shown image always follows the highlighted browser entry (same
+    // behaviour as qRFDetr/qRMBG/qYOLO).
+    connect(m_dbImageList, &QListWidget::itemClicked, this,
+            &FaceDetectDialog::onDbListActivated);
 
     // DB-list double-click target follows the input slot the user is
     // editing: focus in Image B (or moving straight from Image B into the
