@@ -23,6 +23,7 @@
 #include <QSizePolicy>
 #include <QVBoxLayout>
 
+#include "ecvAICoreUiHelper.h"
 #include "ecvClickableImageLabel.h"
 #include "ecvModelDownloader.h"
 #include "ecvPersistentSettings.h"
@@ -34,22 +35,15 @@
 #endif
 
 namespace {
-const int kThumbSize = 96;
 constexpr const char* kRMBGTestImage = "friends1.jpg";
-
-void styleSampleDataButton(QPushButton* button) {
-    button->setStyleSheet(
-            "QPushButton { background: #00897b; color: white; font-weight: "
-            "bold; border: none; border-radius: 4px; padding: 5px 12px; }"
-            "QPushButton:hover { background: #00796b; }"
-            "QPushButton:pressed { background: #00695c; }"
-            "QPushButton:disabled { background: #b2dfdb; color: #e0f2f1; }");
-}
+// QListWidgetItem data role carrying the full-resolution ccImage for the
+// click-to-enlarge preview (the list icon is only a scaled thumbnail).
+constexpr int kDbFullImageRole = Qt::UserRole + 1;
 }  // namespace
 
 RMBGDialog::RMBGDialog(QWidget* parent) : QDialog(parent) {
     setWindowTitle(tr("RMBG Background Removal"));
-    setMinimumSize(680, 560);
+    setMinimumSize(ecvAICoreUi::dpiScaled(680), ecvAICoreUi::dpiScaled(560));
     setupUi();
     populateModelCombo();
     loadSettings();
@@ -63,15 +57,25 @@ RMBGDialog::~RMBGDialog() {
 
 void RMBGDialog::setupUi() {
     auto* rootLayout = new QVBoxLayout(this);
+    ecvAICoreUi::setupTabLayout(rootLayout);
+    // No automatic re-sizing: without this the dialog grows every time the
+    // DB section expands (QDialog's default minimum-size constraint follows
+    // the content minimumSizeHint, inflating the window and leaving the
+    // layout loose).  With SetNoConstraint the DB list scrolls inside its
+    // own bounded height and the dialog keeps a compact fixed size.
+    rootLayout->setSizeConstraint(QLayout::SetNoConstraint);
     m_tabWidget = new QTabWidget(this);
+    ecvAICoreUi::styleTabWidget(m_tabWidget);
     rootLayout->addWidget(m_tabWidget);
 
     // ---- Image tab --------------------------------------------------------
     m_imageTab = new QWidget(this);
     auto* imageLayout = new QVBoxLayout(m_imageTab);
+    ecvAICoreUi::setupTabLayout(imageLayout);
 
     auto* modelRow = new QHBoxLayout;
-    modelRow->addWidget(new QLabel(tr("Model:"), m_imageTab));
+    modelRow->setSpacing(ecvAICoreUi::hSpacing());
+    modelRow->addWidget(ecvAICoreUi::makeLabel(tr("Model:")));
     m_modelCombo = new QComboBox(m_imageTab);
     m_modelCombo->setMinimumContentsLength(26);
     m_modelCombo->setSizeAdjustPolicy(
@@ -83,17 +87,17 @@ void RMBGDialog::setupUi() {
     m_customModelRow = new QWidget(m_imageTab);
     auto* customRow = new QHBoxLayout(m_customModelRow);
     customRow->setContentsMargins(0, 0, 0, 0);
-    customRow->addWidget(new QLabel(tr("Custom GGUF:"), m_customModelRow));
+    customRow->setSpacing(ecvAICoreUi::hSpacing());
+    customRow->addWidget(ecvAICoreUi::makeLabel(tr("Custom GGUF:")));
     m_customModelPath = new QLineEdit(m_customModelRow);
     customRow->addWidget(m_customModelPath, 1);
-    auto* browseCustomBtn = new QPushButton(tr("Browse…"), m_customModelRow);
+    auto* browseCustomBtn =
+            ecvAICoreUi::makeBrowseBtn(tr("Browse…"), m_customModelRow);
     connect(browseCustomBtn, &QPushButton::clicked, this,
             &RMBGDialog::onBrowseCustomModel);
     customRow->addWidget(browseCustomBtn);
     imageLayout->addWidget(m_customModelRow);
 
-    auto* runRow = new QHBoxLayout;
-    runRow->addWidget(new QLabel(tr("Device:"), m_imageTab));
     m_deviceCombo = new QComboBox(m_imageTab);
 #ifdef AICore_ENABLED
     const int nDev = aicore_device_count();
@@ -105,35 +109,36 @@ void RMBGDialog::setupUi() {
         if (dev->is_default) m_deviceCombo->setCurrentIndex(i);
     }
 #endif
-    runRow->addWidget(m_deviceCombo);
-
-    runRow->addWidget(new QLabel(tr("Threads:"), m_imageTab));
     m_threads = new QSpinBox(m_imageTab);
     m_threads->setRange(0, 64);
     m_threads->setValue(0);
     m_threads->setToolTip(tr("0 = auto"));
-    runRow->addWidget(m_threads);
+    auto* runtimeRow =
+            ecvAICoreUi::makeRuntimeRow(m_deviceCombo, m_threads, m_imageTab);
+    imageLayout->addWidget(runtimeRow);
 
-    runRow->addWidget(new QLabel(tr("Alpha Threshold:"), m_imageTab));
+    auto* thresholdRow = new QHBoxLayout;
+    thresholdRow->setSpacing(ecvAICoreUi::hSpacing());
+    thresholdRow->addWidget(ecvAICoreUi::makeLabel(tr("Alpha Threshold:")));
     m_alphaThreshold = new QDoubleSpinBox(m_imageTab);
     m_alphaThreshold->setRange(0.0, 1.0);
     m_alphaThreshold->setSingleStep(0.05);
     m_alphaThreshold->setValue(0.5);
     m_alphaThreshold->setToolTip(
             tr("Pixels below this alpha become transparent (0 disables)"));
-    runRow->addWidget(m_alphaThreshold);
-    runRow->addStretch();
-    imageLayout->addLayout(runRow);
+    ecvAICoreUi::setCompactDoubleSpin(m_alphaThreshold);
+    thresholdRow->addWidget(m_alphaThreshold);
+    thresholdRow->addStretch();
+    imageLayout->addLayout(thresholdRow);
 
     auto* inputRow = new QHBoxLayout;
-    inputRow->addWidget(new QLabel(tr("Image:"), m_imageTab));
+    inputRow->setSpacing(ecvAICoreUi::hSpacing());
+    inputRow->addWidget(ecvAICoreUi::makeLabel(tr("Image:")));
     m_imagePath = new QLineEdit(m_imageTab);
     inputRow->addWidget(m_imagePath, 1);
-    auto* browseBtn = new QPushButton(tr("Browse…"), m_imageTab);
+    auto* browseBtn = ecvAICoreUi::makeBrowseBtn(tr("Browse…"), m_imageTab);
     connect(browseBtn, &QPushButton::clicked, this, &RMBGDialog::onBrowseImage);
-    m_imageTestDataBtn =
-            new QPushButton(tr("\U0001f9ea  Try sample data"), m_imageTab);
-    styleSampleDataButton(m_imageTestDataBtn);
+    m_imageTestDataBtn = ecvAICoreUi::makeSampleDataBtn(m_imageTab);
     m_imageTestDataBtn->setToolTip(
             tr("Load friends1.jpg from the FriendsFaces test-data cache"));
     connect(m_imageTestDataBtn, &QPushButton::clicked, this,
@@ -142,19 +147,21 @@ void RMBGDialog::setupUi() {
     imageLayout->addLayout(inputRow);
 
     // DB image picker (collapsible).
-    m_dbToggleBtn = new QToolButton(m_imageTab);
-    m_dbToggleBtn->setText(tr("DB images ▾"));
-    m_dbToggleBtn->setCheckable(true);
-    m_dbToggleBtn->setChecked(false);
+    m_dbToggleBtn = ecvAICoreUi::makeDbSection(m_imageTab);
     imageLayout->addWidget(m_dbToggleBtn, 0, Qt::AlignLeft);
     m_dbContentWidget = new QWidget(m_imageTab);
     auto* dbLayout = new QVBoxLayout(m_dbContentWidget);
     dbLayout->setContentsMargins(0, 0, 0, 0);
+    dbLayout->setSpacing(ecvAICoreUi::tightVSpacing());
     m_dbImageList = new QListWidget(m_dbContentWidget);
     m_dbImageList->setIconSize(QSize(48, 48));
-    m_dbImageList->setMaximumHeight(140);
+    // Bounded height: the list scrolls internally so expanding the DB
+    // section never inflates the dialog (see SetNoConstraint above).
+    m_dbImageList->setMinimumHeight(ecvAICoreUi::dpiScaled(60));
+    m_dbImageList->setMaximumHeight(ecvAICoreUi::dbListMaxHeight());
     dbLayout->addWidget(m_dbImageList);
     auto* dbBtnRow = new QHBoxLayout;
+    dbBtnRow->setSpacing(ecvAICoreUi::hSpacing());
     auto* refreshDbBtn = new QPushButton(tr("Refresh"), m_dbContentWidget);
     refreshDbBtn->setToolTip(tr("Reload the ccImage list from the DB tree"));
     connect(refreshDbBtn, &QPushButton::clicked, this,
@@ -164,8 +171,8 @@ void RMBGDialog::setupUi() {
     dbLayout->addLayout(dbBtnRow);
     m_dbContentWidget->setVisible(false);
     imageLayout->addWidget(m_dbContentWidget);
+    ecvAICoreUi::connectDbToggle(m_dbToggleBtn, m_dbContentWidget);
     connect(m_dbToggleBtn, &QToolButton::toggled, this, [this](bool on) {
-        m_dbContentWidget->setVisible(on);
         if (on) emit refreshDbImagesRequested();
     });
     connect(m_dbImageList, &QListWidget::itemActivated, this,
@@ -174,16 +181,13 @@ void RMBGDialog::setupUi() {
             &RMBGDialog::onDbListActivated);
 
     m_previewLabel = new ecvClickableImageLabel(m_imageTab);
-    m_previewLabel->setFixedSize(kThumbSize, kThumbSize);
+    m_previewLabel->setFixedSize(ecvAICoreUi::previewSize(),
+                                 ecvAICoreUi::previewSize());
     m_previewLabel->setStyleSheet(
             "border: 1px solid palette(mid); background: palette(base);");
     m_previewLabel->setText(tr("Preview"));
     imageLayout->addWidget(
             ecvClickableImageLabel::wrapWithTapToPreviewHint(m_previewLabel));
-
-    m_downloadLabel = new QLabel(this);
-    m_downloadLabel->setWordWrap(true);
-    m_downloadLabel->setVisible(false);
 
     m_taskStatusLabel = new QLabel(m_imageTab);
     m_taskStatusLabel->setVisible(false);
@@ -191,6 +195,7 @@ void RMBGDialog::setupUi() {
     imageLayout->addWidget(m_taskStatusLabel);
 
     auto* outputRow = new QHBoxLayout;
+    outputRow->setSpacing(ecvAICoreUi::hSpacing());
     m_addDbCheck = new QCheckBox(tr("Add result to DB"), m_imageTab);
     m_addDbCheck->setChecked(true);
     outputRow->addWidget(m_addDbCheck);
@@ -201,7 +206,8 @@ void RMBGDialog::setupUi() {
     m_savePngDir->setEnabled(false);
     m_savePngDir->setPlaceholderText(tr("output directory"));
     outputRow->addWidget(m_savePngDir, 1);
-    auto* browseSaveDirBtn = new QPushButton(tr("Browse…"), m_imageTab);
+    auto* browseSaveDirBtn =
+            ecvAICoreUi::makeBrowseBtn(tr("Browse…"), m_imageTab);
     browseSaveDirBtn->setEnabled(false);
     connect(browseSaveDirBtn, &QPushButton::clicked, this,
             &RMBGDialog::onBrowseSaveDir);
@@ -214,6 +220,7 @@ void RMBGDialog::setupUi() {
     imageLayout->addLayout(outputRow);
 
     auto* actionRow = new QHBoxLayout;
+    actionRow->setSpacing(ecvAICoreUi::hSpacing());
     actionRow->addStretch();
     actionRow->addWidget(m_imageTestDataBtn);
     m_runBtn = new QPushButton(tr("Run"), m_imageTab);
@@ -229,17 +236,17 @@ void RMBGDialog::setupUi() {
     // ---- Live (camera / video) tab ----------------------------------------
     m_liveTab = new QWidget(this);
     auto* liveLayout = new QVBoxLayout(m_liveTab);
+    ecvAICoreUi::setupTabLayout(liveLayout);
     m_liveWidget = new RMBGLiveWidget(m_liveTab);
     liveLayout->addWidget(m_liveWidget, 1);
 
     // Playback controls live in the Live tab itself (mirrors qFaceDetect).
     auto* liveBtnRow = new QHBoxLayout;
+    liveBtnRow->setSpacing(ecvAICoreUi::hSpacing());
     m_testVideoCombo = new QComboBox(m_liveTab);
     m_testVideoCombo->addItem(QStringLiteral("friends_demo.mp4"),
                               QStringLiteral("friends_demo.mp4"));
-    m_testDataBtn =
-            new QPushButton(tr("\U0001f9ea  Try sample data"), m_liveTab);
-    styleSampleDataButton(m_testDataBtn);
+    m_testDataBtn = ecvAICoreUi::makeSampleDataBtn(m_liveTab);
     m_testDataBtn->setToolTip(
             tr("Load the selected video from the FriendsFaces test-data cache"));
     m_liveStartBtn = new QPushButton(tr("Start"), m_liveTab);
@@ -366,12 +373,7 @@ void RMBGDialog::setupUi() {
 
     // Download / task progress — shared by both tabs so a model fetch
     // started from the Live tab stays visible.
-    rootLayout->addWidget(m_downloadLabel);
-    m_progress = new QProgressBar(this);
-    m_progress->setRange(0, 100);
-    m_progress->setValue(0);
-    m_progress->setVisible(false);
-    rootLayout->addWidget(m_progress);
+    ecvAICoreUi::setupProgressSection(rootLayout, m_downloadLabel, m_progress);
 
     auto& testDataRepo = ecvTestDataRepository::instance();
     connect(&testDataRepo, &ecvTestDataRepository::downloadProgress, this,
@@ -601,13 +603,28 @@ void RMBGDialog::onBrowseSaveDir() {
 }
 
 void RMBGDialog::updateImagePreview() {
-    const QImage img(m_imagePath->text());
+    const QString path = m_imagePath->text().trimmed();
+    QImage img;
+    if (path.startsWith(QStringLiteral("db://"))) {
+        // DB-tree entity: look up the stored full-resolution image so the
+        // click-to-enlarge preview works for DB inputs too.
+        const QString name = path.mid(5);
+        for (int i = 0; i < m_dbImageList->count(); ++i) {
+            QListWidgetItem* item = m_dbImageList->item(i);
+            if (item && item->data(Qt::UserRole).toString() == name) {
+                img = item->data(kDbFullImageRole).value<QImage>();
+                break;
+            }
+        }
+    } else {
+        img = QImage(path);
+    }
     if (img.isNull()) {
         m_previewLabel->clearPreview();
         m_previewLabel->setText(tr("Preview"));
         return;
     }
-    m_previewLabel->setPreviewImage(img, kThumbSize);
+    m_previewLabel->setPreviewImage(img, ecvAICoreUi::previewSize());
 }
 
 void RMBGDialog::onRun() {
@@ -705,6 +722,9 @@ void RMBGDialog::setDbImages(const QList<DbImageEntry>& images) {
         auto* item = new QListWidgetItem(QIcon(QPixmap::fromImage(e.preview)),
                                          e.name, m_dbImageList);
         item->setData(Qt::UserRole, e.name);
+        // Full-resolution image for the click-to-enlarge preview (the icon
+        // above is only a scaled thumbnail).
+        item->setData(kDbFullImageRole, e.preview);
     }
 }
 
@@ -897,6 +917,18 @@ void RMBGDialog::changeEvent(QEvent* event) {
     if (event->type() == QEvent::ActivationChange) {
         adaptTabWidgetHeight();
     }
+}
+
+void RMBGDialog::showEvent(QShowEvent* event) {
+    QDialog::showEvent(event);
+    // First display only: snap the dialog to its natural sizeHint (the
+    // layout is settled before Show is sent).  With SetNoConstraint the
+    // window then stays at this size — expanding the DB section or
+    // switching tabs no longer inflates it, keeping the layout compact.
+    if (!m_firstShow) return;
+    m_firstShow = false;
+    adjustSize();
+    adaptTabWidgetHeight();
 }
 
 void RMBGDialog::adaptTabWidgetHeight() {

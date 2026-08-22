@@ -274,7 +274,7 @@ yolo 的 `logf` 已委托公共层，新 task 直接使用 `AICORE_LOG_*` 宏即
 
 ### 底层实现
 
-[`aicore_log.cpp`](file:///home/ludahai/develop/code/github/ACloudViewer/core/AICore/src/common/aicore_log.cpp) 在 `AICore_HAS_CVLOG` 条件下走 `CVLog::Print*` 进入 Console；否则 fallback 到 `fprintf(stderr, ...)`。
+[`aicore_log.cpp`](../../../core/AICore/src/common/aicore_log.cpp) 在 `AICore_HAS_CVLOG` 条件下走 `CVLog::Print*` 进入 Console；否则 fallback 到 `fprintf(stderr, ...)`。
 
 ---
 
@@ -546,9 +546,103 @@ m_liveWidget->setVideoFilePath(path, false);
 - 下载完整性：MD5 + size 校验（`verifyZipIntegrity`），缓存命中不重复下载
 - 下载/提取期间禁用按钮 + 进度条/状态标签可见；失败恢复按钮并在日志说明原因
 
+--
+
+## 13. 插件 UI 设计规范（强制）
+
+所有 AICore 插件对话框**必须**复用共享 UI 工具模块 `ecvAICoreUiHelper.h`（`libs/CVPluginAPI/include/`，命名空间 `ecvAICoreUi`），禁止各插件自建重复的本地 helper / 样式表 / 像素常量。这是 8 个现有插件（qDA3/qDeepLSD/qFaceDetect/qLightGlue/qFreeSplatter/qRFDetr/qRMBG/qYOLO）统一优化后的唯一标准，新插件直接照此实现即可达到商业级外观。
+
+### 13.1 共享工具速查
+
+| 能力 | API | 说明 |
+|---|---|---|
+| DPI 缩放 | `ecvAICoreUi::dpiScaled(px)` | 96-dpi 名义像素 → 当前屏幕 DPI 实际像素；**所有硬编码像素必须经它转换** |
+| 间距/边距 | `tabMargins()`, `vSpacing()`, `hSpacing()`, `tightVSpacing()` | 统一紧凑间距，禁止手写 magic number |
+| 尺寸常量 | `previewSize()` (96), `slotPreviewSize()` (88), `dbListMaxHeight()` (140), `filePoolMaxHeight()` (120) | 缩略图 / 列表高度，DPI 感知 |
+| 标签工厂 | `makeLabel(text)`, `makeHintLabel(text)` | 表单标签（左对齐）+ 灰色提示文字 |
+| 按钮工厂 | `makeSampleDataBtn()`, `makeBrowseBtn(text)` | teal 主题样本按钮 + 固定宽度浏览按钮 |
+| SpinBox | `setCompactDoubleSpin()`, `setCompactSpin()` | 紧凑固定宽度数值框 |
+| 布局工具 | `setupTabLayout()`, `setupFormGrid()`, `tightenGroupBox()`, `styleTabWidget()` | 页面 / 表单网格 / 分组框 / Tab 统一风格 |
+| 段落构建器 | `makeRuntimeRow(device, threads)`, `makeDbSection()`, `connectDbToggle()`, `setupProgressSection()`, `makeActionRow()` | Device/Threads 行、DB 折叠区、进度区、按钮行 |
+
+基本模板（`setupUi()` 开头）：
+
+```cpp
+#include "ecvAICoreUiHelper.h"
+
+void MyDialog::setupUi() {
+    auto* root = new QVBoxLayout(this);
+    ecvAICoreUi::setupTabLayout(root);
+    root->setSizeConstraint(QLayout::SetNoConstraint);  // 见 13.4
+    auto* tabs = new QTabWidget(this);
+    ecvAICoreUi::styleTabWidget(tabs);
+    // 表单网格：label 列宽 92（两列 label|field 结构）
+    auto* grid = new QGridLayout;
+    ecvAICoreUi::setupFormGrid(grid, 92);
+    // 运行时参数：Device/Threads 一行
+    root->addWidget(ecvAICoreUi::makeRuntimeRow(m_deviceCombo, m_threads));
+    // DB 折叠区：
+    auto* dbToggle = ecvAICoreUi::makeDbSection(nullptr);
+    ecvAICoreUi::connectDbToggle(dbToggle, m_dbContentWidget);
+    // 进度区（label + progress，默认隐藏）：
+    ecvAICoreUi::setupProgressSection(root, m_downloadLabel, m_progress);
+    // 按钮行：
+    auto* row = ecvAICoreUi::makeActionRow(m_runBtn, m_cancelBtn);
+}
+```
+
+### 13.2 布局准则
+
+1. **DPI 感知**：`setMinimumSize` / 缩略图尺寸 / 列表高度 / 按钮宽度全部用 `ecvAICoreUi::dpiScaled()`；禁止裸像素。
+2. **紧凑**：页面 layout 用 `setupTabLayout()`（margin 4px / spacing 4px）；分组框用 `tightenGroupBox()`（QSizePolicy::Maximum + 紧凑 margin），使分组框贴合内容、不撑大。
+3. **表单**：QGridLayout 一律 `setupFormGrid()`（label 列固定宽度、field 列 stretch=1），标签用 `makeLabel()` 保证左对齐垂直居中。
+4. **统一外观**：样本数据按钮必须 `makeSampleDataBtn()`（teal `#00897b`）；浏览按钮必须 `makeBrowseBtn()`；数值框必须 `setCompactSpin*()`。禁止自定义色板。
+5. **DB 输入区**：用 `makeDbSection()` + `connectDbToggle()` 做折叠区；列表高度限 `[dpiScaled(60), dbListMaxHeight()]`，内部滚动，**展开不得撑大对话框**（见 13.4）。
+6. **进度区**：用 `setupProgressSection()`；注意其创建的进度条**默认隐藏**——下载/推理开始处必须显式 `m_progress->setVisible(true)`（qFaceDetect/qLightGlue 的既有模式），否则进度条永远不可见。
+
+### 13.3 输入预览与点击放大（强制）
+
+- preview 控件用 `ecvClickableImageLabel`；**必须调用 `setPreviewImage(img, size)`（或 `setPreviewPixmap`）而非裸 `setPixmap`**——点击放大依赖内部 `m_fullImage`，裸 `setPixmap` 时点击无反应。
+- **DB entity 输入（`db://EntityName`）必须同样支持放大**：`setDbImages()` 时把完整分辨率图像存入 item role（`Qt::UserRole + 1`），`updateImagePreview()` 遇到 `db://` 前缀时从 role 取图再 `setPreviewImage`。参考 qDeepLSD / qLightGlue 的既有实现；qDA3（QComboBox）用 `setItemData(idx, img, role)` 存图。
+- 目录 / 多文件输入：取第一张图做预览。
+
+```cpp
+// setDbImages 中：
+item->setData(Qt::UserRole, e.name);
+item->setData(kDbFullImageRole, e.preview);  // 完整分辨率图
+
+// updateImagePreview 中：
+if (path.startsWith(QLatin1String("db://"))) {
+    // 从列表 item 的 kDbFullImageRole 取图 → setPreviewImage
+} else {
+    img = QImage(path);
+}
+```
+
+### 13.4 对话框尺寸与自适应（防放大 / 防松散）
+
+1. **主 layout 设 `QLayout::SetNoConstraint`**：QDialog 默认 minimum-size 约束会让窗口跟随内容 minimumSizeHint 自动变大——DB 折叠区展开、tab 切换、状态文本变化都会撑大对话框、显得松散。设 NoConstraint 后窗口尺寸由首次 sizeHint 决定一次，内容变化不再撑大窗口。
+2. **首次显示固定尺寸**：`showEvent` 中（`m_firstShow` 标志）同步 `adjustSize()`——Qt 在发 Show 事件前已完成布局，此时 sizeHint 纯净。
+3. **Tab 高度管理**（多 tab 且含视频/长表单的对话框，参考 qFaceDetect / qFreeSplatter）：
+   - 首次 `showEvent` **同步**测量 `m_baseChrome = height() - tabWidget->height()`（用 minimumSizeHint 差值或延迟 singleShot 都会算错/输给 X11 窗口映射）；
+   - tab 切换时 `resize(width, qBound(min, baseChrome + tabContentSizeHint, available-20))`，targetHeight = tabBar + 内容 sizeHint；
+   - `ScreenChangeInternal`（跨屏 DPI）重新测量 chrome；
+   - 公式严禁混用 minimum-based 与 sizeHint-based 数值（历史教训：每次切 tab 膨胀 230~600px）。
+4. **视频预览必须有高度上限**（见 13.5 陷阱 1），否则"自适应"会变成"无限放大"。
+
+### 13.5 常见陷阱（真实 Bug 沉淀）
+
+1. **视频预览无上限 → UI 无限放大（qFreeSplatter 回归）**：
+   - 反馈环：每帧 `setPixmap` → QLabel `sizeHint`=pixmap 尺寸 → `QScrollArea(widgetResizable)` 按 sizeHint 增长 widget → preview 实际变高 → 下一帧 pixmap 按更大 label 缩放 → 循环。纯内部收敛，但**外部窗口扰动（WM 微调/DPI/远程桌面）一旦放大就被 1:1 永久保留、永不回落**，表现为"播放视频时整个 UI 不断放大"。
+   - 修复：`updatePreviewHeightCap()`（video_base）adaptive 分支必须 `setMaximumHeight(dpiScaled(560))`；`m_faceCaptureScroll->setMaximumHeight(dpiScaled(560))`；`adaptTabWidgetHeight()` 的 contentHeight 再 `min(..., dpiScaled(560))`。上限要 > 16:9 minimum 给 stretch 留弹性，否则重新引入"大空白"（见陷阱 3）。
+2. **QBoxLayout 压缩 + setGeometry clamp 导致控件重叠**：外层容器高度被 `setFixedHeight` 锁死时，内容增长（如 videoControlsRow 从隐藏变可见）后布局按比例压缩控件；若某控件有显式 minimumHeight，`setGeometry` 会 clamp 回 minimum，导致后续控件 y 偏移重叠。排查：先检查"布局计算几何"与"setGeometry 后实际几何"是否一致；修复：用 `setMinimumHeight` + Expanding 替代 `setFixedHeight`，内容可见性变化时宿主重新测量。
+3. **preview 设 maximumHeight → 大空白**：QVBoxLayout 会把被 cap 截断的剩余空间分给其它 Preferred 控件（input 行/statusLabel 被拉高），出现"大空白"。必须让唯一 stretch 的 preview 独占剩余空间：不设 max（或 max 很大），其他控件保持自然高度。
+4. **DB 组件撑大首页 tab**：list 高度无边或对话框跟随 minimumSizeHint 自动变大。修复：list 限高 + 主 layout `SetNoConstraint`（见 13.4）。
+5. **preview 点击无放大**：见 13.3——裸 `setPixmap` 或 DB 输入未存 full image。
+
 ---
 
-## 13. 检查清单（新任务接入用）
+## 14. 检查清单（新任务接入用）
 
 新增一个 AICore task 并配套插件时，逐项确认：
 
@@ -560,6 +654,11 @@ m_liveWidget->setVideoFilePath(path, false);
 - [ ] 所有日志走 `AICORE_LOG_*` 宏（无 `fprintf`）
 - [ ] ggml 保持 v0.18.1，patch 在现有 manifest 重放后生成，其他模块 contract 测试全绿
 - [ ] 提供 "Try sample data" 按钮（teal 样式），复用 ecvTestDataRepository（ObjectsDetection/Monstree/FriendsFaces）
+- [ ] **UI 复用 `ecvAICoreUiHelper.h`**（setupTabLayout/setupFormGrid/makeLabel/makeSampleDataBtn/makeBrowseBtn/makeRuntimeRow/makeDbSection/setupProgressSection），无本地重复 helper 与魔法像素
+- [ ] **对话框主 layout 设 `SetNoConstraint` + showEvent 首次 adjustSize**（DB 展开/tab 切换不撑大窗口）
+- [ ] **preview 用 `ecvClickableImageLabel` + `setPreviewImage`**，DB 输入（`db://`）存 full image 到 item role 并支持点击放大
+- [ ] **视频预览有高度上限**（`updatePreviewHeightCap` adaptive 分支 max + scroll max + tab 高度钳制，防反馈环无限放大）
+- [ ] 所有像素尺寸经 `ecvAICoreUi::dpiScaled()`，无裸硬编码
 - [ ] 无 getenv/setenv 逻辑控制（仅 ggml_env_bridge / CLOUDVIEWER_DATA_ROOT 两处例外）
 - [ ] 未引入仓库已有能力覆盖的第三方模块（stb 验证：`rg -n "stb_image" core/AICore/src plugins/` 零命中）
 - [ ] include 使用模块根绝对路径（无 `../`、无裸文件名）

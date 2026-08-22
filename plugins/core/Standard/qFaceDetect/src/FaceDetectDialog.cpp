@@ -31,6 +31,7 @@
 #include "FaceDetectTestData.h"
 #include "FaceDetectTestDataWorker.h"
 #include "FaceDetectUiHelpers.h"
+#include "ecvAICoreUiHelper.h"
 #include "FaceLiveDetectWidget.h"
 #include "FaceRegistryWidget.h"
 #include "aicore/backend_capi.h"
@@ -42,7 +43,7 @@ namespace {
 
 constexpr auto kFriends = ecvTestDataRepository::Dataset::FriendsFaces;
 
-const int kThumbSize = FaceDetectUi::kCompactPreviewSize;
+const int kThumbSize = ecvAICoreUi::previewSize();
 constexpr int kTabViewportMinHeight = 280;
 // QListWidgetItem data role carrying the full-resolution ccImage for the
 // click-to-enlarge preview (the 24 px icon is only for list display).
@@ -53,11 +54,9 @@ constexpr int kDbFullImageRole = Qt::UserRole + 1;
 // is 144, so a 280 px minimum must become 420 px.  Scale every hardcoded
 // pixel so tab viewport math stays correct across resolutions and
 // per-monitor DPI (1080p@100%% vs 4K@150%%).
-static int dpiScaled(int px) {
-    const QScreen* screen = QGuiApplication::primaryScreen();
-    const qreal dpi = screen ? screen->logicalDotsPerInch() : 96.0;
-    return qMax(px, qRound(px * dpi / 96.0));
-}
+// Shared DPI-aware scaling from the AICore UI kit (same semantics as the
+// former local static function).
+using ecvAICoreUi::dpiScaled;
 
 bool isSupportedImageFile(const QString& filePath) {
     static const QStringList extensions = {
@@ -88,8 +87,8 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
     FaceDetectTestData::purgeFriendsPathsFromSettings();
 
     setWindowTitle(tr("Face Detect"));
-    setMinimumWidth(760);
-    setMinimumHeight(520);
+    setMinimumWidth(ecvAICoreUi::dpiScaled(760));
+    setMinimumHeight(ecvAICoreUi::dpiScaled(520));
     setSizeGripEnabled(false);
 
     QSettings settings;
@@ -110,8 +109,11 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
 
     auto* outer = new QVBoxLayout(this);
     m_tabWidget = new QTabWidget(this);
-    m_tabWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-    FaceDetectUi::applyTabWidgetPaneStyle(m_tabWidget);
+    // Expanding lets the active page (and its video preview) grow with the
+    // dialog; the per-tab minimum height is managed by
+    // updateActiveTabViewportHeight.
+    m_tabWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+    ecvAICoreUi::styleTabWidget(m_tabWidget);
 
     m_batchTab = new QWidget;
     setupBatchTab(m_batchTab);
@@ -159,6 +161,17 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
             m_liveWidget->setVideoFilePath(savedVideo, true);
         }
         liveLayout->addWidget(m_liveWidget, 1);
+        // The playback controls row appears only once a video is loaded;
+        // re-measure the tab viewport so the new row is never squeezed into
+        // the preview area (the "controls overlapping the video" bug).
+        connect(m_liveWidget,
+                &FaceLiveDetectWidget::videoControlsVisibilityChanged, this,
+                [this](bool) {
+                    QTimer::singleShot(0, this, [this]() {
+                        cacheTabViewportHeights();
+                        updateActiveTabViewportHeight();
+                    });
+                });
         auto* liveBtnRow = new QHBoxLayout;
         m_liveStartBtn = new QPushButton(tr("Start"));
         m_liveStopBtn = new QPushButton(tr("Stop"));
@@ -255,23 +268,21 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
 
     connect(m_tabWidget, &QTabWidget::currentChanged, this, [this](int) {
         // The stacked page changes after this signal. Defer the measurement so
-        // a short tab never inherits the former page's height.
+        // a short tab never inherits the former page's height.  The deferred
+        // resize uses the minimumSizeHint-derived chrome, which is stable
+        // regardless of the current geometry.
         QTimer::singleShot(0, this,
                            [this]() { updateActiveTabViewportHeight(); });
     });
     outer->addWidget(m_tabWidget, 0);
 
-    m_downloadLabel = new QLabel(this);
-    m_downloadLabel->setVisible(false);
-    outer->addWidget(m_downloadLabel);
-
-    m_progress = new QProgressBar(this);
-    m_progress->setFixedHeight(16);
+    ecvAICoreUi::setupProgressSection(outer, m_downloadLabel, m_progress);
+    m_progress->setFixedHeight(ecvAICoreUi::dpiScaled(16));
     m_progress->setTextVisible(false);
-    m_progress->setMaximum(100);
-    m_progress->setValue(0);
+    // The progress bar stays visible as reserved space (the shared helper
+    // hides it by default); only the label toggles during transfers.
+    m_progress->setVisible(true);
     m_progress->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    outer->addWidget(m_progress);
 
     m_testDataWorker = new FaceDetectTestDataWorker(this);
     connect(m_testDataWorker, &FaceDetectTestDataWorker::phaseProgress, this,
@@ -500,10 +511,14 @@ void FaceDetectDialog::cacheTabViewportHeights() {
     for (int i = 0; i < m_tabWidget->count(); ++i) {
         QWidget* content = m_tabWidget->widget(i);
         if (!content) continue;
-        // Capture the static layout before a live preview receives pixmaps.
-        // Later content growth belongs to the page's own scroll area.
+        // Use sizeHint (not minimumSizeHint): a form tab's minimum is
+        // often far below what its content actually needs (e.g. the batch
+        // tab min 380 vs real 750), and sizing the viewport to the minimum
+        // inflated the dialog on every tab switch.  Captured before a live
+        // preview receives pixmaps; later content growth belongs to the
+        // page's own scroll area.
         m_tabViewportHeights.insert(content,
-                                    content->minimumSizeHint().height());
+                                    content->sizeHint().height());
     }
 }
 
@@ -517,19 +532,39 @@ void FaceDetectDialog::updateActiveTabViewportHeight() {
             2 * m_tabWidget->style()->pixelMetric(QStyle::PM_DefaultFrameWidth);
     const int cachedHeight = m_tabViewportHeights.value(
             content, content->minimumSizeHint().height());
-    // Use the construction-time layout minimum, not a live preview's
+    // Use the construction-time layout size, not a live preview's
     // pixmap-driven size hint. The active page owns its overflow.
     const int contentHeight =
             std::max(dpiScaled(kTabViewportMinHeight), cachedHeight);
     const int targetHeight = tabChrome + contentHeight;
 
-    m_tabWidget->setFixedHeight(targetHeight);
+    // Minimum (not fixed) height: the active page may grow taller when the
+    // user enlarges the dialog (video preview scales with the window);
+    // content is never compressed below its minimum, so controls cannot be
+    // pushed over the video area.
+    m_tabWidget->setMinimumHeight(targetHeight);
     m_tabWidget->updateGeometry();
-    if (isVisible() && m_activeTabHeight >= 0 &&
+    if (isVisible() && m_baseChrome >= 0 &&
         targetHeight != m_activeTabHeight) {
-        resize(width(), std::max(dpiScaled(420),
-                                 height() + targetHeight - m_activeTabHeight));
+        // Dialog height = stable non-tab chrome + the incoming tab's
+        // content.  The chrome is derived from minimumSizeHint deltas (not
+        // the current geometry) so it stays constant no matter how the
+        // user resized the window — the old delta formula mixed
+        // minimum-based and sizeHint-based numbers, inflating the dialog
+        // by hundreds of pixels on every tab switch, and the video preview
+        // then absorbed the surplus as a huge empty area.
+        const QScreen* screen =
+                QGuiApplication::screenAt(frameGeometry().center());
+        const int available =
+                screen ? screen->availableGeometry().height() : 800;
+        resize(width(),
+               qBound(dpiScaled(420), m_baseChrome + targetHeight,
+                      available - dpiScaled(20)));
     }
+    // Tab content is measured at construction and when the video controls row
+    // appears; after that, each tab's own scroll area handles overflow.  The
+    // dialog itself has no permanent minimum clamp so switching to a shorter
+    // tab works correctly (setMinimumHeight is updated per-tab below).
     m_activeTabHeight = targetHeight;
 }
 
@@ -543,6 +578,13 @@ void FaceDetectDialog::changeEvent(QEvent* event) {
     if (event->type() == QEvent::ScreenChangeInternal) {
         QTimer::singleShot(0, this, [this]() {
             cacheTabViewportHeights();
+            // Re-measure the chrome on the new monitor: Qt already
+            // resized the window to the new DPI before this deferred
+            // callback runs, so the height() - tab height delta reflects
+            // the fresh decorations and style metrics.
+            if (m_tabWidget) {
+                m_baseChrome = std::max(0, height() - m_tabWidget->height());
+            }
             updateActiveTabViewportHeight();
             update();
         });
@@ -553,8 +595,9 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
     batchTab->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
     auto* main = new QVBoxLayout(batchTab);
     FaceDetectUi::setupCompactMainLayout(main);
+    ecvAICoreUi::setupTabLayout(main);
 
-    auto* testDataBtn = new QPushButton(tr("\U0001f9ea  Try sample data"));
+    auto* testDataBtn = ecvAICoreUi::makeSampleDataBtn(this);
     testDataBtn->setToolTip(tr(
             "Download FriendsFaces sample pack and fill batch image path "
             "(does not register identities — use Registry / Auth tab for "
@@ -562,14 +605,6 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
             "Downloads the FriendsFaces sample pack and fills the batch image "
             "path (group photo). Does not register identities — use "
             "Registry / Auth for enrollment and authentication."));
-    // Prominent teal accent button — same style as the FreeSplatter test data
-    // button — guides first-time users to try bundled sample data.
-    testDataBtn->setStyleSheet(
-            "QPushButton { background: #00897b; color: white; font-weight: "
-            "bold; border: none; border-radius: 4px; padding: 5px 12px; }"
-            "QPushButton:hover { background: #00796b; }"
-            "QPushButton:pressed { background: #00695c; }"
-            "QPushButton:disabled { background: #b2dfdb; color: #e0f2f1; }");
 
     connect(testDataBtn, &QPushButton::clicked, this,
             [this]() { ensureFriendsTestData(false, false, true); });
@@ -732,6 +767,11 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
             m_batchImagePathUserChosen = true;
         }
     });
+    // Focus tracking: DB double-click assigns to the slot the user is
+    // currently editing (Image A by default, Image B when its field has
+    // focus in Verify mode).  The tracking itself lives in the
+    // QApplication::focusChanged handler installed below, next to the DB
+    // image list.
     auto* browseImg = FaceDetectUi::makeBrowseButton(tr("Browse…"));
     connect(browseImg, &QPushButton::clicked, this,
             &FaceDetectDialog::onBrowseImage);
@@ -846,9 +886,45 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
     // a full list scrolls instead of being squeezed.
     m_dbImageList->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
     m_dbImageList->setMinimumHeight(80);
-    m_dbImageList->setMaximumHeight(220);
+    m_dbImageList->setMaximumHeight(ecvAICoreUi::dbListMaxHeight());
     connect(m_dbImageList, &QListWidget::itemActivated, this,
             &FaceDetectDialog::onDbListActivated);
+
+    // DB-list double-click target follows the input slot the user is
+    // editing: focus in Image B (or moving straight from Image B into the
+    // list) targets B; any other focus change — including entering the
+    // list from anywhere else, clicking the mode combo, a button, another
+    // tab or the main window — falls back to the default Image A.  This
+    // replaces the old FocusIn-only tracking whose stale "B" state made
+    // every subsequent DB double-click overwrite Image B.
+    connect(qApp, &QApplication::focusChanged, this,
+            [this](QWidget* old, QWidget* now) {
+                if (now == m_secondImagePath) {
+                    m_dbAssignToSecondImage = true;
+                } else if (now == m_imagePath) {
+                    m_dbAssignToSecondImage = false;
+                } else if (now == m_dbImageList) {
+                    // Direct hand-off Image B → list: keep the B target
+                    // for the double-click the user is about to perform.
+                    if (old != m_secondImagePath) {
+                        m_dbAssignToSecondImage = false;
+                    }
+                } else {
+                    // Focus left both inputs (mode combo, buttons, other
+                    // tabs, main window…): default back to Image A.
+                    m_dbAssignToSecondImage = false;
+                }
+                updateDbAssignHint();
+            });
+
+    // Verify-mode hint making the focus-driven assignment discoverable
+    // instead of silently overwriting one of the two inputs.
+    m_dbAssignHintLabel = new QLabel;
+    m_dbAssignHintLabel->setStyleSheet(
+            "color: #6b7280; font-size: 11px;");
+    updateDbAssignHint();
+    m_dbAssignHintLabel->setVisible(false);
+    dbLayout->addWidget(m_dbAssignHintLabel);
     dbLayout->addWidget(m_dbImageList, 1);
     auto* refreshBtn = new QPushButton(tr("Refresh DB Images"));
     connect(refreshBtn, &QPushButton::clicked, this,
@@ -1260,12 +1336,28 @@ void FaceDetectDialog::updateSecondImagePreview() {
     if (!m_previewLabelB) return;
     const QString path =
             m_secondImagePath ? m_secondImagePath->text().trimmed() : QString();
-    if (path.isEmpty() || !isSupportedImageFile(path)) {
+    if (path.isEmpty()) {
         m_previewLabelB->clearPreview();
         m_previewLabelB->setText(tr("Image B"));
         return;
     }
-    QImage img(path);
+    QImage img;
+    if (path.startsWith(QStringLiteral("db://"))) {
+        // DB-tree entity: look up the stored full-resolution image
+        const QString name = path.mid(5);
+        for (int i = 0; i < m_dbImageList->count(); ++i) {
+            if (m_dbImageList->item(i)->text() == name) {
+                const QVariant full =
+                        m_dbImageList->item(i)->data(kDbFullImageRole);
+                if (full.canConvert<QImage>()) {
+                    img = full.value<QImage>();
+                }
+                break;
+            }
+        }
+    } else if (isSupportedImageFile(path)) {
+        img = QImage(path);
+    }
     if (img.isNull()) {
         m_previewLabelB->clearPreview();
         m_previewLabelB->setText(tr("?"));
@@ -1274,12 +1366,27 @@ void FaceDetectDialog::updateSecondImagePreview() {
     m_previewLabelB->setPreviewImage(img, kThumbSize);
 }
 
+void FaceDetectDialog::updateDbAssignHint() {
+    if (!m_dbAssignHintLabel) return;
+    m_dbAssignHintLabel->setText(
+            m_dbAssignToSecondImage
+                    ? tr("Double-click a DB image fills Image B (focus in "
+                         "Image B)")
+                    : tr("Double-click a DB image fills Image A"));
+}
+
 void FaceDetectDialog::updateModeUi() {
     const Mode mode = static_cast<Mode>(m_modeCombo->currentData().toInt());
     const bool verify = mode == Mode::Verify;
     const bool dense = mode == Mode::DenseLandmarks;
     m_secondImageRow->setVisible(verify);
     m_verifyOptionsRow->setVisible(verify);
+    if (m_dbAssignHintLabel) {
+        // The DB double-click target hint is only meaningful in Verify
+        // mode; elsewhere the DB list always fills Image A.
+        m_dbAssignHintLabel->setVisible(verify);
+        updateDbAssignHint();
+    }
     if (m_previewLabelB) {
         if (QWidget* wrap = m_previewLabelB->parentWidget()) {
             wrap->setVisible(verify);
@@ -1572,12 +1679,12 @@ void FaceDetectDialog::onModeChanged(int) {
     // measurement used for tab switching (see currentChanged handler).
     if (m_tabWidget && m_batchTab) {
         // Invalidate the cached height so updateActiveTabViewportHeight
-        // falls back to a fresh minimumSizeHint() if called before the
-        // deferred re-measurement completes.
+        // falls back to a fresh sizeHint() if called before the deferred
+        // re-measurement completes.
         m_tabViewportHeights.remove(m_batchTab);
         QTimer::singleShot(0, this, [this]() {
             if (!m_batchTab || !m_tabWidget) return;
-            const int freshHeight = m_batchTab->minimumSizeHint().height();
+            const int freshHeight = m_batchTab->sizeHint().height();
             m_tabViewportHeights.insert(m_batchTab, freshHeight);
             updateActiveTabViewportHeight();
         });
@@ -1730,6 +1837,30 @@ void FaceDetectDialog::closeEvent(QCloseEvent* event) {
     if (m_liveWidget) m_liveWidget->saveSettings();
     if (m_registryWidget) m_registryWidget->saveSettings();
     QDialog::closeEvent(event);
+}
+
+void FaceDetectDialog::showEvent(QShowEvent* event) {
+    QDialog::showEvent(event);
+    if (m_baseChrome >= 0) {
+        return;  // measured once; DPI changes re-measure in changeEvent
+    }
+    // At show time the layout is already settled (Qt applies sizeHint
+    // geometry before sending Show), so the initial dialog height minus
+    // the tab height is pure chrome, never polluted by user resizing.
+    // Measuring and resizing synchronously here applies the geometry
+    // BEFORE the window is mapped — deferring it into the event loop
+    // loses the race against the platform's async window map and the
+    // sizeHint-sized initial frame is shown first.
+    if (!m_tabWidget) return;
+    m_baseChrome = std::max(0, height() - m_tabWidget->height());
+    // First display: snap the dialog to exactly chrome + active tab
+    // so the initial size never carries layout slack from sizeHint
+    // inflation.
+    updateActiveTabViewportHeight();
+    if (m_activeTabHeight >= 0) {
+        resize(width(),
+               std::max(dpiScaled(420), m_baseChrome + m_activeTabHeight));
+    }
 }
 
 void FaceDetectDialog::loadBatchSettings() {
@@ -2201,7 +2332,17 @@ void FaceDetectDialog::ensureFriendsTestData(bool fillRegistry,
 void FaceDetectDialog::onDbListActivated(QListWidgetItem* item) {
     if (!item) return;
     m_batchImagePathUserChosen = true;
-    m_imagePath->setText(QStringLiteral("db://") + item->text());
+    const QString dbPath = QStringLiteral("db://") + item->text();
+    const Mode mode =
+            m_modeCombo ? static_cast<Mode>(m_modeCombo->currentData().toInt())
+                        : Mode::Detect;
+    if (mode == Mode::Verify && m_secondImagePath &&
+        m_dbAssignToSecondImage) {
+        // Verify mode with the Image B field focused: assign there.
+        m_secondImagePath->setText(dbPath);
+    } else {
+        m_imagePath->setText(dbPath);
+    }
 }
 
 void FaceDetectDialog::tryAutoDiscoverRegistryDb() {

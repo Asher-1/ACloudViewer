@@ -309,6 +309,12 @@ cd build_app && ctest --output-on-failure
 cmake -DAICore_ENABLED=ON -DAICore_BUILD_TESTS=ON ..
 cmake --build build_app --target test_capi -j "${BUILD_JOBS:-4}"
 
+# AICore tiered CTests — entry targets (ubuntu.yml aicore-tests job):
+#   aicore-fast-tests     ctest -LE "model|gpu|e2e"        (no GGUF assets)
+#   aicore-contract-tests ctest -L capi -LE "model|gpu|e2e" (C API contract)
+#   aicore-model-tests    ctest -L model                    (needs GGUF assets;
+#                           skips exit 77 when absent, never fails)
+
 # qManualCalib bag reader
 cmake -DPLUGIN_STANDARD_QMANUAL_CALIB=ON -DMCALIB_BUILD_TESTS=ON ..
 cmake --build build_app --target test_bag_reader -j
@@ -534,12 +540,3 @@ Debug workflow: read CI log **bottom-up** for the first error; distinguish Docke
 | AICore test skip (exit 77) | Missing GGUF model assets | Download from cloudViewer_downloads or set skip |
 | Plugin not in menu | CMake option OFF or build target missing | Reconfigure with `-DPLUGIN_STANDARD_Q…=ON`, rebuild plugin target |
 | ggml fix works locally but not in CI/PR | 手动改了 `build*/ggml/` 未生成 patch | 按 § ggml 源码修改规则 生成 patch 并注册 `manifest.yaml` |
-
-
-<claude-mem-context>
-# Memory Context
-
-# [ACloudViewer] recent context, 2026-08-20 3:59pm GMT+8
-
-No previous sessions found.
-</claude-mem-context>

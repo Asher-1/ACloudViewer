@@ -10,6 +10,7 @@
 #include <QtCompat.h>
 #include <cvFileDialog.h>
 #include <ecvPersistentSettings.h>
+#include "ecvAICoreUiHelper.h"
 
 #include <QComboBox>
 #include <QDateTime>
@@ -182,14 +183,11 @@ QString VideoPlaybackWidget::browseVideoFile(const QString& settingsPrefix) {
 
 void VideoPlaybackWidget::setPreviewFixedHeight(int height) {
     m_previewFixedHeight = height;
-    if (!m_previewLabel) return;
-    if (height > 0) {
-        m_previewLabel->setMinimumHeight(height);
-    } else {
-        const int previewWidth = std::max(320, contentsRect().width() - 8);
-        const int previewHeight = qBound(180, previewWidth * 9 / 16, 360);
-        m_previewLabel->setMinimumHeight(previewHeight);
-    }
+    // The height is enforced through the maximum-height refresh in
+    // resizeEvent (the layout — Expanding + stretch — then decides the
+    // actual height).  A hard minimum here is what made a tight layout
+    // clamp the preview geometry and overlap the controls below it.
+    updatePreviewHeightCap();
 }
 
 bool VideoPlaybackWidget::videoFileLoaded() const {
@@ -211,9 +209,8 @@ void VideoPlaybackWidget::setupUi() {
     m_previewLabel->setText(tr("Video preview"));
     m_mainLayout->addWidget(m_previewLabel, 1);
 
-    // Fixed gap between the video preview and the controls below so the
-    // input / camera comboboxes never visually invade the display area.
-    m_mainLayout->addSpacing(8);
+    // Tight spacing between the preview and the controls row below.
+    m_mainLayout->addSpacing(2);
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
     // Seek preview thumbnail — child of m_previewLabel so it overlays on
@@ -653,6 +650,7 @@ bool VideoPlaybackWidget::startVideoFile(const QString& path) {
     // Show playback controls now that a video is loaded.
     if (m_videoControlsRow) m_videoControlsRow->setVisible(true);
     updateVideoTimeLabel(0);
+    emit videoControlsVisibilityChanged(true);
 
     beginFrameProcessing();
     emit streamStarted();
@@ -1051,9 +1049,12 @@ void VideoPlaybackWidget::onSourceChangedInternal(int index) {
     // Hide playback controls in camera mode — they are meaningless for
     // live capture.
     if (m_videoControlsRow) {
-        m_videoControlsRow->setVisible(m_inputSource == InputSource::VideoFile);
+        const bool controlsVisible =
+                m_inputSource == InputSource::VideoFile;
+        m_videoControlsRow->setVisible(controlsVisible);
         if (m_videoSeekSlider) m_videoSeekSlider->setEnabled(false);
         if (m_playbackSpeedCombo) m_playbackSpeedCombo->setEnabled(false);
+        emit videoControlsVisibilityChanged(controlsVisible);
     }
     if (m_streamActive) {
         stopStream();
@@ -1287,21 +1288,36 @@ void VideoPlaybackWidget::closePreviewCapture() {
 // Events
 // ---------------------------------------------------------------------------
 
+void VideoPlaybackWidget::updatePreviewHeightCap() {
+    if (!m_previewLabel) return;
+    // 16:9 target height derived from the widget width (used as a floor
+    // only — the layout hands the preview all remaining space via stretch,
+    // so the video grows with the window).
+    const int previewWidth = std::max(320, contentsRect().width() - 8);
+    const int targetHeight = qBound(180, previewWidth * 9 / 16, 640);
+    if (m_previewFixedHeight > 0) {
+        // Fixed-height callers (e.g. qFaceDetect) keep the configured
+        // baseline as a hard floor.
+        m_previewLabel->setMinimumHeight(m_previewFixedHeight);
+    } else {
+        // Adaptive callers (e.g. qFreeSplatter inside a scroll area): claim
+        // the 16:9 target, capped so a very wide desktop does not inflate
+        // the form.  The scroll area grows instead of compressing.
+        m_previewLabel->setMinimumHeight(std::min(targetHeight, 420));
+        // Bounded maximum — a hard cap is REQUIRED for adaptive callers.
+        // Without it, the per-frame setPixmap → QLabel sizeHint (= pixmap
+        // size) → QScrollArea(widgetResizable) widget growth loop retains
+        // every external window enlargement forever: the preview and the
+        // dialog inflate together while a video plays.  560 px still lets
+        // the preview absorb leftover space in normal dialogs; only
+        // runaway growth is physically stopped.
+        m_previewLabel->setMaximumHeight(ecvAICoreUi::dpiScaled(560));
+    }
+}
+
 void VideoPlaybackWidget::resizeEvent(QResizeEvent* event) {
     QWidget::resizeEvent(event);
-    if (!m_previewLabel) return;
-
-    if (m_previewFixedHeight > 0) {
-        return;  // fixed-height mode (e.g. qFaceDetect) — geometry stable
-    }
-    // The camera image remains legible while the surrounding form scrolls on
-    // short displays.  Limit its height so a wide desktop does not make the
-    // capture controls unnecessarily far away.
-    const int previewWidth = std::max(320, contentsRect().width() - 8);
-    const int previewHeight = qBound(180, previewWidth * 9 / 16, 360);
-    if (m_previewLabel->height() != previewHeight) {
-        m_previewLabel->setFixedHeight(previewHeight);
-    }
+    updatePreviewHeightCap();
 }
 
 void VideoPlaybackWidget::showEvent(QShowEvent* event) {
@@ -1313,6 +1329,7 @@ void VideoPlaybackWidget::showEvent(QShowEvent* event) {
     if (m_videoControlsRow) m_videoControlsRow->setVisible(videoLoaded);
     if (m_videoSeekSlider) m_videoSeekSlider->setEnabled(videoLoaded);
     if (m_playbackSpeedCombo) m_playbackSpeedCombo->setEnabled(videoLoaded);
+    emit videoControlsVisibilityChanged(videoLoaded);
 #endif
 }
 
@@ -1328,8 +1345,8 @@ bool VideoPlaybackWidget::eventFilter(QObject* obj, QEvent* event) {
                     const int sliderWidth = m_videoSeekSlider->width();
                     if (sliderWidth > 0) {
                         const int frame = static_cast<int>(
-                                me->pos().x() * (m_totalVideoFrames - 1) /
-                                sliderWidth);
+                                qtCompatMouseEventPosInt(me).x() *
+                                (m_totalVideoFrames - 1) / sliderWidth);
                         const int clamped =
                                 qBound(0, frame, m_totalVideoFrames - 1);
                         // Show preview at clicked position
@@ -1392,7 +1409,8 @@ bool VideoPlaybackWidget::eventFilter(QObject* obj, QEvent* event) {
                 const int sliderWidth = m_videoSeekSlider->width();
                 if (sliderWidth <= 0) break;
                 const int frame = static_cast<int>(
-                        me->pos().x() * (m_totalVideoFrames - 1) / sliderWidth);
+                        qtCompatMouseEventPosInt(me).x() *
+                        (m_totalVideoFrames - 1) / sliderWidth);
                 showSeekPreview(qBound(0, frame, m_totalVideoFrames - 1));
                 break;
             }

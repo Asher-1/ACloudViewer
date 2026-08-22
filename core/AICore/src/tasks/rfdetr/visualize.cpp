@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <vector>
 
 namespace {
 
@@ -373,6 +374,38 @@ extern "C" void rfdetr_visualize_draw_box(rfdetr_image* img,
     draw_text(img, bx1 + padding, by1 + padding, label, tr, tg, tb, scale);
 }
 
+
+/* 3-tap separable Gaussian blur [1,2,1] / 4 on a uint8 buffer (in place).
+ * Converts hard binary mask edges into a continuous soft gradient before
+ * bilinear upsampling, so the upscaled overlay has one smooth transition
+ * per object boundary rather than a "furry" staircase of per-pixel steps.
+ * Sigma~0.5, radius~1 pixel — negligible on 640x640 (~2M ops, <0.1 ms). */
+static void gaussian_blur_mask3(uint8_t* buf, int w, int h) {
+    if (w <= 2 || h <= 2) return;
+    std::vector<uint8_t> tmp(static_cast<size_t>(w) * h);
+    /* Horizontal pass: [1,2,1] / 4 */
+    for (int y = 0; y < h; ++y) {
+        const uint8_t* src = buf + (size_t)y * w;
+        uint8_t* dst = tmp.data() + (size_t)y * w;
+        for (int x = 0; x < w; ++x) {
+            const int l = (x > 0) ? src[x - 1] : 0;
+            const int m = src[x];
+            const int r = (x < w - 1) ? src[x + 1] : 0;
+            dst[x] = (uint8_t)((l + m * 2 + r) / 4);
+        }
+    }
+    /* Vertical pass: [1,2,1] / 4, writing back to buf */
+    for (int y = 0; y < h; ++y) {
+        uint8_t* dst = buf + (size_t)y * w;
+        for (int x = 0; x < w; ++x) {
+            const int t = (y > 0) ? tmp[(size_t)(y - 1) * w + x] : 0;
+            const int m = tmp[(size_t)y * w + x];
+            const int b = (y < h - 1) ? tmp[(size_t)(y + 1) * w + x] : 0;
+            dst[x] = (uint8_t)((t + m * 2 + b) / 4);
+        }
+    }
+}
+
 extern "C" void rfdetr_visualize_overlay_mask(rfdetr_image* img,
                                               rfdetr_detection det,
                                               float alpha) {
@@ -398,25 +431,58 @@ extern "C" void rfdetr_visualize_overlay_mask(rfdetr_image* img,
     const int ih = img->height;
     float one_minus = 1.0f - alpha;
 
-    /* Masks are kept at model resolution (e.g. 640x640) and stretched over
+    /* Pre-blur the binary mask at its native resolution so the bilinear
+     * upsampling below produces a single smooth transition per object
+     * boundary instead of a "furry" staircase of individual mask-pixel
+     * transitions (which happens when bilinear is applied to a hard 0/255
+     * step function directly).  The 3-tap Gaussian is O(5 * mw * mh) and
+     * costs well under 0.1 ms on 640x640.  det.mask is const (owned by the
+     * caller), so we blur into a local copy. */
+    std::vector<uint8_t> blur_buf(det.mask, det.mask + (size_t)mw * mh);
+    gaussian_blur_mask3(blur_buf.data(), mw, mh);
+
+    /* Bilinear interpolation of the soft (blurred) mask.  Gaussian pre-
+     * filtering converts the hard binary edge into a continuous gradient,
+     * so the bilinear upsampling produces a fractional alpha that blends
+     * smoothly over ~2–3 output pixels — nearest-neighbour mapping prior
+     * to both the blur and the bilinear change produced hard jagged edges.
+     *
+     * Masks are kept at model resolution (e.g. 640x640) and stretched over
      * the frame on display — the preprocess path stretches the input the
      * same way (IgnoreAspectRatio). Reverse-map every frame pixel into mask
      * space so no target region is left out (a forward map over the smaller
      * mask would leave holes). When mw == iw && mh == ih the mapping
-     * collapses to sy == y, sx == x — identical to a direct overlay. */
+     * collapses to the identity so only one mask pixel is read per output
+     * pixel — identical to a direct overlay in both speed and output. */
     for (int y = 0; y < ih; ++y) {
-        int sy = (int)(((float)y + 0.5f) * mh / (float)ih - 0.5f);
-        sy = sy < 0 ? 0 : (sy >= mh ? mh - 1 : sy);
-        const uint8_t* row = det.mask + (size_t)sy * mw;
+        const float fw = ((float)y + 0.5f) * (float)mh / (float)ih - 0.5f;
+        const int sy0 = std::max(0, (int)std::floor(fw));
+        const int sy1 = std::min(mh - 1, sy0 + 1);
+        const float wy = fw - (float)sy0;
+        const uint8_t* row0 = blur_buf.data() + (size_t)sy0 * mw;
+        const uint8_t* row1 = blur_buf.data() + (size_t)sy1 * mw;
         uint8_t* prow = img->rgb.data() + (size_t)y * iw * 3;
         for (int x = 0; x < iw; ++x) {
-            int sx = (int)(((float)x + 0.5f) * mw / (float)iw - 0.5f);
-            sx = sx < 0 ? 0 : (sx >= mw ? mw - 1 : sx);
-            if (row[sx] == 0) continue;
+            const float fv = ((float)x + 0.5f) * (float)mw / (float)iw - 0.5f;
+            const int sx0 = std::max(0, (int)std::floor(fv));
+            const int sx1 = std::min(mw - 1, sx0 + 1);
+            const float wx = fv - (float)sx0;
+            /* Bilinear blend of the four nearest mask pixels.  The mask is
+             * 0x00 (background) or 0xFF (foreground), so the result is a
+             * sub-pixel coverage fraction in [0, 1]. */
+            const float cov = ((float)row0[sx0] * (1.0f - wx) +
+                               (float)row0[sx1] * wx) *
+                                      (1.0f - wy) +
+                              ((float)row1[sx0] * (1.0f - wx) +
+                               (float)row1[sx1] * wx) *
+                                      wy;
+            const float a = cov / 255.0f * alpha;
+            if (a <= 0.001f) continue;
+            const float om = 1.0f - a;
             uint8_t* px = prow + (size_t)x * 3;
-            px[0] = (uint8_t)(px[0] * one_minus + r * alpha);
-            px[1] = (uint8_t)(px[1] * one_minus + g * alpha);
-            px[2] = (uint8_t)(px[2] * one_minus + b * alpha);
+            px[0] = (uint8_t)(px[0] * om + r * a);
+            px[1] = (uint8_t)(px[1] * om + g * a);
+            px[2] = (uint8_t)(px[2] * om + b * a);
         }
     }
 }

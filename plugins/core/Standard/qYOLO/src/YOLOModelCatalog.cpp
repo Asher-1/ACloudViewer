@@ -274,6 +274,33 @@ void drawDetections(QImage* image,
     p.end();
 }
 
+/* 3-tap separable Gaussian blur [1,2,1]/4 on Grayscale8. */
+static void gaussianBlurMask3(QImage& img) {
+    if (img.format() != QImage::Format_Grayscale8) return;
+    const int w = img.width(), h = img.height();
+    if (w <= 2 || h <= 2) return;
+    QImage tmp(w, h, QImage::Format_Grayscale8);
+    for (int y = 0; y < h; ++y) {
+        const uchar* s = img.constScanLine(y);
+        uchar* d = tmp.scanLine(y);
+        for (int x = 0; x < w; ++x) {
+            const int l = (x > 0) ? s[x - 1] : 0;
+            const int m = s[x];
+            const int r = (x < w - 1) ? s[x + 1] : 0;
+            d[x] = (uint8_t)((l + m * 2 + r) / 4);
+        }
+    }
+    for (int y = 0; y < h; ++y) {
+        uchar* d = img.scanLine(y);
+        for (int x = 0; x < w; ++x) {
+            const int t = (y > 0) ? tmp.constScanLine(y - 1)[x] : 0;
+            const int m = tmp.constScanLine(y)[x];
+            const int b = (y < h - 1) ? tmp.constScanLine(y + 1)[x] : 0;
+            d[x] = (uint8_t)((t + m * 2 + b) / 4);
+        }
+    }
+}
+
 void drawSegmentation(QImage* image,
                       const QVector<YOLOSegMask>& masks,
                       const QVector<YOLODetection>& detections,
@@ -302,25 +329,45 @@ void drawSegmentation(QImage* image,
         std::memcpy(maskImage.bits(), mask.bits.constData(),
                     static_cast<size_t>(mask.w) * mask.h);
         if (maskImage.isNull()) continue;
-        maskImage = maskImage.scaled(imgW, imgH, Qt::IgnoreAspectRatio,
-                                     Qt::FastTransformation);
+        // YOLO mask values are {0, 1} (not {0, 255}).  Scale to full
+        // uint8 range so the Gaussian blur below produces meaningful
+        // intermediate values at edges instead of eroding everything
+        // through integer division ((0 + 2*1 + 1) / 4 = 0).
+        for (int b = 0; b < maskImage.sizeInBytes(); ++b) {
+            if (maskImage.bits()[b]) maskImage.bits()[b] = 255;
+        }
+        // 3-tap Gaussian blur at native resolution converts the hard
+        // binary mask edge into a soft gradient so SmoothTransformation
+        // downscaling produces a single smooth boundary per object instead
+        // of a "furry" staircase of per-pixel transitions.
+        gaussianBlurMask3(maskImage);
+        // The mask is already at the full image resolution (AICore's
+        // unscale_masks_to_image produces image_w x image_h masks), so
+        // QImage::scaled() would be a full-resolution deep copy — pure
+        // waste.  Skip it and use the mask directly.
         const QColor tint = i < detections.size()
                                     ? QColor(classColor(detections[i].classId))
                                     : QColor(220, 220, 220);
 
-        // Alpha-blend the tint over the foreground mask pixels (no painter
-        // needed — a straight per-pixel pass over the downscaled mask).
+        // Alpha-blend the tint over the foreground mask pixels, with the
+        // blend weight proportional to the mask coverage so SmoothTransformation
+        // anti-aliased edges transition smoothly instead of snapping to full
+        // opacity at the first non-zero pixel.
         for (int y = 0; y < imgH; ++y) {
             const uchar* src = maskImage.constScanLine(y);
             uchar* dst = image->scanLine(y);
             for (int x = 0; x < imgW; ++x) {
                 if (src[x] == 0) continue;
+                const int w = src[x];  // coverage weight 1..255
                 const int d = x * 4;
-                dst[d] = static_cast<uchar>((dst[d] * 2 + tint.blue()) / 3);
-                dst[d + 1] =
-                        static_cast<uchar>((dst[d + 1] * 2 + tint.green()) / 3);
-                dst[d + 2] =
-                        static_cast<uchar>((dst[d + 2] * 2 + tint.red()) / 3);
+                // (dst * (765 - w) + tint * w) / 765  — preserves the
+                // original 2/3 + 1/3 ratio when w == 255.
+                dst[d] = static_cast<uchar>(
+                        (dst[d] * (765 - w) + tint.blue() * w) / 765);
+                dst[d + 1] = static_cast<uchar>(
+                        (dst[d + 1] * (765 - w) + tint.green() * w) / 765);
+                dst[d + 2] = static_cast<uchar>(
+                        (dst[d + 2] * (765 - w) + tint.red() * w) / 765);
             }
         }
     }

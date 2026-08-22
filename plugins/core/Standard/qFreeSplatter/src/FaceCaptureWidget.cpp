@@ -130,6 +130,15 @@ FaceCaptureWidget::FaceCaptureWidget(QWidget* parent)
             &FaceCaptureWidget::cameraError);
 
     m_inferenceCancelToken = aicore_cancel_token_new();
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    // Async GGML detection: inference runs on a thread pool so the GUI
+    // thread (and display timer) is never blocked.  The watcher is owned
+    // by this widget and is reused for every detection cycle.
+    m_detectWatcher = new QFutureWatcher<std::vector<ScoredFace>>(this);
+    connect(m_detectWatcher,
+            &QFutureWatcher<std::vector<ScoredFace>>::finished, this,
+            &FaceCaptureWidget::onAsyncDetectFinished);
+#endif
     m_downloader = new ecvModelDownloader(this);
     connect(m_downloader, &ecvModelDownloader::logMessage, this,
             &FaceCaptureWidget::logMessage);
@@ -249,6 +258,12 @@ FaceCaptureWidget::~FaceCaptureWidget() {
         m_pendingGgmlPath.clear();
     }
     releaseGgmlModel();
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    if (m_detectWatcher) {
+        m_detectWatcher->future().cancel();
+        m_detectWatcher->waitForFinished();
+    }
+#endif
     aicore_cancel_token_free(m_inferenceCancelToken);
     m_inferenceCancelToken = nullptr;
 }
@@ -1434,11 +1449,17 @@ void FaceCaptureWidget::onFrameDecoded(cv::Mat& frame, int frameIndex) {
     // and labels are painted by onDisplayFrame).
     if (!m_identityTracks.empty() && detectorReady() &&
         m_detectorKind == DetectorKind::Ggml && !m_ggmlModelLoading) {
-        if (timeForDetection) {
-            const std::vector<ScoredFace> faces = detectFacesGgml(frame);
-            processRegistryIdentities(frame, faces);
-            m_lastDetectedFrameNum = frameIndex;
-            m_lastDetectedFrame = frame.clone();
+        if (timeForDetection &&
+            m_detectPendingFrame.loadRelaxed() < 0) {
+            // ASYNC: GGML inference runs on a thread pool so the GUI thread
+            // (and display timer) is never blocked.
+            m_detectPendingFrame.storeRelaxed(frameIndex);
+            m_pendingDetectFrameNum = frameIndex;
+            m_asyncPendingFrame = frame.clone();
+            m_detectWatcher->setFuture(QtConcurrent::run(
+                    [this, f = m_asyncPendingFrame.clone()]() {
+                        return detectFacesGgml(f);
+                    }));
         }
         return;
     }
@@ -1447,40 +1468,103 @@ void FaceCaptureWidget::onFrameDecoded(cv::Mat& frame, int frameIndex) {
     bool freshDetection = false;
     if (detectorReady() && !m_ggmlModelLoading) {
         if (m_detectorKind == DetectorKind::Ggml) {
-            if (timeForDetection) {
-                faceRect = detectFaceGgml(frame);
-                m_lastDetectedFrameNum = frameIndex;
-                freshDetection = true;
+            if (timeForDetection &&
+                m_detectPendingFrame.loadRelaxed() < 0) {
+                // ASYNC: submit GGML inference to thread pool.
+                m_detectPendingFrame.storeRelaxed(frameIndex);
+                m_pendingDetectFrameNum = frameIndex;
+                m_asyncPendingFrame = frame.clone();
+                m_detectWatcher->setFuture(QtConcurrent::run(
+                        [this, f = m_asyncPendingFrame.clone()]() {
+                            return detectFacesGgml(f);
+                        }));
+                // Use last known rect until async result arrives.
+                if (m_lastFaceRect.width > 0) faceRect = m_lastFaceRect;
             } else {
+                // Not time for detection or one already pending: use last
+                // known rect.
                 if (m_lastFaceRect.width > 0) faceRect = m_lastFaceRect;
             }
         } else {
+            // OpenCV cascade: fast enough to run synchronously.
             faceRect = detectFaceOpenCv(frame);
             freshDetection = true;
         }
 
-        if (faceRect.width > 0 && faceRect.height > 0) {
-            ++m_consecutiveDetections;
-            m_lastFaceRect = faceRect;
-            if (freshDetection && m_capturingMode) {
-                // Keep the detected frame only while capturing —
-                // captureCurrentFrame needs a frame matching m_lastFaceRect.
-                // Outside capture mode the per-frame full-res clone is pure
-                // waste (OpenCV detects on every frame).
-                m_lastDetectedFrame = frame.clone();
-            }
-            emit faceDetected(QRect(faceRect.x, faceRect.y, faceRect.width,
-                                    faceRect.height));
-        } else {
-            m_consecutiveDetections = 0;
-            m_lastFaceRect = cv::Rect();
-            m_lastDetectedFrame.release();
-            m_lastFaceScore = 0.f;
-            emit faceNotDetected();
+        // Process synchronous detection results immediately.
+        if (m_detectorKind != DetectorKind::Ggml) {
+            processDetectResult(faceRect, frame, frameIndex, freshDetection);
         }
     }
+    // For async GGML: processDetectResult is called from
+    // onAsyncDetectFinished when the inference completes.
+#endif
+}
 
-    // Guided-capture auto-trigger logic (uses the detection state above).
+void FaceCaptureWidget::onAsyncDetectFinished() {
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    if (!m_detectWatcher || !m_detectWatcher->isFinished()) return;
+    const auto faces = m_detectWatcher->result();
+    const int frameIndex = m_pendingDetectFrameNum;
+    m_detectPendingFrame.storeRelaxed(-1);
+
+    if (m_asyncPendingFrame.empty()) {
+        m_asyncPendingFrame.release();
+        return;
+    }
+
+    // Identity-track mode: run registry matching on the GUI thread with
+    // the async result.
+    if (!m_identityTracks.empty()) {
+        processRegistryIdentities(m_asyncPendingFrame, faces);
+        m_lastDetectedFrameNum = frameIndex;
+        m_asyncPendingFrame.release();
+        // Overlays are painted by onDisplayFrame; no faceRect status update
+        // needed here (identity tracks draw their own labels).
+        return;
+    }
+
+    // Pick the best face and update all dependent state (rect, confidence,
+    // consecutive counter, auto-capture) — this mirrors the synchronous
+    // path after detectFaceOpenCv in onFrameDecoded.
+    cv::Mat pendingFrame = m_asyncPendingFrame;  // move
+    m_asyncPendingFrame.release();
+    cv::Rect faceRect = pickFace(pendingFrame, faces);
+    const bool freshDetection = (faceRect.width > 0);
+    m_lastDetectedFrameNum = frameIndex;
+
+    processDetectResult(faceRect, pendingFrame, frameIndex,
+                        freshDetection);
+#endif
+}
+
+void FaceCaptureWidget::processDetectResult(const cv::Rect& faceRect,
+                                             const cv::Mat& sourceFrame,
+                                             int frameIndex,
+                                             bool freshDetection) {
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    Q_UNUSED(frameIndex);
+    if (faceRect.width > 0 && faceRect.height > 0) {
+        ++m_consecutiveDetections;
+        m_lastFaceRect = faceRect;
+        if (freshDetection && m_capturingMode) {
+            // Keep the detected frame only while capturing —
+            // captureCurrentFrame needs a frame matching m_lastFaceRect.
+            // Outside capture mode the per-frame full-res clone is pure
+            // waste (OpenCV detects on every frame).
+            m_lastDetectedFrame = sourceFrame.clone();
+        }
+        emit faceDetected(QRect(faceRect.x, faceRect.y, faceRect.width,
+                                faceRect.height));
+    } else {
+        m_consecutiveDetections = 0;
+        m_lastFaceRect = cv::Rect();
+        m_lastDetectedFrame.release();
+        m_lastFaceScore = 0.f;
+        emit faceNotDetected();
+    }
+
+    // Guided-capture auto-trigger logic.
     if (m_capturingMode) {
         const int trigger = (inputSource() == InputSource::VideoFile)
                                     ? kVideoAutoCaptureTrigger
@@ -1510,8 +1594,8 @@ void FaceCaptureWidget::onFrameDecoded(cv::Mat& frame, int frameIndex) {
                 m_captureBtn->setEnabled(m_consecutiveDetections >= 3);
             }
             if (faceRect.width > 0) {
-                int pct =
-                        std::min(100, m_consecutiveDetections * 100 / trigger);
+                int pct = std::min(
+                        100, m_consecutiveDetections * 100 / trigger);
                 m_statusLabel->setText(
                         tr("Stabilizing... %1% (%2/%3 faces captured)")
                                 .arg(pct)
@@ -1534,13 +1618,19 @@ void FaceCaptureWidget::onFrameDecoded(cv::Mat& frame, int frameIndex) {
             if (m_captureBtn) m_captureBtn->setEnabled(true);
             m_statusLabel->setText(
                     tr("Auto-capture in %1s (or click Capture)")
-                            .arg((kNoCascadeAutoInterval - m_noCascadeCounter) /
+                            .arg((kNoCascadeAutoInterval -
+                                  m_noCascadeCounter) /
                                          30 +
                                  1));
         } else {
             m_statusLabel->setText(tr("Loading face detector..."));
         }
     }
+#else
+    Q_UNUSED(faceRect);
+    Q_UNUSED(sourceFrame);
+    Q_UNUSED(frameIndex);
+    Q_UNUSED(freshDetection);
 #endif
 }
 

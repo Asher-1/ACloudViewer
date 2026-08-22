@@ -8,6 +8,15 @@ on:
         description: 'Set to OFF for Release wheels'
         required: false
         default: 'ON'
+      aicore_model_tests:
+        description: 'Run the AICore model tier (requires GGUF assets; tests skip when assets are missing)'
+        required: false
+        type: boolean
+        default: false
+      aicore_assets_root:
+        description: 'AICore test asset root (extracted cloudViewer_data bundle, e.g. ~/cloudViewer_data/extract)'
+        required: false
+        default: ''
   push:
     branches:
       - main
@@ -272,3 +281,119 @@ jobs:
       - name: Level 3 — Headless processing tests
         run: |
           python -m pytest agent-integration/tests/test_integration.py -v -k "level3"
+
+  # ---------------------------------------------------------------------------
+  # AICore tiered tests — fast lane for hot-path changes
+  #
+  # The AICore CTest suite is already tiered (core/AICore/tests/CMakeLists.txt):
+  #   fast  — no GGUF assets            aicore-fast-tests     (ctest -LE "model|gpu|e2e")
+  #   capi  — public C API contract     aicore-contract-tests (ctest -L capi -LE "model|gpu|e2e")
+  #   model — needs GGUF assets         AICORE_TEST_ENABLE_MODEL_TESTS=ON + asset root
+  #
+  # The docker build/test chain never runs ctest, so this job is the only
+  # Ubuntu lane exercising the tiers. It activates when a hot-path file
+  # changed (PR/push), or unconditionally on release / workflow_dispatch, so
+  # unrelated PRs stay cheap and the full docker build is untouched.
+  #
+  # model tier reachability: hosted runners have neither a durable model cache
+  # nor a GPU, so model tests are OFF by default (ENV{CI}). When enabled
+  # without assets they skip (SKIP_RETURN_CODE 77) — reported as skipped, not
+  # failed — so enabling them can never introduce an unreachable check.
+  aicore-tests:
+    name: AICore tiered tests
+    runs-on: ubuntu-latest
+    needs: [skip-check]
+    if: needs.skip-check.outputs.skip == 'no' && !contains(github.event.head_commit.message, '[skip ci]')
+    timeout-minutes: 120
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # paths-filter needs history to diff against the PR base
+      - name: Detect hot-path changes
+        id: filter
+        if: github.event_name == 'pull_request' || github.event_name == 'push'
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            aicore:
+              - 'core/AICore/**'
+              - 'libs/CVPluginAPI/**'
+              - 'plugins/core/Standard/qDA3/**'
+              - 'plugins/core/Standard/qFreeSplatter/**'
+              - 'plugins/core/Standard/qDeepLSD/**'
+              - 'plugins/core/Standard/qFaceDetect/**'
+              - 'plugins/core/Standard/qLightGlue/**'
+              - 'plugins/core/Standard/qRFDetr/**'
+              - 'plugins/core/Standard/qRMBG/**'
+              - 'plugins/core/Standard/qYOLO/**'
+              - '3rdparty/ggml/**'
+              - 'cmake/AICoreOptions.cmake'
+              - '.github/workflows/ubuntu.yml'
+      - name: Gate (non-PR/push events always run)
+        id: gate
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ] || [ "${{ github.event_name }}" = "push" ]; then
+            echo "run=${{ steps.filter.outputs.aicore }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Install Qt5 (configure requires Qt for libs/CVAppCommon)
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends qtbase5-dev libgl1-mesa-dev
+      - name: Configure (AICore + tiered tests, CPU-only)
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          MODEL_ARGS=""
+          if [ "${{ github.event.inputs.aicore_model_tests }}" = "true" ]; then
+            MODEL_ARGS="-DAICORE_TEST_ENABLE_MODEL_TESTS=ON"
+            if [ -n "${{ github.event.inputs.aicore_assets_root }}" ]; then
+              MODEL_ARGS="$MODEL_ARGS -DAICORE_TEST_ASSET_ROOT=${{ github.event.inputs.aicore_assets_root }}"
+            else
+              # Empty asset root: model tests register but their asset env is
+              # never set, so each skips (SKIP_RETURN_CODE 77) instead of
+              # failing on missing files. Hosted runners have no assets, so
+              # this keeps the model tier reachable but never red.
+              MODEL_ARGS="$MODEL_ARGS -DAICORE_TEST_ASSET_ROOT="
+            fi
+          fi
+          cmake -S . -B build-aicore \
+            -DDEVELOPER_BUILD=ON \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_GUI=OFF \
+            -DUSE_VTK_BACKEND=OFF \
+            -DBUILD_PYTHON_MODULE=OFF \
+            -DBUILD_OPENCV=OFF \
+            -DBUILD_RECONSTRUCTION=OFF \
+            -DBUILD_EXAMPLES=OFF \
+            -DBUILD_UNIT_TESTS=ON \
+            -DBUILD_BENCHMARKS=OFF \
+            -DBUILD_WITH_CONDA=OFF \
+            -DAICore_ENABLED=ON \
+            -DAICore_BUILD_TESTS=ON \
+            -DAICore_BUILD_WHITEBOX_TESTS=ON \
+            -DAICore_USE_VULKAN=OFF \
+            -DAICore_USE_CUDA=OFF \
+            $MODEL_ARGS
+      - name: Build + run fast tier (no GGUF assets)
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          cmake --build build-aicore --target aicore-fast-tests -j2
+      - name: Build + run capi contract tier
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          cmake --build build-aicore --target aicore-contract-tests -j2
+      # Shared AICore UI helper (ecvAICoreUiHelper.h) regression test:
+      # compact spacing/margins, form-grid stretch pattern and DPI scaling
+      # invariants used by every AICore plugin dialog.  Runs headless.
+      - name: Build + run shared UI helper tests
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          cmake --build build-aicore --target test_cvpluginapi_ui_helpers -j2
+          ctest --test-dir build-aicore -R test_cvpluginapi_ui_helpers --output-on-failure
+      - name: Build + run model tier (workflow_dispatch; skips without assets)
+        if: steps.gate.outputs.run == 'true' && github.event.inputs.aicore_model_tests == 'true'
+        run: |
+          cmake --build build-aicore --target aicore-model-tests -j2
