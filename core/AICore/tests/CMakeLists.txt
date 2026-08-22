@@ -232,6 +232,30 @@ function(aicore_add_rmbg_capi_test name)
     set_tests_properties(${name} PROPERTIES LABELS "capi")
 endfunction()
 
+function(aicore_add_sam3_capi_test name)
+    add_executable(${name} sam3/${name}.cpp)
+    target_link_libraries(${name} PRIVATE AICore)
+    _aicore_capi_link(${name})
+    _aicore_test_common(${name})
+    if(NOT MSVC)
+        target_compile_options(${name} PRIVATE -fPIC)
+        target_link_options(${name} PRIVATE "-no-pie")
+    endif()
+    set_tests_properties(${name} PROPERTIES LABELS "capi")
+endfunction()
+
+function(aicore_add_trellis_capi_test name)
+    add_executable(${name} trellis/${name}.cpp)
+    target_link_libraries(${name} PRIVATE AICore)
+    _aicore_capi_link(${name})
+    _aicore_test_common(${name})
+    if(NOT MSVC)
+        target_compile_options(${name} PRIVATE -fPIC)
+        target_link_options(${name} PRIVATE "-no-pie")
+    endif()
+    set_tests_properties(${name} PROPERTIES LABELS "capi")
+endfunction()
+
 function(aicore_add_aliked_capi_test name)
     add_executable(${name} aliked/${name}.cpp)
     target_link_libraries(${name} PRIVATE AICore)
@@ -373,6 +397,8 @@ aicore_add_rfdetr_perf_bench()
 aicore_add_rfdetr_capi_test(test_rfdetr_capi_contract)
 aicore_add_rmbg_capi_test(test_rmbg_capi_contract)
 aicore_add_rmbg_capi_test(test_rmbg_capi_performance)
+aicore_add_sam3_capi_test(test_sam3_capi_contract)
+aicore_add_trellis_capi_test(test_trellis_capi_contract)
 set_tests_properties(test_rmbg_capi_performance PROPERTIES
     LABELS "capi;model;gpu;performance")
 
@@ -565,6 +591,8 @@ set(_aicore_contract_targets
     test_deeplsd_capi_contract
     test_rmbg_capi_contract
     test_rmbg_capi_performance
+    test_sam3_capi_contract
+    test_trellis_capi_contract
     test_yolo_capi_performance)
 set(_aicore_contract_model_exclude)
 if(NOT AICORE_TEST_ENABLE_MODEL_TESTS)

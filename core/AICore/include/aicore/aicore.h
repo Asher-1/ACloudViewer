@@ -41,3 +41,5 @@
 #include "aicore/lightglue_capi.h"
 #include "aicore/rfdetr_capi.h"
 #include "aicore/rmbg_capi.h"
+#include "aicore/sam3_capi.h"
+#include "aicore/trellis_capi.h"

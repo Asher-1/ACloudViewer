@@ -9,6 +9,8 @@ ACloudViewer provides five AI plugins through the unified inference library **`l
 | **qFaceDetect** | [qFaceDetect user guide](qFaceDetect.md) | `PLUGIN_STANDARD_QFACEDETECT` | face-detect.cpp: SCRFD/YuNet detection, ArcFace/SFace verify, age/gender, anti-spoof |
 | **qLightGlue** | [qLightGlue user guide](qLightGlue.md) | `PLUGIN_STANDARD_QLIGHTGLUE` | SIFT/ALIKED LightGlue GGUF — sparse matching |
 | **qFreeSplatter** | [qFreeSplatter user guide](qFreeSplatter.md) | `PLUGIN_STANDARD_QFREESPLATTER` | FreeSplatter: uncalibrated photos → 3D Gaussian splats; **Face Capture** tab (OpenCV Haar or AICore GGUF detector); SIBR PLY; optional qSIBR preview |
+| **qSAM3** | [qSAM3 user guide](qSAM3.md) | `PLUGIN_STANDARD_QSAM3` | SAM2/SAM2.1/SAM3: promptable segmentation + video tracking (GGUF, DINOv2 + Hiera backbones) |
+| **qTrellis** | [qTrellis README](../../../plugins/core/Standard/qTrellis/README.md) | `PLUGIN_STANDARD_QTRELLIS` | TRELLIS.2: single-image → 3D triangle mesh with PBR materials (GGUF, DINOv3 + flow-matching DiTs + FlexiDualGrid VAE) |
 
 ## Prerequisites
 
@@ -34,6 +36,8 @@ cmake -B build_app \
   -DPLUGIN_STANDARD_QRFDETR=ON \
   -DPLUGIN_STANDARD_QRMBG=ON \
   -DPLUGIN_STANDARD_QYOLO=ON \
+  -DPLUGIN_STANDARD_QSAM3=ON \
+  -DPLUGIN_STANDARD_QTRELLIS=ON \
   -DPLUGIN_STANDARD_QSIBR=ON \
   -DBUILD_RECONSTRUCTION=ON \
   .
@@ -43,6 +47,6 @@ cmake --build build_app --target ACloudViewer QDA3_PLUGIN QFACEDETECT_PLUGIN QFR
 
 ## More resources
 
-- Full plugin READMEs (developer details, tests, C API): [`plugins/core/Standard/qDA3/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qDA3/README.md), [`plugins/core/Standard/qDeepLSD/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qDeepLSD/README.md), [`plugins/core/Standard/qFaceDetect/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qFaceDetect/README.md), [`plugins/core/Standard/qLightGlue/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qLightGlue/README.md), [`plugins/core/Standard/qFreeSplatter/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qFreeSplatter/README.md)
+- Full plugin READMEs (developer details, tests, C API): [`plugins/core/Standard/qDA3/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qDA3/README.md), [`plugins/core/Standard/qDeepLSD/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qDeepLSD/README.md), [`plugins/core/Standard/qFaceDetect/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qFaceDetect/README.md), [`plugins/core/Standard/qLightGlue/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qLightGlue/README.md), [`plugins/core/Standard/qFreeSplatter/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qFreeSplatter/README.md), [`plugins/core/Standard/qSAM3/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qSAM3/README.md), [`plugins/core/Standard/qTrellis/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qTrellis/README.md)
 - Plugin catalog: [`plugins/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/README.md)
 - Sphinx doc build syncs the above READMEs into `docs/source/plugins/` (see `docs/source/conf.py`)

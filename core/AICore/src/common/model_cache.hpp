@@ -42,4 +42,8 @@ inline std::string yolo_model_cache_dir() {
     return extract_model_dir("yolo_models");
 }
 
+inline std::string trellis_model_cache_dir() {
+    return extract_model_dir("trellis_models");
+}
+
 }  // namespace aicore

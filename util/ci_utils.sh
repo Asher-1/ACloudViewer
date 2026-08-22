@@ -648,6 +648,8 @@ build_gui_app() {
                 "-DPLUGIN_STANDARD_QRFDETR=ON"
                 "-DPLUGIN_STANDARD_QRMBG=ON"
                 "-DPLUGIN_STANDARD_QYOLO=ON"
+                "-DPLUGIN_STANDARD_QSAM3=ON"
+                "-DPLUGIN_STANDARD_QTRELLIS=ON"
                 "-DPLUGIN_PYTHON=ON"
                 "-DBUILD_PYTHON_MODULE=ON"
                 "-DCONDA_PREFIX=$CONDA_PREFIX"

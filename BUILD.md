@@ -253,6 +253,8 @@ Expand the `INSTALL` group in CMake GUI to enable plugins:
 | qRFDetr                 | PLUGIN_STANDARD_QRFDETR                  | OFF           | RF-DETR real-time object detection/segmentation, COCO 80 classes, GGUF ([README](plugins/core/Standard/qRFDetr/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/rfdetr`). |
 | qRMBG                   | PLUGIN_STANDARD_QRMBG                    | OFF           | RMBG-2.0 (BiRefNet-Swin-L) background removal, transparent RGBA output, GGUF ([README](plugins/core/Standard/qRMBG/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/rmbg`). |
 | qYOLO                   | PLUGIN_STANDARD_QYOLO                    | OFF           | YOLO object detection (COCO 80) + metric depth, GGUF ([README](plugins/core/Standard/qYOLO/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/yolo`). |
+| qSAM3                   | PLUGIN_STANDARD_QSAM3                    | OFF           | SAM 2 / 2.1 / 3 interactive point/box/text-prompt segmentation, GGUF ([README](plugins/core/Standard/qSAM3/README.md), [guide](docs/guides/plugins/qSAM3.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/sam3`). |
+| qTrellis                | PLUGIN_STANDARD_QTRELLIS                 | OFF           | TRELLIS.2 image-to-3D mesh generation with PBR, GGUF ([README](plugins/core/Standard/qTrellis/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/trellis`). |
 
 > 📖 **Plugin catalog:** [plugins/README.md](plugins/README.md) — per-plugin README index and AICore build recipes.
 
@@ -335,13 +337,15 @@ cmake -DBUILD_CUDA_MODULE=ON \
       -DPLUGIN_STANDARD_QRFDETR=ON \
       -DPLUGIN_STANDARD_QRMBG=ON \
       -DPLUGIN_STANDARD_QYOLO=ON \
+      -DPLUGIN_STANDARD_QSAM3=ON \
+      -DPLUGIN_STANDARD_QTRELLIS=ON \
       ..
 cmake --build . --config Release
 ```
 
-#### AICore (qDA3 + qDeepLSD + qFaceDetect + qFreeSplatter + qLightGlue + qRFDetr + qRMBG) Build
+#### AICore (qDA3 + qDeepLSD + qFaceDetect + qFreeSplatter + qLightGlue + qRFDetr + qRMBG + qYOLO + qTrellis) Build
 
-Builds `libAICore.so` (shared ggml inference core for DA3, DeepLSD, FaceDetect, FreeSplatter, LightGlue, RFDetr, and RMBG) and the selected GUI plugins. Runtime **Auto** uses Metal → CPU on macOS and Vulkan → CPU on Linux/Windows by default. When `-DAICore_USE_CUDA=ON` and the CUDA backend is built, Auto becomes **CUDA → Vulkan → CPU** on Linux/Windows. SYCL remains explicit-only. CUDA is only enabled by `-DAICore_USE_CUDA=ON`; the unrelated CloudViewer `BUILD_CUDA_MODULE` option no longer adds CUDA to distributed AICore packages.
+Builds `libAICore.so` (shared ggml inference core for DA3, DeepLSD, FaceDetect, FreeSplatter, LightGlue, RFDetr, RMBG, YOLO, and TRELLIS) and the selected GUI plugins. Runtime **Auto** uses Metal → CPU on macOS and Vulkan → CPU on Linux/Windows by default. When `-DAICore_USE_CUDA=ON` and the CUDA backend is built, Auto becomes **CUDA → Vulkan → CPU** on Linux/Windows. SYCL remains explicit-only. CUDA is only enabled by `-DAICore_USE_CUDA=ON`; the unrelated CloudViewer `BUILD_CUDA_MODULE` option no longer adds CUDA to distributed AICore packages.
 
 ```bash
 cmake -DBUILD_GUI=ON \
@@ -355,6 +359,8 @@ cmake -DBUILD_GUI=ON \
       -DPLUGIN_STANDARD_QRFDETR=ON \
       -DPLUGIN_STANDARD_QRMBG=ON \
       -DPLUGIN_STANDARD_QYOLO=ON \
+      -DPLUGIN_STANDARD_QSAM3=ON \
+      -DPLUGIN_STANDARD_QTRELLIS=ON \
       ..
 cmake --build . --config Release --target ACloudViewer
 ```

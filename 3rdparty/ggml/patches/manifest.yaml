@@ -24,3 +24,9 @@ patches:
     note: "RF-DETR CPU perf: fold broadcast iterations into the llamafile sgemm epilogue loop; inert when GGML_LLAMAFILE=OFF"
   - file: yolo_merged/0001-yolo-ggml-backend-integration.patch
     note: "YOLO GPU ops: ggml_conv_2d_direct_bias_silu API (ggml.h/ggml.c), CUDA direct/dw/transpose conv + pool/upscale/scale kernels, Vulkan F16 conv2d pipeline; merged against the aliked/rmbg/vulkan_parallel chain so only YOLO-specific hunks remain"
+  - file: sam3_merged/0001-sam3-ggml-custom-ops.patch
+    note: "SAM3 custom ops: ggml_mul_mat_cast + ggml_rope_custom_freqs/qkv (ggml.h/ggml.c), CUDA win_part/win_unpart kernels + 2x2 stride-2 conv_transpose cuBLAS fast path + flash-attn tile DKQ 16/32/56 + custom RoPE kernels, Metal flash-attn head 16/56 templates, Vulkan 2x2 stride-2 conv_transpose reorder/interleave fast path; merged against the yolo/rmbg chain so only SAM3-specific hunks remain"
+  - file: trellis_merged/0001-ggml-cuda-cpy-q8_0.patch
+    note: "TRELLIS.2 / general CUDA: Q8_0→Q8_0 direct block copy (cpy_blck_q8_0_q8_0 kernel), avoiding the dequant→F32→requant roundtrip when copying quantized weights between CUDA buffers; placed after sam3_merged because sam3's cpy.cu changes are at a different offset (641+) and would shift the hunk context if applied first"
+  - file: igemm_fix/0001-igemm-plan-rebuild-guards.patch
+    note: "YOLO igemm conv fix: the pointer-keyed plan/nhwc caches were not shape-aware, so a rebuilt ggml graph that recycled a dst tensor pointer could reuse a stale plan and write/read out of bounds (e.g. a 1x1 plan whose 2KB weight buffer served a 3x3 conv, or an erased plan whose buffers were still queued on the async stream). Records in/out/weight byte sizes on the plan, rebuilds the plan (after a stream sync) on any mismatch, validates the chained-consumer owner plan, and drops the fast path when the staged device pointers are not valid; inert when the igemm conv path is unused"

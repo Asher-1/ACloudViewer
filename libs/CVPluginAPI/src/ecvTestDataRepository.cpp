@@ -57,6 +57,17 @@ constexpr const char* kObjectsDetectionExpectedMd5 =
         "4900906590f31d17c1af5a82d49fc98b";
 constexpr qint64 kObjectsDetectionExpectedSize = 61488929;
 
+// Single-image-to-3D samples (qTrellis): 33 curated images in examples_images/
+// plus multi-view (mv/), texture (example_texturing/), HDRI and webp extras.
+constexpr const char* kImage2MeshZipName = "image_to_mesh_data.zip";
+constexpr const char* kImage2MeshExtractDir = "image_to_mesh_data";
+constexpr const char* kImage2MeshDownloadUrl =
+        "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
+        "Image2MeshData/image_to_mesh_data.zip";
+constexpr const char* kImage2MeshExpectedMd5 =
+        "d902c14e06fd2f1d5af10621c0b8fcfc";
+constexpr qint64 kImage2MeshExpectedSize = 29890011;  // ~28.5 MB
+
 }  // namespace
 
 // ----------------------------------------------------------------------------
@@ -143,6 +154,14 @@ ecvTestDataRepository::DatasetInfo ecvTestDataRepository::getDatasetInfo(
                     QString::fromLatin1(kObjectsDetectionDownloadUrl),
                     QString::fromLatin1(kObjectsDetectionExpectedMd5),
                     kObjectsDetectionExpectedSize};
+        case Dataset::Image2Mesh:
+            return {kind,
+                    QStringLiteral("Image2Mesh"),
+                    QString::fromLatin1(kImage2MeshZipName),
+                    QString::fromLatin1(kImage2MeshExtractDir),
+                    QString::fromLatin1(kImage2MeshDownloadUrl),
+                    QString::fromLatin1(kImage2MeshExpectedMd5),
+                    kImage2MeshExpectedSize};
     }
     Q_UNREACHABLE();
     return {};
@@ -226,6 +245,11 @@ bool ecvTestDataRepository::isDatasetAvailable(Dataset kind) const {
             }
             break;
         }
+        case Dataset::Image2Mesh:
+            // The main single-image-to-3D samples live in examples_images/.
+            extractedComplete =
+                    !getImage2MeshImages(extract).isEmpty();
+            break;
     }
     if (extractedComplete) return true;
 
@@ -609,4 +633,29 @@ QString ecvTestDataRepository::findFriendsVideo(const QString& bundleRoot) {
         if (best.isEmpty()) best = QFileInfo(path).absoluteFilePath();
     }
     return best;
+}
+
+QStringList ecvTestDataRepository::getImage2MeshImages(
+        const QString& bundleRoot) {
+    if (bundleRoot.isEmpty()) return {};
+
+    // The curated single-image-to-3D samples live in examples_images/.
+    const QString imageDir =
+            QDir(bundleRoot).filePath(QStringLiteral("examples_images"));
+    if (!QDir(imageDir).exists()) return {};
+
+    const QStringList patterns = {
+            QStringLiteral("*.jpg"),  QStringLiteral("*.jpeg"),
+            QStringLiteral("*.png"),  QStringLiteral("*.webp")};
+
+    QStringList images;
+    QDirIterator it(imageDir, patterns, QDir::Files);
+    while (it.hasNext()) {
+        const QString path = it.next();
+        const QString fileName = QFileInfo(path).fileName();
+        if (fileName.startsWith(QLatin1Char('.'))) continue;
+        images.append(QFileInfo(path).absoluteFilePath());
+    }
+    images.sort(Qt::CaseInsensitive);
+    return images;
 }

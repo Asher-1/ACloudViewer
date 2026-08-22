@@ -1,0 +1,14 @@
+{
+  "type": "Standard",
+  "core": true,
+  "name": "TRELLIS.2 Image to 3D",
+  "icon": ":/CC/plugin/qTrellis/images/qTrellis.svg",
+  "description": "TRELLIS.2 image-to-3D mesh generation (PBR textures) via native GGML inference, with optional RMBG-2.0 background removal.",
+  "authors": [{ "name": "ACloudViewer Contributors" }],
+  "maintainers": [{ "name": "ACloudViewer Team" }],
+  "references": [
+    { "text": "trellis-ggml: https://github.com/Asher-1/trellis-ggml" },
+    { "text": "TRELLIS.2: https://github.com/microsoft/TRELLIS" },
+    { "text": "Models: https://github.com/Asher-1/cloudViewer_downloads/releases/tag/trellis2-ggml" }
+  ]
+}

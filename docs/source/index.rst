@@ -163,6 +163,8 @@ Why AICore?
      -DPLUGIN_STANDARD_QRFDETR=ON \
      -DPLUGIN_STANDARD_QRMBG=ON \
      -DPLUGIN_STANDARD_QYOLO=ON \
+     -DPLUGIN_STANDARD_QSAM3=ON \
+     -DPLUGIN_STANDARD_QTRELLIS=ON \
      -DBUILD_RECONSTRUCTION=ON \
      -DPLUGIN_STANDARD_QSIBR=ON \
      .
@@ -174,7 +176,9 @@ See :doc:`guides/plugins/README` for an overview,
 :doc:`guides/plugins/qDeepLSD`,
 :doc:`guides/plugins/qFaceDetect`,
 :doc:`guides/plugins/qLightGlue`,
-and :doc:`guides/plugins/qFreeSplatter` for usage and build instructions.
+:doc:`guides/plugins/qFreeSplatter`,
+:doc:`guides/plugins/qSAM3`,
+and :doc:`guides/plugins/qTrellis` for usage and build instructions.
 Full build options: :doc:`getting_started/build_from_source`.
 
 .. toctree::
@@ -187,6 +191,8 @@ Full build options: :doc:`getting_started/build_from_source`.
    guides/plugins/qFaceDetect
    guides/plugins/qLightGlue
    guides/plugins/qFreeSplatter
+   guides/plugins/qSAM3
+   guides/plugins/qTrellis
 
 .. toctree::
    :maxdepth: 1

@@ -10,6 +10,7 @@
 #   src/tasks/rfdetr/     — RF-DETR object detection / segmentation
 #   src/tasks/rmbg/       — RMBG-2.0 background removal (foundational matte)
 #   src/tasks/yolo/       — YOLO object detection / metric depth (ultralytics-ggml port)
+#   src/tasks/sam3/       — SAM 2 / 2.1 / 3 segmentation (sam3-ggml port)
 #   src/common/           — shared utilities (data paths, ggml helpers, logging)
 #
 # Build:   libAICore.so
@@ -44,6 +45,8 @@ set(AICORE_FACEDETECT_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/facedetect)
 set(AICORE_RFDETR_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/rfdetr)
 set(AICORE_RMBG_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/rmbg)
 set(AICORE_YOLO_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/yolo)
+set(AICORE_SAM3_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/sam3)
+set(AICORE_TRELLIS_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/trellis)
 
 if(NOT EXISTS ${AICORE_DEPTH_SRC_DIR}/engine.cpp)
     message(WARNING "AICore: depth module not found at ${AICORE_DEPTH_SRC_DIR}")
@@ -77,6 +80,12 @@ file(GLOB AICORE_FACEDETECT_SOURCES ${AICORE_FACEDETECT_SRC_DIR}/*.cpp)
 file(GLOB AICORE_RFDETR_SOURCES ${AICORE_RFDETR_SRC_DIR}/*.cpp)
 file(GLOB AICORE_RMBG_SOURCES ${AICORE_RMBG_SRC_DIR}/*.cpp)
 file(GLOB AICORE_YOLO_SOURCES ${AICORE_YOLO_SRC_DIR}/*.cpp)
+file(GLOB AICORE_SAM3_SOURCES ${AICORE_SAM3_SRC_DIR}/*.cpp)
+file(GLOB AICORE_TRELLIS_SOURCES
+    ${AICORE_TRELLIS_SRC_DIR}/*.cpp
+    ${AICORE_TRELLIS_SRC_DIR}/third_party/meshoptimizer/*.cpp
+    ${AICORE_TRELLIS_SRC_DIR}/third_party/xatlas/*.cpp
+    ${AICORE_TRELLIS_SRC_DIR}/third_party/o-voxel-fdg/*.cpp)
 file(GLOB AICORE_API_HEADERS ${AICORE_INC_DIR}/aicore/*.h)
 
 if(NOT EXISTS ${AICORE_DEEPLSD_SRC_DIR}/deeplsd_extractor.cpp)
@@ -97,6 +106,15 @@ endif()
 if(NOT EXISTS ${AICORE_YOLO_SRC_DIR}/yolo_graph.cpp)
     message(FATAL_ERROR "AICore: missing YOLO module at ${AICORE_YOLO_SRC_DIR}")
 endif()
+if(NOT EXISTS ${AICORE_SAM3_SRC_DIR}/sam3.cpp)
+    message(FATAL_ERROR "AICore: missing SAM3 module at ${AICORE_SAM3_SRC_DIR}")
+endif()
+if(NOT EXISTS ${AICORE_TRELLIS_SRC_DIR}/trellis2.cpp)
+    message(FATAL_ERROR "AICore: missing TRELLIS module at ${AICORE_TRELLIS_SRC_DIR}")
+endif()
+if(NOT EXISTS ${AICORE_TRELLIS_SRC_DIR}/third_party/xatlas/xatlas.cpp)
+    message(FATAL_ERROR "AICore: missing TRELLIS third_party (xatlas) at ${AICORE_TRELLIS_SRC_DIR}/third_party")
+endif()
 
 add_library(${PROJECT_NAME} SHARED
     ${AICORE_COMMON_SOURCES} ${AICORE_COMMON_HEADERS}
@@ -109,6 +127,8 @@ add_library(${PROJECT_NAME} SHARED
     ${AICORE_RFDETR_SOURCES}
     ${AICORE_RMBG_SOURCES}
     ${AICORE_YOLO_SOURCES}
+    ${AICORE_SAM3_SOURCES}
+    ${AICORE_TRELLIS_SOURCES}
     ${AICORE_API_HEADERS}
 )
 
@@ -164,6 +184,12 @@ target_include_directories(${PROJECT_NAME}
         ${AICORE_RFDETR_SRC_DIR}
         ${AICORE_RMBG_SRC_DIR}
         ${AICORE_YOLO_SRC_DIR}
+        ${AICORE_SAM3_SRC_DIR}
+        ${AICORE_TRELLIS_SRC_DIR}
+        ${AICORE_TRELLIS_SRC_DIR}/third_party/xatlas
+        ${AICORE_TRELLIS_SRC_DIR}/third_party/meshoptimizer
+        ${AICORE_TRELLIS_SRC_DIR}/third_party/o-voxel-fdg
+        ${EIGEN_INCLUDE_DIRS}
 )
 
 add_dependencies(${PROJECT_NAME} 3rdparty_ggml)
@@ -255,6 +281,11 @@ if(TARGET CVCoreLib)
 else()
     message(FATAL_ERROR "AICore requires CVCoreLib (CVTools for cross-platform paths)")
 endif()
+# xatlas (trellis GLB export) uses std::thread for parallel charting.
+find_package(Threads REQUIRED)
+if(Threads_FOUND)
+    target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)
+endif()
 
 if(TARGET Qt::Core AND TARGET Qt::Gui)
     target_link_libraries(${PROJECT_NAME} PUBLIC Qt::Core Qt::Gui)
@@ -264,6 +295,7 @@ endif()
 
 target_compile_definitions(${PROJECT_NAME}
     PRIVATE AICore_BUILD AICore_SHARED
+    PRIVATE TRELLIS2_HAVE_RMBG=1
     INTERFACE AICore_SHARED
     PUBLIC AICore_ENABLED
 )
@@ -409,6 +441,8 @@ if(AICore_BUILD_TESTS)
             ${AICORE_RFDETR_SOURCES}
             ${AICORE_RMBG_SOURCES}
             ${AICORE_YOLO_SOURCES}
+            ${AICORE_SAM3_SOURCES}
+            ${AICORE_TRELLIS_SOURCES}
         )
         list(FILTER AICORE_TEST_SOURCES EXCLUDE REGEX
              ".*/(capi|image_depth)\\.cpp$")
@@ -436,6 +470,11 @@ if(AICore_BUILD_TESTS)
             $<BUILD_INTERFACE:${AICORE_RFDETR_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_RMBG_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_YOLO_SRC_DIR}>
+            $<BUILD_INTERFACE:${AICORE_SAM3_SRC_DIR}>
+            $<BUILD_INTERFACE:${AICORE_TRELLIS_SRC_DIR}>
+            $<BUILD_INTERFACE:${AICORE_TRELLIS_SRC_DIR}/third_party/xatlas>
+            $<BUILD_INTERFACE:${AICORE_TRELLIS_SRC_DIR}/third_party/meshoptimizer>
+            $<BUILD_INTERFACE:${AICORE_TRELLIS_SRC_DIR}/third_party/o-voxel-fdg>
         )
         add_dependencies(AICore_test 3rdparty_ggml)
         target_link_libraries(AICore_test PUBLIC 3rdparty_ggml CVCoreLib)
@@ -467,7 +506,7 @@ if(AICore_BUILD_TESTS)
     message(STATUS "AICore: contract tests enabled")
 endif()
 
-message(STATUS "AICore (SHARED): tasks/depth + tasks/gaussian + tasks/lightglue + tasks/deeplsd + tasks/facedetect + tasks/rfdetr + tasks/rmbg + tasks/yolo, ggml linked once")
+message(STATUS "AICore (SHARED): tasks/depth + tasks/gaussian + tasks/lightglue + tasks/deeplsd + tasks/facedetect + tasks/rfdetr + tasks/rmbg + tasks/yolo + tasks/sam3 + tasks/trellis, ggml linked once")
 
 add_executable(aicore_gguf_quantize tools/aicore_gguf_quantize.cpp)
 target_link_libraries(aicore_gguf_quantize PRIVATE AICore)

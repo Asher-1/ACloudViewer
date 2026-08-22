@@ -38,6 +38,8 @@ Four GUI plugins link **`libAICore.so`**, which bundles DA3, DeepLSD, FaceDetect
 | **qRFDetr** | `PLUGIN_STANDARD_QRFDETR` | [docs/guides/plugins/qRFDetr.md](../docs/guides/plugins/qRFDetr.md) | [qRFDetr/README.md](core/Standard/qRFDetr/README.md) |
 | **qRMBG** | `PLUGIN_STANDARD_QRMBG` | [docs/guides/plugins/qRMBG.md](../docs/guides/plugins/qRMBG.md) | [qRMBG/README.md](core/Standard/qRMBG/README.md) |
 | **qYOLO** | `PLUGIN_STANDARD_QYOLO` | [docs/guides/plugins/qYOLO.md](../docs/guides/plugins/qYOLO.md) | [qYOLO/README.md](core/Standard/qYOLO/README.md) |
+| **qSAM3** | `PLUGIN_STANDARD_QSAM3` | [docs/guides/plugins/qSAM3.md](../docs/guides/plugins/qSAM3.md) | [qSAM3/README.md](core/Standard/qSAM3/README.md) |
+| **qTrellis** | `PLUGIN_STANDARD_QTRELLIS` | — | [qTrellis/README.md](core/Standard/qTrellis/README.md) |
 
 **Core library:** enable with `-DAICore_ENABLED=ON` (auto-enables `GGML_ENABLED`).
 
@@ -54,6 +56,8 @@ cmake -DBUILD_GUI=ON \
       -DPLUGIN_STANDARD_QRFDETR=ON \
       -DPLUGIN_STANDARD_QRMBG=ON \
       -DPLUGIN_STANDARD_QYOLO=ON \
+      -DPLUGIN_STANDARD_QSAM3=ON \
+      -DPLUGIN_STANDARD_QTRELLIS=ON \
       -DPLUGIN_STANDARD_QSIBR=ON \
       ..
 ```

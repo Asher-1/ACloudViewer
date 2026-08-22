@@ -41,7 +41,8 @@ public:
     enum class Dataset {
         Monstree,         ///< Monstree dataset for image-based reconstruction
         FriendsFaces,     ///< FriendsFaces video for face capture
-        ObjectsDetection  ///< Shared images/videos for AI inference plugins
+        ObjectsDetection, ///< Shared images/videos for AI inference plugins
+        Image2Mesh        ///< Single-image-to-3D samples (qTrellis etc.)
     };
 
     /** Dataset metadata. */
@@ -147,6 +148,14 @@ public:
      * @return Absolute path to the video file, or empty if not found
      */
     static QString findFriendsVideo(const QString& bundleRoot);
+
+    /**
+     * @brief Get the sample images from the Image2Mesh dataset.
+     * Scans <root>/examples_images for the main single-image-to-3D samples.
+     * @param bundleRoot Path to the extracted dataset root
+     * @return Sorted list of absolute image file paths
+     */
+    static QStringList getImage2MeshImages(const QString& bundleRoot);
 
 signals:
     /** Emitted during download with progress (0-100). */
