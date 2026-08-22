@@ -30,7 +30,6 @@
 #include <QSizePolicy>
 #include <QVBoxLayout>
 #include <QWidget>
-
 #include <cmath>
 #include <cstdio>
 #include <initializer_list>
@@ -39,13 +38,12 @@
 
 int g_test_failures = 0;
 
-#define UI_CHECK(cond)                                                       \
-    do {                                                                     \
-        if (!(cond)) {                                                       \
-            fprintf(stderr, "FAIL %s:%d: %s\n", __FILE__, __LINE__,       \
-                         #cond);                                             \
-            ++g_test_failures;                                               \
-        }                                                                    \
+#define UI_CHECK(cond)                                                      \
+    do {                                                                    \
+        if (!(cond)) {                                                      \
+            fprintf(stderr, "FAIL %s:%d: %s\n", __FILE__, __LINE__, #cond); \
+            ++g_test_failures;                                              \
+        }                                                                   \
     } while (0)
 
 // ---------------------------------------------------------------------------
@@ -65,8 +63,7 @@ static void test_dpi_scaling_invariants() {
     }
     // At 96 logical DPI (the offscreen-platform default) scaling is identity.
     const QScreen* screen = QGuiApplication::primaryScreen();
-    if (screen &&
-        std::abs(screen->logicalDotsPerInch() - 96.0) < 0.5) {
+    if (screen && std::abs(screen->logicalDotsPerInch() - 96.0) < 0.5) {
         UI_CHECK(ecvAICoreUi::dpiScaled(4) == 4);
         UI_CHECK(ecvAICoreUi::dpiScaled(24) == 24);
         UI_CHECK(ecvAICoreUi::dpiScaled(72) == 72);
@@ -88,7 +85,8 @@ static void test_compact_layout_invariants() {
     auto* tabLayout = new QVBoxLayout(&host);
     ecvAICoreUi::setupTabLayout(tabLayout);
     const QMargins m = tabLayout->contentsMargins();
-    UI_CHECK(m.left() == 4 && m.top() == 4 && m.right() == 4 && m.bottom() == 4);
+    UI_CHECK(m.left() == 4 && m.top() == 4 && m.right() == 4 &&
+             m.bottom() == 4);
     UI_CHECK(tabLayout->spacing() == 4);
 
     // The two-column form grid: 2px row spacing, 6px column spacing and the
@@ -164,6 +162,6 @@ int main(int argc, char** argv) {
         return 0;
     }
     fprintf(stderr, "test_cvpluginapi_ui_helpers: %d failure(s)\n",
-                 g_test_failures);
+            g_test_failures);
     return 1;
 }

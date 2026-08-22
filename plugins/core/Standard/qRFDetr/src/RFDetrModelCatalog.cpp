@@ -26,10 +26,10 @@ QString modelInfoJsonFromCtx(struct aicore_rfdetr_ctx* ctx) {
     QJsonObject obj;
 #ifdef AICore_ENABLED
     if (ctx != nullptr && aicore_rfdetr_is_ready(ctx)) {
-        obj[QStringLiteral("variant")] = QString::fromUtf8(
-                aicore_rfdetr_context_variant(ctx));
-        obj[QStringLiteral("num_classes")] = static_cast<int>(
-                aicore_rfdetr_context_num_classes(ctx));
+        obj[QStringLiteral("variant")] =
+                QString::fromUtf8(aicore_rfdetr_context_variant(ctx));
+        obj[QStringLiteral("num_classes")] =
+                static_cast<int>(aicore_rfdetr_context_num_classes(ctx));
         uint32_t nNames = 0;
         const char* const* names =
                 aicore_rfdetr_context_class_names(ctx, &nNames);
@@ -214,7 +214,6 @@ QRgb classColor(uint32_t classId) {
     return kPalette[classId % 20];
 }
 
-
 /* The mask tint pass deliberately does NOT pre-blur the binary mask.
  * The mask value is a confidence/coverage signal: 255 means "definitely
  * part of the object" and must render at full tint strength. Pre-blurring
@@ -260,8 +259,8 @@ void drawDetections(QImage* image,
         if (mask.isNull()) continue;
 
         if (composite.isNull()) {
-            composite = QImage(mask.size(),
-                               QImage::Format_ARGB32_Premultiplied);
+            composite =
+                    QImage(mask.size(), QImage::Format_ARGB32_Premultiplied);
             composite.fill(Qt::transparent);
         }
         const QRgb tintPre = QColor(classColor(d.classId)).rgb();  // r,g,b only

@@ -374,7 +374,6 @@ extern "C" void rfdetr_visualize_draw_box(rfdetr_image* img,
     draw_text(img, bx1 + padding, by1 + padding, label, tr, tg, tb, scale);
 }
 
-
 /* 3-tap separable Gaussian blur [1,2,1] / 4 on a uint8 buffer (in place).
  * Converts hard binary mask edges into a continuous soft gradient before
  * bilinear upsampling, so the upscaled overlay has one smooth transition
@@ -470,12 +469,11 @@ extern "C" void rfdetr_visualize_overlay_mask(rfdetr_image* img,
             /* Bilinear blend of the four nearest mask pixels.  The mask is
              * 0x00 (background) or 0xFF (foreground), so the result is a
              * sub-pixel coverage fraction in [0, 1]. */
-            const float cov = ((float)row0[sx0] * (1.0f - wx) +
-                               (float)row0[sx1] * wx) *
-                                      (1.0f - wy) +
-                              ((float)row1[sx0] * (1.0f - wx) +
-                               (float)row1[sx1] * wx) *
-                                      wy;
+            const float cov =
+                    ((float)row0[sx0] * (1.0f - wx) + (float)row0[sx1] * wx) *
+                            (1.0f - wy) +
+                    ((float)row1[sx0] * (1.0f - wx) + (float)row1[sx1] * wx) *
+                            wy;
             const float a = cov / 255.0f * alpha;
             if (a <= 0.001f) continue;
             const float om = 1.0f - a;

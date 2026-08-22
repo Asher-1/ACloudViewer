@@ -166,8 +166,7 @@ void RFDetrDialog::setupUi() {
     classLayout->addLayout(classTopRow);
 
     m_classSearchEdit = new QLineEdit(m_classFilterContent);
-    m_classSearchEdit->setPlaceholderText(
-            tr("Filter classes by name..."));
+    m_classSearchEdit->setPlaceholderText(tr("Filter classes by name..."));
     m_classSearchEdit->setClearButtonEnabled(true);
     classLayout->addWidget(m_classSearchEdit);
 
@@ -741,11 +740,10 @@ void RFDetrDialog::updateClassCountLabel() {
     const int total = m_classList->count();
     const int enabled = enabledClassIds().size();
     if (total == 0) {
-        m_classCountLabel->setText(
-                tr("Run once to load the model's classes."));
+        m_classCountLabel->setText(tr("Run once to load the model's classes."));
     } else if (enabled == total) {
-        m_classCountLabel->setText(tr("%1/%1 classes enabled (no filter)")
-                                           .arg(total));
+        m_classCountLabel->setText(
+                tr("%1/%1 classes enabled (no filter)").arg(total));
     } else {
         m_classCountLabel->setText(
                 tr("%1/%2 classes enabled").arg(enabled).arg(total));

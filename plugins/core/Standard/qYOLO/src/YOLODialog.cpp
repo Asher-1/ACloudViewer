@@ -174,8 +174,7 @@ void YOLODialog::setupUi() {
         auto* customRow = new QHBoxLayout(panel.customModelRow);
         customRow->setContentsMargins(0, 0, 0, 0);
         customRow->setSpacing(ecvAICoreUi::hSpacing());
-        customRow->addWidget(
-                ecvAICoreUi::makeLabel(tr("Custom GGUF:")));
+        customRow->addWidget(ecvAICoreUi::makeLabel(tr("Custom GGUF:")));
         panel.customModelPath = new QLineEdit(panel.customModelRow);
         customRow->addWidget(panel.customModelPath, 1);
         auto* browseCustomBtn =
@@ -269,8 +268,7 @@ void YOLODialog::setupUi() {
         panel.addAnnotatedCheck->setChecked(true);
         actionRow->addWidget(panel.addAnnotatedCheck);
         actionRow->addStretch();
-        panel.testDataBtn =
-                ecvAICoreUi::makeSampleDataBtn(panel.tab);
+        panel.testDataBtn = ecvAICoreUi::makeSampleDataBtn(panel.tab);
         panel.testDataBtn->setToolTip(
                 tr("Load images/000000397133.jpg from the shared test-data "
                    "cache"));

@@ -135,9 +135,8 @@ FaceCaptureWidget::FaceCaptureWidget(QWidget* parent)
     // thread (and display timer) is never blocked.  The watcher is owned
     // by this widget and is reused for every detection cycle.
     m_detectWatcher = new QFutureWatcher<std::vector<ScoredFace>>(this);
-    connect(m_detectWatcher,
-            &QFutureWatcher<std::vector<ScoredFace>>::finished, this,
-            &FaceCaptureWidget::onAsyncDetectFinished);
+    connect(m_detectWatcher, &QFutureWatcher<std::vector<ScoredFace>>::finished,
+            this, &FaceCaptureWidget::onAsyncDetectFinished);
 #endif
     m_downloader = new ecvModelDownloader(this);
     connect(m_downloader, &ecvModelDownloader::logMessage, this,
@@ -1449,8 +1448,7 @@ void FaceCaptureWidget::onFrameDecoded(cv::Mat& frame, int frameIndex) {
     // and labels are painted by onDisplayFrame).
     if (!m_identityTracks.empty() && detectorReady() &&
         m_detectorKind == DetectorKind::Ggml && !m_ggmlModelLoading) {
-        if (timeForDetection &&
-            m_detectPendingFrame.loadRelaxed() < 0) {
+        if (timeForDetection && m_detectPendingFrame.loadRelaxed() < 0) {
             // ASYNC: GGML inference runs on a thread pool so the GUI thread
             // (and display timer) is never blocked.
             m_detectPendingFrame.storeRelaxed(frameIndex);
@@ -1468,8 +1466,7 @@ void FaceCaptureWidget::onFrameDecoded(cv::Mat& frame, int frameIndex) {
     bool freshDetection = false;
     if (detectorReady() && !m_ggmlModelLoading) {
         if (m_detectorKind == DetectorKind::Ggml) {
-            if (timeForDetection &&
-                m_detectPendingFrame.loadRelaxed() < 0) {
+            if (timeForDetection && m_detectPendingFrame.loadRelaxed() < 0) {
                 // ASYNC: submit GGML inference to thread pool.
                 m_detectPendingFrame.storeRelaxed(frameIndex);
                 m_pendingDetectFrameNum = frameIndex;
@@ -1533,15 +1530,14 @@ void FaceCaptureWidget::onAsyncDetectFinished() {
     const bool freshDetection = (faceRect.width > 0);
     m_lastDetectedFrameNum = frameIndex;
 
-    processDetectResult(faceRect, pendingFrame, frameIndex,
-                        freshDetection);
+    processDetectResult(faceRect, pendingFrame, frameIndex, freshDetection);
 #endif
 }
 
 void FaceCaptureWidget::processDetectResult(const cv::Rect& faceRect,
-                                             const cv::Mat& sourceFrame,
-                                             int frameIndex,
-                                             bool freshDetection) {
+                                            const cv::Mat& sourceFrame,
+                                            int frameIndex,
+                                            bool freshDetection) {
 #ifdef HAS_OPENCV_FACE_CAPTURE
     Q_UNUSED(frameIndex);
     if (faceRect.width > 0 && faceRect.height > 0) {
@@ -1554,8 +1550,8 @@ void FaceCaptureWidget::processDetectResult(const cv::Rect& faceRect,
             // waste (OpenCV detects on every frame).
             m_lastDetectedFrame = sourceFrame.clone();
         }
-        emit faceDetected(QRect(faceRect.x, faceRect.y, faceRect.width,
-                                faceRect.height));
+        emit faceDetected(
+                QRect(faceRect.x, faceRect.y, faceRect.width, faceRect.height));
     } else {
         m_consecutiveDetections = 0;
         m_lastFaceRect = cv::Rect();
@@ -1594,8 +1590,8 @@ void FaceCaptureWidget::processDetectResult(const cv::Rect& faceRect,
                 m_captureBtn->setEnabled(m_consecutiveDetections >= 3);
             }
             if (faceRect.width > 0) {
-                int pct = std::min(
-                        100, m_consecutiveDetections * 100 / trigger);
+                int pct =
+                        std::min(100, m_consecutiveDetections * 100 / trigger);
                 m_statusLabel->setText(
                         tr("Stabilizing... %1% (%2/%3 faces captured)")
                                 .arg(pct)
@@ -1618,8 +1614,7 @@ void FaceCaptureWidget::processDetectResult(const cv::Rect& faceRect,
             if (m_captureBtn) m_captureBtn->setEnabled(true);
             m_statusLabel->setText(
                     tr("Auto-capture in %1s (or click Capture)")
-                            .arg((kNoCascadeAutoInterval -
-                                  m_noCascadeCounter) /
+                            .arg((kNoCascadeAutoInterval - m_noCascadeCounter) /
                                          30 +
                                  1));
         } else {

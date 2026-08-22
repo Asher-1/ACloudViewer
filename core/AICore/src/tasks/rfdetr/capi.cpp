@@ -86,9 +86,7 @@ AICORE_CAPI void aicore_rfdetr_options_set_threads(aicore_rfdetr_options* opts,
 }
 
 AICORE_CAPI void aicore_rfdetr_options_set_class_filter(
-        aicore_rfdetr_options* opts,
-        const uint32_t* class_ids,
-        size_t n) {
+        aicore_rfdetr_options* opts, const uint32_t* class_ids, size_t n) {
     if (opts == nullptr) return;
     opts->class_filter.clear();
     if (class_ids == nullptr || n == 0) return;

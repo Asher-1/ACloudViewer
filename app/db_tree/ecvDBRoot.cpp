@@ -2529,8 +2529,8 @@ void ccDBRoot::exportAllMetadataImages(
     auto* group = new ccHObject(tr("Masks"));
     for (const auto& entry : images) {
         if (entry.second.isNull()) continue;
-        const QString name =
-                uniqueEntityName(m_treeRoot, entityNameFromMetaKey(entry.first));
+        const QString name = uniqueEntityName(
+                m_treeRoot, entityNameFromMetaKey(entry.first));
         group->addChild(new ccImage(entry.second, name));
     }
     if (group->getChildrenNumber() == 0) {

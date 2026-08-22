@@ -9,7 +9,6 @@
 
 #include <CVLog.h>
 #include <cvFileDialog.h>
-#include "ecvAICoreUiHelper.h"
 
 #include <QCloseEvent>
 #include <QDir>
@@ -23,6 +22,7 @@
 #include "aicore/backend_capi.h"
 #include "aicore/deeplsd_capi.h"
 #include "aicore/inference_log.h"
+#include "ecvAICoreUiHelper.h"
 #include "ecvModelDownloader.h"
 static const char* kDownloadBase =
         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
@@ -231,10 +231,11 @@ void DeepLSDDialog::setupUi() {
     m_minSegmentScore->setSingleStep(0.05);
     m_minSegmentScore->setValue(0.15);
     ecvAICoreUi::setCompactDoubleSpin(m_minSegmentScore);
-    m_minSegmentScore->setToolTip(
-            tr("Filter by LSD segment quality (-log10 NFA), mapped to 0\u20131. "
-               "Higher = more significant line (typical 0.1\u20130.5)."));
-    modelLayout->addWidget(ecvAICoreUi::makeLabel(tr("Min segment quality:")), 4, 0);
+    m_minSegmentScore->setToolTip(tr(
+            "Filter by LSD segment quality (-log10 NFA), mapped to 0\u20131. "
+            "Higher = more significant line (typical 0.1\u20130.5)."));
+    modelLayout->addWidget(ecvAICoreUi::makeLabel(tr("Min segment quality:")),
+                           4, 0);
     modelLayout->addWidget(m_minSegmentScore, 4, 1);
 
     ecvAICoreUi::tightenGroupBox(modelGroup);
@@ -355,7 +356,8 @@ void DeepLSDDialog::setupUi() {
     btnRow->addWidget(m_runBtn);
     btnRow->addWidget(m_cancelBtn);
     main->addLayout(btnRow);
-}void DeepLSDDialog::populateModelCombo(const QString& keepFilename) {
+}
+void DeepLSDDialog::populateModelCombo(const QString& keepFilename) {
     const QString cache = modelCacheDir();
     QString selected = keepFilename;
     if (selected.isEmpty() && m_modelCombo && m_modelCombo->count() > 0) {
@@ -544,14 +546,17 @@ void DeepLSDDialog::updateImagePreview() {
                 if (full.canConvert<QImage>()) {
                     const QImage fullImg = full.value<QImage>();
                     if (!fullImg.isNull()) {
-                        m_previewLabel->setPreviewImage(fullImg, ecvAICoreUi::previewSize());
+                        m_previewLabel->setPreviewImage(
+                                fullImg, ecvAICoreUi::previewSize());
                         return;
                     }
                 }
                 const QIcon icon = m_dbImageList->item(i)->icon();
                 if (!icon.isNull()) {
                     m_previewLabel->setPreviewPixmap(
-                            icon.pixmap(ecvAICoreUi::previewSize(), ecvAICoreUi::previewSize()), ecvAICoreUi::previewSize());
+                            icon.pixmap(ecvAICoreUi::previewSize(),
+                                        ecvAICoreUi::previewSize()),
+                            ecvAICoreUi::previewSize());
                     return;
                 }
             }
@@ -624,13 +629,13 @@ void DeepLSDDialog::onModelComboChanged(int index) {
     } else if (data == "CUSTOM") {
         const QString path = m_customModelPath->text();
         if (path.contains(QStringLiteral("wireframe"), Qt::CaseInsensitive)) {
-            variantHint =
-                    tr("Custom wireframe checkpoint \u2014 prefer indoor/man-made "
-                       "scenes.");
+            variantHint = tr(
+                    "Custom wireframe checkpoint \u2014 prefer indoor/man-made "
+                    "scenes.");
         } else if (path.contains(QStringLiteral("_md"), Qt::CaseInsensitive)) {
-            variantHint =
-                    tr("Custom MegaDepth checkpoint \u2014 prefer outdoor/natural "
-                       "scenes.");
+            variantHint = tr(
+                    "Custom MegaDepth checkpoint \u2014 prefer outdoor/natural "
+                    "scenes.");
         } else {
             variantHint =
                     tr("Custom GGUF: use deeplsd_wireframe-* for indoor, "

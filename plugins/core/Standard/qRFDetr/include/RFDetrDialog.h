@@ -20,7 +20,6 @@
 #include <QSpinBox>
 #include <QTabWidget>
 #include <QToolButton>
-
 #include <cstdint>
 
 #include "RFDetrLiveWidget.h"

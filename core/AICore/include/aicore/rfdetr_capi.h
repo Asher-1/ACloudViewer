@@ -49,9 +49,7 @@ AICORE_CAPI void aicore_rfdetr_options_set_threads(aicore_rfdetr_options* opts,
  *  free it after this call. Useful when a model was trained on many classes
  *  (e.g. COCO 80) but the user only cares about a subset. */
 AICORE_CAPI void aicore_rfdetr_options_set_class_filter(
-        aicore_rfdetr_options* opts,
-        const uint32_t* class_ids,
-        size_t n);
+        aicore_rfdetr_options* opts, const uint32_t* class_ids, size_t n);
 
 /** Load an RF-DETR GGUF (detection or segmentation variant). Returns NULL on
  *  failure; inspect aicore_rfdetr_last_error() for the reason. */

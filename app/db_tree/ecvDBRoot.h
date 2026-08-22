@@ -180,8 +180,7 @@ public slots:
     void exportMetadataImage(const QImage& image, const QString& key);
     //! Exports every decodable metadata image of the current entity into a
     //! group folder (key -> image, in metadata map order).
-    void exportAllMetadataImages(
-            const QVector<QPair<QString, QImage>>& images);
+    void exportAllMetadataImages(const QVector<QPair<QString, QImage>>& images);
     void deleteSelectedEntities();
 
     //! Selects a given entity

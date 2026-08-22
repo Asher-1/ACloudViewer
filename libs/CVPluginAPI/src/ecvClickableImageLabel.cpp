@@ -12,7 +12,6 @@
 #include <QMouseEvent>
 #include <QScrollArea>
 #include <QVBoxLayout>
-
 #include <algorithm>
 
 namespace {

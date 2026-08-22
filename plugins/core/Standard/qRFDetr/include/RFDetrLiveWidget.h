@@ -13,7 +13,6 @@
 #include <QThread>
 #include <QVector>
 #include <QWidget>
-
 #include <cstdint>
 
 #include "RFDetrLiveInferWorker.h"

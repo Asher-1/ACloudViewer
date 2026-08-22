@@ -31,12 +31,12 @@
 #include "FaceDetectTestData.h"
 #include "FaceDetectTestDataWorker.h"
 #include "FaceDetectUiHelpers.h"
-#include "ecvAICoreUiHelper.h"
 #include "FaceLiveDetectWidget.h"
 #include "FaceRegistryWidget.h"
 #include "aicore/backend_capi.h"
 #include "aicore/facedetect_capi.h"
 #include "aicore/inference_log.h"
+#include "ecvAICoreUiHelper.h"
 #include "ecvModelDownloader.h"
 
 namespace {
@@ -517,8 +517,7 @@ void FaceDetectDialog::cacheTabViewportHeights() {
         // inflated the dialog on every tab switch.  Captured before a live
         // preview receives pixmaps; later content growth belongs to the
         // page's own scroll area.
-        m_tabViewportHeights.insert(content,
-                                    content->sizeHint().height());
+        m_tabViewportHeights.insert(content, content->sizeHint().height());
     }
 }
 
@@ -544,8 +543,7 @@ void FaceDetectDialog::updateActiveTabViewportHeight() {
     // pushed over the video area.
     m_tabWidget->setMinimumHeight(targetHeight);
     m_tabWidget->updateGeometry();
-    if (isVisible() && m_baseChrome >= 0 &&
-        targetHeight != m_activeTabHeight) {
+    if (isVisible() && m_baseChrome >= 0 && targetHeight != m_activeTabHeight) {
         // Dialog height = stable non-tab chrome + the incoming tab's
         // content.  The chrome is derived from minimumSizeHint deltas (not
         // the current geometry) so it stays constant no matter how the
@@ -557,9 +555,8 @@ void FaceDetectDialog::updateActiveTabViewportHeight() {
                 QGuiApplication::screenAt(frameGeometry().center());
         const int available =
                 screen ? screen->availableGeometry().height() : 800;
-        resize(width(),
-               qBound(dpiScaled(420), m_baseChrome + targetHeight,
-                      available - dpiScaled(20)));
+        resize(width(), qBound(dpiScaled(420), m_baseChrome + targetHeight,
+                               available - dpiScaled(20)));
     }
     // Tab content is measured at construction and when the video controls row
     // appears; after that, each tab's own scroll area handles overflow.  The
@@ -925,8 +922,7 @@ void FaceDetectDialog::setupBatchTab(QWidget* batchTab) {
     // Verify-mode hint making the focus-driven assignment discoverable
     // instead of silently overwriting one of the two inputs.
     m_dbAssignHintLabel = new QLabel;
-    m_dbAssignHintLabel->setStyleSheet(
-            "color: #6b7280; font-size: 11px;");
+    m_dbAssignHintLabel->setStyleSheet("color: #6b7280; font-size: 11px;");
     updateDbAssignHint();
     m_dbAssignHintLabel->setVisible(false);
     dbLayout->addWidget(m_dbAssignHintLabel);
@@ -2341,8 +2337,7 @@ void FaceDetectDialog::onDbListActivated(QListWidgetItem* item) {
     const Mode mode =
             m_modeCombo ? static_cast<Mode>(m_modeCombo->currentData().toInt())
                         : Mode::Detect;
-    if (mode == Mode::Verify && m_secondImagePath &&
-        m_dbAssignToSecondImage) {
+    if (mode == Mode::Verify && m_secondImagePath && m_dbAssignToSecondImage) {
         // Verify mode with the Image B field focused: assign there.
         m_secondImagePath->setText(dbPath);
     } else {

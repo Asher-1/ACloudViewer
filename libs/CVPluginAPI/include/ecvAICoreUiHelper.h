@@ -309,12 +309,12 @@ inline QToolButton* makeDbSection(QWidget* dbContentWidget) {
 
 inline void connectDbToggle(QToolButton* btn, QWidget* contentWidget) {
     if (!btn || !contentWidget) return;
-    QObject::connect(btn, &QToolButton::toggled, btn,
-                     [btn, contentWidget](bool checked) {
-                         btn->setArrowType(checked ? Qt::DownArrow
-                                                   : Qt::RightArrow);
-                         contentWidget->setVisible(checked);
-                     });
+    QObject::connect(
+            btn, &QToolButton::toggled, btn,
+            [btn, contentWidget](bool checked) {
+                btn->setArrowType(checked ? Qt::DownArrow : Qt::RightArrow);
+                contentWidget->setVisible(checked);
+            });
 }
 
 // ---------------------------------------------------------------------------
@@ -322,7 +322,8 @@ inline void connectDbToggle(QToolButton* btn, QWidget* contentWidget) {
 // ---------------------------------------------------------------------------
 
 /// Shared download progress bar + status label (both hidden by default).
-inline void setupProgressSection(QVBoxLayout* parent, QLabel*& downloadLabel,
+inline void setupProgressSection(QVBoxLayout* parent,
+                                 QLabel*& downloadLabel,
                                  QProgressBar*& progressBar) {
     if (!parent) return;
     downloadLabel = new QLabel;

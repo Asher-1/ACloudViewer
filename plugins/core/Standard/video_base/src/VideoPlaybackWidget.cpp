@@ -10,7 +10,6 @@
 #include <QtCompat.h>
 #include <cvFileDialog.h>
 #include <ecvPersistentSettings.h>
-#include "ecvAICoreUiHelper.h"
 
 #include <QComboBox>
 #include <QDateTime>
@@ -34,6 +33,7 @@
 #include <cmath>
 
 #include "VideoFrameReader.h"
+#include "ecvAICoreUiHelper.h"
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
 #include <opencv2/core/utils/logger.hpp>
@@ -1049,8 +1049,7 @@ void VideoPlaybackWidget::onSourceChangedInternal(int index) {
     // Hide playback controls in camera mode — they are meaningless for
     // live capture.
     if (m_videoControlsRow) {
-        const bool controlsVisible =
-                m_inputSource == InputSource::VideoFile;
+        const bool controlsVisible = m_inputSource == InputSource::VideoFile;
         m_videoControlsRow->setVisible(controlsVisible);
         if (m_videoSeekSlider) m_videoSeekSlider->setEnabled(false);
         if (m_playbackSpeedCombo) m_playbackSpeedCombo->setEnabled(false);

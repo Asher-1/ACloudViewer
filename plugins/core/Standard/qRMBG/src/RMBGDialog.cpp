@@ -247,8 +247,8 @@ void RMBGDialog::setupUi() {
     m_testVideoCombo->addItem(QStringLiteral("friends_demo.mp4"),
                               QStringLiteral("friends_demo.mp4"));
     m_testDataBtn = ecvAICoreUi::makeSampleDataBtn(m_liveTab);
-    m_testDataBtn->setToolTip(
-            tr("Load the selected video from the FriendsFaces test-data cache"));
+    m_testDataBtn->setToolTip(tr(
+            "Load the selected video from the FriendsFaces test-data cache"));
     m_liveStartBtn = new QPushButton(tr("Start"), m_liveTab);
     m_liveStopBtn = new QPushButton(tr("Stop"), m_liveTab);
     m_liveRestartBtn = new QPushButton(tr("Restart"), m_liveTab);

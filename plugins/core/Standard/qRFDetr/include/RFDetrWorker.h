@@ -12,7 +12,6 @@
 #include <QString>
 #include <QThread>
 #include <QVector>
-
 #include <cstdint>
 
 #include "RFDetrModelCatalog.h"

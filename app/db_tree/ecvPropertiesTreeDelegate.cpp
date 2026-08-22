@@ -200,7 +200,8 @@ public slots:
     void updateZoomLabel() {
         if (m_view && m_zoomLabel) {
             m_zoomLabel->setText(
-                    tr("Zoom: %1%").arg(qRound(m_view->transform().m11() * 100.0)));
+                    tr("Zoom: %1%")
+                            .arg(qRound(m_view->transform().m11() * 100.0)));
         }
     }
 
@@ -235,7 +236,7 @@ private:
 #else
                                           event->pos()
 #endif
-                                          ) -
+                                                  ) -
                                   anchor;
             translate(delta.x(), delta.y());
             if (zoomChanged) zoomChanged();
@@ -725,10 +726,10 @@ void ccPropertiesTreeDelegate::fillWithMetaData(ccObject* _obj) {
                 // view the full image (see onMetadataImageClicked). Also
                 // collect it for one-click export from the viewer.
                 m_metadataImages.append({it.key(), image});
-                auto* valueItem = new QStandardItem(
-                        tr("Image %1x%2 (click to view)")
-                                .arg(image.width())
-                                .arg(image.height()));
+                auto* valueItem =
+                        new QStandardItem(tr("Image %1x%2 (click to view)")
+                                                  .arg(image.width())
+                                                  .arg(image.height()));
                 valueItem->setIcon(QIcon(QPixmap::fromImage(
                         image.scaled(24, 24, Qt::KeepAspectRatio,
                                      Qt::SmoothTransformation))));
@@ -757,7 +758,8 @@ void ccPropertiesTreeDelegate::fillWithMetaData(ccObject* _obj) {
     }
 }
 
-void ccPropertiesTreeDelegate::onMetadataImageClicked(const QModelIndex& index) {
+void ccPropertiesTreeDelegate::onMetadataImageClicked(
+        const QModelIndex& index) {
     QStandardItem* item = m_model ? m_model->itemFromIndex(index) : nullptr;
     if (!item) {
         return;
@@ -777,8 +779,12 @@ void ccPropertiesTreeDelegate::onMetadataImageClicked(const QModelIndex& index) 
     }
     MetadataImageViewer viewer(
             image, key,
-            [this, image, key]() { emit exportMetadataImageRequested(image, key); },
-            [this]() { emit exportAllMetadataImagesRequested(m_metadataImages); },
+            [this, image, key]() {
+                emit exportMetadataImageRequested(image, key);
+            },
+            [this]() {
+                emit exportAllMetadataImagesRequested(m_metadataImages);
+            },
             m_view ? m_view->window() : nullptr);
     viewer.exec();
 }

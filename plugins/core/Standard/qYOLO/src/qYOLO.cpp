@@ -19,7 +19,6 @@
 #include <QMessageBox>
 #include <QTimer>
 #include <QUuid>
-
 #include <cstring>
 
 #include "ecvPersistentSettings.h"

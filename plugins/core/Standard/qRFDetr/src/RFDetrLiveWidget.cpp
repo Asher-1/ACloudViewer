@@ -476,8 +476,8 @@ void RFDetrLiveWidget::rebuildOverlayLayer(const QSize& displaySize) {
         gaussianBlurMask3(mask);
 
         if (composite.isNull()) {
-            composite = QImage(mask.size(),
-                               QImage::Format_ARGB32_Premultiplied);
+            composite =
+                    QImage(mask.size(), QImage::Format_ARGB32_Premultiplied);
             composite.fill(Qt::transparent);
         }
         const QRgb tintPre = QColor(RFDetrHelpers::classColor(d.classId)).rgb();
@@ -488,10 +488,9 @@ void RFDetrLiveWidget::rebuildOverlayLayer(const QSize& displaySize) {
                 const int mv = mrow[x];
                 if (mv <= 1) continue;
                 if (mv > qAlpha(crow[x])) {
-                    crow[x] = qRgba(
-                            qRed(tintPre) * mv / 255,
-                            qGreen(tintPre) * mv / 255,
-                            qBlue(tintPre) * mv / 255, mv);
+                    crow[x] = qRgba(qRed(tintPre) * mv / 255,
+                                    qGreen(tintPre) * mv / 255,
+                                    qBlue(tintPre) * mv / 255, mv);
                 }
             }
         }

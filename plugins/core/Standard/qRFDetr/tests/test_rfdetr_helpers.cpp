@@ -97,9 +97,9 @@ TEST(RFDetrHelpers, ParseModelInfoJsonPreservesEmptySlots) {
     QStringList names;
     ASSERT_TRUE(RFDetrHelpers::parseModelInfoJson(json, &names));
     ASSERT_EQ(names.size(), 4);
-    EXPECT_TRUE(names.at(0).isEmpty());   // slot 0 preserved
+    EXPECT_TRUE(names.at(0).isEmpty());  // slot 0 preserved
     EXPECT_EQ(names.at(1), QStringLiteral("person"));
-    EXPECT_TRUE(names.at(2).isEmpty());   // slot 2 preserved
+    EXPECT_TRUE(names.at(2).isEmpty());  // slot 2 preserved
     EXPECT_EQ(names.at(3), QStringLiteral("car"));
 }
 
