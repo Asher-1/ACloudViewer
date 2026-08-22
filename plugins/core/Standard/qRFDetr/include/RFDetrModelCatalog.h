@@ -60,7 +60,21 @@ struct RFDetrModelEntry {
     bool segmentationCapable = false;
 };
 
+/** Opaque AICore RF-DETR context. Declared at global scope (matches
+ *  aicore/rfdetr_capi.h) so helper signatures stay compatible with the
+ *  real type — a declaration inside RFDetrHelpers would be a different
+ *  type. */
+struct aicore_rfdetr_ctx;
+
 namespace RFDetrHelpers {
+
+/** Build the model-info JSON envelope (variant / num_classes / class_names)
+ *  from a loaded AICore context — the payload both RFDetrWorker and
+ *  RFDetrLiveInferWorker send after a successful load so the dialog can
+ *  populate its class-filter list. Serialized with QJsonDocument (correct
+ *  escaping for arbitrary class names). Returns "{}" when ctx has no
+ *  loaded model. */
+QString modelInfoJsonFromCtx(struct aicore_rfdetr_ctx* ctx);
 
 /** Enumerate the published catalog from AICore. */
 QVector<RFDetrModelEntry> catalogModels();
@@ -85,6 +99,13 @@ const uchar* packedRgb888Data(const QImage& image, QByteArray* scratch);
 /** Parse the AICore RF-DETR JSON envelope into a run result. Returns true on
  *  success; the envelope's detections array may be empty (no objects). */
 bool parseDetectionsJson(const QByteArray& json, RFDetrRunResult* out);
+
+/** Parse the model-info envelope emitted by RFDetrWorker after a successful
+ *  load ({"variant":..., "num_classes":N, "class_names":["person",...]}).
+ *  Returns true when class_names is present and non-empty; \p outNames
+ *  receives the names indexed by class_id. Pure parsing — unit tested
+ *  without AICore. */
+bool parseModelInfoJson(const QByteArray& json, QStringList* outClassNames);
 
 /** Draw bounding boxes + class/score labels (and the per-detection mask tint
  *  when the detection carries one) onto the image. Pure pixel logic — unit

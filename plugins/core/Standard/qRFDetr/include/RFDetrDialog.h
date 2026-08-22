@@ -20,6 +20,7 @@
 #include <QSpinBox>
 #include <QTabWidget>
 #include <QToolButton>
+#include <cstdint>
 
 #include "RFDetrLiveWidget.h"
 #include "RFDetrModelCatalog.h"
@@ -42,6 +43,9 @@ public:
         float threshold = 0.5f;
         uint32_t topK = 300;
         bool addAnnotatedImageToDb = true;
+        /** Class allowlist (empty = detect all classes). Populated from the
+         *  dialog's class-filter list; consumed by RFDetrWorker. */
+        QVector<uint32_t> classFilter;
     };
 
     struct DbImageEntry {
@@ -71,6 +75,12 @@ signals:
     void refreshDbImagesRequested();
     void liveCaptureReady(const RFDetrRunResult& result);
 
+public slots:
+    /** Receives the worker's model-info envelope (JSON with class_names)
+     *  and fills the class-filter list. Public because qRFDetr connects it
+     *  via a member-function pointer from another class. */
+    void onModelInfoReady(const QString& info);
+
 private slots:
     void onBrowseImage();
     void onBrowseCustomModel();
@@ -82,6 +92,9 @@ private slots:
     void onLiveStop();
     void onLiveRestart();
     void onLiveCapture(const RFDetrRunResult& result);
+    void onClassSelectAll();
+    void onClassSelectNone();
+    void onClassSearchChanged(const QString& text);
 
 protected:
     void closeEvent(QCloseEvent* event) override;
@@ -111,6 +124,12 @@ private:
     void onTestDataExtractionFinished(bool success,
                                       ecvTestDataRepository::Dataset kind);
     void setTestDataControlsEnabled(bool enabled);
+
+    // ---- class filter helpers ----
+    void populateClassList(const QStringList& names);
+    QVector<uint32_t> enabledClassIds() const;
+    void updateClassCountLabel();
+    void clearClassFilter();
 
     QTabWidget* m_tabWidget = nullptr;
     QWidget* m_imageTab = nullptr;
@@ -153,4 +172,14 @@ private:
     TestDataTarget m_pendingTestDataTarget = TestDataTarget::None;
 
     QLabel* m_taskStatusLabel = nullptr;
+
+    // Class filter UI (Image tab).
+    QToolButton* m_classFilterToggle = nullptr;
+    QWidget* m_classFilterContent = nullptr;
+    QListWidget* m_classList = nullptr;
+    QPushButton* m_classAllBtn = nullptr;
+    QPushButton* m_classNoneBtn = nullptr;
+    QLineEdit* m_classSearchEdit = nullptr;
+    QLabel* m_classCountLabel = nullptr;
+    QStringList m_classNames;  // current model's names, indexed by class_id
 };

@@ -73,6 +73,13 @@ bool RFDetrWorker::runInference() {
     aicore_rfdetr_options_set_device(opts,
                                      m_settings.device.toUtf8().constData());
     aicore_rfdetr_options_set_threads(opts, m_settings.threads);
+    if (!m_settings.classFilter.isEmpty()) {
+        aicore_rfdetr_options_set_class_filter(
+                opts, m_settings.classFilter.constData(),
+                static_cast<size_t>(m_settings.classFilter.size()));
+        emit logMessage(tr("[RF-DETR] Class filter: %1 class(es) enabled")
+                                .arg(m_settings.classFilter.size()));
+    }
 
     emit logMessage(tr("[RF-DETR] Loading model: %1 (device=%2, threads=%3)")
                             .arg(QFileInfo(m_settings.modelPath).fileName(),
@@ -98,12 +105,9 @@ bool RFDetrWorker::runInference() {
                             aicore_rfdetr_context_variant(m_pendingCtx)))
                     .arg(aicore_rfdetr_context_num_classes(m_pendingCtx)));
     {
-        const QString info =
-                QStringLiteral("{\"variant\":\"%1\",\"num_classes\":%2}")
-                        .arg(QString::fromUtf8(
-                                aicore_rfdetr_context_variant(m_pendingCtx)))
-                        .arg(aicore_rfdetr_context_num_classes(m_pendingCtx));
-        emit modelInfoReady(info);
+        // Model info envelope for the dialog's class-filter UI: variant,
+        // class count and the full class-name table (indexed by class_id).
+        emit modelInfoReady(RFDetrHelpers::modelInfoJsonFromCtx(m_pendingCtx));
     }
     emit progressUpdate(1, 1);
 

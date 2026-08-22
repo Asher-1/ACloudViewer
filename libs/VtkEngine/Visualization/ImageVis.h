@@ -99,6 +99,15 @@ public:
     void removeLayer(const std::string& layer_id);
     void removeBySubstring(const std::string& substring);
 
+    /** Bring an existing image layer to the front of the render order.
+     *  Multiple overlapping ccImage entities are drawn in ViewProps
+     *  insertion order; re-adding the slice moves it to the end of the
+     *  list so it renders on top of the others.
+     *  @param layer_id Image layer ID (ccImage::getViewId())
+     *  @return true if the layer was found and raised
+     */
+    bool raiseLayer(const std::string& layer_id);
+
     /** @param layer_id Unique layer identifier
      *  @param x,y,width,height Layer bounds in pixels
      *  @param opacity Layer opacity (default 0.5)
@@ -268,6 +277,11 @@ private:
         vtkSmartPointer<vtkImageSliceMapper> imageMapper;
     };
     std::map<std::string, ImageInfo> m_imageInfoMap;
+    /// Layer id kept on top of the render order (set by raiseLayer).
+    /// drawImage rebuilds every image slice during a full redraw, which
+    /// would otherwise re-order the slices by DB traversal; addRGBImage
+    /// re-raises this layer whenever it is rebuilt.
+    std::string m_topMostLayer;
     bool m_disposed = false;
     bool m_imageInteraction2D = true;
 };

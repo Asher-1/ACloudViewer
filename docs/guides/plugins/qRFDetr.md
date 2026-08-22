@@ -1,6 +1,6 @@
 # qRFDetr — RF-DETR Object Detection & Segmentation Plugin
 
-Run **RF-DETR GGUF models** in ACloudViewer (C++ / [ggml](https://github.com/ggml-org/ggml)) for real-time COCO-80 object detection and optional instance segmentation.
+Run **RF-DETR GGUF models** in ACloudViewer (C++ / [ggml](https://github.com/ggml-org/ggml)) for real-time object detection (COCO 91-class layout, 80 real classes) and optional instance segmentation, with a per-class allowlist filter.
 
 ## Architecture
 
@@ -46,8 +46,9 @@ Example outputs: `build_app/bin/libAICore.so`, `build_app/bin/plugins/libQRFDETR
 1. Choose a **model variant** (detection: nano → large; `-seg-` variants add instance masks).
 2. Set **Device** (`Auto` / CUDA / Vulkan / CPU) and **Threads** (0 = auto).
 3. Set **Threshold** (confidence) and **Top-K** (max detections).
-4. Pick an input image from disk or the DB tree (collapsible DB list, or select in the main DB tree).
-5. Click **Run** — the model downloads from cloudViewer_downloads on first use.
+4. *(Optional)* Expand **Class Filter** and uncheck the classes to ignore — only checked classes are detected (see [Class Filter](#class-filter-allowlist)).
+5. Pick an input image from disk or the DB tree (collapsible DB list, or select in the main DB tree).
+6. Click **Run** — the model downloads from cloudViewer_downloads on first use.
 
 The annotated image (boxes + class/score labels; segmentation models additionally tint the per-object masks) is added to the DB tree as `RFDetr_<source>_<device>` with full metadata (per-detection class/score/box, count, runtime, device, model).
 
@@ -56,6 +57,18 @@ The annotated image (boxes + class/score labels; segmentation models additionall
 1. Start the camera or open a video file (reuses `video_base` playback: seek, speed, frame stepping).
 2. Playback is inference-paced: each decoded frame is displayed only after its detections have been drawn, so boxes cannot drift onto a later frame.
 3. **Capture** stores the current annotated frame into the DB tree.
+
+The Live tab mirrors the Image tab's class filter; changing it mid-playback reloads the inference context automatically.
+
+## Class Filter (allowlist)
+
+RF-DETR models are trained on many classes (the published weights use the COCO 91-class layout — 80 named classes plus 11 empty slots). To detect only the classes you care about:
+
+1. Run once to load the model — the filter list fills with the model's class names (indexed by class_id).
+2. Expand **Class Filter (optional)**, uncheck classes to ignore (or use **All / None**, or the search box to filter by name).
+3. The status label shows `N/91 classes enabled`; Run (or continue live playback) to apply.
+
+Filtered classes are removed by the engine's post-processing, so they never appear in the result JSON, the annotation or the DB metadata — this reduces false positives and speeds up display of busy scenes. The selection is persisted per class name and carries over across sessions and across COCO-trained model variants.
 
 ## Models
 
@@ -69,40 +82,47 @@ Official weights: [cloudViewer_downloads RF-DETR-GGUF release](https://github.co
 
 Default: `rfdetr-base-f16.gguf`. Model cache directory: `rfdetr_models/`.
 
-### Detection Classes — COCO 80
+### Detection Classes — COCO 91-class layout
 
 All RF-DETR detection and segmentation models are pretrained on the **COCO
-dataset** with **80 object classes**, identical to the official Roboflow RF-DETR
-releases. The class IDs and names are embedded in each GGUF model under the
-`rfdetr.class_names` metadata key and are read at runtime — no hardcoded class
-table in the plugin.
+dataset**. The published weights use the **COCO 91-class layout**: 80 named
+classes plus 11 empty slots (the original COCO class-id numbering), so
+`num_classes` reads 91 while only 80 entries carry names — e.g. `person`=1,
+`car`=3, `bus`=6, `stop sign`=13, `toothbrush`=90. The class names are embedded
+in each GGUF model under the `rfdetr.class_names` metadata key and are read at
+runtime (the model loader verifies `class_names.length == num_classes`) — no
+hardcoded class table in the plugin.
 
-| # | Class | # | Class | # | Class | # | Class |
-|---|-------|---|-------|---|-------|---|-------|
-| 0 | person | 20 | elephant | 40 | wine glass | 60 | dining table |
-| 1 | bicycle | 21 | bear | 41 | cup | 61 | toilet |
-| 2 | car | 22 | zebra | 42 | fork | 62 | tv |
-| 3 | motorcycle | 23 | giraffe | 43 | knife | 63 | laptop |
-| 4 | airplane | 24 | backpack | 44 | spoon | 64 | mouse |
-| 5 | bus | 25 | umbrella | 45 | bowl | 65 | remote |
-| 6 | train | 26 | handbag | 46 | banana | 66 | keyboard |
-| 7 | truck | 27 | tie | 47 | apple | 67 | cell phone |
-| 8 | boat | 28 | suitcase | 48 | sandwich | 68 | microwave |
-| 9 | traffic light | 29 | frisbee | 49 | orange | 69 | oven |
-| 10 | fire hydrant | 30 | skis | 50 | broccoli | 70 | toaster |
-| 11 | stop sign | 31 | snowboard | 51 | carrot | 71 | sink |
-| 12 | parking meter | 32 | sports ball | 52 | hot dog | 72 | refrigerator |
-| 13 | bench | 33 | kite | 53 | pizza | 73 | book |
-| 14 | bird | 34 | baseball bat | 54 | donut | 74 | clock |
-| 15 | cat | 35 | baseball glove | 55 | cake | 75 | vase |
-| 16 | dog | 36 | skateboard | 56 | chair | 76 | scissors |
-| 17 | horse | 37 | surfboard | 57 | couch | 77 | teddy bear |
-| 18 | sheep | 38 | tennis racket | 58 | potted plant | 78 | hair drier |
-| 19 | cow | 39 | bottle | 59 | bed | 79 | toothbrush |
+| ID | Class | ID | Class | ID | Class | ID | Class |
+|----|-------|----|-------|----|-------|----|-------|
+| 1 | person | 27 | backpack | 52 | banana | 74 | mouse |
+| 2 | bicycle | 28 | umbrella | 53 | apple | 75 | remote |
+| 3 | car | 31 | handbag | 54 | sandwich | 76 | keyboard |
+| 4 | motorcycle | 32 | tie | 55 | orange | 77 | cell phone |
+| 5 | airplane | 33 | suitcase | 56 | broccoli | 78 | microwave |
+| 6 | bus | 34 | frisbee | 57 | carrot | 79 | oven |
+| 7 | train | 35 | skis | 58 | hot dog | 80 | toaster |
+| 8 | truck | 36 | snowboard | 59 | pizza | 81 | sink |
+| 9 | boat | 37 | sports ball | 60 | donut | 82 | refrigerator |
+| 10 | traffic light | 38 | kite | 61 | cake | 84 | book |
+| 11 | fire hydrant | 39 | baseball bat | 62 | chair | 85 | clock |
+| 13 | stop sign | 40 | baseball glove | 63 | couch | 86 | vase |
+| 14 | parking meter | 41 | skateboard | 64 | potted plant | 87 | scissors |
+| 15 | bench | 42 | surfboard | 65 | bed | 88 | teddy bear |
+| 16 | bird | 43 | tennis racket | 67 | dining table | 89 | hair drier |
+| 17 | cat | 44 | bottle | 70 | toilet | 90 | toothbrush |
+| 18 | dog | 46 | wine glass | 72 | tv | | |
+| 19 | horse | 47 | cup | 73 | laptop | | |
+| 20 | sheep | 48 | fork | 74 | mouse | | |
+| 21 | cow | 49 | knife | 75 | remote | | |
+| 22 | elephant | 50 | spoon | 76 | keyboard | | |
+| 23 | bear | 51 | bowl | 77 | cell phone | | |
+| 24 | zebra | 52 | banana | 78 | microwave | | |
+| 25 | giraffe | | | | | | |
 
 **Note:** RF-DETR is an open-vocabulary architecture that supports fine-tuning
 on custom datasets. The base pretrained weights distributed via
-cloudViewer_downloads use the standard COCO 80 classes; when you fine-tune on
+cloudViewer_downloads use the COCO 91-class layout above; when you fine-tune on
 your own dataset the class list changes accordingly.
 
 See [MODEL_CARD.md](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qRFDetr/models/MODEL_CARD.md) for download links and licensing.

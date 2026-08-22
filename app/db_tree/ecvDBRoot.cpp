@@ -398,6 +398,12 @@ ccDBRoot::ccDBRoot(ccCustomQTreeView* dbTreeWidget,
     connect(m_ccPropDelegate,
             &ccPropertiesTreeDelegate::ccObjectAndChildrenAppearanceChanged,
             this, &ccDBRoot::redrawCCObjectAndChildren);
+    connect(m_ccPropDelegate,
+            &ccPropertiesTreeDelegate::exportMetadataImageRequested, this,
+            &ccDBRoot::exportMetadataImage);
+    connect(m_ccPropDelegate,
+            &ccPropertiesTreeDelegate::exportAllMetadataImagesRequested, this,
+            &ccDBRoot::exportAllMetadataImages);
 
     // Per-view visibility: refresh checkbox states when the active view
     // changes so that checkboxes reflect the new view's visibility.
@@ -2472,6 +2478,69 @@ void ccDBRoot::toggleSelectedEntitiesProperty(TOGGLE_PROPERTY prop) {
     } else {
         MainWindow::TheInstance()->refreshAll();
     }
+}
+
+namespace {
+
+//! True when any entity in the subtree carries the given name.
+bool treeContainsName(const ccHObject* root, const QString& name) {
+    if (!root) return false;
+    if (root->getName() == name) return true;
+    for (unsigned i = 0; i < root->getChildrenNumber(); ++i) {
+        if (treeContainsName(root->getChild(i), name)) return true;
+    }
+    return false;
+}
+
+//! Unique entity name: base, base_2, base_3, ...
+QString uniqueEntityName(const ccHObject* root, QString base) {
+    if (!treeContainsName(root, base)) return base;
+    for (int i = 2;; ++i) {
+        const QString candidate = QStringLiteral("%1_%2").arg(base).arg(i);
+        if (!treeContainsName(root, candidate)) return candidate;
+    }
+}
+
+//! Human-readable entity name from a metadata key
+//! ("RFDetr/Det1/mask_png" -> "RFDetr_Det1_mask").
+QString entityNameFromMetaKey(const QString& key) {
+    QString name = key;
+    name.replace(QLatin1Char('/'), QLatin1Char('_'));
+    if (name.endsWith(QStringLiteral("_png"))) {
+        name.chop(4);
+    }
+    return name;
+}
+
+}  // namespace
+
+void ccDBRoot::exportMetadataImage(const QImage& image, const QString& key) {
+    if (image.isNull()) return;
+    const QString name =
+            uniqueEntityName(m_treeRoot, entityNameFromMetaKey(key));
+    auto* img = new ccImage(image, name);
+    addElement(img, true);
+    CVLog::Print(tr("[DB] Exported metadata image '%1'.").arg(name));
+}
+
+void ccDBRoot::exportAllMetadataImages(
+        const QVector<QPair<QString, QImage>>& images) {
+    if (images.isEmpty()) return;
+    auto* group = new ccHObject(tr("Masks"));
+    for (const auto& entry : images) {
+        if (entry.second.isNull()) continue;
+        const QString name = uniqueEntityName(
+                m_treeRoot, entityNameFromMetaKey(entry.first));
+        group->addChild(new ccImage(entry.second, name));
+    }
+    if (group->getChildrenNumber() == 0) {
+        delete group;
+        return;
+    }
+    addElement(group, true);
+    CVLog::Print(tr("[DB] Exported %1 metadata image(s) into '%2'.")
+                         .arg(group->getChildrenNumber())
+                         .arg(group->getName()));
 }
 
 void ccDBRoot::addEmptyGroup() {

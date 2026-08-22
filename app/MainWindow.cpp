@@ -2449,6 +2449,29 @@ void MainWindow::initDBRoot() {
 
                 if (imageSelected) {
                     fitActiveViewForImageEntity(first, glView);
+                    // Multiple overlapping ccImage entities are rendered in
+                    // ViewProps insertion order; raise the selected image(s)
+                    // to the top of the render order in every view displaying
+                    // them so the chosen image is always shown in front.
+                    ccHObject::Container images;
+                    if (first->isA(CV_TYPES::IMAGE)) {
+                        images.push_back(first);
+                    } else if (first->isGroup()) {
+                        first->filterChildren(images, true, CV_TYPES::IMAGE,
+                                              false);
+                    }
+                    for (ccHObject* img : images) {
+                        if (!img) continue;
+                        const std::string viewId =
+                                img->getViewId().toStdString();
+                        for (auto* view : vm.getAllViews()) {
+                            auto* imgGlView = dynamic_cast<vtkGLView*>(view);
+                            if (!imgGlView) continue;
+                            if (auto imgVis = imgGlView->getImageVis()) {
+                                imgVis->raiseLayer(viewId);
+                            }
+                        }
+                    }
                 } else if (was2D) {
                     const ccBBox bbox = first->getDisplayBB_recursive(false);
                     if (bbox.isValid()) {

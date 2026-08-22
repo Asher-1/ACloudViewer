@@ -421,8 +421,7 @@ void FreeSplatterDialog::setupUi() {
         // Synchronous reads during the signal handler return stale values on
         // every platform.
         connect(m_dbToggleBtn, &QToolButton::toggled, this, [this](bool) {
-            QTimer::singleShot(0, this,
-                               [this]() { adaptTabWidgetHeight(); });
+            QTimer::singleShot(0, this, [this]() { adaptTabWidgetHeight(); });
         });
 
         m_inputTabWidget->addTab(m_imagesTab, tr("Images"));
@@ -761,7 +760,8 @@ void FreeSplatterDialog::adaptTabWidgetHeight() {
         // An empty image tab needs only its commands and thumbnail strip.
         // The clamps are DPI-scaled — on Windows 150%% scaling the raw 150..210
         // range would leave blank space and clip the strip.
-        contentHeight = qBound(ecvAICoreUi::dpiScaled(150), contentHeight, ecvAICoreUi::dpiScaled(210));
+        contentHeight = qBound(ecvAICoreUi::dpiScaled(150), contentHeight,
+                               ecvAICoreUi::dpiScaled(210));
     } else {
         const QScreen* screen =
                 QGuiApplication::screenAt(frameGeometry().center());
@@ -778,15 +778,16 @@ void FreeSplatterDialog::adaptTabWidgetHeight() {
         // not the live geometry: the budget must not feed back into the
         // height it constrains (the old height() - tab height created a
         // recursive dependency that inflated the dialog on tab switches).
-        const int dialogChrome = m_baseChrome >= 0
-                                         ? m_baseChrome
-                                         : height() - m_inputTabWidget->height();
+        const int dialogChrome =
+                m_baseChrome >= 0 ? m_baseChrome
+                                  : height() - m_inputTabWidget->height();
         // 220 px is a conservative estimate for title bar + action buttons
         // + margins; scale it with DPI like every other clamp.
-        const int viewportBudget =
-                std::max(ecvAICoreUi::dpiScaled(280),
-                         available - std::max(ecvAICoreUi::dpiScaled(220), dialogChrome) -
-                                 ecvAICoreUi::dpiScaled(32));
+        const int viewportBudget = std::max(
+                ecvAICoreUi::dpiScaled(280),
+                available -
+                        std::max(ecvAICoreUi::dpiScaled(220), dialogChrome) -
+                        ecvAICoreUi::dpiScaled(32));
         // No fixed cap on the viewport: the scroll area grows with the
         // dialog so the video preview inside scales with the window (the
         // preview absorbs leftover height via stretch).  The budget only
@@ -857,10 +858,9 @@ void FreeSplatterDialog::showEvent(QShowEvent* event) {
                 QGuiApplication::screenAt(frameGeometry().center());
         const int available =
                 screen ? screen->availableGeometry().height() : 800;
-        resize(width(),
-               qBound(ecvAICoreUi::dpiScaled(360),
-                      m_baseChrome + m_activeInputTabHeight,
-                      available - ecvAICoreUi::dpiScaled(20)));
+        resize(width(), qBound(ecvAICoreUi::dpiScaled(360),
+                               m_baseChrome + m_activeInputTabHeight,
+                               available - ecvAICoreUi::dpiScaled(20)));
     }
 }
 

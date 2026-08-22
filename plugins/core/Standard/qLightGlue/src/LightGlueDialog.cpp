@@ -9,7 +9,6 @@
 
 #include <CVLog.h>
 #include <cvFileDialog.h>
-#include "ecvAICoreUiHelper.h"
 
 #include <QCloseEvent>
 #include <QDir>
@@ -27,6 +26,7 @@
 #include "aicore/backend_capi.h"
 #include "aicore/inference_log.h"
 #include "aicore/lightglue_capi.h"
+#include "ecvAICoreUiHelper.h"
 #include "ecvModelDownloader.h"
 #include "ecvTestDataRepository.h"
 #include "feature_extractor.h"
@@ -645,7 +645,8 @@ void LightGlueDialog::refreshSlotWidgets() {
         const QImage img = previewForPath(path);
         if (!img.isNull()) {
             m_slotPreview[slot]->setText(QString());
-            m_slotPreview[slot]->setPreviewImage(img, ecvAICoreUi::slotPreviewSize());
+            m_slotPreview[slot]->setPreviewImage(
+                    img, ecvAICoreUi::slotPreviewSize());
         } else {
             m_slotPreview[slot]->clearPreview();
             m_slotPreview[slot]->setText("?");

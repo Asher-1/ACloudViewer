@@ -49,6 +49,10 @@ struct rfdetr_context {
     rfdetr::Model* model = nullptr;
     rfdetr::BackendCtx bctx{};
     int n_threads = 1;
+    /* Stable C-string view of model->config.class_names (built at init so
+     * the std::string elements never reallocate); exposed read-only by
+     * rfdetr_context_class_names. */
+    std::vector<const char*> class_names_ptrs;
 };
 
 extern "C" rfdetr_context* rfdetr_init(const rfdetr_params* params,
@@ -116,6 +120,12 @@ extern "C" rfdetr_context* rfdetr_init(const rfdetr_params* params,
     ctx->model = m;
     ctx->bctx = bctx;
     ctx->n_threads = n_threads;
+    /* Snapshot the class names as stable C-string pointers (the vector of
+     * std::string lives in m->config and is never resized after load). */
+    ctx->class_names_ptrs.reserve(m->config.class_names.size());
+    for (const auto& name : m->config.class_names) {
+        ctx->class_names_ptrs.push_back(name.c_str());
+    }
 
     rfdetr_logf(RFDETR_LOG_INFO,
                 "rfdetr_init: loaded variant=%s, num_classes=%u, "
@@ -240,6 +250,14 @@ int rfdetr_context_has_segmentation(const rfdetr_context* ctx) {
     return (ctx && ctx->model)
                    ? (ctx->model->config.has_segmentation_head ? 1 : 0)
                    : 0;
+}
+
+const char* const* rfdetr_context_class_names(const rfdetr_context* ctx,
+                                              uint32_t* out_count) {
+    if (out_count) *out_count = 0;
+    if (!ctx || ctx->class_names_ptrs.empty()) return nullptr;
+    if (out_count) *out_count = (uint32_t)ctx->class_names_ptrs.size();
+    return ctx->class_names_ptrs.data();
 }
 
 }  // extern "C"

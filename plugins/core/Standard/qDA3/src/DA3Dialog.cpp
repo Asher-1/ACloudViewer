@@ -8,7 +8,6 @@
 #include "DA3Dialog.h"
 
 #include <CVLog.h>
-#include "ecvAICoreUiHelper.h"
 #include <QtCompat.h>
 #include <cvFileDialog.h>
 
@@ -28,6 +27,7 @@
 #include "aicore/backend_capi.h"
 #include "aicore/depth_capi.h"
 #include "aicore/inference_log.h"
+#include "ecvAICoreUiHelper.h"
 #include "ecvClickableImageLabel.h"
 #include "ecvModelDownloader.h"
 #include "ecvPersistentSettings.h"

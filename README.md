@@ -176,7 +176,7 @@ Eight GUI plugins share one native inference library — **`libAICore.so`** ([gg
 <td width="33%" align="center" valign="middle">
 <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qRFDetr/images/qRFDetr.svg" width="35%">
 <br><b>🎯 qRFDetr — Real-time Detection</b>
-<br><sub>RF-DETR real-time object detection &amp; segmentation (COCO 80 classes) with masks</sub>
+<br><sub>RF-DETR real-time object detection &amp; segmentation (COCO 91-class layout, 80 named classes) with masks</sub>
 <br><sub><code>RF-DETR GGUF</code> · <code>PLUGIN_STANDARD_QRFDETR</code></sub>
 </td>
 <td width="33%" align="center" valign="middle">

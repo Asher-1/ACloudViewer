@@ -69,13 +69,25 @@
 #include <QAbstractItemView>
 #include <QCheckBox>
 #include <QComboBox>
+#include <QDialog>
+#include <QDialogButtonBox>
 #include <QFileInfo>
+#include <QGraphicsPixmapItem>
+#include <QGraphicsScene>
+#include <QGraphicsView>
+#include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QHeaderView>
+#include <QIcon>
+#include <QImage>
 #include <QImageReader>
+#include <QLabel>
 #include <QLineEdit>
 #include <QLocale>
+#include <QPixmap>
 #include <QPushButton>
+#include <QScreen>
+#include <QScrollArea>
 #include <QScrollBar>
 #include <QSet>
 #include <QSlider>
@@ -83,11 +95,13 @@
 #include <QStandardItemModel>
 #include <QToolButton>
 #include <QTreeView>
+#include <QVBoxLayout>
 
 // STL
 #include <algorithm>
 #include <exception>
 #include <functional>
+#include <utility>
 
 // System
 #include <assert.h>
@@ -97,6 +111,147 @@
 #include <cmath>
 
 namespace {
+
+/*! Zoomable viewer for metadata images with one-click / all export.
+ *  Zoom follows the mouse wheel; the image is re-fitted when the window
+ *  is resized so enlarging the dialog scales the mask up with high-quality
+ *  (smooth) interpolation. Export buttons call back into the delegate,
+ *  which forwards the request to the DB root. */
+class MetadataImageViewer : public QDialog {
+public:
+    using ExportCallback = std::function<void()>;
+
+    MetadataImageViewer(const QImage& image,
+                        const QString& title,
+                        ExportCallback onExportOne,
+                        ExportCallback onExportAll,
+                        QWidget* parent)
+        : QDialog(parent),
+          m_image(image),
+          m_onExportOne(std::move(onExportOne)),
+          m_onExportAll(std::move(onExportAll)) {
+        setWindowTitle(title);
+        setModal(true);
+
+        m_scene = new QGraphicsScene(this);
+        m_pixmapItem = m_scene->addPixmap(QPixmap::fromImage(m_image));
+        m_pixmapItem->setTransformationMode(Qt::SmoothTransformation);
+
+        m_view = new ZoomGraphicsView(this);
+        m_view->setScene(m_scene);
+        m_view->setRenderHint(QPainter::SmoothPixmapTransform);
+        m_view->setDragMode(QGraphicsView::ScrollHandDrag);
+        m_view->zoomChanged = [this]() { updateZoomLabel(); };
+
+        m_zoomLabel = new QLabel(this);
+        m_zoomLabel->setMinimumWidth(56);
+
+        auto* fitBtn = new QToolButton(this);
+        fitBtn->setText(tr("Fit"));
+        auto* oneBtn = new QToolButton(this);
+        oneBtn->setText(tr("100%"));
+        auto* exportBtn = new QToolButton(this);
+        exportBtn->setText(tr("Export to DB"));
+        auto* exportAllBtn = new QToolButton(this);
+        exportAllBtn->setText(tr("Export all to DB"));
+
+        auto* buttons = new QDialogButtonBox(QDialogButtonBox::Close, this);
+        connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
+        connect(fitBtn, &QToolButton::clicked, this,
+                &MetadataImageViewer::fitToWindow);
+        connect(oneBtn, &QToolButton::clicked, this,
+                &MetadataImageViewer::zoomTo100);
+        connect(exportBtn, &QToolButton::clicked, this, [this]() {
+            if (m_onExportOne) m_onExportOne();
+        });
+        connect(exportAllBtn, &QToolButton::clicked, this, [this]() {
+            if (m_onExportAll) m_onExportAll();
+        });
+
+        auto* toolbar = new QHBoxLayout;
+        toolbar->addWidget(fitBtn);
+        toolbar->addWidget(oneBtn);
+        toolbar->addWidget(m_zoomLabel);
+        toolbar->addStretch(1);
+        toolbar->addWidget(exportBtn);
+        toolbar->addWidget(exportAllBtn);
+        toolbar->addWidget(buttons);
+
+        auto* layout = new QVBoxLayout(this);
+        layout->addWidget(m_view, 1);
+        layout->addLayout(toolbar);
+
+        fitToWindow();
+    }
+
+public slots:
+    void fitToWindow() {
+        if (!m_view || !m_pixmapItem) return;
+        m_view->fitInView(m_pixmapItem, Qt::KeepAspectRatio);
+        updateZoomLabel();
+    }
+
+    void zoomTo100() {
+        if (!m_view) return;
+        m_view->resetTransform();
+        updateZoomLabel();
+    }
+
+    void updateZoomLabel() {
+        if (m_view && m_zoomLabel) {
+            m_zoomLabel->setText(
+                    tr("Zoom: %1%")
+                            .arg(qRound(m_view->transform().m11() * 100.0)));
+        }
+    }
+
+protected:
+    void resizeEvent(QResizeEvent* event) override {
+        QDialog::resizeEvent(event);
+        // Enlarge the window -> the image follows at high quality.
+        fitToWindow();
+    }
+
+private:
+    /*! Graphics view with cursor-anchored wheel zooming. */
+    class ZoomGraphicsView : public QGraphicsView {
+    public:
+        explicit ZoomGraphicsView(QWidget* parent = nullptr)
+            : QGraphicsView(parent) {}
+        std::function<void()> zoomChanged;
+
+    protected:
+        void wheelEvent(QWheelEvent* event) override {
+            const double factor = (event->angleDelta().y() > 0) ? 1.25 : 0.8;
+            // Zoom around the cursor position (mapToScene takes QPoint).
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+            const QPointF anchor = mapToScene(event->position().toPoint());
+#else
+            const QPointF anchor = mapToScene(event->pos());
+#endif
+            scale(factor, factor);
+            const QPointF delta = mapToScene(
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+                                          event->position().toPoint()
+#else
+                                          event->pos()
+#endif
+                                                  ) -
+                                  anchor;
+            translate(delta.x(), delta.y());
+            if (zoomChanged) zoomChanged();
+            event->accept();
+        }
+    };
+
+    QImage m_image;
+    QGraphicsScene* m_scene = nullptr;
+    QGraphicsPixmapItem* m_pixmapItem = nullptr;
+    ZoomGraphicsView* m_view = nullptr;
+    QLabel* m_zoomLabel = nullptr;
+    ExportCallback m_onExportOne;
+    ExportCallback m_onExportAll;
+};
 
 void refreshActiveDisplayLikeUpdateScreen() {
     if (QWidget* w = ecvViewManager::instance().activeWidget()) {
@@ -290,6 +445,13 @@ ccPropertiesTreeDelegate::ccPropertiesTreeDelegate(QStandardItemModel* model,
     m_viewPropertyRenderTimer.setInterval(1);
     connect(&m_viewPropertyRenderTimer, &QTimer::timeout, this,
             [this]() { refreshOpacityPreview(m_lastPreviewView); });
+
+    // Click-to-view for metadata image thumbnails (rows carrying
+    // METADATA_IMAGE_ROLE are set up by fillWithMetaData).
+    if (m_view) {
+        connect(m_view, &QAbstractItemView::clicked, this,
+                &ccPropertiesTreeDelegate::onMetadataImageClicked);
+    }
 }
 
 ccPropertiesTreeDelegate::~ccPropertiesTreeDelegate() { unbind(); }
@@ -357,6 +519,9 @@ void ccPropertiesTreeDelegate::fillModel(ccHObject* hObject) {
     unbind();
 
     m_currentObject = hObject;
+
+    // Metadata image entries are re-collected by fillWithMetaData below.
+    m_metadataImages.clear();
 
     // save current scroll position
     int scrollPos = (m_view && m_view->verticalScrollBar()
@@ -545,14 +710,43 @@ void ccPropertiesTreeDelegate::fillWithMetaData(ccObject* _obj) {
         QVariant var = it.value();
         QString value;
 
+        // Binary values (embedded images, blobs) must never be decoded as
+        // text: UTF-8-decoding arbitrary bytes yields replacement glyphs
+        // and control characters that look like corrupted data.
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-        if (var.canConvert<QString>()) {
+        const bool isByteArray = (var.metaType().id() == QMetaType::QByteArray);
+#else
+        const bool isByteArray = (var.type() == QVariant::ByteArray);
+#endif
+        if (isByteArray) {
+            const QByteArray bytes = var.toByteArray();
+            const QImage image = QImage::fromData(bytes);
+            if (!image.isNull()) {
+                // Decodable image: show a thumbnail and let the user click to
+                // view the full image (see onMetadataImageClicked). Also
+                // collect it for one-click export from the viewer.
+                m_metadataImages.append({it.key(), image});
+                auto* valueItem =
+                        new QStandardItem(tr("Image %1x%2 (click to view)")
+                                                  .arg(image.width())
+                                                  .arg(image.height()));
+                valueItem->setIcon(QIcon(QPixmap::fromImage(
+                        image.scaled(24, 24, Qt::KeepAspectRatio,
+                                     Qt::SmoothTransformation))));
+                valueItem->setData(image, METADATA_IMAGE_ROLE);
+                appendRow(ITEM(it.key()), valueItem);
+                continue;
+            }
+            value = tr("<binary data: %1 bytes>").arg(bytes.size());
+        } else
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+                if (var.canConvert<QString>()) {
             value = var.toString();
         } else {
             value = QString(var.metaType().name());
         }
 #else
-        if (var.canConvert(QVariant::String)) {
+                if (var.canConvert(QVariant::String)) {
             var.convert(QVariant::String);
             value = var.toString();
         } else {
@@ -562,6 +756,37 @@ void ccPropertiesTreeDelegate::fillWithMetaData(ccObject* _obj) {
 
         appendRow(ITEM(it.key()), ITEM(value));
     }
+}
+
+void ccPropertiesTreeDelegate::onMetadataImageClicked(
+        const QModelIndex& index) {
+    QStandardItem* item = m_model ? m_model->itemFromIndex(index) : nullptr;
+    if (!item) {
+        return;
+    }
+    const QVariant imageVar = item->data(METADATA_IMAGE_ROLE);
+    if (!imageVar.canConvert<QImage>()) {
+        return;
+    }
+    const QImage image = imageVar.value<QImage>();
+    if (image.isNull()) {
+        return;
+    }
+    // The metadata key lives in the left column of the same row.
+    QString key;
+    if (QStandardItem* keyItem = m_model->item(index.row(), 0)) {
+        key = keyItem->text();
+    }
+    MetadataImageViewer viewer(
+            image, key,
+            [this, image, key]() {
+                emit exportMetadataImageRequested(image, key);
+            },
+            [this]() {
+                emit exportAllMetadataImagesRequested(m_metadataImages);
+            },
+            m_view ? m_view->window() : nullptr);
+    viewer.exec();
 }
 
 void ccPropertiesTreeDelegate::fillWithViewProperties() {

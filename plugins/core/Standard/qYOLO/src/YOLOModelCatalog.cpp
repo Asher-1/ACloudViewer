@@ -350,9 +350,9 @@ void drawSegmentation(QImage* image,
                                     : QColor(220, 220, 220);
 
         // Alpha-blend the tint over the foreground mask pixels, with the
-        // blend weight proportional to the mask coverage so SmoothTransformation
-        // anti-aliased edges transition smoothly instead of snapping to full
-        // opacity at the first non-zero pixel.
+        // blend weight proportional to the mask coverage so
+        // SmoothTransformation anti-aliased edges transition smoothly instead
+        // of snapping to full opacity at the first non-zero pixel.
         for (int y = 0; y < imgH; ++y) {
             const uchar* src = maskImage.constScanLine(y);
             uchar* dst = image->scanLine(y);
