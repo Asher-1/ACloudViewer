@@ -9,8 +9,11 @@
 
 // Qt
 #include <QAbstractItemModel>
+#include <QImage>
+#include <QPair>
 #include <QPoint>
 #include <QTreeView>
+#include <QVector>
 
 // CV_DB_LIB
 #include <ecvHObject.h>
@@ -171,6 +174,14 @@ public slots:
     void redrawCCObject(ccHObject* object, bool forceRedraw = true);
     void redrawCCObjectAndChildren(ccHObject* object, bool forceRedraw = true);
     void updateCCObject(ccHObject* object);
+
+    //! Exports a single metadata image (e.g. a detection mask) as ccImage
+    //! into the DB tree. key is the metadata key of the source row.
+    void exportMetadataImage(const QImage& image, const QString& key);
+    //! Exports every decodable metadata image of the current entity into a
+    //! group folder (key -> image, in metadata map order).
+    void exportAllMetadataImages(
+            const QVector<QPair<QString, QImage>>& images);
     void deleteSelectedEntities();
 
     //! Selects a given entity

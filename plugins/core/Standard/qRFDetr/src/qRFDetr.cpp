@@ -249,6 +249,7 @@ void qRFDetr::executeTask(const RFDetrDialog::Settings& settings) {
     ws.device = workerDevice;
     ws.threshold = settings.threshold;
     ws.topK = settings.topK;
+    ws.classFilter = settings.classFilter;
 
     m_currentSettings = settings;
     m_worker = new RFDetrWorker(ws, this);
@@ -261,7 +262,7 @@ void qRFDetr::executeTask(const RFDetrDialog::Settings& settings) {
     connect(m_worker, &RFDetrWorker::taskFinished, this,
             &qRFDetr::onTaskFinished, Qt::QueuedConnection);
     connect(m_worker, &RFDetrWorker::modelInfoReady, m_dialog,
-            &RFDetrDialog::appendLog, Qt::QueuedConnection);
+            &RFDetrDialog::onModelInfoReady, Qt::QueuedConnection);
     m_dialog->setRunning(true);
     m_inferenceElapsedSeconds = 0;
     m_inferenceHeartbeat->start();
@@ -331,8 +332,10 @@ void qRFDetr::addResultToDb(const RFDetrRunResult& result,
                                  .arg(d.x2, 0, 'f', 2)
                                  .arg(d.y2, 0, 'f', 2));
         if (!d.maskRaw.isEmpty() && d.maskWidth > 0 && d.maskHeight > 0) {
-            // The live/video path carries raw mask bytes; re-encode PNG here
-            // (one-shot, on the export click) for the DB metadata.
+            /* Encode the mask as a compact PNG in the DB metadata: the
+             * properties panel decodes image byte arrays and shows a
+             * clickable thumbnail (ccPropertiesTreeDelegate), so the mask
+             * stays inspectable without dumping raw bytes into the panel. */
             const QImage mask(
                     reinterpret_cast<const uchar*>(d.maskRaw.constData()),
                     d.maskWidth, d.maskHeight, d.maskWidth,

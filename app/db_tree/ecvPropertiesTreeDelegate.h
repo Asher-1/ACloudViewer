@@ -11,9 +11,11 @@
 #include <ecvArray.h>
 
 // Qt
+#include <QPair>
 #include <QPointer>
 #include <QStyledItemDelegate>
 #include <QTimer>
+#include <QVector>
 
 // Forward declarations
 class ecvGenericGLDisplay;
@@ -191,6 +193,14 @@ signals:
     void ccObjectAndChildrenAppearanceChanged(ccHObject* hObject,
                                               bool forceRedraw = true) const;
 
+    //! Emitted when the user asks to export the metadata image currently
+    //! shown in the click-to-view dialog (key = metadata key of the row).
+    void exportMetadataImageRequested(const QImage& image, const QString& key);
+    //! Emitted when the user asks to export every decodable metadata image of
+    //! the current entity (key -> image, in metadata map order).
+    void exportAllMetadataImagesRequested(
+            const QVector<QPair<QString, QImage>>& images);
+
     /**
      * @brief Request to clear all selection data (prevents crashes from stale
      * references)
@@ -205,6 +215,17 @@ private:
     static const char* s_sfColor;
     static const char* s_defaultPointSizeString;
     static const char* s_defaultPolyWidthSizeString;
+
+    //! Item role holding a QImage decoded from a metadata byte array; rows
+    //! with this role show a thumbnail and open a viewer on click.
+    static constexpr int METADATA_IMAGE_ROLE = Qt::UserRole + 1;
+
+    //! Decodable metadata images of the current entity (key -> image),
+    //! collected by fillWithMetaData for one-click export.
+    QVector<QPair<QString, QImage>> m_metadataImages;
+
+    //! Opens the click-to-view dialog for metadata image thumbnails.
+    void onMetadataImageClicked(const QModelIndex& index);
 
     void updateItem(QStandardItem*);
     void scalarFieldChanged(int);

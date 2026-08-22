@@ -13,6 +13,8 @@
 #include <QThread>
 #include <QVector>
 
+#include <cstdint>
+
 #include "RFDetrModelCatalog.h"
 
 struct aicore_cancel_token;
@@ -33,6 +35,10 @@ public:
         QString device = QStringLiteral("auto");
         float threshold = 0.5f;
         uint32_t topK = 300;
+        /** Class allowlist (empty = detect all classes the model knows).
+         *  Applied by the engine's post-processing, so filtered classes
+         *  never appear in the result JSON. */
+        QVector<uint32_t> classFilter;
     };
 
     explicit RFDetrWorker(const Settings& settings, QObject* parent = nullptr);

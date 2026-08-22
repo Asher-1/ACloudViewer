@@ -56,6 +56,7 @@ void RFDetrLiveInferWorker::releaseModel() {
     m_loadedModelPath.clear();
     m_loadedDevice.clear();
     m_loadedThreads = 0;
+    m_loadedClassFilter.clear();
     m_resolvedDevice.clear();
 #endif
 }
@@ -68,7 +69,8 @@ bool RFDetrLiveInferWorker::ensureModel(const Job& job, QString* error) {
     }
     if (m_ctx && aicore_rfdetr_is_ready(m_ctx) &&
         m_loadedModelPath == job.modelPath && m_loadedDevice == job.device &&
-        m_loadedThreads == job.threads) {
+        m_loadedThreads == job.threads &&
+        m_loadedClassFilter == job.classFilter) {
         return true;
     }
 
@@ -80,6 +82,11 @@ bool RFDetrLiveInferWorker::ensureModel(const Job& job, QString* error) {
     }
     aicore_rfdetr_options_set_device(opts, job.device.toUtf8().constData());
     aicore_rfdetr_options_set_threads(opts, job.threads);
+    if (!job.classFilter.isEmpty()) {
+        aicore_rfdetr_options_set_class_filter(
+                opts, job.classFilter.constData(),
+                static_cast<size_t>(job.classFilter.size()));
+    }
     m_ctx = aicore_rfdetr_load_opts(job.modelPath.toUtf8().constData(), opts);
     aicore_rfdetr_options_free(opts);
     if (!m_ctx || !aicore_rfdetr_is_ready(m_ctx)) {
@@ -94,12 +101,16 @@ bool RFDetrLiveInferWorker::ensureModel(const Job& job, QString* error) {
     m_loadedModelPath = job.modelPath;
     m_loadedDevice = job.device;
     m_loadedThreads = job.threads;
+    m_loadedClassFilter = job.classFilter;
     /* The backend-resolved device ("CUDA0", "cpu", ...), captured at load
      * time so every Result reports what actually ran — a requested GPU that
      * silently fell back to CPU shows up here. */
     const char* resolved = aicore_rfdetr_context_device(m_ctx);
     m_resolvedDevice = (resolved && resolved[0]) ? QString::fromUtf8(resolved)
                                                  : job.device;
+    /* Model-info envelope (variant / class names) so the dialog's class
+     * filter populates in live mode without a prior Image-tab run. */
+    emit modelInfoReady(RFDetrHelpers::modelInfoJsonFromCtx(m_ctx));
     return true;
 }
 #endif

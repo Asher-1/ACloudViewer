@@ -22,6 +22,31 @@
 
 namespace RFDetrHelpers {
 
+QString modelInfoJsonFromCtx(struct aicore_rfdetr_ctx* ctx) {
+    QJsonObject obj;
+#ifdef AICore_ENABLED
+    if (ctx != nullptr && aicore_rfdetr_is_ready(ctx)) {
+        obj[QStringLiteral("variant")] = QString::fromUtf8(
+                aicore_rfdetr_context_variant(ctx));
+        obj[QStringLiteral("num_classes")] = static_cast<int>(
+                aicore_rfdetr_context_num_classes(ctx));
+        uint32_t nNames = 0;
+        const char* const* names =
+                aicore_rfdetr_context_class_names(ctx, &nNames);
+        if (names != nullptr && nNames > 0) {
+            QJsonArray arr;
+            for (uint32_t i = 0; i < nNames; ++i) {
+                arr.append(QString::fromUtf8(names[i]));
+            }
+            obj[QStringLiteral("class_names")] = arr;
+        }
+    }
+#else
+    (void)ctx;
+#endif
+    return QString::fromUtf8(QJsonDocument(obj).toJson(QJsonDocument::Compact));
+}
+
 QVector<RFDetrModelEntry> catalogModels() {
     QVector<RFDetrModelEntry> out;
 #ifdef AICore_ENABLED
@@ -155,6 +180,26 @@ bool parseDetectionsJson(const QByteArray& json, RFDetrRunResult* out) {
     return true;
 }
 
+bool parseModelInfoJson(const QByteArray& json, QStringList* outClassNames) {
+    if (outClassNames == nullptr) return false;
+    outClassNames->clear();
+
+    QJsonParseError err{};
+    const QJsonDocument doc = QJsonDocument::fromJson(json, &err);
+    if (err.error != QJsonParseError::NoError || !doc.isObject()) return false;
+
+    const QJsonObject root = doc.object();
+    const QJsonArray names =
+            root.value(QStringLiteral("class_names")).toArray();
+    if (names.isEmpty()) return false;
+
+    outClassNames->reserve(names.size());
+    for (const QJsonValue& v : names) {
+        outClassNames->append(v.toString());
+    }
+    return true;
+}
+
 QRgb classColor(uint32_t classId) {
     // COCO-consistent deterministic palette (BGR order from OpenCV heritage).
     static const QRgb kPalette[20] = {
@@ -170,36 +215,14 @@ QRgb classColor(uint32_t classId) {
 }
 
 
-/* 3-tap separable Gaussian blur [1,2,1]/4 on a Grayscale8 QImage.
- * Converts hard binary mask edges into a soft gradient so that
- * bilinear upscaling (SmoothPixmapTransform) produces smooth
- * boundaries instead of a staircase of per-pixel transitions. */
-static void gaussianBlurMask3(QImage& img) {
-    if (img.format() != QImage::Format_Grayscale8) return;
-    const int w = img.width(), h = img.height();
-    if (w <= 2 || h <= 2) return;
-    QImage tmp(w, h, QImage::Format_Grayscale8);
-    for (int y = 0; y < h; ++y) {
-        const uchar* s = img.constScanLine(y);
-        uchar* d = tmp.scanLine(y);
-        for (int x = 0; x < w; ++x) {
-            const int l = (x > 0) ? s[x - 1] : 0;
-            const int m = s[x];
-            const int r = (x < w - 1) ? s[x + 1] : 0;
-            d[x] = (uint8_t)((l + m * 2 + r) / 4);
-        }
-    }
-    for (int y = 0; y < h; ++y) {
-        uchar* d = img.scanLine(y);
-        for (int x = 0; x < w; ++x) {
-            const int t = (y > 0) ? tmp.constScanLine(y - 1)[x] : 0;
-            const int m = tmp.constScanLine(y)[x];
-            const int b = (y < h - 1) ? tmp.constScanLine(y + 1)[x] : 0;
-            d[x] = (uint8_t)((t + m * 2 + b) / 4);
-        }
-    }
-}
-
+/* The mask tint pass deliberately does NOT pre-blur the binary mask.
+ * The mask value is a confidence/coverage signal: 255 means "definitely
+ * part of the object" and must render at full tint strength. Pre-blurring
+ * at the model resolution (e.g. 4x4) dilutes every 255 pixel inside small
+ * masks (measured: a 2x2 blob drops to ~56% intensity), making segmented
+ * regions look washed out. The bilinear upscale below (SmoothPixmapTransform)
+ * already produces the smooth 0..255 edge gradient on its own, so the blur
+ * pass is both harmful and redundant. */
 void drawDetections(QImage* image,
                     const QVector<RFDetrDetection>& detections,
                     float maskAlpha,
@@ -223,11 +246,10 @@ void drawDetections(QImage* image,
 
     // Pass 1: tint masked regions (segmentation models).  All detections'
     // masks are accumulated into a single composite image at the mask
-    // resolution (640x640) and then stretched to the frame with one
-    // SIMD/hardware blit, instead of N separate drawImage calls (one per
-    // detection).  Proportional alpha from the Gaussian-blurred mask
-    // replaces the old binary threshold (>= 128 : tintRgb : 0) so the
-    // blur's soft gradient is preserved through the bilinear upscale.
+    // resolution and then stretched to the frame with one SIMD/hardware
+    // blit, instead of N separate drawImage calls (one per detection).
+    // Binary 255 pixels become fully opaque tint; the bilinear upscale
+    // produces the anti-aliased edge gradient.
     QImage composite;
     for (const RFDetrDetection& d : detections) {
         if (d.maskRaw.isEmpty() || d.maskWidth <= 0 || d.maskHeight <= 0)
@@ -236,14 +258,12 @@ void drawDetections(QImage* image,
         std::memcpy(mask.bits(), d.maskRaw.constData(),
                     static_cast<size_t>(d.maskWidth) * d.maskHeight);
         if (mask.isNull()) continue;
-        gaussianBlurMask3(mask);
 
         if (composite.isNull()) {
             composite = QImage(mask.size(),
                                QImage::Format_ARGB32_Premultiplied);
             composite.fill(Qt::transparent);
         }
-        const QRgb tintRgb = QColor(classColor(d.classId)).rgba();
         const QRgb tintPre = QColor(classColor(d.classId)).rgb();  // r,g,b only
         for (int y = 0; y < mask.height(); ++y) {
             const uchar* mrow = mask.constScanLine(y);
@@ -252,10 +272,11 @@ void drawDetections(QImage* image,
                 const int mv = mrow[x];
                 if (mv <= 1) continue;
                 if (mv > qAlpha(crow[x])) {
-                    crow[x] = qRgba(
-                            qRed(tintPre) * mv / 255,
-                            qGreen(tintPre) * mv / 255,
-                            qBlue(tintPre) * mv / 255, mv);
+                    // Premultiplied ARGB32: RGB already scaled by alpha so
+                    // QPainter's SourceOver blit needs no un-premultiply.
+                    crow[x] = qRgba(qRed(tintPre) * mv / 255,
+                                    qGreen(tintPre) * mv / 255,
+                                    qBlue(tintPre) * mv / 255, mv);
                 }
             }
         }

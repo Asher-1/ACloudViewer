@@ -57,6 +57,8 @@ RFDetrLiveWidget::RFDetrLiveWidget(QWidget* parent)
             &QObject::deleteLater);
     connect(m_inferWorker, &RFDetrLiveInferWorker::inferComplete, this,
             &RFDetrLiveWidget::onInferComplete, Qt::QueuedConnection);
+    connect(m_inferWorker, &RFDetrLiveInferWorker::modelInfoReady, this,
+            &RFDetrLiveWidget::modelInfoReady, Qt::QueuedConnection);
     m_inferThread->start();
 }
 
@@ -192,6 +194,10 @@ void RFDetrLiveWidget::setDevice(const QString& device) {
 void RFDetrLiveWidget::setThreads(int threads) {
     m_config.threads = threads;
     if (m_threadsSpin) m_threadsSpin->setValue(threads);
+}
+
+void RFDetrLiveWidget::setClassFilter(const QVector<uint32_t>& classFilter) {
+    m_config.classFilter = classFilter;
 }
 
 void RFDetrLiveWidget::rebuildModelCombo(const QStringList& labels,
@@ -342,6 +348,7 @@ void RFDetrLiveWidget::submitInferJob(const QImage& rgb) {
     job.threads = m_config.threads;
     job.threshold = m_config.threshold;
     job.topK = m_config.topK;
+    job.classFilter = m_config.classFilter;
     QMetaObject::invokeMethod(m_inferWorker, "runJob", Qt::QueuedConnection,
                               Q_ARG(RFDetrLiveInferWorker::Job, job));
 }

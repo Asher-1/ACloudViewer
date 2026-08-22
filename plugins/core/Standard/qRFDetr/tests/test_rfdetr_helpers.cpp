@@ -63,6 +63,60 @@ TEST(RFDetrHelpers, ParseDetectionsJsonInvalid) {
     EXPECT_FALSE(RFDetrHelpers::parseDetectionsJson("[]", &out));
 }
 
+TEST(RFDetrHelpers, ParseModelInfoJsonBasic) {
+    const QByteArray json =
+            "{\"variant\":\"base\",\"num_classes\":3,"
+            "\"class_names\":[\"person\",\"bicycle\",\"car\"]}";
+    QStringList names;
+    ASSERT_TRUE(RFDetrHelpers::parseModelInfoJson(json, &names));
+    ASSERT_EQ(names.size(), 3);
+    EXPECT_EQ(names.at(0), QStringLiteral("person"));
+    EXPECT_EQ(names.at(1), QStringLiteral("bicycle"));
+    EXPECT_EQ(names.at(2), QStringLiteral("car"));
+}
+
+TEST(RFDetrHelpers, ParseModelInfoJsonEscapes) {
+    // Class names with quotes / backslashes must round-trip unescaped.
+    const QByteArray json =
+            "{\"variant\":\"x\",\"num_classes\":2,"
+            "\"class_names\":[\"a\\\"b\",\"c\\\\d\"]}";
+    QStringList names;
+    ASSERT_TRUE(RFDetrHelpers::parseModelInfoJson(json, &names));
+    ASSERT_EQ(names.size(), 2);
+    EXPECT_EQ(names.at(0), QStringLiteral("a\"b"));
+    EXPECT_EQ(names.at(1), QStringLiteral("c\\d"));
+}
+
+TEST(RFDetrHelpers, ParseModelInfoJsonPreservesEmptySlots) {
+    // COCO 91-class layout: empty-string slots (id 0 = background, plus
+    // unused COCO ids) must be preserved so the dialog's list-row index
+    // stays equal to class_id — dropping them would mis-map the allowlist.
+    const QByteArray json =
+            "{\"variant\":\"base\",\"num_classes\":4,"
+            "\"class_names\":[\"\",\"person\",\"\",\"car\"]}";
+    QStringList names;
+    ASSERT_TRUE(RFDetrHelpers::parseModelInfoJson(json, &names));
+    ASSERT_EQ(names.size(), 4);
+    EXPECT_TRUE(names.at(0).isEmpty());   // slot 0 preserved
+    EXPECT_EQ(names.at(1), QStringLiteral("person"));
+    EXPECT_TRUE(names.at(2).isEmpty());   // slot 2 preserved
+    EXPECT_EQ(names.at(3), QStringLiteral("car"));
+}
+
+TEST(RFDetrHelpers, ParseModelInfoJsonMissingNames) {
+    QStringList names;
+    EXPECT_FALSE(RFDetrHelpers::parseModelInfoJson("not json", &names));
+    EXPECT_FALSE(RFDetrHelpers::parseModelInfoJson("[]", &names));
+    EXPECT_FALSE(RFDetrHelpers::parseModelInfoJson(
+            "{\"variant\":\"base\",\"num_classes\":80}", &names));
+    EXPECT_FALSE(RFDetrHelpers::parseModelInfoJson(
+            "{\"variant\":\"base\",\"num_classes\":0,"
+            "\"class_names\":[]}",
+            &names));
+    // NULL output is rejected without crashing.
+    EXPECT_FALSE(RFDetrHelpers::parseModelInfoJson("{\"a\":1}", nullptr));
+}
+
 TEST(RFDetrHelpers, ClassColorDeterministic) {
     EXPECT_TRUE(RFDetrHelpers::classColor(0) == RFDetrHelpers::classColor(0));
     EXPECT_TRUE(RFDetrHelpers::classColor(20) == RFDetrHelpers::classColor(0));

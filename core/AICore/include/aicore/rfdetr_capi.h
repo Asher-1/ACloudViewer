@@ -43,6 +43,16 @@ AICORE_CAPI void aicore_rfdetr_options_set_device(aicore_rfdetr_options* opts,
 AICORE_CAPI void aicore_rfdetr_options_set_threads(aicore_rfdetr_options* opts,
                                                    int n_threads);
 
+/** Set the class allowlist (whitelist) for detection. Only detections whose
+ *  class_id is in \p class_ids survive post-processing; NULL / n=0 means
+ *  "detect all classes" (the default). The array is copied — the caller may
+ *  free it after this call. Useful when a model was trained on many classes
+ *  (e.g. COCO 80) but the user only cares about a subset. */
+AICORE_CAPI void aicore_rfdetr_options_set_class_filter(
+        aicore_rfdetr_options* opts,
+        const uint32_t* class_ids,
+        size_t n);
+
 /** Load an RF-DETR GGUF (detection or segmentation variant). Returns NULL on
  *  failure; inspect aicore_rfdetr_last_error() for the reason. */
 AICORE_CAPI aicore_rfdetr_ctx* aicore_rfdetr_load_opts(
@@ -131,6 +141,12 @@ aicore_rfdetr_context_num_classes(const aicore_rfdetr_ctx* ctx);
 /** 1 when the model has a segmentation head. */
 AICORE_CAPI int aicore_rfdetr_context_has_segmentation(
         const aicore_rfdetr_ctx* ctx);
+/** Class names of the loaded model, indexed by class_id (read-only, owned by
+ *  ctx — stable until the context is freed; copy strings before freeing).
+ *  Returns NULL when no model is loaded; \p out_count receives the number
+ *  of classes (0 on NULL ctx). */
+AICORE_CAPI const char* const* aicore_rfdetr_context_class_names(
+        aicore_rfdetr_ctx* ctx, uint32_t* out_count);
 /** Backend-RESOLVED device name ("CUDA0", "Vulkan0", "cpu", ...).
  * Differs from the requested device when the GPU lease can't be acquired —
  * surfaces silent CPU fallbacks. Owned by ctx; copy before freeing. */

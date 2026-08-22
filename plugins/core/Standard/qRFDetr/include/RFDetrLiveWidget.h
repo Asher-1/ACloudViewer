@@ -11,7 +11,10 @@
 #include <QImage>
 #include <QString>
 #include <QThread>
+#include <QVector>
 #include <QWidget>
+
+#include <cstdint>
 
 #include "RFDetrLiveInferWorker.h"
 #include "RFDetrModelCatalog.h"
@@ -36,6 +39,9 @@ public:
         int threads = 0;
         float threshold = 0.5f;
         uint32_t topK = 300;
+        /** Class allowlist (empty = detect all classes). Mirrored from the
+         *  dialog's class filter; changes reload the live inference ctx. */
+        QVector<uint32_t> classFilter;
     };
 
     explicit RFDetrLiveWidget(QWidget* parent = nullptr);
@@ -60,6 +66,7 @@ public:
     void setModelPath(const QString& path);
     void setDevice(const QString& device);
     void setThreads(int threads);
+    void setClassFilter(const QVector<uint32_t>& classFilter);
     QString modelFilename() const;
     QString deviceId() const;
     int threadCount() const;
@@ -77,6 +84,10 @@ signals:
     void modelSelectionChanged(const QString& modelFilename);
     void deviceSelectionChanged(const QString& deviceId);
     void threadCountChanged(int threads);
+    /** Forwarded from the inference worker after a model (re)load — the
+     *  model-info JSON envelope (variant / class names) for the dialog's
+     *  class-filter list. */
+    void modelInfoReady(const QString& info);
 
 public slots:
     void captureSnapshotToDb();

@@ -130,6 +130,83 @@ void RFDetrDialog::setupUi() {
     runRow->addStretch();
     imageLayout->addLayout(runRow);
 
+    // ---- Class filter (collapsible; optional allowlist) ----------------
+    m_classFilterToggle = new QToolButton(m_imageTab);
+    m_classFilterToggle->setArrowType(Qt::RightArrow);
+    m_classFilterToggle->setCheckable(true);
+    m_classFilterToggle->setChecked(false);
+    m_classFilterToggle->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    m_classFilterToggle->setText(tr("Class Filter (optional)"));
+    m_classFilterToggle->setCursor(Qt::PointingHandCursor);
+    m_classFilterToggle->setStyleSheet(
+            "QToolButton { border: none; font-weight: bold; padding: 4px 6px; "
+            "  border-radius: 3px; color: palette(text); }"
+            "QToolButton:hover { background: palette(midlight); }");
+    imageLayout->addWidget(m_classFilterToggle, 0, Qt::AlignLeft);
+
+    m_classFilterContent = new QWidget(m_imageTab);
+    auto* classLayout = new QVBoxLayout(m_classFilterContent);
+    classLayout->setContentsMargins(0, 0, 0, 0);
+    classLayout->setSpacing(ecvAICoreUi::tightVSpacing());
+
+    auto* classTopRow = new QHBoxLayout;
+    classTopRow->setSpacing(ecvAICoreUi::hSpacing());
+    m_classCountLabel = new QLabel(m_classFilterContent);
+    m_classCountLabel->setStyleSheet("color: palette(placeholder-text);");
+    classTopRow->addWidget(m_classCountLabel);
+    classTopRow->addStretch();
+    m_classAllBtn = new QPushButton(tr("All"), m_classFilterContent);
+    m_classAllBtn->setToolTip(tr("Enable every class (no filtering)"));
+    m_classNoneBtn = new QPushButton(tr("None"), m_classFilterContent);
+    m_classNoneBtn->setToolTip(
+            tr("Disable every class (no detections until some are "
+               "re-enabled)"));
+    classTopRow->addWidget(m_classAllBtn);
+    classTopRow->addWidget(m_classNoneBtn);
+    classLayout->addLayout(classTopRow);
+
+    m_classSearchEdit = new QLineEdit(m_classFilterContent);
+    m_classSearchEdit->setPlaceholderText(
+            tr("Filter classes by name..."));
+    m_classSearchEdit->setClearButtonEnabled(true);
+    classLayout->addWidget(m_classSearchEdit);
+
+    m_classList = new QListWidget(m_classFilterContent);
+    m_classList->setMaximumHeight(ecvAICoreUi::dbListMaxHeight());
+    m_classList->setToolTip(tr(
+            "Only checked classes are detected. Uncheck classes you are not "
+            "interested in to reduce false positives and speed up display."));
+    classLayout->addWidget(m_classList);
+    m_classFilterContent->setVisible(false);
+    imageLayout->addWidget(m_classFilterContent);
+
+    // Toggle arrow + visibility, mirroring the DB-source section pattern.
+    connect(m_classFilterToggle, &QToolButton::toggled, this,
+            [this](bool checked) {
+                m_classFilterToggle->setArrowType(checked ? Qt::DownArrow
+                                                          : Qt::RightArrow);
+                m_classFilterContent->setVisible(checked);
+                if (checked && m_classNames.isEmpty()) {
+                    m_classCountLabel->setText(
+                            tr("Run once to load the model's classes."));
+                }
+            });
+    connect(m_classAllBtn, &QPushButton::clicked, this,
+            &RFDetrDialog::onClassSelectAll);
+    connect(m_classNoneBtn, &QPushButton::clicked, this,
+            &RFDetrDialog::onClassSelectNone);
+    connect(m_classSearchEdit, &QLineEdit::textChanged, this,
+            &RFDetrDialog::onClassSearchChanged);
+    // Live mode mirrors the dialog's class filter (the live widget reloads
+    // its inference context when the allowlist changes).
+    connect(m_classList, &QListWidget::itemChanged, this,
+            [this](QListWidgetItem*) {
+                updateClassCountLabel();
+                if (m_liveWidget) {
+                    m_liveWidget->setClassFilter(enabledClassIds());
+                }
+            });
+
     auto* inputRow = new QHBoxLayout;
     inputRow->setSpacing(ecvAICoreUi::hSpacing());
     inputRow->addWidget(ecvAICoreUi::makeLabel(tr("Image:")));
@@ -304,6 +381,10 @@ void RFDetrDialog::setupUi() {
             });
     connect(m_liveWidget, &RFDetrLiveWidget::captureToDbRequested, this,
             &RFDetrDialog::onLiveCapture);
+    // Live mode reports its model's class table after a (re)load so the
+    // class-filter list populates even without a prior Image-tab run.
+    connect(m_liveWidget, &RFDetrLiveWidget::modelInfoReady, this,
+            &RFDetrDialog::onModelInfoReady);
 
     // Downloader.
     m_downloader = new ecvModelDownloader(this);
@@ -403,6 +484,8 @@ void RFDetrDialog::loadSettings() {
     }
     m_addAnnotatedCheck->setChecked(
             settings.value(QStringLiteral("addAnnotated"), true).toBool());
+    // The class-filter selection is applied when a model reports its class
+    // names (onModelInfoReady); the stored names only need to survive here.
     settings.endGroup();
 }
 
@@ -419,6 +502,18 @@ void RFDetrDialog::saveSettings() const {
     settings.setValue(QStringLiteral("imagePath"), m_imagePath->text());
     settings.setValue(QStringLiteral("addAnnotated"),
                       m_addAnnotatedCheck->isChecked());
+    // Persist the checked class names so the selection carries over across
+    // sessions and across COCO-trained model variants (matched by name in
+    // onModelInfoReady).
+    QStringList enabledNames;
+    const int total = m_classList->count();
+    for (int i = 0; i < total; ++i) {
+        const QListWidgetItem* item = m_classList->item(i);
+        if (item && item->checkState() == Qt::Checked) {
+            enabledNames.append(item->text());
+        }
+    }
+    settings.setValue(QStringLiteral("classFilterNames"), enabledNames);
     settings.endGroup();
 }
 
@@ -464,6 +559,9 @@ void RFDetrDialog::onModelComboChanged(int index) {
                     !RFDetrHelpers::findModelByFilename(filename, nullptr);
     m_customModelRow->setVisible(isCustom);
     m_liveWidget->setModelPath(resolveModelPath());
+    // A different model may have a different class table; the list is
+    // refilled by onModelInfoReady after the next run loads it.
+    clearClassFilter();
 }
 
 QString RFDetrDialog::resolveModelPath() const {
@@ -601,7 +699,132 @@ RFDetrDialog::Settings RFDetrDialog::getSettings() const {
     s.threshold = static_cast<float>(m_threshold->value());
     s.topK = static_cast<uint32_t>(m_topK->value());
     s.addAnnotatedImageToDb = m_addAnnotatedCheck->isChecked();
+    s.classFilter = enabledClassIds();
     return s;
+}
+
+void RFDetrDialog::populateClassList(const QStringList& names) {
+    m_classList->clear();
+    m_classNames = names;
+    for (const QString& name : names) {
+        auto* item = new QListWidgetItem(m_classList);
+        /* Empty names are the COCO 91-class layout's reserved slots (id 0 =
+         * background, plus 10 unused COCO ids). They never win the argmax in
+         * practice, but each slot MUST keep its list row — the row index IS
+         * the class_id that enabledClassIds() reports, so skipping a row
+         * would silently mis-map the allowlist. */
+        item->setText(name.isEmpty() ? tr("(empty)") : name);
+        item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+        item->setCheckState(Qt::Checked);  // default: detect every class
+    }
+    m_classList->setEnabled(!names.isEmpty());
+    m_classSearchEdit->setEnabled(!names.isEmpty());
+    m_classAllBtn->setEnabled(!names.isEmpty());
+    m_classNoneBtn->setEnabled(!names.isEmpty());
+    updateClassCountLabel();
+}
+
+QVector<uint32_t> RFDetrDialog::enabledClassIds() const {
+    QVector<uint32_t> ids;
+    ids.reserve(m_classList->count());
+    for (int i = 0; i < m_classList->count(); ++i) {
+        const QListWidgetItem* item = m_classList->item(i);
+        if (item && item->checkState() == Qt::Checked) {
+            ids.append(static_cast<uint32_t>(i));
+        }
+    }
+    return ids;
+}
+
+void RFDetrDialog::updateClassCountLabel() {
+    if (!m_classCountLabel) return;
+    const int total = m_classList->count();
+    const int enabled = enabledClassIds().size();
+    if (total == 0) {
+        m_classCountLabel->setText(
+                tr("Run once to load the model's classes."));
+    } else if (enabled == total) {
+        m_classCountLabel->setText(tr("%1/%1 classes enabled (no filter)")
+                                           .arg(total));
+    } else {
+        m_classCountLabel->setText(
+                tr("%1/%2 classes enabled").arg(enabled).arg(total));
+    }
+}
+
+void RFDetrDialog::clearClassFilter() {
+    m_classList->clear();
+    m_classNames.clear();
+    m_classList->setEnabled(false);
+    m_classSearchEdit->setEnabled(false);
+    m_classSearchEdit->clear();
+    m_classAllBtn->setEnabled(false);
+    m_classNoneBtn->setEnabled(false);
+    updateClassCountLabel();
+}
+
+void RFDetrDialog::onClassSelectAll() {
+    for (int i = 0; i < m_classList->count(); ++i) {
+        QListWidgetItem* item = m_classList->item(i);
+        if (item) item->setCheckState(Qt::Checked);
+    }
+    updateClassCountLabel();
+}
+
+void RFDetrDialog::onClassSelectNone() {
+    for (int i = 0; i < m_classList->count(); ++i) {
+        QListWidgetItem* item = m_classList->item(i);
+        if (item) item->setCheckState(Qt::Unchecked);
+    }
+    updateClassCountLabel();
+}
+
+void RFDetrDialog::onClassSearchChanged(const QString& text) {
+    const QString needle = text.trimmed();
+    for (int i = 0; i < m_classList->count(); ++i) {
+        QListWidgetItem* item = m_classList->item(i);
+        if (!item) continue;
+        // Hidden items keep their check state; filtering is display-only.
+        item->setHidden(!needle.isEmpty() &&
+                        !item->text().contains(needle, Qt::CaseInsensitive));
+    }
+}
+
+void RFDetrDialog::onModelInfoReady(const QString& info) {
+    // The worker sends {"variant":..., "num_classes":N,
+    // "class_names":["person",...]} after a successful load; fill the
+    // class-filter list from it.
+    QStringList list;
+    if (!RFDetrHelpers::parseModelInfoJson(info.toUtf8(), &list)) {
+        clearClassFilter();
+        return;
+    }
+
+    // Persisted per-name check state: names match across COCO-trained
+    // models, so the user's selection carries over when switching variants.
+    QSettings settings;
+    settings.beginGroup(QStringLiteral("qRFDetr"));
+    const QStringList saved =
+            settings.value(QStringLiteral("classFilterNames")).toStringList();
+    settings.endGroup();
+
+    populateClassList(list);
+    if (!saved.isEmpty()) {
+        const QSet<QString> keep(saved.begin(), saved.end());
+        for (int i = 0; i < m_classList->count(); ++i) {
+            QListWidgetItem* item = m_classList->item(i);
+            if (item) {
+                item->setCheckState(keep.contains(item->text())
+                                            ? Qt::Checked
+                                            : Qt::Unchecked);
+            }
+        }
+        updateClassCountLabel();
+    }
+    if (m_classFilterContent->isVisible()) {
+        appendLog(tr("[RF-DETR] Loaded %1 classes for filtering.")
+                          .arg(list.size()));
+    }
 }
 
 void RFDetrDialog::appendLog(const QString& msg) {

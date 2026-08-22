@@ -117,6 +117,13 @@ const char* rfdetr_context_device_name(const rfdetr_context* ctx);
 /* 1 when the loaded model has a segmentation head (RFDETRSeg* variants). */
 int rfdetr_context_has_segmentation(const rfdetr_context* ctx);
 
+/* Class names of the loaded model, indexed by class_id. The returned
+ * pointers are owned by the context (stable until rfdetr_free) — callers
+ * must not free them. Returns NULL when the context has no loaded model;
+ * *out_count receives the number of classes (0 on NULL ctx). */
+const char* const* rfdetr_context_class_names(const rfdetr_context* ctx,
+                                              uint32_t* out_count);
+
 /* Image I/O (IMPLEMENTED in this plan) */
 rfdetr_image* rfdetr_image_load_file(const char* path,
                                      rfdetr_status* out_status);

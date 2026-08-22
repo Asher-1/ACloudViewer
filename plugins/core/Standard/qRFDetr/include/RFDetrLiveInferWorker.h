@@ -10,6 +10,7 @@
 #include <QImage>
 #include <QObject>
 #include <QString>
+#include <QVector>
 #include <QtGlobal>
 #include <cstdint>
 
@@ -29,6 +30,10 @@ public:
         int threads = 0;
         float threshold = 0.5f;
         uint32_t topK = 300;
+        /** Class allowlist (empty = detect all classes). Passed through to
+         *  the engine's post-processing; part of the ctx-reuse key so a
+         *  changed filter reloads the context. */
+        QVector<uint32_t> classFilter;
         quint64 generation = 0;
     };
 
@@ -48,6 +53,10 @@ public slots:
 
 signals:
     void inferComplete(RFDetrLiveInferWorker::Result result);
+    /** Emitted once after a (re)load with the model-info JSON envelope
+     *  (same payload as RFDetrWorker::modelInfoReady) so the dialog can
+     *  populate its class-filter list in live mode too. */
+    void modelInfoReady(const QString& info);
 
 private:
     void runJobImpl(RFDetrLiveInferWorker::Job job);
@@ -58,6 +67,9 @@ private:
     QString m_loadedModelPath;
     QString m_loadedDevice;
     int m_loadedThreads = 0;
+    /* Class allowlist the loaded context was created with (empty = all
+     * classes); a change triggers a context reload in ensureModel(). */
+    QVector<uint32_t> m_loadedClassFilter;
     /* Backend-RESOLVED device of the loaded context ("CUDA0", "cpu", ...);
      * differs from m_loadedDevice when the GPU lease failed. */
     QString m_resolvedDevice;

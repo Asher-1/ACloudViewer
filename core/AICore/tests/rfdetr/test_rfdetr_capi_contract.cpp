@@ -41,6 +41,24 @@ int main() {
     aicore_rfdetr_options_set_device(opts, "cpu");
     aicore_rfdetr_options_set_threads(opts, 1);
 
+    // Class-filter allowlist: null-safe, copies the array, and must not
+    // break loading (the filter is applied at post-process time only).
+    aicore_rfdetr_options_set_class_filter(nullptr, nullptr, 0);
+    aicore_rfdetr_options_set_class_filter(opts, nullptr, 0);
+    const uint32_t some_ids[] = {0u, 2u, 59u};
+    aicore_rfdetr_options_set_class_filter(opts, some_ids, 3);
+    aicore_rfdetr_options_set_class_filter(opts, some_ids, 0);  // reset
+    aicore_rfdetr_options_set_class_filter(opts, some_ids, 3);
+
+    // Class names: no model loaded -> NULL and count 0 (both via NULL ctx
+    // and via a ctx whose engine failed to load).
+    uint32_t n_names = 99u;
+    AICORE_CHECK(aicore_rfdetr_context_class_names(nullptr, &n_names) ==
+                 nullptr);
+    AICORE_CHECK(n_names == 0);
+    AICORE_CHECK(aicore_rfdetr_context_class_names(nullptr, nullptr) ==
+                 nullptr);
+
     // Loading a nonexistent file must fail cleanly and report an error.
     aicore_rfdetr_ctx* ctx =
             aicore_rfdetr_load_opts("/nonexistent/rfdetr-model.gguf", opts);
@@ -49,6 +67,10 @@ int main() {
     AICORE_CHECK(aicore_rfdetr_last_error(ctx) != nullptr);
     AICORE_CHECK(aicore_rfdetr_detect_path_json(ctx, "/nonexistent/image.png",
                                                 0.5f, 300) == nullptr);
+    // Class names on a failed-load ctx: NULL (no class table to report).
+    n_names = 99u;
+    AICORE_CHECK(aicore_rfdetr_context_class_names(ctx, &n_names) == nullptr);
+    AICORE_CHECK(n_names == 0);
     aicore_rfdetr_free(ctx);
     aicore_rfdetr_options_free(opts);
 

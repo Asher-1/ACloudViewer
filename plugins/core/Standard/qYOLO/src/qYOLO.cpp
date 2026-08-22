@@ -11,6 +11,7 @@
 #include <ecvMainAppInterface.h>
 #include <ecvPluginDbNaming.h>
 
+#include <QBuffer>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -18,6 +19,8 @@
 #include <QMessageBox>
 #include <QTimer>
 #include <QUuid>
+
+#include <cstring>
 
 #include "ecvPersistentSettings.h"
 
@@ -352,6 +355,30 @@ void qYOLO::addResultToDb(const YOLORunResult& result,
                                  .arg(d.y1, 0, 'f', 2)
                                  .arg(d.x2, 0, 'f', 2)
                                  .arg(d.y2, 0, 'f', 2));
+        if (i < static_cast<int>(result.masks.size())) {
+            // Instance mask for this detection (masks are index-aligned with
+            // detections): encode as a compact PNG in the DB metadata so the
+            // properties panel shows a clickable thumbnail (image byte
+            // arrays are decoded there). YOLO mask values are {0, 1};
+            // scale to full uint8 range for a proper black/white mask.
+            const YOLOSegMask& m = result.masks[static_cast<size_t>(i)];
+            if (m.w > 0 && m.h > 0 &&
+                m.bits.size() >= static_cast<qint64>(m.w) * m.h) {
+                QImage maskImage(m.w, m.h, QImage::Format_Grayscale8);
+                std::memcpy(maskImage.bits(), m.bits.constData(),
+                            static_cast<size_t>(m.w) * m.h);
+                for (int b = 0; b < maskImage.sizeInBytes(); ++b) {
+                    if (maskImage.bits()[b]) maskImage.bits()[b] = 255;
+                }
+                QByteArray pngBytes;
+                QBuffer buffer(&pngBytes);
+                buffer.open(QIODevice::WriteOnly);
+                if (maskImage.save(&buffer, "PNG")) {
+                    img->setMetaData(prefix + QStringLiteral("mask_png"),
+                                     pngBytes);
+                }
+            }
+        }
     }
     m_app->addToDB(img, true, true, false, true);
     m_app->setSelectedInDB(img, true);

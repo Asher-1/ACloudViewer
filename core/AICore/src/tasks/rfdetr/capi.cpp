@@ -31,6 +31,10 @@ using aicore::capi::json_escape;
 
 struct aicore_rfdetr_options {
     aicore::capi::CommonOptions common;
+    /* Class allowlist (whitelist) copied from the caller; empty = detect
+     * every class the model knows. Applied at post-processing time (see
+     * run_detect). */
+    std::vector<uint32_t> class_filter;
 };
 
 struct aicore_rfdetr_ctx {
@@ -39,6 +43,11 @@ struct aicore_rfdetr_ctx {
     std::string device;
     int32_t threads = 0;
     std::string last_error;
+
+    /* Class allowlist copied from the options at load time; empty = detect
+     * all classes. Lives here (not in the engine) so the C API owns the
+     * memory and can hand it to rfdetr_detect_params per call. */
+    std::vector<uint32_t> class_filter;
 
     // Per-detection store from the most recent detect call (masks are kept
     // raw at model resolution so the caller-owned rfdetr_detection array can
@@ -76,6 +85,16 @@ AICORE_CAPI void aicore_rfdetr_options_set_threads(aicore_rfdetr_options* opts,
     if (opts != nullptr) aicore::capi::set_threads(opts->common, n_threads);
 }
 
+AICORE_CAPI void aicore_rfdetr_options_set_class_filter(
+        aicore_rfdetr_options* opts,
+        const uint32_t* class_ids,
+        size_t n) {
+    if (opts == nullptr) return;
+    opts->class_filter.clear();
+    if (class_ids == nullptr || n == 0) return;
+    opts->class_filter.assign(class_ids, class_ids + n);
+}
+
 AICORE_CAPI aicore_rfdetr_ctx* aicore_rfdetr_load_opts(
         const char* gguf_path, const aicore_rfdetr_options* opts) {
     if (gguf_path == nullptr) return nullptr;
@@ -85,6 +104,7 @@ AICORE_CAPI aicore_rfdetr_ctx* aicore_rfdetr_load_opts(
     ctx->model_path = gguf_path;
     ctx->device = opts != nullptr ? opts->common.device : "auto";
     ctx->threads = opts != nullptr ? opts->common.threads : 0;
+    if (opts != nullptr) ctx->class_filter = opts->class_filter;
 
     try {
         rfdetr_params p{};
@@ -174,6 +194,11 @@ char* run_detect(aicore_rfdetr_ctx* ctx,
         rfdetr_detect_params dp{};
         dp.threshold = threshold;
         dp.top_k = top_k;
+        /* Class allowlist: empty vector means "all classes" (NULL/0 to the
+         * engine — the post-process fast path skips filtering). */
+        dp.class_filter =
+                ctx->class_filter.empty() ? nullptr : ctx->class_filter.data();
+        dp.class_filter_len = ctx->class_filter.size();
 
         const rfdetr_status st =
                 rfdetr_detect(ctx->engine, img, &dp, &dets, &n);
@@ -384,6 +409,13 @@ AICORE_CAPI int aicore_rfdetr_context_has_segmentation(
         const aicore_rfdetr_ctx* ctx) {
     if (ctx == nullptr || ctx->engine == nullptr) return 0;
     return rfdetr_context_has_segmentation(ctx->engine);
+}
+
+AICORE_CAPI const char* const* aicore_rfdetr_context_class_names(
+        aicore_rfdetr_ctx* ctx, uint32_t* out_count) {
+    if (out_count != nullptr) *out_count = 0;
+    if (ctx == nullptr || ctx->engine == nullptr) return nullptr;
+    return rfdetr_context_class_names(ctx->engine, out_count);
 }
 
 AICORE_CAPI char* aicore_rfdetr_info_json(aicore_rfdetr_ctx* ctx) {

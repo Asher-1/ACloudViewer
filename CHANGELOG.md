@@ -323,7 +323,7 @@ v3.9.5-Beta (Asher) - 08/04/2026
       - CMake: `PLUGIN_STANDARD_QRMBG=ON` + `AICore_ENABLED=ON`
     - Add qRFDetr plugin: RF-DETR object detection and instance segmentation
       - Native GGUF inference through AICore unified runtime
-      - RF-DETR base/large detection with COCO 80 classes
+      - RF-DETR base/large detection with COCO 91-class layout (80 named classes + 11 empty slots)
       - Image and live camera/video inference
       - CMake: `PLUGIN_STANDARD_QRFDETR=ON` + `AICore_ENABLED=ON`
 
