@@ -272,13 +272,26 @@ TEST(RFDetrHelpers, DrawMaskTintFromRawBytes) {
     RFDetrHelpers::drawDetections(&img, dets, 1.0f /*opaque tint*/);
 
     // Mask pixel (0,0) maps to frame pixel (0,0) — must carry the class
-    // color (classId 1 -> palette[1]).
+    // color (classId 1 -> palette[1]). The mask is Gaussian-blurred with a
+    // 3-tap [1,2,1]/4 filter before the bilinear stretch, so a corner pixel
+    // of the 2x2 blob keeps alpha ~0.56 and the tint is blended
+    // proportionally over the black frame: assert channel ratios instead of
+    // exact values (see gaussianBlurMask3 in RFDetrModelCatalog.cpp).
     const QRgb tinted = img.pixel(0, 0);
     EXPECT_NE(qRed(tinted) | qGreen(tinted) | qBlue(tinted), 0);
     const QRgb expected = RFDetrHelpers::classColor(1);
-    EXPECT_EQ(qRed(tinted), qRed(expected));
-    EXPECT_EQ(qGreen(tinted), qGreen(expected));
-    EXPECT_EQ(qBlue(tinted), qBlue(expected));
+    const float ar = qRed(expected) > 0
+                             ? static_cast<float>(qRed(tinted)) / qRed(expected)
+                             : 1.0f;
+    const float ag = qGreen(expected) > 0
+                             ? static_cast<float>(qGreen(tinted)) / qGreen(expected)
+                             : 1.0f;
+    const float ab = qBlue(expected) > 0
+                             ? static_cast<float>(qBlue(tinted)) / qBlue(expected)
+                             : 1.0f;
+    EXPECT_GT(ar, 0.4f);   // solidly tinted, not a faint overlay
+    EXPECT_NEAR(ar, ag, 0.05f);  // same blend factor on every channel
+    EXPECT_NEAR(ag, ab, 0.05f);
 
     // Outside the mask blob and clear of the box border + label banner
     // (frame pixel 60,60: bottom-right corner, away from all overlays).

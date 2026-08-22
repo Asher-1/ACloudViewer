@@ -20,6 +20,7 @@
 
 #include "TrellisModelCatalog.h"
 #include "TrellisWorker.h"
+#include "ecvClickableImageLabel.h"
 #include "ecvModelDownloader.h"
 #include "ecvTestDataRepository.h"
 
@@ -78,6 +79,7 @@ private slots:
 
 protected:
     void closeEvent(QCloseEvent* event) override;
+    void showEvent(QShowEvent* event) override;
 
 private:
     enum class PendingAction { None, Run };
@@ -96,7 +98,7 @@ private:
 
     // Input.
     QLineEdit* m_imagePath = nullptr;
-    QLabel* m_imagePreview = nullptr;
+    ecvClickableImageLabel* m_imagePreview = nullptr;
     QPushButton* m_browseImageBtn = nullptr;
     QPushButton* m_useTestDataBtn = nullptr;
     QComboBox* m_testImageCombo = nullptr;  // pick one of the sample images
@@ -130,5 +132,6 @@ private:
     ecvModelDownloader* m_downloader = nullptr;
     QStringList m_pendingDownloads;
     bool m_downloadInProgress = false;
+    bool m_firstShow = true;  // lock the dialog size on first show (see §13.4)
     PendingAction m_pendingActionAfterDownload = PendingAction::None;
 };

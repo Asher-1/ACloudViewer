@@ -39,15 +39,17 @@ class QDragEnterEvent;
 class QDropEvent;
 class QResizeEvent;
 
-class QComboBox;
 class QCheckBox;
+class QComboBox;
 class QDoubleSpinBox;
 class QLabel;
 class QLineEdit;
+class QProgressBar;
 class QPushButton;
 class QRadioButton;
 class QSlider;
 class QTabWidget;
+class ecvMainAppInterface;
 class VideoTab;  // video tracking tab (VideoTab.h; built with OpenCV only)
 
 // QLabel subclass that captures mouse events for canvas interaction
@@ -85,6 +87,7 @@ signals:
 
 protected:
     void mousePressEvent(QMouseEvent* e) override;
+    void mouseDoubleClickEvent(QMouseEvent* e) override;
     void mouseMoveEvent(QMouseEvent* e) override;
     void mouseReleaseEvent(QMouseEvent* e) override;
     void paintEvent(QPaintEvent* e) override;
@@ -129,6 +132,7 @@ public:
         QString modelFull;
         QString modelVisual;
         QString modelSam2;
+        bool exportToDb = true;
     };
 
     explicit SAM3Dialog(QWidget* parent = nullptr);
@@ -140,6 +144,10 @@ public:
 
 public slots:
     void applyDbTreeSelection(const QStringList& names);
+
+    /** Pass the app interface for DB-tree export. Must be called before
+     *  the dialog is shown (typically from qSAM3::showDialog). */
+    void setAppInterface(ecvMainAppInterface* app) { m_app = app; }
 
 private slots:
     void onLoadModel();
@@ -160,6 +168,9 @@ private slots:
                                     ecvTestDataRepository::Dataset kind);
     void onTestDataExtractionFinished(bool success,
                                       ecvTestDataRepository::Dataset kind);
+
+protected:
+    void showEvent(QShowEvent* e) override;
 
 private:
     /** Model families grouped per tab. */
@@ -186,6 +197,9 @@ private:
     bool currentPcsMode() const;
     QRadioButton* currentPointsRadio() const;
     QRadioButton* currentBoxRadio() const;
+
+    /** Export the current m_lastResult to the DB tree as a ccImage. */
+    void exportToDb();
 
     // UI widgets (top bar)
     QTabWidget* m_tabs = nullptr;
@@ -228,6 +242,7 @@ private:
     QDoubleSpinBox* m_scoreSpin = nullptr;
     QCheckBox* m_showMasks = nullptr;
     QCheckBox* m_multimask = nullptr;
+    QCheckBox* m_exportToDbCheckBox = nullptr;
     QLabel* m_statusLabel = nullptr;
     QLabel* m_detectionLabel = nullptr;
 
@@ -247,4 +262,10 @@ private:
 
     // Test data (shared ecvTestDataRepository, ObjectsDetection dataset)
     bool m_testDataDownloadInProgress = false;
+    QLabel* m_downloadLabel = nullptr;
+    QProgressBar* m_progress = nullptr;
+    bool m_firstShow = true;
+
+    // App interface (set via setAppInterface; used for DB-tree export)
+    ecvMainAppInterface* m_app = nullptr;
 };

@@ -21,6 +21,8 @@
 #include <QVBoxLayout>
 
 #include "ecvPersistentSettings.h"
+#include "aicore/inference_log.h"
+#include "ecvAICoreUiHelper.h"
 
 namespace {
 
@@ -44,24 +46,24 @@ void TrellisDialog::setAppInterface(ecvMainAppInterface* app) {
 
 void TrellisDialog::setupUi() {
     auto* root = new QVBoxLayout(this);
+    ecvAICoreUi::setupTabLayout(root);
+    // Lock the dialog size after the first layout pass: DB sections / status
+    // text changes must not inflate the window (shared AICore UI spec §13.4).
+    root->setSizeConstraint(QLayout::SetNoConstraint);
 
     // ── Input image ──────────────────────────────────────────────────────
     auto* inputGroup = new QGroupBox(tr("Input image"), this);
+    ecvAICoreUi::tightenGroupBox(inputGroup);
     auto* inputLayout = new QGridLayout(inputGroup);
+    inputLayout->setHorizontalSpacing(ecvAICoreUi::hSpacing());
+    inputLayout->setVerticalSpacing(ecvAICoreUi::tightVSpacing());
     m_imagePath = new QLineEdit(inputGroup);
     m_imagePath->setPlaceholderText(tr("PNG / JPEG / WebP image..."));
-    m_browseImageBtn = new QPushButton(tr("Browse..."), inputGroup);
-    m_useTestDataBtn =
-            new QPushButton(QStringLiteral("\U0001f9ea  Try sample data"));
+    m_browseImageBtn = ecvAICoreUi::makeBrowseBtn(tr("Browse..."), inputGroup);
+    m_useTestDataBtn = ecvAICoreUi::makeSampleDataBtn(inputGroup);
     m_useTestDataBtn->setToolTip(
             "Load sample images for generation.\n"
             "Downloads on first use, then cached locally.");
-    m_useTestDataBtn->setStyleSheet(
-            "QPushButton { background: #00897b; color: white; font-weight: bold;"
-            " border: none; border-radius: 4px; padding: 5px 12px; }"
-            "QPushButton:hover { background: #00796b; }"
-            "QPushButton:pressed { background: #00695c; }"
-            "QPushButton:disabled { background: #b2dfdb; color: #e0f2f1; }");
     inputLayout->addWidget(m_imagePath, 0, 0, 1, 2);
     inputLayout->addWidget(m_browseImageBtn, 0, 2);
     inputLayout->addWidget(m_useTestDataBtn, 0, 3);
@@ -72,8 +74,9 @@ void TrellisDialog::setupUi() {
     m_testImageCombo->setToolTip(
             tr("Pick one of the bundled sample images (Image2Mesh dataset)."));
     inputLayout->addWidget(m_testImageCombo, 1, 0, 1, 3);
-    m_imagePreview = new QLabel(inputGroup);
-    m_imagePreview->setMinimumSize(200, 150);
+    m_imagePreview = new ecvClickableImageLabel(inputGroup);
+    m_imagePreview->setMinimumSize(ecvAICoreUi::dpiScaled(200),
+                                   ecvAICoreUi::dpiScaled(150));
     m_imagePreview->setAlignment(Qt::AlignCenter);
     m_imagePreview->setStyleSheet("border: 1px dashed #999;");
     inputLayout->addWidget(m_imagePreview, 2, 0, 1, 4);
@@ -85,9 +88,21 @@ void TrellisDialog::setupUi() {
             QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &TrellisDialog::onTestImageSelected);
 
+    // ── Runtime parameters (shared row) ─────────────────────────────────
+    m_deviceCombo = new QComboBox(this);
+    m_deviceCombo->addItems({tr("auto"), tr("cpu"), tr("vulkan"), tr("cuda")});
+    m_threads = new QSpinBox(this);
+    m_threads->setRange(0, 128);
+    m_threads->setValue(0);
+    m_threads->setSpecialValueText(tr("default"));
+    root->addWidget(ecvAICoreUi::makeRuntimeRow(m_deviceCombo, m_threads));
+
     // ── Model preset ─────────────────────────────────────────────────────
     auto* modelGroup = new QGroupBox(tr("Model"), this);
+    ecvAICoreUi::tightenGroupBox(modelGroup);
     auto* modelLayout = new QGridLayout(modelGroup);
+    modelLayout->setHorizontalSpacing(ecvAICoreUi::hSpacing());
+    modelLayout->setVerticalSpacing(ecvAICoreUi::tightVSpacing());
     modelLayout->addWidget(new QLabel(tr("Quality:"), modelGroup), 0, 0);
     m_presetCombo = new QComboBox(modelGroup);
     const QVector<TrellisPreset> presets = TrellisHelpers::presets();
@@ -127,18 +142,24 @@ void TrellisDialog::setupUi() {
     m_modelStatus = new QLabel(modelGroup);
     m_modelStatus->setWordWrap(true);
     modelLayout->addWidget(m_modelStatus, 3, 0, 1, 3);
-    m_downloadBtn = new QPushButton(tr("Download missing models..."), modelGroup);
+    m_downloadBtn = ecvAICoreUi::makeBrowseBtn(tr("Download missing models..."), modelGroup);
+    m_downloadBtn->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    m_downloadBtn->setFixedWidth(ecvAICoreUi::dpiScaled(168));
     modelLayout->addWidget(m_downloadBtn, 3, 3);
     root->addWidget(modelGroup);
 
     // ── Parameters ───────────────────────────────────────────────────────
     auto* paramGroup = new QGroupBox(tr("Parameters"), this);
+    ecvAICoreUi::tightenGroupBox(paramGroup);
     auto* paramLayout = new QGridLayout(paramGroup);
+    paramLayout->setHorizontalSpacing(ecvAICoreUi::hSpacing());
+    paramLayout->setVerticalSpacing(ecvAICoreUi::tightVSpacing());
     paramLayout->addWidget(new QLabel(tr("Steps:"), paramGroup), 0, 0);
     m_steps = new QSpinBox(paramGroup);
     m_steps->setRange(0, 50);
     m_steps->setValue(0);
     m_steps->setSpecialValueText(tr("default (12)"));
+    ecvAICoreUi::setCompactSpin(m_steps);
     paramLayout->addWidget(m_steps, 0, 1);
 
     paramLayout->addWidget(new QLabel(tr("Guidance:"), paramGroup), 0, 2);
@@ -148,6 +169,7 @@ void TrellisDialog::setupUi() {
     m_guidance->setSingleStep(0.5);
     m_guidance->setValue(-1.0);
     m_guidance->setSpecialValueText(tr("default (7.5)"));
+    ecvAICoreUi::setCompactDoubleSpin(m_guidance);
     paramLayout->addWidget(m_guidance, 0, 3);
 
     paramLayout->addWidget(new QLabel(tr("Texture steps:"), paramGroup), 1, 0);
@@ -155,6 +177,7 @@ void TrellisDialog::setupUi() {
     m_textureSteps->setRange(0, 50);
     m_textureSteps->setValue(0);
     m_textureSteps->setSpecialValueText(tr("default (12)"));
+    ecvAICoreUi::setCompactSpin(m_textureSteps);
     paramLayout->addWidget(m_textureSteps, 1, 1);
 
     paramLayout->addWidget(new QLabel(tr("Seed:"), paramGroup), 1, 2);
@@ -162,64 +185,39 @@ void TrellisDialog::setupUi() {
     m_seed->setRange(0, 999999);
     m_seed->setValue(0);
     m_seed->setSpecialValueText(tr("random"));
+    ecvAICoreUi::setCompactSpin(m_seed);
     paramLayout->addWidget(m_seed, 1, 3);
-
-    paramLayout->addWidget(new QLabel(tr("Device:"), paramGroup), 2, 0);
-    m_deviceCombo = new QComboBox(paramGroup);
-    m_deviceCombo->addItems({tr("auto"), tr("cpu"), tr("vulkan"), tr("cuda")});
-    paramLayout->addWidget(m_deviceCombo, 2, 1);
-
-    paramLayout->addWidget(new QLabel(tr("Threads:"), paramGroup), 2, 2);
-    m_threads = new QSpinBox(paramGroup);
-    m_threads->setRange(0, 128);
-    m_threads->setValue(0);
-    m_threads->setSpecialValueText(tr("default"));
-    paramLayout->addWidget(m_threads, 2, 3);
     root->addWidget(paramGroup);
 
     // ── Output ───────────────────────────────────────────────────────────
     auto* outputGroup = new QGroupBox(tr("Output"), this);
+    ecvAICoreUi::tightenGroupBox(outputGroup);
     auto* outputLayout = new QGridLayout(outputGroup);
+    outputLayout->setHorizontalSpacing(ecvAICoreUi::hSpacing());
+    outputLayout->setVerticalSpacing(ecvAICoreUi::tightVSpacing());
     m_addToDbCheck = new QCheckBox(tr("Add mesh to DB"), outputGroup);
     m_addToDbCheck->setChecked(true);
     outputLayout->addWidget(m_addToDbCheck, 0, 0, 1, 2);
     outputLayout->addWidget(new QLabel(tr("Save GLB:"), outputGroup), 1, 0);
     m_saveGlbDir = new QLineEdit(outputGroup);
     m_saveGlbDir->setPlaceholderText(tr("(empty = skip GLB export)"));
-    auto* browseGlb = new QPushButton(tr("Browse..."), outputGroup);
+    auto* browseGlb = ecvAICoreUi::makeBrowseBtn(tr("Browse..."), outputGroup);
     outputLayout->addWidget(m_saveGlbDir, 1, 1);
     outputLayout->addWidget(browseGlb, 1, 2);
     root->addWidget(outputGroup);
 
     // ── Progress / log ───────────────────────────────────────────────────
-    auto* runLayout = new QHBoxLayout();
+    ecvAICoreUi::setupProgressSection(root, m_stageLabel, m_progress);
     auto* runBtn = new QPushButton(tr("Generate 3D"), this);
     runBtn->setDefault(true);
-    runBtn->setStyleSheet(
-            "QPushButton { background: #00897b; color: white; font-weight: bold;"
-            " border: none; border-radius: 4px; padding: 6px 16px; }"
-            "QPushButton:hover { background: #00796b; }"
-            "QPushButton:pressed { background: #00695c; }"
-            "QPushButton:disabled { background: #b2dfdb; }");
     auto* cancelBtn = new QPushButton(tr("Cancel"), this);
     cancelBtn->setEnabled(false);
-    runLayout->addStretch();
-    runLayout->addWidget(runBtn);
-    runLayout->addWidget(cancelBtn);
-    root->addLayout(runLayout);
+    root->addLayout(ecvAICoreUi::makeActionRow(runBtn, cancelBtn));
 
-    m_stageLabel = new QLabel(this);
-    m_stageLabel->setVisible(false);
-    root->addWidget(m_stageLabel);
-    m_progress = new QProgressBar(this);
-    m_progress->setRange(0, 100);
-    m_progress->setValue(0);
-    m_progress->setVisible(false);
-    root->addWidget(m_progress);
     m_log = new QLabel(this);
     m_log->setWordWrap(true);
     m_log->setTextInteractionFlags(Qt::TextSelectableByMouse);
-    m_log->setMaximumHeight(90);
+    m_log->setMaximumHeight(ecvAICoreUi::dpiScaled(90));
     root->addWidget(m_log);
 
     connect(m_browseImageBtn, &QPushButton::clicked, this,
@@ -329,7 +327,7 @@ void TrellisDialog::setupUi() {
     // Populate the sample picker when the dataset is already cached.
     ensureImage2MeshDataset();
 
-    resize(560, 640);
+    resize(ecvAICoreUi::dpiScaled(560), ecvAICoreUi::dpiScaled(640));
 }
 
 void TrellisDialog::loadSettings() {
@@ -411,6 +409,12 @@ TrellisDialog::Settings TrellisDialog::getSettings() const {
 }
 
 void TrellisDialog::appendLog(const QString& msg) {
+    // Mirror into the AICore log so [TRELLIS] messages reach the Console and
+    // the on-disk log file (the dialog's own text box alone is invisible to
+    // log-file based troubleshooting).
+#ifdef AICore_ENABLED
+    aicore_inference_log::log(msg);
+#endif
     m_log->setText(msg);
 }
 
@@ -450,24 +454,35 @@ void TrellisDialog::setRunning(bool running) {
 
 void TrellisDialog::setImagePreview(const QImage& image) {
     if (image.isNull()) {
-        m_imagePreview->setPixmap(QPixmap());
+        m_imagePreview->setPreviewImage(QImage(), ecvAICoreUi::previewSize());
         return;
     }
-    m_imagePreview->setPixmap(QPixmap::fromImage(image).scaled(
-            m_imagePreview->size(), Qt::KeepAspectRatio,
-            Qt::SmoothTransformation));
+    // ecvClickableImageLabel keeps the full-resolution copy internally, so
+    // clicking the preview opens the original image (shared UI spec §13.3).
+    m_imagePreview->setPreviewImage(image, ecvAICoreUi::previewSize());
 }
 
 void TrellisDialog::updateImagePreview() {
     const QString path = m_imagePath->text().trimmed();
     if (path.isEmpty()) {
-        m_imagePreview->setPixmap(QPixmap());
+        m_imagePreview->setPreviewImage(QImage(), ecvAICoreUi::previewSize());
         return;
     }
     QImageReader reader(path);
     if (!reader.canRead()) return;
     const QImage img = reader.read();
     if (!img.isNull()) setImagePreview(img);
+}
+
+void TrellisDialog::showEvent(QShowEvent* event) {
+    QDialog::showEvent(event);
+    if (m_firstShow) {
+        // Qt has finished the layout pass by the time Show is sent; with
+        // SetNoConstraint this pins the window to its first settled size so
+        // later content changes (status text, progress) do not inflate it.
+        m_firstShow = false;
+        adjustSize();
+    }
 }
 
 void TrellisDialog::onBrowseImage() {
@@ -520,6 +535,7 @@ QStringList TrellisDialog::missingPresetFiles() const {
     }
     QStringList missing;
     for (const QString& p : needed) {
+        if (p.isEmpty()) continue;  // preset placeholder (model not in set)
         if (!QFile::exists(p)) missing << QFileInfo(p).fileName();
     }
     if (m_rmbgCheck->isChecked()) {
@@ -543,6 +559,7 @@ void TrellisDialog::onDownloadModels() {
 
     m_pendingDownloads.clear();
     for (const QString& p : needed) {
+        if (p.isEmpty()) continue;  // preset placeholder (model not in set)
         if (!QFile::exists(p)) {
             m_pendingDownloads << QFileInfo(p).fileName();
         }

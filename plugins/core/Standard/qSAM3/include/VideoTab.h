@@ -19,8 +19,6 @@
 
 #pragma once
 
-#ifdef HAS_OPENCV_FACE_CAPTURE
-
 #include "VideoCanvas.h"
 #include "VideoTimeline.h"
 #include "VideoWorker.h"
@@ -37,6 +35,7 @@ class QRadioButton;
 class QSlider;
 
 class VideoFrameReader;
+class ecvMainAppInterface;
 
 namespace cv {
 class Mat;
@@ -49,6 +48,8 @@ public:
     ~VideoTab() override;
 
     void setDevice(const QString& device);  // propagate shared device combo
+    /** Pass the app interface for DB-tree export. */
+    void setAppInterface(ecvMainAppInterface* app) { m_app = app; }
 
 private slots:
     void onOpenVideo();
@@ -87,6 +88,8 @@ private:
     void setStatus(const QString& msg);
     QColor instanceColor(int id) const;
     void resetPrompts();
+    /** Export the current frame result to the DB tree as a ccImage. */
+    void exportCurrentFrameToDb();
 
     VideoWorker* m_worker = nullptr;
     VideoFrameReader* m_reader = nullptr;
@@ -108,6 +111,7 @@ private:
     VideoCanvas* m_canvas = nullptr;
     VideoTimeline* m_timeline = nullptr;
     QCheckBox* m_showMasks = nullptr;
+    QCheckBox* m_exportToDbCheckBox = nullptr;
     QSlider* m_speedSlider = nullptr;
     QLabel* m_speedLabel = nullptr;
     QPushButton* m_exportBtn = nullptr;
@@ -128,6 +132,8 @@ private:
     SAM3WorkerResult m_lastResult;
     QVector<VideoTimelineEntry> m_timelineEntries;
     QVector<int> m_timelineInstanceIds;
-};
 
-#endif  // HAS_OPENCV_FACE_CAPTURE
+    // DB-tree export state
+    ecvMainAppInterface* m_app = nullptr;
+    QImage m_currentFrameImage;
+};

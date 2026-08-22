@@ -53,6 +53,7 @@ void qSAM3::showDialog() {
     if (!m_app) return;
     if (!m_dialog) {
         m_dialog = new SAM3Dialog(m_app->getMainWindow());
+        m_dialog->setAppInterface(m_app);
     }
     m_dialog->show();
     m_dialog->raise();

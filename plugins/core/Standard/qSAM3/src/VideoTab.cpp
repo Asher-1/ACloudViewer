@@ -7,9 +7,12 @@
 
 #include "VideoTab.h"
 
-#ifdef HAS_OPENCV_FACE_CAPTURE
-
 #include <aicore/sam3_capi.h>
+
+#include <ecvAICoreUiHelper.h>
+#include <ecvImage.h>
+#include <ecvMainAppInterface.h>
+#include <ecvPluginDbNaming.h>
 
 #include "VideoFrameReader.h"
 #include "VideoPlaybackWidget.h"  // cvMatToQImage
@@ -17,13 +20,13 @@
 #include <QButtonGroup>
 #include <QCheckBox>
 #include <QComboBox>
-#include <QDir>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
+#include <QPainter>
 #include <QPushButton>
 #include <QRadioButton>
 #include <QSlider>
@@ -32,6 +35,9 @@
 #include <algorithm>
 
 namespace {
+constexpr const char* kTabModelKeys[] = {"sam", "sam-visual", "sam2"};
+constexpr int kNumTabModelKeys = 3;
+
 // Per-instance display colors, mirroring upstream examples/main_video.cpp.
 constexpr const QColor kInstanceColors[] = {
         QColor(255, 51, 51),   QColor(51, 153, 255), QColor(51, 230, 76),
@@ -88,7 +94,7 @@ void VideoTab::setupUi() {
 
     m_textPrompt = new QLineEdit();
     m_textPrompt->setPlaceholderText(tr("Text prompt (SAM3 only)..."));
-    m_textPrompt->setMinimumWidth(140);
+    m_textPrompt->setMinimumWidth(ecvAICoreUi::dpiScaled(140));
     m_textPrompt->setEnabled(false);
 
     m_openBtn = new QPushButton(tr("Open video..."));
@@ -115,7 +121,7 @@ void VideoTab::setupUi() {
     auto* row2 = new QHBoxLayout();
     auto* modelLabel = new QLabel(tr("Model:"));
     m_modelCombo = new QComboBox();
-    m_modelCombo->setMinimumWidth(240);
+    m_modelCombo->setMinimumWidth(ecvAICoreUi::dpiScaled(240));
     m_loadBtn = new QPushButton(tr("Load"));
     m_loadBtn->setStyleSheet(
             "QPushButton { background: #00897b; color: white; font-weight: bold;"
@@ -141,6 +147,7 @@ void VideoTab::setupUi() {
     // ── Canvas ────────────────────────────────────────────────────────────
     m_canvas = new VideoCanvas();
     m_canvas->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    m_canvas->setMaximumHeight(ecvAICoreUi::dpiScaled(560));
     layout->addWidget(m_canvas, 1);
 
     // ── Timeline ──────────────────────────────────────────────────────────
@@ -151,6 +158,12 @@ void VideoTab::setupUi() {
     auto* bottom = new QHBoxLayout();
     m_showMasks = new QCheckBox(tr("Show masks"));
     m_showMasks->setChecked(true);
+
+    m_exportToDbCheckBox = new QCheckBox(tr("Export to DB"));
+    m_exportToDbCheckBox->setChecked(true);
+    m_exportToDbCheckBox->setToolTip(
+            tr("Automatically add the segmented result to the DB tree as "
+               "an annotated image"));
 
     auto* speedLabel = new QLabel(tr("Speed:"));
     m_speedSlider = new QSlider(Qt::Horizontal);
@@ -171,6 +184,7 @@ void VideoTab::setupUi() {
     m_statusLabel->setStyleSheet("color: #99ccff;");
 
     bottom->addWidget(m_showMasks);
+    bottom->addWidget(m_exportToDbCheckBox);
     bottom->addSpacing(12);
     bottom->addWidget(speedLabel);
     bottom->addWidget(m_speedSlider);
@@ -369,6 +383,7 @@ void VideoTab::onFrameReady(const cv::Mat& rgbFrame, int frameIndex) {
         appendLog(tr("Frame %1 has no data.").arg(frameIndex));
         return;
     }
+    m_currentFrameImage = img;
     m_currentFrame = frameIndex;
     m_canvas->setFrame(img);
     m_timeline->setCurrentFrame(frameIndex);
@@ -393,6 +408,11 @@ void VideoTab::onFrameResult(const SAM3WorkerResult& result, int frameIndex) {
     if (frameIndex > m_processedMax) m_processedMax = frameIndex;
     updateCanvasInstances();
     updateTimeline(frameIndex, result);
+
+    // Auto-export to DB tree if enabled.
+    if (m_exportToDbCheckBox->isChecked() && m_app) {
+        exportCurrentFrameToDb();
+    }
 
     if (result.valid) {
         setStatus(tr("Frame %1/%2 — %3 objects tracked")
@@ -710,4 +730,76 @@ void VideoTab::setStatus(const QString& msg) {
     m_statusLabel->setText(msg);
 }
 
-#endif  // HAS_OPENCV_FACE_CAPTURE
+void VideoTab::exportCurrentFrameToDb() {
+    if (!m_lastResult.valid || !m_app || m_currentFrameImage.isNull()) return;
+
+    // Build the annotated frame: composite masks atop the original frame.
+    QImage annotated = m_currentFrameImage;
+    if (!m_lastResult.instanceMasks.isEmpty()) {
+        QPainter p(&annotated);
+        for (int i = 0; i < m_lastResult.instanceMasks.size(); ++i) {
+            const QColor tint = instanceColor(m_lastResult.instanceIds.value(i));
+            const QImage mask = m_lastResult.instanceMasks.value(i);
+            // Blend the mask with its instance colour.
+            for (int y = 0; y < mask.height() && y < annotated.height(); ++y) {
+                const uchar* src = mask.scanLine(y);
+                QRgb* dst = reinterpret_cast<QRgb*>(annotated.scanLine(y));
+                for (int x = 0; x < mask.width() && x < annotated.width(); ++x) {
+                    if (src[x] > 0) {
+                        const float a = 0.45f;
+                        const QRgb bg = dst[x];
+                        const QRgb fg = tint.rgb();
+                        dst[x] = qRgb(
+                                static_cast<int>(a * qRed(fg) + (1 - a) * qRed(bg)),
+                                static_cast<int>(a * qGreen(fg) + (1 - a) * qGreen(bg)),
+                                static_cast<int>(a * qBlue(fg) + (1 - a) * qBlue(bg)));
+                    }
+                }
+            }
+        }
+        p.end();
+    }
+
+    const QString deviceTag = ecvPluginDbNaming::deviceTagFromName(
+            m_deviceCombo->currentText());
+    const QString baseName = QFileInfo(m_videoPath).completeBaseName();
+    const QString name = ecvPluginDbNaming::makeUnique(
+            QStringLiteral("SAM3_Video_%1_%2_frame%3")
+                    .arg(baseName, deviceTag)
+                    .arg(m_currentFrame, 4, 10, QLatin1Char('0')),
+            m_app);
+
+    auto* img = new ccImage(annotated, name);
+    img->setMetaData(QStringLiteral("SAM3"), true);
+    img->setMetaData(QStringLiteral("SAM3/DetectionCount"),
+                     static_cast<qlonglong>(m_lastResult.detCount));
+    img->setMetaData(QStringLiteral("SAM3/Device"),
+                     m_deviceCombo->currentText());
+    img->setMetaData(QStringLiteral("SAM3/Frame"),
+                     static_cast<qlonglong>(m_currentFrame));
+    img->setMetaData(QStringLiteral("Runtime (ms)"),
+                     m_lastResult.timings.e2e_ms);
+    if (!m_videoPath.isEmpty()) {
+        img->setMetaData(QStringLiteral("Source"), m_videoPath);
+    }
+
+    for (int i = 0; i < m_lastResult.detCount; ++i) {
+        const QString p = QStringLiteral("SAM3/Det%1/").arg(i + 1);
+        const aicore_sam3_box& b = m_lastResult.boxes.value(i);
+        img->setMetaData(p + QStringLiteral("InstanceId"),
+                         static_cast<qlonglong>(
+                                 m_lastResult.instanceIds.value(i)));
+        img->setMetaData(p + QStringLiteral("Score"),
+                         static_cast<double>(m_lastResult.scores.value(i)));
+        img->setMetaData(p + QStringLiteral("Box"),
+                         QStringLiteral("[%1,%2,%3,%4]")
+                                 .arg(b.x0, 0, 'f', 1)
+                                 .arg(b.y0, 0, 'f', 1)
+                                 .arg(b.x1, 0, 'f', 1)
+                                 .arg(b.y1, 0, 'f', 1));
+    }
+
+    m_app->addToDB(img, /*updateZoom=*/false, /*autoExpandDBTree=*/true,
+                   /*checkDimensions=*/false, /*autoRedraw=*/true);
+    m_app->setSelectedInDB(img, true);
+}

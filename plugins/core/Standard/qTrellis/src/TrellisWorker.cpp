@@ -117,6 +117,12 @@ bool TrellisWorker::runInference() {
     // returns a temporary whose .constData() would dangle as soon as the
     // expression ends, and aicore_trellis_load_opts reads these pointers
     // *after* loading the RMBG model (a long-running call).
+    //
+    // Index contract: m_settings.modelPaths MUST be in aicore_trellis_model_paths
+    // field order (dino, ss_flow, ss_dec, slat_flow, slat_hr_flow, shape_dec,
+    // shape_enc, tex_dec, tex_flow, tex_flow_hr). Omitted fields stay as empty
+    // strings (the C API treats "" like NULL: "omit this model"). The presets
+    // in TrellisModelCatalog.cpp guarantee this ordering.
     QByteArray utf8Paths[10];
     auto keepAlive = [&](int i) -> const char* {
         utf8Paths[i] = m_settings.modelPaths.value(i).toUtf8();

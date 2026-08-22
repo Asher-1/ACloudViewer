@@ -7,13 +7,15 @@
 
 #include "VideoCanvas.h"
 
+#include <ecvAICoreUiHelper.h>
+
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPixmap>
 #include <QResizeEvent>
 
 VideoCanvas::VideoCanvas(QWidget* parent) : QLabel(parent) {
-    setMinimumSize(320, 240);
+    setMinimumSize(ecvAICoreUi::dpiScaled(320), ecvAICoreUi::dpiScaled(240));
     setAlignment(Qt::AlignCenter);
     setStyleSheet(
             "QLabel { background: #1a1a26; border: 1px solid #333;"

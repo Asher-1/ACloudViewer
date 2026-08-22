@@ -13,6 +13,12 @@
 #include "VideoTab.h"
 #endif
 
+#include <ecvAICoreUiHelper.h>
+#include <ecvClickableImageLabel.h>
+#include <ecvImage.h>
+#include <ecvMainAppInterface.h>
+#include <ecvPluginDbNaming.h>
+
 #include <cstring>
 
 #include <QButtonGroup>
@@ -32,24 +38,17 @@
 #include <QMessageBox>
 #include <QMimeData>
 #include <QPainter>
+#include <QProgressBar>
 #include <QPushButton>
 #include <QRadioButton>
 #include <QScrollArea>
 #include <QSettings>
+#include <QShowEvent>
 #include <QSplitter>
 #include <QTabWidget>
 #include <QVBoxLayout>
 
 namespace {
-
-void styleSampleDataButton(QPushButton* button) {
-    button->setStyleSheet(
-            "QPushButton { background: #00897b; color: white; font-weight: "
-            "bold; border: none; border-radius: 4px; padding: 5px 12px; }"
-            "QPushButton:hover { background: #00796b; }"
-            "QPushButton:pressed { background: #00695c; }"
-            "QPushButton:disabled { background: #b2dfdb; color: #e0f2f1; }");
-}
 
 // Shared cat sample image inside the ObjectsDetection test dataset.
 constexpr const char* kSam3TestImage = "000000397133.jpg";
@@ -62,7 +61,7 @@ constexpr const char* kSam3TestImage = "000000397133.jpg";
 
 SAM3Canvas::SAM3Canvas(QWidget* parent) : QLabel(parent) {
     setAcceptDrops(true);
-    setMinimumSize(320, 240);
+    setMinimumSize(ecvAICoreUi::dpiScaled(320), ecvAICoreUi::dpiScaled(240));
     setAlignment(Qt::AlignCenter);
     setStyleSheet(
         "QLabel { background: #1a1a26; border: 1px solid #333;"
@@ -170,6 +169,15 @@ QPointF SAM3Canvas::screenToImage(const QPointF& screen) const {
     const double ix = (screen.x() - offX) / pm->width() * m_original.width();
     const double iy = (screen.y() - offY) / pm->height() * m_original.height();
     return QPointF(ix, iy);
+}
+
+void SAM3Canvas::mouseDoubleClickEvent(QMouseEvent* e) {
+    if (!m_original.isNull()) {
+        ecvClickableImageLabel::showEnlargedImage(
+                this, m_original, tr("SAM3 — full image preview"));
+        return;
+    }
+    QLabel::mouseDoubleClickEvent(e);
 }
 
 void SAM3Canvas::mousePressEvent(QMouseEvent* e) {
@@ -301,9 +309,17 @@ void SAM3Canvas::dropEvent(QDropEvent* e) {
 SAM3Dialog::SAM3Dialog(QWidget* parent)
     : QDialog(parent) {
     setWindowTitle(tr("SAM3 Image & Video Segmentation"));
-    setMinimumSize(900, 700);
+    setMinimumSize(ecvAICoreUi::dpiScaled(900), ecvAICoreUi::dpiScaled(700));
     setupUi();
     loadSettings();
+}
+
+void SAM3Dialog::showEvent(QShowEvent* e) {
+    QDialog::showEvent(e);
+    if (m_firstShow) {
+        m_firstShow = false;
+        adjustSize();
+    }
 }
 
 SAM3Dialog::~SAM3Dialog() {
@@ -313,23 +329,23 @@ SAM3Dialog::~SAM3Dialog() {
 
 void SAM3Dialog::setupUi() {
     auto* mainLayout = new QVBoxLayout(this);
-    mainLayout->setSpacing(8);
-    mainLayout->setContentsMargins(10, 10, 10, 10);
+    mainLayout->setSizeConstraint(QLayout::SetNoConstraint);
+    ecvAICoreUi::setupTabLayout(mainLayout);
 
     // ── Tabs: one per model family ────────────────────────────────────────
     m_tabs = new QTabWidget(this);
+    ecvAICoreUi::styleTabWidget(m_tabs);
 
     // ── Tab 1: SAM 3 Full (ViT + text detector) ──────────────────────────
     auto* fullTab = new QWidget();
     auto* fullLayout = new QVBoxLayout(fullTab);
-    fullLayout->setContentsMargins(4, 6, 4, 4);
-    fullLayout->setSpacing(6);
+    ecvAICoreUi::setupTabLayout(fullLayout);
 
     auto* fullRow1 = new QHBoxLayout();
     auto* promptLabel = new QLabel(tr("Text prompt:"));
     m_textPrompt = new QLineEdit();
     m_textPrompt->setPlaceholderText(tr("Enter text prompt (e.g. cat)..."));
-    m_textPrompt->setMinimumWidth(240);
+    m_textPrompt->setMinimumWidth(ecvAICoreUi::dpiScaled(240));
 
     m_segmentBtn = new QPushButton(tr("Segment"));
     m_segmentBtn->setEnabled(false);
@@ -339,8 +355,7 @@ void SAM3Dialog::setupUi() {
         "QPushButton:hover { background: #00796b; }"
         "QPushButton:disabled { background: #555; color: #999; }");
 
-    m_testDataBtn = new QPushButton(tr("\U0001f9ea  Try sample data"));
-    styleSampleDataButton(m_testDataBtn);
+    m_testDataBtn = ecvAICoreUi::makeSampleDataBtn(this);
     m_testDataBtn->setToolTip(
             tr("Load the cat sample image (000000397133.jpg) from the "
                "shared test-data cache"));
@@ -373,7 +388,7 @@ void SAM3Dialog::setupUi() {
 
     auto* modelLabel = new QLabel(tr("Model:"));
     m_modelCombo = new QComboBox();
-    m_modelCombo->setMinimumWidth(240);
+    m_modelCombo->setMinimumWidth(ecvAICoreUi::dpiScaled(240));
     m_loadBtn = new QPushButton(tr("Load"));
     m_loadBtn->setStyleSheet(
         "QPushButton { background: #00897b; color: white; font-weight: bold;"
@@ -393,8 +408,7 @@ void SAM3Dialog::setupUi() {
                                 QPushButton*& testDataBtn) {
         auto* tab = new QWidget();
         auto* layout = new QVBoxLayout(tab);
-        layout->setContentsMargins(4, 6, 4, 4);
-        layout->setSpacing(6);
+        ecvAICoreUi::setupTabLayout(layout);
 
         auto* row1 = new QHBoxLayout();
         auto* modeLabel = new QLabel(tr("Mode:"));
@@ -407,8 +421,7 @@ void SAM3Dialog::setupUi() {
         connect(group, QOverload<int>::of(&QButtonGroup::buttonClicked),
                 this, &SAM3Dialog::onModeChanged);
 
-        testDataBtn = new QPushButton(tr("\U0001f9ea  Try sample data"));
-        styleSampleDataButton(testDataBtn);
+        testDataBtn = ecvAICoreUi::makeSampleDataBtn(this);
         testDataBtn->setToolTip(
                 tr("Load the cat sample image (000000397133.jpg) from the "
                    "shared test-data cache"));
@@ -423,7 +436,7 @@ void SAM3Dialog::setupUi() {
         auto* row2 = new QHBoxLayout();
         auto* modelLabel = new QLabel(tr("Model:"));
         combo = new QComboBox();
-        combo->setMinimumWidth(240);
+        combo->setMinimumWidth(ecvAICoreUi::dpiScaled(240));
         loadBtn = new QPushButton(tr("Load"));
         loadBtn->setStyleSheet(
             "QPushButton { background: #00897b; color: white; font-weight: bold;"
@@ -444,6 +457,9 @@ void SAM3Dialog::setupUi() {
 #ifdef HAS_OPENCV_FACE_CAPTURE
     // Video segmentation & tracking (upstream examples/main_video.cpp).
     m_videoTab = new VideoTab();
+    if (m_app) {
+        m_videoTab->setAppInterface(m_app);
+    }
     connect(m_deviceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, [this](int) {
                 if (m_videoTab) {
@@ -503,6 +519,7 @@ void SAM3Dialog::setupUi() {
     m_scoreSpin->setSingleStep(0.05);
     m_scoreSpin->setValue(0.5);
     m_scoreSpin->setPrefix(tr("Score: "));
+    ecvAICoreUi::setCompactDoubleSpin(m_scoreSpin);
 
     m_showMasks = new QCheckBox(tr("Show masks"));
     m_showMasks->setChecked(true);
@@ -512,6 +529,12 @@ void SAM3Dialog::setupUi() {
         }
     });
 
+    m_exportToDbCheckBox = new QCheckBox(tr("Export to DB"));
+    m_exportToDbCheckBox->setChecked(true);
+    m_exportToDbCheckBox->setToolTip(
+            tr("Automatically add the segmented result to the DB tree as "
+               "an annotated image"));
+
     m_multimask = new QCheckBox(tr("Multi-mask (PVS)"));
 
     m_clearBtn = new QPushButton(tr("Clear"));
@@ -520,6 +543,7 @@ void SAM3Dialog::setupUi() {
     bottomLayout->addWidget(detLabel);
     bottomLayout->addWidget(m_scoreSpin);
     bottomLayout->addWidget(m_showMasks);
+    bottomLayout->addWidget(m_exportToDbCheckBox);
     bottomLayout->addWidget(m_multimask);
     bottomLayout->addSpacing(16);
     bottomLayout->addWidget(m_clearBtn);
@@ -535,6 +559,9 @@ void SAM3Dialog::setupUi() {
     m_detectionLabel = new QLabel();
     m_detectionLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
     mainLayout->addWidget(m_detectionLabel);
+
+    // ── Progress section (shared helper, hidden by default) ────────────────
+    ecvAICoreUi::setupProgressSection(mainLayout, m_downloadLabel, m_progress);
 
     // ── Connections ─────────────────────────────────────────────────────────
     connect(m_loadBtn, &QPushButton::clicked, this, &SAM3Dialog::onLoadModel);
@@ -558,6 +585,9 @@ void SAM3Dialog::setupUi() {
             [this](int percent, const QString& statusText) {
                 if (!m_testDataDownloadInProgress) return;
                 updateStatus(QString("%1 (%2%)").arg(statusText).arg(percent));
+                if (m_progress) {
+                    m_progress->setValue(percent);
+                }
             });
     connect(&repo, &ecvTestDataRepository::downloadLogMessage, this,
             [this](const QString& message) {
@@ -573,6 +603,9 @@ void SAM3Dialog::setupUi() {
                 updateStatus(tr("Extracting test data... %1/%2")
                                      .arg(current)
                                      .arg(total));
+                if (m_progress && total > 0) {
+                    m_progress->setValue(current * 100 / total);
+                }
             });
     connect(&repo, &ecvTestDataRepository::extractionFinished, this,
             [this](bool success, ecvTestDataRepository::Dataset kind) {
@@ -635,11 +668,13 @@ void SAM3Dialog::loadSettings() {
     m_settings.modelFull = settings.value("modelFull").toString();
     m_settings.modelVisual = settings.value("modelVisual").toString();
     m_settings.modelSam2 = settings.value("modelSam2").toString();
+    m_settings.exportToDb = settings.value("exportToDb", true).toBool();
 
     const int devIdx = m_deviceCombo->findText(
             m_settings.device, Qt::MatchStartsWith);
     if (devIdx >= 0) m_deviceCombo->setCurrentIndex(devIdx);
     m_scoreSpin->setValue(m_settings.scoreThreshold);
+    m_exportToDbCheckBox->setChecked(m_settings.exportToDb);
 
     selectModelByFilename(m_modelCombo, m_settings.modelFull);
     selectModelByFilename(m_modelComboV, m_settings.modelVisual);
@@ -655,6 +690,7 @@ void SAM3Dialog::saveSettings() {
     settings.setValue("modelFull", m_modelCombo->currentData().toString());
     settings.setValue("modelVisual", m_modelComboV->currentData().toString());
     settings.setValue("modelSam2", m_modelComboS->currentData().toString());
+    settings.setValue("exportToDb", m_exportToDbCheckBox->isChecked());
 }
 
 QString SAM3Dialog::modelPath() const {
@@ -830,6 +866,11 @@ void SAM3Dialog::onWorkerResult(const SAM3WorkerResult& result) {
     updateCanvasFromResult();
     updateDetectionList();
 
+    // Auto-export to DB tree if enabled and we have a valid app interface.
+    if (m_exportToDbCheckBox->isChecked() && m_app) {
+        exportToDb();
+    }
+
     const auto& t = result.timings;
     updateStatus(QString("Done | pre=%.0f inf=%.0f e2e=%.0f ms | %1 detections")
                  .arg(t.preprocess_ms).arg(t.inference_ms).arg(t.e2e_ms)
@@ -991,6 +1032,66 @@ void SAM3Dialog::updateStatus(const QString& msg) {
     m_statusLabel->setText(msg);
 }
 
+void SAM3Dialog::exportToDb() {
+    // Build the annotated image: current image with mask overlay.
+    if (!m_lastResult.valid || !m_app) return;
+
+    QImage annotated = m_currentImage;
+    if (!m_lastResult.maskComposite.isNull()) {
+        // Composite the mask onto the image for a visually useful result.
+        QPainter p(&annotated);
+        // The mask is a single-channel rgba overlay; we draw it atop.
+        const QImage maskRgba = m_lastResult.maskComposite.convertToFormat(
+                QImage::Format_RGBA8888_Premultiplied);
+        p.drawImage(0, 0, maskRgba);
+        p.end();
+    }
+
+    const QString deviceTag = ecvPluginDbNaming::deviceTagFromName(
+            m_settings.device);
+    const QString sourceLabel =
+            m_currentImagePath.isEmpty()
+                    ? QStringLiteral("canvas")
+                    : QFileInfo(m_currentImagePath).completeBaseName();
+    const QString name = ecvPluginDbNaming::makeUnique(
+            QStringLiteral("SAM3_%1_%2").arg(sourceLabel, deviceTag), m_app);
+
+    auto* img = new ccImage(annotated, name);
+    img->setMetaData(QStringLiteral("SAM3"), true);
+    img->setMetaData(QStringLiteral("SAM3/DetectionCount"),
+                     static_cast<qlonglong>(m_lastResult.detCount));
+    img->setMetaData(QStringLiteral("SAM3/Device"), m_settings.device);
+    img->setMetaData(QStringLiteral("SAM3/Model"),
+                     QFileInfo(m_modelPath).fileName());
+    img->setMetaData(QStringLiteral("Runtime (ms)"),
+                     m_lastResult.timings.e2e_ms);
+    if (!m_currentImagePath.isEmpty()) {
+        img->setMetaData(QStringLiteral("Source"), m_currentImagePath);
+    }
+
+    // Serialise per-instance metadata.
+    for (int i = 0; i < m_lastResult.detCount; ++i) {
+        const QString p = QStringLiteral("SAM3/Det%1/").arg(i + 1);
+        const aicore_sam3_box& b = m_lastResult.boxes.value(i);
+        img->setMetaData(p + QStringLiteral("InstanceId"),
+                         static_cast<qlonglong>(
+                                 m_lastResult.instanceIds.value(i)));
+        img->setMetaData(p + QStringLiteral("Score"),
+                         static_cast<double>(m_lastResult.scores.value(i)));
+        img->setMetaData(p + QStringLiteral("Box"),
+                         QStringLiteral("[%1,%2,%3,%4]")
+                                 .arg(b.x0, 0, 'f', 1)
+                                 .arg(b.y0, 0, 'f', 1)
+                                 .arg(b.x1, 0, 'f', 1)
+                                 .arg(b.y1, 0, 'f', 1));
+    }
+
+    m_app->addToDB(img, /*updateZoom=*/false, /*autoExpandDBTree=*/true,
+                   /*checkDimensions=*/false, /*autoRedraw=*/true);
+    m_app->setSelectedInDB(img, true);
+    appendLog(tr("Added '%1' to DB tree.").arg(name));
+}
+
 // ── Tab helpers ────────────────────────────────────────────────────────────
 
 SAM3Dialog::Sam3Tab SAM3Dialog::currentTab() const {
@@ -1056,6 +1157,13 @@ void SAM3Dialog::requestTestData() {
     const auto info = ecvTestDataRepository::getDatasetInfo(kind);
     m_testDataDownloadInProgress = true;
     setTestDataControlsEnabled(false);
+    if (m_progress) {
+        m_progress->setVisible(true);
+        m_progress->setValue(0);
+    }
+    if (m_downloadLabel) {
+        m_downloadLabel->setVisible(true);
+    }
     if (ecvTestDataRepository::verifyZipIntegrity(
                 ecvTestDataRepository::zipPath(kind), info.expectedMd5,
                 info.expectedSize)) {
@@ -1107,11 +1215,14 @@ void SAM3Dialog::onTestDataDownloadFinished(
         appendLog(tr("[Test data] Download failed."));
         m_testDataDownloadInProgress = false;
         setTestDataControlsEnabled(true);
+        if (m_progress) m_progress->setVisible(false);
+        if (m_downloadLabel) m_downloadLabel->setVisible(false);
         updateStatus(tr("Ready."));
         return;
     }
     appendLog(tr("[Test data] Extracting..."));
     updateStatus(tr("Extracting object detection test data..."));
+    if (m_progress) m_progress->setValue(0);
     ecvTestDataRepository::instance().extractDataset(kind);
 }
 
@@ -1123,6 +1234,9 @@ void SAM3Dialog::onTestDataExtractionFinished(
     }
     m_testDataDownloadInProgress = false;
     setTestDataControlsEnabled(true);
+
+    if (m_progress) m_progress->setVisible(false);
+    if (m_downloadLabel) m_downloadLabel->setVisible(false);
 
     if (!success) {
         appendLog(tr("[Test data] Failed to extract zip archive."));
