@@ -1,0 +1,807 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#include "YOLOLiveWidget.h"
+
+#include <QComboBox>
+#include <QDir>
+#include <QDoubleSpinBox>
+#include <QFileInfo>
+#include <QFont>
+#include <QFormLayout>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QMetaObject>
+#include <QPainter>
+#include <QSettings>
+#include <QSizePolicy>
+#include <QSpinBox>
+#include <QThread>
+#include <algorithm>
+#include <cstring>
+
+#include "YOLOLiveInferWorker.h"
+#include "YOLOModelCatalog.h"
+#include "ecvPersistentSettings.h"
+
+#ifdef AICore_ENABLED
+#include "aicore/backend_capi.h"
+#include "aicore/yolo_capi.h"
+#endif
+
+namespace {
+
+QString formatLatency(qint64 ms) {
+    return ms >= 0 ? QStringLiteral("%1 ms").arg(ms) : QStringLiteral("--");
+}
+
+// Blend weight of the colorized depth layer over the camera frame. Below
+// ~0.5 the depth signal gets hard to read; above ~0.8 the underlying scene
+// (needed to judge alignment) disappears.
+constexpr qreal kDepthOverlayOpacity = 0.65;
+
+}  // namespace
+
+YOLOLiveWidget::YOLOLiveWidget(QWidget* parent) : VideoPlaybackWidget(parent) {
+    // ClockDriven (default): the decode clock advances the video and the
+    // display tick paints the newest frame with the latest cached results.
+    // Inference runs as an async side branch — it must not pace the display.
+    setupUi();
+    setPreviewFixedHeight(300);
+
+    m_inferThread = new QThread(this);
+    m_inferWorker = new YOLOLiveInferWorker;
+    m_inferWorker->moveToThread(m_inferThread);
+    connect(m_inferThread, &QThread::finished, m_inferWorker,
+            &QObject::deleteLater);
+    connect(m_inferWorker, &YOLOLiveInferWorker::inferComplete, this,
+            &YOLOLiveWidget::onInferComplete, Qt::QueuedConnection);
+    m_inferThread->start();
+}
+
+YOLOLiveWidget::~YOLOLiveWidget() {
+    stopStream();
+    shutdownInferThread();
+}
+
+bool YOLOLiveWidget::isAvailable() {
+    return VideoPlaybackWidget::isAvailable();
+}
+
+void YOLOLiveWidget::setConfig(const Config& config) { m_config = config; }
+
+void YOLOLiveWidget::setVideoFilePath(const QString& path, bool userChosen) {
+    VideoPlaybackWidget::setVideoFilePath(path);
+    m_videoPathUserChosen = userChosen;
+}
+
+void YOLOLiveWidget::setupUi() {
+    m_statusLabel = statusLabel();
+
+    // Row 1: model selection (takes all spare width).
+    auto* controls = new QHBoxLayout;
+    controls->setContentsMargins(0, 2, 0, 0);
+    controls->setSpacing(4);
+
+    controls->addWidget(new QLabel(tr("Model:"), this));
+    m_modelCombo = new QComboBox(this);
+    m_modelCombo->setMinimumContentsLength(16);
+    m_modelCombo->setSizeAdjustPolicy(
+            QComboBox::AdjustToMinimumContentsLengthWithIcon);
+    m_modelCombo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    controls->addWidget(m_modelCombo, 1);
+    mainLayout()->insertLayout(0, controls);
+
+    // Row 2: runtime parameters (device / threads).
+    auto* paramsRow = new QHBoxLayout;
+    paramsRow->setSpacing(4);
+    paramsRow->addWidget(new QLabel(tr("Device:"), this));
+    m_deviceCombo = new QComboBox(this);
+    paramsRow->addWidget(m_deviceCombo);
+    paramsRow->addWidget(new QLabel(tr("Threads:"), this));
+    m_threadsSpin = new QSpinBox(this);
+    m_threadsSpin->setRange(0, 64);
+    m_threadsSpin->setValue(0);
+    m_threadsSpin->setToolTip(tr("0 = auto"));
+    paramsRow->addWidget(m_threadsSpin);
+    paramsRow->addStretch();
+    mainLayout()->insertLayout(1, paramsRow);
+
+    // Row 3: detection thresholds (hidden for depth models).
+    auto* thresholdRow = new QHBoxLayout;
+    thresholdRow->setSpacing(4);
+    auto* confLabel = new QLabel(tr("Conf:"), this);
+    thresholdRow->addWidget(confLabel);
+    m_confSpin = new QDoubleSpinBox(this);
+    m_confSpin->setRange(0.01, 1.0);
+    m_confSpin->setSingleStep(0.05);
+    m_confSpin->setValue(0.25);
+    m_confSpin->setToolTip(tr("Confidence threshold (detect/segment models)"));
+    thresholdRow->addWidget(m_confSpin);
+    auto* iouLabel = new QLabel(tr("IoU:"), this);
+    thresholdRow->addWidget(iouLabel);
+    m_iouSpin = new QDoubleSpinBox(this);
+    m_iouSpin->setRange(0.1, 1.0);
+    m_iouSpin->setSingleStep(0.05);
+    m_iouSpin->setValue(0.7);
+    m_iouSpin->setToolTip(tr("NMS IoU threshold (detect/segment models)"));
+    thresholdRow->addWidget(m_iouSpin);
+    auto* topKLabel = new QLabel(tr("Top-K:"), this);
+    thresholdRow->addWidget(topKLabel);
+    m_topKSpin = new QSpinBox(this);
+    m_topKSpin->setRange(1, 1000);
+    m_topKSpin->setValue(300);
+    m_topKSpin->setToolTip(tr("Max detections per frame"));
+    thresholdRow->addWidget(m_topKSpin);
+    thresholdRow->addStretch();
+    mainLayout()->insertLayout(2, thresholdRow);
+
+    // Model selection mirrors the batch tab.
+    connect(m_modelCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, [this](int) {
+                updateModelPathFromCombo();
+                updateThresholdVisibility();
+            });
+    connect(m_deviceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, [this](int) { emit deviceSelectionChanged(deviceId()); });
+    connect(m_threadsSpin, QOverload<int>::of(&QSpinBox::valueChanged), this,
+            [this](int v) { emit threadCountChanged(v); });
+    connect(m_confSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+            this, [this](double conf) {
+                m_config.confThres = static_cast<float>(conf);
+            });
+    connect(m_iouSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+            this, [this](double iou) {
+                m_config.iouThres = static_cast<float>(iou);
+            });
+    connect(m_topKSpin, QOverload<int>::of(&QSpinBox::valueChanged), this,
+            [this](int k) { m_config.topK = static_cast<uint32_t>(k); });
+
+    // Threshold controls + labels share visibility: depth models have no
+    // detection thresholds, detect/segment models do.
+    m_thresholdWidgets = {
+            confLabel, m_confSpin, iouLabel, m_iouSpin, topKLabel, m_topKSpin,
+    };
+    updateThresholdVisibility();
+}
+
+QString YOLOLiveWidget::modelFilename() const {
+    return m_modelCombo ? m_modelCombo->currentData().toString() : QString();
+}
+
+QString YOLOLiveWidget::deviceId() const {
+    return m_deviceCombo ? m_deviceCombo->currentData().toString()
+                         : QStringLiteral("auto");
+}
+
+int YOLOLiveWidget::threadCount() const {
+    return m_threadsSpin ? m_threadsSpin->value() : 0;
+}
+
+QString YOLOLiveWidget::resolveModelPath() const {
+    const QString selection = modelFilename();
+    if (selection.isEmpty()) return QString();
+    const QFileInfo selectedFile(selection);
+    if (selectedFile.isAbsolute()) return selectedFile.absoluteFilePath();
+    const QString dir = YOLOHelpers::modelCacheDir();
+    if (dir.isEmpty()) return QString();
+    return QDir(dir).filePath(selection);
+}
+
+void YOLOLiveWidget::setModelPath(const QString& path) {
+    m_config.modelPath = path;
+    // Sync the internal combo: select the matching entry or add a custom one.
+    if (m_modelCombo) {
+        const QString normalizedPath = QFileInfo(path).absoluteFilePath();
+        int idx = -1;
+        for (int i = 0; i < m_modelCombo->count(); ++i) {
+            const QString stored = m_modelCombo->itemData(i).toString();
+            const QString candidate =
+                    QFileInfo(stored).isAbsolute()
+                            ? QFileInfo(stored).absoluteFilePath()
+                            : QDir(YOLOHelpers::modelCacheDir())
+                                      .absoluteFilePath(stored);
+            if (candidate == normalizedPath) {
+                idx = i;
+                break;
+            }
+        }
+        if (idx >= 0) {
+            m_syncingModelControls = true;
+            m_modelCombo->setCurrentIndex(idx);
+            m_syncingModelControls = false;
+        } else if (!path.isEmpty() && QFileInfo::exists(path)) {
+            m_syncingModelControls = true;
+            m_modelCombo->blockSignals(true);
+            m_modelCombo->addItem(QFileInfo(path).fileName(), path);
+            m_modelCombo->setCurrentIndex(m_modelCombo->count() - 1);
+            m_modelCombo->blockSignals(false);
+            m_syncingModelControls = false;
+        }
+    }
+}
+
+void YOLOLiveWidget::setDevice(const QString& device) {
+    m_config.device = device;
+    if (m_deviceCombo) {
+        const int idx = m_deviceCombo->findData(device);
+        if (idx >= 0) m_deviceCombo->setCurrentIndex(idx);
+    }
+}
+
+void YOLOLiveWidget::setThreads(int threads) {
+    m_config.threads = threads;
+    if (m_threadsSpin) m_threadsSpin->setValue(threads);
+}
+
+void YOLOLiveWidget::rebuildModelCombo(const QStringList& labels,
+                                       const QStringList& filenames,
+                                       const QString& currentFilename) {
+    m_syncingModelControls = true;
+    m_modelCombo->clear();
+    for (int i = 0; i < labels.size(); ++i) {
+        m_modelCombo->addItem(labels.at(i), filenames.at(i));
+    }
+    const int idx = m_modelCombo->findData(currentFilename);
+    if (idx >= 0) m_modelCombo->setCurrentIndex(idx);
+    m_syncingModelControls = false;
+    updateModelPathFromCombo();
+    updateThresholdVisibility();
+}
+
+void YOLOLiveWidget::populateAllModels(const QString& keepFilename) {
+    const QVector<YOLOModelEntry> all = YOLOHelpers::catalogModels();
+    m_syncingModelControls = true;
+    m_modelCombo->clear();
+    for (const YOLOModelEntry& e : all) {
+        m_modelCombo->addItem(YOLOHelpers::modelDisplayLabel(e), e.filename);
+    }
+    if (!keepFilename.isEmpty()) {
+        const int idx = m_modelCombo->findData(keepFilename);
+        if (idx >= 0) m_modelCombo->setCurrentIndex(idx);
+    }
+    m_syncingModelControls = false;
+    updateModelPathFromCombo();
+    updateThresholdVisibility();
+}
+
+void YOLOLiveWidget::updateThresholdVisibility() {
+    // Depth models produce a depth map, not detections — hide the
+    // detection-threshold row. The task follows the selected model entry.
+    YOLOModelEntry entry;
+    const bool isDepth =
+            YOLOHelpers::findModelByFilename(modelFilename(), &entry) &&
+            entry.task == QStringLiteral("depth");
+    for (QWidget* w : m_thresholdWidgets) {
+        if (w) w->setVisible(!isDepth);
+    }
+    // A hidden depth spin keeps its value; restoring the row shows the last
+    // detection thresholds, which matches the batch tab behavior.
+    m_config.confThres = static_cast<float>(m_confSpin->value());
+    m_config.iouThres = static_cast<float>(m_iouSpin->value());
+    m_config.topK = static_cast<uint32_t>(m_topKSpin->value());
+}
+
+void YOLOLiveWidget::rebuildDeviceCombo(const QComboBox* sourceDeviceCombo) {
+    if (!sourceDeviceCombo) return;
+    m_syncingModelControls = true;
+    m_deviceCombo->clear();
+    for (int i = 0; i < sourceDeviceCombo->count(); ++i) {
+        m_deviceCombo->addItem(sourceDeviceCombo->itemText(i),
+                               sourceDeviceCombo->itemData(i));
+    }
+    if (m_deviceCombo->count() > 0) m_deviceCombo->setCurrentIndex(0);
+    m_syncingModelControls = false;
+}
+
+void YOLOLiveWidget::syncModelControlsFrom(const QComboBox* modelCombo,
+                                           const QComboBox* deviceCombo,
+                                           const QSpinBox* threadsSpin) {
+    if (!modelCombo || !deviceCombo || !threadsSpin) return;
+    const QString currentModel = modelCombo->currentData().toString();
+    const QString currentDevice = deviceCombo->currentData().toString();
+    m_syncingModelControls = true;
+    m_modelCombo->clear();
+    for (int i = 0; i < modelCombo->count(); ++i) {
+        m_modelCombo->addItem(modelCombo->itemText(i), modelCombo->itemData(i));
+    }
+    m_deviceCombo->clear();
+    for (int i = 0; i < deviceCombo->count(); ++i) {
+        m_deviceCombo->addItem(deviceCombo->itemText(i),
+                               deviceCombo->itemData(i));
+    }
+    const int modelIndex = m_modelCombo->findData(currentModel);
+    if (modelIndex >= 0) m_modelCombo->setCurrentIndex(modelIndex);
+    const int deviceIndex = m_deviceCombo->findData(currentDevice);
+    if (deviceIndex >= 0) m_deviceCombo->setCurrentIndex(deviceIndex);
+    m_threadsSpin->setRange(threadsSpin->minimum(), threadsSpin->maximum());
+    m_threadsSpin->setValue(threadsSpin->value());
+    m_syncingModelControls = false;
+    m_config.device = deviceId();
+    m_config.threads = threadCount();
+    updateModelPathFromCombo();
+}
+
+void YOLOLiveWidget::updateModelPathFromCombo() {
+    if (m_syncingModelControls) return;
+    m_config.modelPath = resolveModelPath();
+    emit modelSelectionChanged(modelFilename());
+}
+
+void YOLOLiveWidget::loadSettings() {
+    QSettings settings;
+    settings.beginGroup(QStringLiteral("qYOLO/live"));
+    m_confSpin->setValue(
+            settings.value(QStringLiteral("conf"), 0.25).toDouble());
+    m_iouSpin->setValue(settings.value(QStringLiteral("iou"), 0.7).toDouble());
+    m_topKSpin->setValue(settings.value(QStringLiteral("topK"), 300).toInt());
+    m_threadsSpin->setValue(
+            settings.value(QStringLiteral("threads"), 0).toInt());
+    settings.endGroup();
+}
+
+void YOLOLiveWidget::saveSettings() const {
+    QSettings settings;
+    settings.beginGroup(QStringLiteral("qYOLO/live"));
+    settings.setValue(QStringLiteral("conf"), m_confSpin->value());
+    settings.setValue(QStringLiteral("iou"), m_iouSpin->value());
+    settings.setValue(QStringLiteral("topK"), m_topKSpin->value());
+    settings.setValue(QStringLiteral("threads"), m_threadsSpin->value());
+    settings.endGroup();
+}
+
+// ---- video_base hooks -----------------------------------------------------
+
+bool YOLOLiveWidget::onPrepareStream() {
+    // Model must exist before the stream starts.
+    if (m_config.modelPath.isEmpty() ||
+        !QFileInfo::exists(m_config.modelPath)) {
+        emit logMessage(
+                tr("[YOLO] Model not available — download it in "
+                   "the Image tab first."));
+        return false;
+    }
+#ifdef AICore_ENABLED
+    if (aicore_yolo_warmup_backend(m_config.device.toUtf8().constData()) != 0) {
+        emit logMessage(
+                tr("[YOLO] Backend unavailable, falling back to "
+                   "CPU for this stream."));
+        m_config.device = QStringLiteral("cpu");
+    }
+#endif
+    return true;
+}
+
+void YOLOLiveWidget::onFrameDecoded(cv::Mat& frame, int frameIndex) {
+    Q_UNUSED(frameIndex);
+    // Inference paces itself: frames decoded while the worker is busy are
+    // skipped (the overlay lags 1-2 frames behind, imperceptible at preview
+    // size). The RGB conversion only runs when a job is actually submitted —
+    // it is a full-frame copy.
+    if (m_inferBusy) return;
+
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    const QImage rgb =
+            VideoPlaybackWidget::cvMatToQImage(frame).convertToFormat(
+                    QImage::Format_RGB888);
+#else
+    QImage rgb(frame.cols, frame.rows, QImage::Format_RGB888);
+#endif
+    if (rgb.isNull()) return;
+
+    // AICore owns model-size preprocessing. Keeping the decoded resolution
+    // here preserves one coordinate space for pixels, boxes, depth and DB
+    // metadata, and avoids an extra resampling pass for small objects.
+    // Implicit-shared copy — annotated rendering at capture time reuses it.
+    m_lastSourceFrame = rgb;
+    submitInferJob(rgb);
+}
+
+void YOLOLiveWidget::onDisplayFrame(QImage& display, int frameIndex) {
+    Q_UNUSED(frameIndex);
+    // Cache the pre-overlay frame (implicit sharing; the QPainter blit in
+    // drawLiveOverlay detaches `display`, leaving the cache untouched) so
+    // onInferComplete can repaint immediately with fresh results.
+    m_lastDisplayFrame = display;
+    drawLiveOverlay(display);
+}
+
+void YOLOLiveWidget::submitInferJob(const QImage& rgb) {
+    if (!m_inferWorker || m_inferBusy) return;
+    m_inferBusy = true;
+    m_inferSubmitTime.restart();
+
+    YOLOLiveInferWorker::Job job;
+    job.rgb = rgb;
+    job.generation = m_streamGeneration;
+    job.modelPath = m_config.modelPath;
+    job.device = m_config.device;
+    job.threads = m_config.threads;
+    job.confThres = m_config.confThres;
+    job.iouThres = m_config.iouThres;
+    job.topK = m_config.topK;
+    QMetaObject::invokeMethod(m_inferWorker, "runJob", Qt::QueuedConnection,
+                              Q_ARG(YOLOLiveInferWorker::Job, job));
+}
+
+void YOLOLiveWidget::onInferComplete(YOLOLiveInferWorker::Result result) {
+    m_inferBusy = false;
+    // Wall-clock submit→complete, kept for diagnostics only: it includes
+    // queued-connection hops and GUI-thread congestion, so it can read far
+    // above the model's own latency.
+    m_lastInferLatencyMs =
+            m_inferSubmitTime.isValid() ? m_inferSubmitTime.elapsed() : -1;
+
+    if (result.generation != m_streamGeneration || !isActive()) {
+        return;
+    }
+
+    if (!result.ok) {
+        emit logMessage(
+                tr("[YOLO] Live inference failed: %1").arg(result.error));
+        return;
+    }
+
+    // A device switch (e.g. the requested GPU lease failed and yolo fell
+    // back to CPU) is worth a log line — it is the number one cause of
+    // "latency is way higher than the benchmark" reports.
+    const QString resolvedDevice = (result.task == QStringLiteral("depth"))
+                                           ? result.depth.resolvedDevice
+                                           : result.detect.resolvedDevice;
+    if (resolvedDevice != m_lastResolvedDevice) {
+        emit logMessage(tr("[YOLO] Inference device: %1").arg(resolvedDevice));
+        m_lastResolvedDevice = resolvedDevice;
+    }
+
+    m_lastTask = result.task;
+    m_hasSnapshot = true;
+
+    if (result.task == QStringLiteral("depth")) {
+        // Colorize once at source resolution; the overlay layer below only
+        // scales it to preview size on rebuild.
+        m_lastDepth = result.depth;
+        m_overlayDetections.clear();
+        m_overlayMasks.clear();
+        m_overlayDepthImage = YOLOHelpers::depthColorImage(
+                result.depth.depthMap.constData(), result.depth.width,
+                result.depth.height, result.depth.stats.minDepth,
+                result.depth.stats.p95Depth);
+        // Show the MODEL latency (preprocess + forward + postprocess inside
+        // aicore_yolo_depth_rgb) — same scope as the static-image benchmark.
+        const qint64 modelMs =
+                result.depth.runtimeMs >= 0.0
+                        ? static_cast<qint64>(result.depth.runtimeMs)
+                        : m_lastInferLatencyMs;
+        m_statusLabel->setText(
+                tr("Depth %1x%2 | %3-%4 m | infer %5 (%6)")
+                        .arg(result.depth.width)
+                        .arg(result.depth.height)
+                        .arg(result.depth.stats.minDepth, 0, 'f', 1)
+                        .arg(result.depth.stats.p95Depth, 0, 'f', 1)
+                        .arg(formatLatency(modelMs))
+                        .arg(result.depth.resolvedDevice));
+        emit depthSnapshotUpdated(result.depth);
+        ++m_overlayGeneration;
+        repaintLivePreview();
+        return;
+    }
+
+    m_lastSnapshot = result.detect;
+    const qint64 modelMs =
+            result.detect.runtimeMs >= 0.0
+                    ? static_cast<qint64>(result.detect.runtimeMs)
+                    : m_lastInferLatencyMs;
+    m_statusLabel->setText(tr("Objects: %1 | infer %2 (%3)")
+                                   .arg(result.detect.detections.size())
+                                   .arg(formatLatency(modelMs))
+                                   .arg(result.detect.resolvedDevice));
+    emit snapshotUpdated(result.detect);
+    // New detections: update overlay data and invalidate the layer cache;
+    // the immediate repaint below rebuilds it at preview resolution.
+    m_overlayDepthImage = QImage();
+    m_overlayDetections = result.detect.detections;
+    m_overlayMasks = result.detect.masks;  // empty for pure-detect models
+    m_overlaySourceSize = m_lastSourceFrame.size();
+    ++m_overlayGeneration;
+    repaintLivePreview();
+}
+
+/* 3-tap separable Gaussian blur [1,2,1]/4 on Grayscale8. */
+static void gaussianBlurMask3(QImage& img) {
+    if (img.format() != QImage::Format_Grayscale8) return;
+    const int w = img.width(), h = img.height();
+    if (w <= 2 || h <= 2) return;
+    QImage tmp(w, h, QImage::Format_Grayscale8);
+    for (int y = 0; y < h; ++y) {
+        const uchar* s = img.constScanLine(y);
+        uchar* d = tmp.scanLine(y);
+        for (int x = 0; x < w; ++x) {
+            const int l = (x > 0) ? s[x - 1] : 0;
+            const int m = s[x];
+            const int r = (x < w - 1) ? s[x + 1] : 0;
+            d[x] = (uint8_t)((l + m * 2 + r) / 4);
+        }
+    }
+    for (int y = 0; y < h; ++y) {
+        uchar* d = img.scanLine(y);
+        for (int x = 0; x < w; ++x) {
+            const int t = (y > 0) ? tmp.constScanLine(y - 1)[x] : 0;
+            const int m = tmp.constScanLine(y)[x];
+            const int b = (y < h - 1) ? tmp.constScanLine(y + 1)[x] : 0;
+            d[x] = (uint8_t)((t + m * 2 + b) / 4);
+        }
+    }
+}
+
+void YOLOLiveWidget::rebuildOverlayLayer(const QSize& displaySize) {
+    m_overlayLayer = QImage();
+    if (displaySize.isEmpty()) {
+        return;
+    }
+
+    // Depth layer: the colorized map blended over the camera frame — one
+    // premultiplied blit per display tick; no per-pixel work on the GUI
+    // thread.
+    if (!m_overlayDepthImage.isNull()) {
+        QImage layer(displaySize, QImage::Format_ARGB32_Premultiplied);
+        layer.fill(Qt::transparent);
+        QPainter p(&layer);
+        p.setOpacity(kDepthOverlayOpacity);
+        p.drawImage(layer.rect(), m_overlayDepthImage);
+        p.setOpacity(1.0);
+        p.end();
+        m_overlayLayer = layer;
+        m_overlayLayerSize = displaySize;
+        m_overlayRenderedGeneration = m_overlayGeneration;
+        return;
+    }
+
+    if (!m_overlayDetections.isEmpty() || !m_overlayMasks.isEmpty()) {
+        if (m_overlaySourceSize.isEmpty()) {
+            return;
+        }
+    } else {
+        return;
+    }
+
+    // Same rendering semantics as YOLOHelpers::drawDetections /
+    // drawSegmentation, but on the small preview image with coordinates
+    // scaled from the source pixel space.
+    QImage layer(displaySize, QImage::Format_ARGB32_Premultiplied);
+    layer.fill(Qt::transparent);
+    const qreal sx = static_cast<qreal>(displaySize.width()) /
+                     static_cast<qreal>(m_overlaySourceSize.width());
+    const qreal sy = static_cast<qreal>(displaySize.height()) /
+                     static_cast<qreal>(m_overlaySourceSize.height());
+
+    QPainter p(&layer);
+    p.setRenderHint(QPainter::Antialiasing, false);
+
+    // Segment masks: translucent per-class tint, scaled to the display size
+    // (same mapping as YOLOHelpers::drawSegmentation).
+    if (!m_overlayMasks.isEmpty()) {
+        for (int i = 0; i < m_overlayMasks.size(); ++i) {
+            const YOLOSegMask& mask = m_overlayMasks[static_cast<size_t>(i)];
+            if (mask.w <= 0 || mask.h <= 0 ||
+                mask.bits.size() < static_cast<qint64>(mask.w) * mask.h) {
+                continue;
+            }
+            QImage maskImage(mask.w, mask.h, QImage::Format_Grayscale8);
+            std::memcpy(maskImage.bits(), mask.bits.constData(),
+                        static_cast<size_t>(mask.w) * mask.h);
+            // Scale the binary {0,1} mask to preview size FIRST with
+            // nearest-neighbour (lossless for binary data), then convert
+            // to {0,255}, blur and blend at the MUCH smaller display
+            // resolution — avoids the expensive full-resolution Gaussian
+            // blur + full-resolution SmoothTransformation bilinear scale
+            // that made live video unusable.
+            maskImage = maskImage.scaled(
+                    displaySize.width(), displaySize.height(),
+                    Qt::IgnoreAspectRatio, Qt::FastTransformation);
+            for (int b = 0; b < maskImage.sizeInBytes(); ++b) {
+                if (maskImage.bits()[b]) maskImage.bits()[b] = 255;
+            }
+            gaussianBlurMask3(maskImage);
+            const QColor tint =
+                    i < m_overlayDetections.size()
+                            ? QColor(YOLOHelpers::classColor(
+                                      m_overlayDetections[i].classId))
+                            : QColor(220, 220, 220);
+            for (int y = 0; y < displaySize.height(); ++y) {
+                const uchar* src = maskImage.constScanLine(y);
+                QRgb* dst = reinterpret_cast<QRgb*>(layer.scanLine(y));
+                for (int x = 0; x < displaySize.width(); ++x) {
+                    if (src[x] == 0) continue;
+                    // Proportional alpha: the SmoothTransformation-scaling
+                    // produces fractional coverage values at mask boundaries,
+                    // so map 0..255 → 0..170 to keep anti-aliased edges
+                    // proportionally translucent.
+                    const int a = src[x] * 170 / 255;
+                    if (a == 0) continue;
+                    dst[x] = qRgba(tint.red(), tint.green(), tint.blue(), a);
+                }
+            }
+        }
+    }
+
+    // Boxes + labels, scaled from the source pixel space.
+    QFont font = p.font();
+    font.setPixelSize(std::max(12, displaySize.height() / 60));
+    p.setFont(font);
+    for (const YOLODetection& d : m_overlayDetections) {
+        const QColor color(YOLOHelpers::classColor(d.classId));
+        QPen pen(color);
+        pen.setWidth(2);
+        p.setPen(pen);
+        p.drawRect(QRectF(d.x1 * sx, d.y1 * sy, (d.x2 - d.x1) * sx,
+                          (d.y2 - d.y1) * sy));
+
+        const QString label = QStringLiteral("%1 %2")
+                                      .arg(d.className)
+                                      .arg(d.score, 0, 'f', 2);
+        // Keep the banner fully inside the preview (same rule as
+        // YOLOHelpers::drawDetections): clamp horizontally, flip below the
+        // box top when the box hugs the top edge.
+        QRect labelRect(static_cast<int>(d.x1 * sx),
+                        static_cast<int>(d.y1 * sy) - font.pixelSize() - 6,
+                        std::max(20, label.size() * font.pixelSize()),
+                        font.pixelSize() + 6);
+        labelRect.setWidth(std::min(labelRect.width(),
+                                    std::max(20, displaySize.width() - 4)));
+        labelRect.moveLeft(std::clamp(
+                labelRect.left(), 2,
+                std::max(2, displaySize.width() - labelRect.width() - 2)));
+        if (labelRect.top() < 2) {
+            labelRect.moveTop(static_cast<int>(d.y1 * sy) + 2);
+        }
+        labelRect.moveTop(std::min(
+                labelRect.top(),
+                std::max(2, displaySize.height() - labelRect.height() - 2)));
+        p.fillRect(labelRect.adjusted(0, 0, 4, 2), color);
+        p.setPen(Qt::white);
+        p.drawText(labelRect.adjusted(2, 3, -2, -2), label);
+        p.setPen(pen);
+    }
+    p.end();
+
+    m_overlayLayer = layer;
+    m_overlayLayerSize = displaySize;
+    m_overlayRenderedGeneration = m_overlayGeneration;
+}
+
+void YOLOLiveWidget::drawLiveOverlay(QImage& frame) {
+    if (frame.isNull() ||
+        (m_overlayDetections.isEmpty() && m_overlayDepthImage.isNull())) {
+        return;
+    }
+    // Rebuild only when the results changed or the preview was resized;
+    // every display tick then pays just one premultiplied blit.
+    if (m_overlayLayer.isNull() || m_overlayLayerSize != frame.size() ||
+        m_overlayRenderedGeneration != m_overlayGeneration) {
+        rebuildOverlayLayer(frame.size());
+        if (m_overlayLayer.isNull()) return;
+    }
+    QPainter p(&frame);
+    p.drawImage(0, 0, m_overlayLayer);
+    p.end();
+}
+
+void YOLOLiveWidget::repaintLivePreview() {
+    if (m_lastDisplayFrame.isNull() || !previewLabel()) return;
+    // m_lastDisplayFrame is already scaled to the preview label by the
+    // base-class pipeline — overlay and swap directly.
+    QImage frame = m_lastDisplayFrame;
+    drawLiveOverlay(frame);
+    previewLabel()->setPixmap(QPixmap::fromImage(frame));
+}
+
+void YOLOLiveWidget::clearLiveOverlay() {
+    m_lastSourceFrame = QImage();
+    m_overlayDetections.clear();
+    m_overlayMasks.clear();
+    m_overlaySourceSize = QSize();
+    m_overlayDepthImage = QImage();
+    m_overlayLayer = QImage();
+}
+
+void YOLOLiveWidget::onVideoLooped() {
+    ++m_streamGeneration;
+    m_hasSnapshot = false;
+    clearLiveOverlay();
+}
+
+void YOLOLiveWidget::onStreamReset() {
+    ++m_streamGeneration;
+    m_hasSnapshot = false;
+    clearLiveOverlay();
+}
+
+void YOLOLiveWidget::onStreamResumed() {
+    ++m_streamGeneration;
+    m_hasSnapshot = false;
+    clearLiveOverlay();
+}
+
+void YOLOLiveWidget::onStreamStopping() {
+    ++m_streamGeneration;
+    m_hasSnapshot = false;
+    clearLiveOverlay();
+}
+
+void YOLOLiveWidget::onSourceChanged(InputSource source) {
+    Q_UNUSED(source);
+    ++m_streamGeneration;
+    m_hasSnapshot = false;
+    clearLiveOverlay();
+}
+
+void YOLOLiveWidget::captureSnapshotToDb() {
+    if (!m_hasSnapshot || m_lastSourceFrame.isNull()) return;
+    // Annotated rendering is deferred to capture time (the live preview only
+    // needs the downscaled overlay layer). The DB export requires
+    // annotatedImage — render it once here from the cached source frame.
+
+    if (m_lastTask == QStringLiteral("depth")) {
+        if (m_lastDepth.annotatedImage.isNull() &&
+            !m_lastDepth.depthMap.isEmpty()) {
+            m_lastDepth.annotatedImage = YOLOHelpers::depthColorImage(
+                    m_lastDepth.depthMap.constData(), m_lastDepth.width,
+                    m_lastDepth.height, m_lastDepth.stats.minDepth,
+                    m_lastDepth.stats.p95Depth);
+            if (!m_lastDepth.annotatedImage.isNull()) {
+                YOLOHelpers::drawDepthLegend(&m_lastDepth.annotatedImage,
+                                             m_lastDepth.stats.minDepth,
+                                             m_lastDepth.stats.p95Depth);
+            }
+        }
+        if (m_lastDepth.annotatedImage.isNull()) return;
+        emit depthCaptureToDbRequested(m_lastDepth);
+        return;
+    }
+
+    if (m_lastSnapshot.detections.isEmpty() && m_lastSnapshot.masks.isEmpty()) {
+        return;
+    }
+    if (m_lastSnapshot.annotatedImage.isNull()) {
+        QImage annotated = m_lastSourceFrame;
+        if (!m_lastSnapshot.masks.isEmpty()) {
+            YOLOHelpers::drawSegmentation(&annotated, m_lastSnapshot.masks,
+                                          m_lastSnapshot.detections, 2);
+        } else {
+            YOLOHelpers::drawDetections(&annotated, m_lastSnapshot.detections,
+                                        2);
+        }
+        m_lastSnapshot.annotatedImage = annotated;
+    }
+    emit captureToDbRequested(m_lastSnapshot);
+}
+
+void YOLOLiveWidget::shutdownInferThread() {
+    if (!m_inferWorker || !m_inferThread) {
+        return;
+    }
+    // QThread::finished is emitted from the worker thread itself during its
+    // teardown. Because m_inferWorker lives on that thread, the queued
+    // deleteLater connection is delivered as a DIRECT call before the event
+    // loop stops draining — the worker is deleted before wait() returns, and
+    // the explicit delete below then dereferences freed memory (segfault on
+    // app exit). Drop the connection first so this function is the sole
+    // owner of the worker's lifetime.
+    disconnect(m_inferThread, &QThread::finished, m_inferWorker,
+               &QObject::deleteLater);
+    // releaseModel runs synchronously on the worker thread, so quit() below is
+    // guaranteed to end the event loop; wait() can therefore never time out
+    // (its upper bound is the single in-flight inference, which cannot be
+    // interrupted). A bounded wait here would instead risk destroying a
+    // still-running QThread from the widget destructor.
+    QMetaObject::invokeMethod(m_inferWorker, "releaseModel",
+                              Qt::BlockingQueuedConnection);
+    m_inferThread->quit();
+    m_inferThread->wait();
+    delete m_inferWorker;
+    m_inferWorker = nullptr;
+}

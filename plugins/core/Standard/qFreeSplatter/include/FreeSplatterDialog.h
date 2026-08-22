@@ -109,6 +109,11 @@ signals:
 
 protected:
     void closeEvent(QCloseEvent* event) override;
+    // Measure the non-tab chrome (window decorations + fixed UI) on the
+    // first show, once the initial layout has settled.  Every later tab
+    // switch resizes to baseChrome + the incoming tab's content, so the
+    // dialog never inflates (see adaptTabWidgetHeight).
+    void showEvent(QShowEvent* event) override;
     // Re-adapt tab heights when the dialog moves to a screen with a
     // different DPI (Windows multi-monitor scaling) — hardcoded pixel
     // clamps must be recomputed.
@@ -215,6 +220,11 @@ private:
     QWidget* m_imagesTab = nullptr;
     QScrollArea* m_faceCaptureScroll = nullptr;
     int m_activeInputTabHeight = -1;
+    // Dialog height minus the tab widget height, measured once on the
+    // first show (layout settled, no user resize yet).  A measured
+    // invariant: unlike minimumSizeHint deltas or fixed pixel estimates
+    // it stays correct across platforms, window decorations and DPI.
+    int m_baseChrome = -1;
     FaceCaptureWidget* m_faceCaptureWidget = nullptr;
     QPushButton* m_faceStartBtn = nullptr;
     QPushButton* m_faceStopBtn = nullptr;

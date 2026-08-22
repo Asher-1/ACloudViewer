@@ -7,14 +7,14 @@
 
 // Score-map / feature-map checksum diagnostics (LIGHTGLUE_ALIKED_DKD_DEBUG=1).
 
-#include "score_debug.hpp"
+#include "tasks/aliked/score_debug.hpp"
 
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
-#include "gpu_sync.hpp"
+#include "tasks/aliked/gpu_sync.hpp"
 
 namespace lightglue::aliked_internal {
 namespace {
@@ -104,8 +104,10 @@ void PrintStatsLine(const char *kind,
 }  // namespace
 
 bool DkdDebugEnabled() {
-    const char *env = std::getenv("LIGHTGLUE_ALIKED_DKD_DEBUG");
-    return env != nullptr && env[0] != '0';
+    // The historical LIGHTGLUE_ALIKED_DKD_DEBUG env switch was development
+    // scaffolding and is removed; the checksum/parity plumbing below stays
+    // dormant until an explicit API re-enables it.
+    return false;
 }
 
 void ClearDkdDebugCpuRefs() { g_cpu_refs = DkdDebugCpuRefs{}; }

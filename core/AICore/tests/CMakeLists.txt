@@ -57,6 +57,7 @@ function(_aicore_test_common name)
         target_compile_options(${name} PRIVATE -Wall -Wextra)
     endif()
     target_include_directories(${name} PRIVATE ${AICORE_TEST_INC})
+    target_include_directories(${name} PRIVATE ${AICORE_TEST_INC}/..)
     include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/AICoreCompileDefinitions.cmake)
     aicore_apply_compile_definitions(${name})
     set_target_properties(${name} PROPERTIES POSITION_INDEPENDENT_CODE ON)
@@ -160,6 +161,67 @@ endfunction()
 
 function(aicore_add_facedetect_capi_test name)
     add_executable(${name} facedetect/${name}.cpp)
+    target_link_libraries(${name} PRIVATE AICore)
+    _aicore_capi_link(${name})
+    _aicore_test_common(${name})
+    if(NOT MSVC)
+        target_compile_options(${name} PRIVATE -fPIC)
+        target_link_options(${name} PRIVATE "-no-pie")
+    endif()
+    set_tests_properties(${name} PROPERTIES LABELS "capi")
+endfunction()
+
+function(aicore_add_rfdetr_capi_test name)
+    add_executable(${name} rfdetr/${name}.cpp)
+    target_link_libraries(${name} PRIVATE AICore)
+    _aicore_capi_link(${name})
+    _aicore_test_common(${name})
+    if(NOT MSVC)
+        target_compile_options(${name} PRIVATE -fPIC)
+        target_link_options(${name} PRIVATE "-no-pie")
+    endif()
+    set_tests_properties(${name} PROPERTIES LABELS "capi")
+endfunction()
+
+function(aicore_add_rfdetr_whitebox_test name)
+    if(NOT TARGET AICore_test)
+        return()
+    endif()
+    add_executable(${name} rfdetr/${name}.cpp)
+    target_link_libraries(${name} PRIVATE AICore_test)
+    # NOTE: must be the real src/tasks/rfdetr directory and must come before
+    # the include dirs propagated by AICore_test (which list depth/, facedetect/,
+    # gaussian/ first): image_io.hpp, model_loader.hpp and backend.hpp exist in
+    # several task directories and would otherwise resolve to the wrong task.
+    target_include_directories(${name} PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/rfdetr)
+    _aicore_test_common(${name})
+    set_tests_properties(${name} PROPERTIES LABELS "whitebox")
+endfunction()
+
+# Manual perf probe (NOT a ctest — needs a local GGUF, run by hand):
+#   bench_rfdetr_perf <model.gguf> [device] [threads] [srcW] [srcH] [iters]
+# Same whitebox linking rules as the tests above, minus add_test().
+function(aicore_add_rfdetr_perf_bench)
+    if(NOT TARGET AICore_test)
+        return()
+    endif()
+    add_executable(bench_rfdetr_perf rfdetr/bench_rfdetr_perf.cpp)
+    target_link_libraries(bench_rfdetr_perf PRIVATE AICore_test)
+    target_include_directories(bench_rfdetr_perf PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/rfdetr)
+    if(NOT MSVC)
+        target_compile_options(bench_rfdetr_perf PRIVATE -Wall -Wextra)
+    endif()
+    target_include_directories(bench_rfdetr_perf PRIVATE ${AICORE_TEST_INC})
+    include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/AICoreCompileDefinitions.cmake)
+    aicore_apply_compile_definitions(bench_rfdetr_perf)
+    set_target_properties(bench_rfdetr_perf PROPERTIES POSITION_INDEPENDENT_CODE ON)
+    cloudviewer_set_aicore_test_runtime_layout(bench_rfdetr_perf)
+endfunction()
+
+function(aicore_add_rmbg_capi_test name)
+    add_executable(${name} rmbg/${name}.cpp)
     target_link_libraries(${name} PRIVATE AICore)
     _aicore_capi_link(${name})
     _aicore_test_common(${name})
@@ -300,6 +362,59 @@ aicore_add_facedetect_capi_test(test_facedetect_match_capi)
 aicore_add_facedetect_capi_test(test_facedetect_contexts_capi)
 set_tests_properties(test_facedetect_contexts_capi PROPERTIES LABELS "capi;model")
 
+# FaceDetect C API contract test (no GGUF assets: ABI, catalog, lifecycle,
+# null guards — see tests/facedetect/test_facedetect_capi_contract.cpp).
+aicore_add_facedetect_capi_test(test_facedetect_capi_contract)
+set_tests_properties(test_facedetect_capi_contract PROPERTIES LABELS "capi")
+
+aicore_add_rfdetr_whitebox_test(test_rfdetr_preprocess)
+aicore_add_rfdetr_whitebox_test(test_rfdetr_two_stage_mask)
+aicore_add_rfdetr_perf_bench()
+aicore_add_rfdetr_capi_test(test_rfdetr_capi_contract)
+aicore_add_rmbg_capi_test(test_rmbg_capi_contract)
+aicore_add_rmbg_capi_test(test_rmbg_capi_performance)
+set_tests_properties(test_rmbg_capi_performance PROPERTIES
+    LABELS "capi;model;gpu;performance")
+
+# YOLO C API performance benchmark (upstream ultralytics-ggml bench matrix
+# counterpart; see tests/yolo/test_yolo_capi_performance.cpp header for the
+# timing contract). Skips (77) without AICORE_TEST_YOLO_* assets.
+function(aicore_add_yolo_capi_test name)
+    add_executable(${name} yolo/${name}.cpp)
+    target_link_libraries(${name} PRIVATE AICore)
+    _aicore_capi_link(${name})
+    _aicore_test_common(${name})
+    if(NOT MSVC)
+        target_compile_options(${name} PRIVATE -fPIC)
+        target_link_options(${name} PRIVATE "-no-pie")
+    endif()
+    set_tests_properties(${name} PROPERTIES LABELS "capi")
+endfunction()
+
+aicore_add_yolo_capi_test(test_yolo_capi_performance)
+set_tests_properties(test_yolo_capi_performance PROPERTIES
+    LABELS "capi;model;gpu;performance")
+
+# YOLO C API contract test (no GGUF assets: ABI, options, catalog, null
+# guards, model-free error paths — see tests/yolo/test_yolo_capi_contract.cpp).
+aicore_add_yolo_capi_test(test_yolo_capi_contract)
+set_tests_properties(test_yolo_capi_contract PROPERTIES
+    LABELS "capi")
+
+# YOLO geometry whitebox test (no GGUF assets: mask unscale / letterbox
+# inverse mapping — see tests/yolo/test_yolo_unscale_masks.cpp).
+function(aicore_add_yolo_whitebox_test name)
+    if(NOT TARGET AICore_test)
+        return()
+    endif()
+    add_executable(${name} yolo/${name}.cpp)
+    target_link_libraries(${name} PRIVATE AICore_test)
+    _aicore_test_common(${name})
+    set_tests_properties(${name} PROPERTIES LABELS "whitebox")
+endfunction()
+
+aicore_add_yolo_whitebox_test(test_yolo_unscale_masks)
+
 add_test(
     NAME test_aicore_public_headers
     COMMAND ${CMAKE_COMMAND}
@@ -334,7 +449,9 @@ function(aicore_configure_model_test_assets)
         # friends1 is the fixture with stable 5-point landmarks. A cropped
         # single-face image is not suitable for this alignment contract.
         "AICORE_TEST_FACEDETECT_IMAGE=${_root}/friends_faces/query/friends1.jpg"
-        "AICORE_TEST_FACEDETECT_DEVICE=${AICORE_TEST_DEVICE}")
+        "AICORE_TEST_FACEDETECT_DEVICE=${AICORE_TEST_DEVICE}"
+        "AICORE_TEST_RFDETR_GGUF=${_root}/rfdetr_models/rfdetr-base-f16.gguf"
+        "AICORE_TEST_RMBG_GGUF=${_root}/rmbg_models/rmbg_f16.gguf")
     if(AICORE_TEST_AUTO_DOWNLOAD)
         # This fixture is only selected by asset-dependent CTests. It is not a
         # build dependency, so compiling ACloudViewer cannot trigger I/O.
@@ -356,7 +473,8 @@ function(aicore_configure_model_test_assets)
             test_lightglue_aliked_e2e
             test_deeplsd_capi_load
             test_facedetect_embed_capi
-            test_facedetect_contexts_capi)
+            test_facedetect_contexts_capi
+            test_rmbg_capi_performance)
         if(TEST ${_test})
             set_tests_properties(${_test} PROPERTIES ENVIRONMENT "${_env}")
             if(AICORE_TEST_AUTO_DOWNLOAD)
@@ -424,6 +542,14 @@ if(UNIX AND NOT APPLE)
     set_tests_properties(test_no_legacy_symbols PROPERTIES LABELS "capi")
 endif()
 
+# --- Env hygiene: getenv/setenv only in the sanctioned bridge ---
+add_test(
+    NAME test_no_env_getenv
+    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/check_no_env_getenv.sh
+            ${CMAKE_CURRENT_SOURCE_DIR}/../src
+)
+set_tests_properties(test_no_env_getenv PROPERTIES LABELS "capi")
+
 set(_aicore_contract_targets
     test_runtime_capi_contract
     test_depth_capi_contract
@@ -436,7 +562,14 @@ set(_aicore_contract_targets
     test_aliked_capi_contract
     test_aliked_capi_parity
     test_aliked_e2e_smoke
-    test_deeplsd_capi_contract)
+    test_deeplsd_capi_contract
+    test_facedetect_match_capi
+    test_facedetect_capi_contract
+    test_rfdetr_capi_contract
+    test_yolo_capi_contract
+    test_rmbg_capi_contract
+    test_rmbg_capi_performance
+    test_yolo_capi_performance)
 set(_aicore_contract_model_exclude)
 if(NOT AICORE_TEST_ENABLE_MODEL_TESTS)
     list(APPEND _aicore_contract_model_exclude -LE "model|gpu|e2e")
@@ -449,5 +582,144 @@ add_custom_target(aicore-contract-tests
     DEPENDS ${_aicore_contract_targets}
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     COMMENT "Running AICore public contract tests"
+    VERBATIM
+)
+
+# --- Catalog vs release asset consistency (network; CI only) ---------------
+# The catalog can be self-consistent while individual entries 404 on the
+# release (historical rmbg_q4_K.gguf regression). Dump every catalog URL and
+# HEAD-check it against GitHub so drift fails the build instead of the user's
+# first download. Kept out of the "capi" label so offline/contract runs stay
+# network-free.
+add_executable(test_catalog_dump_urls catalog_dump_urls.cpp)
+target_link_libraries(test_catalog_dump_urls PRIVATE AICore)
+_aicore_capi_link(test_catalog_dump_urls)
+_aicore_test_common(test_catalog_dump_urls)
+if(NOT MSVC)
+    target_compile_options(test_catalog_dump_urls PRIVATE -fPIC)
+    target_link_options(test_catalog_dump_urls PRIVATE "-no-pie")
+endif()
+
+find_package(Python3 COMPONENTS Interpreter QUIET)
+if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
+    add_test(
+        NAME test_catalog_remote_assets
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/check_catalog_assets.py
+                $<TARGET_FILE:test_catalog_dump_urls>)
+    set_tests_properties(test_catalog_remote_assets PROPERTIES
+        LABELS "catalog-remote" TIMEOUT 300)
+endif()
+
+# --- Fast tier: no GGUF assets (whitebox/common/gaussian units + capi
+# contract subset + catalog URL dump). Mirror entry point of
+# aicore-contract-tests so CI can address the tier by name. Whitebox targets
+# exist only when AICore_BUILD_WHITEBOX_TESTS=ON; keep the DEPENDS list to
+# targets present in this configuration, while ctest -LE runs every registered
+# fast test. When adding a new fast-tier test target, append it here, otherwise
+# ctest fails at runtime with a missing binary.
+set(_aicore_fast_targets
+    test_data_root
+    test_backend_registry
+    test_gguf_keys
+    test_path_util
+    test_compute_mode
+    test_backend
+    test_linalg
+    test_ggml_extend
+    test_winograd
+    test_reconstruct
+    test_loader
+    test_graph_blocks
+    test_image
+    test_pose
+    test_gaussian_path_util
+    test_facedetect_align
+    test_rfdetr_preprocess
+    test_rfdetr_two_stage_mask
+    test_yolo_unscale_masks
+    test_catalog_dump_urls)
+# The fast tier also runs the no-asset subset of the capi contract suite
+# (ctest -LE "model|gpu|e2e" selects them), so those binaries must exist too.
+list(APPEND _aicore_fast_targets ${_aicore_contract_targets})
+set(_aicore_fast_targets_existing)
+foreach(_t IN LISTS _aicore_fast_targets)
+    if(TARGET ${_t})
+        list(APPEND _aicore_fast_targets_existing ${_t})
+    endif()
+endforeach()
+add_custom_target(aicore-fast-tests
+    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -LE "model|gpu|e2e"
+            -j2
+            -C $<CONFIG>
+    DEPENDS ${_aicore_fast_targets_existing}
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMENT "Running AICore fast-tier tests (no GGUF assets)"
+    VERBATIM
+)
+
+# --- Model tier: needs GGUF assets (AICORE_TEST_ENABLE_MODEL_TESTS=ON +
+# asset root). Tests without assets skip (SKIP_RETURN_CODE 77), so this
+# target never fails on missing assets — it only executes them. Mirror of
+# the fast/contract entry points; the ctest -L "model" selection also covers
+# the two parity variants that reuse the test_aliked_capi_parity binary.
+set(_aicore_model_targets
+    test_dpt_blocks
+    test_rope2d
+    test_uv_posembed
+    test_quantize
+    test_quantize_accuracy
+    test_model_loader
+    test_cam_pose
+    test_preprocess
+    test_backbone
+    test_backbone_prepare
+    test_backbone_mv
+    test_backbone_mv4
+    test_backbone_metric
+    test_backbone_giant
+    test_backbone_da2
+    test_dpt_head
+    test_engine_depth
+    test_engine_depth_native
+    test_engine_pose
+    test_engine_mono
+    test_engine_mv
+    test_engine_metric
+    test_engine_da2
+    test_fused_depth
+    test_gs_head
+    test_gs_adapter
+    test_giant_depth_pose
+    test_head_rays
+    test_metric_head
+    test_nested_align
+    test_preprocess_real
+    test_ray_pose
+    test_parity
+    test_depth_capi_load
+    test_depth_capi_backend_parity
+    test_gaussian_capi_load
+    test_lightglue_aliked_e2e
+    test_aliked_capi_parity
+    test_aliked_e2e_smoke
+    test_deeplsd_capi_load
+    test_facedetect_embed_capi
+    test_facedetect_contexts_capi
+    test_rmbg_capi_performance
+    test_yolo_capi_performance)
+set(_aicore_model_targets_existing)
+foreach(_t IN LISTS _aicore_model_targets)
+    if(TARGET ${_t})
+        list(APPEND _aicore_model_targets_existing ${_t})
+    endif()
+endforeach()
+add_custom_target(aicore-model-tests
+    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -L "model"
+            -j1
+            -C $<CONFIG>
+    DEPENDS ${_aicore_model_targets_existing}
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMENT "Running AICore model-tier tests (skips without GGUF assets)"
     VERBATIM
 )

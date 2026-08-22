@@ -11,6 +11,8 @@
 #include <QString>
 #include <QThread>
 #include <QVector>
+#include <cstddef>
+#include <memory>
 
 // Result of a FreeSplatter inference run
 struct FreeSplatterResult {
@@ -20,7 +22,12 @@ struct FreeSplatterResult {
     int width = 0;
     int gaussianChannels = 0;
     int shDegree = 1;
-    QVector<float> gaussians;  // nViews * H * W * gc float32
+    // Owns the AICore output buffer (freed via aicore_gaussian_free_buffer);
+    // shared_ptr keeps it alive across the queued resultReady signal with
+    // zero data copies — a plain QVector memcpy was ~350 MB for a 24-view
+    // 2DGS object run and doubled the peak memory.
+    std::shared_ptr<float> gaussians;
+    size_t gaussianCount = 0;  // nViews * H * W * gc float32
     bool hasPoses = false;
     QVector<float> cam2world;  // nViews * 16 float32 (row-major 4x4)
     float focal = 0.0f;

@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "aicore/depth_capi.h"
-#include "common/test_macros.hpp"
+#include "tests/common/test_macros.hpp"
 
 namespace {
 
@@ -27,24 +27,23 @@ struct DenseResult {
 };
 
 bool RunDense(aicore_depth_ctx* ctx, const char* image, DenseResult& result) {
-    float* depth = nullptr;
-    float* confidence = nullptr;
-    float* sky = nullptr;
-    if (aicore_depth_depth_dense(ctx, image, &result.height, &result.width,
-                                 &depth, &confidence, &sky, result.ext,
-                                 result.intr, &result.metric) != 0 ||
-        !depth || result.height <= 0 || result.width <= 0) {
-        aicore_depth_free_floats(depth);
-        aicore_depth_free_floats(confidence);
-        aicore_depth_free_floats(sky);
+    aicore_depth_dense_result dense{};
+    if (aicore_depth_depth_dense(ctx, image, &dense) != 0 || !dense.depth ||
+        dense.height <= 0 || dense.width <= 0) {
+        aicore_depth_dense_result_free(&dense);
         return false;
     }
+    result.height = dense.height;
+    result.width = dense.width;
+    result.metric = dense.is_metric;
+    std::copy(dense.ext, dense.ext + 12, result.ext);
+    std::copy(dense.intr, dense.intr + 9, result.intr);
     const size_t count = static_cast<size_t>(result.height) * result.width;
-    result.depth.assign(depth, depth + count);
-    if (confidence) result.confidence.assign(confidence, confidence + count);
-    aicore_depth_free_floats(depth);
-    aicore_depth_free_floats(confidence);
-    aicore_depth_free_floats(sky);
+    result.depth.assign(dense.depth, dense.depth + count);
+    if (dense.conf) {
+        result.confidence.assign(dense.conf, dense.conf + count);
+    }
+    aicore_depth_dense_result_free(&dense);
     return true;
 }
 
@@ -70,10 +69,16 @@ bool Compare(const std::vector<float>& reference,
 aicore_depth_ctx* Load(const char* anyview_or_model,
                        const char* metric,
                        const char* device) {
-    return metric && metric[0]
-                   ? aicore_depth_load_nested_device(anyview_or_model, metric,
-                                                     0, device)
-                   : aicore_depth_load_device(anyview_or_model, 0, device);
+    aicore_depth_options* opts = aicore_depth_options_new();
+    if (!opts) return nullptr;
+    aicore_depth_options_set_device(opts, device);
+    aicore_depth_ctx* ctx =
+            metric && metric[0]
+                    ? aicore_depth_load_nested_opts(anyview_or_model, metric,
+                                                    opts)
+                    : aicore_depth_load_opts(anyview_or_model, opts);
+    aicore_depth_options_free(opts);
+    return ctx;
 }
 
 }  // namespace

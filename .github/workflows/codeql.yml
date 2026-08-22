@@ -250,6 +250,9 @@ jobs:
             -DPLUGIN_STANDARD_QFACEDETECT=OFF \
             -DPLUGIN_STANDARD_QFREESPLATTER=OFF \
             -DPLUGIN_STANDARD_QLIGHTGLUE=OFF \
+            -DPLUGIN_STANDARD_QRFDETR=OFF \
+            -DPLUGIN_STANDARD_QRMBG=OFF \
+            -DPLUGIN_STANDARD_QYOLO=OFF \
             ..
 
       # Initialize CodeQL AFTER configure, so only the build (actual compilation) is traced.

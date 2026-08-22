@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "tensor_ops.hpp"
+#include "tasks/aliked/tensor_ops.hpp"
 
 #include <algorithm>
 #include <cmath>

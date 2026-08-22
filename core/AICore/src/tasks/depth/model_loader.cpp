@@ -5,23 +5,25 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "model_loader.hpp"
+#include "tasks/depth/model_loader.hpp"
 
 #include <utility>
 
-#include "backend.hpp"
-#include "common.hpp"
-#include "compute_mode.hpp"
-#include "depth_gguf_keys.h"
 #include "ggml-backend.h"
+#include "tasks/depth/backend.hpp"
+#include "tasks/depth/common.hpp"
+#include "tasks/depth/compute_mode.hpp"
+#include "tasks/depth/depth_gguf_keys.h"
 
 namespace aicore {
 namespace depth {
 
-// --- Global GPU compute-mode flag (see compute_mode.hpp) -------------------
-static bool g_gpu_mode = false;
-void set_gpu_mode(bool on) { g_gpu_mode = on; }
-bool gpu_mode() { return g_gpu_mode; }
+namespace {
+thread_local bool g_compat_gpu_mode = false;
+}
+
+void set_gpu_mode(bool on) { g_compat_gpu_mode = on; }
+bool gpu_mode() { return g_compat_gpu_mode; }
 
 // Weights read directly on the HOST via ->data during graph build (they feed
 // host-computed graph INPUTS, not graph nodes), so they MUST stay in
@@ -34,6 +36,15 @@ bool gpu_mode() { return g_gpu_mode; }
 // (The metric branch aliases m_vit.* -> vit.* so the same names apply.)
 static bool is_host_read_tensor(const std::string& name) {
     return name == "vit.pos_embed" || name == "vit.camera_token";
+}
+
+// The CUDA q4_k MMQ path is fast, but its accumulated error is too large for
+// the depth confidence head. Keep the inference graph on the selected GPU and
+// dequantize only this format while uploading the resident weights. Other
+// formats (including q8_0 and f16) retain their native representation and
+// performance characteristics.
+static bool needs_gpu_dequantization(ggml_type type) {
+    return type == GGML_TYPE_Q4_K;
 }
 
 static uint32_t kv_u32(gguf_context* g, const char* k, uint32_t d = 0) {
@@ -277,14 +288,27 @@ bool ModelLoader::offload_weights(Backend& be) {
         DA_ERR("offload_weights: device ctx init failed");
         return false;
     }
+    const auto reset_device_storage = [this]() {
+        if (gpu_buf_) {
+            ggml_backend_buffer_free(gpu_buf_);
+            gpu_buf_ = nullptr;
+        }
+        if (device_ctx_) {
+            ggml_free(device_ctx_);
+            device_ctx_ = nullptr;
+        }
+    };
 
     std::vector<std::pair<ggml_tensor*, const void*>> ups;
     ups.reserve(n);
+    std::vector<std::vector<float>> dequantized;
+    dequantized.reserve(n);
     std::unordered_map<ggml_tensor*, ggml_tensor*> src2dev;
     src2dev.reserve(n);
     std::unordered_map<std::string, ggml_tensor*> newmap;
     newmap.reserve(n);
     size_t n_dev = 0;
+    size_t n_dequantized = 0;
     for (auto& kv : tensors_) {
         if (is_host_read_tensor(kv.first)) {
             newmap.emplace(kv.first, kv.second);  // keep host tensor as-is
@@ -296,26 +320,55 @@ bool ModelLoader::offload_weights(Backend& be) {
             newmap.emplace(kv.first, it->second);
             continue;
         }
+        const bool dequantize = needs_gpu_dequantization(s->type);
+        ggml_type device_type = dequantize ? GGML_TYPE_F32 : s->type;
         ggml_tensor* d =
-                ggml_new_tensor(device_ctx_, s->type, GGML_MAX_DIMS, s->ne);
+                ggml_new_tensor(device_ctx_, device_type, GGML_MAX_DIMS, s->ne);
+        if (!d) {
+            DA_ERR("offload_weights: device tensor allocation failed for %s",
+                   s->name);
+            reset_device_storage();
+            return false;
+        }
         ggml_set_name(d, s->name);
         src2dev.emplace(s, d);
         newmap.emplace(kv.first, d);
-        ups.emplace_back(d, s->data);  // host source bytes in ctx_
+        if (dequantize) {
+            std::vector<float>& values = dequantized.emplace_back();
+            const int64_t elements = ggml_nelements(s);
+            const ggml_type_traits* traits = ggml_get_type_traits(s->type);
+            if (!traits || !traits->to_float || elements <= 0) {
+                DA_ERR("offload_weights: cannot dequantize %s", s->name);
+                reset_device_storage();
+                return false;
+            }
+            values.resize(static_cast<size_t>(elements));
+            traits->to_float(s->data, values.data(), elements);
+            ups.emplace_back(d, values.data());
+            ++n_dequantized;
+        } else {
+            ups.emplace_back(d, s->data);  // host source bytes in ctx_
+        }
         ++n_dev;
     }
     gpu_buf_ = ggml_backend_alloc_ctx_tensors(device_ctx_, backend);
     if (!gpu_buf_) {
         DA_ERR("offload_weights: alloc_ctx_tensors failed");
+        reset_device_storage();
         return false;
     }
     for (auto& pr : ups)
         ggml_backend_tensor_set(pr.first, pr.second, 0, ggml_nbytes(pr.first));
+    // q4_k upload sources are temporary dequantized host buffers. Some
+    // accelerator backends enqueue tensor_set copies, so keep those buffers
+    // alive until the transfer queue has consumed them.
+    ggml_backend_synchronize(backend);
     tensors_.swap(newmap);  // graphs now reference the device-resident weights
     DA_DEBUG_LOG(
-            "offload_weights: %zu weights -> %s (%zu host-read tensors kept on "
-            "CPU)",
-            n_dev, be.device_name().c_str(), tensors_.size() - n_dev);
+            "offload_weights: %zu weights -> %s (%zu q4_k weights dequantized "
+            "to F32, %zu host-read tensors kept on CPU)",
+            n_dev, be.device_name().c_str(), n_dequantized,
+            tensors_.size() - n_dev);
     return true;
 }
 }  // namespace depth

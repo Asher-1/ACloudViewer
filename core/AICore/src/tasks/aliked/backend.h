@@ -12,7 +12,7 @@
 #include <functional>
 #include <string>
 
-#include "ggml_backend_registry.hpp"
+#include "common/ggml_backend_registry.hpp"
 
 struct ggml_cgraph;
 

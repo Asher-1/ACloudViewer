@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "preprocess.hpp"
+#include "tasks/depth/preprocess.hpp"
 
 #include <algorithm>
 #include <cmath>

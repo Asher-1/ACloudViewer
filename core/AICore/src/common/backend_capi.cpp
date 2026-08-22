@@ -15,7 +15,7 @@
 #include <utility>
 #include <vector>
 
-#include "ggml_backend_utils.hpp"
+#include "common/ggml_backend_utils.hpp"
 
 #if defined(AICORE_CUDA_STATIC_LINKED)
 #include <cuda_runtime.h>
@@ -220,6 +220,19 @@ bool FillModelDeviceInfo(enum aicore_model_kind model,
             minimum = 128ull * 1024 * 1024;
             recommended = 512ull * 1024 * 1024;
             break;
+        case AICORE_MODEL_RFDETR:
+            // RF-DETR F16 (e.g. base) is ~64 MB; working set dominated by the
+            // ~2 GB of intermediate tensors at 640x640 (compact gallocr reuse
+            // shrinks the live footprint, but the scratch still needs
+            // headroom).
+            minimum = 512ull * 1024 * 1024;
+            recommended = 2ull * 1024 * 1024 * 1024;
+            break;
+        case AICORE_MODEL_RMBG:
+            // BiRefNet-Swin-L at 1024x1024: encoder activations dominate.
+            minimum = 512ull * 1024 * 1024;
+            recommended = 1536ull * 1024 * 1024;
+            break;
         default:
             return false;
     }
@@ -300,8 +313,20 @@ AICORE_CAPI int aicore_device_available(const char* device) {
 }
 
 AICORE_CAPI unsigned int aicore_device_capabilities(const char* device) {
-    if (!has_device(device)) return 0;
-    const std::string backend = resolved_backend_id(device);
+    const std::string requested =
+            ggml_common::to_lower(device && device[0] ? device : "auto");
+    std::string name;
+    int index = 0;
+    ggml_common::parse_device(requested, name, index);
+    // "gpu" / "auto" (and nullptr) fall back to cpu when no accelerator
+    // exists — same resolution as resolved_backend_id() — so the capability
+    // mask is never zero for a resolvable device name. Concrete backend names
+    // ("cuda", "vulkan", ...) keep their original semantics: 0 when absent.
+    if (name != "gpu" && name != "auto" && !name.empty() &&
+        !has_device(requested.c_str())) {
+        return 0;
+    }
+    const std::string backend = resolved_backend_id(requested.c_str());
     unsigned int caps =
             AICORE_BACKEND_CAP_COMPUTE | AICORE_BACKEND_CAP_TASK_CANCEL;
     if (backend != "cpu") {

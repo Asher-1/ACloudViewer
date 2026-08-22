@@ -151,23 +151,29 @@ DA3Worker::CtxGuard DA3Worker::loadModel() {
     const QByteArray device = m_settings.device.trimmed().isEmpty()
                                       ? QByteArray("auto")
                                       : m_settings.device.trimmed().toUtf8();
+    aicore_depth_options* opts = aicore_depth_options_new();
+    if (!opts) {
+        emit logMessage("[Error] Failed to allocate load options.");
+        return g;
+    }
+    aicore_depth_options_set_threads(opts, m_settings.threads);
+    aicore_depth_options_set_device(opts, device.constData());
     if (!m_settings.metricModelPath.isEmpty()) {
         if (!QFile::exists(m_settings.metricModelPath)) {
+            aicore_depth_options_free(opts);
             emit logMessage(QString("[Error] Metric model file not found: %1")
                                     .arg(m_settings.metricModelPath));
             return g;
         }
         emit logMessage("[DA3] Loading nested model (anyview + metric)...");
-        g.ctx = aicore_depth_load_nested_device(
+        g.ctx = aicore_depth_load_nested_opts(
                 modelPath.toStdString().c_str(),
-                m_settings.metricModelPath.toStdString().c_str(),
-                m_settings.threads, device.constData());
+                m_settings.metricModelPath.toStdString().c_str(), opts);
     } else {
         emit logMessage("[DA3] Loading model: " + modelPath);
-        g.ctx = aicore_depth_load_device(modelPath.toStdString().c_str(),
-                                         m_settings.threads,
-                                         device.constData());
+        g.ctx = aicore_depth_load_opts(modelPath.toStdString().c_str(), opts);
     }
+    aicore_depth_options_free(opts);
     if (!g.ctx) {
         emit logMessage(QString("[Error] Failed to load model (GGUF parse or "
                                 "GPU offload failed): %1")
@@ -232,7 +238,7 @@ bool DA3Worker::runDepthSingle() {
         std::copy(depth, depth + h * w, res.depth.begin());
         res.hasPose = false;
         res.runtimeMs = inferTimer.elapsed();
-        aicore_depth_free_floats(depth);
+        aicore_depth_free_buffer(depth);
 
         float dmin = *std::min_element(res.depth.begin(), res.depth.end());
         float dmax = *std::max_element(res.depth.begin(), res.depth.end());
@@ -282,9 +288,17 @@ bool DA3Worker::runDepthPose() {
         const std::string pathStr = m_settings.inputPaths[i].toStdString();
         QElapsedTimer inferTimer;
         inferTimer.start();
-        const int ret = aicore_depth_depth_dense(
-                guard.ctx, pathStr.c_str(), &h, &w, &depth_ptr, &conf_ptr,
-                &sky_ptr, ext, intr, &is_metric);
+        aicore_depth_dense_result dense{};
+        const int ret =
+                aicore_depth_depth_dense(guard.ctx, pathStr.c_str(), &dense);
+        h = dense.height;
+        w = dense.width;
+        depth_ptr = dense.depth;
+        conf_ptr = dense.conf;
+        sky_ptr = dense.sky;
+        std::copy(dense.ext, dense.ext + 12, ext);
+        std::copy(dense.intr, dense.intr + 9, intr);
+        is_metric = dense.is_metric;
         emit progressUpdate(pctNext, 100);
         if (ret != 0 || !depth_ptr) {
             const char* err = aicore_depth_last_error(guard.ctx);
@@ -293,9 +307,7 @@ bool DA3Worker::runDepthPose() {
                                     .arg(err && err[0]
                                                  ? QString(" — %1").arg(err)
                                                  : QString()));
-            if (depth_ptr) aicore_depth_free_floats(depth_ptr);
-            if (conf_ptr) aicore_depth_free_floats(conf_ptr);
-            if (sky_ptr) aicore_depth_free_floats(sky_ptr);
+            aicore_depth_dense_result_free(&dense);
             continue;
         }
         ++okCount;
@@ -323,9 +335,7 @@ bool DA3Worker::runDepthPose() {
                                 .arg(intr[0], 0, 'f', 2)
                                 .arg(intr[4], 0, 'f', 2));
 
-        aicore_depth_free_floats(depth_ptr);
-        if (conf_ptr) aicore_depth_free_floats(conf_ptr);
-        if (sky_ptr) aicore_depth_free_floats(sky_ptr);
+        aicore_depth_dense_result_free(&dense);
 
         emit depthResultReady(res);
     }
@@ -360,18 +370,21 @@ bool DA3Worker::runDepthMultiView() {
         cpaths[i] = paths[i].c_str();
     }
 
-    int h = 0, w = 0, out_n = 0;
-    std::vector<float> ext(n * 12), intr(n * 9);
+    aicore_depth_multiview_result mv{};
     QElapsedTimer inferTimer;
     inferTimer.start();
-    float* depth =
-            aicore_depth_depth_pose_multi(guard.ctx, cpaths.data(), n, &h, &w,
-                                          &out_n, ext.data(), intr.data());
+    const int mv_rc =
+            aicore_depth_depth_pose_multi(guard.ctx, cpaths.data(), n, &mv);
     const qint64 multiRuntimeMs = inferTimer.elapsed();
+    const int out_n = mv.n_views;
+    const int h = mv.height;
+    const int w = mv.width;
+    const float* depth = mv.depth;
     const double perViewRuntimeMs =
             out_n > 0 ? static_cast<double>(multiRuntimeMs) / out_n : 0.0;
-    if (!depth) {
+    if (mv_rc != 0 || !depth) {
         emit logMessage("[Error] Multi-view failed.");
+        aicore_depth_multiview_result_free(&mv);
         return false;
     }
 
@@ -390,15 +403,13 @@ bool DA3Worker::runDepthMultiView() {
         std::copy(depth + i * h * w, depth + (i + 1) * h * w,
                   res.depth.begin());
         res.hasPose = true;
-        std::copy(ext.data() + i * 12, ext.data() + (i + 1) * 12,
-                  res.extrinsics);
-        std::copy(intr.data() + i * 9, intr.data() + (i + 1) * 9,
-                  res.intrinsics);
+        std::copy(mv.ext + i * 12, mv.ext + (i + 1) * 12, res.extrinsics);
+        std::copy(mv.intr + i * 9, mv.intr + (i + 1) * 9, res.intrinsics);
         res.runtimeMs = perViewRuntimeMs;
         emit depthResultReady(res);
     }
 
-    aicore_depth_free_floats(depth);
+    aicore_depth_multiview_result_free(&mv);
     emit logMessage("[DA3] Multi-view complete.");
     return true;
 }
@@ -457,10 +468,10 @@ bool DA3Worker::runReconstruct() {
         }
     }
 
-    aicore_depth_free_floats(means);
-    aicore_depth_free_floats(scales);
-    aicore_depth_free_floats(harmonics);
-    aicore_depth_free_floats(opacities);
+    aicore_depth_free_buffer(means);
+    aicore_depth_free_buffer(scales);
+    aicore_depth_free_buffer(harmonics);
+    aicore_depth_free_buffer(opacities);
 
     emit reconResultReady(res);
     emit logMessage("[DA3] Reconstruction complete.");
@@ -549,7 +560,7 @@ bool DA3Worker::runModelInfo() {
     char* info = aicore_depth_info_json(guard.ctx);
     if (info) {
         emit modelInfoReady(QString::fromUtf8(info));
-        aicore_depth_free_string(info);
+        aicore_depth_free_buffer(info);
         return true;
     }
     emit logMessage("[DA3] No info available.");

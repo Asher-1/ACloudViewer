@@ -19,8 +19,8 @@
 #include <fstream>
 #include <vector>
 
-#include "parity.hpp"
-#include "ray_pose.hpp"
+#include "tasks/depth/ray_pose.hpp"
+#include "tests/depth/whitebox/parity.hpp"
 
 using aicore::depth::RayPoseOut;
 using aicore::depth::RayPoseParams;

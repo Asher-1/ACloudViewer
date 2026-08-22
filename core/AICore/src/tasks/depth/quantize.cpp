@@ -16,7 +16,7 @@
 // vit.camera_token MUST stay f32 or the loader / conv / host paths break.
 // Everything that isn't an allowlisted matmul weight is copied through
 // unchanged.
-#include "quantize.hpp"
+#include "tasks/depth/quantize.hpp"
 
 #include <cstdint>
 #include <cstdio>
@@ -24,9 +24,9 @@
 #include <regex>
 #include <vector>
 
-#include "common.hpp"
 #include "ggml.h"
 #include "gguf.h"
+#include "tasks/depth/common.hpp"
 
 namespace aicore {
 namespace depth {

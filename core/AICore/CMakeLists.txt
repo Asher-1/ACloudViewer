@@ -7,6 +7,9 @@
 #   src/tasks/aliked/     — ALIKED feature extraction
 #   src/tasks/deeplsd/    — DeepLSD line extraction
 #   src/tasks/facedetect/ — face detection, alignment, embedding
+#   src/tasks/rfdetr/     — RF-DETR object detection / segmentation
+#   src/tasks/rmbg/       — RMBG-2.0 background removal (foundational matte)
+#   src/tasks/yolo/       — YOLO object detection / metric depth (ultralytics-ggml port)
 #   src/common/           — shared utilities (data paths, ggml helpers, logging)
 #
 # Build:   libAICore.so
@@ -25,7 +28,7 @@ if(NOT TARGET 3rdparty_ggml)
 endif()
 
 project(AICore
-    DESCRIPTION "Unified AI inference core — depth + gaussian + lightglue + aliked + deeplsd + facedetect"
+    DESCRIPTION "Unified AI inference core — depth + gaussian + lightglue + aliked + deeplsd + facedetect + rfdetr + rmbg + yolo"
     LANGUAGES CXX
 )
 
@@ -38,6 +41,9 @@ set(AICORE_LIGHTGLUE_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/lightglue)
 set(AICORE_DEEPLSD_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/deeplsd)
 set(AICORE_ALIKED_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/aliked)
 set(AICORE_FACEDETECT_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/facedetect)
+set(AICORE_RFDETR_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/rfdetr)
+set(AICORE_RMBG_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/rmbg)
+set(AICORE_YOLO_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/yolo)
 
 if(NOT EXISTS ${AICORE_DEPTH_SRC_DIR}/engine.cpp)
     message(WARNING "AICore: depth module not found at ${AICORE_DEPTH_SRC_DIR}")
@@ -68,6 +74,9 @@ file(GLOB LIGHTGLUE_HEADERS ${AICORE_LIGHTGLUE_SRC_DIR}/*.hpp)
 file(GLOB AICORE_DEEPLSD_SOURCES ${AICORE_DEEPLSD_SRC_DIR}/*.cpp)
 file(GLOB AICORE_ALIKED_SOURCES ${AICORE_ALIKED_SRC_DIR}/*.cpp)
 file(GLOB AICORE_FACEDETECT_SOURCES ${AICORE_FACEDETECT_SRC_DIR}/*.cpp)
+file(GLOB AICORE_RFDETR_SOURCES ${AICORE_RFDETR_SRC_DIR}/*.cpp)
+file(GLOB AICORE_RMBG_SOURCES ${AICORE_RMBG_SRC_DIR}/*.cpp)
+file(GLOB AICORE_YOLO_SOURCES ${AICORE_YOLO_SRC_DIR}/*.cpp)
 file(GLOB AICORE_API_HEADERS ${AICORE_INC_DIR}/aicore/*.h)
 
 if(NOT EXISTS ${AICORE_DEEPLSD_SRC_DIR}/deeplsd_extractor.cpp)
@@ -79,15 +88,14 @@ endif()
 if(NOT EXISTS ${AICORE_FACEDETECT_SRC_DIR}/model.cpp)
     message(FATAL_ERROR "AICore: missing FaceDetect module at ${AICORE_FACEDETECT_SRC_DIR}")
 endif()
-
-# JPEG: FaceDetect decodes JPEG via the bundled libjpeg-turbo only. Never
-# call find_package(JPEG) here — that searches a system-installed JPEG, whose
-# headers (/usr/include/jpeglib.h) and ABI may mismatch the vendored build.
-# 3rdparty_jpeg (created by 3rdparty/find_dependencies.cmake) carries both the
-# include dirs and the static lib, and is linked below.
-if(NOT TARGET 3rdparty_jpeg)
-    message(FATAL_ERROR "AICore requires the 3rdparty_jpeg target (bundled libjpeg-turbo); "
-                        "3rdparty/find_dependencies.cmake must run before core/AICore")
+if(NOT EXISTS ${AICORE_RFDETR_SRC_DIR}/rfdetr_model.cpp)
+    message(FATAL_ERROR "AICore: missing RF-DETR module at ${AICORE_RFDETR_SRC_DIR}")
+endif()
+if(NOT EXISTS ${AICORE_RMBG_SRC_DIR}/rmbg_graph.cpp)
+    message(FATAL_ERROR "AICore: missing RMBG module at ${AICORE_RMBG_SRC_DIR}")
+endif()
+if(NOT EXISTS ${AICORE_YOLO_SRC_DIR}/yolo_graph.cpp)
+    message(FATAL_ERROR "AICore: missing YOLO module at ${AICORE_YOLO_SRC_DIR}")
 endif()
 
 add_library(${PROJECT_NAME} SHARED
@@ -98,6 +106,9 @@ add_library(${PROJECT_NAME} SHARED
     ${AICORE_DEEPLSD_SOURCES}
     ${AICORE_ALIKED_SOURCES}
     ${AICORE_FACEDETECT_SOURCES}
+    ${AICORE_RFDETR_SOURCES}
+    ${AICORE_RMBG_SOURCES}
+    ${AICORE_YOLO_SOURCES}
     ${AICORE_API_HEADERS}
 )
 
@@ -138,6 +149,7 @@ target_include_directories(${PROJECT_NAME}
         $<BUILD_INTERFACE:${AICORE_INC_DIR}>
         $<INSTALL_INTERFACE:include/AICore>
     PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${AICORE_COMMON_SRC_DIR}
         ${AICORE_TASKS_SRC_DIR}
         ${AICORE_DEPTH_SRC_DIR}
@@ -149,13 +161,14 @@ target_include_directories(${PROJECT_NAME}
         ${AICORE_ALIKED_SRC_DIR}/vulkan
         ${AICORE_ALIKED_SRC_DIR}/include
         ${AICORE_FACEDETECT_SRC_DIR}
+        ${AICORE_RFDETR_SRC_DIR}
+        ${AICORE_RMBG_SRC_DIR}
+        ${AICORE_YOLO_SRC_DIR}
 )
 
 add_dependencies(${PROJECT_NAME} 3rdparty_ggml)
 # Build: ggml headers/targets stay PRIVATE (see AICore/README.md).
-# JPEG comes exclusively from the project-internal 3rdparty_jpeg (libjpeg-turbo)
-# target — no system JPEG is ever searched or linked.
-target_link_libraries(${PROJECT_NAME} PRIVATE 3rdparty_ggml PRIVATE 3rdparty_jpeg)
+target_link_libraries(${PROJECT_NAME} PRIVATE 3rdparty_ggml)
 find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
     if(MSVC)
@@ -183,7 +196,6 @@ if(GGML_DYNAMIC_BACKENDS AND UNIX AND NOT APPLE AND NOT MSVC)
     add_library(AICore_capi_link INTERFACE)
     target_link_options(AICore_capi_link INTERFACE "-Wl,--allow-shlib-undefined")
 endif()
-target_compile_definitions(${PROJECT_NAME} PRIVATE FACEDETECT_HAVE_LIBJPEG=1)
 if(DEFINED GGML_INCLUDE_DIRS)
     target_include_directories(${PROJECT_NAME} PRIVATE ${GGML_INCLUDE_DIRS})
 endif()
@@ -394,6 +406,9 @@ if(AICore_BUILD_TESTS)
             ${GAUSSIAN_SOURCES}
             ${LIGHTGLUE_SOURCES}
             ${AICORE_FACEDETECT_SOURCES}
+            ${AICORE_RFDETR_SOURCES}
+            ${AICORE_RMBG_SOURCES}
+            ${AICORE_YOLO_SOURCES}
         )
         list(FILTER AICORE_TEST_SOURCES EXCLUDE REGEX
              ".*/(capi|image_depth)\\.cpp$")
@@ -411,12 +426,16 @@ if(AICore_BUILD_TESTS)
         )
         target_include_directories(AICore_test PUBLIC
             $<BUILD_INTERFACE:${AICORE_INC_DIR}>
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
             $<BUILD_INTERFACE:${AICORE_COMMON_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_TASKS_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_DEPTH_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_GAUSSIAN_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_LIGHTGLUE_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_FACEDETECT_SRC_DIR}>
+            $<BUILD_INTERFACE:${AICORE_RFDETR_SRC_DIR}>
+            $<BUILD_INTERFACE:${AICORE_RMBG_SRC_DIR}>
+            $<BUILD_INTERFACE:${AICORE_YOLO_SRC_DIR}>
         )
         add_dependencies(AICore_test 3rdparty_ggml)
         target_link_libraries(AICore_test PUBLIC 3rdparty_ggml CVCoreLib)
@@ -448,7 +467,7 @@ if(AICore_BUILD_TESTS)
     message(STATUS "AICore: contract tests enabled")
 endif()
 
-message(STATUS "AICore (SHARED): tasks/depth + tasks/gaussian + tasks/lightglue + tasks/deeplsd + tasks/facedetect, ggml linked once")
+message(STATUS "AICore (SHARED): tasks/depth + tasks/gaussian + tasks/lightglue + tasks/deeplsd + tasks/facedetect + tasks/rfdetr + tasks/rmbg + tasks/yolo, ggml linked once")
 
 add_executable(aicore_gguf_quantize tools/aicore_gguf_quantize.cpp)
 target_link_libraries(aicore_gguf_quantize PRIVATE AICore)

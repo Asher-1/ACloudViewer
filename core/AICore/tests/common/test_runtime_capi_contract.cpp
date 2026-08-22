@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <thread>
 
+#include "aicore/backend_capi.h"
 #include "aicore/runtime_capi.h"
 
 namespace {
@@ -20,6 +21,17 @@ int Fail(const char* message) {
 }
 
 }  // namespace
+
+// The legacy process-wide cancel / inference-lock entry points are marked
+// AICORE_LEGACY_API (deprecated). This contract test intentionally verifies
+// they still work, so suppress the deprecation warnings for the whole file.
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#elif defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4996)
+#endif
 
 int main() {
     aicore_cancel_token* outer = aicore_cancel_token_new();
@@ -84,5 +96,38 @@ int main() {
 
     aicore_cancel_token_free(inner);
     aicore_cancel_token_free(outer);
+
+    // Global serial inference lock: acquire, hold, try, release.
+    if (aicore_inference_lock() != 0) return Fail("inference lock failed");
+    if (aicore_inference_try_lock() != -1) {
+        aicore_inference_unlock();
+        return Fail("nested inference lock unexpectedly succeeded");
+    }
+    aicore_inference_unlock();
+    if (aicore_inference_try_lock() != 0) {
+        return Fail("inference try-lock failed after unlock");
+    }
+    aicore_inference_unlock();
+
+    // Device capability bitmask: "cpu" is compute+cancel (no GPU bits).
+    // "gpu" may resolve to a real accelerator when present, or fall back to
+    // cpu on runners without one — either way the mask must be non-zero.
+    // nullptr is treated as "auto" by the runtime (documented contract), so
+    // it must also resolve to a non-zero mask.
+    if (aicore_device_capabilities("cpu") == 0) {
+        return Fail("cpu capabilities unresolved");
+    }
+    if (aicore_device_capabilities("gpu") == 0) {
+        return Fail("gpu capabilities unresolved");
+    }
+    if (aicore_device_capabilities(nullptr) == 0) {
+        return Fail("null (auto) capabilities unresolved");
+    }
     return 0;
 }
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
+#pragma warning(pop)
+#endif

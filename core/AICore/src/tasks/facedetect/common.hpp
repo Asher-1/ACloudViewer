@@ -1,7 +1,12 @@
 #pragma once
 #include <cstdio>
 #include <cstdlib>
-#define FD_LOG(...)  do { std::fprintf(stderr, "[facedetect] " __VA_ARGS__); std::fprintf(stderr, "\n"); } while (0)
+#include "common/aicore_log.hpp"
+
+
+// Routed through the shared AICore log gate (CVLog when built into
+// ACloudViewer, stderr otherwise).
+#define FD_LOG(...) AICORE_LOG_PRINT("[facedetect] ", __VA_ARGS__)
 
 // Hard runtime precondition: log the failed expression with file:line and abort.
 // Used for invariants whose violation would silently corrupt results (e.g. a
@@ -9,8 +14,8 @@
 #define FD_ASSERT(cond) \
     do { \
         if (!(cond)) { \
-            std::fprintf(stderr, "[facedetect] assertion failed: %s (%s:%d)\n", \
-                         #cond, __FILE__, __LINE__); \
+            AICORE_LOG_ERROR("[facedetect] assertion failed: %s (%s:%d)", \
+                             #cond, __FILE__, __LINE__); \
             std::abort(); \
         } \
     } while (0)

@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "preprocess.hpp"
+#include "tasks/facedetect/preprocess.hpp"
 
 namespace fd {
 

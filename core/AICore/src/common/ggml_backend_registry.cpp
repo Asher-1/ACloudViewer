@@ -5,14 +5,14 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "ggml_backend_registry.hpp"
+#include "common/ggml_backend_registry.hpp"
 
 #include <algorithm>
 #include <cstdlib>
 #include <mutex>
 #include <unordered_map>
 
-#include "ggml_backend_utils.hpp"
+#include "common/ggml_backend_utils.hpp"
 
 namespace aicore {
 namespace runtime {
@@ -176,6 +176,17 @@ BackendLeaseLock lock_backend_leases(const std::vector<BackendLease>& leases) {
         result.locks_.emplace_back(state->execution_mutex);
     }
     return result;
+}
+
+void purge_inactive_backend_leases() {
+    std::lock_guard<std::mutex> lock(g_registry_mutex);
+    for (auto it = g_registry.begin(); it != g_registry.end();) {
+        if (it->second.expired()) {
+            it = g_registry.erase(it);
+        } else {
+            ++it;
+        }
+    }
 }
 
 }  // namespace runtime

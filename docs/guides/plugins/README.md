@@ -14,7 +14,7 @@ ACloudViewer provides five AI plugins through the unified inference library **`l
 
 - `-DAICore_ENABLED=ON` (build `core/AICore` → `libAICore.so`)
 - GUI: `-DBUILD_GUI=ON`
-- **qFaceDetect:** system libjpeg (e.g. `libjpeg-dev` on Ubuntu)
+- **qFaceDetect:** image decode via Qt built-in codecs (no system libjpeg needed)
 - **qDA3 + automatic reconstruction:** `-DBUILD_RECONSTRUCTION=ON`
 - **FreeSplatter one-click Visualize:** `-DPLUGIN_STANDARD_QSIBR=ON` (Linux/Windows; macOS CI disables qSIBR by default)
 - **FreeSplatter Face Capture tab:** `-DBUILD_OPENCV=ON` (webcam + Haar or GGML face detector via AICore; GGUF packs from [qFaceDetect release](https://github.com/Asher-1/cloudViewer_downloads/releases/tag/qFaceDetect))
@@ -31,6 +31,9 @@ cmake -B build_app \
   -DPLUGIN_STANDARD_QFACEDETECT=ON \
   -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
   -DPLUGIN_STANDARD_QFREESPLATTER=ON \
+  -DPLUGIN_STANDARD_QRFDETR=ON \
+  -DPLUGIN_STANDARD_QRMBG=ON \
+  -DPLUGIN_STANDARD_QYOLO=ON \
   -DPLUGIN_STANDARD_QSIBR=ON \
   -DBUILD_RECONSTRUCTION=ON \
   .
@@ -40,6 +43,6 @@ cmake --build build_app --target ACloudViewer QDA3_PLUGIN QFACEDETECT_PLUGIN QFR
 
 ## More resources
 
-- Full plugin READMEs (developer details, tests, C API): [`plugins/core/Standard/qDA3/README.md`](../../../plugins/core/Standard/qDA3/README.md), [`plugins/core/Standard/qDeepLSD/README.md`](../../../plugins/core/Standard/qDeepLSD/README.md), [`plugins/core/Standard/qFaceDetect/README.md`](../../../plugins/core/Standard/qFaceDetect/README.md), [`plugins/core/Standard/qLightGlue/README.md`](../../../plugins/core/Standard/qLightGlue/README.md), [`plugins/core/Standard/qFreeSplatter/README.md`](../../../plugins/core/Standard/qFreeSplatter/README.md)
-- Plugin catalog: [`plugins/README.md`](../../../plugins/README.md)
+- Full plugin READMEs (developer details, tests, C API): [`plugins/core/Standard/qDA3/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qDA3/README.md), [`plugins/core/Standard/qDeepLSD/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qDeepLSD/README.md), [`plugins/core/Standard/qFaceDetect/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qFaceDetect/README.md), [`plugins/core/Standard/qLightGlue/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qLightGlue/README.md), [`plugins/core/Standard/qFreeSplatter/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qFreeSplatter/README.md)
+- Plugin catalog: [`plugins/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/README.md)
 - Sphinx doc build syncs the above READMEs into `docs/source/plugins/` (see `docs/source/conf.py`)

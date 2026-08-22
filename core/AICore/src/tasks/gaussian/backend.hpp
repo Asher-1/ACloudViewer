@@ -8,7 +8,8 @@
 #include <string>
 #include <vector>
 
-#include "ggml_backend_registry.hpp"
+#include "common/ggml_backend_registry.hpp"
+
 
 namespace aicore {
 namespace gaussian {

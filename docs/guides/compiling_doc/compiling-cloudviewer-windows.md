@@ -1,6 +1,6 @@
 # Building ACloudViewer from Source on Windows
 
-> **Automated build script:** `[scripts/build_win.py](../../../scripts/build_win.py)`
+> **Automated build script:** `[scripts/build_win.py](https://github.com/Asher-1/ACloudViewer/blob/main/scripts/build_win.py)`
 >
 > ```powershell
 > python .\scripts\build_win.py
@@ -170,6 +170,9 @@ cmake -G $env:GENERATOR -A $env:ARCHITECTURE `
     -DPLUGIN_STANDARD_QFACEDETECT=ON `
     -DPLUGIN_STANDARD_QFREESPLATTER=ON `
     -DPLUGIN_STANDARD_QLIGHTGLUE=ON `
+    -DPLUGIN_STANDARD_QRFDETR=ON `
+    -DPLUGIN_STANDARD_QRMBG=ON `
+    -DPLUGIN_STANDARD_QYOLO=ON `
     -DPLUGIN_PYTHON=ON `
     -DBUILD_PYTHON_MODULE=ON `
     ..
@@ -340,6 +343,9 @@ cmake -DAICore_ENABLED=ON `
       -DPLUGIN_STANDARD_QFACEDETECT=ON `
       -DPLUGIN_STANDARD_QFREESPLATTER=ON `
       -DPLUGIN_STANDARD_QLIGHTGLUE=ON `
+      -DPLUGIN_STANDARD_QRFDETR=ON `
+      -DPLUGIN_STANDARD_QRMBG=ON `
+      -DPLUGIN_STANDARD_QYOLO=ON `
       ..
 ```
 
@@ -352,7 +358,7 @@ includes `Include\`) then `util\vulkan\sync_vulkan_env_from_sdk.ps1`. macOS CI b
 AICore with **Metal + CPU only** (Vulkan is unsupported on macOS). Local builds
 can use the same Windows scripts.
 
-See [BUILD.md](../../../BUILD.md) for build-time vs runtime dependency tables.
+See [BUILD.md](https://github.com/Asher-1/ACloudViewer/blob/main/BUILD.md) for build-time vs runtime dependency tables.
 
 ### CUDA / GPU
 

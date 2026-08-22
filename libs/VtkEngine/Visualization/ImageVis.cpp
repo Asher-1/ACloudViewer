@@ -46,6 +46,7 @@
 #include <vtkInteractorObserver.h>
 #include <vtkInteractorStyleImage.h>
 #include <vtkOpenGLRenderWindow.h>
+#include <vtkPropCollection.h>
 #include <vtkQImageToImageSource.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
@@ -269,6 +270,28 @@ void ImageVis::changeOpacity(double opacity, const std::string& viewID) {
     }
 }
 
+bool ImageVis::raiseLayer(const std::string& layer_id) {
+    auto it = m_imageInfoMap.find(layer_id);
+    if (it == m_imageInfoMap.end() || !it->second.imageSlice || !ren_) {
+        return false;
+    }
+
+    // Remember the raised layer so addRGBImage can re-raise it after a
+    // full redraw rebuilds every image slice.
+    m_topMostLayer = layer_id;
+
+    vtkImageSlice* imageSlice = it->second.imageSlice;
+    // vtkRenderer draws ViewProps in insertion order.  Only re-order when
+    // the slice is not already the last (topmost) prop, so repeatedly
+    // selecting the same image costs nothing.
+    if (ren_->GetViewProps()->GetLastProp() != imageSlice) {
+        ren_->RemoveViewProp(imageSlice);
+        ren_->AddViewProp(imageSlice);
+        imageSlice->Modified();
+    }
+    return true;
+}
+
 void ImageVis::removeAllLayers() {
     std::vector<std::string> ids;
     for (const auto& kv : m_imageInfoMap) ids.push_back(kv.first);
@@ -305,6 +328,10 @@ void ImageVis::removeLayer(const std::string& layer_id) {
     }
 
     m_imageInfoMap.erase(layer_id);
+
+    if (m_topMostLayer == layer_id) {
+        m_topMostLayer.clear();
+    }
 
     if (isImageLayer && m_imageInfoMap.empty() && interactor_ &&
         m_originalInteractorStyle) {
@@ -434,6 +461,19 @@ void ImageVis::addRGBImage(const QImage& qimage,
     info.imageSlice = imageSlice;
     info.imageMapper = mapper;
     m_imageInfoMap[layer_id] = info;
+
+    // A full redraw rebuilds every image slice (drawImage runs for each
+    // entity in DB order), which would otherwise stack the last rebuilt
+    // image on top.  Keep the user-selected topmost layer at the end of
+    // the render order after every rebuild.
+    if (!m_topMostLayer.empty() && m_topMostLayer != layer_id) {
+        auto topIt = m_imageInfoMap.find(m_topMostLayer);
+        if (topIt != m_imageInfoMap.end() && topIt->second.imageSlice &&
+            ren_->GetViewProps()->GetLastProp() != topIt->second.imageSlice) {
+            ren_->RemoveViewProp(topIt->second.imageSlice);
+            ren_->AddViewProp(topIt->second.imageSlice);
+        }
+    }
 }
 
 void ImageVis::addQImage(const QImage& qimage,

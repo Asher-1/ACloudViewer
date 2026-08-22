@@ -5,14 +5,16 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "gpu_sync.hpp"
+#include "tasks/aliked/gpu_sync.hpp"
 
-#include <cstdio>
 #include <exception>
 #include <string>
 
+#include "tasks/aliked/aliked_common.hpp"
+
 #if defined(AICORE_VULKAN_ALIKED)
-#include "vulkan/vulkan_aliked_dispatch.hpp"
+#include "tasks/aliked/vulkan/vulkan_aliked_dispatch.hpp"
+
 #endif
 
 #if defined(AICORE_CUDA_ALIKED)
@@ -49,10 +51,9 @@ void SyncBackendRaw(internal::Backend *backend) {
         }
 #endif
     } catch (const std::exception &e) {
-        std::fprintf(stderr, "[vk-aliked] synchronize: %s\n", e.what());
+        ALIKED_LOG_ERR("synchronize: %s", e.what());
     } catch (...) {
-        std::fprintf(stderr,
-                     "[vk-aliked] synchronize failed with unknown exception\n");
+        ALIKED_LOG_ERR("synchronize failed with unknown exception");
     }
 }
 

@@ -25,9 +25,11 @@
 #include <QMessageBox>
 #include <QScreen>
 #include <QSettings>
+#include <QStandardPaths>
 #include <QStyle>
 #include <QTabBar>
 #include <QTimer>
+#include <QUuid>
 #include <QVBoxLayout>
 #include <cstdio>
 #include <cstdlib>
@@ -37,6 +39,7 @@
 #include "aicore/backend_capi.h"
 #include "aicore/gaussian_capi.h"
 #include "aicore/inference_log.h"
+#include "ecvAICoreUiHelper.h"
 #include "ecvClickableImageLabel.h"
 #include "ecvModelDownloader.h"
 #include "ecvTestDataRepository.h"
@@ -44,26 +47,12 @@ static const char* kDownloadBase =
         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
         "3dgs/";
 
-static const int kThumbSize = 96;
+static const int kThumbSize = ecvAICoreUi::previewSize();
 static const int kThumbCaptionH = 18;
 static const int kThumbRemoveBtnH = 20;
 static const int kThumbTileSpacing = 8;
 static const int kThumbStripHeight =
         kThumbSize + kThumbCaptionH + kThumbRemoveBtnH + kThumbTileSpacing;
-// The capture form is deliberately scrollable.  Keeping the viewport bounded
-// avoids making the reconstruction dialog taller than a typical desktop.
-static const int kFaceCaptureViewportMaxHeight = 560;
-
-// Qt logical coordinates already scale with the active style/font metrics
-// (tab bar heights, size hints, ...), but plain integer clamps do NOT.
-// On a 150%% Windows scaling the logical DPI is 144, so a 220 px chrome
-// estimate must become 330 px.  Multiply every hardcoded pixel by this
-// factor to stay correct across resolutions and per-monitor DPI.
-static int dpiScaled(int px) {
-    const QScreen* screen = QGuiApplication::primaryScreen();
-    const qreal dpi = screen ? screen->logicalDotsPerInch() : 96.0;
-    return qMax(px, qRound(px * dpi / 96.0));
-}
 
 namespace {
 
@@ -141,7 +130,7 @@ QString FreeSplatterDialog::modelCacheDir() {
                 .filePath(QStringLiteral("freesplatter_models"));
     }
     QString result = QString::fromUtf8(dir);
-    aicore_gaussian_free_string(dir);
+    aicore_gaussian_free_buffer(dir);
     return result;
 }
 
@@ -242,13 +231,14 @@ void FreeSplatterDialog::setAppInterface(ecvMainAppInterface* app) {
 
 void FreeSplatterDialog::setupUi() {
     auto* mainLayout = new QVBoxLayout(this);
-    mainLayout->setSpacing(4);
+    ecvAICoreUi::setupTabLayout(mainLayout);
     mainLayout->setSizeConstraint(QLayout::SetNoConstraint);
 
     // --- Model & Mode (merged into one group) ---
     auto* modelGroup = new QGroupBox("Model");
     auto* modelLayout = new QGridLayout(modelGroup);
-    modelLayout->setVerticalSpacing(4);
+    ecvAICoreUi::setupFormGrid(modelLayout);
+    ecvAICoreUi::tightenGroupBox(modelGroup);
 
     auto* pipelineHint = new QLabel(tr(
             "<b>Pipeline:</b> <i>Face detect</i> → <i>Multi-view capture</i> "
@@ -259,7 +249,7 @@ void FreeSplatterDialog::setupUi() {
             "padding: 4px 8px; border-radius: 4px; font-size: 11px;");
     modelLayout->addWidget(pipelineHint, 0, 0, 1, 4);
 
-    modelLayout->addWidget(new QLabel("Mode:"), 1, 0);
+    modelLayout->addWidget(ecvAICoreUi::makeLabel("Mode:"), 1, 0);
     m_modeCombo = new QComboBox;
     m_modeCombo->addItem("3D Reconstruct (Gaussian)",
                          static_cast<int>(Mode::Reconstruct));
@@ -267,7 +257,7 @@ void FreeSplatterDialog::setupUi() {
     connect(m_modeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &FreeSplatterDialog::onModeChanged);
     modelLayout->addWidget(m_modeCombo, 1, 1);
-    modelLayout->addWidget(new QLabel("GGUF:"), 1, 2);
+    modelLayout->addWidget(ecvAICoreUi::makeLabel("GGUF:"), 1, 2);
     m_modelCombo = new QComboBox;
     m_modelCombo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     modelLayout->addWidget(m_modelCombo, 1, 3);
@@ -285,7 +275,7 @@ void FreeSplatterDialog::setupUi() {
         updateRunButtonState();
     });
     customModelLayout->addWidget(m_customModelPath, 1);
-    m_browseCustomModelBtn = new QPushButton("Browse...");
+    m_browseCustomModelBtn = ecvAICoreUi::makeBrowseBtn("Browse...");
     connect(m_browseCustomModelBtn, &QPushButton::clicked, this,
             &FreeSplatterDialog::onBrowseCustomModel);
     customModelLayout->addWidget(m_browseCustomModelBtn);
@@ -301,11 +291,6 @@ void FreeSplatterDialog::setupUi() {
     m_objectHintLabel->setVisible(false);
     modelLayout->addWidget(m_objectHintLabel, 3, 0, 1, 4);
 
-    auto* runtimeRow = new QWidget(modelGroup);
-    auto* runtimeLayout = new QHBoxLayout(runtimeRow);
-    runtimeLayout->setContentsMargins(0, 0, 0, 0);
-    runtimeLayout->setSpacing(8);
-    runtimeLayout->addWidget(new QLabel(tr("Device:")));
     m_deviceCombo = new QComboBox;
     for (int i = 0; i < aicore_device_count(); ++i) {
         const aicore_device_info* d = aicore_device_at(i);
@@ -314,12 +299,12 @@ void FreeSplatterDialog::setupUi() {
     }
     m_deviceCombo->setToolTip(
             tr("Auto tries %1.").arg(aicore_auto_device_order()));
-    runtimeLayout->addWidget(m_deviceCombo, 1);
-    runtimeLayout->addWidget(new QLabel(tr("Threads:")));
     m_threads = new QSpinBox;
     m_threads->setRange(0, 128);
     m_threads->setSpecialValueText("Auto");
-    runtimeLayout->addWidget(m_threads);
+    QWidget* runtimeRow =
+            ecvAICoreUi::makeRuntimeRow(m_deviceCombo, m_threads, modelGroup);
+    auto* runtimeLayout = qobject_cast<QHBoxLayout*>(runtimeRow->layout());
     runtimeLayout->addWidget(new QLabel(tr("Views:")));
     m_maxViewsSpin = new QSpinBox;
     m_maxViewsSpin->setRange(0, 64);
@@ -337,19 +322,21 @@ void FreeSplatterDialog::setupUi() {
     // --- I/O configuration ---
     auto* ioGroup = new QGroupBox("Input / Output");
     auto* ioMainLayout = new QVBoxLayout(ioGroup);
-    ioMainLayout->setSpacing(2);
-    ioMainLayout->setContentsMargins(4, 6, 4, 4);
+    ecvAICoreUi::tightenGroupBox(ioGroup);
 
     m_inputTabWidget = new QTabWidget;
-    m_inputTabWidget->setDocumentMode(true);
-    m_inputTabWidget->tabBar()->setDrawBase(false);
+    ecvAICoreUi::styleTabWidget(m_inputTabWidget);
+    // Expanding lets the active page (and its video preview) grow with the
+    // dialog; the per-tab minimum height is managed by adaptTabWidgetHeight.
+    m_inputTabWidget->setSizePolicy(QSizePolicy::Preferred,
+                                    QSizePolicy::Expanding);
 
     // ---- Tab 0: Images ----
     {
         m_imagesTab = new QWidget;
         auto* imagesLayout = new QVBoxLayout(m_imagesTab);
         imagesLayout->setContentsMargins(2, 2, 2, 2);
-        imagesLayout->setSpacing(2);
+        imagesLayout->setSpacing(ecvAICoreUi::vSpacing());
 
         auto* inputBtnLayout = new QHBoxLayout;
         auto* browseFileBtn = new QPushButton("File...");
@@ -385,23 +372,6 @@ void FreeSplatterDialog::setupUi() {
         imagesLayout->addWidget(m_thumbScroll);
 
         // DB Images collapsible
-        auto* dbRow = new QHBoxLayout;
-        m_dbToggleBtn = new QToolButton;
-        m_dbToggleBtn->setArrowType(Qt::RightArrow);
-        m_dbToggleBtn->setCheckable(true);
-        m_dbToggleBtn->setChecked(false);
-        m_dbToggleBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-        m_dbToggleBtn->setText(tr("DB Images"));
-        m_dbToggleBtn->setCursor(Qt::PointingHandCursor);
-        m_dbToggleBtn->setStyleSheet(
-                "QToolButton { border: none; font-weight: bold; padding: 4px "
-                "6px; "
-                "  border-radius: 3px; color: palette(text); }"
-                "QToolButton:hover { background: palette(midlight); }");
-        dbRow->addWidget(m_dbToggleBtn);
-        dbRow->addStretch();
-        imagesLayout->addLayout(dbRow);
-
         m_dbContentWidget = new QWidget;
         m_dbContentWidget->setStyleSheet(
                 "QWidget#dbContent { "
@@ -411,7 +381,7 @@ void FreeSplatterDialog::setupUi() {
         m_dbContentWidget->setObjectName("dbContent");
         auto* dbCol = new QVBoxLayout(m_dbContentWidget);
         dbCol->setContentsMargins(4, 4, 4, 4);
-        dbCol->setSpacing(4);
+        dbCol->setSpacing(ecvAICoreUi::vSpacing());
         m_dbImageList = new QListWidget;
         m_dbImageList->setSelectionMode(QAbstractItemView::ExtendedSelection);
         // Fixed single-line rows (qDeepLSD style): word-wrapped rows would
@@ -420,7 +390,7 @@ void FreeSplatterDialog::setupUi() {
         m_dbImageList->setUniformItemSizes(true);
         m_dbImageList->setTextElideMode(Qt::ElideMiddle);
         m_dbImageList->setMinimumHeight(72);
-        m_dbImageList->setMaximumHeight(220);
+        m_dbImageList->setMaximumHeight(ecvAICoreUi::dbListMaxHeight());
         m_dbImageList->setAlternatingRowColors(true);
         m_dbImageList->setToolTip(
                 tr("ccImage entities from the DB tree \u2014 check/uncheck to "
@@ -439,18 +409,20 @@ void FreeSplatterDialog::setupUi() {
         m_dbContentWidget->setVisible(false);
         imagesLayout->addWidget(m_dbContentWidget);
 
-        connect(m_dbToggleBtn, &QToolButton::toggled, this,
-                [this](bool checked) {
-                    m_dbToggleBtn->setArrowType(checked ? Qt::DownArrow
-                                                        : Qt::RightArrow);
-                    m_dbContentWidget->setVisible(checked);
-                    // Defer the height re-measure: the layout engine must
-                    // process the visibility change before minimumSizeHint()
-                    // reports the new height.  Synchronous reads during the
-                    // signal handler return stale values on every platform.
-                    QTimer::singleShot(0, this,
-                                       [this]() { adaptTabWidgetHeight(); });
-                });
+        auto* dbRow = new QHBoxLayout;
+        m_dbToggleBtn = ecvAICoreUi::makeDbSection(m_dbContentWidget);
+        dbRow->addWidget(m_dbToggleBtn);
+        dbRow->addStretch();
+        imagesLayout->addLayout(dbRow);
+
+        ecvAICoreUi::connectDbToggle(m_dbToggleBtn, m_dbContentWidget);
+        // Defer the height re-measure: the layout engine must process the
+        // visibility change before minimumSizeHint() reports the new height.
+        // Synchronous reads during the signal handler return stale values on
+        // every platform.
+        connect(m_dbToggleBtn, &QToolButton::toggled, this, [this](bool) {
+            QTimer::singleShot(0, this, [this]() { adaptTabWidgetHeight(); });
+        });
 
         m_inputTabWidget->addTab(m_imagesTab, tr("Images"));
     }
@@ -481,12 +453,19 @@ void FreeSplatterDialog::setupUi() {
                                            QSizePolicy::Expanding);
         // Keep the complete capture form as the scroll area's widget.  The
         // viewport may shrink on small displays, but it must never collapse
-        // the form to zero height.
+        // the form to zero height.  No maximum: the scroll area absorbs the
+        // dialog's leftover height so the video preview inside grows with
+        // the window instead of leaving empty space below the form.
         m_faceCaptureWidget->setSizePolicy(QSizePolicy::Expanding,
                                            QSizePolicy::Preferred);
-        m_faceCaptureScroll->setMinimumHeight(dpiScaled(280));
-        m_faceCaptureScroll->setMaximumHeight(
-                dpiScaled(kFaceCaptureViewportMaxHeight));
+        m_faceCaptureScroll->setMinimumHeight(ecvAICoreUi::dpiScaled(280));
+        // Hard cap on the capture viewport: without it, the video preview's
+        // per-frame pixmap resize feeds back through the scroll area (the
+        // preview grows → the widget sizeHint grows → the dialog is
+        // re-measured larger), retaining every external window enlargement
+        // while a video plays.  560 px bounds the Face Capture tab; the
+        // preview still absorbs leftover space below this cap.
+        m_faceCaptureScroll->setMaximumHeight(ecvAICoreUi::dpiScaled(560));
         m_faceCaptureScroll->setWidget(m_faceCaptureWidget);
         faceLayout->addWidget(m_faceCaptureScroll, 1);
 
@@ -578,6 +557,8 @@ void FreeSplatterDialog::setupUi() {
 
     connect(m_inputTabWidget, &QTabWidget::currentChanged, this,
             [this](int tabIndex) {
+                // The deferred resize uses the minimumSizeHint-derived
+                // chrome, which is stable regardless of the current geometry.
                 // Face Capture tab (index 1): hide reconstruct action buttons
                 // (Run, Visualize, Export, Cancel, Close) and show the
                 // capture-specific buttons (Start/Stop/Restart/Reset) in the
@@ -599,6 +580,12 @@ void FreeSplatterDialog::setupUi() {
                 // signal. Deferring avoids reading the previous page's height
                 // on a quick tab switch, which previously kept the Images tab
                 // at Face Capture size.
+                // Mark the whole tab widget dirty right away: on Windows the
+                // deferred height fix-up re-renders the page area without
+                // clearing the previous page's pixels, leaving the two pages
+                // visually stacked. update() schedules a full repaint that
+                // erases stale content before the resize lands.
+                m_inputTabWidget->update();
                 QTimer::singleShot(0, this,
                                    [this]() { adaptTabWidgetHeight(); });
             });
@@ -606,29 +593,21 @@ void FreeSplatterDialog::setupUi() {
 
     // --- Output settings (compact dual-column) ---
     auto* outputGrid = new QGridLayout;
-    outputGrid->setContentsMargins(0, 2, 0, 0);
-    outputGrid->setHorizontalSpacing(8);
-    outputGrid->setVerticalSpacing(2);
-    outputGrid->setColumnMinimumWidth(0, 74);
-    outputGrid->setColumnMinimumWidth(2, 64);
-    outputGrid->setColumnStretch(1, 1);
-    outputGrid->setColumnStretch(3, 1);
+    ecvAICoreUi::setupFormGrid(outputGrid);
+    outputGrid->setColumnMinimumWidth(0, ecvAICoreUi::dpiScaled(74));
+    outputGrid->setColumnMinimumWidth(2, ecvAICoreUi::dpiScaled(64));
     int row = 0;
 
-    auto* opacityLabel = new QLabel("Opacity:");
-    opacityLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    auto* opacityLabel = ecvAICoreUi::makeLabel("Opacity:");
     outputGrid->addWidget(opacityLabel, row, 0);
     m_opacityThreshold = new QDoubleSpinBox;
     m_opacityThreshold->setRange(0.0, 1.0);
     m_opacityThreshold->setSingleStep(0.01);
     m_opacityThreshold->setValue(0.05);
     m_opacityThreshold->setToolTip("Prune gaussians with opacity <= threshold");
-    m_opacityThreshold->setMinimumWidth(120);
-    m_opacityThreshold->setSizePolicy(QSizePolicy::Expanding,
-                                      QSizePolicy::Fixed);
+    ecvAICoreUi::setCompactDoubleSpin(m_opacityThreshold);
     outputGrid->addWidget(m_opacityThreshold, row, 1);
-    m_exportFieldLabel = new QLabel("Export:");
-    m_exportFieldLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    m_exportFieldLabel = ecvAICoreUi::makeLabel("Export:");
     outputGrid->addWidget(m_exportFieldLabel, row, 2);
     m_exportFieldModeCombo = new QComboBox;
     m_exportFieldModeCombo->addItem(tr("Basic \u2014 XYZ+RGB+Opacity"),
@@ -677,27 +656,18 @@ void FreeSplatterDialog::setupUi() {
     populateModelCombo();
 
     // --- Download / Progress ---
-    m_downloadLabel = new QLabel;
-    m_downloadLabel->setVisible(false);
-    mainLayout->addWidget(m_downloadLabel);
-
     m_taskStatusLabel = new QLabel;
     m_taskStatusLabel->setVisible(false);
     m_taskStatusLabel->setStyleSheet("font-weight: bold; color: #0066cc;");
     mainLayout->addWidget(m_taskStatusLabel);
 
-    m_progressBar = new QProgressBar;
-    m_progressBar->setRange(0, 100);
-    m_progressBar->setValue(0);
-    m_progressBar->setFixedHeight(14);
-    m_progressBar->setTextVisible(false);
-    m_progressBar->setVisible(false);
-    mainLayout->addWidget(m_progressBar);
+    ecvAICoreUi::setupProgressSection(mainLayout, m_downloadLabel,
+                                      m_progressBar);
 
     // --- Buttons ---
     auto* btnLayout = new QHBoxLayout;
 
-    auto* testDataBtn = new QPushButton(QStringLiteral("🧪  Try sample data"));
+    auto* testDataBtn = ecvAICoreUi::makeSampleDataBtn(this);
     testDataBtn->setToolTip(
             tr("Auto-download sample data for the active input tab"));
     connect(testDataBtn, &QPushButton::clicked, this, [this]() {
@@ -781,12 +751,17 @@ void FreeSplatterDialog::adaptTabWidgetHeight() {
     const int tabChrome = m_inputTabWidget->tabBar()->sizeHint().height() +
                           2 * m_inputTabWidget->style()->pixelMetric(
                                       QStyle::PM_DefaultFrameWidth);
-    int contentHeight = current->minimumSizeHint().height();
+    // Use sizeHint: the images tab's minimum is far below what its content
+    // actually needs, and sizing to the minimum inflated the dialog on
+    // every tab switch (the preview then absorbed the surplus as empty
+    // space).
+    int contentHeight = current->sizeHint().height();
     if (current == m_imagesTab) {
         // An empty image tab needs only its commands and thumbnail strip.
         // The clamps are DPI-scaled — on Windows 150%% scaling the raw 150..210
         // range would leave blank space and clip the strip.
-        contentHeight = qBound(dpiScaled(150), contentHeight, dpiScaled(210));
+        contentHeight = qBound(ecvAICoreUi::dpiScaled(150), contentHeight,
+                               ecvAICoreUi::dpiScaled(210));
     } else {
         const QScreen* screen =
                 QGuiApplication::screenAt(frameGeometry().center());
@@ -799,32 +774,94 @@ void FreeSplatterDialog::adaptTabWidgetHeight() {
         const int formHeight =
                 m_faceCaptureWidget ? m_faceCaptureWidget->sizeHint().height()
                                     : contentHeight;
-        const int dialogChrome = height() - m_inputTabWidget->height();
+        // Use the measured invariant chrome (recorded on first show),
+        // not the live geometry: the budget must not feed back into the
+        // height it constrains (the old height() - tab height created a
+        // recursive dependency that inflated the dialog on tab switches).
+        const int dialogChrome =
+                m_baseChrome >= 0 ? m_baseChrome
+                                  : height() - m_inputTabWidget->height();
         // 220 px is a conservative estimate for title bar + action buttons
         // + margins; scale it with DPI like every other clamp.
-        const int viewportBudget =
-                std::max(dpiScaled(280),
-                         available - std::max(dpiScaled(220), dialogChrome) -
-                                 dpiScaled(32));
-        contentHeight = std::min(
-                formHeight, std::min(viewportBudget,
-                                     dpiScaled(kFaceCaptureViewportMaxHeight)));
+        const int viewportBudget = std::max(
+                ecvAICoreUi::dpiScaled(280),
+                available -
+                        std::max(ecvAICoreUi::dpiScaled(220), dialogChrome) -
+                        ecvAICoreUi::dpiScaled(32));
+        // No fixed cap on the viewport: the scroll area grows with the
+        // dialog so the video preview inside scales with the window (the
+        // preview absorbs leftover height via stretch).  The budget only
+        // keeps the first controls visible on small screens.
+        contentHeight = std::min(formHeight, viewportBudget);
+        // Hard cap (in addition to the scroll area's own maximum): keeps
+        // the Face Capture tab height bounded even when the dialog is
+        // resized very large, so the video preview can never drive the
+        // dialog into unbounded growth (pixmap → sizeHint → re-measure
+        // feedback loop).
+        contentHeight = std::min(contentHeight, ecvAICoreUi::dpiScaled(560));
     }
     const int targetHeight = tabChrome + contentHeight;
-    m_inputTabWidget->setFixedHeight(targetHeight);
+    // Minimum (not fixed) height: the capture form (and its video preview)
+    // grows when the user enlarges the dialog; content is never compressed
+    // below its minimum, so controls cannot overlap the video area.
+    m_inputTabWidget->setMinimumHeight(targetHeight);
     m_inputTabWidget->updateGeometry();
+    // Windows only: with setDocumentMode(true) + QWindowsStyle the page area
+    // is not fully cleared when the fixed height changes after a tab switch,
+    // so the previous page's pixels stay visible (both tabs appear stacked).
+    // Force a synchronous full repaint to wipe the stale page content.
+    m_inputTabWidget->repaint();
 
-    if (isVisible() && m_activeInputTabHeight >= 0 &&
+    if (isVisible() && m_baseChrome >= 0 &&
         targetHeight != m_activeInputTabHeight) {
         const QScreen* screen =
                 QGuiApplication::screenAt(frameGeometry().center());
         const int available =
                 screen ? screen->availableGeometry().height() : 800;
-        const int requested = height() + targetHeight - m_activeInputTabHeight;
+        // Dialog height = measured invariant chrome + the incoming tab's
+        // content.  baseChrome is recorded once on first show (see
+        // showEvent), so it stays constant no matter how the user resized
+        // the window — the old delta formula mixed minimum-based and
+        // sizeHint-based numbers, inflating the dialog by hundreds of
+        // pixels on every tab switch, and the video preview then absorbed
+        // the surplus as a huge empty area.
         resize(width(),
-               qBound(dpiScaled(360), requested, available - dpiScaled(20)));
+               qBound(ecvAICoreUi::dpiScaled(360), m_baseChrome + targetHeight,
+                      available - ecvAICoreUi::dpiScaled(20)));
     }
+    // Tab content is measured per-tab so switching to a shorter tab works
+    // correctly (setMinimumHeight is updated each time below, no permanent
+    // clamp on the dialog itself).
     m_activeInputTabHeight = targetHeight;
+}
+
+void FreeSplatterDialog::showEvent(QShowEvent* event) {
+    QDialog::showEvent(event);
+    if (m_baseChrome >= 0) {
+        return;  // measured once; DPI changes re-measure in changeEvent
+    }
+    // At show time the layout is already settled (Qt applies sizeHint
+    // geometry before sending Show), so the initial dialog height minus
+    // the tab height is pure chrome, never polluted by user resizing.
+    // Measuring and resizing synchronously here applies the geometry
+    // BEFORE the window is mapped — deferring it into the event loop
+    // loses the race against the platform's async window map and the
+    // sizeHint-sized initial frame is shown first.
+    if (!m_inputTabWidget) return;
+    m_baseChrome = std::max(0, height() - m_inputTabWidget->height());
+    // First display: snap the dialog to exactly chrome + active tab
+    // so the initial size never carries layout slack from sizeHint
+    // inflation.
+    adaptTabWidgetHeight();
+    if (m_activeInputTabHeight >= 0) {
+        const QScreen* screen =
+                QGuiApplication::screenAt(frameGeometry().center());
+        const int available =
+                screen ? screen->availableGeometry().height() : 800;
+        resize(width(), qBound(ecvAICoreUi::dpiScaled(360),
+                               m_baseChrome + m_activeInputTabHeight,
+                               available - ecvAICoreUi::dpiScaled(20)));
+    }
 }
 
 void FreeSplatterDialog::changeEvent(QEvent* event) {
@@ -835,12 +872,16 @@ void FreeSplatterDialog::changeEvent(QEvent* event) {
     // tab content is clipped or the dialog keeps the old monitor's size.
     if (event->type() == QEvent::ScreenChangeInternal) {
         QTimer::singleShot(0, this, [this]() {
-            // The scroll viewport cap is a hardcoded pixel that must
-            // follow the new DPI, otherwise the capture form is clipped.
-            if (m_faceCaptureScroll) {
-                m_faceCaptureScroll->setMaximumHeight(
-                        dpiScaled(kFaceCaptureViewportMaxHeight));
+            // Re-measure the chrome on the new monitor: Qt already
+            // resized the window to the new DPI before this deferred
+            // callback runs, so the height() - tab height delta reflects
+            // the fresh decorations and style metrics.
+            if (m_inputTabWidget) {
+                m_baseChrome =
+                        std::max(0, height() - m_inputTabWidget->height());
             }
+            // The scroll viewport has no fixed cap (it grows with the
+            // dialog); only re-run the height adaptation for the new DPI.
             adaptTabWidgetHeight();
             update();
         });
@@ -1733,7 +1774,7 @@ void FreeSplatterDialog::onFaceCaptureComplete() {
     }
     m_faceCaptureExportDir = QDir(cacheRoot).filePath(
             QStringLiteral("qFreeSplatter/face_capture/") +
-            QUuid::createUuid().toString(QUuid::Id128));
+            QUuid::createUuid().toString(QUuid::WithoutBraces));
     const std::vector<FaceCaptureWidget::IdentityImageBatch> batches =
             m_faceCaptureWidget->exportCapturedIdentityImages(
                     m_faceCaptureExportDir);

@@ -1,6 +1,8 @@
 #pragma once
-#include "image_io.hpp"
-#include "model_loader.hpp"
+#include "tasks/depth/image_io.hpp"
+
+#include "tasks/depth/model_loader.hpp"
+
 #include <vector>
 #include <cstdint>
 namespace aicore {

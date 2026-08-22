@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "landmark_graph.hpp"
+#include "tasks/facedetect/landmark_graph.hpp"
 
 #include <algorithm>
 #include <array>
@@ -13,11 +13,11 @@
 #include <stdexcept>
 #include <vector>
 
-#include "align.hpp"
 #include "antispoof_graph.hpp"  // run_onnx_graph (shared interpreter)
-#include "detect.hpp"
-#include "model_loader.hpp"
-#include "preprocess.hpp"
+#include "tasks/facedetect/align.hpp"
+#include "tasks/facedetect/detect.hpp"
+#include "tasks/facedetect/model_loader.hpp"
+#include "tasks/facedetect/preprocess.hpp"
 
 namespace fd {
 

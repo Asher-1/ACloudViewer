@@ -38,7 +38,7 @@ cmake --build build_app --target QFACEDETECT_PLUGIN ACloudViewer -j$(nproc)
 
 Example outputs: `build_app/bin/libAICore.so`, `build_app/bin/plugins/libQFACEDETECT_PLUGIN.so`.
 
-Requires system **libjpeg** (e.g. `libjpeg-dev` on Ubuntu).
+Image decode uses Qt's built-in codecs (JPEG/PNG via the Qt image plugins); no direct system libjpeg dependency.
 
 ## GUI usage
 
@@ -75,7 +75,7 @@ Official weights: [cloudViewer_downloads qFaceDetect release](https://github.com
 | **yunet-sface** | **Apache-2.0** commercial use |
 | **landmarks-2d106-1k3d68** | Dense landmarks only (not for this dialog — see MODEL_CARD) |
 
-See [MODEL_CARD.md](../../../plugins/core/Standard/qFaceDetect/models/MODEL_CARD.md) for download links and licensing.
+See [MODEL_CARD.md](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qFaceDetect/models/MODEL_CARD.md) for download links and licensing.
 
 ### DB export options
 
@@ -114,16 +114,20 @@ aicore_facedetect_options_set_device(opts, "auto");
 aicore_facedetect_ctx* ctx =
     aicore_facedetect_load_opts("buffalo_l.gguf", opts);
 
-char* json = aicore_facedetect_detect_path_json(ctx, "photo.jpg");
+uint8_t* rgb = nullptr;
+int32_t w = 0, h = 0;
+aicore_facedetect_load_path_rgb("photo.jpg", &rgb, &w, &h);
+char* json = aicore_facedetect_detect_rgb_json(ctx, rgb, w, h);
 /* {"faces":[{"score":…,"box":[…],"landmarks":[[x,y],…]}, …]} */
-aicore_facedetect_free_string(json);
+aicore_facedetect_free_buffer(json);
+aicore_facedetect_free_buffer(rgb);
 aicore_facedetect_free(ctx);
 aicore_facedetect_options_free(opts);
 ```
 
 ## Further reading
 
-- Developer README (build targets): [`plugins/core/Standard/qFaceDetect/README.md`](../../../plugins/core/Standard/qFaceDetect/README.md)
+- Developer README (build targets): [`plugins/core/Standard/qFaceDetect/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qFaceDetect/README.md)
 - [face-detect.cpp](https://github.com/mudler/face-detect.cpp)
 - [Asher-1/Face_AI](https://github.com/Asher-1/Face_AI) — related InsightFace REST API (ONNX/TensorRT)
 - [insightface](https://github.com/deepinsight/insightface) (original models)

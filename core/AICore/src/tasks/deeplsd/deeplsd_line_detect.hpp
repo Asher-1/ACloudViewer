@@ -4,7 +4,8 @@
 #include <string>
 #include <vector>
 
-#include "deeplsd.hpp"
+#include "tasks/deeplsd/deeplsd.hpp"
+
 
 namespace deeplsd {
 

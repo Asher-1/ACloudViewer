@@ -4,6 +4,13 @@
 // Copyright (c) 2018-2024 www.cloudViewer.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
+//
+// Face detection / landmark / embedding / anti-spoofing C API.
+//
+// The ggml engine under core/AICore/src/tasks/facedetect/ reproduces the
+// insightface SCRFD detector, ArcFace / SFace embeddings and MiniFASNet
+// anti-spoofing heads (https://github.com/deepinsight/insightface) on ggml;
+// alignment and cosine-distance semantics follow the insightface conventions.
 
 #pragma once
 
@@ -16,50 +23,62 @@
 extern "C" {
 #endif
 
+/** Returns the ABI version of the FaceDetect C API (bump on breaking
+ *  ABI changes). */
 AICORE_CAPI int aicore_facedetect_abi_version(void);
 
 typedef struct aicore_facedetect_ctx aicore_facedetect_ctx;
 typedef struct aicore_facedetect_options aicore_facedetect_options;
 
+/** Creates a default options struct (device "auto", threads 0 = backend
+ *  default). Release with aicore_facedetect_options_free. */
 AICORE_CAPI aicore_facedetect_options* aicore_facedetect_options_new(void);
+/** Releases an options struct created by aicore_facedetect_options_new. */
 AICORE_CAPI void aicore_facedetect_options_free(
         aicore_facedetect_options* opts);
+/** Selects the inference device: NULL or "auto", "cpu", "gpu", "vulkan"
+ *  (optionally ":N"), "cuda" (Linux/Windows). */
 AICORE_CAPI void aicore_facedetect_options_set_device(
         aicore_facedetect_options* opts, const char* device);
+/** CPU thread count; <= 0 picks the backend default. */
 AICORE_CAPI void aicore_facedetect_options_set_threads(
         aicore_facedetect_options* opts, int n_threads);
 
+/** Loads a FaceDetect GGUF model (detector, landmark or embedding pack).
+ *  Returns NULL on failure (see aicore_facedetect_last_error). opts may be
+ *  NULL for defaults. */
 AICORE_CAPI aicore_facedetect_ctx* aicore_facedetect_load_opts(
         const char* gguf_path, const aicore_facedetect_options* opts);
+/** Releases a context returned by aicore_facedetect_load_opts; safe on
+ *  NULL. Also invalidates its graph-cache entries. */
 AICORE_CAPI void aicore_facedetect_free(aicore_facedetect_ctx* ctx);
 /** Returns 1 only when the context owns a successfully loaded model. */
 AICORE_CAPI int aicore_facedetect_is_ready(const aicore_facedetect_ctx* ctx);
+/** Returns the last error message of the context (empty when none). */
 AICORE_CAPI const char* aicore_facedetect_last_error(
         const aicore_facedetect_ctx* ctx);
 
-AICORE_CAPI void aicore_facedetect_free_string(char* s);
-AICORE_CAPI void aicore_facedetect_free_vec(float* v);
+/** Releases any buffer returned by an aicore_facedetect_* function (string
+ *  or float array; unified entry point). Safe on NULL. */
+AICORE_CAPI void aicore_facedetect_free_buffer(void* p);
 
-/** Load image as tightly-packed RGB (cv2.imread / libjpeg parity). Caller frees
- *  \p out_rgb with aicore_facedetect_free_vec (same allocator). */
+/** Load an image through Qt as tightly-packed RGB. Caller frees \p out_rgb
+ *  with aicore_facedetect_free_buffer. */
 AICORE_CAPI int aicore_facedetect_load_path_rgb(const char* image_path,
                                                 uint8_t** out_rgb,
                                                 int32_t* out_width,
                                                 int32_t* out_height);
 
-/** Detect all faces; JSON: {"faces":[{"score", "box", "landmarks"}, ...]}. */
-AICORE_CAPI char* aicore_facedetect_detect_path_json(aicore_facedetect_ctx* ctx,
-                                                     const char* image_path);
+/** Detect all faces on a borrowed RGB buffer; JSON: {"faces":[{"score", "box",
+ *  "landmarks"}, ...]}. */
 AICORE_CAPI char* aicore_facedetect_detect_rgb_json(aicore_facedetect_ctx* ctx,
                                                     const uint8_t* rgb,
                                                     int32_t width,
                                                     int32_t height);
 
-/** Age/gender JSON for every detected face.
+/** Age/gender JSON for every detected face on a borrowed RGB buffer.
  *  When min_score > 0, faces below that detection score are omitted (same rule
  * as dense_landmarks). Pass 0 to return every face the detector found. */
-AICORE_CAPI char* aicore_facedetect_analyze_path_json(
-        aicore_facedetect_ctx* ctx, const char* image_path, float min_score);
 AICORE_CAPI char* aicore_facedetect_analyze_rgb_json(aicore_facedetect_ctx* ctx,
                                                      const uint8_t* rgb,
                                                      int32_t width,
@@ -86,6 +105,7 @@ AICORE_CAPI int aicore_facedetect_embed_path(aicore_facedetect_ctx* ctx,
                                              float min_detection_score,
                                              float** out_vec,
                                              int* out_dim);
+/** Same as aicore_facedetect_embed_path but on a borrowed RGB buffer. */
 AICORE_CAPI int aicore_facedetect_embed_rgb(aicore_facedetect_ctx* ctx,
                                             const uint8_t* rgb,
                                             int32_t width,
@@ -127,9 +147,15 @@ AICORE_CAPI int aicore_facedetect_verify_paths(aicore_facedetect_ctx* ctx,
                                                float* out_distance,
                                                int* out_verified);
 
+/** Returns a JSON summary of the loaded model. Caller frees with
+ *  aicore_facedetect_free_buffer. */
 AICORE_CAPI char* aicore_facedetect_info_json(aicore_facedetect_ctx* ctx);
+/** Warms up the backend for `device`; returns 0 on success. */
 AICORE_CAPI int aicore_facedetect_warmup_backend(const char* device);
+/** Releases process-wide FaceDetect backend resources (idempotent). */
 AICORE_CAPI void aicore_facedetect_shutdown(void);
+/** Returns the local model cache directory. Caller frees with
+ *  aicore_facedetect_free_buffer. */
 AICORE_CAPI char* aicore_facedetect_model_cache_dir(void);
 
 /** Published GGUF catalog (cloudViewer_downloads qFaceDetect release). */
@@ -142,17 +168,28 @@ typedef struct aicore_facedetect_model_entry {
     int detector_capable;
 } aicore_facedetect_model_entry;
 
+/** Number of published catalog entries (all model roles). */
 AICORE_CAPI int aicore_facedetect_model_count(void);
+/** Returns the catalog entry at `index` (NULL when out of range). */
 AICORE_CAPI const aicore_facedetect_model_entry* aicore_facedetect_model_at(
         int index);
+/** Number of catalog entries usable as detectors. */
 AICORE_CAPI int aicore_facedetect_detector_model_count(void);
+/** Returns the detector-capable catalog entry at `index` (NULL when out
+ *  of range). */
 AICORE_CAPI const aicore_facedetect_model_entry*
 aicore_facedetect_detector_model_at(int index);
+/** Number of catalog entries usable as landmark models. */
 AICORE_CAPI int aicore_facedetect_landmark_model_count(void);
+/** Returns the landmark-capable catalog entry at `index` (NULL when out
+ *  of range). */
 AICORE_CAPI const aicore_facedetect_model_entry*
 aicore_facedetect_landmark_model_at(int index);
+/** Returns the catalog entry whose filename matches (NULL when not
+ *  found). */
 AICORE_CAPI const aicore_facedetect_model_entry*
 aicore_facedetect_model_by_filename(const char* filename);
+/** Returns the base URL of the published model release. */
 AICORE_CAPI const char* aicore_facedetect_model_download_base(void);
 
 #ifdef __cplusplus

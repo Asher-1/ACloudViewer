@@ -118,7 +118,10 @@ std::vector<FaceDetectBox> parse_dense_json(const QByteArray& json) {
 QImage draw_dense_annotations(const QImage& source,
                               const std::vector<FaceDetectBox>& faces,
                               float minDetectionScore) {
-    QImage rgb = source.convertToFormat(QImage::Format_RGB32);
+    // Draw directly on source — QPainter paints on RGB888 natively in Qt 5+
+    // (same as annotateDetect/annotateRecognize); the extra RGB32 conversion
+    // here used to copy the whole frame for nothing.
+    QImage rgb = source;
     QPainter painter(&rgb);
     painter.setRenderHint(QPainter::Antialiasing, true);
 
@@ -278,7 +281,7 @@ bool FaceDetectWorker::runInference() {
     if (char* info = aicore_facedetect_info_json(ctx)) {
         const QJsonObject obj =
                 QJsonDocument::fromJson(QByteArray(info)).object();
-        aicore_facedetect_free_string(info);
+        aicore_facedetect_free_buffer(info);
         result.resolvedDevice = obj.value(QStringLiteral("device")).toString();
         aicore_inference_log::log_device_resolved(QStringLiteral("FaceDetect"),
                                                   result.resolvedDevice);
@@ -381,7 +384,7 @@ bool FaceDetectWorker::runInference() {
             return false;
         }
         const QByteArray payload(json);
-        aicore_facedetect_free_string(json);
+        aicore_facedetect_free_buffer(json);
         result.resultJson = payload;
 
         if (m_settings.mode == Mode::DenseLandmarks) {

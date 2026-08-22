@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "scrfd_graph.hpp"
+#include "tasks/facedetect/scrfd_graph.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -14,13 +14,13 @@
 #include <string>
 #include <vector>
 
-#include "antispoof_graph.hpp"
-#include "backend.hpp"
-#include "common.hpp"
 #include "ggml.h"
-#include "graph_ops.hpp"
-#include "model_loader.hpp"
-#include "preprocess.hpp"
+#include "tasks/facedetect/antispoof_graph.hpp"
+#include "tasks/facedetect/backend.hpp"
+#include "tasks/facedetect/common.hpp"
+#include "tasks/facedetect/graph_ops.hpp"
+#include "tasks/facedetect/model_loader.hpp"
+#include "tasks/facedetect/preprocess.hpp"
 
 namespace fd {
 

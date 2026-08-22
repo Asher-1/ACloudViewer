@@ -12,6 +12,42 @@
 #include <QMouseEvent>
 #include <QScrollArea>
 #include <QVBoxLayout>
+#include <algorithm>
+
+namespace {
+
+/** Event filter that rescales the image pixmap whenever the host dialog is
+ *  resized, keeping the image centered and preserving aspect ratio. */
+class RescaleFilter : public QObject {
+public:
+    RescaleFilter(QLabel* label, const QImage& image, QObject* parent)
+        : QObject(parent), m_label(label), m_image(image) {}
+
+protected:
+    bool eventFilter(QObject* obj, QEvent* event) override {
+        if (event->type() == QEvent::Resize && m_label && !m_image.isNull()) {
+            auto* dlg = qobject_cast<QDialog*>(obj);
+            if (dlg) {
+                // Leave room for layout margins (8+8=16) and scrollbar (~18)
+                const int margin = 48;
+                const int availW = std::max(1, dlg->width() - margin);
+                const int availH = std::max(1, dlg->height() - margin);
+                // Always rescale to fit the window (even when the source
+                // image is smaller), so the preview tracks resizes both ways
+                m_label->setPixmap(QPixmap::fromImage(
+                        m_image.scaled(availW, availH, Qt::KeepAspectRatio,
+                                       Qt::SmoothTransformation)));
+            }
+        }
+        return QObject::eventFilter(obj, event);
+    }
+
+private:
+    QLabel* m_label;
+    QImage m_image;
+};
+
+}  // namespace
 
 ecvClickableImageLabel::ecvClickableImageLabel(QWidget* parent)
     : QLabel(parent) {
@@ -70,6 +106,8 @@ void ecvClickableImageLabel::showEnlargedImage(QWidget* parent,
     QDialog dlg(parent);
     dlg.setWindowTitle(title.isEmpty() ? QObject::tr("Image Preview") : title);
 
+    // Initial scale-to-fit (capped to a reasonable max so the dialog
+    // doesn't open full-screen for a 16K image).
     constexpr int kMaxPreviewW = 1200;
     constexpr int kMaxPreviewH = 820;
     QImage display = image;
@@ -93,6 +131,10 @@ void ecvClickableImageLabel::showEnlargedImage(QWidget* parent,
     auto* layout = new QVBoxLayout(&dlg);
     layout->setContentsMargins(8, 8, 8, 8);
     layout->addWidget(scroll);
+
+    // Install event filter so the image rescales when the window is resized
+    dlg.installEventFilter(new RescaleFilter(label, image, &dlg));
+
     dlg.exec();
 }
 

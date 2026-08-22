@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "postprocess.hpp"
+#include "tasks/aliked/postprocess.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -15,8 +15,8 @@
 #include <omp.h>
 #endif
 
-#include "deform_conv.hpp"
-#include "tensor_ops.hpp"
+#include "tasks/aliked/deform_conv.hpp"
+#include "tasks/aliked/tensor_ops.hpp"
 
 namespace lightglue::aliked_internal {
 namespace {

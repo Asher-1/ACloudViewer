@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "gguf_loader.h"
+#include "tasks/gaussian/gguf_loader.h"
 
 namespace aicore {
 namespace gaussian {

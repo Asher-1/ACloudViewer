@@ -141,13 +141,14 @@ cmake --build . --config Release --target install
 | `AICore_USE_METAL` | Apple: ON, else OFF | Metal backend (Apple only; macOS Auto default) |
 | `AICore_USE_VULKAN` | Linux/Win: ON, macOS: OFF | **ON:** build Vulkan backend; configure **fails** if glslc/Vulkan/SPIR-V deps missing |
 | `AICore_USE_CUDA` | OFF | Developer CUDA backend (independent of `BUILD_CUDA_MODULE`). When ON, Auto becomes **CUDA → Vulkan → CPU** on Linux/Windows. |
-| | | **Linux:** `libggml-cuda.so` links `CUDA::cudart_static` (no DT_NEEDED on `libcudart.so.*`). FORCE_MMQ routes quantized matmul through MMQ kernels, but ggml hardwires **non-quantized matmul to cuBLAS**, so `libcublas.so.*` is still a DT_NEEDED dependency. **Driver-only machines need the bundled runtime**: add `-DAICore_BUNDLE_CUDA_RUNTIME=ON` to ship `libcublas.so.*` under `lib/cuda-runtime/` (auto-added to `LD_LIBRARY_PATH` by `ACloudViewer.sh`). |
+| | | **Linux:** `libggml-cuda.so` links `CUDA::cudart_static` (no DT_NEEDED on `libcudart.so.*`). Quantized matmul runs MMQ kernels by default (FORCE_MMQ=OFF, upstream performance parity); ggml hardwires **non-quantized matmul to cuBLAS**, so `libcublas.so.*` is a DT_NEEDED dependency. **Driver-only machines need the bundled runtime**: add `-DAICore_BUNDLE_CUDA_RUNTIME=ON` to ship `libcublas.so.*` under `lib/cuda-runtime/` (auto-added to `LD_LIBRARY_PATH` by `ACloudViewer.sh`). Set `-DAICore_CUDA_FORCE_MMQ=ON` instead for a self-contained `libggml-cuda.so` with no libcudart/libcublas DT_NEEDED (slower small conv/matmul kernels; see `core/AICore/docs/cuda_graph_parity.md` §8). |
 | | | **Windows:** `cudart_static` not available (MSVC CRT `/MT` vs `/MD` conflict). Falls back to dynamic `CUDA::cudart` via PRIVATE link. Use `AICore_BUNDLE_CUDA_RUNTIME=ON` to bundle cudart64_*.dll (and any other CUDA DLLs detected by dumpbin) into `lib/cuda-runtime/` inside the installer. `ACloudViewer.bat` auto-adds this dir to `%PATH%`. **Result: no CUDA toolkit needed on target machine — only the NVIDIA driver (nvcuda.dll).** |
 | `AICore_USE_SYCL` | OFF | Intel GPU backend; requires oneAPI compiler and a validated runtime bundle |
 | `AICore_SYCL_USE_DNN` | ON | oneDNN kernels in SYCL backend (requires `AICore_USE_SYCL=ON`) |
 | `AICore_USE_OPENCL` | OFF | Legacy/Adreno developer opt-in; not part of desktop distributions |
 | `AICore_OPENCL_TARGET_VERSION` | 200 | OpenCL host API target: 120, 200, or 300 |
 | `AICore_BUNDLE_CUDA_RUNTIME` | OFF | **`option()`** in `cmake/AICoreOptions.cmake`: redist CUDA runtime into installer; **requires `AICore_USE_CUDA=ON`**. Bundles `libcublas.so.*` (Linux) / cudart64_*.dll + cublas64_*.dll etc. (Windows) into `lib/cuda-runtime/` for **driver-only deployment** — required on both platforms since `libggml-cuda.so` always links cuBLAS. `ACloudViewer.sh` / `ACloudViewer.bat` auto-add this dir to `LD_LIBRARY_PATH` / `%PATH%`. |
+| `AICore_CUDA_FORCE_MMQ` | OFF | **`option()`** in `cmake/AICoreOptions.cmake`: force ggml-cuda MMQ kernels instead of cuBLAS for quantized matmul. **OFF (default):** upstream performance parity (parity with ultralytics-ggml builds); `libggml-cuda.so` keeps a libcublas DT_NEEDED, so driver-only deployments also set `AICore_BUNDLE_CUDA_RUNTIME=ON`. **ON:** self-contained `libggml-cuda.so` (no libcudart/libcublas DT_NEEDED — NVIDIA driver only) at the cost of slower small conv/matmul kernels. See `core/AICore/docs/cuda_graph_parity.md` §8. |
 | `AICore_CPU_ALL_VARIANTS` | OFF | Build all ggml CPU ISA variants (`libggml-cpu-*.so`; compiler-adaptive; CI release/wheel default ON). Matches [llama.cpp release](https://github.com/ggml-org/llama.cpp/blob/master/.github/workflows/release.yml) flags: `-DGGML_BACKEND_DL=ON -DGGML_NATIVE=OFF -DGGML_CPU_ALL_VARIANTS=ON`. Older GCC (e.g. Ubuntu 20.04) skips BF16/AMX/VNNI variants automatically. |
 | `AICore_METAL_ENABLED` | (auto) | Read-only: ON when Metal backend was built |
 | `AICore_VULKAN_ENABLED` | (auto) | Read-only: ON when Vulkan backend was built |
@@ -249,6 +250,9 @@ Expand the `INSTALL` group in CMake GUI to enable plugins:
 | qLightGlue              | PLUGIN_STANDARD_QLIGHTGLUE               | OFF           | Sparse matching — **SIFT/ALIKED LightGlue** via GGUF ([README](plugins/core/Standard/qLightGlue/README.md)). Requires `AICore_ENABLED=ON`. |
 | qDeepLSD                | PLUGIN_STANDARD_QDEEPLSD                 | OFF           | DeepLSD wireframe extraction (df/angle GGUF) ([README](plugins/core/Standard/qDeepLSD/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/deeplsd`). |
 | qFaceDetect             | PLUGIN_STANDARD_QFACEDETECT              | OFF           | face-detect.cpp — SCRFD/YuNet detection, ArcFace/SFace verify, age/gender ([README](plugins/core/Standard/qFaceDetect/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/facedetect`). |
+| qRFDetr                 | PLUGIN_STANDARD_QRFDETR                  | OFF           | RF-DETR real-time object detection/segmentation, COCO 91-class layout (80 named classes), GGUF ([README](plugins/core/Standard/qRFDetr/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/rfdetr`). |
+| qRMBG                   | PLUGIN_STANDARD_QRMBG                    | OFF           | RMBG-2.0 (BiRefNet-Swin-L) background removal, transparent RGBA output, GGUF ([README](plugins/core/Standard/qRMBG/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/rmbg`). |
+| qYOLO                   | PLUGIN_STANDARD_QYOLO                    | OFF           | YOLO object detection (COCO 80) + metric depth, GGUF ([README](plugins/core/Standard/qYOLO/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/yolo`). |
 
 > 📖 **Plugin catalog:** [plugins/README.md](plugins/README.md) — per-plugin README index and AICore build recipes.
 
@@ -328,13 +332,16 @@ cmake -DBUILD_CUDA_MODULE=ON \
       -DPLUGIN_STANDARD_QFACEDETECT=ON \
       -DPLUGIN_STANDARD_QFREESPLATTER=ON \
       -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
+      -DPLUGIN_STANDARD_QRFDETR=ON \
+      -DPLUGIN_STANDARD_QRMBG=ON \
+      -DPLUGIN_STANDARD_QYOLO=ON \
       ..
 cmake --build . --config Release
 ```
 
-#### AICore (qDA3 + qDeepLSD + qFaceDetect + qFreeSplatter + qLightGlue) Build
+#### AICore (qDA3 + qDeepLSD + qFaceDetect + qFreeSplatter + qLightGlue + qRFDetr + qRMBG) Build
 
-Builds `libAICore.so` (shared ggml inference core for DA3, DeepLSD, FaceDetect, FreeSplatter, and LightGlue) and the selected GUI plugins. Runtime **Auto** uses Metal → CPU on macOS and Vulkan → CPU on Linux/Windows by default. When `-DAICore_USE_CUDA=ON` and the CUDA backend is built, Auto becomes **CUDA → Vulkan → CPU** on Linux/Windows. SYCL remains explicit-only. CUDA is only enabled by `-DAICore_USE_CUDA=ON`; the unrelated CloudViewer `BUILD_CUDA_MODULE` option no longer adds CUDA to distributed AICore packages.
+Builds `libAICore.so` (shared ggml inference core for DA3, DeepLSD, FaceDetect, FreeSplatter, LightGlue, RFDetr, and RMBG) and the selected GUI plugins. Runtime **Auto** uses Metal → CPU on macOS and Vulkan → CPU on Linux/Windows by default. When `-DAICore_USE_CUDA=ON` and the CUDA backend is built, Auto becomes **CUDA → Vulkan → CPU** on Linux/Windows. SYCL remains explicit-only. CUDA is only enabled by `-DAICore_USE_CUDA=ON`; the unrelated CloudViewer `BUILD_CUDA_MODULE` option no longer adds CUDA to distributed AICore packages.
 
 ```bash
 cmake -DBUILD_GUI=ON \
@@ -345,6 +352,9 @@ cmake -DBUILD_GUI=ON \
       -DPLUGIN_STANDARD_QFACEDETECT=ON \
       -DPLUGIN_STANDARD_QFREESPLATTER=ON \
       -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
+      -DPLUGIN_STANDARD_QRFDETR=ON \
+      -DPLUGIN_STANDARD_QRMBG=ON \
+      -DPLUGIN_STANDARD_QYOLO=ON \
       ..
 cmake --build . --config Release --target ACloudViewer
 ```
@@ -649,6 +659,8 @@ build_gui_app with_conda package_installer with_aicore_cuda bundle_cuda_runtime
 - **[qDA3 Plugin](plugins/core/Standard/qDA3/README.md)** - Depth Anything V3 build, models, and Automatic Reconstruction integration
 - **[qFreeSplatter Plugin](plugins/core/Standard/qFreeSplatter/README.md)** - FreeSplatter 3D Gaussian Splatting, models, and SIBR export
 - **[qLightGlue Plugin](plugins/core/Standard/qLightGlue/README.md)** - SIFT/ALIKED LightGlue matching (GGUF)
+- **[qRFDetr Plugin](plugins/core/Standard/qRFDetr/README.md)** - RF-DETR object detection/segmentation (GGUF)
+- **[qRMBG Plugin](plugins/core/Standard/qRMBG/README.md)** - RMBG-2.0 background removal (GGUF)
 
 ---
 

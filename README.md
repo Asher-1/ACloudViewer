@@ -115,72 +115,85 @@ and the [unified test suite](https://github.com/Asher-1/ACloudViewer/tree/main/a
 
 ---
 
-## SIBR Viewer — 3D Gaussian Splatting & Novel View Synthesis
-
-<p align="center">
-  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qSIBR/images/SIBR_viewer.png">
-</p>
-
-ACloudViewer integrates the **SIBR framework** (System for Image-Based Rendering) as a built-in plugin,
-enabling real-time **3D Gaussian Splatting** rendering and novel view synthesis directly within the application.
-
-| Viewer | Description |
-|--------|-------------|
-| **3D Gaussian Splatting** | Real-time CUDA-accelerated rendering of trained 3DGS models (`.ply` splat files) |
-| **Remote Gaussian** | Live connection to a running 3DGS training process for real-time monitoring |
-| **ULR / ULR v2** | Unstructured Lumigraph Rendering for novel view synthesis |
-| **Textured Mesh & Point-Based** | IBR dataset visualization with scene debug overlays |
-
-Key features:
-* **Bidirectional interaction** — Select entities in ACloudViewer, auto-detect best viewer, import results back with auto-zoom
-* **No separate install** — The SIBR viewers are built as an ACloudViewer plugin, launchable from the GUI toolbar
-* **Multi-format ingest** — Load Colmap reconstructions, SIBR datasets, or raw 3DGS `.ply` files
-
-Enable with `-DPLUGIN_STANDARD_QSIBR=ON -DBUILD_CUDA_MODULE=ON` (CUDA optional for non-3DGS viewers).
-See [qSIBR plugin documentation](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qSIBR/README.md) for details.
-
----
-
 ## AICore AI Plugins — Depth, Matching & 3D Gaussian Splats
 
-Five GUI plugins share one native inference library — **`libAICore.so`** ([ggml](https://github.com/ggml-org/ggml)). Run quantized **GGUF** models on **CUDA / Vulkan (Linux/Windows) / Metal (macOS) / CPU** with **no Python or PyTorch** at runtime. Results land directly in the DB tree and plug into reconstruction, COLMAP, and SIBR workflows.
+Eight GUI plugins share one native inference library — **`libAICore.so`** ([ggml](https://github.com/ggml-org/ggml)). Run quantized **GGUF** models on **CUDA / Vulkan (Linux/Windows) / Metal (macOS) / CPU** with **no Python or PyTorch** at runtime. Results land directly in the DB tree and plug into reconstruction, COLMAP, and SIBR workflows.
 
-| | **qDA3** | **qDeepLSD** | **qFaceDetect** | **qLightGlue** | **qFreeSplatter** |
-|---|----------|--------------|-----------------|----------------|-------------------|
-| **Task** | Monocular & multi-view depth, camera pose | Line-segment / wireframe extraction | Face detect / analyze / verify | Sparse feature matching | Uncalibrated photos → 3D Gaussian splats |
-| **Model** | Depth Anything V3 GGUF | DeepLSD wireframe GGUF | face-detect.cpp GGUF packs | SIFT/ALIKED LightGlue GGUF | FreeSplatter GGUF |
-| **Standout** | Single-image depth cloud in one click | AFM + LSD lines on photos | SCRFD + ArcFace in one dialog | 300+ matches in **< 1 s** on GPU | **2 photos** → 3D scene + SIBR PLY |
-| **CMake** | `PLUGIN_STANDARD_QDA3` | `PLUGIN_STANDARD_QDEEPLSD` | `PLUGIN_STANDARD_QFACEDETECT` | `PLUGIN_STANDARD_QLIGHTGLUE` | `PLUGIN_STANDARD_QFREESPLATTER` |
+### ✨ Why AICore?
 
+| | |
+|---|---|
+| 🚀 **Native C++ end-to-end** | GUI, automatic reconstruction, and COLMAP pipelines without a Python stack |
+| 🧠 **Compact GGUF weights** | e.g. DA3 Base ~142 MB, LightGlue SIFT matcher ~22 MB; one-click download in each dialog |
+| ⚡ **Multi-backend GPU** | Auto picks CUDA → Vulkan → CPU (Linux/Windows) or Metal → CPU (macOS) |
+| 🌳 **DB-tree integration** | Depth clouds, match lines, Gaussian PLY, and camera frustums as first-class entities |
+
+### 🎯 Plugin showcase
+
+<!-- To add a new AICore plugin: copy one <td> card below, then swap the image, title, description, model tag and CMake flag. -->
 <table>
 <tr>
 <td width="33%" align="center">
 <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qDA3/images/qDA3.png" width="100%">
-<br><sub><b>Depth Anything V3</b> — depth maps &amp; 3D unprojection from a single photo</sub>
+<br><b>🧠 qDA3 — Depth Anything V3</b>
+<br><sub>Monocular &amp; multi-view depth with camera pose — one-click depth point cloud from a single photo</sub>
+<br><sub><code>DA3 GGUF</code> · <code>PLUGIN_STANDARD_QDA3</code></sub>
 </td>
 <td width="33%" align="center">
 <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qLightGlue/images/qLightGlue.png" width="100%">
-<br><sub><b>LightGlue</b> — SIFT / ALIKED matching with live visualization</sub>
+<br><b>🔗 qLightGlue — Feature Matching</b>
+<br><sub>SIFT / ALIKED sparse matching with live visualization — 300+ matches in &lt; 1 s on GPU</sub>
+<br><sub><code>LightGlue GGUF</code> · <code>PLUGIN_STANDARD_QLIGHTGLUE</code></sub>
 </td>
 <td width="33%" align="center">
-<div style="display:flex;gap:6px;"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qFreeSplatter/images/qFreeSplatter.png" width="49%"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qFreeSplatter/images/qFreeSplatter_video.png" width="49%"></div>
-<br><sub><b>qFreeSplatter</b> — sparse-view 3D Gaussian reconstruction and guided multi-view Face Capture</sub>
+<img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qFreeSplatter/images/qFreeSplatter.png" width="100%">
+<br><b>🧊 qFreeSplatter — 3D Gaussian Splats</b>
+<br><sub>Uncalibrated photos → 3D Gaussian splats — as few as 2 photos build a 3D scene + SIBR PLY</sub>
+<br><sub><code>FreeSplatter GGUF</code> · <code>PLUGIN_STANDARD_QFREESPLATTER</code></sub>
 </td>
 </tr>
 <tr>
 <td width="33%" align="center">
-<div style="display:flex;gap:6px;"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qFaceDetect/images/qFaceDetect.png" width="49%"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qFaceDetect/images/qFaceDetect_video.png" width="49%"></div>
-<br><sub><b>qFaceDetect</b> — registry authentication, face recognition, and live multi-face video</sub>
+<img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qFaceDetect/images/qFaceDetect.png" width="100%">
+<br><b>👤 qFaceDetect — Face Detect &amp; Verify</b>
+<br><sub>SCRFD + ArcFace in one dialog — registry authentication, face recognition, live multi-face video</sub>
+<br><sub><code>face-detect GGUF</code> · <code>PLUGIN_STANDARD_QFACEDETECT</code></sub>
+</td>
+<td width="33%" align="center">
+<img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qDeepLSD/images/qDeepLSD.png" width="100%">
+<br><b>📐 qDeepLSD — Line Segment Detection</b>
+<br><sub>DeepLSD + AFM wireframe &amp; line-segment extraction directly from photos</sub>
+<br><sub><code>DeepLSD GGUF</code> · <code>PLUGIN_STANDARD_QDEEPLSD</code></sub>
+</td>
+<td width="33%" align="center" valign="middle">
+<img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qYOLO/images/qYOLO.svg" width="35%">
+<br><b>🎯 qYOLO — Detect, Segment &amp; Depth</b>
+<br><sub>Ultralytics YOLO detection, instance segmentation and metric depth on images &amp; video</sub>
+<br><sub><code>YOLO GGUF</code> · <code>PLUGIN_STANDARD_QYOLO</code></sub>
+</td>
+</tr>
+<tr>
+<td width="33%" align="center" valign="middle">
+<img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qRFDetr/images/qRFDetr.svg" width="35%">
+<br><b>🎯 qRFDetr — Real-time Detection</b>
+<br><sub>RF-DETR real-time object detection &amp; segmentation (COCO 91-class layout, 80 named classes) with masks</sub>
+<br><sub><code>RF-DETR GGUF</code> · <code>PLUGIN_STANDARD_QRFDETR</code></sub>
+</td>
+<td width="33%" align="center" valign="middle">
+<img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qRMBG/images/qRMBG.svg" width="35%">
+<br><b>✂️ qRMBG — Background Removal</b>
+<br><sub>RMBG-2.0 (BiRefNet-Swin-L) one-click background removal → transparent RGBA image</sub>
+<br><sub><code>RMBG-2.0 GGUF</code> · <code>PLUGIN_STANDARD_QRMBG</code></sub>
+</td>
+<td width="33%" align="center" valign="middle">
+<br><br>
+<p style="font-size:44px;margin:0;">🧩</p>
+<b>Build your own AI plugin</b>
+<br><sub>Extend the AICore family — follow the <a href="CONTRIBUTING.md">plugin development guide</a> and the <a href="docs/guides/plugins/README.md">AICore overview</a></sub>
+<br><br>
 </td>
 </tr>
 </table>
-
-**Why AICore?**
-
-* **Native C++ end-to-end** — GUI, automatic reconstruction, and COLMAP pipelines without a Python stack
-* **Compact GGUF weights** — e.g. DA3 Base ~142 MB, LightGlue SIFT matcher ~22 MB; four matching families with one-click download in the dialog
-* **Multi-backend GPU** — Auto picks CUDA → Vulkan → CPU (Linux/Windows) or Metal → CPU (macOS)
-* **DB-tree integration** — depth clouds, match lines, Gaussian PLY, and camera frustums appear as first-class entities
 
 ```bash
 cmake -B build_app \
@@ -191,6 +204,9 @@ cmake -B build_app \
   -DPLUGIN_STANDARD_QFACEDETECT=ON \
   -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
   -DPLUGIN_STANDARD_QFREESPLATTER=ON \
+  -DPLUGIN_STANDARD_QRFDETR=ON \
+  -DPLUGIN_STANDARD_QRMBG=ON \
+  -DPLUGIN_STANDARD_QYOLO=ON \
   -DBUILD_RECONSTRUCTION=ON \
   -DPLUGIN_STANDARD_QSIBR=ON \
   .
@@ -198,7 +214,7 @@ cmake -B build_app \
 cmake --build build_app --target ACloudViewer -j$(nproc)
 ```
 
-User guides: [AICore plugins overview](docs/guides/plugins/README.md) · [qDA3](docs/guides/plugins/qDA3.md) · [qDeepLSD](docs/guides/plugins/qDeepLSD.md) · [qFaceDetect](docs/guides/plugins/qFaceDetect.md) · [qLightGlue](docs/guides/plugins/qLightGlue.md) · [qFreeSplatter](docs/guides/plugins/qFreeSplatter.md)
+User guides: [AICore plugins overview](docs/guides/plugins/README.md) · [qDA3](docs/guides/plugins/qDA3.md) · [qDeepLSD](docs/guides/plugins/qDeepLSD.md) · [qFaceDetect](docs/guides/plugins/qFaceDetect.md) · [qLightGlue](docs/guides/plugins/qLightGlue.md) · [qFreeSplatter](docs/guides/plugins/qFreeSplatter.md) · [qRFDetr](docs/guides/plugins/qRFDetr.md) · [qRMBG](docs/guides/plugins/qRMBG.md) · [qYOLO](docs/guides/plugins/qYOLO.md)
 
 ---
 
@@ -281,6 +297,33 @@ Please stay tuned for MacOS. Download ACloudViewer from the [release page](https
 </tr>
 </table>
 
+---
+
+## SIBR Viewer — 3D Gaussian Splatting & Novel View Synthesis
+
+<p align="center">
+  <img width="640" src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qSIBR/images/SIBR_viewer.png">
+</p>
+
+ACloudViewer integrates the **SIBR framework** (System for Image-Based Rendering) as a built-in plugin,
+enabling real-time **3D Gaussian Splatting** rendering and novel view synthesis directly within the application.
+
+| Viewer | Description |
+|--------|-------------|
+| **3D Gaussian Splatting** | Real-time CUDA-accelerated rendering of trained 3DGS models (`.ply` splat files) |
+| **Remote Gaussian** | Live connection to a running 3DGS training process for real-time monitoring |
+| **ULR / ULR v2** | Unstructured Lumigraph Rendering for novel view synthesis |
+| **Textured Mesh & Point-Based** | IBR dataset visualization with scene debug overlays |
+
+Key features:
+* **Bidirectional interaction** — Select entities in ACloudViewer, auto-detect best viewer, import results back with auto-zoom
+* **No separate install** — The SIBR viewers are built as an ACloudViewer plugin, launchable from the GUI toolbar
+* **Multi-format ingest** — Load Colmap reconstructions, SIBR datasets, or raw 3DGS `.ply` files
+
+Enable with `-DPLUGIN_STANDARD_QSIBR=ON -DBUILD_CUDA_MODULE=ON` (CUDA optional for non-3DGS viewers).
+See [qSIBR plugin documentation](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qSIBR/README.md) for details.
+
+---
 
 ## CloudViewer App & CloudViewer-ML
 

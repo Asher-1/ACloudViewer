@@ -17,20 +17,21 @@
 class ecvModelDownloader;
 
 /**
- * @brief Unified test data repository for reconstruction plugins.
+ * @brief Unified test data repository for application plugins.
  *
  * Provides a single source of truth for downloading, caching, and accessing
- * test datasets (Monstree, FriendsFaces, etc.) used by qFreeSplatter, qDA3,
- * qlightglue, and other reconstruction plugins.
+ * test datasets used by reconstruction and AI inference plugins.
  *
  * Directory structure:
  *   ~/cloudViewer_data/
  *     ├── download/          # Raw zip files
  *     │   ├── dataset_monstree.zip
- *     │   └── friends_faces.zip
+ *     │   ├── friends_faces.zip
+ *     │   └── objects_detection_data.zip
  *     └── extract/           # Extracted datasets
  *         ├── dataset_monstree/
- *         └── friends_faces/
+ *         ├── friends_faces/
+ *         └── objects_detection_data/
  */
 class CVPLUGIN_LIB_API ecvTestDataRepository : public QObject {
     Q_OBJECT
@@ -38,8 +39,9 @@ class CVPLUGIN_LIB_API ecvTestDataRepository : public QObject {
 public:
     /** Available test datasets. */
     enum class Dataset {
-        Monstree,     ///< Monstree dataset for image-based reconstruction
-        FriendsFaces  ///< FriendsFaces video for face capture
+        Monstree,         ///< Monstree dataset for image-based reconstruction
+        FriendsFaces,     ///< FriendsFaces video for face capture
+        ObjectsDetection  ///< Shared images/videos for AI inference plugins
     };
 
     /** Dataset metadata. */
@@ -73,6 +75,9 @@ public:
 
     /** Returns the path where a dataset should be extracted. */
     static QString extractPath(Dataset kind);
+
+    /** Find one uniquely named file below a dataset's extraction directory. */
+    static QString findDatasetFile(Dataset kind, const QString& fileName);
 
     /** Returns true if the dataset is extracted or a valid zip is cached. */
     bool isDatasetAvailable(Dataset kind) const;

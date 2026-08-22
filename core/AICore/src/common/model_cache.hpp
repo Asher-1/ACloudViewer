@@ -1,6 +1,7 @@
 #pragma once
 
-#include "data_root_util.hpp"
+#include "common/data_root_util.hpp"
+
 
 namespace aicore {
 
@@ -27,6 +28,18 @@ inline std::string aliked_model_cache_dir() {
 
 inline std::string facedetect_model_cache_dir() {
     return extract_model_dir("facedetect_models");
+}
+
+inline std::string rfdetr_model_cache_dir() {
+    return extract_model_dir("rfdetr_models");
+}
+
+inline std::string rmbg_model_cache_dir() {
+    return extract_model_dir("rmbg_models");
+}
+
+inline std::string yolo_model_cache_dir() {
+    return extract_model_dir("yolo_models");
 }
 
 }  // namespace aicore

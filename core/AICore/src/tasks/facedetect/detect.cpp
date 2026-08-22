@@ -5,16 +5,16 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "detect.hpp"
+#include "tasks/facedetect/detect.hpp"
 
 #include <algorithm>
 #include <numeric>
 
-#include "backend.hpp"
-#include "common.hpp"
-#include "model_loader.hpp"
-#include "scrfd_graph.hpp"
-#include "yunet_graph.hpp"
+#include "tasks/facedetect/backend.hpp"
+#include "tasks/facedetect/common.hpp"
+#include "tasks/facedetect/model_loader.hpp"
+#include "tasks/facedetect/scrfd_graph.hpp"
+#include "tasks/facedetect/yunet_graph.hpp"
 
 namespace fd {
 
@@ -66,7 +66,7 @@ std::vector<Detection> scrfd_detect(const ModelLoader& ml, const Image& img) {
     const int S = (int)c.det_input_size;    // 640
     const int na = (int)c.det_num_anchors;  // 2
 
-    // Production preprocess: stb-decoded source -> aspect-preserving letterbox
+    // Production preprocess: decoded RGB source -> aspect-preserving letterbox
     // into the square detector input. det_scale maps decoded boxes back to
     // source pixels (== reference's float(new_h)/orig_h).
     Image lb;

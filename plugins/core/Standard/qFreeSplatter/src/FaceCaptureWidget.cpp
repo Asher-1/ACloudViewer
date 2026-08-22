@@ -64,7 +64,7 @@ QString facedetectModelCacheDir() {
     char* dir = aicore_facedetect_model_cache_dir();
     if (dir) {
         QString result = QString::fromUtf8(dir);
-        aicore_facedetect_free_string(dir);
+        aicore_facedetect_free_buffer(dir);
         return result;
     }
     return QDir::homePath() +
@@ -114,113 +114,30 @@ private:
     bool m_locked = false;
 };
 
-// ---------------------------------------------------------------------------
-// VideoFrameReader: owns a cv::VideoCapture on a dedicated QThread so that
-// OpenCV's MSMF/DirectShow backend (Windows) does not block the Qt main
-// thread during read() calls.  Communicates frames as RGB cv::Mat via
-// emitted signal for direct use by face detection.
-// ---------------------------------------------------------------------------
-#ifdef HAS_OPENCV_FACE_CAPTURE
-class VideoFrameReader : public QObject {
-    Q_OBJECT
-public:
-    explicit VideoFrameReader(QObject* parent = nullptr) : QObject(parent) {}
-
-    ~VideoFrameReader() override { release(); }
-
-    bool openVideo(const std::string& path, int backend = cv::CAP_ANY) {
-        release();
-        return m_cap.open(path, backend) || m_cap.open(path, cv::CAP_ANY);
-    }
-
-    bool openCamera(int deviceIndex, int backend = cv::CAP_ANY) {
-        release();
-        m_cap.open(deviceIndex, backend);
-        if (m_cap.isOpened()) {
-            m_cap.set(cv::CAP_PROP_FRAME_WIDTH, 640);
-            m_cap.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
-        }
-        return m_cap.isOpened();
-    }
-
-    bool isOpened() const { return m_cap.isOpened(); }
-
-    Q_INVOKABLE void release() {
-        if (m_cap.isOpened()) m_cap.release();
-    }
-
-    int64_t getFrameCount() const {
-        return m_cap.isOpened() ? static_cast<int64_t>(
-                                          m_cap.get(cv::CAP_PROP_FRAME_COUNT))
-                                : 0;
-    }
-
-    double getFps() const {
-        return m_cap.isOpened() ? m_cap.get(cv::CAP_PROP_FPS) : 0.0;
-    }
-
-    int getFrameWidth() const {
-        return m_cap.isOpened()
-                       ? static_cast<int>(m_cap.get(cv::CAP_PROP_FRAME_WIDTH))
-                       : 0;
-    }
-
-    int getFrameHeight() const {
-        return m_cap.isOpened()
-                       ? static_cast<int>(m_cap.get(cv::CAP_PROP_FRAME_HEIGHT))
-                       : 0;
-    }
-
-    int currentFrameNum() const {
-        return m_cap.isOpened()
-                       ? static_cast<int>(m_cap.get(cv::CAP_PROP_POS_FRAMES))
-                       : 0;
-    }
-
-public slots:
-    void readFrame() {
-        // Reentrancy guard: on Windows the MSMF/DirectShow backend can take
-        // 50-200 ms per read().  If the UI timer keeps firing faster than
-        // that, queued readFrame calls would pile up and the video would
-        // race ahead / lag behind indefinitely.  Drop redundant reads.
-        if (m_reading.exchange(true)) return;
-        if (!m_cap.isOpened()) {
-            m_reading = false;
-            return;
-        }
-        cv::Mat frame;
-        const bool ok = m_cap.read(frame) && !frame.empty();
-        m_reading = false;
-        if (!ok) {
-            emit frameReadFailed();
-            return;
-        }
-        // Emit the raw OpenCV frame (BGR). Downstream consumers
-        // (cvMatToQImage / detection) perform the single BGR→RGB conversion;
-        // converting here would double-swap the channels and corrupt colors.
-        emit frameReady(frame, currentFrameNum());
-    }
-
-    void seekToFrame(int frameIndex) {
-        if (m_cap.isOpened()) {
-            m_cap.set(cv::CAP_PROP_POS_FRAMES, frameIndex);
-        }
-    }
-
-signals:
-    void frameReady(const cv::Mat& rgbFrame, int frameIndex);
-    void frameReadFailed();
-
-private:
-    cv::VideoCapture m_cap;
-    std::atomic<bool> m_reading{false};
-};
-#endif
-
 }  // namespace
 
-FaceCaptureWidget::FaceCaptureWidget(QWidget* parent) : QWidget(parent) {
+FaceCaptureWidget::FaceCaptureWidget(QWidget* parent)
+    : VideoPlaybackWidget(parent) {
+    // video_base owns the playback panel; cache the base status label so
+    // existing code keeps working, and forward the stream signals under the
+    // historical names used by FreeSplatterDialog.
+    m_statusLabel = statusLabel();
+    connect(this, &VideoPlaybackWidget::streamStarted, this,
+            &FaceCaptureWidget::cameraStarted);
+    connect(this, &VideoPlaybackWidget::streamStopped, this,
+            &FaceCaptureWidget::cameraStopped);
+    connect(this, &VideoPlaybackWidget::streamError, this,
+            &FaceCaptureWidget::cameraError);
+
     m_inferenceCancelToken = aicore_cancel_token_new();
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    // Async GGML detection: inference runs on a thread pool so the GUI
+    // thread (and display timer) is never blocked.  The watcher is owned
+    // by this widget and is reused for every detection cycle.
+    m_detectWatcher = new QFutureWatcher<std::vector<ScoredFace>>(this);
+    connect(m_detectWatcher, &QFutureWatcher<std::vector<ScoredFace>>::finished,
+            this, &FaceCaptureWidget::onAsyncDetectFinished);
+#endif
     m_downloader = new ecvModelDownloader(this);
     connect(m_downloader, &ecvModelDownloader::logMessage, this,
             &FaceCaptureWidget::logMessage);
@@ -309,9 +226,9 @@ FaceCaptureWidget::FaceCaptureWidget(QWidget* parent) : QWidget(parent) {
                 emit logMessage(
                         tr("[FaceCapture] Loaded face detector: %1")
                                 .arg(QFileInfo(m_loadedGgmlPath).fileName()));
-                if (m_cameraActive) {
+                if (isActive()) {
                     m_statusLabel->setText(
-                            m_inputSource == InputSource::VideoFile
+                            inputSource() == InputSource::VideoFile
                                     ? tr("Playing video — preview + face "
                                          "overlay")
                                     : tr("Camera active — detecting faces"));
@@ -327,23 +244,8 @@ FaceCaptureWidget::FaceCaptureWidget(QWidget* parent) : QWidget(parent) {
 
 FaceCaptureWidget::~FaceCaptureWidget() {
     requestInferenceCancel();
-    stopCamera();
-#ifdef HAS_OPENCV_FACE_CAPTURE
-    // Clean up background frame reader thread
-    m_frameReaderRunning.store(0);
-    m_frameReaderReady = false;
-    if (m_frameReadTimer) m_frameReadTimer->stop();
-    if (m_frameReaderThread && m_frameReaderThread->isRunning()) {
-        QMetaObject::invokeMethod(m_frameReader, "release",
-                                  Qt::QueuedConnection);
-        m_frameReaderThread->quit();
-        m_frameReaderThread->wait(2000);
-    }
-    {
-        QMutexLocker lock(&m_frameMutex);
-        m_latestFrame.release();
-    }
-#endif
+    stopCamera();  // stops the video_base stream; the background reader
+                   // thread is owned and torn down by the base class
     if (m_ggmlLoadWatcher && m_ggmlLoadWatcher->isRunning()) {
         m_ggmlLoadWatcher->waitForFinished();
     }
@@ -355,140 +257,45 @@ FaceCaptureWidget::~FaceCaptureWidget() {
         m_pendingGgmlPath.clear();
     }
     releaseGgmlModel();
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    if (m_detectWatcher) {
+        m_detectWatcher->future().cancel();
+        m_detectWatcher->waitForFinished();
+    }
+#endif
     aicore_cancel_token_free(m_inferenceCancelToken);
     m_inferenceCancelToken = nullptr;
 }
 
 bool FaceCaptureWidget::isAvailable() {
-#ifdef HAS_OPENCV_FACE_CAPTURE
-    return true;
-#else
-    return false;
-#endif
+    return VideoPlaybackWidget::isAvailable();
 }
 
 void FaceCaptureWidget::setupUi() {
-    auto* mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(4, 4, 4, 4);
-    mainLayout->setSpacing(4);
+    // The playback panel (preview + source selection + seek/speed controls)
+    // is built by the video_base base class; this method only appends the
+    // face-capture specific controls below the base layout.
+    auto* layout = mainLayout();
 
-    m_previewLabel = new ecvClickableImageLabel(this);
-    m_previewLabel->setMinimumSize(320, 180);
-    m_previewLabel->setFixedHeight(180);
-    m_previewLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    m_previewLabel->setStyleSheet(
-            QStringLiteral("QLabel { background-color: #1a1a1a; "
-                           "border: 1px solid #444; border-radius: 4px; }"));
-    m_previewLabel->setText(tr("Camera preview"));
-
-    // Preview label — added directly to the main layout.
-    mainLayout->addWidget(m_previewLabel, 1);
-
-#ifdef HAS_OPENCV_FACE_CAPTURE
-    // Video playback controls — placed below the preview area.
-    // Using a regular QWidget + QVBoxLayout (no overlay / QStackedLayout)
-    // so that child widgets render with native macOS styling.
-    m_videoControlsRow = new QWidget(this);
-    auto* videoCtrlMainLayout = new QVBoxLayout(m_videoControlsRow);
-    videoCtrlMainLayout->setContentsMargins(0, 0, 0, 0);
-    videoCtrlMainLayout->setSpacing(2);
-
-    // Seek preview thumbnail — child of m_previewLabel so it overlays on
-    // the video area without affecting the controls layout.
-    m_seekPreviewLabel = new QLabel(m_previewLabel);
-    m_seekPreviewLabel->setFixedSize(160, 90);
-    m_seekPreviewLabel->setVisible(false);
-    m_seekPreviewLabel->setStyleSheet(
-            QStringLiteral("QLabel { border: 1px solid #444; "
-                           "background: #1a1a1a; }"));
-    m_seekPreviewLabel->setAlignment(Qt::AlignCenter);
-    m_seekPreviewLabel->raise();
-
-    auto* sliderRow = new QWidget(m_videoControlsRow);
-    auto* videoCtrlLayout = new QHBoxLayout(sliderRow);
-    videoCtrlLayout->setContentsMargins(0, 0, 0, 0);
-
-    m_videoSeekSlider = new QSlider(Qt::Horizontal, m_videoControlsRow);
-    m_videoSeekSlider->setRange(0, 0);
-    m_videoSeekSlider->setEnabled(false);
-    videoCtrlLayout->addWidget(m_videoSeekSlider, 1);
-
-    m_videoTimeLabel = new QLabel(QStringLiteral("0:00"), m_videoControlsRow);
-    m_videoTimeLabel->setMinimumWidth(110);
-    m_videoTimeLabel->setAlignment(Qt::AlignCenter);
-    videoCtrlLayout->addWidget(m_videoTimeLabel);
-
-    m_playbackSpeedCombo = new QComboBox(m_videoControlsRow);
-    m_playbackSpeedCombo->addItems(
-            {QStringLiteral("0.25\u00d7"), QStringLiteral("0.5\u00d7"),
-             QStringLiteral("1\u00d7"), QStringLiteral("2\u00d7"),
-             QStringLiteral("4\u00d7")});
-    m_playbackSpeedCombo->setCurrentIndex(2);  // 1\u00d7 default
-    m_playbackSpeedCombo->setFixedWidth(70);
-    m_playbackSpeedCombo->setEnabled(false);  // disabled until video loaded
-    videoCtrlLayout->addWidget(m_playbackSpeedCombo);
-
-    videoCtrlMainLayout->addWidget(sliderRow);
-    m_videoControlsRow->setVisible(false);  // Hidden until video file is loaded
-    mainLayout->addWidget(m_videoControlsRow);  // below preview
-
-    // Install event filter for hover/click preview on slider
-    m_videoSeekSlider->installEventFilter(this);
-    m_videoSeekSlider->setMouseTracking(true);
-
-    connect(m_videoSeekSlider, &QSlider::sliderPressed, this,
-            [this]() { m_userSeeking = true; });
-    connect(m_videoSeekSlider, &QSlider::sliderReleased, this, [this]() {
-        m_userSeeking = false;
-        // Explicitly perform the seek now that m_userSeeking is false.
-        // We cannot rely on valueChanged firing after sliderReleased —
-        // if the slider value was already set during the drag, valueChanged
-        // will not fire again, and the seek would never happen.
-        onVideoSeekSliderChanged(m_videoSeekSlider->value());
-        if (m_seekPreviewLabel) m_seekPreviewLabel->setVisible(false);
-    });
-    connect(m_videoSeekSlider, &QSlider::valueChanged, this,
-            &FaceCaptureWidget::onVideoSeekSliderChanged);
-    connect(m_playbackSpeedCombo,
-            QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-            &FaceCaptureWidget::onPlaybackSpeedChanged);
-#endif
-
+    // Angle guide label (guided capture).
     m_angleLabel = new QLabel(this);
     m_angleLabel->setAlignment(Qt::AlignCenter);
     m_angleLabel->hide();
-    mainLayout->addWidget(m_angleLabel);
-
-    m_statusLabel = new QLabel(this);
-    m_statusLabel->setAlignment(Qt::AlignCenter);
-    m_statusLabel->setWordWrap(false);
-    m_statusLabel->setFixedHeight(m_statusLabel->fontMetrics().height() + 2);
-    mainLayout->addWidget(m_statusLabel);
+    layout->addWidget(m_angleLabel);
 
     m_captureProgress = new QProgressBar(this);
     m_captureProgress->setTextVisible(true);
     m_captureProgress->setFormat(tr("%v / %m faces"));
     m_captureProgress->setValue(0);
-    mainLayout->addWidget(m_captureProgress);
+    layout->addWidget(m_captureProgress);
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
-    // Keep the action adjacent to the video state. A file source has no camera
-    // device to select, but must still offer the same explicit Capture action.
-    m_cameraControlsRow = new QWidget(this);
-    auto* controlsLayout = new QHBoxLayout(m_cameraControlsRow);
-    controlsLayout->setContentsMargins(0, 0, 0, 0);
-    controlsLayout->setSpacing(6);
-    m_cameraDeviceLabel = new QLabel(tr("Device:"), m_cameraControlsRow);
-    controlsLayout->addWidget(m_cameraDeviceLabel);
-
-    m_cameraCombo = new QComboBox(m_cameraControlsRow);
-    m_cameraCombo->addItem(tr("Default (0)"), 0);
-    controlsLayout->addWidget(m_cameraCombo, 1);
-
-    m_captureBtn = new QPushButton(tr("Capture"), m_cameraControlsRow);
+    // Manual capture action (camera mode) / guided-capture snapshot button.
+    m_captureBtn = new QPushButton(tr("Capture"), this);
     m_captureBtn->setEnabled(false);
-    controlsLayout->addWidget(m_captureBtn);
-    mainLayout->addWidget(m_cameraControlsRow);
+    layout->addWidget(m_captureBtn);
+    connect(m_captureBtn, &QPushButton::clicked, this,
+            &FaceCaptureWidget::captureCurrentFrame);
 #endif
 
     m_capturedGalleryScroll = new QScrollArea(this);
@@ -504,27 +311,18 @@ void FaceCaptureWidget::setupUi() {
     galleryLayout->setContentsMargins(0, 0, 0, 0);
     galleryLayout->setSpacing(4);
     m_capturedGalleryScroll->setWidget(m_capturedGalleryRow);
-    mainLayout->addWidget(m_capturedGalleryScroll);
+    layout->addWidget(m_capturedGalleryScroll);
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
     auto* detectorInputRow = new QHBoxLayout();
     detectorInputRow->setSpacing(6);
     detectorInputRow->addWidget(new QLabel(tr("Face detector:"), this));
     m_detectorCombo = new QComboBox(this);
-    detectorInputRow->addWidget(m_detectorCombo, 2);
-    detectorInputRow->addWidget(new QLabel(tr("Input:"), this));
-    m_sourceCombo = new QComboBox(this);
-    m_sourceCombo->addItem(tr("Live camera"),
-                           static_cast<int>(InputSource::Camera));
-    m_sourceCombo->addItem(tr("Video file"),
-                           static_cast<int>(InputSource::VideoFile));
-    detectorInputRow->addWidget(m_sourceCombo, 1);
-    mainLayout->addLayout(detectorInputRow);
+    detectorInputRow->addWidget(m_detectorCombo, 1);
+    layout->addLayout(detectorInputRow);
     connect(m_detectorCombo,
             QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &FaceCaptureWidget::onDetectorComboChanged);
-    connect(m_sourceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &FaceCaptureWidget::onSourceChanged);
 
     auto* settingsRow = new QHBoxLayout();
     settingsRow->setSpacing(6);
@@ -572,7 +370,7 @@ void FaceCaptureWidget::setupUi() {
             "When multiple faces appear, choose which one to capture. "
             "In Track same person mode, one identity is kept across frames."));
     settingsRow->addWidget(m_faceStrategyCombo, 1);
-    mainLayout->addLayout(settingsRow);
+    layout->addLayout(settingsRow);
 
     connect(m_minScoreSpin,
             QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
@@ -596,19 +394,19 @@ void FaceCaptureWidget::setupUi() {
     auto* reloadRegistryBtn = new QPushButton(tr("Reload"), this);
     registryPathRow->addWidget(browseRegistryBtn);
     registryPathRow->addWidget(reloadRegistryBtn);
-    mainLayout->addLayout(registryPathRow);
+    layout->addLayout(registryPathRow);
 
     m_registryFilterEdit = new QLineEdit(this);
     m_registryFilterEdit->setPlaceholderText(
             tr("Filter registered identities by id or name"));
-    mainLayout->addWidget(m_registryFilterEdit);
+    layout->addWidget(m_registryFilterEdit);
     m_registryList = new QListWidget(this);
     m_registryList->setSelectionMode(QAbstractItemView::ExtendedSelection);
     m_registryList->setMaximumHeight(96);
     m_registryList->setAlternatingRowColors(true);
-    mainLayout->addWidget(m_registryList);
+    layout->addWidget(m_registryList);
     m_registryStatusLabel = new QLabel(this);
-    mainLayout->addWidget(m_registryStatusLabel);
+    layout->addWidget(m_registryStatusLabel);
 
     connect(browseRegistryBtn, &QPushButton::clicked, this,
             &FaceCaptureWidget::onBrowseRegistry);
@@ -626,7 +424,7 @@ void FaceCaptureWidget::setupUi() {
     detectorLayout->addWidget(new QLabel(tr("Face detector:"), this));
     m_detectorCombo = new QComboBox(this);
     detectorLayout->addWidget(m_detectorCombo, 1);
-    mainLayout->addLayout(detectorLayout);
+    layout->addLayout(detectorLayout);
     connect(m_detectorCombo,
             QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &FaceCaptureWidget::onDetectorComboChanged);
@@ -635,102 +433,14 @@ void FaceCaptureWidget::setupUi() {
     m_downloadLabel = new QLabel(this);
     m_downloadLabel->setAlignment(Qt::AlignCenter);
     m_downloadLabel->setVisible(false);
-    mainLayout->addWidget(m_downloadLabel);
+    layout->addWidget(m_downloadLabel);
 
     m_downloadProgress = new QProgressBar(this);
     m_downloadProgress->setVisible(false);
     m_downloadProgress->setTextVisible(false);
-    mainLayout->addWidget(m_downloadProgress);
+    layout->addWidget(m_downloadProgress);
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
-    m_videoFileRow = new QWidget(this);
-    auto* videoLayout = new QHBoxLayout(m_videoFileRow);
-    videoLayout->setContentsMargins(0, 0, 0, 0);
-    m_videoPathEdit = new QLineEdit(m_videoFileRow);
-    m_videoPathEdit->setPlaceholderText(
-            tr("Path to video (mp4, avi, mkv, mov, webm, …)"));
-    videoLayout->addWidget(m_videoPathEdit, 1);
-    m_browseVideoBtn = new QPushButton(tr("Browse…"), m_videoFileRow);
-    connect(m_browseVideoBtn, &QPushButton::clicked, this,
-            &FaceCaptureWidget::onBrowseVideoFile);
-    videoLayout->addWidget(m_browseVideoBtn);
-    m_videoFileRow->setVisible(false);
-    mainLayout->addWidget(m_videoFileRow);
-    connect(m_videoPathEdit, &QLineEdit::textChanged, this,
-            [this](const QString& text) {
-                m_videoFilePath = text.trimmed();
-                saveFaceCaptureSettings();
-            });
-
-    m_frameTimer = new QTimer(this);
-    m_frameTimer->setInterval(30);
-
-    m_frameReadTimer = new QTimer(this);
-    // m_frameReadTimer interval will be set when video/camera starts.
-
-    // Async seek-preview decode (Windows MSMF seek/read must not run on
-    // the UI thread — it would freeze the slider and the playing video).
-    m_seekPreviewWatcher = new QFutureWatcher<QPair<int, QPixmap>>(this);
-    connect(m_seekPreviewWatcher,
-            &QFutureWatcher<QPair<int, QPixmap>>::finished, this,
-            &FaceCaptureWidget::onSeekPreviewReady);
-
-    connect(m_frameTimer, &QTimer::timeout, this,
-            &FaceCaptureWidget::processFrame);
-
-    // Background frame reader: reads frames on a dedicated thread so
-    // OpenCV's MSMF/DirectShow backend (Windows) does not block the UI.
-    // cv::Mat must be registered so queued frameReady() deliveries work
-    // (unregistered types are silently dropped by Qt).
-    qRegisterMetaType<cv::Mat>("cv::Mat");
-    m_frameReaderThread = new QThread(this);
-    m_frameReader = new VideoFrameReader();  // no parent — moved to thread
-    m_frameReader->moveToThread(m_frameReaderThread);
-    connect(m_frameReaderThread, &QThread::finished, m_frameReader,
-            &QObject::deleteLater);
-    connect(m_frameReadTimer, &QTimer::timeout,
-            static_cast<VideoFrameReader*>(m_frameReader),
-            &VideoFrameReader::readFrame);
-    connect(static_cast<VideoFrameReader*>(m_frameReader),
-            &VideoFrameReader::frameReady, this,
-            [this](const cv::Mat& rgbFrame, int frameIndex) {
-                QMutexLocker lock(&m_frameMutex);
-                // Shallow copy (refcount bump): the signal argument owns
-                // the decoded buffer exclusively after delivery, so the
-                // member can share it without a full-frame deep copy.
-                m_latestFrame = rgbFrame;
-                m_frameReaderSeekTo.store(frameIndex);
-            });
-    connect(static_cast<VideoFrameReader*>(m_frameReader),
-            &VideoFrameReader::frameReadFailed, this, [this]() {
-                // Video end-of-file: loop back to start.
-                // Camera transient failures are ignored (retry on next tick).
-                if (m_inputSource == InputSource::VideoFile &&
-                    m_frameReaderReady && !m_userSeeking) {
-                    QMetaObject::invokeMethod(m_frameReader, "seekToFrame",
-                                              Qt::QueuedConnection,
-                                              Q_ARG(int, 0));
-                    m_lastDetectedFrameNum = 0;
-                    m_ggmlFrameSkip = 0;
-                    if (m_videoSeekSlider) {
-                        m_videoSeekSlider->blockSignals(true);
-                        m_videoSeekSlider->setValue(0);
-                        m_videoSeekSlider->blockSignals(false);
-                    }
-                    updateVideoTimeLabel(0);
-                }
-            });
-    m_frameReaderThread->start();
-    connect(m_captureBtn, &QPushButton::clicked, this,
-            &FaceCaptureWidget::captureCurrentFrame);
-    connect(m_cameraCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, [this](int) {
-                if (!m_cameraActive) return;
-                const int idx = m_cameraCombo->currentData().toInt();
-                stopCamera();
-                startCamera(idx);
-            });
-
     m_statusLabel->setText(
             tr("Ready \u2014 choose a detector, then start the camera"));
     updateCaptureProgressUi();
@@ -739,404 +449,6 @@ void FaceCaptureWidget::setupUi() {
             tr("Face capture unavailable (OpenCV not built with videoio "
                "and objdetect)"));
 #endif
-}
-
-void FaceCaptureWidget::resizeEvent(QResizeEvent* event) {
-    QWidget::resizeEvent(event);
-    if (!m_previewLabel) return;
-
-    // The camera image remains legible while the surrounding form scrolls on
-    // short displays.  Limit its height so a wide desktop does not make the
-    // capture controls unnecessarily far away.
-    const int previewWidth = std::max(320, contentsRect().width() - 8);
-    const int previewHeight = qBound(180, previewWidth * 9 / 16, 360);
-    if (m_previewLabel->height() != previewHeight) {
-        m_previewLabel->setFixedHeight(previewHeight);
-    }
-
-#ifdef HAS_OPENCV_FACE_CAPTURE
-    // The seek preview thumbnail is now managed by the layout system
-    // (no manual positioning needed).
-    Q_UNUSED(m_seekPreviewLabel)
-    Q_UNUSED(m_videoSeekSlider)
-    Q_UNUSED(m_videoControlsRow)
-#endif
-}
-
-void FaceCaptureWidget::showEvent(QShowEvent* event) {
-    QWidget::showEvent(event);
-    // Restore video controls visibility when the widget is shown again
-    // (e.g., after minimize/restore or plugin reopen).
-#ifdef HAS_OPENCV_FACE_CAPTURE
-    const bool videoLoaded =
-            m_frameReaderReady && m_inputSource == InputSource::VideoFile;
-    if (m_videoControlsRow) m_videoControlsRow->setVisible(videoLoaded);
-    if (m_videoSeekSlider) m_videoSeekSlider->setEnabled(videoLoaded);
-    if (m_playbackSpeedCombo) m_playbackSpeedCombo->setEnabled(videoLoaded);
-#endif
-}
-
-void FaceCaptureWidget::onSourceChanged(int index) {
-    if (!m_sourceCombo) return;
-    m_inputSource =
-            static_cast<InputSource>(m_sourceCombo->itemData(index).toInt());
-    if (m_videoFileRow) {
-        m_videoFileRow->setVisible(m_inputSource == InputSource::VideoFile);
-    }
-    if (m_videoControlsRow) {
-        // Hide playback controls in camera mode — they are meaningless for
-        // live capture.  Re-enable when a video file is opened.
-        m_videoControlsRow->setVisible(m_inputSource == InputSource::VideoFile);
-        if (m_videoSeekSlider) m_videoSeekSlider->setEnabled(false);
-        if (m_playbackSpeedCombo) m_playbackSpeedCombo->setEnabled(false);
-    }
-    if (m_cameraControlsRow) {
-        m_cameraControlsRow->setVisible(true);
-    }
-    if (m_cameraDeviceLabel) {
-        m_cameraDeviceLabel->setVisible(m_inputSource == InputSource::Camera);
-    }
-    if (m_cameraCombo) {
-        m_cameraCombo->setVisible(m_inputSource == InputSource::Camera);
-    }
-    if (m_cameraActive) {
-        stopCapture();
-    }
-    if (m_inputSource == InputSource::VideoFile) {
-        m_statusLabel->setText(tr("Select a video file, then start playback"));
-    } else {
-        m_statusLabel->setText(
-                tr("Ready \u2014 choose a detector, then start the camera"));
-    }
-}
-
-void FaceCaptureWidget::onBrowseVideoFile() {
-    QSettings settings;
-    const QString lastDir =
-            ecvPS::browseDir(settings, QStringLiteral("qFreeSplatter"),
-                             QStringLiteral("lastVideoDir"), QDir::homePath());
-    const QString path = cvFileDialog::getOpenFileName(
-            this, tr("Select video file"), lastDir,
-            tr("Video files (*.mp4 *.avi *.mkv *.mov *.webm *.m4v *.wmv *.ts "
-               "*.mpg *.mpeg);;All files (*.*)"));
-    if (path.isEmpty()) return;
-    ecvPS::saveBrowseDir(settings, QStringLiteral("qFreeSplatter"),
-                         QStringLiteral("lastVideoDir"), path);
-    if (m_videoPathEdit) m_videoPathEdit->setText(path);
-    m_videoFilePath = path;
-}
-
-void FaceCaptureWidget::onVideoSeekSliderChanged(int value) {
-#ifdef HAS_OPENCV_FACE_CAPTURE
-    if (!m_frameReaderReady || m_inputSource != InputSource::VideoFile) return;
-    if (m_userSeeking) {
-        // During drag: show preview thumbnail via independent decode path
-        showSeekPreview(value);
-        // Update time label to show target position (only when timer is
-        // inactive; during playback processFrame overwrites it each tick).
-        if (!m_frameTimer->isActive()) {
-            updateVideoTimeLabel(value);
-        }
-        return;
-    }
-    // Forward seek to background reader
-    QMetaObject::invokeMethod(m_frameReader, "seekToFrame",
-                              Qt::QueuedConnection, Q_ARG(int, value));
-    // Reset detection throttle so detection resumes immediately after seek.
-    // Without this, a backward seek would make curFrameNum <
-    // m_lastDetectedFrameNum, causing the video-time delta to be negative and
-    // timeForDetection=false forever.
-    m_lastDetectedFrameNum = value;
-    // When the timer is not running (video paused / stopped) the preview
-    // label would otherwise keep showing the old frame.  Read the cached
-    // frame and push it to the display.
-    if (!m_frameTimer->isActive()) {
-        cv::Mat frame;
-        {
-            QMutexLocker lock(&m_frameMutex);
-            if (!m_latestFrame.empty()) m_latestFrame.copyTo(frame);
-        }
-        if (!frame.empty()) {
-            QImage img = cvMatToQImage(frame);
-            m_previewLabel->setPixmap(QPixmap::fromImage(
-                    img.scaled(m_previewLabel->size(), Qt::KeepAspectRatio,
-                               Qt::FastTransformation)));
-        }
-    }
-#endif
-}
-
-int FaceCaptureWidget::computeTimerInterval() const {
-    // For video files: match the video's native frame rate × playback speed.
-    // This ensures one timer tick ≈ one video frame advance.
-    if (m_inputSource == InputSource::VideoFile && m_videoFps > 0) {
-        const double interval = 1000.0 / (m_videoFps * m_playbackSpeed);
-        return std::max(1, static_cast<int>(std::lround(interval)));
-    }
-    // For camera: base interval adjusted by speed (if speed control is used).
-    return std::max(1, static_cast<int>(m_baseTimerInterval / m_playbackSpeed));
-}
-
-void FaceCaptureWidget::onPlaybackSpeedChanged(int index) {
-    // Speed values: 0.25, 0.5, 1.0, 2.0, 4.0
-    static constexpr double speeds[] = {0.25, 0.5, 1.0, 2.0, 4.0};
-    if (index < 0 || index >= 5) return;
-    m_playbackSpeed = speeds[index];
-    // Recompute BOTH timers: m_frameReadTimer drives the background reader
-    // (the actual video read rate) and m_frameTimer drives display/inference.
-    const int interval = computeTimerInterval();
-    if (m_frameReadTimer) m_frameReadTimer->setInterval(interval);
-    if (m_frameTimer) m_frameTimer->setInterval(interval);
-}
-
-void FaceCaptureWidget::updateVideoTimeLabel(int frameIndex) {
-    if (!m_videoTimeLabel) return;
-    if (m_totalVideoFrames <= 0) {
-        m_videoTimeLabel->setText(QStringLiteral("0:00"));
-        return;
-    }
-    const double fps = m_videoFps > 0 ? m_videoFps : 30.0;
-    const int totalSec = static_cast<int>(frameIndex / fps);
-    const int totalAllSec = static_cast<int>(m_totalVideoFrames / fps);
-    auto fmt = [](int sec) -> QString {
-        const int h = sec / 3600;
-        const int m = (sec % 3600) / 60;
-        const int s = sec % 60;
-        if (h > 0)
-            return QStringLiteral("%1:%2:%3")
-                    .arg(h)
-                    .arg(m, 2, 10, QLatin1Char('0'))
-                    .arg(s, 2, 10, QLatin1Char('0'));
-        return QStringLiteral("%1:%2").arg(m).arg(s, 2, 10, QLatin1Char('0'));
-    };
-    m_videoTimeLabel->setText(fmt(totalSec) + QStringLiteral(" / ") +
-                              fmt(totalAllSec));
-}
-
-void FaceCaptureWidget::showSeekPreview(int frameIndex) {
-#ifdef HAS_OPENCV_FACE_CAPTURE
-    if (m_videoFilePath.isEmpty() || m_totalVideoFrames <= 0) return;
-    if (frameIndex < 0) frameIndex = 0;
-    if (frameIndex >= m_totalVideoFrames) frameIndex = m_totalVideoFrames - 1;
-
-    if (!m_seekPreviewLabel) return;
-
-    // Check QPixmapCache first — avoids re-decoding the same frame.
-    // Key includes a path hash so different videos of equal length do not
-    // collide (length-only keys showed the old video's frame).
-    const QString cacheKey = QStringLiteral("qfs_seekpreview_%1_%2")
-                                     .arg(qHash(m_videoFilePath))
-                                     .arg(frameIndex);
-    QPixmap cached;
-    if (QPixmapCache::find(cacheKey, &cached)) {
-        m_seekPreviewLabel->setPixmap(cached);
-    } else {
-        // ASYNC decode: Windows MSMF/DirectShow seek+read() can block for
-        // 100 ms+ — doing it synchronously here would freeze the slider AND
-        // the playing video (the main thread is shared).  Decode on the
-        // global thread pool; the mutex serializes access to the shared
-        // preview capture, and only the LATEST request wins.
-        m_pendingPreviewFrame = frameIndex;
-        if (m_seekPreviewWatcher && !m_seekPreviewWatcher->isRunning()) {
-            const QString path = m_videoFilePath;
-            // Snapshot the generation: results decoded for a previous video
-            // must not be painted over the new one.
-            const int gen = m_previewGeneration.load();
-            m_seekPreviewWatcher->setFuture(QtConcurrent::run(
-                    [this, path, frameIndex, gen]() -> QPair<int, QPixmap> {
-                        if (gen != m_previewGeneration.load()) {
-                            return {frameIndex, QPixmap()};
-                        }
-                        QMutexLocker lock(&m_previewMutex);
-                        if (!m_previewCapture.isOpened()) {
-                            if (!m_previewCapture.open(path.toStdString(),
-                                                       cv::CAP_FFMPEG) &&
-                                !m_previewCapture.open(path.toStdString(),
-                                                       cv::CAP_ANY)) {
-                                return {frameIndex, QPixmap()};
-                            }
-                        }
-                        m_previewCapture.set(cv::CAP_PROP_POS_FRAMES,
-                                             frameIndex);
-                        cv::Mat frame;
-                        if (!m_previewCapture.read(frame) || frame.empty()) {
-                            return {frameIndex, QPixmap()};
-                        }
-                        // Scale to thumbnail size (160×90)
-                        cv::Mat thumb;
-                        cv::resize(frame, thumb, cv::Size(160, 90), 0, 0,
-                                   cv::INTER_AREA);
-                        return {frameIndex,
-                                QPixmap::fromImage(cvMatToQImage(thumb))};
-                    }));
-        }
-    }
-
-    // Position the thumbnail centered above the slider handle,
-    // overlaying on the video preview area (like modern video players).
-    if (m_videoSeekSlider && m_previewLabel) {
-        const int sliderWidth = m_videoSeekSlider->width();
-        const int range = m_totalVideoFrames - 1;
-        const int handleX =
-                (range > 0) ? static_cast<int>(static_cast<qint64>(frameIndex) *
-                                               (sliderWidth - 1) / range)
-                            : 0;
-        // Map slider handle position to preview label coordinates.
-        const QPoint sliderGlobal =
-                m_videoSeekSlider->mapToGlobal(QPoint(handleX, 0));
-        const QPoint localPos = m_previewLabel->mapFromGlobal(sliderGlobal);
-        // Center horizontally on the handle, place just above the slider.
-        const int previewW = m_seekPreviewLabel->width();
-        const int previewH = m_seekPreviewLabel->height();
-        int x = localPos.x() - previewW / 2;
-        int y = localPos.y() - previewH - 4;
-        // Clamp within preview bounds.
-        x = qBound(0, x, m_previewLabel->width() - previewW);
-        y = qMax(0, y);
-        m_seekPreviewLabel->move(x, y);
-    }
-    m_seekPreviewLabel->raise();
-    m_seekPreviewLabel->setVisible(true);
-#else
-    Q_UNUSED(frameIndex);
-#endif
-}
-
-void FaceCaptureWidget::onSeekPreviewReady() {
-#ifdef HAS_OPENCV_FACE_CAPTURE
-    if (!m_seekPreviewWatcher || !m_seekPreviewLabel) return;
-    const QPair<int, QPixmap> result = m_seekPreviewWatcher->result();
-    if (result.second.isNull()) return;
-    // Cache under the frame that was ACTUALLY decoded, not the latest
-    // slider position (they differ while the user keeps dragging).
-    const QString cacheKey = QStringLiteral("qfs_seekpreview_%1_%2")
-                                     .arg(qHash(m_videoFilePath))
-                                     .arg(result.first);
-    QPixmapCache::insert(cacheKey, result.second);
-    // Only paint if this result still matches the latest request.
-    if (m_seekPreviewLabel->isVisible() &&
-        result.first == m_pendingPreviewFrame) {
-        m_seekPreviewLabel->setPixmap(result.second);
-    }
-
-    // Limit cache size: periodic trim.
-    static int s_cacheCheckCounter = 0;
-    if (++s_cacheCheckCounter % 50 == 0 && QPixmapCache::cacheLimit() > 0) {
-        QPixmapCache::setCacheLimit(32768);  // 32 MB cap
-    }
-#endif
-}
-
-void FaceCaptureWidget::closePreviewCapture() {
-#ifdef HAS_OPENCV_FACE_CAPTURE
-    // Invalidate in-flight async previews from the current video.
-    m_previewGeneration.fetchAndAddRelaxed(1);
-    // Cancel any pending async decode, then release under the mutex so we
-    // never destroy the capture while a worker is reading it.
-    if (m_seekPreviewWatcher) {
-        m_seekPreviewWatcher->future().cancel();
-        m_seekPreviewWatcher->waitForFinished();
-    }
-    {
-        QMutexLocker lock(&m_previewMutex);
-        if (m_previewCapture.isOpened()) {
-            m_previewCapture.release();
-        }
-    }
-#endif
-    if (m_seekPreviewLabel) {
-        m_seekPreviewLabel->clear();
-        m_seekPreviewLabel->setVisible(false);
-    }
-}
-
-bool FaceCaptureWidget::eventFilter(QObject* obj, QEvent* event) {
-    if (obj == m_videoSeekSlider && m_totalVideoFrames > 0) {
-        switch (event->type()) {
-            case QEvent::MouseButtonPress: {
-                // Click-to-seek: when the user clicks on the slider track (not
-                // just the handle), seek immediately to the clicked position.
-                auto* me = static_cast<QMouseEvent*>(event);
-                if (me->button() == Qt::LeftButton) {
-                    const int sliderWidth = m_videoSeekSlider->width();
-                    if (sliderWidth > 0) {
-                        const int frame = static_cast<int>(
-                                me->pos().x() * (m_totalVideoFrames - 1) /
-                                sliderWidth);
-                        const int clamped =
-                                qBound(0, frame, m_totalVideoFrames - 1);
-                        // Show preview at clicked position
-                        showSeekPreview(clamped);
-                        // Seek main capture via background reader
-                        if (m_frameReaderReady &&
-                            m_inputSource == InputSource::VideoFile) {
-                            QMetaObject::invokeMethod(
-                                    m_frameReader, "seekToFrame",
-                                    Qt::QueuedConnection, Q_ARG(int, clamped));
-                        }
-                        // Update slider value
-                        m_videoSeekSlider->blockSignals(true);
-                        m_videoSeekSlider->setValue(clamped);
-                        m_videoSeekSlider->blockSignals(false);
-                        updateVideoTimeLabel(clamped);
-                        // Update preview display (important when paused).
-                        if (!m_frameTimer->isActive()) {
-                            cv::Mat evFrame;
-                            {
-                                QMutexLocker lock(&m_frameMutex);
-                                if (!m_latestFrame.empty())
-                                    m_latestFrame.copyTo(evFrame);
-                            }
-                            if (!evFrame.empty()) {
-                                QImage img = cvMatToQImage(evFrame);
-                                m_previewLabel->setPixmap(QPixmap::fromImage(
-                                        img.scaled(m_previewLabel->size(),
-                                                   Qt::KeepAspectRatio,
-                                                   Qt::FastTransformation)));
-                            }
-                        }
-                        // Preview stays visible until Leave event or next drag.
-                        // Do NOT use QTimer::singleShot to auto-hide — it would
-                        // dismiss the preview while the mouse is still on the
-                        // slider.
-                    }
-                }
-                break;
-            }
-            case QEvent::MouseMove: {
-                auto* me = static_cast<QMouseEvent*>(event);
-                // Throttle hover preview: 66ms (~15fps) on Linux/macOS,
-                // 100ms on Windows where MSMF decode is slower.
-                constexpr qint64 kHoverThrottleMs =
-#ifdef Q_OS_WIN
-                        100
-#else
-                        66
-#endif
-                        ;
-                const qint64 now = QDateTime::currentMSecsSinceEpoch();
-                if (!m_userSeeking &&
-                    now - m_lastPreviewTimeMs < kHoverThrottleMs)
-                    return QWidget::eventFilter(obj, event);
-                m_lastPreviewTimeMs = now;
-
-                // Map mouse x to frame index
-                const int sliderWidth = m_videoSeekSlider->width();
-                if (sliderWidth <= 0) break;
-                const int frame = static_cast<int>(
-                        me->pos().x() * (m_totalVideoFrames - 1) / sliderWidth);
-                showSeekPreview(qBound(0, frame, m_totalVideoFrames - 1));
-                break;
-            }
-            case QEvent::Leave:
-                if (!m_userSeeking && m_seekPreviewLabel)
-                    m_seekPreviewLabel->setVisible(false);
-                break;
-            default:
-                break;
-        }
-    }
-    return QWidget::eventFilter(obj, event);
 }
 
 void FaceCaptureWidget::onBrowseRegistry() {
@@ -1283,188 +595,6 @@ void FaceCaptureWidget::filterRegistry(const QString& text) {
     }
 }
 
-int FaceCaptureWidget::selectedCameraIndex() const {
-    if (!m_cameraCombo) return 0;
-    return m_cameraCombo->currentData().toInt();
-}
-
-QString FaceCaptureWidget::videoFilePath() const {
-    if (m_videoPathEdit) {
-        const QString edited = m_videoPathEdit->text().trimmed();
-        if (!edited.isEmpty()) return edited;
-    }
-    return m_videoFilePath;
-}
-
-void FaceCaptureWidget::setVideoFilePath(const QString& path) {
-    m_videoFilePath = path;
-    if (m_videoPathEdit) {
-        m_videoPathEdit->setText(path);
-    }
-    saveFaceCaptureSettings();
-}
-
-void FaceCaptureWidget::setInputSource(InputSource source) {
-    if (m_sourceCombo) {
-        const int idx = m_sourceCombo->findData(static_cast<int>(source));
-        if (idx >= 0) m_sourceCombo->setCurrentIndex(idx);
-    }
-}
-
-bool FaceCaptureWidget::startVideoFile(const QString& path) {
-#ifdef HAS_OPENCV_FACE_CAPTURE
-    if (path.isEmpty()) return false;
-
-    qInfo() << "[FaceCaptureWidget] startVideoFile:" << path;
-
-    // Resume from paused state if same video
-    if (m_videoPaused && m_frameReaderReady && m_videoFilePath == path &&
-        m_inputSource == InputSource::VideoFile) {
-        m_videoPaused = false;
-        m_cameraActive = true;
-        m_ggmlFrameSkip = 0;
-        aicore_cancel_token_reset(m_inferenceCancelToken);
-        const int interval = computeTimerInterval();
-        m_frameReadTimer->setInterval(interval);
-        m_frameReadTimer->start();
-        m_frameTimer->setInterval(interval);
-        m_frameTimer->start();
-        m_statusLabel->setText(tr("Resuming video"));
-        emit cameraStarted();
-        return true;
-    }
-
-    // Cancel and drain the previous session before issuing any work for the
-    // new video. Doing this after scheduleGgmlModelLoad would cancel the new
-    // model load through the shared task token.
-    qInfo() << "[FaceCaptureWidget] Stopping previous capture...";
-    stopCapture();
-    closePreviewCapture();
-    aicore_cancel_token_reset(m_inferenceCancelToken);
-    qInfo() << "[FaceCaptureWidget] Configuring detector...";
-    if (!configureDetectorForRegistrySelection()) {
-        qWarning() << "[FaceCaptureWidget] "
-                      "configureDetectorForRegistrySelection failed";
-        return false;
-    }
-    m_inputSource = InputSource::VideoFile;
-    m_videoFilePath = path;
-    if (m_videoPathEdit) m_videoPathEdit->setText(path);
-
-    qInfo() << "[FaceCaptureWidget] Detector kind:"
-            << static_cast<int>(m_detectorKind);
-    if (m_detectorKind == DetectorKind::Ggml) {
-        if (!ensureGgmlModelReady()) {
-            m_statusLabel->setText(
-                    tr("Downloading face detector — video preview starting…"));
-        } else {
-            scheduleGgmlModelLoad(facedetectCachePath(currentGgmlFilename()));
-        }
-    } else if (m_detectorKind == DetectorKind::OpenCV) {
-        releaseGgmlModel();
-        loadCascade();
-    }
-
-    qInfo() << "[FaceCaptureWidget] Opening video with OpenCV...";
-    auto* reader = static_cast<VideoFrameReader*>(m_frameReader);
-    if (!reader->openVideo(path.toStdString(), cv::CAP_FFMPEG) &&
-        !reader->openVideo(path.toStdString(), cv::CAP_ANY)) {
-        const QString err =
-                tr("Failed to open video (rebuild OpenCV with FFmpeg / "
-                   "WITH_FFMPEG=ON): %1")
-                        .arg(path);
-        m_statusLabel->setText(err);
-        emit cameraError(err);
-        m_frameReaderReady = false;
-        return false;
-    }
-    m_frameReaderReady = true;
-
-    qInfo() << "[FaceCaptureWidget] Video opened successfully, starting frame "
-               "timer...";
-    m_cameraActive = true;
-    m_ggmlFrameSkip = 0;
-    m_lastDetectedFrameNum = 0;
-
-    // Initialize video seek slider from background reader metadata
-    m_totalVideoFrames = static_cast<int>(reader->getFrameCount());
-    m_videoFps = reader->getFps();
-    if (m_videoFps <= 0)
-        m_videoFps = 30.0;  // fallback for codecs that don't report FPS
-    if (m_videoSeekSlider) {
-        m_videoSeekSlider->blockSignals(true);
-        m_videoSeekSlider->setRange(0, std::max(0, m_totalVideoFrames - 1));
-        m_videoSeekSlider->setValue(0);
-        m_videoSeekSlider->setEnabled(m_totalVideoFrames > 0);
-        m_videoSeekSlider->blockSignals(false);
-    }
-    if (m_playbackSpeedCombo) {
-        m_playbackSpeedCombo->setEnabled(true);
-    }
-    // Show playback controls now that a video is loaded.
-    if (m_videoControlsRow) m_videoControlsRow->setVisible(true);
-    updateVideoTimeLabel(0);
-
-    // Set timer interval from video FPS × speed (ensures 1 tick ≈ 1 video
-    // frame).
-    const int interval = computeTimerInterval();
-    m_frameReadTimer->setInterval(interval);
-    m_frameReadTimer->start();
-    m_frameTimer->setInterval(interval);
-    m_frameTimer->start();
-    m_statusLabel->setText(tr("Playing video — preview + face overlay"));
-    emit cameraStarted();
-    return true;
-#else
-    Q_UNUSED(path);
-    return false;
-#endif
-}
-
-void FaceCaptureWidget::restartVideoFile() {
-#ifdef HAS_OPENCV_FACE_CAPTURE
-    if (!m_frameReaderReady || m_videoFilePath.isEmpty()) return;
-
-    // Reset ALL detection state so the pipeline restarts fresh:
-    // - Clear stale face rect and cached frame so old overlay disappears
-    // - Reset cancel token so new inference is allowed
-    // - m_lastDetectedFrameNum = -1 forces detection on the very first frame
-    m_lastFaceRect = cv::Rect();
-    m_lastDetectedFrame.release();
-    m_lastFaceScore = 0.f;
-    m_consecutiveDetections = 0;
-    m_ggmlFrameSkip = 0;
-    aicore_cancel_token_reset(m_inferenceCancelToken);
-
-    QMetaObject::invokeMethod(m_frameReader, "seekToFrame",
-                              Qt::QueuedConnection, Q_ARG(int, 0));
-    m_lastDetectedFrameNum = -1;
-    if (m_videoSeekSlider) {
-        m_videoSeekSlider->blockSignals(true);
-        m_videoSeekSlider->setValue(0);
-        m_videoSeekSlider->blockSignals(false);
-    }
-    updateVideoTimeLabel(0);
-
-    // Always restart the pipeline even if cameraActive is still true:
-    // the seek invalidates the current frame position, so we stop the
-    // timer and re-enter startVideoFile pipeline to queue a fresh read.
-    if (m_frameTimer) m_frameTimer->stop();
-    m_videoPaused = false;
-    m_cameraActive = true;
-    m_ggmlFrameSkip = 0;
-    const int interval = computeTimerInterval();
-    m_frameTimer->setInterval(interval);
-    m_frameTimer->start();
-    // Queue the first background read — processFrame drives subsequent reads.
-    QMetaObject::invokeMethod(m_frameReader, "readFrame", Qt::QueuedConnection);
-    m_statusLabel->setText(tr("Restarted video"));
-    // NOTE: deliberately do NOT emit cameraStarted() here.  The dialog uses
-    // that signal to launch startGuidedCapture(), which calls resetCapture()
-    // and would wipe already-collected faces — Restart must keep them.
-#endif
-}
-
 void FaceCaptureWidget::resumeCapture() {
     // Resume guided capture WITHOUT clearing collected faces.
     // Used when playback resumes after Stop (paused) — the user keeps
@@ -1517,7 +647,7 @@ void FaceCaptureWidget::setInferenceDevice(const QString& device) {
     }
     m_inferenceDevice = normalized;
     releaseGgmlModel();
-    if (m_cameraActive && m_detectorKind == DetectorKind::Ggml) {
+    if (isActive() && m_detectorKind == DetectorKind::Ggml) {
         scheduleGgmlModelLoad(facedetectCachePath(currentGgmlFilename()));
     }
 }
@@ -1539,8 +669,6 @@ void FaceCaptureWidget::releaseGpuResources() {
     releaseGgmlModel();
 #endif
 }
-
-bool FaceCaptureWidget::isCaptureActive() const { return m_cameraActive; }
 
 void FaceCaptureWidget::populateDetectorCombo() {
     if (!m_detectorCombo) return;
@@ -1615,7 +743,7 @@ void FaceCaptureWidget::onDetectorComboChanged(int index) {
         reloadRegistry();
     }
 
-    if (m_cameraActive) {
+    if (isActive()) {
         stopCamera();
         startCamera(m_pendingCameraIndex);
     }
@@ -1813,20 +941,30 @@ bool FaceCaptureWidget::loadCascade() {
 #endif
 }
 
-bool FaceCaptureWidget::startCamera(int deviceIndex) {
-#ifdef HAS_OPENCV_FACE_CAPTURE
-    stopCapture();
+// ---------------------------------------------------------------------------
+// video_base hooks
+// ---------------------------------------------------------------------------
+
+bool FaceCaptureWidget::onPrepareStream() {
+    // Cancel and drain the previous inference session before issuing any
+    // work for the new stream.  Doing this after scheduleGgmlModelLoad would
+    // cancel the new model load through the shared task token.
+    requestInferenceCancel();
     aicore_cancel_token_reset(m_inferenceCancelToken);
-    m_pendingCameraIndex = deviceIndex;
-    if (!configureDetectorForRegistrySelection()) return false;
+
+    if (!configureDetectorForRegistrySelection()) {
+        qWarning() << "[FaceCaptureWidget] "
+                      "configureDetectorForRegistrySelection failed";
+        return false;
+    }
 
     if (m_detectorKind == DetectorKind::Ggml) {
         if (!ensureGgmlModelReady()) {
-            m_statusLabel->setText(tr("Downloading face detector model..."));
-            return false;
+            m_statusLabel->setText(
+                    tr("Downloading face detector — video preview starting…"));
+        } else {
+            scheduleGgmlModelLoad(facedetectCachePath(currentGgmlFilename()));
         }
-        scheduleGgmlModelLoad(facedetectCachePath(currentGgmlFilename()));
-        m_cascadeLoaded = false;
     } else if (m_detectorKind == DetectorKind::OpenCV) {
         releaseGgmlModel();
         if (!loadCascade()) {
@@ -1835,120 +973,42 @@ bool FaceCaptureWidget::startCamera(int deviceIndex) {
                        "capture without detection"));
         }
     }
-
-    if (!m_camerasEnumerated && m_cameraCombo) {
-        m_camerasEnumerated = true;
-        m_cameraCombo->blockSignals(true);
-        m_cameraCombo->clear();
-
-        namespace cvlog = cv::utils::logging;
-        const auto prevLevel = cvlog::getLogLevel();
-        cvlog::setLogLevel(cvlog::LOG_LEVEL_SILENT);
-
-        for (int i = 0; i < 10; ++i) {
-            cv::VideoCapture testCap(i, cv::CAP_ANY);
-            if (testCap.isOpened()) {
-                m_cameraCombo->addItem(tr("Camera %1").arg(i), i);
-                testCap.release();
-            }
-        }
-
-        cvlog::setLogLevel(prevLevel);
-
-        if (m_cameraCombo->count() == 0) {
-            m_cameraCombo->addItem(tr("No camera found"), -1);
-            m_cameraCombo->blockSignals(false);
-            m_statusLabel->setText(tr("No camera devices detected"));
-            return false;
-        }
-        if (deviceIndex == 0 && m_cameraCombo->count() > 0) {
-            deviceIndex = m_cameraCombo->itemData(0).toInt();
-            m_pendingCameraIndex = deviceIndex;
-        }
-        m_cameraCombo->blockSignals(false);
-    }
-
-    auto* reader = static_cast<VideoFrameReader*>(m_frameReader);
-    if (!reader->openCamera(deviceIndex, cv::CAP_ANY)) {
-        m_frameReaderReady = false;
-        m_cameraActive = false;
-        const QString error =
-                tr("Failed to open camera device %1").arg(deviceIndex);
-        m_statusLabel->setText(error);
-        emit cameraError(error);
-        return false;
-    }
-    m_frameReaderReady = true;
-
-    if (detectorReady()) {
-        m_statusLabel->setText(tr("Camera active — detecting faces"));
-    } else {
-        m_statusLabel->setText(
-                tr("Camera active — no face detector (full-frame crop)"));
-    }
-
-    m_cameraActive = true;
-    m_ggmlFrameSkip = 0;
-    m_lastDetectedFrameNum = 0;
-    m_frameReadTimer->setInterval(computeTimerInterval());
-    m_frameReadTimer->start();
-    m_frameTimer->setInterval(computeTimerInterval());
-    m_frameTimer->start();
-    emit cameraStarted();
     return true;
-#else
-    Q_UNUSED(deviceIndex);
-    return false;
-#endif
 }
 
-void FaceCaptureWidget::stopCamera() {
-    if (m_frameTimer) m_frameTimer->stop();
-    if (m_frameReadTimer) m_frameReadTimer->stop();
-
-#ifdef HAS_OPENCV_FACE_CAPTURE
-    // For video files: pause (don't release) so we can resume from same
-    // position.  The background reader keeps its video open.
-    if (m_inputSource == InputSource::VideoFile && m_frameReaderReady) {
-        // Just pause — keep reader open for resume
-        m_videoPaused = true;
-    } else if (m_frameReaderReady) {
-        // Release background reader for camera mode
-        QMetaObject::invokeMethod(m_frameReader, "release",
-                                  Qt::QueuedConnection);
-        m_frameReaderReady = false;
-        m_videoFilePath.clear();
-        m_videoPaused = false;
-        closePreviewCapture();
-        {
-            QMutexLocker lock(&m_frameMutex);
-            m_latestFrame.release();
-        }
-    }
-#endif
-
-    if (m_cameraActive) {
-        m_cameraActive = false;
-        emit cameraStopped();
-    }
-
-#ifdef HAS_OPENCV_FACE_CAPTURE
+void FaceCaptureWidget::onStreamStopping() {
+    // Reset per-stream detection state (base class owns the stream itself).
     m_lastFaceRect = cv::Rect();
     m_lastFaceScore = 0.f;
-
-    // Ensure video controls remain functional after stop.
-    // The slider and speed combo stay enabled as long as a video is loaded,
-    // regardless of whether playback is active.
-    const bool videoLoaded =
-            m_frameReaderReady && m_inputSource == InputSource::VideoFile;
-    if (m_videoSeekSlider) m_videoSeekSlider->setEnabled(videoLoaded);
-    if (m_playbackSpeedCombo) m_playbackSpeedCombo->setEnabled(videoLoaded);
-#endif
     m_consecutiveDetections = 0;
-    if (m_seekPreviewLabel) m_seekPreviewLabel->setVisible(false);
 }
 
-bool FaceCaptureWidget::isCameraActive() const { return m_cameraActive; }
+void FaceCaptureWidget::onStreamReset() {
+    // Restart: clear ALL detection state so the pipeline restarts fresh —
+    // stale face rect / cached frame disappear immediately and the next
+    // frame forces a fresh detection (m_lastDetectedFrameNum = -1).
+    m_lastFaceRect = cv::Rect();
+    m_lastDetectedFrame.release();
+    m_lastFaceScore = 0.f;
+    m_consecutiveDetections = 0;
+    m_ggmlFrameSkip = 0;
+    m_lastDetectedFrameNum = -1;
+    aicore_cancel_token_reset(m_inferenceCancelToken);
+}
+
+void FaceCaptureWidget::onStreamResumed() {
+    // Resume from pause: keep collected faces/overlays, only reset the
+    // detection throttle so detection resumes immediately.
+    m_ggmlFrameSkip = 0;
+    aicore_cancel_token_reset(m_inferenceCancelToken);
+}
+
+void FaceCaptureWidget::onVideoLooped() {
+    // Video EOF looped back to frame 0 — reset the video-time detection
+    // throttle so detection resumes on the first loop frame.
+    m_lastDetectedFrameNum = 0;
+    m_ggmlFrameSkip = 0;
+}
 
 void FaceCaptureWidget::startGuidedCapture(
         const std::vector<CaptureAngle>& angles) {
@@ -2023,9 +1083,9 @@ void FaceCaptureWidget::startGuidedCapture(
         // Registry tracks are captured independently after a stable identity
         // match. A generic manual capture has no identity owner and would be
         // silently excluded from the reconstruction batches.
-        m_captureBtn->setEnabled(m_cameraActive && m_identityTracks.empty());
+        m_captureBtn->setEnabled(isActive() && m_identityTracks.empty());
 #else
-        m_captureBtn->setEnabled(m_cameraActive);
+        m_captureBtn->setEnabled(isActive());
 #endif
     }
 
@@ -2093,21 +1153,21 @@ void FaceCaptureWidget::captureCurrentFrame() {
     if (static_cast<int>(m_capturedFrames.size()) >= target) return;
 
     if (detectorReady()) {
-        const int trigger = (m_inputSource == InputSource::VideoFile)
+        const int trigger = (inputSource() == InputSource::VideoFile)
                                     ? kVideoAutoCaptureTrigger
                                     : kAutoCaptureTrigger;
         if (m_consecutiveDetections < trigger) {
             m_statusLabel->setText(tr("Hold still \u2014 face not stable yet"));
             return;
         }
-    } else if (m_inputSource == InputSource::VideoFile) {
+    } else if (inputSource() == InputSource::VideoFile) {
         m_statusLabel->setText(tr("Face detector not ready"));
         return;
     }
 
     const cv::Mat& sourceFrame = detectorReady() && m_lastFaceRect.width > 0
                                          ? m_lastDetectedFrame
-                                         : m_latestFrame;
+                                         : latestFrame();
     if (sourceFrame.empty()) {
         emit cameraError(tr("No captured frame is available"));
         return;
@@ -2121,7 +1181,7 @@ void FaceCaptureWidget::captureCurrentFrame() {
                                : m_targetAngles[static_cast<size_t>(angleIdx)];
 
     CapturedFrame captured;
-    captured.image = cvMatToQImage(frame);
+    captured.image = VideoPlaybackWidget::cvMatToQImage(frame);
     captured.angle = angle;
 
     if (detectorReady() && m_lastFaceRect.width > 0) {
@@ -2135,7 +1195,7 @@ void FaceCaptureWidget::captureCurrentFrame() {
         int y = (frame.rows - side) / 2;
         cv::Mat cropped = frame(cv::Rect(x, y, side, side)).clone();
         cv::resize(cropped, resized, cv::Size(512, 512));
-        captured.croppedFace = cvMatToQImage(resized);
+        captured.croppedFace = VideoPlaybackWidget::cvMatToQImage(resized);
     }
     captured.valid = !captured.croppedFace.isNull();
 
@@ -2204,7 +1264,6 @@ void FaceCaptureWidget::resetCapture() {
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
     m_lastFaceRect = cv::Rect();
-    m_latestFrame.release();
     m_lastDetectedFrame.release();
     m_lastFaceScore = 0.f;
 #endif
@@ -2214,17 +1273,12 @@ void FaceCaptureWidget::resetCapture() {
     refreshCapturedGallery();
     updateCaptureProgressUi();
 
-#ifdef HAS_OPENCV_FACE_CAPTURE
-    // Ensure video controls remain functional after reset.
-    const bool videoLoaded =
-            m_frameReaderReady && m_inputSource == InputSource::VideoFile;
-    if (m_videoSeekSlider) m_videoSeekSlider->setEnabled(videoLoaded);
-    if (m_playbackSpeedCombo) m_playbackSpeedCombo->setEnabled(videoLoaded);
-#endif
+    // Ensure video controls remain functional after reset (base class
+    // keeps them enabled as long as a video is loaded).
     if (m_statusLabel) {
         m_statusLabel->setText(
-                m_cameraActive ? tr("Camera active \u2014 detecting faces")
-                               : tr("Ready"));
+                isActive() ? tr("Camera active \u2014 detecting faces")
+                           : tr("Ready"));
     }
 }
 
@@ -2350,64 +1404,32 @@ FaceCaptureWidget::FacePickStrategy FaceCaptureWidget::facePickStrategy()
             m_faceStrategyCombo->currentData().toInt());
 }
 
-void FaceCaptureWidget::processFrame() {
+void FaceCaptureWidget::onFrameDecoded(cv::Mat& frame, int frameIndex) {
 #ifdef HAS_OPENCV_FACE_CAPTURE
-    // Pipeline-driven reads: every early-return path re-queues the next
-    // background readFrame so the decode pipeline keeps flowing even when
-    // the backend is slow (Windows MSMF).  m_frameReadTimer is a fallback
-    // pacemaker; the atomic guard inside VideoFrameReader::readFrame drops
-    // redundant reads when decoding takes longer than the timer interval.
-    auto queueNextRead = [this]() {
-        if (m_frameReaderReady && m_cameraActive) {
-            QMetaObject::invokeMethod(m_frameReader, "readFrame",
-                                      Qt::QueuedConnection);
-        }
-    };
+    // Record the original frame size so onDisplayFrame can scale overlay
+    // coordinates from original resolution to the displayed resolution.
+    m_lastFrameSize = frame.size();
 
-    if (!m_cameraActive || !m_frameReaderReady) {
-        queueNextRead();
-        return;
-    }
-
-    cv::Mat frame;
-    int curFrameNumForSlider = 0;
-    {
-        QMutexLocker lock(&m_frameMutex);
-        if (m_latestFrame.empty()) {
-            queueNextRead();
-            return;
-        }
-        // O(1) swap instead of a full-frame deep copy: the member hands
-        // ownership to the local, the next frameReady repopulates it.
-        std::swap(frame, m_latestFrame);
-        curFrameNumForSlider = m_frameReaderSeekTo.load();
-    }
-
-    // Update video seek slider and time label
-    if (m_inputSource == InputSource::VideoFile && !m_userSeeking) {
-        if (m_videoSeekSlider && m_totalVideoFrames > 0) {
-            m_videoSeekSlider->blockSignals(true);
-            m_videoSeekSlider->setValue(curFrameNumForSlider);
-            m_videoSeekSlider->blockSignals(false);
-        }
-        updateVideoTimeLabel(curFrameNumForSlider);
-    }
-
-    QImage preview = cvMatToQImage(frame);
-
-    // Determine whether to run detection based on video-time elapsed since last
-    // detection.  This keeps detection frequency consistent across all playback
-    // speeds: at any speed, detection runs once per ~kGgmlDetectInterval video
-    // frames of content.
-    const int curFrameNum = curFrameNumForSlider;
+    // Determine whether to run detection based on video-time elapsed since
+    // last detection.  This keeps detection frequency consistent across all
+    // playback speeds: at any speed, detection runs once per
+    // ~kGgmlDetectInterval video frames of content.
     const bool timeForDetection = [&]() -> bool {
-        if (m_inputSource == InputSource::VideoFile && m_videoFps > 0) {
+        // After a stream reset (restart / reset button), no detection has
+        // run yet — force immediate detection on the very first frame so
+        // the overlay appears without a one-frame gap.
+        if (m_lastDetectedFrameNum < 0) return true;
+        if (inputSource() == InputSource::VideoFile && videoFps() > 0) {
             // Video-time throttle: detect every kGgmlDetectInterval frames of
             // video content, regardless of playback speed.
-            const double videoTimeMs = curFrameNum / m_videoFps * 1000.0;
+            // Also handle backwards frame index (after seek / restart): if
+            // the current frame is before the last detected frame, a seek
+            // occurred and we should detect immediately.
+            if (frameIndex < m_lastDetectedFrameNum) return true;
+            const double videoTimeMs = frameIndex / videoFps() * 1000.0;
             const double thresholdMs =
-                    kGgmlDetectInterval / m_videoFps * 1000.0;
-            if (videoTimeMs - (m_lastDetectedFrameNum / m_videoFps * 1000.0) >=
+                    kGgmlDetectInterval / videoFps() * 1000.0;
+            if (videoTimeMs - (m_lastDetectedFrameNum / videoFps() * 1000.0) >=
                 thresholdMs - 1.0) {  // -1ms tolerance for FP rounding
                 return true;
             }
@@ -2422,32 +1444,20 @@ void FaceCaptureWidget::processFrame() {
         return false;
     }();
 
+    // Identity-tracking mode: run registry matching (state only; the boxes
+    // and labels are painted by onDisplayFrame).
     if (!m_identityTracks.empty() && detectorReady() &&
         m_detectorKind == DetectorKind::Ggml && !m_ggmlModelLoading) {
-        if (timeForDetection) {
-            const std::vector<ScoredFace> faces = detectFacesGgml(frame);
-            processRegistryIdentities(frame, faces, &preview);
-            m_lastDetectedFrameNum = curFrameNum;
-            m_lastDetectedFrame = frame.clone();
-        } else {
-            QPainter painter(&preview);
-            painter.setPen(QPen(QColor(0, 200, 255), 3));
-            for (const IdentityTrack& track : m_identityTracks) {
-                if (track.lastRect.width > 0) {
-                    painter.drawRect(track.lastRect.x, track.lastRect.y,
-                                     track.lastRect.width,
-                                     track.lastRect.height);
-                }
-            }
-        }
-        if (m_capturingMode && !m_targetAngles.empty()) {
-            drawAngleGuide(preview, m_targetAngles[static_cast<size_t>(
-                                            currentGuideAngleIndex())]);
-        }
-        if (!preview.isNull()) {
-            m_previewLabel->setPixmap(QPixmap::fromImage(
-                    preview.scaled(m_previewLabel->size(), Qt::KeepAspectRatio,
-                                   Qt::FastTransformation)));
+        if (timeForDetection && m_detectPendingFrame.loadRelaxed() < 0) {
+            // ASYNC: GGML inference runs on a thread pool so the GUI thread
+            // (and display timer) is never blocked.
+            m_detectPendingFrame.storeRelaxed(frameIndex);
+            m_pendingDetectFrameNum = frameIndex;
+            m_asyncPendingFrame = frame.clone();
+            m_detectWatcher->setFuture(QtConcurrent::run(
+                    [this, f = m_asyncPendingFrame.clone()]() {
+                        return detectFacesGgml(f);
+                    }));
         }
         return;
     }
@@ -2456,56 +1466,110 @@ void FaceCaptureWidget::processFrame() {
     bool freshDetection = false;
     if (detectorReady() && !m_ggmlModelLoading) {
         if (m_detectorKind == DetectorKind::Ggml) {
-            if (timeForDetection) {
-                faceRect = detectFaceGgml(frame);
-                m_lastDetectedFrameNum = curFrameNum;
-                freshDetection = true;
+            if (timeForDetection && m_detectPendingFrame.loadRelaxed() < 0) {
+                // ASYNC: submit GGML inference to thread pool.
+                m_detectPendingFrame.storeRelaxed(frameIndex);
+                m_pendingDetectFrameNum = frameIndex;
+                m_asyncPendingFrame = frame.clone();
+                m_detectWatcher->setFuture(QtConcurrent::run(
+                        [this, f = m_asyncPendingFrame.clone()]() {
+                            return detectFacesGgml(f);
+                        }));
+                // Use last known rect until async result arrives.
+                if (m_lastFaceRect.width > 0) faceRect = m_lastFaceRect;
             } else {
+                // Not time for detection or one already pending: use last
+                // known rect.
                 if (m_lastFaceRect.width > 0) faceRect = m_lastFaceRect;
             }
         } else {
+            // OpenCV cascade: fast enough to run synchronously.
             faceRect = detectFaceOpenCv(frame);
             freshDetection = true;
         }
 
-        if (faceRect.width > 0 && faceRect.height > 0) {
-            ++m_consecutiveDetections;
-            m_lastFaceRect = faceRect;
-            if (freshDetection) m_lastDetectedFrame = frame.clone();
-            emit faceDetected(QRect(faceRect.x, faceRect.y, faceRect.width,
-                                    faceRect.height));
-        } else {
-            m_consecutiveDetections = 0;
-            m_lastFaceRect = cv::Rect();
-            m_lastDetectedFrame.release();
-            m_lastFaceScore = 0.f;
-            emit faceNotDetected();
+        // Process synchronous detection results immediately.
+        if (m_detectorKind != DetectorKind::Ggml) {
+            processDetectResult(faceRect, frame, frameIndex, freshDetection);
         }
     }
+    // For async GGML: processDetectResult is called from
+    // onAsyncDetectFinished when the inference completes.
+#endif
+}
 
-    if (!preview.isNull()) {
-        if (detectorReady() && faceRect.width > 0) {
-            drawOverlay(preview, faceRect);
-        }
-        if (m_capturingMode && !m_targetAngles.empty()) {
-            const int guideIdx = currentGuideAngleIndex();
-            drawAngleGuide(preview,
-                           m_targetAngles[static_cast<size_t>(guideIdx)]);
-        }
-        m_previewLabel->setPixmap(QPixmap::fromImage(
-                preview.scaled(m_previewLabel->size(), Qt::KeepAspectRatio,
-                               Qt::FastTransformation)));
+void FaceCaptureWidget::onAsyncDetectFinished() {
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    if (!m_detectWatcher || !m_detectWatcher->isFinished()) return;
+    const auto faces = m_detectWatcher->result();
+    const int frameIndex = m_pendingDetectFrameNum;
+    m_detectPendingFrame.storeRelaxed(-1);
+
+    if (m_asyncPendingFrame.empty()) {
+        m_asyncPendingFrame.release();
+        return;
     }
 
+    // Identity-track mode: run registry matching on the GUI thread with
+    // the async result.
+    if (!m_identityTracks.empty()) {
+        processRegistryIdentities(m_asyncPendingFrame, faces);
+        m_lastDetectedFrameNum = frameIndex;
+        m_asyncPendingFrame.release();
+        // Overlays are painted by onDisplayFrame; no faceRect status update
+        // needed here (identity tracks draw their own labels).
+        return;
+    }
+
+    // Pick the best face and update all dependent state (rect, confidence,
+    // consecutive counter, auto-capture) — this mirrors the synchronous
+    // path after detectFaceOpenCv in onFrameDecoded.
+    cv::Mat pendingFrame = m_asyncPendingFrame;  // move
+    m_asyncPendingFrame.release();
+    cv::Rect faceRect = pickFace(pendingFrame, faces);
+    const bool freshDetection = (faceRect.width > 0);
+    m_lastDetectedFrameNum = frameIndex;
+
+    processDetectResult(faceRect, pendingFrame, frameIndex, freshDetection);
+#endif
+}
+
+void FaceCaptureWidget::processDetectResult(const cv::Rect& faceRect,
+                                            const cv::Mat& sourceFrame,
+                                            int frameIndex,
+                                            bool freshDetection) {
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    Q_UNUSED(frameIndex);
+    if (faceRect.width > 0 && faceRect.height > 0) {
+        ++m_consecutiveDetections;
+        m_lastFaceRect = faceRect;
+        if (freshDetection && m_capturingMode) {
+            // Keep the detected frame only while capturing —
+            // captureCurrentFrame needs a frame matching m_lastFaceRect.
+            // Outside capture mode the per-frame full-res clone is pure
+            // waste (OpenCV detects on every frame).
+            m_lastDetectedFrame = sourceFrame.clone();
+        }
+        emit faceDetected(
+                QRect(faceRect.x, faceRect.y, faceRect.width, faceRect.height));
+    } else {
+        m_consecutiveDetections = 0;
+        m_lastFaceRect = cv::Rect();
+        m_lastDetectedFrame.release();
+        m_lastFaceScore = 0.f;
+        emit faceNotDetected();
+    }
+
+    // Guided-capture auto-trigger logic.
     if (m_capturingMode) {
-        const int trigger = (m_inputSource == InputSource::VideoFile)
+        const int trigger = (inputSource() == InputSource::VideoFile)
                                     ? kVideoAutoCaptureTrigger
                                     : kAutoCaptureTrigger;
         const int target = minCapturesBeforeComplete();
         const int captured = static_cast<int>(m_capturedFrames.size());
         if (m_postCaptureCooldown > 0) {
             --m_postCaptureCooldown;
-            if (m_inputSource == InputSource::Camera) {
+            if (inputSource() == InputSource::Camera) {
                 m_statusLabel->setText(
                         tr("Repositioning... (%1)")
                                 .arg(m_postCaptureCooldown / 30 + 1));
@@ -2522,7 +1586,7 @@ void FaceCaptureWidget::processFrame() {
                 m_postCaptureCooldown = kPostCaptureCooldown;
                 return;
             }
-            if (m_captureBtn && m_inputSource == InputSource::Camera) {
+            if (m_captureBtn && inputSource() == InputSource::Camera) {
                 m_captureBtn->setEnabled(m_consecutiveDetections >= 3);
             }
             if (faceRect.width > 0) {
@@ -2539,7 +1603,7 @@ void FaceCaptureWidget::processFrame() {
                                 .arg(captured)
                                 .arg(target));
             }
-        } else if (m_inputSource == InputSource::Camera) {
+        } else if (inputSource() == InputSource::Camera) {
             ++m_noCascadeCounter;
             if (m_noCascadeCounter >= kNoCascadeAutoInterval) {
                 m_noCascadeCounter = 0;
@@ -2557,42 +1621,75 @@ void FaceCaptureWidget::processFrame() {
             m_statusLabel->setText(tr("Loading face detector..."));
         }
     }
+#else
+    Q_UNUSED(faceRect);
+    Q_UNUSED(sourceFrame);
+    Q_UNUSED(frameIndex);
+    Q_UNUSED(freshDetection);
+#endif
+}
 
-    queueNextRead();
+void FaceCaptureWidget::onDisplayFrame(QImage& display, int frameIndex) {
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    if (display.isNull()) return;
+
+    // Scale a rectangle from original frame coordinates to the displayed
+    // resolution (the display is the original frame scaled with
+    // KeepAspectRatio by the base class).
+    auto scaledRect = [&](const cv::Rect& r) -> cv::Rect {
+        if (m_lastFrameSize.width <= 0 || m_lastFrameSize.height <= 0) {
+            return r;
+        }
+        const qreal sx =
+                static_cast<qreal>(display.width()) / m_lastFrameSize.width;
+        const qreal sy =
+                static_cast<qreal>(display.height()) / m_lastFrameSize.height;
+        return cv::Rect(static_cast<int>(std::lround(r.x * sx)),
+                        static_cast<int>(std::lround(r.y * sy)),
+                        static_cast<int>(std::lround(r.width * sx)),
+                        static_cast<int>(std::lround(r.height * sy)));
+    };
+
+    // Identity-tracking mode: boxes/labels are cached in m_identityTracks
+    // (original frame coordinates) — scale them to the display.
+    if (!m_identityTracks.empty() && detectorReady() &&
+        m_detectorKind == DetectorKind::Ggml && !m_ggmlModelLoading) {
+        QPainter painter(&display);
+        painter.setPen(QPen(QColor(0, 200, 255), 3));
+        for (const IdentityTrack& track : m_identityTracks) {
+            if (track.lastRect.width <= 0) continue;
+            const cv::Rect box = scaledRect(track.lastRect);
+            painter.drawRect(box.x, box.y, box.width, box.height);
+            const QString label = QStringLiteral("%1 d=%2")
+                                          .arg(track.identity.name)
+                                          .arg(track.lastDistance, 0, 'f', 3);
+            painter.fillRect(
+                    box.x, std::max(0, box.y - 22),
+                    std::max(90, QTCOMPAT_FONTMETRICS_WIDTH(
+                                         painter.fontMetrics(), label) +
+                                         8),
+                    22, QColor(0, 0, 0, 180));
+            painter.setPen(Qt::white);
+            painter.drawText(box.x + 4, std::max(16, box.y - 6), label);
+        }
+        if (m_capturingMode && !m_targetAngles.empty()) {
+            drawAngleGuide(display, m_targetAngles[static_cast<size_t>(
+                                            currentGuideAngleIndex())]);
+        }
+        return;
+    }
+
+    if (detectorReady() && m_lastFaceRect.width > 0) {
+        drawOverlay(display, scaledRect(m_lastFaceRect));
+    }
+    if (m_capturingMode && !m_targetAngles.empty()) {
+        const int guideIdx = currentGuideAngleIndex();
+        drawAngleGuide(display, m_targetAngles[static_cast<size_t>(guideIdx)]);
+    }
 #endif
 }
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
-
-QImage FaceCaptureWidget::cvMatToQImage(const cv::Mat& mat) {
-    if (mat.empty()) return QImage();
-
-    if (mat.channels() == 3) {
-        // Single deep copy: interpret the BGR buffer as RGB888 and swap
-        // R/B once.  rgbSwapped() returns a self-owned image, so no
-        // second .copy() is needed (cvtColor + copy was 2 full-frame
-        // copies per frame).
-        return QImage(mat.data, mat.cols, mat.rows, static_cast<int>(mat.step),
-                      QImage::Format_RGB888)
-                .rgbSwapped();
-    }
-
-    cv::Mat rgb;
-    if (mat.channels() == 1)
-        cv::cvtColor(mat, rgb, cv::COLOR_GRAY2RGB);
-    else if (mat.channels() == 4)
-        cv::cvtColor(mat, rgb, cv::COLOR_BGRA2RGBA);
-    else
-        return QImage();
-
-    // Use QImage(rgb.data, ...).copy() to share the pixel data briefly and
-    // then perform a single deep copy, which is ~3x faster than the per-row
-    // memcpy loop.
-    return QImage(rgb.data, rgb.cols, rgb.rows, static_cast<int>(rgb.step),
-                  rgb.channels() == 4 ? QImage::Format_RGBA8888
-                                      : QImage::Format_RGB888)
-            .copy();
-}
 
 cv::Rect FaceCaptureWidget::detectFaceOpenCv(const cv::Mat& frame) {
     return pickFace(frame, detectFacesOpenCv(frame));
@@ -2603,15 +1700,37 @@ std::vector<FaceCaptureWidget::ScoredFace> FaceCaptureWidget::detectFacesOpenCv(
     std::vector<ScoredFace> out;
     if (m_faceCascade.empty() || frame.empty()) return out;
 
+    // Downscale large frames before cascade detection — detectMultiScale on
+    // a full 1080p frame costs ~20-40 ms while a ≤640px copy is ~5-10 ms.
+    // Boxes are mapped back to full-res coordinates below, so callers keep
+    // working in original-frame space (m_lastFaceRect, capture crops).
+    constexpr int kOpenCvDetectMaxDim = 640;
+    const int maxDim = std::max(frame.cols, frame.rows);
+    const float scale =
+            maxDim > kOpenCvDetectMaxDim
+                    ? static_cast<float>(kOpenCvDetectMaxDim) / maxDim
+                    : 1.f;
+    cv::Mat detectFrame = frame;
+    if (scale < 1.f) {
+        cv::resize(frame, detectFrame, cv::Size(), scale, scale,
+                   cv::INTER_AREA);
+    }
+
     cv::Mat gray;
-    cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
+    cv::cvtColor(detectFrame, gray, cv::COLOR_BGR2GRAY);
     cv::equalizeHist(gray, gray);
 
     std::vector<cv::Rect> faces;
     m_faceCascade.detectMultiScale(gray, faces, 1.1, 5, 0, cv::Size(80, 80));
     out.reserve(faces.size());
+    const float inv = 1.f / scale;
     for (const cv::Rect& rect : faces) {
-        out.push_back({rect, 1.0f});
+        const cv::Rect fullRes(
+                static_cast<int>(std::lround(rect.x * inv)),
+                static_cast<int>(std::lround(rect.y * inv)),
+                static_cast<int>(std::lround(rect.width * inv)),
+                static_cast<int>(std::lround(rect.height * inv)));
+        out.push_back({fullRes, 1.0f});
     }
     return out;
 }
@@ -2640,7 +1759,7 @@ std::vector<FaceCaptureWidget::ScoredFace> FaceCaptureWidget::detectFacesGgml(
     if (!json) return out;
 
     const QJsonDocument doc = QJsonDocument::fromJson(QByteArray(json));
-    aicore_facedetect_free_string(json);
+    aicore_facedetect_free_buffer(json);
     if (!doc.isObject()) return out;
 
     const QJsonArray faces =
@@ -2724,7 +1843,7 @@ bool FaceCaptureWidget::embedFaceCrop(const cv::Mat& frame,
         return false;
     }
     embedding->assign(vec, vec + dim);
-    aicore_facedetect_free_vec(vec);
+    aicore_facedetect_free_buffer(vec);
     return true;
 }
 
@@ -2758,7 +1877,7 @@ bool FaceCaptureWidget::embedScoredFace(const cv::Mat& frame,
         return false;
     }
     embedding->assign(vec, vec + dim);
-    aicore_facedetect_free_vec(vec);
+    aicore_facedetect_free_buffer(vec);
     *embedding = normalizeEmbedding(*embedding);
     return !embedding->empty();
 }
@@ -2773,7 +1892,7 @@ bool FaceCaptureWidget::captureIdentityFrame(IdentityTrack* track,
     const int angleCount = std::max(1, static_cast<int>(m_targetAngles.size()));
     const int angleIndex = static_cast<int>(track->frames.size()) % angleCount;
     CapturedFrame captured;
-    captured.image = cvMatToQImage(frame);
+    captured.image = VideoPlaybackWidget::cvMatToQImage(frame);
     captured.croppedFace = cropAndResizeFace(frame, rect, 512);
     captured.angle = m_targetAngles.empty()
                              ? CaptureAngle::Front
@@ -2797,9 +1916,7 @@ bool FaceCaptureWidget::captureIdentityFrame(IdentityTrack* track,
 }
 
 bool FaceCaptureWidget::processRegistryIdentities(
-        const cv::Mat& frame,
-        const std::vector<ScoredFace>& faces,
-        QImage* preview) {
+        const cv::Mat& frame, const std::vector<ScoredFace>& faces) {
     if (m_identityTracks.empty() || !m_ggmlCtx || frame.empty()) return false;
 
     std::vector<const ScoredFace*> candidates;
@@ -2870,7 +1987,7 @@ bool FaceCaptureWidget::processRegistryIdentities(
                 pair.distance;
     }
 
-    const int trigger = m_inputSource == InputSource::VideoFile
+    const int trigger = inputSource() == InputSource::VideoFile
                                 ? kVideoAutoCaptureTrigger
                                 : kAutoCaptureTrigger;
     bool anyMatched = false;
@@ -2888,25 +2005,8 @@ bool FaceCaptureWidget::processRegistryIdentities(
         track.lastRect = face.rect;
         ++track.consecutiveDetections;
 
-        if (preview && !preview->isNull()) {
-            QPainter painter(preview);
-            painter.setPen(QPen(QColor(0, 200, 255), 3));
-            painter.drawRect(face.rect.x, face.rect.y, face.rect.width,
-                             face.rect.height);
-            const QString label = QStringLiteral("%1 d=%2")
-                                          .arg(track.identity.name)
-                                          .arg(track.lastDistance, 0, 'f', 3);
-            painter.fillRect(
-                    face.rect.x, std::max(0, face.rect.y - 22),
-                    std::max(90, QTCOMPAT_FONTMETRICS_WIDTH(
-                                         painter.fontMetrics(), label) +
-                                         8),
-                    22, QColor(0, 0, 0, 180));
-            painter.setPen(Qt::white);
-            painter.drawText(face.rect.x + 4, std::max(16, face.rect.y - 6),
-                             label);
-        }
-
+        // NOTE: the match box/label is painted by onDisplayFrame (scaled
+        // from original frame coordinates to the displayed resolution).
         if (m_capturingMode && track.cooldown == 0 &&
             track.consecutiveDetections >= trigger) {
             captureIdentityFrame(&track, frame, face.rect);
@@ -3069,7 +2169,7 @@ QImage FaceCaptureWidget::cropAndResizeFace(const cv::Mat& frame,
             (cropped.cols > targetSize) ? cv::INTER_AREA : cv::INTER_LINEAR;
     cv::resize(cropped, resized, cv::Size(targetSize, targetSize), 0, 0,
                interp);
-    return cvMatToQImage(resized);
+    return VideoPlaybackWidget::cvMatToQImage(resized);
 }
 
 void FaceCaptureWidget::drawOverlay(QImage& image, const cv::Rect& faceRect) {
@@ -3239,11 +2339,12 @@ void FaceCaptureWidget::loadFaceCaptureSettings() {
     }
     const QString videoPath =
             settings.value(QStringLiteral("faceVideoPath")).toString();
-    if (m_videoPathEdit && !videoPath.isEmpty()) {
-        m_videoPathEdit->blockSignals(true);
-        m_videoPathEdit->setText(videoPath);
-        m_videoPathEdit->blockSignals(false);
-        m_videoFilePath = videoPath;
+    QLineEdit* pathEdit = videoPathEdit();
+    if (pathEdit && !videoPath.isEmpty()) {
+        pathEdit->blockSignals(true);
+        pathEdit->setText(videoPath);
+        pathEdit->blockSignals(false);
+        setVideoFilePath(videoPath);
     }
     const QString defaultPath = defaultRegistryDbPath(currentGgmlFilename());
     const QString savedRegistryPath =
@@ -3315,5 +2416,3 @@ QString FaceCaptureWidget::angleToString(CaptureAngle angle) const {
     }
     return tr("Unknown angle");
 }
-
-#include "FaceCaptureWidget.moc"

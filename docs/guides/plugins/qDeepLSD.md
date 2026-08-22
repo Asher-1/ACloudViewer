@@ -59,7 +59,7 @@ Models download on first run if missing (progress shows downloaded / total size)
 
 Recommended default: **Wireframe F16**. Q8_0 variants are smaller and suitable for quick tests.
 
-See [MODEL_CARD.md](../../../plugins/core/Standard/qDeepLSD/models/MODEL_CARD.md) for download links.
+See [MODEL_CARD.md](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qDeepLSD/models/MODEL_CARD.md) for download links.
 
 ### DB export options
 
@@ -116,6 +116,6 @@ aicore_deeplsd_options_free(opts);
 
 ## Further reading
 
-- Developer README (build targets, tests): [`plugins/core/Standard/qDeepLSD/README.md`](../../../plugins/core/Standard/qDeepLSD/README.md)
+- Developer README (build targets, tests): [`plugins/core/Standard/qDeepLSD/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qDeepLSD/README.md)
 - GGML parity notes: DeepLSD-GGML `cpp/BENCHMARK.md`
 - [DeepLSD (CVG)](https://github.com/cvg/DeepLSD)

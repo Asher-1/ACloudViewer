@@ -1,6 +1,7 @@
 #pragma once
 
-#include "gpu_tensor.hpp"
+#include "tasks/aliked/gpu_tensor.hpp"
+
 
 #include <cstdint>
 #include <string>

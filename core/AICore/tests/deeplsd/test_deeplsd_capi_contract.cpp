@@ -10,7 +10,7 @@
 #include <cstring>
 
 #include "aicore/deeplsd_capi.h"
-#include "common/test_macros.hpp"
+#include "tests/common/test_macros.hpp"
 
 static int failures = 0;
 
@@ -19,7 +19,7 @@ int main() {
 
     aicore_deeplsd_free(nullptr);
     aicore_deeplsd_options_free(nullptr);
-    aicore_deeplsd_free_string(nullptr);
+    aicore_deeplsd_free_buffer(nullptr);
 
     AICORE_CHECK(aicore_deeplsd_load_opts(nullptr, nullptr) == nullptr);
     AICORE_CHECK(aicore_deeplsd_is_ready(nullptr) == 0);
@@ -43,7 +43,7 @@ int main() {
 
     char* dir = aicore_deeplsd_model_cache_dir();
     AICORE_CHECK(dir != nullptr && std::strlen(dir) > 0);
-    aicore_deeplsd_free_string(dir);
+    aicore_deeplsd_free_buffer(dir);
 
     return failures;
 }

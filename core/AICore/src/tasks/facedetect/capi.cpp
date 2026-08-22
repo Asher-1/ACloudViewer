@@ -14,21 +14,14 @@
 
 #include "aicore/backend_capi.h"
 #include "aicore/facedetect_capi.h"
-#include "backend.hpp"
-#include "ggml_backend_utils.hpp"
-#include "image_io.hpp"
-#include "model.hpp"
-#include "model_cache.hpp"
+#include "common/capi_utils.hpp"
+#include "common/ggml_backend_utils.hpp"
+#include "common/model_cache.hpp"
+#include "tasks/facedetect/backend.hpp"
+#include "tasks/facedetect/image_io.hpp"
+#include "tasks/facedetect/model.hpp"
 
 namespace {
-
-char* dup_cstr(const std::string& s) {
-    char* out = static_cast<char*>(std::malloc(s.size() + 1));
-    if (out != nullptr) {
-        std::memcpy(out, s.c_str(), s.size() + 1);
-    }
-    return out;
-}
 
 float* dup_vec(const std::vector<float>& v) {
     if (v.empty()) return nullptr;
@@ -144,6 +137,8 @@ bool load_rgb_image(const uint8_t* rgb,
 
 }  // namespace
 
+using aicore::capi::dup_cstr;
+
 struct aicore_facedetect_options {
     std::string device = "auto";
     int32_t threads = 0;
@@ -230,9 +225,7 @@ AICORE_CAPI const char* aicore_facedetect_last_error(
                                                       : nullptr;
 }
 
-AICORE_CAPI void aicore_facedetect_free_string(char* s) { std::free(s); }
-
-AICORE_CAPI void aicore_facedetect_free_vec(float* v) { std::free(v); }
+AICORE_CAPI void aicore_facedetect_free_buffer(void* p) { std::free(p); }
 
 AICORE_CAPI int aicore_facedetect_load_path_rgb(const char* image_path,
                                                 uint8_t** out_rgb,
@@ -262,26 +255,6 @@ AICORE_CAPI int aicore_facedetect_load_path_rgb(const char* image_path,
     return 0;
 }
 
-AICORE_CAPI char* aicore_facedetect_detect_path_json(aicore_facedetect_ctx* ctx,
-                                                     const char* image_path) {
-    if (ctx == nullptr || ctx->model == nullptr || image_path == nullptr) {
-        return nullptr;
-    }
-    try {
-        fd::ScopedBackendBinding bind(ctx->backend);
-        fd::Image img;
-        if (!fd::load_image_rgb(image_path, img)) {
-            ctx->last_error =
-                    std::string("failed to load image: ") + image_path;
-            return nullptr;
-        }
-        return dup_cstr(detections_to_json(ctx->model->detect(img)));
-    } catch (const std::exception& e) {
-        ctx->last_error = e.what();
-        return nullptr;
-    }
-}
-
 AICORE_CAPI char* aicore_facedetect_detect_rgb_json(aicore_facedetect_ctx* ctx,
                                                     const uint8_t* rgb,
                                                     int32_t width,
@@ -294,28 +267,6 @@ AICORE_CAPI char* aicore_facedetect_detect_rgb_json(aicore_facedetect_ctx* ctx,
     try {
         fd::ScopedBackendBinding bind(ctx->backend);
         return dup_cstr(detections_to_json(ctx->model->detect(img)));
-    } catch (const std::exception& e) {
-        ctx->last_error = e.what();
-        return nullptr;
-    }
-}
-
-AICORE_CAPI char* aicore_facedetect_analyze_path_json(
-        aicore_facedetect_ctx* ctx, const char* image_path, float min_score) {
-    if (ctx == nullptr || ctx->model == nullptr || image_path == nullptr) {
-        return nullptr;
-    }
-    try {
-        fd::ScopedBackendBinding bind(ctx->backend);
-        fd::Image img;
-        if (!fd::load_image_rgb(image_path, img)) {
-            ctx->last_error =
-                    std::string("failed to load image: ") + image_path;
-            return nullptr;
-        }
-        std::vector<fd::Face> faces = ctx->model->analyze(img);
-        filter_analyze_faces(&faces, min_score);
-        return dup_cstr(faces_to_analyze_json(faces));
     } catch (const std::exception& e) {
         ctx->last_error = e.what();
         return nullptr;

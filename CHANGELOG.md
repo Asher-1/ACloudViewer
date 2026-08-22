@@ -307,8 +307,41 @@ v3.9.5-Beta (Asher) - 08/04/2026
         download/cache (SIFT / ALIKED matcher weights), match visualization in DB tree,
         JSON export, Model Info mode
       - CMake: `PLUGIN_STANDARD_QLIGHTGLUE=ON` + `AICore_ENABLED=ON` + `BUILD_OPENCV=ON`
-  
+    - Add qYOLO plugin: YOLO object detection, instance segmentation, and metric depth
+      - YOLOv8 n/s/m/l/x + YOLO26 n/s/m/l/x detection (COCO 80 classes)
+      - YOLOv8-seg n/s/m/l/x + YOLO26-seg n/s/m/l/x instance segmentation
+      - yolo26n-depth absolute metric depth estimation
+      - SessionOptions: typed struct replaces implicit env-var configuration
+      - CUDA/Vulkan/Metal GPU acceleration through AICore unified backend
+      - Task-based tab UI: Object Detection / Instance Segmentation / Depth tabs
+        (per-task model filtering, task-specific controls)
+      - Live camera/video inference for all three task types
+      - CMake: `PLUGIN_STANDARD_QYOLO=ON` + `AICore_ENABLED=ON`
+    - Add qRMBG plugin: RMBG-2.0 background removal (matting)
+      - Native GGUF inference through AICore unified runtime
+      - Image and live camera/video background removal
+      - CMake: `PLUGIN_STANDARD_QRMBG=ON` + `AICore_ENABLED=ON`
+    - Add qRFDetr plugin: RF-DETR object detection and instance segmentation
+      - Native GGUF inference through AICore unified runtime
+      - RF-DETR base/large detection with COCO 91-class layout (80 named classes + 11 empty slots)
+      - Image and live camera/video inference
+      - CMake: `PLUGIN_STANDARD_QRFDETR=ON` + `AICore_ENABLED=ON`
+
 - New features:
+    - AICore YOLO upgrade (ultralytics-ggml segment + CUDA/Vulkan optimization):
+      - Segment task: instance mask support for YOLOv8-seg and YOLO26-seg
+      - CUDA: igemm direct-conv path with f16 tensor core (TF32-compatible), Q8_0 weights
+      - Vulkan: f16 direct-conv path, Q8_0-to-f16 host dequant, f32-to-f16 cast
+      - SessionOptions: typed struct replaces implicit env-var configuration
+      - Unified AICore macros: AICORE_AUTO_INCLUDE_CUDA / AICORE_VULKAN_ENABLED
+        replace per-task YOLO_USE_CUDA / YOLO_USE_VULKAN
+      - Removed all std::getenv() calls from yolo module
+      - Model catalog expanded from 33 to 63 entries (detect + depth + segment)
+    - qYOLO plugin redesign:
+      - Task-based tab UI: Object Detection / Instance Segmentation / Depth tabs
+        (per-task model filtering, task-specific controls)
+      - Guard spaces for future tasks (Pose, Track, Heatmap)
+      - Live mode supports all three task types
     - Unified AICore inference core (`core/AICore` → `libAICore.so`)
       - Single ggml link for depth (DA3), gaussian (FreeSplatter), and lightglue modules
       - Public C APIs: `depth_capi.h`, `gaussian_capi.h`, `lightglue_capi.h`

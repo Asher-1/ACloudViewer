@@ -22,7 +22,7 @@ make -j4 QFACEDETECT_PLUGIN
 
 Face-detect GGML sources live in `core/AICore/src/tasks/facedetect/` (in-tree port of [face-detect.cpp](https://github.com/mudler/face-detect.cpp)).
 
-Requires system **libjpeg** (e.g. `libjpeg-dev` on Ubuntu).
+Image decode uses Qt's built-in codecs (JPEG/PNG via the Qt image plugins); no direct system libjpeg dependency.
 
 ### Unit tests (helpers + registry store)
 

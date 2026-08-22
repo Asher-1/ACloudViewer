@@ -1,12 +1,12 @@
 CompileFlags:
-  CompilationDatabase: /Users/asher/develop/code/github/ACloudViewer
+  # Cross-platform: each platform's CMake configure also symlinks its own
+  # compile_commands.json to the repo root (see root CMakeLists.txt), so
+  # clangd auto-discovers the right database even when the build dir name
+  # differs (build_app on Linux/Windows, build on macOS). The explicit
+  # directory below covers the common Linux/Windows layout directly.
+  CompilationDatabase: build_app
   Add:
     - "-std=c++17"
-    - "-DQT_CORE_LIB"
-    - "-DQT_WIDGETS_LIB"
-    - "-DQT_GUI_LIB"
-    - "-DAICore_ENABLED"
-    - "-I/Users/asher/develop/code/github/ACloudViewer/libs/CVPluginAPI/include"
 
 Diagnostics:
   Suppress:

@@ -9,8 +9,8 @@
 #include <string>
 #include <vector>
 
-#include "facedetect/backend.hpp"
-#include "ggml_backend_registry.hpp"
+#include "common/ggml_backend_registry.hpp"
+#include "tasks/facedetect/backend.hpp"
 
 namespace {
 

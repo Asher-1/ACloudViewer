@@ -1,0 +1,3064 @@
+diff --git a/include/ggml.h b/include/ggml.h
+index c66030d..2b82722 100644
+--- a/include/ggml.h
++++ b/include/ggml.h
+@@ -2187,6 +2187,18 @@ extern "C" {
+             int                   d0,  // dilation dimension 0
+             int                   d1); // dilation dimension 1
+ 
++    GGML_API struct ggml_tensor * ggml_conv_2d_direct_bias_silu(
++            struct ggml_context * ctx,
++            struct ggml_tensor  * a,
++            struct ggml_tensor  * b,
++            struct ggml_tensor  * bias,
++            int                   s0,
++            int                   s1,
++            int                   p0,
++            int                   p1,
++            int                   d0,
++            int                   d1);
++
+     GGML_API struct ggml_tensor * ggml_conv_3d_direct(
+             struct ggml_context * ctx,
+             struct ggml_tensor  * a,   // kernel [KW, KH, KD, IC * OC]
+diff --git a/src/ggml-cuda/CMakeLists.txt b/src/ggml-cuda/CMakeLists.txt
+index 84fbb02..7c7176b 100644
+--- a/src/ggml-cuda/CMakeLists.txt
++++ b/src/ggml-cuda/CMakeLists.txt
+@@ -137,6 +137,21 @@ if (CUDAToolkit_FOUND)
+         target_link_libraries(ggml-cuda PRIVATE ${RMBG_CUDNN_LIBRARY})
+         target_compile_definitions(ggml-cuda PRIVATE GGML_CUDA_RMBG_CUDNN)
+     endif()
++    if (GGML_CUDA_CUDNN)
++        find_path(CUDNN_INCLUDE_DIR cudnn.h
++            HINTS $ENV{CUDNN_ROOT} /usr/local/cudnn
++            PATH_SUFFIXES include)
++        find_library(CUDNN_LIBRARY cudnn
++            HINTS $ENV{CUDNN_ROOT} /usr/local/cudnn
++            PATH_SUFFIXES lib lib64)
++        if (NOT CUDNN_INCLUDE_DIR OR NOT CUDNN_LIBRARY)
++            message(FATAL_ERROR "GGML_CUDA_CUDNN requires cuDNN headers and library; set CUDNN_ROOT or disable YOLO_GGML_CUDNN")
++        endif()
++        target_include_directories(ggml-cuda PRIVATE ${CUDNN_INCLUDE_DIR})
++        target_link_libraries(ggml-cuda PRIVATE ${CUDNN_LIBRARY})
++        target_compile_definitions(ggml-cuda PRIVATE GGML_CUDA_USE_CUDNN)
++        message(STATUS "Using cuDNN direct convolutions: ${CUDNN_LIBRARY}")
++    endif()
+ 
+     add_compile_definitions(GGML_CUDA_PEER_MAX_BATCH_SIZE=${GGML_CUDA_PEER_MAX_BATCH_SIZE})
+ 
+diff --git a/src/ggml-cuda/binbcast.cu b/src/ggml-cuda/binbcast.cu
+index 2e38077..cf6ad57 100644
+--- a/src/ggml-cuda/binbcast.cu
++++ b/src/ggml-cuda/binbcast.cu
+@@ -415,7 +415,9 @@ static void ggml_cuda_op_bin_bcast(
+ 
+     GGML_ASSERT(src1->type == GGML_TYPE_F32 || src1->type == GGML_TYPE_F16);
+ 
+-    if (src0->type == GGML_TYPE_F32 && dst->type == GGML_TYPE_F32) {
++    if (src0->type == GGML_TYPE_F32 && src1->type == GGML_TYPE_F16 && dst->type == GGML_TYPE_F32) {
++        op()(src0, src1, dst, (const float *)src0_dd, (const half *)src1_dd, (float *)dst_dd, stream);
++    } else if (src0->type == GGML_TYPE_F32 && dst->type == GGML_TYPE_F32) {
+         op()(src0, src1, dst, (const float *)src0_dd, (const float *)src1_dd, (float *)dst_dd, stream);
+     } else if (src0->type == GGML_TYPE_F16 && src1->type == GGML_TYPE_F16 && dst->type == GGML_TYPE_F16) {
+         op()(src0, src1, dst, (const half *) src0_dd, (const half *)src1_dd, (half *) dst_dd, stream);
+@@ -457,7 +459,11 @@ static void ggml_cuda_op_fused_binbcast_impl(ggml_backend_cuda_context & ctx, gg
+     const ggml_tensor * src0 = dst->src[0];
+     const ggml_tensor * src1 = dst->src[1];
+ 
+-    if (src0->type == GGML_TYPE_F32 && dst->type == GGML_TYPE_F32) {
++    if (src0->type == GGML_TYPE_F32 && src1->type == GGML_TYPE_F16 && dst->type == GGML_TYPE_F32) {
++        launch_bin_bcast_pack<op, float, half, float>(src0, src1, dst,
++            (const float *) src0->data, (const half *) src1->data, (float *) dst->data,
++            stream, std::make_index_sequence<n_fuse>{});
++    } else if (src0->type == GGML_TYPE_F32 && dst->type == GGML_TYPE_F32) {
+         launch_bin_bcast_pack<op, float, float, float>(src0, src1, dst,
+             (const float *) src0->data, (const float *) src1->data, (float *) dst->data,
+             stream, std::make_index_sequence<n_fuse>{});
+diff --git a/src/ggml-cuda/common.cuh b/src/ggml-cuda/common.cuh
+index d27d8ac..ea0d54d 100644
+--- a/src/ggml-cuda/common.cuh
++++ b/src/ggml-cuda/common.cuh
+@@ -1419,6 +1419,7 @@ struct ggml_backend_cuda_context {
+ 
+     cudaStream_t streams[GGML_CUDA_MAX_DEVICES][GGML_CUDA_MAX_STREAMS] = { { nullptr } };
+     cublasHandle_t cublas_handles[GGML_CUDA_MAX_DEVICES] = {nullptr};
++    void * cudnn_context = nullptr;
+ 
+     int curr_stream_no = 0;
+ 
+@@ -1666,4 +1667,3 @@ static __inline__ void ggml_cuda_kernel_launch(Kernel kernel, const ggml_cuda_ke
+     kernel<<<launch_params.block_nums, launch_params.block_dims, launch_params.shmem, launch_params.stream>>>(std::forward<Args>(args)... );
+     CUDA_CHECK(cudaGetLastError());
+ }
+-
+diff --git a/src/ggml-cuda/conv2d-dw.cu b/src/ggml-cuda/conv2d-dw.cu
+index 7583233..53c6c66 100644
+--- a/src/ggml-cuda/conv2d-dw.cu
++++ b/src/ggml-cuda/conv2d-dw.cu
+@@ -1,4 +1,6 @@
+ #include "conv2d-dw.cuh"
++#include "conv2d.cuh"
++#include "convert.cuh"
+ 
+ struct conv_params {
+     int in_w, in_h;
+@@ -97,7 +99,7 @@ __global__ void conv2d_dw_kernel(const T * __restrict__ input, const T * __restr
+     int batch_idx, channel_idx, out_y_idx, out_x_idx;
+     Layout::unpack_indices(global_idx, params, batch_idx, channel_idx, out_y_idx, out_x_idx);
+ 
+-    T accumulator = 0;
++    float accumulator = 0.0f;
+     kernel_bounds bounds = calculate_kernel_bounds(out_x_idx, out_y_idx, params);
+ 
+     for (int kern_y = bounds.y_min; kern_y < bounds.y_max; ++kern_y) {
+@@ -109,21 +111,24 @@ __global__ void conv2d_dw_kernel(const T * __restrict__ input, const T * __restr
+             const T input_val  = input[Layout::input_index(batch_idx, channel_idx, in_y_idx, in_x_idx, params)];
+             const T kernel_val = kernel[Layout::kernel_index(channel_idx, kern_y, kern_x, params)];
+ 
+-            accumulator += input_val * kernel_val;
++            accumulator += ggml_cuda_cast<float>(input_val) * ggml_cuda_cast<float>(kernel_val);
+         }
+     }
+ 
+-    output[Layout::output_index(batch_idx, channel_idx, out_y_idx, out_x_idx, params)] = accumulator;
++    output[Layout::output_index(batch_idx, channel_idx, out_y_idx, out_x_idx, params)] =
++        ggml_cuda_cast<T>(accumulator);
+ }
+ 
+ void ggml_cuda_op_conv2d_dw(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
+     const ggml_tensor * kernel = dst->src[0];
+     const ggml_tensor * input  = dst->src[1];
+ 
+-    GGML_ASSERT(kernel->type == GGML_TYPE_F32 && input->type == GGML_TYPE_F32 && dst->type == GGML_TYPE_F32);
+-    const float * w_d = (const float *) kernel->data;
+-    const float * x_d = (const float *) input->data;
+-    float *       y_d = (float *) dst->data;
++    const bool f32 = kernel->type == GGML_TYPE_F32 && input->type == GGML_TYPE_F32 && dst->type == GGML_TYPE_F32;
++    const bool f16 = kernel->type == GGML_TYPE_F16 && input->type == GGML_TYPE_F16 && dst->type == GGML_TYPE_F16;
++    GGML_ASSERT(f32 || f16);
++#ifdef GGML_CUDA_USE_CUDNN
++    if (ggml_cuda_conv2d_cudnn(ctx, dst, true)) return;
++#endif
+ 
+     const int32_t * p          = (const int32_t *) dst->op_params;
+     const int       stride_x   = p[0];
+@@ -147,14 +152,22 @@ void ggml_cuda_op_conv2d_dw(ggml_backend_cuda_context & ctx, ggml_tensor * dst)
+     const int total  = batches * channels * out_h * out_w;
+     const int blocks = (total + CUDA_CONV2D_DW_BLOCK_SIZE - 1) / CUDA_CONV2D_DW_BLOCK_SIZE;
+ 
+-    if (ggml_is_contiguous(input)) {
++    if (f16 && ggml_is_contiguous(input)) {
++        conv2d_dw_kernel<half, whcn_layout><<<blocks, CUDA_CONV2D_DW_BLOCK_SIZE, 0, st>>>(
++            (const half *) input->data, (const half *) kernel->data, (half *) dst->data, in_w, in_h, out_w, out_h,
++            kernel_w, kernel_h, stride_x, stride_y, padding_x, padding_y, dilation_x, dilation_y, channels, batches);
++    } else if (f16 && ggml_is_contiguous_channels(input)) {
++        conv2d_dw_kernel<half, cwhn_layout><<<blocks, CUDA_CONV2D_DW_BLOCK_SIZE, 0, st>>>(
++            (const half *) input->data, (const half *) kernel->data, (half *) dst->data, in_w, in_h, out_w, out_h,
++            kernel_w, kernel_h, stride_x, stride_y, padding_x, padding_y, dilation_x, dilation_y, channels, batches);
++    } else if (ggml_is_contiguous(input)) {
+         conv2d_dw_kernel<float, whcn_layout><<<blocks, CUDA_CONV2D_DW_BLOCK_SIZE, 0, st>>>(
+-            x_d, w_d, y_d, in_w, in_h, out_w, out_h, kernel_w, kernel_h, stride_x, stride_y, padding_x, padding_y,
+-            dilation_x, dilation_y, channels, batches);
++            (const float *) input->data, (const float *) kernel->data, (float *) dst->data, in_w, in_h, out_w, out_h,
++            kernel_w, kernel_h, stride_x, stride_y, padding_x, padding_y, dilation_x, dilation_y, channels, batches);
+     } else if (ggml_is_contiguous_channels(input)) {
+         conv2d_dw_kernel<float, cwhn_layout><<<blocks, CUDA_CONV2D_DW_BLOCK_SIZE, 0, st>>>(
+-            x_d, w_d, y_d, in_w, in_h, out_w, out_h, kernel_w, kernel_h, stride_x, stride_y, padding_x, padding_y,
+-            dilation_x, dilation_y, channels, batches);
++            (const float *) input->data, (const float *) kernel->data, (float *) dst->data, in_w, in_h, out_w, out_h,
++            kernel_w, kernel_h, stride_x, stride_y, padding_x, padding_y, dilation_x, dilation_y, channels, batches);
+     } else {
+         GGML_ABORT("Unsupported memory layout for conv_2d_dw");
+     }
+diff --git a/src/ggml-cuda/conv2d-transpose.cu b/src/ggml-cuda/conv2d-transpose.cu
+index 6cbd6f8..139dee1 100644
+--- a/src/ggml-cuda/conv2d-transpose.cu
++++ b/src/ggml-cuda/conv2d-transpose.cu
+@@ -1,10 +1,16 @@
+ #include "conv2d-transpose.cuh"
+ #include "convert.cuh"
+ 
+-template <typename kernel_t>
+-static __global__ void conv2d_transpose_kernel(const float * __restrict__ input,
++#ifdef GGML_CUDA_USE_CUDNN
++#include <cudnn.h>
++#include <new>
++#include <string>
++#endif
++
++template <typename input_t, typename kernel_t, typename output_t>
++static __global__ void conv2d_transpose_kernel(const input_t * __restrict__ input,
+                                                const kernel_t * __restrict__ kernel,
+-                                               float * __restrict__ output,
++                                               output_t * __restrict__ output,
+                                                const int in_w,
+                                                const int in_h,
+                                                const int out_w,
+@@ -56,27 +62,144 @@ static __global__ void conv2d_transpose_kernel(const float * __restrict__ input,
+                 const int kernel_idx =
+                     (kernel_h * kernel_w * c_out) * c_in_idx + (kernel_h * kernel_w) * c_idx + (kernel_w) *kh + kw;
+ 
+-                float    input_val = input[input_idx];
++                input_t  input_val  = input[input_idx];
+                 kernel_t kern_val  = kernel[kernel_idx];
+ 
+-                accumulator += input_val * ggml_cuda_cast<float>(kern_val);
++                accumulator += ggml_cuda_cast<float>(input_val) * ggml_cuda_cast<float>(kern_val);
+             }
+         }
+     }
+ 
+-    output[(out_w * out_h * c_out) * n_idx + (out_w * out_h) * c_idx + (out_w) *out_y_idx + out_x_idx] = accumulator;
++    output[(out_w * out_h * c_out) * n_idx + (out_w * out_h) * c_idx + (out_w) *out_y_idx + out_x_idx] =
++        ggml_cuda_cast<output_t>(accumulator);
+ }
+ 
++#ifdef GGML_CUDA_USE_CUDNN
++namespace {
++
++struct transpose_cudnn_plan {
++    cudnnHandle_t handle = nullptr;
++    cudnnTensorDescriptor_t dx_desc = nullptr;
++    cudnnTensorDescriptor_t dy_desc = nullptr;
++    cudnnFilterDescriptor_t w_desc = nullptr;
++    cudnnConvolutionDescriptor_t conv_desc = nullptr;
++    cudnnConvolutionBwdDataAlgo_t algo = CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
++    size_t workspace_bytes = 0;
++    void * workspace = nullptr;
++    std::string source_key;
++    bool disabled = false;
++    ~transpose_cudnn_plan() {
++        if (workspace) cudaFree(workspace);
++        if (conv_desc) cudnnDestroyConvolutionDescriptor(conv_desc);
++        if (w_desc) cudnnDestroyFilterDescriptor(w_desc);
++        if (dy_desc) cudnnDestroyTensorDescriptor(dy_desc);
++        if (dx_desc) cudnnDestroyTensorDescriptor(dx_desc);
++        if (handle) cudnnDestroy(handle);
++    }
++};
++
++static transpose_cudnn_plan & transpose_plan() {
++    // A plan owns a cuDNN handle and descriptors. Keep one cache per worker
++    // thread so independent sessions cannot race while rebuilding it.
++    thread_local transpose_cudnn_plan plan;
++    return plan;
++}
++
++static std::string transpose_plan_key(const ggml_tensor * kernel, const ggml_tensor * input,
++                                      const ggml_tensor * dst) {
++    const int32_t stride = dst->op_params[0];
++    return std::to_string(reinterpret_cast<uintptr_t>(kernel->data)) + ":" +
++           std::to_string(input->ne[0]) + ":" + std::to_string(input->ne[1]) + ":" +
++           std::to_string(input->ne[2]) + ":" + std::to_string(input->ne[3]) + ":" +
++           std::to_string(dst->ne[0]) + ":" + std::to_string(dst->ne[1]) + ":" +
++           std::to_string(dst->ne[2]) + ":" + std::to_string(dst->ne[3]) + ":" +
++           std::to_string(kernel->ne[0]) + ":" + std::to_string(kernel->ne[1]) + ":" +
++           std::to_string(kernel->ne[2]) + ":" + std::to_string(kernel->ne[3]) + ":" +
++           std::to_string((int) input->type) + ":" + std::to_string((int) kernel->type) + ":" +
++           std::to_string(stride);
++}
++
++static bool transpose_cudnn(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
++    const ggml_tensor * kernel = dst->src[0];
++    const ggml_tensor * input = dst->src[1];
++    if (input->type != dst->type || kernel->type != input->type ||
++        (input->type != GGML_TYPE_F16 && input->type != GGML_TYPE_F32) || !ggml_is_contiguous(input) ||
++        !ggml_is_contiguous(kernel) || !ggml_is_contiguous(dst)) {
++        return false;
++    }
++
++    auto & plan = transpose_plan();
++    const std::string key = transpose_plan_key(kernel, input, dst);
++    if (plan.source_key != key || plan.handle == nullptr) {
++        if (plan.handle) {
++            plan.~transpose_cudnn_plan();
++            new (&plan) transpose_cudnn_plan();
++        }
++        if (cudnnCreate(&plan.handle) != CUDNN_STATUS_SUCCESS ||
++            cudnnCreateTensorDescriptor(&plan.dx_desc) != CUDNN_STATUS_SUCCESS ||
++            cudnnCreateTensorDescriptor(&plan.dy_desc) != CUDNN_STATUS_SUCCESS ||
++            cudnnCreateFilterDescriptor(&plan.w_desc) != CUDNN_STATUS_SUCCESS ||
++            cudnnCreateConvolutionDescriptor(&plan.conv_desc) != CUDNN_STATUS_SUCCESS) {
++            return false;
++        }
++
++        const int cin = input->ne[2], cout = dst->ne[2], kh = kernel->ne[1], kw = kernel->ne[0];
++        const cudnnDataType_t type = input->type == GGML_TYPE_F16 ? CUDNN_DATA_HALF : CUDNN_DATA_FLOAT;
++        if (cudnnSetTensor4dDescriptor(plan.dx_desc, CUDNN_TENSOR_NCHW, type,
++                                       dst->ne[3], dst->ne[2], dst->ne[1], dst->ne[0]) != CUDNN_STATUS_SUCCESS ||
++            cudnnSetTensor4dDescriptor(plan.dy_desc, CUDNN_TENSOR_NCHW, type,
++                                       input->ne[3], input->ne[2], input->ne[1], input->ne[0]) != CUDNN_STATUS_SUCCESS ||
++            // ConvTranspose weights are [Cin, Cout, Kh, Kw], exactly the filter
++            // layout expected by backward-data where dy has Cin channels.
++            cudnnSetFilter4dDescriptor(plan.w_desc, type, CUDNN_TENSOR_NCHW, cin, cout, kh, kw) != CUDNN_STATUS_SUCCESS ||
++            cudnnSetConvolution2dDescriptor(plan.conv_desc, 0, 0, dst->op_params[0], dst->op_params[0], 1, 1,
++                                            CUDNN_CROSS_CORRELATION, CUDNN_DATA_FLOAT) != CUDNN_STATUS_SUCCESS ||
++            cudnnSetConvolutionMathType(plan.conv_desc, CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION) != CUDNN_STATUS_SUCCESS) {
++            return false;
++        }
++        cudnnConvolutionBwdDataAlgoPerf_t perf[CUDNN_CONVOLUTION_BWD_DATA_ALGO_COUNT];
++        int count = 0;
++        if (cudaMalloc(&plan.workspace, 64ull << 20) != cudaSuccess ||
++            cudnnFindConvolutionBackwardDataAlgorithmEx(plan.handle, plan.w_desc, kernel->data, plan.dy_desc,
++                                                         input->data, plan.conv_desc, plan.dx_desc, dst->data,
++                                                         CUDNN_CONVOLUTION_BWD_DATA_ALGO_COUNT, &count, perf,
++                                                         plan.workspace, 64ull << 20) != CUDNN_STATUS_SUCCESS) {
++            return false;
++        }
++        bool found_algorithm = false;
++        for (int i = 0; i < count; ++i) {
++            if (perf[i].status == CUDNN_STATUS_SUCCESS && perf[i].memory <= (64ull << 20)) {
++                plan.algo = perf[i].algo;
++                plan.workspace_bytes = perf[i].memory;
++                found_algorithm = true;
++                break;
++            }
++        }
++        plan.source_key = key;
++        plan.disabled = !found_algorithm;
++    }
++    if (plan.disabled) return false;
++
++    if (cudnnSetStream(plan.handle, ctx.stream()) != CUDNN_STATUS_SUCCESS) return false;
++    const float alpha = 1.0f, beta = 0.0f;
++    const cudnnStatus_t status = cudnnConvolutionBackwardData(
++        plan.handle, &alpha, plan.w_desc, kernel->data, plan.dy_desc, input->data, plan.conv_desc, plan.algo,
++        plan.workspace, plan.workspace_bytes, &beta, plan.dx_desc, dst->data);
++    plan.disabled = status != CUDNN_STATUS_SUCCESS;
++    return !plan.disabled;
++}
++
++} // namespace
++#endif
++
+ //input is (W, H, C_in, N), Kernel is (W, H, C_out, C_in)
+ void ggml_cuda_conv_2d_transpose_p0(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
+     const ggml_tensor * kernel = dst->src[0];
+     const ggml_tensor * input  = dst->src[1];
+ 
+     GGML_ASSERT(kernel->type == GGML_TYPE_F16 || kernel->type == GGML_TYPE_F32);
+-    GGML_ASSERT(input->type == GGML_TYPE_F32 && dst->type == GGML_TYPE_F32);
+-
+-    const float * input_data  = (const float *) input->data;
+-    float *       output_data = (float *) dst->data;
++    GGML_ASSERT(input->type == dst->type);
++    GGML_ASSERT(input->type == GGML_TYPE_F16 || input->type == GGML_TYPE_F32);
+     const void *  kernel_data = kernel->data;
+ 
+     const int input_w      = input->ne[0];
+@@ -99,17 +222,28 @@ void ggml_cuda_conv_2d_transpose_p0(ggml_backend_cuda_context & ctx, ggml_tensor
+     GGML_ASSERT(ggml_is_contiguous(kernel));
+     GGML_ASSERT(ggml_is_contiguous(dst));
+ 
++#ifdef GGML_CUDA_USE_CUDNN
++    if (transpose_cudnn(ctx, dst)) return;
++#endif
++
+     const int total  = output_w * output_h * channels_out * batches;
+     const int blocks = (total + CUDA_CONV2D_TRANSPOSE_BLOCK_SIZE - 1) / CUDA_CONV2D_TRANSPOSE_BLOCK_SIZE;
+ 
+-    if (kernel->type == GGML_TYPE_F16) {
+-        conv2d_transpose_kernel<half><<<blocks, CUDA_CONV2D_TRANSPOSE_BLOCK_SIZE, 0, st>>>(
+-            input_data, (const half *) kernel_data, output_data, input_w, input_h, output_w, output_h, kernel_w,
+-            kernel_h, stride, channels_in, channels_out, batches);
+-
++    if (input->type == GGML_TYPE_F16 && kernel->type == GGML_TYPE_F16) {
++        conv2d_transpose_kernel<half, half, half><<<blocks, CUDA_CONV2D_TRANSPOSE_BLOCK_SIZE, 0, st>>>(
++            (const half *) input->data, (const half *) kernel_data, (half *) dst->data,
++            input_w, input_h, output_w, output_h, kernel_w, kernel_h, stride, channels_in, channels_out, batches);
++    } else if (input->type == GGML_TYPE_F16 && kernel->type == GGML_TYPE_F32) {
++        conv2d_transpose_kernel<half, float, half><<<blocks, CUDA_CONV2D_TRANSPOSE_BLOCK_SIZE, 0, st>>>(
++            (const half *) input->data, (const float *) kernel_data, (half *) dst->data,
++            input_w, input_h, output_w, output_h, kernel_w, kernel_h, stride, channels_in, channels_out, batches);
++    } else if (kernel->type == GGML_TYPE_F16) {
++        conv2d_transpose_kernel<float, half, float><<<blocks, CUDA_CONV2D_TRANSPOSE_BLOCK_SIZE, 0, st>>>(
++            (const float *) input->data, (const half *) kernel_data, (float *) dst->data,
++            input_w, input_h, output_w, output_h, kernel_w, kernel_h, stride, channels_in, channels_out, batches);
+     } else {
+-        conv2d_transpose_kernel<float><<<blocks, CUDA_CONV2D_TRANSPOSE_BLOCK_SIZE, 0, st>>>(
+-            input_data, (const float *) kernel_data, output_data, input_w, input_h, output_w, output_h, kernel_w,
+-            kernel_h, stride, channels_in, channels_out, batches);
++        conv2d_transpose_kernel<float, float, float><<<blocks, CUDA_CONV2D_TRANSPOSE_BLOCK_SIZE, 0, st>>>(
++            (const float *) input->data, (const float *) kernel_data, (float *) dst->data,
++            input_w, input_h, output_w, output_h, kernel_w, kernel_h, stride, channels_in, channels_out, batches);
+     }
+ }
+diff --git a/src/ggml-cuda/conv2d.cu b/src/ggml-cuda/conv2d.cu
+index 14774d4..685cafb 100644
+--- a/src/ggml-cuda/conv2d.cu
++++ b/src/ggml-cuda/conv2d.cu
+@@ -1,6 +1,25 @@
+ #include "conv2d.cuh"
+ #include "convert.cuh"
+ 
++#include <cinttypes>
++#include <cstdlib>
++#include <cstring>
++#include <memory>
++#include <unordered_map>
++
++#if !defined(GGML_USE_HIP)
++#include <mma.h> // WMMA tensor core API for the native implicit-GEMM conv
++#endif
++
++#ifdef GGML_CUDA_USE_CUDNN
++#include <cudnn.h>
++
++#include <algorithm>
++#include <array>
++#include <limits>
++#include <vector>
++#endif
++
+ struct conv_params {
+     const int64_t IW, IH;
+     const int64_t OW, OH;
+@@ -69,10 +88,10 @@ struct whcn_layout {
+     }
+ };
+ 
+-template <typename T, typename Layout>
+-static __global__ void conv2d_kernel(const float * __restrict__ input,
+-                                     const T * __restrict__ kernel,
+-                                     float * __restrict__ output,
++template <typename X, typename K, typename Y, typename Layout>
++static __global__ void conv2d_kernel(const X * __restrict__ input,
++                                     const K * __restrict__ kernel,
++                                     Y * __restrict__ output,
+                                      const conv_params P) {
+     const int64_t global_idx = blockIdx.x * blockDim.x + threadIdx.x;
+ 
+@@ -94,47 +113,1668 @@ static __global__ void conv2d_kernel(const float * __restrict__ input,
+             for (int64_t kx = bounds.x_min; kx < bounds.x_max; ++kx) {
+                 const int64_t in_x = calculate_input_coord(out_x, kx, P.ST_X, P.DL_X, P.PD_X);
+ 
+-                const float input_val = input[Layout::input_index(n, c_in, in_y, in_x, P)];
+-                const T kernel_val = kernel[Layout::kernel_index(c_out, c_in, ky, kx, P)];
+-                acc += (input_val * ggml_cuda_cast<float>(kernel_val));
++                const X input_val = input[Layout::input_index(n, c_in, in_y, in_x, P)];
++                const K kernel_val = kernel[Layout::kernel_index(c_out, c_in, ky, kx, P)];
++                acc += ggml_cuda_cast<float>(input_val) * ggml_cuda_cast<float>(kernel_val);
+             }
+         }
+     }
+ 
+     // [N, OC, OH, OW]
+-    output[Layout::output_index(n, c_out, out_y, out_x, P)] = acc;
++    output[Layout::output_index(n, c_out, out_y, out_x, P)] = ggml_cuda_cast<Y>(acc);
+ }
+ 
+-template <typename T>
+-static void conv2d_cuda(const float * X_D, const T * K_D, float * Y_D, const conv_params P, cudaStream_t st) {
++template <typename X, typename K, typename Y>
++static void conv2d_cuda(const X * X_D, const K * K_D, Y * Y_D, const conv_params P, cudaStream_t st) {
+     const int blocks = (P.TOTAL + CUDA_CONV2D_BLOCK_SIZE - 1) / CUDA_CONV2D_BLOCK_SIZE;
+-    conv2d_kernel<T, whcn_layout><<<blocks, CUDA_CONV2D_BLOCK_SIZE, 0, st>>>(X_D, K_D, Y_D, P);
++    conv2d_kernel<X, K, Y, whcn_layout><<<blocks, CUDA_CONV2D_BLOCK_SIZE, 0, st>>>(X_D, K_D, Y_D, P);
++}
++
++template <typename T>
++static __global__ void bias_silu_kernel(
++        T * output, const float * bias, int64_t spatial, int64_t channels, int64_t total) {
++    const int64_t index = blockIdx.x * blockDim.x + threadIdx.x;
++    if (index >= total) return;
++    const float value = ggml_cuda_cast<float>(output[index]) + bias[(index / spatial) % channels];
++    output[index] = ggml_cuda_cast<T>(value / (1.0f + expf(-value)));
++}
++
++static void bias_silu_cuda(ggml_tensor * dst, cudaStream_t stream) {
++    if (!dst->src[2] || ggml_get_op_params_i32(dst, 7) != 1) return;
++    const int64_t spatial = dst->ne[0] * dst->ne[1];
++    const int64_t total = ggml_nelements(dst);
++    const int blocks = (total + CUDA_CONV2D_BLOCK_SIZE - 1) / CUDA_CONV2D_BLOCK_SIZE;
++    if (dst->type == GGML_TYPE_F16) {
++        bias_silu_kernel<<<blocks, CUDA_CONV2D_BLOCK_SIZE, 0, stream>>>(
++            (half *) dst->data, (const float *) dst->src[2]->data, spatial, dst->ne[2], total);
++    } else {
++        bias_silu_kernel<<<blocks, CUDA_CONV2D_BLOCK_SIZE, 0, stream>>>(
++            (float *) dst->data, (const float *) dst->src[2]->data, spatial, dst->ne[2], total);
++    }
++}
++
++#ifdef GGML_CUDA_USE_CUDNN
++
++static __global__ void fp32_to_fp16_kernel(const float * src, half * dst, int64_t count) {
++    const int64_t index = blockIdx.x * blockDim.x + threadIdx.x;
++    if (index < count) dst[index] = __float2half(src[index]);
++}
++
++template <typename T>
++static __global__ void transpose_batched_kernel(
++        const T * src, T * dst, int64_t rows, int64_t columns) {
++    __shared__ T tile[32][33];
++    const int64_t batch = blockIdx.z;
++    const int64_t src_x = blockIdx.x * 32 + threadIdx.x;
++    const int64_t src_y = blockIdx.y * 32 + threadIdx.y;
++    const T * src_batch = src + batch * rows * columns;
++    T * dst_batch = dst + batch * rows * columns;
++    for (int offset = 0; offset < 32; offset += 8) {
++        if (src_x < columns && src_y + offset < rows) {
++            tile[threadIdx.y + offset][threadIdx.x] = src_batch[(src_y + offset) * columns + src_x];
++        }
++    }
++    __syncthreads();
++    const int64_t dst_x = blockIdx.y * 32 + threadIdx.x;
++    const int64_t dst_y = blockIdx.x * 32 + threadIdx.y;
++    for (int offset = 0; offset < 32; offset += 8) {
++        if (dst_x < rows && dst_y + offset < columns) {
++            dst_batch[(dst_y + offset) * rows + dst_x] = tile[threadIdx.x][threadIdx.y + offset];
++        }
++    }
++}
++
++static void nchw_to_nhwc(const void * src, void * dst, cudnnDataType_t type,
++                         int64_t batches, int64_t channels, int64_t height, int64_t width, cudaStream_t stream) {
++    const int64_t total = batches * channels * height * width;
++    GGML_UNUSED(total);
++    const int64_t spatial = height * width;
++    const dim3 blocks((spatial + 31) / 32, (channels + 31) / 32, batches);
++    const dim3 threads(32, 8);
++    if (type == CUDNN_DATA_HALF) {
++        transpose_batched_kernel<<<blocks, threads, 0, stream>>>(
++            (const half *) src, (half *) dst, channels, spatial);
++    } else {
++        transpose_batched_kernel<<<blocks, threads, 0, stream>>>(
++            (const float *) src, (float *) dst, channels, spatial);
++    }
++}
++
++static void nhwc_to_nchw(const void * src, void * dst, cudnnDataType_t type,
++                         int64_t batches, int64_t channels, int64_t height, int64_t width, cudaStream_t stream) {
++    const int64_t spatial = height * width;
++    const dim3 blocks((channels + 31) / 32, (spatial + 31) / 32, batches);
++    const dim3 threads(32, 8);
++    if (type == CUDNN_DATA_HALF) {
++        transpose_batched_kernel<<<blocks, threads, 0, stream>>>(
++            (const half *) src, (half *) dst, spatial, channels);
++    } else {
++        transpose_batched_kernel<<<blocks, threads, 0, stream>>>(
++            (const float *) src, (float *) dst, spatial, channels);
++    }
++}
++
++namespace {
++
++// Minimal cudnnBackend (Graph API) wrappers replacing the cudnn-frontend
++// dependency. The generated descriptors match what the retired frontend
++// builders produced, so execution plans and kernels stay equivalent.
++struct cudnn_backend_desc_deleter {
++    void operator()(cudnnBackendStruct * desc) const { cudnnBackendDestroyDescriptor(desc); }
++};
++
++// Shared ownership mirrors cudnn_frontend::ManagedOpaqueDescriptor: shape-keyed
++// choices outlive the per-tensor plans that created the descriptor.
++using cudnn_backend_desc_ptr = std::shared_ptr<cudnnBackendStruct>;
++
++static cudnn_backend_desc_ptr cudnn_backend_create(cudnnBackendDescriptorType_t type) {
++    cudnnBackendDescriptor_t desc = nullptr;
++    if (cudnnBackendCreateDescriptor(type, &desc) != CUDNN_STATUS_SUCCESS) return nullptr;
++    return cudnn_backend_desc_ptr(desc, cudnn_backend_desc_deleter());
++}
++
++static bool cudnn_set_attr(cudnnBackendDescriptor_t desc, cudnnBackendAttributeName_t name,
++                           cudnnBackendAttributeType_t type, int64_t count, const void * values) {
++    return cudnnBackendSetAttribute(desc, name, type, count, values) == CUDNN_STATUS_SUCCESS;
++}
++
++static cudnn_backend_desc_ptr cudnn_make_tensor_desc(
++        const int64_t * dims, const int64_t * strides, int64_t id, cudnnDataType_t data_type, bool is_virtual) {
++    const int64_t alignment = 16;
++    auto tensor = cudnn_backend_create(CUDNN_BACKEND_TENSOR_DESCRIPTOR);
++    if (!tensor ||
++        !cudnn_set_attr(tensor.get(), CUDNN_ATTR_TENSOR_DATA_TYPE, CUDNN_TYPE_DATA_TYPE, 1, &data_type) ||
++        !cudnn_set_attr(tensor.get(), CUDNN_ATTR_TENSOR_DIMENSIONS, CUDNN_TYPE_INT64, 4, dims) ||
++        !cudnn_set_attr(tensor.get(), CUDNN_ATTR_TENSOR_STRIDES, CUDNN_TYPE_INT64, 4, strides) ||
++        !cudnn_set_attr(tensor.get(), CUDNN_ATTR_TENSOR_UNIQUE_ID, CUDNN_TYPE_INT64, 1, &id) ||
++        !cudnn_set_attr(tensor.get(), CUDNN_ATTR_TENSOR_BYTE_ALIGNMENT, CUDNN_TYPE_INT64, 1, &alignment)) {
++        return nullptr;
++    }
++    if (is_virtual) {
++        const bool virtual_flag = true;
++        if (!cudnn_set_attr(tensor.get(), CUDNN_ATTR_TENSOR_IS_VIRTUAL, CUDNN_TYPE_BOOLEAN, 1, &virtual_flag)) {
++            return nullptr;
++        }
++    }
++    return cudnnBackendFinalize(tensor.get()) == CUDNN_STATUS_SUCCESS ? tensor : nullptr;
++}
++
++static cudnn_backend_desc_ptr cudnn_make_conv_desc(
++        const int64_t * padding, const int64_t * stride, const int64_t * dilation) {
++    const int64_t spatial_dims = 2;
++    const cudnnConvolutionMode_t mode = CUDNN_CROSS_CORRELATION;
++    const cudnnDataType_t compute_type = CUDNN_DATA_FLOAT;
++    auto conv = cudnn_backend_create(CUDNN_BACKEND_CONVOLUTION_DESCRIPTOR);
++    if (!conv ||
++        !cudnn_set_attr(conv.get(), CUDNN_ATTR_CONVOLUTION_COMP_TYPE, CUDNN_TYPE_DATA_TYPE, 1, &compute_type) ||
++        !cudnn_set_attr(conv.get(), CUDNN_ATTR_CONVOLUTION_CONV_MODE, CUDNN_TYPE_CONVOLUTION_MODE, 1, &mode) ||
++        !cudnn_set_attr(conv.get(), CUDNN_ATTR_CONVOLUTION_SPATIAL_DIMS, CUDNN_TYPE_INT64, 1, &spatial_dims) ||
++        !cudnn_set_attr(conv.get(), CUDNN_ATTR_CONVOLUTION_PRE_PADDINGS, CUDNN_TYPE_INT64, 2, padding) ||
++        !cudnn_set_attr(conv.get(), CUDNN_ATTR_CONVOLUTION_POST_PADDINGS, CUDNN_TYPE_INT64, 2, padding) ||
++        !cudnn_set_attr(conv.get(), CUDNN_ATTR_CONVOLUTION_FILTER_STRIDES, CUDNN_TYPE_INT64, 2, stride) ||
++        !cudnn_set_attr(conv.get(), CUDNN_ATTR_CONVOLUTION_DILATIONS, CUDNN_TYPE_INT64, 2, dilation)) {
++        return nullptr;
++    }
++    return cudnnBackendFinalize(conv.get()) == CUDNN_STATUS_SUCCESS ? conv : nullptr;
++}
++
++static cudnn_backend_desc_ptr cudnn_make_pointwise_desc(cudnnPointwiseMode_t mode) {
++    const cudnnDataType_t math_prec = CUDNN_DATA_FLOAT;
++    auto desc = cudnn_backend_create(CUDNN_BACKEND_POINTWISE_DESCRIPTOR);
++    if (!desc ||
++        !cudnn_set_attr(desc.get(), CUDNN_ATTR_POINTWISE_MODE, CUDNN_TYPE_POINTWISE_MODE, 1, &mode) ||
++        !cudnn_set_attr(desc.get(), CUDNN_ATTR_POINTWISE_MATH_PREC, CUDNN_TYPE_DATA_TYPE, 1, &math_prec)) {
++        return nullptr;
++    }
++    return cudnnBackendFinalize(desc.get()) == CUDNN_STATUS_SUCCESS ? desc : nullptr;
++}
++
++static cudnn_backend_desc_ptr cudnn_make_conv_op(
++        const cudnnBackendDescriptor_t x, const cudnnBackendDescriptor_t y,
++        const cudnnBackendDescriptor_t w, const cudnnBackendDescriptor_t conv) {
++    const float alpha = 1.0f;
++    const float beta = 0.0f;
++    auto op = cudnn_backend_create(CUDNN_BACKEND_OPERATION_CONVOLUTION_FORWARD_DESCRIPTOR);
++    if (!op ||
++        !cudnn_set_attr(op.get(), CUDNN_ATTR_OPERATION_CONVOLUTION_FORWARD_X, CUDNN_TYPE_BACKEND_DESCRIPTOR, 1, &x) ||
++        !cudnn_set_attr(op.get(), CUDNN_ATTR_OPERATION_CONVOLUTION_FORWARD_W, CUDNN_TYPE_BACKEND_DESCRIPTOR, 1, &w) ||
++        !cudnn_set_attr(op.get(), CUDNN_ATTR_OPERATION_CONVOLUTION_FORWARD_Y, CUDNN_TYPE_BACKEND_DESCRIPTOR, 1, &y) ||
++        !cudnn_set_attr(op.get(), CUDNN_ATTR_OPERATION_CONVOLUTION_FORWARD_CONV_DESC,
++                        CUDNN_TYPE_BACKEND_DESCRIPTOR, 1, &conv) ||
++        !cudnn_set_attr(op.get(), CUDNN_ATTR_OPERATION_CONVOLUTION_FORWARD_ALPHA, CUDNN_TYPE_FLOAT, 1, &alpha) ||
++        !cudnn_set_attr(op.get(), CUDNN_ATTR_OPERATION_CONVOLUTION_FORWARD_BETA, CUDNN_TYPE_FLOAT, 1, &beta)) {
++        return nullptr;
++    }
++    return cudnnBackendFinalize(op.get()) == CUDNN_STATUS_SUCCESS ? op : nullptr;
++}
++
++// cudnn-frontend defaults pointwise alpha1/alpha2 to 1.0f when unset.
++static cudnn_backend_desc_ptr cudnn_make_pointwise_op(
++        const cudnnBackendDescriptor_t pw, const cudnnBackendDescriptor_t x,
++        const cudnnBackendDescriptor_t y, const cudnnBackendDescriptor_t b) {
++    const float alpha = 1.0f;
++    auto op = cudnn_backend_create(CUDNN_BACKEND_OPERATION_POINTWISE_DESCRIPTOR);
++    if (!op ||
++        !cudnn_set_attr(op.get(), CUDNN_ATTR_OPERATION_POINTWISE_PW_DESCRIPTOR, CUDNN_TYPE_BACKEND_DESCRIPTOR, 1, &pw) ||
++        !cudnn_set_attr(op.get(), CUDNN_ATTR_OPERATION_POINTWISE_XDESC, CUDNN_TYPE_BACKEND_DESCRIPTOR, 1, &x) ||
++        !cudnn_set_attr(op.get(), CUDNN_ATTR_OPERATION_POINTWISE_YDESC, CUDNN_TYPE_BACKEND_DESCRIPTOR, 1, &y) ||
++        !cudnn_set_attr(op.get(), CUDNN_ATTR_OPERATION_POINTWISE_ALPHA1, CUDNN_TYPE_FLOAT, 1, &alpha) ||
++        !cudnn_set_attr(op.get(), CUDNN_ATTR_OPERATION_POINTWISE_ALPHA2, CUDNN_TYPE_FLOAT, 1, &alpha)) {
++        return nullptr;
++    }
++    if (b && !cudnn_set_attr(op.get(), CUDNN_ATTR_OPERATION_POINTWISE_BDESC, CUDNN_TYPE_BACKEND_DESCRIPTOR, 1, &b)) {
++        return nullptr;
++    }
++    return cudnnBackendFinalize(op.get()) == CUDNN_STATUS_SUCCESS ? op : nullptr;
++}
++
++static cudnn_backend_desc_ptr cudnn_make_opgraph(
++        cudnnHandle_t handle, const cudnnBackendDescriptor_t * ops, int64_t count) {
++    auto graph = cudnn_backend_create(CUDNN_BACKEND_OPERATIONGRAPH_DESCRIPTOR);
++    if (!graph ||
++        !cudnn_set_attr(graph.get(), CUDNN_ATTR_OPERATIONGRAPH_OPS, CUDNN_TYPE_BACKEND_DESCRIPTOR, count, ops) ||
++        !cudnn_set_attr(graph.get(), CUDNN_ATTR_OPERATIONGRAPH_HANDLE, CUDNN_TYPE_HANDLE, 1, &handle)) {
++        return nullptr;
++    }
++    return cudnnBackendFinalize(graph.get()) == CUDNN_STATUS_SUCCESS ? graph : nullptr;
++}
++
++// Mirrors cudnn_frontend::get_heuristics_list({"heuristics_instant",
++// "heuristics_fallback"}, ..., /*evaluate_all=*/true): MODE_A first, then
++// MODE_FALLBACK, and a failing mode does not abort the collection.
++static void cudnn_collect_engine_configs(const cudnn_backend_desc_ptr & graph,
++                                         std::vector<cudnn_backend_desc_ptr> & configs) {
++    for (const cudnnBackendHeurMode_t mode : {CUDNN_HEUR_MODE_A, CUDNN_HEUR_MODE_FALLBACK}) {
++        const cudnnBackendDescriptor_t graph_desc = graph.get();
++        auto heur = cudnn_backend_create(CUDNN_BACKEND_ENGINEHEUR_DESCRIPTOR);
++        if (!heur ||
++            !cudnn_set_attr(heur.get(), CUDNN_ATTR_ENGINEHEUR_OPERATION_GRAPH,
++                            CUDNN_TYPE_BACKEND_DESCRIPTOR, 1, &graph_desc) ||
++            !cudnn_set_attr(heur.get(), CUDNN_ATTR_ENGINEHEUR_MODE, CUDNN_TYPE_HEUR_MODE, 1, &mode) ||
++            cudnnBackendFinalize(heur.get()) != CUDNN_STATUS_SUCCESS) {
++            continue;
++        }
++        int64_t count = 0;
++        if (cudnnBackendGetAttribute(heur.get(), CUDNN_ATTR_ENGINEHEUR_RESULTS, CUDNN_TYPE_BACKEND_DESCRIPTOR, 0,
++                                     &count, nullptr) != CUDNN_STATUS_SUCCESS || count <= 0) {
++            continue;
++        }
++        std::vector<cudnn_backend_desc_ptr> results;
++        std::vector<cudnnBackendDescriptor_t> raw;
++        results.reserve(count);
++        raw.reserve(count);
++        bool ready = true;
++        for (int64_t i = 0; i < count && ready; ++i) {
++            results.push_back(cudnn_backend_create(CUDNN_BACKEND_ENGINECFG_DESCRIPTOR));
++            ready = results.back() != nullptr;
++            if (ready) raw.push_back(results.back().get());
++        }
++        if (!ready) continue;
++        int64_t filled = 0;
++        if (cudnnBackendGetAttribute(heur.get(), CUDNN_ATTR_ENGINEHEUR_RESULTS, CUDNN_TYPE_BACKEND_DESCRIPTOR,
++                                     count, &filled, raw.data()) != CUDNN_STATUS_SUCCESS || filled <= 0) {
++            continue;
++        }
++        results.resize(filled);
++        configs.insert(configs.end(), std::make_move_iterator(results.begin()),
++                       std::make_move_iterator(results.end()));
++    }
++}
++
++static cudnn_backend_desc_ptr cudnn_make_execution_plan(
++        cudnnHandle_t handle, const cudnn_backend_desc_ptr & engine_config, int64_t * workspace_size) {
++    const cudnnBackendDescriptor_t config_desc = engine_config.get();
++    auto plan = cudnn_backend_create(CUDNN_BACKEND_EXECUTION_PLAN_DESCRIPTOR);
++    if (!plan ||
++        !cudnn_set_attr(plan.get(), CUDNN_ATTR_EXECUTION_PLAN_ENGINE_CONFIG,
++                        CUDNN_TYPE_BACKEND_DESCRIPTOR, 1, &config_desc) ||
++        !cudnn_set_attr(plan.get(), CUDNN_ATTR_EXECUTION_PLAN_HANDLE, CUDNN_TYPE_HANDLE, 1, &handle) ||
++        cudnnBackendFinalize(plan.get()) != CUDNN_STATUS_SUCCESS ||
++        cudnnBackendGetAttribute(plan.get(), CUDNN_ATTR_EXECUTION_PLAN_WORKSPACE_SIZE, CUDNN_TYPE_INT64, 1,
++                                 workspace_size, nullptr) != CUDNN_STATUS_SUCCESS) {
++        return nullptr;
++    }
++    return plan;
++}
++
++static cudnn_backend_desc_ptr cudnn_make_variant_pack(
++        void * workspace, void * const * data_ptrs, const int64_t * uids, int64_t count) {
++    auto pack = cudnn_backend_create(CUDNN_BACKEND_VARIANT_PACK_DESCRIPTOR);
++    if (!pack ||
++        !cudnn_set_attr(pack.get(), CUDNN_ATTR_VARIANT_PACK_DATA_POINTERS, CUDNN_TYPE_VOID_PTR, count, data_ptrs) ||
++        !cudnn_set_attr(pack.get(), CUDNN_ATTR_VARIANT_PACK_UNIQUE_IDS, CUDNN_TYPE_INT64, count, uids) ||
++        !cudnn_set_attr(pack.get(), CUDNN_ATTR_VARIANT_PACK_WORKSPACE, CUDNN_TYPE_VOID_PTR, 1, &workspace)) {
++        return nullptr;
++    }
++    return cudnnBackendFinalize(pack.get()) == CUDNN_STATUS_SUCCESS ? pack : nullptr;
++}
++
++constexpr size_t CUDNN_WORKSPACE_BYTES = 64ull << 20;
++
++static bool env_enabled(const char * name) {
++    const char * value = getenv(name);
++    return value && value[0] != '\0' && strcmp(value, "0") != 0;
++}
++
++struct cudnn_conv_plan {
++    cudnnTensorDescriptor_t x_desc = nullptr;
++    cudnnTensorDescriptor_t y_desc = nullptr;
++    cudnnFilterDescriptor_t w_desc = nullptr;
++    cudnnConvolutionDescriptor_t conv_desc = nullptr;
++    std::array<cudnnConvolutionFwdAlgoPerf_t, CUDNN_CONVOLUTION_FWD_ALGO_COUNT> algorithms{};
++    int algorithm_count = 0;
++    int algorithm_index = 0;
++    bool disabled = false;
++    bool frontend_fused = false;
++    float frontend_time_ms = std::numeric_limits<float>::max();
++    void * frontend_input = nullptr;
++    void * frontend_output = nullptr;
++    void * frontend_weight = nullptr;
++    void * frontend_bias = nullptr;
++    cudnn_backend_desc_ptr frontend_plan;
++
++    ~cudnn_conv_plan() {
++        if (frontend_weight) cudaFree(frontend_weight);
++        if (frontend_output) cudaFree(frontend_output);
++        if (frontend_input) cudaFree(frontend_input);
++        if (frontend_bias) cudaFree(frontend_bias);
++        if (conv_desc) cudnnDestroyConvolutionDescriptor(conv_desc);
++        if (w_desc) cudnnDestroyFilterDescriptor(w_desc);
++        if (y_desc) cudnnDestroyTensorDescriptor(y_desc);
++        if (x_desc) cudnnDestroyTensorDescriptor(x_desc);
++    }
++};
++
++using cudnn_conv_shape = std::array<int64_t, 26>;
++
++struct cudnn_conv_shape_hash {
++    size_t operator()(const cudnn_conv_shape & shape) const {
++        size_t hash = 0;
++        for (const int64_t value : shape) {
++            hash ^= std::hash<int64_t>{}(value) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
++        }
++        return hash;
++    }
++};
++
++enum class cudnn_conv_backend {
++    frontend,
++    legacy,
++};
++
++struct cudnn_conv_choice {
++    cudnn_conv_backend backend = cudnn_conv_backend::legacy;
++    cudnn_backend_desc_ptr frontend_plan;
++    bool frontend_fused = false;
++    float frontend_time_ms = std::numeric_limits<float>::max();
++    float legacy_time_ms = std::numeric_limits<float>::max();
++    std::array<cudnnConvolutionFwdAlgoPerf_t, CUDNN_CONVOLUTION_FWD_ALGO_COUNT> algorithms{};
++    int algorithm_count = 0;
++    int algorithm_index = 0;
++};
++
++static cudnn_conv_shape get_conv_shape(const ggml_tensor * dst, bool depthwise) {
++    const ggml_tensor * kernel = dst->src[0];
++    const ggml_tensor * input = dst->src[1];
++    const ggml_tensor * bias = dst->src[2];
++    const int32_t * p = (const int32_t *) dst->op_params;
++    return {
++        input->ne[0], input->ne[1], input->ne[2], input->ne[3],
++        kernel->ne[0], kernel->ne[1], kernel->ne[2], kernel->ne[3],
++        dst->ne[0], dst->ne[1], dst->ne[2], dst->ne[3],
++        p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7],
++        input->type, kernel->type, dst->type, depthwise, bias != nullptr, bias ? bias->type : -1,
++    };
++}
++
++
++struct cudnn_conv_context {
++    cudnnHandle_t handle = nullptr;
++    void * workspace = nullptr;
++    size_t workspace_bytes = 0;
++    std::unordered_map<const ggml_tensor *, std::unique_ptr<cudnn_conv_plan>> plans;
++    std::unordered_map<cudnn_conv_shape, cudnn_conv_choice, cudnn_conv_shape_hash> choices;
++
++    explicit cudnn_conv_context(int device) {
++        ggml_cuda_set_device(device);
++        if (cudnnCreate(&handle) != CUDNN_STATUS_SUCCESS) {
++            handle = nullptr;
++            return;
++        }
++        if (cudaMalloc(&workspace, CUDNN_WORKSPACE_BYTES) == cudaSuccess) {
++            workspace_bytes = CUDNN_WORKSPACE_BYTES;
++        } else {
++            workspace = nullptr;
++            cudaGetLastError();
++        }
++    }
++
++    ~cudnn_conv_context() {
++        plans.clear();
++        choices.clear();
++        if (workspace) cudaFree(workspace);
++        if (handle) cudnnDestroy(handle);
++    }
++};
++
++static bool prepare_nhwc_buffers(cudnn_conv_context & cctx, const ggml_tensor * dst,
++                                 cudnn_conv_plan & plan, bool convert_bias) {
++    const ggml_tensor * kernel = dst->src[0];
++    const ggml_tensor * input = dst->src[1];
++    const cudnnDataType_t data_type = input->type == GGML_TYPE_F16 ? CUDNN_DATA_HALF : CUDNN_DATA_FLOAT;
++    if (!plan.frontend_input && cudaMalloc(&plan.frontend_input, ggml_nbytes(input)) != cudaSuccess) {
++        cudaGetLastError();
++        return false;
++    }
++    if (!plan.frontend_output && cudaMalloc(&plan.frontend_output, ggml_nbytes(dst)) != cudaSuccess) {
++        cudaGetLastError();
++        return false;
++    }
++    if (!plan.frontend_weight && cudaMalloc(&plan.frontend_weight, ggml_nbytes(kernel)) != cudaSuccess) {
++        cudaGetLastError();
++        return false;
++    }
++
++    cudaStream_t stream = nullptr;
++    cudnnGetStream(cctx.handle, &stream);
++    nchw_to_nhwc(kernel->data, plan.frontend_weight, data_type, kernel->ne[3], kernel->ne[2],
++                 kernel->ne[1], kernel->ne[0], stream);
++    nchw_to_nhwc(input->data, plan.frontend_input, data_type, input->ne[3], input->ne[2],
++                 input->ne[1], input->ne[0], stream);
++
++    if (convert_bias && data_type == CUDNN_DATA_HALF && !plan.frontend_bias) {
++        const size_t bias_bytes = dst->ne[2] * sizeof(half);
++        if (cudaMalloc(&plan.frontend_bias, bias_bytes) != cudaSuccess) {
++            cudaGetLastError();
++            return false;
++        }
++        const int blocks = (dst->ne[2] + CUDA_CONV2D_BLOCK_SIZE - 1) / CUDA_CONV2D_BLOCK_SIZE;
++        fp32_to_fp16_kernel<<<blocks, CUDA_CONV2D_BLOCK_SIZE, 0, stream>>>(
++            (const float *) dst->src[2]->data, (half *) plan.frontend_bias, dst->ne[2]);
++    }
++    return true;
++}
++
++static bool create_frontend_plan(cudnn_conv_context & cctx, const ggml_tensor * dst, cudnn_conv_plan & plan) {
++    const ggml_tensor * kernel = dst->src[0];
++    const ggml_tensor * input = dst->src[1];
++    const int32_t * p = (const int32_t *) dst->op_params;
++    const cudnnDataType_t data_type = input->type == GGML_TYPE_F16 ? CUDNN_DATA_HALF : CUDNN_DATA_FLOAT;
++
++    int64_t x_dim[] = {input->ne[3], input->ne[2], input->ne[1], input->ne[0]};
++    int64_t y_dim[] = {dst->ne[3], dst->ne[2], dst->ne[1], dst->ne[0]};
++    int64_t w_dim[] = {kernel->ne[3], kernel->ne[2], kernel->ne[1], kernel->ne[0]};
++    int64_t x_stride[] = {input->ne[1] * input->ne[0] * input->ne[2], 1, input->ne[0] * input->ne[2], input->ne[2]};
++    int64_t y_stride[] = {dst->ne[1] * dst->ne[0] * dst->ne[2], 1, dst->ne[0] * dst->ne[2], dst->ne[2]};
++    int64_t w_stride[] = {kernel->ne[1] * kernel->ne[0] * kernel->ne[2], 1,
++                          kernel->ne[0] * kernel->ne[2], kernel->ne[2]};
++    int64_t padding[] = {p[3], p[2]};
++    int64_t stride[] = {p[1], p[0]};
++    int64_t dilation[] = {p[5], p[4]};
++    const bool fuse_bias_silu = dst->src[2] && p[7] == 1;
++
++    if (!prepare_nhwc_buffers(cctx, dst, plan, fuse_bias_silu)) return false;
++    cudaStream_t frontend_stream = nullptr;
++    cudnnGetStream(cctx.handle, &frontend_stream);
++
++    auto select_plan = [&](const cudnn_backend_desc_ptr & graph, bool fused) {
++        std::vector<cudnn_backend_desc_ptr> configs;
++        cudnn_collect_engine_configs(graph, configs);
++
++        cudnn_backend_desc_ptr candidate;
++        for (const auto & config : configs) {
++            int64_t workspace_size = std::numeric_limits<int64_t>::max();
++            candidate = cudnn_make_execution_plan(cctx.handle, config, &workspace_size);
++            if (candidate && workspace_size <= (int64_t) cctx.workspace_bytes) break;
++            candidate.reset();
++        }
++        if (!candidate) return false;
++        plan.frontend_plan = candidate;
++
++        void * data_ptrs[] = {
++            plan.frontend_input, plan.frontend_output, plan.frontend_weight,
++            plan.frontend_bias ? plan.frontend_bias : (dst->src[2] ? dst->src[2]->data : nullptr)};
++        const int64_t uids[] = {'x', 'y', 'w', 'b'};
++        const int64_t pointer_count = fused ? 4 : 3;
++        auto variant = cudnn_make_variant_pack(cctx.workspace, data_ptrs, uids, pointer_count);
++        if (!variant) {
++            plan.frontend_plan.reset();
++            return false;
++        }
++
++        auto execute = [&]() {
++            nchw_to_nhwc(input->data, plan.frontend_input, data_type, input->ne[3], input->ne[2],
++                         input->ne[1], input->ne[0], frontend_stream);
++            const cudnnStatus_t status = cudnnBackendExecute(cctx.handle, plan.frontend_plan.get(), variant.get());
++            if (status == CUDNN_STATUS_SUCCESS) {
++                nhwc_to_nchw(plan.frontend_output, dst->data, data_type, dst->ne[3], dst->ne[2],
++                             dst->ne[1], dst->ne[0], frontend_stream);
++            }
++            return status;
++        };
++        if (execute() != CUDNN_STATUS_SUCCESS || cudaStreamSynchronize(frontend_stream) != cudaSuccess) {
++            cudaGetLastError();
++            plan.frontend_plan.reset();
++            return false;
++        }
++        cudaEvent_t start = nullptr;
++        cudaEvent_t stop = nullptr;
++        cudaEventCreate(&start);
++        cudaEventCreate(&stop);
++        std::array<float, 3> times{};
++        for (float & time : times) {
++            cudaEventRecord(start, frontend_stream);
++            if (execute() != CUDNN_STATUS_SUCCESS) {
++                plan.frontend_plan.reset();
++                break;
++            }
++            cudaEventRecord(stop, frontend_stream);
++            cudaEventSynchronize(stop);
++            cudaEventElapsedTime(&time, start, stop);
++        }
++        cudaEventDestroy(stop);
++        cudaEventDestroy(start);
++        if (!plan.frontend_plan) return false;
++        std::sort(times.begin(), times.end());
++        plan.frontend_time_ms = times[1];
++        return true;
++    };
++
++    auto x = cudnn_make_tensor_desc(x_dim, x_stride, 'x', data_type, false);
++    auto w = cudnn_make_tensor_desc(w_dim, w_stride, 'w', data_type, false);
++    auto y = cudnn_make_tensor_desc(y_dim, y_stride, 'y', data_type, false);
++    auto conv = cudnn_make_conv_desc(padding, stride, dilation);
++    if (!x || !w || !y || !conv) {
++        GGML_LOG_WARN("cuDNN backend plan failed: descriptor construction\n");
++        return false;
++    }
++    if (!fuse_bias_silu) {
++        auto operation = cudnn_make_conv_op(x.get(), y.get(), w.get(), conv.get());
++        if (!operation) {
++            GGML_LOG_WARN("cuDNN backend plan failed: convolution operation\n");
++            return false;
++        }
++        const cudnnBackendDescriptor_t ops[] = {operation.get()};
++        auto graph = cudnn_make_opgraph(cctx.handle, ops, 1);
++        if (!graph) {
++            GGML_LOG_WARN("cuDNN backend plan failed: operation graph\n");
++            return false;
++        }
++        return select_plan(graph, false);
++    }
++
++    int64_t b_dim[] = {1, dst->ne[2], 1, 1};
++    int64_t b_stride[] = {dst->ne[2], 1, dst->ne[2], dst->ne[2]};
++    auto b = cudnn_make_tensor_desc(b_dim, b_stride, 'b', data_type, false);
++    auto after_conv = cudnn_make_tensor_desc(y_dim, y_stride, 'c', data_type, true);
++    auto after_bias = cudnn_make_tensor_desc(y_dim, y_stride, 'z', data_type, true);
++    auto add = cudnn_make_pointwise_desc(CUDNN_POINTWISE_ADD);
++    auto silu = cudnn_make_pointwise_desc(CUDNN_POINTWISE_SWISH_FWD);
++    auto conv_op = cudnn_make_conv_op(x.get(), after_conv.get(), w.get(), conv.get());
++    auto bias_op = cudnn_make_pointwise_op(add.get(), after_conv.get(), after_bias.get(), b.get());
++    auto silu_op = cudnn_make_pointwise_op(silu.get(), after_bias.get(), y.get(), nullptr);
++    if (!b || !after_conv || !after_bias || !add || !silu || !conv_op || !bias_op || !silu_op) {
++        GGML_LOG_WARN("cuDNN backend plan failed: fused graph construction\n");
++        return false;
++    }
++    const cudnnBackendDescriptor_t ops[] = {conv_op.get(), bias_op.get(), silu_op.get()};
++    auto graph = cudnn_make_opgraph(cctx.handle, ops, 3);
++    if (!graph) {
++        GGML_LOG_WARN("cuDNN backend plan failed: operation graph\n");
++        return false;
++    }
++    plan.frontend_fused = select_plan(graph, true);
++    return plan.frontend_fused;
++}
++
++static bool cudnn_ok(cudnnStatus_t status, const char * operation) {
++    if (status == CUDNN_STATUS_SUCCESS) return true;
++    GGML_LOG_WARN("cuDNN %s failed: %s\n", operation, cudnnGetErrorString(status));
++    return false;
++}
++
++static float time_legacy_plan(cudnn_conv_context & cctx, ggml_tensor * dst, cudnn_conv_plan & plan,
++                              const cudnnConvolutionFwdAlgoPerf_t & candidate) {
++    const float alpha = 1.0f;
++    const float beta = 0.0f;
++    cudaStream_t stream = nullptr;
++    cudnnGetStream(cctx.handle, &stream);
++    auto execute = [&]() {
++        const cudnnStatus_t status = cudnnConvolutionForward(
++            cctx.handle, &alpha, plan.x_desc, dst->src[1]->data, plan.w_desc, dst->src[0]->data,
++            plan.conv_desc, candidate.algo, cctx.workspace, candidate.memory, &beta, plan.y_desc, dst->data);
++        if (status == CUDNN_STATUS_SUCCESS) bias_silu_cuda(dst, stream);
++        return status;
++    };
++
++    if (execute() != CUDNN_STATUS_SUCCESS || cudaDeviceSynchronize() != cudaSuccess) {
++        cudaGetLastError();
++        return std::numeric_limits<float>::max();
++    }
++
++    cudaEvent_t start = nullptr;
++    cudaEvent_t stop = nullptr;
++    if (cudaEventCreate(&start) != cudaSuccess || cudaEventCreate(&stop) != cudaSuccess) {
++        if (start) cudaEventDestroy(start);
++        if (stop) cudaEventDestroy(stop);
++        cudaGetLastError();
++        return std::numeric_limits<float>::max();
++    }
++
++    std::array<float, 3> times{};
++    bool valid = true;
++    for (float & time : times) {
++        if (cudaEventRecord(start, stream) != cudaSuccess || execute() != CUDNN_STATUS_SUCCESS ||
++            cudaEventRecord(stop, stream) != cudaSuccess || cudaEventSynchronize(stop) != cudaSuccess ||
++            cudaEventElapsedTime(&time, start, stop) != cudaSuccess) {
++            valid = false;
++            break;
++        }
++    }
++    cudaEventDestroy(stop);
++    cudaEventDestroy(start);
++    if (!valid) {
++        cudaGetLastError();
++        return std::numeric_limits<float>::max();
++    }
++    std::sort(times.begin(), times.end());
++    return times[1];
++}
++
++static cudnn_conv_plan * create_cudnn_plan(cudnn_conv_context & cctx, const ggml_tensor * dst, bool depthwise) {
++    const ggml_tensor * kernel = dst->src[0];
++    const ggml_tensor * input = dst->src[1];
++    const cudnnDataType_t data_type = input->type == GGML_TYPE_F16 ? CUDNN_DATA_HALF : CUDNN_DATA_FLOAT;
++    auto plan = std::make_unique<cudnn_conv_plan>();
++
++    if (!cudnn_ok(cudnnCreateTensorDescriptor(&plan->x_desc), "create input descriptor") ||
++        !cudnn_ok(cudnnCreateTensorDescriptor(&plan->y_desc), "create output descriptor") ||
++        !cudnn_ok(cudnnCreateFilterDescriptor(&plan->w_desc), "create filter descriptor") ||
++        !cudnn_ok(cudnnCreateConvolutionDescriptor(&plan->conv_desc), "create convolution descriptor")) {
++        return nullptr;
++    }
++
++    const int32_t * p = (const int32_t *) dst->op_params;
++    if (!cudnn_ok(cudnnSetTensor4dDescriptor(plan->x_desc, CUDNN_TENSOR_NCHW, data_type,
++                                              input->ne[3], input->ne[2], input->ne[1], input->ne[0]),
++                  "set input descriptor") ||
++        !cudnn_ok(cudnnSetTensor4dDescriptor(plan->y_desc, CUDNN_TENSOR_NCHW, data_type,
++                                              dst->ne[3], dst->ne[2], dst->ne[1], dst->ne[0]),
++                  "set output descriptor") ||
++        !cudnn_ok(cudnnSetFilter4dDescriptor(plan->w_desc, data_type, CUDNN_TENSOR_NCHW,
++                                              kernel->ne[3], kernel->ne[2], kernel->ne[1], kernel->ne[0]),
++                  "set filter descriptor") ||
++        !cudnn_ok(cudnnSetConvolution2dDescriptor(plan->conv_desc, p[3], p[2], p[1], p[0], p[5], p[4],
++                                                   CUDNN_CROSS_CORRELATION, CUDNN_DATA_FLOAT),
++                  "set convolution descriptor")) {
++        return nullptr;
++    }
++    if (depthwise && !cudnn_ok(cudnnSetConvolutionGroupCount(plan->conv_desc, input->ne[2]), "set group count")) {
++        return nullptr;
++    }
++    if (!cudnn_ok(cudnnSetConvolutionMathType(plan->conv_desc, CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION),
++                  "enable tensor operations")) {
++        return nullptr;
++    }
++
++    const cudnn_conv_shape shape = get_conv_shape(dst, depthwise);
++    float legacy_time = std::numeric_limits<float>::max();
++    bool has_frontend_plan = false;
++
++    auto cached = cctx.choices.find(shape);
++    if (cached != cctx.choices.end()) {
++        const cudnn_conv_choice & choice = cached->second;
++        plan->frontend_time_ms = choice.frontend_time_ms;
++        legacy_time = choice.legacy_time_ms;
++        plan->algorithms = choice.algorithms;
++        plan->algorithm_count = choice.algorithm_count;
++        plan->algorithm_index = choice.algorithm_index;
++
++        bool restored = false;
++        if (choice.backend == cudnn_conv_backend::frontend && choice.frontend_plan &&
++            prepare_nhwc_buffers(cctx, dst, *plan, choice.frontend_fused)) {
++            plan->frontend_plan = choice.frontend_plan;
++            plan->frontend_fused = choice.frontend_fused;
++            has_frontend_plan = true;
++            restored = true;
++        }
++        if (choice.backend == cudnn_conv_backend::legacy) {
++            restored = plan->algorithm_index < plan->algorithm_count;
++        }
++
++        if (restored) {
++            if (env_enabled("GGML_CUDA_LOG_CUDNN_PLANS")) {
++                const char * selected = choice.backend == cudnn_conv_backend::frontend ? "frontend" : "legacy";
++                GGML_LOG_INFO("CUDA reused %s plan for %" PRId64 "x%" PRId64 "x%" PRId64
++                              " -> %" PRId64 "x%" PRId64 "x%" PRId64 "\n",
++                              selected, input->ne[0], input->ne[1], input->ne[2],
++                              dst->ne[0], dst->ne[1], dst->ne[2]);
++            }
++            cudnn_conv_plan * result = plan.get();
++            cctx.plans.emplace(dst, std::move(plan));
++            return result;
++        }
++        cctx.choices.erase(cached);
++    }
++
++    has_frontend_plan = !env_enabled("GGML_CUDA_DISABLE_CUDNN_FRONTEND") &&
++                        create_frontend_plan(cctx, dst, *plan);
++
++    int count = 0;
++    cudnnConvolutionFwdAlgoPerf_t perf[CUDNN_CONVOLUTION_FWD_ALGO_COUNT];
++    if (!cudnn_ok(cudnnGetConvolutionForwardAlgorithm_v7(
++                      cctx.handle, plan->x_desc, plan->w_desc, plan->conv_desc, plan->y_desc,
++                      CUDNN_CONVOLUTION_FWD_ALGO_COUNT, &count, perf),
++                  "query convolution algorithms") && !has_frontend_plan
++                  ) {
++        return nullptr;
++    }
++    for (int i = 0; i < count; ++i) {
++        if (perf[i].status == CUDNN_STATUS_SUCCESS && perf[i].memory <= cctx.workspace_bytes) {
++            plan->algorithms[plan->algorithm_count++] = perf[i];
++        }
++    }
++    if (plan->algorithm_count > 0) {
++        legacy_time = time_legacy_plan(cctx, const_cast<ggml_tensor *>(dst), *plan, plan->algorithms[0]);
++        if (legacy_time == std::numeric_limits<float>::max()) {
++            plan->algorithm_index = 1;
++        } else {
++            plan->algorithms[0].time = legacy_time;
++        }
++    }
++    if (has_frontend_plan && legacy_time < plan->frontend_time_ms) {
++        plan->frontend_plan.reset();
++    }
++    if (!plan->frontend_plan &&
++        plan->algorithm_count == 0) return nullptr;
++
++    bool uses_nhwc = plan->frontend_plan != nullptr;
++    if (!uses_nhwc) {
++        cudaFree(plan->frontend_bias);
++        cudaFree(plan->frontend_weight);
++        cudaFree(plan->frontend_output);
++        cudaFree(plan->frontend_input);
++        plan->frontend_bias = nullptr;
++        plan->frontend_weight = nullptr;
++        plan->frontend_output = nullptr;
++        plan->frontend_input = nullptr;
++    }
++
++    cudnn_conv_choice choice;
++    choice.backend = plan->frontend_plan ? cudnn_conv_backend::frontend :
++                     cudnn_conv_backend::legacy;
++    choice.frontend_plan = plan->frontend_plan;
++    choice.frontend_fused = plan->frontend_fused;
++    choice.frontend_time_ms = plan->frontend_time_ms;
++    choice.legacy_time_ms = legacy_time;
++    choice.algorithms = plan->algorithms;
++    choice.algorithm_count = plan->algorithm_count;
++    choice.algorithm_index = plan->algorithm_index;
++    cctx.choices.emplace(shape, std::move(choice));
++
++    if (env_enabled("GGML_CUDA_LOG_CUDNN_PLANS")) {
++        const char * selected = plan->frontend_plan ? "frontend" : "legacy";
++        GGML_LOG_INFO("CUDA selected %s plan (frontend %.4f ms, legacy %.4f ms) for %" PRId64 "x%" PRId64
++                      "x%" PRId64 " -> %" PRId64 "x%" PRId64 "x%" PRId64 "\n",
++                      selected, plan->frontend_time_ms, legacy_time,
++                      input->ne[0], input->ne[1], input->ne[2], dst->ne[0], dst->ne[1], dst->ne[2]);
++    }
++
++    cudnn_conv_plan * result = plan.get();
++    cctx.plans.emplace(dst, std::move(plan));
++    return result;
+ }
+ 
+-static void conv2d_cuda_f16(const float * X_D, const half * K_D, float * Y_D, const conv_params P, cudaStream_t st) {
+-    conv2d_cuda<half>(X_D, K_D, Y_D, P, st);
++static bool conv2d_cudnn(ggml_backend_cuda_context & ctx, ggml_tensor * dst, bool depthwise) {
++    const bool f32 = dst->src[0]->type == GGML_TYPE_F32 && dst->src[1]->type == GGML_TYPE_F32 &&
++                     dst->type == GGML_TYPE_F32;
++    const bool f16 = dst->src[0]->type == GGML_TYPE_F16 && dst->src[1]->type == GGML_TYPE_F16 &&
++                     dst->type == GGML_TYPE_F16;
++    if (!f32 && !f16) {
++        return false;
++    }
++    if (!ctx.cudnn_context) {
++        ctx.cudnn_context = new cudnn_conv_context(ctx.device);
++    }
++    auto & cctx = *(cudnn_conv_context *) ctx.cudnn_context;
++    if (!cctx.handle) return false;
++    if (!cudnn_ok(cudnnSetStream(cctx.handle, ctx.stream()), "set stream")) return false;
++
++    auto it = cctx.plans.find(dst);
++    cudnn_conv_plan * plan = it == cctx.plans.end() ? create_cudnn_plan(cctx, dst, depthwise) : it->second.get();
++    if (!plan) return false;
++    if (plan->disabled) return false;
++
++    const float alpha = 1.0f;
++    const float beta = 0.0f;
++    if (plan->frontend_plan) {
++        const cudnnDataType_t data_type = dst->type == GGML_TYPE_F16 ? CUDNN_DATA_HALF : CUDNN_DATA_FLOAT;
++        nchw_to_nhwc(dst->src[1]->data, plan->frontend_input, data_type,
++                     dst->src[1]->ne[3], dst->src[1]->ne[2], dst->src[1]->ne[1], dst->src[1]->ne[0], ctx.stream());
++        void * data_ptrs[] = {plan->frontend_input, plan->frontend_output, plan->frontend_weight,
++                              plan->frontend_bias ? plan->frontend_bias : (dst->src[2] ? dst->src[2]->data : nullptr)};
++        const int64_t uids[] = {'x', 'y', 'w', 'b'};
++        const int64_t pointer_count = plan->frontend_fused ? 4 : 3;
++        auto variant = cudnn_make_variant_pack(cctx.workspace, data_ptrs, uids, pointer_count);
++        if (variant && cudnnBackendExecute(cctx.handle, plan->frontend_plan.get(), variant.get()) == CUDNN_STATUS_SUCCESS) {
++            nhwc_to_nchw(plan->frontend_output, dst->data, data_type,
++                         dst->ne[3], dst->ne[2], dst->ne[1], dst->ne[0], ctx.stream());
++            if (!plan->frontend_fused) bias_silu_cuda(dst, ctx.stream());
++            return true;
++        }
++        plan->frontend_plan.reset();
++    }
++    while (plan->algorithm_index < plan->algorithm_count) {
++        const auto & candidate = plan->algorithms[plan->algorithm_index];
++        const cudnnStatus_t status = cudnnConvolutionForward(
++            cctx.handle, &alpha, plan->x_desc, dst->src[1]->data, plan->w_desc, dst->src[0]->data,
++            plan->conv_desc, candidate.algo, cctx.workspace, candidate.memory, &beta, plan->y_desc, dst->data);
++        if (status == CUDNN_STATUS_SUCCESS) {
++            bias_silu_cuda(dst, ctx.stream());
++            return true;
++        }
++        GGML_LOG_WARN("cuDNN convolution algorithm %d failed for %" PRId64 "x%" PRId64 "x%" PRId64
++                      " -> %" PRId64 "x%" PRId64 "x%" PRId64 ": %s; trying fallback\n",
++                      (int) candidate.algo, dst->src[1]->ne[0], dst->src[1]->ne[1], dst->src[1]->ne[2],
++                      dst->ne[0], dst->ne[1], dst->ne[2], cudnnGetErrorString(status));
++        ++plan->algorithm_index;
++    }
++    plan->disabled = true;
++    return false;
++}
++
++} // namespace
++
++bool ggml_cuda_conv2d_cudnn(ggml_backend_cuda_context & ctx, ggml_tensor * dst, bool depthwise) {
++    return conv2d_cudnn(ctx, dst, depthwise);
++}
++
++void ggml_cuda_free_cudnn(ggml_backend_cuda_context & ctx) {
++    delete (cudnn_conv_context *) ctx.cudnn_context;
++    ctx.cudnn_context = nullptr;
++}
++#endif
++
++#if !defined(GGML_USE_HIP)
++
++// ---------------------------------------------------------------------------
++// Native implicit-GEMM convolution (WMMA tensor cores, zero dependencies).
++//
++//   out[b,p,q,k] = act( sum_{r,s,c} in[b, ih, iw, c] * w[k,r,s,c] + bias[k] )
++//
++// The convolution is mapped to a blocked GEMM: M = P*Q output positions,
++// N = K output channels, GEMM-K = R*S*C input elements per output (c
++// enumerated fastest). The im2col operand is never materialized in global
++// memory: the A tile [M, K] is formed on the fly in shared memory while
++// loading from the NHWC input — the same trick as CUTLASS implicit GEMM
++// iterators — using only the WMMA API shipped with the CUDA toolkit. Bias
++// and SiLU are fused into the epilogue, so a whole fused conv is a single
++// kernel launch between the NCHW<->NHWC layout transposes.
++// ---------------------------------------------------------------------------
++namespace {
++
++template <typename T>
++static __global__ void igemm_transpose_batched_kernel(
++        const T * src, T * dst, int64_t rows, int64_t columns) {
++    __shared__ T tile[32][33];
++    const int64_t batch = blockIdx.z;
++    const int64_t src_x = blockIdx.x * 32 + threadIdx.x;
++    const int64_t src_y = blockIdx.y * 32 + threadIdx.y;
++    const T * src_batch = src + batch * rows * columns;
++    T * dst_batch = dst + batch * rows * columns;
++    for (int offset = 0; offset < 32; offset += 8) {
++        if (src_x < columns && src_y + offset < rows) {
++            tile[threadIdx.y + offset][threadIdx.x] = src_batch[(src_y + offset) * columns + src_x];
++        }
++    }
++    __syncthreads();
++    const int64_t dst_x = blockIdx.y * 32 + threadIdx.x;
++    const int64_t dst_y = blockIdx.x * 32 + threadIdx.y;
++    for (int offset = 0; offset < 32; offset += 8) {
++        if (dst_x < rows && dst_y + offset < columns) {
++            dst_batch[(dst_y + offset) * rows + dst_x] = tile[threadIdx.x][threadIdx.y + offset];
++        }
++    }
+ }
+ 
+-static void conv2d_cuda_f32(const float * X_D, const float * K_D, float * Y_D, const conv_params P, cudaStream_t st) {
+-    conv2d_cuda<float>(X_D, K_D, Y_D, P, st);
++template <typename T>
++static void igemm_nchw_to_nhwc(const void * src, void * dst,
++                               int64_t batches, int64_t channels, int64_t height, int64_t width,
++                               cudaStream_t stream) {
++    const int64_t spatial = height * width;
++    const dim3 blocks((spatial + 31) / 32, (channels + 31) / 32, batches);
++    const dim3 threads(32, 8);
++    igemm_transpose_batched_kernel<<<blocks, threads, 0, stream>>>(
++        (const T *) src, (T *) dst, channels, spatial);
+ }
+ 
++template <typename T>
++static void igemm_nhwc_to_nchw(const void * src, void * dst,
++                               int64_t batches, int64_t channels, int64_t height, int64_t width,
++                               cudaStream_t stream) {
++    const int64_t spatial = height * width;
++    const dim3 blocks((channels + 31) / 32, (spatial + 31) / 32, batches);
++    const dim3 threads(32, 8);
++    igemm_transpose_batched_kernel<<<blocks, threads, 0, stream>>>(
++        (const T *) src, (T *) dst, spatial, channels);
++}
++
++// One-shot Q8_0 -> KRSC half expansion run at plan creation. Source blocks are
++// laid out per output channel in torch's c-major order (k' = c*R*S + rs, rs
++// fastest inside a block); the scatter maps each element to its GEMM-order
++// position k = rs*C + c so the conv kernel's B-tile loads stay sequential.
++// Dequantizing once here — instead of gathering and converting per element
++// inside the hot conv kernel — is what lets quantized convs run at f16 speed.
++static __global__ void igemm_q8_dequant_kernel(
++        const block_q8_0 * __restrict__ src, half * __restrict__ dst,
++        const int C, const int RS, const int nblk, const int K_gemm, const int64_t total) {
++    const int64_t idx = (int64_t) blockIdx.x * blockDim.x + threadIdx.x; // n * nblk + blk
++    if (idx >= total) {
++        return;
++    }
++    const block_q8_0 * s = src + idx;
++    const float d  = __half2float(s->d);
++    const int blk  = idx % nblk;
++    const int n    = idx / nblk;
++    const int k0   = blk * QK8_0;     // k' = c*RS + rs
++    const int c0   = k0 / RS;
++    const int rs0  = k0 % RS;
++    half * row = dst + (int64_t) n * K_gemm;
++    #pragma unroll
++    for (int j = 0; j < QK8_0; ++j) {
++        const int c  = c0 + (rs0 + j) / RS;
++        const int rs = (rs0 + j) % RS;
++        row[rs * C + c] = __float2half(d * s->qs[j]);
++    }
++}
++
++// 64xNT tile per 128-thread block; NT is the B-tile width (output channels)
++// chosen per layer so the A (activation) operand — which never fits in L2 on
++// the big layers — is re-read from DRAM as few times as possible: every block
++// row along N reloads the whole A tile, so A traffic scales with K/NT.
++// NT=64 keeps four warps in a 2x2 grid of 32x32 patches (2x2 WMMA 16x16x16
++// per warp per 16-wide k-step); NT=128 widens each warp to 32x64 (2x4
++// fragments, 2x2 warp grid); NT=256 runs a 1x4 warp grid of 64x64 patches
++// (4x4 fragments) so K=320..640 layers reload A only 2-3x instead of 5-10x.
++// NT=16 keeps the 4x1 grid of 16x16 patches for narrow-channel heads where a
++// wider tile would idle tensor cores. 64 k-elements are staged per iteration
++// to amortize the barriers. The +8 half row pitch of the A/B staging buffers
++// keeps ldmatrix loads bank-conflict free without swizzling.
++constexpr int IGEMM_MT      = 64;  // A tile rows (output positions)
++constexpr int IGEMM_KT      = 64;  // GEMM-K elements staged per iteration
++constexpr int IGEMM_KP      = IGEMM_KT + 8; // padded operand row pitch, in halves
++// NT (B tile rows = output channels) is a template parameter, selected per
++// layer from K and the resulting block count (see conv2d_igemm): wide tiles
++// cut DRAM A re-reads, narrow tiles keep the SMs busy when M or K is small.
++template <int NT, bool WITH_BIAS, bool WITH_SILU, bool C8>
++static __global__ __launch_bounds__(128) void igemm_conv_f16_kernel(
++        const half * __restrict__ in,     // [B, H, W, C] NHWC
++        const half * __restrict__ w,      // [K, R, S, C] KRSC (Q8_0 expanded once at plan creation)
++        const float * __restrict__ bias,  // [K] (nullable)
++        half * __restrict__ out,          // [B, P, Q, K] NHWC
++        const int H, const int W, const int C, const int P, const int Q, const int K,
++        const int R, const int S, const int sh, const int sw,
++        const int ph, const int pw, const int dh, const int dw) {
++#if !defined(__CUDA_ARCH__) || __CUDA_ARCH__ >= 700
++    using namespace nvcuda;
++
++    constexpr int MT = IGEMM_MT;
++    constexpr int KT = IGEMM_KT;
++    constexpr int KP = IGEMM_KP;
++    constexpr int EC  = NT < 64 ? NT : 64;  // epilogue chunk width (columns)
++    constexpr int ECP = EC + 8;             // padded epilogue row pitch
++    constexpr int FM = NT == 16 ? 1 : NT == 256 ? 4 : 2; // fragments per warp along m
++    constexpr int FN = NT == 16 ? 1 : NT == 64 ? 2 : 4;  // fragments per warp along n
++    static_assert(MT / (16 * FM) * (NT / (16 * FN)) == 4, "four warps must tile the output block");
++    // The f32 epilogue staging tile (MT*ECP*4B) overlays sa+sb ((MT+NT)*KP*2B)
++    // once the main loop is done; wide NT tiles write back EC columns at a
++    // time so the footprint stays small enough for multiple resident blocks.
++    static_assert(MT * ECP * 4 <= (MT + NT) * KP * 2, "f32 epilogue must overlay the operand staging buffers");
++
++    const int M      = P * Q;
++    const int K_gemm = R * S * C;
++    const int m0     = blockIdx.x * MT;
++    const int n0     = blockIdx.y * NT;
++    const int b      = blockIdx.z;
++    const int tid    = threadIdx.x;
++
++    extern __shared__ char smem_raw[];
++    half * sa = reinterpret_cast<half *>(smem_raw);   // A[MT][KP]
++    half * sb = sa + MT * KP;                         // B[NT][KP]
++    float * sc = reinterpret_cast<float *>(smem_raw); // overlays both buffers
++
++    constexpr int WARPS_N = NT / (16 * FN); // warp columns
++    constexpr int WARPS_M = 4 / WARPS_N;    // warp rows
++    const int warp_m = (tid / (32 * WARPS_N)) * 16 * FM;
++    const int warp_n = ((tid / 32) % WARPS_N) * 16 * FN;
++
++    wmma::fragment<wmma::matrix_a, 16, 16, 16, half, wmma::row_major> fa[FM];
++    wmma::fragment<wmma::matrix_b, 16, 16, 16, half, wmma::col_major> fb[FN];
++    wmma::fragment<wmma::accumulator, 16, 16, 16, float> fc[FM][FN];
++    #pragma unroll
++    for (int i = 0; i < FM; ++i) {
++        #pragma unroll
++        for (int j = 0; j < FN; ++j) {
++            wmma::fill_fragment(fc[i][j], 0.0f);
++        }
++    }
++
++    // Stage one k-tile at a time: load, sync, consume on the tensor cores,
++    // sync. At 64-deep stages and two resident blocks per SM the memory
++    // system stays ahead of the mma pipeline without software pipelining.
++    auto load_tile = [&](int kbase) {
++        // A tile: implicit im2col. k advances in steps of 8, so a staged
++        // vector maps to 8 consecutive channels of one input pixel whenever
++        // C % 8 == 0 — a single 16B load. Unaligned C splits such a vector
++        // across kernel taps, so every element is addressed on its own;
++        // out-of-image taps and padding become zeros.
++        for (int idx = tid; idx < MT * (KT / 8); idx += 128) {
++            const int m  = idx / (KT / 8);
++            const int k8 = idx % (KT / 8);
++            const int k  = kbase + k8 * 8;
++            half * dst   = sa + m * KP + k8 * 8;
++            const int m_abs = m0 + m;
++            const bool m_ok = m_abs < M;
++            const int p = m_abs / Q;
++            const int q = m_abs % Q;
++            if (C8) {
++                int64_t src = -1;
++                if (m_ok && k < K_gemm) {
++                    const int rs = k / C;
++                    const int ih = p * sh + (rs / S) * dh - ph;
++                    const int iw = q * sw + (rs % S) * dw - pw;
++                    if (ih >= 0 && ih < H && iw >= 0 && iw < W) {
++                        src = ((int64_t) b * H + ih) * W * C + (int64_t) iw * C + k % C;
++                    }
++                }
++                if (src >= 0) {
++                    * (uint4 *) dst = * (const uint4 *) (in + src);
++                } else {
++                    * (uint4 *) dst = make_uint4(0, 0, 0, 0);
++                }
++            } else {
++                #pragma unroll
++                for (int i = 0; i < 8; ++i) {
++                    const int kk = k + i;
++                    half v = (half) 0;
++                    if (m_ok && kk < K_gemm) {
++                        const int rs = kk / C;
++                        const int ih = p * sh + (rs / S) * dh - ph;
++                        const int iw = q * sw + (rs % S) * dw - pw;
++                        if (ih >= 0 && ih < H && iw >= 0 && iw < W) {
++                            v = in[((int64_t) b * H + ih) * W * C + (int64_t) iw * C + kk % C];
++                        }
++                    }
++                    dst[i] = v;
++                }
++            }
++        }
++
++        // B tile: transposed view of the KRSC weight so k streams contiguously.
++        // Q8_0 kernels arrive pre-dequantized into this same KRSC half layout
++        // (igemm_create_plan expands them once), so quantized convs share the
++        // plain half loaders below.
++        for (int idx = tid; idx < NT * (KT / 8); idx += 128) {
++            const int n  = idx / (KT / 8);
++            const int k8 = idx % (KT / 8);
++            const int k  = kbase + k8 * 8;
++            half * dst   = sb + n * KP + k8 * 8;
++            const int n_abs = n0 + n;
++            if (C8) {
++                if (n_abs < K && k < K_gemm) {
++                    const int rs = k / C;
++                    const int c0 = k % C;
++                    const half * src = w + (((int64_t) n_abs * R + rs / S) * S + rs % S) * C + c0;
++                    * (uint4 *) dst = * (const uint4 *) src;
++                } else {
++                    * (uint4 *) dst = make_uint4(0, 0, 0, 0);
++                }
++            } else {
++                #pragma unroll
++                for (int i = 0; i < 8; ++i) {
++                    const int kk = k + i;
++                    half v = (half) 0;
++                    if (n_abs < K && kk < K_gemm) {
++                        const int rs = kk / C;
++                        v = w[(((int64_t) n_abs * R + rs / S) * S + rs % S) * C + kk % C];
++                    }
++                    dst[i] = v;
++                }
++            }
++        }
++    };
++
++    for (int kbase = 0; kbase < K_gemm; kbase += KT) {
++        load_tile(kbase);
++        __syncthreads();
++        #pragma unroll
++        for (int ks = 0; ks < KT / 16; ++ks) {
++            #pragma unroll
++            for (int i = 0; i < FM; ++i) {
++                wmma::load_matrix_sync(fa[i], sa + (warp_m + i * 16) * KP + ks * 16, KP);
++                #pragma unroll
++                for (int j = 0; j < FN; ++j) {
++                    if (i == 0) {
++                        wmma::load_matrix_sync(fb[j], sb + (warp_n + j * 16) * KP + ks * 16, KP);
++                    }
++                    wmma::mma_sync(fc[i][j], fa[i], fb[j], fc[i][j]);
++                }
++            }
++        }
++        __syncthreads(); // mma reads are complete before the next overwrite
++    }
++
++    // Epilogue: route f32 accumulators through shared memory EC columns at a
++    // time so bias and SiLU can be applied per output channel, then store 16B
++    // vectors. Fragment j of a warp covers columns warp_n + j*16 .. +16, and
++    // every supported (NT, warp_n) places each 16-column slice in exactly one
++    // chunk, so no fragment straddles a chunk boundary.
++    for (int chunk = 0; chunk < NT; chunk += EC) {
++        __syncthreads();
++        #pragma unroll
++        for (int i = 0; i < FM; ++i) {
++            #pragma unroll
++            for (int j = 0; j < FN; ++j) {
++                const int col = warp_n + j * 16;
++                if (col >= chunk && col < chunk + EC) {
++                    wmma::store_matrix_sync(sc + (warp_m + i * 16) * ECP + (col - chunk), fc[i][j], ECP, wmma::mem_row_major);
++                }
++            }
++        }
++        __syncthreads();
++
++        for (int idx = tid; idx < MT * (EC / 8); idx += 128) {
++            const int m  = idx / (EC / 8);
++            const int n8 = idx % (EC / 8);
++            const int m_abs = m0 + m;
++            const int n_abs = n0 + chunk + n8 * 8;
++            if (m_abs >= M || n_abs >= K) {
++                continue;
++            }
++            alignas(16) half vals[8];
++            #pragma unroll
++            for (int i = 0; i < 8; ++i) {
++                float v = sc[m * ECP + n8 * 8 + i];
++                if (WITH_BIAS && n_abs + i < K) {
++                    v += bias[n_abs + i];
++                }
++                if (WITH_SILU) {
++                    v = v / (1.0f + expf(-v));
++                }
++                vals[i] = __float2half(v);
++            }
++            const int p = m_abs / Q;
++            const int q = m_abs % Q;
++            if (n_abs + 8 <= K) {
++                * (uint4 *) (out + (((int64_t) b * P + p) * Q + q) * K + n_abs) = * (uint4 *) vals;
++            } else {
++                // tail: K not a multiple of 8 (e.g. the OC=4 end2end head convs)
++                for (int i = 0; i < K - n_abs; ++i) {
++                    out[(((int64_t) b * P + p) * Q + q) * K + n_abs + i] = vals[i];
++                }
++            }
++        }
++        __syncthreads();
++    }
++#else
++    // Placeholder body for pre-Volta compilation passes; the host side never
++    // launches this kernel on devices below cc 7.0 (see conv2d_igemm).
++#endif
++}
++
++template <int NT, bool C8>
++static void igemm_conv_dispatch(const dim3 & grid, bool with_bias, bool with_silu,
++                                const half * in_p, const half * w_p, const float * b_p, half * out_p,
++                                cudaStream_t stream,
++                                int H, int W, int C, int P, int Q, int K, int R, int S, const int32_t * p) {
++    constexpr size_t smem = (IGEMM_MT + NT) * IGEMM_KP * sizeof(half); // A + B staging
++    // NT=256 needs >48KB dynamic smem; opt in once per kernel variant.
++    static const bool smem_ok = [] {
++        if (smem <= 48 * 1024) return true;
++        return cudaSuccess == cudaFuncSetAttribute(igemm_conv_f16_kernel<NT, true, true, C8>,
++                                                   cudaFuncAttributeMaxDynamicSharedMemorySize, smem)
++            && cudaSuccess == cudaFuncSetAttribute(igemm_conv_f16_kernel<NT, true, false, C8>,
++                                                   cudaFuncAttributeMaxDynamicSharedMemorySize, smem)
++            && cudaSuccess == cudaFuncSetAttribute(igemm_conv_f16_kernel<NT, false, false, C8>,
++                                                   cudaFuncAttributeMaxDynamicSharedMemorySize, smem);
++    }();
++    if (!smem_ok) return;
++    if (with_silu) {
++        igemm_conv_f16_kernel<NT, true, true, C8><<<grid, 128, smem, stream>>>
++            (in_p, w_p, b_p, out_p, H, W, C, P, Q, K, R, S, p[1], p[0], p[3], p[2], p[5], p[4]);
++    } else if (with_bias) {
++        igemm_conv_f16_kernel<NT, true, false, C8><<<grid, 128, smem, stream>>>
++            (in_p, w_p, b_p, out_p, H, W, C, P, Q, K, R, S, p[1], p[0], p[3], p[2], p[5], p[4]);
++    } else {
++        igemm_conv_f16_kernel<NT, false, false, C8><<<grid, 128, smem, stream>>>
++            (in_p, w_p, b_p, out_p, H, W, C, P, Q, K, R, S, p[1], p[0], p[3], p[2], p[5], p[4]);
++    }
++}
++
++// NT launcher folding the C % 8 vectorization check into the template tree.
++template <int NT>
++static void igemm_conv_launch(const dim3 & grid, bool with_bias, bool with_silu, int C,
++                              const half * in_p, const half * w_p, const float * b_p, half * out_p,
++                              cudaStream_t stream,
++                              int H, int W, int P, int Q, int K, int R, int S, const int32_t * p) {
++    if (C % 8 == 0) {
++        igemm_conv_dispatch<NT, true>(grid, with_bias, with_silu, in_p, w_p, b_p, out_p, stream,
++                                      H, W, C, P, Q, K, R, S, p);
++    } else {
++        igemm_conv_dispatch<NT, false>(grid, with_bias, with_silu, in_p, w_p, b_p, out_p, stream,
++                                       H, W, C, P, Q, K, R, S, p);
++    }
++}
++
++// TF32 sibling of igemm_conv_f16_kernel: same 64x64 tile scheme, but the
++// tensor-core mma is 16x16x8 (TF32) and operands stage as float with a +4 row
++// pitch. The WMMA float fragment load truncates mantissas to tf32 in hardware;
++// accumulation and the stored output stay fp32. Requires cc >= 8.0 (Ampere).
++constexpr int IGEMM_KP_F32  = IGEMM_KT + 4; // float staging row pitch, 16B-aligned
++constexpr size_t IGEMM_SMEM_F32 = 2 * IGEMM_MT * IGEMM_KP_F32 * sizeof(float);
++template <bool WITH_BIAS, bool WITH_SILU, bool C8>
++static __global__ __launch_bounds__(128) void igemm_conv_f32_kernel(
++        const float * __restrict__ in,   // [B, H, W, C] NHWC
++        const float * __restrict__ w,    // [K, R, S, C] KRSC
++        const float * __restrict__ bias, // [K] (nullable)
++        float * __restrict__ out,        // [B, P, Q, K] NHWC
++        const int H, const int W, const int C, const int P, const int Q, const int K,
++        const int R, const int S, const int sh, const int sw,
++        const int ph, const int pw, const int dh, const int dw) {
++#if !defined(__CUDA_ARCH__) || __CUDA_ARCH__ >= 800
++    using namespace nvcuda;
++
++    constexpr int MT = IGEMM_MT;
++    constexpr int NT = 64;  // f32 path keeps the single 64x64 tile
++    constexpr int KT = IGEMM_KT;
++    constexpr int KP = IGEMM_KP_F32;
++    constexpr int CP = NT + 8; // padded f32 epilogue row pitch
++    static_assert(MT * CP * 4 <= 2 * MT * KP * 4, "f32 epilogue must overlay the operand staging buffers");
++
++    const int M      = P * Q;
++    const int K_gemm = R * S * C;
++    const int m0     = blockIdx.x * MT;
++    const int n0     = blockIdx.y * NT;
++    const int b      = blockIdx.z;
++    const int tid    = threadIdx.x;
++
++    extern __shared__ char smem_raw[];
++    float * sa = reinterpret_cast<float *>(smem_raw); // A[MT][KP]
++    float * sb = sa + MT * KP;                        // B[NT][KP]
++    float * sc = reinterpret_cast<float *>(smem_raw); // overlays both buffers
++
++    const int warp_m = (tid / 64) * 32;
++    const int warp_n = ((tid / 32) % 2) * 32;
++
++    wmma::fragment<wmma::matrix_a, 16, 16, 8, wmma::precision::tf32, wmma::row_major> fa[2];
++    wmma::fragment<wmma::matrix_b, 16, 16, 8, wmma::precision::tf32, wmma::col_major> fb[2];
++    wmma::fragment<wmma::accumulator, 16, 16, 8, float> fc[2][2];
++    #pragma unroll
++    for (int i = 0; i < 2; ++i) {
++        #pragma unroll
++        for (int j = 0; j < 2; ++j) {
++            wmma::fill_fragment(fc[i][j], 0.0f);
++        }
++    }
++
++    auto load_tile = [&](int kbase) {
++        // A tile: 4 consecutive channels (one 16B vector) per staged slot; the
++        // C8 path keeps vectors channel-aligned, otherwise stage per element.
++        for (int idx = tid; idx < MT * (KT / 4); idx += 128) {
++            const int m  = idx / (KT / 4);
++            const int k4 = idx % (KT / 4);
++            const int k  = kbase + k4 * 4;
++            float * dst  = sa + m * KP + k4 * 4;
++            const int m_abs = m0 + m;
++            const bool m_ok = m_abs < M;
++            const int p = m_abs / Q;
++            const int q = m_abs % Q;
++            if (C8) {
++                int64_t src = -1;
++                if (m_ok && k < K_gemm) {
++                    const int rs = k / C;
++                    const int ih = p * sh + (rs / S) * dh - ph;
++                    const int iw = q * sw + (rs % S) * dw - pw;
++                    if (ih >= 0 && ih < H && iw >= 0 && iw < W) {
++                        src = ((int64_t) b * H + ih) * W * C + (int64_t) iw * C + k % C;
++                    }
++                }
++                if (src >= 0) {
++                    * (uint4 *) dst = * (const uint4 *) (in + src);
++                } else {
++                    * (uint4 *) dst = make_uint4(0, 0, 0, 0);
++                }
++            } else {
++                #pragma unroll
++                for (int i = 0; i < 4; ++i) {
++                    const int kk = k + i;
++                    float v = 0.0f;
++                    if (m_ok && kk < K_gemm) {
++                        const int rs = kk / C;
++                        const int ih = p * sh + (rs / S) * dh - ph;
++                        const int iw = q * sw + (rs % S) * dw - pw;
++                        if (ih >= 0 && ih < H && iw >= 0 && iw < W) {
++                            v = in[((int64_t) b * H + ih) * W * C + (int64_t) iw * C + kk % C];
++                        }
++                    }
++                    dst[i] = v;
++                }
++            }
++        }
++
++        // B tile: transposed view of the KRSC weight so k streams contiguously.
++        for (int idx = tid; idx < NT * (KT / 4); idx += 128) {
++            const int n  = idx / (KT / 4);
++            const int k4 = idx % (KT / 4);
++            const int k  = kbase + k4 * 4;
++            float * dst  = sb + n * KP + k4 * 4;
++            const int n_abs = n0 + n;
++            if (C8) {
++                if (n_abs < K && k < K_gemm) {
++                    const int rs = k / C;
++                    const int c0 = k % C;
++                    const float * src = w + (((int64_t) n_abs * R + rs / S) * S + rs % S) * C + c0;
++                    * (uint4 *) dst = * (const uint4 *) src;
++                } else {
++                    * (uint4 *) dst = make_uint4(0, 0, 0, 0);
++                }
++            } else {
++                #pragma unroll
++                for (int i = 0; i < 4; ++i) {
++                    const int kk = k + i;
++                    float v = 0.0f;
++                    if (n_abs < K && kk < K_gemm) {
++                        const int rs = kk / C;
++                        v = w[(((int64_t) n_abs * R + rs / S) * S + rs % S) * C + kk % C];
++                    }
++                    dst[i] = v;
++                }
++            }
++        }
++    };
++
++    for (int kbase = 0; kbase < K_gemm; kbase += KT) {
++        load_tile(kbase);
++        __syncthreads();
++        #pragma unroll
++        for (int ks = 0; ks < KT / 8; ++ks) {
++            #pragma unroll
++            for (int i = 0; i < 2; ++i) {
++                wmma::load_matrix_sync(fa[i], sa + (warp_m + i * 16) * KP + ks * 8, KP);
++                #pragma unroll
++                for (int j = 0; j < 2; ++j) {
++                    if (i == 0) {
++                        wmma::load_matrix_sync(fb[j], sb + (warp_n + j * 16) * KP + ks * 8, KP);
++                    }
++                    wmma::mma_sync(fc[i][j], fa[i], fb[j], fc[i][j]);
++                }
++            }
++        }
++        __syncthreads(); // mma reads are complete before the next overwrite
++    }
++
++    __syncthreads();
++    #pragma unroll
++    for (int i = 0; i < 2; ++i) {
++        #pragma unroll
++        for (int j = 0; j < 2; ++j) {
++            wmma::store_matrix_sync(sc + (warp_m + i * 16) * CP + warp_n + j * 16, fc[i][j], CP, wmma::mem_row_major);
++        }
++    }
++    __syncthreads();
++
++    for (int idx = tid; idx < MT * (NT / 4); idx += 128) {
++        const int m  = idx / (NT / 4);
++        const int n4 = idx % (NT / 4);
++        const int m_abs = m0 + m;
++        const int n_abs = n0 + n4 * 4;
++        if (m_abs >= M || n_abs >= K) {
++            continue;
++        }
++        alignas(16) float vals[4];
++        #pragma unroll
++        for (int i = 0; i < 4; ++i) {
++            float v = sc[m * CP + n4 * 4 + i];
++            if (WITH_BIAS) {
++                v += bias[n_abs + i];
++            }
++            if (WITH_SILU) {
++                v = v / (1.0f + expf(-v));
++            }
++            vals[i] = v;
++        }
++        const int p = m_abs / Q;
++        const int q = m_abs % Q;
++        * (uint4 *) (out + (((int64_t) b * P + p) * Q + q) * K + n_abs) = * (uint4 *) vals;
++    }
++#else
++    // Placeholder body for pre-Ampere compilation passes; the host side never
++    // launches this kernel on devices below cc 8.0 (see conv2d_igemm).
++#endif
++}
++
++template <bool C8>
++static void igemm_conv_dispatch_f32(const dim3 & grid, bool with_bias, bool with_silu,
++                                    const float * in_p, const float * w_p, const float * b_p, float * out_p,
++                                    cudaStream_t stream,
++                                    int H, int W, int C, int P, int Q, int K, int R, int S, const int32_t * p) {
++    if (with_silu) {
++        igemm_conv_f32_kernel<true, true, C8><<<grid, 128, IGEMM_SMEM_F32, stream>>>
++            (in_p, w_p, b_p, out_p, H, W, C, P, Q, K, R, S, p[1], p[0], p[3], p[2], p[5], p[4]);
++    } else if (with_bias) {
++        igemm_conv_f32_kernel<true, false, C8><<<grid, 128, IGEMM_SMEM_F32, stream>>>
++            (in_p, w_p, b_p, out_p, H, W, C, P, Q, K, R, S, p[1], p[0], p[3], p[2], p[5], p[4]);
++    } else {
++        igemm_conv_f32_kernel<false, false, C8><<<grid, 128, IGEMM_SMEM_F32, stream>>>
++            (in_p, w_p, b_p, out_p, H, W, C, P, Q, K, R, S, p[1], p[0], p[3], p[2], p[5], p[4]);
++    }
++}
++
++struct igemm_conv_plan {
++    void * nhwc_input  = nullptr;
++    void * nhwc_output = nullptr;
++    void * nhwc_weight = nullptr;
++
++    ~igemm_conv_plan() {
++        if (nhwc_weight) cudaFree(nhwc_weight);
++        if (nhwc_output) cudaFree(nhwc_output);
++        if (nhwc_input)  cudaFree(nhwc_input);
++    }
++};
++
++static std::unordered_map<const ggml_tensor *, std::unique_ptr<igemm_conv_plan>> g_igemm_plans;
++
++// NHWC copies published by executed igemm convs. A downstream igemm conv whose
++// input matches one of these entries reads the staged layout directly and skips
++// the input transpose. The NCHW write-back always runs, so non-conv consumers
++// (dwconv, concat, add, detect heads) are unaffected.
++struct igemm_nhwc_copy {
++    const void * ptr;
++    ggml_type    type;
++    int64_t      ne[4];
++};
++static std::unordered_map<const ggml_tensor *, igemm_nhwc_copy> g_nhwc_copies;
++
++static bool igemm_env_enabled(const char * name) {
++    const char * value = getenv(name);
++    return value && value[0] != '\0' && strcmp(value, "0") != 0;
++}
++
++static igemm_conv_plan * igemm_create_plan(ggml_tensor * dst, cudaStream_t stream) {
++    const ggml_tensor * kernel = dst->src[0];
++    const ggml_tensor * input  = dst->src[1];
++    const bool q8_kernel = kernel->type == GGML_TYPE_Q8_0;
++    // KRSC staging holds one element per weight: halves for f16 (and the Q8_0
++    // expansion below), floats for f32. The 4D quantized view's ggml_nbytes
++    // is degenerate, so size it explicitly.
++    const int64_t K_gemm = kernel->ne[0] * kernel->ne[1] * kernel->ne[2];
++    const int64_t wbytes = kernel->ne[3] * K_gemm *
++                           (q8_kernel ? (int64_t) sizeof(half) : (int64_t) ggml_type_size(kernel->type));
++
++    auto plan = std::make_unique<igemm_conv_plan>();
++    if (cudaMalloc(&plan->nhwc_input, ggml_nbytes(input)) != cudaSuccess ||
++        cudaMalloc(&plan->nhwc_output, ggml_nbytes(dst)) != cudaSuccess ||
++        cudaMalloc(&plan->nhwc_weight, wbytes) != cudaSuccess) {
++        cudaGetLastError();
++        return nullptr;
++    }
++    // Weights are immutable for a live plan: stage them once in KRSC order so
++    // the conv kernel streams a plain half/float B tile (f16/f32: layout
++    // transpose; Q8_0: one-shot dequant expansion — gathering per element
++    // inside the hot conv kernel costs far more than the extra staging
++    // memory).
++    if (q8_kernel) {
++        const int C    = kernel->ne[2];
++        const int RS   = kernel->ne[0] * kernel->ne[1];
++        const int nblk = K_gemm / QK8_0; // blocks per output channel
++        const int OC   = kernel->ne[3];
++        const int64_t total = (int64_t) OC * nblk;
++        const dim3 blocks((total + 255) / 256);
++        igemm_q8_dequant_kernel<<<blocks, 256, 0, stream>>>(
++            (const block_q8_0 *) kernel->data, (half *) plan->nhwc_weight,
++            C, RS, nblk, (int) K_gemm, total);
++    } else if (kernel->type == GGML_TYPE_F32) {
++        igemm_nchw_to_nhwc<float>(kernel->data, plan->nhwc_weight, kernel->ne[3], kernel->ne[2],
++                                  kernel->ne[1], kernel->ne[0], stream);
++    } else {
++        igemm_nchw_to_nhwc<half>(kernel->data, plan->nhwc_weight, kernel->ne[3], kernel->ne[2],
++                                 kernel->ne[1], kernel->ne[0], stream);
++    }
++    if (igemm_env_enabled("GGML_CUDA_LOG_IGEMM")) {
++        GGML_LOG_INFO("CUDA IGEMM create %" PRId64 "x%" PRId64 "x%" PRId64
++                      " -> %" PRId64 "x%" PRId64 "x%" PRId64 " k=%" PRId64 "x%" PRId64 "\n",
++                      input->ne[0], input->ne[1], input->ne[2], dst->ne[0], dst->ne[1], dst->ne[2],
++                      kernel->ne[0], kernel->ne[1]);
++    }
++    igemm_conv_plan * result = plan.get();
++    g_igemm_plans.emplace(dst, std::move(plan));
++    return result;
++}
++
++static bool conv2d_igemm(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
++    const ggml_tensor * kernel = dst->src[0];
++    const ggml_tensor * input  = dst->src[1];
++    const bool use_f16 = input->type == GGML_TYPE_F16 && kernel->type == GGML_TYPE_F16 &&
++                         dst->type == GGML_TYPE_F16;
++    const bool use_f32 = input->type == GGML_TYPE_F32 && kernel->type == GGML_TYPE_F32 &&
++                         dst->type == GGML_TYPE_F32;
++    // Quantized conv: f16 activations flow through the same WMMA kernel; the
++    // Q8_0 weight was expanded into KRSC halves once at plan creation (zero
++    // im2col, zero dynamic quantization, zero output transpose vs. the
++    // mul_mat path).
++    const bool use_q8 = input->type == GGML_TYPE_F16 && kernel->type == GGML_TYPE_Q8_0 &&
++                        dst->type == GGML_TYPE_F16;
++    if (!use_f16 && !use_f32 && !use_q8) {
++        return false;
++    }
++    // f16/f32 epilogues vectorize 8-wide and need OC % 8 == 0; the scalar
++    // tail path (below) writes the remainder, so quantized convs with any
++    // output-channel count (e.g. OC=4 end2end heads) are accepted.
++    if (!use_q8 && kernel->ne[3] % 8 != 0) return false;
++    if (use_q8 && (kernel->ne[0] * kernel->ne[1] * kernel->ne[2]) % QK8_0 != 0) return false;
++    if (igemm_env_enabled("GGML_CUDA_DISABLE_IGEMM")) return false;
++    // TF32 tensor-core mma exists on Ampere and newer; f16 WMMA on Volta+.
++    const int min_cc = use_f32 ? 800 : 700;
++    if (ggml_cuda_info().devices[ggml_cuda_get_device()].cc < min_cc) return false;
++
++    auto it = g_igemm_plans.find(dst);
++    igemm_conv_plan * plan = nullptr;
++    if (it == g_igemm_plans.end()) {
++        // igemm_create_plan emplaces successful plans itself; only record
++        // failures here so we do not retry (and re-leak) every invocation.
++        plan = igemm_create_plan(dst, ctx.stream());
++        if (!plan) g_igemm_plans.emplace(dst, std::unique_ptr<igemm_conv_plan>(nullptr));
++    } else {
++        plan = it->second.get();
++    }
++    if (!plan) return false;
++
++    const int32_t * p = (const int32_t *) dst->op_params;
++    const int B = input->ne[3];
++    const int H = input->ne[1];
++    const int W = input->ne[0];
++    const int C = input->ne[2];
++    const int P = dst->ne[1];
++    const int Q = dst->ne[0];
++    const int K = kernel->ne[3];
++    const int R = kernel->ne[1];
++    const int S = kernel->ne[0];
++    // Wide B tiles cut the DRAM re-read factor of the L2-resident-unfriendly
++    // activation operand (A traffic scales with K/NT); the fallback halves NT
++    // while the block count would starve the 28-SM device of parallelism.
++    // GGML_CUDA_IGEMM_NT overrides the heuristic for tuning.
++    int nt = 0;
++    if (const char * env = getenv("GGML_CUDA_IGEMM_NT")) nt = atoi(env);
++    if (nt != 16 && nt != 64 && nt != 128 && nt != 256) {
++        nt = K <= 16 ? 16 : K <= 96 ? 64 : K <= 192 ? 128 : 256;
++        const int64_t gm = (P * Q + 63) / 64;
++        while (nt > 64 && gm * ((K + nt - 1) / nt) < 56) nt /= 2;
++    }
++    const dim3 grid((P * Q + 63) / 64, (K + nt - 1) / nt, B);
++
++    cudaStream_t stream = ctx.stream();
++
++    // Chained input: the upstream igemm conv published its NHWC output; a
++    // pointer/type/shape match lets this conv consume it directly.
++    auto cit = g_nhwc_copies.find(input);
++    const bool chained = cit != g_nhwc_copies.end() &&
++                         cit->second.type == input->type &&
++                         cit->second.ne[0] == input->ne[0] &&
++                         cit->second.ne[1] == input->ne[1] &&
++                         cit->second.ne[2] == input->ne[2] &&
++                         cit->second.ne[3] == input->ne[3];
++
++    const bool with_bias = dst->src[2] != nullptr;
++    const bool with_silu = with_bias && ggml_get_op_params_i32(dst, 7) == 1;
++    const float * b_p = with_bias ? (const float *) dst->src[2]->data : nullptr;
++
++    // C % 8 == 0 keeps every staged 16B vector aligned; unaligned channel
++    // counts (e.g. the RGB first layer) fall back to scalar staging.
++    if (use_f32) {
++        if (!chained) {
++            igemm_nchw_to_nhwc<float>(input->data, plan->nhwc_input, B, C, H, W, stream);
++        }
++        const float * in_p = (const float *) (chained ? cit->second.ptr : plan->nhwc_input);
++        const float * w_p  = (const float *) plan->nhwc_weight;
++        float * out_p      = (float *) plan->nhwc_output;
++        if (C % 8 == 0) {
++            igemm_conv_dispatch_f32<true>(grid, with_bias, with_silu, in_p, w_p, b_p, out_p,
++                                          stream, H, W, C, P, Q, K, R, S, p);
++        } else {
++            igemm_conv_dispatch_f32<false>(grid, with_bias, with_silu, in_p, w_p, b_p, out_p,
++                                           stream, H, W, C, P, Q, K, R, S, p);
++        }
++    } else {
++        if (!chained) {
++            igemm_nchw_to_nhwc<half>(input->data, plan->nhwc_input, B, C, H, W, stream);
++        }
++        const half * in_p = (const half *) (chained ? cit->second.ptr : plan->nhwc_input);
++        const half * w_p  = (const half *) plan->nhwc_weight; // KRSC (Q8_0 pre-expanded)
++        half * out_p      = (half *) plan->nhwc_output;
++        if (nt == 16) {
++            igemm_conv_launch<16>(grid, with_bias, with_silu, C, in_p, w_p, b_p, out_p,
++                                  stream, H, W, P, Q, K, R, S, p);
++        } else if (nt == 128) {
++            igemm_conv_launch<128>(grid, with_bias, with_silu, C, in_p, w_p, b_p, out_p,
++                                   stream, H, W, P, Q, K, R, S, p);
++        } else if (nt == 256) {
++            igemm_conv_launch<256>(grid, with_bias, with_silu, C, in_p, w_p, b_p, out_p,
++                                   stream, H, W, P, Q, K, R, S, p);
++        } else {
++            igemm_conv_launch<64>(grid, with_bias, with_silu, C, in_p, w_p, b_p, out_p,
++                                  stream, H, W, P, Q, K, R, S, p);
++        }
++    }
++    // Publish the NHWC output for chained consumers; the NCHW write-back
++    // always runs so every other consumer keeps reading dst->data.
++    g_nhwc_copies[dst] = igemm_nhwc_copy{ plan->nhwc_output, dst->type,
++                                          { dst->ne[0], dst->ne[1], dst->ne[2], dst->ne[3] } };
++    if (use_f32) {
++        igemm_nhwc_to_nchw<float>(plan->nhwc_output, dst->data, B, K, P, Q, stream);
++    } else {
++        igemm_nhwc_to_nchw<half>(plan->nhwc_output, dst->data, B, K, P, Q, stream);
++    }
++    return cudaPeekAtLastError() == cudaSuccess;
++}
++
++} // namespace
++
++static bool ggml_cuda_conv2d_igemm(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
++    return conv2d_igemm(ctx, dst);
++}
++
++#endif // !GGML_USE_HIP
++
+ void ggml_cuda_op_conv2d(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
+     const ggml_tensor * kernel = dst->src[0];
+     const ggml_tensor * input  = dst->src[1];
+-    float *             K_D    = (float *) kernel->data;
+-    const float *       X_D    = (const float *) input->data;
+-    float *             Y_D    = (float *) dst->data;
+ 
+     GGML_ASSERT(ggml_is_contiguous(input));
+     GGML_ASSERT(ggml_is_contiguous(kernel));
+-    GGML_ASSERT(kernel->type == GGML_TYPE_F16 || kernel->type == GGML_TYPE_F32);
++    GGML_ASSERT(kernel->type == GGML_TYPE_F16 || kernel->type == GGML_TYPE_F32 ||
++                kernel->type == GGML_TYPE_Q8_0);
+ 
+     // same number of input channels
+     GGML_ASSERT(input->ne[2] == kernel->ne[2]);
+ 
+     cudaStream_t st = ctx.stream();
+ 
++#ifdef GGML_CUDA_USE_CUDNN
++    if (ggml_cuda_conv2d_cudnn(ctx, dst, false)) return;
++#endif
++#if !defined(GGML_USE_HIP)
++    if (ggml_cuda_conv2d_igemm(ctx, dst)) return;
++#endif
++    // The naive conv kernels below only handle f32/f16 weights; a quantized
++    // kernel reaching this point (igemm unavailable or rejected) has no path.
++    if (ggml_is_quantized(kernel->type)) {
++        GGML_ABORT("conv2d: quantized kernel requires the igemm path "
++                   "(k=%lldx%lld C=%lld -> %lld, in=%s dst=%s)",
++                   (long long) kernel->ne[0], (long long) kernel->ne[1],
++                   (long long) kernel->ne[2], (long long) kernel->ne[3],
++                   ggml_type_name(input->type), ggml_type_name(dst->type));
++    }
++
+     const int32_t * p    = (const int32_t *) dst->op_params;
+     const int       ST_X = p[0];  // stride_x
+     const int       ST_Y = p[1];  // stride_y
+@@ -159,9 +1799,13 @@ void ggml_cuda_op_conv2d(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
+     const int64_t total  = B * OC * OH * OW;
+     conv_params   params = { IW, IH, OW, OH, KW, KH, ST_X, ST_Y, PD_X, PD_Y, DL_X, DL_Y, IC, OC, B, total };
+ 
+-    if (kernel->type == GGML_TYPE_F16) {
+-        conv2d_cuda_f16(X_D, (half *) K_D, Y_D, params, st);
++    if (input->type == GGML_TYPE_F16 && kernel->type == GGML_TYPE_F16 && dst->type == GGML_TYPE_F16) {
++        conv2d_cuda((const half *) input->data, (const half *) kernel->data, (half *) dst->data, params, st);
++    } else if (input->type == GGML_TYPE_F32 && kernel->type == GGML_TYPE_F16 && dst->type == GGML_TYPE_F32) {
++        conv2d_cuda((const float *) input->data, (const half *) kernel->data, (float *) dst->data, params, st);
+     } else {
+-        conv2d_cuda_f32(X_D, K_D, Y_D, params, st);
++        GGML_ASSERT(input->type == GGML_TYPE_F32 && kernel->type == GGML_TYPE_F32 && dst->type == GGML_TYPE_F32);
++        conv2d_cuda((const float *) input->data, (const float *) kernel->data, (float *) dst->data, params, st);
+     }
++    bias_silu_cuda(dst, st);
+ }
+diff --git a/src/ggml-cuda/conv2d.cuh b/src/ggml-cuda/conv2d.cuh
+index ce4802c..da97303 100644
+--- a/src/ggml-cuda/conv2d.cuh
++++ b/src/ggml-cuda/conv2d.cuh
+@@ -3,3 +3,8 @@
+ 
+ #define CUDA_CONV2D_BLOCK_SIZE 256
+ void ggml_cuda_op_conv2d(ggml_backend_cuda_context & ctx, ggml_tensor * dst);
++
++#ifdef GGML_CUDA_USE_CUDNN
++bool ggml_cuda_conv2d_cudnn(ggml_backend_cuda_context & ctx, ggml_tensor * dst, bool depthwise);
++void ggml_cuda_free_cudnn(ggml_backend_cuda_context & ctx);
++#endif
+diff --git a/src/ggml-cuda/ggml-cuda.cu b/src/ggml-cuda/ggml-cuda.cu
+index 5432725..2ca42d9 100644
+--- a/src/ggml-cuda/ggml-cuda.cu
++++ b/src/ggml-cuda/ggml-cuda.cu
+@@ -704,6 +704,10 @@ ggml_backend_cuda_context::~ggml_backend_cuda_context() {
+     std::unique_lock<std::mutex> lock(ggml_cuda_lock);
+     ggml_cuda_lock_cv.wait(lock, []{ return ggml_cuda_lock_counter.load(std::memory_order_relaxed) == 0; });
+ 
++#ifdef GGML_CUDA_USE_CUDNN
++    ggml_cuda_free_cudnn(*this);
++#endif
++
+     if (copy_event != nullptr) {
+         CUDA_CHECK(cudaEventDestroy(copy_event));
+     }
+@@ -5220,7 +5224,7 @@ static bool ggml_backend_cuda_device_supports_op(ggml_backend_dev_t dev, const g
+         case GGML_OP_CONV_2D:
+             return (ggml_is_contiguous(op->src[0]) && ggml_is_contiguous(op->src[1]));
+         case GGML_OP_CONV_2D_DW:
+-            return op->src[0]->type == GGML_TYPE_F32;
++            return op->src[0]->type == GGML_TYPE_F32 || op->src[0]->type == GGML_TYPE_F16;
+         case GGML_OP_CONV_TRANSPOSE_2D:
+         case GGML_OP_POOL_2D:
+             return true;
+diff --git a/src/ggml-cuda/pool2d.cu b/src/ggml-cuda/pool2d.cu
+index c6d51e4..b90cc2b 100644
+--- a/src/ggml-cuda/pool2d.cu
++++ b/src/ggml-cuda/pool2d.cu
+@@ -1,4 +1,5 @@
+ #include "pool2d.cuh"
++#include "convert.cuh"
+ 
+ template <typename Ti, typename To>
+ static  __global__ void pool2d_nchw_kernel(
+@@ -24,8 +25,8 @@ static  __global__ void pool2d_nchw_kernel(
+     const int start_w = cur_ow * sw - pw;
+     const int bw = max(0, start_w);
+     const int ew = min(iw, start_w + kw);
+-    const To scale = 1. / (kh * kw);
+-    To res = 0;
++    const float scale = 1.0f / (kh * kw);
++    float res = 0.0f;
+ 
+     switch (op) {
+         case GGML_OP_POOL_AVG: res = 0; break;
+@@ -41,20 +42,21 @@ static  __global__ void pool2d_nchw_kernel(
+             Ti cur = i_ptr[i * iw + j];
+ #endif
+             switch (op) {
+-                case GGML_OP_POOL_AVG: res += cur * scale; break;
+-                case GGML_OP_POOL_MAX: res = max(res, (To)cur); break;
++                case GGML_OP_POOL_AVG: res += ggml_cuda_cast<float>(cur) * scale; break;
++                case GGML_OP_POOL_MAX: res = fmaxf(res, ggml_cuda_cast<float>(cur)); break;
+                 default: assert(false);
+             }
+         }
+     }
+-    o_ptr[cur_oh * ow + cur_ow] = res;
++    o_ptr[cur_oh * ow + cur_ow] = ggml_cuda_cast<To>(res);
+ }
+ 
+-static void pool2d_nchw_kernel_f32_f32_cuda(
++template <typename T>
++static void pool2d_nchw_cuda(
+         const int ih, const int iw, const int oh, const int ow,
+         const int kh, const int kw, const int sh, const int sw,
+         const int ph, const int pw, const int parallel_elements,
+-        const float * src, float * dst, const enum ggml_op_pool op,
++        const T * src, T * dst, const enum ggml_op_pool op,
+         cudaStream_t stream) {
+ 
+     const int num_blocks = (parallel_elements + CUDA_POOL2D_BLOCK_SIZE - 1) / CUDA_POOL2D_BLOCK_SIZE;
+@@ -64,12 +66,10 @@ static void pool2d_nchw_kernel_f32_f32_cuda(
+ 
+ void ggml_cuda_op_pool2d(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
+     const ggml_tensor * src0 = dst->src[0];
+-    const float * src0_d = (const float *)src0->data;
+-    float * dst_d = (float *)dst->data;
+     cudaStream_t stream = ctx.stream();
+ 
+-    GGML_ASSERT(src0->type == GGML_TYPE_F32);
+-    GGML_ASSERT( dst->type == GGML_TYPE_F32);
++    GGML_ASSERT(src0->type == dst->type);
++    GGML_ASSERT(src0->type == GGML_TYPE_F32 || src0->type == GGML_TYPE_F16);
+ 
+     const int32_t * opts = (const int32_t *)dst->op_params;
+     enum ggml_op_pool op = static_cast<ggml_op_pool>(opts[0]);
+@@ -90,5 +90,11 @@ void ggml_cuda_op_pool2d(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
+ 
+     const int parallel_elements = N * OC * OH * OW;
+ 
+-    pool2d_nchw_kernel_f32_f32_cuda(IH, IW, OH, OW, k1, k0, s1, s0, p1, p0, parallel_elements, src0_d, dst_d, op, stream);
++    if (src0->type == GGML_TYPE_F16) {
++        pool2d_nchw_cuda(IH, IW, OH, OW, k1, k0, s1, s0, p1, p0, parallel_elements,
++                         (const half *) src0->data, (half *) dst->data, op, stream);
++    } else {
++        pool2d_nchw_cuda(IH, IW, OH, OW, k1, k0, s1, s0, p1, p0, parallel_elements,
++                         (const float *) src0->data, (float *) dst->data, op, stream);
++    }
+ }
+diff --git a/src/ggml-cuda/scale.cu b/src/ggml-cuda/scale.cu
+index 7b2e59a..83a5848 100644
+--- a/src/ggml-cuda/scale.cu
++++ b/src/ggml-cuda/scale.cu
+@@ -1,37 +1,42 @@
+ #include "scale.cuh"
++#include "convert.cuh"
+ 
+ #define MAX_GRIDDIM_X 0x7FFFFFFF
+ 
+-static __global__ void scale_f32(const float * x, float * dst, const float scale, const float bias, const int64_t nelements) {
++template <typename T>
++static __global__ void scale_kernel(const T * x, T * dst, const float scale, const float bias, const int64_t nelements) {
+     ggml_cuda_pdl_lc();
+     int64_t tid = (int64_t)blockIdx.x * (int64_t)blockDim.x + (int64_t)threadIdx.x;
+     int64_t stride = (int64_t)blockDim.x * (int64_t)gridDim.x;
+ 
+     ggml_cuda_pdl_sync();
+     for (int64_t i = tid; i < nelements; i += stride) {
+-        dst[i] = scale * x[i] + bias;
++        dst[i] = ggml_cuda_cast<T>(scale * ggml_cuda_cast<float>(x[i]) + bias);
+     }
+ }
+ 
+-static void scale_f32_cuda(const float * x, float * dst, const float scale, const float bias, const int64_t nelements, cudaStream_t stream) {
++template <typename T>
++static void scale_cuda(const T * x, T * dst, const float scale, const float bias, const int64_t nelements, cudaStream_t stream) {
+     const int64_t num_blocks = (nelements + CUDA_SCALE_BLOCK_SIZE - 1) / CUDA_SCALE_BLOCK_SIZE;
+     const ggml_cuda_kernel_launch_params launch_params = ggml_cuda_kernel_launch_params(MIN(MAX_GRIDDIM_X, num_blocks), CUDA_SCALE_BLOCK_SIZE, 0, stream);
+-    ggml_cuda_kernel_launch(scale_f32, launch_params, x, dst, scale, bias, nelements);
++    ggml_cuda_kernel_launch(scale_kernel<T>, launch_params, x, dst, scale, bias, nelements);
+ }
+ 
+ void ggml_cuda_op_scale(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
+     const ggml_tensor * src0 = dst->src[0];
+-    const float * src0_d = (const float *)src0->data;
+-    float * dst_d = (float *)dst->data;
+     cudaStream_t stream = ctx.stream();
+ 
+-    GGML_ASSERT(src0->type == GGML_TYPE_F32);
+-    GGML_ASSERT( dst->type == GGML_TYPE_F32);
++    GGML_ASSERT(src0->type == dst->type);
++    GGML_ASSERT(src0->type == GGML_TYPE_F32 || src0->type == GGML_TYPE_F16);
+ 
+     float scale;
+     float bias;
+     memcpy(&scale, (float *) dst->op_params + 0, sizeof(float));
+     memcpy(&bias,  (float *) dst->op_params + 1, sizeof(float));
+ 
+-    scale_f32_cuda(src0_d, dst_d, scale, bias, ggml_nelements(src0), stream);
++    if (src0->type == GGML_TYPE_F16) {
++        scale_cuda((const half *) src0->data, (half *) dst->data, scale, bias, ggml_nelements(src0), stream);
++    } else {
++        scale_cuda((const float *) src0->data, (float *) dst->data, scale, bias, ggml_nelements(src0), stream);
++    }
+ }
+diff --git a/src/ggml-cuda/upscale.cu b/src/ggml-cuda/upscale.cu
+index 6bdf3cd..3b03e92 100644
+--- a/src/ggml-cuda/upscale.cu
++++ b/src/ggml-cuda/upscale.cu
+@@ -1,6 +1,7 @@
+ #include "upscale.cuh"
+ 
+-static __global__ void upscale_f32(const float * x, float * dst,
++template <typename T>
++static __global__ void upscale_nearest(const T * x, T * dst,
+         const int nb00, const int nb01, const int nb02, const int nb03,
+         const int ne10, const int ne11, const int ne12, const int ne13,
+         const float sf0, const float sf1, const float sf2, const float sf3) {
+@@ -19,7 +20,7 @@ static __global__ void upscale_f32(const float * x, float * dst,
+     int i02 = i12 / sf2;
+     int i03 = i13 / sf3;
+ 
+-    dst[index] = *( (const float *)((const char *)x + i03 * nb03 + i02 * nb02 + i01 * nb01 + i00 * nb00) );
++    dst[index] = *( (const T *)((const char *)x + i03 * nb03 + i02 * nb02 + i01 * nb01 + i00 * nb00) );
+ }
+ 
+ static __global__ void upscale_f32_bilinear(const float * x, float * dst,
+@@ -215,7 +216,8 @@ static __global__ void upscale_f32_bicubic(const float * x, float * dst,
+     dst[index] = result;
+ }
+ 
+-static void upscale_f32_cuda(const float * x, float * dst,
++template <typename T>
++static void upscale_nearest_cuda(const T * x, T * dst,
+         const int nb00, const int nb01, const int nb02, const int nb03,
+         const int ne10, const int ne11, const int ne12, const int ne13,
+         const float sf0, const float sf1, const float sf2, const float sf3,
+@@ -223,7 +225,7 @@ static void upscale_f32_cuda(const float * x, float * dst,
+     const int64_t dst_size   = ne10 * ne11 * ne12 * ne13;
+     const int64_t num_blocks = (dst_size + CUDA_UPSCALE_BLOCK_SIZE - 1) / CUDA_UPSCALE_BLOCK_SIZE;
+ 
+-    upscale_f32<<<num_blocks, CUDA_UPSCALE_BLOCK_SIZE,0,stream>>>(x, dst, nb00, nb01, nb02, nb03, ne10, ne11, ne12, ne13, sf0, sf1, sf2, sf3);
++    upscale_nearest<<<num_blocks, CUDA_UPSCALE_BLOCK_SIZE,0,stream>>>(x, dst, nb00, nb01, nb02, nb03, ne10, ne11, ne12, ne13, sf0, sf1, sf2, sf3);
+ }
+ 
+ static void upscale_f32_bilinear_cuda(const float * x, float * dst,
+@@ -256,12 +258,10 @@ static void upscale_f32_bicubic_cuda(const float * x, float * dst,
+ 
+ void ggml_cuda_op_upscale(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
+     const ggml_tensor * src0 = dst->src[0];
+-    const float * src0_d = (const float *)src0->data;
+-    float * dst_d = (float *)dst->data;
+     cudaStream_t stream = ctx.stream();
+ 
+-    GGML_ASSERT(src0->type == GGML_TYPE_F32);
+-    GGML_ASSERT( dst->type == GGML_TYPE_F32);
++    GGML_ASSERT(src0->type == dst->type);
++    GGML_ASSERT(src0->type == GGML_TYPE_F32 || src0->type == GGML_TYPE_F16);
+ 
+     const int mode_flags = dst->op_params[0];
+     const ggml_scale_mode mode = (ggml_scale_mode)(mode_flags & 0xFF);
+@@ -279,13 +279,27 @@ void ggml_cuda_op_upscale(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
+     }
+ 
+     if (mode == GGML_SCALE_MODE_NEAREST) {
+-        upscale_f32_cuda(src0_d, dst_d, src0->nb[0], src0->nb[1], src0->nb[2], src0->nb[3], dst->ne[0], dst->ne[1], dst->ne[2], dst->ne[3], sf0, sf1, sf2, sf3, stream);
++        if (src0->type == GGML_TYPE_F16) {
++            upscale_nearest_cuda((const half *) src0->data, (half *) dst->data,
++                                 src0->nb[0], src0->nb[1], src0->nb[2], src0->nb[3],
++                                 dst->ne[0], dst->ne[1], dst->ne[2], dst->ne[3], sf0, sf1, sf2, sf3, stream);
++        } else {
++            upscale_nearest_cuda((const float *) src0->data, (float *) dst->data,
++                                 src0->nb[0], src0->nb[1], src0->nb[2], src0->nb[3],
++                                 dst->ne[0], dst->ne[1], dst->ne[2], dst->ne[3], sf0, sf1, sf2, sf3, stream);
++        }
+     } else if (mode == GGML_SCALE_MODE_BILINEAR) {
++        GGML_ASSERT(src0->type == GGML_TYPE_F32);
++        const float * src0_d = (const float *) src0->data;
++        float * dst_d = (float *) dst->data;
+         const bool antialias = (mode_flags & GGML_SCALE_FLAG_ANTIALIAS);
+         upscale_f32_bilinear_cuda(src0_d, dst_d, src0->nb[0], src0->nb[1], src0->nb[2], src0->nb[3],
+                                  src0->ne[0], src0->ne[1], dst->ne[0], dst->ne[1], dst->ne[2], dst->ne[3],
+                                  sf0, sf1, sf2, sf3, pixel_offset, antialias, stream);
+     } else if (mode == GGML_SCALE_MODE_BICUBIC) {
++        GGML_ASSERT(src0->type == GGML_TYPE_F32);
++        const float * src0_d = (const float *) src0->data;
++        float * dst_d = (float *) dst->data;
+         upscale_f32_bicubic_cuda(src0_d, dst_d, src0->nb[0], src0->nb[1], src0->nb[2], src0->nb[3],
+                                  src0->ne[0], src0->ne[1], dst->ne[0], dst->ne[1], dst->ne[2], dst->ne[3],
+                                  sf0, sf1, sf2, sf3, pixel_offset, stream);
+diff --git a/src/ggml-vulkan/ggml-vulkan.cpp b/src/ggml-vulkan/ggml-vulkan.cpp
+index a7c9297..961794d 100644
+--- a/src/ggml-vulkan/ggml-vulkan.cpp
++++ b/src/ggml-vulkan/ggml-vulkan.cpp
+@@ -511,9 +511,9 @@ struct vk_conv_block_size {
+ vk_conv_block_size vk_conv_block_sizes[CONV_SHAPE_COUNT] = {
+     // K   NPQ  CRS
+     { 128, 128, 16 }, // CONV_SHAPE_128x128
+-    {  64,  32, 32 }, // CONV_SHAPE_64x32
++    {  64,  32, 64 }, // CONV_SHAPE_64x32
+     {  32, 256, 16 }, // CONV_SHAPE_32x256
+-    {  64, 128, 16 }, // CONV_SHAPE_64x128
++    {  64, 128, 32 }, // CONV_SHAPE_64x128
+ };
+ 
+ enum dmmv_wg_sizes {
+@@ -795,6 +795,7 @@ struct vk_device_struct {
+     bool add_rms_fusion;
+     uint32_t partials_binding_alignment;
+     uint32_t max_nodes_per_submit;
++    uint32_t target_submits;
+ 
+     bool shader_64b_indexing;
+ 
+@@ -927,7 +928,8 @@ struct vk_device_struct {
+ 
+     vk_pipeline pipeline_concat_i8, pipeline_concat_i16, pipeline_concat_i32, pipeline_concat_i64;
+     vk_pipeline pipeline_upscale_nearest_f32, pipeline_upscale_bilinear_f32, pipeline_upscale_bicubic_f32, pipeline_upscale_bilinear_antialias_f32;
+-    vk_pipeline pipeline_scale_f32;
++    vk_pipeline pipeline_upscale_nearest_f16, pipeline_upscale_bilinear_f16, pipeline_upscale_bicubic_f16, pipeline_upscale_bilinear_antialias_f16;
++    vk_pipeline pipeline_scale_f32, pipeline_scale_f16;
+     vk_pipeline pipeline_log[2];
+     vk_pipeline pipeline_tri[2];
+     vk_pipeline pipeline_diag[2];
+@@ -1038,7 +1040,7 @@ struct vk_device_struct {
+     vk_pipeline pipeline_snake_f16;
+     vk_pipeline pipeline_snake_bf16;
+     vk_pipeline pipeline_pool1d_f32;
+-    vk_pipeline pipeline_pool2d_f32;
++    vk_pipeline pipeline_pool2d_f32, pipeline_pool2d_f16;
+     vk_pipeline pipeline_rwkv_wkv6_f32;
+     vk_pipeline pipeline_rwkv_wkv7_f32;
+     // [size_idx][kda] where size_idx: 0=d16, 1=d32, 2=d64, 3=d128
+@@ -1054,12 +1056,14 @@ struct vk_device_struct {
+     std::map<vk_conv2d_pipeline_state, vk_pipeline> pipeline_conv2d_f16_f32[CONV_SHAPE_COUNT];
+     std::map<vk_conv2d_pipeline_state, vk_pipeline> pipeline_conv2d_f32_scalar[CONV_SHAPE_COUNT];
+     std::map<vk_conv2d_pipeline_state, vk_pipeline> pipeline_conv2d_f16_f32_scalar[CONV_SHAPE_COUNT];
++    std::map<vk_conv2d_pipeline_state, vk_pipeline> pipeline_conv2d_f16[CONV_SHAPE_COUNT];
+     std::map<vk_conv2d_pipeline_state, vk_pipeline> pipeline_conv_transpose_2d_f32[CONV_SHAPE_COUNT];
+     std::map<vk_conv2d_pipeline_state, vk_pipeline> pipeline_conv_transpose_2d_f16_f32[CONV_SHAPE_COUNT];
++    std::map<vk_conv2d_pipeline_state, vk_pipeline> pipeline_conv_transpose_2d_f16[CONV_SHAPE_COUNT];
+     std::map<vk_conv3d_pipeline_state, vk_pipeline> pipeline_conv3d_f32[CONV_SHAPE_COUNT];
+     std::map<vk_conv3d_pipeline_state, vk_pipeline> pipeline_conv3d_f16_f32[CONV_SHAPE_COUNT];
+-    vk_pipeline pipeline_conv2d_dw_whcn_f32, pipeline_conv2d_dw_whcn_f16_f32;
+-    vk_pipeline pipeline_conv2d_dw_cwhn_f32, pipeline_conv2d_dw_cwhn_f16_f32;
++    vk_pipeline pipeline_conv2d_dw_whcn_f32, pipeline_conv2d_dw_whcn_f16_f32, pipeline_conv2d_dw_whcn_f16;
++    vk_pipeline pipeline_conv2d_dw_cwhn_f32, pipeline_conv2d_dw_cwhn_f16_f32, pipeline_conv2d_dw_cwhn_f16;
+ 
+     std::map<vk_fa_pipeline_state, vk_pipeline> pipeline_flash_attn_f32_f16;
+ 
+@@ -1882,6 +1886,8 @@ struct vk_op_conv2d_push_constants {
+     uint32_t nb2;
+     uint32_t nb3;
+ 
++    uint32_t fuse_bias_silu;
++
+     // init_fastdiv_values constants for dividing by OW, OW*OH
+     uint32_t OWmp;   uint32_t OWL;
+     uint32_t OWOHmp; uint32_t OWOHL;
+@@ -2374,22 +2380,26 @@ static uint32_t get_misalign_bytes(const ggml_backend_vk_context * ctx, const gg
+     return ((vk_tensor_offset(t) + t->view_offs) & (ctx->device->properties.limits.minStorageBufferOffsetAlignment - 1));;
+ }
+ 
+-static uint32_t ggml_vk_concat_unit_size(ggml_type type) {
+-    const uint32_t type_size = ggml_type_size(type);
+-
+-    if (!ggml_is_quantized(type)) {
+-        return type_size;
+-    }
++static uint32_t ggml_vk_concat_unit_size(const ggml_tensor * src0, const ggml_tensor * src1, const ggml_tensor * dst) {
++    const uint32_t type_size  = ggml_type_size(dst->type);
++    const uint32_t block_size = ggml_blck_size(dst->type);
+ 
+-    // Use the widest existing concat shader that evenly divides a quant block.
+-    if (type_size % 8 == 0) {
+-        return 8;
+-    }
+-    if (type_size % 4 == 0) {
+-        return 4;
+-    }
+-    if (type_size % 2 == 0) {
+-        return 2;
++    // Concatenation is a raw copy. Use the widest shader compatible with row
++    // boundaries, strides, and suballocation offsets so each invocation can
++    // move several F16/F32 elements without changing their representation.
++    for (uint32_t unit_size : { 8u, 4u, 2u, 1u }) {
++        bool aligned = true;
++        for (const ggml_tensor * tensor : { src0, src1, dst }) {
++            const uint64_t row_bytes = tensor->ne[0] / block_size * type_size;
++            const uint64_t offset    = vk_tensor_offset(tensor) + tensor->view_offs;
++            aligned = aligned && row_bytes % unit_size == 0 && offset % unit_size == 0;
++            for (int dim = 1; dim < GGML_MAX_DIMS; ++dim) {
++                aligned = aligned && tensor->nb[dim] % unit_size == 0;
++            }
++        }
++        if (aligned) {
++            return unit_size;
++        }
+     }
+     return 1;
+ }
+@@ -2399,13 +2409,9 @@ static bool ggml_vk_concat_supported(const ggml_tensor * src0, const ggml_tensor
+         return false;
+     }
+ 
+-    if (!ggml_is_quantized(src0->type)) {
+-        const size_t type_size = ggml_type_size(src0->type);
+-        return type_size == 1 || type_size == 2 || type_size == 4 || type_size == 8;
+-    }
+-
+-    // Quantized tensor rows are block-aligned when created.
+-    return ggml_is_contiguous_rows(src0) && ggml_is_contiguous_rows(src1) && ggml_is_contiguous_rows(dst);
++    const size_t type_size = ggml_type_size(src0->type);
++    return (type_size == 1 || type_size == 2 || type_size == 4 || type_size == 8 || ggml_is_quantized(src0->type)) &&
++        ggml_is_contiguous_rows(src0) && ggml_is_contiguous_rows(src1) && ggml_is_contiguous_rows(dst);
+ }
+ 
+ template <typename T> void init_pushconst_tensor_offsets(ggml_backend_vk_context * ctx, T &p, const ggml_tensor * src0, const ggml_tensor * src1, const ggml_tensor * src2, const ggml_tensor * src3, ggml_tensor * dst) {
+@@ -5599,8 +5605,13 @@ static void ggml_vk_load_shaders(vk_device& device, vk_pipeline requested) {
+     ggml_vk_create_pipeline(device, device->pipeline_upscale_bilinear_f32, "upscale_f32", upscale_f32_len, upscale_f32_data, "main", 2, sizeof(vk_op_upscale_push_constants), {512, 1, 1}, {GGML_SCALE_MODE_BILINEAR}, 1);
+     ggml_vk_create_pipeline(device, device->pipeline_upscale_bicubic_f32, "upscale_f32", upscale_f32_len, upscale_f32_data, "main", 2, sizeof(vk_op_upscale_push_constants), {512, 1, 1}, {GGML_SCALE_MODE_BICUBIC}, 1);
+     ggml_vk_create_pipeline(device, device->pipeline_upscale_bilinear_antialias_f32, "upscale_f32", upscale_f32_len, upscale_f32_data, "main", 2, sizeof(vk_op_upscale_push_constants), {512, 1, 1}, {GGML_SCALE_MODE_BILINEAR | GGML_SCALE_FLAG_ANTIALIAS}, 1);
++    ggml_vk_create_pipeline(device, device->pipeline_upscale_nearest_f16, "upscale_f16", upscale_f16_len, upscale_f16_data, "main", 2, sizeof(vk_op_upscale_push_constants), {512, 1, 1}, {GGML_SCALE_MODE_NEAREST}, 1);
++    ggml_vk_create_pipeline(device, device->pipeline_upscale_bilinear_f16, "upscale_f16", upscale_f16_len, upscale_f16_data, "main", 2, sizeof(vk_op_upscale_push_constants), {512, 1, 1}, {GGML_SCALE_MODE_BILINEAR}, 1);
++    ggml_vk_create_pipeline(device, device->pipeline_upscale_bicubic_f16, "upscale_f16", upscale_f16_len, upscale_f16_data, "main", 2, sizeof(vk_op_upscale_push_constants), {512, 1, 1}, {GGML_SCALE_MODE_BICUBIC}, 1);
++    ggml_vk_create_pipeline(device, device->pipeline_upscale_bilinear_antialias_f16, "upscale_f16", upscale_f16_len, upscale_f16_data, "main", 2, sizeof(vk_op_upscale_push_constants), {512, 1, 1}, {GGML_SCALE_MODE_BILINEAR | GGML_SCALE_FLAG_ANTIALIAS}, 1);
+ 
+     ggml_vk_create_pipeline(device, device->pipeline_scale_f32, "scale_f32", scale_f32_len, scale_f32_data, "main", 2, sizeof(vk_op_unary_push_constants), {512, 1, 1}, {}, 1);
++    ggml_vk_create_pipeline(device, device->pipeline_scale_f16, "scale_f16", scale_f16_len, scale_f16_data, "main", 2, sizeof(vk_op_unary_push_constants), {512, 1, 1}, {}, 1);
+ 
+     ggml_vk_create_pipeline(device, device->pipeline_log[0], "log_f32", log_f32_len, log_f32_data, "main", 2, sizeof(vk_op_unary_push_constants), {512, 1, 1}, {}, 1);
+     ggml_vk_create_pipeline(device, device->pipeline_log[1], "log_f16", log_f16_len, log_f16_data, "main", 2, sizeof(vk_op_unary_push_constants), {512, 1, 1}, {}, 1);
+@@ -5809,6 +5820,7 @@ static void ggml_vk_load_shaders(vk_device& device, vk_pipeline requested) {
+ 
+     ggml_vk_create_pipeline(device, device->pipeline_pool1d_f32, "pool1d_f32", pool1d_f32_len, pool1d_f32_data, "main", 2, sizeof(vk_op_pool1d_push_constants), {512, 1, 1}, {}, 1);
+     ggml_vk_create_pipeline(device, device->pipeline_pool2d_f32, "pool2d_f32", pool2d_f32_len, pool2d_f32_data, "main", 2, sizeof(vk_op_pool2d_push_constants), {512, 1, 1}, {}, 1);
++    ggml_vk_create_pipeline(device, device->pipeline_pool2d_f16, "pool2d_f16", pool2d_f16_len, pool2d_f16_data, "main", 2, sizeof(vk_op_pool2d_push_constants), {512, 1, 1}, {}, 1);
+ 
+     ggml_vk_create_pipeline(device, device->pipeline_rwkv_wkv6_f32, "rwkv_wkv6_f32", rwkv_wkv6_f32_len, rwkv_wkv6_f32_data, "main", 7, sizeof(vk_op_rwkv_wkv6_push_constants), {1, 1, 1}, {device->subgroup_size}, 1);
+ 
+@@ -5906,6 +5918,17 @@ static void ggml_vk_load_shaders(vk_device& device, vk_pipeline requested) {
+         vk_conv_block_size conv2d_BS = vk_conv_block_sizes[s];
+         bool conv2d_UNROLL = true;
+ 
++        // Wider CRS tiles amortize cooperative-matrix barriers on NVIDIA.
++        // Keep the upstream sizes on other vendors, whose shared-memory and
++        // register limits differ from the measured device.
++        if (device->vendor_id != VK_VENDOR_ID_NVIDIA) {
++            if (s == CONV_SHAPE_64x32) {
++                conv2d_BS.CRS = 32;
++            } else if (s == CONV_SHAPE_64x128) {
++                conv2d_BS.CRS = 16;
++            }
++        }
++
+ #if defined(GGML_VULKAN_COOPMAT2_GLSLC_SUPPORT)
+         if (device->coopmat2) {
+             conv2d_SHMEM_PAD = 8; // 8 float16_t
+@@ -6038,14 +6061,16 @@ static void ggml_vk_load_shaders(vk_device& device, vk_pipeline requested) {
+             spec_constants_cpy.push_back(conv2d_WN); \
+             ggml_vk_create_pipeline( \
+                 device, c.second, #name #type_suffix, \
+-                name##type_suffix##spv_suffix##_len, name##type_suffix##spv_suffix##_data, "main", 3, \
++                name##type_suffix##spv_suffix##_len, name##type_suffix##spv_suffix##_data, "main", 4, \
+                 sizeof(vk_op_conv2d_push_constants), wg_denoms, spec_constants_cpy, 1, true, use_collectives || conv2d_required_subgroup_size, conv2d_required_subgroup_size);    \
+         }
+ #define CREATE_CONVS(spv_suffix) \
+         CREATE_CONV(conv2d, _f32, spv_suffix) \
+         CREATE_CONV(conv2d, _f16_f32, spv_suffix) \
++        CREATE_CONV(conv2d, _f16, spv_suffix) \
+         CREATE_CONV(conv_transpose_2d, _f32, spv_suffix) \
+-        CREATE_CONV(conv_transpose_2d, _f16_f32, spv_suffix)
++        CREATE_CONV(conv_transpose_2d, _f16_f32, spv_suffix) \
++        CREATE_CONV(conv_transpose_2d, _f16, spv_suffix)
+ #if defined(GGML_VULKAN_COOPMAT2_GLSLC_SUPPORT)
+         if (device->coopmat2) {
+             CREATE_CONVS(_cm2)
+@@ -6139,6 +6164,8 @@ static void ggml_vk_load_shaders(vk_device& device, vk_pipeline requested) {
+     ggml_vk_create_pipeline(device, device->pipeline_conv2d_dw_cwhn_f32, "conv2d_dw_cwhn_f32", conv2d_dw_cwhn_f32_len, conv2d_dw_cwhn_f32_data, "main", 3, sizeof(vk_op_conv2d_dw_push_constants), {512, 1, 1}, {}, 1);
+     ggml_vk_create_pipeline(device, device->pipeline_conv2d_dw_whcn_f16_f32, "conv2d_dw_whcn_f16_f32", conv2d_dw_whcn_f16_f32_len, conv2d_dw_whcn_f16_f32_data, "main", 3, sizeof(vk_op_conv2d_dw_push_constants), {512, 1, 1}, {}, 1);
+     ggml_vk_create_pipeline(device, device->pipeline_conv2d_dw_cwhn_f16_f32, "conv2d_dw_cwhn_f16_f32", conv2d_dw_cwhn_f16_f32_len, conv2d_dw_cwhn_f16_f32_data, "main", 3, sizeof(vk_op_conv2d_dw_push_constants), {512, 1, 1}, {}, 1);
++    ggml_vk_create_pipeline(device, device->pipeline_conv2d_dw_whcn_f16, "conv2d_dw_whcn_f16", conv2d_dw_whcn_f16_len, conv2d_dw_whcn_f16_data, "main", 3, sizeof(vk_op_conv2d_dw_push_constants), {512, 1, 1}, {}, 1);
++    ggml_vk_create_pipeline(device, device->pipeline_conv2d_dw_cwhn_f16, "conv2d_dw_cwhn_f16", conv2d_dw_cwhn_f16_len, conv2d_dw_cwhn_f16_data, "main", 3, sizeof(vk_op_conv2d_dw_push_constants), {512, 1, 1}, {}, 1);
+ 
+     for (uint32_t use_push = 0; use_push < 2; ++use_push) {
+         for (uint32_t i = 0; i < num_topk_moe_pipelines; ++i) {
+@@ -6448,6 +6475,13 @@ static vk_device ggml_vk_get_device(size_t idx) {
+             uint32_t max_nodes_per_submit = std::stoul(GGML_VK_MAX_NODES_PER_SUBMIT);
+             device->max_nodes_per_submit = std::max(max_nodes_per_submit, 1u);
+         }
++        // NVIDIA vision graphs benefit from fewer, larger submissions. Zero
++        // selects the measured FLOP-dependent 4/8 policy below.
++        device->target_submits = device->vendor_id == VK_VENDOR_ID_NVIDIA ? 0 : 40;
++        const char * GGML_VK_TARGET_SUBMITS = getenv("GGML_VK_TARGET_SUBMITS");
++        if (GGML_VK_TARGET_SUBMITS != nullptr) {
++            device->target_submits = std::max(std::stoul(GGML_VK_TARGET_SUBMITS), 1ul);
++        }
+ 
+         const bool force_disable_f16 = getenv("GGML_VK_DISABLE_F16") != nullptr;
+ 
+@@ -11227,7 +11261,7 @@ static vk_pipeline ggml_vk_op_get_pipeline(ggml_backend_vk_context * ctx, const
+         if (!ggml_vk_concat_supported(src0, src1, dst)) {
+             return nullptr;
+         }
+-        switch (ggml_vk_concat_unit_size(src0->type)) {
++        switch (ggml_vk_concat_unit_size(src0, src1, dst)) {
+         case 1:
+             return ctx->device->pipeline_concat_i8;
+         case 2:
+@@ -11241,25 +11275,26 @@ static vk_pipeline ggml_vk_op_get_pipeline(ggml_backend_vk_context * ctx, const
+         }
+     }
+     case GGML_OP_UPSCALE:
+-        if (src0->type == GGML_TYPE_F32 && dst->type == GGML_TYPE_F32) {
++        if (src0->type == dst->type && (src0->type == GGML_TYPE_F32 || src0->type == GGML_TYPE_F16)) {
++            const bool f16 = src0->type == GGML_TYPE_F16;
+             uint32_t mode = (ggml_get_op_params_i32(dst, 0) & (0xFF | GGML_SCALE_FLAG_ANTIALIAS));
+             switch (mode) {
+                 case GGML_SCALE_MODE_NEAREST:
+-                    return ctx->device->pipeline_upscale_nearest_f32;
++                    return f16 ? ctx->device->pipeline_upscale_nearest_f16 : ctx->device->pipeline_upscale_nearest_f32;
+                 case GGML_SCALE_MODE_BILINEAR:
+-                    return ctx->device->pipeline_upscale_bilinear_f32;
++                    return f16 ? ctx->device->pipeline_upscale_bilinear_f16 : ctx->device->pipeline_upscale_bilinear_f32;
+                 case GGML_SCALE_MODE_BICUBIC:
+-                    return ctx->device->pipeline_upscale_bicubic_f32;
++                    return f16 ? ctx->device->pipeline_upscale_bicubic_f16 : ctx->device->pipeline_upscale_bicubic_f32;
+                 case GGML_SCALE_MODE_BILINEAR | GGML_SCALE_FLAG_ANTIALIAS:
+-                    return ctx->device->pipeline_upscale_bilinear_antialias_f32;
++                    return f16 ? ctx->device->pipeline_upscale_bilinear_antialias_f16 : ctx->device->pipeline_upscale_bilinear_antialias_f32;
+                 default:
+                     return nullptr;
+             }
+         }
+         return nullptr;
+     case GGML_OP_SCALE:
+-        if (src0->type == GGML_TYPE_F32 && dst->type == GGML_TYPE_F32) {
+-            return ctx->device->pipeline_scale_f32;
++        if (src0->type == dst->type && (src0->type == GGML_TYPE_F32 || src0->type == GGML_TYPE_F16)) {
++            return src0->type == GGML_TYPE_F16 ? ctx->device->pipeline_scale_f16 : ctx->device->pipeline_scale_f32;
+         }
+         return nullptr;
+     case GGML_OP_SQR:
+@@ -11627,8 +11662,8 @@ static vk_pipeline ggml_vk_op_get_pipeline(ggml_backend_vk_context * ctx, const
+         }
+         return nullptr;
+     case GGML_OP_POOL_2D:
+-        if (src0->type == GGML_TYPE_F32 && dst->type == GGML_TYPE_F32) {
+-            return ctx->device->pipeline_pool2d_f32;
++        if (src0->type == dst->type && (src0->type == GGML_TYPE_F32 || src0->type == GGML_TYPE_F16)) {
++            return src0->type == GGML_TYPE_F16 ? ctx->device->pipeline_pool2d_f16 : ctx->device->pipeline_pool2d_f32;
+         }
+         return nullptr;
+     case GGML_OP_RWKV_WKV6:
+@@ -11694,7 +11729,8 @@ static vk_pipeline ggml_vk_op_get_pipeline(ggml_backend_vk_context * ctx, const
+         return nullptr;
+     case GGML_OP_CONV_2D:
+     case GGML_OP_CONV_TRANSPOSE_2D:
+-        if (src1->type == GGML_TYPE_F32 && dst->type == GGML_TYPE_F32) {
++        if ((src1->type == GGML_TYPE_F32 && dst->type == GGML_TYPE_F32) ||
++            (src0->type == GGML_TYPE_F16 && src1->type == GGML_TYPE_F16 && dst->type == GGML_TYPE_F16)) {
+             uint32_t K = dst->ne[2]; // Cout
+             uint32_t NPQ = dst->ne[3] * dst->ne[1] * dst->ne[0]; // N * OH * OW
+             vk_conv_shapes shape = ggml_vk_conv_select_shape(ctx, K, NPQ);
+@@ -11728,6 +11764,8 @@ static vk_pipeline ggml_vk_op_get_pipeline(ggml_backend_vk_context * ctx, const
+                 if (src0->type == GGML_TYPE_F32) {
+                     pipelines = force_scalar ? &ctx->device->pipeline_conv2d_f32_scalar[shape]
+                                              : &ctx->device->pipeline_conv2d_f32[shape];
++                } else if (src1->type == GGML_TYPE_F16) {
++                    pipelines = &ctx->device->pipeline_conv2d_f16[shape];
+                 } else if (src0->type == GGML_TYPE_F16) {
+                     pipelines = force_scalar ? &ctx->device->pipeline_conv2d_f16_f32_scalar[shape]
+                                              : &ctx->device->pipeline_conv2d_f16_f32[shape];
+@@ -11735,6 +11773,8 @@ static vk_pipeline ggml_vk_op_get_pipeline(ggml_backend_vk_context * ctx, const
+             } else if (op == GGML_OP_CONV_TRANSPOSE_2D) {
+                 if (src0->type == GGML_TYPE_F32) {
+                     pipelines = &ctx->device->pipeline_conv_transpose_2d_f32[shape];
++                } else if (src1->type == GGML_TYPE_F16) {
++                    pipelines = &ctx->device->pipeline_conv_transpose_2d_f16[shape];
+                 } else if (src0->type == GGML_TYPE_F16) {
+                     pipelines = &ctx->device->pipeline_conv_transpose_2d_f16_f32[shape];
+                 }
+@@ -11768,6 +11808,12 @@ static vk_pipeline ggml_vk_op_get_pipeline(ggml_backend_vk_context * ctx, const
+             } else if (ggml_is_contiguous_channels(src1)) {
+                 return ctx->device->pipeline_conv2d_dw_cwhn_f16_f32;
+             }
++        } else if (src0->type == GGML_TYPE_F16 && src1->type == GGML_TYPE_F16 && dst->type == GGML_TYPE_F16) {
++            if (ggml_is_contiguous(src1)) {
++                return ctx->device->pipeline_conv2d_dw_whcn_f16;
++            } else if (ggml_is_contiguous_channels(src1)) {
++                return ctx->device->pipeline_conv2d_dw_cwhn_f16;
++            }
+         }
+         return nullptr;
+     case GGML_OP_CONV_3D:
+@@ -11929,7 +11975,7 @@ template <> void init_pushconst_tensor_offsets(ggml_backend_vk_context * ctx, vk
+ }
+ 
+ template <> void init_pushconst_tensor_offsets(ggml_backend_vk_context * ctx, vk_op_concat_push_constants &p, const ggml_tensor * src0, const ggml_tensor * src1, const ggml_tensor * src2, const ggml_tensor * src3, ggml_tensor * dst) {
+-    const uint32_t unit_size = ggml_vk_concat_unit_size(dst->type);
++    const uint32_t unit_size = ggml_vk_concat_unit_size(src0, src1, dst);
+     const uint32_t a_offset = get_misalign_bytes(ctx, src0) / unit_size;
+     const uint32_t b_offset = get_misalign_bytes(ctx, src1) / unit_size;
+     const uint32_t d_offset = get_misalign_bytes(ctx, dst) / unit_size;
+@@ -11975,7 +12021,9 @@ static void ggml_vk_op_f32(ggml_backend_vk_context * ctx, vk_context& subctx, co
+     }
+     std::cerr << "), (" << dst << ", name=" << dst->name << ", type=" << dst->type << ", ne0=" << dst->ne[0] << ", ne1=" << dst->ne[1] << ", ne2=" << dst->ne[2] << ", ne3=" << dst->ne[3] << ", nb0=" << dst->nb[0] << ", nb1=" << dst->nb[1] << ", nb2=" << dst->nb[2] << ", nb3=" << dst->nb[3];
+     std::cerr << "), " << ggml_op_name(op) << ")");
+-    GGML_ASSERT(op == GGML_OP_GET_ROWS || op == GGML_OP_CPY || op == GGML_OP_CONCAT || (!ggml_is_quantized(src0->type) && (src1 == nullptr || !ggml_is_quantized(src1->type))));  // NOLINT
++    // IM2COL/IM2COL_3D never bind src0 (dispatch uses only src1/dst buffers);
++    // a quantized src0 only lends KH/KW/IC shape metadata to the patch loop.
++    GGML_ASSERT(op == GGML_OP_GET_ROWS || op == GGML_OP_CPY || op == GGML_OP_CONCAT || op == GGML_OP_IM2COL || op == GGML_OP_IM2COL_3D || (!ggml_is_quantized(src0->type) && (src1 == nullptr || !ggml_is_quantized(src1->type))));  // NOLINT
+     GGML_ASSERT(dst->buffer != nullptr);
+     const uint64_t ne00 = src0->ne[0];
+     const uint64_t ne01 = src0->ne[1];
+@@ -12237,8 +12285,9 @@ static void ggml_vk_op_f32(ggml_backend_vk_context * ctx, vk_context& subctx, co
+                     ne *= ggml_type_size(src0->type) / 2;
+                 }
+             }
+-            if (op == GGML_OP_CONCAT && ggml_is_quantized(dst->type)) {
+-                ne = ne / ggml_blck_size(dst->type) * ggml_type_size(dst->type) / ggml_vk_concat_unit_size(dst->type);
++            if (op == GGML_OP_CONCAT) {
++                ne = ne / ggml_blck_size(dst->type) * ggml_type_size(dst->type) /
++                    ggml_vk_concat_unit_size(src0, src1, dst);
+             }
+             // copy_to_quant has block size of 32, and each thread does QUANT_K elements.
+             // Splitting into 512x512xZ wouldn't work well since each workgroup does 1024 elements.
+@@ -12337,6 +12386,10 @@ static void ggml_vk_op_f32(ggml_backend_vk_context * ctx, vk_context& subctx, co
+     } else if (op == GGML_OP_OPT_STEP_SGD) {
+         // OPT_STEP_SGD works on src0, it does not need dst
+         ggml_vk_dispatch_pipeline(ctx, subctx, pipeline, { src0_buf, src1_buf, src2_buf }, pc, elements);
++    } else if (op == GGML_OP_CONV_2D || op == GGML_OP_CONV_TRANSPOSE_2D) {
++        // Direct convolution always declares the optional FP32 bias binding.
++        ggml_vk_dispatch_pipeline(ctx, subctx, pipeline,
++            { src0_buf, src1_buf, dst_buf, use_src2 ? src2_buf : src0_buf }, pc, elements);
+     } else if (use_src3) {
+         ggml_vk_dispatch_pipeline(ctx, subctx, pipeline, { src0_buf, src1_buf, src2_buf, src3_buf, dst_buf }, pc, elements);
+     } else if (use_src2) {
+@@ -13134,18 +13187,17 @@ static void ggml_vk_opt_step_sgd(ggml_backend_vk_context * ctx, vk_context& subc
+ static void ggml_vk_concat(ggml_backend_vk_context * ctx, vk_context& subctx, const ggml_tensor * src0, const ggml_tensor * src1, ggml_tensor * dst) {
+     int * op_params = (int *)dst->op_params;
+ 
+-    const uint32_t unit_size = ggml_vk_concat_unit_size(dst->type);
+-    const uint32_t units_per_block = ggml_type_size(dst->type) / unit_size;
++    const uint32_t unit_size = ggml_vk_concat_unit_size(src0, src1, dst);
++    const uint32_t type_size = ggml_type_size(dst->type);
+     const uint32_t block_size = ggml_blck_size(dst->type);
+-    const bool quantized = ggml_is_quantized(dst->type);
+ 
+     // Address dimension 0 in packed storage units; higher strides may be noncontiguous.
+-    const uint32_t ne00 = src0->ne[0] / block_size * units_per_block;
+-    const uint32_t ne10 = src1->ne[0] / block_size * units_per_block;
+-    const uint32_t ne20 =  dst->ne[0] / block_size * units_per_block;
+-    const uint32_t nb00 = quantized ? 1 : src0->nb[0] / unit_size;
+-    const uint32_t nb10 = quantized ? 1 : src1->nb[0] / unit_size;
+-    const uint32_t nb20 = quantized ? 1 :  dst->nb[0] / unit_size;
++    const uint32_t ne00 = src0->ne[0] / block_size * type_size / unit_size;
++    const uint32_t ne10 = src1->ne[0] / block_size * type_size / unit_size;
++    const uint32_t ne20 =  dst->ne[0] / block_size * type_size / unit_size;
++    const uint32_t nb00 = 1;
++    const uint32_t nb10 = 1;
++    const uint32_t nb20 = 1;
+ 
+     vk_op_concat_push_constants pc {{
+         ne20 * (uint32_t)dst->ne[1] * (uint32_t)dst->ne[2] * (uint32_t)dst->ne[3],
+@@ -14396,15 +14448,15 @@ static void ggml_vk_pool_2d(ggml_backend_vk_context * ctx, vk_context& subctx, c
+ }
+ 
+ static void ggml_vk_conv_2d(ggml_backend_vk_context * ctx, vk_context & subctx, const ggml_tensor * src0,
+-                            const ggml_tensor * src1, ggml_tensor * dst) {
++                            const ggml_tensor * src1, const ggml_tensor * src2, ggml_tensor * dst) {
+     GGML_ASSERT(src0->type == GGML_TYPE_F32 || src0->type == GGML_TYPE_F16);
+-    GGML_ASSERT(src1->type == GGML_TYPE_F32);
+-    GGML_ASSERT(dst->type == GGML_TYPE_F32);
++    GGML_ASSERT(src1->type == dst->type);
++    GGML_ASSERT(src1->type == GGML_TYPE_F32 || src1->type == GGML_TYPE_F16);
+ 
+     GGML_TENSOR_BINARY_OP_LOCALS
+     GGML_ASSERT(nb00 == sizeof(float) || nb00 == sizeof(ggml_fp16_t));
+-    GGML_ASSERT(nb10 == sizeof(float));
+-    GGML_ASSERT(nb0 == sizeof(float));
++    GGML_ASSERT(nb10 == ggml_type_size(src1->type));
++    GGML_ASSERT(nb0 == ggml_type_size(dst->type));
+ 
+     bool transpose = dst->op == GGML_OP_CONV_TRANSPOSE_2D;
+ 
+@@ -14431,8 +14483,9 @@ static void ggml_vk_conv_2d(ggml_backend_vk_context * ctx, vk_context & subctx,
+     p.nb1 = static_cast<uint32_t>(nb1 / nb0);
+     p.nb2 = static_cast<uint32_t>(nb2 / nb0);
+     p.nb3 = static_cast<uint32_t>(nb3 / nb0);
++    p.fuse_bias_silu = src2 && ggml_get_op_params_i32(dst, 7) == 1;
+ 
+-    ggml_vk_op_f32(ctx, subctx, src0, src1, nullptr, nullptr, dst, dst->op, std::move(p));
++    ggml_vk_op_f32(ctx, subctx, src0, src1, src2, nullptr, dst, dst->op, std::move(p));
+ }
+ 
+ static void ggml_vk_conv_3d(ggml_backend_vk_context * ctx, vk_context & subctx, const ggml_tensor * src0,
+@@ -15907,7 +15960,7 @@ static bool ggml_vk_build_graph(ggml_backend_vk_context * ctx, ggml_cgraph * cgr
+         break;
+     case GGML_OP_CONV_2D:
+     case GGML_OP_CONV_TRANSPOSE_2D:
+-        ggml_vk_conv_2d(ctx, compute_ctx, src0, src1, node);
++        ggml_vk_conv_2d(ctx, compute_ctx, src0, src1, src2, node);
+ 
+         break;
+     case GGML_OP_CONV_3D:
+@@ -17317,7 +17370,9 @@ static ggml_status ggml_backend_vk_graph_compute(ggml_backend_t backend, ggml_cg
+             flops_cap = 2'000'000'000ULL * ctx->device->shader_core_count;
+         }
+     }
+-    uint64_t flops_per_submit = std::min(flops_cap, ctx->last_total_flops / 40u);
++    const uint32_t target_submits = ctx->device->target_submits != 0 ? ctx->device->target_submits :
++        (ctx->last_total_flops >= 150'000'000'000ULL ? 4u : 8u);
++    uint64_t flops_per_submit = std::min(flops_cap, ctx->last_total_flops / target_submits);
+ 
+     auto const submit_after = [&]() {
+         first_node_in_batch = true;
+@@ -18650,7 +18705,8 @@ static bool ggml_backend_vk_device_supports_op(ggml_backend_dev_t dev, const ggm
+                     return false;
+                 }
+             }
+-            return op->src[0]->type == GGML_TYPE_F32;
++            return op->src[0]->type == op->type &&
++                (op->type == GGML_TYPE_F32 || op->type == GGML_TYPE_F16);
+         case GGML_OP_ACC:
+             return op->src[0]->type == GGML_TYPE_F32 && op->src[1]->type == GGML_TYPE_F32 && op->type == GGML_TYPE_F32;
+         case GGML_OP_SET:
+@@ -18668,7 +18724,8 @@ static bool ggml_backend_vk_device_supports_op(ggml_backend_dev_t dev, const ggm
+         case GGML_OP_FILL:
+             return op->type == GGML_TYPE_F32 || op->type == GGML_TYPE_F16;
+         case GGML_OP_SCALE:
+-            return ggml_is_contiguous(op->src[0]) && op->src[0]->type == GGML_TYPE_F32;
++            return ggml_is_contiguous(op->src[0]) && op->src[0]->type == op->type &&
++                (op->type == GGML_TYPE_F32 || op->type == GGML_TYPE_F16);
+         case GGML_OP_PAD:
+         case GGML_OP_ROLL:
+             return op->src[0]->type == GGML_TYPE_F32;
+@@ -18724,12 +18781,15 @@ static bool ggml_backend_vk_device_supports_op(ggml_backend_dev_t dev, const ggm
+         case GGML_OP_TIMESTEP_EMBEDDING:
+             return op->src[0]->type == GGML_TYPE_F32;
+         case GGML_OP_CONV_2D_DW:
+-            return (op->src[0]->type == GGML_TYPE_F32 || op->src[0]->type == GGML_TYPE_F16)
+-                && op->src[1]->type == GGML_TYPE_F32;
++            return (op->src[0]->type == GGML_TYPE_F32 || op->src[0]->type == GGML_TYPE_F16) &&
++                op->src[1]->type == op->type &&
++                (op->type == GGML_TYPE_F32 ||
++                 (op->src[0]->type == GGML_TYPE_F16 && op->type == GGML_TYPE_F16));
+         case GGML_OP_POOL_1D:
+             return ggml_is_contiguous(op->src[0]) && op->src[0]->type == GGML_TYPE_F32;
+         case GGML_OP_POOL_2D:
+-            return ggml_is_contiguous(op->src[0]) && op->src[0]->type == GGML_TYPE_F32;
++            return ggml_is_contiguous(op->src[0]) && op->src[0]->type == op->type &&
++                (op->type == GGML_TYPE_F32 || op->type == GGML_TYPE_F16);
+         case GGML_OP_RWKV_WKV6:
+         case GGML_OP_RWKV_WKV7:
+             return true; // all inputs are contiguous, see ggml.c
+@@ -18803,10 +18863,17 @@ static bool ggml_backend_vk_device_supports_op(ggml_backend_dev_t dev, const ggm
+                 const int64_t cin  = !transpose ? op->src[0]->ne[2] : op->src[0]->ne[3];
+ 
+                 // Channel-contiguous format is not supported yet.
++                const bool f32_io = op->src[1]->type == GGML_TYPE_F32 && op->type == GGML_TYPE_F32;
++                const bool f16_io = op->src[0]->type == GGML_TYPE_F16 &&
++                    op->src[1]->type == GGML_TYPE_F16 && op->type == GGML_TYPE_F16;
++                const bool valid_post_op = !op->src[2] ||
++                    (op->src[2]->type == GGML_TYPE_F32 &&
++                     ggml_nelements(op->src[2]) == cout &&
++                     ggml_get_op_params_i32(op, 7) == 1);
+                 return ((op->src[0]->type == GGML_TYPE_F32 || op->src[0]->type == GGML_TYPE_F16) &&
+                     (op->src[0]->nb[0] == sizeof(float) || op->src[0]->nb[0] == sizeof(ggml_fp16_t) ) &&
+-                    op->src[1]->type == GGML_TYPE_F32 &&
+-                    op->type == GGML_TYPE_F32 &&
++                    (f32_io || f16_io) &&
++                    valid_post_op &&
+                     cout == op->ne[2] &&
+                     cin == op->src[1]->ne[2] &&
+                     ggml_is_contiguous(op->src[0]) &&
+diff --git a/src/ggml-vulkan/vulkan-shaders/conv2d_mm.comp b/src/ggml-vulkan/vulkan-shaders/conv2d_mm.comp
+index 9940009..cdf11b4 100644
+--- a/src/ggml-vulkan/vulkan-shaders/conv2d_mm.comp
++++ b/src/ggml-vulkan/vulkan-shaders/conv2d_mm.comp
+@@ -33,6 +33,10 @@ layout(binding = 2) writeonly buffer D {
+     D_TYPE dst_data[];
+ };  // dst - result:    [OW, OH, Cout, N]
+ 
++layout(binding = 3) readonly buffer Bias {
++    float bias_data[];
++};
++
+ layout(push_constant) uniform parameter {
+     // I/O channels, batch size
+     uint32_t Cout;
+@@ -58,6 +62,8 @@ layout(push_constant) uniform parameter {
+     uint32_t nb2;
+     uint32_t nb3;
+ 
++    uint32_t fuse_bias_silu;
++
+     // fastdiv helper values
+     uint32_t OWmp;   uint32_t OWL;
+     uint32_t OWOHmp; uint32_t OWOHL;
+@@ -201,6 +207,14 @@ uint fastdiv(uint n, uint mp, uint L) {
+     return (msbs + n) >> L;
+ }
+ 
++float apply_post_op(float value, uint channel) {
++    if (p.fuse_bias_silu == 0) {
++        return value;
++    }
++    value += bias_data[channel];
++    return value / (1.0 + exp(-value));
++}
++
+ #ifdef COOPMAT2
+ #define ACC_TYPE float16_t
+ 
+@@ -213,7 +227,7 @@ ACC_TYPE perElemOpStore(const in uint32_t r, const in uint32_t c, const in ACC_T
+     uint32_t OW_idx  = NPQ_idx - N_idx * p.OH * p.OW - OH_idx * p.OW;
+     uint32_t dst_idx = OW_idx + OH_idx * p.nb1 + K_idx * p.nb2 + N_idx * p.nb3;
+     if (aligned != 0 || (K_idx < K && NPQ_idx < NPQ)) {
+-        dst_data[dst_idx] = D_TYPE(elem);
++        dst_data[dst_idx] = D_TYPE(apply_post_op(float(elem), K_idx));
+     }
+     return elem;
+ }
+@@ -451,7 +465,7 @@ void main() {
+             uint32_t OW_idx  = NPQ_idx - N_idx * p.OH * p.OW - OH_idx * p.OW;
+             uint32_t dst_idx = OW_idx + OH_idx * p.nb1 + K_idx * p.nb2 + N_idx * p.nb3;
+             if (aligned != 0 || (K_idx < K && NPQ_idx < NPQ)) {
+-                dst_data[dst_idx] = D_TYPE(Csh[k_local * Csh_stride + npq_thread]);
++                dst_data[dst_idx] = D_TYPE(apply_post_op(float(Csh[k_local * Csh_stride + npq_thread]), K_idx));
+             }
+         }
+     }
+@@ -471,7 +485,7 @@ void main() {
+                 uint32_t OW_idx  = NPQ_idx - N_idx * p.OH * p.OW - OH_idx * p.OW;
+                 uint32_t dst_idx = OW_idx + OH_idx * p.nb1 + K_idx * p.nb2 + N_idx * p.nb3;
+                 if (aligned != 0 || (K_idx < K && NPQ_idx < NPQ)) {
+-                    dst_data[dst_idx] = regC[T_ly][T_lx];
++                    dst_data[dst_idx] = D_TYPE(apply_post_op(regC[T_ly][T_lx], K_idx));
+                 }
+             }
+         }
+diff --git a/src/ggml-vulkan/vulkan-shaders/pool2d.comp b/src/ggml-vulkan/vulkan-shaders/pool2d.comp
+index d9d7166..3d06495 100644
+--- a/src/ggml-vulkan/vulkan-shaders/pool2d.comp
++++ b/src/ggml-vulkan/vulkan-shaders/pool2d.comp
+@@ -70,5 +70,5 @@ void main() {
+         }
+     }
+ 
+-    data_d[nc * O_HW + cur_oh * p.OW + cur_ow] = res;
++    data_d[nc * O_HW + cur_oh * p.OW + cur_ow] = D_TYPE(res);
+ }
+diff --git a/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp b/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
+index d5497cb..3b43a24 100644
+--- a/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
++++ b/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
+@@ -896,6 +896,7 @@ void process_shaders() {
+     string_to_spv("repeat_i16", "repeat.comp", {{"A_TYPE", "int16_t"}, {"D_TYPE", "int16_t"}});
+ 
+     string_to_spv("scale_f32", "scale.comp", {{"A_TYPE", "float"}, {"D_TYPE", "float"}, {"FLOAT_TYPE", "float"}});
++    string_to_spv("scale_f16", "scale.comp", {{"A_TYPE", "float16_t"}, {"D_TYPE", "float16_t"}, {"FLOAT_TYPE", "float"}});
+ 
+     string_to_spv("pad_f32", "pad.comp", {{"A_TYPE", "float"}, {"D_TYPE", "float"}});
+ 
+@@ -905,6 +906,7 @@ void process_shaders() {
+     string_to_spv("concat_i64", "concat.comp", {{"A_TYPE", "uvec2"}, {"B_TYPE", "uvec2"}, {"D_TYPE", "uvec2"}});
+ 
+     string_to_spv("upscale_f32", "upscale.comp", {{"A_TYPE", "float"}, {"B_TYPE", "float"}, {"D_TYPE", "float"}});
++    string_to_spv("upscale_f16", "upscale.comp", {{"A_TYPE", "float16_t"}, {"B_TYPE", "float16_t"}, {"D_TYPE", "float16_t"}});
+ 
+     string_to_spv("exp_f16",        "unary.comp",       {{"A_TYPE", "float16_t"},   {"D_TYPE", "float16_t"}, {"OP", "op_exp"}});
+     string_to_spv("exp_f32",        "unary.comp",       {{"A_TYPE", "float"},       {"D_TYPE", "float"},     {"OP", "op_exp"}});
+@@ -1063,6 +1065,7 @@ void process_shaders() {
+ 
+     string_to_spv("pool1d_f32", "pool1d.comp", merge_maps(base_dict, {{"A_TYPE", "float"}, {"D_TYPE", "float"}}));
+     string_to_spv("pool2d_f32", "pool2d.comp", merge_maps(base_dict, {{"A_TYPE", "float"}, {"D_TYPE", "float"}}));
++    string_to_spv("pool2d_f16", "pool2d.comp", merge_maps(base_dict, {{"A_TYPE", "float16_t"}, {"D_TYPE", "float16_t"}}));
+ 
+     string_to_spv("rwkv_wkv6_f32", "wkv6.comp", merge_maps(base_dict, {{"A_TYPE", "float"}}));
+ 
+@@ -1079,14 +1082,18 @@ void process_shaders() {
+ 
+     for (auto transpose : {false, true}) {
+         for (auto unroll : {false, true}) {
+-            for (auto a_f16 : {false, true}) {
++            for (auto io_type : {0, 1, 2}) {
++                const bool a_f16 = io_type != 0;
++                const bool io_f16 = io_type == 2;
+                 std::map<std::string, std::string> defines = {
+-                    {"A_TYPE", a_f16 ? "float16_t" : "float"}, {"B_TYPE", "float"}, {"D_TYPE", "float"},
++                    {"A_TYPE", a_f16 ? "float16_t" : "float"},
++                    {"B_TYPE", io_f16 ? "float16_t" : "float"},
++                    {"D_TYPE", io_f16 ? "float16_t" : "float"},
+                     {"USE_COLLECTIVES", "1"}, {"UNROLL", unroll ? "[[unroll]]" : ""},
+                 };
+                 if (transpose) defines["TRANSPOSE"] = "1";
+                 std::string name = std::string(transpose ? "conv_transpose_2d": "conv2d")
+-                    + (a_f16 ? "_f16" : "") + "_f32";
++                    + (a_f16 ? "_f16" : "") + (io_f16 ? "" : "_f32");
+                 string_to_spv(name + (unroll ? "_unroll" : ""), "conv2d_mm.comp", defines);
+ #if defined(GGML_VULKAN_COOPMAT2_GLSLC_SUPPORT)
+                 if (unroll) {
+@@ -1135,6 +1142,8 @@ void process_shaders() {
+     string_to_spv("conv2d_dw_cwhn_f32", "conv2d_dw.comp", merge_maps(base_dict, {{"A_TYPE", "float"}, {"B_TYPE", "float"}, {"D_TYPE", "float"}, {"CWHN", "1"}}));
+     string_to_spv("conv2d_dw_whcn_f16_f32", "conv2d_dw.comp", merge_maps(base_dict, {{"A_TYPE", "float16_t"}, {"B_TYPE", "float"}, {"D_TYPE", "float"}, {"WHCN", "1"}}));
+     string_to_spv("conv2d_dw_cwhn_f16_f32", "conv2d_dw.comp", merge_maps(base_dict, {{"A_TYPE", "float16_t"}, {"B_TYPE", "float"}, {"D_TYPE", "float"}, {"CWHN", "1"}}));
++    string_to_spv("conv2d_dw_whcn_f16", "conv2d_dw.comp", merge_maps(base_dict, {{"A_TYPE", "float16_t"}, {"B_TYPE", "float16_t"}, {"D_TYPE", "float16_t"}, {"WHCN", "1"}}));
++    string_to_spv("conv2d_dw_cwhn_f16", "conv2d_dw.comp", merge_maps(base_dict, {{"A_TYPE", "float16_t"}, {"B_TYPE", "float16_t"}, {"D_TYPE", "float16_t"}, {"CWHN", "1"}}));
+ 
+     string_to_spv("roll_f32", "roll.comp", merge_maps(base_dict, {{"A_TYPE", "float"}, {"D_TYPE", "float"}}));
+ 
+diff --git a/src/ggml.c b/src/ggml.c
+index 59191c6..a2435b5 100644
+--- a/src/ggml.c
++++ b/src/ggml.c
+@@ -4885,6 +4885,24 @@ struct ggml_tensor * ggml_conv_2d_direct(
+     return result;
+ }
+ 
++struct ggml_tensor * ggml_conv_2d_direct_bias_silu(
++        struct ggml_context * ctx,
++        struct ggml_tensor  * a,
++        struct ggml_tensor  * b,
++        struct ggml_tensor  * bias,
++        int                   s0,
++        int                   s1,
++        int                   p0,
++        int                   p1,
++        int                   d0,
++        int                   d1) {
++    struct ggml_tensor * result = ggml_conv_2d_direct(ctx, a, b, s0, s1, p0, p1, d0, d1);
++    GGML_ASSERT(bias->ne[0] == result->ne[2] && ggml_nelements(bias) == result->ne[2]);
++    result->src[2] = bias;
++    ggml_set_op_params_i32(result, 7, 1);
++    return result;
++}
++
+ // ggml_conv_3d_direct
+ 
+ struct ggml_tensor * ggml_conv_3d_direct(
+@@ -4954,7 +4972,7 @@ struct ggml_tensor * ggml_conv_transpose_2d_p0(
+         a->ne[2], b->ne[3],
+     };
+ 
+-    struct ggml_tensor* result = ggml_new_tensor(ctx, GGML_TYPE_F32, 4, ne);
++    struct ggml_tensor* result = ggml_new_tensor(ctx, b->type, 4, ne);
+ 
+     ggml_set_op_params_i32(result, 0, stride);
+ 
+@@ -5021,7 +5039,7 @@ struct ggml_tensor * ggml_pool_2d(
+     GGML_ASSERT(ne[0] > 0);
+     GGML_ASSERT(ne[1] > 0);
+ 
+-    result = ggml_new_tensor(ctx, GGML_TYPE_F32, 4, ne);
++    result = ggml_new_tensor(ctx, a->type, 4, ne);
+ 
+     int32_t params[] = { op, k0, k1, s0, s1, p0, p1 };
+     ggml_set_op_params(result, params, sizeof(params));
+@@ -5069,7 +5087,7 @@ static struct ggml_tensor * ggml_interpolate_impl(
+     GGML_ASSERT((mode & 0xFF) < GGML_SCALE_MODE_COUNT);
+     // TODO: implement antialias for modes other than bilinear
+     GGML_ASSERT(!(mode & GGML_SCALE_FLAG_ANTIALIAS) || (mode & 0xFF) == GGML_SCALE_MODE_BILINEAR);
+-    GGML_ASSERT(a->type == GGML_TYPE_F32);
++    GGML_ASSERT(a->type == GGML_TYPE_F32 || a->type == GGML_TYPE_F16);
+ 
+     struct ggml_tensor * result = ggml_new_tensor_4d(ctx, a->type, ne0, ne1, ne2, ne3);
+ 

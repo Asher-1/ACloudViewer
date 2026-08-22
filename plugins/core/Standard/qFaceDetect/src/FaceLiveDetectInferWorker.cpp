@@ -90,7 +90,7 @@ bool FaceLiveDetectInferWorker::runDetectJob(const Job& job, Result* out) {
             job.inferRgb.height());
     if (!json) return false;
     const QByteArray payload(json);
-    aicore_facedetect_free_string(json);
+    aicore_facedetect_free_buffer(json);
 
     // Keep boxes in infer coordinates for annotation at infer resolution.
     auto allFaces = FaceDetectEmbed::parseDetectJson(payload);
@@ -115,7 +115,6 @@ bool FaceLiveDetectInferWorker::runDetectJob(const Job& job, Result* out) {
                                  Qt::IgnoreAspectRatio, Qt::FastTransformation);
     }
     out->snapshot.annotatedImage = annotated;
-    out->displayImage = annotated;
 
     // Scale boxes to display coordinates for snapshot consumers.
     FaceDetectEmbed::scaleFaceBoxes(&out->snapshot.faces, job.inferScale);
@@ -130,7 +129,7 @@ bool FaceLiveDetectInferWorker::runRecognizeJob(const Job& job, Result* out) {
             job.inferRgb.height());
     if (!json) return false;
     const QByteArray payload(json);
-    aicore_facedetect_free_string(json);
+    aicore_facedetect_free_buffer(json);
 
     // Keep boxes in infer coordinates for annotation at infer resolution.
     auto allFaces = FaceDetectEmbed::parseDetectJson(payload);
@@ -205,7 +204,6 @@ bool FaceLiveDetectInferWorker::runRecognizeJob(const Job& job, Result* out) {
                                  Qt::IgnoreAspectRatio, Qt::FastTransformation);
     }
     out->snapshot.annotatedImage = annotated;
-    out->displayImage = annotated;
 
     // Scale boxes to display coordinates for snapshot consumers.
     FaceDetectEmbed::scaleFaceBoxes(&out->snapshot.faces, job.inferScale);

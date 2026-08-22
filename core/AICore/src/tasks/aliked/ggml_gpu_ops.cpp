@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "ggml_gpu_ops.hpp"
+#include "tasks/aliked/ggml_gpu_ops.hpp"
 
 #include <ggml-alloc.h>
 #include <ggml-backend.h>
@@ -17,11 +17,11 @@
 #include <string>
 #include <unordered_map>
 
-#include "gpu_pipeline_cache.hpp"
-#include "gpu_sync.hpp"
-#include "gpu_tensor.hpp"
-#include "tensor_ops.hpp"
-#include "vulkan/vulkan_aliked_dispatch.hpp"
+#include "tasks/aliked/gpu_pipeline_cache.hpp"
+#include "tasks/aliked/gpu_sync.hpp"
+#include "tasks/aliked/gpu_tensor.hpp"
+#include "tasks/aliked/tensor_ops.hpp"
+#include "tasks/aliked/vulkan/vulkan_aliked_dispatch.hpp"
 
 namespace lightglue::aliked_internal {
 namespace {
@@ -1008,7 +1008,11 @@ bool RunCropWhcnGpu(internal::Backend *backend,
     }
 
 #if defined(AICORE_VULKAN_ALIKED)
-    if (backend != nullptr && backend->IsVulkan() &&
+    // The custom dense-copy shader is qualified for the small single-channel
+    // score map only. Large multi-channel feature crops have intermittently
+    // returned zero-filled regions on NVIDIA Vulkan drivers; use the host
+    // round-trip below for that correctness-sensitive path.
+    if (input.c == 1 && backend != nullptr && backend->IsVulkan() &&
         VkAlikedAvailable(backend->handle)) {
         if (!GpuTensor::Allocate(backend, out_w, out_h, input.c, output,
                                  error)) {
@@ -1035,7 +1039,8 @@ bool RunCropWhcnGpu(internal::Backend *backend,
     }
 #endif
 
-    if (backend != nullptr && backend->IsGpu()) {
+    if (backend != nullptr && backend->IsGpu() &&
+        !(backend->IsVulkan() && input.c > 1)) {
         const int32_t ic = input.c;
         const char *cache_key = "crop_whcn";
         return RunGraphWithInput(

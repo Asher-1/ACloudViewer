@@ -26,9 +26,9 @@
 #include <tuple>
 #include <utility>
 
-#include "backend.hpp"
-#include "common.hpp"
-#include "types.hpp"
+#include "tasks/lightglue/backend.hpp"
+#include "tasks/lightglue/common.hpp"
+#include "tasks/lightglue/types.hpp"
 
 namespace aicore {
 namespace lightglue {
@@ -514,28 +514,21 @@ public:
 
         const int64_t tokens0 = static_cast<int64_t>(image1.keypoints.size());
         const int64_t tokens1 = static_cast<int64_t>(image2.keypoints.size());
-        const auto profile_start = std::chrono::steady_clock::now();
         const int64_t input_dim = file_.hp.input_dim;
         const int64_t dim = file_.hp.descriptor_dim;
         const int64_t heads = file_.hp.num_heads;
         const int64_t head_dim = dim / heads;
         const int64_t position_dim = file_.hp.add_scale_orientation ? 4 : 2;
-        bool fused_attention =
+        // Fused attention whenever the backend supports it (and on CPU past
+        // 256 tokens, where the fused kernel wins). The historical
+        // LIGHTGLUE_ATTENTION=manual override was an A/B scaffold and is
+        // removed. The LIGHTGLUE_DUMP_DIR tap dump and LIGHTGLUE_PROFILE
+        // timing hooks were upstream-parity development scaffolding and are
+        // removed; the TapFunction plumbing stays as an identity pass-through.
+        const bool fused_attention =
                 backend_.supports_fused_attention() ||
                 (backend_.is_cpu() && std::max(tokens0, tokens1) > 256);
-        if (const char *mode = std::getenv("LIGHTGLUE_ATTENTION")) {
-            fused_attention = std::string(mode) != "manual";
-        }
-        const char *dump_directory = std::getenv("LIGHTGLUE_DUMP_DIR");
-        std::vector<std::pair<std::string, ggml_tensor *>> taps;
-        auto tap = [&](ggml_tensor *tensor, const std::string &name) {
-            if (dump_directory != nullptr) {
-                for (ggml_tensor *storage = tensor; storage != nullptr;
-                     storage = storage->view_src) {
-                    ggml_set_output(storage);
-                }
-                taps.emplace_back(name, tensor);
-            }
+        auto tap = [](ggml_tensor *tensor, const std::string &) {
             return tensor;
         };
 
@@ -697,13 +690,11 @@ public:
             ggml_build_forward_expand(graph, device_mutual1);
             ggml_build_forward_expand(graph, device_best_score0);
         }
-        const auto profile_graph = std::chrono::steady_clock::now();
         if (!ggml_gallocr_alloc_graph(backend_.galloc, graph)) {
             error_ = "failed to allocate the LightGlue compute graph";
             ggml_free(context);
             return false;
         }
-        const auto profile_allocate = std::chrono::steady_clock::now();
 
         ggml_backend_tensor_set(position0, positions0.data(), 0,
                                 positions0.size() * sizeof(float));
@@ -740,7 +731,6 @@ public:
             ggml_free(context);
             return false;
         }
-        const auto profile_compute = std::chrono::steady_clock::now();
 
         if (backend_.is_cpu() || !argmax_on_device) {
             // Vulkan path: see argmax_on_device comment above — we routed
@@ -764,41 +754,6 @@ public:
             ggml_backend_tensor_get(device_best_score0, best_score0.data(), 0,
                                     best_score0.size() * sizeof(float));
             FilterDeviceMatches(best0, mutual1, best_score0, result);
-        }
-        if (dump_directory != nullptr) {
-            std::filesystem::create_directories(dump_directory);
-            for (const auto &entry : taps) {
-                const ggml_tensor *tensor = entry.second;
-                std::ofstream stream(std::filesystem::path(dump_directory) /
-                                             (entry.first + ".bin"),
-                                     std::ios::binary);
-                const uint32_t dimensions = GGML_MAX_DIMS;
-                stream.write("LGTAP01\0", 8);
-                stream.write(reinterpret_cast<const char *>(&dimensions),
-                             sizeof(dimensions));
-                stream.write(reinterpret_cast<const char *>(tensor->ne),
-                             sizeof(tensor->ne));
-                std::vector<float> values(
-                        static_cast<size_t>(ggml_nelements(tensor)));
-                ggml_backend_tensor_get(tensor, values.data(), 0,
-                                        values.size() * sizeof(float));
-                stream.write(reinterpret_cast<const char *>(values.data()),
-                             values.size() * sizeof(float));
-            }
-        }
-        if (std::getenv("LIGHTGLUE_PROFILE") != nullptr) {
-            const auto profile_end = std::chrono::steady_clock::now();
-            auto milliseconds = [](auto begin, auto end) {
-                return std::chrono::duration<double, std::milli>(end - begin)
-                        .count();
-            };
-            std::fprintf(stderr,
-                         "profile: graph=%.3fms allocate=%.3fms compute=%.3fms "
-                         "read_filter=%.3fms\n",
-                         milliseconds(profile_start, profile_graph),
-                         milliseconds(profile_graph, profile_allocate),
-                         milliseconds(profile_allocate, profile_compute),
-                         milliseconds(profile_compute, profile_end));
         }
         ggml_free(context);
         return true;

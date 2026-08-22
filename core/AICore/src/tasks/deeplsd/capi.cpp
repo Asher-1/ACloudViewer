@@ -12,20 +12,13 @@
 
 #include "aicore/backend_capi.h"
 #include "aicore/deeplsd_capi.h"
-#include "deeplsd.hpp"
-#include "ggml_backend_utils.hpp"
-#include "gguf_weight_quantize.hpp"
-#include "model_cache.hpp"
+#include "common/capi_utils.hpp"
+#include "common/ggml_backend_utils.hpp"
+#include "common/gguf_weight_quantize.hpp"
+#include "common/model_cache.hpp"
+#include "tasks/deeplsd/deeplsd.hpp"
 
 namespace {
-
-char* dup_cstr(const std::string& s) {
-    char* out = static_cast<char*>(std::malloc(s.size() + 1));
-    if (out != nullptr) {
-        std::memcpy(out, s.c_str(), s.size() + 1);
-    }
-    return out;
-}
 
 std::string normalize_device(const char* device) {
     if (device == nullptr || device[0] == '\0') {
@@ -35,6 +28,8 @@ std::string normalize_device(const char* device) {
 }
 
 }  // namespace
+
+using aicore::capi::dup_cstr;
 
 struct aicore_deeplsd_options {
     std::string device = "cpu";
@@ -246,7 +241,7 @@ AICORE_CAPI char* aicore_deeplsd_info_json(aicore_deeplsd_ctx* ctx) {
     return dup_cstr(json);
 }
 
-AICORE_CAPI void aicore_deeplsd_free_string(char* s) { std::free(s); }
+AICORE_CAPI void aicore_deeplsd_free_buffer(void* p) { std::free(p); }
 
 AICORE_CAPI int aicore_deeplsd_warmup_backend(const char* device) {
     return aicore_warmup_backend(device);
