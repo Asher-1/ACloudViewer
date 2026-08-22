@@ -11,6 +11,10 @@ add_subdirectory( include )
 add_subdirectory( src )
 add_subdirectory( ui )
 
+if (BUILD_UNIT_TESTS)
+    add_subdirectory( tests )
+endif()
+
 # We only need the includes from the stub
 get_target_property( STUB_INCLUDES CVPluginStub INCLUDE_DIRECTORIES )
 

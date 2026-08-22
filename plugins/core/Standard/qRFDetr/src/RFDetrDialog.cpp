@@ -26,6 +26,7 @@
 #include <QSizePolicy>
 #include <QVBoxLayout>
 
+#include "ecvAICoreUiHelper.h"
 #include "ecvClickableImageLabel.h"
 #include "ecvModelDownloader.h"
 #include "ecvPersistentSettings.h"
@@ -37,22 +38,15 @@
 #endif
 
 namespace {
-const int kThumbSize = 96;
 constexpr const char* kRFDetrTestImage = "000000397133.jpg";
-
-void styleSampleDataButton(QPushButton* button) {
-    button->setStyleSheet(
-            "QPushButton { background: #00897b; color: white; font-weight: "
-            "bold; border: none; border-radius: 4px; padding: 5px 12px; }"
-            "QPushButton:hover { background: #00796b; }"
-            "QPushButton:pressed { background: #00695c; }"
-            "QPushButton:disabled { background: #b2dfdb; color: #e0f2f1; }");
-}
+// QListWidgetItem data role carrying the full-resolution ccImage for the
+// click-to-enlarge preview (the list icon is only a scaled thumbnail).
+constexpr int kDbFullImageRole = Qt::UserRole + 1;
 }  // namespace
 
 RFDetrDialog::RFDetrDialog(QWidget* parent) : QDialog(parent) {
     setWindowTitle(tr("RF-DETR Object Detection"));
-    setMinimumSize(680, 560);
+    setMinimumSize(ecvAICoreUi::dpiScaled(680), ecvAICoreUi::dpiScaled(560));
     setupUi();
     populateModelCombo();
     loadSettings();
@@ -66,15 +60,19 @@ RFDetrDialog::~RFDetrDialog() {
 
 void RFDetrDialog::setupUi() {
     auto* rootLayout = new QVBoxLayout(this);
+    ecvAICoreUi::setupTabLayout(rootLayout);
     m_tabWidget = new QTabWidget(this);
+    ecvAICoreUi::styleTabWidget(m_tabWidget);
     rootLayout->addWidget(m_tabWidget);
 
     // ---- Image tab --------------------------------------------------------
     m_imageTab = new QWidget(this);
     auto* imageLayout = new QVBoxLayout(m_imageTab);
+    ecvAICoreUi::setupTabLayout(imageLayout);
 
     auto* modelRow = new QHBoxLayout;
-    modelRow->addWidget(new QLabel(tr("Model:"), m_imageTab));
+    modelRow->setSpacing(ecvAICoreUi::hSpacing());
+    modelRow->addWidget(ecvAICoreUi::makeLabel(tr("Model:")));
     m_modelCombo = new QComboBox(m_imageTab);
     m_modelCombo->setMinimumContentsLength(26);
     m_modelCombo->setSizeAdjustPolicy(
@@ -86,17 +84,18 @@ void RFDetrDialog::setupUi() {
     m_customModelRow = new QWidget(m_imageTab);
     auto* customRow = new QHBoxLayout(m_customModelRow);
     customRow->setContentsMargins(0, 0, 0, 0);
-    customRow->addWidget(new QLabel(tr("Custom GGUF:"), m_customModelRow));
+    customRow->setSpacing(ecvAICoreUi::hSpacing());
+    customRow->addWidget(ecvAICoreUi::makeLabel(tr("Custom GGUF:")));
     m_customModelPath = new QLineEdit(m_customModelRow);
     customRow->addWidget(m_customModelPath, 1);
-    auto* browseCustomBtn = new QPushButton(tr("Browse…"), m_customModelRow);
+    auto* browseCustomBtn = ecvAICoreUi::makeBrowseBtn("Browse...");
     connect(browseCustomBtn, &QPushButton::clicked, this,
             &RFDetrDialog::onBrowseCustomModel);
     customRow->addWidget(browseCustomBtn);
     imageLayout->addWidget(m_customModelRow);
 
     auto* runRow = new QHBoxLayout;
-    runRow->addWidget(new QLabel(tr("Device:"), m_imageTab));
+    runRow->setSpacing(ecvAICoreUi::hSpacing());
     m_deviceCombo = new QComboBox(m_imageTab);
 #ifdef AICore_ENABLED
     const int nDev = aicore_device_count();
@@ -108,23 +107,22 @@ void RFDetrDialog::setupUi() {
         if (dev->is_default) m_deviceCombo->setCurrentIndex(i);
     }
 #endif
-    runRow->addWidget(m_deviceCombo);
-
-    runRow->addWidget(new QLabel(tr("Threads:"), m_imageTab));
     m_threads = new QSpinBox(m_imageTab);
     m_threads->setRange(0, 64);
     m_threads->setValue(0);
     m_threads->setToolTip(tr("0 = auto"));
-    runRow->addWidget(m_threads);
+    auto* runtimeWidget = ecvAICoreUi::makeRuntimeRow(m_deviceCombo, m_threads);
+    runRow->addWidget(runtimeWidget);
 
-    runRow->addWidget(new QLabel(tr("Threshold:"), m_imageTab));
+    runRow->addWidget(ecvAICoreUi::makeLabel(tr("Threshold:")));
     m_threshold = new QDoubleSpinBox(m_imageTab);
     m_threshold->setRange(0.01, 1.0);
     m_threshold->setSingleStep(0.05);
     m_threshold->setValue(0.5);
+    ecvAICoreUi::setCompactDoubleSpin(m_threshold);
     runRow->addWidget(m_threshold);
 
-    runRow->addWidget(new QLabel(tr("Top-K:"), m_imageTab));
+    runRow->addWidget(ecvAICoreUi::makeLabel(tr("Top-K:")));
     m_topK = new QSpinBox(m_imageTab);
     m_topK->setRange(1, 1000);
     m_topK->setValue(300);
@@ -133,34 +131,26 @@ void RFDetrDialog::setupUi() {
     imageLayout->addLayout(runRow);
 
     auto* inputRow = new QHBoxLayout;
-    inputRow->addWidget(new QLabel(tr("Image:"), m_imageTab));
+    inputRow->setSpacing(ecvAICoreUi::hSpacing());
+    inputRow->addWidget(ecvAICoreUi::makeLabel(tr("Image:")));
     m_imagePath = new QLineEdit(m_imageTab);
     inputRow->addWidget(m_imagePath, 1);
-    auto* browseBtn = new QPushButton(tr("Browse…"), m_imageTab);
+    auto* browseBtn = ecvAICoreUi::makeBrowseBtn("Browse...");
     connect(browseBtn, &QPushButton::clicked, this,
             &RFDetrDialog::onBrowseImage);
-    m_imageTestDataBtn =
-            new QPushButton(tr("\U0001f9ea  Try sample data"), m_imageTab);
-    styleSampleDataButton(m_imageTestDataBtn);
-    m_imageTestDataBtn->setToolTip(
-            tr("Load images/000000397133.jpg from the shared test-data cache"));
-    connect(m_imageTestDataBtn, &QPushButton::clicked, this,
-            [this]() { requestTestData(TestDataTarget::Image); });
     inputRow->addWidget(browseBtn);
     imageLayout->addLayout(inputRow);
 
     // DB image picker (collapsible).
-    m_dbToggleBtn = new QToolButton(m_imageTab);
-    m_dbToggleBtn->setText(tr("DB images ▾"));
-    m_dbToggleBtn->setCheckable(true);
-    m_dbToggleBtn->setChecked(false);
+    m_dbToggleBtn = ecvAICoreUi::makeDbSection(nullptr);
     imageLayout->addWidget(m_dbToggleBtn, 0, Qt::AlignLeft);
     m_dbContentWidget = new QWidget(m_imageTab);
     auto* dbLayout = new QVBoxLayout(m_dbContentWidget);
     dbLayout->setContentsMargins(0, 0, 0, 0);
+    dbLayout->setSpacing(ecvAICoreUi::tightVSpacing());
     m_dbImageList = new QListWidget(m_dbContentWidget);
     m_dbImageList->setIconSize(QSize(48, 48));
-    m_dbImageList->setMaximumHeight(140);
+    m_dbImageList->setMaximumHeight(ecvAICoreUi::dbListMaxHeight());
     dbLayout->addWidget(m_dbImageList);
     auto* dbBtnRow = new QHBoxLayout;
     auto* refreshDbBtn = new QPushButton(tr("Refresh"), m_dbContentWidget);
@@ -172,8 +162,8 @@ void RFDetrDialog::setupUi() {
     dbLayout->addLayout(dbBtnRow);
     m_dbContentWidget->setVisible(false);
     imageLayout->addWidget(m_dbContentWidget);
+    ecvAICoreUi::connectDbToggle(m_dbToggleBtn, m_dbContentWidget);
     connect(m_dbToggleBtn, &QToolButton::toggled, this, [this](bool on) {
-        m_dbContentWidget->setVisible(on);
         if (on) emit refreshDbImagesRequested();
     });
     connect(m_dbImageList, &QListWidget::itemActivated, this,
@@ -182,16 +172,13 @@ void RFDetrDialog::setupUi() {
             &RFDetrDialog::onDbListActivated);
 
     m_previewLabel = new ecvClickableImageLabel(m_imageTab);
-    m_previewLabel->setFixedSize(kThumbSize, kThumbSize);
+    m_previewLabel->setFixedSize(ecvAICoreUi::previewSize(),
+                                 ecvAICoreUi::previewSize());
     m_previewLabel->setStyleSheet(
             "border: 1px solid palette(mid); background: palette(base);");
     m_previewLabel->setText(tr("Preview"));
     imageLayout->addWidget(
             ecvClickableImageLabel::wrapWithTapToPreviewHint(m_previewLabel));
-
-    m_downloadLabel = new QLabel(this);
-    m_downloadLabel->setWordWrap(true);
-    m_downloadLabel->setVisible(false);
 
     m_taskStatusLabel = new QLabel(m_imageTab);
     m_taskStatusLabel->setVisible(false);
@@ -199,11 +186,17 @@ void RFDetrDialog::setupUi() {
     imageLayout->addWidget(m_taskStatusLabel);
 
     auto* actionRow = new QHBoxLayout;
+    actionRow->setSpacing(ecvAICoreUi::hSpacing());
     m_addAnnotatedCheck =
             new QCheckBox(tr("Add annotated image to DB"), m_imageTab);
     m_addAnnotatedCheck->setChecked(true);
     actionRow->addWidget(m_addAnnotatedCheck);
     actionRow->addStretch();
+    m_imageTestDataBtn = ecvAICoreUi::makeSampleDataBtn(this);
+    m_imageTestDataBtn->setToolTip(
+            tr("Load images/000000397133.jpg from the shared test-data cache"));
+    connect(m_imageTestDataBtn, &QPushButton::clicked, this,
+            [this]() { requestTestData(TestDataTarget::Image); });
     actionRow->addWidget(m_imageTestDataBtn);
     m_runBtn = new QPushButton(tr("Run"), m_imageTab);
     m_runBtn->setDefault(true);
@@ -218,19 +211,19 @@ void RFDetrDialog::setupUi() {
     // ---- Live (camera / video) tab ----------------------------------------
     m_liveTab = new QWidget(this);
     auto* liveLayout = new QVBoxLayout(m_liveTab);
+    ecvAICoreUi::setupTabLayout(liveLayout);
     m_liveWidget = new RFDetrLiveWidget(m_liveTab);
     liveLayout->addWidget(m_liveWidget, 1);
 
     // Playback controls live in the Live tab itself (mirrors qFaceDetect).
     auto* liveBtnRow = new QHBoxLayout;
+    liveBtnRow->setSpacing(ecvAICoreUi::hSpacing());
     m_testVideoCombo = new QComboBox(m_liveTab);
     m_testVideoCombo->addItem(QStringLiteral("traffic.mp4"),
                               QStringLiteral("traffic.mp4"));
     m_testVideoCombo->addItem(QStringLiteral("supervision_demo.mp4"),
                               QStringLiteral("supervision_demo.mp4"));
-    m_testDataBtn =
-            new QPushButton(tr("\U0001f9ea  Try sample data"), m_liveTab);
-    styleSampleDataButton(m_testDataBtn);
+    m_testDataBtn = ecvAICoreUi::makeSampleDataBtn(this);
     m_testDataBtn->setToolTip(
             tr("Load the selected video from the shared test-data cache"));
     m_liveStartBtn = new QPushButton(tr("Start"), m_liveTab);
@@ -351,12 +344,7 @@ void RFDetrDialog::setupUi() {
 
     // Download / task progress — shared by both tabs so a model fetch
     // started from the Live tab stays visible.
-    rootLayout->addWidget(m_downloadLabel);
-    m_progress = new QProgressBar(this);
-    m_progress->setRange(0, 100);
-    m_progress->setValue(0);
-    m_progress->setVisible(false);
-    rootLayout->addWidget(m_progress);
+    ecvAICoreUi::setupProgressSection(rootLayout, m_downloadLabel, m_progress);
 
     // Shared test data repository.
     auto& repo = ecvTestDataRepository::instance();
@@ -570,13 +558,28 @@ void RFDetrDialog::onBrowseImage() {
 }
 
 void RFDetrDialog::updateImagePreview() {
-    const QImage img(m_imagePath->text());
+    const QString path = m_imagePath->text().trimmed();
+    QImage img;
+    if (path.startsWith(QStringLiteral("db://"))) {
+        // DB-tree entity: look up the stored full-resolution image so the
+        // click-to-enlarge preview works for DB inputs too.
+        const QString name = path.mid(5);
+        for (int i = 0; i < m_dbImageList->count(); ++i) {
+            QListWidgetItem* item = m_dbImageList->item(i);
+            if (item && item->data(Qt::UserRole).toString() == name) {
+                img = item->data(kDbFullImageRole).value<QImage>();
+                break;
+            }
+        }
+    } else {
+        img = QImage(path);
+    }
     if (img.isNull()) {
         m_previewLabel->clearPreview();
         m_previewLabel->setText(tr("Preview"));
         return;
     }
-    m_previewLabel->setPreviewImage(img, kThumbSize);
+    m_previewLabel->setPreviewImage(img, ecvAICoreUi::previewSize());
 }
 
 void RFDetrDialog::onRun() {
@@ -672,6 +675,9 @@ void RFDetrDialog::setDbImages(const QList<DbImageEntry>& images) {
         auto* item = new QListWidgetItem(QIcon(QPixmap::fromImage(e.preview)),
                                          e.name, m_dbImageList);
         item->setData(Qt::UserRole, e.name);
+        // Full-resolution image for the click-to-enlarge preview (the icon
+        // above is only a scaled thumbnail).
+        item->setData(kDbFullImageRole, e.preview);
     }
 }
 

@@ -270,3 +270,4 @@ docs-output/
 *.cu text eol=lf
 agent-integration/examples/test_data
 .trae/
+.qoder/

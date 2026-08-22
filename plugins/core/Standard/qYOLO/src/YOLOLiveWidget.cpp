@@ -510,6 +510,33 @@ void YOLOLiveWidget::onInferComplete(YOLOLiveInferWorker::Result result) {
     repaintLivePreview();
 }
 
+/* 3-tap separable Gaussian blur [1,2,1]/4 on Grayscale8. */
+static void gaussianBlurMask3(QImage& img) {
+    if (img.format() != QImage::Format_Grayscale8) return;
+    const int w = img.width(), h = img.height();
+    if (w <= 2 || h <= 2) return;
+    QImage tmp(w, h, QImage::Format_Grayscale8);
+    for (int y = 0; y < h; ++y) {
+        const uchar* s = img.constScanLine(y);
+        uchar* d = tmp.scanLine(y);
+        for (int x = 0; x < w; ++x) {
+            const int l = (x > 0) ? s[x - 1] : 0;
+            const int m = s[x];
+            const int r = (x < w - 1) ? s[x + 1] : 0;
+            d[x] = (uint8_t)((l + m * 2 + r) / 4);
+        }
+    }
+    for (int y = 0; y < h; ++y) {
+        uchar* d = img.scanLine(y);
+        for (int x = 0; x < w; ++x) {
+            const int t = (y > 0) ? tmp.constScanLine(y - 1)[x] : 0;
+            const int m = tmp.constScanLine(y)[x];
+            const int b = (y < h - 1) ? tmp.constScanLine(y + 1)[x] : 0;
+            d[x] = (uint8_t)((t + m * 2 + b) / 4);
+        }
+    }
+}
+
 void YOLOLiveWidget::rebuildOverlayLayer(const QSize& displaySize) {
     m_overlayLayer = QImage();
     if (displaySize.isEmpty()) {
@@ -566,9 +593,19 @@ void YOLOLiveWidget::rebuildOverlayLayer(const QSize& displaySize) {
             QImage maskImage(mask.w, mask.h, QImage::Format_Grayscale8);
             std::memcpy(maskImage.bits(), mask.bits.constData(),
                         static_cast<size_t>(mask.w) * mask.h);
+            // Scale the binary {0,1} mask to preview size FIRST with
+            // nearest-neighbour (lossless for binary data), then convert
+            // to {0,255}, blur and blend at the MUCH smaller display
+            // resolution — avoids the expensive full-resolution Gaussian
+            // blur + full-resolution SmoothTransformation bilinear scale
+            // that made live video unusable.
             maskImage = maskImage.scaled(
                     displaySize.width(), displaySize.height(),
                     Qt::IgnoreAspectRatio, Qt::FastTransformation);
+            for (int b = 0; b < maskImage.sizeInBytes(); ++b) {
+                if (maskImage.bits()[b]) maskImage.bits()[b] = 255;
+            }
+            gaussianBlurMask3(maskImage);
             const QColor tint =
                     i < m_overlayDetections.size()
                             ? QColor(YOLOHelpers::classColor(
@@ -579,9 +616,13 @@ void YOLOLiveWidget::rebuildOverlayLayer(const QSize& displaySize) {
                 QRgb* dst = reinterpret_cast<QRgb*>(layer.scanLine(y));
                 for (int x = 0; x < displaySize.width(); ++x) {
                     if (src[x] == 0) continue;
-                    // 2/3 alpha blend over the transparent layer (the blit
-                    // below composites the result over the frame).
-                    dst[x] = qRgba(tint.red(), tint.green(), tint.blue(), 170);
+                    // Proportional alpha: the SmoothTransformation-scaling
+                    // produces fractional coverage values at mask boundaries,
+                    // so map 0..255 → 0..170 to keep anti-aliased edges
+                    // proportionally translucent.
+                    const int a = src[x] * 170 / 255;
+                    if (a == 0) continue;
+                    dst[x] = qRgba(tint.red(), tint.green(), tint.blue(), a);
                 }
             }
         }

@@ -29,6 +29,7 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
+#include "ecvAICoreUiHelper.h"
 #include "ecvClickableImageLabel.h"
 #include "ecvModelDownloader.h"
 #include "ecvPersistentSettings.h"
@@ -40,17 +41,10 @@
 #endif
 
 namespace {
-const int kThumbSize = 96;
 constexpr const char* kYOLOTestImage = "000000397133.jpg";
-
-void styleSampleDataButton(QPushButton* button) {
-    button->setStyleSheet(
-            "QPushButton { background: #00897b; color: white; font-weight: "
-            "bold; border: none; border-radius: 4px; padding: 5px 12px; }"
-            "QPushButton:hover { background: #00796b; }"
-            "QPushButton:pressed { background: #00695c; }"
-            "QPushButton:disabled { background: #b2dfdb; color: #e0f2f1; }");
-}
+// QListWidgetItem data role carrying the full-resolution ccImage for the
+// click-to-enlarge preview (the list icon is only a scaled thumbnail).
+constexpr int kDbFullImageRole = Qt::UserRole + 1;
 }  // namespace
 
 YOLODialog::YOLODialog(QWidget* parent) : QDialog(parent) {
@@ -61,7 +55,9 @@ YOLODialog::YOLODialog(QWidget* parent) : QDialog(parent) {
     m_liveWidget->loadSettings();
     // Content-driven minimum (font / DPI aware) instead of hard-coded
     // pixels, so the dialog adapts to any platform and screen resolution.
-    setMinimumSize(minimumSizeHint());
+    const QSize hint = minimumSizeHint();
+    setMinimumSize(ecvAICoreUi::dpiScaled(hint.width()),
+                   ecvAICoreUi::dpiScaled(hint.height()));
 }
 
 YOLODialog::~YOLODialog() {
@@ -81,9 +77,9 @@ QString YOLOTaskPanel::modelPath() const {
 
 void YOLODialog::setupUi() {
     auto* rootLayout = new QVBoxLayout(this);
-    rootLayout->setContentsMargins(6, 6, 6, 6);
-    rootLayout->setSpacing(4);
+    ecvAICoreUi::setupTabLayout(rootLayout);
     m_tabWidget = new QTabWidget(this);
+    ecvAICoreUi::styleTabWidget(m_tabWidget);
     rootLayout->addWidget(m_tabWidget);
 
     // ---- Per-task tabs (each with its own model combo + thresholds) -----
@@ -94,31 +90,24 @@ void YOLODialog::setupUi() {
                                    tr("Instance Segmentation"),
                                    tr("Metric Depth")};
 
-    auto makeParamLabel = [this](const QString& text, QWidget* parent) {
-        auto* label = new QLabel(text, parent);
-        label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-        return label;
-    };
-
     for (int i = 0; i < taskOrder.size(); ++i) {
         YOLOTaskPanel panel;
         panel.task = taskOrder[i];
         panel.tab = new QWidget(this);
         auto* layout = new QVBoxLayout(panel.tab);
-        layout->setContentsMargins(4, 4, 4, 4);
-        layout->setSpacing(4);
+        ecvAICoreUi::setupTabLayout(layout);
 
         // Two-column body: config controls on the left, preview on the
         // right, so the dialog stays compact along both axes.
         auto* contentRow = new QHBoxLayout;
-        contentRow->setSpacing(8);
+        contentRow->setSpacing(ecvAICoreUi::hSpacing());
         auto* configCol = new QVBoxLayout;
-        configCol->setSpacing(4);
+        configCol->setSpacing(ecvAICoreUi::vSpacing());
 
         // Model row: label + combo (filtered to this task's catalog).
         auto* modelRow = new QHBoxLayout;
-        modelRow->setSpacing(6);
-        modelRow->addWidget(makeParamLabel(tr("Model:"), panel.tab));
+        modelRow->setSpacing(ecvAICoreUi::hSpacing());
+        modelRow->addWidget(ecvAICoreUi::makeLabel(tr("Model:")));
         panel.modelCombo = new QComboBox(panel.tab);
         panel.modelCombo->setMinimumContentsLength(16);
         panel.modelCombo->setSizeAdjustPolicy(
@@ -131,9 +120,6 @@ void YOLODialog::setupUi() {
         // Runtime params row: device / threads — rendered inside the tab,
         // directly under the model row they configure (shared values kept
         // in sync across tabs below).
-        auto* paramsRow = new QHBoxLayout;
-        paramsRow->setSpacing(6);
-        paramsRow->addWidget(makeParamLabel(tr("Device:"), panel.tab));
         panel.deviceCombo = new QComboBox(panel.tab);
 #ifdef AICore_ENABLED
         const int nDev = aicore_device_count();
@@ -145,38 +131,37 @@ void YOLODialog::setupUi() {
             if (dev->is_default) panel.deviceCombo->setCurrentIndex(i);
         }
 #endif
-        paramsRow->addWidget(panel.deviceCombo);
-        paramsRow->addWidget(makeParamLabel(tr("Threads:"), panel.tab));
         panel.threads = new QSpinBox(panel.tab);
         panel.threads->setRange(0, 64);
         panel.threads->setValue(0);
         panel.threads->setToolTip(tr("0 = auto"));
-        paramsRow->addWidget(panel.threads);
-        paramsRow->addStretch();
-        configCol->addLayout(paramsRow);
+        configCol->addWidget(ecvAICoreUi::makeRuntimeRow(
+                panel.deviceCombo, panel.threads, panel.tab));
 
         // Threshold row: Conf / IoU / Top-K (hidden for metric-depth models,
         // which have no detection thresholds).
         panel.thresholdRow = new QWidget(panel.tab);
         auto* thresholdLayout = new QHBoxLayout(panel.thresholdRow);
         thresholdLayout->setContentsMargins(0, 0, 0, 0);
-        thresholdLayout->setSpacing(4);
-        thresholdLayout->addWidget(makeParamLabel(tr("Conf:"), panel.tab));
+        thresholdLayout->setSpacing(ecvAICoreUi::tightHSpacing());
+        thresholdLayout->addWidget(ecvAICoreUi::makeLabel(tr("Conf:")));
         panel.conf = new QDoubleSpinBox(panel.tab);
         panel.conf->setRange(0.01, 1.0);
         panel.conf->setSingleStep(0.05);
         panel.conf->setValue(0.25);
         panel.conf->setToolTip(
                 tr("Confidence threshold (detect/segment models)"));
+        ecvAICoreUi::setCompactDoubleSpin(panel.conf);
         thresholdLayout->addWidget(panel.conf);
-        thresholdLayout->addWidget(makeParamLabel(tr("IoU:"), panel.tab));
+        thresholdLayout->addWidget(ecvAICoreUi::makeLabel(tr("IoU:")));
         panel.iou = new QDoubleSpinBox(panel.tab);
         panel.iou->setRange(0.1, 1.0);
         panel.iou->setSingleStep(0.05);
         panel.iou->setValue(0.7);
         panel.iou->setToolTip(tr("NMS IoU threshold (detect/segment models)"));
+        ecvAICoreUi::setCompactDoubleSpin(panel.iou);
         thresholdLayout->addWidget(panel.iou);
-        thresholdLayout->addWidget(makeParamLabel(tr("Top-K:"), panel.tab));
+        thresholdLayout->addWidget(ecvAICoreUi::makeLabel(tr("Top-K:")));
         panel.topK = new QSpinBox(panel.tab);
         panel.topK->setRange(1, 1000);
         panel.topK->setValue(300);
@@ -188,13 +173,13 @@ void YOLODialog::setupUi() {
         panel.customModelRow = new QWidget(panel.tab);
         auto* customRow = new QHBoxLayout(panel.customModelRow);
         customRow->setContentsMargins(0, 0, 0, 0);
-        customRow->setSpacing(6);
+        customRow->setSpacing(ecvAICoreUi::hSpacing());
         customRow->addWidget(
-                new QLabel(tr("Custom GGUF:"), panel.customModelRow));
+                ecvAICoreUi::makeLabel(tr("Custom GGUF:")));
         panel.customModelPath = new QLineEdit(panel.customModelRow);
         customRow->addWidget(panel.customModelPath, 1);
         auto* browseCustomBtn =
-                new QPushButton(tr("Browse…"), panel.customModelRow);
+                ecvAICoreUi::makeBrowseBtn(tr("Browse…"), panel.customModelRow);
         connect(browseCustomBtn, &QPushButton::clicked, this, [this]() {
             // The browse dialog stores into the ACTIVE panel's line edit.
             YOLOTaskPanel* active = currentTaskPanel();
@@ -206,13 +191,13 @@ void YOLODialog::setupUi() {
         customRow->addWidget(browseCustomBtn);
         configCol->addWidget(panel.customModelRow);
 
-        // Input row: image path + browse + sample-data button.
+        // Input row: image path + browse.
         auto* inputRow = new QHBoxLayout;
-        inputRow->setSpacing(6);
-        inputRow->addWidget(makeParamLabel(tr("Image:"), panel.tab));
+        inputRow->setSpacing(ecvAICoreUi::hSpacing());
+        inputRow->addWidget(ecvAICoreUi::makeLabel(tr("Image:")));
         panel.imagePath = new QLineEdit(panel.tab);
         inputRow->addWidget(panel.imagePath, 1);
-        auto* browseBtn = new QPushButton(tr("Browse…"), panel.tab);
+        auto* browseBtn = ecvAICoreUi::makeBrowseBtn(tr("Browse…"), panel.tab);
         connect(browseBtn, &QPushButton::clicked, this, [this]() {
             YOLOTaskPanel* active = currentTaskPanel();
             if (!active) return;
@@ -223,20 +208,13 @@ void YOLODialog::setupUi() {
         configCol->addLayout(inputRow);
 
         // DB image picker (collapsible).
-        panel.dbToggleBtn = new QToolButton(panel.tab);
-        panel.dbToggleBtn->setText(tr("DB images ▾"));
-        panel.dbToggleBtn->setCheckable(true);
-        panel.dbToggleBtn->setChecked(false);
-        configCol->addWidget(panel.dbToggleBtn, 0, Qt::AlignLeft);
         panel.dbContentWidget = new QWidget(panel.tab);
         auto* dbLayout = new QVBoxLayout(panel.dbContentWidget);
         dbLayout->setContentsMargins(0, 0, 0, 0);
-        dbLayout->setSpacing(4);
+        dbLayout->setSpacing(ecvAICoreUi::vSpacing());
         panel.dbImageList = new QListWidget(panel.dbContentWidget);
         panel.dbImageList->setIconSize(QSize(48, 48));
-        // ~8 rows, scaled with the dialog font instead of fixed pixels.
-        panel.dbImageList->setMaximumHeight(panel.tab->fontMetrics().height() *
-                                            8);
+        panel.dbImageList->setMaximumHeight(ecvAICoreUi::dbListMaxHeight());
         dbLayout->addWidget(panel.dbImageList);
         auto* dbBtnRow = new QHBoxLayout;
         auto* refreshDbBtn =
@@ -249,22 +227,11 @@ void YOLODialog::setupUi() {
         dbBtnRow->addStretch();
         dbLayout->addLayout(dbBtnRow);
         panel.dbContentWidget->setVisible(false);
+        panel.dbToggleBtn = ecvAICoreUi::makeDbSection(panel.dbContentWidget);
+        ecvAICoreUi::connectDbToggle(panel.dbToggleBtn, panel.dbContentWidget);
+        configCol->addWidget(panel.dbToggleBtn, 0, Qt::AlignLeft);
         configCol->addWidget(panel.dbContentWidget);
         configCol->addStretch();
-        connect(panel.dbToggleBtn, &QToolButton::toggled, this,
-                [this](bool on) {
-                    YOLOTaskPanel* active = currentTaskPanel();
-                    if (!active) return;
-                    active->dbContentWidget->setVisible(on);
-                    if (on) emit refreshDbImagesRequested();
-                    // Auto-grow the dialog so the expanded DB list stays
-                    // fully visible; never shrink a user-resized dialog.
-                    QTimer::singleShot(0, this, [this]() {
-                        const QSize hint = sizeHint();
-                        resize(qMax(width(), hint.width()),
-                               qMax(height(), hint.height()));
-                    });
-                });
         connect(panel.dbImageList, &QListWidget::itemActivated, this,
                 &YOLODialog::onDbListActivated);
         connect(panel.dbImageList, &QListWidget::itemClicked, this,
@@ -273,12 +240,12 @@ void YOLODialog::setupUi() {
         contentRow->addLayout(configCol, 1);
 
         // Right column: preview thumbnail (top-aligned). The thumbnail size
-        // is in logical pixels (Qt scales it by devicePixelRatio), while all
-        // text-adjacent sizes stay font-relative for cross-platform fit.
+        // is DPI-aware via ecvAICoreUi::previewSize().
         auto* previewCol = new QVBoxLayout;
-        previewCol->setSpacing(4);
+        previewCol->setSpacing(ecvAICoreUi::vSpacing());
         panel.previewLabel = new ecvClickableImageLabel(panel.tab);
-        panel.previewLabel->setFixedSize(kThumbSize, kThumbSize);
+        const int ps = ecvAICoreUi::previewSize();
+        panel.previewLabel->setFixedSize(ps, ps);
         panel.previewLabel->setStyleSheet(
                 "border: 1px solid palette(mid); background: palette(base);");
         panel.previewLabel->setText(tr("Preview"));
@@ -295,15 +262,14 @@ void YOLODialog::setupUi() {
 
         // Action row: add-to-DB + sample data + Run / Cancel.
         auto* actionRow = new QHBoxLayout;
-        actionRow->setSpacing(6);
+        actionRow->setSpacing(ecvAICoreUi::hSpacing());
         panel.addAnnotatedCheck =
                 new QCheckBox(tr("Add annotated image to DB"), panel.tab);
         panel.addAnnotatedCheck->setChecked(true);
         actionRow->addWidget(panel.addAnnotatedCheck);
         actionRow->addStretch();
         panel.testDataBtn =
-                new QPushButton(tr("\U0001f9ea  Try sample data"), panel.tab);
-        styleSampleDataButton(panel.testDataBtn);
+                ecvAICoreUi::makeSampleDataBtn(panel.tab);
         panel.testDataBtn->setToolTip(
                 tr("Load images/000000397133.jpg from the shared test-data "
                    "cache"));
@@ -332,22 +298,19 @@ void YOLODialog::setupUi() {
     // ---- Live (camera / video) tab ----------------------------------------
     m_liveTab = new QWidget(this);
     auto* liveLayout = new QVBoxLayout(m_liveTab);
-    liveLayout->setContentsMargins(4, 4, 4, 4);
-    liveLayout->setSpacing(4);
+    ecvAICoreUi::setupTabLayout(liveLayout);
     m_liveWidget = new YOLOLiveWidget(m_liveTab);
     liveLayout->addWidget(m_liveWidget, 1);
 
     // Playback controls live in the Live tab itself (mirrors qFaceDetect).
     auto* liveBtnRow = new QHBoxLayout;
-    liveBtnRow->setSpacing(6);
+    liveBtnRow->setSpacing(ecvAICoreUi::hSpacing());
     m_testVideoCombo = new QComboBox(m_liveTab);
     m_testVideoCombo->addItem(QStringLiteral("traffic.mp4"),
                               QStringLiteral("traffic.mp4"));
     m_testVideoCombo->addItem(QStringLiteral("supervision_demo.mp4"),
                               QStringLiteral("supervision_demo.mp4"));
-    m_testDataBtn =
-            new QPushButton(tr("\U0001f9ea  Try sample data"), m_liveTab);
-    styleSampleDataButton(m_testDataBtn);
+    m_testDataBtn = ecvAICoreUi::makeSampleDataBtn(m_liveTab);
     m_testDataBtn->setToolTip(
             tr("Load the selected video from the shared test-data cache"));
     m_liveStartBtn = new QPushButton(tr("Start"), m_liveTab);
@@ -453,6 +416,10 @@ void YOLODialog::setupUi() {
     connect(m_liveWidget, &YOLOLiveWidget::depthCaptureToDbRequested, this,
             &YOLODialog::onLiveDepthCapture);
 
+    // Download / task progress — shared by all tabs so a model fetch started
+    // from any tab stays visible.
+    ecvAICoreUi::setupProgressSection(rootLayout, m_downloadLabel, m_progress);
+
     // Downloader.
     m_downloader = new ecvModelDownloader(this);
     connect(m_downloader, &ecvModelDownloader::progress, this,
@@ -489,17 +456,6 @@ void YOLODialog::setupUi() {
                     }
                 }
             });
-
-    // Download / task progress — shared by all tabs so a model fetch started
-    // from any tab stays visible.
-    rootLayout->addWidget(m_downloadLabel = new QLabel(this));
-    m_downloadLabel->setWordWrap(true);
-    m_downloadLabel->setVisible(false);
-    m_progress = new QProgressBar(this);
-    m_progress->setRange(0, 100);
-    m_progress->setValue(0);
-    m_progress->setVisible(false);
-    rootLayout->addWidget(m_progress);
 
     m_taskStatusLabel = new QLabel(this);
     m_taskStatusLabel->setVisible(false);
@@ -842,13 +798,30 @@ void YOLODialog::onBrowseImage() {
 
 void YOLODialog::updateImagePreview() {
     if (!m_imagePath || !m_previewLabel) return;
-    const QImage img(m_imagePath->text());
+    const QString path = m_imagePath->text().trimmed();
+    QImage img;
+    if (path.startsWith(QStringLiteral("db://"))) {
+        // DB-tree entity: look up the stored full-resolution image so the
+        // click-to-enlarge preview works for DB inputs too.
+        const QString name = path.mid(5);
+        if (YOLOTaskPanel* panel = currentTaskPanel()) {
+            for (int i = 0; i < panel->dbImageList->count(); ++i) {
+                QListWidgetItem* item = panel->dbImageList->item(i);
+                if (item && item->data(Qt::UserRole).toString() == name) {
+                    img = item->data(kDbFullImageRole).value<QImage>();
+                    break;
+                }
+            }
+        }
+    } else {
+        img = QImage(path);
+    }
     if (img.isNull()) {
         m_previewLabel->clearPreview();
         m_previewLabel->setText(tr("Preview"));
         return;
     }
-    m_previewLabel->setPreviewImage(img, kThumbSize);
+    m_previewLabel->setPreviewImage(img, ecvAICoreUi::previewSize());
 }
 
 void YOLODialog::onRun() {
@@ -951,6 +924,9 @@ void YOLODialog::setDbImages(const QList<DbImageEntry>& images) {
                     new QListWidgetItem(QIcon(QPixmap::fromImage(e.preview)),
                                         e.name, panel.dbImageList);
             item->setData(Qt::UserRole, e.name);
+            // Full-resolution image for the click-to-enlarge preview (the
+            // icon above is only a scaled thumbnail).
+            item->setData(kDbFullImageRole, e.preview);
         }
     }
 }

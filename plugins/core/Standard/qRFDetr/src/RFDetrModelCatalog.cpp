@@ -169,6 +169,37 @@ QRgb classColor(uint32_t classId) {
     return kPalette[classId % 20];
 }
 
+
+/* 3-tap separable Gaussian blur [1,2,1]/4 on a Grayscale8 QImage.
+ * Converts hard binary mask edges into a soft gradient so that
+ * bilinear upscaling (SmoothPixmapTransform) produces smooth
+ * boundaries instead of a staircase of per-pixel transitions. */
+static void gaussianBlurMask3(QImage& img) {
+    if (img.format() != QImage::Format_Grayscale8) return;
+    const int w = img.width(), h = img.height();
+    if (w <= 2 || h <= 2) return;
+    QImage tmp(w, h, QImage::Format_Grayscale8);
+    for (int y = 0; y < h; ++y) {
+        const uchar* s = img.constScanLine(y);
+        uchar* d = tmp.scanLine(y);
+        for (int x = 0; x < w; ++x) {
+            const int l = (x > 0) ? s[x - 1] : 0;
+            const int m = s[x];
+            const int r = (x < w - 1) ? s[x + 1] : 0;
+            d[x] = (uint8_t)((l + m * 2 + r) / 4);
+        }
+    }
+    for (int y = 0; y < h; ++y) {
+        uchar* d = img.scanLine(y);
+        for (int x = 0; x < w; ++x) {
+            const int t = (y > 0) ? tmp.constScanLine(y - 1)[x] : 0;
+            const int m = tmp.constScanLine(y)[x];
+            const int b = (y < h - 1) ? tmp.constScanLine(y + 1)[x] : 0;
+            d[x] = (uint8_t)((t + m * 2 + b) / 4);
+        }
+    }
+}
+
 void drawDetections(QImage* image,
                     const QVector<RFDetrDetection>& detections,
                     float maskAlpha,
@@ -186,34 +217,52 @@ void drawDetections(QImage* image,
 
     QPainter p(image);
     p.setRenderHint(QPainter::Antialiasing, false);
+    // Smooth (bilinear) interpolation for the low-resolution mask → full-res
+    // stretch so segmentation edges are anti-aliased instead of jagged.
+    p.setRenderHint(QPainter::SmoothPixmapTransform, true);
 
-    // Pass 1: tint masked regions (segmentation models). Masks are stored at
-    // model resolution (e.g. 640x640 — the AICore postprocess no longer
-    // upsamples them; the preprocess stretches the input the same way).
-    // Raw mask bytes are wrapped as a zero-copy Grayscale8 view (no PNG
-    // decode), then tinted and let QPainter scale to the frame: one
-    // SIMD-optimized blit per detection replaces both the full-frame
-    // per-pixel C++ loop and the unsafe scanLine() writes while the painter
-    // is active (undefined behavior).
+    // Pass 1: tint masked regions (segmentation models).  All detections'
+    // masks are accumulated into a single composite image at the mask
+    // resolution (640x640) and then stretched to the frame with one
+    // SIMD/hardware blit, instead of N separate drawImage calls (one per
+    // detection).  Proportional alpha from the Gaussian-blurred mask
+    // replaces the old binary threshold (>= 128 : tintRgb : 0) so the
+    // blur's soft gradient is preserved through the bilinear upscale.
+    QImage composite;
     for (const RFDetrDetection& d : detections) {
         if (d.maskRaw.isEmpty() || d.maskWidth <= 0 || d.maskHeight <= 0)
             continue;
-        const QImage mask(reinterpret_cast<const uchar*>(d.maskRaw.constData()),
-                          d.maskWidth, d.maskHeight, d.maskWidth,
-                          QImage::Format_Grayscale8);
+        QImage mask(d.maskWidth, d.maskHeight, QImage::Format_Grayscale8);
+        std::memcpy(mask.bits(), d.maskRaw.constData(),
+                    static_cast<size_t>(d.maskWidth) * d.maskHeight);
         if (mask.isNull()) continue;
+        gaussianBlurMask3(mask);
 
-        QImage tinted(mask.size(), QImage::Format_ARGB32_Premultiplied);
+        if (composite.isNull()) {
+            composite = QImage(mask.size(),
+                               QImage::Format_ARGB32_Premultiplied);
+            composite.fill(Qt::transparent);
+        }
         const QRgb tintRgb = QColor(classColor(d.classId)).rgba();
+        const QRgb tintPre = QColor(classColor(d.classId)).rgb();  // r,g,b only
         for (int y = 0; y < mask.height(); ++y) {
             const uchar* mrow = mask.constScanLine(y);
-            QRgb* trow = reinterpret_cast<QRgb*>(tinted.scanLine(y));
+            QRgb* crow = reinterpret_cast<QRgb*>(composite.scanLine(y));
             for (int x = 0; x < mask.width(); ++x) {
-                trow[x] = mrow[x] >= 128 ? tintRgb : 0;
+                const int mv = mrow[x];
+                if (mv <= 1) continue;
+                if (mv > qAlpha(crow[x])) {
+                    crow[x] = qRgba(
+                            qRed(tintPre) * mv / 255,
+                            qGreen(tintPre) * mv / 255,
+                            qBlue(tintPre) * mv / 255, mv);
+                }
             }
         }
+    }
+    if (!composite.isNull()) {
         p.setOpacity(maskAlpha);
-        p.drawImage(QRect(0, 0, w, h), tinted);
+        p.drawImage(QRect(0, 0, w, h), composite);
         p.setOpacity(1.0);
     }
 

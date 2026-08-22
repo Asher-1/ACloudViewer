@@ -404,6 +404,34 @@ void RFDetrLiveWidget::onInferComplete(RFDetrLiveInferWorker::Result result) {
     repaintLivePreview();
 }
 
+/* 3-tap separable Gaussian blur [1,2,1]/4 on Grayscale8.
+ * Converts hard binary edges to a soft gradient for smooth bilinear upscale. */
+static void gaussianBlurMask3(QImage& img) {
+    if (img.format() != QImage::Format_Grayscale8) return;
+    const int w = img.width(), h = img.height();
+    if (w <= 2 || h <= 2) return;
+    QImage tmp(w, h, QImage::Format_Grayscale8);
+    for (int y = 0; y < h; ++y) {
+        const uchar* s = img.constScanLine(y);
+        uchar* d = tmp.scanLine(y);
+        for (int x = 0; x < w; ++x) {
+            const int l = (x > 0) ? s[x - 1] : 0;
+            const int m = s[x];
+            const int r = (x < w - 1) ? s[x + 1] : 0;
+            d[x] = (uint8_t)((l + m * 2 + r) / 4);
+        }
+    }
+    for (int y = 0; y < h; ++y) {
+        uchar* d = img.scanLine(y);
+        for (int x = 0; x < w; ++x) {
+            const int t = (y > 0) ? tmp.constScanLine(y - 1)[x] : 0;
+            const int m = tmp.constScanLine(y)[x];
+            const int b = (y < h - 1) ? tmp.constScanLine(y + 1)[x] : 0;
+            d[x] = (uint8_t)((t + m * 2 + b) / 4);
+        }
+    }
+}
+
 void RFDetrLiveWidget::rebuildOverlayLayer(const QSize& displaySize) {
     m_overlayLayer = QImage();
     if (m_overlayDetections.isEmpty() || m_overlaySourceSize.isEmpty() ||
@@ -423,29 +451,47 @@ void RFDetrLiveWidget::rebuildOverlayLayer(const QSize& displaySize) {
 
     QPainter p(&layer);
     p.setRenderHint(QPainter::Antialiasing, false);
+    // Smooth interpolation for the mask stretch (same as drawDetections).
+    p.setRenderHint(QPainter::SmoothPixmapTransform, true);
 
-    // Pass 1: mask tints — raw Grayscale8 masks wrapped zero-copy, tinted
-    // once per rebuild and stretched with a single SIMD blit per detection.
+    // Pass 1: mask tints — all detections accumulated into one composite
+    // at mask resolution, then stretched with a single blit (replaces N
+    // separate drawImage calls).  Proportional alpha from the Gaussian-
+    // blurred mask preserves the soft gradient through bilinear upscale.
+    QImage composite;
     for (const RFDetrDetection& d : m_overlayDetections) {
         if (d.maskRaw.isEmpty() || d.maskWidth <= 0 || d.maskHeight <= 0)
             continue;
-        const QImage mask(reinterpret_cast<const uchar*>(d.maskRaw.constData()),
-                          d.maskWidth, d.maskHeight, d.maskWidth,
-                          QImage::Format_Grayscale8);
+        QImage mask(d.maskWidth, d.maskHeight, QImage::Format_Grayscale8);
+        std::memcpy(mask.bits(), d.maskRaw.constData(),
+                    static_cast<size_t>(d.maskWidth) * d.maskHeight);
         if (mask.isNull()) continue;
+        gaussianBlurMask3(mask);
 
-        QImage tinted(mask.size(), QImage::Format_ARGB32_Premultiplied);
-        const QRgb tintRgb =
-                QColor(RFDetrHelpers::classColor(d.classId)).rgba();
+        if (composite.isNull()) {
+            composite = QImage(mask.size(),
+                               QImage::Format_ARGB32_Premultiplied);
+            composite.fill(Qt::transparent);
+        }
+        const QRgb tintPre = QColor(RFDetrHelpers::classColor(d.classId)).rgb();
         for (int y = 0; y < mask.height(); ++y) {
             const uchar* mrow = mask.constScanLine(y);
-            QRgb* trow = reinterpret_cast<QRgb*>(tinted.scanLine(y));
+            QRgb* crow = reinterpret_cast<QRgb*>(composite.scanLine(y));
             for (int x = 0; x < mask.width(); ++x) {
-                trow[x] = mrow[x] >= 128 ? tintRgb : 0;
+                const int mv = mrow[x];
+                if (mv <= 1) continue;
+                if (mv > qAlpha(crow[x])) {
+                    crow[x] = qRgba(
+                            qRed(tintPre) * mv / 255,
+                            qGreen(tintPre) * mv / 255,
+                            qBlue(tintPre) * mv / 255, mv);
+                }
             }
         }
+    }
+    if (!composite.isNull()) {
         p.setOpacity(0.3f);
-        p.drawImage(layer.rect(), tinted);
+        p.drawImage(layer.rect(), composite);
         p.setOpacity(1.0);
     }
 

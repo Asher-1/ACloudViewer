@@ -89,6 +89,7 @@ private slots:
 protected:
     void closeEvent(QCloseEvent* event) override;
     void changeEvent(QEvent* event) override;
+    void showEvent(QShowEvent* event) override;
 
 private:
     enum class PendingAction { None, Run, LiveStart };
@@ -155,4 +156,6 @@ private:
     TestDataTarget m_pendingTestDataTarget = TestDataTarget::None;
 
     QLabel* m_taskStatusLabel = nullptr;
+
+    bool m_firstShow = true;
 };

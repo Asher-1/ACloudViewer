@@ -563,6 +563,10 @@ set(_aicore_contract_targets
     test_aliked_capi_parity
     test_aliked_e2e_smoke
     test_deeplsd_capi_contract
+    test_facedetect_match_capi
+    test_facedetect_capi_contract
+    test_rfdetr_capi_contract
+    test_yolo_capi_contract
     test_rmbg_capi_contract
     test_rmbg_capi_performance
     test_yolo_capi_performance)
@@ -606,3 +610,116 @@ if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
     set_tests_properties(test_catalog_remote_assets PROPERTIES
         LABELS "catalog-remote" TIMEOUT 300)
 endif()
+
+# --- Fast tier: no GGUF assets (whitebox/common/gaussian units + capi
+# contract subset + catalog URL dump). Mirror entry point of
+# aicore-contract-tests so CI can address the tier by name. Whitebox targets
+# exist only when AICore_BUILD_WHITEBOX_TESTS=ON; keep the DEPENDS list to
+# targets present in this configuration, while ctest -LE runs every registered
+# fast test. When adding a new fast-tier test target, append it here, otherwise
+# ctest fails at runtime with a missing binary.
+set(_aicore_fast_targets
+    test_data_root
+    test_backend_registry
+    test_gguf_keys
+    test_path_util
+    test_compute_mode
+    test_backend
+    test_linalg
+    test_ggml_extend
+    test_winograd
+    test_reconstruct
+    test_loader
+    test_graph_blocks
+    test_image
+    test_pose
+    test_gaussian_path_util
+    test_facedetect_align
+    test_rfdetr_preprocess
+    test_rfdetr_two_stage_mask
+    test_yolo_unscale_masks
+    test_catalog_dump_urls)
+# The fast tier also runs the no-asset subset of the capi contract suite
+# (ctest -LE "model|gpu|e2e" selects them), so those binaries must exist too.
+list(APPEND _aicore_fast_targets ${_aicore_contract_targets})
+set(_aicore_fast_targets_existing)
+foreach(_t IN LISTS _aicore_fast_targets)
+    if(TARGET ${_t})
+        list(APPEND _aicore_fast_targets_existing ${_t})
+    endif()
+endforeach()
+add_custom_target(aicore-fast-tests
+    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -LE "model|gpu|e2e"
+            -j2
+            -C $<CONFIG>
+    DEPENDS ${_aicore_fast_targets_existing}
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMENT "Running AICore fast-tier tests (no GGUF assets)"
+    VERBATIM
+)
+
+# --- Model tier: needs GGUF assets (AICORE_TEST_ENABLE_MODEL_TESTS=ON +
+# asset root). Tests without assets skip (SKIP_RETURN_CODE 77), so this
+# target never fails on missing assets — it only executes them. Mirror of
+# the fast/contract entry points; the ctest -L "model" selection also covers
+# the two parity variants that reuse the test_aliked_capi_parity binary.
+set(_aicore_model_targets
+    test_dpt_blocks
+    test_rope2d
+    test_uv_posembed
+    test_quantize
+    test_quantize_accuracy
+    test_model_loader
+    test_cam_pose
+    test_preprocess
+    test_backbone
+    test_backbone_prepare
+    test_backbone_mv
+    test_backbone_mv4
+    test_backbone_metric
+    test_backbone_giant
+    test_backbone_da2
+    test_dpt_head
+    test_engine_depth
+    test_engine_depth_native
+    test_engine_pose
+    test_engine_mono
+    test_engine_mv
+    test_engine_metric
+    test_engine_da2
+    test_fused_depth
+    test_gs_head
+    test_gs_adapter
+    test_giant_depth_pose
+    test_head_rays
+    test_metric_head
+    test_nested_align
+    test_preprocess_real
+    test_ray_pose
+    test_parity
+    test_depth_capi_load
+    test_depth_capi_backend_parity
+    test_gaussian_capi_load
+    test_lightglue_aliked_e2e
+    test_aliked_capi_parity
+    test_aliked_e2e_smoke
+    test_deeplsd_capi_load
+    test_facedetect_embed_capi
+    test_facedetect_contexts_capi
+    test_rmbg_capi_performance
+    test_yolo_capi_performance)
+set(_aicore_model_targets_existing)
+foreach(_t IN LISTS _aicore_model_targets)
+    if(TARGET ${_t})
+        list(APPEND _aicore_model_targets_existing ${_t})
+    endif()
+endforeach()
+add_custom_target(aicore-model-tests
+    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -L "model"
+            -j1
+            -C $<CONFIG>
+    DEPENDS ${_aicore_model_targets_existing}
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMENT "Running AICore model-tier tests (skips without GGUF assets)"
+    VERBATIM
+)

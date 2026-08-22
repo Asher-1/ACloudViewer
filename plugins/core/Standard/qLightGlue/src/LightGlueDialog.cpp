@@ -9,6 +9,7 @@
 
 #include <CVLog.h>
 #include <cvFileDialog.h>
+#include "ecvAICoreUiHelper.h"
 
 #include <QCloseEvent>
 #include <QDir>
@@ -32,8 +33,6 @@
 static const char* kDownloadBase =
         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
         "LightGlue/";
-
-static const int kThumbSize = 72;
 
 namespace {
 
@@ -113,7 +112,7 @@ QString LightGlueDialog::formatFileSize(qint64 bytes) {
 
 LightGlueDialog::LightGlueDialog(QWidget* parent) : QDialog(parent) {
     setWindowTitle(tr("Feature Matching (LightGlue)"));
-    setMinimumWidth(720);
+    setMinimumSize(ecvAICoreUi::dpiScaled(720), 0);
     setupUi();
     m_downloader = new ecvModelDownloader(this);
     connect(m_downloader, &ecvModelDownloader::logMessage, this,
@@ -190,10 +189,10 @@ void LightGlueDialog::setAppInterface(ecvMainAppInterface* app) { m_app = app; }
 
 void LightGlueDialog::setupUi() {
     auto* mainLayout = new QVBoxLayout(this);
-    mainLayout->setSpacing(6);
+    ecvAICoreUi::setupTabLayout(mainLayout);
 
     auto* modeRow = new QHBoxLayout;
-    modeRow->addWidget(new QLabel(tr("Mode:")));
+    modeRow->addWidget(ecvAICoreUi::makeLabel(tr("Mode:")));
     m_modeCombo = new QComboBox;
     m_modeCombo->addItem(tr("Match two images"), static_cast<int>(Mode::Match));
     m_modeCombo->addItem(tr("Model Info"), static_cast<int>(Mode::ModelInfo));
@@ -202,21 +201,18 @@ void LightGlueDialog::setupUi() {
             this, &LightGlueDialog::onModeChanged);
     mainLayout->addLayout(modeRow);
 
-    auto* lgHint = new QLabel(
+    auto* lgHint = ecvAICoreUi::makeHintLabel(
             tr("Sparse local features + LightGlue GGML matcher. "
                "SIFT uses OpenCV RootSIFT; ALIKED uses AICore GGML extractor "
                "(download matching aliked-n16rot-*.gguf)."));
-    lgHint->setWordWrap(true);
-    lgHint->setStyleSheet("color: #555; font-size: 11px; padding: 2px 0;");
     mainLayout->addWidget(lgHint);
 
     auto* modelGroup = new QGroupBox(tr("Model & Runtime"));
     auto* modelLayout = new QGridLayout(modelGroup);
-    modelLayout->setHorizontalSpacing(8);
-    modelLayout->setVerticalSpacing(4);
+    ecvAICoreUi::setupFormGrid(modelLayout, 100);
     m_modelCombo = new QComboBox;
-    modelLayout->addWidget(new QLabel(tr("GGUF Model:")), 0, 0);
-    modelLayout->addWidget(m_modelCombo, 0, 1, 1, 2);
+    modelLayout->addWidget(ecvAICoreUi::makeLabel(tr("GGUF Model:")), 0, 0);
+    modelLayout->addWidget(m_modelCombo, 0, 1, 1, 3);
     connect(m_modelCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &LightGlueDialog::onModelComboChanged);
 
@@ -226,14 +222,13 @@ void LightGlueDialog::setupUi() {
     m_customModelPath = new QLineEdit;
     m_customModelPath->setPlaceholderText(tr("Path to custom .gguf file"));
     customLayout->addWidget(m_customModelPath, 1);
-    m_browseCustomModelBtn = new QPushButton(tr("Browse..."));
+    m_browseCustomModelBtn = ecvAICoreUi::makeBrowseBtn(tr("Browse..."));
     connect(m_browseCustomModelBtn, &QPushButton::clicked, this,
             &LightGlueDialog::onBrowseCustomModel);
     customLayout->addWidget(m_browseCustomModelBtn);
     m_customModelRow->setVisible(false);
     modelLayout->addWidget(m_customModelRow, 1, 0, 1, 3);
 
-    modelLayout->addWidget(new QLabel(tr("Device:")), 2, 0);
     m_deviceCombo = new QComboBox;
     for (int i = 0; i < aicore_device_count(); ++i) {
         if (const aicore_device_info* d = aicore_device_at(i)) {
@@ -241,28 +236,28 @@ void LightGlueDialog::setupUi() {
             if (d->is_default) m_deviceCombo->setCurrentIndex(i);
         }
     }
-    modelLayout->addWidget(m_deviceCombo, 2, 1);
-
-    modelLayout->addWidget(new QLabel(tr("Threads:")), 3, 0);
     m_threads = new QSpinBox;
     m_threads->setRange(0, 128);
     m_threads->setSpecialValueText(tr("Auto"));
-    modelLayout->addWidget(m_threads, 3, 1);
+    auto* runtimeRow = ecvAICoreUi::makeRuntimeRow(m_deviceCombo, m_threads);
+    modelLayout->addWidget(runtimeRow, 2, 0, 1, 4);
 
     m_minScoreRow = new QWidget;
     auto* minScoreLayout = new QHBoxLayout(m_minScoreRow);
     minScoreLayout->setContentsMargins(0, 0, 0, 0);
-    minScoreLayout->addWidget(new QLabel(tr("Min match score:")));
+    minScoreLayout->addWidget(ecvAICoreUi::makeLabel(tr("Min match score:")));
     m_minScore = new QDoubleSpinBox;
     m_minScore->setRange(0.0, 1.0);
     m_minScore->setSingleStep(0.05);
     m_minScore->setValue(0.5);
     m_minScore->setToolTip(
             tr("Filter exported matches by confidence score (0–1)."));
+    ecvAICoreUi::setCompactDoubleSpin(m_minScore);
     minScoreLayout->addWidget(m_minScore);
     minScoreLayout->addStretch();
-    modelLayout->addWidget(m_minScoreRow, 4, 0, 1, 2);
+    modelLayout->addWidget(m_minScoreRow, 3, 0, 1, 2);
 
+    ecvAICoreUi::tightenGroupBox(modelGroup);
     mainLayout->addWidget(modelGroup);
 
     auto* ioGroup = new QGroupBox(tr("Input Images"));
@@ -284,7 +279,9 @@ void LightGlueDialog::setupUi() {
         auto* slotLayout = new QVBoxLayout(slotGroup);
 
         m_slotPreview[slot] = new ecvClickableImageLabel;
-        m_slotPreview[slot]->setFixedSize(kThumbSize + 16, kThumbSize + 16);
+        m_slotPreview[slot]->setFixedSize(
+                ecvAICoreUi::slotPreviewSize() + ecvAICoreUi::dpiScaled(16),
+                ecvAICoreUi::slotPreviewSize() + ecvAICoreUi::dpiScaled(16));
         m_slotPreview[slot]->setFrameShape(QFrame::StyledPanel);
         m_slotPreview[slot]->setStyleSheet("background: #f4f4f4;");
         slotLayout->addWidget(ecvClickableImageLabel::wrapWithTapToPreviewHint(
@@ -356,7 +353,7 @@ void LightGlueDialog::setupUi() {
     m_filePoolList = new QListWidget;
     m_filePoolList->setSelectionMode(QAbstractItemView::SingleSelection);
     m_filePoolList->setMinimumHeight(100);
-    m_filePoolList->setMaximumHeight(140);
+    m_filePoolList->setMaximumHeight(ecvAICoreUi::filePoolMaxHeight());
     m_filePoolList->setToolTip(tr(
             "Images from Add Files / Load Folder. "
             "Select an entry, click → Image 1/2, or double-click to assign."));
@@ -368,21 +365,7 @@ void LightGlueDialog::setupUi() {
 
     auto* dbHeader = new QHBoxLayout;
     dbHeader->setContentsMargins(0, 4, 0, 0);
-    m_dbToggleBtn = new QToolButton;
-    m_dbToggleBtn->setArrowType(Qt::RightArrow);
-    m_dbToggleBtn->setCheckable(true);
-    m_dbToggleBtn->setChecked(false);
-    m_dbToggleBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    m_dbToggleBtn->setText(tr("DB Source Images (optional)"));
-    m_dbToggleBtn->setCursor(Qt::PointingHandCursor);
-    m_dbToggleBtn->setStyleSheet(
-            "QToolButton { border: none; font-weight: bold; padding: 4px 6px; "
-            "  border-radius: 3px; color: palette(text); }"
-            "QToolButton:hover { background: palette(midlight); }");
-    connect(m_dbToggleBtn, &QToolButton::toggled, this, [this](bool checked) {
-        m_dbToggleBtn->setArrowType(checked ? Qt::DownArrow : Qt::RightArrow);
-        m_dbContentWidget->setVisible(checked);
-    });
+    m_dbToggleBtn = ecvAICoreUi::makeDbSection(nullptr);
     dbHeader->addWidget(m_dbToggleBtn);
     dbHeader->addStretch();
     ioLayout->addLayout(dbHeader);
@@ -401,7 +384,7 @@ void LightGlueDialog::setupUi() {
     m_dbImageList = new QListWidget;
     m_dbImageList->setSelectionMode(QAbstractItemView::SingleSelection);
     m_dbImageList->setMinimumHeight(80);
-    m_dbImageList->setMaximumHeight(140);
+    m_dbImageList->setMaximumHeight(ecvAICoreUi::dbListMaxHeight());
     m_dbImageList->setAlternatingRowColors(true);
     m_dbImageList->setToolTip(
             tr("ccImage entities from the DB tree (match outputs are hidden). "
@@ -417,6 +400,7 @@ void LightGlueDialog::setupUi() {
 
     m_dbContentWidget->setVisible(false);
     ioLayout->addWidget(m_dbContentWidget);
+    ecvAICoreUi::connectDbToggle(m_dbToggleBtn, m_dbContentWidget);
 
     m_imageStatusLabel = new QLabel;
     m_imageStatusLabel->setStyleSheet("font-weight: bold;");
@@ -429,31 +413,18 @@ void LightGlueDialog::setupUi() {
 
     mainLayout->addWidget(ioGroup);
 
-    m_downloadLabel = new QLabel;
-    m_downloadLabel->setVisible(false);
-    mainLayout->addWidget(m_downloadLabel);
+    ecvAICoreUi::setupProgressSection(mainLayout, m_downloadLabel, m_progress);
 
     m_taskStatusLabel = new QLabel;
     m_taskStatusLabel->setVisible(false);
     m_taskStatusLabel->setStyleSheet("font-weight: bold; color: #0066aa;");
     mainLayout->addWidget(m_taskStatusLabel);
 
-    m_progress = new QProgressBar;
-    m_progress->setRange(0, 100);
-    mainLayout->addWidget(m_progress);
-
     auto* actionRow = new QHBoxLayout;
-    m_useTestDataBtn = new QPushButton(tr("\U0001f9ea  Try sample data"));
+    m_useTestDataBtn = ecvAICoreUi::makeSampleDataBtn(this);
     m_useTestDataBtn->setToolTip(
             tr("Load Monstree multi-view test images for matching.\n"
                "Downloads on first use, then cached locally."));
-    // Prominent teal accent — consistent with qFreeSplatter / qFaceDetect.
-    m_useTestDataBtn->setStyleSheet(
-            "QPushButton { background: #00897b; color: white; font-weight: "
-            "bold; border: none; border-radius: 4px; padding: 5px 12px; }"
-            "QPushButton:hover { background: #00796b; }"
-            "QPushButton:pressed { background: #00695c; }"
-            "QPushButton:disabled { background: #b2dfdb; color: #e0f2f1; }");
     connect(m_useTestDataBtn, &QPushButton::clicked, this,
             &LightGlueDialog::onUseTestData);
     actionRow->addWidget(m_useTestDataBtn);
@@ -674,7 +645,7 @@ void LightGlueDialog::refreshSlotWidgets() {
         const QImage img = previewForPath(path);
         if (!img.isNull()) {
             m_slotPreview[slot]->setText(QString());
-            m_slotPreview[slot]->setPreviewImage(img, kThumbSize);
+            m_slotPreview[slot]->setPreviewImage(img, ecvAICoreUi::slotPreviewSize());
         } else {
             m_slotPreview[slot]->clearPreview();
             m_slotPreview[slot]->setText("?");
@@ -1115,6 +1086,7 @@ void LightGlueDialog::startAlikedExtractorDownload(
     m_downloadTargetFilename = extractorFilename;
     m_downloadLabel->setText(tr("Downloading %1 ...").arg(extractorFilename));
     m_downloadLabel->setVisible(true);
+    m_progress->setVisible(true);
     m_progress->setValue(0);
     updateRunButtonState();
 
@@ -1257,6 +1229,7 @@ void LightGlueDialog::startDownload(const LightGlueBuiltinModel& model) {
     m_downloadTargetFilename = model.filename;
     m_downloadLabel->setText(tr("Downloading %1 ...").arg(model.filename));
     m_downloadLabel->setVisible(true);
+    m_progress->setVisible(true);
     m_progress->setValue(0);
     updateRunButtonState();
 
@@ -1289,11 +1262,13 @@ void LightGlueDialog::setRunning(bool running) {
             m_taskStatusLabel->setText(tr("Starting..."));
             m_taskStatusLabel->setVisible(true);
         }
+        m_progress->setVisible(true);
         m_progress->setRange(0, 100);
         m_progress->setValue(0);
     } else if (m_taskStatusLabel) {
         m_taskStatusLabel->clear();
         m_taskStatusLabel->setVisible(false);
+        m_progress->setVisible(false);
     }
     updateRunButtonState();
     if (m_modeCombo) {
@@ -1305,6 +1280,7 @@ void LightGlueDialog::setTaskStage(const QString& stage, int percent) {
     if (!m_taskStatusLabel) return;
     m_taskStatusLabel->setText(stage);
     m_taskStatusLabel->setVisible(true);
+    m_progress->setVisible(true);
     if (percent >= 0) {
         m_progress->setRange(0, 100);
         m_progress->setValue(percent);

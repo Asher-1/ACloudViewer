@@ -33,16 +33,11 @@ protected:
                 const int margin = 48;
                 const int availW = std::max(1, dlg->width() - margin);
                 const int availH = std::max(1, dlg->height() - margin);
-                QImage scaled;
-                if (m_image.width() <= availW &&
-                    m_image.height() <= availH) {
-                    scaled = m_image;
-                } else {
-                    scaled = m_image.scaled(availW, availH,
-                                            Qt::KeepAspectRatio,
-                                            Qt::SmoothTransformation);
-                }
-                m_label->setPixmap(QPixmap::fromImage(scaled));
+                // Always rescale to fit the window (even when the source
+                // image is smaller), so the preview tracks resizes both ways
+                m_label->setPixmap(QPixmap::fromImage(
+                        m_image.scaled(availW, availH, Qt::KeepAspectRatio,
+                                       Qt::SmoothTransformation)));
             }
         }
         return QObject::eventFilter(obj, event);

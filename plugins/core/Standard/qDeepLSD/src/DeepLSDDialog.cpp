@@ -9,6 +9,7 @@
 
 #include <CVLog.h>
 #include <cvFileDialog.h>
+#include "ecvAICoreUiHelper.h"
 
 #include <QCloseEvent>
 #include <QDir>
@@ -29,23 +30,8 @@ static const char* kDownloadBase =
 
 namespace {
 
-const int kThumbSize = 96;
-// QListWidgetItem data role carrying the full-resolution ccImage for the
-// click-to-enlarge preview (the 48 px icon is only for list display).
 constexpr int kDbFullImageRole = Qt::UserRole + 1;
 constexpr const char* kDeepLSDTestImage = "deeplsd_examples.jpg";
-
-// Prominent teal accent shared by the other AI plugins (qYOLO / qRMBG /
-// qRFDetr / qLightGlue): the sample-data action is a primary affordance,
-// not a secondary path-row button.
-void styleSampleDataButton(QPushButton* button) {
-    button->setStyleSheet(
-            "QPushButton { background: #00897b; color: white; font-weight: "
-            "bold; border: none; border-radius: 4px; padding: 5px 12px; }"
-            "QPushButton:hover { background: #00796b; }"
-            "QPushButton:pressed { background: #00695c; }"
-            "QPushButton:disabled { background: #b2dfdb; color: #e0f2f1; }");
-}
 
 bool isSupportedImageFile(const QString& filePath) {
     static const QStringList extensions = {
@@ -96,7 +82,7 @@ QString DeepLSDDialog::modelCacheDir() {
 
 DeepLSDDialog::DeepLSDDialog(QWidget* parent) : QDialog(parent) {
     setWindowTitle(tr("DeepLSD Line Extraction"));
-    setMinimumWidth(720);
+    setMinimumSize(ecvAICoreUi::dpiScaled(720), 0);
     setupUi();
     m_downloader = new ecvModelDownloader(this);
     connect(m_downloader, &ecvModelDownloader::logMessage, this,
@@ -193,12 +179,15 @@ void DeepLSDDialog::setAppInterface(ecvMainAppInterface* app) { m_app = app; }
 
 void DeepLSDDialog::setupUi() {
     auto* main = new QVBoxLayout(this);
+    ecvAICoreUi::setupTabLayout(main);
 
     auto* modelGroup = new QGroupBox(tr("Model"));
     auto* modelLayout = new QGridLayout(modelGroup);
+    ecvAICoreUi::setupFormGrid(modelLayout, 92);
+
     m_modelCombo = new QComboBox;
-    modelLayout->addWidget(new QLabel(tr("GGUF:")), 0, 0);
-    modelLayout->addWidget(m_modelCombo, 0, 1);
+    modelLayout->addWidget(ecvAICoreUi::makeLabel(tr("GGUF:")), 0, 0);
+    modelLayout->addWidget(m_modelCombo, 0, 1, 1, 3);
     connect(m_modelCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &DeepLSDDialog::onModelComboChanged);
 
@@ -207,18 +196,20 @@ void DeepLSDDialog::setupUi() {
     m_variantHintLabel->setStyleSheet(
             "color: #333; background: #eef4fb; border: 1px solid #b8d4f0; "
             "padding: 6px; border-radius: 4px; font-size: 11px;");
-    modelLayout->addWidget(m_variantHintLabel, 1, 0, 1, 2);
+    modelLayout->addWidget(m_variantHintLabel, 1, 0, 1, 4);
 
     m_customModelRow = new QWidget;
     auto* customLayout = new QHBoxLayout(m_customModelRow);
+    customLayout->setContentsMargins(0, 0, 0, 0);
+    customLayout->setSpacing(ecvAICoreUi::hSpacing());
     m_customModelPath = new QLineEdit;
-    auto* browseModel = new QPushButton(tr("Browse..."));
+    auto* browseModel = ecvAICoreUi::makeBrowseBtn(tr("Browse..."));
     connect(browseModel, &QPushButton::clicked, this,
             &DeepLSDDialog::onBrowseCustomModel);
     customLayout->addWidget(m_customModelPath, 1);
     customLayout->addWidget(browseModel);
     m_customModelRow->setVisible(false);
-    modelLayout->addWidget(m_customModelRow, 2, 0, 1, 2);
+    modelLayout->addWidget(m_customModelRow, 2, 0, 1, 4);
 
     m_deviceCombo = new QComboBox;
     for (int i = 0; i < aicore_device_count(); ++i) {
@@ -227,29 +218,35 @@ void DeepLSDDialog::setupUi() {
             if (d->is_default) m_deviceCombo->setCurrentIndex(i);
         }
     }
-    modelLayout->addWidget(new QLabel(tr("Device:")), 3, 0);
-    modelLayout->addWidget(m_deviceCombo, 3, 1);
 
     m_threads = new QSpinBox;
     m_threads->setRange(0, 128);
     m_threads->setSpecialValueText(tr("Auto"));
-    modelLayout->addWidget(new QLabel(tr("Threads:")), 4, 0);
-    modelLayout->addWidget(m_threads, 4, 1);
+
+    auto* runtimeRow = ecvAICoreUi::makeRuntimeRow(m_deviceCombo, m_threads);
+    modelLayout->addWidget(runtimeRow, 3, 0, 1, 4);
 
     m_minSegmentScore = new QDoubleSpinBox;
     m_minSegmentScore->setRange(0.0, 1.0);
     m_minSegmentScore->setSingleStep(0.05);
     m_minSegmentScore->setValue(0.15);
+    ecvAICoreUi::setCompactDoubleSpin(m_minSegmentScore);
     m_minSegmentScore->setToolTip(
-            tr("Filter by LSD segment quality (-log10 NFA), mapped to 0–1. "
-               "Higher = more significant line (typical 0.1–0.5)."));
-    modelLayout->addWidget(new QLabel(tr("Min segment quality:")), 5, 0);
-    modelLayout->addWidget(m_minSegmentScore, 5, 1);
+            tr("Filter by LSD segment quality (-log10 NFA), mapped to 0\u20131. "
+               "Higher = more significant line (typical 0.1\u20130.5)."));
+    modelLayout->addWidget(ecvAICoreUi::makeLabel(tr("Min segment quality:")), 4, 0);
+    modelLayout->addWidget(m_minSegmentScore, 4, 1);
+
+    ecvAICoreUi::tightenGroupBox(modelGroup);
     main->addWidget(modelGroup);
 
     auto* ioGroup = new QGroupBox(tr("Input"));
     auto* ioLayout = new QVBoxLayout(ioGroup);
+    ioLayout->setContentsMargins(6, 4, 6, 4);
+    ioLayout->setSpacing(ecvAICoreUi::vSpacing());
+
     auto* pathRow = new QHBoxLayout;
+    pathRow->setSpacing(ecvAICoreUi::hSpacing());
     m_imagePath = new QLineEdit;
     m_imagePath->setPlaceholderText(
             tr("Local image path, or db://EntityName from DB tree"));
@@ -258,7 +255,7 @@ void DeepLSDDialog::setupUi() {
                "QSettings."));
     connect(m_imagePath, &QLineEdit::textChanged, this,
             [this](const QString&) { updateImagePreview(); });
-    auto* browseImg = new QPushButton(tr("Browse..."));
+    auto* browseImg = ecvAICoreUi::makeBrowseBtn(tr("Browse..."));
     browseImg->setToolTip(
             tr("Pick an image file (last folder is remembered)."));
     connect(browseImg, &QPushButton::clicked, this,
@@ -268,7 +265,8 @@ void DeepLSDDialog::setupUi() {
     ioLayout->addLayout(pathRow);
 
     m_previewLabel = new ecvClickableImageLabel;
-    m_previewLabel->setFixedSize(kThumbSize, kThumbSize);
+    const int ps = ecvAICoreUi::previewSize();
+    m_previewLabel->setFixedSize(ps, ps);
     m_previewLabel->setStyleSheet(
             "border: 1px solid palette(mid); background: palette(base);");
     m_previewLabel->setText(tr("Preview"));
@@ -276,10 +274,8 @@ void DeepLSDDialog::setupUi() {
             ecvClickableImageLabel::wrapWithTapToPreviewHint(m_previewLabel));
 
     auto* dbHeader = new QHBoxLayout;
-    m_dbToggleBtn = new QToolButton;
-    m_dbToggleBtn->setArrowType(Qt::RightArrow);
-    m_dbToggleBtn->setCheckable(true);
-    m_dbToggleBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    dbHeader->setSpacing(ecvAICoreUi::hSpacing());
+    m_dbToggleBtn = ecvAICoreUi::makeDbSection(nullptr);
     m_dbToggleBtn->setText(tr("DB Source Images (optional)"));
     connect(m_dbToggleBtn, &QToolButton::toggled, this, [this](bool checked) {
         m_dbToggleBtn->setArrowType(checked ? Qt::DownArrow : Qt::RightArrow);
@@ -291,15 +287,17 @@ void DeepLSDDialog::setupUi() {
 
     m_dbContentWidget = new QWidget;
     auto* dbLayout = new QVBoxLayout(m_dbContentWidget);
+    dbLayout->setContentsMargins(0, 0, 0, 0);
+    dbLayout->setSpacing(ecvAICoreUi::tightVSpacing());
     m_dbImageList = new QListWidget;
-    m_dbImageList->setMinimumHeight(80);
-    m_dbImageList->setMaximumHeight(140);
+    m_dbImageList->setMaximumHeight(ecvAICoreUi::dbListMaxHeight());
     m_dbImageList->setToolTip(
             tr("Double-click a ccImage from the DB tree to use as input."));
     connect(m_dbImageList, &QListWidget::itemActivated, this,
             &DeepLSDDialog::onDbListActivated);
     dbLayout->addWidget(m_dbImageList);
     auto* refreshBtn = new QPushButton(tr("Refresh DB Images"));
+    refreshBtn->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     connect(refreshBtn, &QPushButton::clicked, this,
             &DeepLSDDialog::refreshDbImagesRequested);
     dbLayout->addWidget(refreshBtn);
@@ -329,18 +327,15 @@ void DeepLSDDialog::setupUi() {
                "(editable wireframe geometry, not ccPolyline)."));
     m_exportPolylinesCheck->setChecked(false);
     ioLayout->addWidget(m_exportPolylinesCheck);
+
+    ecvAICoreUi::tightenGroupBox(ioGroup);
     main->addWidget(ioGroup);
 
-    m_downloadLabel = new QLabel;
-    m_downloadLabel->setVisible(false);
-    main->addWidget(m_downloadLabel);
-
-    m_progress = new QProgressBar;
-    main->addWidget(m_progress);
+    ecvAICoreUi::setupProgressSection(main, m_downloadLabel, m_progress);
 
     auto* btnRow = new QHBoxLayout;
-    m_testDataBtn = new QPushButton(tr("\U0001f9ea  Try sample data"));
-    styleSampleDataButton(m_testDataBtn);
+    btnRow->setSpacing(ecvAICoreUi::hSpacing());
+    m_testDataBtn = ecvAICoreUi::makeSampleDataBtn(this);
     m_testDataBtn->setToolTip(
             tr("Load deeplsd_examples.jpg from the shared test-data cache"));
     connect(m_testDataBtn, &QPushButton::clicked, this,
@@ -355,9 +350,7 @@ void DeepLSDDialog::setupUi() {
     btnRow->addWidget(m_runBtn);
     btnRow->addWidget(m_cancelBtn);
     main->addLayout(btnRow);
-}
-
-void DeepLSDDialog::populateModelCombo(const QString& keepFilename) {
+}void DeepLSDDialog::populateModelCombo(const QString& keepFilename) {
     const QString cache = modelCacheDir();
     QString selected = keepFilename;
     if (selected.isEmpty() && m_modelCombo && m_modelCombo->count() > 0) {
@@ -546,14 +539,14 @@ void DeepLSDDialog::updateImagePreview() {
                 if (full.canConvert<QImage>()) {
                     const QImage fullImg = full.value<QImage>();
                     if (!fullImg.isNull()) {
-                        m_previewLabel->setPreviewImage(fullImg, kThumbSize);
+                        m_previewLabel->setPreviewImage(fullImg, ecvAICoreUi::previewSize());
                         return;
                     }
                 }
                 const QIcon icon = m_dbImageList->item(i)->icon();
                 if (!icon.isNull()) {
                     m_previewLabel->setPreviewPixmap(
-                            icon.pixmap(kThumbSize, kThumbSize), kThumbSize);
+                            icon.pixmap(ecvAICoreUi::previewSize(), ecvAICoreUi::previewSize()), ecvAICoreUi::previewSize());
                     return;
                 }
             }
@@ -573,7 +566,7 @@ void DeepLSDDialog::updateImagePreview() {
         m_previewLabel->setText(tr("?"));
         return;
     }
-    m_previewLabel->setPreviewImage(img, kThumbSize);
+    m_previewLabel->setPreviewImage(img, ecvAICoreUi::previewSize());
 }
 
 void DeepLSDDialog::onBrowseImage() {
@@ -609,7 +602,7 @@ void DeepLSDDialog::onModelComboChanged(int index) {
     QString variantHint;
     if (data.contains(QStringLiteral("wireframe"), Qt::CaseInsensitive)) {
         variantHint =
-                tr("Wireframe model — trained on indoor/wireframe scenes "
+                tr("Wireframe model \u2014 trained on indoor/wireframe scenes "
                    "(synthetic "
                    "wireframe + ScanNet). Best for structured indoor geometry, "
                    "CAD-like "
@@ -619,7 +612,7 @@ void DeepLSDDialog::onModelComboChanged(int index) {
                data.contains(QStringLiteral("megadepth"),
                              Qt::CaseInsensitive)) {
         variantHint = tr(
-                "MegaDepth (md) model — trained on outdoor phototourism "
+                "MegaDepth (md) model \u2014 trained on outdoor phototourism "
                 "(MegaDepth). "
                 "Best for natural scenes, facades, and general outdoor/street "
                 "photography.");
@@ -627,11 +620,11 @@ void DeepLSDDialog::onModelComboChanged(int index) {
         const QString path = m_customModelPath->text();
         if (path.contains(QStringLiteral("wireframe"), Qt::CaseInsensitive)) {
             variantHint =
-                    tr("Custom wireframe checkpoint — prefer indoor/man-made "
+                    tr("Custom wireframe checkpoint \u2014 prefer indoor/man-made "
                        "scenes.");
         } else if (path.contains(QStringLiteral("_md"), Qt::CaseInsensitive)) {
             variantHint =
-                    tr("Custom MegaDepth checkpoint — prefer outdoor/natural "
+                    tr("Custom MegaDepth checkpoint \u2014 prefer outdoor/natural "
                        "scenes.");
         } else {
             variantHint =

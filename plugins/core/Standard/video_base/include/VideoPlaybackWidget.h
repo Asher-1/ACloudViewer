@@ -115,6 +115,12 @@ signals:
     void streamError(const QString& error);
     void logMessage(const QString& message);
 
+    // Emitted when the seek/speed controls row is shown or hidden (video
+    // loaded / source switched).  Host dialogs that size themselves to the
+    // content (e.g. qFaceDetect's fixed-height tab) must re-measure so the
+    // new row is never squeezed into the preview area.
+    void videoControlsVisibilityChanged(bool visible);
+
 protected:
     // ---- Subclass hooks (all invoked on the GUI thread) -------------------
 
@@ -209,6 +215,12 @@ private:
     void resizeEvent(QResizeEvent* event) override;
     void showEvent(QShowEvent* event) override;
     bool eventFilter(QObject* obj, QEvent* event) override;
+
+    // Refreshes the preview's height bounds so it follows the widget size
+    // (16:9 width target, capped by the available height).  Fixed-height
+    // callers keep a hard minimum (their hosts re-measure on content
+    // growth); adaptive mode claims the 16:9 target inside a scroll area.
+    void updatePreviewHeightCap();
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
     cv::VideoCapture m_previewCapture;  // independent decode path for

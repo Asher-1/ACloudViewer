@@ -127,6 +127,9 @@ private slots:
     void reloadRegistry();
     void filterRegistry(const QString& text);
 
+    // Async GGML detection result arrived on the GUI thread.
+    void onAsyncDetectFinished();
+
 protected:
     // ---- video_base hooks -------------------------------------------------
     void onFrameDecoded(cv::Mat& frame, int frameIndex) override;
@@ -213,6 +216,13 @@ private:
     void drawOverlay(QImage& image, const cv::Rect& faceRect);
     void drawAngleGuide(QImage& image, CaptureAngle angle);
 
+    // Process detection result (face rect, consecutive counter, auto-capture
+    // logic); shared by sync (OpenCV) and async (GGML watcher) paths.
+    void processDetectResult(const cv::Rect& faceRect,
+                             const cv::Mat& sourceFrame,
+                             int frameIndex,
+                             bool freshDetection);
+
     cv::CascadeClassifier m_faceCascade;
     cv::Rect m_lastFaceRect;
     cv::Mat m_lastDetectedFrame;
@@ -245,6 +255,13 @@ private:
     std::vector<RegistryIdentity> m_registryIdentities;
 #ifdef HAS_OPENCV_FACE_CAPTURE
     std::vector<IdentityTrack> m_identityTracks;
+
+    // Async GGML detection: inference runs on a thread pool so the GUI
+    // thread (and display timer) is never blocked.
+    QFutureWatcher<std::vector<ScoredFace>>* m_detectWatcher = nullptr;
+    QAtomicInt m_detectPendingFrame{-1};  // frame index, -1 = idle
+    int m_pendingDetectFrameNum = -1;     // frame index for the pending job
+    cv::Mat m_asyncPendingFrame;          // frame copy for the pending job
 #endif
 
     ecvModelDownloader* m_downloader = nullptr;

@@ -11,6 +11,8 @@
 #include <QComboBox>
 #include <QDialog>
 #include <QFile>
+#include <QGroupBox>
+#include <QImage>
 #include <QLabel>
 #include <QLineEdit>
 #include <QProgressBar>
@@ -30,6 +32,11 @@ struct DA3BuiltinModel {
     QString displayName;
     QString filename;
     QString downloadUrl;
+};
+
+struct DA3DbImageEntry {
+    QString name;
+    QImage preview;  // full-resolution image for the enlarged preview
 };
 
 class DA3Dialog : public QDialog {
@@ -74,7 +81,7 @@ public:
     void setRunning(bool running);
     void enableExportButtons(bool hasResults);
 
-    void setDbImages(const QStringList& imageNames);
+    void setDbImages(const QList<DA3DbImageEntry>& images);
     // Select the first matching entry in the DB combo (single-image
     // dialog) from a DB tree selection.
     void applyDbTreeSelection(const QStringList& imageNames);
@@ -153,7 +160,7 @@ private:
     QWidget* m_dbContentWidget = nullptr;
     QComboBox* m_dbImageCombo = nullptr;
 
-    QWidget* m_quantGroup = nullptr;
+    QGroupBox* m_quantGroup = nullptr;
     QLineEdit* m_quantInput = nullptr;
     QLineEdit* m_quantOutput = nullptr;
     QComboBox* m_quantType = nullptr;

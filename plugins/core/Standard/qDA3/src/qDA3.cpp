@@ -89,16 +89,21 @@ void qDA3::refreshDbImages() {
     ccHObject::Container images;
     root->filterChildren(images, true, CV_TYPES::IMAGE, false);
 
-    QStringList names;
+    QList<DA3DbImageEntry> entries;
     for (ccHObject* obj : images) {
         if (!obj || !obj->isEnabled()) continue;
         ccImage* img = dynamic_cast<ccImage*>(obj);
         // Skip images without pixel data — selecting an empty ccImage
         // would fail at inference time with a confusing error.
         if (!img || img->data().isNull()) continue;
-        names.append(obj->getName());
+        DA3DbImageEntry entry;
+        entry.name = obj->getName();
+        // Full-resolution image so the dialog's click-to-enlarge preview
+        // works for DB-tree inputs.
+        entry.preview = img->data();
+        entries.append(entry);
     }
-    m_dialog->setDbImages(names);
+    m_dialog->setDbImages(entries);
 }
 
 ccImage* qDA3::findDbImage(const QString& name) const {

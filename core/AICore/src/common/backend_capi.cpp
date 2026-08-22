@@ -313,8 +313,20 @@ AICORE_CAPI int aicore_device_available(const char* device) {
 }
 
 AICORE_CAPI unsigned int aicore_device_capabilities(const char* device) {
-    if (!has_device(device)) return 0;
-    const std::string backend = resolved_backend_id(device);
+    const std::string requested =
+            ggml_common::to_lower(device && device[0] ? device : "auto");
+    std::string name;
+    int index = 0;
+    ggml_common::parse_device(requested, name, index);
+    // "gpu" / "auto" (and nullptr) fall back to cpu when no accelerator
+    // exists — same resolution as resolved_backend_id() — so the capability
+    // mask is never zero for a resolvable device name. Concrete backend names
+    // ("cuda", "vulkan", ...) keep their original semantics: 0 when absent.
+    if (name != "gpu" && name != "auto" && !name.empty() &&
+        !has_device(requested.c_str())) {
+        return 0;
+    }
+    const std::string backend = resolved_backend_id(requested.c_str());
     unsigned int caps =
             AICORE_BACKEND_CAP_COMPUTE | AICORE_BACKEND_CAP_TASK_CANCEL;
     if (backend != "cpu") {
