@@ -269,6 +269,18 @@ bool TrellisWorker::runInference() {
         std::memcpy(result.pbr.data(), pbr, sizeof(float) * nv * 6);
         result.hasPbr = true;
     }
+    // AI background-removal result: wrap the borrowed RGBA buffer in a QImage
+    // and detach with a deep copy, since the mesh (and its buffers) is freed
+    // right below. QImage::Format_RGBA8888 matches the pipeline's byte order.
+    if (aicore_trellis_mesh_has_rmbg(mesh)) {
+        const uint8_t* rgba = aicore_trellis_mesh_rmbg_rgba(mesh);
+        const int w = aicore_trellis_mesh_rmbg_w(mesh);
+        const int h = aicore_trellis_mesh_rmbg_h(mesh);
+        if (rgba && w > 0 && h > 0) {
+            QImage img(rgba, w, h, w * 4, QImage::Format_RGBA8888);
+            result.rmbgImage = img.copy();
+        }
+    }
     aicore_trellis_mesh_free(mesh);
 
     emit logMessage(QStringLiteral("[TRELLIS] Mesh %1 verts / %2 tris "

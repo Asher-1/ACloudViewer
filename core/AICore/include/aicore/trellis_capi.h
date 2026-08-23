@@ -212,6 +212,14 @@ AICORE_CAPI const float* aicore_trellis_mesh_grid_feats(
         const aicore_trellis_mesh* r);
 AICORE_CAPI const int* aicore_trellis_mesh_grid_coords(
         const aicore_trellis_mesh* r);
+/** AI background-removal result (RGBA, decoded-input resolution), present only
+ *  when an RMBG model was attached to the context and actually ran. Buffers
+ *  stay valid until aicore_trellis_mesh_free. */
+AICORE_CAPI int aicore_trellis_mesh_has_rmbg(const aicore_trellis_mesh* r);
+AICORE_CAPI const uint8_t* aicore_trellis_mesh_rmbg_rgba(
+        const aicore_trellis_mesh* r);
+AICORE_CAPI int aicore_trellis_mesh_rmbg_w(const aicore_trellis_mesh* r);
+AICORE_CAPI int aicore_trellis_mesh_rmbg_h(const aicore_trellis_mesh* r);
 AICORE_CAPI void aicore_trellis_mesh_free(aicore_trellis_mesh* r);
 
 /** Bake a mesh into a portable UV-atlas-textured GLB (glTF 2.0 binary):

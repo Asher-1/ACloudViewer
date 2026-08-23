@@ -8,6 +8,7 @@
 #include "qTrellis.h"
 
 #include <ecvGenericMesh.h>
+#include <ecvImage.h>
 #include <ecvMainAppInterface.h>
 #include <ecvMesh.h>
 #include <ecvPluginDbNaming.h>
@@ -194,13 +195,16 @@ void qTrellis::onWorkerProgress(int stage, int step, int total) {
             stageName = tr("generation");
             break;
     }
-    m_dialog->setProgressStage(stageName, step, total);
+    m_dialog->setProgressStage(stage, stageName, step, total);
 }
 
 void qTrellis::onResultReady(const TrellisRunResult& result) {
     if (!m_app) return;
     if (m_currentSettings.addResultToDb) {
         addResultToDb(result, m_currentSettings);
+    }
+    if (m_currentSettings.addRmbgImageToDb) {
+        addRmbgImageToDb(result, m_currentSettings);
     }
     if (!m_currentSettings.saveGlbDir.isEmpty()) {
         saveResultGlb(result, m_currentSettings, result.sourceImage);
@@ -324,6 +328,30 @@ void qTrellis::addResultToDb(const TrellisRunResult& result,
     m_app->addToDB(mesh);
     m_app->refreshAll();
     m_app->updateUI();
+}
+
+void qTrellis::addRmbgImageToDb(const TrellisRunResult& result,
+                                const TrellisDialog::Settings& settings) {
+    if (!m_app) return;
+    if (result.rmbgImage.isNull()) {
+        // Reached only when the AI matting did not run (no RMBG model loaded
+        // despite the option): the solid-color fallback has no matted image.
+        m_dialog->appendLog(tr("[TRELLIS] RMBG image unavailable: AI "
+                               "background removal did not run."));
+        return;
+    }
+    const QString sourceName = QFileInfo(result.sourceImage).completeBaseName();
+    const QString name = ecvPluginDbNaming::makeUnique(
+            QStringLiteral("TRELLIS_RMBG_%1").arg(sourceName), m_app);
+    auto* img = new ccImage(result.rmbgImage, name);
+    img->setMetaData(QStringLiteral("Source"), result.sourceImage);
+    img->setMetaData(QStringLiteral("Preset"), result.presetName);
+    img->setMetaData(QStringLiteral("Runtime (ms)"), result.totalRuntimeMs);
+    img->setMetaData(QStringLiteral("Backend"), result.backend);
+    m_app->addToDB(img, /*updateZoom=*/false, /*autoExpandDBTree=*/true,
+                   /*checkDimensions=*/false, /*autoRedraw=*/true);
+    m_dialog->appendLog(tr("[TRELLIS] Added RMBG image '%1' to DB tree.")
+                                .arg(name));
 }
 
 void qTrellis::saveResultGlb(const TrellisRunResult& result,

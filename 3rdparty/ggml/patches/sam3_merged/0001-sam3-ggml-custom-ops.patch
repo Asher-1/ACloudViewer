@@ -490,53 +490,6 @@ index 2ca42d9..a23dd4a 100644
  
      const cuda_t * src0_ptr = nullptr;
      const cuda_t * src1_ptr = nullptr;
-@@ -1509,16 +1510,16 @@ static void ggml_cuda_mul_mat_cublas_impl(ggml_backend_cuda_context & ctx, const
-     const void * beta = traits::get_beta();
- 
-     const int cc = ggml_cuda_info().devices[ctx.device].cc;
--    bool prefer_f32_output = false;
-+    bool prefer_f32_output = dst->type == GGML_TYPE_F32;
-     if (compute_type == GGML_TYPE_F16) {
-         // RMBG: prefer F16 inputs with FP32 accumulation/output on Ampere+ so the
-         // 10-bit FP16 mantissa matches TF32 precision while tensor cores run at
-         // the full FP16 rate instead of the GeForce TF32 rate (equal to FP32 CUDA
-         // cores). Parity against the FP32 reference stays within the 2e-3 gate.
--        prefer_f32_output = cc == GGML_CUDA_CC_VOLTA || cc >= GGML_CUDA_CC_AMPERE ||
--                            GGML_CUDA_CC_IS_RDNA4(cc) || GGML_CUDA_CC_IS_CDNA(cc);
-+        prefer_f32_output = prefer_f32_output && (cc == GGML_CUDA_CC_VOLTA || cc >= GGML_CUDA_CC_AMPERE ||
-+                            GGML_CUDA_CC_IS_RDNA4(cc) || GGML_CUDA_CC_IS_CDNA(cc));
-     } else if (compute_type == GGML_TYPE_BF16) {
--        prefer_f32_output = !GGML_CUDA_CC_IS_RDNA3(cc) && !GGML_CUDA_CC_IS_CDNA(cc);
-+        prefer_f32_output = prefer_f32_output && !GGML_CUDA_CC_IS_RDNA3(cc) && !GGML_CUDA_CC_IS_CDNA(cc);
-     }
- 
-     if (prefer_f32_output) {
-@@ -1531,9 +1532,13 @@ static void ggml_cuda_mul_mat_cublas_impl(ggml_backend_cuda_context & ctx, const
-         if constexpr (compute_type == GGML_TYPE_F32) {
-             dst_ptr = (char *) dst_ddf;  // Direct F32 output
-         } else {
--            dst_ptr = (char *) dst_temp.alloc(ne_dst);
--            nbd2 /= sizeof(float) / sizeof(cuda_t);
--            nbd3 /= sizeof(float) / sizeof(cuda_t);
-+            if (dst->type == compute_type) {
-+                dst_ptr = (char *) dst->data; // Direct low-precision output
-+            } else {
-+                dst_ptr = (char *) dst_temp.alloc(ne_dst);
-+                nbd2 /= sizeof(float) / sizeof(cuda_t);
-+                nbd3 /= sizeof(float) / sizeof(cuda_t);
-+            }
-         }
-     }
- 
-@@ -1620,7 +1625,7 @@ static void ggml_cuda_mul_mat_cublas_impl(ggml_backend_cuda_context & ctx, const
-     }
- 
-     // Convert output back to F32 if needed
--    if (cu_data_type != CUDA_R_32F) {
-+    if (dst->type == GGML_TYPE_F32 && cu_data_type != CUDA_R_32F) {
-         const to_fp32_cuda_t to_fp32_cuda = ggml_get_to_fp32_cuda(traits::ggml_type_val);
-         to_fp32_cuda(dst_temp.get(), dst_ddf, ne_dst, main_stream);
-     }
 @@ -2194,6 +2199,12 @@ static bool ggml_cuda_compute_forward(ggml_backend_cuda_context & ctx, struct gg
          case GGML_OP_CONCAT:
              ggml_cuda_op_concat(ctx, dst);

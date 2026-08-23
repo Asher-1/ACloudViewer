@@ -44,6 +44,8 @@ private:
                           QString* errorMsg);
     void addResultToDb(const TrellisRunResult& result,
                        const TrellisDialog::Settings& settings);
+    void addRmbgImageToDb(const TrellisRunResult& result,
+                          const TrellisDialog::Settings& settings);
     void saveResultGlb(const TrellisRunResult& result,
                        const TrellisDialog::Settings& settings,
                        const QString& sourceLabel);

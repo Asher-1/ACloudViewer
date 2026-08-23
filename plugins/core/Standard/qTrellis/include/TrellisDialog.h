@@ -46,6 +46,9 @@ public:
         bool useRmbg = false;
         bool textureEnabled = true;
         bool addResultToDb = true;
+        /** Export the AI background-removed image as a ccImage entity to the
+         *  DB tree (default off; requires useRmbg with a loaded RMBG model). */
+        bool addRmbgImageToDb = false;
         QString saveGlbDir;  // empty = do not write GLB files
     };
 
@@ -55,7 +58,8 @@ public:
     void setAppInterface(ecvMainAppInterface* app);
     Settings getSettings() const;
     void appendLog(const QString& msg);
-    void setProgressStage(const QString& stage, int step, int total);
+    void setProgressStage(int stageId, const QString& stage, int step,
+                          int total);
     void setRunning(bool running);
     void setImagePreview(const QImage& image);
     void refreshModelState();
@@ -122,6 +126,7 @@ private:
 
     // Output.
     QCheckBox* m_addToDbCheck = nullptr;
+    QCheckBox* m_addRmbgToDbCheck = nullptr;
     QLineEdit* m_saveGlbDir = nullptr;
 
     // Progress / log.

@@ -100,6 +100,10 @@ struct aicore_trellis_mesh {
     int grid_res = 0;
     std::vector<float> grid_feats;     // 7 * nvox dual-grid decode output
     std::vector<int32_t> grid_coords;  // 3 * nvox voxel indices
+    // Optional AI background-removal result (RGBA at decoded-input size);
+    // empty when no RMBG model ran.
+    std::vector<uint8_t> rmbg_rgba;
+    int rmbg_w = 0, rmbg_h = 0;
 };
 
 namespace {
@@ -837,6 +841,10 @@ aicore_trellis_mesh *aicore_trellis_generate(
         return nullptr;
     }
 #ifdef TRELLIS2_HAVE_RMBG
+    // AI background-removal result, carried out on the mesh for callers that
+    // want the matted image (e.g. DB-tree ccImage output). Kept only when the
+    // AI matting actually ran; the solid-color heuristic does not produce one.
+    std::vector<uint8_t> rmbg_rgba;
     if (p->rmbg) {
         uint8_t *rmbg_out = nullptr;
         int rmbg_out_len = 0;
@@ -850,6 +858,7 @@ aicore_trellis_mesh *aicore_trellis_generate(
         }
         src_rgba.assign(rmbg_out, rmbg_out + (size_t)rmbg_out_len);
         trellis2_rmbg_free_buffer(rmbg_out);
+        rmbg_rgba = src_rgba;
         background_mode = AICORE_TRELLIS_BG_KEEP;
     }
 #endif
@@ -914,6 +923,13 @@ aicore_trellis_mesh *aicore_trellis_generate(
     }
 
     auto *r = new aicore_trellis_mesh();
+#ifdef TRELLIS2_HAVE_RMBG
+    if (!rmbg_rgba.empty()) {
+        r->rmbg_rgba = std::move(rmbg_rgba);
+        r->rmbg_w = iw;
+        r->rmbg_h = ih;
+    }
+#endif
 
     if (pt == AICORE_TRELLIS_PIPE_COARSE) {
         // ── coarse path: marching cubes on the 64^3 occupancy ────────────────
@@ -1202,6 +1218,18 @@ const float *aicore_trellis_mesh_grid_feats(const aicore_trellis_mesh *r) {
 }
 const int *aicore_trellis_mesh_grid_coords(const aicore_trellis_mesh *r) {
     return (r && !r->grid_coords.empty()) ? r->grid_coords.data() : nullptr;
+}
+int aicore_trellis_mesh_has_rmbg(const aicore_trellis_mesh *r) {
+    return (r && !r->rmbg_rgba.empty()) ? 1 : 0;
+}
+const uint8_t *aicore_trellis_mesh_rmbg_rgba(const aicore_trellis_mesh *r) {
+    return (r && !r->rmbg_rgba.empty()) ? r->rmbg_rgba.data() : nullptr;
+}
+int aicore_trellis_mesh_rmbg_w(const aicore_trellis_mesh *r) {
+    return r ? r->rmbg_w : 0;
+}
+int aicore_trellis_mesh_rmbg_h(const aicore_trellis_mesh *r) {
+    return r ? r->rmbg_h : 0;
 }
 void aicore_trellis_mesh_free(aicore_trellis_mesh *r) { delete r; }
 

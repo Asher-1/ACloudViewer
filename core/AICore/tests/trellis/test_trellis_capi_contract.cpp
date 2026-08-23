@@ -54,6 +54,11 @@ int main() {
     AICORE_CHECK(aicore_trellis_caps(nullptr) == 0);
     AICORE_CHECK(aicore_trellis_backend(nullptr) != nullptr);
     AICORE_CHECK(std::strcmp(aicore_trellis_backend(nullptr), "none") == 0);
+    // RMBG-result accessors are null-safe and empty on a null mesh.
+    AICORE_CHECK(aicore_trellis_mesh_has_rmbg(nullptr) == 0);
+    AICORE_CHECK(aicore_trellis_mesh_rmbg_rgba(nullptr) == nullptr);
+    AICORE_CHECK(aicore_trellis_mesh_rmbg_w(nullptr) == 0);
+    AICORE_CHECK(aicore_trellis_mesh_rmbg_h(nullptr) == 0);
 
     // Options lifecycle + NULL no-ops.
     aicore_trellis_options* opts = aicore_trellis_options_new();

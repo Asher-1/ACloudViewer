@@ -163,6 +163,9 @@ void TrellisDialog::setupUi() {
     m_steps->setValue(0);
     m_steps->setSpecialValueText(tr("default (12)"));
     ecvAICoreUi::setCompactSpin(m_steps);
+    // The shared compact spin width (72 px) clips the "default (12)" special
+    // text, so widen the parameter spins to fit the full label.
+    m_steps->setFixedWidth(ecvAICoreUi::dpiScaled(112));
     paramLayout->addWidget(m_steps, 0, 1);
 
     paramLayout->addWidget(new QLabel(tr("Guidance:"), paramGroup), 0, 2);
@@ -173,6 +176,7 @@ void TrellisDialog::setupUi() {
     m_guidance->setValue(-1.0);
     m_guidance->setSpecialValueText(tr("default (7.5)"));
     ecvAICoreUi::setCompactDoubleSpin(m_guidance);
+    m_guidance->setFixedWidth(ecvAICoreUi::dpiScaled(112));
     paramLayout->addWidget(m_guidance, 0, 3);
 
     paramLayout->addWidget(new QLabel(tr("Texture steps:"), paramGroup), 1, 0);
@@ -181,6 +185,7 @@ void TrellisDialog::setupUi() {
     m_textureSteps->setValue(0);
     m_textureSteps->setSpecialValueText(tr("default (12)"));
     ecvAICoreUi::setCompactSpin(m_textureSteps);
+    m_textureSteps->setFixedWidth(ecvAICoreUi::dpiScaled(112));
     paramLayout->addWidget(m_textureSteps, 1, 1);
 
     paramLayout->addWidget(new QLabel(tr("Seed:"), paramGroup), 1, 2);
@@ -189,6 +194,7 @@ void TrellisDialog::setupUi() {
     m_seed->setValue(0);
     m_seed->setSpecialValueText(tr("random"));
     ecvAICoreUi::setCompactSpin(m_seed);
+    m_seed->setFixedWidth(ecvAICoreUi::dpiScaled(112));
     paramLayout->addWidget(m_seed, 1, 3);
     root->addWidget(paramGroup);
 
@@ -201,12 +207,19 @@ void TrellisDialog::setupUi() {
     m_addToDbCheck = new QCheckBox(tr("Add mesh to DB"), outputGroup);
     m_addToDbCheck->setChecked(true);
     outputLayout->addWidget(m_addToDbCheck, 0, 0, 1, 2);
-    outputLayout->addWidget(new QLabel(tr("Save GLB:"), outputGroup), 1, 0);
+    m_addRmbgToDbCheck =
+            new QCheckBox(tr("Add RMBG image to DB"), outputGroup);
+    m_addRmbgToDbCheck->setChecked(false);
+    m_addRmbgToDbCheck->setToolTip(
+            tr("Add the AI background-removed image as a ccImage entity to "
+               "the DB tree. Requires AI background removal above."));
+    outputLayout->addWidget(m_addRmbgToDbCheck, 1, 0, 1, 2);
+    outputLayout->addWidget(new QLabel(tr("Save GLB:"), outputGroup), 2, 0);
     m_saveGlbDir = new QLineEdit(outputGroup);
     m_saveGlbDir->setPlaceholderText(tr("(empty = skip GLB export)"));
     auto* browseGlb = ecvAICoreUi::makeBrowseBtn(tr("Browse..."), outputGroup);
-    outputLayout->addWidget(m_saveGlbDir, 1, 1);
-    outputLayout->addWidget(browseGlb, 1, 2);
+    outputLayout->addWidget(m_saveGlbDir, 2, 1);
+    outputLayout->addWidget(browseGlb, 2, 2);
     root->addWidget(outputGroup);
 
     // ── Progress / log ───────────────────────────────────────────────────
@@ -235,6 +248,10 @@ void TrellisDialog::setupUi() {
             &TrellisDialog::updateModelStatus);
     connect(m_textureCheck, &QCheckBox::toggled, this,
             &TrellisDialog::updateModelStatus);
+    // The RMBG-image output depends on the AI matting actually running; keep
+    // it disabled while the RMBG switch is off.
+    connect(m_rmbgCheck, &QCheckBox::toggled, this,
+            [this](bool on) { m_addRmbgToDbCheck->setEnabled(on); });
     connect(m_downloadBtn, &QPushButton::clicked, this,
             &TrellisDialog::onDownloadModels);
     connect(runBtn, &QPushButton::clicked, this, &TrellisDialog::onRun);
@@ -342,6 +359,10 @@ void TrellisDialog::loadSettings() {
     }
     m_textureCheck->setChecked(settings.value("textureEnabled", true).toBool());
     m_rmbgCheck->setChecked(settings.value("useRmbg", true).toBool());
+    // Restore after useRmbg so the toggled-handler keeps the output checkbox
+    // enabled only when AI matting is on.
+    m_addRmbgToDbCheck->setChecked(
+            settings.value("addRmbgImageToDb", false).toBool());
     m_steps->setValue(settings.value("steps", 0).toInt());
     m_guidance->setValue(settings.value("guidance", -1.0).toDouble());
     m_textureSteps->setValue(settings.value("textureSteps", 0).toInt());
@@ -363,6 +384,7 @@ void TrellisDialog::saveSettings() const {
     settings.setValue("presetIndex", m_presetCombo->currentIndex());
     settings.setValue("textureEnabled", m_textureCheck->isChecked());
     settings.setValue("useRmbg", m_rmbgCheck->isChecked());
+    settings.setValue("addRmbgImageToDb", m_addRmbgToDbCheck->isChecked());
     settings.setValue("steps", m_steps->value());
     settings.setValue("guidance", m_guidance->value());
     settings.setValue("textureSteps", m_textureSteps->value());
@@ -392,6 +414,7 @@ TrellisDialog::Settings TrellisDialog::getSettings() const {
     s.useRmbg = m_rmbgCheck->isChecked();
     s.textureEnabled = m_textureCheck->isChecked();
     s.addResultToDb = m_addToDbCheck->isChecked();
+    s.addRmbgImageToDb = m_addRmbgToDbCheck->isChecked();
     s.saveGlbDir = m_saveGlbDir->text().trimmed();
     s.pipelineType =
             m_presetCombo->currentIndex() == 0
@@ -421,21 +444,43 @@ void TrellisDialog::appendLog(const QString& msg) {
     m_log->setText(msg);
 }
 
-void TrellisDialog::setProgressStage(const QString& stage,
+void TrellisDialog::setProgressStage(int stageId,
+                                     const QString& stage,
                                      int step,
                                      int total) {
     m_stageLabel->setVisible(true);
+    m_progress->setVisible(true);
+    // Map the 11 pipeline stages onto a single 0..100 sweep so the bar
+    // advances monotonically with the real inference work (the C API reports
+    // per-stage step counts, which alone would make the bar jump back to 0
+    // between stages and look frozen on long stages).
+    static const int kRange[11][2] = {
+            {0, 2},    // PREPROCESS
+            {2, 6},    // DINO
+            {6, 26},   // SS_FLOW
+            {26, 29},  // SS_DEC
+            {29, 49},  // SLAT_FLOW
+            {49, 52},  // SHAPE_DEC
+            {52, 55},  // MESH
+            {55, 56},  // UPSAMPLE
+            {56, 57},  // SLAT_FLOW_HR
+            {57, 60},  // SHAPE_DEC_HR
+            {60, 100}  // TEXTURE
+    };
+    int pct = 0;
+    if (stageId >= 0 && stageId < 11) {
+        const int lo = kRange[stageId][0];
+        const int hi = kRange[stageId][1];
+        pct = (total > 0) ? lo + (hi - lo) * step / total : lo;
+        if (pct > hi) pct = hi;
+    }
+    m_progress->setRange(0, 100);
+    m_progress->setValue(pct);
     if (total > 0) {
         m_stageLabel->setText(
                 tr("Stage: %1 (%2/%3)").arg(stage).arg(step).arg(total));
-        m_progress->setVisible(true);
-        m_progress->setRange(0, total);
-        m_progress->setValue(step);
     } else {
         m_stageLabel->setText(tr("Stage: %1").arg(stage));
-        m_progress->setVisible(true);
-        m_progress->setRange(0, 1);
-        m_progress->setValue(0);
     }
 }
 
@@ -455,7 +500,17 @@ void TrellisDialog::setRunning(bool running) {
     m_deviceCombo->setEnabled(!running);
     m_threads->setEnabled(!running);
     m_addToDbCheck->setEnabled(!running);
+    m_addRmbgToDbCheck->setEnabled(!running && m_rmbgCheck->isChecked());
     m_saveGlbDir->setEnabled(!running);
+    if (running) {
+        // Reset the inference sweep so the first stage callback is visible
+        // instead of leaving the bar at a stale download/previous-run value.
+        m_progress->setVisible(true);
+        m_progress->setRange(0, 100);
+        m_progress->setValue(0);
+        m_stageLabel->setVisible(true);
+        m_stageLabel->setText(tr("Stage: starting..."));
+    }
 }
 
 void TrellisDialog::setImagePreview(const QImage& image) {

@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <QImage>
 #include <QString>
 #include <QStringList>
 #include <QThread>
@@ -28,6 +29,9 @@ struct TrellisRunResult {
      *  alpha); empty when untextured. */
     QVector<float> pbr;
     bool hasPbr = false;
+    /** AI background-removal result (full-resolution RGBA), null when no
+     *  RMBG model ran (e.g. solid-color fallback). */
+    QImage rmbgImage;
     double totalRuntimeMs = 0.0;
     QString backend;
     QString modelPath;
