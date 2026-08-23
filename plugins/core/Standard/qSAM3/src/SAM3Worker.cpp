@@ -10,6 +10,7 @@
 #include <QDir>
 #include <QElapsedTimer>
 #include <QFileInfo>
+#include <cstdint>
 #include <cstring>
 
 #ifdef AICore_ENABLED
@@ -304,8 +305,8 @@ SAM3WorkerResult SAM3Worker::buildResult(aicore_sam3_seg_result* segRes,
         if (mask.data && !m.isNull()) {
             for (int y = 0; y < mask.height; ++y) {
                 memcpy(m.scanLine(y),
-                       mask.data +
-                               static_cast<int64_t>(y) * mask.row_stride_bytes,
+                       static_cast<const uint8_t*>(mask.data) +
+                               static_cast<size_t>(y) * mask.row_stride_bytes,
                        static_cast<size_t>(mask.width));
             }
         }
