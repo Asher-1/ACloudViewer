@@ -16,7 +16,7 @@ constexpr int kBandHeight = 6;
 constexpr int kBandGap = 2;
 constexpr int kLeftMargin = 6;
 constexpr int kRightMargin = 26;  // room for the "#id" labels
-}
+}  // namespace
 
 VideoTimeline::VideoTimeline(QWidget* parent) : QWidget(parent) {
     setMinimumHeight(40);
@@ -111,11 +111,11 @@ void VideoTimeline::paintEvent(QPaintEvent*) {
     }
 
     // Playhead.
-    const int phX = barX +
-                    static_cast<int>(m_currentFrame /
-                                     static_cast<double>(
-                                             qMax(m_frameCount - 1, 1)) *
-                                     barW);
+    const int phX =
+            barX +
+            static_cast<int>(m_currentFrame /
+                             static_cast<double>(qMax(m_frameCount - 1, 1)) *
+                             barW);
     p.fillRect(QRect(phX - 1, barY, 3, kBarHeight), QColor(255, 255, 255, 230));
     p.setPen(QColor(200, 200, 200, 220));
     p.drawText(QPointF(phX + 5, barY + kBarHeight - 2),
@@ -131,7 +131,9 @@ void VideoTimeline::paintEvent(QPaintEvent*) {
     setMinimumHeight(kBarHeight + 6 + bandsH);
 }
 
-void VideoTimeline::drawBand(QPainter& p, int row, int idIndex,
+void VideoTimeline::drawBand(QPainter& p,
+                             int row,
+                             int idIndex,
                              const QColor& color) {
     const int barW = width() - kLeftMargin - kRightMargin;
     const int barX = kLeftMargin;

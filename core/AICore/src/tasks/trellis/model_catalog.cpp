@@ -48,55 +48,56 @@ static std::vector<ModelRow> buildModels() {
                    const char* license, const char* role) {
         std::string url = std::string(kDownloadBase) + file;
         rows.push_back({dupString(file), dupString(url.c_str()),
-                        dupString(display), dupString(quant), dupString(license),
-                        dupString(role)});
+                        dupString(display), dupString(quant),
+                        dupString(license), dupString(role)});
     };
 
-    const char* kTrellisLicense = "MIT (TRELLIS.2-4B-GGUF / TRELLIS-image-large-GGUF)";
-    const char* kDinoLicense =
-            "DINOv3 License (built with DINOv3)";
+    const char* kTrellisLicense =
+            "MIT (TRELLIS.2-4B-GGUF / TRELLIS-image-large-GGUF)";
+    const char* kDinoLicense = "DINOv3 License (built with DINOv3)";
     const char* kRmbgLicense =
             "CC BY-NC 4.0 (non-commercial); commercial license from BRIA";
 
     // Conditioning encoder.
-    add("dino_f16.gguf", "DINOv3 ViT-L/16 f16", "F16 \xe2\x80\x94 half precision",
-        kDinoLicense, "dino");
-    add("dino_q8.gguf", "DINOv3 ViT-L/16 q8", "Q8 \xe2\x80\x94 8-bit quant (recommended)",
-        kDinoLicense, "dino");
+    add("dino_f16.gguf", "DINOv3 ViT-L/16 f16",
+        "F16 \xe2\x80\x94 half precision", kDinoLicense, "dino");
+    add("dino_q8.gguf", "DINOv3 ViT-L/16 q8",
+        "Q8 \xe2\x80\x94 8-bit quant (recommended)", kDinoLicense, "dino");
 
     // Sparse-structure stage (required for every quality).
-    add("ss_flow_q8.gguf", "Sparse-structure flow q8", "Q8 \xe2\x80\x94 8-bit quant",
-        kTrellisLicense, "ss_flow");
-    add("ss_dec_f16.gguf", "Occupancy decoder f16", "F16 \xe2\x80\x94 half precision",
-        kTrellisLicense, "ss_dec");
+    add("ss_flow_q8.gguf", "Sparse-structure flow q8",
+        "Q8 \xe2\x80\x94 8-bit quant", kTrellisLicense, "ss_flow");
+    add("ss_dec_f16.gguf", "Occupancy decoder f16",
+        "F16 \xe2\x80\x94 half precision", kTrellisLicense, "ss_dec");
     add("ss_dec_q8.gguf", "Occupancy decoder q8", "Q8 \xe2\x80\x94 8-bit quant",
         kTrellisLicense, "ss_dec");
 
     // Shape stage: 512 fine + 1024 cascade.
-    add("slat_flow_q8.gguf", "Shape-SLAT flow 512 q8", "Q8 \xe2\x80\x94 8-bit quant",
-        kTrellisLicense, "slat_flow");
-    add("slat_flow_1024_q8.gguf", "Shape-SLAT flow 1024 q8", "Q8 \xe2\x80\x94 8-bit quant",
-        kTrellisLicense, "slat_flow_hr");
-    add("shape_dec_f16.gguf", "Shape decoder f16", "F16 \xe2\x80\x94 half precision",
-        kTrellisLicense, "shape_dec");
+    add("slat_flow_q8.gguf", "Shape-SLAT flow 512 q8",
+        "Q8 \xe2\x80\x94 8-bit quant", kTrellisLicense, "slat_flow");
+    add("slat_flow_1024_q8.gguf", "Shape-SLAT flow 1024 q8",
+        "Q8 \xe2\x80\x94 8-bit quant", kTrellisLicense, "slat_flow_hr");
+    add("shape_dec_f16.gguf", "Shape decoder f16",
+        "F16 \xe2\x80\x94 half precision", kTrellisLicense, "shape_dec");
 
     // PBR texturing stage.
-    add("shape_enc_f16.gguf", "Shape encoder f16", "F16 \xe2\x80\x94 half precision",
-        kTrellisLicense, "shape_enc");
-    add("tex_dec_f16.gguf", "Texture decoder f16", "F16 \xe2\x80\x94 half precision",
-        kTrellisLicense, "tex_dec");
-    add("tex_slat_flow_512_q8.gguf", "Texture flow 512 q8", "Q8 \xe2\x80\x94 8-bit quant",
-        kTrellisLicense, "tex_flow");
-    add("tex_slat_flow_1024_q8.gguf", "Texture flow 1024 q8", "Q8 \xe2\x80\x94 8-bit quant",
-        kTrellisLicense, "tex_flow_hr");
+    add("shape_enc_f16.gguf", "Shape encoder f16",
+        "F16 \xe2\x80\x94 half precision", kTrellisLicense, "shape_enc");
+    add("tex_dec_f16.gguf", "Texture decoder f16",
+        "F16 \xe2\x80\x94 half precision", kTrellisLicense, "tex_dec");
+    add("tex_slat_flow_512_q8.gguf", "Texture flow 512 q8",
+        "Q8 \xe2\x80\x94 8-bit quant", kTrellisLicense, "tex_flow");
+    add("tex_slat_flow_1024_q8.gguf", "Texture flow 1024 q8",
+        "Q8 \xe2\x80\x94 8-bit quant", kTrellisLicense, "tex_flow_hr");
 
     // AI background removal (shared with the aicore_rmbg catalog).
-    add("rmbg_f32.gguf", "RMBG-2.0 f32", "F32 \xe2\x80\x94 full precision reference",
-        kRmbgLicense, "rmbg");
-    add("rmbg_f16.gguf", "RMBG-2.0 f16", "F16 \xe2\x80\x94 half precision (recommended)",
-        kRmbgLicense, "rmbg");
-    add("rmbg_q8.gguf", "RMBG-2.0 q8", "Q8 \xe2\x80\x94 8-bit quant, best accuracy/size trade",
-        kRmbgLicense, "rmbg");
+    add("rmbg_f32.gguf", "RMBG-2.0 f32",
+        "F32 \xe2\x80\x94 full precision reference", kRmbgLicense, "rmbg");
+    add("rmbg_f16.gguf", "RMBG-2.0 f16",
+        "F16 \xe2\x80\x94 half precision (recommended)", kRmbgLicense, "rmbg");
+    add("rmbg_q8.gguf", "RMBG-2.0 q8",
+        "Q8 \xe2\x80\x94 8-bit quant, best accuracy/size trade", kRmbgLicense,
+        "rmbg");
 
     return rows;
 }
@@ -106,15 +107,16 @@ static const std::vector<ModelRow> kModels = buildModels();
 static int modelCount() { return static_cast<int>(kModels.size()); }
 
 static aicore_trellis_model_entry toEntry(const ModelRow& row) {
-    return {row.filename, row.download_url, row.display_name, row.quant_note,
-            row.license_note, row.role};
+    return {row.filename,   row.download_url, row.display_name,
+            row.quant_note, row.license_note, row.role};
 }
 
 }  // namespace
 
 AICORE_CAPI int aicore_trellis_model_count(void) { return modelCount(); }
 
-AICORE_CAPI const aicore_trellis_model_entry* aicore_trellis_model_at(int index) {
+AICORE_CAPI const aicore_trellis_model_entry* aicore_trellis_model_at(
+        int index) {
     static thread_local aicore_trellis_model_entry entry{};
     if (index < 0 || index >= modelCount()) return nullptr;
     entry = toEntry(kModels[static_cast<size_t>(index)]);

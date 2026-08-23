@@ -11,7 +11,6 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QImage>
-
 #include <cstring>
 #include <vector>
 
@@ -24,18 +23,30 @@ namespace {
 // Stage names for the progress log (mirror aicore_trellis_stage).
 const char* stageName(int stage) {
     switch (stage) {
-        case AICORE_TRELLIS_STAGE_PREPROCESS: return "preprocess";
-        case AICORE_TRELLIS_STAGE_DINO: return "dino";
-        case AICORE_TRELLIS_STAGE_SS_FLOW: return "ss_flow";
-        case AICORE_TRELLIS_STAGE_SS_DEC: return "ss_dec";
-        case AICORE_TRELLIS_STAGE_SLAT_FLOW: return "slat_flow";
-        case AICORE_TRELLIS_STAGE_SHAPE_DEC: return "shape_dec";
-        case AICORE_TRELLIS_STAGE_MESH: return "mesh";
-        case AICORE_TRELLIS_STAGE_UPSAMPLE: return "upsample";
-        case AICORE_TRELLIS_STAGE_SLAT_FLOW_HR: return "slat_flow_hr";
-        case AICORE_TRELLIS_STAGE_SHAPE_DEC_HR: return "shape_dec_hr";
-        case AICORE_TRELLIS_STAGE_TEXTURE: return "texture";
-        default: return "?";
+        case AICORE_TRELLIS_STAGE_PREPROCESS:
+            return "preprocess";
+        case AICORE_TRELLIS_STAGE_DINO:
+            return "dino";
+        case AICORE_TRELLIS_STAGE_SS_FLOW:
+            return "ss_flow";
+        case AICORE_TRELLIS_STAGE_SS_DEC:
+            return "ss_dec";
+        case AICORE_TRELLIS_STAGE_SLAT_FLOW:
+            return "slat_flow";
+        case AICORE_TRELLIS_STAGE_SHAPE_DEC:
+            return "shape_dec";
+        case AICORE_TRELLIS_STAGE_MESH:
+            return "mesh";
+        case AICORE_TRELLIS_STAGE_UPSAMPLE:
+            return "upsample";
+        case AICORE_TRELLIS_STAGE_SLAT_FLOW_HR:
+            return "slat_flow_hr";
+        case AICORE_TRELLIS_STAGE_SHAPE_DEC_HR:
+            return "shape_dec_hr";
+        case AICORE_TRELLIS_STAGE_TEXTURE:
+            return "texture";
+        default:
+            return "?";
     }
 }
 
@@ -69,7 +80,8 @@ void TrellisWorker::run() {
 #ifdef AICore_ENABLED
 
 void TrellisWorker::applySettingsToOptions(aicore_trellis_options* opts) {
-    aicore_trellis_options_set_device(opts, m_settings.device.toUtf8().constData());
+    aicore_trellis_options_set_device(opts,
+                                      m_settings.device.toUtf8().constData());
     aicore_trellis_options_set_threads(opts, m_settings.threads);
     aicore_trellis_options_set_shape_dec_placement(
             opts, m_settings.shapeDecPlacement.toUtf8().constData());
@@ -83,15 +95,18 @@ bool TrellisWorker::resolveRmbgModel() {
     // The rmbg model comes from the same trellis2-ggml release; reuse the
     // trellis catalog entry (role == "rmbg").
     const QString cacheDir = TrellisHelpers::modelCacheDir();
-    const QString path = cacheDir + QLatin1Char('/') + QStringLiteral("rmbg_f16.gguf");
+    const QString path =
+            cacheDir + QLatin1Char('/') + QStringLiteral("rmbg_f16.gguf");
     if (QFile::exists(path)) {
         m_settings.rmbgModelPath = path;
         return true;
     }
-    emit logMessage(QStringLiteral(
-            "[TRELLIS] RMBG model not found: %1 (download rmbg_f16.gguf "
-            "first, e.g. via the qRMBG plugin). Falling back to solid-color "
-            "background removal.").arg(path));
+    emit logMessage(QStringLiteral("[TRELLIS] RMBG model not found: %1 "
+                                   "(download rmbg_f16.gguf "
+                                   "first, e.g. via the qRMBG plugin). Falling "
+                                   "back to solid-color "
+                                   "background removal.")
+                            .arg(path));
     m_settings.useRmbg = false;
     return true;
 }
@@ -118,11 +133,12 @@ bool TrellisWorker::runInference() {
     // expression ends, and aicore_trellis_load_opts reads these pointers
     // *after* loading the RMBG model (a long-running call).
     //
-    // Index contract: m_settings.modelPaths MUST be in aicore_trellis_model_paths
-    // field order (dino, ss_flow, ss_dec, slat_flow, slat_hr_flow, shape_dec,
-    // shape_enc, tex_dec, tex_flow, tex_flow_hr). Omitted fields stay as empty
-    // strings (the C API treats "" like NULL: "omit this model"). The presets
-    // in TrellisModelCatalog.cpp guarantee this ordering.
+    // Index contract: m_settings.modelPaths MUST be in
+    // aicore_trellis_model_paths field order (dino, ss_flow, ss_dec, slat_flow,
+    // slat_hr_flow, shape_dec, shape_enc, tex_dec, tex_flow, tex_flow_hr).
+    // Omitted fields stay as empty strings (the C API treats "" like NULL:
+    // "omit this model"). The presets in TrellisModelCatalog.cpp guarantee this
+    // ordering.
     QByteArray utf8Paths[10];
     auto keepAlive = [&](int i) -> const char* {
         utf8Paths[i] = m_settings.modelPaths.value(i).toUtf8();
@@ -228,8 +244,8 @@ bool TrellisWorker::runInference() {
     }
     aicore_trellis_mesh_free(mesh);
 
-    emit logMessage(QStringLiteral(
-            "[TRELLIS] Mesh %1 verts / %2 tris generated in %3 ms (backend %4)")
+    emit logMessage(QStringLiteral("[TRELLIS] Mesh %1 verts / %2 tris "
+                                   "generated in %3 ms (backend %4)")
                             .arg(nv)
                             .arg(nt)
                             .arg(elapsedMs, 0, 'f', 0)

@@ -342,7 +342,7 @@ jobs:
         if: steps.gate.outputs.run == 'true'
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends qtbase5-dev libgl1-mesa-dev
+          sudo apt-get install -y --no-install-recommends qtbase5-dev libqt5svg5-dev libgl1-mesa-dev
       - name: Configure (AICore + tiered tests, CPU-only)
         if: steps.gate.outputs.run == 'true'
         run: |

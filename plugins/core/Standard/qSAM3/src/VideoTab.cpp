@@ -8,14 +8,10 @@
 #include "VideoTab.h"
 
 #include <aicore/sam3_capi.h>
-
 #include <ecvAICoreUiHelper.h>
 #include <ecvImage.h>
 #include <ecvMainAppInterface.h>
 #include <ecvPluginDbNaming.h>
-
-#include "VideoFrameReader.h"
-#include "VideoPlaybackWidget.h"  // cvMatToQImage
 
 #include <QButtonGroup>
 #include <QCheckBox>
@@ -31,8 +27,10 @@
 #include <QRadioButton>
 #include <QSlider>
 #include <QVBoxLayout>
-
 #include <algorithm>
+
+#include "VideoFrameReader.h"
+#include "VideoPlaybackWidget.h"  // cvMatToQImage
 
 namespace {
 constexpr const char* kTabModelKeys[] = {"sam", "sam-visual", "sam2"};
@@ -40,10 +38,10 @@ constexpr int kNumTabModelKeys = 3;
 
 // Per-instance display colors, mirroring upstream examples/main_video.cpp.
 constexpr const QColor kInstanceColors[] = {
-        QColor(255, 51, 51),   QColor(51, 153, 255), QColor(51, 230, 76),
-        QColor(255, 204, 26),  QColor(204, 76, 230), QColor(255, 128, 26),
-        QColor(26, 230, 230),  QColor(230, 102, 153), QColor(128, 204, 51),
-        QColor(76, 76, 255),   QColor(255, 153, 179), QColor(153, 255, 128),
+        QColor(255, 51, 51),  QColor(51, 153, 255),  QColor(51, 230, 76),
+        QColor(255, 204, 26), QColor(204, 76, 230),  QColor(255, 128, 26),
+        QColor(26, 230, 230), QColor(230, 102, 153), QColor(128, 204, 51),
+        QColor(76, 76, 255),  QColor(255, 153, 179), QColor(153, 255, 128),
 };
 constexpr int kNumColors = sizeof(kInstanceColors) / sizeof(kInstanceColors[0]);
 }  // namespace
@@ -89,8 +87,8 @@ void VideoTab::setupUi() {
     modeGroup->addButton(m_modeText, 0);
     modeGroup->addButton(m_modeBox, 1);
     modeGroup->addButton(m_modePoints, 2);
-    connect(modeGroup, QOverload<int>::of(&QButtonGroup::buttonClicked),
-            this, &VideoTab::onModeChanged);
+    connect(modeGroup, QOverload<int>::of(&QButtonGroup::buttonClicked), this,
+            &VideoTab::onModeChanged);
 
     m_textPrompt = new QLineEdit();
     m_textPrompt->setPlaceholderText(tr("Text prompt (SAM3 only)..."));
@@ -124,7 +122,8 @@ void VideoTab::setupUi() {
     m_modelCombo->setMinimumWidth(ecvAICoreUi::dpiScaled(240));
     m_loadBtn = new QPushButton(tr("Load"));
     m_loadBtn->setStyleSheet(
-            "QPushButton { background: #00897b; color: white; font-weight: bold;"
+            "QPushButton { background: #00897b; color: white; font-weight: "
+            "bold;"
             "  border: none; border-radius: 4px; padding: 5px 14px; }"
             "QPushButton:hover { background: #00796b; }");
 
@@ -216,8 +215,7 @@ void VideoTab::setupUi() {
             &VideoTab::onCanvasPosPoint);
     connect(m_canvas, &VideoCanvas::negPointAdded, this,
             &VideoTab::onCanvasNegPoint);
-    connect(m_timeline, &VideoTimeline::seekRequested, this,
-            &VideoTab::onSeek);
+    connect(m_timeline, &VideoTimeline::seekRequested, this, &VideoTab::onSeek);
     connect(&m_playTimer, &QTimer::timeout, this, &VideoTab::trackNextFrame);
 }
 
@@ -226,10 +224,10 @@ void VideoTab::populateModelCombo() {
     for (int i = 0; i < n; ++i) {
         const auto* entry = aicore_sam3_model_at(i);
         if (!entry || !entry->filename) continue;
-        m_modelCombo->addItem(
-                QString("%1 (%2)").arg(entry->display_name)
-                        .arg(entry->quant_note),
-                entry->filename);
+        m_modelCombo->addItem(QString("%1 (%2)")
+                                      .arg(entry->display_name)
+                                      .arg(entry->quant_note),
+                              entry->filename);
     }
     m_modelCombo->addItem(tr("Browse..."), QString("__browse__"));
 }
@@ -264,12 +262,11 @@ void VideoTab::openVideoFile(const QString& path) {
         m_reader = new VideoFrameReader(this);
         connect(m_reader, &VideoFrameReader::frameReady, this,
                 &VideoTab::onFrameReady);
-        connect(m_reader, &VideoFrameReader::frameReadFailed, this,
-                [this]() {
-                    m_playing = false;
-                    m_playBtn->setText(tr("Play"));
-                    setStatus(tr("Video read failed / end of stream."));
-                });
+        connect(m_reader, &VideoFrameReader::frameReadFailed, this, [this]() {
+            m_playing = false;
+            m_playBtn->setText(tr("Play"));
+            setStatus(tr("Video read failed / end of stream."));
+        });
     }
     m_reader->setConsumerDriven(true);
     m_reader->setPaused(true);
@@ -503,9 +500,7 @@ void VideoTab::onReset() {
     setStatus(tr("Reset. Ready to annotate."));
 }
 
-void VideoTab::onCanvasBox() {
-    addInstanceFromPrompts();
-}
+void VideoTab::onCanvasBox() { addInstanceFromPrompts(); }
 
 void VideoTab::onCanvasInstanceClicked(int id) {
     if (!m_trackerActive || !m_worker) return;
@@ -522,8 +517,8 @@ void VideoTab::onCanvasPosPoint(const QPointF& p) {
     req.action = VideoWorker::Action::RefineInstance;
     req.instanceId = -2;  // sentinel: add new instance from points
     for (const auto& pt : pos) {
-        req.prompt.posPoints.append({static_cast<float>(pt.x()),
-                                     static_cast<float>(pt.y())});
+        req.prompt.posPoints.append(
+                {static_cast<float>(pt.x()), static_cast<float>(pt.y())});
     }
     m_worker->post(req);
 }
@@ -546,18 +541,17 @@ void VideoTab::addInstanceFromPrompts() {
     if (m_canvas->hasBox()) {
         const QRectF b = m_canvas->box();
         req.prompt.usePvsBox = true;
-        req.prompt.pvsBox = {static_cast<float>(b.left()),
-                             static_cast<float>(b.top()),
-                             static_cast<float>(b.right()),
-                             static_cast<float>(b.bottom())};
+        req.prompt.pvsBox = {
+                static_cast<float>(b.left()), static_cast<float>(b.top()),
+                static_cast<float>(b.right()), static_cast<float>(b.bottom())};
     }
     for (const auto& pt : m_canvas->posPoints()) {
-        req.prompt.posPoints.append({static_cast<float>(pt.x()),
-                                     static_cast<float>(pt.y())});
+        req.prompt.posPoints.append(
+                {static_cast<float>(pt.x()), static_cast<float>(pt.y())});
     }
     for (const auto& pt : m_canvas->negPoints()) {
-        req.prompt.negPoints.append({static_cast<float>(pt.x()),
-                                     static_cast<float>(pt.y())});
+        req.prompt.negPoints.append(
+                {static_cast<float>(pt.x()), static_cast<float>(pt.y())});
     }
     if (req.prompt.posPoints.isEmpty() && !req.prompt.usePvsBox) {
         appendLog(tr("Click a positive point or drag a box first."));
@@ -567,19 +561,20 @@ void VideoTab::addInstanceFromPrompts() {
     resetPrompts();
 }
 
-void VideoTab::refineInstance(int id, const QVector<QPointF>& pos,
+void VideoTab::refineInstance(int id,
+                              const QVector<QPointF>& pos,
                               const QVector<QPointF>& neg) {
     if (!m_trackerActive || !m_worker) return;
     VideoWorker::TrackRequest req;
     req.action = VideoWorker::Action::RefineInstance;
     req.instanceId = id;
     for (const auto& pt : pos) {
-        req.prompt.posPoints.append({static_cast<float>(pt.x()),
-                                     static_cast<float>(pt.y())});
+        req.prompt.posPoints.append(
+                {static_cast<float>(pt.x()), static_cast<float>(pt.y())});
     }
     for (const auto& pt : neg) {
-        req.prompt.negPoints.append({static_cast<float>(pt.x()),
-                                     static_cast<float>(pt.y())});
+        req.prompt.negPoints.append(
+                {static_cast<float>(pt.x()), static_cast<float>(pt.y())});
     }
     m_worker->post(req);
 }
@@ -604,9 +599,7 @@ void VideoTab::onBusyChanged(bool busy) {
     if (busy) m_playTimer.stop();
 }
 
-void VideoTab::onLog(const QString& msg) {
-    setStatus(msg);
-}
+void VideoTab::onLog(const QString& msg) { setStatus(msg); }
 
 void VideoTab::onSeek(int frame) {
     if (m_videoPath.isEmpty()) return;
@@ -635,10 +628,11 @@ void VideoTab::onExportMasks() {
         if (dir.isEmpty()) return;
         int exported = 0;
         for (int i = 0; i < m_lastResult.instanceMasks.size(); ++i) {
-            const QString path = QString("%1/frame%2_mask%3.png")
-                                         .arg(dir)
-                                         .arg(m_currentFrame, 4, 10, QLatin1Char('0'))
-                                         .arg(i);
+            const QString path =
+                    QString("%1/frame%2_mask%3.png")
+                            .arg(dir)
+                            .arg(m_currentFrame, 4, 10, QLatin1Char('0'))
+                            .arg(i);
             if (m_lastResult.instanceMasks[i].save(path)) ++exported;
         }
         appendLog(tr("Exported %1 mask(s) to %2").arg(exported).arg(dir));
@@ -722,13 +716,9 @@ void VideoTab::resetPrompts() {
     m_canvas->clearBox();
 }
 
-void VideoTab::appendLog(const QString& msg) {
-    setStatus(msg);
-}
+void VideoTab::appendLog(const QString& msg) { setStatus(msg); }
 
-void VideoTab::setStatus(const QString& msg) {
-    m_statusLabel->setText(msg);
-}
+void VideoTab::setStatus(const QString& msg) { m_statusLabel->setText(msg); }
 
 void VideoTab::exportCurrentFrameToDb() {
     if (!m_lastResult.valid || !m_app || m_currentFrameImage.isNull()) return;
@@ -738,21 +728,25 @@ void VideoTab::exportCurrentFrameToDb() {
     if (!m_lastResult.instanceMasks.isEmpty()) {
         QPainter p(&annotated);
         for (int i = 0; i < m_lastResult.instanceMasks.size(); ++i) {
-            const QColor tint = instanceColor(m_lastResult.instanceIds.value(i));
+            const QColor tint =
+                    instanceColor(m_lastResult.instanceIds.value(i));
             const QImage mask = m_lastResult.instanceMasks.value(i);
             // Blend the mask with its instance colour.
             for (int y = 0; y < mask.height() && y < annotated.height(); ++y) {
                 const uchar* src = mask.scanLine(y);
                 QRgb* dst = reinterpret_cast<QRgb*>(annotated.scanLine(y));
-                for (int x = 0; x < mask.width() && x < annotated.width(); ++x) {
+                for (int x = 0; x < mask.width() && x < annotated.width();
+                     ++x) {
                     if (src[x] > 0) {
                         const float a = 0.45f;
                         const QRgb bg = dst[x];
                         const QRgb fg = tint.rgb();
-                        dst[x] = qRgb(
-                                static_cast<int>(a * qRed(fg) + (1 - a) * qRed(bg)),
-                                static_cast<int>(a * qGreen(fg) + (1 - a) * qGreen(bg)),
-                                static_cast<int>(a * qBlue(fg) + (1 - a) * qBlue(bg)));
+                        dst[x] = qRgb(static_cast<int>(a * qRed(fg) +
+                                                       (1 - a) * qRed(bg)),
+                                      static_cast<int>(a * qGreen(fg) +
+                                                       (1 - a) * qGreen(bg)),
+                                      static_cast<int>(a * qBlue(fg) +
+                                                       (1 - a) * qBlue(bg)));
                     }
                 }
             }
@@ -760,8 +754,8 @@ void VideoTab::exportCurrentFrameToDb() {
         p.end();
     }
 
-    const QString deviceTag = ecvPluginDbNaming::deviceTagFromName(
-            m_deviceCombo->currentText());
+    const QString deviceTag =
+            ecvPluginDbNaming::deviceTagFromName(m_deviceCombo->currentText());
     const QString baseName = QFileInfo(m_videoPath).completeBaseName();
     const QString name = ecvPluginDbNaming::makeUnique(
             QStringLiteral("SAM3_Video_%1_%2_frame%3")
@@ -786,9 +780,9 @@ void VideoTab::exportCurrentFrameToDb() {
     for (int i = 0; i < m_lastResult.detCount; ++i) {
         const QString p = QStringLiteral("SAM3/Det%1/").arg(i + 1);
         const aicore_sam3_box& b = m_lastResult.boxes.value(i);
-        img->setMetaData(p + QStringLiteral("InstanceId"),
-                         static_cast<qlonglong>(
-                                 m_lastResult.instanceIds.value(i)));
+        img->setMetaData(
+                p + QStringLiteral("InstanceId"),
+                static_cast<qlonglong>(m_lastResult.instanceIds.value(i)));
         img->setMetaData(p + QStringLiteral("Score"),
                          static_cast<double>(m_lastResult.scores.value(i)));
         img->setMetaData(p + QStringLiteral("Box"),

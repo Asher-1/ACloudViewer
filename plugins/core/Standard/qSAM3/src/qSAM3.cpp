@@ -6,7 +6,6 @@
 // ----------------------------------------------------------------------------
 
 #include "qSAM3.h"
-#include "SAM3Dialog.h"
 
 #include <ecvImage.h>
 #include <ecvMainAppInterface.h>
@@ -18,6 +17,8 @@
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QTimer>
+
+#include "SAM3Dialog.h"
 
 #ifdef AICore_ENABLED
 #include "aicore/backend_capi.h"

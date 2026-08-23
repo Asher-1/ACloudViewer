@@ -82,9 +82,7 @@ void VideoCanvas::clearBox() {
     redraw();
 }
 
-QSize VideoCanvas::imageSize() const {
-    return m_frame.size();
-}
+QSize VideoCanvas::imageSize() const { return m_frame.size(); }
 
 int VideoCanvas::hitTestInstance(const QPointF& p) const {
     const int px = static_cast<int>(p.x());
@@ -154,9 +152,7 @@ void VideoCanvas::mouseReleaseEvent(QMouseEvent* e) {
     }
 }
 
-void VideoCanvas::paintEvent(QPaintEvent* e) {
-    QLabel::paintEvent(e);
-}
+void VideoCanvas::paintEvent(QPaintEvent* e) { QLabel::paintEvent(e); }
 
 void VideoCanvas::resizeEvent(QResizeEvent* e) {
     QLabel::resizeEvent(e);
@@ -173,8 +169,8 @@ void VideoCanvas::redraw() {
     drawFrameAndMasks(p, display);
     p.end();
     m_composited = display;
-    setPixmap(QPixmap::fromImage(display.scaled(
-            size(), Qt::KeepAspectRatio, Qt::SmoothTransformation)));
+    setPixmap(QPixmap::fromImage(display.scaled(size(), Qt::KeepAspectRatio,
+                                                Qt::SmoothTransformation)));
     setText(QString());
 }
 
@@ -190,24 +186,28 @@ void VideoCanvas::drawFrameAndMasks(QPainter& p, QImage& canvas) {
             for (int x = 0; x < mask.width() && x < canvas.width(); ++x) {
                 if (src[x] > 127) {
                     const QRgb base = dst[x];
-                    dst[x] = qRgb(
-                            static_cast<int>(qRed(base) * 0.6 + tint.red() * 0.4),
-                            static_cast<int>(qGreen(base) * 0.6 + tint.green() * 0.4),
-                            static_cast<int>(qBlue(base) * 0.6 + tint.blue() * 0.4));
+                    dst[x] = qRgb(static_cast<int>(qRed(base) * 0.6 +
+                                                   tint.red() * 0.4),
+                                  static_cast<int>(qGreen(base) * 0.6 +
+                                                   tint.green() * 0.4),
+                                  static_cast<int>(qBlue(base) * 0.6 +
+                                                   tint.blue() * 0.4));
                 }
             }
         }
     }
 
     const double scaleX = static_cast<double>(canvas.width()) / m_frame.width();
-    const double scaleY = static_cast<double>(canvas.height()) / m_frame.height();
+    const double scaleY =
+            static_cast<double>(canvas.height()) / m_frame.height();
 
     // Instance boxes + labels.
     for (const auto& inst : m_boxes) {
         p.setPen(QPen(inst.color, 2));
         p.setBrush(Qt::NoBrush);
         p.drawRect(QRectF(inst.box.left() * scaleX, inst.box.top() * scaleY,
-                          inst.box.width() * scaleX, inst.box.height() * scaleY));
+                          inst.box.width() * scaleX,
+                          inst.box.height() * scaleY));
         p.drawText(QPointF(inst.box.left() * scaleX + 2,
                            inst.box.top() * scaleY - 4),
                    QString("#%1 %2").arg(inst.id).arg(inst.score, 0, 'f', 2));

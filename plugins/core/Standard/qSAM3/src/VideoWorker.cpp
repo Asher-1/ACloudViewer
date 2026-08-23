@@ -8,7 +8,6 @@
 #include "VideoWorker.h"
 
 #include <QWaitCondition>
-
 #include <algorithm>
 #include <cstring>
 
@@ -81,15 +80,15 @@ void VideoWorker::process(const TrackRequest& req) {
                 aicore_sam3_options_set_device(opts,
                                                req.device.toUtf8().constData());
                 aicore_sam3_options_set_threads(opts, 4);
-                m_ctx = aicore_sam3_load_opts(req.modelPath.toUtf8().constData(),
-                                              opts);
+                m_ctx = aicore_sam3_load_opts(
+                        req.modelPath.toUtf8().constData(), opts);
                 aicore_sam3_options_free(opts);
             }
             if (!m_ctx || !aicore_sam3_is_ready(m_ctx)) {
-                emit logMessage(tr("Failed to load model: %1")
-                                        .arg(m_ctx
-                                                     ? aicore_sam3_last_error(m_ctx)
-                                                     : "invalid options"));
+                emit logMessage(
+                        tr("Failed to load model: %1")
+                                .arg(m_ctx ? aicore_sam3_last_error(m_ctx)
+                                           : "invalid options"));
                 break;
             }
             m_visualOnly = aicore_sam3_context_visual_only(m_ctx) != 0;
@@ -106,9 +105,10 @@ void VideoWorker::process(const TrackRequest& req) {
             emit modelReady(
                     QString::fromUtf8(aicore_sam3_context_backend_name(m_ctx)),
                     m_visualOnly);
-            emit logMessage(tr("Model + tracker ready on %1 (visual-only: %2)")
-                                    .arg(aicore_sam3_context_backend_name(m_ctx))
-                                    .arg(m_visualOnly ? "yes" : "no"));
+            emit logMessage(
+                    tr("Model + tracker ready on %1 (visual-only: %2)")
+                            .arg(aicore_sam3_context_backend_name(m_ctx))
+                            .arg(m_visualOnly ? "yes" : "no"));
             break;
         }
         case Action::TrackFrame: {
@@ -153,7 +153,8 @@ void VideoWorker::process(const TrackRequest& req) {
                 prompt.use_box = 1;
             }
             prompt.multimask = req.prompt.multimask ? 1 : 0;
-            const int newId = aicore_sam3_tracker_add_instance(m_tracker, &prompt);
+            const int newId =
+                    aicore_sam3_tracker_add_instance(m_tracker, &prompt);
             if (newId >= 0) {
                 emit instanceAdded(newId);
             } else {
@@ -215,8 +216,7 @@ SAM3WorkerResult VideoWorker::buildResult(aicore_sam3_seg_result* segRes,
         r.scores.append(aicore_sam3_seg_det_score_at(segRes, i));
         r.ious.append(aicore_sam3_seg_det_iou_at(segRes, i));
         r.instanceIds.append(aicore_sam3_seg_det_instance_id_at(segRes, i));
-        const aicore_sam3_plane_view mask =
-                aicore_sam3_seg_mask_at(segRes, i);
+        const aicore_sam3_plane_view mask = aicore_sam3_seg_mask_at(segRes, i);
         QImage m(mask.width, mask.height, QImage::Format_Grayscale8);
         if (mask.data && !m.isNull()) {
             for (int y = 0; y < mask.height; ++y) {

@@ -33,8 +33,8 @@ public:
     struct Settings {
         QStringList modelPaths;
         QString presetName;
-        int pipelineType = 0;          // aicore_trellis_pipeline_type
-        int backgroundMode = 0;        // aicore_trellis_background_mode
+        int pipelineType = 0;    // aicore_trellis_pipeline_type
+        int backgroundMode = 0;  // aicore_trellis_background_mode
         QString inputPath;
         int steps = 0;
         double guidance = -1.0;
@@ -105,8 +105,8 @@ private:
 
     // Model preset.
     QComboBox* m_presetCombo = nullptr;
-    QComboBox* m_dinoCombo = nullptr;     // dino_q8 / dino_f16
-    QComboBox* m_decCombo = nullptr;      // ss_dec_q8 / ss_dec_f16
+    QComboBox* m_dinoCombo = nullptr;  // dino_q8 / dino_f16
+    QComboBox* m_decCombo = nullptr;   // ss_dec_q8 / ss_dec_f16
     QLabel* m_modelStatus = nullptr;
     QPushButton* m_downloadBtn = nullptr;
     QCheckBox* m_textureCheck = nullptr;

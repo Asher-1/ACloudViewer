@@ -19,8 +19,6 @@
 #include <ecvMainAppInterface.h>
 #include <ecvPluginDbNaming.h>
 
-#include <cstring>
-
 #include <QButtonGroup>
 #include <QCheckBox>
 #include <QComboBox>
@@ -47,6 +45,7 @@
 #include <QSplitter>
 #include <QTabWidget>
 #include <QVBoxLayout>
+#include <cstring>
 
 namespace {
 
@@ -64,15 +63,17 @@ SAM3Canvas::SAM3Canvas(QWidget* parent) : QLabel(parent) {
     setMinimumSize(ecvAICoreUi::dpiScaled(320), ecvAICoreUi::dpiScaled(240));
     setAlignment(Qt::AlignCenter);
     setStyleSheet(
-        "QLabel { background: #1a1a26; border: 1px solid #333;"
-        " border-radius: 4px; color: #666; font-size: 14px; }");
+            "QLabel { background: #1a1a26; border: 1px solid #333;"
+            " border-radius: 4px; color: #666; font-size: 14px; }");
     setText(tr("Drag and drop an image here"));
 }
 
 void SAM3Canvas::setInteractive(bool on) {
     m_interactive = on;
-    if (!on) setCursor(Qt::ArrowCursor);
-    else         setCursor(Qt::CrossCursor);
+    if (!on)
+        setCursor(Qt::ArrowCursor);
+    else
+        setCursor(Qt::CrossCursor);
 }
 
 void SAM3Canvas::setImage(const QImage& img) {
@@ -81,18 +82,14 @@ void SAM3Canvas::setImage(const QImage& img) {
     m_maskOverlay = QImage();
     clearPoints();  // also resets box state
     m_dragging = false;
-    setPixmap(QPixmap::fromImage(m_overlay.scaled(
-            size(), Qt::KeepAspectRatio, Qt::SmoothTransformation)));
+    setPixmap(QPixmap::fromImage(m_overlay.scaled(size(), Qt::KeepAspectRatio,
+                                                  Qt::SmoothTransformation)));
     setText(QString());
 }
 
-void SAM3Canvas::setMaskOverlay(const QImage& mask) {
-    m_maskOverlay = mask;
-}
+void SAM3Canvas::setMaskOverlay(const QImage& mask) { m_maskOverlay = mask; }
 
-void SAM3Canvas::clearMaskOverlay() {
-    m_maskOverlay = QImage();
-}
+void SAM3Canvas::clearMaskOverlay() { m_maskOverlay = QImage(); }
 
 bool SAM3Canvas::isInsideImage(const QPointF& p) const {
     return !m_original.isNull() && p.x() >= 0 && p.y() >= 0 &&
@@ -111,8 +108,8 @@ void SAM3Canvas::updateOverlay() {
     drawAnnotations(p, display);
     p.end();
     m_overlay = display;
-    setPixmap(QPixmap::fromImage(display.scaled(
-            size(), Qt::KeepAspectRatio, Qt::SmoothTransformation)));
+    setPixmap(QPixmap::fromImage(display.scaled(size(), Qt::KeepAspectRatio,
+                                                Qt::SmoothTransformation)));
 }
 
 void SAM3Canvas::resizeEvent(QResizeEvent* e) {
@@ -220,13 +217,16 @@ void SAM3Canvas::mouseMoveEvent(QMouseEvent* e) {
                 m_dragRect.height() / m_original.height() * display.height()));
         p.end();
         m_overlay = display;
-        setPixmap(QPixmap::fromImage(display.scaled(
-                size(), Qt::KeepAspectRatio, Qt::SmoothTransformation)));
+        setPixmap(QPixmap::fromImage(display.scaled(size(), Qt::KeepAspectRatio,
+                                                    Qt::SmoothTransformation)));
     }
 }
 
 void SAM3Canvas::mouseReleaseEvent(QMouseEvent* e) {
-    if (!m_dragging) { QLabel::mouseReleaseEvent(e); return; }
+    if (!m_dragging) {
+        QLabel::mouseReleaseEvent(e);
+        return;
+    }
     m_dragging = false;
 
     QPointF ip = screenToImage(e->localPos());
@@ -256,8 +256,10 @@ void SAM3Canvas::paintEvent(QPaintEvent* e) {
 }
 
 void SAM3Canvas::drawAnnotations(QPainter& p, const QImage& display) {
-    const double scaleX = static_cast<double>(display.width()) / m_original.width();
-    const double scaleY = static_cast<double>(display.height()) / m_original.height();
+    const double scaleX =
+            static_cast<double>(display.width()) / m_original.width();
+    const double scaleY =
+            static_cast<double>(display.height()) / m_original.height();
 
     // Positive points (green)
     p.setPen(QPen(Qt::white, 2));
@@ -276,9 +278,8 @@ void SAM3Canvas::drawAnnotations(QPainter& p, const QImage& display) {
     if (m_hasBox) {
         p.setPen(QPen(QColor(0, 255, 255, 220), 3));
         p.setBrush(Qt::NoBrush);
-        p.drawRect(QRectF(
-                m_box.left() * scaleX, m_box.top() * scaleY,
-                m_box.width() * scaleX, m_box.height() * scaleY));
+        p.drawRect(QRectF(m_box.left() * scaleX, m_box.top() * scaleY,
+                          m_box.width() * scaleX, m_box.height() * scaleY));
     }
 }
 
@@ -306,8 +307,7 @@ void SAM3Canvas::dropEvent(QDropEvent* e) {
 // SAM3Dialog implementation
 // ---------------------------------------------------------------------------
 
-SAM3Dialog::SAM3Dialog(QWidget* parent)
-    : QDialog(parent) {
+SAM3Dialog::SAM3Dialog(QWidget* parent) : QDialog(parent) {
     setWindowTitle(tr("SAM3 Image & Video Segmentation"));
     setMinimumSize(ecvAICoreUi::dpiScaled(900), ecvAICoreUi::dpiScaled(700));
     setupUi();
@@ -350,10 +350,11 @@ void SAM3Dialog::setupUi() {
     m_segmentBtn = new QPushButton(tr("Segment"));
     m_segmentBtn->setEnabled(false);
     m_segmentBtn->setStyleSheet(
-        "QPushButton { background: #00897b; color: white; font-weight: bold;"
-        "  border: none; border-radius: 4px; padding: 5px 14px; }"
-        "QPushButton:hover { background: #00796b; }"
-        "QPushButton:disabled { background: #555; color: #999; }");
+            "QPushButton { background: #00897b; color: white; font-weight: "
+            "bold;"
+            "  border: none; border-radius: 4px; padding: 5px 14px; }"
+            "QPushButton:hover { background: #00796b; }"
+            "QPushButton:disabled { background: #555; color: #999; }");
 
     m_testDataBtn = ecvAICoreUi::makeSampleDataBtn(this);
     m_testDataBtn->setToolTip(
@@ -391,9 +392,10 @@ void SAM3Dialog::setupUi() {
     m_modelCombo->setMinimumWidth(ecvAICoreUi::dpiScaled(240));
     m_loadBtn = new QPushButton(tr("Load"));
     m_loadBtn->setStyleSheet(
-        "QPushButton { background: #00897b; color: white; font-weight: bold;"
-        "  border: none; border-radius: 4px; padding: 5px 14px; }"
-        "QPushButton:hover { background: #00796b; }");
+            "QPushButton { background: #00897b; color: white; font-weight: "
+            "bold;"
+            "  border: none; border-radius: 4px; padding: 5px 14px; }"
+            "QPushButton:hover { background: #00796b; }");
 
     fullRow2->addWidget(modelLabel);
     fullRow2->addWidget(m_modelCombo, 1);
@@ -418,8 +420,8 @@ void SAM3Dialog::setupUi() {
         auto* group = new QButtonGroup(this);
         group->addButton(points, 0);
         group->addButton(box, 1);
-        connect(group, QOverload<int>::of(&QButtonGroup::buttonClicked),
-                this, &SAM3Dialog::onModeChanged);
+        connect(group, QOverload<int>::of(&QButtonGroup::buttonClicked), this,
+                &SAM3Dialog::onModeChanged);
 
         testDataBtn = ecvAICoreUi::makeSampleDataBtn(this);
         testDataBtn->setToolTip(
@@ -439,9 +441,10 @@ void SAM3Dialog::setupUi() {
         combo->setMinimumWidth(ecvAICoreUi::dpiScaled(240));
         loadBtn = new QPushButton(tr("Load"));
         loadBtn->setStyleSheet(
-            "QPushButton { background: #00897b; color: white; font-weight: bold;"
-            "  border: none; border-radius: 4px; padding: 5px 14px; }"
-            "QPushButton:hover { background: #00796b; }");
+                "QPushButton { background: #00897b; color: white; font-weight: "
+                "bold;"
+                "  border: none; border-radius: 4px; padding: 5px 14px; }"
+                "QPushButton:hover { background: #00796b; }");
         row2->addWidget(modelLabel);
         row2->addWidget(combo, 1);
         row2->addWidget(loadBtn);
@@ -449,10 +452,10 @@ void SAM3Dialog::setupUi() {
 
         m_tabs->addTab(tab, title);
     };
-    makeVisualTab(tr("SAM 3 Visual"), m_modePointsV, m_modeBoxV,
-                  m_modelComboV, m_loadBtnV, m_testDataBtnV);
-    makeVisualTab(tr("SAM 2 / 2.1"), m_modePointsS, m_modeBoxS,
-                  m_modelComboS, m_loadBtnS, m_testDataBtnS);
+    makeVisualTab(tr("SAM 3 Visual"), m_modePointsV, m_modeBoxV, m_modelComboV,
+                  m_loadBtnV, m_testDataBtnV);
+    makeVisualTab(tr("SAM 2 / 2.1"), m_modePointsS, m_modeBoxS, m_modelComboS,
+                  m_loadBtnS, m_testDataBtnS);
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
     // Video segmentation & tracking (upstream examples/main_video.cpp).
@@ -494,20 +497,23 @@ void SAM3Dialog::setupUi() {
     // ── Canvas (shared across tabs) ────────────────────────────────────────
     m_canvas = new SAM3Canvas();
     m_canvas->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    connect(m_canvas, &SAM3Canvas::pointAdded, this, &SAM3Dialog::onCanvasPoint);
+    connect(m_canvas, &SAM3Canvas::pointAdded, this,
+            &SAM3Dialog::onCanvasPoint);
     connect(m_canvas, &SAM3Canvas::boxDrawn, this, &SAM3Dialog::onCanvasBox);
-    connect(m_canvas, &SAM3Canvas::imageDropped, this, [this](const QString& path) {
-        QImage img(path);
-        if (img.isNull()) return;
-        m_currentImage = img;
-        m_currentImagePath = path;
-        m_encoded = false;
-        m_canvas->setImage(img);
-        appendLog(tr("Loaded image: %1").arg(QFileInfo(path).fileName()));
-        if (m_worker && m_worker->context()) {
-            m_segmentBtn->setEnabled(true);
-        }
-    });
+    connect(m_canvas, &SAM3Canvas::imageDropped, this,
+            [this](const QString& path) {
+                QImage img(path);
+                if (img.isNull()) return;
+                m_currentImage = img;
+                m_currentImagePath = path;
+                m_encoded = false;
+                m_canvas->setImage(img);
+                appendLog(
+                        tr("Loaded image: %1").arg(QFileInfo(path).fileName()));
+                if (m_worker && m_worker->context()) {
+                    m_segmentBtn->setEnabled(true);
+                }
+            });
     mainLayout->addWidget(m_canvas, 1);
 
     // ── Bottom panel ───────────────────────────────────────────────────────
@@ -567,9 +573,11 @@ void SAM3Dialog::setupUi() {
     connect(m_loadBtn, &QPushButton::clicked, this, &SAM3Dialog::onLoadModel);
     connect(m_loadBtnV, &QPushButton::clicked, this, &SAM3Dialog::onLoadModel);
     connect(m_loadBtnS, &QPushButton::clicked, this, &SAM3Dialog::onLoadModel);
-    connect(m_segmentBtn, &QPushButton::clicked, this, &SAM3Dialog::onRunSegment);
+    connect(m_segmentBtn, &QPushButton::clicked, this,
+            &SAM3Dialog::onRunSegment);
     connect(m_clearBtn, &QPushButton::clicked, this, &SAM3Dialog::onClear);
-    connect(m_exportBtn, &QPushButton::clicked, this, &SAM3Dialog::onExportMasks);
+    connect(m_exportBtn, &QPushButton::clicked, this,
+            &SAM3Dialog::onExportMasks);
     connect(m_testDataBtn, &QPushButton::clicked, this,
             &SAM3Dialog::requestTestData);
     connect(m_testDataBtnV, &QPushButton::clicked, this,
@@ -645,9 +653,10 @@ void SAM3Dialog::populateModelCombo(QComboBox* combo, Sam3Tab tab) {
         const auto* entry = aicore_sam3_model_at(i);
         if (!entry) continue;
         if (!familyMatches(entry->model_family, tab)) continue;
-        combo->addItem(
-                QString("%1 (%2)").arg(entry->display_name).arg(entry->quant_note),
-                entry->filename);
+        combo->addItem(QString("%1 (%2)")
+                               .arg(entry->display_name)
+                               .arg(entry->quant_note),
+                       entry->filename);
     }
     combo->addItem(tr("Browse..."), QString("__browse__"));
 }
@@ -663,15 +672,16 @@ void SAM3Dialog::loadSettings() {
     QSettings settings("qSAM3");
     m_settings.device = settings.value("device", "auto").toString();
     m_settings.threads = settings.value("threads", 4).toInt();
-    m_settings.scoreThreshold = settings.value("scoreThreshold", 0.5).toDouble();
+    m_settings.scoreThreshold =
+            settings.value("scoreThreshold", 0.5).toDouble();
     m_settings.nmsThreshold = settings.value("nmsThreshold", 0.1).toDouble();
     m_settings.modelFull = settings.value("modelFull").toString();
     m_settings.modelVisual = settings.value("modelVisual").toString();
     m_settings.modelSam2 = settings.value("modelSam2").toString();
     m_settings.exportToDb = settings.value("exportToDb", true).toBool();
 
-    const int devIdx = m_deviceCombo->findText(
-            m_settings.device, Qt::MatchStartsWith);
+    const int devIdx =
+            m_deviceCombo->findText(m_settings.device, Qt::MatchStartsWith);
     if (devIdx >= 0) m_deviceCombo->setCurrentIndex(devIdx);
     m_scoreSpin->setValue(m_settings.scoreThreshold);
     m_exportToDbCheckBox->setChecked(m_settings.exportToDb);
@@ -699,8 +709,8 @@ QString SAM3Dialog::modelPath() const {
     if (QFileInfo::exists(filename)) return filename;
     // Search common model directories
     const QStringList searchDirs = {
-        QDir::homePath() + "/.cache/cloudViewer/models/sam",
-        QDir::homePath() + "/develop/code/github/dl/sam3-ggml/models",
+            QDir::homePath() + "/.cache/cloudViewer/models/sam",
+            QDir::homePath() + "/develop/code/github/dl/sam3-ggml/models",
     };
     for (const auto& dir : searchDirs) {
         const QString full = dir + "/" + filename;
@@ -715,9 +725,7 @@ void SAM3Dialog::applyDbTreeSelection(const QStringList& names) {
     appendLog(tr("DB selection: %1").arg(names.join(", ")));
 }
 
-void SAM3Dialog::appendLog(const QString& msg) {
-    updateStatus(msg);
-}
+void SAM3Dialog::appendLog(const QString& msg) { updateStatus(msg); }
 
 // ── Slots ──────────────────────────────────────────────────────────────────
 
@@ -731,8 +739,8 @@ void SAM3Dialog::onLoadModel() {
     if (path.isEmpty() ||
         currentModelCombo()->currentData().toString() == "__browse__") {
         path = QFileDialog::getOpenFileName(
-                this, tr("Select SAM3 GGUF model"),
-                QDir::homePath(), tr("GGUF files (*.gguf);;All files (*)"));
+                this, tr("Select SAM3 GGUF model"), QDir::homePath(),
+                tr("GGUF files (*.gguf);;All files (*)"));
         if (path.isEmpty()) return;
     }
 
@@ -786,16 +794,17 @@ void SAM3Dialog::onRunSegment() {
         if (posPts.isEmpty() && !m_canvas->hasBox()) {
             // The C-API requires at least one positive point or a box;
             // negative-only clicks must not start a pointless run.
-            appendLog(tr("Click a positive point or drag a bounding box first."));
+            appendLog(
+                    tr("Click a positive point or drag a bounding box first."));
             return;
         }
         for (const auto& pt : posPts) {
-            prompt.posPoints.append({static_cast<float>(pt.x()),
-                                     static_cast<float>(pt.y())});
+            prompt.posPoints.append(
+                    {static_cast<float>(pt.x()), static_cast<float>(pt.y())});
         }
         for (const auto& pt : negPts) {
-            prompt.negPoints.append({static_cast<float>(pt.x()),
-                                     static_cast<float>(pt.y())});
+            prompt.negPoints.append(
+                    {static_cast<float>(pt.x()), static_cast<float>(pt.y())});
         }
         if (m_canvas->hasBox()) {
             const QRectF b = m_canvas->box();
@@ -832,8 +841,7 @@ void SAM3Dialog::onExportMasks() {
     }
     const QString path = QFileDialog::getSaveFileName(
             this, tr("Export mask composite PNG"),
-            QDir::homePath() + "/sam3_masks.png",
-            tr("PNG images (*.png)"));
+            QDir::homePath() + "/sam3_masks.png", tr("PNG images (*.png)"));
     if (!path.isEmpty()) {
         m_lastResult.maskComposite.save(path);
         appendLog(tr("Exported: %1").arg(path));
@@ -851,15 +859,12 @@ void SAM3Dialog::onWorkerProgress(int current, int total) {
     // Not used for now
 }
 
-void SAM3Dialog::onWorkerLog(const QString& msg) {
-    updateStatus(msg);
-}
+void SAM3Dialog::onWorkerLog(const QString& msg) { updateStatus(msg); }
 
 void SAM3Dialog::onWorkerResult(const SAM3WorkerResult& result) {
     if (!result.valid) {
-        updateStatus(result.errorMsg.isEmpty()
-                     ? tr("No detections.")
-                     : result.errorMsg);
+        updateStatus(result.errorMsg.isEmpty() ? tr("No detections.")
+                                               : result.errorMsg);
         return;
     }
     m_lastResult = result;
@@ -873,8 +878,10 @@ void SAM3Dialog::onWorkerResult(const SAM3WorkerResult& result) {
 
     const auto& t = result.timings;
     updateStatus(QString("Done | pre=%.0f inf=%.0f e2e=%.0f ms | %1 detections")
-                 .arg(t.preprocess_ms).arg(t.inference_ms).arg(t.e2e_ms)
-                 .arg(result.detCount));
+                         .arg(t.preprocess_ms)
+                         .arg(t.inference_ms)
+                         .arg(t.e2e_ms)
+                         .arg(result.detCount));
 }
 
 void SAM3Dialog::onCanvasPoint(int type) {
@@ -900,8 +907,9 @@ void SAM3Dialog::onCanvasBox() {
 void SAM3Dialog::onTabChanged(int index) {
     Q_UNUSED(index);
     // The active tab defines the interaction mode; refresh the hint text.
-    updateStatus(tr("Mode: %1").arg(
-            currentPcsMode() ? tr("Exemplar (PCS)") : tr("Points / Box (PVS)")));
+    updateStatus(tr("Mode: %1")
+                         .arg(currentPcsMode() ? tr("Exemplar (PCS)")
+                                               : tr("Points / Box (PVS)")));
     if (m_worker && m_worker->context()) {
         appendLog(tr("Switched to %1 model family. "
                      "The loaded model stays active; re-load if needed.")
@@ -915,21 +923,25 @@ void SAM3Dialog::onModeChanged() {
     m_segmentBtn->setVisible(isPCS);
     // Update help text
     if (currentPointsRadio()->isChecked())
-        updateStatus(tr("Left-click: +point | Right-click: -point | Drag: bounding box"));
+        updateStatus(
+                tr("Left-click: +point | Right-click: -point | Drag: bounding "
+                   "box"));
     else if (currentBoxRadio()->isChecked())
-        updateStatus(tr("Drag: bounding box (PVS) | Left-click: +point | Right-click: -point"));
+        updateStatus(
+                tr("Drag: bounding box (PVS) | Left-click: +point | "
+                   "Right-click: -point"));
     else
         updateStatus(tr("Drag: exemplar box | Type text and press Segment"));
 }
 
 void SAM3Dialog::onDeviceChanged(int idx) {
     const QStringList devNames = {"auto", "cpu", "cuda", "vulkan"};
-    m_settings.device = (idx >= 0 && idx < devNames.size())
-            ? devNames[idx] : "auto";
+    m_settings.device =
+            (idx >= 0 && idx < devNames.size()) ? devNames[idx] : "auto";
     // If model is already loaded, user needs to re-load after changing device
     if (m_worker && m_worker->context()) {
         appendLog(tr("Device changed to %1 - re-load model if needed.")
-                  .arg(m_settings.device));
+                          .arg(m_settings.device));
     }
 }
 
@@ -949,25 +961,28 @@ void SAM3Dialog::startWorker(SAM3WorkerAction action) {
     m_worker->setAction(action);
     m_worker->setImage(m_currentImage);
     connect(m_worker, &SAM3Worker::logMessage, this, &SAM3Dialog::onWorkerLog);
-    connect(m_worker, &SAM3Worker::resultReady, this, &SAM3Dialog::onWorkerResult);
-    connect(m_worker, &SAM3Worker::modelReady, this, [this](const QString& backend, int, bool vis) {
-        m_backendLabel->setText(QString("Backend: %1").arg(backend));
-        m_visualOnly = vis;
-        // Text prompt / Exemplar only make sense on the Full tab and only
-        // for models that carry the text encoder.
-        const bool showText = (currentTab() == Sam3Tab::Full) && !vis;
-        m_modeExemplar->setVisible(showText);
-        m_textPrompt->setVisible(showText);
-        m_segmentBtn->setEnabled(true);
-        m_canvas->setInteractive(true);
-        appendLog(tr("Model loaded successfully on %1.").arg(backend));
-        if (vis) {
-            appendLog(tr("Model is visual-only; use point / box interaction."));
-        }
-    });
-    connect(m_worker, &SAM3Worker::finished, this, [this]() {
-        setBusy(false);
-    });
+    connect(m_worker, &SAM3Worker::resultReady, this,
+            &SAM3Dialog::onWorkerResult);
+    connect(m_worker, &SAM3Worker::modelReady, this,
+            [this](const QString& backend, int, bool vis) {
+                m_backendLabel->setText(QString("Backend: %1").arg(backend));
+                m_visualOnly = vis;
+                // Text prompt / Exemplar only make sense on the Full tab and
+                // only for models that carry the text encoder.
+                const bool showText = (currentTab() == Sam3Tab::Full) && !vis;
+                m_modeExemplar->setVisible(showText);
+                m_textPrompt->setVisible(showText);
+                m_segmentBtn->setEnabled(true);
+                m_canvas->setInteractive(true);
+                appendLog(tr("Model loaded successfully on %1.").arg(backend));
+                if (vis) {
+                    appendLog(
+                            tr("Model is visual-only; use point / box "
+                               "interaction."));
+                }
+            });
+    connect(m_worker, &SAM3Worker::finished, this,
+            [this]() { setBusy(false); });
     m_worker->start();
 }
 
@@ -1012,8 +1027,8 @@ void SAM3Dialog::updateDetectionList() {
     }
     QString html;
     static const char* kColors[] = {
-        "#ff3333", "#3399ff", "#33e64c", "#ffcc1a", "#cc4ce6",
-        "#ff801a", "#1ae6e6", "#e66699", "#80cc33", "#4c4cff",
+            "#ff3333", "#3399ff", "#33e64c", "#ffcc1a", "#cc4ce6",
+            "#ff801a", "#1ae6e6", "#e66699", "#80cc33", "#4c4cff",
     };
     const int nColors = sizeof(kColors) / sizeof(kColors[0]);
 
@@ -1021,9 +1036,9 @@ void SAM3Dialog::updateDetectionList() {
         const QString color = kColors[i % nColors];
         html += QString("<span style='color:%1; font-weight:bold;'>"
                         "#%2: %3</span> ")
-                .arg(color)
-                .arg(m_lastResult.instanceIds.value(i))
-                .arg(m_lastResult.scores.value(i), 0, 'f', 2);
+                        .arg(color)
+                        .arg(m_lastResult.instanceIds.value(i))
+                        .arg(m_lastResult.scores.value(i), 0, 'f', 2);
     }
     m_detectionLabel->setText(html);
 }
@@ -1047,8 +1062,8 @@ void SAM3Dialog::exportToDb() {
         p.end();
     }
 
-    const QString deviceTag = ecvPluginDbNaming::deviceTagFromName(
-            m_settings.device);
+    const QString deviceTag =
+            ecvPluginDbNaming::deviceTagFromName(m_settings.device);
     const QString sourceLabel =
             m_currentImagePath.isEmpty()
                     ? QStringLiteral("canvas")
@@ -1073,9 +1088,9 @@ void SAM3Dialog::exportToDb() {
     for (int i = 0; i < m_lastResult.detCount; ++i) {
         const QString p = QStringLiteral("SAM3/Det%1/").arg(i + 1);
         const aicore_sam3_box& b = m_lastResult.boxes.value(i);
-        img->setMetaData(p + QStringLiteral("InstanceId"),
-                         static_cast<qlonglong>(
-                                 m_lastResult.instanceIds.value(i)));
+        img->setMetaData(
+                p + QStringLiteral("InstanceId"),
+                static_cast<qlonglong>(m_lastResult.instanceIds.value(i)));
         img->setMetaData(p + QStringLiteral("Score"),
                          static_cast<double>(m_lastResult.scores.value(i)));
         img->setMetaData(p + QStringLiteral("Box"),
@@ -1103,9 +1118,12 @@ SAM3Dialog::Sam3Tab SAM3Dialog::currentTab() const {
 
 QComboBox* SAM3Dialog::currentModelCombo() const {
     switch (currentTab()) {
-        case Sam3Tab::Full:   return m_modelCombo;
-        case Sam3Tab::Visual: return m_modelComboV;
-        case Sam3Tab::Sam2:   return m_modelComboS;
+        case Sam3Tab::Full:
+            return m_modelCombo;
+        case Sam3Tab::Visual:
+            return m_modelComboV;
+        case Sam3Tab::Sam2:
+            return m_modelComboS;
     }
     return m_modelCombo;
 }
@@ -1118,18 +1136,24 @@ bool SAM3Dialog::currentPcsMode() const {
 
 QRadioButton* SAM3Dialog::currentPointsRadio() const {
     switch (currentTab()) {
-        case Sam3Tab::Full:   return m_modePoints;
-        case Sam3Tab::Visual: return m_modePointsV;
-        case Sam3Tab::Sam2:   return m_modePointsS;
+        case Sam3Tab::Full:
+            return m_modePoints;
+        case Sam3Tab::Visual:
+            return m_modePointsV;
+        case Sam3Tab::Sam2:
+            return m_modePointsS;
     }
     return m_modePoints;
 }
 
 QRadioButton* SAM3Dialog::currentBoxRadio() const {
     switch (currentTab()) {
-        case Sam3Tab::Full:   return m_modeBox;
-        case Sam3Tab::Visual: return m_modeBoxV;
-        case Sam3Tab::Sam2:   return m_modeBoxS;
+        case Sam3Tab::Full:
+            return m_modeBox;
+        case Sam3Tab::Visual:
+            return m_modeBoxV;
+        case Sam3Tab::Sam2:
+            return m_modeBoxS;
     }
     return m_modeBox;
 }
@@ -1185,8 +1209,8 @@ bool SAM3Dialog::loadRequestedTestData() {
 
     QImage img(path);
     if (img.isNull()) {
-        appendLog(tr("[Test data] Failed to decode sample image: %1")
-                          .arg(path));
+        appendLog(
+                tr("[Test data] Failed to decode sample image: %1").arg(path));
         return true;  // cached file exists but is unusable; don't re-download
     }
     m_currentImage = img;

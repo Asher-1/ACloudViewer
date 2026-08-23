@@ -39,9 +39,9 @@ typedef struct aicore_sam3_tracker_ctx aicore_sam3_tracker_ctx;
 
 /** Model family, mirroring sam3_model_type upstream. */
 enum aicore_sam3_model_type {
-    AICORE_SAM3_MODEL_SAM3        = 0, /**< full SAM3 (ViT + text detector) */
+    AICORE_SAM3_MODEL_SAM3 = 0,        /**< full SAM3 (ViT + text detector) */
     AICORE_SAM3_MODEL_SAM3_VISUAL = 1, /**< SAM3 visual-only (no text) */
-    AICORE_SAM3_MODEL_SAM2        = 2, /**< SAM2 / SAM2.1 Hiera */
+    AICORE_SAM3_MODEL_SAM2 = 2,        /**< SAM2 / SAM2.1 Hiera */
 };
 
 /** Creates a default options struct (device "auto", threads 0 = backend
@@ -191,21 +191,21 @@ AICORE_CAPI aicore_sam3_seg_result* aicore_sam3_segment_pvs_rgb(
 /** Number of detections in the segment result. */
 AICORE_CAPI int aicore_sam3_seg_det_count(const aicore_sam3_seg_result* res);
 /** Detection box of the i-th detection (shallow copy). */
-AICORE_CAPI aicore_sam3_box aicore_sam3_seg_det_box_at(
-        const aicore_sam3_seg_result* res, int index);
+AICORE_CAPI aicore_sam3_box
+aicore_sam3_seg_det_box_at(const aicore_sam3_seg_result* res, int index);
 /** Detection score of the i-th detection. */
 AICORE_CAPI float aicore_sam3_seg_det_score_at(
         const aicore_sam3_seg_result* res, int index);
 /** IoU score of the i-th detection. */
-AICORE_CAPI float aicore_sam3_seg_det_iou_at(
-        const aicore_sam3_seg_result* res, int index);
+AICORE_CAPI float aicore_sam3_seg_det_iou_at(const aicore_sam3_seg_result* res,
+                                             int index);
 /** Instance id of the i-th detection (-1 for one-shot image results). */
 AICORE_CAPI int aicore_sam3_seg_det_instance_id_at(
         const aicore_sam3_seg_result* res, int index);
 /** Mask of the i-th detection (borrowed; valid while res lives; 0/255 at
  *  original image resolution). */
-AICORE_CAPI aicore_sam3_plane_view aicore_sam3_seg_mask_at(
-        const aicore_sam3_seg_result* res, int index);
+AICORE_CAPI aicore_sam3_plane_view
+aicore_sam3_seg_mask_at(const aicore_sam3_seg_result* res, int index);
 /** Release a segment result. Safe on NULL. */
 AICORE_CAPI void aicore_sam3_seg_result_free(aicore_sam3_seg_result* res);
 
@@ -243,22 +243,19 @@ AICORE_CAPI aicore_sam3_seg_result* aicore_sam3_propagate_frame(
  *  must have been processed by track_frame/propagate_frame or encoded via
  *  aicore_sam3_encode_rgb. Returns the assigned instance id, or -1. */
 AICORE_CAPI int aicore_sam3_tracker_add_instance(
-        aicore_sam3_tracker_ctx* tracker,
-        const aicore_sam3_pvs_prompt* prompt);
+        aicore_sam3_tracker_ctx* tracker, const aicore_sam3_pvs_prompt* prompt);
 /** Add a tracked instance from an existing binary mask (0/255 view) on the
  *  current frame. Returns the assigned instance id, or -1. */
 AICORE_CAPI int aicore_sam3_tracker_add_instance_from_mask(
-        aicore_sam3_tracker_ctx* tracker,
-        const aicore_sam3_plane_view* mask);
+        aicore_sam3_tracker_ctx* tracker, const aicore_sam3_plane_view* mask);
 /** Refine a tracked instance with interactive points. Returns 0 on success,
  *  -1 on failure. */
-AICORE_CAPI int aicore_sam3_refine_instance(
-        aicore_sam3_tracker_ctx* tracker,
-        int instance_id,
-        const aicore_sam3_point* pos_points,
-        int n_pos_points,
-        const aicore_sam3_point* neg_points,
-        int n_neg_points);
+AICORE_CAPI int aicore_sam3_refine_instance(aicore_sam3_tracker_ctx* tracker,
+                                            int instance_id,
+                                            const aicore_sam3_point* pos_points,
+                                            int n_pos_points,
+                                            const aicore_sam3_point* neg_points,
+                                            int n_neg_points);
 /** Current frame index of the tracker. */
 AICORE_CAPI int aicore_sam3_tracker_frame_index(
         const aicore_sam3_tracker_ctx* tracker);
@@ -286,13 +283,13 @@ AICORE_CAPI int aicore_sam3_last_timings(const aicore_sam3_ctx* ctx,
 /** ---- Published model catalog (cloudViewer_downloads "sam" release) ---- */
 
 typedef struct aicore_sam3_model_entry {
-    const char* filename;      /**< e.g. "sam3-f16.gguf" */
-    const char* download_url;  /**< full download URL */
-    const char* display_name;  /**< human-readable */
-    const char* quant_note;    /**< quantization description */
-    const char* model_family;  /**< "sam3" | "sam3-visual" | "sam2.1" | "sam2" */
-    int64_t size_bytes;        /**< published asset size */
-    int visual_only;           /**< 1 = no text prompt support */
+    const char* filename;     /**< e.g. "sam3-f16.gguf" */
+    const char* download_url; /**< full download URL */
+    const char* display_name; /**< human-readable */
+    const char* quant_note;   /**< quantization description */
+    const char* model_family; /**< "sam3" | "sam3-visual" | "sam2.1" | "sam2" */
+    int64_t size_bytes;       /**< published asset size */
+    int visual_only;          /**< 1 = no text prompt support */
 } aicore_sam3_model_entry;
 
 /** Number of catalog entries. */

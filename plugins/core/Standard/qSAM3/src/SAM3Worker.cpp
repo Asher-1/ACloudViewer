@@ -7,11 +7,10 @@
 
 #include "SAM3Worker.h"
 
-#include <cstring>
-
 #include <QDir>
 #include <QElapsedTimer>
 #include <QFileInfo>
+#include <cstring>
 
 #ifdef AICore_ENABLED
 #include "aicore/runtime_capi.h"
@@ -23,10 +22,10 @@ static QImage blendMasksImpl(aicore_sam3_seg_result* res, int imgW, int imgH) {
 
     // Static instance colors matching the ImGui original
     static const QRgb kColors[] = {
-        qRgb(255, 51, 51),   qRgb(51, 153, 255), qRgb(51, 230, 76),
-        qRgb(255, 204, 26),  qRgb(204, 76, 230), qRgb(255, 128, 26),
-        qRgb(26, 230, 230),  qRgb(230, 102, 153), qRgb(128, 204, 51),
-        qRgb(76, 76, 255),   qRgb(255, 153, 179), qRgb(153, 255, 128),
+            qRgb(255, 51, 51),  qRgb(51, 153, 255),  qRgb(51, 230, 76),
+            qRgb(255, 204, 26), qRgb(204, 76, 230),  qRgb(255, 128, 26),
+            qRgb(26, 230, 230), qRgb(230, 102, 153), qRgb(128, 204, 51),
+            qRgb(76, 76, 255),  qRgb(255, 153, 179), qRgb(153, 255, 128),
     };
     static constexpr int kNColors = sizeof(kColors) / sizeof(kColors[0]);
 
@@ -41,18 +40,20 @@ static QImage blendMasksImpl(aicore_sam3_seg_result* res, int imgW, int imgH) {
         const uint8_t* src = static_cast<const uint8_t*>(m.data);
 
         for (int y = 0; y < m.height && y < imgH; ++y) {
-            uint32_t* dstLine = reinterpret_cast<uint32_t*>(
-                    overlay.scanLine(y));
+            uint32_t* dstLine =
+                    reinterpret_cast<uint32_t*>(overlay.scanLine(y));
             for (int x = 0; x < m.width && x < imgW; ++x) {
-                if (src[static_cast<size_t>(y) * m.row_stride_bytes + x] > 127) {
+                if (src[static_cast<size_t>(y) * m.row_stride_bytes + x] >
+                    127) {
                     const QRgb existing = dstLine[x];
                     const int a = alpha;
                     const int invA = 255 - a;
                     dstLine[x] = qRgba(
-                        (qRed(color) * a + qRed(existing) * invA) / 255,
-                        (qGreen(color) * a + qGreen(existing) * invA) / 255,
-                        (qBlue(color) * a + qBlue(existing) * invA) / 255,
-                        qAlpha(existing) + ((255 - qAlpha(existing)) * a) / 255);
+                            (qRed(color) * a + qRed(existing) * invA) / 255,
+                            (qGreen(color) * a + qGreen(existing) * invA) / 255,
+                            (qBlue(color) * a + qBlue(existing) * invA) / 255,
+                            qAlpha(existing) +
+                                    ((255 - qAlpha(existing)) * a) / 255);
                 }
             }
         }
@@ -61,8 +62,7 @@ static QImage blendMasksImpl(aicore_sam3_seg_result* res, int imgW, int imgH) {
 }
 
 SAM3Worker::SAM3Worker(const Settings& settings, QObject* parent)
-    : QThread(parent), m_settings(settings) {
-}
+    : QThread(parent), m_settings(settings) {}
 
 SAM3Worker::~SAM3Worker() {
     requestCancel();
@@ -72,9 +72,7 @@ SAM3Worker::~SAM3Worker() {
     }
 }
 
-void SAM3Worker::requestCancel() {
-    m_cancelled = true;
-}
+void SAM3Worker::requestCancel() { m_cancelled = true; }
 
 void SAM3Worker::run() {
     const bool ok = runInference();
@@ -96,15 +94,20 @@ bool SAM3Worker::runInference() {
                 emit logMessage("SAM3: Failed to allocate options.");
                 return false;
             }
-            aicore_sam3_options_set_device(opts, m_settings.device.toUtf8().constData());
+            aicore_sam3_options_set_device(
+                    opts, m_settings.device.toUtf8().constData());
             aicore_sam3_options_set_threads(opts, m_settings.threads);
-            aicore_sam3_options_set_encode_img_size(opts, m_settings.encodeImgSize);
-            aicore_sam3_options_set_score_threshold(opts, m_settings.scoreThreshold);
-            aicore_sam3_options_set_nms_threshold(opts, m_settings.nmsThreshold);
+            aicore_sam3_options_set_encode_img_size(opts,
+                                                    m_settings.encodeImgSize);
+            aicore_sam3_options_set_score_threshold(opts,
+                                                    m_settings.scoreThreshold);
+            aicore_sam3_options_set_nms_threshold(opts,
+                                                  m_settings.nmsThreshold);
 
-            emit logMessage(QString("Loading model: %1 (device=%2)")
-                    .arg(QFileInfo(m_settings.modelPath).fileName(),
-                         m_settings.device));
+            emit logMessage(
+                    QString("Loading model: %1 (device=%2)")
+                            .arg(QFileInfo(m_settings.modelPath).fileName(),
+                                 m_settings.device));
             emit progressUpdate(0, 1);
 
             m_pendingCtx = aicore_sam3_load_opts(
@@ -112,10 +115,12 @@ bool SAM3Worker::runInference() {
             aicore_sam3_options_free(opts);
 
             if (!m_pendingCtx || !aicore_sam3_is_ready(m_pendingCtx)) {
-                const char* err = m_pendingCtx ? aicore_sam3_last_error(m_pendingCtx)
-                                               : "context allocation failed";
+                const char* err = m_pendingCtx
+                                          ? aicore_sam3_last_error(m_pendingCtx)
+                                          : "context allocation failed";
                 emit logMessage(QString("Model load failed: %1")
-                        .arg(err ? QString::fromUtf8(err) : "unknown error"));
+                                        .arg(err ? QString::fromUtf8(err)
+                                                 : "unknown error"));
                 return false;
             }
             m_ctx = m_pendingCtx;
@@ -124,9 +129,13 @@ bool SAM3Worker::runInference() {
             const int modelType = aicore_sam3_context_model_type(m_ctx);
             const int visualOnly = aicore_sam3_context_visual_only(m_ctx);
             const char* backend = aicore_sam3_context_backend_name(m_ctx);
-            emit logMessage(QString("Model loaded: type=%1 visual_only=%2 backend=%3")
-                    .arg(modelType).arg(visualOnly).arg(backend));
-            emit modelReady(QString::fromUtf8(backend), modelType, visualOnly != 0);
+            emit logMessage(
+                    QString("Model loaded: type=%1 visual_only=%2 backend=%3")
+                            .arg(modelType)
+                            .arg(visualOnly)
+                            .arg(backend));
+            emit modelReady(QString::fromUtf8(backend), modelType,
+                            visualOnly != 0);
         }
 
         if (m_cancelled) return false;
@@ -178,13 +187,12 @@ bool SAM3Worker::runInference() {
 aicore_sam3_seg_result* SAM3Worker::runPVS() {
     // Encode image
     const QImage rgb = m_image.convertToFormat(QImage::Format_RGB888);
-    const int ok = aicore_sam3_encode_rgb(m_ctx, rgb.constBits(),
-                                           rgb.width(), rgb.height(),
-                                           static_cast<size_t>(rgb.bytesPerLine()),
-                                           1);
+    const int ok = aicore_sam3_encode_rgb(
+            m_ctx, rgb.constBits(), rgb.width(), rgb.height(),
+            static_cast<size_t>(rgb.bytesPerLine()), 1);
     if (ok != 0) {
         emit logMessage(QString("Encode failed: %1")
-                .arg(aicore_sam3_last_error(m_ctx)));
+                                .arg(aicore_sam3_last_error(m_ctx)));
         return nullptr;
     }
 
@@ -214,13 +222,12 @@ aicore_sam3_seg_result* SAM3Worker::runPVS() {
 aicore_sam3_seg_result* SAM3Worker::runPCS() {
     // Encode image (with detector neck)
     const QImage rgb = m_image.convertToFormat(QImage::Format_RGB888);
-    const int ok = aicore_sam3_encode_rgb(m_ctx, rgb.constBits(),
-                                           rgb.width(), rgb.height(),
-                                           static_cast<size_t>(rgb.bytesPerLine()),
-                                           0);
+    const int ok = aicore_sam3_encode_rgb(
+            m_ctx, rgb.constBits(), rgb.width(), rgb.height(),
+            static_cast<size_t>(rgb.bytesPerLine()), 0);
     if (ok != 0) {
         emit logMessage(QString("Encode (full) failed: %1")
-                .arg(aicore_sam3_last_error(m_ctx)));
+                                .arg(aicore_sam3_last_error(m_ctx)));
         return nullptr;
     }
 
@@ -242,7 +249,8 @@ aicore_sam3_seg_result* SAM3Worker::runPCS() {
                                        static_cast<size_t>(rgb.bytesPerLine()));
 }
 
-SAM3WorkerResult SAM3Worker::buildResult(aicore_sam3_seg_result* segRes, const QImage& img) {
+SAM3WorkerResult SAM3Worker::buildResult(aicore_sam3_seg_result* segRes,
+                                         const QImage& img) {
     SAM3WorkerResult r;
     if (!segRes) return r;
 
@@ -257,13 +265,13 @@ SAM3WorkerResult SAM3Worker::buildResult(aicore_sam3_seg_result* segRes, const Q
         r.instanceIds.append(aicore_sam3_seg_det_instance_id_at(segRes, i));
         // Per-instance 0/255 mask at original image resolution, for
         // per-instance coloring (video timeline / overlay).
-        const aicore_sam3_plane_view mask =
-                aicore_sam3_seg_mask_at(segRes, i);
+        const aicore_sam3_plane_view mask = aicore_sam3_seg_mask_at(segRes, i);
         QImage m(mask.width, mask.height, QImage::Format_Grayscale8);
         if (mask.data && !m.isNull()) {
             for (int y = 0; y < mask.height; ++y) {
                 memcpy(m.scanLine(y),
-                       mask.data + static_cast<int64_t>(y) * mask.row_stride_bytes,
+                       mask.data +
+                               static_cast<int64_t>(y) * mask.row_stride_bytes,
                        static_cast<size_t>(mask.width));
             }
         }

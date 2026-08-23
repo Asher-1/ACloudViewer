@@ -182,7 +182,7 @@ void MpvFrameSource::mpvThreadMain() {
     mpv_render_param initParams[] = {
             {MPV_RENDER_PARAM_API_TYPE,
              const_cast<char*>(MPV_RENDER_API_TYPE_SW)},
-            {0, nullptr},
+            mpv_render_param{},
     };
     if (mpv_render_context_create(&m_renderCtx, m_mpv, initParams) < 0) {
         m_renderCtx = nullptr;
@@ -243,8 +243,9 @@ void MpvFrameSource::onMpvEvent(mpv_event* ev) {
 }
 
 void MpvFrameSource::renderFrame() {
-    const int64_t w = mpv_get_property_int(m_mpv, "video-params/w");
-    const int64_t h = mpv_get_property_int(m_mpv, "video-params/h");
+    int64_t w = 0, h = 0;
+    mpv_get_property(m_mpv, "video-params/w", MPV_FORMAT_INT64, &w);
+    mpv_get_property(m_mpv, "video-params/h", MPV_FORMAT_INT64, &h);
     if (w <= 0 || h <= 0) return;
 
     if (m_swWidth != w || m_swHeight != h) {
@@ -261,13 +262,14 @@ void MpvFrameSource::renderFrame() {
             {MPV_RENDER_PARAM_SW_FORMAT, const_cast<char*>("bgr0")},
             {MPV_RENDER_PARAM_SW_STRIDE, swStride},
             {MPV_RENDER_PARAM_SW_POINTER, &bufPtr},
-            {0, nullptr},
+            mpv_render_param{},
     };
     if (mpv_render_context_render(m_renderCtx, params) != 0) return;
 
     // video-pts distinguishes a genuinely new frame from a re-render of the
     // same frame (e.g. after a widget redraw request).
-    const double pts = mpv_get_property_double(m_mpv, "video-pts");
+    double pts = -1.0;
+    mpv_get_property(m_mpv, "video-pts", MPV_FORMAT_DOUBLE, &pts);
     if (pts < 0.0 || pts == m_lastPts) return;
     m_lastPts = pts;
 
@@ -285,9 +287,11 @@ void MpvFrameSource::renderFrame() {
 }
 
 void MpvFrameSource::updateMetadata() {
-    const double duration = mpv_get_property_double(m_mpv, "duration");
-    double fps = mpv_get_property_double(m_mpv, "estimated-vf-fps");
-    if (fps <= 0.0) fps = mpv_get_property_double(m_mpv, "fps");
+    double duration = 0.0;
+    mpv_get_property(m_mpv, "duration", MPV_FORMAT_DOUBLE, &duration);
+    double fps = 0.0;
+    mpv_get_property(m_mpv, "estimated-vf-fps", MPV_FORMAT_DOUBLE, &fps);
+    if (fps <= 0.0) mpv_get_property(m_mpv, "fps", MPV_FORMAT_DOUBLE, &fps);
     if (fps <= 0.0) fps = 30.0;  // fallback for VFR / unknown
     m_fps.store(fps, std::memory_order_release);
     m_frameCount.store(
@@ -298,7 +302,7 @@ void MpvFrameSource::updateMetadata() {
 #endif  // HAS_LIBMPV && MPV_RENDER_API_TYPE_SW
 
 // Older libmpv (no software rendering): the header provides an
-// always-unavailable stub; keep the symbol definition here for linkage.
+// always-unavailable stub; no out-of-line definition needed.
 #if defined(HAS_LIBMPV) && !defined(MPV_RENDER_API_TYPE_SW)
-bool MpvFrameSource::available() { return false; }
+// MpvFrameSource::available() is defined inline in the header stub.
 #endif

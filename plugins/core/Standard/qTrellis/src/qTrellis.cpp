@@ -10,8 +10,8 @@
 #include <ecvGenericMesh.h>
 #include <ecvMainAppInterface.h>
 #include <ecvMesh.h>
-#include <ecvPointCloud.h>
 #include <ecvPluginDbNaming.h>
+#include <ecvPointCloud.h>
 #include <ecvScalarField.h>
 
 #include <QDateTime>
@@ -35,8 +35,9 @@ qTrellis::qTrellis(QObject* parent)
     qRegisterMetaType<TrellisRunResult>("TrellisRunResult");
     qRegisterMetaType<TrellisDialog::Settings>("TrellisDialog::Settings");
     m_action = new QAction(tr("TRELLIS.2 Image to 3D"), this);
-    m_action->setToolTip(tr("Generate a textured 3D mesh from a single image "
-                            "(TRELLIS.2, GGML)"));
+    m_action->setToolTip(
+            tr("Generate a textured 3D mesh from a single image "
+               "(TRELLIS.2, GGML)"));
     m_action->setIcon(QIcon(":/CC/plugin/qTrellis/images/qTrellis.svg"));
     connect(m_action, &QAction::triggered, this, &qTrellis::showDialog);
 
@@ -60,8 +61,8 @@ void qTrellis::onNewSelection(const ccHObject::Container& selectedEntities) {
 void qTrellis::showDialog() {
     if (!m_app) return;
     if (!m_dialog) {
-        m_dialog =
-                new TrellisDialog(static_cast<QWidget*>(m_app->getMainWindow()));
+        m_dialog = new TrellisDialog(
+                static_cast<QWidget*>(m_app->getMainWindow()));
         m_dialog->setAppInterface(m_app);
         connect(m_dialog, &TrellisDialog::runRequested, this,
                 &qTrellis::executeTask);
@@ -124,8 +125,9 @@ void qTrellis::executeTask(const TrellisDialog::Settings& settings) {
     workerSettings.textureEnabled = settings.textureEnabled;
 
     if (workerSettings.modelPaths.size() < 3) {
-        m_dialog->appendLog(tr("[TRELLIS] Model paths unresolved — select a "
-                               "preset and download the models first."));
+        m_dialog->appendLog(
+                tr("[TRELLIS] Model paths unresolved — select a "
+                   "preset and download the models first."));
         return;
     }
 
@@ -135,8 +137,8 @@ void qTrellis::executeTask(const TrellisDialog::Settings& settings) {
             &TrellisDialog::appendLog, Qt::QueuedConnection);
     connect(m_worker, &TrellisWorker::progressUpdate, this,
             &qTrellis::onWorkerProgress, Qt::QueuedConnection);
-    connect(m_worker, &TrellisWorker::resultReady, this, &qTrellis::onResultReady,
-            Qt::QueuedConnection);
+    connect(m_worker, &TrellisWorker::resultReady, this,
+            &qTrellis::onResultReady, Qt::QueuedConnection);
     connect(m_worker, &TrellisWorker::taskFinished, this,
             &qTrellis::onTaskFinished, Qt::QueuedConnection);
     m_dialog->setRunning(true);
@@ -155,18 +157,42 @@ void qTrellis::onWorkerProgress(int stage, int step, int total) {
     if (!m_dialog) return;
     QString stageName;
     switch (stage) {
-        case AICORE_TRELLIS_STAGE_PREPROCESS: stageName = tr("preprocess"); break;
-        case AICORE_TRELLIS_STAGE_DINO: stageName = tr("dino"); break;
-        case AICORE_TRELLIS_STAGE_SS_FLOW: stageName = tr("sparse structure"); break;
-        case AICORE_TRELLIS_STAGE_SS_DEC: stageName = tr("occupancy decode"); break;
-        case AICORE_TRELLIS_STAGE_SLAT_FLOW: stageName = tr("shape flow"); break;
-        case AICORE_TRELLIS_STAGE_SHAPE_DEC: stageName = tr("shape decode"); break;
-        case AICORE_TRELLIS_STAGE_MESH: stageName = tr("mesh extraction"); break;
-        case AICORE_TRELLIS_STAGE_UPSAMPLE: stageName = tr("upsample"); break;
-        case AICORE_TRELLIS_STAGE_SLAT_FLOW_HR: stageName = tr("shape flow 1024"); break;
-        case AICORE_TRELLIS_STAGE_SHAPE_DEC_HR: stageName = tr("shape decode 1024"); break;
-        case AICORE_TRELLIS_STAGE_TEXTURE: stageName = tr("PBR texture"); break;
-        default: stageName = tr("generation"); break;
+        case AICORE_TRELLIS_STAGE_PREPROCESS:
+            stageName = tr("preprocess");
+            break;
+        case AICORE_TRELLIS_STAGE_DINO:
+            stageName = tr("dino");
+            break;
+        case AICORE_TRELLIS_STAGE_SS_FLOW:
+            stageName = tr("sparse structure");
+            break;
+        case AICORE_TRELLIS_STAGE_SS_DEC:
+            stageName = tr("occupancy decode");
+            break;
+        case AICORE_TRELLIS_STAGE_SLAT_FLOW:
+            stageName = tr("shape flow");
+            break;
+        case AICORE_TRELLIS_STAGE_SHAPE_DEC:
+            stageName = tr("shape decode");
+            break;
+        case AICORE_TRELLIS_STAGE_MESH:
+            stageName = tr("mesh extraction");
+            break;
+        case AICORE_TRELLIS_STAGE_UPSAMPLE:
+            stageName = tr("upsample");
+            break;
+        case AICORE_TRELLIS_STAGE_SLAT_FLOW_HR:
+            stageName = tr("shape flow 1024");
+            break;
+        case AICORE_TRELLIS_STAGE_SHAPE_DEC_HR:
+            stageName = tr("shape decode 1024");
+            break;
+        case AICORE_TRELLIS_STAGE_TEXTURE:
+            stageName = tr("PBR texture");
+            break;
+        default:
+            stageName = tr("generation");
+            break;
     }
     m_dialog->setProgressStage(stageName, step, total);
 }
@@ -205,8 +231,7 @@ void qTrellis::addResultToDb(const TrellisRunResult& result,
         return;
     }
     for (int i = 0; i < nv; ++i) {
-        cloud->addPoint(CCVector3(result.verts[i * 3],
-                                  result.verts[i * 3 + 1],
+        cloud->addPoint(CCVector3(result.verts[i * 3], result.verts[i * 3 + 1],
                                   result.verts[i * 3 + 2]));
     }
 
@@ -215,13 +240,15 @@ void qTrellis::addResultToDb(const TrellisRunResult& result,
         if (cloud->resizeTheRGBTable()) {
             for (int i = 0; i < nv; ++i) {
                 const float* pbr = result.pbr.constData() + i * 6;
-                cloud->setPointColor(i, ecvColor::Rgb(
-                                                static_cast<ColorCompType>(pbr[0] * 255.0f),
-                                                static_cast<ColorCompType>(pbr[1] * 255.0f),
-                                                static_cast<ColorCompType>(pbr[2] * 255.0f)));
+                cloud->setPointColor(
+                        i,
+                        ecvColor::Rgb(
+                                static_cast<ColorCompType>(pbr[0] * 255.0f),
+                                static_cast<ColorCompType>(pbr[1] * 255.0f),
+                                static_cast<ColorCompType>(pbr[2] * 255.0f)));
             }
         }
-        if (cloud->resizeTheNormsTable() && result.normals.size() == nv * 3) {
+        if (result.normals.size() == nv * 3 && cloud->resizeTheNormsTable()) {
             for (int i = 0; i < nv; ++i) {
                 const float* n = result.normals.constData() + i * 3;
                 cloud->setPointNormal(i, CCVector3(n[0], n[1], n[2]));
@@ -234,9 +261,12 @@ void qTrellis::addResultToDb(const TrellisRunResult& result,
         int idxR = cloud->addScalarField(kRoughness);
         int idxA = cloud->addScalarField(kAlpha);
         if (idxM >= 0 && idxR >= 0 && idxA >= 0) {
-            ccScalarField* sfM = static_cast<ccScalarField*>(cloud->getScalarField(idxM));
-            ccScalarField* sfR = static_cast<ccScalarField*>(cloud->getScalarField(idxR));
-            ccScalarField* sfA = static_cast<ccScalarField*>(cloud->getScalarField(idxA));
+            ccScalarField* sfM =
+                    static_cast<ccScalarField*>(cloud->getScalarField(idxM));
+            ccScalarField* sfR =
+                    static_cast<ccScalarField*>(cloud->getScalarField(idxR));
+            ccScalarField* sfA =
+                    static_cast<ccScalarField*>(cloud->getScalarField(idxA));
             for (int i = 0; i < nv; ++i) {
                 const float* pbr = result.pbr.constData() + i * 6;
                 sfM->setValue(i, pbr[3]);
@@ -246,8 +276,12 @@ void qTrellis::addResultToDb(const TrellisRunResult& result,
             sfM->computeMinAndMax();
             sfR->computeMinAndMax();
             sfA->computeMinAndMax();
-            cloud->setCurrentDisplayedScalarField(idxM);
-            cloud->showSF(true);
+            // Keep the PBR channels queryable as scalar fields, but show the
+            // base-color vertex colours by default: displaying the metallic
+            // field here would paint the whole mesh grey (SF rendering
+            // overrides vertex colours).
+            cloud->showSF(false);
+            cloud->showColors(true);
         }
     } else if (result.normals.size() == nv * 3) {
         if (cloud->resizeTheNormsTable()) {
@@ -269,7 +303,15 @@ void qTrellis::addResultToDb(const TrellisRunResult& result,
         mesh->addTriangle(result.tris[i * 3], result.tris[i * 3 + 1],
                           result.tris[i * 3 + 2]);
     }
-    mesh->computeNormals(true);
+    // Keep the robust structure-tensor normals produced by fdg::vertex_normals
+    // (aicore_trellis_capi): ccMesh::computePerVertexNormals would overwrite
+    // them with a naive area-weighted average, which cancels out on the dual
+    // grid's winding-mixed faces and leaves the mesh looking full of holes
+    // under backface culling. Fall back to the classic computation only when
+    // the pipeline delivered no normals at all.
+    if (!cloud->hasNormals()) {
+        mesh->computeNormals(true);
+    }
     mesh->showNormals(true);
 
     mesh->setMetaData(QStringLiteral("Source"), result.sourceImage);
@@ -295,14 +337,15 @@ void qTrellis::saveResultGlb(const TrellisRunResult& result,
     const QString path = dir + QDir::separator() +
                          QStringLiteral("TRELLIS_%1_%2.glb")
                                  .arg(base)
-                                 .arg(QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss"));
+                                 .arg(QDateTime::currentDateTime().toString(
+                                         "yyyyMMdd_hhmmss"));
     char err[512] = {0};
     int outLen = 0;
     uint8_t* glb = aicore_trellis_bake_glb(
             result.verts.constData(), result.verts.size() / 3,
             result.tris.constData(), result.tris.size() / 3,
-            result.hasPbr ? result.pbr.constData() : nullptr,
-            2048, 0, &outLen, err, sizeof(err));
+            result.hasPbr ? result.pbr.constData() : nullptr, 2048, 0, &outLen,
+            err, sizeof(err));
     if (!glb) {
         m_dialog->appendLog(tr("[TRELLIS] GLB bake failed: %1")
                                     .arg(QString::fromUtf8(err)));

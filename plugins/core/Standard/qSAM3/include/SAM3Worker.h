@@ -22,7 +22,7 @@ enum class SAM3WorkerAction {
     LoadModel,
     EncodeAndSegmentPVS,
     EncodeAndSegmentPCS,
-    SegmentOnly,    // re-segment on already-encoded image
+    SegmentOnly,  // re-segment on already-encoded image
 };
 
 // Result data transferred from worker back to UI thread
@@ -34,7 +34,7 @@ struct SAM3WorkerResult {
     QVector<float> ious;
     QVector<int> instanceIds;
     QVector<QImage> instanceMasks;  // per-detection 0/255 mask at original size
-    QImage maskComposite;  // all masks blended on a black background
+    QImage maskComposite;           // all masks blended on a black background
     aicore_sam3_timings timings{};
     QString errorMsg;
 };
@@ -94,7 +94,8 @@ private:
     bool runInference();
     aicore_sam3_seg_result* runPVS();
     aicore_sam3_seg_result* runPCS();
-    SAM3WorkerResult buildResult(aicore_sam3_seg_result* segRes, const QImage& img);
+    SAM3WorkerResult buildResult(aicore_sam3_seg_result* segRes,
+                                 const QImage& img);
     QImage blendMasks(aicore_sam3_seg_result* res, int imgW, int imgH);
 
     Settings m_settings;

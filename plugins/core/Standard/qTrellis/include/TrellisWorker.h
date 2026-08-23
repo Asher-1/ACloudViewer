@@ -21,9 +21,9 @@ struct TrellisRunResult {
     QString sourceImage;
     QString presetName;
     /** Centered unit-cube mesh ([-0.5, 0.5]^3). */
-    QVector<float> verts;     // 3 * nVerts
-    QVector<float> normals;   // 3 * nVerts
-    QVector<int> tris;        // 3 * nTris
+    QVector<float> verts;    // 3 * nVerts
+    QVector<float> normals;  // 3 * nVerts
+    QVector<int> tris;       // 3 * nTris
     /** Per-vertex PBR (6 * nVerts: base_color rgb, metallic, roughness,
      *  alpha); empty when untextured. */
     QVector<float> pbr;
@@ -42,20 +42,20 @@ class TrellisWorker : public QThread {
 
 public:
     struct Settings {
-        QStringList modelPaths;   // resolved absolute GGUF paths
+        QStringList modelPaths;  // resolved absolute GGUF paths
         QString inputPath;
         QString presetName;
-        int pipelineType = 0;     // aicore_trellis_pipeline_type (auto=0)
-        int backgroundMode = 0;   // aicore_trellis_background_mode (auto=0)
-        int steps = 0;            // <=0 -> pipeline default (12)
-        double guidance = -1.0;   // <0 -> pipeline default (7.5)
-        int textureSteps = 0;     // <=0 -> pipeline default (12)
+        int pipelineType = 0;    // aicore_trellis_pipeline_type (auto=0)
+        int backgroundMode = 0;  // aicore_trellis_background_mode (auto=0)
+        int steps = 0;           // <=0 -> pipeline default (12)
+        double guidance = -1.0;  // <0 -> pipeline default (7.5)
+        int textureSteps = 0;    // <=0 -> pipeline default (12)
         uint64_t seed = 0;
         int threads = 0;
         QString device = QStringLiteral("auto");
         QString shapeDecPlacement = QStringLiteral("auto");
         bool useRmbg = false;
-        QString rmbgModelPath;    // used when useRmbg
+        QString rmbgModelPath;  // used when useRmbg
         bool textureEnabled = true;
     };
 

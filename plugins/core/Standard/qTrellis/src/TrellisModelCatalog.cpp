@@ -59,8 +59,10 @@ QVector<TrellisModelEntry> modelsByRole(const QString& role) {
 QVector<TrellisPreset> presets() {
     QVector<TrellisPreset> out;
     out.append({QStringLiteral("Coarse 64\u00b3 preview"),
-                QStringLiteral("Fast occupancy preview (~4.5 GB): dino + ss_flow + ss_dec"),
-                {QStringLiteral("dino_f16.gguf"), QStringLiteral("ss_flow_q8.gguf"),
+                QStringLiteral("Fast occupancy preview (~4.5 GB): dino + "
+                               "ss_flow + ss_dec"),
+                {QStringLiteral("dino_f16.gguf"),
+                 QStringLiteral("ss_flow_q8.gguf"),
                  QStringLiteral("ss_dec_f16.gguf")}});
     // The file lists below MUST stay in aicore_trellis_model_paths field
     // order (dino, ss_flow, ss_dec, slat_flow, slat_hr_flow, shape_dec,
@@ -68,25 +70,34 @@ QVector<TrellisPreset> presets() {
     // resolved list by index. A preset that omits a field keeps an empty
     // string placeholder so later fields do not shift.
     QStringList fine512;
-    fine512 << QStringLiteral("dino_f16.gguf") << QStringLiteral("ss_flow_q8.gguf")
-            << QStringLiteral("ss_dec_f16.gguf") << QStringLiteral("slat_flow_q8.gguf")
+    fine512 << QStringLiteral("dino_f16.gguf")
+            << QStringLiteral("ss_flow_q8.gguf")
+            << QStringLiteral("ss_dec_f16.gguf")
+            << QStringLiteral("slat_flow_q8.gguf")
             << QString()  // slat_hr_flow (1024) — not in this preset
             << QStringLiteral("shape_dec_f16.gguf")
-            << QStringLiteral("shape_enc_f16.gguf") << QStringLiteral("tex_dec_f16.gguf")
+            << QStringLiteral("shape_enc_f16.gguf")
+            << QStringLiteral("tex_dec_f16.gguf")
             << QStringLiteral("tex_slat_flow_512_q8.gguf")
             << QString();  // tex_flow_hr (1024) — not in this preset
-    out.append({QStringLiteral("Standard 512 + PBR (recommended)"),
-                QStringLiteral("512\u00b3 fine dual-grid with PBR texturing (~7.9 GB)"),
-                fine512});
-    out.append({QStringLiteral("Full 1024 cascade + PBR"),
-                QStringLiteral("1024\u00b3 cascade with PBR texturing (~9.3 GB)"),
-                {QStringLiteral("dino_f16.gguf"), QStringLiteral("ss_flow_q8.gguf"),
-                 QStringLiteral("ss_dec_f16.gguf"), QStringLiteral("slat_flow_q8.gguf"),
-                 QStringLiteral("slat_flow_1024_q8.gguf"),
-                 QStringLiteral("shape_dec_f16.gguf"), QStringLiteral("shape_enc_f16.gguf"),
-                 QStringLiteral("tex_dec_f16.gguf"),
-                 QStringLiteral("tex_slat_flow_512_q8.gguf"),
-                 QStringLiteral("tex_slat_flow_1024_q8.gguf")}});
+    out.append(
+            {QStringLiteral("Standard 512 + PBR (recommended)"),
+             QStringLiteral(
+                     "512\u00b3 fine dual-grid with PBR texturing (~7.9 GB)"),
+             fine512});
+    out.append(
+            {QStringLiteral("Full 1024 cascade + PBR"),
+             QStringLiteral("1024\u00b3 cascade with PBR texturing (~9.3 GB)"),
+             {QStringLiteral("dino_f16.gguf"),
+              QStringLiteral("ss_flow_q8.gguf"),
+              QStringLiteral("ss_dec_f16.gguf"),
+              QStringLiteral("slat_flow_q8.gguf"),
+              QStringLiteral("slat_flow_1024_q8.gguf"),
+              QStringLiteral("shape_dec_f16.gguf"),
+              QStringLiteral("shape_enc_f16.gguf"),
+              QStringLiteral("tex_dec_f16.gguf"),
+              QStringLiteral("tex_slat_flow_512_q8.gguf"),
+              QStringLiteral("tex_slat_flow_1024_q8.gguf")}});
     return out;
 }
 

@@ -337,13 +337,13 @@ TEST(RFDetrHelpers, DrawMaskTintFromRawBytes) {
     const float ar = qRed(expected) > 0
                              ? static_cast<float>(qRed(tinted)) / qRed(expected)
                              : 1.0f;
-    const float ag = qGreen(expected) > 0
-                             ? static_cast<float>(qGreen(tinted)) / qGreen(expected)
-                             : 1.0f;
-    const float ab = qBlue(expected) > 0
-                             ? static_cast<float>(qBlue(tinted)) / qBlue(expected)
-                             : 1.0f;
-    EXPECT_GT(ar, 0.4f);   // solidly tinted, not a faint overlay
+    const float ag = qGreen(expected) > 0 ? static_cast<float>(qGreen(tinted)) /
+                                                    qGreen(expected)
+                                          : 1.0f;
+    const float ab = qBlue(expected) > 0 ? static_cast<float>(qBlue(tinted)) /
+                                                   qBlue(expected)
+                                         : 1.0f;
+    EXPECT_GT(ar, 0.4f);         // solidly tinted, not a faint overlay
     EXPECT_NEAR(ar, ag, 0.05f);  // same blend factor on every channel
     EXPECT_NEAR(ag, ab, 0.05f);
 

@@ -39,10 +39,10 @@ class CVPLUGIN_LIB_API ecvTestDataRepository : public QObject {
 public:
     /** Available test datasets. */
     enum class Dataset {
-        Monstree,         ///< Monstree dataset for image-based reconstruction
-        FriendsFaces,     ///< FriendsFaces video for face capture
-        ObjectsDetection, ///< Shared images/videos for AI inference plugins
-        Image2Mesh        ///< Single-image-to-3D samples (qTrellis etc.)
+        Monstree,          ///< Monstree dataset for image-based reconstruction
+        FriendsFaces,      ///< FriendsFaces video for face capture
+        ObjectsDetection,  ///< Shared images/videos for AI inference plugins
+        Image2Mesh         ///< Single-image-to-3D samples (qTrellis etc.)
     };
 
     /** Dataset metadata. */

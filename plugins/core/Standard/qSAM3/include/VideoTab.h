@@ -19,12 +19,12 @@
 
 #pragma once
 
+#include <QTimer>
+#include <QWidget>
+
 #include "VideoCanvas.h"
 #include "VideoTimeline.h"
 #include "VideoWorker.h"
-
-#include <QTimer>
-#include <QWidget>
 
 class QCheckBox;
 class QComboBox;
@@ -80,7 +80,8 @@ private:
     void trackNextFrame();
     void schedulePlayback();
     void addInstanceFromPrompts();
-    void refineInstance(int id, const QVector<QPointF>& pos,
+    void refineInstance(int id,
+                        const QVector<QPointF>& pos,
                         const QVector<QPointF>& neg);
     void updateCanvasInstances();
     void updateTimeline(int frameIndex, const SAM3WorkerResult& result);

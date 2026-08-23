@@ -247,8 +247,7 @@ bool ecvTestDataRepository::isDatasetAvailable(Dataset kind) const {
         }
         case Dataset::Image2Mesh:
             // The main single-image-to-3D samples live in examples_images/.
-            extractedComplete =
-                    !getImage2MeshImages(extract).isEmpty();
+            extractedComplete = !getImage2MeshImages(extract).isEmpty();
             break;
     }
     if (extractedComplete) return true;
@@ -645,8 +644,8 @@ QStringList ecvTestDataRepository::getImage2MeshImages(
     if (!QDir(imageDir).exists()) return {};
 
     const QStringList patterns = {
-            QStringLiteral("*.jpg"),  QStringLiteral("*.jpeg"),
-            QStringLiteral("*.png"),  QStringLiteral("*.webp")};
+            QStringLiteral("*.jpg"), QStringLiteral("*.jpeg"),
+            QStringLiteral("*.png"), QStringLiteral("*.webp")};
 
     QStringList images;
     QDirIterator it(imageDir, patterns, QDir::Files);

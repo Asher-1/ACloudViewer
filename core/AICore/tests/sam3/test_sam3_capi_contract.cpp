@@ -74,8 +74,8 @@ int main() {
 
     // Image/geometry entry points with a null ctx: fail without crashing.
     static const uint8_t kRgb[4 * 3] = {0};
-    AICORE_CHECK(aicore_sam3_encode_rgb(nullptr, kRgb, 2, 2,
-                                        sizeof(kRgb), 0) == -1);
+    AICORE_CHECK(aicore_sam3_encode_rgb(nullptr, kRgb, 2, 2, sizeof(kRgb), 0) ==
+                 -1);
     aicore_sam3_pcs_prompt pcs{};
     pcs.text = "cat";
     AICORE_CHECK(aicore_sam3_segment_pcs_rgb(nullptr, &pcs, kRgb, 2, 2,
@@ -98,15 +98,15 @@ int main() {
     // Tracker plumbing on a null ctx/tracker fails cleanly.
     AICORE_CHECK(aicore_sam3_tracker_create(nullptr) == nullptr);
     aicore_sam3_tracker_set_text_prompt(nullptr, "cat");  // NULL-safe no-op
-    AICORE_CHECK(aicore_sam3_track_frame(nullptr, kRgb, 2, 2,
-                                         sizeof(kRgb)) == nullptr);
+    AICORE_CHECK(aicore_sam3_track_frame(nullptr, kRgb, 2, 2, sizeof(kRgb)) ==
+                 nullptr);
     AICORE_CHECK(aicore_sam3_propagate_frame(nullptr, kRgb, 2, 2,
                                              sizeof(kRgb)) == nullptr);
     AICORE_CHECK(aicore_sam3_tracker_add_instance(nullptr, &pvs) == -1);
-    AICORE_CHECK(aicore_sam3_tracker_add_instance_from_mask(
-                         nullptr, &mask) == -1);
-    AICORE_CHECK(aicore_sam3_refine_instance(nullptr, 0, nullptr, 0,
-                                             nullptr, 0) == -1);
+    AICORE_CHECK(aicore_sam3_tracker_add_instance_from_mask(nullptr, &mask) ==
+                 -1);
+    AICORE_CHECK(aicore_sam3_refine_instance(nullptr, 0, nullptr, 0, nullptr,
+                                             0) == -1);
 
     // Timings: null ctx or null out pointer -> -1; valid pointer stays
     // untouched until a real inference runs.

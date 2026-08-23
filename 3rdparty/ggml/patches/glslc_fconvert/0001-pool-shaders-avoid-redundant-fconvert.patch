@@ -1,0 +1,26 @@
+diff --git a/src/ggml-vulkan/vulkan-shaders/pool1d.comp b/src/ggml-vulkan/vulkan-shaders/pool1d.comp
+index bb87631..0b7b0a1 100644
+--- a/src/ggml-vulkan/vulkan-shaders/pool1d.comp
++++ b/src/ggml-vulkan/vulkan-shaders/pool1d.comp
+@@ -52,7 +52,7 @@ void main() {
+ 
+     #pragma unroll
+     for (uint i = bl; i < el; i++) {
+-        const float cur = D_TYPE(data_a[nc * p.IL + i]);
++        const float cur = float(data_a[nc * p.IL + i]);
+ 
+         if (p.op == OP_POOL_AVG) {
+             res += cur * scale;
+diff --git a/src/ggml-vulkan/vulkan-shaders/pool2d.comp b/src/ggml-vulkan/vulkan-shaders/pool2d.comp
+index d9d7166..2e21f26 100644
+--- a/src/ggml-vulkan/vulkan-shaders/pool2d.comp
++++ b/src/ggml-vulkan/vulkan-shaders/pool2d.comp
+@@ -60,7 +60,7 @@ void main() {
+     for (uint i = bh; i < eh; i++) {
+         #pragma unroll
+         for (uint j = bw; j < ew; j++) {
+-            const float cur = D_TYPE(data_a[nc * p.IH * p.IW + i * p.IW + j]);
++            const float cur = float(data_a[nc * p.IH * p.IW + i * p.IW + j]);
+ 
+             if (p.op == OP_POOL_AVG) {
+                 res += cur * scale;

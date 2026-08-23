@@ -93,7 +93,14 @@ def _git_command(
             pass
         else:
             cwd = repository_root
-            command.append(f"--directory={source_relative.as_posix()}")
+            # When src_dir IS the repository root, no directory adjustment is
+            # needed — patch paths are already relative to the root.  Adding
+            # --directory=. produces paths like ./CMakeLists.txt which git
+            # apply rejects as invalid.
+            if source_relative != Path("."):
+                command.append(
+                    f"--directory={source_relative.as_posix()}"
+                )
     if reverse:
         command.append("--reverse")
     command.append(str(patch_path))
@@ -118,6 +125,54 @@ def _try_sequence(src_dir: Path, patch_paths: list[Path], reverse: bool) -> tupl
                     False,
                     f"{direction} failed at {patch_path.name}:\n{result.stdout or ''}",
                 )
+    return True, ""
+
+
+def _try_recover_partial(
+    src_dir: Path, patch_paths: list[Path]
+) -> tuple[bool, str]:
+    """Recover a partially-patched source.
+
+    A previous failed patch step can leave the source with some patches
+    applied and others not (e.g. the chain grew after an interrupted build).
+    Neither the full forward nor the full reverse chain then applies.  This
+    un-applies whatever is applied (walking backwards from the tail), verifies
+    the full chain re-applies cleanly on a scratch copy, and only then mutates
+    the real source.  A genuinely drifted tree fails the scratch verification
+    and is reported as unrecoverable.
+    """
+    with tempfile.TemporaryDirectory(prefix="acloudviewer-ggml-patch-") as temp:
+        scratch = Path(temp) / "src"
+        shutil.copytree(src_dir, scratch)
+
+        # Un-apply applied patches, walking backwards from the tail.  Patches
+        # that are not applied fail to reverse and are skipped.
+        for patch_path in reversed(patch_paths):
+            _git_command(scratch, patch_path, reverse=True)
+
+        # The scratch must now accept the full forward chain.
+        for patch_path in patch_paths:
+            result = _git_command(scratch, patch_path)
+            if result.returncode != 0:
+                return False, (
+                    f"recovery impossible at {patch_path.name}:\n{result.stdout or ''}"
+                )
+
+    # Recovery verified on scratch: mirror it on the real source.
+    print("[ggml-patch] recovering partially-patched source")
+    for patch_path in reversed(patch_paths):
+        result = _git_command(src_dir, patch_path, reverse=True)
+        if result.returncode == 0:
+            print(f"[ggml-patch] un-applied: {patch_path.name}")
+
+    for patch_path in patch_paths:
+        result = _git_command(src_dir, patch_path)
+        if result.returncode != 0:
+            print(
+                f"[ggml-patch] ERROR applying {patch_path.name}\n{result.stdout or ''}"
+            )
+            return False, result.stdout or ""
+        print(f"[ggml-patch] applied: {patch_path.name}")
     return True, ""
 
 
@@ -156,10 +211,16 @@ def apply_sequence(src_dir: Path, patch_paths: list[Path]) -> bool:
             print(f"[ggml-patch] already applied: {patch_path.name}")
         return True
 
+    # Partially-patched source (e.g. interrupted previous build): un-apply
+    # what is applied and re-apply the whole chain.
+    recovered, recovery_error = _try_recover_partial(src_dir, patch_paths)
+    if recovered:
+        return True
+
     print(
         "[ggml-patch] ERROR: manifest cannot be applied or reversed as a "
         "complete chain; source is partially patched or has drifted\n"
-        f"{forward_error}\n{reverse_error}"
+        f"{forward_error}\n{reverse_error}\n{recovery_error}"
     )
     return False
 

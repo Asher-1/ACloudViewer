@@ -15,6 +15,7 @@
 // The precision-contract test is skipped (exit 77) when the model file or
 // reference image is not found (download via the catalog URL first).
 
+#include <aicore/sam3_capi.h>
 #include <gtest/gtest.h>
 
 #include <QDir>
@@ -22,15 +23,11 @@
 #include <QImage>
 #include <QStringList>
 
-#include <aicore/sam3_capi.h>
-
 // ---------------------------------------------------------------------------
 // ABI version
 // ---------------------------------------------------------------------------
 
-TEST(SAM3Contract, AbiVersion) {
-    EXPECT_GE(aicore_sam3_abi_version(), 1);
-}
+TEST(SAM3Contract, AbiVersion) { EXPECT_GE(aicore_sam3_abi_version(), 1); }
 
 // ---------------------------------------------------------------------------
 // Model catalog
@@ -69,7 +66,7 @@ TEST(SAM3Contract, ModelEntries) {
                     url.find("github.com") != std::string::npos);
 
         if (strcmp(e->model_family, "sam3") == 0) foundSam3 = true;
-        if (strstr(e->model_family, "sam2.1"))    foundSam21 = true;
+        if (strstr(e->model_family, "sam2.1")) foundSam21 = true;
         if (strcmp(e->model_family, "sam2") == 0) foundSam2 = true;
     }
 
@@ -175,15 +172,23 @@ protected:
     static void SetUpTestSuite() {
         // Look for a test model in standard locations
         const QStringList candidates = {
-            "/home/ludahai/develop/code/github/dl/sam3-ggml/models/sam2.1_hiera_tiny_f16.gguf",
-            QDir::homePath() + "/.cache/cloudViewer/models/sam/sam2.1_hiera_tiny_f16.gguf",
+                "/home/ludahai/develop/code/github/dl/sam3-ggml/models/"
+                "sam2.1_hiera_tiny_f16.gguf",
+                QDir::homePath() +
+                        "/.cache/cloudViewer/models/sam/"
+                        "sam2.1_hiera_tiny_f16.gguf",
         };
         s_modelPath.clear();
         for (const auto& p : candidates) {
-            if (QFileInfo::exists(p)) { s_modelPath = p; break; }
+            if (QFileInfo::exists(p)) {
+                s_modelPath = p;
+                break;
+            }
         }
 
-        s_imagePath = "/home/ludahai/develop/code/github/dl/sam3-ggml/data/test_image.jpg";
+        s_imagePath =
+                "/home/ludahai/develop/code/github/dl/sam3-ggml/data/"
+                "test_image.jpg";
     }
 
     static QString s_modelPath;
@@ -210,17 +215,17 @@ TEST_F(SAM3PrecisionContract, EncodeSegmentPVS) {
     aicore_sam3_options_set_device(opts, "cpu");
     aicore_sam3_options_set_threads(opts, 4);
 
-    aicore_sam3_ctx* ctx = aicore_sam3_load_opts(
-            s_modelPath.toUtf8().constData(), opts);
+    aicore_sam3_ctx* ctx =
+            aicore_sam3_load_opts(s_modelPath.toUtf8().constData(), opts);
     aicore_sam3_options_free(opts);
 
     ASSERT_NE(ctx, nullptr) << "Model load failed";
     ASSERT_TRUE(aicore_sam3_is_ready(ctx));
 
     // Encode
-    EXPECT_EQ(aicore_sam3_encode_rgb(ctx, img.constBits(),
-                                     img.width(), img.height(),
-                                     static_cast<size_t>(img.bytesPerLine()), 1),
+    EXPECT_EQ(aicore_sam3_encode_rgb(
+                      ctx, img.constBits(), img.width(), img.height(),
+                      static_cast<size_t>(img.bytesPerLine()), 1),
               0);
     EXPECT_TRUE(aicore_sam3_has_encoded_image(ctx));
 
@@ -232,8 +237,7 @@ TEST_F(SAM3PrecisionContract, EncodeSegmentPVS) {
     prompt.multimask = 0;
 
     aicore_sam3_seg_result* res = aicore_sam3_segment_pvs_rgb(
-            ctx, &prompt, img.constBits(),
-            img.width(), img.height(),
+            ctx, &prompt, img.constBits(), img.width(), img.height(),
             static_cast<size_t>(img.bytesPerLine()));
     ASSERT_NE(res, nullptr);
 

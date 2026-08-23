@@ -43,10 +43,11 @@ QVector<TrellisPreset> presets();
 
 /** Resolve the preset's file list against the catalog into absolute paths.
  *  Missing files are skipped; the caller decides whether that is fatal. */
-QStringList resolvePresetFiles(const TrellisPreset& preset,
-                               const QString& cacheDir,
-                               const QString& dinoVariant /* "dino_q8" | "dino_f16" */,
-                               const QString& ssDecVariant /* "ss_dec_q8" | "ss_dec_f16" */);
+QStringList resolvePresetFiles(
+        const TrellisPreset& preset,
+        const QString& cacheDir,
+        const QString& dinoVariant /* "dino_q8" | "dino_f16" */,
+        const QString& ssDecVariant /* "ss_dec_q8" | "ss_dec_f16" */);
 
 /** Model cache directory for qTrellis (aicore_trellis_model_cache_dir). */
 QString modelCacheDir();

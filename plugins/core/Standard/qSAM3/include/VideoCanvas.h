@@ -73,10 +73,10 @@ private:
     void drawFrameAndMasks(QPainter& p, QImage& canvas);
 
     bool m_interactive = false;
-    QImage m_frame;          // current video frame (RGB32)
-    QImage m_composited;     // frame + mask tints, at frame resolution
+    QImage m_frame;       // current video frame (RGB32)
+    QImage m_composited;  // frame + mask tints, at frame resolution
     QVector<VideoInstanceBox> m_boxes;
-    QVector<QImage> m_masks; // parallel to m_boxes, 0/255 grayscale
+    QVector<QImage> m_masks;  // parallel to m_boxes, 0/255 grayscale
     QVector<QPointF> m_posPoints;
     QVector<QPointF> m_negPoints;
 

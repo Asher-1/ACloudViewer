@@ -20,11 +20,7 @@
 
 #pragma once
 
-#include "SAM3Worker.h"
-
 #include <aicore/sam3_capi.h>
-
-#include "ecvTestDataRepository.h"
 
 #include <QDialog>
 #include <QImage>
@@ -34,6 +30,9 @@
 #include <QThread>
 #include <QVector>
 #include <QWidget>
+
+#include "SAM3Worker.h"
+#include "ecvTestDataRepository.h"
 
 class QDragEnterEvent;
 class QDropEvent;

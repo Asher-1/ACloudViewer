@@ -32,9 +32,9 @@ static const unsigned char kPng1x1[] = {
         0x61, 0x00, 0x00, 0x00, 0x19, 0x49, 0x44, 0x41,  // IDAT len + type
         0x54, 0x78, 0x9C, 0x63, 0xF8, 0xCF, 0xC0, 0xF0,  // zlib stream (filter
         0x9F, 0x12, 0xCC, 0x30, 0x6A, 0xC0, 0xA8, 0x01,  // 0 rows + RGBA red)
-        0xA3, 0x06, 0x0C, 0x17, 0x03, 0x00, 0x30, 0xC4,
-        0xFE, 0x10, 0x1C, 0x27,
-        0xE4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45,  // IDAT CRC + IEND
+        0xA3, 0x06, 0x0C, 0x17, 0x03, 0x00, 0x30, 0xC4, 0xFE, 0x10, 0x1C,
+        0x27, 0xE4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45,  // IDAT CRC +
+                                                               // IEND
         0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82};
 
 static void test_progress(void*, int, int, int) {}
@@ -87,46 +87,47 @@ int main() {
 
     // Inference guards: null context / invalid image must not crash.
     char err[256] = {0};
-    AICORE_CHECK(aicore_trellis_generate(nullptr, kPng1x1,
-                                         (int) sizeof(kPng1x1), nullptr,
-                                         test_progress, nullptr, err,
+    AICORE_CHECK(aicore_trellis_generate(nullptr, kPng1x1, (int)sizeof(kPng1x1),
+                                         nullptr, test_progress, nullptr, err,
                                          sizeof(err)) == nullptr);
     AICORE_CHECK(aicore_trellis_generate(ctx /* null */, nullptr, 0, nullptr,
                                          nullptr, nullptr, err,
                                          sizeof(err)) == nullptr);
 
     // Preprocess: real decode path on the tiny PNG; 16x16 -> 512x512 RGB.
-    std::vector<unsigned char> rgb((size_t) 512 * 512 * 3, 0x7F);
+    std::vector<unsigned char> rgb((size_t)512 * 512 * 3, 0x7F);
     AICORE_CHECK(aicore_trellis_preprocess_image_bytes(
-                         kPng1x1, (int) sizeof(kPng1x1), 512, rgb.data(),
+                         kPng1x1, (int)sizeof(kPng1x1), 512, rgb.data(),
                          AICORE_TRELLIS_BG_AUTO, err, sizeof(err)) == 0);
     // Invalid arguments are rejected.
     AICORE_CHECK(aicore_trellis_preprocess_image_bytes(
                          nullptr, 0, 512, rgb.data(), AICORE_TRELLIS_BG_AUTO,
                          err, sizeof(err)) != 0);
     AICORE_CHECK(aicore_trellis_preprocess_image_bytes(
-                         kPng1x1, (int) sizeof(kPng1x1), 512, nullptr,
+                         kPng1x1, (int)sizeof(kPng1x1), 512, nullptr,
                          AICORE_TRELLIS_BG_AUTO, err, sizeof(err)) != 0);
     AICORE_CHECK(aicore_trellis_preprocess_image_bytes(
-                         kPng1x1, (int) sizeof(kPng1x1), 0, rgb.data(),
+                         kPng1x1, (int)sizeof(kPng1x1), 0, rgb.data(),
                          AICORE_TRELLIS_BG_AUTO, err, sizeof(err)) != 0);
     // Trash bytes fail decode cleanly.
     static const unsigned char kTrash[64] = {0};
     AICORE_CHECK(aicore_trellis_preprocess_image_bytes(
-                         kTrash, (int) sizeof(kTrash), 512, rgb.data(),
+                         kTrash, (int)sizeof(kTrash), 512, rgb.data(),
                          AICORE_TRELLIS_BG_AUTO, err, sizeof(err)) != 0);
 
     // GLB bake contract: NULL guards and invalid component filter.
     int out_len = 0;
     AICORE_CHECK(aicore_trellis_bake_glb(nullptr, 0, nullptr, 0, nullptr, 0, 0,
-                                         &out_len, err, sizeof(err)) == nullptr);
+                                         &out_len, err,
+                                         sizeof(err)) == nullptr);
     static const float kVerts[] = {0, 0, 0, 1, 0, 0, 0, 1, 0};
     static const int kTris[] = {0, 1, 2};
     AICORE_CHECK(aicore_trellis_bake_glb(kVerts, 3, kTris, 1, nullptr, 0, 3,
                                          &out_len, err, sizeof(err)) ==
                  nullptr);  // bad filter
     AICORE_CHECK(aicore_trellis_bake_glb(kVerts, 3, kTris, 1, nullptr, 0, 0,
-                                         &out_len, err, sizeof(err)) != nullptr);
+                                         &out_len, err,
+                                         sizeof(err)) != nullptr);
     AICORE_CHECK(out_len > 0);
 
     // Mesh accessor guards on a null handle.
@@ -144,15 +145,21 @@ int main() {
 
     // Model catalog contract (must match the trellis2-ggml release assets).
     AICORE_CHECK(aicore_trellis_model_count() == 15);
-    static const char* kExpected[] = {
-            "dino_f16.gguf",         "dino_q8.gguf",
-            "ss_flow_q8.gguf",       "ss_dec_f16.gguf",
-            "ss_dec_q8.gguf",        "slat_flow_q8.gguf",
-            "slat_flow_1024_q8.gguf", "shape_dec_f16.gguf",
-            "shape_enc_f16.gguf",    "tex_dec_f16.gguf",
-            "tex_slat_flow_512_q8.gguf", "tex_slat_flow_1024_q8.gguf",
-            "rmbg_f32.gguf",         "rmbg_f16.gguf",
-            "rmbg_q8.gguf"};
+    static const char* kExpected[] = {"dino_f16.gguf",
+                                      "dino_q8.gguf",
+                                      "ss_flow_q8.gguf",
+                                      "ss_dec_f16.gguf",
+                                      "ss_dec_q8.gguf",
+                                      "slat_flow_q8.gguf",
+                                      "slat_flow_1024_q8.gguf",
+                                      "shape_dec_f16.gguf",
+                                      "shape_enc_f16.gguf",
+                                      "tex_dec_f16.gguf",
+                                      "tex_slat_flow_512_q8.gguf",
+                                      "tex_slat_flow_1024_q8.gguf",
+                                      "rmbg_f32.gguf",
+                                      "rmbg_f16.gguf",
+                                      "rmbg_q8.gguf"};
     for (int i = 0; i < 15; ++i) {
         const aicore_trellis_model_entry* e = aicore_trellis_model_at(i);
         AICORE_CHECK(e != nullptr && e->filename != nullptr &&

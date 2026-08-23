@@ -40,7 +40,9 @@ double elapsed_ms(Clock::time_point t0, Clock::time_point t1) {
 
 // Convert a borrowed stride-aware RGB24 view into the tightly-packed RGB the
 // engine preprocess expects. Zero-copy when the stride is already packed.
-std::vector<uint8_t> pack_rgb(const uint8_t* rgb, int32_t width, int32_t height,
+std::vector<uint8_t> pack_rgb(const uint8_t* rgb,
+                              int32_t width,
+                              int32_t height,
                               size_t row_stride_bytes) {
     std::vector<uint8_t> packed;
     if (row_stride_bytes == static_cast<size_t>(width) * 3) {
@@ -57,7 +59,8 @@ std::vector<uint8_t> pack_rgb(const uint8_t* rgb, int32_t width, int32_t height,
 }
 
 sam3_image make_sam3_image(const std::vector<uint8_t>& rgb,
-                           int32_t width, int32_t height) {
+                           int32_t width,
+                           int32_t height) {
     sam3_image img;
     img.width = width;
     img.height = height;
@@ -321,9 +324,9 @@ AICORE_CAPI int aicore_sam3_encode_rgb(aicore_sam3_ctx* ctx,
     ctx->encoded_rgb = pack_rgb(rgb, width, height, row_stride_bytes);
     const sam3_image img = make_sam3_image(ctx->encoded_rgb, width, height);
 
-    const bool ok = pvs_only
-            ? sam3_encode_image_pvs(*ctx->state, *ctx->model, img)
-            : sam3_encode_image(*ctx->state, *ctx->model, img);
+    const bool ok =
+            pvs_only ? sam3_encode_image_pvs(*ctx->state, *ctx->model, img)
+                     : sam3_encode_image(*ctx->state, *ctx->model, img);
     if (!ok) {
         ctx->last_error = "encode failed";
         ctx->encoded = false;
@@ -350,9 +353,12 @@ struct aicore_sam3_seg_result {
 
 // Ensure the ctx has an encoded image for (width, height); re-encodes when
 // the size changed or nothing is cached. pvs_only controls the neck.
-static bool ensure_encoded(aicore_sam3_ctx* ctx, const uint8_t* rgb,
-                           int32_t width, int32_t height,
-                           size_t row_stride_bytes, bool pvs_only) {
+static bool ensure_encoded(aicore_sam3_ctx* ctx,
+                           const uint8_t* rgb,
+                           int32_t width,
+                           int32_t height,
+                           size_t row_stride_bytes,
+                           bool pvs_only) {
     if (ctx->encoded && ctx->encoded_w == width && ctx->encoded_h == height) {
         return true;
     }
@@ -360,9 +366,9 @@ static bool ensure_encoded(aicore_sam3_ctx* ctx, const uint8_t* rgb,
                                   pvs_only ? 1 : 0) == 0;
 }
 
-static aicore_sam3_seg_result* run_segment(
-        aicore_sam3_ctx* ctx, std::function<sam3_result()> fn,
-        const char* what) {
+static aicore_sam3_seg_result* run_segment(aicore_sam3_ctx* ctx,
+                                           std::function<sam3_result()> fn,
+                                           const char* what) {
     auto t0 = Clock::now();
     sam3_result r = fn();
     if (r.detections.empty()) {
@@ -377,8 +383,9 @@ static aicore_sam3_seg_result* run_segment(
     }
     out->result = std::move(r);
     ctx->timings.inference_ms = elapsed_ms(t0, Clock::now());
-    ctx->timings.e2e_ms = ctx->timings.preprocess_ms + ctx->timings.inference_ms;
-    (void) what;
+    ctx->timings.e2e_ms =
+            ctx->timings.preprocess_ms + ctx->timings.inference_ms;
+    (void)what;
     return out.release();
 }
 
@@ -407,33 +414,31 @@ AICORE_CAPI aicore_sam3_seg_result* aicore_sam3_segment_pcs_rgb(
 
     sam3_pcs_params p;
     p.text_prompt = prompt->text;
-    p.score_threshold =
-            prompt->score_threshold > 0 ? prompt->score_threshold
-                                        : ctx->score_threshold;
+    p.score_threshold = prompt->score_threshold > 0 ? prompt->score_threshold
+                                                    : ctx->score_threshold;
     p.nms_threshold = prompt->nms_threshold > 0 ? prompt->nms_threshold
                                                 : ctx->nms_threshold;
     if (prompt->pos_exemplars && prompt->n_pos_exemplars > 0) {
         p.pos_exemplars.reserve(prompt->n_pos_exemplars);
         for (int i = 0; i < prompt->n_pos_exemplars; ++i) {
-            p.pos_exemplars.push_back({prompt->pos_exemplars[i].x0,
-                                       prompt->pos_exemplars[i].y0,
-                                       prompt->pos_exemplars[i].x1,
-                                       prompt->pos_exemplars[i].y1});
+            p.pos_exemplars.push_back(
+                    {prompt->pos_exemplars[i].x0, prompt->pos_exemplars[i].y0,
+                     prompt->pos_exemplars[i].x1, prompt->pos_exemplars[i].y1});
         }
     }
     if (prompt->neg_exemplars && prompt->n_neg_exemplars > 0) {
         p.neg_exemplars.reserve(prompt->n_neg_exemplars);
         for (int i = 0; i < prompt->n_neg_exemplars; ++i) {
-            p.neg_exemplars.push_back({prompt->neg_exemplars[i].x0,
-                                       prompt->neg_exemplars[i].y0,
-                                       prompt->neg_exemplars[i].x1,
-                                       prompt->neg_exemplars[i].y1});
+            p.neg_exemplars.push_back(
+                    {prompt->neg_exemplars[i].x0, prompt->neg_exemplars[i].y0,
+                     prompt->neg_exemplars[i].x1, prompt->neg_exemplars[i].y1});
         }
     }
 
-    return run_segment(ctx,
-                       [&]() { return sam3_segment_pcs(*ctx->state, *ctx->model, p); },
-                       "pcs");
+    return run_segment(
+            ctx,
+            [&]() { return sam3_segment_pcs(*ctx->state, *ctx->model, p); },
+            "pcs");
 }
 
 AICORE_CAPI aicore_sam3_seg_result* aicore_sam3_segment_pvs_rgb(
@@ -459,32 +464,33 @@ AICORE_CAPI aicore_sam3_seg_result* aicore_sam3_segment_pvs_rgb(
     if (prompt->pos_points && prompt->n_pos_points > 0) {
         p.pos_points.reserve(prompt->n_pos_points);
         for (int i = 0; i < prompt->n_pos_points; ++i) {
-            p.pos_points.push_back({prompt->pos_points[i].x,
-                                    prompt->pos_points[i].y});
+            p.pos_points.push_back(
+                    {prompt->pos_points[i].x, prompt->pos_points[i].y});
         }
     }
     if (prompt->neg_points && prompt->n_neg_points > 0) {
         p.neg_points.reserve(prompt->n_neg_points);
         for (int i = 0; i < prompt->n_neg_points; ++i) {
-            p.neg_points.push_back({prompt->neg_points[i].x,
-                                    prompt->neg_points[i].y});
+            p.neg_points.push_back(
+                    {prompt->neg_points[i].x, prompt->neg_points[i].y});
         }
     }
     p.box = {prompt->box.x0, prompt->box.y0, prompt->box.x1, prompt->box.y1};
     p.use_box = prompt->use_box != 0;
     p.multimask = prompt->multimask != 0;
 
-    return run_segment(ctx,
-                       [&]() { return sam3_segment_pvs(*ctx->state, *ctx->model, p); },
-                       "pvs");
+    return run_segment(
+            ctx,
+            [&]() { return sam3_segment_pvs(*ctx->state, *ctx->model, p); },
+            "pvs");
 }
 
 AICORE_CAPI int aicore_sam3_seg_det_count(const aicore_sam3_seg_result* res) {
     return res ? static_cast<int>(res->result.detections.size()) : 0;
 }
 
-AICORE_CAPI aicore_sam3_box aicore_sam3_seg_det_box_at(
-        const aicore_sam3_seg_result* res, int index) {
+AICORE_CAPI aicore_sam3_box
+aicore_sam3_seg_det_box_at(const aicore_sam3_seg_result* res, int index) {
     if (!res || index < 0 || index >= aicore_sam3_seg_det_count(res)) {
         return {0, 0, 0, 0};
     }
@@ -500,8 +506,8 @@ AICORE_CAPI float aicore_sam3_seg_det_score_at(
     return res->result.detections[index].score;
 }
 
-AICORE_CAPI float aicore_sam3_seg_det_iou_at(
-        const aicore_sam3_seg_result* res, int index) {
+AICORE_CAPI float aicore_sam3_seg_det_iou_at(const aicore_sam3_seg_result* res,
+                                             int index) {
     if (!res || index < 0 || index >= aicore_sam3_seg_det_count(res)) {
         return 0.0f;
     }
@@ -516,14 +522,13 @@ AICORE_CAPI int aicore_sam3_seg_det_instance_id_at(
     return res->result.detections[index].instance_id;
 }
 
-AICORE_CAPI aicore_sam3_plane_view aicore_sam3_seg_mask_at(
-        const aicore_sam3_seg_result* res, int index) {
+AICORE_CAPI aicore_sam3_plane_view
+aicore_sam3_seg_mask_at(const aicore_sam3_seg_result* res, int index) {
     if (!res || index < 0 || index >= aicore_sam3_seg_det_count(res)) {
         return {nullptr, 0, 0, 0};
     }
     const sam3_mask& m = res->result.detections[index].mask;
-    return {m.data.data(), m.width, m.height,
-            static_cast<size_t>(m.width)};
+    return {m.data.data(), m.width, m.height, static_cast<size_t>(m.width)};
 }
 
 AICORE_CAPI void aicore_sam3_seg_result_free(aicore_sam3_seg_result* res) {
@@ -607,8 +612,11 @@ AICORE_CAPI void aicore_sam3_tracker_free(aicore_sam3_tracker_ctx* tracker) {
 }
 
 static aicore_sam3_seg_result* run_tracker_frame(
-        aicore_sam3_tracker_ctx* tracker, const uint8_t* rgb,
-        int32_t width, int32_t height, size_t row_stride_bytes,
+        aicore_sam3_tracker_ctx* tracker,
+        const uint8_t* rgb,
+        int32_t width,
+        int32_t height,
+        size_t row_stride_bytes,
         bool propagate_only) {
     if (!tracker || !tracker->tracker || !tracker->state || !tracker->model) {
         if (tracker) tracker->last_error = "tracker not ready";
@@ -621,15 +629,17 @@ static aicore_sam3_seg_result* run_tracker_frame(
     }
 
     auto t0 = Clock::now();
-    const std::vector<uint8_t> packed = pack_rgb(rgb, width, height, row_stride_bytes);
+    const std::vector<uint8_t> packed =
+            pack_rgb(rgb, width, height, row_stride_bytes);
     const sam3_image frame = make_sam3_image(packed, width, height);
 
     auto t1 = Clock::now();
-    sam3_result r = propagate_only
-            ? sam3_propagate_frame(*tracker->tracker, *tracker->state,
-                                   *tracker->model, frame)
-            : sam3_track_frame(*tracker->tracker, *tracker->state,
-                               *tracker->model, frame);
+    sam3_result r =
+            propagate_only
+                    ? sam3_propagate_frame(*tracker->tracker, *tracker->state,
+                                           *tracker->model, frame)
+                    : sam3_track_frame(*tracker->tracker, *tracker->state,
+                                       *tracker->model, frame);
     auto t2 = Clock::now();
 
     std::unique_ptr<aicore_sam3_seg_result> out(
@@ -680,23 +690,22 @@ AICORE_CAPI int aicore_sam3_tracker_add_instance(
     if (prompt->pos_points && prompt->n_pos_points > 0) {
         p.pos_points.reserve(prompt->n_pos_points);
         for (int i = 0; i < prompt->n_pos_points; ++i) {
-            p.pos_points.push_back({prompt->pos_points[i].x,
-                                    prompt->pos_points[i].y});
+            p.pos_points.push_back(
+                    {prompt->pos_points[i].x, prompt->pos_points[i].y});
         }
     }
     if (prompt->neg_points && prompt->n_neg_points > 0) {
         p.neg_points.reserve(prompt->n_neg_points);
         for (int i = 0; i < prompt->n_neg_points; ++i) {
-            p.neg_points.push_back({prompt->neg_points[i].x,
-                                    prompt->neg_points[i].y});
+            p.neg_points.push_back(
+                    {prompt->neg_points[i].x, prompt->neg_points[i].y});
         }
     }
     p.box = {prompt->box.x0, prompt->box.y0, prompt->box.x1, prompt->box.y1};
     p.use_box = prompt->use_box != 0;
     p.multimask = prompt->multimask != 0;
 
-    const int id = sam3_tracker_add_instance(*tracker->tracker,
-                                             *tracker->state,
+    const int id = sam3_tracker_add_instance(*tracker->tracker, *tracker->state,
                                              *tracker->model, p);
     if (id < 0) {
         tracker->last_error = "add_instance failed";
@@ -705,8 +714,7 @@ AICORE_CAPI int aicore_sam3_tracker_add_instance(
 }
 
 AICORE_CAPI int aicore_sam3_tracker_add_instance_from_mask(
-        aicore_sam3_tracker_ctx* tracker,
-        const aicore_sam3_plane_view* mask) {
+        aicore_sam3_tracker_ctx* tracker, const aicore_sam3_plane_view* mask) {
     if (!tracker || !tracker->tracker || !tracker->state || !tracker->model) {
         if (tracker) tracker->last_error = "tracker not ready";
         return -1;
@@ -727,22 +735,20 @@ AICORE_CAPI int aicore_sam3_tracker_add_instance_from_mask(
                     src + static_cast<size_t>(y) * mask->row_stride_bytes,
                     static_cast<size_t>(mask->width));
     }
-    const int id = sam3_tracker_add_instance_from_mask(*tracker->tracker,
-                                                       *tracker->state,
-                                                       *tracker->model, m);
+    const int id = sam3_tracker_add_instance_from_mask(
+            *tracker->tracker, *tracker->state, *tracker->model, m);
     if (id < 0) {
         tracker->last_error = "add_instance_from_mask failed";
     }
     return id;
 }
 
-AICORE_CAPI int aicore_sam3_refine_instance(
-        aicore_sam3_tracker_ctx* tracker,
-        int instance_id,
-        const aicore_sam3_point* pos_points,
-        int n_pos_points,
-        const aicore_sam3_point* neg_points,
-        int n_neg_points) {
+AICORE_CAPI int aicore_sam3_refine_instance(aicore_sam3_tracker_ctx* tracker,
+                                            int instance_id,
+                                            const aicore_sam3_point* pos_points,
+                                            int n_pos_points,
+                                            const aicore_sam3_point* neg_points,
+                                            int n_neg_points) {
     if (!tracker || !tracker->tracker || !tracker->state || !tracker->model) {
         if (tracker) tracker->last_error = "tracker not ready";
         return -1;
@@ -760,8 +766,9 @@ AICORE_CAPI int aicore_sam3_refine_instance(
             neg.push_back({neg_points[i].x, neg_points[i].y});
         }
     }
-    const bool ok = sam3_refine_instance(*tracker->tracker, *tracker->state,
-                                         *tracker->model, instance_id, pos, neg);
+    const bool ok =
+            sam3_refine_instance(*tracker->tracker, *tracker->state,
+                                 *tracker->model, instance_id, pos, neg);
     if (!ok) {
         tracker->last_error = "refine_instance failed";
         return -1;
@@ -772,7 +779,8 @@ AICORE_CAPI int aicore_sam3_refine_instance(
 AICORE_CAPI int aicore_sam3_tracker_frame_index(
         const aicore_sam3_tracker_ctx* tracker) {
     return tracker && tracker->tracker
-            ? sam3_tracker_frame_index(*tracker->tracker) : -1;
+                   ? sam3_tracker_frame_index(*tracker->tracker)
+                   : -1;
 }
 
 AICORE_CAPI void aicore_sam3_tracker_reset(aicore_sam3_tracker_ctx* tracker) {
@@ -810,7 +818,8 @@ struct ModelEntry {
 // Published assets of the "sam" release, verified against the GitHub Release
 // API (39 models; sam3-f32 intentionally absent — too large to publish).
 constexpr const char* kSamDownloadBase =
-        "https://github.com/Asher-1/cloudViewer_downloads/releases/download/sam/";
+        "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
+        "sam/";
 
 constexpr ModelEntry kModels[] = {
         // SAM 3 (full: ViT + text detector + tracker)
@@ -897,7 +906,8 @@ constexpr ModelEntry kModels[] = {
          "Q4_0 \xe2\x80\x94 smallest SAM2 quant (22 MB)"},
 };
 
-constexpr int kModelCount = static_cast<int>(sizeof(kModels) / sizeof(kModels[0]));
+constexpr int kModelCount =
+        static_cast<int>(sizeof(kModels) / sizeof(kModels[0]));
 
 const char* familyDisplayName(const char* family) {
     if (std::strcmp(family, "sam3") == 0) return "SAM 3 (text + tracking)";

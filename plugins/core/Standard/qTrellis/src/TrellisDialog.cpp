@@ -20,9 +20,9 @@
 #include <QSettings>
 #include <QVBoxLayout>
 
-#include "ecvPersistentSettings.h"
 #include "aicore/inference_log.h"
 #include "ecvAICoreUiHelper.h"
+#include "ecvPersistentSettings.h"
 
 namespace {
 
@@ -30,8 +30,7 @@ const char* kSettingsGroup = "qTrellis";
 
 }  // namespace
 
-TrellisDialog::TrellisDialog(QWidget* parent)
-    : QDialog(parent) {
+TrellisDialog::TrellisDialog(QWidget* parent) : QDialog(parent) {
     setWindowTitle(tr("TRELLIS.2 Image to 3D"));
     setupUi();
     loadSettings();
@@ -40,9 +39,7 @@ TrellisDialog::TrellisDialog(QWidget* parent)
 
 TrellisDialog::~TrellisDialog() = default;
 
-void TrellisDialog::setAppInterface(ecvMainAppInterface* app) {
-    m_app = app;
-}
+void TrellisDialog::setAppInterface(ecvMainAppInterface* app) { m_app = app; }
 
 void TrellisDialog::setupUi() {
     auto* root = new QVBoxLayout(this);
@@ -114,11 +111,13 @@ void TrellisDialog::setupUi() {
 
     modelLayout->addWidget(new QLabel(tr("DINOv3:"), modelGroup), 1, 0);
     m_dinoCombo = new QComboBox(modelGroup);
-    m_dinoCombo->addItem(tr("q8 (smaller, recommended)"), QStringLiteral("dino_q8"));
+    m_dinoCombo->addItem(tr("q8 (smaller, recommended)"),
+                         QStringLiteral("dino_q8"));
     m_dinoCombo->addItem(tr("f16 (reference)"), QStringLiteral("dino_f16"));
     modelLayout->addWidget(m_dinoCombo, 1, 1);
 
-    modelLayout->addWidget(new QLabel(tr("Occupancy decoder:"), modelGroup), 1, 2);
+    modelLayout->addWidget(new QLabel(tr("Occupancy decoder:"), modelGroup), 1,
+                           2);
     m_decCombo = new QComboBox(modelGroup);
     m_decCombo->addItem(tr("f16 (recommended)"), QStringLiteral("ss_dec_f16"));
     m_decCombo->addItem(tr("q8"), QStringLiteral("ss_dec_q8"));
@@ -126,23 +125,27 @@ void TrellisDialog::setupUi() {
 
     m_textureCheck = new QCheckBox(tr("PBR textures"), modelGroup);
     m_textureCheck->setChecked(true);
-    m_textureCheck->setToolTip(tr("Shape encoder + texture decoder + texture "
-                                  "flow (~3 GB extra); per-vertex base color / "
-                                  "metallic / roughness"));
+    m_textureCheck->setToolTip(
+            tr("Shape encoder + texture decoder + texture "
+               "flow (~3 GB extra); per-vertex base color / "
+               "metallic / roughness"));
     modelLayout->addWidget(m_textureCheck, 2, 0, 1, 2);
 
-    m_rmbgCheck = new QCheckBox(tr("AI background removal (RMBG-2.0)"), modelGroup);
+    m_rmbgCheck =
+            new QCheckBox(tr("AI background removal (RMBG-2.0)"), modelGroup);
     m_rmbgCheck->setChecked(true);
-    m_rmbgCheck->setToolTip(tr("Remove the background with the in-tree "
-                               "RMBG-2.0 model (rmbg_f16.gguf) before "
-                               "generation; falls back to the solid-color "
-                               "heuristic when the model is absent."));
+    m_rmbgCheck->setToolTip(
+            tr("Remove the background with the in-tree "
+               "RMBG-2.0 model (rmbg_f16.gguf) before "
+               "generation; falls back to the solid-color "
+               "heuristic when the model is absent."));
     modelLayout->addWidget(m_rmbgCheck, 2, 2, 1, 2);
 
     m_modelStatus = new QLabel(modelGroup);
     m_modelStatus->setWordWrap(true);
     modelLayout->addWidget(m_modelStatus, 3, 0, 1, 3);
-    m_downloadBtn = ecvAICoreUi::makeBrowseBtn(tr("Download missing models..."), modelGroup);
+    m_downloadBtn = ecvAICoreUi::makeBrowseBtn(tr("Download missing models..."),
+                                               modelGroup);
     m_downloadBtn->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     m_downloadBtn->setFixedWidth(ecvAICoreUi::dpiScaled(168));
     modelLayout->addWidget(m_downloadBtn, 3, 3);
@@ -226,10 +229,10 @@ void TrellisDialog::setupUi() {
             &TrellisDialog::onTestDataClicked);
     connect(m_presetCombo, qOverload<int>(&QComboBox::currentIndexChanged),
             this, &TrellisDialog::onPresetChanged);
-    connect(m_dinoCombo, qOverload<int>(&QComboBox::currentIndexChanged),
-            this, &TrellisDialog::updateModelStatus);
-    connect(m_decCombo, qOverload<int>(&QComboBox::currentIndexChanged),
-            this, &TrellisDialog::updateModelStatus);
+    connect(m_dinoCombo, qOverload<int>(&QComboBox::currentIndexChanged), this,
+            &TrellisDialog::updateModelStatus);
+    connect(m_decCombo, qOverload<int>(&QComboBox::currentIndexChanged), this,
+            &TrellisDialog::updateModelStatus);
     connect(m_textureCheck, &QCheckBox::toggled, this,
             &TrellisDialog::updateModelStatus);
     connect(m_downloadBtn, &QPushButton::clicked, this,
@@ -278,8 +281,7 @@ void TrellisDialog::setupUi() {
                 m_stageLabel->setText(statusText);
             });
     connect(&testDataRepo, &ecvTestDataRepository::downloadFinished, this,
-            [this](bool success,
-                   ecvTestDataRepository::Dataset dataset) {
+            [this](bool success, ecvTestDataRepository::Dataset dataset) {
                 if (dataset != ecvTestDataRepository::Dataset::Image2Mesh) {
                     return;
                 }
@@ -298,8 +300,9 @@ void TrellisDialog::setupUi() {
                         ecvTestDataRepository::instance().extractDataset(
                                 dataset);
                     } else {
-                        appendLog(tr(
-                                "[TRELLIS] Sample data integrity check failed"));
+                        appendLog(
+                                tr("[TRELLIS] Sample data integrity check "
+                                   "failed"));
                         m_progress->setVisible(false);
                         m_stageLabel->setVisible(false);
                     }
@@ -310,8 +313,7 @@ void TrellisDialog::setupUi() {
                 }
             });
     connect(&testDataRepo, &ecvTestDataRepository::extractionFinished, this,
-            [this](bool success,
-                   ecvTestDataRepository::Dataset dataset) {
+            [this](bool success, ecvTestDataRepository::Dataset dataset) {
                 if (dataset != ecvTestDataRepository::Dataset::Image2Mesh) {
                     return;
                 }
@@ -338,14 +340,14 @@ void TrellisDialog::loadSettings() {
     if (presetIdx >= 0 && presetIdx < m_presetCombo->count()) {
         m_presetCombo->setCurrentIndex(presetIdx);
     }
-    m_textureCheck->setChecked(
-            settings.value("textureEnabled", true).toBool());
+    m_textureCheck->setChecked(settings.value("textureEnabled", true).toBool());
     m_rmbgCheck->setChecked(settings.value("useRmbg", true).toBool());
     m_steps->setValue(settings.value("steps", 0).toInt());
     m_guidance->setValue(settings.value("guidance", -1.0).toDouble());
     m_textureSteps->setValue(settings.value("textureSteps", 0).toInt());
     m_seed->setValue(settings.value("seed", 0).toInt());
-    const QString device = settings.value("device", QStringLiteral("auto")).toString();
+    const QString device =
+            settings.value("device", QStringLiteral("auto")).toString();
     const int di = m_deviceCombo->findText(device);
     if (di >= 0) m_deviceCombo->setCurrentIndex(di);
     m_threads->setValue(settings.value("threads", 0).toInt());
@@ -391,10 +393,11 @@ TrellisDialog::Settings TrellisDialog::getSettings() const {
     s.textureEnabled = m_textureCheck->isChecked();
     s.addResultToDb = m_addToDbCheck->isChecked();
     s.saveGlbDir = m_saveGlbDir->text().trimmed();
-    s.pipelineType = m_presetCombo->currentIndex() == 0
-                             ? 1 /* coarse */
-                             : (m_presetCombo->currentIndex() == 2 ? 3 /* 1024 */
-                                                                   : 0 /* auto */);
+    s.pipelineType =
+            m_presetCombo->currentIndex() == 0
+                    ? 1                                       /* coarse */
+                    : (m_presetCombo->currentIndex() == 2 ? 3 /* 1024 */
+                                                          : 0 /* auto */);
 
     // Resolve the absolute model paths for this preset/variant selection.
     const QVector<TrellisPreset> presets = TrellisHelpers::presets();
@@ -418,10 +421,13 @@ void TrellisDialog::appendLog(const QString& msg) {
     m_log->setText(msg);
 }
 
-void TrellisDialog::setProgressStage(const QString& stage, int step, int total) {
+void TrellisDialog::setProgressStage(const QString& stage,
+                                     int step,
+                                     int total) {
     m_stageLabel->setVisible(true);
     if (total > 0) {
-        m_stageLabel->setText(tr("Stage: %1 (%2/%3)").arg(stage).arg(step).arg(total));
+        m_stageLabel->setText(
+                tr("Stage: %1 (%2/%3)").arg(stage).arg(step).arg(total));
         m_progress->setVisible(true);
         m_progress->setRange(0, total);
         m_progress->setValue(step);
@@ -510,8 +516,8 @@ void TrellisDialog::updateModelStatus() {
     const QStringList missing = missingPresetFiles();
     const QString cacheDir = TrellisHelpers::modelCacheDir();
     if (missing.isEmpty()) {
-        m_modelStatus->setText(tr("\u2705 All models present in %1")
-                                       .arg(cacheDir));
+        m_modelStatus->setText(
+                tr("\u2705 All models present in %1").arg(cacheDir));
         m_downloadBtn->setEnabled(false);
     } else {
         m_modelStatus->setText(tr("\u26a0 Missing %1 model(s): %2")
@@ -539,8 +545,8 @@ QStringList TrellisDialog::missingPresetFiles() const {
         if (!QFile::exists(p)) missing << QFileInfo(p).fileName();
     }
     if (m_rmbgCheck->isChecked()) {
-        const QString rmbg = cacheDir + QLatin1Char('/') +
-                             QStringLiteral("rmbg_f16.gguf");
+        const QString rmbg =
+                cacheDir + QLatin1Char('/') + QStringLiteral("rmbg_f16.gguf");
         if (!QFile::exists(rmbg)) missing << QStringLiteral("rmbg_f16.gguf");
     }
     return missing;
@@ -599,8 +605,8 @@ void TrellisDialog::downloadNextModel() {
         downloadNextModel();
         return;
     }
-    const QString dest = TrellisHelpers::modelCacheDir() +
-                         QDir::separator() + entry.filename;
+    const QString dest = TrellisHelpers::modelCacheDir() + QDir::separator() +
+                         entry.filename;
     appendLog(tr("[TRELLIS] Downloading %1...").arg(entry.filename));
     m_downloadInProgress = true;
     ecvModelDownloader::Request req;
@@ -616,9 +622,8 @@ void TrellisDialog::onTestDataClicked() {
     const TestDataset kind = TestDataset::Image2Mesh;
 
     // 1. Already extracted: fill the picker and select the first image.
-    const QStringList images =
-            ecvTestDataRepository::getImage2MeshImages(
-                    ecvTestDataRepository::extractPath(kind));
+    const QStringList images = ecvTestDataRepository::getImage2MeshImages(
+            ecvTestDataRepository::extractPath(kind));
     if (!images.isEmpty()) {
         populateTestImages();
         return;
@@ -651,9 +656,8 @@ void TrellisDialog::ensureImage2MeshDataset() {
     // the user clicks "Try sample data".
     using TestDataset = ecvTestDataRepository::Dataset;
     const TestDataset kind = TestDataset::Image2Mesh;
-    const QStringList images =
-            ecvTestDataRepository::getImage2MeshImages(
-                    ecvTestDataRepository::extractPath(kind));
+    const QStringList images = ecvTestDataRepository::getImage2MeshImages(
+            ecvTestDataRepository::extractPath(kind));
     if (!images.isEmpty()) {
         populateTestImages();
     }
@@ -662,9 +666,8 @@ void TrellisDialog::ensureImage2MeshDataset() {
 void TrellisDialog::populateTestImages() {
     using TestDataset = ecvTestDataRepository::Dataset;
     const TestDataset kind = TestDataset::Image2Mesh;
-    const QStringList images =
-            ecvTestDataRepository::getImage2MeshImages(
-                    ecvTestDataRepository::extractPath(kind));
+    const QStringList images = ecvTestDataRepository::getImage2MeshImages(
+            ecvTestDataRepository::extractPath(kind));
     if (images.isEmpty()) {
         m_testImageCombo->clear();
         m_testImageCombo->setEnabled(false);
@@ -677,8 +680,15 @@ void TrellisDialog::populateTestImages() {
     }
     m_testImageCombo->blockSignals(false);
     m_testImageCombo->setEnabled(true);
-    m_testImageCombo->setCurrentIndex(0);
-    onTestImageSelected(0);
+    // Prefer the curated "T" sample (the representative single-image-to-3D
+    // demo from the bundle); fall back to the first image otherwise.
+    int pickIndex = 0;
+    const int tIndex = m_testImageCombo->findText(QStringLiteral("T.png"));
+    if (tIndex >= 0) {
+        pickIndex = tIndex;
+    }
+    m_testImageCombo->setCurrentIndex(pickIndex);
+    onTestImageSelected(pickIndex);
     appendLog(tr("[TRELLIS] %1 sample image(s) ready — pick one above.")
                       .arg(images.size()));
 }

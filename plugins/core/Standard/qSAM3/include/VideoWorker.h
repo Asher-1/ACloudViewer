@@ -13,8 +13,6 @@
 
 #pragma once
 
-#include "SAM3Worker.h"  // SAM3WorkerResult / Prompt types
-
 #include <aicore/sam3_capi.h>
 
 #include <QImage>
@@ -23,16 +21,18 @@
 #include <QThread>
 #include <QVector>
 
+#include "SAM3Worker.h"  // SAM3WorkerResult / Prompt types
+
 class VideoWorker : public QThread {
     Q_OBJECT
 public:
     enum class Action {
         None,
-        LoadModel,      // load ctx + create tracker (with optional text prompt)
-        TrackFrame,     // track_frame / propagate_frame on the given frame
-        AddInstance,    // tracker_add_instance from PVS prompts
-        RefineInstance, // refine_instance with pos/neg points
-        ResetTracker,   // clear tracker state and re-create it
+        LoadModel,    // load ctx + create tracker (with optional text prompt)
+        TrackFrame,   // track_frame / propagate_frame on the given frame
+        AddInstance,  // tracker_add_instance from PVS prompts
+        RefineInstance,  // refine_instance with pos/neg points
+        ResetTracker,    // clear tracker state and re-create it
     };
 
     struct TrackRequest {
@@ -40,10 +40,10 @@ public:
         QString modelPath;
         QString device = "auto";
         QString textPrompt;
-        QImage frame;                   // TrackFrame
-        int frameIndex = -1;            // TrackFrame: source frame number
-        SAM3Worker::Prompt prompt;      // AddInstance / RefineInstance
-        int instanceId = -1;            // RefineInstance
+        QImage frame;               // TrackFrame
+        int frameIndex = -1;        // TrackFrame: source frame number
+        SAM3Worker::Prompt prompt;  // AddInstance / RefineInstance
+        int instanceId = -1;        // RefineInstance
         bool cancel = false;
     };
 
