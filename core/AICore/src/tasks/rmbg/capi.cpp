@@ -177,6 +177,15 @@ AICORE_CAPI const char* aicore_rmbg_last_error(const aicore_rmbg_ctx* ctx) {
                                                       : nullptr;
 }
 
+AICORE_CAPI int aicore_rmbg_set_progress_callback(aicore_rmbg_ctx* ctx,
+                                                   aicore_rmbg_progress_fn cb,
+                                                   void* user) {
+    if (ctx == nullptr || ctx->model.graph == nullptr) {
+        return 0;
+    }
+    return ctx->model.graph->set_progress_callback(cb, user) ? 1 : 0;
+}
+
 AICORE_CAPI int aicore_rmbg_last_timings(const aicore_rmbg_ctx* ctx,
                                          aicore_rmbg_timings* out_timings) {
     if (ctx == nullptr || out_timings == nullptr || !ctx->has_timings) {

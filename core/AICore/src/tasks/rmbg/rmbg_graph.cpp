@@ -16,6 +16,7 @@
 #include <utility>
 
 #include "ggml-alloc.h"
+#include "ggml-metal.h"
 #include "ggml.h"
 
 namespace rmbg {
@@ -58,6 +59,7 @@ struct GraphBuilder {
     bool use_cuda_custom = false;
     bool use_backend_custom = false;
     bool use_vulkan_custom = false;
+    bool use_metal = false;
     bool use_vulkan_direct_conv = false;
     bool is_cpu_backend = false;
     bool use_f16_gemm = false;
@@ -80,18 +82,32 @@ struct GraphBuilder {
           opts(options_) {
         const char *name = ggml_backend_name(backend);
         use_cuda_custom = name && std::strstr(name, "CUDA");
-        use_backend_custom = name && (std::strstr(name, "CUDA") ||
-                                      std::strstr(name, "Vulkan"));
         use_vulkan_custom = name && std::strstr(name, "Vulkan");
+        // ggml_backend_metal_name returns the device name ("MTL0" on Apple
+        // silicon) instead of the fixed "Metal" family string, so match the
+        // MTL prefix as well (see yolo/backend.cpp which lowercases and
+        // searches the same lease device name).
+        use_metal =
+                name && (std::strstr(name, "Metal") || std::strstr(name, "MTL"));
+        // Custom-op families: only the rmbg_swin_qkv_layout kernel has a
+        // Metal implementation (name-matched in ggml-metal-ops.cpp); every
+        // other custom op still rejects Metal in supports_op and falls back
+        // to the primitive chain, so including Metal here is safe.
+        use_backend_custom =
+                use_cuda_custom || use_vulkan_custom || use_metal;
         use_vulkan_direct_conv = use_vulkan_custom && opts.vulkan_direct_conv;
         is_cpu_backend = name && std::strstr(name, "CPU");
         // F16-in/FP32-accumulate GEMMs for the Swin MLP linear layers.  The
         // 10-bit FP16 mantissa matches TF32 precision while GeForce tensor
         // cores run FP16 at twice the TF32 rate.  Strict mode keeps pure
         // FP32; the f16 GEMM path is an explicit opt-in (see GraphOptions,
-        // which replaced the RMBG_* environment variables).
+        // which replaced the RMBG_* environment variables).  Metal enables it
+        // by default (metal_f16_gemm): F16 weights are the only way to hit
+        // the matrix-unit kernels for the Swin MLP/QKV GEMMs - the F32
+        // kernel's scalar dequantize_f32 load is several times slower.
         use_f16_gemm =
-                use_cuda_custom && !opts.strict_math && opts.cuda_f16_gemm;
+                (use_cuda_custom && !opts.strict_math && opts.cuda_f16_gemm) ||
+                (use_metal && !opts.strict_math && opts.metal_f16_gemm);
         f16_min_stage = std::max(0, opts.cuda_f16_min_stage);
         // Pre-transposed NN weights for the Swin QKV/projection GEMMs.
         // Measured on RTX 3060: fast (TF32) mode is bit-identical either way,
@@ -310,6 +326,34 @@ struct GraphBuilder {
                           prefix.c_str());
             ggml_set_name(out, custom_name);
             if (ggml_backend_supports_op(backend, out)) {
+                return weights.get_f32((prefix + "bias").c_str())
+                               ? add_bias_spatial(out, prefix + "bias")
+                               : out;
+            }
+        }
+        // Metal: F16 im2col + F16 weights keep the conv GEMM on the F16
+        // matrix-unit path (kernel_mul_mm_f16_f16).  The F32 path runs the
+        // scalar dequantize_f32 load inside kernel_mul_mm_f32_f32, which is
+        // several times slower for the short-K conv GEMMs of this model.
+        // The F16 im2col also halves the col buffer write bandwidth.
+        if (use_metal) {
+            ggml_tensor *w16 = weight_f16(prefix + "weight");
+            if (w16) {
+                ggml_tensor *col16 = ggml_im2col(ctx, w16, input, stride,
+                                                 stride, pad, pad, 1, 1, true,
+                                                 GGML_TYPE_F16);
+                out = ggml_mul_mat(
+                        ctx,
+                        ggml_reshape_2d(ctx, col16, col16->ne[0],
+                                        col16->ne[1] * col16->ne[2] *
+                                                col16->ne[3]),
+                        ggml_reshape_2d(ctx, w16,
+                                        w16->ne[0] * w16->ne[1] * w16->ne[2],
+                                        w16->ne[3]));
+                ggml_mul_mat_set_prec(out, GGML_PREC_F32);
+                out = ggml_reshape_4d(ctx, out, col16->ne[1], col16->ne[2],
+                                      col16->ne[3], w16->ne[3]);
+                out = ggml_cont(ctx, ggml_permute(ctx, out, 0, 1, 3, 2));
                 return weights.get_f32((prefix + "bias").c_str())
                                ? add_bias_spatial(out, prefix + "bias")
                                : out;
@@ -846,9 +890,13 @@ struct GraphBuilder {
         // folds the same values into its Flash Attention mask below.
         ggml_tensor *rpb_tensor =
                 constant(GGML_TYPE_F32, {N, N, heads, 1}, rpb, "rpb");
-        ggml_tensor *qkv_weight = weight(p + "attn_qkv_weight");
+        ggml_tensor *qkv_weight =
+                use_f16_gemm ? weight_f16(p + "attn_qkv_weight")
+                             : weight(p + "attn_qkv_weight");
         ggml_tensor *qkv_bias = weight(p + "attn_qkv_bias");
-        ggml_tensor *proj_weight = weight(p + "attn_proj_weight");
+        ggml_tensor *proj_weight =
+                use_f16_gemm ? weight_f16(p + "attn_proj_weight")
+                             : weight(p + "attn_proj_weight");
         ggml_tensor *proj_bias = weight(p + "attn_proj_bias");
         if (!qkv_weight || !qkv_bias || !proj_weight || !proj_bias)
             return nullptr;
@@ -983,13 +1031,21 @@ struct GraphBuilder {
             // rather than assuming every attention block is equally tolerant.
             const bool coop_requested = opts.vulkan_flash_coop;
             const int coop_stage = opts.vulkan_flash_coop_stage;
+            // The cooperative F16 kernel is Vulkan-only; Metal uses the F32
+            // scalar Flash path even when coop is requested elsewhere.
             const bool flash_coop =
-                    coop_requested && (coop_stage < 0 || coop_stage == stage);
+                    use_vulkan_custom && coop_requested &&
+                    (coop_stage < 0 || coop_stage == stage);
             // F32 scalar Flash is the Vulkan default: it measured ~35 ms
             // faster than the batched QK/softmax/AV path and stays valid in
             // strict mode.  Only the cooperative variant needs device F16.
-            const bool use_flash = use_vulkan_custom && !flash_disabled &&
-                                   (!disable_vk_f16 || !flash_coop);
+            // Metal: ggml 0.18.1 ships kernel_flash_attn_ext_f32 and the
+            // device gates the op on head-size and simdgroup matrix support,
+            // so the same scalar path applies (measured -825 ms vs the
+            // primitive QK/softmax/AV chain on M2 Max).
+            const bool use_flash =
+                    (use_vulkan_custom || use_metal) && !flash_disabled &&
+                    (!disable_vk_f16 || !flash_coop);
             ggml_tensor *swin_mask = nullptr;
             if (use_flash) {
                 // Flash Attention consumes the complete shifted-window mask.
@@ -1233,6 +1289,10 @@ struct RmbgDeviceGraph::Impl {
     int input_size = 0;
     size_t compute_size = 0;
 
+    // ACV: per-inference progress forwarding (see set_progress_callback).
+    void (*progress_cb)(void *, int, int) = nullptr;
+    void *progress_user = nullptr;
+
     ~Impl() {
         if (allocator) ggml_gallocr_free(allocator);
         if (static_buffer) ggml_backend_buffer_free(static_buffer);
@@ -1415,6 +1475,56 @@ bool RmbgDeviceGraph::forward(const std::vector<float> &input_nchw,
     ggml_backend_tensor_get(impl_->alpha, alpha.data(), 0,
                             alpha.size() * sizeof(float));
     return true;
+}
+
+bool RmbgDeviceGraph::set_progress_callback(void (*cb)(void *, int, int),
+                                            void *user) {
+    impl_->progress_cb = cb;
+    impl_->progress_user = user;
+
+    // The Metal backend is the only one that reports per-node progress
+    // (the callback is invoked from the encode threads while the graph is
+    // being submitted).  Other backends stay silent.  Match by name: the
+    // metal backend reports the device name ("MTL0"), same as GraphBuilder.
+    const char *backend_name =
+            impl_->backend != nullptr ? ggml_backend_name(impl_->backend)
+                                      : nullptr;
+    const bool is_metal =
+            backend_name &&
+            (std::strstr(backend_name, "Metal") ||
+             std::strstr(backend_name, "MTL"));
+    if (is_metal) {
+        // The setter lives in the dlopen'd backend module, which ggml loads
+        // with RTLD_LOCAL — but ggml exposes it through its official backend
+        // extension point instead of manual dlsym: backends register custom
+        // functions via ggml_backend_reg_get_proc_address.
+        using ProgressSetter = void (*)(ggml_backend_t,
+                                        void (*)(int, int, void *),
+                                        void *);
+        ggml_backend_dev_t dev = ggml_backend_get_device(impl_->backend);
+        ggml_backend_reg_t reg =
+                dev != nullptr ? ggml_backend_dev_backend_reg(dev) : nullptr;
+        if (reg != nullptr) {
+            auto setter = reinterpret_cast<ProgressSetter>(
+                    ggml_backend_reg_get_proc_address(
+                            reg, "ggml_backend_metal_set_progress_callback"));
+            if (setter != nullptr) {
+                setter(impl_->backend,
+                       [](int node_index, int n_nodes, void *user_data) {
+                           // Bridge the (node, n, user) Metal signature to
+                           // the user-first AICore C API signature.
+                           auto *impl = static_cast<Impl *>(user_data);
+                           if (impl->progress_cb) {
+                               impl->progress_cb(impl->progress_user,
+                                                 node_index, n_nodes);
+                           }
+                       },
+                       impl_.get());
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 bool RmbgDeviceGraph::forward_swin_debug(const std::vector<float> &input_nchw,

@@ -45,6 +45,11 @@ public:
 
 signals:
     void logMessage(const QString& msg);
+    /** Stage-progress signal for the inference phases. stage is a human-readable
+     *  label ("Loading model…", "Encoding…", "Swin blocks…", "Decoding…");
+     *  percent < 0 puts the progress bar into busy (indeterminate) mode. */
+    void taskStage(const QString& stage, int percent);
+    /** Legacy simple-progress signal (binary 0/1 → 1/1). */
     void progressUpdate(int current, int total);
     void resultReady(const RMBGRunResult& result);
     void taskFinished(bool success);
@@ -61,4 +66,7 @@ private:
     Settings m_settings;
     struct aicore_rmbg_ctx* m_pendingCtx = nullptr;
     aicore_cancel_token* m_cancelToken = nullptr;
+    /** Live inference progress (node counter + throttle state), owned by the
+     *  worker thread while an inference is running; null otherwise. */
+    struct LiveProgressState* m_progressState = nullptr;
 };

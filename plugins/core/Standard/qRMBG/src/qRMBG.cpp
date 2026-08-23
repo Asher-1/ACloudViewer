@@ -254,6 +254,8 @@ void qRMBG::executeTask(const RMBGDialog::Settings& settings) {
     m_worker = new RMBGWorker(ws, this);
     connect(m_worker, &RMBGWorker::logMessage, m_dialog, &RMBGDialog::appendLog,
             Qt::QueuedConnection);
+    connect(m_worker, &RMBGWorker::taskStage, m_dialog, &RMBGDialog::setTaskStage,
+            Qt::QueuedConnection);
     connect(m_worker, &RMBGWorker::progressUpdate, this,
             &qRMBG::onWorkerProgress, Qt::QueuedConnection);
     connect(m_worker, &RMBGWorker::resultReady, this, &qRMBG::onResultReady,

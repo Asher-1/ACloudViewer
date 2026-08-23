@@ -54,7 +54,9 @@ std::string device_queue_key(const char* device) {
         }
         if (request == "auto" || request == "gpu") request = "cpu";
     }
-    if (request == "mtl") request = "metal";
+    if (request == "mtl" || request == "mtl0" || request == "mtl:0") {
+        request = "metal";
+    }
     for (const char* family : {"cuda", "vulkan", "metal"}) {
         const std::string name(family);
         if (request == name + ":0" || request == name + "0") {

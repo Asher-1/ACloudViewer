@@ -16,9 +16,29 @@
 
 #include "TrellisModelCatalog.h"
 #include "aicore/backend_capi.h"
+#include "aicore/runtime_capi.h"
 #include "aicore/trellis_capi.h"
 
 namespace {
+
+/* Serializes this worker against every other AICore inference task on the
+ * same device (live video loops, other plugin workers). ggml-metal's backend
+ * state machine is not safe under concurrent graph compute from two threads;
+ * the shared device queue lock is the process-wide mutex that keeps command
+ * buffers from racing (a failed command buffer poisons the backend for the
+ * rest of the process). */
+class DeviceTaskGuard {
+public:
+    explicit DeviceTaskGuard(const QString& device)
+        : m_locked(aicore_device_task_lock(device.toUtf8().constData()) == 0) {}
+    ~DeviceTaskGuard() {
+        if (m_locked) aicore_device_task_unlock();
+    }
+    bool isLocked() const { return m_locked; }
+
+private:
+    bool m_locked = false;
+};
 
 // Stage names for the progress log (mirror aicore_trellis_stage).
 const char* stageName(int stage) {
@@ -112,6 +132,13 @@ bool TrellisWorker::resolveRmbgModel() {
 }
 
 bool TrellisWorker::runInference() {
+    DeviceTaskGuard taskGuard(m_settings.device);
+    if (!taskGuard.isLocked()) {
+        emit logMessage(
+                tr("[TRELLIS] Failed to acquire the inference device; "
+                   "another task is running."));
+        return false;
+    }
     if (m_settings.modelPaths.size() < 3) {
         emit logMessage(QStringLiteral("[TRELLIS] Model set incomplete."));
         return false;

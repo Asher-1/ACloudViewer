@@ -112,4 +112,14 @@ python3 -c "import ctypes; ctypes.CDLL('./libggml-metal.so')"
 
 # Check OpenMP linkage (macOS, should show nothing):
 otool -L libggml-cpu.so | grep omp
+
+## Metal 性能优化经验参考
+
+见 `docs/guides/metal-inference-optimization.md`，包含：
+1. **定位方法论**：per-op profile 识别 threadgroup 过碎 / 标量路径 / 带宽饱和
+2. **六大可复用 kernel 模式**：flat-grid 一维化、每线程多元素+float4、广播特例除法消除、K<64 F16 矩阵门槛、小 K f16 权重化、图级 op 融合
+3. **图构建决策**：MTL0 检测、f16 条件门控、三量化验证
+4. **陷阱清单**：MSL/C struct 一致性、ExternalProject mtime、ggml_view_4d stride、profile 分支
+5. **新模型加速检查表**
+
 ```

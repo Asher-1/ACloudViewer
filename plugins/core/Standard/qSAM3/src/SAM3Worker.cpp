@@ -16,6 +16,31 @@
 #include "aicore/runtime_capi.h"
 #endif
 
+namespace {
+
+#ifdef AICore_ENABLED
+/* Serializes this worker against every other AICore inference task on the
+ * same device (live video loops, other plugin workers). ggml-metal's backend
+ * state machine is not safe under concurrent graph compute from two threads;
+ * the shared device queue lock is the process-wide mutex that keeps command
+ * buffers from racing (a failed command buffer poisons the backend for the
+ * rest of the process). */
+class DeviceTaskGuard {
+public:
+    explicit DeviceTaskGuard(const QString& device)
+        : m_locked(aicore_device_task_lock(device.toUtf8().constData()) == 0) {}
+    ~DeviceTaskGuard() {
+        if (m_locked) aicore_device_task_unlock();
+    }
+    bool isLocked() const { return m_locked; }
+
+private:
+    bool m_locked = false;
+};
+#endif
+
+}  // namespace
+
 static QImage blendMasksImpl(aicore_sam3_seg_result* res, int imgW, int imgH) {
     const int n = aicore_sam3_seg_det_count(res);
     if (n <= 0) return QImage();
@@ -82,6 +107,15 @@ void SAM3Worker::run() {
 }
 
 bool SAM3Worker::runInference() {
+#ifdef AICore_ENABLED
+    DeviceTaskGuard taskGuard(m_settings.device);
+    if (!taskGuard.isLocked()) {
+        emit logMessage(
+                tr("[SAM3] Failed to acquire the inference device; another "
+                   "task is running."));
+        return false;
+    }
+#endif
     if (m_cancelled) return false;
 
     // Load model if needed

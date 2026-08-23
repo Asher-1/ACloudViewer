@@ -32,6 +32,15 @@ AICORE_CAPI int aicore_rmbg_abi_version(void);
 typedef struct aicore_rmbg_ctx aicore_rmbg_ctx;
 typedef struct aicore_rmbg_options aicore_rmbg_options;
 
+/** Real-time inference progress.  node_index is the number of graph nodes
+ *  already encoded to the GPU (monotonic within one inference call),
+ *  n_nodes the total graph size; called from the inference thread(s), so the
+ *  callback must be thread-safe (UI updates should be queued).  Only
+ *  meaningful for the Metal backend; other backends never invoke it. */
+typedef void (*aicore_rmbg_progress_fn)(void* user,
+                                        int node_index,
+                                        int n_nodes);
+
 /** Timings for the most recent successful inference request. inference_ms is
  *  the graph->forward() interval used by the upstream RMBG benchmark; total_ms
  *  additionally includes input decoding/preprocessing and output encoding. */
@@ -104,6 +113,13 @@ AICORE_CAPI void aicore_rmbg_free(aicore_rmbg_ctx* ctx);
 AICORE_CAPI int aicore_rmbg_is_ready(const aicore_rmbg_ctx* ctx);
 /** Returns the last error message of the context (empty when none). */
 AICORE_CAPI const char* aicore_rmbg_last_error(const aicore_rmbg_ctx* ctx);
+/** Registers a per-inference progress callback (see aicore_rmbg_progress_fn).
+ *  Pass NULL to clear.  The callback fires while the graph is being encoded
+ *  to the GPU; only the Metal backend reports it.  Returns 1 when the
+ *  callback was accepted (live progress will be reported), 0 otherwise —
+ *  callers should fall back to indeterminate UI. */
+AICORE_CAPI int aicore_rmbg_set_progress_callback(
+        aicore_rmbg_ctx* ctx, aicore_rmbg_progress_fn cb, void* user);
 /** Copy the most recent successful request timings into out_timings. */
 AICORE_CAPI int aicore_rmbg_last_timings(const aicore_rmbg_ctx* ctx,
                                          aicore_rmbg_timings* out_timings);
