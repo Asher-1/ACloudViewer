@@ -7,6 +7,8 @@
 
 #include "mesh_to_dual_grid.h"
 
+#include <cstddef>
+
 #include "third_party/o-voxel-fdg/fdg_api.h"
 
 namespace mtdg {
@@ -25,9 +27,9 @@ Result mesh_to_flexible_dual_grid(const float* verts,
         return r;
 
     // o-voxel expects mesh in [0,1]^3; Trellis meshes live in [-0.5,0.5]^3.
-    std::vector<float> qef_verts((size_t)n_verts * 3);
+    std::vector<float> qef_verts((std::size_t)n_verts * 3);
     for (int i = 0; i < n_verts * 3; ++i)
-        qef_verts[(size_t)i] = verts[i] + 0.5f;
+        qef_verts[(std::size_t)i] = verts[i] + 0.5f;
 
     FdgVoxelGrid g = mesh_to_flexible_dual_grid_native(
             qef_verts.data(), n_verts, tris, n_tris, grid_size, face_weight,

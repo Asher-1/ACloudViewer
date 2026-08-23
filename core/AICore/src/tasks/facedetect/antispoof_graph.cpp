@@ -405,7 +405,7 @@ ggml_tensor* build_node(
         const int64_t ne1[4] = {1, 1, 1, 1};
         ggml_tensor* eps = graph_input_tensor(
                 ctx, GGML_TYPE_F32, 1, ne1, keep.back().data(), sizeof(float));
-        ggml_tensor* inv = ggml_sqrt(ctx, ggml_add1(ctx, var, eps));
+        ggml_tensor* inv = ggml_sqrt(ctx, ggml_add(ctx, var, eps));
         ggml_tensor* scale = ggml_div(ctx, gamma, inv);
         ggml_tensor* shift = ggml_sub(ctx, beta, ggml_mul(ctx, mean, scale));
         const int64_t C = gamma->ne[0];

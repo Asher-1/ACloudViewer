@@ -50,7 +50,7 @@ ggml_tensor* ga_batchnorm(ggml_context* ctx,
     const int64_t ne1[4] = {1, 1, 1, 1};
     ggml_tensor* eps_t = graph_input_tensor(ctx, GGML_TYPE_F32, 1, ne1,
                                             keep.back().data(), sizeof(float));
-    ggml_tensor* inv_std = ggml_sqrt(ctx, ggml_add1(ctx, var, eps_t));
+    ggml_tensor* inv_std = ggml_sqrt(ctx, ggml_add(ctx, var, eps_t));
     ggml_tensor* scale = ggml_div(ctx, gamma, inv_std);
     ggml_tensor* shift = ggml_sub(ctx, beta, ggml_mul(ctx, mean, scale));
 
