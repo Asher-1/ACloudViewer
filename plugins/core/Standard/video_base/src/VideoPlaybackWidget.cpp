@@ -1187,7 +1187,8 @@ void VideoPlaybackWidget::showSeekPreview(int frameIndex) {
                         // wasted work that delays the preview catching up.
                         const int target =
                                 qtCompatLoadRelaxed(m_pendingPreviewFrame) >= 0
-                                        ? qtCompatLoadRelaxed(m_pendingPreviewFrame)
+                                        ? qtCompatLoadRelaxed(
+                                                  m_pendingPreviewFrame)
                                         : frameIndex;
                         m_previewCapture.set(cv::CAP_PROP_POS_FRAMES, target);
                         cv::Mat frame;

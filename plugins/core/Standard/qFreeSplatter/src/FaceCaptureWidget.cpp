@@ -1466,7 +1466,8 @@ void FaceCaptureWidget::onFrameDecoded(cv::Mat& frame, int frameIndex) {
     bool freshDetection = false;
     if (detectorReady() && !m_ggmlModelLoading) {
         if (m_detectorKind == DetectorKind::Ggml) {
-            if (timeForDetection && qtCompatLoadRelaxed(m_detectPendingFrame) < 0) {
+            if (timeForDetection &&
+                qtCompatLoadRelaxed(m_detectPendingFrame) < 0) {
                 // ASYNC: submit GGML inference to thread pool.
                 qtCompatStoreRelaxed(m_detectPendingFrame, frameIndex);
                 m_pendingDetectFrameNum = frameIndex;

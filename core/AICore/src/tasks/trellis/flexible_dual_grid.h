@@ -462,8 +462,7 @@ inline void fill_holes(Mesh& m, int max_loop = 1024, int max_passes = 8) {
                     if (cur == start) return true;
                     if ((int)loop.size() > max_loop) return false;
                     if (--budget <= 0) return false;
-                    std::vector<std::pair<int, int>>
-                            cands;  // (degree, nb)
+                    std::vector<std::pair<int, int>> cands;  // (degree, nb)
                     auto it = adj.find(cur);
                     if (it != adj.end()) {
                         for (const int c : it->second) {
