@@ -5,7 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#ifndef _USE_MATH_DEFINES
 #define _USE_MATH_DEFINES
+#endif
 
 #include "sam3.h"
 
@@ -58,6 +60,14 @@
 #define SAM3_LOG_LEVEL 1
 #endif
 #include "common/aicore_log.hpp"
+
+#ifdef _WIN32
+/* MSVC provides no strncasecmp (POSIX); _strnicmp is the equivalent
+ * case-insensitive n-char compare. Defined after all includes so the
+ * replacement never rewrites declarations inside vendored headers. */
+#define strncasecmp _strnicmp
+#endif
+
 #define SAM3_LOG(level, ...)                          \
     do {                                              \
         if ((level) <= SAM3_LOG_LEVEL)                \

@@ -12,4 +12,7 @@ void rfdetr_internal_log(rfdetr_log_level lvl, const char* msg);
 
 /* printf-style wrapper. Builds the string then dispatches. */
 void rfdetr_logf(rfdetr_log_level lvl, const char* fmt, ...)
-    __attribute__((format(printf, 2, 3)));
+#if defined(__GNUC__) || defined(__clang__)
+        __attribute__((format(printf, 2, 3)))
+#endif
+        ;

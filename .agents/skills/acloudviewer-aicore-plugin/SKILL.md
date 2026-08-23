@@ -642,7 +642,137 @@ if (path.startsWith(QLatin1String("db://"))) {
 
 ---
 
-## 14. 检查清单（新任务接入用）
+## 14. 跨平台编译兼容性（强制）
+
+新代码在 Linux 上能编译**不代表**三平台都能过。三平台编译器对同一段代码的行为差异（全部来自真实 CI 事故）：
+
+| 平台 | 编译器 | 关键行为 | 事故案例 |
+|---|---|---|---|
+| macOS | AppleClang | GNU 扩展**默认即 error**（无需 -Werror），如 void* 指针算术 | qSAM3 的 `mask.data + offset` 编译失败 |
+| Windows | MSVC | `__attribute__` 不认识（C3646 连锁报错）；POSIX 函数缺失（C3861）；/W4 /WX- 警告不中断 | rfdetr 一行属性 → 8 个文件报错；sam3 4 处 strncasecmp |
+| Linux | GCC/Clang | 最宽松，GNU 扩展仅告警 | —— |
+
+### 14.1 void* 指针算术（macOS 必炸）
+
+对 `const void*`（如 `aicore_<task>_plane_view::data`）做 `+`/`-`/`[]` 是 GNU 扩展：Linux 仅告警，**AppleClang 默认 error** `arithmetic on a pointer to void`。
+
+```cpp
+// 错误：mask.data 是 const void*
+memcpy(m.scanLine(y), mask.data + y * mask.row_stride_bytes, w);
+
+// 正确：先 cast 再做偏移；偏移量用 size_t；显式 #include <cstdint>
+memcpy(m.scanLine(y),
+       static_cast<const uint8_t*>(mask.data) +
+               static_cast<size_t>(y) * mask.row_stride_bytes,
+       static_cast<size_t>(mask.width));
+```
+
+参考先例：`plugins/core/Standard/qYOLO/src/YOLOWorker.cpp`（cast 后给 QByteArray）、`core/AICore/src/tasks/sam3/sam3_capi.cpp` tracker 内部（cast uint8_t* 后逐行 memcpy）。
+
+### 14.2 `__attribute__` 裸用（Windows 必炸）
+
+所有 `__attribute__((...))` 必须加编译器守卫，否则 MSVC 报 `C3646: '__attribute__': unknown override specifier` + 一串 C2059/C2143 连锁错误（同一头文件被 N 个源文件 include 就会报 N 份）。
+
+```cpp
+void rfdetr_logf(rfdetr_log_level lvl, const char* fmt, ...)
+#if defined(__GNUC__) || defined(__clang__)
+        __attribute__((format(printf, 2, 3)))
+#endif
+        ;
+```
+
+- 参考先例：`core/AICore/include/aicore/runtime_capi.h` 的 `AICORE_LEGACY_API` 三分支（`_MSC_VER` → `__declspec` / `__GNUC__||__clang__` → `__attribute__` / else 空）
+- 函数 multiversioning 的 `__attribute__((target("avx512...")))` 除编译器守卫外，还需 ISA 宏门控（参考 `facedetect/winograd.cpp` / `directconv.cpp` 的 `FD_WINO_AVX512_TARGET` 模式：`FACEDETECT_*_AVX512 && __AVX2__ && (__GNUC__ || __clang__)`）
+- `__declspec` 同理：只允许在 `#ifdef _WIN32` 分支内使用
+
+### 14.3 POSIX 函数与头文件（Windows 必炸）
+
+项目 CMake 对 WIN32 target 全局定义 `_CRT_NONSTDC_NO_DEPRECATE`（`cmake/CloudViewerSetGlobalProperties.cmake`）→ **MSVC 头文件不声明任何无下划线 POSIX 名**，直接用必报 C3861。常用替换表：
+
+| POSIX | MSVC 等价 | 仓库先例 |
+|---|---|---|
+| `strncasecmp` / `strcasecmp` | `_strnicmp` / `_stricmp` | `sam3.cpp`（`#ifdef _WIN32` 宏映射，定义在所有 include 之后） |
+| `strdup` | `_strdup` | 4 个 `model_catalog.cpp` 的 `dupString()` 包装 |
+| `usleep(us)` | `::Sleep(ms)`（注意 µs→ms） | app/插件 7 处 `#if defined(CV_WINDOWS)` 分支 |
+| `localtime_r` / `gmtime_r` | `localtime_s` / `gmtime_s`（参数顺序不同） | `core/src/Helper.cpp` |
+| `mkstemp` | `_mktemp` | PoissonRecon/Geometry.cpp |
+| `gettimeofday` | `_ftime` | PoissonRecon/MyTime.h |
+| `getpid` | `_getpid` | `ecvConsole.cpp`（`#define getpid _getpid`） |
+| `mkdir(path, mode)` | `_mkdir(path)` | `sam3.cpp` 已有宏先例 |
+| `fdopen(fd, ...)` | `std::fopen` 直接打开 | `depth/ply_export.cpp` 的 `#else` 分支 |
+
+无 Windows 等价物的 POSIX 头必须平台分支：`unistd.h`、`dirent.h`、`strings.h`、`pthread.h`、`sys/time.h`、`sys/sysinfo.h`、`sys/sysctl.h`、`dlfcn.h`、`mach/mach.h`——`#ifdef _WIN32` / `__APPLE__` / `__linux__` 三分支，参考 `core/AICore/src/common/ggml_backend_utils.hpp` 的 dlfcn/windows.h 分支。
+
+### 14.4 命令行已定义宏不要重复 `#define`（Windows C4005）
+
+`_USE_MATH_DEFINES`、`__STDC_LIMIT_MACROS`、`NOMINMAX`、`_CRT_SECURE_NO_WARNINGS` 已由全局 compile definitions 提供（`cmake/CMakeSetCompilerOptions.cmake` / `cmake/CloudViewerSetGlobalProperties.cmake`），源码中**不要**再写 `#define _USE_MATH_DEFINES`（会报 C4005 macro redefinition）。确需本地定义时用：
+
+```cpp
+#ifndef _USE_MATH_DEFINES
+#define _USE_MATH_DEFINES
+#endif
+```
+
+`M_PI` 等数学常量由全局 `_USE_MATH_DEFINES` 保证，直接使用，不需要也不应重复定义。
+
+### 14.5 Qt 版本兼容（Qt5/Qt6，强制）
+
+项目同时支持 Qt 5.12+ 与 Qt 6.2+。**凡是 Qt5/Qt6 行为差异的 API，必须走兼容层 `core/include/QtCompat.h`**（CVCoreLib 公共头，`#include <QtCompat.h>`），禁止在插件内直接调用差异 API 或各自写 `#if QT_VERSION` 分支。
+
+常用替代对照表（QtCompat.h 已覆盖 14 类）：
+
+| Qt5-only（Qt6 移除/废弃） | 统一兼容写法 |
+|---|---|
+| `QRegExp` / `QString::split(QRegExp)` | `QtCompatRegExp` / `qtCompatSplit` / `qtCompatSplitRegex` / `qtCompatReplace` / `QtCompatRegExpWrapper` |
+| `QString::SkipEmptyParts` | `QtCompat::SkipEmptyParts`（`QtCompat::KeepEmptyParts`） |
+| `QStringRef` / `midRef` / `splitRef` | `QtCompatStringRef` / `qtCompatStringRef*` / `qtCompatSplitRef*` |
+| `QTextCodec::codecForLocale()` | `qtCompatCodecForLocale()`（类型 `QtCompatQTextCodec`） |
+| `QTextStream::endl` | `QtCompat::endl` / `QTCOMPAT_ENDL` |
+| `QFontMetrics::width(text)` | `QTCOMPAT_FONTMETRICS_WIDTH(fm, text)` |
+| `QWheelEvent::delta()` / `pos()` | `qtCompatWheelEventDelta` / `qtCompatWheelEventPos` |
+| `QMouseEvent::pos()` / `globalPos()` | `qtCompatMouseEventPos*` / `qtCompatMouseEventGlobalPos*` |
+| `QDropEvent::pos()` | `qtCompatDropEventPos*` |
+| `QMap::insertMulti()` / `unite()` | `qtCompatMapInsertMulti` / `qtCompatMapUnite` |
+| `QVariant::type()` / `var.type() == QVariant::String` | `qtCompatVariantType` / `qtCompatVariantIsString` 等 |
+| `QPlainTextEdit::setTabStopWidth()` | `qtCompatSetTabStopWidth` |
+| `QSet<T>(begin,end)` / `QVector<T>(begin,end)` | `qtCompatQSetFromVector` / `qtCompatQVectorFromSet` |
+| `QAtomicInteger::load()/store()` | `qtCompatLoadRelaxed` / `qtCompatStoreRelaxed` |
+
+规则：
+
+1. **优先扩展 QtCompat.h 而非局部 `#if`**：新遇到的 Qt5/Qt6 差异 API，先给 `QtCompat.h` 增量添加 `qtCompat*` helper（一处封装、全局复用），禁止在多个插件各写一份 `#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)` 分支。
+2. **QtCompat.h 中 mouse/wheel/drop/plaintextedit 部分依赖 QtWidgets**：AICore 核心（`core/AICore`，只链接 Qt::Core + Qt::Gui）只使用 regex/split/stringref/endl/variant/map 等 Core 部分；插件层（链接 QtWidgets）可全量使用。
+3. **QtCompat.h 未覆盖的 API** 才允许局部 `#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)` 分支（参考 `app/ecvUIManager.cpp` 的既有模式），并注释差异原因。
+4. `QString`/`QList` 等隐式共享容器在 Qt6 的 API 变化（如 `QVector` → `QList` 别名）优先用 QtCompat 包装，不做裸容器迁移。
+
+### 14.6 提交前跨平台自检命令
+
+```bash
+# macOS 必炸：void* 算术/下标（应只命中已 cast 的安全用法）
+rg -n '\.data\s*[+\-]|->data\s*[+\-]' core/AICore/src plugins/core/Standard/q<task>/ | rg -v 'static_cast<const uint8_t|static_cast<const char'
+
+# Windows 必炸：裸 __attribute__（应全部紧邻 #if/#else/#elif 守卫）
+rg -n '__attribute__' core/AICore/src plugins/core/Standard/q<task>/ | rg -v '#if|#else|#elif|#endif'
+
+# Windows 必炸：POSIX 函数无 _WIN32/_MSC_VER 分支
+rg -n '\b(strncasecmp|strcasecmp|strdup|usleep|localtime_r|gmtime_r|gettimeofday|mkstemp)\s*\(' core/AICore/src plugins/core/Standard/q<task>/
+
+# 重复定义命令行宏
+rg -n '^\s*#define\s+(_USE_MATH_DEFINES|__STDC_LIMIT_MACROS|NOMINMAX|_CRT_SECURE_NO_WARNINGS)' core/AICore/src plugins/core/Standard/q<task>/
+
+# Qt5-only API 直接调用（应走 QtCompat.h 兼容层）
+rg -n 'QRegExp|QString::SkipEmptyParts|QStringRef|QTextCodec|QTextStream::endl|QFontMetrics.*\.width\(|QWheelEvent.*->delta\(\)|QMouseEvent.*->pos\(\)|insertMulti\(' core/AICore/src plugins/core/Standard/q<task>/
+```
+
+### 14.7 排错要点
+
+- **Windows 日志大量 error 常是同一根因连锁**（一个头文件 × 多个 TU 报同一行）：先定位首个根因文件/行，不要逐条修
+- 修复后 IDE（clangd）可能仍报误错：`compile_commands.json` 的平台与当前系统不一致时（如 build_app 是 Windows 配置、本机是 macOS），用本机重新 configure 即可消除
+- 三平台 CI 都要跑：Linux 最宽松，**不能**作为唯一通过标准
+
+---
+
+## 15. 检查清单（新任务接入用）
 
 新增一个 AICore task 并配套插件时，逐项确认：
 
@@ -670,3 +800,11 @@ if (path.startsWith(QLatin1String("db://"))) {
 - [ ] `python3 core/AICore/tests/check_capi_coverage.py` >= 95%
 - [ ] 如果修改 ggml 源码，patch 文件放入 `3rdparty/ggml/patches/` 并注册 `manifest.yaml`
 - [ ] 非 ABI 兼容变更递增 `aicore_<task>_abi_version`
+- [ ] **跨平台（第 14 章）**：无 void* 指针算术/下标（plane_view.data 先 cast `uint8_t*` 再偏移，偏移量用 size_t）
+- [ ] **跨平台**：无裸 `__attribute__` / `__declspec`（`#if defined(__GNUC__) || defined(__clang__)` / `#ifdef _WIN32` 守卫）
+- [ ] **跨平台**：POSIX 函数与头文件均有平台分支（strncasecmp/strdup/usleep/localtime_r/gettimeofday/mkstemp 等，见 14.3 替换表）
+- [ ] **跨平台**：不重复 `#define` 命令行已定义宏（`_USE_MATH_DEFINES`/`__STDC_LIMIT_MACROS`/`NOMINMAX` 等）
+- [ ] **Qt 兼容（14.5）**：Qt5/Qt6 差异 API 走 `QtCompat.h` 兼容层（`QtCompatRegExp`/`QtCompat::SkipEmptyParts`/`qtCompatCodecForLocale`/`QtCompat::endl` 等），无插件内裸 `#if QT_VERSION` 分支
+- [ ] **Qt 兼容**：新发现的 Qt 差异 API 已增量扩展进 `core/include/QtCompat.h`，而非局部处理
+- [ ] **Qt 兼容**：AICore 核心未使用 QtCompat.h 中依赖 QtWidgets 的部分（mouse/wheel/drop/plaintextedit）
+- [ ] **跨平台**：已跑 14.6 自检命令且三平台 CI 全绿（Linux 通过不算完成）

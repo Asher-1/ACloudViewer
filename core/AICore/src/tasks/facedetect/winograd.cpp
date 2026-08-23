@@ -36,7 +36,8 @@
 #if defined(__AVX512F__)
 #define FD_WINO_HAVE_AVX512 1
 #define FD_WINO_AVX512_TARGET /* ISA already global; no per-fn attribute */
-#elif defined(FACEDETECT_WINO_AVX512) && defined(__AVX2__)
+#elif defined(FACEDETECT_WINO_AVX512) && defined(__AVX2__) && \
+        (defined(__GNUC__) || defined(__clang__))
 #define FD_WINO_HAVE_AVX512 1
 #define FD_WINO_AVX512_TARGET \
     __attribute__((target("avx512f,avx512bw,avx512vl")))

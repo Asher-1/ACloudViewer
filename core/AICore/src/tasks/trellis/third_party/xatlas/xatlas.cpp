@@ -21,7 +21,9 @@
 #include <condition_variable>
 #include <mutex>
 #include <thread>
+#ifndef __STDC_LIMIT_MACROS
 #define __STDC_LIMIT_MACROS
+#endif
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
