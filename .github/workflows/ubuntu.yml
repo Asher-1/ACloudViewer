@@ -350,8 +350,13 @@ jobs:
           # packages shipping Qt5OpenGLConfig.cmake / Qt5WebSocketsConfig.cmake;
           # on Ubuntu 24.04 the former is only a Recommends of qtbase5-dev,
           # so --no-install-recommends would silently drop it.
+          # qttools5-dev ships Qt5LinguistToolsConfig.cmake and
+          # qttools5-dev-tools the lrelease/lupdate tools, both required by
+          # app/translations (find_package(Qt5LinguistTools)).
           sudo apt-get install -y --no-install-recommends \
             qtbase5-dev \
+            qttools5-dev \
+            qttools5-dev-tools \
             libqt5svg5-dev \
             libqt5opengl5-dev \
             libqt5websockets5-dev \

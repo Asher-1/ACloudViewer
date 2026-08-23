@@ -2,7 +2,8 @@ set_directory_properties( PROPERTIES CLEAN_NO_CUSTOM 1 )
 
 # Qt5/Qt6 compatibility
 if(USE_QT6)
-		find_package( Qt6 COMPONENTS LinguistTools REQUIRED )
+		find_package( Qt6 COMPONENTS LinguistTools )
+    set( QT_LINGUIST_FOUND ${Qt6LinguistTools_FOUND} )
     set( QT_PATH ${_qt6_linguisttools_install_prefix} )
     if( UNIX AND NOT APPLE )
         set( QT_PATH "${QT_PATH}/share/qt6" )
@@ -17,7 +18,8 @@ if(USE_QT6)
     endif()
     set( QT_LCONVERT_EXE Qt::lconvert )
 else()
-    find_package( Qt5LinguistTools REQUIRED )
+    find_package( Qt5LinguistTools )
+    set( QT_LINGUIST_FOUND ${Qt5LinguistTools_FOUND} )
     # Note that _qt5_linguisttools_install_prefix is from Qt5LinguistToolsConfig.cmake
     #	and probably a private variable...
     set( QT_PATH ${_qt5_linguisttools_install_prefix} )
@@ -35,6 +37,16 @@ else()
     set( QT_LCONVERT_EXE Qt::lconvert )
 endif()
 
+if(NOT QT_LINGUIST_FOUND)
+    # LinguistTools is a separate tool package; without it the .ts files
+    # cannot be compiled to .qm, so the whole translations target is skipped
+    # instead of failing the configure (e.g. Linux CI installs only
+    # qtbase5-dev; qttools5-dev/qttools5-dev-tools are optional).  A guard
+    # flag guards the body below rather than return() so this file behaves
+    # identically under add_subdirectory() and include() on every platform
+    # and CMake version.
+    message(STATUS "Qt LinguistTools not found - skipping translations")
+else()
 # Now handle our own .ts files
 file( GLOB TRANSLATION_FILES ${CMAKE_CURRENT_LIST_DIR}/*.ts )
 
@@ -122,4 +134,5 @@ elseif ( WIN32 )
 	elseif()
 		install( FILES ${TRANSLATION_QM} DESTINATION ${ACloudViewer_DEST_FOLDER}/translations )
 	endif()
+endif()
 endif()

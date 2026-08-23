@@ -149,13 +149,21 @@ function(cloudviewer_set_aicore_test_runtime_layout target)
             # CMake's automatic rpath computation). $<TARGET_FILE_DIR:...>
             # resolves Qt's IMPORTED_LOCATION(_<CONFIG>) whichever form the
             # Qt package ships (plain LOCATION is NOTFOUND for config-only
-            # imports, e.g. conda-forge Qt5).
-            if(TARGET Qt::Gui)
-                list(APPEND _rpath "$<TARGET_FILE_DIR:Qt::Gui>")
-            elseif(TARGET Qt5::Gui)
+            # imports, e.g. conda-forge Qt5).  The versioned targets
+            # (Qt5::Gui/Qt6::Gui) are the real shared libraries and must be
+            # checked first: conda-forge Qt5 defines Qt::Gui as an INTERFACE
+            # aggregate target with no file location, which TARGET_FILE_DIR
+            # rejects.  The unversioned Qt::Gui fallback is only usable when
+            # it resolves to a real library via ALIASED_TARGET.
+            if(TARGET Qt5::Gui)
                 list(APPEND _rpath "$<TARGET_FILE_DIR:Qt5::Gui>")
             elseif(TARGET Qt6::Gui)
                 list(APPEND _rpath "$<TARGET_FILE_DIR:Qt6::Gui>")
+            elseif(TARGET Qt::Gui)
+                get_target_property(_qt_gui_alias Qt::Gui ALIASED_TARGET)
+                if(_qt_gui_alias)
+                    list(APPEND _rpath "$<TARGET_FILE_DIR:${_qt_gui_alias}>")
+                endif()
             endif()
         else()
             set(_rpath "\$ORIGIN/..")

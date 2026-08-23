@@ -325,7 +325,6 @@ ggml_tensor* cross_attn_deformable(ggml_context* ctx,
                            /*ne0*/ dim, /*ne1*/ NQ, /*ne2*/ 1, /*ne3*/ 1,
                            inputs, /*n_args*/ 3, def_attn_op,
                            /*n_tasks*/ GGML_N_TASKS_MAX, (void*)args_userdata);
-    ggml_set_name(sampled, "rfdetr_deform_attn");
 
     /* Output projection. */
     ggml_tensor* out = ggml_mul_mat(ctx, W_op, sampled);

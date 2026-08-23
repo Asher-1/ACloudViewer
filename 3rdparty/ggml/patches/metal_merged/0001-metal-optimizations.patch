@@ -1,7 +1,50 @@
-diff -ruN a/src/ggml-metal/ggml-metal-context.m b/src/ggml-metal/ggml-metal-context.m
---- a/src/ggml-metal/ggml-metal-context.m	2026-08-04 16:44:52
-+++ b/src/ggml-metal/ggml-metal-context.m	2026-08-23 15:49:43
-@@ -17,7 +17,7 @@
+diff --git a/include/ggml-metal.h b/include/ggml-metal.h
+--- a/include/ggml-metal.h
++++ b/include/ggml-metal.h
+@@ -46,6 +46,13 @@ GGML_BACKEND_API bool ggml_backend_is_metal(ggml_backend_t backend);
+ 
+ GGML_BACKEND_API void ggml_backend_metal_set_abort_callback(ggml_backend_t backend, ggml_abort_callback abort_callback, void * user_data);
+ 
++
++// ACV: per-node progress reporting while a graph is being encoded (Metal
++// only).  Invoked from the backend's parallel encode threads with the
++// accumulated encoded-node count; the callback must be thread-safe.
++typedef void (*ggml_metal_progress_cb)(int node_index, int n_nodes, void * user_data);
++GGML_BACKEND_API void ggml_backend_metal_set_progress_callback(ggml_backend_t backend, ggml_metal_progress_cb progress_callback, void * user_data);
++
+ // helper to check if the device supports a specific family
+ // ideally, the user code should be doing these checks
+ // ref: https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
+diff --git a/src/ggml-metal/ggml-metal-context.h b/src/ggml-metal/ggml-metal-context.h
+--- a/src/ggml-metal/ggml-metal-context.h
++++ b/src/ggml-metal/ggml-metal-context.h
+@@ -33,6 +33,14 @@ ggml_metal_event_t ggml_metal_get_ev_cpy(ggml_metal_t ctx);
+ 
+ void ggml_metal_set_n_cb            (ggml_metal_t ctx, int n_cb);
+ void ggml_metal_set_abort_callback  (ggml_metal_t ctx, ggml_abort_callback abort_callback, void * user_data);
++
++// ACV: per-node progress reporting while encoding a graph (see
++// ggml_backend_metal_set_progress_callback).  Called from the encoding
++// threads with an accumulated count of encoded nodes; n_nodes is the total
++// graph size.  The callback must be thread-safe.
++typedef void (*ggml_metal_progress_cb)(int node_index, int n_nodes, void * user_data);
++void ggml_metal_set_progress_callback(ggml_metal_t ctx, ggml_metal_progress_cb progress_callback, void * user_data);
++
+ bool ggml_metal_supports_family     (ggml_metal_t ctx, int family);
+ void ggml_metal_capture_next_compute(ggml_metal_t ctx);
+ 
+diff --git a/src/ggml-metal/ggml-metal-context.m b/src/ggml-metal/ggml-metal-context.m
+--- a/src/ggml-metal/ggml-metal-context.m
++++ b/src/ggml-metal/ggml-metal-context.m
+@@ -11,13 +11,15 @@
+ 
+ #import <Metal/Metal.h>
+ 
++#import <stdatomic.h>
++
+ #undef MIN
+ #undef MAX
+ #define MIN(a, b) ((a) < (b) ? (a) : (b))
  #define MAX(a, b) ((a) > (b) ? (a) : (b))
  
  // max number of MTLCommandBuffer used to submit a graph for processing
@@ -10,7 +53,21 @@ diff -ruN a/src/ggml-metal/ggml-metal-context.m b/src/ggml-metal/ggml-metal-cont
  
  struct ggml_metal_command_buffer {
      id<MTLCommandBuffer> obj;
-@@ -189,6 +189,27 @@
+@@ -76,6 +78,13 @@
+     ggml_abort_callback abort_callback;
+     void *              abort_callback_data;
+ 
++    // ACV: per-node progress reporting while encoding (see
++    // ggml_metal_set_progress_callback).  progress_count accumulates the
++    // encoded nodes across the parallel encode threads.
++    ggml_metal_progress_cb progress_cb;
++    void *                 progress_cb_data;
++    atomic_int             progress_count;
++
+     // error state - set when a command buffer fails during synchronize
+     // once set, graph_compute will return GGML_STATUS_FAILED until the backend is recreated
+     bool has_error;
+@@ -189,6 +198,27 @@ ggml_metal_t ggml_metal_init(ggml_metal_device_t dev) {
  void ggml_metal_free(ggml_metal_t ctx) {
      GGML_LOG_INFO("%s: deallocating\n", __func__);
  
@@ -38,7 +95,7 @@ diff -ruN a/src/ggml-metal/ggml-metal-context.m b/src/ggml-metal/ggml-metal-cont
      for (int i = 0; i < GGML_METAL_MAX_COMMAND_BUFFERS; ++i) {
          if (ctx->cmd_bufs[i].obj) {
              [ctx->cmd_bufs[i].obj release];
-@@ -265,7 +286,11 @@
+@@ -265,7 +295,11 @@ void ggml_metal_synchronize(ggml_metal_t ctx) {
          }
      }
  
@@ -51,7 +108,7 @@ diff -ruN a/src/ggml-metal/ggml-metal-context.m b/src/ggml-metal/ggml-metal-cont
      if (ctx->cmd_bufs_ext.count > 0) {
          for (size_t i = 0; i < ctx->cmd_bufs_ext.count; ++i) {
              id<MTLCommandBuffer> cmd_buf = ctx->cmd_bufs_ext[i];
-@@ -277,20 +302,10 @@
+@@ -277,20 +311,10 @@ void ggml_metal_synchronize(ggml_metal_t ctx) {
                      GGML_LOG_ERROR("error: %s\n", [[cmd_buf error].localizedDescription UTF8String]);
                  }
  
@@ -72,7 +129,7 @@ diff -ruN a/src/ggml-metal/ggml-metal-context.m b/src/ggml-metal/ggml-metal-cont
      }
  }
  
-@@ -441,8 +456,39 @@
+@@ -441,8 +465,39 @@ enum ggml_status ggml_metal_graph_compute(ggml_metal_t ctx, struct ggml_cgraph *
          return GGML_STATUS_FAILED;
      }
  
@@ -114,10 +171,43 @@ diff -ruN a/src/ggml-metal/ggml-metal-context.m b/src/ggml-metal/ggml-metal-cont
  
      // number of threads in addition to the main thread
      const int n_cb = ctx->n_cb;
-diff -ruN a/src/ggml-metal/ggml-metal-device.cpp b/src/ggml-metal/ggml-metal-device.cpp
---- a/src/ggml-metal/ggml-metal-device.cpp	2026-08-04 16:44:52
-+++ b/src/ggml-metal/ggml-metal-device.cpp	2026-08-23 15:50:03
-@@ -160,6 +160,21 @@
+@@ -711,6 +766,19 @@ void ggml_metal_set_n_cb(ggml_metal_t ctx, int n_cb) {
+             }
+ 
+             idx += res - 1;
++
++            // ACV: report encoding progress.  Accumulated across the parallel
++            // encode threads; the callback is invoked from the encode threads,
++            // so it must be thread-safe (the AICore bridge only forwards an
++            // atomic counter, and the GUI throttles UI updates).
++            if (ctx->progress_cb) {
++                const int done = atomic_fetch_add_explicit(
++                                         &ctx->progress_count, res,
++                                         memory_order_relaxed) +
++                                 res;
++                ctx->progress_cb(done, ctx->gf->n_nodes,
++                                 ctx->progress_cb_data);
++            }
+         }
+ 
+         ggml_metal_op_free(ctx_op);
+@@ -726,6 +794,12 @@ void ggml_metal_set_abort_callback(ggml_metal_t ctx, ggml_abort_callback abort_c
+     ctx->abort_callback_data = user_data;
+ }
+ 
++void ggml_metal_set_progress_callback(ggml_metal_t ctx, ggml_metal_progress_cb progress_callback, void * user_data) {
++    ctx->progress_cb = progress_callback;
++    ctx->progress_cb_data = user_data;
++    atomic_store(&ctx->progress_count, 0);
++}
++
+ bool ggml_metal_supports_family(ggml_metal_t ctx, int family) {
+     GGML_ASSERT(ctx->dev != nil);
+ 
+diff --git a/src/ggml-metal/ggml-metal-device.cpp b/src/ggml-metal/ggml-metal-device.cpp
+--- a/src/ggml-metal/ggml-metal-device.cpp
++++ b/src/ggml-metal/ggml-metal-device.cpp
+@@ -160,6 +160,21 @@ ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_get_rows(ggml_me
      return res;
  }
  
@@ -139,7 +229,7 @@ diff -ruN a/src/ggml-metal/ggml-metal-device.cpp b/src/ggml-metal/ggml-metal-dev
  ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_set_rows(ggml_metal_library_t lib, const ggml_tensor * op) {
      char base[256];
      char name[256];
-@@ -280,6 +295,30 @@
+@@ -280,6 +295,30 @@ ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_unary(ggml_metal
      const bool is_c4 = op->src[0]->ne[0] % 4 == 0;
      const bool is_cnt = ggml_is_contiguous(op->src[0]) && ggml_nelements(op) < 32768;
  
@@ -170,7 +260,7 @@ diff -ruN a/src/ggml-metal/ggml-metal-device.cpp b/src/ggml-metal/ggml-metal-dev
      snprintf(base, 256, "kernel_unary_%s_%s%s", t0_str, t_str, is_c4 ? "_4" : "");
      snprintf(name, 256, "%s_op=%d_cnt=%d", base, op_num, is_cnt);
  
-@@ -512,6 +551,30 @@
+@@ -512,6 +551,18 @@ ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_dsv4_hc(ggml_met
      return res;
  }
  
@@ -186,22 +276,10 @@ diff -ruN a/src/ggml-metal/ggml-metal-device.cpp b/src/ggml-metal/ggml-metal-dev
 +    return res;
 +}
 +
-+ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_rfdetr_deform_attn(ggml_metal_library_t lib) {
-+    char base[256];
-+    snprintf(base, 256, "kernel_rfdetr_deform_attn_f32");
-+
-+    ggml_metal_pipeline_with_params res = ggml_metal_library_get_pipeline(lib, base);
-+    if (!res.pipeline) {
-+        res = ggml_metal_library_compile_pipeline(lib, base, base, nullptr);
-+    }
-+
-+    return res;
-+}
-+
  ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_ssm_conv(ggml_metal_library_t lib, const ggml_tensor * op) {
      GGML_ASSERT(op->src[0]->type == GGML_TYPE_F32);
      GGML_ASSERT(op->src[1]->type == GGML_TYPE_F32);
-@@ -1621,6 +1684,41 @@
+@@ -1621,6 +1672,41 @@ ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_bin(ggml_metal_l
      const bool is_cb = op->src[0]->ne[0] != op->src[1]->ne[0];
      const bool is_rb = ggml_is_contiguous(op->src[0]) && ggml_is_contiguous(op->src[1]) && (ggml_nrows(op->src[1]) == 1) && ggml_nelements(op) < 65536;
  
@@ -243,7 +321,7 @@ diff -ruN a/src/ggml-metal/ggml-metal-device.cpp b/src/ggml-metal/ggml-metal-dev
      snprintf(base, 256, "kernel_bin_fuse_%s_%s_%s%s", t0_str, t1_str, t_str, is_c4 ? "_4" : "");
      snprintf(name, 256, "%s_op=%d_nf=%d_rb=%d_cb=%d", base, op_num, n_fuse, is_rb, is_cb);
  
-@@ -1823,10 +1921,19 @@
+@@ -1823,10 +1909,19 @@ ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_im2col(ggml_meta
      const int64_t KH = is_2D ? ne01 : 1;
      const int64_t KW = ne00;
  
@@ -264,10 +342,10 @@ diff -ruN a/src/ggml-metal/ggml-metal-device.cpp b/src/ggml-metal/ggml-metal-dev
          snprintf(base, 256, "kernel_im2col_%s", ggml_type_name(op->type));
      } else {
          snprintf(base, 256, "kernel_im2col_ext_%s", ggml_type_name(op->type));
-diff -ruN a/src/ggml-metal/ggml-metal-device.h b/src/ggml-metal/ggml-metal-device.h
---- a/src/ggml-metal/ggml-metal-device.h	2026-08-04 16:44:52
-+++ b/src/ggml-metal/ggml-metal-device.h	2026-08-23 15:50:03
-@@ -112,6 +112,7 @@
+diff --git a/src/ggml-metal/ggml-metal-device.h b/src/ggml-metal/ggml-metal-device.h
+--- a/src/ggml-metal/ggml-metal-device.h
++++ b/src/ggml-metal/ggml-metal-device.h
+@@ -112,6 +112,7 @@ struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_cpy
  struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_pool_1d           (ggml_metal_library_t lib, const struct ggml_tensor * op, enum ggml_op_pool op_pool);
  struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_pool_2d           (ggml_metal_library_t lib, const struct ggml_tensor * op, enum ggml_op_pool op_pool);
  struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_get_rows          (ggml_metal_library_t lib, enum ggml_type tsrc);
@@ -275,19 +353,18 @@ diff -ruN a/src/ggml-metal/ggml-metal-device.h b/src/ggml-metal/ggml-metal-devic
  struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_set_rows          (ggml_metal_library_t lib, const struct ggml_tensor * op);
  struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_diag              (ggml_metal_library_t lib, const struct ggml_tensor * op);
  struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_repeat            (ggml_metal_library_t lib, enum ggml_type tsrc);
-@@ -128,6 +129,8 @@
+@@ -128,6 +129,7 @@ struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_soft_max
  struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_lightning_indexer (ggml_metal_library_t lib, const struct ggml_tensor * op);
  struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_dsv4_hc           (ggml_metal_library_t lib, enum ggml_op op);
  struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_ssm_conv          (ggml_metal_library_t lib, const struct ggml_tensor * op);
 +struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_rmbg_swin_qkv_layout (ggml_metal_library_t lib);
-+struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_rfdetr_deform_attn (ggml_metal_library_t lib);
  struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_ssm_conv_batched  (ggml_metal_library_t lib, const struct ggml_tensor * op, int ssm_conv_bs);
  struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_ssm_scan          (ggml_metal_library_t lib, const struct ggml_tensor * op);
  struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_rwkv              (ggml_metal_library_t lib, const struct ggml_tensor * op);
-diff -ruN a/src/ggml-metal/ggml-metal-device.m b/src/ggml-metal/ggml-metal-device.m
---- a/src/ggml-metal/ggml-metal-device.m	2026-08-04 16:44:52
-+++ b/src/ggml-metal/ggml-metal-device.m	2026-08-23 15:50:03
-@@ -1339,6 +1339,33 @@
+diff --git a/src/ggml-metal/ggml-metal-device.m b/src/ggml-metal/ggml-metal-device.m
+--- a/src/ggml-metal/ggml-metal-device.m
++++ b/src/ggml-metal/ggml-metal-device.m
+@@ -1341,6 +1341,20 @@ bool ggml_metal_device_supports_op(ggml_metal_device_t dev, const struct ggml_te
                  default:
                      return false;
              }
@@ -304,27 +381,14 @@ diff -ruN a/src/ggml-metal/ggml-metal-device.m b/src/ggml-metal/ggml-metal-devic
 +                       ggml_is_contiguous(op->src[1]) &&
 +                       ggml_is_contiguous(op);
 +            }
-+            // ACV RF-DETR deformable attention, matched by op name
-+            // (see decoder.cpp cross_attn_deformable).
-+            if (op->name[0] != '\0' &&
-+                strncmp(op->name, "rfdetr_deform_attn", 18) == 0) {
-+                return op->src[0]->type == GGML_TYPE_F32 &&
-+                       op->src[1]->type == GGML_TYPE_F32 &&
-+                       op->src[2]->type == GGML_TYPE_F32 &&
-+                       op->type         == GGML_TYPE_F32 &&
-+                       ggml_is_contiguous(op) &&
-+                       ggml_is_contiguous(op->src[0]) &&
-+                       ggml_is_contiguous(op->src[1]) &&
-+                       ggml_is_contiguous(op->src[2]);
-+            }
 +            return false;
          case GGML_OP_DSV4_HC_COMB:
              return has_simdgroup_reduction &&
                  op->src[0]->type == GGML_TYPE_F32 &&
-diff -ruN a/src/ggml-metal/ggml-metal-impl.h b/src/ggml-metal/ggml-metal-impl.h
---- a/src/ggml-metal/ggml-metal-impl.h	2026-08-04 16:44:52
-+++ b/src/ggml-metal/ggml-metal-impl.h	2026-08-23 15:50:03
-@@ -715,6 +715,8 @@
+diff --git a/src/ggml-metal/ggml-metal-impl.h b/src/ggml-metal/ggml-metal-impl.h
+--- a/src/ggml-metal/ggml-metal-impl.h
++++ b/src/ggml-metal/ggml-metal-impl.h
+@@ -715,6 +715,8 @@ typedef struct {
      int32_t  KH;
      int32_t  KW;
      int32_t  KHW; // KH * KW, pre-computed on CPU to save GPU resources
@@ -333,13 +397,13 @@ diff -ruN a/src/ggml-metal/ggml-metal-impl.h b/src/ggml-metal/ggml-metal-impl.h
  } ggml_metal_kargs_im2col;
  
  typedef struct {
-@@ -870,7 +872,36 @@
+@@ -870,6 +872,17 @@ typedef struct {
      uint64_t nb2;
  } ggml_metal_kargs_ssm_conv;
  
 +// ACV RMBG fused QKV split + bias (+ head/lane layout), see
 +// ggml_metal_op_rmbg_swin_qkv_layout and kernel_rmbg_swin_qkv_layout_f32.
- typedef struct {
++typedef struct {
 +    int32_t C;      // channels per segment (hd * heads)
 +    int32_t N;      // tokens per window
 +    int32_t heads;
@@ -348,29 +412,10 @@ diff -ruN a/src/ggml-metal/ggml-metal-impl.h b/src/ggml-metal/ggml-metal-impl.h
 +    int32_t total;  // C * N * nW elements per segment
 +} ggml_metal_kargs_rmbg_swin_qkv_layout;
 +
-+// ACV RF-DETR deformable attention, see
-+// ggml_metal_op_rfdetr_deform_attn and kernel_rfdetr_deform_attn_f32.
-+typedef struct {
-+    int32_t NQ;
-+    int32_t H, W;
-+    int32_t n_heads;
-+    int32_t n_points;
-+    int32_t head_dim;
-+    int64_t val_stride_h;   // head_dim (elements)
-+    int64_t val_stride_i;   // head_dim * n_heads (token stride)
-+    int64_t sloc_stride_p;  // 2
-+    int64_t sloc_stride_h;  // 2 * n_points
-+    int64_t sloc_stride_q;  // 2 * n_points * n_heads
-+    int64_t aw_stride_h;    // n_points
-+    int64_t aw_stride_q;    // n_points * n_heads
-+    int64_t dst_stride_q;   // head_dim * n_heads
-+} ggml_metal_kargs_rfdetr_deform_attn;
-+
-+typedef struct {
+ typedef struct {
      int64_t  d_state;
      int64_t  d_inner;
-     int64_t  n_head;
-@@ -979,6 +1010,8 @@
+@@ -979,6 +992,8 @@ typedef struct {
      uint64_t nb10;
      uint64_t nb11;
      uint64_t nb12;
@@ -379,10 +424,10 @@ diff -ruN a/src/ggml-metal/ggml-metal-impl.h b/src/ggml-metal/ggml-metal-impl.h
      uint64_t nb1;
      uint64_t nb2;
      uint64_t nb3;
-diff -ruN a/src/ggml-metal/ggml-metal-ops.cpp b/src/ggml-metal/ggml-metal-ops.cpp
---- a/src/ggml-metal/ggml-metal-ops.cpp	2026-08-04 16:44:52
-+++ b/src/ggml-metal/ggml-metal-ops.cpp	2026-08-23 15:50:03
-@@ -9,10 +9,15 @@
+diff --git a/src/ggml-metal/ggml-metal-ops.cpp b/src/ggml-metal/ggml-metal-ops.cpp
+--- a/src/ggml-metal/ggml-metal-ops.cpp
++++ b/src/ggml-metal/ggml-metal-ops.cpp
+@@ -9,10 +9,13 @@
  #include "ggml-metal-device.h"
  
  #include <cassert>
@@ -392,13 +437,11 @@ diff -ruN a/src/ggml-metal/ggml-metal-ops.cpp b/src/ggml-metal/ggml-metal-ops.cp
  #include <cmath>
  
 +static bool ggml_metal_op_is_rmbg_swin_qkv_layout(const ggml_tensor * dst);
-+static bool ggml_metal_op_is_rfdetr_deform_attn(const ggml_tensor * dst);
-+static int  ggml_metal_op_rfdetr_deform_attn(ggml_metal_op_t ctx, int idx);
 +
  static ggml_metal_buffer_id ggml_metal_get_buffer_id(const ggml_tensor * t) {
      if (!t) {
          return { nullptr, 0 };
-@@ -334,6 +339,16 @@
+@@ -334,6 +337,14 @@ static int ggml_metal_op_encode_impl(ggml_metal_op_t ctx, int idx) {
              {
                  n_fuse = ggml_metal_op_soft_max(ctx, idx);
              } break;
@@ -408,14 +451,12 @@ diff -ruN a/src/ggml-metal/ggml-metal-ops.cpp b/src/ggml-metal/ggml-metal-ops.cp
 +                // falls back to the CPU backend via the scheduler.
 +                if (ggml_metal_op_is_rmbg_swin_qkv_layout(node)) {
 +                    n_fuse = ggml_metal_op_rmbg_swin_qkv_layout(ctx, idx);
-+                } else if (ggml_metal_op_is_rfdetr_deform_attn(node)) {
-+                    n_fuse = ggml_metal_op_rfdetr_deform_attn(ctx, idx);
 +                }
 +            } break;
          case GGML_OP_SSM_CONV:
              {
                  n_fuse = ggml_metal_op_ssm_conv(ctx, idx);
-@@ -844,6 +859,18 @@
+@@ -844,6 +855,18 @@ int ggml_metal_op_unary(ggml_metal_op_t ctx, int idx) {
      ggml_metal_encoder_set_buffer  (enc, bid_src0, 1);
      ggml_metal_encoder_set_buffer  (enc, bid_dst,  2);
  
@@ -434,7 +475,7 @@ diff -ruN a/src/ggml-metal/ggml-metal-ops.cpp b/src/ggml-metal/ggml-metal-ops.cp
      if (pipeline.cnt) {
          const int n = pipeline.c4 ? ggml_nelements(op)/4 : ggml_nelements(op);
  
-@@ -1187,11 +1214,36 @@
+@@ -1187,11 +1210,36 @@ int ggml_metal_op_get_rows(ggml_metal_op_t ctx, int idx) {
          /*.nb10  =*/ nb10,
          /*.nb11  =*/ nb11,
          /*.nb12  =*/ nb12,
@@ -471,7 +512,7 @@ diff -ruN a/src/ggml-metal/ggml-metal-ops.cpp b/src/ggml-metal/ggml-metal-ops.cp
      const int nth = std::min(args.ne00t, ggml_metal_pipeline_max_theads_per_threadgroup(pipeline));
  
      const int nw0 = (args.ne00t + nth - 1)/nth;
-@@ -1598,6 +1650,143 @@
+@@ -1598,6 +1646,62 @@ int ggml_metal_op_soft_max(ggml_metal_op_t ctx, int idx) {
      return 1;
  }
  
@@ -531,91 +572,10 @@ diff -ruN a/src/ggml-metal/ggml-metal-ops.cpp b/src/ggml-metal/ggml-metal-ops.cp
 +    return 1;
 +}
 +
-+static bool ggml_metal_op_is_rfdetr_deform_attn(const ggml_tensor * dst) {
-+    return dst && dst->op == GGML_OP_CUSTOM &&
-+           dst->name[0] != '\0' &&
-+           std::strncmp(dst->name, "rfdetr_deform_attn", 18) == 0;
-+}
-+
-+int ggml_metal_op_rfdetr_deform_attn(ggml_metal_op_t ctx, int idx) {
-+    ggml_tensor * op = ctx->node(idx);
-+    ggml_metal_library_t lib = ctx->lib;
-+    ggml_metal_encoder_t enc = ctx->enc;
-+
-+    ggml_tensor * val  = op->src[0];  // (head_dim, n_heads, H*W)
-+    ggml_tensor * sloc = op->src[1];  // (2, n_points, n_heads, NQ)
-+    ggml_tensor * aw   = op->src[2];  // (n_points, n_heads, NQ)
-+
-+    GGML_ASSERT(val->type  == GGML_TYPE_F32);
-+    GGML_ASSERT(sloc->type == GGML_TYPE_F32);
-+    GGML_ASSERT(aw->type   == GGML_TYPE_F32);
-+    GGML_ASSERT(op->type   == GGML_TYPE_F32);
-+    GGML_ASSERT(ggml_is_contiguous(val) && ggml_is_contiguous(sloc) &&
-+                ggml_is_contiguous(aw) && ggml_is_contiguous(op));
-+
-+    // Extract H, W, n_heads, n_points, head_dim from userdata stored in
-+    // op_params by ggml_custom_4d (ggml_custom_op_params layout on arm64:
-+    // fun=8, n_tasks=4, pad=4, userdata=8 → userdata at op_params[4]).
-+    void * userdata = nullptr;
-+    std::memcpy(&userdata, &op->op_params[4], sizeof(void *));
-+    GGML_ASSERT(userdata != nullptr);
-+    const int * da = (const int *)userdata;
-+    const int H        = da[0];
-+    const int W        = da[1];
-+    const int n_heads  = da[2];
-+    const int n_points = da[3];
-+    const int head_dim = da[4];
-+    const int NQ = (int)op->ne[1];
-+
-+    // Strides in elements (matching def_attn_op in decoder.cpp)
-+    const int64_t val_stride_h  = (int64_t)head_dim;
-+    const int64_t val_stride_i  = (int64_t)head_dim * (int64_t)n_heads;
-+    const int64_t sloc_stride_p = 2;
-+    const int64_t sloc_stride_h = (int64_t)2 * (int64_t)n_points;
-+    const int64_t sloc_stride_q = (int64_t)2 * (int64_t)n_points * (int64_t)n_heads;
-+    const int64_t aw_stride_h   = (int64_t)n_points;
-+    const int64_t aw_stride_q   = (int64_t)n_points * (int64_t)n_heads;
-+    const int64_t dst_stride_q  = (int64_t)head_dim * (int64_t)n_heads;
-+
-+    ggml_metal_kargs_rfdetr_deform_attn args = {
-+        /*.NQ           =*/ (int32_t)NQ,
-+        /*.H            =*/ (int32_t)H,
-+        /*.W            =*/ (int32_t)W,
-+        /*.n_heads      =*/ (int32_t)n_heads,
-+        /*.n_points     =*/ (int32_t)n_points,
-+        /*.head_dim     =*/ (int32_t)head_dim,
-+        /*.val_stride_h =*/ val_stride_h,
-+        /*.val_stride_i =*/ val_stride_i,
-+        /*.sloc_stride_p=*/ sloc_stride_p,
-+        /*.sloc_stride_h=*/ sloc_stride_h,
-+        /*.sloc_stride_q=*/ sloc_stride_q,
-+        /*.aw_stride_h  =*/ aw_stride_h,
-+        /*.aw_stride_q  =*/ aw_stride_q,
-+        /*.dst_stride_q =*/ dst_stride_q,
-+    };
-+
-+    auto pipeline = ggml_metal_library_get_pipeline_rfdetr_deform_attn(lib);
-+
-+    ggml_metal_encoder_set_pipeline(enc, pipeline);
-+    ggml_metal_encoder_set_bytes(enc, &args, sizeof(args), 0);
-+    ggml_metal_encoder_set_buffer(enc, ggml_metal_get_buffer_id(val),  1);
-+    ggml_metal_encoder_set_buffer(enc, ggml_metal_get_buffer_id(sloc), 2);
-+    ggml_metal_encoder_set_buffer(enc, ggml_metal_get_buffer_id(aw),   3);
-+    ggml_metal_encoder_set_buffer(enc, ggml_metal_get_buffer_id(op),   4);
-+
-+    // One thread per (q, h, d) triple = NQ * n_heads * head_dim.
-+    // 256 threads per threadgroup, 1D dispatch.
-+    const int total = (int)NQ * n_heads * head_dim;
-+    ggml_metal_encoder_dispatch_threadgroups(
-+            enc, (total + 255) / 256, 1, 1, 256, 1, 1);
-+
-+    return 1;
-+}
-+
  int ggml_metal_op_ssm_conv(ggml_metal_op_t ctx, int idx) {
      ggml_tensor * op = ctx->node(idx);
  
-@@ -2437,8 +2626,14 @@
+@@ -2437,8 +2541,14 @@ int ggml_metal_op_mul_mat(ggml_metal_op_t ctx, int idx) {
          !ggml_is_transposed(op->src[1]) &&
          // for now the matrix-matrix multiplication kernel only works on A14+/M1+ SoCs
          // AMD GPU and older A-chips will reuse matrix-vector multiplication kernel
@@ -632,7 +592,7 @@ diff -ruN a/src/ggml-metal/ggml-metal-ops.cpp b/src/ggml-metal/ggml-metal-ops.cp
  
          // some Metal matrix data types require aligned pointers
          // ref: https://developer.apple.com/metal/Metal-Shading-Language-Specification.pdf (Table 2.5)
-@@ -2965,7 +3160,10 @@
+@@ -2965,7 +3075,10 @@ int ggml_metal_op_flash_attn_ext(ggml_metal_op_t ctx, int idx) {
      const float m0 = powf(2.0f, -(max_bias       ) / n_head_log2);
      const float m1 = powf(2.0f, -(max_bias / 2.0f) / n_head_log2);
  
@@ -644,7 +604,7 @@ diff -ruN a/src/ggml-metal/ggml-metal-ops.cpp b/src/ggml-metal/ggml-metal-ops.cp
  
      ggml_metal_buffer_id bid_src0 = ggml_metal_get_buffer_id(op->src[0]);
      ggml_metal_buffer_id bid_src1 = ggml_metal_get_buffer_id(op->src[1]);
-@@ -3530,6 +3728,20 @@
+@@ -3530,6 +3643,20 @@ int ggml_metal_op_bin(ggml_metal_op_t ctx, int idx) {
      ggml_metal_encoder_set_buffer  (enc, bid_src1, 2);
      ggml_metal_encoder_set_buffer  (enc, bid_dst,  3);
  
@@ -665,7 +625,7 @@ diff -ruN a/src/ggml-metal/ggml-metal-ops.cpp b/src/ggml-metal/ggml-metal-ops.cp
      if (pipeline.cnt) {
          ggml_metal_encoder_dispatch_threadgroups(enc, args.ne0, ggml_nrows(op), 1, 1, 1, 1);
      } else {
-@@ -3982,10 +4194,30 @@
+@@ -3982,10 +4109,30 @@ int ggml_metal_op_im2col(ggml_metal_op_t ctx, int idx) {
          /*.KH   =*/ KH,
          /*.KW   =*/ KW,
          /*.KHW  =*/ KH * KW,
@@ -696,7 +656,7 @@ diff -ruN a/src/ggml-metal/ggml-metal-ops.cpp b/src/ggml-metal/ggml-metal-ops.cp
      if (KH*KW <= ggml_metal_pipeline_max_theads_per_threadgroup(pipeline)) {
          const uint64_t ntptg0 = std::min(ggml_metal_pipeline_max_theads_per_threadgroup(pipeline)/(KH*KW), N);
  
-@@ -4421,11 +4653,13 @@
+@@ -4421,11 +4568,13 @@ int ggml_metal_op_conv_transpose_2d(ggml_metal_op_t ctx, int idx) {
      ggml_metal_encoder_set_buffer  (enc, ggml_metal_get_buffer_id(op->src[1]), 2);
      ggml_metal_encoder_set_buffer  (enc, ggml_metal_get_buffer_id(op),         3);
  
@@ -713,10 +673,10 @@ diff -ruN a/src/ggml-metal/ggml-metal-ops.cpp b/src/ggml-metal/ggml-metal-ops.cp
  
      return 1;
  }
-diff -ruN a/src/ggml-metal/ggml-metal-ops.h b/src/ggml-metal/ggml-metal-ops.h
---- a/src/ggml-metal/ggml-metal-ops.h	2026-08-04 16:44:52
-+++ b/src/ggml-metal/ggml-metal-ops.h	2026-08-23 15:49:43
-@@ -58,6 +58,7 @@
+diff --git a/src/ggml-metal/ggml-metal-ops.h b/src/ggml-metal/ggml-metal-ops.h
+--- a/src/ggml-metal/ggml-metal-ops.h
++++ b/src/ggml-metal/ggml-metal-ops.h
+@@ -58,6 +58,7 @@ int ggml_metal_op_lightning_indexer (ggml_metal_op_t ctx, int idx);
  int ggml_metal_op_dsv4_hc           (ggml_metal_op_t ctx, int idx);
  int ggml_metal_op_soft_max          (ggml_metal_op_t ctx, int idx);
  int ggml_metal_op_ssm_conv          (ggml_metal_op_t ctx, int idx);
@@ -724,10 +684,38 @@ diff -ruN a/src/ggml-metal/ggml-metal-ops.h b/src/ggml-metal/ggml-metal-ops.h
  int ggml_metal_op_ssm_scan          (ggml_metal_op_t ctx, int idx);
  int ggml_metal_op_rwkv              (ggml_metal_op_t ctx, int idx);
  int ggml_metal_op_gated_delta_net   (ggml_metal_op_t ctx, int idx);
-diff -ruN a/src/ggml-metal/ggml-metal.metal b/src/ggml-metal/ggml-metal.metal
---- a/src/ggml-metal/ggml-metal.metal	2026-08-04 16:44:52
-+++ b/src/ggml-metal/ggml-metal.metal	2026-08-23 15:50:03
-@@ -1255,6 +1255,142 @@
+diff --git a/src/ggml-metal/ggml-metal.cpp b/src/ggml-metal/ggml-metal.cpp
+--- a/src/ggml-metal/ggml-metal.cpp
++++ b/src/ggml-metal/ggml-metal.cpp
+@@ -565,6 +565,14 @@ static void ggml_backend_metal_set_n_cb(ggml_backend_t backend, int n_cb) {
+     ggml_metal_set_n_cb(ctx, n_cb);
+ }
+ 
++void ggml_backend_metal_set_progress_callback(ggml_backend_t backend, ggml_metal_progress_cb progress_callback, void * user_data) {
++    GGML_ASSERT(ggml_backend_is_metal(backend));
++
++    ggml_metal_t ctx = (ggml_metal_t)backend->context;
++
++    ggml_metal_set_progress_callback(ctx, progress_callback, user_data);
++}
++
+ static ggml_backend_i ggml_backend_metal_i = {
+     /* .get_name                = */ ggml_backend_metal_name,
+     /* .free                    = */ ggml_backend_metal_free,
+@@ -872,6 +880,9 @@ static void * ggml_backend_metal_get_proc_address(ggml_backend_reg_t reg, const
+     if (strcmp(name, "ggml_backend_get_features") == 0) {
+         return (void *)ggml_backend_metal_get_features;
+     }
++    if (strcmp(name, "ggml_backend_metal_set_progress_callback") == 0) {
++        return (void *)ggml_backend_metal_set_progress_callback;
++    }
+ 
+     return NULL;
+ 
+diff --git a/src/ggml-metal/ggml-metal.metal b/src/ggml-metal/ggml-metal.metal
+--- a/src/ggml-metal/ggml-metal.metal
++++ b/src/ggml-metal/ggml-metal.metal
+@@ -1255,6 +1255,142 @@ template [[host_name("kernel_unary_f32_f32_4")]] kernel kernel_unary_t kernel_un
  template [[host_name("kernel_unary_f16_f16")]]   kernel kernel_unary_t kernel_unary_impl<half,   half,   float>;
  template [[host_name("kernel_unary_f16_f16_4")]] kernel kernel_unary_t kernel_unary_impl<half4,  half4,  float4>;
  
@@ -870,7 +858,7 @@ diff -ruN a/src/ggml-metal/ggml-metal.metal b/src/ggml-metal/ggml-metal.metal
  kernel void kernel_silu_back_f32(
          constant ggml_metal_kargs_silu_back & args,
          device const float * dy,
-@@ -1435,6 +1571,123 @@
+@@ -1435,6 +1571,123 @@ template [[host_name("kernel_bin_fuse_f32_f32_f32_4")]] kernel kernel_bin_fuse_t
  template [[host_name("kernel_bin_fuse_f16_f16_f16")]]   kernel kernel_bin_fuse_t kernel_bin_fuse_impl<half,   half,   half>;
  template [[host_name("kernel_bin_fuse_f16_f16_f16_4")]] kernel kernel_bin_fuse_t kernel_bin_fuse_impl<half4,  half4,  half4>;
  
@@ -994,7 +982,7 @@ diff -ruN a/src/ggml-metal/ggml-metal.metal b/src/ggml-metal/ggml-metal.metal
  kernel void kernel_add_id(
          constant ggml_metal_kargs_add_id & args,
          device const char * src0,
-@@ -2185,6 +2438,74 @@
+@@ -2185,6 +2438,74 @@ template [[host_name("kernel_soft_max_f16_4")]] kernel kernel_soft_max_4_t kerne
  template [[host_name("kernel_soft_max_f32_4")]] kernel kernel_soft_max_4_t kernel_soft_max_4<float4>;
  
  // ref: ggml.c:ggml_compute_forward_ssm_conv_f32
@@ -1069,7 +1057,7 @@ diff -ruN a/src/ggml-metal/ggml-metal.metal b/src/ggml-metal/ggml-metal.metal
  kernel void kernel_ssm_conv_f32_f32(
          constant ggml_metal_kargs_ssm_conv & args,
          device const  void * src0,
-@@ -4944,6 +5265,149 @@
+@@ -4944,6 +5265,149 @@ kernel void kernel_im2col(
  template [[host_name("kernel_im2col_f32")]] kernel im2col_t kernel_im2col<float>;
  template [[host_name("kernel_im2col_f16")]] kernel im2col_t kernel_im2col<half>;
  
@@ -1219,7 +1207,7 @@ diff -ruN a/src/ggml-metal/ggml-metal.metal b/src/ggml-metal/ggml-metal.metal
  // TODO: optimize
  typedef void (im2col_ext_t)(
          constant ggml_metal_kargs_im2col & args,
-@@ -5474,48 +5938,52 @@
+@@ -5474,48 +5938,52 @@ kernel void kernel_conv_transpose_2d(
      const int64_t out_y = tgpig[1];
      const int64_t out_c = tgpig[2];
  
@@ -1293,7 +1281,7 @@ diff -ruN a/src/ggml-metal/ggml-metal.metal b/src/ggml-metal/ggml-metal.metal
      }
  }
  
-@@ -9885,6 +10353,45 @@
+@@ -9901,6 +10369,45 @@ kernel void kernel_get_rows_f(
  typedef decltype(kernel_get_rows_f<float, float>) get_rows_f_t;
  
  template [[host_name("kernel_get_rows_f32")]]  kernel get_rows_f_t kernel_get_rows_f<float, float>;
@@ -1339,202 +1327,8 @@ diff -ruN a/src/ggml-metal/ggml-metal.metal b/src/ggml-metal/ggml-metal.metal
  template [[host_name("kernel_get_rows_f16")]]  kernel get_rows_f_t kernel_get_rows_f<half,  float>;
  template [[host_name("kernel_get_rows_i32")]]  kernel get_rows_f_t kernel_get_rows_f<int32_t, int32_t>;
  #if defined(GGML_METAL_HAS_BF16)
-@@ -11600,4 +12107,78 @@
-     FOR_UNROLL (ushort idst = 0; idst < hc; ++idst) {
+@@ -11617,3 +12124,4 @@ kernel void kernel_dsv4_hc_post_f32(
          *(device float *) (dst + i0*args.nb_d0 + idst*args.nb_d1 + it*args.nb_d2) = result[idst];
      }
-+}
-+
-+// ACV RF-DETR deformable attention kernel (MSDeformAttn bilinear sampling +
-+// weighted-sum).  One thread per (q, h, d) triple — total grid = NQ * n_heads *
-+// head_dim.  Inner loop over n_points.
-+kernel void kernel_rfdetr_deform_attn_f32(
-+        constant ggml_metal_kargs_rfdetr_deform_attn & args,
-+        device const  float * val,
-+        device const  float * sloc,
-+        device const  float * aw,
-+        device       float * dst,
-+        uint3 tgpig [[threadgroup_position_in_grid]],
-+        uint3 tpitg [[thread_position_in_threadgroup]],
-+        uint3 ntg   [[threads_per_grid]]) {
-+    const uint idx = tgpig.x * ntg.x + tpitg.x;
-+    const uint total = (uint)args.NQ * (uint)args.n_heads * (uint)args.head_dim;
-+    if (idx >= total) { return; }
-+
-+    // decode idx -> (q, h, d)
-+    const uint q = idx / ((uint)args.n_heads * (uint)args.head_dim);
-+    const uint r = idx - q * ((uint)args.n_heads * (uint)args.head_dim);
-+    const uint h = r / (uint)args.head_dim;
-+    const uint d = r % (uint)args.head_dim;
-+
-+    float sum = 0.0f;
-+
-+    device const float * val_h = val + (size_t)h * (size_t)args.val_stride_h;
-+
-+    for (uint p = 0; p < (uint)args.n_points; ++p) {
-+        const float sx = sloc[(size_t)q * (size_t)args.sloc_stride_q +
-+                              (size_t)h * (size_t)args.sloc_stride_h +
-+                              (size_t)p * (size_t)args.sloc_stride_p + 0];
-+        const float sy = sloc[(size_t)q * (size_t)args.sloc_stride_q +
-+                              (size_t)h * (size_t)args.sloc_stride_h +
-+                              (size_t)p * (size_t)args.sloc_stride_p + 1];
-+        const float w_attn = aw[(size_t)q * (size_t)args.aw_stride_q +
-+                                (size_t)h * (size_t)args.aw_stride_h +
-+                                (size_t)p];
-+
-+        // bilinear (align_corners=false, padding_mode=zeros)
-+        const float ix = sx * (float)args.W - 0.5f;
-+        const float iy = sy * (float)args.H - 0.5f;
-+        const int ix0 = (int)::metal::floor(ix);
-+        const int iy0 = (int)::metal::floor(iy);
-+        const int ix1 = ix0 + 1;
-+        const int iy1 = iy0 + 1;
-+        const float wx1 = ix - (float)ix0;
-+        const float wy1 = iy - (float)iy0;
-+        const float wx0 = 1.0f - wx1;
-+        const float wy0 = 1.0f - wy1;
-+
-+        float s = 0.0f;
-+        if (ix0 >= 0 && ix0 < args.W && iy0 >= 0 && iy0 < args.H) {
-+            const uint t = (uint)iy0 * (uint)args.W + (uint)ix0;
-+            s += wx0 * wy0 * val_h[(size_t)t * (size_t)args.val_stride_i + d];
-+        }
-+        if (ix1 >= 0 && ix1 < args.W && iy0 >= 0 && iy0 < args.H) {
-+            const uint t = (uint)iy0 * (uint)args.W + (uint)ix1;
-+            s += wx1 * wy0 * val_h[(size_t)t * (size_t)args.val_stride_i + d];
-+        }
-+        if (ix0 >= 0 && ix0 < args.W && iy1 >= 0 && iy1 < args.H) {
-+            const uint t = (uint)iy1 * (uint)args.W + (uint)ix0;
-+            s += wx0 * wy1 * val_h[(size_t)t * (size_t)args.val_stride_i + d];
-+        }
-+        if (ix1 >= 0 && ix1 < args.W && iy1 >= 0 && iy1 < args.H) {
-+            const uint t = (uint)iy1 * (uint)args.W + (uint)ix1;
-+            s += wx1 * wy1 * val_h[(size_t)t * (size_t)args.val_stride_i + d];
-+        }
-+
-+        sum += w_attn * s;
-+    }
-+
-+    dst[(size_t)q * (size_t)args.dst_stride_q +
-+        (size_t)h * (size_t)args.head_dim + d] = sum;
  }
---- ggml_patch_base/src/ggml-metal/ggml-metal-context.h	2026-08-04 16:44:52
-+++ b/src/ggml-metal/ggml-metal-context.h	2026-08-23 18:26:41
-@@ -33,6 +33,14 @@
- 
- void ggml_metal_set_n_cb            (ggml_metal_t ctx, int n_cb);
- void ggml_metal_set_abort_callback  (ggml_metal_t ctx, ggml_abort_callback abort_callback, void * user_data);
 +
-+// ACV: per-node progress reporting while encoding a graph (see
-+// ggml_backend_metal_set_progress_callback).  Called from the encoding
-+// threads with an accumulated count of encoded nodes; n_nodes is the total
-+// graph size.  The callback must be thread-safe.
-+typedef void (*ggml_metal_progress_cb)(int node_index, int n_nodes, void * user_data);
-+void ggml_metal_set_progress_callback(ggml_metal_t ctx, ggml_metal_progress_cb progress_callback, void * user_data);
-+
- bool ggml_metal_supports_family     (ggml_metal_t ctx, int family);
- void ggml_metal_capture_next_compute(ggml_metal_t ctx);
- 
---- ggml_patch_base/src/ggml-metal/ggml-metal-context.m	2026-08-23 18:32:34
-+++ b/src/ggml-metal/ggml-metal-context.m	2026-08-23 18:27:06
-@@ -11,6 +11,8 @@
- 
- #import <Metal/Metal.h>
- 
-+#import <stdatomic.h>
-+
- #undef MIN
- #undef MAX
- #define MIN(a, b) ((a) < (b) ? (a) : (b))
-@@ -75,6 +77,13 @@
-     // abort ggml_metal_graph_compute if callback returns true
-     ggml_abort_callback abort_callback;
-     void *              abort_callback_data;
-+
-+    // ACV: per-node progress reporting while encoding (see
-+    // ggml_metal_set_progress_callback).  progress_count accumulates the
-+    // encoded nodes across the parallel encode threads.
-+    ggml_metal_progress_cb progress_cb;
-+    void *                 progress_cb_data;
-+    atomic_int             progress_count;
- 
-     // error state - set when a command buffer fails during synchronize
-     // once set, graph_compute will return GGML_STATUS_FAILED until the backend is recreated
-@@ -757,6 +766,19 @@
-             }
- 
-             idx += res - 1;
-+
-+            // ACV: report encoding progress.  Accumulated across the parallel
-+            // encode threads; the callback is invoked from the encode threads,
-+            // so it must be thread-safe (the AICore bridge only forwards an
-+            // atomic counter, and the GUI throttles UI updates).
-+            if (ctx->progress_cb) {
-+                const int done = atomic_fetch_add_explicit(
-+                                         &ctx->progress_count, res,
-+                                         memory_order_relaxed) +
-+                                 res;
-+                ctx->progress_cb(done, ctx->gf->n_nodes,
-+                                 ctx->progress_cb_data);
-+            }
-         }
- 
-         ggml_metal_op_free(ctx_op);
-@@ -772,6 +794,12 @@
-     ctx->abort_callback_data = user_data;
- }
- 
-+void ggml_metal_set_progress_callback(ggml_metal_t ctx, ggml_metal_progress_cb progress_callback, void * user_data) {
-+    ctx->progress_cb = progress_callback;
-+    ctx->progress_cb_data = user_data;
-+    atomic_store(&ctx->progress_count, 0);
-+}
-+
- bool ggml_metal_supports_family(ggml_metal_t ctx, int family) {
-     GGML_ASSERT(ctx->dev != nil);
- 
---- ggml_patch_base/src/ggml-metal/ggml-metal.cpp	2026-08-04 16:44:52
-+++ b/src/ggml-metal/ggml-metal.cpp	2026-08-23 18:56:04
-@@ -565,6 +565,14 @@
-     ggml_metal_set_n_cb(ctx, n_cb);
- }
- 
-+void ggml_backend_metal_set_progress_callback(ggml_backend_t backend, ggml_metal_progress_cb progress_callback, void * user_data) {
-+    GGML_ASSERT(ggml_backend_is_metal(backend));
-+
-+    ggml_metal_t ctx = (ggml_metal_t)backend->context;
-+
-+    ggml_metal_set_progress_callback(ctx, progress_callback, user_data);
-+}
-+
- static ggml_backend_i ggml_backend_metal_i = {
-     /* .get_name                = */ ggml_backend_metal_name,
-     /* .free                    = */ ggml_backend_metal_free,
-@@ -872,6 +880,9 @@
-     if (strcmp(name, "ggml_backend_get_features") == 0) {
-         return (void *)ggml_backend_metal_get_features;
-     }
-+    if (strcmp(name, "ggml_backend_metal_set_progress_callback") == 0) {
-+        return (void *)ggml_backend_metal_set_progress_callback;
-+    }
- 
-     return NULL;
- 
---- ggml_patch_base/include/ggml-metal.h	2026-08-04 16:44:52
-+++ b/include/ggml-metal.h	2026-08-23 18:45:00
-@@ -43,8 +43,15 @@
- GGML_BACKEND_API bool ggml_backend_is_metal(ggml_backend_t backend);
- 
- GGML_BACKEND_API void ggml_backend_metal_set_abort_callback(ggml_backend_t backend, ggml_abort_callback abort_callback, void * user_data);
- 
-+
-+// ACV: per-node progress reporting while a graph is being encoded (Metal
-+// only).  Invoked from the backend's parallel encode threads with the
-+// accumulated encoded-node count; the callback must be thread-safe.
-+typedef void (*ggml_metal_progress_cb)(int node_index, int n_nodes, void * user_data);
-+GGML_BACKEND_API void ggml_backend_metal_set_progress_callback(ggml_backend_t backend, ggml_metal_progress_cb progress_callback, void * user_data);
-+
- // helper to check if the device supports a specific family
- // ideally, the user code should be doing these checks
- // ref: https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
- GGML_BACKEND_API bool ggml_backend_metal_supports_family(ggml_backend_t backend, int family);
