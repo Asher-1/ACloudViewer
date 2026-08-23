@@ -207,8 +207,7 @@ void TrellisDialog::setupUi() {
     m_addToDbCheck = new QCheckBox(tr("Add mesh to DB"), outputGroup);
     m_addToDbCheck->setChecked(true);
     outputLayout->addWidget(m_addToDbCheck, 0, 0, 1, 2);
-    m_addRmbgToDbCheck =
-            new QCheckBox(tr("Add RMBG image to DB"), outputGroup);
+    m_addRmbgToDbCheck = new QCheckBox(tr("Add RMBG image to DB"), outputGroup);
     m_addRmbgToDbCheck->setChecked(false);
     m_addRmbgToDbCheck->setToolTip(
             tr("Add the AI background-removed image as a ccImage entity to "

@@ -336,8 +336,9 @@ void qTrellis::addRmbgImageToDb(const TrellisRunResult& result,
     if (result.rmbgImage.isNull()) {
         // Reached only when the AI matting did not run (no RMBG model loaded
         // despite the option): the solid-color fallback has no matted image.
-        m_dialog->appendLog(tr("[TRELLIS] RMBG image unavailable: AI "
-                               "background removal did not run."));
+        m_dialog->appendLog(
+                tr("[TRELLIS] RMBG image unavailable: AI "
+                   "background removal did not run."));
         return;
     }
     const QString sourceName = QFileInfo(result.sourceImage).completeBaseName();
@@ -350,8 +351,8 @@ void qTrellis::addRmbgImageToDb(const TrellisRunResult& result,
     img->setMetaData(QStringLiteral("Backend"), result.backend);
     m_app->addToDB(img, /*updateZoom=*/false, /*autoExpandDBTree=*/true,
                    /*checkDimensions=*/false, /*autoRedraw=*/true);
-    m_dialog->appendLog(tr("[TRELLIS] Added RMBG image '%1' to DB tree.")
-                                .arg(name));
+    m_dialog->appendLog(
+            tr("[TRELLIS] Added RMBG image '%1' to DB tree.").arg(name));
 }
 
 void qTrellis::saveResultGlb(const TrellisRunResult& result,

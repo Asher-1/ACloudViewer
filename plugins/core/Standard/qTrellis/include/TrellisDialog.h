@@ -58,7 +58,9 @@ public:
     void setAppInterface(ecvMainAppInterface* app);
     Settings getSettings() const;
     void appendLog(const QString& msg);
-    void setProgressStage(int stageId, const QString& stage, int step,
+    void setProgressStage(int stageId,
+                          const QString& stage,
+                          int step,
                           int total);
     void setRunning(bool running);
     void setImagePreview(const QImage& image);
