@@ -353,10 +353,14 @@ jobs:
           # qttools5-dev ships Qt5LinguistToolsConfig.cmake and
           # qttools5-dev-tools the lrelease/lupdate tools, both required by
           # app/translations (find_package(Qt5LinguistTools)).
-          # libxrandr-dev provides <X11/extensions/Xrandr.h>, which the
-          # vendored GLFW (ext_glfw, linked by libs/CVViewer/tools GLInfo)
-          # hard-requires at configure time; its deps pull in libx11-dev /
-          # libxext-dev. Dockerfile.ci covers the same need via xorg-dev.
+          # xorg-dev is a meta package covering every X11 extension header
+          # the vendored GLFW 3.4 configure hard-requires in sequence
+          # (Xcursor.h, Xinerama.h, Xrandr.h, Xrender.h, XKBlib.h, XI.h,
+          # Xxf86vm.h) — the GLFW X11 backend is forced ON by
+          # 3rdparty/glfw/glfw.cmake (-DGLFW_BUILD_X11=ON, linked by
+          # libs/CVViewer/tools GLInfo). Single-header packages (e.g.
+          # libxrandr-dev alone) only satisfy the first check and fail on
+          # the next one. Dockerfile.ci covers the same need via xorg-dev.
           sudo apt-get install -y --no-install-recommends \
             qtbase5-dev \
             qttools5-dev \
@@ -365,7 +369,7 @@ jobs:
             libqt5opengl5-dev \
             libqt5websockets5-dev \
             libgl1-mesa-dev \
-            libxrandr-dev
+            xorg-dev
       - name: Configure (AICore + tiered tests, CPU-only)
         if: steps.gate.outputs.run == 'true'
         run: |

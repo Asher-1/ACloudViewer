@@ -228,13 +228,31 @@ jobs:
             exit 1
           fi
 
-          INSTALLER_BIN=$(find "$INSTALLER_APP/Contents/MacOS" -type f -perm +111 | head -1)
+          # Copy the installer bundle off the DMG volume before running it.
+          # A process whose binary or cwd lives on the mount (Qt IFW spawns
+          # helpers like touch/lsregister, and Spotlight may index the
+          # volume) keeps it busy, so `hdiutil detach` fails with
+          # "Resource busy" (exit 16) right after a successful install.
+          INSTALLER_LOCAL="$HOME/acv-installer-local.app"
+          ditto "$INSTALLER_APP" "$INSTALLER_LOCAL"
+          INSTALLER_BIN=$(find "$INSTALLER_LOCAL/Contents/MacOS" -type f -perm +111 | head -1)
           echo "Installer binary: $INSTALLER_BIN"
 
           INSTALL_DIR="$HOME/ACloudViewer"
           "$INSTALLER_BIN" --root "$INSTALL_DIR" \
             --accept-licenses --accept-messages --confirm-command install
-          hdiutil detach "$VOLUME"
+
+          # Detach with retry; fall back to -force for transient system
+          # references (mds/Spotlight, LaunchServices). Installation is
+          # already complete at this point, so never fail the job here.
+          cd "$HOME"
+          if ! hdiutil detach "$VOLUME" -quiet; then
+            echo "::warning::hdiutil detach busy, retrying after 3s"
+            sleep 3
+            hdiutil detach "$VOLUME" -quiet \
+              || hdiutil detach "$VOLUME" -force \
+              || echo "::warning::forced detach failed; leaving volume mounted"
+          fi
 
           echo "=== Installed contents ==="
           ls -la "$INSTALL_DIR"/
