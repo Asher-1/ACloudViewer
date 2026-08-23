@@ -72,6 +72,24 @@ def _run(
     )
 
 
+# git apply only accepts LF patch files, but a Windows checkout can convert
+# *.patch to CRLF (core.autocrlf / text=auto) until the repo is renormalized.
+# Normalize once per run into a temp dir so stale checkouts keep building.
+_CRLF_PATCH_DIR: tempfile.TemporaryDirectory | None = None
+
+
+def _ensure_lf_patch(patch_path: Path) -> Path:
+    global _CRLF_PATCH_DIR
+    data = patch_path.read_bytes()
+    if b"\r\n" not in data:
+        return patch_path
+    if _CRLF_PATCH_DIR is None:
+        _CRLF_PATCH_DIR = tempfile.TemporaryDirectory(prefix="acloudviewer-ggml-patch-lf-")
+    tmp = Path(_CRLF_PATCH_DIR.name) / patch_path.name
+    tmp.write_bytes(data.replace(b"\r\n", b"\n"))
+    return tmp
+
+
 def _git_command(
     src_dir: Path, patch_path: Path, reverse: bool = False
 ) -> subprocess.CompletedProcess:
@@ -79,6 +97,7 @@ def _git_command(
     if not git:
         return subprocess.CompletedProcess([], 127, "git executable not found")
 
+    patch_path = _ensure_lf_patch(patch_path)
     git_env = os.environ.copy()
     command = [git, "apply", "--whitespace=nowarn"]
     cwd = src_dir

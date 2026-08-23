@@ -33,7 +33,10 @@ if(NOT MSVC)
     target_compile_options(test_sam3_contract PRIVATE -Wall -Wextra -fPIC)
     set_target_properties(test_sam3_contract PROPERTIES
         POSITION_INDEPENDENT_CODE ON)
-    target_link_options(test_sam3_contract PRIVATE "-Wl,--allow-shlib-undefined")
+    # GNU ld only; Apple ld64 does not know --allow-shlib-undefined.
+    if(UNIX AND NOT APPLE)
+        target_link_options(test_sam3_contract PRIVATE "-Wl,--allow-shlib-undefined")
+    endif()
 endif()
 
 cloudviewer_set_bin_runtime_output_directory(test_sam3_contract)

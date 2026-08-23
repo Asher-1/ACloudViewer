@@ -1154,15 +1154,15 @@ void VideoPlaybackWidget::showSeekPreview(int frameIndex) {
         // the playing video (the main thread is shared).  Decode on the
         // global thread pool; the mutex serializes access to the shared
         // preview capture, and only the LATEST request wins.
-        m_pendingPreviewFrame.storeRelaxed(frameIndex);
+        qtCompatStoreRelaxed(m_pendingPreviewFrame, frameIndex);
         if (m_seekPreviewWatcher && !m_seekPreviewWatcher->isRunning()) {
             const QString path = m_videoFilePath;
             // Snapshot the generation: results decoded for a previous video
             // must not be painted over the new one.
-            const int gen = m_previewGeneration.loadRelaxed();
+            const int gen = qtCompatLoadRelaxed(m_previewGeneration);
             m_seekPreviewWatcher->setFuture(QtConcurrent::run(
                     [this, path, frameIndex, gen]() -> QPair<int, QPixmap> {
-                        if (gen != m_previewGeneration.loadRelaxed()) {
+                        if (gen != qtCompatLoadRelaxed(m_previewGeneration)) {
                             return {frameIndex, QPixmap()};
                         }
                         QMutexLocker lock(&m_previewMutex);
@@ -1186,8 +1186,8 @@ void VideoPlaybackWidget::showSeekPreview(int frameIndex) {
                         // keeps scrubbing, decoding the stale request is
                         // wasted work that delays the preview catching up.
                         const int target =
-                                m_pendingPreviewFrame.loadRelaxed() >= 0
-                                        ? m_pendingPreviewFrame.loadRelaxed()
+                                qtCompatLoadRelaxed(m_pendingPreviewFrame) >= 0
+                                        ? qtCompatLoadRelaxed(m_pendingPreviewFrame)
                                         : frameIndex;
                         m_previewCapture.set(cv::CAP_PROP_POS_FRAMES, target);
                         cv::Mat frame;
@@ -1248,7 +1248,7 @@ void VideoPlaybackWidget::onSeekPreviewReady() {
     QPixmapCache::insert(cacheKey, result.second);
     // Only paint if this result still matches the latest request.
     if (m_seekPreviewLabel->isVisible() &&
-        result.first == m_pendingPreviewFrame.loadRelaxed()) {
+        result.first == qtCompatLoadRelaxed(m_pendingPreviewFrame)) {
         m_seekPreviewLabel->setPixmap(result.second);
     }
 

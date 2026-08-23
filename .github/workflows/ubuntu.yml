@@ -342,7 +342,20 @@ jobs:
         if: steps.gate.outputs.run == 'true'
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends qtbase5-dev libqt5svg5-dev libgl1-mesa-dev
+          # Minimal subset of docker/Dockerfile.ci's Qt5 package set (line
+          # 164-172), covering every CMakeExternalLibs.cmake
+          # find_package(Qt5 COMPONENTS ... REQUIRED) module. Package names
+          # are identical on Ubuntu 20.04/22.04/24.04 (Qt 5.12+/5.15+).
+          # libqt5opengl5-dev and libqt5websockets5-dev are standalone
+          # packages shipping Qt5OpenGLConfig.cmake / Qt5WebSocketsConfig.cmake;
+          # on Ubuntu 24.04 the former is only a Recommends of qtbase5-dev,
+          # so --no-install-recommends would silently drop it.
+          sudo apt-get install -y --no-install-recommends \
+            qtbase5-dev \
+            libqt5svg5-dev \
+            libqt5opengl5-dev \
+            libqt5websockets5-dev \
+            libgl1-mesa-dev
       - name: Configure (AICore + tiered tests, CPU-only)
         if: steps.gate.outputs.run == 'true'
         run: |

@@ -1448,10 +1448,10 @@ void FaceCaptureWidget::onFrameDecoded(cv::Mat& frame, int frameIndex) {
     // and labels are painted by onDisplayFrame).
     if (!m_identityTracks.empty() && detectorReady() &&
         m_detectorKind == DetectorKind::Ggml && !m_ggmlModelLoading) {
-        if (timeForDetection && m_detectPendingFrame.loadRelaxed() < 0) {
+        if (timeForDetection && qtCompatLoadRelaxed(m_detectPendingFrame) < 0) {
             // ASYNC: GGML inference runs on a thread pool so the GUI thread
             // (and display timer) is never blocked.
-            m_detectPendingFrame.storeRelaxed(frameIndex);
+            qtCompatStoreRelaxed(m_detectPendingFrame, frameIndex);
             m_pendingDetectFrameNum = frameIndex;
             m_asyncPendingFrame = frame.clone();
             m_detectWatcher->setFuture(QtConcurrent::run(
@@ -1466,9 +1466,9 @@ void FaceCaptureWidget::onFrameDecoded(cv::Mat& frame, int frameIndex) {
     bool freshDetection = false;
     if (detectorReady() && !m_ggmlModelLoading) {
         if (m_detectorKind == DetectorKind::Ggml) {
-            if (timeForDetection && m_detectPendingFrame.loadRelaxed() < 0) {
+            if (timeForDetection && qtCompatLoadRelaxed(m_detectPendingFrame) < 0) {
                 // ASYNC: submit GGML inference to thread pool.
-                m_detectPendingFrame.storeRelaxed(frameIndex);
+                qtCompatStoreRelaxed(m_detectPendingFrame, frameIndex);
                 m_pendingDetectFrameNum = frameIndex;
                 m_asyncPendingFrame = frame.clone();
                 m_detectWatcher->setFuture(QtConcurrent::run(
@@ -1503,7 +1503,7 @@ void FaceCaptureWidget::onAsyncDetectFinished() {
     if (!m_detectWatcher || !m_detectWatcher->isFinished()) return;
     const auto faces = m_detectWatcher->result();
     const int frameIndex = m_pendingDetectFrameNum;
-    m_detectPendingFrame.storeRelaxed(-1);
+    qtCompatStoreRelaxed(m_detectPendingFrame, -1);
 
     if (m_asyncPendingFrame.empty()) {
         m_asyncPendingFrame.release();

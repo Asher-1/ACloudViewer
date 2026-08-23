@@ -143,6 +143,20 @@ function(cloudviewer_set_aicore_test_runtime_layout target)
         )
         if(APPLE)
             set(_rpath "@loader_path/..")
+            # Test binaries inherit Qt through AICore's PUBLIC Qt link. Qt
+            # dylibs use @rpath install names, so dyld also needs Qt's lib
+            # directory on the search path (BUILD_WITH_INSTALL_RPATH skips
+            # CMake's automatic rpath computation). $<TARGET_FILE_DIR:...>
+            # resolves Qt's IMPORTED_LOCATION(_<CONFIG>) whichever form the
+            # Qt package ships (plain LOCATION is NOTFOUND for config-only
+            # imports, e.g. conda-forge Qt5).
+            if(TARGET Qt::Gui)
+                list(APPEND _rpath "$<TARGET_FILE_DIR:Qt::Gui>")
+            elseif(TARGET Qt5::Gui)
+                list(APPEND _rpath "$<TARGET_FILE_DIR:Qt5::Gui>")
+            elseif(TARGET Qt6::Gui)
+                list(APPEND _rpath "$<TARGET_FILE_DIR:Qt6::Gui>")
+            endif()
         else()
             set(_rpath "\$ORIGIN/..")
         endif()

@@ -153,7 +153,12 @@ inline Mesh extract(const float* feats,
             // split_weight=None fallback; the shipped decoder always emits
             // feat[6], so we follow the learned choice.)
             auto sw = [&](int i) {
-                const float x = feats[(size_t)q[i] * 7 + 6];
+                // Synthetic neighbours (q[i] >= n) have no decoder feature;
+                // their dual vertex was projected from the current voxel's
+                // offset, so borrow its split weight too. Reading feats at a
+                // synthetic index would overrun the [0, n) voxel array.
+                const int fi = q[i] < n ? q[i] : v;
+                const float x = feats[(size_t)fi * 7 + 6];
                 return x > 20.0f ? x : std::log1p(std::exp(x));  // softplus
             };
             if (sw(0) * sw(2) > sw(1) * sw(3)) {
@@ -402,6 +407,9 @@ inline void fill_holes(Mesh& m, int max_loop = 1024, int max_passes = 8) {
     // Iterate: the greedy loop walk misses some loops at non-manifold
     // junctions, and each fill can expose newly closeable loops, so repeat
     // until a pass adds nothing (or the pass cap is hit).
+    // Shared exploration budget for the whole call: with on_path pruning each
+    // hole costs O(rim) work, so this only caps pathological boundaries.
+    int budget = 4000000;
     for (int pass = 0; pass < max_passes; ++pass) {
         const size_t before = m.tris.size();
         // run-length count of undirected edges via sort (lighter than a
@@ -443,15 +451,27 @@ inline void fill_holes(Mesh& m, int max_loop = 1024, int max_passes = 8) {
                 // branches) and only gives up when every route is exhausted.
                 std::vector<int> loop{start, nb0};
                 used.insert(key(start, nb0));
+                // Path-vertex set: a hole rim is a simple cycle, so the walk
+                // must never re-enter a vertex already on the path. Without
+                // this, junction vertices (degree > 2 on the non-manifold dual
+                // grid) make the backtracking explore the same sub-paths
+                // repeatedly and the search can go exponential.
+                std::unordered_set<int> on_path{start, nb0};
                 std::function<bool(int, int)> dfs = [&](int prev,
                                                         int cur) -> bool {
                     if (cur == start) return true;
                     if ((int)loop.size() > max_loop) return false;
-                    std::vector<std::pair<int, int>> cands;  // (degree, nb)
+                    if (--budget <= 0) return false;
+                    std::vector<std::pair<int, int>>
+                            cands;  // (degree, nb)
                     auto it = adj.find(cur);
                     if (it != adj.end()) {
                         for (const int c : it->second) {
                             if (c == prev) continue;
+                            // Re-entering start closes the loop; any other
+                            // vertex already on the path would only make the
+                            // walk self-intersect, so prune it.
+                            if (c != start && on_path.count(c)) continue;
                             const uint64_t k = key(cur, c);
                             if (used.count(k)) continue;
                             cands.emplace_back((int)adj[c].size(), c);
@@ -463,7 +483,9 @@ inline void fill_holes(Mesh& m, int max_loop = 1024, int max_passes = 8) {
                         const uint64_t k = key(cur, c);
                         used.insert(k);
                         loop.push_back(c);
+                        on_path.insert(c);
                         if (dfs(cur, c)) return true;
+                        on_path.erase(c);
                         loop.pop_back();
                         used.erase(k);
                     }
