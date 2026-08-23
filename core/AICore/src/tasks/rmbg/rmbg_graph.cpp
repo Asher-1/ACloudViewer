@@ -87,14 +87,13 @@ struct GraphBuilder {
         // silicon) instead of the fixed "Metal" family string, so match the
         // MTL prefix as well (see yolo/backend.cpp which lowercases and
         // searches the same lease device name).
-        use_metal =
-                name && (std::strstr(name, "Metal") || std::strstr(name, "MTL"));
+        use_metal = name &&
+                    (std::strstr(name, "Metal") || std::strstr(name, "MTL"));
         // Custom-op families: only the rmbg_swin_qkv_layout kernel has a
         // Metal implementation (name-matched in ggml-metal-ops.cpp); every
         // other custom op still rejects Metal in supports_op and falls back
         // to the primitive chain, so including Metal here is safe.
-        use_backend_custom =
-                use_cuda_custom || use_vulkan_custom || use_metal;
+        use_backend_custom = use_cuda_custom || use_vulkan_custom || use_metal;
         use_vulkan_direct_conv = use_vulkan_custom && opts.vulkan_direct_conv;
         is_cpu_backend = name && std::strstr(name, "CPU");
         // F16-in/FP32-accumulate GEMMs for the Swin MLP linear layers.  The
@@ -339,14 +338,14 @@ struct GraphBuilder {
         if (use_metal) {
             ggml_tensor *w16 = weight_f16(prefix + "weight");
             if (w16) {
-                ggml_tensor *col16 = ggml_im2col(ctx, w16, input, stride,
-                                                 stride, pad, pad, 1, 1, true,
-                                                 GGML_TYPE_F16);
+                ggml_tensor *col16 =
+                        ggml_im2col(ctx, w16, input, stride, stride, pad, pad,
+                                    1, 1, true, GGML_TYPE_F16);
                 out = ggml_mul_mat(
                         ctx,
-                        ggml_reshape_2d(ctx, col16, col16->ne[0],
-                                        col16->ne[1] * col16->ne[2] *
-                                                col16->ne[3]),
+                        ggml_reshape_2d(
+                                ctx, col16, col16->ne[0],
+                                col16->ne[1] * col16->ne[2] * col16->ne[3]),
                         ggml_reshape_2d(ctx, w16,
                                         w16->ne[0] * w16->ne[1] * w16->ne[2],
                                         w16->ne[3]));
@@ -890,13 +889,13 @@ struct GraphBuilder {
         // folds the same values into its Flash Attention mask below.
         ggml_tensor *rpb_tensor =
                 constant(GGML_TYPE_F32, {N, N, heads, 1}, rpb, "rpb");
-        ggml_tensor *qkv_weight =
-                use_f16_gemm ? weight_f16(p + "attn_qkv_weight")
-                             : weight(p + "attn_qkv_weight");
+        ggml_tensor *qkv_weight = use_f16_gemm
+                                          ? weight_f16(p + "attn_qkv_weight")
+                                          : weight(p + "attn_qkv_weight");
         ggml_tensor *qkv_bias = weight(p + "attn_qkv_bias");
-        ggml_tensor *proj_weight =
-                use_f16_gemm ? weight_f16(p + "attn_proj_weight")
-                             : weight(p + "attn_proj_weight");
+        ggml_tensor *proj_weight = use_f16_gemm
+                                           ? weight_f16(p + "attn_proj_weight")
+                                           : weight(p + "attn_proj_weight");
         ggml_tensor *proj_bias = weight(p + "attn_proj_bias");
         if (!qkv_weight || !qkv_bias || !proj_weight || !proj_bias)
             return nullptr;
@@ -1033,9 +1032,8 @@ struct GraphBuilder {
             const int coop_stage = opts.vulkan_flash_coop_stage;
             // The cooperative F16 kernel is Vulkan-only; Metal uses the F32
             // scalar Flash path even when coop is requested elsewhere.
-            const bool flash_coop =
-                    use_vulkan_custom && coop_requested &&
-                    (coop_stage < 0 || coop_stage == stage);
+            const bool flash_coop = use_vulkan_custom && coop_requested &&
+                                    (coop_stage < 0 || coop_stage == stage);
             // F32 scalar Flash is the Vulkan default: it measured ~35 ms
             // faster than the batched QK/softmax/AV path and stays valid in
             // strict mode.  Only the cooperative variant needs device F16.
@@ -1043,9 +1041,9 @@ struct GraphBuilder {
             // device gates the op on head-size and simdgroup matrix support,
             // so the same scalar path applies (measured -825 ms vs the
             // primitive QK/softmax/AV chain on M2 Max).
-            const bool use_flash =
-                    (use_vulkan_custom || use_metal) && !flash_disabled &&
-                    (!disable_vk_f16 || !flash_coop);
+            const bool use_flash = (use_vulkan_custom || use_metal) &&
+                                   !flash_disabled &&
+                                   (!disable_vk_f16 || !flash_coop);
             ggml_tensor *swin_mask = nullptr;
             if (use_flash) {
                 // Flash Attention consumes the complete shifted-window mask.
@@ -1486,21 +1484,18 @@ bool RmbgDeviceGraph::set_progress_callback(void (*cb)(void *, int, int),
     // (the callback is invoked from the encode threads while the graph is
     // being submitted).  Other backends stay silent.  Match by name: the
     // metal backend reports the device name ("MTL0"), same as GraphBuilder.
-    const char *backend_name =
-            impl_->backend != nullptr ? ggml_backend_name(impl_->backend)
-                                      : nullptr;
-    const bool is_metal =
-            backend_name &&
-            (std::strstr(backend_name, "Metal") ||
-             std::strstr(backend_name, "MTL"));
+    const char *backend_name = impl_->backend != nullptr
+                                       ? ggml_backend_name(impl_->backend)
+                                       : nullptr;
+    const bool is_metal = backend_name && (std::strstr(backend_name, "Metal") ||
+                                           std::strstr(backend_name, "MTL"));
     if (is_metal) {
         // The setter lives in the dlopen'd backend module, which ggml loads
         // with RTLD_LOCAL — but ggml exposes it through its official backend
         // extension point instead of manual dlsym: backends register custom
         // functions via ggml_backend_reg_get_proc_address.
-        using ProgressSetter = void (*)(ggml_backend_t,
-                                        void (*)(int, int, void *),
-                                        void *);
+        using ProgressSetter =
+                void (*)(ggml_backend_t, void (*)(int, int, void *), void *);
         ggml_backend_dev_t dev = ggml_backend_get_device(impl_->backend);
         ggml_backend_reg_t reg =
                 dev != nullptr ? ggml_backend_dev_backend_reg(dev) : nullptr;
@@ -1509,17 +1504,18 @@ bool RmbgDeviceGraph::set_progress_callback(void (*cb)(void *, int, int),
                     ggml_backend_reg_get_proc_address(
                             reg, "ggml_backend_metal_set_progress_callback"));
             if (setter != nullptr) {
-                setter(impl_->backend,
-                       [](int node_index, int n_nodes, void *user_data) {
-                           // Bridge the (node, n, user) Metal signature to
-                           // the user-first AICore C API signature.
-                           auto *impl = static_cast<Impl *>(user_data);
-                           if (impl->progress_cb) {
-                               impl->progress_cb(impl->progress_user,
-                                                 node_index, n_nodes);
-                           }
-                       },
-                       impl_.get());
+                setter(
+                        impl_->backend,
+                        [](int node_index, int n_nodes, void *user_data) {
+                            // Bridge the (node, n, user) Metal signature to
+                            // the user-first AICore C API signature.
+                            auto *impl = static_cast<Impl *>(user_data);
+                            if (impl->progress_cb) {
+                                impl->progress_cb(impl->progress_user,
+                                                  node_index, n_nodes);
+                            }
+                        },
+                        impl_.get());
                 return true;
             }
         }

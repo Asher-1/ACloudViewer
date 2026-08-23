@@ -11,7 +11,6 @@
 #include <QElapsedTimer>
 #include <QFileInfo>
 #include <QImage>
-
 #include <atomic>
 
 #ifdef AICore_ENABLED
@@ -195,10 +194,10 @@ bool RMBGWorker::runInference() {
                             const qint64 now =
                                     QDateTime::currentMSecsSinceEpoch();
                             if (pct - st->lastPercent.load(
-                                                 std::memory_order_relaxed) <
+                                              std::memory_order_relaxed) <
                                         2 &&
                                 now - st->lastEmitMs.load(
-                                                 std::memory_order_relaxed) <
+                                              std::memory_order_relaxed) <
                                         50) {
                                 return;
                             }
@@ -210,8 +209,7 @@ bool RMBGWorker::runInference() {
                                 // QueuedConnection in qRMBG.cpp: safe
                                 // cross-thread.
                                 emit st->worker->taskStage(
-                                        RMBGWorker::tr(
-                                                "Removing background…"),
+                                        RMBGWorker::tr("Removing background…"),
                                         pct);
                             }
                         },

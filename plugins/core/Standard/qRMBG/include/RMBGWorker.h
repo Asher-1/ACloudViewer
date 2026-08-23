@@ -45,9 +45,10 @@ public:
 
 signals:
     void logMessage(const QString& msg);
-    /** Stage-progress signal for the inference phases. stage is a human-readable
-     *  label ("Loading model…", "Encoding…", "Swin blocks…", "Decoding…");
-     *  percent < 0 puts the progress bar into busy (indeterminate) mode. */
+    /** Stage-progress signal for the inference phases. stage is a
+     * human-readable label ("Loading model…", "Encoding…", "Swin blocks…",
+     * "Decoding…"); percent < 0 puts the progress bar into busy (indeterminate)
+     * mode. */
     void taskStage(const QString& stage, int percent);
     /** Legacy simple-progress signal (binary 0/1 → 1/1). */
     void progressUpdate(int current, int total);

@@ -118,8 +118,9 @@ AICORE_CAPI const char* aicore_rmbg_last_error(const aicore_rmbg_ctx* ctx);
  *  to the GPU; only the Metal backend reports it.  Returns 1 when the
  *  callback was accepted (live progress will be reported), 0 otherwise —
  *  callers should fall back to indeterminate UI. */
-AICORE_CAPI int aicore_rmbg_set_progress_callback(
-        aicore_rmbg_ctx* ctx, aicore_rmbg_progress_fn cb, void* user);
+AICORE_CAPI int aicore_rmbg_set_progress_callback(aicore_rmbg_ctx* ctx,
+                                                  aicore_rmbg_progress_fn cb,
+                                                  void* user);
 /** Copy the most recent successful request timings into out_timings. */
 AICORE_CAPI int aicore_rmbg_last_timings(const aicore_rmbg_ctx* ctx,
                                          aicore_rmbg_timings* out_timings);

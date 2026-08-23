@@ -178,8 +178,8 @@ AICORE_CAPI const char* aicore_rmbg_last_error(const aicore_rmbg_ctx* ctx) {
 }
 
 AICORE_CAPI int aicore_rmbg_set_progress_callback(aicore_rmbg_ctx* ctx,
-                                                   aicore_rmbg_progress_fn cb,
-                                                   void* user) {
+                                                  aicore_rmbg_progress_fn cb,
+                                                  void* user) {
     if (ctx == nullptr || ctx->model.graph == nullptr) {
         return 0;
     }
