@@ -236,22 +236,29 @@ namespace {
 // Pick the best available compute backend: the first GPU device exposed by the
 // ggml backend registry (CUDA / Metal / Vulkan / ...), falling back to CPU.
 // Mirrors sam3.cpp's "use a GPU backend automatically if one is available".
-// device: nullptr/"auto" = GPU if available else CPU; "cpu" = force CPU.
+// device: nullptr/"auto" = GPU if available else CPU; "cpu" = force CPU;
+// "cuda" / "vulkan" / "gpu" (optionally ":N") = that specific backend family
+// (AICore extension; the upstream port resolves by build, not by name).
 ggml_backend_t init_best_backend(std::string &name_out,
                                  const char *device = nullptr) {
+    // Register the dynamic ggml backends (libggml-cpu-<isa>.so / CUDA /
+    // Vulkan) from the library directory before querying the registry; every
+    // other AICore task does this in its own backend init.
+    ggml_common::load_backends_once();
     std::string want = device ? device : "";
-    if (want != "cpu")
-        for (size_t i = 0; i < ggml_backend_dev_count(); ++i) {
-            ggml_backend_dev_t dev = ggml_backend_dev_get(i);
-            if (ggml_backend_dev_type(dev) == GGML_BACKEND_DEVICE_TYPE_GPU) {
-                ggml_backend_t b = ggml_backend_dev_init(dev, nullptr);
-                if (b) {
-                    const char *d = ggml_backend_dev_description(dev);
-                    name_out = d ? d : ggml_backend_dev_name(dev);
-                    return b;
-                }
-            }
+    if (want != "cpu") {
+        std::string fam;
+        int want_idx = 0;
+        ggml_common::parse_device(want, fam, want_idx);
+        if (fam.empty() || fam == "auto") fam = "gpu";
+        std::string resolved;
+        if (ggml_backend_t b = ggml_common::find_gpu_backend(
+                    fam, want_idx, resolved)) {
+            name_out = resolved;
+            return b;
         }
+        // Requested family missing: fall through to CPU.
+    }
     name_out = "CPU";
     // Use the backend registry (works with dynamic backends: the CPU symbol
     // lives in libggml-cpu-<isa>.so, not in the linked base library).
