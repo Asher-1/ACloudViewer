@@ -252,8 +252,8 @@ ggml_backend_t init_best_backend(std::string &name_out,
         ggml_common::parse_device(want, fam, want_idx);
         if (fam.empty() || fam == "auto") fam = "gpu";
         std::string resolved;
-        if (ggml_backend_t b = ggml_common::find_gpu_backend(
-                    fam, want_idx, resolved)) {
+        if (ggml_backend_t b =
+                    ggml_common::find_gpu_backend(fam, want_idx, resolved)) {
             name_out = resolved;
             return b;
         }
