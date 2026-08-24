@@ -26,7 +26,14 @@
 //   AICORE_TEST_YOLO_WARMUP      warmup iterations (default 20)
 //   AICORE_TEST_YOLO_ITERS       timed iterations (default 50)
 
+// dirent.h is POSIX-only; the vendored 3rdparty/dirent (tronkko dirent)
+// provides the Windows-compatible implementation (same pattern as
+// core/src/FileSystem.cpp).
+#ifdef _WIN32
+#include <dirent/dirent.h>
+#else
 #include <dirent.h>
+#endif
 
 #include <algorithm>
 #include <cerrno>

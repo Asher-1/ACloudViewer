@@ -408,6 +408,11 @@ set_tests_properties(test_rmbg_capi_performance PROPERTIES
 function(aicore_add_yolo_capi_test name)
     add_executable(${name} yolo/${name}.cpp)
     target_link_libraries(${name} PRIVATE AICore)
+    if(WIN32)
+        # dirent.h is POSIX-only; 3rdparty/dirent provides the MSVC shim
+        # (test_yolo_capi_performance.cpp includes <dirent/dirent.h> there).
+        target_link_libraries(${name} PRIVATE 3rdparty_dirent)
+    endif()
     _aicore_capi_link(${name})
     _aicore_test_common(${name})
     if(NOT MSVC)
