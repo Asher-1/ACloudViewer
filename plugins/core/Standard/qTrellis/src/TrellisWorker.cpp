@@ -211,6 +211,13 @@ bool TrellisWorker::runInference() {
         return false;
     }
     m_ctx = ctx;
+    // Surface a backend downgrade (e.g. VRAM too small for the requested
+    // GPU) so the user knows why the run fell back to another device.
+    const char* note = aicore_trellis_backend_note(ctx);
+    if (note && note[0]) {
+        emit logMessage(
+                QStringLiteral("[TRELLIS] %1").arg(QString::fromUtf8(note)));
+    }
 
     aicore_trellis_generate_params params{};
     params.pipeline_type = m_settings.pipelineType;

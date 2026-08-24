@@ -54,6 +54,8 @@ int main() {
     AICORE_CHECK(aicore_trellis_caps(nullptr) == 0);
     AICORE_CHECK(aicore_trellis_backend(nullptr) != nullptr);
     AICORE_CHECK(std::strcmp(aicore_trellis_backend(nullptr), "none") == 0);
+    AICORE_CHECK(aicore_trellis_backend_note(nullptr) != nullptr);
+    AICORE_CHECK(aicore_trellis_backend_note(nullptr)[0] == '\0');
     // RMBG-result accessors are null-safe and empty on a null mesh.
     AICORE_CHECK(aicore_trellis_mesh_has_rmbg(nullptr) == 0);
     AICORE_CHECK(aicore_trellis_mesh_rmbg_rgba(nullptr) == nullptr);

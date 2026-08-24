@@ -628,10 +628,12 @@ TRELLIS2_API bool trellis2_tex_dec_decode(
         std::vector<int32_t>& out_coords,
         std::string* error = nullptr);
 
-// Free VRAM (bytes) on the first GPU backend device, or 0 when there is no GPU
-// (CPU-only build/host). Used to auto-place the shape decoder and to decide
-// whether to free the flow DiTs before a decode. Cheap (a cudaMemGetInfo).
-TRELLIS2_API size_t trellis2_gpu_free_vram(void);
+// Free VRAM (bytes) on the first GPU backend device matching `family`
+// ("cuda" / "vulkan" / "mtl"; NULL or "" = any GPU), or 0 when there is no
+// GPU (CPU-only build/host). Used to auto-place the shape decoder and to
+// decide whether to free the flow DiTs before a decode. Cheap (a
+// cudaMemGetInfo / vkGetMemoryHeapProperties).
+TRELLIS2_API size_t trellis2_gpu_free_vram(const char* family = nullptr);
 
 /*****************************************************************************
 ** Public API – DINOv3 ViT-L/16 image-conditioning encoder

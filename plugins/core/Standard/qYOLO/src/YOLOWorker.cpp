@@ -7,6 +7,8 @@
 
 #include "YOLOWorker.h"
 
+#include <QtCompat.h>
+
 #include <QDir>
 #include <QElapsedTimer>
 #include <QFileInfo>
@@ -356,8 +358,8 @@ bool YOLOWorker::runDepth(const QImage& rgb, const uchar* rgbData) {
     result.runtimeMs = ms;
     result.width = depthW;
     result.height = depthH;
-    result.depthMap =
-            QVector<float>(depth, depth + static_cast<size_t>(depthW) * depthH);
+    result.depthMap = qtCompatQVectorFromRange<float>(
+            depth, depth + static_cast<size_t>(depthW) * depthH);
     aicore_yolo_free_buffer(depth);
     result.modelVariant =
             QString::fromUtf8(aicore_yolo_context_model_name(m_pendingCtx));

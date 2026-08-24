@@ -292,13 +292,29 @@ const char *kv_str(const gguf_context *g, const char *key, const char *def) {
 
 }  // namespace
 
-size_t trellis2_gpu_free_vram(void) {
-    ggml_backend_dev_t dev =
-            ggml_backend_dev_by_type(GGML_BACKEND_DEVICE_TYPE_GPU);
-    if (!dev) return 0;  // CPU-only build/host
-    size_t free = 0, total = 0;
-    ggml_backend_dev_memory(dev, &free, &total);
-    return free;
+size_t trellis2_gpu_free_vram(const char *family) {
+    ggml_common::load_backends_once();
+    for (size_t i = 0; i < ggml_backend_dev_count(); ++i) {
+        ggml_backend_dev_t dev = ggml_backend_dev_get(i);
+        const auto type = ggml_backend_dev_type(dev);
+        if (type != GGML_BACKEND_DEVICE_TYPE_GPU &&
+            type != GGML_BACKEND_DEVICE_TYPE_IGPU) {
+            continue;
+        }
+        if (family && family[0]) {
+            // Same family matching as ggml_common::find_gpu_backend.
+            const char *reg =
+                    ggml_backend_reg_name(ggml_backend_dev_backend_reg(dev));
+            if (!reg || ggml_common::to_lower(reg) !=
+                                ggml_common::normalize_backend_name(family)) {
+                continue;
+            }
+        }
+        size_t free = 0, total = 0;
+        ggml_backend_dev_memory(dev, &free, &total);
+        return free;
+    }
+    return 0;  // CPU-only build/host
 }
 
 trellis2_ss_flow_model *trellis2_ss_flow_load(const std::string &path,

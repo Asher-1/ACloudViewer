@@ -118,10 +118,14 @@ private:
     QCheckBox* m_textureCheck = nullptr;
     QCheckBox* m_rmbgCheck = nullptr;
 
-    // Parameters.
+    // Parameters (each row: "use default" checkbox + numeric spinbox).
+    QCheckBox* m_stepsAuto = nullptr;
     QSpinBox* m_steps = nullptr;
+    QCheckBox* m_guidanceAuto = nullptr;
     QDoubleSpinBox* m_guidance = nullptr;
+    QCheckBox* m_textureStepsAuto = nullptr;
     QSpinBox* m_textureSteps = nullptr;
+    QCheckBox* m_seedRandom = nullptr;
     QSpinBox* m_seed = nullptr;
     QComboBox* m_deviceCombo = nullptr;
     QSpinBox* m_threads = nullptr;

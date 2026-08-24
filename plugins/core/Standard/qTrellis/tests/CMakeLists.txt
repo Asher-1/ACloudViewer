@@ -17,6 +17,7 @@ find_package(Threads REQUIRED)
 
 target_link_libraries(test_qtrellis_catalog PRIVATE
     CVCoreLib
+    CVPluginAPI
     AICore
     3rdparty_googletest
     Qt${QT_VERSION_MAJOR}::Core

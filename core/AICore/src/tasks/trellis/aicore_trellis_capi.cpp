@@ -12,6 +12,7 @@
 // options / generate parameters (AICore reads no environment variables for
 // logic control).
 
+#include <QFileInfo>
 #include <QImage>
 
 #include "aicore/backend_capi.h"
@@ -20,6 +21,7 @@
 #include "common/capi_utils.hpp"
 #include "common/data_root_util.hpp"
 #include "common/ggml_backend_registry.hpp"
+#include "common/ggml_backend_utils.hpp"
 #include "common/model_cache.hpp"
 #include "flexible_dual_grid.h"
 #include "marching_cubes.h"
@@ -70,8 +72,14 @@ struct aicore_trellis_ctx {
     trellis2_slat_flow_model *slat_hr = nullptr;   // 1024 model (cascade)
     trellis2_shape_dec_model *shapedec = nullptr;  // shared by 512 + cascade
     std::string backend;
-    bool fine = false;     // 512 dual-grid available
-    bool cascade = false;  // 1024 cascade available
+    // Resolved (VRAM-aware) device used for every model load: e.g. the user
+    // asked for "auto"/"cuda" but no GPU can hold this preset, so all models
+    // load on "vulkan" or "cpu" instead of aborting on a CUDA OOM.
+    std::string device;
+    std::string device_family;  // backend family of `device` ("cuda"/...)
+    std::string backend_note;   // user-facing downgrade reason (empty = none)
+    bool fine = false;          // 512 dual-grid available
+    bool cascade = false;       // 1024 cascade available
     bool texture =
             false;  // PBR texturing available (shape_enc + tex_dec + tex_flow)
     bool shapedec_gpu =
@@ -112,15 +120,18 @@ namespace {
 // No-op the common case where nothing was freed (pointers still set).
 bool reload_flows(aicore_trellis_ctx *p, std::string &e) {
     if (!p->flow && !p->ss_flow_path.empty()) {
-        p->flow = trellis2_ss_flow_load(p->ss_flow_path.c_str(), true, &e);
+        p->flow = trellis2_ss_flow_load(p->ss_flow_path.c_str(), true, &e,
+                                        p->device.c_str());
         if (!p->flow) return false;
     }
     if (!p->slat && !p->slat_path.empty()) {
-        p->slat = trellis2_slat_flow_load(p->slat_path.c_str(), true, &e);
+        p->slat = trellis2_slat_flow_load(p->slat_path.c_str(), true, &e,
+                                          p->device.c_str());
         if (!p->slat) return false;
     }
     if (!p->slat_hr && !p->slat_hr_path.empty()) {
-        p->slat_hr = trellis2_slat_flow_load(p->slat_hr_path.c_str(), true, &e);
+        p->slat_hr = trellis2_slat_flow_load(p->slat_hr_path.c_str(), true, &e,
+                                             p->device.c_str());
         if (!p->slat_hr) return false;
     }
     return true;
@@ -132,13 +143,15 @@ bool reload_flows(aicore_trellis_ctx *p, std::string &e) {
 // generate. No-op for a CPU decoder or when the decode already fits.
 void ensure_decode_vram(aicore_trellis_ctx *p, int pipeline_type) {
     if (!p->shapedec_gpu) return;
-    if (trellis2_gpu_free_vram() >= decode_vram_peak(pipeline_type)) return;
-    trellis2_ss_flow_free(p->flow);
-    p->flow = nullptr;
-    trellis2_slat_flow_free(p->slat);
-    p->slat = nullptr;
-    trellis2_slat_flow_free(p->slat_hr);
-    p->slat_hr = nullptr;
+    if (trellis2_gpu_free_vram(p->device_family.c_str()) <
+        decode_vram_peak(pipeline_type)) {
+        trellis2_ss_flow_free(p->flow);
+        p->flow = nullptr;
+        trellis2_slat_flow_free(p->slat);
+        p->slat = nullptr;
+        trellis2_slat_flow_free(p->slat_hr);
+        p->slat_hr = nullptr;
+    }
 }
 
 // Shared tail: shape_enc -> tex_flow -> tex_dec -> vertex PBR sample.
@@ -164,8 +177,8 @@ bool run_texture_stage_core(aicore_trellis_ctx *p,
     if (progress)
         progress(user, AICORE_TRELLIS_STAGE_TEXTURE, 0,
                  texture_steps > 0 ? texture_steps : 12);
-    trellis2_shape_enc_model *enc =
-            trellis2_shape_enc_load(p->shapeenc_path.c_str(), true, &e);
+    trellis2_shape_enc_model *enc = trellis2_shape_enc_load(
+            p->shapeenc_path.c_str(), true, &e, p->device.c_str());
     if (!enc) {
         e = "shape_enc load: " + e;
         return false;
@@ -198,7 +211,7 @@ bool run_texture_stage_core(aicore_trellis_ctx *p,
     const std::string &fp = pt == AICORE_TRELLIS_PIPE_1024 ? p->texflow_hr_path
                                                            : p->texflow_path;
     trellis2_slat_flow_model *flow =
-            trellis2_slat_flow_load(fp.c_str(), true, &e);
+            trellis2_slat_flow_load(fp.c_str(), true, &e, p->device.c_str());
     if (!flow) {
         e = "tex_flow load: " + e;
         return false;
@@ -235,8 +248,8 @@ bool run_texture_stage_core(aicore_trellis_ctx *p,
         return false;
     }
 
-    trellis2_shape_dec_model *texdec =
-            trellis2_tex_dec_load(p->texdec_path.c_str(), true, &e);
+    trellis2_shape_dec_model *texdec = trellis2_tex_dec_load(
+            p->texdec_path.c_str(), true, &e, p->device.c_str());
     if (!texdec) {
         e = "tex_dec load: " + e;
         return false;
@@ -447,6 +460,157 @@ void aicore_trellis_options_set_timing(aicore_trellis_options *opts,
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// VRAM-aware device resolution
+// ─────────────────────────────────────────────────────────────────────────
+// TRELLIS is memory-hungry (the f16 512 fine path wants ~16 GB) and ggml's
+// CUDA backend aborts the process when a device allocation fails.  A GPU
+// whose free VRAM cannot hold this preset must therefore be skipped *before*
+// any weights are allocated: "auto" slides CUDA → Vulkan → CPU instead of
+// crashing on the first cuMemCreate.
+
+namespace {
+
+// Weights + graph activations ≈ 2x the weight bytes; plus a fixed base
+// margin for the CUDA/Vulkan context, graph buffers and fragmentation.
+constexpr double kWeightsVramFactor = 2.0;
+constexpr size_t kVramBaseMargin = 1u << 30;  // 1 GiB
+
+// GGUF payloads are stored uncompressed, so the file size ≈ weight bytes.
+size_t fileSizeOrZero(const char *path) {
+    if (!path || !path[0]) return 0;
+    const QFileInfo fi(QString::fromUtf8(path));
+    return fi.exists() ? (size_t)fi.size() : 0;
+}
+
+// Model weights that coexist on the GPU while the pipeline is loaded.  The
+// occupancy decoder always runs on the CPU and the texture models are loaded
+// lazily after the flow DiTs are freed, so neither is counted here.
+size_t coresident_weights_bytes(const aicore_trellis_model_paths *paths,
+                                const aicore_trellis_options *opts) {
+    if (!paths) return 0;
+    size_t total = 0;
+    total += fileSizeOrZero(paths->dino_gguf);
+    total += fileSizeOrZero(paths->ss_flow_gguf);
+    total += fileSizeOrZero(paths->slat_flow_gguf);
+    total += fileSizeOrZero(paths->slat_hr_flow_gguf);
+    total += fileSizeOrZero(paths->shape_dec_gguf);
+    if (opts && !opts->rmbg_gguf.empty()) {
+        total += fileSizeOrZero(opts->rmbg_gguf.c_str());
+    }
+    return total;
+}
+
+// Free VRAM on the want_idx-th GPU device of `family` (matching rules as in
+// ggml_common::find_gpu_backend). Returns 0 when no such device exists.
+size_t familyFreeVram(const std::string &family, int want_idx) {
+    ggml_common::load_backends_once();
+    const std::string want_reg = ggml_common::normalize_backend_name(family);
+    int gpu_idx = 0;
+    for (size_t i = 0; i < ggml_backend_dev_count(); ++i) {
+        ggml_backend_dev_t dev = ggml_backend_dev_get(i);
+        const auto type = ggml_backend_dev_type(dev);
+        if (type != GGML_BACKEND_DEVICE_TYPE_GPU &&
+            type != GGML_BACKEND_DEVICE_TYPE_IGPU) {
+            continue;
+        }
+        const char *reg =
+                ggml_backend_reg_name(ggml_backend_dev_backend_reg(dev));
+        if (!reg || ggml_common::to_lower(reg) != want_reg) continue;
+        if (gpu_idx++ != want_idx) continue;
+        size_t free = 0, total = 0;
+        ggml_backend_dev_memory(dev, &free, &total);
+        return free;
+    }
+    return 0;
+}
+
+}  // namespace
+
+// Resolve the requested device against the actual free VRAM.  Returns the
+// device string every model load should use ("cpu" when no GPU can hold the
+// pipeline); `note` collects a user-facing explanation when the request was
+// downgraded.  `requested` may carry an index ("cuda:1"), which is
+// preserved on the winning family.
+std::string resolveVramAwareDevice(const std::string &requested,
+                                   const aicore_trellis_model_paths *paths,
+                                   const aicore_trellis_options *opts,
+                                   std::string *note) {
+    note->clear();
+    std::string fam;
+    int want_idx = 0;
+    ggml_common::parse_device(requested, fam, want_idx);
+    if (fam == "cpu") return "cpu";
+
+    const size_t weights = coresident_weights_bytes(paths, opts);
+    const size_t need =
+            (size_t)((double)weights * kWeightsVramFactor) + kVramBaseMargin;
+
+    // Candidate order: the explicitly requested family first, then the
+    // platform auto order (CUDA → Vulkan on Linux/Windows, Metal on macOS).
+    std::vector<std::string> candidates;
+    const bool generic = fam.empty() || fam == "auto" || fam == "gpu";
+    if (!generic) candidates.push_back(fam);
+    for (const char *const *p = ggml_common::auto_backend_ids(); *p; ++p) {
+        if (std::find(candidates.begin(), candidates.end(), *p) ==
+            candidates.end()) {
+            candidates.push_back(*p);
+        }
+    }
+
+    // Remember the first-choice device's free VRAM so a downgrade to
+    // another family (or to CPU) can be explained to the user.  The whole
+    // pipeline shares the resolved device — no model ever picks a backend
+    // on its own (see the load call sites in aicore_trellis_load_opts).
+    const std::string &preferred = candidates.front();
+    const size_t preferred_free = familyFreeVram(preferred, want_idx);
+
+    for (const std::string &c : candidates) {
+        const size_t free = familyFreeVram(c, want_idx);
+        if (free >= need) {
+            if (c != preferred) {
+                // Downgraded to another GPU family: make it visible instead
+                // of silently running somewhere else than requested.
+                char buf[320];
+                if (preferred_free > 0 && preferred_free < need) {
+                    std::snprintf(buf, sizeof(buf),
+                                  "'%s' VRAM too small for this preset "
+                                  "(~%.1f GiB needed, %.1f GiB free) — "
+                                  "using %s instead.",
+                                  preferred.c_str(), (double)need / (1u << 30),
+                                  (double)preferred_free / (1u << 30),
+                                  c.c_str());
+                } else {
+                    std::snprintf(buf, sizeof(buf),
+                                  "device '%s' is unavailable — using %s "
+                                  "instead.",
+                                  preferred.c_str(), c.c_str());
+                }
+                *note = buf;
+            }
+            return want_idx > 0 ? c + ":" + std::to_string(want_idx) : c;
+        }
+    }
+
+    // No GPU (CUDA/Vulkan, incl. iGPU) can hold the pipeline: fall back to
+    // CPU with an explanation.  The user's GGUF selection is never changed
+    // automatically — only the device downgrades; fitting a GPU requires a
+    // manual switch to q8 models or a coarser preset.
+    size_t best = 0;
+    for (const std::string &c : candidates) {
+        best = std::max(best, familyFreeVram(c, want_idx));
+    }
+    char buf[360];
+    std::snprintf(buf, sizeof(buf),
+                  "GPU VRAM too small for this preset (~%.1f GiB needed, "
+                  "best available %.1f GiB) — falling back to CPU "
+                  "inference (your GGUF selection is unchanged). Switching "
+                  "to q8 models or the coarse preset would fit the GPU.",
+                  (double)need / (1u << 30), (double)best / (1u << 30));
+    *note = buf;
+    return "cpu";
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // Pipeline load / free / introspection
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -458,17 +622,41 @@ aicore_trellis_ctx *aicore_trellis_load_opts(
         !paths->ss_dec_gguf || !paths->ss_dec_gguf[0]) {
         return nullptr;
     }
-    const std::string device = opts ? opts->device : std::string("auto");
+    const std::string requested_device =
+            opts ? opts->device : std::string("auto");
     trellis2_set_threads(opts ? opts->threads : 0);
     trellis2_set_sdpa_exact(opts ? opts->sdpa_exact : false);
     trellis2_set_timing(opts ? opts->timing : false);
 
     std::string e;
     auto *p = new aicore_trellis_ctx();
+
+    // Decide the compute device before any model load (see
+    // resolveVramAwareDevice): a small-VRAM card must never reach a CUDA
+    // allocation, which would abort the whole process.  Every model of the
+    // pipeline (dino / flows / decoders / RMBG / texture stage) loads with
+    // this same resolved device, so a downgrade applies to the whole
+    // pipeline, never to individual models.
+    p->device = resolveVramAwareDevice(requested_device, paths, opts,
+                                       &p->backend_note);
+    {
+        std::string f;
+        int idx = 0;
+        ggml_common::parse_device(p->device, f, idx);
+        p->device_family = f;
+    }
+    AICORE_LOG_INFO("[trellis] ",
+                    "device request '%s' resolved to '%s' (shared by all "
+                    "pipeline models)\n",
+                    requested_device.c_str(), p->device.c_str());
+    if (!p->backend_note.empty()) {
+        AICORE_LOG_WARN("[trellis] ", "[WARN] %s\n", p->backend_note.c_str());
+    }
+
     const char *rmbg_gguf = opts ? opts->rmbg_gguf.c_str() : "";
 #ifdef TRELLIS2_HAVE_RMBG
     if (rmbg_gguf && rmbg_gguf[0]) {
-        p->rmbg = trellis2_rmbg_load(rmbg_gguf, device.c_str(), &e);
+        p->rmbg = trellis2_rmbg_load(rmbg_gguf, p->device.c_str(), &e);
         if (!p->rmbg) {
             p->last_error = "rmbg: " + e;
             aicore_trellis_free(p);
@@ -476,7 +664,7 @@ aicore_trellis_ctx *aicore_trellis_load_opts(
         }
     }
 #endif
-    p->dino = trellis2_dino_load(paths->dino_gguf, true, &e, device.c_str());
+    p->dino = trellis2_dino_load(paths->dino_gguf, true, &e, p->device.c_str());
     if (!p->dino) {
         p->last_error = "dino: " + e;
         aicore_trellis_free(p);
@@ -484,9 +672,10 @@ aicore_trellis_ctx *aicore_trellis_load_opts(
     }
     // Free VRAM before the flow DiTs are loaded == the VRAM reclaimable by
     // freeing them again at decode time. Drives the shape-decoder placement.
-    const size_t free_pre_flows = trellis2_gpu_free_vram();
+    const size_t free_pre_flows =
+            trellis2_gpu_free_vram(p->device_family.c_str());
     p->flow = trellis2_ss_flow_load(paths->ss_flow_gguf, true, &e,
-                                    device.c_str());
+                                    p->device.c_str());
     if (!p->flow) {
         p->last_error = "ss_flow: " + e;
         aicore_trellis_free(p);
@@ -505,7 +694,7 @@ aicore_trellis_ctx *aicore_trellis_load_opts(
 
     if (present(paths->slat_flow_gguf) && present(paths->shape_dec_gguf)) {
         p->slat = trellis2_slat_flow_load(paths->slat_flow_gguf, true, &e,
-                                          device.c_str());
+                                          p->device.c_str());
         if (!p->slat) {
             p->last_error = "slat_flow: " + e;
             aicore_trellis_free(p);
@@ -544,8 +733,9 @@ aicore_trellis_ctx *aicore_trellis_load_opts(
                                                    : AICORE_TRELLIS_PIPE_512) +
                              margin;
         }
-        p->shapedec = trellis2_shape_dec_load(paths->shape_dec_gguf, true, &e,
-                                              sd_gpu ? nullptr : "cpu");
+        p->shapedec = trellis2_shape_dec_load(
+                paths->shape_dec_gguf, true, &e,
+                sd_gpu ? p->device_family.c_str() : "cpu");
         if (!p->shapedec &&
             sd_gpu) {  // unexpected GPU load OOM — fall back to CPU
             sd_gpu = false;
@@ -564,7 +754,7 @@ aicore_trellis_ctx *aicore_trellis_load_opts(
         // and reuses p->shapedec for both the upsample and the 1024^3 decode.
         if (will_cascade) {
             p->slat_hr = trellis2_slat_flow_load(paths->slat_hr_flow_gguf, true,
-                                                 &e, device.c_str());
+                                                 &e, p->device.c_str());
             if (!p->slat_hr) {
                 p->last_error = "slat_hr_flow: " + e;
                 aicore_trellis_free(p);
@@ -669,6 +859,10 @@ const char *aicore_trellis_last_error(const aicore_trellis_ctx *ctx) {
 
 const char *aicore_trellis_backend(const aicore_trellis_ctx *p) {
     return p ? p->backend.c_str() : "none";
+}
+
+const char *aicore_trellis_backend_note(const aicore_trellis_ctx *p) {
+    return p ? p->backend_note.c_str() : "";
 }
 
 void aicore_trellis_free(aicore_trellis_ctx *p) {
@@ -1152,7 +1346,7 @@ aicore_trellis_mesh *aicore_trellis_generate(
     if (p->texture && pt != AICORE_TRELLIS_PIPE_COARSE) {
         // Free the (finished) geometry flow DiTs so the ~4 GB of tex models fit
         // in VRAM; reload_flows() restores them on the next generate.
-        if (trellis2_gpu_free_vram() > 0) {
+        if (trellis2_gpu_free_vram(p->device_family.c_str()) > 0) {
             if (p->flow) {
                 trellis2_ss_flow_free(p->flow);
                 p->flow = nullptr;

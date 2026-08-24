@@ -150,6 +150,7 @@
 #include <QTextStream>
 #include <QVector>
 #include <QtGlobal>
+#include <iterator>
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 // Qt6 includes
@@ -1083,6 +1084,25 @@ inline QSet<T> qSetFromVector(const QVector<T>& vec) {
 template <typename T>
 inline QVector<T> qVectorFromSet(const QSet<T>& set) {
     return qtCompatQVectorFromSet(set);
+}
+
+// Helper to create QVector from an arbitrary iterator range [first, last).
+// This covers raw pointer ranges (e.g. float* arrays from C APIs) which
+// qtCompatQVectorFromSet/qtCompatQSetFromVector do not handle.
+template <typename T, typename InputIt>
+inline QVector<T> qtCompatQVectorFromRange(InputIt first, InputIt last) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+    return QVector<T>(first, last);
+#else
+    // Qt5.0-5.14: no iterator-range constructor — manual copy loop
+    QVector<T> result;
+    result.reserve(static_cast<int>(std::distance(first, last)));
+    while (first != last) {
+        result.append(*first);
+        ++first;
+    }
+    return result;
+#endif
 }
 
 // ----------------------------------------------------------------------------

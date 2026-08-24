@@ -29,6 +29,15 @@ struct TrellisPreset {
     QStringList files;  // GGUF filenames (without rmbg_* — optional add-on)
 };
 
+/** A GGUF published on the qTrellis Hugging Face mirror
+ *  (https://huggingface.co/Asher-1/Trellis2-models). The mirror carries the
+ *  f16 flow variants that exceed the 2 GB GitHub release limit. */
+struct HfModelInfo {
+    QString filename;
+    qint64 sizeBytes = 0;  // exact published LFS size, used for validation
+    QString sha256;        // HF LFS content fingerprint (hex, 64 chars)
+};
+
 namespace TrellisHelpers {
 
 /** Enumerate the published catalog from AICore. */
@@ -37,6 +46,21 @@ QVector<TrellisModelEntry> catalogModels();
 bool findModelByFilename(const QString& filename, TrellisModelEntry* out);
 /** Return all entries with the given role ("dino", "ss_flow", ...). */
 QVector<TrellisModelEntry> modelsByRole(const QString& role);
+
+/** Look up a file on the HF mirror (all f16/q8 variants). Returns false
+ *  for files not published there. */
+bool hfModelInfo(const QString& filename, HfModelInfo* out);
+/** Direct download URL on the HF mirror (empty when not published). */
+QString hfDownloadUrl(const QString& filename);
+/** True when path holds a valid GGUF whose size matches the published
+ *  mirror size for filename (falls back to the generic GGUF check when the
+ *  file is not on the mirror). Lightweight (magic + size only, no full
+ *  read) — this is the per-dialog presence check. */
+bool isValidModelFile(const QString& path, const QString& filename);
+/** Content-level verification against the published SHA-256. Reads the
+ *  whole file — use only for one-shot checks (e.g. after a manual
+ *  deployment), not for the per-dialog presence check. */
+bool verifyModelFileSha256(const QString& path, const QString& filename);
 
 /** The three built-in pipeline presets (Coarse / 512 / 1024). */
 QVector<TrellisPreset> presets();

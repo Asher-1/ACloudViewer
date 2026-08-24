@@ -162,6 +162,11 @@ AICORE_CAPI const char* aicore_trellis_last_error(
 AICORE_CAPI int aicore_trellis_caps(const aicore_trellis_ctx* ctx);
 /** Name of the compute backend the pipeline was loaded onto. */
 AICORE_CAPI const char* aicore_trellis_backend(const aicore_trellis_ctx* ctx);
+/** User-facing reason when the requested device was downgraded (e.g. GPU
+ *  VRAM too small for this preset); empty string when the request was
+ *  honored as-is. */
+AICORE_CAPI const char* aicore_trellis_backend_note(
+        const aicore_trellis_ctx* ctx);
 /** Releases any buffer returned by an aicore_trellis_* function (unified
  *  entry point). Safe on NULL. */
 AICORE_CAPI void aicore_trellis_free_buffer(void* p);

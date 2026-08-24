@@ -7,6 +7,8 @@
 
 #include "YOLOLiveInferWorker.h"
 
+#include <QtCompat.h>
+
 #include <QByteArray>
 #include <QElapsedTimer>
 #include <QFileInfo>
@@ -168,8 +170,8 @@ void YOLOLiveInferWorker::runJobImpl(YOLOLiveInferWorker::Job job) {
             emit inferComplete(result);
             return;
         }
-        result.depth.depthMap =
-                QVector<float>(depth, depth + static_cast<size_t>(dw) * dh);
+        result.depth.depthMap = qtCompatQVectorFromRange<float>(
+                depth, depth + static_cast<size_t>(dw) * dh);
         aicore_yolo_free_buffer(depth);
         result.depth.width = dw;
         result.depth.height = dh;
