@@ -808,7 +808,10 @@ void RFDetrDialog::onModelInfoReady(const QString& info) {
 
     populateClassList(list);
     if (!saved.isEmpty()) {
-        const QSet<QString> keep(saved.begin(), saved.end());
+        QSet<QString> keep;
+        for (const auto& s : saved) {
+            keep.insert(s);
+        }
         for (int i = 0; i < m_classList->count(); ++i) {
             QListWidgetItem* item = m_classList->item(i);
             if (item) {

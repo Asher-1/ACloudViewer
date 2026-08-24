@@ -203,6 +203,16 @@ if(OpenMP_CXX_FOUND)
         # built-in /openmp:experimental enables them (no optional LLVM
         # component required), so the ALIKED SIMD/collapse kernels keep their
         # full performance on Windows instead of being disabled.
+        #
+        # ggml.cmake links OpenMP::OpenMP_CXX INTERFACE on 3rdparty_ggml,
+        # propagating /openmp. Strip it here first — /openmp:experimental
+        # subsumes standard /openmp, and having both triggers MSVC D9025.
+        get_target_property(_ggml_omp 3rdparty_ggml INTERFACE_LINK_LIBRARIES)
+        if(_ggml_omp MATCHES "OpenMP::OpenMP_CXX")
+            list(REMOVE_ITEM _ggml_omp "OpenMP::OpenMP_CXX")
+            set_target_properties(3rdparty_ggml PROPERTIES
+                INTERFACE_LINK_LIBRARIES "${_ggml_omp}")
+        endif()
         target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/openmp:experimental>)
     else()
         target_link_libraries(${PROJECT_NAME} PRIVATE OpenMP::OpenMP_CXX)
@@ -489,7 +499,14 @@ if(AICore_BUILD_TESTS)
         find_package(OpenMP)
         if(OpenMP_CXX_FOUND)
             if(MSVC)
-                # Same as AICore: enable SIMD/collapse via /openmp:experimental.
+                # Same as AICore: strip inherited /openmp from 3rdparty_ggml
+                # to avoid D9025 before adding /openmp:experimental.
+                get_target_property(_ggml_omp_t 3rdparty_ggml INTERFACE_LINK_LIBRARIES)
+                if(_ggml_omp_t MATCHES "OpenMP::OpenMP_CXX")
+                    list(REMOVE_ITEM _ggml_omp_t "OpenMP::OpenMP_CXX")
+                    set_target_properties(3rdparty_ggml PROPERTIES
+                        INTERFACE_LINK_LIBRARIES "${_ggml_omp_t}")
+                endif()
                 target_compile_options(AICore_test PUBLIC $<$<COMPILE_LANGUAGE:CXX>:/openmp:experimental>)
             else()
                 target_link_libraries(AICore_test PUBLIC OpenMP::OpenMP_CXX)

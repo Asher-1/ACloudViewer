@@ -677,7 +677,7 @@ foreach(_t IN LISTS _aicore_fast_targets)
     endif()
 endforeach()
 add_custom_target(aicore-fast-tests
-    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -LE "model|gpu|e2e"
+    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -LE "model|gpu|e2e|cvpluginapi"
             -j2
             -C $<CONFIG>
     DEPENDS ${_aicore_fast_targets_existing}

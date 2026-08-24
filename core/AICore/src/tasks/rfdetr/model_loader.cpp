@@ -129,7 +129,8 @@ void bicubic_resample_patch_grid(
         const float* src, int src_side, int dim, float* dst, int dst_side) {
     constexpr float A =
             -0.5f;  // antialias=True path uses Keys, not Catmull-Rom
-    auto kernel = [](float x) -> float {
+    // Capture A explicitly for MSVC compat (C3493: no default capture mode)
+    auto kernel = [A](float x) -> float {
         const float ax = std::fabs(x);
         if (ax < 1.0f) {
             return ((A + 2.0f) * ax - (A + 3.0f)) * ax * ax + 1.0f;

@@ -806,5 +806,11 @@ rg -n 'QRegExp|QString::SkipEmptyParts|QStringRef|QTextCodec|QTextStream::endl|Q
 - [ ] **跨平台**：不重复 `#define` 命令行已定义宏（`_USE_MATH_DEFINES`/`__STDC_LIMIT_MACROS`/`NOMINMAX` 等）
 - [ ] **Qt 兼容（14.5）**：Qt5/Qt6 差异 API 走 `QtCompat.h` 兼容层（`QtCompatRegExp`/`QtCompat::SkipEmptyParts`/`qtCompatCodecForLocale`/`QtCompat::endl` 等），无插件内裸 `#if QT_VERSION` 分支
 - [ ] **Qt 兼容**：新发现的 Qt 差异 API 已增量扩展进 `core/include/QtCompat.h`，而非局部处理
+- [ ] **Qt 兼容**：避免 `QSet<T>(begin, end)` 迭代器范围构造（Qt 5.12 不提供），改用 `QSet<T> s; for(auto& v : src) s.insert(v);`
 - [ ] **Qt 兼容**：AICore 核心未使用 QtCompat.h 中依赖 QtWidgets 的部分（mouse/wheel/drop/plaintextedit）
 - [ ] **跨平台**：已跑 14.6 自检命令且三平台 CI 全绿（Linux 通过不算完成）
+- [ ] **跨平台**：lambda 必须有显式捕获模式（MSVC 拒绝隐式捕获 `constexpr` 局部变量，需 `[A]` 或 `[=]`）
+- [ ] **跨平台**：MSVC 上 `/openmp` + `/openmp:experimental` 同时存在触发 D9025，需从上游 INTERFACE 剥离标准 `/openmp`（见 `AICore/CMakeLists.txt` MSVC 分支处理模式）
+- [ ] **插件文档**：`plugins/core/Standard/<Plugin>/models/MODEL_CARD.md` 已创建，所有支持模型逐条列出（文件名、大小、量化类型、推荐用途）
+- [ ] **插件文档**：`README.md` 已引用 `models/MODEL_CARD.md` 完整模型目录
+- [ ] **测试注册**：新测试若不在 AICore 构建树内，必须加 `LABELS` 属性并排除于 `aicore-fast-tests`（`-LE "model|gpu|e2e|cvpluginapi"`）

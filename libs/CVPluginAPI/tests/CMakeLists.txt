@@ -27,3 +27,4 @@ endif()
 
 cloudviewer_set_bin_runtime_output_directory(test_cvpluginapi_ui_helpers)
 add_test(NAME test_cvpluginapi_ui_helpers COMMAND test_cvpluginapi_ui_helpers)
+set_tests_properties(test_cvpluginapi_ui_helpers PROPERTIES LABELS "cvpluginapi")

@@ -45,7 +45,9 @@ downloaded.
 
 All published GGUF models of the
 [cloudViewer_downloads "sam" release](https://github.com/Asher-1/cloudViewer_downloads/releases/tag/sam)
-(39 models) are listed in the model combo, grouped by family:
+(39 models) are listed in the model combo, grouped by family.
+See [models/MODEL_CARD.md](models/MODEL_CARD.md) for the complete model catalog
+with sizes and recommended defaults.
 
 | Family | Quantizations | Text prompt |
 |--------|---------------|-------------|
