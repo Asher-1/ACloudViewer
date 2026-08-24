@@ -37,7 +37,7 @@ constexpr const char* kTabModelKeys[] = {"sam", "sam-visual", "sam2"};
 constexpr int kNumTabModelKeys = 3;
 
 // Per-instance display colors, mirroring upstream examples/main_video.cpp.
-constexpr const QColor kInstanceColors[] = {
+const QColor kInstanceColors[] = {
         QColor(255, 51, 51),  QColor(51, 153, 255),  QColor(51, 230, 76),
         QColor(255, 204, 26), QColor(204, 76, 230),  QColor(255, 128, 26),
         QColor(26, 230, 230), QColor(230, 102, 153), QColor(128, 204, 51),
