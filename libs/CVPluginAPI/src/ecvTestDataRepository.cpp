@@ -68,6 +68,17 @@ constexpr const char* kImage2MeshExpectedMd5 =
         "d902c14e06fd2f1d5af10621c0b8fcfc";
 constexpr qint64 kImage2MeshExpectedSize = 29890011;  // ~28.5 MB
 
+// SAM3 segmentation samples (qSAM3): 14 images in images/ + 7 tracking
+// videos in videos/.
+constexpr const char* kSam3ZipName = "sam_test_data.zip";
+constexpr const char* kSam3ExtractDir = "sam_test_data";
+constexpr const char* kSam3DownloadUrl =
+        "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
+        "sam_test_data/sam_test_data.zip";
+constexpr const char* kSam3ExpectedMd5 =
+        "459505bf5a37f5c7a664d48acaec8e5a";
+constexpr qint64 kSam3ExpectedSize = 31694047;  // ~30 MB
+
 }  // namespace
 
 // ----------------------------------------------------------------------------
@@ -162,6 +173,14 @@ ecvTestDataRepository::DatasetInfo ecvTestDataRepository::getDatasetInfo(
                     QString::fromLatin1(kImage2MeshDownloadUrl),
                     QString::fromLatin1(kImage2MeshExpectedMd5),
                     kImage2MeshExpectedSize};
+        case Dataset::SAM3:
+            return {kind,
+                    QStringLiteral("SAM3"),
+                    QString::fromLatin1(kSam3ZipName),
+                    QString::fromLatin1(kSam3ExtractDir),
+                    QString::fromLatin1(kSam3DownloadUrl),
+                    QString::fromLatin1(kSam3ExpectedMd5),
+                    kSam3ExpectedSize};
     }
     Q_UNREACHABLE();
     return {};
@@ -248,6 +267,12 @@ bool ecvTestDataRepository::isDatasetAvailable(Dataset kind) const {
         case Dataset::Image2Mesh:
             // The main single-image-to-3D samples live in examples_images/.
             extractedComplete = !getImage2MeshImages(extract).isEmpty();
+            break;
+        case Dataset::SAM3:
+            // Both the segmentation images and the tracking videos must be
+            // present for the qSAM3 sample-data flow to work.
+            extractedComplete = !getSamImages(extract).isEmpty() &&
+                                !getSamVideos(extract).isEmpty();
             break;
     }
     if (extractedComplete) return true;
@@ -657,4 +682,53 @@ QStringList ecvTestDataRepository::getImage2MeshImages(
     }
     images.sort(Qt::CaseInsensitive);
     return images;
+}
+
+QStringList ecvTestDataRepository::getSamImages(
+        const QString& bundleRoot) {
+    if (bundleRoot.isEmpty()) return {};
+
+    const QString imageDir =
+            QDir(bundleRoot).filePath(QStringLiteral("images"));
+    if (!QDir(imageDir).exists()) return {};
+
+    const QStringList patterns = {
+            QStringLiteral("*.jpg"), QStringLiteral("*.jpeg"),
+            QStringLiteral("*.png"), QStringLiteral("*.webp")};
+
+    QStringList images;
+    QDirIterator it(imageDir, patterns, QDir::Files);
+    while (it.hasNext()) {
+        const QString path = it.next();
+        const QString fileName = QFileInfo(path).fileName();
+        if (fileName.startsWith(QLatin1Char('.'))) continue;
+        images.append(QFileInfo(path).absoluteFilePath());
+    }
+    images.sort(Qt::CaseInsensitive);
+    return images;
+}
+
+QStringList ecvTestDataRepository::getSamVideos(
+        const QString& bundleRoot) {
+    if (bundleRoot.isEmpty()) return {};
+
+    const QString videoDir =
+            QDir(bundleRoot).filePath(QStringLiteral("videos"));
+    if (!QDir(videoDir).exists()) return {};
+
+    const QStringList patterns = {
+            QStringLiteral("*.mp4"), QStringLiteral("*.mov"),
+            QStringLiteral("*.avi"), QStringLiteral("*.mkv"),
+            QStringLiteral("*.webm")};
+
+    QStringList videos;
+    QDirIterator it(videoDir, patterns, QDir::Files);
+    while (it.hasNext()) {
+        const QString path = it.next();
+        const QString fileName = QFileInfo(path).fileName();
+        if (fileName.startsWith(QLatin1Char('.'))) continue;
+        videos.append(QFileInfo(path).absoluteFilePath());
+    }
+    videos.sort(Qt::CaseInsensitive);
+    return videos;
 }

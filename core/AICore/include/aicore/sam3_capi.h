@@ -244,6 +244,14 @@ AICORE_CAPI aicore_sam3_seg_result* aicore_sam3_propagate_frame(
  *  aicore_sam3_encode_rgb. Returns the assigned instance id, or -1. */
 AICORE_CAPI int aicore_sam3_tracker_add_instance(
         aicore_sam3_tracker_ctx* tracker, const aicore_sam3_pvs_prompt* prompt);
+/** Run PVS on the tracker's currently-encoded frame *without* advancing the
+ *  tracker state (upstream main_video.cpp re-runs sam3_segment_pvs right
+ *  after add_instance to obtain the display mask). The frame must have been
+ *  processed by aicore_sam3_track_frame / _propagate_frame first; returns
+ *  NULL when the tracker has no encoded frame or the prompt is invalid.
+ *  Release the result with aicore_sam3_seg_result_free. */
+AICORE_CAPI aicore_sam3_seg_result* aicore_sam3_tracker_segment_pvs(
+        aicore_sam3_tracker_ctx* tracker, const aicore_sam3_pvs_prompt* prompt);
 /** Add a tracked instance from an existing binary mask (0/255 view) on the
  *  current frame. Returns the assigned instance id, or -1. */
 AICORE_CAPI int aicore_sam3_tracker_add_instance_from_mask(

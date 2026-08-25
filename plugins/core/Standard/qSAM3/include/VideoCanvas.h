@@ -46,6 +46,9 @@ public:
     QPointF screenToImage(const QPointF& screen) const;
     const QVector<QPointF>& posPoints() const { return m_posPoints; }
     const QVector<QPointF>& negPoints() const { return m_negPoints; }
+    /** Queues a negative point for the next instance creation (upstream
+     *  main_video.cpp keeps queued init points on the canvas). */
+    void addNegPoint(const QPointF& p);
     bool hasBox() const { return m_hasBox; }
     QRectF box() const { return m_box; }
     void clearBox();
@@ -57,7 +60,10 @@ public:
 
 signals:
     void boxDrawn();
-    void instanceClicked(int instanceId);
+    /** Left-click on a tracked mask: emits the instance id and the click
+     *  position in original image coordinates (upstream main_video.cpp
+     *  refines with a positive point at the click). */
+    void instanceClicked(int instanceId, const QPointF& imagePos);
     void posPointAdded(const QPointF& p);
     void negPointAdded(const QPointF& p);
 

@@ -1,0 +1,57 @@
+--- a/src/ggml-cuda/ggml-cuda.cu	2026-08-24 22:34:59.712567459 +0800
++++ b/src/ggml-cuda/ggml-cuda.cu	2026-08-24 22:31:59.761394493 +0800
+@@ -1522,20 +1522,30 @@
+         prefer_f32_output = !GGML_CUDA_CC_IS_RDNA3(cc) && !GGML_CUDA_CC_IS_CDNA(cc);
+     }
+ 
+-    if (prefer_f32_output) {
++    if (prefer_f32_output && dst_ddf != nullptr) {
++        // F32 output: write directly into the F32 destination.
+         dst_ptr = (char *) dst_ddf;
+         cu_compute_type = batched_mul_mat_traits<GGML_TYPE_F32>::compute_type;
+         cu_data_type = batched_mul_mat_traits<GGML_TYPE_F32>::data_type;
+         alpha = batched_mul_mat_traits<GGML_TYPE_F32>::get_alpha();
+         beta = batched_mul_mat_traits<GGML_TYPE_F32>::get_beta();
+-    } else {
++    } else if (dst_ddf != nullptr) {
+         if constexpr (compute_type == GGML_TYPE_F32) {
+             dst_ptr = (char *) dst_ddf;  // Direct F32 output
+         } else {
++            // F32 destination, native-type compute: temp buffer + convert.
+             dst_ptr = (char *) dst_temp.alloc(ne_dst);
+             nbd2 /= sizeof(float) / sizeof(cuda_t);
+             nbd3 /= sizeof(float) / sizeof(cuda_t);
+         }
++    } else {
++        // F16/BF16 destination (e.g. ggml_mul_mat_cast): compute natively
++        // into a temp buffer and copy it to the destination at the end.
++        // Writing F32 into an F16 destination here would be an out-of-bounds
++        // write (illegal memory access) that poisons the CUDA context.
++        dst_ptr = (char *) dst_temp.alloc(ne_dst);
++        nbd2 /= sizeof(float) / sizeof(cuda_t);
++        nbd3 /= sizeof(float) / sizeof(cuda_t);
+     }
+ 
+     GGML_ASSERT(ne12 % ne02 == 0);
+@@ -1620,10 +1630,18 @@
+                 CUBLAS_GEMM_DEFAULT_TENSOR_OP));
+     }
+ 
+-    // Convert output back to F32 if needed
++    // Convert output back to F32 if needed; for a native-type destination
++    // (F16/BF16) the computed temp buffer is copied over directly.
+     if (cu_data_type != CUDA_R_32F) {
+-        const to_fp32_cuda_t to_fp32_cuda = ggml_get_to_fp32_cuda(traits::ggml_type_val);
+-        to_fp32_cuda(dst_temp.get(), dst_ddf, ne_dst, main_stream);
++        if (dst_ddf != nullptr) {
++            const to_fp32_cuda_t to_fp32_cuda = ggml_get_to_fp32_cuda(traits::ggml_type_val);
++            to_fp32_cuda(dst_temp.get(), dst_ddf, ne_dst, main_stream);
++        } else {
++            const size_t elem_size = ggml_type_size(dst->type);
++            CUDA_CHECK(cudaMemcpyAsync(dst->data, dst_temp.get(),
++                                       ne_dst * elem_size,
++                                       cudaMemcpyDeviceToDevice, main_stream));
++        }
+     }
+ }
+ 

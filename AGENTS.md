@@ -12,7 +12,7 @@ Reference layout: Use this file when you need a **full-repo map** (build, module
 | Build or fix compile/link errors | This file § Build Instructions | Platform guide in `docs/guides/compiling_doc/`, `BUILD.md` |
 | Develop a plugin | `.agents/rules/acloudviewer-plugin-dev.mdc` | `plugins/core/<Category>/<Plugin>/README.md` |
 | Add JSON-RPC / MCP / CLI command | `.agents/rules/acloudviewer-agent-dev.mdc` | `agent-integration/docs/JSON-RPC-API.md` |
-| Modify ggml / AICore / GPU backend | `.agents/rules/acloudviewer-ggml-aicore.mdc` | This file § ggml 源码修改规则, `3rdparty/ggml/patches/` |
+| Modify ggml / AICore / GPU backend | `.agents/rules/acloudviewer-ggml-aicore.mdc` | This file § ggml Source Modification Rules, `3rdparty/ggml/patches/` |
 | Debug CI failure | `.agents/rules/acloudviewer-ci-debugging.mdc` | `.github/workflows/`, `util/ci_utils.sh` |
 | Understand a module | This file § Module Layers + Key Classes | Per-plugin README, Sphinx `docs/source/` |
 
@@ -20,8 +20,9 @@ Reference layout: Use this file when you need a **full-repo map** (build, module
 
 1. **Never guess binary CLI flags** — use `cli-anything-acloudviewer` (headless) or JSON-RPC (GUI).
 2. **Windows file ops** — prefer `--mode headless` to avoid RPC hang when port 6001 is stale.
-3. **ggml 源码修改** — **禁止**手动改 ggml 源码（含 `build*/ggml/`、vendor tarball、任何临时提取目录）。所有改动**必须**以 unified diff patch 提交到 `3rdparty/ggml/patches/`，由 CMake ExternalProject 在构建时通过 `apply_ggml_patches.py`（`git apply`）自动应用；见 § ggml 源码修改规则。
+3. **ggml source modification** — **never** edit ggml sources by hand (including `build*/ggml/`, vendor tarballs, and any temporary extraction directory). Every change **must** be committed as a unified diff patch to `3rdparty/ggml/patches/` and applied automatically by CMake's ExternalProject at build time via `apply_ggml_patches.py` (`git apply`); see § ggml Source Modification Rules.
 4. **Doc edits** — incremental additions only; do not rewrite unrelated sections (reduces merge conflicts).
+5. **Conclusions must be based on facts; guessing/estimation is forbidden** — every conclusion and recommendation must cite verifiable evidence (code file paths, line numbers, function signatures, CMake variable names, version numbers, actual `rg`/`ctest`/`grep` output, etc.); never conclude from experience-based guessing or subjective estimation. Verify evidence first (read code, run commands), then conclude; anything that cannot be verified must be explicitly marked "unverified" rather than stated as fact. When a document contradicts the code, the actual code wins and the discrepancy must be called out.
 
 ## Project Overview
 
@@ -40,7 +41,7 @@ Main deliverables:
 
 Agent control: JSON-RPC WebSocket plugin, MCP server, CLI harness — see `agent-integration/README.md`.
 
-> **AI 操作 ACloudViewer（重要）**：所有面向 AI / 自动化脚本的 CLI 交互，**必须**通过 `agent-integration/` 提供的 `cli-anything-acloudviewer` 工具链（headless 直接调用二进制，GUI 走 JSON-RPC）。**不要**直接猜二进制参数。先读 `agent-integration/README.md` 与 `agent-integration/docs/CLI-QUICK-REFERENCE.md`。安装：`pip install git+https://github.com/Asher-1/CLI-Anything.git#subdirectory=acloudviewer/agent-harness`（本机已装 v3.1.0）。
+> **AI operating ACloudViewer (important):** all CLI interaction for AI / automation scripts **must** go through the `cli-anything-acloudviewer` toolchain provided by `agent-integration/` (headless calls the binary directly, GUI goes through JSON-RPC). **Never** guess binary flags. Read `agent-integration/README.md` and `agent-integration/docs/CLI-QUICK-REFERENCE.md` first. Install: `pip install git+https://github.com/Asher-1/CLI-Anything.git#subdirectory=acloudviewer/agent-harness` (v3.1.0 already installed on this machine).
 
 ## Directory Structure
 
@@ -373,18 +374,18 @@ New AICore / reconstruction code may use `snake_case` for functions and `PascalC
 
 - RPC methods: `category.action` in `JsonRPCPlugin::execute()`; update `rpcMethodsList()`
 - Scoped rules: `.agents/rules/acloudviewer-agent-dev.mdc`
-- **三套接口**（详见 `agent-integration/README.md`）：
-  - **JSON-RPC**（WebSocket 6001，GUI 实时控制）— 插件 `qJSonRPCPlugin`，`PLUGIN_STANDARD_QJSONRPC=ON`
-  - **MCP Server**（stdio，供 OpenClaw/Cursor/Claude Code）— `cli-anything-acloudviewer-mcp`；Cursor 一键配置见 `.agents/mcp.json`
-  - **CLI Harness**（Click，headless 直接调二进制 / GUI 走 RPC）— `cli-anything-acloudviewer`
-- **CLI 常用操作**（headless 无需 GUI）：
-  - `cli-anything-acloudviewer info` / `formats` — 环境与格式
-  - `cli-anything-acloudviewer --mode headless convert in.ply out.obj` — 格式转换（Windows 推荐加 `--mode headless`）
-  - `cli-anything-acloudviewer process <op> in.ply -o out.ply` — 55+ 处理算子（subsample/normals/crop/icp/csf/ransac/m3c2/canupo/poisson/cork 等）
-  - `cli-anything-acloudviewer reconstruct auto ./imgs -w ./ws` — COLMAP 重建
-  - `cli-anything-acloudviewer view screenshot out.png` — GUI 截图（需 GUI）
-  - `cli-anything-acloudviewer --json scene list` — GUI 场景树
-- **运行 Python 脚本（qPythonRuntime）**：GUI 模式下在插件面板手动运行；CLI 可用 `ACloudViewer -SILENT -PYTHON_SCRIPT x.py`（headless）。脚本示例见 `plugins/core/Standard/qPythonRuntime/script_examples/`
+- **Three interface stacks** (details in `agent-integration/README.md`):
+  - **JSON-RPC** (WebSocket 6001, real-time GUI control) — plugin `qJSonRPCPlugin`, `PLUGIN_STANDARD_QJSONRPC=ON`
+  - **MCP Server** (stdio, for OpenClaw/Cursor/Claude Code) — `cli-anything-acloudviewer-mcp`; one-click Cursor setup in `.agents/mcp.json`
+  - **CLI Harness** (Click; headless calls the binary directly / GUI goes through RPC) — `cli-anything-acloudviewer`
+- **Common CLI operations** (headless, no GUI needed):
+  - `cli-anything-acloudviewer info` / `formats` — environment and formats
+  - `cli-anything-acloudviewer --mode headless convert in.ply out.obj` — format conversion (add `--mode headless` on Windows)
+  - `cli-anything-acloudviewer process <op> in.ply -o out.ply` — 55+ processing ops (subsample/normals/crop/icp/csf/ransac/m3c2/canupo/poisson/cork, etc.)
+  - `cli-anything-acloudviewer reconstruct auto ./imgs -w ./ws` — COLMAP reconstruction
+  - `cli-anything-acloudviewer view screenshot out.png` — GUI screenshot (needs GUI)
+  - `cli-anything-acloudviewer --json scene list` — GUI scene tree
+- **Running Python scripts (qPythonRuntime)**: run manually from the plugin panel in GUI mode; from CLI use `ACloudViewer -SILENT -PYTHON_SCRIPT x.py` (headless). Script examples in `plugins/core/Standard/qPythonRuntime/script_examples/`
 
 **Agent integration docs:**
 
@@ -437,57 +438,69 @@ Large downloads: [cloudViewer_downloads](https://github.com/Asher-1/cloudViewer_
 
 > **macOS Vulkan defect:** MoltenVK SPIR-V → MSL translation fails for complex ggml compute shaders (conv_transpose, quantized matmul). Metal is both native and faster. Vulkan support was removed from macOS builds in v3.9.5.
 
-### ggml 源码修改规则（强制）
+### ggml Source Modification Rules (mandatory)
 
-> **所有涉及 ggml 源码的修改，都必须通过 CMake 构建链自动 apply patch 实现，禁止手动改 ggml 源码。**
+> **Every ggml source change must be applied automatically by the CMake build chain as a patch. Manually editing ggml sources is forbidden.**
 
-ggml 在本仓库中是 **ExternalProject**（`3rdparty/ggml/ggml.cmake`）：每次 configure/干净构建都会从 tarball **重新解压**一份全新源码，随后在 `PATCH_COMMAND` 阶段由 `3rdparty/ggml/patches/apply_ggml_patches.py` 按 `manifest.yaml` 顺序执行 `git apply`。
+ggml is an **ExternalProject** in this repo (`3rdparty/ggml/ggml.cmake`): every configure/clean build **re-extracts** a fresh source tree from the tarball, then `3rdparty/ggml/patches/apply_ggml_patches.py` executes `git apply` on the patches in `manifest.yaml` order during the `PATCH_COMMAND` stage.
 
-#### 禁止的做法
+**Version lock: ggml pinned to v0.18.1** (`3rdparty/ggml/ggml.cmake:24` `set(GGML_VERSION "0.18.1")`, URL `https://github.com/ggml-org/ggml/archive/refs/tags/v0.18.1.tar.gz`, SHA256 `e9679cc9a8f0480ddc137b0a650df31b7c955e53ac6fdded1967aac36790c5e3`). **Upgrading/downgrading is forbidden** — every patch hunk in manifest.yaml anchors to this version's sources; version drift breaks all AI plugins at once.
 
-| 禁止 | 后果 |
+#### Forbidden practices
+
+| Forbidden | Consequence |
 |------|------|
-| 直接编辑 `build/ggml/`、`build_app/ggml/` 下的 `.c/.cpp/.h/.metal` 等 | 本地可能暂时能编过，但**无法提交**、CI/他人/干净构建**全部丢失** |
-| 把 ggml 改动只留在工作区而未生成 patch | PR 无 diff、修复**无法合入**、问题会在下次构建复现 |
-| 绕过 `manifest.yaml` 手工 `patch -p1` 后不再入库 | 不可复现，团队与 CI 行为不一致 |
-| 在 ggml 上游目录直接改 vendor 副本而不走 patch 流程 | 同上；vendor 树会被 ExternalProject 覆盖 |
+| Editing `.c/.cpp/.h/.metal` under `build/ggml/`, `build_app/ggml/` etc. | May compile locally, but **cannot be committed**; lost in CI / for others / on clean builds |
+| Leaving ggml changes only in the worktree without a patch | PR has no diff, the fix **cannot be merged**, the problem reappears on the next build |
+| Hand-applying `patch -p1` bypassing `manifest.yaml` and not committing it | Non-reproducible; team and CI behavior diverge |
+| Editing the vendor copy in the upstream ggml directory without the patch flow | Same as above; the vendor tree is overwritten by ExternalProject |
 
-**允许的唯一路径：** patch 文件入库 → `manifest.yaml` 注册 → CMake 构建时自动 apply。
+**The only allowed path:** commit the patch file → register in `manifest.yaml` → CMake applies it automatically at build time.
 
-#### 正确流程
+#### Correct flow
 
 ```
-1. 在 build_app/ggml/... 的解压副本中**临时**修改并验证（仅作试验场，不要提交这里的文件）
-2. 生成 unified diff：
-     diff -ruN orig/ modified/ > 3rdparty/ggml/patches/<subdir>/0001-描述.patch
-   或对比 git 状态生成 patch
-3. 将 *.patch 放入 3rdparty/ggml/patches/<子目录>/
-4. 在 3rdparty/ggml/patches/manifest.yaml 中注册（顺序重要，见已有条目）
-5. 清理 ExternalProject stamp 后重建，确认 apply_ggml_patches.py 成功：
+1. Temporarily modify and verify in the extracted copy under build_app/ggml/... (experimentation only; never commit these files)
+2. Generate a unified diff:
+     diff -ruN orig/ modified/ > 3rdparty/ggml/patches/<subdir>/0001-description.patch
+   or generate the patch by comparing git state
+3. Put the *.patch into 3rdparty/ggml/patches/<subdir>/
+4. Register it in 3rdparty/ggml/patches/manifest.yaml (order matters; see existing entries)
+5. Clear the ExternalProject stamp and rebuild, confirming apply_ggml_patches.py succeeds:
      rm -f build_app/ggml/src/ext_ggml-stamp/ext_ggml-{install,done}
      cmake --build build_app --target ext_ggml -j4
-6. 仅提交 patch + manifest.yaml（及必要的 ggml.cmake / AICore 胶水代码），**不要**提交 build*/ggml/ 下的源码
+6. Commit only the patch + manifest.yaml (plus any necessary ggml.cmake / AICore glue code); **never** commit sources under build*/ggml/
 ```
 
-目录结构：
+Directory layout (manifest.yaml is the single source of truth; currently 14 patches; verify with `rg -n "file:" 3rdparty/ggml/patches/manifest.yaml`):
 
 ```
 3rdparty/ggml/patches/
-├── manifest.yaml              # 所有 patch 的有序清单（唯一权威来源）
-├── apply_ggml_patches.py      # 构建时 CMake 调用；内部用 git apply --directory
-├── aliked_merged/0001-*.patch
-├── cpu_all_variants/0001-*.patch
-├── metal_merged/0001-*.patch
-└── msvc_vulkan/0001-*.patch
+├── manifest.yaml              # ordered list of all patches (single source of truth)
+├── apply_ggml_patches.py      # invoked by CMake at build time; uses git apply --directory
+├── aliked_merged/0001-vulkan-aliked.patch
+├── msvc_vulkan/0001-msvc-vulkan-hpp-compat.patch
+├── cpu_all_variants/0001-cpu-all-variants-compiler-checks.patch
+├── metal_merged/0001-metal-optimizations.patch
+├── cuda_mmq/0001-cuda-mmq-force-static.patch
+├── vulkan_parallel/0001-vulkan-shaders-gen-skip-parallel-trycompile.patch
+├── rmbg_merged/0001-rmbg-custom-ops.patch
+├── rfdetr_merged/0001-ggml-cpu-fold-broadcast-iterations.patch
+├── yolo_merged/0001-yolo-ggml-backend-integration.patch
+├── sam3_merged/0001-sam3-ggml-custom-ops.patch
+├── trellis_merged/0001-ggml-cuda-cpy-q8_0.patch
+├── igemm_fix/0001-igemm-plan-rebuild-guards.patch
+├── glslc_fconvert/0001-pool-shaders-avoid-redundant-fconvert.patch
+└── cuda_mul_mat_f16_dst/0001-cuda-mul-mat-f16-dst.patch
 ```
 
-#### 为何必须如此
+#### Why this is required
 
-- ExternalProject 每次从 tarball 解压 → **构建目录里的 ggml 源码不是持久状态**。
-- `apply_ggml_patches.py` 会先在前向 replay 验证整条 patch 链，再 `git apply` → 保证跨平台、可复现、可审查。
-- 历史上 in-place Python 改源码的脚本已**全部迁移**为 unified diff patch；新工作必须继续走 patch 流程。
+- ExternalProject re-extracts from the tarball every time → **ggml sources in build directories are not persistent state**.
+- `apply_ggml_patches.py` first validates the whole patch chain with a forward replay, then `git apply` → cross-platform, reproducible, reviewable.
+- Historical in-place Python source mutators have all been **migrated** to unified diff patches; new work must keep using the patch flow.
 
-详细后端变量与调试：`.agents/rules/acloudviewer-ggml-aicore.mdc`（`AICore_USE_CUDA`、`AICore_BUNDLE_CUDA_RUNTIME` 等）。
+Detailed backend variables and debugging: `.agents/rules/acloudviewer-ggml-aicore.mdc` (`AICore_USE_CUDA`, `AICore_BUNDLE_CUDA_RUNTIME`, etc.).
 
 ## Notable Plugins (quick index)
 
@@ -539,4 +552,4 @@ Debug workflow: read CI log **bottom-up** for the first error; distinguish Docke
 | RPC / CLI hang (Windows) | Stale port 6001 | `--mode headless` |
 | AICore test skip (exit 77) | Missing GGUF model assets | Download from cloudViewer_downloads or set skip |
 | Plugin not in menu | CMake option OFF or build target missing | Reconfigure with `-DPLUGIN_STANDARD_Q…=ON`, rebuild plugin target |
-| ggml fix works locally but not in CI/PR | 手动改了 `build*/ggml/` 未生成 patch | 按 § ggml 源码修改规则 生成 patch 并注册 `manifest.yaml` |
+| ggml fix works locally but not in CI/PR | `build*/ggml/` was edited by hand without a patch | Generate the patch and register it in `manifest.yaml` per § ggml Source Modification Rules |

@@ -19,10 +19,12 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QHBoxLayout>
+#include <QKeyEvent>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QPainter>
+#include <QProgressBar>
 #include <QPushButton>
 #include <QRadioButton>
 #include <QSlider>
@@ -49,13 +51,45 @@ constexpr int kNumColors = sizeof(kInstanceColors) / sizeof(kInstanceColors[0]);
 VideoTab::VideoTab(QWidget* parent) : QWidget(parent) {
     setupUi();
     populateModelCombo();
+
+    // Shared test data repository (SAM3 dataset: images + videos).
+    auto& repo = ecvTestDataRepository::instance();
+    connect(&repo, &ecvTestDataRepository::downloadProgress, this,
+            [this](int percent, const QString& statusText) {
+                if (!m_testDataDownloadInProgress) return;
+                setStatus(QString("%1 (%2%)").arg(statusText).arg(percent));
+                if (m_progress) m_progress->setValue(percent);
+            });
+    connect(&repo, &ecvTestDataRepository::downloadLogMessage, this,
+            [this](const QString& message) {
+                if (m_testDataDownloadInProgress) appendLog(message);
+            });
+    connect(&repo, &ecvTestDataRepository::downloadFinished, this,
+            &VideoTab::onTestDataDownloadFinished);
+    connect(&repo, &ecvTestDataRepository::extractionProgress, this,
+            [this](int current, int total) {
+                if (!m_testDataDownloadInProgress || total <= 0) return;
+                setStatus(tr("Extracting SAM3 test data... %1/%2")
+                                  .arg(current)
+                                  .arg(total));
+                if (m_progress && total > 0) {
+                    m_progress->setValue(current * 100 / total);
+                }
+            });
+    connect(&repo, &ecvTestDataRepository::extractionFinished, this,
+            &VideoTab::onTestDataExtractionFinished);
+
+    // Fill the test-video picker from the (possibly cached) SAM3 dataset.
+    populateTestVideoCombo();
 }
 
 VideoTab::~VideoTab() {
     m_playTimer.stop();
     if (m_worker) {
         m_worker->requestCancel();
-        m_worker->wait(5000);
+        // Give a running track/load task a generous window before deleting
+        // the thread object (deleting a running QThread aborts the app).
+        m_worker->wait(30000);
         delete m_worker;
         m_worker = nullptr;
     }
@@ -82,7 +116,9 @@ void VideoTab::setupUi() {
     m_modeText = new QRadioButton(tr("Text"));
     m_modeBox = new QRadioButton(tr("Box"));
     m_modePoints = new QRadioButton(tr("Points"));
-    m_modePoints->setChecked(true);
+    // Upstream main_video.cpp defaults to Text mode; visual-only models
+    // fall back to Box when the tracker reports visual_only.
+    m_modeText->setChecked(true);
     auto* modeGroup = new QButtonGroup(this);
     modeGroup->addButton(m_modeText, 0);
     modeGroup->addButton(m_modeBox, 1);
@@ -96,6 +132,14 @@ void VideoTab::setupUi() {
     m_textPrompt->setEnabled(false);
 
     m_openBtn = new QPushButton(tr("Open video..."));
+    m_testVideoCombo = new QComboBox();
+    m_testVideoCombo->setMinimumWidth(ecvAICoreUi::dpiScaled(140));
+    m_testVideoCombo->setToolTip(
+            tr("Pick which sample video to test (SAM3 test dataset)"));
+    m_testDataBtn = ecvAICoreUi::makeSampleDataBtn(this);
+    m_testDataBtn->setToolTip(
+            tr("Download (cached) and open the selected sample video for "
+               "one-click testing"));
     m_playBtn = new QPushButton(tr("Play"));
     m_stepBtn = new QPushButton(tr("Step >>"));
     m_stepBtn->setEnabled(false);
@@ -109,6 +153,8 @@ void VideoTab::setupUi() {
     row1->addSpacing(10);
     row1->addWidget(m_textPrompt, 1);
     row1->addSpacing(10);
+    row1->addWidget(m_testVideoCombo);
+    row1->addWidget(m_testDataBtn);
     row1->addWidget(m_openBtn);
     row1->addWidget(m_playBtn);
     row1->addWidget(m_stepBtn);
@@ -152,6 +198,9 @@ void VideoTab::setupUi() {
     // ── Timeline ──────────────────────────────────────────────────────────
     m_timeline = new VideoTimeline();
     layout->addWidget(m_timeline);
+
+    // ── Test-data download progress (hidden by default) ───────────────────
+    ecvAICoreUi::setupProgressSection(layout, m_downloadLabel, m_progress);
 
     // ── Bottom row ────────────────────────────────────────────────────────
     auto* bottom = new QHBoxLayout();
@@ -199,6 +248,8 @@ void VideoTab::setupUi() {
 
     // ── Connections ───────────────────────────────────────────────────────
     connect(m_openBtn, &QPushButton::clicked, this, &VideoTab::onOpenVideo);
+    connect(m_testDataBtn, &QPushButton::clicked, this,
+            &VideoTab::onUseTestData);
     connect(m_loadBtn, &QPushButton::clicked, this, &VideoTab::onLoadModel);
     connect(m_playBtn, &QPushButton::clicked, this, &VideoTab::onPlayPause);
     connect(m_stepBtn, &QPushButton::clicked, this, &VideoTab::onStep);
@@ -217,6 +268,11 @@ void VideoTab::setupUi() {
             &VideoTab::onCanvasNegPoint);
     connect(m_timeline, &VideoTimeline::seekRequested, this, &VideoTab::onSeek);
     connect(&m_playTimer, &QTimer::timeout, this, &VideoTab::trackNextFrame);
+    // Hot-swap: re-load the model when the device combo changes.
+    connect(m_deviceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &VideoTab::onDeviceChanged);
+    // Receive Space / arrow key shortcuts.
+    setFocusPolicy(Qt::StrongFocus);
 }
 
 void VideoTab::populateModelCombo() {
@@ -310,8 +366,24 @@ void VideoTab::onLoadModel() {
         return;
     }
     QString path = modelPath();
-    if (path.isEmpty() ||
-        m_modelCombo->currentData().toString() == "__browse__") {
+    const bool isBrowseItem =
+            m_modelCombo->currentData().toString() == "__browse__";
+    if (path.isEmpty() || isBrowseItem) {
+        path = QFileDialog::getOpenFileName(
+                this, tr("Select SAM3 GGUF model"), QDir::homePath(),
+                tr("GGUF files (*.gguf);;All files (*)"));
+        if (path.isEmpty()) return;
+    } else if (!QFileInfo::exists(path)) {
+        // The combo lists published models, but the GGUF itself is not
+        // downloaded yet. Tell the user instead of failing silently.
+        const auto answer = QMessageBox::question(
+                this, tr("qSAM3"),
+                tr("Model file not found:\n%1\n\n"
+                   "It has not been downloaded yet. Browse for a local GGUF "
+                   "file instead?")
+                        .arg(path),
+                QMessageBox::Yes | QMessageBox::Cancel, QMessageBox::Cancel);
+        if (answer != QMessageBox::Yes) return;
         path = QFileDialog::getOpenFileName(
                 this, tr("Select SAM3 GGUF model"), QDir::homePath(),
                 tr("GGUF files (*.gguf);;All files (*)"));
@@ -502,24 +574,30 @@ void VideoTab::onReset() {
 
 void VideoTab::onCanvasBox() { addInstanceFromPrompts(); }
 
-void VideoTab::onCanvasInstanceClicked(int id) {
-    if (!m_trackerActive || !m_worker) return;
-    // Refine with a positive point at the instance center (upstream behavior:
-    // clicking a mask refines it with a positive point at the click).
-    refineInstance(id, {}, {});
+void VideoTab::onCanvasInstanceClicked(int id, const QPointF& pos) {
+    if (!m_trackerActive || !m_worker || !m_worker->hasModel()) {
+        setStatus(tr("Load a model first to enable tracking."));
+        return;
+    }
+    // Upstream main_video.cpp: clicking an existing mask refines it with a
+    // positive point at the click position.
+    refineInstance(id, {pos}, {});
     setStatus(tr("Refined instance #%1").arg(id));
 }
 
 void VideoTab::onCanvasPosPoint(const QPointF& p) {
-    if (!m_trackerActive || !m_worker) return;
-    QVector<QPointF> pos{p};
-    VideoWorker::TrackRequest req;
-    req.action = VideoWorker::Action::RefineInstance;
-    req.instanceId = -2;  // sentinel: add new instance from points
-    for (const auto& pt : pos) {
-        req.prompt.posPoints.append(
-                {static_cast<float>(pt.x()), static_cast<float>(pt.y())});
+    if (!m_trackerActive || !m_worker || !m_worker->hasModel()) {
+        setStatus(tr("Load a model first to enable tracking."));
+        return;
     }
+    // Upstream main_video.cpp Points mode: a click on empty canvas adds a
+    // new tracked instance from the positive point right away.
+    VideoWorker::TrackRequest req;
+    req.action = VideoWorker::Action::AddInstance;
+    req.prompt.posPoints.append(
+            {static_cast<float>(p.x()), static_cast<float>(p.y())});
+    req.frame = m_currentFrameImage;
+    req.frameIndex = m_currentFrame;
     m_worker->post(req);
 }
 
@@ -527,15 +605,53 @@ void VideoTab::onCanvasNegPoint(const QPointF& p) {
     // Negative point: refine the instance under the cursor, or queue it for
     // the next AddInstance.
     const int hit = m_canvas->hitTestInstance(p);
-    if (hit >= 0 && m_trackerActive && m_worker) {
-        refineInstance(hit, {}, {p});
+    if (hit >= 0 && m_trackerActive && m_worker && m_worker->hasModel()) {
+        // Upstream main_video.cpp: right-click on a tracked mask refines it
+        // with the mask centroid as positive point + the click as negative.
+        QPointF centroid;
+        bool hasCentroid = false;
+        const int idx = m_lastResult.instanceIds.indexOf(hit);
+        if (idx >= 0 && idx < m_lastResult.instanceMasks.size()) {
+            const QImage& mask = m_lastResult.instanceMasks[idx];
+            double cx = 0.0, cy = 0.0;
+            qint64 n = 0;
+            for (int y = 0; y < mask.height(); ++y) {
+                const uchar* row = mask.constScanLine(y);
+                for (int x = 0; x < mask.width(); ++x) {
+                    if (row[x] > 127) {
+                        cx += x;
+                        cy += y;
+                        ++n;
+                    }
+                }
+            }
+            if (n > 0) {
+                centroid = QPointF(cx / n, cy / n);
+                hasCentroid = true;
+            }
+        }
+        refineInstance(hit, hasCentroid ? QVector<QPointF>{centroid}
+                                        : QVector<QPointF>(),
+                       {p});
         return;
     }
-    appendLog(tr("Negative point on empty area: add a positive prompt first."));
+    if (!m_trackerActive || !m_worker || !m_worker->hasModel()) {
+        setStatus(tr("Load a model first to enable tracking."));
+        return;
+    }
+    // Upstream main_video.cpp Points mode: a negative click on empty canvas
+    // is queued on the canvas and included in the next instance creation.
+    m_canvas->addNegPoint(p);
+    appendLog(tr("Negative point queued; draw a box or click a positive "
+                 "point to add an instance."));
 }
 
 void VideoTab::addInstanceFromPrompts() {
-    if (!m_trackerActive || !m_worker || !m_canvas) return;
+    if (!m_trackerActive || !m_worker || !m_worker->hasModel()) {
+        setStatus(tr("Load a model first to enable tracking."));
+        return;
+    }
+    if (!m_canvas) return;
     VideoWorker::TrackRequest req;
     req.action = VideoWorker::Action::AddInstance;
     if (m_canvas->hasBox()) {
@@ -557,6 +673,10 @@ void VideoTab::addInstanceFromPrompts() {
         appendLog(tr("Click a positive point or drag a box first."));
         return;
     }
+    // Carry the current frame so the worker can run the display PVS
+    // (upstream main_video.cpp shows the new instance's mask right away).
+    req.frame = m_currentFrameImage;
+    req.frameIndex = m_currentFrame;
     m_worker->post(req);
     resetPrompts();
 }
@@ -564,7 +684,10 @@ void VideoTab::addInstanceFromPrompts() {
 void VideoTab::refineInstance(int id,
                               const QVector<QPointF>& pos,
                               const QVector<QPointF>& neg) {
-    if (!m_trackerActive || !m_worker) return;
+    if (!m_trackerActive || !m_worker || !m_worker->hasModel()) {
+        setStatus(tr("Load a model first to enable tracking."));
+        return;
+    }
     VideoWorker::TrackRequest req;
     req.action = VideoWorker::Action::RefineInstance;
     req.instanceId = id;
@@ -619,6 +742,54 @@ void VideoTab::onModeChanged() {
         m_modeBox->setChecked(true);
     }
     appendLog(tr("Mode: %1").arg(textMode ? tr("Text") : tr("Box / Points")));
+}
+
+void VideoTab::onDeviceChanged() {
+    // Hot-swap: with a model loaded, re-load it on the newly selected
+    // backend right away (upstream main_video.cpp Devices combo triggers
+    // reload_model() on the fly).
+    if (!m_worker || !m_worker->hasModel()) return;
+    if (m_busy) {
+        appendLog(tr("Device changed; re-loading when the current task "
+                     "finishes."));
+        return;
+    }
+    if (m_modelCombo->currentData().toString() == "__browse__") {
+        appendLog(tr("Device changed; re-load the model to apply."));
+        return;
+    }
+    appendLog(tr("Device changed to %1 - reloading model...")
+                      .arg(m_deviceCombo->currentText()));
+    onLoadModel();
+}
+
+void VideoTab::keyPressEvent(QKeyEvent* e) {
+    // Keyboard shortcuts mirroring upstream main_video.cpp: Space toggles
+    // play/pause, Right steps forward, Left steps back. Widgets that
+    // consume keys (e.g. the text-prompt QLineEdit) handle them first, so
+    // typing in the prompt never triggers playback.
+    if (e->key() == Qt::Key_Space && !e->isAutoRepeat()) {
+        onPlayPause();
+        e->accept();
+        return;
+    }
+    if (e->key() == Qt::Key_Right && !e->isAutoRepeat()) {
+        onStep();
+        e->accept();
+        return;
+    }
+    if (e->key() == Qt::Key_Left && !e->isAutoRepeat()) {
+        if (m_currentFrame > 0) {
+            m_playing = false;
+            m_playBtn->setText(tr("Play"));
+            m_playTimer.stop();
+            --m_currentFrame;
+            trackNextFrame();
+        }
+        e->accept();
+        return;
+    }
+    QWidget::keyPressEvent(e);
 }
 
 void VideoTab::onExportMasks() {
@@ -796,4 +967,132 @@ void VideoTab::exportCurrentFrameToDb() {
     m_app->addToDB(img, /*updateZoom=*/false, /*autoExpandDBTree=*/true,
                    /*checkDimensions=*/false, /*autoRedraw=*/true);
     m_app->setSelectedInDB(img, true);
+}
+
+// ── Test data (shared ecvTestDataRepository, SAM3 dataset) ─────────────────
+
+void VideoTab::populateTestVideoCombo() {
+    if (!m_testVideoCombo) return;
+    const QStringList videos = ecvTestDataRepository::getSamVideos(
+            ecvTestDataRepository::extractPath(
+                    ecvTestDataRepository::Dataset::SAM3));
+    m_testVideoCombo->blockSignals(true);
+    m_testVideoCombo->clear();
+    if (videos.isEmpty()) {
+        m_testVideoCombo->addItem(tr("(no test video)"), QString());
+    } else {
+        for (const QString& path : videos) {
+            const QString name = QFileInfo(path).fileName();
+            m_testVideoCombo->addItem(name, name);
+        }
+    }
+    m_testVideoCombo->blockSignals(false);
+}
+
+bool VideoTab::loadRequestedTestVideo() {
+    if (!m_testVideoCombo) return false;
+    const QString fileName = m_testVideoCombo->currentData().toString();
+    if (fileName.isEmpty()) return false;
+
+    const QString path = ecvTestDataRepository::findDatasetFile(
+            ecvTestDataRepository::Dataset::SAM3, fileName);
+    if (path.isEmpty()) return false;
+
+    openVideoFile(path);
+    appendLog(tr("[Test data] Loaded video: %1").arg(path));
+    appendLog(tr("Load a model, then pause and annotate to add instances."));
+    return true;
+}
+
+void VideoTab::onUseTestData() {
+    if (m_testDataDownloadInProgress) {
+        appendLog(tr("[Test data] Download already in progress."));
+        return;
+    }
+    if (m_busy) {
+        appendLog(tr("[Test data] Wait for the current task to finish."));
+        return;
+    }
+    if (loadRequestedTestVideo()) return;
+
+    auto& repo = ecvTestDataRepository::instance();
+    if (repo.isDownloadInProgress()) {
+        appendLog(tr("[Test data] Another test-data download is running."));
+        return;
+    }
+
+    const auto kind = ecvTestDataRepository::Dataset::SAM3;
+    const auto info = ecvTestDataRepository::getDatasetInfo(kind);
+    m_testDataDownloadInProgress = true;
+    setTestDataControlsEnabled(false);
+    if (m_progress) {
+        m_progress->setVisible(true);
+        m_progress->setValue(0);
+    }
+    if (m_downloadLabel) {
+        m_downloadLabel->setVisible(true);
+    }
+    if (ecvTestDataRepository::verifyZipIntegrity(
+                ecvTestDataRepository::zipPath(kind), info.expectedMd5,
+                info.expectedSize)) {
+        appendLog(tr("[Test data] Extracting cached archive..."));
+        setStatus(tr("Extracting SAM3 test data..."));
+        repo.extractDataset(kind);
+        return;
+    }
+    appendLog(tr("[Test data] Downloading SAM3 test data..."));
+    setStatus(tr("Downloading SAM3 test data..."));
+    repo.startDownload(kind);
+}
+
+void VideoTab::onTestDataDownloadFinished(
+        bool success, ecvTestDataRepository::Dataset kind) {
+    if (!m_testDataDownloadInProgress ||
+        kind != ecvTestDataRepository::Dataset::SAM3) {
+        return;
+    }
+    if (!success) {
+        appendLog(tr("[Test data] Download failed."));
+        m_testDataDownloadInProgress = false;
+        setTestDataControlsEnabled(true);
+        if (m_progress) m_progress->setVisible(false);
+        if (m_downloadLabel) m_downloadLabel->setVisible(false);
+        setStatus(tr("Ready."));
+        return;
+    }
+    appendLog(tr("[Test data] Extracting..."));
+    setStatus(tr("Extracting SAM3 test data..."));
+    if (m_progress) m_progress->setValue(0);
+    ecvTestDataRepository::instance().extractDataset(kind);
+}
+
+void VideoTab::onTestDataExtractionFinished(
+        bool success, ecvTestDataRepository::Dataset kind) {
+    if (!m_testDataDownloadInProgress ||
+        kind != ecvTestDataRepository::Dataset::SAM3) {
+        return;
+    }
+    m_testDataDownloadInProgress = false;
+    setTestDataControlsEnabled(true);
+
+    if (m_progress) m_progress->setVisible(false);
+    if (m_downloadLabel) m_downloadLabel->setVisible(false);
+
+    if (!success) {
+        appendLog(tr("[Test data] Failed to extract zip archive."));
+        setStatus(tr("Ready."));
+        return;
+    }
+    // The picker was empty before the first extract; fill it and open the
+    // (first) video so the one-click flow completes automatically.
+    populateTestVideoCombo();
+    if (!loadRequestedTestVideo()) {
+        appendLog(tr("[Test data] Sample video not found in the archive."));
+    }
+    setStatus(tr("Ready."));
+}
+
+void VideoTab::setTestDataControlsEnabled(bool enabled) {
+    if (m_testDataBtn) m_testDataBtn->setEnabled(enabled);
+    if (m_testVideoCombo) m_testVideoCombo->setEnabled(enabled);
 }

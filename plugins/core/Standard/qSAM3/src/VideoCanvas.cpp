@@ -19,8 +19,10 @@ VideoCanvas::VideoCanvas(QWidget* parent) : QLabel(parent) {
     setAlignment(Qt::AlignCenter);
     setStyleSheet(
             "QLabel { background: #1a1a26; border: 1px solid #333;"
-            " border-radius: 4px; color: #666; font-size: 14px; }");
-    setText(tr("Open a video file to start tracking"));
+            " border-radius: 4px; color: #666; font-size: 13px; }");
+    setText(tr("Open a video, pick a model and click Load.\n"
+               "Then pause, click on an object / drag a box to add an "
+               "instance, and press Play."));
     setMouseTracking(true);
 }
 
@@ -51,7 +53,9 @@ void VideoCanvas::clearAll() {
     m_posPoints.clear();
     m_negPoints.clear();
     clearBox();
-    setText(tr("Open a video file to start tracking"));
+    setText(tr("Open a video, pick a model and click Load.\n"
+               "Then pause, click on an object / drag a box to add an "
+               "instance, and press Play."));
     setPixmap(QPixmap());
 }
 
@@ -79,6 +83,11 @@ QPointF VideoCanvas::screenToImage(const QPointF& screen) const {
 void VideoCanvas::clearBox() {
     m_hasBox = false;
     m_box = QRectF();
+    redraw();
+}
+
+void VideoCanvas::addNegPoint(const QPointF& p) {
+    m_negPoints.append(p);
     redraw();
 }
 
@@ -110,7 +119,7 @@ void VideoCanvas::mousePressEvent(QMouseEvent* e) {
         // Clicking an existing tracked mask refines that instance.
         const int hit = hitTestInstance(ip);
         if (hit >= 0) {
-            emit instanceClicked(hit);
+            emit instanceClicked(hit, ip);
             return;
         }
         m_dragging = true;

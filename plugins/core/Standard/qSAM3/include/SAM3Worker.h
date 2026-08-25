@@ -76,6 +76,7 @@ public:
     ~SAM3Worker() override;
 
     void setAction(SAM3WorkerAction action) { m_action = action; }
+    SAM3WorkerAction action() const { return m_action; }
     void setImage(const QImage& img) { m_image = img; }
     void setPrompt(const Prompt& prompt) { m_prompt = prompt; }
     void requestCancel();
@@ -105,4 +106,13 @@ private:
     aicore_sam3_ctx* m_ctx = nullptr;
     aicore_sam3_ctx* m_pendingCtx = nullptr;
     bool m_cancelled = false;
+
+    // Encoding cache: the C-API caches the encoded features by image size;
+    // we gate re-encoding on the actual image + pvs_only mode so repeated
+    // point/box clicks on the same picture only run the decoder, matching
+    // upstream examples/main_image.cpp (encode once, segment per click).
+    qint64 m_encodedImageKey = -1;
+    int m_encodedWidth = 0;
+    int m_encodedHeight = 0;
+    bool m_encodedPvsOnly = false;
 };

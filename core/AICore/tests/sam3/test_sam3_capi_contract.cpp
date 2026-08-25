@@ -107,6 +107,10 @@ int main() {
                  -1);
     AICORE_CHECK(aicore_sam3_refine_instance(nullptr, 0, nullptr, 0, nullptr,
                                              0) == -1);
+    // PVS on the tracker's encoded frame: NULL-safe, and a null prompt fails
+    // cleanly.
+    AICORE_CHECK(aicore_sam3_tracker_segment_pvs(nullptr, &pvs) == nullptr);
+    AICORE_CHECK(aicore_sam3_tracker_segment_pvs(nullptr, nullptr) == nullptr);
 
     // Timings: null ctx or null out pointer -> -1; valid pointer stays
     // untouched until a real inference runs.

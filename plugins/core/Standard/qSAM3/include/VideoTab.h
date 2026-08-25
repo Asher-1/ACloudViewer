@@ -22,6 +22,8 @@
 #include <QTimer>
 #include <QWidget>
 
+#include <ecvTestDataRepository.h>
+
 #include "VideoCanvas.h"
 #include "VideoTimeline.h"
 #include "VideoWorker.h"
@@ -30,6 +32,7 @@ class QCheckBox;
 class QComboBox;
 class QLabel;
 class QLineEdit;
+class QProgressBar;
 class QPushButton;
 class QRadioButton;
 class QSlider;
@@ -67,10 +70,24 @@ private slots:
     void onSeek(int frame);
     void onModeChanged();
     void onCanvasBox();
-    void onCanvasInstanceClicked(int id);
+    void onCanvasInstanceClicked(int id, const QPointF& imagePos);
     void onCanvasPosPoint(const QPointF& p);
     void onCanvasNegPoint(const QPointF& p);
     void onExportMasks();
+    /** Hot-swap: re-load the model on the newly selected device. */
+    void onDeviceChanged();
+    /** One-click test: download (cached) the SAM3 test dataset and open the
+     *  video selected in the test-video picker. */
+    void onUseTestData();
+    void onTestDataDownloadFinished(bool success,
+                                    ecvTestDataRepository::Dataset kind);
+    void onTestDataExtractionFinished(bool success,
+                                      ecvTestDataRepository::Dataset kind);
+
+protected:
+    /** Space = play/pause, Right = step, Left = previous frame (upstream
+     *  main_video.cpp keyboard shortcuts). */
+    void keyPressEvent(QKeyEvent* e) override;
 
 private:
     void setupUi();
@@ -91,6 +108,11 @@ private:
     void resetPrompts();
     /** Export the current frame result to the DB tree as a ccImage. */
     void exportCurrentFrameToDb();
+    /** (Re)fill the test-video picker from the extracted SAM3 dataset. */
+    void populateTestVideoCombo();
+    /** Open the video currently selected in the test-video picker. */
+    bool loadRequestedTestVideo();
+    void setTestDataControlsEnabled(bool enabled);
 
     VideoWorker* m_worker = nullptr;
     VideoFrameReader* m_reader = nullptr;
@@ -109,6 +131,8 @@ private:
     QPushButton* m_loadBtn = nullptr;
     QComboBox* m_deviceCombo = nullptr;
     QLabel* m_backendLabel = nullptr;
+    QComboBox* m_testVideoCombo = nullptr;  // test-video picker (SAM3 dataset)
+    QPushButton* m_testDataBtn = nullptr;
     VideoCanvas* m_canvas = nullptr;
     VideoTimeline* m_timeline = nullptr;
     QCheckBox* m_showMasks = nullptr;
@@ -118,6 +142,8 @@ private:
     QPushButton* m_exportBtn = nullptr;
     QLabel* m_instanceLabel = nullptr;
     QLabel* m_statusLabel = nullptr;
+    QLabel* m_downloadLabel = nullptr;  // test-data download/extract status
+    QProgressBar* m_progress = nullptr;
 
     // State
     QString m_videoPath;
@@ -129,6 +155,7 @@ private:
     bool m_busy = false;
     bool m_trackerActive = false;
     bool m_visualOnly = false;
+    bool m_testDataDownloadInProgress = false;
 
     SAM3WorkerResult m_lastResult;
     QVector<VideoTimelineEntry> m_timelineEntries;

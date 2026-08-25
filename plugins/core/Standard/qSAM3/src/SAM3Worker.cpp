@@ -12,6 +12,7 @@
 #include <QFileInfo>
 #include <cstdint>
 #include <cstring>
+#include <exception>
 
 #ifdef AICore_ENABLED
 #include "aicore/runtime_capi.h"
@@ -92,6 +93,13 @@ SAM3Worker::SAM3Worker(const Settings& settings, QObject* parent)
 
 SAM3Worker::~SAM3Worker() {
     requestCancel();
+    // Never destroy a running QThread: Qt aborts the process when a thread
+    // object is deleted while still running (segmentation can take far
+    // longer than the 5 s the dialog waits, so re-check here with a longer
+    // timeout as a last line of defence).
+    if (isRunning()) {
+        wait(30000);
+    }
     if (m_pendingCtx) {
         aicore_sam3_free(m_pendingCtx);
         m_pendingCtx = nullptr;
@@ -101,7 +109,17 @@ SAM3Worker::~SAM3Worker() {
 void SAM3Worker::requestCancel() { m_cancelled = true; }
 
 void SAM3Worker::run() {
-    const bool ok = runInference();
+    bool ok = false;
+    try {
+        ok = runInference();
+    } catch (const std::exception& e) {
+        // An uncaught exception in a QThread aborts the process (std::terminate).
+        // Surface it as a log message instead so the user can retry.
+        emit logMessage(QString("[SAM3] inference error: %1")
+                                .arg(QString::fromUtf8(e.what())));
+    } catch (...) {
+        emit logMessage(tr("[SAM3] unknown inference error"));
+    }
     if (!m_cancelled) {
         emit progressUpdate(0, 0);
     }
@@ -220,15 +238,28 @@ bool SAM3Worker::runInference() {
 }
 
 aicore_sam3_seg_result* SAM3Worker::runPVS() {
-    // Encode image
     const QImage rgb = m_image.convertToFormat(QImage::Format_RGB888);
-    const int ok = aicore_sam3_encode_rgb(
-            m_ctx, rgb.constBits(), rgb.width(), rgb.height(),
-            static_cast<size_t>(rgb.bytesPerLine()), 1);
-    if (ok != 0) {
-        emit logMessage(QString("Encode failed: %1")
-                                .arg(aicore_sam3_last_error(m_ctx)));
-        return nullptr;
+    // Encode once per image: the C-API caches encoded features by size, and
+    // upstream main_image.cpp encodes on load then only runs the decoder
+    // per click. Re-encode only when the picture or the pvs_only mode
+    // changed (PCS needs the detector neck, PVS does not).
+    const bool needEncode =
+            m_encodedImageKey != m_image.cacheKey() ||
+            m_encodedWidth != rgb.width() ||
+            m_encodedHeight != rgb.height() || !m_encodedPvsOnly;
+    if (needEncode) {
+        const int ok = aicore_sam3_encode_rgb(
+                m_ctx, rgb.constBits(), rgb.width(), rgb.height(),
+                static_cast<size_t>(rgb.bytesPerLine()), 1);
+        if (ok != 0) {
+            emit logMessage(QString("Encode failed: %1")
+                                    .arg(aicore_sam3_last_error(m_ctx)));
+            return nullptr;
+        }
+        m_encodedImageKey = m_image.cacheKey();
+        m_encodedWidth = rgb.width();
+        m_encodedHeight = rgb.height();
+        m_encodedPvsOnly = true;
     }
 
     // Build prompt
@@ -255,15 +286,26 @@ aicore_sam3_seg_result* SAM3Worker::runPVS() {
 }
 
 aicore_sam3_seg_result* SAM3Worker::runPCS() {
-    // Encode image (with detector neck)
     const QImage rgb = m_image.convertToFormat(QImage::Format_RGB888);
-    const int ok = aicore_sam3_encode_rgb(
-            m_ctx, rgb.constBits(), rgb.width(), rgb.height(),
-            static_cast<size_t>(rgb.bytesPerLine()), 0);
-    if (ok != 0) {
-        emit logMessage(QString("Encode (full) failed: %1")
-                                .arg(aicore_sam3_last_error(m_ctx)));
-        return nullptr;
+    // Same one-encode-per-image policy as runPVS; PCS needs the detector
+    // neck (pvs_only = 0), so switching PCS ↔ PVS re-encodes once.
+    const bool needEncode =
+            m_encodedImageKey != m_image.cacheKey() ||
+            m_encodedWidth != rgb.width() ||
+            m_encodedHeight != rgb.height() || m_encodedPvsOnly;
+    if (needEncode) {
+        const int ok = aicore_sam3_encode_rgb(
+                m_ctx, rgb.constBits(), rgb.width(), rgb.height(),
+                static_cast<size_t>(rgb.bytesPerLine()), 0);
+        if (ok != 0) {
+            emit logMessage(QString("Encode (full) failed: %1")
+                                    .arg(aicore_sam3_last_error(m_ctx)));
+            return nullptr;
+        }
+        m_encodedImageKey = m_image.cacheKey();
+        m_encodedWidth = rgb.width();
+        m_encodedHeight = rgb.height();
+        m_encodedPvsOnly = false;
     }
 
     aicore_sam3_pcs_prompt prompt{};

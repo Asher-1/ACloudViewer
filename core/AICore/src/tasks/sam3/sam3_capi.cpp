@@ -400,8 +400,20 @@ AICORE_CAPI aicore_sam3_seg_result* aicore_sam3_segment_pcs_rgb(
         if (ctx) ctx->last_error = "context not ready";
         return nullptr;
     }
-    if (!prompt || !prompt->text || !prompt->text[0]) {
-        ctx->last_error = "PCS requires a non-empty text prompt";
+    if (!prompt) {
+        ctx->last_error = "PCS requires a text prompt or at least one exemplar box";
+        return nullptr;
+    }
+    // Mirror upstream examples/main_image.cpp: the text prompt is optional
+    // when exemplar boxes are provided (and vice versa). Only reject when
+    // both are empty — sam3_segment_pcs handles a missing text prompt by
+    // falling back to SOT/EOT-only tokens.
+    const bool no_text =
+            !prompt->text || !prompt->text[0];
+    const bool no_exemplars = prompt->n_pos_exemplars <= 0 &&
+                              prompt->n_neg_exemplars <= 0;
+    if (no_text && no_exemplars) {
+        ctx->last_error = "PCS requires a text prompt or at least one exemplar box";
         return nullptr;
     }
     if (ctx->visual_only) {
@@ -675,18 +687,12 @@ AICORE_CAPI aicore_sam3_seg_result* aicore_sam3_propagate_frame(
                              true);
 }
 
-AICORE_CAPI int aicore_sam3_tracker_add_instance(
-        aicore_sam3_tracker_ctx* tracker,
-        const aicore_sam3_pvs_prompt* prompt) {
-    if (!tracker || !tracker->tracker || !tracker->state || !tracker->model) {
-        if (tracker) tracker->last_error = "tracker not ready";
-        return -1;
-    }
-    if (!prompt) {
-        tracker->last_error = "null PVS prompt";
-        return -1;
-    }
-    sam3_pvs_params p;
+// Convert a C PVS prompt into the engine's sam3_pvs_params. Returns false on
+// a null prompt (all-empty prompts are allowed: they mirror the upstream
+// behavior of an empty prompt set).
+static bool fill_pvs_params(sam3_pvs_params& p,
+                            const aicore_sam3_pvs_prompt* prompt) {
+    if (!prompt) return false;
     if (prompt->pos_points && prompt->n_pos_points > 0) {
         p.pos_points.reserve(prompt->n_pos_points);
         for (int i = 0; i < prompt->n_pos_points; ++i) {
@@ -704,6 +710,21 @@ AICORE_CAPI int aicore_sam3_tracker_add_instance(
     p.box = {prompt->box.x0, prompt->box.y0, prompt->box.x1, prompt->box.y1};
     p.use_box = prompt->use_box != 0;
     p.multimask = prompt->multimask != 0;
+    return true;
+}
+
+AICORE_CAPI int aicore_sam3_tracker_add_instance(
+        aicore_sam3_tracker_ctx* tracker,
+        const aicore_sam3_pvs_prompt* prompt) {
+    if (!tracker || !tracker->tracker || !tracker->state || !tracker->model) {
+        if (tracker) tracker->last_error = "tracker not ready";
+        return -1;
+    }
+    sam3_pvs_params p;
+    if (!fill_pvs_params(p, prompt)) {
+        tracker->last_error = "null PVS prompt";
+        return -1;
+    }
 
     const int id = sam3_tracker_add_instance(*tracker->tracker, *tracker->state,
                                              *tracker->model, p);
@@ -711,6 +732,44 @@ AICORE_CAPI int aicore_sam3_tracker_add_instance(
         tracker->last_error = "add_instance failed";
     }
     return id;
+}
+
+AICORE_CAPI aicore_sam3_seg_result* aicore_sam3_tracker_segment_pvs(
+        aicore_sam3_tracker_ctx* tracker,
+        const aicore_sam3_pvs_prompt* prompt) {
+    if (!tracker || !tracker->tracker || !tracker->state || !tracker->model) {
+        if (tracker) tracker->last_error = "tracker not ready";
+        return nullptr;
+    }
+    sam3_pvs_params p;
+    if (!fill_pvs_params(p, prompt)) {
+        tracker->last_error = "null PVS prompt";
+        return nullptr;
+    }
+    if (p.pos_points.empty() && !p.use_box) {
+        tracker->last_error =
+                "no prompts provided (need at least one point or box)";
+        return nullptr;
+    }
+
+    auto t0 = Clock::now();
+    sam3_result r =
+            sam3_segment_pvs(*tracker->state, *tracker->model, p);
+    auto t1 = Clock::now();
+    // sam3_segment_pvs is safe on an unencoded state (logs + empty result);
+    // an empty detection list is a valid outcome here (e.g. a prompt that
+    // matches nothing), so we hand it back as a regular result.
+    std::unique_ptr<aicore_sam3_seg_result> out(
+            new (std::nothrow) aicore_sam3_seg_result());
+    if (!out) {
+        tracker->last_error = "out of memory";
+        return nullptr;
+    }
+    out->result = std::move(r);
+    tracker->timings.preprocess_ms = 0.0;
+    tracker->timings.inference_ms = elapsed_ms(t0, t1);
+    tracker->timings.e2e_ms = elapsed_ms(t0, t1);
+    return out.release();
 }
 
 AICORE_CAPI int aicore_sam3_tracker_add_instance_from_mask(

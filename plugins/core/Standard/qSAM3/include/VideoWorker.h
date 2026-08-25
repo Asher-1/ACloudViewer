@@ -80,4 +80,8 @@ private:
     aicore_sam3_ctx* m_ctx = nullptr;
     aicore_sam3_tracker_ctx* m_tracker = nullptr;
     bool m_visualOnly = false;
+    /** Result of the most recent TrackFrame; merged with the mask of a new
+     *  instance so the UI shows old + new instances at once (upstream
+     *  main_video.cpp appends the PVS mask to the current result). */
+    SAM3WorkerResult m_lastFrameResult;
 };

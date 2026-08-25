@@ -48,8 +48,18 @@ class QPushButton;
 class QRadioButton;
 class QSlider;
 class QTabWidget;
+class QTimer;
 class ecvMainAppInterface;
 class VideoTab;  // video tracking tab (VideoTab.h; built with OpenCV only)
+
+/** Detection box + label drawn on the image canvas, mirroring upstream
+ *  examples/main_image.cpp detection boxes. */
+struct SAM3DetBox {
+    QRectF box;
+    int instanceId = -1;
+    float score = 0.0f;
+    QColor color;
+};
 
 // QLabel subclass that captures mouse events for canvas interaction
 class SAM3Canvas : public QLabel {
@@ -61,11 +71,17 @@ public:
     void setImage(const QImage& img);
     void updateOverlay();
     void clearOverlay();
+    /** Shows the step-by-step usage hint when no image is loaded. */
+    void updatePlaceholderText();
 
     /** Sets the mask overlay layer (blended at original image resolution);
      *  drawn between the image and the point/box annotations. */
     void setMaskOverlay(const QImage& mask);
     void clearMaskOverlay();
+    /** Sets the detection boxes + labels drawn atop the mask overlay
+     *  (upstream main_image.cpp draws a rect + "#id score" per detection). */
+    void setDetections(const QVector<SAM3DetBox>& detections);
+    void clearDetections();
     /** True when \p p (in original image pixels) lies inside the image. */
     bool isInsideImage(const QPointF& p) const;
 
@@ -102,6 +118,7 @@ private:
     QImage m_original;
     QImage m_overlay;
     QImage m_maskOverlay;
+    QVector<SAM3DetBox> m_detections;
 
     // Points / box state
     QVector<QPointF> m_posPoints;
@@ -170,6 +187,8 @@ private slots:
 
 protected:
     void showEvent(QShowEvent* e) override;
+    /** Keeps the busy overlay covering the whole dialog. */
+    void resizeEvent(QResizeEvent* e) override;
 
 private:
     /** Model families grouped per tab. */
@@ -184,11 +203,33 @@ private:
     QString modelPath() const;
     void startWorker(SAM3WorkerAction action);
     void stopWorker();
+    /** If a model file for the current combo entry exists locally and it is
+     *  not loaded yet (or the combo switched to a different model), start
+     *  loading it right away. Loads lazily on first use (Segment / click /
+     *  box), never on dialog show. Returns true when a load was started. */
+    bool autoLoadModelIfAvailable();
+    /** Ensures a model matching the current combo selection is loaded and
+     *  ready for inference. Starts a lazy load when needed (the pending
+     *  operation is re-run once the load finishes); shows a message box
+     *  when the GGUF file is missing. Returns true when ready to run. */
+    bool ensureModelReady();
+    /** True when the loaded model differs from the current combo entry
+     *  (model switched / tab changed / nothing loaded yet). */
+    bool modelSelectionChanged() const;
     void setBusy(bool busy);
+    /** Re-evaluate whether the Segment button can run now (image + not
+     *  busy; the model loads lazily on first use) and keep the canvas
+     *  interactivity in sync. */
+    void updateSegmentButtonState();
     void updateCanvasFromResult();
     void updateDetectionList();
     void updateStatus(const QString& msg);
     bool loadRequestedTestData();
+    /** (Re)fill the per-tab test-image pickers from the extracted SAM3
+     *  dataset (images/ subdirectory). Keeps the three tabs in sync. */
+    void populateTestDataCombos();
+    /** Test-image picker of the active tab. */
+    QComboBox* currentTestDataCombo() const;
     void setTestDataControlsEnabled(bool enabled);
 
     Sam3Tab currentTab() const;
@@ -213,6 +254,7 @@ private:
     QRadioButton* m_modeExemplar = nullptr;
     QComboBox* m_modelCombo = nullptr;
     QPushButton* m_loadBtn = nullptr;
+    QComboBox* m_testDataCombo = nullptr;  // test-image picker (SAM3 dataset)
     QPushButton* m_testDataBtn = nullptr;
 
     // ── SAM3 Visual tab (visual-only) ──
@@ -220,6 +262,7 @@ private:
     QRadioButton* m_modeBoxV = nullptr;
     QComboBox* m_modelComboV = nullptr;
     QPushButton* m_loadBtnV = nullptr;
+    QComboBox* m_testDataComboV = nullptr;
     QPushButton* m_testDataBtnV = nullptr;
 
     // ── SAM 2 / 2.1 tab (visual-only Hiera) ──
@@ -227,6 +270,7 @@ private:
     QRadioButton* m_modeBoxS = nullptr;
     QComboBox* m_modelComboS = nullptr;
     QPushButton* m_loadBtnS = nullptr;
+    QComboBox* m_testDataComboS = nullptr;
     QPushButton* m_testDataBtnS = nullptr;
 
     // Device
@@ -236,6 +280,12 @@ private:
     // Canvas
     SAM3Canvas* m_canvas = nullptr;
     VideoTab* m_videoTab = nullptr;
+
+    // Busy overlay (spinner + dim, mirroring upstream main_image.cpp
+    // draw_busy_overlay)
+    QLabel* m_busyOverlay = nullptr;
+    QTimer* m_busyTimer = nullptr;
+    int m_busyFrame = 0;
 
     // Bottom panel
     QDoubleSpinBox* m_scoreSpin = nullptr;
@@ -255,9 +305,16 @@ private:
     QString m_modelPath;
     int m_mode = 0;  // 0=Points, 1=Box, 2=Exemplar
     bool m_visualOnly = false;
+    bool m_busy = false;
+    /** Positive exemplar boxes collected in Exemplar (PCS) mode, mirroring
+     *  upstream examples/main_image.cpp pos_exemplars. */
+    QVector<QRectF> m_posExemplars;
     QImage m_currentImage;
     QString m_currentImagePath;
     bool m_encoded = false;
+    /** Set when the user triggered Segment / point / box while the model
+     *  was still loading; the operation is re-run once the load finishes. */
+    bool m_retryAfterModelLoad = false;
 
     // Test data (shared ecvTestDataRepository, ObjectsDetection dataset)
     bool m_testDataDownloadInProgress = false;

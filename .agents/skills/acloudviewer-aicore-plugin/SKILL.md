@@ -1,101 +1,125 @@
 ---
 name: acloudviewer-aicore-plugin
-description: ACloudViewer AICore 插件集成指南。为新任务添加 C-API、实现 ggml 推理、对接 CMake 构建系统、编写 contract 测试的完整规范。适用于新建 AICore 推理任务或集成新插件。
+description: ACloudViewer AICore plugin integration guide. Complete specification for adding a new task's C API, implementing ggml inference, wiring up the CMake build system, and writing contract tests. Use when creating a new AICore inference task or integrating a new plugin.
 ---
 
 # ACloudViewer AICore Plugin Integration Guide
 
-本 skill 聚合了 `core/AICore/` 接入 ACloudViewer 插件生态的全部规范。当需要为 AICore 添加新推理任务（task）或集成新的 AICore 依赖插件时，依次参考以下章节。
+This skill aggregates the full specification for wiring `core/AICore/` into the ACloudViewer plugin ecosystem. When adding a new inference task to AICore or integrating a new AICore-dependent plugin, follow the sections below in order.
 
-底层规则参考：`.agents/rules/acloudviewer-ggml-aicore.mdc`（ggml 构建）、`.agents/rules/acloudviewer-plugin-dev.mdc`（插件架构）。
+Underlying rules: `.agents/rules/acloudviewer-ggml-aicore.mdc` (ggml build), `.agents/rules/acloudviewer-plugin-dev.mdc` (plugin architecture).
+
+## 0. Global Principle: Conclusions Must Be Based on Facts (Mandatory)
+
+Every conclusion and recommendation must cite verifiable evidence: code file paths, line numbers, function signatures, CMake variable names, version numbers, and actual output of `rg`/`ctest`/`grep`/`python3` commands. Guessing from experience or deriving conclusions by subjective estimation is forbidden.
+
+- Verify evidence first (read code, run commands), then conclude
+- Anything that cannot be verified must be explicitly marked "unverified" — never stated as fact
+- When a document contradicts the code, **the actual code wins**, and the discrepancy must be called out in the conclusion
+- Every "precedent" cited in this document can be reproduced with a command (e.g. `rg -n` to locate a function/constant)
 
 ---
 
-## 1. AICore C-API 设计规范
+## 1. AICore C-API Design Specification
 
-### 参数封装
+### Parameter Encapsulation
 
-函数入参超过 6 个必须封装为 struct。参考本次重构的案例：
+Functions with more than 6 input parameters must be encapsulated into a struct. Two landed precedents in the repo (signatures verifiable via grep):
 
-| 重构前（长参数列表） | 重构后（struct 封装） |
+| Precedent file | Encapsulated real signature (verify: `rg -n "func\(" core/AICore/include/aicore/*.h`) |
 |---|---|
-| `aicore_depth_depth_dense(ctx, path, *out_w, *out_h, **out_depth, **out_conf, **out_sky, *ext, *intr, *is_metric)` | `aicore_depth_depth_dense(ctx, path, &aicore_depth_dense_result)` |
-| `aicore_gaussian_tree_overlap(pairs, n, geom, opacity, block, overlap, max_levels, spacing, cap, **out, *n_out, *nodes_out)` | `aicore_gaussian_tree_overlap(pairs, n, geom, opacity, &merge_opts, ...)` |
+| `core/AICore/include/aicore/depth_capi.h:226` | `int aicore_depth_depth_dense(aicore_depth_ctx* ctx, const char* image_path, aicore_depth_dense_result* out)` — outputs (depth/conf/sky/ext/intr/is_metric) go into `aicore_depth_dense_result` (depth_capi.h:113-122), freed via `aicore_depth_dense_result_free` (depth_capi.h:126) |
+| `core/AICore/include/aicore/gaussian_capi.h:251` | `int aicore_gaussian_tree_overlap(const float** pairs, int n_pairs, const aicore_gaussian_geometry* geom, float opacity_threshold, const aicore_gaussian_merge_options* merge_opts, aicore_gaussian_point** out, size_t* n_out, int* n_nodes_out)` — block/overlap/max_levels/spacing/cap folded into `aicore_gaussian_merge_options` (gaussian_capi.h:171-175) |
 
-规则：
-- 输出数据统一放入 result struct，附带 `_result_free` 释放函数
-- 配置/选项参数统一放入 options struct，builder 模式设值
-- 头文件只暴露不透明句柄（`struct aicore_<task>_ctx`），实现细节永远隐藏在 `.cpp` 中
+Rules:
+- Outputs go into a result struct with a `_result_free` function (`_result_free` internally calls `aicore_<task>_free_buffer`; see depth_capi.h:126)
+- Config/options go into an options struct set via builder pattern; every setter must be a no-op on NULL (each yolo_capi.h setter comment states this; covered by contract tests)
+- Headers expose only opaque handles (`struct aicore_<task>_ctx`); implementation details stay in `.cpp` files
+- Verification: `python3 core/AICore/tests/check_capi_coverage.py` scans all headers with the regex `\b(aicore_[a-z0-9_]+)\s*\(` (script L40)
 
-### ABI 版本管理
+### ABI Version Management
 
-每个任务必须定义 `aicore_<task>_abi_version(void)`：
+Every task must define `aicore_<task>_abi_version(void)`:
 
 ```c
 AICORE_CAPI int aicore_<task>_abi_version(void);  // bump on breaking ABI change
 ```
 
-破坏性变更（参数签名变化、struct 字段变化、删除函数）必须递增版本号。返回值在 contract 测试中验证。
+Breaking changes (signature changes, struct field changes, function removal) must bump the version. The return value is asserted in contract tests.
 
-### 内存所有权约定
+### Memory Ownership Convention
 
-统一释放入口：
+Single release entry point:
 
 ```c
-AICORE_CAPI void aicore_<task>_free_buffer(void* p);  // 唯一释放函数
+AICORE_CAPI void aicore_<task>_free_buffer(void* p);  // the only free function
 ```
 
-禁止导出多个不同命名的释放函数（如 `free_string`、`free_floats`、`free_bytes` 等）。每一个返回 malloc'd 内存的 API 都必须在 doc 中注明"free with aicore_<task>_free_buffer"。
+Exporting multiple differently-named free functions (e.g. `free_string`, `free_floats`, `free_bytes`) is forbidden. Every API that returns malloc'd memory must note "free with aicore_<task>_free_buffer" in its doc comment.
 
-### 错误处理
+### Error Handling
 
 ```c
-// ctx 中存储错误信息
+// error message stored in ctx
 AICORE_CAPI const char* aicore_<task>_last_error(const aicore_<task>_ctx* ctx);
-// C-API 返回 int：0=成功, -1=错误
+// C-API returns int: 0=success, -1=error
 AICORE_CAPI int aicore_<task>_do_something(aicore_<task>_ctx* ctx, ...);
 ```
 
-内部实现：`ctx->last_error = "reason";`，C-API 返回 -1。禁止直接 `fprintf` 或 `printf` 错误信息到 stderr（见日志规则）。
+Implementation: `ctx->last_error = "reason";` and return -1. Direct `fprintf`/`printf` of errors to stderr is forbidden (see logging rules).
 
-### 头文件输出函数名唯一性
+### Header Function Name Uniqueness
 
-`check_capi_coverage.py` 通过正则 `\b(aicore_[a-z0-9_]+)\s*\(` 匹配所有公开 API。命名风格：`aicore_<task>_<verb>_<noun>`。
-
----
-
-## 2. 配置显式性规则（禁止 getenv/setenv 逻辑控制）
-
-**所有流程控制开关必须通过 options struct 显式传参，禁止在 pipeline 中用 getenv/setenv 读取环境变量控制逻辑。**
-
-### 为什么
-
-环境变量是全局隐式状态：
-
-- 流程不清晰：调用方看不到推理链被什么开关影响（调试开关藏在环境里）
-- 测试不可复现：同一二进制在不同 shell 环境行为不同
-- 并发不安全：一个线程 setenv 影响所有线程
-- 迁移遗留：上游仓库常用 env 藏调试开关，直接移植会把隐式状态带进 AICore
-
-### AICore 已有先例
-
-- depth：历史 `DA_FUSED` / `DA3_FORCE_JOINT_MV` / `DA_PROFILE` 环境变量 → `aicore_depth_options_set_fused_graph` / `_set_force_joint_multiview` / `_set_profile_logging`。ABI 注释明确 "AICore reads no environment variables for logic control"。
-- rmbg：上游 `RMBG_VULKAN_MODE` / `RMBG_STRICT_MATH` / `RMBG_VULKAN_*` → `aicore_rmbg_options_set_math_profile` 等 setter（头文件注明 "Replaces the ... environment variables of the upstream port"）。
-
-移植上游代码时，遇到 `getenv("XXX")` 必须改为 options 字段 + setter，并在头文件注释中记录"此 setter 取代上游 XXX 环境变量"。
-
-### 例外（仅两处允许，新代码禁止第三种）
-
-1. `ggml_env_bridge.cpp`：ggml 库在 init 时 snapshot 环境变量（如 `CUDA_VISIBLE_DEVICES`），AICore 必须把 options 翻译成 ggml 期望的 env。这是 ggml 的硬性接口要求，且集中在唯一桥接文件。
-2. `CLOUDVIEWER_DATA_ROOT`：跨插件共享的数据根目录（路径配置，非流程开关）。
+`check_capi_coverage.py` matches all public APIs with the regex `\b(aicore_[a-z0-9_]+)\s*\(`. Naming style: `aicore_<task>_<verb>_<noun>`.
 
 ---
 
-## 3. 资源管理规则
+## 2. Explicit Configuration Rule (No getenv/setenv Logic Control)
 
-### shutdown 实现
+**All flow-control switches must be passed explicitly through options structs. Reading environment variables with getenv/setenv to control pipeline logic is forbidden.**
 
-`aicore_<task>_shutdown()` 必须执行真实清理，不得为空实现。yolo/rmbg 的修正先例：
+### Why
+
+Environment variables are global implicit state:
+
+- Opaque flow: callers cannot see what switches affect the inference chain (debug switches hidden in the environment)
+- Non-reproducible tests: the same binary behaves differently across shells
+- Concurrency-unsafe: one thread's setenv affects all threads
+- Migration legacy: upstream repos often hide debug switches in env; porting them directly brings implicit state into AICore
+
+### Existing AICore Precedents
+
+- depth: historical `DA_FUSED` / `DA3_FORCE_JOINT_MV` / `DA_PROFILE` env vars → `aicore_depth_options_set_fused_graph` / `_set_force_joint_multiview` / `_set_profile_logging`. Evidence: the ABI comment in `core/AICore/include/aicore/depth_capi.h:25-36` states "AICore reads no environment variables for logic control"; the setters are declared at depth_capi.h:57-66.
+- rmbg: upstream `RMBG_VULKAN_MODE` / `RMBG_STRICT_MATH` / `RMBG_VULKAN_*` → `aicore_rmbg_options_set_math_profile` and other setters. Evidence: `core/AICore/include/aicore/rmbg_capi.h:67-104`, comments annotate each one as "Replaces the ... environment variables of the upstream port" (e.g. RMBG_VK_QKV_LAYOUT → `aicore_rmbg_options_set_vulkan_qkv_layout`, rmbg_capi.h:93-95).
+
+When porting upstream code, any `getenv("XXX")` must become an options field + setter, with a header comment recording "this setter replaces the upstream XXX environment variable".
+
+### Enforced Check (CTest Hard Gate)
+
+`core/AICore/tests/CMakeLists.txt:580-587` registers `test_no_env_getenv`: `bash core/AICore/tests/check_no_env_getenv.sh core/AICore/src` statically scans all .cpp/.c/.hpp/.h files; only two files are whitelisted (script L18-21):
+
+1. `src/common/data_root_util.cpp` — data-root path configuration (`CLOUDVIEWER_DATA_ROOT`)
+2. `src/common/ggml_env_bridge.cpp` — the only sanctioned env writer
+
+Any `getenv|secure_getenv|setenv|unsetenv|putenv|_putenv_s` call in task code fails the check (script L24). Local verification:
+
+```bash
+bash core/AICore/tests/check_no_env_getenv.sh core/AICore/src   # expected: "reads/writes environment only through the sanctioned bridge"
+ctest -R test_no_env_getenv --output-on-failure                  # POSIX only (no .sh launcher on Windows)
+```
+
+### Exceptions (exactly two; no third kind for new code)
+
+1. `core/AICore/src/common/ggml_env_bridge.cpp`: ggml snapshots environment variables at init (actually handled: `GGML_VK_DISABLE_F16` / `GGML_VK_DISABLE_COOPMAT` / `GGML_METAL_GRAPH_OPTIMIZE_DISABLE` / `RMBG_VK_SCALAR_DIRECT_CONV` / `NVIDIA_TF32_OVERRIDE` etc., see ggml_env_bridge.cpp:60-79); AICore must translate options into the env ggml expects. This is ggml's hard interface requirement, concentrated in the single bridge file.
+2. `core/AICore/src/common/data_root_util.cpp`: the data root shared across plugins (`CLOUDVIEWER_DATA_ROOT`, a path configuration, not a flow switch).
+
+---
+
+## 3. Resource Management Rules
+
+### shutdown Implementation
+
+`aicore_<task>_shutdown()` must perform real cleanup — an empty implementation is forbidden. Four task precedents (all call `aicore::runtime::purge_inactive_backend_leases()`): yolo (`core/AICore/src/tasks/yolo/capi.cpp:837`), rmbg (`rmbg/capi.cpp:483`), sam3 (`sam3_capi.cpp:1040`), trellis (`aicore_trellis_capi.cpp:1484`):
 
 ```cpp
 AICORE_CAPI void aicore_yolo_shutdown(void) {
@@ -103,243 +127,317 @@ AICORE_CAPI void aicore_yolo_shutdown(void) {
 }
 ```
 
-`purge_inactive_backend_leases()` 在 `ggml_backend_registry` 中清理过期 backend lease。
+`purge_inactive_backend_leases()` is defined at `core/AICore/src/common/ggml_backend_registry.cpp:181` (declared at `ggml_backend_registry.hpp:82`): under a mutex it walks the registry and removes backend leases whose owners are gone (`it->second.expired()`). Verify: `rg -n "purge_inactive_backend_leases" core/AICore/src` should hit 1 definition + 4 shutdown calls.
 
-### 权重 Host 副本管理
+### Host Weight Copy Management
 
-设计模式：支持惰性释放 + 按需重读（参考 yolo P2b）：
-
-```cpp
-int aicore_yolo_release_host_weights(ctx);  // 释放 host 副本（device 权重不受影响）
-int aicore_yolo_ensure_host_weights(ctx);   // 从 GGUF 文件按偏移 fseek+fread 重读
-```
-
-实现要点：
-- `HostTensor` 记录 `file_type` / `file_offset`（GGUF 文件中的原始类型和偏移）
-- `prepare_host_weights` 提取为可重入函数（Vulkan Q8→F16、CUDA F32→F16 等转换幂等）
-- `build_run_plan` 中 `if (!s->wbuf)` 保证权重只上传一次，重建图复用 wbuf 不触碰 host 数据
-- **推理结束可以安全释放 host 权重，不释放 device 权重**，大幅降低宿主内存峰值
-
-### 图分配器缓冲控制
-
-对于实时场景（video frames），提供 `keep_graph_buffers` 选项（参考 depth P2c）：
+Design pattern: lazy release + on-demand reload. Real signatures (`core/AICore/include/aicore/yolo_capi.h:139-142`):
 
 ```cpp
-void aicore_<task>_options_set_keep_graph_buffers(opts, int enabled);
-// ON: 保持图内缓冲复用（高水位 VRAM）
-// OFF: 每次推理后释放图缓冲（VRAM 峰值 = 单图，适合多视图/一次性任务）
+int aicore_yolo_release_host_weights(aicore_yolo_ctx* ctx);  // drop host copies (device weights untouched); 0 ok / -1 no engine
+int aicore_yolo_ensure_host_weights(aicore_yolo_ctx* ctx);   // reload from GGUF by offset; no-op when present
 ```
+
+Implementation points:
+- `HostTensor` records `file_type` / `file_offset` (original type and offset in the GGUF file)
+- `prepare_host_weights` is extracted as a re-entrant function (Vulkan Q8→F16, CUDA F32→F16 conversions are idempotent)
+- In `build_run_plan`, `if (!s->wbuf)` guarantees weights are uploaded only once; graph rebuilds reuse wbuf without touching host data
+- **After inference, host weights can be safely released while device weights stay**, greatly reducing host memory peaks
+
+### Graph Allocator Buffer Control
+
+For real-time scenarios (video frames), provide the `keep_graph_buffers` option. Real signature and semantics (`core/AICore/include/aicore/depth_capi.h:67-73`):
+
+```cpp
+void aicore_depth_options_set_keep_graph_buffers(aicore_depth_options* opts, int enabled);
+// ON: keep graph buffers reused (high-water VRAM), for repeated same-shape inference like video frames
+// OFF (default): release graph buffers after each inference (VRAM peak = single graph), for multi-view/one-shot jobs
+```
+
+Companion VRAM release entry: `aicore_depth_release_gpu_working_memory(aicore_depth_ctx* ctx)` (depth_capi.h:252, "Drop ggml graph buffers and (when GPU offloading) device-resident weights").
 
 ---
 
-## 4. 依赖引入规则（复用仓库已有能力）
+## 4. Dependency Introduction Rules (Reuse Existing Capabilities)
 
-### 核心原则
+### Core Principle
 
-集成上游代码时，**先检查仓库是否已有同能力模块，有则复用，禁止重复引入**。引入一个新依赖 = 解决一个具名缺口（不是"上游就是这么写的"）。
+When integrating upstream code, **check first whether the repo already has an equivalent module; reuse it, never re-introduce a duplicate**. Introducing a new dependency = solving a named gap (not "that's how upstream wrote it").
 
-### 已确认可复用的能力
+### Confirmed Reusable Capabilities
 
-| 需求 | 仓库已有能力 | 禁止引入 |
+| Need | Existing repo capability | Forbidden to introduce |
 |---|---|---|
-| 图像解码（JPEG/PNG 等） | Qt QImage（内置 codecs） | stb_image / 直调 libjpeg |
-| 图像编码/保存 | QImage / QPainter | stb_image_write |
-| 图像缩放/裁剪 | QImage scaled / copy | stb_image_resize |
-| 推理运行时 | ggml（3rdparty ExternalProject） | 第二套 ggml / ONNX Runtime |
-| 线性代数 | Eigen（3rdparty） | 自研矩阵库 |
-| JSON | jsoncpp（3rdparty） | 自研 parser |
-| 日志 | AICORE_LOG_* → CVLog | 私有日志体系 |
-| 模型下载 | ecvModelDownloader（CVPluginAPI） | 私有下载器 |
-| 摄像头/视频 | video_base（插件共享库） | 私有时钟/解码 |
+| Image decode (JPEG/PNG etc.) | Qt QImage (built-in codecs) | stb_image / direct libjpeg |
+| Image encode/save | QImage / QPainter | stb_image_write |
+| Image scale/crop | QImage scaled / copy | stb_image_resize |
+| Inference runtime | ggml (3rdparty ExternalProject) | second ggml / ONNX Runtime |
+| Linear algebra | Eigen (3rdparty) | hand-rolled matrix library |
+| JSON | jsoncpp (3rdparty) | hand-rolled parser |
+| Logging | AICORE_LOG_* → CVLog | private logging system |
+| Model download | ecvModelDownloader (CVPluginAPI) | private downloader |
+| Camera/video | video_base (shared plugin library) | private clock/decode |
 
-### stb 案例（真实教训）
+### stb Case (Real Lesson)
 
-face-detect.cpp 上游依赖 stb_image 解码；AICore facedetect 移植时改为 Qt QImage（`image_io.cpp`），注释同步修正。验证命令：
+face-detect upstream (InsightFace) depends on stb_image decoding; the AICore facedetect port switched to Qt QImage (`core/AICore/src/tasks/facedetect/image_io.cpp`, 68 lines). Same precedent: the comment in `core/AICore/src/tasks/yolo/yolo_image.hpp:11-15` states "the upstream stb_image load/save ... live on the plugin side (Qt QImage / QPainter)".
+
+Verification commands (exclude comments and known exceptions):
 
 ```bash
-rg -n "stb_image|STB_IMAGE_IMPLEMENTATION" core/AICore/src plugins/  # qSIBR 除外
+# No stb implementation or include in AICore sources (comments don't count) — expect 0 hits:
+rg -n 'STB_IMAGE_IMPLEMENTATION|#include [<"](stb_image|stb_image_write|stb_image_resize)' core/AICore/src
+# Full plugin scan excluding known exceptions (qSIBR's xatlas 3rdparty and tinygltf's STB define):
+rg -n 'STB_IMAGE_IMPLEMENTATION' core/AICore/src plugins --glob '!**/3rdparty/**' --glob '!plugins/core/Standard/qSIBR/**'
 ```
 
-必须零命中。
+Current repo baseline: in `core/AICore/src` only the `yolo_image.hpp` comment contains the string "stb_image"; there is no implementation or header dependency. `plugins/core/Standard/qSIBR/3rdparty/xatlas/` and `3rdparty/find_dependencies.cmake:1345` (tinygltf's `STB_IMAGE_IMPLEMENTATION` define) are known exceptions.
 
-### 引入新依赖前的检查清单
+### Checklist Before Introducing a New Dependency
 
-1. 仓库（含 `3rdparty/`）是否已有功能等价模块？
-2. 已有模块缺什么（格式支持？性能？）——缺什么补什么，而不是整体换一套
-3. 新依赖的许可证与 ACloudViewer（根项目 GPL-2.0-or-later、AICore MIT）是否兼容？
-4. 新依赖是否引入构建负担（CMAKE 配置、跨平台 patch）？
+1. Does the repo (including `3rdparty/`) already have a functionally equivalent module?
+2. What does the existing module lack (format support? performance?) — fill the gap, don't replace the whole stack
+3. Is the new dependency's license compatible with ACloudViewer (root project GPL-2.0-or-later, AICore MIT)?
+4. Does the new dependency add build burden (CMake config, cross-platform patches)?
 
 ---
 
-## 5. 编码风格与命名规范（与 AICore 一致）
+## 5. Coding Style and Naming (Consistent with AICore)
 
-### 命名
+### Naming
 
-| 类别 | 风格 | 示例 |
+| Category | Style | Examples |
 |---|---|---|
-| 函数/变量 | snake_case | `prepare_host_weights`、`run_dense_impl`、`use_direct_conv` |
-| 类型 | PascalCase | `HostTensor`、`ModelDef`、`EngineOptions` |
-| 常量 | k 前缀或 UPPER_SNAKE | `kQuantCount`、`QK8_0` |
+| Functions/variables | snake_case | `prepare_host_weights`, `run_dense_impl`, `use_direct_conv` |
+| Types | PascalCase | `HostTensor`, `ModelDef`, `EngineOptions` |
+| Constants | k-prefix or UPPER_SNAKE | `kQuantCount`, `QK8_0` |
 | C API | `aicore_<task>_<verb>_<noun>` | `aicore_yolo_set_detect_thresholds` |
-| 宏 | AICORE_ 前缀 | `AICORE_LOG_WARN`、`AICORE_CAPI` |
+| Macros | AICORE_ prefix | `AICORE_LOG_WARN`, `AICORE_CAPI` |
 
-### include 使用绝对路径（从模块根开始）
+### Includes Use Absolute Paths (from module root)
 
-从 `core/AICore/` 根开始的全路径，**禁止 `../` 相对路径和裸文件名**：
+Full paths from the `core/AICore/` root. **`../` relative paths and bare filenames are forbidden**:
 
 ```cpp
-// 正确
-#include "aicore/depth_capi.h"     // 公开头：include/ 根
-#include "common/capi_utils.hpp"   // src 内部：src/ 根
+// correct
+#include "aicore/depth_capi.h"     // public header: include/ root
+#include "common/capi_utils.hpp"   // internal: src/ root
 #include "tasks/yolo/yolo_common.hpp"
 
-// 错误
+// wrong
 #include "../tasks/yolo/yolo_common.hpp"
 #include "yolo_common.hpp"
 ```
 
-### 其他
+Verification (current repo baseline: 0 hits):
 
-- C++17，RAII，`std::unique_ptr` + custom deleter，不可复制 session
-- 原始指针只表示 non-owning view 或 C ABI opaque handle；所有权在类型/注释中明确
-- 不在 C boundary 暴露异常、STL、Qt、OpenCV、ggml 类型
-- 用小的 task-specific 类拆分 loader/graph/postprocess，不写几千行单文件
-- 不做与周边代码无关的风格重写；clang-format 匹配现有格式
+```bash
+rg -n '#include "\.\./' core/AICore/src          # no ../ relative includes
+rg -n '#include "(aicore|common|tasks)/' core/AICore/src | wc -l   # module-root paths should cover all internal includes
+```
 
----
+### Other
 
-## 6. 性能与内存规则（端到端链路）
-
-### 零拷贝原则
-
-- 输入借用：C ABI 接收带 stride 的只读 view，调用期间有效，不取得所有权
-- 输出复用：热循环避免临时 vector 分配，用 session scratch 复用容量；小结果 shrink logical size，不每帧 `shrink_to_fit`
-- 避免中间物化：不先构造 packed RGB 再做第二次 CHW 转换；热路径无 JSON serialize/parse；不把 DB 图片临时落盘再重解码
-
-### 省内存
-
-- 权重只上传一次（`build_run_plan` 中 `if (!s->wbuf)` 复用 wbuf），推理结束可释放 host 副本（`session_release_host_weights` / `aicore_<task>_release_host_weights`）
-- 大 buffer（mask/depth）用 immutable result handle + borrowed view，禁止 queued signal 深拷贝
-- mask/depth 按需物化：不每帧生成 N × source_width × source_height 数据
-
-### 省显存
-
-- 多视图/一次性任务：`keep_graph_buffers=OFF`（单图峰值）
-- 实时视频：`keep_graph_buffers=ON`（缓冲复用）
-- 必要时调用 `aicore_<task>_release_gpu_working_memory` 在视图间释放图缓冲
-
-### 端到端加速
-
-- 视频实时：单 job + latest-wins，队列深度 ≤ 2（running + pending），结果绑定 source frame + generation
-- preprocess 直接从 stride-aware view 写持久 CHW staging，一次 upload
-- detect 只回读 decoder 所需 tensor；segment 只为 selected detections 物化 mask
-- 日志含 model/task/device/stage，不含用户敏感路径
+- C++17, RAII, `std::unique_ptr` with custom deleter, non-copyable sessions
+- Raw pointers mean only non-owning views or C ABI opaque handles; ownership is explicit in the type/comment
+- Never expose exceptions, STL, Qt, OpenCV, or ggml types across the C boundary
+- Split loader/graph/postprocess into small task-specific classes; no multi-thousand-line single files
+- No unrelated style rewrites of surrounding code; clang-format matches the existing format
 
 ---
 
-## 7. 日志集成规则
+## 6. Performance and Memory Rules (End-to-End Pipeline)
 
-所有 AICore 输出必须走 `AICORE_LOG_*` 宏体系，最终经 CVLog 进入 ACloudViewer Console。
+### Zero-Copy Principles
 
-### 日志级别
+- Input borrowing: the C ABI receives a read-only stride-aware view, valid for the duration of the call; no ownership transfer
+- Output reuse: hot loops avoid temporary vector allocations; reuse session scratch capacity; shrink logical size for small results instead of `shrink_to_fit` every frame
+- No intermediate materialization: don't build packed RGB and then do a second CHW conversion; no JSON serialize/parse on the hot path; never write DB images to disk temporarily and re-decode
+
+### Save Memory
+
+- Weights uploaded once (`if (!s->wbuf)` in `build_run_plan` reuses wbuf); after inference the host copy can be released (`session_release_host_weights` / `aicore_<task>_release_host_weights`)
+- Large buffers (mask/depth) use immutable result handles + borrowed views; queued-signal deep copies are forbidden
+- mask/depth materialized on demand: never generate N × source_width × source_height data per frame
+
+### Save VRAM
+
+- Multi-view/one-shot tasks: `keep_graph_buffers=OFF` (single-graph peak)
+- Real-time video: `keep_graph_buffers=ON` (buffer reuse)
+- Call `aicore_<task>_release_gpu_working_memory` between views to drop graph buffers when needed
+
+### End-to-End Acceleration
+
+- Real-time video: single job + latest-wins, queue depth ≤ 2 (running + pending), results bound to source frame + generation
+- Preprocess writes the persistent CHW staging directly from the stride-aware view, one upload
+- detect reads back only the tensors the decoder needs; segment materializes masks only for selected detections
+- Logs contain model/task/device/stage, never user-sensitive paths
+
+---
+
+## 7. Logging Integration Rules
+
+All AICore output must go through the `AICORE_LOG_*` macro system, ultimately reaching the ACloudViewer Console via CVLog.
+
+### Log Levels
 
 ```c
-// src/common/aicore_log.hpp 定义的公共级别常量
+// level constants defined in core/AICore/src/common/aicore_log.hpp:29-32
 #define AICORE_LOG_LEVEL_DEBUG 0
 #define AICORE_LOG_LEVEL_INFO  1
 #define AICORE_LOG_LEVEL_WARN  2
 #define AICORE_LOG_LEVEL_ERROR 3
 
-// 使用方式
+// usage (macros are unconditional; use aicore_log_at for runtime thresholds)
 AICORE_LOG_DEBUG("yolo", "preprocess took %.2f ms", ms);
 AICORE_LOG_INFO("depth", "loaded model: %s", name);
 AICORE_LOG_WARN("rmbg", "fallback to CPU");
 AICORE_LOG_ERROR("gaussian", "OOM during inference");
 ```
 
-### 禁止行为
+Note: under `AICore_HAS_CVLOG` the `AICORE_LOG_*` macros map directly to `CVLog::Print/PrintDebug/Warning/Error` (aicore_log.hpp:5-11) with no runtime filtering; thresholded logging must go through `aicore_log_at(level, tag, fmt, ...)` (aicore_log.hpp:42).
 
-- **禁止直打 `fprintf(stderr, ...)`**（`ggml_env_bridge.cpp` 已有先例修正为 `AICORE_LOG_WARN`）
-- **禁止在 task 内定义私有日志级别枚举**——必须用公共层 `aicore_set_log_level` / `aicore_log_at`
+### Forbidden Behavior
 
-### 线程局部日志级别
+- **No direct `fprintf(stderr, ...)` for errors or status on the inference/business path** — use `AICORE_LOG_*` / `aicore_log_at` (precedent: `ggml_env_bridge.cpp:55` fixed to `AICORE_LOG_WARN`)
+- **No private log-level enums inside tasks** — use the shared layer `aicore_set_log_level` / `aicore_log_at`
+
+The 5 allowed `fprintf(stderr)` exceptions (verify: every hit of `rg -n 'fprintf\(stderr' core/AICore/src` must fall into one category):
+
+1. `aicore_log.hpp:15-16` — the `AICORE_LOG_*` macro fallback when `AICore_HAS_CVLOG` is absent (the logging system itself)
+2. `ggml_backend_utils.hpp:113-129` — `#ifndef NDEBUG` gated debug-build diagnostics (not compiled in Release)
+3. `yolo/backend.cpp:266-270`, `yolo_graph.cpp:838,888` — `[op profile]` / `[gap-prof]`, controlled by the explicit options `aicore_yolo_options_set_profile_ops` / `_set_profile_gaps` (yolo_capi.h:70-75)
+4. `lightglue/quantize.cpp:227`, `common/simple_gguf_io.cpp:441` — CLI quantizer (`aicore_gguf_quantize`) output
+5. `deeplsd/lsd.cpp:75` — legacy error handling from the upstream LSD library (prints before exit; don't propagate this pattern)
+
+### Thread-Local Log Level
 
 ```cpp
+// defined in the anonymous namespace of core/AICore/src/common/aicore_log.cpp:21
 thread_local int tls_log_level = AICORE_LOG_LEVEL_INFO;
-void aicore_set_log_level(int level);   // 设置当前线程的最低输出级别
-int aicore_get_log_level(void);         // 查询当前线程级别
+void aicore_set_log_level(int level);   // set the current thread's minimum level (aicore_log.cpp:27)
+int aicore_get_log_level(void);         // query the current thread's level (aicore_log.cpp:29)
 ```
 
-yolo 的 `logf` 已委托公共层，新 task 直接使用 `AICORE_LOG_*` 宏即可。
+yolo's `logf` already delegates to the shared layer (aicore_log.cpp:19-20 comment: "Default INFO matches the historical yolo::tls_log_level behavior"); new tasks just use the `AICORE_LOG_*` macros.
 
-### 底层实现
+### Underlying Implementation
 
-[`aicore_log.cpp`](../../../core/AICore/src/common/aicore_log.cpp) 在 `AICore_HAS_CVLOG` 条件下走 `CVLog::Print*` 进入 Console；否则 fallback 到 `fprintf(stderr, ...)`。
+`core/AICore/src/common/aicore_log.cpp` uses `CVLog::Print*` to reach the Console under `AICore_HAS_CVLOG` (aicore_log.cpp:41-56, level mapping in the switch); otherwise it falls back to `fprintf(stderr, ...)` (aicore_log.cpp:58). `AICore_HAS_CVLOG` is defined by `core/AICore/CMakeLists.txt:290` when linking CVCoreLib.
+
+Verification (review command; each hit must fall into the 5 exceptions above):
+
+```bash
+rg -n 'fprintf\(stderr' core/AICore/src
+```
+
+> Tool note: `rg` = ripgrep (use `grep -rnE` as an equivalent if not installed).
 
 ---
 
-## 8. ggml 修改规则
+## 8. ggml Modification Rules
 
-**绝对禁止直接修改构建目录中的 ggml 源码。** 完整规则见 `acloudviewer-ggml-aicore.mdc`。以下为要点浓缩：
+**Directly modifying ggml sources in build directories is absolutely forbidden.** Full rules: `acloudviewer-ggml-aicore.mdc`. Condensed essentials below:
 
-### ggml 版本锁定（v0.18.1）
+### ggml Version Lock (v0.18.1)
 
-- ACloudViewer 的 ggml 固定在 **v0.18.1**（`3rdparty/ggml/ggml.cmake` 的 ExternalProject tarball）。**禁止升级或降级 ggml 版本**——所有已有 patch（`rmbg_merged` / `aliked_merged` / `metal_merged` / `msvc_vulkan` / `cpu_all_variants`）都基于该版本生成，版本漂移会让全部 AI 插件一起失效。
-- 新增任务所需的最小 patch 必须与现有 patch 链**语义去重**（rmbg/aliked 已提供的功能不得重复引入），按文件/算子拆分为：公共 ggml API、CPU、CUDA、Vulkan、build dependency。
+- ACloudViewer pins ggml to **v0.18.1** (`3rdparty/ggml/ggml.cmake:24` `set(GGML_VERSION "0.18.1")`, URL `https://github.com/ggml-org/ggml/archive/refs/tags/v0.18.1.tar.gz`, SHA256 `e9679cc9a8f0480ddc137b0a650df31b7c955e53ac6fdded1967aac36790c5e3`, ggml.cmake:26). **Upgrading or downgrading ggml is forbidden** — all 14 patches in manifest.yaml are generated against this version (git apply hunks anchor to v0.18.1 sources), so version drift breaks every AI plugin at once.
+- The minimal patch for a new task must be **semantically de-duplicated** against the existing patch chain (do not re-introduce what rmbg/aliked already provide), split by file/operator into: public ggml API, CPU, CUDA, Vulkan, build dependency.
 
-### patch 兼容性要求（不影响其他模块推理）
+### Current Patch List (manifest.yaml is the single source of truth: 14 patches)
 
-1. 新 patch 必须在**"现有 manifest 全部应用后"的树**上生成（先完整重放 `manifest.yaml` 再 diff），禁止在原始 tarball 上生成。
-2. 三遍 replay 验证：forward replay → reverse replay → 第二次 idempotent replay 必须全部成功：
+Verify: `rg -n "file:" 3rdparty/ggml/patches/manifest.yaml`. Current full list (manifest.yaml:9-36):
+
+| Subdirectory | Content | Inert when |
+|---|---|---|
+| `aliked_merged/0001-vulkan-aliked.patch` | ALIKED Vulkan extraction (compute/DCN/SDDH/DKD/C API/shader registration) | never |
+| `msvc_vulkan/0001-msvc-vulkan-hpp-compat.patch` | MSVC `__faststorefence` intrinsic compatibility | not MSVC |
+| `cpu_all_variants/0001-cpu-all-variants-compiler-checks.patch` | CPU ALL_VARIANTS compiler gating | `GGML_CPU_ALL_VARIANTS=OFF` |
+| `metal_merged/0001-metal-optimizations.patch` | Metal optimizations (conv_transpose/flash-attn/Swin QKV etc.) | Metal OFF |
+| `cuda_mmq/0001-cuda-mmq-force-static.patch` | Force MMQ kernels + static cudart | `GGML_CUDA_FORCE_MMQ=OFF` |
+| `vulkan_parallel/0001-vulkan-shaders-gen-skip-parallel-trycompile.patch` | Fix MSBuild parallel file-lock race (MSB3491) | not Windows |
+| `rmbg_merged/0001-rmbg-custom-ops.patch` | RMBG custom ops (CUDA/Vulkan) | never |
+| `rfdetr_merged/0001-ggml-cpu-fold-broadcast-iterations.patch` | RF-DETR CPU perf (llamafile epilogue) | `GGML_LLAMAFILE=OFF` |
+| `yolo_merged/0001-yolo-ggml-backend-integration.patch` | YOLO GPU ops | never |
+| `sam3_merged/0001-sam3-ggml-custom-ops.patch` | SAM3 custom ops | never |
+| `trellis_merged/0001-ggml-cuda-cpy-q8_0.patch` | CUDA Q8_0→Q8_0 direct block copy | not CUDA |
+| `igemm_fix/0001-igemm-plan-rebuild-guards.patch` | YOLO igemm plan rebuild guards | igemm path unused |
+| `glslc_fconvert/0001-pool-shaders-avoid-redundant-fconvert.patch` | Ubuntu 24.04+ shaderc FConvert fix | `GGML_USE_VULKAN=OFF` |
+| `cuda_mul_mat_f16_dst/0001-cuda-mul-mat-f16-dst.patch` | CUDA mul_mat F16 output fix | F16-output path unused |
+
+Note: the manifest comments for `yolo_merged` and `sam3_merged` explicitly say "merged against the aliked/rmbg/vulkan_parallel chain" — new patches must follow the same on-chain merge semantics; never append upstream patches verbatim.
+
+### Patch Compatibility Requirements (no impact on other modules' inference)
+
+1. A new patch must be generated on the tree **after the full existing manifest has been applied** (replay `manifest.yaml` completely, then diff) — never on the pristine tarball.
+2. Verify against the real replay semantics (`3rdparty/ggml/patches/apply_ggml_patches.py:198-244`, not a "three-pass replay"):
+   - forward replay: the whole chain is applied to a temporary copy (`_try_sequence`, L129-147); on failure, a full-chain reverse is attempted (treated as already applied);
+   - if forward passes: `git apply` each patch to the real source, then **verify the whole chain by full reverse on a temporary copy** (L215-225, ensuring the chain is fully present);
+   - if both fail: `_try_recover_partial` un-applies from the tail one by one and re-applies forward (L150-195); an unrecoverable tree fails with an error.
+   Manual rebuild commands (ggml.cmake's patch-signature mechanism auto-discards the old tree when patch contents change):
    ```bash
    rm -f build_app/ggml/src/ext_ggml-stamp/ext_ggml-{install,done}
    cmake --build build_app --target ext_ggml -j4
    ```
-3. 回归验证：patch 应用后，**所有其他 AI 模块的 contract 测试必须全绿**（`test_rmbg_capi_contract`、`test_aliked_capi_contract`、`test_depth_capi_contract`、`test_gaussian_capi_contract` 等），证明共享 ggml 未被破坏。
-4. 精度约束：新增算子不得改变已有模块的数值路径——只增加新 op 或新 backend 分支，不改变既有 op 的默认行为。
-5. 禁止从上游原样追加 patch（如 ultralytics-ggml 的 `0001-yolo-ggml-backend-integration.patch`）——两边 patch 已独立演进，必须语义合并。
+3. Regression verification: after applying the patch, **all other AI modules' contract tests must stay green**. The contract suite is defined at `core/AICore/tests/CMakeLists.txt:589-610` (`_aicore_contract_targets`: test_runtime_capi_contract / test_depth_capi_contract / test_gaussian_capi_contract / test_lightglue_capi_contract / test_aliked_capi_contract / test_deeplsd_capi_contract / test_facedetect_capi_contract / test_rfdetr_capi_contract / test_yolo_capi_contract / test_rmbg_capi_contract / test_sam3_capi_contract / test_trellis_capi_contract):
+   ```bash
+   cmake -DAICore_ENABLED=ON -DAICore_BUILD_TESTS=ON ..
+   cmake --build build_app --target aicore-contract-tests -j4   # runs ctest -L capi -LE "model|gpu|e2e"
+   ```
+4. Precision constraint: new operators must not change the numerical path of existing modules — only add new ops or new backend branches, never alter the default behavior of existing ops.
+5. Never append upstream patches verbatim (e.g. ultralytics-ggml's `0001-yolo-ggml-backend-integration.patch`) — the two patch sets have evolved independently and must be merged semantically (yolo_merged/sam3_merged in the manifest are the merged products).
 
-### 修改流程
+### Modification Flow
 
 ```
-1. 在 build_app/ggml/... 中临时修改并验证（仅作试验场）
-2. diff -ruN orig/ modified/ > 3rdparty/ggml/patches/<subdir>/0001-描述.patch
-3. 在 3rdparty/ggml/patches/manifest.yaml 中注册（顺序重要）
+1. Temporarily modify and verify in build_app/ggml/... (experimentation only)
+2. diff -ruN orig/ modified/ > 3rdparty/ggml/patches/<subdir>/0001-description.patch
+3. Register in 3rdparty/ggml/patches/manifest.yaml (order matters)
 4. rm -f build_app/ggml/src/ext_ggml-stamp/ext_ggml-{install,done}
    cmake --build build_app --target ext_ggml -j4
-5. 仅提交 patch + manifest.yaml + 胶水代码，不提交 build*/ggml/ 下的源码
+5. Commit only the patch + manifest.yaml + glue code; never commit sources under build*/ggml/
 ```
 
-### 精度约束
+### Precision Constraint
 
-ggml 修改**不可影响推理数值精度**。contract 测试必须包含推理结果验证（不仅验证 ABI）：
+ggml changes **must not affect inference numerical precision**. Contract tests must include inference-result verification (not just ABI). Existing numerical gate precedent in the repo (`core/AICore/tests/aliked/test_aliked_capi_parity.cpp:17,39-40`):
 
-- 使用 Q8_0 / F16 量化路径的模型，与全 F32 推理结果比较 PSNR，阈值参考上游仓库
-- Vulkan coopmat / CUDA F16 GEMM 等加速路径不得改变数值分布的基本统计量
+```cpp
+// Gates (vs CPU ref): kpt median <= 0.005 px, desc cosine median >= 0.9996
+constexpr float kKptMedianTolPx = 0.005f;      // keypoint median error (pixels)
+constexpr float kDescCosMedianTol = 0.9996f;   // descriptor cosine median lower bound
+```
+
+GPU (Vulkan/CUDA/Metal) vs CPU reference comparison tests run against these gates (`test_aliked_capi_parity`, registered at tests/CMakeLists.txt:370-374, LABELS "capi;model;gpu"). New tasks follow the same pattern: compare GPU output against a CPU F32 reference with deterministic numerical gates (pixel-level/cosine-level metrics) instead of non-reproducible descriptions like "threshold per upstream repo".
 
 ---
 
-## 9. CMake 集成清单
+## 9. CMake Integration Checklist
 
-### AICore 构建开关
-
-```bash
--DAICore_ENABLED=ON              # 主开关，自动启用 GGML_ENABLED
--DAICore_USE_VULKAN=ON/OFF       # Vulkan（Linux/Windows，macOS 强制 OFF）
--DAICore_BUILD_TESTS=ON          # 构建 contract 测试
-```
-
-### 插件构建开关
+### AICore Build Switches
 
 ```bash
--DPLUGIN_STANDARD_Q<task>=ON     # 标准插件开关（大写 + _PLUGIN 后缀）
+-DAICore_ENABLED=ON              # master switch; auto-enables GGML_ENABLED (cmake/AICoreOptions.cmake:36-41)
+-DAICore_USE_VULKAN=ON/OFF       # Vulkan (Linux/Windows default ON, macOS default OFF; AICoreOptions.cmake:62-64)
+-DAICore_USE_METAL=ON/OFF        # Metal (Apple default ON; AICoreOptions.cmake:59-61)
+-DAICore_USE_CUDA=ON             # CUDA (developer opt-in; AICoreOptions.cmake:65-67)
+-DAICore_BUILD_TESTS=ON          # build contract tests (AICoreOptions.cmake:24-26)
+-DAICore_BUILD_WHITEBOX_TESTS=ON # whitebox tests (requires AICore_BUILD_TESTS=ON, else FATAL_ERROR; AICoreOptions.cmake:31-34)
 ```
 
-CMake 目标命名：`Q<task>_PLUGIN` 全大写（如 `QDA3_PLUGIN`、`QYOLO_PLUGIN`）。
+Note: all `GGML_*` variables are internal (synced from `AICore_*` by `aicore_sync_options_to_ggml()`, AICoreOptions.cmake:120-174) — **do not pass `-DGGML_*` on the command line**; stale cache entries are cleared with a warning (AICoreOptions.cmake:103-118). Read-only result variables: `AICore_VULKAN_ENABLED` / `AICore_CUDA_ENABLED` / `AICore_METAL_ENABLED` etc. (`aicore_sync_results_from_ggml()`, AICoreOptions.cmake:185-199).
 
-### 常用链接
+### Plugin Build Switches
 
-插件 CMakeLists.txt 模板：
+```bash
+-DPLUGIN_STANDARD_Q<task>=ON     # standard plugin switch (uppercase + _PLUGIN suffix)
+```
+
+CMake target naming: `Q<task>_PLUGIN` all uppercase (e.g. `QDA3_PLUGIN`, `QYOLO_PLUGIN`).
+
+### Common Linking
+
+Plugin CMakeLists.txt template (`AddPlugin(NAME ...)` defined in `plugins/cmake/Plugins.cmake`):
 
 ```cmake
 AddPlugin(NAME Q<NAME> ...)
@@ -350,53 +448,78 @@ target_link_libraries(Q<NAME>_PLUGIN PRIVATE
 )
 ```
 
-新 AICore 依赖 task：在 `core/AICore/CMakeLists.txt` 注册 `add_subdirectory(src/tasks/<task>)` + `target_sources` + 链接 ggml 库。
+### Registering a New AICore Task in CMake (the actual pattern)
+
+`core/AICore/CMakeLists.txt` does **not** use `add_subdirectory` — a new task registers in 4 steps (following the existing yolo/sam3 pattern):
+
+1. Sources go to `core/AICore/src/tasks/<task>/`, the header to `core/AICore/include/aicore/<task>_capi.h`;
+2. In `core/AICore/CMakeLists.txt` add `set(AICORE_<TASK>_SRC_DIR ...)` (pattern at L36-49) + `file(GLOB AICORE_<TASK>_SOURCES ...)` (L69-88) + an entry-file existence check (`FATAL_ERROR`, pattern at L91-117);
+3. Add `AICORE_<TASK>_SOURCES` to the `add_library(${PROJECT_NAME} SHARED ...)` source list (L119-133) and the task directory to `target_include_directories(... PRIVATE ...)` (L167-193);
+4. For private implementation tests: add `aicore_add_<task>_capi_test(test_<task>_capi_contract)` in `core/AICore/tests/CMakeLists.txt` (see `aicore_add_yolo_capi_test`, L408-423) and add it to `_aicore_contract_targets` (L589-610) and `_aicore_fast_targets` (L659-682).
+
+ggml linking is always through the `3rdparty_ggml` interface target (`target_link_libraries(${PROJECT_NAME} PRIVATE 3rdparty_ggml)`, L197); tasks never link ggml directly.
 
 ---
 
-## 10. 测试规范
+## 10. Testing Specification
 
-### Contract 测试（必须）
+### Contract Tests (mandatory)
 
-每个 C-API 函数至少有 contract 测试，验证：
-- ABI 版本返回值匹配
-- NULL 入参安全性（不崩溃）
-- 创建（load/options_new）→ 使用 → 释放（free）完整生命周期
+Every C-API function needs at least a contract test verifying:
+- ABI version return value
+- NULL argument safety (no crash)
+- Full lifecycle: create (load/options_new) → use → free
 
-测试文件命名：`tests/<task>/test_<task>_capi_contract.cpp`
-
-### 覆盖率要求
-
-`python3 core/AICore/tests/check_capi_coverage.py` 确保覆盖率 >= 95%。
-
-该脚本扫描 `include/aicore/*_capi.h` 中所有 `aicore_*` 函数，检查是否被消费者（tests/plugins/libs）调用。新增 API 必须至少被一个 contract 测试引用。
-
-### 推理精度验证
+Test file naming: `tests/<task>/test_<task>_capi_contract.cpp` (e.g. `tests/yolo/test_yolo_capi_contract.cpp`, `tests/aliked/test_aliked_capi_contract.cpp`). Real template (`tests/yolo/test_yolo_capi_contract.cpp:24-80`):
 
 ```cpp
-// 伪代码：固定输入 → 输出与基线比较
-load_model(ctx, "model.gguf");
-float* output = run_inference(ctx, fixed_input);
-float psnr = compute_psnr(output, reference_output, size);
-assert(psnr > 35.0f);  // 阈值因模型而异
-free_buffer(output);
+#include "aicore/yolo_capi.h"
+#include "tests/common/test_macros.hpp"   // AICORE_CHECK assertion macro
+
+int main() {
+    AICORE_CHECK(aicore_yolo_abi_version() >= 1);
+    // NULL-safe teardown / lifecycle
+    aicore_yolo_free(nullptr);
+    aicore_yolo_options_free(nullptr);
+    aicore_yolo_free_buffer(nullptr);
+    // every setter's NULL no-op + getter round-trip (options lifecycle)
+    // loading a nonexistent model must fail cleanly and report last_error
+    // default-value assertions: aicore_yolo_options_get_conf_thres(nullptr) == 0.25f etc.
+}
 ```
 
-### 推理性能验证
+Registration: `aicore_add_<task>_capi_test(test_<task>_capi_contract)` in `core/AICore/tests/CMakeLists.txt` (L408-423 is yolo's full function body, including the WIN32 dirent link branch), with `LABELS "capi"`. Run:
+
+```bash
+cmake -DAICore_ENABLED=ON -DAICore_BUILD_TESTS=ON ..
+cmake --build build_app --target test_<task>_capi_contract -j4
+./build_app/bin/aicore_tests/test_<task>_capi_contract   # no GGUF assets; pure ABI/NULL/lifecycle
+```
+
+### Coverage Requirement
+
+`python3 core/AICore/tests/check_capi_coverage.py` enforces coverage >= 95% (script L24 `COVERAGE_TARGET = 95`, exit code 0=PASS / 1=FAIL).
+
+The script scans all `aicore_*` functions in `include/aicore/*_capi.h` (regex `\b(aicore_[a-z0-9_]+)\s*\(`, L40) and checks whether they are called by consumers (`core/AICore/tests`, `core/AICore/tools`, `plugins/core/Standard`, `libs`, L27-32). A new API must be referenced by at least one contract test.
+
+### Inference Precision Verification
+
+Contract tests without GGUF assets cover ABI/NULL/lifecycle; **numerical verification lives in asset/GPU parity tests**. Real precedent in the repo (`core/AICore/tests/aliked/test_aliked_capi_parity.cpp:17,39-40`, CTest LABELS "capi;model;gpu"):
 
 ```cpp
-// 计时模板
-auto start = now();
-for (int i = 0; i < N; ++i) run_inference(ctx, test_input);
-double ms = elapsed_ms(start) / N;
-assert(ms < baseline_ms * 1.1);  // 不超过基线 1.1x
+// Fixed input (sacre_coeur1.jpg) → pointwise comparison of GPU output vs CPU reference
+// Gates (vs CPU ref): kpt median <= 0.005 px, desc cosine median >= 0.9996
+constexpr float kKptMedianTolPx = 0.005f;
+constexpr float kDescCosMedianTol = 0.9996f;
 ```
+
+Test assets are injected as environment variables by `aicore_configure_model_test_assets()` (tests/CMakeLists.txt:457-516: `AICORE_TEST_<TASK>_GGUF` / `AICORE_TEST_<TASK>_IMAGE`); tests without assets skip with exit code 77 (`SKIP_RETURN_CODE 77`, L66).
 
 ---
 
-## 11. 插件集成代码模板
+## 11. Plugin Integration Code Templates
 
-### C-API 头文件模板
+### C-API Header Template
 
 ```c
 // include/aicore/<task>_capi.h
@@ -435,7 +558,7 @@ AICORE_CAPI void aicore_<task>_free_buffer(void* p);
 #endif
 ```
 
-### Worker 类模板
+### Worker Class Template
 
 ```cpp
 // plugins/core/Standard/q<Worker>/src/q<Worker>.cpp
@@ -456,8 +579,8 @@ private:
     }
     
     void runInference() {
-        // ... 调用推理 API ...
-        // 资源释放
+        // ... call inference API ...
+        // resource release
         aicore_<task>_free_buffer(some_output);
         aicore_<task>_free(m_ctx);
     }
@@ -466,19 +589,22 @@ private:
 
 ---
 
-## 12. 测试数据集成规范（use test data 按钮）
+## 12. Test Data Integration Specification (use test data button)
 
-新插件必须提供 "Try sample data" 一键测试入口，**复用共享组件 `ecvTestDataRepository`（libs/CVPluginAPI），禁止自研下载器**。
+New plugins must provide a "Try sample data" one-click entry, **reusing the shared component `ecvTestDataRepository` (libs/CVPluginAPI); hand-rolled downloaders are forbidden**.
 
-### 数据集选择
+### Dataset Selection
 
-| 插件类型 | Dataset | 内容 |
+The `ecvTestDataRepository::Dataset` enum (`libs/CVPluginAPI/include/ecvTestDataRepository.h:41-46`) has 4 datasets:
+
+| Plugin type | Dataset | Content |
 |---|---|---|
-| AI 推理（qYOLO/qRFDetr/qRMBG/qDeepLSD） | `ObjectsDetection` | 共享图片/视频 |
-| 重建（qDA3） | `Monstree` | 多视图图片 |
-| 人脸（qFaceDetect） | `FriendsFaces` | 人脸视频 |
+| AI inference (qYOLO/qRFDetr/qRMBG/qDeepLSD) | `ObjectsDetection` | shared images/videos |
+| Reconstruction (qDA3) | `Monstree` | multi-view images |
+| Face (qFaceDetect) | `FriendsFaces` | face video |
+| Image-to-3D (qTrellis etc.) | `Image2Mesh` | single-image-to-3D samples (`examples_images/`, ecvTestDataRepository.h:154-158) |
 
-### 按钮规范（跨插件统一外观）
+### Button Specification (consistent look across plugins)
 
 ```cpp
 m_useTestDataBtn =
@@ -494,13 +620,13 @@ m_useTestDataBtn->setStyleSheet(
         "QPushButton:disabled { background: #b2dfdb; color: #e0f2f1; }");
 ```
 
-teal 主题（`#00897b`）是所有插件（qDA3/qFaceDetect/qFreeSplatter/qYOLO）的统一外观，禁止自定义颜色。
+The teal theme (`#00897b`) is the unified look of all AICore plugins (qDA3/qDeepLSD/qFaceDetect/qFreeSplatter/qLightGlue/qRFDetr/qRMBG/qYOLO/qSAM3/qTrellis); custom colors are forbidden. The stylesheet lives in `makeSampleDataBtn()` at `libs/CVPluginAPI/include/ecvAICoreUiHelper.h:132-143`, verbatim identical to the button spec above.
 
-### 点击流程（onUseTestData 三态）
+### Click Flow (onUseTestData three states)
 
-1. **已提取**：extract 目录存在且 `findDatasetFile` / `getMonstreeImages` 命中 → 直接填充组件并返回
-2. **zip 已缓存**：`verifyZipIntegrity(zipPath, expectedMd5, expectedSize)` 通过 → 进度条 + `extractDataset` → 提取完成后填充
-3. **无缓存**：`startDownload(kind)` + 信号链（`downloadFinished` → `extractDataset` → 填充）
+1. **Already extracted**: extract dir exists and `findDatasetFile` / `getMonstreeImages` hit → fill components and return
+2. **Zip cached**: `verifyZipIntegrity(zipPath, expectedMd5, expectedSize)` passes → progress bar + `extractDataset` → fill after extraction
+3. **No cache**: `startDownload(kind)` + signal chain (`downloadFinished` → `extractDataset` → fill)
 
 ```cpp
 void onUseTestData() {
@@ -508,11 +634,11 @@ void onUseTestData() {
     auto& repo = ecvTestDataRepository::instance();
     const TestDataset kind = TestDataset::ObjectsDetection;
 
-    // 1. 已提取：直接填充
+    // 1. already extracted: fill directly
     const QString path = ecvTestDataRepository::findDatasetFile(kind, kTestImage);
     if (!path.isEmpty()) { fillComponents(path); return; }
 
-    // 2. zip 已缓存：提取
+    // 2. zip cached: extract
     const auto info = ecvTestDataRepository::getDatasetInfo(kind);
     if (ecvTestDataRepository::verifyZipIntegrity(
             ecvTestDataRepository::zipPath(kind), info.expectedMd5,
@@ -523,49 +649,51 @@ void onUseTestData() {
         return;
     }
 
-    // 3. 无缓存：下载（信号链回调中填充）
+    // 3. no cache: download (fill in the signal-chain callback)
     m_progress->setRange(0, 100);
     m_progress->setVisible(true);
     repo.startDownload(kind);
 }
 ```
 
-### 自动填充组件
+### Filling Components
 
 ```cpp
-// 图片列表 → 路径输入框（分号分隔）
+// image list → path input (semicolon separated)
 m_inputPath->setText(images.join(";"));
-// 视频 → video 输入源
+// video → video input source
 m_liveWidget->setInputSource(YOLOLiveWidget::InputSource::VideoFile);
 m_liveWidget->setVideoFilePath(path, false);
 ```
 
-### 缓存与完整性
+### Cache and Integrity
 
-- 目录：`~/cloudViewer_data/download/`（zip）+ `~/cloudViewer_data/extract/`（解压后）
-- 下载完整性：MD5 + size 校验（`verifyZipIntegrity`），缓存命中不重复下载
-- 下载/提取期间禁用按钮 + 进度条/状态标签可见；失败恢复按钮并在日志说明原因
+- Directories: `~/cloudViewer_data/download/` (zip) + `~/cloudViewer_data/extract/` (extracted)
+- Download integrity: MD5 + size check (`verifyZipIntegrity`); cache hits skip re-download
+- While downloading/extracting: disable the button + keep progress bar/status label visible; on failure restore the button and log the reason
 
---
+---
 
-## 13. 插件 UI 设计规范（强制）
+## 13. Plugin UI Design Specification (mandatory)
 
-所有 AICore 插件对话框**必须**复用共享 UI 工具模块 `ecvAICoreUiHelper.h`（`libs/CVPluginAPI/include/`，命名空间 `ecvAICoreUi`），禁止各插件自建重复的本地 helper / 样式表 / 像素常量。这是 8 个现有插件（qDA3/qDeepLSD/qFaceDetect/qLightGlue/qFreeSplatter/qRFDetr/qRMBG/qYOLO）统一优化后的唯一标准，新插件直接照此实现即可达到商业级外观。
+All AICore plugin dialogs **must** reuse the shared UI helper `ecvAICoreUiHelper.h` (`libs/CVPluginAPI/include/`, namespace `ecvAICoreUi`); local duplicate helpers / stylesheets / pixel constants are forbidden. This is the unified standard of the 10 existing plugins (qDA3/qDeepLSD/qFaceDetect/qLightGlue/qFreeSplatter/qRFDetr/qRMBG/qYOLO/qSAM3/qTrellis) — the header comment (ecvAICoreUiHelper.h:8-9) names 8, with qSAM3 (`SAM3Dialog.cpp:16`) and qTrellis (`TrellisDialog.cpp:24`) already migrated. New plugins follow it directly to reach production-grade appearance.
 
-### 13.1 共享工具速查
+Verify: `rg -l "ecvAICoreUiHelper.h" plugins/core/Standard/q*/src` should cover every AICore plugin dialog.
 
-| 能力 | API | 说明 |
-|---|---|---|
-| DPI 缩放 | `ecvAICoreUi::dpiScaled(px)` | 96-dpi 名义像素 → 当前屏幕 DPI 实际像素；**所有硬编码像素必须经它转换** |
-| 间距/边距 | `tabMargins()`, `vSpacing()`, `hSpacing()`, `tightVSpacing()` | 统一紧凑间距，禁止手写 magic number |
-| 尺寸常量 | `previewSize()` (96), `slotPreviewSize()` (88), `dbListMaxHeight()` (140), `filePoolMaxHeight()` (120) | 缩略图 / 列表高度，DPI 感知 |
-| 标签工厂 | `makeLabel(text)`, `makeHintLabel(text)` | 表单标签（左对齐）+ 灰色提示文字 |
-| 按钮工厂 | `makeSampleDataBtn()`, `makeBrowseBtn(text)` | teal 主题样本按钮 + 固定宽度浏览按钮 |
-| SpinBox | `setCompactDoubleSpin()`, `setCompactSpin()` | 紧凑固定宽度数值框 |
-| 布局工具 | `setupTabLayout()`, `setupFormGrid()`, `tightenGroupBox()`, `styleTabWidget()` | 页面 / 表单网格 / 分组框 / Tab 统一风格 |
-| 段落构建器 | `makeRuntimeRow(device, threads)`, `makeDbSection()`, `connectDbToggle()`, `setupProgressSection()`, `makeActionRow()` | Device/Threads 行、DB 折叠区、进度区、按钮行 |
+### 13.1 Shared Helper Quick Reference
 
-基本模板（`setupUi()` 开头）：
+| Capability | API | Defined at | Description |
+|---|---|---|---|
+| DPI scaling | `ecvAICoreUi::dpiScaled(px)` | ecvAICoreUiHelper.h:47-51 | 96-dpi nominal pixels → actual pixels at current screen DPI; **every hardcoded pixel must go through it** |
+| Spacing/margins | `tabMargins()`, `vSpacing()`, `hSpacing()`, `tightVSpacing()` | ecvAICoreUiHelper.h:63-79 | unified compact spacing (margin 4px / spacing 4/6/2px); no magic numbers |
+| Size constants | `previewSize()` (96), `slotPreviewSize()` (88), `dbListMaxHeight()` (140), `filePoolMaxHeight()` (120) | ecvAICoreUiHelper.h:88-97 | thumbnail / list heights, DPI-aware |
+| Label factories | `makeLabel(text)`, `makeHintLabel(text)` | ecvAICoreUiHelper.h:104-124 | form labels (left-aligned) + grey hint text |
+| Button factories | `makeSampleDataBtn()`, `makeBrowseBtn(text)` | ecvAICoreUiHelper.h:132-152 | teal sample button (`#00897b`) + fixed-width browse button (`browseBtnWidth()`=dpiScaled(72)) |
+| SpinBox | `setCompactDoubleSpin()`, `setCompactSpin()` | ecvAICoreUiHelper.h:158-168 | compact fixed-width spinboxes (`compactSpinWidth()`=dpiScaled(72)) |
+| Layout tools | `setupTabLayout()`, `setupFormGrid()`, `tightenGroupBox()`, `styleTabWidget()` | ecvAICoreUiHelper.h:175-220 | page / form grid / group box / tab unified styling |
+| Section builders | `makeRuntimeRow(device, threads)`, `makeDbSection()`, `connectDbToggle()`, `setupProgressSection()`, `makeActionRow()` | ecvAICoreUiHelper.h:251-340 | Device/Threads row, DB collapse section, progress section, action row |
+
+Basic template (`setupUi()` start):
 
 ```cpp
 #include "ecvAICoreUiHelper.h"
@@ -573,105 +701,106 @@ m_liveWidget->setVideoFilePath(path, false);
 void MyDialog::setupUi() {
     auto* root = new QVBoxLayout(this);
     ecvAICoreUi::setupTabLayout(root);
-    root->setSizeConstraint(QLayout::SetNoConstraint);  // 见 13.4
+    root->setSizeConstraint(QLayout::SetNoConstraint);  // see 13.4
     auto* tabs = new QTabWidget(this);
     ecvAICoreUi::styleTabWidget(tabs);
-    // 表单网格：label 列宽 92（两列 label|field 结构）
+    // form grid: label column width 92 (two-column label|field structure)
     auto* grid = new QGridLayout;
     ecvAICoreUi::setupFormGrid(grid, 92);
-    // 运行时参数：Device/Threads 一行
+    // runtime params: Device/Threads in one row
     root->addWidget(ecvAICoreUi::makeRuntimeRow(m_deviceCombo, m_threads));
-    // DB 折叠区：
+    // DB collapse section:
     auto* dbToggle = ecvAICoreUi::makeDbSection(nullptr);
     ecvAICoreUi::connectDbToggle(dbToggle, m_dbContentWidget);
-    // 进度区（label + progress，默认隐藏）：
+    // progress section (label + progress, hidden by default):
     ecvAICoreUi::setupProgressSection(root, m_downloadLabel, m_progress);
-    // 按钮行：
+    // action row:
     auto* row = ecvAICoreUi::makeActionRow(m_runBtn, m_cancelBtn);
 }
 ```
 
-### 13.2 布局准则
+### 13.2 Layout Guidelines
 
-1. **DPI 感知**：`setMinimumSize` / 缩略图尺寸 / 列表高度 / 按钮宽度全部用 `ecvAICoreUi::dpiScaled()`；禁止裸像素。
-2. **紧凑**：页面 layout 用 `setupTabLayout()`（margin 4px / spacing 4px）；分组框用 `tightenGroupBox()`（QSizePolicy::Maximum + 紧凑 margin），使分组框贴合内容、不撑大。
-3. **表单**：QGridLayout 一律 `setupFormGrid()`（label 列固定宽度、field 列 stretch=1），标签用 `makeLabel()` 保证左对齐垂直居中。
-4. **统一外观**：样本数据按钮必须 `makeSampleDataBtn()`（teal `#00897b`）；浏览按钮必须 `makeBrowseBtn()`；数值框必须 `setCompactSpin*()`。禁止自定义色板。
-5. **DB 输入区**：用 `makeDbSection()` + `connectDbToggle()` 做折叠区；列表高度限 `[dpiScaled(60), dbListMaxHeight()]`，内部滚动，**展开不得撑大对话框**（见 13.4）。
-6. **进度区**：用 `setupProgressSection()`；注意其创建的进度条**默认隐藏**——下载/推理开始处必须显式 `m_progress->setVisible(true)`（qFaceDetect/qLightGlue 的既有模式），否则进度条永远不可见。
+1. **DPI-aware**: `setMinimumSize` / thumbnail sizes / list heights / button widths all use `ecvAICoreUi::dpiScaled()`; bare pixels forbidden.
+2. **Compact**: page layouts use `setupTabLayout()` (margin 4px / spacing 4px); group boxes use `tightenGroupBox()` (QSizePolicy::Maximum + compact margins) so boxes hug their content.
+3. **Forms**: every QGridLayout uses `setupFormGrid()` (fixed label column width, field column stretch=1), labels via `makeLabel()` for left-aligned vertical centering.
+4. **Unified look**: sample-data buttons must use `makeSampleDataBtn()` (teal `#00897b`); browse buttons must use `makeBrowseBtn()`; spinboxes must use `setCompactSpin*()`. Custom palettes forbidden.
+5. **DB input area**: use `makeDbSection()` + `connectDbToggle()` for the collapse section; list height clamped to `[dpiScaled(60), dbListMaxHeight()]` with internal scrolling; **expanding must not grow the dialog** (see 13.4).
+6. **Progress section**: use `setupProgressSection()`; note its progress bar is **hidden by default** — you must explicitly call `m_progress->setVisible(true)` where download/inference starts (the existing qFaceDetect/qLightGlue pattern), otherwise the bar never shows.
 
-### 13.3 输入预览与点击放大（强制）
+### 13.3 Input Preview and Click-to-Enlarge (mandatory)
 
-- preview 控件用 `ecvClickableImageLabel`；**必须调用 `setPreviewImage(img, size)`（或 `setPreviewPixmap`）而非裸 `setPixmap`**——点击放大依赖内部 `m_fullImage`，裸 `setPixmap` 时点击无反应。
-- **DB entity 输入（`db://EntityName`）必须同样支持放大**：`setDbImages()` 时把完整分辨率图像存入 item role（`Qt::UserRole + 1`），`updateImagePreview()` 遇到 `db://` 前缀时从 role 取图再 `setPreviewImage`。参考 qDeepLSD / qLightGlue 的既有实现；qDA3（QComboBox）用 `setItemData(idx, img, role)` 存图。
-- 目录 / 多文件输入：取第一张图做预览。
+- Preview widgets use `ecvClickableImageLabel`; **call `setPreviewImage(img, size)` (or `setPreviewPixmap`) instead of bare `setPixmap`** — click-to-enlarge depends on the internal `m_fullImage`; bare `setPixmap` makes clicks dead.
+- **DB entity input (`db://EntityName`) must support enlarge too**: in `setDbImages()` store the full-resolution image in an item role (`Qt::UserRole + 1`); in `updateImagePreview()` when the path has a `db://` prefix, fetch from the role and call `setPreviewImage`. See the existing qDeepLSD / qLightGlue implementations; qDA3 (QComboBox) stores images via `setItemData(idx, img, role)`.
+- Directory / multi-file inputs: use the first image for the preview.
 
 ```cpp
-// setDbImages 中：
+// in setDbImages:
 item->setData(Qt::UserRole, e.name);
-item->setData(kDbFullImageRole, e.preview);  // 完整分辨率图
+item->setData(kDbFullImageRole, e.preview);  // full-resolution image
 
-// updateImagePreview 中：
+// in updateImagePreview:
 if (path.startsWith(QLatin1String("db://"))) {
-    // 从列表 item 的 kDbFullImageRole 取图 → setPreviewImage
+    // fetch from the list item's kDbFullImageRole → setPreviewImage
 } else {
     img = QImage(path);
 }
 ```
 
-### 13.4 对话框尺寸与自适应（防放大 / 防松散）
+### 13.4 Dialog Sizing and Self-Adaptation (no growth / no looseness)
 
-1. **主 layout 设 `QLayout::SetNoConstraint`**：QDialog 默认 minimum-size 约束会让窗口跟随内容 minimumSizeHint 自动变大——DB 折叠区展开、tab 切换、状态文本变化都会撑大对话框、显得松散。设 NoConstraint 后窗口尺寸由首次 sizeHint 决定一次，内容变化不再撑大窗口。
-2. **首次显示固定尺寸**：`showEvent` 中（`m_firstShow` 标志）同步 `adjustSize()`——Qt 在发 Show 事件前已完成布局，此时 sizeHint 纯净。
-3. **Tab 高度管理**（多 tab 且含视频/长表单的对话框，参考 qFaceDetect / qFreeSplatter）：
-   - 首次 `showEvent` **同步**测量 `m_baseChrome = height() - tabWidget->height()`（用 minimumSizeHint 差值或延迟 singleShot 都会算错/输给 X11 窗口映射）；
-   - tab 切换时 `resize(width, qBound(min, baseChrome + tabContentSizeHint, available-20))`，targetHeight = tabBar + 内容 sizeHint；
-   - `ScreenChangeInternal`（跨屏 DPI）重新测量 chrome；
-   - 公式严禁混用 minimum-based 与 sizeHint-based 数值（历史教训：每次切 tab 膨胀 230~600px）。
-4. **视频预览必须有高度上限**（见 13.5 陷阱 1），否则"自适应"会变成"无限放大"。
+1. **Main layout uses `QLayout::SetNoConstraint`**: QDialog's default minimum-size constraint makes the window follow content minimumSizeHint and grow automatically — expanding the DB section, switching tabs, or status-text changes all inflate the dialog. With NoConstraint the window size is decided once by the first sizeHint and content changes no longer grow it.
+2. **Fix the size on first show**: in `showEvent` (guarded by an `m_firstShow` flag) call `adjustSize()` synchronously — Qt has finished layout before the Show event, so the sizeHint is clean at that point.
+3. **Tab height management** (dialogs with multiple tabs and video/long forms, see qFaceDetect / qFreeSplatter):
+   - On first `showEvent`, measure `m_baseChrome = height() - tabWidget->height()` **synchronously** (minimumSizeHint deltas or delayed singleShot both miscompute / lose to X11 window mapping);
+   - On tab switch: `resize(width, qBound(min, baseChrome + tabContentSizeHint, available-20))`, targetHeight = tabBar + content sizeHint;
+   - Re-measure chrome on `ScreenChangeInternal` (cross-screen DPI);
+   - Never mix minimum-based and sizeHint-based numbers in the formulas (historical lesson: each tab switch inflated the dialog by 230~600px).
+4. **Video previews must have a height cap** (see 13.5 pitfall 1), otherwise "self-adaptation" becomes "infinite growth".
 
-### 13.5 常见陷阱（真实 Bug 沉淀）
+### 13.5 Common Pitfalls (real bug sediment)
 
-1. **视频预览无上限 → UI 无限放大（qFreeSplatter 回归）**：
-   - 反馈环：每帧 `setPixmap` → QLabel `sizeHint`=pixmap 尺寸 → `QScrollArea(widgetResizable)` 按 sizeHint 增长 widget → preview 实际变高 → 下一帧 pixmap 按更大 label 缩放 → 循环。纯内部收敛，但**外部窗口扰动（WM 微调/DPI/远程桌面）一旦放大就被 1:1 永久保留、永不回落**，表现为"播放视频时整个 UI 不断放大"。
-   - 修复：`updatePreviewHeightCap()`（video_base）adaptive 分支必须 `setMaximumHeight(dpiScaled(560))`；`m_faceCaptureScroll->setMaximumHeight(dpiScaled(560))`；`adaptTabWidgetHeight()` 的 contentHeight 再 `min(..., dpiScaled(560))`。上限要 > 16:9 minimum 给 stretch 留弹性，否则重新引入"大空白"（见陷阱 3）。
-2. **QBoxLayout 压缩 + setGeometry clamp 导致控件重叠**：外层容器高度被 `setFixedHeight` 锁死时，内容增长（如 videoControlsRow 从隐藏变可见）后布局按比例压缩控件；若某控件有显式 minimumHeight，`setGeometry` 会 clamp 回 minimum，导致后续控件 y 偏移重叠。排查：先检查"布局计算几何"与"setGeometry 后实际几何"是否一致；修复：用 `setMinimumHeight` + Expanding 替代 `setFixedHeight`，内容可见性变化时宿主重新测量。
-3. **preview 设 maximumHeight → 大空白**：QVBoxLayout 会把被 cap 截断的剩余空间分给其它 Preferred 控件（input 行/statusLabel 被拉高），出现"大空白"。必须让唯一 stretch 的 preview 独占剩余空间：不设 max（或 max 很大），其他控件保持自然高度。
-4. **DB 组件撑大首页 tab**：list 高度无边或对话框跟随 minimumSizeHint 自动变大。修复：list 限高 + 主 layout `SetNoConstraint`（见 13.4）。
-5. **preview 点击无放大**：见 13.3——裸 `setPixmap` 或 DB 输入未存 full image。
+1. **Uncapped video preview → UI grows unboundedly (qFreeSplatter regression)**:
+   - Feedback loop: per-frame `setPixmap` → QLabel `sizeHint` = pixmap size → `QScrollArea(widgetResizable)` grows the widget per sizeHint → preview gets taller → next frame's pixmap scales to the bigger label → loop. Internally convergent, but **any external window perturbation (WM tweaks/DPI/remote desktop) that enlarges it is retained 1:1 forever** — "the whole UI keeps growing while playing video".
+   - Fix: `updatePreviewHeightCap()` (`video_base/src/VideoPlaybackWidget.cpp:1291-1316`) adaptive branch must `m_previewLabel->setMaximumHeight(ecvAICoreUi::dpiScaled(560))` (L1314); `m_faceCaptureScroll->setMaximumHeight(dpiScaled(560))`; `adaptTabWidgetHeight()` contentHeight additionally `min(..., dpiScaled(560))`. The cap must be > 16:9 minimum to leave stretch room, otherwise the "big blank" returns (see pitfall 3).
+   - Verify: `rg -n "dpiScaled\(560\)" plugins/core/Standard/video_base plugins/core/Standard/qFaceDetect` should hit the 3 places above.
+2. **QBoxLayout compression + setGeometry clamp → overlapping widgets**: when an outer container height is locked by `setFixedHeight`, content growth (e.g. videoControlsRow going from hidden to visible) makes the layout compress widgets proportionally; a widget with an explicit minimumHeight is clamped back by `setGeometry`, shifting later widgets' y and overlapping them. Debug: check whether "layout-computed geometry" and "post-setGeometry actual geometry" agree; fix: replace `setFixedHeight` with `setMinimumHeight` + Expanding and re-measure the host when content visibility changes.
+3. **maximumHeight on the preview → big blank**: QVBoxLayout hands the space clipped from the capped widget to other Preferred widgets (input row/statusLabel get stretched), producing a "big blank". The single stretch preview must own the remaining space exclusively: don't cap it (or cap very high), keep other widgets at natural height.
+4. **DB components inflate the first tab**: list height unbounded or the dialog follows minimumSizeHint. Fix: clamp the list height + `SetNoConstraint` on the main layout (see 13.4).
+5. **Preview click does not enlarge**: see 13.3 — bare `setPixmap` or DB input without the stored full image.
 
 ---
 
-## 14. 跨平台编译兼容性（强制）
+## 14. Cross-Platform Compilation Compatibility (mandatory)
 
-新代码在 Linux 上能编译**不代表**三平台都能过。三平台编译器对同一段代码的行为差异（全部来自真实 CI 事故）：
+Compiling on Linux does **not** mean all three platforms pass. Compiler behavior differences (all from real CI incidents):
 
-| 平台 | 编译器 | 关键行为 | 事故案例 |
+| Platform | Compiler | Key behavior | Incident |
 |---|---|---|---|
-| macOS | AppleClang | GNU 扩展**默认即 error**（无需 -Werror），如 void* 指针算术 | qSAM3 的 `mask.data + offset` 编译失败 |
-| Windows | MSVC | `__attribute__` 不认识（C3646 连锁报错）；POSIX 函数缺失（C3861）；/W4 /WX- 警告不中断 | rfdetr 一行属性 → 8 个文件报错；sam3 4 处 strncasecmp |
-| Linux | GCC/Clang | 最宽松，GNU 扩展仅告警 | —— |
+| macOS | AppleClang | GNU extensions are **errors by default** (no -Werror needed), e.g. void* pointer arithmetic | qSAM3's `mask.data + offset` failed to compile |
+| Windows | MSVC | `__attribute__` unknown (C3646 cascade); POSIX functions missing (C3861); /W4 /WX- warnings don't break | one attribute in rfdetr → 8 files failed; 4 strncasecmp uses in sam3 |
+| Linux | GCC/Clang | most permissive; GNU extensions only warn | —— |
 
-### 14.1 void* 指针算术（macOS 必炸）
+### 14.1 void* Pointer Arithmetic (breaks on macOS)
 
-对 `const void*`（如 `aicore_<task>_plane_view::data`）做 `+`/`-`/`[]` 是 GNU 扩展：Linux 仅告警，**AppleClang 默认 error** `arithmetic on a pointer to void`。
+`+`/`-`/`[]` on `const void*` (e.g. `aicore_<task>_plane_view::data`) is a GNU extension: Linux only warns, **AppleClang errors by default** with `arithmetic on a pointer to void`.
 
 ```cpp
-// 错误：mask.data 是 const void*
+// wrong: mask.data is const void*
 memcpy(m.scanLine(y), mask.data + y * mask.row_stride_bytes, w);
 
-// 正确：先 cast 再做偏移；偏移量用 size_t；显式 #include <cstdint>
+// correct: cast first, size_t offsets, explicit #include <cstdint>
 memcpy(m.scanLine(y),
        static_cast<const uint8_t*>(mask.data) +
                static_cast<size_t>(y) * mask.row_stride_bytes,
        static_cast<size_t>(mask.width));
 ```
 
-参考先例：`plugins/core/Standard/qYOLO/src/YOLOWorker.cpp`（cast 后给 QByteArray）、`core/AICore/src/tasks/sam3/sam3_capi.cpp` tracker 内部（cast uint8_t* 后逐行 memcpy）。
+Precedents: `plugins/core/Standard/qYOLO/src/YOLOWorker.cpp` (casts then feeds QByteArray), the tracker internals of `core/AICore/src/tasks/sam3/sam3_capi.cpp` (casts to uint8_t* then memcpy row by row).
 
-### 14.2 `__attribute__` 裸用（Windows 必炸）
+### 14.2 Bare `__attribute__` (breaks on Windows)
 
-所有 `__attribute__((...))` 必须加编译器守卫，否则 MSVC 报 `C3646: '__attribute__': unknown override specifier` + 一串 C2059/C2143 连锁错误（同一头文件被 N 个源文件 include 就会报 N 份）。
+All `__attribute__((...))` must have a compiler guard, otherwise MSVC reports `C3646: '__attribute__': unknown override specifier` plus a C2059/C2143 cascade (one header included by N source files = N error dumps).
 
 ```cpp
 void rfdetr_logf(rfdetr_log_level lvl, const char* fmt, ...)
@@ -681,31 +810,29 @@ void rfdetr_logf(rfdetr_log_level lvl, const char* fmt, ...)
         ;
 ```
 
-- 参考先例：`core/AICore/include/aicore/runtime_capi.h` 的 `AICORE_LEGACY_API` 三分支（`_MSC_VER` → `__declspec` / `__GNUC__||__clang__` → `__attribute__` / else 空）
-- 函数 multiversioning 的 `__attribute__((target("avx512...")))` 除编译器守卫外，还需 ISA 宏门控（参考 `facedetect/winograd.cpp` / `directconv.cpp` 的 `FD_WINO_AVX512_TARGET` 模式：`FACEDETECT_*_AVX512 && __AVX2__ && (__GNUC__ || __clang__)`）
-- `__declspec` 同理：只允许在 `#ifdef _WIN32` 分支内使用
+- Precedent: the `AICORE_LEGACY_API` three-branch macro in `core/AICore/include/aicore/runtime_capi.h` (`_MSC_VER` → `__declspec` / `__GNUC__||__clang__` → `__attribute__` / else empty)
+- Function multiversioning `__attribute__((target("avx512...")))` additionally needs ISA macro gating (see the `FD_WINO_AVX512_TARGET` pattern in `facedetect/winograd.cpp` / `directconv.cpp`: `FACEDETECT_*_AVX512 && __AVX2__ && (__GNUC__ || __clang__)`)
+- `__declspec` likewise: only inside `#ifdef _WIN32` branches
 
-### 14.3 POSIX 函数与头文件（Windows 必炸）
+### 14.3 POSIX Functions and Headers (breaks on Windows)
 
-项目 CMake 对 WIN32 target 全局定义 `_CRT_NONSTDC_NO_DEPRECATE`（`cmake/CloudViewerSetGlobalProperties.cmake`）→ **MSVC 头文件不声明任何无下划线 POSIX 名**，直接用必报 C3861。常用替换表：
+The project CMake defines `_CRT_NONSTDC_NO_DEPRECATE` globally for WIN32 targets (`cmake/CloudViewerSetGlobalProperties.cmake`) → **MSVC headers do not declare any underscore-less POSIX names**; direct use fails with C3861. Common replacement table:
 
-| POSIX | MSVC 等价 | 仓库先例 |
+| POSIX | MSVC equivalent | Repo precedent (verifiable) |
 |---|---|---|
-| `strncasecmp` / `strcasecmp` | `_strnicmp` / `_stricmp` | `sam3.cpp`（`#ifdef _WIN32` 宏映射，定义在所有 include 之后） |
-| `strdup` | `_strdup` | 4 个 `model_catalog.cpp` 的 `dupString()` 包装 |
-| `usleep(us)` | `::Sleep(ms)`（注意 µs→ms） | app/插件 7 处 `#if defined(CV_WINDOWS)` 分支 |
-| `localtime_r` / `gmtime_r` | `localtime_s` / `gmtime_s`（参数顺序不同） | `core/src/Helper.cpp` |
-| `mkstemp` | `_mktemp` | PoissonRecon/Geometry.cpp |
-| `gettimeofday` | `_ftime` | PoissonRecon/MyTime.h |
-| `getpid` | `_getpid` | `ecvConsole.cpp`（`#define getpid _getpid`） |
-| `mkdir(path, mode)` | `_mkdir(path)` | `sam3.cpp` 已有宏先例 |
-| `fdopen(fd, ...)` | `std::fopen` 直接打开 | `depth/ply_export.cpp` 的 `#else` 分支 |
+| `strncasecmp` / `strcasecmp` | `_strnicmp` / `_stricmp` | `core/AICore/src/tasks/sam3/sam3.cpp:64-69` (`#ifdef _WIN32` macro mapping, defined after all includes) |
+| `strdup` | `_strdup` | the `dupString()` wrappers in 4 `model_catalog.cpp` files (yolo/rmbg/rfdetr/trellis, all `#ifdef _MSC_VER` three-branch) |
+| `usleep(us)` | `::Sleep(ms)` (note µs→ms) | app/ecvContourExtractorDlg.cpp:144-146, app/ecvDeepSemanticSegmentationTool.cpp:383-385, app/ecvPoissonReconDlg.cpp:251-253 (`#if defined(CV_WINDOWS)` / `#else` branches) |
+| `localtime_r` / `gmtime_r` | `localtime_s` / `gmtime_s` (different argument order) | `core/src/Helper.cpp:288-293` |
+| `getpid` | `_getpid` | `app/ecvConsole.cpp:46-48` (`#define getpid _getpid`) |
+| `mkdir(path, mode)` | `_mkdir(path)` | `core/AICore/src/tasks/sam3/sam3.cpp:33-39` (`#define mkdir(path, mode) _mkdir(path)`) |
+| `fdopen(fd, ...)` | `std::fopen` directly | the `#else` branch of `core/AICore/src/tasks/depth/ply_export.cpp:23-31` |
 
-无 Windows 等价物的 POSIX 头必须平台分支：`unistd.h`、`dirent.h`、`strings.h`、`pthread.h`、`sys/time.h`、`sys/sysinfo.h`、`sys/sysctl.h`、`dlfcn.h`、`mach/mach.h`——`#ifdef _WIN32` / `__APPLE__` / `__linux__` 三分支，参考 `core/AICore/src/common/ggml_backend_utils.hpp` 的 dlfcn/windows.h 分支。
+POSIX headers with no Windows equivalent must be platform-branched: `unistd.h`, `dirent.h`, `strings.h`, `pthread.h`, `sys/time.h`, `sys/sysinfo.h`, `sys/sysctl.h`, `dlfcn.h`, `mach/mach.h` — `#ifdef _WIN32` / `__APPLE__` / `__linux__` three-way, following the dlfcn/windows.h branch in `core/AICore/src/common/ggml_backend_utils.hpp`.
 
-### 14.4 命令行已定义宏不要重复 `#define`（Windows C4005）
+### 14.4 Don't Re-`#define` Command-Line Macros (Windows C4005)
 
-`_USE_MATH_DEFINES`、`__STDC_LIMIT_MACROS`、`NOMINMAX`、`_CRT_SECURE_NO_WARNINGS` 已由全局 compile definitions 提供（`cmake/CMakeSetCompilerOptions.cmake` / `cmake/CloudViewerSetGlobalProperties.cmake`），源码中**不要**再写 `#define _USE_MATH_DEFINES`（会报 C4005 macro redefinition）。确需本地定义时用：
+`_USE_MATH_DEFINES`, `__STDC_LIMIT_MACROS`, `NOMINMAX`, `_CRT_SECURE_NO_WARNINGS` are provided by global compile definitions (`cmake/CMakeSetCompilerOptions.cmake` / `cmake/CloudViewerSetGlobalProperties.cmake`); **do not** write `#define _USE_MATH_DEFINES` in sources (triggers C4005 macro redefinition). When a local define is genuinely needed:
 
 ```cpp
 #ifndef _USE_MATH_DEFINES
@@ -713,104 +840,104 @@ void rfdetr_logf(rfdetr_log_level lvl, const char* fmt, ...)
 #endif
 ```
 
-`M_PI` 等数学常量由全局 `_USE_MATH_DEFINES` 保证，直接使用，不需要也不应重复定义。
+Math constants like `M_PI` are guaranteed by the global `_USE_MATH_DEFINES`; use them directly, never redefine.
 
-### 14.5 Qt 版本兼容（Qt5/Qt6，强制）
+### 14.5 Qt Version Compatibility (Qt5/Qt6, mandatory)
 
-项目同时支持 Qt 5.12+ 与 Qt 6.2+。**凡是 Qt5/Qt6 行为差异的 API，必须走兼容层 `core/include/QtCompat.h`**（CVCoreLib 公共头，`#include <QtCompat.h>`），禁止在插件内直接调用差异 API 或各自写 `#if QT_VERSION` 分支。
+The project supports both Qt 5.12+ and Qt 6.2+. **Any API that behaves differently between Qt5 and Qt6 must go through the compatibility layer `core/include/QtCompat.h`** (CVCoreLib public header, `#include <QtCompat.h>`); calling divergent APIs directly or writing per-plugin `#if QT_VERSION` branches is forbidden.
 
-常用替代对照表（QtCompat.h 已覆盖 14 类）：
+Common replacements (QtCompat.h covers 14 categories):
 
-| Qt5-only（Qt6 移除/废弃） | 统一兼容写法 |
+| Qt5-only (removed/deprecated in Qt6) | Unified compatible form |
 |---|---|
 | `QRegExp` / `QString::split(QRegExp)` | `QtCompatRegExp` / `qtCompatSplit` / `qtCompatSplitRegex` / `qtCompatReplace` / `QtCompatRegExpWrapper` |
-| `QString::SkipEmptyParts` | `QtCompat::SkipEmptyParts`（`QtCompat::KeepEmptyParts`） |
+| `QString::SkipEmptyParts` | `QtCompat::SkipEmptyParts` (`QtCompat::KeepEmptyParts`) |
 | `QStringRef` / `midRef` / `splitRef` | `QtCompatStringRef` / `qtCompatStringRef*` / `qtCompatSplitRef*` |
-| `QTextCodec::codecForLocale()` | `qtCompatCodecForLocale()`（类型 `QtCompatQTextCodec`） |
+| `QTextCodec::codecForLocale()` | `qtCompatCodecForLocale()` (type `QtCompatQTextCodec`) |
 | `QTextStream::endl` | `QtCompat::endl` / `QTCOMPAT_ENDL` |
 | `QFontMetrics::width(text)` | `QTCOMPAT_FONTMETRICS_WIDTH(fm, text)` |
 | `QWheelEvent::delta()` / `pos()` | `qtCompatWheelEventDelta` / `qtCompatWheelEventPos` |
 | `QMouseEvent::pos()` / `globalPos()` | `qtCompatMouseEventPos*` / `qtCompatMouseEventGlobalPos*` |
 | `QDropEvent::pos()` | `qtCompatDropEventPos*` |
 | `QMap::insertMulti()` / `unite()` | `qtCompatMapInsertMulti` / `qtCompatMapUnite` |
-| `QVariant::type()` / `var.type() == QVariant::String` | `qtCompatVariantType` / `qtCompatVariantIsString` 等 |
+| `QVariant::type()` / `var.type() == QVariant::String` | `qtCompatVariantType` / `qtCompatVariantIsString` etc. |
 | `QPlainTextEdit::setTabStopWidth()` | `qtCompatSetTabStopWidth` |
 | `QSet<T>(begin,end)` / `QVector<T>(begin,end)` | `qtCompatQSetFromVector` / `qtCompatQVectorFromSet` |
 | `QAtomicInteger::load()/store()` | `qtCompatLoadRelaxed` / `qtCompatStoreRelaxed` |
 
-规则：
+Rules:
 
-1. **优先扩展 QtCompat.h 而非局部 `#if`**：新遇到的 Qt5/Qt6 差异 API，先给 `QtCompat.h` 增量添加 `qtCompat*` helper（一处封装、全局复用），禁止在多个插件各写一份 `#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)` 分支。
-2. **QtCompat.h 中 mouse/wheel/drop/plaintextedit 部分依赖 QtWidgets**：AICore 核心（`core/AICore`，只链接 Qt::Core + Qt::Gui）只使用 regex/split/stringref/endl/variant/map 等 Core 部分；插件层（链接 QtWidgets）可全量使用。
-3. **QtCompat.h 未覆盖的 API** 才允许局部 `#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)` 分支（参考 `app/ecvUIManager.cpp` 的既有模式），并注释差异原因。
-4. `QString`/`QList` 等隐式共享容器在 Qt6 的 API 变化（如 `QVector` → `QList` 别名）优先用 QtCompat 包装，不做裸容器迁移。
+1. **Extend QtCompat.h rather than local `#if`**: when a new Qt5/Qt6 divergent API appears, add a `qtCompat*` helper to `QtCompat.h` incrementally (one wrapper, globally reused); writing separate `#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)` branches in multiple plugins is forbidden.
+2. **The mouse/wheel/drop/plaintextedit parts of QtCompat.h depend on QtWidgets**: the AICore core (`core/AICore`, linking only Qt::Core + Qt::Gui) uses only the Core parts (regex/split/stringref/endl/variant/map); the plugin layer (linking QtWidgets) may use everything.
+3. APIs **not covered by QtCompat.h** may use a local `#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)` branch (see the existing pattern in `app/ecvUIManager.cpp`), with a comment explaining the difference.
+4. Implicitly-shared containers (`QString`/`QList`) whose Qt6 API changed (e.g. `QVector` → `QList` alias) should be wrapped via QtCompat rather than bare container migration.
 
-### 14.6 提交前跨平台自检命令
+### 14.6 Pre-Commit Cross-Platform Self-Check Commands
 
 ```bash
-# macOS 必炸：void* 算术/下标（应只命中已 cast 的安全用法）
+# macOS breaker: void* arithmetic/subscript (should only hit already-cast safe uses)
 rg -n '\.data\s*[+\-]|->data\s*[+\-]' core/AICore/src plugins/core/Standard/q<task>/ | rg -v 'static_cast<const uint8_t|static_cast<const char'
 
-# Windows 必炸：裸 __attribute__（应全部紧邻 #if/#else/#elif 守卫）
+# Windows breaker: bare __attribute__ (should all sit next to #if/#else/#elif guards)
 rg -n '__attribute__' core/AICore/src plugins/core/Standard/q<task>/ | rg -v '#if|#else|#elif|#endif'
 
-# Windows 必炸：POSIX 函数无 _WIN32/_MSC_VER 分支
+# Windows breaker: POSIX functions without _WIN32/_MSC_VER branches
 rg -n '\b(strncasecmp|strcasecmp|strdup|usleep|localtime_r|gmtime_r|gettimeofday|mkstemp)\s*\(' core/AICore/src plugins/core/Standard/q<task>/
 
-# 重复定义命令行宏
+# redefining command-line macros
 rg -n '^\s*#define\s+(_USE_MATH_DEFINES|__STDC_LIMIT_MACROS|NOMINMAX|_CRT_SECURE_NO_WARNINGS)' core/AICore/src plugins/core/Standard/q<task>/
 
-# Qt5-only API 直接调用（应走 QtCompat.h 兼容层）
+# Qt5-only API direct calls (should go through QtCompat.h)
 rg -n 'QRegExp|QString::SkipEmptyParts|QStringRef|QTextCodec|QTextStream::endl|QFontMetrics.*\.width\(|QWheelEvent.*->delta\(\)|QMouseEvent.*->pos\(\)|insertMulti\(' core/AICore/src plugins/core/Standard/q<task>/
 ```
 
-### 14.7 排错要点
+### 14.7 Troubleshooting Notes
 
-- **Windows 日志大量 error 常是同一根因连锁**（一个头文件 × 多个 TU 报同一行）：先定位首个根因文件/行，不要逐条修
-- 修复后 IDE（clangd）可能仍报误错：`compile_commands.json` 的平台与当前系统不一致时（如 build_app 是 Windows 配置、本机是 macOS），用本机重新 configure 即可消除
-- 三平台 CI 都要跑：Linux 最宽松，**不能**作为唯一通过标准
+- **A flood of Windows errors is usually one root cause cascading** (one header × N translation units reporting the same line): locate the first root-cause file/line; don't fix entries one by one
+- After a fix, IDE (clangd) errors may persist (deterministic case): when `compile_commands.json` was configured for a different platform than the current machine (e.g. build_app configured for Windows, local machine macOS), clangd necessarily misresolves headers. Verify: compare `rg -n '"platform"' build_app/compile_commands.json | head -1` with the current system; reconfigure locally to clear it.
+- All three platform CIs must run: Linux is the most permissive and **cannot** be the only pass criterion
 
 ---
 
-## 15. 检查清单（新任务接入用）
+## 15. Checklist (for onboarding a new task)
 
-新增一个 AICore task 并配套插件时，逐项确认：
+When adding a new AICore task with a companion plugin, confirm each item:
 
-- [ ] `include/aicore/<task>_capi.h` 定义了 `aicore_<task>_abi_version`
-- [ ] 所有输出内存统一用 `aicore_<task>_free_buffer` 释放
-- [ ] 长参数列表（>6 个入参）封装为 struct
-- [ ] options 使用 builder 模式，所有 setter 支持 NULL no-op
-- [ ] shutdown 函数执行真实清理（调用 `purge_inactive_backend_leases`）
-- [ ] 所有日志走 `AICORE_LOG_*` 宏（无 `fprintf`）
-- [ ] ggml 保持 v0.18.1，patch 在现有 manifest 重放后生成，其他模块 contract 测试全绿
-- [ ] 提供 "Try sample data" 按钮（teal 样式），复用 ecvTestDataRepository（ObjectsDetection/Monstree/FriendsFaces）
-- [ ] **UI 复用 `ecvAICoreUiHelper.h`**（setupTabLayout/setupFormGrid/makeLabel/makeSampleDataBtn/makeBrowseBtn/makeRuntimeRow/makeDbSection/setupProgressSection），无本地重复 helper 与魔法像素
-- [ ] **对话框主 layout 设 `SetNoConstraint` + showEvent 首次 adjustSize**（DB 展开/tab 切换不撑大窗口）
-- [ ] **preview 用 `ecvClickableImageLabel` + `setPreviewImage`**，DB 输入（`db://`）存 full image 到 item role 并支持点击放大
-- [ ] **视频预览有高度上限**（`updatePreviewHeightCap` adaptive 分支 max + scroll max + tab 高度钳制，防反馈环无限放大）
-- [ ] 所有像素尺寸经 `ecvAICoreUi::dpiScaled()`，无裸硬编码
-- [ ] 无 getenv/setenv 逻辑控制（仅 ggml_env_bridge / CLOUDVIEWER_DATA_ROOT 两处例外）
-- [ ] 未引入仓库已有能力覆盖的第三方模块（stb 验证：`rg -n "stb_image" core/AICore/src plugins/` 零命中）
-- [ ] include 使用模块根绝对路径（无 `../`、无裸文件名）
-- [ ] 命名与 AICore 一致（snake_case 函数、PascalCase 类型）
-- [ ] 零拷贝设计：输入借用、缓冲复用、无中间物化
-- [ ] 权重只上传一次，host 副本可释放；实时场景 `keep_graph_buffers` 按需设置
-- [ ] CMakeLists.txt 在 `core/AICore/CMakeLists.txt` 注册 task
-- [ ] `tests/<task>/test_<task>_capi_contract.cpp` 覆盖所有公开 API
+- [ ] `include/aicore/<task>_capi.h` defines `aicore_<task>_abi_version`
+- [ ] all output memory is freed via the single `aicore_<task>_free_buffer`
+- [ ] long parameter lists (>6 inputs) are encapsulated in structs
+- [ ] options use the builder pattern; every setter is a NULL no-op
+- [ ] shutdown performs real cleanup (calls `purge_inactive_backend_leases`)
+- [ ] inference/business-path logging uses `AICORE_LOG_*` macros (`fprintf(stderr)` only in the 5 exception categories of section 7: macro fallback / NDEBUG diagnostics / options-gated profile output / CLI tools / upstream legacy)
+- [ ] ggml stays at v0.18.1; patches generated after replaying the existing manifest; other modules' contract tests all green
+- [ ] "Try sample data" button (teal style) reuses ecvTestDataRepository (ObjectsDetection/Monstree/FriendsFaces/Image2Mesh, see section 12)
+- [ ] **UI reuses `ecvAICoreUiHelper.h`** (setupTabLayout/setupFormGrid/makeLabel/makeSampleDataBtn/makeBrowseBtn/makeRuntimeRow/makeDbSection/setupProgressSection); no local duplicate helpers or magic pixels
+- [ ] **main dialog layout is `SetNoConstraint` + first-show adjustSize** (DB expand/tab switch must not grow the window)
+- [ ] **preview uses `ecvClickableImageLabel` + `setPreviewImage`**; DB input (`db://`) stores the full image in an item role and supports click-to-enlarge
+- [ ] **video preview has a height cap** (`updatePreviewHeightCap` adaptive-branch max + scroll max + tab height clamp, preventing the feedback-loop infinite growth)
+- [ ] all pixel sizes go through `ecvAICoreUi::dpiScaled()`; no bare hardcoding
+- [ ] no getenv/setenv logic control (only `data_root_util.cpp` / `ggml_env_bridge.cpp`; verify: `bash core/AICore/tests/check_no_env_getenv.sh core/AICore/src` or `ctest -R test_no_env_getenv`)
+- [ ] no third-party modules covering capabilities the repo already has (stb check: `rg -n 'STB_IMAGE_IMPLEMENTATION|#include [<"](stb_image|stb_image_write|stb_image_resize)' core/AICore/src` zero hits; comments don't count)
+- [ ] includes use module-root absolute paths (no `../`, no bare filenames)
+- [ ] naming consistent with AICore (snake_case functions, PascalCase types)
+- [ ] zero-copy design: borrowed inputs, buffer reuse, no intermediate materialization
+- [ ] weights uploaded once; host copies releasable; `keep_graph_buffers` set per real-time need
+- [ ] CMakeLists.txt registers the task per the 4 steps of section 9 (`AICORE_<TASK>_SRC_DIR` + `file(GLOB ...)` + existence `FATAL_ERROR` + `add_library` source list + PRIVATE include dirs; no `add_subdirectory`)
+- [ ] `tests/<task>/test_<task>_capi_contract.cpp` covers all public APIs
 - [ ] `python3 core/AICore/tests/check_capi_coverage.py` >= 95%
-- [ ] 如果修改 ggml 源码，patch 文件放入 `3rdparty/ggml/patches/` 并注册 `manifest.yaml`
-- [ ] 非 ABI 兼容变更递增 `aicore_<task>_abi_version`
-- [ ] **跨平台（第 14 章）**：无 void* 指针算术/下标（plane_view.data 先 cast `uint8_t*` 再偏移，偏移量用 size_t）
-- [ ] **跨平台**：无裸 `__attribute__` / `__declspec`（`#if defined(__GNUC__) || defined(__clang__)` / `#ifdef _WIN32` 守卫）
-- [ ] **跨平台**：POSIX 函数与头文件均有平台分支（strncasecmp/strdup/usleep/localtime_r/gettimeofday/mkstemp 等，见 14.3 替换表）
-- [ ] **跨平台**：不重复 `#define` 命令行已定义宏（`_USE_MATH_DEFINES`/`__STDC_LIMIT_MACROS`/`NOMINMAX` 等）
-- [ ] **Qt 兼容（14.5）**：Qt5/Qt6 差异 API 走 `QtCompat.h` 兼容层（`QtCompatRegExp`/`QtCompat::SkipEmptyParts`/`qtCompatCodecForLocale`/`QtCompat::endl` 等），无插件内裸 `#if QT_VERSION` 分支
-- [ ] **Qt 兼容**：新发现的 Qt 差异 API 已增量扩展进 `core/include/QtCompat.h`，而非局部处理
-- [ ] **Qt 兼容**：避免 `QSet<T>(begin, end)` 迭代器范围构造（Qt 5.12 不提供），改用 `QSet<T> s; for(auto& v : src) s.insert(v);`
-- [ ] **Qt 兼容**：AICore 核心未使用 QtCompat.h 中依赖 QtWidgets 的部分（mouse/wheel/drop/plaintextedit）
-- [ ] **跨平台**：已跑 14.6 自检命令且三平台 CI 全绿（Linux 通过不算完成）
-- [ ] **跨平台**：lambda 必须有显式捕获模式（MSVC 拒绝隐式捕获 `constexpr` 局部变量，需 `[A]` 或 `[=]`）
-- [ ] **跨平台**：MSVC 上 `/openmp` + `/openmp:experimental` 同时存在触发 D9025，需从上游 INTERFACE 剥离标准 `/openmp`（见 `AICore/CMakeLists.txt` MSVC 分支处理模式）
-- [ ] **插件文档**：`plugins/core/Standard/<Plugin>/models/MODEL_CARD.md` 已创建，所有支持模型逐条列出（文件名、大小、量化类型、推荐用途）
-- [ ] **插件文档**：`README.md` 已引用 `models/MODEL_CARD.md` 完整模型目录
-- [ ] **测试注册**：新测试若不在 AICore 构建树内，必须加 `LABELS` 属性并排除于 `aicore-fast-tests`（`-LE "model|gpu|e2e|cvpluginapi"`）
+- [ ] if ggml sources are modified, the patch goes into `3rdparty/ggml/patches/<subdir>/` and is registered in `manifest.yaml` (currently 14 patches, see section 8)
+- [ ] non-ABI-compatible changes bump `aicore_<task>_abi_version`
+- [ ] **cross-platform (section 14)**: no void* arithmetic/subscript (cast plane_view.data to `uint8_t*` first, size_t offsets)
+- [ ] **cross-platform**: no bare `__attribute__` / `__declspec` (`#if defined(__GNUC__) || defined(__clang__)` / `#ifdef _WIN32` guards)
+- [ ] **cross-platform**: POSIX functions and headers have platform branches (strncasecmp/strdup/usleep/localtime_r/getpid/mkdir/fdopen etc., see 14.3 replacement table)
+- [ ] **cross-platform**: no re-`#define` of command-line macros (`_USE_MATH_DEFINES`/`__STDC_LIMIT_MACROS`/`NOMINMAX` etc.)
+- [ ] **Qt compat (14.5)**: Qt5/Qt6 divergent APIs go through `QtCompat.h` (`QtCompatRegExp`/`QtCompat::SkipEmptyParts`/`qtCompatCodecForLocale`/`QtCompat::endl` etc.); no bare `#if QT_VERSION` branches in plugins
+- [ ] **Qt compat**: newly discovered divergent APIs are incrementally added to `core/include/QtCompat.h` rather than handled locally
+- [ ] **Qt compat**: avoid `QSet<T>(begin, end)` iterator-range construction (not available in Qt 5.12); use `QSet<T> s; for(auto& v : src) s.insert(v);`
+- [ ] **Qt compat**: AICore core does not use the QtWidgets-dependent parts of QtCompat.h (mouse/wheel/drop/plaintextedit)
+- [ ] **cross-platform**: 14.6 self-check commands run and all three platform CIs green (Linux passing is not completion)
+- [ ] **cross-platform**: lambdas have explicit capture lists (MSVC rejects implicit capture of `constexpr` locals; use `[A]` or `[=]`)
+- [ ] **cross-platform**: `/openmp` + `/openmp:experimental` together trigger MSVC D9025; strip the standard `/openmp` from the upstream INTERFACE (see the MSVC branch pattern in `AICore/CMakeLists.txt`)
+- [ ] **plugin docs**: `plugins/core/Standard/<Plugin>/models/MODEL_CARD.md` created, listing every supported model (filename, size, quantization, recommended use)
+- [ ] **plugin docs**: `README.md` references `models/MODEL_CARD.md` with the full model catalog
+- [ ] **test registration**: new tests outside the AICore build tree must have a `LABELS` property and be excluded from `aicore-fast-tests` (`-LE "model|gpu|e2e|cvpluginapi"`)

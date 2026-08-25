@@ -42,7 +42,8 @@ public:
         Monstree,          ///< Monstree dataset for image-based reconstruction
         FriendsFaces,      ///< FriendsFaces video for face capture
         ObjectsDetection,  ///< Shared images/videos for AI inference plugins
-        Image2Mesh         ///< Single-image-to-3D samples (qTrellis etc.)
+        Image2Mesh,        ///< Single-image-to-3D samples (qTrellis etc.)
+        SAM3               ///< SAM3 segmentation images + tracking videos
     };
 
     /** Dataset metadata. */
@@ -156,6 +157,22 @@ public:
      * @return Sorted list of absolute image file paths
      */
     static QStringList getImage2MeshImages(const QString& bundleRoot);
+
+    /**
+     * @brief Get the sample images from the SAM3 dataset.
+     * Scans <root>/images for segmentation samples.
+     * @param bundleRoot Path to the extracted dataset root
+     * @return Sorted list of absolute image file paths
+     */
+    static QStringList getSamImages(const QString& bundleRoot);
+
+    /**
+     * @brief Get the sample videos from the SAM3 dataset.
+     * Scans <root>/videos for tracking samples.
+     * @param bundleRoot Path to the extracted dataset root
+     * @return Sorted list of absolute video file paths
+     */
+    static QStringList getSamVideos(const QString& bundleRoot);
 
 signals:
     /** Emitted during download with progress (0-100). */

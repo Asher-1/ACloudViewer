@@ -57,7 +57,7 @@
    AICore log layer (AICORE_LOG_*) so messages reach the ACloudViewer console.
    Level filtering keeps the upstream semantics: 1=summary timing, 2=verbose. */
 #ifndef SAM3_LOG_LEVEL
-#define SAM3_LOG_LEVEL 1
+#define SAM3_LOG_LEVEL 2
 #endif
 #include "common/aicore_log.hpp"
 
@@ -3778,6 +3778,14 @@ static bool sam3_fattn_hd_supported(ggml_backend_t backend, int64_t hd) {
         return false;
     }
 
+    // CUDA flash-attention offers only the generic TILE kernel for head_dim=32
+    // (MMA/VEC kernels exclude it), which is pathologically slow for the small
+    // query counts used here (geometry/fusion encoders). Route it to manual
+    // SDPA, which is an order of magnitude faster in practice.
+    if (hd == 32) {
+        return false;
+    }
+
     struct probe_cache {
         ggml_backend_t backend;
         bool tested[4097];
@@ -7349,7 +7357,9 @@ static std::vector<float> sam3_precompute_geom_input(
         const float* img_feats_data,  // [D, W, H] ggml-layout backbone features
                                       // (nullable if no boxes)
         int W_feat,
-        int H_feat) {
+        int H_feat,
+        float img_w,
+        float img_h) {  // original image size in pixels (for normalization)
     const auto& ge = model.geom_enc;
     const int D = model.hparams.neck_dim;  // 256
     const int roi_size = 7;
@@ -7363,18 +7373,20 @@ static std::vector<float> sam3_precompute_geom_input(
     std::vector<box_info> boxes;
     for (const auto& b : params.pos_exemplars) {
         // API provides XYXY in original image space — convert to normalized
-        // CxCyWH [0,1]
-        float cx = (b.x0 + b.x1) * 0.5f;
-        float cy = (b.y0 + b.y1) * 0.5f;
-        float bw = b.x1 - b.x0;
-        float bh = b.y1 - b.y0;
+        // CxCyWH [0,1] (the ROI-align feature scaling below assumes normalized
+        // box coordinates; unnormalized pixel values would blow up the
+        // sampling count by ~(img_size)^2 and hang on CPU).
+        float cx = ((b.x0 + b.x1) * 0.5f) / img_w;
+        float cy = ((b.y0 + b.y1) * 0.5f) / img_h;
+        float bw = (b.x1 - b.x0) / img_w;
+        float bh = (b.y1 - b.y0) / img_h;
         boxes.push_back({cx, cy, bw, bh, 0});  // label 0 = positive
     }
     for (const auto& b : params.neg_exemplars) {
-        float cx = (b.x0 + b.x1) * 0.5f;
-        float cy = (b.y0 + b.y1) * 0.5f;
-        float bw = b.x1 - b.x0;
-        float bh = b.y1 - b.y0;
+        float cx = ((b.x0 + b.x1) * 0.5f) / img_w;
+        float cy = ((b.y0 + b.y1) * 0.5f) / img_h;
+        float bw = (b.x1 - b.x0) / img_w;
+        float bh = (b.y1 - b.y0) / img_h;
         boxes.push_back({cx, cy, bw, bh, 1});  // label 1 = negative
     }
 
@@ -9573,8 +9585,9 @@ sam3_result sam3_segment_pcs(sam3_state& state,
         {
             const float* feats_ptr =
                     n_boxes > 0 ? img_feats_cpu.data() : nullptr;
-            auto geom_data =
-                    sam3_precompute_geom_input(model, params, feats_ptr, H, H);
+            auto geom_data = sam3_precompute_geom_input(
+                    model, params, feats_ptr, H, H, (float)state.orig_width,
+                    (float)state.orig_height);
             auto* gi = ggml_get_tensor(ctx, "geom_post_final_proj");
             if (gi)
                 ggml_backend_tensor_set(gi, geom_data.data(), 0,
@@ -9777,6 +9790,22 @@ sam3_result sam3_segment_pcs(sam3_state& state,
     }
 
     float presence_prob = 1.0f / (1.0f + expf(-presence_logit));
+
+    // When the text prompt is effectively empty (only SOT+EOT framing tokens,
+    // no content), the presence head has no semantic concept to evaluate and
+    // defaults to a very negative logit (~-8), which multiplies all class
+    // scores by ~0.0003 — effectively zeroing out every detection. This is
+    // correct for "does the text concept exist?" but meaningless when there
+    // is no text concept.  The presence head was designed specifically for
+    // negative-phrase rejection (see SAM3 paper §3); with no phrase at all,
+    // we bypass it so exemplar-only detection can work.
+    const int n_text_tokens = n_valid_tokens - N_geo;
+    if (n_text_tokens <= 2) {
+        presence_prob = 1.0f;
+    }
+
+    SAM3_LOG(1, "%s: presence_logit=%.3f presence_prob=%.6f (text_tokens=%d)\n",
+             __func__, presence_logit, presence_prob, n_text_tokens);
 
     SAM3_LOG(2, "%s: DETR decoder done\n", __func__);
     /*
@@ -14041,8 +14070,9 @@ bool sam3_test_dump_geom_enc(const sam3_model& model,
                             D * H * H * sizeof(float));
 
     // Pre-compute geometry input on CPU and upload
-    auto geom_data = sam3_precompute_geom_input(model, params,
-                                                neck_det_2_ggml.data(), H, H);
+    // (test reference boxes are already normalized, so pass 1.0 scale)
+    auto geom_data = sam3_precompute_geom_input(
+            model, params, neck_det_2_ggml.data(), H, H, 1.0f, 1.0f);
     auto* gi = ggml_get_tensor(ctx0, "geom_post_final_proj");
     if (gi) {
         ggml_backend_tensor_set(gi, geom_data.data(), 0,

@@ -11,12 +11,15 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
+#include <exception>
 
 VideoWorker::VideoWorker(QObject* parent) : QThread(parent) {}
 
 VideoWorker::~VideoWorker() {
     requestCancel();
-    if (isRunning()) wait(5000);
+    // Deleting a QThread that is still running aborts the process; give a
+    // running track/load task a generous window to finish.
+    if (isRunning()) wait(30000);
     if (m_tracker) aicore_sam3_tracker_free(m_tracker);
     if (m_ctx) aicore_sam3_free(m_ctx);
 }
@@ -57,7 +60,20 @@ void VideoWorker::run() {
             req = m_queue.takeFirst();
         }
         if (req.cancel) break;
-        process(req);
+        try {
+            process(req);
+        } catch (const std::exception& e) {
+            // Never let an exception escape a QThread (std::terminate →
+            // process abort); reset the busy flag so the UI stays usable.
+            m_busy = false;
+            emit busyChanged(false);
+            emit logMessage(QString("[SAM3] track error: %1")
+                                    .arg(QString::fromUtf8(e.what())));
+        } catch (...) {
+            m_busy = false;
+            emit busyChanged(false);
+            emit logMessage(tr("[SAM3] unknown track error"));
+        }
     }
 }
 
@@ -130,7 +146,8 @@ void VideoWorker::process(const TrackRequest& req) {
                                         .arg(aicore_sam3_last_error(m_ctx)));
                 break;
             }
-            emit frameResultReady(buildResult(res, req.frame), req.frameIndex);
+            m_lastFrameResult = buildResult(res, req.frame);
+            emit frameResultReady(m_lastFrameResult, req.frameIndex);
             aicore_sam3_seg_result_free(res);
             break;
         }
@@ -158,6 +175,32 @@ void VideoWorker::process(const TrackRequest& req) {
                     aicore_sam3_tracker_add_instance(m_tracker, &prompt);
             if (newId >= 0) {
                 emit instanceAdded(newId);
+                // Upstream main_video.cpp re-runs PVS on the encoded frame
+                // right after add_instance to display the new instance's mask
+                // immediately (without advancing the tracker). Merge it into
+                // the last tracked result so existing instances stay visible
+                // and the timeline keeps both.
+                if (aicore_sam3_seg_result* maskRes =
+                            aicore_sam3_tracker_segment_pvs(m_tracker,
+                                                            &prompt)) {
+                    SAM3WorkerResult maskResult = buildResult(maskRes, req.frame);
+                    for (int i = 0; i < maskResult.detCount; ++i) {
+                        maskResult.instanceIds[i] = newId;
+                    }
+                    aicore_sam3_seg_result_free(maskRes);
+                    if (!maskResult.instanceMasks.isEmpty()) {
+                        SAM3WorkerResult merged = m_lastFrameResult;
+                        merged.boxes.append(maskResult.boxes);
+                        merged.scores.append(maskResult.scores);
+                        merged.ious.append(maskResult.ious);
+                        merged.instanceIds.append(maskResult.instanceIds);
+                        merged.instanceMasks.append(maskResult.instanceMasks);
+                        merged.detCount = merged.boxes.size();
+                        merged.valid = true;
+                        merged.timings = maskResult.timings;
+                        emit frameResultReady(merged, req.frameIndex);
+                    }
+                }
             } else {
                 emit logMessage(tr("Add instance failed: %1")
                                         .arg(aicore_sam3_last_error(m_ctx)));
@@ -183,6 +226,7 @@ void VideoWorker::process(const TrackRequest& req) {
         }
         case Action::ResetTracker: {
             if (!m_ctx) break;
+            m_lastFrameResult = SAM3WorkerResult{};
             if (m_tracker) aicore_sam3_tracker_free(m_tracker);
             m_tracker = aicore_sam3_tracker_create(m_ctx);
             if (!m_tracker) {
