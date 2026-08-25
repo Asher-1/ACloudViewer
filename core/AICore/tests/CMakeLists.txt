@@ -574,12 +574,17 @@ if(UNIX AND NOT APPLE)
 endif()
 
 # --- Env hygiene: getenv/setenv only in the sanctioned bridge ---
-add_test(
-    NAME test_no_env_getenv
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/check_no_env_getenv.sh
-            ${CMAKE_CURRENT_SOURCE_DIR}/../src
-)
-set_tests_properties(test_no_env_getenv PROPERTIES LABELS "capi")
+# POSIX-only guard: this is a bash static scan (grep/find/sort). macOS and
+# Linux run it fine, but Windows has no .sh launcher (CTest BAD_COMMAND),
+# so register it only on non-Windows platforms.
+if(NOT WIN32)
+    add_test(
+        NAME test_no_env_getenv
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/check_no_env_getenv.sh
+                ${CMAKE_CURRENT_SOURCE_DIR}/../src
+    )
+    set_tests_properties(test_no_env_getenv PROPERTIES LABELS "capi")
+endif()
 
 set(_aicore_contract_targets
     test_runtime_capi_contract
