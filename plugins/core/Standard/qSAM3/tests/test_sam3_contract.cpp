@@ -23,7 +23,6 @@
 #include <QFileInfo>
 #include <QImage>
 #include <QStringList>
-
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -120,7 +119,8 @@ TEST(SAM3Contract, CachedModelSizesMatchCatalog) {
     for (int i = 0; i < aicore_sam3_model_count(); ++i) {
         const auto* entry = aicore_sam3_model_at(i);
         ASSERT_NE(entry, nullptr);
-        const QFileInfo file(cacheDir.filePath(QString::fromUtf8(entry->filename)));
+        const QFileInfo file(
+                cacheDir.filePath(QString::fromUtf8(entry->filename)));
         if (!file.exists()) continue;
         EXPECT_EQ(file.size(), entry->size_bytes) << entry->filename;
     }
@@ -238,9 +238,10 @@ protected:
                            QStringLiteral("sam2.1_hiera_tiny_q4_0.gguf"),
                            QStringLiteral("sam2_hiera_tiny_q4_0.gguf")});
         for (const QString& filename : candidates) {
-            const QString path = QFileInfo(filename).isAbsolute()
-                                         ? filename
-                                         : modelDir + QLatin1Char('/') + filename;
+            const QString path =
+                    QFileInfo(filename).isAbsolute()
+                            ? filename
+                            : modelDir + QLatin1Char('/') + filename;
             if (QFileInfo::exists(path)) {
                 s_modelPath = path;
                 break;
@@ -258,8 +259,8 @@ protected:
                 dataRoot + QLatin1String("/extract/sam_test_data/images");
         const QString reference =
                 imageDir + QLatin1String("/test_image_market_03.jpg");
-        const QString requestedImage = QString::fromLocal8Bit(
-                qgetenv("AICORE_SAM3_TEST_IMAGE"));
+        const QString requestedImage =
+                QString::fromLocal8Bit(qgetenv("AICORE_SAM3_TEST_IMAGE"));
         if (!requestedImage.isEmpty() && QFileInfo::exists(requestedImage)) {
             s_imagePath = requestedImage;
         } else if (QFileInfo::exists(reference)) {
@@ -271,9 +272,9 @@ protected:
             QFileInfo::exists(requestedSecondImage)) {
             s_secondImagePath = requestedSecondImage;
         }
-        s_textPrompt = QString::fromLocal8Bit(
-                               qgetenv("AICORE_SAM3_TEST_TEXT_PROMPT"))
-                               .trimmed();
+        s_textPrompt =
+                QString::fromLocal8Bit(qgetenv("AICORE_SAM3_TEST_TEXT_PROMPT"))
+                        .trimmed();
         if (s_textPrompt.isEmpty()) s_textPrompt = QStringLiteral("pepper");
     }
 
@@ -310,9 +311,8 @@ TEST_F(SAM3PrecisionContract, RepeatedContextRelease) {
         aicore_sam3_ctx* ctx =
                 aicore_sam3_load_opts(s_modelPath.toUtf8().constData(), opts);
         aicore_sam3_options_free(opts);
-        ASSERT_NE(ctx, nullptr)
-                << "model reload " << pass << " failed: "
-                << aicore_sam3_last_load_error();
+        ASSERT_NE(ctx, nullptr) << "model reload " << pass
+                                << " failed: " << aicore_sam3_last_load_error();
         ASSERT_TRUE(aicore_sam3_is_ready(ctx));
 
         aicore_sam3_free(ctx);
@@ -403,13 +403,12 @@ TEST_F(SAM3PrecisionContract, EncodeSegmentPVS) {
         size_t foreground = 0;
         const auto* src = static_cast<const uint8_t*>(mask.data);
         for (int y = 0; y < mask.height; ++y) {
-            const auto* row = src + static_cast<size_t>(y) *
-                                      mask.row_stride_bytes;
+            const auto* row =
+                    src + static_cast<size_t>(y) * mask.row_stride_bytes;
             std::copy(row, row + mask.width,
                       packed.begin() + static_cast<size_t>(y) * mask.width);
-            foreground += static_cast<size_t>(
-                    std::count_if(row, row + mask.width,
-                                  [](uint8_t v) { return v > 127; }));
+            foreground += static_cast<size_t>(std::count_if(
+                    row, row + mask.width, [](uint8_t v) { return v > 127; }));
         }
         EXPECT_GT(foreground, 0u) << "empty mask on pass " << pass;
 
@@ -492,13 +491,14 @@ TEST_F(SAM3PrecisionContract, EncodeSegmentPVS) {
     ASSERT_NE(tracker, nullptr) << aicore_sam3_last_error(ctx);
     const bool visualOnly = aicore_sam3_context_visual_only(ctx) != 0;
     aicore_sam3_seg_result* firstFrame =
-            visualOnly
-                    ? aicore_sam3_propagate_frame(
-                              tracker, img.constBits(), img.width(), img.height(),
-                              static_cast<size_t>(img.bytesPerLine()))
-                    : aicore_sam3_track_frame(
-                              tracker, img.constBits(), img.width(), img.height(),
-                              static_cast<size_t>(img.bytesPerLine()));
+            visualOnly ? aicore_sam3_propagate_frame(
+                                 tracker, img.constBits(), img.width(),
+                                 img.height(),
+                                 static_cast<size_t>(img.bytesPerLine()))
+                       : aicore_sam3_track_frame(
+                                 tracker, img.constBits(), img.width(),
+                                 img.height(),
+                                 static_cast<size_t>(img.bytesPerLine()));
     ASSERT_NE(firstFrame, nullptr) << aicore_sam3_tracker_last_error(tracker);
     aicore_sam3_seg_result_free(firstFrame);
 
@@ -512,21 +512,22 @@ TEST_F(SAM3PrecisionContract, EncodeSegmentPVS) {
     aicore_sam3_seg_result_free(currentMask);
 
     aicore_sam3_seg_result* secondFrame =
-            visualOnly
-                    ? aicore_sam3_propagate_frame(
-                              tracker, img.constBits(), img.width(), img.height(),
-                              static_cast<size_t>(img.bytesPerLine()))
-                    : aicore_sam3_track_frame(
-                              tracker, img.constBits(), img.width(), img.height(),
-                              static_cast<size_t>(img.bytesPerLine()));
+            visualOnly ? aicore_sam3_propagate_frame(
+                                 tracker, img.constBits(), img.width(),
+                                 img.height(),
+                                 static_cast<size_t>(img.bytesPerLine()))
+                       : aicore_sam3_track_frame(
+                                 tracker, img.constBits(), img.width(),
+                                 img.height(),
+                                 static_cast<size_t>(img.bytesPerLine()));
     ASSERT_NE(secondFrame, nullptr) << aicore_sam3_tracker_last_error(tracker);
     const int secondFrameCount = aicore_sam3_seg_det_count(secondFrame);
     ASSERT_GE(secondFrameCount, 1);
     bool retainedInstanceId = false;
     for (int i = 0; i < secondFrameCount; ++i) {
         retainedInstanceId =
-                retainedInstanceId ||
-                aicore_sam3_seg_det_instance_id_at(secondFrame, i) == instanceId;
+                retainedInstanceId || aicore_sam3_seg_det_instance_id_at(
+                                              secondFrame, i) == instanceId;
     }
     EXPECT_TRUE(retainedInstanceId)
             << "tracker replaced the initialized object on the next frame";
@@ -540,11 +541,10 @@ TEST_F(SAM3PrecisionContract, EncodeSegmentPVS) {
     // The next frame must associate at least one prompted object with its
     // existing ID instead of allocating a fresh identity every frame.
     if (!visualOnly) {
-        aicore_sam3_tracker_ctx* textTracker =
-                aicore_sam3_tracker_create(ctx);
+        aicore_sam3_tracker_ctx* textTracker = aicore_sam3_tracker_create(ctx);
         ASSERT_NE(textTracker, nullptr) << aicore_sam3_last_error(ctx);
-        aicore_sam3_tracker_set_text_prompt(
-                textTracker, s_textPrompt.toUtf8().constData());
+        aicore_sam3_tracker_set_text_prompt(textTracker,
+                                            s_textPrompt.toUtf8().constData());
         aicore_sam3_seg_result* textFirst = aicore_sam3_track_frame(
                 textTracker, img.constBits(), img.width(), img.height(),
                 static_cast<size_t>(img.bytesPerLine()));
@@ -560,9 +560,8 @@ TEST_F(SAM3PrecisionContract, EncodeSegmentPVS) {
         }
         aicore_sam3_seg_result_free(textFirst);
 
-        QImage textSecondImage = s_secondImagePath.isEmpty()
-                                         ? img
-                                         : QImage(s_secondImagePath);
+        QImage textSecondImage =
+                s_secondImagePath.isEmpty() ? img : QImage(s_secondImagePath);
         ASSERT_FALSE(textSecondImage.isNull())
                 << "second tracking image could not be loaded";
         textSecondImage =
@@ -575,12 +574,10 @@ TEST_F(SAM3PrecisionContract, EncodeSegmentPVS) {
                 << aicore_sam3_tracker_last_error(textTracker);
         bool retainedTextId = false;
         for (int i = 0; i < aicore_sam3_seg_det_count(textSecond); ++i) {
-            const int id =
-                    aicore_sam3_seg_det_instance_id_at(textSecond, i);
-            retainedTextId =
-                    retainedTextId ||
-                    std::find(textFirstIds.begin(), textFirstIds.end(), id) !=
-                            textFirstIds.end();
+            const int id = aicore_sam3_seg_det_instance_id_at(textSecond, i);
+            retainedTextId = retainedTextId ||
+                             std::find(textFirstIds.begin(), textFirstIds.end(),
+                                       id) != textFirstIds.end();
         }
         EXPECT_TRUE(retainedTextId)
                 << "text tracker replaced all pending IDs on the next frame";

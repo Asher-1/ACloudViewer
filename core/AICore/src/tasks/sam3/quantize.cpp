@@ -18,10 +18,9 @@
 #include <string>
 #include <vector>
 
+#include "common/aicore_log.hpp"
 #include "ggml.h"
 #include "gguf.h"
-
-#include "common/aicore_log.hpp"
 
 namespace aicore {
 namespace sam3 {
@@ -62,9 +61,18 @@ bool parse_type(const std::string& s, ggml_type& out) {
     std::string lc = s;
     for (auto& c : lc)
         if (c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
-    if (lc == "q4_0") { out = GGML_TYPE_Q4_0; return true; }
-    if (lc == "q4_1") { out = GGML_TYPE_Q4_1; return true; }
-    if (lc == "q8_0") { out = GGML_TYPE_Q8_0; return true; }
+    if (lc == "q4_0") {
+        out = GGML_TYPE_Q4_0;
+        return true;
+    }
+    if (lc == "q4_1") {
+        out = GGML_TYPE_Q4_1;
+        return true;
+    }
+    if (lc == "q8_0") {
+        out = GGML_TYPE_Q8_0;
+        return true;
+    }
     return false;
 }
 
@@ -75,9 +83,10 @@ bool quantize_gguf(const std::string& input_gguf,
                    const std::string& type_name) {
     ggml_type qtype = GGML_TYPE_F32;
     if (!parse_type(type_name, qtype)) {
-        AICORE_LOG_ERROR("[sam3] ",
-                         "quantize: unknown type '%s' (expected q4_0/q4_1/q8_0)\n",
-                         type_name.c_str());
+        AICORE_LOG_ERROR(
+                "[sam3] ",
+                "quantize: unknown type '%s' (expected q4_0/q4_1/q8_0)\n",
+                type_name.c_str());
         return false;
     }
 
@@ -134,8 +143,8 @@ bool quantize_gguf(const std::string& input_gguf,
         const char* name = gguf_get_tensor_name(src, ti);
         ggml_tensor* src_t = ggml_get_tensor(meta_ctx, name);
         if (!src_t || !src_t->data) {
-            AICORE_LOG_ERROR("[sam3] ",
-                             "quantize: tensor '%s' has no data\n", name);
+            AICORE_LOG_ERROR("[sam3] ", "quantize: tensor '%s' has no data\n",
+                             name);
             failed = true;
             break;
         }
@@ -147,11 +156,9 @@ bool quantize_gguf(const std::string& input_gguf,
         ggml_type out_type = src_t->type;
         std::vector<uint8_t> bytes;
 
-        const bool quant =
-            should_quantize(name, src_t->type) &&
-            ggml_n_dims(src_t) == 2 &&
-            nrows > 0 &&
-            src_t->ne[0] % blk_size == 0;
+        const bool quant = should_quantize(name, src_t->type) &&
+                           ggml_n_dims(src_t) == 2 && nrows > 0 &&
+                           src_t->ne[0] % blk_size == 0;
 
         if (quant) {
             // Dequantize to F32
@@ -163,8 +170,8 @@ bool quantize_gguf(const std::string& input_gguf,
                             (size_t)n_el * sizeof(float));
             } else if (src_t->type == GGML_TYPE_F16) {
                 ggml_fp16_to_fp32_row(
-                    static_cast<const ggml_fp16_t*>(src_t->data),
-                    f32_buf.data(), n_el);
+                        static_cast<const ggml_fp16_t*>(src_t->data),
+                        f32_buf.data(), n_el);
             } else {
                 const auto* tr = ggml_get_type_traits(src_t->type);
                 if (!tr || !tr->to_float) {
@@ -180,11 +187,11 @@ bool quantize_gguf(const std::string& input_gguf,
             // Quantize
             out_type = qtype;
             const size_t qsz =
-                ggml_row_size(qtype, src_t->ne[0]) * (size_t)nrows;
+                    ggml_row_size(qtype, src_t->ne[0]) * (size_t)nrows;
             bytes.resize(qsz);
-            const size_t got = ggml_quantize_chunk(
-                qtype, f32_buf.data(), bytes.data(),
-                0, nrows, src_t->ne[0], nullptr);
+            const size_t got =
+                    ggml_quantize_chunk(qtype, f32_buf.data(), bytes.data(), 0,
+                                        nrows, src_t->ne[0], nullptr);
             if (got != qsz) {
                 AICORE_LOG_ERROR("[sam3] ",
                                  "quantize: size mismatch '%s' (%zu vs %zu)\n",
@@ -201,8 +208,8 @@ bool quantize_gguf(const std::string& input_gguf,
             ++n_kept;
         }
 
-        ggml_tensor* dst = ggml_new_tensor(out_ctx, out_type,
-                                           ggml_n_dims(src_t), ne);
+        ggml_tensor* dst =
+                ggml_new_tensor(out_ctx, out_type, ggml_n_dims(src_t), ne);
         ggml_set_name(dst, name);
         owners.emplace_back(std::move(bytes));
         dst->data = owners.back().data();
@@ -221,8 +228,7 @@ bool quantize_gguf(const std::string& input_gguf,
     }
 
     if (ok) {
-        AICORE_LOG_PRINT("[sam3] ",
-                         "quantize: %d quantized (%s), %d kept\n",
+        AICORE_LOG_PRINT("[sam3] ", "quantize: %d quantized (%s), %d kept\n",
                          n_quant, ggml_type_name(qtype), n_kept);
     }
 

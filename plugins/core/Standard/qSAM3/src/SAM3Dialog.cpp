@@ -8,7 +8,6 @@
 #include "SAM3Dialog.h"
 
 #include <CVLog.h>
-
 #include <aicore/sam3_capi.h>
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
@@ -16,10 +15,10 @@
 #endif
 
 #include <ecvAICoreUiHelper.h>
-#include <ecvModelDownloader.h>
 #include <ecvClickableImageLabel.h>
 #include <ecvImage.h>
 #include <ecvMainAppInterface.h>
+#include <ecvModelDownloader.h>
 #include <ecvPluginDbNaming.h>
 
 #include <QButtonGroup>
@@ -63,8 +62,8 @@ const aicore_sam3_model_entry* catalogEntry(const QString& filename) {
 
 bool isValidCatalogModel(const QString& path, const QString& filename) {
     const auto* entry = catalogEntry(filename);
-    return entry && ecvModelDownloader::isValidCachedFile(
-                            path, 64 * 1024, true, entry->size_bytes);
+    return entry && ecvModelDownloader::isValidCachedFile(path, 64 * 1024, true,
+                                                          entry->size_bytes);
 }
 
 }  // namespace
@@ -84,7 +83,8 @@ SAM3Canvas::SAM3Canvas(QWidget* parent) : QLabel(parent) {
 }
 
 void SAM3Canvas::updatePlaceholderText() {
-    setText(tr("Step 1: drop an image here (or load test data)\n"
+    setText(
+            tr("Step 1: drop an image here (or load test data)\n"
                "Step 2: type a text prompt, or click on the object /\n"
                "        drag a box (the model loads automatically)\n"
                "(left-click +point · right-click -point · drag box)"));
@@ -337,8 +337,7 @@ void SAM3Canvas::drawAnnotations(QPainter& p, const QImage& display) {
         p.setPen(QPen(det.color, 2));
         p.setBrush(Qt::NoBrush);
         p.drawRect(QRectF(det.box.left() * scaleX, det.box.top() * scaleY,
-                          det.box.width() * scaleX,
-                          det.box.height() * scaleY));
+                          det.box.width() * scaleX, det.box.height() * scaleY));
         p.drawText(QPointF(det.box.left() * scaleX + 2,
                            det.box.top() * scaleY + 2),
                    QString("#%1 %2")
@@ -407,8 +406,7 @@ SAM3Dialog::SAM3Dialog(QWidget* parent) : QDialog(parent) {
                 const bool thenRun = m_downloadThenRun;
                 const int tab = m_downloadTab;
                 const QString filename = m_downloadTargetFilename;
-                const bool valid =
-                        ok && isValidCatalogModel(dest, filename);
+                const bool valid = ok && isValidCatalogModel(dest, filename);
                 m_downloadInProgress = false;
                 m_downloadThenRun = false;
                 if (m_downloadLabel) m_downloadLabel->setVisible(false);
@@ -418,8 +416,7 @@ SAM3Dialog::SAM3Dialog(QWidget* parent) : QDialog(parent) {
                 setBusy(false);
                 if (valid) {
                     m_downloadPrompted = false;
-                    appendLog(tr("Model downloaded: %1")
-                                      .arg(filename));
+                    appendLog(tr("Model downloaded: %1").arg(filename));
                     if (thenRun && static_cast<int>(currentTab()) == tab) {
                         // Re-run the pending operation now that the GGUF
                         // exists (lazy model load on first use).
@@ -444,8 +441,9 @@ void SAM3Dialog::showEvent(QShowEvent* e) {
         adjustSize();
         // No eager model load on dialog open: the initial model (or a model
         // switched later) loads lazily on the first Segment / click / box.
-        updateStatus(tr("Ready. The selected model loads automatically on "
-                        "the first Segment / click / box."));
+        updateStatus(
+                tr("Ready. The selected model loads automatically on "
+                   "the first Segment / click / box."));
     }
     if (m_busyOverlay) {
         m_busyOverlay->setGeometry(rect());
@@ -521,9 +519,10 @@ void SAM3Dialog::setupUi() {
 
         if (isFull) {
             u.textPrompt = new QLineEdit();
-            u.textPrompt->setPlaceholderText(tr("Describe the object to "
-                                                "segment (e.g. person, "
-                                                "car)..."));
+            u.textPrompt->setPlaceholderText(
+                    tr("Describe the object to "
+                       "segment (e.g. person, "
+                       "car)..."));
             u.textPrompt->setMinimumWidth(ecvAICoreUi::dpiScaled(240));
             connect(u.textPrompt, &QLineEdit::returnPressed, this,
                     &SAM3Dialog::onRunSegment);
@@ -562,9 +561,10 @@ void SAM3Dialog::setupUi() {
                         return;
                     }
                     loadTestImageInto(u);
-                    appendLog(tr("Sample switched - the selected model "
-                                 "re-encodes the new image on the next "
-                                 "Segment / click / box."));
+                    appendLog(
+                            tr("Sample switched - the selected model "
+                               "re-encodes the new image on the next "
+                               "Segment / click / box."));
                 });
 
         row1->addWidget(modeLabel);
@@ -634,8 +634,7 @@ void SAM3Dialog::setupUi() {
         // Canvas: fills all remaining tab space (upstream: the image region
         // is the whole panel below the compact controls).
         u.canvas = new SAM3Canvas();
-        u.canvas->setSizePolicy(QSizePolicy::Expanding,
-                                QSizePolicy::Expanding);
+        u.canvas->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         connect(u.canvas, &SAM3Canvas::pointAdded, this,
                 &SAM3Dialog::onCanvasPoint);
         connect(u.canvas, &SAM3Canvas::boxDrawn, this,
@@ -650,11 +649,13 @@ void SAM3Dialog::setupUi() {
                     appendLog(tr("Loaded image: %1")
                                       .arg(QFileInfo(path).fileName()));
                     if (m_worker && m_worker->context()) {
-                        appendLog(tr("Model ready — click on an object or "
-                                     "drag a box to segment it."));
+                        appendLog(
+                                tr("Model ready — click on an object or "
+                                   "drag a box to segment it."));
                     } else {
-                        appendLog(tr("The selected model loads automatically "
-                                     "on the first Segment / click / box."));
+                        appendLog(
+                                tr("The selected model loads automatically "
+                                   "on the first Segment / click / box."));
                     }
                     updateSegmentButtonState();
                 });
@@ -689,8 +690,7 @@ void SAM3Dialog::setupUi() {
         u.multimask = new QCheckBox(tr("Multi-mask (PVS)"));
 
         u.clearBtn = new QPushButton(tr("Clear"));
-        connect(u.clearBtn, &QPushButton::clicked, this,
-                &SAM3Dialog::onClear);
+        connect(u.clearBtn, &QPushButton::clicked, this, &SAM3Dialog::onClear);
         u.exportBtn = new QPushButton(tr("Export masks"));
         connect(u.exportBtn, &QPushButton::clicked, this,
                 &SAM3Dialog::onExportMasks);
@@ -756,8 +756,7 @@ void SAM3Dialog::setupUi() {
             [this](const QString& backend) {
                 if (m_tabs && m_videoTab &&
                     m_tabs->currentWidget() == m_videoTab) {
-                    m_backendLabel->setText(
-                            tr("Backend: %1").arg(backend));
+                    m_backendLabel->setText(tr("Backend: %1").arg(backend));
                 }
             });
     m_tabs->addTab(m_videoTab, tr("Video"));
@@ -870,8 +869,9 @@ void SAM3Dialog::populateModelCombo(QComboBox* combo, Sam3Tab tab) {
         QString suffix;
         if (isValidCatalogModel(fi.absoluteFilePath(),
                                 QString::fromUtf8(entry->filename))) {
-            suffix = QStringLiteral(" [%1] \u2713")
-                             .arg(ecvModelDownloader::formatFileSize(fi.size()));
+            suffix =
+                    QStringLiteral(" [%1] \u2713")
+                            .arg(ecvModelDownloader::formatFileSize(fi.size()));
         } else {
             suffix = QStringLiteral(" [download]");
         }
@@ -926,9 +926,9 @@ void SAM3Dialog::saveSettings() {
     QSettings settings("qSAM3");
     settings.setValue("device", m_settings.device);
     settings.setValue("threads", m_settings.threads);
-    settings.setValue("scoreThreshold",
-                      m_tabsUi[0].scoreSpin ? m_tabsUi[0].scoreSpin->value()
-                                             : m_settings.scoreThreshold);
+    settings.setValue("scoreThreshold", m_tabsUi[0].scoreSpin
+                                                ? m_tabsUi[0].scoreSpin->value()
+                                                : m_settings.scoreThreshold);
     settings.setValue("nmsThreshold", m_settings.nmsThreshold);
     settings.setValue("modelFull",
                       m_tabsUi[0].modelCombo->currentData().toString());
@@ -983,8 +983,8 @@ void SAM3Dialog::startDownload(bool thenRun) {
         }
         return;
     }
-    ecvModelDownloader::removeInvalidCacheFile(
-            dest, 64 * 1024, true, entry->size_bytes);
+    ecvModelDownloader::removeInvalidCacheFile(dest, 64 * 1024, true,
+                                               entry->size_bytes);
 
     QDir().mkpath(cacheDir);
     m_downloadInProgress = true;
@@ -1002,7 +1002,8 @@ void SAM3Dialog::startDownload(bool thenRun) {
     setBusy(true);
     appendLog(tr("Downloading model %1 (%2) ...")
                       .arg(filename)
-                      .arg(ecvModelDownloader::formatFileSize(entry->size_bytes)));
+                      .arg(ecvModelDownloader::formatFileSize(
+                              entry->size_bytes)));
 
     ecvModelDownloader::Request req;
     req.url = QString::fromUtf8(entry->download_url);
@@ -1105,9 +1106,7 @@ void SAM3Dialog::onLoadModel() {
     startWorker(SAM3WorkerAction::LoadModel);
 }
 
-void SAM3Dialog::onRunSegment() {
-    runSegmentation(false);
-}
+void SAM3Dialog::onRunSegment() { runSegmentation(false); }
 
 void SAM3Dialog::runSegmentation(bool canvasPrompt) {
     ImageTabUi& u = currentUi();
@@ -1159,21 +1158,19 @@ void SAM3Dialog::runSegmentation(bool canvasPrompt) {
         // Exemplar boxes drawn on the canvas (upstream main_image.cpp
         // pos_exemplars): every box is a positive exemplar for PCS.
         for (const auto& b : u.posExemplars) {
-            prompt.posExemplars.push_back(
-                    {static_cast<float>(b.left()),
-                     static_cast<float>(b.top()),
-                     static_cast<float>(b.right()),
-                     static_cast<float>(b.bottom())});
+            prompt.posExemplars.push_back({static_cast<float>(b.left()),
+                                           static_cast<float>(b.top()),
+                                           static_cast<float>(b.right()),
+                                           static_cast<float>(b.bottom())});
         }
         // A box drawn in Points / Box mode while a text prompt is present
         // acts as an exemplar (text + region hint) instead of being dropped.
         if (prompt.posExemplars.empty() && u.canvas->hasBox()) {
             const QRectF b = u.canvas->box();
-            prompt.posExemplars.push_back(
-                    {static_cast<float>(b.left()),
-                     static_cast<float>(b.top()),
-                     static_cast<float>(b.right()),
-                     static_cast<float>(b.bottom())});
+            prompt.posExemplars.push_back({static_cast<float>(b.left()),
+                                           static_cast<float>(b.top()),
+                                           static_cast<float>(b.right()),
+                                           static_cast<float>(b.bottom())});
         }
         if (!prompt.text[0] && prompt.posExemplars.empty()) {
             QMessageBox::information(
@@ -1264,10 +1261,9 @@ void SAM3Dialog::onExportMasks() {
     if (dir.isEmpty()) return;
     int exported = 0;
     for (int i = 0; i < u.lastResult.instanceMasks.size(); ++i) {
-        const QString path =
-                QStringLiteral("%1/mask_%2.png")
-                        .arg(dir)
-                        .arg(i, 2, 10, QLatin1Char('0'));
+        const QString path = QStringLiteral("%1/mask_%2.png")
+                                     .arg(dir)
+                                     .arg(i, 2, 10, QLatin1Char('0'));
         if (u.lastResult.instanceMasks[i].save(path)) ++exported;
     }
     if (!u.lastResult.maskComposite.isNull() &&
@@ -1280,8 +1276,9 @@ void SAM3Dialog::onExportMasks() {
 void SAM3Dialog::onWorkerFinished(bool ok) {
     setBusy(false);
     if (!ok) {
-        m_tabsUi[m_taskTab].statusLabel->setText(tr("Task failed or "
-                                                    "cancelled."));
+        m_tabsUi[m_taskTab].statusLabel->setText(
+                tr("Task failed or "
+                   "cancelled."));
     }
 }
 
@@ -1334,8 +1331,7 @@ void SAM3Dialog::onCanvasPoint(int type) {
         appendLog(tr("Drop an image on the canvas first."));
         return;
     }
-    if (type == 1 && u.canvas->posPoints().isEmpty() &&
-        !u.canvas->hasBox()) {
+    if (type == 1 && u.canvas->posPoints().isEmpty() && !u.canvas->hasBox()) {
         return;
     }
     CVLog::Print("[qSAM3] canvas point type=%d (pos=%d neg=%d box=%d)", type,
@@ -1494,9 +1490,8 @@ void SAM3Dialog::startWorker(SAM3WorkerAction action) {
     s.device = m_settings.device;
     s.threads = m_settings.threads;
     s.encodeImgSize = m_settings.encodeImgSize;
-    s.scoreThreshold = u.scoreSpin
-                               ? static_cast<float>(u.scoreSpin->value())
-                               : m_settings.scoreThreshold;
+    s.scoreThreshold = u.scoreSpin ? static_cast<float>(u.scoreSpin->value())
+                                   : m_settings.scoreThreshold;
     s.nmsThreshold = m_settings.nmsThreshold;
 
     m_worker = new SAM3Worker(s, this);
@@ -1526,53 +1521,52 @@ void SAM3Dialog::startWorker(SAM3WorkerAction action) {
                                "interaction."));
                 }
                 if (u.currentImage.isNull()) {
-                    appendLog(tr("Now drop an image on the canvas (or load "
-                                 "test data) to start."));
+                    appendLog(
+                            tr("Now drop an image on the canvas (or load "
+                               "test data) to start."));
                 } else {
-                    appendLog(tr("Click on an object or drag a box to "
-                                 "segment it."));
+                    appendLog(
+                            tr("Click on an object or drag a box to "
+                               "segment it."));
                 }
                 updateSegmentButtonState();
             });
-    connect(m_worker, &SAM3Worker::finished, this,
-            [this]() {
-                setBusy(false);
-                if (m_reloadAfterCurrentTask && !m_modelPath.isEmpty()) {
-                    m_reloadAfterCurrentTask = false;
-                    appendLog(tr("Re-loading model on %1...")
-                                      .arg(m_settings.device));
-                    setBusy(true);
-                    startWorker(SAM3WorkerAction::LoadModel);
-                    return;
-                }
-                // A load task that never built a context means the model
-                // file failed to load — surface it prominently instead of
-                // leaving the Segment button silently disabled.
-                if (m_worker && !m_worker->context() &&
-                    m_worker->action() == SAM3WorkerAction::LoadModel) {
-                    m_retryAfterModelLoad = false;  // drop pending operation
-                    m_backendLabel->setText(tr("Backend: none"));
-                    QMessageBox::warning(
-                            this, tr("qSAM3"),
-                            tr("Failed to load the model.\n\n"
-                               "Check that the GGUF file exists and is "
-                               "valid, or pick another model from the list "
-                               "(the log above shows the details)."));
-                } else if (m_retryAfterModelLoad && m_worker &&
-                           m_worker->context()) {
-                    // Lazy load finished: re-run the segmentation the user
-                    // triggered before the model was ready. Switch back to
-                    // the tab that started the task so the operation runs
-                    // against the right image / prompt.
-                    const bool canvasPrompt = m_retryCanvasPrompt;
-                    m_retryAfterModelLoad = false;
-                    m_retryCanvasPrompt = false;
-                    if (m_tabs && m_tabs->currentIndex() != m_taskTab) {
-                        m_tabs->setCurrentIndex(m_taskTab);
-                    }
-                    runSegmentation(canvasPrompt);
-                }
-            });
+    connect(m_worker, &SAM3Worker::finished, this, [this]() {
+        setBusy(false);
+        if (m_reloadAfterCurrentTask && !m_modelPath.isEmpty()) {
+            m_reloadAfterCurrentTask = false;
+            appendLog(tr("Re-loading model on %1...").arg(m_settings.device));
+            setBusy(true);
+            startWorker(SAM3WorkerAction::LoadModel);
+            return;
+        }
+        // A load task that never built a context means the model
+        // file failed to load — surface it prominently instead of
+        // leaving the Segment button silently disabled.
+        if (m_worker && !m_worker->context() &&
+            m_worker->action() == SAM3WorkerAction::LoadModel) {
+            m_retryAfterModelLoad = false;  // drop pending operation
+            m_backendLabel->setText(tr("Backend: none"));
+            QMessageBox::warning(
+                    this, tr("qSAM3"),
+                    tr("Failed to load the model.\n\n"
+                       "Check that the GGUF file exists and is "
+                       "valid, or pick another model from the list "
+                       "(the log above shows the details)."));
+        } else if (m_retryAfterModelLoad && m_worker && m_worker->context()) {
+            // Lazy load finished: re-run the segmentation the user
+            // triggered before the model was ready. Switch back to
+            // the tab that started the task so the operation runs
+            // against the right image / prompt.
+            const bool canvasPrompt = m_retryCanvasPrompt;
+            m_retryAfterModelLoad = false;
+            m_retryCanvasPrompt = false;
+            if (m_tabs && m_tabs->currentIndex() != m_taskTab) {
+                m_tabs->setCurrentIndex(m_taskTab);
+            }
+            runSegmentation(canvasPrompt);
+        }
+    });
     m_worker->start();
 }
 
@@ -1603,8 +1597,7 @@ bool SAM3Dialog::autoLoadModelIfAvailable() {
     }
     m_modelPath = path;
     m_settings.device = m_deviceCombo->currentText().toLower();
-    appendLog(tr("Auto-loading model: %1 ...")
-                      .arg(QFileInfo(path).fileName()));
+    appendLog(tr("Auto-loading model: %1 ...").arg(QFileInfo(path).fileName()));
     setBusy(true);
     startWorker(SAM3WorkerAction::LoadModel);
     return true;
@@ -1640,8 +1633,9 @@ bool SAM3Dialog::ensureModelReady() {
             startDownload(true);
             return false;
         }
-        appendLog(tr("Model not cached. Use the Download button or "
-                     "select a cached model from the combo."));
+        appendLog(
+                tr("Model not cached. Use the Download button or "
+                   "select a cached model from the combo."));
     }
     return false;
 }
@@ -1668,8 +1662,9 @@ void SAM3Dialog::setBusy(bool busy) {
     // updateSegmentButtonState(); the model loads lazily on first use.
     updateSegmentButtonState();
     if (busy) {
-        updateStatus(tr("Working... please wait (segmentation may take "
-                        "several seconds)"));
+        updateStatus(
+                tr("Working... please wait (segmentation may take "
+                   "several seconds)"));
     }
     // Spinner overlay covering the whole dialog.
     if (m_busyOverlay) {
@@ -1701,12 +1696,13 @@ void SAM3Dialog::updateSegmentButtonState() {
 
 void SAM3Dialog::updateCanvasFromResult(ImageTabUi* target) {
     ImageTabUi& u = target ? *target : currentUi();
-    CVLog::Print("[qSAM3] updateCanvasFromResult: valid=%d maskNull=%d "
-                 "showMasks=%d detCount=%d",
-                 u.lastResult.valid ? 1 : 0,
-                 u.lastResult.maskComposite.isNull() ? 1 : 0,
-                 u.showMasks ? (u.showMasks->isChecked() ? 1 : 0) : -1,
-                 u.lastResult.detCount);
+    CVLog::Print(
+            "[qSAM3] updateCanvasFromResult: valid=%d maskNull=%d "
+            "showMasks=%d detCount=%d",
+            u.lastResult.valid ? 1 : 0,
+            u.lastResult.maskComposite.isNull() ? 1 : 0,
+            u.showMasks ? (u.showMasks->isChecked() ? 1 : 0) : -1,
+            u.lastResult.detCount);
     // The mask overlay is a layer owned by the canvas; updateOverlay()
     // composites image → mask → annotations in one pass so the mask is
     // never clobbered by the annotation redraw.
@@ -1924,8 +1920,7 @@ bool SAM3Dialog::loadTestImageInto(ImageTabUi& u) {
     const QString fileName = u.testDataCombo->currentData().toString();
     if (fileName.isEmpty()) return false;
 
-    const QString path =
-            ecvTestDataRepository::findDatasetFile(kind, fileName);
+    const QString path = ecvTestDataRepository::findDatasetFile(kind, fileName);
     if (path.isEmpty()) {
         CVLog::Warning("[qSAM3] test image not found in dataset: %s",
                        fileName.toUtf8().constData());
@@ -1953,11 +1948,13 @@ bool SAM3Dialog::loadTestImageInto(ImageTabUi& u) {
                  QFileInfo(path).fileName().toUtf8().constData(), img.width(),
                  img.height());
     appendLog(tr("[Test data] Loaded sample image: %1").arg(path));
-    appendLog(tr("Click on an object to segment it, or drag a box around "
-                 "it."));
+    appendLog(
+            tr("Click on an object to segment it, or drag a box around "
+               "it."));
     if (!m_worker || !m_worker->context()) {
-        appendLog(tr("The selected model loads automatically on the first "
-                     "Segment / click / box."));
+        appendLog(
+                tr("The selected model loads automatically on the first "
+                   "Segment / click / box."));
     }
     updateSegmentButtonState();
     return true;

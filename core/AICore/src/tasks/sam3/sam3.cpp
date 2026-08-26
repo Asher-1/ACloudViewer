@@ -3165,12 +3165,12 @@ std::shared_ptr<sam3_model> sam3_load_model(const sam3_params& params) {
     // delete the C++ object and leak its backend, weight buffer and ggml
     // context. Attach the resource teardown to the final shared owner so a
     // context and any tracker may safely share the same model.
-    std::shared_ptr<sam3_model> model(
-            new (std::nothrow) sam3_model(), [](sam3_model* ptr) {
-                if (!ptr) return;
-                sam3_free_model(*ptr);
-                delete ptr;
-            });
+    std::shared_ptr<sam3_model> model(new (std::nothrow) sam3_model(),
+                                      [](sam3_model* ptr) {
+                                          if (!ptr) return;
+                                          sam3_free_model(*ptr);
+                                          delete ptr;
+                                      });
     if (!model) {
         AICORE_LOG_ERROR("[sam3] ", "%s: model allocation failed\n", __func__);
         gguf_free(gguf);
@@ -9347,8 +9347,8 @@ static float sam3_box_iou(const sam3_box& a, const sam3_box& b) {
 static bool sam3_finite(float v) { return std::isfinite(v); }
 
 static bool sam3_finite_box(const sam3_box& box) {
-    return sam3_finite(box.x0) && sam3_finite(box.y0) &&
-           sam3_finite(box.x1) && sam3_finite(box.y1);
+    return sam3_finite(box.x0) && sam3_finite(box.y0) && sam3_finite(box.x1) &&
+           sam3_finite(box.y1);
 }
 
 static bool sam3_finite_values(const float* values, size_t count) {
@@ -9866,9 +9866,10 @@ sam3_result sam3_segment_pcs(sam3_state& state,
 
     float presence_prob = sam3_sigmoid_finite(presence_logit);
     if (!sam3_finite(presence_prob)) {
-        AICORE_LOG_ERROR("[sam3] ",
-                         "%s: non-finite presence logit; returning no detections\n",
-                         __func__);
+        AICORE_LOG_ERROR(
+                "[sam3] ",
+                "%s: non-finite presence logit; returning no detections\n",
+                __func__);
         return result;
     }
 
@@ -10014,8 +10015,8 @@ sam3_result sam3_segment_pcs(sam3_state& state,
         det.box = sam3_cxcywh_to_xyxy(cx, cy, bw, bh, state.orig_width,
                                       state.orig_height);
         if (!sam3_finite_box(det.box)) {
-            SAM3_LOG(1, "%s: dropping query %d with non-finite box\n",
-                     __func__, q);
+            SAM3_LOG(1, "%s: dropping query %d with non-finite box\n", __func__,
+                     q);
             continue;
         }
         det.score = score;
@@ -11018,10 +11019,10 @@ sam3_result sam3_segment_pvs(sam3_state& state,
     if (!sam3_finite(obj_score) ||
         !sam3_finite_values(iou_data.data(), iou_data.size()) ||
         !sam3_finite_values(masks_data.data(), masks_data.size())) {
-        AICORE_LOG_ERROR(
-                "[sam3] ",
-                "%s: non-finite decoder output (obj/iou/mask); returning no masks\n",
-                __func__);
+        AICORE_LOG_ERROR("[sam3] ",
+                         "%s: non-finite decoder output (obj/iou/mask); "
+                         "returning no masks\n",
+                         __func__);
         ggml_gallocr_free(galloc);
         ggml_free(ctx0);
         return result;
@@ -11033,9 +11034,10 @@ sam3_result sam3_segment_pvs(sam3_state& state,
     ggml_backend_tensor_get(dec_out.sam_token, sam_token_data.data(), 0,
                             D * sizeof(float));
     if (!sam3_finite_values(sam_token_data.data(), sam_token_data.size())) {
-        AICORE_LOG_ERROR("[sam3] ",
-                         "%s: non-finite SAM token output; returning no masks\n",
-                         __func__);
+        AICORE_LOG_ERROR(
+                "[sam3] ",
+                "%s: non-finite SAM token output; returning no masks\n",
+                __func__);
         ggml_gallocr_free(galloc);
         ggml_free(ctx0);
         return result;
@@ -11504,8 +11506,7 @@ static sam3_prop_output sam3_propagate_single(
         ggml_backend_tensor_get(dec.iou_pred, all_ious.data(), 0,
                                 num_mask_tokens * sizeof(float));
         if (!sam3_finite_values(all_ious.data(), all_ious.size())) {
-            AICORE_LOG_ERROR("[sam3] ",
-                             "%s: non-finite multimask IoU output\n",
+            AICORE_LOG_ERROR("[sam3] ", "%s: non-finite multimask IoU output\n",
                              __func__);
             return {};
         }
@@ -11664,12 +11665,11 @@ static bool sam3_encode_memory(sam3_tracker& tracker,
                                int frame_idx,
                                bool is_cond,
                                float obj_score) {
-    if (!mask_logits || mask_h <= 0 || mask_w <= 0 ||
-        !sam3_finite(obj_score) ||
+    if (!mask_logits || mask_h <= 0 || mask_w <= 0 || !sam3_finite(obj_score) ||
         !sam3_finite_values(mask_logits,
                             static_cast<size_t>(mask_h) * mask_w)) {
-        AICORE_LOG_ERROR("[sam3] ",
-                         "%s: invalid/non-finite memory input\n", __func__);
+        AICORE_LOG_ERROR("[sam3] ", "%s: invalid/non-finite memory input\n",
+                         __func__);
         return false;
     }
     const auto& hp = model.hparams;

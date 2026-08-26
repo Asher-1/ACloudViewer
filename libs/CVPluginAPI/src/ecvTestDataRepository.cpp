@@ -75,8 +75,7 @@ constexpr const char* kSam3ExtractDir = "sam_test_data";
 constexpr const char* kSam3DownloadUrl =
         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
         "sam_test_data/sam_test_data.zip";
-constexpr const char* kSam3ExpectedMd5 =
-        "459505bf5a37f5c7a664d48acaec8e5a";
+constexpr const char* kSam3ExpectedMd5 = "459505bf5a37f5c7a664d48acaec8e5a";
 constexpr qint64 kSam3ExpectedSize = 31694047;  // ~30 MB
 
 }  // namespace
@@ -684,8 +683,7 @@ QStringList ecvTestDataRepository::getImage2MeshImages(
     return images;
 }
 
-QStringList ecvTestDataRepository::getSamImages(
-        const QString& bundleRoot) {
+QStringList ecvTestDataRepository::getSamImages(const QString& bundleRoot) {
     if (bundleRoot.isEmpty()) return {};
 
     const QString imageDir =
@@ -708,8 +706,7 @@ QStringList ecvTestDataRepository::getSamImages(
     return images;
 }
 
-QStringList ecvTestDataRepository::getSamVideos(
-        const QString& bundleRoot) {
+QStringList ecvTestDataRepository::getSamVideos(const QString& bundleRoot) {
     if (bundleRoot.isEmpty()) return {};
 
     const QString videoDir =

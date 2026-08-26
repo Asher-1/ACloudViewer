@@ -32,7 +32,6 @@
 #include "common/ggml_backend_registry.hpp"
 #include "common/model_cache.hpp"
 #include "sam3.h"
-
 #include "tasks/sam3/quantize.hpp"
 
 namespace {
@@ -216,8 +215,7 @@ AICORE_CAPI aicore_sam3_ctx* aicore_sam3_load_opts(
     g_last_load_error.clear();
     if (!gguf_path || !gguf_path[0]) {
         g_last_load_error = "empty model path";
-        AICORE_LOG_ERROR("[sam3] ", "load: %s\n",
-                         g_last_load_error.c_str());
+        AICORE_LOG_ERROR("[sam3] ", "load: %s\n", g_last_load_error.c_str());
         return nullptr;
     }
 
@@ -296,7 +294,7 @@ AICORE_CAPI const char* aicore_sam3_last_load_error(void) {
 }
 
 AICORE_CAPI int aicore_sam3_set_score_threshold(aicore_sam3_ctx* ctx,
-                                                 float score_threshold) {
+                                                float score_threshold) {
     if (!ctx || !std::isfinite(score_threshold) || score_threshold < 0.0f ||
         score_threshold > 1.0f) {
         return -1;
@@ -389,8 +387,8 @@ static bool result_is_finite_and_well_formed(const sam3_result& result) {
             !std::isfinite(det.mask.iou_score) ||
             !std::isfinite(det.mask.obj_score) || det.mask.width <= 0 ||
             det.mask.height <= 0 ||
-            det.mask.data.size() != static_cast<size_t>(det.mask.width) *
-                                            det.mask.height ||
+            det.mask.data.size() !=
+                    static_cast<size_t>(det.mask.width) * det.mask.height ||
             !std::all_of(det.sam_token.begin(), det.sam_token.end(),
                          [](float v) { return std::isfinite(v); })) {
             return false;
@@ -412,7 +410,8 @@ static bool encoded_rgb_matches(const aicore_sam3_ctx* ctx,
     const size_t expected = row_bytes * static_cast<size_t>(height);
     if (ctx->encoded_rgb.size() != expected) return false;
     for (int32_t y = 0; y < height; ++y) {
-        if (std::memcmp(ctx->encoded_rgb.data() + static_cast<size_t>(y) * row_bytes,
+        if (std::memcmp(ctx->encoded_rgb.data() +
+                                static_cast<size_t>(y) * row_bytes,
                         rgb + static_cast<size_t>(y) * row_stride_bytes,
                         row_bytes) != 0) {
             return false;
@@ -480,19 +479,20 @@ AICORE_CAPI aicore_sam3_seg_result* aicore_sam3_segment_pcs_rgb(
         return nullptr;
     }
     if (!prompt) {
-        ctx->last_error = "PCS requires a text prompt or at least one exemplar box";
+        ctx->last_error =
+                "PCS requires a text prompt or at least one exemplar box";
         return nullptr;
     }
     // Mirror upstream examples/main_image.cpp: the text prompt is optional
     // when exemplar boxes are provided (and vice versa). Only reject when
     // both are empty — sam3_segment_pcs handles a missing text prompt by
     // falling back to SOT/EOT-only tokens.
-    const bool no_text =
-            !prompt->text || !prompt->text[0];
-    const bool no_exemplars = prompt->n_pos_exemplars <= 0 &&
-                              prompt->n_neg_exemplars <= 0;
+    const bool no_text = !prompt->text || !prompt->text[0];
+    const bool no_exemplars =
+            prompt->n_pos_exemplars <= 0 && prompt->n_neg_exemplars <= 0;
     if (no_text && no_exemplars) {
-        ctx->last_error = "PCS requires a text prompt or at least one exemplar box";
+        ctx->last_error =
+                "PCS requires a text prompt or at least one exemplar box";
         return nullptr;
     }
     if (ctx->visual_only) {
@@ -857,8 +857,7 @@ AICORE_CAPI aicore_sam3_seg_result* aicore_sam3_tracker_segment_pvs(
     }
 
     auto t0 = Clock::now();
-    sam3_result r =
-            sam3_segment_pvs(*tracker->state, *tracker->model, p);
+    sam3_result r = sam3_segment_pvs(*tracker->state, *tracker->model, p);
     auto t1 = Clock::now();
     if (!result_is_finite_and_well_formed(r)) {
         sam3_free_result(r);
@@ -1115,8 +1114,7 @@ struct ModelCatalogStore {
             entry.quant_note = model.quant_note;
             entry.model_family = model.family;
             entry.size_bytes = model.size_bytes;
-            entry.visual_only =
-                    std::strcmp(model.family, "sam3") != 0 ? 1 : 0;
+            entry.visual_only = std::strcmp(model.family, "sam3") != 0 ? 1 : 0;
             entries.push_back(entry);
         }
     }
@@ -1161,11 +1159,11 @@ AICORE_CAPI const char* aicore_sam3_model_download_base(void) {
 // ---------------------------------------------------------------------------
 
 AICORE_CAPI int aicore_sam3_benchmark(aicore_sam3_ctx* ctx,
-                                       int32_t img_width,
-                                       int32_t img_height,
-                                       int n_warmup,
-                                       int n_iter,
-                                       aicore_sam3_timings* out_avg) {
+                                      int32_t img_width,
+                                      int32_t img_height,
+                                      int n_warmup,
+                                      int n_iter,
+                                      aicore_sam3_timings* out_avg) {
     if (!ctx || !out_avg || img_width <= 0 || img_height <= 0) return -1;
     if (n_warmup < 1) n_warmup = 1;
     if (n_iter < 1) n_iter = 1;
@@ -1186,18 +1184,16 @@ AICORE_CAPI int aicore_sam3_benchmark(aicore_sam3_ctx* ctx,
 
     // Warm-up iterations (no timings recorded).
     for (int i = 0; i < n_warmup; ++i) {
-        aicore_sam3_seg_result* r =
-            aicore_sam3_segment_pvs_rgb(ctx, &prompt, frame.data(),
-                                        img_width, img_height, row_stride);
+        aicore_sam3_seg_result* r = aicore_sam3_segment_pvs_rgb(
+                ctx, &prompt, frame.data(), img_width, img_height, row_stride);
         aicore_sam3_seg_result_free(r);
     }
 
     // Timed iterations.
     double sum_pre = 0.0, sum_inf = 0.0, sum_post = 0.0, sum_e2e = 0.0;
     for (int i = 0; i < n_iter; ++i) {
-        aicore_sam3_seg_result* r =
-            aicore_sam3_segment_pvs_rgb(ctx, &prompt, frame.data(),
-                                        img_width, img_height, row_stride);
+        aicore_sam3_seg_result* r = aicore_sam3_segment_pvs_rgb(
+                ctx, &prompt, frame.data(), img_width, img_height, row_stride);
         aicore_sam3_timings t{};
         aicore_sam3_last_timings(ctx, &t);
         sum_pre += t.preprocess_ms;
@@ -1256,7 +1252,7 @@ AICORE_CAPI int aicore_sam3_profile_encoder(aicore_sam3_ctx* ctx,
         int64_t max_n = 0;
         for (int b = 0; b < 64; ++b) {
             const std::string name =
-                "vit.blocks." + std::to_string(b) + ".attn.freqs_cis";
+                    "vit.blocks." + std::to_string(b) + ".attn.freqs_cis";
             if (!sam3_get_model_tensor_info(*ctx->model, name, ti)) break;
             max_n = std::max(max_n, ti.ne[2]);
         }
@@ -1276,7 +1272,7 @@ AICORE_CAPI int aicore_sam3_profile_encoder(aicore_sam3_ctx* ctx,
         // SAM2 Hiera models have no ViT patch_embed/pos_embed tensors; the
         // profile sub-graphs are SAM3-only.
         ctx->last_error =
-            "profile: model has no ViT tensors (SAM3 profile is SAM3-only)";
+                "profile: model has no ViT tensors (SAM3 profile is SAM3-only)";
         return -1;
     }
     AICORE_LOG_PRINT("[sam3] ", "profile: patch=%d E=%d grid=%d img=%d\n",
@@ -1291,24 +1287,21 @@ AICORE_CAPI int aicore_sam3_profile_encoder(aicore_sam3_ctx* ctx,
          s <= (int)SAM3_VIT_PREFIX_STAGE_LN_PRE; ++s) {
         std::vector<float> out_data;
         int64_t out_ne[4] = {0, 0, 0, 0};
-        if (!sam3_test_run_vit_prefix_stage(*ctx->model,
-                                            (sam3_vit_prefix_stage)s,
-                                            img.data(), img_ne, out_data,
-                                            out_ne, n_threads)) {
+        if (!sam3_test_run_vit_prefix_stage(
+                    *ctx->model, (sam3_vit_prefix_stage)s, img.data(), img_ne,
+                    out_data, out_ne, n_threads)) {
             continue;  // backend does not support this sub-stage
         }
         for (int it = 0; it < n_warmup; ++it) {
             sam3_test_run_vit_prefix_stage(*ctx->model,
-                                           (sam3_vit_prefix_stage)s,
-                                           img.data(), img_ne, out_data,
-                                           out_ne, n_threads);
+                                           (sam3_vit_prefix_stage)s, img.data(),
+                                           img_ne, out_data, out_ne, n_threads);
         }
         auto t0 = Clock::now();
         for (int it = 0; it < n_iter; ++it) {
             sam3_test_run_vit_prefix_stage(*ctx->model,
-                                           (sam3_vit_prefix_stage)s,
-                                           img.data(), img_ne, out_data,
-                                           out_ne, n_threads);
+                                           (sam3_vit_prefix_stage)s, img.data(),
+                                           img_ne, out_data, out_ne, n_threads);
         }
         emit(AICORE_SAM3_PROFILE_PREFIX, s, s,
              elapsed_ms(t0, Clock::now()) / n_iter);
@@ -1316,8 +1309,7 @@ AICORE_CAPI int aicore_sam3_profile_encoder(aicore_sam3_ctx* ctx,
         // Chain the output as the next stage's input where shapes allow.
         std::copy(std::begin(out_ne), std::end(out_ne), std::begin(img_ne));
         img.swap(out_data);
-        img.resize((size_t)img_ne[0] * img_ne[1] * img_ne[2] * img_ne[3],
-                   0.0f);
+        img.resize((size_t)img_ne[0] * img_ne[1] * img_ne[2] * img_ne[3], 0.0f);
     }
 
     // ── Block stages, chained per block ──────────────────────────────────
@@ -1329,7 +1321,7 @@ AICORE_CAPI int aicore_sam3_profile_encoder(aicore_sam3_ctx* ctx,
         // windowed sub-graphs cannot produce — skip them.
         {
             const std::string name =
-                "vit.blocks." + std::to_string(b) + ".attn.freqs_cis";
+                    "vit.blocks." + std::to_string(b) + ".attn.freqs_cis";
             if (sam3_get_model_tensor_info(*ctx->model, name, ti) &&
                 ti.ne[2] == (int64_t)grid * grid) {
                 continue;
@@ -1343,21 +1335,21 @@ AICORE_CAPI int aicore_sam3_profile_encoder(aicore_sam3_ctx* ctx,
             std::vector<float> out_data;
             int64_t out_ne[4] = {0, 0, 0, 0};
             if (!sam3_test_run_vit_block_stage(
-                    *ctx->model, b, (sam3_vit_block_stage)s, x.data(), ne,
-                    out_data, out_ne, n_threads)) {
+                        *ctx->model, b, (sam3_vit_block_stage)s, x.data(), ne,
+                        out_data, out_ne, n_threads)) {
                 continue;  // invalid block or unsupported stage
             }
             any = true;
             for (int it = 0; it < n_warmup; ++it) {
-                sam3_test_run_vit_block_stage(
-                    *ctx->model, b, (sam3_vit_block_stage)s, x.data(), ne,
-                    out_data, out_ne, n_threads);
+                sam3_test_run_vit_block_stage(*ctx->model, b,
+                                              (sam3_vit_block_stage)s, x.data(),
+                                              ne, out_data, out_ne, n_threads);
             }
             auto t0 = Clock::now();
             for (int it = 0; it < n_iter; ++it) {
-                sam3_test_run_vit_block_stage(
-                    *ctx->model, b, (sam3_vit_block_stage)s, x.data(), ne,
-                    out_data, out_ne, n_threads);
+                sam3_test_run_vit_block_stage(*ctx->model, b,
+                                              (sam3_vit_block_stage)s, x.data(),
+                                              ne, out_data, out_ne, n_threads);
             }
             emit(AICORE_SAM3_PROFILE_BLOCK, b, s,
                  elapsed_ms(t0, Clock::now()) / n_iter);
@@ -1377,9 +1369,8 @@ AICORE_CAPI int aicore_sam3_quantize_gguf(const char* input_gguf,
                                           const char* output_gguf,
                                           const char* type_name) {
     if (!input_gguf || !output_gguf || !type_name) return -1;
-    return aicore::sam3::quantize_gguf(input_gguf, output_gguf, type_name)
-               ? 0
-               : -1;
+    return aicore::sam3::quantize_gguf(input_gguf, output_gguf, type_name) ? 0
+                                                                           : -1;
 }
 
 AICORE_CAPI int aicore_sam3_warmup_backend(const char* device) {

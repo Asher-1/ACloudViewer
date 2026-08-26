@@ -20,7 +20,8 @@ VideoCanvas::VideoCanvas(QWidget* parent) : QLabel(parent) {
     setStyleSheet(
             "QLabel { background: #1a1a26; border: 1px solid #333;"
             " border-radius: 4px; color: #666; font-size: 13px; }");
-    setText(tr("Open a video, pick a model and click Load.\n"
+    setText(
+            tr("Open a video, pick a model and click Load.\n"
                "Then pause, click on an object / drag a box to add an "
                "instance, and press Play."));
     setMouseTracking(true);
@@ -41,10 +42,9 @@ void VideoCanvas::setInstances(const QVector<VideoInstanceBox>& boxes,
     redraw();
 }
 
-void VideoCanvas::setFrameAndInstances(
-        const QImage& frame,
-        const QVector<VideoInstanceBox>& boxes,
-        const QVector<QImage>& masks) {
+void VideoCanvas::setFrameAndInstances(const QImage& frame,
+                                       const QVector<VideoInstanceBox>& boxes,
+                                       const QVector<QImage>& masks) {
     m_frame = frame.convertToFormat(QImage::Format_RGB32);
     m_boxes = boxes;
     m_masks = masks;
@@ -66,7 +66,8 @@ void VideoCanvas::clearAll() {
     m_posPoints.clear();
     m_negPoints.clear();
     clearBox();
-    setText(tr("Open a video, pick a model and click Load.\n"
+    setText(
+            tr("Open a video, pick a model and click Load.\n"
                "Then pause, click on an object / drag a box to add an "
                "instance, and press Play."));
     setPixmap(QPixmap());
