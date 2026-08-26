@@ -47,6 +47,7 @@
 #include <cstdio>
 #include <cstring>
 #include <fstream>
+#include <limits>
 #include <map>
 #include <thread>
 #include <unordered_map>
@@ -793,6 +794,11 @@ struct sam3_state {
 
     int orig_width = 0;
     int orig_height = 0;
+    // Set by every image-encode attempt. An empty sam3_result is otherwise
+    // ambiguous: it can mean either "no detections" or "the backbone graph
+    // could not allocate/compute". The C API uses this bit to propagate the
+    // latter as an error instead of reporting a successful empty frame.
+    bool last_encode_ok = false;
     int n_threads = 4;
 
     int encode_img_size =
@@ -1057,19 +1063,21 @@ static ggml_backend_t sam3_backend_init(sam3_device device, bool use_gpu) {
     ggml_backend_dev_t dev = nullptr;
     switch (device) {
         case SAM3_DEVICE_AUTO:
-            // Probe CUDA first, then Vulkan, then CPU.
+            // Probe CUDA first, then CPU.
+            // NOTE: ggml v0.18.1 Vulkan backend crashes all SAM/SAM2 models
+            // with VK_ERROR_DEVICE_LOST during graph compute on NVIDIA driver
+            // 550.144.03 (and likely other versions). Skip Vulkan in AUTO and
+            // let the explicit SAM3_DEVICE_VULKAN path below handle users who
+            // knowingly opt in.
             dev = sam3_find_dev_by_name("cuda");
-            if (!dev) dev = sam3_find_dev_by_name("vulkan");
-            if (!dev)
-                dev = ggml_backend_dev_by_type(GGML_BACKEND_DEVICE_TYPE_GPU);
-            break;
-        case SAM3_DEVICE_CPU:
             break;
         case SAM3_DEVICE_CUDA:
             dev = sam3_find_dev_by_name("cuda");
             break;
         case SAM3_DEVICE_VULKAN:
             dev = sam3_find_dev_by_name("vulkan");
+            break;
+        case SAM3_DEVICE_CPU:
             break;
     }
     if (!dev) {
@@ -3152,7 +3160,23 @@ std::shared_ptr<sam3_model> sam3_load_model(const sam3_params& params) {
                      __func__, arch.c_str(), ftype,
                      (long long)gguf_get_n_tensors(gguf));
 
-    auto model = std::make_shared<sam3_model>();
+    // sam3_model intentionally exposes an explicit sam3_free_model() API and
+    // has no destructor of its own. A default shared_ptr deleter would only
+    // delete the C++ object and leak its backend, weight buffer and ggml
+    // context. Attach the resource teardown to the final shared owner so a
+    // context and any tracker may safely share the same model.
+    std::shared_ptr<sam3_model> model(
+            new (std::nothrow) sam3_model(), [](sam3_model* ptr) {
+                if (!ptr) return;
+                sam3_free_model(*ptr);
+                delete ptr;
+            });
+    if (!model) {
+        AICORE_LOG_ERROR("[sam3] ", "%s: model allocation failed\n", __func__);
+        gguf_free(gguf);
+        ggml_free(gguf_ctx);
+        return nullptr;
+    }
     {
         ggml_type wtype;
         switch (ftype) {
@@ -3295,6 +3319,12 @@ std::shared_ptr<sam3_model> sam3_load_model(const sam3_params& params) {
 }
 
 void sam3_free_model(sam3_model& model) {
+    if (model.backend) {
+        // Finish queued GPU work before releasing graph/weight storage. This
+        // also makes a tab switch a deterministic resource hand-off to the
+        // next model load on the same device.
+        ggml_backend_synchronize(model.backend);
+    }
     if (model.buffer) {
         ggml_backend_buffer_free(model.buffer);
         model.buffer = nullptr;
@@ -3304,9 +3334,14 @@ void sam3_free_model(sam3_model& model) {
         model.ctx = nullptr;
     }
     if (model.backend) {
+        if (g_sam3_backend == model.backend) g_sam3_backend = nullptr;
         ggml_backend_free(model.backend);
         model.backend = nullptr;
     }
+}
+
+bool sam3_state_last_encode_succeeded(const sam3_state& state) {
+    return state.last_encode_ok;
 }
 
 bool sam3_is_visual_only(const sam3_model& model) {
@@ -5107,6 +5142,7 @@ static void sam2_build_fpn_neck_graph(struct ggml_context* ctx,
 static bool sam2_encode_image_hiera(sam3_state& state,
                                     const sam3_model& model,
                                     const sam3_image& image) {
+    state.last_encode_ok = false;
     auto t_start = std::chrono::high_resolution_clock::now();
     const auto& hp = model.hparams;
     const int img_size = sam3_eff_img_size(state, hp);
@@ -5383,6 +5419,7 @@ static bool sam2_encode_image_hiera(sam3_state& state,
                          (long long)state.neck_trk[i]->ne[3]);
     }
 
+    state.last_encode_ok = true;
     return true;
 }
 
@@ -5394,6 +5431,7 @@ static bool sam3_encode_image_impl(sam3_state& state,
                                    const sam3_model& model,
                                    const sam3_image& image,
                                    bool tracker_only) {
+    state.last_encode_ok = false;
     // ── SAM2 dispatch ────────────────────────────────────────────────────
     if (model.hparams.is_sam2()) {
         return sam2_encode_image_hiera(state, model, image);
@@ -5451,7 +5489,11 @@ static bool sam3_encode_image_impl(sam3_state& state,
             return false;
         }
     } else {
-        // Free stale SAM3 cache
+        // Free stale SAM3 cache. state.ctx/galloc alias the same allocations
+        // as sam3_ctx/sam3_galloc (both are assigned the current ctx0/galloc
+        // below), so clear them together — otherwise the cache-swap block
+        // below double-frees the old context when switching PVS ↔ PCS
+        // (tracker_only flag changes, graph_cached goes false).
         if (state.sam3_ctx) {
             ggml_gallocr_free(state.sam3_galloc);
             ggml_free(state.sam3_ctx);
@@ -5460,6 +5502,8 @@ static bool sam3_encode_image_impl(sam3_state& state,
             state.sam3_galloc = nullptr;
             state.sam3_img_size = 0;
             state.sam3_tracker_only = false;
+            state.ctx = nullptr;
+            state.galloc = nullptr;
         }
 
         const size_t buf_size =
@@ -5609,6 +5653,7 @@ static bool sam3_encode_image_impl(sam3_state& state,
     SAM3_LOG(1, "%s: image encoded successfully in %.1f ms\n", __func__,
              total_ms);
 #endif
+    state.last_encode_ok = true;
     return true;
 }
 
@@ -9295,6 +9340,36 @@ static float sam3_box_iou(const sam3_box& a, const sam3_box& b) {
     return (uni > 0.0f) ? inter / uni : 0.0f;
 }
 
+// Decoder tensors can contain NaN/Inf when a backend kernel or quantized
+// weight overflows.  Letting those values reach sigmoid, resize, NMS, or the
+// UI turns a numerical failure into a silently empty mask.  Keep the check in
+// the common post-processing path so every backend observes the same contract.
+static bool sam3_finite(float v) { return std::isfinite(v); }
+
+static bool sam3_finite_box(const sam3_box& box) {
+    return sam3_finite(box.x0) && sam3_finite(box.y0) &&
+           sam3_finite(box.x1) && sam3_finite(box.y1);
+}
+
+static bool sam3_finite_values(const float* values, size_t count) {
+    if (!values) return false;
+    for (size_t i = 0; i < count; ++i)
+        if (!sam3_finite(values[i])) return false;
+    return true;
+}
+
+static float sam3_sigmoid_finite(float logit) {
+    if (!sam3_finite(logit)) return std::numeric_limits<float>::quiet_NaN();
+    // Avoid exp overflow while preserving the exact sigmoid value in the
+    // numerically relevant range.
+    if (logit >= 0.0f) {
+        const float z = expf(-logit);
+        return 1.0f / (1.0f + z);
+    }
+    const float z = expf(logit);
+    return z / (1.0f + z);
+}
+
 // Non-maximum suppression on detections, sorted by score descending.
 // Returns indices of kept detections.
 static std::vector<int> sam3_nms(const std::vector<sam3_detection>& dets,
@@ -9789,7 +9864,13 @@ sam3_result sam3_segment_pcs(sam3_state& state,
         ggml_free(ctx);
     }
 
-    float presence_prob = 1.0f / (1.0f + expf(-presence_logit));
+    float presence_prob = sam3_sigmoid_finite(presence_logit);
+    if (!sam3_finite(presence_prob)) {
+        AICORE_LOG_ERROR("[sam3] ",
+                         "%s: non-finite presence logit; returning no detections\n",
+                         __func__);
+        return result;
+    }
 
     // When the text prompt is effectively empty (only SOT+EOT framing tokens,
     // no content), the presence head has no semantic concept to evaluate and
@@ -9914,9 +9995,15 @@ sam3_result sam3_segment_pcs(sam3_state& state,
     */
     std::vector<sam3_detection> dets;
     for (int q = 0; q < NQ; ++q) {
-        float class_prob = 1.0f / (1.0f + expf(-scores_data[q]));
+        if (!sam3_finite(scores_data[q]) ||
+            !sam3_finite_values(boxes_data.data() + q * 4, 4)) {
+            SAM3_LOG(1, "%s: dropping query %d with non-finite score/box\n",
+                     __func__, q);
+            continue;
+        }
+        float class_prob = sam3_sigmoid_finite(scores_data[q]);
         float score = class_prob * presence_prob;
-        if (score < params.score_threshold) continue;
+        if (!sam3_finite(score) || score < params.score_threshold) continue;
 
         sam3_detection det;
         float cx = boxes_data[0 + q * 4];
@@ -9926,12 +10013,23 @@ sam3_result sam3_segment_pcs(sam3_state& state,
 
         det.box = sam3_cxcywh_to_xyxy(cx, cy, bw, bh, state.orig_width,
                                       state.orig_height);
+        if (!sam3_finite_box(det.box)) {
+            SAM3_LOG(1, "%s: dropping query %d with non-finite box\n",
+                     __func__, q);
+            continue;
+        }
         det.score = score;
 
         const float* mask_ptr = all_masks.data() + q * mask_hw * mask_hw;
         auto mask_resized =
                 sam3_bilinear_interpolate(mask_ptr, mask_hw, mask_hw,
                                           state.orig_width, state.orig_height);
+        if (!sam3_finite_values(mask_ptr, (size_t)mask_hw * mask_hw) ||
+            !sam3_finite_values(mask_resized.data(), mask_resized.size())) {
+            SAM3_LOG(1, "%s: dropping query %d with non-finite mask logits\n",
+                     __func__, q);
+            continue;
+        }
         det.mask.width = state.orig_width;
         det.mask.height = state.orig_height;
         det.mask.data.resize(state.orig_width * state.orig_height);
@@ -10916,13 +11014,32 @@ sam3_result sam3_segment_pvs(sam3_state& state,
     // Object score: [1, 1]
     float obj_logit = 0.0f;
     ggml_backend_tensor_get(dec_out.obj_score, &obj_logit, 0, sizeof(float));
-    float obj_score = 1.0f / (1.0f + expf(-obj_logit));
+    float obj_score = sam3_sigmoid_finite(obj_logit);
+    if (!sam3_finite(obj_score) ||
+        !sam3_finite_values(iou_data.data(), iou_data.size()) ||
+        !sam3_finite_values(masks_data.data(), masks_data.size())) {
+        AICORE_LOG_ERROR(
+                "[sam3] ",
+                "%s: non-finite decoder output (obj/iou/mask); returning no masks\n",
+                __func__);
+        ggml_gallocr_free(galloc);
+        ggml_free(ctx0);
+        return result;
+    }
 
     // SAM output token: [D, 1] — needed for object pointer extraction in
     // tracking
     std::vector<float> sam_token_data(D);
     ggml_backend_tensor_get(dec_out.sam_token, sam_token_data.data(), 0,
                             D * sizeof(float));
+    if (!sam3_finite_values(sam_token_data.data(), sam_token_data.size())) {
+        AICORE_LOG_ERROR("[sam3] ",
+                         "%s: non-finite SAM token output; returning no masks\n",
+                         __func__);
+        ggml_gallocr_free(galloc);
+        ggml_free(ctx0);
+        return result;
+    }
 
     SAM3_LOG(2,
              "%s: obj_score=%.4f (logit=%.4f), iou=[%.3f, %.3f, %.3f, %.3f]\n",
@@ -11386,6 +11503,12 @@ static sam3_prop_output sam3_propagate_single(
         std::vector<float> all_ious(num_mask_tokens);
         ggml_backend_tensor_get(dec.iou_pred, all_ious.data(), 0,
                                 num_mask_tokens * sizeof(float));
+        if (!sam3_finite_values(all_ious.data(), all_ious.size())) {
+            AICORE_LOG_ERROR("[sam3] ",
+                             "%s: non-finite multimask IoU output\n",
+                             __func__);
+            return {};
+        }
 
         // Multimask uses mask tokens 1-3 (skip token 0 which is the single-mask
         // output)
@@ -11439,6 +11562,18 @@ static sam3_prop_output sam3_propagate_single(
                                 D * sizeof(float));
     }
 
+    if (!sam3_finite(output.obj_score) ||
+        !sam3_finite_values(output.iou_scores.data(),
+                            output.iou_scores.size()) ||
+        !sam3_finite_values(output.mask_logits.data(),
+                            output.mask_logits.size()) ||
+        !sam3_finite_values(output.sam_token.data(), output.sam_token.size())) {
+        AICORE_LOG_ERROR("[sam3] ",
+                         "%s: non-finite propagation decoder output\n",
+                         __func__);
+        return {};
+    }
+
     if (s_prof) {
         auto t_r = std::chrono::high_resolution_clock::now();
         AICORE_LOG_PRINT(
@@ -11458,27 +11593,41 @@ static std::vector<std::pair<int, int>> sam3_match_detections(
         float iou_threshold) {
     std::vector<std::pair<int, int>> matches;
     if (masklets.empty() || dets.empty()) return matches;
-    int n_m = (int)masklets.size(), n_d = (int)dets.size();
-    std::vector<bool> dm(n_d, false);
+    const int n_m = (int)masklets.size(), n_d = (int)dets.size();
+    struct Candidate {
+        int masklet = -1;
+        int detection = -1;
+        float iou = 0.0f;
+    };
+    std::vector<Candidate> candidates;
     for (int i = 0; i < n_m; ++i) {
         if (i >= (int)prop_masks.size() || prop_masks[i].data.empty()) continue;
-        int bj = -1;
-        float bi = iou_threshold;
         for (int j = 0; j < n_d; ++j) {
-            if (dm[j] || dets[j].mask.data.empty()) continue;
+            if (dets[j].mask.data.empty()) continue;
             int w = prop_masks[i].width, h = prop_masks[i].height;
             if (w != dets[j].mask.width || h != dets[j].mask.height) continue;
             float iou = sam3_mask_iou(prop_masks[i].data.data(),
                                       dets[j].mask.data.data(), w * h);
-            if (iou > bi) {
-                bi = iou;
-                bj = j;
-            }
+            if (iou > iou_threshold) candidates.push_back({i, j, iou});
         }
-        if (bj >= 0) {
-            matches.push_back({i, bj});
-            dm[bj] = true;
+    }
+    // Resolve associations globally by highest IoU. The previous masklet-order
+    // greedy pass could let an early weak overlap consume a detection that was
+    // the strong match for another instance, causing avoidable ID switches.
+    std::sort(candidates.begin(), candidates.end(),
+              [](const Candidate& a, const Candidate& b) {
+                  return a.iou > b.iou;
+              });
+    std::vector<bool> masklet_matched(n_m, false);
+    std::vector<bool> detection_matched(n_d, false);
+    for (const Candidate& candidate : candidates) {
+        if (masklet_matched[candidate.masklet] ||
+            detection_matched[candidate.detection]) {
+            continue;
         }
+        matches.push_back({candidate.masklet, candidate.detection});
+        masklet_matched[candidate.masklet] = true;
+        detection_matched[candidate.detection] = true;
     }
     return matches;
 }
@@ -11515,6 +11664,14 @@ static bool sam3_encode_memory(sam3_tracker& tracker,
                                int frame_idx,
                                bool is_cond,
                                float obj_score) {
+    if (!mask_logits || mask_h <= 0 || mask_w <= 0 ||
+        !sam3_finite(obj_score) ||
+        !sam3_finite_values(mask_logits,
+                            static_cast<size_t>(mask_h) * mask_w)) {
+        AICORE_LOG_ERROR("[sam3] ",
+                         "%s: invalid/non-finite memory input\n", __func__);
+        return false;
+    }
     const auto& hp = model.hparams;
     const int D = hp.neck_dim, MD = hp.mem_out_dim;
     const int H = sam3_eff_feat_size(state, hp);
@@ -11530,12 +11687,15 @@ static bool sam3_encode_memory(sam3_tracker& tracker,
     auto m_hires = sam3_bilinear_interpolate(mask_logits, mask_w, mask_h,
                                              HIGH_RES, HIGH_RES);
     const float sig_scale = hp.sigmoid_scale(), sig_bias = hp.sigmoid_bias();
+    if (!sam3_finite(sig_scale) || !sam3_finite(sig_bias)) return false;
     for (auto& v : m_hires) {
-        float s = 1.0f / (1.0f + expf(-v));
+        const float s = sam3_sigmoid_finite(v);
+        if (!sam3_finite(s)) return false;
         v = s * sig_scale + sig_bias;
     }
     auto m_interp = sam3_bilinear_interpolate(m_hires.data(), HIGH_RES,
                                               HIGH_RES, INTERPOL, INTERPOL);
+    if (!sam3_finite_values(m_interp.data(), m_interp.size())) return false;
 
     const size_t bs = ggml_tensor_overhead() * 16384 + ggml_graph_overhead();
     struct ggml_init_params gp = {bs, nullptr, true};
@@ -11864,9 +12024,22 @@ sam3_result sam3_track_frame(sam3_tracker& tracker,
             auto r2 = sam3_bilinear_interpolate(
                     p2.mask_logits.data(), p2.mask_w, p2.mask_h,
                     state.orig_width, state.orig_height);
+            sam3_mask propagated;
+            propagated.width = state.orig_width;
+            propagated.height = state.orig_height;
+            propagated.data.resize(static_cast<size_t>(state.orig_width) *
+                                   state.orig_height);
             int fg2 = 0;
-            for (auto v : r2)
-                if (v > 0.0f) fg2++;
+            for (int p = 0; p < (int)r2.size(); ++p) {
+                const bool foreground = r2[p] > 0.0f;
+                propagated.data[p] = foreground ? 255 : 0;
+                if (foreground) fg2++;
+            }
+            // Pending instances participate in next-frame association and
+            // rendering just like confirmed masklets. Omitting this map entry
+            // made every PCS detection look new until hotstart completed,
+            // creating duplicate IDs and blank/intermittent pending masks.
+            pm[id] = std::move(propagated);
             float c2 = (float)fg2 / (state.orig_width * state.orig_height);
             ml.mds_sum += (c2 > 0.001f && p2.obj_score > 0.0f) ? 1 : -1;
             sam3_encode_memory(tracker, state, model, id, p2.mask_logits.data(),

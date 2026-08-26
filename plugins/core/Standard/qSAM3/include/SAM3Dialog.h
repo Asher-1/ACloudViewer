@@ -7,14 +7,16 @@
 // SAM3 interactive segmentation dialog.
 //
 // Qt-based replacement for the upstream ImGui demo (examples/main_image.cpp).
-// Layout:
-//   Tabs per model family:
+// Layout (mirrors the upstream single-panel strategy):
+//   Shared device row at the top, then one tab per model family:
 //     SAM 3 Full (ViT + text detector) → Points / Box (PVS) / Exemplar (PCS)
 //     SAM 3 Visual (no text encoder)   → Points / Box (PVS)
 //     SAM 2 / 2.1 (visual-only Hiera)  → Points / Box (PVS)
-//   Each tab: model combo (filtered by family) + Load + "Try sample data"
-//   Shared: device combo, image canvas, score threshold, show masks,
-//           multimask, status, detection list, Clear / Export buttons
+//     Video (self-contained tracking tab)
+//   Each image tab is self-contained and compact: two control rows, the
+//   canvas expanding to fill all remaining space, a compact bottom bar
+//   (score / show masks / export to DB / multimask / Clear / Export masks /
+//   status) and the detection list. No tab's layout affects another one.
 //   Canvas mouse interaction: left-click → +point, right-click → -point,
 //                             drag → bounding box
 
@@ -48,8 +50,10 @@ class QPushButton;
 class QRadioButton;
 class QSlider;
 class QTabWidget;
+class QTextBrowser;
 class QTimer;
 class ecvMainAppInterface;
+class ecvModelDownloader;
 class VideoTab;  // video tracking tab (VideoTab.h; built with OpenCV only)
 
 /** Detection box + label drawn on the image canvas, mirroring upstream
@@ -82,6 +86,14 @@ public:
      *  (upstream main_image.cpp draws a rect + "#id score" per detection). */
     void setDetections(const QVector<SAM3DetBox>& detections);
     void clearDetections();
+    /** Sets the positive exemplar boxes (Exemplar / PCS mode) drawn as green
+     *  rects, mirroring upstream examples/main_image.cpp pos_exemplars. */
+    void setExemplars(const QVector<QRectF>& exemplars);
+    void clearExemplars();
+    /** In Exemplar (PCS) mode the freshly dragged box is one of the green
+     *  exemplar rects (upstream draws pos_exemplars only); the cyan
+     *  "confirmed PVS box" is hidden. */
+    void setExemplarMode(bool on);
     /** True when \p p (in original image pixels) lies inside the image. */
     bool isInsideImage(const QPointF& p) const;
 
@@ -119,6 +131,8 @@ private:
     QImage m_overlay;
     QImage m_maskOverlay;
     QVector<SAM3DetBox> m_detections;
+    QVector<QRectF> m_exemplars;  // Exemplar (PCS) mode, green rects
+    bool m_exemplarMode = false;  // hide the cyan confirmed box in PCS mode
 
     // Points / box state
     QVector<QPointF> m_posPoints;
@@ -128,6 +142,42 @@ private:
     bool m_dragging = false;
     QPointF m_dragStart;
     QRectF m_dragRect;
+};
+
+/** Widgets + per-tab state of one image segmentation tab. Each tab owns
+ *  its own canvas and bottom bar so the three image tabs are fully
+ *  self-contained and never affected by the Video tab's layout. */
+struct ImageTabUi {
+    // Tab page + control rows
+    QWidget* tab = nullptr;
+    QRadioButton* modePoints = nullptr;
+    QRadioButton* modeBox = nullptr;
+    QRadioButton* modeExemplar = nullptr;  // SAM 3 Full only
+    QLineEdit* textPrompt = nullptr;       // SAM 3 Full only
+    QPushButton* segmentBtn = nullptr;     // SAM 3 Full only
+    QComboBox* modelCombo = nullptr;
+    QPushButton* downloadBtn = nullptr;  // downloads the selected catalog GGUF
+    QPushButton* loadBtn = nullptr;
+    QComboBox* testDataCombo = nullptr;    // test-image picker (SAM3 dataset)
+    QPushButton* testDataBtn = nullptr;
+    // Canvas (fills the tab) + bottom bar
+    SAM3Canvas* canvas = nullptr;
+    QLabel* detLabel = nullptr;
+    QDoubleSpinBox* scoreSpin = nullptr;
+    QCheckBox* showMasks = nullptr;
+    QCheckBox* multimask = nullptr;
+    QCheckBox* exportToDbCheckBox = nullptr;
+    QPushButton* clearBtn = nullptr;
+    QPushButton* exportBtn = nullptr;
+    QLabel* statusLabel = nullptr;
+    QTextBrowser* detectionLabel = nullptr;
+    // Per-tab state
+    QImage currentImage;
+    QString currentImagePath;
+    SAM3WorkerResult lastResult;
+    /** Positive exemplar boxes collected in Exemplar (PCS) mode, mirroring
+     *  upstream examples/main_image.cpp pos_exemplars. */
+    QVector<QRectF> posExemplars;
 };
 
 class SAM3Dialog : public QDialog {
@@ -148,7 +198,6 @@ public:
         QString modelFull;
         QString modelVisual;
         QString modelSam2;
-        bool exportToDb = true;
     };
 
     explicit SAM3Dialog(QWidget* parent = nullptr);
@@ -162,8 +211,9 @@ public slots:
     void applyDbTreeSelection(const QStringList& names);
 
     /** Pass the app interface for DB-tree export. Must be called before
-     *  the dialog is shown (typically from qSAM3::showDialog). */
-    void setAppInterface(ecvMainAppInterface* app) { m_app = app; }
+     *  the dialog is shown (typically from qSAM3::showDialog); forwarded to
+     *  the Video tab as well so its Export to DB works too. */
+    void setAppInterface(ecvMainAppInterface* app);
 
 private slots:
     void onLoadModel();
@@ -201,8 +251,20 @@ private:
     void loadSettings();
     void saveSettings();
     QString modelPath() const;
+    /** Download the GGUF currently selected in the active tab's model combo
+     *  into the shared AICore model cache (sam3_models). Naming mirrors the
+     *  qDA3/qYOLO/qDeepLSD startDownload convention. When \p thenRun is
+     *  true the pending operation is re-executed once the download finishes. */
+    void startDownload(bool thenRun);
+    /** Refresh every tab's Download button state (cached / missing). */
+    void updateDownloadButtons();
+    /** Re-fill all three model combos, keeping the current selection. */
+    void refreshModelCombos();
     void startWorker(SAM3WorkerAction action);
     void stopWorker();
+    /** Run a segmentation request. Canvas-originated requests always use
+     *  PVS, even when the text field is non-empty, matching main_image.cpp. */
+    void runSegmentation(bool canvasPrompt);
     /** If a model file for the current combo entry exists locally and it is
      *  not loaded yet (or the combo switched to a different model), start
      *  loading it right away. Loads lazily on first use (Segment / click /
@@ -221,10 +283,18 @@ private:
      *  busy; the model loads lazily on first use) and keep the canvas
      *  interactivity in sync. */
     void updateSegmentButtonState();
-    void updateCanvasFromResult();
-    void updateDetectionList();
+    /** Refresh the target tab's canvas from its lastResult (defaults to the
+     *  active tab; worker callbacks pass the task's tab explicitly). */
+    void updateCanvasFromResult(ImageTabUi* target = nullptr);
+    void updateDetectionList(ImageTabUi* target = nullptr);
+    /** Clear prompts and rendered inference output while preserving the image,
+     *  selected model and (optionally) the text prompt. */
+    void clearInteractionState(ImageTabUi& ui, bool clearTextPrompt);
     void updateStatus(const QString& msg);
     bool loadRequestedTestData();
+    /** Load the sample image selected in the given tab's test-data picker
+     *  into that tab's canvas (combo switch auto-loads per tab). */
+    bool loadTestImageInto(ImageTabUi& u);
     /** (Re)fill the per-tab test-image pickers from the extracted SAM3
      *  dataset (images/ subdirectory). Keeps the three tabs in sync. */
     void populateTestDataCombos();
@@ -233,52 +303,31 @@ private:
     void setTestDataControlsEnabled(bool enabled);
 
     Sam3Tab currentTab() const;
+    /** Widgets + state of the active image tab (Video tab never reaches
+     *  here; guarded by the callers). */
+    ImageTabUi& currentUi() { return m_tabsUi[static_cast<int>(currentTab())]; }
+    const ImageTabUi& currentUi() const {
+        return m_tabsUi[static_cast<int>(currentTab())];
+    }
     QComboBox* currentModelCombo() const;
     bool currentPcsMode() const;
     QRadioButton* currentPointsRadio() const;
     QRadioButton* currentBoxRadio() const;
 
-    /** Export the current m_lastResult to the DB tree as a ccImage. */
-    void exportToDb();
+    /** Export the target tab's lastResult to the DB tree as a ccImage
+     *  (defaults to the active tab). */
+    void exportToDb(ImageTabUi* target = nullptr);
 
     // UI widgets (top bar)
     QTabWidget* m_tabs = nullptr;
-    QLineEdit* m_textPrompt = nullptr;
-    QPushButton* m_segmentBtn = nullptr;
-    QPushButton* m_clearBtn = nullptr;
-    QPushButton* m_exportBtn = nullptr;
+    /** Widgets + state of the three image tabs (indexed by Sam3Tab). */
+    ImageTabUi m_tabsUi[3];
 
-    // ── SAM3 Full tab (text + detector) ──
-    QRadioButton* m_modePoints = nullptr;
-    QRadioButton* m_modeBox = nullptr;
-    QRadioButton* m_modeExemplar = nullptr;
-    QComboBox* m_modelCombo = nullptr;
-    QPushButton* m_loadBtn = nullptr;
-    QComboBox* m_testDataCombo = nullptr;  // test-image picker (SAM3 dataset)
-    QPushButton* m_testDataBtn = nullptr;
-
-    // ── SAM3 Visual tab (visual-only) ──
-    QRadioButton* m_modePointsV = nullptr;
-    QRadioButton* m_modeBoxV = nullptr;
-    QComboBox* m_modelComboV = nullptr;
-    QPushButton* m_loadBtnV = nullptr;
-    QComboBox* m_testDataComboV = nullptr;
-    QPushButton* m_testDataBtnV = nullptr;
-
-    // ── SAM 2 / 2.1 tab (visual-only Hiera) ──
-    QRadioButton* m_modePointsS = nullptr;
-    QRadioButton* m_modeBoxS = nullptr;
-    QComboBox* m_modelComboS = nullptr;
-    QPushButton* m_loadBtnS = nullptr;
-    QComboBox* m_testDataComboS = nullptr;
-    QPushButton* m_testDataBtnS = nullptr;
-
-    // Device
+    // Device (shared across the image tabs)
     QComboBox* m_deviceCombo = nullptr;
     QLabel* m_backendLabel = nullptr;
 
-    // Canvas
-    SAM3Canvas* m_canvas = nullptr;
+    // Video tracking tab (self-contained; VideoTab.h, OpenCV only)
     VideoTab* m_videoTab = nullptr;
 
     // Busy overlay (spinner + dim, mirroring upstream main_image.cpp
@@ -287,40 +336,43 @@ private:
     QTimer* m_busyTimer = nullptr;
     int m_busyFrame = 0;
 
-    // Bottom panel
-    QDoubleSpinBox* m_scoreSpin = nullptr;
-    QCheckBox* m_showMasks = nullptr;
-    QCheckBox* m_multimask = nullptr;
-    QCheckBox* m_exportToDbCheckBox = nullptr;
-    QLabel* m_statusLabel = nullptr;
-    QLabel* m_detectionLabel = nullptr;
-
     // Worker
-    QThread* m_workerThread = nullptr;
     SAM3Worker* m_worker = nullptr;
-    SAM3WorkerResult m_lastResult;
 
     // State
     Settings m_settings;
     QString m_modelPath;
-    int m_mode = 0;  // 0=Points, 1=Box, 2=Exemplar
     bool m_visualOnly = false;
     bool m_busy = false;
-    /** Positive exemplar boxes collected in Exemplar (PCS) mode, mirroring
-     *  upstream examples/main_image.cpp pos_exemplars. */
-    QVector<QRectF> m_posExemplars;
-    QImage m_currentImage;
-    QString m_currentImagePath;
-    bool m_encoded = false;
     /** Set when the user triggered Segment / point / box while the model
      *  was still loading; the operation is re-run once the load finishes. */
     bool m_retryAfterModelLoad = false;
+    bool m_retryCanvasPrompt = false;
+    bool m_reloadAfterCurrentTask = false;
+    /** Tab index (0..2) that owns the running worker task; all worker
+     *  callbacks (result / model-ready / finished / log) target this tab's
+     *  UI so a task started on one tab never writes another tab's state. */
+    int m_taskTab = 0;
+    /** Tab index that requested the test-data download; the auto-load after
+     *  extraction lands on that tab even if the user switched away. */
+    int m_testDataTab = 0;
 
     // Test data (shared ecvTestDataRepository, ObjectsDetection dataset)
     bool m_testDataDownloadInProgress = false;
     QLabel* m_downloadLabel = nullptr;
     QProgressBar* m_progress = nullptr;
     bool m_firstShow = true;
+
+    // Model downloader (shared ecvModelDownloader, qDA3-style)
+    ecvModelDownloader* m_modelDownloader = nullptr;
+    bool m_downloadInProgress = false;
+    /** Re-run the pending operation once the download completes. */
+    bool m_downloadThenRun = false;
+    QString m_downloadTargetFilename;
+    /** Tab index that owns the in-flight download (0..2). */
+    int m_downloadTab = 0;
+    /** Prevent re-prompting after the user declined the download dialog. */
+    bool m_downloadPrompted = false;
 
     // App interface (set via setAppInterface; used for DB-tree export)
     ecvMainAppInterface* m_app = nullptr;

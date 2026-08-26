@@ -41,3 +41,4 @@ endif()
 
 cloudviewer_set_bin_runtime_output_directory(test_sam3_contract)
 add_test(NAME test_sam3_contract COMMAND test_sam3_contract)
+set_tests_properties(test_sam3_contract PROPERTIES LABELS "model;sam3")

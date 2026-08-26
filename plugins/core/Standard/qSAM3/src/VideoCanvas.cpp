@@ -27,12 +27,25 @@ VideoCanvas::VideoCanvas(QWidget* parent) : QLabel(parent) {
 }
 
 void VideoCanvas::setFrame(const QImage& frame) {
-    m_frame = frame;
+    // drawFrameAndMasks() writes pixels through QRgb*. VideoFrameReader
+    // supplies RGB888 frames, whose 3-byte rows must never be addressed as
+    // 4-byte QRgb pixels (that corrupts adjacent pixels/rows as white bars).
+    m_frame = frame.convertToFormat(QImage::Format_RGB32);
     redraw();
 }
 
 void VideoCanvas::setInstances(const QVector<VideoInstanceBox>& boxes,
                                const QVector<QImage>& masks) {
+    m_boxes = boxes;
+    m_masks = masks;
+    redraw();
+}
+
+void VideoCanvas::setFrameAndInstances(
+        const QImage& frame,
+        const QVector<VideoInstanceBox>& boxes,
+        const QVector<QImage>& masks) {
+    m_frame = frame.convertToFormat(QImage::Format_RGB32);
     m_boxes = boxes;
     m_masks = masks;
     redraw();
@@ -184,6 +197,9 @@ void VideoCanvas::redraw() {
 }
 
 void VideoCanvas::drawFrameAndMasks(QPainter& p, QImage& canvas) {
+    Q_ASSERT(canvas.format() == QImage::Format_RGB32 ||
+             canvas.format() == QImage::Format_ARGB32 ||
+             canvas.format() == QImage::Format_ARGB32_Premultiplied);
     // Mask tints (alpha 0.4, like upstream build_frame_overlay).
     for (int i = 0; i < m_masks.size(); ++i) {
         const QImage& mask = m_masks[i];

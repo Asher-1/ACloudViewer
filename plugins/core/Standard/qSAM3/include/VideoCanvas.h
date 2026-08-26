@@ -37,6 +37,11 @@ public:
     void setFrame(const QImage& frame);
     void setInstances(const QVector<VideoInstanceBox>& boxes,
                       const QVector<QImage>& masks);
+    /** Replace the decoded frame and its matching inference result with one
+     *  redraw so masks are never shown on the wrong frame. */
+    void setFrameAndInstances(const QImage& frame,
+                              const QVector<VideoInstanceBox>& boxes,
+                              const QVector<QImage>& masks);
     void setPromptPoints(const QVector<QPointF>& pos,
                          const QVector<QPointF>& neg);
     void clearAll();

@@ -30,7 +30,7 @@ public:
     void setCurrentFrame(int frame);
     void setProcessedMax(int frame);  // highest frame tracked so far
     void setTimeline(const QVector<VideoTimelineEntry>& entries);
-    void setInstanceColors(const QVector<QColor>& colors);
+    void setInstances(const QVector<int>& ids, const QVector<QColor>& colors);
 
 signals:
     void seekRequested(int frame);
@@ -50,6 +50,7 @@ private:
     int m_currentFrame = 0;
     int m_processedMax = -1;
     QVector<VideoTimelineEntry> m_entries;
+    QVector<int> m_instanceIds;
     QVector<QColor> m_colors;
     bool m_dragging = false;
 };

@@ -1,28 +1,28 @@
-# Metal 推理性能优化经验（ggml）
+# Metal Inference Performance Optimization Experience (ggml)
 
-本文档汇总了在 Apple Silicon (M2 Max) 上优化 ggml Metal 后端的推理性能时所积累的**可复用模式**与**陷阱清单**。适用场景：接入新模型（YOLO 检测/分割、RF-DETR、depth 等）时，若首次在 Metal 上推理偏慢，可参照本文档系统性地定位并消除瓶颈。
+This document summarizes the **reusable patterns** and **pitfall checklist** accumulated while optimizing ggml Metal backend inference performance on Apple Silicon (M2 Max). Applicable scenario: when integrating a new model (YOLO detection/segmentation, RF-DETR, depth, etc.), if first-time Metal inference is slow, use this document to systematically locate and eliminate bottlenecks.
 
-> **核心结论（第一性原理）**：Apple Silicon 的 GPU 算力通过**专用矩阵单元**（simdgroup matrix multiply）释放。如果 kernel 没有走矩阵单元路径（例如标量逐元素循环、每线程元素过少导致 threadgroup 利用率不足），性能会差 10–100 倍。所有优化都围绕这一约束展开。
+> **Core conclusion (first principles)**: Apple Silicon's GPU compute is released through **dedicated matrix units** (simdgroup matrix multiply). If a kernel does not take the matrix-unit path (e.g., scalar element-wise loops, too few elements per thread causing low threadgroup utilization), performance can differ by 10–100×. All optimizations revolve around this constraint.
 
 ---
 
-## 1. 定位方法论：用 per-op Profile 找到真瓶颈
+## 1. Profiling Methodology: Find the Real Bottleneck with per-op Profile
 
-### 1.1 不要猜，要测
+### 1.1 Don't guess, measure
 
-ggml-metal 自带 **GGML_METAL_OP_PROFILE** 环境变量（需在 `ggml-metal-context.m` 中启用），可逐 op 获取 GPU 执行时间：
+ggml-metal ships the **GGML_METAL_OP_PROFILE** environment variable (must be enabled in `ggml-metal-context.m`), which gives per-op GPU execution time:
 
 ```objc
-// 在 ggml_metal_graph_compute 的 @autoreleasepool 开头插入 env 门控分支
+// Insert an env-gated branch at the start of the @autoreleasepool in ggml_metal_graph_compute
 if (getenv("GGML_METAL_OP_PROFILE") != NULL) {
-    static int s_profile_after = 3;  // 第 3 次 compute 后开始（确保 pipeline 缓存）
+    static int s_profile_after = 3;  // start after the 3rd compute (ensure pipeline cache)
     if (s_profile_after > 0 && --s_profile_after == 0) {
         id<MTLCommandBuffer> cb = [queue commandBufferWithUnretainedReferences];
-        // op_init 9 参数签名：dev, cb, gf, gi, gi+1, false, false, false, 0, 0
+        // op_init 9-arg signature: dev, cb, gf, gi, gi+1, false, false, false, 0, 0
         ggml_metal_op_t op = ggml_metal_op_init(ctx->dev, cb, gf, gi, gi + 1,
                                                  false, false, false, 0, 0);
         ggml_metal_op_encode(op, 0);
-        ggml_metal_op_free(op);      // 先 free（内部 endEncoding）再 commit
+        ggml_metal_op_free(op);      // free first (internal endEncoding) then commit
         [cb commit];
         [cb waitUntilCompleted];
         fprintf(stderr, "[op-profile] idx=... src=[%s,%s] k=%lld ... gpu=...us\n", ...);
@@ -31,74 +31,74 @@ if (getenv("GGML_METAL_OP_PROFILE") != NULL) {
 }
 ```
 
-> **Attention**: profile 分支**不要入库**（它是 env 门控的本地调试工具）。patch 中不应包含它。
+> **Attention**: do **not commit** the profile branch (it is an env-gated local debugging tool). It must not be included in patches.
 
-### 1.2 瓶颈模式识别
+### 1.2 Bottleneck Pattern Recognition
 
-从 profile 输出中识别三类根因：
+Identify three root-cause classes from profile output:
 
-| 模式 | 特征 | 根因 |
-|------|------|------|
-| **threadgroup 过碎** | op 平均耗时短（<10μs）但数量极大（数百个同类 op），总和大 | 每 threadgroup 处理的元素太少，GPU 核利用率低 |
-| **标量路径** | K<64 的 mul_mat 显著慢（0.1 TFLOPS 级） | Apple Matrix Unit 要求 K≥64 才能激活矩阵路径；K 过小时退化为逐元素标量 kernel |
-| **带宽饱和** | UNARY / CPY 类 op 达到 ~310 GB/s 时 | kernel 已到硬件带宽极限，进一步优化需减少中间张量流量（图级 fusion） |
+| Pattern | Signature | Root cause |
+|---------|-----------|------------|
+| **Fragmented threadgroups** | op avg duration short (<10μs) but huge count (hundreds of same-class ops), large total | too few elements per threadgroup, low GPU core utilization |
+| **Scalar path** | mul_mat with K<64 significantly slow (0.1 TFLOPS class) | Apple Matrix Unit requires K≥64 to activate the matrix path; when K is too small it degrades to element-wise scalar kernels |
+| **Bandwidth saturation** | UNARY / CPY-class ops reach ~310 GB/s | kernel is at the hardware bandwidth limit; further optimization requires reducing intermediate tensor traffic (graph-level fusion) |
 
 ---
 
-## 2. 六大可复用 Kernel 优化模式
+## 2. Six Reusable Kernel Optimization Patterns
 
-以下每种模式配有适用条件与实测收益量级（基于 M2 Max 64GB 上的 BiRefNet-Swin-L / YOLOv8 / RF-DETR）。
+Each pattern below includes applicable conditions and measured benefit magnitude (based on BiRefNet-Swin-L / YOLOv8 / RF-DETR on M2 Max 64GB).
 
-### 模式 A：Flat-grid 一维化 + 除法消除
+### Pattern A: Flat-grid flattening + division elimination
 
-**根因**：IM2COL 默认按 `(OC, OH, OW)` 三维排布，当 `[IC, KH, KW]` 很大而 `OC` 很小时（如 conv 的 OC=1），每 threadgroup 只处理 1×9 个元素，GPU 执行单元严重空闲。
+**Root cause**: IM2COL defaults to a 3D `(OC, OH, OW)` layout; when `[IC, KH, KW]` is large while `OC` is small (e.g., conv with OC=1), each threadgroup processes only 1×9 elements, leaving the GPU execution units severely idle.
 
-**解法**：将多维 grid 塌缩为一维 `total/thread_elements`，线程内用**hw 进位递增**（hw-carry chain）代替逐元素取模除法：
+**Solution**: collapse the multi-dimensional grid into a 1D `total/thread_elements`, using an **hw-carry increment** (hw-carry chain) inside the thread instead of per-element modulo division:
 
 ```metal
-// 每线程处理 16 个通道（4×float4）
+// each thread processes 16 channels (4×float4)
 const int total = IC * OH * OW;        // CHW
 const int total4 = total >> 2;
 const int i0 = idx * 16;               // 4 float4 per thread
 for (int j = 0; j < 16; j += 4) {
-    int c = (i0 + j) >> 2;             // 进位进位：h*w 递增，c 进位
+    int c = (i0 + j) >> 2;             // carry: h*w increments, c carries
     int h = c / OW;
     int w = c - h * OW;
     // ... im2col gather
 }
 ```
 
-**适用条件**：`OC * N == 1` 且 `CHW` 是 4 的倍数（float4 对齐）时，收益最大。`CHW` 很大且 16 对齐时更优。
+**Applicable conditions**: most beneficial when `OC * N == 1` and `CHW` is a multiple of 4 (float4 alignment). Even better when `CHW` is large and 16-aligned.
 
-**收益量级**：IM2COL 从 1382ms → 142ms（**-90%**），是本次优化中单 kernel 收益最大的项。
+**Benefit magnitude**: IM2COL from 1382ms → 142ms (**-90%**), the single largest kernel win in this optimization pass.
 
-### 模式 B：每线程多元素 + float4 向量化
+### Pattern B: Multi-element per thread + float4 vectorization
 
-**根因**：一条 threadgroup 调度（dispatch）有固定开销；逐 1 元素的 kernel 让 GPU 花费大量时间在调度和 threadgroup 管理上。
+**Root cause**: each threadgroup dispatch has fixed overhead; kernels processing 1 element per thread make the GPU spend most time on dispatch and threadgroup management.
 
-**解法**：每线程处理 4 个或 16 个元素，用 `float4` / `float16` 向量类型一次加载/存储，grid 缩小到 `1/4` 或 `1/16`。
+**Solution**: each thread processes 4 or 16 elements, loading/storing once with `float4` / `float16` vector types; the grid shrinks to `1/4` or `1/16`.
 
 ```metal
-// 每线程处理 4 个 float 4（共 16 元素）
+// each thread processes 4 float4s (16 elements total)
 const int total = args.ne * ...;
 const int idx = tgpig.x * ntg * ... + tiitg;
 const int i0 = idx * 16;
-// 读取 4 个 float4
+// read 4 float4s
 float4 v0 = src[i0/4 + 0];
 float4 v1 = src[i0/4 + 1];
 float4 v2 = src[i0/4 + 2];
 float4 v3 = src[i0/4 + 3];
 ```
 
-**适用条件**：`total` 大（>10000 元素）、带宽受限的 kernel（UNARY、BIN、GET_ROWS）。不适用于计算密集型 kernel（矩阵乘），后者线程数已饱和。
+**Applicable conditions**: large `total` (>10000 elements), bandwidth-bound kernels (UNARY, BIN, GET_ROWS). Not suitable for compute-intensive kernels (matrix multiply), where thread count is already saturated.
 
-**收益量级**：BIN_OP 从 ~146ms 减少 60%+；GET_ROWS 从 7.2ms → ~2ms（**-72%**）。
+**Benefit magnitude**: BIN_OP from ~146ms down 60%+; GET_ROWS from 7.2ms → ~2ms (**-72%**).
 
-### 模式 C：广播 / 行特例消除取模
+### Pattern C: Broadcast / row-special-case modulo elimination
 
-**根因**：以矩阵按行广播（`ne0 == ne10`）时，逐元素 `i0 % args.ne10` 取模指令 GPU 周期长。
+**Root cause**: when a matrix is broadcast by row (`ne0 == ne10`), the per-element `i0 % args.ne10` modulo instruction costs many GPU cycles.
 
-**解法**：提取**广播特例**（`args.ne10 <= 1`：全局标量）和**行对齐特例**（`args.ne10 == args.ne0`：每行相同值），用分支无条件赋值消除除法：
+**Solution**: extract the **broadcast special case** (`args.ne10 <= 1`: global scalar) and the **row-aligned special case** (`args.ne10 == args.ne0`: same value per row), using branchless unconditional assignment to eliminate division:
 
 ```metal
 const bool b_scalar = args.ne10 <= 1;
@@ -112,89 +112,89 @@ if (FC_bin_op == 0) {       // ADD
 }
 ```
 
-**适用条件**：`M=N`（或 `ne0 == ne10`）的二元运算。Metal 的 threadgroup uniform 分支开销接近零（同一 warp 所有线程走同一路径时）。
+**Applicable conditions**: binary ops with `M=N` (or `ne0 == ne10`). Metal's threadgroup uniform branch overhead is near zero when all threads in a warp take the same path.
 
-**收益量级**：BIN_OP 每行减少 1 个整数除法和 1 个取模，综合 -20~50%（与 per-thread 多元素联合使用）。
+**Benefit magnitude**: BIN_OP saves 1 integer division and 1 modulo per row; combined -20~50% (when combined with per-thread multi-element).
 
-### 模式 D：K<64 走 F16 矩阵乘门槛放宽
+### Pattern D: K<64 F16 matrix multiplication threshold relaxation
 
-**根因**：Metal 的 simdgroup 矩阵乘要求 K≥64 才激活矩阵单元路径（`kernel_mul_mm`）；K<64 时退化到 matrix-vector 标量 kernel（`kernel_mul_mv_f32_f32`），性能约 **0.1 TFLOPS** 级（矩阵路径的 1/100）。
+**Root cause**: Metal's simdgroup matrix multiply requires K≥64 to activate the matrix-unit path (`kernel_mul_mm`); with K<64 it degrades to the matrix-vector scalar kernel (`kernel_mul_mv_f32_f32`) at roughly **0.1 TFLOPS** (1/100 of the matrix path).
 
-**解法**：对 `f16×f16` 组合将门槛从 64 放宽到 16：
+**Solution**: relax the threshold from 64 to 16 for `f16×f16` combinations:
 
 ```cpp
-// 在 ggml-metal-ops.cpp 的 get_extra_buffers_mul_mat 或 dispatch 分支中
+// in ggml-metal-ops.cpp, in get_extra_buffers_mul_mat or the dispatch branch
 props_dev->has_simdgroup_mm &&
     ((ne00 >= 16 && op->src[0]->type == GGML_TYPE_F16 && op->src[1]->type == GGML_TYPE_F16)
      || (ne00 >= 64))
     && ne11 > ne11_mm_min
 ```
 
-> **极其重要的约束**：**只对 f16×f16 放宽**。f32 时 K<64 走矩阵路径会灾难性地慢（从标量路径 38ms 倒退到 2487ms），因为 f32 矩阵路径的 dequantize_f32 开销在小 K 时不可接受。
+> **Extremely important constraint**: **relax only for f16×f16**. For f32, taking the matrix path with K<64 is catastrophically slow (regresses from 38ms on the scalar path to 2487ms), because the f32 matrix path's dequantize_f32 overhead is unacceptable at small K.
 
-**适用条件**：模型中存在多个 `[M, K]×[K, N]` 形状且 K 在 [16, 63] 的 f16 权重 GEMM（典型场景：conv 的 K=27 个输出通道、MLP 的 K=32 等）。f16 模型（推荐推理格式）直接受益。
+**Applicable conditions**: the model has multiple `[M, K]×[K, N]` shapes with f16 weights where K is in [16, 63] (typical: conv K=27 output channels, MLP K=32, etc.). f16 models (recommended inference format) benefit directly.
 
-**收益量级**：conv K=27 从 38.4ms → 1.6ms；整个 YOLO v8 推理链从 51.4ms → 14.5ms（**-72%**，包含 IM2COL 加速的累积收益）。
+**Benefit magnitude**: conv K=27 from 38.4ms → 1.6ms; the whole YOLO v8 inference chain from 51.4ms → 14.5ms (**-72%**, including accumulated IM2COL speedup).
 
-### 模式 E：小 K GEMM 的 F16 权重化（矩阵单元路径锁定）
+### Pattern E: Small-K GEMM f16 weight conversion (matrix-unit path lock-in)
 
-**根因**：f32 权重在 Metal 中走 `kernel_mul_mm_f32_f32` 时，权重加载经过 `dequantize_f32` 标量路径（逐 4 字节 load 而不是 64 字节 cacheline burst），带宽利用率低，尤其对小 K 的 conv/MLP GEMM 影响大。
+**Root cause**: f32 weights go through `kernel_mul_mm_f32_f32` in Metal, where weight loading uses the `dequantize_f32` scalar path (4-byte loads instead of 64-byte cacheline bursts), giving poor bandwidth utilization — especially impactful for small-K conv/MLP GEMMs.
 
-**解法**：在 AICore 图构建阶段，对 `use_metal` 路径将 conv 权重和 QKV/Proj 线性层权重指定为 F16：
+**Solution**: in the AICore graph construction phase, specify conv weights and QKV/Proj linear-layer weights as F16 for the `use_metal` path:
 
 ```cpp
-// rmbg_graph.cpp 中
-ggml_tensor *w16 = weight_f16(prefix + "weight");  // F16 权重
+// in rmbg_graph.cpp
+ggml_tensor *w16 = weight_f16(prefix + "weight");  // F16 weights
 ggml_tensor *col16 = ggml_im2col(ctx, w16, ..., GGML_TYPE_F16);
-// F16 im2col + F16 weight → kernel_mul_mm_f16_f16 矩阵单元路径
+// F16 im2col + F16 weight → kernel_mul_mm_f16_f16 matrix-unit path
 ```
 
-同时将 F16 im2col 的输出设为 F16（减少写带宽），结合 Metal 图构建的 `metal_f16_gemm` 选项控制。
+Also set the F16 im2col output to F16 (reduces write bandwidth), controlled together with the `metal_f16_gemm` option in Metal graph construction.
 
-**适用条件**：模型中有大量小 K（≤256）的 GEMM（conv 的 IC→OC、MLP 的 hidden→4×hidden 等）。大 K GEMM（≥3072）时矩阵路径**已饱和**（~10 TFLOPS），f16 化无收益。
+**Applicable conditions**: the model has many small-K (≤256) GEMMs (conv IC→OC, MLP hidden→4×hidden, etc.). For large-K GEMMs (≥3072) the matrix path is **already saturated** (~10 TFLOPS), and f16 conversion brings no benefit.
 
-**收益量级**：conv 链 F16 化减少 ~50% 以上（依赖 K 大小）；全模型从 2534ms → 933ms（**-63%**，综合所有优化）。
+**Benefit magnitude**: f16 conversion of the conv chain reduces ~50%+ (K-size dependent); full model from 2534ms → 933ms (**-63%**, combining all optimizations).
 
-### 模式 F：图级 Op 融合
+### Pattern F: Graph-level Op Fusion
 
-**根因**：ggml 的计算图中有大量 reshape/cont/permute 拷贝操作（RMBG 原始图 6461 节点，其中 RESHAPE 1266、CONT 551、PERMUTE 359）。这些操作不增计算量，但搬运大张量数据（[3072, 1024] 级别），累计耗时可观。
+**Root cause**: ggml computation graphs contain many reshape/cont/permute copy operations (RMBG original graph: 6461 nodes, including RESHAPE 1266, CONT 551, PERMUTE 359). These ops add no compute but move large tensors ([3072, 1024] class), accumulating significant time.
 
-**解法**：用自定义 kernel 替代常见多 op 链：
+**Solution**: replace common multi-op chains with custom kernels:
 
-| 融合场景 | 替换前 | 替换后 | 收益 |
-|---------|--------|--------|------|
-| **SWIN_QKV Layout** | add + 3×(cont + permute + cont) | 1 个 kernel（bias 融合 + 重排写） | -179ms |
-| **Flash Attention** | QK matmul + scale + softmax + AV matmul | 1 个 kernel（kernel_flash_attn_ext_f32） | -828ms |
-| **Conv + Bias** | im2col + matmul + add + bias | 1 个 kernel（GPU 通用，需自定义 op） | 视情况 |
+| Fusion scenario | Before | After | Benefit |
+|-----------------|--------|-------|---------|
+| **SWIN_QKV Layout** | add + 3×(cont + permute + cont) | 1 kernel (bias fusion + reorder write) | -179ms |
+| **Flash Attention** | QK matmul + scale + softmax + AV matmul | 1 kernel (kernel_flash_attn_ext_f32) | -828ms |
+| **Conv + Bias** | im2col + matmul + add + bias | 1 kernel (GPU-generic, needs custom op) | depends |
 
-**适用条件**：图构建阶段可识别（图结构固定时），且新 kernel 的标志重排逻辑与原始拷贝链**比特级等价**（用 output_hash 验证）。
+**Applicable conditions**: identifiable at graph-construction time (fixed graph structure), and the new kernel's flag-reorder logic must be **bitwise-equivalent** to the original copy chain (verified with output_hash).
 
-**收益量级**：flash attention 总是有收益（-800~1000ms 级，QKV 重排次数正比）。qkv layout fusion 在有多个 attention block 时每个 block 省 ~3 个 cont+permute。
+**Benefit magnitude**: flash attention always pays off (-800~1000ms class, proportional to QKV reorder count). qkv layout fusion saves ~3 cont+permute per block when multiple attention blocks exist.
 
 ---
 
-## 3. 图构建决策模式（AICore 层）
+## 3. Graph Construction Decision Patterns (AICore layer)
 
-### 3.1 Metal 后端检测
+### 3.1 Metal backend detection
 
-**MTL0 陷阱**：`ggml_backend_name()` 返回的是设备名（如 `"MTL0"`），**不是**固定的 `"Metal"` 字符串。必须同时匹配：
+**MTL0 trap**: `ggml_backend_name()` returns the device name (e.g., `"MTL0"`), **not** the fixed `"Metal"` string. Must match both:
 
 ```cpp
 use_metal = name && (std::strstr(name, "Metal") || std::strstr(name, "MTL"));
 ```
 
-### 3.2 F16 权重化的条件门控
+### 3.2 Conditional gating for f16 weight conversion
 
-在 `GraphOptions` 中为 Metal 独立配置：
+Configure Metal independently in `GraphOptions`:
 
 ```cpp
 struct GraphOptions {
-    bool cuda_f16_gemm = false;       // CUDA 默认 OFF（用户显式 opt-in）
-    bool metal_f16_gemm = true;       // Metal 默认 ON（F16 是唯一矩阵单元路径）
+    bool cuda_f16_gemm = false;       // CUDA default OFF (explicit user opt-in)
+    bool metal_f16_gemm = true;       // Metal default ON (F16 is the only matrix-unit path)
 };
 ```
 
-`use_f16_gemm` 的推导：
+Derivation of `use_f16_gemm`:
 
 ```cpp
 use_f16_gemm =
@@ -202,102 +202,102 @@ use_f16_gemm =
     (use_metal && !strict_math && metal_f16_gemm);
 ```
 
-`strict_math` 模式下禁止 f16 化，保持纯 FP32 精度。
+In `strict_math` mode, f16 conversion is forbidden to keep pure FP32 precision.
 
-### 3.3 三量化一致性验证
+### 3.3 Three-quantization consistency verification
 
-> 在灰度发布前，验证 f32/f16/q8**三量化**的精度一致性（f32/f16 output_hash 应完全一致；q8 因反量化路径不同，hash 不同但 contract 通过）。
+> Before grayscale release, verify precision consistency across f32/f16/q8 **three quantizations** (f32/f16 output_hash should be exactly identical; q8 differs in hash due to the dequantization path, but contract passes).
 
 ```bash
-# RMBG contract 测试
+# RMBG contract tests
 AICORE_TEST_RMBG_MODEL=<f16.gguf> test_rmbg_capi_contract
 AICORE_TEST_RMBG_MODEL=<f32.gguf> test_rmbg_capi_contract
 AICORE_TEST_RMBG_MODEL=<q8.gguf> test_rmbg_capi_contract
-# 三量化性能应一致（±1%）——Metal 瓶颈在激活路径，权重量化不影响性能
+# Performance should be consistent across the three quantizations (±1%) — Metal bottleneck is the activation path, weight quantization does not affect performance
 ```
 
-三量化性能一致（±1%）是 Metal 的独特特征（CUDA 上 q8 会更快），原因：瓶颈在**激活路径**（矩阵乘运算本身），而非权重带宽。
+Three-quantization performance consistency (±1%) is a unique Metal characteristic (q8 is faster on CUDA); the reason: the bottleneck is in the **activation path** (the matrix multiply itself), not weight bandwidth.
 
 ---
 
-## 4. 陷阱清单（必须避免）
+## 4. Pitfall Checklist (must avoid)
 
-### 4.1 MSL / C struct 布局一致性（SIGKILL）
+### 4.1 MSL / C struct layout consistency (SIGKILL)
 
-**现象**：运行时 SIGKILL (Kill: 9)，无任何错误输出。
+**Symptom**: runtime SIGKILL (Kill: 9) with no error output.
 
-**根因**：MSL kernel 侧的 `constant struct kargs_im2col` 包含字段 `OH`/`OW`，但 C 侧（`impl.h`）的对应 struct 不包含这些字段→**MSL 读到的 args.OH/args.OW 是垃圾指针**→GPU 越界访问→GPU reset→OS 发送 SIGKILL。
+**Root cause**: the MSL kernel-side `constant struct kargs_im2col` contains fields `OH`/`OW`, but the corresponding C-side struct (`impl.h`) does not → **the MSL-read args.OH/args.OW are garbage pointers** → GPU out-of-bounds access → GPU reset → OS sends SIGKILL.
 
-**修复**：C 侧 `kargs_im2col` 必须**严格匹配** MSL 侧的字段顺序与类型。`sed` 展开模板时也会偏移，用 `#include "impl.h"` 统一声明的结构体。
+**Fix**: the C-side `kargs_im2col` must **strictly match** the MSL-side field order and types. `sed` template expansion also shifts offsets — declare the struct uniformly with `#include "impl.h"`.
 
-**预防**：每次在 MSL 侧新增 kernel args 时，同步更新 `impl.h` 的 C 侧 struct。编译 metallib 后立即跑一遍 contract，确认不 SIGKILL。
+**Prevention**: every time new kernel args are added on the MSL side, synchronously update the C-side struct in `impl.h`. Run contract immediately after compiling the metallib to confirm no SIGKILL.
 
-### 4.2 ExternalProject 增量构建 mtime 陷阱
+### 4.2 ExternalProject incremental build mtime trap
 
-**现象**：修改某个 patch 文件并 clean install stamp 后重建，`metallib` 没有重新编译。
+**Symptom**: after modifying a patch file and cleaning the install stamp, `metallib` is not recompiled.
 
-**根因**：Python 脚本写入 .metal 文件的 mtime 与之前 .o 编译时间同秒 → make 认为源文件 up-to-date → 跳过 metallib 重编。
+**Root cause**: the mtime written by the Python script to the .metal file lands in the same second as the previous .o compile time → make considers the source up-to-date → skips metallib recompilation.
 
-**修复**：每次 patch 链变化后，必须同时清除 build + install + done stamp：
+**Fix**: after every patch-chain change, clear the build + install + done stamps together:
 
 ```bash
 rm -f build_app/ggml/src/ext_ggml-stamp/ext_ggml-{build,install,done}
-# 极端情况：直接清整个源码目录让 ExternalProject 重新解压
+# extreme case: wipe the whole source dir so ExternalProject re-extracts
 rm -rf build_app/ggml/src/ext_ggml
 cmake --build build_app --target ext_ggml -j4
 ```
 
-### 4.3 ggml_view_4d stride 继承陷阱
+### 4.3 ggml_view_4d stride inheritance trap
 
-**现象**：Flash attention 在大输入（1024²）上输出退化（alpha 值全在 [253,255]）。
+**Symptom**: Flash attention output degenerates on large inputs (1024²) (alpha values all in [253,255]).
 
-**根因**：`ggml_view_4d(src, ne0, ne1, ne2, ne3)` 没有重新计算 nb 数组，而是**继承父张量的 strides**。当用 view 做维度拆分（如将 [3C] 拆成 [hd, heads]）时，继承的 strides 会导致 kernel 读到错误地址。
+**Root cause**: `ggml_view_4d(src, ne0, ne1, ne2, ne3)` does not recompute the nb array — it **inherits the parent tensor's strides**. When a view is used for dimension splitting (e.g., splitting [3C] into [hd, heads]), the inherited strides make the kernel read wrong addresses.
 
-**预防**：涉及维度拆分的 view 操作需要手动验证 nb 指针。对于 Flash Attention 等 kernel，不要用 strided view 传入，而是先做 `ggml_cont` 确保连续再传。
+**Prevention**: view operations involving dimension splits require manual verification of the nb pointers. For kernels like Flash Attention, do not pass strided views; do `ggml_cont` first to ensure contiguity, then pass.
 
-### 4.4 profile 分支不入库
+### 4.4 Profile branch must not be committed
 
-profile 分支（见 §1.1）是**纯本地调试工具**，包含 `#import "ggml-metal-impl.h"` 等内部头文件，**不要提交到 patch 中**。patch 是面向生产环境的稳定优化，不应包含调试代码。
+The profile branch (see §1.1) is a **purely local debugging tool** containing internal headers like `#import "ggml-metal-impl.h"` — **do not commit it into patches**. Patches are production-oriented stable optimizations and must not contain debug code.
 
-### 4.5 K<64 全局门槛灾难
+### 4.5 K<64 global threshold disaster
 
-**绝对不要**无条件将 K<64 的 mul_mat 全部走矩阵路径。f32 大 M 时 K<64 走矩阵路径会产生灾难性倒退：
+**Never** unconditionally route all K<64 mul_mats onto the matrix path. For f32 with large M, K<64 on the matrix path produces catastrophic regression:
 
 ```cpp
-// 错误的做法：
-// (ne00 >= 16 && op->src[0]->type == GGML_TYPE_F32)  // ← 灾难！
-// 正确的做法（仅 f16×f16）：
+// Wrong:
+// (ne00 >= 16 && op->src[0]->type == GGML_TYPE_F32)  // ← disaster!
+// Correct (f16×f16 only):
 (ne00 >= 16 && op->src[0]->type == GGML_TYPE_F16 && op->src[1]->type == GGML_TYPE_F16)
 ```
 
-实测：f32 时走 mul_mm 从 2487ms 倒退到 38ms（**倒退 65×**）。根本原因是 f32 矩阵路径的 dequantize_f32 负载在小 K 时极端低效。
+Measured: f32 on the mul_mm path regresses from 38ms to 2487ms (**65× regression**). The root cause is that the f32 matrix path's dequantize_f32 load is extremely inefficient at small K.
 
 ---
 
-## 5. 新模型加速检查表
+## 5. New-Model Acceleration Checklist
 
-当接入一个新模型（如新的 YOLO 变体、depth 模型、MLP-only 模型）且 Metal 推理偏慢时，按以下顺序检查：
+When integrating a new model (e.g., a new YOLO variant, depth model, MLP-only model) with slow Metal inference, check in this order:
 
-1. **跑 per-op profile** → 识别热点 op 类型
-   - MUL_MAT 主导 → 检查 K 分布，确认 K≥64 的走矩阵路径；K<64 的按模式 D 处理
-   - IM2COL 主导 → 按模式 A flat-grid 优化（CHW 对齐时最佳）
-   - BIN_OP / UNARY / GET_ROWS 主导 → 按模式 B + C 向量化
-   - CONT / CPY / PERMUTE 为主 → 考虑图级融合（模式 F）
+1. **Run per-op profile** → identify hot op types
+   - MUL_MAT dominated → check K distribution, confirm K≥64 takes the matrix path; handle K<64 per Pattern D
+   - IM2COL dominated → optimize per Pattern A flat-grid (best when CHW is aligned)
+   - BIN_OP / UNARY / GET_ROWS dominated → vectorize per Patterns B + C
+   - CONT / CPY / PERMUTE dominated → consider graph-level fusion (Pattern F)
 
-2. **检查权重类型** → 若是 f32，评估 f16 化收益（模式 E）
-   - 小 K GEMM 多 → f16 化大收益
-   - 大 K GEMM 多（≥3072）→ 已饱和，仅检查 K<64 门槛
+2. **Check weight type** → if f32, evaluate f16 conversion benefit (Pattern E)
+   - Many small-K GEMMs → large f16 benefit
+   - Many large-K GEMMs (≥3072) → already saturated, only check the K<64 threshold
 
-3. **检查 attention block** → 若有，启用 Flash Attention（模式 F）
+3. **Check attention blocks** → if present, enable Flash Attention (Pattern F)
 
-4. **三量化验证** → f32/f16/q8 各跑 contract，确认精度一致
+4. **Three-quantization verification** → run contract for f32/f16/q8 each, confirm precision consistency
 
-5. **回归**：全量 contract 通过后，检查 CUDA/Vulkan/CPU 基线是否退化（ggml-metal 代码隔离，不应退化）
+5. **Regression**: after all contracts pass, check whether CUDA/Vulkan/CPU baselines regressed (ggml-metal code is isolated and should not regress)
 
 ---
 
-## 6. 参考
+## 6. References
 
-- 合并后的 Metal 优化 patch：`3rdparty/ggml/patches/metal_merged/0001-metal-optimizations.patch`
-- AICore 图构建：`core/AICore/src/tasks/rmbg/rmbg_graph.cpp`（Metal 分支参考实现）
-- ggml 代码修改规则：`.agents/rules/acloudviewer-ggml-aicore.mdc`
+- Merged Metal optimization patch: `3rdparty/ggml/patches/metal_merged/0001-metal-optimizations.patch`
+- AICore graph construction: `core/AICore/src/tasks/rmbg/rmbg_graph.cpp` (Metal-branch reference implementation)
+- ggml code modification rules: `.agents/rules/acloudviewer-ggml-aicore.mdc`

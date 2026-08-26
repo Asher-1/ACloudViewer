@@ -20,6 +20,9 @@
 #include <QObject>
 #include <QThread>
 #include <QVector>
+#include <QWaitCondition>
+
+#include <atomic>
 
 #include "SAM3Worker.h"  // SAM3WorkerResult / Prompt types
 
@@ -40,6 +43,7 @@ public:
         QString modelPath;
         QString device = "auto";
         QString textPrompt;
+        float scoreThreshold = 0.5f;
         QImage frame;               // TrackFrame
         int frameIndex = -1;        // TrackFrame: source frame number
         SAM3Worker::Prompt prompt;  // AddInstance / RefineInstance
@@ -53,12 +57,13 @@ public:
     void post(const TrackRequest& req);
     void requestCancel();
 
-    bool hasModel() const { return m_ctx != nullptr; }
-    bool isBusy() const { return m_busy; }
+    bool hasModel() const { return m_hasModel.load(); }
+    bool isBusy() const { return m_busy.load(); }
 
 signals:
     void logMessage(const QString& msg);
     void modelReady(const QString& backendName, bool visualOnly);
+    void trackerReset(const QString& textPrompt, bool ok);
     void frameResultReady(const SAM3WorkerResult& result, int frameIndex);
     void instanceAdded(int instanceId);
     void instanceRefined(int instanceId, bool ok);
@@ -73,15 +78,24 @@ private:
                                  const QImage& frame);
 
     mutable QMutex m_mutex;
+    QWaitCondition m_condition;
     QVector<TrackRequest> m_queue;
-    bool m_cancel = false;
-    bool m_busy = false;
+    std::atomic_bool m_cancel{false};
+    std::atomic_bool m_busy{false};
+    std::atomic_bool m_hasModel{false};
 
     aicore_sam3_ctx* m_ctx = nullptr;
     aicore_sam3_tracker_ctx* m_tracker = nullptr;
+    QString m_device = QStringLiteral("auto");
     bool m_visualOnly = false;
     /** Result of the most recent TrackFrame; merged with the mask of a new
      *  instance so the UI shows old + new instances at once (upstream
      *  main_video.cpp appends the PVS mask to the current result). */
     SAM3WorkerResult m_lastFrameResult;
+    /** Frame index whose features are currently encoded in the tracker
+     *  state; -1 = none. Mirrors upstream main_video.cpp frame_encoded:
+     *  add_instance / refine run PVS internally and need valid encoded
+     *  features of the current frame (sam3_segment_pvs bails out with
+     *  "image not encoded" otherwise). */
+    int m_encodedFrameIndex = -1;
 };

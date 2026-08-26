@@ -7,6 +7,8 @@
 
 #include "SAM3Worker.h"
 
+#include <CVLog.h>
+
 #include <QDir>
 #include <QElapsedTimer>
 #include <QFileInfo>
@@ -43,7 +45,7 @@ private:
 
 }  // namespace
 
-static QImage blendMasksImpl(aicore_sam3_seg_result* res, int imgW, int imgH) {
+static QImage blendMasksImpl(aicore_sam3_seg_result* res, const QImage& img) {
     const int n = aicore_sam3_seg_det_count(res);
     if (n <= 0) return QImage();
 
@@ -56,36 +58,55 @@ static QImage blendMasksImpl(aicore_sam3_seg_result* res, int imgW, int imgH) {
     };
     static constexpr int kNColors = sizeof(kColors) / sizeof(kColors[0]);
 
-    QImage overlay(imgW, imgH, QImage::Format_ARGB32);
-    overlay.fill(qRgba(0, 0, 0, 0));
+    // Mirror upstream examples/main_image.cpp build_overlay(): the mask is
+    // blended straight onto a copy of the image — 0.4 * instance color +
+    // 0.6 * pixel — producing a vivid semi-transparent look. A two-stage
+    // composite (tinted overlay drawn over the image) would darken the
+    // result and look like a solid red fill.
+    QImage composite = img.convertToFormat(QImage::Format_RGB32);
+    const int imgW = composite.width();
+    const int imgH = composite.height();
+    qint64 totalNonZero = 0;
 
     for (int d = 0; d < n; ++d) {
         const aicore_sam3_plane_view m = aicore_sam3_seg_mask_at(res, d);
-        if (!m.data || m.width <= 0 || m.height <= 0) continue;
+        if (!m.data || m.width <= 0 || m.height <= 0) {
+            CVLog::Print("[qSAM3][Worker] blendMasks: det %d mask empty "
+                         "(data=%p %dx%d)",
+                         d, static_cast<const void*>(m.data), m.width,
+                         m.height);
+            continue;
+        }
         const QRgb color = kColors[d % kNColors];
-        const int alpha = 102;  // ~0.4 * 255
+        const int a = 102;  // ~0.4 * 255, same alpha as upstream
+        const int invA = 255 - a;
         const uint8_t* src = static_cast<const uint8_t*>(m.data);
 
+        qint64 nonZero = 0;
         for (int y = 0; y < m.height && y < imgH; ++y) {
-            uint32_t* dstLine =
-                    reinterpret_cast<uint32_t*>(overlay.scanLine(y));
+            QRgb* dstLine = reinterpret_cast<QRgb*>(composite.scanLine(y));
             for (int x = 0; x < m.width && x < imgW; ++x) {
                 if (src[static_cast<size_t>(y) * m.row_stride_bytes + x] >
                     127) {
-                    const QRgb existing = dstLine[x];
-                    const int a = alpha;
-                    const int invA = 255 - a;
-                    dstLine[x] = qRgba(
-                            (qRed(color) * a + qRed(existing) * invA) / 255,
-                            (qGreen(color) * a + qGreen(existing) * invA) / 255,
-                            (qBlue(color) * a + qBlue(existing) * invA) / 255,
-                            qAlpha(existing) +
-                                    ((255 - qAlpha(existing)) * a) / 255);
+                    ++nonZero;
+                    ++totalNonZero;
+                    const QRgb p = dstLine[x];
+                    dstLine[x] = qRgb(
+                            (qRed(color) * a + qRed(p) * invA) / 255,
+                            (qGreen(color) * a + qGreen(p) * invA) / 255,
+                            (qBlue(color) * a + qBlue(p) * invA) / 255);
                 }
             }
         }
+        CVLog::Print("[qSAM3][Worker] blendMasks: det %d mask %dx%d "
+                     "nonZero=%lld composite=%dx%d",
+                     d, m.width, m.height, static_cast<long long>(nonZero),
+                     composite.width(), composite.height());
     }
-    return overlay;
+    // Returning an untouched copy makes an all-zero decoder result look like
+    // a successful overlay. Keep it null so the UI can surface the actual
+    // inference failure instead of silently displaying the source image.
+    return totalNonZero > 0 ? composite : QImage();
 }
 
 SAM3Worker::SAM3Worker(const Settings& settings, QObject* parent)
@@ -98,15 +119,24 @@ SAM3Worker::~SAM3Worker() {
     // longer than the 5 s the dialog waits, so re-check here with a longer
     // timeout as a last line of defence).
     if (isRunning()) {
-        wait(30000);
+        wait();
     }
+#ifdef AICore_ENABLED
+    // Context teardown touches backend-owned buffers too; serialize it with
+    // inference on the same resolved device just like model load/compute.
+    DeviceTaskGuard taskGuard(m_settings.device);
+#endif
     if (m_pendingCtx) {
         aicore_sam3_free(m_pendingCtx);
         m_pendingCtx = nullptr;
     }
+    if (m_ctx) {
+        aicore_sam3_free(m_ctx);
+        m_ctx = nullptr;
+    }
 }
 
-void SAM3Worker::requestCancel() { m_cancelled = true; }
+void SAM3Worker::requestCancel() { m_cancelled.store(true); }
 
 void SAM3Worker::run() {
     bool ok = false;
@@ -129,6 +159,9 @@ bool SAM3Worker::runInference() {
 #ifdef AICore_ENABLED
     DeviceTaskGuard taskGuard(m_settings.device);
     if (!taskGuard.isLocked()) {
+        CVLog::Warning(
+                "[qSAM3][SAM3Worker] failed to acquire inference device (%s)",
+                m_settings.device.toUtf8().constData());
         emit logMessage(
                 tr("[SAM3] Failed to acquire the inference device; another "
                    "task is running."));
@@ -144,6 +177,8 @@ bool SAM3Worker::runInference() {
         if (!m_ctx) {
             aicore_sam3_options* opts = aicore_sam3_options_new();
             if (!opts) {
+                CVLog::Warning("[qSAM3][SAM3Worker] options allocation "
+                               "failed");
                 emit logMessage("SAM3: Failed to allocate options.");
                 return false;
             }
@@ -170,7 +205,9 @@ bool SAM3Worker::runInference() {
             if (!m_pendingCtx || !aicore_sam3_is_ready(m_pendingCtx)) {
                 const char* err = m_pendingCtx
                                           ? aicore_sam3_last_error(m_pendingCtx)
-                                          : "context allocation failed";
+                                          : aicore_sam3_last_load_error();
+                CVLog::Warning("[qSAM3][SAM3Worker] model load failed: %s",
+                               err ? err : "unknown error");
                 emit logMessage(QString("Model load failed: %1")
                                         .arg(err ? QString::fromUtf8(err)
                                                  : "unknown error"));
@@ -182,6 +219,13 @@ bool SAM3Worker::runInference() {
             const int modelType = aicore_sam3_context_model_type(m_ctx);
             const int visualOnly = aicore_sam3_context_visual_only(m_ctx);
             const char* backend = aicore_sam3_context_backend_name(m_ctx);
+            CVLog::Print(
+                    "[qSAM3][SAM3Worker] model loaded: %s | type=%d "
+                    "visual_only=%d backend=%s",
+                    QFileInfo(m_settings.modelPath).fileName()
+                            .toUtf8()
+                            .constData(),
+                    modelType, visualOnly, backend ? backend : "?");
             emit logMessage(
                     QString("Model loaded: type=%1 visual_only=%2 backend=%3")
                             .arg(modelType)
@@ -202,6 +246,8 @@ bool SAM3Worker::runInference() {
     }
 
     if (m_image.isNull()) {
+        CVLog::Warning("[qSAM3][SAM3Worker] action %d with no image",
+                       static_cast<int>(m_action));
         emit logMessage("No image loaded.");
         return false;
     }
@@ -215,12 +261,22 @@ bool SAM3Worker::runInference() {
     aicore_sam3_seg_result* segRes = nullptr;
     if (m_action == SAM3WorkerAction::EncodeAndSegmentPVS ||
         m_action == SAM3WorkerAction::SegmentOnly) {
+        CVLog::Print("[qSAM3][SAM3Worker] PVS on %dx%d image (%d pos, %d "
+                     "neg, box=%d, multimask=%d)",
+                     w, h, static_cast<int>(m_prompt.posPoints.size()),
+                     static_cast<int>(m_prompt.negPoints.size()),
+                     m_prompt.usePvsBox ? 1 : 0, m_prompt.multimask ? 1 : 0);
         segRes = runPVS();
     } else if (m_action == SAM3WorkerAction::EncodeAndSegmentPCS) {
+        CVLog::Print("[qSAM3][SAM3Worker] PCS text=\"%s\" (%d exemplars)",
+                     m_prompt.text, static_cast<int>(m_prompt.posExemplars.size()));
         segRes = runPCS();
     }
 
     if (!segRes && !m_cancelled) {
+        CVLog::Warning("[qSAM3][SAM3Worker] segmentation returned no results "
+                       "(last_error: %s)",
+                       m_ctx ? aicore_sam3_last_error(m_ctx) : "no ctx");
         emit logMessage("Segmentation returned no results.");
         return false;
     }
@@ -248,10 +304,14 @@ aicore_sam3_seg_result* SAM3Worker::runPVS() {
             m_encodedWidth != rgb.width() ||
             m_encodedHeight != rgb.height() || !m_encodedPvsOnly;
     if (needEncode) {
+        CVLog::Print("[qSAM3][SAM3Worker] PVS encode %dx%d -> %d", rgb.width(),
+                     rgb.height(), m_settings.encodeImgSize);
         const int ok = aicore_sam3_encode_rgb(
                 m_ctx, rgb.constBits(), rgb.width(), rgb.height(),
                 static_cast<size_t>(rgb.bytesPerLine()), 1);
         if (ok != 0) {
+            CVLog::Warning("[qSAM3][SAM3Worker] PVS encode failed: %s",
+                           aicore_sam3_last_error(m_ctx));
             emit logMessage(QString("Encode failed: %1")
                                     .arg(aicore_sam3_last_error(m_ctx)));
             return nullptr;
@@ -260,6 +320,8 @@ aicore_sam3_seg_result* SAM3Worker::runPVS() {
         m_encodedWidth = rgb.width();
         m_encodedHeight = rgb.height();
         m_encodedPvsOnly = true;
+    } else {
+        CVLog::Print("[qSAM3][SAM3Worker] PVS reuses cached encode");
     }
 
     // Build prompt
@@ -294,10 +356,14 @@ aicore_sam3_seg_result* SAM3Worker::runPCS() {
             m_encodedWidth != rgb.width() ||
             m_encodedHeight != rgb.height() || m_encodedPvsOnly;
     if (needEncode) {
+        CVLog::Print("[qSAM3][SAM3Worker] PCS encode %dx%d -> %d", rgb.width(),
+                     rgb.height(), m_settings.encodeImgSize);
         const int ok = aicore_sam3_encode_rgb(
                 m_ctx, rgb.constBits(), rgb.width(), rgb.height(),
                 static_cast<size_t>(rgb.bytesPerLine()), 0);
         if (ok != 0) {
+            CVLog::Warning("[qSAM3][SAM3Worker] PCS encode failed: %s",
+                           aicore_sam3_last_error(m_ctx));
             emit logMessage(QString("Encode (full) failed: %1")
                                     .arg(aicore_sam3_last_error(m_ctx)));
             return nullptr;
@@ -306,6 +372,8 @@ aicore_sam3_seg_result* SAM3Worker::runPCS() {
         m_encodedWidth = rgb.width();
         m_encodedHeight = rgb.height();
         m_encodedPvsOnly = false;
+    } else {
+        CVLog::Print("[qSAM3][SAM3Worker] PCS reuses cached encode");
     }
 
     aicore_sam3_pcs_prompt prompt{};
@@ -360,6 +428,9 @@ SAM3WorkerResult SAM3Worker::buildResult(aicore_sam3_seg_result* segRes,
         r.timings = t;
     }
 
-    r.maskComposite = blendMasksImpl(segRes, img.width(), img.height());
+    r.maskComposite = blendMasksImpl(segRes, img);
+    if (n > 0 && r.maskComposite.isNull()) {
+        r.errorMsg = tr("Decoder returned detections with empty masks.");
+    }
     return r;
 }

@@ -7,17 +7,22 @@
 
 #include "VideoTab.h"
 
+#include <CVLog.h>
+
 #include <aicore/sam3_capi.h>
 #include <ecvAICoreUiHelper.h>
 #include <ecvImage.h>
 #include <ecvMainAppInterface.h>
+#include <ecvModelDownloader.h>
 #include <ecvPluginDbNaming.h>
 
 #include <QButtonGroup>
 #include <QCheckBox>
 #include <QComboBox>
+#include <QDoubleSpinBox>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QFrame>
 #include <QHBoxLayout>
 #include <QKeyEvent>
 #include <QLabel>
@@ -28,6 +33,7 @@
 #include <QPushButton>
 #include <QRadioButton>
 #include <QSlider>
+#include <QTextBrowser>
 #include <QVBoxLayout>
 #include <algorithm>
 
@@ -46,11 +52,66 @@ const QColor kInstanceColors[] = {
         QColor(76, 76, 255),  QColor(255, 153, 179), QColor(153, 255, 128),
 };
 constexpr int kNumColors = sizeof(kInstanceColors) / sizeof(kInstanceColors[0]);
+
+const aicore_sam3_model_entry* catalogEntry(const QString& filename) {
+    return aicore_sam3_model_by_filename(filename.toUtf8().constData());
+}
+
+bool isValidCatalogModel(const QString& path, const QString& filename) {
+    const auto* entry = catalogEntry(filename);
+    return entry && ecvModelDownloader::isValidCachedFile(
+                            path, 64 * 1024, true, entry->size_bytes);
+}
 }  // namespace
 
 VideoTab::VideoTab(QWidget* parent) : QWidget(parent) {
     setupUi();
     populateModelCombo();
+
+    // Shared model downloader (qDA3-style): catalog GGUFs land in the AICore
+    // model cache (sam3_models) and are verified by size + GGUF magic.
+    m_modelDownloader = new ecvModelDownloader(this);
+    connect(m_modelDownloader, &ecvModelDownloader::logMessage, this,
+            &VideoTab::appendLog);
+    connect(m_modelDownloader, &ecvModelDownloader::progress, this,
+            [this](qint64 received, qint64 total) {
+                if (total > 0 && m_progress) {
+                    m_progress->setValue(
+                            static_cast<int>(received * 100 / total));
+                }
+                if (m_downloadLabel) {
+                    m_downloadLabel->setText(
+                            tr("Downloading %1 — %2")
+                                    .arg(m_downloadTargetFilename)
+                                    .arg(ecvModelDownloader::
+                                                 formatDownloadProgress(
+                                                         received, total)));
+                }
+            });
+    connect(m_modelDownloader, &ecvModelDownloader::finished, this,
+            [this](bool ok, const QString& dest) {
+                const bool thenRun = m_downloadThenRun;
+                const QString filename = m_downloadTargetFilename;
+                const bool valid =
+                        ok && isValidCatalogModel(dest, filename);
+                m_downloadInProgress = false;
+                m_downloadThenRun = false;
+                if (m_downloadLabel) m_downloadLabel->setVisible(false);
+                if (m_progress) m_progress->setVisible(false);
+                refreshModelCombo();
+                updateDownloadButton();
+                if (valid) {
+                    m_downloadPrompted = false;
+                    appendLog(tr("Model downloaded: %1")
+                                      .arg(filename));
+                    if (thenRun) ensureModelReady();
+                } else {
+                    appendLog(tr("Model download failed or did not pass "
+                                 "catalog validation: %1")
+                                      .arg(filename));
+                }
+                m_downloadTargetFilename.clear();
+            });
 
     // Shared test data repository (SAM3 dataset: images + videos).
     auto& repo = ecvTestDataRepository::instance();
@@ -84,15 +145,7 @@ VideoTab::VideoTab(QWidget* parent) : QWidget(parent) {
 }
 
 VideoTab::~VideoTab() {
-    m_playTimer.stop();
-    if (m_worker) {
-        m_worker->requestCancel();
-        // Give a running track/load task a generous window before deleting
-        // the thread object (deleting a running QThread aborts the app).
-        m_worker->wait(30000);
-        delete m_worker;
-        m_worker = nullptr;
-    }
+    releaseModel();
     if (m_reader) {
         m_reader->release();
         delete m_reader;
@@ -100,9 +153,53 @@ VideoTab::~VideoTab() {
     }
 }
 
+void VideoTab::releaseModel() {
+    m_playTimer.stop();
+    m_playing = false;
+    if (m_playBtn) m_playBtn->setText(tr("Play"));
+    if (m_worker) {
+        m_worker->requestCancel();
+        // The worker has a persistent request loop, so cancellation is the
+        // normal shutdown path. Do not delete a live QThread.
+        if (!m_worker->wait(30000)) {
+            appendLog(tr("Timed out while releasing the video model; GPU "
+                         "resources remain owned by the worker."));
+            return;
+        }
+        delete m_worker;
+        m_worker = nullptr;
+        aicore_sam3_shutdown();
+        CVLog::Print("[qSAM3][VideoTab] model resources released");
+    }
+    m_loadedModelPath.clear();
+    m_loadingModelPath.clear();
+    m_loadedDevice.clear();
+    m_loadingDevice.clear();
+    m_activeTextPrompt.clear();
+    m_loadingTextPrompt.clear();
+    m_trackerActive = false;
+    m_visualOnly = false;
+    m_promptResetInFlight = false;
+    m_trackerPromptDirty = false;
+    m_pendingAction = PendingAction::None;
+    m_pendingRetrack = false;
+    if (m_backendLabel) m_backendLabel->setText(tr("Backend: none"));
+    emit backendChanged(QStringLiteral("none"));
+    if (m_stepBtn) m_stepBtn->setEnabled(false);
+    if (m_resetBtn) m_resetBtn->setEnabled(false);
+    if (m_canvas) m_canvas->setInteractive(false);
+    clearTrackingVisualization();
+}
+
 void VideoTab::setDevice(const QString& device) {
-    const int idx = m_deviceCombo->findText(device, Qt::MatchStartsWith);
-    if (idx >= 0) m_deviceCombo->setCurrentIndex(idx);
+    if (!m_deviceCombo) return;
+    for (int i = 0; i < m_deviceCombo->count(); ++i) {
+        if (m_deviceCombo->itemText(i).compare(device, Qt::CaseInsensitive) ==
+            0) {
+            m_deviceCombo->setCurrentIndex(i);
+            return;
+        }
+    }
 }
 
 void VideoTab::setupUi() {
@@ -111,14 +208,14 @@ void VideoTab::setupUi() {
     layout->setSpacing(6);
 
     // ── Row 1: mode + text prompt + playback controls ────────────────────
+    // Two compact rows instead of one overloaded row so buttons never get
+    // squeezed or overlapped at narrow dialog widths.
     auto* row1 = new QHBoxLayout();
     auto* modeLabel = new QLabel(tr("Mode:"));
     m_modeText = new QRadioButton(tr("Text"));
     m_modeBox = new QRadioButton(tr("Box"));
     m_modePoints = new QRadioButton(tr("Points"));
-    // Upstream main_video.cpp defaults to Text mode; visual-only models
-    // fall back to Box when the tracker reports visual_only.
-    m_modeText->setChecked(true);
+    m_modeBox->setChecked(true);
     auto* modeGroup = new QButtonGroup(this);
     modeGroup->addButton(m_modeText, 0);
     modeGroup->addButton(m_modeBox, 1);
@@ -129,17 +226,10 @@ void VideoTab::setupUi() {
     m_textPrompt = new QLineEdit();
     m_textPrompt->setPlaceholderText(tr("Text prompt (SAM3 only)..."));
     m_textPrompt->setMinimumWidth(ecvAICoreUi::dpiScaled(140));
-    m_textPrompt->setEnabled(false);
+    // Enabled state is driven by onModeChanged() below; the initial toggle
+    // happens at the end of setupUi() so the text box follows the default
+    // "Text" mode.
 
-    m_openBtn = new QPushButton(tr("Open video..."));
-    m_testVideoCombo = new QComboBox();
-    m_testVideoCombo->setMinimumWidth(ecvAICoreUi::dpiScaled(140));
-    m_testVideoCombo->setToolTip(
-            tr("Pick which sample video to test (SAM3 test dataset)"));
-    m_testDataBtn = ecvAICoreUi::makeSampleDataBtn(this);
-    m_testDataBtn->setToolTip(
-            tr("Download (cached) and open the selected sample video for "
-               "one-click testing"));
     m_playBtn = new QPushButton(tr("Play"));
     m_stepBtn = new QPushButton(tr("Step >>"));
     m_stepBtn->setEnabled(false);
@@ -153,15 +243,51 @@ void VideoTab::setupUi() {
     row1->addSpacing(10);
     row1->addWidget(m_textPrompt, 1);
     row1->addSpacing(10);
-    row1->addWidget(m_testVideoCombo);
-    row1->addWidget(m_testDataBtn);
-    row1->addWidget(m_openBtn);
     row1->addWidget(m_playBtn);
     row1->addWidget(m_stepBtn);
     row1->addWidget(m_resetBtn);
     layout->addLayout(row1);
 
-    // ── Row 2: model + device ────────────────────────────────────────────
+    // Row 1b: test-video picker + one-click sample data + open file
+    auto* row1b = new QHBoxLayout();
+    m_testVideoCombo = new QComboBox();
+    m_testVideoCombo->setMinimumWidth(ecvAICoreUi::dpiScaled(140));
+    m_testVideoCombo->setToolTip(
+            tr("Pick which sample video to test (SAM3 test dataset)"));
+    // Switching the picker opens the selected sample video right away
+    // (cached dataset; no need to press the sample-data button again).
+    connect(m_testVideoCombo,
+            QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            [this](int) {
+                if (m_busy) {
+                    appendLog(tr("[Test data] Wait for the current task to "
+                                 "finish before switching videos."));
+                    return;
+                }
+                if (!loadRequestedTestVideo()) {
+                    appendLog(tr("[Test data] Sample video not found; run "
+                                 "'Try sample data' once to download the "
+                                 "dataset."));
+                }
+            });
+    m_testDataBtn = ecvAICoreUi::makeSampleDataBtn(this);
+    m_testDataBtn->setToolTip(
+            tr("Download (cached) and open the selected sample video for "
+               "one-click testing"));
+    m_openBtn = new QPushButton(tr("Open video..."));
+
+    row1b->addWidget(m_testVideoCombo);
+    row1b->addWidget(m_testDataBtn);
+    row1b->addSpacing(10);
+    row1b->addWidget(m_openBtn);
+    row1b->addStretch();
+    layout->addLayout(row1b);
+
+    // ── Row 2: model + Load ──────────────────────────────────────────────
+    // Device is managed by the shared row in SAM3Dialog's top bar, which
+    // forwards changes via setDevice(). The VideoTab keeps hidden device
+    // widgets so onDeviceChanged() / setDevice() / onLoadModel() continue
+    // to work without a visible duplicate.
     auto* row2 = new QHBoxLayout();
     auto* modelLabel = new QLabel(tr("Model:"));
     m_modelCombo = new QComboBox();
@@ -172,27 +298,36 @@ void VideoTab::setupUi() {
             "bold;"
             "  border: none; border-radius: 4px; padding: 5px 14px; }"
             "QPushButton:hover { background: #00796b; }");
+    // No manual Load step: the model loads automatically on first use
+    // (Play / Step / Reset / annotate), matching upstream main_video.cpp.
+    // The button is kept hidden for the Browse fallback in onLoadModel().
+    m_loadBtn->setVisible(false);
 
-    auto* deviceLabel = new QLabel(tr("Device:"));
-    m_deviceCombo = new QComboBox();
+    // Hidden device widgets (keep for internal state tracking, not visible).
+    m_deviceCombo = new QComboBox(this);
     m_deviceCombo->addItems({"Auto", "CPU", "CUDA", "Vulkan"});
-    m_backendLabel = new QLabel(tr("Backend: none"));
-    m_backendLabel->setStyleSheet("color: #99b4d1;");
+    m_deviceCombo->hide();
+    m_backendLabel = new QLabel(tr("Backend: none"), this);
+    m_backendLabel->hide();
 
     row2->addWidget(modelLabel);
     row2->addWidget(m_modelCombo, 1);
+    // One-click download of the selected catalog GGUF into the shared
+    // AICore model cache (sam3_models), qDA3-style.
+    m_downloadBtn = new QPushButton(tr("Download"));
+    m_downloadBtn->setToolTip(
+            tr("Download the selected model GGUF into the model cache"));
+    connect(m_downloadBtn, &QPushButton::clicked, this, [this]() {
+        if (!m_downloadInProgress) startDownload(false);
+    });
+    row2->addWidget(m_downloadBtn);
     row2->addWidget(m_loadBtn);
-    row2->addSpacing(16);
-    row2->addWidget(deviceLabel);
-    row2->addWidget(m_deviceCombo);
-    row2->addSpacing(12);
-    row2->addWidget(m_backendLabel);
+    row2->addStretch();
     layout->addLayout(row2);
 
-    // ── Canvas ────────────────────────────────────────────────────────────
+    // ── Canvas (fills the remaining tab space; no height cap) ────────────
     m_canvas = new VideoCanvas();
     m_canvas->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    m_canvas->setMaximumHeight(ecvAICoreUi::dpiScaled(560));
     layout->addWidget(m_canvas, 1);
 
     // ── Timeline ──────────────────────────────────────────────────────────
@@ -202,16 +337,29 @@ void VideoTab::setupUi() {
     // ── Test-data download progress (hidden by default) ───────────────────
     ecvAICoreUi::setupProgressSection(layout, m_downloadLabel, m_progress);
 
-    // ── Bottom row ────────────────────────────────────────────────────────
-    auto* bottom = new QHBoxLayout();
+    // ── Bottom controls ───────────────────────────────────────────────────
+    // Keep commands in one stable row and put variable-length tracking/status
+    // text below it so neither can squeeze the other off-screen.
+    auto* bottomControls = new QHBoxLayout();
     m_showMasks = new QCheckBox(tr("Show masks"));
     m_showMasks->setChecked(true);
 
+    auto* scoreLabel = new QLabel(tr("Score threshold:"));
+    m_scoreSpin = new QDoubleSpinBox();
+    m_scoreSpin->setRange(0.0, 1.0);
+    m_scoreSpin->setDecimals(2);
+    m_scoreSpin->setSingleStep(0.05);
+    m_scoreSpin->setValue(0.5);
+    m_scoreSpin->setToolTip(
+            tr("Minimum text-detection score used by the video tracker"));
+    ecvAICoreUi::setCompactDoubleSpin(m_scoreSpin);
+
     m_exportToDbCheckBox = new QCheckBox(tr("Export to DB"));
-    m_exportToDbCheckBox->setChecked(true);
+    m_exportToDbCheckBox->setChecked(false);  // opt-in, not automatic
     m_exportToDbCheckBox->setToolTip(
             tr("Automatically add the segmented result to the DB tree as "
                "an annotated image"));
+    m_exportToDbCheckBox->hide();  // replaced by the Export to DB button below
 
     auto* speedLabel = new QLabel(tr("Speed:"));
     m_speedSlider = new QSlider(Qt::Horizontal);
@@ -224,36 +372,77 @@ void VideoTab::setupUi() {
     m_exportBtn = new QPushButton(tr("Export frame masks"));
     m_exportBtn->setEnabled(false);
 
+    m_exportFrameToDbBtn = new QPushButton(tr("Export frame to DB"));
+    m_exportFrameToDbBtn->setEnabled(false);
+    m_exportFrameToDbBtn->setToolTip(
+            tr("Export the current annotated frame to the DB tree (one-shot)"));
+
     auto* instLabel = new QLabel(tr("Tracked instances:"));
-    m_instanceLabel = new QLabel(tr("(none)"));
-    m_instanceLabel->setStyleSheet("color: #999;");
+    m_instanceLabel = new QTextBrowser();
+    m_instanceLabel->setOpenLinks(false);
+    m_instanceLabel->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_instanceLabel->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    m_instanceLabel->setFrameShape(QFrame::NoFrame);
+    m_instanceLabel->setMinimumHeight(ecvAICoreUi::dpiScaled(32));
+    m_instanceLabel->setMaximumHeight(ecvAICoreUi::dpiScaled(58));
+    m_instanceLabel->setStyleSheet(
+            "QTextBrowser { background: transparent; color: #999; "
+            "padding: 0; }");
+    m_instanceLabel->setText(tr("(none)"));
 
     m_statusLabel = new QLabel(tr("Open a video and load a model to start."));
     m_statusLabel->setStyleSheet("color: #99ccff;");
 
-    bottom->addWidget(m_showMasks);
-    bottom->addWidget(m_exportToDbCheckBox);
-    bottom->addSpacing(12);
-    bottom->addWidget(speedLabel);
-    bottom->addWidget(m_speedSlider);
-    bottom->addWidget(m_speedLabel);
-    bottom->addSpacing(12);
-    bottom->addWidget(m_exportBtn);
-    bottom->addSpacing(12);
-    bottom->addWidget(instLabel);
-    bottom->addWidget(m_instanceLabel, 1);
-    bottom->addSpacing(12);
-    bottom->addWidget(m_statusLabel, 1);
-    layout->addLayout(bottom);
+    bottomControls->addWidget(m_showMasks);
+    bottomControls->addWidget(m_exportToDbCheckBox);
+    bottomControls->addSpacing(ecvAICoreUi::hSpacing());
+    bottomControls->addWidget(scoreLabel);
+    bottomControls->addWidget(m_scoreSpin);
+    bottomControls->addSpacing(ecvAICoreUi::hSpacing());
+    bottomControls->addWidget(speedLabel);
+    bottomControls->addWidget(m_speedSlider);
+    bottomControls->addWidget(m_speedLabel);
+    bottomControls->addStretch();
+    bottomControls->addWidget(m_exportBtn);
+    bottomControls->addWidget(m_exportFrameToDbBtn);
+    layout->addLayout(bottomControls);
+
+    auto* trackingRow = new QHBoxLayout();
+    trackingRow->addWidget(instLabel);
+    trackingRow->addWidget(m_instanceLabel, 2);
+    m_statusLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    m_statusLabel->setWordWrap(true);
+    trackingRow->addWidget(m_statusLabel, 1);
+    layout->addLayout(trackingRow);
 
     // ── Connections ───────────────────────────────────────────────────────
     connect(m_openBtn, &QPushButton::clicked, this, &VideoTab::onOpenVideo);
     connect(m_testDataBtn, &QPushButton::clicked, this,
             &VideoTab::onUseTestData);
     connect(m_loadBtn, &QPushButton::clicked, this, &VideoTab::onLoadModel);
+    connect(m_modelCombo,
+            QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            [this](int) {
+                m_downloadPrompted = false;
+                m_pendingFrameImage = QImage();
+                m_pendingFrameIndex = -1;
+                clearTrackingVisualization();
+                updateDownloadButton();
+            });
     connect(m_playBtn, &QPushButton::clicked, this, &VideoTab::onPlayPause);
     connect(m_stepBtn, &QPushButton::clicked, this, &VideoTab::onStep);
     connect(m_resetBtn, &QPushButton::clicked, this, &VideoTab::onReset);
+    connect(m_textPrompt, &QLineEdit::editingFinished, this, [this]() {
+        m_trackerPromptDirty = true;
+        if (m_worker && m_worker->hasModel() && !m_busy) {
+            syncTrackerPrompt(true);
+        }
+    });
+    connect(m_scoreSpin, &QDoubleSpinBox::editingFinished, this, [this]() {
+        if (m_worker && m_worker->hasModel() && !m_busy) {
+            requestTrackerReset(desiredTextPrompt(), true);
+        }
+    });
     connect(m_speedSlider, &QSlider::valueChanged, this, [this](int v) {
         m_speedLabel->setText(QString("%1x").arg(v / 10.0, 0, 'f', 1));
     });
@@ -267,40 +456,156 @@ void VideoTab::setupUi() {
     connect(m_canvas, &VideoCanvas::negPointAdded, this,
             &VideoTab::onCanvasNegPoint);
     connect(m_timeline, &VideoTimeline::seekRequested, this, &VideoTab::onSeek);
-    connect(&m_playTimer, &QTimer::timeout, this, &VideoTab::trackNextFrame);
+    m_playTimer.setSingleShot(true);
+    connect(&m_playTimer, &QTimer::timeout, this, [this]() {
+        if (!m_playing || m_currentFrame + 1 >= m_totalFrames) {
+            schedulePlayback();
+            return;
+        }
+        ++m_currentFrame;
+        trackNextFrame();
+    });
     // Hot-swap: re-load the model when the device combo changes.
     connect(m_deviceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &VideoTab::onDeviceChanged);
+    // One-shot export of the current frame to the DB tree.
+    connect(m_exportFrameToDbBtn, &QPushButton::clicked, this,
+            &VideoTab::exportCurrentFrameToDb);
     // Receive Space / arrow key shortcuts.
     setFocusPolicy(Qt::StrongFocus);
+
+    // Sync the text-prompt enabled state with the default "Text" mode
+    // (m_visualOnly is false at construction, so the prompt starts enabled).
+    onModeChanged();
 }
 
 void VideoTab::populateModelCombo() {
+    m_modelCombo->clear();
     const int n = aicore_sam3_model_count();
+    // Cache status suffix mirrors qDA3: "[size] ✓" when the GGUF is cached
+    // in the shared AICore model cache, "[download]" otherwise.
+    char* cacheDirRaw = aicore_sam3_model_cache_dir();
+    const QString cacheDir = QString::fromUtf8(cacheDirRaw);
+    aicore_sam3_free_buffer(cacheDirRaw);
     for (int i = 0; i < n; ++i) {
         const auto* entry = aicore_sam3_model_at(i);
         if (!entry || !entry->filename) continue;
-        m_modelCombo->addItem(QString("%1 (%2)")
+        const QString file = cacheDir + QLatin1Char('/') +
+                             QString::fromUtf8(entry->filename);
+        QFileInfo fi(file);
+        QString suffix;
+        if (isValidCatalogModel(fi.absoluteFilePath(),
+                                QString::fromUtf8(entry->filename))) {
+            suffix = QStringLiteral(" [%1] \u2713")
+                             .arg(ecvModelDownloader::formatFileSize(fi.size()));
+        } else {
+            suffix = QStringLiteral(" [download]");
+        }
+        m_modelCombo->addItem(QString("%1 (%2)%3")
                                       .arg(entry->display_name)
-                                      .arg(entry->quant_note),
+                                      .arg(entry->quant_note)
+                                      .arg(suffix),
                               entry->filename);
     }
     m_modelCombo->addItem(tr("Browse..."), QString("__browse__"));
 }
 
+void VideoTab::refreshModelCombo() {
+    // Save selection before rebuild (mirrors SAM3Dialog::refreshModelCombos).
+    const QString keep = m_modelCombo->currentData().toString();
+    populateModelCombo();  // clears and rebuilds
+    if (!keep.isEmpty()) {
+        const int idx = m_modelCombo->findData(keep);
+        if (idx >= 0) m_modelCombo->setCurrentIndex(idx);
+    }
+}
+
 QString VideoTab::modelPath() const {
     const QString filename = m_modelCombo->currentData().toString();
     if (filename.isEmpty() || filename == "__browse__") return QString();
-    if (QFileInfo::exists(filename)) return filename;
-    const QStringList searchDirs = {
-            QDir::homePath() + "/.cache/cloudViewer/models/sam",
-            QDir::homePath() + "/develop/code/github/dl/sam3-ggml/models",
-    };
-    for (const auto& dir : searchDirs) {
-        const QString full = dir + "/" + filename;
-        if (QFileInfo::exists(full)) return full;
+    // Catalog entries contain a basename and must resolve through the shared
+    // cache. Only an explicitly browsed absolute path may bypass the catalog.
+    const QFileInfo selected(filename);
+    if (selected.isAbsolute() && selected.isFile()) {
+        return selected.absoluteFilePath();
     }
+    // The published GGUFs live in the shared AICore model cache
+    // ({CLOUDVIEWER_DATA_ROOT|~}/cloudViewer_data/extract/sam3_models).
+    char* dir = aicore_sam3_model_cache_dir();
+    const QString cacheDir = QString::fromUtf8(dir);
+    aicore_sam3_free_buffer(dir);
+    const QString full = cacheDir + "/" + filename;
+    if (isValidCatalogModel(full, filename)) return full;
     return filename;
+}
+
+void VideoTab::startDownload(bool thenRun) {
+    if (m_downloadInProgress || !m_modelDownloader) {
+        if (m_downloadInProgress) {
+            appendLog(tr("[Warning] A model download is already in progress."));
+        }
+        return;
+    }
+    const QString filename = m_modelCombo->currentData().toString();
+    if (filename.isEmpty() || filename == "__browse__") return;
+    const auto* entry =
+            aicore_sam3_model_by_filename(filename.toUtf8().constData());
+    if (!entry || !entry->download_url) return;
+
+    char* dir = aicore_sam3_model_cache_dir();
+    const QString cacheDir = QString::fromUtf8(dir);
+    aicore_sam3_free_buffer(dir);
+    const QString dest = cacheDir + QLatin1Char('/') + filename;
+    if (isValidCatalogModel(dest, filename)) {
+        appendLog(tr("Model already cached: %1").arg(dest));
+        if (thenRun) ensureModelReady();
+        return;
+    }
+    ecvModelDownloader::removeInvalidCacheFile(
+            dest, 64 * 1024, true, entry->size_bytes);
+
+    QDir().mkpath(cacheDir);
+    m_downloadInProgress = true;
+    m_downloadThenRun = thenRun;
+    m_downloadTargetFilename = filename;
+    if (m_downloadLabel) {
+        m_downloadLabel->setText(tr("Downloading %1 ...").arg(filename));
+        m_downloadLabel->setVisible(true);
+    }
+    if (m_progress) {
+        m_progress->setVisible(true);
+        m_progress->setValue(0);
+    }
+    updateDownloadButton();
+    appendLog(tr("Downloading model %1 (%2) ...")
+                      .arg(filename)
+                      .arg(ecvModelDownloader::formatFileSize(entry->size_bytes)));
+
+    ecvModelDownloader::Request req;
+    req.url = QString::fromUtf8(entry->download_url);
+    req.destPath = dest;
+    // The catalog sizes are verified against the GitHub Release API; the
+    // downloader deletes the file when the size mismatches (truncated/CDN
+    // error pages that still carry the GGUF magic).
+    req.expectedSize = entry->size_bytes;
+    m_modelDownloader->download(req);
+}
+
+void VideoTab::updateDownloadButton() {
+    if (!m_downloadBtn) return;
+    const QString filename = m_modelCombo->currentData().toString();
+    const bool isCatalogModel =
+            !filename.isEmpty() && filename != "__browse__";
+    char* dir = aicore_sam3_model_cache_dir();
+    const QString cacheDir = QString::fromUtf8(dir);
+    aicore_sam3_free_buffer(dir);
+    const bool cached =
+            isCatalogModel &&
+            isValidCatalogModel(cacheDir + QLatin1Char('/') + filename,
+                                filename);
+    m_downloadBtn->setEnabled(!m_downloadInProgress && isCatalogModel &&
+                              !cached && !m_busy);
+    m_downloadBtn->setText(cached ? tr("Cached") : tr("Download"));
 }
 
 // ── Slots ──────────────────────────────────────────────────────────────────
@@ -314,6 +619,9 @@ void VideoTab::onOpenVideo() {
 }
 
 void VideoTab::openVideoFile(const QString& path) {
+    // A stale playback timer must never fire into the newly opened video
+    // (trackNextFrame does not check m_playing).
+    m_playTimer.stop();
     if (!m_reader) {
         m_reader = new VideoFrameReader(this);
         connect(m_reader, &VideoFrameReader::frameReady, this,
@@ -321,12 +629,16 @@ void VideoTab::openVideoFile(const QString& path) {
         connect(m_reader, &VideoFrameReader::frameReadFailed, this, [this]() {
             m_playing = false;
             m_playBtn->setText(tr("Play"));
+            CVLog::Warning("[qSAM3][VideoTab] frameReadFailed: end of stream / "
+                           "read error");
             setStatus(tr("Video read failed / end of stream."));
         });
     }
     m_reader->setConsumerDriven(true);
     m_reader->setPaused(true);
     if (!m_reader->openVideo(path.toStdString())) {
+        CVLog::Warning("[qSAM3][VideoTab] openVideo failed: %s",
+                       path.toUtf8().constData());
         QMessageBox::warning(this, tr("qSAM3"),
                              tr("Failed to open video:\n%1").arg(path));
         return;
@@ -339,11 +651,13 @@ void VideoTab::openVideoFile(const QString& path) {
     m_timelineEntries.clear();
     m_timelineInstanceIds.clear();
     m_lastResult = SAM3WorkerResult{};
+    m_pendingFrameImage = QImage();
+    m_pendingFrameIndex = -1;
     m_timeline->setFrameCount(m_totalFrames);
     m_timeline->setCurrentFrame(0);
     m_timeline->setProcessedMax(-1);
     m_timeline->setTimeline(m_timelineEntries);
-    m_timeline->setInstanceColors({});
+    m_timeline->setInstances({}, {});
     m_canvas->clearAll();
     m_canvas->setInteractive(m_worker && m_worker->hasModel());
     m_stepBtn->setEnabled(m_worker && m_worker->hasModel());
@@ -351,6 +665,11 @@ void VideoTab::openVideoFile(const QString& path) {
     m_playing = false;
     m_playBtn->setText(tr("Play"));
 
+    CVLog::Print("[qSAM3][VideoTab] opened video: %s | %dx%d | %d frames | "
+                 "%.1f fps",
+                 QFileInfo(path).fileName().toUtf8().constData(),
+                 m_reader->getFrameWidth(), m_reader->getFrameHeight(),
+                 m_totalFrames, static_cast<double>(m_fps));
     appendLog(tr("Video: %1 | %2x%3 | %4 frames | %.1f fps")
                       .arg(QFileInfo(path).fileName())
                       .arg(m_reader->getFrameWidth())
@@ -358,9 +677,41 @@ void VideoTab::openVideoFile(const QString& path) {
                       .arg(m_totalFrames)
                       .arg(m_fps));
     setStatus(tr("Pause and annotate to add instances."));
+
+    // Show the first frame right away so the canvas is never left black.
+    // The frame is delivered asynchronously via frameReady() and rendered
+    // by onFrameReady() even before any model is loaded. The decode is
+    // queued onto the event loop instead of running inline: OpenCV read()
+    // blocks 50-200 ms, and openVideoFile must return so the dialog repaints
+    // and the status line updates first. m_reading in VideoFrameReader
+    // guards against re-entrant reads if the user hits Play immediately.
+    m_reader->seekToFrame(0);
+    QMetaObject::invokeMethod(this, [this]() {
+        if (m_reader && m_reader->isOpened()) {
+            m_reader->readFrame();
+        }
+    }, Qt::QueuedConnection);
+
+    // Upstream main_video.cpp auto-creates the tracker (and loads the model
+    // on first use) right after opening a video; the first frame is then
+    // encoded. Mirror that here so the video is usable without any manual
+    // Load step.
+    if (m_worker && m_worker->hasModel() && !m_busy) {
+        // A tracker owns temporal memory from the previous video. Reusing it
+        // for a new file leaks instances/state across unrelated streams.
+        requestTrackerReset(desiredTextPrompt(), true);
+    } else if (!m_worker || !m_worker->hasModel()) {
+        ensureModelReady();
+    } else {
+        m_trackerPromptDirty = true;
+        m_pendingRetrack = true;
+    }
 }
 
 void VideoTab::onLoadModel() {
+    // Lazy loading covers the normal flow (Play / Step / Reset / annotate
+    // auto-load the model). This slot remains only for the explicit
+    // "Browse..." fallback and the hidden Load button.
     if (m_busy) {
         appendLog(tr("Worker is busy; wait for the current task."));
         return;
@@ -394,6 +745,8 @@ void VideoTab::onLoadModel() {
         connect(m_worker, &VideoWorker::logMessage, this, &VideoTab::onLog);
         connect(m_worker, &VideoWorker::modelReady, this,
                 &VideoTab::onModelReady);
+        connect(m_worker, &VideoWorker::trackerReset, this,
+                &VideoTab::onTrackerReset);
         connect(m_worker, &VideoWorker::frameResultReady, this,
                 &VideoTab::onFrameResult);
         connect(m_worker, &VideoWorker::instanceAdded, this,
@@ -408,16 +761,156 @@ void VideoTab::onLoadModel() {
     req.action = VideoWorker::Action::LoadModel;
     req.modelPath = path;
     req.device = m_deviceCombo->currentText().toLower();
-    if (m_modeText->isChecked() && m_modeText->isVisible()) {
-        req.textPrompt = m_textPrompt->text();
-    }
+    req.textPrompt = desiredTextPrompt();
+    req.scoreThreshold = static_cast<float>(m_scoreSpin->value());
+    m_loadingModelPath = QFileInfo(path).absoluteFilePath();
+    m_loadingDevice = req.device;
+    m_loadingTextPrompt = req.textPrompt;
+    m_backendLabel->setText(tr("Backend: loading..."));
+    emit backendChanged(QStringLiteral("loading..."));
     setStatus(tr("Loading model..."));
     m_worker->post(req);
 }
 
+bool VideoTab::ensureModelReady() {
+    const QString path = modelPath();
+    const QString requestedPath = QFileInfo(path).absoluteFilePath();
+    const QString requestedDevice = m_deviceCombo->currentText().toLower();
+    // A live worker is only reusable when it owns the model/device selected
+    // in the UI. Otherwise the next action must hot-reload first.
+    if (m_worker && m_worker->hasModel() &&
+        m_loadedModelPath == requestedPath &&
+        m_loadedDevice == requestedDevice) {
+        return true;
+    }
+    if (m_busy) {
+        appendLog(tr("Worker is busy; wait for the current task to finish."));
+        return false;
+    }
+    // Lazy load: same path as onLoadModel() but with no user interaction
+    // (the model file must exist locally; otherwise the load fails with a
+    // log message instead of a dialog).
+    if (!m_worker) {
+        m_worker = new VideoWorker(this);
+        connect(m_worker, &VideoWorker::logMessage, this, &VideoTab::onLog);
+        connect(m_worker, &VideoWorker::modelReady, this,
+                &VideoTab::onModelReady);
+        connect(m_worker, &VideoWorker::trackerReset, this,
+                &VideoTab::onTrackerReset);
+        connect(m_worker, &VideoWorker::frameResultReady, this,
+                &VideoTab::onFrameResult);
+        connect(m_worker, &VideoWorker::instanceAdded, this,
+                &VideoTab::onInstanceAdded);
+        connect(m_worker, &VideoWorker::instanceRefined, this,
+                &VideoTab::onInstanceRefined);
+        connect(m_worker, &VideoWorker::busyChanged, this,
+                &VideoTab::onBusyChanged);
+    }
+    if (path.isEmpty() || path == "__browse__" ||
+        !QFileInfo::exists(path)) {
+        CVLog::Warning("[qSAM3][VideoTab] auto-load: model file not found: %s",
+                       path.toUtf8().constData());
+        // Offer to download the catalog GGUF once per session (qDA3-style).
+        if (!m_downloadPrompted) {
+            const auto answer = QMessageBox::question(
+                    this, tr("qSAM3"),
+                    tr("Model file not found:\n%1\n\n"
+                       "Download it now into the model cache?")
+                            .arg(path),
+                    QMessageBox::Yes | QMessageBox::No);
+            m_downloadPrompted = true;
+            if (answer == QMessageBox::Yes) {
+                startDownload(true);
+                return false;
+            }
+            appendLog(tr("Model not cached. Use the Download button or "
+                         "select a cached model from the combo."));
+        }
+        return false;
+    }
+    VideoWorker::TrackRequest req;
+    req.action = VideoWorker::Action::LoadModel;
+    req.modelPath = path;
+    req.device = requestedDevice;
+    req.textPrompt = desiredTextPrompt();
+    req.scoreThreshold = static_cast<float>(m_scoreSpin->value());
+    m_loadingModelPath = requestedPath;
+    m_loadingDevice = req.device;
+    m_loadingTextPrompt = req.textPrompt;
+    CVLog::Print("[qSAM3][VideoTab] auto-loading model on first use: %s",
+                 QFileInfo(path).fileName().toUtf8().constData());
+    m_backendLabel->setText(tr("Backend: loading..."));
+    emit backendChanged(QStringLiteral("loading..."));
+    setStatus(tr("Loading model..."));
+    m_worker->post(req);
+    return false;
+}
+
+QString VideoTab::desiredTextPrompt() const {
+    if (m_visualOnly || !m_modeText->isChecked() ||
+        !m_modeText->isVisible()) {
+        return QString();
+    }
+    return m_textPrompt->text().trimmed();
+}
+
+void VideoTab::clearTrackingVisualization() {
+    m_lastResult = SAM3WorkerResult{};
+    m_processedMax = -1;
+    m_timelineEntries.clear();
+    m_timelineInstanceIds.clear();
+    m_timeline->setProcessedMax(-1);
+    m_timeline->setTimeline(m_timelineEntries);
+    m_timeline->setInstances({}, {});
+    updateCanvasInstances();
+}
+
+void VideoTab::requestTrackerReset(const QString& textPrompt, bool retrack) {
+    if (!m_worker || !m_worker->hasModel() || m_busy ||
+        m_promptResetInFlight) {
+        m_trackerPromptDirty = true;
+        m_pendingRetrack = m_pendingRetrack || retrack;
+        return;
+    }
+    clearTrackingVisualization();
+    VideoWorker::TrackRequest req;
+    req.action = VideoWorker::Action::ResetTracker;
+    req.textPrompt = m_visualOnly ? QString() : textPrompt;
+    req.scoreThreshold = static_cast<float>(m_scoreSpin->value());
+    m_promptResetInFlight = true;
+    m_trackerPromptDirty = false;
+    m_pendingRetrack = m_pendingRetrack || retrack;
+    m_worker->post(req);
+    setStatus(req.textPrompt.isEmpty()
+                      ? tr("Resetting tracker...")
+                      : tr("Applying text prompt: %1").arg(req.textPrompt));
+}
+
+bool VideoTab::syncTrackerPrompt(bool retrack) {
+    if (!m_worker || !m_worker->hasModel()) return true;
+    const QString desired = desiredTextPrompt();
+    if (!m_trackerPromptDirty && desired == m_activeTextPrompt) return true;
+    if (m_busy || m_promptResetInFlight) {
+        m_trackerPromptDirty = true;
+        m_pendingRetrack = m_pendingRetrack || retrack;
+        return false;
+    }
+    requestTrackerReset(desired, retrack);
+    return false;
+}
+
 void VideoTab::onModelReady(const QString& backend, bool visualOnly) {
     m_visualOnly = visualOnly;
+    m_loadedModelPath = m_loadingModelPath;
+    m_loadedDevice = m_loadingDevice;
+    m_activeTextPrompt = visualOnly ? QString() : m_loadingTextPrompt;
+    m_loadingModelPath.clear();
+    m_loadingDevice.clear();
+    m_loadingTextPrompt.clear();
+    m_trackerPromptDirty = false;
+    m_promptResetInFlight = false;
     m_backendLabel->setText(QString("Backend: %1").arg(backend));
+    emit backendChanged(backend);
     // Text mode is only available on full SAM3 models.
     m_modeText->setVisible(!visualOnly);
     m_textPrompt->setEnabled(!visualOnly && m_modeText->isChecked());
@@ -428,14 +921,71 @@ void VideoTab::onModelReady(const QString& backend, bool visualOnly) {
     m_stepBtn->setEnabled(true);
     m_trackerActive = true;
     setStatus(tr("Tracker created. Press Play or add instances."));
+    // Re-run the operation that triggered the lazy load (Play / Step /
+    // Reset / annotate), mirroring upstream main_video.cpp where the model
+    // loads automatically on first use. If nothing was pending, just
+    // process the current frame so a freshly opened video is never black.
+    const PendingAction pending = m_pendingAction;
+    m_pendingAction = PendingAction::None;
+    if (pending == PendingAction::Play) {
+        m_playing = true;
+        m_playBtn->setText(tr("Pause"));
+        trackNextFrame();
+        return;
+    }
+    if (pending == PendingAction::Step) {
+        onStep();
+        return;
+    }
+    if (pending == PendingAction::Seek) {
+        trackNextFrame();
+        return;
+    }
+    if (pending == PendingAction::Reset) {
+        onReset();
+        return;
+    }
+    if (pending == PendingAction::Annotate) {
+        // The user already drew a box / point while the model was loading;
+        // add the instance now that the tracker exists.
+        addInstanceFromPrompts();
+        return;
+    }
     // If a video is already open, process the current frame right away.
-    if (!m_videoPath.isEmpty() && !m_busy) {
+    // trackNextFrame() itself defers to onBusyChanged(false) when the
+    // worker is still busy (modelReady arrives before busyChanged(false)).
+    if (!m_videoPath.isEmpty()) {
         trackNextFrame();
     }
 }
 
+void VideoTab::onTrackerReset(const QString& textPrompt, bool ok) {
+    m_promptResetInFlight = false;
+    if (ok) {
+        m_activeTextPrompt = m_visualOnly ? QString() : textPrompt;
+        m_trackerPromptDirty = desiredTextPrompt() != m_activeTextPrompt;
+        m_trackerActive = true;
+    } else {
+        m_trackerPromptDirty = true;
+        m_trackerActive = false;
+    }
+}
+
 void VideoTab::trackNextFrame() {
-    if (m_busy || !m_worker || !m_worker->hasModel() || !m_reader) return;
+    // Decode and display the next frame. Tracking (segment) needs a loaded
+    // model; without one, the video still plays — the user sees raw frames
+    // and can load a model later without restarting.
+    if (m_busy || !m_reader) {
+        // The worker is busy (model load / ResetTracker); modelReady and
+        // the reset completion arrive before busyChanged(false), so a
+        // direct call here would be dropped. Remember the request and
+        // re-run it from onBusyChanged(false).
+        if (m_busy && m_reader) m_pendingRetrack = true;
+        return;
+    }
+    if (m_worker && m_worker->hasModel() && !syncTrackerPrompt(true)) {
+        return;
+    }
     if (m_currentFrame >= m_totalFrames) {
         m_playing = false;
         m_playBtn->setText(tr("Play"));
@@ -449,21 +999,28 @@ void VideoTab::trackNextFrame() {
 void VideoTab::onFrameReady(const cv::Mat& rgbFrame, int frameIndex) {
     QImage img = VideoPlaybackWidget::cvMatToQImage(rgbFrame);
     if (img.isNull()) {
+        CVLog::Warning("[qSAM3][VideoTab] frame %d decoded to a null QImage",
+                       frameIndex);
         appendLog(tr("Frame %1 has no data.").arg(frameIndex));
         return;
     }
-    m_currentFrameImage = img;
-    m_currentFrame = frameIndex;
-    m_canvas->setFrame(img);
-    m_timeline->setCurrentFrame(frameIndex);
-
     if (m_worker && m_worker->hasModel()) {
+        // Do not expose a raw decoded frame while inference is running. Keep
+        // the last fully-rendered frame visible and atomically promote this
+        // frame together with its matching boxes/masks in onFrameResult().
+        m_pendingFrameImage = img;
+        m_pendingFrameIndex = frameIndex;
         VideoWorker::TrackRequest req;
         req.action = VideoWorker::Action::TrackFrame;
         req.frameIndex = frameIndex;
         req.frame = img;
         m_worker->post(req);
     } else {
+        m_currentFrameImage = img;
+        m_currentFrame = frameIndex;
+        m_lastResult = SAM3WorkerResult{};
+        m_canvas->setFrameAndInstances(img, {}, {});
+        m_timeline->setCurrentFrame(frameIndex);
         setStatus(tr("Frame %1/%2 — no tracker active")
                           .arg(frameIndex)
                           .arg(m_totalFrames));
@@ -472,6 +1029,27 @@ void VideoTab::onFrameReady(const cv::Mat& rgbFrame, int frameIndex) {
 }
 
 void VideoTab::onFrameResult(const SAM3WorkerResult& result, int frameIndex) {
+    if (frameIndex == m_pendingFrameIndex && !m_pendingFrameImage.isNull()) {
+        // m_currentFrame is the last committed frame during consumer-driven
+        // playback. The decoded/inferred frame advances it only here, so
+        // requiring equality before this assignment rejects every normal next
+        // frame as stale.
+        m_currentFrameImage = m_pendingFrameImage;
+        m_pendingFrameImage = QImage();
+        m_pendingFrameIndex = -1;
+    } else if (frameIndex != m_currentFrame) {
+        // A seek/model reset superseded this result. Never paint stale masks
+        // over the currently displayed frame.
+        CVLog::Warning(
+                "[qSAM3][VideoTab] ignoring stale result for frame %d "
+                "(displayed=%d pending=%d)",
+                frameIndex, m_currentFrame, m_pendingFrameIndex);
+        if (frameIndex == m_pendingFrameIndex) {
+            m_pendingFrameImage = QImage();
+            m_pendingFrameIndex = -1;
+        }
+        return;
+    }
     m_lastResult = result;
     m_currentFrame = frameIndex;
     if (frameIndex > m_processedMax) m_processedMax = frameIndex;
@@ -483,7 +1061,16 @@ void VideoTab::onFrameResult(const SAM3WorkerResult& result, int frameIndex) {
         exportCurrentFrameToDb();
     }
 
-    if (result.valid) {
+    if (!result.errorMsg.isEmpty()) {
+        // Allocation/compute failures are not empty detections. Stop playback
+        // so the same failing frame is not retried indefinitely and keep the
+        // actionable backend error visible.
+        m_playTimer.stop();
+        m_playing = false;
+        m_playBtn->setText(tr("Play"));
+        setStatus(result.errorMsg);
+        return;
+    } else if (result.valid) {
         setStatus(tr("Frame %1/%2 — %3 objects tracked")
                           .arg(frameIndex)
                           .arg(m_totalFrames)
@@ -507,12 +1094,15 @@ void VideoTab::schedulePlayback() {
 }
 
 void VideoTab::onPlayPause() {
-    if (!m_worker || !m_worker->hasModel()) {
-        appendLog(tr("Load a model first."));
+    if (m_videoPath.isEmpty()) {
+        CVLog::Warning("[qSAM3][VideoTab] Play pressed with no video open");
+        appendLog(tr("Open a video first."));
         return;
     }
-    if (m_videoPath.isEmpty()) {
-        appendLog(tr("Open a video first."));
+    if (!ensureModelReady()) {
+        // Model loads lazily on first use; the play request re-runs from
+        // onModelReady once the load finishes.
+        m_pendingAction = PendingAction::Play;
         return;
     }
     m_playing = !m_playing;
@@ -523,14 +1113,22 @@ void VideoTab::onPlayPause() {
         if (m_currentFrame + 1 >= m_totalFrames) {
             m_currentFrame = 0;
         }
+        CVLog::Print("[qSAM3][VideoTab] Play: resume from frame %d/%d "
+                     "(model=%d)",
+                     m_currentFrame, m_totalFrames,
+                     (m_worker && m_worker->hasModel()) ? 1 : 0);
         trackNextFrame();
     } else {
         m_playTimer.stop();
+        CVLog::Print("[qSAM3][VideoTab] Pause at frame %d", m_currentFrame);
     }
 }
 
 void VideoTab::onStep() {
-    if (!m_worker || !m_worker->hasModel()) return;
+    if (!ensureModelReady()) {
+        m_pendingAction = PendingAction::Step;
+        return;
+    }
     if (m_currentFrame + 1 < m_totalFrames) {
         m_playing = false;
         m_playBtn->setText(tr("Play"));
@@ -549,34 +1147,50 @@ void VideoTab::onReset() {
     m_timelineEntries.clear();
     m_timelineInstanceIds.clear();
     m_timeline->setTimeline(m_timelineEntries);
-    m_timeline->setInstanceColors({});
+    m_timeline->setInstances({}, {});
     m_canvas->clearAll();
+    m_currentFrameImage = QImage();
+    m_pendingFrameImage = QImage();
+    m_pendingFrameIndex = -1;
     m_currentFrame = 0;
     m_processedMax = -1;
     m_timeline->setCurrentFrame(0);
     m_timeline->setProcessedMax(-1);
 
-    if (m_worker && m_worker->hasModel() && !m_videoPath.isEmpty()) {
-        VideoWorker::TrackRequest req;
-        req.action = VideoWorker::Action::ResetTracker;
-        if (m_modeText->isChecked() && m_modeText->isVisible()) {
-            req.textPrompt = m_textPrompt->text();
-        }
-        m_worker->post(req);
-        m_trackerActive = true;
-        m_canvas->setInteractive(true);
-        // Re-track frame 0 once the tracker is reset.
-        m_currentFrame = 0;
-        trackNextFrame();
+    if (m_videoPath.isEmpty()) {
+        setStatus(tr("Reset. Ready to annotate."));
+        return;
     }
+    // The model loads lazily on first use (upstream main_video.cpp Reset
+    // re-creates the tracker and re-encodes frame 0; without a model it
+    // auto-loads one first).
+    if (!ensureModelReady()) {
+        m_pendingAction = PendingAction::Reset;
+        return;
+    }
+
+    m_trackerActive = true;
+    m_canvas->setInteractive(true);
+    m_currentFrame = 0;
+    requestTrackerReset(desiredTextPrompt(), true);
     setStatus(tr("Reset. Ready to annotate."));
 }
 
-void VideoTab::onCanvasBox() { addInstanceFromPrompts(); }
+void VideoTab::onCanvasBox() {
+    if (!ensureModelReady()) {
+        m_pendingAction = PendingAction::Annotate;
+        return;
+    }
+    addInstanceFromPrompts();
+}
 
 void VideoTab::onCanvasInstanceClicked(int id, const QPointF& pos) {
-    if (!m_trackerActive || !m_worker || !m_worker->hasModel()) {
-        setStatus(tr("Load a model first to enable tracking."));
+    if (!ensureModelReady()) {
+        m_pendingAction = PendingAction::Annotate;
+        return;
+    }
+    if (!m_trackerActive) {
+        setStatus(tr("Tracker not ready; press Play or Reset first."));
         return;
     }
     // Upstream main_video.cpp: clicking an existing mask refines it with a
@@ -586,8 +1200,12 @@ void VideoTab::onCanvasInstanceClicked(int id, const QPointF& pos) {
 }
 
 void VideoTab::onCanvasPosPoint(const QPointF& p) {
-    if (!m_trackerActive || !m_worker || !m_worker->hasModel()) {
-        setStatus(tr("Load a model first to enable tracking."));
+    if (!ensureModelReady()) {
+        m_pendingAction = PendingAction::Annotate;
+        return;
+    }
+    if (!m_trackerActive) {
+        setStatus(tr("Tracker not ready; press Play or Reset first."));
         return;
     }
     // Upstream main_video.cpp Points mode: a click on empty canvas adds a
@@ -602,6 +1220,10 @@ void VideoTab::onCanvasPosPoint(const QPointF& p) {
 }
 
 void VideoTab::onCanvasNegPoint(const QPointF& p) {
+    if (!ensureModelReady()) {
+        m_pendingAction = PendingAction::Annotate;
+        return;
+    }
     // Negative point: refine the instance under the cursor, or queue it for
     // the next AddInstance.
     const int hit = m_canvas->hitTestInstance(p);
@@ -648,10 +1270,21 @@ void VideoTab::onCanvasNegPoint(const QPointF& p) {
 
 void VideoTab::addInstanceFromPrompts() {
     if (!m_trackerActive || !m_worker || !m_worker->hasModel()) {
+        CVLog::Warning(
+                "[qSAM3][VideoTab] addInstanceFromPrompts skipped: no model "
+                "loaded (trackerActive=%d hasModel=%d)",
+                m_trackerActive ? 1 : 0, (m_worker && m_worker->hasModel()) ? 1 : 0);
         setStatus(tr("Load a model first to enable tracking."));
         return;
     }
     if (!m_canvas) return;
+    if (m_currentFrameImage.isNull()) {
+        CVLog::Warning(
+                "[qSAM3][VideoTab] addInstanceFromPrompts skipped: no current "
+                "frame image (video not displaying)");
+        appendLog(tr("No video frame available; open a video first."));
+        return;
+    }
     VideoWorker::TrackRequest req;
     req.action = VideoWorker::Action::AddInstance;
     if (m_canvas->hasBox()) {
@@ -677,6 +1310,10 @@ void VideoTab::addInstanceFromPrompts() {
     // (upstream main_video.cpp shows the new instance's mask right away).
     req.frame = m_currentFrameImage;
     req.frameIndex = m_currentFrame;
+    CVLog::Print(
+            "[qSAM3][VideoTab] addInstance: frame=%d box=%d pts=%d",
+            m_currentFrame, req.prompt.usePvsBox ? 1 : 0,
+            static_cast<int>(req.prompt.posPoints.size()));
     m_worker->post(req);
     resetPrompts();
 }
@@ -685,12 +1322,19 @@ void VideoTab::refineInstance(int id,
                               const QVector<QPointF>& pos,
                               const QVector<QPointF>& neg) {
     if (!m_trackerActive || !m_worker || !m_worker->hasModel()) {
+        CVLog::Warning(
+                "[qSAM3][VideoTab] refineInstance skipped: no model loaded");
         setStatus(tr("Load a model first to enable tracking."));
         return;
     }
     VideoWorker::TrackRequest req;
     req.action = VideoWorker::Action::RefineInstance;
     req.instanceId = id;
+    // Carry the current frame so the worker can (re-)encode it when the
+    // tracker state is stale (refine runs PVS internally and needs the
+    // current frame's encoded features).
+    req.frame = m_currentFrameImage;
+    req.frameIndex = m_currentFrame;
     for (const auto& pt : pos) {
         req.prompt.posPoints.append(
                 {static_cast<float>(pt.x()), static_cast<float>(pt.y())});
@@ -719,13 +1363,46 @@ void VideoTab::onBusyChanged(bool busy) {
     m_deviceCombo->setEnabled(!busy);
     m_canvas->setInteractive(!busy);
     m_stepBtn->setEnabled(!busy && m_worker && m_worker->hasModel());
-    if (busy) m_playTimer.stop();
+    updateDownloadButton();
+    if (busy) {
+        m_playTimer.stop();
+    } else if (m_worker && !m_worker->hasModel() &&
+               !m_loadingModelPath.isEmpty()) {
+        // A failed load has no modelReady signal, so clear the transient
+        // loading identity here when the worker becomes idle.
+        m_loadingModelPath.clear();
+        m_loadingDevice.clear();
+        m_loadingTextPrompt.clear();
+        m_backendLabel->setText(tr("Backend: none"));
+        emit backendChanged(QStringLiteral("none"));
+    } else if (m_reloadWhenIdle) {
+        m_reloadWhenIdle = false;
+        onLoadModel();
+    } else if (m_trackerPromptDirty && m_worker && m_worker->hasModel()) {
+        // Text/mode may have changed while inference was in flight. Apply it
+        // before releasing the pending frame to the tracker.
+        syncTrackerPrompt(m_pendingRetrack);
+    } else if (m_pendingRetrack) {
+        // A frame request was queued while the worker was busy (model
+        // load / ResetTracker); deliver it now that the worker is free.
+        m_pendingRetrack = false;
+        if (!m_videoPath.isEmpty()) {
+            trackNextFrame();
+        }
+    }
 }
 
 void VideoTab::onLog(const QString& msg) { setStatus(msg); }
 
 void VideoTab::onSeek(int frame) {
     if (m_videoPath.isEmpty()) return;
+    if (!ensureModelReady()) {
+        // Track the requested frame once the lazy model load finishes
+        // (onModelReady re-runs trackNextFrame for the current frame).
+        m_pendingAction = PendingAction::Seek;
+        m_currentFrame = qBound(0, frame, m_totalFrames - 1);
+        return;
+    }
     m_playing = false;
     m_playBtn->setText(tr("Play"));
     m_playTimer.stop();
@@ -734,12 +1411,18 @@ void VideoTab::onSeek(int frame) {
 }
 
 void VideoTab::onModeChanged() {
-    const bool textMode = m_modeText->isChecked() && !m_visualOnly;
-    m_textPrompt->setEnabled(textMode);
-    resetPrompts();
     if (m_modeText->isChecked() && m_visualOnly) {
         // Visual-only model: fall back to box mode.
         m_modeBox->setChecked(true);
+    }
+    const bool textMode = m_modeText->isChecked() && !m_visualOnly;
+    m_textPrompt->setEnabled(textMode);
+    resetPrompts();
+    m_trackerPromptDirty = desiredTextPrompt() != m_activeTextPrompt;
+    if (m_trackerPromptDirty && m_worker && m_worker->hasModel() && !m_busy) {
+        // Switching Text <-> Box/Points changes whether automatic text
+        // detections belong in the tracker; rebuild immediately.
+        syncTrackerPrompt(true);
     }
     appendLog(tr("Mode: %1").arg(textMode ? tr("Text") : tr("Box / Points")));
 }
@@ -752,6 +1435,7 @@ void VideoTab::onDeviceChanged() {
     if (m_busy) {
         appendLog(tr("Device changed; re-loading when the current task "
                      "finishes."));
+        m_reloadWhenIdle = true;
         return;
     }
     if (m_modelCombo->currentData().toString() == "__browse__") {
@@ -827,14 +1511,21 @@ void VideoTab::updateCanvasInstances() {
             boxes.append(b);
         }
     }
-    m_canvas->setInstances(boxes, m_showMasks->isChecked()
-                                          ? m_lastResult.instanceMasks
-                                          : QVector<QImage>());
+    const QVector<QImage> masks =
+            m_showMasks->isChecked() ? m_lastResult.instanceMasks
+                                     : QVector<QImage>();
+    if (!m_currentFrameImage.isNull()) {
+        m_canvas->setFrameAndInstances(m_currentFrameImage, boxes, masks);
+    } else {
+        m_canvas->setInstances(boxes, masks);
+    }
 
     // Instance list label.
     if (!m_lastResult.valid || m_lastResult.detCount <= 0) {
         m_instanceLabel->setText(tr("(none)"));
-        m_instanceLabel->setStyleSheet("color: #999;");
+        m_instanceLabel->setStyleSheet(
+                "QTextBrowser { background: transparent; color: #999; "
+                "padding: 0; }");
     } else {
         QString html;
         for (int i = 0; i < m_lastResult.detCount; ++i) {
@@ -845,11 +1536,13 @@ void VideoTab::updateCanvasInstances() {
                             .arg(m_lastResult.instanceIds.value(i))
                             .arg(m_lastResult.scores.value(i), 0, 'f', 2);
         }
-        m_instanceLabel->setText(html);
-        m_instanceLabel->setStyleSheet(QString());
+        m_instanceLabel->setHtml(html);
+        m_instanceLabel->setStyleSheet(
+                "QTextBrowser { background: transparent; padding: 0; }");
     }
     m_exportBtn->setEnabled(m_lastResult.valid &&
                             !m_lastResult.instanceMasks.isEmpty());
+    m_exportFrameToDbBtn->setEnabled(m_lastResult.valid && m_app);
 }
 
 void VideoTab::updateTimeline(int frameIndex, const SAM3WorkerResult& result) {
@@ -874,7 +1567,7 @@ void VideoTab::updateTimeline(int frameIndex, const SAM3WorkerResult& result) {
     m_timeline->setCurrentFrame(frameIndex);
     m_timeline->setProcessedMax(m_processedMax);
     m_timeline->setTimeline(m_timelineEntries);
-    m_timeline->setInstanceColors(colors);
+    m_timeline->setInstances(m_timelineInstanceIds, colors);
 }
 
 QColor VideoTab::instanceColor(int id) const {
@@ -895,7 +1588,10 @@ void VideoTab::exportCurrentFrameToDb() {
     if (!m_lastResult.valid || !m_app || m_currentFrameImage.isNull()) return;
 
     // Build the annotated frame: composite masks atop the original frame.
-    QImage annotated = m_currentFrameImage;
+    // The mask compositor below writes QRgb pixels. Decoded video frames are
+    // commonly RGB888, so normalize the destination before 32-bit writes.
+    QImage annotated =
+            m_currentFrameImage.convertToFormat(QImage::Format_RGB32);
     if (!m_lastResult.instanceMasks.isEmpty()) {
         QPainter p(&annotated);
         for (int i = 0; i < m_lastResult.instanceMasks.size(); ++i) {

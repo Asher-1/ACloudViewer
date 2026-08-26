@@ -30,12 +30,15 @@
 
 class QCheckBox;
 class QComboBox;
+class QDoubleSpinBox;
 class QLabel;
 class QLineEdit;
 class QProgressBar;
 class QPushButton;
 class QRadioButton;
 class QSlider;
+class QTextBrowser;
+class ecvModelDownloader;
 
 class VideoFrameReader;
 class ecvMainAppInterface;
@@ -51,8 +54,14 @@ public:
     ~VideoTab() override;
 
     void setDevice(const QString& device);  // propagate shared device combo
+    /** Release the tracker/model while preserving the opened video. */
+    void releaseModel();
     /** Pass the app interface for DB-tree export. */
     void setAppInterface(ecvMainAppInterface* app) { m_app = app; }
+
+signals:
+    /** Keep the dialog's shared backend indicator in sync with video mode. */
+    void backendChanged(const QString& backendName);
 
 private slots:
     void onOpenVideo();
@@ -61,6 +70,7 @@ private slots:
     void onStep();
     void onReset();
     void onModelReady(const QString& backend, bool visualOnly);
+    void onTrackerReset(const QString& textPrompt, bool ok);
     void onFrameReady(const cv::Mat& rgbFrame, int frameIndex);
     void onFrameResult(const SAM3WorkerResult& result, int frameIndex);
     void onInstanceAdded(int instanceId);
@@ -92,8 +102,32 @@ protected:
 private:
     void setupUi();
     void populateModelCombo();
+    /** Rebuild the model combo keeping the current selection (cache status
+     *  suffixes may have changed after a download). */
+    void refreshModelCombo();
     QString modelPath() const;
+    /** Download the GGUF currently selected in the model combo into the
+     *  shared AICore model cache (sam3_models). Naming mirrors the
+     *  qDA3/qYOLO/qDeepLSD startDownload convention. When \p thenRun is
+     *  true the pending operation is re-executed once the download finishes. */
+    void startDownload(bool thenRun);
+    /** Refresh the Download button state (cached / missing). */
+    void updateDownloadButton();
     void openVideoFile(const QString& path);
+    /** Ensure a model matching the current combo selection is loaded.
+     *  Starts a lazy load when needed (the pending action is re-run once
+     *  the load finishes, mirroring upstream main_video.cpp where the
+     *  model loads automatically on first use — there is no manual Load
+     *  step). Returns true when ready to run. */
+    bool ensureModelReady();
+    /** Action to re-run once a lazy model load completes. */
+    enum class PendingAction { None, Play, Step, Seek, Reset, Annotate };
+    QString desiredTextPrompt() const;
+    /** Make the tracker prompt/mode match the UI. Returns true when no
+     *  asynchronous reset is needed. */
+    bool syncTrackerPrompt(bool retrack);
+    void requestTrackerReset(const QString& textPrompt, bool retrack);
+    void clearTrackingVisualization();
     void trackNextFrame();
     void schedulePlayback();
     void addInstanceFromPrompts();
@@ -128,6 +162,7 @@ private:
     QPushButton* m_stepBtn = nullptr;
     QPushButton* m_resetBtn = nullptr;
     QComboBox* m_modelCombo = nullptr;
+    QPushButton* m_downloadBtn = nullptr;  // downloads the selected GGUF
     QPushButton* m_loadBtn = nullptr;
     QComboBox* m_deviceCombo = nullptr;
     QLabel* m_backendLabel = nullptr;
@@ -137,13 +172,24 @@ private:
     VideoTimeline* m_timeline = nullptr;
     QCheckBox* m_showMasks = nullptr;
     QCheckBox* m_exportToDbCheckBox = nullptr;
+    QDoubleSpinBox* m_scoreSpin = nullptr;
     QSlider* m_speedSlider = nullptr;
     QLabel* m_speedLabel = nullptr;
     QPushButton* m_exportBtn = nullptr;
-    QLabel* m_instanceLabel = nullptr;
+    QPushButton* m_exportFrameToDbBtn = nullptr;
+    QTextBrowser* m_instanceLabel = nullptr;
     QLabel* m_statusLabel = nullptr;
     QLabel* m_downloadLabel = nullptr;  // test-data download/extract status
     QProgressBar* m_progress = nullptr;
+
+    // Model downloader (shared ecvModelDownloader, qDA3-style)
+    ecvModelDownloader* m_modelDownloader = nullptr;
+    bool m_downloadInProgress = false;
+    /** Re-run the pending operation once the download completes. */
+    bool m_downloadThenRun = false;
+    QString m_downloadTargetFilename;
+    /** Prevent re-prompting after the user declined the download dialog. */
+    bool m_downloadPrompted = false;
 
     // State
     QString m_videoPath;
@@ -155,7 +201,24 @@ private:
     bool m_busy = false;
     bool m_trackerActive = false;
     bool m_visualOnly = false;
+    QString m_activeTextPrompt;
+    QString m_loadingTextPrompt;
+    QString m_loadedModelPath;
+    QString m_loadingModelPath;
+    QString m_loadedDevice;
+    QString m_loadingDevice;
+    bool m_trackerPromptDirty = false;
+    bool m_promptResetInFlight = false;
+    bool m_reloadWhenIdle = false;
     bool m_testDataDownloadInProgress = false;
+    /** Operation queued while a lazy model load runs; re-executed from
+     *  onModelReady once the load finishes. */
+    PendingAction m_pendingAction = PendingAction::None;
+    /** A trackNextFrame() call arrived while the worker was busy (model
+     *  loading / ResetTracker); re-run it once busy clears. Without this,
+     *  the frame request is silently dropped because modelReady / reset
+     *  completion signals arrive before busyChanged(false). */
+    bool m_pendingRetrack = false;
 
     SAM3WorkerResult m_lastResult;
     QVector<VideoTimelineEntry> m_timelineEntries;
@@ -164,4 +227,8 @@ private:
     // DB-tree export state
     ecvMainAppInterface* m_app = nullptr;
     QImage m_currentFrameImage;
+    /** Decoded frame waiting for its matching tracker result. Consumer-driven
+     *  playback guarantees at most one pending inference frame. */
+    QImage m_pendingFrameImage;
+    int m_pendingFrameIndex = -1;
 };

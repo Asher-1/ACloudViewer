@@ -92,7 +92,9 @@ Mirror hosted by ACloudViewer:
 
 `https://github.com/Asher-1/cloudViewer_downloads/releases/download/sam/<filename>`
 
-The model cache directory is `~/.cache/cloudViewer/models/sam/`.
+The model cache directory is `~/cloudViewer_data/extract/sam3_models/`
+(`$CLOUDVIEWER_DATA_ROOT/extract/sam3_models` when the environment variable
+is set — the same convention as qDA3 / qTrellis via the AICore cache API).
 
 ## Recommended defaults
 

@@ -16,6 +16,8 @@
 #include <QThread>
 #include <QVector>
 
+#include <atomic>
+
 // Actions the worker can perform
 enum class SAM3WorkerAction {
     None,
@@ -34,10 +36,16 @@ struct SAM3WorkerResult {
     QVector<float> ious;
     QVector<int> instanceIds;
     QVector<QImage> instanceMasks;  // per-detection 0/255 mask at original size
-    QImage maskComposite;           // all masks blended on a black background
+    QImage maskComposite;  // masks blended on the source image (0.4 alpha, like upstream)
     aicore_sam3_timings timings{};
     QString errorMsg;
 };
+
+// The worker emits resultReady() / frameResultReady() from its own thread;
+// without this registration Qt silently drops queued (cross-thread) signals
+// of this custom type, so the UI never sees the segmentation output. qYOLO
+// / qRFDetr follow the same pattern (Q_DECLARE_METATYPE after the struct).
+Q_DECLARE_METATYPE(SAM3WorkerResult)
 
 class SAM3Worker : public QThread {
     Q_OBJECT
@@ -97,7 +105,6 @@ private:
     aicore_sam3_seg_result* runPCS();
     SAM3WorkerResult buildResult(aicore_sam3_seg_result* segRes,
                                  const QImage& img);
-    QImage blendMasks(aicore_sam3_seg_result* res, int imgW, int imgH);
 
     Settings m_settings;
     SAM3WorkerAction m_action = SAM3WorkerAction::None;
@@ -105,7 +112,7 @@ private:
     Prompt m_prompt;
     aicore_sam3_ctx* m_ctx = nullptr;
     aicore_sam3_ctx* m_pendingCtx = nullptr;
-    bool m_cancelled = false;
+    std::atomic_bool m_cancelled{false};
 
     // Encoding cache: the C-API caches the encoded features by image size;
     // we gate re-encoding on the actual image + pvs_only mode so repeated

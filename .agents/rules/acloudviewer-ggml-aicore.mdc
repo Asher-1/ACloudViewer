@@ -15,28 +15,28 @@ alwaysApply: false
 
 # ACloudViewer ggml / AICore Build Rules
 
-## ⚠️ ggml 源码修改规则（强制）
+## ⚠️ ggml Source Modification Rules (mandatory)
 
-**绝对禁止直接修改构建目录中的 ggml 源码文件**（`build/ggml/`、`build_app/ggml/` 等）。
-所有对 ggml 源码的修改必须通过 patch 文件管理，流程如下：
+**Directly modifying ggml source files in build directories is absolutely forbidden** (`build/ggml/`, `build_app/ggml/`, etc.).
+All ggml source modifications MUST go through patch files. The flow is:
 
-1. **本地修改**：在 `build/` 或 `build_app/` 的 ggml 源码副本中进行修改和验证
-2. **生成 patch**：用 `diff -ruN` 或 `git diff` 对比原始 ggml 源码与修改后的版本，生成 unified diff
-3. **存放 patch**：将 patch 文件放入 `3rdparty/ggml/patches/<子目录>/0001-描述.patch`
-4. **注册 patch**：在 `3rdparty/ggml/patches/manifest.yaml` 中添加条目（顺序重要）
-5. **构建验证**：清理构建目录后重新构建，确认 `apply_ggml_patches.py` 正确应用补丁
+1. **Local edit**: modify and verify in the ggml source copy under `build/` or `build_app/`
+2. **Generate patch**: produce a unified diff with `diff -ruN` or `git diff` between the pristine ggml source and the modified version
+3. **Store patch**: put the patch file under `3rdparty/ggml/patches/<subdir>/0001-description.patch`
+4. **Register patch**: add an entry to `3rdparty/ggml/patches/manifest.yaml` (order matters)
+5. **Build verification**: clean the build directory, rebuild, and confirm `apply_ggml_patches.py` applies the patch correctly
 
 ```
 3rdparty/ggml/patches/
-├── manifest.yaml                        # 注册所有 patch（顺序重要）
-├── apply_ggml_patches.py                # 构建时自动应用
+├── manifest.yaml                        # registers all patches (order matters)
+├── apply_ggml_patches.py                # applied automatically at build time
 ├── aliked_merged/0001-vulkan-aliked.patch
 ├── cpu_all_variants/0001-*.patch
 ├── metal_merged/0001-metal-optimizations.patch
 └── msvc_vulkan/0001-*.patch
 ```
 
-**原因**：ggml 是 ExternalProject，每次干净构建都从 tarball 重新提取。直接修改构建目录的文件在 CI 或他人构建时不会生效——只有 patch 文件才会被应用。
+**Why**: ggml is an ExternalProject — every clean build re-extracts it from a tarball. Files modified directly in build directories will not take effect in CI or on other machines; only patch files get applied.
 
 ## ggml ExternalProject Architecture
 
@@ -113,13 +113,13 @@ python3 -c "import ctypes; ctypes.CDLL('./libggml-metal.so')"
 # Check OpenMP linkage (macOS, should show nothing):
 otool -L libggml-cpu.so | grep omp
 
-## Metal 性能优化经验参考
+## Metal Performance Optimization Reference
 
-见 `docs/guides/metal-inference-optimization.md`，包含：
-1. **定位方法论**：per-op profile 识别 threadgroup 过碎 / 标量路径 / 带宽饱和
-2. **六大可复用 kernel 模式**：flat-grid 一维化、每线程多元素+float4、广播特例除法消除、K<64 F16 矩阵门槛、小 K f16 权重化、图级 op 融合
-3. **图构建决策**：MTL0 检测、f16 条件门控、三量化验证
-4. **陷阱清单**：MSL/C struct 一致性、ExternalProject mtime、ggml_view_4d stride、profile 分支
-5. **新模型加速检查表**
+See `docs/guides/metal-inference-optimization.md`, which covers:
+1. **Profiling methodology**: per-op profile to identify fragmented threadgroups / scalar paths / bandwidth saturation
+2. **Six reusable kernel patterns**: flat-grid flattening, multi-element-per-thread + float4, broadcast-special-case division elimination, K<64 F16 matrix threshold, small-K f16 weight conversion, graph-level op fusion
+3. **Graph construction decisions**: MTL0 detection, f16 conditional gating, three-quantization verification
+4. **Pitfall checklist**: MSL/C struct consistency, ExternalProject mtime, ggml_view_4d strides, profile branch
+5. **New-model acceleration checklist
 
 ```

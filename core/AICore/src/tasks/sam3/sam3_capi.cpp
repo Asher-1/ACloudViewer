@@ -17,6 +17,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <cstddef>
 #include <cstring>
 #include <functional>
@@ -27,8 +28,12 @@
 
 #include "aicore/backend_capi.h"
 #include "common/aicore_log.hpp"
+#include "common/capi_utils.hpp"
 #include "common/ggml_backend_registry.hpp"
+#include "common/model_cache.hpp"
 #include "sam3.h"
+
+#include "tasks/sam3/quantize.hpp"
 
 namespace {
 
@@ -80,6 +85,8 @@ sam3_device resolve_device(const std::string& device) {
 // Shared engine log level for verbose progress (upstream SAM3_LOG_LEVEL=2).
 // Kept at INFO unless a caller explicitly raises it via aicore_set_log_level.
 constexpr int kSam3LogLevel = 1;
+
+thread_local std::string g_last_load_error;
 
 }  // namespace
 
@@ -194,9 +201,11 @@ struct aicore_sam3_ctx {
     int recondition_every = 16;
     int fill_hole_area = 16;
 
-    // Cached encoded image (image mode). Re-encoded when the input size
-    // changes so repeated prompts on one image reuse the backbone.
+    // Cached encoded image (image mode). The cache identity includes image
+    // bytes and the requested neck: same-sized frames and PCS/PVS encodes are
+    // not interchangeable.
     bool encoded = false;
+    bool encoded_pvs_only = false;
     int32_t encoded_w = 0;
     int32_t encoded_h = 0;
     std::vector<uint8_t> encoded_rgb;
@@ -204,13 +213,17 @@ struct aicore_sam3_ctx {
 
 AICORE_CAPI aicore_sam3_ctx* aicore_sam3_load_opts(
         const char* gguf_path, const aicore_sam3_options* opts) {
+    g_last_load_error.clear();
     if (!gguf_path || !gguf_path[0]) {
-        AICORE_LOG_ERROR("[sam3] ", "load: empty model path\n");
+        g_last_load_error = "empty model path";
+        AICORE_LOG_ERROR("[sam3] ", "load: %s\n",
+                         g_last_load_error.c_str());
         return nullptr;
     }
 
     std::unique_ptr<aicore_sam3_ctx> ctx(new (std::nothrow) aicore_sam3_ctx());
     if (!ctx) {
+        g_last_load_error = "context allocation failed";
         return nullptr;
     }
 
@@ -226,15 +239,17 @@ AICORE_CAPI aicore_sam3_ctx* aicore_sam3_load_opts(
     auto t0 = Clock::now();
     ctx->model = sam3_load_model(params);
     if (!ctx->model) {
-        ctx->last_error = "sam3_load_model failed (see console for details)";
-        AICORE_LOG_ERROR("[sam3] ", "%s\n", ctx->last_error.c_str());
+        g_last_load_error =
+                "model load failed (invalid/incompatible GGUF or backend "
+                "allocation failure; see the preceding [sam3] log)";
+        AICORE_LOG_ERROR("[sam3] ", "%s\n", g_last_load_error.c_str());
         return nullptr;
     }
 
     ctx->state = sam3_create_state(*ctx->model, params);
     if (!ctx->state) {
-        ctx->last_error = "sam3_create_state failed";
-        AICORE_LOG_ERROR("[sam3] ", "%s\n", ctx->last_error.c_str());
+        g_last_load_error = "sam3_create_state failed";
+        AICORE_LOG_ERROR("[sam3] ", "%s\n", g_last_load_error.c_str());
         return nullptr;
     }
 
@@ -274,6 +289,20 @@ AICORE_CAPI int aicore_sam3_is_ready(const aicore_sam3_ctx* ctx) {
 AICORE_CAPI const char* aicore_sam3_last_error(const aicore_sam3_ctx* ctx) {
     static const char* kEmpty = "";
     return ctx ? ctx->last_error.c_str() : kEmpty;
+}
+
+AICORE_CAPI const char* aicore_sam3_last_load_error(void) {
+    return g_last_load_error.c_str();
+}
+
+AICORE_CAPI int aicore_sam3_set_score_threshold(aicore_sam3_ctx* ctx,
+                                                 float score_threshold) {
+    if (!ctx || !std::isfinite(score_threshold) || score_threshold < 0.0f ||
+        score_threshold > 1.0f) {
+        return -1;
+    }
+    ctx->score_threshold = score_threshold;
+    return 0;
 }
 
 AICORE_CAPI void aicore_sam3_free_buffer(void* p) { std::free(p); }
@@ -333,6 +362,7 @@ AICORE_CAPI int aicore_sam3_encode_rgb(aicore_sam3_ctx* ctx,
         return -1;
     }
     ctx->encoded = true;
+    ctx->encoded_pvs_only = pvs_only != 0;
     ctx->encoded_w = width;
     ctx->encoded_h = height;
     ctx->timings.preprocess_ms = elapsed_ms(t0, Clock::now());
@@ -351,15 +381,58 @@ struct aicore_sam3_seg_result {
     sam3_result result;  // owns detections + masks (allocated by sam3.cpp)
 };
 
-// Ensure the ctx has an encoded image for (width, height); re-encodes when
-// the size changed or nothing is cached. pvs_only controls the neck.
+static bool result_is_finite_and_well_formed(const sam3_result& result) {
+    for (const sam3_detection& det : result.detections) {
+        if (!std::isfinite(det.box.x0) || !std::isfinite(det.box.y0) ||
+            !std::isfinite(det.box.x1) || !std::isfinite(det.box.y1) ||
+            !std::isfinite(det.score) || !std::isfinite(det.iou_score) ||
+            !std::isfinite(det.mask.iou_score) ||
+            !std::isfinite(det.mask.obj_score) || det.mask.width <= 0 ||
+            det.mask.height <= 0 ||
+            det.mask.data.size() != static_cast<size_t>(det.mask.width) *
+                                            det.mask.height ||
+            !std::all_of(det.sam_token.begin(), det.sam_token.end(),
+                         [](float v) { return std::isfinite(v); })) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static bool encoded_rgb_matches(const aicore_sam3_ctx* ctx,
+                                const uint8_t* rgb,
+                                int32_t width,
+                                int32_t height,
+                                size_t row_stride_bytes) {
+    if (!ctx || !rgb || width <= 0 || height <= 0 ||
+        row_stride_bytes < static_cast<size_t>(width) * 3) {
+        return false;
+    }
+    const size_t row_bytes = static_cast<size_t>(width) * 3;
+    const size_t expected = row_bytes * static_cast<size_t>(height);
+    if (ctx->encoded_rgb.size() != expected) return false;
+    for (int32_t y = 0; y < height; ++y) {
+        if (std::memcmp(ctx->encoded_rgb.data() + static_cast<size_t>(y) * row_bytes,
+                        rgb + static_cast<size_t>(y) * row_stride_bytes,
+                        row_bytes) != 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// Reuse an encode only when dimensions, content and neck all match. Width and
+// height alone are insufficient for image tabs that switch between same-sized
+// inputs or between PCS (full neck) and PVS (visual neck).
 static bool ensure_encoded(aicore_sam3_ctx* ctx,
                            const uint8_t* rgb,
                            int32_t width,
                            int32_t height,
                            size_t row_stride_bytes,
                            bool pvs_only) {
-    if (ctx->encoded && ctx->encoded_w == width && ctx->encoded_h == height) {
+    if (ctx->encoded && ctx->encoded_w == width && ctx->encoded_h == height &&
+        ctx->encoded_pvs_only == pvs_only &&
+        encoded_rgb_matches(ctx, rgb, width, height, row_stride_bytes)) {
         return true;
     }
     return aicore_sam3_encode_rgb(ctx, rgb, width, height, row_stride_bytes,
@@ -371,6 +444,12 @@ static aicore_sam3_seg_result* run_segment(aicore_sam3_ctx* ctx,
                                            const char* what) {
     auto t0 = Clock::now();
     sam3_result r = fn();
+    if (!result_is_finite_and_well_formed(r)) {
+        sam3_free_result(r);
+        ctx->last_error = std::string(what) +
+                          " produced a non-finite or malformed result";
+        return nullptr;
+    }
     if (r.detections.empty()) {
         // Empty results are valid (no detections); only report failures via
         // the upstream log. Keep the timing accounting simple.
@@ -385,7 +464,7 @@ static aicore_sam3_seg_result* run_segment(aicore_sam3_ctx* ctx,
     ctx->timings.inference_ms = elapsed_ms(t0, Clock::now());
     ctx->timings.e2e_ms =
             ctx->timings.preprocess_ms + ctx->timings.inference_ms;
-    (void)what;
+    ctx->last_error.clear();
     return out.release();
 }
 
@@ -598,14 +677,22 @@ AICORE_CAPI aicore_sam3_tracker_ctx* aicore_sam3_tracker_create(
     }
     if (!t->tracker) {
         t->last_error = "sam3_create_tracker failed";
+        ctx->last_error = t->last_error;
         return nullptr;
     }
     t->state = sam3_create_state(*t->model, t->params);
     if (!t->state) {
         t->last_error = "sam3_create_state failed";
+        ctx->last_error = t->last_error;
         return nullptr;
     }
     return t.release();
+}
+
+AICORE_CAPI const char* aicore_sam3_tracker_last_error(
+        const aicore_sam3_tracker_ctx* tracker) {
+    static const char* kEmpty = "";
+    return tracker ? tracker->last_error.c_str() : kEmpty;
 }
 
 AICORE_CAPI void aicore_sam3_tracker_set_text_prompt(
@@ -654,6 +741,20 @@ static aicore_sam3_seg_result* run_tracker_frame(
                                        *tracker->model, frame);
     auto t2 = Clock::now();
 
+    if (!sam3_state_last_encode_succeeded(*tracker->state)) {
+        sam3_free_result(r);
+        tracker->last_error =
+                "frame encode failed (backend allocation or graph compute)";
+        return nullptr;
+    }
+
+    if (!result_is_finite_and_well_formed(r)) {
+        sam3_free_result(r);
+        tracker->last_error =
+                "tracker produced a non-finite or malformed result";
+        return nullptr;
+    }
+
     std::unique_ptr<aicore_sam3_seg_result> out(
             new (std::nothrow) aicore_sam3_seg_result());
     if (!out) {
@@ -664,6 +765,7 @@ static aicore_sam3_seg_result* run_tracker_frame(
     tracker->timings.preprocess_ms = elapsed_ms(t0, t1);
     tracker->timings.inference_ms = elapsed_ms(t1, t2);
     tracker->timings.e2e_ms = elapsed_ms(t0, t2);
+    tracker->last_error.clear();
     return out.release();
 }
 
@@ -730,6 +832,8 @@ AICORE_CAPI int aicore_sam3_tracker_add_instance(
                                              *tracker->model, p);
     if (id < 0) {
         tracker->last_error = "add_instance failed";
+    } else {
+        tracker->last_error.clear();
     }
     return id;
 }
@@ -756,6 +860,12 @@ AICORE_CAPI aicore_sam3_seg_result* aicore_sam3_tracker_segment_pvs(
     sam3_result r =
             sam3_segment_pvs(*tracker->state, *tracker->model, p);
     auto t1 = Clock::now();
+    if (!result_is_finite_and_well_formed(r)) {
+        sam3_free_result(r);
+        tracker->last_error =
+                "tracker PVS produced a non-finite or malformed result";
+        return nullptr;
+    }
     // sam3_segment_pvs is safe on an unencoded state (logs + empty result);
     // an empty detection list is a valid outcome here (e.g. a prompt that
     // matches nothing), so we hand it back as a regular result.
@@ -769,6 +879,7 @@ AICORE_CAPI aicore_sam3_seg_result* aicore_sam3_tracker_segment_pvs(
     tracker->timings.preprocess_ms = 0.0;
     tracker->timings.inference_ms = elapsed_ms(t0, t1);
     tracker->timings.e2e_ms = elapsed_ms(t0, t1);
+    tracker->last_error.clear();
     return out.release();
 }
 
@@ -798,6 +909,8 @@ AICORE_CAPI int aicore_sam3_tracker_add_instance_from_mask(
             *tracker->tracker, *tracker->state, *tracker->model, m);
     if (id < 0) {
         tracker->last_error = "add_instance_from_mask failed";
+    } else {
+        tracker->last_error.clear();
     }
     return id;
 }
@@ -832,6 +945,7 @@ AICORE_CAPI int aicore_sam3_refine_instance(aicore_sam3_tracker_ctx* tracker,
         tracker->last_error = "refine_instance failed";
         return -1;
     }
+    tracker->last_error.clear();
     return 0;
 }
 
@@ -861,6 +975,14 @@ AICORE_CAPI int aicore_sam3_last_timings(const aicore_sam3_ctx* ctx,
     return ctx->timings.e2e_ms > 0.0 ? 0 : -1;
 }
 
+AICORE_CAPI int aicore_sam3_tracker_last_timings(
+        const aicore_sam3_tracker_ctx* tracker,
+        aicore_sam3_timings* out_timings) {
+    if (!tracker || !out_timings) return -1;
+    *out_timings = tracker->timings;
+    return tracker->timings.e2e_ms > 0.0 ? 0 : -1;
+}
+
 // ---------------------------------------------------------------------------
 // Model catalog (cloudViewer_downloads "sam" release)
 // ---------------------------------------------------------------------------
@@ -882,86 +1004,86 @@ constexpr const char* kSamDownloadBase =
 
 constexpr ModelEntry kModels[] = {
         // SAM 3 (full: ViT + text detector + tracker)
-        {"sam3-f16.gguf", "sam3", 1837900000LL,
+        {"sam3-f16.gguf", "sam3", 1837924096LL,
          "F16 \xe2\x80\x94 half precision (recommended)"},
-        {"sam3-q8_0.gguf", "sam3", 1099400000LL,
+        {"sam3-q8_0.gguf", "sam3", 1099442368LL,
          "Q8_0 \xe2\x80\x94 8-bit quant, best accuracy/size trade"},
-        {"sam3-q4_1.gguf", "sam3", 755800000LL,
+        {"sam3-q4_1.gguf", "sam3", 755755328LL,
          "Q4_1 \xe2\x80\x94 4-bit quant with bias"},
-        {"sam3-q4_0.gguf", "sam3", 706700000LL,
+        {"sam3-q4_0.gguf", "sam3", 706657216LL,
          "Q4_0 \xe2\x80\x94 smallest SAM3 quant"},
         // SAM 3 visual-only (no text encoder)
-        {"sam3-visual-f16.gguf", "sam3-visual", 945500000LL,
+        {"sam3-visual-f16.gguf", "sam3-visual", 945529696LL,
          "F16 \xe2\x80\x94 half precision (recommended)"},
-        {"sam3-visual-q8_0.gguf", "sam3-visual", 517100000LL,
+        {"sam3-visual-q8_0.gguf", "sam3-visual", 517085888LL,
          "Q8_0 \xe2\x80\x94 8-bit quant, best accuracy/size trade"},
-        {"sam3-visual-q4_1.gguf", "sam3-visual", 317700000LL,
+        {"sam3-visual-q4_1.gguf", "sam3-visual", 317650048LL,
          "Q4_1 \xe2\x80\x94 4-bit quant with bias"},
-        {"sam3-visual-q4_0.gguf", "sam3-visual", 289200000LL,
+        {"sam3-visual-q4_0.gguf", "sam3-visual", 289159232LL,
          "Q4_0 \xe2\x80\x94 smallest SAM3-visual quant"},
         // SAM 2.1 (Hiera backbone, visual-only)
-        {"sam2.1_hiera_large_f16.gguf", "sam2.1", 450900000LL,
+        {"sam2.1_hiera_large_f16.gguf", "sam2.1", 450932736LL,
          "F16 \xe2\x80\x94 half precision (recommended)"},
-        {"sam2.1_hiera_large_f32.gguf", "sam2.1", 897800000LL,
+        {"sam2.1_hiera_large_f32.gguf", "sam2.1", 897848576LL,
          "F32 \xe2\x80\x94 full precision reference"},
-        {"sam2.1_hiera_large_q8_0.gguf", "sam2.1", 241200000LL,
+        {"sam2.1_hiera_large_q8_0.gguf", "sam2.1", 241243168LL,
          "Q8_0 \xe2\x80\x94 8-bit quant, best accuracy/size trade"},
-        {"sam2.1_hiera_large_q4_1.gguf", "sam2.1", 143900000LL,
+        {"sam2.1_hiera_large_q4_1.gguf", "sam2.1", 143892640LL,
          "Q4_1 \xe2\x80\x94 4-bit quant with bias"},
-        {"sam2.1_hiera_large_q4_0.gguf", "sam2.1", 130000000LL,
+        {"sam2.1_hiera_large_q4_0.gguf", "sam2.1", 129985440LL,
          "Q4_0 \xe2\x80\x94 smallest large quant"},
-        {"sam2.1_hiera_base_plus_f16.gguf", "sam2.1", 163300000LL,
+        {"sam2.1_hiera_base_plus_f16.gguf", "sam2.1", 163305952LL,
          "F16 \xe2\x80\x94 half precision (recommended)"},
-        {"sam2.1_hiera_base_plus_f32.gguf", "sam2.1", 323400000LL,
+        {"sam2.1_hiera_base_plus_f32.gguf", "sam2.1", 323444448LL,
          "F32 \xe2\x80\x94 full precision reference"},
-        {"sam2.1_hiera_base_plus_q8_0.gguf", "sam2.1", 87700000LL,
+        {"sam2.1_hiera_base_plus_q8_0.gguf", "sam2.1", 87743744LL,
          "Q8_0 \xe2\x80\x94 8-bit quant, best accuracy/size trade"},
-        {"sam2.1_hiera_base_plus_q4_1.gguf", "sam2.1", 53000000LL,
+        {"sam2.1_hiera_base_plus_q4_1.gguf", "sam2.1", 52985984LL,
          "Q4_1 \xe2\x80\x94 4-bit quant with bias"},
-        {"sam2.1_hiera_base_plus_q4_0.gguf", "sam2.1", 48000000LL,
+        {"sam2.1_hiera_base_plus_q4_0.gguf", "sam2.1", 48020608LL,
          "Q4_0 \xe2\x80\x94 smallest base-plus quant"},
-        {"sam2.1_hiera_small_f16.gguf", "sam2.1", 93600000LL,
+        {"sam2.1_hiera_small_f16.gguf", "sam2.1", 93561600LL,
          "F16 \xe2\x80\x94 half precision (recommended)"},
-        {"sam2.1_hiera_small_f32.gguf", "sam2.1", 184300000LL,
+        {"sam2.1_hiera_small_f32.gguf", "sam2.1", 184279040LL,
          "F32 \xe2\x80\x94 full precision reference"},
-        {"sam2.1_hiera_small_q8_0.gguf", "sam2.1", 50200000LL,
+        {"sam2.1_hiera_small_q8_0.gguf", "sam2.1", 50200672LL,
          "Q8_0 \xe2\x80\x94 8-bit quant, best accuracy/size trade"},
-        {"sam2.1_hiera_small_q4_1.gguf", "sam2.1", 30500000LL,
+        {"sam2.1_hiera_small_q4_1.gguf", "sam2.1", 30470176LL,
          "Q4_1 \xe2\x80\x94 4-bit quant with bias"},
-        {"sam2.1_hiera_small_q4_0.gguf", "sam2.1", 27700000LL,
+        {"sam2.1_hiera_small_q4_0.gguf", "sam2.1", 27651552LL,
          "Q4_0 \xe2\x80\x94 smallest small quant"},
-        {"sam2.1_hiera_tiny_f16.gguf", "sam2.1", 79300000LL,
+        {"sam2.1_hiera_tiny_f16.gguf", "sam2.1", 79322912LL,
          "F16 \xe2\x80\x94 half precision (recommended)"},
-        {"sam2.1_hiera_tiny_f32.gguf", "sam2.1", 155900000LL,
+        {"sam2.1_hiera_tiny_f32.gguf", "sam2.1", 155884576LL,
          "F32 \xe2\x80\x94 full precision reference"},
-        {"sam2.1_hiera_tiny_q8_0.gguf", "sam2.1", 42600000LL,
+        {"sam2.1_hiera_tiny_q8_0.gguf", "sam2.1", 42597504LL,
          "Q8_0 \xe2\x80\x94 8-bit quant, best accuracy/size trade"},
-        {"sam2.1_hiera_tiny_q4_1.gguf", "sam2.1", 26000000LL,
+        {"sam2.1_hiera_tiny_q4_1.gguf", "sam2.1", 25963584LL,
          "Q4_1 \xe2\x80\x94 4-bit quant with bias"},
-        {"sam2.1_hiera_tiny_q4_0.gguf", "sam2.1", 23600000LL,
+        {"sam2.1_hiera_tiny_q4_0.gguf", "sam2.1", 23587328LL,
          "Q4_0 \xe2\x80\x94 smallest SAM2.1 quant (22 MB)"},
         // SAM 2 (Hiera backbone, visual-only)
-        {"sam2_hiera_large_f16.gguf", "sam2", 450900000LL,
+        {"sam2_hiera_large_f16.gguf", "sam2", 450866528LL,
          "F16 \xe2\x80\x94 half precision (recommended)"},
-        {"sam2_hiera_base_plus_f16.gguf", "sam2", 163200000LL,
+        {"sam2_hiera_base_plus_f16.gguf", "sam2", 163239712LL,
          "F16 \xe2\x80\x94 half precision (recommended)"},
-        {"sam2_hiera_base_plus_f32.gguf", "sam2", 323400000LL,
+        {"sam2_hiera_base_plus_f32.gguf", "sam2", 323378208LL,
          "F32 \xe2\x80\x94 full precision reference"},
-        {"sam2_hiera_base_plus_q8_0.gguf", "sam2", 87700000LL,
+        {"sam2_hiera_base_plus_q8_0.gguf", "sam2", 87725632LL,
          "Q8_0 \xe2\x80\x94 8-bit quant, best accuracy/size trade"},
-        {"sam2_hiera_base_plus_q4_1.gguf", "sam2", 53000000LL,
+        {"sam2_hiera_base_plus_q4_1.gguf", "sam2", 52975040LL,
          "Q4_1 \xe2\x80\x94 4-bit quant with bias"},
-        {"sam2_hiera_base_plus_q4_0.gguf", "sam2", 48000000LL,
+        {"sam2_hiera_base_plus_q4_0.gguf", "sam2", 48010688LL,
          "Q4_0 \xe2\x80\x94 smallest base-plus quant"},
-        {"sam2_hiera_tiny_f16.gguf", "sam2", 79300000LL,
+        {"sam2_hiera_tiny_f16.gguf", "sam2", 79256672LL,
          "F16 \xe2\x80\x94 half precision (recommended)"},
-        {"sam2_hiera_tiny_f32.gguf", "sam2", 155800000LL,
+        {"sam2_hiera_tiny_f32.gguf", "sam2", 155818336LL,
          "F32 \xe2\x80\x94 full precision reference"},
-        {"sam2_hiera_tiny_q8_0.gguf", "sam2", 42600000LL,
+        {"sam2_hiera_tiny_q8_0.gguf", "sam2", 42579392LL,
          "Q8_0 \xe2\x80\x94 8-bit quant, best accuracy/size trade"},
-        {"sam2_hiera_tiny_q4_1.gguf", "sam2", 26000000LL,
+        {"sam2_hiera_tiny_q4_1.gguf", "sam2", 25952640LL,
          "Q4_1 \xe2\x80\x94 4-bit quant with bias"},
-        {"sam2_hiera_tiny_q4_0.gguf", "sam2", 23600000LL,
+        {"sam2_hiera_tiny_q4_0.gguf", "sam2", 23577408LL,
          "Q4_0 \xe2\x80\x94 smallest SAM2 quant (22 MB)"},
 };
 
@@ -975,6 +1097,36 @@ const char* familyDisplayName(const char* family) {
     return "SAM 2 Hiera";
 }
 
+struct ModelCatalogStore {
+    std::vector<std::string> urls;
+    std::vector<aicore_sam3_model_entry> entries;
+
+    ModelCatalogStore() {
+        urls.reserve(kModelCount);
+        entries.reserve(kModelCount);
+        for (int i = 0; i < kModelCount; ++i) {
+            const ModelEntry& model = kModels[i];
+            urls.emplace_back(std::string(kSamDownloadBase) + model.filename);
+
+            aicore_sam3_model_entry entry{};
+            entry.filename = model.filename;
+            entry.download_url = urls.back().c_str();
+            entry.display_name = familyDisplayName(model.family);
+            entry.quant_note = model.quant_note;
+            entry.model_family = model.family;
+            entry.size_bytes = model.size_bytes;
+            entry.visual_only =
+                    std::strcmp(model.family, "sam3") != 0 ? 1 : 0;
+            entries.push_back(entry);
+        }
+    }
+};
+
+const ModelCatalogStore& modelCatalogStore() {
+    static const ModelCatalogStore store;
+    return store;
+}
+
 }  // namespace
 
 AICORE_CAPI int aicore_sam3_model_count(void) { return kModelCount; }
@@ -983,27 +1135,7 @@ AICORE_CAPI const aicore_sam3_model_entry* aicore_sam3_model_at(int index) {
     if (index < 0 || index >= kModelCount) {
         return nullptr;
     }
-    static std::vector<aicore_sam3_model_entry> entries;
-    static bool initialized = false;
-    if (!initialized) {
-        entries.reserve(kModelCount);
-        for (int i = 0; i < kModelCount; ++i) {
-            const ModelEntry& m = kModels[i];
-            static std::vector<std::string> urls;
-            urls.emplace_back(std::string(kSamDownloadBase) + m.filename);
-            aicore_sam3_model_entry e{};
-            e.filename = m.filename;
-            e.download_url = urls.back().c_str();
-            e.display_name = familyDisplayName(m.family);
-            e.quant_note = m.quant_note;
-            e.model_family = m.family;
-            e.size_bytes = m.size_bytes;
-            e.visual_only = std::strcmp(m.family, "sam3") != 0 ? 1 : 0;
-            entries.push_back(e);
-        }
-        initialized = true;
-    }
-    return &entries[index];
+    return &modelCatalogStore().entries[index];
 }
 
 AICORE_CAPI const aicore_sam3_model_entry* aicore_sam3_model_by_filename(
@@ -1028,6 +1160,228 @@ AICORE_CAPI const char* aicore_sam3_model_download_base(void) {
 // Process-wide helpers
 // ---------------------------------------------------------------------------
 
+AICORE_CAPI int aicore_sam3_benchmark(aicore_sam3_ctx* ctx,
+                                       int32_t img_width,
+                                       int32_t img_height,
+                                       int n_warmup,
+                                       int n_iter,
+                                       aicore_sam3_timings* out_avg) {
+    if (!ctx || !out_avg || img_width <= 0 || img_height <= 0) return -1;
+    if (n_warmup < 1) n_warmup = 1;
+    if (n_iter < 1) n_iter = 1;
+
+    // Constant-gray fake frame so results do not depend on image content.
+    const size_t row_stride = static_cast<size_t>(img_width) * 3;
+    const size_t frame_bytes = static_cast<size_t>(img_height) * row_stride;
+    std::vector<uint8_t> frame(frame_bytes, 128);  // mid-gray
+
+    // Point prompt at the image center (mirrors the upstream benchmark's
+    // object-tracking point), so every iteration runs the full PVS pipeline
+    // (encode + prompt encoder + mask decoder).
+    aicore_sam3_point center{static_cast<float>(img_width) * 0.5f,
+                             static_cast<float>(img_height) * 0.5f};
+    aicore_sam3_pvs_prompt prompt{};
+    prompt.pos_points = &center;
+    prompt.n_pos_points = 1;
+
+    // Warm-up iterations (no timings recorded).
+    for (int i = 0; i < n_warmup; ++i) {
+        aicore_sam3_seg_result* r =
+            aicore_sam3_segment_pvs_rgb(ctx, &prompt, frame.data(),
+                                        img_width, img_height, row_stride);
+        aicore_sam3_seg_result_free(r);
+    }
+
+    // Timed iterations.
+    double sum_pre = 0.0, sum_inf = 0.0, sum_post = 0.0, sum_e2e = 0.0;
+    for (int i = 0; i < n_iter; ++i) {
+        aicore_sam3_seg_result* r =
+            aicore_sam3_segment_pvs_rgb(ctx, &prompt, frame.data(),
+                                        img_width, img_height, row_stride);
+        aicore_sam3_timings t{};
+        aicore_sam3_last_timings(ctx, &t);
+        sum_pre += t.preprocess_ms;
+        sum_inf += t.inference_ms;
+        sum_post += t.postprocess_ms;
+        sum_e2e += t.e2e_ms;
+        aicore_sam3_seg_result_free(r);
+    }
+
+    out_avg->preprocess_ms = sum_pre / n_iter;
+    out_avg->inference_ms = sum_inf / n_iter;
+    out_avg->postprocess_ms = sum_post / n_iter;
+    out_avg->e2e_ms = sum_e2e / n_iter;
+    return 0;
+}
+
+// ---------------------------------------------------------------------------
+// Profile
+// ---------------------------------------------------------------------------
+
+AICORE_CAPI int aicore_sam3_profile_encoder(aicore_sam3_ctx* ctx,
+                                            int n_warmup,
+                                            int n_iter,
+                                            aicore_sam3_profile_entry* out,
+                                            int max_entries,
+                                            int* n_entries_out) {
+    if (!ctx || !ctx->model) return -1;
+    if (n_warmup < 1) n_warmup = 1;
+    if (n_iter < 1) n_iter = 1;
+    if (n_entries_out) *n_entries_out = 0;
+
+    const int n_threads = ctx->params.n_threads > 0 ? ctx->params.n_threads : 4;
+    int written = 0;
+    auto emit = [&](int kind, int index, int stage, double ms) {
+        if (out && written < max_entries) {
+            out[written].kind = kind;
+            out[written].index = index;
+            out[written].stage = stage;
+            out[written].avg_ms = ms;
+        }
+        ++written;
+    };
+
+    // Infer network geometry from a few known weight tensors.
+    sam3_tensor_info ti;
+    int patch = 14, E = 0, grid = 0;
+    if (sam3_get_model_tensor_info(*ctx->model, "vit.patch_embed.proj.weight",
+                                   ti)) {
+        patch = (int)ti.ne[0];
+        E = (int)ti.ne[3];
+    }
+    // Full-image feature grid: the largest RoPE table among the blocks is the
+    // global-attention one, sized to the full token count (img_size/patch)^2.
+    // (Window-attention blocks carry a window-sized table instead.)
+    {
+        int64_t max_n = 0;
+        for (int b = 0; b < 64; ++b) {
+            const std::string name =
+                "vit.blocks." + std::to_string(b) + ".attn.freqs_cis";
+            if (!sam3_get_model_tensor_info(*ctx->model, name, ti)) break;
+            max_n = std::max(max_n, ti.ne[2]);
+        }
+        if (max_n > 0) {
+            const int64_t g = (int64_t)std::sqrt((double)max_n);
+            if (g * g == max_n && g > 0) grid = (int)g;
+        }
+    }
+    if (grid <= 0) {
+        // Fallback: SAM3 pretrained pos_embed grid (tiled 3x at runtime, see
+        // sam3_register_tensors).
+        if (sam3_get_model_tensor_info(*ctx->model, "vit.pos_embed", ti)) {
+            grid = (int)ti.ne[1] * 3;
+        }
+    }
+    if (E <= 0 || grid <= 0) {
+        // SAM2 Hiera models have no ViT patch_embed/pos_embed tensors; the
+        // profile sub-graphs are SAM3-only.
+        ctx->last_error =
+            "profile: model has no ViT tensors (SAM3 profile is SAM3-only)";
+        return -1;
+    }
+    AICORE_LOG_PRINT("[sam3] ", "profile: patch=%d E=%d grid=%d img=%d\n",
+                     patch, E, grid, grid * patch);
+
+    const int img_size = grid * patch;
+
+    // ── Prefix stages (patch embed -> ln_pre), chained ───────────────────
+    int64_t img_ne[4] = {img_size, img_size, 3, 1};
+    std::vector<float> img((size_t)img_size * img_size * 3, 0.001f);
+    for (int s = (int)SAM3_VIT_PREFIX_STAGE_PATCH_EMBED;
+         s <= (int)SAM3_VIT_PREFIX_STAGE_LN_PRE; ++s) {
+        std::vector<float> out_data;
+        int64_t out_ne[4] = {0, 0, 0, 0};
+        if (!sam3_test_run_vit_prefix_stage(*ctx->model,
+                                            (sam3_vit_prefix_stage)s,
+                                            img.data(), img_ne, out_data,
+                                            out_ne, n_threads)) {
+            continue;  // backend does not support this sub-stage
+        }
+        for (int it = 0; it < n_warmup; ++it) {
+            sam3_test_run_vit_prefix_stage(*ctx->model,
+                                           (sam3_vit_prefix_stage)s,
+                                           img.data(), img_ne, out_data,
+                                           out_ne, n_threads);
+        }
+        auto t0 = Clock::now();
+        for (int it = 0; it < n_iter; ++it) {
+            sam3_test_run_vit_prefix_stage(*ctx->model,
+                                           (sam3_vit_prefix_stage)s,
+                                           img.data(), img_ne, out_data,
+                                           out_ne, n_threads);
+        }
+        emit(AICORE_SAM3_PROFILE_PREFIX, s, s,
+             elapsed_ms(t0, Clock::now()) / n_iter);
+
+        // Chain the output as the next stage's input where shapes allow.
+        std::copy(std::begin(out_ne), std::end(out_ne), std::begin(img_ne));
+        img.swap(out_data);
+        img.resize((size_t)img_ne[0] * img_ne[1] * img_ne[2] * img_ne[3],
+                   0.0f);
+    }
+
+    // ── Block stages, chained per block ──────────────────────────────────
+    std::vector<float> feat((size_t)E * grid * grid, 0.001f);
+    int64_t feat_ne[4] = {E, grid, grid, 1};
+    for (int b = 0; b < 128; ++b) {  // probe bound; stops when stage 0 fails
+        // Global-attention blocks (RoPE table sized to the full token grid)
+        // expect un-windowed full-image features, which the chained
+        // windowed sub-graphs cannot produce — skip them.
+        {
+            const std::string name =
+                "vit.blocks." + std::to_string(b) + ".attn.freqs_cis";
+            if (sam3_get_model_tensor_info(*ctx->model, name, ti) &&
+                ti.ne[2] == (int64_t)grid * grid) {
+                continue;
+            }
+        }
+        std::vector<float> x = feat;
+        int64_t ne[4];
+        std::copy(std::begin(feat_ne), std::end(feat_ne), ne);
+        bool any = false;
+        for (int s = 0; s <= (int)SAM3_VIT_BLOCK_STAGE_MLP; ++s) {
+            std::vector<float> out_data;
+            int64_t out_ne[4] = {0, 0, 0, 0};
+            if (!sam3_test_run_vit_block_stage(
+                    *ctx->model, b, (sam3_vit_block_stage)s, x.data(), ne,
+                    out_data, out_ne, n_threads)) {
+                continue;  // invalid block or unsupported stage
+            }
+            any = true;
+            for (int it = 0; it < n_warmup; ++it) {
+                sam3_test_run_vit_block_stage(
+                    *ctx->model, b, (sam3_vit_block_stage)s, x.data(), ne,
+                    out_data, out_ne, n_threads);
+            }
+            auto t0 = Clock::now();
+            for (int it = 0; it < n_iter; ++it) {
+                sam3_test_run_vit_block_stage(
+                    *ctx->model, b, (sam3_vit_block_stage)s, x.data(), ne,
+                    out_data, out_ne, n_threads);
+            }
+            emit(AICORE_SAM3_PROFILE_BLOCK, b, s,
+                 elapsed_ms(t0, Clock::now()) / n_iter);
+
+            std::copy(std::begin(out_ne), std::end(out_ne), std::begin(ne));
+            x.swap(out_data);
+            x.resize((size_t)ne[0] * ne[1] * ne[2] * ne[3], 0.0f);
+        }
+        if (!any) break;  // past the last block
+    }
+
+    if (n_entries_out) *n_entries_out = written;
+    return 0;
+}
+
+AICORE_CAPI int aicore_sam3_quantize_gguf(const char* input_gguf,
+                                          const char* output_gguf,
+                                          const char* type_name) {
+    if (!input_gguf || !output_gguf || !type_name) return -1;
+    return aicore::sam3::quantize_gguf(input_gguf, output_gguf, type_name)
+               ? 0
+               : -1;
+}
+
 AICORE_CAPI int aicore_sam3_warmup_backend(const char* device) {
     // Probe the requested device and clear any stale CUDA error state, so
     // plugin startup can validate the backend before the first load.
@@ -1038,4 +1392,8 @@ AICORE_CAPI void aicore_sam3_shutdown(void) {
     // The engine keeps no process-wide backend leases beyond ggml's registry;
     // purging them is handled by the shared runtime.
     aicore::runtime::purge_inactive_backend_leases();
+}
+
+AICORE_CAPI char* aicore_sam3_model_cache_dir(void) {
+    return aicore::capi::dup_cstr(aicore::sam3_model_cache_dir());
 }

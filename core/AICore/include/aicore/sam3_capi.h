@@ -93,6 +93,13 @@ AICORE_CAPI void aicore_sam3_free(aicore_sam3_ctx* ctx);
 AICORE_CAPI int aicore_sam3_is_ready(const aicore_sam3_ctx* ctx);
 /** Returns the last error message of the context (empty when none). */
 AICORE_CAPI const char* aicore_sam3_last_error(const aicore_sam3_ctx* ctx);
+/** Returns the error from the most recent load attempt on the calling thread.
+ *  This remains available when aicore_sam3_load_opts returns NULL. */
+AICORE_CAPI const char* aicore_sam3_last_load_error(void);
+/** Updates the score threshold used when subsequently creating a tracker.
+ *  Returns 0 on success, -1 for a NULL context or a value outside [0, 1]. */
+AICORE_CAPI int aicore_sam3_set_score_threshold(aicore_sam3_ctx* ctx,
+                                                 float score_threshold);
 /** Releases any buffer returned by an aicore_sam3_* function (unified entry
  *  point). Safe on NULL. */
 AICORE_CAPI void aicore_sam3_free_buffer(void* p);
@@ -216,6 +223,9 @@ AICORE_CAPI void aicore_sam3_seg_result_free(aicore_sam3_seg_result* res);
  *  failure. */
 AICORE_CAPI aicore_sam3_tracker_ctx* aicore_sam3_tracker_create(
         aicore_sam3_ctx* ctx);
+/** Returns the last tracker-specific error (empty when none). */
+AICORE_CAPI const char* aicore_sam3_tracker_last_error(
+        const aicore_sam3_tracker_ctx* tracker);
 /** Set (or clear, with an empty string) the text prompt of a text-prompted
  *  tracker. Must be called before the first track_frame; the tracker
  *  re-reads it on every frame. No-op on visual-only trackers. */
@@ -287,6 +297,10 @@ typedef struct aicore_sam3_timings {
  *  Returns 0 on success, -1 when ctx has never run an inference. */
 AICORE_CAPI int aicore_sam3_last_timings(const aicore_sam3_ctx* ctx,
                                          aicore_sam3_timings* out_timings);
+/** Copy timings from the most recent tracker inference. */
+AICORE_CAPI int aicore_sam3_tracker_last_timings(
+        const aicore_sam3_tracker_ctx* tracker,
+        aicore_sam3_timings* out_timings);
 
 /** ---- Published model catalog (cloudViewer_downloads "sam" release) ---- */
 
@@ -312,7 +326,90 @@ AICORE_CAPI const aicore_sam3_model_entry* aicore_sam3_model_by_filename(
 /** Returns the base URL of the published model release. */
 AICORE_CAPI const char* aicore_sam3_model_download_base(void);
 
+/** Returns the local model cache directory
+ *  ({CLOUDVIEWER_DATA_ROOT|~}/cloudViewer_data/extract/sam3_models).
+ *  Caller frees with aicore_sam3_free_buffer. */
+AICORE_CAPI char* aicore_sam3_model_cache_dir(void);
+
 /** ---- Process-wide helpers ---- */
+
+/** ---- Benchmark ---- */
+
+/**
+ * Run repeated PVS (encode + point/box segment) benchmarks against a fake
+ * RGB frame of the given size, returning average wall-clock timings.
+ *
+ * \p n_warmup and \p n_iter control the number of warm-up and timed
+ * iterations respectively (both >= 1).  The frame is filled with a fixed
+ * gray pixel value and each iteration segments a point prompt at the image
+ * center, so results are consistent and do not depend on image content.
+ *
+ * Returns 0 on success, -1 if the context has no loaded model.  On success
+ * \p out_avg receives the per-iteration averages.
+ */
+AICORE_CAPI int aicore_sam3_benchmark(
+    aicore_sam3_ctx* ctx,
+    int32_t img_width,
+    int32_t img_height,
+    int n_warmup,
+    int n_iter,
+    aicore_sam3_timings* out_avg);
+
+/** ---- Profile ---- */
+
+/** Entry kind of aicore_sam3_profile_encoder output. */
+enum aicore_sam3_profile_kind {
+    AICORE_SAM3_PROFILE_PREFIX = 0, /**< ViT prefix sub-stage (patch embed ... ln_pre) */
+    AICORE_SAM3_PROFILE_BLOCK = 1,  /**< ViT block sub-stage (norm1 ... mlp) */
+};
+
+/** One measured stage of the ViT encoder. */
+typedef struct aicore_sam3_profile_entry {
+    int kind;   /**< aicore_sam3_profile_kind */
+    int index;  /**< prefix: sam3_vit_prefix_stage value; block: block index */
+    int stage;  /**< block: sam3_vit_block_stage value; prefix: same as index */
+    double avg_ms; /**< average wall-clock time over n_iter timed runs */
+} aicore_sam3_profile_entry;
+
+/**
+ * Profile the ViT image encoder stage by stage (the same sub-graphs the
+ * upstream sam3-ggml profile tool measures): each prefix sub-stage and each
+ * ViT block sub-stage is run as its own ggml graph and timed.  Stages whose
+ * backend does not support the sub-graph are skipped (they simply do not
+ * appear in the output).
+ *
+ * \p n_warmup and \p n_iter control warm-up and timed iterations (both >= 1).
+ * \p out_entries receives up to \p max_entries stage timings; \p n_entries_out
+ * is set to the number written (NULL allowed for both when only probing).
+ *
+ * Returns 0 on success, -1 if the context has no loaded model.
+ */
+AICORE_CAPI int aicore_sam3_profile_encoder(
+    aicore_sam3_ctx* ctx,
+    int n_warmup,
+    int n_iter,
+    aicore_sam3_profile_entry* out_entries,
+    int max_entries,
+    int* n_entries_out);
+
+/** ---- Quantize ---- */
+
+/**
+ * Quantize a SAM3 / SAM2 GGUF from F32/F16 to q4_0 / q4_1 / q8_0.
+ *
+ * Only matmul (2D) weights whose leading dimension is block-aligned and whose
+ * name is not an embedding / bias / norm parameter are quantized — the same
+ * rule set the upstream sam3-ggml quantize tool applies, mirroring the
+ * register_* macros.  All metadata (arch, hparams, tokenizer) is copied
+ * through verbatim and the `sam3.ftype` KV is updated so the output loads
+ * identically through aicore_sam3_load_opts.
+ *
+ * Supported types: "q4_0", "q4_1", "q8_0".
+ * Returns 0 on success, -1 on failure.
+ */
+AICORE_CAPI int aicore_sam3_quantize_gguf(const char* input_gguf,
+                                           const char* output_gguf,
+                                           const char* type_name);
 
 /** Warms up the backend for `device`; returns 0 on success. */
 AICORE_CAPI int aicore_sam3_warmup_backend(const char* device);

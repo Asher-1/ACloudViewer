@@ -7,6 +7,8 @@
 
 #include "VideoTimeline.h"
 
+#include <ecvAICoreUiHelper.h>
+
 #include <QMouseEvent>
 #include <QPainter>
 
@@ -15,7 +17,10 @@ constexpr int kBarHeight = 14;
 constexpr int kBandHeight = 6;
 constexpr int kBandGap = 2;
 constexpr int kLeftMargin = 6;
-constexpr int kRightMargin = 26;  // room for the "#id" labels
+int rightMargin() {
+    // Reserve enough DPI-aware room for multi-digit "#id" labels.
+    return ecvAICoreUi::dpiScaled(48);
+}
 }  // namespace
 
 VideoTimeline::VideoTimeline(QWidget* parent) : QWidget(parent) {
@@ -43,14 +48,16 @@ void VideoTimeline::setTimeline(const QVector<VideoTimelineEntry>& entries) {
     update();
 }
 
-void VideoTimeline::setInstanceColors(const QVector<QColor>& colors) {
+void VideoTimeline::setInstances(const QVector<int>& ids,
+                                 const QVector<QColor>& colors) {
+    m_instanceIds = ids;
     m_colors = colors;
     update();
 }
 
 int VideoTimeline::frameAt(const QPoint& pos) const {
     if (m_frameCount <= 0) return 0;
-    const int barW = width() - kLeftMargin - kRightMargin;
+    const int barW = width() - kLeftMargin - rightMargin();
     if (barW <= 0) return 0;
     const double rel = (pos.x() - kLeftMargin) / static_cast<double>(barW);
     const double clamped = qBound(0.0, rel, 1.0);
@@ -90,7 +97,7 @@ void VideoTimeline::paintEvent(QPaintEvent*) {
         return;
     }
 
-    const int barW = width() - kLeftMargin - kRightMargin;
+    const int barW = width() - kLeftMargin - rightMargin();
     const int barX = kLeftMargin;
     const int barY = 2;
     const double pxPerFrame = barW / static_cast<double>(m_frameCount);
@@ -135,14 +142,15 @@ void VideoTimeline::drawBand(QPainter& p,
                              int row,
                              int idIndex,
                              const QColor& color) {
-    const int barW = width() - kLeftMargin - kRightMargin;
+    const int barW = width() - kLeftMargin - rightMargin();
     const int barX = kLeftMargin;
     const int y = row;
     const double pxPerFrame = barW / static_cast<double>(m_frameCount);
 
-    // Instance id from the timeline entries (they are collected in sorted
-    // order by the tab); fall back to the color index.
-    int instId = idIndex + 1;
+    // Tracker IDs are not guaranteed to be contiguous after resets/refines.
+    // Use the explicit sorted ID list supplied by VideoTab rather than
+    // inferring an ID from the display-row index.
+    const int instId = m_instanceIds.value(idIndex, idIndex + 1);
     // Dim background for the full band.
     p.setBrush(QColor(color.red() * 0.3, color.green() * 0.3,
                       color.blue() * 0.3, 100));
