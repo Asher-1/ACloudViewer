@@ -15,7 +15,6 @@
 #include <QString>
 #include <QThread>
 #include <QVector>
-
 #include <atomic>
 
 // Actions the worker can perform
@@ -36,7 +35,8 @@ struct SAM3WorkerResult {
     QVector<float> ious;
     QVector<int> instanceIds;
     QVector<QImage> instanceMasks;  // per-detection 0/255 mask at original size
-    QImage maskComposite;  // masks blended on the source image (0.4 alpha, like upstream)
+    QImage maskComposite;  // masks blended on the source image (0.4 alpha, like
+                           // upstream)
     aicore_sam3_timings timings{};
     QString errorMsg;
 };

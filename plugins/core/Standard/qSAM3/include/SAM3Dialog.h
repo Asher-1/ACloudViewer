@@ -157,7 +157,7 @@ struct ImageTabUi {
     QComboBox* modelCombo = nullptr;
     QPushButton* downloadBtn = nullptr;  // downloads the selected catalog GGUF
     QPushButton* loadBtn = nullptr;
-    QComboBox* testDataCombo = nullptr;    // test-image picker (SAM3 dataset)
+    QComboBox* testDataCombo = nullptr;  // test-image picker (SAM3 dataset)
     QPushButton* testDataBtn = nullptr;
     // Canvas (fills the tab) + bottom bar
     SAM3Canvas* canvas = nullptr;

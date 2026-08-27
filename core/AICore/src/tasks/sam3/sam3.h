@@ -411,7 +411,7 @@ SAM3_API sam3_result sam3_propagate_frame(sam3_tracker& tracker,
 /*****************************************************************************
 ** Test and Debug API
 **
-** Standalone tokenizer, intermediate tensor dumps, and debug utilities.
+** Standalone tokenizer and debug utilities.
 ** These functions are intended for testing and development only.
 *****************************************************************************/
 
@@ -419,107 +419,13 @@ SAM3_API bool sam3_test_load_tokenizer(const std::string& model_path);
 SAM3_API std::vector<int32_t> sam3_test_tokenize(const std::string& text);
 
 /*
-** Run the text encoder on fixed token IDs and dump standard intermediate
-** tensors to <output_dir>/<tensor_name>.{bin,shape}.
-*/
-SAM3_API bool sam3_test_dump_text_encoder(const sam3_model& model,
-                                          const std::vector<int32_t>& token_ids,
-                                          const std::string& output_dir,
-                                          int n_threads = 4);
-
-/*
-** Run the full phase 5 detector path (fusion encoder + DETR decoder +
-** dot-product scoring + segmentation head) on an already-encoded image
-** and dump intermediate tensors.
-*/
-SAM3_API bool sam3_test_dump_phase5(const sam3_model& model,
-                                    const sam3_state& state,
-                                    const std::vector<int32_t>& token_ids,
-                                    const std::string& output_dir,
-                                    int n_threads = 4);
-
-/*
-** Run the phase 5 detector from pre-dumped inputs instead of re-running
-** the image/text encoders.  Isolates detector numerics from earlier phases.
-*/
-SAM3_API bool sam3_test_dump_phase5_from_ref_inputs(
-        const sam3_model& model,
-        const std::vector<int32_t>& token_ids,
-        const std::string& prephase_ref_dir,
-        const std::string& phase5_ref_dir,
-        const std::string& output_dir,
-        int n_threads = 4);
-
-/*
-** Run the phase 6 prompt encoder + SAM decoder on an already-encoded
-** tracker image state and dump intermediate tensors.
-*/
-SAM3_API bool sam3_test_dump_phase6(const sam3_model& model,
-                                    const sam3_state& state,
-                                    const sam3_pvs_params& params,
-                                    const std::string& output_dir,
-                                    int n_threads = 4);
-
-/*
-** Run the phase 6 prompt encoder + SAM decoder from pre-dumped phase 3
-** tracker features.  Isolates phase 6 numerics from earlier phases.
-*/
-SAM3_API bool sam3_test_dump_phase6_from_ref_inputs(
-        const sam3_model& model,
-        const std::string& prephase_ref_dir,
-        const sam3_pvs_params& params,
-        const std::string& output_dir,
-        int n_threads = 4);
-
-/*
-** Run the phase 7 tracker subgraph from pre-dumped case inputs and dump
-** intermediate tensors.  Case directory produced by dump_phase7_reference.py.
-*/
-SAM3_API bool sam3_test_dump_phase7_from_ref_inputs(
-        const sam3_model& model,
-        const std::string& case_ref_dir,
-        const std::string& output_dir,
-        int n_threads = 4);
-
-/*
-** Run the geometry encoder from pre-computed backbone features and dump
-** intermediate tensors.  Tests exemplar box coordinate encoding against
-** Python reference.
-*/
-SAM3_API bool sam3_test_dump_geom_enc(const sam3_model& model,
-                                      const std::string& prephase_ref_dir,
-                                      const sam3_pcs_params& params,
-                                      const std::string& output_dir,
-                                      int n_threads = 4);
-
-/*
-** Run ONLY the fusion encoder (6 layers) from pre-dumped inputs (image
-** features, pos encoding, prompt tokens, attn bias).  Dumps per-layer
-** outputs for isolated fenc debugging.
-*/
-SAM3_API bool sam3_test_fenc_only(const sam3_model& model,
-                                  const std::string& ref_dir,
-                                  const std::string& output_dir,
-                                  int n_threads = 4);
-
-/*
 ** ── Debug ────────────────────────────────────────────────────────────────
 */
-
-/* Dump a named state tensor to a binary file for verification. */
-SAM3_API bool sam3_dump_state_tensor(const sam3_state& state,
-                                     const std::string& tensor_name,
-                                     const std::string& output_path);
 
 /* Query metadata for a named state tensor without dumping its payload. */
 SAM3_API bool sam3_get_state_tensor_info(const sam3_state& state,
                                          const std::string& tensor_name,
                                          sam3_tensor_info& info);
-
-/* Dump a named model tensor (weights/constants) to a binary file. */
-SAM3_API bool sam3_dump_model_tensor(const sam3_model& model,
-                                     const std::string& tensor_name,
-                                     const std::string& output_path);
 
 /* Query metadata for a named model tensor. */
 SAM3_API bool sam3_get_model_tensor_info(const sam3_model& model,

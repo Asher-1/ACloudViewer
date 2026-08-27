@@ -85,10 +85,10 @@ static QImage blendMasksImpl(aicore_sam3_seg_result* res, const QImage& img) {
                     127) {
                     ++totalNonZero;
                     const QRgb p = dstLine[x];
-                    dstLine[x] = qRgb(
-                            (qRed(color) * a + qRed(p) * invA) / 255,
-                            (qGreen(color) * a + qGreen(p) * invA) / 255,
-                            (qBlue(color) * a + qBlue(p) * invA) / 255);
+                    dstLine[x] =
+                            qRgb((qRed(color) * a + qRed(p) * invA) / 255,
+                                 (qGreen(color) * a + qGreen(p) * invA) / 255,
+                                 (qBlue(color) * a + qBlue(p) * invA) / 255);
                 }
             }
         }
@@ -133,8 +133,9 @@ void SAM3Worker::run() {
     try {
         ok = runInference();
     } catch (const std::exception& e) {
-        // An uncaught exception in a QThread aborts the process (std::terminate).
-        // Surface it as a log message instead so the user can retry.
+        // An uncaught exception in a QThread aborts the process
+        // (std::terminate). Surface it as a log message instead so the user can
+        // retry.
         emit logMessage(QString("[SAM3] inference error: %1")
                                 .arg(QString::fromUtf8(e.what())));
     } catch (...) {
@@ -167,8 +168,9 @@ bool SAM3Worker::runInference() {
         if (!m_ctx) {
             aicore_sam3_options* opts = aicore_sam3_options_new();
             if (!opts) {
-                CVLog::Warning("[qSAM3][SAM3Worker] options allocation "
-                               "failed");
+                CVLog::Warning(
+                        "[qSAM3][SAM3Worker] options allocation "
+                        "failed");
                 emit logMessage("SAM3: Failed to allocate options.");
                 return false;
             }
@@ -187,6 +189,12 @@ bool SAM3Worker::runInference() {
                             .arg(QFileInfo(m_settings.modelPath).fileName(),
                                  m_settings.device));
             emit progressUpdate(0, 1);
+
+            CVLog::Print("[qSAM3][SAM3Worker] loading model: %s (device=%s)",
+                         m_settings.modelPath.toUtf8().constData(),
+                         m_settings.device.toUtf8().constData());
+            QElapsedTimer loadTimer;
+            loadTimer.start();
 
             m_pendingCtx = aicore_sam3_load_opts(
                     m_settings.modelPath.toUtf8().constData(), opts);
@@ -209,6 +217,12 @@ bool SAM3Worker::runInference() {
             const int modelType = aicore_sam3_context_model_type(m_ctx);
             const int visualOnly = aicore_sam3_context_visual_only(m_ctx);
             const char* backend = aicore_sam3_context_backend_name(m_ctx);
+            CVLog::Print(
+                    "[qSAM3][SAM3Worker] model loaded: %s | type=%d "
+                    "visual_only=%d backend=%s in %.0f ms",
+                    m_settings.modelPath.toUtf8().constData(), modelType,
+                    visualOnly, backend ? backend : "?",
+                    static_cast<double>(loadTimer.elapsed()));
             emit logMessage(
                     QString("Model loaded: type=%1 visual_only=%2 backend=%3")
                             .arg(modelType)
@@ -250,9 +264,10 @@ bool SAM3Worker::runInference() {
     }
 
     if (!segRes && !m_cancelled) {
-        CVLog::Warning("[qSAM3][SAM3Worker] segmentation returned no results "
-                       "(last_error: %s)",
-                       m_ctx ? aicore_sam3_last_error(m_ctx) : "no ctx");
+        CVLog::Warning(
+                "[qSAM3][SAM3Worker] segmentation returned no results "
+                "(last_error: %s)",
+                m_ctx ? aicore_sam3_last_error(m_ctx) : "no ctx");
         emit logMessage("Segmentation returned no results.");
         return false;
     }
@@ -265,6 +280,18 @@ bool SAM3Worker::runInference() {
     SAM3WorkerResult result = buildResult(segRes, rgb);
     if (segRes) aicore_sam3_seg_result_free(segRes);
 
+    if (result.valid) {
+        const char* mode = (m_action == SAM3WorkerAction::EncodeAndSegmentPCS)
+                                   ? "PCS"
+                                   : "PVS";
+        CVLog::Print(
+                "[qSAM3][SAM3Worker] %s on %dx%d image: %d detection(s) | "
+                "e2e=%.1f ms (pre=%.1f infer=%.1f post=%.1f)",
+                mode, w, h, result.detCount, result.timings.e2e_ms,
+                result.timings.preprocess_ms, result.timings.inference_ms,
+                result.timings.postprocess_ms);
+    }
+
     emit resultReady(result);
     return true;
 }
@@ -275,10 +302,10 @@ aicore_sam3_seg_result* SAM3Worker::runPVS() {
     // upstream main_image.cpp encodes on load then only runs the decoder
     // per click. Re-encode only when the picture or the pvs_only mode
     // changed (PCS needs the detector neck, PVS does not).
-    const bool needEncode =
-            m_encodedImageKey != m_image.cacheKey() ||
-            m_encodedWidth != rgb.width() ||
-            m_encodedHeight != rgb.height() || !m_encodedPvsOnly;
+    const bool needEncode = m_encodedImageKey != m_image.cacheKey() ||
+                            m_encodedWidth != rgb.width() ||
+                            m_encodedHeight != rgb.height() ||
+                            !m_encodedPvsOnly;
     if (needEncode) {
         const int ok = aicore_sam3_encode_rgb(
                 m_ctx, rgb.constBits(), rgb.width(), rgb.height(),
@@ -323,10 +350,9 @@ aicore_sam3_seg_result* SAM3Worker::runPCS() {
     const QImage rgb = m_image.convertToFormat(QImage::Format_RGB888);
     // Same one-encode-per-image policy as runPVS; PCS needs the detector
     // neck (pvs_only = 0), so switching PCS ↔ PVS re-encodes once.
-    const bool needEncode =
-            m_encodedImageKey != m_image.cacheKey() ||
-            m_encodedWidth != rgb.width() ||
-            m_encodedHeight != rgb.height() || m_encodedPvsOnly;
+    const bool needEncode = m_encodedImageKey != m_image.cacheKey() ||
+                            m_encodedWidth != rgb.width() ||
+                            m_encodedHeight != rgb.height() || m_encodedPvsOnly;
     if (needEncode) {
         const int ok = aicore_sam3_encode_rgb(
                 m_ctx, rgb.constBits(), rgb.width(), rgb.height(),

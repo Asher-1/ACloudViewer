@@ -118,8 +118,8 @@ int main() {
     // not crash.
     aicore_sam3_profile_entry prof[8];
     int n_prof = -1;
-    AICORE_CHECK(aicore_sam3_profile_encoder(nullptr, 1, 1, prof, 8,
-                                             &n_prof) == -1);
+    AICORE_CHECK(aicore_sam3_profile_encoder(nullptr, 1, 1, prof, 8, &n_prof) ==
+                 -1);
 
     // Tracker plumbing on a null ctx/tracker fails cleanly.
     AICORE_CHECK(aicore_sam3_tracker_create(nullptr) == nullptr);
@@ -176,9 +176,8 @@ int main() {
     }
     for (int i = 0; i < count; ++i) {
         const aicore_sam3_model_entry* entry = aicore_sam3_model_at(i);
-        AICORE_CHECK(entry != nullptr &&
-                     catalogUrls[static_cast<size_t>(i)] ==
-                             entry->download_url);
+        AICORE_CHECK(entry != nullptr && catalogUrls[static_cast<size_t>(i)] ==
+                                                 entry->download_url);
     }
 
     // Process-wide helpers: must not crash on an uninitialized process.

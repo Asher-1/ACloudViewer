@@ -19,10 +19,10 @@
 
 #pragma once
 
+#include <ecvTestDataRepository.h>
+
 #include <QTimer>
 #include <QWidget>
-
-#include <ecvTestDataRepository.h>
 
 #include "VideoCanvas.h"
 #include "VideoTimeline.h"

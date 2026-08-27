@@ -8,7 +8,6 @@
 #include "VideoTab.h"
 
 #include <CVLog.h>
-
 #include <aicore/sam3_capi.h>
 #include <ecvAICoreUiHelper.h>
 #include <ecvImage.h>
@@ -57,8 +56,8 @@ const aicore_sam3_model_entry* catalogEntry(const QString& filename) {
 
 bool isValidCatalogModel(const QString& path, const QString& filename) {
     const auto* entry = catalogEntry(filename);
-    return entry && ecvModelDownloader::isValidCachedFile(
-                            path, 64 * 1024, true, entry->size_bytes);
+    return entry && ecvModelDownloader::isValidCachedFile(path, 64 * 1024, true,
+                                                          entry->size_bytes);
 }
 }  // namespace
 
@@ -90,8 +89,7 @@ VideoTab::VideoTab(QWidget* parent) : QWidget(parent) {
             [this](bool ok, const QString& dest) {
                 const bool thenRun = m_downloadThenRun;
                 const QString filename = m_downloadTargetFilename;
-                const bool valid =
-                        ok && isValidCatalogModel(dest, filename);
+                const bool valid = ok && isValidCatalogModel(dest, filename);
                 m_downloadInProgress = false;
                 m_downloadThenRun = false;
                 if (m_downloadLabel) m_downloadLabel->setVisible(false);
@@ -100,8 +98,7 @@ VideoTab::VideoTab(QWidget* parent) : QWidget(parent) {
                 updateDownloadButton();
                 if (valid) {
                     m_downloadPrompted = false;
-                    appendLog(tr("Model downloaded: %1")
-                                      .arg(filename));
+                    appendLog(tr("Model downloaded: %1").arg(filename));
                     if (thenRun) ensureModelReady();
                 } else {
                     appendLog(tr("Model download failed or did not pass "
@@ -160,8 +157,9 @@ void VideoTab::releaseModel() {
         // The worker has a persistent request loop, so cancellation is the
         // normal shutdown path. Do not delete a live QThread.
         if (!m_worker->wait(30000)) {
-            appendLog(tr("Timed out while releasing the video model; GPU "
-                         "resources remain owned by the worker."));
+            appendLog(
+                    tr("Timed out while releasing the video model; GPU "
+                       "resources remain owned by the worker."));
             return;
         }
         delete m_worker;
@@ -256,14 +254,16 @@ void VideoTab::setupUi() {
             QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             [this](int) {
                 if (m_busy) {
-                    appendLog(tr("[Test data] Wait for the current task to "
-                                 "finish before switching videos."));
+                    appendLog(
+                            tr("[Test data] Wait for the current task to "
+                               "finish before switching videos."));
                     return;
                 }
                 if (!loadRequestedTestVideo()) {
-                    appendLog(tr("[Test data] Sample video not found; run "
-                                 "'Try sample data' once to download the "
-                                 "dataset."));
+                    appendLog(
+                            tr("[Test data] Sample video not found; run "
+                               "'Try sample data' once to download the "
+                               "dataset."));
                 }
             });
     m_testDataBtn = ecvAICoreUi::makeSampleDataBtn(this);
@@ -402,9 +402,8 @@ void VideoTab::setupUi() {
     connect(m_testDataBtn, &QPushButton::clicked, this,
             &VideoTab::onUseTestData);
     connect(m_loadBtn, &QPushButton::clicked, this, &VideoTab::onLoadModel);
-    connect(m_modelCombo,
-            QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-            [this](int) {
+    connect(m_modelCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, [this](int) {
                 m_downloadPrompted = false;
                 updateDownloadButton();
             });
@@ -475,8 +474,9 @@ void VideoTab::populateModelCombo() {
         QString suffix;
         if (isValidCatalogModel(fi.absoluteFilePath(),
                                 QString::fromUtf8(entry->filename))) {
-            suffix = QStringLiteral(" [%1] \u2713")
-                             .arg(ecvModelDownloader::formatFileSize(fi.size()));
+            suffix =
+                    QStringLiteral(" [%1] \u2713")
+                            .arg(ecvModelDownloader::formatFileSize(fi.size()));
         } else {
             suffix = QStringLiteral(" [download]");
         }
@@ -540,8 +540,8 @@ void VideoTab::startDownload(bool thenRun) {
         if (thenRun) ensureModelReady();
         return;
     }
-    ecvModelDownloader::removeInvalidCacheFile(
-            dest, 64 * 1024, true, entry->size_bytes);
+    ecvModelDownloader::removeInvalidCacheFile(dest, 64 * 1024, true,
+                                               entry->size_bytes);
 
     QDir().mkpath(cacheDir);
     m_downloadInProgress = true;
@@ -558,7 +558,8 @@ void VideoTab::startDownload(bool thenRun) {
     updateDownloadButton();
     appendLog(tr("Downloading model %1 (%2) ...")
                       .arg(filename)
-                      .arg(ecvModelDownloader::formatFileSize(entry->size_bytes)));
+                      .arg(ecvModelDownloader::formatFileSize(
+                              entry->size_bytes)));
 
     ecvModelDownloader::Request req;
     req.url = QString::fromUtf8(entry->download_url);
@@ -573,8 +574,7 @@ void VideoTab::startDownload(bool thenRun) {
 void VideoTab::updateDownloadButton() {
     if (!m_downloadBtn) return;
     const QString filename = m_modelCombo->currentData().toString();
-    const bool isCatalogModel =
-            !filename.isEmpty() && filename != "__browse__";
+    const bool isCatalogModel = !filename.isEmpty() && filename != "__browse__";
     char* dir = aicore_sam3_model_cache_dir();
     const QString cacheDir = QString::fromUtf8(dir);
     aicore_sam3_free_buffer(dir);
@@ -608,8 +608,9 @@ void VideoTab::openVideoFile(const QString& path) {
         connect(m_reader, &VideoFrameReader::frameReadFailed, this, [this]() {
             m_playing = false;
             m_playBtn->setText(tr("Play"));
-            CVLog::Warning("[qSAM3][VideoTab] frameReadFailed: end of stream / "
-                           "read error");
+            CVLog::Warning(
+                    "[qSAM3][VideoTab] frameReadFailed: end of stream / "
+                    "read error");
             setStatus(tr("Video read failed / end of stream."));
         });
     }
@@ -658,11 +659,14 @@ void VideoTab::openVideoFile(const QString& path) {
     // and the status line updates first. m_reading in VideoFrameReader
     // guards against re-entrant reads if the user hits Play immediately.
     m_reader->seekToFrame(0);
-    QMetaObject::invokeMethod(this, [this]() {
-        if (m_reader && m_reader->isOpened()) {
-            m_reader->readFrame();
-        }
-    }, Qt::QueuedConnection);
+    QMetaObject::invokeMethod(
+            this,
+            [this]() {
+                if (m_reader && m_reader->isOpened()) {
+                    m_reader->readFrame();
+                }
+            },
+            Qt::QueuedConnection);
 
     // Upstream main_video.cpp auto-creates the tracker (and loads the model
     // on first use) right after opening a video; the first frame is then
@@ -738,6 +742,9 @@ void VideoTab::onLoadModel() {
     m_loadingModelPath = QFileInfo(path).absoluteFilePath();
     m_loadingDevice = req.device;
     m_loadingTextPrompt = req.textPrompt;
+    CVLog::Print("[qSAM3][VideoTab] loading model: %s (device=%s)",
+                 m_loadingModelPath.toUtf8().constData(),
+                 req.device.toUtf8().constData());
     m_backendLabel->setText(tr("Backend: loading..."));
     emit backendChanged(QStringLiteral("loading..."));
     setStatus(tr("Loading model..."));
@@ -778,8 +785,7 @@ bool VideoTab::ensureModelReady() {
         connect(m_worker, &VideoWorker::busyChanged, this,
                 &VideoTab::onBusyChanged);
     }
-    if (path.isEmpty() || path == "__browse__" ||
-        !QFileInfo::exists(path)) {
+    if (path.isEmpty() || path == "__browse__" || !QFileInfo::exists(path)) {
         CVLog::Warning("[qSAM3][VideoTab] auto-load: model file not found: %s",
                        path.toUtf8().constData());
         // Offer to download the catalog GGUF once per session (qDA3-style).
@@ -795,8 +801,9 @@ bool VideoTab::ensureModelReady() {
                 startDownload(true);
                 return false;
             }
-            appendLog(tr("Model not cached. Use the Download button or "
-                         "select a cached model from the combo."));
+            appendLog(
+                    tr("Model not cached. Use the Download button or "
+                       "select a cached model from the combo."));
         }
         return false;
     }
@@ -809,6 +816,11 @@ bool VideoTab::ensureModelReady() {
     m_loadingModelPath = requestedPath;
     m_loadingDevice = req.device;
     m_loadingTextPrompt = req.textPrompt;
+    CVLog::Print(
+            "[qSAM3][VideoTab] auto-loading model on first use: %s "
+            "(device=%s)",
+            requestedPath.toUtf8().constData(),
+            req.device.toUtf8().constData());
     m_backendLabel->setText(tr("Backend: loading..."));
     emit backendChanged(QStringLiteral("loading..."));
     setStatus(tr("Loading model..."));
@@ -817,8 +829,7 @@ bool VideoTab::ensureModelReady() {
 }
 
 QString VideoTab::desiredTextPrompt() const {
-    if (m_visualOnly || !m_modeText->isChecked() ||
-        !m_modeText->isVisible()) {
+    if (m_visualOnly || !m_modeText->isChecked() || !m_modeText->isVisible()) {
         return QString();
     }
     return m_textPrompt->text().trimmed();
@@ -836,8 +847,7 @@ void VideoTab::clearTrackingVisualization() {
 }
 
 void VideoTab::requestTrackerReset(const QString& textPrompt, bool retrack) {
-    if (!m_worker || !m_worker->hasModel() || m_busy ||
-        m_promptResetInFlight) {
+    if (!m_worker || !m_worker->hasModel() || m_busy || m_promptResetInFlight) {
         m_trackerPromptDirty = true;
         m_pendingRetrack = m_pendingRetrack || retrack;
         return;
@@ -1185,9 +1195,10 @@ void VideoTab::onCanvasNegPoint(const QPointF& p) {
                 hasCentroid = true;
             }
         }
-        refineInstance(hit, hasCentroid ? QVector<QPointF>{centroid}
-                                        : QVector<QPointF>(),
-                       {p});
+        refineInstance(
+                hit,
+                hasCentroid ? QVector<QPointF>{centroid} : QVector<QPointF>(),
+                {p});
         return;
     }
     if (!m_trackerActive || !m_worker || !m_worker->hasModel()) {
@@ -1197,8 +1208,9 @@ void VideoTab::onCanvasNegPoint(const QPointF& p) {
     // Upstream main_video.cpp Points mode: a negative click on empty canvas
     // is queued on the canvas and included in the next instance creation.
     m_canvas->addNegPoint(p);
-    appendLog(tr("Negative point queued; draw a box or click a positive "
-                 "point to add an instance."));
+    appendLog(
+            tr("Negative point queued; draw a box or click a positive "
+               "point to add an instance."));
 }
 
 void VideoTab::addInstanceFromPrompts() {
@@ -1206,7 +1218,8 @@ void VideoTab::addInstanceFromPrompts() {
         CVLog::Warning(
                 "[qSAM3][VideoTab] addInstanceFromPrompts skipped: no model "
                 "loaded (trackerActive=%d hasModel=%d)",
-                m_trackerActive ? 1 : 0, (m_worker && m_worker->hasModel()) ? 1 : 0);
+                m_trackerActive ? 1 : 0,
+                (m_worker && m_worker->hasModel()) ? 1 : 0);
         setStatus(tr("Load a model first to enable tracking."));
         return;
     }
@@ -1362,8 +1375,9 @@ void VideoTab::onDeviceChanged() {
     // reload_model() on the fly).
     if (!m_worker || !m_worker->hasModel()) return;
     if (m_busy) {
-        appendLog(tr("Device changed; re-loading when the current task "
-                     "finishes."));
+        appendLog(
+                tr("Device changed; re-loading when the current task "
+                   "finishes."));
         m_reloadWhenIdle = true;
         return;
     }
@@ -1662,8 +1676,8 @@ void VideoTab::onUseTestData() {
     repo.startDownload(kind);
 }
 
-void VideoTab::onTestDataDownloadFinished(
-        bool success, ecvTestDataRepository::Dataset kind) {
+void VideoTab::onTestDataDownloadFinished(bool success,
+                                          ecvTestDataRepository::Dataset kind) {
     if (!m_testDataDownloadInProgress ||
         kind != ecvTestDataRepository::Dataset::SAM3) {
         return;

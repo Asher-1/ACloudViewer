@@ -23,7 +23,6 @@
 #include <QFileInfo>
 #include <QImage>
 #include <QStringList>
-
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -120,7 +119,8 @@ TEST(SAM3Contract, CachedModelSizesMatchCatalog) {
     for (int i = 0; i < aicore_sam3_model_count(); ++i) {
         const auto* entry = aicore_sam3_model_at(i);
         ASSERT_NE(entry, nullptr);
-        const QFileInfo file(cacheDir.filePath(QString::fromUtf8(entry->filename)));
+        const QFileInfo file(
+                cacheDir.filePath(QString::fromUtf8(entry->filename)));
         if (!file.exists()) continue;
         EXPECT_EQ(file.size(), entry->size_bytes) << entry->filename;
     }
@@ -238,9 +238,10 @@ protected:
                            QStringLiteral("sam2.1_hiera_tiny_q4_0.gguf"),
                            QStringLiteral("sam2_hiera_tiny_q4_0.gguf")});
         for (const QString& filename : candidates) {
-            const QString path = QFileInfo(filename).isAbsolute()
-                                         ? filename
-                                         : modelDir + QLatin1Char('/') + filename;
+            const QString path =
+                    QFileInfo(filename).isAbsolute()
+                            ? filename
+                            : modelDir + QLatin1Char('/') + filename;
             if (QFileInfo::exists(path)) {
                 s_modelPath = path;
                 break;
@@ -351,13 +352,12 @@ TEST_F(SAM3PrecisionContract, EncodeSegmentPVS) {
         size_t foreground = 0;
         const auto* src = static_cast<const uint8_t*>(mask.data);
         for (int y = 0; y < mask.height; ++y) {
-            const auto* row = src + static_cast<size_t>(y) *
-                                      mask.row_stride_bytes;
+            const auto* row =
+                    src + static_cast<size_t>(y) * mask.row_stride_bytes;
             std::copy(row, row + mask.width,
                       packed.begin() + static_cast<size_t>(y) * mask.width);
-            foreground += static_cast<size_t>(
-                    std::count_if(row, row + mask.width,
-                                  [](uint8_t v) { return v > 127; }));
+            foreground += static_cast<size_t>(std::count_if(
+                    row, row + mask.width, [](uint8_t v) { return v > 127; }));
         }
         EXPECT_GT(foreground, 0u) << "empty mask on pass " << pass;
 
@@ -440,13 +440,14 @@ TEST_F(SAM3PrecisionContract, EncodeSegmentPVS) {
     ASSERT_NE(tracker, nullptr) << aicore_sam3_last_error(ctx);
     const bool visualOnly = aicore_sam3_context_visual_only(ctx) != 0;
     aicore_sam3_seg_result* firstFrame =
-            visualOnly
-                    ? aicore_sam3_propagate_frame(
-                              tracker, img.constBits(), img.width(), img.height(),
-                              static_cast<size_t>(img.bytesPerLine()))
-                    : aicore_sam3_track_frame(
-                              tracker, img.constBits(), img.width(), img.height(),
-                              static_cast<size_t>(img.bytesPerLine()));
+            visualOnly ? aicore_sam3_propagate_frame(
+                                 tracker, img.constBits(), img.width(),
+                                 img.height(),
+                                 static_cast<size_t>(img.bytesPerLine()))
+                       : aicore_sam3_track_frame(
+                                 tracker, img.constBits(), img.width(),
+                                 img.height(),
+                                 static_cast<size_t>(img.bytesPerLine()));
     ASSERT_NE(firstFrame, nullptr) << aicore_sam3_tracker_last_error(tracker);
     aicore_sam3_seg_result_free(firstFrame);
 
@@ -460,13 +461,14 @@ TEST_F(SAM3PrecisionContract, EncodeSegmentPVS) {
     aicore_sam3_seg_result_free(currentMask);
 
     aicore_sam3_seg_result* secondFrame =
-            visualOnly
-                    ? aicore_sam3_propagate_frame(
-                              tracker, img.constBits(), img.width(), img.height(),
-                              static_cast<size_t>(img.bytesPerLine()))
-                    : aicore_sam3_track_frame(
-                              tracker, img.constBits(), img.width(), img.height(),
-                              static_cast<size_t>(img.bytesPerLine()));
+            visualOnly ? aicore_sam3_propagate_frame(
+                                 tracker, img.constBits(), img.width(),
+                                 img.height(),
+                                 static_cast<size_t>(img.bytesPerLine()))
+                       : aicore_sam3_track_frame(
+                                 tracker, img.constBits(), img.width(),
+                                 img.height(),
+                                 static_cast<size_t>(img.bytesPerLine()));
     ASSERT_NE(secondFrame, nullptr) << aicore_sam3_tracker_last_error(tracker);
     EXPECT_GE(aicore_sam3_seg_det_count(secondFrame), 1);
     aicore_sam3_seg_result_free(secondFrame);
