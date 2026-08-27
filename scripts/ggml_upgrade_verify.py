@@ -33,6 +33,11 @@ Environment (auto-derived unless overridden):
     AICORE_TEST_LIGHTGLUE_GGUF / _IMAGE0 / _IMAGE1
     QT_LIB_DIR                    (default /opt/qt515/lib)
     CLOUDVIEWER_DATA_ROOT         (default ~/cloudViewer_data)
+
+The LD_LIBRARY_PATH wiring below is Linux-first. It is harmless on
+macOS/Windows: the env var is ignored by their loaders, and the test
+binaries resolve libAICore via the build-tree install name (macOS) or
+exe-directory DLL search (Windows) on the machine they were built on.
 """
 
 from __future__ import annotations

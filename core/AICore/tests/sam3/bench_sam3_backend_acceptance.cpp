@@ -9,7 +9,13 @@
 // propagation per run, records stage latency, and compares Vulkan to the CPU
 // reference: mask IoU >= 0.98, max box error <= 1 px, score error <= 5e-3.
 
+// MSVC provides no <strings.h>/strncasecmp (POSIX); _strnicmp is the
+// equivalent (same pattern as sam3.cpp).
+#if defined(_MSC_VER)
+#define strncasecmp _strnicmp
+#else
 #include <strings.h>
+#endif
 
 #include <QImage>
 #include <QImageReader>
