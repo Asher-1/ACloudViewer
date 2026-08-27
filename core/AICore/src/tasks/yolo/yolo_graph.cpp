@@ -50,6 +50,8 @@ struct GraphBuilder {
     // when weights/activations share an f16/f32 dtype. CPU/Metal sessions
     // keep the generic im2col vocabulary.
     bool use_direct_conv = false;
+    // CUDA f16 flow: conv_transpose needs an F32 detour (see conv_transpose).
+    bool cuda_backend = false;
 
     ggml_tensor* w(const std::string& prefix, const char* suffix) {
         const std::string name = prefix + "." + suffix;
@@ -199,8 +201,18 @@ struct GraphBuilder {
                            prefix.c_str());
             return nullptr;
         }
+        // CUDA f16 flow: ggml-cuda's conv_transpose kernel (p0) is
+        // F32-only for input/dst (conv2d-transpose.cu asserts it and reads
+        // both as float*); its reorder kernel consumes F16 weights natively.
+        // Cast activations around the op — the same runtime-by-backend
+        // pattern as interpolate below. Vulkan has a native F16 pipeline
+        // (yolo_merged patch) and CPU consumes F16 directly, so both keep
+        // the zero-copy path.
+        const bool f32_detour = cuda_backend && x->type == GGML_TYPE_F16;
+        if (f32_detour) x = ggml_cast(gctx, x, GGML_TYPE_F32);
         ggml_tensor* out =
                 ggml_conv_transpose_2d_p0(gctx, wT, x, (int)op.ip("s"));
+        if (f32_detour) out = ggml_cast(gctx, out, GGML_TYPE_F16);
         return add_bias_act(op, prefix, out);
     }
 
@@ -379,8 +391,12 @@ bool build_run_plan(Session* s, int input_w, int input_h) {
         return false;
     }
 
-    GraphBuilder gb{gctx, s->wctx, s->model, s->q8_direct,
-                    s->backend.is_cuda || s->backend.is_vulkan};
+    GraphBuilder gb{gctx,
+                    s->wctx,
+                    s->model,
+                    s->q8_direct,
+                    s->backend.is_cuda || s->backend.is_vulkan,
+                    s->backend.is_cuda};
     std::vector<ggml_tensor*> values(s->model.ops.size(), nullptr);
 
     ggml_tensor* input =
