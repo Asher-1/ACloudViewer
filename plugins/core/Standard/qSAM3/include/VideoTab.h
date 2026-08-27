@@ -19,10 +19,10 @@
 
 #pragma once
 
-#include <ecvTestDataRepository.h>
-
 #include <QTimer>
 #include <QWidget>
+
+#include <ecvTestDataRepository.h>
 
 #include "VideoCanvas.h"
 #include "VideoTimeline.h"
@@ -37,7 +37,6 @@ class QProgressBar;
 class QPushButton;
 class QRadioButton;
 class QSlider;
-class QTextBrowser;
 class ecvModelDownloader;
 
 class VideoFrameReader;
@@ -177,7 +176,7 @@ private:
     QLabel* m_speedLabel = nullptr;
     QPushButton* m_exportBtn = nullptr;
     QPushButton* m_exportFrameToDbBtn = nullptr;
-    QTextBrowser* m_instanceLabel = nullptr;
+    QLabel* m_instanceLabel = nullptr;
     QLabel* m_statusLabel = nullptr;
     QLabel* m_downloadLabel = nullptr;  // test-data download/extract status
     QProgressBar* m_progress = nullptr;
@@ -227,8 +226,4 @@ private:
     // DB-tree export state
     ecvMainAppInterface* m_app = nullptr;
     QImage m_currentFrameImage;
-    /** Decoded frame waiting for its matching tracker result. Consumer-driven
-     *  playback guarantees at most one pending inference frame. */
-    QImage m_pendingFrameImage;
-    int m_pendingFrameIndex = -1;
 };

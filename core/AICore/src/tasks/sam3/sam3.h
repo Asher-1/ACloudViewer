@@ -261,10 +261,6 @@ SAM3_API sam3_state_ptr sam3_create_state(const sam3_model& model,
 /* Free inference state and its GPU buffers. */
 SAM3_API void sam3_free_state(sam3_state& state);
 
-/* Result of the most recent backbone encode attempt. This disambiguates a
-** valid empty detection result from an allocation/compute failure. */
-SAM3_API bool sam3_state_last_encode_succeeded(const sam3_state& state);
-
 /*
 ** ── Image Backbone ───────────────────────────────────────────────────────
 */

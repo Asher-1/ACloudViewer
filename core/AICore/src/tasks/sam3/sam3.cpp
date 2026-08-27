@@ -58,7 +58,7 @@
    AICore log layer (AICORE_LOG_*) so messages reach the ACloudViewer console.
    Level filtering keeps the upstream semantics: 1=summary timing, 2=verbose. */
 #ifndef SAM3_LOG_LEVEL
-#define SAM3_LOG_LEVEL 2
+#define SAM3_LOG_LEVEL 1
 #endif
 #include "common/aicore_log.hpp"
 
@@ -782,6 +782,10 @@ struct sam3_model {
 
     // tokenizer
     sam3_bpe_tokenizer tokenizer;
+
+    // Models are owned by shared_ptr in the C API. Keep ggml buffer/backend
+    // lifetime coupled to that owner instead of relying on an external call.
+    ~sam3_model();
 };
 
 struct sam3_state {
@@ -794,11 +798,6 @@ struct sam3_state {
 
     int orig_width = 0;
     int orig_height = 0;
-    // Set by every image-encode attempt. An empty sam3_result is otherwise
-    // ambiguous: it can mean either "no detections" or "the backbone graph
-    // could not allocate/compute". The C API uses this bit to propagate the
-    // latter as an error instead of reporting a successful empty frame.
-    bool last_encode_ok = false;
     int n_threads = 4;
 
     int encode_img_size =
@@ -1706,26 +1705,6 @@ static bool sam3_load_hparams(const gguf_kv& r, sam3_hparams& hp) {
     return r.err.empty();
 }
 
-static void sam3_print_hparams(const sam3_hparams& hp) {
-    AICORE_LOG_PRINT("[sam3] ", "  img_size       = %d\n", hp.img_size);
-    AICORE_LOG_PRINT("[sam3] ", "  patch_size     = %d\n", hp.patch_size);
-    AICORE_LOG_PRINT("[sam3] ", "  vit_embed_dim  = %d\n", hp.vit_embed_dim);
-    AICORE_LOG_PRINT("[sam3] ", "  vit_depth      = %d\n", hp.vit_depth);
-    AICORE_LOG_PRINT("[sam3] ", "  vit_num_heads  = %d\n", hp.vit_num_heads);
-    AICORE_LOG_PRINT("[sam3] ", "  vit_mlp_dim    = %d\n", hp.vit_mlp_dim);
-    AICORE_LOG_PRINT("[sam3] ", "  vit_window     = %d\n", hp.vit_window_size);
-    AICORE_LOG_PRINT("[sam3] ", "  text_width     = %d\n", hp.text_width);
-    AICORE_LOG_PRINT("[sam3] ", "  text_layers    = %d\n", hp.text_layers);
-    AICORE_LOG_PRINT("[sam3] ", "  neck_dim       = %d\n", hp.neck_dim);
-    AICORE_LOG_PRINT("[sam3] ", "  fenc_layers    = %d\n", hp.fenc_layers);
-    AICORE_LOG_PRINT("[sam3] ", "  ddec_layers    = %d\n", hp.ddec_layers);
-    AICORE_LOG_PRINT("[sam3] ", "  ddec_queries   = %d\n", hp.ddec_num_queries);
-    AICORE_LOG_PRINT("[sam3] ", "  sam_embed_dim  = %d\n", hp.sam_embed_dim);
-    AICORE_LOG_PRINT("[sam3] ", "  mem_attn_lyrs  = %d\n", hp.mem_attn_layers);
-    AICORE_LOG_PRINT("[sam3] ", "  num_maskmem    = %d\n", hp.num_maskmem);
-    AICORE_LOG_PRINT("[sam3] ", "  visual_only    = %d\n", hp.visual_only);
-}
-
 // ── SAM2-specific loading ─────────────────────────────────────────────────
 
 static bool sam2_load_hparams(const gguf_kv& r, sam3_hparams& hp) {
@@ -1814,41 +1793,6 @@ static bool sam2_load_hparams(const gguf_kv& r, sam3_hparams& hp) {
     return r.err.empty();
 }
 
-static void sam2_print_hparams(const sam3_hparams& hp) {
-    AICORE_LOG_PRINT("[sam3] ", "  model_type        = SAM2%s\n",
-                     hp.is_sam2_1 ? ".1" : ".0");
-    AICORE_LOG_PRINT("[sam3] ", "  img_size          = %d\n", hp.img_size);
-    AICORE_LOG_PRINT("[sam3] ", "  hiera_embed_dim   = %d\n",
-                     hp.hiera_embed_dim);
-    AICORE_LOG_PRINT("[sam3] ", "  hiera_num_heads   = %d\n",
-                     hp.hiera_num_heads);
-    AICORE_LOG_PRINT("[sam3] ", "  hiera_stages      = [%d, %d, %d, %d]\n",
-                     hp.hiera_stages[0], hp.hiera_stages[1], hp.hiera_stages[2],
-                     hp.hiera_stages[3]);
-    AICORE_LOG_PRINT("[sam3] ", "  hiera_total_blks  = %d\n",
-                     hp.hiera_total_blocks());
-    AICORE_LOG_PRINT("[sam3] ", "  hiera_q_pool      = %d\n", hp.hiera_q_pool);
-    AICORE_LOG_PRINT("[sam3] ", "  hiera_window_spec = [%d, %d, %d, %d]\n",
-                     hp.hiera_window_spec[0], hp.hiera_window_spec[1],
-                     hp.hiera_window_spec[2], hp.hiera_window_spec[3]);
-    AICORE_LOG_PRINT("[sam3] ", "  hiera_global_n    = %d\n",
-                     hp.hiera_global_n);
-    AICORE_LOG_PRINT("[sam3] ", "  hiera_feat_size   = %d\n",
-                     hp.hiera_feat_size());
-    AICORE_LOG_PRINT("[sam3] ", "  scalp             = %d\n", hp.scalp);
-    AICORE_LOG_PRINT("[sam3] ", "  neck_dim          = %d\n", hp.neck_dim);
-    AICORE_LOG_PRINT("[sam3] ", "  sam_embed_dim     = %d\n", hp.sam_embed_dim);
-    AICORE_LOG_PRINT("[sam3] ", "  mem_attn_layers   = %d\n",
-                     hp.mem_attn_layers);
-    AICORE_LOG_PRINT("[sam3] ", "  num_maskmem       = %d\n", hp.num_maskmem);
-    AICORE_LOG_PRINT("[sam3] ", "  pred_obj_scores   = %d\n",
-                     hp.pred_obj_scores);
-    AICORE_LOG_PRINT("[sam3] ", "  sigmoid_scale     = %.1f\n",
-                     hp.sigmoid_scale());
-    AICORE_LOG_PRINT("[sam3] ", "  sigmoid_bias      = %.1f\n",
-                     hp.sigmoid_bias());
-}
-
 // Set per-block metadata: stage_idx, dim_in/out, window_size, has_q_stride
 static void sam2_precompute_hiera_metadata(sam3_model& model) {
     auto& hp = model.hparams;
@@ -1913,16 +1857,6 @@ static void sam2_precompute_hiera_metadata(sam3_model& model) {
         }
 
         embed_dim = dim_out;
-    }
-
-    AICORE_LOG_PRINT("[sam3] ", "%s: block metadata:\n", __func__);
-    for (int i = 0; i < total; ++i) {
-        const auto& b = hiera.blocks[i];
-        AICORE_LOG_PRINT(
-                "[sam3] ",
-                "  blk %2d: stage=%d dim=%d→%d heads=%d ws=%d q_stride=%d\n", i,
-                b.stage_idx, b.dim_in, b.dim_out, b.num_heads, b.window_size,
-                b.has_q_stride ? 1 : 0);
     }
 }
 
@@ -3160,23 +3094,7 @@ std::shared_ptr<sam3_model> sam3_load_model(const sam3_params& params) {
                      __func__, arch.c_str(), ftype,
                      (long long)gguf_get_n_tensors(gguf));
 
-    // sam3_model intentionally exposes an explicit sam3_free_model() API and
-    // has no destructor of its own. A default shared_ptr deleter would only
-    // delete the C++ object and leak its backend, weight buffer and ggml
-    // context. Attach the resource teardown to the final shared owner so a
-    // context and any tracker may safely share the same model.
-    std::shared_ptr<sam3_model> model(new (std::nothrow) sam3_model(),
-                                      [](sam3_model* ptr) {
-                                          if (!ptr) return;
-                                          sam3_free_model(*ptr);
-                                          delete ptr;
-                                      });
-    if (!model) {
-        AICORE_LOG_ERROR("[sam3] ", "%s: model allocation failed\n", __func__);
-        gguf_free(gguf);
-        ggml_free(gguf_ctx);
-        return nullptr;
-    }
+    auto model = std::make_shared<sam3_model>();
     {
         ggml_type wtype;
         switch (ftype) {
@@ -3215,7 +3133,6 @@ std::shared_ptr<sam3_model> sam3_load_model(const sam3_params& params) {
             ggml_free(gguf_ctx);
             return nullptr;
         }
-        sam2_print_hparams(model->hparams);
     } else {
         if (!sam3_load_hparams(r, model->hparams)) {
             AICORE_LOG_ERROR("[sam3] ",
@@ -3225,7 +3142,6 @@ std::shared_ptr<sam3_model> sam3_load_model(const sam3_params& params) {
             ggml_free(gguf_ctx);
             return nullptr;
         }
-        sam3_print_hparams(model->hparams);
     }
 
     // ── Init backend ─────────────────────────────────────────────────────
@@ -3319,12 +3235,6 @@ std::shared_ptr<sam3_model> sam3_load_model(const sam3_params& params) {
 }
 
 void sam3_free_model(sam3_model& model) {
-    if (model.backend) {
-        // Finish queued GPU work before releasing graph/weight storage. This
-        // also makes a tab switch a deterministic resource hand-off to the
-        // next model load on the same device.
-        ggml_backend_synchronize(model.backend);
-    }
     if (model.buffer) {
         ggml_backend_buffer_free(model.buffer);
         model.buffer = nullptr;
@@ -3334,14 +3244,13 @@ void sam3_free_model(sam3_model& model) {
         model.ctx = nullptr;
     }
     if (model.backend) {
-        if (g_sam3_backend == model.backend) g_sam3_backend = nullptr;
         ggml_backend_free(model.backend);
         model.backend = nullptr;
     }
 }
 
-bool sam3_state_last_encode_succeeded(const sam3_state& state) {
-    return state.last_encode_ok;
+sam3_model::~sam3_model() {
+    sam3_free_model(*this);
 }
 
 bool sam3_is_visual_only(const sam3_model& model) {
@@ -3942,13 +3851,16 @@ static struct ggml_tensor* sam3_attn_ext(
 ** Reverse (sam3_win_unpart) just runs the inverse, finishing with a view
 ** crop back to (w0, h0) when padding was added.
 **
-** Gated by GGML_USE_CUDA / GGML_USE_VULKAN so CPU/Metal builds keep using the
-** native single-op form (which is faster and saves graph nodes).
+** Dispatch is a RUNTIME probe (mirrors sam3_backend_needs_mean_dim0): the
+** compile-time GGML_USE_VULKAN guard never fires because AICore links every
+** ggml backend into one library and picks the device at runtime. ggml-vulkan
+** (and ggml-cuda) have no WIN_PART/WIN_UNPART kernel and silently skip such
+** nodes in graph compute (ggml_vk_build_graph returns false; the output
+** tensor is left unwritten), which corrupts every windowed attention block.
 *****************************************************************************/
 
-#if defined(GGML_USE_VULKAN)
-
-static struct ggml_tensor* sam3_win_part(
+// Runtime variant: pad + reshape + permute + cont (Vulkan/CUDA compatible).
+static struct ggml_tensor* sam3_win_part_compat(
         struct ggml_context* ctx,
         struct ggml_tensor* a,  // [E, W, H, 1] F32
         int w) {
@@ -3975,7 +3887,7 @@ static struct ggml_tensor* sam3_win_part(
     return p;
 }
 
-static struct ggml_tensor* sam3_win_unpart(
+static struct ggml_tensor* sam3_win_unpart_compat(
         struct ggml_context* ctx,
         struct ggml_tensor* a,  // [E, w, w, npx*npy] F32
         int w0,
@@ -4007,11 +3919,24 @@ static struct ggml_tensor* sam3_win_unpart(
     return ggml_cont(ctx, view);
 }
 
-#else  // CPU/CUDA/Metal use the native single-op backend implementations.
+// Backend lacks a native WIN_PART kernel (ggml-vulkan / ggml-cuda): use the
+// pad + reshape + permute + cont expansion. CPU and Metal keep the native
+// single-op form (faster, fewer graph nodes). g_sam3_backend is set by
+// sam3_backend_init() before any graph is built.
+static inline bool sam3_backend_needs_win_part_compat() {
+    if (!g_sam3_backend) return false;
+    ggml_backend_dev_t dev = ggml_backend_get_device(g_sam3_backend);
+    const char* name = dev ? ggml_backend_dev_name(dev) : nullptr;
+    return name && (strncasecmp(name, "cuda", 4) == 0 ||
+                    strncasecmp(name, "vulkan", 6) == 0);
+}
 
 static inline struct ggml_tensor* sam3_win_part(struct ggml_context* ctx,
                                                 struct ggml_tensor* a,
                                                 int w) {
+    if (sam3_backend_needs_win_part_compat()) {
+        return sam3_win_part_compat(ctx, a, w);
+    }
     return ggml_win_part(ctx, a, w);
 }
 
@@ -4020,10 +3945,11 @@ static inline struct ggml_tensor* sam3_win_unpart(struct ggml_context* ctx,
                                                   int w0,
                                                   int h0,
                                                   int w) {
+    if (sam3_backend_needs_win_part_compat()) {
+        return sam3_win_unpart_compat(ctx, a, w0, h0, w);
+    }
     return ggml_win_unpart(ctx, a, w0, h0, w);
 }
-
-#endif  // GGML_USE_VULKAN
 
 /*****************************************************************************
 ** Global mean along dim 0  (CUDA/Vulkan-compatible variant)
@@ -4616,33 +4542,6 @@ static std::vector<float> sam2_compute_pos_embed(const sam3_model& model,
                 win_tiled[e * H * W + y * W + x] =
                         win_chw[e * ws * ws + (y % ws) * ws + (x % ws)];
 
-    // Dump intermediates if requested
-    const char* dump_dir =
-            nullptr;  // AICore: no env access (upstream SAM2_DUMP_DIR)
-    if (dump_dir) {
-        char path[512];
-        // Dump bkg_interp as CHW
-        snprintf(path, sizeof(path), "%s/cpp_pe_bkg_interp.bin", dump_dir);
-        FILE* f = fopen(path, "wb");
-        if (f) {
-            fwrite(bkg_interp.data(), sizeof(float), bkg_interp.size(), f);
-            fclose(f);
-        }
-        snprintf(path, sizeof(path), "%s/cpp_pe_bkg_interp.shape", dump_dir);
-        f = fopen(path, "w");
-        if (f) {
-            fprintf(f, "%d,%d,%d", E, H, W);
-            fclose(f);
-        }
-        // Dump win_tiled as CHW
-        snprintf(path, sizeof(path), "%s/cpp_pe_win_tiled.bin", dump_dir);
-        f = fopen(path, "wb");
-        if (f) {
-            fwrite(win_tiled.data(), sizeof(float), win_tiled.size(), f);
-            fclose(f);
-        }
-    }
-
     // Sum and convert to ggml layout [E, W, H, 1]
     std::vector<float> pe(E * H * W);
     for (int e = 0; e < E; ++e)
@@ -4789,12 +4688,10 @@ static struct ggml_tensor* sam2_hiera_block_forward(struct ggml_context* ctx,
                                                     struct ggml_tensor* x,
                                                     const sam2_hiera_block& blk,
                                                     int spatial_H,
-                                                    int spatial_W,
-                                                    int block_idx = -1) {
+                                                    int spatial_W) {
     const int64_t C_in = blk.dim_in;
     const int64_t C_out = blk.dim_out;
     const int B = 1;
-    const bool dump = (block_idx == 0);  // dump internals for block 0
 
     // ── 1. Pre-norm ──────────────────────────────────────────────────────
     // x: [C_in, W, H, B]
@@ -4807,10 +4704,6 @@ static struct ggml_tensor* sam2_hiera_block_forward(struct ggml_context* ctx,
             ctx, normed,
             ggml_repeat(ctx, ggml_reshape_4d(ctx, blk.norm1_b, C_in, 1, 1, 1),
                         normed));
-    if (dump) {
-        ggml_set_name(normed, "dbg_blk0_norm1");
-        ggml_set_output(normed);
-    }
 
     // ── 2. Shortcut with dimension projection and/or Q-stride pooling ──
     struct ggml_tensor* shortcut;
@@ -4942,17 +4835,8 @@ static struct ggml_tensor* sam2_hiera_block_forward(struct ggml_context* ctx,
                                         unpart_pad_hw, target_H, target_W, B);
     }
 
-    if (dump) {
-        ggml_set_name(attn_result, "dbg_blk0_attn_out");
-        ggml_set_output(attn_result);
-    }
-
     // ── 6. Residual ─────────────────────────────────────────────────────
     auto* res1 = ggml_add(ctx, shortcut, attn_result);
-    if (dump) {
-        ggml_set_name(res1, "dbg_blk0_res1");
-        ggml_set_output(res1);
-    }
 
     // ── 7. MLP + residual ───────────────────────────────────────────────
     int64_t new_H = res1->ne[2];
@@ -4999,8 +4883,6 @@ static void sam2_build_hiera_graph(struct ggml_context* ctx,
                                  hp.hiera_embed_dim, 1));
     // Permute from [OW, OH, E, 1] to [E, OW, OH, 1] (channel-first convention)
     x = ggml_cont(ctx, ggml_permute(ctx, x, 1, 2, 0, 3));
-    ggml_set_name(x, "dbg_patch_embed");
-    ggml_set_output(x);
 
     // ── Add positional embedding (precomputed on CPU, uploaded as input) ─
     // PE spatial dims match patch embed output (input_size / 4).
@@ -5010,8 +4892,6 @@ static void sam2_build_hiera_graph(struct ggml_context* ctx,
     ggml_set_name(pe, "hiera_pos_embed");
     ggml_set_input(pe);
     x = ggml_add(ctx, x, pe);
-    ggml_set_name(x, "dbg_after_pe");
-    ggml_set_output(x);
 
     // ── Process all blocks ───────────────────────────────────────────────
     int spatial_H = pe_spatial;
@@ -5021,15 +4901,7 @@ static void sam2_build_hiera_graph(struct ggml_context* ctx,
     for (int i = 0; i < hp.hiera_total_blocks(); ++i) {
         const auto& blk = hiera.blocks[i];
 
-        x = sam2_hiera_block_forward(ctx, x, blk, spatial_H, spatial_W, i);
-
-        // Mark key block outputs for debugging
-        if (i == 0 || i == 1 || i == 2 || i == 5 || i == 21) {
-            char dbg_name[64];
-            snprintf(dbg_name, sizeof(dbg_name), "dbg_block_%d", i);
-            ggml_set_name(x, dbg_name);
-            ggml_set_output(x);
-        }
+        x = sam2_hiera_block_forward(ctx, x, blk, spatial_H, spatial_W);
 
         // Update spatial dims if Q-pooling happened
         if (blk.has_q_stride) {
@@ -5080,12 +4952,6 @@ static void sam2_build_fpn_neck_graph(struct ggml_context* ctx,
         conv_out = ggml_add(ctx, conv_out, ggml_repeat(ctx, bias, conv_out));
         // Permute back to [D, W, H, 1]
         laterals[i] = ggml_cont(ctx, ggml_permute(ctx, conv_out, 1, 2, 0, 3));
-        {
-            char name[64];
-            snprintf(name, sizeof(name), "dbg_fpn_lateral_%d", i);
-            ggml_set_name(laterals[i], name);
-            ggml_set_output(laterals[i]);
-        }
     }
 
     // Top-down fusion: process in reverse order (high to low resolution)
@@ -5142,31 +5008,15 @@ static void sam2_build_fpn_neck_graph(struct ggml_context* ctx,
 static bool sam2_encode_image_hiera(sam3_state& state,
                                     const sam3_model& model,
                                     const sam3_image& image) {
-    state.last_encode_ok = false;
     auto t_start = std::chrono::high_resolution_clock::now();
     const auto& hp = model.hparams;
     const int img_size = sam3_eff_img_size(state, hp);
-    const bool timing =
-            false;  // AICore: no env access (upstream SAM3_ENCODE_TIMING)
-    auto tmark = [&](const char* what) {
-        if (timing) {
-            auto now = std::chrono::high_resolution_clock::now();
-            AICORE_LOG_PRINT(
-                    "[sam3] ", "  [hiera-enc] %-22s %8.1f ms\n", what,
-                    std::chrono::duration<double, std::milli>(now - t_start)
-                            .count());
-        }
-    };
-
-    AICORE_LOG_PRINT("[sam3] ", "%s: encoding %dx%d image (SAM2 Hiera)\n",
-                     __func__, image.width, image.height);
 
     state.orig_width = image.width;
     state.orig_height = image.height;
 
     // ── Preprocess ───────────────────────────────────────────────────────
     auto img_data = sam2_preprocess_image(image, img_size);
-    tmark("preprocess");
 
     // ── Build graph ──────────────────────────────────────────────────────
     // ── Build or reuse the cached encode graph ───────────────────────────
@@ -5257,17 +5107,6 @@ static bool sam2_encode_image_hiera(sam3_state& state,
         state.enc_pe = pe_tensor;
         for (int i = 0; i < 4; ++i) state.enc_fpn[i] = fpn_outs[i];
     }
-    tmark(graph_cached ? "graph reused" : "graph build+alloc");
-
-    if (timing) {
-        AICORE_LOG_PRINT(
-                "[sam3] ",
-                "  [hiera-enc] inp=%p buf=%p pe=%p pebuf=%p galloc=%p\n",
-                (void*)inp, (void*)(inp ? inp->buffer : nullptr),
-                (void*)pe_tensor,
-                (void*)(pe_tensor ? pe_tensor->buffer : nullptr),
-                (void*)galloc);
-    }
 
     // Set input image (must upload every frame — pixel data changes)
     ggml_backend_tensor_set(inp, img_data.data(), 0,
@@ -5284,7 +5123,6 @@ static bool sam2_encode_image_hiera(sam3_state& state,
         ggml_backend_tensor_set(pe_tensor, pe_data.data(), 0,
                                 pe_data.size() * sizeof(float));
     }
-    tmark("set inputs");
 
     // Compute
     sam3_backend_set_n_threads(model.backend, state.n_threads);
@@ -5295,7 +5133,6 @@ static bool sam2_encode_image_hiera(sam3_state& state,
         ggml_free(ctx0);
         return false;
     }
-    tmark("compute");
 
     // ── Copy results to state ────────────────────────────────────────────
     // Optimised path: when the FPN output sizes haven't changed (same image
@@ -5408,18 +5245,8 @@ static bool sam2_encode_image_hiera(sam3_state& state,
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(t_end -
                                                                     t_start)
                       .count();
-    AICORE_LOG_PRINT("[sam3] ", "%s: SAM2 image encoded in %ld ms\n", __func__,
-                     ms);
-    for (int i = 0; i < n_fpn; ++i) {
-        AICORE_LOG_PRINT("[sam3] ",
-                         "  neck_trk[%d]: [%lld, %lld, %lld, %lld]\n", i,
-                         (long long)state.neck_trk[i]->ne[0],
-                         (long long)state.neck_trk[i]->ne[1],
-                         (long long)state.neck_trk[i]->ne[2],
-                         (long long)state.neck_trk[i]->ne[3]);
-    }
+    SAM3_LOG(1, "%s: SAM2 image encoded in %ld ms\n", __func__, ms);
 
-    state.last_encode_ok = true;
     return true;
 }
 
@@ -5431,7 +5258,6 @@ static bool sam3_encode_image_impl(sam3_state& state,
                                    const sam3_model& model,
                                    const sam3_image& image,
                                    bool tracker_only) {
-    state.last_encode_ok = false;
     // ── SAM2 dispatch ────────────────────────────────────────────────────
     if (model.hparams.is_sam2()) {
         return sam2_encode_image_hiera(state, model, image);
@@ -5443,8 +5269,6 @@ static bool sam3_encode_image_impl(sam3_state& state,
     const auto& hp = model.hparams;
     const int img_size = sam3_eff_img_size(state, hp);
 
-    SAM3_LOG(2, "%s: encoding %dx%d image → %dx%d\n", __func__, image.width,
-             image.height, img_size, img_size);
 
     state.orig_width = image.width;
     state.orig_height = image.height;
@@ -5577,8 +5401,6 @@ static bool sam3_encode_image_impl(sam3_state& state,
             return false;
         }
 
-        SAM3_LOG(2, "%s: graph allocated, %d nodes\n", __func__,
-                 ggml_graph_n_nodes(graph));
     }
 
     ggml_backend_tensor_set(inp, img_data.data(), 0,
@@ -5653,7 +5475,6 @@ static bool sam3_encode_image_impl(sam3_state& state,
     SAM3_LOG(1, "%s: image encoded successfully in %.1f ms\n", __func__,
              total_ms);
 #endif
-    state.last_encode_ok = true;
     return true;
 }
 
@@ -6621,9 +6442,6 @@ bool sam3_encode_image_from_preprocessed(sam3_state& state,
         return false;
     }
 
-    AICORE_LOG_PRINT("[sam3] ", "%s: encoding from preprocessed %dx%d\n",
-                     __func__, img_size, img_size);
-
     // SAM2 dispatch: build a fake sam3_image and use the SAM2 encoder
     if (hp.is_sam2()) {
         state.orig_width = img_size;
@@ -6689,30 +6507,6 @@ bool sam3_encode_image_from_preprocessed(sam3_state& state,
             auto* pe_tensor = ggml_graph_get_tensor(graph, "hiera_pos_embed");
             ggml_backend_tensor_set(pe_tensor, pe_data.data(), 0,
                                     pe_data.size() * sizeof(float));
-
-            // Dump PE if requested
-            const char* dump_dir =
-                    nullptr;  // AICore: no env access (upstream SAM2_DUMP_DIR)
-            if (dump_dir) {
-                char path[512];
-                snprintf(path, sizeof(path), "%s/cpp_pos_embed.bin", dump_dir);
-                FILE* f = fopen(path, "wb");
-                if (f) {
-                    fwrite(pe_data.data(), sizeof(float), pe_data.size(), f);
-                    fclose(f);
-                }
-                snprintf(path, sizeof(path), "%s/cpp_pos_embed.shape",
-                         dump_dir);
-                f = fopen(path, "w");
-                if (f) {
-                    fprintf(f, "%d,%d,%d,%d", hp.hiera_embed_dim, pe_W, pe_H,
-                            1);
-                    fclose(f);
-                }
-                AICORE_LOG_PRINT("[sam3] ",
-                                 "  [DUMP] cpp_pos_embed: [%d,%d,%d,1]\n",
-                                 hp.hiera_embed_dim, pe_W, pe_H);
-            }
         }
 
         sam3_backend_set_n_threads(model.backend, state.n_threads);
@@ -6721,49 +6515,6 @@ bool sam3_encode_image_from_preprocessed(sam3_state& state,
             ggml_gallocr_free(galloc);
             ggml_free(ctx0);
             return false;
-        }
-
-        // Dump debug tensors if SAM2_DUMP_DIR is set
-        {
-            const char* dump_dir =
-                    nullptr;  // AICore: no env access (upstream SAM2_DUMP_DIR)
-            if (dump_dir) {
-                const char* dbg_names[] = {
-                        "dbg_patch_embed",   "dbg_after_pe",
-                        "dbg_blk0_norm1",    "dbg_blk0_attn_out",
-                        "dbg_blk0_res1",     "dbg_block_0",
-                        "dbg_block_1",       "dbg_block_2",
-                        "dbg_block_5",       "dbg_block_21",
-                        "dbg_fpn_lateral_0", "dbg_fpn_lateral_1",
-                        "dbg_fpn_lateral_2", "dbg_fpn_lateral_3",
-                };
-                for (const char* dn : dbg_names) {
-                    auto* t = ggml_graph_get_tensor(graph, dn);
-                    if (!t) continue;
-                    int64_t nb = ggml_nbytes(t);
-                    std::vector<char> buf(nb);
-                    ggml_backend_tensor_get(t, buf.data(), 0, nb);
-                    char path[512];
-                    snprintf(path, sizeof(path), "%s/%s.bin", dump_dir, dn);
-                    FILE* f = fopen(path, "wb");
-                    if (f) {
-                        fwrite(buf.data(), 1, nb, f);
-                        fclose(f);
-                    }
-                    snprintf(path, sizeof(path), "%s/%s.shape", dump_dir, dn);
-                    f = fopen(path, "w");
-                    if (f) {
-                        fprintf(f, "%lld,%lld,%lld,%lld", (long long)t->ne[0],
-                                (long long)t->ne[1], (long long)t->ne[2],
-                                (long long)t->ne[3]);
-                        fclose(f);
-                    }
-                    AICORE_LOG_PRINT("[sam3] ",
-                                     "  [DUMP] %s: [%lld,%lld,%lld,%lld]\n", dn,
-                                     (long long)t->ne[0], (long long)t->ne[1],
-                                     (long long)t->ne[2], (long long)t->ne[3]);
-                }
-            }
         }
 
         // Copy to state (same as sam2_encode_image_hiera)
@@ -6827,9 +6578,7 @@ bool sam3_encode_image_from_preprocessed(sam3_state& state,
         ggml_gallocr_free(galloc);
         ggml_free(ctx0);
 
-        AICORE_LOG_PRINT("[sam3] ",
-                         "%s: SAM2 encoding from preprocessed done\n",
-                         __func__);
+        SAM3_LOG(1, "%s: SAM2 encoding from preprocessed done\n", __func__);
         return true;
     }
 
@@ -6859,36 +6608,6 @@ bool sam3_encode_image_from_preprocessed(sam3_state& state,
     auto* vit_out = sam3_build_vit_graph(ctx0, inp, model);
     ggml_set_name(vit_out, "vit_output");
     ggml_set_output(vit_out);
-
-    // Mark debug intermediate tensors as outputs so graph allocator preserves
-    // them
-    {
-        const char* dbg_names[] = {
-                "dbg_patch_embed",           "dbg_after_pos_embed",
-                "dbg_ln_pre_norm",           "dbg_ln_pre_scale",
-                "dbg_after_ln_pre",          "dbg_block_15_norm1",
-                "dbg_block_15_qkv_proj",     "dbg_block_15_q_split",
-                "dbg_block_15_k_split",      "dbg_block_15_v_split",
-                "dbg_block_15_q_heads_base", "dbg_block_15_k_heads_base",
-                "dbg_block_15_v_heads_base", "dbg_block_15_q_heads",
-                "dbg_block_15_k_heads",      "dbg_block_15_v_flash",
-                "dbg_block_15_q_rope",       "dbg_block_15_k_rope",
-                "dbg_block_15_q_flash",      "dbg_block_15_k_flash",
-                "dbg_block_15_attn_out",     "dbg_block_15_attn_proj",
-                "dbg_block_15_resid1",       "dbg_block_15_norm2",
-                "dbg_block_15_mlp",
-        };
-        for (const char* dn : dbg_names) {
-            auto* dt = ggml_get_tensor(ctx0, dn);
-            if (dt) ggml_set_output(dt);
-        }
-        for (int i = 0; i < (int)model.hparams.vit_depth; ++i) {
-            char bn[64];
-            snprintf(bn, sizeof(bn), "dbg_block_%d_out", i);
-            auto* dt = ggml_get_tensor(ctx0, bn);
-            if (dt) ggml_set_output(dt);
-        }
-    }
 
     struct ggml_tensor* neck_det_out[4] = {};
     struct ggml_tensor* neck_trk_out[4];
@@ -6951,9 +6670,8 @@ bool sam3_encode_image_from_preprocessed(sam3_state& state,
         }
         auto t1 = std::chrono::high_resolution_clock::now();
         double ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
-        AICORE_LOG_PRINT("[sam3] ",
-                         "%s: graph computed in %.1f ms (%d threads)\n",
-                         __func__, ms, state.n_threads);
+        SAM3_LOG(1, "%s: graph computed in %.1f ms (%d threads)\n", __func__,
+                 ms, state.n_threads);
     }
 
     // Cache results in state
@@ -7029,8 +6747,7 @@ bool sam3_encode_image_from_preprocessed(sam3_state& state,
     auto t_end = std::chrono::high_resolution_clock::now();
     double total_ms =
             std::chrono::duration<double, std::milli>(t_end - t_start).count();
-    AICORE_LOG_PRINT("[sam3] ", "%s: encoded successfully in %.1f ms\n",
-                     __func__, total_ms);
+    SAM3_LOG(1, "%s: encoded successfully in %.1f ms\n", __func__, total_ms);
     return true;
 }
 
@@ -7602,12 +7319,6 @@ static std::vector<float> sam3_precompute_geom_input(
                 sum += out[d_in + t * D] * proj_w[d_in + d_out * D];
             projected[d_out + t * D] = sum;
         }
-    }
-    if (n_boxes > 0) {
-        AICORE_LOG_PRINT("[sam3] ",
-                         "%s: %d exemplar boxes encoded (%d pos, %d neg)\n",
-                         __func__, n_boxes, (int)params.pos_exemplars.size(),
-                         (int)params.neg_exemplars.size());
     }
 
     // LayerNorm over D dimension for each token
@@ -9347,8 +9058,8 @@ static float sam3_box_iou(const sam3_box& a, const sam3_box& b) {
 static bool sam3_finite(float v) { return std::isfinite(v); }
 
 static bool sam3_finite_box(const sam3_box& box) {
-    return sam3_finite(box.x0) && sam3_finite(box.y0) && sam3_finite(box.x1) &&
-           sam3_finite(box.y1);
+    return sam3_finite(box.x0) && sam3_finite(box.y0) &&
+           sam3_finite(box.x1) && sam3_finite(box.y1);
 }
 
 static bool sam3_finite_values(const float* values, size_t count) {
@@ -9496,8 +9207,6 @@ sam3_result sam3_segment_pcs(sam3_state& state,
         return result;
     }
 
-    SAM3_LOG(2, "%s: text='%s', %zu tokens\n", __func__,
-             params.text_prompt.c_str(), token_ids.size());
 
     // ── Helper: run a sub-graph with its own context and allocator ──────
     // Each stage below follows this exact pattern:
@@ -9615,7 +9324,6 @@ sam3_result sam3_segment_pcs(sam3_state& state,
         ggml_free(ctx);
     }
 
-    SAM3_LOG(2, "%s: text encoder done\n", __func__);
 
     /*
     ** ── SUB-GRAPH 2: Geometry Encoder ────────────────────────────────
@@ -9681,7 +9389,6 @@ sam3_result sam3_segment_pcs(sam3_state& state,
         ggml_free(ctx);
     }
 
-    SAM3_LOG(2, "%s: geometry encoder done\n", __func__);
 
     // Build combined prompt on CPU: [text_feats, geo_feats] → [D * T]
     std::vector<float> combined_prompt_cpu(D * T);
@@ -9690,7 +9397,6 @@ sam3_result sam3_segment_pcs(sam3_state& state,
     memcpy(combined_prompt_cpu.data() + D * L, geo_feats_cpu.data(),
            D * N_geo * sizeof(float));
 
-    SAM3_LOG(2, "%s: starting fusion encoder\n", __func__);
     /*
     ** ── SUB-GRAPH 3: Fusion Encoder ──────────────────────────────────
     */
@@ -9748,15 +9454,11 @@ sam3_result sam3_segment_pcs(sam3_state& state,
         ggml_backend_tensor_get(out, fenc_output_cpu.data(), 0,
                                 D * N_spatial * sizeof(float));
 
-        SAM3_LOG(2, "%s: fenc_out[0..4] = [%.6f, %.6f, %.6f, %.6f, %.6f]\n",
-                 __func__, fenc_output_cpu[0], fenc_output_cpu[1],
-                 fenc_output_cpu[2], fenc_output_cpu[3], fenc_output_cpu[4]);
 
         ggml_gallocr_free(alloc);
         ggml_free(ctx);
     }
 
-    SAM3_LOG(2, "%s: fusion encoder done\n", __func__);
     /*
     ** ── SUB-GRAPH 4: DETR Decoder + Scoring ──────────────────────────
     */
@@ -9866,10 +9568,9 @@ sam3_result sam3_segment_pcs(sam3_state& state,
 
     float presence_prob = sam3_sigmoid_finite(presence_logit);
     if (!sam3_finite(presence_prob)) {
-        AICORE_LOG_ERROR(
-                "[sam3] ",
-                "%s: non-finite presence logit; returning no detections\n",
-                __func__);
+        AICORE_LOG_ERROR("[sam3] ",
+                         "%s: non-finite presence logit; returning no detections\n",
+                         __func__);
         return result;
     }
 
@@ -9889,7 +9590,6 @@ sam3_result sam3_segment_pcs(sam3_state& state,
     SAM3_LOG(1, "%s: presence_logit=%.3f presence_prob=%.6f (text_tokens=%d)\n",
              __func__, presence_logit, presence_prob, n_text_tokens);
 
-    SAM3_LOG(2, "%s: DETR decoder done\n", __func__);
     /*
     ** ── SUB-GRAPH 5: Segmentation Head ───────────────────────────────
     */
@@ -9937,8 +9637,6 @@ sam3_result sam3_segment_pcs(sam3_state& state,
         auto* graph = ggml_new_graph_custom(ctx, 32768, false);
         ggml_build_forward_expand(graph, out);
 
-        SAM3_LOG(2, "%s: seg head graph: %d nodes\n", __func__,
-                 ggml_graph_n_nodes(graph));
 
         auto* alloc = ggml_gallocr_new(
                 ggml_backend_get_default_buffer_type(model.backend));
@@ -10015,8 +9713,8 @@ sam3_result sam3_segment_pcs(sam3_state& state,
         det.box = sam3_cxcywh_to_xyxy(cx, cy, bw, bh, state.orig_width,
                                       state.orig_height);
         if (!sam3_finite_box(det.box)) {
-            SAM3_LOG(1, "%s: dropping query %d with non-finite box\n", __func__,
-                     q);
+            SAM3_LOG(1, "%s: dropping query %d with non-finite box\n",
+                     __func__, q);
             continue;
         }
         det.score = score;
@@ -10041,11 +9739,6 @@ sam3_result sam3_segment_pcs(sam3_state& state,
         dets.push_back(std::move(det));
     }
 
-    SAM3_LOG(2,
-             "%s: %zu detections above threshold %.2f (presence=%.3f, "
-             "logit=%.3f)\n",
-             __func__, dets.size(), params.score_threshold, presence_prob,
-             presence_logit);
 
     auto keep = sam3_nms(dets, params.nms_threshold);
     for (int i = 0; i < (int)keep.size(); ++i) {
@@ -10053,8 +9746,6 @@ sam3_result sam3_segment_pcs(sam3_state& state,
         result.detections.push_back(std::move(dets[keep[i]]));
     }
 
-    SAM3_LOG(2, "%s: %zu detections after NMS\n", __func__,
-             result.detections.size());
 
 #if SAM3_LOG_LEVEL >= 1
     auto t_end = std::chrono::high_resolution_clock::now();
@@ -10086,16 +9777,6 @@ static struct ggml_tensor* sam3_sam_attention(
     auto* K = ggml_add(ctx, ggml_mul_mat(ctx, attn.k_w, k_in), attn.k_b);
     auto* V = ggml_add(ctx, ggml_mul_mat(ctx, attn.v_w, v_in), attn.v_b);
 
-    // Debug: mark projections for the first SA call (N_q=8 tokens, block 0)
-    static int _sa_call_count = 0;
-    if (_sa_call_count == 0 && N_q <= 16) {
-        ggml_set_name(Q, "dbg_sa0_Q_proj");
-        ggml_set_output(Q);
-        ggml_set_name(V, "dbg_sa0_V_proj");
-        ggml_set_output(V);
-    }
-    _sa_call_count++;
-
     // internal_dim = out_proj cols = attn.q_w->ne[1]
     const int64_t ID = attn.q_w->ne[1];
     const int64_t HD = ID / n_heads;
@@ -10116,51 +9797,8 @@ static struct ggml_tensor* sam3_sam_attention(
     auto* out = sam3_attn_ext(ctx, Q, K, V, nullptr, scale, 0.0f, 0.0f);
     // out: [HD, NH, N_q, B] (flash_attn_ext swaps dims 1,2 vs input)
 
-#if 0  // Manual SDPA (for debugging only)
-    auto* Q3 = ggml_reshape_3d(ctx, Q, HD, N_q, n_heads * B);
-    auto* K3 = ggml_reshape_3d(ctx, K, HD, N_kv, n_heads * B);
-    auto* V3 = ggml_reshape_3d(ctx, V, HD, N_kv, n_heads * B);
-    // QK^T: ggml_mul_mat(K, Q) → K^T @ Q → [N_kv, N_q, NH*B]
-    auto* attn_scores = ggml_mul_mat(ctx, K3, Q3);
-    attn_scores = ggml_scale(ctx, attn_scores, scale);
-    attn_scores = ggml_soft_max(ctx, attn_scores);
-
-    // attn @ V: need attn^T [N_q, N_kv] and V^T [HD, N_kv]
-    // ggml_mul_mat(attn^T, V) = (attn^T)^T @ V = attn @ V = [N_q, HD]... no.
-    // ggml_mul_mat(A, B) = A^T @ B where A=[K, M], B=[K, N] → [M, N]
-    // Want: output[q, d] = sum_k attn[q, k] * V[k, d]
-    // = (V^T @ attn^T)^T... let me think differently.
-    // attn_scores is [N_kv, N_q, NH*B]. For each head:
-    //   attn[k, q] = attn_scores[k, q]  (col q has the weights for query q)
-    // V3 is [HD, N_kv, NH*B].
-    // Want: out[d, q] = sum_k V[d, k] * attn[k, q] = V @ attn
-    // = ggml_mul_mat? mul_mat(A, B) = A^T B with A=[K, M], B=[K, N] → [M, N]
-    // V has ne=[HD, N_kv, ...]. attn has ne=[N_kv, N_q, ...].
-    // If A=V3 (ne0=HD, ne1=N_kv) and B=attn_scores (ne0=N_kv, ne1=N_q):
-    // Shared dim ne0: V3 ne0=HD ≠ attn ne0=N_kv. Mismatch!
-    //
-    // Need to transpose V: V^T is [N_kv, HD]. Then A=V^T, B=attn_scores.
-    // A ne0=N_kv, B ne0=N_kv → shared. A^T B = V @ attn → [HD, N_q]. ✓
-    auto* VT = ggml_permute(ctx, V3, 1, 0, 2, 3);  // [N_kv, HD, NH*B]
-    VT = ggml_cont(ctx, VT);
-    auto* out3 = ggml_mul_mat(ctx, VT, attn_scores);  // [HD, N_q, NH*B]
-
-    // Reshape back to 4D: [HD, N_q, NH, B]
-    auto* out = ggml_reshape_4d(ctx, out3, HD, N_q, n_heads, B);
-    // Permute to [HD, NH, N_q, B] to match flash_attn_ext output convention
-    out = ggml_cont(ctx, ggml_permute(ctx, out, 0, 2, 1, 3));
-#endif
-
     // Merge heads: [ID=HD*NH, N_q, B]
     auto* merged = ggml_reshape_3d(ctx, out, ID, N_q, B);
-
-    // Debug: mark merged attention output for first SA call
-    static int _sa_merge_count = 0;
-    if (_sa_merge_count == 0 && N_q <= 16) {
-        ggml_set_name(merged, "dbg_sa0_merged");
-        ggml_set_output(merged);
-    }
-    _sa_merge_count++;
 
     // Output projection
     out = ggml_mul_mat(ctx, attn.out_w, merged);
@@ -10272,10 +9910,6 @@ static void sam3_populate_pe_cache(sam3_state& state, const sam3_model& model) {
     }
 
     state.pe_cache_valid = true;
-    AICORE_LOG_PRINT(
-            "[sam3] ",
-            "%s: PE cache populated (%d embeddings, %.1f KB dense grids)\n",
-            __func__, pe_nel, 2.0f * D * H * H * sizeof(float) / 1024.0f);
 }
 
 // Match the official image predictor prompt ordering:
@@ -10384,10 +10018,6 @@ static void sam3_twoway_block_forward(
         queries = ggml_add(ctx, queries, attn_out);
     }
     queries = sam3_layer_norm(ctx, queries, blk.norm1_w, blk.norm1_b);
-    if (skip_first_layer_pe) {
-        ggml_set_name(queries, "dbg_twoway_skip_sa_norm");
-        ggml_set_output(queries);
-    }
 
     // 2. Cross-attention: tokens attending to image
     {
@@ -10397,10 +10027,6 @@ static void sam3_twoway_block_forward(
                 sam3_sam_attention(ctx, q, k, keys, blk.ca_tok2img, n_heads);
         queries = ggml_add(ctx, queries, attn_out);
         queries = sam3_layer_norm(ctx, queries, blk.norm2_w, blk.norm2_b);
-    }
-    if (skip_first_layer_pe) {
-        ggml_set_name(queries, "dbg_twoway_skip_ca_tok2img");
-        ggml_set_output(queries);
     }
 
     // 3. MLP on queries (ReLU activation)
@@ -10413,10 +10039,6 @@ static void sam3_twoway_block_forward(
         queries = ggml_add(ctx, queries, mlp);
         queries = sam3_layer_norm(ctx, queries, blk.norm3_w, blk.norm3_b);
     }
-    if (skip_first_layer_pe) {
-        ggml_set_name(queries, "dbg_twoway_skip_mlp");
-        ggml_set_output(queries);
-    }
 
     // 4. Cross-attention: image attending to tokens
     {
@@ -10427,10 +10049,6 @@ static void sam3_twoway_block_forward(
                 sam3_sam_attention(ctx, k, q, queries, blk.ca_img2tok, n_heads);
         keys = ggml_add(ctx, keys, attn_out);
         keys = sam3_layer_norm(ctx, keys, blk.norm4_w, blk.norm4_b);
-    }
-    if (skip_first_layer_pe) {
-        ggml_set_name(keys, "dbg_twoway_skip_img2tok");
-        ggml_set_output(keys);
     }
 }
 
@@ -10540,12 +10158,6 @@ static sam3_dec_result sam3_build_sam_dec_graph(
                                   dec.final_norm_b);
         ggml_set_name(queries, "sam_dec_final_queries");
     }
-
-    // Debug: mark transformer outputs
-    ggml_set_name(queries, "dbg_dec_queries_out");
-    ggml_set_output(queries);
-    ggml_set_name(keys, "dbg_dec_keys_out");
-    ggml_set_output(keys);
 
     // ── Extract output tokens ────────────────────────────────────────────
     // With pred_obj_scores=True (6 tokens):  obj(0), iou(1), masks(2..5)
@@ -10730,9 +10342,6 @@ sam3_result sam3_segment_pvs(sam3_state& state,
         return result;
     }
 
-    SAM3_LOG(2, "%s: %zu pos points, %zu neg points, box=%s, multimask=%s\n",
-             __func__, params.pos_points.size(), params.neg_points.size(),
-             params.use_box ? "yes" : "no", params.multimask ? "yes" : "no");
 
     // ── Build computation graph ──────────────────────────────────────────
     const size_t buf_size =
@@ -10807,8 +10416,6 @@ sam3_result sam3_segment_pvs(sam3_state& state,
         return result;
     }
 
-    SAM3_LOG(2, "%s: graph allocated, %d nodes\n", __func__,
-             ggml_graph_n_nodes(graph));
 
     // Set default obj_score when pred_obj_scores=False (older SAM2 models)
     if (!model.sam_dec.obj_score_token) {
@@ -10860,25 +10467,6 @@ sam3_result sam3_segment_pvs(sam3_state& state,
         ggml_backend_tensor_set(pe_out.sparse, sparse_data.data(), 0,
                                 N_pts * D * sizeof(float));
 
-        // Dump sparse embeddings if requested
-        {
-            const char* dd =
-                    nullptr;  // AICore: no env access (upstream SAM2_DUMP_DIR)
-            if (dd) {
-                char p[512];
-                snprintf(p, sizeof(p), "%s/cpp_sparse_emb.bin", dd);
-                FILE* f = fopen(p, "wb");
-                if (f) {
-                    fwrite(sparse_data.data(), sizeof(float), N_pts * D, f);
-                    fclose(f);
-                }
-                AICORE_LOG_PRINT(
-                        "[sam3] ",
-                        "  [DUMP] cpp_sparse_emb: %d tokens x %d dims\n", N_pts,
-                        D);
-            }
-        }
-
         // Dense PE grid and no-mask embedding — use pre-computed caches
         ggml_backend_tensor_set(pe_out.image_pe, state.dense_pe_cache.data(), 0,
                                 D * H * H * sizeof(float));
@@ -10900,24 +10488,6 @@ sam3_result sam3_segment_pvs(sam3_state& state,
             for (int d = 0; d < D; ++d) trk2[d + s * D] += no_mem_data[d];
         ggml_backend_tensor_set(image_feats, trk2.data(), 0,
                                 n2 * sizeof(float));
-
-        // Dump image_feats (with no_mem_embed) if requested
-        {
-            const char* dd =
-                    nullptr;  // AICore: no env access (upstream SAM2_DUMP_DIR)
-            if (dd) {
-                char p[512];
-                snprintf(p, sizeof(p), "%s/cpp_image_feats.bin", dd);
-                FILE* f = fopen(p, "wb");
-                if (f) {
-                    fwrite(trk2.data(), sizeof(float), n2, f);
-                    fclose(f);
-                }
-                AICORE_LOG_PRINT("[sam3] ",
-                                 "  [DUMP] cpp_image_feats: [%d, %d, %d]\n", D,
-                                 H, H);
-            }
-        }
 
         ggml_backend_tensor_copy(state.neck_trk[0], feat_s0);
         ggml_backend_tensor_copy(state.neck_trk[1], feat_s1);
@@ -10941,65 +10511,6 @@ sam3_result sam3_segment_pvs(sam3_state& state,
 #endif
     }
 
-    // ── Dump decoder outputs if SAM2_DUMP_DIR set ──────────────────────
-    {
-        const char* dump_dir =
-                nullptr;  // AICore: no env access (upstream SAM2_DUMP_DIR)
-        if (dump_dir) {
-            auto dump_t = [&](const char* name, struct ggml_tensor* t) {
-                if (!t) return;
-                int64_t nb = ggml_nbytes(t);
-                std::vector<char> buf(nb);
-                ggml_backend_tensor_get(t, buf.data(), 0, nb);
-                char path[512];
-                snprintf(path, sizeof(path), "%s/%s.bin", dump_dir, name);
-                FILE* f = fopen(path, "wb");
-                if (f) {
-                    fwrite(buf.data(), 1, nb, f);
-                    fclose(f);
-                }
-                snprintf(path, sizeof(path), "%s/%s.shape", dump_dir, name);
-                f = fopen(path, "w");
-                if (f) {
-                    fprintf(f, "%lld,%lld,%lld,%lld", (long long)t->ne[0],
-                            (long long)t->ne[1], (long long)t->ne[2],
-                            (long long)t->ne[3]);
-                    fclose(f);
-                }
-                AICORE_LOG_PRINT("[sam3] ",
-                                 "  [DUMP] %s: [%lld,%lld,%lld,%lld]\n", name,
-                                 (long long)t->ne[0], (long long)t->ne[1],
-                                 (long long)t->ne[2], (long long)t->ne[3]);
-            };
-            dump_t("cpp_pvs_masks", dec_out.masks);
-            dump_t("cpp_pvs_iou", dec_out.iou_pred);
-            dump_t("cpp_pvs_obj_score", dec_out.obj_score);
-            // Decoder transformer intermediates
-            dump_t("cpp_dec_queries",
-                   ggml_graph_get_tensor(graph, "dbg_dec_queries_out"));
-            dump_t("cpp_dec_keys",
-                   ggml_graph_get_tensor(graph, "dbg_dec_keys_out"));
-            // Block 0 internals
-            const char* b0_names[] = {"sam_dec_tokens_initial",
-                                      "dbg_twoway_skip_sa_norm",
-                                      "dbg_twoway_skip_ca_tok2img",
-                                      "dbg_twoway_skip_mlp",
-                                      "dbg_twoway_skip_img2tok",
-                                      "dbg_sa0_Q_proj",
-                                      "dbg_sa0_merged"};
-            for (auto* bn : b0_names)
-                dump_t(bn, ggml_graph_get_tensor(graph, bn));
-            // Per-block outputs
-            for (int bi = 0; bi < 2; bi++) {
-                char bn[64];
-                snprintf(bn, sizeof(bn), "sam_dec_block%d_queries", bi);
-                dump_t(bn, ggml_graph_get_tensor(graph, bn));
-                snprintf(bn, sizeof(bn), "sam_dec_block%d_keys", bi);
-                dump_t(bn, ggml_graph_get_tensor(graph, bn));
-            }
-        }
-    }
-
     // ── Read outputs ─────────────────────────────────────────────────────
     // masks: [H*4×H*4, 4, 1]
     const int mask_hw = H * 4;
@@ -11019,10 +10530,10 @@ sam3_result sam3_segment_pvs(sam3_state& state,
     if (!sam3_finite(obj_score) ||
         !sam3_finite_values(iou_data.data(), iou_data.size()) ||
         !sam3_finite_values(masks_data.data(), masks_data.size())) {
-        AICORE_LOG_ERROR("[sam3] ",
-                         "%s: non-finite decoder output (obj/iou/mask); "
-                         "returning no masks\n",
-                         __func__);
+        AICORE_LOG_ERROR(
+                "[sam3] ",
+                "%s: non-finite decoder output (obj/iou/mask); returning no masks\n",
+                __func__);
         ggml_gallocr_free(galloc);
         ggml_free(ctx0);
         return result;
@@ -11034,19 +10545,14 @@ sam3_result sam3_segment_pvs(sam3_state& state,
     ggml_backend_tensor_get(dec_out.sam_token, sam_token_data.data(), 0,
                             D * sizeof(float));
     if (!sam3_finite_values(sam_token_data.data(), sam_token_data.size())) {
-        AICORE_LOG_ERROR(
-                "[sam3] ",
-                "%s: non-finite SAM token output; returning no masks\n",
-                __func__);
+        AICORE_LOG_ERROR("[sam3] ",
+                         "%s: non-finite SAM token output; returning no masks\n",
+                         __func__);
         ggml_gallocr_free(galloc);
         ggml_free(ctx0);
         return result;
     }
 
-    SAM3_LOG(2,
-             "%s: obj_score=%.4f (logit=%.4f), iou=[%.3f, %.3f, %.3f, %.3f]\n",
-             __func__, obj_score, obj_logit, iou_data[0], iou_data[1],
-             iou_data[2], iou_data[3]);
 
     // ── Select masks based on multimask mode ─────────────────────────────
     // Python: if multimask_output → masks[:, 1:, :, :], iou_pred[:, 1:]
@@ -11103,7 +10609,6 @@ sam3_result sam3_segment_pvs(sam3_state& state,
         result.detections.push_back(std::move(det));
     }
 
-    SAM3_LOG(2, "%s: %zu masks returned\n", __func__, result.detections.size());
 
     // ── Cleanup ──────────────────────────────────────────────────────────
     ggml_gallocr_free(galloc);
@@ -11160,10 +10665,6 @@ static void sam3_ensure_tracker_pe_caches(sam3_tracker& tracker,
         }
 
     tracker.pe_caches_valid = true;
-    SAM3_LOG(2, "%s: tracker PE caches populated (%.1f KB)\n", __func__,
-             (tracker.cached_sinpe_256.size() + tracker.cached_sinpe_64.size() +
-              tracker.cached_axial_cis_reord.size()) *
-                     sizeof(float) / 1024.0f);
 }
 
 static sam3_prop_output sam3_propagate_single(
@@ -11178,10 +10679,6 @@ static sam3_prop_output sam3_propagate_single(
     const int D = hp.neck_dim, MD = hp.mem_out_dim;
     const int H = sam3_eff_feat_size(state, hp);
     const int N = H * H;
-
-    static const bool s_prof =
-            false;  // AICore: no env access (upstream SAM3_PROFILE_PROP)
-    auto t_p0 = std::chrono::high_resolution_clock::now();
 
     auto sel = sam3_select_memory_frames(mem_bank, hp.num_maskmem);
     if (sel.empty()) return output;
@@ -11414,7 +10911,6 @@ static sam3_prop_output sam3_propagate_single(
     }
 
     // Upload prompt data — the frame-dependent parts are uploaded every frame.
-    auto t_p1 = std::chrono::high_resolution_clock::now();
     ggml_backend_tensor_set(prompt_t, pd.prompt.data(), 0,
                             pd.prompt.size() * sizeof(float));
     ggml_backend_tensor_set(prompt_pos_t, pd.prompt_pos.data(), 0,
@@ -11471,26 +10967,9 @@ static sam3_prop_output sam3_propagate_single(
     ggml_backend_tensor_copy(state.neck_trk[0], trk_s0);
     ggml_backend_tensor_copy(state.neck_trk[1], trk_s1);
 
-    if (s_prof) {
-        auto t_u = std::chrono::high_resolution_clock::now();
-        AICORE_LOG_PRINT(
-                "[sam3] ", "  prop: build+download %6.1f ms, upload %6.1f ms\n",
-                std::chrono::duration<double, std::milli>(t_p1 - t_p0).count(),
-                std::chrono::duration<double, std::milli>(t_u - t_p1).count());
-        t_p0 = t_u;
-    }
-
     if (!sam3_graph_compute(model.backend, graph, 4)) {
         // Don't free galloc/ctx0 — they're cached in tracker
         return output;
-    }
-
-    if (s_prof) {
-        auto t_c = std::chrono::high_resolution_clock::now();
-        AICORE_LOG_PRINT(
-                "[sam3] ", "  prop: compute %6.1f ms\n",
-                std::chrono::duration<double, std::milli>(t_c - t_p0).count());
-        t_p0 = t_c;
     }
 
     const int mhw = H * 4;
@@ -11506,7 +10985,8 @@ static sam3_prop_output sam3_propagate_single(
         ggml_backend_tensor_get(dec.iou_pred, all_ious.data(), 0,
                                 num_mask_tokens * sizeof(float));
         if (!sam3_finite_values(all_ious.data(), all_ious.size())) {
-            AICORE_LOG_ERROR("[sam3] ", "%s: non-finite multimask IoU output\n",
+            AICORE_LOG_ERROR("[sam3] ",
+                             "%s: non-finite multimask IoU output\n",
                              __func__);
             return {};
         }
@@ -11575,13 +11055,6 @@ static sam3_prop_output sam3_propagate_single(
         return {};
     }
 
-    if (s_prof) {
-        auto t_r = std::chrono::high_resolution_clock::now();
-        AICORE_LOG_PRINT(
-                "[sam3] ", "  prop: readback %6.1f ms\n",
-                std::chrono::duration<double, std::milli>(t_r - t_p0).count());
-    }
-
     // NOTE: galloc and ctx0 are cached in tracker (prop_galloc / prop_ctx).
     // They are freed by sam3_tracker_reset, NOT here.
     return output;
@@ -11594,41 +11067,27 @@ static std::vector<std::pair<int, int>> sam3_match_detections(
         float iou_threshold) {
     std::vector<std::pair<int, int>> matches;
     if (masklets.empty() || dets.empty()) return matches;
-    const int n_m = (int)masklets.size(), n_d = (int)dets.size();
-    struct Candidate {
-        int masklet = -1;
-        int detection = -1;
-        float iou = 0.0f;
-    };
-    std::vector<Candidate> candidates;
+    int n_m = (int)masklets.size(), n_d = (int)dets.size();
+    std::vector<bool> dm(n_d, false);
     for (int i = 0; i < n_m; ++i) {
         if (i >= (int)prop_masks.size() || prop_masks[i].data.empty()) continue;
+        int bj = -1;
+        float bi = iou_threshold;
         for (int j = 0; j < n_d; ++j) {
-            if (dets[j].mask.data.empty()) continue;
+            if (dm[j] || dets[j].mask.data.empty()) continue;
             int w = prop_masks[i].width, h = prop_masks[i].height;
             if (w != dets[j].mask.width || h != dets[j].mask.height) continue;
             float iou = sam3_mask_iou(prop_masks[i].data.data(),
                                       dets[j].mask.data.data(), w * h);
-            if (iou > iou_threshold) candidates.push_back({i, j, iou});
+            if (iou > bi) {
+                bi = iou;
+                bj = j;
+            }
         }
-    }
-    // Resolve associations globally by highest IoU. The previous masklet-order
-    // greedy pass could let an early weak overlap consume a detection that was
-    // the strong match for another instance, causing avoidable ID switches.
-    std::sort(candidates.begin(), candidates.end(),
-              [](const Candidate& a, const Candidate& b) {
-                  return a.iou > b.iou;
-              });
-    std::vector<bool> masklet_matched(n_m, false);
-    std::vector<bool> detection_matched(n_d, false);
-    for (const Candidate& candidate : candidates) {
-        if (masklet_matched[candidate.masklet] ||
-            detection_matched[candidate.detection]) {
-            continue;
+        if (bj >= 0) {
+            matches.push_back({i, bj});
+            dm[bj] = true;
         }
-        matches.push_back({candidate.masklet, candidate.detection});
-        masklet_matched[candidate.masklet] = true;
-        detection_matched[candidate.detection] = true;
     }
     return matches;
 }
@@ -11665,11 +11124,12 @@ static bool sam3_encode_memory(sam3_tracker& tracker,
                                int frame_idx,
                                bool is_cond,
                                float obj_score) {
-    if (!mask_logits || mask_h <= 0 || mask_w <= 0 || !sam3_finite(obj_score) ||
+    if (!mask_logits || mask_h <= 0 || mask_w <= 0 ||
+        !sam3_finite(obj_score) ||
         !sam3_finite_values(mask_logits,
                             static_cast<size_t>(mask_h) * mask_w)) {
-        AICORE_LOG_ERROR("[sam3] ", "%s: invalid/non-finite memory input\n",
-                         __func__);
+        AICORE_LOG_ERROR("[sam3] ",
+                         "%s: invalid/non-finite memory input\n", __func__);
         return false;
     }
     const auto& hp = model.hparams;
@@ -11677,10 +11137,6 @@ static bool sam3_encode_memory(sam3_tracker& tracker,
     const int H = sam3_eff_feat_size(state, hp);
     const int HIGH_RES = sam3_eff_img_size(state, hp);
     const int INTERPOL = H * 16;
-
-    static const bool s_prof =
-            false;  // AICore: no env access (upstream SAM3_PROFILE_PROP)
-    auto t_m0 = std::chrono::high_resolution_clock::now();
 
     // Mask preprocessing: mask_logits → HIGH_RES → sigmoid → scale/bias →
     // INTERPOL
@@ -11824,17 +11280,9 @@ static bool sam3_encode_memory(sam3_tracker& tracker,
                             m_interp.size() * sizeof(float));
     // Copy pixel features from state tensor to fresh input — GPU→GPU direct.
     ggml_backend_tensor_copy(state.neck_trk[2], pix_in_raw);
-    auto t_m1 = std::chrono::high_resolution_clock::now();
     if (!sam3_graph_compute(model.backend, tracker.mem_graph, 4)) {
         // Keep the cached graph; a later frame may succeed.
         return false;
-    }
-    auto t_m2 = std::chrono::high_resolution_clock::now();
-    if (s_prof) {
-        AICORE_LOG_PRINT(
-                "[sam3] ", "  memenc: prep %6.1f ms, compute %6.1f ms\n",
-                std::chrono::duration<double, std::milli>(t_m1 - t_m0).count(),
-                std::chrono::duration<double, std::milli>(t_m2 - t_m1).count());
     }
 
     // Read back only when occlusion requires CPU-side post-processing. The
@@ -11954,9 +11402,8 @@ sam3_tracker_ptr sam3_create_tracker(const sam3_model& model,
     }
     sam3_tracker_ptr tracker(new sam3_tracker());
     tracker->params = params;
-    AICORE_LOG_PRINT("[sam3] ",
-                     "%s: tracker created (hotstart=%d, max_keep_alive=%d)\n",
-                     __func__, params.hotstart_delay, params.max_keep_alive);
+    SAM3_LOG(1, "%s: tracker created (hotstart=%d, max_keep_alive=%d)\n",
+             __func__, params.hotstart_delay, params.max_keep_alive);
     return tracker;
 }
 
@@ -11981,10 +11428,7 @@ sam3_result sam3_track_frame(sam3_tracker& tracker,
     sam3_result result;
     const int D = model.hparams.neck_dim;
     if (!sam3_encode_image(state, model, frame)) return result;
-    int fi = tracker.frame_index;
-    AICORE_LOG_PRINT("[sam3] ", "%s: frame %d (%zu active + %zu pending)\n",
-                     __func__, fi, tracker.masklets.size(),
-                     tracker.pending.size());
+    const int fi = tracker.frame_index;
 
     std::map<int, sam3_mask> pm;
     std::map<int, sam3_prop_output> po;
@@ -12024,22 +11468,9 @@ sam3_result sam3_track_frame(sam3_tracker& tracker,
             auto r2 = sam3_bilinear_interpolate(
                     p2.mask_logits.data(), p2.mask_w, p2.mask_h,
                     state.orig_width, state.orig_height);
-            sam3_mask propagated;
-            propagated.width = state.orig_width;
-            propagated.height = state.orig_height;
-            propagated.data.resize(static_cast<size_t>(state.orig_width) *
-                                   state.orig_height);
             int fg2 = 0;
-            for (int p = 0; p < (int)r2.size(); ++p) {
-                const bool foreground = r2[p] > 0.0f;
-                propagated.data[p] = foreground ? 255 : 0;
-                if (foreground) fg2++;
-            }
-            // Pending instances participate in next-frame association and
-            // rendering just like confirmed masklets. Omitting this map entry
-            // made every PCS detection look new until hotstart completed,
-            // creating duplicate IDs and blank/intermittent pending masks.
-            pm[id] = std::move(propagated);
+            for (auto v : r2)
+                if (v > 0.0f) fg2++;
             float c2 = (float)fg2 / (state.orig_width * state.orig_height);
             ml.mds_sum += (c2 > 0.001f && p2.obj_score > 0.0f) ? 1 : -1;
             sam3_encode_memory(tracker, state, model, id, p2.mask_logits.data(),
@@ -12222,8 +11653,6 @@ sam3_result sam3_track_frame(sam3_tracker& tracker,
                               tracker.params.fill_hole_area);
     }
     tracker.frame_index++;
-    SAM3_LOG(2, "%s: frame %d done — %zu tracked\n", __func__, fi,
-             result.detections.size());
     return result;
 }
 
@@ -12271,7 +11700,6 @@ bool sam3_refine_instance(sam3_tracker& tracker,
         std::fill(op.begin(), op.end(), 0.0f);
     }
     sam3_store_obj_ptr(tracker, model, instance_id, op.data(), fi);
-    SAM3_LOG(2, "%s: refined instance %d\n", __func__, instance_id);
     return true;
 }
 
@@ -12347,8 +11775,6 @@ int sam3_tracker_add_instance(sam3_tracker& tracker,
     ml.mds_sum = 1;
     tracker.masklets.push_back(std::move(ml));
 
-    SAM3_LOG(2, "%s: added instance #%d (score=%.3f)\n", __func__, inst_id,
-             det.score);
     return inst_id;
 }
 
@@ -12456,8 +11882,6 @@ int sam3_tracker_add_instance_from_mask(sam3_tracker& tracker,
     ml.mds_sum = 1;
     tracker.masklets.push_back(std::move(ml));
 
-    SAM3_LOG(2, "%s: added instance #%d from mask (obj_score=%.3f)\n", __func__,
-             inst_id, obj_score);
     return inst_id;
 }
 
@@ -12527,9 +11951,8 @@ sam3_tracker_ptr sam3_create_visual_tracker(
     vp.fill_hole_area = params.fill_hole_area;
     sam3_tracker_ptr tracker(new sam3_tracker());
     tracker->params = vp;
-    AICORE_LOG_PRINT("[sam3] ",
-                     "%s: visual-only tracker created (max_keep_alive=%d)\n",
-                     __func__, params.max_keep_alive);
+    SAM3_LOG(1, "%s: visual-only tracker created (max_keep_alive=%d)\n",
+             __func__, params.max_keep_alive);
     return tracker;
 }
 
@@ -12540,10 +11963,7 @@ sam3_result sam3_propagate_frame(sam3_tracker& tracker,
     sam3_result result;
     const int D = model.hparams.neck_dim;
     if (!sam3_encode_image(state, model, frame)) return result;
-    int fi = tracker.frame_index;
-    AICORE_LOG_PRINT("[sam3] ", "%s: frame %d (%zu active + %zu pending)\n",
-                     __func__, fi, tracker.masklets.size(),
-                     tracker.pending.size());
+    const int fi = tracker.frame_index;
 
     // ── Propagate active masklets ────────────────────────────────────────
     std::map<int, sam3_mask> pm;
@@ -12665,8 +12085,6 @@ sam3_result sam3_propagate_frame(sam3_tracker& tracker,
                               tracker.params.fill_hole_area);
     }
     tracker.frame_index++;
-    SAM3_LOG(2, "%s: frame %d done — %zu tracked\n", __func__, fi,
-             result.detections.size());
     return result;
 }
 

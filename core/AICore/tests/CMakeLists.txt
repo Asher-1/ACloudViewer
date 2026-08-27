@@ -398,6 +398,26 @@ aicore_add_rfdetr_capi_test(test_rfdetr_capi_contract)
 aicore_add_rmbg_capi_test(test_rmbg_capi_contract)
 aicore_add_rmbg_capi_test(test_rmbg_capi_performance)
 aicore_add_sam3_capi_test(test_sam3_capi_contract)
+
+# Manual real-model acceptance probe for a ggml-version worktree. It is not a
+# CTest because it requires a local SAM3 GGUF, a Vulkan-capable GPU, and takes
+# several minutes on CPU. See the source header for its exact parity gates.
+add_executable(bench_sam3_backend_acceptance sam3/bench_sam3_backend_acceptance.cpp)
+target_link_libraries(bench_sam3_backend_acceptance PRIVATE AICore)
+_aicore_capi_link(bench_sam3_backend_acceptance)
+if(TARGET Qt::Core AND TARGET Qt::Gui)
+    target_link_libraries(bench_sam3_backend_acceptance PRIVATE Qt::Core Qt::Gui)
+elseif(Qt5_FOUND)
+    target_link_libraries(bench_sam3_backend_acceptance PRIVATE Qt5::Core Qt5::Gui)
+endif()
+if(NOT MSVC)
+    target_compile_options(bench_sam3_backend_acceptance PRIVATE -Wall -Wextra -fPIC)
+    target_link_options(bench_sam3_backend_acceptance PRIVATE "-no-pie")
+endif()
+target_include_directories(bench_sam3_backend_acceptance PRIVATE ${AICORE_TEST_INC})
+include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/AICoreCompileDefinitions.cmake)
+aicore_apply_compile_definitions(bench_sam3_backend_acceptance)
+cloudviewer_set_aicore_test_runtime_layout(bench_sam3_backend_acceptance)
 aicore_add_trellis_capi_test(test_trellis_capi_contract)
 set_tests_properties(test_rmbg_capi_performance PROPERTIES
     LABELS "capi;model;gpu;performance")

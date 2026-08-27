@@ -9,7 +9,6 @@
 
 #include <CVLog.h>
 
-#include <QElapsedTimer>
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
@@ -124,9 +123,8 @@ void VideoWorker::process(const TrackRequest& req) {
 #ifdef AICore_ENABLED
             DeviceTaskGuard releaseGuard(m_device);
             if (!releaseGuard.isLocked()) {
-                emit logMessage(
-                        tr("[SAM3] Failed to acquire the previous "
-                           "inference device for model release."));
+                emit logMessage(tr("[SAM3] Failed to acquire the previous "
+                                   "inference device for model release."));
                 m_busy = false;
                 emit busyChanged(false);
                 return;
@@ -159,9 +157,6 @@ void VideoWorker::process(const TrackRequest& req) {
     }
 #endif
 
-    QElapsedTimer timer;
-    timer.start();
-
     switch (req.action) {
         case Action::LoadModel: {
             aicore_sam3_options* opts = aicore_sam3_options_new();
@@ -170,7 +165,7 @@ void VideoWorker::process(const TrackRequest& req) {
                                                req.device.toUtf8().constData());
                 aicore_sam3_options_set_threads(opts, 4);
                 aicore_sam3_options_set_score_threshold(opts,
-                                                        req.scoreThreshold);
+                                                         req.scoreThreshold);
                 m_ctx = aicore_sam3_load_opts(
                         req.modelPath.toUtf8().constData(), opts);
                 aicore_sam3_options_free(opts);
@@ -202,11 +197,6 @@ void VideoWorker::process(const TrackRequest& req) {
             emit modelReady(
                     QString::fromUtf8(aicore_sam3_context_backend_name(m_ctx)),
                     m_visualOnly);
-            CVLog::Print(
-                    "[qSAM3][VideoWorker] model+tracker ready on %s "
-                    "(visual_only=%d) in %.0f ms",
-                    aicore_sam3_context_backend_name(m_ctx),
-                    m_visualOnly ? 1 : 0, static_cast<double>(timer.elapsed()));
             emit logMessage(
                     tr("Model + tracker ready on %1 (visual-only: %2)")
                             .arg(aicore_sam3_context_backend_name(m_ctx))
@@ -218,8 +208,7 @@ void VideoWorker::process(const TrackRequest& req) {
                 CVLog::Warning(
                         "[qSAM3][VideoWorker] TrackFrame skipped: ctx=%d "
                         "tracker=%d frame_null=%d",
-                        m_ctx ? 1 : 0, m_tracker ? 1 : 0,
-                        req.frame.isNull() ? 1 : 0);
+                        m_ctx ? 1 : 0, m_tracker ? 1 : 0, req.frame.isNull() ? 1 : 0);
                 break;
             }
             QImage rgb = req.frame.convertToFormat(QImage::Format_RGB888);
@@ -234,24 +223,16 @@ void VideoWorker::process(const TrackRequest& req) {
                                       rgb.height(),
                                       static_cast<size_t>(rgb.bytesPerLine()));
             if (!res) {
-                const QString error = QString::fromUtf8(
-                        aicore_sam3_tracker_last_error(m_tracker));
                 CVLog::Warning("[qSAM3][VideoWorker] TrackFrame(%d) failed: %s",
                                req.frameIndex,
                                aicore_sam3_tracker_last_error(m_tracker));
-                emit logMessage(tr("Track frame failed: %1").arg(error));
-                SAM3WorkerResult failed;
-                failed.errorMsg = tr("Track frame failed: %1").arg(error);
-                emit frameResultReady(failed, req.frameIndex);
+                emit logMessage(tr("Track frame failed: %1")
+                                        .arg(aicore_sam3_tracker_last_error(
+                                                m_tracker)));
                 break;
             }
             m_lastFrameResult = buildResult(res, req.frame);
             m_encodedFrameIndex = req.frameIndex;
-            CVLog::Print(
-                    "[qSAM3][VideoWorker] TrackFrame(%d) ok: %d det(s), "
-                    "e2e=%.1f ms",
-                    req.frameIndex, m_lastFrameResult.detCount,
-                    static_cast<double>(m_lastFrameResult.timings.e2e_ms));
             emit frameResultReady(m_lastFrameResult, req.frameIndex);
             aicore_sam3_seg_result_free(res);
             break;
@@ -277,33 +258,29 @@ void VideoWorker::process(const TrackRequest& req) {
                             "to encode; state is stale (encoded=%d)",
                             req.frameIndex, m_encodedFrameIndex);
                 } else {
-                    CVLog::Print(
-                            "[qSAM3][VideoWorker] AddInstance(%d): state not "
-                            "encoded (last=%d), running one track pass first",
-                            req.frameIndex, m_encodedFrameIndex);
-                    QImage rgb =
-                            req.frame.convertToFormat(QImage::Format_RGB888);
+                    QImage rgb = req.frame.convertToFormat(
+                            QImage::Format_RGB888);
                     aicore_sam3_seg_result* r =
-                            m_visualOnly ? aicore_sam3_propagate_frame(
-                                                   m_tracker, rgb.constBits(),
-                                                   rgb.width(), rgb.height(),
-                                                   static_cast<size_t>(
-                                                           rgb.bytesPerLine()))
-                                         : aicore_sam3_track_frame(
-                                                   m_tracker, rgb.constBits(),
-                                                   rgb.width(), rgb.height(),
-                                                   static_cast<size_t>(
-                                                           rgb.bytesPerLine()));
+                            m_visualOnly
+                                    ? aicore_sam3_propagate_frame(
+                                              m_tracker, rgb.constBits(),
+                                              rgb.width(), rgb.height(),
+                                              static_cast<size_t>(
+                                                      rgb.bytesPerLine()))
+                                    : aicore_sam3_track_frame(
+                                              m_tracker, rgb.constBits(),
+                                              rgb.width(), rgb.height(),
+                                              static_cast<size_t>(
+                                                      rgb.bytesPerLine()));
                     if (!r) {
                         CVLog::Warning(
                                 "[qSAM3][VideoWorker] AddInstance(%d) "
                                 "pre-encode failed: %s",
                                 req.frameIndex,
                                 aicore_sam3_tracker_last_error(m_tracker));
-                        emit logMessage(
-                                tr("Cannot annotate this frame: %1")
-                                        .arg(aicore_sam3_tracker_last_error(
-                                                m_tracker)));
+                        emit logMessage(tr("Cannot annotate this frame: %1")
+                                                .arg(aicore_sam3_tracker_last_error(
+                                                        m_tracker)));
                         break;
                     }
                     aicore_sam3_seg_result_free(r);
@@ -331,11 +308,6 @@ void VideoWorker::process(const TrackRequest& req) {
             const int newId =
                     aicore_sam3_tracker_add_instance(m_tracker, &prompt);
             if (newId >= 0) {
-                CVLog::Print(
-                        "[qSAM3][VideoWorker] AddInstance(%d) ok: id=%d "
-                        "(pts=%d box=%d)",
-                        req.frameIndex, newId, static_cast<int>(pos.size()),
-                        prompt.use_box ? 1 : 0);
                 emit instanceAdded(newId);
                 // Upstream main_video.cpp re-runs PVS on the encoded frame
                 // right after add_instance to display the new instance's mask
@@ -345,8 +317,7 @@ void VideoWorker::process(const TrackRequest& req) {
                 if (aicore_sam3_seg_result* maskRes =
                             aicore_sam3_tracker_segment_pvs(m_tracker,
                                                             &prompt)) {
-                    SAM3WorkerResult maskResult =
-                            buildResult(maskRes, req.frame);
+                    SAM3WorkerResult maskResult = buildResult(maskRes, req.frame);
                     for (int i = 0; i < maskResult.detCount; ++i) {
                         maskResult.instanceIds[i] = newId;
                     }
@@ -393,34 +364,29 @@ void VideoWorker::process(const TrackRequest& req) {
                             "frame to encode; state is stale (encoded=%d)",
                             req.frameIndex, m_encodedFrameIndex);
                 } else {
-                    CVLog::Print(
-                            "[qSAM3][VideoWorker] RefineInstance(%d): state "
-                            "not encoded (last=%d), running one track pass "
-                            "first",
-                            req.frameIndex, m_encodedFrameIndex);
-                    QImage rgb =
-                            req.frame.convertToFormat(QImage::Format_RGB888);
+                    QImage rgb = req.frame.convertToFormat(
+                            QImage::Format_RGB888);
                     aicore_sam3_seg_result* r =
-                            m_visualOnly ? aicore_sam3_propagate_frame(
-                                                   m_tracker, rgb.constBits(),
-                                                   rgb.width(), rgb.height(),
-                                                   static_cast<size_t>(
-                                                           rgb.bytesPerLine()))
-                                         : aicore_sam3_track_frame(
-                                                   m_tracker, rgb.constBits(),
-                                                   rgb.width(), rgb.height(),
-                                                   static_cast<size_t>(
-                                                           rgb.bytesPerLine()));
+                            m_visualOnly
+                                    ? aicore_sam3_propagate_frame(
+                                              m_tracker, rgb.constBits(),
+                                              rgb.width(), rgb.height(),
+                                              static_cast<size_t>(
+                                                      rgb.bytesPerLine()))
+                                    : aicore_sam3_track_frame(
+                                              m_tracker, rgb.constBits(),
+                                              rgb.width(), rgb.height(),
+                                              static_cast<size_t>(
+                                                      rgb.bytesPerLine()));
                     if (!r) {
                         CVLog::Warning(
                                 "[qSAM3][VideoWorker] RefineInstance(%d) "
                                 "pre-encode failed: %s",
                                 req.frameIndex,
                                 aicore_sam3_tracker_last_error(m_tracker));
-                        emit logMessage(
-                                tr("Cannot refine this frame: %1")
-                                        .arg(aicore_sam3_tracker_last_error(
-                                                m_tracker)));
+                        emit logMessage(tr("Cannot refine this frame: %1")
+                                                .arg(aicore_sam3_tracker_last_error(
+                                                        m_tracker)));
                         emit instanceRefined(req.instanceId, false);
                         break;
                     }
@@ -453,9 +419,6 @@ void VideoWorker::process(const TrackRequest& req) {
                         req.frameIndex, req.instanceId,
                         aicore_sam3_tracker_last_error(m_tracker));
             } else {
-                CVLog::Print(
-                        "[qSAM3][VideoWorker] RefineInstance(%d, id=%d) ok",
-                        req.frameIndex, req.instanceId);
                 if (aicore_sam3_seg_result* maskRes =
                             aicore_sam3_tracker_segment_pvs(m_tracker,
                                                             &prompt)) {
@@ -473,7 +436,8 @@ void VideoWorker::process(const TrackRequest& req) {
                             continue;
                         }
                         merged.boxes.append(m_lastFrameResult.boxes.value(i));
-                        merged.scores.append(m_lastFrameResult.scores.value(i));
+                        merged.scores.append(
+                                m_lastFrameResult.scores.value(i));
                         merged.ious.append(m_lastFrameResult.ious.value(i));
                         merged.instanceIds.append(
                                 m_lastFrameResult.instanceIds.value(i, -1));
@@ -488,7 +452,8 @@ void VideoWorker::process(const TrackRequest& req) {
                     merged.detCount = merged.boxes.size();
                     merged.timings = refined.timings;
                     m_lastFrameResult = merged;
-                    emit frameResultReady(m_lastFrameResult, req.frameIndex);
+                    emit frameResultReady(m_lastFrameResult,
+                                          req.frameIndex);
                 }
             }
             emit instanceRefined(req.instanceId, ok == 0);
@@ -515,8 +480,7 @@ void VideoWorker::process(const TrackRequest& req) {
             m_tracker = aicore_sam3_tracker_create(m_ctx);
             if (!m_tracker) {
                 CVLog::Warning(
-                        "[qSAM3][VideoWorker] ResetTracker re-create failed: "
-                        "%s",
+                        "[qSAM3][VideoWorker] ResetTracker re-create failed: %s",
                         aicore_sam3_last_error(m_ctx));
                 emit logMessage(tr("Failed to re-create tracker: %1")
                                         .arg(aicore_sam3_last_error(m_ctx)));
@@ -528,7 +492,6 @@ void VideoWorker::process(const TrackRequest& req) {
                 aicore_sam3_tracker_set_text_prompt(
                         m_tracker, req.textPrompt.toUtf8().constData());
             }
-            CVLog::Print("[qSAM3][VideoWorker] ResetTracker ok");
             emit logMessage(tr("Tracker reset."));
             emit trackerReset(req.textPrompt, true);
             break;

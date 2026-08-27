@@ -112,6 +112,7 @@ python3 -c "import ctypes; ctypes.CDLL('./libggml-metal.so')"
 
 # Check OpenMP linkage (macOS, should show nothing):
 otool -L libggml-cpu.so | grep omp
+```
 
 ## Metal Performance Optimization Reference
 
@@ -122,4 +123,16 @@ See `docs/guides/metal-inference-optimization.md`, which covers:
 4. **Pitfall checklist**: MSL/C struct consistency, ExternalProject mtime, ggml_view_4d strides, profile branch
 5. **New-model acceleration checklist
 
-```
+## ggml Version Upgrade (mandatory pipeline)
+
+Upgrading the pinned `GGML_VERSION` in `3rdparty/ggml/ggml.cmake` MUST follow
+`docs/guides/ggml_upgrade_pipeline.md` (5 fail-stop stages: research → patch
+chain replay → contract tier → parity tier → performance A/B).
+
+- One-click verification: `scripts/ggml_upgrade_verify.py --baseline <dir> --candidate <dir>`
+  (regression threshold +5%, noise floor 3%, prints coverage of (task, backend) pairs).
+- AI reference skill: `.agents/skills/ggml-upgrade/SKILL.md`.
+- Known pre-existing defects (never classify as upgrade regression):
+  0.18.1-only Vulkan DeviceLost (fixed upstream >= 0.19, FLOP-based submit policy),
+  RMBG Vulkan conv2d descriptor-count assert (present on 0.18.1 and 0.21).
+

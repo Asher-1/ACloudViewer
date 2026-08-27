@@ -21,6 +21,7 @@
 #include <QThread>
 #include <QVector>
 #include <QWaitCondition>
+
 #include <atomic>
 
 #include "SAM3Worker.h"  // SAM3WorkerResult / Prompt types

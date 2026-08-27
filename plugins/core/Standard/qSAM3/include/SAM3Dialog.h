@@ -50,7 +50,6 @@ class QPushButton;
 class QRadioButton;
 class QSlider;
 class QTabWidget;
-class QTextBrowser;
 class QTimer;
 class ecvMainAppInterface;
 class ecvModelDownloader;
@@ -158,7 +157,7 @@ struct ImageTabUi {
     QComboBox* modelCombo = nullptr;
     QPushButton* downloadBtn = nullptr;  // downloads the selected catalog GGUF
     QPushButton* loadBtn = nullptr;
-    QComboBox* testDataCombo = nullptr;  // test-image picker (SAM3 dataset)
+    QComboBox* testDataCombo = nullptr;    // test-image picker (SAM3 dataset)
     QPushButton* testDataBtn = nullptr;
     // Canvas (fills the tab) + bottom bar
     SAM3Canvas* canvas = nullptr;
@@ -170,7 +169,7 @@ struct ImageTabUi {
     QPushButton* clearBtn = nullptr;
     QPushButton* exportBtn = nullptr;
     QLabel* statusLabel = nullptr;
-    QTextBrowser* detectionLabel = nullptr;
+    QLabel* detectionLabel = nullptr;
     // Per-tab state
     QImage currentImage;
     QString currentImagePath;
@@ -287,9 +286,6 @@ private:
      *  active tab; worker callbacks pass the task's tab explicitly). */
     void updateCanvasFromResult(ImageTabUi* target = nullptr);
     void updateDetectionList(ImageTabUi* target = nullptr);
-    /** Clear prompts and rendered inference output while preserving the image,
-     *  selected model and (optionally) the text prompt. */
-    void clearInteractionState(ImageTabUi& ui, bool clearTextPrompt);
     void updateStatus(const QString& msg);
     bool loadRequestedTestData();
     /** Load the sample image selected in the given tab's test-data picker

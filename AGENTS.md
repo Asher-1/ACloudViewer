@@ -13,6 +13,7 @@ Reference layout: Use this file when you need a **full-repo map** (build, module
 | Develop a plugin | `.agents/rules/acloudviewer-plugin-dev.mdc` | `plugins/core/<Category>/<Plugin>/README.md` |
 | Add JSON-RPC / MCP / CLI command | `.agents/rules/acloudviewer-agent-dev.mdc` | `agent-integration/docs/JSON-RPC-API.md` |
 | Modify ggml / AICore / GPU backend | `.agents/rules/acloudviewer-ggml-aicore.mdc` | This file § ggml Source Modification Rules, `3rdparty/ggml/patches/` |
+| Upgrade ggml version / verify perf regression | `docs/guides/ggml_upgrade_pipeline.md`, `.agents/skills/ggml-upgrade/SKILL.md` | `scripts/ggml_upgrade_verify.py` (one-click baseline/candidate A/B) |
 | Debug CI failure | `.agents/rules/acloudviewer-ci-debugging.mdc` | `.github/workflows/`, `util/ci_utils.sh` |
 | Understand a module | This file § Module Layers + Key Classes | Per-plugin README, Sphinx `docs/source/` |
 
@@ -332,6 +333,7 @@ Test data: `examples/test_data/` (CMake download list); qManualCalib ships `plug
 | Audience | Location |
 |----------|----------|
 | Build / CMake | `BUILD.md`, `docs/guides/compiling_doc/` |
+| ggml upgrade pipeline (verify gain/regression) | `docs/guides/ggml_upgrade_pipeline.md`, `scripts/ggml_upgrade_verify.py` |
 | Plugin catalog | `plugins/README.md` |
 | AI user guides | `docs/guides/plugins/` (qDA3, qFreeSplatter, qManualCalib) |
 | Per-plugin dev docs | `plugins/core/<Category>/<Plugin>/README.md` |
@@ -472,7 +474,7 @@ ggml is an **ExternalProject** in this repo (`3rdparty/ggml/ggml.cmake`): every 
 6. Commit only the patch + manifest.yaml (plus any necessary ggml.cmake / AICore glue code); **never** commit sources under build*/ggml/
 ```
 
-Directory layout (manifest.yaml is the single source of truth; currently 14 patches; verify with `rg -n "file:" 3rdparty/ggml/patches/manifest.yaml`):
+Directory layout (manifest.yaml is the single source of truth; currently 15 patches; verify with `rg -n "file:" 3rdparty/ggml/patches/manifest.yaml`):
 
 ```
 3rdparty/ggml/patches/
@@ -491,7 +493,8 @@ Directory layout (manifest.yaml is the single source of truth; currently 14 patc
 ├── trellis_merged/0001-ggml-cuda-cpy-q8_0.patch
 ├── igemm_fix/0001-igemm-plan-rebuild-guards.patch
 ├── glslc_fconvert/0001-pool-shaders-avoid-redundant-fconvert.patch
-└── cuda_mul_mat_f16_dst/0001-cuda-mul-mat-f16-dst.patch
+├── cuda_mul_mat_f16_dst/0001-cuda-mul-mat-f16-dst.patch
+└── cuda_rope_dup_mode/0001-cuda-rope-duplicate-mode-declaration.patch
 ```
 
 #### Why this is required

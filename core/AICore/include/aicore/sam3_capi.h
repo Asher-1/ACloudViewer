@@ -99,7 +99,7 @@ AICORE_CAPI const char* aicore_sam3_last_load_error(void);
 /** Updates the score threshold used when subsequently creating a tracker.
  *  Returns 0 on success, -1 for a NULL context or a value outside [0, 1]. */
 AICORE_CAPI int aicore_sam3_set_score_threshold(aicore_sam3_ctx* ctx,
-                                                float score_threshold);
+                                                 float score_threshold);
 /** Releases any buffer returned by an aicore_sam3_* function (unified entry
  *  point). Safe on NULL. */
 AICORE_CAPI void aicore_sam3_free_buffer(void* p);
@@ -347,27 +347,27 @@ AICORE_CAPI char* aicore_sam3_model_cache_dir(void);
  * Returns 0 on success, -1 if the context has no loaded model.  On success
  * \p out_avg receives the per-iteration averages.
  */
-AICORE_CAPI int aicore_sam3_benchmark(aicore_sam3_ctx* ctx,
-                                      int32_t img_width,
-                                      int32_t img_height,
-                                      int n_warmup,
-                                      int n_iter,
-                                      aicore_sam3_timings* out_avg);
+AICORE_CAPI int aicore_sam3_benchmark(
+    aicore_sam3_ctx* ctx,
+    int32_t img_width,
+    int32_t img_height,
+    int n_warmup,
+    int n_iter,
+    aicore_sam3_timings* out_avg);
 
 /** ---- Profile ---- */
 
 /** Entry kind of aicore_sam3_profile_encoder output. */
 enum aicore_sam3_profile_kind {
-    AICORE_SAM3_PROFILE_PREFIX =
-            0, /**< ViT prefix sub-stage (patch embed ... ln_pre) */
-    AICORE_SAM3_PROFILE_BLOCK = 1, /**< ViT block sub-stage (norm1 ... mlp) */
+    AICORE_SAM3_PROFILE_PREFIX = 0, /**< ViT prefix sub-stage (patch embed ... ln_pre) */
+    AICORE_SAM3_PROFILE_BLOCK = 1,  /**< ViT block sub-stage (norm1 ... mlp) */
 };
 
 /** One measured stage of the ViT encoder. */
 typedef struct aicore_sam3_profile_entry {
-    int kind;  /**< aicore_sam3_profile_kind */
-    int index; /**< prefix: sam3_vit_prefix_stage value; block: block index */
-    int stage; /**< block: sam3_vit_block_stage value; prefix: same as index */
+    int kind;   /**< aicore_sam3_profile_kind */
+    int index;  /**< prefix: sam3_vit_prefix_stage value; block: block index */
+    int stage;  /**< block: sam3_vit_block_stage value; prefix: same as index */
     double avg_ms; /**< average wall-clock time over n_iter timed runs */
 } aicore_sam3_profile_entry;
 
@@ -385,12 +385,12 @@ typedef struct aicore_sam3_profile_entry {
  * Returns 0 on success, -1 if the context has no loaded model.
  */
 AICORE_CAPI int aicore_sam3_profile_encoder(
-        aicore_sam3_ctx* ctx,
-        int n_warmup,
-        int n_iter,
-        aicore_sam3_profile_entry* out_entries,
-        int max_entries,
-        int* n_entries_out);
+    aicore_sam3_ctx* ctx,
+    int n_warmup,
+    int n_iter,
+    aicore_sam3_profile_entry* out_entries,
+    int max_entries,
+    int* n_entries_out);
 
 /** ---- Quantize ---- */
 
@@ -408,8 +408,8 @@ AICORE_CAPI int aicore_sam3_profile_encoder(
  * Returns 0 on success, -1 on failure.
  */
 AICORE_CAPI int aicore_sam3_quantize_gguf(const char* input_gguf,
-                                          const char* output_gguf,
-                                          const char* type_name);
+                                           const char* output_gguf,
+                                           const char* type_name);
 
 /** Warms up the backend for `device`; returns 0 on success. */
 AICORE_CAPI int aicore_sam3_warmup_backend(const char* device);

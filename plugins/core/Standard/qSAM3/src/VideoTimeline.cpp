@@ -7,8 +7,6 @@
 
 #include "VideoTimeline.h"
 
-#include <ecvAICoreUiHelper.h>
-
 #include <QMouseEvent>
 #include <QPainter>
 
@@ -17,10 +15,7 @@ constexpr int kBarHeight = 14;
 constexpr int kBandHeight = 6;
 constexpr int kBandGap = 2;
 constexpr int kLeftMargin = 6;
-int rightMargin() {
-    // Reserve enough DPI-aware room for multi-digit "#id" labels.
-    return ecvAICoreUi::dpiScaled(48);
-}
+constexpr int kRightMargin = 26;  // room for the "#id" labels
 }  // namespace
 
 VideoTimeline::VideoTimeline(QWidget* parent) : QWidget(parent) {
@@ -57,7 +52,7 @@ void VideoTimeline::setInstances(const QVector<int>& ids,
 
 int VideoTimeline::frameAt(const QPoint& pos) const {
     if (m_frameCount <= 0) return 0;
-    const int barW = width() - kLeftMargin - rightMargin();
+    const int barW = width() - kLeftMargin - kRightMargin;
     if (barW <= 0) return 0;
     const double rel = (pos.x() - kLeftMargin) / static_cast<double>(barW);
     const double clamped = qBound(0.0, rel, 1.0);
@@ -97,7 +92,7 @@ void VideoTimeline::paintEvent(QPaintEvent*) {
         return;
     }
 
-    const int barW = width() - kLeftMargin - rightMargin();
+    const int barW = width() - kLeftMargin - kRightMargin;
     const int barX = kLeftMargin;
     const int barY = 2;
     const double pxPerFrame = barW / static_cast<double>(m_frameCount);
@@ -142,7 +137,7 @@ void VideoTimeline::drawBand(QPainter& p,
                              int row,
                              int idIndex,
                              const QColor& color) {
-    const int barW = width() - kLeftMargin - rightMargin();
+    const int barW = width() - kLeftMargin - kRightMargin;
     const int barX = kLeftMargin;
     const int y = row;
     const double pxPerFrame = barW / static_cast<double>(m_frameCount);

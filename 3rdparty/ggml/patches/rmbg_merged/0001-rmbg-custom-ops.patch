@@ -1624,64 +1624,6 @@ index 9bde34b..a7c9297 100644
          break;
      case GGML_OP_ADD:
          if (ctx->num_additional_fused_ops) {
-@@ -16794,6 +17319,16 @@ static ggml_status ggml_backend_vk_graph_compute(ggml_backend_t backend, ggml_cg
-     }
-     uint64_t flops_per_submit = std::min(flops_cap, ctx->last_total_flops / 40u);
-
-+    auto const submit_after = [&]() {
-+        first_node_in_batch = true;
-+        submitted_nodes = 0;
-+        batch_flops = 0;
-+        if (submit_count < 3) {
-+            flops_per_submit *= 2;
-+        }
-+        submit_count++;
-+    };
-+
-     for (int i = 0; i < cgraph->n_nodes; i++) {
-         if (first_node_in_batch) {
-             submit_node_idx = i;
-@@ -16801,8 +17336,24 @@ static ggml_status ggml_backend_vk_graph_compute(ggml_backend_t backend, ggml_cg
-
-         {
-             auto node_flops = ggml_vk_get_node_flops(cgraph->nodes[i]);
--            batch_flops += node_flops;
-             total_flops += node_flops;
-+
-+            // Keep a large node out of the preceding batch. This is the
-+            // upstream 0.20.1 submission fix and avoids highly uneven command
-+            // buffers for RMBG's alternating attention and convolution graph.
-+            if (flops_per_submit != 0 && submitted_nodes > 0 &&
-+                batch_flops + node_flops >= flops_per_submit) {
-+                vk_context flush_ctx = ggml_vk_get_compute_ctx(ctx);
-+                ggml_vk_ctx_end(flush_ctx);
-+                flush_ctx->exit_tensor_idx = -1;
-+                ctx->compute_ctx.reset();
-+                ggml_vk_compute_forward(ctx, cgraph, cgraph->nodes[submit_node_idx],
-+                                        submit_node_idx, false);
-+                submit_after();
-+                submit_node_idx = i;
-+            }
-+
-+            batch_flops += node_flops;
-         }
-
-         // op_srcs_fused_elementwise indicates whether an op's srcs all contribute to
-@@ -17056,13 +17607,7 @@ static ggml_status ggml_backend_vk_graph_compute(ggml_backend_t backend, ggml_cg
-         }
-
-         if (submit && enqueued) {
--            first_node_in_batch = true;
--            submitted_nodes = 0;
--            batch_flops = 0;
--            if (submit_count < 3) {
--                flops_per_submit *= 2;
--            }
--            submit_count++;
-+            submit_after();
-         }
-         i += ctx->num_additional_fused_ops;
-         ctx->num_additional_fused_ops = 0;
 @@ -17677,6 +18222,66 @@ static bool ggml_backend_vk_device_supports_op(ggml_backend_dev_t dev, const ggm
      }
 

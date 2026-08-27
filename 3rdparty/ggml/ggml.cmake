@@ -21,9 +21,9 @@ if(NOT GGML_ENABLED)
     return()
 endif()
 
-set(GGML_VERSION "0.18.1")
+set(GGML_VERSION "0.21.0")
 set(GGML_URL "https://github.com/ggml-org/ggml/archive/refs/tags/v${GGML_VERSION}.tar.gz")
-set(GGML_SHA256 "e9679cc9a8f0480ddc137b0a650df31b7c955e53ac6fdded1967aac36790c5e3")
+set(GGML_SHA256 "3b0d4f1fe7c278824d4bb753b7402733576985689bd40e9cc719eca627131d24")
 
 # Dynamic backend mode: accelerator backends are built as separate shared libraries
 # loaded at runtime (GGML_BACKEND_DL). Fixed ON for AICore — see AICoreOptions sync.
