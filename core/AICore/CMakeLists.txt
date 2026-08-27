@@ -309,6 +309,11 @@ target_compile_definitions(${PROJECT_NAME}
     INTERFACE AICore_SHARED
     PUBLIC AICore_ENABLED
 )
+# sam3.h gates SAM3_API on SAM3_SHARED (visibility("default") on non-Windows).
+# Without it the internal SAM3 C++ API compiles hidden and the sam3_*
+# whitelist in cmake/aicore.exports.map cannot export it for the in-repo
+# cmp_sam3_vit_stages diagnostic.
+target_compile_definitions(${PROJECT_NAME} PRIVATE SAM3_SHARED SAM3_BUILD)
 if(MSVC)
     # M_PI and other math constants (pose.cpp, tests); same as CloudViewerSetGlobalProperties.cmake
     target_compile_definitions(${PROJECT_NAME} PRIVATE _USE_MATH_DEFINES)

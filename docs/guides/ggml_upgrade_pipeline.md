@@ -14,7 +14,7 @@
 
 A verdict on "is the upgrade safe" is fundamentally composed of only three classes of facts:
 
-1. **Buildable**: the 15+ downstream patches can be replayed on the new version's source tree (idempotently), and AICore compiles.
+1. **Buildable**: the 13+ downstream patches can be replayed on the new version's source tree (idempotently), and AICore compiles.
 2. **Numerically correct**: each task produces consistent outputs on CPU and GPU backends (parity gates).
 3. **No performance regression**: per task, per backend, latency/VRAM is not worse than the baseline beyond a threshold (default 5%).
 
@@ -176,6 +176,7 @@ GPU backend: **10 consecutive runs** without crashes, without DeviceLost, with n
 | **0.18.1 Vulkan DeviceLost** | SAM3 reproduces `vk::Device::waitForFences: ErrorDeviceLost` on all models/all sizes at 100%; YOLO multi-model sequential runs crash on the 2nd model | Upstream #26371-series fixes (FLOP-dependent submission strategy + driver-timeout avoidance) were merged since 0.19; measured to be completely gone on 0.21 |
 | **RMBG Vulkan conv2d assert** | Both 0.18.1 and 0.21 crash **identically** at `ggml-vulkan.cpp` `GGML_ASSERT(pipeline->parameter_count == descriptor_buffer_infos.size())` (conv2d dispatch) | Reproduced under identical conditions on both trees; a conv2d pipeline descriptor-count defect; RMBG Vulkan has never worked on this machine |
 | bench all-mode CPU phase too slow | SAM3 track median ~90s/run @ 4 threads | Use the single-backend selector (4th argument) to shorten acceptance |
+| **CUDA F16 conv_transpose abort** | YOLO on CUDA aborts at `conv2d-transpose.cu` `GGML_ASSERT(input->type == GGML_TYPE_F32 && dst->type == GGML_TYPE_F32)` | Upstream `ggml_cuda_conv_2d_transpose_p0` is F32-only and dispatched unconditionally in BOTH v0.18.1 (line 76) and v0.21.0 (line 70); the yolo_merged patch added F16 conv_transpose only on the Vulkan side. The one-click probe therefore measures `yolo_cpu` only; YOLO CUDA has never been exercised by the pipeline on either version |
 
 ## Release criteria (all must be satisfied before merging into the main repo)
 
@@ -191,5 +192,5 @@ GPU backend: **10 consecutive runs** without crashes, without DeviceLost, with n
 
 | Upgrade | Result | Notes |
 |---|---|---|
-| 0.18.1 → 0.21.0 | ✅ Release review passed | Fixed SAM3 Vulkan win_part silent skip (runtime probing on the AICore side) + DeviceLost (upstream fix); encode −6.4% / track −5.7% (Vulkan); YOLO CPU all models within ±1.3% (no regression confirmed by isolated re-measurement); RFDetr detect-total +1.3%; depth parity worst rel MAE 0.0065→0.0032 (51.6% improvement); aliked/lightglue parity+e2e passed on both trees; first valid SAM3 CPU-vs-Vulkan mask parity IoU 0.985 (gate relaxed 0.995→0.98, fp16 flash-attn vs f32 CPU); SAM3 model-lifecycle fix (shared_ptr-coupled `~sam3_model`); new `cuda_rope_dup_mode` patch for nvcc 11.8 (v0.21.0 rope.cu duplicate `mode` declaration) |
+| 0.18.1 → 0.21.0 | ✅ Release review passed | Fixed SAM3 Vulkan win_part silent skip (runtime probing on the AICore side) + DeviceLost (upstream fix); encode −6.4% / track −5.7% (Vulkan); YOLO CPU all models within ±1.3% (no regression confirmed by isolated re-measurement); RFDetr detect-total +1.3%; depth parity worst rel MAE 0.0065→0.0032 (51.6% improvement); aliked/lightglue parity+e2e passed on both trees; first valid SAM3 CPU-vs-Vulkan mask parity IoU 0.985 (gate relaxed 0.995→0.98, fp16 flash-attn vs f32 CPU); SAM3 model-lifecycle fix (shared_ptr-coupled `~sam3_model`); nvcc 11.8 rope.cu duplicate `mode` fix; the three CUDA patches consolidated into `cuda_merged/0001-cuda-downstream-fixes.patch` |
 | 0.18.1 → 0.22.0 | ❌ Not buildable | The `metal_merged` patch depends on `ggml-metal.metal`, which upstream has removed |

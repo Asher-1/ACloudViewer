@@ -474,7 +474,7 @@ ggml is an **ExternalProject** in this repo (`3rdparty/ggml/ggml.cmake`): every 
 6. Commit only the patch + manifest.yaml (plus any necessary ggml.cmake / AICore glue code); **never** commit sources under build*/ggml/
 ```
 
-Directory layout (manifest.yaml is the single source of truth; currently 15 patches; verify with `rg -n "file:" 3rdparty/ggml/patches/manifest.yaml`):
+Directory layout (manifest.yaml is the single source of truth; currently 13 patches; verify with `rg -n "file:" 3rdparty/ggml/patches/manifest.yaml`):
 
 ```
 3rdparty/ggml/patches/
@@ -484,7 +484,6 @@ Directory layout (manifest.yaml is the single source of truth; currently 15 patc
 ├── msvc_vulkan/0001-msvc-vulkan-hpp-compat.patch
 ├── cpu_all_variants/0001-cpu-all-variants-compiler-checks.patch
 ├── metal_merged/0001-metal-optimizations.patch
-├── cuda_mmq/0001-cuda-mmq-force-static.patch
 ├── vulkan_parallel/0001-vulkan-shaders-gen-skip-parallel-trycompile.patch
 ├── rmbg_merged/0001-rmbg-custom-ops.patch
 ├── rfdetr_merged/0001-ggml-cpu-fold-broadcast-iterations.patch
@@ -493,8 +492,7 @@ Directory layout (manifest.yaml is the single source of truth; currently 15 patc
 ├── trellis_merged/0001-ggml-cuda-cpy-q8_0.patch
 ├── igemm_fix/0001-igemm-plan-rebuild-guards.patch
 ├── glslc_fconvert/0001-pool-shaders-avoid-redundant-fconvert.patch
-├── cuda_mul_mat_f16_dst/0001-cuda-mul-mat-f16-dst.patch
-└── cuda_rope_dup_mode/0001-cuda-rope-duplicate-mode-declaration.patch
+└── cuda_merged/0001-cuda-downstream-fixes.patch   # mmq + mul_mat_f16_dst + rope_dup_mode
 ```
 
 #### Why this is required

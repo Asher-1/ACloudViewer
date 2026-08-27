@@ -418,6 +418,21 @@ target_include_directories(bench_sam3_backend_acceptance PRIVATE ${AICORE_TEST_I
 include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/AICoreCompileDefinitions.cmake)
 aicore_apply_compile_definitions(bench_sam3_backend_acceptance)
 cloudviewer_set_aicore_test_runtime_layout(bench_sam3_backend_acceptance)
+
+# Per-stage CPU/Vulkan divergence locator for the SAM3 ViT encoder. Manual
+# diagnostic (needs a local SAM3 GGUF + Vulkan GPU), not a CTest. Links
+# against the internal SAM3 C++ API via the aicore.exports.map whitelist.
+add_executable(cmp_sam3_vit_stages sam3/cmp_sam3_vit_stages.cpp)
+target_link_libraries(cmp_sam3_vit_stages PRIVATE AICore)
+target_compile_definitions(cmp_sam3_vit_stages PRIVATE SAM3_SHARED)
+if(NOT MSVC)
+    target_compile_options(cmp_sam3_vit_stages PRIVATE -Wall -Wextra -fPIC)
+    target_link_options(cmp_sam3_vit_stages PRIVATE "-no-pie")
+endif()
+target_include_directories(cmp_sam3_vit_stages PRIVATE ${AICORE_TEST_INC})
+target_include_directories(cmp_sam3_vit_stages PRIVATE ${AICORE_TEST_INC}/../src)
+aicore_apply_compile_definitions(cmp_sam3_vit_stages)
+cloudviewer_set_aicore_test_runtime_layout(cmp_sam3_vit_stages)
 aicore_add_trellis_capi_test(test_trellis_capi_contract)
 set_tests_properties(test_rmbg_capi_performance PROPERTIES
     LABELS "capi;model;gpu;performance")

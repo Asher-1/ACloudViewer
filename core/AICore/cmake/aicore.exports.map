@@ -2,6 +2,14 @@ AICORE_1 {
     global:
         aicore_*;
         _ZN6aicore5depth10ImageDepth*;
+        /* Internal SAM3 C++ API consumed by in-repo diagnostics
+           (cmp_sam3_vit_stages). SAM3_API already exports these on
+           Windows; keep the Linux .so parity with that surface. */
+        _Z*sam3_load_model*;
+        _Z*sam3_free_model*;
+        _Z*sam3_backend_name*;
+        _Z*sam3_get_model_tensor_info*;
+        _Z*sam3_test_run_vit*;
     local:
         *;
 };
