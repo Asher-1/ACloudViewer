@@ -61,6 +61,10 @@ RMBGLiveWidget::RMBGLiveWidget(QWidget* parent) : VideoPlaybackWidget(parent) {
 }
 
 RMBGLiveWidget::~RMBGLiveWidget() {
+    // Destruction guard (see ~VideoPlaybackWidget): this body runs before
+    // the base destructor, so drop outgoing connections before stopStream()
+    // emits streamStopped at ancestor-context slots.
+    disconnect(this, nullptr, nullptr, nullptr);
     stopStream();
     shutdownInferThread();
 }

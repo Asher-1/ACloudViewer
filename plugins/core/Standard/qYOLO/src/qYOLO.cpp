@@ -258,6 +258,9 @@ void qYOLO::executeTask(const YOLODialog::Settings& settings) {
     ws.confThres = settings.confThres;
     ws.iouThres = settings.iouThres;
     ws.topK = settings.topK;
+    // Open-vocabulary tabs (world/yoloe): class list + text encoder GGUF.
+    ws.classes = settings.classes;
+    ws.textModelPath = settings.textModelPath;
 
     m_currentSettings = settings;
     m_worker = new YOLOWorker(ws, this);
@@ -364,8 +367,15 @@ void qYOLO::addResultToDb(const YOLORunResult& result,
             if (m.w > 0 && m.h > 0 &&
                 m.bits.size() >= static_cast<qint64>(m.w) * m.h) {
                 QImage maskImage(m.w, m.h, QImage::Format_Grayscale8);
-                std::memcpy(maskImage.bits(), m.bits.constData(),
-                            static_cast<size_t>(m.w) * m.h);
+                /* Row-by-row copy: QImage scanlines are 32-bit aligned, so
+                 * for a width that is not a multiple of 4 bytesPerLine >
+                 * width and one contiguous memcpy shears the mask. */
+                for (int y = 0; y < m.h; ++y) {
+                    std::memcpy(
+                            maskImage.scanLine(y),
+                            m.bits.constData() + static_cast<qint64>(y) * m.w,
+                            static_cast<size_t>(m.w));
+                }
                 for (int b = 0; b < maskImage.sizeInBytes(); ++b) {
                     if (maskImage.bits()[b]) maskImage.bits()[b] = 255;
                 }

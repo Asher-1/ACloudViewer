@@ -102,13 +102,20 @@ public:
     void addPosPoint(const QPointF& p);
     void addNegPoint(const QPointF& p);
     void clearPoints();
-    void setBox(const QRectF& box);
+    /** Same as clearPoints() but keeps the confirmed box prompt: upstream
+     *  main_image.cpp stores pvs_box independently of the point prompts, so
+     *  collecting an exemplar must not drop a box drawn in Box (PVS) mode. */
+    void clearPointsKeepBox();
     bool hasBox() const { return m_hasBox; }
     QRectF box() const { return m_box; }
 
 signals:
     void pointAdded(int type);  // 0 = positive, 1 = negative
-    void boxDrawn();
+    /** Emitted on drag release with the drawn box (original image pixels).
+     *  Carries the box explicitly so Exemplar (PCS) collection never has to
+     *  read/write the PVS prompt-box slots (upstream main_image.cpp keeps
+     *  pos_exemplars and pvs_box as independent state). */
+    void boxDrawn(const QRectF& box);
     void imageDropped(const QString& path);
 
 protected:
@@ -224,7 +231,7 @@ private slots:
     void onWorkerLog(const QString& msg);
     void onWorkerResult(const SAM3WorkerResult& result);
     void onCanvasPoint(int type);
-    void onCanvasBox();
+    void onCanvasBox(QRectF box);
     void onModeChanged();
     void onDeviceChanged(int idx);
     void onTabChanged(int index);
@@ -313,6 +320,10 @@ private:
     /** Export the target tab's lastResult to the DB tree as a ccImage
      *  (defaults to the active tab). */
     void exportToDb(ImageTabUi* target = nullptr);
+    /** Mirror the target tab's per-instance masks into the DB tree as
+     *  grayscale ccImages (video-tab parity; SAM3 metadata attached).
+     *  Returns the number of images added (0 when no app interface). */
+    int exportMasksToDb(ImageTabUi* target = nullptr);
 
     // UI widgets (top bar)
     QTabWidget* m_tabs = nullptr;

@@ -25,7 +25,6 @@
 
 #include "aicore/runtime_capi.h"
 #include "common/ggml_backend_utils.hpp"
-#include "common/ggml_env_bridge.hpp"
 #include "tasks/gaussian/common.hpp"
 
 #if defined(AICORE_CUDA_STATIC_LINKED)
@@ -34,12 +33,6 @@
 
 namespace aicore {
 namespace gaussian {
-
-using aicore::apply_ggml_env_overrides;
-using aicore::GgmlEnvOverrides;
-using aicore::GgmlEnvSnapshot;
-using aicore::restore_ggml_env_snapshot;
-using aicore::take_ggml_env_snapshot;
 
 namespace {
 
@@ -71,31 +64,14 @@ bool engine_backend::init(const std::string& device_req, int n_threads) {
         name == "opencl" || name == "metal" || name == "sycl" ||
         name == "vulkan") {
         clear_sticky_cuda_errors();
-#ifdef __APPLE__
-        // ggml-metal's graph optimizer/fusion mis-handles the FreeSplatter
-        // graph; scope GGML_METAL_*_DISABLE to the backend-creation window
-        // via the ggml env bridge (the ONLY place AICore touches those
-        // variables), then restore the shell's values.
-        const bool disable_metal_opt =
+        // Interface-only control: the metal-optimizer disable scope lives in
+        // the common layer (ggml_common::resolve_gpu_group), so this task
+        // module carries no environment-mechanism references.
+        ggml_common::GpuResolveOptions gpu_opts;
+        gpu_opts.disable_metal_graph_opt =
                 (name == "metal" || name == "gpu" || name == "auto");
-        GgmlEnvSnapshot metal_env_snapshot;
-        if (disable_metal_opt) {
-            metal_env_snapshot =
-                    take_ggml_env_snapshot({"GGML_METAL_GRAPH_OPTIMIZE_DISABLE",
-                                            "GGML_METAL_FUSION_DISABLE"});
-            GgmlEnvOverrides disable;
-            disable.metal_graph_optimize_disable = true;
-            disable.metal_fusion_disable = true;
-            apply_ggml_env_overrides(disable);
-        }
-#endif
         ggml_common::GpuBackendGroup group =
-                ggml_common::resolve_gpu_group(device_req);
-#ifdef __APPLE__
-        if (disable_metal_opt) {
-            restore_ggml_env_snapshot(metal_env_snapshot);
-        }
-#endif
+                ggml_common::resolve_gpu_group(device_req, gpu_opts);
         if (!group.primary()) {
             if (name.empty() || name == "auto") {
                 return init("cpu", n_threads);

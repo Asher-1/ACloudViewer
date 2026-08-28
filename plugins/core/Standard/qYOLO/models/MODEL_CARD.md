@@ -5,18 +5,19 @@
 | Field        | Value                                                                 |
 |--------------|-----------------------------------------------------------------------|
 | Architecture | Ultralytics YOLO — YOLOv8 and YOLO26 families (GGUF export)           |
-| Task         | Object detection (COCO 80 classes), instance segmentation, metric depth |
-| Input        | RGB image letterboxed to the model's image size                       |
-| Output       | Detection boxes (class_id / score / box); instance masks (binary per-object); depth: per-pixel depth map in meters |
+| Task         | Object detection (COCO 80 classes), instance segmentation, metric depth, keypoint pose (COCO-17), oriented boxes (DOTA-15), classification (ImageNet-1000), semantic segmentation (Cityscapes-19), open-vocabulary detection/segmentation (YOLO-World / YOLOE, text towers included) |
+| Input        | RGB image letterboxed to the model's image size (classify: checkpoint-baked resize + center crop) |
+| Output       | Detection boxes (class_id / score / box); instance masks (binary per-object); depth: per-pixel depth map in meters; pose: boxes + 17 keypoints (x/y/visibility); obb: rotated boxes (cx/cy/w/h/angle); classify: softmax table; semantic: full-resolution class map; world/yoloe: detections (and masks) against the user's class list |
 | License      | [AGPL-3.0](https://github.com/ultralytics/ultralytics/blob/main/LICENSE) (Ultralytics) |
 | Source       | ultralytics-ggml conversion -> `yolo_gguf_models` release (hosted on cloudViewer_downloads) |
 
 ## Files
 
-**21 variants x 3 quantizations = 63 GGUF files** in the
+**61 variants x 3 quantizations = 183 GGUF files** in the
 [yolo_gguf_models release](https://github.com/Asher-1/cloudViewer_downloads/releases/tag/yolo_gguf_models).
 Filename pattern: `<variant>-<quant>.gguf` (e.g. `yolov8n-f16.gguf`,
-`yolov8n-seg-f16.gguf`, `yolo26n-depth-q8_0.gguf`).
+`yolov8n-seg-f16.gguf`, `yolo26n-depth-q8_0.gguf`,
+`yoloe-26n-seg-pf-q8_0.gguf`).
 
 | Variant family | Variants          | Task                | Head                                    | end2end |
 |----------------|-------------------|---------------------|-----------------------------------------|---------|
@@ -24,7 +25,20 @@ Filename pattern: `<variant>-<quant>.gguf` (e.g. `yolov8n-f16.gguf`,
 | YOLO26         | n / s / m / l / x | Detection (COCO 80) | end-to-end (NMS baked into the head)    | yes     |
 | YOLOv8-seg     | n / s / m / l / x | Segmentation        | classic + NMS + Proto                   | no      |
 | YOLO26-seg     | n / s / m / l / x | Segmentation        | end-to-end + Proto26                    | yes     |
-| YOLO26 depth   | yolo26n-depth     | Metric depth        | end-to-end                              | yes     |
+| YOLO26 depth   | n / s / m / l / x | Metric depth        | end-to-end (768 input)                  | yes     |
+| YOLO26 pose    | n / s / m / l / x | Keypoint pose       | Pose26 (RLE head, COCO-17)              | yes     |
+| YOLO26 obb     | n / s / m / l / x | Oriented boxes      | OBB26 (DOTA-15, raw radians)            | yes     |
+| YOLO26 sem     | n / s / m / l / x | Semantic seg        | Cityscapes-19 head (canvas/8 grid)      | yes     |
+| YOLO26 cls     | n / s / m / l / x | Classification      | ImageNet-1000 linear head (224 input)   | yes     |
+| YOLOv8-world   | s / m / l / x     | Open-vocab detect   | CLIP text-conditioned head (v3 graph)   | no      |
+| YOLOE-26-seg   | n / s / m / l / x (+ `-pf`) | Open-vocab segment | MobileCLIP text tower + reprta (v4 graph) | yes |
+| Text towers    | clip-ViT-B-32, mobileclip2_b | Text encoder | BPE + causal transformer (512-d L2-normalised embeddings) | — |
+
+The `-pf` (prompt-free) YOLOE variants derive the vocabulary from image
+features at runtime; the non-pf variants accept a plaintext class list
+encoded through the MobileCLIP tower. The text towers are selectable in the
+world / yoloe tabs' "Text model" combo (CLIP for World, MobileCLIP for
+YOLOE).
 
 ## Download
 

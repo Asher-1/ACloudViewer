@@ -141,6 +141,10 @@ private:
     void resetPrompts();
     /** Export the current frame result to the DB tree as a ccImage. */
     void exportCurrentFrameToDb();
+    /** Mirror the current frame's instance masks into the DB tree as
+     *  grayscale ccImages (one per instance, SAM3 metadata attached).
+     *  Returns the number of images added (0 when no app interface). */
+    int exportMasksToDb();
     /** (Re)fill the test-video picker from the extracted SAM3 dataset. */
     void populateTestVideoCombo();
     /** Open the video currently selected in the test-video picker. */

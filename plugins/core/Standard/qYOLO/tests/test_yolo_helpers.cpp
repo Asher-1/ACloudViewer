@@ -9,6 +9,7 @@
 
 #include <QGuiApplication>
 #include <QImage>
+#include <cstring>
 
 #include "YOLOModelCatalog.h"
 
@@ -115,36 +116,77 @@ TEST(YOLOHelpers, FilenameIsDepthDepth) {
 }
 
 TEST(YOLOHelpers, CatalogMirror) {
-    // 63 models = 21 variants (10 detection + 10 segmentation + 1 depth)
-    // x 3 quants (f32, f16, q8_0), mirroring the AICore catalog.
+    // 183 models = 61 variants (10 detect + 10 seg + 5 depth + 5 pose +
+    // 5 obb + 5 sem + 5 cls + 4 world + 10 yoloe + 2 text) x 3 quants
+    // (f32, f16, q8_0), mirroring the AICore catalog.
     const QVector<YOLOModelEntry> all = YOLOHelpers::catalogModels();
-    ASSERT_EQ(all.size(), 63);
-    // Each task tab filters on the GGUF task: pure detect / segment / depth.
+    ASSERT_EQ(all.size(), 183);
+    // Each task tab filters on its catalog role: pure detect / segment /
+    // depth, the new batch families, and the text-conditioned families.
     EXPECT_EQ(YOLOHelpers::detectionModels().size(), 30);
     EXPECT_EQ(YOLOHelpers::segmentModels().size(), 30);
-    EXPECT_EQ(YOLOHelpers::depthModels().size(), 3);
+    EXPECT_EQ(YOLOHelpers::depthModels().size(), 15);
+    EXPECT_EQ(YOLOHelpers::poseModels().size(), 15);
+    EXPECT_EQ(YOLOHelpers::obbModels().size(), 15);
+    EXPECT_EQ(YOLOHelpers::classifyModels().size(), 15);
+    EXPECT_EQ(YOLOHelpers::semanticModels().size(), 15);
+    EXPECT_EQ(YOLOHelpers::worldModels().size(), 12);
+    EXPECT_EQ(YOLOHelpers::yoloeModels().size(), 30);
+    EXPECT_EQ(YOLOHelpers::textModels().size(), 6);
     EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("detect")).size(), 30);
     EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("segment")).size(), 30);
-    EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("depth")).size(), 3);
-    EXPECT_TRUE(all.size() == YOLOHelpers::detectionModels().size() +
-                                      YOLOHelpers::segmentModels().size() +
-                                      YOLOHelpers::depthModels().size());
+    EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("depth")).size(), 15);
+    EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("pose")).size(), 15);
+    EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("obb")).size(), 15);
+    EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("classify")).size(), 15);
+    EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("semantic")).size(), 15);
+    EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("world")).size(), 12);
+    EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("yoloe")).size(), 30);
+    EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("text")).size(), 6);
+    int roleSum = YOLOHelpers::detectionModels().size() +
+                  YOLOHelpers::segmentModels().size() +
+                  YOLOHelpers::depthModels().size() +
+                  YOLOHelpers::poseModels().size() +
+                  YOLOHelpers::obbModels().size() +
+                  YOLOHelpers::classifyModels().size() +
+                  YOLOHelpers::semanticModels().size() +
+                  YOLOHelpers::worldModels().size() +
+                  YOLOHelpers::yoloeModels().size() +
+                  YOLOHelpers::textModels().size();
+    EXPECT_EQ(roleSum, all.size());  // the roles partition the catalog
     for (const YOLOModelEntry& e : YOLOHelpers::depthModels()) {
         EXPECT_TRUE(e.depthCapable);
         EXPECT_EQ(e.task, QStringLiteral("depth"));
     }
     for (const YOLOModelEntry& e : YOLOHelpers::detectionModels()) {
         EXPECT_EQ(e.task, QStringLiteral("detect"));
+        EXPECT_FALSE(e.textInput);  // closed-set only
     }
     for (const YOLOModelEntry& e : YOLOHelpers::segmentModels()) {
         EXPECT_EQ(e.task, QStringLiteral("segment"));
         EXPECT_FALSE(e.depthCapable);
+        EXPECT_FALSE(e.textInput);
+    }
+    for (const YOLOModelEntry& e : YOLOHelpers::worldModels()) {
+        EXPECT_TRUE(e.textInput);
+        EXPECT_EQ(e.task, QStringLiteral("detect"));
+    }
+    for (const YOLOModelEntry& e : YOLOHelpers::yoloeModels()) {
+        EXPECT_TRUE(e.textInput);
+        EXPECT_EQ(e.task, QStringLiteral("segment"));
+    }
+    for (const YOLOModelEntry& e : YOLOHelpers::textModels()) {
+        EXPECT_TRUE(e.textInput);
+        EXPECT_EQ(e.task, QStringLiteral("text"));
     }
 
     bool foundV8Nano = false;
     bool found26Nano = false;
     bool foundDepth = false;
     bool foundSeg = false;
+    bool foundWorld = false;
+    bool foundYoloe = false;
+    bool foundText = false;
     for (const YOLOModelEntry& e : all) {
         EXPECT_FALSE(e.filename.isEmpty());
         EXPECT_TRUE(e.downloadUrl.startsWith(QStringLiteral("https://")));
@@ -173,11 +215,28 @@ TEST(YOLOHelpers, CatalogMirror) {
             EXPECT_EQ(e.task, QStringLiteral("segment"));
             EXPECT_FALSE(e.depthCapable);
         }
+        if (e.filename == QStringLiteral("yolov8s-world-f16.gguf")) {
+            foundWorld = true;
+            EXPECT_TRUE(e.textInput);
+            EXPECT_EQ(e.task, QStringLiteral("detect"));
+        }
+        if (e.filename == QStringLiteral("yoloe-26n-seg-f16.gguf")) {
+            foundYoloe = true;
+            EXPECT_TRUE(e.textInput);
+            EXPECT_EQ(e.task, QStringLiteral("segment"));
+        }
+        if (e.filename == QStringLiteral("mobileclip2_b-f16.gguf")) {
+            foundText = true;
+            EXPECT_EQ(e.task, QStringLiteral("text"));
+        }
     }
     EXPECT_TRUE(foundV8Nano);
     EXPECT_TRUE(found26Nano);
     EXPECT_TRUE(foundDepth);
     EXPECT_TRUE(foundSeg);
+    EXPECT_TRUE(foundWorld);
+    EXPECT_TRUE(foundYoloe);
+    EXPECT_TRUE(foundText);
 
     YOLOModelEntry entry;
     EXPECT_TRUE(YOLOHelpers::findModelByFilename(
@@ -198,6 +257,71 @@ TEST(YOLOHelpers, ModelDisplayLabelDoesNotDuplicateQuantNote) {
 
     entry.displayName = QStringLiteral("YOLOv8 Nano");
     EXPECT_EQ(YOLOHelpers::modelDisplayLabel(entry).count(entry.quantNote), 1);
+}
+
+TEST(YOLOHelpers, DrawPoseProducesVisibleOverlay) {
+    // A pose set drawn on a copy must visibly change the image (skeleton
+    // lines + keypoints + box) — guards against an empty-overlay regression
+    // ("pose results not visualized").
+    QImage img(320, 240, QImage::Format_RGB888);
+    img.fill(Qt::black);
+    const QImage before = img.copy();
+
+    YOLOKeypointSet set;
+    set.det.classId = 0;
+    set.det.className = QStringLiteral("person");
+    set.det.score = 0.9f;
+    set.det.x1 = 40;
+    set.det.y1 = 40;
+    set.det.x2 = 200;
+    set.det.y2 = 220;
+    for (int k = 0; k < 17; ++k) {
+        YOLOKeypoint kp;
+        kp.x = 60.0f + (k % 5) * 20.0f;
+        kp.y = 60.0f + (k / 5) * 30.0f;
+        kp.visibility = 0.9f;
+        set.kpts.append(kp);
+    }
+    YOLOHelpers::drawPose(&img, {set});
+
+    ASSERT_TRUE(img.constBits() != before.constBits() ||
+                std::memcmp(img.constBits(), before.constBits(),
+                            img.sizeInBytes()) != 0);
+    // Sample the skeleton area: at least one non-black pixel inside the box.
+    bool lit = false;
+    for (int y = 45; y < 215 && !lit; ++y) {
+        for (int x = 45; x < 195 && !lit; ++x) {
+            if (img.pixelColor(x, y) != Qt::black) lit = true;
+        }
+    }
+    EXPECT_TRUE(lit);
+}
+
+TEST(YOLOHelpers, DrawObbProducesVisibleOverlay) {
+    QImage img(320, 240, QImage::Format_RGB888);
+    img.fill(Qt::black);
+    const QImage before = img.copy();
+
+    YOLOObbBox b;
+    b.cx = 160;
+    b.cy = 120;
+    b.w = 120;
+    b.h = 60;
+    b.angle = 0.5f;  // ~28.6 degrees
+    b.score = 0.8f;
+    b.classId = 3;
+    b.className = QStringLiteral("plane");
+    YOLOHelpers::drawObb(&img, {b});
+
+    ASSERT_TRUE(std::memcmp(img.constBits(), before.constBits(),
+                            img.sizeInBytes()) != 0);
+    bool lit = false;
+    for (int y = 2; y < 238 && !lit; ++y) {
+        for (int x = 2; x < 318 && !lit; ++x) {
+            if (img.pixelColor(x, y) != Qt::black) lit = true;
+        }
+    }
+    EXPECT_TRUE(lit);
 }
 
 TEST(YOLOHelpers, PackedRgb888RemovesRowPadding) {

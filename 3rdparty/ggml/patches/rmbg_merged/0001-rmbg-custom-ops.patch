@@ -1225,7 +1225,7 @@ index 9bde34b..a7c9297 100644
 +                state.KW, state.KH, state.aligned, 0, 16, 16 }; \
 +            ggml_vk_create_pipeline( \
 +                device, c.second, "conv2d" #type_suffix "_scalar", \
-+                conv2d##type_suffix##spv_suffix##_len, conv2d##type_suffix##spv_suffix##_data, "main", 3, \
++                conv2d##type_suffix##spv_suffix##_len, conv2d##type_suffix##spv_suffix##_data, "main", 4, \
 +                sizeof(vk_op_conv2d_push_constants), { scalar_BS.K, 1, 1 }, scalar_spec_constants, \
 +                1, true, scalar_use_collectives != 0, 0); \
 +        }

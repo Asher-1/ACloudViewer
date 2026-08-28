@@ -41,14 +41,52 @@
 #endif
 
 namespace {
-constexpr const char* kYOLOTestImage = "000000397133.jpg";
+// Per-task default sample image from the shared test-data cache: the
+// classification tab wants a single-subject photo (cat.jpg) and OBB models
+// are trained on DOTA aerial imagery (aerial_airport.jpg); every other
+// task starts with the COCO street scene.
+QString testImageForTask(const QString& task) {
+    if (task == QStringLiteral("classify")) return QStringLiteral("cat.jpg");
+    if (task == QStringLiteral("obb"))
+        return QStringLiteral("aerial_airport.jpg");
+    return QStringLiteral("000000397133.jpg");
+}
+// QListWidgetItem data role carrying the QStackedWidget page index behind
+// a task-list entry (section headers are disabled and carry no data).
+constexpr int kTaskStackIndexRole = Qt::UserRole + 10;
 // QListWidgetItem data role carrying the full-resolution ccImage for the
 // click-to-enlarge preview (the list icon is only a scaled thumbnail).
 constexpr int kDbFullImageRole = Qt::UserRole + 1;
+// One task panel per family, in tab order. taskModels() maps each id onto
+// its catalog role, so every tab only offers its own family's models.
+QStringList kPanelTasks() {
+    return {QStringLiteral("detect"),   QStringLiteral("segment"),
+            QStringLiteral("depth"),    QStringLiteral("pose"),
+            QStringLiteral("obb"),      QStringLiteral("classify"),
+            QStringLiteral("semantic"), QStringLiteral("world"),
+            QStringLiteral("yoloe")};
+}
+// Tabs whose models carry detection thresholds (Conf/IoU/Top-K).
+bool taskHasThresholds(const QString& task) {
+    return task != QStringLiteral("depth") &&
+           task != QStringLiteral("classify") &&
+           task != QStringLiteral("semantic");
+}
+// Open-vocabulary tabs (class list + text-encoder model).
+bool taskHasText(const QString& task) {
+    return task == QStringLiteral("world") || task == QStringLiteral("yoloe");
+}
+// Default text-encoder GGUF per open-vocabulary family (world detects with
+// CLIP embeddings; yoloe segments with MobileCLIP embeddings).
+QString defaultTextModelForTask(const QString& task) {
+    return task == QStringLiteral("yoloe")
+                   ? QStringLiteral("mobileclip2_b-f16.gguf")
+                   : QStringLiteral("clip-ViT-B-32-f16.gguf");
+}
 }  // namespace
 
 YOLODialog::YOLODialog(QWidget* parent) : QDialog(parent) {
-    setWindowTitle(tr("YOLO Detect, Segment & Depth"));
+    setWindowTitle(tr("YOLO Inference"));
     setupUi();
     populateModelCombo();
     loadSettings();
@@ -75,20 +113,83 @@ QString YOLOTaskPanel::modelPath() const {
     return dir + QDir::separator() + filename;
 }
 
+QString YOLOTaskPanel::textModelPath() const {
+    const QString filename = textModelCombo
+                                     ? textModelCombo->currentData().toString()
+                                     : QString();
+    if (filename.isEmpty()) return QString();
+    if (QFileInfo::exists(filename)) return filename;
+    const QString dir = YOLOHelpers::modelCacheDir();
+    if (dir.isEmpty()) return QString();
+    return dir + QDir::separator() + filename;
+}
+
 void YOLODialog::setupUi() {
     auto* rootLayout = new QVBoxLayout(this);
     ecvAICoreUi::setupTabLayout(rootLayout);
-    m_tabWidget = new QTabWidget(this);
-    ecvAICoreUi::styleTabWidget(m_tabWidget);
-    rootLayout->addWidget(m_tabWidget);
 
-    // ---- Per-task tabs (each with its own model combo + thresholds) -----
-    const QStringList taskOrder = {QStringLiteral("detect"),
-                                   QStringLiteral("segment"),
-                                   QStringLiteral("depth")};
+    // Global runtime row: device / threads render once above the task
+    // list — they configure every task panel and the Live widget alike.
+    auto* runtimeRow = new QHBoxLayout;
+    runtimeRow->setSpacing(ecvAICoreUi::hSpacing());
+    runtimeRow->addWidget(ecvAICoreUi::makeLabel(tr("Device:")));
+    m_deviceCombo = new QComboBox(this);
+    m_deviceCombo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    m_deviceCombo->setMaximumWidth(ecvAICoreUi::dpiScaled(220));
+#ifdef AICore_ENABLED
+    const int nDev = aicore_device_count();
+    for (int i = 0; i < nDev; ++i) {
+        const aicore_device_info* dev = aicore_device_at(i);
+        if (!dev || !dev->id) continue;
+        m_deviceCombo->addItem(QString::fromUtf8(dev->label),
+                               QString::fromUtf8(dev->id));
+        if (dev->is_default) m_deviceCombo->setCurrentIndex(i);
+    }
+#endif
+    runtimeRow->addWidget(m_deviceCombo);
+    runtimeRow->addWidget(ecvAICoreUi::makeLabel(tr("Threads:")));
+    m_threads = new QSpinBox(this);
+    m_threads->setRange(0, 64);
+    m_threads->setValue(0);
+    m_threads->setToolTip(tr("0 = auto"));
+    runtimeRow->addWidget(m_threads);
+    runtimeRow->addStretch();
+    rootLayout->addLayout(runtimeRow);
+
+    // Body: grouped task list on the left, one panel per task on the
+    // right — the list/stack navigation keeps every task visible and
+    // reachable without a tab-bar overflow.
+    auto* bodyRow = new QHBoxLayout;
+    bodyRow->setSpacing(ecvAICoreUi::hSpacing());
+    m_taskList = new QListWidget(this);
+    m_taskList->setFixedWidth(ecvAICoreUi::dpiScaled(190));
+    m_taskList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_taskList->setStyleSheet(
+            QStringLiteral("QListWidget { background: palette(base); border: "
+                           "1px solid palette(mid); border-radius: 3px; "
+                           "padding: 2px; }"
+                           "QListWidget::item { padding: 4px 6px; "
+                           "border-radius: 3px; }"
+                           "QListWidget::item:selected { background: "
+                           "palette(highlight); color: "
+                           "palette(highlighted-text); }"));
+    bodyRow->addWidget(m_taskList);
+
+    m_taskStack = new QStackedWidget(this);
+    bodyRow->addWidget(m_taskStack, 1);
+    rootLayout->addLayout(bodyRow, 1);
+
+    // ---- Per-task panels (each with its own model combo + thresholds) ---
+    const QStringList taskOrder = kPanelTasks();
     const QStringList tabTitles = {tr("Object Detection"),
                                    tr("Instance Segmentation"),
-                                   tr("Metric Depth")};
+                                   tr("Metric Depth"),
+                                   tr("Pose (Keypoints)"),
+                                   tr("Oriented Boxes"),
+                                   tr("Classification"),
+                                   tr("Semantic Segmentation"),
+                                   tr("Open-Vocab Detect (World)"),
+                                   tr("Open-Vocab Segment (YOLOE)")};
 
     for (int i = 0; i < taskOrder.size(); ++i) {
         YOLOTaskPanel panel;
@@ -116,27 +217,6 @@ void YOLODialog::setupUi() {
                                         QSizePolicy::Fixed);
         modelRow->addWidget(panel.modelCombo, 1);
         configCol->addLayout(modelRow);
-
-        // Runtime params row: device / threads — rendered inside the tab,
-        // directly under the model row they configure (shared values kept
-        // in sync across tabs below).
-        panel.deviceCombo = new QComboBox(panel.tab);
-#ifdef AICore_ENABLED
-        const int nDev = aicore_device_count();
-        for (int i = 0; i < nDev; ++i) {
-            const aicore_device_info* dev = aicore_device_at(i);
-            if (!dev || !dev->id) continue;
-            panel.deviceCombo->addItem(QString::fromUtf8(dev->label),
-                                       QString::fromUtf8(dev->id));
-            if (dev->is_default) panel.deviceCombo->setCurrentIndex(i);
-        }
-#endif
-        panel.threads = new QSpinBox(panel.tab);
-        panel.threads->setRange(0, 64);
-        panel.threads->setValue(0);
-        panel.threads->setToolTip(tr("0 = auto"));
-        configCol->addWidget(ecvAICoreUi::makeRuntimeRow(
-                panel.deviceCombo, panel.threads, panel.tab));
 
         // Threshold row: Conf / IoU / Top-K (hidden for metric-depth models,
         // which have no detection thresholds).
@@ -168,6 +248,56 @@ void YOLODialog::setupUi() {
         thresholdLayout->addWidget(panel.topK);
         thresholdLayout->addStretch();
         configCol->addWidget(panel.thresholdRow);
+
+        // Open-vocabulary row (world/yoloe tabs): class list + text-model
+        // combo, following the qSAM3 text-prompt interaction — the detector
+        // and the text encoder are picked separately, and the text model
+        // defaults to the family's tower (CLIP for World, MobileCLIP for
+        // YOLOE). Classes are plain text, comma-separated.
+        panel.textRow = new QWidget(panel.tab);
+        auto* textLayout = new QVBoxLayout(panel.textRow);
+        textLayout->setContentsMargins(0, 0, 0, 0);
+        textLayout->setSpacing(ecvAICoreUi::tightHSpacing());
+        auto* classesRow = new QHBoxLayout;
+        classesRow->setSpacing(ecvAICoreUi::hSpacing());
+        classesRow->addWidget(ecvAICoreUi::makeLabel(tr("Classes:")));
+        panel.classesEdit = new QLineEdit(panel.textRow);
+        panel.classesEdit->setPlaceholderText(tr("person, bus, car"));
+        panel.classesEdit->setToolTip(
+                tr("Comma-separated open-vocabulary class names ("
+                   "leave empty to use the vocabulary stored in the "
+                   "checkpoint)"));
+        classesRow->addWidget(panel.classesEdit, 1);
+        textLayout->addLayout(classesRow);
+        auto* textModelRow = new QHBoxLayout;
+        textModelRow->setSpacing(ecvAICoreUi::hSpacing());
+        textModelRow->addWidget(ecvAICoreUi::makeLabel(tr("Text model:")));
+        panel.textModelCombo = new QComboBox(panel.textRow);
+        panel.textModelCombo->setMinimumContentsLength(16);
+        panel.textModelCombo->setSizeAdjustPolicy(
+                QComboBox::AdjustToMinimumContentsLengthWithIcon);
+        panel.textModelCombo->setSizePolicy(QSizePolicy::Expanding,
+                                            QSizePolicy::Fixed);
+        for (const YOLOModelEntry& e : YOLOHelpers::textModels()) {
+            // Family lock: the detector GGUF's text tower is fixed at
+            // conversion time (YOLO-World embeddings live in CLIP space,
+            // YOLOE in MobileCLIP2 space — docs.ultralytics.com; mixing
+            // them fails at encode time). Only offer the matching tower.
+            const bool clip_ok =
+                    panel.task == QStringLiteral("world") &&
+                    e.filename.startsWith(QStringLiteral("clip-ViT-B-32"));
+            const bool mc_ok =
+                    panel.task == QStringLiteral("yoloe") &&
+                    e.filename.startsWith(QStringLiteral("mobileclip2_b"));
+            if (clip_ok || mc_ok) {
+                panel.textModelCombo->addItem(YOLOHelpers::modelDisplayLabel(e),
+                                              e.filename);
+            }
+        }
+        selectDefaultTextModel(panel);
+        textModelRow->addWidget(panel.textModelCombo, 1);
+        textLayout->addLayout(textModelRow);
+        configCol->addWidget(panel.textRow);
 
         // Custom GGUF row (shown only when a non-catalog file is picked).
         panel.customModelRow = new QWidget(panel.tab);
@@ -269,9 +399,24 @@ void YOLODialog::setupUi() {
         actionRow->addWidget(panel.addAnnotatedCheck);
         actionRow->addStretch();
         panel.testDataBtn = ecvAICoreUi::makeSampleDataBtn(panel.tab);
-        panel.testDataBtn->setToolTip(
-                tr("Load images/000000397133.jpg from the shared test-data "
-                   "cache"));
+        // Per-task sample image: classification loads the single-subject
+        // cat.jpg, OBB loads the DOTA-style aerial_airport.jpg, and every
+        // other task loads the COCO street scene 000000397133.jpg.
+        QStringList tip = {
+                tr("Load this task's default sample image from the shared "
+                   "test-data cache")};
+        if (panel.task == QStringLiteral("obb")) {
+            tip << tr(
+                    "(aerial_airport.jpg — OBB models are trained on DOTA "
+                    "aerial imagery)");
+        } else if (panel.task == QStringLiteral("classify")) {
+            tip << tr(
+                    "(cat.jpg — a single-subject photo classifies more "
+                    "meaningfully than a multi-object street scene)");
+        } else {
+            tip << tr("(000000397133.jpg — a multi-object street scene)");
+        }
+        panel.testDataBtn->setToolTip(tip.join(QChar(' ')));
         connect(panel.testDataBtn, &QPushButton::clicked, this,
                 [this]() { requestTestData(TestDataTarget::Image); });
         actionRow->addWidget(panel.testDataBtn);
@@ -291,7 +436,7 @@ void YOLODialog::setupUi() {
                 &YOLODialog::onCancel);
 
         m_panels.append(panel);
-        m_tabWidget->addTab(panel.tab, tabTitles[i]);
+        m_taskStack->addWidget(panel.tab);
     }
 
     // ---- Live (camera / video) tab ----------------------------------------
@@ -325,7 +470,7 @@ void YOLODialog::setupUi() {
     liveBtnRow->addStretch();
     liveLayout->addLayout(liveBtnRow);
 
-    m_tabWidget->addTab(m_liveTab, tr("Live (camera / video)"));
+    m_taskStack->addWidget(m_liveTab);
 
     connect(m_liveStartBtn, &QPushButton::clicked, this,
             &YOLODialog::onLiveStart);
@@ -352,36 +497,18 @@ void YOLODialog::setupUi() {
         }
     });
 
-    // The Live tab lists ALL catalog models (any task) and shares the
-    // device/threads controls with the batch tabs (each task tab renders
-    // its own instance; any change propagates to the other panels and to
-    // the Live widget).
+    // The Live page lists ALL catalog models (any task); device / threads
+    // live in the global runtime row above the task list (one shared
+    // instance — no cross-panel sync needed).
     m_liveWidget->populateAllModels();
-    if (!m_panels.isEmpty()) {
-        m_liveWidget->rebuildDeviceCombo(m_panels[0].deviceCombo);
-    }
-    for (YOLOTaskPanel& panel : m_panels) {
-        connect(panel.deviceCombo,
-                QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-                [this, &panel](int) {
-                    const QString device =
-                            panel.deviceCombo->currentData().toString();
-                    for (YOLOTaskPanel& other : m_panels) {
-                        if (&other == &panel) continue;
-                        const int idx = other.deviceCombo->findData(device);
-                        if (idx >= 0) other.deviceCombo->setCurrentIndex(idx);
-                    }
-                    m_liveWidget->setDevice(device);
-                });
-        connect(panel.threads, QOverload<int>::of(&QSpinBox::valueChanged),
-                this, [this, &panel](int v) {
-                    for (YOLOTaskPanel& other : m_panels) {
-                        if (&other == &panel) continue;
-                        other.threads->setValue(v);
-                    }
-                    m_liveWidget->setThreads(v);
-                });
-    }
+    m_liveWidget->rebuildDeviceCombo(m_deviceCombo);
+    connect(m_deviceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, [this](int) {
+                m_liveWidget->setDevice(
+                        m_deviceCombo->currentData().toString());
+            });
+    connect(m_threads, QOverload<int>::of(&QSpinBox::valueChanged), this,
+            [this](int v) { m_liveWidget->setThreads(v); });
     connect(m_liveWidget, &YOLOLiveWidget::modelSelectionChanged, this,
             [this](const QString& filename) {
                 // Keep the matching batch tab's model in sync so the two
@@ -394,24 +521,59 @@ void YOLODialog::setupUi() {
             });
     connect(m_liveWidget, &YOLOLiveWidget::deviceSelectionChanged, this,
             [this](const QString& device) {
-                for (YOLOTaskPanel& panel : m_panels) {
-                    const int index = panel.deviceCombo->findData(device);
-                    if (index >= 0 &&
-                        index != panel.deviceCombo->currentIndex()) {
-                        panel.deviceCombo->setCurrentIndex(index);
-                    }
-                }
+                const int index = m_deviceCombo->findData(device);
+                if (index >= 0) m_deviceCombo->setCurrentIndex(index);
             });
     connect(m_liveWidget, &YOLOLiveWidget::threadCountChanged, this,
             [this](int threads) {
-                for (YOLOTaskPanel& panel : m_panels) {
-                    if (panel.threads->value() != threads) {
-                        panel.threads->setValue(threads);
-                    }
-                }
+                if (m_threads->value() != threads) m_threads->setValue(threads);
             });
     connect(m_liveWidget, &YOLOLiveWidget::captureToDbRequested, this,
             &YOLODialog::onLiveCapture);
+
+    // ---- Task list entries ------------------------------------------------
+    // Grouped navigation (section headers are disabled items): closed-set
+    // tasks, open-vocabulary families, then the capture page.
+    auto addSectionHeader = [this](const QString& title) {
+        auto* header = new QListWidgetItem(title, m_taskList);
+        header->setFlags(Qt::NoItemFlags);
+        QFont bold = header->font();
+        bold.setBold(true);
+        header->setFont(bold);
+        header->setForeground(palette().mid());
+        header->setToolTip(title);
+    };
+    auto addTaskItem = [this](const QString& title, int stackIndex) {
+        auto* item = new QListWidgetItem(title, m_taskList);
+        item->setData(kTaskStackIndexRole, stackIndex);
+        item->setToolTip(title);
+    };
+    addSectionHeader(tr("Closed-set tasks"));
+    bool openVocabHeaderAdded = false;
+    for (int i = 0; i < taskOrder.size(); ++i) {
+        if (taskHasText(taskOrder[i]) && !openVocabHeaderAdded) {
+            addSectionHeader(tr("Open-vocabulary"));
+            openVocabHeaderAdded = true;
+        }
+        addTaskItem(tabTitles[i], i);
+    }
+    addSectionHeader(tr("Capture"));
+    addTaskItem(tr("Live (camera / video)"), m_taskStack->count() - 1);
+
+    connect(m_taskList, &QListWidget::currentRowChanged, this, [this](int row) {
+        QListWidgetItem* item = m_taskList->item(row);
+        if (!item) return;
+        const QVariant page = item->data(kTaskStackIndexRole);
+        if (!page.isValid()) return;
+        m_taskStack->setCurrentIndex(page.toInt());
+    });
+    // Select the first selectable entry (row 0 is a section header).
+    for (int row = 0; row < m_taskList->count(); ++row) {
+        if (m_taskList->item(row)->data(kTaskStackIndexRole).isValid()) {
+            m_taskList->setCurrentRow(row);
+            break;
+        }
+    }
     connect(m_liveWidget, &YOLOLiveWidget::depthCaptureToDbRequested, this,
             &YOLODialog::onLiveDepthCapture);
 
@@ -495,12 +657,20 @@ void YOLODialog::setupUi() {
 
 void YOLODialog::setAppInterface(ecvMainAppInterface* app) { m_app = app; }
 
+void YOLODialog::selectDefaultTextModel(YOLOTaskPanel& panel) const {
+    if (!panel.textModelCombo) return;
+    // Keep a valid explicit selection; only fill the default when nothing
+    // (or a non-catalog entry) is selected.
+    if (!panel.textModelCombo->currentData().toString().isEmpty()) return;
+    const QString preferred = defaultTextModelForTask(panel.task);
+    const int idx = panel.textModelCombo->findData(preferred);
+    if (idx >= 0) panel.textModelCombo->setCurrentIndex(idx);
+}
+
 void YOLODialog::loadSettings() {
     QSettings settings;
     settings.beginGroup(QStringLiteral("qYOLO"));
-    const QStringList tasks = {QStringLiteral("detect"),
-                               QStringLiteral("segment"),
-                               QStringLiteral("depth")};
+    const QStringList tasks = kPanelTasks();
     for (int i = 0; i < m_panels.size() && i < tasks.size(); ++i) {
         YOLOTaskPanel& panel = m_panels[i];
         const QString modelFilename =
@@ -531,25 +701,41 @@ void YOLODialog::loadSettings() {
             m_previewLabel = panel.previewLabel;
             updateImagePreview();
         }
+        if (panel.classesEdit) {
+            panel.classesEdit->setText(
+                    settings.value(QStringLiteral("classes/") + tasks[i])
+                            .toString());
+        }
+        if (panel.textModelCombo) {
+            const QString textModelFilename =
+                    settings.value(QStringLiteral("textModel/") + tasks[i])
+                            .toString();
+            if (!textModelFilename.isEmpty()) {
+                const int idx =
+                        panel.textModelCombo->findData(textModelFilename);
+                if (idx >= 0) panel.textModelCombo->setCurrentIndex(idx);
+            }
+            selectDefaultTextModel(panel);
+        }
     }
+    // Device/threads are global controls rendered once above the task
+    // list.
     const QString device =
             settings.value(QStringLiteral("device"), QStringLiteral("auto"))
                     .toString();
     const int threads = settings.value(QStringLiteral("threads"), 0).toInt();
-    for (YOLOTaskPanel& panel : m_panels) {
-        const int idx = panel.deviceCombo->findData(device);
-        if (idx >= 0) panel.deviceCombo->setCurrentIndex(idx);
-        panel.threads->setValue(threads);
+    if (!device.isEmpty()) {
+        const int idx = m_deviceCombo->findData(device);
+        if (idx >= 0) m_deviceCombo->setCurrentIndex(idx);
     }
+    m_threads->setValue(threads);
     settings.endGroup();
 }
 
 void YOLODialog::saveSettings() const {
     QSettings settings;
     settings.beginGroup(QStringLiteral("qYOLO"));
-    const QStringList tasks = {QStringLiteral("detect"),
-                               QStringLiteral("segment"),
-                               QStringLiteral("depth")};
+    const QStringList tasks = kPanelTasks();
     for (int i = 0; i < m_panels.size() && i < tasks.size(); ++i) {
         const YOLOTaskPanel& panel = m_panels[i];
         settings.setValue(QStringLiteral("modelFilename/") + tasks[i],
@@ -564,15 +750,19 @@ void YOLODialog::saveSettings() const {
                           panel.addAnnotatedCheck->isChecked());
         settings.setValue(QStringLiteral("imagePath/") + tasks[i],
                           panel.imagePath->text());
+        if (panel.classesEdit) {
+            settings.setValue(QStringLiteral("classes/") + tasks[i],
+                              panel.classesEdit->text());
+        }
+        if (panel.textModelCombo) {
+            settings.setValue(QStringLiteral("textModel/") + tasks[i],
+                              panel.textModelCombo->currentData().toString());
+        }
     }
-    // Device/threads are shared across the task panels (kept in sync);
-    // persist from the first panel.
-    if (!m_panels.isEmpty()) {
-        settings.setValue(QStringLiteral("device"),
-                          m_panels[0].deviceCombo->currentData().toString());
-        settings.setValue(QStringLiteral("threads"),
-                          m_panels[0].threads->value());
-    }
+    // Device/threads are global controls; persist them directly.
+    settings.setValue(QStringLiteral("device"),
+                      m_deviceCombo->currentData().toString());
+    settings.setValue(QStringLiteral("threads"), m_threads->value());
     settings.endGroup();
 }
 
@@ -580,9 +770,7 @@ QString YOLODialog::modelCacheDir() { return YOLOHelpers::modelCacheDir(); }
 
 void YOLODialog::populateModelCombo(const QString& keepFilename) {
     // Each task panel lists only its own task's catalog models.
-    const QStringList tasks = {QStringLiteral("detect"),
-                               QStringLiteral("segment"),
-                               QStringLiteral("depth")};
+    const QStringList tasks = kPanelTasks();
     for (int i = 0; i < m_panels.size() && i < tasks.size(); ++i) {
         YOLOTaskPanel& panel = m_panels[i];
         const QVector<YOLOModelEntry> models =
@@ -629,13 +817,20 @@ void YOLODialog::refreshModelList() {
 }
 
 YOLOTaskPanel* YOLODialog::currentTaskPanel() const {
-    return panelForTab(m_tabWidget->currentWidget());
+    if (!m_taskStack) return nullptr;
+    QWidget* page = m_taskStack->currentWidget();
+    for (const YOLOTaskPanel& panel : m_panels) {
+        if (panel.tab == page) {
+            // const_cast: callers expect a mutable panel (they set controls).
+            return const_cast<YOLOTaskPanel*>(&panel);
+        }
+    }
+    return nullptr;
 }
 
-YOLOTaskPanel* YOLODialog::panelForTab(QWidget* tab) const {
+YOLOTaskPanel* YOLODialog::panelForTask(const QString& task) const {
     for (const YOLOTaskPanel& panel : m_panels) {
-        if (panel.tab == tab) {
-            // const_cast: callers expect a mutable panel (they set controls).
+        if (panel.task == task) {
             return const_cast<YOLOTaskPanel*>(&panel);
         }
     }
@@ -673,8 +868,33 @@ void YOLODialog::applyPanelVisibility(YOLOTaskPanel& panel) {
                     !YOLOHelpers::findModelByFilename(filename, nullptr);
     panel.customModelRow->setVisible(isCustom);
 
-    // Threshold row visible for detect/segment, hidden for depth.
-    panel.thresholdRow->setVisible(panel.task != QStringLiteral("depth"));
+    // Threshold row visible for the box/conf-driven tasks (detect, segment,
+    // pose, obb, world, yoloe); depth/classify/semantic have none.
+    panel.thresholdRow->setVisible(taskHasThresholds(panel.task));
+    // Text row visible only for the open-vocabulary families; keep the
+    // family-default text tower selected.
+    if (panel.textRow) {
+        panel.textRow->setVisible(taskHasText(panel.task));
+        if (taskHasText(panel.task)) selectDefaultTextModel(panel);
+        // Prompt-free YOLOE checkpoints match regions against the built-in
+        // 4585-entry vocabulary (LRPC) and REJECT set_classes outright
+        // (docs.ultralytics.com AssertionError) — disable the class list
+        // and the text tower for them.
+        const QString sel = panel.modelCombo->currentData().toString();
+        const bool prompt_free = sel.contains(QStringLiteral("-pf-")) ||
+                                 sel.contains(QStringLiteral("-pf."));
+        if (panel.classesEdit) {
+            panel.classesEdit->setEnabled(!prompt_free);
+            panel.classesEdit->setToolTip(
+                    prompt_free
+                            ? tr("Prompt-free checkpoints use the built-in "
+                                 "vocabulary and do not accept a class list")
+                            : QString());
+        }
+        if (panel.textModelCombo) {
+            panel.textModelCombo->setEnabled(!prompt_free);
+        }
+    }
 }
 
 QString YOLODialog::resolveModelPath() const {
@@ -683,11 +903,12 @@ QString YOLODialog::resolveModelPath() const {
 }
 
 bool YOLODialog::ensureModelAvailable(PendingAction action) {
-    // The Live tab has its own model combo (all catalog models) and is not
-    // one of the task panels. Resolve against the live widget's model when
-    // it is the active tab — checking the batch panel here would silently
-    // no-op (currentTaskPanel() == nullptr) and Start would do nothing.
-    if (m_tabWidget && m_tabWidget->currentWidget() == m_liveTab) {
+    // The Live page has its own model combo (all catalog models) and is
+    // not one of the task panels. Resolve against the live widget's model
+    // when it is the active page — checking the batch panel here would
+    // silently no-op (currentTaskPanel() == nullptr) and Start would do
+    // nothing.
+    if (m_taskStack && m_taskStack->currentWidget() == m_liveTab) {
         if (!m_liveWidget) return false;
         const QString filename = m_liveWidget->modelFilename();
         if (filename.isEmpty()) {
@@ -729,6 +950,45 @@ bool YOLODialog::ensureModelAvailable(PendingAction action) {
                           .arg(filename));
         startDownload(entry);
         return false;
+    }
+    // Open-vocabulary tabs: with a non-empty class list the text-encoder
+    // GGUF is a SECOND required model — run the same availability +
+    // auto-download + pending-action-rerun chain as the detector (if both
+    // files are missing the two downloads chain through the pending
+    // action: detector first, text on the automatic re-run).
+    if (taskHasText(panel->task) && panel->classesEdit &&
+        panel->textModelCombo) {
+        bool hasClasses = false;
+        const QStringList raw =
+                panel->classesEdit->text().split(QLatin1Char(','));
+        for (const QString& c : raw) {
+            if (!c.trimmed().isEmpty()) {
+                hasClasses = true;
+                break;
+            }
+        }
+        if (hasClasses) {
+            const QString textFilename =
+                    panel->textModelCombo->currentData().toString();
+            if (textFilename.isEmpty()) {
+                appendLog(tr("[YOLO] Select a text model first."));
+                return false;
+            }
+            if (!QFileInfo::exists(panel->textModelPath())) {
+                YOLOModelEntry entry;
+                if (!YOLOHelpers::findModelByFilename(textFilename, &entry)) {
+                    appendLog(tr("[YOLO] Text model file not found: %1")
+                                      .arg(textFilename));
+                    return false;
+                }
+                m_pendingActionAfterDownload = action;
+                appendLog(tr("[YOLO] Text model missing — downloading %1; it "
+                             "will start automatically when ready.")
+                                  .arg(textFilename));
+                startDownload(entry);
+                return false;
+            }
+        }
     }
     return true;
 }
@@ -839,12 +1099,34 @@ YOLODialog::Settings YOLODialog::getSettings() const {
     if (!panel) return s;
     s.modelPath = panel->modelPath();
     s.inputPath = panel->imagePath->text();
-    s.device = panel->deviceCombo->currentData().toString();
-    s.threads = panel->threads->value();
+    s.device = m_deviceCombo->currentData().toString();
+    s.threads = m_threads->value();
     s.confThres = static_cast<float>(panel->conf->value());
     s.iouThres = static_cast<float>(panel->iou->value());
     s.topK = static_cast<uint32_t>(panel->topK->value());
     s.addAnnotatedImageToDb = panel->addAnnotatedCheck->isChecked();
+    if (panel->classesEdit) {
+        // Split the comma-separated class list; surrounding spaces are
+        // padding, but an empty field stays a real class row (the
+        // background prompt semantics of the YOLO-World docs).
+        const QStringList raw =
+                panel->classesEdit->text().split(QLatin1Char(','));
+        for (const QString& name : raw) {
+            s.classes.append(name.trimmed());
+        }
+        while (!s.classes.isEmpty() && s.classes.last().isEmpty() &&
+               s.classes.size() > 1) {
+            // Drop only the trailing empty field produced by a trailing
+            // comma; interior empties stay (real class rows).
+            s.classes.removeLast();
+        }
+        if (s.classes.size() == 1 && s.classes.first().isEmpty()) {
+            s.classes.clear();  // blank input = checkpoint vocabulary
+        }
+    }
+    if (panel->textModelCombo) {
+        s.textModelPath = panel->textModelPath();
+    }
     return s;
 }
 
@@ -1057,7 +1339,8 @@ bool YOLODialog::loadRequestedTestData() {
     const auto kind = ecvTestDataRepository::Dataset::ObjectsDetection;
     QString fileName;
     if (m_pendingTestDataTarget == TestDataTarget::Image) {
-        fileName = QString::fromLatin1(kYOLOTestImage);
+        const YOLOTaskPanel* panel = currentTaskPanel();
+        fileName = testImageForTask(panel ? panel->task : QString());
     } else if (m_pendingTestDataTarget == TestDataTarget::Video &&
                m_testVideoCombo) {
         fileName = m_testVideoCombo->currentData().toString();
@@ -1149,19 +1432,4 @@ void YOLODialog::closeEvent(QCloseEvent* event) {
     saveSettings();
     m_liveWidget->saveSettings();
     event->accept();
-}
-
-void YOLODialog::changeEvent(QEvent* event) {
-    QDialog::changeEvent(event);
-    if (event->type() == QEvent::ActivationChange) {
-        adaptTabWidgetHeight();
-    }
-}
-
-void YOLODialog::adaptTabWidgetHeight() {
-    // Keep the dialog compact on small screens; the live tab has its own
-    // fixed preview height.
-    if (m_activeTabHeight < 0) {
-        m_activeTabHeight = m_tabWidget->height();
-    }
 }

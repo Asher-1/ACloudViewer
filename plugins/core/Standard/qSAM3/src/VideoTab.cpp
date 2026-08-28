@@ -333,8 +333,11 @@ void VideoTab::setupUi() {
     // ── Test-data download progress (hidden by default) ───────────────────
     ecvAICoreUi::setupProgressSection(layout, m_downloadLabel, m_progress);
 
-    // ── Bottom row ────────────────────────────────────────────────────────
-    auto* bottom = new QHBoxLayout();
+    // ── Bottom rows ─────────────────────────────────────────────────────
+    // Two rows instead of one overloaded row: eleven widgets on a single
+    // line squeezed the Export buttons until their labels clipped at the
+    // minimum dialog width.
+    auto* bottom1 = new QHBoxLayout();
     m_showMasks = new QCheckBox(tr("Show masks"));
     m_showMasks->setChecked(true);
 
@@ -363,8 +366,24 @@ void VideoTab::setupUi() {
     m_speedLabel = new QLabel(tr("1.0x"));
     m_speedLabel->setMinimumWidth(40);
 
+    bottom1->addWidget(m_showMasks);
+    bottom1->addWidget(m_exportToDbCheckBox);
+    bottom1->addSpacing(12);
+    bottom1->addWidget(scoreLabel);
+    bottom1->addWidget(m_scoreSpin);
+    bottom1->addSpacing(12);
+    bottom1->addWidget(speedLabel);
+    bottom1->addWidget(m_speedSlider);
+    bottom1->addWidget(m_speedLabel);
+    bottom1->addStretch();
+    layout->addLayout(bottom1);
+
+    auto* bottom2 = new QHBoxLayout();
     m_exportBtn = new QPushButton(tr("Export frame masks"));
     m_exportBtn->setEnabled(false);
+    m_exportBtn->setToolTip(
+            tr("Export the current frame's per-instance masks as grayscale "
+               "images into the DB tree"));
 
     m_exportFrameToDbBtn = new QPushButton(tr("Export frame to DB"));
     m_exportFrameToDbBtn->setEnabled(false);
@@ -377,25 +396,17 @@ void VideoTab::setupUi() {
 
     m_statusLabel = new QLabel(tr("Open a video and load a model to start."));
     m_statusLabel->setStyleSheet("color: #99ccff;");
+    // Frame-progress lines are long; wrap instead of clipping.
+    m_statusLabel->setWordWrap(true);
 
-    bottom->addWidget(m_showMasks);
-    bottom->addWidget(m_exportToDbCheckBox);
-    bottom->addSpacing(12);
-    bottom->addWidget(scoreLabel);
-    bottom->addWidget(m_scoreSpin);
-    bottom->addSpacing(12);
-    bottom->addWidget(speedLabel);
-    bottom->addWidget(m_speedSlider);
-    bottom->addWidget(m_speedLabel);
-    bottom->addSpacing(12);
-    bottom->addWidget(m_exportBtn);
-    bottom->addWidget(m_exportFrameToDbBtn);
-    bottom->addSpacing(12);
-    bottom->addWidget(instLabel);
-    bottom->addWidget(m_instanceLabel, 1);
-    bottom->addSpacing(12);
-    bottom->addWidget(m_statusLabel, 1);
-    layout->addLayout(bottom);
+    bottom2->addWidget(m_exportBtn);
+    bottom2->addWidget(m_exportFrameToDbBtn);
+    bottom2->addSpacing(12);
+    bottom2->addWidget(instLabel);
+    bottom2->addWidget(m_instanceLabel);
+    bottom2->addSpacing(12);
+    bottom2->addWidget(m_statusLabel, 1);
+    layout->addLayout(bottom2);
 
     // ── Connections ───────────────────────────────────────────────────────
     connect(m_openBtn, &QPushButton::clicked, this, &VideoTab::onOpenVideo);
@@ -446,6 +457,9 @@ void VideoTab::setupUi() {
     // Hot-swap: re-load the model when the device combo changes.
     connect(m_deviceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &VideoTab::onDeviceChanged);
+    // Mask export: PNG files to a directory plus grayscale mask images
+    // into the DB tree (see onExportMasks).
+    connect(m_exportBtn, &QPushButton::clicked, this, &VideoTab::onExportMasks);
     // One-shot export of the current frame to the DB tree.
     connect(m_exportFrameToDbBtn, &QPushButton::clicked, this,
             &VideoTab::exportCurrentFrameToDb);
@@ -986,10 +1000,15 @@ void VideoTab::onFrameReady(const cv::Mat& rgbFrame, int frameIndex) {
     }
     m_currentFrameImage = img;
     m_currentFrame = frameIndex;
-    // Never paint the previous frame's masks over a newly decoded frame while
-    // inference is in flight. The matching result repopulates them below.
-    m_lastResult = SAM3WorkerResult{};
-    m_canvas->setInstances({}, {});
+    // Keep the previous frame's instance masks visible on the newly decoded
+    // frame until this frame's result arrives. Clearing here made the
+    // overlay blink off for the whole decode+inference window of every
+    // frame ("one frame with masks, one frame without"): the playback
+    // period equals decode+inference, so the blank gap dominated. A mask
+    // that is one frame old is imperceptible at playback rates. No
+    // setInstances() call here: VideoCanvas::setFrame → redraw() composites
+    // the retained boxes / masks onto the new frame, and onFrameResult()
+    // → updateCanvasInstances() then swaps in the fresh result.
     m_canvas->setFrame(img);
     m_timeline->setCurrentFrame(frameIndex);
 
@@ -1349,6 +1368,11 @@ void VideoTab::onSeek(int frame) {
     m_playBtn->setText(tr("Play"));
     m_playTimer.stop();
     m_currentFrame = qBound(0, frame, m_totalFrames - 1);
+    // A seek lands far from the frame the retained masks belong to; they
+    // would highlight the wrong objects. Drop them — the first tracked
+    // frame after the seek repopulates the overlay.
+    m_lastResult = SAM3WorkerResult{};
+    updateCanvasInstances();
     trackNextFrame();
 }
 
@@ -1411,6 +1435,10 @@ void VideoTab::keyPressEvent(QKeyEvent* e) {
             m_playBtn->setText(tr("Play"));
             m_playTimer.stop();
             --m_currentFrame;
+            // Backwards tracking restarts from the seek target; the retained
+            // masks belong to a later frame. Drop them (see onSeek).
+            m_lastResult = SAM3WorkerResult{};
+            updateCanvasInstances();
             trackNextFrame();
         }
         e->accept();
@@ -1420,23 +1448,60 @@ void VideoTab::keyPressEvent(QKeyEvent* e) {
 }
 
 void VideoTab::onExportMasks() {
-    if (m_lastResult.valid && !m_lastResult.instanceMasks.isEmpty()) {
-        const QString dir = QFileDialog::getExistingDirectory(
-                this, tr("Export masks to directory"), QDir::homePath());
-        if (dir.isEmpty()) return;
-        int exported = 0;
-        for (int i = 0; i < m_lastResult.instanceMasks.size(); ++i) {
-            const QString path =
-                    QString("%1/frame%2_mask%3.png")
-                            .arg(dir)
-                            .arg(m_currentFrame, 4, 10, QLatin1Char('0'))
-                            .arg(i);
-            if (m_lastResult.instanceMasks[i].save(path)) ++exported;
-        }
-        appendLog(tr("Exported %1 mask(s) to %2").arg(exported).arg(dir));
-    } else {
+    if (!m_lastResult.valid || m_lastResult.instanceMasks.isEmpty()) {
         appendLog(tr("No masks on the current frame."));
+        return;
     }
+    // One-shot DB export: each per-instance mask lands as its own grayscale
+    // ccImage in the DB tree — no filesystem round-trip. The annotated frame
+    // belongs to the Export-frame-to-DB button, not to this one.
+    const int dbCount = exportMasksToDb();
+    if (dbCount > 0) {
+        appendLog(tr("Added %1 mask image(s) to the DB tree.").arg(dbCount));
+    } else {
+        appendLog(tr("No DB interface available; masks were not exported."));
+    }
+}
+
+int VideoTab::exportMasksToDb() {
+    if (!m_lastResult.valid || !m_app || m_lastResult.instanceMasks.isEmpty()) {
+        return 0;
+    }
+    const QString deviceTag =
+            ecvPluginDbNaming::deviceTagFromName(m_deviceCombo->currentText());
+    const QString baseName = QFileInfo(m_videoPath).completeBaseName();
+    int added = 0;
+    for (int i = 0; i < m_lastResult.instanceMasks.size(); ++i) {
+        const QImage mask = m_lastResult.instanceMasks.value(i);
+        if (mask.isNull()) continue;
+        const int id = m_lastResult.instanceIds.value(i, i + 1);
+        const QString name = ecvPluginDbNaming::makeUnique(
+                QStringLiteral("SAM3_Video_%1_%2_mask_obj%3_frame%4")
+                        .arg(baseName, deviceTag)
+                        .arg(id)
+                        .arg(m_currentFrame, 4, 10, QLatin1Char('0')),
+                m_app);
+        auto* img = new ccImage(mask, name);
+        img->setMetaData(QStringLiteral("SAM3"), true);
+        img->setMetaData(QStringLiteral("SAM3/Kind"), QStringLiteral("mask"));
+        img->setMetaData(QStringLiteral("SAM3/InstanceId"),
+                         static_cast<qlonglong>(id));
+        img->setMetaData(QStringLiteral("SAM3/Score"),
+                         static_cast<double>(m_lastResult.scores.value(i)));
+        img->setMetaData(QStringLiteral("SAM3/Frame"),
+                         static_cast<qlonglong>(m_currentFrame));
+        img->setMetaData(QStringLiteral("SAM3/Device"),
+                         m_deviceCombo->currentText());
+        img->setMetaData(QStringLiteral("SAM3/Model"),
+                         QFileInfo(m_loadedModelPath).fileName());
+        if (!m_videoPath.isEmpty()) {
+            img->setMetaData(QStringLiteral("Source"), m_videoPath);
+        }
+        m_app->addToDB(img, /*updateZoom=*/false, /*autoExpandDBTree=*/true,
+                       /*checkDimensions=*/false, /*autoRedraw=*/true);
+        ++added;
+    }
+    return added;
 }
 
 // ── Private helpers ────────────────────────────────────────────────────────
@@ -1467,7 +1532,7 @@ void VideoTab::updateCanvasInstances() {
         for (int i = 0; i < m_lastResult.detCount; ++i) {
             const QColor c = instanceColor(m_lastResult.instanceIds.value(i));
             html += QString("<span style='color:%1; font-weight:bold;'>"
-                            "#%2: %3</span> ")
+                            "object #%2 — score %3</span>&nbsp; ")
                             .arg(c.name())
                             .arg(m_lastResult.instanceIds.value(i))
                             .arg(m_lastResult.scores.value(i), 0, 'f', 2);

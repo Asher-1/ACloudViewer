@@ -243,6 +243,10 @@ FaceCaptureWidget::FaceCaptureWidget(QWidget* parent)
 }
 
 FaceCaptureWidget::~FaceCaptureWidget() {
+    // Destruction guard (see ~VideoPlaybackWidget): stopCamera() below is
+    // stopStream() and emits streamStopped, forwarded to the owner dialog —
+    // drop outgoing connections first so no slot runs on a half-dead tree.
+    disconnect(this, nullptr, nullptr, nullptr);
     requestInferenceCancel();
     stopCamera();  // stops the video_base stream; the background reader
                    // thread is owned and torn down by the base class

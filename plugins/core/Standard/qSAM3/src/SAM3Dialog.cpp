@@ -184,9 +184,9 @@ void SAM3Canvas::clearPoints() {
     updateOverlay();
 }
 
-void SAM3Canvas::setBox(const QRectF& box) {
-    m_box = box;
-    m_hasBox = true;
+void SAM3Canvas::clearPointsKeepBox() {
+    m_posPoints.clear();
+    m_negPoints.clear();
     updateOverlay();
 }
 
@@ -243,6 +243,11 @@ void SAM3Canvas::mouseMoveEvent(QMouseEvent* e) {
             p.drawImage(0, 0, m_maskOverlay);
         }
         drawAnnotations(p, display);
+        // Outline only: drawAnnotations may leave a filled brush active
+        // (positive / negative point ellipses); drawing the drag rect with
+        // that leftover brush filled its interior and hid the image under
+        // it, making the box impossible to position.
+        p.setBrush(Qt::NoBrush);
         p.setPen(QPen(QColor(255, 255, 0, 180), 2));
         p.drawRect(QRectF(
                 m_dragRect.left() / m_original.width() * display.width(),
@@ -273,10 +278,25 @@ void SAM3Canvas::mouseReleaseEvent(QMouseEvent* e) {
 
     if (dx * dx + dy * dy > 25.0) {
         // Drag → bounding box
-        m_box = QRectF(m_dragStart, ip).normalized();
-        m_hasBox = true;
-        updateOverlay();
-        emit boxDrawn();
+        const QRectF drawn = QRectF(m_dragStart, ip).normalized();
+        if (m_exemplarMode) {
+            // Exemplar (PCS): the box joins the green exemplar list via the
+            // boxDrawn(QRectF) payload; the PVS prompt-box slots stay
+            // untouched and existing detections stay visible until the next
+            // run — upstream main_image.cpp accumulates pos_exemplars next
+            // to the live result.
+            updateOverlay();
+        } else {
+            // Points / Box (PVS): a fresh prompt supersedes the previous
+            // result — drop the stale detection boxes so the new prompt box
+            // is visible immediately (drawAnnotations hides the prompt box
+            // while detection boxes exist, to keep one box per object).
+            m_detections.clear();
+            m_box = drawn;
+            m_hasBox = true;
+            updateOverlay();
+        }
+        emit boxDrawn(drawn);
     } else {
         // Click → positive point
         addPosPoint(m_dragStart);
@@ -319,7 +339,11 @@ void SAM3Canvas::drawAnnotations(QPainter& p, const QImage& display) {
 
     // Confirmed box (cyan) — hidden in Exemplar (PCS) mode where the green
     // exemplar rects above are the only boxes (upstream main_image.cpp).
-    if (m_hasBox && !m_exemplarMode) {
+    // Also hidden while detection boxes exist: a PVS box prompt's result
+    // covers the same region, and stacking both rectangles on one object
+    // reads as two overlapping results. The prompt box returns as soon as
+    // the detections are cleared (Clear button / a freshly dragged box).
+    if (m_hasBox && !m_exemplarMode && m_detections.isEmpty()) {
         p.setPen(QPen(QColor(0, 255, 255, 220), 3));
         p.setBrush(Qt::NoBrush);
         p.drawRect(QRectF(m_box.left() * scaleX, m_box.top() * scaleY,
@@ -645,7 +669,10 @@ void SAM3Dialog::setupUi() {
                     if (img.isNull()) return;
                     u.currentImage = img;
                     u.currentImagePath = path;
-                    u.canvas->setImage(img);
+                    // The canvas already displayed the image in dropEvent()
+                    // (setImage → clearPoints); calling it again here would
+                    // re-decode/rescale the full image and reset the prompt
+                    // state a second time.
                     appendLog(tr("Loaded image: %1")
                                       .arg(QFileInfo(path).fileName()));
                     if (m_worker && m_worker->context()) {
@@ -687,15 +714,29 @@ void SAM3Dialog::setupUi() {
                    "as an annotated image"));
 
         u.multimask = new QCheckBox(tr("Multi-mask (PVS)"));
+        u.multimask->setToolTip(
+                tr("PVS mask-decoder output mode.\n"
+                   "ON: run the decoder with 3 candidate masks (whole "
+                   "object / part / subpart) and return the one with the "
+                   "highest predicted IoU — helps point prompts on objects "
+                   "with an ambiguous extent (planes, crowds, herds...).\n"
+                   "OFF: return the single default mask. Recommended for box "
+                   "prompts, where the box already defines the extent."));
 
         u.clearBtn = new QPushButton(tr("Clear"));
         connect(u.clearBtn, &QPushButton::clicked, this, &SAM3Dialog::onClear);
         u.exportBtn = new QPushButton(tr("Export masks"));
+        u.exportBtn->setToolTip(
+                tr("Export the current detections' per-instance masks as "
+                   "grayscale images into the DB tree"));
         connect(u.exportBtn, &QPushButton::clicked, this,
                 &SAM3Dialog::onExportMasks);
 
         u.statusLabel = new QLabel(tr("Ready."));
         u.statusLabel->setStyleSheet("color: #99ccff;");
+        // Timing / log lines are long; wrap instead of clipping at the
+        // right dialog edge.
+        u.statusLabel->setWordWrap(true);
 
         bottom->addWidget(u.detLabel);
         bottom->addWidget(scoreLabel);
@@ -709,8 +750,10 @@ void SAM3Dialog::setupUi() {
         bottom->addWidget(u.statusLabel, 1);
         layout->addLayout(bottom);
 
-        // Detection list
+        // Detection list: wraps to multiple lines (10+ instances overflow
+        // a single row) and stays selectable for copying scores out.
         u.detectionLabel = new QLabel();
+        u.detectionLabel->setWordWrap(true);
         u.detectionLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
         layout->addWidget(u.detectionLabel);
 
@@ -1226,28 +1269,68 @@ void SAM3Dialog::onClear() {
 }
 
 void SAM3Dialog::onExportMasks() {
-    // Upstream examples/main_image.cpp exports one PNG per detection
-    // (mask_%02d.png); we additionally write the composite overlay.
+    // One-shot DB export: each per-instance mask lands as its own grayscale
+    // ccImage in the DB tree — no filesystem round-trip. The annotated
+    // composite belongs to the Export-to-DB checkbox, not to this button.
     ImageTabUi& u = currentUi();
     if (!u.lastResult.valid || u.lastResult.instanceMasks.isEmpty()) {
         appendLog(tr("No masks to export."));
         return;
     }
-    const QString dir = QFileDialog::getExistingDirectory(
-            this, tr("Export masks to directory"), QDir::homePath());
-    if (dir.isEmpty()) return;
-    int exported = 0;
+    const int dbCount = exportMasksToDb(&u);
+    if (dbCount > 0) {
+        appendLog(tr("Added %1 mask image(s) to the DB tree.").arg(dbCount));
+    } else {
+        appendLog(tr("No DB interface available; masks were not exported."));
+    }
+}
+
+int SAM3Dialog::exportMasksToDb(ImageTabUi* target) {
+    ImageTabUi& u = target ? *target : currentUi();
+    if (!u.lastResult.valid || !m_app || u.lastResult.instanceMasks.isEmpty()) {
+        return 0;
+    }
+    const QString deviceTag =
+            ecvPluginDbNaming::deviceTagFromName(m_settings.device);
+    const QString sourceLabel =
+            u.currentImagePath.isEmpty()
+                    ? QStringLiteral("canvas")
+                    : QFileInfo(u.currentImagePath).completeBaseName();
+    int added = 0;
     for (int i = 0; i < u.lastResult.instanceMasks.size(); ++i) {
-        const QString path = QStringLiteral("%1/mask_%2.png")
-                                     .arg(dir)
-                                     .arg(i, 2, 10, QLatin1Char('0'));
-        if (u.lastResult.instanceMasks[i].save(path)) ++exported;
+        const QImage mask = u.lastResult.instanceMasks.value(i);
+        if (mask.isNull()) continue;
+        const int id = u.lastResult.instanceIds.value(i, i + 1);
+        const QString name = ecvPluginDbNaming::makeUnique(
+                QStringLiteral("SAM3_%1_%2_mask_obj%3")
+                        .arg(sourceLabel, deviceTag)
+                        .arg(id),
+                m_app);
+        auto* img = new ccImage(mask, name);
+        img->setMetaData(QStringLiteral("SAM3"), true);
+        img->setMetaData(QStringLiteral("SAM3/Kind"), QStringLiteral("mask"));
+        img->setMetaData(QStringLiteral("SAM3/InstanceId"),
+                         static_cast<qlonglong>(id));
+        img->setMetaData(QStringLiteral("SAM3/Score"),
+                         static_cast<double>(u.lastResult.scores.value(i)));
+        const aicore_sam3_box& b = u.lastResult.boxes.value(i);
+        img->setMetaData(QStringLiteral("SAM3/Box"),
+                         QStringLiteral("[%1,%2,%3,%4]")
+                                 .arg(b.x0, 0, 'f', 1)
+                                 .arg(b.y0, 0, 'f', 1)
+                                 .arg(b.x1, 0, 'f', 1)
+                                 .arg(b.y1, 0, 'f', 1));
+        img->setMetaData(QStringLiteral("SAM3/Device"), m_settings.device);
+        img->setMetaData(QStringLiteral("SAM3/Model"),
+                         QFileInfo(m_modelPath).fileName());
+        if (!u.currentImagePath.isEmpty()) {
+            img->setMetaData(QStringLiteral("Source"), u.currentImagePath);
+        }
+        m_app->addToDB(img, /*updateZoom=*/false, /*autoExpandDBTree=*/true,
+                       /*checkDimensions=*/false, /*autoRedraw=*/true);
+        ++added;
     }
-    if (!u.lastResult.maskComposite.isNull() &&
-        u.lastResult.maskComposite.save(dir + "/mask_composite.png")) {
-        ++exported;
-    }
-    appendLog(tr("Exported %1 mask(s) to %2").arg(exported).arg(dir));
+    return added;
 }
 
 void SAM3Dialog::onWorkerFinished(bool ok) {
@@ -1291,7 +1374,8 @@ void SAM3Dialog::onWorkerResult(const SAM3WorkerResult& result) {
 
     const auto& t = result.timings;
     u.statusLabel->setText(
-            QString("Done | pre=%1 inf=%2 e2e=%3 ms | %4 detections")
+            tr("Done — preprocess %1 ms, inference %2 ms, total %3 ms — "
+               "%4 detections")
                     .arg(QString::number(t.preprocess_ms, 'f', 0))
                     .arg(QString::number(t.inference_ms, 'f', 0))
                     .arg(QString::number(t.e2e_ms, 'f', 0))
@@ -1316,7 +1400,7 @@ void SAM3Dialog::onCanvasPoint(int type) {
     runSegmentation(true);
 }
 
-void SAM3Dialog::onCanvasBox() {
+void SAM3Dialog::onCanvasBox(QRectF box) {
     ImageTabUi& u = currentUi();
     // Auto-segment on box drawn
     if (u.currentImage.isNull()) {
@@ -1330,10 +1414,13 @@ void SAM3Dialog::onCanvasBox() {
         // upstream main_image.cpp behavior (drag: exemplar box, then
         // Segment runs PCS with text + exemplars). No model is needed to
         // collect the exemplar.
-        u.posExemplars.append(u.canvas->box());
+        u.posExemplars.append(box);
         u.canvas->setExemplars(u.posExemplars);
-        u.canvas->clearPoints();
-        u.canvas->setBox(u.posExemplars.last());
+        // Drop pending PVS point prompts, but keep the box prompt slots:
+        // upstream stores pos_exemplars and pvs_box independently, so a box
+        // drawn in Box (PVS) mode survives exemplar collection and still
+        // serves as the fallback exemplar for the next Segment.
+        u.canvas->clearPointsKeepBox();
         appendLog(tr("Added positive exemplar box (%1). Press Segment to "
                      "run detection (text is optional).")
                           .arg(u.posExemplars.size()));
@@ -1688,7 +1775,11 @@ void SAM3Dialog::updateDetectionList(ImageTabUi* target) {
         u.detectionLabel->clear();
         return;
     }
-    QString html;
+    // Spell out what the numbers mean: id = detected object index,
+    // score = confidence.
+    QString html =
+            tr("<span style='color:#888;'>Detected objects "
+               "(id — confidence):</span> ");
     static const char* kColors[] = {
             "#ff3333", "#3399ff", "#33e64c", "#ffcc1a", "#cc4ce6",
             "#ff801a", "#1ae6e6", "#e66699", "#80cc33", "#4c4cff",
@@ -1698,7 +1789,7 @@ void SAM3Dialog::updateDetectionList(ImageTabUi* target) {
     for (int i = 0; i < u.lastResult.detCount; ++i) {
         const QString color = kColors[i % nColors];
         html += QString("<span style='color:%1; font-weight:bold;'>"
-                        "#%2: %3</span> ")
+                        "object #%2 — score %3</span>&nbsp; ")
                         .arg(color)
                         .arg(u.lastResult.instanceIds.value(i))
                         .arg(u.lastResult.scores.value(i), 0, 'f', 2);

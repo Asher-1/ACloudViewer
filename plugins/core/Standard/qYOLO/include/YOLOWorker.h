@@ -36,6 +36,10 @@ public:
         float confThres = 0.25f;
         float iouThres = 0.7f;
         uint32_t topK = 300;
+        // Open-vocabulary knobs (world/yoloe tabs): the class list is
+        // encoded through the text model GGUF at load time.
+        QStringList classes;
+        QString textModelPath;
     };
 
     explicit YOLOWorker(const Settings& settings, QObject* parent = nullptr);
@@ -63,6 +67,10 @@ private:
     bool runDetect(const QImage& rgb, const uchar* rgbData);
     bool runSegment(const QImage& rgb, const uchar* rgbData);
     bool runDepth(const QImage& rgb, const uchar* rgbData);
+    bool runPose(const QImage& rgb, const uchar* rgbData);
+    bool runObb(const QImage& rgb, const uchar* rgbData);
+    bool runSemantic(const QImage& rgb, const uchar* rgbData);
+    bool runClassify(const QImage& rgb, const uchar* rgbData);
 #endif
 
     Settings m_settings;

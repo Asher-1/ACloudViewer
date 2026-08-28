@@ -1,7 +1,23 @@
-# qYOLO — YOLO Detect, Segment & Depth
+# qYOLO — YOLO Detect, Segment, Depth, Pose, OBB, Classify, Semantic, World & YOLOE
 
 Ultralytics YOLO object detection (COCO 80 classes — see full list below),
-instance segmentation, and metric depth for ACloudViewer — **native C++ GGML**.
+instance segmentation, metric depth, keypoint pose (COCO-17), oriented boxes
+(DOTA-15), image classification (ImageNet-1000), semantic segmentation
+(Cityscapes-19), and the open-vocabulary YOLO-World (CLIP text) / YOLOE
+(MobileCLIP text) families for ACloudViewer — **native C++ GGML**.
+
+Each task family has its own panel in the plugin dialog (a grouped task
+list on the left selects the panel on the right; Device / Threads are shared
+global controls); the world / yoloe panels
+additionally offer a class-list field and a text-encoder model selection
+(CLIP ViT-B/32 for World, MobileCLIP2-B for YOLOE — the text tower is fixed
+per detector family and cannot be mixed, per docs.ultralytics.com),
+following the qSAM3 text-prompt interaction. Prompt-free (`-pf`) YOLOE
+checkpoints disable the class list (they match against the built-in 4585
+vocabulary). Device parity on real GGUFs is enforced by
+`test_yolo_capi_parity` (CUDA and Vulkan: all task families PASS, including
+YOLOE/World text-conditioned masks; bisect tool `test_yolo_world_optrace`
+compares every user-op output across CPU/GPU devices).
 
 **User guide:** [docs/guides/plugins/qYOLO.md](../../../docs/guides/plugins/qYOLO.md)
 
@@ -110,7 +126,10 @@ Benchmark source: [ultralytics-ggml](https://github.com/Asher-1/ultralytics-ggml
    (the task is a property of the model, not a runtime switch)
 3. Select a variant (downloads on first Run if missing); detection/segment
    models take confidence / IoU / top-K, depth models hide the threshold row
-4. Pick an image from disk or DB tree -> **Run**
+4. Pick an image from disk or DB tree -> **Run** (or click **Try sample
+   data** to load the task's default sample image from the shared
+   `objects_detection_data` cache: `cat.jpg` for Classification,
+   `aerial_airport.jpg` for Oriented Boxes, `000000397133.jpg` elsewhere)
 5. An annotated ccImage is added to the DB tree: boxes + class/score labels
    for detection, a mask tint overlay for segmentation, a turbo colormap with
    a legend for depth

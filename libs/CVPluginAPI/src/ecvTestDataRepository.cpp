@@ -54,8 +54,8 @@ constexpr const char* kObjectsDetectionDownloadUrl =
         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
         "objects_detection_data/objects_detection_data.zip";
 constexpr const char* kObjectsDetectionExpectedMd5 =
-        "4900906590f31d17c1af5a82d49fc98b";
-constexpr qint64 kObjectsDetectionExpectedSize = 61488929;
+        "74df242943e57d18959c01eeb7d77b5a";
+constexpr qint64 kObjectsDetectionExpectedSize = 62176277;
 
 // Single-image-to-3D samples (qTrellis): 33 curated images in examples_images/
 // plus multi-view (mv/), texture (example_texturing/), HDRI and webp extras.
@@ -251,6 +251,8 @@ bool ecvTestDataRepository::isDatasetAvailable(Dataset kind) const {
             const QStringList required = {
                     QStringLiteral("bus.jpg"),
                     QStringLiteral("000000397133.jpg"),
+                    QStringLiteral("cat.jpg"),
+                    QStringLiteral("aerial_airport.jpg"),
                     QStringLiteral("deeplsd_examples.jpg"),
                     QStringLiteral("supervision_demo.mp4"),
                     QStringLiteral("traffic.mp4")};

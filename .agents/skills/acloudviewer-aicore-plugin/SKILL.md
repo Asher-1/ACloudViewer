@@ -768,6 +768,84 @@ if (path.startsWith(QLatin1String("db://"))) {
 3. **maximumHeight on the preview → big blank**: QVBoxLayout hands the space clipped from the capped widget to other Preferred widgets (input row/statusLabel get stretched), producing a "big blank". The single stretch preview must own the remaining space exclusively: don't cap it (or cap very high), keep other widgets at natural height.
 4. **DB components inflate the first tab**: list height unbounded or the dialog follows minimumSizeHint. Fix: clamp the list height + `SetNoConstraint` on the main layout (see 13.4).
 5. **Preview click does not enlarge**: see 13.3 — bare `setPixmap` or DB input without the stored full image.
+6. **Signal emitted during the QWidget destruction cascade → SIGSEGV in `QFunctorSlotObject` (qSAM3 exit crash, v3.9.5)**:
+   - Crash chain (stack + code double-confirmed): `~MainWindow` → `~SAM3Dialog` → QWidget `deleteChildren` → `~QTabWidget` → `~VideoTab` → `releaseModel()` → `emit backendChanged("none")` (VideoTab.cpp:181) → `setupUi()` lambda connected with `this` context (SAM3Dialog.cpp:738) → dereferences `m_backendLabel`/`m_tabs` (SAM3Dialog.cpp:483/494, created **before** `m_videoTab` at :728) → jump to near-NULL offset 0x21.
+   - Root cause — three conditions, all required: (a) a child widget **emits a signal directly or indirectly from its destructor chain**; (b) the receiver was connected with an ancestor dialog as context — during `deleteChildren` the ancestor's QObject is still alive so Qt does **not** auto-disconnect; (c) the slot/lambda touches sibling child widgets or members whose owning objects were already destroyed earlier in the cascade. The receivers' context dies only at `~QObject`, which runs **after** the whole `deleteChildren` walk.
+   - Why normal testing misses it: the emit fires only when a stream/model is **active while the window closes**; headless lifecycle tests never enter the destructor cascade.
+   - Fix (landed, SAM3Dialog.cpp:458-466): `disconnect(m_videoTab, &VideoTab::backendChanged, this, nullptr)` at the top of `~SAM3Dialog` — before the `deleteChildren` cascade. Single-point cut of the only destruction-time emit path; zero runtime behavior change (label refresh on live backend switches stays connected).
+
+   #### Full-plugin audit result (v3.9.5, every `~Class()` in `plugins/core/Standard` inspected)
+
+   | Emitter in destruction chain | Receivers with ancestor context | Status |
+   |---|---|---|
+   | `VideoTab::~VideoTab` → `releaseModel` → `emit backendChanged` (VideoTab.cpp:142-149, 181) | SAM3Dialog.cpp:738 | **crashed, fixed** |
+   | `~VideoPlaybackWidget` → `stopStream()` → `emit streamStopped` (VideoPlaybackWidget.cpp:770-774) | YOLODialog.cpp:346, RFDetrDialog.cpp:340, RMBGDialog.cpp:293, FaceDetectDialog.cpp:201, FreeSplatterDialog.cpp:535 (via FaceCaptureWidget.cpp:127 forwarding) | **order-luck safe → root-fixed** (destructor disconnect guards, see below) |
+   | `RFDetrLiveInferWorker::~{releaseModel();}` (:48), `YOLOLiveInferWorker` (:48), `RMBGLiveInferWorker` (:45) | — | safe: their `releaseModel()` frees the ctx only, emits nothing |
+   | All 9 `QThread` workers (`~SAM3Worker`, `~TrellisWorker`, `~DA3Worker`, …) | — | safe: cancel/wait/free only, no emit |
+   | `onStreamStopping`/`onStreamReset` overrides (YOLOLiveWidget.cpp:733, RFDetrLiveWidget.cpp:601, RMBGLiveWidget.cpp:488, FaceLiveDetectWidget.cpp:987, FaceCaptureWidget.cpp:983) | — | safe: reset state only, no emit |
+
+   **"Order-luck safe" and the root fix (landed v3.9.5)**: those 5 dialogs connect `streamStopped`→lambda that touches `m_liveStartBtn` etc.; they survived only because the emitter child was created **before** the buttons (YOLODialog.cpp:301 vs 315, RFDetrDialog.cpp:291 vs 305, RMBGDialog.cpp:240 vs 252, FaceDetectDialog.cpp:159 vs 176, FreeSplatterDialog.cpp:436 vs 475) — `deleteChildren` destroys children in creation order, so when the live widget emitted, the buttons were still alive. Reordering `setupUi()` would reintroduce the exact qSAM3 crash with zero compiler/test signal; trigger condition: closing the window while the stream is active (`if (m_streamActive)` guard, VideoPlaybackWidget.cpp:770).
+
+   #### Mandatory rules for new AICore plugin dialogs
+
+   1. **Never emit signals from a destructor chain** (destructor body or anything it calls). If teardown must run logic that would normally emit (release model, stop stream), disconnect that signal first, or suppress the emit with a `m_destroying` flag.
+   2. **Emitter-side root fix (landed v3.9.5)**: `disconnect(this, nullptr, nullptr, nullptr);` as the first statement of every destructor that can reach a teardown emit. **C++ ordering trap**: a subclass destructor body runs BEFORE `~VideoPlaybackWidget`, so the base-class guard alone cannot stop a subclass-destructor `stopStream()` — the landed fix puts the guard in `~VideoPlaybackWidget` (baseline for direct use / future subclasses, VideoPlaybackWidget.cpp:99) AND in all 5 subclasses that call `stopStream()` from their own destructors: YOLOLiveWidget.cpp:70, RFDetrLiveWidget.cpp:69, RMBGLiveWidget.cpp:67, FaceLiveDetectWidget.cpp:109, FaceCaptureWidget.cpp:249 (its `stopCamera()` is `stopStream()`, FaceCaptureWidget.h:73). Dropping outgoing connections at destruction time is safe: receiver-side connections die with `~QObject` anyway, and internal `this→this` wiring (timers, the FaceCaptureWidget forwarding) is exactly what must stop. The receiver-side `disconnect` (SAM3 style) remains the fallback when the emitter is not under your control.
+   3. **Ordering contract**: if a destructor-chain emit cannot be removed, the emitting child must be created before every widget its receivers touch — and add a comment at both creation sites; this is a fragile last resort, not a design.
+   4. **Related teardown-trap family (already handled, do not regress)**: `QThread::finished → deleteLater` is delivered as a DIRECT call during thread teardown while the event loop is half-dead; drop the connection before `quit()` and own the worker lifetime manually (VideoPlaybackWidget.cpp:109-111, FaceLiveDetectWidget.cpp:119-127).
+
+   Verification:
+
+   ```bash
+   # no emit inside any destructor body (direct pattern) — expect 0 hits:
+   rg -U --glob '*.cpp' '~\w+\s*\([^;{}]*\)\s*\{[^{}]*\bemit\s' plugins/core/Standard
+   # locate destruction-chain emitters manually for the indirect pattern (e.g. stopStream/releaseModel)
+   # qSAM3 fix present:
+   rg -n "disconnect\(m_videoTab, &VideoTab::backendChanged" plugins/core/Standard/qSAM3/src/SAM3Dialog.cpp
+   # streamStopped root fix present (6 guards: video_base baseline + 5 subclasses):
+   rg -n "disconnect\(this, nullptr, nullptr, nullptr\);" \
+     plugins/core/Standard/video_base/src/VideoPlaybackWidget.cpp \
+     plugins/core/Standard/qYOLO/src/YOLOLiveWidget.cpp \
+     plugins/core/Standard/qRFDetr/src/RFDetrLiveWidget.cpp \
+     plugins/core/Standard/qRMBG/src/RMBGLiveWidget.cpp \
+     plugins/core/Standard/qFaceDetect/src/FaceLiveDetectWidget.cpp \
+     plugins/core/Standard/qFreeSplatter/src/FaceCaptureWidget.cpp
+   ```
+7. **Never `memcpy` into a `QImage` as one contiguous block — use the explicit-stride constructor (zero-copy) or per-row copies (qRF-DETR seg masks rendered as diagonal-stripe garbage, v3.9.5)**:
+   - Symptom: detection boxes correct; segmentation tint appears as diagonal stripes/blobs unrelated to the objects. Same artifact in the still-image (DB export) and live render paths.
+   - Root cause: `QImage` scanlines are **32-bit aligned** — for `Format_Grayscale8` with `width = 78` (the RF-DETR mask-head resolution, `image_size / mask_downsample_ratio`), `bytesPerLine = 80 > 78`. One contiguous `memcpy(img.bits(), src, w * h)` fills row `y` starting at offset `y * 78` while the image reads row `y` at `y * 80` — a cumulative 2 px/row horizontal shear = diagonal stripes. Nothing upstream was wrong (verified: the C-API masks were byte-identical to the correct per-query planes; model, postprocess and plugin data all agreed).
+   - **Decision table (use the fastest pattern that fits the access pattern)** — measured on 78x78 Grayscale8, 200k iters, Qt 5.15, -O2, including the `QImage` allocation:
+
+     | Pattern | µs/op | Correct? | Use when |
+     |---|---|---|---|
+     | `QImage(const uchar*, w, h, w, fmt)` **zero-copy wrap** | **0.035** | yes | source is read-only while the QImage lives (mask tint/blit sources, PNG-encode-once metadata). No copy at all — faster than even the buggy contiguous memcpy |
+     | per-row `memcpy(img.scanLine(y), src + y*w, w)` | 0.389 | yes | source must be **copied and mutated** afterwards (Gaussian blur, `{0,1}`→`{0,255}` rescale) — the write target must be an owned, Qt-aligned buffer |
+     | contiguous `memcpy(img.bits(), src, w*h)` | 0.094 | **NO (shears)** | forbidden unless `w % 4 == 0` is guaranteed AND asserted |
+
+     ```cpp
+     // READ-ONLY consumption (landed in RFDetrModelCatalog.cpp drawDetections):
+     const QImage mask(reinterpret_cast<const uchar*>(d.maskRaw.constData()),
+                       d.maskWidth, d.maskHeight, d.maskWidth,
+                       QImage::Format_Grayscale8);   // stride passed = no shear, no copy
+     // WRITE path (landed in RFDetrLiveWidget.cpp: blur mutates the buffer,
+     // so an owned Qt-aligned copy is required — fill it row by row):
+     QImage mask(w, h, QImage::Format_Grayscale8);
+     for (int y = 0; y < h; ++y)
+         std::memcpy(mask.scanLine(y), src + (size_t)y * w, (size_t)w);
+     ```
+
+   - Wrap lifetime rule: the ctor does **not** copy; the source bytes must outlive the QImage and must not be resized/mutated through the original container while the view is alive. For a needed owned copy prefer `view.copy()` (deep, stride preserved) over a new contiguous memcpy.
+   - **Qt version compatibility (CI-verified)**: both the explicit-stride ctor and `constScanLine` exist since Qt 5.12 — verified against the actual `qtbase5-dev 5.12.8` headers on Ubuntu 20.04 (`/usr/include/x86_64-linux-gnu/qt5/QtGui/qimage.h` declares `QImage(const uchar*, int, int, int bytesPerLine, Format)`), and the parameter type widening to `qsizetype` in Qt 6 accepts the same int call sites. CI matrix coverage: apt Qt 5.12.8 (focal docker), conda `qt=5.15.*` (all platforms), conda `qt6-main>=6.4`. No `QT_VERSION` branching needed for this fix.
+   - Same trap in other formats: **any** format whose bytes-per-pixel makes `w * bpp % 4 != 0` pads scanlines — `Format_RGB888` (3 B/px) shears for `w % 4 != 0`, `Format_Grayscale8` (1 B/px) shears for `w % 4 != 0`. `Format_ARGB32` (4 B/px) is immune. The rule is about `bytesPerLine`, never about pixel semantics.
+   - Landed: RFDetrModelCatalog.cpp `drawDetections` (zero-copy wrap, still-image path), RFDetrLiveWidget.cpp (per-row, write path with blur), qYOLO.cpp / YOLOLiveWidget.cpp / YOLOModelCatalog.cpp (per-row, write paths with `{0,1}`→`{0,255}` rescale / blur; latent only — YOLO's 160-wide masks satisfy `w % 4 == 0`).
+   - Audit baseline (safe patterns already in tree): qSAM3 (SAM3Worker/VideoWorker) and qDA3 copy via `scanLine(y)` per row; qRFDetr.cpp DB-mask metadata uses the explicit-stride ctor; LightGlue/DeepLSD use `convertToFormat`; VtkMultiTextureRenderer, rfdetr `image_io.cpp`, `depth_export.cpp` are row-wise or explicit-stride.
+   - Verify:
+
+     ```bash
+     # no contiguous memcpy into QImage::bits() left in plugin sources — expect 0 hits:
+     rg -U --glob '*.cpp' 'memcpy\(\w+\.bits\(\),' plugins/core/Standard
+     ```
+
+     (Debug tip when a rendered buffer looks wrong: dump the **raw source bytes** with a minimal viewer first and compare against the QImage render — that separates "data is wrong" from "stride is wrong" in minutes. In this incident the raw 78x78 planes were perfect cat silhouettes while every QImage-based render showed stripes.)
 
 ---
 

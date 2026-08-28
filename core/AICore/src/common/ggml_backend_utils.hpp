@@ -237,6 +237,17 @@ inline std::string registry_backend_id(const char* reg_name) {
     return name;
 }
 
+// Optional knobs for resolve_gpu_group(). All control stays interface-only:
+// any ggml-side environment translation happens inside the common layer
+// (see common/ggml_env_bridge.hpp), never in the calling task module.
+struct GpuResolveOptions {
+    // macOS only: scope the ggml-metal graph-optimizer/fusion disable
+    // switches to the backend-creation window inside resolve_gpu_group
+    // (ggml-metal's optimizer mis-handles the FreeSplatter graph). The
+    // shell's values are restored before returning.
+    bool disable_metal_graph_opt = false;
+};
+
 // All GPU backends for a device request. "auto" collects every GPU of the first
 // auto-priority backend family (e.g. both cuda:0 and cuda:1); "cuda:1" selects one.
 struct GpuBackendGroup {
@@ -259,12 +270,33 @@ struct GpuBackendGroup {
     }
 };
 
-inline GpuBackendGroup resolve_gpu_group(const std::string& device_req) {
+inline GpuBackendGroup resolve_gpu_group(const std::string& device_req,
+                                         const GpuResolveOptions& opts = {}) {
     load_backends_once();
     GpuBackendGroup group;
     std::string name;
     int want_idx = 0;
     parse_device(device_req, name, want_idx);
+
+#ifdef __APPLE__
+    // Interface-only metal-optimizer disable: the env-mechanism scope
+    // (snapshot -> apply -> resolve -> restore) lives here in the common
+    // layer, so the calling task module carries no environment references.
+    const bool metal_env_scoped =
+            opts.disable_metal_graph_opt &&
+            (name.empty() || name == "auto" || name == "gpu" ||
+             name == "metal");
+    aicore::GgmlEnvSnapshot metal_env_snapshot;
+    if (metal_env_scoped) {
+        metal_env_snapshot = aicore::take_ggml_env_snapshot(
+                {"GGML_METAL_GRAPH_OPTIMIZE_DISABLE",
+                 "GGML_METAL_FUSION_DISABLE"});
+        aicore::GgmlEnvOverrides disable;
+        disable.metal_graph_optimize_disable = true;
+        disable.metal_fusion_disable = true;
+        aicore::apply_ggml_env_overrides(disable);
+    }
+#endif
 
     auto append_gpu = [&](ggml_backend_dev_t dev) {
         if (ggml_backend_t be = ggml_backend_dev_init(dev, nullptr)) {
@@ -310,6 +342,11 @@ inline GpuBackendGroup resolve_gpu_group(const std::string& device_req) {
             group.names.push_back(resolved);
         }
     }
+#ifdef __APPLE__
+    if (metal_env_scoped) {
+        aicore::restore_ggml_env_snapshot(metal_env_snapshot);
+    }
+#endif
     return group;
 }
 

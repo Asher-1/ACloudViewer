@@ -109,4 +109,60 @@ void mark_ggml_backends_loaded() {
     g_backends_loaded = true;
 }
 
+// ------------------------------------------------------------------
+// RMBG math-profile translation (moved out of tasks/rmbg — task modules
+// carry no environment mechanism; see the header comment).
+// ------------------------------------------------------------------
+
+namespace {
+
+// Coopmat matmul whitelist of the "optimized" profile (historical default
+// written into RMBG_VK_COOPMAT_MATMUL before the env bridge existed).
+constexpr const char* kOptimizedCoopmatWhitelist =
+        "bb_layers_0,bb_layers_1,bb_layers_2,bb_layers_3,sq0_,db4_,db3_,db2_"
+        ",db1_";
+
+}  // namespace
+
+void apply_rmbg_math_profile(const std::string& profile,
+                             const std::string& requested) {
+    GgmlEnvOverrides env;
+    const bool generic_gpu = requested == "gpu";
+    const bool may_vulkan = requested == "auto" || generic_gpu ||
+                            requested.rfind("vulkan", 0) == 0;
+    const bool may_cuda = requested == "auto" || generic_gpu ||
+                          requested.rfind("cuda", 0) == 0;
+    if (may_vulkan) {
+        if (profile == "strict") {
+            env.vk_disable_f16 = true;
+            env.vk_disable_coopmat = true;
+            env.vk_disable_coopmat2 = true;
+            env.vk_disable_integer_dot_product = true;
+            env.rmbg_vk_scalar_direct_conv = false;
+            env.rmbg_vk_coopmat_matmul = std::string("");
+        } else if (profile == "fast" || profile == "unsafe-fast") {
+            env.vk_disable_f16 = false;
+            env.vk_disable_coopmat = false;
+            env.vk_disable_coopmat2 = false;
+            env.vk_disable_integer_dot_product = false;
+            env.rmbg_vk_scalar_direct_conv = false;
+            env.rmbg_vk_coopmat_matmul = std::string("");
+        } else {  // "optimized" (default)
+            env.vk_disable_f16 = true;
+            env.vk_disable_coopmat = false;
+            env.vk_disable_coopmat2 = true;
+            env.vk_disable_integer_dot_product = true;
+            env.rmbg_vk_scalar_direct_conv = true;
+            env.rmbg_vk_coopmat_matmul =
+                    std::string(kOptimizedCoopmatWhitelist);
+        }
+    }
+    if (profile == "strict" && may_cuda) {
+        // Bit-stable FP32 GEMMs. The default keeps cuBLAS TF32 enabled; its
+        // measured alpha error remains below 1.4e-3.
+        env.nvidia_tf32_override = false;
+    }
+    apply_ggml_env_overrides(env);
+}
+
 }  // namespace aicore

@@ -13,7 +13,7 @@
 #include <QVector>
 #include <cstdint>
 
-/** Single parsed detection (from the AICore YOLO JSON envelope). */
+/** One typed detection (shared by detect/segment/pose accessors). */
 struct YOLODetection {
     uint32_t classId = 0;
     QString className;
@@ -22,6 +22,38 @@ struct YOLODetection {
     float y1 = 0.0f;
     float x2 = 0.0f;
     float y2 = 0.0f;
+};
+
+/** COCO-17 keypoint in source-image pixels. */
+struct YOLOKeypoint {
+    float x = 0.0f;
+    float y = 0.0f;
+    float visibility = 1.0f;
+};
+
+/** One pose detection: box + decoded keypoints. */
+struct YOLOKeypointSet {
+    YOLODetection det;
+    QVector<YOLOKeypoint> kpts;
+};
+
+/** Oriented box in source-image pixels (angle radians, unrotated w/h). */
+struct YOLOObbBox {
+    float cx = 0.0f;
+    float cy = 0.0f;
+    float w = 0.0f;
+    float h = 0.0f;
+    float angle = 0.0f;  // radians
+    float score = 0.0f;
+    uint32_t classId = 0;
+    QString className;
+};
+
+/** One classification entry (softmax probability). */
+struct YOLOClassProb {
+    uint32_t classId = 0;
+    QString className;
+    float prob = 0.0f;
 };
 
 /** Depth statistics parsed from aicore_yolo_last_depth_json. */
@@ -52,7 +84,9 @@ struct YOLORunResult {
     QImage annotatedImage;
     QVector<YOLODetection> detections;
     QVector<YOLOSegMask> masks;  // valid when the model task is "segment"
-    QString task;                // "detect" | "segment" of the model
+    QString task;                // "detect" | "segment" | "pose" | "obb" |
+                                 // "semantic" | "classify" (world/yoloe map
+                                 // to detect/segment)
     double runtimeMs = 0.0;
     int totalDetected = 0;
     QString modelVariant;
@@ -62,6 +96,19 @@ struct YOLORunResult {
     QString resolvedDevice;
     QString modelPath;
     QByteArray resultJson;
+
+    // ---- pose results (task == "pose") ----
+    QVector<YOLOKeypointSet> keypointSets;
+    int kptCount = 0;  // keypoints per set (17 for the COCO models)
+    // ---- obb results (task == "obb") ----
+    QVector<YOLOObbBox> obbBoxes;
+    // ---- classify results (task == "classify") ----
+    QVector<YOLOClassProb> classifications;  // full softmax table
+    // ---- semantic results (task == "semantic") ----
+    QByteArray semanticClassMap;  // width*height bytes, one class id/pixel
+    int semanticWidth = 0;
+    int semanticHeight = 0;
+    int semanticNumClasses = 0;
 };
 
 /** Result envelope of one YOLO depth inference (typed float map + stats). */
@@ -91,25 +138,45 @@ struct YOLOModelEntry {
     QString displayName;
     QString quantNote;
     QString licenseNote;
-    // GGUF task: "detect" | "segment" | "depth". The model combo of each
-    // task tab is filtered on this field, so a detect tab never offers a
-    // segment model (and vice versa).
+    // GGUF task: "detect" | "segment" | "depth" | "pose" | "obb" |
+    // "semantic" | "classify" | "text". The model combo of each task tab is
+    // filtered on this field (plus textInput for the open-vocabulary
+    // families), so a detect tab never offers a segment model and the
+    // world/yoloe tabs never offer closed-set models.
     QString task;
     bool depthCapable = false;
     bool end2end = false;
+    bool textInput = false;  // YOLO-World / YOLOE / text towers
 };
 
 namespace YOLOHelpers {
 
 /** Enumerate the published catalog from AICore. */
 QVector<YOLOModelEntry> catalogModels();
-/** All pure object-detection catalog entries (task == "detect"). */
+/** All pure object-detection catalog entries (closed-set, task ==
+ *  "detect"). */
 QVector<YOLOModelEntry> detectionModels();
-/** All instance-segmentation catalog entries (task == "segment"). */
+/** All instance-segmentation catalog entries (closed-set, task ==
+ *  "segment"). */
 QVector<YOLOModelEntry> segmentModels();
 /** All metric-depth catalog entries (task == "depth"). */
 QVector<YOLOModelEntry> depthModels();
-/** Filter the full catalog on a task string ("detect"|"segment"|"depth"). */
+/** All keypoint-pose entries (task == "pose"). */
+QVector<YOLOModelEntry> poseModels();
+/** All oriented-box entries (task == "obb"). */
+QVector<YOLOModelEntry> obbModels();
+/** All classification entries (task == "classify"). */
+QVector<YOLOModelEntry> classifyModels();
+/** All semantic-segmentation entries (task == "semantic"). */
+QVector<YOLOModelEntry> semanticModels();
+/** YOLO-World open-vocabulary detectors (CLIP text tower). */
+QVector<YOLOModelEntry> worldModels();
+/** YOLOE open-vocabulary segmenters (MobileCLIP text tower). */
+QVector<YOLOModelEntry> yoloeModels();
+/** Text-encoder towers (CLIP ViT-B/32, MobileCLIP2-B). */
+QVector<YOLOModelEntry> textModels();
+/** Filter the full catalog on a tab task id ("detect"|"segment"|"depth"|
+ *  "pose"|"obb"|"classify"|"semantic"|"world"|"yoloe"|"text"). */
 QVector<YOLOModelEntry> taskModels(const QString& task);
 /** Lookup by GGUF filename; returns false when unknown. */
 bool findModelByFilename(const QString& filename, YOLOModelEntry* out);
@@ -145,6 +212,33 @@ void drawSegmentation(QImage* image,
                       const QVector<YOLOSegMask>& masks,
                       const QVector<YOLODetection>& detections,
                       int thickness = 2);
+
+/** Draw pose results: COCO-17 skeleton lines between visible keypoints,
+ *  keypoint dots and the box/label (keypoints in source pixels).
+ *  keypointSets may be empty (draws nothing). */
+void drawPose(QImage* image,
+              const QVector<YOLOKeypointSet>& keypointSets,
+              int thickness = 2);
+
+/** Draw oriented boxes as rotated rectangles with a center mark and label
+ *  (coordinates in source pixels). */
+void drawObb(QImage* image,
+             const QVector<YOLOObbBox>& boxes,
+             int thickness = 2);
+
+/** Blend the semantic class map (width*height bytes, one class id per
+ *  source pixel) over the image at 50% alpha using the Cityscapes-19
+ *  palette (deterministic fallback beyond 19 classes). */
+void drawSemantic(QImage* image,
+                  const QByteArray& classMap,
+                  int width,
+                  int height,
+                  int numClasses);
+
+/** Draw a top-k classification banner (top-left). */
+void drawClassifications(QImage* image,
+                         const QVector<YOLOClassProb>& classifications,
+                         int topK = 5);
 
 /** Turbo-style colorization of a metric depth map (near = blue, far = red;
  *  same mapping as drawDepthLegend). When minDepth >= maxDepth the valid

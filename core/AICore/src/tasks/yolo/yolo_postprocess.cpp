@@ -242,4 +242,116 @@ std::vector<SegMask> compose_masks(const std::vector<Detection>& dets,
     return masks;
 }
 
+std::vector<PoseDetection> postprocess_pose(const std::vector<float>& raw,
+                                            int no,
+                                            int na,
+                                            const ModelMeta& meta,
+                                            const float* anchors,
+                                            const float* strides,
+                                            const PostprocConfig& cfg) {
+    // Box/class candidate selection and ordering are identical to detect; the
+    // keypoint decode is a per-anchor affine transform that commutes with the
+    // filter, so reuse postprocess and decode only the surviving anchors.
+    std::vector<Detection> dets =
+            postprocess(raw, no, na, meta, anchors, strides, cfg);
+    const int nk = meta.nk;
+    const int kpt_base = 4 * meta.reg_max + meta.nc;
+    std::vector<PoseDetection> out;
+    out.reserve(dets.size());
+    for (const Detection& d : dets) {
+        const int a = d.anchor;
+        if (a < 0 || nk <= 0) continue;
+        PoseDetection pd;
+        pd.det = d;
+        pd.kpts.resize(nk);
+        const float ax = anchors[2 * a], ay = anchors[2 * a + 1],
+                    st = strides[a];
+        for (int k = 0; k < nk; k += meta.kpt_ndim) {
+            // Pose26.kpts_decode (export): (raw + grid) * stride; the
+            // visibility dim (when present) is passed through sigmoid.
+            pd.kpts[k] = (raw[(size_t)(kpt_base + k) * na + a] + ax) * st;
+            pd.kpts[k + 1] =
+                    (raw[(size_t)(kpt_base + k + 1) * na + a] + ay) * st;
+            if (meta.kpt_ndim == 3)
+                pd.kpts[k + 2] =
+                        sigmoid(raw[(size_t)(kpt_base + k + 2) * na + a]);
+        }
+        out.push_back(std::move(pd));
+    }
+    return out;
+}
+
+std::vector<OBBDetection> postprocess_obb(const std::vector<float>& raw,
+                                          int no,
+                                          int na,
+                                          const ModelMeta& meta,
+                                          const float* anchors,
+                                          const float* strides,
+                                          const PostprocConfig& cfg) {
+    // Candidate selection reuses postprocess; the box decode differs
+    // (dist2rbox instead of dist2bbox), so re-decode the surviving anchors
+    // from raw.
+    std::vector<Detection> dets =
+            postprocess(raw, no, na, meta, anchors, strides, cfg);
+    const int angle_base = 4 * meta.reg_max + meta.nc;
+    std::vector<OBBDetection> out;
+    out.reserve(dets.size());
+    for (const Detection& d : dets) {
+        const int a = d.anchor;
+        if (a < 0) continue;
+        const float ax = anchors[2 * a], ay = anchors[2 * a + 1],
+                    st = strides[a];
+        const float lt_x = raw[(size_t)0 * na + a];
+        const float lt_y = raw[(size_t)1 * na + a];
+        const float rb_x = raw[(size_t)2 * na + a];
+        const float rb_y = raw[(size_t)3 * na + a];
+        const float ang =
+                raw[(size_t)angle_base * na + a];  // raw radians (OBB26)
+        const float cos_a = std::cos(ang), sin_a = std::sin(ang);
+        const float xf = (rb_x - lt_x) * 0.5f, yf = (rb_y - lt_y) * 0.5f;
+        const float cx = (xf * cos_a - yf * sin_a + ax) * st;
+        const float cy = (xf * sin_a + yf * cos_a + ay) * st;
+        const float w = (lt_x + rb_x) * st, h = (lt_y + rb_y) * st;
+        out.push_back({cx, cy, w, h, ang, d.score, d.class_id});
+    }
+    return out;
+}
+
+std::vector<uint8_t> semantic_argmax(const std::vector<float>& logits,
+                                     int nc,
+                                     int w,
+                                     int h) {
+    std::vector<uint8_t> cls((size_t)w * h);
+    if (nc <= 0 || nc > 255 || (int)logits.size() != nc * w * h) return cls;
+    for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+            const size_t px = (size_t)y * w + x;
+            int best = 0;
+            float bv = -INFINITY;
+            for (int c = 0; c < nc; c++) {
+                const float v = logits[(size_t)c * w * h + px];
+                if (v > bv) {
+                    bv = v;
+                    best = c;
+                }
+            }
+            cls[px] = (uint8_t)best;
+        }
+    }
+    return cls;
+}
+
+std::vector<float> classify_softmax(const std::vector<float>& logits) {
+    std::vector<float> p(logits.size());
+    if (logits.empty()) return p;
+    const float m = *std::max_element(logits.begin(), logits.end());
+    float sum = 0.0f;
+    for (size_t i = 0; i < logits.size(); i++) {
+        p[i] = std::exp(logits[i] - m);
+        sum += p[i];
+    }
+    for (float& v : p) v /= sum;
+    return p;
+}
+
 }  // namespace yolo

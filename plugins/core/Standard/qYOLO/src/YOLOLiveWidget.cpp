@@ -64,6 +64,10 @@ YOLOLiveWidget::YOLOLiveWidget(QWidget* parent) : VideoPlaybackWidget(parent) {
 }
 
 YOLOLiveWidget::~YOLOLiveWidget() {
+    // Destruction guard (see ~VideoPlaybackWidget): this body runs before
+    // the base destructor, so drop outgoing connections before stopStream()
+    // emits streamStopped at ancestor-context slots.
+    disconnect(this, nullptr, nullptr, nullptr);
     stopStream();
     shutdownInferThread();
 }
@@ -254,7 +258,19 @@ void YOLOLiveWidget::rebuildModelCombo(const QStringList& labels,
 }
 
 void YOLOLiveWidget::populateAllModels(const QString& keepFilename) {
-    const QVector<YOLOModelEntry> all = YOLOHelpers::catalogModels();
+    // The live pipeline covers the closed-set real-time families (detect /
+    // segment / depth). The batch-only families (pose / obb / classify /
+    // semantic) and the text-conditioned world/yoloe models (which need a
+    // class list + text tower per context) are offered by their dedicated
+    // task tabs instead.
+    QVector<YOLOModelEntry> all;
+    for (const YOLOModelEntry& e : YOLOHelpers::catalogModels()) {
+        const bool closedSet = !e.textInput;
+        const bool liveTask = e.task == QStringLiteral("detect") ||
+                              e.task == QStringLiteral("segment") ||
+                              e.task == QStringLiteral("depth");
+        if (closedSet && liveTask) all.append(e);
+    }
     m_syncingModelControls = true;
     m_modelCombo->clear();
     for (const YOLOModelEntry& e : all) {
@@ -591,8 +607,15 @@ void YOLOLiveWidget::rebuildOverlayLayer(const QSize& displaySize) {
                 continue;
             }
             QImage maskImage(mask.w, mask.h, QImage::Format_Grayscale8);
-            std::memcpy(maskImage.bits(), mask.bits.constData(),
-                        static_cast<size_t>(mask.w) * mask.h);
+            /* Row-by-row copy: QImage scanlines are 32-bit aligned, so for
+             * a width that is not a multiple of 4 bytesPerLine > width and
+             * one contiguous memcpy shears the mask. */
+            for (int y = 0; y < mask.h; ++y) {
+                std::memcpy(
+                        maskImage.scanLine(y),
+                        mask.bits.constData() + static_cast<qint64>(y) * mask.w,
+                        static_cast<size_t>(mask.w));
+            }
             // Scale the binary {0,1} mask to preview size FIRST with
             // nearest-neighbour (lossless for binary data), then convert
             // to {0,255}, blur and blend at the MUCH smaller display

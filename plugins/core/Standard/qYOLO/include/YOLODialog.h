@@ -18,7 +18,7 @@
 #include <QProgressBar>
 #include <QPushButton>
 #include <QSpinBox>
-#include <QTabWidget>
+#include <QStackedWidget>
 #include <QToolButton>
 
 #include "YOLOLiveWidget.h"
@@ -30,25 +30,31 @@
 
 class ecvMainAppInterface;
 
-/** One task-tab panel: its own model combo (filtered on the tab's task),
- *  runtime params (device / threads), threshold row, image input and Run
- *  button. A dialog owns three of these (detect / segment / depth); the
- *  Live tab reuses all models. The per-panel device/threads controls are
- *  kept in sync across panels (they are shared runtime parameters rendered
- *  inside every tab, next to the model they configure). */
+/** One task panel: its own model combo (filtered on the panel's task),
+ *  threshold row, image input and Run button. A dialog owns one panel per
+ *  task family (detect / segment / depth / pose / obb / classify /
+ *  semantic / world / yoloe) shown in a left-hand task list; the Live page
+ *  reuses all closed-set models. Device / Threads are global controls
+ *  rendered once above the task list (they configure every panel and the
+ *  Live widget). */
 struct YOLOTaskPanel {
-    QString task;  // "detect" | "segment" | "depth"
+    QString task;  // "detect" | "segment" | "depth" | "pose" | "obb" |
+                   // "classify" | "semantic" | "world" | "yoloe"
 
     QWidget* tab = nullptr;
     QComboBox* modelCombo = nullptr;
-    QComboBox* deviceCombo = nullptr;
-    QSpinBox* threads = nullptr;
     QLineEdit* customModelPath = nullptr;
     QWidget* customModelRow = nullptr;
-    QWidget* thresholdRow = nullptr;  // Conf/IoU/Top-K (hidden for depth)
+    QWidget* thresholdRow = nullptr;  // Conf/IoU/Top-K (hidden for depth /
+                                      // classify / semantic)
     QDoubleSpinBox* conf = nullptr;
     QDoubleSpinBox* iou = nullptr;
     QSpinBox* topK = nullptr;
+    // Open-vocabulary row (world/yoloe tabs only): comma-separated class
+    // list + text-encoder GGUF combo (default follows the detector family).
+    QWidget* textRow = nullptr;
+    QLineEdit* classesEdit = nullptr;
+    QComboBox* textModelCombo = nullptr;
     QLineEdit* imagePath = nullptr;
     ecvClickableImageLabel* previewLabel = nullptr;
     QPushButton* runBtn = nullptr;
@@ -60,6 +66,9 @@ struct YOLOTaskPanel {
     QListWidget* dbImageList = nullptr;
 
     QString modelPath() const;  // resolved path of modelCombo's selection
+    /** Resolved path of textModelCombo's selection (empty when the tab has
+     *  no text row). */
+    QString textModelPath() const;
 };
 
 class YOLODialog : public QDialog {
@@ -75,6 +84,9 @@ public:
         float iouThres = 0.7f;
         uint32_t topK = 300;
         bool addAnnotatedImageToDb = true;
+        // Open-vocabulary (world/yoloe) tabs.
+        QStringList classes;
+        QString textModelPath;
     };
 
     struct DbImageEntry {
@@ -120,7 +132,6 @@ private slots:
 
 protected:
     void closeEvent(QCloseEvent* event) override;
-    void changeEvent(QEvent* event) override;
 
 private:
     enum class PendingAction { None, Run, LiveStart };
@@ -131,13 +142,16 @@ private:
     void saveSettings() const;
     void populateModelCombo(const QString& keepFilename = QString());
     bool selectModelByFilename(const QString& filename);
+    /** Select the family-default text-encoder GGUF in the panel's text
+     *  model combo (CLIP for World, MobileCLIP for YOLOE). No-op for tabs
+     *  without a text row. */
+    void selectDefaultTextModel(YOLOTaskPanel& panel) const;
     QString resolveModelPath() const;
     bool ensureModelAvailable(PendingAction action);
     void startDownload(const YOLOModelEntry& model);
     void cancelDownload();
     void updateImagePreview();
     void startLiveStream();
-    void adaptTabWidgetHeight();
     /** Update custom-row / threshold-row visibility of one task panel. */
     void applyPanelVisibility(YOLOTaskPanel& panel);
 
@@ -149,14 +163,19 @@ private:
                                       ecvTestDataRepository::Dataset kind);
     void setTestDataControlsEnabled(bool enabled);
 
-    /** The task panel of the currently active tab. */
+    /** The task panel of the currently active task-list entry. */
     YOLOTaskPanel* currentTaskPanel() const;
-    /** Find the panel whose tab is `tab`. */
-    YOLOTaskPanel* panelForTab(QWidget* tab) const;
+    /** Find the panel whose task id is `task` (may be nullptr). */
+    YOLOTaskPanel* panelForTask(const QString& task) const;
     /** Find the panel whose model combo lists `filename` (may be nullptr). */
     YOLOTaskPanel* panelForFilename(const QString& filename) const;
 
-    QTabWidget* m_tabWidget = nullptr;
+    // Left-hand task navigation: a grouped list driving the stack.
+    QListWidget* m_taskList = nullptr;
+    QStackedWidget* m_taskStack = nullptr;
+    // Global runtime parameters rendered once above the task list.
+    QComboBox* m_deviceCombo = nullptr;
+    QSpinBox* m_threads = nullptr;
     QWidget* m_liveTab = nullptr;
     YOLOLiveWidget* m_liveWidget = nullptr;
     QPushButton* m_liveStartBtn = nullptr;
@@ -165,7 +184,8 @@ private:
     QPushButton* m_testDataBtn = nullptr;
     QComboBox* m_testVideoCombo = nullptr;
 
-    // One panel per task (index 0=detect, 1=segment, 2=depth).
+    // One panel per task family (stack order; see kPanelTasks() in
+    // YOLODialog.cpp).
     QVector<YOLOTaskPanel> m_panels;
 
     QLineEdit* m_customModelPath = nullptr;
@@ -185,7 +205,6 @@ private:
     bool m_taskRunning = false;
     QString m_lastTaskError;
     QString m_downloadTargetFilename;
-    int m_activeTabHeight = -1;
 
     bool m_testDataDownloadInProgress = false;
     TestDataTarget m_pendingTestDataTarget = TestDataTarget::None;

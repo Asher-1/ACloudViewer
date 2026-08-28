@@ -326,6 +326,27 @@ v3.9.5-Beta (Asher) - 08/04/2026
       - RF-DETR base/large detection with COCO 91-class layout (80 named classes + 11 empty slots)
       - Image and live camera/video inference
       - CMake: `PLUGIN_STANDARD_QRFDETR=ON` + `AICore_ENABLED=ON`
+    - Add qTrellis plugin: TRELLIS.2 image-to-3D mesh generation with PBR
+      - Native GGUF inference through AICore unified runtime (`aicore_trellis_*`):
+        single image in, textured 3D mesh out — no PyTorch at runtime
+      - Three quality presets: Coarse 64³ preview / Standard 512³ + PBR (recommended)
+        / Full 1024³ cascade + PBR
+      - Per-vertex PBR materials: base color as RGB colors, metallic/roughness/alpha
+        as scalar fields; GLB export via xatlas + meshoptimizer
+      - AI background removal reusing the shared RMBG-2.0 engine (qRMBG models)
+      - Model auto-download from the Hugging Face mirror with streamed SHA-256 +
+        size + GGUF magic verification; one-click sample images
+      - CMake: `PLUGIN_STANDARD_QTRELLIS=ON` + `AICore_ENABLED=ON`
+    - Add qSAM3 plugin: SAM 2 / 2.1 / 3 image & video segmentation
+      - Native GGUF inference through AICore unified runtime (`aicore_sam3_*`)
+      - Four tabs: SAM 3 Full (text / point / box PVS + exemplar PCS),
+        SAM 3 Visual, SAM 2 / 2.1, and Video tracking
+      - Text-prompted detection, interactive point / box prompts, and
+        multi-exemplar (PCS) search with one-click sample images
+      - Video tab: frame-by-frame tracking with scrubber timeline and
+        per-instance presence bands, text-prompt tracking, and per-instance
+        mask / annotated frame export to the DB tree
+      - CMake: `PLUGIN_STANDARD_QSAM3=ON` + `AICore_ENABLED=ON`
 
 - New features:
     - AICore YOLO upgrade (ultralytics-ggml segment + CUDA/Vulkan optimization):
@@ -337,6 +358,34 @@ v3.9.5-Beta (Asher) - 08/04/2026
         replace per-task YOLO_USE_CUDA / YOLO_USE_VULKAN
       - Removed all std::getenv() calls from yolo module
       - Model catalog expanded from 33 to 63 entries (detect + depth + segment)
+    - AICore env-policy hardening (tasks carry no environment mechanism):
+      - ggml_env_bridge gains `apply_rmbg_math_profile()` — the RMBG
+        profile->ggml-switch translation moved out of tasks/rmbg; gaussian
+        scopes the macOS metal-optimizer disable through
+        `GpuResolveOptions` on `resolve_gpu_group()`; task modules now call
+        plain interfaces only
+      - `check_no_env_getenv.sh` rule 2: src/tasks/** must not include the
+        env bridge or reference any GgmlEnv*/apply_*_env symbol (interface
+        -only enforcement, positive + negative tested)
+    - ggml patch `rmbg_merged` fix: the scalar direct-conv pipelines were
+      created with 3 storage bindings while the yolo_merged conv2d shader
+      contract declares 4 (optional FP32 bias) — op_f32 always dispatches
+      4 descriptors, so RMBG's optimized math profile aborted on Vulkan at
+      `parameter_count == descriptor_buffer_infos.size()`; scalar pipelines
+      now create with parameter_count=4 (rmbg Vulkan perf test passes:
+      median 521.7 ms on RTX 3060, stable output hash)
+    - AICore YOLO GPU-parity fixes (real-GGUF parity across CPU/CUDA/Vulkan):
+      - ggml patch `sam3_merged`: guard the Vulkan 2x2/stride-2 conv_transpose
+        fast path to its F32-activation contract — F16 protos (YOLOE/v8seg
+        masks on the Vulkan F16 direct path) fell through to the generic
+        conv_transpose pipeline instead of being misread as F32 (fixes
+        Vulkan mask disagreement; optrace now shows all user-op outputs
+        matching and parity passes on yolov8n-seg / yoloe-seg / world f16)
+      - YOLO optrace tool: compare every user-op output across devices
+        (F16-aware), plus post-cast session outputs (what the C API reads)
+      - `yolo_graph`: keep_all_ops no longer wipes op_values at plan commit
+      - `test_yolo_capi_parity`: guard `env_or` against NULL fallback
+        (getenv(nullptr) crash when AICORE_TEST_YOLO_GGUF is unset)
     - qYOLO plugin redesign:
       - Task-based tab UI: Object Detection / Instance Segmentation / Depth tabs
         (per-task model filtering, task-specific controls)

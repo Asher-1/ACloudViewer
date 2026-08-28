@@ -17,7 +17,6 @@
 #include <memory>
 
 #include "common/ggml_backend_utils.hpp"
-#include "common/ggml_env_bridge.hpp"
 #include "ggml-backend.h"
 #include "gguf.h"
 #include "tasks/rmbg/rmbg.hpp"
@@ -29,59 +28,6 @@ namespace rmbg {
 static std::string lower(std::string value);
 
 namespace {
-
-// Coopmat matmul whitelist of the "optimized" profile (historical default
-// written into RMBG_VK_COOPMAT_MATMUL before the env bridge existed).
-constexpr const char *kOptimizedCoopmatWhitelist =
-        "bb_layers_0,bb_layers_1,bb_layers_2,bb_layers_3,sq0_,db4_,db3_,db2_"
-        ",db1_";
-
-// Apply the ggml-side environment overrides implied by a math profile.
-// Device-aware, mirroring the historical configure_backend_profile():
-// the Vulkan switches are only meaningful when a Vulkan backend may load,
-// the cuBLAS TF32 switch only for CUDA-bound requests. Runs BEFORE
-// pick_backend() so instances created during device resolution see the
-// values.
-void apply_profile_env(const std::string &profile,
-                       const std::string &requested) {
-    aicore::GgmlEnvOverrides env;
-    const bool generic_gpu = requested == "gpu";
-    const bool may_vulkan = requested == "auto" || generic_gpu ||
-                            requested.rfind("vulkan", 0) == 0;
-    const bool may_cuda = requested == "auto" || generic_gpu ||
-                          requested.rfind("cuda", 0) == 0;
-    if (may_vulkan) {
-        if (profile == "strict") {
-            env.vk_disable_f16 = true;
-            env.vk_disable_coopmat = true;
-            env.vk_disable_coopmat2 = true;
-            env.vk_disable_integer_dot_product = true;
-            env.rmbg_vk_scalar_direct_conv = false;
-            env.rmbg_vk_coopmat_matmul = std::string("");
-        } else if (profile == "fast" || profile == "unsafe-fast") {
-            env.vk_disable_f16 = false;
-            env.vk_disable_coopmat = false;
-            env.vk_disable_coopmat2 = false;
-            env.vk_disable_integer_dot_product = false;
-            env.rmbg_vk_scalar_direct_conv = false;
-            env.rmbg_vk_coopmat_matmul = std::string("");
-        } else {  // "optimized" (default)
-            env.vk_disable_f16 = true;
-            env.vk_disable_coopmat = false;
-            env.vk_disable_coopmat2 = true;
-            env.vk_disable_integer_dot_product = true;
-            env.rmbg_vk_scalar_direct_conv = true;
-            env.rmbg_vk_coopmat_matmul =
-                    std::string(kOptimizedCoopmatWhitelist);
-        }
-    }
-    if (profile == "strict" && may_cuda) {
-        // Bit-stable FP32 GEMMs. The default keeps cuBLAS TF32 enabled; its
-        // measured alpha error remains below 1.4e-3.
-        env.nvidia_tf32_override = false;
-    }
-    aicore::apply_ggml_env_overrides(env);
-}
 
 // Profile-driven graph fields. The caller's fine-tuning fields (qkv layout,
 // flash attention, cuda f16/nn gemm, ...) are kept; the profile always wins
@@ -172,9 +118,11 @@ bool load_gguf(const char *path,
 
     const std::string profile = normalize_math_profile(math_profile);
     const std::string requested = lower(device && device[0] ? device : "auto");
-    // The ggml env overrides must be applied before the backend instances
-    // are created (pick_backend below resolves the device).
-    apply_profile_env(profile, requested);
+    // The ggml-side backend configuration implied by the profile must be
+    // applied before the backend instances are created (pick_backend below
+    // resolves the device). Interface-only: the env-mechanism translation
+    // lives in the common layer (aicore::apply_rmbg_math_profile).
+    aicore::apply_rmbg_math_profile(profile, requested);
 
     WeightMap weights;
     if (!weights.load_gguf(path, err)) return false;

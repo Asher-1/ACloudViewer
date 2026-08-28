@@ -136,7 +136,9 @@ void free_backend_ctx(BackendCtx& ctx) {
 bool backend_ctx_graph_alloc(BackendCtx& ctx,
                              ::ggml_cgraph* graph,
                              ::ggml_tensor* pin_input,
-                             ::ggml_tensor* pin_output) {
+                             ::ggml_tensor* pin_output,
+                             ::ggml_tensor* pin_text,
+                             ::ggml_tensor* pin_proto) {
     if (ctx.sched) {
         /* Pre-flight: every node must be claimed by the GPU or the CPU half
          * of the scheduler. A node neither backend supports would leave the
@@ -166,7 +168,7 @@ bool backend_ctx_graph_alloc(BackendCtx& ctx,
             ctx.is_cuda = ctx.is_vulkan = false;
         } else {
             ggml_backend_sched_reset(ctx.sched);
-            // Pin input/output AFTER reset, before alloc_graph.
+            // Pin the external leaves AFTER reset, before alloc_graph.
             // ggml_backend_sched_reset clears all hv_tensor_backend_ids to
             // -1, so any ggml_backend_sched_set_tensor_backend calls made
             // before reset are lost.  The upstream llama.cpp pattern is:
@@ -177,6 +179,14 @@ bool backend_ctx_graph_alloc(BackendCtx& ctx,
             }
             if (ctx.gpu && pin_output) {
                 ggml_backend_sched_set_tensor_backend(ctx.sched, pin_output,
+                                                      ctx.gpu);
+            }
+            if (ctx.gpu && pin_text) {
+                ggml_backend_sched_set_tensor_backend(ctx.sched, pin_text,
+                                                      ctx.gpu);
+            }
+            if (ctx.gpu && pin_proto) {
+                ggml_backend_sched_set_tensor_backend(ctx.sched, pin_proto,
                                                       ctx.gpu);
             }
             if (!ggml_backend_sched_alloc_graph(ctx.sched, graph)) {

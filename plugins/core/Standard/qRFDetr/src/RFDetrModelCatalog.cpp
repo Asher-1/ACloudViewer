@@ -253,9 +253,16 @@ void drawDetections(QImage* image,
     for (const RFDetrDetection& d : detections) {
         if (d.maskRaw.isEmpty() || d.maskWidth <= 0 || d.maskHeight <= 0)
             continue;
-        QImage mask(d.maskWidth, d.maskHeight, QImage::Format_Grayscale8);
-        std::memcpy(mask.bits(), d.maskRaw.constData(),
-                    static_cast<size_t>(d.maskWidth) * d.maskHeight);
+        /* Zero-copy view over the mask bytes: the explicit-stride ctor wraps
+         * EXTERNAL data (bytesPerLine = width), so no 32-bit-alignment
+         * padding can shear the rows (QImage's own allocation pads
+         * Grayscale8 scanlines, e.g. 78 -> 80, which turned contiguous
+         * copies into diagonal stripes). The mask is read-only here
+         * (composite pass uses constScanLine) and d.maskRaw outlives the
+         * QPainter scope, so wrapping is safe and faster than any copy. */
+        const QImage mask(reinterpret_cast<const uchar*>(d.maskRaw.constData()),
+                          d.maskWidth, d.maskHeight, d.maskWidth,
+                          QImage::Format_Grayscale8);
         if (mask.isNull()) continue;
 
         if (composite.isNull()) {

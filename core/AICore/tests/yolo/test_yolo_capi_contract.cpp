@@ -20,7 +20,7 @@
 static int failures = 0;
 
 int main() {
-    AICORE_CHECK(aicore_yolo_abi_version() >= 1);
+    AICORE_CHECK(aicore_yolo_abi_version() >= 3);
 
     // Null-safe teardown / lifecycle.
     aicore_yolo_free(nullptr);
@@ -28,6 +28,10 @@ int main() {
     aicore_yolo_free_buffer(nullptr);
     aicore_yolo_free_buffer(nullptr);
     aicore_yolo_seg_result_free(nullptr);
+    aicore_yolo_pose_result_free(nullptr);
+    aicore_yolo_obb_result_free(nullptr);
+    aicore_yolo_semantic_result_free(nullptr);
+    aicore_yolo_classify_result_free(nullptr);
 
     AICORE_CHECK(aicore_yolo_load_opts(nullptr, nullptr) == nullptr);
     AICORE_CHECK(aicore_yolo_is_ready(nullptr) == 0);
@@ -62,6 +66,15 @@ int main() {
     aicore_yolo_options_set_keep_all_ops(nullptr, 1);
     aicore_yolo_options_set_profile_ops(nullptr, 1);
     aicore_yolo_options_set_profile_gaps(nullptr, 1);
+    // Open-vocabulary setters: NULL options / NULL array must be safe no-ops;
+    // an empty entry inside the array is preserved (background prompt).
+    aicore_yolo_options_set_classes(nullptr, nullptr, 0);
+    const char* kClasses[] = {"person", "", "bus"};
+    aicore_yolo_options_set_classes(opts, kClasses, 3);
+    aicore_yolo_options_set_classes(opts, nullptr, 3);    // clears
+    aicore_yolo_options_set_classes(opts, kClasses, -1);  // clears
+    aicore_yolo_options_set_text_model(nullptr, "x.gguf");
+    aicore_yolo_options_set_text_model(opts, nullptr);  // clears
     // NULL options expose the documented defaults (not zero).
     AICORE_CHECK(aicore_yolo_options_get_conf_thres(nullptr) == 0.25f);
     AICORE_CHECK(aicore_yolo_options_get_iou_thres(nullptr) == 0.7f);
@@ -109,6 +122,29 @@ int main() {
     AICORE_CHECK(aicore_yolo_seg_det_class_name(nullptr, 0) == nullptr);
     AICORE_CHECK(aicore_yolo_seg_mask_at(nullptr, 0).data == nullptr);
 
+    // New-task inference entry points must reject a ctx with no loaded
+    // model, and their accessors must be null-safe.
+    AICORE_CHECK(aicore_yolo_pose_rgb(ctx, kRgb, 3, 3) == nullptr);
+    AICORE_CHECK(aicore_yolo_obb_rgb(ctx, kRgb, 3, 3) == nullptr);
+    AICORE_CHECK(aicore_yolo_semantic_rgb(ctx, kRgb, 3, 3) == nullptr);
+    AICORE_CHECK(aicore_yolo_classify_rgb(ctx, kRgb, 3, 3) == nullptr);
+    AICORE_CHECK(aicore_yolo_pose_det_count(nullptr) == 0);
+    AICORE_CHECK(aicore_yolo_pose_det_at(nullptr, 0).score == 0.0f);
+    AICORE_CHECK(aicore_yolo_pose_kpt_count(nullptr) == 0);
+    AICORE_CHECK(aicore_yolo_pose_kpt_at(nullptr, 0, 0).x == 0.0f);
+    AICORE_CHECK(aicore_yolo_pose_det_class_name(nullptr, 0) == nullptr);
+    AICORE_CHECK(aicore_yolo_obb_count(nullptr) == 0);
+    AICORE_CHECK(aicore_yolo_obb_at(nullptr, 0).score == 0.0f);
+    AICORE_CHECK(aicore_yolo_obb_class_name(nullptr, 0) == nullptr);
+    AICORE_CHECK(aicore_yolo_semantic_class_map(nullptr).data == nullptr);
+    AICORE_CHECK(aicore_yolo_semantic_num_classes(nullptr) == 0);
+    AICORE_CHECK(aicore_yolo_semantic_class_name(nullptr, 0) == nullptr);
+    AICORE_CHECK(aicore_yolo_classify_count(nullptr) == 0);
+    AICORE_CHECK(aicore_yolo_classify_prob_at(nullptr, 0) == 0.0f);
+    AICORE_CHECK(aicore_yolo_classify_class_name(nullptr, 0) == nullptr);
+    AICORE_CHECK(aicore_yolo_context_has_text_input(nullptr) == 0);
+    AICORE_CHECK(aicore_yolo_context_has_text_input(ctx) == 0);
+
     // Host-weight memory management: no engine loaded -> both must fail
     // cleanly (release/ensure need a live session).
     AICORE_CHECK(aicore_yolo_release_host_weights(nullptr) == -1);
@@ -137,8 +173,8 @@ int main() {
     AICORE_CHECK(rgb == nullptr && iw == 0 && ih == 0);
     AICORE_CHECK(aicore_yolo_load_path_rgb(nullptr, &rgb, &iw, &ih) == -1);
 
-    // Model catalog contract: task-tagged entries (63 = 3 quant x
-    // (10 detect + 10 segment + 1 depth); counts must be stable).
+    // Model catalog contract: task-tagged entries over the full published
+    // release (183 = 3 quant x 61 variants; counts must be stable).
     const int n_total = aicore_yolo_model_count(AICORE_YOLO_ROLE_ANY);
     AICORE_CHECK(n_total > 0);
     AICORE_CHECK(aicore_yolo_model_at(-1, AICORE_YOLO_ROLE_ANY) == nullptr);
@@ -151,25 +187,49 @@ int main() {
                      e->download_url != nullptr && e->display_name != nullptr &&
                      e->license_note != nullptr && e->task != nullptr);
     }
-    const int n_det = aicore_yolo_model_count(AICORE_YOLO_ROLE_DETECTION);
-    const int n_dep = aicore_yolo_model_count(AICORE_YOLO_ROLE_DEPTH);
-    const int n_seg = aicore_yolo_model_count(AICORE_YOLO_ROLE_SEGMENT);
-    AICORE_CHECK(n_det > 0 && n_dep > 0 && n_seg > 0);
-    // Classification is by task tag: depth_capable marks the depth variant,
-    // so the detection view (everything that is not depth) already contains
-    // the segmentation entries.
-    AICORE_CHECK(n_det + n_dep == n_total);
-    AICORE_CHECK(n_seg < n_det);
-    AICORE_CHECK(aicore_yolo_model_at(0, AICORE_YOLO_ROLE_DETECTION) !=
-                 nullptr);
-    AICORE_CHECK(aicore_yolo_model_at(n_det, AICORE_YOLO_ROLE_DETECTION) ==
-                 nullptr);
-    AICORE_CHECK(aicore_yolo_model_at(0, AICORE_YOLO_ROLE_DEPTH) != nullptr);
-    AICORE_CHECK(aicore_yolo_model_at(n_dep, AICORE_YOLO_ROLE_DEPTH) ==
-                 nullptr);
-    AICORE_CHECK(aicore_yolo_model_at(0, AICORE_YOLO_ROLE_SEGMENT) != nullptr);
-    AICORE_CHECK(aicore_yolo_model_at(n_seg, AICORE_YOLO_ROLE_SEGMENT) ==
-                 nullptr);
+    // Per-role counts: 61 variants x 3 quants, partitioned by role.
+    struct RoleCount {
+        enum aicore_yolo_model_role role;
+        int expected;
+    };
+    const RoleCount kRoleCounts[] = {
+            {AICORE_YOLO_ROLE_DETECTION, 30},  // 10 detect x 3
+            {AICORE_YOLO_ROLE_DEPTH, 15},      // 5 depth x 3
+            {AICORE_YOLO_ROLE_SEGMENT, 30},    // 10 closed-set seg x 3
+            {AICORE_YOLO_ROLE_POSE, 15},       // 5 pose x 3
+            {AICORE_YOLO_ROLE_OBB, 15},        // 5 obb x 3
+            {AICORE_YOLO_ROLE_CLASSIFY, 15},   // 5 cls x 3
+            {AICORE_YOLO_ROLE_SEMANTIC, 15},   // 5 sem x 3
+            {AICORE_YOLO_ROLE_WORLD, 12},      // 4 world x 3
+            {AICORE_YOLO_ROLE_YOLOE, 30},      // 10 yoloe (incl. -pf) x 3
+            {AICORE_YOLO_ROLE_TEXT, 6},        // 2 text towers x 3
+    };
+    int role_sum = 0;
+    for (const RoleCount& rc : kRoleCounts) {
+        const int n = aicore_yolo_model_count(rc.role);
+        AICORE_CHECK(n == rc.expected);
+        role_sum += n;
+        AICORE_CHECK(aicore_yolo_model_at(0, rc.role) != nullptr);
+        AICORE_CHECK(aicore_yolo_model_at(n, rc.role) == nullptr);
+    }
+    // The roles partition the catalog.
+    AICORE_CHECK(role_sum == n_total);
+    // World entries are text-conditioned detectors; YOLOE entries are
+    // text-conditioned segmenters; text towers are their own task.
+    const aicore_yolo_model_entry* world =
+            aicore_yolo_model_by_filename("yolov8s-world-f16.gguf");
+    AICORE_CHECK(world != nullptr && world->text_input == 1 &&
+                 std::strcmp(world->task, "detect") == 0);
+    const aicore_yolo_model_entry* yoloe =
+            aicore_yolo_model_by_filename("yoloe-26n-seg-f16.gguf");
+    AICORE_CHECK(yoloe != nullptr && yoloe->text_input == 1 &&
+                 std::strcmp(yoloe->task, "segment") == 0);
+    const aicore_yolo_model_entry* clip =
+            aicore_yolo_model_by_filename("clip-ViT-B-32-f16.gguf");
+    AICORE_CHECK(clip != nullptr && std::strcmp(clip->task, "text") == 0);
+    const aicore_yolo_model_entry* mclip =
+            aicore_yolo_model_by_filename("mobileclip2_b-q8_0.gguf");
+    AICORE_CHECK(mclip != nullptr && std::strcmp(mclip->task, "text") == 0);
 
     const aicore_yolo_model_entry* first =
             aicore_yolo_model_at(0, AICORE_YOLO_ROLE_ANY);

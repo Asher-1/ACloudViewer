@@ -9,8 +9,11 @@
 // ----------------------------------------------------------------------------
 //
 // Detection decoding for the raw detect head output and segment mask
-// composition. In-tree port of ultralytics-ggml cpp_ggml/src/postprocess.{hpp,cpp}.
+// composition. In-tree port of ultralytics-ggml cpp_ggml/src/postprocess.{hpp,cpp},
+// including the pose / OBB / semantic / classify decoders of the expanded
+// task families.
 
+#include <cstdint>
 #include <vector>
 
 #include "tasks/yolo/yolo_common.hpp"
@@ -64,5 +67,47 @@ std::vector<SegMask> compose_masks(const std::vector<Detection>& dets,
                                    const std::vector<float>& proto,
                                    int proto_w, int proto_h, int canvas_w,
                                    int canvas_h);
+
+/* Pose: one detection plus its decoded keypoints.
+ *
+ * kpts is [nk] in letterbox-canvas coordinates, (x, y) interleaved per
+ * keypoint with an optional visibility (sigmoid of the raw third dim) when
+ * kpt_ndim == 3. Decoding mirrors Pose26.kpts_decode (export path):
+ * (raw + grid) * stride.
+ */
+struct PoseDetection {
+    Detection det;
+    std::vector<float> kpts;
+};
+
+std::vector<PoseDetection> postprocess_pose(
+        const std::vector<float>& raw, int no, int na, const ModelMeta& meta,
+        const float* anchors, const float* strides, const PostprocConfig& cfg);
+
+/* OBB: oriented box in letterbox-canvas coordinates.
+ *
+ * cx/cy is the rotated center, w/h the unrotated extent, angle the raw OBB26
+ * prediction in radians (no sigmoid, matching OBB26.forward_head). Decoding
+ * mirrors dist2rbox (tal.py): [cx, cy, w, h] from lt/rb distances + angle.
+ */
+struct OBBDetection {
+    float cx, cy, w, h;
+    float angle;  // radians
+    float score;
+    int class_id;
+};
+
+std::vector<OBBDetection> postprocess_obb(
+        const std::vector<float>& raw, int no, int na, const ModelMeta& meta,
+        const float* anchors, const float* strides, const PostprocConfig& cfg);
+
+/* Semantic: per-pixel argmax class map [w * h] uint8 on the canvas/8 grid.
+ * nc must be <= 255 (Cityscapes 19; uint8 is the shipped GGUF contract).
+ */
+std::vector<uint8_t> semantic_argmax(const std::vector<float>& logits, int nc,
+                                     int w, int h);
+
+/* Classify: softmax probabilities [nc] from the head logits. */
+std::vector<float> classify_softmax(const std::vector<float>& logits);
 
 }  // namespace yolo

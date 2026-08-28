@@ -107,19 +107,19 @@ ggml_backend_buffer_type_t backend_ctx_weight_buft(const BackendCtx& ctx);
 /* Allocate buffers for the (single) compute graph. Uses the sched when
  * active (GPU), else the persistent gallocr. Returns false on allocation
  * failure. Call this, then ggml_backend_tensor_set() the graph inputs,
- * then backend_ctx_graph_compute(). */
-/* Allocate buffers for the (single) compute graph. Uses the sched when
- * active (GPU), else the persistent gallocr. Returns false on allocation
- * failure. Call this, then ggml_backend_tensor_set() the graph inputs,
  * then backend_ctx_graph_compute().
  *
- * When the scheduler is active, pin_input/pin_output (if non-null) are
- * forced to live on the GPU backend so upload and readback don't bounce
- * through CPU host memory. These MUST be set AFTER reset (i.e. right
- * before alloc_graph) or the scheduler clears them. */
+ * When the scheduler is active, the pin tensors (if non-null) are forced
+ * to live on the GPU backend so upload and readback don't bounce through
+ * CPU host memory. The function resets the scheduler internally
+ * (ggml_backend_sched_reset clears ALL tensor→backend assignments), so
+ * these MUST be passed here — assignments made by the caller before the
+ * call are lost. pin_text/pin_proto cover the yolo world/segment leaves. */
 bool backend_ctx_graph_alloc(BackendCtx& ctx, ::ggml_cgraph* graph,
                              ::ggml_tensor* pin_input = nullptr,
-                             ::ggml_tensor* pin_output = nullptr);
+                             ::ggml_tensor* pin_output = nullptr,
+                             ::ggml_tensor* pin_text = nullptr,
+                             ::ggml_tensor* pin_proto = nullptr);
 
 /* Run the graph on the bundle. Honors the AICore cancel token: returns
  * GGML_STATUS_ABORTED without launching compute when cancellation was

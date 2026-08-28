@@ -103,6 +103,10 @@ FaceLiveDetectWidget::FaceLiveDetectWidget(QWidget* parent)
 }
 
 FaceLiveDetectWidget::~FaceLiveDetectWidget() {
+    // Destruction guard (see ~VideoPlaybackWidget): this body runs before
+    // the base destructor, so drop outgoing connections before stopStream()
+    // emits streamStopped at ancestor-context slots.
+    disconnect(this, nullptr, nullptr, nullptr);
     saveSettings();
     stopStream();  // video_base owns the reader thread teardown
     shutdownInferThread();

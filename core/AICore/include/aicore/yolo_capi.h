@@ -5,13 +5,17 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 //
-// YOLO object detection / instance segmentation / metric depth C API.
+// YOLO C API: detection / instance segmentation / metric depth / pose /
+// oriented boxes / semantic segmentation / classification plus the
+// open-vocabulary YOLO-World (CLIP text) and YOLOE (MobileCLIP text)
+// families.
 //
 // The ggml engine under core/AICore/src/tasks/yolo/ is an in-tree port of
 // ultralytics-ggml cpp_ggml (https://github.com/Asher-1/ultralytics-ggml),
-// extended with typed segment results and yolo26n-depth absolute-depth
-// support. The upstream source is AGPL-3.0; this port keeps the license
-// until a written relicensing decision is recorded (see
+// extended with typed results, persistent sessions (video-friendly canvas
+// rebuilds) and the yolo26n-depth absolute-depth support. The upstream
+// source is AGPL-3.0; this port keeps the license until a written
+// relicensing decision is recorded (see
 // ultralytics-ggml-integration-plan.md §5).
 
 #pragma once
@@ -73,6 +77,22 @@ AICORE_CAPI void aicore_yolo_options_set_profile_ops(aicore_yolo_options* opts,
  *  (default off). */
 AICORE_CAPI void aicore_yolo_options_set_profile_gaps(aicore_yolo_options* opts,
                                                       int enabled);
+
+/** Open-vocabulary class list for YOLO-World / YOLOE models (plain text,
+ *  e.g. "person", "bus"). The list is copied; NULL classes or count <= 0
+ *  clears it (= use the vocabulary embedded in the GGUF, if any). The class
+ *  count fixes the graph text-input shape, so it must be set before
+ *  aicore_yolo_load_opts. An empty class name ("") is a real class row (the
+ *  background prompt of the YOLO-World docs). */
+AICORE_CAPI void aicore_yolo_options_set_classes(aicore_yolo_options* opts,
+                                                 const char* const* classes,
+                                                 int32_t count);
+/** Text-encoder GGUF used to encode the open-vocabulary class list:
+ *  clip-ViT-B-32-*.gguf for YOLO-World, mobileclip2_b-*.gguf for YOLOE.
+ *  The string is copied; pass NULL to clear. Ignored for closed-set
+ *  models. */
+AICORE_CAPI void aicore_yolo_options_set_text_model(
+        aicore_yolo_options* opts, const char* text_model_path);
 
 /** Get the recommended default confidence threshold for this model. */
 AICORE_CAPI float aicore_yolo_options_get_conf_thres(
@@ -168,9 +188,13 @@ AICORE_CAPI float* aicore_yolo_depth_rgb(aicore_yolo_ctx* ctx,
 AICORE_CAPI char* aicore_yolo_last_depth_json(aicore_yolo_ctx* ctx);
 
 /** Model introspection. */
-/** Task of the loaded model: "detect", "segment" or "depth" ("" when
- *  not ready). */
+/** Task of the loaded model: "detect", "segment", "depth", "pose", "obb",
+ *  "semantic" or "classify" ("" when not ready). */
 AICORE_CAPI const char* aicore_yolo_context_task(aicore_yolo_ctx* ctx);
+/** 1 when the loaded model is text-conditioned (YOLO-World / YOLOE; its
+ *  class vocabulary is the list passed via aicore_yolo_options_set_classes
+ *  or the checkpoint-embedded one). */
+AICORE_CAPI int aicore_yolo_context_has_text_input(const aicore_yolo_ctx* ctx);
 /** GGUF-declared model name. */
 AICORE_CAPI const char* aicore_yolo_context_model_name(aicore_yolo_ctx* ctx);
 /** Model input resolution (square, from GGUF metadata). */
@@ -224,17 +248,26 @@ typedef struct aicore_yolo_model_entry {
     const char* display_name;
     const char* quant_note;
     const char* license_note;
-    const char* task;   // "detect" | "segment" | "depth"
-    int depth_capable;  // 1 for the yolo26n-depth absolute-depth variants
+    const char* task;   // "detect" | "segment" | "depth" | "pose" | "obb" |
+                        // "semantic" | "classify" | "text"
+    int depth_capable;  // 1 for the yolo26*-depth absolute-depth variants
     int end2end;        // 1 for the yolo26 family (NMS-free head)
+    int text_input;     // 1 for YOLO-World / YOLOE / text encoders
 } aicore_yolo_model_entry;
 
 /** Catalog role filter for the unified query entry points. */
 enum aicore_yolo_model_role {
     AICORE_YOLO_ROLE_ANY = 0,       /**< every catalog entry */
-    AICORE_YOLO_ROLE_DETECTION = 1, /**< detection-capable (incl. segment) */
+    AICORE_YOLO_ROLE_DETECTION = 1, /**< closed-set detection-capable */
     AICORE_YOLO_ROLE_DEPTH = 2,     /**< absolute-depth variants */
-    AICORE_YOLO_ROLE_SEGMENT = 3,   /**< models with a segmentation head */
+    AICORE_YOLO_ROLE_SEGMENT = 3,   /**< closed-set instance segmentation */
+    AICORE_YOLO_ROLE_POSE = 4,      /**< keypoint (COCO-17) variants */
+    AICORE_YOLO_ROLE_OBB = 5,       /**< oriented-box (DOTA-15) variants */
+    AICORE_YOLO_ROLE_CLASSIFY = 6,  /**< classification variants */
+    AICORE_YOLO_ROLE_SEMANTIC = 7,  /**< semantic segmentation variants */
+    AICORE_YOLO_ROLE_WORLD = 8,     /**< YOLO-World (CLIP text) detectors */
+    AICORE_YOLO_ROLE_YOLOE = 9,     /**< YOLOE (MobileCLIP text) segments */
+    AICORE_YOLO_ROLE_TEXT = 10, /**< text-encoder towers (CLIP/MobileCLIP) */
 };
 
 /** Number of catalog entries matching the role filter. */
@@ -322,6 +355,128 @@ aicore_yolo_seg_mask_at(const aicore_yolo_segment_result* res, int index);
 
 /** Release a segment result. Safe on NULL. */
 AICORE_CAPI void aicore_yolo_seg_result_free(aicore_yolo_segment_result* res);
+
+// ---- Pose API (typed results) ----
+
+/** COCO-17 keypoint (source-image pixels): visibility is the sigmoided
+ *  third head channel when the model declares 3 dims per keypoint, always
+ *  1.0 for 2-dim models. */
+typedef struct aicore_yolo_keypoint {
+    float x, y;
+    float visibility;
+} aicore_yolo_keypoint;
+
+typedef struct aicore_yolo_pose_result aicore_yolo_pose_result;
+
+/** Run pose estimation on a borrowed RGB buffer (person boxes + COCO-17
+ *  keypoints). Thresholds come from the context (see
+ *  aicore_yolo_set_detect_thresholds). Returns NULL on failure; inspect
+ *  aicore_yolo_last_error(). Valid until aicore_yolo_pose_result_free. */
+AICORE_CAPI aicore_yolo_pose_result* aicore_yolo_pose_rgb(aicore_yolo_ctx* ctx,
+                                                          const uint8_t* rgb,
+                                                          int32_t width,
+                                                          int32_t height);
+/** Number of pose detections. */
+AICORE_CAPI int aicore_yolo_pose_det_count(const aicore_yolo_pose_result* res);
+/** Get the i-th detection box (shallow copy). */
+AICORE_CAPI aicore_yolo_detection
+aicore_yolo_pose_det_at(const aicore_yolo_pose_result* res, int index);
+/** Keypoint count per detection (17 for the shipped COCO models). */
+AICORE_CAPI int aicore_yolo_pose_kpt_count(const aicore_yolo_pose_result* res);
+/** Get the k-th keypoint of the i-th detection (zeroed when out of
+ *  range). */
+AICORE_CAPI aicore_yolo_keypoint
+aicore_yolo_pose_kpt_at(const aicore_yolo_pose_result* res, int index, int kpt);
+/** Class name of the i-th detection (owned by the result). */
+AICORE_CAPI const char* aicore_yolo_pose_det_class_name(
+        const aicore_yolo_pose_result* res, int index);
+/** Release a pose result. Safe on NULL. */
+AICORE_CAPI void aicore_yolo_pose_result_free(aicore_yolo_pose_result* res);
+
+// ---- OBB API (typed results) ----
+
+/** Oriented box in source-image pixels; angle in radians, unrotated w/h. */
+typedef struct aicore_yolo_obb_box {
+    float cx, cy, w, h;
+    float angle;
+    float score;
+    int32_t class_id;
+} aicore_yolo_obb_box;
+
+typedef struct aicore_yolo_obb_result aicore_yolo_obb_result;
+
+/** Run oriented-box detection on a borrowed RGB buffer. Returns NULL on
+ *  failure; inspect aicore_yolo_last_error(). Valid until
+ *  aicore_yolo_obb_result_free. */
+AICORE_CAPI aicore_yolo_obb_result* aicore_yolo_obb_rgb(aicore_yolo_ctx* ctx,
+                                                        const uint8_t* rgb,
+                                                        int32_t width,
+                                                        int32_t height);
+/** Number of oriented boxes. */
+AICORE_CAPI int aicore_yolo_obb_count(const aicore_yolo_obb_result* res);
+/** Get the i-th oriented box (shallow copy). */
+AICORE_CAPI aicore_yolo_obb_box
+aicore_yolo_obb_at(const aicore_yolo_obb_result* res, int index);
+/** Class name of the i-th box (owned by the result). */
+AICORE_CAPI const char* aicore_yolo_obb_class_name(
+        const aicore_yolo_obb_result* res, int index);
+/** Release an OBB result. Safe on NULL. */
+AICORE_CAPI void aicore_yolo_obb_result_free(aicore_yolo_obb_result* res);
+
+// ---- Semantic segmentation API (typed results) ----
+
+typedef struct aicore_yolo_semantic_result aicore_yolo_semantic_result;
+
+/** Run semantic segmentation on a borrowed RGB buffer. The class map is
+ *  restored to the FULL source-image resolution (nearest upsample of the
+ *  canvas/8 argmax grid), aligned 1:1 with the input pixels. Returns NULL
+ *  on failure; inspect aicore_yolo_last_error(). Valid until
+ *  aicore_yolo_semantic_result_free. */
+AICORE_CAPI aicore_yolo_semantic_result* aicore_yolo_semantic_rgb(
+        aicore_yolo_ctx* ctx,
+        const uint8_t* rgb,
+        int32_t width,
+        int32_t height);
+/** Class map of the most recent call (borrowed; width*height bytes, one
+ *  class id per source pixel) — same layout as aicore_yolo_plane_view. */
+AICORE_CAPI aicore_yolo_plane_view
+aicore_yolo_semantic_class_map(const aicore_yolo_semantic_result* res);
+/** Number of classes the model predicts (19 for Cityscapes). */
+AICORE_CAPI int aicore_yolo_semantic_num_classes(
+        const aicore_yolo_semantic_result* res);
+/** Class name for a class id (owned by the result; NULL when out of
+ *  range). */
+AICORE_CAPI const char* aicore_yolo_semantic_class_name(
+        const aicore_yolo_semantic_result* res, int class_id);
+/** Release a semantic result. Safe on NULL. */
+AICORE_CAPI void aicore_yolo_semantic_result_free(
+        aicore_yolo_semantic_result* res);
+
+// ---- Classify API (typed results) ----
+
+typedef struct aicore_yolo_classify_result aicore_yolo_classify_result;
+
+/** Run image classification on a borrowed RGB buffer. Returns NULL on
+ *  failure; inspect aicore_yolo_last_error(). Valid until
+ *  aicore_yolo_classify_result_free. */
+AICORE_CAPI aicore_yolo_classify_result* aicore_yolo_classify_rgb(
+        aicore_yolo_ctx* ctx,
+        const uint8_t* rgb,
+        int32_t width,
+        int32_t height);
+/** Number of classes (full softmax table; callers apply their own top-k). */
+AICORE_CAPI int aicore_yolo_classify_count(
+        const aicore_yolo_classify_result* res);
+/** Probability of the i-th class (softmax, descending NOT guaranteed). */
+AICORE_CAPI float aicore_yolo_classify_prob_at(
+        const aicore_yolo_classify_result* res, int index);
+/** Class name of the i-th class (owned by the result; NULL when the model
+ *  declares no name — fall back to "class <id>"). */
+AICORE_CAPI const char* aicore_yolo_classify_class_name(
+        const aicore_yolo_classify_result* res, int index);
+/** Release a classify result. Safe on NULL. */
+AICORE_CAPI void aicore_yolo_classify_result_free(
+        aicore_yolo_classify_result* res);
 
 #ifdef __cplusplus
 }

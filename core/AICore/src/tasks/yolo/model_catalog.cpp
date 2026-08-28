@@ -21,28 +21,93 @@ static constexpr const char* kDownloadBase =
         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
         "yolo_gguf_models/";
 
-// 21 variants: yolov8 n/s/m/l/x, yolo26 n/s/m/l/x, yolo26n-depth,
-// yolov8 n/s/m/l/x seg, yolo26 n/s/m/l/x seg.
-// Filenames follow the yolo_gguf_models release exactly (33 + 30 segment
-// assets, verified against the GitHub Release API).
-static constexpr const char* kVariantNames[] = {
-        "yolov8n",     "yolov8s",     "yolov8m",       "yolov8l",
-        "yolov8x",     "yolo26n",     "yolo26s",       "yolo26m",
-        "yolo26l",     "yolo26x",     "yolo26n-depth", "yolov8n-seg",
-        "yolov8s-seg", "yolov8m-seg", "yolov8l-seg",   "yolov8x-seg",
-        "yolo26n-seg", "yolo26s-seg", "yolo26m-seg",   "yolo26l-seg",
-        "yolo26x-seg",
+// One catalog family (release filename stem without the -<quant> suffix).
+// Filenames follow the yolo_gguf_models release exactly (61 variants x 3
+// quantizations = 183 gguf assets, verified against the GitHub release
+// expanded-assets listing).
+struct VariantInfo {
+    const char* name;     // release stem ("yolov8n", "yolo26n-depth", ...)
+    const char* display;  // user-facing name
+    const char* task;     // GGUF yolo.task ("text" = encoder-only tower)
+    int text_input;       // text-conditioned head / text encoder tower
 };
 
-static constexpr int kVariantCount =
-        sizeof(kVariantNames) / sizeof(kVariantNames[0]);
+static constexpr const VariantInfo kVariants[] = {
+        // Closed-set detection (COCO-80).
+        {"yolov8n", "YOLOv8 Nano", "detect", 0},
+        {"yolov8s", "YOLOv8 Small", "detect", 0},
+        {"yolov8m", "YOLOv8 Medium", "detect", 0},
+        {"yolov8l", "YOLOv8 Large", "detect", 0},
+        {"yolov8x", "YOLOv8 XLarge", "detect", 0},
+        {"yolo26n", "YOLO26 Nano", "detect", 0},
+        {"yolo26s", "YOLO26 Small", "detect", 0},
+        {"yolo26m", "YOLO26 Medium", "detect", 0},
+        {"yolo26l", "YOLO26 Large", "detect", 0},
+        {"yolo26x", "YOLO26 XLarge", "detect", 0},
+        // Absolute depth (768 input).
+        {"yolo26n-depth", "YOLO26 Nano Depth", "depth", 0},
+        {"yolo26s-depth", "YOLO26 Small Depth", "depth", 0},
+        {"yolo26m-depth", "YOLO26 Medium Depth", "depth", 0},
+        {"yolo26l-depth", "YOLO26 Large Depth", "depth", 0},
+        {"yolo26x-depth", "YOLO26 XLarge Depth", "depth", 0},
+        // Instance segmentation.
+        {"yolov8n-seg", "YOLOv8 Nano (Seg)", "segment", 0},
+        {"yolov8s-seg", "YOLOv8 Small (Seg)", "segment", 0},
+        {"yolov8m-seg", "YOLOv8 Medium (Seg)", "segment", 0},
+        {"yolov8l-seg", "YOLOv8 Large (Seg)", "segment", 0},
+        {"yolov8x-seg", "YOLOv8 XLarge (Seg)", "segment", 0},
+        {"yolo26n-seg", "YOLO26 Nano (Seg)", "segment", 0},
+        {"yolo26s-seg", "YOLO26 Small (Seg)", "segment", 0},
+        {"yolo26m-seg", "YOLO26 Medium (Seg)", "segment", 0},
+        {"yolo26l-seg", "YOLO26 Large (Seg)", "segment", 0},
+        {"yolo26x-seg", "YOLO26 XLarge (Seg)", "segment", 0},
+        // Keypoints (COCO-17 person pose).
+        {"yolo26n-pose", "YOLO26 Nano (Pose)", "pose", 0},
+        {"yolo26s-pose", "YOLO26 Small (Pose)", "pose", 0},
+        {"yolo26m-pose", "YOLO26 Medium (Pose)", "pose", 0},
+        {"yolo26l-pose", "YOLO26 Large (Pose)", "pose", 0},
+        {"yolo26x-pose", "YOLO26 XLarge (Pose)", "pose", 0},
+        // Oriented boxes (DOTA-15).
+        {"yolo26n-obb", "YOLO26 Nano (OBB)", "obb", 0},
+        {"yolo26s-obb", "YOLO26 Small (OBB)", "obb", 0},
+        {"yolo26m-obb", "YOLO26 Medium (OBB)", "obb", 0},
+        {"yolo26l-obb", "YOLO26 Large (OBB)", "obb", 0},
+        {"yolo26x-obb", "YOLO26 XLarge (OBB)", "obb", 0},
+        // Semantic segmentation (Cityscapes-19).
+        {"yolo26n-sem", "YOLO26 Nano (Semantic)", "semantic", 0},
+        {"yolo26s-sem", "YOLO26 Small (Semantic)", "semantic", 0},
+        {"yolo26m-sem", "YOLO26 Medium (Semantic)", "semantic", 0},
+        {"yolo26l-sem", "YOLO26 Large (Semantic)", "semantic", 0},
+        {"yolo26x-sem", "YOLO26 XLarge (Semantic)", "semantic", 0},
+        // Classification (ImageNet-1000, 224 input).
+        {"yolo26n-cls", "YOLO26 Nano (Classify)", "classify", 0},
+        {"yolo26s-cls", "YOLO26 Small (Classify)", "classify", 0},
+        {"yolo26m-cls", "YOLO26 Medium (Classify)", "classify", 0},
+        {"yolo26l-cls", "YOLO26 Large (Classify)", "classify", 0},
+        {"yolo26x-cls", "YOLO26 XLarge (Classify)", "classify", 0},
+        // Open-vocabulary detection (CLIP text embeddings).
+        {"yolov8s-world", "YOLOv8 Small (World)", "detect", 1},
+        {"yolov8m-world", "YOLOv8 Medium (World)", "detect", 1},
+        {"yolov8l-world", "YOLOv8 Large (World)", "detect", 1},
+        {"yolov8x-world", "YOLOv8 XLarge (World)", "detect", 1},
+        // Open-vocabulary instance segmentation (MobileCLIP text tower).
+        {"yoloe-26n-seg", "YOLOE26 Nano (Seg)", "segment", 1},
+        {"yoloe-26s-seg", "YOLOE26 Small (Seg)", "segment", 1},
+        {"yoloe-26m-seg", "YOLOE26 Medium (Seg)", "segment", 1},
+        {"yoloe-26l-seg", "YOLOE26 Large (Seg)", "segment", 1},
+        {"yoloe-26x-seg", "YOLOE26 XLarge (Seg)", "segment", 1},
+        // Prompt-free YOLOE variants (image-derived vocabulary).
+        {"yoloe-26n-seg-pf", "YOLOE26 Nano (Seg, Prompt-Free)", "segment", 1},
+        {"yoloe-26s-seg-pf", "YOLOE26 Small (Seg, Prompt-Free)", "segment", 1},
+        {"yoloe-26m-seg-pf", "YOLOE26 Medium (Seg, Prompt-Free)", "segment", 1},
+        {"yoloe-26l-seg-pf", "YOLOE26 Large (Seg, Prompt-Free)", "segment", 1},
+        {"yoloe-26x-seg-pf", "YOLOE26 XLarge (Seg, Prompt-Free)", "segment", 1},
+        // Text-encoder towers (also usable standalone).
+        {"clip-ViT-B-32", "CLIP ViT-B/32 (Text)", "text", 1},
+        {"mobileclip2_b", "MobileCLIP2-B (Text)", "text", 1},
+};
 
-// First yolo26* index (end2end head family).
-static constexpr int kYolo26Start = 5;
-// Depth variant index.
-static constexpr int kDepthVariant = 10;
-// First segment variant index (yolov8n-seg).
-static constexpr int kSegStart = 11;
+static constexpr int kVariantCount = sizeof(kVariants) / sizeof(kVariants[0]);
 
 // 3 quantization suffixes.
 static constexpr const char* kQuantSuffixes[] = {"f32", "f16", "q8_0"};
@@ -56,27 +121,6 @@ static constexpr const char* kQuantNotes[] = {
         "F16 \xe2\x80\x94 half precision (recommended)",
         "Q8_0 \xe2\x80\x94 8-bit quant, best accuracy/size trade",
 };
-
-static const char* variantDisplayName(int vi) {
-    static const char* names[] = {
-            "YOLOv8 Nano",         "YOLOv8 Small",        "YOLOv8 Medium",
-            "YOLOv8 Large",        "YOLOv8 XLarge",       "YOLO26 Nano",
-            "YOLO26 Small",        "YOLO26 Medium",       "YOLO26 Large",
-            "YOLO26 XLarge",       "YOLO26 Nano Depth",   "YOLOv8 Nano (Seg)",
-            "YOLOv8 Small (Seg)",  "YOLOv8 Medium (Seg)", "YOLOv8 Large (Seg)",
-            "YOLOv8 XLarge (Seg)", "YOLO26 Nano (Seg)",   "YOLO26 Small (Seg)",
-            "YOLO26 Medium (Seg)", "YOLO26 Large (Seg)",  "YOLO26 XLarge (Seg)",
-    };
-    return (vi >= 0 && vi < kVariantCount) ? names[vi] : "?";
-}
-
-static int isDepthVariant(int vi) { return vi == kDepthVariant ? 1 : 0; }
-
-static int isSegmentVariant(int vi) { return vi >= kSegStart ? 1 : 0; }
-
-static int isEnd2EndVariant(int vi) {
-    return vi >= kYolo26Start ? 1 : 0;  // yolo26 family (incl. depth)
-}
 
 // MSVC names the POSIX helper "_strdup"; keep a portable wrapper so the
 // catalog builds warning-clean on all three platforms.
@@ -97,15 +141,17 @@ struct ModelRow {
     const char* task;
     int depth_capable;
     int end2end;
-    int64_t expected_bytes; /* 0 = no official baseline (segment) */
-    const char* sha256;     /* NULL = no official baseline (segment) */
+    int text_input;
+    int64_t expected_bytes; /* 0 = no official baseline */
+    const char* sha256;     /* NULL = no official baseline */
 };
 
-// Official release digests (exact byte count + SHA-256) for the 33
+// Official release digests (exact byte count + SHA-256) for the 33 original
 // detect/depth assets, from the yolo_gguf_models release audit
-// (2026-08-19, ultralytics-ggml-integration-plan.md 3.2). Segment assets
-// have no published baseline yet — omitted, verify_model skips size/hash
-// for them (still checks magic + task). Order matches kQuantSuffixes.
+// (2026-08-19, ultralytics-ggml-integration-plan.md 3.2). Later additions
+// (segment/world/yoloe/pose/obb/sem/cls/depth s..x/text) have no published
+// baseline yet — omitted, verify_model skips size/hash for them (still
+// checks magic + task). Order matches kQuantSuffixes.
 struct VariantDigest {
     const char* variant;
     int64_t bytes[3];  // f32, f16, q8_0
@@ -170,6 +216,9 @@ static constexpr VariantDigest kDigests[] = {
           "0d5795cd182c8c79c4c1a6f92e549f8e39841733f067d6b20764da568dfbac2f"}},
 };
 
+static_assert(sizeof(kDigests) / sizeof(kDigests[0]) == 11,
+              "digest count mismatch");
+
 static const VariantDigest* findDigest(const char* variant) {
     for (const auto& d : kDigests) {
         if (std::strcmp(d.variant, variant) == 0) return &d;
@@ -182,21 +231,24 @@ static std::vector<ModelRow> buildModels() {
     std::vector<ModelRow> rows;
     rows.reserve(kVariantCount * kQuantCount);
     for (int vi = 0; vi < kVariantCount; ++vi) {
+        const VariantInfo& info = kVariants[vi];
         for (int qi = 0; qi < kQuantCount; ++qi) {
-            const char* task = isSegmentVariant(vi) ? "segment"
-                               : isDepthVariant(vi) ? "depth"
-                                                    : "detect";
-            std::string filename = std::string(kVariantNames[vi]) + "-" +
-                                   kQuantSuffixes[qi] + ".gguf";
+            std::string filename =
+                    std::string(info.name) + "-" + kQuantSuffixes[qi] + ".gguf";
             std::string url = std::string(kDownloadBase) + filename;
-            std::string display = std::string(variantDisplayName(vi)) +
-                                  " \xe2\x80\x94 " + kQuantNotes[qi];
+            std::string display = std::string(info.display) + " \xe2\x80\x94 " +
+                                  kQuantNotes[qi];
             rows.push_back({dupString(filename.c_str()), dupString(url.c_str()),
                             dupString(display.c_str()),
                             dupString(kQuantNotes[qi]),
-                            "AGPL-3.0 (Ultralytics)", task, isDepthVariant(vi),
-                            isEnd2EndVariant(vi), 0, nullptr});
-            if (const VariantDigest* d = findDigest(kVariantNames[vi])) {
+                            "AGPL-3.0 (Ultralytics)", info.task,
+                            std::strcmp(info.task, "depth") == 0 ? 1 : 0,
+                            std::strncmp(info.name, "yolo26", 6) == 0 &&
+                                            std::strcmp(info.task, "text") != 0
+                                    ? 1
+                                    : 0,
+                            info.text_input, 0, nullptr});
+            if (const VariantDigest* d = findDigest(info.name)) {
                 rows.back().expected_bytes = d->bytes[qi];
                 rows.back().sha256 = d->sha256[qi];
             }
@@ -210,13 +262,34 @@ static const std::vector<ModelRow> kModels = buildModels();
 static int modelCount() { return static_cast<int>(kModels.size()); }
 
 static bool roleMatches(enum aicore_yolo_model_role role, const ModelRow& row) {
+    const bool closed_set = row.text_input == 0;
     switch (role) {
         case AICORE_YOLO_ROLE_DETECTION:
-            return !row.depth_capable;
+            return closed_set && row.task != nullptr &&
+                   std::strcmp(row.task, "detect") == 0;
         case AICORE_YOLO_ROLE_DEPTH:
-            return row.depth_capable;
+            return row.task != nullptr && std::strcmp(row.task, "depth") == 0;
         case AICORE_YOLO_ROLE_SEGMENT:
-            return row.task != nullptr && std::strcmp(row.task, "segment") == 0;
+            return closed_set && row.task != nullptr &&
+                   std::strcmp(row.task, "segment") == 0;
+        case AICORE_YOLO_ROLE_POSE:
+            return row.task != nullptr && std::strcmp(row.task, "pose") == 0;
+        case AICORE_YOLO_ROLE_OBB:
+            return row.task != nullptr && std::strcmp(row.task, "obb") == 0;
+        case AICORE_YOLO_ROLE_CLASSIFY:
+            return row.task != nullptr &&
+                   std::strcmp(row.task, "classify") == 0;
+        case AICORE_YOLO_ROLE_SEMANTIC:
+            return row.task != nullptr &&
+                   std::strcmp(row.task, "semantic") == 0;
+        case AICORE_YOLO_ROLE_WORLD:
+            return row.task != nullptr && row.text_input != 0 &&
+                   std::strcmp(row.task, "detect") == 0;
+        case AICORE_YOLO_ROLE_YOLOE:
+            return row.task != nullptr && row.text_input != 0 &&
+                   std::strcmp(row.task, "segment") == 0;
+        case AICORE_YOLO_ROLE_TEXT:
+            return row.task != nullptr && std::strcmp(row.task, "text") == 0;
         case AICORE_YOLO_ROLE_ANY:
         default:
             return true;
@@ -226,13 +299,13 @@ static bool roleMatches(enum aicore_yolo_model_role role, const ModelRow& row) {
 static aicore_yolo_model_entry toEntry(const ModelRow& row) {
     return {row.filename,      row.download_url, row.display_name,
             row.quant_note,    row.license_note, row.task,
-            row.depth_capable, row.end2end};
+            row.depth_capable, row.end2end,      row.text_input};
 }
 
 // Static (non-thread-local) backing store: unlike the historical
 // thread_local singleton, concurrently held entry pointers never overwrite
 // each other.
-static std::array<aicore_yolo_model_entry, 64> g_entry_store;
+static std::array<aicore_yolo_model_entry, 256> g_entry_store;
 
 static const aicore_yolo_model_entry* entry_at(size_t index) {
     if (index >= kModels.size() || index >= g_entry_store.size())
@@ -303,7 +376,9 @@ AICORE_CAPI int aicore_yolo_verify_model(const char* path,
     if (out) out->filename_ok = 1;
 
     // Filename is "<variant>-<quant>.gguf"; split at the LAST '-' of the
-    // stem ("yolo26n-depth-f16.gguf" -> variant "yolo26n-depth", quant "f16").
+    // stem ("yolo26n-depth-f16.gguf" -> variant "yolo26n-depth", quant
+    // "f16"). The prompt-free YOLOE variants ("-seg-pf") split the same way
+    // (variant "yoloe-26n-seg-pf", quant "f16").
     const std::string file(base);
     const size_t dot = file.rfind(".gguf");
     const std::string stem =

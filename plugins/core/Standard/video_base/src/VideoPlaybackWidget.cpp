@@ -88,6 +88,15 @@ VideoPlaybackWidget::VideoPlaybackWidget(QWidget* parent) : QWidget(parent) {
 }
 
 VideoPlaybackWidget::~VideoPlaybackWidget() {
+    // Destruction guard: drop every outgoing signal connection before any
+    // teardown call below. stopStream() emits streamStopped(); its receivers
+    // are connected with ancestor-dialog context, which Qt only disconnects
+    // at ~QObject — i.e. after the whole deleteChildren cascade. Emitting
+    // here would run dialog lambdas against half-dead widget trees (same
+    // pattern as the qSAM3 backendChanged exit crash). Subclasses that call
+    // stopStream() from their own destructors must disconnect first too:
+    // their destructor body runs BEFORE this base-class destructor.
+    disconnect(this, nullptr, nullptr, nullptr);
     stopStream();
 #ifdef HAS_OPENCV_FACE_CAPTURE
     // Tear down the background frame reader. QThread::finished is emitted

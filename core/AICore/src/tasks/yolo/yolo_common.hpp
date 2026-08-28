@@ -57,6 +57,11 @@ struct SessionOptions {
     bool keep_all_ops = false;   // debug: keep every op output alive
     bool profile_ops = false;    // debug: per-op wall-time table
     bool profile_gaps = false;   // debug: per-stage timing on stderr
+    // YOLO-World/YOLOE open-vocabulary class count. 0 = use the GGUF yolo.nc
+    // default (plus the vocabulary embedded in the GGUF when it ships one).
+    // The class count fixes the text-input shape and every nc-dependent
+    // tensor in the graph, so changing it requires a new session.
+    int world_nc = 0;
 };
 
 // Detection result -----------------------------------------------------------
@@ -84,10 +89,19 @@ struct LetterboxInfo {
 
 struct ModelMeta {
     std::string name;
-    std::string task;  // "detect" | "segment" | "depth"
+    std::string task;  // "detect" | "segment" | "depth" | "pose" | "obb" |
+                       // "semantic" | "classify"
     std::string dtype;
+    // Open-vocabulary models: name of the matching text tower declared by
+    // the GGUF ("mobileclip2_b" for YOLOE, empty for YOLO-World / closed
+    // set). has_text_input mirrors the yolo.world KV flag.
+    std::string text_model;
+    bool has_text_input = false;
     int nc = 80;
     int nm = 0;          // mask prototypes (0 for detect/depth)
+    int nk = 0;          // pose: keypoint values (kpt_shape[0]*kpt_shape[1])
+    int kpt_ndim = 0;    // pose: dims per keypoint (2 = xy, 3 = xy+visible)
+    int ne = 0;          // obb: angle channels (1)
     int nl = 3;
     int imgsz = 640;
     int reg_max = 16;
@@ -147,6 +161,20 @@ struct ModelDef {
     // Flattened per-level head info, taken from the single detect op.
     bool has_detect = false;
     int detect_op_index = -1;
+
+    // Open-vocabulary models: 1 when the op graph contains a text-conditioned
+    // head op (max_sigmoid_attn / image_pooling_attn / world_detect /
+    // world_segment); vocab_txt holds the checkpoint's embedded class
+    // embeddings ([nc, 512] row-major, empty when the GGUF ships none).
+    bool has_text_input = false;
+    std::vector<float> vocab_txt;
+
+    // Tiny F32 scalar constants the graph builder bakes as build-time graph
+    // constants (max_sigmoid_attn head bias, world_detect per-level
+    // logit_scale/bias), extracted at load time by name so canvas rebuilds
+    // never read HostTensor.data — session_release_host_weights may have
+    // dropped those copies when a rebuild happens.
+    std::map<std::string, std::vector<float>> scalar_params;
 };
 
 // Timing helper ---------------------------------------------------------------

@@ -138,38 +138,49 @@ bool has_device(const char* device) {
     const std::string requested =
             ggml_common::to_lower(device && device[0] ? device : "auto");
     if (requested == "cpu") return true;
-    if (requested == "auto") {
-        std::string resolved;
-        if (ggml_backend_t be = ggml_common::find_auto_backend(resolved)) {
-            ggml_backend_free(be);
-            return true;
+
+    // Device-existence probe WITHOUT instantiating a backend instance.
+    // The previous implementation did init→free probe cycles of GPU
+    // backends; repeating them (warmup is called on every plugin-dialog
+    // open, and agents probe cuda→vulkan in sequence) corrupts the heap in
+    // ggml v0.18.1 (backend free after a later different-backend init —
+    // munmap_chunk aborts / silent downstream corruption). Enumerating the
+    // registered devices answers an existence check identically.
+    auto gpu_matches = [&](const std::string& backend, int want_index) {
+        std::map<std::string, int> indices;
+        for (size_t i = 0; i < ggml_backend_dev_count(); ++i) {
+            ggml_backend_dev_t dev = ggml_backend_dev_get(i);
+            const auto type = ggml_backend_dev_type(dev);
+            if (type != GGML_BACKEND_DEVICE_TYPE_GPU &&
+                type != GGML_BACKEND_DEVICE_TYPE_IGPU) {
+                continue;
+            }
+            const std::string canon = canonical_backend_name(
+                    ggml_backend_reg_name(ggml_backend_dev_backend_reg(dev)));
+            const int idx = indices[canon]++;
+            if (canon == backend && idx == want_index) return true;
         }
-        ggml_backend_t cpu = ggml_backend_init_by_type(
-                GGML_BACKEND_DEVICE_TYPE_CPU, nullptr);
-        if (cpu) ggml_backend_free(cpu);
-        return cpu != nullptr;
+        return false;
+    };
+
+    if (requested == "auto") {
+        return true;  // CPU always exists; auto resolves to it at worst
     }
     if (requested == "gpu") {
-        std::string resolved;
-        ggml_backend_t be = ggml_common::find_gpu_backend("gpu", 0, resolved);
-        if (be) ggml_backend_free(be);
-        return be != nullptr;
+        for (const char* const* p = ggml_common::auto_backend_ids(); *p; ++p) {
+            if (gpu_matches(*p, 0)) return true;
+        }
+        return false;
     }
 
     std::string parsed_name;
     int want_idx = 0;
     ggml_common::parse_device(requested, parsed_name, want_idx);
-    if (parsed_name.empty() || parsed_name == "auto") {
-        std::string resolved;
-        ggml_backend_t be = ggml_common::find_auto_backend(resolved);
-        if (be) ggml_backend_free(be);
-        return be != nullptr;
+    if (parsed_name.empty() || parsed_name == "auto" || parsed_name == "gpu") {
+        return true;  // resolvable to CPU at worst
     }
-    std::string resolved;
-    ggml_backend_t be =
-            ggml_common::find_gpu_backend(parsed_name, want_idx, resolved);
-    if (be) ggml_backend_free(be);
-    return be != nullptr;
+    if (parsed_name == "cpu") return true;
+    return gpu_matches(parsed_name, want_idx);
 }
 
 std::string resolved_backend_id(const char* device) {

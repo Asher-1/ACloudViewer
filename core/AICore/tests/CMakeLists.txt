@@ -461,6 +461,13 @@ aicore_add_yolo_capi_test(test_yolo_capi_performance)
 set_tests_properties(test_yolo_capi_performance PROPERTIES
     LABELS "capi;model;gpu;performance")
 
+# YOLO device-parity test (CPU vs GPU numeric gates on real GGUF assets;
+# see tests/yolo/test_yolo_capi_parity.cpp for the gate table). Skips (77)
+# without AICORE_TEST_YOLO_* assets or a GPU backend.
+aicore_add_yolo_capi_test(test_yolo_capi_parity)
+set_tests_properties(test_yolo_capi_parity PROPERTIES
+    LABELS "capi;model;gpu")
+
 # YOLO C API contract test (no GGUF assets: ABI, options, catalog, null
 # guards, model-free error paths — see tests/yolo/test_yolo_capi_contract.cpp).
 aicore_add_yolo_capi_test(test_yolo_capi_contract)
@@ -480,6 +487,25 @@ function(aicore_add_yolo_whitebox_test name)
 endfunction()
 
 aicore_add_yolo_whitebox_test(test_yolo_unscale_masks)
+
+# Whitebox op-level bisection tool for world-family device-parity failures
+# (model/env-gated; see tests/yolo/test_yolo_world_optrace.cpp).
+function(aicore_add_yolo_optrace_test name)
+    if(NOT TARGET AICore_test)
+        return()
+    endif()
+    add_executable(${name} yolo/${name}.cpp)
+    target_link_libraries(${name} PRIVATE AICore_test)
+    # Qt was built with -reduce-relocations → compile with -fPIC (same
+    # pattern as aicore_add_yolo_capi_test; -fPIE is not enough).
+    if(NOT MSVC)
+        target_compile_options(${name} PRIVATE -fPIC)
+        target_link_options(${name} PRIVATE "-no-pie")
+    endif()
+    _aicore_test_common(${name})
+    set_tests_properties(${name} PROPERTIES LABELS "whitebox;gpu")
+endfunction()
+aicore_add_yolo_optrace_test(test_yolo_world_optrace)
 
 add_test(
     NAME test_aicore_public_headers

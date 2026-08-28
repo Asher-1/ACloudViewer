@@ -149,6 +149,118 @@ void unscale_boxes(std::vector<Detection>& dets, const LetterboxInfo& info) {
     }
 }
 
+void unscale_pose(std::vector<PoseDetection>& poses,
+                  const LetterboxInfo& info) {
+    for (auto& p : poses) {
+        p.det.x1 = (p.det.x1 - info.pad_w) / info.scale;
+        p.det.y1 = (p.det.y1 - info.pad_h) / info.scale;
+        p.det.x2 = (p.det.x2 - info.pad_w) / info.scale;
+        p.det.y2 = (p.det.y2 - info.pad_h) / info.scale;
+        for (size_t k = 0; k + 1 < p.kpts.size(); k += 2) {
+            p.kpts[k] = (p.kpts[k] - info.pad_w) / info.scale;
+            p.kpts[k + 1] = (p.kpts[k + 1] - info.pad_h) / info.scale;
+        }
+    }
+}
+
+void unscale_obb(std::vector<OBBDetection>& obbs, const LetterboxInfo& info) {
+    for (auto& o : obbs) {
+        o.cx = (o.cx - info.pad_w) / info.scale;
+        o.cy = (o.cy - info.pad_h) / info.scale;
+        o.w /= info.scale;
+        o.h /= info.scale;
+    }
+}
+
+// torchvision antialias=True bilinear resize (two-pass, horizontal then
+// vertical, float intermediate, uint8 round at the end). Downsample uses
+// the ATen area-pixel weights w(i) = 1 - |i - src_idx| * (1/scale) over the
+// support [src_idx - scale, src_idx + scale]; upsample (scale <= 1) falls
+// back to the plain bilinear w = 1 - |i - src_idx| over 2 taps.
+// src_idx = (dst + 0.5) * scale - 0.5 in both modes, matching
+// F.interpolate(align_corners=False).
+static void tv_resize_linear(
+        const uint8_t* src, int sw, int sh, uint8_t* dst, int dw, int dh) {
+    std::vector<float> tmp((size_t)dw * sh * 3);
+    const double scale_x = (double)sw / dw;
+    const double inv_x = scale_x > 1.0 ? 1.0 / scale_x : 1.0;
+    const double support_x = scale_x > 1.0 ? scale_x : 1.0;
+    for (int yy = 0; yy < sh; yy++) {
+        for (int xx = 0; xx < dw; xx++) {
+            const double src_idx = scale_x * (xx + 0.5) - 0.5;
+            const int i0 = std::max(0, (int)std::ceil(src_idx - support_x));
+            const int i1 =
+                    std::min(sw - 1, (int)std::floor(src_idx + support_x));
+            float ww = 0.0f;
+            float acc[3] = {0.0f, 0.0f, 0.0f};
+            const uint8_t* row = src + (size_t)yy * sw * 3;
+            for (int i = i0; i <= i1; i++) {
+                const float w = (float)std::max(
+                        0.0, 1.0 - std::abs((i - src_idx) * inv_x));
+                if (w <= 0.0f) continue;
+                for (int c = 0; c < 3; c++)
+                    acc[c] += row[(size_t)i * 3 + c] * w;
+                ww += w;
+            }
+            if (ww <= 0.0f) ww = 1.0f;
+            float* out = &tmp[((size_t)yy * dw + xx) * 3];
+            for (int c = 0; c < 3; c++) out[c] = acc[c] / ww;
+        }
+    }
+    const double scale_y = (double)sh / dh;
+    const double inv_y = scale_y > 1.0 ? 1.0 / scale_y : 1.0;
+    const double support_y = scale_y > 1.0 ? scale_y : 1.0;
+    for (int yy = 0; yy < dh; yy++) {
+        const double src_idx = scale_y * (yy + 0.5) - 0.5;
+        const int j0 = std::max(0, (int)std::ceil(src_idx - support_y));
+        const int j1 = std::min(sh - 1, (int)std::floor(src_idx + support_y));
+        for (int xx = 0; xx < dw; xx++) {
+            float ww = 0.0f;
+            float acc[3] = {0.0f, 0.0f, 0.0f};
+            for (int j = j0; j <= j1; j++) {
+                const float w = (float)std::max(
+                        0.0, 1.0 - std::abs((j - src_idx) * inv_y));
+                if (w <= 0.0f) continue;
+                const float* px = &tmp[((size_t)j * dw + xx) * 3];
+                for (int c = 0; c < 3; c++) acc[c] += px[c] * w;
+                ww += w;
+            }
+            if (ww <= 0.0f) ww = 1.0f;
+            uint8_t* out = &dst[((size_t)yy * dw + xx) * 3];
+            for (int c = 0; c < 3; c++)
+                out[c] = (uint8_t)std::clamp((int)(acc[c] / ww + 0.5f), 0, 255);
+        }
+    }
+}
+
+void classify_preprocess(const Image& img, int size, std::vector<float>& out) {
+    // The released yolo26-cls checkpoint bakes its own transforms:
+    // Resize(size, BILINEAR, antialias=True) on the shortest edge,
+    // CenterCrop(size), then a plain /255 (ImageNet mean/std are NOT
+    // applied).
+    const int min_edge = std::min(img.w, img.h);
+    // torchvision: new_long = int(size * long / short) — multiply before
+    // divide (1080x810 -> int(224*1080/810) = 298, not
+    // int(1080*0.2765...) = 223).
+    const int new_w = std::max(1, (int)(size * (double)img.w / min_edge));
+    const int new_h = std::max(1, (int)(size * (double)img.h / min_edge));
+
+    std::vector<uint8_t> resized((size_t)new_w * new_h * 3);
+    tv_resize_linear(img.rgb, img.w, img.h, resized.data(), new_w, new_h);
+
+    const int left = (new_w - size) / 2, top = (new_h - size) / 2;
+    const size_t plane = (size_t)size * size;
+    out.resize(3 * plane);
+    for (int y = 0; y < size; y++) {
+        for (int x = 0; x < size; x++) {
+            const size_t src = ((size_t)(y + top) * new_w + x + left) * 3;
+            for (int c = 0; c < 3; c++)
+                out[(size_t)c * plane + (size_t)y * size + x] =
+                        resized[src + c] / 255.0f;
+        }
+    }
+}
+
 void unscale_masks(std::vector<SegMask>& masks,
                    const LetterboxInfo& info,
                    int image_w,

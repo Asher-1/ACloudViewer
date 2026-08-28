@@ -63,6 +63,10 @@ RFDetrLiveWidget::RFDetrLiveWidget(QWidget* parent)
 }
 
 RFDetrLiveWidget::~RFDetrLiveWidget() {
+    // Destruction guard (see ~VideoPlaybackWidget): this body runs before
+    // the base destructor, so drop outgoing connections before stopStream()
+    // emits streamStopped at ancestor-context slots.
+    disconnect(this, nullptr, nullptr, nullptr);
     stopStream();
     shutdownInferThread();
 }
@@ -470,8 +474,19 @@ void RFDetrLiveWidget::rebuildOverlayLayer(const QSize& displaySize) {
         if (d.maskRaw.isEmpty() || d.maskWidth <= 0 || d.maskHeight <= 0)
             continue;
         QImage mask(d.maskWidth, d.maskHeight, QImage::Format_Grayscale8);
-        std::memcpy(mask.bits(), d.maskRaw.constData(),
-                    static_cast<size_t>(d.maskWidth) * d.maskHeight);
+        /* Row-by-row copy (WRITE path: gaussianBlurMask3 below mutates the
+         * buffer, so we cannot zero-copy wrap d.maskRaw like
+         * RFDetrHelpers::drawDetections does for its read-only pass).
+         * QImage scanlines are 32-bit aligned — bytesPerLine > width for
+         * non-multiple-of-4 widths (78-wide RF-DETR seg masks) — so the
+         * copy must go row by row; a single contiguous memcpy shears the
+         * mask into diagonal stripes. */
+        for (int y = 0; y < d.maskHeight; ++y) {
+            std::memcpy(mask.scanLine(y),
+                        d.maskRaw.constData() +
+                                static_cast<size_t>(y) * d.maskWidth,
+                        static_cast<size_t>(d.maskWidth));
+        }
         if (mask.isNull()) continue;
         gaussianBlurMask3(mask);
 

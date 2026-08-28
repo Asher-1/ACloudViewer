@@ -7,6 +7,13 @@ CompileFlags:
   CompilationDatabase: build_app
   Add:
     - "-std=c++17"
+  Remove:
+    # LLVM >= 19 dropped the KNL target, so clangd rejects these two
+    # GCC-originated flags (still emitted by this project's CMake flags)
+    # as unknown arguments. Strip them for clangd only; real builds keep
+    # them for GCC.
+    - "-mno-avx512pf"
+    - "-mno-avx512er"
 
 Diagnostics:
   Suppress:

@@ -54,6 +54,14 @@ struct Session {
     bool q8_direct = false;  // one-shot load decision (CUDA/Vulkan f16 flow);
                              // reused by every canvas rebuild
 
+    // Open-vocabulary state (YOLO-World / YOLOE). The text leaf lives in
+    // gctx (rebuilt with every canvas); text_pending is the session-lived
+    // host copy of the [nc, 512] embedding, uploaded before every run and
+    // re-uploaded after a canvas rebuild.
+    ggml_tensor* text_input = nullptr;  // external [512, nc] F32 embedding
+    std::vector<float> text_pending;
+    int world_nc = 0;  // class count driving the text input shape
+
     /* Run plan for the current canvas — rebuilt by session_ensure_canvas().
      * All tensor structs and the cgraph live inside gctx. */
     ggml_context* gctx = nullptr;
@@ -65,6 +73,11 @@ struct Session {
     int input_h = 0;                // non-square under LetterBox auto=True)
     std::vector<ggml_fp16_t> output_f16;        // F16 readback scratch
     std::vector<ggml_fp16_t> output_proto_f16;  // segment proto F16 scratch
+
+    // Per-user-op output tensors (size == model.ops.size() when
+    // opts.keep_all_ops; used by the optrace bisection tool to compare
+    // device outputs op-by-op). Populated by build_run_plan.
+    std::vector<ggml_tensor*> op_values;
 
     // Postprocess constants (mirrors ultralytics make_anchors). Rebuilt with
     // the graph because the anchor grid depends on the canvas dims.
@@ -110,8 +123,16 @@ void free_session(Session* s);
 // Copy a CHW float image into the input tensor, run the graph.
 bool session_run(Session* s, const float* chw_image);
 
+// YOLO-World/YOLOE: copy an [nc, 512] row-major text embedding into the text
+// input (column-major [512, nc] in ggml — identical memory layout) before
+// session_run. The upload is queued and executed at the start of the next
+// graph run (and after every canvas rebuild). Requires a text-conditioned
+// model; returns false otherwise.
+bool session_set_text(Session* s, const float* text_embed);
+
 // Read back the raw detect output [no, A] (row-major: no rows x A anchors).
-// For segment models `no` additionally carries nm mask-coefficient rows.
+// For segment models `no` additionally carries nm mask-coefficient rows; for
+// pose +nk keypoint rows; for obb +ne angle rows.
 bool session_read_output(Session* s, std::vector<float>& out, int& no, int& na);
 
 // Read back the segment mask prototypes [nm, H, W] (row-major, canvas/4 grid).
@@ -121,5 +142,13 @@ bool session_read_proto(Session* s, std::vector<float>& out, int& nm, int& w,
 // Read back a metric depth map in meters, row-major [height, width].
 bool session_read_depth(Session* s, std::vector<float>& out, int& width,
                         int& height);
+
+// Read back semantic logits [nc, H, W] on the canvas/8 grid (row-major
+// channels).
+bool session_read_semantic(Session* s, std::vector<float>& out, int& nc,
+                           int& w, int& h);
+
+// Read back classify logits [nc] (row-major).
+bool session_read_logits(Session* s, std::vector<float>& out);
 
 }  // namespace yolo

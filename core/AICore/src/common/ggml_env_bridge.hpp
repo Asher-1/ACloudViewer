@@ -28,6 +28,11 @@
 // apply its overrides before its first context creation; applying after the
 // backends were loaded prints a warning because existing instances keep
 // their snapshot.
+//
+// Task modules never touch this header (enforced by
+// tests/check_no_env_getenv.sh): they call the higher-level profile
+// interfaces below (apply_rmbg_math_profile) or the backend utilities with
+// plain option values, and those common-layer functions drive the overrides.
 
 #pragma once
 
@@ -83,5 +88,15 @@ void restore_ggml_env_snapshot(const GgmlEnvSnapshot& snapshot);
  *  apply_ggml_env_overrides() calls can warn about the snapshot semantics.
  *  Called by ggml_common::load_backends_once(). */
 void mark_ggml_backends_loaded();
+
+/** RMBG math-profile -> ggml-side overrides, translated here so the rmbg
+ *  task module stays free of any environment mechanism (interface-only
+ *  control; see the header comment). Device-aware: the Vulkan switches are
+ *  only applied when a Vulkan backend may load, the cuBLAS TF32 switch only
+ *  for CUDA-bound requests. Call BEFORE the first backend instance is
+ *  created (ggml snapshots these variables at instance creation).
+ *  Profile: "strict" | "fast" | "unsafe-fast" | "optimized" (default). */
+void apply_rmbg_math_profile(const std::string& profile,
+                             const std::string& requested_device);
 
 }  // namespace aicore

@@ -38,8 +38,22 @@ struct Image {
 void letterbox_image(const Image& img, int imgsz, LetterboxInfo& info,
                      std::vector<float>& out);
 
+// Classification preprocessing (checkpoint-baked torchvision classify
+// transforms): resize the shortest edge to `size` (antialiased bilinear),
+// center-crop size x size, then a plain /255 (ImageNet mean/std are NOT
+// applied). Output is the same CHW F32 layout as letterbox_image.
+void classify_preprocess(const Image& img, int size, std::vector<float>& out);
+
 // Map boxes from the letterboxed canvas back to original image pixels.
 void unscale_boxes(std::vector<Detection>& dets, const LetterboxInfo& info);
+
+// Map pose keypoints from the letterboxed canvas back to original pixels
+// (same scale/pad transform as unscale_boxes; visibility dims untouched).
+void unscale_pose(std::vector<PoseDetection>& poses,
+                  const LetterboxInfo& info);
+
+// Map OBB centers/extents back to original image pixels (angle unchanged).
+void unscale_obb(std::vector<OBBDetection>& obbs, const LetterboxInfo& info);
 
 // Remap instance masks from the letterbox-canvas space back to the source
 // image space. compose_masks() emits one canvas-space window per instance

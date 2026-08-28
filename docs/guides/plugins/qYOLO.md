@@ -41,29 +41,30 @@ Example outputs: `build_app/bin/libAICore.so`, `build_app/bin/plugins/libQYOLO_P
 
 **Menu:** Plugins → **YOLO Detect, Segment & Depth**
 
-The dialog has four tabs: **Object Detection**, **Instance Segmentation**,
-**Metric Depth**, and **Live (camera / video)**. Each task tab owns an
-independent model combo filtered to that task's catalog (a detection tab never
+The dialog shows a grouped **task list** on the left with one panel per task on the right: **Object Detection**, **Instance Segmentation**, **Metric Depth**, **Pose (Keypoints)**, **Oriented Boxes**, **Classification** and **Semantic Segmentation** under *Closed-set tasks*; **Open-Vocab Detect (World)** and **Open-Vocab Segment (YOLOE)** under *Open-vocabulary*; **Live (camera / video)** under *Capture*. **Device** and **Threads** are shared controls rendered once above the task list. Each task panel owns an
+independent model combo filtered to that task's catalog (a detection panel never
 offers a segment model and vice versa), its own thresholds, image input and
-Run button; the Live tab lists all models and adapts its threshold row to the
+Run button; the Live page lists all models and adapts its threshold row to the
 selected model.
 
-### Object Detection / Instance Segmentation tabs
+Every task panel has a **Try sample data** button that loads that task's default sample image from the shared `objects_detection_data` test-data cache (downloaded on first use): **Classification** loads the single-subject `cat.jpg`, **Oriented Boxes** loads the DOTA-style aerial `aerial_airport.jpg`, and all other tasks load the COCO street scene `000000397133.jpg`.
+
+### Object Detection / Instance Segmentation panels
 
 1. Pick a **model variant** (YOLOv8 n→x: classic NMS head; YOLO26 n→x: end-to-end head; `-seg` variants: instance segmentation).
-2. Set **Device** (`Auto` / CUDA / Vulkan / CPU) and **Threads** (0 = auto) — shared by all tabs.
+2. Set **Device** (`Auto` / CUDA / Vulkan / CPU) and **Threads** (0 = auto) — shared by all panels.
 3. Set **Confidence** / **IoU** / **Top-K** thresholds.
 4. Pick an input image from disk or the DB tree and click **Run** — the model downloads from cloudViewer_downloads on first use.
 
 The annotated image is added to the DB tree: boxes + class/score labels (detection) or a translucent per-class mask tint plus boxes (segmentation) as `YOLO_<source>_<device>`, with full metadata (per-detection class/score/box/mask, runtime, device, model).
 
-### Metric Depth tab
+### Metric Depth panel
 
 1. Pick a **depth model variant** (`yolo26n-depth`). The threshold row (Conf/IoU/Top-K) is hidden — depth models produce a metric depth map, not detections.
 2. Set Device / Threads, pick an image, click **Run**.
 3. The result is a turbo colormap (near = blue, far = red) with a range legend as `YOLODepth_<source>_<device>`, storing the depth map size, min/max/mean/p95 depth (meters) and valid-pixel count.
 
-### Live (camera / video) tab
+### Live (camera / video) page
 
 1. Pick any model (the combo lists all catalog tasks), start the camera or open a video file (reuses `video_base` playback: seek, speed, frame stepping).
 2. The threshold row (Conf/IoU/Top-K) appears for detect/segment models and hides automatically when a depth model is selected — the layout adapts to the chosen model.
