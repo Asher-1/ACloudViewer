@@ -455,6 +455,15 @@ void SAM3Dialog::resizeEvent(QResizeEvent* e) {
 SAM3Dialog::~SAM3Dialog() {
     saveSettings();
     stopWorker();
+    // Teardown guard: QObject destroys children (QTabWidget -> VideoTab)
+    // AFTER this class's members (m_tabs, m_backendLabel) are gone. The
+    // VideoTab destructor calls releaseModel(), which emits backendChanged;
+    // the setupUi() lambda connected with `this` context would then run on
+    // destroyed members (SIGSEGV in QFunctorSlotObject). Disconnect before
+    // the deleteChildren cascade.
+    if (m_videoTab) {
+        disconnect(m_videoTab, &VideoTab::backendChanged, this, nullptr);
+    }
 }
 
 void SAM3Dialog::setupUi() {
