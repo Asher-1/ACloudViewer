@@ -130,13 +130,20 @@ function(cloudviewer_set_aicore_test_runtime_layout target)
         set_target_properties(${target} PROPERTIES
             RUNTIME_OUTPUT_DIRECTORY "${_bin_root}/aicore_tests"
         )
-        foreach(_cfg IN ITEMS Debug Release RelWithDebInfo)
-            string(TOUPPER "${_cfg}" _cfg_upper)
-            set_tests_properties(${target} PROPERTIES
-                "ENVIRONMENT_${_cfg_upper}"
-                    "PATH=${_bin_root}/${_cfg};$ENV{PATH}"
-            )
-        endforeach()
+        # Manual benchmarks (bench_rfdetr_perf, bench_sam3_backend_acceptance,
+        # cmp_sam3_vit_stages) are plain executables without add_test();
+        # set_tests_properties on a name that is not a registered test is a
+        # fatal configure error, so guard the ctest-only ENVIRONMENT_<CONFIG>
+        # properties with if(TEST).
+        if(TEST ${target})
+            foreach(_cfg IN ITEMS Debug Release RelWithDebInfo)
+                string(TOUPPER "${_cfg}" _cfg_upper)
+                set_tests_properties(${target} PROPERTIES
+                    "ENVIRONMENT_${_cfg_upper}"
+                        "PATH=${_bin_root}/${_cfg};$ENV{PATH}"
+                )
+            endforeach()
+        endif()
     else()
         set_target_properties(${target} PROPERTIES
             RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/aicore_tests"
