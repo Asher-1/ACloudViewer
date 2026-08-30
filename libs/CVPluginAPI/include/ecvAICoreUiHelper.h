@@ -281,7 +281,8 @@ inline QHBoxLayout* makeActionRow(QPushButton* runBtn,
 /// explicit-choice persistence; to keep a programmatic selection from
 /// being recorded as user-driven, block the combo's signals around this
 /// call and drive the visibility refresh directly.
-inline int selectModelRow(QComboBox* combo, const QString& keepFilename,
+inline int selectModelRow(QComboBox* combo,
+                          const QString& keepFilename,
                           int defaultIndex) {
     if (!combo || combo->count() == 0) return -1;
     if (!keepFilename.isEmpty()) {

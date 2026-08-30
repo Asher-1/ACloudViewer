@@ -92,8 +92,8 @@ bool readLedger(const QString& path, LedgerEntry* out) {
         return false;
     }
     out->digestHex = obj.value(QStringLiteral("digest")).toString().toLatin1();
-    out->size = static_cast<qint64>(
-            obj.value(QStringLiteral("size")).toDouble());
+    out->size =
+            static_cast<qint64>(obj.value(QStringLiteral("size")).toDouble());
     out->mtimeMs = static_cast<qint64>(
             obj.value(QStringLiteral("mtime_ms")).toDouble());
     return out->size >= 0 && out->mtimeMs >= 0;
@@ -103,11 +103,9 @@ bool writeLedger(const QString& path, const LedgerEntry& entry) {
     QJsonObject obj;
     obj.insert(QStringLiteral("version"), kLedgerVersion);
     obj.insert(QStringLiteral("algo"), algoName(entry.algo));
-    obj.insert(QStringLiteral("digest"),
-               QString::fromLatin1(entry.digestHex));
+    obj.insert(QStringLiteral("digest"), QString::fromLatin1(entry.digestHex));
     obj.insert(QStringLiteral("size"), static_cast<double>(entry.size));
-    obj.insert(QStringLiteral("mtime_ms"),
-               static_cast<double>(entry.mtimeMs));
+    obj.insert(QStringLiteral("mtime_ms"), static_cast<double>(entry.mtimeMs));
 
     QSaveFile file(ledgerPath(path));
     if (!file.open(QIODevice::WriteOnly)) return false;
@@ -160,7 +158,8 @@ bool ecvAssetIntegrity::isVerified(const QString& path,
         // An empty-pin query accepts any ledger evidence: a pinned entry is
         // strictly stronger than what the query itself could establish, so
         // trusting it never weakens the check (and must not destroy it).
-        const bool digestCompatible = anchor.digestHex.isEmpty() ||
+        const bool digestCompatible =
+                anchor.digestHex.isEmpty() ||
                 entry.digestHex.compare(anchor.digestHex,
                                         Qt::CaseInsensitive) == 0;
         const bool algoCompatible =
@@ -234,6 +233,7 @@ void ecvAssetIntegrity::invalidate(const QString& path) {
 }
 
 QByteArray ecvAssetIntegrity::PinnedDigest(const QString& fileName) {
-    const char* digest = aicore::AssetDigestForFile(fileName.toUtf8().constData());
+    const char* digest =
+            aicore::AssetDigestForFile(fileName.toUtf8().constData());
     return digest ? QByteArray(digest) : QByteArray();
 }

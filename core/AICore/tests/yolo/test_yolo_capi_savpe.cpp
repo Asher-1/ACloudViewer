@@ -145,15 +145,17 @@ int main() {
     const char* image = env_or_null("AICORE_TEST_YOLO_IMAGE");
     const char* boxes_csv = env_or_null("AICORE_TEST_YOLO_VP_BOXES");
     if (gguf == nullptr || image == nullptr || boxes_csv == nullptr) {
-        std::printf("[yolo] savpe model test skipped (set AICORE_TEST_YOLO_"
-                    "SAVPE_GGUF / AICORE_TEST_YOLO_IMAGE / "
-                    "AICORE_TEST_YOLO_VP_BOXES)\n");
+        std::printf(
+                "[yolo] savpe model test skipped (set AICORE_TEST_YOLO_"
+                "SAVPE_GGUF / AICORE_TEST_YOLO_IMAGE / "
+                "AICORE_TEST_YOLO_VP_BOXES)\n");
         return 77;
     }
 
     const std::vector<float> boxes = parse_boxes(boxes_csv);
     if (boxes.size() < 4 || boxes.size() % 4 != 0) {
-        std::printf("[yolo] savpe test skipped: bad AICORE_TEST_YOLO_VP_BOXES\n");
+        std::printf(
+                "[yolo] savpe test skipped: bad AICORE_TEST_YOLO_VP_BOXES\n");
         return 77;
     }
     const int q = (int)(boxes.size() / 4);

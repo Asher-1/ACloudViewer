@@ -1,11 +1,16 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #pragma once
 
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-
 namespace cumesh {
-
 
 /**
  * A 3D vector class with overloaded operators and methods.
@@ -33,12 +38,10 @@ struct __align__(16) Vec3f {
     __device__ __forceinline__ Vec3f slerp(const Vec3f& o, float t) const;
 };
 
-
 /**
  * QEM (Quadric Error Metric) class for mesh simplification.
  */
-struct __align__(16) QEM
-{
+struct __align__(16) QEM {
     // store upper triangle of symmetric 4x4 matrix:
     // e = [ 00, 01, 02, 03, 11, 12, 13, 22, 23, 33 ]
     float e[10];
@@ -51,9 +54,9 @@ struct __align__(16) QEM
     __device__ __forceinline__ void zero();
     __device__ __forceinline__ void add_plane(float4 p);
     __device__ __forceinline__ float evaluate(const Vec3f& p) const;
-    __device__ __forceinline__ bool solve_optimal(float3 &out, float &err) const;
+    __device__ __forceinline__ bool solve_optimal(float3 & out, float& err)
+            const;
 };
-
 
 __device__ __forceinline__ Vec3f::Vec3f() {
     x = 0.0f;
@@ -73,11 +76,9 @@ __device__ __forceinline__ Vec3f::Vec3f(float3 v) {
     z = v.z;
 }
 
-
 __device__ __forceinline__ Vec3f Vec3f::operator+(const Vec3f& o) const {
     return Vec3f(x + o.x, y + o.y, z + o.z);
 }
-
 
 __device__ __forceinline__ Vec3f& Vec3f::operator+=(const Vec3f& o) {
     x += o.x;
@@ -86,11 +87,9 @@ __device__ __forceinline__ Vec3f& Vec3f::operator+=(const Vec3f& o) {
     return *this;
 }
 
-
 __device__ __forceinline__ Vec3f Vec3f::operator-(const Vec3f& o) const {
     return Vec3f(x - o.x, y - o.y, z - o.z);
 }
-
 
 __device__ __forceinline__ Vec3f& Vec3f::operator-=(const Vec3f& o) {
     x -= o.x;
@@ -99,11 +98,9 @@ __device__ __forceinline__ Vec3f& Vec3f::operator-=(const Vec3f& o) {
     return *this;
 }
 
-
 __device__ __forceinline__ Vec3f Vec3f::operator*(float s) const {
     return Vec3f(x * s, y * s, z * s);
 }
-
 
 __device__ __forceinline__ Vec3f& Vec3f::operator*=(float s) {
     x *= s;
@@ -112,11 +109,9 @@ __device__ __forceinline__ Vec3f& Vec3f::operator*=(float s) {
     return *this;
 }
 
-
 __device__ __forceinline__ Vec3f Vec3f::operator/(float s) const {
     return Vec3f(x / s, y / s, z / s);
 }
-
 
 __device__ __forceinline__ Vec3f& Vec3f::operator/=(float s) {
     x /= s;
@@ -125,27 +120,22 @@ __device__ __forceinline__ Vec3f& Vec3f::operator/=(float s) {
     return *this;
 }
 
-
 __device__ __forceinline__ float Vec3f::dot(const Vec3f& o) const {
     return x * o.x + y * o.y + z * o.z;
 }
-
 
 __device__ __forceinline__ float Vec3f::norm() const {
     return sqrtf(x * x + y * y + z * z);
 }
 
-
 __device__ __forceinline__ float Vec3f::norm2() const {
     return x * x + y * y + z * z;
 }
-
 
 __device__ __forceinline__ Vec3f Vec3f::normalized() const {
     float inv_norm = rsqrtf(x * x + y * y + z * z);
     return Vec3f(x * inv_norm, y * inv_norm, z * inv_norm);
 }
-
 
 __device__ __forceinline__ void Vec3f::normalize() {
     float inv_norm = rsqrtf(x * x + y * y + z * z);
@@ -154,60 +144,50 @@ __device__ __forceinline__ void Vec3f::normalize() {
     z *= inv_norm;
 }
 
-
 __device__ __forceinline__ Vec3f Vec3f::cross(const Vec3f& o) const {
     return Vec3f(y * o.z - z * o.y, z * o.x - x * o.z, x * o.y - y * o.x);
 }
 
-
 __device__ __forceinline__ Vec3f Vec3f::slerp(const Vec3f& o, float t) const {
     float dot_prod = this->dot(o);
-    dot_prod = fmaxf(fminf(dot_prod, 1.0f), -1.0f); // Clamp to [-1, 1]
+    dot_prod = fmaxf(fminf(dot_prod, 1.0f), -1.0f);  // Clamp to [-1, 1]
     float theta = acosf(dot_prod) * t;
     Vec3f relative_vec = (o - (*this) * dot_prod).normalized();
     return (*this) * cosf(theta) + relative_vec * sinf(theta);
 }
 
-
-__device__ __forceinline__ QEM::QEM() {
-    zero();
-}
-
+__device__ __forceinline__ QEM::QEM() { zero(); }
 
 __device__ __forceinline__ QEM QEM::operator+(const QEM& o) const {
     QEM res;
-    #pragma unroll
+#pragma unroll
     for (int i = 0; i < 10; ++i) res.e[i] = e[i] + o.e[i];
     return res;
 }
 
-
 __device__ __forceinline__ QEM& QEM::operator+=(const QEM& o) {
-    #pragma unroll
+#pragma unroll
     for (int i = 0; i < 10; ++i) e[i] += o.e[i];
     return *this;
 }
 
-
 __device__ __forceinline__ QEM QEM::operator-(const QEM& o) const {
     QEM res;
-    #pragma unroll
+#pragma unroll
     for (int i = 0; i < 10; ++i) res.e[i] = e[i] - o.e[i];
     return res;
 }
 
-
 __device__ __forceinline__ QEM& QEM::operator-=(const QEM& o) {
-    #pragma unroll
+#pragma unroll
     for (int i = 0; i < 10; ++i) e[i] -= o.e[i];
     return *this;
 }
 
 __device__ __forceinline__ void QEM::zero() {
-    #pragma unroll
+#pragma unroll
     for (int i = 0; i < 10; ++i) e[i] = 0.0f;
 }
-
 
 // Add plane p = (a,b,c,d) as outer product p * p^T
 __device__ __forceinline__ void QEM::add_plane(float4 p) {
@@ -234,7 +214,6 @@ __device__ __forceinline__ void QEM::add_plane(float4 p) {
     e[8] += c * d;
     e[9] += d * d;
 }
-
 
 // Evaluate v^T * Q * v for v = (x,y,z,1)
 __device__ __forceinline__ float QEM::evaluate(const Vec3f& p) const {
@@ -266,12 +245,12 @@ __device__ __forceinline__ float QEM::evaluate(const Vec3f& p) const {
     return res;
 }
 
-
-// Try to solve for optimal point minimizing v^T Q v with constraint v = (x,y,z,1)
-// Solve the linear system: A * [x y z]^T = -b, where
-// A = top-left 3x3 of Q, b = [e03, e13, e23] (note signs)
-// Return true if solved (matrix invertible), false otherwise. err returns the error at the solution.
-__device__ __forceinline__ bool QEM::solve_optimal(float3 &out, float &err) const {
+// Try to solve for optimal point minimizing v^T Q v with constraint v =
+// (x,y,z,1) Solve the linear system: A * [x y z]^T = -b, where A = top-left 3x3
+// of Q, b = [e03, e13, e23] (note signs) Return true if solved (matrix
+// invertible), false otherwise. err returns the error at the solution.
+__device__ __forceinline__ bool QEM::solve_optimal(float3& out,
+                                                   float& err) const {
     // Build A (symmetric)
     float A00 = e[0];
     float A01 = e[1];
@@ -287,10 +266,8 @@ __device__ __forceinline__ bool QEM::solve_optimal(float3 &out, float &err) cons
     // Solve A * x = -b
     // Use analytic inverse for 3x3 symmetric matrix (compute determinant)
     // Compute determinant
-    float det =
-        A00 * (A11 * A22 - A12 * A12) -
-        A01 * (A01 * A22 - A12 * A02) +
-        A02 * (A01 * A12 - A11 * A02);
+    float det = A00 * (A11 * A22 - A12 * A12) - A01 * (A01 * A22 - A12 * A02) +
+                A02 * (A01 * A12 - A11 * A02);
 
     if (fabsf(det) < 1e-12f) {
         // singular - fall back: pick minimal among corners (or average 0)
@@ -303,12 +280,12 @@ __device__ __forceinline__ bool QEM::solve_optimal(float3 &out, float &err) cons
     float invDet = 1.0f / det;
 
     // Compute inverse(A) via adjugate
-    float inv00 =  (A11 * A22 - A12 * A12) * invDet;
+    float inv00 = (A11 * A22 - A12 * A12) * invDet;
     float inv01 = -(A01 * A22 - A12 * A02) * invDet;
-    float inv02 =  (A01 * A12 - A11 * A02) * invDet;
-    float inv11 =  (A00 * A22 - A02 * A02) * invDet;
+    float inv02 = (A01 * A12 - A11 * A02) * invDet;
+    float inv11 = (A00 * A22 - A02 * A02) * invDet;
     float inv12 = -(A00 * A12 - A01 * A02) * invDet;
-    float inv22 =  (A00 * A11 - A01 * A01) * invDet;
+    float inv22 = (A00 * A11 - A01 * A01) * invDet;
 
     // x = -inv(A) * b
     float x = -(inv00 * b0 + inv01 * b1 + inv02 * b2);
@@ -320,5 +297,4 @@ __device__ __forceinline__ bool QEM::solve_optimal(float3 &out, float &err) cons
     return true;
 }
 
-
-} // namespace cumesh
+}  // namespace cumesh

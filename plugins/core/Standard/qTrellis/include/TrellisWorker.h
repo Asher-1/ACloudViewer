@@ -53,8 +53,8 @@ struct TrellisRunResult {
     /** Seven-channel decoded dual grid carried through for standalone
      *  re-texturing (aicore_trellis_texture_mesh). Empty on the coarse
      *  pipeline. */
-    QVector<float> gridFeats;     // 7 * nvox
-    QVector<int> gridCoords;      // 3 * nvox
+    QVector<float> gridFeats;  // 7 * nvox
+    QVector<int> gridCoords;   // 3 * nvox
     int gridRes = 0;
     /** AI background-removal result (full-resolution RGBA), null when no
      *  RMBG model ran (e.g. solid-color fallback). */
@@ -121,8 +121,8 @@ private:
     bool runInference();
     bool resolveRmbgModel();
     void applySettingsToOptions(struct aicore_trellis_options* opts);
-    void emitPreviewBlob(int stage, int step, int total, const void* data,
-                         int len);
+    void emitPreviewBlob(
+            int stage, int step, int total, const void* data, int len);
     /** Progress trampoline: forwards to progressUpdate and accumulates the
      *  per-stage wall times (the C callback is capture-less, so the state
      *  lives on the worker). */

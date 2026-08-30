@@ -50,10 +50,10 @@ public:
     /** Dataset metadata. */
     struct DatasetInfo {
         Dataset kind;
-        QString displayName;     ///< Human-readable name
-        QString zipFileName;     ///< Name of the zip file
-        QString extractDirName;  ///< Directory name after extraction
-        QString downloadUrl;     ///< Remote URL
+        QString displayName;               ///< Human-readable name
+        QString zipFileName;               ///< Name of the zip file
+        QString extractDirName;            ///< Directory name after extraction
+        QString downloadUrl;               ///< Remote URL
         ecvAssetIntegrity::Anchor anchor;  ///< Content identity pinned in
                                            ///< source; verified once at
                                            ///< ingestion (streamed digest)

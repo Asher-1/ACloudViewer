@@ -78,8 +78,8 @@ QString modelInfoJsonFromCtx(struct aicore_rfdetr_ctx* ctx);
 
 /** Enumerate the published catalog from AICore. */
 QVector<RFDetrModelEntry> catalogModels();
-/** Index of the catalog-declared default row (aicore_rfdetr_model_default_index);
- *  -1 when AICore is not available. */
+/** Index of the catalog-declared default row
+ * (aicore_rfdetr_model_default_index); -1 when AICore is not available. */
 int catalogDefaultIndex();
 /** All detection-capable catalog entries (segmentation == false). */
 QVector<RFDetrModelEntry> detectionModels();

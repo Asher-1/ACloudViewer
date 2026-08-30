@@ -1,5 +1,11 @@
-#include "cumesh.h"
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
+#include "cumesh.h"
 
 namespace cumesh {
 
@@ -59,33 +65,21 @@ CuMesh::~CuMesh() {
     cub_temp_storage.free();
 }
 
-int CuMesh::num_vertices() const {
-    return vertices.size;
-}
+int CuMesh::num_vertices() const { return vertices.size; }
 
-int CuMesh::num_faces() const {
-    return faces.size;
-}
+int CuMesh::num_faces() const { return faces.size; }
 
-int CuMesh::num_edges() const {
-    return edges.size;
-}
+int CuMesh::num_edges() const { return edges.size; }
 
-int CuMesh::num_boundaries() const {
-    return boundaries.size;
-}
+int CuMesh::num_boundaries() const { return boundaries.size; }
 
-int CuMesh::num_conneted_components() const {
-    return num_conn_comps;
-}
+int CuMesh::num_conneted_components() const { return num_conn_comps; }
 
 int CuMesh::num_boundary_conneted_components() const {
     return num_bound_conn_comps;
 }
 
-int CuMesh::num_boundary_loops() const {
-    return num_bound_loops;
-}
+int CuMesh::num_boundary_loops() const { return num_bound_loops; }
 
 void CuMesh::clear_cache() {
     face_areas.free();
@@ -139,4 +133,4 @@ void CuMesh::clear_cache() {
     cub_temp_storage.free();
 }
 
-} // namespace cumesh
+}  // namespace cumesh

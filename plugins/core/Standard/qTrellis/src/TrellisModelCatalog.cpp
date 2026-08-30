@@ -159,8 +159,9 @@ bool isValidModelFile(const QString& path, const QString& filename) {
     // content-level verification happens at download time (streamed) or via
     // verifyModelFileSha256() for manual deployments.
     return ecvAssetIntegrity::isVerified(
-            path, {QCryptographicHash::Sha256,
-                   ecvAssetIntegrity::PinnedDigest(filename)},
+            path,
+            {QCryptographicHash::Sha256,
+             ecvAssetIntegrity::PinnedDigest(filename)},
             64 * 1024, true, ecvAssetIntegrity::OnMiss::CheapChecksOnly,
             info.sizeBytes);
 }
@@ -201,12 +202,11 @@ QVector<TrellisPreset> presets() {
             << QStringLiteral("tex_dec_f16.gguf")
             << QStringLiteral("tex_slat_flow_512_f16.gguf")
             << QString();  // tex_flow_hr (1024) — not in this preset
-    out.append(
-            {QStringLiteral("Standard 512 + PBR (recommended)"),
-             QStringLiteral(
-                     "512\u00b3 fine dual-grid with PBR texturing (~7.5 GB "
-                     "q8 / ~11.2 GB f16)"),
-             fine512});
+    out.append({QStringLiteral("Standard 512 + PBR (recommended)"),
+                QStringLiteral(
+                        "512\u00b3 fine dual-grid with PBR texturing (~7.5 GB "
+                        "q8 / ~11.2 GB f16)"),
+                fine512});
     out.append(
             {QStringLiteral("Full 1024 cascade + PBR"),
              QStringLiteral("1024\u00b3 cascade with PBR texturing (~10.5 GB "

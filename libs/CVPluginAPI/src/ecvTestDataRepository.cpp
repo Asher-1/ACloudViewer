@@ -149,16 +149,14 @@ ecvTestDataRepository::DatasetInfo ecvTestDataRepository::getDatasetInfo(
                     QString::fromLatin1(kMonstreeZipName),
                     QString::fromLatin1(kMonstreeExtractDir),
                     QString::fromLatin1(kMonstreeDownloadUrl),
-                    {QCryptographicHash::Sha256,
-                     QByteArray(kMonstreeSha256)}};
+                    {QCryptographicHash::Sha256, QByteArray(kMonstreeSha256)}};
         case Dataset::FriendsFaces:
             return {kind,
                     QStringLiteral("FriendsFaces"),
                     QString::fromLatin1(kFriendsZipName),
                     QString::fromLatin1(kFriendsExtractDir),
                     QString::fromLatin1(kFriendsDownloadUrl),
-                    {QCryptographicHash::Sha256,
-                     QByteArray(kFriendsSha256)}};
+                    {QCryptographicHash::Sha256, QByteArray(kFriendsSha256)}};
         case Dataset::ObjectsDetection:
             return {kind,
                     QStringLiteral("ObjectsDetection"),
@@ -181,8 +179,7 @@ ecvTestDataRepository::DatasetInfo ecvTestDataRepository::getDatasetInfo(
                     QString::fromLatin1(kSam3ZipName),
                     QString::fromLatin1(kSam3ExtractDir),
                     QString::fromLatin1(kSam3DownloadUrl),
-                    {QCryptographicHash::Sha256,
-                     QByteArray(kSam3Sha256)}};
+                    {QCryptographicHash::Sha256, QByteArray(kSam3Sha256)}};
     }
     Q_UNREACHABLE();
     return {};
@@ -309,8 +306,8 @@ void ecvTestDataRepository::startDownload(Dataset kind) {
     ecvModelDownloader::Request request;
     request.url = info.downloadUrl;
     request.destPath = destPath;
-    request.minBytes = 1024 * 1024;    // At least 1 MB
-    request.requireGgufMagic = false;  // Not a GGUF file
+    request.minBytes = 1024 * 1024;       // At least 1 MB
+    request.requireGgufMagic = false;     // Not a GGUF file
     request.contentAnchor = info.anchor;  // streamed digest check at ingestion
 
     m_downloader->download(request);

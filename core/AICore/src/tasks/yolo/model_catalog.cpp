@@ -241,13 +241,12 @@ static std::vector<ModelRow> buildModels() {
         // it is the default — half the download at matching accuracy).
         const bool mclip_bridge =
                 std::strcmp(info.name, "mclip-labse-vitb32") == 0;
-        const char* license = mclip_bridge
-                                      ? "MIT / Apache-2.0 (M-CLIP / LaBSE)"
-                                      : "AGPL-3.0 (Ultralytics)";
+        const char* license = mclip_bridge ? "MIT / Apache-2.0 (M-CLIP / LaBSE)"
+                                           : "AGPL-3.0 (Ultralytics)";
         for (int qi = 0; qi < kQuantCount; ++qi) {
             // 0 = f32 (not published), 1 = f16, 2 = q8_0 (default).
-            const int eqi = mclip_bridge ? (qi == 0 ? 2 : (qi == 1 ? 1 : -1))
-                                         : qi;
+            const int eqi =
+                    mclip_bridge ? (qi == 0 ? 2 : (qi == 1 ? 1 : -1)) : qi;
             if (eqi < 0) continue;
             const int qi_eff = eqi;
             std::string filename = std::string(info.name) + "-" +
@@ -257,8 +256,7 @@ static std::vector<ModelRow> buildModels() {
                                   kQuantNotes[qi_eff];
             rows.push_back({dupString(filename.c_str()), dupString(url.c_str()),
                             dupString(display.c_str()),
-                            dupString(kQuantNotes[qi_eff]),
-                            license, info.task,
+                            dupString(kQuantNotes[qi_eff]), license, info.task,
                             std::strcmp(info.task, "depth") == 0 ? 1 : 0,
                             std::strncmp(info.name, "yolo26", 6) == 0 &&
                                             std::strcmp(info.task, "text") != 0
@@ -352,8 +350,7 @@ AICORE_CAPI int aicore_yolo_model_default_index(
     int view = 0;
     for (const auto& row : kModels) {
         if (!roleMatches(role, row)) continue;
-        if (row.quant_note &&
-            std::strstr(row.quant_note, "(recommended)")) {
+        if (row.quant_note && std::strstr(row.quant_note, "(recommended)")) {
             return view;
         }
         ++view;

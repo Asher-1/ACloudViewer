@@ -1,18 +1,22 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#include <cub/cub.cuh>
+
 #include "cumesh.h"
 #include "dtypes.cuh"
 #include "shared.h"
-#include <cub/cub.cuh>
-
 
 namespace cumesh {
 
-
-static __global__ void compute_face_areas_kernel(
-    const float3* vertices,
-    const int3* faces,
-    const size_t F,
-    float* face_areas
-) {
+static __global__ void compute_face_areas_kernel(const float3* vertices,
+                                                 const int3* faces,
+                                                 const size_t F,
+                                                 float* face_areas) {
     const int fid = blockIdx.x * blockDim.x + threadIdx.x;
     if (fid >= F) return;
     int3 face = faces[fid];
@@ -22,27 +26,20 @@ static __global__ void compute_face_areas_kernel(
     face_areas[fid] = 0.5 * (v1 - v0).cross(v2 - v0).norm();
 }
 
-
 void CuMesh::compute_face_areas() {
     cudaStream_t stream = current_stream();
     size_t F = this->faces.size;
     this->face_areas.resize(F);
-    compute_face_areas_kernel<<<(F + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE, 0, stream>>>(
-        this->vertices.ptr,
-        this->faces.ptr,
-        F,
-        this->face_areas.ptr
-    );
+    compute_face_areas_kernel<<<(F + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE,
+                                0, stream>>>(
+            this->vertices.ptr, this->faces.ptr, F, this->face_areas.ptr);
     CUDA_CHECK(cudaGetLastError());
 }
 
-
-static __global__ void compute_face_normals_kernel(
-    const float3* vertices,
-    const int3* faces,
-    const size_t F,
-    float3* face_normals
-) {
+static __global__ void compute_face_normals_kernel(const float3* vertices,
+                                                   const int3* faces,
+                                                   const size_t F,
+                                                   float3* face_normals) {
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
     if (tid >= F) return;
 
@@ -56,29 +53,23 @@ static __global__ void compute_face_normals_kernel(
     face_normals[tid] = make_float3(normal.x, normal.y, normal.z);
 }
 
-
 void CuMesh::compute_face_normals() {
     cudaStream_t stream = current_stream();
     size_t F = this->faces.size;
     this->face_normals.resize(F);
-    compute_face_normals_kernel<<<(F + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE, 0, stream>>>(
-        this->vertices.ptr,
-        this->faces.ptr,
-        F,
-        this->face_normals.ptr
-    );
+    compute_face_normals_kernel<<<(F + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE,
+                                  0, stream>>>(
+            this->vertices.ptr, this->faces.ptr, F, this->face_normals.ptr);
     CUDA_CHECK(cudaGetLastError());
 }
 
-
 static __global__ void compute_vertex_normals_kernel(
-    const float3* vertices,
-    const int3* faces,
-    const int* vert2face,
-    const int* vert2face_offset,
-    const size_t V,
-    float3* vertex_normals
-) {
+        const float3* vertices,
+        const int3* faces,
+        const int* vert2face,
+        const int* vert2face_offset,
+        const size_t V,
+        float3* vertex_normals) {
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
     if (tid >= V) return;
 
@@ -109,7 +100,6 @@ static __global__ void compute_vertex_normals_kernel(
     vertex_normals[tid] = make_float3(normal.x, normal.y, normal.z);
 }
 
-
 void CuMesh::compute_vertex_normals() {
     if (this->vert2face.is_empty() || this->vert2face_offset.is_empty()) {
         this->get_vertex_face_adjacency();
@@ -118,16 +108,11 @@ void CuMesh::compute_vertex_normals() {
     cudaStream_t stream = current_stream();
     size_t V = this->vertices.size;
     this->vertex_normals.resize(V);
-    compute_vertex_normals_kernel<<<(V + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE, 0, stream>>>(
-        this->vertices.ptr,
-        this->faces.ptr,
-        this->vert2face.ptr,
-        this->vert2face_offset.ptr,
-        V,
-        this->vertex_normals.ptr
-    );
+    compute_vertex_normals_kernel<<<(V + BLOCK_SIZE - 1) / BLOCK_SIZE,
+                                    BLOCK_SIZE, 0, stream>>>(
+            this->vertices.ptr, this->faces.ptr, this->vert2face.ptr,
+            this->vert2face_offset.ptr, V, this->vertex_normals.ptr);
     CUDA_CHECK(cudaGetLastError());
 }
 
-
-} // namespace cumesh
+}  // namespace cumesh

@@ -144,8 +144,8 @@ bool YOLOWorker::runInference() {
                 opts, boxes.data(),
                 static_cast<int32_t>(m_settings.visualPrompts.size()));
         emit logMessage(tr("[YOLO] Visual prompts: %1 example box(es); the "
-                            "SAVPE encoder derives the categories "
-                            "(object0..object%2).")
+                           "SAVPE encoder derives the categories "
+                           "(object0..object%2).")
                                 .arg(m_settings.visualPrompts.size())
                                 .arg(m_settings.visualPrompts.size() - 1));
     } else if (!m_settings.classes.isEmpty()) {
@@ -299,8 +299,7 @@ bool YOLOWorker::runDetect(const QImage& rgb, const uchar* rgbData) {
                     .arg(result.modelVariant)
                     .arg(m_settings.confThres, 0, 'f', 2)
                     .arg(m_settings.iouThres, 0, 'f', 2));
-    if (result.detections.isEmpty() &&
-        hasPhrasePrompt(m_settings.classes)) {
+    if (result.detections.isEmpty() && hasPhrasePrompt(m_settings.classes)) {
         emit logMessage(
                 tr("[YOLO] Hint: descriptive phrase prompts (e.g. \"female "
                    "in yellow hat\") score far below short categories on "

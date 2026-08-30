@@ -45,8 +45,8 @@ static const int kTris[] = {0, 1, 2};
 static const float kPbr6[6] = {0.8f, 0.2f, 0.1f, 0.0f, 0.5f, 1.0f};
 
 static int g_preview_blobs = 0;
-static void test_preview(void*, int stage, int, int, const void* data,
-                         int len) {
+static void test_preview(
+        void*, int stage, int, int, const void* data, int len) {
     if (!data || len < 8) return;
     const char* magic = (const char*)data;
     if (std::strncmp(magic, "T2VOX01", 7) == 0 ||
@@ -120,20 +120,17 @@ int main() {
                                          nullptr, nullptr, err,
                                          sizeof(err)) == nullptr);
     // generate_ex: null-context guard + null preview == generate.
-    AICORE_CHECK(aicore_trellis_generate_ex(nullptr, kPng1x1,
-                                            (int)sizeof(kPng1x1), nullptr,
-                                            test_progress, nullptr, test_preview,
-                                            nullptr, err, sizeof(err)) ==
-                 nullptr);
+    AICORE_CHECK(aicore_trellis_generate_ex(
+                         nullptr, kPng1x1, (int)sizeof(kPng1x1), nullptr,
+                         test_progress, nullptr, test_preview, nullptr, err,
+                         sizeof(err)) == nullptr);
 
     // Standalone texturing / export-prep contracts: guards must not crash.
-    AICORE_CHECK(aicore_trellis_texture_mesh(nullptr, kVerts, 3, kTris, 1,
-                                             nullptr, 0, nullptr, 0,
-                                             AICORE_TRELLIS_PIPE_512, kPng1x1,
-                                             (int)sizeof(kPng1x1),
-                                             AICORE_TRELLIS_BG_AUTO, 0, 0,
-                                             test_progress, nullptr, err,
-                                             sizeof(err)) == nullptr);
+    AICORE_CHECK(aicore_trellis_texture_mesh(
+                         nullptr, kVerts, 3, kTris, 1, nullptr, 0, nullptr, 0,
+                         AICORE_TRELLIS_PIPE_512, kPng1x1, (int)sizeof(kPng1x1),
+                         AICORE_TRELLIS_BG_AUTO, 0, 0, test_progress, nullptr,
+                         err, sizeof(err)) == nullptr);
     AICORE_CHECK(aicore_trellis_prepare_mesh(nullptr, 0, nullptr, 0, nullptr, 0,
                                              err, sizeof(err)) == nullptr);
     AICORE_CHECK(aicore_trellis_prepare_mesh(kVerts, 3, kTris, 1, nullptr, 3,
@@ -145,24 +142,23 @@ int main() {
     // safe either way and the prepare guard must hold.
     const int printable = aicore_trellis_print_remesh_available();
     AICORE_CHECK(printable == 0 || printable == 1);
-    AICORE_CHECK(aicore_trellis_prepare_print_mesh(kVerts, 3, kTris, 1,
-                                                   nullptr, 0, 0.01f, 0.01f,
-                                                   err, sizeof(err)) ==
+    AICORE_CHECK(aicore_trellis_prepare_print_mesh(kVerts, 3, kTris, 1, nullptr,
+                                                   0, 0.01f, 0.01f, err,
+                                                   sizeof(err)) ==
                  nullptr);  // degenerate single triangle
     // Projected GLB bake: guards + (unavailable CGAL -> null, not crash).
     int out_len = 0;
     AICORE_CHECK(aicore_trellis_bake_projected_glb(
-                     nullptr, 0, nullptr, 0, nullptr, 0, nullptr, 0, nullptr, 0,
-                     0, &out_len, err, sizeof(err)) == nullptr);
+                         nullptr, 0, nullptr, 0, nullptr, 0, nullptr, 0,
+                         nullptr, 0, 0, &out_len, err, sizeof(err)) == nullptr);
     AICORE_CHECK(aicore_trellis_bake_projected_glb(
-                     kVerts, 3, kTris, 1, kVerts, 3, kTris, 1, kPbr6, 0, 0,
-                     &out_len, err, sizeof(err)) ==
+                         kVerts, 3, kTris, 1, kVerts, 3, kTris, 1, kPbr6, 0, 0,
+                         &out_len, err, sizeof(err)) ==
                  nullptr);  // CGAL unavailable in-tree, wrap target degenerate
 
     // prepare_mesh returns the same topology for KeepAll and fills normals.
-    aicore_trellis_mesh* prepared =
-            aicore_trellis_prepare_mesh(kVerts, 3, kTris, 1, nullptr, 2, err,
-                                        sizeof(err));
+    aicore_trellis_mesh* prepared = aicore_trellis_prepare_mesh(
+            kVerts, 3, kTris, 1, nullptr, 2, err, sizeof(err));
     AICORE_CHECK(prepared != nullptr);
     AICORE_CHECK(aicore_trellis_mesh_n_verts(prepared) == 3);
     AICORE_CHECK(aicore_trellis_mesh_n_tris(prepared) == 1);

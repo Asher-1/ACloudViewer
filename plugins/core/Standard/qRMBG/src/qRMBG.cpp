@@ -300,8 +300,8 @@ void qRMBG::addResultToDb(const RMBGRunResult& result,
                                             : result.resolvedDevice);
     // Model tag keeps runs from different checkpoint variants separable
     // in the DB tree (source + device alone collide across variants).
-    const QString modelTag = ecvPluginDbNaming::modelTagFromFilename(
-            settings.modelPath);
+    const QString modelTag =
+            ecvPluginDbNaming::modelTagFromFilename(settings.modelPath);
     const QString name = ecvPluginDbNaming::makeUnique(
             QStringLiteral("RMBG_%1_%2_%3")
                     .arg(modelTag, sourceLabel, deviceTag),

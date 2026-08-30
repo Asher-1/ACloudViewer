@@ -1,32 +1,37 @@
-#include <torch/extension.h>
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#include <c10/cuda/CUDAStream.h>
 #include <cuda.h>
 #include <cuda_runtime.h>
-#include <cub/cub.cuh>
-#include <c10/cuda/CUDAStream.h>
+#include <torch/extension.h>
 
-#include "api.h"
-#include "../utils.h"
+#include <cub/cub.cuh>
+
 #include "../hash/api.h"
 #include "../hash/hash.cuh"
+#include "../utils.h"
+#include "api.h"
 
-
-template<typename T>
-static __global__ void get_vertex_num(
-    const size_t N,
-    const size_t M,
-    const int W,
-    const int H,
-    const int D,
-    const T* __restrict__ hashmap_keys,
-    const uint32_t* __restrict__ hashmap_vals,
-    const int32_t* __restrict__ coords,
-    int* __restrict__ num_vertices
-) {
+template <typename T>
+static __global__ void get_vertex_num(const size_t N,
+                                      const size_t M,
+                                      const int W,
+                                      const int H,
+                                      const int D,
+                                      const T* __restrict__ hashmap_keys,
+                                      const uint32_t* __restrict__ hashmap_vals,
+                                      const int32_t* __restrict__ coords,
+                                      int* __restrict__ num_vertices) {
     size_t thread_id = blockIdx.x * blockDim.x + threadIdx.x;
     if (thread_id >= M) return;
 
-    int num = 1;        // include the current voxel
-    
+    int num = 1;  // include the current voxel
+
     int x = coords[3 * thread_id + 0];
     int y = coords[3 * thread_id + 1];
     int z = coords[3 * thread_id + 2];
@@ -34,11 +39,11 @@ static __global__ void get_vertex_num(
     size_t flat_idx;
     T key;
 
-    #pragma unroll
+#pragma unroll
     for (int i = 0; i <= 1; i++) {
-        #pragma unroll
+#pragma unroll
         for (int j = 0; j <= 1; j++) {
-            #pragma unroll
+#pragma unroll
             for (int k = 0; k <= 1; k++) {
                 if (i == 0 && j == 0 && k == 0) continue;
                 int xx = x + i;
@@ -50,7 +55,8 @@ static __global__ void get_vertex_num(
                 }
                 flat_idx = (size_t)(xx * H + yy) * D + zz;
                 key = static_cast<T>(flat_idx);
-                if (linear_probing_lookup(hashmap_keys, hashmap_vals, key, N) == std::numeric_limits<uint32_t>::max()) {
+                if (linear_probing_lookup(hashmap_keys, hashmap_vals, key, N) ==
+                    std::numeric_limits<uint32_t>::max()) {
                     num++;
                 }
             }
@@ -60,23 +66,20 @@ static __global__ void get_vertex_num(
     num_vertices[thread_id] = num;
 }
 
-
-template<typename T>
-static __global__ void set_vertex(
-    const size_t N,
-    const size_t M,
-    const int W,
-    const int H,
-    const int D,
-    const T* __restrict__ hashmap_keys,
-    const uint32_t* __restrict__ hashmap_vals,
-    const int32_t* __restrict__ coords,
-    const int* __restrict__ vertices_offset,
-    int* __restrict__ vertices
-) {
+template <typename T>
+static __global__ void set_vertex(const size_t N,
+                                  const size_t M,
+                                  const int W,
+                                  const int H,
+                                  const int D,
+                                  const T* __restrict__ hashmap_keys,
+                                  const uint32_t* __restrict__ hashmap_vals,
+                                  const int32_t* __restrict__ coords,
+                                  const int* __restrict__ vertices_offset,
+                                  int* __restrict__ vertices) {
     size_t thread_id = blockIdx.x * blockDim.x + threadIdx.x;
     if (thread_id >= M) return;
-    
+
     int x = coords[3 * thread_id + 0];
     int y = coords[3 * thread_id + 1];
     int z = coords[3 * thread_id + 2];
@@ -89,11 +92,11 @@ static __global__ void set_vertex(
     size_t flat_idx;
     T key;
 
-    #pragma unroll
+#pragma unroll
     for (int i = 0; i <= 1; i++) {
-        #pragma unroll
+#pragma unroll
         for (int j = 0; j <= 1; j++) {
-            #pragma unroll
+#pragma unroll
             for (int k = 0; k <= 1; k++) {
                 if (i == 0 && j == 0 && k == 0) continue;
                 int xx = x + i;
@@ -108,7 +111,8 @@ static __global__ void set_vertex(
                 }
                 flat_idx = (size_t)(xx * H + yy) * D + zz;
                 key = static_cast<T>(flat_idx);
-                if (linear_probing_lookup(hashmap_keys, hashmap_vals, key, N) == std::numeric_limits<uint32_t>::max()) {
+                if (linear_probing_lookup(hashmap_keys, hashmap_vals, key, N) ==
+                    std::numeric_limits<uint32_t>::max()) {
                     vertices[3 * ptr_start + 0] = xx;
                     vertices[3 * ptr_start + 1] = yy;
                     vertices[3 * ptr_start + 2] = zz;
@@ -119,31 +123,34 @@ static __global__ void set_vertex(
     }
 }
 
-
 /**
  * Get the active vetices of a sparse voxel grid
- * 
+ *
  * @param hashmap_keys  [N] uint32/uint64 tensor containing the hashmap keys
- * @param hashmap_vals  [N] uint32 tensor containing the hashmap values as voxel indices
- * @param coords        [M, 3] int32 tensor containing the coordinates of the active voxels
+ * @param hashmap_vals  [N] uint32 tensor containing the hashmap values as voxel
+ * indices
+ * @param coords        [M, 3] int32 tensor containing the coordinates of the
+ * active voxels
  * @param W             the number of width dimensions
  * @param H             the number of height dimensions
  * @param D             the number of depth dimensions
- *  
+ *
  * @return              [L, 3] int32 tensor containing the active vertices
  */
 torch::Tensor cumesh::get_sparse_voxel_grid_active_vertices(
-    torch::Tensor& hashmap_keys,
-    torch::Tensor& hashmap_vals,
-    const torch::Tensor& coords,
-    const int W,
-    const int H,
-    const int D
-) {
-    // Handle empty input - return early to avoid launching kernels with 0 blocks
+        torch::Tensor& hashmap_keys,
+        torch::Tensor& hashmap_vals,
+        const torch::Tensor& coords,
+        const int W,
+        const int H,
+        const int D) {
+    // Handle empty input - return early to avoid launching kernels with 0
+    // blocks
     size_t M = coords.size(0);
     if (M == 0) {
-        return torch::empty({0, 3}, torch::dtype(torch::kInt32).device(hashmap_keys.device()));
+        return torch::empty(
+                {0, 3},
+                torch::dtype(torch::kInt32).device(hashmap_keys.device()));
     }
 
     // Get the number of active vertices for each voxel
@@ -152,29 +159,17 @@ torch::Tensor cumesh::get_sparse_voxel_grid_active_vertices(
     int* num_vertices;
     CUDA_CHECK(cudaMalloc(&num_vertices, (M + 1) * sizeof(int)));
     if (hashmap_keys.dtype() == torch::kUInt32) {
-        get_vertex_num<<<(M + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE, 0, stream>>>(
-            N,
-            M,
-            W,
-            H,
-            D,
-            hashmap_keys.data_ptr<uint32_t>(),
-            hashmap_vals.data_ptr<uint32_t>(),
-            coords.data_ptr<int32_t>(),
-            num_vertices
-        );
+        get_vertex_num<<<(M + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE, 0,
+                         stream>>>(N, M, W, H, D,
+                                   hashmap_keys.data_ptr<uint32_t>(),
+                                   hashmap_vals.data_ptr<uint32_t>(),
+                                   coords.data_ptr<int32_t>(), num_vertices);
     } else if (hashmap_keys.dtype() == torch::kUInt64) {
-        get_vertex_num<<<(M + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE, 0, stream>>>(
-            N,
-            M,
-            W,
-            H,
-            D,
-            hashmap_keys.data_ptr<uint64_t>(),
-            hashmap_vals.data_ptr<uint32_t>(),
-            coords.data_ptr<int32_t>(),
-            num_vertices
-        );
+        get_vertex_num<<<(M + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE, 0,
+                         stream>>>(N, M, W, H, D,
+                                   hashmap_keys.data_ptr<uint64_t>(),
+                                   hashmap_vals.data_ptr<uint32_t>(),
+                                   coords.data_ptr<int32_t>(), num_vertices);
     } else {
         TORCH_CHECK(false, "Unsupported data type");
     }
@@ -182,48 +177,39 @@ torch::Tensor cumesh::get_sparse_voxel_grid_active_vertices(
 
     // Compute the offset
     size_t temp_storage_bytes = 0;
-    cub::DeviceScan::ExclusiveSum(nullptr, temp_storage_bytes, num_vertices, M + 1, stream);
+    cub::DeviceScan::ExclusiveSum(nullptr, temp_storage_bytes, num_vertices,
+                                  M + 1, stream);
     void* d_temp_storage = nullptr;
     CUDA_CHECK(cudaMalloc(&d_temp_storage, temp_storage_bytes));
-    cub::DeviceScan::ExclusiveSum(d_temp_storage, temp_storage_bytes, num_vertices, M + 1, stream);
+    cub::DeviceScan::ExclusiveSum(d_temp_storage, temp_storage_bytes,
+                                  num_vertices, M + 1, stream);
     int total_vertices;
-    CUDA_CHECK(cudaMemcpyAsync(&total_vertices, num_vertices + M, sizeof(int), cudaMemcpyDeviceToHost, stream));
+    CUDA_CHECK(cudaMemcpyAsync(&total_vertices, num_vertices + M, sizeof(int),
+                               cudaMemcpyDeviceToHost, stream));
     CUDA_CHECK(cudaStreamSynchronize(stream));
     CUDA_CHECK(cudaFree(d_temp_storage));
 
     // Set the active vertices for each voxel
-    auto vertices = torch::empty({total_vertices, 3}, torch::dtype(torch::kInt32).device(hashmap_keys.device()));
+    auto vertices = torch::empty(
+            {total_vertices, 3},
+            torch::dtype(torch::kInt32).device(hashmap_keys.device()));
     if (hashmap_keys.dtype() == torch::kUInt32) {
-        set_vertex<<<(M + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE, 0, stream>>>(
-            N,
-            M,
-            W,
-            H,
-            D,
-            hashmap_keys.data_ptr<uint32_t>(),
-            hashmap_vals.data_ptr<uint32_t>(),
-            coords.data_ptr<int32_t>(),
-            num_vertices,
-            vertices.data_ptr<int32_t>()
-        );
-    }
-    else if (hashmap_keys.dtype() == torch::kUInt64) {
-        set_vertex<<<(M + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE, 0, stream>>>(
-            N,
-            M,
-            W,
-            H,
-            D,
-            hashmap_keys.data_ptr<uint64_t>(),
-            hashmap_vals.data_ptr<uint32_t>(),
-            coords.data_ptr<int32_t>(),
-            num_vertices,
-            vertices.data_ptr<int32_t>()
-        );
+        set_vertex<<<(M + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE, 0,
+                     stream>>>(N, M, W, H, D, hashmap_keys.data_ptr<uint32_t>(),
+                               hashmap_vals.data_ptr<uint32_t>(),
+                               coords.data_ptr<int32_t>(), num_vertices,
+                               vertices.data_ptr<int32_t>());
+    } else if (hashmap_keys.dtype() == torch::kUInt64) {
+        set_vertex<<<(M + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE, 0,
+                     stream>>>(N, M, W, H, D, hashmap_keys.data_ptr<uint64_t>(),
+                               hashmap_vals.data_ptr<uint32_t>(),
+                               coords.data_ptr<int32_t>(), num_vertices,
+                               vertices.data_ptr<int32_t>());
     }
     CUDA_CHECK(cudaGetLastError());
 
-    // Free the temporary memory — sync stream first so set_vertex kernel is done
+    // Free the temporary memory — sync stream first so set_vertex kernel is
+    // done
     CUDA_CHECK(cudaStreamSynchronize(stream));
     CUDA_CHECK(cudaFree(num_vertices));
 

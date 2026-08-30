@@ -93,8 +93,8 @@ QImage _getEmbeddedTexture(unsigned int inTextureIndex,
     image = QImage(static_cast<int>(texture->mWidth),
                    static_cast<int>(texture->mHeight), QImage::Format_ARGB32);
     for (unsigned y = 0; y < texture->mHeight; ++y) {
-        auto *scanLine = reinterpret_cast<QRgb *>(
-                image.scanLine(static_cast<int>(y)));
+        auto *scanLine =
+                reinterpret_cast<QRgb *>(image.scanLine(static_cast<int>(y)));
         const aiTexel *src = texture->pcData + y * texture->mWidth;
         for (unsigned x = 0; x < texture->mWidth; ++x) {
             scanLine[x] = qRgba(src[x].r, src[x].g, src[x].b, src[x].a);
@@ -248,10 +248,9 @@ ccMaterialSet *createMaterialSetForMesh(const aiMesh *inMesh,
                     // two different files in the same directory (e.g. several
                     // GLB exports with same-name/unnamed textures) must never
                     // share entries in the global texture DB.
-                    const QString sourceId =
-                            inSourceFileName.isEmpty()
-                                    ? QStringLiteral("file")
-                                    : inSourceFileName;
+                    const QString sourceId = inSourceFileName.isEmpty()
+                                                     ? QStringLiteral("file")
+                                                     : inSourceFileName;
                     QString storagePath;
                     if (match.hasMatch()) {
                         // glTF/GLB embedded textures use Assimp paths like
@@ -261,8 +260,7 @@ ccMaterialSet *createMaterialSetForMesh(const aiMesh *inMesh,
                                         .arg(inPath, sourceId,
                                              match.captured("index")));
                         ccMaterial::AddTexture(image, storagePath);
-                    } else if (!QFile::exists(path) &&
-                               inScene->HasTextures()) {
+                    } else if (!QFile::exists(path) && inScene->HasTextures()) {
                         // Embedded texture referenced by name (not on disk)
                         storagePath = CVTools::ToNativeSeparators(
                                 QStringLiteral("%1/%2/#embedded/%3")

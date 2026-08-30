@@ -89,7 +89,9 @@ public:
     /** Mark a strip slot done / active (see the kStage* constants). */
     void setStageState(int slot, int state);
     /** Remember the last generation result for the export page. */
-    void setLastResult(const TrellisRunResult& result) { m_lastResult = result; }
+    void setLastResult(const TrellisRunResult& result) {
+        m_lastResult = result;
+    }
     const TrellisRunResult& lastResult() const { return m_lastResult; }
     /** Export-page settings + info line. */
     int exportTextureSize() const {

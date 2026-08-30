@@ -43,7 +43,7 @@ namespace {
 // upstream TRELLIS2_DEVICE / TRELLIS2_N_THREADS / TRELLIS2_SDPA_EXACT /
 // TRELLIS2_SDPA_FLASH / TRELLIS2_TIMING environment variables; AICore reads
 // no environment variables for logic control).
-thread_local int tls_n_threads = 0;  // 0 = hardware concurrency
+thread_local int tls_n_threads = 0;        // 0 = hardware concurrency
 thread_local bool tls_sdpa_exact = false;  // force the unchunked exact path
 thread_local bool tls_sdpa_flash = false;  // opt back into flash attention
 thread_local bool tls_timing = false;
@@ -533,7 +533,7 @@ ggml_tensor *sdpa_auto(ggml_context *ctx,
     const uint64_t full = (uint64_t)Lq * Lk * H * sizeof(float);
     const bool fits = full <= ((uint64_t)12 << 30);
     if (tls_sdpa_exact || fits) {
-        ggml_tensor *sc = ggml_mul_mat(ctx, kp, qp);              // [Lk, Lq, H]
+        ggml_tensor *sc = ggml_mul_mat(ctx, kp, qp);  // [Lk, Lq, H]
         ggml_mul_mat_set_prec(sc, GGML_PREC_F32);
         sc = ggml_soft_max_ext(ctx, sc, nullptr, scale, 0.0f);
         ggml_tensor *vt = ggml_cont(
@@ -1702,8 +1702,8 @@ bool trellis2_dino_encode(trellis2_dino_model *m,
                                  // otherwise (dino cond rel-L2 6e-4)
         sc = ggml_soft_max_ext(ctx, sc, nullptr, attn_scale, 0.0f);
         ggml_tensor *vt = ggml_cont(
-                ctx, ggml_permute(ctx, vp, 1, 0, 2, 3));       // [Nk, hd, H]
-        ggml_tensor *o = ggml_mul_mat(ctx, vt, sc);            // [hd, Nq, H]
+                ctx, ggml_permute(ctx, vp, 1, 0, 2, 3));  // [Nk, hd, H]
+        ggml_tensor *o = ggml_mul_mat(ctx, vt, sc);       // [hd, Nq, H]
         ggml_mul_mat_set_prec(o, GGML_PREC_F32);
         o = ggml_cont(ctx, ggml_permute(ctx, o, 0, 2, 1, 3));  // [hd, H, Nq]
         return ggml_reshape_2d(ctx, o, C, o->ne[2]);           // [C, Nq]
@@ -3350,7 +3350,7 @@ static bool shape_dec_run(trellis2_shape_dec_model *m,
                 g = ggml_mul(ctx, g,
                              mask_t[k]);  // zero missing (broadcast [1,L])
                 ggml_tensor *y = ggml_mul_mat(ctx, wk, g);  // [Co, L]
-                ggml_mul_mat_set_prec(y, GGML_PREC_F32);  // f32 accumulate
+                ggml_mul_mat_set_prec(y, GGML_PREC_F32);    // f32 accumulate
                 acc = acc ? ggml_add(ctx, acc, y) : y;
             }
             return ggml_add(ctx, acc, b);

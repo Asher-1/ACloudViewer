@@ -9,7 +9,6 @@
 
 #include <QMouseEvent>
 #include <QPainter>
-
 #include <algorithm>
 
 namespace {
@@ -48,13 +47,13 @@ void YOLOVisualPromptLabel::setPromptImage(const QImage& image,
     // KeepAspectRatio + centered alignment (QLabel default): the displayed
     // rect is derived from the actual pixmap, so the coordinate mapping
     // stays exact for any DPI/size combination.
-    const QPixmap pm = QPixmap::fromImage(
-            m_image.scaled(target, Qt::KeepAspectRatio,
-                           Qt::SmoothTransformation));
+    const QPixmap pm = QPixmap::fromImage(m_image.scaled(
+            target, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     const QSizeF pmSize(pm.size());
     const QSizeF widgetSize(size());
-    const QPointF topLeft(qMax<qreal>(0.0, (widgetSize.width() - pmSize.width()) / 2.0),
-                          qMax<qreal>(0.0, (widgetSize.height() - pmSize.height()) / 2.0));
+    const QPointF topLeft(
+            qMax<qreal>(0.0, (widgetSize.width() - pmSize.width()) / 2.0),
+            qMax<qreal>(0.0, (widgetSize.height() - pmSize.height()) / 2.0));
     m_pixmapRect = QRectF(topLeft, pmSize);
     setPixmap(pm);
     update();
@@ -101,14 +100,11 @@ void YOLOVisualPromptLabel::clearBoxes() {
     update();
 }
 
-QPointF YOLOVisualPromptLabel::toImageCoords(
-        const QPointF& widgetPos) const {
+QPointF YOLOVisualPromptLabel::toImageCoords(const QPointF& widgetPos) const {
     if (m_pixmapRect.isEmpty() || m_imageSize.isEmpty()) return QPointF();
-    return QPointF(m_imageSize.width() *
-                           (widgetPos.x() - m_pixmapRect.left()) /
+    return QPointF(m_imageSize.width() * (widgetPos.x() - m_pixmapRect.left()) /
                            m_pixmapRect.width(),
-                   m_imageSize.height() *
-                           (widgetPos.y() - m_pixmapRect.top()) /
+                   m_imageSize.height() * (widgetPos.y() - m_pixmapRect.top()) /
                            m_pixmapRect.height());
 }
 
@@ -140,16 +136,16 @@ void YOLOVisualPromptLabel::paintEvent(QPaintEvent* event) {
         painter.setBrush(Qt::NoBrush);
         painter.drawRect(widgetRect);
         if (!label.isEmpty()) {
-            const QRect textRect = fm.boundingRect(label).adjusted(
-                    -3, -1, 3, 1);
-            const QPointF anchor(qMax<qreal>(widgetRect.left(), 0.0),
-                                 qMax<qreal>(widgetRect.top() - textRect.height() - 2,
-                                             0.0));
+            const QRect textRect =
+                    fm.boundingRect(label).adjusted(-3, -1, 3, 1);
+            const QPointF anchor(
+                    qMax<qreal>(widgetRect.left(), 0.0),
+                    qMax<qreal>(widgetRect.top() - textRect.height() - 2, 0.0));
             painter.fillRect(QRectF(anchor, textRect.size()),
                              QColor(0, 0, 0, 150));
             painter.setPen(Qt::white);
-            painter.drawText(QRectF(anchor, textRect.size()),
-                             Qt::AlignCenter, label);
+            painter.drawText(QRectF(anchor, textRect.size()), Qt::AlignCenter,
+                             label);
         }
     };
 
@@ -181,11 +177,11 @@ void YOLOVisualPromptLabel::mouseMoveEvent(QMouseEvent* event) {
         return;
     }
     const QPointF img = toImageCoords(event->pos());
-    m_rubberBandCurrent = QRectF(
-            QPointF(std::min(m_rubberBandStart.x(), img.x()),
-                    std::min(m_rubberBandStart.y(), img.y())),
-            QPointF(std::max(m_rubberBandStart.x(), img.x()),
-                    std::max(m_rubberBandStart.y(), img.y())));
+    m_rubberBandCurrent =
+            QRectF(QPointF(std::min(m_rubberBandStart.x(), img.x()),
+                           std::min(m_rubberBandStart.y(), img.y())),
+                   QPointF(std::max(m_rubberBandStart.x(), img.x()),
+                           std::max(m_rubberBandStart.y(), img.y())));
     update();
 }
 
@@ -196,11 +192,10 @@ void YOLOVisualPromptLabel::mouseReleaseEvent(QMouseEvent* event) {
     }
     m_rubberBandActive = false;
     const QPointF img = toImageCoords(event->pos());
-    QRectF box(
-            QPointF(std::min(m_rubberBandStart.x(), img.x()),
-                    std::min(m_rubberBandStart.y(), img.y())),
-            QPointF(std::max(m_rubberBandStart.x(), img.x()),
-                    std::max(m_rubberBandStart.y(), img.y())));
+    QRectF box(QPointF(std::min(m_rubberBandStart.x(), img.x()),
+                       std::min(m_rubberBandStart.y(), img.y())),
+               QPointF(std::max(m_rubberBandStart.x(), img.x()),
+                       std::max(m_rubberBandStart.y(), img.y())));
     // Discard tiny drags (clicks) and out-of-canvas slivers.
     const qreal sx = m_pixmapRect.width() / m_imageSize.width();
     const qreal sy = m_pixmapRect.height() / m_imageSize.height();

@@ -448,8 +448,7 @@ void RMBGDialog::saveSettings() const {
     settings.beginGroup(QStringLiteral("qRMBG"));
     settings.setValue(QStringLiteral("modelFilename"),
                       m_modelCombo->currentData().toString());
-    settings.setValue(QStringLiteral("modelFilenameExplicit"),
-                      m_modelExplicit);
+    settings.setValue(QStringLiteral("modelFilenameExplicit"), m_modelExplicit);
     settings.setValue(QStringLiteral("device"),
                       m_deviceCombo->currentData().toString());
     settings.setValue(QStringLiteral("threads"), m_threads->value());
@@ -829,9 +828,9 @@ void RMBGDialog::requestTestData(TestDataTarget target) {
     setTestDataControlsEnabled(false);
     m_downloadLabel->setVisible(true);
     m_progress->setVisible(true);
-    if (ecvAssetIntegrity::isVerified(
-                ecvTestDataRepository::zipPath(kind), info.anchor, 0, false,
-                ecvAssetIntegrity::OnMiss::DeepVerify)) {
+    if (ecvAssetIntegrity::isVerified(ecvTestDataRepository::zipPath(kind),
+                                      info.anchor, 0, false,
+                                      ecvAssetIntegrity::OnMiss::DeepVerify)) {
         m_downloadLabel->setText(tr("Extracting cached test data..."));
         m_progress->setRange(0, 0);
         repo.extractDataset(kind);

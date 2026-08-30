@@ -127,8 +127,7 @@ TEST(YOLOHelpers, IsPromptFreeFilename) {
             QStringLiteral("yoloe-26s-seg-f16.gguf")));
     EXPECT_FALSE(YOLOHelpers::isPromptFreeFilename(
             QStringLiteral("yolov8s-world-f16.gguf")));
-    EXPECT_FALSE(
-            YOLOHelpers::isPromptFreeFilename(QStringLiteral("")));
+    EXPECT_FALSE(YOLOHelpers::isPromptFreeFilename(QStringLiteral("")));
 }
 
 TEST(YOLOHelpers, PromptFreeSiblingFilename) {
@@ -145,9 +144,11 @@ TEST(YOLOHelpers, PromptFreeSiblingFilename) {
                       QStringLiteral("yoloe-26l-seg-pf-f16.gguf")),
               QString());
     EXPECT_EQ(YOLOHelpers::promptFreeSiblingFilename(
-              QStringLiteral("yolov8s-world-f16.gguf")), QString());
+                      QStringLiteral("yolov8s-world-f16.gguf")),
+              QString());
     EXPECT_EQ(YOLOHelpers::promptFreeSiblingFilename(
-              QStringLiteral("custom-mystery.gguf")), QString());
+                      QStringLiteral("custom-mystery.gguf")),
+              QString());
     EXPECT_EQ(YOLOHelpers::promptFreeSiblingFilename(QString()), QString());
 }
 
@@ -359,19 +360,19 @@ TEST(YOLOHelpers, TaskDefaultIndexPointsAtRecommendedRow) {
     // Lock the wiring: the declared default must land on the marked row for
     // every task tab.
     const QStringList tasks = {
-            QStringLiteral("detect"),  QStringLiteral("segment"),
-            QStringLiteral("depth"),   QStringLiteral("pose"),
-            QStringLiteral("obb"),     QStringLiteral("classify"),
+            QStringLiteral("detect"),   QStringLiteral("segment"),
+            QStringLiteral("depth"),    QStringLiteral("pose"),
+            QStringLiteral("obb"),      QStringLiteral("classify"),
             QStringLiteral("semantic"), QStringLiteral("world"),
-            QStringLiteral("yoloe"),   QStringLiteral("text")};
+            QStringLiteral("yoloe"),    QStringLiteral("text")};
     for (const QString& task : tasks) {
         const QVector<YOLOModelEntry> models = YOLOHelpers::taskModels(task);
         ASSERT_FALSE(models.isEmpty()) << task.toStdString();
         const int d = YOLOHelpers::defaultModelIndexForTask(task);
         ASSERT_GE(d, 0) << task.toStdString();
         ASSERT_LT(d, models.size()) << task.toStdString();
-        EXPECT_TRUE(YOLOHelpers::modelDisplayLabel(models[d])
-                            .contains(QStringLiteral("(recommended)")))
+        EXPECT_TRUE(YOLOHelpers::modelDisplayLabel(models[d]).contains(
+                QStringLiteral("(recommended)")))
                 << task.toStdString() << " default row is unmarked";
     }
     // Unknown tasks have no declared default; the caller's guard fallback

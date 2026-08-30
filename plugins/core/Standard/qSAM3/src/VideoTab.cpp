@@ -12,7 +12,6 @@
 #include <ecvAICoreUiHelper.h>
 #include <ecvImage.h>
 #include <ecvMainAppInterface.h>
-#include "ecvModelDownloader.h"
 #include <ecvPluginDbNaming.h>
 
 #include <QButtonGroup>
@@ -36,6 +35,7 @@
 
 #include "VideoFrameReader.h"
 #include "VideoPlaybackWidget.h"  // cvMatToQImage
+#include "ecvModelDownloader.h"
 
 namespace {
 constexpr const char* kTabModelKeys[] = {"sam", "sam-visual", "sam2"};
@@ -565,10 +565,9 @@ void VideoTab::startDownload(bool thenRun) {
         if (thenRun) ensureModelReady();
         return;
     }
-    ecvAssetIntegrity::removeIfNotVerified(dest, {}, 64 * 1024, true,
-                                           ecvAssetIntegrity::OnMiss::
-                                                   CheapChecksOnly,
-                                           entry->size_bytes);
+    ecvAssetIntegrity::removeIfNotVerified(
+            dest, {}, 64 * 1024, true,
+            ecvAssetIntegrity::OnMiss::CheapChecksOnly, entry->size_bytes);
 
     QDir().mkpath(cacheDir);
     m_downloadInProgress = true;
@@ -1492,8 +1491,7 @@ int VideoTab::exportMasksToDb() {
         if (mask.isNull()) continue;
         const int id = m_lastResult.instanceIds.value(i, i + 1);
         const QString name = ecvPluginDbNaming::makeUnique(
-                QStringLiteral(
-                        "SAM3_Video_%1_%2_%3_mask_obj%4_frame%5")
+                QStringLiteral("SAM3_Video_%1_%2_%3_mask_obj%4_frame%5")
                         .arg(modelTag, baseName, deviceTag)
                         .arg(id)
                         .arg(m_currentFrame, 4, 10, QLatin1Char('0')),
@@ -1747,9 +1745,9 @@ void VideoTab::onUseTestData() {
     if (m_downloadLabel) {
         m_downloadLabel->setVisible(true);
     }
-    if (ecvAssetIntegrity::isVerified(
-                ecvTestDataRepository::zipPath(kind), info.anchor, 0, false,
-                ecvAssetIntegrity::OnMiss::DeepVerify)) {
+    if (ecvAssetIntegrity::isVerified(ecvTestDataRepository::zipPath(kind),
+                                      info.anchor, 0, false,
+                                      ecvAssetIntegrity::OnMiss::DeepVerify)) {
         appendLog(tr("[Test data] Extracting cached archive..."));
         setStatus(tr("Extracting SAM3 test data..."));
         repo.extractDataset(kind);

@@ -107,8 +107,8 @@ AICORE_CAPI void aicore_yolo_options_set_text_model(
 AICORE_CAPI void aicore_yolo_options_set_visual_prompts(
         aicore_yolo_options* opts, const float* boxes_xyxy, int32_t count);
 /** Number of visual prompts currently set (0 = text/vocabulary path). */
-AICORE_CAPI int32_t aicore_yolo_options_get_visual_prompt_count(
-        const aicore_yolo_options* opts);
+AICORE_CAPI int32_t
+aicore_yolo_options_get_visual_prompt_count(const aicore_yolo_options* opts);
 /** 1 when the GGUF carries YOLOE savpe weights (yolo.savpe = 1) and thus
  *  supports visual prompts. Header-only probe (no tensor mapping); returns
  *  0 on unreadable files. */

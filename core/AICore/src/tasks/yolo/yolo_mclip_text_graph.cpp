@@ -20,7 +20,6 @@
 #include "ggml-cpu.h"
 #include "ggml.h"
 #include "gguf.h"
-
 #include "tasks/yolo/yolo_clip_text_graph.hpp"  // shared LN/attn/MLP/L2 blocks
 #include "tasks/yolo/yolo_common.hpp"           // YOLO_LOG_* sink
 
@@ -28,8 +27,10 @@ namespace mclip {
 
 namespace {
 
-#define MCLOG_ERROR(...) ::yolo::logf(AICORE_LOG_LEVEL_ERROR, "mclip: " __VA_ARGS__)
-#define MCLOG_INFO(...) ::yolo::logf(AICORE_LOG_LEVEL_INFO, "mclip: " __VA_ARGS__)
+#define MCLOG_ERROR(...) \
+    ::yolo::logf(AICORE_LOG_LEVEL_ERROR, "mclip: " __VA_ARGS__)
+#define MCLOG_INFO(...) \
+    ::yolo::logf(AICORE_LOG_LEVEL_INFO, "mclip: " __VA_ARGS__)
 
 ggml_tensor* find_tensor(ggml_context* ctx, const char* name) {
     ggml_tensor* t = ggml_get_tensor(ctx, name);
@@ -41,11 +42,13 @@ ggml_tensor* find_tensor(ggml_context* ctx, const char* name) {
 // F16/Q8_0 weights natively, and GGML_OP_CAST rejects quantized types — so
 // the mclip tower (unlike the CLIP tower) passes its quantized matrices
 // straight through. Non-causal (DistilBERT is bidirectional).
-ggml_tensor* mclip_self_attention(ggml_context* ctx, ggml_tensor* x,
+ggml_tensor* mclip_self_attention(ggml_context* ctx,
+                                  ggml_tensor* x,
                                   ggml_tensor* in_proj_w,
                                   ggml_tensor* in_proj_b,
                                   ggml_tensor* out_proj_w,
-                                  ggml_tensor* out_proj_b, int n_heads,
+                                  ggml_tensor* out_proj_b,
+                                  int n_heads,
                                   int d_head) {
     const int D = (int)x->ne[0];
     const int S = (int)x->ne[1];
@@ -59,21 +62,19 @@ ggml_tensor* mclip_self_attention(ggml_context* ctx, ggml_tensor* x,
     const size_t ts = ggml_type_size(qkv->type);
     const size_t row_bytes = (size_t)3 * D * ts;
     const size_t head_bytes = (size_t)d_head * ts;
-    ggml_tensor* q4 = ggml_view_4d(ctx, qkv, d_head, n_heads, S, 1,
-                                   head_bytes, row_bytes, qkv->nb[3], 0);
-    ggml_tensor* k4 = ggml_view_4d(ctx, qkv, d_head, n_heads, S, 1,
-                                   head_bytes, row_bytes, qkv->nb[3],
-                                   D * ts);
-    ggml_tensor* v4 = ggml_view_4d(ctx, qkv, d_head, n_heads, S, 1,
-                                   head_bytes, row_bytes, qkv->nb[3],
-                                   2 * D * ts);
+    ggml_tensor* q4 = ggml_view_4d(ctx, qkv, d_head, n_heads, S, 1, head_bytes,
+                                   row_bytes, qkv->nb[3], 0);
+    ggml_tensor* k4 = ggml_view_4d(ctx, qkv, d_head, n_heads, S, 1, head_bytes,
+                                   row_bytes, qkv->nb[3], D * ts);
+    ggml_tensor* v4 = ggml_view_4d(ctx, qkv, d_head, n_heads, S, 1, head_bytes,
+                                   row_bytes, qkv->nb[3], 2 * D * ts);
 
     ggml_tensor* kT = ggml_cont(ctx, ggml_permute(ctx, k4, 0, 2, 1, 3));
     ggml_tensor* qT = ggml_cont(ctx, ggml_permute(ctx, q4, 0, 2, 1, 3));
 
     const float scale = 1.0f / sqrtf((float)d_head);
-    ggml_tensor* attn =
-            ggml_soft_max(ctx, ggml_scale(ctx, ggml_mul_mat(ctx, kT, qT), scale));
+    ggml_tensor* attn = ggml_soft_max(
+            ctx, ggml_scale(ctx, ggml_mul_mat(ctx, kT, qT), scale));
     ggml_tensor* vT = ggml_cont(ctx, ggml_permute(ctx, v4, 1, 2, 0, 3));
     ggml_tensor* out = ggml_mul_mat(ctx, vT, attn);
     ggml_tensor* out_merged =
@@ -82,14 +83,17 @@ ggml_tensor* mclip_self_attention(ggml_context* ctx, ggml_tensor* x,
 
     ggml_tensor* result = ggml_mul_mat(ctx, out_proj_w, out_2d);
     if (out_proj_b)
-        result = ggml_add(ctx, result,
-                          ggml_reshape_2d(ctx, out_proj_b, out_proj_b->ne[0], 1));
+        result = ggml_add(
+                ctx, result,
+                ggml_reshape_2d(ctx, out_proj_b, out_proj_b->ne[0], 1));
     return result;
 }
 
 // LayerNorm with DistilBERT's eps=1e-12 (clip_layer_norm pins 1e-5).
-ggml_tensor* mclip_layer_norm(ggml_context* ctx, ggml_tensor* x,
-                              ggml_tensor* weight, ggml_tensor* bias) {
+ggml_tensor* mclip_layer_norm(ggml_context* ctx,
+                              ggml_tensor* x,
+                              ggml_tensor* weight,
+                              ggml_tensor* bias) {
     ggml_tensor* y = ggml_norm(ctx, x, 1e-12f);
     if (weight) y = ggml_mul(ctx, y, weight);
     if (bias) y = ggml_add(ctx, y, bias);
@@ -133,9 +137,8 @@ uint32_t utf8_next(const std::string& s, size_t& i) {
 bool is_whitespace_cp(uint32_t cp) {
     if (cp == ' ' || cp == '\t' || cp == '\n' || cp == '\r') return true;
     // Unicode Zs (space separators).
-    return cp == 0xA0 || cp == 0x1680 ||
-           (cp >= 0x2000 && cp <= 0x200A) || cp == 0x202F || cp == 0x205F ||
-           cp == 0x3000;
+    return cp == 0xA0 || cp == 0x1680 || (cp >= 0x2000 && cp <= 0x200A) ||
+           cp == 0x202F || cp == 0x205F || cp == 0x3000;
 }
 
 bool is_control_cp(uint32_t cp) {
@@ -162,8 +165,7 @@ bool is_cjk_cp(uint32_t cp) {
            (cp >= 0x2A700 && cp <= 0x2B73F) ||
            (cp >= 0x2B740 && cp <= 0x2B81F) ||
            (cp >= 0x2B820 && cp <= 0x2CEAF) ||
-           (cp >= 0x2CEB0 && cp <= 0x2EBEF) ||
-           (cp >= 0x30000 && cp <= 0x3134F);
+           (cp >= 0x2CEB0 && cp <= 0x2EBEF) || (cp >= 0x30000 && cp <= 0x3134F);
 }
 
 std::vector<std::string> basic_tokenize(const std::string& text) {
@@ -253,7 +255,9 @@ std::vector<std::string> wordpiece(TextSession* s, const std::string& word) {
 // Per-string graph build + compute (true sequence length, no padding)
 // ---------------------------------------------------------------------------
 
-bool build_and_compute(TextSession* s, const std::int32_t* ids, int S,
+bool build_and_compute(TextSession* s,
+                       const std::int32_t* ids,
+                       int S,
                        float* embed) {
     if (S < 2 || S > MAX_TOKENS) {
         MCLOG_ERROR("invalid sequence length %d", S);
@@ -297,18 +301,20 @@ bool build_and_compute(TextSession* s, const std::int32_t* ids, int S,
         const auto& b = s->blocks[i];
         // DistilBERT post-LN layout: attention consumes the raw stream, the
         // residual add is followed by each LayerNorm.
-        ggml_tensor* att = mclip_self_attention(
-                gctx, h, b.attn_in_w, b.attn_in_b, b.attn_out_w, b.attn_out_b,
-                N_HEADS, d_head);
-        h = mclip_layer_norm(gctx, ggml_add(gctx, h, att), b.sa_ln_w, b.sa_ln_b);
+        ggml_tensor* att = mclip_self_attention(gctx, h, b.attn_in_w,
+                                                b.attn_in_b, b.attn_out_w,
+                                                b.attn_out_b, N_HEADS, d_head);
+        h = mclip_layer_norm(gctx, ggml_add(gctx, h, att), b.sa_ln_w,
+                             b.sa_ln_b);
         // FFN (expanded from clip::clip_mlp_block with probe points).
         ggml_tensor* hh = ggml_mul_mat(gctx, b.ffn_in_w, h);
         hh = ggml_add(gctx, hh,
                       ggml_reshape_2d(gctx, b.ffn_in_b, b.ffn_in_b->ne[0], 1));
         hh = ggml_gelu_erf(gctx, hh);
         ggml_tensor* fo = ggml_mul_mat(gctx, b.ffn_out_w, hh);
-        fo = ggml_add(gctx, fo,
-                      ggml_reshape_2d(gctx, b.ffn_out_b, b.ffn_out_b->ne[0], 1));
+        fo = ggml_add(
+                gctx, fo,
+                ggml_reshape_2d(gctx, b.ffn_out_b, b.ffn_out_b->ne[0], 1));
         h = mclip_layer_norm(gctx, ggml_add(gctx, h, fo), b.out_ln_w,
                              b.out_ln_b);
     }
@@ -319,8 +325,8 @@ bool build_and_compute(TextSession* s, const std::int32_t* ids, int S,
     ggml_tensor* pooled = ggml_reshape_1d(
             gctx,
             ggml_scale(gctx,
-                       ggml_sum_rows(
-                               gctx, ggml_cont(gctx, ggml_transpose(gctx, h))),
+                       ggml_sum_rows(gctx,
+                                     ggml_cont(gctx, ggml_transpose(gctx, h))),
                        1.0f / float(S)),
             EMBED_DIM);
 
@@ -328,8 +334,7 @@ bool build_and_compute(TextSession* s, const std::int32_t* ids, int S,
     // (F16/Q8_0 weights feed mul_mat natively — no cast).
     ggml_tensor* out = ggml_mul_mat(gctx, s->proj_w, pooled);
     if (s->proj_b)
-        out = ggml_add(gctx, out,
-                       ggml_reshape_2d(gctx, s->proj_b, OUT_DIM, 1));
+        out = ggml_add(gctx, out, ggml_reshape_2d(gctx, s->proj_b, OUT_DIM, 1));
 
     out = clip::clip_l2_norm(gctx, ggml_reshape_1d(gctx, out, OUT_DIM));
     ggml_set_output(out);
@@ -446,9 +451,12 @@ TextSession* text_create_session(const std::string& gguf_path, int threads) {
     // Special-token ids by name (converter asserts the canonical layout, but
     // resolve dynamically so a re-ordering stays safe).
     for (const auto& [tok, id] : s->encoder) {
-        if (tok == "[CLS]") s->cls_id = id;
-        else if (tok == "[SEP]") s->sep_id = id;
-        else if (tok == "[UNK]") s->unk_id = id;
+        if (tok == "[CLS]")
+            s->cls_id = id;
+        else if (tok == "[SEP]")
+            s->sep_id = id;
+        else if (tok == "[UNK]")
+            s->unk_id = id;
     }
 
     gguf_free(g);
@@ -490,7 +498,9 @@ int text_tokenize(TextSession* s, const char* text, int32_t* tokens, int cap) {
     return (int)ids.size();
 }
 
-bool text_encode_tokens(TextSession* s, const int32_t* tokens, int n_tokens,
+bool text_encode_tokens(TextSession* s,
+                        const int32_t* tokens,
+                        int n_tokens,
                         float* embed) {
     if (!s || !tokens || !embed || n_tokens <= 0) return false;
     return build_and_compute(s, tokens, n_tokens, embed);

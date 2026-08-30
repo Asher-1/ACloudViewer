@@ -342,8 +342,8 @@ void qFaceDetect::addResultToDb(const FaceDetectRunResult& result,
                                             : result.resolvedDevice);
     // Model tag keeps runs from different checkpoint variants separable
     // in the DB tree (source + device alone collide across variants).
-    const QString modelTag = ecvPluginDbNaming::modelTagFromFilename(
-            settings.modelPath);
+    const QString modelTag =
+            ecvPluginDbNaming::modelTagFromFilename(settings.modelPath);
     const QString name = ecvPluginDbNaming::makeUnique(
             QStringLiteral("FaceDetect_%1_%2_%3_%4")
                     .arg(suffix, modelTag, sourceLabel, deviceTag),

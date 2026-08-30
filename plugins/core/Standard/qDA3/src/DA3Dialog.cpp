@@ -696,8 +696,9 @@ bool DA3Dialog::ensureAllModelsAvailable() {
         if (data == "CUSTOM" || data == "NONE") return;
         QString cached = cacheDir + "/" + data;
         if (ecvAssetIntegrity::isVerified(
-                    cached, {QCryptographicHash::Sha256,
-                             ecvAssetIntegrity::PinnedDigest(data)},
+                    cached,
+                    {QCryptographicHash::Sha256,
+                     ecvAssetIntegrity::PinnedDigest(data)},
                     64 * 1024, true,
                     ecvAssetIntegrity::OnMiss::CheapChecksOnly)) {
             return;

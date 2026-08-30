@@ -312,10 +312,10 @@ void YOLODialog::setupUi() {
         // Confidence guidance while the multilingual bridge tower is
         // selected: bridged prompts score below native-English ones, so the
         // threshold has to come down for reliable detections.
-        panel.bridgeHint = new QLabel(
-                tr("Multilingual bridge — Conf auto-lowered to 0.03 "
-                   "(bridged prompts score ~4x lower than English)"),
-                panel.textRow);
+        panel.bridgeHint =
+                new QLabel(tr("Multilingual bridge — Conf auto-lowered to 0.03 "
+                              "(bridged prompts score ~4x lower than English)"),
+                           panel.textRow);
         panel.bridgeHint->setStyleSheet(
                 QStringLiteral("color: palette(mid); font-size: 11px;"));
         panel.bridgeHint->setWordWrap(true);
@@ -375,13 +375,14 @@ void YOLODialog::setupUi() {
                                 QImage img;
                                 if (path.startsWith(QStringLiteral("db://"))) {
                                     const QString name = path.mid(5);
-                                    for (int i = 0;
-                                         i < p.dbImageList->count(); ++i) {
+                                    for (int i = 0; i < p.dbImageList->count();
+                                         ++i) {
                                         QListWidgetItem* item =
                                                 p.dbImageList->item(i);
-                                        if (item && item->data(Qt::UserRole)
-                                                                .toString() ==
-                                                       name) {
+                                        if (item &&
+                                            item->data(Qt::UserRole)
+                                                            .toString() ==
+                                                    name) {
                                             img = item->data(kDbFullImageRole)
                                                           .value<QImage>();
                                             break;
@@ -392,7 +393,9 @@ void YOLODialog::setupUi() {
                                 }
                                 if (!img.isNull()) {
                                     p.vpLabel->setPromptImage(
-                                            img, QSize(ecvAICoreUi::previewSize(), ecvAICoreUi::previewSize()));
+                                            img,
+                                            QSize(ecvAICoreUi::previewSize(),
+                                                  ecvAICoreUi::previewSize()));
                                 }
                             }
                             return;
@@ -493,8 +496,7 @@ void YOLODialog::setupUi() {
         auto* vpBtnRow = new QHBoxLayout;
         vpBtnRow->setSpacing(ecvAICoreUi::hSpacing());
         panel.vpClearBtn = new QPushButton(tr("Clear boxes"), panel.tab);
-        panel.vpClearBtn->setToolTip(
-                tr("Remove all drawn example boxes"));
+        panel.vpClearBtn->setToolTip(tr("Remove all drawn example boxes"));
         panel.vpClearBtn->setVisible(false);
         connect(panel.vpClearBtn, &QPushButton::clicked, panel.vpLabel,
                 &YOLOVisualPromptLabel::clearBoxes);
@@ -827,7 +829,7 @@ void YOLODialog::loadSettings() {
                 QStringLiteral("yolo26n-depth-f32.gguf")};
         panel.explicitModelChoice =
                 settings.value(QStringLiteral("modelFilenameExplicit/") +
-                               tasks[i],
+                                       tasks[i],
                                false)
                         .toBool() &&
                 !kStaleMirrorModels.contains(modelFilename);
@@ -1161,8 +1163,7 @@ void YOLODialog::updateBridgeHints(bool force) {
     for (YOLOTaskPanel& p : m_panels) {
         if (!p.bridgeHint || !p.textModelCombo) continue;
         const QString tower = p.textModelCombo->currentData().toString();
-        const bool mclip =
-                tower.startsWith(QStringLiteral("mclip-labse"));
+        const bool mclip = tower.startsWith(QStringLiteral("mclip-labse"));
         // Conf recalibrations only fire on a real tower change (or a forced
         // refresh after settings restore): applyPanelVisibility() runs on
         // every model-combo change and must never touch the threshold.
@@ -1180,11 +1181,11 @@ void YOLODialog::updateBridgeHints(bool force) {
             // positives. The yoloe phrase workflow (Conf ~0.02) never sees
             // this branch: its tower is mobileclip2 and bridgeWasActive
             // stays false there.
-            if (towerChanged && p.bridgeWasActive &&
-                p.conf->value() < 0.10) {
+            if (towerChanged && p.bridgeWasActive && p.conf->value() < 0.10) {
                 p.conf->setValue(0.25);
-                appendLog(tr("[YOLO] Native text tower selected — "
-                             "confidence restored to 0.25"));
+                appendLog(
+                        tr("[YOLO] Native text tower selected — "
+                           "confidence restored to 0.25"));
             }
             if (towerChanged) p.bridgeWasActive = false;
             continue;
@@ -1198,9 +1199,10 @@ void YOLODialog::updateBridgeHints(bool force) {
         // tower switch recalibrates again (predictable, no stale state).
         if (towerChanged) {
             p.conf->setValue(0.03);
-            appendLog(tr("[YOLO] Multilingual bridge selected — confidence "
-                         "set to 0.03 (bridged prompts score ~4x lower "
-                         "than native English)"));
+            appendLog(
+                    tr("[YOLO] Multilingual bridge selected — confidence "
+                       "set to 0.03 (bridged prompts score ~4x lower "
+                       "than native English)"));
         }
         p.bridgeWasActive = true;
         p.conf->setToolTip(
@@ -1220,14 +1222,13 @@ void YOLODialog::updateBridgeHints(bool force) {
                 }
             }
             p.bridgeHint->setText(
-                    asciiOnly
-                            ? tr("Multilingual bridge — Confidence auto-set "
-                                 "to 0.03. English prompts score ~3x higher "
-                                 "on the native CLIP tower — switch unless "
-                                 "you need multilingual input")
-                            : tr("Multilingual bridge — Confidence auto-set "
-                                 "to 0.03 (bridged prompts score ~4x lower "
-                                 "than native English)"));
+                    asciiOnly ? tr("Multilingual bridge — Confidence auto-set "
+                                   "to 0.03. English prompts score ~3x higher "
+                                   "on the native CLIP tower — switch unless "
+                                   "you need multilingual input")
+                              : tr("Multilingual bridge — Confidence auto-set "
+                                   "to 0.03 (bridged prompts score ~4x lower "
+                                   "than native English)"));
         }
     }
 }
@@ -1275,14 +1276,16 @@ bool YOLODialog::ensureModelAvailable(PendingAction action) {
     if (panel->task == QStringLiteral("yoloe") &&
         panelUsesVisualPrompts(*panel)) {
         if (YOLOHelpers::isPromptFreeFilename(filename)) {
-            appendLog(tr("[Error] Prompt-free YOLOE checkpoints reject visual "
-                         "prompts — pick the non-prompt-free variant of the "
-                         "same scale, or switch back to Text prompt mode."));
+            appendLog(
+                    tr("[Error] Prompt-free YOLOE checkpoints reject visual "
+                       "prompts — pick the non-prompt-free variant of the "
+                       "same scale, or switch back to Text prompt mode."));
             return false;
         }
         if (!panel->vpLabel || panel->vpLabel->boxCount() == 0) {
-            appendLog(tr("[Error] Visual prompt mode: draw at least one "
-                         "example box on the preview first."));
+            appendLog(
+                    tr("[Error] Visual prompt mode: draw at least one "
+                       "example box on the preview first."));
             return false;
         }
         return true;
@@ -1319,12 +1322,13 @@ bool YOLODialog::ensureModelAvailable(PendingAction action) {
             // entirely different results than the text/visual prompts the
             // user intended. Fail with an actionable hint instead — picking
             // the -pf checkpoint stays the user's call.
-            appendLog(tr("[Error] This YOLOE checkpoint ships no stored "
-                         "vocabulary and no class list was entered — enter "
-                         "comma-separated class names (e.g. person, bus, "
-                         "car), draw visual prompts (Visual prompt mode), or "
-                         "select the prompt-free (-pf) checkpoint of the "
-                         "same scale."));
+            appendLog(
+                    tr("[Error] This YOLOE checkpoint ships no stored "
+                       "vocabulary and no class list was entered — enter "
+                       "comma-separated class names (e.g. person, bus, "
+                       "car), draw visual prompts (Visual prompt mode), or "
+                       "select the prompt-free (-pf) checkpoint of the "
+                       "same scale."));
             return false;
         }
     }
@@ -1472,17 +1476,20 @@ void YOLODialog::updateImagePreview() {
     if (img.isNull()) {
         m_previewLabel->clearPreview();
         m_previewLabel->setText(tr("Preview"));
-        if (YOLOTaskPanel* panel = currentTaskPanel(); panel && panel->vpLabel) {
+        if (YOLOTaskPanel* panel = currentTaskPanel();
+            panel && panel->vpLabel) {
             panel->vpLabel->clearPrompt();
             panel->vpLabel->setText(tr("Preview"));
         }
         return;
     }
-    m_previewLabel->setPreviewImage(img, QSize(ecvAICoreUi::previewSize(), ecvAICoreUi::previewSize()));
+    m_previewLabel->setPreviewImage(
+            img, QSize(ecvAICoreUi::previewSize(), ecvAICoreUi::previewSize()));
     // Keep the visual-prompt canvas in sync (yoloe tab): it shows the same
     // image so example boxes can be drawn without reloading anything.
     if (YOLOTaskPanel* panel = currentTaskPanel(); panel && panel->vpLabel) {
-        panel->vpLabel->setPromptImage(img, QSize(ecvAICoreUi::previewSize(), ecvAICoreUi::previewSize()));
+        panel->vpLabel->setPromptImage(img, QSize(ecvAICoreUi::previewSize(),
+                                                  ecvAICoreUi::previewSize()));
     }
 }
 
@@ -1492,8 +1499,9 @@ void YOLODialog::onRun() {
     // confusing "Input file not found: <empty>" after the wait.
     if (currentTaskPanel() &&
         currentTaskPanel()->imagePath->text().trimmed().isEmpty()) {
-        appendLog(tr("[Error] Select an image first — pick a file, a DB "
-                     "image, or click Use test data."));
+        appendLog(
+                tr("[Error] Select an image first — pick a file, a DB "
+                   "image, or click Use test data."));
         return;
     }
     if (!ensureModelAvailable(PendingAction::Run)) return;
@@ -1755,8 +1763,9 @@ void YOLODialog::requestTestData(TestDataTarget target) {
             m_followupTestDataTarget = target;
             m_followupTestDataTask = task;
         }
-        appendLog(tr("[Test data] Queued — will load when the current "
-                     "test-data download finishes."));
+        appendLog(
+                tr("[Test data] Queued — will load when the current "
+                   "test-data download finishes."));
         return;
     }
 
@@ -1781,8 +1790,9 @@ void YOLODialog::advancePendingTestData() {
     if (repo.isDownloadInProgress()) {
         // Another request is being served right now; keep waiting — the
         // repository's finished signals resume the queued slots.
-        appendLog(tr("[Test data] Queued — will load when the current "
-                     "test-data download finishes."));
+        appendLog(
+                tr("[Test data] Queued — will load when the current "
+                   "test-data download finishes."));
         return;
     }
 
@@ -1790,9 +1800,9 @@ void YOLODialog::advancePendingTestData() {
     const auto info = ecvTestDataRepository::getDatasetInfo(kind);
     m_testDataDownloadInProgress = true;
     setTestDataControlsEnabled(false);
-    if (ecvAssetIntegrity::isVerified(
-                ecvTestDataRepository::zipPath(kind), info.anchor, 0, false,
-                ecvAssetIntegrity::OnMiss::DeepVerify)) {
+    if (ecvAssetIntegrity::isVerified(ecvTestDataRepository::zipPath(kind),
+                                      info.anchor, 0, false,
+                                      ecvAssetIntegrity::OnMiss::DeepVerify)) {
         appendLog(tr("[Test data] Extracting cached archive..."));
         m_progress->setRange(0, 0);
         m_progress->setValue(0);
@@ -1816,7 +1826,8 @@ void YOLODialog::servePendingTestData() {
     if (m_pendingTestDataTarget != TestDataTarget::None) {
         if (!loadTestDataFor(m_pendingTestDataTarget, m_pendingTestDataTask)) {
             appendLog(
-                    tr("[Test data] Requested file was not found in the archive."));
+                    tr("[Test data] Requested file was not found in the "
+                       "archive."));
         }
         m_pendingTestDataTarget = TestDataTarget::None;
         m_pendingTestDataTask.clear();
@@ -1825,7 +1836,8 @@ void YOLODialog::servePendingTestData() {
         if (!loadTestDataFor(m_followupTestDataTarget,
                              m_followupTestDataTask)) {
             appendLog(
-                    tr("[Test data] Requested file was not found in the archive."));
+                    tr("[Test data] Requested file was not found in the "
+                       "archive."));
         }
         m_followupTestDataTarget = TestDataTarget::None;
         m_followupTestDataTask.clear();
@@ -1843,8 +1855,8 @@ bool YOLODialog::loadTestDataFor(TestDataTarget target, const QString& task) {
         // while the archive downloads.
         YOLOTaskPanel* panel = panelForTask(task);
         if (!panel) panel = currentTaskPanel();
-        fileName = YOLOHelpers::testImageForTask(panel ? panel->task
-                                                       : QString());
+        fileName =
+                YOLOHelpers::testImageForTask(panel ? panel->task : QString());
     } else if (target == TestDataTarget::Video && m_testVideoCombo) {
         fileName = m_testVideoCombo->currentData().toString();
     }
@@ -1885,8 +1897,7 @@ void YOLODialog::onTestDataDownloadFinished(
         // slot, not for this dataset. Deferred so the repo's slot state
         // is settled regardless of slot-invocation order.
         if (!ours) {
-            QTimer::singleShot(0, this,
-                               [this]() { advancePendingTestData(); });
+            QTimer::singleShot(0, this, [this]() { advancePendingTestData(); });
         }
         return;
     }
@@ -1913,14 +1924,14 @@ void YOLODialog::onTestDataDownloadFinished(
             return;
         }
         // Foreign chain for OUR dataset failed: retry once from our side.
-        QTimer::singleShot(0, this,
-                           [this]() { advancePendingTestData(); });
+        QTimer::singleShot(0, this, [this]() { advancePendingTestData(); });
         return;
     }
 
     if (ours) {
         appendLog(tr("[Test data] Extracting..."));
-        m_downloadLabel->setText(tr("Extracting object detection test data..."));
+        m_downloadLabel->setText(
+                tr("Extracting object detection test data..."));
         m_progress->setRange(0, 0);  // indeterminate / busy
         m_progress->setVisible(true);
         ecvTestDataRepository::instance().extractDataset(kind);
@@ -1929,8 +1940,9 @@ void YOLODialog::onTestDataDownloadFinished(
     // Queued on a foreign chain for OUR dataset: its starter extracts
     // next and the extractionFinished broadcast serves the queued slots —
     // do not extract the same archive twice on the GUI thread.
-    appendLog(tr("[Test data] Download finished — loading after "
-                 "extraction..."));
+    appendLog(
+            tr("[Test data] Download finished — loading after "
+               "extraction..."));
 }
 
 void YOLODialog::onTestDataExtractionFinished(
@@ -1971,8 +1983,7 @@ void YOLODialog::onTestDataExtractionFinished(
         if (success) {
             servePendingTestData();
         } else {
-            QTimer::singleShot(0, this,
-                               [this]() { advancePendingTestData(); });
+            QTimer::singleShot(0, this, [this]() { advancePendingTestData(); });
         }
     }
 }

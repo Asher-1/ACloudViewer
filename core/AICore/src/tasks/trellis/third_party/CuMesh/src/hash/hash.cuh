@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 // 32 bit Murmur3 hash
 __forceinline__ __device__ size_t hash(uint32_t k, size_t N) {
     k ^= k >> 16;
@@ -7,7 +14,6 @@ __forceinline__ __device__ size_t hash(uint32_t k, size_t N) {
     k ^= k >> 16;
     return k % N;
 }
-
 
 // 64 bit Murmur3 hash
 __forceinline__ __device__ size_t hash(uint64_t k, size_t N) {
@@ -19,18 +25,16 @@ __forceinline__ __device__ size_t hash(uint64_t k, size_t N) {
     return k % N;
 }
 
-
-template<typename K, typename V>
-__forceinline__ __device__ void linear_probing_insert(
-    K* hashmap_keys,
-    V* hashmap_values,
-    const K key,
-    const V value,
-    const size_t N
-) {
+template <typename K, typename V>
+__forceinline__ __device__ void linear_probing_insert(K* hashmap_keys,
+                                                      V* hashmap_values,
+                                                      const K key,
+                                                      const V value,
+                                                      const size_t N) {
     size_t slot = hash(key, N);
     while (true) {
-        K prev = atomicCAS(&hashmap_keys[slot], std::numeric_limits<K>::max(), key);
+        K prev = atomicCAS(&hashmap_keys[slot], std::numeric_limits<K>::max(),
+                           key);
         if (prev == std::numeric_limits<K>::max() || prev == key) {
             hashmap_values[slot] = value;
             return;
@@ -40,22 +44,19 @@ __forceinline__ __device__ void linear_probing_insert(
     }
 }
 
-
-template<typename V>
-__forceinline__ __device__ void linear_probing_insert(
-    uint64_t* hashmap_keys,
-    V* hashmap_values,
-    const uint64_t key,
-    const V value,
-    const size_t N
-) {
+template <typename V>
+__forceinline__ __device__ void linear_probing_insert(uint64_t* hashmap_keys,
+                                                      V* hashmap_values,
+                                                      const uint64_t key,
+                                                      const V value,
+                                                      const size_t N) {
     size_t slot = hash(key, N);
     while (true) {
         uint64_t prev = atomicCAS(
-            reinterpret_cast<unsigned long long*>(&hashmap_keys[slot]),
-            static_cast<unsigned long long>(std::numeric_limits<uint64_t>::max()),
-            static_cast<unsigned long long>(key)
-        );
+                reinterpret_cast<unsigned long long*>(&hashmap_keys[slot]),
+                static_cast<unsigned long long>(
+                        std::numeric_limits<uint64_t>::max()),
+                static_cast<unsigned long long>(key));
         if (prev == std::numeric_limits<uint64_t>::max() || prev == key) {
             hashmap_values[slot] = value;
             return;
@@ -64,14 +65,11 @@ __forceinline__ __device__ void linear_probing_insert(
     }
 }
 
-
-template<typename K, typename V>
-__forceinline__ __device__ V linear_probing_lookup(
-    const K* hashmap_keys,
-    const V* hashmap_values,
-    const K key,
-    const size_t N
-) {
+template <typename K, typename V>
+__forceinline__ __device__ V linear_probing_lookup(const K* hashmap_keys,
+                                                   const V* hashmap_values,
+                                                   const K key,
+                                                   const size_t N) {
     size_t slot = hash(key, N);
     while (true) {
         K prev = hashmap_keys[slot];

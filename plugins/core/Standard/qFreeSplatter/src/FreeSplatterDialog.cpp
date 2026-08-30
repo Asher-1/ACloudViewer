@@ -1309,8 +1309,9 @@ bool FreeSplatterDialog::ensureModelAvailable() {
 
     QString cached = modelCacheDir() + "/" + data;
     if (ecvAssetIntegrity::isVerified(
-                cached, {QCryptographicHash::Sha256,
-                         ecvAssetIntegrity::PinnedDigest(data)},
+                cached,
+                {QCryptographicHash::Sha256,
+                 ecvAssetIntegrity::PinnedDigest(data)},
                 64 * 1024, true, ecvAssetIntegrity::OnMiss::CheapChecksOnly)) {
         return true;
     }

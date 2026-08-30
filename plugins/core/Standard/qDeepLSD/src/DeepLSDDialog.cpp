@@ -683,9 +683,9 @@ void DeepLSDDialog::onUseTestData() {
     m_testDataBtn->setEnabled(false);
     m_downloadLabel->setVisible(true);
     const auto info = ecvTestDataRepository::getDatasetInfo(kind);
-    if (ecvAssetIntegrity::isVerified(
-                ecvTestDataRepository::zipPath(kind), info.anchor, 0, false,
-                ecvAssetIntegrity::OnMiss::DeepVerify)) {
+    if (ecvAssetIntegrity::isVerified(ecvTestDataRepository::zipPath(kind),
+                                      info.anchor, 0, false,
+                                      ecvAssetIntegrity::OnMiss::DeepVerify)) {
         m_downloadLabel->setText(tr("Extracting cached test data..."));
         repo.extractDataset(kind);
         return;

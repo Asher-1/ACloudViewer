@@ -101,9 +101,8 @@ QImage renderVoxelBlob(const char* data, int len, int size) {
     };
     // Unit-cube bounds in projected space.
     float umin = 1e9f, umax = -1e9f, vmin = 1e9f, vmax = -1e9f;
-    const float corners[8][3] = {{0, 0, 0},    {r, 0, 0},    {0, r, 0},
-                                 {r, r, 0},    {0, 0, r},    {r, 0, r},
-                                 {0, r, r},    {r, r, r}};
+    const float corners[8][3] = {{0, 0, 0}, {r, 0, 0}, {0, r, 0}, {r, r, 0},
+                                 {0, 0, r}, {r, 0, r}, {0, r, r}, {r, r, r}};
     for (const auto& c : corners) {
         auto p = project(c[0], c[1], c[2]);
         umin = std::min(umin, p.first);
@@ -211,26 +210,29 @@ QImage renderMeshBlob(const char* data, int len, int size) {
                 (b[2] - a[2]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[2] - a[2]);
         const float n1 =
                 (b[1] - a[1]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[1] - a[1]);
-        const float nl =
-                std::sqrt(nz * nz + ny * ny + n1 * n1) + 1e-20f;
+        const float nl = std::sqrt(nz * nz + ny * ny + n1 * n1) + 1e-20f;
         float shade = std::fabs((nz * lx + ny * ly + n1 * lz) / nl);
         shade = 0.25f + 0.75f * shade;
         const int R = (int)(232 * shade), G = (int)(166 * shade),
                   B = (int)(98 * shade);
         const QRgb col = qRgb(R, G, B);
         const int x0 = std::max(0, (int)std::floor(std::min({ax, bx, cx})));
-        const int x1 = std::min(size - 1, (int)std::ceil(std::max({ax, bx, cx})));
+        const int x1 =
+                std::min(size - 1, (int)std::ceil(std::max({ax, bx, cx})));
         const int y0 = std::max(0, (int)std::floor(std::min({ay, by, cy})));
-        const int y1 = std::min(size - 1, (int)std::ceil(std::max({ay, by, cy})));
+        const int y1 =
+                std::min(size - 1, (int)std::ceil(std::max({ay, by, cy})));
         const float inv_area = 1.0f / area;
         const float cz = a[2] + b[2] + c[2];
         for (int py = y0; py <= y1; ++py) {
             for (int px = x0; px <= x1; ++px) {
                 const float sx = px + 0.5f, sy = py + 0.5f;
-                const float w0 = ((bx - sx) * (cy - sy) - (by - sy) * (cx - sx)) *
-                                 inv_area;
-                const float w1 = ((cx - sx) * (ay - sy) - (cy - sy) * (ax - sx)) *
-                                 inv_area;
+                const float w0 =
+                        ((bx - sx) * (cy - sy) - (by - sy) * (cx - sx)) *
+                        inv_area;
+                const float w1 =
+                        ((cx - sx) * (ay - sy) - (cy - sy) * (ax - sx)) *
+                        inv_area;
                 const float w2 = 1.0f - w0 - w1;
                 if (w0 < 0 || w1 < 0 || w2 < 0) continue;
                 // View depth = w0*a[2]+w1*b[2]+w2*c[2] along +z (camera at +z).
@@ -298,8 +300,8 @@ void TrellisWorker::applySettingsToOptions(aicore_trellis_options* opts) {
     }
 }
 
-void TrellisWorker::emitPreviewBlob(int stage, int step, int total,
-                                    const void* data, int len) {
+void TrellisWorker::emitPreviewBlob(
+        int stage, int step, int total, const void* data, int len) {
     TrellisStagePreview preview;
     preview.stage = stage;
     preview.step = step;
@@ -463,23 +465,22 @@ bool TrellisWorker::runInference() {
         // function pointer, but the two branches of a conditional expression
         // (lambda vs nullptr) do not share a type — bind through variables
         // with explicit types so the live-preview switch stays type-safe.
-        aicore_trellis_progress_fn progressFn =
-                [](void* user, int stage, int step, int total) {
-                    auto* self = static_cast<TrellisWorker*>(user);
-                    self->onProgress(stage, step, total);
-                };
+        aicore_trellis_progress_fn progressFn = [](void* user, int stage,
+                                                   int step, int total) {
+            auto* self = static_cast<TrellisWorker*>(user);
+            self->onProgress(stage, step, total);
+        };
         aicore_trellis_preview_fn previewLambda =
-                [](void* user, int stage, int step, int total,
-                   const void* data, int len) {
+                [](void* user, int stage, int step, int total, const void* data,
+                   int len) {
                     auto* self = static_cast<TrellisWorker*>(user);
                     self->emitPreviewBlob(stage, step, total, data, len);
                 };
         aicore_trellis_preview_fn previewFn =
                 m_settings.livePreview ? previewLambda : nullptr;
-        mesh = aicore_trellis_generate_ex(ctx, imageBytes.constData(),
-                                          imageBytes.size(), &params,
-                                          progressFn, this, previewFn, this,
-                                          err, sizeof(err));
+        mesh = aicore_trellis_generate_ex(
+                ctx, imageBytes.constData(), imageBytes.size(), &params,
+                progressFn, this, previewFn, this, err, sizeof(err));
     }
     const double elapsedMs = static_cast<double>(timer.elapsed());
     // Close the trailing stage's wall-time bucket.

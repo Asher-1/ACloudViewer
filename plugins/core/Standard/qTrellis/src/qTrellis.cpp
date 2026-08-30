@@ -7,6 +7,7 @@
 
 #include "qTrellis.h"
 
+#include <FileIOFilter.h>
 #include <ecvGenericMesh.h>
 #include <ecvImage.h>
 #include <ecvMainAppInterface.h>
@@ -14,8 +15,6 @@
 #include <ecvPluginDbNaming.h>
 #include <ecvPointCloud.h>
 #include <ecvScalarField.h>
-
-#include <FileIOFilter.h>
 
 #include <QDateTime>
 #include <QDir>
@@ -214,9 +213,9 @@ void qTrellis::onResultReady(const TrellisRunResult& result) {
         // Step-strip completion + hand the result to the export page.
         m_dialog->setLastResult(result);
         m_dialog->setStageState(3, TrellisDialog::kStageDone);
-        m_dialog->setStageState(
-                4, result.hasPbr ? TrellisDialog::kStageDone
-                                 : TrellisDialog::kStagePending);
+        m_dialog->setStageState(4, result.hasPbr
+                                           ? TrellisDialog::kStageDone
+                                           : TrellisDialog::kStagePending);
         m_dialog->updateExportInfo(result);
     }
     if (m_currentSettings.addResultToDb) {
@@ -240,8 +239,9 @@ void qTrellis::onExportRequested() {
     if (!m_dialog) return;
     const TrellisRunResult& result = m_dialog->lastResult();
     if (result.verts.isEmpty() || result.tris.isEmpty()) {
-        m_dialog->appendLog(tr("[TRELLIS] Nothing to export yet — run a "
-                               "generation first."));
+        m_dialog->appendLog(
+                tr("[TRELLIS] Nothing to export yet — run a "
+                   "generation first."));
         return;
     }
     TrellisDialog::Settings settings = m_currentSettings;
@@ -275,8 +275,7 @@ void qTrellis::addResultToDb(const TrellisRunResult& result,
     const QString deviceTag = ecvPluginDbNaming::deviceTagFromName(
             result.backend.isEmpty() ? settings.device : result.backend);
     const QString name = ecvPluginDbNaming::makeUnique(
-            QStringLiteral("TRELLIS_%1_%2").arg(sourceName, deviceTag),
-            m_app);
+            QStringLiteral("TRELLIS_%1_%2").arg(sourceName, deviceTag), m_app);
 
 #ifdef AICore_ENABLED
     // Preferred display path: import the baked GLB through the shared file
@@ -286,7 +285,8 @@ void qTrellis::addResultToDb(const TrellisRunResult& result,
     // in the viewer. Vertex colours cannot express metallic/roughness, so
     // they remain only as the fallback when the bake or the import fails.
     if (!result.glb.isEmpty()) {
-        QTemporaryFile tmp(QDir::tempPath() + QStringLiteral("/TRELLIS_XXXXXX.glb"));
+        QTemporaryFile tmp(QDir::tempPath() +
+                           QStringLiteral("/TRELLIS_XXXXXX.glb"));
         if (tmp.open()) {
             tmp.write(result.glb);
             tmp.flush();
@@ -295,8 +295,8 @@ void qTrellis::addResultToDb(const TrellisRunResult& result,
             params.shiftHandlingMode =
                     ecvGlobalShiftManager::NO_DIALOG_AUTO_SHIFT;
             CC_FILE_ERROR err = CC_FERR_NO_ERROR;
-            ccHObject* imported = FileIOFilter::LoadFromFile(
-                    tmp.fileName(), params, err);
+            ccHObject* imported =
+                    FileIOFilter::LoadFromFile(tmp.fileName(), params, err);
             tmp.close();
             if (imported) {
                 imported->setName(name);
@@ -445,11 +445,10 @@ void qTrellis::addRmbgImageToDb(const TrellisRunResult& result,
     const QString sourceName = QFileInfo(result.sourceImage).completeBaseName();
     const QString name = ecvPluginDbNaming::makeUnique(
             QStringLiteral("TRELLIS_RMBG_%1_%2")
-                    .arg(sourceName,
-                         ecvPluginDbNaming::deviceTagFromName(
-                                 result.backend.isEmpty()
-                                         ? QStringLiteral("auto")
-                                         : result.backend)),
+                    .arg(sourceName, ecvPluginDbNaming::deviceTagFromName(
+                                             result.backend.isEmpty()
+                                                     ? QStringLiteral("auto")
+                                                     : result.backend)),
             m_app);
     auto* img = new ccImage(result.rmbgImage, name);
     img->setMetaData(QStringLiteral("Source"), result.sourceImage);

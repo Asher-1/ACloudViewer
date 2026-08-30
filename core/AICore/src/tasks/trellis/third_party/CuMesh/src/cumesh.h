@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #pragma once
 
 #include <cuda.h>
@@ -6,9 +13,7 @@
 
 #include "utils.h"
 
-
 #define BLOCK_SIZE 256
-
 
 namespace cumesh {
 
@@ -102,7 +107,7 @@ public:
 
     /**
      * Initialize mesh
-     * 
+     *
      * @param vertices The vertex positions as an [V, 3] tensor.
      * @param faces The triangle faces as an [F, 3] tensor.
      */
@@ -117,28 +122,28 @@ public:
 
     /**
      * Get the face normals.
-     * 
+     *
      * @return The face normals as an [F, 3] tensor.
      */
     torch::Tensor read_face_normals();
 
     /**
      * Get the normals of the vertices.
-     * 
+     *
      * @return The vertex normals as an [V, 3] tensor.
      */
     torch::Tensor read_vertex_normals();
-    
+
     /**
      * Get the edges of the mesh.
-     * 
+     *
      * @return The edges as an [E, 2] tensor.
      */
     torch::Tensor read_edges();
 
     /**
      * Get the boundaries of the mesh.
-     * 
+     *
      * @return The boundaries as an [B] tensor.
      *         Each element is the index of a boundary edge.
      */
@@ -146,14 +151,14 @@ public:
 
     /**
      * Get the manifold faces adjacency.
-     * 
+     *
      * @return The manifold faces adjacency as an [M, 2] tensor.
      */
     torch::Tensor read_manifold_face_adjacency();
 
     /**
      * Get the manifold boundary adjacency.
-     * 
+     *
      * @return The manifold boundary adjacency as an [M, 2] tensor.
      */
     torch::Tensor read_manifold_boundary_adjacency();
@@ -188,11 +193,10 @@ public:
 
     /**
      * Get all cached data.
-     * 
+     *
      * @return A dictionary of all cached data.
      */
     std::unordered_map<std::string, torch::Tensor> read_all_cache();
-    
 
     // Geometric functions
 
@@ -219,7 +223,6 @@ public:
      * - vertex_normals
      */
     void compute_vertex_normals();
-
 
     // Connectivity functions
 
@@ -351,9 +354,8 @@ public:
      */
     void get_boundary_loops();
 
-
     // Cleanup functions
-    
+
     /**
      * Remove faces.
      */
@@ -380,7 +382,7 @@ public:
      * This function requires:
      * - loop_boundaries
      * - loop_boundaries_offset
-     * 
+     *
      * @param max_hole_perimeter The maximum perimeter of a hole to be filled.
      */
     void fill_holes(float max_hole_perimeter);
@@ -399,9 +401,9 @@ public:
 
     /**
      * Remove faces on non-manifold edges.
-     * For each non-manifold edge (shared by >2 faces), only keep the first 2 faces.
-     * This repairs non-manifold edges by deleting faces instead of splitting vertices.
-     * This function requires:
+     * For each non-manifold edge (shared by >2 faces), only keep the first 2
+     * faces. This repairs non-manifold edges by deleting faces instead of
+     * splitting vertices. This function requires:
      * - edge2face
      * - edge2face_offset
      * - edge2face_cnt
@@ -422,7 +424,7 @@ public:
      * - faces
      * This function destroys:
      * - All connectivity information
-     * 
+     *
      * @param min_area The minimum area of the connected components to be kept.
      */
     void remove_small_connected_components(float min_area);
@@ -435,7 +437,6 @@ public:
      * - faces
      */
     void unify_face_orientations();
-    
 
     // Simplification functions
 
@@ -446,18 +447,21 @@ public:
      * - faces
      * This function destroys:
      * - All connectivity information
-     * 
+     *
      * @param lambda_edge_length The weight for edge length term.
      * @param lambda_skinny The weight for skinny term.
      * @param threshold The threshold for edge collapse cost.
-     * @return A tuple of the number of vertices and the number of faces after simplification.
+     * @return A tuple of the number of vertices and the number of faces after
+     * simplification.
      */
-    std::tuple<int, int> simplify_step(float lambda_edge_length, float lambda_skinny, float threshold, bool timing=false);
-
+    std::tuple<int, int> simplify_step(float lambda_edge_length,
+                                       float lambda_skinny,
+                                       float threshold,
+                                       bool timing = false);
 
     // Atlasing functions
 
-   /**
+    /**
      * Compute charts for atlasing.
      * This function requires:
      * - manifold_face_adj
@@ -467,25 +471,26 @@ public:
      * - atlas_chart_faces
      * - atlas_chart_faces_offset
      *
-     *  @param  threshold_cone_half_angle_rad The threshold for the cone half angle in radians.
-     *  @param  refine_iterations             The number of refinement iterations.
+     *  @param  threshold_cone_half_angle_rad The threshold for the cone half
+     * angle in radians.
+     *  @param  refine_iterations             The number of refinement
+     * iterations.
      *  @param  global_iterations             The number of global iterations.
      *  @param  smooth_strength               The strength of the smoothing.
-     *  @param  area_penalty_weight           Coefficient for chart size penalty. Cost += Area * weight.
-     *                                        Prevents charts from becoming too large if > 0, 
-     *                                        or encourages larger charts if < 0 (though usually used to penalize size variance).
-     *  @param  perimeter_area_ratio_weight   Coefficient for shape irregularity (long-strip) penalty. 
-     *                                        Cost += (Perimeter / Area) * weight.
-     *                                        Higher values penalize long strips and encourage circular/compact shapes.
+     *  @param  area_penalty_weight           Coefficient for chart size
+     * penalty. Cost += Area * weight. Prevents charts from becoming too large
+     * if > 0, or encourages larger charts if < 0 (though usually used to
+     * penalize size variance).
+     *  @param  perimeter_area_ratio_weight   Coefficient for shape irregularity
+     * (long-strip) penalty. Cost += (Perimeter / Area) * weight. Higher values
+     * penalize long strips and encourage circular/compact shapes.
      */
-    void compute_charts(
-        float threshold_cone_half_angle_rad, 
-        int refine_iterations, 
-        int global_iterations, 
-        float smooth_strength,
-        float area_penalty_weight,
-        float perimeter_area_ratio_weight
-    );
+    void compute_charts(float threshold_cone_half_angle_rad,
+                        int refine_iterations,
+                        int global_iterations,
+                        float smooth_strength,
+                        float area_penalty_weight,
+                        float perimeter_area_ratio_weight);
 
     /**
      * Read the atlas charts.
@@ -498,7 +503,13 @@ public:
      * - The chart vertices offset as an [C+1] tensor.
      * - The chart faces offset as an [C+1] tensor.
      */
-    std::tuple<int, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> read_atlas_charts();
+    std::tuple<int,
+               torch::Tensor,
+               torch::Tensor,
+               torch::Tensor,
+               torch::Tensor,
+               torch::Tensor>
+    read_atlas_charts();
 };
 
-} // namespace cumesh
+}  // namespace cumesh

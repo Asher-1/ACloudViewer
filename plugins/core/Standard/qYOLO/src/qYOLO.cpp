@@ -118,8 +118,9 @@ bool qYOLO::resolveInputPath(const QString& rawPath,
     // them in the status label (same convention as "[Error] Model required.").
     if (rawPath.trimmed().isEmpty()) {
         if (errorMsg) {
-            *errorMsg = tr("[Error] No input image — pick a file, a DB "
-                           "image, or click Use test data.");
+            *errorMsg =
+                    tr("[Error] No input image — pick a file, a DB "
+                       "image, or click Use test data.");
         }
         return false;
     }
@@ -336,8 +337,8 @@ void qYOLO::addResultToDb(const YOLORunResult& result,
     // Model tag (family + variant + dtype, e.g. yolov8s-world-f16) keeps
     // two runs with different models distinguishable in the DB tree —
     // source + device alone collide into anonymous _01/_02 suffixes.
-    const QString modelTag = ecvPluginDbNaming::modelTagFromFilename(
-            settings.modelPath);
+    const QString modelTag =
+            ecvPluginDbNaming::modelTagFromFilename(settings.modelPath);
     const QString name = ecvPluginDbNaming::makeUnique(
             QStringLiteral("YOLO_%1_%2_%3")
                     .arg(modelTag, sourceLabel, deviceTag),
@@ -424,8 +425,8 @@ void qYOLO::addDepthResultToDb(const YOLODepthResult& result,
     const QString deviceTag = ecvPluginDbNaming::deviceTagFromName(
             result.resolvedDevice.isEmpty() ? settings.device
                                             : result.resolvedDevice);
-    const QString modelTag = ecvPluginDbNaming::modelTagFromFilename(
-            settings.modelPath);
+    const QString modelTag =
+            ecvPluginDbNaming::modelTagFromFilename(settings.modelPath);
     const QString name = ecvPluginDbNaming::makeUnique(
             QStringLiteral("YOLODepth_%1_%2_%3")
                     .arg(modelTag, sourceLabel, deviceTag),

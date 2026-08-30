@@ -55,12 +55,12 @@ private:
     QRectF toWidgetRect(const QRectF& imageRect) const;
     void updateLabelFromBoxes();
 
-    QImage m_image;            // full-resolution prompt canvas
-    QSizeF m_imageSize;        // full-image size (for coord mapping)
-    QRectF m_pixmapRect;       // displayed pixmap rect inside the widget
-    QList<QRectF> m_boxes;     // full-image pixel coordinates
+    QImage m_image;         // full-resolution prompt canvas
+    QSizeF m_imageSize;     // full-image size (for coord mapping)
+    QRectF m_pixmapRect;    // displayed pixmap rect inside the widget
+    QList<QRectF> m_boxes;  // full-image pixel coordinates
     bool m_drawingEnabled = false;
     bool m_rubberBandActive = false;
-    QPointF m_rubberBandStart;     // image coords
-    QRectF m_rubberBandCurrent;    // image coords
+    QPointF m_rubberBandStart;   // image coords
+    QRectF m_rubberBandCurrent;  // image coords
 };

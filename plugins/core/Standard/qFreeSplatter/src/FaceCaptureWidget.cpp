@@ -245,7 +245,8 @@ FaceCaptureWidget::FaceCaptureWidget(QWidget* parent)
                     ecvAssetIntegrity::isVerified(
                             requestedPath,
                             {QCryptographicHash::Sha256,
-                             ecvAssetIntegrity::PinnedDigest(currentGgmlFilename())},
+                             ecvAssetIntegrity::PinnedDigest(
+                                     currentGgmlFilename())},
                             64 * 1024, true,
                             ecvAssetIntegrity::OnMiss::CheapChecksOnly)) {
                     scheduleGgmlModelLoad(requestedPath);
@@ -790,8 +791,9 @@ bool FaceCaptureWidget::ensureGgmlModelReady() {
 
     const QString path = facedetectCachePath(filename);
     if (ecvAssetIntegrity::isVerified(
-                path, {QCryptographicHash::Sha256,
-                       ecvAssetIntegrity::PinnedDigest(filename)},
+                path,
+                {QCryptographicHash::Sha256,
+                 ecvAssetIntegrity::PinnedDigest(filename)},
                 64 * 1024, true, ecvAssetIntegrity::OnMiss::CheapChecksOnly)) {
         return true;
     }
@@ -833,9 +835,9 @@ void FaceCaptureWidget::startModelDownload(
     req.destPath = dest;
     // Content identity from the release digest registry — streamed SHA-256
     // check at ingestion (truncation and corruption both caught).
-    req.contentAnchor = {
-            QCryptographicHash::Sha256,
-            ecvAssetIntegrity::PinnedDigest(QString::fromUtf8(model->filename))};
+    req.contentAnchor = {QCryptographicHash::Sha256,
+                         ecvAssetIntegrity::PinnedDigest(
+                                 QString::fromUtf8(model->filename))};
     m_downloader->download(req);
 }
 

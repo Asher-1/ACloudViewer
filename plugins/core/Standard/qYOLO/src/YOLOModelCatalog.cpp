@@ -9,7 +9,6 @@
 
 #include <QColor>
 #include <QFont>
-#include <QRegularExpression>
 #include <QImage>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -17,6 +16,7 @@
 #include <QPainter>
 #include <QPainterPath>
 #include <QPen>
+#include <QRegularExpression>
 #include <QtMath>
 #include <algorithm>
 #include <cmath>
@@ -124,17 +124,28 @@ QVector<YOLOModelEntry> taskModels(const QString& task) {
 int defaultModelIndexForTask(const QString& task) {
 #ifdef AICore_ENABLED
     enum aicore_yolo_model_role role = AICORE_YOLO_ROLE_ANY;
-    if (task == QStringLiteral("detect")) role = AICORE_YOLO_ROLE_DETECTION;
-    else if (task == QStringLiteral("segment")) role = AICORE_YOLO_ROLE_SEGMENT;
-    else if (task == QStringLiteral("depth")) role = AICORE_YOLO_ROLE_DEPTH;
-    else if (task == QStringLiteral("pose")) role = AICORE_YOLO_ROLE_POSE;
-    else if (task == QStringLiteral("obb")) role = AICORE_YOLO_ROLE_OBB;
-    else if (task == QStringLiteral("classify")) role = AICORE_YOLO_ROLE_CLASSIFY;
-    else if (task == QStringLiteral("semantic")) role = AICORE_YOLO_ROLE_SEMANTIC;
-    else if (task == QStringLiteral("world")) role = AICORE_YOLO_ROLE_WORLD;
-    else if (task == QStringLiteral("yoloe")) role = AICORE_YOLO_ROLE_YOLOE;
-    else if (task == QStringLiteral("text")) role = AICORE_YOLO_ROLE_TEXT;
-    else return -1;  // unknown task: let the caller's fallback decide
+    if (task == QStringLiteral("detect"))
+        role = AICORE_YOLO_ROLE_DETECTION;
+    else if (task == QStringLiteral("segment"))
+        role = AICORE_YOLO_ROLE_SEGMENT;
+    else if (task == QStringLiteral("depth"))
+        role = AICORE_YOLO_ROLE_DEPTH;
+    else if (task == QStringLiteral("pose"))
+        role = AICORE_YOLO_ROLE_POSE;
+    else if (task == QStringLiteral("obb"))
+        role = AICORE_YOLO_ROLE_OBB;
+    else if (task == QStringLiteral("classify"))
+        role = AICORE_YOLO_ROLE_CLASSIFY;
+    else if (task == QStringLiteral("semantic"))
+        role = AICORE_YOLO_ROLE_SEMANTIC;
+    else if (task == QStringLiteral("world"))
+        role = AICORE_YOLO_ROLE_WORLD;
+    else if (task == QStringLiteral("yoloe"))
+        role = AICORE_YOLO_ROLE_YOLOE;
+    else if (task == QStringLiteral("text"))
+        role = AICORE_YOLO_ROLE_TEXT;
+    else
+        return -1;  // unknown task: let the caller's fallback decide
     return aicore_yolo_model_default_index(role);
 #else
     (void)task;
@@ -221,62 +232,148 @@ namespace {
 
 const QHash<QString, QString>& zhWordMap() {
     static const QHash<QString, QString> map = {
-        // colors
-        {"红色", "red"}, {"红", "red"}, {"绿色", "green"}, {"绿", "green"},
-        {"黄色", "yellow"}, {"黄", "yellow"}, {"粉色", "pink"},
-        {"粉红色", "pink"}, {"粉", "pink"}, {"蓝色", "blue"}, {"蓝", "blue"},
-        {"黑色", "black"}, {"黑", "black"}, {"白色", "white"}, {"白", "white"},
-        {"橙色", "orange"}, {"橘色", "orange"}, {"紫色", "purple"},
-        {"棕色", "brown"}, {"褐色", "brown"}, {"灰色", "gray"},
-        // people / age
-        {"孩子", "child"}, {"小孩", "child"}, {"儿童", "child"},
-        {"小朋友", "child"}, {"成年人", "adult"}, {"成人", "adult"},
-        {"大人", "adult"}, {"男人", "man"}, {"男子", "man"}, {"男士", "man"},
-        {"女人", "woman"}, {"女子", "woman"}, {"女士", "woman"},
-        {"男孩", "boy"}, {"女孩", "girl"}, {"人", "person"}, {"人类", "person"},
-        // wear / attributes
-        {"戴", "wearing"}, {"穿着", "wearing"}, {"帽子", "hat"}, {"帽", "hat"},
-        {"眼镜", "glasses"}, {"太阳镜", "sunglasses"},
-        // COCO objects (common Chinese names)
-        {"汽车", "car"}, {"轿车", "car"}, {"公交车", "bus"}, {"巴士", "bus"},
-        {"卡车", "truck"}, {"货车", "truck"}, {"自行车", "bicycle"},
-        {"单车", "bicycle"}, {"摩托车", "motorcycle"}, {"飞机", "airplane"},
-        {"火车", "train"}, {"船", "boat"}, {"轮船", "boat"},
-        {"红绿灯", "traffic light"}, {"交通灯", "traffic light"},
-        {"消防栓", "fire hydrant"}, {"停车标志", "stop sign"},
-        {"长椅", "bench"}, {"鸟", "bird"}, {"狗", "dog"}, {"猫", "cat"},
-        {"马", "horse"}, {"羊", "sheep"}, {"牛", "cow"}, {"大象", "elephant"},
-        {"熊", "bear"}, {"斑马", "zebra"}, {"长颈鹿", "giraffe"},
-        {"背包", "backpack"}, {"雨伞", "umbrella"}, {"伞", "umbrella"},
-        {"手提包", "handbag"}, {"领带", "tie"}, {"行李箱", "suitcase"},
-        {"飞盘", "frisbee"}, {"滑雪板", "skis"}, {"单板滑雪", "snowboard"},
-        {"风筝", "kite"}, {"网球拍", "tennis racket"}, {"瓶子", "bottle"},
-        {"酒杯", "wine glass"}, {"杯子", "cup"}, {"叉子", "fork"},
-        {"刀", "knife"}, {"勺子", "spoon"}, {"碗", "bowl"},
-        {"香蕉", "banana"}, {"苹果", "apple"}, {"三明治", "sandwich"},
-        {"橙子", "orange"}, {"花椰菜", "broccoli"}, {"胡萝卜", "carrot"},
-        {"热狗", "hot dog"}, {"披萨", "pizza"}, {"甜甜圈", "donut"},
-        {"蛋糕", "cake"}, {"椅子", "chair"}, {"沙发", "couch"},
-        {"盆栽", "potted plant"}, {"床", "bed"}, {"餐桌", "dining table"},
-        {"马桶", "toilet"}, {"电视", "tv"}, {"笔记本电脑", "laptop"},
-        {"鼠标", "mouse"}, {"键盘", "keyboard"}, {"手机", "cell phone"},
-        {"微波炉", "microwave"}, {"烤箱", "oven"}, {"冰箱", "refrigerator"},
-        {"书", "book"}, {"时钟", "clock"}, {"花瓶", "vase"},
-        // function words (dropped in the English prompt)
-        {"的", ""}, {"一个", "a"}, {"一位", "a"}, {"两只", "two"},
-        {"剪刀", "scissors"}, {"泰迪熊", "teddy bear"}, {"吹风机", "hair drier"},
-        {"牙刷", "toothbrush"},
+            // colors
+            {"红色", "red"},
+            {"红", "red"},
+            {"绿色", "green"},
+            {"绿", "green"},
+            {"黄色", "yellow"},
+            {"黄", "yellow"},
+            {"粉色", "pink"},
+            {"粉红色", "pink"},
+            {"粉", "pink"},
+            {"蓝色", "blue"},
+            {"蓝", "blue"},
+            {"黑色", "black"},
+            {"黑", "black"},
+            {"白色", "white"},
+            {"白", "white"},
+            {"橙色", "orange"},
+            {"橘色", "orange"},
+            {"紫色", "purple"},
+            {"棕色", "brown"},
+            {"褐色", "brown"},
+            {"灰色", "gray"},
+            // people / age
+            {"孩子", "child"},
+            {"小孩", "child"},
+            {"儿童", "child"},
+            {"小朋友", "child"},
+            {"成年人", "adult"},
+            {"成人", "adult"},
+            {"大人", "adult"},
+            {"男人", "man"},
+            {"男子", "man"},
+            {"男士", "man"},
+            {"女人", "woman"},
+            {"女子", "woman"},
+            {"女士", "woman"},
+            {"男孩", "boy"},
+            {"女孩", "girl"},
+            {"人", "person"},
+            {"人类", "person"},
+            // wear / attributes
+            {"戴", "wearing"},
+            {"穿着", "wearing"},
+            {"帽子", "hat"},
+            {"帽", "hat"},
+            {"眼镜", "glasses"},
+            {"太阳镜", "sunglasses"},
+            // COCO objects (common Chinese names)
+            {"汽车", "car"},
+            {"轿车", "car"},
+            {"公交车", "bus"},
+            {"巴士", "bus"},
+            {"卡车", "truck"},
+            {"货车", "truck"},
+            {"自行车", "bicycle"},
+            {"单车", "bicycle"},
+            {"摩托车", "motorcycle"},
+            {"飞机", "airplane"},
+            {"火车", "train"},
+            {"船", "boat"},
+            {"轮船", "boat"},
+            {"红绿灯", "traffic light"},
+            {"交通灯", "traffic light"},
+            {"消防栓", "fire hydrant"},
+            {"停车标志", "stop sign"},
+            {"长椅", "bench"},
+            {"鸟", "bird"},
+            {"狗", "dog"},
+            {"猫", "cat"},
+            {"马", "horse"},
+            {"羊", "sheep"},
+            {"牛", "cow"},
+            {"大象", "elephant"},
+            {"熊", "bear"},
+            {"斑马", "zebra"},
+            {"长颈鹿", "giraffe"},
+            {"背包", "backpack"},
+            {"雨伞", "umbrella"},
+            {"伞", "umbrella"},
+            {"手提包", "handbag"},
+            {"领带", "tie"},
+            {"行李箱", "suitcase"},
+            {"飞盘", "frisbee"},
+            {"滑雪板", "skis"},
+            {"单板滑雪", "snowboard"},
+            {"风筝", "kite"},
+            {"网球拍", "tennis racket"},
+            {"瓶子", "bottle"},
+            {"酒杯", "wine glass"},
+            {"杯子", "cup"},
+            {"叉子", "fork"},
+            {"刀", "knife"},
+            {"勺子", "spoon"},
+            {"碗", "bowl"},
+            {"香蕉", "banana"},
+            {"苹果", "apple"},
+            {"三明治", "sandwich"},
+            {"橙子", "orange"},
+            {"花椰菜", "broccoli"},
+            {"胡萝卜", "carrot"},
+            {"热狗", "hot dog"},
+            {"披萨", "pizza"},
+            {"甜甜圈", "donut"},
+            {"蛋糕", "cake"},
+            {"椅子", "chair"},
+            {"沙发", "couch"},
+            {"盆栽", "potted plant"},
+            {"床", "bed"},
+            {"餐桌", "dining table"},
+            {"马桶", "toilet"},
+            {"电视", "tv"},
+            {"笔记本电脑", "laptop"},
+            {"鼠标", "mouse"},
+            {"键盘", "keyboard"},
+            {"手机", "cell phone"},
+            {"微波炉", "microwave"},
+            {"烤箱", "oven"},
+            {"冰箱", "refrigerator"},
+            {"书", "book"},
+            {"时钟", "clock"},
+            {"花瓶", "vase"},
+            // function words (dropped in the English prompt)
+            {"的", ""},
+            {"一个", "a"},
+            {"一位", "a"},
+            {"两只", "two"},
+            {"剪刀", "scissors"},
+            {"泰迪熊", "teddy bear"},
+            {"吹风机", "hair drier"},
+            {"牙刷", "toothbrush"},
     };
     return map;
 }
 
 const QHash<QString, QString>& zhPersonMap() {
     static const QHash<QString, QString> map = {
-        {"孩子", "child"}, {"小孩", "child"}, {"儿童", "child"},
-        {"小朋友", "child"}, {"成年人", "adult"}, {"成人", "adult"},
-        {"大人", "adult"}, {"男人", "man"}, {"男子", "man"}, {"男士", "man"},
-        {"女人", "woman"}, {"女子", "woman"}, {"女士", "woman"},
-        {"男孩", "boy"}, {"女孩", "girl"}, {"人", "person"},
+            {"孩子", "child"},   {"小孩", "child"},   {"儿童", "child"},
+            {"小朋友", "child"}, {"成年人", "adult"}, {"成人", "adult"},
+            {"大人", "adult"},   {"男人", "man"},     {"男子", "man"},
+            {"男士", "man"},     {"女人", "woman"},   {"女子", "woman"},
+            {"女士", "woman"},   {"男孩", "boy"},     {"女孩", "girl"},
+            {"人", "person"},
     };
     return map;
 }
@@ -305,8 +402,8 @@ QString translatePromptToEnglish(const QString& text, bool* translated) {
         const QRegularExpressionMatch m = it.next();
         const QString personZh = m.captured(2);
         QString attr = m.captured(1);
-        QString personEn = zhPersonMap().value(personZh,
-                                               QStringLiteral("person"));
+        QString personEn =
+                zhPersonMap().value(personZh, QStringLiteral("person"));
         QString attrEn;
         const QRegularExpression cjkWord(
                 QStringLiteral("[\\x{4e00}-\\x{9fff}]+"));
@@ -316,10 +413,11 @@ QString translatePromptToEnglish(const QString& text, bool* translated) {
             attrEn += zhWordMap().value(w) + " ";
         }
         attrEn = attrEn.trimmed();
-        QString repl = attrEn.isEmpty()
-                               ? QStringLiteral("%1 wearing a hat").arg(personEn)
-                               : QStringLiteral("%1 with %2 hat")
-                                     .arg(personEn, attrEn);
+        QString repl =
+                attrEn.isEmpty()
+                        ? QStringLiteral("%1 wearing a hat").arg(personEn)
+                        : QStringLiteral("%1 with %2 hat")
+                                  .arg(personEn, attrEn);
         out.replace(m.capturedStart(), m.capturedLength(), repl);
         it = hatPerson.globalMatch(out);  // offsets shifted; restart scan
         if (translated) *translated = true;
@@ -328,13 +426,12 @@ QString translatePromptToEnglish(const QString& text, bool* translated) {
     // Word-level dictionary replacement for everything else (longest keys
     // first so 红 inside 红色 never wins).
     QStringList keys;
-    for (auto keyIt = zhWordMap().constBegin();
-         keyIt != zhWordMap().constEnd(); ++keyIt)
+    for (auto keyIt = zhWordMap().constBegin(); keyIt != zhWordMap().constEnd();
+         ++keyIt)
         keys << keyIt.key();
-    std::sort(keys.begin(), keys.end(),
-              [](const QString& a, const QString& b) {
-                  return a.size() > b.size();
-              });
+    std::sort(keys.begin(), keys.end(), [](const QString& a, const QString& b) {
+        return a.size() > b.size();
+    });
     for (const QString& key : keys) {
         const QString en = zhWordMap().value(key);
         out.replace(key, " " + en + " ");

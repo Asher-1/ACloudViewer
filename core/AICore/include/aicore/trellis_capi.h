@@ -109,12 +109,8 @@ typedef void (*aicore_trellis_progress_fn)(void* user,
  *  normals, i32[3nt] tris) replayed after the final decode. `data` is valid
  *  only during the call (copy it). Fires on the generating thread. NULL
  *  disables it. */
-typedef void (*aicore_trellis_preview_fn)(void* user,
-                                          int stage,
-                                          int step,
-                                          int total,
-                                          const void* data,
-                                          int len);
+typedef void (*aicore_trellis_preview_fn)(
+        void* user, int stage, int step, int total, const void* data, int len);
 
 /** GGUF paths for the pipeline. dino/ss_flow/ss_dec are required; the others
  *  select the available qualities (see file header). Any field may be NULL or
@@ -204,9 +200,9 @@ typedef struct aicore_trellis_generate_params {
     int pipeline_type;   /**< aicore_trellis_pipeline_type */
     int background_mode; /**< aicore_trellis_background_mode */
     uint64_t seed;
-    int steps;         /**< <= 0 -> 12 */
-    float guidance;    /**< < 0 -> 7.5 */
-    int texture_steps; /**< <= 0 -> 12 */
+    int steps;          /**< <= 0 -> 12 */
+    float guidance;     /**< < 0 -> 7.5 */
+    int texture_steps;  /**< <= 0 -> 12 */
     int preview_stride; /**< 0 = auto, <0 = stage checkpoints only */
     int keyframes;      /**< 0 = off, <= 8 */
 } aicore_trellis_generate_params;

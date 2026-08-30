@@ -18,7 +18,6 @@
 #include <ecvClickableImageLabel.h>
 #include <ecvImage.h>
 #include <ecvMainAppInterface.h>
-#include "ecvModelDownloader.h"
 #include <ecvPluginDbNaming.h>
 
 #include <QButtonGroup>
@@ -48,6 +47,8 @@
 #include <QTabWidget>
 #include <QVBoxLayout>
 #include <cstring>
+
+#include "ecvModelDownloader.h"
 
 namespace {
 
@@ -1019,10 +1020,9 @@ void SAM3Dialog::startDownload(bool thenRun) {
         }
         return;
     }
-    ecvAssetIntegrity::removeIfNotVerified(dest, {}, 64 * 1024, true,
-                                           ecvAssetIntegrity::OnMiss::
-                                                   CheapChecksOnly,
-                                           entry->size_bytes);
+    ecvAssetIntegrity::removeIfNotVerified(
+            dest, {}, 64 * 1024, true,
+            ecvAssetIntegrity::OnMiss::CheapChecksOnly, entry->size_bytes);
 
     QDir().mkpath(cacheDir);
     m_downloadInProgress = true;
@@ -1844,7 +1844,8 @@ void SAM3Dialog::exportToDb(ImageTabUi* target) {
                     ? QStringLiteral("canvas")
                     : QFileInfo(u.currentImagePath).completeBaseName();
     const QString name = ecvPluginDbNaming::makeUnique(
-            QStringLiteral("SAM3_%1_%2_%3").arg(modelTag, sourceLabel, deviceTag),
+            QStringLiteral("SAM3_%1_%2_%3")
+                    .arg(modelTag, sourceLabel, deviceTag),
             m_app);
 
     auto* img = new ccImage(annotated, name);
@@ -1948,9 +1949,9 @@ void SAM3Dialog::requestTestData() {
     if (m_downloadLabel) {
         m_downloadLabel->setVisible(true);
     }
-    if (ecvAssetIntegrity::isVerified(
-                ecvTestDataRepository::zipPath(kind), info.anchor, 0, false,
-                ecvAssetIntegrity::OnMiss::DeepVerify)) {
+    if (ecvAssetIntegrity::isVerified(ecvTestDataRepository::zipPath(kind),
+                                      info.anchor, 0, false,
+                                      ecvAssetIntegrity::OnMiss::DeepVerify)) {
         appendLog(tr("[Test data] Extracting cached archive..."));
         updateStatus(tr("Extracting SAM3 test data..."));
         repo.extractDataset(kind);

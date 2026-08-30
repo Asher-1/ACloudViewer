@@ -8,13 +8,13 @@
 #include <QImage>
 #include <QString>
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <map>
 #include <mutex>
-#include <array>
 #include <new>
 #include <sstream>
 #include <string>
@@ -154,11 +154,11 @@ std::map<std::string, TextEmbedCacheEntry> g_text_embed_cache;
 
 // Probe a text-encoder GGUF for the mclip architecture and its projection
 // target space (KVs "mclip.arch" / "mclip.target_space", written by
-// core/AICore/src/tasks/yolo/tools/convert_mclip_gguf.py). Header-only read, no tensor data mapped.
-// Returns "" when the file is not an mclip bridge; otherwise the target
-// space id ("clipb32" = OpenAI CLIP ViT-B/32 for World, "mobileclip2b" =
-// MobileCLIP2-B for YOLOE). Older bridge files without the key default to
-// "clipb32".
+// core/AICore/src/tasks/yolo/tools/convert_mclip_gguf.py). Header-only read, no
+// tensor data mapped. Returns "" when the file is not an mclip bridge;
+// otherwise the target space id ("clipb32" = OpenAI CLIP ViT-B/32 for World,
+// "mobileclip2b" = MobileCLIP2-B for YOLOE). Older bridge files without the key
+// default to "clipb32".
 std::string text_gguf_target_space(const std::string& path) {
     gguf_init_params ip{};
     ip.no_alloc = true;
@@ -224,14 +224,13 @@ bool encode_open_vocab_classes(aicore_yolo_ctx* ctx,
         // Space gate: the bridge GGUF declares which text space its
         // projection lands in ("clipb32" for World, "mobileclip2b" for
         // YOLOE) — the detector head consumes that space and nothing else.
-        const bool compatible =
-                yoloe ? (mclip_target == "mobileclip2b")
-                      : (mclip_target == "clipb32");
+        const bool compatible = yoloe ? (mclip_target == "mobileclip2b")
+                                      : (mclip_target == "clipb32");
         if (!compatible) {
             ctx->last_error =
                     yoloe ? "YOLOE detectors require a text tower projecting "
-                           "into the MobileCLIP2-B space (mclip.target_space="
-                           "mobileclip2b)"
+                            "into the MobileCLIP2-B space (mclip.target_space="
+                            "mobileclip2b)"
                           : "YOLO-World detectors require a text tower "
                             "projecting into the CLIP ViT-B/32 space "
                             "(mclip.target_space=clipb32)";
@@ -247,9 +246,9 @@ bool encode_open_vocab_classes(aicore_yolo_ctx* ctx,
             return false;
         }
         for (int i = 0; i < nc; ++i) {
-            if (!mclip::text_encode_string(
-                        ms, ctx->class_names_override[i].c_str(),
-                        embed.data() + (size_t)i * dim)) {
+            if (!mclip::text_encode_string(ms,
+                                           ctx->class_names_override[i].c_str(),
+                                           embed.data() + (size_t)i * dim)) {
                 ctx->last_error = "failed to encode class '" +
                                   ctx->class_names_override[i] + "'";
                 mclip::text_free_session(ms);
@@ -460,8 +459,8 @@ AICORE_CAPI void aicore_yolo_options_set_visual_prompts(
     }
 }
 
-AICORE_CAPI int32_t aicore_yolo_options_get_visual_prompt_count(
-        const aicore_yolo_options* opts) {
+AICORE_CAPI int32_t
+aicore_yolo_options_get_visual_prompt_count(const aicore_yolo_options* opts) {
     return opts != nullptr ? (int32_t)(opts->visual_boxes.size() / 4) : 0;
 }
 
@@ -481,9 +480,9 @@ AICORE_CAPI int aicore_yolo_gguf_has_savpe(const char* gguf_path) {
 AICORE_CAPI int aicore_yolo_context_has_visual_prompts(
         const aicore_yolo_ctx* ctx) {
     return ctx != nullptr && ctx->engine != nullptr &&
-                   ctx->engine->visual_mode()
-               ? 1
-               : 0;
+                           ctx->engine->visual_mode()
+                   ? 1
+                   : 0;
 }
 
 AICORE_CAPI float aicore_yolo_options_get_conf_thres(
@@ -573,8 +572,7 @@ AICORE_CAPI aicore_yolo_ctx* aicore_yolo_load_opts(
         // (official semantics: visual prompts group examples, they do not
         // carry names), so the typed result accessors resolve every cid.
         if (ctx->engine != nullptr && sopts.visual_count > 0) {
-            ctx->class_names_override.reserve(
-                    (size_t)sopts.visual_count);
+            ctx->class_names_override.reserve((size_t)sopts.visual_count);
             for (int i = 0; i < sopts.visual_count; ++i) {
                 ctx->class_names_override.push_back("object" +
                                                     std::to_string(i));
@@ -1233,8 +1231,7 @@ AICORE_CAPI aicore_yolo_segment_result* aicore_yolo_seg_rgb(
         }
         if (const char* dump = std::getenv("AICORE_SAVPE_DUMP")) {
             if (s->savpe_out != nullptr) {
-                std::vector<float> vpe(
-                        (size_t)ggml_nelements(s->savpe_out));
+                std::vector<float> vpe((size_t)ggml_nelements(s->savpe_out));
                 ggml_backend_tensor_get(s->savpe_out, vpe.data(), 0,
                                         vpe.size() * sizeof(float));
                 FILE* f = std::fopen(dump, "wb");

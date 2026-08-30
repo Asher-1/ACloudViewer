@@ -227,8 +227,7 @@ TEST(TrellisCatalog, IntegrityLedgerStatTrust) {
     }
     const ecvAssetIntegrity::Anchor anchor{
             QCryptographicHash::Sha256,
-            QCryptographicHash::hash(QByteArray("GGUF") +
-                                             QByteArray(4096, 'x'),
+            QCryptographicHash::hash(QByteArray("GGUF") + QByteArray(4096, 'x'),
                                      QCryptographicHash::Sha256)
                     .toHex()};
     // Ledger miss + DeepVerify self-heals and records the state.
@@ -263,8 +262,7 @@ TEST(TrellisCatalog, IntegrityLedgerPinBump) {
     }
     const ecvAssetIntegrity::Anchor oldPin{
             QCryptographicHash::Sha256,
-            QCryptographicHash::hash(QByteArray("GGUF") +
-                                             QByteArray(4096, 'x'),
+            QCryptographicHash::hash(QByteArray("GGUF") + QByteArray(4096, 'x'),
                                      QCryptographicHash::Sha256)
                     .toHex()};
     ASSERT_TRUE(ecvAssetIntegrity::markVerified(path, oldPin));
@@ -297,8 +295,7 @@ TEST(TrellisCatalog, IntegrityLedgerEmptyPinPreservesPinnedEntry) {
     }
     const ecvAssetIntegrity::Anchor pin{
             QCryptographicHash::Sha256,
-            QCryptographicHash::hash(QByteArray("GGUF") +
-                                             QByteArray(4096, 'x'),
+            QCryptographicHash::hash(QByteArray("GGUF") + QByteArray(4096, 'x'),
                                      QCryptographicHash::Sha256)
                     .toHex()};
     ASSERT_TRUE(ecvAssetIntegrity::markVerified(path, pin));
@@ -335,8 +332,8 @@ TEST(TrellisCatalog, IntegrityLedgerSizeOnlyEntries) {
         f.close();
     }
     EXPECT_FALSE(ecvAssetIntegrity::isVerified(
-            path, noPin, 0, false,
-            ecvAssetIntegrity::OnMiss::CheapChecksOnly, 4100));
+            path, noPin, 0, false, ecvAssetIntegrity::OnMiss::CheapChecksOnly,
+            4100));
 }
 
 TEST(TrellisCatalog, RemoveIfNotVerified) {

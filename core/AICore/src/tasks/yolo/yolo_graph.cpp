@@ -775,12 +775,8 @@ struct GraphBuilder {
     // core/AICore/src/tasks/yolo/tools/convert_yoloe_savpe_gguf.py
     // ("savpe.cv1_0_0.w" = GraphBuilder w("savpe.cv1_0_0", "w")).
     // ------------------------------------------------------------------
-    ggml_tensor* savpe_conv(const char* tag,
-                            ggml_tensor* x,
-                            int k,
-                            int s,
-                            int p,
-                            bool silu) {
+    ggml_tensor* savpe_conv(
+            const char* tag, ggml_tensor* x, int k, int s, int p, bool silu) {
         OpDef op;
         op.type = "conv";
         op.aparams["s"] = {(int64_t)s, (int64_t)s};
@@ -791,8 +787,7 @@ struct GraphBuilder {
         return conv2d(op, std::string("savpe.") + tag, x);
     }
 
-    ggml_tensor* savpe(const std::vector<ggml_tensor*>& fpn,
-                       ggml_tensor* vp) {
+    ggml_tensor* savpe(const std::vector<ggml_tensor*>& fpn, ggml_tensor* vp) {
         // vp: external [W3, H3, Q, 1] F32 binary masks on the P3 grid.
         const int64_t W3 = fpn[0]->ne[0], H3 = fpn[0]->ne[1];
         const int64_t HW3 = W3 * H3;
@@ -802,26 +797,26 @@ struct GraphBuilder {
         // semantic (cv1: Conv3x3 -> Conv3x3 -> Upsample) per level — the
         // convs run at the level's OWN resolution and the upsample comes
         // LAST (Sequential order), landing every level on the P3 grid.
-        ggml_tensor* act = nullptr;   // [W3, H3, c3]
-        ggml_tensor* sem = nullptr;   // [W3, H3, c3]
+        ggml_tensor* act = nullptr;  // [W3, H3, c3]
+        ggml_tensor* sem = nullptr;  // [W3, H3, c3]
         for (int l = 0; l < 3; l++) {
             const std::string lv = std::to_string(l);
             dbg_savpe_fpn[l] = fpn[l];
-            ggml_tensor* a = savpe_conv(("cv2_" + lv).c_str(), fpn[l], 1, 1,
-                                        0, true);
+            ggml_tensor* a =
+                    savpe_conv(("cv2_" + lv).c_str(), fpn[l], 1, 1, 0, true);
             dbg_savpe_cv2[l] = a;
-            ggml_tensor* s0 =
-                    savpe_conv(("cv1_" + lv + "_0").c_str(), fpn[l], 3, 1, 1,
-                               true);
+            ggml_tensor* s0 = savpe_conv(("cv1_" + lv + "_0").c_str(), fpn[l],
+                                         3, 1, 1, true);
             ggml_tensor* s1 =
-                    savpe_conv(("cv1_" + lv + "_1").c_str(), s0, 3, 1, 1,
-                               true);
+                    savpe_conv(("cv1_" + lv + "_1").c_str(), s0, 3, 1, 1, true);
             if (l > 0) {
                 a = ggml_upscale(gctx, a, 1 << l, GGML_SCALE_MODE_NEAREST);
                 s1 = ggml_upscale(gctx, s1, 1 << l, GGML_SCALE_MODE_NEAREST);
             }
-            std::fprintf(stderr, "[savpe-build] level %d done (post-conv upsample x%d)\n",
-                         l, l > 0 ? (1 << l) : 1);
+            std::fprintf(
+                    stderr,
+                    "[savpe-build] level %d done (post-conv upsample x%d)\n", l,
+                    l > 0 ? (1 << l) : 1);
             act = act ? ggml_concat(gctx, act, a, 2) : a;
             sem = sem ? ggml_concat(gctx, sem, s1, 2) : s1;
         }
@@ -836,8 +831,7 @@ struct GraphBuilder {
         // (same permute pattern as world_detect's embedding branch).
         ggml_tensor* xT = ggml_cont(gctx, ggml_permute(gctx, x, 1, 2, 0, 3));
         xT = ggml_reshape_2d(gctx, xT, x->ne[2], HW3);
-        if (xT->type != GGML_TYPE_F32)
-            xT = ggml_cast(gctx, xT, GGML_TYPE_F32);
+        if (xT->type != GGML_TYPE_F32) xT = ggml_cast(gctx, xT, GGML_TYPE_F32);
 
         // Per prompt q: cv5(mask) -> cat(y, .) -> cv6 -> masked softmax over
         // the P3 grid -> one [HW3, 16] score column block.
@@ -868,12 +862,12 @@ struct GraphBuilder {
             ggml_tensor* outside = ggml_scale(
                     gctx, ggml_relu(gctx, ggml_scale(gctx, vp_col, -1.0f)),
                     -1e30f);
-            ggml_tensor* masked = ggml_add(
-                    gctx, ggml_mul(gctx, yT, vp_col), outside);
+            ggml_tensor* masked =
+                    ggml_add(gctx, ggml_mul(gctx, yT, vp_col), outside);
             // Softmax must run over the grid (ne0): transpose to [HW3, 16]
             // (ne[axis_i] = a->ne[i], so (1,0,2,3) swaps the first two dims).
-            ggml_tensor* s_q = ggml_cont(
-                    gctx, ggml_permute(gctx, masked, 1, 0, 2, 3));
+            ggml_tensor* s_q =
+                    ggml_cont(gctx, ggml_permute(gctx, masked, 1, 0, 2, 3));
             s_q = ggml_soft_max(gctx, s_q);
             s_all = s_all ? ggml_concat(gctx, s_all, s_q, 1) : s_q;
         }
@@ -886,9 +880,9 @@ struct GraphBuilder {
         const int64_t d = x->ne[2] / c16;  // 32 for the shipped 512-d models
         ggml_tensor* out = nullptr;
         for (int64_t g = 0; g < c16; g++) {
-            ggml_tensor* x_g = ggml_cont(
-                    gctx, ggml_view_2d(gctx, xT, HW3, d, xT->nb[1],
-                                       (size_t)(g * d) * xT->nb[1]));
+            ggml_tensor* x_g =
+                    ggml_cont(gctx, ggml_view_2d(gctx, xT, HW3, d, xT->nb[1],
+                                                 (size_t)(g * d) * xT->nb[1]));
             ggml_tensor* s_g = ggml_cont(
                     gctx, ggml_view_2d(gctx, s_all, HW3, Q, s_all->nb[1] * c16,
                                        (size_t)g * s_all->nb[0]));
@@ -1011,9 +1005,9 @@ bool build_run_plan(Session* s, int input_w, int input_h) {
     }
     if (visual) {
         const int stride0 = meta.strides.empty() ? 8 : (int)meta.strides[0];
-        vp_input = ggml_new_tensor_4d(gctx, GGML_TYPE_F32,
-                                      input_w / stride0, input_h / stride0,
-                                      s->opts.visual_count, 1);
+        vp_input =
+                ggml_new_tensor_4d(gctx, GGML_TYPE_F32, input_w / stride0,
+                                   input_h / stride0, s->opts.visual_count, 1);
         ggml_set_input(vp_input);
         ggml_set_name(vp_input, "vp_masks");
     }
@@ -1474,9 +1468,8 @@ Session* create_session(const std::string& gguf_path,
         free_session(s);
         return nullptr;
     }
-    const int world_nc =
-            visual ? opts.visual_count
-                   : (opts.world_nc > 0 ? opts.world_nc : meta.nc);
+    const int world_nc = visual ? opts.visual_count
+                                : (opts.world_nc > 0 ? opts.world_nc : meta.nc);
     s->world_nc = world_nc;
     if (s->model.has_text_input || visual) {
         s->model.meta.nc = world_nc;
@@ -1779,9 +1772,8 @@ bool session_prepare_visual_masks(Session* s, const LetterboxInfo& info) {
     if (!s || !s->visual_mode() || !s->model.has_savpe) return false;
     const int q = s->opts.visual_count;
     if (s->opts.visual_boxes.size() != (size_t)q * 4) return false;
-    const int stride0 = s->model.meta.strides.empty()
-                                ? 8
-                                : (int)s->model.meta.strides[0];
+    const int stride0 =
+            s->model.meta.strides.empty() ? 8 : (int)s->model.meta.strides[0];
     const int w3 = s->input_w / stride0;
     const int h3 = s->input_h / stride0;
     if (w3 <= 0 || h3 <= 0) return false;
@@ -1792,8 +1784,8 @@ bool session_prepare_visual_masks(Session* s, const LetterboxInfo& info) {
     // LoadVisualPrompt(scale_factor=1/8) rasterization.
     s->vp_pending.assign((size_t)w3 * h3 * q, 0.0f);
     float* masks = s->vp_pending.data();
-    std::fprintf(stderr, "[savpe-dbg] masks %dx%d q=%d boxes=%zu\n", w3, h3,
-                 q, s->opts.visual_boxes.size());
+    std::fprintf(stderr, "[savpe-dbg] masks %dx%d q=%d boxes=%zu\n", w3, h3, q,
+                 s->opts.visual_boxes.size());
     for (int i = 0; i < q; i++) {
         const float* box = &s->opts.visual_boxes[(size_t)i * 4];
         const float sx1 = (box[0] * info.scale + info.pad_w) / stride0;
@@ -1810,8 +1802,11 @@ bool session_prepare_visual_masks(Session* s, const LetterboxInfo& info) {
             for (int x = x0; x < x1; ++x) row[x] = 1.0f;
         }
         size_t nz = 0;
-        for (size_t k = 0; k < (size_t)w3 * h3; ++k) nz += masks[(size_t)i * w3 * h3 + k] > 0.f;
-        std::fprintf(stderr, "[savpe-dbg] plane %d nonzero=%zu rect=[%d,%d)-[%d,%d)\n", i, nz, x0, y0, x1, y1);
+        for (size_t k = 0; k < (size_t)w3 * h3; ++k)
+            nz += masks[(size_t)i * w3 * h3 + k] > 0.f;
+        std::fprintf(stderr,
+                     "[savpe-dbg] plane %d nonzero=%zu rect=[%d,%d)-[%d,%d)\n",
+                     i, nz, x0, y0, x1, y1);
     }
     if (const char* mdump = std::getenv("AICORE_SAVPE_DUMP_MASK")) {
         FILE* f = std::fopen(mdump, "wb");

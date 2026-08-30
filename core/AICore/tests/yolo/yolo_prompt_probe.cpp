@@ -8,10 +8,8 @@
 // TEMPORARY PoC probe for the YOLOE linear-bridge fit: end-to-end detection
 // with a chosen text tower. Delete after the Y1 PoC.
 
-#include "aicore/runtime_capi.h"
-#include "aicore/yolo_capi.h"
-
 #include <QColor>
+#include <QFont>
 #include <QGuiApplication>
 #include <QImage>
 #include <QJsonArray>
@@ -19,14 +17,15 @@
 #include <QJsonObject>
 #include <QPainter>
 #include <QPen>
-#include <QFont>
-
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <string>
 #include <vector>
+
+#include "aicore/runtime_capi.h"
+#include "aicore/yolo_capi.h"
 
 namespace {
 
@@ -40,9 +39,9 @@ std::vector<std::string> splitClasses(const std::string& csv) {
     size_t start = 0;
     while (start <= csv.size()) {
         const size_t comma = csv.find(',', start);
-        std::string c = csv.substr(start, comma == std::string::npos
-                                            ? std::string::npos
-                                            : comma - start);
+        std::string c =
+                csv.substr(start, comma == std::string::npos ? std::string::npos
+                                                             : comma - start);
         const size_t first = c.find_first_not_of(" \t");
         if (first == std::string::npos) {
             c.clear();
@@ -59,9 +58,9 @@ std::vector<std::string> splitClasses(const std::string& csv) {
 
 QColor colorFor(size_t i) {
     static const QColor kPalette[10] = {
-            QColor(220, 20, 60),  QColor(0, 128, 0),    QColor(255, 165, 0),
+            QColor(220, 20, 60),  QColor(0, 128, 0),   QColor(255, 165, 0),
             QColor(138, 43, 226), QColor(0, 105, 180), QColor(255, 0, 255),
-            QColor(0, 128, 128),  QColor(139, 69, 19),  QColor(255, 105, 180),
+            QColor(0, 128, 128),  QColor(139, 69, 19), QColor(255, 105, 180),
             QColor(0, 0, 255),
     };
     return kPalette[i % 10];
@@ -73,7 +72,8 @@ struct Det {
     float x1 = 0, y1 = 0, x2 = 0, y2 = 0;
 };
 
-void drawAndSave(QImage image, const std::vector<Det>& dets,
+void drawAndSave(QImage image,
+                 const std::vector<Det>& dets,
                  const char* outPath) {
     if (image.format() != QImage::Format_RGB888) {
         image = image.convertToFormat(QImage::Format_RGB888);
@@ -98,9 +98,9 @@ void drawAndSave(QImage image, const std::vector<Det>& dets,
                         static_cast<int>(d.y1) - font.pixelSize() - 6,
                         std::max(24, label.size() * font.pixelSize()),
                         font.pixelSize() + 6);
-        labelRect.moveLeft(std::clamp(
-                labelRect.left(), 2,
-                std::max(2, image.width() - labelRect.width() - 2)));
+        labelRect.moveLeft(
+                std::clamp(labelRect.left(), 2,
+                           std::max(2, image.width() - labelRect.width() - 2)));
         if (labelRect.top() < 2) labelRect.moveTop(static_cast<int>(d.y1) + 2);
         p.fillRect(labelRect.adjusted(0, 0, 4, 2).intersected(image.rect()),
                    color);
@@ -148,9 +148,9 @@ int main(int argc, char** argv) {
     }
     const uchar* rgbData = reinterpret_cast<const uchar*>(packed.constData());
 
-    std::vector<std::string> classes =
-            classesCsv == "-" ? std::vector<std::string>()
-                              : splitClasses(classesCsv);
+    std::vector<std::string> classes = classesCsv == "-"
+                                               ? std::vector<std::string>()
+                                               : splitClasses(classesCsv);
     std::vector<const char*> ptrs;
     ptrs.reserve(classes.size());
     for (const std::string& c : classes) ptrs.push_back(c.c_str());
@@ -182,8 +182,8 @@ int main(int argc, char** argv) {
     QImage annotated = rgb;
     std::vector<Det> dets;
     if (std::strcmp(aicore_yolo_context_task(ctx), "segment") == 0) {
-        aicore_yolo_segment_result* seg = aicore_yolo_seg_rgb(
-                ctx, rgbData, rgb.width(), rgb.height());
+        aicore_yolo_segment_result* seg =
+                aicore_yolo_seg_rgb(ctx, rgbData, rgb.width(), rgb.height());
         if (!seg) {
             std::fprintf(stderr, "probe: seg failed: %s\n",
                          aicore_yolo_last_error(ctx));
@@ -246,4 +246,3 @@ int main(int argc, char** argv) {
     aicore_yolo_free(ctx);
     return 0;
 }
-

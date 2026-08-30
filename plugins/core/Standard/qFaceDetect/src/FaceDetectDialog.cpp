@@ -465,8 +465,7 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
                             dest,
                             ecvTestDataRepository::getDatasetInfo(kFriends)
                                     .anchor,
-                            0, false,
-                            ecvAssetIntegrity::OnMiss::DeepVerify)) {
+                            0, false, ecvAssetIntegrity::OnMiss::DeepVerify)) {
                     QFile::remove(dest);
                     ecvAssetIntegrity::invalidate(dest);
                     setTestDataBusy(false);
@@ -2256,9 +2255,8 @@ void FaceDetectDialog::startFriendsTestDataDownload(bool fillRegistry,
     const QString zipPath = ecvTestDataRepository::zipPath(kFriends);
     if (QFileInfo::exists(zipPath) &&
         !ecvAssetIntegrity::isVerified(
-                zipPath,
-                ecvTestDataRepository::getDatasetInfo(kFriends).anchor, 0,
-                false, ecvAssetIntegrity::OnMiss::DeepVerify)) {
+                zipPath, ecvTestDataRepository::getDatasetInfo(kFriends).anchor,
+                0, false, ecvAssetIntegrity::OnMiss::DeepVerify)) {
         QFile::remove(zipPath);
         ecvAssetIntegrity::invalidate(zipPath);
         appendLog(

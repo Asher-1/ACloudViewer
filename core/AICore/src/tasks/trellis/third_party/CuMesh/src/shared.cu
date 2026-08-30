@@ -1,8 +1,13 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "shared.h"
 
-
 namespace cumesh {
-
 
 /**
  * Hook edges
@@ -11,12 +16,10 @@ namespace cumesh {
  * @param conn_comp_ids: the buffer for connected component ids, shape (F)
  * @param end_flag: flag to indicate if any union operation happened
  */
-__global__ void hook_edges_kernel(
-    const int2* adj,
-    const int M,
-    int* conn_comp_ids,
-    int* end_flag
-) {
+__global__ void hook_edges_kernel(const int2* adj,
+                                  const int M,
+                                  int* conn_comp_ids,
+                                  int* end_flag) {
     const int tid = blockIdx.x * blockDim.x + threadIdx.x;
     if (tid >= M) return;
 
@@ -43,16 +46,12 @@ __global__ void hook_edges_kernel(
     *end_flag = 0;
 }
 
-
 /**
  * Compress connected components
  * @param conn_comp_ids: the buffer for connected component ids, shape (F)
  * @param F: the number of faces
  */
-__global__ void compress_components_kernel(
-    int* conn_comp_ids,
-    const int F
-) {
+__global__ void compress_components_kernel(int* conn_comp_ids, const int F) {
     const int tid = blockIdx.x * blockDim.x + threadIdx.x;
     if (tid >= F) return;
 
@@ -63,5 +62,4 @@ __global__ void compress_components_kernel(
     conn_comp_ids[tid] = p;
 }
 
-
-} // namespace cumesh
+}  // namespace cumesh

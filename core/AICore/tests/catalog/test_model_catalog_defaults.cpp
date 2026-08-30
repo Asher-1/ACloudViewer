@@ -64,11 +64,11 @@ int main() {
     // --- YOLO: every role view's declared default is marked ---------------
     {
         const aicore_yolo_model_role roles[] = {
-                AICORE_YOLO_ROLE_ANY,     AICORE_YOLO_ROLE_DETECTION,
-                AICORE_YOLO_ROLE_DEPTH,   AICORE_YOLO_ROLE_SEGMENT,
-                AICORE_YOLO_ROLE_POSE,    AICORE_YOLO_ROLE_OBB,
+                AICORE_YOLO_ROLE_ANY,      AICORE_YOLO_ROLE_DETECTION,
+                AICORE_YOLO_ROLE_DEPTH,    AICORE_YOLO_ROLE_SEGMENT,
+                AICORE_YOLO_ROLE_POSE,     AICORE_YOLO_ROLE_OBB,
                 AICORE_YOLO_ROLE_CLASSIFY, AICORE_YOLO_ROLE_SEMANTIC,
-                AICORE_YOLO_ROLE_WORLD,   AICORE_YOLO_ROLE_YOLOE,
+                AICORE_YOLO_ROLE_WORLD,    AICORE_YOLO_ROLE_YOLOE,
                 AICORE_YOLO_ROLE_TEXT,
         };
         for (const aicore_yolo_model_role role : roles) {
@@ -92,8 +92,8 @@ int main() {
             const aicore_sam3_model_entry* e =
                     i < n ? aicore_sam3_model_at(i) : nullptr;
             const char* family = e ? e->model_family : nullptr;
-            if (firstFamily && (family == nullptr ||
-                                std::strcmp(family, firstFamily) != 0)) {
+            if (firstFamily &&
+                (family == nullptr || std::strcmp(family, firstFamily) != 0)) {
                 // Family run ended: its first row must be the marked one.
                 const aicore_sam3_model_entry* f =
                         aicore_sam3_model_at(firstIndex);

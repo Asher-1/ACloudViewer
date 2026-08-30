@@ -261,7 +261,8 @@ std::unique_ptr<ModelDef> load_gguf(const std::string& path) {
     if (model->has_savpe) {
         if (!model->has_text_input || model->detect_op_index < 0) {
             YOLO_LOG_ERROR(
-                    "yolo.savpe set but the graph has no world head; ignore the "
+                    "yolo.savpe set but the graph has no world head; ignore "
+                    "the "
                     "flag or reconvert the checkpoint");
             gguf_free(g);
             ggml_free(weight_ctx);
@@ -287,9 +288,9 @@ std::unique_ptr<ModelDef> load_gguf(const std::string& path) {
         const OpDef& head = model->ops[model->detect_op_index];
         const bool head_masks = head.ip("has_masks", 0) != 0;
         const size_t lv_stride = head_masks ? 3 : 2;
-        const size_t lv_count =
-                head_masks ? (head.inputs.size() - 1) / lv_stride
-                           : head.inputs.size() / lv_stride;
+        const size_t lv_count = head_masks
+                                        ? (head.inputs.size() - 1) / lv_stride
+                                        : head.inputs.size() / lv_stride;
         for (size_t l = 0; l < lv_count && model->savpe_fpn_ops.size() < 3;
              l++) {
             // Per level: [box, embed(, mask)] — box and embed are rooted at
@@ -309,9 +310,8 @@ std::unique_ptr<ModelDef> load_gguf(const std::string& path) {
             model->savpe_fpn_ops.push_back(root);
         }
         if (model->savpe_fpn_ops.size() != 3) {
-            YOLO_LOG_ERROR(
-                    "savpe: expected 3 FPN levels, resolved %zu",
-                    model->savpe_fpn_ops.size());
+            YOLO_LOG_ERROR("savpe: expected 3 FPN levels, resolved %zu",
+                           model->savpe_fpn_ops.size());
             gguf_free(g);
             ggml_free(weight_ctx);
             return nullptr;
@@ -378,9 +378,8 @@ std::unique_ptr<ModelDef> load_gguf(const std::string& path) {
                 }
             }
         }
-        for (const std::string& tag :
-             {"savpe.cv3", "savpe.cv4", "savpe.cv5", "savpe.cv6_0",
-              "savpe.cv6_1"}) {
+        for (const std::string& tag : {"savpe.cv3", "savpe.cv4", "savpe.cv5",
+                                       "savpe.cv6_0", "savpe.cv6_1"}) {
             if (!model->tensors.count(tag + ".w")) {
                 YOLO_LOG_ERROR("yolo.savpe set but tensor %s.w is missing",
                                tag.c_str());
@@ -402,13 +401,12 @@ std::unique_ptr<ModelDef> load_gguf(const std::string& path) {
                 if (in >= 0) savpe_consumers[in]++;
         for (size_t l = 0; l < model->savpe_fpn_ops.size(); ++l) {
             int conv_idx = savpe_head.inputs[l * savpe_stride];
-            while (conv_idx >= 0 &&
-                   conv_idx < (int)model->ops.size() &&
+            while (conv_idx >= 0 && conv_idx < (int)model->ops.size() &&
                    (model->ops[conv_idx].type == "conv" ||
                     model->ops[conv_idx].type == "dwconv") &&
-                    !model->ops[conv_idx].inputs.empty() &&
-                    model->ops[conv_idx].inputs[0] >= 0 &&
-                    savpe_consumers[model->ops[conv_idx].inputs[0]] == 1) {
+                   !model->ops[conv_idx].inputs.empty() &&
+                   model->ops[conv_idx].inputs[0] >= 0 &&
+                   savpe_consumers[model->ops[conv_idx].inputs[0]] == 1) {
                 conv_idx = model->ops[conv_idx].inputs[0];
             }
             // conv_idx is now the last conv before the FPN root; its kernel
@@ -420,8 +418,7 @@ std::unique_ptr<ModelDef> load_gguf(const std::string& path) {
                 ggml_free(weight_ctx);
                 return nullptr;
             }
-            const std::string conv_w =
-                    "op." + std::to_string(conv_idx) + ".w";
+            const std::string conv_w = "op." + std::to_string(conv_idx) + ".w";
             const auto it = model->tensors.find(conv_w);
             if (it == model->tensors.end() || it->second.ne[2] <= 0) {
                 YOLO_LOG_ERROR("savpe: missing weight %s", conv_w.c_str());
@@ -443,8 +440,8 @@ std::unique_ptr<ModelDef> load_gguf(const std::string& path) {
                             "converted from a different checkpoint",
                             name.c_str(),
                             (long long)(sit == model->tensors.end()
-                                            ? -1
-                                            : sit->second.ne[2]),
+                                                ? -1
+                                                : sit->second.ne[2]),
                             l, (long long)fpn_ch);
                     gguf_free(g);
                     ggml_free(weight_ctx);
