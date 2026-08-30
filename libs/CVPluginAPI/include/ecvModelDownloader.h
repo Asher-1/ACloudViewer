@@ -13,6 +13,7 @@
 #include <QUrl>
 
 #include "CVPluginAPI.h"
+#include "ecvAssetIntegrity.h"
 
 class QNetworkAccessManager;
 class QNetworkReply;
@@ -27,50 +28,34 @@ public:
     struct Request {
         QString url;
         QString destPath;
-        // Validation policy for the downloaded file. Both fields apply:
-        //   1. the file must be at least minBytes long (floor for
-        //      detecting truncated/empty responses), and
-        //   2. when requireGgufMagic is true, the first four bytes must
-        //      be the GGUF magic ("GGUF") — this is the canonical way to
-        //      tell a real model file from an HTML error page or an
-        //      empty/truncated download.
+        // Validation policy for the downloaded file — INGESTION TIME ONLY.
+        // All checks run once at finalize, never on subsequent accesses
+        // (verified files are stat-trusted via ecvAssetIntegrity):
+        //   1. minBytes floor rejects empty/HTML junk pages;
+        //   2. requireGgufMagic accepts only files starting with "GGUF";
+        //   3. when contentAnchor carries a digest, the file is stream-hashed
+        //      WHILE downloading and compared once at finalize — truncation
+        //      and corruption are both caught with no extra read pass;
+        //   4. otherwise, ingestExactSize (when > 0) is compared once at
+        //      finalize — the single truncation guard for assets without a
+        //      pinned digest (e.g. GitHub-release GGUFs). NOT a per-access
+        //      policy.
         // minBytes default is 64 KiB: large enough to reject empty/HTML
         // pages, small enough to admit the smallest ALIKED
         // (aliked-n16rot-q8_0.gguf is ~714 KiB on disk).
         qint64 minBytes = 64 * 1024;
         bool requireGgufMagic = true;
-        // When > 0, the downloaded file must be exactly this many bytes;
-        // a mismatch deletes the file and fails the download. Used by
-        // plugins whose assets are published with known sizes (e.g. HF LFS
-        // mirrors) to catch truncated/CDN-error downloads that still carry
-        // the GGUF magic.
-        qint64 expectedSize = 0;
-        // Hex-encoded SHA-256 (64 chars) of the expected file content, e.g.
-        // the HF LFS oid. Computed WHILE downloading (streamed, no extra
-        // I/O pass over the file); a mismatch deletes the file and fails
-        // the download. This is the content-level integrity check —
-        // expectedSize above only catches length changes.
-        QByteArray expectedSha256;
+        // Content identity pinned in source (algo + hex digest, e.g. the
+        // HF LFS oid). Streamed while downloading; a mismatch deletes the
+        // file and fails the download.
+        ecvAssetIntegrity::Anchor contentAnchor;
+        // Exact expected byte count, used ONLY when contentAnchor has no
+        // digest (see policy item 4 above).
+        qint64 ingestExactSize = 0;
     };
 
     explicit ecvModelDownloader(QObject* parent = nullptr);
     ~ecvModelDownloader() override;
-
-    /** Returns true if the file exists, meets minBytes, matches expectedSize
-     *  (when > 0), starts with the GGUF magic bytes (when requireGgufMagic),
-     *  and matches expectedSha256 (when non-empty; computed by reading the
-     *  whole file — use only for one-shot verification, not per-dialog
-     *  presence checks on multi-GB models). */
-    static bool isValidCachedFile(const QString& path,
-                                  qint64 minBytes = 64 * 1024,
-                                  bool requireGgufMagic = true,
-                                  qint64 expectedSize = 0,
-                                  const QByteArray& expectedSha256 = {});
-    static void removeInvalidCacheFile(const QString& path,
-                                       qint64 minBytes = 64 * 1024,
-                                       bool requireGgufMagic = true,
-                                       qint64 expectedSize = 0,
-                                       const QByteArray& expectedSha256 = {});
 
     /** Human-readable size (B / KB / MB / GB). */
     static QString formatFileSize(qint64 bytes);
@@ -113,8 +98,8 @@ private:
     QString m_tmpPath;
     QString m_destPath;
     qint64 m_minValidBytes = 0;
-    qint64 m_expectedSize = 0;
-    QByteArray m_expectedSha256;
+    ecvAssetIntegrity::Anchor m_contentAnchor;
+    qint64 m_ingestExactSize = 0;
     QCryptographicHash* m_hash = nullptr;  // streamed while downloading
     bool m_requireGgufMagic = true;
     bool m_busy = false;

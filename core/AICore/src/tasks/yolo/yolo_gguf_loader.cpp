@@ -251,6 +251,72 @@ std::unique_ptr<ModelDef> load_gguf(const std::string& path) {
         ggml_free(weight_ctx);
         return nullptr;
     }
+
+    // ---- YOLOE visual-prompt (savpe) support ----
+    // Resolve the FPN feature ops the savpe encoder consumes by walking the
+    // world head's box/embed branch chains back to their shared producer:
+    // branch-internal conv outputs have exactly one consumer, while the FPN
+    // feature feeds both the box and the embed branch (>= 2 consumers).
+    model->has_savpe = key_or(g, "yolo.savpe", 0) != 0;
+    if (model->has_savpe) {
+        if (!model->has_text_input || model->detect_op_index < 0) {
+            YOLO_LOG_ERROR(
+                    "yolo.savpe set but the graph has no world head; ignore the "
+                    "flag or reconvert the checkpoint");
+            gguf_free(g);
+            ggml_free(weight_ctx);
+            return nullptr;
+        }
+        std::vector<int> consumers(model->ops.size(), 0);
+        for (const OpDef& op : model->ops)
+            for (int in : op.inputs)
+                if (in >= 0) consumers[in]++;
+        auto branch_root = [&](int out_idx) -> int {
+            int cur = out_idx;
+            while (cur >= 0 && cur < (int)model->ops.size()) {
+                const OpDef& o = model->ops[cur];
+                if ((o.type != "conv" && o.type != "dwconv") ||
+                    o.inputs.empty() || o.inputs[0] < 0)
+                    return cur;
+                const int prev = o.inputs[0];
+                if (consumers[prev] >= 2) return prev;  // shared FPN feature
+                cur = prev;
+            }
+            return cur;
+        };
+        const OpDef& head = model->ops[model->detect_op_index];
+        const bool head_masks = head.ip("has_masks", 0) != 0;
+        const size_t lv_stride = head_masks ? 3 : 2;
+        const size_t lv_count =
+                head_masks ? (head.inputs.size() - 1) / lv_stride
+                           : head.inputs.size() / lv_stride;
+        for (size_t l = 0; l < lv_count && model->savpe_fpn_ops.size() < 3;
+             l++) {
+            // Per level: [box, embed(, mask)] — box and embed are rooted at
+            // the same FPN feature, so the pair cross-checks the walk.
+            const int root = branch_root(head.inputs[lv_stride * l]);
+            if (root < 0 || root >= (int)model->ops.size() ||
+                root != branch_root(head.inputs[lv_stride * l + 1])) {
+                YOLO_LOG_ERROR(
+                        "savpe: cannot resolve the FPN feature for level %zu",
+                        l);
+                gguf_free(g);
+                ggml_free(weight_ctx);
+                return nullptr;
+            }
+            // Level order follows the head inputs: level 0 = P3 (smallest
+            // stride), which is the torch x = [P3, P4, P5] order savpe needs.
+            model->savpe_fpn_ops.push_back(root);
+        }
+        if (model->savpe_fpn_ops.size() != 3) {
+            YOLO_LOG_ERROR(
+                    "savpe: expected 3 FPN levels, resolved %zu",
+                    model->savpe_fpn_ops.size());
+            gguf_free(g);
+            ggml_free(weight_ctx);
+            return nullptr;
+        }
+    }
     if (model->meta.nl <= 0 ||
         model->meta.strides.size() < (size_t)model->meta.nl) {
         YOLO_LOG_ERROR("invalid feature-level metadata");
@@ -288,6 +354,104 @@ std::unique_ptr<ModelDef> load_gguf(const std::string& path) {
         const size_t n = gguf_get_arr_n(g, id);
         const float* p = (const float*)gguf_get_arr_data(g, id);
         model->vocab_txt.assign(p, p + n);
+    }
+
+    // A savpe-flagged GGUF must carry the full savpe weight set; anything
+    // else is a truncated conversion and would fail deep inside the graph
+    // builder instead. Naming follows the GraphBuilder convention
+    // ("savpe.cv1_0_0.w" = w("savpe.cv1_0_0", "w")), see yolo_graph.cpp.
+    if (model->has_savpe) {
+        for (int i = 0; i < 3; i++) {
+            const std::string lv = std::to_string(i);
+            const std::string required[] = {
+                    "savpe.cv1_" + lv + "_0.w", "savpe.cv1_" + lv + "_0.b",
+                    "savpe.cv1_" + lv + "_1.w", "savpe.cv1_" + lv + "_1.b",
+                    "savpe.cv2_" + lv + ".w",   "savpe.cv2_" + lv + ".b",
+            };
+            for (const std::string& name : required) {
+                if (!model->tensors.count(name)) {
+                    YOLO_LOG_ERROR("yolo.savpe set but tensor %s is missing",
+                                   name.c_str());
+                    gguf_free(g);
+                    ggml_free(weight_ctx);
+                    return nullptr;
+                }
+            }
+        }
+        for (const std::string& tag :
+             {"savpe.cv3", "savpe.cv4", "savpe.cv5", "savpe.cv6_0",
+              "savpe.cv6_1"}) {
+            if (!model->tensors.count(tag + ".w")) {
+                YOLO_LOG_ERROR("yolo.savpe set but tensor %s.w is missing",
+                               tag.c_str());
+                gguf_free(g);
+                ggml_free(weight_ctx);
+                return nullptr;
+            }
+        }
+        // Shape gate: the savpe convs must consume the same channel counts
+        // as the FPN features the head actually receives. Resolve each
+        // level's channel count from the first conv of the box branch (the
+        // conv adjacent to the FPN root; its kernel ne[2] = in-channels).
+        const OpDef& savpe_head = model->ops[model->detect_op_index];
+        const bool savpe_masks = savpe_head.ip("has_masks", 0) != 0;
+        const size_t savpe_stride = savpe_masks ? 3 : 2;
+        std::vector<int> savpe_consumers(model->ops.size(), 0);
+        for (const OpDef& op : model->ops)
+            for (int in : op.inputs)
+                if (in >= 0) savpe_consumers[in]++;
+        for (size_t l = 0; l < model->savpe_fpn_ops.size(); ++l) {
+            int conv_idx = savpe_head.inputs[l * savpe_stride];
+            while (conv_idx >= 0 &&
+                   conv_idx < (int)model->ops.size() &&
+                   (model->ops[conv_idx].type == "conv" ||
+                    model->ops[conv_idx].type == "dwconv") &&
+                    !model->ops[conv_idx].inputs.empty() &&
+                    model->ops[conv_idx].inputs[0] >= 0 &&
+                    savpe_consumers[model->ops[conv_idx].inputs[0]] == 1) {
+                conv_idx = model->ops[conv_idx].inputs[0];
+            }
+            // conv_idx is now the last conv before the FPN root; its kernel
+            // in-channels equal the FPN channel count.
+            if (conv_idx < 0 || conv_idx >= (int)model->ops.size()) {
+                YOLO_LOG_ERROR("savpe: box branch conv for level %zu not found",
+                               l);
+                gguf_free(g);
+                ggml_free(weight_ctx);
+                return nullptr;
+            }
+            const std::string conv_w =
+                    "op." + std::to_string(conv_idx) + ".w";
+            const auto it = model->tensors.find(conv_w);
+            if (it == model->tensors.end() || it->second.ne[2] <= 0) {
+                YOLO_LOG_ERROR("savpe: missing weight %s", conv_w.c_str());
+                gguf_free(g);
+                ggml_free(weight_ctx);
+                return nullptr;
+            }
+            const int64_t fpn_ch = it->second.ne[2];
+            const std::string lv = std::to_string(l);
+            const std::string cv1 = "savpe.cv1_" + lv + "_0.w";
+            const std::string cv2 = "savpe.cv2_" + lv + ".w";
+            for (const std::string& name : {cv1, cv2}) {
+                const auto sit = model->tensors.find(name);
+                if (sit == model->tensors.end() ||
+                    sit->second.ne[2] != fpn_ch) {
+                    YOLO_LOG_ERROR(
+                            "savpe: %s in-channels (%lld) do not match the "
+                            "level-%zu FPN feature (%lld); the GGUF was "
+                            "converted from a different checkpoint",
+                            name.c_str(),
+                            (long long)(sit == model->tensors.end()
+                                            ? -1
+                                            : sit->second.ne[2]),
+                            l, (long long)fpn_ch);
+                    gguf_free(g);
+                    ggml_free(weight_ctx);
+                    return nullptr;
+                }
+            }
+        }
     }
 
     // Extract the tiny F32 scalar constants the graph builder bakes into the

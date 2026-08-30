@@ -114,16 +114,27 @@ bool qYOLO::resolveInputPath(const QString& rawPath,
                              QString& outPath,
                              QString* errorMsg) {
     outPath.clear();
+    // Messages carry the "[Error]" prefix so YOLODialog::appendLog surfaces
+    // them in the status label (same convention as "[Error] Model required.").
+    if (rawPath.trimmed().isEmpty()) {
+        if (errorMsg) {
+            *errorMsg = tr("[Error] No input image — pick a file, a DB "
+                           "image, or click Use test data.");
+        }
+        return false;
+    }
     if (rawPath.startsWith(QStringLiteral("db://"))) {
         const QString name = rawPath.mid(5);
         ccImage* img = findDbImage(name);
         if (!img) {
-            if (errorMsg) *errorMsg = tr("DB image not found: %1").arg(name);
+            if (errorMsg)
+                *errorMsg = tr("[Error] DB image not found: %1").arg(name);
             return false;
         }
         if (img->data().isNull()) {
             if (errorMsg) {
-                *errorMsg = tr("DB image has no pixel data: %1").arg(name);
+                *errorMsg =
+                        tr("[Error] DB image has no pixel data: %1").arg(name);
             }
             return false;
         }
@@ -133,7 +144,8 @@ bool qYOLO::resolveInputPath(const QString& rawPath,
                   QUuid::createUuid().toString(QUuid::WithoutBraces) + ".png";
         if (!img->data().save(outPath)) {
             if (errorMsg) {
-                *errorMsg = tr("Failed to export DB image: %1").arg(name);
+                *errorMsg =
+                        tr("[Error] Failed to export DB image: %1").arg(name);
             }
             return false;
         }
@@ -144,7 +156,8 @@ bool qYOLO::resolveInputPath(const QString& rawPath,
         outPath = rawPath;
         return true;
     }
-    if (errorMsg) *errorMsg = tr("Input file not found: %1").arg(rawPath);
+    if (errorMsg)
+        *errorMsg = tr("[Error] Input file not found: %1").arg(rawPath);
     return false;
 }
 
@@ -261,6 +274,8 @@ void qYOLO::executeTask(const YOLODialog::Settings& settings) {
     // Open-vocabulary tabs (world/yoloe): class list + text encoder GGUF.
     ws.classes = settings.classes;
     ws.textModelPath = settings.textModelPath;
+    // YOLOE visual prompts (SAVPE): non-empty switches to the visual path.
+    ws.visualPrompts = settings.visualPrompts;
 
     m_currentSettings = settings;
     m_worker = new YOLOWorker(ws, this);
@@ -318,8 +333,15 @@ void qYOLO::addResultToDb(const YOLORunResult& result,
     const QString deviceTag = ecvPluginDbNaming::deviceTagFromName(
             result.resolvedDevice.isEmpty() ? settings.device
                                             : result.resolvedDevice);
+    // Model tag (family + variant + dtype, e.g. yolov8s-world-f16) keeps
+    // two runs with different models distinguishable in the DB tree —
+    // source + device alone collide into anonymous _01/_02 suffixes.
+    const QString modelTag = ecvPluginDbNaming::modelTagFromFilename(
+            settings.modelPath);
     const QString name = ecvPluginDbNaming::makeUnique(
-            QStringLiteral("YOLO_%1_%2").arg(sourceLabel, deviceTag), m_app);
+            QStringLiteral("YOLO_%1_%2_%3")
+                    .arg(modelTag, sourceLabel, deviceTag),
+            m_app);
     auto* img = new ccImage(result.annotatedImage, name);
     img->setMetaData(QStringLiteral("YOLO"), true);
     img->setMetaData(QStringLiteral("YOLO/Task"), result.task);
@@ -402,8 +424,11 @@ void qYOLO::addDepthResultToDb(const YOLODepthResult& result,
     const QString deviceTag = ecvPluginDbNaming::deviceTagFromName(
             result.resolvedDevice.isEmpty() ? settings.device
                                             : result.resolvedDevice);
+    const QString modelTag = ecvPluginDbNaming::modelTagFromFilename(
+            settings.modelPath);
     const QString name = ecvPluginDbNaming::makeUnique(
-            QStringLiteral("YOLODepth_%1_%2").arg(sourceLabel, deviceTag),
+            QStringLiteral("YOLODepth_%1_%2_%3")
+                    .arg(modelTag, sourceLabel, deviceTag),
             m_app);
     auto* img = new ccImage(result.annotatedImage, name);
     img->setMetaData(QStringLiteral("YOLO"), true);

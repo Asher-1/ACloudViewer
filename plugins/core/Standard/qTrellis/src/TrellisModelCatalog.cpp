@@ -146,31 +146,42 @@ bool isValidModelFile(const QString& path, const QString& filename) {
     if (!hfModelInfo(filename, &info)) {
         // Not published on the mirror: fall back to the generic GGUF check
         // so previously supported (GitHub-only) files keep validating.
-        return ecvModelDownloader::isValidCachedFile(path);
+        return ecvAssetIntegrity::isVerified(
+                path,
+                {QCryptographicHash::Sha256,
+                 ecvAssetIntegrity::PinnedDigest(filename)},
+                64 * 1024, true, ecvAssetIntegrity::OnMiss::CheapChecksOnly);
     }
-    // Lightweight presence check: exact size + GGUF magic. A full SHA-256
-    // pass over multi-GB files on every dialog refresh would be too slow;
+    // Lightweight presence check: integrity-ledger stat-trust (the HF LFS
+    // oid is the pinned digest), falling back to the exact published size
+    // for files downloaded before the ledger existed. A full SHA-256 pass
+    // over multi-GB files on every dialog refresh would be too slow;
     // content-level verification happens at download time (streamed) or via
     // verifyModelFileSha256() for manual deployments.
-    return ecvModelDownloader::isValidCachedFile(path, 64 * 1024, true,
-                                                 info.sizeBytes);
+    return ecvAssetIntegrity::isVerified(
+            path, {QCryptographicHash::Sha256,
+                   ecvAssetIntegrity::PinnedDigest(filename)},
+            64 * 1024, true, ecvAssetIntegrity::OnMiss::CheapChecksOnly,
+            info.sizeBytes);
 }
 
 bool verifyModelFileSha256(const QString& path, const QString& filename) {
     HfModelInfo info;
     if (!hfModelInfo(filename, &info)) return false;
-    return ecvModelDownloader::isValidCachedFile(
-            path, 64 * 1024, true, info.sizeBytes, info.sha256.toLatin1());
+    return ecvAssetIntegrity::verifyNow(
+            path, {QCryptographicHash::Sha256, info.sha256.toLatin1()});
 }
 
 QVector<TrellisPreset> presets() {
     QVector<TrellisPreset> out;
-    // Default file lists use the f16 variants throughout (upstream's
-    // recommended precision). The q8 alternatives remain selectable via the
-    // dialog's variant combos (resolvePresetFiles substitutes the names).
+    // The canonical file lists name the f16 GGUFs; resolvePresetFiles()
+    // substitutes the q8 variants per the selected quantization chain
+    // (default q8 — every model that publishes a q8 variant). The
+    // precision-sensitive decoders (shape_dec / shape_enc / tex_dec) have
+    // no q8 variant and always stay f16.
     out.append({QStringLiteral("Coarse 64\u00b3 preview"),
-                QStringLiteral("Fast occupancy preview (~3.4 GB, f16): dino + "
-                               "ss_flow + ss_dec"),
+                QStringLiteral("Fast occupancy preview (~3.4 GB q8 / 3.4 GB "
+                               "f16): dino + ss_flow + ss_dec"),
                 {QStringLiteral("dino_f16.gguf"),
                  QStringLiteral("ss_flow_f16.gguf"),
                  QStringLiteral("ss_dec_f16.gguf")}});
@@ -193,13 +204,13 @@ QVector<TrellisPreset> presets() {
     out.append(
             {QStringLiteral("Standard 512 + PBR (recommended)"),
              QStringLiteral(
-                     "512\u00b3 fine dual-grid with PBR texturing (~11.2 GB, "
-                     "f16)"),
+                     "512\u00b3 fine dual-grid with PBR texturing (~7.5 GB "
+                     "q8 / ~11.2 GB f16)"),
              fine512});
     out.append(
             {QStringLiteral("Full 1024 cascade + PBR"),
-             QStringLiteral("1024\u00b3 cascade with PBR texturing (~16.5 GB, "
-                            "f16)"),
+             QStringLiteral("1024\u00b3 cascade with PBR texturing (~10.5 GB "
+                            "q8 / ~16.5 GB f16)"),
              {QStringLiteral("dino_f16.gguf"),
               QStringLiteral("ss_flow_f16.gguf"),
               QStringLiteral("ss_dec_f16.gguf"),
@@ -213,21 +224,59 @@ QVector<TrellisPreset> presets() {
     return out;
 }
 
+bool isPrecisionSensitiveDecoder(const QString& filename) {
+    // Sparse subdivision / UV decoding are not robust to Q8 weight rounding;
+    // these roles never take the q8 chain (they also have no q8 variant
+    // published). shape_dec is in a separate class: it stays f16 on q8 but
+    // upgrades to f32 on the exact-mode f32 chain (isChaoticChainModel).
+    return filename.startsWith(QStringLiteral("shape_dec_")) ||
+           filename.startsWith(QStringLiteral("shape_enc_")) ||
+           filename.startsWith(QStringLiteral("tex_dec_"));
+}
+
+bool isChaoticChainModel(const QString& filename) {
+    // Models feeding the chaotic CFG samplers: the upstream f32 (exact)
+    // mode upgrades exactly this set to full-f32 weights (the texture chain
+    // stays f16 there — its noise affects appearance, not the voxel set).
+    return filename.startsWith(QStringLiteral("dino_")) ||
+           filename.startsWith(QStringLiteral("ss_flow_")) ||
+           filename.startsWith(QStringLiteral("ss_dec_")) ||
+           filename.startsWith(QStringLiteral("slat_flow_")) ||
+           filename.startsWith(QStringLiteral("shape_dec_"));
+}
+
 QStringList resolvePresetFiles(const TrellisPreset& preset,
                                const QString& cacheDir,
-                               const QString& dinoVariant,
-                               const QString& ssDecVariant) {
+                               const QString& quantization) {
+    const bool wantQ8 = quantization == QStringLiteral("q8");
+    const bool wantF32 = quantization == QStringLiteral("f32");
     QStringList out;
     for (const QString& file : preset.files) {
-        // Variant selection: the preset lists the default f16 names, but the
-        // dialog may prefer the smaller q8 dino / ss_dec.
         QString actual = file;
-        if (file == QStringLiteral("dino_f16.gguf") &&
-            dinoVariant == QStringLiteral("dino_q8")) {
-            actual = QStringLiteral("dino_q8.gguf");
-        } else if (file == QStringLiteral("ss_dec_f16.gguf") &&
-                   ssDecVariant == QStringLiteral("ss_dec_q8")) {
-            actual = QStringLiteral("ss_dec_q8.gguf");
+        if (file.endsWith(QStringLiteral("_f16.gguf"))) {
+            const QString stem =
+                    file.left(file.size() - QStringLiteral("f16.gguf").size());
+            if (wantQ8 && file.startsWith(QStringLiteral("ss_dec_"))) {
+                // q8 chain (upstream 2026-08-30 CUDA+Vulkan e2e experiment):
+                // ONLY ss_dec takes the q8 substitution. Everything feeding
+                // the chaotic CFG samplers (dino cond, ss_flow, slat_flow)
+                // plus the three VAE stages stays f16 — even a Q8_0 cond
+                // error of ~7e-3 rel-L2 is amplified into completely
+                // different voxel sets. ss_dec's q8 GGUF is itself a byte
+                // clone of f16 (its dense conv3d layout [3,3,3,N] is not
+                // Q8-blockable), so q8 currently saves nothing on this
+                // pipeline and stays selectable for experiments only.
+                const QString q8 = stem + QStringLiteral("q8.gguf");
+                HfModelInfo info;
+                if (hfModelInfo(q8, &info)) actual = q8;
+            } else if (wantF32 && isChaoticChainModel(file)) {
+                // f32 (exact) chain: upgrade the chaotic chain to full-f32
+                // weights. The f32 GGUFs are not published on the mirror —
+                // they are local conversions from the upstream safetensors
+                // (scripts/convert_*_to_gguf.py --ftype 0); a missing file
+                // surfaces through the regular missing-model check.
+                actual = stem + QStringLiteral("f32.gguf");
+            }
         }
         if (actual.isEmpty()) {
             // Keep the placeholder slot: the caller maps the resolved list by

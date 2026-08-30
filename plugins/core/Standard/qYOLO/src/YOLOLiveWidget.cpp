@@ -26,6 +26,7 @@
 
 #include "YOLOLiveInferWorker.h"
 #include "YOLOModelCatalog.h"
+#include "ecvAICoreUiHelper.h"
 #include "ecvPersistentSettings.h"
 
 #ifdef AICore_ENABLED
@@ -252,8 +253,10 @@ void YOLOLiveWidget::rebuildModelCombo(const QStringList& labels,
     }
     const int idx = m_modelCombo->findData(currentFilename);
     if (idx >= 0) m_modelCombo->setCurrentIndex(idx);
-    m_syncingModelControls = false;
+    // Still syncing: refresh the config path without emitting
+    // modelSelectionChanged (the state was mirrored from the batch tab).
     updateModelPathFromCombo();
+    m_syncingModelControls = false;
     updateThresholdVisibility();
 }
 
@@ -276,12 +279,16 @@ void YOLOLiveWidget::populateAllModels(const QString& keepFilename) {
     for (const YOLOModelEntry& e : all) {
         m_modelCombo->addItem(YOLOHelpers::modelDisplayLabel(e), e.filename);
     }
-    if (!keepFilename.isEmpty()) {
-        const int idx = m_modelCombo->findData(keepFilename);
-        if (idx >= 0) m_modelCombo->setCurrentIndex(idx);
-    }
-    m_syncingModelControls = false;
+    // Single selection policy for every AICore dialog (the all-model Live
+    // view has no single catalog-declared default: defaultIndex -1 falls
+    // through to the "(recommended)" guard row).
+    ecvAICoreUi::selectModelRow(m_modelCombo, keepFilename, -1);
+    // Still syncing: refresh the config path without emitting
+    // modelSelectionChanged — the dialog construction used to mirror this
+    // auto-picked row back into the matching batch tab and record it as an
+    // explicit user choice, pinning F32 across restarts.
     updateModelPathFromCombo();
+    m_syncingModelControls = false;
     updateThresholdVisibility();
 }
 
@@ -336,15 +343,22 @@ void YOLOLiveWidget::syncModelControlsFrom(const QComboBox* modelCombo,
     if (deviceIndex >= 0) m_deviceCombo->setCurrentIndex(deviceIndex);
     m_threadsSpin->setRange(threadsSpin->minimum(), threadsSpin->maximum());
     m_threadsSpin->setValue(threadsSpin->value());
+    // Still syncing: refresh the config path without emitting
+    // modelSelectionChanged (mirrored state, not a user pick).
+    updateModelPathFromCombo();
     m_syncingModelControls = false;
     m_config.device = deviceId();
     m_config.threads = threadCount();
-    updateModelPathFromCombo();
 }
 
 void YOLOLiveWidget::updateModelPathFromCombo() {
-    if (m_syncingModelControls) return;
+    // The config path always tracks the combo; the signal is emitted only
+    // for user-driven changes — the rebuild/populate/sync paths call this
+    // while m_syncingModelControls is still set so that the mirrored state
+    // is never written back into the batch tabs (and never recorded as an
+    // explicit model choice there).
     m_config.modelPath = resolveModelPath();
+    if (m_syncingModelControls) return;
     emit modelSelectionChanged(modelFilename());
 }
 
@@ -377,8 +391,8 @@ bool YOLOLiveWidget::onPrepareStream() {
     if (m_config.modelPath.isEmpty() ||
         !QFileInfo::exists(m_config.modelPath)) {
         emit logMessage(
-                tr("[YOLO] Model not available — download it in "
-                   "the Image tab first."));
+                tr("[YOLO] Model file not found — download it from a task "
+                   "tab first."));
         return false;
     }
 #ifdef AICore_ENABLED

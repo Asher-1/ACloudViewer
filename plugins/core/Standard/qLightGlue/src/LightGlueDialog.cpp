@@ -54,7 +54,11 @@ bool isSupportedImageFile(const QString& filePath) {
 }
 
 bool isValidCachedGguf(const QFileInfo& fi) {
-    return ecvModelDownloader::isValidCachedFile(fi.absoluteFilePath());
+    return ecvAssetIntegrity::isVerified(
+            fi.absoluteFilePath(),
+            {QCryptographicHash::Sha256,
+             ecvAssetIntegrity::PinnedDigest(fi.fileName())},
+            64 * 1024, true, ecvAssetIntegrity::OnMiss::CheapChecksOnly);
 }
 
 QStringList listImageFilesInDir(const QString& dirPath) {
@@ -1094,6 +1098,10 @@ void LightGlueDialog::startAlikedExtractorDownload(
     ecvModelDownloader::Request req;
     req.url = url;
     req.destPath = dest;
+    // Content identity from the release digest registry — streamed SHA-256
+    // check at ingestion (truncation and corruption both caught).
+    req.contentAnchor = {QCryptographicHash::Sha256,
+                         ecvAssetIntegrity::PinnedDigest(extractorFilename)};
     m_downloader->download(req);
 }
 
@@ -1237,6 +1245,10 @@ void LightGlueDialog::startDownload(const LightGlueBuiltinModel& model) {
     ecvModelDownloader::Request req;
     req.url = model.downloadUrl;
     req.destPath = dest;
+    // Content identity from the release digest registry — streamed SHA-256
+    // check at ingestion (truncation and corruption both caught).
+    req.contentAnchor = {QCryptographicHash::Sha256,
+                         ecvAssetIntegrity::PinnedDigest(model.filename)};
     m_downloader->download(req);
 }
 

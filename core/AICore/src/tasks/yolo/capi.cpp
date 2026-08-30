@@ -14,6 +14,7 @@
 #include <cstring>
 #include <map>
 #include <mutex>
+#include <array>
 #include <new>
 #include <sstream>
 #include <string>
@@ -25,10 +26,12 @@
 #include "common/ggml_backend_registry.hpp"
 #include "common/ggml_backend_utils.hpp"
 #include "common/model_cache.hpp"
+#include "gguf.h"
 #include "tasks/yolo/backend.hpp"
 #include "tasks/yolo/yolo_clip_text_graph.hpp"
 #include "tasks/yolo/yolo_graph.hpp"
 #include "tasks/yolo/yolo_image.hpp"
+#include "tasks/yolo/yolo_mclip_text_graph.hpp"
 #include "tasks/yolo/yolo_mobileclip_graph.hpp"
 #include "tasks/yolo/yolo_postprocess.hpp"
 
@@ -88,6 +91,10 @@ struct aicore_yolo_options {
     // Open-vocabulary knobs (YOLO-World / YOLOE).
     std::vector<std::string> classes;
     std::string text_model_path;
+    // YOLOE visual prompts (SAVPE): original-image pixel boxes, four floats
+    // per box; empty = text/vocabulary path. See
+    // aicore_yolo_options_set_visual_prompts.
+    std::vector<float> visual_boxes;
 };
 
 struct aicore_yolo_segment_result {
@@ -145,6 +152,34 @@ struct TextEmbedCacheEntry {
 std::mutex g_text_embed_cache_mutex;
 std::map<std::string, TextEmbedCacheEntry> g_text_embed_cache;
 
+// Probe a text-encoder GGUF for the mclip architecture and its projection
+// target space (KVs "mclip.arch" / "mclip.target_space", written by
+// core/AICore/src/tasks/yolo/tools/convert_mclip_gguf.py). Header-only read, no tensor data mapped.
+// Returns "" when the file is not an mclip bridge; otherwise the target
+// space id ("clipb32" = OpenAI CLIP ViT-B/32 for World, "mobileclip2b" =
+// MobileCLIP2-B for YOLOE). Older bridge files without the key default to
+// "clipb32".
+std::string text_gguf_target_space(const std::string& path) {
+    gguf_init_params ip{};
+    ip.no_alloc = true;
+    ip.ctx = nullptr;
+    gguf_context* g = gguf_init_from_file(path.c_str(), ip);
+    if (!g) return "";
+    const int arch = gguf_find_key(g, "mclip.arch");
+    if (arch < 0) {
+        gguf_free(g);
+        return "";
+    }
+    std::string space = "clipb32";
+    const int kid = gguf_find_key(g, "mclip.target_space");
+    if (kid >= 0 && gguf_get_kv_type(g, kid) == GGUF_TYPE_STRING) {
+        const char* v = gguf_get_val_str(g, kid);
+        if (v && v[0]) space = v;
+    }
+    gguf_free(g);
+    return space;
+}
+
 // Encode the open-vocabulary class list through the matching text tower
 // (MobileCLIP for YOLOE — its GGUF declares yolo.text_model — and CLIP for
 // YOLO-World) and queue the embedding as the session's text input. The
@@ -160,7 +195,7 @@ bool encode_open_vocab_classes(aicore_yolo_ctx* ctx,
         return false;
     }
     const int nc = s->world_nc;
-    const size_t dim = 512;  // CLIP / MobileCLIP embedding dim
+    const size_t dim = 512;  // CLIP / MobileCLIP / M-CLIP embedding dim
 
     // Cache lookup (pure-function memoization; see the comment above).
     std::string cache_key = opts->text_model_path + '\x1f';
@@ -182,7 +217,47 @@ bool encode_open_vocab_classes(aicore_yolo_ctx* ctx,
 
     std::vector<float> embed((size_t)nc * dim, 0.0f);
     const bool yoloe = !s->model.meta.text_model.empty();
-    if (yoloe) {
+    const std::string mclip_target =
+            text_gguf_target_space(opts->text_model_path);
+    const bool mclip = !mclip_target.empty();
+    if (mclip) {
+        // Space gate: the bridge GGUF declares which text space its
+        // projection lands in ("clipb32" for World, "mobileclip2b" for
+        // YOLOE) — the detector head consumes that space and nothing else.
+        const bool compatible =
+                yoloe ? (mclip_target == "mobileclip2b")
+                      : (mclip_target == "clipb32");
+        if (!compatible) {
+            ctx->last_error =
+                    yoloe ? "YOLOE detectors require a text tower projecting "
+                           "into the MobileCLIP2-B space (mclip.target_space="
+                           "mobileclip2b)"
+                          : "YOLO-World detectors require a text tower "
+                            "projecting into the CLIP ViT-B/32 space "
+                            "(mclip.target_space=clipb32)";
+            return false;
+        }
+        // Multilingual bridge: DistilBERT tower projected into the detector's
+        // text space — the head consumes it unchanged.
+        mclip::TextSession* ms =
+                mclip::text_create_session(opts->text_model_path, ctx->threads);
+        if (ms == nullptr) {
+            ctx->last_error = "failed to load M-CLIP text model: " +
+                              opts->text_model_path;
+            return false;
+        }
+        for (int i = 0; i < nc; ++i) {
+            if (!mclip::text_encode_string(
+                        ms, ctx->class_names_override[i].c_str(),
+                        embed.data() + (size_t)i * dim)) {
+                ctx->last_error = "failed to encode class '" +
+                                  ctx->class_names_override[i] + "'";
+                mclip::text_free_session(ms);
+                return false;
+            }
+        }
+        mclip::text_free_session(ms);
+    } else if (yoloe) {
         mobileclip::Session* ms =
                 mobileclip::create_session(opts->text_model_path, ctx->threads);
         if (ms == nullptr) {
@@ -359,6 +434,58 @@ AICORE_CAPI void aicore_yolo_options_set_text_model(
     opts->text_model_path = text_model_path != nullptr ? text_model_path : "";
 }
 
+// Sanity cap: every prompt adds a graph branch and a mask plane; 64 boxes
+// is far past any interactive labeling session.
+constexpr int32_t kMaxVisualPrompts = 64;
+
+AICORE_CAPI void aicore_yolo_options_set_visual_prompts(
+        aicore_yolo_options* opts, const float* boxes_xyxy, int32_t count) {
+    if (opts == nullptr) return;
+    opts->visual_boxes.clear();
+    if (boxes_xyxy == nullptr || count <= 0) return;
+    const int32_t n = std::min(count, kMaxVisualPrompts);
+    for (int32_t i = 0; i < n; ++i) {
+        const float x1 = boxes_xyxy[i * 4 + 0];
+        const float y1 = boxes_xyxy[i * 4 + 1];
+        const float x2 = boxes_xyxy[i * 4 + 2];
+        const float y2 = boxes_xyxy[i * 4 + 3];
+        // Degenerate boxes carry no usable appearance; drop them instead of
+        // handing the encoder an empty mask (which would yield a zero
+        // embedding that matches nothing).
+        if (!std::isfinite(x1) || !std::isfinite(y1) || !std::isfinite(x2) ||
+            !std::isfinite(y2) || x2 <= x1 || y2 <= y1) {
+            continue;
+        }
+        opts->visual_boxes.insert(opts->visual_boxes.end(), {x1, y1, x2, y2});
+    }
+}
+
+AICORE_CAPI int32_t aicore_yolo_options_get_visual_prompt_count(
+        const aicore_yolo_options* opts) {
+    return opts != nullptr ? (int32_t)(opts->visual_boxes.size() / 4) : 0;
+}
+
+AICORE_CAPI int aicore_yolo_gguf_has_savpe(const char* gguf_path) {
+    if (gguf_path == nullptr) return 0;
+    gguf_init_params ip{};  // header only, no tensor mapping
+    ip.no_alloc = true;
+    ip.ctx = nullptr;
+    gguf_context* g = gguf_init_from_file(gguf_path, ip);
+    if (!g) return 0;
+    const int64_t id = gguf_find_key(g, "yolo.savpe");
+    const int has = id >= 0 ? (gguf_get_val_u32(g, id) != 0) : 0;
+    gguf_free(g);
+    return has;
+}
+
+AICORE_CAPI int aicore_yolo_context_has_visual_prompts(
+        const aicore_yolo_ctx* ctx) {
+    return ctx != nullptr && ctx->engine != nullptr &&
+                   ctx->engine->visual_mode()
+               ? 1
+               : 0;
+}
+
 AICORE_CAPI float aicore_yolo_options_get_conf_thres(
         const aicore_yolo_options* opts) {
     return opts != nullptr ? opts->conf_thres : 0.25f;
@@ -398,6 +525,19 @@ AICORE_CAPI aicore_yolo_ctx* aicore_yolo_load_opts(
             // ride into the session options at creation.
             if (!opts->classes.empty())
                 sopts.world_nc = (int)opts->classes.size();
+            // Visual prompts take precedence over a class list: the head's
+            // cls_pe comes from the savpe encoder, nc = prompt count.
+            if (!opts->visual_boxes.empty()) {
+                if (!aicore_yolo_gguf_has_savpe(gguf_path)) {
+                    ctx->last_error =
+                            "visual prompts need a YOLOE GGUF converted with "
+                            "savpe weights (yolo.savpe=1); this checkpoint "
+                            "ships none";
+                    return ctx;
+                }
+                sopts.visual_count = (int)(opts->visual_boxes.size() / 4);
+                sopts.visual_boxes = opts->visual_boxes;
+            }
         } else {
             sopts.threads = ctx->threads;
         }
@@ -413,15 +553,31 @@ AICORE_CAPI aicore_yolo_ctx* aicore_yolo_load_opts(
         }
         // Open-vocabulary setup: user classes override the checkpoint
         // vocabulary in every result, then get encoded through the matching
-        // text tower (no-op when the session uses the embedded vocabulary).
+        // text tower. The override is the text-encoding contract, so it only
+        // applies to text-conditioned models: a prompt-free YOLOE checkpoint
+        // rejects set_classes outright (upstream AssertionError) and matches
+        // its built-in LRPC vocabulary. Storing the caller's list for such a
+        // model used to REPLACE the GGUF's stored class-name table, so every
+        // detection cid left the tiny override and the plugin label degraded
+        // to "class <id>" (the class-name accessor returns nullptr there).
         if (ctx->engine != nullptr && opts != nullptr &&
-            !opts->classes.empty()) {
+            !opts->classes.empty() && ctx->engine->model.has_text_input &&
+            sopts.visual_count == 0) {
             ctx->class_names_override = opts->classes;
-            if (ctx->engine->model.has_text_input) {
-                if (!encode_open_vocab_classes(ctx, opts)) {
-                    yolo::free_session(ctx->engine);
-                    ctx->engine = nullptr;
-                }
+            if (!encode_open_vocab_classes(ctx, opts)) {
+                yolo::free_session(ctx->engine);
+                ctx->engine = nullptr;
+            }
+        }
+        // Visual-prompt sessions label detections object0..object{Q-1}
+        // (official semantics: visual prompts group examples, they do not
+        // carry names), so the typed result accessors resolve every cid.
+        if (ctx->engine != nullptr && sopts.visual_count > 0) {
+            ctx->class_names_override.reserve(
+                    (size_t)sopts.visual_count);
+            for (int i = 0; i < sopts.visual_count; ++i) {
+                ctx->class_names_override.push_back("object" +
+                                                    std::to_string(i));
             }
         }
     } catch (const std::exception& e) {
@@ -502,6 +658,10 @@ char* run_detect(aicore_yolo_ctx* ctx,
             ctx->last_error = "graph rebuild for the letterbox canvas failed";
             return nullptr;
         }
+        if (s->visual_mode() && !yolo::session_prepare_visual_masks(s, info)) {
+            ctx->last_error = "visual prompt rasterization failed";
+            return nullptr;
+        }
         const double preprocess_ms = yolo::ms_since(t0);
 
         t0 = yolo::Clock::now();
@@ -525,7 +685,7 @@ char* run_detect(aicore_yolo_ctx* ctx,
         std::vector<yolo::Detection> dets =
                 yolo::postprocess(raw, no, na, s->model.meta, s->anchors.data(),
                                   s->anchor_strides.data(), cfg);
-        yolo::unscale_boxes(dets, info);
+        yolo::unscale_boxes(dets, info, width, height);
         const double postprocess_ms = yolo::ms_since(t0);
 
         t0 = yolo::Clock::now();
@@ -1060,12 +1220,49 @@ AICORE_CAPI aicore_yolo_segment_result* aicore_yolo_seg_rgb(
             ctx->last_error = "graph rebuild failed";
             return nullptr;
         }
+        if (s->visual_mode() && !yolo::session_prepare_visual_masks(s, info)) {
+            ctx->last_error = "visual prompt rasterization failed";
+            return nullptr;
+        }
         const double preprocess_ms = yolo::ms_since(t0);
 
         t0 = yolo::Clock::now();
         if (!yolo::session_run(s, canvas.data())) {
             ctx->last_error = "YOLO segment inference failed";
             return nullptr;
+        }
+        if (const char* dump = std::getenv("AICORE_SAVPE_DUMP")) {
+            if (s->savpe_out != nullptr) {
+                std::vector<float> vpe(
+                        (size_t)ggml_nelements(s->savpe_out));
+                ggml_backend_tensor_get(s->savpe_out, vpe.data(), 0,
+                                        vpe.size() * sizeof(float));
+                FILE* f = std::fopen(dump, "wb");
+                if (f != nullptr) {
+                    std::fwrite(vpe.data(), sizeof(float), vpe.size(), f);
+                    std::fclose(f);
+                }
+            }
+            std::vector<std::pair<ggml_tensor*, std::string>> nodes = {
+                    {s->savpe_x, "_x.bin"}, {s->savpe_y, "_y.bin"}};
+            for (int l = 0; l < 3; l++) {
+                nodes.push_back({s->savpe_fpn_dbg[l],
+                                 "_fpn" + std::to_string(l) + ".bin"});
+                nodes.push_back({s->savpe_cv2_dbg[l],
+                                 "_cv2" + std::to_string(l) + ".bin"});
+            }
+            for (auto& [node, suffix] : nodes) {
+                if (node == nullptr) continue;
+                std::vector<float> d((size_t)ggml_nelements(node));
+                ggml_backend_tensor_get(node, d.data(), 0,
+                                        d.size() * sizeof(float));
+                std::string path = std::string(dump) + suffix;
+                FILE* f2 = std::fopen(path.c_str(), "wb");
+                if (f2 != nullptr) {
+                    std::fwrite(d.data(), sizeof(float), d.size(), f2);
+                    std::fclose(f2);
+                }
+            }
         }
 
         // Read detect output
@@ -1101,8 +1298,9 @@ AICORE_CAPI aicore_yolo_segment_result* aicore_yolo_seg_rgb(
                 dets, raw, na, s->model.meta, proto, proto_w, proto_h,
                 info.imgsz_w, info.imgsz_h);
 
-        // Unscale boxes to original image coordinates
-        yolo::unscale_boxes(dets, info);
+        // Unscale boxes to original image coordinates (clipped to the
+        // source image — upstream clip_boxes).
+        yolo::unscale_boxes(dets, info, width, height);
 
         // Masks follow the boxes into the original image space: the canvas
         // windows compose_masks produced would overlay the wrong region on

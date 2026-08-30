@@ -62,6 +62,14 @@ struct SessionOptions {
     // The class count fixes the text-input shape and every nc-dependent
     // tensor in the graph, so changing it requires a new session.
     int world_nc = 0;
+    // Visual-prompt mode (YOLOE savpe): box count > 0 switches the session to
+    // image-derived class embeddings (one per box) and fixes nc = count,
+    // exactly like world_nc does for the text path. Box coordinates ride on
+    // the session options (original-image pixels, [x1, y1, x2, y2] per box)
+    // and are rasterized to P3 binary masks per image via
+    // session_prepare_visual_masks.
+    int visual_count = 0;
+    std::vector<float> visual_boxes;  // [4 * visual_count], original pixels
 };
 
 // Detection result -----------------------------------------------------------
@@ -168,6 +176,16 @@ struct ModelDef {
     // embeddings ([nc, 512] row-major, empty when the GGUF ships none).
     bool has_text_input = false;
     std::vector<float> vocab_txt;
+
+    // YOLOE visual-prompt support (KV yolo.savpe = 1): the GGUF carries the
+    // head's SAVPE conv weights (savpe.cv*_w/b tensors). When present, the
+    // caller may drive the head with box-derived class embeddings instead of
+    // the MobileCLIP text path. savpe_fpn_ops lists the op indices producing
+    // the FPN features [P3, P4, P5] the savpe encoder consumes (resolved at
+    // load time by walking the world head's box/embed branch chains back to
+    // their shared producer); empty when the GGUF has no savpe.
+    bool has_savpe = false;
+    std::vector<int> savpe_fpn_ops;
 
     // Tiny F32 scalar constants the graph builder bakes as build-time graph
     // constants (max_sigmoid_attn head bias, world_detect per-level

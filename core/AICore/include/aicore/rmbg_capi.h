@@ -197,6 +197,10 @@ typedef struct aicore_rmbg_model_entry {
 AICORE_CAPI int aicore_rmbg_model_count(void);
 /** Returns the catalog entry at `index` (NULL when out of range). */
 AICORE_CAPI const aicore_rmbg_model_entry* aicore_rmbg_model_at(int index);
+/** Index of the entry the catalog declares as its default — the row
+ *  carrying the visible "(recommended)" marker. UI combos should select
+ *  this row when no explicit user choice is persisted. */
+AICORE_CAPI int aicore_rmbg_model_default_index(void);
 /** Returns the catalog entry whose filename matches (NULL when not
  *  found). */
 AICORE_CAPI const aicore_rmbg_model_entry* aicore_rmbg_model_by_filename(

@@ -18,7 +18,7 @@
 #include <ecvClickableImageLabel.h>
 #include <ecvImage.h>
 #include <ecvMainAppInterface.h>
-#include <ecvModelDownloader.h>
+#include "ecvModelDownloader.h"
 #include <ecvPluginDbNaming.h>
 
 #include <QButtonGroup>
@@ -60,8 +60,18 @@ const aicore_sam3_model_entry* catalogEntry(const QString& filename) {
 
 bool isValidCatalogModel(const QString& path, const QString& filename) {
     const auto* entry = catalogEntry(filename);
-    return entry && ecvModelDownloader::isValidCachedFile(path, 64 * 1024, true,
-                                                          entry->size_bytes);
+    // Presence check: integrity-ledger stat-trust (digest pinned per
+    // release asset), falling back to the catalog's exact size for files
+    // downloaded before the ledger existed. Never hashes (multi-GB GGUFs
+    // on dialog paths).
+    return entry &&
+           ecvAssetIntegrity::isVerified(
+                   path,
+                   {QCryptographicHash::Sha256,
+                    ecvAssetIntegrity::PinnedDigest(
+                            QString::fromUtf8(entry->filename))},
+                   64 * 1024, true, ecvAssetIntegrity::OnMiss::CheapChecksOnly,
+                   entry->size_bytes);
 }
 
 }  // namespace
@@ -1009,8 +1019,10 @@ void SAM3Dialog::startDownload(bool thenRun) {
         }
         return;
     }
-    ecvModelDownloader::removeInvalidCacheFile(dest, 64 * 1024, true,
-                                               entry->size_bytes);
+    ecvAssetIntegrity::removeIfNotVerified(dest, {}, 64 * 1024, true,
+                                           ecvAssetIntegrity::OnMiss::
+                                                   CheapChecksOnly,
+                                           entry->size_bytes);
 
     QDir().mkpath(cacheDir);
     m_downloadInProgress = true;
@@ -1034,10 +1046,11 @@ void SAM3Dialog::startDownload(bool thenRun) {
     ecvModelDownloader::Request req;
     req.url = QString::fromUtf8(entry->download_url);
     req.destPath = dest;
-    // The catalog sizes are verified against the GitHub Release API; the
-    // downloader deletes the file when the size mismatches (truncated/CDN
-    // error pages that still carry the GGUF magic).
-    req.expectedSize = entry->size_bytes;
+    // Content identity from the release digest registry — streamed SHA-256
+    // check at ingestion (truncation and corruption both caught, no size
+    // guard needed); the verified state is recorded in the ledger.
+    req.contentAnchor = {QCryptographicHash::Sha256,
+                         ecvAssetIntegrity::PinnedDigest(filename)};
     m_modelDownloader->download(req);
 }
 
@@ -1292,6 +1305,10 @@ int SAM3Dialog::exportMasksToDb(ImageTabUi* target) {
     }
     const QString deviceTag =
             ecvPluginDbNaming::deviceTagFromName(m_settings.device);
+    // Model tag keeps runs from different checkpoint variants separable
+    // in the DB tree (source + device alone collide across variants).
+    const QString modelTag =
+            ecvPluginDbNaming::modelTagFromFilename(modelPath());
     const QString sourceLabel =
             u.currentImagePath.isEmpty()
                     ? QStringLiteral("canvas")
@@ -1302,8 +1319,8 @@ int SAM3Dialog::exportMasksToDb(ImageTabUi* target) {
         if (mask.isNull()) continue;
         const int id = u.lastResult.instanceIds.value(i, i + 1);
         const QString name = ecvPluginDbNaming::makeUnique(
-                QStringLiteral("SAM3_%1_%2_mask_obj%3")
-                        .arg(sourceLabel, deviceTag)
+                QStringLiteral("SAM3_%1_%2_%3_mask_obj%4")
+                        .arg(modelTag, sourceLabel, deviceTag)
                         .arg(id),
                 m_app);
         auto* img = new ccImage(mask, name);
@@ -1820,12 +1837,15 @@ void SAM3Dialog::exportToDb(ImageTabUi* target) {
 
     const QString deviceTag =
             ecvPluginDbNaming::deviceTagFromName(m_settings.device);
+    const QString modelTag =
+            ecvPluginDbNaming::modelTagFromFilename(modelPath());
     const QString sourceLabel =
             u.currentImagePath.isEmpty()
                     ? QStringLiteral("canvas")
                     : QFileInfo(u.currentImagePath).completeBaseName();
     const QString name = ecvPluginDbNaming::makeUnique(
-            QStringLiteral("SAM3_%1_%2").arg(sourceLabel, deviceTag), m_app);
+            QStringLiteral("SAM3_%1_%2_%3").arg(modelTag, sourceLabel, deviceTag),
+            m_app);
 
     auto* img = new ccImage(annotated, name);
     img->setMetaData(QStringLiteral("SAM3"), true);
@@ -1928,9 +1948,9 @@ void SAM3Dialog::requestTestData() {
     if (m_downloadLabel) {
         m_downloadLabel->setVisible(true);
     }
-    if (ecvTestDataRepository::verifyZipIntegrity(
-                ecvTestDataRepository::zipPath(kind), info.expectedMd5,
-                info.expectedSize)) {
+    if (ecvAssetIntegrity::isVerified(
+                ecvTestDataRepository::zipPath(kind), info.anchor, 0, false,
+                ecvAssetIntegrity::OnMiss::DeepVerify)) {
         appendLog(tr("[Test data] Extracting cached archive..."));
         updateStatus(tr("Extracting SAM3 test data..."));
         repo.extractDataset(kind);

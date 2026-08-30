@@ -138,7 +138,8 @@ bool backend_ctx_graph_alloc(BackendCtx& ctx,
                              ::ggml_tensor* pin_input,
                              ::ggml_tensor* pin_output,
                              ::ggml_tensor* pin_text,
-                             ::ggml_tensor* pin_proto) {
+                             ::ggml_tensor* pin_proto,
+                             ::ggml_tensor* pin_masks) {
     if (ctx.sched) {
         /* Pre-flight: every node must be claimed by the GPU or the CPU half
          * of the scheduler. A node neither backend supports would leave the
@@ -187,6 +188,10 @@ bool backend_ctx_graph_alloc(BackendCtx& ctx,
             }
             if (ctx.gpu && pin_proto) {
                 ggml_backend_sched_set_tensor_backend(ctx.sched, pin_proto,
+                                                      ctx.gpu);
+            }
+            if (ctx.gpu && pin_masks) {
+                ggml_backend_sched_set_tensor_backend(ctx.sched, pin_masks,
                                                       ctx.gpu);
             }
             if (!ggml_backend_sched_alloc_graph(ctx.sched, graph)) {

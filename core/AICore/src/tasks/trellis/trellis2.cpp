@@ -41,10 +41,11 @@ namespace {
 
 // Thread-local engine configuration set via trellis2_set_* (replaces the
 // upstream TRELLIS2_DEVICE / TRELLIS2_N_THREADS / TRELLIS2_SDPA_EXACT /
-// TRELLIS2_TIMING environment variables; AICore reads no environment
-// variables for logic control).
+// TRELLIS2_SDPA_FLASH / TRELLIS2_TIMING environment variables; AICore reads
+// no environment variables for logic control).
 thread_local int tls_n_threads = 0;  // 0 = hardware concurrency
-thread_local bool tls_sdpa_exact = false;
+thread_local bool tls_sdpa_exact = false;  // force the unchunked exact path
+thread_local bool tls_sdpa_flash = false;  // opt back into flash attention
 thread_local bool tls_timing = false;
 
 inline void set_error(std::string *error, const std::string &msg) {
@@ -77,6 +78,12 @@ void trellis2_set_threads(int n_threads) {
 }
 
 void trellis2_set_sdpa_exact(bool exact) { tls_sdpa_exact = exact; }
+
+// Opt back into ggml_flash_attn_ext (the pre-parity default). CUDA's flash
+// kernel accumulates K/V in F16 MMA (~3e-3 rel-L2 per forward), which the
+// upstream reference found collapses the HR shape decode's subdivision
+// predictions — the exact materialized path is therefore the default.
+void trellis2_set_sdpa_flash(bool flash) { tls_sdpa_flash = flash; }
 
 void trellis2_set_timing(bool enabled) { tls_timing = enabled; }
 
@@ -245,6 +252,12 @@ ggml_backend_t init_best_backend(std::string &name_out,
     // Vulkan) from the library directory before querying the registry; every
     // other AICore task does this in its own backend init.
     ggml_common::load_backends_once();
+    // Numerical parity with the upstream reference (trellis-ggml) comes from
+    // the ggml patches (trellis_f32_route/0001: GGML_PREC_F32 routes
+    // Vulkan/CUDA GEMMs to pure-fp32 pipelines) plus the engine-side sdpa
+    // exact default and the PREC_F32 projection sites below — no environment
+    // mechanism is involved (ggml's cuBLAS handle uses CUBLAS_COMPUTE_32F,
+    // i.e. TF32 is never engaged).
     std::string want = device ? device : "";
     if (want != "cpu") {
         std::string fam;
@@ -485,14 +498,16 @@ namespace {
 // O(L) memory). q3/k3/v3 are [head_dim, n_head, L]; returns [n_head*head_dim,
 // L_q].
 //
-// Flash is the default for both flow DiTs: it is bit-faithful to full softmax
-// on CPU with F32 accumulation (validated to ~1e-4 rel-L2, identical to the
-// exact materialized path) but avoids the [L_k, L_q, heads] score matrix —
-// which is both the memory wall (the HR cascade's ~49k voxels would need >100
-// GB) and, on GPU, ~30% of the forward's wall time (the softmax + the
-// permute/cont copies around it). On the CUDA F16-MMA kernel flash costs ~3e-3
-// rel-L2 per forward, immaterial to the final mesh. Set TRELLIS2_SDPA_EXACT to
-// force the old materialized path (e.g. to reproduce the tightest GPU numbers).
+// Numerical parity (upstream trellis-ggml): CPU flash accumulates in F32 but
+// its tiling order is not bit-faithful to the materialized path, and the
+// chaotic CFG samplers amplify the ~1e-4 gap into different voxel sets;
+// CUDA's flash kernel accumulates in F16 MMA outright (~3e-3 rel-L2 per
+// forward, collapsing the HR shape decode's subdivision predictions). The
+// materialized F32 path is therefore the DEFAULT: one big score matrix when
+// it fits the memory budget, otherwise Q-dim chunking which is
+// mathematically identical (each softmax row is independent) at O(L) memory.
+// Flash remains opt-in via trellis2_set_sdpa_flash; trellis2_set_sdpa_exact
+// forces the unchunked materialized path.
 ggml_tensor *sdpa_auto(ggml_context *ctx,
                        ggml_tensor *q3,
                        ggml_tensor *k3,
@@ -506,20 +521,49 @@ ggml_tensor *sdpa_auto(ggml_context *ctx,
     ggml_tensor *vp =
             ggml_cont(ctx, ggml_permute(ctx, v3, 0, 2, 1, 3));  // [hd, Lk, H]
 
-    const bool exact = tls_sdpa_exact;
-    if (!exact) {
+    if (tls_sdpa_flash && !tls_sdpa_exact) {
         ggml_tensor *o = ggml_flash_attn_ext(ctx, qp, kp, vp, nullptr, scale,
                                              0.0f, 0.0f);
         ggml_flash_attn_ext_set_prec(o, GGML_PREC_F32);
         return ggml_reshape_2d(ctx, o, C, o->ne[2]);  // [C, Lq]
     }
-    ggml_tensor *sc = ggml_mul_mat(ctx, kp, qp);  // [Lk, Lq, H]
-    sc = ggml_soft_max_ext(ctx, sc, nullptr, scale, 0.0f);
+
+    const int64_t Lq = qp->ne[1], Lk = kp->ne[1], H = qp->ne[2];
+    // f32 score-matrix size; keep it under a conservative memory budget.
+    const uint64_t full = (uint64_t)Lq * Lk * H * sizeof(float);
+    const bool fits = full <= ((uint64_t)12 << 30);
+    if (tls_sdpa_exact || fits) {
+        ggml_tensor *sc = ggml_mul_mat(ctx, kp, qp);              // [Lk, Lq, H]
+        ggml_mul_mat_set_prec(sc, GGML_PREC_F32);
+        sc = ggml_soft_max_ext(ctx, sc, nullptr, scale, 0.0f);
+        ggml_tensor *vt = ggml_cont(
+                ctx, ggml_permute(ctx, vp, 1, 0, 2, 3));  // [Lk, hd, H]
+        ggml_tensor *o = ggml_mul_mat(ctx, vt, sc);       // [hd, Lq, H]
+        ggml_mul_mat_set_prec(o, GGML_PREC_F32);
+        o = ggml_cont(ctx, ggml_permute(ctx, o, 0, 2, 1, 3));  // [hd, H, Lq]
+        return ggml_reshape_2d(ctx, o, C, o->ne[2]);           // [C, Lq]
+    }
+    // Chunked exact SDPA along the query dim (the HR cascade's ~49k tokens):
+    // identical math to the full path, bounded score memory.
+    const uint64_t chunk_budget = (uint64_t)4 << 30;
+    int64_t bq = (int64_t)(chunk_budget / ((uint64_t)Lk * H * sizeof(float)));
+    bq = std::max<int64_t>(1, std::min(bq, Lq));
     ggml_tensor *vt =
             ggml_cont(ctx, ggml_permute(ctx, vp, 1, 0, 2, 3));  // [Lk, hd, H]
-    ggml_tensor *o = ggml_mul_mat(ctx, vt, sc);                 // [hd, Lq, H]
-    o = ggml_cont(ctx, ggml_permute(ctx, o, 0, 2, 1, 3));       // [hd, H, Lq]
-    return ggml_reshape_2d(ctx, o, C, o->ne[2]);                // [C, Lq]
+    ggml_tensor *o = nullptr;
+    for (int64_t off = 0; off < Lq; off += bq) {
+        const int64_t n = std::min(bq, Lq - off);
+        ggml_tensor *qc = ggml_view_3d(ctx, qp, qp->ne[0], n, H, qp->nb[1],
+                                       qp->nb[2], (size_t)off * qp->nb[1]);
+        ggml_tensor *sc = ggml_mul_mat(ctx, kp, qc);  // [Lk, n, H]
+        ggml_mul_mat_set_prec(sc, GGML_PREC_F32);
+        sc = ggml_soft_max_ext(ctx, sc, nullptr, scale, 0.0f);
+        ggml_tensor *oc = ggml_mul_mat(ctx, vt, sc);  // [hd, n, H]
+        ggml_mul_mat_set_prec(oc, GGML_PREC_F32);
+        oc = ggml_cont(ctx, ggml_permute(ctx, oc, 0, 2, 1, 3));  // [hd, H, n]
+        o = o ? ggml_concat(ctx, o, oc, 2) : oc;                 // [hd, H, Σn]
+    }
+    return ggml_reshape_2d(ctx, o, C, o->ne[2]);  // [C, Lq]
 }
 
 // Sinusoidal timestep embedding (cos|sin), matching TimestepEmbedder.
@@ -655,6 +699,9 @@ bool trellis2_ss_flow_forward(trellis2_ss_flow_model *m,
 
     auto lin = [&](ggml_tensor *in, const std::string &pfx) -> ggml_tensor * {
         ggml_tensor *y = ggml_mul_mat(ctx, W(pfx + ".weight"), in);
+        ggml_mul_mat_set_prec(
+                y, GGML_PREC_F32);  // f32 accumulate: f16 MMA drift gets
+                                    // amplified by the chaotic sampler
         ggml_tensor *b = W(pfx + ".bias");
         if (b) y = ggml_add(ctx, y, b);
         return y;
@@ -1604,6 +1651,9 @@ bool trellis2_dino_encode(trellis2_dino_model *m,
 
     auto lin = [&](ggml_tensor *in, const std::string &pfx) -> ggml_tensor * {
         ggml_tensor *y = ggml_mul_mat(ctx, W(pfx + ".weight"), in);
+        ggml_mul_mat_set_prec(
+                y, GGML_PREC_F32);  // f32 accumulate: f16 MMA drift gets
+                                    // amplified by the chaotic sampler
         ggml_tensor *b = Wopt(pfx + ".bias");
         if (b) y = ggml_add(ctx, y, b);
         return y;
@@ -1646,10 +1696,15 @@ bool trellis2_dino_encode(trellis2_dino_model *m,
         ggml_tensor *kp = ggml_cont(ctx, ggml_permute(ctx, k3, 0, 2, 1, 3));
         ggml_tensor *vp = ggml_cont(ctx, ggml_permute(ctx, v3, 0, 2, 1, 3));
         ggml_tensor *sc = ggml_mul_mat(ctx, kp, qp);  // [Nk, Nq, H]
+        ggml_mul_mat_set_prec(
+                sc,
+                GGML_PREC_F32);  // Vulkan coopmat2 would accumulate fp16
+                                 // otherwise (dino cond rel-L2 6e-4)
         sc = ggml_soft_max_ext(ctx, sc, nullptr, attn_scale, 0.0f);
         ggml_tensor *vt = ggml_cont(
                 ctx, ggml_permute(ctx, vp, 1, 0, 2, 3));       // [Nk, hd, H]
         ggml_tensor *o = ggml_mul_mat(ctx, vt, sc);            // [hd, Nq, H]
+        ggml_mul_mat_set_prec(o, GGML_PREC_F32);
         o = ggml_cont(ctx, ggml_permute(ctx, o, 0, 2, 1, 3));  // [hd, H, Nq]
         return ggml_reshape_2d(ctx, o, C, o->ne[2]);           // [C, Nq]
     };
@@ -2527,6 +2582,9 @@ bool trellis2_slat_flow_forward(trellis2_slat_flow_model *m,
 
     auto lin = [&](ggml_tensor *in, const std::string &pfx) -> ggml_tensor * {
         ggml_tensor *y = ggml_mul_mat(ctx, W(pfx + ".weight"), in);
+        ggml_mul_mat_set_prec(
+                y, GGML_PREC_F32);  // f32 accumulate: f16 MMA drift gets
+                                    // amplified by the chaotic sampler
         ggml_tensor *b = W(pfx + ".bias");
         if (b) y = ggml_add(ctx, y, b);
         return y;
@@ -3240,6 +3298,9 @@ static bool shape_dec_run(trellis2_shape_dec_model *m,
         auto lin = [&](ggml_tensor *in,
                        const std::string &pfx) -> ggml_tensor * {
             ggml_tensor *y = ggml_mul_mat(ctx, W(pfx + ".weight"), in);
+            ggml_mul_mat_set_prec(
+                    y, GGML_PREC_F32);  // f32 accumulate (see the parity note
+                                        // on the flow-DiT lin lambdas)
             ggml_tensor *b = W(pfx + ".bias");
             if (b) y = ggml_add(ctx, y, b);
             return y;
@@ -3289,6 +3350,7 @@ static bool shape_dec_run(trellis2_shape_dec_model *m,
                 g = ggml_mul(ctx, g,
                              mask_t[k]);  // zero missing (broadcast [1,L])
                 ggml_tensor *y = ggml_mul_mat(ctx, wk, g);  // [Co, L]
+                ggml_mul_mat_set_prec(y, GGML_PREC_F32);  // f32 accumulate
                 acc = acc ? ggml_add(ctx, acc, y) : y;
             }
             return ggml_add(ctx, acc, b);
@@ -3906,6 +3968,9 @@ bool trellis2_shape_enc_encode(trellis2_shape_enc_model *m,
         auto lin = [&](ggml_tensor *in,
                        const std::string &pfx) -> ggml_tensor * {
             ggml_tensor *y = ggml_mul_mat(ctx, W(pfx + ".weight"), in);
+            ggml_mul_mat_set_prec(
+                    y, GGML_PREC_F32);  // f32 accumulate (see the parity note
+                                        // on the flow-DiT lin lambdas)
             ggml_tensor *b = W(pfx + ".bias");
             if (b) y = ggml_add(ctx, y, b);
             return y;
@@ -3950,6 +4015,7 @@ bool trellis2_shape_enc_encode(trellis2_shape_enc_model *m,
                 ggml_tensor *g = ggml_get_rows(ctx, x, idxs[k]);
                 g = ggml_mul(ctx, g, masks[k]);
                 ggml_tensor *y = ggml_mul_mat(ctx, wk, g);
+                ggml_mul_mat_set_prec(y, GGML_PREC_F32);  // f32 accumulate
                 acc = acc ? ggml_add(ctx, acc, y) : y;
             }
             return ggml_add(ctx, acc, b);

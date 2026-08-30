@@ -140,12 +140,23 @@ void letterbox_image(const Image& img,
     }
 }
 
-void unscale_boxes(std::vector<Detection>& dets, const LetterboxInfo& info) {
+void unscale_boxes(std::vector<Detection>& dets,
+                   const LetterboxInfo& info,
+                   int image_w,
+                   int image_h) {
     for (auto& d : dets) {
         d.x1 = (d.x1 - info.pad_w) / info.scale;
         d.y1 = (d.y1 - info.pad_h) / info.scale;
         d.x2 = (d.x2 - info.pad_w) / info.scale;
         d.y2 = (d.y2 - info.pad_h) / info.scale;
+        if (image_w > 0 && image_h > 0) {
+            // Upstream clip_boxes: keep unscaled boxes inside the source
+            // image (edge anchors can overshoot the letterbox canvas).
+            d.x1 = std::clamp(d.x1, 0.0f, (float)image_w);
+            d.x2 = std::clamp(d.x2, 0.0f, (float)image_w);
+            d.y1 = std::clamp(d.y1, 0.0f, (float)image_h);
+            d.y2 = std::clamp(d.y2, 0.0f, (float)image_h);
+        }
     }
 }
 

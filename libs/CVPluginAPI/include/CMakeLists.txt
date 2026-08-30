@@ -3,6 +3,7 @@ target_sources( ${PROJECT_NAME}
 	PRIVATE
 		${CMAKE_CURRENT_LIST_DIR}/CVPluginAPI.h
 		${CMAKE_CURRENT_LIST_DIR}/cvFileDialog.h
+		${CMAKE_CURRENT_LIST_DIR}/ecvAssetIntegrity.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvColorScaleSelector.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvColorScaleEditorDlg.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvColorScaleEditorWidget.h

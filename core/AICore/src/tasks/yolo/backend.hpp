@@ -114,12 +114,14 @@ ggml_backend_buffer_type_t backend_ctx_weight_buft(const BackendCtx& ctx);
  * CPU host memory. The function resets the scheduler internally
  * (ggml_backend_sched_reset clears ALL tensor→backend assignments), so
  * these MUST be passed here — assignments made by the caller before the
- * call are lost. pin_text/pin_proto cover the yolo world/segment leaves. */
+ * call are lost. pin_text/pin_proto/pin_masks cover the yolo world/segment
+ * and visual-prompt leaves. */
 bool backend_ctx_graph_alloc(BackendCtx& ctx, ::ggml_cgraph* graph,
                              ::ggml_tensor* pin_input = nullptr,
                              ::ggml_tensor* pin_output = nullptr,
                              ::ggml_tensor* pin_text = nullptr,
-                             ::ggml_tensor* pin_proto = nullptr);
+                             ::ggml_tensor* pin_proto = nullptr,
+                             ::ggml_tensor* pin_masks = nullptr);
 
 /* Run the graph on the bundle. Honors the AICore cancel token: returns
  * GGML_STATUS_ABORTED without launching compute when cancellation was

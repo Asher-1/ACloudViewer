@@ -37,7 +37,9 @@ extern "C" {
 #endif
 
 /** Returns the ABI version of the TRELLIS C API (bump on breaking ABI
- *  changes). */
+ *  changes). Version 2: preview callback + generate_ex, texture_mesh,
+ *  prepare_mesh, print-remesh and bake_projected_glb, sdpa_flash option,
+ *  generate_params gained preview_stride/keyframes. */
 AICORE_CAPI int aicore_trellis_abi_version(void);
 
 typedef struct aicore_trellis_ctx aicore_trellis_ctx;
@@ -99,6 +101,21 @@ typedef void (*aicore_trellis_progress_fn)(void* user,
                                            int step,
                                            int total);
 
+/** Optional live intermediate-preview callback. During generation the host
+ *  receives self-describing blobs so a viewer can watch the shape emerging:
+ *  "T2VOX01" voxel sets (magic[8], u32 res, u32 nvox, u16[3*nvox] coords in
+ *  [0,res)) during the SS / upsample stages and "T2MESH01" marching-cubes
+ *  mesh keyframes (magic[8], u32 nv, u32 nt, f32[3nv] verts, f32[3nv]
+ *  normals, i32[3nt] tris) replayed after the final decode. `data` is valid
+ *  only during the call (copy it). Fires on the generating thread. NULL
+ *  disables it. */
+typedef void (*aicore_trellis_preview_fn)(void* user,
+                                          int stage,
+                                          int step,
+                                          int total,
+                                          const void* data,
+                                          int len);
+
 /** GGUF paths for the pipeline. dino/ss_flow/ss_dec are required; the others
  *  select the available qualities (see file header). Any field may be NULL or
  *  "" to omit that model. */
@@ -141,6 +158,12 @@ AICORE_CAPI void aicore_trellis_options_set_shape_dec_placement(
  *  (debug; default 0). Replaces TRELLIS2_SDPA_EXACT upstream. */
 AICORE_CAPI void aicore_trellis_options_set_sdpa_exact(
         aicore_trellis_options* opts, int exact);
+/** Opt back into flash attention (debug; default 0 = the exact materialized
+ *  F32 path, which is the numerical-parity default — CUDA's flash kernel
+ *  accumulates K/V in F16 MMA and collapses the HR shape decode's
+ *  subdivision predictions). Replaces TRELLIS2_SDPA_FLASH upstream. */
+AICORE_CAPI void aicore_trellis_options_set_sdpa_flash(
+        aicore_trellis_options* opts, int flash);
 /** Enable per-forward stage timing logs (debug; default 0). Replaces
  *  TRELLIS2_TIMING upstream. */
 AICORE_CAPI void aicore_trellis_options_set_timing(aicore_trellis_options* opts,
@@ -172,7 +195,11 @@ AICORE_CAPI const char* aicore_trellis_backend_note(
 AICORE_CAPI void aicore_trellis_free_buffer(void* p);
 
 /** Per-generate parameters. 0 / negative values select the pipeline defaults
- *  (steps 12, guidance 7.5, texture_steps 12). */
+ *  (steps 12, guidance 7.5, texture_steps 12). preview_stride: emit a live
+ *  SS-voxel preview every N SS-flow steps (0 = ~4 across the run; <0 = only
+ *  the settled stage checkpoints). keyframes: replay N (<= 8) intermediate
+ *  shape-SLAT flow keyframes as coarse T2MESH01 meshes after the final
+ *  decode (0 = off). Previews require aicore_trellis_generate_ex. */
 typedef struct aicore_trellis_generate_params {
     int pipeline_type;   /**< aicore_trellis_pipeline_type */
     int background_mode; /**< aicore_trellis_background_mode */
@@ -180,6 +207,8 @@ typedef struct aicore_trellis_generate_params {
     int steps;         /**< <= 0 -> 12 */
     float guidance;    /**< < 0 -> 7.5 */
     int texture_steps; /**< <= 0 -> 12 */
+    int preview_stride; /**< 0 = auto, <0 = stage checkpoints only */
+    int keyframes;      /**< 0 = off, <= 8 */
 } aicore_trellis_generate_params;
 
 /** Run image-to-3D generation. image_bytes must be an encoded image
@@ -193,6 +222,22 @@ AICORE_CAPI aicore_trellis_mesh* aicore_trellis_generate(
         const aicore_trellis_generate_params* params,
         aicore_trellis_progress_fn progress,
         void* progress_user,
+        char* err,
+        int err_len);
+
+/** aicore_trellis_generate with live per-step previews (see
+ *  aicore_trellis_preview_fn and the preview_stride / keyframes param
+ *  fields). preview may be NULL (identical to aicore_trellis_generate). The
+ *  pipeline is NOT thread-safe: serialize calls per context. */
+AICORE_CAPI aicore_trellis_mesh* aicore_trellis_generate_ex(
+        aicore_trellis_ctx* ctx,
+        const void* image_bytes,
+        int image_len,
+        const aicore_trellis_generate_params* params,
+        aicore_trellis_progress_fn progress,
+        void* progress_user,
+        aicore_trellis_preview_fn preview,
+        void* preview_user,
         char* err,
         int err_len);
 
@@ -245,6 +290,90 @@ AICORE_CAPI uint8_t* aicore_trellis_bake_glb(const float* verts,
                                              int* out_len,
                                              char* err,
                                              int err_len);
+
+/** Standalone PBR texturing: mesh + reference image -> textured mesh.
+ *  Pass grid_feats = NULL / grid_nvox = 0 to derive the shape-encoder input
+ *  via QEF (mesh -> dual grid); otherwise pass the seven-channel decoded
+ *  dual grid from a previous aicore_trellis_generate (grid accessors).
+ *  pipeline_type must be AICORE_TRELLIS_PIPE_512 or _1024 (grid_res 512 or
+ *  1024). Returns a mesh handle whose pbr carries the generated material
+ *  (free with aicore_trellis_mesh_free). Requires the texture models to be
+ *  loaded on the context. */
+AICORE_CAPI aicore_trellis_mesh* aicore_trellis_texture_mesh(
+        aicore_trellis_ctx* ctx,
+        const float* verts,
+        int n_verts,
+        const int* tris,
+        int n_tris,
+        const float* grid_feats,
+        int grid_nvox,
+        const int* grid_coords,
+        int grid_res,
+        int pipeline_type,
+        const void* image_bytes,
+        int image_len,
+        int background_mode,
+        uint64_t seed,
+        int texture_steps,
+        aicore_trellis_progress_fn progress,
+        void* progress_user,
+        char* err,
+        int err_len);
+
+/** Prepare the exact component-cleaned geometry used for export so hosts can
+ *  preview it. component_filter: 0 removes only tiny islands, 1 keeps the
+ *  largest connected component, 2 keeps all. The returned mesh owns copied
+ *  PBR (free with aicore_trellis_mesh_free). */
+AICORE_CAPI aicore_trellis_mesh* aicore_trellis_prepare_mesh(
+        const float* verts,
+        int n_verts,
+        const int* tris,
+        int n_tris,
+        const float* pbr,
+        int component_filter,
+        char* err,
+        int err_len);
+
+/** Optional CGAL Alpha Wrap print remeshing. Availability is fixed at build
+ *  time. alpha_ratio and offset_ratio are fractions of the component-filtered
+ *  input bounding-box diagonal (recommended start: 0.01 and 0.01/30). The
+ *  result is watertight, oriented, intersection-free and 2-manifold. When
+ *  the source carries PBR it reaches the caller as a closest-surface
+ *  projected per-vertex preview aligned with the wrap vertices. */
+AICORE_CAPI int aicore_trellis_print_remesh_available(void);
+AICORE_CAPI aicore_trellis_mesh* aicore_trellis_prepare_print_mesh(
+        const float* verts,
+        int n_verts,
+        const int* tris,
+        int n_tris,
+        const float* pbr,
+        int component_filter,
+        float alpha_ratio,
+        float offset_ratio,
+        char* err,
+        int err_len);
+
+/** Bake a UV-atlas PBR GLB for replacement geometry (e.g. a print wrap) by
+ *  closest-surface projection from a dense source mesh: every covered target
+ *  atlas texel is projected to a source triangle and receives barycentrically
+ *  interpolated source PBR. source_component_filter: 0/1/2 as above. Returns
+ *  NULL when CGAL support is unavailable. Free with
+ *  aicore_trellis_free_buffer. */
+AICORE_CAPI uint8_t* aicore_trellis_bake_projected_glb(
+        const float* target_verts,
+        int target_n_verts,
+        const int* target_tris,
+        int target_n_tris,
+        const float* source_verts,
+        int source_n_verts,
+        const int* source_tris,
+        int source_n_tris,
+        const float* source_pbr,
+        int texture_size,
+        int source_component_filter,
+        int* out_len,
+        char* err,
+        int err_len);
 
 /** Image decode + TRELLIS.2 preprocessing only (no models). out_rgb must hold
  *  out_size*out_size*3 bytes. Returns 0 on success. */

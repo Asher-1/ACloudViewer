@@ -38,6 +38,35 @@ image ──► (RMBG-2.0 background removal, optional) ──► preprocess
   `image_to_mesh_data.zip` with 33 curated single-image samples; auto-downloaded
   into `~/cloudViewer_data/extract/image_to_mesh_data/`, then pickable from a
   combo).
+- **Live per-step previews** — the dialog's *Pipeline steps* strip shows a
+  thumbnail per core stage (source → preprocess/RMBG → SS voxel set → mesh
+  keyframe → texture → GLB). Voxel sets (`T2VOX01`) stream live during the
+  sparse-structure flow, marching-cubes mesh keyframes (`T2MESH01`) replay
+  after the final decode (AICore preview callbacks, ABI 2).
+- **One-click export** — *Generate + GLB* runs the full chain and writes the
+  textured GLB into the Save-GLB directory (defaults to `~/Downloads/TRELLIS`).
+  The **Export / Print** page re-bakes the last result with a chosen atlas
+  size / component filter and reports print-wrap (CGAL Alpha Wrap)
+  availability.
+- **Backend numerical parity** — the engine matches the upstream reference
+  numerics on every backend: exact materialized F32 attention (chunked above
+  the 12 GiB score budget; flash opt-in), F32-accumulate matmuls in the
+  diffusion graphs, cuBLAS TF32 and Vulkan fp16-accumulate pipelines disabled
+  (`aicore::apply_trellis_math_profile`), matching the upstream CUDA/Vulkan
+  parity fixes.
+- **CuMesh GPU chart clustering (optional)** — when ACloudViewer is built
+  with `AICore_USE_CUMESH=ON` (needs CUDA + libtorch, `CUMESH_TORCH_DIR`),
+  the GLB bake's Auto unwrap uses CuMesh normal-cone chart clustering as
+  hard xatlas chart boundaries, matching the upstream mesh2glb default;
+  otherwise the chartless `simple_unwrap` fallback is used (same as
+  upstream's `T2GLB_NOCUMESH`).
+- **f32 exact mode** — the Quantization combo also offers upstream's f32
+  exact mode (chaotic chain in full f32). Those GGUFs are local conversions
+  (`convert_*_to_gguf.py --ftype 0`), not published on the HF mirror, so the
+  download check lists them as missing until they are placed in the cache.
+- **Backend A/B harness** — `core/AICore/src/tasks/trellis/tools/trellis_backend_ab.py` runs one image
+  through several backends/qualities and prints a per-stage timing table
+  with geometry hashes (same methodology as `ggml_upgrade_verify.py`).
 
 ## Build
 
@@ -52,8 +81,12 @@ inference works but is slow.
 
 ## Models
 
-Default presets use the **f16** variants throughout (upstream's recommended
-precision); q8 alternatives stay selectable in the dialog.
+Default presets use the **q8** chain (every model that publishes a q8 variant;
+halves the memory footprint so the 512 preset fits small GPUs). The
+precision-sensitive decoders `shape_dec` / `shape_enc` / `tex_dec` have no q8
+variant and always stay f16 — sparse subdivision and UV decoding are not
+robust to Q8 weight rounding. The full **f16** reference chain stays
+selectable in the dialog's Quantization combo.
 
 | Role | Files (HF mirror) |
 |------|-------------------|

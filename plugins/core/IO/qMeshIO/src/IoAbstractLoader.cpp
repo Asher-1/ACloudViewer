@@ -145,8 +145,8 @@ private:
                 continue;
             }
 
-            auto materialSet =
-                    IoUtils::createMaterialSetForMesh(mesh, cPath, inScene);
+            auto materialSet = IoUtils::createMaterialSetForMesh(
+                    mesh, cPath, inScene, cFileName);
 
             if (materialSet != nullptr) {
                 newMesh->setMaterialSet(materialSet);

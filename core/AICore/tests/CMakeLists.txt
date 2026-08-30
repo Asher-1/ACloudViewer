@@ -399,6 +399,20 @@ aicore_add_rmbg_capi_test(test_rmbg_capi_contract)
 aicore_add_rmbg_capi_test(test_rmbg_capi_performance)
 aicore_add_sam3_capi_test(test_sam3_capi_contract)
 
+# Cross-catalog default-row contract (see tests/catalog/ header): locks the
+# aicore_<task>_model_default_index() declarations and the
+# "first row of every family is the recommended pack" catalogs to the
+# visible "(recommended)" marker. Fast, no GGUF assets.
+add_executable(test_model_catalog_defaults catalog/test_model_catalog_defaults.cpp)
+target_link_libraries(test_model_catalog_defaults PRIVATE AICore)
+_aicore_capi_link(test_model_catalog_defaults)
+_aicore_test_common(test_model_catalog_defaults)
+if(NOT MSVC)
+    target_compile_options(test_model_catalog_defaults PRIVATE -fPIC)
+    target_link_options(test_model_catalog_defaults PRIVATE "-no-pie")
+endif()
+set_tests_properties(test_model_catalog_defaults PROPERTIES LABELS "capi")
+
 # Manual real-model acceptance probe for a ggml-version worktree. It is not a
 # CTest because it requires a local SAM3 GGUF, a Vulkan-capable GPU, and takes
 # several minutes on CPU. See the source header for its exact parity gates.
@@ -461,6 +475,25 @@ aicore_add_yolo_capi_test(test_yolo_capi_performance)
 set_tests_properties(test_yolo_capi_performance PROPERTIES
     LABELS "capi;model;gpu;performance")
 
+# TEMPORARY probe for reproducing the yoloe/seg visualization issues
+# (delete after diagnosis).
+add_executable(yolo_prompt_probe yolo/yolo_prompt_probe.cpp)
+target_link_libraries(yolo_prompt_probe PRIVATE AICore)
+_aicore_capi_link(yolo_prompt_probe)
+if(TARGET Qt::Core AND TARGET Qt::Gui)
+    target_link_libraries(yolo_prompt_probe PRIVATE Qt::Core Qt::Gui)
+elseif(Qt5_FOUND)
+    target_link_libraries(yolo_prompt_probe PRIVATE Qt5::Core Qt5::Gui)
+endif()
+if(NOT MSVC)
+    target_compile_options(yolo_prompt_probe PRIVATE -Wall -Wextra -fPIC)
+    target_link_options(yolo_prompt_probe PRIVATE "-no-pie")
+endif()
+target_include_directories(yolo_prompt_probe PRIVATE ${AICORE_TEST_INC})
+include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/AICoreCompileDefinitions.cmake)
+aicore_apply_compile_definitions(yolo_prompt_probe)
+cloudviewer_set_aicore_test_runtime_layout(yolo_prompt_probe)
+
 # YOLO device-parity test (CPU vs GPU numeric gates on real GGUF assets;
 # see tests/yolo/test_yolo_capi_parity.cpp for the gate table). Skips (77)
 # without AICORE_TEST_YOLO_* assets or a GPU backend.
@@ -473,6 +506,13 @@ set_tests_properties(test_yolo_capi_parity PROPERTIES
 aicore_add_yolo_capi_test(test_yolo_capi_contract)
 set_tests_properties(test_yolo_capi_contract PROPERTIES
     LABELS "capi")
+
+# YOLOE visual-prompt (SAVPE) model-tier test (needs a savpe-converted
+# yoloe GGUF + prompt image; skips with 77 without
+# AICORE_TEST_YOLO_SAVPE_* assets — see test_yolo_capi_savpe.cpp).
+aicore_add_yolo_capi_test(test_yolo_capi_savpe)
+set_tests_properties(test_yolo_capi_savpe PROPERTIES
+    LABELS "capi;model")
 
 # YOLO geometry whitebox test (no GGUF assets: mask unscale / letterbox
 # inverse mapping — see tests/yolo/test_yolo_unscale_masks.cpp).

@@ -45,7 +45,11 @@ bool isSupportedImageFile(const QString& filePath) {
 }
 
 bool isValidCachedGguf(const QFileInfo& fi) {
-    return ecvModelDownloader::isValidCachedFile(fi.absoluteFilePath());
+    return ecvAssetIntegrity::isVerified(
+            fi.absoluteFilePath(),
+            {QCryptographicHash::Sha256,
+             ecvAssetIntegrity::PinnedDigest(fi.fileName())},
+            64 * 1024, true, ecvAssetIntegrity::OnMiss::CheapChecksOnly);
 }
 
 }  // namespace
@@ -679,9 +683,9 @@ void DeepLSDDialog::onUseTestData() {
     m_testDataBtn->setEnabled(false);
     m_downloadLabel->setVisible(true);
     const auto info = ecvTestDataRepository::getDatasetInfo(kind);
-    if (ecvTestDataRepository::verifyZipIntegrity(
-                ecvTestDataRepository::zipPath(kind), info.expectedMd5,
-                info.expectedSize)) {
+    if (ecvAssetIntegrity::isVerified(
+                ecvTestDataRepository::zipPath(kind), info.anchor, 0, false,
+                ecvAssetIntegrity::OnMiss::DeepVerify)) {
         m_downloadLabel->setText(tr("Extracting cached test data..."));
         repo.extractDataset(kind);
         return;
@@ -747,6 +751,10 @@ void DeepLSDDialog::startDownload(const DeepLSDBuiltinModel& model) {
     ecvModelDownloader::Request req;
     req.url = model.downloadUrl;
     req.destPath = dest;
+    // Content identity from the release digest registry — streamed SHA-256
+    // check at ingestion (truncation and corruption both caught).
+    req.contentAnchor = {QCryptographicHash::Sha256,
+                         ecvAssetIntegrity::PinnedDigest(model.filename)};
     m_downloader->download(req);
 }
 

@@ -2946,6 +2946,13 @@ void MainWindow::copyPrimaryViewConfig(vtkGLView* view, vtkGLView* sourceView) {
 
     view->context().resetInteractionState();
 
+    // A brand-new view must always start in camera-transform mode: the
+    // source view may currently carry a tool's restricted interaction flags
+    // (e.g. INTERACT_SEND_ALL_SIGNALS while a picking tool is running),
+    // which would leave the new view unable to rotate/pan the camera.
+    view->context().interactionFlags =
+            ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA;
+
     // Per-view projection: sync VTK from source window (not global QSettings)
     view->setPerspectiveState(srcCtx.viewportParams.perspectiveView,
                               srcCtx.viewportParams.objectCenteredView, false);

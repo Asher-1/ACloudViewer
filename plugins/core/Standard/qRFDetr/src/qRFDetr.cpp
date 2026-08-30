@@ -293,8 +293,14 @@ void qRFDetr::addResultToDb(const RFDetrRunResult& result,
     const QString deviceTag = ecvPluginDbNaming::deviceTagFromName(
             result.resolvedDevice.isEmpty() ? settings.device
                                             : result.resolvedDevice);
+    // Model tag keeps runs from different checkpoint variants separable
+    // in the DB tree (source + device alone collide across variants).
+    const QString modelTag = ecvPluginDbNaming::modelTagFromFilename(
+            settings.modelPath);
     const QString name = ecvPluginDbNaming::makeUnique(
-            QStringLiteral("RFDetr_%1_%2").arg(sourceLabel, deviceTag), m_app);
+            QStringLiteral("RFDetr_%1_%2_%3")
+                    .arg(modelTag, sourceLabel, deviceTag),
+            m_app);
     auto* img = new ccImage(result.annotatedImage, name);
     img->setMetaData(QStringLiteral("RFDetr"), true);
     img->setMetaData(QStringLiteral("RFDetr/Model"), result.modelVariant);

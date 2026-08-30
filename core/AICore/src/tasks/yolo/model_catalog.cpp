@@ -105,6 +105,11 @@ static constexpr const VariantInfo kVariants[] = {
         // Text-encoder towers (also usable standalone).
         {"clip-ViT-B-32", "CLIP ViT-B/32 (Text)", "text", 1},
         {"mobileclip2_b", "MobileCLIP2-B (Text)", "text", 1},
+        // Multilingual bridge (sentence-transformers clip-ViT-B-32-
+        // multilingual-v1: DistilBERT tower projected into the OpenAI CLIP
+        // ViT-B/32 text space) — lets the YOLO-World head consume prompts in
+        // 100+ languages with zero detector changes. F16 only (released).
+        {"mclip-labse-vitb32", "Multilingual CLIP Bridge (Text)", "text", 1},
 };
 
 static constexpr int kVariantCount = sizeof(kVariants) / sizeof(kVariants[0]);
@@ -232,16 +237,28 @@ static std::vector<ModelRow> buildModels() {
     rows.reserve(kVariantCount * kQuantCount);
     for (int vi = 0; vi < kVariantCount; ++vi) {
         const VariantInfo& info = kVariants[vi];
+        // The multilingual bridge is published in F16 + Q8_0 (Q8_0 first:
+        // it is the default — half the download at matching accuracy).
+        const bool mclip_bridge =
+                std::strcmp(info.name, "mclip-labse-vitb32") == 0;
+        const char* license = mclip_bridge
+                                      ? "MIT / Apache-2.0 (M-CLIP / LaBSE)"
+                                      : "AGPL-3.0 (Ultralytics)";
         for (int qi = 0; qi < kQuantCount; ++qi) {
-            std::string filename =
-                    std::string(info.name) + "-" + kQuantSuffixes[qi] + ".gguf";
+            // 0 = f32 (not published), 1 = f16, 2 = q8_0 (default).
+            const int eqi = mclip_bridge ? (qi == 0 ? 2 : (qi == 1 ? 1 : -1))
+                                         : qi;
+            if (eqi < 0) continue;
+            const int qi_eff = eqi;
+            std::string filename = std::string(info.name) + "-" +
+                                   kQuantSuffixes[qi_eff] + ".gguf";
             std::string url = std::string(kDownloadBase) + filename;
             std::string display = std::string(info.display) + " \xe2\x80\x94 " +
-                                  kQuantNotes[qi];
+                                  kQuantNotes[qi_eff];
             rows.push_back({dupString(filename.c_str()), dupString(url.c_str()),
                             dupString(display.c_str()),
-                            dupString(kQuantNotes[qi]),
-                            "AGPL-3.0 (Ultralytics)", info.task,
+                            dupString(kQuantNotes[qi_eff]),
+                            license, info.task,
                             std::strcmp(info.task, "depth") == 0 ? 1 : 0,
                             std::strncmp(info.name, "yolo26", 6) == 0 &&
                                             std::strcmp(info.task, "text") != 0
@@ -249,8 +266,8 @@ static std::vector<ModelRow> buildModels() {
                                     : 0,
                             info.text_input, 0, nullptr});
             if (const VariantDigest* d = findDigest(info.name)) {
-                rows.back().expected_bytes = d->bytes[qi];
-                rows.back().sha256 = d->sha256[qi];
+                rows.back().expected_bytes = d->bytes[qi_eff];
+                rows.back().sha256 = d->sha256[qi_eff];
             }
         }
     }
@@ -322,6 +339,26 @@ AICORE_CAPI int aicore_yolo_model_count(enum aicore_yolo_model_role role) {
         if (roleMatches(role, row)) ++n;
     }
     return n;
+}
+
+AICORE_CAPI int aicore_yolo_model_default_index(
+        enum aicore_yolo_model_role role) {
+    // Per-role default declaration: the first row of the role-filtered
+    // view whose note carries the visible "(recommended)" marker. Reading
+    // the marker here (instead of hard-coding row offsets) keeps the
+    // declaration and the user-facing label from ever drifting apart. The
+    // returned index is relative to the role-filtered view, matching
+    // aicore_yolo_model_at(index, role).
+    int view = 0;
+    for (const auto& row : kModels) {
+        if (!roleMatches(role, row)) continue;
+        if (row.quant_note &&
+            std::strstr(row.quant_note, "(recommended)")) {
+            return view;
+        }
+        ++view;
+    }
+    return 0;
 }
 
 AICORE_CAPI const aicore_yolo_model_entry* aicore_yolo_model_at(

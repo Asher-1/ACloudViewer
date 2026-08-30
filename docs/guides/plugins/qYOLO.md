@@ -47,7 +47,9 @@ offers a segment model and vice versa), its own thresholds, image input and
 Run button; the Live page lists all models and adapts its threshold row to the
 selected model.
 
-Every task panel has a **Try sample data** button that loads that task's default sample image from the shared `objects_detection_data` test-data cache (downloaded on first use): **Classification** loads the single-subject `cat.jpg`, **Oriented Boxes** loads the DOTA-style aerial `aerial_airport.jpg`, and all other tasks load the COCO street scene `000000397133.jpg`.
+Every task panel has a **Try sample data** button that loads that task's default sample image from the shared `objects_detection_data` test-data cache (downloaded on first use): **Classification** loads the single-subject `cat.jpg`, **Oriented Boxes** loads the DOTA-style aerial `aerial_airport.jpg`, **Pose** loads `000000087038.jpg` (multiple people in dynamic poses), **World / YOLOE** load `party_hats.jpg` (one differently colored party hat per person — prompts like `adult with red hat` select the matching person only), and all other tasks load the COCO street scene `000000397133.jpg`.
+
+The **World** panel also accepts the *Multilingual CLIP Bridge* text tower (`mclip-labse-vitb32-q8_0.gguf` default / `-f16.gguf`, a DistilBERT tower projected into the CLIP ViT-B/32 text space): prompts in 100+ languages — including Chinese — are mapped into the same space the detection head was trained against, so the head consumes them unchanged. Bridged prompts score ~4x lower than native-English ones; selecting the bridge therefore **automatically sets the panel confidence to 0.03 on every tower switch** (measured: Chinese max 0.046 vs English 0.186 on the sample scene — all detections at 0.03 hit the prompted subjects), and switches back to 0.25 on a native tower. The bridge is a multilingual tool: for pure-English prompts the native CLIP tower scores ~3x higher on the same prompt (party-hats scene: 0.166 vs 0.053) — the hint label calls this out while English text is entered. Note that CLIP-style heads bind attributes weakly: with `person with yellow hat` the strongest response is often the most salient person regardless of hat color (measured identical top-1 box on both towers), so short category nouns (`hat`, `red hat`) rank more reliably than long descriptive phrases. The YOLOE panel requires the MobileCLIP2-B tower (its head lives in a different embedding space) and stays English-only.
 
 ### Object Detection / Instance Segmentation panels
 
@@ -56,13 +58,13 @@ Every task panel has a **Try sample data** button that loads that task's default
 3. Set **Confidence** / **IoU** / **Top-K** thresholds.
 4. Pick an input image from disk or the DB tree and click **Run** — the model downloads from cloudViewer_downloads on first use.
 
-The annotated image is added to the DB tree: boxes + class/score labels (detection) or a translucent per-class mask tint plus boxes (segmentation) as `YOLO_<source>_<device>`, with full metadata (per-detection class/score/box/mask, runtime, device, model).
+The annotated image is added to the DB tree: boxes + class/score labels (detection) or a translucent per-class mask tint plus boxes (segmentation) as `YOLO_<model>_<source>_<device>` (model tag = checkpoint filename stem, e.g. `yolov8s-world-f16`), with full metadata (per-detection class/score/box/mask, runtime, device, model).
 
 ### Metric Depth panel
 
 1. Pick a **depth model variant** (`yolo26n-depth`). The threshold row (Conf/IoU/Top-K) is hidden — depth models produce a metric depth map, not detections.
 2. Set Device / Threads, pick an image, click **Run**.
-3. The result is a turbo colormap (near = blue, far = red) with a range legend as `YOLODepth_<source>_<device>`, storing the depth map size, min/max/mean/p95 depth (meters) and valid-pixel count.
+3. The result is a turbo colormap (near = blue, far = red) with a range legend as `YOLODepth_<model>_<source>_<device>`, storing the depth map size, min/max/mean/p95 depth (meters) and valid-pixel count.
 
 ### Live (camera / video) page
 
@@ -153,3 +155,31 @@ or `Depth 1920×1080 | 0.4–12.3 m | infer 41 ms (Vulkan0)` for depth. The numb
 does **not** include video decode, color conversion or cross-thread hops;
 overlay updates may trail the display by 1–2 frames by design (busy frames are
 skipped, not queued).
+
+### YOLOE prompt modes — text, visual (SAVPE), prompt-free
+
+The YOLOE tab offers three ways to define the categories, mirroring the
+official ultralytics YOLOE prompting modes:
+
+- **Text prompt** (default, non-`-pf` checkpoints): enter comma-separated
+  class names; the MobileCLIP2-B tower encodes them (downloaded
+  automatically). Short category nouns score far better than descriptive
+  phrases.
+- **Visual prompt** (SAVPE): switch the prompt mode to *Visual prompt* and
+  draw one example box per target on the preview. The checkpoint's
+  SAVPE encoder derives one class embedding per box; results are labeled
+  `object0`, `object1`, … (official semantics: example boxes group targets,
+  they do not carry names). Requires a non-`-pf` YOLOE GGUF converted with
+  savpe weights — regenerate via `core/AICore/src/tasks/yolo/tools/convert_yoloe_savpe_gguf.py`
+  (writes `yolo.savpe = 1` + the `savpe.*` tensors); the loader validates
+  the weight shapes against the actual FPN features at load. Visual prompts
+  take precedence over a class list when both are present.
+- **Prompt-free** (`-pf` checkpoints): no input at all — the checkpoint
+  matches against its built-in 4585-entry LRPC vocabulary. `-pf` variants
+  reject both a class list and visual prompts.
+
+Leaving the YOLOE class list empty in text mode auto-switches the panel to
+the `-pf` variant of the same scale (the official no-input path), because a
+fresh upstream `*-seg.pt` has no usable built-in vocabulary: without
+`set_classes` the official runtime falls back to a zero embedding and emits
+80 numeric placeholder classes ("0"…"79"), which is not usable recognition.

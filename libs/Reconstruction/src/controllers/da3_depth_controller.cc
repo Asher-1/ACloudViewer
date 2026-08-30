@@ -23,6 +23,10 @@
 #include "aicore/depth_capi.h"
 #endif
 
+// Digest registry lives in AICore's public headers (resolved via the
+// AICore target's PUBLIC include dir; this TU is not Qt-dependent).
+#include "aicore/asset_digests.h"
+
 #ifdef COLMAP_DOWNLOAD_ENABLED
 #include "util/download.h"
 #endif
@@ -2171,7 +2175,14 @@ std::string DA3ModelDownloadURL(DA3ModelType model, DA3QuantType quant) {
 }
 
 std::string DA3ModelDownloadURI(DA3ModelType model, DA3QuantType quant) {
-    return DA3ModelDownloadURL(model, quant);
+    const std::string filename = DA3ModelFilename(model, quant);
+    const char* digest = aicore::AssetDigestForFile(filename.c_str());
+    if (digest == nullptr) {
+        // Digest not (yet) pinned in the registry: fall back to the
+        // URL-only format (no verification possible for this asset).
+        return DA3ModelDownloadURL(model, quant);
+    }
+    return DA3ModelDownloadURL(model, quant) + ";" + filename + ";" + digest;
 }
 
 bool DA3ModelExists(DA3ModelType model, DA3QuantType quant) {
@@ -2275,20 +2286,45 @@ std::string DA3DepthController::ResolveModelPath(const DA3Config& config) {
 
 #ifdef COLMAP_DOWNLOAD_ENABLED
     const std::string url = DA3ModelDownloadURL(config.model_type, config.quant_type);
+    // Pinned content digest from the release asset registry; fails closed
+    // for filenames that are not published assets.
+    const char* pinned_digest = aicore::AssetDigestForFile(filename.c_str());
+    if (pinned_digest == nullptr) {
+        LOG(ERROR) << "DA3: no pinned digest for model asset: " << filename;
+        return "";
+    }
 
     const std::filesystem::path cache_dir(DA3ModelCacheDir());
     std::filesystem::create_directories(cache_dir);
     const auto cached_path = cache_dir / filename;
 
     if (std::filesystem::exists(cached_path)) {
-        RECON_LOG_DEBUG("DA3: Using cached model: %s\n", cached_path.string().c_str());
-        return cached_path.string();
+        // Verify the cached model before trusting it: a truncated or
+        // corrupted cache must never silently feed the reconstruction.
+        const std::string cached_digest = ComputeFileSHA256(cached_path);
+        if (cached_digest == pinned_digest) {
+            RECON_LOG_DEBUG("DA3: Using cached model: %s\n", cached_path.string().c_str());
+            return cached_path.string();
+        }
+        LOG(WARNING) << "DA3: cached model failed digest check (got " << cached_digest
+                     << ", expected " << pinned_digest << "), re-downloading: "
+                     << cached_path.string();
+        std::filesystem::remove(cached_path);
     }
 
     RECON_LOG_DEBUG("DA3: Downloading model from: %s\n", url.c_str());
     const auto blob = DownloadFile(url);
     if (!blob.has_value()) {
         LOG(ERROR) << "DA3: Failed to download model from: " << url;
+        return "";
+    }
+
+    // Verify before caching: a truncated/corrupted download must never
+    // poison the cache for every later run.
+    const std::string blob_digest = ComputeSHA256(std::string_view(blob->data(), blob->size()));
+    if (blob_digest != pinned_digest) {
+        LOG(ERROR) << "DA3: downloaded model failed digest check (got " << blob_digest
+                   << ", expected " << pinned_digest << "): " << url;
         return "";
     }
 

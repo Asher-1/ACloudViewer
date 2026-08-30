@@ -404,11 +404,140 @@ bool run_texture_stage_qef(aicore_trellis_ctx *p,
 #endif
 }
 
+// ── live intermediate 3D previews (voxel sets + mesh keyframes) ──────
+//
+// Port of the upstream trellis2_capi.cpp preview machinery: self-describing
+// blobs the host streams to its viewer.
+//   "T2VOX01"  magic[8], u32 res, u32 nvox, u16[3*nvox] coords in [0,res)
+//   "T2MESH01" magic[8], u32 nv, u32 nt, f32[3nv] verts, f32[3nv] normals,
+//              i32[3nt] tris (little-endian)
+
+// Collect the occupied cells (logit > 0) of a dense [res^3] occupancy grid.
+void collect_occupied(const float *occ, int res, std::vector<int32_t> &cells) {
+    cells.clear();
+    for (int x = 0; x < res; ++x)
+        for (int y = 0; y < res; ++y)
+            for (int z = 0; z < res; ++z) {
+                if (occ[((size_t)x * res + y) * res + z] > 0.0f) {
+                    cells.push_back(x);
+                    cells.push_back(y);
+                    cells.push_back(z);
+                }
+            }
+}
+
+// Pack a flat [x,y,z,...] cell list into a T2VOX01 blob and hand it to the
+// host callback. Best-effort: never fatal.
+void emit_voxels(aicore_trellis_preview_fn fn,
+                 void *user,
+                 int stage,
+                 int step,
+                 int total,
+                 int res,
+                 const std::vector<int32_t> &cells) {
+    if (!fn) return;
+    const uint32_t nvox = (uint32_t)(cells.size() / 3);
+    const uint32_t r = (uint32_t)res;
+    std::vector<uint8_t> blob(16 + (size_t)nvox * 3 * 2);
+    std::memcpy(blob.data(), "T2VOX01", 8);  // 7 chars + NUL
+    std::memcpy(blob.data() + 8, &r, 4);
+    std::memcpy(blob.data() + 12, &nvox, 4);
+    uint8_t *dst = blob.data() + 16;
+    for (uint32_t i = 0; i < nvox * 3; ++i) {
+        const uint16_t c = (uint16_t)cells[i];
+        std::memcpy(dst, &c, 2);
+        dst += 2;
+    }
+    fn(user, stage, step, total, blob.data(), (int)blob.size());
+}
+
+// One shape-flow stage's captured intermediate x_0 latents (denormalized)
+// plus the scaffold they sit on, awaiting post-decode replay.
+struct kf_capture {
+    int stage = 0;    // SLAT_FLOW or SLAT_FLOW_HR
+    int res_in = 0;   // scaffold resolution (32 LR / 64 HR)
+    int levels = 0;   // upsample levels to the ~128^3 keyframe grid
+    int stride = 1;   // capture every `stride` steps (plus the last)
+    int channels = 0; // latent channels (32)
+    const float *norm_mean = nullptr;
+    const float *norm_std = nullptr;
+    std::vector<int32_t> coords;              // scaffold coords, copied once
+    std::vector<int> steps, totals;           // per capture, for labelling
+    std::vector<std::vector<float>> latents;  // denormalized [L*channels] each
+};
+
+// Sampler preview trampoline: denormalize + stash the step's x_0 estimate.
+void kf_capture_cb(void *u, int step, int total, const float *latent, int n) {
+    auto *c = (kf_capture *)u;
+    if (c->stride < 1) return;
+    if (step != total && (step % c->stride) != 0) return;  // stride + last
+    const int C = c->channels;
+    std::vector<float> den((size_t)n);
+    for (int i = 0; i < n; ++i)
+        den[i] = latent[i] * c->norm_std[i % C] + c->norm_mean[i % C];
+    c->steps.push_back(step);
+    c->totals.push_back(total);
+    c->latents.push_back(std::move(den));
+}
+
+// Replay captured latents into coarse MC-mesh keyframes and stream each. Runs
+// after the final decode (decoder owns VRAM). Best-effort: skips on failure.
+void emit_keyframes(trellis2_shape_dec_model *dec,
+                    kf_capture &kf,
+                    aicore_trellis_preview_fn fn,
+                    void *user) {
+    if (!fn || kf.latents.empty() || !dec) return;
+    const int L = (int)(kf.coords.size() / 3);
+    const int tgt = kf.res_in << kf.levels;  // keyframe grid (128^3)
+    for (size_t k = 0; k < kf.latents.size(); ++k) {
+        std::vector<int32_t> up;
+        std::string e;
+        if (!trellis2_shape_dec_upsample(dec, kf.latents[k].data(), L,
+                                         kf.coords.data(), kf.levels, up, &e))
+            continue;
+        std::vector<float> field((size_t)tgt * tgt * tgt, 0.0f);
+        for (size_t i = 0; i + 2 < up.size(); i += 3) {
+            const int x = up[i], y = up[i + 1], z = up[i + 2];
+            if (x >= 0 && x < tgt && y >= 0 && y < tgt && z >= 0 && z < tgt)
+                field[((size_t)x * tgt + y) * tgt + z] = 1.0f;
+        }
+        mc::Mesh m = mc::extract(field.data(), tgt, tgt, tgt, 0.5f);
+        if (m.verts.empty()) continue;
+        const float inv = 1.0f / (float)tgt;
+        for (auto &v : m.verts) v = v * inv - 0.5f;  // -> centered unit cube
+        const uint32_t nv = (uint32_t)(m.verts.size() / 3);
+        const uint32_t nt = (uint32_t)(m.tris.size() / 3);
+        std::vector<uint8_t> blob(16 + (size_t)nv * 24 + (size_t)nt * 12);
+        std::memcpy(blob.data(), "T2MESH01", 8);
+        std::memcpy(blob.data() + 8, &nv, 4);
+        std::memcpy(blob.data() + 12, &nt, 4);
+        size_t o = 16;
+        std::memcpy(blob.data() + o, m.verts.data(), (size_t)nv * 12);
+        o += (size_t)nv * 12;
+        std::memcpy(blob.data() + o, m.normals.data(), (size_t)nv * 12);
+        o += (size_t)nv * 12;
+        std::memcpy(blob.data() + o, m.tris.data(), (size_t)nt * 12);
+        fn(user, kf.stage, kf.steps[k], kf.totals[k], blob.data(),
+           (int)blob.size());
+    }
+}
+
+// Context for the SS-sampler preview trampoline: decode the handed-out x_0
+// estimate into a 64^3 occupancy and stream it as voxels (stride-gated).
+struct ss_preview_ctx {
+    aicore_trellis_preview_fn fn = nullptr;
+    void *user = nullptr;
+    trellis2_ss_dec_model *dec = nullptr;
+    int res = 0;
+    int stride = 1;
+    std::vector<float> *occ = nullptr;  // scratch [res^3], caller-owned
+};
+
 }  // namespace
 
 extern "C" {
 
-int aicore_trellis_abi_version(void) { return 1; }
+int aicore_trellis_abi_version(void) { return 2; }
 
 // ─────────────────────────────────────────────────────────────────────────
 // Options builder
@@ -420,6 +549,7 @@ struct aicore_trellis_options {
     std::string rmbg_gguf;
     std::string shape_dec_placement = "auto";
     bool sdpa_exact = false;
+    bool sdpa_flash = false;
     bool timing = false;
 };
 
@@ -452,6 +582,11 @@ void aicore_trellis_options_set_shape_dec_placement(
 void aicore_trellis_options_set_sdpa_exact(aicore_trellis_options *opts,
                                            int exact) {
     if (opts) opts->sdpa_exact = exact != 0;
+}
+
+void aicore_trellis_options_set_sdpa_flash(aicore_trellis_options *opts,
+                                           int flash) {
+    if (opts) opts->sdpa_flash = flash != 0;
 }
 
 void aicore_trellis_options_set_timing(aicore_trellis_options *opts,
@@ -626,6 +761,7 @@ aicore_trellis_ctx *aicore_trellis_load_opts(
             opts ? opts->device : std::string("auto");
     trellis2_set_threads(opts ? opts->threads : 0);
     trellis2_set_sdpa_exact(opts ? opts->sdpa_exact : false);
+    trellis2_set_sdpa_flash(opts ? opts->sdpa_flash : false);
     trellis2_set_timing(opts ? opts->timing : false);
 
     std::string e;
@@ -967,13 +1103,15 @@ int aicore_trellis_preprocess_image_bytes(const void *image_bytes,
 // Generation
 // ─────────────────────────────────────────────────────────────────────────
 
-aicore_trellis_mesh *aicore_trellis_generate(
+aicore_trellis_mesh *generate_impl(
         aicore_trellis_ctx *p,
         const void *image_bytes,
         int image_len,
         const aicore_trellis_generate_params *params,
         aicore_trellis_progress_fn progress,
         void *user,
+        aicore_trellis_preview_fn preview,
+        void *preview_user,
         char *err,
         int err_len) {
     if (!p) {
@@ -990,6 +1128,10 @@ aicore_trellis_mesh *aicore_trellis_generate(
     int steps = params ? params->steps : 0;
     float guidance = params ? params->guidance : -1.0f;
     int texture_steps = params ? params->texture_steps : 0;
+    int preview_stride = params ? params->preview_stride : 0;
+    int keyframes =
+            preview ? (params ? params->keyframes : 0) : 0;
+    keyframes = keyframes < 0 ? 0 : (keyframes > 8 ? 8 : keyframes);
     if (pipeline_type < AICORE_TRELLIS_PIPE_AUTO ||
         pipeline_type > AICORE_TRELLIS_PIPE_1024) {
         copy_err(err, err_len, "invalid pipeline type");
@@ -1100,6 +1242,34 @@ aicore_trellis_mesh *aicore_trellis_generate(
         };
         sp.progress_user = &cbc;
     }
+    // Live per-step previews: decode each step's x_0 estimate into a 64^3
+    // occupancy and stream it as voxels (stride-gated; the last step is left
+    // to the settled SS_DEC checkpoint below). pctx/occ outlive the sampler.
+    ss_preview_ctx pctx;
+    if (preview) {
+        if (preview_stride < 0) {
+            // Stage-checkpoints-only mode: no per-step SS previews.
+        } else {
+            if (preview_stride == 0)
+                preview_stride = std::max(1, sp.steps / 4);
+            pctx = ss_preview_ctx{preview, preview_user, p->dec, Rout,
+                                  preview_stride, &occ};
+            sp.preview = [](void *u, int step, int total,
+                            const float *latent, int /*n*/) {
+                auto *c = (ss_preview_ctx *)u;
+                if (step % c->stride != 0 || step == total) return;
+                std::string de;
+                if (!trellis2_ss_dec_decode(c->dec, latent, c->occ->data(),
+                                            &de))
+                    return;
+                std::vector<int32_t> cells;
+                collect_occupied(c->occ->data(), c->res, cells);
+                emit_voxels(c->fn, c->user, AICORE_TRELLIS_STAGE_SS_FLOW,
+                            step, total, c->res, cells);
+            };
+            sp.preview_user = &pctx;
+        }
+    }
 
     const int R = fhp.resolution;
     std::vector<float> latent((size_t)fhp.in_channels * R * R * R);
@@ -1114,6 +1284,13 @@ aicore_trellis_mesh *aicore_trellis_generate(
     if (!trellis2_ss_dec_decode(p->dec, latent.data(), occ.data(), &e)) {
         copy_err(err, err_len, "ss_dec decode: " + e);
         return nullptr;
+    }
+    // Settled-occupancy checkpoint (the clean sparse structure, 64^3 voxels).
+    if (preview) {
+        std::vector<int32_t> cells;
+        collect_occupied(occ.data(), Rout, cells);
+        emit_voxels(preview, preview_user, AICORE_TRELLIS_STAGE_SS_DEC, 0, 0,
+                    Rout, cells);
     }
 
     auto *r = new aicore_trellis_mesh();
@@ -1196,11 +1373,27 @@ aicore_trellis_mesh *aicore_trellis_generate(
         return slp;
     };
 
+    kf_capture kf_lr;  // intermediate shape-flow keyframes (opt-in)
+    kf_capture kf_hr;  // HR shape-flow keyframes (1024 model, opt-in)
+
     // ── LR shape-SLAT flow (512 model, 512-res cond) ─────────────────────────
     std::vector<float> slat((size_t)L * shp.in_channels);
     {
         trellis2_ss_sampler_params slp =
                 make_slp(AICORE_TRELLIS_STAGE_SLAT_FLOW, seed ^ 0x51a7ULL);
+        if (keyframes > 0) {
+            kf_lr.stage = AICORE_TRELLIS_STAGE_SLAT_FLOW;
+            kf_lr.res_in = ss_res;
+            kf_lr.channels = shp.in_channels;
+            kf_lr.norm_mean = shp.norm_mean;
+            kf_lr.norm_std = shp.norm_std;
+            kf_lr.coords = coords;
+            while ((ss_res << (kf_lr.levels + 1)) <= 128) kf_lr.levels++;
+            if (kf_lr.levels < 1) kf_lr.levels = 1;
+            kf_lr.stride = std::max(1, slp.steps / keyframes);
+            slp.preview = kf_capture_cb;
+            slp.preview_user = &kf_lr;
+        }
         if (!trellis2_slat_flow_sample(p->slat, L, coords.data(),
                                        cond.data.data(), (int)cond.tokens(),
                                        (int)cond.channels(), &slp, nullptr,
@@ -1273,6 +1466,13 @@ aicore_trellis_mesh *aicore_trellis_generate(
             return nullptr;
         }
 
+        // Sharper 64^3 HR-scaffold checkpoint (the cascade's refined
+        // structure).
+        if (preview) {
+            emit_voxels(preview, preview_user, AICORE_TRELLIS_STAGE_UPSAMPLE,
+                        0, 0, hr_grid, hr_coords);
+        }
+
         // 1024-res conditioning (separate preprocess + encode at 1024)
         std::vector<unsigned char> rgb1024((size_t)1024 * 1024 * 3);
         if (!trellis2_preprocess_rgba(src_rgba.data(), iw, ih, 1024, rgb1024,
@@ -1294,6 +1494,19 @@ aicore_trellis_mesh *aicore_trellis_generate(
         std::vector<float> hr_slat((size_t)Lhr * shp_hr.in_channels);
         trellis2_ss_sampler_params slp =
                 make_slp(AICORE_TRELLIS_STAGE_SLAT_FLOW_HR, seed ^ 0x1024ULL);
+        if (keyframes > 0) {
+            kf_hr.stage = AICORE_TRELLIS_STAGE_SLAT_FLOW_HR;
+            kf_hr.res_in = hr_grid;
+            kf_hr.channels = shp_hr.in_channels;
+            kf_hr.norm_mean = shp_hr.norm_mean;
+            kf_hr.norm_std = shp_hr.norm_std;
+            kf_hr.coords = hr_coords;
+            while ((hr_grid << (kf_hr.levels + 1)) <= 128) kf_hr.levels++;
+            if (kf_hr.levels < 1) kf_hr.levels = 1;
+            kf_hr.stride = std::max(1, slp.steps / keyframes);
+            slp.preview = kf_capture_cb;
+            slp.preview_user = &kf_hr;
+        }
         if (!trellis2_slat_flow_sample(
                     p->slat_hr, Lhr, hr_coords.data(), cond1024.data.data(),
                     (int)cond1024.tokens(), (int)cond1024.channels(), &slp,
@@ -1342,6 +1555,15 @@ aicore_trellis_mesh *aicore_trellis_generate(
     r->grid_feats = dec_feats;
     r->grid_coords = dec_coords;
 
+    // ── shape-flow keyframe replay ──────────────────────────────────
+    // Now is the safe window: the flow DiTs are freed (ensure_decode_vram)
+    // and the shape decoder owns VRAM, before the texture stage loads its
+    // models.
+    if (preview && keyframes > 0) {
+        emit_keyframes(p->shapedec, kf_lr, preview, preview_user);
+        emit_keyframes(p->shapedec, kf_hr, preview, preview_user);  // empty 512
+    }
+
     // ── PBR texture stage (optional) ─────────────────────────────────────────
     if (p->texture && pt != AICORE_TRELLIS_PIPE_COARSE) {
         // Free the (finished) geometry flow DiTs so the ~4 GB of tex models fit
@@ -1375,6 +1597,292 @@ aicore_trellis_mesh *aicore_trellis_generate(
     }
     return r;
 }
+
+aicore_trellis_mesh *aicore_trellis_generate(
+        aicore_trellis_ctx *p,
+        const void *image_bytes,
+        int image_len,
+        const aicore_trellis_generate_params *params,
+        aicore_trellis_progress_fn progress,
+        void *progress_user,
+        char *err,
+        int err_len) {
+    return generate_impl(p, image_bytes, image_len, params, progress,
+                         progress_user, nullptr, nullptr, err, err_len);
+}
+
+aicore_trellis_mesh *aicore_trellis_generate_ex(
+        aicore_trellis_ctx *p,
+        const void *image_bytes,
+        int image_len,
+        const aicore_trellis_generate_params *params,
+        aicore_trellis_progress_fn progress,
+        void *progress_user,
+        aicore_trellis_preview_fn preview,
+        void *preview_user,
+        char *err,
+        int err_len) {
+    return generate_impl(p, image_bytes, image_len, params, progress,
+                         progress_user, preview, preview_user, err, err_len);
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Standalone texturing / export preparation
+// ──────────────────────────────────────────────────────────────────────────
+
+aicore_trellis_mesh *aicore_trellis_texture_mesh(
+        aicore_trellis_ctx *p,
+        const float *verts,
+        int n_verts,
+        const int *tris,
+        int n_tris,
+        const float *grid_feats,
+        int grid_nvox,
+        const int *grid_coords,
+        int grid_res,
+        int pipeline_type,
+        const void *image_bytes,
+        int image_len,
+        int background_mode,
+        uint64_t seed,
+        int texture_steps,
+        aicore_trellis_progress_fn progress,
+        void *user,
+        char *err,
+        int err_len) {
+    if (!p) {
+        copy_err(err, err_len, "null context");
+        return nullptr;
+    }
+    if (!p->texture) {
+        copy_err(err, err_len, "texture models not loaded");
+        return nullptr;
+    }
+    if (!verts || n_verts <= 0 || !tris || n_tris <= 0) {
+        copy_err(err, err_len, "invalid mesh");
+        return nullptr;
+    }
+    const bool use_qef = !grid_feats || grid_nvox <= 0 || !grid_coords;
+    if (grid_res <= 0) {
+        copy_err(err, err_len, "grid_res required");
+        return nullptr;
+    }
+    if (!image_bytes || image_len <= 0) {
+        copy_err(err, err_len, "invalid image");
+        return nullptr;
+    }
+    if (pipeline_type != AICORE_TRELLIS_PIPE_512 &&
+        pipeline_type != AICORE_TRELLIS_PIPE_1024) {
+        copy_err(err, err_len, "pipeline_type must be 512 or 1024");
+        return nullptr;
+    }
+    if (pipeline_type == AICORE_TRELLIS_PIPE_1024 &&
+        p->texflow_hr_path.empty()) {
+        copy_err(err, err_len, "1024 texture flow model not loaded");
+        return nullptr;
+    }
+
+    std::string e;
+    const int S = (pipeline_type == AICORE_TRELLIS_PIPE_1024) ? 1024 : 512;
+    if (progress) progress(user, AICORE_TRELLIS_STAGE_PREPROCESS, 0, 0);
+
+    // Single decode pass (Qt QImage), then optional in-tree RMBG matting,
+    // then preprocessing — mirrors the integrated generate path.
+    std::vector<uint8_t> src_rgba;
+    int iw = 0, ih = 0;
+    if (!decode_image_rgba(image_bytes, image_len, src_rgba, iw, ih, e)) {
+        copy_err(err, err_len, e);
+        return nullptr;
+    }
+#ifdef TRELLIS2_HAVE_RMBG
+    if (p->rmbg) {
+        uint8_t *rmbg_out = nullptr;
+        int rmbg_out_len = 0;
+        std::string rmbg_err;
+        int rc = trellis2_rmbg_remove_background(p->rmbg, src_rgba.data(), iw,
+                                                 ih, &rmbg_out, &rmbg_out_len,
+                                                 &rmbg_err);
+        if (rc != 0 || !rmbg_out) {
+            copy_err(err, err_len, "RMBG: " + rmbg_err);
+            return nullptr;
+        }
+        src_rgba.assign(rmbg_out, rmbg_out + (size_t)rmbg_out_len);
+        trellis2_rmbg_free_buffer(rmbg_out);
+        background_mode = AICORE_TRELLIS_BG_KEEP;
+    }
+#endif
+    std::vector<unsigned char> rgb((size_t)S * S * 3);
+    if (!trellis2_preprocess_rgba(src_rgba.data(), iw, ih, S, rgb, &e)) {
+        copy_err(err, err_len, "preprocess failed: " + e);
+        return nullptr;
+    }
+
+    if (progress) progress(user, AICORE_TRELLIS_STAGE_DINO, 0, 0);
+    trellis2_dino_cond cond;
+    if (!trellis2_dino_encode_rgb(p->dino, rgb.data(), S, cond, &e)) {
+        copy_err(err, err_len, "dino encode: " + e);
+        return nullptr;
+    }
+
+    auto *r = new aicore_trellis_mesh();
+    r->verts.assign(verts, verts + (size_t)n_verts * 3);
+    r->tris.assign(tris, tris + (size_t)n_tris * 3);
+    r->normals = fdg::vertex_normals(fdg::Mesh{r->verts, r->tris});
+    r->grid_res = grid_res;
+
+    std::vector<float> pbr;
+    if (use_qef) {
+        std::vector<int32_t> qef_coords;
+        if (!run_texture_stage_qef(p, verts, n_verts, tris, n_tris, grid_res,
+                                   r->verts, pipeline_type, cond, seed,
+                                   texture_steps, progress, user, pbr,
+                                   qef_coords, e)) {
+            copy_err(err, err_len, "texture: " + e);
+            delete r;
+            return nullptr;
+        }
+        r->grid_coords = std::move(qef_coords);
+    } else {
+        r->grid_feats.assign(grid_feats,
+                             grid_feats + (size_t)grid_nvox * 7);
+        r->grid_coords.assign(grid_coords,
+                              grid_coords + (size_t)grid_nvox * 3);
+        if (!run_texture_stage(p, r->grid_feats, r->grid_coords, r->verts,
+                               grid_res, pipeline_type, cond, seed,
+                               texture_steps, progress, user, pbr, e)) {
+            copy_err(err, err_len, "texture: " + e);
+            delete r;
+            return nullptr;
+        }
+    }
+    r->pbr = std::move(pbr);
+    return r;
+}
+
+aicore_trellis_mesh *aicore_trellis_prepare_mesh(
+        const float *verts,
+        int n_verts,
+        const int *tris,
+        int n_tris,
+        const float *pbr,
+        int component_filter,
+        char *err,
+        int err_len) {
+    if (!verts || !tris || n_verts <= 0 || n_tris <= 0) {
+        copy_err(err, err_len, "empty mesh");
+        return nullptr;
+    }
+    if (component_filter < 0 || component_filter > 2) {
+        copy_err(err, err_len, "bad component filter");
+        return nullptr;
+    }
+    t2glb::MeshExportOptions opt;
+    opt.components = (t2glb::ComponentFilter)component_filter;
+    t2glb::PreparedMesh prepared;
+    std::string e;
+    if (!t2glb::prepare_mesh(verts, n_verts, (const int32_t *)tris, n_tris,
+                             pbr, opt, prepared, e)) {
+        copy_err(err, err_len, e);
+        return nullptr;
+    }
+    auto *r = new aicore_trellis_mesh();
+    r->verts = std::move(prepared.verts);
+    r->normals = std::move(prepared.normals);
+    r->tris.assign(prepared.tris.begin(), prepared.tris.end());
+    r->pbr = std::move(prepared.pbr);
+    return r;
+}
+
+int aicore_trellis_print_remesh_available(void) {
+    return t2glb::print_remesh_available() ? 1 : 0;
+}
+
+aicore_trellis_mesh *aicore_trellis_prepare_print_mesh(
+        const float *verts,
+        int n_verts,
+        const int *tris,
+        int n_tris,
+        const float *pbr,
+        int component_filter,
+        float alpha_ratio,
+        float offset_ratio,
+        char *err,
+        int err_len) {
+    if (!verts || !tris || n_verts <= 0 || n_tris <= 0) {
+        copy_err(err, err_len, "empty mesh");
+        return nullptr;
+    }
+    if (component_filter < 0 || component_filter > 2) {
+        copy_err(err, err_len, "bad component filter");
+        return nullptr;
+    }
+    t2glb::MeshExportOptions opt;
+    opt.components = (t2glb::ComponentFilter)component_filter;
+    t2glb::PreparedMesh prepared;
+    std::string e;
+    if (!t2glb::prepare_print_mesh(verts, n_verts, (const int32_t *)tris,
+                                   n_tris, pbr, opt, alpha_ratio, offset_ratio,
+                                   prepared, e)) {
+        copy_err(err, err_len, e);
+        return nullptr;
+    }
+    auto *r = new aicore_trellis_mesh();
+    r->verts = std::move(prepared.verts);
+    r->normals = std::move(prepared.normals);
+    r->tris.assign(prepared.tris.begin(), prepared.tris.end());
+    r->pbr = std::move(prepared.pbr);
+    return r;
+}
+
+uint8_t *aicore_trellis_bake_projected_glb(
+        const float *target_verts,
+        int target_n_verts,
+        const int *target_tris,
+        int target_n_tris,
+        const float *source_verts,
+        int source_n_verts,
+        const int *source_tris,
+        int source_n_tris,
+        const float *source_pbr,
+        int texture_size,
+        int source_component_filter,
+        int *out_len,
+        char *err,
+        int err_len) {
+    if (out_len) *out_len = 0;
+    if (!target_verts || !target_tris || target_n_verts <= 0 ||
+        target_n_tris <= 0 || !source_verts || !source_tris || !source_pbr ||
+        source_n_verts <= 0 || source_n_tris <= 0) {
+        copy_err(err, err_len, "empty projected GLB mesh");
+        return nullptr;
+    }
+    if (source_component_filter < 0 || source_component_filter > 2) {
+        copy_err(err, err_len, "bad component filter");
+        return nullptr;
+    }
+    t2glb::MeshExportOptions opt;
+    if (texture_size > 0) opt.texture_size = texture_size;
+    opt.components = (t2glb::ComponentFilter)source_component_filter;
+    std::vector<uint8_t> glb;
+    std::string e;
+    if (!t2glb::mesh_to_projected_glb(
+                target_verts, target_n_verts, (const int32_t *)target_tris,
+                target_n_tris, source_verts, source_n_verts,
+                (const int32_t *)source_tris, source_n_tris, source_pbr, opt,
+                glb, e)) {
+        copy_err(err, err_len, e);
+        return nullptr;
+    }
+    uint8_t *buf = (uint8_t *)std::malloc(glb.size());
+    if (!buf) {
+        copy_err(err, err_len, "out of memory");
+        return nullptr;
+    }
+    std::memcpy(buf, glb.data(), glb.size());
+    if (out_len) *out_len = (int)glb.size();
+    return buf;
+}
+
 
 // ─────────────────────────────────────────────────────────────────────────
 // Mesh accessors (buffers borrowed until aicore_trellis_mesh_free)

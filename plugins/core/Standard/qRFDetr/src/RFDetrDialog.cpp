@@ -465,7 +465,13 @@ void RFDetrDialog::loadSettings() {
     settings.beginGroup(QStringLiteral("qRFDetr"));
     const QString modelFilename =
             settings.value(QStringLiteral("modelFilename")).toString();
-    selectModelByFilename(modelFilename);
+    // Legacy builds auto-persisted the index-0 (Nano F32 reference) default
+    // on close; only restore an explicit user choice and otherwise keep the
+    // recommended entry picked by populateModelCombo().
+    m_modelExplicit =
+            settings.value(QStringLiteral("modelFilenameExplicit"), false)
+                    .toBool();
+    if (m_modelExplicit) selectModelByFilename(modelFilename);
     const QString device =
             settings.value(QStringLiteral("device"), QStringLiteral("auto"))
                     .toString();
@@ -493,6 +499,8 @@ void RFDetrDialog::saveSettings() const {
     settings.beginGroup(QStringLiteral("qRFDetr"));
     settings.setValue(QStringLiteral("modelFilename"),
                       m_modelCombo->currentData().toString());
+    settings.setValue(QStringLiteral("modelFilenameExplicit"),
+                      m_modelExplicit);
     settings.setValue(QStringLiteral("device"),
                       m_deviceCombo->currentData().toString());
     settings.setValue(QStringLiteral("threads"), m_threads->value());
@@ -525,10 +533,10 @@ void RFDetrDialog::populateModelCombo(const QString& keepFilename) {
     for (const RFDetrModelEntry& e : models) {
         m_modelCombo->addItem(RFDetrHelpers::modelDisplayLabel(e), e.filename);
     }
-    if (!keepFilename.isEmpty()) {
-        const int idx = m_modelCombo->findData(keepFilename);
-        if (idx >= 0) m_modelCombo->setCurrentIndex(idx);
-    }
+    // Single selection policy for every AICore dialog: keep the caller's
+    // selection when valid, else the catalog-declared default row.
+    ecvAICoreUi::selectModelRow(m_modelCombo, keepFilename,
+                                RFDetrHelpers::catalogDefaultIndex());
     m_modelCombo->blockSignals(false);
     if (m_liveWidget) {
         m_liveWidget->syncModelControlsFrom(m_modelCombo, m_deviceCombo,
@@ -551,6 +559,9 @@ void RFDetrDialog::refreshModelList() {
 }
 
 void RFDetrDialog::onModelComboChanged(int index) {
+    // A real signal (sender() set) means the user changed the combo; the
+    // populate/load paths drive the slot directly with no sender.
+    if (sender() == m_modelCombo) m_modelExplicit = true;
     const QString filename = m_modelCombo->itemData(index).toString();
     const bool isCustom =
             filename.isEmpty() ||
@@ -614,6 +625,10 @@ void RFDetrDialog::startDownload(const RFDetrModelEntry& model) {
     req.url = model.downloadUrl;
     req.destPath = dest;
     req.minBytes = 1024 * 1024;  // RF-DETR GGUFs are tens of MB
+    // Content identity from the release digest registry — streamed SHA-256
+    // check at ingestion (truncation and corruption both caught).
+    req.contentAnchor = {QCryptographicHash::Sha256,
+                         ecvAssetIntegrity::PinnedDigest(model.filename)};
     m_downloader->download(req);
 }
 
@@ -994,9 +1009,9 @@ void RFDetrDialog::requestTestData(TestDataTarget target) {
     const auto info = ecvTestDataRepository::getDatasetInfo(kind);
     m_testDataDownloadInProgress = true;
     setTestDataControlsEnabled(false);
-    if (ecvTestDataRepository::verifyZipIntegrity(
-                ecvTestDataRepository::zipPath(kind), info.expectedMd5,
-                info.expectedSize)) {
+    if (ecvAssetIntegrity::isVerified(
+                ecvTestDataRepository::zipPath(kind), info.anchor, 0, false,
+                ecvAssetIntegrity::OnMiss::DeepVerify)) {
         appendLog(tr("[Test data] Extracting cached archive..."));
         m_progress->setRange(0, 0);
         m_progress->setValue(0);

@@ -414,6 +414,24 @@ std::string ComputeSHA256(const std::string_view& str) {
   return SHA256DigestToHex(digest, SHA256_DIGEST_LENGTH);
 }
 
+std::string ComputeFileSHA256(const std::filesystem::path& path) {
+  std::FILE* file = std::fopen(path.string().c_str(), "rb");
+  if (file == nullptr) {
+    return "";
+  }
+  SHA256_CTX ctx;
+  SHA256_Init(&ctx);
+  std::vector<char> buffer(1 << 20);
+  size_t bytes = 0;
+  while ((bytes = std::fread(buffer.data(), 1, buffer.size(), file)) > 0) {
+    SHA256_Update(&ctx, buffer.data(), bytes);
+  }
+  std::fclose(file);
+  unsigned char digest[SHA256_DIGEST_LENGTH];
+  SHA256_Final(digest, &ctx);
+  return SHA256DigestToHex(digest, SHA256_DIGEST_LENGTH);
+}
+
 namespace {
 
 std::optional<std::filesystem::path> download_cache_dir_overwrite;

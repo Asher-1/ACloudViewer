@@ -148,6 +148,9 @@ private:
     ecvModelDownloader* m_downloader = nullptr;
     ecvMainAppInterface* m_app = nullptr;
     bool m_downloadInProgress = false;
+    // True once the user picked a model explicitly; legacy builds persisted
+    // the auto index-0 default, which must not shadow the recommended one.
+    bool m_modelExplicit = false;
     PendingAction m_pendingActionAfterDownload = PendingAction::None;
     bool m_taskRunning = false;
     QString m_lastTaskError;

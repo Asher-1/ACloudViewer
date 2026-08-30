@@ -12,7 +12,7 @@
 #include <ecvAICoreUiHelper.h>
 #include <ecvImage.h>
 #include <ecvMainAppInterface.h>
-#include <ecvModelDownloader.h>
+#include "ecvModelDownloader.h"
 #include <ecvPluginDbNaming.h>
 
 #include <QButtonGroup>
@@ -56,8 +56,18 @@ const aicore_sam3_model_entry* catalogEntry(const QString& filename) {
 
 bool isValidCatalogModel(const QString& path, const QString& filename) {
     const auto* entry = catalogEntry(filename);
-    return entry && ecvModelDownloader::isValidCachedFile(path, 64 * 1024, true,
-                                                          entry->size_bytes);
+    // Presence check: integrity-ledger stat-trust (digest pinned per
+    // release asset), falling back to the catalog's exact size for files
+    // downloaded before the ledger existed. Never hashes (multi-GB GGUFs
+    // on dialog paths).
+    return entry &&
+           ecvAssetIntegrity::isVerified(
+                   path,
+                   {QCryptographicHash::Sha256,
+                    ecvAssetIntegrity::PinnedDigest(
+                            QString::fromUtf8(entry->filename))},
+                   64 * 1024, true, ecvAssetIntegrity::OnMiss::CheapChecksOnly,
+                   entry->size_bytes);
 }
 }  // namespace
 
@@ -66,7 +76,8 @@ VideoTab::VideoTab(QWidget* parent) : QWidget(parent) {
     populateModelCombo();
 
     // Shared model downloader (qDA3-style): catalog GGUFs land in the AICore
-    // model cache (sam3_models) and are verified by size + GGUF magic.
+    // model cache (sam3_models), are verified once at ingestion (exact size
+    // compared at finalize) and stat-trusted afterwards.
     m_modelDownloader = new ecvModelDownloader(this);
     connect(m_modelDownloader, &ecvModelDownloader::logMessage, this,
             &VideoTab::appendLog);
@@ -554,8 +565,10 @@ void VideoTab::startDownload(bool thenRun) {
         if (thenRun) ensureModelReady();
         return;
     }
-    ecvModelDownloader::removeInvalidCacheFile(dest, 64 * 1024, true,
-                                               entry->size_bytes);
+    ecvAssetIntegrity::removeIfNotVerified(dest, {}, 64 * 1024, true,
+                                           ecvAssetIntegrity::OnMiss::
+                                                   CheapChecksOnly,
+                                           entry->size_bytes);
 
     QDir().mkpath(cacheDir);
     m_downloadInProgress = true;
@@ -578,10 +591,11 @@ void VideoTab::startDownload(bool thenRun) {
     ecvModelDownloader::Request req;
     req.url = QString::fromUtf8(entry->download_url);
     req.destPath = dest;
-    // The catalog sizes are verified against the GitHub Release API; the
-    // downloader deletes the file when the size mismatches (truncated/CDN
-    // error pages that still carry the GGUF magic).
-    req.expectedSize = entry->size_bytes;
+    // Content identity from the release digest registry — streamed SHA-256
+    // check at ingestion (truncation and corruption both caught, no size
+    // guard needed); the verified state is recorded in the ledger.
+    req.contentAnchor = {QCryptographicHash::Sha256,
+                         ecvAssetIntegrity::PinnedDigest(filename)};
     m_modelDownloader->download(req);
 }
 
@@ -1469,6 +1483,8 @@ int VideoTab::exportMasksToDb() {
     }
     const QString deviceTag =
             ecvPluginDbNaming::deviceTagFromName(m_deviceCombo->currentText());
+    const QString modelTag =
+            ecvPluginDbNaming::modelTagFromFilename(modelPath());
     const QString baseName = QFileInfo(m_videoPath).completeBaseName();
     int added = 0;
     for (int i = 0; i < m_lastResult.instanceMasks.size(); ++i) {
@@ -1476,8 +1492,9 @@ int VideoTab::exportMasksToDb() {
         if (mask.isNull()) continue;
         const int id = m_lastResult.instanceIds.value(i, i + 1);
         const QString name = ecvPluginDbNaming::makeUnique(
-                QStringLiteral("SAM3_Video_%1_%2_mask_obj%3_frame%4")
-                        .arg(baseName, deviceTag)
+                QStringLiteral(
+                        "SAM3_Video_%1_%2_%3_mask_obj%4_frame%5")
+                        .arg(modelTag, baseName, deviceTag)
                         .arg(id)
                         .arg(m_currentFrame, 4, 10, QLatin1Char('0')),
                 m_app);
@@ -1623,10 +1640,12 @@ void VideoTab::exportCurrentFrameToDb() {
 
     const QString deviceTag =
             ecvPluginDbNaming::deviceTagFromName(m_deviceCombo->currentText());
+    const QString modelTag =
+            ecvPluginDbNaming::modelTagFromFilename(modelPath());
     const QString baseName = QFileInfo(m_videoPath).completeBaseName();
     const QString name = ecvPluginDbNaming::makeUnique(
-            QStringLiteral("SAM3_Video_%1_%2_frame%3")
-                    .arg(baseName, deviceTag)
+            QStringLiteral("SAM3_Video_%1_%2_%3_frame%4")
+                    .arg(modelTag, baseName, deviceTag)
                     .arg(m_currentFrame, 4, 10, QLatin1Char('0')),
             m_app);
 
@@ -1728,9 +1747,9 @@ void VideoTab::onUseTestData() {
     if (m_downloadLabel) {
         m_downloadLabel->setVisible(true);
     }
-    if (ecvTestDataRepository::verifyZipIntegrity(
-                ecvTestDataRepository::zipPath(kind), info.expectedMd5,
-                info.expectedSize)) {
+    if (ecvAssetIntegrity::isVerified(
+                ecvTestDataRepository::zipPath(kind), info.anchor, 0, false,
+                ecvAssetIntegrity::OnMiss::DeepVerify)) {
         appendLog(tr("[Test data] Extracting cached archive..."));
         setStatus(tr("Extracting SAM3 test data..."));
         repo.extractDataset(kind);

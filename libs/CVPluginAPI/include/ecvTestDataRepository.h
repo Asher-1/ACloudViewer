@@ -13,6 +13,7 @@
 #include <functional>
 
 #include "CVPluginAPI.h"
+#include "ecvAssetIntegrity.h"
 
 class ecvModelDownloader;
 
@@ -53,8 +54,13 @@ public:
         QString zipFileName;     ///< Name of the zip file
         QString extractDirName;  ///< Directory name after extraction
         QString downloadUrl;     ///< Remote URL
-        QString expectedMd5;     ///< Expected MD5 hash
-        qint64 expectedSize;     ///< Expected file size in bytes
+        ecvAssetIntegrity::Anchor anchor;  ///< Content identity pinned in
+                                           ///< source; verified once at
+                                           ///< ingestion (streamed digest)
+                                           ///< and recorded in the
+                                           ///< <zip>.cvintegrity ledger —
+                                           ///< later access checks are
+                                           ///< stat-only.
     };
 
     /** Returns the singleton instance. */
@@ -81,19 +87,9 @@ public:
     /** Find one uniquely named file below a dataset's extraction directory. */
     static QString findDatasetFile(Dataset kind, const QString& fileName);
 
-    /** Returns true if the dataset is extracted or a valid zip is cached. */
+    /** Returns true if the dataset is extracted or a verified zip is
+     *  cached. */
     bool isDatasetAvailable(Dataset kind) const;
-
-    /**
-     * @brief Verify zip file integrity (size + MD5).
-     * @param zipPath Path to the zip file
-     * @param expectedMd5 Expected MD5 hash (empty = skip MD5 check)
-     * @param expectedMinSize Minimum expected file size (0 = skip size check)
-     * @return true if file exists, passes size check, and MD5 matches
-     */
-    static bool verifyZipIntegrity(const QString& zipPath,
-                                   const QString& expectedMd5,
-                                   qint64 expectedMinSize = 0);
 
     /**
      * @brief Start downloading a dataset.

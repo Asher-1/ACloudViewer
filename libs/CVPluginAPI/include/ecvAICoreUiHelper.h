@@ -263,6 +263,49 @@ inline QHBoxLayout* makeActionRow(QPushButton* runBtn,
 }
 
 // ---------------------------------------------------------------------------
+//  Model-combo default selection
+// ---------------------------------------------------------------------------
+
+/// Select the row a model combo should show, using the single policy
+/// shared by every AICore plugin dialog:
+///  1. `keepFilename` when the combo holds it (caller's persisted or
+///     refreshed selection — explicit user choices win),
+///  2. `defaultIndex` when valid — the index the task's C API catalog
+///     declares as its default (e.g. aicore_rmbg_model_default_index(),
+///     aicore_yolo_model_default_index(role)); pass -1 when the view has
+///     no catalog-declared default,
+///  3. the first row whose label carries "(recommended)" — guard for
+///     views without a declared default,
+///  4. row 0.
+/// Returns the selected index (-1 on an empty combo). The caller owns the
+/// explicit-choice persistence; to keep a programmatic selection from
+/// being recorded as user-driven, block the combo's signals around this
+/// call and drive the visibility refresh directly.
+inline int selectModelRow(QComboBox* combo, const QString& keepFilename,
+                          int defaultIndex) {
+    if (!combo || combo->count() == 0) return -1;
+    if (!keepFilename.isEmpty()) {
+        const int idx = combo->findData(keepFilename);
+        if (idx >= 0) {
+            combo->setCurrentIndex(idx);
+            return idx;
+        }
+    }
+    if (defaultIndex >= 0 && defaultIndex < combo->count()) {
+        combo->setCurrentIndex(defaultIndex);
+        return defaultIndex;
+    }
+    for (int i = 0; i < combo->count(); ++i) {
+        if (combo->itemText(i).contains(QStringLiteral("(recommended)"))) {
+            combo->setCurrentIndex(i);
+            return i;
+        }
+    }
+    combo->setCurrentIndex(0);
+    return 0;
+}
+
+// ---------------------------------------------------------------------------
 //  Runtime parameter row (Device / Threads)
 // ---------------------------------------------------------------------------
 

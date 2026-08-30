@@ -34,7 +34,8 @@ struct TrellisPreset {
  *  f16 flow variants that exceed the 2 GB GitHub release limit. */
 struct HfModelInfo {
     QString filename;
-    qint64 sizeBytes = 0;  // exact published LFS size, used for validation
+    qint64 sizeBytes = 0;  // published LFS size: display + no-ledger
+                           // fallback guard for presence checks
     QString sha256;        // HF LFS content fingerprint (hex, 64 chars)
 };
 
@@ -66,12 +67,21 @@ bool verifyModelFileSha256(const QString& path, const QString& filename);
 QVector<TrellisPreset> presets();
 
 /** Resolve the preset's file list against the catalog into absolute paths.
- *  Missing files are skipped; the caller decides whether that is fatal. */
-QStringList resolvePresetFiles(
-        const TrellisPreset& preset,
-        const QString& cacheDir,
-        const QString& dinoVariant /* "dino_q8" | "dino_f16" */,
-        const QString& ssDecVariant /* "ss_dec_q8" | "ss_dec_f16" */);
+ *  quantization selects the weight-precision chain: "q8" (default — every
+ *  model that publishes a q8 variant uses it; the precision-sensitive
+ *  decoders shape_dec / shape_enc / tex_dec have no q8 variant and always
+ *  stay f16), "f16" (the full-half-precision reference chain) or "f32"
+ *  (upstream's exact mode: the chaotic chain upgrades to full-f32 weights;
+ *  those GGUFs are local conversions, not published on the mirror). Missing
+ *  files are skipped; the caller decides whether that is fatal. */
+QStringList resolvePresetFiles(const TrellisPreset& preset,
+                               const QString& cacheDir,
+                               const QString& quantization /* "q8"|"f16" */);
+
+/** True when `filename` is one of the precision-sensitive decoders that
+ *  always stay f16 regardless of the selected chain (sparse subdivision /
+ *  UV decoding are not robust to Q8 weight rounding). */
+bool isPrecisionSensitiveDecoder(const QString& filename);
 
 /** Model cache directory for qTrellis (aicore_trellis_model_cache_dir). */
 QString modelCacheDir();

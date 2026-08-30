@@ -70,7 +70,11 @@ bool isSupportedImageFile(const QString& filePath) {
 }
 
 bool isValidCachedGguf(const QFileInfo& fi) {
-    return ecvModelDownloader::isValidCachedFile(fi.absoluteFilePath());
+    return ecvAssetIntegrity::isVerified(
+            fi.absoluteFilePath(),
+            {QCryptographicHash::Sha256,
+             ecvAssetIntegrity::PinnedDigest(fi.fileName())},
+            64 * 1024, true, ecvAssetIntegrity::OnMiss::CheapChecksOnly);
 }
 
 }  // namespace
@@ -457,18 +461,19 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
                     appendLog(tr("[Test data] Download failed."));
                     return;
                 }
-                if (!ecvTestDataRepository::verifyZipIntegrity(
+                if (!ecvAssetIntegrity::isVerified(
                             dest,
                             ecvTestDataRepository::getDatasetInfo(kFriends)
-                                    .expectedMd5,
-                            ecvTestDataRepository::getDatasetInfo(kFriends)
-                                    .expectedSize)) {
+                                    .anchor,
+                            0, false,
+                            ecvAssetIntegrity::OnMiss::DeepVerify)) {
                     QFile::remove(dest);
+                    ecvAssetIntegrity::invalidate(dest);
                     setTestDataBusy(false);
                     if (m_downloadLabel) m_downloadLabel->setVisible(false);
                     appendLog(tr(
                             "[Test data] Download rejected: friends_faces.zip "
-                            "failed MD5 integrity check (incomplete or "
+                            "failed integrity check (incomplete or "
                             "corrupted)."));
                     QMessageBox::warning(this, tr("Test data download"),
                                          tr("The downloaded friends_faces.zip "
@@ -478,7 +483,8 @@ FaceDetectDialog::FaceDetectDialog(QWidget* parent) : QDialog(parent) {
                                             "download."));
                     return;
                 }
-                appendLog(tr("[Test data] Downloaded %1 (MD5 OK)").arg(dest));
+                appendLog(tr("[Test data] Downloaded %1 (integrity OK)")
+                                  .arg(dest));
                 QDir().mkpath(ecvTestDataRepository::extractDir());
                 FaceDetectFriendsBundle bundle;
                 m_testDataPostProgressBase = kTestDataDownloadShare;
@@ -2249,17 +2255,18 @@ void FaceDetectDialog::startFriendsTestDataDownload(bool fillRegistry,
     QDir().mkpath(ecvTestDataRepository::downloadDir());
     const QString zipPath = ecvTestDataRepository::zipPath(kFriends);
     if (QFileInfo::exists(zipPath) &&
-        !ecvTestDataRepository::verifyZipIntegrity(
+        !ecvAssetIntegrity::isVerified(
                 zipPath,
-                ecvTestDataRepository::getDatasetInfo(kFriends).expectedMd5,
-                ecvTestDataRepository::getDatasetInfo(kFriends).expectedSize)) {
+                ecvTestDataRepository::getDatasetInfo(kFriends).anchor, 0,
+                false, ecvAssetIntegrity::OnMiss::DeepVerify)) {
         QFile::remove(zipPath);
+        ecvAssetIntegrity::invalidate(zipPath);
         appendLog(
-                tr("[Test data] Removed cached friends_faces.zip (MD5 "
-                   "mismatch)."));
+                tr("[Test data] Removed cached friends_faces.zip (integrity "
+                   "check failed)."));
     }
-    ecvModelDownloader::removeInvalidCacheFile(
-            zipPath, 30 * 1024 * 1024,
+    ecvAssetIntegrity::removeIfNotVerified(
+            zipPath, {}, 30 * 1024 * 1024,
             false /* GGUF magic not relevant for zip */);
     m_testDataDownloadInProgress = true;
     setTestDataBusy(true);
@@ -2280,6 +2287,10 @@ void FaceDetectDialog::startFriendsTestDataDownload(bool fillRegistry,
     req.destPath = ecvTestDataRepository::zipPath(kFriends);
     req.minBytes = 30 * 1024 * 1024;
     req.requireGgufMagic = false; /* zip archive, not a GGUF */
+    // Streamed content check against the repository's pinned digest; the
+    // verified state is recorded at finalize so the post-download check
+    // is stat-only instead of a second full read pass.
+    req.contentAnchor = ecvTestDataRepository::getDatasetInfo(kFriends).anchor;
     m_testDataDownloader->download(req);
 }
 

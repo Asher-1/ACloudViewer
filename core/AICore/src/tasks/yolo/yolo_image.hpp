@@ -44,8 +44,15 @@ void letterbox_image(const Image& img, int imgsz, LetterboxInfo& info,
 // applied). Output is the same CHW F32 layout as letterbox_image.
 void classify_preprocess(const Image& img, int size, std::vector<float>& out);
 
-// Map boxes from the letterboxed canvas back to original image pixels.
-void unscale_boxes(std::vector<Detection>& dets, const LetterboxInfo& info);
+// Map boxes from the letterboxed canvas back to original image pixels. When
+// source image dims are given, the result is clipped into [0, w]x[0, h]
+// (upstream clip_boxes): near-edge anchors can decode slightly outside the
+// canvas, and without the clamp those negative/overshoot coordinates leak
+// into DB metadata and the annotation painter.
+void unscale_boxes(std::vector<Detection>& dets,
+                   const LetterboxInfo& info,
+                   int image_w = 0,
+                   int image_h = 0);
 
 // Map pose keypoints from the letterboxed canvas back to original pixels
 // (same scale/pad transform as unscale_boxes; visibility dims untouched).

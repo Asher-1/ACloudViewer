@@ -11,7 +11,12 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QImage>
+#include <QPainter>
+#include <QPolygon>
+#include <algorithm>
+#include <cmath>
 #include <cstring>
+#include <utility>
 #include <vector>
 
 #include "TrellisModelCatalog.h"
@@ -70,7 +75,189 @@ const char* stageName(int stage) {
     }
 }
 
+// ── preview blob → QImage software rendering ────────────────────────────────
+// The AICore preview blobs are self-describing little-endian payloads:
+//   "T2VOX01": magic[8], u32 res, u32 nvox, u16[3*nvox] coords in [0,res)
+//   "T2MESH01": magic[8], u32 nv, u32 nt, f32[3nv] verts, f32[3nv] normals,
+//               i32[3nt] tris
+// Both are rendered on the worker thread so the GUI thread only blits a
+// ready QImage.
+
+// Isometric voxel-set render (painter-sorted shaded cubes).
+QImage renderVoxelBlob(const char* data, int len, int size) {
+    if (len < 16) return QImage();
+    quint32 res = 0, nvox = 0;
+    std::memcpy(&res, data + 8, 4);
+    std::memcpy(&nvox, data + 12, 4);
+    if (res == 0 || res > 4096 || nvox == 0) return QImage();
+    if (len < (int)(16 + (size_t)nvox * 6)) return QImage();
+    const unsigned char* cells = (const unsigned char*)data + 16;
+    const float r = (float)res;
+
+    // Isometric axes: +x -> (0.866, 0.5), +z -> (-0.866, 0.5), +y -> (0, -1).
+    auto project = [](float x, float y, float z) {
+        return std::pair<float, float>((x - z) * 0.8660254f,
+                                       (x + z) * 0.5f - y);
+    };
+    // Unit-cube bounds in projected space.
+    float umin = 1e9f, umax = -1e9f, vmin = 1e9f, vmax = -1e9f;
+    const float corners[8][3] = {{0, 0, 0},    {r, 0, 0},    {0, r, 0},
+                                 {r, r, 0},    {0, 0, r},    {r, 0, r},
+                                 {0, r, r},    {r, r, r}};
+    for (const auto& c : corners) {
+        auto p = project(c[0], c[1], c[2]);
+        umin = std::min(umin, p.first);
+        umax = std::max(umax, p.first);
+        vmin = std::min(vmin, p.second);
+        vmax = std::max(vmax, p.second);
+    }
+    const float span = std::max(umax - umin, vmax - vmin) + 1e-6f;
+    const float scale = (float)(size - 8) / span;
+    auto toScreen = [&](float u, float v) {
+        return QPointF(4.0 + (u - umin) * scale, 4.0 + (vmax - v) * scale);
+    };
+
+    QImage img(size, size, QImage::Format_ARGB32_Premultiplied);
+    img.fill(Qt::transparent);
+    QPainter p(&img);
+    p.setRenderHint(QPainter::Antialiasing, false);
+    p.setPen(Qt::NoPen);
+
+    // Depth sort: the camera looks along -(1,1,1), so voxels with smaller
+    // x+y+z are farther away and are drawn first.
+    struct Cell {
+        quint16 x, y, z;
+    };
+    std::vector<Cell> order;
+    order.reserve(nvox);
+    for (quint32 i = 0; i < nvox; ++i) {
+        Cell c;
+        std::memcpy(&c.x, cells + (size_t)i * 6 + 0, 2);
+        std::memcpy(&c.y, cells + (size_t)i * 6 + 2, 2);
+        std::memcpy(&c.z, cells + (size_t)i * 6 + 4, 2);
+        order.push_back(c);
+    }
+    std::sort(order.begin(), order.end(), [](const Cell& a, const Cell& b) {
+        return (a.x + a.y + a.z) < (b.x + b.y + b.z);
+    });
+
+    const QColor top(126, 174, 224), side(72, 118, 168), front(52, 92, 138);
+    for (const Cell& c : order) {
+        const float x = c.x, y = c.y, z = c.z;
+        auto v = [&](float dx, float dy, float dz) {
+            auto pr = project(x + dx, y + dy, z + dz);
+            return toScreen(pr.first, pr.second);
+        };
+        // Top face at y+1.
+        QPointF topQ[4] = {v(0, 1, 0), v(1, 1, 0), v(1, 1, 1), v(0, 1, 1)};
+        p.setBrush(top);
+        p.drawPolygon(topQ, 4);
+        // +x face.
+        QPointF rightQ[4] = {v(1, 0, 0), v(1, 1, 0), v(1, 1, 1), v(1, 0, 1)};
+        p.setBrush(side);
+        p.drawPolygon(rightQ, 4);
+        // +z face.
+        QPointF frontQ[4] = {v(0, 0, 1), v(1, 0, 1), v(1, 1, 1), v(0, 1, 1)};
+        p.setBrush(front);
+        p.drawPolygon(frontQ, 4);
+    }
+    p.end();
+    return img;
+}
+
+// Flat-shaded z-buffer render of a mesh keyframe.
+QImage renderMeshBlob(const char* data, int len, int size) {
+    if (len < 16) return QImage();
+    quint32 nv = 0, nt = 0;
+    std::memcpy(&nv, data + 8, 4);
+    std::memcpy(&nt, data + 12, 4);
+    if (nv == 0 || nt == 0 || nv > (1u << 22) || nt > (1u << 22)) {
+        return QImage();
+    }
+    const size_t want = 16 + (size_t)nv * 24 + (size_t)nt * 12;
+    if (len < (int)want) return QImage();
+    const float* verts = (const float*)(data + 16);
+    const float* normals = verts + (size_t)nv * 3;
+    const qint32* tris = (const qint32*)(normals + (size_t)nv * 3);
+
+    QImage img(size, size, QImage::Format_ARGB32);
+    img.fill(0x00000000);
+    std::vector<float> depth((size_t)size * size, -1e9f);
+    const float scale = (float)(size - 8) * 0.85f;
+    auto toScreen = [&](const float* v, float* sx, float* sy) {
+        *sx = 4.0f + (v[0] + 0.5f) * scale;
+        *sy = 4.0f + (0.5f - v[1]) * scale;  // y-up -> image top-down
+    };
+    // Simple directional light in view space.
+    const float lx = 0.4f, ly = 0.7f, lz = 0.6f;
+    for (quint32 t = 0; t < nt; ++t) {
+        const qint32 ia = tris[3 * t + 0], ib = tris[3 * t + 1],
+                     ic = tris[3 * t + 2];
+        if (ia < 0 || ib < 0 || ic < 0 || ia >= (qint32)nv ||
+            ib >= (qint32)nv || ic >= (qint32)nv)
+            continue;
+        const float* a = verts + (size_t)ia * 3;
+        const float* b = verts + (size_t)ib * 3;
+        const float* c = verts + (size_t)ic * 3;
+        float ax, ay, bx, by, cx, cy;
+        toScreen(a, &ax, &ay);
+        toScreen(b, &bx, &by);
+        toScreen(c, &cx, &cy);
+        const float area = (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
+        if (std::fabs(area) < 1e-9f) continue;
+        const float nz =
+                (b[0] - a[0]) * (c[2] - a[2]) - (b[2] - a[2]) * (c[0] - a[0]);
+        const float ny =
+                (b[2] - a[2]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[2] - a[2]);
+        const float n1 =
+                (b[1] - a[1]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[1] - a[1]);
+        const float nl =
+                std::sqrt(nz * nz + ny * ny + n1 * n1) + 1e-20f;
+        float shade = std::fabs((nz * lx + ny * ly + n1 * lz) / nl);
+        shade = 0.25f + 0.75f * shade;
+        const int R = (int)(232 * shade), G = (int)(166 * shade),
+                  B = (int)(98 * shade);
+        const QRgb col = qRgb(R, G, B);
+        const int x0 = std::max(0, (int)std::floor(std::min({ax, bx, cx})));
+        const int x1 = std::min(size - 1, (int)std::ceil(std::max({ax, bx, cx})));
+        const int y0 = std::max(0, (int)std::floor(std::min({ay, by, cy})));
+        const int y1 = std::min(size - 1, (int)std::ceil(std::max({ay, by, cy})));
+        const float inv_area = 1.0f / area;
+        const float cz = a[2] + b[2] + c[2];
+        for (int py = y0; py <= y1; ++py) {
+            for (int px = x0; px <= x1; ++px) {
+                const float sx = px + 0.5f, sy = py + 0.5f;
+                const float w0 = ((bx - sx) * (cy - sy) - (by - sy) * (cx - sx)) *
+                                 inv_area;
+                const float w1 = ((cx - sx) * (ay - sy) - (cy - sy) * (ax - sx)) *
+                                 inv_area;
+                const float w2 = 1.0f - w0 - w1;
+                if (w0 < 0 || w1 < 0 || w2 < 0) continue;
+                // View depth = w0*a[2]+w1*b[2]+w2*c[2] along +z (camera at +z).
+                const float z = w0 * a[2] + w1 * b[2] + w2 * c[2] + cz * 0.0f;
+                float& d = depth[(size_t)py * size + px];
+                if (z > d) {
+                    d = z;
+                    img.setPixel(px, py, col);
+                }
+            }
+        }
+    }
+    return img;
+}
+
 }  // namespace
+
+QImage TrellisWorker::renderPreviewBlob(const char* data, int len, int size) {
+    if (!data || len < 16) return QImage();
+    if (std::memcmp(data, "T2VOX01", 7) == 0) {
+        return renderVoxelBlob(data, len, size);
+    }
+    if (std::memcmp(data, "T2MESH01", 8) == 0) {
+        return renderMeshBlob(data, len, size);
+    }
+    return QImage();
+}
 
 TrellisWorker::TrellisWorker(const Settings& settings, QObject* parent)
     : QThread(parent), m_settings(settings) {}
@@ -111,22 +298,54 @@ void TrellisWorker::applySettingsToOptions(aicore_trellis_options* opts) {
     }
 }
 
-bool TrellisWorker::resolveRmbgModel() {
-    // The rmbg model comes from the same trellis2-ggml release; reuse the
-    // trellis catalog entry (role == "rmbg").
-    const QString cacheDir = TrellisHelpers::modelCacheDir();
-    const QString path =
-            cacheDir + QLatin1Char('/') + QStringLiteral("rmbg_f16.gguf");
-    if (QFile::exists(path)) {
-        m_settings.rmbgModelPath = path;
-        return true;
+void TrellisWorker::emitPreviewBlob(int stage, int step, int total,
+                                    const void* data, int len) {
+    TrellisStagePreview preview;
+    preview.stage = stage;
+    preview.step = step;
+    preview.total = total;
+    preview.label = QString::fromLatin1(stageName(stage));
+    if (total > 0)
+        preview.label += QStringLiteral(" %1/%2").arg(step).arg(total);
+    preview.image = renderPreviewBlob((const char*)data, len, 256);
+    if (!preview.image.isNull()) {
+        emit stagePreview(preview);
     }
-    emit logMessage(QStringLiteral("[TRELLIS] RMBG model not found: %1 "
-                                   "(download rmbg_f16.gguf "
+}
+
+void TrellisWorker::onProgress(int stage, int step, int total) {
+    // Per-stage wall-time buckets: the timer restarts only on a stage change,
+    // so each bucket accumulates that stage's full duration (progress fires
+    // at stage entry; the trailing stage closes after generate returns).
+    if (m_lastStage != stage) {
+        if (m_lastStage >= 0) {
+            m_stageMs[m_lastStage] +=
+                    static_cast<double>(m_stageTimer.elapsed());
+        }
+        m_lastStage = stage;
+        m_stageTimer.restart();
+    }
+    emit progressUpdate(stage, step, total);
+}
+
+bool TrellisWorker::resolveRmbgModel() {
+    // The rmbg model comes from the same Trellis2 mirror; prefer the q8
+    // variant (best accuracy/size trade, keeps host RAM low on the small-
+    // machine presets) and fall back to f16.
+    const QString cacheDir = TrellisHelpers::modelCacheDir();
+    for (const QString& name :
+         {QStringLiteral("rmbg_q8.gguf"), QStringLiteral("rmbg_f16.gguf")}) {
+        const QString path = cacheDir + QLatin1Char('/') + name;
+        if (QFile::exists(path)) {
+            m_settings.rmbgModelPath = path;
+            return true;
+        }
+    }
+    emit logMessage(QStringLiteral("[TRELLIS] RMBG model not found in %1 "
+                                   "(download rmbg_q8.gguf / rmbg_f16.gguf "
                                    "first, e.g. via the qRMBG plugin). Falling "
-                                   "back to solid-color "
-                                   "background removal.")
-                            .arg(path));
+                                   "back to solid-color background removal.")
+                            .arg(cacheDir));
     m_settings.useRmbg = false;
     return true;
 }
@@ -226,18 +445,47 @@ bool TrellisWorker::runInference() {
     params.steps = m_settings.steps;
     params.guidance = static_cast<float>(m_settings.guidance);
     params.texture_steps = m_settings.textureSteps;
+    // Live per-step voxel previews (stride auto: ~4 across the SS run) and
+    // two replayed shape-flow mesh keyframes; the preview callback is only
+    // wired when the dialog asked for live previews.
+    params.preview_stride = m_settings.livePreview ? 0 : -1;
+    params.keyframes = m_settings.livePreview ? 2 : 0;
 
     char err[512] = {0};
     QElapsedTimer timer;
+    m_stageTimer.start();
+    m_lastStage = -1;
+    m_stageMs.clear();
     timer.start();
-    aicore_trellis_mesh* mesh = aicore_trellis_generate(
-            ctx, imageBytes.constData(), imageBytes.size(), &params,
-            [](void* user, int stage, int step, int total) {
-                auto* self = static_cast<TrellisWorker*>(user);
-                self->emit progressUpdate(stage, step, total);
-            },
-            this, err, sizeof(err));
+    aicore_trellis_mesh* mesh = nullptr;
+    {
+        // Fixed function pointers: a capture-less lambda decays to a plain
+        // function pointer, but the two branches of a conditional expression
+        // (lambda vs nullptr) do not share a type — bind through variables
+        // with explicit types so the live-preview switch stays type-safe.
+        aicore_trellis_progress_fn progressFn =
+                [](void* user, int stage, int step, int total) {
+                    auto* self = static_cast<TrellisWorker*>(user);
+                    self->onProgress(stage, step, total);
+                };
+        aicore_trellis_preview_fn previewLambda =
+                [](void* user, int stage, int step, int total,
+                   const void* data, int len) {
+                    auto* self = static_cast<TrellisWorker*>(user);
+                    self->emitPreviewBlob(stage, step, total, data, len);
+                };
+        aicore_trellis_preview_fn previewFn =
+                m_settings.livePreview ? previewLambda : nullptr;
+        mesh = aicore_trellis_generate_ex(ctx, imageBytes.constData(),
+                                          imageBytes.size(), &params,
+                                          progressFn, this, previewFn, this,
+                                          err, sizeof(err));
+    }
     const double elapsedMs = static_cast<double>(timer.elapsed());
+    // Close the trailing stage's wall-time bucket.
+    if (m_lastStage >= 0) {
+        m_stageMs[m_lastStage] += static_cast<double>(m_stageTimer.elapsed());
+    }
 
     if (!mesh) {
         emit logMessage(QStringLiteral("[TRELLIS] Generation failed: %1")
@@ -252,6 +500,8 @@ bool TrellisWorker::runInference() {
     result.presetName = m_settings.presetName;
     result.totalRuntimeMs = elapsedMs;
     result.backend = QString::fromUtf8(aicore_trellis_backend(ctx));
+    result.quantization = m_settings.quantization;
+    result.stageMs = m_stageMs;
 
     const int nv = aicore_trellis_mesh_n_verts(mesh);
     const int nt = aicore_trellis_mesh_n_tris(mesh);
@@ -276,6 +526,18 @@ bool TrellisWorker::runInference() {
         std::memcpy(result.pbr.data(), pbr, sizeof(float) * nv * 6);
         result.hasPbr = true;
     }
+    // Decoded dual grid: carried through for standalone re-texturing
+    // (aicore_trellis_texture_mesh with the sidecar grid path).
+    result.gridRes = aicore_trellis_mesh_grid_res(mesh);
+    const int nvox = aicore_trellis_mesh_grid_nvox(mesh);
+    if (result.gridRes > 0 && nvox > 0) {
+        const float* gf = aicore_trellis_mesh_grid_feats(mesh);
+        const int* gc = aicore_trellis_mesh_grid_coords(mesh);
+        result.gridFeats.resize(nvox * 7);
+        result.gridCoords.resize(nvox * 3);
+        std::memcpy(result.gridFeats.data(), gf, sizeof(float) * nvox * 7);
+        std::memcpy(result.gridCoords.data(), gc, sizeof(int) * nvox * 3);
+    }
     // AI background-removal result: wrap the borrowed RGBA buffer in a QImage
     // and detach with a deep copy, since the mesh (and its buffers) is freed
     // right below. QImage::Format_RGBA8888 matches the pipeline's byte order.
@@ -290,12 +552,47 @@ bool TrellisWorker::runInference() {
     }
     aicore_trellis_mesh_free(mesh);
 
+    // Bake the UV-atlas textured GLB here on the worker thread: the
+    // add-to-DB path imports it for the full PBR material display (vertex
+    // colours alone cannot express metallic/roughness, so the mesh would
+    // render as flat diffuse base colour), and the GLB export reuses the
+    // same bytes instead of re-baking on the GUI thread. Failure leaves the
+    // result in vertex-colour fallback mode.
+    if (result.hasPbr && !result.verts.isEmpty() && !result.tris.isEmpty()) {
+        emit logMessage(QStringLiteral(
+                "[TRELLIS] Baking UV-atlas textured GLB (2048) on the worker "
+                "thread..."));
+        char glbErr[512] = {0};
+        int glbLen = 0;
+        uint8_t* glb = aicore_trellis_bake_glb(
+                result.verts.constData(), result.verts.size() / 3,
+                result.tris.constData(), result.tris.size() / 3,
+                result.pbr.constData(), 2048, 0, &glbLen, glbErr,
+                sizeof(glbErr));
+        if (glb && glbLen > 0) {
+            result.glb = QByteArray(reinterpret_cast<const char*>(glb), glbLen);
+            emit logMessage(
+                    QStringLiteral("[TRELLIS] Textured GLB baked (%1 MB)")
+                            .arg(glbLen / (1024.0 * 1024.0), 0, 'f', 1));
+        } else {
+            emit logMessage(
+                    QStringLiteral("[TRELLIS] GLB bake failed (%1); falling "
+                                   "back to vertex colours")
+                            .arg(glbErr[0] ? QString::fromUtf8(glbErr)
+                                           : QStringLiteral("unknown error")));
+        }
+        if (glb) {
+            aicore_trellis_free_buffer(glb);
+        }
+    }
+
     emit logMessage(QStringLiteral("[TRELLIS] Mesh %1 verts / %2 tris "
-                                   "generated in %3 ms (backend %4)")
+                                   "generated in %3 ms (backend %4, %5 chain)")
                             .arg(nv)
                             .arg(nt)
                             .arg(elapsedMs, 0, 'f', 0)
-                            .arg(result.backend));
+                            .arg(result.backend)
+                            .arg(result.quantization));
 
     aicore_trellis_free(ctx);
     m_ctx = nullptr;

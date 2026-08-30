@@ -51,6 +51,14 @@ bool findModelByFilename(const QString& filename, RMBGModelEntry* out) {
     return false;
 }
 
+int catalogDefaultIndex() {
+#ifdef AICore_ENABLED
+    return aicore_rmbg_model_default_index();
+#else
+    return -1;
+#endif
+}
+
 QString modelCacheDir() {
 #ifdef AICore_ENABLED
     char* dir = aicore_rmbg_model_cache_dir();

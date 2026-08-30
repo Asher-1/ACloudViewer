@@ -82,6 +82,20 @@ static aicore_rmbg_model_entry toEntry(const ModelRow& row) {
 
 AICORE_CAPI int aicore_rmbg_model_count(void) { return modelCount(); }
 
+AICORE_CAPI int aicore_rmbg_model_default_index(void) {
+    // The catalog's own default declaration: the row whose note carries
+    // the visible "(recommended)" marker. Reading the marker here (instead
+    // of hard-coding an index) keeps the declaration and the user-facing
+    // label from ever drifting apart.
+    for (size_t i = 0; i < kModels.size(); ++i) {
+        if (kModels[i].quant_note &&
+            std::strstr(kModels[i].quant_note, "(recommended)")) {
+            return static_cast<int>(i);
+        }
+    }
+    return 0;
+}
+
 AICORE_CAPI const aicore_rmbg_model_entry* aicore_rmbg_model_at(int index) {
     static thread_local aicore_rmbg_model_entry entry{};
     if (index < 0 || index >= modelCount()) return nullptr;

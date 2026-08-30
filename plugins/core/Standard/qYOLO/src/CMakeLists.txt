@@ -5,5 +5,6 @@ target_sources( ${PROJECT_NAME}
         ${CMAKE_CURRENT_LIST_DIR}/YOLOWorker.cpp
         ${CMAKE_CURRENT_LIST_DIR}/YOLOLiveInferWorker.cpp
         ${CMAKE_CURRENT_LIST_DIR}/YOLOLiveWidget.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/YOLOVisualPromptLabel.cpp
         ${CMAKE_CURRENT_LIST_DIR}/YOLODialog.cpp
 )

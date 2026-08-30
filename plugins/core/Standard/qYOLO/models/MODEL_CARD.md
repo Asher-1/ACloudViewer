@@ -7,7 +7,7 @@
 | Architecture | Ultralytics YOLO — YOLOv8 and YOLO26 families (GGUF export)           |
 | Task         | Object detection (COCO 80 classes), instance segmentation, metric depth, keypoint pose (COCO-17), oriented boxes (DOTA-15), classification (ImageNet-1000), semantic segmentation (Cityscapes-19), open-vocabulary detection/segmentation (YOLO-World / YOLOE, text towers included) |
 | Input        | RGB image letterboxed to the model's image size (classify: checkpoint-baked resize + center crop) |
-| Output       | Detection boxes (class_id / score / box); instance masks (binary per-object); depth: per-pixel depth map in meters; pose: boxes + 17 keypoints (x/y/visibility); obb: rotated boxes (cx/cy/w/h/angle); classify: softmax table; semantic: full-resolution class map; world/yoloe: detections (and masks) against the user's class list |
+| Output       | Detection boxes (class_id / score / box); instance masks (binary per-object); depth: per-pixel depth map in meters; pose: boxes + 17 keypoints (x/y/visibility); obb: rotated boxes (cx/cy/w/h/angle); classify: softmax table; semantic: full-resolution class map; world/yoloe: detections (and masks) against the user's class list; yoloe visual prompts (SAVPE): detections/masks against image-derived class embeddings (object0..objectN-1) |
 | License      | [AGPL-3.0](https://github.com/ultralytics/ultralytics/blob/main/LICENSE) (Ultralytics) |
 | Source       | ultralytics-ggml conversion -> `yolo_gguf_models` release (hosted on cloudViewer_downloads) |
 
@@ -18,6 +18,12 @@
 Filename pattern: `<variant>-<quant>.gguf` (e.g. `yolov8n-f16.gguf`,
 `yolov8n-seg-f16.gguf`, `yolo26n-depth-q8_0.gguf`,
 `yoloe-26n-seg-pf-q8_0.gguf`).
+
+YOLOE visual prompts: the non-`-pf` `yoloe-*-seg` GGUFs additionally support
+the official SAVPE visual-prompt mode when they carry savpe weights
+(`yolo.savpe = 1` + `savpe.*` tensors, added by
+`core/AICore/src/tasks/yolo/tools/convert_yoloe_savpe_gguf.py` from the matching `.pt` checkpoint);
+GGUFs without the flag keep working through the text / prompt-free paths.
 
 | Variant family | Variants          | Task                | Head                                    | end2end |
 |----------------|-------------------|---------------------|-----------------------------------------|---------|

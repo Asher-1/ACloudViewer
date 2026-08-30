@@ -99,6 +99,14 @@ bool findModelByFilename(const QString& filename, RFDetrModelEntry* out) {
     return false;
 }
 
+int catalogDefaultIndex() {
+#ifdef AICore_ENABLED
+    return aicore_rfdetr_model_default_index();
+#else
+    return -1;
+#endif
+}
+
 QString modelCacheDir() {
 #ifdef AICore_ENABLED
     char* dir = aicore_rfdetr_model_cache_dir();

@@ -137,6 +137,7 @@ cmake --build . --config Release --target install
 | `AICore_ENABLED` | OFF | Build unified AI core (`libAICore.so`) — DA3 depth/pose + FreeSplatter 3D Gaussians (auto-enables `GGML_ENABLED`) |
 | `AICore_BUILD_TESTS` | OFF | Build the lightweight public ABI/runtime contract suite |
 | `AICore_BUILD_WHITEBOX_TESTS` | OFF | Also build private implementation tests (slower; duplicates AICore objects) |
+| `AICore_USE_CUMESH` | ON (with `AICore_USE_CUDA`) | Trellis: CuMesh GPU chart clustering for the UV-atlas GLB bake. Mirrors upstream `TRELLIS2_CUMESH` default ON; CuMesh links libtorch internally (upstream contract — the C API `cumesh_glue.h` is torch-free). Auto-disabled with a warning when CUDA / libtorch / Python headers are unavailable; set `CUMESH_TORCH_DIR=<torch>/share/cmake/Torch` when auto-discovery fails |
 | `GGML_ENABLED` | (internal) | Auto-synced from `AICore_ENABLED`; not a separate user switch |
 | `AICore_USE_METAL` | Apple: ON, else OFF | Metal backend (Apple only; macOS Auto default) |
 | `AICore_USE_VULKAN` | Linux/Win: ON, macOS: OFF | **ON:** build Vulkan backend; configure **fails** if glslc/Vulkan/SPIR-V deps missing |

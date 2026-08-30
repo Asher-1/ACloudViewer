@@ -24,7 +24,8 @@
 namespace IoUtils {
 ccMaterialSet *createMaterialSetForMesh(const aiMesh *inMesh,
                                         const QString &inPath,
-                                        const aiScene *inScene);
+                                        const aiScene *inScene,
+                                        const QString &inSourceFileName);
 
 ccMesh *newCCMeshFromAIMesh(const aiMesh *inMesh);
 

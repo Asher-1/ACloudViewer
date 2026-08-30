@@ -21,6 +21,8 @@
 #include <map>
 #include <mutex>
 #include <thread>
+#include <unordered_map>
+#include <utility>
 
 #include "WidgetMap.h"
 #include "qVTK.h"
@@ -524,10 +526,14 @@ public:
                      int viewport = 0);
     /** @param context Draw context
      *  @param materials Material set for texture update
-     *  @return true on success
+     *  @param forceApply When false and the same material set was already
+     *         applied to this actor, the update is skipped (plain scene
+     *         redraws). Explicit property-driven updates pass true.
+     *  @return true on success (including a skipped no-op update)
      */
     bool updateTexture(const CC_DRAW_CONTEXT& context,
-                       const ccMaterialSet* materials);
+                       const ccMaterialSet* materials,
+                       bool forceApply = true);
     /**
      * @brief Add texture mesh directly from ccGenericMesh (preferred)
      * @param mesh ccGenericMesh object containing geometry and materials
@@ -1401,6 +1407,12 @@ protected:
     VtkRendering::CloudActorMapPtr cloud_actor_map_;
     VtkRendering::ShapeActorMapPtr shape_actor_map_;
     VtkRendering::CoordinateActorMapPtr coordinate_actor_map_;
+
+    // Per-viewID record of the material set last applied by a NON-forced
+    // updateTexture() call (plain redraw path). Used to skip redundant
+    // full texture/PBR re-application when nothing changed.
+    std::unordered_map<std::string, std::pair<const void*, size_t>>
+            m_autoAppliedMaterials;
 
     vtkSmartPointer<vtkOrientationMarkerWidget> m_axes_widget;
     vtkSmartPointer<vtkPointPicker> m_point_picker;

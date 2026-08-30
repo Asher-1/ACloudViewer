@@ -178,6 +178,10 @@ QVector<YOLOModelEntry> textModels();
 /** Filter the full catalog on a tab task id ("detect"|"segment"|"depth"|
  *  "pose"|"obb"|"classify"|"semantic"|"world"|"yoloe"|"text"). */
 QVector<YOLOModelEntry> taskModels(const QString& task);
+/** Index (within taskModels(task)) of the catalog-declared default row for
+ *  the task's role view (aicore_yolo_model_default_index); -1 when AICore
+ *  is not available or the task is unknown. */
+int defaultModelIndexForTask(const QString& task);
 /** Lookup by GGUF filename; returns false when unknown. */
 bool findModelByFilename(const QString& filename, YOLOModelEntry* out);
 
@@ -258,5 +262,37 @@ QRgb classColor(uint32_t classId);
 
 /** True when the model filename looks like a depth variant. */
 bool filenameIsDepth(const QString& filename);
+
+/** True when the GGUF filename is a prompt-free YOLOE checkpoint ("-pf-"
+ *  / "-pf." in the name): it matches the built-in 4585-entry vocabulary
+ *  and rejects an explicit class list. */
+bool isPromptFreeFilename(const QString& filename);
+
+/** Same-scale prompt-free sibling of a non-prompt-free YOLOE GGUF filename
+ *  ("yoloe-26s-seg-f16.gguf" -> "yoloe-26s-seg-pf-f16.gguf"), verified
+ *  against the catalog. Empty when the input is not a non-pf YOLOE
+ *  checkpoint or the catalog ships no such sibling. This is the official
+ *  no-input path for YOLOE: the -pf variant matches its built-in 4585-entry
+ *  vocabulary with no text and no visual prompt (upstream *-seg-pf.pt). */
+QString promptFreeSiblingFilename(const QString& filename);
+
+/** Translate a Chinese detection prompt into English for the text towers
+ *  (LaBSE/MobileCLIP heads are English-trained; bridged Chinese vectors
+ *  lose the color/age discriminative directions). Uses a "wear X-hat Y"
+ *  template plus a word-level dictionary (COCO classes, colors, people);
+ *  words outside the dictionary are dropped. Returns the input unchanged
+ *  when it contains no CJK characters. *translated reports whether any
+ *  conversion happened. */
+QString translatePromptToEnglish(const QString& text, bool* translated);
+
+/** Per-task default sample image from the shared objects_detection_data
+ *  test-data cache: the classification tab wants a single-subject photo
+ *  (cat.jpg), OBB models are trained on DOTA aerial imagery
+ *  (aerial_airport.jpg), pose wants multiple people in dynamic poses
+ *  (000000087038.jpg), and the world/yoloe tabs want the multi-person
+ *  party-hats scene (party_hats.jpg — differently colored hats per person,
+ *  verified to demonstrate text-prompt selectivity); every other task uses
+ *  the COCO street scene. */
+QString testImageForTask(const QString& task);
 
 }  // namespace YOLOHelpers

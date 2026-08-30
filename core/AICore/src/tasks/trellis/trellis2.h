@@ -794,6 +794,13 @@ TRELLIS2_API void trellis2_set_threads(int n_threads);
 // Thread-local. Was TRELLIS2_SDPA_EXACT upstream.
 TRELLIS2_API void trellis2_set_sdpa_exact(bool exact);
 
+// Opt back into ggml_flash_attn_ext (the pre-parity default). The exact
+// materialized F32 path is the default for numerical parity with the
+// upstream reference: CUDA's flash kernel accumulates K/V in F16 MMA (~3e-3
+// rel-L2 per forward), which collapses the HR shape decode's subdivision
+// predictions. Thread-local. Was TRELLIS2_SDPA_FLASH upstream.
+TRELLIS2_API void trellis2_set_sdpa_flash(bool flash);
+
 // Enable per-forward stage timing logs. Thread-local. Was TRELLIS2_TIMING
 // upstream.
 TRELLIS2_API void trellis2_set_timing(bool enabled);

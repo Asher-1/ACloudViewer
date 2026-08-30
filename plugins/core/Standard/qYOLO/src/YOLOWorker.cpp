@@ -46,6 +46,21 @@ private:
 
 }  // namespace
 
+namespace {
+
+/* True when the class list carries a multi-word descriptive phrase — the
+ * open-vocabulary heads score those far below short category nouns, so an
+ * empty result with such a prompt is almost always a threshold/wording
+ * issue, not a broken pipeline. */
+bool hasPhrasePrompt(const QStringList& classes) {
+    for (const QString& c : classes) {
+        if (c.contains(QLatin1Char(' '))) return true;
+    }
+    return false;
+}
+
+}  // namespace
+
 YOLOWorker::YOLOWorker(const Settings& settings, QObject* parent)
     : QThread(parent), m_settings(settings) {
 #ifdef AICore_ENABLED
@@ -113,8 +128,27 @@ bool YOLOWorker::runInference() {
     aicore_yolo_options_set_iou_thres(opts, m_settings.iouThres);
     aicore_yolo_options_set_top_k(opts, m_settings.topK);
     // Open-vocabulary setup (world/yoloe): the class list rides into load;
-    // the text-model GGUF encodes it once per context.
-    if (!m_settings.classes.isEmpty()) {
+    // the text-model GGUF encodes it once per context. YOLOE visual prompts
+    // take precedence: the SAVPE encoder derives the class embeddings from
+    // the drawn boxes, so no class list and no text model apply.
+    if (!m_settings.visualPrompts.isEmpty()) {
+        std::vector<float> boxes;
+        boxes.reserve(static_cast<size_t>(m_settings.visualPrompts.size()) * 4);
+        for (const QRectF& b : m_settings.visualPrompts) {
+            boxes.push_back(static_cast<float>(b.left()));
+            boxes.push_back(static_cast<float>(b.top()));
+            boxes.push_back(static_cast<float>(b.right()));
+            boxes.push_back(static_cast<float>(b.bottom()));
+        }
+        aicore_yolo_options_set_visual_prompts(
+                opts, boxes.data(),
+                static_cast<int32_t>(m_settings.visualPrompts.size()));
+        emit logMessage(tr("[YOLO] Visual prompts: %1 example box(es); the "
+                            "SAVPE encoder derives the categories "
+                            "(object0..object%2).")
+                                .arg(m_settings.visualPrompts.size())
+                                .arg(m_settings.visualPrompts.size() - 1));
+    } else if (!m_settings.classes.isEmpty()) {
         std::vector<const char*> classPtrs;
         classPtrs.reserve(static_cast<size_t>(m_settings.classes.size()));
         QList<QByteArray> utf8;
@@ -265,6 +299,14 @@ bool YOLOWorker::runDetect(const QImage& rgb, const uchar* rgbData) {
                     .arg(result.modelVariant)
                     .arg(m_settings.confThres, 0, 'f', 2)
                     .arg(m_settings.iouThres, 0, 'f', 2));
+    if (result.detections.isEmpty() &&
+        hasPhrasePrompt(m_settings.classes)) {
+        emit logMessage(
+                tr("[YOLO] Hint: descriptive phrase prompts (e.g. \"female "
+                   "in yellow hat\") score far below short categories on "
+                   "open-vocabulary heads — split into short nouns (person, "
+                   "hat) or lower Confidence to ~0.02."));
+    }
     emit resultReady(result);
     return true;
 }
@@ -357,6 +399,13 @@ bool YOLOWorker::runSegment(const QImage& rgb, const uchar* rgbData) {
                     .arg(result.modelVariant)
                     .arg(m_settings.confThres, 0, 'f', 2)
                     .arg(m_settings.iouThres, 0, 'f', 2));
+    if (n == 0 && hasPhrasePrompt(m_settings.classes)) {
+        emit logMessage(
+                tr("[YOLO] Hint: descriptive phrase prompts (e.g. \"female "
+                   "in yellow hat\") score far below short categories on "
+                   "open-vocabulary heads — split into short nouns (person, "
+                   "hat) or lower Confidence to ~0.02."));
+    }
     emit resultReady(result);
     return true;
 }

@@ -37,6 +37,8 @@ private slots:
     void onResultReady(const TrellisRunResult& result);
     void onTaskFinished(bool success);
     void onWorkerProgress(int stage, int step, int total);
+    /** Export page: re-bake the textured GLB from the last generation. */
+    void onExportRequested();
 
 private:
     bool resolveInputPath(const QString& rawPath,
@@ -49,6 +51,12 @@ private:
     void saveResultGlb(const TrellisRunResult& result,
                        const TrellisDialog::Settings& settings,
                        const QString& sourceLabel);
+    /** saveResultGlb with explicit bake settings (export page). */
+    void saveResultGlbEx(const TrellisRunResult& result,
+                         const TrellisDialog::Settings& settings,
+                         const QString& sourceLabel,
+                         int textureSize,
+                         int componentFilter);
 
     QAction* m_action = nullptr;
     TrellisDialog* m_dialog = nullptr;

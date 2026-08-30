@@ -9,6 +9,9 @@
 
 #include "ecvPointPickingGenericInterface.h"
 
+// CV_DB_LIB
+#include <ecvGenericGLDisplay.h>
+
 // Local
 #include <ui_pointPropertiesDlg.h>
 
@@ -54,11 +57,22 @@ protected:
     //! Picking mode
     enum Mode { POINT_INFO, POINT_POINT_DISTANCE, POINTS_ANGLE, RECT_ZONE };
 
+    //! Sets interaction flags on the current effective view, releasing the
+    //! flags previously applied to another view. With multiple views, the
+    //! effective view may change while the dialog is open (the user clicks
+    //! another window); without this cleanup the old view would keep e.g.
+    //! INTERACT_SEND_ALL_SIGNALS forever and stop responding to camera
+    //! rotate/pan/zoom.
+    void restrictViewInteraction(ecvGenericGLDisplay::INTERACTION_FLAGS flags);
+
     // inherited from ccPointPickingGenericInterface
     void processPickedPoint(const PickedItem& picked) override;
 
     //! Current picking mode
     Mode m_pickingMode;
+
+    //! View currently carrying restricted interaction flags (or nullptr)
+    ecvGenericGLDisplay* m_restrictedView = nullptr;
 
     //! Associated 3D label
     cc2DLabel* m_label;

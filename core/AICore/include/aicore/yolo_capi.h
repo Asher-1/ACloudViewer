@@ -94,6 +94,30 @@ AICORE_CAPI void aicore_yolo_options_set_classes(aicore_yolo_options* opts,
 AICORE_CAPI void aicore_yolo_options_set_text_model(
         aicore_yolo_options* opts, const char* text_model_path);
 
+/** YOLOE visual prompts (SAVPE): example boxes on the image in original-
+ *  image pixel coordinates, [x1, y1, x2, y2] per box. The checkpoint's
+ *  visual prompt encoder derives one class embedding per box; results are
+ *  labeled "object0", "object1", ... (official YOLOE semantics). Requires
+ *  a YOLOE GGUF converted with savpe weights (yolo.savpe = 1 — probe with
+ *  aicore_yolo_gguf_has_savpe); otherwise the load fails. Passing NULL
+ *  boxes or count <= 0 clears the prompts (back to the text path). Must be
+ *  set before aicore_yolo_load_opts: the prompt count fixes the graph
+ *  shape, and visual prompts take precedence over aicore_yolo_options_set_
+ *  classes when both are present. */
+AICORE_CAPI void aicore_yolo_options_set_visual_prompts(
+        aicore_yolo_options* opts, const float* boxes_xyxy, int32_t count);
+/** Number of visual prompts currently set (0 = text/vocabulary path). */
+AICORE_CAPI int32_t aicore_yolo_options_get_visual_prompt_count(
+        const aicore_yolo_options* opts);
+/** 1 when the GGUF carries YOLOE savpe weights (yolo.savpe = 1) and thus
+ *  supports visual prompts. Header-only probe (no tensor mapping); returns
+ *  0 on unreadable files. */
+AICORE_CAPI int aicore_yolo_gguf_has_savpe(const char* gguf_path);
+/** 1 when the loaded context runs in visual-prompt mode (class embeddings
+ *  derived from the prompted boxes instead of text/vocabulary). */
+AICORE_CAPI int aicore_yolo_context_has_visual_prompts(
+        const aicore_yolo_ctx* ctx);
+
 /** Get the recommended default confidence threshold for this model. */
 AICORE_CAPI float aicore_yolo_options_get_conf_thres(
         const aicore_yolo_options* opts);
@@ -276,6 +300,12 @@ AICORE_CAPI int aicore_yolo_model_count(enum aicore_yolo_model_role role);
  *  range). Returned pointers are stable for the process lifetime. */
 AICORE_CAPI const aicore_yolo_model_entry* aicore_yolo_model_at(
         int index, enum aicore_yolo_model_role role);
+/** Index (relative to the same role-filtered view) of the entry the
+ *  catalog declares as its default — the first row carrying the visible
+ *  "(recommended)" marker. UI combos should select this row when no
+ *  explicit user choice is persisted. Returns 0 for empty/unknown views. */
+AICORE_CAPI int aicore_yolo_model_default_index(
+        enum aicore_yolo_model_role role);
 /** Returns the catalog entry whose filename matches (NULL when not
  *  found). */
 AICORE_CAPI const aicore_yolo_model_entry* aicore_yolo_model_by_filename(

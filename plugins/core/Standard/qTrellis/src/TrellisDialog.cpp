@@ -17,10 +17,15 @@
 #include <QHBoxLayout>
 #include <QImageReader>
 #include <QMessageBox>
+#include <QPixmap>
 #include <QSettings>
+#include <QStandardPaths>
 #include <QVBoxLayout>
 
+#ifdef AICore_ENABLED
 #include "aicore/inference_log.h"
+#include "aicore/trellis_capi.h"
+#endif
 #include "ecvAICoreUiHelper.h"
 #include "ecvPersistentSettings.h"
 
@@ -48,11 +53,43 @@ TrellisDialog::~TrellisDialog() = default;
 void TrellisDialog::setAppInterface(ecvMainAppInterface* app) { m_app = app; }
 
 void TrellisDialog::setupUi() {
-    auto* root = new QVBoxLayout(this);
+    // qYOLO-style two-page shell: a left-hand page list driving a stacked
+    // content area, so the generate flow and the export/print tools each get
+    // a dedicated, uncluttered page.
+    auto* root = new QHBoxLayout(this);
+    root->setContentsMargins(8, 8, 8, 8);
+
+    m_pageList = new QListWidget(this);
+    m_pageList->setFixedWidth(ecvAICoreUi::dpiScaled(132));
+    m_pageList->setSpacing(ecvAICoreUi::dpiScaled(2));
+    m_pageList->addItem(tr("Generate"));
+    m_pageList->addItem(tr("Export / Print"));
+    m_pageList->setCurrentRow(0);
+
+    m_pageStack = new QStackedWidget(this);
+    auto* generatePage = new QWidget(m_pageStack);
+    auto* exportPage = new QWidget(m_pageStack);
+    buildGeneratePage(generatePage);
+    buildExportPage(exportPage);
+    m_pageStack->addWidget(generatePage);
+    m_pageStack->addWidget(exportPage);
+
+    root->addWidget(m_pageList);
+    root->addWidget(m_pageStack, 1);
+
+    connect(m_pageList, &QListWidget::currentRowChanged, this,
+            &TrellisDialog::onPageChanged);
+
+    resize(ecvAICoreUi::dpiScaled(640), ecvAICoreUi::dpiScaled(680));
+}
+
+void TrellisDialog::onPageChanged(int row) {
+    if (m_pageStack) m_pageStack->setCurrentIndex(row);
+}
+
+void TrellisDialog::buildGeneratePage(QWidget* page) {
+    auto* root = new QVBoxLayout(page);
     ecvAICoreUi::setupTabLayout(root);
-    // Lock the dialog size after the first layout pass: DB sections / status
-    // text changes must not inflate the window (shared AICore UI spec §13.4).
-    root->setSizeConstraint(QLayout::SetNoConstraint);
 
     // ── Input image ──────────────────────────────────────────────────────
     auto* inputGroup = new QGroupBox(tr("Input image"), this);
@@ -119,20 +156,26 @@ void TrellisDialog::setupUi() {
     m_presetCombo->setCurrentIndex(1);  // Standard 512 + PBR
     modelLayout->addWidget(m_presetCombo, 0, 1, 1, 3);
 
-    modelLayout->addWidget(new QLabel(tr("DINOv3:"), modelGroup), 1, 0);
-    m_dinoCombo = new QComboBox(modelGroup);
-    // f16 is upstream's recommended precision; q8 stays as a size-optimised
-    // alternative.
-    m_dinoCombo->addItem(tr("f16 (recommended)"), QStringLiteral("dino_f16"));
-    m_dinoCombo->addItem(tr("q8 (smaller)"), QStringLiteral("dino_q8"));
-    modelLayout->addWidget(m_dinoCombo, 1, 1);
-
-    modelLayout->addWidget(new QLabel(tr("Occupancy decoder:"), modelGroup), 1,
-                           2);
-    m_decCombo = new QComboBox(modelGroup);
-    m_decCombo->addItem(tr("f16 (recommended)"), QStringLiteral("ss_dec_f16"));
-    m_decCombo->addItem(tr("q8"), QStringLiteral("ss_dec_q8"));
-    modelLayout->addWidget(m_decCombo, 1, 3);
+    modelLayout->addWidget(new QLabel(tr("Quantization:"), modelGroup), 1, 0);
+    m_quantCombo = new QComboBox(modelGroup);
+    // q8 is the default weight-precision chain: every model that publishes a
+    // q8 variant uses it, halving the VRAM/RAM footprint (the
+    // precision-sensitive decoders shape_dec / shape_enc / tex_dec have no
+    // q8 variant and always stay f16). f16 is the full reference chain.
+    m_quantCombo->addItem(tr("q8 (recommended, low VRAM)"),
+                          QStringLiteral("q8"));
+    m_quantCombo->addItem(tr("f16 (reference)"), QStringLiteral("f16"));
+    // Upstream's exact mode: the chaotic chain (dino / flows / ss_dec /
+    // shape_dec) upgrades to full-f32 weights; those GGUFs are local
+    // conversions (upstream convert_*_to_gguf.py --ftype 0), not published
+    // on the mirror, so the download check lists them as missing when absent.
+    m_quantCombo->addItem(tr("f32 (exact mode, local models)"),
+                          QStringLiteral("f32"));
+    m_quantCombo->setToolTip(
+            tr("Weight precision of the whole chain. q8 halves the memory "
+               "footprint (fits small GPUs); the sensitive decoders always "
+               "stay f16. Use f16 for the numerically exact reference run."));
+    modelLayout->addWidget(m_quantCombo, 1, 1, 1, 3);
 
     m_textureCheck = new QCheckBox(tr("PBR textures"), modelGroup);
     m_textureCheck->setChecked(true);
@@ -257,6 +300,40 @@ void TrellisDialog::setupUi() {
     });
     root->addWidget(paramGroup);
 
+    // End-to-end step strip: one chip per core pipeline step, each showing a
+    // live thumbnail (source image / RMBG+preprocess / SS voxel set / mesh
+    // keyframe / PBR texture / GLB file) so the user can watch every stage's
+    // effect without leaving the dialog.
+    auto* stripGroup = new QGroupBox(tr("Pipeline steps"), this);
+    ecvAICoreUi::tightenGroupBox(stripGroup);
+    auto* stripLayout = new QHBoxLayout(stripGroup);
+    stripLayout->setSpacing(ecvAICoreUi::dpiScaled(6));
+    const QStringList kStepNames = {tr("Source"), tr("Preprocess"),
+                                    tr("Voxels"), tr("Mesh"), tr("Texture"),
+                                    tr("GLB")};
+    const int thumb = ecvAICoreUi::dpiScaled(72);
+    for (const QString& name : kStepNames) {
+        auto* cell = new QVBoxLayout();
+        cell->setSpacing(1);
+        auto* thumbLabel = new QLabel(stripGroup);
+        thumbLabel->setFixedSize(thumb, thumb);
+        thumbLabel->setAlignment(Qt::AlignCenter);
+        thumbLabel->setStyleSheet(
+                "border: 1px solid #B8C4D0; border-radius: 3px; "
+                "background: #F4F7FA; color: #98A4B0;");
+        thumbLabel->setText(QStringLiteral("-"));
+        auto* caption = new QLabel(name, stripGroup);
+        caption->setAlignment(Qt::AlignCenter);
+        caption->setStyleSheet("color: #5A6672; font-size: 10px;");
+        cell->addWidget(thumbLabel, 0, Qt::AlignHCenter);
+        cell->addWidget(caption, 0, Qt::AlignHCenter);
+        stripLayout->addLayout(cell);
+        m_stageThumbs << thumbLabel;
+        m_stageCaptions << caption;
+    }
+    stripLayout->addStretch(1);
+    root->addWidget(stripGroup);
+
     // ── Output ───────────────────────────────────────────────────────────
     auto* outputGroup = new QGroupBox(tr("Output"), this);
     ecvAICoreUi::tightenGroupBox(outputGroup);
@@ -287,9 +364,22 @@ void TrellisDialog::setupUi() {
     // Keep a floor width so the label never clips on narrow windows or
     // translated strings.
     runBtn->setMinimumWidth(ecvAICoreUi::dpiScaled(120));
+    // One-click end-to-end: generate with the current settings AND write the
+    // textured GLB into the Save-GLB directory (defaulted to ~/Downloads /
+    // TRELLIS when empty), so the whole image -> portable-asset flow is one
+    // button for non-expert users.
+    auto* oneClickBtn = new QPushButton(tr("Generate + GLB"), this);
+    oneClickBtn->setToolTip(
+            tr("One-click end-to-end: run generation and save the textured "
+               "GLB to the Save GLB directory (defaults to Downloads/"
+               "TRELLIS)."));
+    oneClickBtn->setMinimumWidth(ecvAICoreUi::dpiScaled(120));
     auto* cancelBtn = new QPushButton(tr("Cancel"), this);
     cancelBtn->setEnabled(false);
-    root->addLayout(ecvAICoreUi::makeActionRow(runBtn, cancelBtn));
+    root->addLayout(
+            ecvAICoreUi::makeActionRow(runBtn, oneClickBtn, cancelBtn));
+    connect(oneClickBtn, &QPushButton::clicked, this,
+            &TrellisDialog::onRunOneClick);
 
     m_log = new QLabel(this);
     m_log->setWordWrap(true);
@@ -303,10 +393,8 @@ void TrellisDialog::setupUi() {
             &TrellisDialog::onTestDataClicked);
     connect(m_presetCombo, qOverload<int>(&QComboBox::currentIndexChanged),
             this, &TrellisDialog::onPresetChanged);
-    connect(m_dinoCombo, qOverload<int>(&QComboBox::currentIndexChanged), this,
-            &TrellisDialog::updateModelStatus);
-    connect(m_decCombo, qOverload<int>(&QComboBox::currentIndexChanged), this,
-            &TrellisDialog::updateModelStatus);
+    connect(m_quantCombo, qOverload<int>(&QComboBox::currentIndexChanged),
+            this, &TrellisDialog::onQuantChanged);
     connect(m_textureCheck, &QCheckBox::toggled, this,
             &TrellisDialog::updateModelStatus);
     // The RMBG-image output depends on the AI matting actually running; keep
@@ -369,9 +457,10 @@ void TrellisDialog::setupUi() {
                     // populates the picker.
                     const auto info =
                             ecvTestDataRepository::getDatasetInfo(dataset);
-                    if (ecvTestDataRepository::verifyZipIntegrity(
+                    if (ecvAssetIntegrity::isVerified(
                                 ecvTestDataRepository::zipPath(dataset),
-                                info.expectedMd5, info.expectedSize)) {
+                                info.anchor, 0, false,
+                                ecvAssetIntegrity::OnMiss::DeepVerify)) {
                         m_progress->setRange(0, 100);
                         m_progress->setValue(0);
                         m_stageLabel->setText(tr("Extracting sample data..."));
@@ -406,8 +495,6 @@ void TrellisDialog::setupUi() {
 
     // Populate the sample picker when the dataset is already cached.
     ensureImage2MeshDataset();
-
-    resize(ecvAICoreUi::dpiScaled(560), ecvAICoreUi::dpiScaled(640));
 }
 
 void TrellisDialog::loadSettings() {
@@ -450,6 +537,14 @@ void TrellisDialog::loadSettings() {
     m_threads->setValue(settings.value("threads", 0).toInt());
     m_addToDbCheck->setChecked(settings.value("addToDb", true).toBool());
     m_saveGlbDir->setText(settings.value("saveGlbDir").toString());
+    const QString quant =
+            settings.value("quantization", QStringLiteral("q8")).toString();
+    const int qi = m_quantCombo->findData(quant);
+    if (qi >= 0) m_quantCombo->setCurrentIndex(qi);
+    m_exportTextureSize->setValue(
+            settings.value("exportTextureSize", 2048).toInt());
+    m_exportComponentFilter->setCurrentIndex(
+            settings.value("exportComponentFilter", 0).toInt());
     settings.endGroup();
 }
 
@@ -474,6 +569,10 @@ void TrellisDialog::saveSettings() const {
     settings.setValue("threads", m_threads->value());
     settings.setValue("addToDb", m_addToDbCheck->isChecked());
     settings.setValue("saveGlbDir", m_saveGlbDir->text());
+    settings.setValue("quantization", quantization());
+    settings.setValue("exportTextureSize", m_exportTextureSize->value());
+    settings.setValue("exportComponentFilter",
+                      m_exportComponentFilter->currentIndex());
     settings.endGroup();
 }
 
@@ -510,12 +609,16 @@ TrellisDialog::Settings TrellisDialog::getSettings() const {
     const QVector<TrellisPreset> presets = TrellisHelpers::presets();
     const int idx = m_presetCombo->currentIndex();
     if (idx >= 0 && idx < presets.size()) {
+        s.quantization = quantization();
         s.modelPaths = TrellisHelpers::resolvePresetFiles(
-                presets[idx], TrellisHelpers::modelCacheDir(),
-                m_dinoCombo->currentData().toString(),
-                m_decCombo->currentData().toString());
+                presets[idx], TrellisHelpers::modelCacheDir(), s.quantization);
     }
     return s;
+}
+
+void TrellisDialog::onQuantChanged(int index) {
+    Q_UNUSED(index);
+    updateModelStatus();
 }
 
 void TrellisDialog::appendLog(const QString& msg) {
@@ -573,8 +676,7 @@ void TrellisDialog::setRunning(bool running) {
     m_useTestDataBtn->setEnabled(!running);
     m_downloadBtn->setEnabled(!running);
     m_presetCombo->setEnabled(!running);
-    m_dinoCombo->setEnabled(!running);
-    m_decCombo->setEnabled(!running);
+    m_quantCombo->setEnabled(!running);
     m_textureCheck->setEnabled(!running);
     m_rmbgCheck->setEnabled(!running);
     // Parameter rows: the checkboxes toggle with running state, the
@@ -610,6 +712,7 @@ void TrellisDialog::setImagePreview(const QImage& image) {
     }
     // ecvClickableImageLabel keeps the full-resolution copy internally, so
     // clicking the preview opens the original image (shared UI spec §13.3).
+    m_lastPreviewImage = image;
     m_imagePreview->setPreviewImage(image, ecvAICoreUi::previewSize());
 }
 
@@ -677,10 +780,8 @@ QStringList TrellisDialog::missingPresetFiles() const {
     const QVector<TrellisPreset> presets = TrellisHelpers::presets();
     const int idx = m_presetCombo->currentIndex();
     if (idx < 0 || idx >= presets.size()) return {};
-    const QString dinoVariant = m_dinoCombo->currentData().toString();
-    const QString decVariant = m_decCombo->currentData().toString();
     QStringList needed = TrellisHelpers::resolvePresetFiles(
-            presets[idx], cacheDir, dinoVariant, decVariant);
+            presets[idx], cacheDir, quantization());
     if (m_textureCheck->isChecked() && idx == 0) {
         // Texture requires a fine preset; ignore for coarse.
     }
@@ -694,7 +795,12 @@ QStringList TrellisDialog::missingPresetFiles() const {
         if (!TrellisHelpers::isValidModelFile(p, name)) missing << name;
     }
     if (m_rmbgCheck->isChecked()) {
-        const QString rmbgName = QStringLiteral("rmbg_f16.gguf");
+        const QString rmbgName =
+            TrellisHelpers::isValidModelFile(cacheDir + QLatin1Char('/') +
+                                             QStringLiteral("rmbg_q8.gguf"),
+                                             QStringLiteral("rmbg_q8.gguf"))
+                    ? QStringLiteral("rmbg_q8.gguf")
+                    : QStringLiteral("rmbg_f16.gguf");
         const QString rmbg = cacheDir + QLatin1Char('/') + rmbgName;
         if (!TrellisHelpers::isValidModelFile(rmbg, rmbgName)) {
             missing << rmbgName;
@@ -709,10 +815,8 @@ void TrellisDialog::onDownloadModels() {
     const QVector<TrellisPreset> presets = TrellisHelpers::presets();
     const int idx = m_presetCombo->currentIndex();
     if (idx < 0 || idx >= presets.size()) return;
-    const QString dinoVariant = m_dinoCombo->currentData().toString();
-    const QString decVariant = m_decCombo->currentData().toString();
     const QStringList needed = TrellisHelpers::resolvePresetFiles(
-            presets[idx], cacheDir, dinoVariant, decVariant);
+            presets[idx], cacheDir, quantization());
 
     m_pendingDownloads.clear();
     for (const QString& p : needed) {
@@ -723,7 +827,12 @@ void TrellisDialog::onDownloadModels() {
         }
     }
     if (m_rmbgCheck->isChecked()) {
-        const QString rmbgName = QStringLiteral("rmbg_f16.gguf");
+        const QString rmbgName =
+            TrellisHelpers::isValidModelFile(cacheDir + QLatin1Char('/') +
+                                             QStringLiteral("rmbg_q8.gguf"),
+                                             QStringLiteral("rmbg_q8.gguf"))
+                    ? QStringLiteral("rmbg_q8.gguf")
+                    : QStringLiteral("rmbg_f16.gguf");
         if (!TrellisHelpers::isValidModelFile(
                     cacheDir + QLatin1Char('/') + rmbgName, rmbgName)) {
             m_pendingDownloads << rmbgName;
@@ -766,8 +875,12 @@ void TrellisDialog::downloadNextModel() {
     // longer queries it for downloads.
     HfModelInfo hfInfo;
     if (!TrellisHelpers::hfModelInfo(filename, &hfInfo)) {
+        // Not published on the mirror. Expected for the f32 (exact-mode)
+        // GGUFs, which are local conversions from the upstream safetensors.
         appendLog(
-                tr("[TRELLIS] Model not found on HF mirror: %1").arg(filename));
+                tr("[TRELLIS] Model not found on HF mirror: %1 (f32 models "
+                   "are local conversions — see the plugin README)")
+                        .arg(filename));
         downloadNextModel();
         return;
     }
@@ -780,8 +893,8 @@ void TrellisDialog::downloadNextModel() {
     req.url = url;
     req.destPath = dest;
     req.minBytes = 1024 * 1024;
-    req.expectedSize = hfInfo.sizeBytes;
-    req.expectedSha256 = hfInfo.sha256.toLatin1();  // streamed content check
+    req.contentAnchor = {QCryptographicHash::Sha256,
+                         hfInfo.sha256.toLatin1()};  // streamed content check
     m_downloader->download(req);
 }
 
@@ -800,9 +913,9 @@ void TrellisDialog::onTestDataClicked() {
 
     // 2. Zip cached and intact: extract, then populate (signal chain).
     const auto info = ecvTestDataRepository::getDatasetInfo(kind);
-    if (ecvTestDataRepository::verifyZipIntegrity(
-                ecvTestDataRepository::zipPath(kind), info.expectedMd5,
-                info.expectedSize)) {
+    if (ecvAssetIntegrity::isVerified(
+                ecvTestDataRepository::zipPath(kind), info.anchor, 0, false,
+                ecvAssetIntegrity::OnMiss::DeepVerify)) {
         m_progress->setRange(0, 100);
         m_progress->setVisible(true);
         m_stageLabel->setVisible(true);
@@ -899,9 +1012,189 @@ void TrellisDialog::onRun() {
         return;
     }
     saveSettings();
+    resetStageStrip(m_lastPreviewImage);
     emit runRequested(getSettings());
+}
+
+void TrellisDialog::onRunOneClick() {
+    // One-click end-to-end: guarantee a GLB destination, then run. The GLB
+    // write itself happens in the plugin when the result arrives.
+    if (m_saveGlbDir->text().trimmed().isEmpty()) {
+        const QString downloads = QStandardPaths::writableLocation(
+                QStandardPaths::DownloadLocation);
+        m_saveGlbDir->setText(downloads + QStringLiteral("/TRELLIS"));
+    }
+    onRun();
 }
 
 void TrellisDialog::onCancel() { emit cancelRequested(); }
 
 void TrellisDialog::refreshModelState() { updateModelStatus(); }
+
+void TrellisDialog::buildExportPage(QWidget* page) {
+    auto* root = new QVBoxLayout(page);
+    ecvAICoreUi::setupTabLayout(root);
+
+    auto* infoGroup = new QGroupBox(tr("Last generation result"), page);
+    ecvAICoreUi::tightenGroupBox(infoGroup);
+    auto* infoLayout = new QVBoxLayout(infoGroup);
+    m_exportInfo = new QLabel(tr("Run a generation first."), infoGroup);
+    m_exportInfo->setWordWrap(true);
+    m_exportInfo->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    infoLayout->addWidget(m_exportInfo);
+    root->addWidget(infoGroup);
+
+    auto* glbGroup = new QGroupBox(tr("Textured GLB export"), page);
+    ecvAICoreUi::tightenGroupBox(glbGroup);
+    auto* glbLayout = new QGridLayout(glbGroup);
+    glbLayout->setHorizontalSpacing(ecvAICoreUi::hSpacing());
+    glbLayout->setVerticalSpacing(ecvAICoreUi::tightVSpacing());
+    glbLayout->addWidget(new QLabel(tr("Texture size:"), glbGroup), 0, 0);
+    m_exportTextureSize = new QSpinBox(glbGroup);
+    m_exportTextureSize->setRange(256, 8192);
+    m_exportTextureSize->setSingleStep(256);
+    m_exportTextureSize->setValue(2048);
+    glbLayout->addWidget(m_exportTextureSize, 0, 1);
+    glbLayout->addWidget(new QLabel(tr("Components:"), glbGroup), 1, 0);
+    m_exportComponentFilter = new QComboBox(glbGroup);
+    m_exportComponentFilter->addItem(tr("Remove tiny islands"));
+    m_exportComponentFilter->addItem(tr("Largest component only"));
+    m_exportComponentFilter->addItem(tr("Keep all"));
+    glbLayout->addWidget(m_exportComponentFilter, 1, 1);
+    root->addWidget(glbGroup);
+
+    auto* actions = new QHBoxLayout();
+    m_rebakeBtn = new QPushButton(tr("Re-bake GLB..."), page);
+    m_rebakeBtn->setToolTip(
+            tr("Re-run the UV-unwrap + PBR atlas bake on the last generated "
+               "mesh with the settings above, and save it into the Save GLB "
+               "directory."));
+    m_printWrapBtn = new QPushButton(tr("Print wrap (CGAL)"), page);
+    m_printWrapBtn->setToolTip(
+            tr("Watertight Alpha-Wrap print mesh preview of the last "
+               "generation (requires a CGAL build)."));
+    actions->addWidget(m_rebakeBtn);
+    actions->addWidget(m_printWrapBtn);
+    actions->addStretch(1);
+    root->addLayout(actions);
+    root->addStretch(1);
+
+#ifdef AICore_ENABLED
+    const bool printable = aicore_trellis_print_remesh_available() != 0;
+    m_printWrapBtn->setEnabled(printable);
+    if (!printable) {
+        m_printWrapBtn->setToolTip(
+                tr("Unavailable: rebuild ACloudViewer with CGAL >= 5.5 to "
+                   "enable the print wrap."));
+    }
+#else
+    m_printWrapBtn->setEnabled(false);
+    m_rebakeBtn->setEnabled(false);
+#endif
+
+    connect(m_rebakeBtn, &QPushButton::clicked, this, [this]() {
+        emit exportRequested();
+    });
+}
+
+QString TrellisDialog::quantization() const {
+    return m_quantCombo ? m_quantCombo->currentData().toString()
+                        : QStringLiteral("q8");
+}
+
+void TrellisDialog::resetStageStrip(const QImage& input) {
+    const QStringList names = {tr("Source"), tr("Preprocess"), tr("Voxels"),
+                               tr("Mesh"), tr("Texture"), tr("GLB")};
+    for (int i = 0; i < m_stageThumbs.size() && i < names.size(); ++i) {
+        m_stageThumbs[i]->setStyleSheet(
+                "border: 1px solid #B8C4D0; border-radius: 3px; "
+                "background: #F4F7FA; color: #98A4B0;");
+        m_stageThumbs[i]->setText(QStringLiteral("-"));
+        m_stageThumbs[i]->setPixmap(QPixmap());
+        m_stageCaptions[i]->setText(names[i]);
+        m_stageCaptions[i]->setStyleSheet("color: #5A6672; font-size: 10px;");
+    }
+    if (!input.isNull() && !m_stageThumbs.isEmpty()) {
+        m_stageThumbs[0]->setPixmap(
+                QPixmap::fromImage(input.scaled(m_stageThumbs[0]->size(),
+                                                Qt::KeepAspectRatio,
+                                                Qt::SmoothTransformation)));
+    }
+}
+
+void TrellisDialog::updateExportInfo(const TrellisRunResult& result) {
+    if (!m_exportInfo) return;
+    if (result.verts.isEmpty()) {
+        m_exportInfo->setText(tr("Run a generation first."));
+        return;
+    }
+    const int nv = result.verts.size() / 3;
+    const int nt = result.tris.size() / 3;
+    m_exportInfo->setText(
+            tr("Mesh: %1 verts / %2 tris\nBackend: %3 (%4 chain, %5 ms)\n"
+               "PBR: %6\nGrid: %7\nSource: %8")
+                    .arg(nv)
+                    .arg(nt)
+                    .arg(result.backend)
+                    .arg(result.quantization)
+                    .arg(result.totalRuntimeMs, 0, 'f', 0)
+                    .arg(result.hasPbr ? tr("textured") : tr("untextured"))
+                    .arg(result.gridRes > 0
+                                 ? tr("%1\u00b3 dual grid").arg(result.gridRes)
+                                 : tr("(coarse)"))
+                    .arg(QFileInfo(result.sourceImage).fileName()));
+}
+
+void TrellisDialog::setStageState(int slot, int state) {
+    if (slot < 0 || slot >= m_stageThumbs.size()) return;
+    const QString border =
+            state == kStageDone
+                    ? QStringLiteral("2px solid #3D9A50")
+                    : (state == kStageActive
+                               ? QStringLiteral("2px solid #2E7BD0")
+                               : QStringLiteral("1px solid #B8C4D0"));
+    m_stageThumbs[slot]->setStyleSheet(
+            QStringLiteral("border: %1; border-radius: 3px; "
+                           "background: #F4F7FA;")
+                    .arg(border));
+    if (state == kStageDone) {
+        m_stageCaptions[slot]->setStyleSheet(
+                "color: #3D9A50; font-size: 10px; font-weight: bold;");
+    } else if (state == kStageActive) {
+        m_stageCaptions[slot]->setStyleSheet(
+                "color: #2E7BD0; font-size: 10px; font-weight: bold;");
+    }
+}
+
+void TrellisDialog::setStagePreview(const TrellisStagePreview& preview) {
+    // Map the AICore stage onto the strip slot: voxel sets (SS_FLOW /
+    // SS_DEC / UPSAMPLE) light the Voxels chip, mesh keyframes and decodes
+    // (SLAT_FLOW* / SHAPE_DEC*) the Mesh chip.
+    int slot = -1;
+    switch (preview.stage) {
+        case AICORE_TRELLIS_STAGE_SS_FLOW:
+        case AICORE_TRELLIS_STAGE_SS_DEC:
+        case AICORE_TRELLIS_STAGE_UPSAMPLE:
+            slot = 2;
+            break;
+        case AICORE_TRELLIS_STAGE_SLAT_FLOW:
+        case AICORE_TRELLIS_STAGE_SLAT_FLOW_HR:
+        case AICORE_TRELLIS_STAGE_SHAPE_DEC:
+        case AICORE_TRELLIS_STAGE_SHAPE_DEC_HR:
+            slot = 3;
+            break;
+        default:
+            break;
+    }
+    if (slot < 0 || slot >= m_stageThumbs.size()) return;
+    if (!preview.image.isNull()) {
+        m_stageThumbs[slot]->setPixmap(
+                QPixmap::fromImage(preview.image.scaled(
+                        m_stageThumbs[slot]->size(), Qt::KeepAspectRatio,
+                        Qt::SmoothTransformation)));
+    }
+    if (!preview.label.isEmpty()) {
+        m_stageCaptions[slot]->setText(preview.label);
+    }
+    setStageState(slot, kStageActive);
+}

@@ -903,7 +903,12 @@ void FreeSplatterDialog::populateModelCombo(const QString& keepFilename) {
         QString cached = cacheDir + "/" + m.filename;
         QFileInfo fi(cached);
         QString suffix;
-        if (ecvModelDownloader::isValidCachedFile(fi.absoluteFilePath())) {
+        if (ecvAssetIntegrity::isVerified(
+                    fi.absoluteFilePath(),
+                    {QCryptographicHash::Sha256,
+                     ecvAssetIntegrity::PinnedDigest(m.filename)},
+                    64 * 1024, true,
+                    ecvAssetIntegrity::OnMiss::CheapChecksOnly)) {
             suffix = QString(" [%1] \u2713").arg(formatFileSize(fi.size()));
         } else {
             suffix = QString(" [download]");
@@ -1046,8 +1051,13 @@ bool FreeSplatterDialog::isModelReady() const {
                QFile::exists(m_customModelPath->text().trimmed());
     }
     if (data.isEmpty()) return false;
-    if (ecvModelDownloader::isValidCachedFile(modelCacheDir() + "/" + data))
+    if (ecvAssetIntegrity::isVerified(
+                modelCacheDir() + "/" + data,
+                {QCryptographicHash::Sha256,
+                 ecvAssetIntegrity::PinnedDigest(data)},
+                64 * 1024, true, ecvAssetIntegrity::OnMiss::CheapChecksOnly)) {
         return true;
+    }
     for (const auto& m : builtinModels()) {
         if (m.filename == data) return true;
     }
@@ -1298,7 +1308,12 @@ bool FreeSplatterDialog::ensureModelAvailable() {
     if (data == "CUSTOM") return true;
 
     QString cached = modelCacheDir() + "/" + data;
-    if (ecvModelDownloader::isValidCachedFile(cached)) return true;
+    if (ecvAssetIntegrity::isVerified(
+                cached, {QCryptographicHash::Sha256,
+                         ecvAssetIntegrity::PinnedDigest(data)},
+                64 * 1024, true, ecvAssetIntegrity::OnMiss::CheapChecksOnly)) {
+        return true;
+    }
 
     for (const auto& bm : builtinModels()) {
         if (bm.filename == data) {
@@ -1344,6 +1359,10 @@ void FreeSplatterDialog::startDownload(const FreeSplatterBuiltinModel& model) {
     ecvModelDownloader::Request req;
     req.url = model.downloadUrl;
     req.destPath = dest;
+    // Content identity from the release digest registry — streamed SHA-256
+    // check at ingestion (truncation and corruption both caught).
+    req.contentAnchor = {QCryptographicHash::Sha256,
+                         ecvAssetIntegrity::PinnedDigest(model.filename)};
     m_downloader->download(req);
 }
 

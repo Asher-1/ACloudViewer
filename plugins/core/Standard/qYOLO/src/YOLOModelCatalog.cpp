@@ -9,6 +9,7 @@
 
 #include <QColor>
 #include <QFont>
+#include <QRegularExpression>
 #include <QImage>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -120,6 +121,27 @@ QVector<YOLOModelEntry> taskModels(const QString& task) {
     return detectionModels();  // forward-compatible fallback
 }
 
+int defaultModelIndexForTask(const QString& task) {
+#ifdef AICore_ENABLED
+    enum aicore_yolo_model_role role = AICORE_YOLO_ROLE_ANY;
+    if (task == QStringLiteral("detect")) role = AICORE_YOLO_ROLE_DETECTION;
+    else if (task == QStringLiteral("segment")) role = AICORE_YOLO_ROLE_SEGMENT;
+    else if (task == QStringLiteral("depth")) role = AICORE_YOLO_ROLE_DEPTH;
+    else if (task == QStringLiteral("pose")) role = AICORE_YOLO_ROLE_POSE;
+    else if (task == QStringLiteral("obb")) role = AICORE_YOLO_ROLE_OBB;
+    else if (task == QStringLiteral("classify")) role = AICORE_YOLO_ROLE_CLASSIFY;
+    else if (task == QStringLiteral("semantic")) role = AICORE_YOLO_ROLE_SEMANTIC;
+    else if (task == QStringLiteral("world")) role = AICORE_YOLO_ROLE_WORLD;
+    else if (task == QStringLiteral("yoloe")) role = AICORE_YOLO_ROLE_YOLOE;
+    else if (task == QStringLiteral("text")) role = AICORE_YOLO_ROLE_TEXT;
+    else return -1;  // unknown task: let the caller's fallback decide
+    return aicore_yolo_model_default_index(role);
+#else
+    (void)task;
+    return -1;
+#endif
+}
+
 bool findModelByFilename(const QString& filename, YOLOModelEntry* out) {
     const QVector<YOLOModelEntry> all = catalogModels();
     for (const YOLOModelEntry& e : all) {
@@ -171,6 +193,167 @@ const uchar* packedRgb888Data(const QImage& image, QByteArray* scratch) {
 
 bool filenameIsDepth(const QString& filename) {
     return filename.toLower().contains(QStringLiteral("depth"));
+}
+
+bool isPromptFreeFilename(const QString& filename) {
+    // Prompt-free YOLOE checkpoints carry "-pf-" mid-name (e.g.
+    // "yoloe-26l-seg-pf-f16.gguf") or "-pf." right before the extension
+    // (e.g. "yoloe-26l-seg-pf.gguf").
+    return filename.contains(QStringLiteral("-pf-")) ||
+           filename.contains(QStringLiteral("-pf."));
+}
+
+QString promptFreeSiblingFilename(const QString& filename) {
+    // Official no-input path for YOLOE: the -pf checkpoint of the same
+    // scale (upstream trains it from the text-prompt model and fuses the
+    // 4585-entry LRPC vocabulary, so it needs no prompt at all).
+    if (filename.isEmpty() || isPromptFreeFilename(filename)) return {};
+    if (!filename.startsWith(QStringLiteral("yoloe-"))) return {};
+    const int seg = filename.indexOf(QStringLiteral("-seg"));
+    if (seg < 0) return {};
+    QString sibling = filename;
+    sibling.insert(seg + 4, QStringLiteral("-pf"));
+    YOLOModelEntry entry;
+    return findModelByFilename(sibling, &entry) ? sibling : QString();
+}
+
+namespace {
+
+const QHash<QString, QString>& zhWordMap() {
+    static const QHash<QString, QString> map = {
+        // colors
+        {"红色", "red"}, {"红", "red"}, {"绿色", "green"}, {"绿", "green"},
+        {"黄色", "yellow"}, {"黄", "yellow"}, {"粉色", "pink"},
+        {"粉红色", "pink"}, {"粉", "pink"}, {"蓝色", "blue"}, {"蓝", "blue"},
+        {"黑色", "black"}, {"黑", "black"}, {"白色", "white"}, {"白", "white"},
+        {"橙色", "orange"}, {"橘色", "orange"}, {"紫色", "purple"},
+        {"棕色", "brown"}, {"褐色", "brown"}, {"灰色", "gray"},
+        // people / age
+        {"孩子", "child"}, {"小孩", "child"}, {"儿童", "child"},
+        {"小朋友", "child"}, {"成年人", "adult"}, {"成人", "adult"},
+        {"大人", "adult"}, {"男人", "man"}, {"男子", "man"}, {"男士", "man"},
+        {"女人", "woman"}, {"女子", "woman"}, {"女士", "woman"},
+        {"男孩", "boy"}, {"女孩", "girl"}, {"人", "person"}, {"人类", "person"},
+        // wear / attributes
+        {"戴", "wearing"}, {"穿着", "wearing"}, {"帽子", "hat"}, {"帽", "hat"},
+        {"眼镜", "glasses"}, {"太阳镜", "sunglasses"},
+        // COCO objects (common Chinese names)
+        {"汽车", "car"}, {"轿车", "car"}, {"公交车", "bus"}, {"巴士", "bus"},
+        {"卡车", "truck"}, {"货车", "truck"}, {"自行车", "bicycle"},
+        {"单车", "bicycle"}, {"摩托车", "motorcycle"}, {"飞机", "airplane"},
+        {"火车", "train"}, {"船", "boat"}, {"轮船", "boat"},
+        {"红绿灯", "traffic light"}, {"交通灯", "traffic light"},
+        {"消防栓", "fire hydrant"}, {"停车标志", "stop sign"},
+        {"长椅", "bench"}, {"鸟", "bird"}, {"狗", "dog"}, {"猫", "cat"},
+        {"马", "horse"}, {"羊", "sheep"}, {"牛", "cow"}, {"大象", "elephant"},
+        {"熊", "bear"}, {"斑马", "zebra"}, {"长颈鹿", "giraffe"},
+        {"背包", "backpack"}, {"雨伞", "umbrella"}, {"伞", "umbrella"},
+        {"手提包", "handbag"}, {"领带", "tie"}, {"行李箱", "suitcase"},
+        {"飞盘", "frisbee"}, {"滑雪板", "skis"}, {"单板滑雪", "snowboard"},
+        {"风筝", "kite"}, {"网球拍", "tennis racket"}, {"瓶子", "bottle"},
+        {"酒杯", "wine glass"}, {"杯子", "cup"}, {"叉子", "fork"},
+        {"刀", "knife"}, {"勺子", "spoon"}, {"碗", "bowl"},
+        {"香蕉", "banana"}, {"苹果", "apple"}, {"三明治", "sandwich"},
+        {"橙子", "orange"}, {"花椰菜", "broccoli"}, {"胡萝卜", "carrot"},
+        {"热狗", "hot dog"}, {"披萨", "pizza"}, {"甜甜圈", "donut"},
+        {"蛋糕", "cake"}, {"椅子", "chair"}, {"沙发", "couch"},
+        {"盆栽", "potted plant"}, {"床", "bed"}, {"餐桌", "dining table"},
+        {"马桶", "toilet"}, {"电视", "tv"}, {"笔记本电脑", "laptop"},
+        {"鼠标", "mouse"}, {"键盘", "keyboard"}, {"手机", "cell phone"},
+        {"微波炉", "microwave"}, {"烤箱", "oven"}, {"冰箱", "refrigerator"},
+        {"书", "book"}, {"时钟", "clock"}, {"花瓶", "vase"},
+        // function words (dropped in the English prompt)
+        {"的", ""}, {"一个", "a"}, {"一位", "a"}, {"两只", "two"},
+        {"剪刀", "scissors"}, {"泰迪熊", "teddy bear"}, {"吹风机", "hair drier"},
+        {"牙刷", "toothbrush"},
+    };
+    return map;
+}
+
+const QHash<QString, QString>& zhPersonMap() {
+    static const QHash<QString, QString> map = {
+        {"孩子", "child"}, {"小孩", "child"}, {"儿童", "child"},
+        {"小朋友", "child"}, {"成年人", "adult"}, {"成人", "adult"},
+        {"大人", "adult"}, {"男人", "man"}, {"男子", "man"}, {"男士", "man"},
+        {"女人", "woman"}, {"女子", "woman"}, {"女士", "woman"},
+        {"男孩", "boy"}, {"女孩", "girl"}, {"人", "person"},
+    };
+    return map;
+}
+
+bool hasCJK(const QString& text) {
+    static const QRegularExpression cjk(QStringLiteral("[\u4e00-\u9fff]"));
+    return cjk.match(text).hasMatch();
+}
+
+}  // namespace
+
+QString translatePromptToEnglish(const QString& text, bool* translated) {
+    if (translated) *translated = false;
+    if (!hasCJK(text)) return text;
+
+    QString out = text;
+
+    // Template rule: 戴<attr>帽子 的 <person>  ->  "<person> with <attr> hat"
+    // (the dominant detection-prompt pattern; attr may carry colors).
+    static const QRegularExpression hatPerson(
+            QStringLiteral("戴([\\x{4e00}-\\x{9fff}]{0,6}?)帽子?的?"
+                           "(孩子|小孩|儿童|小朋友|成年人|成人|大人|男人|男子|"
+                           "女士|女人|女子|男士|男孩|女孩|人)"));
+    QRegularExpressionMatchIterator it = hatPerson.globalMatch(out);
+    while (it.hasNext()) {
+        const QRegularExpressionMatch m = it.next();
+        const QString personZh = m.captured(2);
+        QString attr = m.captured(1);
+        QString personEn = zhPersonMap().value(personZh,
+                                               QStringLiteral("person"));
+        QString attrEn;
+        const QRegularExpression cjkWord(
+                QStringLiteral("[\\x{4e00}-\\x{9fff}]+"));
+        QRegularExpressionMatchIterator ait = cjkWord.globalMatch(attr);
+        while (ait.hasNext()) {
+            const QString w = ait.next().captured(0);
+            attrEn += zhWordMap().value(w) + " ";
+        }
+        attrEn = attrEn.trimmed();
+        QString repl = attrEn.isEmpty()
+                               ? QStringLiteral("%1 wearing a hat").arg(personEn)
+                               : QStringLiteral("%1 with %2 hat")
+                                     .arg(personEn, attrEn);
+        out.replace(m.capturedStart(), m.capturedLength(), repl);
+        it = hatPerson.globalMatch(out);  // offsets shifted; restart scan
+        if (translated) *translated = true;
+    }
+
+    // Word-level dictionary replacement for everything else (longest keys
+    // first so 红 inside 红色 never wins).
+    QStringList keys;
+    for (auto keyIt = zhWordMap().constBegin();
+         keyIt != zhWordMap().constEnd(); ++keyIt)
+        keys << keyIt.key();
+    std::sort(keys.begin(), keys.end(),
+              [](const QString& a, const QString& b) {
+                  return a.size() > b.size();
+              });
+    for (const QString& key : keys) {
+        const QString en = zhWordMap().value(key);
+        out.replace(key, " " + en + " ");
+    }
+    out = out.simplified();
+
+    if (translated && !*translated) *translated = true;
+    return out;
+}
+
+QString testImageForTask(const QString& task) {
+    if (task == QStringLiteral("classify")) return QStringLiteral("cat.jpg");
+    if (task == QStringLiteral("obb"))
+        return QStringLiteral("aerial_airport.jpg");
+    if (task == QStringLiteral("pose"))
+        return QStringLiteral("000000087038.jpg");
+    if (task == QStringLiteral("world") || task == QStringLiteral("yoloe"))
+        return QStringLiteral("party_hats.jpg");
+    return QStringLiteral("000000397133.jpg");
 }
 
 bool parseDetectionsJson(const QByteArray& json, YOLORunResult* out) {

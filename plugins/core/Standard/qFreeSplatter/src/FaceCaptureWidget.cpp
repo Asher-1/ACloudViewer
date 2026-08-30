@@ -196,7 +196,13 @@ FaceCaptureWidget::FaceCaptureWidget(QWidget* parent)
                     if (ctx) aicore_facedetect_free(ctx);
                     if (m_detectorKind == DetectorKind::Ggml &&
                         !currentGgmlFilename().isEmpty() &&
-                        ecvModelDownloader::isValidCachedFile(requestedPath)) {
+                        ecvAssetIntegrity::isVerified(
+                                requestedPath,
+                                {QCryptographicHash::Sha256,
+                                 ecvAssetIntegrity::PinnedDigest(
+                                         currentGgmlFilename())},
+                                64 * 1024, true,
+                                ecvAssetIntegrity::OnMiss::CheapChecksOnly)) {
                         scheduleGgmlModelLoad(requestedPath);
                     }
                     return;
@@ -236,7 +242,12 @@ FaceCaptureWidget::FaceCaptureWidget(QWidget* parent)
                 if (m_detectorKind == DetectorKind::Ggml &&
                     !currentGgmlFilename().isEmpty() &&
                     requestedPath != m_loadedGgmlPath &&
-                    ecvModelDownloader::isValidCachedFile(requestedPath)) {
+                    ecvAssetIntegrity::isVerified(
+                            requestedPath,
+                            {QCryptographicHash::Sha256,
+                             ecvAssetIntegrity::PinnedDigest(currentGgmlFilename())},
+                            64 * 1024, true,
+                            ecvAssetIntegrity::OnMiss::CheapChecksOnly)) {
                     scheduleGgmlModelLoad(requestedPath);
                 }
             });
@@ -692,7 +703,13 @@ void FaceCaptureWidget::populateDetectorCombo() {
         const QFileInfo fi(cache + QLatin1Char('/') +
                            QString::fromUtf8(m->filename));
         const QString suffix =
-                ecvModelDownloader::isValidCachedFile(fi.absoluteFilePath())
+                ecvAssetIntegrity::isVerified(
+                        fi.absoluteFilePath(),
+                        {QCryptographicHash::Sha256,
+                         ecvAssetIntegrity::PinnedDigest(
+                                 QString::fromUtf8(m->filename))},
+                        64 * 1024, true,
+                        ecvAssetIntegrity::OnMiss::CheapChecksOnly)
                         ? QString(" [%1] \u2713")
                                   .arg(ecvModelDownloader::formatFileSize(
                                           fi.size()))
@@ -772,7 +789,12 @@ bool FaceCaptureWidget::ensureGgmlModelReady() {
     if (filename.isEmpty()) return true;
 
     const QString path = facedetectCachePath(filename);
-    if (ecvModelDownloader::isValidCachedFile(path)) return true;
+    if (ecvAssetIntegrity::isVerified(
+                path, {QCryptographicHash::Sha256,
+                       ecvAssetIntegrity::PinnedDigest(filename)},
+                64 * 1024, true, ecvAssetIntegrity::OnMiss::CheapChecksOnly)) {
+        return true;
+    }
 
     const aicore_facedetect_model_entry* model =
             aicore_facedetect_model_by_filename(filename.toUtf8().constData());
@@ -809,6 +831,11 @@ void FaceCaptureWidget::startModelDownload(
     ecvModelDownloader::Request req;
     req.url = QString::fromUtf8(model->download_url);
     req.destPath = dest;
+    // Content identity from the release digest registry — streamed SHA-256
+    // check at ingestion (truncation and corruption both caught).
+    req.contentAnchor = {
+            QCryptographicHash::Sha256,
+            ecvAssetIntegrity::PinnedDigest(QString::fromUtf8(model->filename))};
     m_downloader->download(req);
 }
 

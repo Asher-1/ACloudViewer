@@ -9,6 +9,7 @@
 
 #include <QImage>
 #include <QObject>
+#include <QRectF>
 #include <QString>
 #include <QThread>
 #include <QVector>
@@ -40,6 +41,9 @@ public:
         // encoded through the text model GGUF at load time.
         QStringList classes;
         QString textModelPath;
+        // YOLOE visual prompts (SAVPE): full-image pixel boxes; non-empty
+        // switches the run to the visual-prompt path (classes are ignored).
+        QList<QRectF> visualPrompts;
     };
 
     explicit YOLOWorker(const Settings& settings, QObject* parent = nullptr);

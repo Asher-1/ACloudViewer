@@ -139,6 +139,19 @@ static aicore_rfdetr_model_entry toEntry(const ModelRow& row) {
 
 AICORE_CAPI int aicore_rfdetr_model_count(void) { return modelCount(); }
 
+AICORE_CAPI int aicore_rfdetr_model_default_index(void) {
+    // The catalog's own default declaration: the row whose note carries
+    // the visible "(recommended)" marker (first variant's F16 build), so
+    // declaration and user-facing label cannot drift.
+    for (size_t i = 0; i < kModels.size(); ++i) {
+        if (kModels[i].quant_note &&
+            std::strstr(kModels[i].quant_note, "(recommended)")) {
+            return static_cast<int>(i);
+        }
+    }
+    return 0;
+}
+
 AICORE_CAPI const aicore_rfdetr_model_entry* aicore_rfdetr_model_at(int index) {
     static thread_local aicore_rfdetr_model_entry entry{};
     if (index < 0 || index >= modelCount()) return nullptr;

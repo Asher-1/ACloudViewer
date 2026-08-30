@@ -53,6 +53,9 @@ namespace RMBGHelpers {
 
 /** Enumerate the published catalog from AICore. */
 QVector<RMBGModelEntry> catalogModels();
+/** Index of the catalog-declared default row (aicore_rmbg_model_default_index);
+ *  -1 when AICore is not available. */
+int catalogDefaultIndex();
 /** Lookup by GGUF filename; returns false when unknown. */
 bool findModelByFilename(const QString& filename, RMBGModelEntry* out);
 

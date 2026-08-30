@@ -62,6 +62,25 @@ struct Session {
     std::vector<float> text_pending;
     int world_nc = 0;  // class count driving the text input shape
 
+    // Visual-prompt state (YOLOE savpe). Active when opts.visual_count > 0:
+    // the graph takes an external [W3, H3, Q] F32 binary mask input (P3
+    // grid) instead of a text leaf, and the savpe encoder derives the class
+    // embeddings from the prompted boxes. vp_pending is rasterized per
+    // image by session_prepare_visual_masks (letterbox-aware) and uploaded
+    // before every run, mirroring text_pending.
+    ggml_tensor* vp_input = nullptr;    // external [W3, H3, Q] F32 masks
+    std::vector<float> vp_pending;
+    // Debug: the savpe vpe node ([512, Q] F32) of the current plan; used by
+    // the AICORE_SAVPE_DUMP readback hook in capi.cpp. Null outside visual
+    // mode.
+    ggml_tensor* savpe_out = nullptr;
+    ggml_tensor* savpe_x = nullptr;  // debug: cv3 output [W3, H3, 512]
+    ggml_tensor* savpe_y = nullptr;  // debug: cv4 output [W3, H3, 16]
+    ggml_tensor* savpe_fpn_dbg[3] = {nullptr, nullptr, nullptr};
+    ggml_tensor* savpe_cv2_dbg[3] = {nullptr, nullptr, nullptr};
+
+    bool visual_mode() const { return opts.visual_count > 0; }
+
     /* Run plan for the current canvas — rebuilt by session_ensure_canvas().
      * All tensor structs and the cgraph live inside gctx. */
     ggml_context* gctx = nullptr;
@@ -129,6 +148,14 @@ bool session_run(Session* s, const float* chw_image);
 // graph run (and after every canvas rebuild). Requires a text-conditioned
 // model; returns false otherwise.
 bool session_set_text(Session* s, const float* text_embed);
+
+// YOLOE visual prompts: rasterize the session's prompted boxes (original-
+// image pixels, set at load via the options) into the P3 binary mask input
+// for the CURRENT letterbox geometry. Must be called after
+// session_ensure_canvas and before session_run on every image (the mask
+// depends on the image's letterbox scale/pad). Returns false when the
+// session is not in visual mode.
+bool session_prepare_visual_masks(Session* s, const LetterboxInfo& info);
 
 // Read back the raw detect output [no, A] (row-major: no rows x A anchors).
 // For segment models `no` additionally carries nm mask-coefficient rows; for

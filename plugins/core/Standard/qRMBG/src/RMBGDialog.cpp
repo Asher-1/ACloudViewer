@@ -413,7 +413,13 @@ void RMBGDialog::loadSettings() {
     settings.beginGroup(QStringLiteral("qRMBG"));
     const QString modelFilename =
             settings.value(QStringLiteral("modelFilename")).toString();
-    selectModelByFilename(modelFilename);
+    // Legacy builds auto-persisted the index-0 (F32 reference) default on
+    // close; only restore an explicit user choice and otherwise keep the
+    // recommended entry picked by populateModelCombo().
+    m_modelExplicit =
+            settings.value(QStringLiteral("modelFilenameExplicit"), false)
+                    .toBool();
+    if (m_modelExplicit) selectModelByFilename(modelFilename);
     const QString device =
             settings.value(QStringLiteral("device"), QStringLiteral("auto"))
                     .toString();
@@ -442,6 +448,8 @@ void RMBGDialog::saveSettings() const {
     settings.beginGroup(QStringLiteral("qRMBG"));
     settings.setValue(QStringLiteral("modelFilename"),
                       m_modelCombo->currentData().toString());
+    settings.setValue(QStringLiteral("modelFilenameExplicit"),
+                      m_modelExplicit);
     settings.setValue(QStringLiteral("device"),
                       m_deviceCombo->currentData().toString());
     settings.setValue(QStringLiteral("threads"), m_threads->value());
@@ -463,10 +471,10 @@ void RMBGDialog::populateModelCombo(const QString& keepFilename) {
     for (const RMBGModelEntry& e : models) {
         m_modelCombo->addItem(RMBGHelpers::modelDisplayLabel(e), e.filename);
     }
-    if (!keepFilename.isEmpty()) {
-        const int idx = m_modelCombo->findData(keepFilename);
-        if (idx >= 0) m_modelCombo->setCurrentIndex(idx);
-    }
+    // Single selection policy for every AICore dialog: keep the caller's
+    // selection when valid, else the catalog-declared default row.
+    ecvAICoreUi::selectModelRow(m_modelCombo, keepFilename,
+                                RMBGHelpers::catalogDefaultIndex());
     m_modelCombo->blockSignals(false);
     if (m_liveWidget) {
         m_liveWidget->syncModelControlsFrom(m_modelCombo, m_deviceCombo,
@@ -489,6 +497,9 @@ void RMBGDialog::refreshModelList() {
 }
 
 void RMBGDialog::onModelComboChanged(int index) {
+    // A real signal (sender() set) means the user changed the combo; the
+    // populate/load paths drive the slot directly with no sender.
+    if (sender() == m_modelCombo) m_modelExplicit = true;
     const QString filename = m_modelCombo->itemData(index).toString();
     const bool isCustom =
             filename.isEmpty() ||
@@ -549,6 +560,10 @@ void RMBGDialog::startDownload(const RMBGModelEntry& model) {
     req.url = model.downloadUrl;
     req.destPath = dest;
     req.minBytes = 1024 * 1024;  // RMBG-2.0 GGUF is tens of MB
+    // Content identity from the release digest registry — streamed SHA-256
+    // check at ingestion (truncation and corruption both caught).
+    req.contentAnchor = {QCryptographicHash::Sha256,
+                         ecvAssetIntegrity::PinnedDigest(model.filename)};
     m_downloader->download(req);
 }
 
@@ -814,9 +829,9 @@ void RMBGDialog::requestTestData(TestDataTarget target) {
     setTestDataControlsEnabled(false);
     m_downloadLabel->setVisible(true);
     m_progress->setVisible(true);
-    if (ecvTestDataRepository::verifyZipIntegrity(
-                ecvTestDataRepository::zipPath(kind), info.expectedMd5,
-                info.expectedSize)) {
+    if (ecvAssetIntegrity::isVerified(
+                ecvTestDataRepository::zipPath(kind), info.anchor, 0, false,
+                ecvAssetIntegrity::OnMiss::DeepVerify)) {
         m_downloadLabel->setText(tr("Extracting cached test data..."));
         m_progress->setRange(0, 0);
         repo.extractDataset(kind);

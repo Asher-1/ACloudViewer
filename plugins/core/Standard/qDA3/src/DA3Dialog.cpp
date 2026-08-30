@@ -523,7 +523,12 @@ void DA3Dialog::populateModelCombos(const QString& keepModelFilename,
         QString cached = cacheDir + "/" + m.filename;
         QFileInfo fi(cached);
         QString suffix;
-        if (ecvModelDownloader::isValidCachedFile(fi.absoluteFilePath())) {
+        if (ecvAssetIntegrity::isVerified(
+                    fi.absoluteFilePath(),
+                    {QCryptographicHash::Sha256,
+                     ecvAssetIntegrity::PinnedDigest(m.filename)},
+                    64 * 1024, true,
+                    ecvAssetIntegrity::OnMiss::CheapChecksOnly)) {
             suffix =
                     QString(" [%1] \u2713")
                             .arg(ecvModelDownloader::formatFileSize(fi.size()));
@@ -545,7 +550,12 @@ void DA3Dialog::populateModelCombos(const QString& keepModelFilename,
         QString cached = cacheDir + "/" + m.filename;
         QFileInfo fi(cached);
         QString suffix;
-        if (ecvModelDownloader::isValidCachedFile(fi.absoluteFilePath())) {
+        if (ecvAssetIntegrity::isVerified(
+                    fi.absoluteFilePath(),
+                    {QCryptographicHash::Sha256,
+                     ecvAssetIntegrity::PinnedDigest(m.filename)},
+                    64 * 1024, true,
+                    ecvAssetIntegrity::OnMiss::CheapChecksOnly)) {
             suffix =
                     QString(" [%1] \u2713")
                             .arg(ecvModelDownloader::formatFileSize(fi.size()));
@@ -685,7 +695,13 @@ bool DA3Dialog::ensureAllModelsAvailable() {
         QString data = combo->currentData().toString();
         if (data == "CUSTOM" || data == "NONE") return;
         QString cached = cacheDir + "/" + data;
-        if (ecvModelDownloader::isValidCachedFile(cached)) return;
+        if (ecvAssetIntegrity::isVerified(
+                    cached, {QCryptographicHash::Sha256,
+                             ecvAssetIntegrity::PinnedDigest(data)},
+                    64 * 1024, true,
+                    ecvAssetIntegrity::OnMiss::CheapChecksOnly)) {
+            return;
+        }
         for (const auto& bm : catalog) {
             if (bm.filename == data) {
                 needed.append(bm);
@@ -743,6 +759,10 @@ void DA3Dialog::startDownload(const DA3BuiltinModel& model) {
     ecvModelDownloader::Request req;
     req.url = model.downloadUrl;
     req.destPath = dest;
+    // Content identity from the release digest registry — streamed SHA-256
+    // check at ingestion (truncation and corruption both caught).
+    req.contentAnchor = {QCryptographicHash::Sha256,
+                         ecvAssetIntegrity::PinnedDigest(model.filename)};
     m_downloader->download(req);
 }
 

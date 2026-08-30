@@ -39,8 +39,25 @@ static const unsigned char kPng1x1[] = {
 
 static void test_progress(void*, int, int, int) {}
 
+// Tiny 3-vert / 1-tri mesh used by the GLB bake and export-prep contracts.
+static const float kVerts[] = {0, 0, 0, 1, 0, 0, 0, 1, 0};
+static const int kTris[] = {0, 1, 2};
+static const float kPbr6[6] = {0.8f, 0.2f, 0.1f, 0.0f, 0.5f, 1.0f};
+
+static int g_preview_blobs = 0;
+static void test_preview(void*, int stage, int, int, const void* data,
+                         int len) {
+    if (!data || len < 8) return;
+    const char* magic = (const char*)data;
+    if (std::strncmp(magic, "T2VOX01", 7) == 0 ||
+        std::strncmp(magic, "T2MESH01", 8) == 0) {
+        ++g_preview_blobs;
+        (void)stage;
+    }
+}
+
 int main() {
-    AICORE_CHECK(aicore_trellis_abi_version() >= 1);
+    AICORE_CHECK(aicore_trellis_abi_version() >= 2);
 
     // Null-safe teardown / lifecycle.
     aicore_trellis_free(nullptr);
@@ -70,12 +87,14 @@ int main() {
     aicore_trellis_options_set_rmbg_gguf(opts, "/nonexistent/rmbg_f16.gguf");
     aicore_trellis_options_set_shape_dec_placement(opts, "cpu");
     aicore_trellis_options_set_sdpa_exact(opts, 1);
+    aicore_trellis_options_set_sdpa_flash(opts, 0);
     aicore_trellis_options_set_timing(opts, 0);
     aicore_trellis_options_set_device(nullptr, "cpu");
     aicore_trellis_options_set_threads(nullptr, 1);
     aicore_trellis_options_set_rmbg_gguf(nullptr, "x");
     aicore_trellis_options_set_shape_dec_placement(nullptr, "cpu");
     aicore_trellis_options_set_sdpa_exact(nullptr, 1);
+    aicore_trellis_options_set_sdpa_flash(nullptr, 0);
     aicore_trellis_options_set_timing(nullptr, 0);
 
     // Loading nonexistent model files must fail cleanly with a null ctx and
@@ -100,6 +119,55 @@ int main() {
     AICORE_CHECK(aicore_trellis_generate(ctx /* null */, nullptr, 0, nullptr,
                                          nullptr, nullptr, err,
                                          sizeof(err)) == nullptr);
+    // generate_ex: null-context guard + null preview == generate.
+    AICORE_CHECK(aicore_trellis_generate_ex(nullptr, kPng1x1,
+                                            (int)sizeof(kPng1x1), nullptr,
+                                            test_progress, nullptr, test_preview,
+                                            nullptr, err, sizeof(err)) ==
+                 nullptr);
+
+    // Standalone texturing / export-prep contracts: guards must not crash.
+    AICORE_CHECK(aicore_trellis_texture_mesh(nullptr, kVerts, 3, kTris, 1,
+                                             nullptr, 0, nullptr, 0,
+                                             AICORE_TRELLIS_PIPE_512, kPng1x1,
+                                             (int)sizeof(kPng1x1),
+                                             AICORE_TRELLIS_BG_AUTO, 0, 0,
+                                             test_progress, nullptr, err,
+                                             sizeof(err)) == nullptr);
+    AICORE_CHECK(aicore_trellis_prepare_mesh(nullptr, 0, nullptr, 0, nullptr, 0,
+                                             err, sizeof(err)) == nullptr);
+    AICORE_CHECK(aicore_trellis_prepare_mesh(kVerts, 3, kTris, 1, nullptr, 3,
+                                             err, sizeof(err)) ==
+                 nullptr);  // bad filter
+    AICORE_CHECK(aicore_trellis_prepare_mesh(kVerts, 3, kTris, 1, nullptr, 2,
+                                             err, sizeof(err)) != nullptr);
+    // Print remesh availability is a build-time constant; the call must be
+    // safe either way and the prepare guard must hold.
+    const int printable = aicore_trellis_print_remesh_available();
+    AICORE_CHECK(printable == 0 || printable == 1);
+    AICORE_CHECK(aicore_trellis_prepare_print_mesh(kVerts, 3, kTris, 1,
+                                                   nullptr, 0, 0.01f, 0.01f,
+                                                   err, sizeof(err)) ==
+                 nullptr);  // degenerate single triangle
+    // Projected GLB bake: guards + (unavailable CGAL -> null, not crash).
+    int out_len = 0;
+    AICORE_CHECK(aicore_trellis_bake_projected_glb(
+                     nullptr, 0, nullptr, 0, nullptr, 0, nullptr, 0, nullptr, 0,
+                     0, &out_len, err, sizeof(err)) == nullptr);
+    AICORE_CHECK(aicore_trellis_bake_projected_glb(
+                     kVerts, 3, kTris, 1, kVerts, 3, kTris, 1, kPbr6, 0, 0,
+                     &out_len, err, sizeof(err)) ==
+                 nullptr);  // CGAL unavailable in-tree, wrap target degenerate
+
+    // prepare_mesh returns the same topology for KeepAll and fills normals.
+    aicore_trellis_mesh* prepared =
+            aicore_trellis_prepare_mesh(kVerts, 3, kTris, 1, nullptr, 2, err,
+                                        sizeof(err));
+    AICORE_CHECK(prepared != nullptr);
+    AICORE_CHECK(aicore_trellis_mesh_n_verts(prepared) == 3);
+    AICORE_CHECK(aicore_trellis_mesh_n_tris(prepared) == 1);
+    AICORE_CHECK(aicore_trellis_mesh_normals(prepared) != nullptr);
+    aicore_trellis_mesh_free(prepared);
 
     // Preprocess: real decode path on the tiny PNG; 16x16 -> 512x512 RGB.
     std::vector<unsigned char> rgb((size_t)512 * 512 * 3, 0x7F);
@@ -123,12 +191,9 @@ int main() {
                          AICORE_TRELLIS_BG_AUTO, err, sizeof(err)) != 0);
 
     // GLB bake contract: NULL guards and invalid component filter.
-    int out_len = 0;
     AICORE_CHECK(aicore_trellis_bake_glb(nullptr, 0, nullptr, 0, nullptr, 0, 0,
                                          &out_len, err,
                                          sizeof(err)) == nullptr);
-    static const float kVerts[] = {0, 0, 0, 1, 0, 0, 0, 1, 0};
-    static const int kTris[] = {0, 1, 2};
     AICORE_CHECK(aicore_trellis_bake_glb(kVerts, 3, kTris, 1, nullptr, 0, 3,
                                          &out_len, err, sizeof(err)) ==
                  nullptr);  // bad filter

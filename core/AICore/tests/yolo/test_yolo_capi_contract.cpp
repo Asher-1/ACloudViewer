@@ -202,7 +202,7 @@ int main() {
             {AICORE_YOLO_ROLE_SEMANTIC, 15},   // 5 sem x 3
             {AICORE_YOLO_ROLE_WORLD, 12},      // 4 world x 3
             {AICORE_YOLO_ROLE_YOLOE, 30},      // 10 yoloe (incl. -pf) x 3
-            {AICORE_YOLO_ROLE_TEXT, 6},        // 2 text towers x 3
+            {AICORE_YOLO_ROLE_TEXT, 8},        // 2 text towers x 3 + mclip f16+q8_0
     };
     int role_sum = 0;
     for (const RoleCount& rc : kRoleCounts) {
@@ -230,6 +230,33 @@ int main() {
     const aicore_yolo_model_entry* mclip =
             aicore_yolo_model_by_filename("mobileclip2_b-q8_0.gguf");
     AICORE_CHECK(mclip != nullptr && std::strcmp(mclip->task, "text") == 0);
+    const aicore_yolo_model_entry* bridge =
+            aicore_yolo_model_by_filename("mclip-labse-vitb32-f16.gguf");
+    AICORE_CHECK(bridge != nullptr && bridge->text_input == 1 &&
+                 std::strcmp(bridge->task, "text") == 0);
+    // The multilingual bridge is published in F16 + Q8_0 (no F32), with
+    // Q8_0 listed first (default quant).
+    AICORE_CHECK(aicore_yolo_model_by_filename(
+                        "mclip-labse-vitb32-f32.gguf") == nullptr);
+    AICORE_CHECK(aicore_yolo_model_by_filename(
+                        "mclip-labse-vitb32-q8_0.gguf") != nullptr);
+    {
+        // The first mclip entry is the Q8_0 default.
+        bool saw_q8_first = false;
+        for (int i = 0; i < aicore_yolo_model_count(AICORE_YOLO_ROLE_TEXT);
+             ++i) {
+            const aicore_yolo_model_entry* e =
+                    aicore_yolo_model_at(i, AICORE_YOLO_ROLE_TEXT);
+            AICORE_CHECK(e != nullptr);
+            if (std::strncmp(e->filename, "mclip-labse", 11) == 0) {
+                AICORE_CHECK(std::strcmp(e->filename,
+                                         "mclip-labse-vitb32-q8_0.gguf") == 0);
+                saw_q8_first = true;
+                break;
+            }
+        }
+        AICORE_CHECK(saw_q8_first);
+    }
 
     const aicore_yolo_model_entry* first =
             aicore_yolo_model_at(0, AICORE_YOLO_ROLE_ANY);
@@ -273,6 +300,39 @@ int main() {
     char* info = aicore_yolo_info_json(empty);
     aicore_yolo_free_buffer(info);  // NULL is a valid no-op input
     aicore_yolo_free(empty);
+
+    // ---- YOLOE visual prompts (SAVPE) contract ----
+    // Null guards first: every new entry point must tolerate NULL.
+    aicore_yolo_options_set_visual_prompts(nullptr, nullptr, 0);
+    AICORE_CHECK(aicore_yolo_options_get_visual_prompt_count(nullptr) == 0);
+    // A dedicated options struct: the shared one above was already freed.
+    aicore_yolo_options* vopts = aicore_yolo_options_new();
+    AICORE_CHECK(vopts != nullptr);
+    AICORE_CHECK(aicore_yolo_gguf_has_savpe(nullptr) == 0);
+    AICORE_CHECK(aicore_yolo_gguf_has_savpe("") == 0);
+    AICORE_CHECK(aicore_yolo_gguf_has_savpe("/nonexistent/y.gguf") == 0);
+    AICORE_CHECK(aicore_yolo_context_has_visual_prompts(nullptr) == 0);
+    // Clearing (NULL array / count <= 0) must reset the count to 0.
+    const float kBoxes[] = {10.f, 20.f, 110.f, 220.f, 300.f, 400.f, 500.f, 600.f};
+    aicore_yolo_options_set_visual_prompts(vopts, kBoxes, 2);
+    AICORE_CHECK(aicore_yolo_options_get_visual_prompt_count(vopts) == 2);
+    aicore_yolo_options_set_visual_prompts(vopts, nullptr, 2);
+    AICORE_CHECK(aicore_yolo_options_get_visual_prompt_count(vopts) == 0);
+    aicore_yolo_options_set_visual_prompts(vopts, kBoxes, 2);
+    aicore_yolo_options_set_visual_prompts(vopts, kBoxes, -1);
+    AICORE_CHECK(aicore_yolo_options_get_visual_prompt_count(vopts) == 0);
+    // Degenerate boxes (inverted / zero area / non-finite) are dropped; the
+    // count only reflects usable prompts.
+    const float kMixed[] = {10.f, 20.f, 110.f, 220.f,   // valid
+                            50.f, 60.f, 40.f, 80.f,     // inverted x: dropped
+                            5.f, 5.f, 5.f, 5.f,         // zero area: dropped
+                            0.f, 0.f, 30.f, 40.f};      // valid
+    aicore_yolo_options_set_visual_prompts(vopts, kMixed, 4);
+    AICORE_CHECK(aicore_yolo_options_get_visual_prompt_count(vopts) == 2);
+    aicore_yolo_options_set_visual_prompts(vopts, nullptr, 0);
+    AICORE_CHECK(aicore_yolo_options_get_visual_prompt_count(vopts) == 0);
+
+    aicore_yolo_options_free(vopts);
 
     // Warmup on cpu must succeed without any model loaded.
     AICORE_CHECK(aicore_yolo_warmup_backend("cpu") == 0);

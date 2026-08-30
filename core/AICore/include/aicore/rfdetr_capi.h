@@ -177,6 +177,10 @@ typedef struct aicore_rfdetr_model_entry {
 AICORE_CAPI int aicore_rfdetr_model_count(void);
 /** Returns the catalog entry at `index` (NULL when out of range). */
 AICORE_CAPI const aicore_rfdetr_model_entry* aicore_rfdetr_model_at(int index);
+/** Index of the entry the catalog declares as its default — the row
+ *  carrying the visible "(recommended)" marker. UI combos should select
+ *  this row when no explicit user choice is persisted. */
+AICORE_CAPI int aicore_rfdetr_model_default_index(void);
 /** Number of catalog entries usable for detection. */
 AICORE_CAPI int aicore_rfdetr_detection_model_count(void);
 /** Returns the detection-capable catalog entry at `index` (NULL when out

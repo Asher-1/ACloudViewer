@@ -115,12 +115,77 @@ TEST(YOLOHelpers, FilenameIsDepthDepth) {
             QStringLiteral("YOLO26N-DEPTH-F32.GGUF")));
 }
 
+TEST(YOLOHelpers, IsPromptFreeFilename) {
+    // Prompt-free YOLOE checkpoints: "-pf-" mid-name or "-pf." before the
+    // extension.
+    EXPECT_TRUE(YOLOHelpers::isPromptFreeFilename(
+            QStringLiteral("yoloe-26l-seg-pf-f16.gguf")));
+    EXPECT_TRUE(YOLOHelpers::isPromptFreeFilename(
+            QStringLiteral("yoloe-26n-seg-pf.gguf")));
+    // Non-prompt-free YOLOE and every other family must NOT match.
+    EXPECT_FALSE(YOLOHelpers::isPromptFreeFilename(
+            QStringLiteral("yoloe-26s-seg-f16.gguf")));
+    EXPECT_FALSE(YOLOHelpers::isPromptFreeFilename(
+            QStringLiteral("yolov8s-world-f16.gguf")));
+    EXPECT_FALSE(
+            YOLOHelpers::isPromptFreeFilename(QStringLiteral("")));
+}
+
+TEST(YOLOHelpers, PromptFreeSiblingFilename) {
+    // Same-scale pf sibling of a non-pf YOLOE checkpoint (the official
+    // no-input path): "-pf" is inserted after the "-seg" tag.
+    EXPECT_EQ(YOLOHelpers::promptFreeSiblingFilename(
+                      QStringLiteral("yoloe-26s-seg-f16.gguf")),
+              QStringLiteral("yoloe-26s-seg-pf-f16.gguf"));
+    EXPECT_EQ(YOLOHelpers::promptFreeSiblingFilename(
+                      QStringLiteral("yoloe-26x-seg-q8_0.gguf")),
+              QStringLiteral("yoloe-26x-seg-pf-q8_0.gguf"));
+    // pf inputs, non-YOLOE families and unknown files have no sibling.
+    EXPECT_EQ(YOLOHelpers::promptFreeSiblingFilename(
+                      QStringLiteral("yoloe-26l-seg-pf-f16.gguf")),
+              QString());
+    EXPECT_EQ(YOLOHelpers::promptFreeSiblingFilename(
+              QStringLiteral("yolov8s-world-f16.gguf")), QString());
+    EXPECT_EQ(YOLOHelpers::promptFreeSiblingFilename(
+              QStringLiteral("custom-mystery.gguf")), QString());
+    EXPECT_EQ(YOLOHelpers::promptFreeSiblingFilename(QString()), QString());
+}
+
+TEST(YOLOHelpers, TestImageForTask) {
+    // Classification wants the single-subject photo, OBB the DOTA-style
+    // aerial view, pose the multi-person dynamic-poses scene, and the
+    // world/yoloe tabs the multi-person party-hats scene; everything else
+    // gets the COCO street scene (the names must match the
+    // objects_detection_data archive contents).
+    EXPECT_EQ(YOLOHelpers::testImageForTask(QStringLiteral("classify")),
+              QStringLiteral("cat.jpg"));
+    EXPECT_EQ(YOLOHelpers::testImageForTask(QStringLiteral("obb")),
+              QStringLiteral("aerial_airport.jpg"));
+    EXPECT_EQ(YOLOHelpers::testImageForTask(QStringLiteral("pose")),
+              QStringLiteral("000000087038.jpg"));
+    EXPECT_EQ(YOLOHelpers::testImageForTask(QStringLiteral("world")),
+              QStringLiteral("party_hats.jpg"));
+    EXPECT_EQ(YOLOHelpers::testImageForTask(QStringLiteral("yoloe")),
+              QStringLiteral("party_hats.jpg"));
+    EXPECT_EQ(YOLOHelpers::testImageForTask(QStringLiteral("detect")),
+              QStringLiteral("000000397133.jpg"));
+    EXPECT_EQ(YOLOHelpers::testImageForTask(QStringLiteral("segment")),
+              QStringLiteral("000000397133.jpg"));
+    EXPECT_EQ(YOLOHelpers::testImageForTask(QStringLiteral("depth")),
+              QStringLiteral("000000397133.jpg"));
+    EXPECT_EQ(YOLOHelpers::testImageForTask(QStringLiteral("semantic")),
+              QStringLiteral("000000397133.jpg"));
+    EXPECT_EQ(YOLOHelpers::testImageForTask(QString()),
+              QStringLiteral("000000397133.jpg"));
+}
+
 TEST(YOLOHelpers, CatalogMirror) {
-    // 183 models = 61 variants (10 detect + 10 seg + 5 depth + 5 pose +
-    // 5 obb + 5 sem + 5 cls + 4 world + 10 yoloe + 2 text) x 3 quants
-    // (f32, f16, q8_0), mirroring the AICore catalog.
+    // 185 models = 61 variants x 3 quants + 2 mclip bridge quants (f16+q8_0)
+    // (10 detect + 10 seg + 5 depth + 5 pose + 5 obb + 5 sem + 5 cls +
+    // 4 world + 10 yoloe + 2 text + 1 mclip x f16), mirroring the AICore
+    // catalog.
     const QVector<YOLOModelEntry> all = YOLOHelpers::catalogModels();
-    ASSERT_EQ(all.size(), 183);
+    ASSERT_EQ(all.size(), 185);
     // Each task tab filters on its catalog role: pure detect / segment /
     // depth, the new batch families, and the text-conditioned families.
     EXPECT_EQ(YOLOHelpers::detectionModels().size(), 30);
@@ -132,7 +197,7 @@ TEST(YOLOHelpers, CatalogMirror) {
     EXPECT_EQ(YOLOHelpers::semanticModels().size(), 15);
     EXPECT_EQ(YOLOHelpers::worldModels().size(), 12);
     EXPECT_EQ(YOLOHelpers::yoloeModels().size(), 30);
-    EXPECT_EQ(YOLOHelpers::textModels().size(), 6);
+    EXPECT_EQ(YOLOHelpers::textModels().size(), 8);
     EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("detect")).size(), 30);
     EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("segment")).size(), 30);
     EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("depth")).size(), 15);
@@ -142,7 +207,7 @@ TEST(YOLOHelpers, CatalogMirror) {
     EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("semantic")).size(), 15);
     EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("world")).size(), 12);
     EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("yoloe")).size(), 30);
-    EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("text")).size(), 6);
+    EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("text")).size(), 8);
     int roleSum = YOLOHelpers::detectionModels().size() +
                   YOLOHelpers::segmentModels().size() +
                   YOLOHelpers::depthModels().size() +
@@ -257,6 +322,62 @@ TEST(YOLOHelpers, ModelDisplayLabelDoesNotDuplicateQuantNote) {
 
     entry.displayName = QStringLiteral("YOLOv8 Nano");
     EXPECT_EQ(YOLOHelpers::modelDisplayLabel(entry).count(entry.quantNote), 1);
+}
+
+TEST(YOLOHelpers, RecommendedQuantIsSelectableByLabel) {
+    // The task panels and the Live tab default to the first row whose
+    // display label carries "(recommended)". That search only works if the
+    // recommended quant is exactly the F16 row of every variant — verify
+    // the catalog invariant: every F32 row is unlabeled and every variant
+    // contributes exactly one recommended row.
+    int recommended = 0;
+    int f32Rows = 0;
+    for (const YOLOModelEntry& e : YOLOHelpers::catalogModels()) {
+        const QString label = YOLOHelpers::modelDisplayLabel(e);
+        if (e.filename.contains(QStringLiteral("-f32."))) {
+            ++f32Rows;
+            EXPECT_FALSE(label.contains(QStringLiteral("(recommended)")))
+                    << "F32 row marked recommended: "
+                    << e.filename.toStdString();
+        }
+        if (label.contains(QStringLiteral("(recommended)"))) {
+            ++recommended;
+            EXPECT_TRUE(e.filename.contains(QStringLiteral("-f16.")))
+                    << "recommended row is not F16: "
+                    << e.filename.toStdString();
+        }
+    }
+    // The multilingual bridge ships no F32 asset, so the counts differ by
+    // one; the invariant under test is per-row, not the totals.
+    EXPECT_GT(recommended, 0);
+    EXPECT_GT(f32Rows, 0);
+}
+
+TEST(YOLOHelpers, TaskDefaultIndexPointsAtRecommendedRow) {
+    // The dialog's populateModelCombo selects taskModels(task)[
+    // defaultModelIndexForTask(task)] when no explicit choice is persisted.
+    // Lock the wiring: the declared default must land on the marked row for
+    // every task tab.
+    const QStringList tasks = {
+            QStringLiteral("detect"),  QStringLiteral("segment"),
+            QStringLiteral("depth"),   QStringLiteral("pose"),
+            QStringLiteral("obb"),     QStringLiteral("classify"),
+            QStringLiteral("semantic"), QStringLiteral("world"),
+            QStringLiteral("yoloe"),   QStringLiteral("text")};
+    for (const QString& task : tasks) {
+        const QVector<YOLOModelEntry> models = YOLOHelpers::taskModels(task);
+        ASSERT_FALSE(models.isEmpty()) << task.toStdString();
+        const int d = YOLOHelpers::defaultModelIndexForTask(task);
+        ASSERT_GE(d, 0) << task.toStdString();
+        ASSERT_LT(d, models.size()) << task.toStdString();
+        EXPECT_TRUE(YOLOHelpers::modelDisplayLabel(models[d])
+                            .contains(QStringLiteral("(recommended)")))
+                << task.toStdString() << " default row is unmarked";
+    }
+    // Unknown tasks have no declared default; the caller's guard fallback
+    // (first "(recommended)" row) decides instead.
+    EXPECT_EQ(YOLOHelpers::defaultModelIndexForTask(QStringLiteral("nope")),
+              -1);
 }
 
 TEST(YOLOHelpers, DrawPoseProducesVisibleOverlay) {
@@ -565,6 +686,30 @@ TEST(YOLOHelpers, DrawDepthLegendSmoke) {
     // Degenerate range and null image are no-ops (no crash).
     YOLOHelpers::drawDepthLegend(&img, 5.0, 5.0);
     YOLOHelpers::drawDepthLegend(nullptr, 1.0, 2.0);
+}
+
+TEST(YOLOHelpers, TranslatePromptToEnglish) {
+    bool translated = false;
+    // The dominant "wear X-hat Y" template.
+    EXPECT_EQ(YOLOHelpers::translatePromptToEnglish(
+                      QStringLiteral("戴绿色帽子的孩子"), &translated),
+              QStringLiteral("child with green hat"));
+    EXPECT_EQ(YOLOHelpers::translatePromptToEnglish(
+                      QStringLiteral("戴粉色帽子的成年人"), &translated),
+              QStringLiteral("adult with pink hat"));
+    // No color: "wearing a hat".
+    EXPECT_EQ(YOLOHelpers::translatePromptToEnglish(
+                      QStringLiteral("戴帽子的人"), &translated),
+              QStringLiteral("person wearing a hat"));
+    // Word-level dictionary path.
+    EXPECT_EQ(YOLOHelpers::translatePromptToEnglish(
+                      QStringLiteral("红色的汽车"), &translated),
+              QStringLiteral("red car"));
+    // English input passes through untouched.
+    EXPECT_EQ(YOLOHelpers::translatePromptToEnglish(
+                      QStringLiteral("person with red hat"), &translated),
+              QStringLiteral("person with red hat"));
+    EXPECT_FALSE(translated);
 }
 
 int main(int argc, char** argv) {

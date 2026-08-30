@@ -761,6 +761,150 @@ struct GraphBuilder {
         y = ggml_add(gctx, y, ggml_reshape_2d(gctx, b3, b3->ne[0], 1));
         return ggml_add(gctx, x, y);  // Residual: x + SwiGLUFFN(x)
     }
+
+    // ------------------------------------------------------------------
+    // YOLOE SAVPE (Small Adoptable Visual Prompt Encoder) — the official
+    // visual-prompt path: example boxes on the image are rasterized into
+    // P3-resolution binary masks, and the encoder turns them into [Q, 512]
+    // class embeddings that REPLACE the MobileCLIP text embeddings as the
+    // head's cls_pe (no reprta residual, no text tower; in-tree port of
+    // ultralytics nn/modules/block.py SAVPE + YOLOEDetect.get_vpe). All
+    // convs ride the shared conv2d path (dtype rules + direct-conv fast
+    // paths) through synthetic OpDefs; weights follow the GraphBuilder
+    // naming convention written by
+    // core/AICore/src/tasks/yolo/tools/convert_yoloe_savpe_gguf.py
+    // ("savpe.cv1_0_0.w" = GraphBuilder w("savpe.cv1_0_0", "w")).
+    // ------------------------------------------------------------------
+    ggml_tensor* savpe_conv(const char* tag,
+                            ggml_tensor* x,
+                            int k,
+                            int s,
+                            int p,
+                            bool silu) {
+        OpDef op;
+        op.type = "conv";
+        op.aparams["s"] = {(int64_t)s, (int64_t)s};
+        op.aparams["p"] = {(int64_t)p, (int64_t)p};
+        op.aparams["d"] = {1, 1};
+        op.aparams["k"] = {(int64_t)k, (int64_t)k};
+        if (silu) op.sparams["act"] = "silu";
+        return conv2d(op, std::string("savpe.") + tag, x);
+    }
+
+    ggml_tensor* savpe(const std::vector<ggml_tensor*>& fpn,
+                       ggml_tensor* vp) {
+        // vp: external [W3, H3, Q, 1] F32 binary masks on the P3 grid.
+        const int64_t W3 = fpn[0]->ne[0], H3 = fpn[0]->ne[1];
+        const int64_t HW3 = W3 * H3;
+        const int64_t Q = vp->ne[2];
+
+        // Shared branches: activation (cv2: Conv1x1 -> Upsample) and
+        // semantic (cv1: Conv3x3 -> Conv3x3 -> Upsample) per level — the
+        // convs run at the level's OWN resolution and the upsample comes
+        // LAST (Sequential order), landing every level on the P3 grid.
+        ggml_tensor* act = nullptr;   // [W3, H3, c3]
+        ggml_tensor* sem = nullptr;   // [W3, H3, c3]
+        for (int l = 0; l < 3; l++) {
+            const std::string lv = std::to_string(l);
+            dbg_savpe_fpn[l] = fpn[l];
+            ggml_tensor* a = savpe_conv(("cv2_" + lv).c_str(), fpn[l], 1, 1,
+                                        0, true);
+            dbg_savpe_cv2[l] = a;
+            ggml_tensor* s0 =
+                    savpe_conv(("cv1_" + lv + "_0").c_str(), fpn[l], 3, 1, 1,
+                               true);
+            ggml_tensor* s1 =
+                    savpe_conv(("cv1_" + lv + "_1").c_str(), s0, 3, 1, 1,
+                               true);
+            if (l > 0) {
+                a = ggml_upscale(gctx, a, 1 << l, GGML_SCALE_MODE_NEAREST);
+                s1 = ggml_upscale(gctx, s1, 1 << l, GGML_SCALE_MODE_NEAREST);
+            }
+            std::fprintf(stderr, "[savpe-build] level %d done (post-conv upsample x%d)\n",
+                         l, l > 0 ? (1 << l) : 1);
+            act = act ? ggml_concat(gctx, act, a, 2) : a;
+            sem = sem ? ggml_concat(gctx, sem, s1, 2) : s1;
+        }
+        // cv4 (3x3, plain) -> [W3, H3, 16]; cv3 (1x1, plain) -> [W3, H3, 512]
+        ggml_tensor* y = savpe_conv("cv4", act, 3, 1, 1, false);
+        ggml_tensor* x = savpe_conv("cv3", sem, 1, 1, 0, false);
+        if (!y || !x) return nullptr;
+        dbg_savpe_x = x;
+        dbg_savpe_y = y;
+
+        // Channels-first staging of the semantic map: [512, HW3] contiguous
+        // (same permute pattern as world_detect's embedding branch).
+        ggml_tensor* xT = ggml_cont(gctx, ggml_permute(gctx, x, 1, 2, 0, 3));
+        xT = ggml_reshape_2d(gctx, xT, x->ne[2], HW3);
+        if (xT->type != GGML_TYPE_F32)
+            xT = ggml_cast(gctx, xT, GGML_TYPE_F32);
+
+        // Per prompt q: cv5(mask) -> cat(y, .) -> cv6 -> masked softmax over
+        // the P3 grid -> one [HW3, 16] score column block.
+        ggml_tensor* s_all = nullptr;  // [HW3, 16*Q], prompt blocks in order
+        for (int64_t q = 0; q < Q; q++) {
+            ggml_tensor* vp_q = ggml_cont(
+                    gctx, ggml_view_4d(gctx, vp, W3, H3, 1, 1, vp->nb[1],
+                                       vp->nb[2], vp->nb[3], q * vp->nb[2]));
+            ggml_tensor* m = savpe_conv("cv5", vp_q, 3, 1, 1, false);
+            ggml_tensor* yq = ggml_concat(gctx, y, m, 2);  // [W3,H3,32]
+            yq = savpe_conv("cv6_0", yq, 3, 1, 1, true);
+            yq = savpe_conv("cv6_1", yq, 3, 1, 1, false);
+
+            // Stage per-group scores: [16, HW3] F32, rows = groups.
+            ggml_tensor* yT =
+                    ggml_cont(gctx, ggml_permute(gctx, yq, 1, 2, 0, 3));
+            yT = ggml_reshape_2d(gctx, yT, yq->ne[2], HW3);
+            if (yT->type != GGML_TYPE_F32)
+                yT = ggml_cast(gctx, yT, GGML_TYPE_F32);
+
+            // score = y * vp + (1 - vp) * finfo.min, softmax over the grid.
+            // The mask is binary host data, so (1 - vp) == relu(-vp). The
+            // mask column broadcasts over the 16 group rows: ggml binary ops
+            // require src1 to tile src0 (each src0 dim a multiple of the
+            // src1 dim), so the mask must be [1, HW3] next to yT's [16, HW3].
+            ggml_tensor* vp_col = ggml_reshape_2d(
+                    gctx, ggml_reshape_1d(gctx, vp_q, HW3), 1, HW3);
+            ggml_tensor* outside = ggml_scale(
+                    gctx, ggml_relu(gctx, ggml_scale(gctx, vp_col, -1.0f)),
+                    -1e30f);
+            ggml_tensor* masked = ggml_add(
+                    gctx, ggml_mul(gctx, yT, vp_col), outside);
+            // Softmax must run over the grid (ne0): transpose to [HW3, 16]
+            // (ne[axis_i] = a->ne[i], so (1,0,2,3) swaps the first two dims).
+            ggml_tensor* s_q = ggml_cont(
+                    gctx, ggml_permute(gctx, masked, 1, 0, 2, 3));
+            s_q = ggml_soft_max(gctx, s_q);
+            s_all = s_all ? ggml_concat(gctx, s_all, s_q, 1) : s_q;
+        }
+
+        // Grouped aggregation: for each of the 16 channel groups,
+        // agg_g = X_g @ S_g with X_g = channels [g*32, g*32+32) of the
+        // semantic map and S_g = the prompt-q score columns of that group;
+        // concat over groups -> [512, Q] (the head's cls_pe layout).
+        const int64_t c16 = y->ne[2];
+        const int64_t d = x->ne[2] / c16;  // 32 for the shipped 512-d models
+        ggml_tensor* out = nullptr;
+        for (int64_t g = 0; g < c16; g++) {
+            ggml_tensor* x_g = ggml_cont(
+                    gctx, ggml_view_2d(gctx, xT, HW3, d, xT->nb[1],
+                                       (size_t)(g * d) * xT->nb[1]));
+            ggml_tensor* s_g = ggml_cont(
+                    gctx, ggml_view_2d(gctx, s_all, HW3, Q, s_all->nb[1] * c16,
+                                       (size_t)g * s_all->nb[0]));
+            ggml_tensor* agg = ggml_mul_mat(gctx, x_g, s_g);  // [d, Q]
+            out = out ? ggml_concat(gctx, out, agg, 0) : agg;
+        }
+        // The official encoder L2-normalizes here; world_detect re-normalizes
+        // its cls_pe input regardless, so the extra chain is skipped.
+        return out;  // [512, Q]
+    }
+
+    // Debug readback nodes (AICORE_SAVPE_DUMP): the savpe branch outputs.
+    ggml_tensor* dbg_savpe_x = nullptr;
+    ggml_tensor* dbg_savpe_y = nullptr;
+    ggml_tensor* dbg_savpe_fpn[3] = {nullptr, nullptr, nullptr};
+    ggml_tensor* dbg_savpe_cv2[3] = {nullptr, nullptr, nullptr};
 };
 
 /* Drop the current run plan. Called on rebuild failure (the plan is unusable
@@ -771,6 +915,10 @@ void clear_run_plan(Session* s) {
     s->input = nullptr;
     s->output = nullptr;
     s->text_input = nullptr;  // leaf lives in gctx; text_pending survives
+    s->vp_input = nullptr;    // leaf lives in gctx; vp_pending survives
+    s->savpe_out = nullptr;
+    s->savpe_x = nullptr;
+    s->savpe_y = nullptr;
     s->graph = nullptr;
     s->input_w = s->input_h = 0;
     s->anchors.clear();
@@ -794,14 +942,21 @@ bool build_run_plan(Session* s, int input_w, int input_h) {
     // Per-anchor output channels: detect=4*rm+nc, segment=+nm, pose=+nk,
     // obb=+ne.
     const int no = 4 * meta.reg_max + meta.nc + meta.nm + meta.nk + meta.ne;
+    // Visual-prompt mode (YOLOE savpe): the head's cls_pe comes from the
+    // savpe encoder instead of the text leaf. world_nc == prompt count Q.
+    const bool visual = s->visual_mode() && s->model.has_savpe &&
+                        s->model.detect_op_index >= 0;
 
     // ggml node budget: every op expands to a few nodes, and a
     // text-conditioned head adds one row view plus a 3-node max2 merge per
     // class and reduction site (measured 72..140 nodes per class on the
-    // upstream yolov8-world family, so 256 bounds the shipped models).
+    // upstream yolov8-world family, so 256 bounds the shipped models). The
+    // savpe branch adds ~60 base nodes plus ~15 per prompt and ~3 per
+    // channel group (bounded by the 4096 slab + per-prompt allowance).
     const size_t node_budget =
             s->model.ops.size() * 12 + 512 +
-            (s->model.has_text_input ? (size_t)s->world_nc * 256 : 0);
+            (s->model.has_text_input ? (size_t)s->world_nc * 256 : 0) +
+            (visual ? 4096 + (size_t)s->opts.visual_count * 256 : 0);
 
     // Graph context: intermediate tensor structs (data lives in galloc/sched).
     const size_t g_size = node_budget * ggml_tensor_overhead() + (32u << 20);
@@ -827,9 +982,15 @@ bool build_run_plan(Session* s, int input_w, int input_h) {
     // Open-vocabulary text leaf: external [512, nc] F32 embedding (CLIP /
     // MobileCLIP text encoder output). Recreated with every canvas; the
     // host copy (text_pending) survives and is re-uploaded on the next run.
+    // Visual-prompt sessions take a [W3, H3, Q] binary mask leaf instead;
+    // the savpe chain itself is built lazily on the first in_text() call
+    // (it consumes FPN features that only exist once the op loop reaches
+    // them), so no reprta residual applies on that path.
     ggml_tensor* text_input = nullptr;
     ggml_tensor* graph_text = nullptr;
-    if (s->model.has_text_input) {
+    ggml_tensor* vp_input = nullptr;
+    bool savpe_failed = false;
+    if (s->model.has_text_input && !visual) {
         text_input = ggml_new_tensor_2d(gctx, GGML_TYPE_F32, 512, s->world_nc);
         ggml_set_input(text_input);
         ggml_set_name(text_input, "text");
@@ -847,6 +1008,14 @@ bool build_run_plan(Session* s, int input_w, int input_h) {
                 }
             }
         }
+    }
+    if (visual) {
+        const int stride0 = meta.strides.empty() ? 8 : (int)meta.strides[0];
+        vp_input = ggml_new_tensor_4d(gctx, GGML_TYPE_F32,
+                                      input_w / stride0, input_h / stride0,
+                                      s->opts.visual_count, 1);
+        ggml_set_input(vp_input);
+        ggml_set_name(vp_input, "vp_masks");
     }
 
     // The input tensor is always F32; GPU f16 flows insert the cast node.
@@ -868,7 +1037,17 @@ bool build_run_plan(Session* s, int input_w, int input_h) {
         const int idx = op.inputs.empty() ? -1 : op.inputs[0];
         return idx < 0 ? graph_input : values[idx];
     };
-    auto in_text = [&]() { return graph_text; };
+    auto in_text = [&]() -> ggml_tensor* {
+        if (visual && graph_text == nullptr && !savpe_failed) {
+            std::vector<ggml_tensor*> fpn;
+            for (int op_idx : s->model.savpe_fpn_ops) {
+                fpn.push_back(values[op_idx]);
+            }
+            graph_text = gb.savpe(fpn, vp_input);
+            if (!graph_text) savpe_failed = true;
+        }
+        return graph_text;
+    };
 
     ggml_tensor* output_proto = nullptr;
     for (size_t i = 0; i < s->model.ops.size(); i++) {
@@ -1053,7 +1232,7 @@ bool build_run_plan(Session* s, int input_w, int input_h) {
         }
     }
     ggml_tensor* output = values.back();
-    if (!output) {
+    if (!output || savpe_failed) {
         YOLO_LOG_ERROR("graph produced no output (last op returned null)");
         ggml_free(gctx);
         return false;
@@ -1113,6 +1292,14 @@ bool build_run_plan(Session* s, int input_w, int input_h) {
     s->output = output;
     s->output_proto = output_proto;
     s->text_input = text_input;
+    s->vp_input = vp_input;
+    s->savpe_out = visual ? graph_text : nullptr;  // vpe node for the dump hook
+    s->savpe_x = visual ? gb.dbg_savpe_x : nullptr;
+    s->savpe_y = visual ? gb.dbg_savpe_y : nullptr;
+    for (int l = 0; l < 3; l++) {
+        s->savpe_fpn_dbg[l] = visual ? gb.dbg_savpe_fpn[l] : nullptr;
+        s->savpe_cv2_dbg[l] = visual ? gb.dbg_savpe_cv2[l] : nullptr;
+    }
     s->graph = graph;
     s->input_w = input_w;
     s->input_h = input_h;
@@ -1170,7 +1357,7 @@ bool build_run_plan(Session* s, int input_w, int input_h) {
     // be lost. input/output/text(/proto) end up on the GPU so upload and
     // readback do not bounce through host memory.
     if (!backend_ctx_graph_alloc(s->backend, s->graph, s->input, s->output,
-                                 s->text_input, s->output_proto)) {
+                                 s->text_input, s->output_proto, s->vp_input)) {
         clear_run_plan(
                 s);  // sched/galloc state no longer matches the old graph
         return false;
@@ -1276,12 +1463,24 @@ Session* create_session(const std::string& gguf_path,
     // head cannot run without a vocabulary: with no explicit class list the
     // caller means "use whatever the checkpoint shipped" (vocab_txt),
     // mirroring the Python default of predicting before any set_classes
-    // call.
-    const int world_nc = opts.world_nc > 0 ? opts.world_nc : meta.nc;
+    // call. Visual-prompt sessions (YOLOE savpe) instead fix nc to the
+    // prompt count Q: the head's cls_pe comes from the image-derived
+    // embeddings, so neither a class list nor a stored vocabulary applies.
+    const bool visual = opts.visual_count > 0;
+    if (visual && !s->model.has_savpe) {
+        YOLO_LOG_ERROR(
+                "visual prompts need a YOLOE GGUF converted with savpe "
+                "weights (yolo.savpe=1); this checkpoint ships none");
+        free_session(s);
+        return nullptr;
+    }
+    const int world_nc =
+            visual ? opts.visual_count
+                   : (opts.world_nc > 0 ? opts.world_nc : meta.nc);
     s->world_nc = world_nc;
-    if (s->model.has_text_input) {
+    if (s->model.has_text_input || visual) {
         s->model.meta.nc = world_nc;
-        if (opts.world_nc <= 0 &&
+        if (!visual && opts.world_nc <= 0 &&
             s->model.vocab_txt.size() != (size_t)world_nc * 512) {
             YOLO_LOG_ERROR(
                     "no stored vocabulary for %zu classes: convert a "
@@ -1290,7 +1489,7 @@ Session* create_session(const std::string& gguf_path,
             free_session(s);
             return nullptr;
         }
-        if (opts.world_nc <= 0) {
+        if (!visual && opts.world_nc <= 0) {
             s->text_pending = s->model.vocab_txt;
         }
     }
@@ -1420,7 +1619,8 @@ bool session_run(Session* s, const float* chw_image) {
     // Graph allocation reuses the text leaf's backing storage between runs.
     // Keep the host embedding for the session and upload it before every
     // graph execution, just as the image input is uploaded on every frame
-    // (also re-uploads after a canvas rebuild recreated the leaf).
+    // (also re-uploads after a canvas rebuild recreated the leaf). Visual
+    // prompts mirror the same pattern with the rasterized mask buffer.
     if (s->text_input && !s->text_pending.empty()) {
         const size_t text_bytes = s->text_pending.size() * sizeof(float);
         if (s->backend.gpu) {
@@ -1430,6 +1630,16 @@ bool session_run(Session* s, const float* chw_image) {
         } else {
             ggml_backend_tensor_set(s->text_input, s->text_pending.data(), 0,
                                     text_bytes);
+        }
+    }
+    if (s->vp_input && !s->vp_pending.empty()) {
+        const size_t vp_bytes = s->vp_pending.size() * sizeof(float);
+        if (s->backend.gpu) {
+            ggml_backend_tensor_set_async(s->backend.gpu, s->vp_input,
+                                          s->vp_pending.data(), 0, vp_bytes);
+        } else {
+            ggml_backend_tensor_set(s->vp_input, s->vp_pending.data(), 0,
+                                    vp_bytes);
         }
     }
     const auto t1 = std::chrono::steady_clock::now();
@@ -1562,6 +1772,54 @@ bool session_set_text(Session* s, const float* text_embed) {
     // buffer.
     s->text_pending.assign(text_embed,
                            text_embed + ggml_nelements(s->text_input));
+    return true;
+}
+
+bool session_prepare_visual_masks(Session* s, const LetterboxInfo& info) {
+    if (!s || !s->visual_mode() || !s->model.has_savpe) return false;
+    const int q = s->opts.visual_count;
+    if (s->opts.visual_boxes.size() != (size_t)q * 4) return false;
+    const int stride0 = s->model.meta.strides.empty()
+                                ? 8
+                                : (int)s->model.meta.strides[0];
+    const int w3 = s->input_w / stride0;
+    const int h3 = s->input_h / stride0;
+    if (w3 <= 0 || h3 <= 0) return false;
+
+    // Binary P3 masks [W3, H3, Q]: 1 inside the prompted box, 0 outside.
+    // Boxes arrive in original-image pixels; map them through the letterbox
+    // (scale + pad) and down to the P3 grid, matching the official
+    // LoadVisualPrompt(scale_factor=1/8) rasterization.
+    s->vp_pending.assign((size_t)w3 * h3 * q, 0.0f);
+    float* masks = s->vp_pending.data();
+    std::fprintf(stderr, "[savpe-dbg] masks %dx%d q=%d boxes=%zu\n", w3, h3,
+                 q, s->opts.visual_boxes.size());
+    for (int i = 0; i < q; i++) {
+        const float* box = &s->opts.visual_boxes[(size_t)i * 4];
+        const float sx1 = (box[0] * info.scale + info.pad_w) / stride0;
+        const float sy1 = (box[1] * info.scale + info.pad_h) / stride0;
+        const float sx2 = (box[2] * info.scale + info.pad_w) / stride0;
+        const float sy2 = (box[3] * info.scale + info.pad_h) / stride0;
+        int x0 = std::max(0, std::min((int)std::lround(sx1), w3));
+        int y0 = std::max(0, std::min((int)std::lround(sy1), h3));
+        int x1 = std::max(x0, std::min((int)std::lround(sx2), w3));
+        int y1 = std::max(y0, std::min((int)std::lround(sy2), h3));
+        float* plane = masks + (size_t)i * w3 * h3;
+        for (int y = y0; y < y1; ++y) {
+            float* row = plane + (size_t)y * w3;
+            for (int x = x0; x < x1; ++x) row[x] = 1.0f;
+        }
+        size_t nz = 0;
+        for (size_t k = 0; k < (size_t)w3 * h3; ++k) nz += masks[(size_t)i * w3 * h3 + k] > 0.f;
+        std::fprintf(stderr, "[savpe-dbg] plane %d nonzero=%zu rect=[%d,%d)-[%d,%d)\n", i, nz, x0, y0, x1, y1);
+    }
+    if (const char* mdump = std::getenv("AICORE_SAVPE_DUMP_MASK")) {
+        FILE* f = std::fopen(mdump, "wb");
+        if (f != nullptr) {
+            std::fwrite(masks, sizeof(float), s->vp_pending.size(), f);
+            std::fclose(f);
+        }
+    }
     return true;
 }
 

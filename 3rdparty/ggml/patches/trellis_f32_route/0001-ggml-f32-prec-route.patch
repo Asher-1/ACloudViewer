@@ -1,0 +1,329 @@
+diff --git a/src/ggml-vulkan/ggml-vulkan.cpp b/src/ggml-vulkan/ggml-vulkan.cpp
+index 510fb68..2ed2071 100644
+--- a/src/ggml-vulkan/ggml-vulkan.cpp
++++ b/src/ggml-vulkan/ggml-vulkan.cpp
+@@ -4478,6 +4478,65 @@ static void ggml_vk_load_shaders(vk_device& device, vk_pipeline requested) {
+         CREATE_MM(PIPELINE_NAME . f32acc, NAMELC, , WG_DENOMS, WARPTILE, PUSHCONST, PARAMCOUNT)   \
+ 
+         CREATE_MM2(pipeline_matmul_f16, matmul_f16, wg_denoms, warptile, vk_mat_mat_push_constants, 3)
++
++        // trellis-ggml: coopmat2 only ships fp16 shaders, so contiguous
++        // F32 x F32 and F32 x F16 GEMMs would otherwise be silently converted
++        // to fp16 (breaks DINOv3 patch-embed parity with the PyTorch reference,
++        // ~5e-2 on embd). Wire the F32 / F32xF16 pipelines to the base fp32
++        // shaders (matmul_f32_f32_fp32 / matmul_f32_f16_fp32, pure FP32
++        // accumulate) using the base-layout warptile/wg_denoms spec constants.
++        // fp16/bf16 weights still use the cm2 shaders.
++        {
++            const uint32_t sg8 = std::max(device->subgroup_size, 8u);
++            const std::vector<uint32_t> f32_wt_l = {128, 128, 128, 16, 2*sg8, 64, 2, 4, 4, 1, sg8};
++            const std::vector<uint32_t> f32_wt_m = {128,  64,  64, 16,   sg8, 32, 2, 4, 2, 1, sg8};
++            const std::vector<uint32_t> f32_wt_s = { sg8, 32,  32, 16,   sg8, 32, 2, 2, 2, 1, sg8};
++            const std::array<uint32_t, 3> f32_wg_l = {128, 128, 1};
++            const std::array<uint32_t, 3> f32_wg_m = { 64,  64, 1};
++            const std::array<uint32_t, 3> f32_wg_s = { 32,  32, 1};
++            if (device->mul_mat_l[GGML_TYPE_F32]) {
++                ggml_vk_create_pipeline(device, device->pipeline_matmul_f32->l, "matmul_f32_f32_fp32_l", matmul_f32_f32_fp32_len, matmul_f32_f32_fp32_data, "main", 3, sizeof(vk_mat_mat_push_constants), f32_wg_l, ggml_vk_mul_mm_spec(f32_wt_l, false), 1, false, false, 0);
++                ggml_vk_create_pipeline(device, device->pipeline_matmul_f32->a_l, "matmul_f32_f32_fp32_aligned_l", matmul_f32_f32_fp32_len, matmul_f32_f32_fp32_data, "main", 3, sizeof(vk_mat_mat_push_constants), f32_wg_l, ggml_vk_mul_mm_spec(f32_wt_l, true), 128, false, false, 0);
++                ggml_vk_create_pipeline(device, device->pipeline_matmul_f32_f16->l, "matmul_f32_f16_fp32_l", matmul_f32_f16_fp32_len, matmul_f32_f16_fp32_data, "main", 3, sizeof(vk_mat_mat_push_constants), f32_wg_l, ggml_vk_mul_mm_spec(f32_wt_l, false), 1, false, false, 0);
++                ggml_vk_create_pipeline(device, device->pipeline_matmul_f32_f16->a_l, "matmul_f32_f16_fp32_aligned_l", matmul_f32_f16_fp32_len, matmul_f32_f16_fp32_data, "main", 3, sizeof(vk_mat_mat_push_constants), f32_wg_l, ggml_vk_mul_mm_spec(f32_wt_l, true), 128, false, false, 0);
++            }
++            if (device->mul_mat_m[GGML_TYPE_F32]) {
++                ggml_vk_create_pipeline(device, device->pipeline_matmul_f32->m, "matmul_f32_f32_fp32_m", matmul_f32_f32_fp32_len, matmul_f32_f32_fp32_data, "main", 3, sizeof(vk_mat_mat_push_constants), f32_wg_m, ggml_vk_mul_mm_spec(f32_wt_m, false), 1, false, false, 0);
++                ggml_vk_create_pipeline(device, device->pipeline_matmul_f32->a_m, "matmul_f32_f32_fp32_aligned_m", matmul_f32_f32_fp32_len, matmul_f32_f32_fp32_data, "main", 3, sizeof(vk_mat_mat_push_constants), f32_wg_m, ggml_vk_mul_mm_spec(f32_wt_m, true), 64, false, false, 0);
++                ggml_vk_create_pipeline(device, device->pipeline_matmul_f32_f16->m, "matmul_f32_f16_fp32_m", matmul_f32_f16_fp32_len, matmul_f32_f16_fp32_data, "main", 3, sizeof(vk_mat_mat_push_constants), f32_wg_m, ggml_vk_mul_mm_spec(f32_wt_m, false), 1, false, false, 0);
++                ggml_vk_create_pipeline(device, device->pipeline_matmul_f32_f16->a_m, "matmul_f32_f16_fp32_aligned_m", matmul_f32_f16_fp32_len, matmul_f32_f16_fp32_data, "main", 3, sizeof(vk_mat_mat_push_constants), f32_wg_m, ggml_vk_mul_mm_spec(f32_wt_m, true), 64, false, false, 0);
++            }
++            if (device->mul_mat_s[GGML_TYPE_F32]) {
++                ggml_vk_create_pipeline(device, device->pipeline_matmul_f32->s, "matmul_f32_f32_fp32_s", matmul_f32_f32_fp32_len, matmul_f32_f32_fp32_data, "main", 3, sizeof(vk_mat_mat_push_constants), f32_wg_s, ggml_vk_mul_mm_spec(f32_wt_s, false), 1, false, false, 0);
++                ggml_vk_create_pipeline(device, device->pipeline_matmul_f32->a_s, "matmul_f32_f32_fp32_aligned_s", matmul_f32_f32_fp32_len, matmul_f32_f32_fp32_data, "main", 3, sizeof(vk_mat_mat_push_constants), f32_wg_s, ggml_vk_mul_mm_spec(f32_wt_s, true), 32, false, false, 0);
++                ggml_vk_create_pipeline(device, device->pipeline_matmul_f32_f16->s, "matmul_f32_f16_fp32_s", matmul_f32_f16_fp32_len, matmul_f32_f16_fp32_data, "main", 3, sizeof(vk_mat_mat_push_constants), f32_wg_s, ggml_vk_mul_mm_spec(f32_wt_s, false), 1, false, false, 0);
++                ggml_vk_create_pipeline(device, device->pipeline_matmul_f32_f16->a_s, "matmul_f32_f16_fp32_aligned_s", matmul_f32_f16_fp32_len, matmul_f32_f16_fp32_data, "main", 3, sizeof(vk_mat_mat_push_constants), f32_wg_s, ggml_vk_mul_mm_spec(f32_wt_s, true), 32, false, false, 0);
++            }
++            // F16 weights x F32 activations (the f16 deployment path) also
++            // need base fp32 shaders: coopmat2 has no F16 x F32 cm2 shader, so
++            // ggml_vk_get_mul_mat_mat_pipeline() would return an empty
++            // pipeline_matmul_f16_f32 and crash (nullptr->l in
++            // ggml_vk_guess_matmul_pipeline). Wire both accumulator variants
++            // to matmul_f16_f32_fp32 with the base-layout spec constants.
++            if (device->mul_mat_l[GGML_TYPE_F16]) {
++                ggml_vk_create_pipeline(device, device->pipeline_matmul_f16_f32.f16acc->l, "matmul_f16_f32_fp32_l", matmul_f16_f32_fp32_len, matmul_f16_f32_fp32_data, "main", 3, sizeof(vk_mat_mat_push_constants), f32_wg_l, ggml_vk_mul_mm_spec(f32_wt_l, false), 1, false, false, 0);
++                ggml_vk_create_pipeline(device, device->pipeline_matmul_f16_f32.f16acc->a_l, "matmul_f16_f32_fp32_aligned_l", matmul_f16_f32_fp32_len, matmul_f16_f32_fp32_data, "main", 3, sizeof(vk_mat_mat_push_constants), f32_wg_l, ggml_vk_mul_mm_spec(f32_wt_l, true), 128, false, false, 0);
++                ggml_vk_create_pipeline(device, device->pipeline_matmul_f16_f32.f32acc->l, "matmul_f16_f32_fp32_f32acc_l", matmul_f16_f32_fp32_len, matmul_f16_f32_fp32_data, "main", 3, sizeof(vk_mat_mat_push_constants), f32_wg_l, ggml_vk_mul_mm_spec(f32_wt_l, false), 1, false, false, 0);
++                ggml_vk_create_pipeline(device, device->pipeline_matmul_f16_f32.f32acc->a_l, "matmul_f16_f32_fp32_f32acc_aligned_l", matmul_f16_f32_fp32_len, matmul_f16_f32_fp32_data, "main", 3, sizeof(vk_mat_mat_push_constants), f32_wg_l, ggml_vk_mul_mm_spec(f32_wt_l, true), 128, false, false, 0);
++            }
++            if (device->mul_mat_m[GGML_TYPE_F16]) {
++                ggml_vk_create_pipeline(device, device->pipeline_matmul_f16_f32.f16acc->m, "matmul_f16_f32_fp32_m", matmul_f16_f32_fp32_len, matmul_f16_f32_fp32_data, "main", 3, sizeof(vk_mat_mat_push_constants), f32_wg_m, ggml_vk_mul_mm_spec(f32_wt_m, false), 1, false, false, 0);
++                ggml_vk_create_pipeline(device, device->pipeline_matmul_f16_f32.f16acc->a_m, "matmul_f16_f32_fp32_aligned_m", matmul_f16_f32_fp32_len, matmul_f16_f32_fp32_data, "main", 3, sizeof(vk_mat_mat_push_constants), f32_wg_m, ggml_vk_mul_mm_spec(f32_wt_m, true), 64, false, false, 0);
++                ggml_vk_create_pipeline(device, device->pipeline_matmul_f16_f32.f32acc->m, "matmul_f16_f32_fp32_f32acc_m", matmul_f16_f32_fp32_len, matmul_f16_f32_fp32_data, "main", 3, sizeof(vk_mat_mat_push_constants), f32_wg_m, ggml_vk_mul_mm_spec(f32_wt_m, false), 1, false, false, 0);
++                ggml_vk_create_pipeline(device, device->pipeline_matmul_f16_f32.f32acc->a_m, "matmul_f16_f32_fp32_f32acc_aligned_m", matmul_f16_f32_fp32_len, matmul_f16_f32_fp32_data, "main", 3, sizeof(vk_mat_mat_push_constants), f32_wg_m, ggml_vk_mul_mm_spec(f32_wt_m, true), 64, false, false, 0);
++            }
++            if (device->mul_mat_s[GGML_TYPE_F16]) {
++                ggml_vk_create_pipeline(device, device->pipeline_matmul_f16_f32.f16acc->s, "matmul_f16_f32_fp32_s", matmul_f16_f32_fp32_len, matmul_f16_f32_fp32_data, "main", 3, sizeof(vk_mat_mat_push_constants), f32_wg_s, ggml_vk_mul_mm_spec(f32_wt_s, false), 1, false, false, 0);
++                ggml_vk_create_pipeline(device, device->pipeline_matmul_f16_f32.f16acc->a_s, "matmul_f16_f32_fp32_aligned_s", matmul_f16_f32_fp32_len, matmul_f16_f32_fp32_data, "main", 3, sizeof(vk_mat_mat_push_constants), f32_wg_s, ggml_vk_mul_mm_spec(f32_wt_s, true), 32, false, false, 0);
++                ggml_vk_create_pipeline(device, device->pipeline_matmul_f16_f32.f32acc->s, "matmul_f16_f32_fp32_f32acc_s", matmul_f16_f32_fp32_len, matmul_f16_f32_fp32_data, "main", 3, sizeof(vk_mat_mat_push_constants), f32_wg_s, ggml_vk_mul_mm_spec(f32_wt_s, false), 1, false, false, 0);
++                ggml_vk_create_pipeline(device, device->pipeline_matmul_f16_f32.f32acc->a_s, "matmul_f16_f32_fp32_f32acc_aligned_s", matmul_f16_f32_fp32_len, matmul_f16_f32_fp32_data, "main", 3, sizeof(vk_mat_mat_push_constants), f32_wg_s, ggml_vk_mul_mm_spec(f32_wt_s, true), 32, false, false, 0);
++            }
++        }
+ #if defined(GGML_VULKAN_BFLOAT16_GLSLC_SUPPORT)
+         if (device->coopmat_bf16_support) {
+             CREATE_MM(pipeline_matmul_bf16, matmul_bf16, , wg_denoms, warptile, vk_mat_mat_push_constants, 3)
+@@ -9000,11 +9059,18 @@ static void ggml_vk_mul_mat_q_f16(ggml_backend_vk_context * ctx, vk_context& sub
+         src1_uma = d_Qy != nullptr;
+     }
+ 
+-    // Reformat and convert to fp16 if non-contiguous, or for coopmat2 for better perf
+-    const bool x_non_contig = (ctx->device->coopmat2 && src0->type == GGML_TYPE_F32) ||
+-                              !ggml_vk_dim01_contiguous(src0);
+-    const bool y_non_contig = (ctx->device->coopmat2 && src1->type == GGML_TYPE_F32) ||
+-                              (src0->type == GGML_TYPE_BF16 && src1->type != GGML_TYPE_BF16) ||
++    // Reformat and convert to fp16 if non-contiguous, or for coopmat2 for better perf.
++    // trellis-ggml: never route contiguous F32 x F32 GEMMs through the coopmat2
++    // fp16 conversion — it silently rounds F32 operands to fp16 and breaks
++    // DINOv3 patch-embed parity with the PyTorch reference (~5e-2 on embd).
++    // fp16/bf16 src0 still uses coopmat2, so deployment weights are unaffected.
++    const bool x_non_contig = !ggml_vk_dim01_contiguous(src0);
++    // trellis-ggml: quantized src0 (q8 etc.) x F32 activations keep the
++    // upstream coopmat2 fp16 conversion — the q8_1 quantize-activation path
++    // (quantize_y) produces garbage on NV_coopmat2 GPUs, so it must not be
++    // taken. F32 src0 stays on the base fp32 shaders (DINO parity above).
++    const bool y_non_contig = (ctx->device->coopmat2 && src0->type != GGML_TYPE_F32 && src1->type == GGML_TYPE_F32) ||
++                              (src0->type == GGML_TYPE_BF16 && src1->type != GGML_TYPE_BF16) ||
+                               !ggml_vk_dim01_contiguous(src1);
+ 
+     // If src0 is BF16, try to use a BF16 x BF16 multiply
+@@ -9012,7 +9078,7 @@
+ 
+     const bool y_f32_kernel = src1->type == GGML_TYPE_F32 && !y_non_contig;
+ 
+-    bool quantize_y = ctx->device->integer_dot_product && src1->type == GGML_TYPE_F32 && ggml_is_contiguous(src1) && !y_non_contig && (ne11 * ne10) % 4 == 0;
++    bool quantize_y = ctx->device->integer_dot_product && src0->type != GGML_TYPE_F32 && src1->type == GGML_TYPE_F32 && ggml_is_contiguous(src1) && !y_non_contig && (ne11 * ne10) % 4 == 0;
+ 
+     // Check for mmq first
+     vk_matmul_pipeline mmp = quantize_y ? ggml_vk_get_mul_mat_mat_pipeline(ctx, src0->type, GGML_TYPE_Q8_1, (ggml_prec)dst->op_params[0]) : nullptr;
+@@ -9345,7 +9411,7 @@
+     const bool y_non_contig = !ggml_vk_dim01_contiguous(src1);
+ 
+     const bool f16_f32_kernel = src1->type == GGML_TYPE_F32;
+-    bool quantize_y = ctx->device->integer_dot_product && src1->type == GGML_TYPE_F32 && ggml_is_contiguous(src1) && !y_non_contig && (ne11 * ne10) % 4 == 0 && ggml_vk_should_use_mmvq(ctx->device, ne01, ne11, ne10, src0->type);
++    bool quantize_y = ctx->device->integer_dot_product && src0->type != GGML_TYPE_F32 && src1->type == GGML_TYPE_F32 && ggml_is_contiguous(src1) && !y_non_contig && (ne11 * ne10) % 4 == 0 && ggml_vk_should_use_mmvq(ctx->device, ne01, ne11, ne10, src0->type);
+ 
+     vk_pipeline to_fp16_vk_0 = nullptr;
+     vk_pipeline to_fp16_vk_1 = nullptr;
+@@ -9918,9 +9984,10 @@
+         ids_uma = d_ids != nullptr;
+     }
+ 
+-    // Reformat and convert to fp16 if non-contiguous, or for coopmat2 for better perf
+-    const bool x_non_contig = (ctx->device->coopmat2 && src0->type == GGML_TYPE_F32) ||
+-                              !ggml_vk_dim01_contiguous(src0);
++    // Reformat and convert to fp16 if non-contiguous, or for coopmat2 for better perf.
++    // trellis-ggml: keep contiguous F32 GEMMs at full FP32 precision (see
++    // ggml_vk_mul_mat_q_f16 for the DINOv3 parity rationale).
++    const bool x_non_contig = !ggml_vk_dim01_contiguous(src0);
+     // If src0 is BF16, try to use a BF16 x BF16 multiply
+     ggml_type f16_type = src0->type == GGML_TYPE_BF16 ? GGML_TYPE_BF16 : GGML_TYPE_F16;
+ #if defined(GGML_VULKAN_COOPMAT2_DECODE_VECTOR_GLSLC_SUPPORT)
+@@ -9948,7 +10015,7 @@
+ 
+     const bool y_f32_kernel = src1->type == GGML_TYPE_F32 && !y_non_contig;
+ 
+-    bool quantize_y = ctx->device->integer_dot_product && src1->type == GGML_TYPE_F32 && ggml_is_contiguous(src1) && !y_non_contig && (ne11 * ne10) % 4 == 0;
++    bool quantize_y = ctx->device->integer_dot_product && src0->type != GGML_TYPE_F32 && src1->type == GGML_TYPE_F32 && ggml_is_contiguous(src1) && !y_non_contig && (ne11 * ne10) % 4 == 0;
+ 
+     // Check for mmq first
+     vk_matmul_pipeline mmp = quantize_y ? ggml_vk_get_mul_mat_mat_id_pipeline(ctx, src0->type, GGML_TYPE_Q8_1, (ggml_prec)dst->op_params[0]) : nullptr;
+@@ -10244,7 +10311,7 @@
+     const bool y_non_contig = !ggml_vk_dim01_contiguous(src1);
+ 
+     const bool f16_f32_kernel = src1->type == GGML_TYPE_F32;
+-    bool quantize_y = ctx->device->integer_dot_product && src1->type == GGML_TYPE_F32 && ggml_is_contiguous(src1) && !y_non_contig && (ne11 * ne10) % 4 == 0 && ggml_vk_should_use_mmvq(ctx->device, ne01, ne12, ne10, src0->type);
++    bool quantize_y = ctx->device->integer_dot_product && src0->type != GGML_TYPE_F32 && src1->type == GGML_TYPE_F32 && ggml_is_contiguous(src1) && !y_non_contig && (ne11 * ne10) % 4 == 0 && ggml_vk_should_use_mmvq(ctx->device, ne01, ne12, ne10, src0->type);
+ 
+     vk_pipeline to_fp16_vk_0 = nullptr;
+     vk_pipeline to_fp16_vk_1 = nullptr;
+diff --git a/src/ggml-cuda/ggml-cuda.cu b/src/ggml-cuda/ggml-cuda.cu
+--- a/src/ggml-cuda/ggml-cuda.cu
++++ b/src/ggml-cuda/ggml-cuda.cu
+@@ -1830,7 +1830,12 @@ static void ggml_cuda_mul_mat(ggml_backend_cuda_context & ctx, const ggml_tensor * src0, const ggml_tensor * src1, ggml_tensor * dst) {
+     const int cc        = ggml_cuda_info().devices[ctx.device].cc;
+     const int warp_size = ggml_cuda_info().devices[ctx.device].warp_size;
+ 
+-    if (ggml_cuda_should_use_mmvf(src0->type, cc, src0->ne, src0->nb, ne11)) {
++    // trellis-ggml: GGML_PREC_F32 must bypass the f16 MMA vector kernels,
++    // which accumulate in half and diverge from the CPU backend's f32
++    // reductions (the chaotic diffusion samplers amplify the gap).
++    const bool prec_f32 = (dst->op_params[0] == GGML_PREC_F32);
++
++    if (!prec_f32 && ggml_cuda_should_use_mmvf(src0->type, cc, src0->ne, src0->nb, ne11)) {
+         // The custom F16 vector kernel can be used over batched cuBLAS GEMM.
+         // But this is only faster for GPUs without tensor cores or with a thin src0 matrix (particularly KQV in attention)
+         ggml_cuda_mul_mat_vec_f(ctx, src0, src1, nullptr, dst);
+@@ -1850,7 +1855,7 @@ static void ggml_cuda_mul_mat(ggml_backend_cuda_context & ctx, const ggml_tensor * src0, const ggml_tensor * src1, ggml_tensor * dst) {
+         ggml_cuda_mul_mat_vec_f(ctx, src1, src0, nullptr, &dst_vec);
+         return;
+     }
+-    if (ggml_cuda_should_use_mmf(src0->type, cc, warp_size, src0->ne, src0->nb, ne11, /*mul_mat_id =*/ false)) {
++    if (!prec_f32 && ggml_cuda_should_use_mmf(src0->type, cc, warp_size, src0->ne, src0->nb, ne11, /*mul_mat_id =*/ false)) {
+         ggml_cuda_mul_mat_f(ctx, src0, src1, nullptr, dst);
+         return;
+     }
+--- a/src/ggml-vulkan/ggml-vulkan.cpp
++++ b/src/ggml-vulkan/ggml-vulkan.cpp
+@@ -9307,7 +9307,10 @@
+     // upstream coopmat2 fp16 conversion — the q8_1 quantize-activation path
+     // (quantize_y) produces garbage on NV_coopmat2 GPUs, so it must not be
+     // taken. F32 src0 stays on the base fp32 shaders (DINO parity above).
+-    const bool y_non_contig = (ctx->device->coopmat2 && src0->type != GGML_TYPE_F32 && src1->type == GGML_TYPE_F32) ||
++    // trellis-ggml: with GGML_PREC_F32 the activation must stay fp32 - the
++    // coopmat2 fp16 conversion of Y alone costs ~5.4e-4 rel-L2/step, which the
++    // chaotic samplers amplify into different voxel sets / PBR fields.
++    const bool y_non_contig = (ctx->device->coopmat2 && (ggml_prec)dst->op_params[0] != GGML_PREC_F32 && src0->type != GGML_TYPE_F32 && src1->type == GGML_TYPE_F32) ||
+                               (src0->type == GGML_TYPE_BF16 && src1->type != GGML_TYPE_BF16) ||
+                               !ggml_vk_dim01_contiguous(src1);
+ 
+@@ -9316,6 +9319,15 @@
+ 
+     const bool y_f32_kernel = src1->type == GGML_TYPE_F32 && !y_non_contig;
+ 
++    // trellis-ggml: the fp16-weights fp32-accumulate pipeline still drifts
++    // ~5.4e-4/step from the cuBLAS/CPU fp32-accumulate semantics even with
++    // GGML_PREC_F32, which the chaotic samplers amplify into different voxel
++    // sets / PBR fields. When PREC_F32 is requested, dequantize fp16 weights
++    // to fp32 and take the pure fp32 pipeline instead: fp16 values convert to
++    // fp32 exactly, so this matches the CUDA/CPU paths mathematically.
++    const bool prec_f32_route = (ggml_prec)dst->op_params[0] == GGML_PREC_F32 &&
++                                src0->type == GGML_TYPE_F16 && y_f32_kernel;
++
+     bool quantize_y = ctx->device->integer_dot_product && src0->type != GGML_TYPE_F32 && src1->type == GGML_TYPE_F32 && ggml_is_contiguous(src1) && !y_non_contig && (ne11 * ne10) % 4 == 0;
+ 
+     // Check for mmq first
+@@ -9323,7 +9335,7 @@
+ 
+     if (mmp == nullptr) {
+         // Fall back to f16 dequant mul mat
+-        mmp = ggml_vk_get_mul_mat_mat_pipeline(ctx, src0->type, y_non_contig ? f16_type : src1->type, (ggml_prec)dst->op_params[0]);
++        mmp = prec_f32_route ? nullptr : ggml_vk_get_mul_mat_mat_pipeline(ctx, src0->type, y_non_contig ? f16_type : src1->type, (ggml_prec)dst->op_params[0]);
+         quantize_y = false;
+     }
+ 
+@@ -9338,12 +9350,15 @@
+         }
+     }
+ 
+-    const bool qx_needs_dequant = mmp == nullptr || x_non_contig;
++    const bool qx_needs_dequant = mmp == nullptr || x_non_contig || prec_f32_route;
+     const bool qy_needs_dequant = !quantize_y && ((src1->type != f16_type && !y_f32_kernel) || y_non_contig);
+ 
+     if (qx_needs_dequant) {
+-        // Fall back to dequant + f16 mulmat
+-        mmp = ggml_vk_get_mul_mat_mat_pipeline(ctx, f16_type, y_f32_kernel ? GGML_TYPE_F32 : f16_type, (ggml_prec)dst->op_params[0]);
++        // Fall back to dequant + f16 mulmat; with prec_f32_route the dequant
++        // target is fp32 and the pure fp32 pipeline is used (see above).
++        mmp = prec_f32_route
++            ? ggml_vk_get_mul_mat_mat_pipeline(ctx, GGML_TYPE_F32, GGML_TYPE_F32, (ggml_prec)dst->op_params[0])
++            : ggml_vk_get_mul_mat_mat_pipeline(ctx, f16_type, y_f32_kernel ? GGML_TYPE_F32 : f16_type, (ggml_prec)dst->op_params[0]);
+     }
+ 
+     // Not implemented
+@@ -9351,10 +9366,10 @@
+ 
+     const ggml_type effective_src1_type = quantize_y ? GGML_TYPE_Q8_1 : (y_f32_kernel ? GGML_TYPE_F32 : src1->type);
+ 
+-    const uint32_t kpad = quantize_y ? 0 : ggml_vk_align_size(ne10, ggml_vk_guess_matmul_pipeline_align(ctx, mmp, ne01, ne11, qx_needs_dequant ? f16_type : src0->type, effective_src1_type));
++    const uint32_t kpad = quantize_y ? 0 : ggml_vk_align_size(ne10, ggml_vk_guess_matmul_pipeline_align(ctx, mmp, ne01, ne11, qx_needs_dequant ? (prec_f32_route ? GGML_TYPE_F32 : f16_type) : src0->type, effective_src1_type));
+     const bool aligned = !quantize_y && ne10 == kpad && ne01 > 8 && ne11 > 8;
+ 
+-    vk_pipeline pipeline = ggml_vk_guess_matmul_pipeline(ctx, mmp, ne01, ne11, aligned, qx_needs_dequant ? f16_type : src0->type, effective_src1_type);
++    vk_pipeline pipeline = ggml_vk_guess_matmul_pipeline(ctx, mmp, ne01, ne11, aligned, qx_needs_dequant ? (prec_f32_route ? GGML_TYPE_F32 : f16_type) : src0->type, effective_src1_type);
+ 
+     if (ggml_nbytes(src0) > ctx->device->properties.limits.maxStorageBufferRange) {
+         pipeline = ggml_vk_get_64b_indexing_pipeline(ctx, pipeline);
+@@ -9371,7 +9386,7 @@
+ 
+     const uint64_t qx_sz = ggml_type_size(src0->type) * x_ne / ggml_blck_size(src0->type);
+     const uint64_t qy_sz = ggml_type_size(src1->type) * y_ne / ggml_blck_size(src1->type);
+-    const uint64_t x_sz = !qx_needs_dequant ? qx_sz : sizeof(ggml_fp16_t) * x_ne;
++    const uint64_t x_sz = !qx_needs_dequant ? qx_sz : (prec_f32_route ? sizeof(float) : sizeof(ggml_fp16_t)) * x_ne;
+     const uint64_t y_sz = quantize_y ? (ggml_vk_align_size(y_ne, 128) * ggml_type_size(GGML_TYPE_Q8_1) / ggml_blck_size(GGML_TYPE_Q8_1)) : (y_f32_kernel ? sizeof(float) * y_ne : sizeof(ggml_fp16_t) * y_ne);
+     const uint64_t d_sz = sizeof(float) * d_ne;
+ 
+@@ -9380,7 +9395,9 @@
+     vk_pipeline to_q8_1 = nullptr;
+ 
+     if (x_non_contig) {
+-        to_fp16_vk_0 = ggml_vk_get_cpy_pipeline(ctx, src0, nullptr, f16_type);
++        to_fp16_vk_0 = ggml_vk_get_cpy_pipeline(ctx, src0, nullptr, prec_f32_route ? GGML_TYPE_F32 : f16_type);
++    } else if (prec_f32_route) {
++        to_fp16_vk_0 = ggml_vk_get_cpy_pipeline(ctx, src0, nullptr, GGML_TYPE_F32);
+     } else {
+         to_fp16_vk_0 = ggml_vk_get_to_fp16(ctx, src0->type);
+     }
+@@ -9478,6 +9495,12 @@
+ 
+     if (x_non_contig) {
+         ggml_vk_cpy_to_contiguous(ctx, subctx, to_fp16_vk_0, src0, ggml_vk_subbuffer(ctx, d_Qx, qx_buf_offset), ggml_vk_subbuffer(ctx, d_X, 0));
++    } else if (prec_f32_route) {
++        // fp16 -> fp32 dequant copy. The contiguous-copy pipeline has the
++        // unary push-constant layout (ggml_vk_cpy_to_contiguous builds it),
++        // not the 5-field dequant layout used by the to-fp16 pipelines.
++        ggml_vk_cpy_to_contiguous(ctx, subctx, to_fp16_vk_0, src0, ggml_vk_subbuffer(ctx, d_Qx, qx_buf_offset), ggml_vk_subbuffer(ctx, d_X, 0));
++        ggml_vk_sync_buffers(ctx, subctx);
+     } else if (qx_needs_dequant) {
+         const std::vector<uint32_t> pc = { (uint32_t)ne01, (uint32_t)ne10, (uint32_t)ne10, (uint32_t)ne10, (uint32_t)(ggml_nelements(src0)) };
+         ggml_vk_dispatch_pipeline(ctx, subctx, to_fp16_vk_0, { vk_subbuffer{ d_Qx, qx_buf_offset, qx_sz }, vk_subbuffer{ d_X, 0, x_sz } }, pc, { (uint32_t)(x_ne), 1, 1});
+@@ -10264,6 +10287,15 @@
+ 
+     const bool y_f32_kernel = src1->type == GGML_TYPE_F32 && !y_non_contig;
+ 
++    // trellis-ggml: the fp16-weights fp32-accumulate pipeline still drifts
++    // ~5.4e-4/step from the cuBLAS/CPU fp32-accumulate semantics even with
++    // GGML_PREC_F32, which the chaotic samplers amplify into different voxel
++    // sets / PBR fields. When PREC_F32 is requested, dequantize fp16 weights
++    // to fp32 and take the pure fp32 pipeline instead: fp16 values convert to
++    // fp32 exactly, so this matches the CUDA/CPU paths mathematically.
++    const bool prec_f32_route = (ggml_prec)dst->op_params[0] == GGML_PREC_F32 &&
++                                src0->type == GGML_TYPE_F16 && y_f32_kernel;
++
+     bool quantize_y = ctx->device->integer_dot_product && src0->type != GGML_TYPE_F32 && src1->type == GGML_TYPE_F32 && ggml_is_contiguous(src1) && !y_non_contig && (ne11 * ne10) % 4 == 0;
+ 
+     // Check for mmq first
+@@ -10275,12 +10307,15 @@
+         quantize_y = false;
+     }
+ 
+-    const bool qx_needs_dequant = mmp == nullptr || x_non_contig;
++    const bool qx_needs_dequant = mmp == nullptr || x_non_contig || prec_f32_route;
+     const bool qy_needs_dequant = !quantize_y && ((src1->type != f16_type && !y_f32_kernel) || y_non_contig);
+ 
+     if (qx_needs_dequant) {
+-        // Fall back to dequant + f16 mulmat
+-        mmp = ggml_vk_get_mul_mat_mat_id_pipeline(ctx, f16_type, y_f32_kernel ? GGML_TYPE_F32 : f16_type, (ggml_prec)dst->op_params[0]);
++        // Fall back to dequant + f16 mulmat; with prec_f32_route the dequant
++        // target is fp32 and the pure fp32 pipeline is used (see above).
++        mmp = prec_f32_route
++            ? ggml_vk_get_mul_mat_mat_id_pipeline(ctx, GGML_TYPE_F32, GGML_TYPE_F32, (ggml_prec)dst->op_params[0])
++            : ggml_vk_get_mul_mat_mat_id_pipeline(ctx, f16_type, y_f32_kernel ? GGML_TYPE_F32 : f16_type, (ggml_prec)dst->op_params[0]);
+     }
+ 
+     // Not implemented
+@@ -10304,7 +10339,7 @@
+ 
+     const uint64_t qx_sz = ggml_type_size(src0->type) * x_ne / ggml_blck_size(src0->type);
+     const uint64_t qy_sz = ggml_type_size(src1->type) * ggml_nelements(src1) / ggml_blck_size(src1->type);
+-    const uint64_t x_sz = !qx_needs_dequant ? qx_sz : sizeof(ggml_fp16_t) * x_ne;
++    const uint64_t x_sz = !qx_needs_dequant ? qx_sz : (prec_f32_route ? sizeof(float) : sizeof(ggml_fp16_t)) * x_ne;
+     const uint64_t y_sz = quantize_y ? (ggml_vk_align_size(y_ne, 128) * ggml_type_size(GGML_TYPE_Q8_1) / ggml_blck_size(GGML_TYPE_Q8_1)) : (y_f32_kernel ? sizeof(float) * y_ne : sizeof(ggml_fp16_t) * y_ne);
+     const uint64_t ids_sz = nbi2;
+     const uint64_t d_sz = sizeof(float) * d_ne;
+@@ -10324,7 +10359,9 @@
+     };
+ 
+     if (x_non_contig) {
+-        to_fp16_vk_0 = ggml_vk_get_cpy_pipeline(ctx, src0, nullptr, f16_type);
++        to_fp16_vk_0 = ggml_vk_get_cpy_pipeline(ctx, src0, nullptr, prec_f32_route ? GGML_TYPE_F32 : f16_type);
++    } else if (prec_f32_route) {
++        to_fp16_vk_0 = ggml_vk_get_cpy_pipeline(ctx, src0, nullptr, GGML_TYPE_F32);
+     } else {
+         to_fp16_vk_0 = ggml_vk_get_to_fp16(ctx, src0->type);
+     }
