@@ -178,8 +178,9 @@ official ultralytics YOLOE prompting modes:
   matches against its built-in 4585-entry LRPC vocabulary. `-pf` variants
   reject both a class list and visual prompts.
 
-Leaving the YOLOE class list empty in text mode auto-switches the panel to
-the `-pf` variant of the same scale (the official no-input path), because a
+Leaving the YOLOE class list empty in text mode fails the Run with an
+actionable hint (enter classes, draw visual prompts, or pick the `-pf`
+variant of the same scale — the official no-input path), because a
 fresh upstream `*-seg.pt` has no usable built-in vocabulary: without
 `set_classes` the official runtime falls back to a zero embedding and emits
 80 numeric placeholder classes ("0"…"79"), which is not usable recognition.

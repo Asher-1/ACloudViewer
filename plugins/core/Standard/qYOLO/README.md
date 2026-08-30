@@ -37,9 +37,10 @@ Visual prompts need a non-`-pf` YOLOE GGUF converted with savpe weights
 `core/AICore/src/tasks/yolo/tools/convert_yoloe_savpe_gguf.py`; the loader rejects mismatched
 weights) and take precedence over the class list when both are set. Because
 the upstream `*-seg.pt` checkpoints report nc=80 numeric placeholder names
-without `set_classes` (zero-embedding fallback), leaving the YOLOE class
-list empty auto-switches to the prompt-free equivalent of the same scale
-(the official no-input path) instead of failing. Device parity on real GGUFs is enforced by
+without `set_classes` (zero-embedding fallback), an empty YOLOE class list
+is rejected at Run time with an actionable hint (enter classes, draw visual
+prompts, or pick the `-pf` checkpoint of the same scale — the official
+no-input path). Device parity on real GGUFs is enforced by
 `test_yolo_capi_parity` (CUDA and Vulkan: all task families PASS, including
 YOLOE/World text-conditioned masks; bisect tool `test_yolo_world_optrace`
 compares every user-op output across CPU/GPU devices). The savpe run path is
@@ -92,8 +93,9 @@ models (the task is a property of the model, not a runtime switch); the
 Live tab lists the closed-set real-time families (detection / segmentation /
 depth). Note for the YOLOE tab: the non-`-pf` checkpoints ship no stored
 vocabulary, so a class list is required before Run (the `-pf` checkpoints
-use the built-in vocabulary and need no class list). Leaving the class list
-empty auto-switches the panel to the `-pf` variant of the same scale; the
+use the built-in vocabulary and need no class list; Run rejects an empty
+class list with an actionable hint instead of switching models on its
+own); the
 **Visual prompt** mode (SAVPE example boxes) is the third no-text option —
 see above.
 

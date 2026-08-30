@@ -1139,9 +1139,8 @@ void YOLODialog::applyPanelVisibility(YOLOTaskPanel& panel) {
                     : yoloe_needs_classes
                             ? tr("Required for this checkpoint: it ships no "
                                  "stored vocabulary — enter comma-separated "
-                                 "class names, or leave empty to auto-switch "
-                                 "to the prompt-free variant of the same "
-                                 "scale. Use short category nouns; "
+                                 "class names (an empty list is rejected at "
+                                 "run time). Use short category nouns; "
                                  "descriptive phrases score far lower and "
                                  "need Confidence ~0.02 or below")
                             : tr("Comma-separated open-vocabulary class names "
@@ -1243,13 +1242,13 @@ bool YOLODialog::ensureModelAvailable(PendingAction action) {
         if (!m_liveWidget) return false;
         const QString filename = m_liveWidget->modelFilename();
         if (filename.isEmpty()) {
-            appendLog(tr("[YOLO] Select a model first."));
+            appendLog(tr("[Error] Select a model first."));
             return false;
         }
         if (!QFileInfo::exists(m_liveWidget->resolveModelPath())) {
             YOLOModelEntry entry;
             if (!YOLOHelpers::findModelByFilename(filename, &entry)) {
-                appendLog(tr("[YOLO] Model file not found: %1").arg(filename));
+                appendLog(tr("[Error] Model file not found: %1").arg(filename));
                 return false;
             }
             m_pendingActionAfterDownload = action;
@@ -1264,11 +1263,9 @@ bool YOLODialog::ensureModelAvailable(PendingAction action) {
 
     YOLOTaskPanel* panel = currentTaskPanel();
     if (!panel) return false;
-    // Non-const: the no-class-list YOLOE path below may re-point it at the
-    // prompt-free sibling it auto-switches to.
-    QString filename = panel->modelCombo->currentData().toString();
+    const QString filename = panel->modelCombo->currentData().toString();
     if (filename.isEmpty()) {
-        appendLog(tr("[YOLO] Select a model first."));
+        appendLog(tr("[Error] Select a model first."));
         return false;
     }
     // YOLOE visual-prompt mode: SAVPE box prompts replace the class-list
@@ -1278,13 +1275,13 @@ bool YOLODialog::ensureModelAvailable(PendingAction action) {
     if (panel->task == QStringLiteral("yoloe") &&
         panelUsesVisualPrompts(*panel)) {
         if (YOLOHelpers::isPromptFreeFilename(filename)) {
-            appendLog(tr("[YOLO] Prompt-free YOLOE checkpoints reject visual "
+            appendLog(tr("[Error] Prompt-free YOLOE checkpoints reject visual "
                          "prompts — pick the non-prompt-free variant of the "
                          "same scale, or switch back to Text prompt mode."));
             return false;
         }
         if (!panel->vpLabel || panel->vpLabel->boxCount() == 0) {
-            appendLog(tr("[YOLO] Visual prompt mode: draw at least one "
+            appendLog(tr("[Error] Visual prompt mode: draw at least one "
                          "example box on the preview first."));
             return false;
         }
@@ -1311,44 +1308,30 @@ bool YOLODialog::ensureModelAvailable(PendingAction action) {
             }
         }
         if (!hasClasses) {
-            // Official-parity no-input path: the upstream *-seg.pt reports
+            // Official-parity no-input route: the upstream *-seg.pt reports
             // nc=80 numeric placeholder names without set_classes (its
             // zero-embedding fallback), so the sanctioned promptless route
             // is the same-scale -pf checkpoint (built-in 4585-entry LRPC
-            // vocabulary). Switch to it instead of failing; the backend
-            // still rejects the run when no pf sibling exists.
-            const QString sibling =
-                    YOLOHelpers::promptFreeSiblingFilename(filename);
-            if (!sibling.isEmpty()) {
-                const int idx = panel->modelCombo->findData(sibling);
-                if (idx >= 0) {
-                    // Programmatic switch: block the combo signal so this
-                    // stays a non-explicit choice (onModelComboChanged marks
-                    // real signals as user picks), then refresh the panel
-                    // hints manually — mirrors populateModelCombo.
-                    QSignalBlocker block(panel->modelCombo);
-                    panel->modelCombo->setCurrentIndex(idx);
-                    applyPanelVisibility(*panel);
-                    appendLog(tr("[YOLO] No class list entered — switched to "
-                                 "the prompt-free equivalent %1 (built-in "
-                                 "4585-entry vocabulary, no text input "
-                                 "needed).")
-                                  .arg(sibling));
-                    filename = sibling;
-                }
-            } else {
-                appendLog(tr("[YOLO] This YOLOE checkpoint ships no stored "
-                             "vocabulary — enter a comma-separated class "
-                             "list (e.g. person, bus, car); the text model "
-                             "encodes it and downloads automatically."));
-                return false;
-            }
+            // vocabulary). Do NOT auto-switch to it: silently re-pointing
+            // the combo away from an explicit user pick made the model jump
+            // back to prompt-free with no on-screen hint (the switch notice
+            // only reached the internal log), and the -pf vocabulary yields
+            // entirely different results than the text/visual prompts the
+            // user intended. Fail with an actionable hint instead — picking
+            // the -pf checkpoint stays the user's call.
+            appendLog(tr("[Error] This YOLOE checkpoint ships no stored "
+                         "vocabulary and no class list was entered — enter "
+                         "comma-separated class names (e.g. person, bus, "
+                         "car), draw visual prompts (Visual prompt mode), or "
+                         "select the prompt-free (-pf) checkpoint of the "
+                         "same scale."));
+            return false;
         }
     }
     if (!QFileInfo::exists(panel->modelPath())) {
         YOLOModelEntry entry;
         if (!YOLOHelpers::findModelByFilename(filename, &entry)) {
-            appendLog(tr("[YOLO] Model file not found: %1").arg(filename));
+            appendLog(tr("[Error] Model file not found: %1").arg(filename));
             return false;
         }
         m_pendingActionAfterDownload = action;
@@ -1589,9 +1572,14 @@ void YOLODialog::appendLog(const QString& msg) {
     if (!m_taskStatusLabel || !msg.startsWith(QStringLiteral("[Error]"))) {
         return;
     }
-    if (m_lastTaskError.isEmpty()) {
-        m_lastTaskError = msg.mid(QStringLiteral("[Error]").size()).trimmed();
-    }
+    // Record the latest error and show it immediately: pre-run validation
+    // (onRun / ensureModelAvailable) returns before the plugin enters the
+    // running state, so the label would otherwise stay untouched until a
+    // later setRunning(false) flushes m_lastTaskError.
+    m_lastTaskError = msg.mid(QStringLiteral("[Error]").size()).trimmed();
+    m_taskStatusLabel->setText(m_lastTaskError);
+    m_taskStatusLabel->setStyleSheet("font-weight: bold; color: #b91c1c;");
+    m_taskStatusLabel->setVisible(true);
 }
 
 void YOLODialog::setProgress(int current, int total) {
