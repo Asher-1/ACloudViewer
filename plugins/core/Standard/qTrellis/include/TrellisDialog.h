@@ -124,7 +124,6 @@ private slots:
     void onTestImageSelected(int index);
     void onTestDataExtracted();
     void onPageChanged(int row);
-    void onExportPageAction();
 
 protected:
     void closeEvent(QCloseEvent* event) override;

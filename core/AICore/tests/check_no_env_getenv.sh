@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # Fail if AICore source reads or writes process environment variables outside
-# the two sanctioned files:
+# the sanctioned files:
 #   src/common/data_root_util.cpp  - deployment data-root convention
 #   src/common/ggml_env_bridge.cpp - the ONLY writer of ggml-side variables
-#                                     (explicit options -> env, single point)
+#                                    (explicit options -> env, single point)
+#   src/common/debug_dump.cpp      - debug-only dump-path reads (YOLO SAVPE)
 # All logic control must flow through explicit options/APIs (see the AICore
 # unification plan): a getenv/setenv call in a task or common module is a
 # regression.
@@ -24,6 +25,7 @@ fi
 whitelist=(
     "common/data_root_util.cpp"
     "common/ggml_env_bridge.cpp"
+    "common/debug_dump.cpp"
 )
 
 # Match actual calls (not comments/doc mentions).
@@ -66,7 +68,7 @@ done < <(find "$src_dir/tasks" -type f \( -name '*.cpp' -o -name '*.c' \
     -o -name '*.hpp' -o -name '*.h' \) | sort)
 
 if [[ "$violations" != 0 ]]; then
-    echo "FAIL: environment access is limited to $src_dir/common/{data_root_util.cpp, ggml_env_bridge.cpp}; task modules use interfaces only" >&2
+    echo "FAIL: environment access is limited to $src_dir/common/{data_root_util.cpp, ggml_env_bridge.cpp, debug_dump.cpp}; task modules use interfaces only" >&2
     exit 1
 fi
 

@@ -708,7 +708,8 @@ set(_aicore_contract_targets
     test_rmbg_capi_performance
     test_sam3_capi_contract
     test_trellis_capi_contract
-    test_yolo_capi_performance)
+    test_yolo_capi_performance
+    test_model_catalog_defaults)
 set(_aicore_contract_model_exclude)
 if(NOT AICORE_TEST_ENABLE_MODEL_TESTS)
     list(APPEND _aicore_contract_model_exclude -LE "model|gpu|e2e")

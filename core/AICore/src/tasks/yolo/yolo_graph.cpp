@@ -14,6 +14,7 @@
 #include <utility>
 #include <vector>
 
+#include "common/debug_dump.hpp"
 #include "ggml-alloc.h"
 #include "ggml.h"
 #include "gguf.h"
@@ -1808,7 +1809,7 @@ bool session_prepare_visual_masks(Session* s, const LetterboxInfo& info) {
                      "[savpe-dbg] plane %d nonzero=%zu rect=[%d,%d)-[%d,%d)\n",
                      i, nz, x0, y0, x1, y1);
     }
-    if (const char* mdump = std::getenv("AICORE_SAVPE_DUMP_MASK")) {
+    if (const char* mdump = aicore::debug::savpe_mask_dump_path()) {
         FILE* f = std::fopen(mdump, "wb");
         if (f != nullptr) {
             std::fwrite(masks, sizeof(float), s->vp_pending.size(), f);

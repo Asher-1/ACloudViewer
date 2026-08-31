@@ -23,6 +23,7 @@
 #include "aicore/backend_capi.h"
 #include "aicore/yolo_capi.h"
 #include "common/capi_utils.hpp"
+#include "common/debug_dump.hpp"
 #include "common/ggml_backend_registry.hpp"
 #include "common/ggml_backend_utils.hpp"
 #include "common/model_cache.hpp"
@@ -1229,7 +1230,7 @@ AICORE_CAPI aicore_yolo_segment_result* aicore_yolo_seg_rgb(
             ctx->last_error = "YOLO segment inference failed";
             return nullptr;
         }
-        if (const char* dump = std::getenv("AICORE_SAVPE_DUMP")) {
+        if (const char* dump = aicore::debug::savpe_dump_path()) {
             if (s->savpe_out != nullptr) {
                 std::vector<float> vpe((size_t)ggml_nelements(s->savpe_out));
                 ggml_backend_tensor_get(s->savpe_out, vpe.data(), 0,
