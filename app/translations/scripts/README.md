@@ -21,7 +21,7 @@ Automatically extracts all translatable strings from source code and updates the
 
 **Usage:**
 ```bash
-cd /home/ludahai/develop/code/github/ACloudViewer/app/translations/scripts
+cd <repo-root>/app/translations/scripts
 bash update_translations.sh
 ```
 
@@ -172,7 +172,7 @@ To reproduce the entire translation from 76% to 100%:
 
 ```bash
 # Navigate to scripts directory
-cd /home/ludahai/develop/code/github/ACloudViewer/app/translations/scripts
+cd <repo-root>/app/translations/scripts
 
 # Step 0: Update translation file from source code (if needed)
 bash update_translations.sh
@@ -266,7 +266,7 @@ Each script targets a specific type of content:
 When source code is updated with new translatable strings:
 
 ```bash
-cd /home/ludahai/develop/code/github/ACloudViewer/app/translations/scripts
+cd <repo-root>/app/translations/scripts
 bash update_translations.sh
 ```
 

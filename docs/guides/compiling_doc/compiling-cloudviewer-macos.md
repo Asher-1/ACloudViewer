@@ -218,7 +218,7 @@ conda activate python${PYTHON_VERSION}
 ### 2. Install Python dependencies
 
 ```bash
-export CLOUDVIEWER_ML_ROOT=/Users/asher/develop/code/github/CloudViewer-ML
+export CLOUDVIEWER_ML_ROOT="$HOME/develop/code/github/CloudViewer-ML"  # adjust to your CloudViewer-ML checkout location
 
 CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/ >/dev/null 2>&1 && pwd)"
 export BUILD_PYTORCH_OPS=ON

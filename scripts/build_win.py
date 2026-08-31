@@ -263,7 +263,10 @@ if __name__ == "__main__":
     if not os.path.exists(ACLOUDVIEWER_INSTALL):
         os.makedirs(ACLOUDVIEWER_INSTALL)
     logging.info(f"ACloudViewer_INSTALL PATH: {ACLOUDVIEWER_INSTALL}")
-    CloudViewerMLRoot = "C:/Users/asher/develop/code/CloudViewer/CloudViewer-ML"
+    # ML repo is expected as a sibling of this repo; override via env var.
+    CloudViewerMLRoot = os.environ.get(
+        "CLOUDVIEWER_ML_ROOT",
+        os.path.join(os.path.dirname(CLOUDVIEWER_SOURCE_ROOT), "CloudViewer-ML"))
     logging.info(f"CloudViewerMLRoot PATH: {CloudViewerMLRoot}")
 
     WIN_APP_BUILD_SHELL = os.path.join(CLOUDVIEWER_SOURCE_ROOT, "scripts", "build_win_app.ps1")

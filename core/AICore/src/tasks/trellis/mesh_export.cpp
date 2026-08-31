@@ -1645,11 +1645,6 @@ bool bake_atlas_locked(const PreparedMesh &mesh,
     // clustering -> 6-bin projection); XAtlas skips straight to xatlas
     // charting; Simple skips GPU/xatlas and starts at cone clustering.
     const bool force_xatlas = opt.unwrap == UnwrapMode::XAtlas;
-#ifdef TRELLIS2_HAVE_CUMESH
-    const bool use_cumesh = opt.unwrap == UnwrapMode::Auto;
-#else
-    const bool use_cumesh = false;
-#endif
     bool unwrapped = false;
     if (force_xatlas) {
         unwrapped = xatlas_unwrap(mesh.verts, mesh.normals, mesh.pbr, dnv,
@@ -1658,6 +1653,11 @@ bool bake_atlas_locked(const PreparedMesh &mesh,
         if (!unwrapped)
             GLBLOG("xatlas unwrap failed (%s); falling back", err.c_str());
     }
+#ifdef TRELLIS2_HAVE_CUMESH
+    // The cumesh_unwrap definition above lives behind this same guard; the
+    // call site must be preprocessed out as well (a runtime bool is not
+    // enough) or CPU-only builds fail with an undeclared identifier.
+    const bool use_cumesh = opt.unwrap == UnwrapMode::Auto;
     if (!unwrapped && use_cumesh) {
         unwrapped = cumesh_unwrap(mesh.verts, mesh.normals, mesh.pbr, dnv,
                                   mesh.tris, dnt, opt, TS, opos, onrm, ouv,
@@ -1667,6 +1667,7 @@ bool bake_atlas_locked(const PreparedMesh &mesh,
                    "clustering",
                    err.c_str());
     }
+#endif
     if (!unwrapped) {
         unwrapped = cone_cluster_unwrap(mesh.verts, mesh.normals, mesh.pbr, dnv,
                                         mesh.tris, dnt, opt, TS, opos, onrm,
