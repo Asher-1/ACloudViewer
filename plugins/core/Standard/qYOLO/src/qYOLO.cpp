@@ -277,6 +277,7 @@ void qYOLO::executeTask(const YOLODialog::Settings& settings) {
     ws.textModelPath = settings.textModelPath;
     // YOLOE visual prompts (SAVPE): non-empty switches to the visual path.
     ws.visualPrompts = settings.visualPrompts;
+    ws.visualPromptNames = settings.visualPromptNames;
 
     m_currentSettings = settings;
     m_worker = new YOLOWorker(ws, this);

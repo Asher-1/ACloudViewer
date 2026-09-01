@@ -14,6 +14,7 @@
 #include <QFileInfo>
 #include <QImage>
 #include <QStringList>
+#include <algorithm>
 #include <vector>
 
 #ifdef AICore_ENABLED
@@ -178,11 +179,22 @@ bool YOLOWorker::runInference() {
         aicore_yolo_options_set_visual_prompts(
                 opts, boxes.data(),
                 static_cast<int32_t>(m_settings.visualPrompts.size()));
-        emit logMessage(tr("[YOLO] Visual prompts: %1 example box(es); the "
-                           "SAVPE encoder derives the categories "
-                           "(object0..object%2).")
-                                .arg(m_settings.visualPrompts.size())
-                                .arg(m_settings.visualPrompts.size() - 1));
+        const int named =
+                std::count_if(m_settings.visualPromptNames.cbegin(),
+                              m_settings.visualPromptNames.cend(),
+                              [](const QString& n) { return !n.isEmpty(); });
+        emit logMessage(
+                named > 0 ? tr("[YOLO] Visual prompts: %1 example "
+                               "box(es); %2 named (SAVPE derives the "
+                               "categories from the boxes).")
+                                    .arg(m_settings.visualPrompts.size())
+                                    .arg(named)
+                          : tr("[YOLO] Visual prompts: %1 example "
+                               "box(es); the SAVPE encoder derives the "
+                               "categories (object0..object%2). Double-"
+                               "click a box on the canvas to name it.")
+                                    .arg(m_settings.visualPrompts.size())
+                                    .arg(m_settings.visualPrompts.size() - 1));
     } else if (!m_settings.classes.isEmpty()) {
         std::vector<const char*> classPtrs;
         classPtrs.reserve(static_cast<size_t>(m_settings.classes.size()));
@@ -278,6 +290,13 @@ bool YOLOWorker::runInference() {
     return ok;
 }
 
+QString YOLOWorker::visualPromptName(uint32_t classId) const {
+    if (classId < static_cast<uint32_t>(m_settings.visualPromptNames.size())) {
+        return m_settings.visualPromptNames.at(static_cast<int>(classId));
+    }
+    return QString();
+}
+
 bool YOLOWorker::runDetect(const QImage& rgb) {
     QElapsedTimer timer;
     timer.start();
@@ -322,6 +341,11 @@ bool YOLOWorker::runDetect(const QImage& rgb) {
         YOLODetection d;
         d.classId = static_cast<uint32_t>(det.class_id);
         d.className = QStringLiteral("class %1").arg(det.class_id);
+        // Visual-prompt naming: a user-assigned prompt name replaces the
+        // positional class-N/objectN label (detections are labeled by the
+        // prompt index in visual-prompt mode).
+        const QString promptName = visualPromptName(d.classId);
+        if (!promptName.isEmpty()) d.className = promptName;
         d.x1 = det.x1;
         d.y1 = det.y1;
         d.x2 = det.x2;
@@ -425,6 +449,14 @@ bool YOLOWorker::runSegment(const QImage& rgb) {
                         ? QString::fromUtf8(name)
                         : QStringLiteral("class %1")
                                   .arg(result.detections[i].classId);
+        // Visual-prompt naming: a user-assigned prompt name replaces the
+        // backend's positional objectN label (class_id = prompt index in
+        // visual-prompt mode).
+        const QString promptName =
+                visualPromptName(result.detections[i].classId);
+        if (!promptName.isEmpty()) {
+            result.detections[i].className = promptName;
+        }
     }
     result.totalDetected = n;
     aicore_yolo_seg_result_free(seg);

@@ -7,6 +7,8 @@
 
 #include "YOLOVisualPromptLabel.h"
 
+#include <QInputDialog>
+#include <QLineEdit>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QResizeEvent>
@@ -33,6 +35,7 @@ void YOLOVisualPromptLabel::setPromptImage(const QImage& image,
                                            const QSize& displaySize) {
     m_image = image;
     m_boxes.clear();
+    m_boxNames.clear();
     m_rubberBandActive = false;
     m_displayTarget = displaySize;
     if (m_image.isNull()) {
@@ -74,6 +77,7 @@ void YOLOVisualPromptLabel::clearPrompt() {
     m_imageSize = QSizeF();
     m_pixmapRect = QRectF();
     m_boxes.clear();
+    m_boxNames.clear();
     m_rubberBandActive = false;
     clear();
     update();
@@ -92,13 +96,26 @@ void YOLOVisualPromptLabel::setDrawingEnabled(bool enabled) {
 
 void YOLOVisualPromptLabel::setBoxes(const QList<QRectF>& boxes) {
     m_boxes = boxes;
+    m_boxNames.clear();  // programmatic box set: drop stale names
     emit boxesChanged();
     update();
+}
+
+QStringList YOLOVisualPromptLabel::boxNames() const {
+    // Index-aligned with boxes(); unnamed prompts stay empty so the
+    // backend's positional objectN label applies.
+    QStringList names;
+    names.reserve(m_boxes.size());
+    for (int i = 0; i < m_boxes.size(); ++i) {
+        names.append(i < m_boxNames.size() ? m_boxNames.at(i) : QString());
+    }
+    return names;
 }
 
 void YOLOVisualPromptLabel::removeLast() {
     if (m_boxes.isEmpty()) return;
     m_boxes.removeLast();
+    if (!m_boxNames.isEmpty()) m_boxNames.removeLast();
     emit boxesChanged();
     update();
 }
@@ -106,6 +123,7 @@ void YOLOVisualPromptLabel::removeLast() {
 void YOLOVisualPromptLabel::clearBoxes() {
     if (m_boxes.isEmpty()) return;
     m_boxes.clear();
+    m_boxNames.clear();
     emit boxesChanged();
     update();
 }
@@ -160,7 +178,10 @@ void YOLOVisualPromptLabel::paintEvent(QPaintEvent* event) {
     };
 
     for (int i = 0; i < m_boxes.size(); ++i) {
-        drawBox(m_boxes[i], QStringLiteral("object%1").arg(i));
+        // User-assigned name when set; official positional label otherwise.
+        const QString name = m_boxNames.value(i);
+        drawBox(m_boxes[i],
+                name.isEmpty() ? QStringLiteral("object%1").arg(i) : name);
     }
     if (m_rubberBandActive) {
         pen.setStyle(Qt::DashLine);
@@ -221,6 +242,36 @@ void YOLOVisualPromptLabel::mouseReleaseEvent(QMouseEvent* event) {
     }
     m_rubberBandCurrent = QRectF();
     update();
+}
+
+void YOLOVisualPromptLabel::mouseDoubleClickEvent(QMouseEvent* event) {
+    if (!m_drawingEnabled || event->button() != Qt::LeftButton ||
+        m_imageSize.isEmpty()) {
+        QLabel::mouseDoubleClickEvent(event);
+        return;
+    }
+    // The double click also started a rubber band on press; cancel it.
+    m_rubberBandActive = false;
+    const QPointF widgetPos = event->pos();
+    for (int i = m_boxes.size() - 1; i >= 0; --i) {
+        if (!toWidgetRect(m_boxes[i]).contains(widgetPos)) continue;
+        bool ok = false;
+        const QString text = QInputDialog::getText(
+                this, tr("Prompt name"),
+                tr("Name for this example (empty = object%1)").arg(i),
+                QLineEdit::Normal, m_boxNames.value(i), &ok);
+        if (ok) {
+            while (m_boxNames.size() < m_boxes.size()) {
+                m_boxNames.append(QString());
+            }
+            m_boxNames[i] = text.trimmed();
+            emit boxesChanged();
+        }
+        update();
+        return;
+    }
+    // Not on any box: fall through to the default handling.
+    QLabel::mouseDoubleClickEvent(event);
 }
 
 void YOLOVisualPromptLabel::resizeEvent(QResizeEvent* event) {

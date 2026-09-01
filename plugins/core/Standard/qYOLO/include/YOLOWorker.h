@@ -44,6 +44,9 @@ public:
         // YOLOE visual prompts (SAVPE): full-image pixel boxes; non-empty
         // switches the run to the visual-prompt path (classes are ignored).
         QList<QRectF> visualPrompts;
+        // Optional user-assigned names, index-aligned with visualPrompts;
+        // empty entries keep the backend's positional objectN label.
+        QStringList visualPromptNames;
     };
 
     explicit YOLOWorker(const Settings& settings, QObject* parent = nullptr);
@@ -75,6 +78,10 @@ private:
     bool runObb(const QImage& rgb);
     bool runSemantic(const QImage& rgb);
     bool runClassify(const QImage& rgb);
+    /** User-assigned name for prompt index \p classId (empty = keep the
+     *  backend's positional objectN label); shared by the detect and
+     *  segment result paths. */
+    QString visualPromptName(uint32_t classId) const;
 #endif
 
     Settings m_settings;

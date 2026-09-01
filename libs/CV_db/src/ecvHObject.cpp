@@ -196,6 +196,15 @@ ccHObject::~ccHObject() {
 }
 
 void ccHObject::notifyGeometryUpdate() {
+    // During application shutdown (ViewManager shutting down) views and the DB
+    // are being or have been destroyed. Late destructors (undo-stack teardown
+    // of Remove/undone-Add commands holding DB entities) still reach this
+    // point; notifying through the dangling display pointers would crash
+    // (segfault on exit). Notifications are meaningless at that stage anyway.
+    if (ecvViewManager::instance().isShuttingDown()) {
+        return;
+    }
+
     ecvGenericGLDisplay* disp = getDisplay();
     if (!disp) disp = ecvViewManager::instance().getEffectiveView();
     if (disp) {

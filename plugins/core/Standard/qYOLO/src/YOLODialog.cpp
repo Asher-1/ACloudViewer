@@ -1579,6 +1579,7 @@ YOLODialog::Settings YOLODialog::getSettings() {
     const bool visualPrompts = panelUsesVisualPrompts(*panel);
     if (visualPrompts && panel->vpLabel) {
         s.visualPrompts = panel->vpLabel->boxes();
+        s.visualPromptNames = panel->vpLabel->boxNames();
     }
     if (panel->classesEdit && !promptFree && !visualPrompts) {
         // Split the comma-separated class list; surrounding spaces are

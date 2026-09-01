@@ -122,6 +122,9 @@ public:
         // YOLOE visual prompts (full-image pixel boxes); non-empty switches
         // the run to the SAVPE visual-prompt path (classes are ignored).
         QList<QRectF> visualPrompts;
+        // Optional user-assigned names, index-aligned with visualPrompts;
+        // empty entries keep the backend's positional objectN label.
+        QStringList visualPromptNames;
     };
 
     struct DbImageEntry {

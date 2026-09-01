@@ -638,6 +638,16 @@ MainWindow::~MainWindow() {
     vm.blockSignals(true);
     disconnect(&vm, nullptr, this, nullptr);
 
+    // Drain the undo stack while the CV_db objects are still alive. Commands
+    // held by the stack can own DB entities (Remove-mode or undone-Add
+    // ecvEntityAddRemoveCommand); letting them reach static teardown deletes
+    // those entities from ~QUndoStack with all views already destroyed, and
+    // ~ccPointCloud -> notifyGeometryUpdate() then runs with dangling state.
+    // Clearing here releases them through the normal destruction path.
+    if (auto* undoMgr = vm.undoManager()) {
+        undoMgr->clear();
+    }
+
     // Clear active source FIRST to avoid dangling pointer access when
     // views are unregistered (which triggers updateActiveRepresentation).
     vm.setActiveSource(nullptr);
