@@ -19,6 +19,16 @@ namespace yolo {
 
 namespace {
 
+inline uint8_t image_channel(const Image& img, int x, int y, int c) {
+    const size_t stride = img.row_stride_bytes != 0
+                                  ? img.row_stride_bytes
+                                  : static_cast<size_t>(img.w) * img.channels;
+    const uint8_t* pixel = img.rgb + static_cast<size_t>(y) * stride +
+                           static_cast<size_t>(x) * img.channels;
+    if (img.channels == 1) return pixel[0];
+    return pixel[img.bgr ? 2 - c : c];
+}
+
 std::vector<float> resize_bilinear_float(
         const float* src, int sw, int sh, int dw, int dh) {
     std::vector<float> dst((size_t)dw * dh);
@@ -123,16 +133,14 @@ void letterbox_image(const Image& img,
         const int yc1 = std::clamp(iy0 + 1, 0, img.h - 1);
         const float wy = sy - iy0;
         for (int x = 0; x < new_w; x++) {
-            const size_t p00 = ((size_t)yc0 * img.w + x0[x]) * 3;
-            const size_t p01 = ((size_t)yc0 * img.w + x1[x]) * 3;
-            const size_t p10 = ((size_t)yc1 * img.w + x0[x]) * 3;
-            const size_t p11 = ((size_t)yc1 * img.w + x1[x]) * 3;
             const size_t dst = (size_t)(y + top) * canvas_w + x + left;
             for (int c = 0; c < 3; c++) {
-                const float v0 = img.rgb[p00 + c] +
-                                 (img.rgb[p01 + c] - img.rgb[p00 + c]) * wx[x];
-                const float v1 = img.rgb[p10 + c] +
-                                 (img.rgb[p11 + c] - img.rgb[p10 + c]) * wx[x];
+                const float p00 = image_channel(img, x0[x], yc0, c);
+                const float p01 = image_channel(img, x1[x], yc0, c);
+                const float p10 = image_channel(img, x0[x], yc1, c);
+                const float p11 = image_channel(img, x1[x], yc1, c);
+                const float v0 = p00 + (p01 - p00) * wx[x];
+                const float v1 = p10 + (p11 - p10) * wx[x];
                 const uint8_t value = (uint8_t)(v0 + (v1 - v0) * wy + 0.5f);
                 out[(size_t)c * plane + dst] = value / 255.0f;
             }
@@ -190,8 +198,9 @@ void unscale_obb(std::vector<OBBDetection>& obbs, const LetterboxInfo& info) {
 // back to the plain bilinear w = 1 - |i - src_idx| over 2 taps.
 // src_idx = (dst + 0.5) * scale - 0.5 in both modes, matching
 // F.interpolate(align_corners=False).
-static void tv_resize_linear(
-        const uint8_t* src, int sw, int sh, uint8_t* dst, int dw, int dh) {
+static void tv_resize_linear(const Image& img, uint8_t* dst, int dw, int dh) {
+    const int sw = img.w;
+    const int sh = img.h;
     std::vector<float> tmp((size_t)dw * sh * 3);
     const double scale_x = (double)sw / dw;
     const double inv_x = scale_x > 1.0 ? 1.0 / scale_x : 1.0;
@@ -204,13 +213,12 @@ static void tv_resize_linear(
                     std::min(sw - 1, (int)std::floor(src_idx + support_x));
             float ww = 0.0f;
             float acc[3] = {0.0f, 0.0f, 0.0f};
-            const uint8_t* row = src + (size_t)yy * sw * 3;
             for (int i = i0; i <= i1; i++) {
                 const float w = (float)std::max(
                         0.0, 1.0 - std::abs((i - src_idx) * inv_x));
                 if (w <= 0.0f) continue;
                 for (int c = 0; c < 3; c++)
-                    acc[c] += row[(size_t)i * 3 + c] * w;
+                    acc[c] += image_channel(img, i, yy, c) * w;
                 ww += w;
             }
             if (ww <= 0.0f) ww = 1.0f;
@@ -257,7 +265,7 @@ void classify_preprocess(const Image& img, int size, std::vector<float>& out) {
     const int new_h = std::max(1, (int)(size * (double)img.h / min_edge));
 
     std::vector<uint8_t> resized((size_t)new_w * new_h * 3);
-    tv_resize_linear(img.rgb, img.w, img.h, resized.data(), new_w, new_h);
+    tv_resize_linear(img, resized.data(), new_w, new_h);
 
     const int left = (new_w - size) / 2, top = (new_h - size) / 2;
     const size_t plane = (size_t)size * size;

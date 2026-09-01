@@ -25,10 +25,12 @@ image ──► (RMBG-2.0 background removal, optional) ──► preprocess
   solid-color heuristic when absent).
 - **GLB export** — UV-atlas-textured glTF 2.0 binary via `aicore_trellis_bake_glb`
   (xatlas + meshoptimizer, all CPU).
-- **Model auto-download** — all models are fetched from the unified
+- **Model auto-download** — TRELLIS pipeline models are fetched from the unified
   [Asher-1/Trellis2-models](https://huggingface.co/Asher-1/Trellis2-models)
   Hugging Face mirror into `~/cloudViewer_data/extract/trellis_models/` (see
-  `aicore_trellis_model_cache_dir`); missing files are downloaded on demand.
+  `aicore_trellis_model_cache_dir`). The optional RMBG dependency is shared
+  with qRMBG and is stored in `~/cloudViewer_data/extract/rmbg_models/` (see
+  `aicore_rmbg_model_cache_dir`); missing files are downloaded on demand.
   Every download is verified against the mirror's official LFS **SHA-256**
   fingerprint (streamed while downloading, no extra I/O) plus exact size and
   GGUF magic; manually deployed files are validated the same way on demand.
@@ -60,10 +62,10 @@ image ──► (RMBG-2.0 background removal, optional) ──► preprocess
   hard xatlas chart boundaries, matching the upstream mesh2glb default;
   otherwise the chartless `simple_unwrap` fallback is used (same as
   upstream's `T2GLB_NOCUMESH`).
-- **f32 exact mode** — the Quantization combo also offers upstream's f32
-  exact mode (chaotic chain in full f32). Those GGUFs are local conversions
-  (`convert_*_to_gguf.py --ftype 0`), not published on the HF mirror, so the
-  download check lists them as missing until they are placed in the cache.
+- **f32 exact mode** — the Quantization combo uses the published f32 chaotic
+  chain (DINO, sparse/SLAT flows, occupancy and shape decoders). Texture-only
+  weights remain on their published f16 files; all required files download
+  from the same HF catalog.
 - **Backend A/B harness** — `core/AICore/src/tasks/trellis/tools/trellis_backend_ab.py` runs one image
   through several backends/qualities and prints a per-stage timing table
   with geometry hashes (same methodology as `ggml_upgrade_verify.py`).
@@ -90,10 +92,10 @@ selectable in the dialog's Quantization combo.
 
 | Role | Files (HF mirror) |
 |------|-------------------|
-| Conditioning | `dino_f16.gguf` / `dino_q8.gguf` |
-| Sparse structure | `ss_flow_f16.gguf` / `ss_flow_q8.gguf`, `ss_dec_f16.gguf` / `ss_dec_q8.gguf` |
-| Shape 512 | `slat_flow_f16.gguf` / `slat_flow_q8.gguf`, `shape_dec_f16.gguf` |
-| Shape 1024 | `slat_flow_1024_f16.gguf` / `slat_flow_1024_q8.gguf` |
+| Conditioning | `dino_f16.gguf` / `dino_q8.gguf` / `dino_f32.gguf` |
+| Sparse structure | `ss_flow_f16.gguf` / `ss_flow_q8.gguf` / `ss_flow_f32.gguf`, `ss_dec_f16.gguf` / `ss_dec_q8.gguf` / `ss_dec_f32.gguf` |
+| Shape 512 | `slat_flow_f16.gguf` / `slat_flow_q8.gguf` / `slat_flow_f32.gguf`, `shape_dec_f16.gguf` / `shape_dec_f32.gguf` |
+| Shape 1024 | `slat_flow_1024_f16.gguf` / `slat_flow_1024_q8.gguf` / `slat_flow_1024_f32.gguf` |
 | PBR texturing | `shape_enc_f16.gguf`, `tex_dec_f16.gguf`, `tex_slat_flow_512_f16.gguf` / `tex_slat_flow_512_q8.gguf`, `tex_slat_flow_1024_f16.gguf` / `tex_slat_flow_1024_q8.gguf` |
 | Background removal | `rmbg_f16.gguf` (shared with qRMBG) |
 

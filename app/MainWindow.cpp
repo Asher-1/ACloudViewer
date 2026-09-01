@@ -2449,29 +2449,6 @@ void MainWindow::initDBRoot() {
 
                 if (imageSelected) {
                     fitActiveViewForImageEntity(first, glView);
-                    // Multiple overlapping ccImage entities are rendered in
-                    // ViewProps insertion order; raise the selected image(s)
-                    // to the top of the render order in every view displaying
-                    // them so the chosen image is always shown in front.
-                    ccHObject::Container images;
-                    if (first->isA(CV_TYPES::IMAGE)) {
-                        images.push_back(first);
-                    } else if (first->isGroup()) {
-                        first->filterChildren(images, true, CV_TYPES::IMAGE,
-                                              false);
-                    }
-                    for (ccHObject* img : images) {
-                        if (!img) continue;
-                        const std::string viewId =
-                                img->getViewId().toStdString();
-                        for (auto* view : vm.getAllViews()) {
-                            auto* imgGlView = dynamic_cast<vtkGLView*>(view);
-                            if (!imgGlView) continue;
-                            if (auto imgVis = imgGlView->getImageVis()) {
-                                imgVis->raiseLayer(viewId);
-                            }
-                        }
-                    }
                 } else if (was2D) {
                     const ccBBox bbox = first->getDisplayBB_recursive(false);
                     if (bbox.isValid()) {
@@ -2945,13 +2922,6 @@ void MainWindow::copyPrimaryViewConfig(vtkGLView* view, vtkGLView* sourceView) {
     view->context() = srcCtx;
 
     view->context().resetInteractionState();
-
-    // A brand-new view must always start in camera-transform mode: the
-    // source view may currently carry a tool's restricted interaction flags
-    // (e.g. INTERACT_SEND_ALL_SIGNALS while a picking tool is running),
-    // which would leave the new view unable to rotate/pan the camera.
-    view->context().interactionFlags =
-            ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA;
 
     // Per-view projection: sync VTK from source window (not global QSettings)
     view->setPerspectiveState(srcCtx.viewportParams.perspectiveView,

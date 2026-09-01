@@ -18,6 +18,7 @@
 
 #include "aicore/backend_capi.h"
 #include "aicore/lightglue_capi.h"
+#include "aicore/runtime_capi.h"
 #include "common/capi_utils.hpp"
 #include "tasks/lightglue/path_util.hpp"
 #include "tasks/lightglue/types.hpp"
@@ -72,6 +73,7 @@ struct aicore_lightglue_ctx {
     std::unique_ptr<aicore::lightglue::FeatureMatcher> matcher;
     aicore::lightglue::MatchingOptions opts;
     std::string error;
+    aicore_pipeline_timings pipeline_timings{};
 };
 
 extern "C" {
@@ -143,6 +145,7 @@ AICORE_CAPI aicore_lightglue_ctx* aicore_lightglue_load_opts(
 AICORE_CAPI void aicore_lightglue_free(aicore_lightglue_ctx* ctx) {
     delete ctx;
 }
+AICORE_CAPI void aicore_lightglue_shutdown(void) { aicore_runtime_shutdown(); }
 
 AICORE_CAPI int aicore_lightglue_is_ready(const aicore_lightglue_ctx* ctx) {
     return ctx != nullptr && ctx->matcher != nullptr ? 1 : 0;
@@ -201,6 +204,7 @@ AICORE_CAPI int aicore_lightglue_run_match(
         const aicore_lightglue_features* image2,
         aicore_lightglue_match** out_matches,
         int32_t* n_matches) {
+    const auto started = aicore::capi::PipelineClock::now();
     if (!ctx || !ctx->matcher || !image1 || !image2 || !out_matches ||
         !n_matches) {
         return -1;
@@ -215,7 +219,10 @@ AICORE_CAPI int aicore_lightglue_run_match(
         ctx->error = ctx->matcher->error();
         return -1;
     }
-    if (matches.empty()) return 0;
+    if (matches.empty()) {
+        aicore::capi::record_pipeline_e2e(ctx->pipeline_timings, started);
+        return 0;
+    }
 
     auto* out = static_cast<aicore_lightglue_match*>(
             std::malloc(matches.size() * sizeof(aicore_lightglue_match)));
@@ -227,7 +234,14 @@ AICORE_CAPI int aicore_lightglue_run_match(
     }
     *out_matches = out;
     *n_matches = static_cast<int32_t>(matches.size());
+    aicore::capi::record_pipeline_e2e(ctx->pipeline_timings, started);
     return 0;
+}
+
+AICORE_CAPI int aicore_lightglue_last_pipeline_timings(
+        const aicore_lightglue_ctx* ctx, aicore_pipeline_timings* out) {
+    return ctx ? aicore::capi::copy_pipeline_timings(ctx->pipeline_timings, out)
+               : -1;
 }
 
 AICORE_CAPI void aicore_lightglue_free_matches(

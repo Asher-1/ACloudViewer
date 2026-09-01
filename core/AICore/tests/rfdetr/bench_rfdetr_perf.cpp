@@ -34,6 +34,7 @@
 #include <thread>
 #include <vector>
 
+#include "common/validation_probe.hpp"
 #include "tasks/rfdetr/backend.hpp"
 #include "tasks/rfdetr/common.hpp"
 #include "tasks/rfdetr/image_io.hpp"
@@ -292,6 +293,18 @@ int main(int argc, char** argv) {
     std::fprintf(stderr, "  select              : %8.1f\n",
                  median_of(t_select));
     std::fprintf(stderr, "  detect-total        : %8.1f\n", median_of(t_total));
+
+    uint64_t output_hash = aicore::test::fnv1a(
+            fout.class_logits.data(), fout.class_logits.size() * sizeof(float));
+    output_hash =
+            aicore::test::fnv1aAppend(output_hash, fout.bbox_cxcywh.data(),
+                                      fout.bbox_cxcywh.size() * sizeof(float));
+    std::printf(
+            "{\"suite\":\"aicore-validation\",\"task\":\"rfdetr\","
+            "\"device\":\"%s\",\"inference_ms\":%.6f,"
+            "\"e2e_ms\":%.6f,\"output_hash\":\"%016llx\"}\n",
+            bctx.device_name.c_str(), median_of(t_forward), median_of(t_total),
+            static_cast<unsigned long long>(output_hash));
 
     std::free(px_legacy);
     rfdetr_image_free(img);

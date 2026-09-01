@@ -15,6 +15,7 @@
 
 #include "aicore/backend_capi.h"
 #include "aicore/rfdetr_capi.h"
+#include "aicore/runtime_capi.h"
 #include "common/capi_utils.hpp"
 #include "common/ggml_backend_utils.hpp"
 #include "common/model_cache.hpp"
@@ -63,6 +64,7 @@ struct aicore_rfdetr_ctx {
         int mask_height = 0;
     };
     std::vector<DetectionStore> detections;
+    aicore_pipeline_timings pipeline_timings{};
 };
 
 AICORE_CAPI int aicore_rfdetr_abi_version(void) { return 1; }
@@ -174,7 +176,9 @@ char* run_detect(aicore_rfdetr_ctx* ctx,
                  const rfdetr_image* img,
                  float threshold,
                  uint32_t top_k,
-                 int* out_rc) {
+                 int* out_rc,
+                 bool serialize_json = true) {
+    const auto started = aicore::capi::PipelineClock::now();
     *out_rc = -1;
     if (ctx == nullptr || ctx->engine == nullptr || img == nullptr) {
         return nullptr;
@@ -240,6 +244,11 @@ char* run_detect(aicore_rfdetr_ctx* ctx,
         dets = nullptr;
         n = 0;
 
+        aicore::capi::record_pipeline_e2e(ctx->pipeline_timings, started);
+        if (!serialize_json) {
+            *out_rc = 0;
+            return nullptr;
+        }
         const uint32_t image_size = rfdetr_context_image_size(ctx->engine);
         const uint32_t num_classes = rfdetr_context_num_classes(ctx->engine);
         const uint32_t num_queries = rfdetr_context_num_queries(ctx->engine);
@@ -324,9 +333,87 @@ AICORE_CAPI char* aicore_rfdetr_detect_rgb_json(aicore_rfdetr_ctx* ctx,
     return json;
 }
 
+AICORE_CAPI int aicore_rfdetr_detect_rgb(aicore_rfdetr_ctx* ctx,
+                                         const uint8_t* rgb,
+                                         int32_t width,
+                                         int32_t height,
+                                         float threshold,
+                                         uint32_t top_k) {
+    if (ctx == nullptr || ctx->engine == nullptr || rgb == nullptr ||
+        width <= 0 || height <= 0) {
+        return -1;
+    }
+    rfdetr_status st = RFDETR_OK;
+    rfdetr_image* img = rfdetr_image_borrow_rgb(rgb, width, height, &st);
+    if (img == nullptr) {
+        ctx->last_error = "failed to wrap rgb buffer";
+        return -1;
+    }
+    int rc = -1;
+    (void)run_detect(ctx, img, threshold, top_k, &rc, false);
+    rfdetr_image_free(img);
+    return rc;
+}
+
+AICORE_CAPI int aicore_rfdetr_detect_image(aicore_rfdetr_ctx* ctx,
+                                           const aicore_image_view* image,
+                                           float threshold,
+                                           uint32_t top_k) {
+    if (!ctx || !ctx->engine || !image || !image->data) return -1;
+    int channels = 0;
+    bool bgr = false;
+    if (image->format == AICORE_IMAGE_RGB8)
+        channels = 3;
+    else if (image->format == AICORE_IMAGE_RGBA8)
+        channels = 4;
+    else if (image->format == AICORE_IMAGE_GRAY8)
+        channels = 1;
+    else if (image->format == AICORE_IMAGE_BGR8) {
+        channels = 3;
+        bgr = true;
+    } else if (image->format == AICORE_IMAGE_BGRA8) {
+        channels = 4;
+        bgr = true;
+    } else
+        return -1;
+    rfdetr_status status = RFDETR_OK;
+    rfdetr_image* wrapped = rfdetr_image_borrow_view(
+            image->data, image->width, image->height, channels, bgr,
+            image->row_stride_bytes, &status);
+    if (!wrapped) return -1;
+    int rc = -1;
+    (void)run_detect(ctx, wrapped, threshold, top_k, &rc, false);
+    rfdetr_image_free(wrapped);
+    return rc;
+}
+
 AICORE_CAPI int aicore_rfdetr_detection_count(const aicore_rfdetr_ctx* ctx) {
     if (ctx == nullptr) return -1;
     return static_cast<int>(ctx->detections.size());
+}
+
+AICORE_CAPI int aicore_rfdetr_detection_at(const aicore_rfdetr_ctx* ctx,
+                                           int index,
+                                           aicore_rfdetr_detection* out) {
+    if (ctx == nullptr || out == nullptr || index < 0 ||
+        static_cast<size_t>(index) >= ctx->detections.size()) {
+        return -1;
+    }
+    const auto& d = ctx->detections[static_cast<size_t>(index)];
+    out->class_id = d.class_id;
+    out->class_name = d.class_name.c_str();
+    out->score = d.score;
+    out->x1 = d.x1;
+    out->y1 = d.y1;
+    out->x2 = d.x2;
+    out->y2 = d.y2;
+    return 0;
+}
+
+AICORE_CAPI int aicore_rfdetr_last_pipeline_timings(
+        const aicore_rfdetr_ctx* ctx, aicore_pipeline_timings* out) {
+    return ctx ? aicore::capi::copy_pipeline_timings(ctx->pipeline_timings, out)
+               : -1;
 }
 
 AICORE_CAPI int aicore_rfdetr_detection_mask(aicore_rfdetr_ctx* ctx,
@@ -454,7 +541,7 @@ AICORE_CAPI int aicore_rfdetr_warmup_backend(const char* device) {
     return aicore_warmup_backend(device != nullptr ? device : "auto");
 }
 
-AICORE_CAPI void aicore_rfdetr_shutdown(void) {}
+AICORE_CAPI void aicore_rfdetr_shutdown(void) { aicore_runtime_shutdown(); }
 
 AICORE_CAPI char* aicore_rfdetr_model_cache_dir(void) {
     return dup_cstr(aicore::rfdetr_model_cache_dir());

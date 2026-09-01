@@ -91,4 +91,8 @@ float antispoof_real_prob(const Model& m, const Image& img, const Detection& d);
 // is judged live when this is >= 0.5 (the reference threshold).
 float antispoof_score(const Model& m, const Image& img, const Detection& d);
 
+// Model-scoped invalidation for the folded Conv+BN constants used by the ONNX
+// graph interpreter.
+void invalidate_antispoof_fold_cache(const ModelLoader& ml);
+
 } // namespace fd

@@ -59,6 +59,8 @@ public:
         QString modelPath;
         QString metricModelPath;
         QStringList inputPaths;
+        QImage inputImage;
+        QString inputImageName;
         QString outputDir;
         int threads = 0;
         QString device = "auto";  // auto | cpu | sycl | vulkan | cuda | metal

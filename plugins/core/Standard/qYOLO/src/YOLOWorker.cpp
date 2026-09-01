@@ -42,6 +42,41 @@ public:
 private:
     bool m_locked = false;
 };
+
+aicore_image_format imageFormat(const QImage& image) {
+    switch (image.format()) {
+        case QImage::Format_RGB888:
+            return AICORE_IMAGE_RGB8;
+        case QImage::Format_RGBA8888:
+            return AICORE_IMAGE_RGBA8;
+        case QImage::Format_Grayscale8:
+            return AICORE_IMAGE_GRAY8;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+        case QImage::Format_BGR888:
+            return AICORE_IMAGE_BGR8;
+#endif
+#if Q_BYTE_ORDER == Q_LITTLE_ENDIAN
+        case QImage::Format_RGB32:
+        case QImage::Format_ARGB32:
+            return AICORE_IMAGE_BGRA8;
+#endif
+        default:
+            return static_cast<aicore_image_format>(0);
+    }
+}
+
+QImage inferenceImage(const QImage& image) {
+    return imageFormat(image) != 0
+                   ? image
+                   : image.convertToFormat(QImage::Format_RGB888);
+}
+
+aicore_image_view imageView(const QImage& image) {
+    return aicore_image_view{
+            reinterpret_cast<const uint8_t*>(image.constBits()), image.width(),
+            image.height(), static_cast<size_t>(image.bytesPerLine()),
+            imageFormat(image)};
+}
 #endif
 
 }  // namespace
@@ -222,15 +257,8 @@ bool YOLOWorker::runInference() {
                                 .arg(m_settings.inputPath));
         return false;
     }
-    const QImage rgb = input.convertToFormat(QImage::Format_RGB888);
+    const QImage rgb = inferenceImage(input);
     emit progressUpdate(0, 1);
-
-    QByteArray packedRgb;
-    const uchar* rgbData = YOLOHelpers::packedRgb888Data(rgb, &packedRgb);
-    if (!rgbData) {
-        emit logMessage(tr("[YOLO] Failed to pack the RGB input."));
-        return false;
-    }
 
     // The loaded model decides the path: a detect GGUF yields boxes, a
     // segment GGUF yields boxes + instance masks, a depth GGUF yields a
@@ -239,28 +267,27 @@ bool YOLOWorker::runInference() {
     // the model. World/YOLOE models are text-conditioned detect/segment
     // variants and flow through the same paths (the class vocabulary comes
     // from the tab's class list + text model).
-    const bool ok =
-            (task == QStringLiteral("depth"))      ? runDepth(rgb, rgbData)
-            : (task == QStringLiteral("segment"))  ? runSegment(rgb, rgbData)
-            : (task == QStringLiteral("pose"))     ? runPose(rgb, rgbData)
-            : (task == QStringLiteral("obb"))      ? runObb(rgb, rgbData)
-            : (task == QStringLiteral("semantic")) ? runSemantic(rgb, rgbData)
-            : (task == QStringLiteral("classify")) ? runClassify(rgb, rgbData)
-                                                   : runDetect(rgb, rgbData);
+    const bool ok = (task == QStringLiteral("depth"))      ? runDepth(rgb)
+                    : (task == QStringLiteral("segment"))  ? runSegment(rgb)
+                    : (task == QStringLiteral("pose"))     ? runPose(rgb)
+                    : (task == QStringLiteral("obb"))      ? runObb(rgb)
+                    : (task == QStringLiteral("semantic")) ? runSemantic(rgb)
+                    : (task == QStringLiteral("classify")) ? runClassify(rgb)
+                                                           : runDetect(rgb);
     emit progressUpdate(1, 1);
     return ok;
 }
 
-bool YOLOWorker::runDetect(const QImage& rgb, const uchar* rgbData) {
+bool YOLOWorker::runDetect(const QImage& rgb) {
     QElapsedTimer timer;
     timer.start();
     aicore_cancel_scope_begin(m_cancelToken);
-    char* json = aicore_yolo_detect_rgb_json(m_pendingCtx, rgbData, rgb.width(),
-                                             rgb.height());
+    const aicore_image_view image = imageView(rgb);
+    const int detectRc = aicore_yolo_detect_image(m_pendingCtx, &image);
     aicore_cancel_scope_end(m_cancelToken);
     const double ms = static_cast<double>(timer.elapsed());
 
-    if (!json) {
+    if (detectRc != 0) {
         const char* err = aicore_yolo_last_error(m_pendingCtx);
         emit logMessage(tr("[YOLO] Inference failed: %1")
                                 .arg(err ? QString::fromUtf8(err)
@@ -280,13 +307,28 @@ bool YOLOWorker::runDetect(const QImage& rgb, const uchar* rgbData) {
     result.resolvedDevice = (resolvedDevice && resolvedDevice[0])
                                     ? QString::fromUtf8(resolvedDevice)
                                     : m_settings.device;
-    if (!YOLOHelpers::parseDetectionsJson(QByteArray(json), &result)) {
-        aicore_yolo_free_buffer(json);
-        emit logMessage(tr("[YOLO] Failed to parse detection JSON."));
-        return false;
+    result.modelVariant =
+            QString::fromUtf8(aicore_yolo_context_model_name(m_pendingCtx));
+    result.imageSize =
+            static_cast<int>(aicore_yolo_context_image_size(m_pendingCtx));
+    result.numClasses =
+            static_cast<int>(aicore_yolo_context_num_classes(m_pendingCtx));
+    result.end2end = aicore_yolo_context_end2end(m_pendingCtx) != 0;
+    const int detectionCount = aicore_yolo_detection_count(m_pendingCtx);
+    result.detections.reserve(detectionCount > 0 ? detectionCount : 0);
+    for (int i = 0; i < detectionCount; ++i) {
+        const aicore_yolo_detection det =
+                aicore_yolo_detection_at(m_pendingCtx, i);
+        YOLODetection d;
+        d.classId = static_cast<uint32_t>(det.class_id);
+        d.className = QStringLiteral("class %1").arg(det.class_id);
+        d.x1 = det.x1;
+        d.y1 = det.y1;
+        d.x2 = det.x2;
+        d.y2 = det.y2;
+        d.score = det.score;
+        result.detections.append(d);
     }
-    aicore_yolo_free_buffer(json);
-
     // Annotated image (boxes + labels) for DB export.
     QImage annotated = rgb;
     YOLOHelpers::drawDetections(&annotated, result.detections);
@@ -310,12 +352,13 @@ bool YOLOWorker::runDetect(const QImage& rgb, const uchar* rgbData) {
     return true;
 }
 
-bool YOLOWorker::runSegment(const QImage& rgb, const uchar* rgbData) {
+bool YOLOWorker::runSegment(const QImage& rgb) {
     QElapsedTimer timer;
     timer.start();
     aicore_cancel_scope_begin(m_cancelToken);
-    aicore_yolo_segment_result* seg = aicore_yolo_seg_rgb(
-            m_pendingCtx, rgbData, rgb.width(), rgb.height());
+    const aicore_image_view image = imageView(rgb);
+    aicore_yolo_segment_result* seg =
+            aicore_yolo_seg_image(m_pendingCtx, &image);
     aicore_cancel_scope_end(m_cancelToken);
     const double ms = static_cast<double>(timer.elapsed());
 
@@ -409,13 +452,14 @@ bool YOLOWorker::runSegment(const QImage& rgb, const uchar* rgbData) {
     return true;
 }
 
-bool YOLOWorker::runDepth(const QImage& rgb, const uchar* rgbData) {
+bool YOLOWorker::runDepth(const QImage& rgb) {
     QElapsedTimer timer;
     timer.start();
     int32_t depthW = 0, depthH = 0;
     aicore_cancel_scope_begin(m_cancelToken);
-    float* depth = aicore_yolo_depth_rgb(m_pendingCtx, rgbData, rgb.width(),
-                                         rgb.height(), &depthW, &depthH);
+    const aicore_image_view image = imageView(rgb);
+    float* depth =
+            aicore_yolo_depth_image(m_pendingCtx, &image, &depthW, &depthH);
     aicore_cancel_scope_end(m_cancelToken);
     const double ms = static_cast<double>(timer.elapsed());
 
@@ -447,11 +491,15 @@ bool YOLOWorker::runDepth(const QImage& rgb, const uchar* rgbData) {
                                     ? QString::fromUtf8(resolvedDevice)
                                     : m_settings.device;
 
-    // Statistics envelope (min/max/mean/p95 over valid pixels).
-    if (char* statsJson = aicore_yolo_last_depth_json(m_pendingCtx)) {
-        result.resultJson = QByteArray(statsJson);
-        aicore_yolo_free_buffer(statsJson);
-        YOLOHelpers::parseDepthStatsJson(result.resultJson, &result.stats);
+    aicore_yolo_depth_stats stats{};
+    if (aicore_yolo_last_depth_stats(m_pendingCtx, &stats) == 0) {
+        result.stats.width = stats.depth_width;
+        result.stats.height = stats.depth_height;
+        result.stats.minDepth = stats.min_depth;
+        result.stats.maxDepth = stats.max_depth;
+        result.stats.meanDepth = stats.mean_depth;
+        result.stats.p95Depth = stats.p95_depth;
+        result.stats.validPixels = static_cast<long long>(stats.valid_pixels);
     }
 
     // Colorized export image: turbo ramp over [min, p95] + legend. The p95
@@ -477,12 +525,13 @@ bool YOLOWorker::runDepth(const QImage& rgb, const uchar* rgbData) {
     return true;
 }
 
-bool YOLOWorker::runPose(const QImage& rgb, const uchar* rgbData) {
+bool YOLOWorker::runPose(const QImage& rgb) {
     QElapsedTimer timer;
     timer.start();
     aicore_cancel_scope_begin(m_cancelToken);
-    aicore_yolo_pose_result* pose = aicore_yolo_pose_rgb(
-            m_pendingCtx, rgbData, rgb.width(), rgb.height());
+    const aicore_image_view image = imageView(rgb);
+    aicore_yolo_pose_result* pose =
+            aicore_yolo_pose_image(m_pendingCtx, &image);
     aicore_cancel_scope_end(m_cancelToken);
     const double ms = static_cast<double>(timer.elapsed());
 
@@ -550,12 +599,12 @@ bool YOLOWorker::runPose(const QImage& rgb, const uchar* rgbData) {
     return true;
 }
 
-bool YOLOWorker::runObb(const QImage& rgb, const uchar* rgbData) {
+bool YOLOWorker::runObb(const QImage& rgb) {
     QElapsedTimer timer;
     timer.start();
     aicore_cancel_scope_begin(m_cancelToken);
-    aicore_yolo_obb_result* obb = aicore_yolo_obb_rgb(
-            m_pendingCtx, rgbData, rgb.width(), rgb.height());
+    const aicore_image_view image = imageView(rgb);
+    aicore_yolo_obb_result* obb = aicore_yolo_obb_image(m_pendingCtx, &image);
     aicore_cancel_scope_end(m_cancelToken);
     const double ms = static_cast<double>(timer.elapsed());
 
@@ -623,12 +672,13 @@ bool YOLOWorker::runObb(const QImage& rgb, const uchar* rgbData) {
     return true;
 }
 
-bool YOLOWorker::runSemantic(const QImage& rgb, const uchar* rgbData) {
+bool YOLOWorker::runSemantic(const QImage& rgb) {
     QElapsedTimer timer;
     timer.start();
     aicore_cancel_scope_begin(m_cancelToken);
-    aicore_yolo_semantic_result* sem = aicore_yolo_semantic_rgb(
-            m_pendingCtx, rgbData, rgb.width(), rgb.height());
+    const aicore_image_view image = imageView(rgb);
+    aicore_yolo_semantic_result* sem =
+            aicore_yolo_semantic_image(m_pendingCtx, &image);
     aicore_cancel_scope_end(m_cancelToken);
     const double ms = static_cast<double>(timer.elapsed());
 
@@ -686,12 +736,13 @@ bool YOLOWorker::runSemantic(const QImage& rgb, const uchar* rgbData) {
     return true;
 }
 
-bool YOLOWorker::runClassify(const QImage& rgb, const uchar* rgbData) {
+bool YOLOWorker::runClassify(const QImage& rgb) {
     QElapsedTimer timer;
     timer.start();
     aicore_cancel_scope_begin(m_cancelToken);
-    aicore_yolo_classify_result* cls = aicore_yolo_classify_rgb(
-            m_pendingCtx, rgbData, rgb.width(), rgb.height());
+    const aicore_image_view image = imageView(rgb);
+    aicore_yolo_classify_result* cls =
+            aicore_yolo_classify_image(m_pendingCtx, &image);
     aicore_cancel_scope_end(m_cancelToken);
     const double ms = static_cast<double>(timer.elapsed());
 

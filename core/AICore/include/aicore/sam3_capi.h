@@ -10,7 +10,7 @@
 // The ggml engine under core/AICore/src/tasks/sam3/ is an in-tree port of
 // sam3-ggml (https://github.com/Asher-1/sam3-ggml), a single-file C++14
 // library running Segment Anything 2 / 2.1 / 3 on CPU, CUDA, Vulkan and
-// Metal through ggml v0.18.1 (see 3rdparty/ggml/patches/sam3_merged/).
+// Metal through the project's selected tensor backend.
 // The upstream source is MIT licensed.
 //
 // Supported models (all GGUF, published in the cloudViewer_downloads "sam"
@@ -24,6 +24,7 @@
 #include <stdint.h>
 
 #include "aicore/export.h"
+#include "aicore/pipeline_timing.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -297,10 +298,17 @@ typedef struct aicore_sam3_timings {
  *  Returns 0 on success, -1 when ctx has never run an inference. */
 AICORE_CAPI int aicore_sam3_last_timings(const aicore_sam3_ctx* ctx,
                                          aicore_sam3_timings* out_timings);
+/** Common timing contract adapter for the most recent image inference. */
+AICORE_CAPI int aicore_sam3_last_pipeline_timings(
+        const aicore_sam3_ctx* ctx, aicore_pipeline_timings* out_timings);
 /** Copy timings from the most recent tracker inference. */
 AICORE_CAPI int aicore_sam3_tracker_last_timings(
         const aicore_sam3_tracker_ctx* tracker,
         aicore_sam3_timings* out_timings);
+/** Common timing contract adapter for the most recent tracker inference. */
+AICORE_CAPI int aicore_sam3_tracker_last_pipeline_timings(
+        const aicore_sam3_tracker_ctx* tracker,
+        aicore_pipeline_timings* out_timings);
 
 /** ---- Published model catalog (cloudViewer_downloads "sam" release) ---- */
 

@@ -23,15 +23,43 @@
 
 #pragma once
 
+#include <chrono>
 #include <cstdint>
 #include <exception>
 #include <string>
 #include <utility>
+#include <vector>
+
+#include "aicore/image_view.h"
+#include "aicore/pipeline_timing.h"
 
 class QImage;
 
 namespace aicore {
 namespace capi {
+
+using PipelineClock = std::chrono::steady_clock;
+
+inline void record_pipeline_e2e(aicore_pipeline_timings& timings,
+                                PipelineClock::time_point start) {
+    timings = {};
+    timings.abi_version = AICORE_PIPELINE_TIMINGS_ABI_VERSION;
+    timings.valid_fields = AICORE_TIMING_E2E;
+    timings.e2e_ms =
+            std::chrono::duration<double, std::milli>(PipelineClock::now() -
+                                                       start)
+                    .count();
+}
+
+inline int copy_pipeline_timings(const aicore_pipeline_timings& timings,
+                                 aicore_pipeline_timings* out) {
+    if (out == nullptr || timings.abi_version == 0 ||
+        timings.valid_fields == 0) {
+        return -1;
+    }
+    *out = timings;
+    return 0;
+}
 
 /** Run f() under a try/catch that records std::exception what() (or a
  *  generic "unknown exception") into last_error and returns f()'s result
@@ -70,6 +98,11 @@ struct PackedRgb {
     int height = 0;
 };
 PackedRgb qimage_to_packed_rgb(const QImage& image);
+
+/** Convert a borrowed public image view to packed RGB in one owned buffer.
+ *  This is the common boundary for stride-aware Qt/OpenCV callers. */
+bool image_view_to_packed_rgb(const aicore_image_view& view,
+                              std::vector<uint8_t>& out);
 
 /** The device/threads fields every aicore_<task>_options struct carries.
  *  Defaults: device "auto", threads 0 (backend default). Compose (do not

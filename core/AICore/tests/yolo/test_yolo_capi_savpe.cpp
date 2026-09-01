@@ -37,9 +37,11 @@
 
 #include "aicore/yolo_capi.h"
 
-static const char* env_or_null(const char* name) {
+static const char* env_or_null(const char* name,
+                               const char* fallback = nullptr) {
     const char* v = std::getenv(name);
-    return (v != nullptr && v[0] != '\0') ? v : nullptr;
+    if (v != nullptr && v[0] != '\0') return v;
+    return fallback;
 }
 
 static int failures = 0;
@@ -164,14 +166,23 @@ int main() {
         min_iou = std::strtof(v, nullptr);
     }
     const bool strict = env_or_null("AICORE_TEST_YOLO_SAVPE_STRICT") != nullptr;
+    // Device selection for both load paths (default cpu; cuda / vulkan
+    // exercise the GPU savpe + head graphs, same env style as the parity
+    // test's AICORE_TEST_YOLO_PARITY_DEVICE).
+    const char* device = env_or_null("AICORE_TEST_YOLO_SAVPE_DEVICE", "cpu");
 
     // 1. The GGUF must declare savpe support.
     CHECK(aicore_yolo_gguf_has_savpe(gguf) == 1);
 
     // 2. Visual-prompt load: no classes, no text model.
     aicore_yolo_options* opts = aicore_yolo_options_new();
-    aicore_yolo_options_set_device(opts, "cpu");
+    aicore_yolo_options_set_device(opts, device);
     aicore_yolo_options_set_visual_prompts(opts, boxes.data(), q);
+    // When dumping intermediates, keep every node alive: without it the
+    // gallocr reuses the debug buffers after their last consumer and the
+    // dump reads garbage (that garbage once masqueraded as a real defect).
+    if (std::getenv("AICORE_SAVPE_DUMP") != nullptr)
+        aicore_yolo_options_set_keep_all_ops(opts, 1);
     CHECK(aicore_yolo_options_get_visual_prompt_count(opts) == q);
     aicore_yolo_ctx* ctx = aicore_yolo_load_opts(gguf, opts);
     aicore_yolo_options_free(opts);
@@ -210,6 +221,10 @@ int main() {
                     t.box[2] = d.x2;
                     t.box[3] = d.y2;
                     dets.push_back(t);
+                    std::fprintf(stderr,
+                                 "[det] object%d score=%.4f "
+                                 "box=[%.1f,%.1f,%.1f,%.1f]\n",
+                                 d.class_id, d.score, d.x1, d.y1, d.x2, d.y2);
                     // 3b. names resolve to objectN for every cid < q.
                     const char* name = aicore_yolo_seg_det_class_name(seg, i);
                     CHECK(name != nullptr &&
@@ -243,7 +258,7 @@ int main() {
     // 5. A prompt-free GGUF must reject visual prompts at load.
     if (const char* pf = env_or_null("AICORE_TEST_YOLO_SAVPE_PF_GGUF")) {
         aicore_yolo_options* pf_opts = aicore_yolo_options_new();
-        aicore_yolo_options_set_device(pf_opts, "cpu");
+        aicore_yolo_options_set_device(pf_opts, device);
         aicore_yolo_options_set_visual_prompts(pf_opts, boxes.data(), q);
         aicore_yolo_ctx* pf_ctx = aicore_yolo_load_opts(pf, pf_opts);
         CHECK(pf_ctx == nullptr || aicore_yolo_is_ready(pf_ctx) == 0);
@@ -251,6 +266,7 @@ int main() {
         aicore_yolo_options_free(pf_opts);
     }
 
-    if (failures == 0) std::printf("[yolo] savpe model test passed\n");
+    if (failures == 0)
+        std::printf("[yolo] savpe model test passed (device=%s)\n", device);
     return failures;
 }

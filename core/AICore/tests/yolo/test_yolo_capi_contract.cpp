@@ -20,7 +20,7 @@
 static int failures = 0;
 
 int main() {
-    AICORE_CHECK(aicore_yolo_abi_version() >= 3);
+    AICORE_CHECK(aicore_yolo_abi_version() >= 4);
 
     // Null-safe teardown / lifecycle.
     aicore_yolo_free(nullptr);
@@ -97,11 +97,19 @@ int main() {
     aicore_yolo_timings timings{};
     AICORE_CHECK(aicore_yolo_last_timings(ctx, &timings) == -1);
     AICORE_CHECK(aicore_yolo_last_timings(ctx, nullptr) == -1);
+    aicore_pipeline_timings pipeline_timings{};
+    AICORE_CHECK(aicore_yolo_last_pipeline_timings(ctx, &pipeline_timings) ==
+                 -1);
+    AICORE_CHECK(aicore_yolo_last_pipeline_timings(ctx, nullptr) == -1);
+    aicore_yolo_depth_stats depth_stats{};
+    AICORE_CHECK(aicore_yolo_last_depth_stats(ctx, &depth_stats) == -1);
+    AICORE_CHECK(aicore_yolo_last_depth_stats(ctx, nullptr) == -1);
 
     // Inference entry points must reject a ctx with no loaded model.
     static const uint8_t kRgb[3 * 3 * 3] = {
             255, 0,   0, 0,   255, 0,   0,   0,  255, 255, 255, 0,  0, 255,
             255, 255, 0, 255, 128, 128, 128, 64, 64,  64,  32,  32, 32};
+    const aicore_image_view image{kRgb, 3, 3, 9, AICORE_IMAGE_RGB8};
     char* json = aicore_yolo_detect_rgb_json(ctx, kRgb, 3, 3);
     AICORE_CHECK(json == nullptr);
     char* json_path = aicore_yolo_detect_path_json(ctx, "/nonexistent/x.png");
@@ -114,9 +122,12 @@ int main() {
             aicore_yolo_depth_path(ctx, "/nonexistent/x.png", &dw, &dh);
     AICORE_CHECK(depth_path == nullptr);
     AICORE_CHECK(aicore_yolo_last_depth_json(ctx) == nullptr);
+    AICORE_CHECK(aicore_yolo_depth_image(ctx, &image, &dw, &dh) == nullptr);
+    AICORE_CHECK(aicore_yolo_depth_image(ctx, nullptr, &dw, &dh) == nullptr);
 
     aicore_yolo_segment_result* seg = aicore_yolo_seg_rgb(ctx, kRgb, 3, 3);
     AICORE_CHECK(seg == nullptr);
+    AICORE_CHECK(aicore_yolo_seg_image(ctx, &image) == nullptr);
     AICORE_CHECK(aicore_yolo_seg_det_count(nullptr) == 0);
     AICORE_CHECK(aicore_yolo_seg_det_at(nullptr, 0).score == 0.0f);
     AICORE_CHECK(aicore_yolo_seg_det_class_name(nullptr, 0) == nullptr);
@@ -128,6 +139,10 @@ int main() {
     AICORE_CHECK(aicore_yolo_obb_rgb(ctx, kRgb, 3, 3) == nullptr);
     AICORE_CHECK(aicore_yolo_semantic_rgb(ctx, kRgb, 3, 3) == nullptr);
     AICORE_CHECK(aicore_yolo_classify_rgb(ctx, kRgb, 3, 3) == nullptr);
+    AICORE_CHECK(aicore_yolo_pose_image(ctx, &image) == nullptr);
+    AICORE_CHECK(aicore_yolo_obb_image(ctx, &image) == nullptr);
+    AICORE_CHECK(aicore_yolo_semantic_image(ctx, &image) == nullptr);
+    AICORE_CHECK(aicore_yolo_classify_image(ctx, &image) == nullptr);
     AICORE_CHECK(aicore_yolo_pose_det_count(nullptr) == 0);
     AICORE_CHECK(aicore_yolo_pose_det_at(nullptr, 0).score == 0.0f);
     AICORE_CHECK(aicore_yolo_pose_kpt_count(nullptr) == 0);

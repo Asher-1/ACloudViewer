@@ -24,7 +24,10 @@ import tempfile
 import numpy as np
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, "/tmp/da3-src/src")  # reference package location (per task)
+DA3_SRC = os.environ.get("DA3_SRC", "")
+if not DA3_SRC:
+    raise RuntimeError("DA3_SRC must point to the upstream depth-anything-3/src directory")
+sys.path.insert(0, DA3_SRC)
 
 from depth_anything_3.utils.read_write_model import (  # noqa: E402
     read_cameras_binary,

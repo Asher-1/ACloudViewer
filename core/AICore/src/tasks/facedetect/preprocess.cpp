@@ -23,9 +23,10 @@ std::vector<float> to_blob(
     const float inv = 1.0f / std;
     for (int y = 0; y < h; ++y)
         for (int x = 0; x < w; ++x) {
-            const uint8_t* px = &img.rgb[((size_t)y * w + x) * 3];  // R,G,B
             // swap_rb on an RGB image -> output plane order B,G,R.
-            float r = (float)px[0], g = (float)px[1], b = (float)px[2];
+            const float r = static_cast<float>(img.channel(x, y, 0));
+            const float g = static_cast<float>(img.channel(x, y, 1));
+            const float b = static_cast<float>(img.channel(x, y, 2));
             float c0 = swap_rb ? b : r, c1 = g, c2 = swap_rb ? r : b;
             const size_t idx = (size_t)y * w + x;
             blob[0 * hw + idx] = (c0 - mean) * inv;

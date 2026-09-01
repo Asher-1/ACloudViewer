@@ -679,6 +679,17 @@ std::array<double, 3> ensemble_softmax(const Model& m,
 
 }  // namespace
 
+void invalidate_antispoof_fold_cache(const ModelLoader& ml) {
+    std::lock_guard<std::mutex> lk(g_convbn_fold_mu);
+    for (auto it = g_convbn_fold.begin(); it != g_convbn_fold.end();) {
+        if (ml.owns_tensor(it->first)) {
+            it = g_convbn_fold.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
 float antispoof_real_prob(const Model& m,
                           const Image& img,
                           const Detection& d) {

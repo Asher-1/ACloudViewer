@@ -151,21 +151,16 @@ void RFDetrLiveInferWorker::runJobImpl(RFDetrLiveInferWorker::Job job) {
         return;
     }
 
-    QByteArray packedRgb;
-    const uchar* rgb = RFDetrHelpers::packedRgb888Data(job.rgb, &packedRgb);
-    if (!rgb) {
-        result.error = tr("Live frame is not RGB888.");
-        emit inferComplete(result);
-        return;
-    }
-
     QElapsedTimer timer;
     timer.start();
-    char* json = aicore_rfdetr_detect_rgb_json(m_ctx, rgb, job.rgb.width(),
-                                               job.rgb.height(), job.threshold,
-                                               job.topK);
+    const aicore_image_view image{
+            reinterpret_cast<const uint8_t*>(job.rgb.constBits()),
+            job.rgb.width(), job.rgb.height(),
+            static_cast<size_t>(job.rgb.bytesPerLine()), AICORE_IMAGE_RGB8};
+    const int detectRc =
+            aicore_rfdetr_detect_image(m_ctx, &image, job.threshold, job.topK);
     result.snapshot.runtimeMs = static_cast<double>(timer.elapsed());
-    if (!json) {
+    if (detectRc != 0) {
         const char* message = aicore_rfdetr_last_error(m_ctx);
         result.error = message ? QString::fromUtf8(message)
                                : tr("RF-DETR inference failed.");
@@ -173,13 +168,24 @@ void RFDetrLiveInferWorker::runJobImpl(RFDetrLiveInferWorker::Job job) {
         return;
     }
 
-    const QByteArray payload(json);
-    aicore_rfdetr_free_buffer(json);
-    if (!RFDetrHelpers::parseDetectionsJson(payload, &result.snapshot)) {
-        result.error = tr("Failed to parse detection output.");
-        emit inferComplete(result);
-        return;
+    const int count = aicore_rfdetr_detection_count(m_ctx);
+    result.snapshot.detections.reserve(std::max(0, count));
+    for (int i = 0; i < count; ++i) {
+        aicore_rfdetr_detection det{};
+        if (aicore_rfdetr_detection_at(m_ctx, i, &det) != 0) continue;
+        RFDetrDetection out;
+        out.classId = det.class_id;
+        out.className = det.class_name
+                                ? QString::fromUtf8(det.class_name)
+                                : QStringLiteral("class %1").arg(det.class_id);
+        out.score = det.score;
+        out.x1 = det.x1;
+        out.y1 = det.y1;
+        out.x2 = det.x2;
+        out.y2 = det.y2;
+        result.snapshot.detections.push_back(out);
     }
+    result.snapshot.totalDetected = result.snapshot.detections.size();
 
     if (aicore_rfdetr_context_has_segmentation(m_ctx)) {
         const int count =

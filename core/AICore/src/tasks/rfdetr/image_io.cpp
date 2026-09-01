@@ -27,6 +27,14 @@
 
 namespace {
 
+uint8_t image_channel(const rfdetr_image* img, int x, int y, int c) {
+    const uint8_t* row = rfdetr_image_rgb_data(img) +
+                         static_cast<size_t>(y) * img->row_stride_bytes;
+    const uint8_t* pixel = row + static_cast<size_t>(x) * img->channels;
+    if (img->channels == 1) return pixel[0];
+    return pixel[img->bgr ? 2 - c : c];
+}
+
 /// Convert a decoded QImage (any format) to an rfdetr_image (RGB888, HWC).
 rfdetr_image* qimage_to_rfdetr(const QImage& img, rfdetr_status* out_status) {
     auto set = [&](rfdetr_status s) {
@@ -52,6 +60,7 @@ rfdetr_image* qimage_to_rfdetr(const QImage& img, rfdetr_status* out_status) {
         out->width = packed.width;
         out->height = packed.height;
         out->channels = 3;
+        out->row_stride_bytes = static_cast<size_t>(out->width) * 3;
         out->rgb.assign(packed.data,
                         packed.data + (size_t)packed.width * packed.height * 3);
         std::free(packed.data);
@@ -117,6 +126,7 @@ extern "C" rfdetr_image* rfdetr_image_from_rgb_buffer(
         img->width = width;
         img->height = height;
         img->channels = 3;
+        img->row_stride_bytes = static_cast<size_t>(width) * 3;
         img->rgb.assign(rgb, rgb + nbytes);
     } catch (const std::bad_alloc&) {
         delete img;
@@ -131,10 +141,23 @@ rfdetr_image* rfdetr_image_borrow_rgb(const uint8_t* rgb,
                                       int width,
                                       int height,
                                       rfdetr_status* out_status) {
+    return rfdetr_image_borrow_view(rgb, width, height, 3, false,
+                                    static_cast<size_t>(width) * 3, out_status);
+}
+
+rfdetr_image* rfdetr_image_borrow_view(const uint8_t* data,
+                                       int width,
+                                       int height,
+                                       int channels,
+                                       bool bgr,
+                                       size_t row_stride_bytes,
+                                       rfdetr_status* out_status) {
     auto set = [&](rfdetr_status s) {
         if (out_status) *out_status = s;
     };
-    if (!rgb || width <= 0 || height <= 0) {
+    if (!data || width <= 0 || height <= 0 ||
+        (channels != 1 && channels != 3 && channels != 4) ||
+        row_stride_bytes < static_cast<size_t>(width) * channels) {
         set(RFDETR_ERR_INVALID_ARG);
         return nullptr;
     }
@@ -145,8 +168,10 @@ rfdetr_image* rfdetr_image_borrow_rgb(const uint8_t* rgb,
     }
     img->width = width;
     img->height = height;
-    img->channels = 3;
-    img->borrowed_rgb = rgb; /* no pixel copy: caller keeps buffer alive */
+    img->channels = channels;
+    img->bgr = bgr;
+    img->row_stride_bytes = row_stride_bytes;
+    img->borrowed_rgb = data; /* no pixel copy: caller keeps buffer alive */
     set(RFDETR_OK);
     return img;
 }
@@ -206,8 +231,16 @@ extern "C" rfdetr_status rfdetr_render(const rfdetr_image* img,
     if (img->borrowed_rgb != nullptr) {
         try {
             const size_t nbytes = (size_t)img->width * (size_t)img->height * 3;
-            copy.rgb.assign(img->borrowed_rgb, img->borrowed_rgb + nbytes);
+            copy.rgb.resize(nbytes);
+            for (int y = 0; y < img->height; ++y)
+                for (int x = 0; x < img->width; ++x)
+                    for (int c = 0; c < 3; ++c)
+                        copy.rgb[(static_cast<size_t>(y) * img->width + x) * 3 +
+                                 c] = image_channel(img, x, y, c);
             copy.borrowed_rgb = nullptr;
+            copy.channels = 3;
+            copy.bgr = false;
+            copy.row_stride_bytes = static_cast<size_t>(copy.width) * 3;
         } catch (const std::bad_alloc&) {
             return RFDETR_ERR_OUT_OF_MEMORY;
         }
@@ -305,7 +338,6 @@ extern "C" rfdetr_status rfdetr_preprocess(const rfdetr_image* img,
          * at width 2471) to move a normalized output value by ~5e-5, and the
          * error grows with the source width. The sampled pixels and the
          * output stay float. */
-        const uint8_t* src_rgb = rfdetr_image_rgb_data(img);
         const double scale_x = (double)img->width / (double)target_w;
         const double scale_y = (double)img->height / (double)target_h;
         for (int h = 0; h < target_h; ++h) {
@@ -323,14 +355,10 @@ extern "C" rfdetr_status rfdetr_preprocess(const rfdetr_image* img,
                 const float wx = (float)(src_x - (double)x0_raw);
 
                 for (int c = 0; c < 3; ++c) {
-                    const float p00 = (float)
-                            src_rgb[((size_t)y0 * img->width + x0) * 3 + c];
-                    const float p01 = (float)
-                            src_rgb[((size_t)y0 * img->width + x1) * 3 + c];
-                    const float p10 = (float)
-                            src_rgb[((size_t)y1 * img->width + x0) * 3 + c];
-                    const float p11 = (float)
-                            src_rgb[((size_t)y1 * img->width + x1) * 3 + c];
+                    const float p00 = (float)image_channel(img, x0, y0, c);
+                    const float p01 = (float)image_channel(img, x1, y0, c);
+                    const float p10 = (float)image_channel(img, x0, y1, c);
+                    const float p11 = (float)image_channel(img, x1, y1, c);
                     const float top = p00 + (p01 - p00) * wx;
                     const float bottom = p10 + (p11 - p10) * wx;
                     float v = (top + (bottom - top) * wy) / 255.0f;
@@ -344,8 +372,25 @@ extern "C" rfdetr_status rfdetr_preprocess(const rfdetr_image* img,
         /* Legacy path, preserved so GGUFs converted before
          * rfdetr.preprocess.resize_mode existed keep their exact outputs.
          * Input is uint8 RGB packed HWC. */
-        QImage src(rfdetr_image_rgb_data(img), img->width, img->height,
-                   img->width * 3, QImage::Format_RGB888);
+        std::vector<uint8_t> packed;
+        QImage src;
+        if (img->bgr) {
+            packed.resize(static_cast<size_t>(img->width) * img->height * 3);
+            for (int y = 0; y < img->height; ++y)
+                for (int x = 0; x < img->width; ++x)
+                    for (int c = 0; c < 3; ++c)
+                        packed[(static_cast<size_t>(y) * img->width + x) * 3 +
+                               c] = image_channel(img, x, y, c);
+            src = QImage(packed.data(), img->width, img->height, img->width * 3,
+                         QImage::Format_RGB888);
+        } else {
+            const QImage::Format format =
+                    img->channels == 1   ? QImage::Format_Grayscale8
+                    : img->channels == 4 ? QImage::Format_RGBA8888
+                                         : QImage::Format_RGB888;
+            src = QImage(rfdetr_image_rgb_data(img), img->width, img->height,
+                         static_cast<int>(img->row_stride_bytes), format);
+        }
         QImage resized = src.scaled(target_w, target_h, Qt::IgnoreAspectRatio,
                                     Qt::SmoothTransformation);
         resized = resized.convertToFormat(QImage::Format_RGB888);

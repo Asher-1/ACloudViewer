@@ -27,6 +27,7 @@
 #include <vector>
 
 #include "aicore/backend_capi.h"
+#include "aicore/runtime_capi.h"
 #include "common/aicore_log.hpp"
 #include "common/capi_utils.hpp"
 #include "common/ggml_backend_registry.hpp"
@@ -967,12 +968,45 @@ AICORE_CAPI int aicore_sam3_last_timings(const aicore_sam3_ctx* ctx,
     return ctx->timings.e2e_ms > 0.0 ? 0 : -1;
 }
 
+namespace {
+
+int copy_pipeline_timings(const aicore_sam3_timings& source,
+                          aicore_pipeline_timings* destination) {
+    if (destination == nullptr || source.e2e_ms <= 0.0) return -1;
+    *destination = aicore_pipeline_timings{
+            AICORE_PIPELINE_TIMINGS_ABI_VERSION,
+            AICORE_TIMING_PREPROCESS | AICORE_TIMING_INFERENCE |
+                    AICORE_TIMING_POSTPROCESS | AICORE_TIMING_E2E,
+            source.preprocess_ms,
+            source.inference_ms,
+            source.postprocess_ms,
+            0.0,
+            source.e2e_ms};
+    return 0;
+}
+
+}  // namespace
+
+AICORE_CAPI int aicore_sam3_last_pipeline_timings(
+        const aicore_sam3_ctx* ctx, aicore_pipeline_timings* out_timings) {
+    return ctx == nullptr ? -1
+                          : copy_pipeline_timings(ctx->timings, out_timings);
+}
+
 AICORE_CAPI int aicore_sam3_tracker_last_timings(
         const aicore_sam3_tracker_ctx* tracker,
         aicore_sam3_timings* out_timings) {
     if (!tracker || !out_timings) return -1;
     *out_timings = tracker->timings;
     return tracker->timings.e2e_ms > 0.0 ? 0 : -1;
+}
+
+AICORE_CAPI int aicore_sam3_tracker_last_pipeline_timings(
+        const aicore_sam3_tracker_ctx* tracker,
+        aicore_pipeline_timings* out_timings) {
+    return tracker == nullptr
+                   ? -1
+                   : copy_pipeline_timings(tracker->timings, out_timings);
 }
 
 // ---------------------------------------------------------------------------
@@ -1372,11 +1406,7 @@ AICORE_CAPI int aicore_sam3_warmup_backend(const char* device) {
     return aicore_warmup_backend(device != nullptr ? device : "auto");
 }
 
-AICORE_CAPI void aicore_sam3_shutdown(void) {
-    // The engine keeps no process-wide backend leases beyond ggml's registry;
-    // purging them is handled by the shared runtime.
-    aicore::runtime::purge_inactive_backend_leases();
-}
+AICORE_CAPI void aicore_sam3_shutdown(void) { aicore_runtime_shutdown(); }
 
 AICORE_CAPI char* aicore_sam3_model_cache_dir(void) {
     return aicore::capi::dup_cstr(aicore::sam3_model_cache_dir());

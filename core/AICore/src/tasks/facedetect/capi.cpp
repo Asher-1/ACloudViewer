@@ -6,6 +6,7 @@
 // ----------------------------------------------------------------------------
 
 #include <algorithm>
+#include <chrono>
 #include <cstdlib>
 #include <cstring>
 #include <memory>
@@ -14,6 +15,7 @@
 
 #include "aicore/backend_capi.h"
 #include "aicore/facedetect_capi.h"
+#include "aicore/runtime_capi.h"
 #include "common/capi_utils.hpp"
 #include "common/ggml_backend_utils.hpp"
 #include "common/model_cache.hpp"
@@ -110,6 +112,18 @@ std::string faces_to_analyze_json(const std::vector<fd::Face>& faces) {
     return out;
 }
 
+void copy_detection(const fd::Detection& d, aicore_facedetect_detection* out) {
+    out->score = d.score;
+    out->x1 = d.x1;
+    out->y1 = d.y1;
+    out->x2 = d.x2;
+    out->y2 = d.y2;
+    for (int i = 0; i < 5; ++i) {
+        out->landmarks_xy10[2 * i] = d.landmarks[i][0];
+        out->landmarks_xy10[2 * i + 1] = d.landmarks[i][1];
+    }
+}
+
 void filter_analyze_faces(std::vector<fd::Face>* faces, float min_score) {
     if (faces == nullptr || min_score <= 0.0f) return;
     faces->erase(std::remove_if(faces->begin(), faces->end(),
@@ -153,9 +167,31 @@ struct aicore_facedetect_ctx {
     std::string device;
     int32_t threads = 0;
     std::string last_error;
+    std::vector<fd::Detection> last_detections;
+    std::vector<fd::Face> last_analysis;
+    std::vector<fd::DenseLandmarkFace> last_dense_faces;
+    aicore_pipeline_timings timings{};
+    bool has_timings = false;
 };
 
-AICORE_CAPI int aicore_facedetect_abi_version(void) { return 1; }
+namespace {
+
+using FaceDetectClock = std::chrono::steady_clock;
+
+void record_facedetect_e2e(aicore_facedetect_ctx* ctx,
+                           FaceDetectClock::time_point start) {
+    ctx->timings = {};
+    ctx->timings.abi_version = AICORE_PIPELINE_TIMINGS_ABI_VERSION;
+    ctx->timings.valid_fields = AICORE_TIMING_E2E;
+    ctx->timings.e2e_ms = std::chrono::duration<double, std::milli>(
+                                  FaceDetectClock::now() - start)
+                                  .count();
+    ctx->has_timings = true;
+}
+
+}  // namespace
+
+AICORE_CAPI int aicore_facedetect_abi_version(void) { return 2; }
 
 AICORE_CAPI aicore_facedetect_options* aicore_facedetect_options_new(void) {
     return new (std::nothrow) aicore_facedetect_options();
@@ -248,7 +284,7 @@ AICORE_CAPI int aicore_facedetect_load_path_rgb(const char* image_path,
     if (buf == nullptr) {
         return -1;
     }
-    std::memcpy(buf, img.rgb.data(), nbytes);
+    std::memcpy(buf, img.data(), nbytes);
     *out_rgb = buf;
     *out_width = img.width;
     *out_height = img.height;
@@ -273,25 +309,225 @@ AICORE_CAPI char* aicore_facedetect_detect_rgb_json(aicore_facedetect_ctx* ctx,
     }
 }
 
+AICORE_CAPI int aicore_facedetect_detect_image(aicore_facedetect_ctx* ctx,
+                                               const aicore_image_view* image) {
+    if (ctx == nullptr || ctx->model == nullptr || image == nullptr) return -1;
+    const auto request_start = FaceDetectClock::now();
+    fd::Image img;
+    if (!fd::image_from_view(*image, img)) {
+        ctx->last_error = "invalid image view";
+        return -1;
+    }
+    try {
+        fd::ScopedBackendBinding bind(ctx->backend);
+        ctx->last_detections = ctx->model->detect(img);
+        record_facedetect_e2e(ctx, request_start);
+        return 0;
+    } catch (const std::exception& e) {
+        ctx->last_error = e.what();
+        ctx->last_detections.clear();
+        return -1;
+    }
+}
+
+AICORE_CAPI int aicore_facedetect_detect_rgb(aicore_facedetect_ctx* ctx,
+                                             const uint8_t* rgb,
+                                             int32_t width,
+                                             int32_t height) {
+    aicore_image_view view{rgb, width, height,
+                           static_cast<size_t>(width > 0 ? width : 0) * 3,
+                           AICORE_IMAGE_RGB8};
+    return aicore_facedetect_detect_image(ctx, &view);
+}
+
+AICORE_CAPI size_t
+aicore_facedetect_detection_count(const aicore_facedetect_ctx* ctx) {
+    return ctx == nullptr ? 0 : ctx->last_detections.size();
+}
+
+AICORE_CAPI int aicore_facedetect_detection_at(
+        const aicore_facedetect_ctx* ctx,
+        size_t index,
+        aicore_facedetect_detection* out) {
+    if (ctx == nullptr || out == nullptr ||
+        index >= ctx->last_detections.size()) {
+        return -1;
+    }
+    copy_detection(ctx->last_detections[index], out);
+    return 0;
+}
+
+AICORE_CAPI int aicore_facedetect_analyze_image(aicore_facedetect_ctx* ctx,
+                                                const aicore_image_view* image,
+                                                float min_score) {
+    if (ctx == nullptr || ctx->model == nullptr || image == nullptr) return -1;
+    const auto request_start = FaceDetectClock::now();
+    fd::Image img;
+    if (!fd::image_from_view(*image, img)) {
+        ctx->last_error = "invalid image view";
+        ctx->last_analysis.clear();
+        return -1;
+    }
+    try {
+        fd::ScopedBackendBinding bind(ctx->backend);
+        ctx->last_analysis = ctx->model->analyze(img);
+        filter_analyze_faces(&ctx->last_analysis, min_score);
+        record_facedetect_e2e(ctx, request_start);
+        return 0;
+    } catch (const std::exception& e) {
+        ctx->last_error = e.what();
+        ctx->last_analysis.clear();
+        return -1;
+    }
+}
+
+AICORE_CAPI size_t
+aicore_facedetect_analysis_count(const aicore_facedetect_ctx* ctx) {
+    return ctx == nullptr ? 0 : ctx->last_analysis.size();
+}
+
+AICORE_CAPI int aicore_facedetect_analysis_at(const aicore_facedetect_ctx* ctx,
+                                              size_t index,
+                                              aicore_facedetect_analysis* out) {
+    if (ctx == nullptr || out == nullptr ||
+        index >= ctx->last_analysis.size()) {
+        return -1;
+    }
+    const fd::Face& face = ctx->last_analysis[index];
+    copy_detection(face.det, &out->detection);
+    out->age = face.age;
+    out->gender = face.gender == 'F' ? 1 : (face.gender == 'M' ? 2 : 0);
+    out->spoof_score = face.spoof_score;
+    return 0;
+}
+
+AICORE_CAPI const float* aicore_facedetect_analysis_embedding(
+        const aicore_facedetect_ctx* ctx, size_t index, int32_t* out_dim) {
+    if (out_dim != nullptr) *out_dim = 0;
+    if (ctx == nullptr || out_dim == nullptr ||
+        index >= ctx->last_analysis.size()) {
+        return nullptr;
+    }
+    const std::vector<float>& embedding = ctx->last_analysis[index].embedding;
+    *out_dim = static_cast<int32_t>(embedding.size());
+    return embedding.empty() ? nullptr : embedding.data();
+}
+
 AICORE_CAPI char* aicore_facedetect_analyze_rgb_json(aicore_facedetect_ctx* ctx,
                                                      const uint8_t* rgb,
                                                      int32_t width,
                                                      int32_t height,
                                                      float min_score) {
-    if (ctx == nullptr || ctx->model == nullptr) return nullptr;
-    fd::Image img;
-    if (!load_rgb_image(rgb, width, height, img, &ctx->last_error)) {
+    const aicore_image_view view{rgb, width, height,
+                                 static_cast<size_t>(width > 0 ? width : 0) * 3,
+                                 AICORE_IMAGE_RGB8};
+    if (aicore_facedetect_analyze_image(ctx, &view, min_score) != 0) {
         return nullptr;
+    }
+    return dup_cstr(faces_to_analyze_json(ctx->last_analysis));
+}
+
+AICORE_CAPI int aicore_facedetect_dense_landmarks_image(
+        aicore_facedetect_ctx* detector_ctx,
+        aicore_facedetect_ctx* landmark_ctx,
+        const aicore_image_view* image,
+        float min_score) {
+    if (detector_ctx == nullptr || detector_ctx->model == nullptr ||
+        landmark_ctx == nullptr || landmark_ctx->model == nullptr ||
+        image == nullptr) {
+        if (detector_ctx != nullptr) {
+            detector_ctx->last_error = "null detector/landmark ctx or image";
+            detector_ctx->last_dense_faces.clear();
+        }
+        return -1;
+    }
+    const auto request_start = FaceDetectClock::now();
+    fd::Image img;
+    if (!fd::image_from_view(*image, img)) {
+        detector_ctx->last_error = "invalid image view";
+        detector_ctx->last_dense_faces.clear();
+        return -1;
     }
     try {
-        fd::ScopedBackendBinding bind(ctx->backend);
-        std::vector<fd::Face> faces = ctx->model->analyze(img);
-        filter_analyze_faces(&faces, min_score);
-        return dup_cstr(faces_to_analyze_json(faces));
+        std::vector<fd::Detection> detections;
+        {
+            fd::ScopedBackendBinding bind(detector_ctx->backend);
+            detections = detector_ctx->model->detect(img);
+        }
+        if (min_score > 0.0f) {
+            detections.erase(
+                    std::remove_if(detections.begin(), detections.end(),
+                                   [min_score](const fd::Detection& detection) {
+                                       return detection.score < min_score;
+                                   }),
+                    detections.end());
+        }
+        if (detections.empty()) {
+            detector_ctx->last_dense_faces.clear();
+            record_facedetect_e2e(detector_ctx, request_start);
+            return 0;
+        }
+        fd::ScopedBackendBinding bind(landmark_ctx->backend);
+        detector_ctx->last_dense_faces =
+                landmark_ctx->model->dense_landmarks(img, detections);
+        record_facedetect_e2e(detector_ctx, request_start);
+        return 0;
     } catch (const std::exception& e) {
-        ctx->last_error = e.what();
-        return nullptr;
+        detector_ctx->last_error = e.what();
+        detector_ctx->last_dense_faces.clear();
+        return -1;
     }
+}
+
+AICORE_CAPI size_t
+aicore_facedetect_dense_face_count(const aicore_facedetect_ctx* detector_ctx) {
+    return detector_ctx == nullptr ? 0 : detector_ctx->last_dense_faces.size();
+}
+
+AICORE_CAPI int aicore_facedetect_dense_detection_at(
+        const aicore_facedetect_ctx* detector_ctx,
+        size_t face_index,
+        aicore_facedetect_detection* out) {
+    if (detector_ctx == nullptr || out == nullptr ||
+        face_index >= detector_ctx->last_dense_faces.size()) {
+        return -1;
+    }
+    copy_detection(detector_ctx->last_dense_faces[face_index].det, out);
+    return 0;
+}
+
+AICORE_CAPI size_t
+aicore_facedetect_dense_point_count(const aicore_facedetect_ctx* detector_ctx,
+                                    size_t face_index,
+                                    int three_d) {
+    if (detector_ctx == nullptr ||
+        face_index >= detector_ctx->last_dense_faces.size()) {
+        return 0;
+    }
+    const fd::DenseLandmarkFace& face =
+            detector_ctx->last_dense_faces[face_index];
+    return three_d != 0 ? face.points_3d.size() : face.points_2d.size();
+}
+
+AICORE_CAPI int aicore_facedetect_dense_point_at(
+        const aicore_facedetect_ctx* detector_ctx,
+        size_t face_index,
+        int three_d,
+        size_t point_index,
+        aicore_facedetect_landmark_point* out) {
+    if (detector_ctx == nullptr || out == nullptr ||
+        face_index >= detector_ctx->last_dense_faces.size()) {
+        return -1;
+    }
+    const fd::DenseLandmarkFace& face =
+            detector_ctx->last_dense_faces[face_index];
+    const std::vector<fd::LandmarkPoint>& points =
+            three_d != 0 ? face.points_3d : face.points_2d;
+    if (point_index >= points.size()) return -1;
+    out->x = points[point_index].x;
+    out->y = points[point_index].y;
+    out->z = points[point_index].z;
+    return 0;
 }
 
 AICORE_CAPI char* aicore_facedetect_dense_landmarks_rgb_json(
@@ -301,42 +537,14 @@ AICORE_CAPI char* aicore_facedetect_dense_landmarks_rgb_json(
         int32_t width,
         int32_t height,
         float min_score) {
-    if (detector_ctx == nullptr || detector_ctx->model == nullptr ||
-        landmark_ctx == nullptr || landmark_ctx->model == nullptr) {
-        if (detector_ctx)
-            detector_ctx->last_error = "null detector/landmark ctx";
+    const aicore_image_view view{rgb, width, height,
+                                 static_cast<size_t>(width > 0 ? width : 0) * 3,
+                                 AICORE_IMAGE_RGB8};
+    if (aicore_facedetect_dense_landmarks_image(detector_ctx, landmark_ctx,
+                                                &view, min_score) != 0) {
         return nullptr;
     }
-    fd::Image img;
-    if (!load_rgb_image(rgb, width, height, img, &detector_ctx->last_error)) {
-        return nullptr;
-    }
-    try {
-        std::vector<fd::Detection> dets;
-        {
-            fd::ScopedBackendBinding bind(detector_ctx->backend);
-            dets = detector_ctx->model->detect(img);
-        }
-        if (min_score > 0.0f) {
-            dets.erase(std::remove_if(dets.begin(), dets.end(),
-                                      [min_score](const fd::Detection& d) {
-                                          return d.score < min_score;
-                                      }),
-                       dets.end());
-        }
-        if (dets.empty()) {
-            return dup_cstr("{\"faces\":[]}");
-        }
-        std::vector<fd::DenseLandmarkFace> faces;
-        {
-            fd::ScopedBackendBinding bind(landmark_ctx->backend);
-            faces = landmark_ctx->model->dense_landmarks(img, dets);
-        }
-        return dup_cstr(dense_landmarks_to_json(faces));
-    } catch (const std::exception& e) {
-        detector_ctx->last_error = e.what();
-        return nullptr;
-    }
+    return dup_cstr(dense_landmarks_to_json(detector_ctx->last_dense_faces));
 }
 
 AICORE_CAPI int aicore_facedetect_embed_path(aicore_facedetect_ctx* ctx,
@@ -480,6 +688,107 @@ AICORE_CAPI int aicore_facedetect_cosine_distance_matrix(const float* queries,
     return 0;
 }
 
+AICORE_CAPI int aicore_facedetect_verify_images(
+        aicore_facedetect_ctx* ctx,
+        const aicore_image_view* image_a,
+        const aicore_image_view* image_b,
+        const aicore_facedetect_verify_options* options,
+        aicore_facedetect_verify_result* out_result) {
+    if (ctx == nullptr || ctx->model == nullptr || image_a == nullptr ||
+        image_b == nullptr || out_result == nullptr) {
+        return -1;
+    }
+    const auto request_start = FaceDetectClock::now();
+    fd::Image first;
+    fd::Image second;
+    if (!fd::image_from_view(*image_a, first) ||
+        !fd::image_from_view(*image_b, second)) {
+        ctx->last_error = "invalid image view";
+        return -1;
+    }
+
+    const float requested_threshold =
+            options != nullptr ? options->threshold : 0.0f;
+    const float min_detection_score =
+            options != nullptr ? options->min_detection_score : 0.0f;
+    const bool request_anti_spoof =
+            options != nullptr && options->anti_spoof != 0;
+    try {
+        fd::ScopedBackendBinding bind(ctx->backend);
+        const float threshold = requested_threshold > 0.0f
+                                        ? requested_threshold
+                                        : ctx->model->config().verify_threshold;
+        const std::vector<float> first_embedding =
+                ctx->model->embed(first, min_detection_score);
+        const std::vector<float> second_embedding =
+                ctx->model->embed(second, min_detection_score);
+        if (first_embedding.empty() ||
+            first_embedding.size() != second_embedding.size()) {
+            ctx->last_error = "invalid or incompatible face embeddings";
+            return -1;
+        }
+
+        double dot = 0.0;
+        for (size_t i = 0; i < first_embedding.size(); ++i) {
+            dot += static_cast<double>(first_embedding[i]) *
+                   second_embedding[i];
+        }
+        const float distance = static_cast<float>(1.0 - dot);
+        int verified = distance <= threshold ? 1 : 0;
+        int anti_spoof_passed = -1;
+
+        if (verified != 0 && request_anti_spoof &&
+            ctx->model->config().antispoof_present) {
+            auto image_is_live = [&](const fd::Image& image) {
+                std::vector<fd::Detection> detections =
+                        ctx->model->detect(image);
+                if (min_detection_score > 0.0f) {
+                    detections.erase(
+                            std::remove_if(
+                                    detections.begin(), detections.end(),
+                                    [min_detection_score](
+                                            const fd::Detection& detection) {
+                                        return detection.score <
+                                               min_detection_score;
+                                    }),
+                            detections.end());
+                }
+                if (detections.empty()) return false;
+                const fd::Detection& primary = *std::max_element(
+                        detections.begin(), detections.end(),
+                        [](const fd::Detection& lhs, const fd::Detection& rhs) {
+                            return (lhs.x2 - lhs.x1) * (lhs.y2 - lhs.y1) <
+                                   (rhs.x2 - rhs.x1) * (rhs.y2 - rhs.y1);
+                        });
+                return ctx->model->is_real(image, primary);
+            };
+            anti_spoof_passed =
+                    image_is_live(first) && image_is_live(second) ? 1 : 0;
+            if (anti_spoof_passed == 0) verified = 0;
+        }
+
+        out_result->distance = distance;
+        out_result->threshold = threshold;
+        out_result->verified = verified;
+        out_result->anti_spoof_passed = anti_spoof_passed;
+        record_facedetect_e2e(ctx, request_start);
+        return 0;
+    } catch (const std::exception& e) {
+        ctx->last_error = e.what();
+        return -1;
+    }
+}
+
+AICORE_CAPI int aicore_facedetect_last_pipeline_timings(
+        const aicore_facedetect_ctx* ctx,
+        aicore_pipeline_timings* out_timings) {
+    if (ctx == nullptr || out_timings == nullptr || !ctx->has_timings) {
+        return -1;
+    }
+    *out_timings = ctx->timings;
+    return 0;
+}
+
 AICORE_CAPI int aicore_facedetect_verify_paths(aicore_facedetect_ctx* ctx,
                                                const char* a,
                                                const char* b,
@@ -491,50 +800,30 @@ AICORE_CAPI int aicore_facedetect_verify_paths(aicore_facedetect_ctx* ctx,
         b == nullptr || out_distance == nullptr || out_verified == nullptr) {
         return -1;
     }
-    try {
-        fd::ScopedBackendBinding bind(ctx->backend);
-        const float thr = threshold > 0.0f
-                                  ? threshold
-                                  : ctx->model->config().verify_threshold;
-        fd::Image ia, ib;
-        if (!fd::load_image_rgb(a, ia)) {
-            ctx->last_error = std::string("failed to load image: ") + a;
-            return -1;
-        }
-        if (!fd::load_image_rgb(b, ib)) {
-            ctx->last_error = std::string("failed to load image: ") + b;
-            return -1;
-        }
-        const std::vector<float> ea = ctx->model->embed(ia);
-        const std::vector<float> eb = ctx->model->embed(ib);
-        double dot = 0.0;
-        const size_t n = std::min(ea.size(), eb.size());
-        for (size_t i = 0; i < n; ++i)
-            dot += static_cast<double>(ea[i]) * eb[i];
-        const float dist = static_cast<float>(1.0 - dot);
-        *out_distance = dist;
-        int verified = dist <= thr ? 1 : 0;
-        if (verified && anti_spoof != 0 &&
-            ctx->model->config().antispoof_present) {
-            auto live = [&](const fd::Image& im) -> bool {
-                std::vector<fd::Detection> d = ctx->model->detect(im);
-                if (d.empty()) return false;
-                const fd::Detection& primary = *std::max_element(
-                        d.begin(), d.end(),
-                        [](const fd::Detection& x, const fd::Detection& y) {
-                            return (x.x2 - x.x1) * (x.y2 - x.y1) <
-                                   (y.x2 - y.x1) * (y.y2 - y.y1);
-                        });
-                return ctx->model->is_real(im, primary);
-            };
-            if (!live(ia) || !live(ib)) verified = 0;
-        }
-        *out_verified = verified;
-        return 0;
-    } catch (const std::exception& e) {
-        ctx->last_error = e.what();
+    fd::Image first;
+    fd::Image second;
+    if (!fd::load_image_rgb(a, first)) {
+        ctx->last_error = std::string("failed to load image: ") + a;
         return -1;
     }
+    if (!fd::load_image_rgb(b, second)) {
+        ctx->last_error = std::string("failed to load image: ") + b;
+        return -1;
+    }
+    const aicore_image_view first_view{first.data(), first.width, first.height,
+                                       first.stride(), AICORE_IMAGE_RGB8};
+    const aicore_image_view second_view{second.data(), second.width,
+                                        second.height, second.stride(),
+                                        AICORE_IMAGE_RGB8};
+    const aicore_facedetect_verify_options options{threshold, 0.0f, anti_spoof};
+    aicore_facedetect_verify_result result{};
+    if (aicore_facedetect_verify_images(ctx, &first_view, &second_view,
+                                        &options, &result) != 0) {
+        return -1;
+    }
+    *out_distance = result.distance;
+    *out_verified = result.verified;
+    return 0;
 }
 
 AICORE_CAPI char* aicore_facedetect_info_json(aicore_facedetect_ctx* ctx) {
@@ -565,7 +854,7 @@ AICORE_CAPI int aicore_facedetect_warmup_backend(const char* device) {
     return 0;
 }
 
-AICORE_CAPI void aicore_facedetect_shutdown(void) { fd::shutdown_backend(); }
+AICORE_CAPI void aicore_facedetect_shutdown(void) { aicore_runtime_shutdown(); }
 
 AICORE_CAPI char* aicore_facedetect_model_cache_dir(void) {
     return dup_cstr(aicore::facedetect_model_cache_dir());

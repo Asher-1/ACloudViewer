@@ -16,6 +16,7 @@
 
 #include "aicore/backend_capi.h"
 #include "aicore/depth_capi.h"
+#include "aicore/runtime_capi.h"
 #include "common/capi_utils.hpp"
 #include "common/ggml_backend_utils.hpp"
 #include "tasks/depth/colmap_export.hpp"
@@ -34,6 +35,7 @@
 struct aicore_depth_ctx {
     std::unique_ptr<aicore::depth::Engine> engine;
     std::string last_error;
+    aicore_pipeline_timings pipeline_timings{};
 };
 
 struct aicore_depth_options {
@@ -70,6 +72,49 @@ static bool capi_is_metric(const aicore::depth::Config& cfg) {
            n.find("mono") != std::string::npos;
 }
 
+static bool capi_borrow_image_view(aicore_depth_ctx* c,
+                                   const aicore_image_view* view,
+                                   aicore::depth::Image& image,
+                                   const char* operation) {
+    if (!c || !c->engine || !view || !view->data || view->width <= 0 ||
+        view->height <= 0) {
+        if (c) c->last_error = std::string(operation) + ": bad args";
+        return false;
+    }
+    int channels = 0;
+    bool bgr = false;
+    switch (view->format) {
+        case AICORE_IMAGE_RGB8:
+            channels = 3;
+            break;
+        case AICORE_IMAGE_RGBA8:
+            channels = 4;
+            break;
+        case AICORE_IMAGE_GRAY8:
+            channels = 1;
+            break;
+        case AICORE_IMAGE_BGR8:
+            channels = 3;
+            bgr = true;
+            break;
+        case AICORE_IMAGE_BGRA8:
+            channels = 4;
+            bgr = true;
+            break;
+        default:
+            c->last_error =
+                    std::string(operation) + ": unsupported image format";
+            return false;
+    }
+    if (!aicore::depth::borrow_image_view(view->data, view->width, view->height,
+                                          channels, bgr, view->row_stride_bytes,
+                                          image)) {
+        c->last_error = std::string(operation) + ": invalid view";
+        return false;
+    }
+    return true;
+}
+
 // Run the nested metric pipeline (anyview GIANT + metric ViT-L branches ->
 // alignment) for a single image. Fills depth + scaled ext/intr + processed
 // dims. Returns false with c->last_error set on failure.
@@ -92,7 +137,7 @@ static bool capi_run_nested(aicore_depth_ctx* c,
 }
 
 extern "C" {
-AICORE_CAPI int aicore_depth_abi_version(void) { return 7; }
+AICORE_CAPI int aicore_depth_abi_version(void) { return 8; }
 AICORE_CAPI aicore_depth_options* aicore_depth_options_new(void) {
     return new (std::nothrow) aicore_depth_options();
 }
@@ -153,6 +198,7 @@ AICORE_CAPI void aicore_depth_free(aicore_depth_ctx* c) {
     }
     delete c;
 }
+AICORE_CAPI void aicore_depth_shutdown(void) { aicore_runtime_shutdown(); }
 AICORE_CAPI int aicore_depth_is_ready(const aicore_depth_ctx* c) {
     return c != nullptr && c->engine != nullptr ? 1 : 0;
 }
@@ -172,6 +218,11 @@ AICORE_CAPI const char* aicore_depth_last_error(aicore_depth_ctx* c) {
 AICORE_CAPI const char* aicore_depth_device_name(aicore_depth_ctx* c) {
     if (!c || !c->engine) return "";
     return c->engine->device_name().c_str();
+}
+AICORE_CAPI int aicore_depth_last_pipeline_timings(
+        const aicore_depth_ctx* c, aicore_pipeline_timings* out) {
+    return c ? aicore::capi::copy_pipeline_timings(c->pipeline_timings, out)
+             : -1;
 }
 AICORE_CAPI float* aicore_depth_depth_path(aicore_depth_ctx* c,
                                            const char* image_path,
@@ -240,6 +291,7 @@ AICORE_CAPI int aicore_depth_pose_path(aicore_depth_ctx* c,
 // failure.
 static bool capi_export_prep(aicore_depth_ctx* c,
                              const char* image_path,
+                             const aicore::depth::Image* image_view,
                              std::vector<float>& depth,
                              std::vector<float>& conf,
                              std::vector<std::array<float, 9>>& K,
@@ -248,7 +300,9 @@ static bool capi_export_prep(aicore_depth_ctx* c,
                              aicore::depth::Image& img,
                              int& H,
                              int& W) {
-    if (!aicore::depth::load_image_rgb(image_path, img)) {
+    if (image_view) {
+        img = *image_view;
+    } else if (!image_path || !aicore::depth::load_image_rgb(image_path, img)) {
         c->last_error = "export: load image failed";
         return false;
     }
@@ -288,12 +342,36 @@ AICORE_CAPI int aicore_depth_export_glb(aicore_depth_ctx* c,
     std::vector<uint8_t> rgb_u8;
     aicore::depth::Image img;
     int H = 0, W = 0;
-    if (!capi_export_prep(c, image_path, depth, conf, K, E, rgb_u8, img, H, W))
+    if (!capi_export_prep(c, image_path, nullptr, depth, conf, K, E, rgb_u8,
+                          img, H, W))
         return -1;
     std::vector<const uint8_t*> imgs_u8{rgb_u8.data()};
     if (!aicore::depth::write_glb(out_glb, depth, conf, K, E, imgs_u8, H, W, 1,
                                   aicore::depth::GlbOptions{})) {
         c->last_error = "export_glb: write failed";
+        return -1;
+    }
+    return 0;
+}
+AICORE_CAPI int aicore_depth_export_glb_image(aicore_depth_ctx* c,
+                                              const aicore_image_view* view,
+                                              const char* out_glb) {
+    aicore::depth::Image image;
+    if (!out_glb || !capi_borrow_image_view(c, view, image, "export_glb_image"))
+        return -1;
+    std::vector<float> depth, conf;
+    std::vector<std::array<float, 9>> K;
+    std::vector<std::array<float, 16>> E;
+    std::vector<uint8_t> rgb_u8;
+    aicore::depth::Image prepared_image;
+    int H = 0, W = 0;
+    if (!capi_export_prep(c, nullptr, &image, depth, conf, K, E, rgb_u8,
+                          prepared_image, H, W))
+        return -1;
+    std::vector<const uint8_t*> imgs_u8{rgb_u8.data()};
+    if (!aicore::depth::write_glb(out_glb, depth, conf, K, E, imgs_u8, H, W, 1,
+                                  aicore::depth::GlbOptions{})) {
+        c->last_error = "export_glb_image: write failed";
         return -1;
     }
     return 0;
@@ -312,7 +390,8 @@ AICORE_CAPI int aicore_depth_export_colmap(aicore_depth_ctx* c,
     std::vector<uint8_t> rgb_u8;
     aicore::depth::Image img;
     int H = 0, W = 0;
-    if (!capi_export_prep(c, image_path, depth, conf, K, E, rgb_u8, img, H, W))
+    if (!capi_export_prep(c, image_path, nullptr, depth, conf, K, E, rgb_u8,
+                          img, H, W))
         return -1;
     std::vector<const uint8_t*> imgs_u8{rgb_u8.data()};
     std::string path(image_path);
@@ -323,6 +402,35 @@ AICORE_CAPI int aicore_depth_export_colmap(aicore_depth_ctx* c,
     if (!aicore::depth::write_colmap(out_dir, depth, conf, K, E, imgs_u8, names,
                                      orig_wh, H, W, 1, binary != 0)) {
         c->last_error = "export_colmap: write failed";
+        return -1;
+    }
+    return 0;
+}
+AICORE_CAPI int aicore_depth_export_colmap_image(aicore_depth_ctx* c,
+                                                 const aicore_image_view* view,
+                                                 const char* image_name,
+                                                 const char* out_dir,
+                                                 int binary) {
+    aicore::depth::Image image;
+    if (!out_dir ||
+        !capi_borrow_image_view(c, view, image, "export_colmap_image"))
+        return -1;
+    std::vector<float> depth, conf;
+    std::vector<std::array<float, 9>> K;
+    std::vector<std::array<float, 16>> E;
+    std::vector<uint8_t> rgb_u8;
+    aicore::depth::Image prepared_image;
+    int H = 0, W = 0;
+    if (!capi_export_prep(c, nullptr, &image, depth, conf, K, E, rgb_u8,
+                          prepared_image, H, W))
+        return -1;
+    std::vector<const uint8_t*> imgs_u8{rgb_u8.data()};
+    std::vector<std::string> names{image_name && image_name[0] ? image_name
+                                                               : "image.png"};
+    std::vector<std::pair<int, int>> orig_wh{{image.w, image.h}};
+    if (!aicore::depth::write_colmap(out_dir, depth, conf, K, E, imgs_u8, names,
+                                     orig_wh, H, W, 1, binary != 0)) {
+        c->last_error = "export_colmap_image: write failed";
         return -1;
     }
     return 0;
@@ -463,6 +571,7 @@ AICORE_CAPI int aicore_depth_write_colmap_from_multiview(
 }
 static int run_dense_impl(aicore_depth_ctx* c,
                           const char* image_path,
+                          const aicore::depth::Image* image_view,
                           int* out_h,
                           int* out_w,
                           float** out_depth,
@@ -471,7 +580,7 @@ static int run_dense_impl(aicore_depth_ctx* c,
                           float out_ext[12],
                           float out_intr[9],
                           int* out_is_metric) {
-    if (!c || !c->engine || !image_path) {
+    if (!c || !c->engine || (!image_path && !image_view)) {
         if (c) c->last_error = "depth_dense: bad args";
         return -1;
     }
@@ -488,8 +597,18 @@ static int run_dense_impl(aicore_depth_ctx* c,
         std::vector<float> ndepth;
         std::array<float, 12> next;
         std::array<float, 9> nintr;
-        if (!capi_run_nested(c, image_path, ndepth, next, nintr, H, W))
+        if (image_view) {
+            aicore::depth::NestedOut nested;
+            if (!c->engine->depth_metric(*image_view, nested, H, W)) {
+                c->last_error = "depth_dense: nested failed";
+                return -1;
+            }
+            ndepth = std::move(nested.depth);
+            next = nested.extrinsics;
+            nintr = nested.intrinsics;
+        } else if (!capi_run_nested(c, image_path, ndepth, next, nintr, H, W)) {
             return -1;
+        }
         const size_t hw = (size_t)H * W;
         if (hw == 0 || ndepth.size() != hw) {
             c->last_error = "depth_dense: nested empty/size mismatch";
@@ -516,7 +635,11 @@ static int run_dense_impl(aicore_depth_ctx* c,
     // (sigmoid x max_depth).
     if (c->engine->is_da2()) {
         std::vector<float> d2;
-        if (!c->engine->depth_relative_path(image_path, d2, H, W)) {
+        const bool ok =
+                image_view
+                        ? c->engine->depth_relative(*image_view, d2, H, W)
+                        : c->engine->depth_relative_path(image_path, d2, H, W);
+        if (!ok) {
             c->last_error = "depth_dense: da2 failed";
             return -1;
         }
@@ -541,7 +664,9 @@ static int run_dense_impl(aicore_depth_ctx* c,
         return 0;
     }
     aicore::depth::Image img;
-    if (!aicore::depth::load_image_rgb(image_path, img)) {
+    if (image_view) {
+        img = *image_view;
+    } else if (!aicore::depth::load_image_rgb(image_path, img)) {
         c->last_error = "depth_dense: load image failed";
         return -1;
     }
@@ -604,11 +729,36 @@ static int run_dense_impl(aicore_depth_ctx* c,
 AICORE_CAPI int aicore_depth_depth_dense(aicore_depth_ctx* c,
                                          const char* image_path,
                                          aicore_depth_dense_result* out) {
+    const auto started = aicore::capi::PipelineClock::now();
     if (!out) return -1;
     std::memset(out, 0, sizeof(*out));
-    return run_dense_impl(c, image_path, &out->height, &out->width, &out->depth,
-                          &out->conf, &out->sky, out->ext, out->intr,
-                          &out->is_metric);
+    const int rc = run_dense_impl(
+            c, image_path, nullptr, &out->height, &out->width, &out->depth,
+            &out->conf, &out->sky, out->ext, out->intr, &out->is_metric);
+    if (rc == 0)
+        aicore::capi::record_pipeline_e2e(c->pipeline_timings, started);
+    return rc;
+}
+
+AICORE_CAPI int aicore_depth_depth_image(aicore_depth_ctx* c,
+                                         const aicore_image_view* view,
+                                         aicore_depth_dense_result* out) {
+    const auto started = aicore::capi::PipelineClock::now();
+    if (!out) return -1;
+    std::memset(out, 0, sizeof(*out));
+    if (!c || !c->engine || !view || !view->data || view->width <= 0 ||
+        view->height <= 0) {
+        if (c) c->last_error = "depth_image: bad args";
+        return -1;
+    }
+    aicore::depth::Image image;
+    if (!capi_borrow_image_view(c, view, image, "depth_image")) return -1;
+    const int rc = run_dense_impl(c, nullptr, &image, &out->height, &out->width,
+                                  &out->depth, &out->conf, &out->sky, out->ext,
+                                  out->intr, &out->is_metric);
+    if (rc == 0)
+        aicore::capi::record_pipeline_e2e(c->pipeline_timings, started);
+    return rc;
 }
 
 AICORE_CAPI void aicore_depth_dense_result_free(aicore_depth_dense_result* r) {
@@ -747,7 +897,8 @@ AICORE_CAPI int aicore_depth_points(aicore_depth_ctx* c,
     std::vector<uint8_t> rgb_u8;
     aicore::depth::Image img;
     int H = 0, W = 0;
-    if (!capi_export_prep(c, image_path, depth, conf, K, E, rgb_u8, img, H, W))
+    if (!capi_export_prep(c, image_path, nullptr, depth, conf, K, E, rgb_u8,
+                          img, H, W))
         return -1;
     // back_project expects world-to-camera extrinsics; capi_export_prep yields
     // the same 4x4 ext used by glb/colmap export (mirrors examples/cli
@@ -819,6 +970,61 @@ static float* dup_floats(const std::vector<float>& v) {
     return p;
 }
 
+static bool validate_reconstruct_outputs(int* out_h,
+                                         int* out_w,
+                                         int* out_n,
+                                         float** out_means,
+                                         float** out_scales,
+                                         float** out_harmonics,
+                                         float** out_opacities) {
+    if (!out_h || !out_w || !out_n || !out_means || !out_scales ||
+        !out_harmonics || !out_opacities)
+        return false;
+    *out_h = 0;
+    *out_w = 0;
+    *out_n = 0;
+    *out_means = nullptr;
+    *out_scales = nullptr;
+    *out_harmonics = nullptr;
+    *out_opacities = nullptr;
+    return true;
+}
+
+static int copy_reconstruct_outputs(const aicore::depth::Gaussians& g,
+                                    int H,
+                                    int W,
+                                    int* out_h,
+                                    int* out_w,
+                                    int* out_n,
+                                    float** out_means,
+                                    float** out_scales,
+                                    float** out_harmonics,
+                                    float** out_opacities) {
+    *out_h = H;
+    *out_w = W;
+    *out_n = g.N;
+    if (g.N <= 0) return 0;
+
+    *out_means = dup_floats(g.means);
+    *out_scales = dup_floats(g.scales);
+    *out_harmonics = dup_floats(g.harmonics);
+    *out_opacities = dup_floats(g.opacities);
+    if (*out_means && *out_scales && *out_harmonics && *out_opacities) return 0;
+
+    std::free(*out_means);
+    std::free(*out_scales);
+    std::free(*out_harmonics);
+    std::free(*out_opacities);
+    *out_means = nullptr;
+    *out_scales = nullptr;
+    *out_harmonics = nullptr;
+    *out_opacities = nullptr;
+    *out_h = 0;
+    *out_w = 0;
+    *out_n = 0;
+    return -1;
+}
+
 AICORE_CAPI int aicore_depth_reconstruct_path(const char* gguf_path,
                                               int n_threads,
                                               const char* image_path,
@@ -829,17 +1035,12 @@ AICORE_CAPI int aicore_depth_reconstruct_path(const char* gguf_path,
                                               float** out_scales,
                                               float** out_harmonics,
                                               float** out_opacities) {
-    if (!gguf_path || !image_path || !out_h || !out_w || !out_n || !out_means ||
-        !out_scales || !out_harmonics || !out_opacities) {
+    if (!gguf_path || !image_path ||
+        !validate_reconstruct_outputs(out_h, out_w, out_n, out_means,
+                                      out_scales, out_harmonics,
+                                      out_opacities)) {
         return -1;
     }
-    *out_means = nullptr;
-    *out_scales = nullptr;
-    *out_harmonics = nullptr;
-    *out_opacities = nullptr;
-    *out_h = 0;
-    *out_w = 0;
-    *out_n = 0;
 
     aicore::depth::EngineOptions eo;
     eo.n_threads = n_threads;
@@ -855,32 +1056,39 @@ AICORE_CAPI int aicore_depth_reconstruct_path(const char* gguf_path,
         return -1;
     }
 
-    *out_h = H;
-    *out_w = W;
-    *out_n = g.N;
-    if (g.N <= 0) {
-        return 0;
-    }
+    return copy_reconstruct_outputs(g, H, W, out_h, out_w, out_n, out_means,
+                                    out_scales, out_harmonics, out_opacities);
+}
 
-    *out_means = dup_floats(g.means);
-    *out_scales = dup_floats(g.scales);
-    *out_harmonics = dup_floats(g.harmonics);
-    *out_opacities = dup_floats(g.opacities);
-    if (!*out_means || !*out_scales || !*out_harmonics || !*out_opacities) {
-        std::free(*out_means);
-        std::free(*out_scales);
-        std::free(*out_harmonics);
-        std::free(*out_opacities);
-        *out_means = nullptr;
-        *out_scales = nullptr;
-        *out_harmonics = nullptr;
-        *out_opacities = nullptr;
-        *out_h = 0;
-        *out_w = 0;
-        *out_n = 0;
+AICORE_CAPI int aicore_depth_reconstruct_image(aicore_depth_ctx* c,
+                                               const aicore_image_view* view,
+                                               int* out_h,
+                                               int* out_w,
+                                               int* out_n,
+                                               float** out_means,
+                                               float** out_scales,
+                                               float** out_harmonics,
+                                               float** out_opacities) {
+    const auto started = aicore::capi::PipelineClock::now();
+    if (!validate_reconstruct_outputs(out_h, out_w, out_n, out_means,
+                                      out_scales, out_harmonics, out_opacities))
+        return -1;
+    aicore::depth::Image image;
+    if (!capi_borrow_image_view(c, view, image, "reconstruct_image")) return -1;
+
+    aicore::depth::Gaussians g;
+    int H = 0;
+    int W = 0;
+    if (!c->engine->reconstruct(image, g, H, W)) {
+        c->last_error = "reconstruct_image: failed";
         return -1;
     }
-    return 0;
+    const int rc =
+            copy_reconstruct_outputs(g, H, W, out_h, out_w, out_n, out_means,
+                                     out_scales, out_harmonics, out_opacities);
+    if (rc == 0)
+        aicore::capi::record_pipeline_e2e(c->pipeline_timings, started);
+    return rc;
 }
 
 AICORE_CAPI int aicore_depth_quantize_gguf(const char* in_gguf,

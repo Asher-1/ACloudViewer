@@ -48,6 +48,7 @@ bool load_image_rgb(const std::string& path, Image& out) {
     result.width = packed.width;
     result.height = packed.height;
     result.rgb.assign(packed.data, packed.data + byteCount);
+    result.row_stride_bytes = static_cast<size_t>(result.width) * 3;
     std::free(packed.data);
     out = std::move(result);
     return true;
@@ -61,6 +62,51 @@ bool image_from_rgb(const uint8_t* rgb, int width, int height, Image& out) {
     result.width = width;
     result.height = height;
     result.rgb.assign(rgb, rgb + byteCount);
+    result.row_stride_bytes = static_cast<size_t>(width) * 3;
+    out = std::move(result);
+    return true;
+}
+
+bool image_from_view(const aicore_image_view& view, Image& out) {
+    if (view.data == nullptr || view.width <= 0 || view.height <= 0) {
+        return false;
+    }
+    size_t channels = 0;
+    bool bgr = false;
+    switch (view.format) {
+        case AICORE_IMAGE_RGB8:
+            channels = 3;
+            break;
+        case AICORE_IMAGE_RGBA8:
+            channels = 4;
+            break;
+        case AICORE_IMAGE_GRAY8:
+            channels = 1;
+            break;
+        case AICORE_IMAGE_BGR8:
+            channels = 3;
+            bgr = true;
+            break;
+        case AICORE_IMAGE_BGRA8:
+            channels = 4;
+            bgr = true;
+            break;
+        default:
+            return false;
+    }
+    const size_t row_bytes = static_cast<size_t>(view.width) * channels;
+    if (view.row_stride_bytes < row_bytes ||
+        static_cast<size_t>(view.height) >
+                std::numeric_limits<size_t>::max() / row_bytes) {
+        return false;
+    }
+    Image result;
+    result.width = view.width;
+    result.height = view.height;
+    result.borrowed_data = view.data;
+    result.row_stride_bytes = view.row_stride_bytes;
+    result.channels = static_cast<int>(channels);
+    result.bgr = bgr;
     out = std::move(result);
     return true;
 }

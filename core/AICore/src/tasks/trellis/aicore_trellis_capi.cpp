@@ -16,6 +16,7 @@
 #include <QImage>
 
 #include "aicore/backend_capi.h"
+#include "aicore/runtime_capi.h"
 #include "aicore/trellis_capi.h"
 #include "common/aicore_log.hpp"
 #include "common/capi_utils.hpp"
@@ -85,6 +86,7 @@ struct aicore_trellis_ctx {
     bool shapedec_gpu =
             false;  // shape decoder placed on the GPU (VRAM permitting)
     std::string last_error;
+    aicore_pipeline_timings pipeline_timings{};
 #ifdef TRELLIS2_HAVE_RMBG
     trellis2_rmbg_model *rmbg = nullptr;  // optional AI background removal
 #endif
@@ -537,7 +539,7 @@ struct ss_preview_ctx {
 
 extern "C" {
 
-int aicore_trellis_abi_version(void) { return 2; }
+int aicore_trellis_abi_version(void) { return 3; }
 
 // ─────────────────────────────────────────────────────────────────────────
 // Options builder
@@ -1604,8 +1606,13 @@ aicore_trellis_mesh *aicore_trellis_generate(
         void *progress_user,
         char *err,
         int err_len) {
-    return generate_impl(p, image_bytes, image_len, params, progress,
-                         progress_user, nullptr, nullptr, err, err_len);
+    const auto started = aicore::capi::PipelineClock::now();
+    aicore_trellis_mesh *mesh =
+            generate_impl(p, image_bytes, image_len, params, progress,
+                          progress_user, nullptr, nullptr, err, err_len);
+    if (mesh && p)
+        aicore::capi::record_pipeline_e2e(p->pipeline_timings, started);
+    return mesh;
 }
 
 aicore_trellis_mesh *aicore_trellis_generate_ex(
@@ -1619,8 +1626,19 @@ aicore_trellis_mesh *aicore_trellis_generate_ex(
         void *preview_user,
         char *err,
         int err_len) {
-    return generate_impl(p, image_bytes, image_len, params, progress,
-                         progress_user, preview, preview_user, err, err_len);
+    const auto started = aicore::capi::PipelineClock::now();
+    aicore_trellis_mesh *mesh =
+            generate_impl(p, image_bytes, image_len, params, progress,
+                          progress_user, preview, preview_user, err, err_len);
+    if (mesh && p)
+        aicore::capi::record_pipeline_e2e(p->pipeline_timings, started);
+    return mesh;
+}
+
+int aicore_trellis_last_pipeline_timings(const aicore_trellis_ctx *ctx,
+                                         aicore_pipeline_timings *out) {
+    return ctx ? aicore::capi::copy_pipeline_timings(ctx->pipeline_timings, out)
+               : -1;
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -1976,12 +1994,7 @@ int aicore_trellis_warmup_backend(const char *device) {
     return aicore_warmup_backend(device != nullptr ? device : "auto");
 }
 
-void aicore_trellis_shutdown(void) {
-    // Reclaims process-wide backend registry entries whose owners are gone
-    // (expired leases). Live contexts are never touched; ggml backends stay
-    // registered for the process lifetime.
-    aicore::runtime::purge_inactive_backend_leases();
-}
+void aicore_trellis_shutdown(void) { aicore_runtime_shutdown(); }
 
 char *aicore_trellis_model_cache_dir(void) {
     return aicore::capi::dup_cstr(aicore::trellis_model_cache_dir());

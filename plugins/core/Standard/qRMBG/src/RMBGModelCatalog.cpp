@@ -12,7 +12,6 @@
 #include <QPainter>
 #include <algorithm>
 #include <cmath>
-#include <cstring>
 
 #include "aicore/rmbg_capi.h"
 
@@ -82,19 +81,41 @@ QString modelDisplayLabel(const RMBGModelEntry& entry) {
     return label;
 }
 
-const uchar* packedRgb888Data(const QImage& image, QByteArray* scratch) {
-    if (!scratch || image.isNull() || image.format() != QImage::Format_RGB888)
-        return nullptr;
-    scratch->clear();
-    const int rowBytes = image.width() * 3;
-    if (image.bytesPerLine() == rowBytes) return image.constBits();
+bool imageView(QImage* image, aicore_image_view* out) {
+    if (!image || !out || image->isNull()) return false;
 
-    scratch->resize(rowBytes * image.height());
-    for (int y = 0; y < image.height(); ++y) {
-        std::memcpy(scratch->data() + y * rowBytes, image.constScanLine(y),
-                    static_cast<size_t>(rowBytes));
+    aicore_image_format format = AICORE_IMAGE_RGBA8;
+    switch (image->format()) {
+        case QImage::Format_RGB888:
+            format = AICORE_IMAGE_RGB8;
+            break;
+        case QImage::Format_RGBA8888:
+            format = AICORE_IMAGE_RGBA8;
+            break;
+        case QImage::Format_Grayscale8:
+            format = AICORE_IMAGE_GRAY8;
+            break;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+        case QImage::Format_BGR888:
+            format = AICORE_IMAGE_BGR8;
+            break;
+#endif
+#if Q_BYTE_ORDER == Q_LITTLE_ENDIAN
+        case QImage::Format_RGB32:
+        case QImage::Format_ARGB32:
+            format = AICORE_IMAGE_BGRA8;
+            break;
+#endif
+        default:
+            *image = image->convertToFormat(QImage::Format_RGBA8888);
+            if (image->isNull()) return false;
+            format = AICORE_IMAGE_RGBA8;
+            break;
     }
-    return reinterpret_cast<const uchar*>(scratch->constData());
+    *out = aicore_image_view{
+            image->constBits(), image->width(), image->height(),
+            static_cast<size_t>(image->bytesPerLine()), format};
+    return true;
 }
 
 bool parseInfoJson(const QByteArray& json, RMBGRunResult* out) {

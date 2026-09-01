@@ -106,6 +106,7 @@ public:
     // device path uploads into a backend buffer). Returns false on failure.
     bool realize_weights(ggml_backend_t backend);
     bool weights_realized() const { return weights_buf_ != nullptr; }
+    bool owns_tensor(const ggml_tensor* tensor) const;
 private:
     FaceConfig cfg_;
     gguf_context* gguf_ = nullptr;

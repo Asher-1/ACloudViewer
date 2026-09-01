@@ -390,8 +390,8 @@ void RFDetrLiveWidget::onInferComplete(RFDetrLiveInferWorker::Result result) {
     // Show BOTH latencies so the user can distinguish a slow model from a
     // congested pipeline:
     //   infer = MODEL latency (preprocess + forward + postprocess inside
-    //          aicore_rfdetr_detect_rgb_json) — the same scope the upstream
-    //          rf-detr.cpp benchmark measures.
+    //          typed aicore_rfdetr_detect_image API) — the same scope the
+    //          upstream rf-detr.cpp benchmark measures.
     //   e2e  = submit→complete wall clock — includes queued-connection hops
     //          (GUI→worker→GUI) and GUI-thread congestion. A large gap
     //          between infer and e2e signals pipeline stalls, not model

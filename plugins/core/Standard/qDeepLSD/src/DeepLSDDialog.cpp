@@ -17,6 +17,7 @@
 #include <QHBoxLayout>
 #include <QMessageBox>
 #include <QSettings>
+#include <QStandardPaths>
 #include <QVBoxLayout>
 
 #include "aicore/backend_capi.h"
@@ -80,8 +81,9 @@ QString DeepLSDDialog::modelCacheDir() {
         aicore_deeplsd_free_buffer(dir);
         return result;
     }
-    return QDir::homePath() +
-           QStringLiteral("/cloudViewer_data/extract/deeplsd_models");
+    return QDir(QStandardPaths::writableLocation(
+                        QStandardPaths::AppDataLocation))
+            .filePath(QStringLiteral("extract/deeplsd_models"));
 }
 
 DeepLSDDialog::DeepLSDDialog(QWidget* parent) : QDialog(parent) {

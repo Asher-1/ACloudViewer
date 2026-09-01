@@ -6,9 +6,9 @@ Run **Ultralytics YOLO GGUF models** (YOLOv8 + YOLO26) in ACloudViewer (C++ / [g
 
 ```
 GUI (YOLO dialog) ──► libAICore (yolo_capi) ──► GGML YOLO
-                         ├── detect_rgb_json → detections JSON (class/score/box)
-                         ├── seg_rgb        → typed detections + instance masks
-                         └── depth_rgb      → metric depth map in meters + stats JSON
+                         ├── *_image(aicore_image_view) → borrowed stride-aware input
+                         ├── detect/segment/pose/OBB   → typed records and masks
+                         └── semantic/classify/depth   → typed maps, scores or depth
 ```
 
 | Component | Path |
@@ -16,7 +16,12 @@ GUI (YOLO dialog) ──► libAICore (yolo_capi) ──► GGML YOLO
 | Inference library | `core/AICore/` → `libAICore.so` |
 | GGML YOLO engine | `core/AICore/src/tasks/yolo/` (port of ultralytics-ggml) |
 | Plugin | `plugins/core/Standard/qYOLO/` |
-| ggml patch | none required |
+| ggml patch | `3rdparty/ggml/patches/yolo_merged/` (registered by the central manifest) |
+
+The plugin passes the native Qt image storage as a borrowed, stride-aware
+`aicore_image_view`; it does not repack every frame into a tightly packed RGB
+scratch buffer. JSON and path entry points remain compatibility APIs and are
+not used by the interactive inference hot path.
 
 ## Enable and build
 
@@ -140,11 +145,13 @@ Qualitatively:
 - GPU backends (CUDA / Vulkan) are roughly an order of magnitude faster than CPU, as with the other AICore tasks.
 - f16 is the recommended quantization: half the f32 download with no measured recall loss.
 
-Benchmark source: [ultralytics-ggml](https://github.com/Asher-1/ultralytics-ggml)
-(commit `8c356b7a`). The integrated parity harness lives in
-`core/AICore/tests/yolo/` (`run_upstream_parity.sh` + `bench_compare.py`);
-CUDA graph rows currently exceed the +5% gate — see
-[`core/AICore/docs/cuda_graph_parity.md`](../../../core/AICore/docs/cuda_graph_parity.md).
+Benchmark source: [ultralytics-ggml](https://github.com/Asher-1/ultralytics-ggml).
+The integrated parity and performance harness lives in
+`core/AICore/tests/yolo/`. Use `run_yolo_model_matrix.py` for model,
+quantization and backend coverage, and treat skipped asset rows as incomplete
+coverage rather than a pass. Current acceptance rules and controlled CUDA
+build comparison are documented in
+[`core/AICore/tests/TESTING.md`](../../../core/AICore/tests/TESTING.md).
 
 ### Live video latency — how to read the status line
 
@@ -152,9 +159,9 @@ The live tab's status line shows the **model latency** (preprocess + forward +
 postprocess) and the **backend-resolved device**, e.g. `Objects: 3 | infer 34 ms
 (CUDA0)` for detection, `Objects: 5 | infer 41 ms (Vulkan0)` for segmentation,
 or `Depth 1920×1080 | 0.4–12.3 m | infer 41 ms (Vulkan0)` for depth. The number
-does **not** include video decode, color conversion or cross-thread hops;
-overlay updates may trail the display by 1–2 frames by design (busy frames are
-skipped, not queued).
+does **not** include video decode, Qt signal delivery or rendering. The input
+view itself is borrowed with its row stride, so the plugin does not perform a
+mandatory full-frame packing copy before each AICore call.
 
 ### YOLOE prompt modes — text, visual (SAVPE), prompt-free
 
@@ -166,7 +173,9 @@ official ultralytics YOLOE prompting modes:
   automatically). Short category nouns score far better than descriptive
   phrases.
 - **Visual prompt** (SAVPE): switch the prompt mode to *Visual prompt* and
-  draw one example box per target on the preview. The checkpoint's
+  draw one example box per target: the mode swaps a full-width drawing
+  canvas in below the config row (it re-fits with the dialog), replacing
+  the small preview thumbnail. The checkpoint's
   SAVPE encoder derives one class embedding per box; results are labeled
   `object0`, `object1`, … (official semantics: example boxes group targets,
   they do not carry names). Requires a non-`-pf` YOLOE GGUF converted with

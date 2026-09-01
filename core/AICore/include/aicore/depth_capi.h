@@ -16,6 +16,8 @@
 #include <stddef.h>
 
 #include "aicore/export.h"
+#include "aicore/image_view.h"
+#include "aicore/pipeline_timing.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,7 +35,8 @@ typedef struct aicore_depth_options aicore_depth_options;
    packaged into result structs (aicore_depth_dense_result,
    aicore_depth_multiview_result, aicore_depth_multiview_data) instead of
    flat out-parameter lists; buffers are released with
-   aicore_depth_free_buffer. */
+   aicore_depth_free_buffer. 8: in-memory image-view entry points cover depth,
+   reconstruction, GLB export and COLMAP export. */
 AICORE_CAPI int aicore_depth_abi_version(void);
 /* Options handle (opaque, heap-allocated, value semantics). All setters are
    no-ops on NULL and ignore NULL/invalid values, keeping whatever was set
@@ -86,6 +89,8 @@ AICORE_CAPI aicore_depth_ctx* aicore_depth_load_nested_opts(
         const aicore_depth_options* opts);
 /** Releases a context returned by aicore_depth_load*; safe on NULL. */
 AICORE_CAPI void aicore_depth_free(aicore_depth_ctx* ctx); /* safe on NULL */
+/** Reclaims inactive shared backend leases; safe and idempotent. */
+AICORE_CAPI void aicore_depth_shutdown(void);
 /** True only when a context has a loaded depth engine. */
 AICORE_CAPI int aicore_depth_is_ready(const aicore_depth_ctx* ctx);
 /* malloc'd JSON describing model config; free via aicore_depth_free_buffer. */
@@ -99,6 +104,14 @@ AICORE_CAPI const char* aicore_depth_last_error(aicore_depth_ctx* ctx);
    ctx is null. Pointer valid until aicore_depth_free(ctx). */
 AICORE_CAPI const char* aicore_depth_device_name(
         aicore_depth_ctx* ctx); /* owned by ctx, "" if none */
+AICORE_CAPI int aicore_depth_last_pipeline_timings(
+        const aicore_depth_ctx* ctx, aicore_pipeline_timings* out);
+/** In-memory RGB image entry point. The view is borrowed for the duration of
+ *  the call and may have a padded row stride. Results are returned in the
+ *  same dense struct as aicore_depth_depth_dense. */
+AICORE_CAPI int aicore_depth_depth_image(aicore_depth_ctx* ctx,
+                                         const aicore_image_view* image,
+                                         struct aicore_depth_dense_result* out);
 /* Dense per-pixel output for a single image (owned by the caller; release
    with aicore_depth_dense_result_free or aicore_depth_free_buffer).
      - DualDPT model (camera-pose capable): depth + conf are filled, sky = NULL,
@@ -184,6 +197,10 @@ AICORE_CAPI int aicore_depth_depth_pose_multi(
 AICORE_CAPI int aicore_depth_export_glb(aicore_depth_ctx* ctx,
                                         const char* image_path,
                                         const char* out_glb);
+/* In-memory equivalent of aicore_depth_export_glb. */
+AICORE_CAPI int aicore_depth_export_glb_image(aicore_depth_ctx* ctx,
+                                              const aicore_image_view* image,
+                                              const char* out_glb);
 /* Single-image 3D export to a COLMAP sparse model (cameras/images/points3D) in
    directory out_dir. binary != 0 => .bin (default); 0 => .txt. Returns 0 ok, -1
    error. */
@@ -191,6 +208,13 @@ AICORE_CAPI int aicore_depth_export_colmap(aicore_depth_ctx* ctx,
                                            const char* image_path,
                                            const char* out_dir,
                                            int binary);
+/* In-memory equivalent of aicore_depth_export_colmap. image_name is stored in
+   COLMAP's images table and may be NULL or empty to use "image.png". */
+AICORE_CAPI int aicore_depth_export_colmap_image(aicore_depth_ctx* ctx,
+                                                 const aicore_image_view* image,
+                                                 const char* image_name,
+                                                 const char* out_dir,
+                                                 int binary);
 /* Multi-view COLMAP sparse export: multiview depth+pose, back-project to
    points3D. image_paths has n_images entries; writes under out_dir. Returns 0
    ok, -1 error. */
@@ -271,6 +295,18 @@ AICORE_CAPI int aicore_depth_reconstruct_path(const char* gguf_path,
                                               float** out_scales,
                                               float** out_harmonics,
                                               float** out_opacities);
+/* In-memory reconstruction using an already loaded context. The image is
+   borrowed only for the duration of the call; output ownership matches
+   aicore_depth_reconstruct_path. */
+AICORE_CAPI int aicore_depth_reconstruct_image(aicore_depth_ctx* ctx,
+                                               const aicore_image_view* image,
+                                               int* out_h,
+                                               int* out_w,
+                                               int* out_n,
+                                               float** out_means,
+                                               float** out_scales,
+                                               float** out_harmonics,
+                                               float** out_opacities);
 /* Quantize GGUF matmul weights to type (f16/q8_0/q6_k/q5_k/q4_k). Returns 0
  * ok, -1 error. */
 AICORE_CAPI int aicore_depth_quantize_gguf(const char* in_gguf,

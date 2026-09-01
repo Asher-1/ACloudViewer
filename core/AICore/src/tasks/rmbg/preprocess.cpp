@@ -124,18 +124,69 @@ bool decode_preprocess_rgb(const uint8_t *rgb,
                            int &height,
                            std::vector<float> &input_nchw,
                            std::string &err) {
-    if (!rgb || rgb_w <= 0 || rgb_h <= 0 || size <= 0) {
-        err = "invalid rgb input";
+    const aicore_image_view image{
+            rgb, rgb_w, rgb_h, rgb_w > 0 ? static_cast<size_t>(rgb_w) * 3 : 0,
+            AICORE_IMAGE_RGB8};
+    return decode_preprocess_view(image, size, mean, std, original_rgba, width,
+                                  height, input_nchw, err);
+}
+
+bool decode_preprocess_view(const aicore_image_view &image,
+                            int size,
+                            const float mean[3],
+                            const float std[3],
+                            std::vector<uint8_t> &original_rgba,
+                            int &width,
+                            int &height,
+                            std::vector<float> &input_nchw,
+                            std::string &err) {
+    int channels = 0;
+    switch (image.format) {
+        case AICORE_IMAGE_RGB8:
+        case AICORE_IMAGE_BGR8:
+            channels = 3;
+            break;
+        case AICORE_IMAGE_RGBA8:
+        case AICORE_IMAGE_BGRA8:
+            channels = 4;
+            break;
+        case AICORE_IMAGE_GRAY8:
+            channels = 1;
+            break;
+        default:
+            err = "unsupported image format";
+            return false;
+    }
+    if (!image.data || image.width <= 0 || image.height <= 0 || size <= 0 ||
+        image.row_stride_bytes < static_cast<size_t>(image.width) * channels) {
+        err = "invalid image view";
         return false;
     }
-    width = rgb_w;
-    height = rgb_h;
-    original_rgba.resize((size_t)rgb_w * rgb_h * 4);
-    for (size_t i = 0; i < (size_t)rgb_w * rgb_h; ++i) {
-        original_rgba[i * 4 + 0] = rgb[i * 3 + 0];
-        original_rgba[i * 4 + 1] = rgb[i * 3 + 1];
-        original_rgba[i * 4 + 2] = rgb[i * 3 + 2];
-        original_rgba[i * 4 + 3] = 255;
+    width = image.width;
+    height = image.height;
+    const bool bgr = image.format == AICORE_IMAGE_BGR8 ||
+                     image.format == AICORE_IMAGE_BGRA8;
+    auto channel = [&](int x, int y, int c) -> uint8_t {
+        const uint8_t *pixel = image.data +
+                               static_cast<size_t>(y) * image.row_stride_bytes +
+                               static_cast<size_t>(x) * channels;
+        if (channels == 1) return pixel[0];
+        return pixel[bgr && c != 1 ? 2 - c : c];
+    };
+    original_rgba.resize(static_cast<size_t>(width) * height * 4);
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            const size_t dst = (static_cast<size_t>(y) * width + x) * 4;
+            original_rgba[dst + 0] = channel(x, y, 0);
+            original_rgba[dst + 1] = channel(x, y, 1);
+            original_rgba[dst + 2] = channel(x, y, 2);
+            original_rgba[dst + 3] =
+                    channels == 4
+                            ? image.data[static_cast<size_t>(y) *
+                                                 image.row_stride_bytes +
+                                         static_cast<size_t>(x) * channels + 3]
+                            : 255;
+        }
     }
     input_nchw.resize((size_t)3 * size * size);
     for (int y = 0; y < size; ++y) {
@@ -143,10 +194,9 @@ bool decode_preprocess_rgb(const uint8_t *rgb,
             for (int c = 0; c < 3; ++c) {
                 const float interpolated = resize_bilinear(
                         [&](int px, int py) {
-                            return rgb[((size_t)py * rgb_w + px) * 3 + c] /
-                                   255.f;
+                            return channel(px, py, c) / 255.f;
                         },
-                        rgb_w, rgb_h, size, size, x, y);
+                        width, height, size, size, x, y);
                 const float value =
                         std::lround(std::clamp(interpolated, 0.f, 1.f) *
                                     255.f) /

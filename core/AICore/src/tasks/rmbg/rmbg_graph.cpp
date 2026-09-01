@@ -303,21 +303,15 @@ struct GraphBuilder {
                         int pad) {
         ggml_tensor *w = weight(prefix + "weight");
         if (!w) return nullptr;
-        const int64_t ow = (input->ne[0] + 2 * pad - w->ne[0]) / stride + 1;
-        const int64_t oh = (input->ne[1] + 2 * pad - w->ne[1]) / stride + 1;
-        ggml_tensor *args[] = {w, input};
-        ggml_tensor *out = ggml_custom_4d(ctx, GGML_TYPE_F32, ow, oh, w->ne[3],
-                                          input->ne[3], args, 2, nullptr,
-                                          GGML_N_TASKS_MAX, nullptr);
         char custom_name[GGML_MAX_NAME];
-        std::snprintf(custom_name, sizeof(custom_name), "rmbg_conv2d_s%d_p%d",
-                      stride, pad);
-        ggml_set_name(out, custom_name);
-        if (use_cuda_custom && ggml_backend_supports_op(backend, out)) {
-            return weights.get_f32((prefix + "bias").c_str())
-                           ? add_bias_spatial(out, prefix + "bias")
-                           : out;
-        }
+        ggml_tensor *out = nullptr;
+        // CUDA: no custom-op dispatch anymore (the cuDNN conv was removed from
+        // 3rdparty/ggml/patches). ggml_conv_2d_direct is NOT used here either:
+        // its generic layout contract does not match the RMBG graph (verified
+        // numerically broken during the cuDNN-removal A/B). CUDA conv runs the
+        // im2col decomposition below: F16 im2col + F16 weights on the fast
+        // profile (F16 matrix-unit GEMM, mirrors the Metal branch), pure F32
+        // under strict_math.
         if (use_vulkan_direct_conv) {
             out = ggml_conv_2d_direct(ctx, w, input, stride, stride, pad, pad,
                                       1, 1);
@@ -336,6 +330,33 @@ struct GraphBuilder {
         // several times slower for the short-K conv GEMMs of this model.
         // The F16 im2col also halves the col buffer write bandwidth.
         if (use_metal) {
+            ggml_tensor *w16 = weight_f16(prefix + "weight");
+            if (w16) {
+                ggml_tensor *col16 =
+                        ggml_im2col(ctx, w16, input, stride, stride, pad, pad,
+                                    1, 1, true, GGML_TYPE_F16);
+                out = ggml_mul_mat(
+                        ctx,
+                        ggml_reshape_2d(
+                                ctx, col16, col16->ne[0],
+                                col16->ne[1] * col16->ne[2] * col16->ne[3]),
+                        ggml_reshape_2d(ctx, w16,
+                                        w16->ne[0] * w16->ne[1] * w16->ne[2],
+                                        w16->ne[3]));
+                ggml_mul_mat_set_prec(out, GGML_PREC_F32);
+                out = ggml_reshape_4d(ctx, out, col16->ne[1], col16->ne[2],
+                                      col16->ne[3], w16->ne[3]);
+                out = ggml_cont(ctx, ggml_permute(ctx, out, 0, 1, 3, 2));
+                return weights.get_f32((prefix + "bias").c_str())
+                               ? add_bias_spatial(out, prefix + "bias")
+                               : out;
+            }
+        }
+        // CUDA: F16 im2col + F16 weights keep the conv GEMM on the F16
+        // matrix-unit path (same rationale as the Metal branch above; the
+        // GeForce F16 rate is twice the TF32 rate). Default on the fast
+        // profile; strict_math keeps the pure-F32 im2col decomposition.
+        if (use_cuda_custom && !opts.strict_math) {
             ggml_tensor *w16 = weight_f16(prefix + "weight");
             if (w16) {
                 ggml_tensor *col16 =

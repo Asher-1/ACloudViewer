@@ -69,6 +69,11 @@ struct YOLOTaskPanel {
     QComboBox* promptModeCombo = nullptr;
     YOLOVisualPromptLabel* vpLabel = nullptr;
     QPushButton* vpClearBtn = nullptr;
+    // Full-width canvas block below the config row (canvas + its Clear
+    // boxes button), swapped in for the preview thumbnail while the YOLOE
+    // "Visual prompt" mode is active: the 96 px preview slot is too small
+    // for precise example boxes on full-resolution photos.
+    QWidget* vpCanvasWrap = nullptr;
     // Set while the multilingual bridge tower is the panel's active text
     // encoder; drives the symmetric confidence restore when the user
     // switches back to a native tower.
@@ -81,6 +86,9 @@ struct YOLOTaskPanel {
                                    // multilingual bridge tower is selected
     QLineEdit* imagePath = nullptr;
     ecvClickableImageLabel* previewLabel = nullptr;
+    // Hint under the preview; text flips with the YOLOE prompt mode
+    // ("Tap to preview" vs the visual-canvas enlarge hint).
+    QLabel* previewHint = nullptr;
     QPushButton* runBtn = nullptr;
     QPushButton* cancelBtn = nullptr;
     QPushButton* testDataBtn = nullptr;

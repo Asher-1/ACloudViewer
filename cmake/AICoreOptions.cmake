@@ -87,7 +87,7 @@ OFF (default): performance-parity with upstream ggml/ultralytics-ggml builds\
 (cuBLAS stays linked, so libggml-cuda.so has a libcublas DT_NEEDED — driver-only\
 deployments must also set AICore_BUNDLE_CUDA_RUNTIME=ON).\
 ON: self-contained libggml-cuda.so (no libcudart/libcublas DT_NEEDED) at the\
-cost of slower small conv/matmul kernels (see core/AICore/docs/cuda_graph_parity.md)."
+cost of slower small conv/matmul kernels (see core/AICore/tests/TESTING.md)."
     OFF)
 set(AICore_OPENCL_TARGET_VERSION "200" CACHE STRING
     "OpenCL host API target for AICore (120, 200, or 300)")

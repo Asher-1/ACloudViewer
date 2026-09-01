@@ -101,11 +101,17 @@ std::vector<OBBDetection> postprocess_obb(
         const std::vector<float>& raw, int no, int na, const ModelMeta& meta,
         const float* anchors, const float* strides, const PostprocConfig& cfg);
 
-/* Semantic: per-pixel argmax class map [w * h] uint8 on the canvas/8 grid.
- * nc must be <= 255 (Cityscapes 19; uint8 is the shipped GGUF contract).
+/* Restore semantic logits to the source image before argmax, matching the
+ * Ultralytics predictor contract:
+ *   grid logits -> bilinear canvas -> remove letterbox -> bilinear source
+ *   -> argmax.
+ *
+ * Only one canvas-sized class plane and one source-sized score plane are
+ * materialized, rather than an nc * source_w * source_h tensor.
  */
-std::vector<uint8_t> semantic_argmax(const std::vector<float>& logits, int nc,
-                                     int w, int h);
+std::vector<uint8_t> semantic_restore_logits(
+        const std::vector<float>& logits, int nc, int grid_w, int grid_h,
+        int canvas_w, int canvas_h, int source_w, int source_h);
 
 /* Classify: softmax probabilities [nc] from the head logits. */
 std::vector<float> classify_softmax(const std::vector<float>& logits);

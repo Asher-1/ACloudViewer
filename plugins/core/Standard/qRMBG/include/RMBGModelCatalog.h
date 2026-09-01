@@ -14,6 +14,8 @@
 #include <QVector>
 #include <cstdint>
 
+#include "aicore/image_view.h"
+
 /** Result envelope of one RMBG-2.0 background removal. */
 struct RMBGRunResult {
     QString imagePath;
@@ -66,9 +68,10 @@ QString modelCacheDir();
  *  note that is already part of displayName. */
 QString modelDisplayLabel(const RMBGModelEntry& entry);
 
-/** Return tightly packed RGB888 pixels for AICore's stride-less C API.
- *  scratch owns the returned bytes only when QImage row padding is present. */
-const uchar* packedRgb888Data(const QImage& image, QByteArray* scratch);
+/** Build a borrowed stride-aware AICore view. Unsupported Qt formats are
+ *  converted once in-place to RGBA8888; common camera formats stay zero-copy.
+ */
+bool imageView(QImage* image, aicore_image_view* out);
 
 /** Parse the AICore RMBG info JSON into a run result. Returns true on
  *  success. */

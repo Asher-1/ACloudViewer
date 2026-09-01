@@ -20,6 +20,8 @@
 #include <stdint.h>
 
 #include "aicore/export.h"
+#include "aicore/image_view.h"
+#include "aicore/pipeline_timing.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -124,6 +126,9 @@ AICORE_CAPI int aicore_rmbg_set_progress_callback(aicore_rmbg_ctx* ctx,
 /** Copy the most recent successful request timings into out_timings. */
 AICORE_CAPI int aicore_rmbg_last_timings(const aicore_rmbg_ctx* ctx,
                                          aicore_rmbg_timings* out_timings);
+/** Common timing contract adapter for the most recent inference. */
+AICORE_CAPI int aicore_rmbg_last_pipeline_timings(
+        const aicore_rmbg_ctx* ctx, aicore_pipeline_timings* out_timings);
 
 /** Releases any buffer returned by an aicore_rmbg_* function (string, PNG
  *  bytes, RGBA or alpha matte; unified entry point). Safe on NULL. */
@@ -146,6 +151,15 @@ AICORE_CAPI int aicore_rmbg_remove_background_rgb(aicore_rmbg_ctx* ctx,
                                                   uint8_t** out_png,
                                                   int* out_len);
 
+/** Stride-aware in-memory variant of aicore_rmbg_remove_background_rgb.
+ *  The borrowed image remains owned by the caller and is only read during
+ *  this call. */
+AICORE_CAPI int aicore_rmbg_remove_background_image_view(
+        aicore_rmbg_ctx* ctx,
+        const aicore_image_view* image,
+        uint8_t** out_png,
+        int* out_len);
+
 /** Remove background from an in-memory RGB buffer and return the raw RGBA
  *  composite (HWC, 4 bytes/pixel, alpha blended, at the ORIGINAL resolution)
  *  instead of PNG bytes — the in-memory consumer path (GUI preview), which
@@ -161,6 +175,15 @@ AICORE_CAPI int aicore_rmbg_remove_background_rgba(aicore_rmbg_ctx* ctx,
                                                    int32_t* out_height,
                                                    int* out_len);
 
+/** Stride-aware raw-RGBA output variant. */
+AICORE_CAPI int aicore_rmbg_remove_background_rgba_image_view(
+        aicore_rmbg_ctx* ctx,
+        const aicore_image_view* image,
+        uint8_t** out_rgba,
+        int32_t* out_width,
+        int32_t* out_height,
+        int* out_len);
+
 /** Raw 8-bit alpha matte (0 = background, 255 = foreground) at the ORIGINAL
  *  image resolution, row-major. out_alpha is allocated by the callee and must
  *  be released with aicore_rmbg_free_buffer. Returns 0 on success. This is the
@@ -172,6 +195,13 @@ AICORE_CAPI int aicore_rmbg_alpha_mat_rgb(aicore_rmbg_ctx* ctx,
                                           uint8_t** out_alpha,
                                           int32_t* out_width,
                                           int32_t* out_height);
+
+/** Stride-aware raw alpha-matte variant. */
+AICORE_CAPI int aicore_rmbg_alpha_mat_image_view(aicore_rmbg_ctx* ctx,
+                                                 const aicore_image_view* image,
+                                                 uint8_t** out_alpha,
+                                                 int32_t* out_width,
+                                                 int32_t* out_height);
 
 /** Returns a JSON summary of the loaded model. Caller frees with
  *  aicore_rmbg_free_buffer. */

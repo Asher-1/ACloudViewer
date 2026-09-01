@@ -19,6 +19,7 @@
 #include <stdint.h>
 
 #include "aicore/export.h"
+#include "aicore/pipeline_timing.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -90,6 +91,8 @@ AICORE_CAPI aicore_lightglue_ctx* aicore_lightglue_load_opts(
 /** Releases a context returned by aicore_lightglue_load_opts; safe on
  *  NULL. */
 AICORE_CAPI void aicore_lightglue_free(aicore_lightglue_ctx* ctx);
+/** Reclaims inactive shared backend leases; safe and idempotent. */
+AICORE_CAPI void aicore_lightglue_shutdown(void);
 /** True only after a context owns a successfully initialized matcher. */
 AICORE_CAPI int aicore_lightglue_is_ready(const aicore_lightglue_ctx* ctx);
 /** Returns the last error message of the context (empty when none). */
@@ -114,6 +117,8 @@ AICORE_CAPI int aicore_lightglue_run_match(
         const aicore_lightglue_features* image2,
         aicore_lightglue_match** out_matches,
         int32_t* n_matches);
+AICORE_CAPI int aicore_lightglue_last_pipeline_timings(
+        const aicore_lightglue_ctx* ctx, aicore_pipeline_timings* out);
 
 /** Releases a matches array returned by aicore_lightglue_run_match. */
 AICORE_CAPI void aicore_lightglue_free_matches(aicore_lightglue_match* matches);

@@ -14,6 +14,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QTemporaryDir>
+#include <algorithm>
 
 #include "TrellisModelCatalog.h"
 #include "ecvAssetIntegrity.h"
@@ -94,9 +95,9 @@ TEST(TrellisCatalog, ResolvePresetFilesF32Chain) {
     QTemporaryDir tmp;
     const QStringList paths = TrellisHelpers::resolvePresetFiles(
             presets[1], tmp.path(), QStringLiteral("f32"));
-    // f32 (exact) chain: the chaotic chain upgrades to full-f32 weights;
-    // shape_enc / tex_dec / the texture flows stay f16 (no f32 texture
-    // GGUFs — texture noise affects appearance, not the voxel set).
+    // f32 exact chain: the chaotic chain upgrades to published f32 weights;
+    // shape_enc / tex_dec / texture flows remain f16 because no f32 texture
+    // GGUFs are published.
     ASSERT_EQ(paths.size(), 10);
     EXPECT_TRUE(paths[0].endsWith(QStringLiteral("dino_f32.gguf")));
     EXPECT_TRUE(paths[1].endsWith(QStringLiteral("ss_flow_f32.gguf")));
@@ -132,6 +133,11 @@ TEST(TrellisCatalog, HfMirror) {
     EXPECT_EQ(TrellisHelpers::hfDownloadUrl("ss_flow_f16.gguf"),
               QStringLiteral("https://huggingface.co/Asher-1/Trellis2-models/"
                              "resolve/main/ss_flow_f16.gguf"));
+    ASSERT_TRUE(TrellisHelpers::hfModelInfo("ss_flow_f32.gguf", &info));
+    EXPECT_EQ(info.sizeBytes, 5168762720LL);
+    EXPECT_EQ(info.sha256,
+              QStringLiteral("bc2e98e6ee92f5516c04c6e868e0da1c64d388c2c107fb6"
+                             "aa79b07e4039c5f07"));
     // Unknown files are not on the mirror.
     EXPECT_FALSE(TrellisHelpers::hfModelInfo("nope.gguf", nullptr));
     EXPECT_TRUE(TrellisHelpers::hfDownloadUrl("nope.gguf").isEmpty());
@@ -158,6 +164,25 @@ TEST(TrellisCatalog, HfMirror) {
     EXPECT_TRUE(TrellisHelpers::hfModelInfo("ss_dec_q8.gguf", nullptr));
     EXPECT_TRUE(TrellisHelpers::hfModelInfo("rmbg_f16.gguf", nullptr));
     EXPECT_TRUE(TrellisHelpers::hfModelInfo("rmbg_q8.gguf", nullptr));
+    const QVector<TrellisModelEntry> all = TrellisHelpers::catalogModels();
+    EXPECT_EQ(all.size(), 26);
+    EXPECT_TRUE(std::any_of(
+            all.cbegin(), all.cend(), [](const TrellisModelEntry& e) {
+                return e.filename == QStringLiteral("shape_dec_f32.gguf") &&
+                       e.sizeBytes == 1896943680LL && e.sha256.size() == 64;
+            }));
+}
+
+TEST(TrellisCatalog, RmbgUsesSharedTaskCache) {
+    const QString trellisCache = TrellisHelpers::modelCacheDir();
+    const QString rmbgCache = TrellisHelpers::rmbgModelCacheDir();
+    EXPECT_TRUE(trellisCache.endsWith(QStringLiteral("trellis_models")));
+    EXPECT_TRUE(rmbgCache.endsWith(QStringLiteral("rmbg_models")));
+    EXPECT_NE(trellisCache, rmbgCache);
+    EXPECT_EQ(TrellisHelpers::modelCacheDirFor(QStringLiteral("rmbg_f16.gguf")),
+              rmbgCache);
+    EXPECT_EQ(TrellisHelpers::modelCacheDirFor(QStringLiteral("dino_f16.gguf")),
+              trellisCache);
 }
 
 TEST(TrellisCatalog, DeployedFileValidation) {

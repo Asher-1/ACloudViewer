@@ -67,8 +67,9 @@ QString facedetectModelCacheDir() {
         aicore_facedetect_free_buffer(dir);
         return result;
     }
-    return QDir::homePath() +
-           QStringLiteral("/cloudViewer_data/extract/facedetect_models");
+    return QDir(QStandardPaths::writableLocation(
+                        QStandardPaths::AppDataLocation))
+            .filePath(QStringLiteral("extract/facedetect_models"));
 }
 
 QString facedetectCachePath(const QString& filename) {
@@ -951,15 +952,14 @@ bool FaceCaptureWidget::loadCascade() {
 #endif
 
     const QStringList systemPaths = {
-            QCoreApplication::applicationDirPath() +
-                    QStringLiteral("/../share/opencv4/haarcascades/"
-                                   "haarcascade_frontalface_alt2.xml"),
-            QStringLiteral("/usr/share/opencv4/haarcascades/"
-                           "haarcascade_frontalface_alt2.xml"),
-            QStringLiteral("/usr/local/share/opencv4/haarcascades/"
-                           "haarcascade_frontalface_alt2.xml"),
-            QStringLiteral("/opt/homebrew/share/opencv4/haarcascades/"
-                           "haarcascade_frontalface_alt2.xml"),
+            QDir(QCoreApplication::applicationDirPath())
+                    .absoluteFilePath(
+                            QStringLiteral("../share/opencv4/haarcascades/"
+                                           "haarcascade_frontalface_alt2.xml")),
+            QStandardPaths::locate(
+                    QStandardPaths::GenericDataLocation,
+                    QStringLiteral("opencv4/haarcascades/"
+                                   "haarcascade_frontalface_alt2.xml")),
     };
     for (const QString& p : systemPaths) {
         if (QFile::exists(p) && m_faceCascade.load(p.toStdString())) {

@@ -24,6 +24,8 @@
 #include <stdint.h>
 
 #include "aicore/export.h"
+#include "aicore/image_view.h"
+#include "aicore/pipeline_timing.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -167,6 +169,15 @@ AICORE_CAPI char* aicore_yolo_detect_rgb_json(aicore_yolo_ctx* ctx,
                                               const uint8_t* rgb,
                                               int32_t width,
                                               int32_t height);
+/** Typed hot-path detection. Populates a context-owned result store without
+ * allocating a JSON envelope. */
+AICORE_CAPI int aicore_yolo_detect_rgb(aicore_yolo_ctx* ctx,
+                                       const uint8_t* rgb,
+                                       int32_t width,
+                                       int32_t height);
+/** Stride-aware equivalent; accepts RGB/RGBA/GRAY/BGR/BGRA borrowed views. */
+AICORE_CAPI int aicore_yolo_detect_image(aicore_yolo_ctx* ctx,
+                                         const aicore_image_view* image);
 /** Update detection thresholds at runtime without rebuilding the context.
  *  Out-of-range values keep the previous value (0 for top_k = model
  *  max_det). */
@@ -201,6 +212,29 @@ AICORE_CAPI float* aicore_yolo_depth_rgb(aicore_yolo_ctx* ctx,
                                          int32_t height,
                                          int32_t* out_width,
                                          int32_t* out_height);
+/** Stride-aware depth entry point; accepts RGB/RGBA/GRAY/BGR/BGRA views. */
+AICORE_CAPI float* aicore_yolo_depth_image(aicore_yolo_ctx* ctx,
+                                           const aicore_image_view* image,
+                                           int32_t* out_width,
+                                           int32_t* out_height);
+
+/** Typed statistics from the most recent successful depth call. */
+typedef struct aicore_yolo_depth_stats {
+    int32_t image_width;
+    int32_t image_height;
+    int32_t depth_width;
+    int32_t depth_height;
+    float min_depth;
+    float max_depth;
+    float mean_depth;
+    float p95_depth;
+    uint64_t valid_pixels;
+} aicore_yolo_depth_stats;
+
+/** Copies the latest depth statistics. Returns 0 on success, -1 before the
+ * first successful depth inference or for invalid arguments. */
+AICORE_CAPI int aicore_yolo_last_depth_stats(
+        const aicore_yolo_ctx* ctx, aicore_yolo_depth_stats* out_stats);
 
 /** Statistics of the most recent aicore_yolo_depth_* call:
  *  {"model": "..", "task": "depth", "image_size": N,
@@ -264,6 +298,9 @@ typedef struct aicore_yolo_timings {
  *  Returns 0 on success, -1 when ctx has never run an inference. */
 AICORE_CAPI int aicore_yolo_last_timings(const aicore_yolo_ctx* ctx,
                                          aicore_yolo_timings* out_timings);
+/** Common timing contract adapter for the most recent inference. */
+AICORE_CAPI int aicore_yolo_last_pipeline_timings(
+        const aicore_yolo_ctx* ctx, aicore_pipeline_timings* out_timings);
 
 /** Published GGUF catalog (cloudViewer_downloads yolo_gguf_models release). */
 typedef struct aicore_yolo_model_entry {
@@ -342,6 +379,9 @@ typedef struct aicore_yolo_detection {
     float score;
     int32_t class_id;
 } aicore_yolo_detection;
+AICORE_CAPI int aicore_yolo_detection_count(const aicore_yolo_ctx* ctx);
+AICORE_CAPI aicore_yolo_detection
+aicore_yolo_detection_at(const aicore_yolo_ctx* ctx, int index);
 
 /** Non-owning view of a plane (segment mask, depth). Mask data is a
  *  full-size source-image bitmap (width x height, 1 byte per pixel:
@@ -363,6 +403,9 @@ AICORE_CAPI aicore_yolo_segment_result* aicore_yolo_seg_rgb(
         const uint8_t* rgb,
         int32_t width,
         int32_t height);
+/** Stride-aware equivalent; accepts RGB/RGBA/GRAY/BGR/BGRA borrowed views. */
+AICORE_CAPI aicore_yolo_segment_result* aicore_yolo_seg_image(
+        aicore_yolo_ctx* ctx, const aicore_image_view* image);
 
 /** Number of detections in the segment result. */
 AICORE_CAPI int aicore_yolo_seg_det_count(
@@ -406,6 +449,9 @@ AICORE_CAPI aicore_yolo_pose_result* aicore_yolo_pose_rgb(aicore_yolo_ctx* ctx,
                                                           const uint8_t* rgb,
                                                           int32_t width,
                                                           int32_t height);
+/** Stride-aware equivalent; accepts RGB/RGBA/GRAY/BGR/BGRA borrowed views. */
+AICORE_CAPI aicore_yolo_pose_result* aicore_yolo_pose_image(
+        aicore_yolo_ctx* ctx, const aicore_image_view* image);
 /** Number of pose detections. */
 AICORE_CAPI int aicore_yolo_pose_det_count(const aicore_yolo_pose_result* res);
 /** Get the i-th detection box (shallow copy). */
@@ -442,6 +488,9 @@ AICORE_CAPI aicore_yolo_obb_result* aicore_yolo_obb_rgb(aicore_yolo_ctx* ctx,
                                                         const uint8_t* rgb,
                                                         int32_t width,
                                                         int32_t height);
+/** Stride-aware equivalent; accepts RGB/RGBA/GRAY/BGR/BGRA borrowed views. */
+AICORE_CAPI aicore_yolo_obb_result* aicore_yolo_obb_image(
+        aicore_yolo_ctx* ctx, const aicore_image_view* image);
 /** Number of oriented boxes. */
 AICORE_CAPI int aicore_yolo_obb_count(const aicore_yolo_obb_result* res);
 /** Get the i-th oriented box (shallow copy). */
@@ -458,15 +507,18 @@ AICORE_CAPI void aicore_yolo_obb_result_free(aicore_yolo_obb_result* res);
 typedef struct aicore_yolo_semantic_result aicore_yolo_semantic_result;
 
 /** Run semantic segmentation on a borrowed RGB buffer. The class map is
- *  restored to the FULL source-image resolution (nearest upsample of the
- *  canvas/8 argmax grid), aligned 1:1 with the input pixels. Returns NULL
- *  on failure; inspect aicore_yolo_last_error(). Valid until
+ *  restored to the FULL source-image resolution by bilinearly resizing the
+ *  logits before argmax, aligned 1:1 with the input pixels. Returns NULL on
+ *  failure; inspect aicore_yolo_last_error(). Valid until
  *  aicore_yolo_semantic_result_free. */
 AICORE_CAPI aicore_yolo_semantic_result* aicore_yolo_semantic_rgb(
         aicore_yolo_ctx* ctx,
         const uint8_t* rgb,
         int32_t width,
         int32_t height);
+/** Stride-aware equivalent; accepts RGB/RGBA/GRAY/BGR/BGRA borrowed views. */
+AICORE_CAPI aicore_yolo_semantic_result* aicore_yolo_semantic_image(
+        aicore_yolo_ctx* ctx, const aicore_image_view* image);
 /** Class map of the most recent call (borrowed; width*height bytes, one
  *  class id per source pixel) — same layout as aicore_yolo_plane_view. */
 AICORE_CAPI aicore_yolo_plane_view
@@ -494,6 +546,9 @@ AICORE_CAPI aicore_yolo_classify_result* aicore_yolo_classify_rgb(
         const uint8_t* rgb,
         int32_t width,
         int32_t height);
+/** Stride-aware equivalent; accepts RGB/RGBA/GRAY/BGR/BGRA borrowed views. */
+AICORE_CAPI aicore_yolo_classify_result* aicore_yolo_classify_image(
+        aicore_yolo_ctx* ctx, const aicore_image_view* image);
 /** Number of classes (full softmax table; callers apply their own top-k). */
 AICORE_CAPI int aicore_yolo_classify_count(
         const aicore_yolo_classify_result* res);

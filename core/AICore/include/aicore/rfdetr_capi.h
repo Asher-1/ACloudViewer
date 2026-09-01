@@ -18,6 +18,8 @@
 #include <stdint.h>
 
 #include "aicore/export.h"
+#include "aicore/image_view.h"
+#include "aicore/pipeline_timing.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -94,10 +96,36 @@ AICORE_CAPI char* aicore_rfdetr_detect_rgb_json(aicore_rfdetr_ctx* ctx,
                                                 int32_t height,
                                                 float threshold,
                                                 uint32_t top_k);
+/** Typed hot-path detection. Populates the borrowed detection store without
+ *  allocating a JSON envelope; read records with aicore_rfdetr_detection_at. */
+AICORE_CAPI int aicore_rfdetr_detect_rgb(aicore_rfdetr_ctx* ctx,
+                                         const uint8_t* rgb,
+                                         int32_t width,
+                                         int32_t height,
+                                         float threshold,
+                                         uint32_t top_k);
+/** Stride-aware equivalent; accepts RGB/RGBA/GRAY/BGR/BGRA borrowed views. */
+AICORE_CAPI int aicore_rfdetr_detect_image(aicore_rfdetr_ctx* ctx,
+                                           const aicore_image_view* image,
+                                           float threshold,
+                                           uint32_t top_k);
 
 /** Number of detections from the most recent detect call. Returns 0 when no
  *  detect has run or the model has no segmentation head; -1 on invalid ctx. */
 AICORE_CAPI int aicore_rfdetr_detection_count(const aicore_rfdetr_ctx* ctx);
+/** Borrowed detection record from the most recent detect call. The returned
+ *  class_name pointer remains valid until the next detect or context free. */
+typedef struct aicore_rfdetr_detection {
+    uint32_t class_id;
+    const char* class_name;
+    float score;
+    float x1, y1, x2, y2;
+} aicore_rfdetr_detection;
+AICORE_CAPI int aicore_rfdetr_detection_at(const aicore_rfdetr_ctx* ctx,
+                                           int index,
+                                           aicore_rfdetr_detection* out);
+AICORE_CAPI int aicore_rfdetr_last_pipeline_timings(
+        const aicore_rfdetr_ctx* ctx, aicore_pipeline_timings* out);
 
 /** Raw thresholded binary mask (0/255, row-major) of detection \p index, at
  *  the MODEL resolution (e.g. 640x640 — masks are no longer upsampled to the

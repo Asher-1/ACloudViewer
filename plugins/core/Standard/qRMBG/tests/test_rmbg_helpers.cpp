@@ -67,7 +67,7 @@ TEST(RMBGHelpers, ModelDisplayLabelDoesNotDuplicateQuantNote) {
     EXPECT_EQ(RMBGHelpers::modelDisplayLabel(entry).count(entry.quantNote), 1);
 }
 
-TEST(RMBGHelpers, PackedRgb888RemovesRowPadding) {
+TEST(RMBGHelpers, ImageViewPreservesRowStride) {
     QImage image(3, 2, QImage::Format_RGB888);
     ASSERT_GT(image.bytesPerLine(), image.width() * 3);
     for (int y = 0; y < image.height(); ++y) {
@@ -77,16 +77,33 @@ TEST(RMBGHelpers, PackedRgb888RemovesRowPadding) {
         }
     }
 
-    QByteArray scratch;
-    const uchar* packed = RMBGHelpers::packedRgb888Data(image, &scratch);
-    ASSERT_NE(packed, nullptr);
-    ASSERT_EQ(scratch.size(), image.width() * image.height() * 3);
+    aicore_image_view view{};
+    ASSERT_TRUE(RMBGHelpers::imageView(&image, &view));
+    EXPECT_EQ(view.data, image.constBits());
+    EXPECT_EQ(view.width, image.width());
+    EXPECT_EQ(view.height, image.height());
+    EXPECT_EQ(view.row_stride_bytes, static_cast<size_t>(image.bytesPerLine()));
+    EXPECT_EQ(view.format, AICORE_IMAGE_RGB8);
     for (int y = 0; y < image.height(); ++y) {
         for (int x = 0; x < image.width() * 3; ++x) {
-            EXPECT_EQ(packed[y * image.width() * 3 + x],
+            EXPECT_EQ(view.data[static_cast<size_t>(y) * view.row_stride_bytes +
+                                x],
                       static_cast<uchar>(y * 32 + x));
         }
     }
+}
+
+TEST(RMBGHelpers, ImageViewMapsNativeArgb32) {
+    QImage image(2, 2, QImage::Format_ARGB32);
+    image.fill(qRgba(10, 20, 30, 255));
+    aicore_image_view view{};
+    ASSERT_TRUE(RMBGHelpers::imageView(&image, &view));
+#if Q_BYTE_ORDER == Q_LITTLE_ENDIAN
+    EXPECT_EQ(view.data, image.constBits());
+    EXPECT_EQ(view.format, AICORE_IMAGE_BGRA8);
+#else
+    EXPECT_EQ(view.format, AICORE_IMAGE_RGBA8);
+#endif
 }
 
 TEST(RMBGHelpers, AlphaStatsOpaque) {

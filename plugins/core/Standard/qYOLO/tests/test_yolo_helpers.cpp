@@ -446,28 +446,6 @@ TEST(YOLOHelpers, DrawObbProducesVisibleOverlay) {
     EXPECT_TRUE(lit);
 }
 
-TEST(YOLOHelpers, PackedRgb888RemovesRowPadding) {
-    QImage image(3, 2, QImage::Format_RGB888);
-    ASSERT_GT(image.bytesPerLine(), image.width() * 3);
-    for (int y = 0; y < image.height(); ++y) {
-        uchar* row = image.scanLine(y);
-        for (int x = 0; x < image.width() * 3; ++x) {
-            row[x] = static_cast<uchar>(y * 32 + x);
-        }
-    }
-
-    QByteArray scratch;
-    const uchar* packed = YOLOHelpers::packedRgb888Data(image, &scratch);
-    ASSERT_NE(packed, nullptr);
-    ASSERT_EQ(scratch.size(), image.width() * image.height() * 3);
-    for (int y = 0; y < image.height(); ++y) {
-        for (int x = 0; x < image.width() * 3; ++x) {
-            EXPECT_EQ(packed[y * image.width() * 3 + x],
-                      static_cast<uchar>(y * 32 + x));
-        }
-    }
-}
-
 TEST(YOLOHelpers, DrawDetectionsSmoke) {
     QImage img(320, 240, QImage::Format_ARGB32);
     img.fill(Qt::black);

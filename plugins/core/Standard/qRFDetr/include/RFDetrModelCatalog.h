@@ -95,10 +95,6 @@ QString modelCacheDir();
  *  note that is already part of displayName. */
 QString modelDisplayLabel(const RFDetrModelEntry& entry);
 
-/** Return tightly packed RGB888 pixels for AICore's stride-less C API.
- *  scratch owns the returned bytes only when QImage row padding is present. */
-const uchar* packedRgb888Data(const QImage& image, QByteArray* scratch);
-
 /** Parse the AICore RF-DETR JSON envelope into a run result. Returns true on
  *  success; the envelope's detections array may be empty (no objects). */
 bool parseDetectionsJson(const QByteArray& json, RFDetrRunResult* out);

@@ -35,6 +35,13 @@ public:
 private:
     bool m_locked = false;
 };
+
+aicore_image_view imageView(const QImage& image) {
+    return aicore_image_view{
+            reinterpret_cast<const uint8_t*>(image.constBits()), image.width(),
+            image.height(), static_cast<size_t>(image.bytesPerLine()),
+            AICORE_IMAGE_RGB8};
+}
 #endif
 
 }  // namespace
@@ -143,13 +150,7 @@ void YOLOLiveInferWorker::runJobImpl(YOLOLiveInferWorker::Job job) {
     }
     result.task = m_loadedTask;
 
-    QByteArray packedRgb;
-    const uchar* rgb = YOLOHelpers::packedRgb888Data(job.rgb, &packedRgb);
-    if (!rgb) {
-        result.error = tr("Live frame is not RGB888.");
-        emit inferComplete(result);
-        return;
-    }
+    const aicore_image_view image = imageView(job.rgb);
 
     if (result.task == QStringLiteral("depth")) {
         // Metric depth: typed float map + statistics envelope. The colorized
@@ -159,8 +160,7 @@ void YOLOLiveInferWorker::runJobImpl(YOLOLiveInferWorker::Job job) {
         QElapsedTimer timer;
         timer.start();
         int32_t dw = 0, dh = 0;
-        float* depth = aicore_yolo_depth_rgb(m_ctx, rgb, job.rgb.width(),
-                                             job.rgb.height(), &dw, &dh);
+        float* depth = aicore_yolo_depth_image(m_ctx, &image, &dw, &dh);
         result.depth.runtimeMs = static_cast<double>(timer.elapsed());
         if (!depth || dw <= 0 || dh <= 0) {
             if (depth) aicore_yolo_free_buffer(depth);
@@ -175,11 +175,16 @@ void YOLOLiveInferWorker::runJobImpl(YOLOLiveInferWorker::Job job) {
         aicore_yolo_free_buffer(depth);
         result.depth.width = dw;
         result.depth.height = dh;
-        if (char* statsJson = aicore_yolo_last_depth_json(m_ctx)) {
-            result.depth.resultJson = QByteArray(statsJson);
-            aicore_yolo_free_buffer(statsJson);
-            YOLOHelpers::parseDepthStatsJson(result.depth.resultJson,
-                                             &result.depth.stats);
+        aicore_yolo_depth_stats stats{};
+        if (aicore_yolo_last_depth_stats(m_ctx, &stats) == 0) {
+            result.depth.stats.width = stats.depth_width;
+            result.depth.stats.height = stats.depth_height;
+            result.depth.stats.minDepth = stats.min_depth;
+            result.depth.stats.maxDepth = stats.max_depth;
+            result.depth.stats.meanDepth = stats.mean_depth;
+            result.depth.stats.p95Depth = stats.p95_depth;
+            result.depth.stats.validPixels =
+                    static_cast<long long>(stats.valid_pixels);
         }
         result.depth.modelPath = job.modelPath;
         result.depth.resolvedDevice = m_resolvedDevice;
@@ -195,8 +200,7 @@ void YOLOLiveInferWorker::runJobImpl(YOLOLiveInferWorker::Job job) {
         timer.start();
         aicore_yolo_set_detect_thresholds(m_ctx, job.confThres, job.iouThres,
                                           job.topK);
-        aicore_yolo_segment_result* seg = aicore_yolo_seg_rgb(
-                m_ctx, rgb, job.rgb.width(), job.rgb.height());
+        aicore_yolo_segment_result* seg = aicore_yolo_seg_image(m_ctx, &image);
         result.detect.runtimeMs = static_cast<double>(timer.elapsed());
         if (!seg) {
             const char* message = aicore_yolo_last_error(m_ctx);
@@ -251,15 +255,15 @@ void YOLOLiveInferWorker::runJobImpl(YOLOLiveInferWorker::Job job) {
         return;
     }
 
-    // Detect: JSON envelope.
+    // Detect: typed context-owned records; JSON is reserved for explicit API
+    // compatibility callers and never crosses the live-video hot path.
     QElapsedTimer timer;
     timer.start();
     aicore_yolo_set_detect_thresholds(m_ctx, job.confThres, job.iouThres,
                                       job.topK);
-    char* json = aicore_yolo_detect_rgb_json(m_ctx, rgb, job.rgb.width(),
-                                             job.rgb.height());
+    const int detectRc = aicore_yolo_detect_image(m_ctx, &image);
     result.detect.runtimeMs = static_cast<double>(timer.elapsed());
-    if (!json) {
+    if (detectRc != 0) {
         const char* message = aicore_yolo_last_error(m_ctx);
         result.error = message ? QString::fromUtf8(message)
                                : tr("YOLO inference failed.");
@@ -267,13 +271,21 @@ void YOLOLiveInferWorker::runJobImpl(YOLOLiveInferWorker::Job job) {
         return;
     }
 
-    const QByteArray payload(json);
-    aicore_yolo_free_buffer(json);
-    if (!YOLOHelpers::parseDetectionsJson(payload, &result.detect)) {
-        result.error = tr("Failed to parse detection output.");
-        emit inferComplete(result);
-        return;
+    const int count = aicore_yolo_detection_count(m_ctx);
+    result.detect.detections.reserve(std::max(0, count));
+    for (int i = 0; i < count; ++i) {
+        const aicore_yolo_detection det = aicore_yolo_detection_at(m_ctx, i);
+        YOLODetection out;
+        out.classId = static_cast<uint32_t>(det.class_id);
+        out.className = QStringLiteral("class %1").arg(det.class_id);
+        out.x1 = det.x1;
+        out.y1 = det.y1;
+        out.x2 = det.x2;
+        out.y2 = det.y2;
+        out.score = det.score;
+        result.detect.detections.append(out);
     }
+    result.detect.totalDetected = count;
 
     // No annotated rendering here: the live preview only needs a downscaled
     // overlay (drawn by the widget on the display image), so a per-frame

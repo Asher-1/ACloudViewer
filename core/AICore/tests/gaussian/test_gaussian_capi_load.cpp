@@ -10,6 +10,7 @@
 
 #include "aicore/gaussian_capi.h"
 #include "tests/common/test_macros.hpp"
+#include "tests/common/validation_probe.hpp"
 
 static int failures = 0;
 
@@ -40,6 +41,8 @@ int main() {
 
     const char* image0 = std::getenv("AICORE_TEST_GAUSSIAN_IMAGE_0");
     const char* image1 = std::getenv("AICORE_TEST_GAUSSIAN_IMAGE_1");
+    uint64_t output_hash = 0;
+    aicore_pipeline_timings timings{};
     if (image0 && image0[0] && image1 && image1[0]) {
         const char* paths[] = {image0, image1};
         float* output = nullptr;
@@ -47,11 +50,20 @@ int main() {
         AICORE_CHECK(aicore_gaussian_run_paths(ctx, paths, 2, &output,
                                                &output_count) == 0);
         AICORE_CHECK(output != nullptr && output_count > 0);
+        if (output) {
+            output_hash =
+                    aicore::test::fnv1a(output, output_count * sizeof(float));
+            AICORE_CHECK(aicore_gaussian_last_pipeline_timings(ctx, &timings) ==
+                         0);
+        }
         aicore_gaussian_free_buffer(output);
         std::fprintf(stderr,
                      "gaussian inference ok: device=%s output=%zu floats\n",
                      device, output_count);
     }
+
+    aicore::test::printValidationResult("gaussian", device, output_hash,
+                                        &timings);
 
     aicore_gaussian_free(ctx);
     std::fprintf(stderr, "gaussian load ok: %s\n", gguf);

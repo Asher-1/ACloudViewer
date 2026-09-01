@@ -18,7 +18,7 @@
 static int failures = 0;
 
 int main() {
-    AICORE_CHECK(aicore_rmbg_abi_version() >= 2);
+    AICORE_CHECK(aicore_rmbg_abi_version() >= 3);
 
     // Null-safe teardown / lifecycle.
     aicore_rmbg_free(nullptr);
@@ -73,12 +73,17 @@ int main() {
             255, 255, 0, 255, 128, 128, 128, 64, 64,  64,  32,  32, 32};
     AICORE_CHECK(aicore_rmbg_remove_background_rgb(ctx, kRgb, 3, 3, &png,
                                                    &png_len) == -1);
+    const aicore_image_view padded_rgb{kRgb, 2, 3, 9, AICORE_IMAGE_RGB8};
+    AICORE_CHECK(aicore_rmbg_remove_background_image_view(
+                         ctx, &padded_rgb, &png, &png_len) == -1);
 
     uint8_t* alpha = nullptr;
     int32_t aw = 0;
     int32_t ah = 0;
     AICORE_CHECK(aicore_rmbg_alpha_mat_rgb(ctx, kRgb, 3, 3, &alpha, &aw, &ah) ==
                  -1);
+    AICORE_CHECK(aicore_rmbg_alpha_mat_image_view(ctx, &padded_rgb, &alpha, &aw,
+                                                  &ah) == -1);
 
     // Raw-RGBA variant: same failure contract as the PNG path, plus output
     // pointers must be zeroed on failure.
@@ -87,6 +92,8 @@ int main() {
     int rlen = 0;
     AICORE_CHECK(aicore_rmbg_remove_background_rgba(ctx, kRgb, 3, 3, &rgba, &rw,
                                                     &rh, &rlen) == -1);
+    AICORE_CHECK(aicore_rmbg_remove_background_rgba_image_view(
+                         ctx, &padded_rgb, &rgba, &rw, &rh, &rlen) == -1);
     AICORE_CHECK(rgba == nullptr && rw == 0 && rh == 0 && rlen == 0);
     aicore_rmbg_free(ctx);
     aicore_rmbg_options_free(opts);
@@ -104,6 +111,12 @@ int main() {
     // dereference (pass nullptr explicitly — the ctx above is already freed).
     AICORE_CHECK(aicore_rmbg_remove_background_rgba(
                          nullptr, nullptr, 0, 0, &rgba, &rw, &rh, &rlen) == -1);
+    AICORE_CHECK(aicore_rmbg_remove_background_image_view(
+                         nullptr, &padded_rgb, &png, &png_len) == -1);
+    AICORE_CHECK(aicore_rmbg_remove_background_rgba_image_view(
+                         nullptr, &padded_rgb, &rgba, &rw, &rh, &rlen) == -1);
+    AICORE_CHECK(aicore_rmbg_alpha_mat_image_view(nullptr, &padded_rgb, &alpha,
+                                                  &aw, &ah) == -1);
 
     // Model catalog contract.
     // 3 quantized variants: f32, f16, q8 (must match the trellis2-ggml

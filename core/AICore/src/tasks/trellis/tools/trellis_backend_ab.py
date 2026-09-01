@@ -76,16 +76,28 @@ class Timer:
                                          + (now - self._t0) * 1000.0)
 
 
-def build_paths(models, pipeline):
+def model_name(stem, quant):
+    if quant == "mixed":
+        suffix = "f16" if stem in ("dino", "ss_dec") else "q8"
+    else:
+        suffix = quant
+    return f"{stem}_{suffix}.gguf"
+
+
+def build_paths(models, pipeline, quant):
     """aicore_trellis_model_paths field order; "" omits a model."""
-    need = ["dino_q8.gguf", "ss_flow_q8.gguf", "ss_dec_q8.gguf"]
+    need = [model_name("dino", quant), model_name("ss_flow", quant),
+            model_name("ss_dec", quant), "", "", "", "", "", "", ""]
+    texture_quant = "f16" if quant == "f32" else quant
     if pipeline in (PIPE_512, PIPE_1024):
-        need += ["slat_flow_q8.gguf", "", "shape_dec_f16.gguf",
-                 "shape_enc_f16.gguf", "tex_dec_f16.gguf",
-                 "tex_slat_flow_512_q8.gguf"]
+        need[3] = model_name("slat_flow", quant)
+        need[5] = "shape_dec_f16.gguf"
+        need[6] = "shape_enc_f16.gguf"
+        need[7] = "tex_dec_f16.gguf"
+        need[8] = model_name("tex_slat_flow_512", texture_quant)
     if pipeline == PIPE_1024:
-        need[4] = "slat_flow_1024_q8.gguf"
-        need[9] = "tex_slat_flow_1024_q8.gguf"
+        need[4] = model_name("slat_flow_1024", quant)
+        need[9] = model_name("tex_slat_flow_1024", texture_quant)
     paths = [os.path.join(models, n) if n else "" for n in need]
     for p in paths:
         if p and not os.path.exists(p):
@@ -93,7 +105,7 @@ def build_paths(models, pipeline):
     return paths
 
 
-def run_once(lib, models, image_bytes, device, pipeline, steps, seed):
+def run_once(lib, models, image_bytes, device, pipeline, quant, steps, seed):
     opts = lib.aicore_trellis_options_new()
     lib.aicore_trellis_options_set_device(opts, device.encode())
     lib.aicore_trellis_options_set_threads(opts, 0)
@@ -105,7 +117,7 @@ def run_once(lib, models, image_bytes, device, pipeline, steps, seed):
                      "shape_enc_gguf", "tex_dec_gguf", "tex_flow_gguf",
                      "tex_flow_hr_gguf")]
 
-    mp = ModelPaths(*[p.encode() for p in build_paths(models, pipeline)])
+    mp = ModelPaths(*[p.encode() for p in build_paths(models, pipeline, quant)])
     ctx = lib.aicore_trellis_load_opts(ctypes.byref(mp), opts)
     lib.aicore_trellis_options_free(opts)
     if not ctx:
@@ -160,6 +172,7 @@ def main():
                     help="comma list: cuda, vulkan, cpu")
     ap.add_argument("--pipeline", default="coarse",
                     help="coarse | 512 | 1024")
+    ap.add_argument("--quant", choices=("f16", "q8", "f32", "mixed"), default="q8")
     ap.add_argument("--steps", type=int, default=12)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--lib", default=None, help="path to libAICore.so")
@@ -212,11 +225,14 @@ def main():
         print(f"=== running device={device} pipeline={args.pipeline} "
               f"steps={args.steps} ...", flush=True)
         t0 = time.perf_counter()
-        r = run_once(lib, args.models, image_bytes, device, pipeline,
+        r = run_once(lib, args.models, image_bytes, device, pipeline, args.quant,
                      args.steps, args.seed)
+        r["quant"] = args.quant
         r["wall_ms"] = round((time.perf_counter() - t0) * 1000.0, 1)
         results.append(r)
-        print(json.dumps(r, indent=2), flush=True)
+        # One JSON object per line is the machine-readable contract consumed by
+        # the all-model validation runner.
+        print(json.dumps(r, sort_keys=True), flush=True)
 
     print("\n## A/B summary\n")
     keys = sorted({k for r in results for k in r["stage_ms"]})

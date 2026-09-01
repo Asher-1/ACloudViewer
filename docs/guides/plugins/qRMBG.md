@@ -6,8 +6,8 @@ Run **RMBG-2.0 (BiRefNet-Swin-L) GGUF** in ACloudViewer (C++ / [ggml](https://gi
 
 ```
 GUI (RMBG dialog) ──► libAICore (rmbg_capi) ──► GGML BiRefNet
-                     ├── remove_background_rgb → RGBA PNG at original resolution
-                     └── alpha_mat_rgb          → raw 8-bit alpha matte (future plugins)
+                     ├── remove_background_rgba_image_view → raw RGBA
+                     └── alpha_mat_image_view              → raw 8-bit alpha matte
 ```
 
 | Component | Path |
@@ -20,6 +20,11 @@ GUI (RMBG dialog) ──► libAICore (rmbg_capi) ──► GGML BiRefNet
 `aicore_rmbg_*` is the **foundational background-removal module**: the raw
 alpha matte API lets future plugins threshold / feather / re-composite at
 their own resolution.
+
+Interactive image and live-video paths borrow the source pixels through a
+stride-aware `aicore_image_view` and consume raw RGBA or alpha output. This
+avoids both plugin-side tight-RGB packing and a PNG encode/decode round trip;
+PNG remains an explicit save/export format.
 
 ## Enable and build
 

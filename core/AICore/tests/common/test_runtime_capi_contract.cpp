@@ -10,8 +10,16 @@
 #include <cstdio>
 #include <thread>
 
+#include "aicore/aliked_capi.h"
 #include "aicore/backend_capi.h"
+#include "aicore/deeplsd_capi.h"
+#include "aicore/depth_capi.h"
+#include "aicore/facedetect_capi.h"
+#include "aicore/gaussian_capi.h"
+#include "aicore/lightglue_capi.h"
+#include "aicore/rfdetr_capi.h"
 #include "aicore/runtime_capi.h"
+#include "aicore/yolo_capi.h"
 
 namespace {
 
@@ -34,6 +42,33 @@ int Fail(const char* message) {
 #endif
 
 int main() {
+    // Runtime shutdown is intentionally idempotent and can be called between
+    // task batches without invalidating live contexts.
+    aicore_runtime_shutdown();
+    aicore_runtime_shutdown();
+
+    // Every task owns the same idempotent shutdown contract. Invalid image
+    // calls must fail synchronously without dereferencing a context or view.
+    aicore_aliked_shutdown();
+    aicore_deeplsd_shutdown();
+    aicore_depth_shutdown();
+    aicore_gaussian_shutdown();
+    aicore_lightglue_shutdown();
+    aicore_rfdetr_shutdown();
+    aicore_yolo_shutdown();
+    if (aicore_depth_depth_image(nullptr, nullptr, nullptr) == 0) {
+        return Fail("null depth image call unexpectedly succeeded");
+    }
+    if (aicore_facedetect_detect_rgb(nullptr, nullptr, 0, 0) == 0) {
+        return Fail("null face image call unexpectedly succeeded");
+    }
+    if (aicore_rfdetr_detect_rgb(nullptr, nullptr, 0, 0, 0.0F, 0) == 0) {
+        return Fail("null RF-DETR image call unexpectedly succeeded");
+    }
+    if (aicore_yolo_detect_rgb(nullptr, nullptr, 0, 0) == 0) {
+        return Fail("null YOLO image call unexpectedly succeeded");
+    }
+
     aicore_cancel_token* outer = aicore_cancel_token_new();
     aicore_cancel_token* inner = aicore_cancel_token_new();
     if (!outer || !inner) return Fail("token allocation failed");

@@ -32,5 +32,9 @@ const char* savpe_dump_path();
  *  mask buffer dump written right after rasterization. */
 const char* savpe_mask_dump_path();
 
+/** True when AICORE_SAVPE_DEBUG is set: enables the [savpe-dbg] rasterization
+ *  rect diagnostics on stderr (off by default; the run is never affected). */
+bool savpe_debug_enabled();
+
 }  // namespace debug
 }  // namespace aicore

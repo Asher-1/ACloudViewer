@@ -167,12 +167,10 @@ bool RMBGWorker::runInference() {
                                     .arg(m_settings.inputPath));
             return false;
         }
-        const QImage rgb = input.convertToFormat(QImage::Format_RGB888);
-
-        QByteArray packedRgb;
-        const uchar* rgbData = RMBGHelpers::packedRgb888Data(rgb, &packedRgb);
-        if (!rgbData) {
-            emit logMessage(tr("[RMBG] Failed to pack the RGB input."));
+        QImage source = input;
+        aicore_image_view image{};
+        if (!RMBGHelpers::imageView(&source, &image)) {
+            emit logMessage(tr("[RMBG] Failed to create an image view."));
             return false;
         }
 
@@ -219,9 +217,8 @@ bool RMBGWorker::runInference() {
         uint8_t* rgba = nullptr;
         int32_t outW = 0, outH = 0;
         int rgbaLen = 0;
-        const int rc = aicore_rmbg_remove_background_rgba(
-                m_pendingCtx, rgbData, rgb.width(), rgb.height(), &rgba, &outW,
-                &outH, &rgbaLen);
+        const int rc = aicore_rmbg_remove_background_rgba_image_view(
+                m_pendingCtx, &image, &rgba, &outW, &outH, &rgbaLen);
         aicore_cancel_scope_end(m_cancelToken);
         aicore_rmbg_set_progress_callback(m_pendingCtx, nullptr, nullptr);
         delete m_progressState;

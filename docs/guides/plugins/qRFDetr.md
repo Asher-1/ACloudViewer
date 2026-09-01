@@ -6,7 +6,7 @@ Run **RF-DETR GGUF models** in ACloudViewer (C++ / [ggml](https://github.com/ggm
 
 ```
 GUI (RFDetr dialog) ──► libAICore (rfdetr_capi) ──► GGML RF-DETR
-                         ├── detect_rgb_json → detections JSON (class/score/box)
+                         ├── detect_image → context-owned typed detections
                          └── detection_mask → raw per-detection masks (seg models);
                              detection_mask_png → PNG form (metadata/export only)
 ```
@@ -17,6 +17,10 @@ GUI (RFDetr dialog) ──► libAICore (rfdetr_capi) ──► GGML RF-DETR
 | GGML RF-DETR engine | `core/AICore/src/tasks/rfdetr/` (port of [rf-detr.cpp](https://github.com/mudler/rf-detr.cpp)) |
 | Plugin | `plugins/core/Standard/qRFDetr/` |
 | ggml patch | `3rdparty/ggml/patches/rfdetr_merged/` (CPU sgemm broadcast fold) |
+
+The plugin supplies a borrowed `aicore_image_view` with the source row stride.
+The hot path reads typed detections and raw masks directly; JSON and encoded
+PNG entry points are compatibility or export surfaces only.
 
 ## Enable and build
 
@@ -68,7 +72,7 @@ RF-DETR models are trained on many classes (the published weights use the COCO 9
 2. Expand **Class Filter (optional)**, uncheck classes to ignore (or use **All / None**, or the search box to filter by name).
 3. The status label shows `N/91 classes enabled`; Run (or continue live playback) to apply.
 
-Filtered classes are removed by the engine's post-processing, so they never appear in the result JSON, the annotation or the DB metadata — this reduces false positives and speeds up display of busy scenes. The selection is persisted per class name and carries over across sessions and across COCO-trained model variants.
+Filtered classes are removed by the engine's post-processing, so they never appear in the typed result store, the annotation or the DB metadata — this reduces false positives and speeds up display of busy scenes. The selection is persisted per class name and carries over across sessions and across COCO-trained model variants.
 
 ## Models
 
@@ -165,7 +169,7 @@ The live tab's status line shows **two latencies** and the backend-resolved
 device, e.g. `Objects: 3 | infer 34 ms / e2e 52 ms (CUDA0)`:
 
 - **`infer`** = model latency (preprocess + forward + postprocess inside
-  `aicore_rfdetr_detect_rgb_json`) — the same scope the upstream benchmark
+  `aicore_rfdetr_detect_image`) — the same scope the upstream benchmark
   measures. This is the number to compare against the table above.
 - **`e2e`** = submit→complete wall clock — includes queued-connection hops
   (GUI→worker→GUI) and GUI-thread congestion. A large gap between `infer`
@@ -188,6 +192,6 @@ Interpreting the two numbers:
 - On CPU, `infer` is highly sensitive to the thread count: auto (0) resolves
   to `hardware_concurrency() / 2` (physical-core estimate) to avoid the SMT
   oversubscription collapse. See the thread table above for details.
-- Neither number includes video decode or BGR→RGB conversion; frame-to-frame
-  overlay updates may still trail the display by 1–2 frames by design (busy
-  frames are skipped, not queued).
+- Neither number includes video decode, Qt signal delivery or rendering. Native
+  RGB/BGR/RGBA/BGRA/gray layouts are described by `aicore_image_view`, so the
+  plugin does not require a separate BGR→RGB packing pass.

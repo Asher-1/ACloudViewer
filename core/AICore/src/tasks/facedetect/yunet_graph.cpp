@@ -33,13 +33,10 @@ namespace {
 // narrows the horizontal pass to int16 first); the raw heads are robust to that
 // drift, and the decode parity gate is additionally exercised from the
 // reference's EXACT resized pixels.
-void cv_resize_linear_u8(const uint8_t* src,
-                         int sw,
-                         int sh,
-                         uint8_t* dst,
-                         int dw,
-                         int dh,
-                         int cn) {
+void cv_resize_linear_u8(
+        const Image& src, uint8_t* dst, int dw, int dh, int cn) {
+    const int sw = src.width;
+    const int sh = src.height;
     const int BITS = 11;
     const float SCALE = (float)(1 << BITS);
     auto sat_short = [](float v) -> int {
@@ -83,15 +80,15 @@ void cv_resize_linear_u8(const uint8_t* src,
     for (int dy = 0; dy < dh; ++dy) {
         const int sy0 = yofs[dy], sy1 = std::min(sy0 + 1, sh - 1);
         const int b0 = ibeta[dy * 2], b1 = ibeta[dy * 2 + 1];
-        const uint8_t* r0 = src + (size_t)sy0 * sw * cn;
-        const uint8_t* r1 = src + (size_t)sy1 * sw * cn;
         uint8_t* drow = dst + (size_t)dy * dw * cn;
         for (int dx = 0; dx < dw; ++dx) {
             const int ix = xofs[dx], ix1 = std::min(ix + 1, sw - 1);
             const int a0 = ialpha[dx * 2], a1 = ialpha[dx * 2 + 1];
             for (int c = 0; c < cn; ++c) {
-                const int p0 = r0[ix * cn + c] * a0 + r0[ix1 * cn + c] * a1;
-                const int p1 = r1[ix * cn + c] * a0 + r1[ix1 * cn + c] * a1;
+                const int p0 = src.channel(ix, sy0, c) * a0 +
+                               src.channel(ix1, sy0, c) * a1;
+                const int p1 = src.channel(ix, sy1, c) * a0 +
+                               src.channel(ix1, sy1, c) * a1;
                 int v = ((int64_t)p0 * b0 + (int64_t)p1 * b1 + (1 << 21)) >> 22;
                 v = v < 0 ? 0 : (v > 255 ? 255 : v);
                 drow[dx * cn + c] = (uint8_t)v;
@@ -140,9 +137,11 @@ void yunet_resize(
         const Image& src, int size, Image& out, float& sx, float& sy) {
     out.width = size;
     out.height = size;
+    out.borrowed_data = nullptr;
+    out.row_stride_bytes = static_cast<size_t>(size) * 3;
+    out.channels = 3;
     out.rgb.assign((size_t)size * size * 3, 0);
-    cv_resize_linear_u8(src.rgb.data(), src.width, src.height, out.rgb.data(),
-                        size, size, 3);
+    cv_resize_linear_u8(src, out.rgb.data(), size, size, 3);
     sx = (float)src.width / (float)size;
     sy = (float)src.height / (float)size;
 }

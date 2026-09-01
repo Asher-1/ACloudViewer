@@ -21,5 +21,9 @@ const char* savpe_mask_dump_path() {
     return std::getenv("AICORE_SAVPE_DUMP_MASK");
 }
 
+bool savpe_debug_enabled() {
+    return std::getenv("AICORE_SAVPE_DEBUG") != nullptr;
+}
+
 }  // namespace debug
 }  // namespace aicore

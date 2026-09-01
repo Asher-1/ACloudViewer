@@ -2,225 +2,213 @@
 
 ## Scope
 
-AICore is the process-local inference boundary shared by ACloudViewer plugins,
-reconstruction code, command-line tools, and language bindings. Its public ABI
-is the C header set under `include/aicore/`; ggml types and backend libraries are
-private implementation details.
-
-The architecture is partly migrated toward a process Runtime plus independent
-model Sessions. Device discovery, capabilities, task cancellation, and opaque
-per-model contexts are available today. Backend ownership and result contracts
-are not yet fully uniform across every model family.
+AICore is the process-local inference boundary shared by Qt plugins,
+reconstruction code, tools, and bindings. It intentionally builds as one shared
+library. Task-specific model state is isolated behind opaque C contexts while
+device discovery, scheduling, cancellation, logging, backend leases, and
+cleanup are common runtime services.
 
 ## Runtime Topology
 
 ```mermaid
 flowchart LR
-    UI[Qt plugins and app] --> CAPI[Public C ABI]
-    CLI[CLI and tests] --> CAPI
-    CAPI --> RT[Runtime services]
-    RT --> DEV[Device discovery and capabilities]
-    RT --> CANCEL[Per-task cancel tokens]
-    RT --> LOCK[Per-device task queues]
-    CAPI --> SESS[Opaque model contexts]
-    SESS --> GGML[Private ggml core]
-    GGML --> CPU[CPU backend]
-    GGML --> CUDA[CUDA backend]
-    GGML --> VK[Vulkan]
-    GGML --> METAL[Metal]
+    UI[Qt plugins and app] --> ABI[Public C ABI]
+    CLI[Tools and tests] --> ABI
+    ABI --> CTX[Task context and session]
+    ABI --> RT[Common runtime]
+    RT --> DEV[Device discovery and queues]
+    RT --> CANCEL[Caller-owned cancel tokens]
+    RT --> CLEAN[Cleanup registry]
+    CTX --> LEASE[BackendLease]
+    CTX --> CACHE[Private weights, graphs, scratch]
+    LEASE --> CPU[CPU]
+    LEASE --> CUDA[CUDA]
+    LEASE --> VK[Vulkan]
+    LEASE --> METAL[Metal]
 ```
 
-Long-running plugin jobs acquire a queue keyed by their resolved device. This
-permits independent CPU and GPU jobs to overlap while preserving one task at a
-time per physical backend. The legacy process inference lock remains only for
-short synchronous paths that do not yet expose a device request.
+The public C ABI is the stable boundary. ggml headers, targets, backend handles,
+and patch-specific operators are private to AICore.
 
-## Public Entry Points
+## Ownership Model
 
-| Header | Responsibility | Context ownership |
+| Object | Owner | Lifetime rule |
 |---|---|---|
-| `runtime_capi.h` | Task cancellation and per-device scheduling | Process runtime plus caller-owned cancel token |
-| `backend_capi.h` | Device enumeration, availability, warmup, capabilities | Process discovery snapshot |
-| `aliked_capi.h` | ALIKED feature extraction | Per-context extractor, backend, and pipeline cache |
-| `lightglue_capi.h` | Sparse feature matching | Per-context matcher and backend |
-| `facedetect_capi.h` | Detection, alignment, embedding, verification | Per-context model; backend is still process-global |
-| `depth_capi.h` | Depth, pose, reconstruction, export | Per-context `depth::Engine` |
-| `gaussian_capi.h` | FreeSplatter Gaussian reconstruction | Per-context model and options |
-| `deeplsd_capi.h` | Line extraction | Per-context extractor |
+| Options | Caller | Create, set, pass to load, free; setters are NULL-safe |
+| Task context | Caller | One model/session owner; free after all synchronous calls complete |
+| Input image view | Caller | Borrowed for the duration of one synchronous inference call |
+| Typed result | Task ABI | Release with the result/task function documented by that header |
+| BackendLease | Context/session | Shared physical backend handle; reference counted |
+| Graph/allocator/scratch | Context/session | Never process-global mutable model state |
+| Cancel token | Worker/caller | Independent request scope; bind only on the inference thread |
+| Runtime cleanup registry | Process runtime | Purges inactive resources, never live contexts |
 
-All returned buffers must be released through the matching module free
-function. C++ exceptions, STL containers, Qt types, and ggml handles must not
-cross this boundary.
+Compatibility wrappers may allocate temporary result text or packed RGB, but
+they call into the typed implementation and are not used by plugin frame paths.
 
-## Module Data Flow
+## In-Memory Image Flow
+
+For tasks that consume decoded images, the preferred path is:
 
 ```mermaid
 sequenceDiagram
-    participant Plugin
-    participant Runtime
-    participant Context
-    participant Backend
-    Plugin->>Runtime: acquire resolved-device task queue
-    Plugin->>Runtime: bind task cancel token
-    Plugin->>Context: load model and create session
-    Context->>Backend: resolve requested device
-    Plugin->>Context: run input
-    Context->>Runtime: poll cancellation between graph or batch steps
-    Context-->>Plugin: result or last_error
-    Plugin->>Runtime: unbind token and release lock
+    participant P as Plugin/QImage
+    participant C as Task C API
+    participant S as Session
+    participant B as Backend
+    P->>C: aicore_image_view(data, shape, stride, format)
+    C->>S: validate and preprocess directly by row
+    S->>B: upload prepared graph input once
+    B-->>S: required output tensors
+    S-->>C: typed native result
+    C-->>P: result handle/struct + common timings
+    P->>C: result_free/free_buffer
 ```
 
-### ALIKED and LightGlue
+`aicore_image_view` supports RGB8, RGBA8, GRAY8, BGR8, and BGRA8. The row
+stride is part of the contract because QImage, camera frames, and decoded video
+planes are not necessarily tightly packed. Unsupported or premultiplied QImage
+formats are converted once at the plugin boundary; representable formats are
+borrowed directly.
 
-`src/tasks/aliked/` owns an extractor backend and a `GpuPipelineCache` per context.
-Vulkan custom operations are resolved dynamically through
-`vulkan/vulkan_aliked_dispatch.cpp`. Large Vulkan sessions currently rebuild
-the backend between repeated extractions because ggml Vulkan convolution state
-is not reliable after a 1024-pixel extraction. This is a correctness guard, not
-the final performance design.
+The hot path must not contain:
 
-`src/tasks/lightglue/` owns matcher state per context. qLightGlue composes two ALIKED
-extractions with one LightGlue match while keeping the public feature format
-backend-neutral.
+- image save/reload or temporary filesystem staging;
+- JSON serialization followed by plugin parsing;
+- packed RGB scratch before another CHW conversion;
+- encoded PNG/JPEG handoffs;
+- full-resolution mask materialization before detection filtering.
 
-### FaceDetect
+JSON and encoded images remain supported for model metadata, persistence,
+backward-compatible APIs, DB metadata, and explicit export.
 
-`src/tasks/facedetect/` supports YuNet/SCRFD detection, aligned SFace/ArcFace
-embeddings, dense landmarks, age/gender, and anti-spoofing.
+## Result and Timing Contracts
 
-Every FaceDetect context owns a Session with a compatible graph cache and
-leases a physical backend from the common registry. The implementation retains
-the `global_backend()` accessor solely as a thread-local binding inside an
-active Session; it does not identify process-global mutable model state.
+Each task owns the semantic layout of its typed result. A universal result
+variant would erase useful type information and add dispatch complexity, so the
+common layer standardizes ownership/error/timing instead of payload shape.
 
-### Depth and Gaussian
+Every pipeline exposes `aicore_pipeline_timings` where applicable. Fields have
+one meaning across tasks:
 
-`src/tasks/depth/` uses a context-owned `depth::Engine`; `src/tasks/gaussian/` uses a
-context-owned model. Both poll the runtime cancellation API at graph or batch
-boundaries. They still implement different internal backend wrappers and error
-reporting conventions.
+| Field | Boundary |
+|---|---|
+| `preprocess_ms` | API validation through graph-input preparation |
+| `inference_ms` | upload, backend graph execution, synchronization, required readback |
+| `postprocess_ms` | typed native result construction |
+| `serialization_ms` | optional compatibility encoding/serialization |
+| `e2e_ms` | API entry until native result is ready |
 
-## Device Selection
+`valid_fields` is mandatory: a zero without a valid bit means unavailable, not
+instantaneous. Plugin queue, thread-hop, video decode, render, and display time
+are outer measurements and must not be mixed with AICore E2E.
 
-`src/common/backend_capi.cpp` is the public device catalog and capability API.
-It delegates registry loading and device resolution to
-`src/common/ggml_backend_utils.hpp`.
+## Runtime Lifecycle
 
-Platform auto order is:
+Per-task `aicore_<task>_shutdown()` functions are ABI-compatible delegates to
+`aicore_runtime_shutdown()`. The common call is idempotent and may purge
+inactive backend leases and registered task caches. It does not free live task
+contexts or unload backends still referenced by them.
 
-- Linux and Windows with CUDA: CUDA, Vulkan, CPU.
-- Linux and Windows without CUDA: Vulkan, CPU.
-- macOS: Metal, CPU.
+Long-running workers use:
 
-Capabilities describe the resolved concrete backend. They are not a promise
-that every model implements every operation on that backend; model load and
-parity tests remain authoritative.
+1. one caller-owned cancel token;
+2. one queue for the resolved physical device;
+3. a task context kept on the worker thread;
+4. cooperative cancellation between graph/batch boundaries;
+5. generation checks before publishing results.
 
-## Cancellation
+The legacy process cancel token and global inference lock remain compatibility
+APIs. New workers use task-owned tokens and device queues.
 
-Each long-running Qt worker owns an `aicore_cancel_token`, binds it on its worker
-thread, and requests only that token from the UI thread. Current migrated
-workers are qDA3, qFaceDetect, and qFreeSplatter.
+## Cache and GPU Graph Safety
 
-The legacy process token and global inference-lock exports remain only for ABI
-compatibility. They are compiler-deprecated in `runtime_capi.h`; new code must
-use a caller-owned token plus `aicore_device_task_lock()` and must not call
-`aicore_cancel_request()`.
+Caches are context-owned or keyed by explicit ownership identity. A valid key
+includes all state that changes compatibility: resolved backend/device, tensor
+shape and type, model/weight identity, graph-affecting options, and session
+generation where backend plans may outlive an allocator.
 
-## Migration Status
+Context teardown invalidates only entries associated with its weights/owner.
+Clearing a process-global cache from one context can corrupt another live
+context and is forbidden.
 
-FaceDetect now creates one backend Session per context. Each Session has a
-private compatible graph cache and leases a compatible physical backend keyed
-by resolved device and CPU-thread configuration. The C API binds that Session
-for model load, inference, and teardown, so it never changes
-`FACEDETECT_DEVICE`, resets a process-global backend, or invalidates another
-context's weights.
-
-All public model C APIs now provide an explicit `*_is_ready(ctx)` query. This
-normalizes readiness for successful contexts without breaking older `NULL on
-load failure` entry points.
-
-qDA3, qDeepLSD, qFaceDetect, qFreeSplatter, and qLightGlue workers now bind
-their caller-owned cancellation token while holding the resolved-device queue.
-The synchronous Face Capture path uses the same scoped token and resolved
-device queue; it no longer serializes unrelated inference through the legacy
-process-wide lock.
-
-## Remaining Architecture Gaps
-
-1. The internal backend registry now shares a physical `ggml_backend_t` across
-   FaceDetect, LightGlue, DeepLSD, Depth, Gaussian, and ALIKED. Every public
-   context retains private graph caches, allocators, schedulers, and weights;
-   only compatible physical handles and execution locks are shared.
-2. The public runtime ABI exposes device discovery, capability bits, scoped
-   task cancellation, and device queues, but does not yet provide a single
-   typed `DeviceManager`/task-result object for third-party C++ consumers.
-3. Load-failure contracts differ: depth retains its ABI-compatible `NULL` result,
-   while newer modules return a non-ready context with `last_error`.
-4. Result payloads remain task-specific allocations/JSON rather than one typed
-   result envelope; callers must still use each module's documented free API.
-5. Cancellation is cooperative and checked at graph or batch boundaries; a
-   single long backend kernel cannot be preempted.
-6. Backend capability bits are device-wide. Model-specific operation coverage,
-   memory limits, and precision guarantees are not yet queryable.
-
-## Target Design
-
-The next migration should preserve the C ABI while adding internal C++ runtime
-objects:
+Cached graph execution follows this order:
 
 ```text
-Runtime (process singleton)
-  DeviceManager
-    BackendRegistryEntry { device, raw backend, ref_count, execution mutex,
-                           capabilities }
-  TaskScheduler
-    Task { cancel_token, requested_device, priority }
-
-Session (one per public context)
-  shared BackendLease
-  private allocator/scheduler, model weights and graph cache
-  last status { ready, error_code, message }
-  result owner
+construct graph
+  -> allocate/bind graph buffers
+  -> upload current input
+  -> execute that same bound graph
+  -> read required outputs
 ```
 
-Migration order:
+Rebinding after input upload can invalidate or clear input storage. GPU tests
+therefore require repeated forwards and context destroy/recreate, not a single
+successful call.
 
-1. Done: add the internal `BackendLease` and reference-counted raw-backend
-   registry without changing public context APIs.
-2. Done: migrate LightGlue and DeepLSD while retaining private allocators and
-   serialize graph work per physical backend.
-3. Done: migrate Depth and Gaussian with a lease group for their GPU set plus
-   CPU fallback backend; schedulers remain Session-private.
-4. Done: migrate ALIKED and FaceDetect, retaining ALIKED's size-keyed Vulkan
-   graph cache and FaceDetect's compatible graph cache as Session-private.
-5. Add common status/error definitions and `is_ready` to every public module,
-   preserving old symbols as ABI-compatible wrappers.
-6. Add model capability queries that combine device support with graph and
-   precision requirements.
-7. Add concurrency tests for two contexts, two devices, cancellation isolation,
-   and backend lifetime reference counting.
+## Backend and Configuration Policy
+
+Platform Auto order is:
+
+- Linux/Windows with CUDA built: CUDA, Vulkan, CPU;
+- Linux/Windows without CUDA: Vulkan, CPU;
+- macOS: Metal, CPU.
+
+Capabilities describe a resolved device, not per-model numerical support.
+Model/backend parity remains the acceptance gate.
+
+Task behavior is explicit in options. Task modules do not read or write process
+environment variables for flow control. The only centralized exceptions are
+the deployment data-root reader and the ggml environment bridge needed before
+backend construction.
+
+## ggml Integration
+
+ggml is an ExternalProject and private dependency. The pinned version and
+archive digest live in `3rdparty/ggml/ggml.cmake`; downstream modifications are
+the ordered patches in `3rdparty/ggml/patches/manifest.yaml`.
+
+Extracted `build*/ggml/` source trees are disposable. A patch must be generated
+against the fully replayed preceding chain, cleanly replayed by CMake, and
+validated against all affected pipelines. Adding an operator must not silently
+change an existing task's default numerical path.
+
+## Plugin Execution Model
+
+Still-image workers pass decoded storage through image view and convert the
+typed result into annotations or DB entities after inference.
+
+Live workers allow one running frame and at most one latest pending frame.
+Results carry source generation and are dropped after seek, source/model
+change, stop, or teardown. Consumer-driven video releases the next frame on
+every completion path, including failure/cancellation/stale results.
+
+This bounds memory, avoids unbounded queued image copies, and keeps overlays
+attached to the frame that produced them.
+
+## Known Validation Boundary
+
+The contracts above are implemented across the current task set, but validation
+coverage is evidence-dependent:
+
+- contract tests prove ABI, ownership, stride, timing, and lifecycle behavior;
+- backend parity proves agreement with a selected reference backend;
+- upstream-framework comparison is required to prove model truth;
+- a complete claim requires every requested model, quantization, backend, and
+  platform row with real assets;
+- Linux CUDA/Vulkan results do not prove Windows Vulkan or macOS Metal.
+
+See [`../tests/TESTING.md`](../tests/TESTING.md) for the acceptance ladder and
+the complete matrix runner.
 
 ## Edit Guide
 
-| Change | Primary files |
+| Change | Primary owner |
 |---|---|
-| Device aliases or auto order | `src/common/ggml_backend_utils.hpp`, `src/common/backend_capi.cpp` |
-| Public capability bit | `include/aicore/backend_capi.h`, `src/common/backend_capi.cpp`, contract tests |
-| Cancellation behavior | `include/aicore/runtime_capi.h`, `src/common/runtime_capi.cpp` |
-| New model C API | `include/aicore/<model>_capi.h`, `src/tasks/<model>/capi.cpp`, `tests/<model>/` |
-| ALIKED Vulkan operation | `src/tasks/aliked/vulkan/`, merged ggml patch exporter, ALIKED parity tests |
-| FaceDetect CUDA | `src/tasks/facedetect/graph_ops.cpp`, `src/tasks/facedetect/antispoof_graph.cpp` |
-| Plugin task integration | Plugin worker class plus `runtime_capi.h`; use a caller-owned cancel token |
-
-## Verification
-
-Fast ABI and runtime contracts:
-
-```bash
-ctest --test-dir build_app -L capi --output-on-failure
-```
-
-Model-specific acceptance additionally requires CPU/GPU parity, repeated
-same-context execution, cancellation isolation, and end-to-end plugin workflow
-tests. A backend being discoverable is not sufficient evidence of correctness.
+| Common image format/validation | `include/aicore/image_view.h`, `src/common/capi_utils.*`, common contract tests |
+| Timing meaning | `include/aicore/pipeline_timing.h`, every task C API, timing contract test |
+| Cancellation/cleanup/queues | `include/aicore/runtime_capi.h`, `src/common/runtime_capi.cpp` |
+| Backend discovery/leases | `include/aicore/backend_capi.h`, `src/common/ggml_backend_*` |
+| New or changed task ABI | `include/aicore/<task>_capi.h`, `src/tasks/<task>/capi.cpp`, task contract tests |
+| Plugin hot path | Plugin worker plus the task's typed image/result API |
+| ggml implementation | Ordered patch manifest plus AICore glue and cross-task parity tests |

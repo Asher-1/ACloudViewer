@@ -38,6 +38,7 @@ Usage:
 
 import argparse
 import hashlib
+import os
 import sys
 from pathlib import Path
 

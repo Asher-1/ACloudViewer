@@ -284,6 +284,7 @@ if(TARGET AICore_test)
     # White-box tests compile private AICore implementation sources.
     aicore_add_common_test(test_data_root)
     aicore_add_common_test(test_backend_registry)
+    aicore_add_common_test(test_image_view_contract)
     aicore_add_depth_test(test_gguf_keys)
     aicore_add_depth_test(test_path_util)
     aicore_add_depth_test(test_compute_mode)
@@ -349,6 +350,7 @@ endif()
 
 # --- depth (C API / libAICore) ---
 aicore_add_common_capi_test(test_runtime_capi_contract)
+aicore_add_common_capi_test(test_pipeline_timing_contract)
 aicore_add_depth_capi_test(test_depth_capi_contract)
 aicore_add_depth_capi_test(test_image_depth)
 aicore_add_depth_capi_test(test_depth_capi_load)
@@ -364,8 +366,11 @@ set_tests_properties(test_gaussian_capi_load PROPERTIES LABELS "capi;model")
 
 aicore_add_lightglue_capi_test(test_lightglue_capi_contract)
 aicore_add_lightglue_capi_test(test_lightglue_aliked_e2e)
+aicore_add_lightglue_capi_test(test_lightglue_model_validation)
 set_tests_properties(test_lightglue_aliked_e2e
     PROPERTIES LABELS "capi;model;gpu;e2e")
+set_tests_properties(test_lightglue_model_validation
+    PROPERTIES LABELS "capi;model;gpu;validation")
 
 aicore_add_aliked_capi_test(test_aliked_capi_contract)
 aicore_add_aliked_capi_test(test_aliked_capi_parity)
@@ -382,6 +387,9 @@ if(TARGET AICore_test)
 endif()
 aicore_add_facedetect_capi_test(test_facedetect_embed_capi)
 set_tests_properties(test_facedetect_embed_capi PROPERTIES LABELS "capi;model")
+aicore_add_facedetect_capi_test(test_facedetect_dense_validation)
+set_tests_properties(test_facedetect_dense_validation
+    PROPERTIES LABELS "capi;model;validation")
 aicore_add_facedetect_capi_test(test_facedetect_match_capi)
 aicore_add_facedetect_capi_test(test_facedetect_contexts_capi)
 set_tests_properties(test_facedetect_contexts_capi PROPERTIES LABELS "capi;model")
@@ -434,10 +442,23 @@ aicore_apply_compile_definitions(bench_sam3_backend_acceptance)
 cloudviewer_set_aicore_test_runtime_layout(bench_sam3_backend_acceptance)
 
 # Per-stage CPU/Vulkan divergence locator for the SAM3 ViT encoder. Manual
-# diagnostic (needs a local SAM3 GGUF + Vulkan GPU), not a CTest. Links
-# against the internal SAM3 C++ API via the aicore.exports.map whitelist.
+# diagnostic (needs a local SAM3 GGUF + Vulkan GPU), not a CTest. The internal
+# implementation is deliberately compiled into this test-only static library;
+# no SAM3 C++ symbol is part of libAICore's production ABI.
+add_library(AICore_sam3_diagnostics STATIC ${AICORE_SAM3_SRC_DIR}/sam3.cpp)
+target_include_directories(AICore_sam3_diagnostics PRIVATE
+    ${AICORE_TEST_INC} ${AICORE_TEST_INC}/.. ${AICORE_INC_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src ${AICORE_COMMON_SRC_DIR}
+    ${AICORE_TASKS_SRC_DIR} ${AICORE_SAM3_SRC_DIR} ${GGML_INCLUDE_DIRS})
+target_compile_definitions(AICore_sam3_diagnostics PRIVATE SAM3_SHARED SAM3_BUILD)
+if(NOT MSVC)
+    target_compile_options(AICore_sam3_diagnostics PRIVATE -fPIC)
+endif()
+aicore_apply_compile_definitions(AICore_sam3_diagnostics)
+target_link_libraries(AICore_sam3_diagnostics PRIVATE AICore)
+
 add_executable(cmp_sam3_vit_stages sam3/cmp_sam3_vit_stages.cpp)
-target_link_libraries(cmp_sam3_vit_stages PRIVATE AICore)
+target_link_libraries(cmp_sam3_vit_stages PRIVATE AICore_sam3_diagnostics AICore)
 target_compile_definitions(cmp_sam3_vit_stages PRIVATE SAM3_SHARED)
 if(NOT MSVC)
     target_compile_options(cmp_sam3_vit_stages PRIVATE -Wall -Wextra -fPIC)
@@ -474,6 +495,9 @@ endfunction()
 aicore_add_yolo_capi_test(test_yolo_capi_performance)
 set_tests_properties(test_yolo_capi_performance PROPERTIES
     LABELS "capi;model;gpu;performance")
+aicore_add_yolo_capi_test(test_yolo_text_model_validation)
+set_tests_properties(test_yolo_text_model_validation PROPERTIES
+    LABELS "capi;model;validation;performance")
 
 # TEMPORARY probe for reproducing the yoloe/seg visualization issues
 # (delete after diagnosis).
@@ -500,6 +524,28 @@ cloudviewer_set_aicore_test_runtime_layout(yolo_prompt_probe)
 aicore_add_yolo_capi_test(test_yolo_capi_parity)
 set_tests_properties(test_yolo_capi_parity PROPERTIES
     LABELS "capi;model;gpu")
+
+# Full same-model/same-input matrix: CPU/CUDA/Vulkan latency plus CPU-vs-GPU
+# numeric parity for every YOLO task and f32/f16/q8_0. Missing assets skip;
+# partial assets or a missing requested backend fail with an explicit report.
+if(Python3_EXECUTABLE)
+    add_test(NAME test_yolo_model_matrix
+        COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/yolo/run_yolo_model_matrix.py
+            --benchmark $<TARGET_FILE:test_yolo_capi_performance>
+            --parity $<TARGET_FILE:test_yolo_capi_parity>
+            --report ${CMAKE_BINARY_DIR}/Testing/yolo_model_matrix.json)
+    set_tests_properties(test_yolo_model_matrix PROPERTIES
+        SKIP_RETURN_CODE 77
+        LABELS "matrix;performance;parity")
+    add_custom_target(aicore-yolo-model-matrix
+        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+                -R "^test_yolo_model_matrix$" -C $<CONFIG>
+        DEPENDS test_yolo_capi_performance test_yolo_capi_parity
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMENT "Running YOLO task/quant/backend model matrix"
+        VERBATIM)
+endif()
 
 # YOLO C API contract test (no GGUF assets: ABI, options, catalog, null
 # guards, model-free error paths — see tests/yolo/test_yolo_capi_contract.cpp).
@@ -841,10 +887,12 @@ set(_aicore_model_targets
     test_depth_capi_backend_parity
     test_gaussian_capi_load
     test_lightglue_aliked_e2e
+    test_lightglue_model_validation
     test_aliked_capi_parity
     test_aliked_e2e_smoke
     test_deeplsd_capi_load
     test_facedetect_embed_capi
+    test_facedetect_dense_validation
     test_facedetect_contexts_capi
     test_rmbg_capi_performance
     test_yolo_capi_performance)
@@ -863,3 +911,40 @@ add_custom_target(aicore-model-tests
     COMMENT "Running AICore model-tier tests (skips without GGUF assets)"
     VERBATIM
 )
+
+# Complete real-model/task regression gate. The runner discovers every model,
+# executes task-specific probes serially, and rejects missing coverage.
+if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
+    set(_aicore_validation_targets
+        test_depth_capi_load
+        test_gaussian_capi_load
+        test_aliked_capi_parity
+        test_lightglue_model_validation
+        test_deeplsd_capi_load
+        test_facedetect_embed_capi
+        test_facedetect_dense_validation
+        bench_rfdetr_perf
+        test_rmbg_capi_performance
+        bench_sam3_backend_acceptance
+        test_yolo_capi_performance
+        test_yolo_text_model_validation
+        test_yolo_capi_parity)
+    add_custom_target(aicore-validate-all
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/validate_all.py
+                --build ${CMAKE_BINARY_DIR}
+                --assets ${AICORE_TEST_ASSET_ROOT}
+                --backend ${AICORE_TEST_DEVICE}
+                --output ${CMAKE_BINARY_DIR}/Testing/aicore_validation.json
+        DEPENDS test_catalog_dump_urls ${_aicore_validation_targets}
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMENT "Running complete AICore model/task regression matrix"
+        USES_TERMINAL
+        VERBATIM)
+
+    add_test(NAME test_aicore_validation_runner
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_validate_all.py)
+    set_tests_properties(test_aicore_validation_runner PROPERTIES
+        LABELS "fast;validation")
+endif()

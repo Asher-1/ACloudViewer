@@ -272,8 +272,16 @@ bool RunUnaryInPlaceOnGpuTensor(
             entry.h = tensor->h;
             entry.c = tensor->c;
         }
+        // The shared allocator may have been rebound by an intervening graph.
+        // Rebind before uploading inputs, matching the binary in-place path.
+        if (!ggml_gallocr_alloc_graph(entry.gallocr, entry.graph)) {
+            if (error) {
+                *error = "failed to bind cached unary in-place graph";
+            }
+            return false;
+        }
         BackendTensorCopyCompat(backend, tensor->tensor, entry.in);
-        if (!CachedGraphCompute(backend, entry.graph, entry.gallocr, error)) {
+        if (!RunBoundGraphCompute(backend, entry.graph, error)) {
             return false;
         }
         BackendTensorCopyCompat(backend, entry.out, tensor->tensor);
@@ -567,8 +575,16 @@ bool RunGraphWithInput(internal::Backend *backend,
                     static_cast<int32_t>(entry.out->ne[2]), dst, error)) {
             return false;
         }
+        // Bind before uploading the borrowed input. CachedGraphCompute would
+        // allocate again after the copy and may invalidate or clear it.
+        if (!ggml_gallocr_alloc_graph(entry.gallocr, entry.graph)) {
+            if (error) {
+                *error = "failed to bind cached one-input graph";
+            }
+            return false;
+        }
         BackendTensorCopyCompat(backend, input.tensor, entry.in);
-        if (!CachedGraphCompute(backend, entry.graph, entry.gallocr, error)) {
+        if (!RunBoundGraphCompute(backend, entry.graph, error)) {
             return false;
         }
         BackendTensorCopyCompat(backend, entry.out, dst->tensor);

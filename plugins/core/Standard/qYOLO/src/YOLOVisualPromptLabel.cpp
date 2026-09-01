@@ -9,6 +9,7 @@
 
 #include <QMouseEvent>
 #include <QPainter>
+#include <QResizeEvent>
 #include <algorithm>
 
 namespace {
@@ -33,6 +34,7 @@ void YOLOVisualPromptLabel::setPromptImage(const QImage& image,
     m_image = image;
     m_boxes.clear();
     m_rubberBandActive = false;
+    m_displayTarget = displaySize;
     if (m_image.isNull()) {
         clear();
         m_pixmapRect = QRectF();
@@ -41,9 +43,17 @@ void YOLOVisualPromptLabel::setPromptImage(const QImage& image,
         return;
     }
     m_imageSize = QSizeF(m_image.size());
-    const QSize target = displaySize.isValid() && !displaySize.isEmpty()
-                                 ? displaySize
-                                 : QSize(256, 256);
+    refreshPixmap();
+}
+
+void YOLOVisualPromptLabel::refreshPixmap() {
+    if (m_image.isNull()) return;
+    // Fixed target (legacy small-canvas use) or the live widget size (the
+    // inline canvas that resizes with the dialog layout).
+    const QSize target = m_displayTarget.isValid() && !m_displayTarget.isEmpty()
+                                 ? m_displayTarget
+                                 : size();
+    if (target.isEmpty()) return;  // not laid out yet; resizeEvent re-fits
     // KeepAspectRatio + centered alignment (QLabel default): the displayed
     // rect is derived from the actual pixmap, so the coordinate mapping
     // stays exact for any DPI/size combination.
@@ -211,4 +221,14 @@ void YOLOVisualPromptLabel::mouseReleaseEvent(QMouseEvent* event) {
     }
     m_rubberBandCurrent = QRectF();
     update();
+}
+
+void YOLOVisualPromptLabel::resizeEvent(QResizeEvent* event) {
+    QLabel::resizeEvent(event);
+    // Re-fit the pixmap and the mapping rect when the widget resizes (the
+    // inline canvas tracks the dialog layout; a fixed display target never
+    // changes, so nothing to do there).
+    if (m_image.isNull()) return;
+    if (m_displayTarget.isValid() && !m_displayTarget.isEmpty()) return;
+    refreshPixmap();
 }

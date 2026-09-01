@@ -1006,12 +1006,11 @@ static void sam3_backend_set_n_threads(ggml_backend_t backend, int n_threads) {
     }
 }
 
-// Active backend, recorded by sam3_backend_init() for graph-build probes
-// (flash-attention head-dim capability, see sam3_fattn_hd_supported).
-// sam3 is single-model: every model goes through sam3_backend_init, and
-// the probe cache is keyed on this pointer, so a backend change after a
-// model reload (e.g. GPU -> CPU) invalidates it automatically.
-static ggml_backend_t g_sam3_backend = nullptr;
+// Backend used by graph-build capability probes. Keep this thread-local: the
+// C API permits independent contexts on worker threads, so a process-global
+// pointer would let one model reload change another context's graph decisions.
+// The backend lifetime remains owned by the corresponding SAM3 context.
+static thread_local ggml_backend_t g_sam3_backend = nullptr;
 
 static bool sam3_backend_is_cuda() {
     if (!g_sam3_backend) {
@@ -12068,9 +12067,10 @@ sam3_result sam3_propagate_frame(sam3_tracker& tracker,
 ** Tokenizer — standalone test API (does not require model weights)
 *****************************************************************************/
 
-// Global tokenizer instance for the test API.
-static sam3_bpe_tokenizer g_test_tokenizer;
-static bool g_test_tokenizer_loaded = false;
+// The diagnostic tokenizer API has no context handle. Keep its state
+// thread-local so independent contract tests cannot overwrite one another.
+static thread_local sam3_bpe_tokenizer g_test_tokenizer;
+static thread_local bool g_test_tokenizer_loaded = false;
 
 bool sam3_test_load_tokenizer(const std::string& model_path) {
     // GGUF metadata only — no tensor data needed for the tokenizer test.

@@ -23,8 +23,12 @@ class YOLOVisualPromptLabel : public QLabel {
 public:
     explicit YOLOVisualPromptLabel(QWidget* parent = nullptr);
 
-    /** Show \p image as the prompt canvas (scaled to fit \p displaySize). */
-    void setPromptImage(const QImage& image, const QSize& displaySize);
+    /** Show \p image as the prompt canvas. With a valid \p displaySize the
+     *  pixmap is fixed to it; without one the canvas tracks the widget size
+     *  and re-fits on resize (the inline full-width canvas below the config
+     *  row). */
+    void setPromptImage(const QImage& image,
+                        const QSize& displaySize = QSize());
     void clearPrompt();
 
     /** Enable/disable rubber-band box drawing (off = plain preview). */
@@ -47,6 +51,7 @@ protected:
     void mousePressEvent(QMouseEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
     void mouseReleaseEvent(QMouseEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
 
 private:
     /** Widget position -> full-image pixel coordinate (identity mapping
@@ -54,10 +59,15 @@ private:
     QPointF toImageCoords(const QPointF& widgetPos) const;
     QRectF toWidgetRect(const QRectF& imageRect) const;
     void updateLabelFromBoxes();
+    /** Re-scale the pixmap to the active target (fixed \p m_displayTarget
+     *  or the live widget size) and re-derive the displayed-pixmap rect the
+     *  coordinate mapping depends on. */
+    void refreshPixmap();
 
     QImage m_image;         // full-resolution prompt canvas
     QSizeF m_imageSize;     // full-image size (for coord mapping)
     QRectF m_pixmapRect;    // displayed pixmap rect inside the widget
+    QSize m_displayTarget;  // fixed target size (invalid = track widget)
     QList<QRectF> m_boxes;  // full-image pixel coordinates
     bool m_drawingEnabled = false;
     bool m_rubberBandActive = false;

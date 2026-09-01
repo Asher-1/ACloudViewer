@@ -2,12 +2,12 @@
 
 InsightFace-style face detection and recognition for ACloudViewer — **native C++ GGML**.
 
-**User guide:** [docs/guides/plugins/qFaceDetect.md](../../../docs/guides/plugins/qFaceDetect.md)
+**User guide:** [docs/guides/plugins/qFaceDetect.md](../../../../docs/guides/plugins/qFaceDetect.md)
 
 ![qFaceDetect registry and recognition workflow](images/qFaceDetect.png)
 
 ```
-Image → AICore FaceDetect GGML → detect / analyze / verify → annotated ccImage → DB tree
+Image → borrowed image view → AICore FaceDetect GGML → typed detect / analyze / landmarks / verify result → ccImage / registry
 ```
 
 ## Build
@@ -23,10 +23,14 @@ make -j4 QFACEDETECT_PLUGIN
 Face-detect GGML sources live in `core/AICore/src/tasks/facedetect/` (in-tree port of [face-detect.cpp](https://github.com/mudler/face-detect.cpp)).
 
 Image decode uses Qt's built-in codecs (JPEG/PNG via the Qt image plugins); no direct system libjpeg dependency.
+The worker passes Qt image storage through `aicore_image_view`, preserving row
+stride and avoiding a mandatory tightly packed RGB scratch allocation. JSON
+and path APIs are compatibility surfaces, not the interactive hot path.
 
 ### Unit tests (helpers + registry store)
 
-Pure JSON/box/label helpers and SQLite registry matching (no GGUF model required):
+Typed-result, image-stride, box/label helpers and SQLite registry matching (no
+GGUF model required; legacy JSON parser compatibility is tested separately):
 
 ```bash
 cmake -DBUILD_GUI=ON -DAICore_ENABLED=ON -DPLUGIN_STANDARD_QFACEDETECT=ON \

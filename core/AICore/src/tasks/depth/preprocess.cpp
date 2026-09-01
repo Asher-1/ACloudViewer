@@ -34,7 +34,7 @@ static void resize_bilinear(const Image& s,
                 x1c = std::clamp(x0 + 1, 0, s.w - 1);
             for (int c = 0; c < 3; ++c) {
                 auto P = [&](int yy, int xx) {
-                    return (float)s.rgb[((size_t)yy * s.w + xx) * 3 + c];
+                    return (float)s.channel(xx, yy, c);
                 };
                 float top = P(y0c, x0c) * (1 - wx) + P(y0c, x1c) * wx;
                 float bot = P(y1c, x0c) * (1 - wx) + P(y1c, x1c) * wx;
@@ -99,6 +99,7 @@ Image resize_cubic(const Image& src, int dw, int dh) {
     dst.w = dw;
     dst.h = dh;
     dst.rgb.assign((size_t)dw * dh * 3, 0);
+    dst.reset_owned_layout();
     if (src.w <= 0 || src.h <= 0 || dw <= 0 || dh <= 0) return dst;
     const int sw = src.w, sh = src.h;
     const double sx = (double)sw / dw, sy = (double)sh / dh;
@@ -125,8 +126,7 @@ Image resize_cubic(const Image& src, int dw, int dh) {
                 float acc = 0;
                 for (int k = 0; k < 4; ++k) {
                     int s = xidx[(size_t)x * 4 + k];
-                    acc += xwt[(size_t)x * 4 + k] *
-                           (float)src.rgb[((size_t)y * sw + s) * 3 + c];
+                    acc += xwt[(size_t)x * 4 + k] * (float)src.channel(s, y, c);
                 }
                 tmp[((size_t)y * dw + x) * 3 + c] = acc;
             }
@@ -190,6 +190,7 @@ Image resize_area(const Image& src, int dw, int dh) {
         up.w = dw;
         up.h = dh;
         up.rgb.resize((size_t)dw * dh * 3);
+        up.reset_owned_layout();
         for (size_t i = 0; i < up.rgb.size(); ++i) up.rgb[i] = sat_u8(hwc[i]);
         return up;
     }
@@ -200,8 +201,7 @@ Image resize_area(const Image& src, int dw, int dh) {
         for (const auto& t : xtab)
             for (int c = 0; c < 3; ++c)
                 tmp[((size_t)y * dw + t.di) * 3 + c] +=
-                        t.alpha *
-                        (float)src.rgb[((size_t)y * sw + t.si) * 3 + c];
+                        t.alpha * (float)src.channel(t.si, y, c);
     // Vertical pass: accumulate into dh x dw x 3 float, then saturate.
     std::vector<float> acc((size_t)dh * dw * 3, 0.f);
     for (const auto& t : ytab)
@@ -213,6 +213,7 @@ Image resize_area(const Image& src, int dw, int dh) {
     dst.w = dw;
     dst.h = dh;
     dst.rgb.resize((size_t)dw * dh * 3);
+    dst.reset_owned_layout();
     for (size_t i = 0; i < acc.size(); ++i) dst.rgb[i] = sat_u8(acc[i]);
     return dst;
 }
@@ -271,13 +272,19 @@ bool preprocess_real(const Image& img,
     out.orig_h = oh;
     out.scale_w = (float)W / ow;
     out.scale_h = (float)H / oh;
-    if (rgb_u8_out)
-        *rgb_u8_out = cur.rgb;  // resized HWC RGB uint8 (pre-normalize)
+    if (rgb_u8_out) {
+        rgb_u8_out->resize(static_cast<size_t>(W) * H * 3);
+        for (int y = 0; y < H; ++y)
+            for (int x = 0; x < W; ++x)
+                for (int c = 0; c < 3; ++c)
+                    (*rgb_u8_out)[(static_cast<size_t>(y) * W + x) * 3 + c] =
+                            cur.channel(x, y, c);
+    }
     out.chw.assign((size_t)3 * H * W, 0.f);
     for (int c = 0; c < 3; ++c)
         for (int y = 0; y < H; ++y)
             for (int x = 0; x < W; ++x) {
-                float v = (float)cur.rgb[((size_t)y * W + x) * 3 + c] / 255.f;
+                float v = (float)cur.channel(x, y, c) / 255.f;
                 out.chw[((size_t)c * H + y) * W + x] =
                         (v - cfg.img_mean[c]) / cfg.img_std[c];
             }

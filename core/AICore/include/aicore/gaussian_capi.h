@@ -18,6 +18,7 @@
 #include <stdint.h>
 
 #include "aicore/export.h"
+#include "aicore/pipeline_timing.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -56,6 +57,8 @@ AICORE_CAPI aicore_gaussian_ctx* aicore_gaussian_load_opts(
         const char* gguf_path, const aicore_gaussian_options* opts);
 /** Releases a context returned by aicore_gaussian_load*; safe on NULL. */
 AICORE_CAPI void aicore_gaussian_free(aicore_gaussian_ctx* ctx);
+/** Reclaims inactive shared backend leases; safe and idempotent. */
+AICORE_CAPI void aicore_gaussian_shutdown(void);
 /** True only after a context loaded its model successfully. */
 AICORE_CAPI int aicore_gaussian_is_ready(const aicore_gaussian_ctx* ctx);
 /** Returns the last error message of the context (empty when none). */
@@ -86,6 +89,8 @@ AICORE_CAPI int aicore_gaussian_run(aicore_gaussian_ctx* ctx,
                                     int32_t width,
                                     float** out,
                                     size_t* n_out);
+AICORE_CAPI int aicore_gaussian_last_pipeline_timings(
+        const aicore_gaussian_ctx* ctx, aicore_pipeline_timings* out);
 /** Releases any buffer returned by an aicore_gaussian_* function (string,
  *  float or byte array; unified entry point). Safe on NULL. */
 AICORE_CAPI void aicore_gaussian_free_buffer(void* p);

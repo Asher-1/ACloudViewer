@@ -57,7 +57,7 @@ static void test_preview(
 }
 
 int main() {
-    AICORE_CHECK(aicore_trellis_abi_version() >= 2);
+    AICORE_CHECK(aicore_trellis_abi_version() >= 3);
 
     // Null-safe teardown / lifecycle.
     aicore_trellis_free(nullptr);
@@ -211,41 +211,58 @@ int main() {
     AICORE_CHECK(aicore_trellis_mesh_grid_feats(nullptr) == nullptr);
     AICORE_CHECK(aicore_trellis_mesh_grid_coords(nullptr) == nullptr);
 
-    // Model catalog contract (must match the trellis2-ggml release assets).
-    AICORE_CHECK(aicore_trellis_model_count() == 15);
+    // Model catalog contract (must match the HF TRELLIS.2 published assets).
+    AICORE_CHECK(aicore_trellis_model_count() == 26);
     static const char* kExpected[] = {"dino_f16.gguf",
                                       "dino_q8.gguf",
+                                      "dino_f32.gguf",
+                                      "ss_flow_f16.gguf",
                                       "ss_flow_q8.gguf",
+                                      "ss_flow_f32.gguf",
                                       "ss_dec_f16.gguf",
                                       "ss_dec_q8.gguf",
+                                      "ss_dec_f32.gguf",
+                                      "slat_flow_f16.gguf",
                                       "slat_flow_q8.gguf",
+                                      "slat_flow_f32.gguf",
+                                      "slat_flow_1024_f16.gguf",
                                       "slat_flow_1024_q8.gguf",
+                                      "slat_flow_1024_f32.gguf",
                                       "shape_dec_f16.gguf",
+                                      "shape_dec_f32.gguf",
                                       "shape_enc_f16.gguf",
                                       "tex_dec_f16.gguf",
+                                      "tex_slat_flow_512_f16.gguf",
                                       "tex_slat_flow_512_q8.gguf",
+                                      "tex_slat_flow_1024_f16.gguf",
                                       "tex_slat_flow_1024_q8.gguf",
                                       "rmbg_f32.gguf",
                                       "rmbg_f16.gguf",
                                       "rmbg_q8.gguf"};
-    for (int i = 0; i < 15; ++i) {
+    for (int i = 0; i < 26; ++i) {
         const aicore_trellis_model_entry* e = aicore_trellis_model_at(i);
         AICORE_CHECK(e != nullptr && e->filename != nullptr &&
                      std::strcmp(e->filename, kExpected[i]) == 0 &&
                      e->download_url != nullptr && e->display_name != nullptr &&
                      e->quant_note != nullptr && e->license_note != nullptr &&
-                     e->role != nullptr);
+                     e->role != nullptr && e->size_bytes > 0 &&
+                     e->sha256 != nullptr && std::strlen(e->sha256) == 64 &&
+                     std::strstr(e->download_url, "huggingface.co/") !=
+                             nullptr);
     }
     AICORE_CHECK(aicore_trellis_model_at(-1) == nullptr);
-    AICORE_CHECK(aicore_trellis_model_at(15) == nullptr);
+    AICORE_CHECK(aicore_trellis_model_at(26) == nullptr);
     AICORE_CHECK(aicore_trellis_model_by_filename("dino_q8.gguf") != nullptr);
     AICORE_CHECK(aicore_trellis_model_by_filename("shape_dec_f16.gguf") !=
+                 nullptr);
+    AICORE_CHECK(aicore_trellis_model_by_filename("ss_flow_f32.gguf") !=
                  nullptr);
     AICORE_CHECK(aicore_trellis_model_by_filename("nope.gguf") == nullptr);
     AICORE_CHECK(aicore_trellis_model_by_filename(nullptr) == nullptr);
     AICORE_CHECK(aicore_trellis_model_download_base() != nullptr &&
                  std::strstr(aicore_trellis_model_download_base(),
-                             "trellis2-ggml") != nullptr);
+                             "huggingface.co/Asher-1/Trellis2-models") !=
+                         nullptr);
 
     // Device enumeration / warmup.
     AICORE_CHECK(aicore_trellis_warmup_backend("cpu") == 0);

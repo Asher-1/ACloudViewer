@@ -51,7 +51,8 @@ struct Session {
     ggml_backend_buffer_t wbuf = nullptr;
 
     SessionOptions opts;                 // creation-time configuration
-    bool q8_direct = false;  // one-shot load decision (CUDA/Vulkan f16 flow);
+    uint64_t plan_owner_id = 0;  // generation tag for backend plan caches
+    bool q8_direct = false;  // one-shot load decision for Q8 -> F16 flow;
                              // reused by every canvas rebuild
 
     // Open-vocabulary state (YOLO-World / YOLOE). The text leaf lives in

@@ -20,6 +20,7 @@
 #include <QHBoxLayout>
 #include <QMessageBox>
 #include <QSettings>
+#include <QStandardPaths>
 #include <QVBoxLayout>
 
 #include "aicore/aliked_capi.h"
@@ -97,8 +98,9 @@ QVector<LightGlueBuiltinModel> LightGlueDialog::builtinModels() {
 QString LightGlueDialog::modelCacheDir() {
     char* dir = aicore_lightglue_model_cache_dir();
     if (!dir) {
-        return QDir::homePath() +
-               QStringLiteral("/cloudViewer_data/extract/lightglue_models");
+        return QDir(QStandardPaths::writableLocation(
+                            QStandardPaths::AppDataLocation))
+                .filePath(QStringLiteral("extract/lightglue_models"));
     }
     QString result = QString::fromUtf8(dir);
     aicore_lightglue_free_buffer(dir);

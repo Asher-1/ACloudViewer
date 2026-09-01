@@ -13,6 +13,7 @@
 
 #include "aicore/deeplsd_capi.h"
 #include "tests/common/test_macros.hpp"
+#include "tests/common/validation_probe.hpp"
 
 static int failures = 0;
 
@@ -50,9 +51,21 @@ int main() {
                          &ow, &oh) == 0);
     AICORE_CHECK(df != nullptr && ang != nullptr && ow > 0 && oh > 0);
 
+    uint64_t output_hash = 1469598103934665603ULL;
+    if (df && ang && ow > 0 && oh > 0) {
+        const size_t bytes = static_cast<size_t>(ow) * oh * sizeof(float);
+        output_hash = aicore::test::fnv1aAppend(output_hash, df, bytes);
+        output_hash = aicore::test::fnv1aAppend(output_hash, ang, bytes);
+    }
+    aicore_pipeline_timings timings{};
+    AICORE_CHECK(aicore_deeplsd_last_pipeline_timings(ctx, &timings) == 0);
+
     char* json = aicore_deeplsd_info_json(ctx);
     AICORE_CHECK(json != nullptr && std::strstr(json, "deeplsd") != nullptr);
     aicore_deeplsd_free_buffer(json);
+
+    aicore::test::printValidationResult("deeplsd", device, output_hash,
+                                        &timings);
 
     std::free(df);
     std::free(ang);

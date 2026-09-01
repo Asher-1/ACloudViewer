@@ -31,13 +31,15 @@
 #include <stdint.h>
 
 #include "aicore/export.h"
+#include "aicore/pipeline_timing.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** Returns the ABI version of the TRELLIS C API (bump on breaking ABI
- *  changes). Version 2: preview callback + generate_ex, texture_mesh,
+ *  changes). Version 3: model catalog entries include the published size and
+ *  SHA-256. Version 2: preview callback + generate_ex, texture_mesh,
  *  prepare_mesh, print-remesh and bake_projected_glb, sdpa_flash option,
  *  generate_params gained preview_stride/keyframes. */
 AICORE_CAPI int aicore_trellis_abi_version(void);
@@ -236,6 +238,8 @@ AICORE_CAPI aicore_trellis_mesh* aicore_trellis_generate_ex(
         void* preview_user,
         char* err,
         int err_len);
+AICORE_CAPI int aicore_trellis_last_pipeline_timings(
+        const aicore_trellis_ctx* ctx, aicore_pipeline_timings* out);
 
 /** Mesh accessors. Vertices are in a centered unit cube ([-0.5, 0.5]^3);
  *  normals are per-vertex unit vectors. Buffers stay valid until
@@ -392,7 +396,9 @@ AICORE_CAPI char* aicore_trellis_model_cache_dir(void);
  *  aicore_trellis_free_buffer. */
 AICORE_CAPI char* aicore_trellis_info_json(aicore_trellis_ctx* ctx);
 
-/** Published GGUF catalog (cloudViewer_downloads trellis2-ggml release). */
+/** Published GGUF catalog (Asher-1/Trellis2-models Hugging Face repository).
+ *  The URL, size and SHA-256 identify the same immutable LFS object used by
+ *  AICore's full regression downloader and qTrellis. */
 typedef struct aicore_trellis_model_entry {
     const char* filename;
     const char* download_url;
@@ -403,6 +409,8 @@ typedef struct aicore_trellis_model_entry {
      *  "shape_dec", "shape_enc", "tex_dec", "tex_flow", "tex_flow_hr",
      *  "rmbg". */
     const char* role;
+    uint64_t size_bytes;
+    const char* sha256;
 } aicore_trellis_model_entry;
 
 /** Number of published catalog entries. */
@@ -413,7 +421,7 @@ AICORE_CAPI const aicore_trellis_model_entry* aicore_trellis_model_at(
 /** Returns the catalog entry whose filename matches (NULL when not found). */
 AICORE_CAPI const aicore_trellis_model_entry* aicore_trellis_model_by_filename(
         const char* filename);
-/** Returns the base URL of the published model release. */
+/** Returns the base URL of the published model repository. */
 AICORE_CAPI const char* aicore_trellis_model_download_base(void);
 
 #ifdef __cplusplus

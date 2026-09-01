@@ -130,6 +130,66 @@ int runCase3() {
     return 0;
 }
 
+int runStrideAwarePreprocessCase() {
+    constexpr int w = 3;
+    constexpr int h = 2;
+    const uint8_t packed[w * h * 3] = {10, 20, 30, 40, 50, 60, 70, 80, 90,
+                                       11, 21, 31, 41, 51, 61, 71, 81, 91};
+    const uint8_t padded[h * 12] = {10, 20, 30, 40, 50, 60, 70, 80,
+                                    90, 1,  2,  3,  11, 21, 31, 41,
+                                    51, 61, 71, 81, 91, 4,  5,  6};
+    const uint8_t rgba[w * h * 4] = {10, 20, 30, 255, 40, 50, 60, 0,
+                                     70, 80, 90, 127, 11, 21, 31, 1,
+                                     41, 51, 61, 2,   71, 81, 91, 3};
+    const uint8_t bgr[w * h * 3] = {30, 20, 10, 60, 50, 40, 90, 80, 70,
+                                    31, 21, 11, 61, 51, 41, 91, 81, 71};
+    const uint8_t bgra[w * h * 4] = {30, 20, 10, 255, 60, 50, 40, 0,
+                                     90, 80, 70, 127, 31, 21, 11, 1,
+                                     61, 51, 41, 2,   91, 81, 71, 3};
+
+    yolo::LetterboxInfo packedInfo, paddedInfo, rgbaInfo, bgrInfo, bgraInfo;
+    std::vector<float> packedOut, paddedOut, rgbaOut, bgrOut, bgraOut;
+    yolo::letterbox_image(yolo::Image{w, h, packed, w * 3, 3}, 32, packedInfo,
+                          packedOut);
+    yolo::letterbox_image(yolo::Image{w, h, padded, 12, 3}, 32, paddedInfo,
+                          paddedOut);
+    yolo::letterbox_image(yolo::Image{w, h, rgba, w * 4, 4}, 32, rgbaInfo,
+                          rgbaOut);
+    yolo::letterbox_image(yolo::Image{w, h, bgr, w * 3, 3, true}, 32, bgrInfo,
+                          bgrOut);
+    yolo::letterbox_image(yolo::Image{w, h, bgra, w * 4, 4, true}, 32, bgraInfo,
+                          bgraOut);
+    CHECK(packedOut == paddedOut);
+    CHECK(packedOut == rgbaOut);
+    CHECK(packedOut == bgrOut);
+    CHECK(packedOut == bgraOut);
+
+    std::vector<float> packedCls, paddedCls, rgbaCls, bgrCls, bgraCls;
+    yolo::classify_preprocess(yolo::Image{w, h, packed, w * 3, 3}, 2,
+                              packedCls);
+    yolo::classify_preprocess(yolo::Image{w, h, padded, 12, 3}, 2, paddedCls);
+    yolo::classify_preprocess(yolo::Image{w, h, rgba, w * 4, 4}, 2, rgbaCls);
+    yolo::classify_preprocess(yolo::Image{w, h, bgr, w * 3, 3, true}, 2,
+                              bgrCls);
+    yolo::classify_preprocess(yolo::Image{w, h, bgra, w * 4, 4, true}, 2,
+                              bgraCls);
+    CHECK(packedCls == paddedCls);
+    CHECK(packedCls == rgbaCls);
+    CHECK(packedCls == bgrCls);
+    CHECK(packedCls == bgraCls);
+
+    const uint8_t gray[w * h] = {10, 40, 70, 11, 41, 71};
+    const uint8_t grayRgb[w * h * 3] = {10, 10, 10, 40, 40, 40, 70, 70, 70,
+                                        11, 11, 11, 41, 41, 41, 71, 71, 71};
+    std::vector<float> grayOut, grayRgbOut;
+    yolo::letterbox_image(yolo::Image{w, h, gray, w, 1}, 32, packedInfo,
+                          grayOut);
+    yolo::letterbox_image(yolo::Image{w, h, grayRgb, w * 3, 3}, 32, paddedInfo,
+                          grayRgbOut);
+    CHECK(grayOut == grayRgbOut);
+    return 0;
+}
+
 }  // namespace
 
 int main() {
@@ -138,6 +198,8 @@ int main() {
     rc = runCase2();
     if (rc != 0) return rc;
     rc = runCase3();
+    if (rc != 0) return rc;
+    rc = runStrideAwarePreprocessCase();
     if (rc != 0) return rc;
     std::printf("test_yolo_unscale_masks: all checks passed\n");
     return 0;

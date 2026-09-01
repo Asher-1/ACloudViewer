@@ -19,6 +19,34 @@
 
 namespace {
 
+aicore_image_format imageFormat(const QImage& image) {
+    switch (image.format()) {
+        case QImage::Format_RGB888:
+            return AICORE_IMAGE_RGB8;
+        case QImage::Format_RGBA8888:
+            return AICORE_IMAGE_RGBA8;
+        case QImage::Format_Grayscale8:
+            return AICORE_IMAGE_GRAY8;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+        case QImage::Format_BGR888:
+            return AICORE_IMAGE_BGR8;
+#endif
+#if Q_BYTE_ORDER == Q_LITTLE_ENDIAN
+        case QImage::Format_RGB32:
+        case QImage::Format_ARGB32:
+            return AICORE_IMAGE_BGRA8;
+#endif
+        default:
+            return static_cast<aicore_image_format>(0);
+    }
+}
+
+QImage inferenceImage(const QImage& image) {
+    return imageFormat(image) != 0
+                   ? image
+                   : image.convertToFormat(QImage::Format_RGB888);
+}
+
 #ifdef AICore_ENABLED
 /* Serializes this worker against every other AICore inference task on the
  * same device (live video loops, other plugin workers). ggml-metal's backend
@@ -156,25 +184,22 @@ bool RFDetrWorker::runInference() {
                                     .arg(m_settings.inputPath));
             return false;
         }
-        const QImage rgb = input.convertToFormat(QImage::Format_RGB888);
+        const QImage rgb = inferenceImage(input);
         emit progressUpdate(0, 1);
 
         QElapsedTimer timer;
         timer.start();
-        QByteArray packedRgb;
-        const uchar* rgbData = RFDetrHelpers::packedRgb888Data(rgb, &packedRgb);
-        if (!rgbData) {
-            emit logMessage(tr("[RF-DETR] Failed to pack the RGB input."));
-            return false;
-        }
+        const aicore_image_view image{
+                reinterpret_cast<const uint8_t*>(rgb.constBits()), rgb.width(),
+                rgb.height(), static_cast<size_t>(rgb.bytesPerLine()),
+                imageFormat(rgb)};
         aicore_cancel_scope_begin(m_cancelToken);
-        char* json = aicore_rfdetr_detect_rgb_json(
-                m_pendingCtx, rgbData, rgb.width(), rgb.height(),
-                m_settings.threshold, m_settings.topK);
+        const int detectRc = aicore_rfdetr_detect_image(
+                m_pendingCtx, &image, m_settings.threshold, m_settings.topK);
         aicore_cancel_scope_end(m_cancelToken);
         const double ms = static_cast<double>(timer.elapsed());
 
-        if (!json) {
+        if (detectRc != 0) {
             const char* err = aicore_rfdetr_last_error(m_pendingCtx);
             emit logMessage(tr("[RF-DETR] Inference failed: %1")
                                     .arg(err ? QString::fromUtf8(err)
@@ -193,12 +218,32 @@ bool RFDetrWorker::runInference() {
         result.resolvedDevice = (resolvedDevice && resolvedDevice[0])
                                         ? QString::fromUtf8(resolvedDevice)
                                         : m_settings.device;
-        if (!RFDetrHelpers::parseDetectionsJson(QByteArray(json), &result)) {
-            aicore_rfdetr_free_buffer(json);
-            emit logMessage(tr("[RF-DETR] Failed to parse detection JSON."));
-            return false;
+        result.modelVariant =
+                QString::fromUtf8(aicore_rfdetr_context_variant(m_pendingCtx));
+        result.segmentation =
+                aicore_rfdetr_context_has_segmentation(m_pendingCtx) != 0;
+        result.imageSize = static_cast<int>(
+                aicore_rfdetr_context_image_size(m_pendingCtx));
+        result.numClasses = static_cast<int>(
+                aicore_rfdetr_context_num_classes(m_pendingCtx));
+        const int detectionCount = aicore_rfdetr_detection_count(m_pendingCtx);
+        result.detections.reserve(detectionCount);
+        for (int i = 0; i < detectionCount; ++i) {
+            aicore_rfdetr_detection d{};
+            if (aicore_rfdetr_detection_at(m_pendingCtx, i, &d) != 0) continue;
+            RFDetrDetection out;
+            out.classId = d.class_id;
+            out.className =
+                    d.class_name ? QString::fromUtf8(d.class_name) : QString();
+            out.score = d.score;
+            out.x1 = d.x1;
+            out.y1 = d.y1;
+            out.x2 = d.x2;
+            out.y2 = d.y2;
+            result.detections.append(out);
         }
-        aicore_rfdetr_free_buffer(json);
+        result.totalDetected = result.detections.size();
+        result.resultJson.clear();
 
         // Fetch per-detection masks for segmentation models (raw bytes — no
         // PNG encode/decode round-trip; sizing also returns the dimensions).

@@ -333,12 +333,9 @@ def generate_audit_report(audit_results: dict, output_file: str):
 
 
 def main():
-    import os
     import sys
     
-    repo_root = os.path.dirname(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    ts_file = os.path.join(repo_root, "app", "translations", "ACloudViewer_zh.ts")
+    ts_file = "/home/ludahai/develop/code/github/ACloudViewer/app/translations/ACloudViewer_zh.ts"
     
     print("=" * 80)
     print("翻译质量审核与改进")
@@ -364,8 +361,7 @@ def main():
             print(f"  - {severity}: {count}")
     
     # 2. 生成审核报告
-    report_file = os.path.join(repo_root, "app", "translations",
-                               "QUALITY_AUDIT_REPORT.md")
+    report_file = "/home/ludahai/develop/code/github/ACloudViewer/app/translations/QUALITY_AUDIT_REPORT.md"
     print(f"\n📝 生成审核报告: {report_file}")
     generate_audit_report(audit_results, report_file)
     

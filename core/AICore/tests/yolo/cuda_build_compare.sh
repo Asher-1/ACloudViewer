@@ -2,7 +2,7 @@
 # ----------------------------------------------------------------------------
 # CUDA graph parity: compare the integrated ggml-cuda build artifact against
 # an upstream ultralytics-ggml checkout. Part of the "CUDA graph 36~88%"
-# follow-up documented in core/AICore/docs/cuda_graph_parity.md.
+# controlled build-artifact comparison documented in core/AICore/tests/TESTING.md.
 #
 # This script collects the EVIDENCE only — it does not change any build
 # configuration. It prints the per-op profile of both sides, the ggml-cuda
@@ -144,4 +144,4 @@ else
     echo "== [4/4] cuobjdump not found — SASS comparison skipped =="
 fi
 echo
-echo "Done. Evidence in $OUT_DIR — next steps per docs/cuda_graph_parity.md §6."
+echo "Done. Evidence in $OUT_DIR; interpret it with core/AICore/tests/TESTING.md."

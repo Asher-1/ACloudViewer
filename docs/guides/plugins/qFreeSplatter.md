@@ -2,7 +2,7 @@
 
 Turn ordinary photos into **3D Gaussian splatting** point clouds — **no camera poses and no Python required**. Shares `libAICore.so` with qDA3 (ggml inference for [FreeSplatter](https://github.com/TencentARC/FreeSplatter)).
 
-![qFreeSplatter guided face capture](../../_static/plugin-assets/qFreeSplatter/qFreeSplatter_video.png)
+![qFreeSplatter guided face capture](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qFreeSplatter/images/qFreeSplatter_video.png?raw=1)
 
 ## Workflow
 

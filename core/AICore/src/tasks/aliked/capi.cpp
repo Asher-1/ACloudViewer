@@ -14,6 +14,7 @@
 #include <utility>
 
 #include "aicore/aliked_capi.h"
+#include "aicore/runtime_capi.h"
 #include "common/capi_utils.hpp"
 #include "common/model_cache.hpp"
 #include "tasks/aliked/include/lightglue/aliked.h"
@@ -128,6 +129,7 @@ struct aicore_aliked_ctx {
     std::string model_path;
     std::string device;
     std::string last_error;
+    aicore_pipeline_timings pipeline_timings{};
 };
 
 AICORE_CAPI int aicore_aliked_abi_version(void) { return 2; }
@@ -199,6 +201,7 @@ AICORE_CAPI aicore_aliked_ctx* aicore_aliked_load_opts(
 }
 
 AICORE_CAPI void aicore_aliked_free(aicore_aliked_ctx* ctx) { delete ctx; }
+AICORE_CAPI void aicore_aliked_shutdown(void) { aicore_runtime_shutdown(); }
 
 AICORE_CAPI int aicore_aliked_is_ready(const aicore_aliked_ctx* ctx) {
     return ctx != nullptr && ctx->extractor != nullptr ? 1 : 0;
@@ -223,6 +226,7 @@ AICORE_CAPI int aicore_aliked_extract_rgb(aicore_aliked_ctx* ctx,
                                           int32_t height,
                                           int32_t row_stride,
                                           aicore_lightglue_features* out) {
+    const auto started = aicore::capi::PipelineClock::now();
     if (out != nullptr) {
         *out = {};
     }
@@ -267,7 +271,14 @@ AICORE_CAPI int aicore_aliked_extract_rgb(aicore_aliked_ctx* ctx,
         return -1;
     }
     ctx->last_error.clear();
+    aicore::capi::record_pipeline_e2e(ctx->pipeline_timings, started);
     return 0;
+}
+
+AICORE_CAPI int aicore_aliked_last_pipeline_timings(
+        const aicore_aliked_ctx* ctx, aicore_pipeline_timings* out) {
+    return ctx ? aicore::capi::copy_pipeline_timings(ctx->pipeline_timings, out)
+               : -1;
 }
 
 AICORE_CAPI char* aicore_aliked_info_json(aicore_aliked_ctx* ctx) {

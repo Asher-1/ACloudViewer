@@ -82,13 +82,48 @@ int main(int argc, char** argv) {
     aicore_rmbg_free_buffer(info);
 
     std::vector<uint8_t> rgb((size_t)kInputSize * kInputSize * 3);
+    constexpr size_t kViewStride = static_cast<size_t>(kInputSize) * 4 + 16;
+    std::vector<uint8_t> bgra(kViewStride * kInputSize, 0xA5);
     for (int y = 0; y < kInputSize; ++y) {
         for (int x = 0; x < kInputSize; ++x) {
             const size_t p = ((size_t)y * kInputSize + x) * 3;
             rgb[p + 0] = static_cast<uint8_t>((x * 13 + y * 3) & 255);
             rgb[p + 1] = static_cast<uint8_t>((x * 5 + y * 11) & 255);
             rgb[p + 2] = static_cast<uint8_t>((x ^ y) & 255);
+            uint8_t* pixel = bgra.data() +
+                             static_cast<size_t>(y) * kViewStride +
+                             static_cast<size_t>(x) * 4;
+            pixel[0] = rgb[p + 2];
+            pixel[1] = rgb[p + 1];
+            pixel[2] = rgb[p + 0];
+            pixel[3] = 255;
         }
+    }
+    const aicore_image_view image{bgra.data(), kInputSize, kInputSize,
+                                  kViewStride, AICORE_IMAGE_BGRA8};
+
+    // One compatibility check outside the benchmark window: the legacy tight
+    // RGB wrapper and a padded native BGRA view must produce identical mattes.
+    uint8_t* legacy_alpha = nullptr;
+    uint8_t* view_alpha = nullptr;
+    int32_t legacy_w = 0, legacy_h = 0, view_w = 0, view_h = 0;
+    const int legacy_rc =
+            aicore_rmbg_alpha_mat_rgb(ctx, rgb.data(), kInputSize, kInputSize,
+                                      &legacy_alpha, &legacy_w, &legacy_h);
+    const int view_rc = aicore_rmbg_alpha_mat_image_view(
+            ctx, &image, &view_alpha, &view_w, &view_h);
+    const size_t matte_bytes = static_cast<size_t>(kInputSize) * kInputSize;
+    const bool views_match =
+            legacy_rc == 0 && view_rc == 0 && legacy_alpha && view_alpha &&
+            legacy_w == view_w && legacy_h == view_h &&
+            legacy_w == kInputSize && legacy_h == kInputSize &&
+            std::memcmp(legacy_alpha, view_alpha, matte_bytes) == 0;
+    aicore_rmbg_free_buffer(legacy_alpha);
+    aicore_rmbg_free_buffer(view_alpha);
+    if (!views_match) {
+        std::fprintf(stderr, "[rmbg-perf] RGB/BGRA image-view parity failed\n");
+        aicore_rmbg_free(ctx);
+        return 1;
     }
 
     std::vector<double> samples;
@@ -98,8 +133,8 @@ int main(int argc, char** argv) {
         uint8_t* alpha = nullptr;
         int32_t width = 0;
         int32_t height = 0;
-        if (aicore_rmbg_alpha_mat_rgb(ctx, rgb.data(), kInputSize, kInputSize,
-                                      &alpha, &width, &height) != 0 ||
+        if (aicore_rmbg_alpha_mat_image_view(ctx, &image, &alpha, &width,
+                                             &height) != 0 ||
             !alpha || width != kInputSize || height != kInputSize) {
             std::fprintf(stderr, "[rmbg-perf] inference failed: %s\n",
                          aicore_rmbg_last_error(ctx)

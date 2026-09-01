@@ -35,7 +35,7 @@ int main() {
     AICORE_CHECK(depthInfo.recommended_working_set_bytes >=
                  depthInfo.min_working_set_bytes);
 
-    AICORE_CHECK(aicore_depth_abi_version() >= 6);
+    AICORE_CHECK(aicore_depth_abi_version() >= 8);
 
     aicore_depth_free(nullptr);
     aicore_depth_free_buffer(nullptr);
@@ -88,6 +88,13 @@ int main() {
     AICORE_CHECK(aicore_depth_depth_pose_multi(nullptr, nullptr, 0, &mv) != 0);
     aicore_depth_multiview_result_free(&mv);
     AICORE_CHECK(aicore_depth_export_glb(nullptr, "x.png", "/tmp/x.glb") != 0);
+    AICORE_CHECK(
+            aicore_depth_export_glb_image(nullptr, nullptr, "/tmp/x.glb") != 0);
+    AICORE_CHECK(aicore_depth_export_colmap_image(nullptr, nullptr, "x.png",
+                                                  "/tmp", 0) != 0);
+    AICORE_CHECK(aicore_depth_reconstruct_image(
+                         nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+                         nullptr, nullptr, nullptr) != 0);
     AICORE_CHECK(aicore_depth_export_colmap(nullptr, "x.png", "/tmp/x", 1) !=
                  0);
     AICORE_CHECK(aicore_depth_export_colmap_multi(nullptr, nullptr, 0, "/tmp/x",

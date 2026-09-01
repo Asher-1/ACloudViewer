@@ -1,10 +1,10 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 54cd3ca..3e7d8cd 100644
+index 7dafb7d..75f0fa4 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -11,7 +11,7 @@ set(GGML_VERSION_BASE "${GGML_VERSION_MAJOR}.${GGML_VERSION_MINOR}.${GGML_VERSIO
  list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
-
+ 
  find_program(GIT_EXE NAMES git git.exe NO_CMAKE_FIND_ROOT_PATH)
 -if(GIT_EXE)
 +if(GIT_EXE AND NOT GGML_BUILD_COMMIT)
@@ -12,40 +12,32 @@ index 54cd3ca..3e7d8cd 100644
      execute_process(COMMAND ${GIT_EXE} rev-parse --short HEAD
          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 diff --git a/include/ggml.h b/include/ggml.h
-index 35f0c44..c66030d 100644
+index 32462d7..6e2bd31 100644
 --- a/include/ggml.h
 +++ b/include/ggml.h
 @@ -226,7 +226,7 @@
  #define GGML_MAX_OP_PARAMS      64
-
+ 
  #ifndef GGML_MAX_NAME
 -#   define GGML_MAX_NAME        64
 +#   define GGML_MAX_NAME        128
  #endif
-
+ 
  #define GGML_DEFAULT_N_THREADS  4
 diff --git a/src/ggml-cuda/CMakeLists.txt b/src/ggml-cuda/CMakeLists.txt
-index 8eb9f98..84fbb02 100644
+index d3953ee..b718381 100644
 --- a/src/ggml-cuda/CMakeLists.txt
 +++ b/src/ggml-cuda/CMakeLists.txt
-@@ -129,6 +129,15 @@ if (CUDAToolkit_FOUND)
+@@ -129,6 +129,7 @@ if (CUDAToolkit_FOUND)
                               ${GGML_SOURCES_CUDA}
                              )
-
-+    find_path(RMBG_CUDNN_INCLUDE_DIR cudnn.h HINTS /usr/local/cudnn/include)
-+    find_library(RMBG_CUDNN_LIBRARY cudnn HINTS /usr/local/cudnn/lib64)
-+    if (RMBG_CUDNN_INCLUDE_DIR AND RMBG_CUDNN_LIBRARY)
-+        message(STATUS "Enabling optional RMBG cuDNN convolution path")
-+        target_include_directories(ggml-cuda PRIVATE ${RMBG_CUDNN_INCLUDE_DIR})
-+        target_link_libraries(ggml-cuda PRIVATE ${RMBG_CUDNN_LIBRARY})
-+        target_compile_definitions(ggml-cuda PRIVATE GGML_CUDA_RMBG_CUDNN)
-+    endif()
+ 
 +
      add_compile_definitions(GGML_CUDA_PEER_MAX_BATCH_SIZE=${GGML_CUDA_PEER_MAX_BATCH_SIZE})
-
+ 
      if (GGML_CUDA_GRAPHS)
 diff --git a/src/ggml-cuda/ggml-cuda.cu b/src/ggml-cuda/ggml-cuda.cu
-index 561ab7a..5432725 100644
+index a8a1c09..6c92d48 100644
 --- a/src/ggml-cuda/ggml-cuda.cu
 +++ b/src/ggml-cuda/ggml-cuda.cu
 @@ -40,6 +40,7 @@
@@ -56,7 +48,7 @@ index 561ab7a..5432725 100644
  #include "ggml-cuda/roll.cuh"
  #include "ggml-cuda/scale.cuh"
  #include "ggml-cuda/snake.cuh"
-@@ -1506,7 +1507,12 @@ static void ggml_cuda_mul_mat_cublas_impl(ggml_backend_cuda_context & ctx, const
+@@ -1509,7 +1510,12 @@ static void ggml_cuda_mul_mat_cublas_impl(ggml_backend_cuda_context & ctx, const
      const int cc = ggml_cuda_info().devices[ctx.device].cc;
      bool prefer_f32_output = false;
      if (compute_type == GGML_TYPE_F16) {
@@ -70,7 +62,7 @@ index 561ab7a..5432725 100644
      } else if (compute_type == GGML_TYPE_BF16) {
          prefer_f32_output = !GGML_CUDA_CC_IS_RDNA3(cc) && !GGML_CUDA_CC_IS_CDNA(cc);
      }
-@@ -2361,6 +2367,36 @@ static bool ggml_cuda_compute_forward(ggml_backend_cuda_context & ctx, struct gg
+@@ -2395,6 +2401,36 @@ static bool ggml_cuda_compute_forward(ggml_backend_cuda_context & ctx, struct gg
          case GGML_OP_FILL:
              ggml_cuda_op_fill(ctx, dst);
              break;
@@ -107,9 +99,9 @@ index 561ab7a..5432725 100644
          case GGML_OP_LIGHTNING_INDEXER:
              ggml_cuda_lightning_indexer(ctx, dst);
              break;
-@@ -4744,6 +4780,83 @@ static bool ggml_backend_cuda_device_supports_op(ggml_backend_dev_t dev, const g
+@@ -4874,6 +4910,83 @@ static bool ggml_backend_cuda_device_supports_op(ggml_backend_dev_t dev, const g
      }
-
+ 
      switch (op->op) {
 +        case GGML_OP_CUSTOM:
 +            if (ggml_cuda_is_rmbg_deform_im2col(op)) {
@@ -193,10 +185,10 @@ index 561ab7a..5432725 100644
                  case GGML_UNARY_OP_ABS:
 diff --git a/src/ggml-cuda/rmbg-deform-im2col.cu b/src/ggml-cuda/rmbg-deform-im2col.cu
 new file mode 100644
-index 0000000..486c361
+index 0000000..2a3c3c1
 --- /dev/null
 +++ b/src/ggml-cuda/rmbg-deform-im2col.cu
-@@ -0,0 +1,750 @@
+@@ -0,0 +1,610 @@
 +#include "rmbg-deform-im2col.cuh"
 +
 +#include <cstdio>
@@ -206,9 +198,6 @@ index 0000000..486c361
 +#include <memory>
 +#include <unordered_map>
 +
-+#ifdef GGML_CUDA_RMBG_CUDNN
-+#include <cudnn.h>
-+#endif
 +
 +namespace {
 +
@@ -246,136 +235,6 @@ index 0000000..486c361
 +    return value;
 +}
 +
-+#ifdef GGML_CUDA_RMBG_CUDNN
-+
-+#define CUDNN_CHECK(expr) do { \
-+    const cudnnStatus_t status_ = (expr); \
-+    GGML_ASSERT(status_ == CUDNN_STATUS_SUCCESS); \
-+} while (0)
-+
-+struct CudnnHandle {
-+    cudnnHandle_t value = nullptr;
-+    CudnnHandle() { CUDNN_CHECK(cudnnCreate(&value)); }
-+    ~CudnnHandle() { if (value) cudnnDestroy(value); }
-+};
-+
-+struct rmbg_cudnn_key {
-+    std::array<int, 15> values;
-+
-+    bool operator==(const rmbg_cudnn_key & other) const {
-+        return values == other.values;
-+    }
-+};
-+
-+struct rmbg_cudnn_key_hash {
-+    size_t operator()(const rmbg_cudnn_key & key) const {
-+        size_t hash = 0;
-+        for (const int value : key.values) {
-+            hash ^= (size_t) value + 0x9e3779b9u + (hash << 6) + (hash >> 2);
-+        }
-+        return hash;
-+    }
-+};
-+
-+struct rmbg_cudnn_plan {
-+    cudnnTensorDescriptor_t x = nullptr;
-+    cudnnTensorDescriptor_t y = nullptr;
-+    cudnnFilterDescriptor_t w = nullptr;
-+    cudnnConvolutionDescriptor_t conv = nullptr;
-+    cudnnConvolutionFwdAlgo_t algorithm = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
-+    size_t workspace_size = 0;
-+
-+    ~rmbg_cudnn_plan() {
-+        if (conv) cudnnDestroyConvolutionDescriptor(conv);
-+        if (w) cudnnDestroyFilterDescriptor(w);
-+        if (y) cudnnDestroyTensorDescriptor(y);
-+        if (x) cudnnDestroyTensorDescriptor(x);
-+    }
-+};
-+
-+struct rmbg_cudnn_device_cache {
-+    CudnnHandle handle;
-+    std::unordered_map<rmbg_cudnn_key, std::unique_ptr<rmbg_cudnn_plan>,
-+                       rmbg_cudnn_key_hash> plans;
-+};
-+
-+static rmbg_cudnn_device_cache & rmbg_cudnn_cache_for_device(int device) {
-+    thread_local std::unordered_map<int, std::unique_ptr<rmbg_cudnn_device_cache>> caches;
-+    auto & cache = caches[device];
-+    if (!cache) cache.reset(new rmbg_cudnn_device_cache());
-+    return *cache;
-+}
-+
-+static rmbg_cudnn_plan & rmbg_cudnn_get_plan(
-+        rmbg_cudnn_device_cache & cache, const rmbg_cudnn_key & key,
-+        bool conv_tf32) {
-+    auto found = cache.plans.find(key);
-+    if (found != cache.plans.end()) return *found->second;
-+
-+    std::unique_ptr<rmbg_cudnn_plan> plan(new rmbg_cudnn_plan());
-+    const auto & v = key.values;
-+    CUDNN_CHECK(cudnnCreateTensorDescriptor(&plan->x));
-+    CUDNN_CHECK(cudnnCreateTensorDescriptor(&plan->y));
-+    CUDNN_CHECK(cudnnCreateFilterDescriptor(&plan->w));
-+    CUDNN_CHECK(cudnnCreateConvolutionDescriptor(&plan->conv));
-+    CUDNN_CHECK(cudnnSetTensor4dDescriptor(plan->x, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT,
-+        v[0], v[1], v[2], v[3]));
-+    CUDNN_CHECK(cudnnSetTensor4dDescriptor(plan->y, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT,
-+        v[4], v[5], v[6], v[7]));
-+    CUDNN_CHECK(cudnnSetFilter4dDescriptor(plan->w, CUDNN_DATA_FLOAT, CUDNN_TENSOR_NCHW,
-+        v[8], v[9], v[10], v[11]));
-+    CUDNN_CHECK(cudnnSetConvolution2dDescriptor(plan->conv, v[13], v[13], v[12], v[12],
-+        1, 1, CUDNN_CROSS_CORRELATION, CUDNN_DATA_FLOAT));
-+    CUDNN_CHECK(cudnnSetConvolutionMathType(plan->conv,
-+        conv_tf32 ? CUDNN_TENSOR_OP_MATH : CUDNN_FMA_MATH));
-+
-+    constexpr size_t max_workspace = 512ull * 1024 * 1024;
-+    cudnnConvolutionFwdAlgoPerf_t perf[8];
-+    int returned = 0;
-+    CUDNN_CHECK(cudnnGetConvolutionForwardAlgorithm_v7(cache.handle.value, plan->x, plan->w,
-+        plan->conv, plan->y, 8, &returned, perf));
-+    for (int i = 0; i < returned; ++i) {
-+        if (perf[i].status == CUDNN_STATUS_SUCCESS && perf[i].memory <= max_workspace) {
-+            plan->algorithm = perf[i].algo;
-+            plan->workspace_size = perf[i].memory;
-+            break;
-+        }
-+    }
-+    auto inserted = cache.plans.emplace(key, std::move(plan));
-+    return *inserted.first->second;
-+}
-+
-+static void rmbg_cudnn_conv2d(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
-+    const ggml_tensor * kernel = dst->src[0];
-+    const ggml_tensor * input = dst->src[1];
-+    int stride = 0, pad = 0;
-+    GGML_ASSERT(std::sscanf(ggml_get_name(dst), "rmbg_conv2d_s%d_p%d", &stride, &pad) == 2);
-+    // cuDNN's TF32 convolution was measured at parity 1.92e-3 (vs 1.32e-3 for
-+    // FP32 conv) with no latency gain on RTX 3060 — the heuristic picks the
-+    // same implicit-GEMM algorithm either way.  Keep FP32 by default;
-+    // RMBG_CUDA_CONV_TF32=1 re-enables tensor-core convolution.
-+    static const bool conv_tf32 = [] {
-+        const char * opt = std::getenv("RMBG_CUDA_CONV_TF32");
-+        return opt && opt[0] && opt[0] != '0';
-+    }();
-+    rmbg_cudnn_device_cache & cache = rmbg_cudnn_cache_for_device(ctx.device);
-+    CUDNN_CHECK(cudnnSetStream(cache.handle.value, ctx.stream()));
-+    const rmbg_cudnn_key key {{
-+        (int) input->ne[3], (int) input->ne[2], (int) input->ne[1], (int) input->ne[0],
-+        (int) dst->ne[3], (int) dst->ne[2], (int) dst->ne[1], (int) dst->ne[0],
-+        (int) kernel->ne[3], (int) kernel->ne[2], (int) kernel->ne[1], (int) kernel->ne[0],
-+        stride, pad, conv_tf32 ? 1 : 0,
-+    }};
-+    rmbg_cudnn_plan & plan = rmbg_cudnn_get_plan(cache, key, conv_tf32);
-+    ggml_cuda_pool_alloc<uint8_t> workspace(ctx.pool());
-+    if (plan.workspace_size) workspace.alloc(plan.workspace_size);
-+    const float alpha = 1.f, beta = 0.f;
-+    CUDNN_CHECK(cudnnConvolutionForward(cache.handle.value, &alpha, plan.x, input->data,
-+        plan.w, kernel->data, plan.conv, plan.algorithm, workspace.ptr, plan.workspace_size,
-+        &beta, plan.y, dst->data));
-+}
-+
-+#endif
 +
 +// For one output location and kernel tap, offsets and modulation are shared by
 +// every input channel.  Keep the CK-major destination layout while computing
@@ -727,23 +586,16 @@ index 0000000..486c361
 +}
 +
 +bool ggml_cuda_is_rmbg_conv2d(const ggml_tensor * dst) {
-+#ifdef GGML_CUDA_RMBG_CUDNN
-+    return dst && dst->op == GGML_OP_CUSTOM &&
-+           std::strncmp(ggml_get_name(dst), kConvName, std::strlen(kConvName)) == 0;
-+#else
++    // cuDNN convolution path removed: RMBG conv2d is not dispatched on CUDA;
++    // the graph falls back to im2col + mul_mat (see rmbg_graph.cpp).
 +    GGML_UNUSED(dst);
 +    return false;
-+#endif
 +}
 +
 +void ggml_cuda_op_rmbg_conv2d(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
-+#ifdef GGML_CUDA_RMBG_CUDNN
-+    rmbg_cudnn_conv2d(ctx, dst);
-+#else
 +    GGML_UNUSED(ctx);
 +    GGML_UNUSED(dst);
-+    GGML_ABORT("RMBG cuDNN convolution was not compiled");
-+#endif
++    GGML_ABORT("RMBG conv2d must not be dispatched on CUDA; graph falls back to im2col");
 +}
 +
 +bool ggml_cuda_is_rmbg_swin_attention(const ggml_tensor * dst) {
@@ -974,13 +826,13 @@ index 0000000..46f9b9e
 +bool ggml_cuda_is_rmbg_affine_relu(const ggml_tensor * dst);
 +void ggml_cuda_op_rmbg_affine(ggml_backend_cuda_context & ctx, ggml_tensor * dst);
 diff --git a/src/ggml-vulkan/ggml-vulkan.cpp b/src/ggml-vulkan/ggml-vulkan.cpp
-index 9bde34b..a7c9297 100644
+index c2a47f1..4db4fdb 100644
 --- a/src/ggml-vulkan/ggml-vulkan.cpp
 +++ b/src/ggml-vulkan/ggml-vulkan.cpp
-@@ -861,6 +861,14 @@ struct vk_device_struct {
+@@ -897,6 +897,14 @@ struct vk_device_struct {
      vk_matmul_pipeline2 pipeline_matmul_f16;
      vk_matmul_pipeline2 pipeline_matmul_f16_f32;
-
+ 
 +    // Exact scalar alternatives retained on cooperative-matrix devices. RMBG
 +    // uses these for numerically sensitive layers while keeping CM1 enabled
 +    // for the layers that pass its end-to-end alpha gate.
@@ -992,7 +844,7 @@ index 9bde34b..a7c9297 100644
      vk_matmul_pipeline2 pipeline_dequant_mul_mat_mat[GGML_TYPE_COUNT];
      vk_matmul_pipeline2 pipeline_dequant_mul_mat_mat_f16[GGML_TYPE_COUNT];
      vk_matmul_pipeline2 pipeline_dequant_mul_mat_mat_q8_1[GGML_TYPE_COUNT];
-@@ -889,6 +897,13 @@ struct vk_device_struct {
+@@ -926,6 +934,13 @@ struct vk_device_struct {
      vk_pipeline pipeline_get_rows[GGML_TYPE_COUNT];
      vk_pipeline pipeline_get_rows_f32[GGML_TYPE_COUNT];
      vk_pipeline pipeline_get_rows_back_f32;
@@ -1005,8 +857,8 @@ index 9bde34b..a7c9297 100644
 +    vk_pipeline pipeline_rmbg_swin_qkv_layout_f32;
      vk_pipeline pipeline_acc_f32;
      vk_pipeline pipeline_set_f32;
-
-@@ -1037,6 +1052,8 @@ struct vk_device_struct {
+ 
+@@ -1076,6 +1091,8 @@ struct vk_device_struct {
      vk_pipeline pipeline_opt_step_sgd_f32;
      std::map<vk_conv2d_pipeline_state, vk_pipeline> pipeline_conv2d_f32[CONV_SHAPE_COUNT];
      std::map<vk_conv2d_pipeline_state, vk_pipeline> pipeline_conv2d_f16_f32[CONV_SHAPE_COUNT];
@@ -1015,10 +867,10 @@ index 9bde34b..a7c9297 100644
      std::map<vk_conv2d_pipeline_state, vk_pipeline> pipeline_conv_transpose_2d_f32[CONV_SHAPE_COUNT];
      std::map<vk_conv2d_pipeline_state, vk_pipeline> pipeline_conv_transpose_2d_f16_f32[CONV_SHAPE_COUNT];
      std::map<vk_conv3d_pipeline_state, vk_pipeline> pipeline_conv3d_f32[CONV_SHAPE_COUNT];
-@@ -1644,6 +1661,75 @@ struct vk_op_im2col_push_constants {
+@@ -1735,6 +1752,75 @@ struct vk_op_im2col_push_constants {
      uint32_t batch_IC;
  };
-
+ 
 +struct vk_op_rmbg_gather_push_constants {
 +    uint32_t a_offset;
 +    uint32_t d_offset;
@@ -1091,9 +943,9 @@ index 9bde34b..a7c9297 100644
  struct vk_op_im2col_3d_push_constants {
      uint64_t dst_addr;
      uint32_t nb10;
-@@ -3703,7 +3789,11 @@ static vk_fa_tuning_params get_fa_tuning_params_coopmat2(const vk_device& device
+@@ -3843,7 +3929,11 @@ static vk_fa_tuning_params get_fa_tuning_params_coopmat2(const vk_device& device
  }
-
+ 
  static vk_fa_tuning_params get_fa_tuning_params(const vk_device& device, uint32_t hsk, uint32_t hsv, uint32_t n_rows, uint32_t n_kv, ggml_type k_type, ggml_type v_type, bool f32acc) {
 -    FaCodePath path = device->coopmat2 ? FA_COOPMAT2 :
 +    // The cooperative-matrix modules use F16/BF16 multiplicands.  F32 K/V is
@@ -1102,9 +954,9 @@ index 9bde34b..a7c9297 100644
 +    FaCodePath path = (k_type == GGML_TYPE_F32 || v_type == GGML_TYPE_F32) ? FA_SCALAR :
 +                      device->coopmat2 ? FA_COOPMAT2 :
                        device->coopmat1_fa_support ? FA_COOPMAT1 : FA_SCALAR;
-
+ 
      if (path == FA_COOPMAT2 && k_type == GGML_TYPE_BF16 && !device->coopmat2_bf16_support) {
-@@ -4234,6 +4324,18 @@ static void ggml_vk_load_shaders(vk_device& device, vk_pipeline requested) {
+@@ -4377,6 +4467,18 @@ static void ggml_vk_load_shaders(vk_device& device, vk_pipeline requested) {
      if (!device->pipeline_matmul_f32_f16) {
          device->pipeline_matmul_f32_f16 = std::make_shared<vk_matmul_pipeline_struct>();
      }
@@ -1123,7 +975,7 @@ index 9bde34b..a7c9297 100644
      if (!device->pipeline_matmul_id_f32) {
          device->pipeline_matmul_id_f32 = std::make_shared<vk_matmul_pipeline_struct>();
      }
-@@ -4348,7 +4450,10 @@ static void ggml_vk_load_shaders(vk_device& device, vk_pipeline requested) {
+@@ -4491,7 +4593,10 @@ static void ggml_vk_load_shaders(vk_device& device, vk_pipeline requested) {
  #endif
              name = aligned ? "flash_attn_f32_f16_aligned" : "flash_attn_f32_f16";
          } else {
@@ -1135,7 +987,7 @@ index 9bde34b..a7c9297 100644
                  if (device->dot2_f16) {
                      if (f32acc) { spv_data = flash_attn_f32_f16_dot2_data;        spv_size = flash_attn_f32_f16_dot2_len; }
                      else        { spv_data = flash_attn_f32_f16_dot2_f16acc_data; spv_size = flash_attn_f32_f16_dot2_f16acc_len; }
-@@ -4670,6 +4775,35 @@ static void ggml_vk_load_shaders(vk_device& device, vk_pipeline requested) {
+@@ -4822,6 +4927,35 @@ static void ggml_vk_load_shaders(vk_device& device, vk_pipeline requested) {
              CREATE_MM2(GGML_TYPE_MXFP4,   pipeline_dequant_mul_mat_mat_id[GGML_TYPE_MXFP4],   matmul_id_subgroup_mxfp4_f32,   mmq_wg_denoms, warptile_mmq, vk_mat_mat_id_push_constants, mul_mat_id_param_count, _id);
              CREATE_MM2(GGML_TYPE_NVFP4,   pipeline_dequant_mul_mat_mat_id[GGML_TYPE_NVFP4],   matmul_id_subgroup_nvfp4_f32,   mmq_wg_denoms, warptile_mmq, vk_mat_mat_id_push_constants, mul_mat_id_param_count, _id);
          }
@@ -1171,7 +1023,7 @@ index 9bde34b..a7c9297 100644
  #undef CREATE_MM2
  #undef CREATE_MM
      } else
-@@ -5304,6 +5438,21 @@ static void ggml_vk_load_shaders(vk_device& device, vk_pipeline requested) {
+@@ -5469,6 +5603,21 @@ static void ggml_vk_load_shaders(vk_device& device, vk_pipeline requested) {
      ggml_vk_create_pipeline(device, device->pipeline_get_rows_f32[GGML_TYPE_MXFP4],   "get_rows_mxfp4_f32",   get_rows_mxfp4_f32_len,   get_rows_mxfp4_f32_data,   "main", 3, sizeof(vk_op_binary_push_constants), {1024, 1, 1}, {}, 1);
      ggml_vk_create_pipeline(device, device->pipeline_get_rows_f32[GGML_TYPE_NVFP4],   "get_rows_nvfp4_f32",   get_rows_nvfp4_f32_len,   get_rows_nvfp4_f32_data,   "main", 3, sizeof(vk_op_binary_push_constants), {1024, 1, 1}, {}, 1);
      ggml_vk_create_pipeline(device, device->pipeline_get_rows_back_f32, "get_rows_back_f32", get_rows_back_f32_len, get_rows_back_f32_data, "main", 3, sizeof(vk_op_binary_push_constants), {256, 1, 1}, {}, 1, true);
@@ -1190,13 +1042,13 @@ index 9bde34b..a7c9297 100644
 +    ggml_vk_create_pipeline(device, device->pipeline_rmbg_affine_relu_f32, "rmbg_affine_relu_f32", rmbg_affine_relu_f32_len, rmbg_affine_relu_f32_data, "main", 4, sizeof(vk_op_rmbg_affine_relu_push_constants), {256, 1, 1}, {}, 1);
 +    ggml_vk_create_pipeline(device, device->pipeline_rmbg_swin_windows_f32, "rmbg_swin_windows_f32", rmbg_swin_windows_f32_len, rmbg_swin_windows_f32_data, "main", 2, sizeof(vk_op_rmbg_swin_windows_push_constants), {256, 1, 1}, {}, 1);
 +    ggml_vk_create_pipeline(device, device->pipeline_rmbg_swin_qkv_layout_f32, "rmbg_swin_qkv_layout_f32", rmbg_swin_qkv_layout_f32_len, rmbg_swin_qkv_layout_f32_data, "main", 3, sizeof(vk_op_rmbg_swin_qkv_layout_push_constants), {256, 1, 1}, {}, 1);
-
+ 
      ggml_vk_create_pipeline(device, device->pipeline_matmul_split_k_reduce, "split_k_reduce", split_k_reduce_len, split_k_reduce_data, "main", 2, 2 * sizeof(uint32_t), {256 * 4, 1, 1}, {}, 1);
      ggml_vk_create_pipeline(device, device->pipeline_flash_attn_split_k_reduce, "fa_split_k_reduce", fa_split_k_reduce_len, fa_split_k_reduce_data, "main", 3, sizeof(vk_op_flash_attn_split_k_reduce_push_constants), {1, device->subgroup_size, 1}, {device->subgroup_size}, 1, true);
-@@ -5789,6 +5938,17 @@ static void ggml_vk_load_shaders(vk_device& device, vk_pipeline requested) {
+@@ -5957,6 +6106,17 @@ static void ggml_vk_load_shaders(vk_device& device, vk_pipeline requested) {
                  conv2d_BS.CRS);  // CRS block size should be capped at subgroup size for correctness when shuffle is used.
          }
-
+ 
 +        // Preserve the scalar configuration before cooperative-matrix tuning
 +        // mutates the shared-memory layout and workgroup shape below. RMBG
 +        // uses these exact pipelines for numerically sensitive convolutions
@@ -1211,10 +1063,10 @@ index 9bde34b..a7c9297 100644
          // cm1 is used only when cm2 is unavailable; capped at 64x128 (due to shared memory size).
          // Requires 16x16x16 f16-acc since that's the fragment shape hard-coded in the shader.
          // Subgroup size must be 32 or 64 (to keep WG_SIZE sane) and we need
-@@ -5904,6 +6064,29 @@ static void ggml_vk_load_shaders(vk_device& device, vk_pipeline requested) {
+@@ -6072,6 +6232,29 @@ static void ggml_vk_load_shaders(vk_device& device, vk_pipeline requested) {
  #undef CREATE_CONV
  #undef CREATE_CONVS
-
+ 
 +#define CREATE_SCALAR_CONV(type_suffix, spv_suffix) \
 +        for (auto &c : device->pipeline_conv2d##type_suffix##_scalar[s]) { \
 +            const vk_conv2d_pipeline_state &state = c.first; \
@@ -1241,10 +1093,10 @@ index 9bde34b..a7c9297 100644
          std::vector<uint32_t> conv3d_spec_constants = { conv2d_WG_SIZE, conv2d_BS.K, conv2d_BS.CRS, conv2d_BS.NPQ, conv2d_TS_K, conv2d_SHMEM_PAD };
  #define CREATE_CONV3D(type_suffix, spv_suffix) \
          for (auto &c : device->pipeline_conv3d##type_suffix[s]) { \
-@@ -8956,6 +9139,61 @@ static vk_pipeline ggml_vk_get_64b_indexing_pipeline(ggml_backend_vk_context * c
+@@ -9160,6 +9343,61 @@ static vk_pipeline ggml_vk_get_64b_indexing_pipeline(ggml_backend_vk_context * c
      return pipeline;
  }
-
+ 
 +static bool ggml_vk_rmbg_tensor_matches(const ggml_tensor * tensor, const std::string & token) {
 +    for (const ggml_tensor * current = tensor; current; current = current->view_src) {
 +        const char * name = ggml_get_name(current);
@@ -1303,10 +1155,10 @@ index 9bde34b..a7c9297 100644
  static void ggml_vk_mul_mat_q_f16(ggml_backend_vk_context * ctx, vk_context& subctx, const ggml_tensor * src0, const ggml_tensor * src1, ggml_tensor * dst, bool disable_split_k) {
      VK_LOG_DEBUG("ggml_vk_mul_mat_q_f16((" << src0 << ", name=" << src0->name << ", type=" << ggml_type_name(src0->type) << ", ne0=" << src0->ne[0] << ", ne1=" << src0->ne[1] << ", ne2=" << src0->ne[2] << ", ne3=" << src0->ne[3] << ", nb0=" << src0->nb[0] << ", nb1=" << src0->nb[1] << ", nb2=" << src0->nb[2] << ", nb3=" << src0->nb[3];
      std::cerr << "), (" << src1 << ", name=" << src1->name << ", type=" << ggml_type_name(src1->type) << ", ne0=" << src1->ne[0] << ", ne1=" << src1->ne[1] << ", ne2=" << src1->ne[2] << ", ne3=" << src1->ne[3] << ", nb0=" << src1->nb[0] << ", nb1=" << src1->nb[1] << ", nb2=" << src1->nb[2] << ", nb3=" << src1->nb[3];
-@@ -9023,6 +9261,17 @@ static void ggml_vk_mul_mat_q_f16(ggml_backend_vk_context * ctx, vk_context& sub
+@@ -9227,6 +9465,17 @@ static void ggml_vk_mul_mat_q_f16(ggml_backend_vk_context * ctx, vk_context& sub
          quantize_y = false;
      }
-
+ 
 +    if (ctx->device->coopmat_support &&
 +        ggml_vk_rmbg_force_scalar_matmul(src0, src1, dst)) {
 +        const ggml_type scalar_src1_type = y_non_contig ? f16_type : src1->type;
@@ -1320,9 +1172,9 @@ index 9bde34b..a7c9297 100644
 +
      const bool qx_needs_dequant = mmp == nullptr || x_non_contig;
      const bool qy_needs_dequant = !quantize_y && ((src1->type != f16_type && !y_f32_kernel) || y_non_contig);
-
-@@ -11474,10 +11723,14 @@ static vk_pipeline ggml_vk_op_get_pipeline(ggml_backend_vk_context * ctx, const
-
+ 
+@@ -11749,10 +11998,14 @@ static vk_pipeline ggml_vk_op_get_pipeline(ggml_backend_vk_context * ctx, const
+ 
              std::map<vk_conv2d_pipeline_state, vk_pipeline> *pipelines = nullptr;
              if (op == GGML_OP_CONV_2D) {
 +                const char *scalar_conv = std::getenv("RMBG_VK_SCALAR_DIRECT_CONV");
@@ -1338,10 +1190,10 @@ index 9bde34b..a7c9297 100644
                  }
              } else if (op == GGML_OP_CONV_TRANSPOSE_2D) {
                  if (src0->type == GGML_TYPE_F32) {
-@@ -12125,6 +12378,260 @@ static void ggml_vk_get_rows_back(ggml_backend_vk_context * ctx, vk_context& sub
+@@ -12409,6 +12662,260 @@ static void ggml_vk_get_rows_back(ggml_backend_vk_context * ctx, vk_context& sub
      });
  }
-
+ 
 +static bool ggml_vk_is_rmbg_patch_merge(const ggml_tensor * dst) {
 +    return dst && dst->op == GGML_OP_CUSTOM &&
 +           std::strncmp(ggml_get_name(dst), "rmbg_patch_merge_", 17) == 0;
@@ -1599,10 +1451,10 @@ index 9bde34b..a7c9297 100644
  static void ggml_vk_acc(ggml_backend_vk_context * ctx, vk_context& subctx, const ggml_tensor * src0, const ggml_tensor * src1, ggml_tensor * dst) {
      const uint32_t src0_type_size = ggml_type_size(src0->type);
      const uint32_t src1_type_size = ggml_type_size(src1->type);
-@@ -15109,6 +15616,24 @@ static bool ggml_vk_build_graph(ggml_backend_vk_context * ctx, ggml_cgraph * cgr
+@@ -15430,6 +15937,24 @@ static bool ggml_vk_build_graph(ggml_backend_vk_context * ctx, ggml_cgraph * cgr
      case GGML_OP_GET_ROWS_BACK:
          ggml_vk_get_rows_back(ctx, compute_ctx, src0, src1, node);
-
+ 
 +        break;
 +    case GGML_OP_CUSTOM:
 +        if (ggml_vk_is_rmbg_deform_im2col(node)) {
@@ -1624,9 +1476,9 @@ index 9bde34b..a7c9297 100644
          break;
      case GGML_OP_ADD:
          if (ctx->num_additional_fused_ops) {
-@@ -17677,6 +18222,66 @@ static bool ggml_backend_vk_device_supports_op(ggml_backend_dev_t dev, const ggm
+@@ -18056,6 +18581,66 @@ static bool ggml_backend_vk_device_supports_op(ggml_backend_dev_t dev, const ggm
      }
-
+ 
      switch (op->op) {
 +        case GGML_OP_CUSTOM:
 +            if (!(ggml_vk_is_rmbg_patch_merge(op) || ggml_vk_is_rmbg_image_patches(op) ||
@@ -2205,12 +2057,12 @@ index 0000000..9b21cd4
 +    data_d[p.d_offset + idx] = data_a[p.a_offset + channel + p.channels * (t + TOKENS * window)];
 +}
 diff --git a/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp b/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
-index 616273e..d5497cb 100644
+index 50c77c2..7389aa6 100644
 --- a/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
 +++ b/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
-@@ -791,6 +791,15 @@ void process_shaders() {
+@@ -796,6 +796,15 @@ void process_shaders() {
      }
-
+ 
      string_to_spv("get_rows_i32", "get_rows.comp", {{"TEMP_TYPE", "uint"}, {"A_TYPE", "uint"}, {"B_TYPE", "int"}, {"D_TYPE", "uint"}});
 +    string_to_spv("rmbg_gather_f32", "rmbg_gather.comp", {});
 +    string_to_spv("rmbg_deform_im2col_f32", "rmbg_deform_im2col.comp", {});
@@ -2221,6 +2073,6 @@ index 616273e..d5497cb 100644
 +    string_to_spv("rmbg_affine_relu_f32", "rmbg_affine_relu.comp", {});
 +    string_to_spv("rmbg_swin_windows_f32", "rmbg_swin_windows.comp", {});
 +    string_to_spv("rmbg_swin_qkv_layout_f32", "rmbg_swin_qkv_layout.comp", {});
-
+ 
      string_to_spv("mul_mat_vec_p021_f16_f32_subgroup_add", "mul_mat_vec_p021.comp", {{"A_TYPE", "float16_t"}, {"A_TYPEV4", "f16vec4"}, {"B_TYPE", "float"}, {"B_TYPEV4", "vec4"}, {"D_TYPE", "float"}, {"USE_SUBGROUP_ADD", "1"}});
      string_to_spv("mul_mat_vec_p021_f16_f32",              "mul_mat_vec_p021.comp", {{"A_TYPE", "float16_t"}, {"A_TYPEV4", "f16vec4"}, {"B_TYPE", "float"}, {"B_TYPEV4", "vec4"}, {"D_TYPE", "float"}});

@@ -82,5 +82,47 @@ PackedRgb qimage_to_packed_rgb(const QImage& image) {
     return out;
 }
 
+bool image_view_to_packed_rgb(const aicore_image_view& view,
+                              std::vector<uint8_t>& out) {
+    if (!view.data || view.width <= 0 || view.height <= 0) return false;
+    size_t channels = 0;
+    if (view.format == AICORE_IMAGE_RGB8)
+        channels = 3;
+    else if (view.format == AICORE_IMAGE_RGBA8)
+        channels = 4;
+    else if (view.format == AICORE_IMAGE_GRAY8)
+        channels = 1;
+    else if (view.format == AICORE_IMAGE_BGR8)
+        channels = 3;
+    else if (view.format == AICORE_IMAGE_BGRA8)
+        channels = 4;
+    else
+        return false;
+    const size_t row = static_cast<size_t>(view.width) * channels;
+    if (view.row_stride_bytes < row) return false;
+    out.resize(static_cast<size_t>(view.width) * view.height * 3);
+    for (int y = 0; y < view.height; ++y) {
+        const uint8_t* src =
+                view.data + static_cast<size_t>(y) * view.row_stride_bytes;
+        uint8_t* dst = out.data() + static_cast<size_t>(y) * view.width * 3;
+        if (channels == 3 && view.format == AICORE_IMAGE_RGB8)
+            std::memcpy(dst, src, row);
+        else
+            for (int x = 0; x < view.width; ++x) {
+                if (channels == 1)
+                    dst[3 * x] = dst[3 * x + 1] = dst[3 * x + 2] = src[x];
+                else {
+                    const int step = channels;
+                    const bool bgr = view.format == AICORE_IMAGE_BGR8 ||
+                                     view.format == AICORE_IMAGE_BGRA8;
+                    dst[3 * x] = src[step * x + (bgr ? 2 : 0)];
+                    dst[3 * x + 1] = src[step * x + 1];
+                    dst[3 * x + 2] = src[step * x + (bgr ? 0 : 2)];
+                }
+            }
+    }
+    return true;
+}
+
 }  // namespace capi
 }  // namespace aicore

@@ -165,12 +165,9 @@ void TrellisDialog::buildGeneratePage(QWidget* page) {
     m_quantCombo->addItem(tr("q8 (recommended, low VRAM)"),
                           QStringLiteral("q8"));
     m_quantCombo->addItem(tr("f16 (reference)"), QStringLiteral("f16"));
-    // Upstream's exact mode: the chaotic chain (dino / flows / ss_dec /
-    // shape_dec) upgrades to full-f32 weights; those GGUFs are local
-    // conversions (upstream convert_*_to_gguf.py --ftype 0), not published
-    // on the mirror, so the download check lists them as missing when absent.
-    m_quantCombo->addItem(tr("f32 (exact mode, local models)"),
-                          QStringLiteral("f32"));
+    // The exact chain upgrades dino, flows, ss_dec, and shape_dec to the
+    // published f32 weights. Texture-only files remain on f16.
+    m_quantCombo->addItem(tr("f32 (exact reference)"), QStringLiteral("f32"));
     m_quantCombo->setToolTip(
             tr("Weight precision of the whole chain. q8 halves the memory "
                "footprint (fits small GPUs); the sensitive decoders always "
@@ -761,10 +758,8 @@ void TrellisDialog::onPresetChanged(int index) {
 
 void TrellisDialog::updateModelStatus() {
     const QStringList missing = missingPresetFiles();
-    const QString cacheDir = TrellisHelpers::modelCacheDir();
     if (missing.isEmpty()) {
-        m_modelStatus->setText(
-                tr("\u2705 All models present in %1").arg(cacheDir));
+        m_modelStatus->setText(tr("\u2705 All models present."));
         m_downloadBtn->setEnabled(false);
     } else {
         m_modelStatus->setText(tr("\u26a0 Missing %1 model(s): %2")
@@ -776,6 +771,7 @@ void TrellisDialog::updateModelStatus() {
 
 QStringList TrellisDialog::missingPresetFiles() const {
     const QString cacheDir = TrellisHelpers::modelCacheDir();
+    const QString rmbgCacheDir = TrellisHelpers::rmbgModelCacheDir();
     const QVector<TrellisPreset> presets = TrellisHelpers::presets();
     const int idx = m_presetCombo->currentIndex();
     if (idx < 0 || idx >= presets.size()) return {};
@@ -795,12 +791,12 @@ QStringList TrellisDialog::missingPresetFiles() const {
     }
     if (m_rmbgCheck->isChecked()) {
         const QString rmbgName = TrellisHelpers::isValidModelFile(
-                                         cacheDir + QLatin1Char('/') +
+                                         rmbgCacheDir + QLatin1Char('/') +
                                                  QStringLiteral("rmbg_q8.gguf"),
                                          QStringLiteral("rmbg_q8.gguf"))
                                          ? QStringLiteral("rmbg_q8.gguf")
                                          : QStringLiteral("rmbg_f16.gguf");
-        const QString rmbg = cacheDir + QLatin1Char('/') + rmbgName;
+        const QString rmbg = rmbgCacheDir + QLatin1Char('/') + rmbgName;
         if (!TrellisHelpers::isValidModelFile(rmbg, rmbgName)) {
             missing << rmbgName;
         }
@@ -810,7 +806,9 @@ QStringList TrellisDialog::missingPresetFiles() const {
 
 void TrellisDialog::onDownloadModels() {
     const QString cacheDir = TrellisHelpers::modelCacheDir();
+    const QString rmbgCacheDir = TrellisHelpers::rmbgModelCacheDir();
     QDir().mkpath(cacheDir);
+    QDir().mkpath(rmbgCacheDir);
     const QVector<TrellisPreset> presets = TrellisHelpers::presets();
     const int idx = m_presetCombo->currentIndex();
     if (idx < 0 || idx >= presets.size()) return;
@@ -827,13 +825,13 @@ void TrellisDialog::onDownloadModels() {
     }
     if (m_rmbgCheck->isChecked()) {
         const QString rmbgName = TrellisHelpers::isValidModelFile(
-                                         cacheDir + QLatin1Char('/') +
+                                         rmbgCacheDir + QLatin1Char('/') +
                                                  QStringLiteral("rmbg_q8.gguf"),
                                          QStringLiteral("rmbg_q8.gguf"))
                                          ? QStringLiteral("rmbg_q8.gguf")
                                          : QStringLiteral("rmbg_f16.gguf");
         if (!TrellisHelpers::isValidModelFile(
-                    cacheDir + QLatin1Char('/') + rmbgName, rmbgName)) {
+                    rmbgCacheDir + QLatin1Char('/') + rmbgName, rmbgName)) {
             m_pendingDownloads << rmbgName;
         }
     }
@@ -868,23 +866,18 @@ void TrellisDialog::downloadNextModel() {
         return;
     }
     const QString filename = m_pendingDownloads.takeFirst();
-    // All models are published on the Hugging Face mirror
-    // (Asher-1/Trellis2-models). The GitHub release only carries q8 flow
-    // variants and is kept only for legacy compatibility; the plugin no
-    // longer queries it for downloads.
+    // The AICore catalog supplies the HF URL, size, and LFS SHA-256 for every
+    // supported model; qTrellis deliberately owns no duplicate model table.
     HfModelInfo hfInfo;
     if (!TrellisHelpers::hfModelInfo(filename, &hfInfo)) {
-        // Not published on the mirror. Expected for the f32 (exact-mode)
-        // GGUFs, which are local conversions from the upstream safetensors.
-        appendLog(tr("[TRELLIS] Model not found on HF mirror: %1 (f32 models "
-                     "are local conversions — see the plugin README)")
+        appendLog(tr("[TRELLIS] Model is absent from the AICore catalog: %1")
                           .arg(filename));
         downloadNextModel();
         return;
     }
     const QString url = TrellisHelpers::hfDownloadUrl(filename);
-    const QString dest =
-            TrellisHelpers::modelCacheDir() + QDir::separator() + filename;
+    const QString dest = TrellisHelpers::modelCacheDirFor(filename) +
+                         QDir::separator() + filename;
     appendLog(tr("[TRELLIS] Downloading %1...").arg(filename));
     m_downloadInProgress = true;
     ecvModelDownloader::Request req;

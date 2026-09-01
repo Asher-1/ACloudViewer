@@ -10,11 +10,11 @@ Image + prompts → AICore SAM3 GGML → segmentation masks / detections → ann
 The engine is an in-tree port of
 [sam3-ggml](https://github.com/Asher-1/sam3-ggml) living in
 `core/AICore/src/tasks/sam3/` (single-file C++ library running the GGUF
-models on ggml v0.18.1). The required ggml operators are applied through the
+models on the repository-pinned ggml runtime). The required ggml operators are applied through the
 standard patch chain (`3rdparty/ggml/patches/sam3_merged/`,
 `igemm_fix/`).
 
-**User guide:** [docs/guides/plugins/qSAM3.md](../../../docs/guides/plugins/qSAM3.md)
+**User guide:** [docs/guides/plugins/qSAM3.md](../../../../docs/guides/plugins/qSAM3.md)
 
 ## Build
 

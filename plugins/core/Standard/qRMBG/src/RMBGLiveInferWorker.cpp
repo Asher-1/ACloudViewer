@@ -7,7 +7,6 @@
 
 #include "RMBGLiveInferWorker.h"
 
-#include <QByteArray>
 #include <QFileInfo>
 #include <new>
 #include <utility>
@@ -147,10 +146,9 @@ void RMBGLiveInferWorker::runJobImpl(RMBGLiveInferWorker::Job job) {
     result.snapshot.backend = m_info.backend;
     result.snapshot.mathProfile = m_info.mathProfile;
 
-    QByteArray packedRgb;
-    const uchar* rgb = RMBGHelpers::packedRgb888Data(job.rgb, &packedRgb);
-    if (!rgb) {
-        result.error = tr("Live frame is not RGB888.");
+    aicore_image_view image{};
+    if (!RMBGHelpers::imageView(&job.rgb, &image)) {
+        result.error = tr("Failed to create an image view for the live frame.");
         emit inferComplete(result);
         return;
     }
@@ -158,9 +156,8 @@ void RMBGLiveInferWorker::runJobImpl(RMBGLiveInferWorker::Job job) {
     uint8_t* rgba = nullptr;
     int32_t outW = 0, outH = 0;
     int rgbaLength = 0;
-    const int rc = aicore_rmbg_remove_background_rgba(
-            m_ctx, rgb, job.rgb.width(), job.rgb.height(), &rgba, &outW, &outH,
-            &rgbaLength);
+    const int rc = aicore_rmbg_remove_background_rgba_image_view(
+            m_ctx, &image, &rgba, &outW, &outH, &rgbaLength);
     if (rc != 0 || !rgba || rgbaLength <= 0) {
         const char* message = aicore_rmbg_last_error(m_ctx);
         result.error = message ? QString::fromUtf8(message)

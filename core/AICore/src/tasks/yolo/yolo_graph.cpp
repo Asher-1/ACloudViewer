@@ -7,6 +7,7 @@
 
 #include "tasks/yolo/yolo_graph.hpp"
 
+#include <atomic>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -22,6 +23,8 @@
 namespace yolo {
 
 namespace {
+
+std::atomic<uint64_t> g_next_plan_owner_id{1};
 
 // Q8_0 block layout (binary-compatible with ggml's block_q8_0): a per-32-
 // element fp16 scale followed by 32 int8 deltas. Defined locally so the host
@@ -219,10 +222,9 @@ struct GraphBuilder {
         return add_bias_act(op, prefix, out);
     }
 
-    // ggml 0.18.1 conv_2d_dw builds mul_mat(F32 kernel, F16 im2col) which
-    // asserts on CPU (src1 must be F32 when src0 is F32). Cast F32 kernels
-    // to F16 — matching the im2col F16 dtype — so both operands are F16 like
-    // every other conv.
+    // ggml's generic CPU depthwise lowering emits an F16 im2col even for F32
+    // input, so its kernel must match. GPU sessions use direct convolution and
+    // never enter this helper.
     ggml_tensor* dw_kernel(ggml_tensor* wT) {
         return wT->type == GGML_TYPE_F32 ? ggml_cast(gctx, wT, GGML_TYPE_F16)
                                          : wT;
@@ -814,10 +816,6 @@ struct GraphBuilder {
                 a = ggml_upscale(gctx, a, 1 << l, GGML_SCALE_MODE_NEAREST);
                 s1 = ggml_upscale(gctx, s1, 1 << l, GGML_SCALE_MODE_NEAREST);
             }
-            std::fprintf(
-                    stderr,
-                    "[savpe-build] level %d done (post-conv upsample x%d)\n", l,
-                    l > 0 ? (1 << l) : 1);
             act = act ? ggml_concat(gctx, act, a, 2) : a;
             sem = sem ? ggml_concat(gctx, sem, s1, 2) : s1;
         }
@@ -828,11 +826,21 @@ struct GraphBuilder {
         dbg_savpe_x = x;
         dbg_savpe_y = y;
 
-        // Channels-first staging of the semantic map: [512, HW3] contiguous
-        // (same permute pattern as world_detect's embedding branch).
-        ggml_tensor* xT = ggml_cont(gctx, ggml_permute(gctx, x, 1, 2, 0, 3));
-        xT = ggml_reshape_2d(gctx, xT, x->ne[2], HW3);
+        // Channels-first staging of the semantic map: [HW3, C] F32 rows,
+        // p = h*W + w — the SAME grid order the mask leaf and s_all use
+        // (torch's [C,H,W].flatten(2) layout). x's own memory already IS
+        // that layout ([W, H, C] with p innermost), so a plain reshape —
+        // no permute — reinterprets it; the per-group views below index it
+        // row-major ((p, ch) at p + ch*nb[1]). A permute-based staging here
+        // scrambles channels against grid positions and silently zeroes
+        // visual-prompt detections: permute maps a's dim i into slot axis_i
+        // (ne[axis_i] = a->ne[i]), so cont(permute(x, 2,0,1,3)) yields the
+        // flat order h + H3*c + H3*C*w, which no clean [C,HW3]/[HW3,C]
+        // reinterpretation of the [W3,H3,C] source can reproduce — only the
+        // raw memory order matches flatten(2).
+        ggml_tensor* xT = x;
         if (xT->type != GGML_TYPE_F32) xT = ggml_cast(gctx, xT, GGML_TYPE_F32);
+        xT = ggml_reshape_2d(gctx, xT, HW3, x->ne[2]);
 
         // Per prompt q: cv5(mask) -> cat(y, .) -> cv6 -> masked softmax over
         // the P3 grid -> one [HW3, 16] score column block.
@@ -842,26 +850,46 @@ struct GraphBuilder {
                     gctx, ggml_view_4d(gctx, vp, W3, H3, 1, 1, vp->nb[1],
                                        vp->nb[2], vp->nb[3], q * vp->nb[2]));
             ggml_tensor* m = savpe_conv("cv5", vp_q, 3, 1, 1, false);
+            // Concat type match (same pattern as world_detect's s4): the
+            // mask branch consumes the F32 external leaf, so on the GPU
+            // f16 activation flows cv5 lands on F32 while cv4's `y` is F16
+            // — cast the mask column to the activation flow's dtype before
+            // the concat (the following cv6 convs then see one dtype).
+            if (m->type != y->type) m = ggml_cast(gctx, m, y->type);
             ggml_tensor* yq = ggml_concat(gctx, y, m, 2);  // [W3,H3,32]
             yq = savpe_conv("cv6_0", yq, 3, 1, 1, true);
             yq = savpe_conv("cv6_1", yq, 3, 1, 1, false);
 
-            // Stage per-group scores: [16, HW3] F32, rows = groups.
-            ggml_tensor* yT =
-                    ggml_cont(gctx, ggml_permute(gctx, yq, 1, 2, 0, 3));
-            yT = ggml_reshape_2d(gctx, yT, yq->ne[2], HW3);
+            // Stage per-group scores: [16, HW3] F32, rows = groups, p = h*W+w
+            // grid order (torch's [16,H,W].flatten(2)). yq's memory is that
+            // order transposed ([HW3, 16] rows, p innermost), so reshape to
+            // [HW3, 16], transpose-view, then cont materializes the
+            // group-major layout the masked-mul broadcast (src1 [1, HW3]
+            // must tile src0) and the s_all column offset below require.
+            ggml_tensor* yT = yq;
             if (yT->type != GGML_TYPE_F32)
                 yT = ggml_cast(gctx, yT, GGML_TYPE_F32);
+            yT = ggml_cont(gctx, ggml_permute(gctx,
+                                              ggml_reshape_2d(gctx, yT, HW3,
+                                                              yq->ne[2]),
+                                              1, 0, 2, 3));  // [16, HW3]
 
             // score = y * vp + (1 - vp) * finfo.min, softmax over the grid.
-            // The mask is binary host data, so (1 - vp) == relu(-vp). The
-            // mask column broadcasts over the 16 group rows: ggml binary ops
-            // require src1 to tile src0 (each src0 dim a multiple of the
+            // For the binary mask leaf, (1 - vp) == relu(1 - vp) via one
+            // scale_bias. The previous relu(-vp) identity is identically
+            // ZERO for non-negative vp, so the -1e30 outside gate never
+            // fired and the softmax leaked uniform mass over the whole P3
+            // grid — the aggregated vpe collapsed into the global image
+            // average and the contrastive head scored nothing.
+            //
+            // The mask column broadcasts over the 16 group rows: ggml binary
+            // ops require src1 to tile src0 (each src0 dim a multiple of the
             // src1 dim), so the mask must be [1, HW3] next to yT's [16, HW3].
             ggml_tensor* vp_col = ggml_reshape_2d(
                     gctx, ggml_reshape_1d(gctx, vp_q, HW3), 1, HW3);
             ggml_tensor* outside = ggml_scale(
-                    gctx, ggml_relu(gctx, ggml_scale(gctx, vp_col, -1.0f)),
+                    gctx,
+                    ggml_relu(gctx, ggml_scale_bias(gctx, vp_col, -1.0f, 1.0f)),
                     -1e30f);
             ggml_tensor* masked =
                     ggml_add(gctx, ggml_mul(gctx, yT, vp_col), outside);
@@ -884,9 +912,15 @@ struct GraphBuilder {
             ggml_tensor* x_g =
                     ggml_cont(gctx, ggml_view_2d(gctx, xT, HW3, d, xT->nb[1],
                                                  (size_t)(g * d) * xT->nb[1]));
+            // Column-offset into s_all: S_g[p, q] = s_all[p, q*16 + g] — the
+            // softmax weight of GROUP g at grid row p for prompt q (official
+            // SAVPE aggregation). The previous row-offset (g * nb[0]) read
+            // group 0 at grid g+p: mathematically wrong AND out of bounds
+            // for g+p >= HW3 (observed as m-scale savpe failures on every
+            // backend, while the loose test threshold masked it on n).
             ggml_tensor* s_g = ggml_cont(
                     gctx, ggml_view_2d(gctx, s_all, HW3, Q, s_all->nb[1] * c16,
-                                       (size_t)g * s_all->nb[0]));
+                                       (size_t)g * s_all->nb[1]));
             ggml_tensor* agg = ggml_mul_mat(gctx, x_g, s_g);  // [d, Q]
             out = out ? ggml_concat(gctx, out, agg, 0) : agg;
         }
@@ -961,12 +995,9 @@ bool build_run_plan(Session* s, int input_w, int input_h) {
         return false;
     }
 
-    GraphBuilder gb{gctx,
-                    s->wctx,
-                    s->model,
-                    s->q8_direct,
-                    s->backend.is_cuda || s->backend.is_vulkan,
-                    s->backend.is_cuda};
+    const bool use_direct_conv = s->backend.is_cuda || s->backend.is_vulkan;
+    GraphBuilder gb{gctx,         s->wctx,         s->model,
+                    s->q8_direct, use_direct_conv, s->backend.is_cuda};
     std::vector<ggml_tensor*> values(s->model.ops.size(), nullptr);
 
     ggml_tensor* input =
@@ -1251,6 +1282,25 @@ bool build_run_plan(Session* s, int input_w, int input_h) {
                 ggml_build_forward_expand(graph, values[i]);
             }
         }
+        // savpe debug nodes (visual mode): the dump hook reads them after
+        // the run, so they must be kept alive too — without ggml_set_output
+        // the gallocr reuses their buffers as soon as their last consumer
+        // runs, and the dump sees garbage (observed on the savpe bisection).
+        for (int l = 0; l < 3; l++) {
+            ggml_tensor* dbg[2] = {gb.dbg_savpe_fpn[l], gb.dbg_savpe_cv2[l]};
+            for (ggml_tensor* t : dbg) {
+                if (t) {
+                    ggml_set_output(t);
+                    ggml_build_forward_expand(graph, t);
+                }
+            }
+        }
+        for (ggml_tensor* t : {gb.dbg_savpe_x, gb.dbg_savpe_y, graph_text}) {
+            if (t) {
+                ggml_set_output(t);
+                ggml_build_forward_expand(graph, t);
+            }
+        }
         // Keep the C-API-visible outputs alive too (the post-cast nodes on
         // GPU flows) so the optrace tool can compare exactly what
         // session_read_proto/session output readback consumes. Duplicates
@@ -1267,6 +1317,18 @@ bool build_run_plan(Session* s, int input_w, int input_h) {
         if (output_proto) {
             ggml_set_output(output_proto);
             ggml_build_forward_expand(graph, output_proto);
+        }
+    }
+
+    // Direct-conv backends cache transformed weights. Tensor addresses and
+    // shapes may be reused after a model is freed, so neither is a sufficient
+    // cache identity. Stamp every direct convolution with this session's
+    // monotonic generation; the CUDA patch validates it before reusing a plan.
+    for (int i = 0; i < ggml_graph_n_nodes(graph); ++i) {
+        ggml_tensor* node = ggml_graph_node(graph, i);
+        if (node->op == GGML_OP_CONV_2D) {
+            std::memcpy(&node->op_params[8], &s->plan_owner_id,
+                        sizeof(s->plan_owner_id));
         }
     }
 
@@ -1370,14 +1432,22 @@ bool build_run_plan(Session* s, int input_w, int input_h) {
 // compile-time macros — a CUDA-enabled build must still run the plain
 // F32 flow when the lease resolved to CPU, and a CPU-only build that
 // dlopen-ed a GPU backend module gets the GPU flow.
+//   CPU    — semantic q8 models: expand to f16 once. The generic Q8 path
+//            dynamically quantizes activations and fell below the external
+//            semantic reference gate; other CPU tasks retain native Q8.
 //   CUDA   — f32 models: cast weights to f16 once for the igemm flow;
-//            q8 models keep Q8_0 for the direct igemm path.
+//            q8 models expand to f16 once on the host. The CUDA Q8 conv path
+//            also expands every weight into a per-conv f16 plan, so retaining
+//            the compressed device tensor only adds device memory and a
+//            failure-only code path without doing quantized arithmetic.
 //   Vulkan — q8 models: expand Q8_0 weights to f16 on the host once
 //            (vulkan has no Q8 conv shader).
 // Idempotent: tensors already preprocessed (type != file_type) are skipped,
 // so it can run again after an on-demand reload of released host weights.
 static void prepare_host_weights(Session* s) {
-    if (s->backend.is_cuda || s->backend.is_vulkan) {
+    const bool expand_q8 = s->backend.is_cuda || s->backend.is_vulkan ||
+                           s->model.meta.task == "semantic";
+    if (expand_q8) {
         // Route quantized convs through the direct flow only when every
         // quantized tensor conforms; K 32-alignment is the hard constraint.
         for (const auto& [name, ht] : s->model.tensors) {
@@ -1389,8 +1459,10 @@ static void prepare_host_weights(Session* s) {
             s->q8_direct = true;
         }
     }
-    if (s->backend.is_vulkan && s->q8_direct) {
-        // Vulkan: expand Q8_0 weights to f16 on the host once.
+    if (expand_q8 && s->q8_direct) {
+        // Direct GPU backends and the precision-gated CPU semantic path consume
+        // f16 weights. Expand Q8_0 once before upload instead of retaining a
+        // compressed copy and repeatedly converting during convolution.
         for (auto& [name, ht] : s->model.tensors) {
             if (ht.type != GGML_TYPE_Q8_0) continue;
             const int64_t n = ht.ne[0] * ht.ne[1] * ht.ne[2] * ht.ne[3];
@@ -1433,6 +1505,8 @@ Session* create_session(const std::string& gguf_path,
     yolo::set_log_level(opts.log_level);
 
     Session* s = new Session();
+    s->plan_owner_id =
+            g_next_plan_owner_id.fetch_add(1, std::memory_order_relaxed);
     s->model = std::move(*model);
     s->opts = opts;
     const int threads = opts.threads > 0 ? opts.threads : 1;
@@ -1785,8 +1859,10 @@ bool session_prepare_visual_masks(Session* s, const LetterboxInfo& info) {
     // LoadVisualPrompt(scale_factor=1/8) rasterization.
     s->vp_pending.assign((size_t)w3 * h3 * q, 0.0f);
     float* masks = s->vp_pending.data();
-    std::fprintf(stderr, "[savpe-dbg] masks %dx%d q=%d boxes=%zu\n", w3, h3, q,
-                 s->opts.visual_boxes.size());
+    const bool dbg_log = aicore::debug::savpe_debug_enabled();
+    if (dbg_log)
+        std::fprintf(stderr, "[savpe-dbg] masks %dx%d q=%d boxes=%zu\n", w3, h3,
+                     q, s->opts.visual_boxes.size());
     for (int i = 0; i < q; i++) {
         const float* box = &s->opts.visual_boxes[(size_t)i * 4];
         const float sx1 = (box[0] * info.scale + info.pad_w) / stride0;
@@ -1803,11 +1879,14 @@ bool session_prepare_visual_masks(Session* s, const LetterboxInfo& info) {
             for (int x = x0; x < x1; ++x) row[x] = 1.0f;
         }
         size_t nz = 0;
-        for (size_t k = 0; k < (size_t)w3 * h3; ++k)
-            nz += masks[(size_t)i * w3 * h3 + k] > 0.f;
-        std::fprintf(stderr,
-                     "[savpe-dbg] plane %d nonzero=%zu rect=[%d,%d)-[%d,%d)\n",
-                     i, nz, x0, y0, x1, y1);
+        if (dbg_log) {
+            for (size_t k = 0; k < (size_t)w3 * h3; ++k)
+                nz += masks[(size_t)i * w3 * h3 + k] > 0.f;
+            std::fprintf(
+                    stderr,
+                    "[savpe-dbg] plane %d nonzero=%zu rect=[%d,%d)-[%d,%d)\n",
+                    i, nz, x0, y0, x1, y1);
+        }
     }
     if (const char* mdump = aicore::debug::savpe_mask_dump_path()) {
         FILE* f = std::fopen(mdump, "wb");

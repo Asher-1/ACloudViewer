@@ -19,6 +19,7 @@
 #include <stdint.h>
 
 #include "aicore/export.h"
+#include "aicore/pipeline_timing.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,6 +51,8 @@ AICORE_CAPI aicore_deeplsd_ctx* aicore_deeplsd_load_opts(
         const char* gguf_path, const aicore_deeplsd_options* opts);
 /** Releases a context returned by aicore_deeplsd_load_opts; safe on NULL. */
 AICORE_CAPI void aicore_deeplsd_free(aicore_deeplsd_ctx* ctx);
+/** Reclaims inactive shared backend leases; safe and idempotent. */
+AICORE_CAPI void aicore_deeplsd_shutdown(void);
 /** True only after a context owns a successfully initialized extractor. */
 AICORE_CAPI int aicore_deeplsd_is_ready(const aicore_deeplsd_ctx* ctx);
 /** Returns the last error message of the context (empty when none). */
@@ -102,6 +105,8 @@ AICORE_CAPI int aicore_deeplsd_extract_segments(
         float** out_angle,
         int32_t* out_width,
         int32_t* out_height);
+AICORE_CAPI int aicore_deeplsd_last_pipeline_timings(
+        const aicore_deeplsd_ctx* ctx, aicore_pipeline_timings* out);
 
 /** Quantize conv weights in F32 GGUF to f16 or q8_0. */
 AICORE_CAPI int aicore_deeplsd_quantize(const char* input_gguf,

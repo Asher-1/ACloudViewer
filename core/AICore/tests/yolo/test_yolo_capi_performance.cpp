@@ -83,6 +83,11 @@ std::vector<std::string> list_ggufs(const std::string& dir) {
     while (dirent* e = readdir(d)) {
         const std::string name = e->d_name;
         if (name.size() > 5 && name.compare(name.size() - 5, 5, ".gguf") == 0) {
+            if (name.rfind("clip-", 0) == 0 ||
+                name.rfind("mobileclip", 0) == 0 ||
+                name.rfind("mclip-", 0) == 0) {
+                continue;
+            }
             out.push_back(dir + "/" + name);
         }
     }
@@ -131,28 +136,23 @@ bool run_once(aicore_yolo_ctx* ctx,
               int w,
               int h,
               long long* sanity) {
+    const aicore_image_view image{rgb, w, h, static_cast<size_t>(w) * 3,
+                                  AICORE_IMAGE_RGB8};
     if (std::strcmp(task, "detect") == 0) {
-        char* j = aicore_yolo_detect_rgb_json(ctx, rgb, w, h);
-        if (j == nullptr) return false;
-        long long n = 0;
-        for (const char* p = j; (p = std::strstr(p, "\"box\":")) != nullptr;
-             p += 6) {
-            ++n;
-        }
-        *sanity = n;
-        aicore_yolo_free_buffer(j);
+        if (aicore_yolo_detect_image(ctx, &image) != 0) return false;
+        *sanity = aicore_yolo_detection_count(ctx);
         return true;
     }
     if (std::strcmp(task, "depth") == 0) {
         int32_t dw = 0, dh = 0;
-        float* m = aicore_yolo_depth_rgb(ctx, rgb, w, h, &dw, &dh);
+        float* m = aicore_yolo_depth_image(ctx, &image, &dw, &dh);
         if (m == nullptr) return false;
         *sanity = (long long)dw * dh;
         aicore_yolo_free_buffer(m);
         return true;
     }
     if (std::strcmp(task, "segment") == 0) {
-        aicore_yolo_segment_result* r = aicore_yolo_seg_rgb(ctx, rgb, w, h);
+        aicore_yolo_segment_result* r = aicore_yolo_seg_image(ctx, &image);
         if (r == nullptr) return false;
         long long bits = 0;
         for (int i = 0; i < aicore_yolo_seg_det_count(r); ++i) {
@@ -167,7 +167,7 @@ bool run_once(aicore_yolo_ctx* ctx,
         return true;
     }
     if (std::strcmp(task, "pose") == 0) {
-        aicore_yolo_pose_result* r = aicore_yolo_pose_rgb(ctx, rgb, w, h);
+        aicore_yolo_pose_result* r = aicore_yolo_pose_image(ctx, &image);
         if (r == nullptr) return false;
         *sanity = (long long)aicore_yolo_pose_det_count(r) *
                   aicore_yolo_pose_kpt_count(r);
@@ -175,7 +175,7 @@ bool run_once(aicore_yolo_ctx* ctx,
         return true;
     }
     if (std::strcmp(task, "obb") == 0) {
-        aicore_yolo_obb_result* r = aicore_yolo_obb_rgb(ctx, rgb, w, h);
+        aicore_yolo_obb_result* r = aicore_yolo_obb_image(ctx, &image);
         if (r == nullptr) return false;
         *sanity = aicore_yolo_obb_count(r);
         aicore_yolo_obb_result_free(r);
@@ -183,7 +183,7 @@ bool run_once(aicore_yolo_ctx* ctx,
     }
     if (std::strcmp(task, "semantic") == 0) {
         aicore_yolo_semantic_result* r =
-                aicore_yolo_semantic_rgb(ctx, rgb, w, h);
+                aicore_yolo_semantic_image(ctx, &image);
         if (r == nullptr) return false;
         const aicore_yolo_plane_view v = aicore_yolo_semantic_class_map(r);
         *sanity = (long long)v.width * v.height *
@@ -193,7 +193,7 @@ bool run_once(aicore_yolo_ctx* ctx,
     }
     if (std::strcmp(task, "classify") == 0) {
         aicore_yolo_classify_result* r =
-                aicore_yolo_classify_rgb(ctx, rgb, w, h);
+                aicore_yolo_classify_image(ctx, &image);
         if (r == nullptr) return false;
         // Top probability x1000 as the sanity signal.
         float top = 0.0f;
@@ -219,6 +219,11 @@ int bench_model(const std::string& gguf,
                 int iters,
                 const char* classes_env,
                 const char* text_model_env) {
+    const size_t slash = gguf.rfind('/');
+    const std::string filename =
+            slash == std::string::npos ? gguf : gguf.substr(slash + 1);
+    const bool open_vocabulary = filename.rfind("yoloe", 0) == 0 ||
+                                 filename.find("world") != std::string::npos;
     aicore_yolo_options* opts = aicore_yolo_options_new();
     if (opts == nullptr) return 1;
     aicore_yolo_options_set_device(opts, device);
@@ -230,17 +235,22 @@ int bench_model(const std::string& gguf,
     // (matching the plugin's world/yoloe tabs).
     std::vector<std::string> class_storage;
     std::vector<const char*> class_ptrs;
-    if (classes_env != nullptr && classes_env[0] != '\0') {
+    if (open_vocabulary && classes_env != nullptr && classes_env[0] != '\0') {
         std::string item;
         for (const char* p = classes_env;; ++p) {
             if (*p == ',' || *p == '\0') {
                 class_storage.push_back(item);
-                class_ptrs.push_back(class_storage.back().c_str());
                 item.clear();
                 if (*p == '\0') break;
             } else {
                 item.push_back(*p);
             }
+        }
+        // Collect pointers only after parsing: pushes above may reallocate
+        // class_storage and invalidate earlier c_str() addresses.
+        class_ptrs.reserve(class_storage.size());
+        for (const auto& class_name : class_storage) {
+            class_ptrs.push_back(class_name.c_str());
         }
         aicore_yolo_options_set_classes(opts, class_ptrs.data(),
                                         (int32_t)class_ptrs.size());
@@ -285,11 +295,21 @@ int bench_model(const std::string& gguf,
 
     Stats preprocess, graph, post, e2e;
     long long sanity = -1;
+    long long reference_sanity = -1;
     for (int i = 0; i < iters; ++i) {
-        aicore_yolo_timings t{};
+        aicore_pipeline_timings t{};
         sanity = -1;
         if (!run_once(ctx, task, rgb, w, h, &sanity) ||
-            aicore_yolo_last_timings(ctx, &t) != 0) {
+            aicore_yolo_last_pipeline_timings(ctx, &t) != 0) {
+            aicore_yolo_free(ctx);
+            return 1;
+        }
+        if (i == 0) {
+            reference_sanity = sanity;
+        } else if (sanity != reference_sanity) {
+            std::fprintf(stderr,
+                         "[yolo-perf] unstable output signal: %lld -> %lld\n",
+                         reference_sanity, sanity);
             aicore_yolo_free(ctx);
             return 1;
         }
@@ -308,7 +328,7 @@ int bench_model(const std::string& gguf,
             pos == std::string::npos ? gguf : gguf.substr(pos + 1);
     emit_row("aicore", base, task, dtype, aicore_yolo_context_device(ctx),
              aicore_yolo_context_threads(ctx), warmup, iters, preprocess, graph,
-             post, e2e, sanity);
+             post, e2e, reference_sanity);
     aicore_yolo_free(ctx);
     return 0;
 }

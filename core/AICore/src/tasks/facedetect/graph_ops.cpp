@@ -53,6 +53,17 @@ thread_local bool g_wino_f4_scope = false;
 void set_winograd_f4_scope(bool on) { g_wino_f4_scope = on; }
 bool winograd_f4_scope() { return g_wino_f4_scope; }
 
+void invalidate_bn_fold_cache(const ModelLoader& ml) {
+    std::lock_guard<std::mutex> lk(g_bn_fold_mu);
+    for (auto it = g_bn_fold.begin(); it != g_bn_fold.end();) {
+        if (ml.owns_tensor(it->first)) {
+            it = g_bn_fold.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
 void bn_fold_params(const ModelLoader& ml,
                     const char* prefix,
                     float eps,

@@ -13,6 +13,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <map>
 #include <mutex>
 #include <new>
@@ -21,12 +22,14 @@
 #include <vector>
 
 #include "aicore/backend_capi.h"
+#include "aicore/runtime_capi.h"
 #include "aicore/yolo_capi.h"
 #include "common/capi_utils.hpp"
 #include "common/debug_dump.hpp"
 #include "common/ggml_backend_registry.hpp"
 #include "common/ggml_backend_utils.hpp"
 #include "common/model_cache.hpp"
+#include "common/runtime_cleanup.hpp"
 #include "gguf.h"
 #include "tasks/yolo/backend.hpp"
 #include "tasks/yolo/yolo_clip_text_graph.hpp"
@@ -74,6 +77,7 @@ struct aicore_yolo_ctx {
         size_t valid_pixels = 0;
     };
     DepthStats depth;
+    std::vector<yolo::Detection> last_detections;
 };
 
 struct aicore_yolo_options {
@@ -152,6 +156,13 @@ struct TextEmbedCacheEntry {
 };
 std::mutex g_text_embed_cache_mutex;
 std::map<std::string, TextEmbedCacheEntry> g_text_embed_cache;
+std::once_flag g_text_embed_cleanup_registration;
+constexpr size_t kMaxTextEmbedCacheEntries = 32;
+
+void clear_text_embed_cache() {
+    std::lock_guard<std::mutex> lock(g_text_embed_cache_mutex);
+    g_text_embed_cache.clear();
+}
 
 // Probe a text-encoder GGUF for the mclip architecture and its projection
 // target space (KVs "mclip.arch" / "mclip.target_space", written by
@@ -188,6 +199,9 @@ std::string text_gguf_target_space(const std::string& path) {
 // state the detector graph consumes.
 bool encode_open_vocab_classes(aicore_yolo_ctx* ctx,
                                const aicore_yolo_options* opts) {
+    std::call_once(g_text_embed_cleanup_registration, [] {
+        aicore::runtime::register_cleanup(clear_text_embed_cache);
+    });
     yolo::Session* s = ctx->engine;
     if (opts->text_model_path.empty()) {
         ctx->last_error =
@@ -305,6 +319,10 @@ bool encode_open_vocab_classes(aicore_yolo_ctx* ctx,
         TextEmbedCacheEntry entry;
         entry.embed = embed;
         entry.nc = nc;
+        if (g_text_embed_cache.size() >= kMaxTextEmbedCacheEntries &&
+            g_text_embed_cache.find(cache_key) == g_text_embed_cache.end()) {
+            g_text_embed_cache.erase(g_text_embed_cache.begin());
+        }
         g_text_embed_cache[cache_key] = std::move(entry);
     }
     return true;
@@ -342,7 +360,7 @@ const std::vector<std::string>& effective_class_names(aicore_yolo_ctx* ctx) {
 
 }  // namespace
 
-AICORE_CAPI int aicore_yolo_abi_version(void) { return 3; }
+AICORE_CAPI int aicore_yolo_abi_version(void) { return 4; }
 
 AICORE_CAPI aicore_yolo_options* aicore_yolo_options_new(void) {
     return new (std::nothrow) aicore_yolo_options();
@@ -528,7 +546,15 @@ AICORE_CAPI aicore_yolo_ctx* aicore_yolo_load_opts(
             // Visual prompts take precedence over a class list: the head's
             // cls_pe comes from the savpe encoder, nc = prompt count.
             if (!opts->visual_boxes.empty()) {
-                if (!aicore_yolo_gguf_has_savpe(gguf_path)) {
+                // Pre-flight the SAVPE KV only when the file actually opens:
+                // a missing/unresolvable path used to fail the header probe
+                // and masquerade as "ships none" (observed from the GUI,
+                // which passes a not-yet-downloaded cache-dir path here).
+                // Let the loader report the real open error instead.
+                std::error_code probe_ec;
+                const bool path_exists =
+                        std::filesystem::exists(gguf_path, probe_ec);
+                if (path_exists && !aicore_yolo_gguf_has_savpe(gguf_path)) {
                     ctx->last_error =
                             "visual prompts need a YOLOE GGUF converted with "
                             "savpe weights (yolo.savpe=1); this checkpoint "
@@ -625,18 +651,63 @@ AICORE_CAPI int aicore_yolo_load_path_rgb(const char* image_path,
 
 namespace {
 
+yolo::Image packed_rgb_image(const uint8_t* rgb,
+                             int32_t width,
+                             int32_t height) {
+    return yolo::Image{width, height, rgb,
+                       width > 0 ? static_cast<size_t>(width) * 3 : 0, 3};
+}
+
+bool image_from_view(const aicore_image_view* view, yolo::Image* out) {
+    if (view == nullptr || out == nullptr || view->data == nullptr ||
+        view->width <= 0 || view->height <= 0) {
+        return false;
+    }
+    int channels = 0;
+    bool bgr = false;
+    switch (view->format) {
+        case AICORE_IMAGE_RGB8:
+            channels = 3;
+            break;
+        case AICORE_IMAGE_RGBA8:
+            channels = 4;
+            break;
+        case AICORE_IMAGE_GRAY8:
+            channels = 1;
+            break;
+        case AICORE_IMAGE_BGR8:
+            channels = 3;
+            bgr = true;
+            break;
+        case AICORE_IMAGE_BGRA8:
+            channels = 4;
+            bgr = true;
+            break;
+        default:
+            return false;
+    }
+    const size_t min_stride = static_cast<size_t>(view->width) * channels;
+    if (view->row_stride_bytes < min_stride) return false;
+    *out = yolo::Image{view->width, view->height,
+                       view->data,  view->row_stride_bytes,
+                       channels,    bgr};
+    return true;
+}
+
 // Shared detect core: letterbox, inference, postprocess, JSON envelope.
 // Everything may allocate; an uncaught bad_alloc would cross the extern "C"
 // boundary and the Qt event loop (queued worker slot) and terminate the
 // process with SIGABRT — hence the catch fencing.
 char* run_detect(aicore_yolo_ctx* ctx,
-                 const uint8_t* rgb,
-                 int32_t width,
-                 int32_t height,
-                 int* out_rc) {
+                 const yolo::Image& image,
+                 int* out_rc,
+                 bool serialize_json = true) {
     *out_rc = -1;
     yolo::Session* s = ctx->engine;
-    if (s == nullptr || rgb == nullptr || width <= 0 || height <= 0) {
+    const int32_t width = image.w;
+    const int32_t height = image.h;
+    if (s == nullptr || image.rgb == nullptr || width <= 0 || height <= 0 ||
+        (image.channels != 1 && image.channels != 3 && image.channels != 4)) {
         return nullptr;
     }
     if (s->model.meta.task != "detect") {
@@ -651,8 +722,7 @@ char* run_detect(aicore_yolo_ctx* ctx,
         auto t0 = yolo::Clock::now();
         yolo::LetterboxInfo info;
         std::vector<float> canvas;
-        yolo::letterbox_image(yolo::Image{width, height, rgb},
-                              s->model.meta.imgsz, info, canvas);
+        yolo::letterbox_image(image, s->model.meta.imgsz, info, canvas);
         if (!yolo::session_ensure_canvas(s, info.imgsz_w, info.imgsz_h)) {
             ctx->last_error = "graph rebuild for the letterbox canvas failed";
             return nullptr;
@@ -685,8 +755,17 @@ char* run_detect(aicore_yolo_ctx* ctx,
                 yolo::postprocess(raw, no, na, s->model.meta, s->anchors.data(),
                                   s->anchor_strides.data(), cfg);
         yolo::unscale_boxes(dets, info, width, height);
+        ctx->last_detections = dets;
         const double postprocess_ms = yolo::ms_since(t0);
 
+        if (!serialize_json) {
+            ctx->timings = aicore_yolo_timings{preprocess_ms, inference_ms,
+                                               postprocess_ms, 0.0,
+                                               yolo::ms_since(t_e2e)};
+            ctx->has_timings = true;
+            *out_rc = 0;
+            return nullptr;
+        }
         t0 = yolo::Clock::now();
         const auto& names = effective_class_names(ctx);
         std::ostringstream o;
@@ -731,13 +810,14 @@ char* run_detect(aicore_yolo_ctx* ctx,
 // Shared depth core: letterbox, inference, model-resolution readback, restore
 // to the original image size, summary statistics, malloc'd float array.
 float* run_depth(aicore_yolo_ctx* ctx,
-                 const uint8_t* rgb,
-                 int32_t width,
-                 int32_t height,
+                 const yolo::Image& image,
                  int32_t* out_width,
                  int32_t* out_height) {
     yolo::Session* s = ctx->engine;
-    if (s == nullptr || rgb == nullptr || width <= 0 || height <= 0) {
+    const int32_t width = image.w;
+    const int32_t height = image.h;
+    if (s == nullptr || image.rgb == nullptr || width <= 0 || height <= 0 ||
+        (image.channels != 1 && image.channels != 3 && image.channels != 4)) {
         return nullptr;
     }
     if (s->model.meta.task != "depth") {
@@ -751,8 +831,7 @@ float* run_depth(aicore_yolo_ctx* ctx,
         auto t0 = yolo::Clock::now();
         yolo::LetterboxInfo info;
         std::vector<float> canvas;
-        yolo::letterbox_image(yolo::Image{width, height, rgb},
-                              s->model.meta.imgsz, info, canvas);
+        yolo::letterbox_image(image, s->model.meta.imgsz, info, canvas);
         if (!yolo::session_ensure_canvas(s, info.imgsz_w, info.imgsz_h)) {
             ctx->last_error = "graph rebuild for the letterbox canvas failed";
             return nullptr;
@@ -839,17 +918,16 @@ float* run_depth(aicore_yolo_ctx* ctx,
 
 // Shared pose core: letterbox, inference, box + keypoint decode.
 aicore_yolo_pose_result* run_pose(aicore_yolo_ctx* ctx,
-                                  const uint8_t* rgb,
-                                  int32_t width,
-                                  int32_t height) {
+                                  const yolo::Image& image) {
     yolo::Session* s = ctx->engine;
+    const int32_t width = image.w;
+    const int32_t height = image.h;
     try {
         const auto t_e2e = yolo::Clock::now();
         auto t0 = yolo::Clock::now();
         yolo::LetterboxInfo info;
         std::vector<float> canvas;
-        yolo::letterbox_image(yolo::Image{width, height, rgb},
-                              s->model.meta.imgsz, info, canvas);
+        yolo::letterbox_image(image, s->model.meta.imgsz, info, canvas);
         if (!yolo::session_ensure_canvas(s, info.imgsz_w, info.imgsz_h)) {
             ctx->last_error = "graph rebuild for the letterbox canvas failed";
             return nullptr;
@@ -906,17 +984,16 @@ aicore_yolo_pose_result* run_pose(aicore_yolo_ctx* ctx,
 
 // Shared OBB core: letterbox, inference, dist2rbox decode + unscale.
 aicore_yolo_obb_result* run_obb(aicore_yolo_ctx* ctx,
-                                const uint8_t* rgb,
-                                int32_t width,
-                                int32_t height) {
+                                const yolo::Image& image) {
     yolo::Session* s = ctx->engine;
+    const int32_t width = image.w;
+    const int32_t height = image.h;
     try {
         const auto t_e2e = yolo::Clock::now();
         auto t0 = yolo::Clock::now();
         yolo::LetterboxInfo info;
         std::vector<float> canvas;
-        yolo::letterbox_image(yolo::Image{width, height, rgb},
-                              s->model.meta.imgsz, info, canvas);
+        yolo::letterbox_image(image, s->model.meta.imgsz, info, canvas);
         if (!yolo::session_ensure_canvas(s, info.imgsz_w, info.imgsz_h)) {
             ctx->last_error = "graph rebuild for the letterbox canvas failed";
             return nullptr;
@@ -968,20 +1045,19 @@ aicore_yolo_obb_result* run_obb(aicore_yolo_ctx* ctx,
     }
 }
 
-// Shared semantic core: letterbox, inference, argmax + full-resolution
-// nearest upsample of the class map.
+// Shared semantic core: letterbox, inference, full-resolution logit restore,
+// then argmax (the ordering is part of the Ultralytics semantic contract).
 aicore_yolo_semantic_result* run_semantic(aicore_yolo_ctx* ctx,
-                                          const uint8_t* rgb,
-                                          int32_t width,
-                                          int32_t height) {
+                                          const yolo::Image& image) {
     yolo::Session* s = ctx->engine;
+    const int32_t width = image.w;
+    const int32_t height = image.h;
     try {
         const auto t_e2e = yolo::Clock::now();
         auto t0 = yolo::Clock::now();
         yolo::LetterboxInfo info;
         std::vector<float> canvas;
-        yolo::letterbox_image(yolo::Image{width, height, rgb},
-                              s->model.meta.imgsz, info, canvas);
+        yolo::letterbox_image(image, s->model.meta.imgsz, info, canvas);
         if (!yolo::session_ensure_canvas(s, info.imgsz_w, info.imgsz_h)) {
             ctx->last_error = "graph rebuild for the letterbox canvas failed";
             return nullptr;
@@ -1002,36 +1078,18 @@ aicore_yolo_semantic_result* run_semantic(aicore_yolo_ctx* ctx,
         const double inference_ms = yolo::ms_since(t0);
 
         t0 = yolo::Clock::now();
-        const std::vector<uint8_t> grid =
-                yolo::semantic_argmax(logits, nc, gw, gh);
-        if ((int)grid.size() != gw * gh) {
-            ctx->last_error = "semantic argmax failed";
+        std::vector<uint8_t> class_map = yolo::semantic_restore_logits(
+                logits, nc, gw, gh, info.imgsz_w, info.imgsz_h, width, height);
+        if ((int)class_map.size() != width * height) {
+            ctx->last_error = "semantic logit restoration failed";
             return nullptr;
         }
-        // Restore the class map to the source resolution: invert the
-        // letterbox (strip padding, undo resize) with nearest sampling, so
-        // the map aligns 1:1 with the input pixels (same convention as
-        // unscale_masks).
         auto* res = new (std::nothrow) aicore_yolo_semantic_result();
         if (res == nullptr) {
             ctx->last_error = "YOLO out of memory for semantic result";
             return nullptr;
         }
-        res->class_map.assign((size_t)width * height, 0);
-        for (int32_t y = 0; y < height; y++) {
-            // Canvas y of the source row centre; clamp into the grid.
-            const int cy = std::min(
-                    gh - 1, std::max(0, (int)((y * info.scale + info.pad_h) /
-                                              (float)info.imgsz_h * gh)));
-            uint8_t* dst = res->class_map.data() + (size_t)y * width;
-            for (int32_t x = 0; x < width; x++) {
-                const int cx = std::min(
-                        gw - 1,
-                        std::max(0, (int)((x * info.scale + info.pad_w) /
-                                          (float)info.imgsz_w * gw)));
-                dst[x] = grid[(size_t)cy * gw + cx];
-            }
-        }
+        res->class_map = std::move(class_map);
         res->width = width;
         res->height = height;
         res->num_classes = nc;
@@ -1054,9 +1112,7 @@ aicore_yolo_semantic_result* run_semantic(aicore_yolo_ctx* ctx,
 // Shared classify core: checkpoint-baked resize+crop preprocessing,
 // inference, softmax.
 aicore_yolo_classify_result* run_classify(aicore_yolo_ctx* ctx,
-                                          const uint8_t* rgb,
-                                          int32_t width,
-                                          int32_t height) {
+                                          const yolo::Image& image) {
     yolo::Session* s = ctx->engine;
     try {
         const auto t_e2e = yolo::Clock::now();
@@ -1065,8 +1121,7 @@ aicore_yolo_classify_result* run_classify(aicore_yolo_ctx* ctx,
         // letterbox), so the canvas is the fixed square imgsz and the graph
         // never rebuilds.
         std::vector<float> input;
-        yolo::classify_preprocess(yolo::Image{width, height, rgb},
-                                  s->model.meta.imgsz, input);
+        yolo::classify_preprocess(image, s->model.meta.imgsz, input);
         if (!yolo::session_ensure_canvas(s, s->model.meta.imgsz,
                                          s->model.meta.imgsz)) {
             ctx->last_error = "graph rebuild for the classify canvas failed";
@@ -1116,11 +1171,11 @@ AICORE_CAPI char* aicore_yolo_detect_path_json(aicore_yolo_ctx* ctx,
     if (ctx == nullptr || ctx->engine == nullptr || image_path == nullptr) {
         return nullptr;
     }
-    return with_path_rgb(image_path, ctx,
-                         [&](const uint8_t* rgb, int w, int h) {
-                             int rc = -1;
-                             return run_detect(ctx, rgb, w, h, &rc);
-                         });
+    return with_path_rgb(
+            image_path, ctx, [&](const uint8_t* rgb, int w, int h) {
+                int rc = -1;
+                return run_detect(ctx, packed_rgb_image(rgb, w, h), &rc);
+            });
 }
 
 AICORE_CAPI char* aicore_yolo_detect_rgb_json(aicore_yolo_ctx* ctx,
@@ -1132,7 +1187,47 @@ AICORE_CAPI char* aicore_yolo_detect_rgb_json(aicore_yolo_ctx* ctx,
     /* Borrow (no copy): the caller's buffer must stay alive for the whole
      * call, which the synchronous C API contract guarantees (preprocess
      * only reads from it). Saves a full-frame copy per detection call. */
-    return run_detect(ctx, rgb, width, height, &rc);
+    return run_detect(ctx, packed_rgb_image(rgb, width, height), &rc);
+}
+
+AICORE_CAPI int aicore_yolo_detect_rgb(aicore_yolo_ctx* ctx,
+                                       const uint8_t* rgb,
+                                       int32_t width,
+                                       int32_t height) {
+    if (ctx == nullptr || ctx->engine == nullptr) return -1;
+    int rc = -1;
+    (void)run_detect(ctx, packed_rgb_image(rgb, width, height), &rc, false);
+    return rc;
+}
+
+AICORE_CAPI int aicore_yolo_detect_image(aicore_yolo_ctx* ctx,
+                                         const aicore_image_view* image) {
+    if (!ctx || !ctx->engine) return -1;
+    yolo::Image input;
+    if (!image_from_view(image, &input)) return -1;
+    int rc = -1;
+    (void)run_detect(ctx, input, &rc, false);
+    return rc;
+}
+
+AICORE_CAPI int aicore_yolo_detection_count(const aicore_yolo_ctx* ctx) {
+    return ctx != nullptr ? static_cast<int>(ctx->last_detections.size()) : -1;
+}
+
+AICORE_CAPI aicore_yolo_detection
+aicore_yolo_detection_at(const aicore_yolo_ctx* ctx, int index) {
+    aicore_yolo_detection out = {};
+    if (ctx == nullptr || index < 0 ||
+        static_cast<size_t>(index) >= ctx->last_detections.size())
+        return out;
+    const auto& d = ctx->last_detections[static_cast<size_t>(index)];
+    out.x1 = d.x1;
+    out.y1 = d.y1;
+    out.x2 = d.x2;
+    out.y2 = d.y2;
+    out.score = d.score;
+    out.class_id = d.class_id;
+    return out;
 }
 
 /** Runtime threshold update without rebuilding the context (validated: out
@@ -1169,10 +1264,11 @@ AICORE_CAPI float* aicore_yolo_depth_path(aicore_yolo_ctx* ctx,
     if (ctx == nullptr || ctx->engine == nullptr || image_path == nullptr) {
         return nullptr;
     }
-    return with_path_rgb(
-            image_path, ctx, [&](const uint8_t* rgb, int w, int h) {
-                return run_depth(ctx, rgb, w, h, out_width, out_height);
-            });
+    return with_path_rgb(image_path, ctx,
+                         [&](const uint8_t* rgb, int w, int h) {
+                             return run_depth(ctx, packed_rgb_image(rgb, w, h),
+                                              out_width, out_height);
+                         });
 }
 
 AICORE_CAPI float* aicore_yolo_depth_rgb(aicore_yolo_ctx* ctx,
@@ -1184,18 +1280,31 @@ AICORE_CAPI float* aicore_yolo_depth_rgb(aicore_yolo_ctx* ctx,
     if (ctx == nullptr || ctx->engine == nullptr) return nullptr;
     if (out_width != nullptr) *out_width = 0;
     if (out_height != nullptr) *out_height = 0;
-    return run_depth(ctx, rgb, width, height, out_width, out_height);
+    return run_depth(ctx, packed_rgb_image(rgb, width, height), out_width,
+                     out_height);
+}
+
+AICORE_CAPI float* aicore_yolo_depth_image(aicore_yolo_ctx* ctx,
+                                           const aicore_image_view* image,
+                                           int32_t* out_width,
+                                           int32_t* out_height) {
+    if (out_width != nullptr) *out_width = 0;
+    if (out_height != nullptr) *out_height = 0;
+    if (ctx == nullptr || ctx->engine == nullptr) return nullptr;
+    yolo::Image input;
+    if (!image_from_view(image, &input)) return nullptr;
+    return run_depth(ctx, input, out_width, out_height);
 }
 
 // ---- Segment result (typed API) ----
 
-AICORE_CAPI aicore_yolo_segment_result* aicore_yolo_seg_rgb(
-        aicore_yolo_ctx* ctx,
-        const uint8_t* rgb,
-        int32_t width,
-        int32_t height) {
-    if (ctx == nullptr || ctx->engine == nullptr || rgb == nullptr ||
-        width <= 0 || height <= 0) {
+static aicore_yolo_segment_result* run_segment(aicore_yolo_ctx* ctx,
+                                               const yolo::Image& image) {
+    const int32_t width = image.w;
+    const int32_t height = image.h;
+    if (ctx == nullptr || ctx->engine == nullptr || image.rgb == nullptr ||
+        width <= 0 || height <= 0 ||
+        (image.channels != 1 && image.channels != 3 && image.channels != 4)) {
         return nullptr;
     }
     yolo::Session* s = ctx->engine;
@@ -1211,8 +1320,7 @@ AICORE_CAPI aicore_yolo_segment_result* aicore_yolo_seg_rgb(
         auto t0 = yolo::Clock::now();
         yolo::LetterboxInfo info;
         std::vector<float> canvas;
-        yolo::letterbox_image(yolo::Image{width, height, rgb},
-                              s->model.meta.imgsz, info, canvas);
+        yolo::letterbox_image(image, s->model.meta.imgsz, info, canvas);
 
         // Canvas resize if needed
         if (!yolo::session_ensure_canvas(s, info.imgsz_w, info.imgsz_h)) {
@@ -1259,6 +1367,30 @@ AICORE_CAPI aicore_yolo_segment_result* aicore_yolo_seg_rgb(
                 if (f2 != nullptr) {
                     std::fwrite(d.data(), sizeof(float), d.size(), f2);
                     std::fclose(f2);
+                }
+            }
+        }
+
+        // Debug: dump the level-0 embed op output (savpe/contrastive input)
+        // when op tracing is on — pairs with the upstream YOLO_EMB_DUMP.
+        if (const char* dump = aicore::debug::savpe_dump_path();
+            dump != nullptr && s->opts.keep_all_ops && s->model.has_savpe &&
+            s->model.detect_op_index >= 0 &&
+            s->model.ops[s->model.detect_op_index].inputs.size() > 1) {
+            const int emb_op = s->model.ops[s->model.detect_op_index].inputs[1];
+            if (emb_op >= 0 && emb_op < (int)s->op_values.size() &&
+                s->op_values[emb_op] != nullptr) {
+                std::string ep = std::string(dump) + "_emb0.bin";
+                ggml_tensor* t = s->op_values[emb_op];
+                if (t->type == GGML_TYPE_F32) {
+                    std::vector<float> d((size_t)ggml_nelements(t));
+                    ggml_backend_tensor_get(t, d.data(), 0,
+                                            d.size() * sizeof(float));
+                    FILE* fe2 = std::fopen(ep.c_str(), "wb");
+                    if (fe2 != nullptr) {
+                        std::fwrite(d.data(), sizeof(float), d.size(), fe2);
+                        std::fclose(fe2);
+                    }
                 }
             }
         }
@@ -1335,6 +1467,20 @@ AICORE_CAPI aicore_yolo_segment_result* aicore_yolo_seg_rgb(
     }
 }
 
+AICORE_CAPI aicore_yolo_segment_result* aicore_yolo_seg_rgb(
+        aicore_yolo_ctx* ctx,
+        const uint8_t* rgb,
+        int32_t width,
+        int32_t height) {
+    return run_segment(ctx, packed_rgb_image(rgb, width, height));
+}
+
+AICORE_CAPI aicore_yolo_segment_result* aicore_yolo_seg_image(
+        aicore_yolo_ctx* ctx, const aicore_image_view* image) {
+    yolo::Image input;
+    return image_from_view(image, &input) ? run_segment(ctx, input) : nullptr;
+}
+
 AICORE_CAPI int aicore_yolo_seg_det_count(
         const aicore_yolo_segment_result* res) {
     return res != nullptr ? (int)res->dets.size() : 0;
@@ -1401,7 +1547,22 @@ AICORE_CAPI aicore_yolo_pose_result* aicore_yolo_pose_rgb(aicore_yolo_ctx* ctx,
                 "model is not a pose model (task=" + s->model.meta.task + ")";
         return nullptr;
     }
-    return run_pose(ctx, rgb, width, height);
+    return run_pose(ctx, packed_rgb_image(rgb, width, height));
+}
+
+AICORE_CAPI aicore_yolo_pose_result* aicore_yolo_pose_image(
+        aicore_yolo_ctx* ctx, const aicore_image_view* image) {
+    yolo::Image input;
+    if (ctx == nullptr || ctx->engine == nullptr ||
+        !image_from_view(image, &input)) {
+        return nullptr;
+    }
+    if (ctx->engine->model.meta.task != "pose") {
+        ctx->last_error = "model is not a pose model (task=" +
+                          ctx->engine->model.meta.task + ")";
+        return nullptr;
+    }
+    return run_pose(ctx, input);
 }
 
 AICORE_CAPI int aicore_yolo_pose_det_count(const aicore_yolo_pose_result* res) {
@@ -1478,7 +1639,22 @@ AICORE_CAPI aicore_yolo_obb_result* aicore_yolo_obb_rgb(aicore_yolo_ctx* ctx,
                 "model is not an obb model (task=" + s->model.meta.task + ")";
         return nullptr;
     }
-    return run_obb(ctx, rgb, width, height);
+    return run_obb(ctx, packed_rgb_image(rgb, width, height));
+}
+
+AICORE_CAPI aicore_yolo_obb_result* aicore_yolo_obb_image(
+        aicore_yolo_ctx* ctx, const aicore_image_view* image) {
+    yolo::Image input;
+    if (ctx == nullptr || ctx->engine == nullptr ||
+        !image_from_view(image, &input)) {
+        return nullptr;
+    }
+    if (ctx->engine->model.meta.task != "obb") {
+        ctx->last_error = "model is not an obb model (task=" +
+                          ctx->engine->model.meta.task + ")";
+        return nullptr;
+    }
+    return run_obb(ctx, input);
 }
 
 AICORE_CAPI int aicore_yolo_obb_count(const aicore_yolo_obb_result* res) {
@@ -1534,7 +1710,22 @@ AICORE_CAPI aicore_yolo_semantic_result* aicore_yolo_semantic_rgb(
                 ")";
         return nullptr;
     }
-    return run_semantic(ctx, rgb, width, height);
+    return run_semantic(ctx, packed_rgb_image(rgb, width, height));
+}
+
+AICORE_CAPI aicore_yolo_semantic_result* aicore_yolo_semantic_image(
+        aicore_yolo_ctx* ctx, const aicore_image_view* image) {
+    yolo::Image input;
+    if (ctx == nullptr || ctx->engine == nullptr ||
+        !image_from_view(image, &input)) {
+        return nullptr;
+    }
+    if (ctx->engine->model.meta.task != "semantic") {
+        ctx->last_error = "model is not a semantic model (task=" +
+                          ctx->engine->model.meta.task + ")";
+        return nullptr;
+    }
+    return run_semantic(ctx, input);
 }
 
 AICORE_CAPI aicore_yolo_plane_view
@@ -1587,7 +1778,22 @@ AICORE_CAPI aicore_yolo_classify_result* aicore_yolo_classify_rgb(
                 ")";
         return nullptr;
     }
-    return run_classify(ctx, rgb, width, height);
+    return run_classify(ctx, packed_rgb_image(rgb, width, height));
+}
+
+AICORE_CAPI aicore_yolo_classify_result* aicore_yolo_classify_image(
+        aicore_yolo_ctx* ctx, const aicore_image_view* image) {
+    yolo::Image input;
+    if (ctx == nullptr || ctx->engine == nullptr ||
+        !image_from_view(image, &input)) {
+        return nullptr;
+    }
+    if (ctx->engine->model.meta.task != "classify") {
+        ctx->last_error = "model is not a classify model (task=" +
+                          ctx->engine->model.meta.task + ")";
+        return nullptr;
+    }
+    return run_classify(ctx, input);
 }
 
 AICORE_CAPI int aicore_yolo_classify_count(
@@ -1616,6 +1822,17 @@ AICORE_CAPI const char* aicore_yolo_classify_class_name(
 AICORE_CAPI void aicore_yolo_classify_result_free(
         aicore_yolo_classify_result* res) {
     delete res;
+}
+
+AICORE_CAPI int aicore_yolo_last_depth_stats(
+        const aicore_yolo_ctx* ctx, aicore_yolo_depth_stats* out_stats) {
+    if (ctx == nullptr || out_stats == nullptr || !ctx->depth.valid) return -1;
+    const auto& st = ctx->depth;
+    *out_stats = aicore_yolo_depth_stats{
+            st.image_w, st.image_h, st.width,
+            st.height,  st.min_d,   st.max_d,
+            st.mean_d,  st.p95_d,   static_cast<uint64_t>(st.valid_pixels)};
+    return 0;
 }
 
 AICORE_CAPI char* aicore_yolo_last_depth_json(aicore_yolo_ctx* ctx) {
@@ -1727,17 +1944,29 @@ AICORE_CAPI int aicore_yolo_last_timings(const aicore_yolo_ctx* ctx,
     return 0;
 }
 
+AICORE_CAPI int aicore_yolo_last_pipeline_timings(
+        const aicore_yolo_ctx* ctx, aicore_pipeline_timings* out_timings) {
+    if (ctx == nullptr || out_timings == nullptr || !ctx->has_timings) {
+        return -1;
+    }
+    *out_timings = aicore_pipeline_timings{
+            AICORE_PIPELINE_TIMINGS_ABI_VERSION,
+            AICORE_TIMING_PREPROCESS | AICORE_TIMING_INFERENCE |
+                    AICORE_TIMING_POSTPROCESS | AICORE_TIMING_SERIALIZATION |
+                    AICORE_TIMING_E2E,
+            ctx->timings.preprocess_ms,
+            ctx->timings.inference_ms,
+            ctx->timings.postprocess_ms,
+            ctx->timings.json_ms,
+            ctx->timings.e2e_ms};
+    return 0;
+}
+
 AICORE_CAPI int aicore_yolo_warmup_backend(const char* device) {
     return aicore_warmup_backend(device != nullptr ? device : "auto");
 }
 
-AICORE_CAPI void aicore_yolo_shutdown(void) {
-    // Reclaims process-wide backend registry entries whose owners are gone
-    // (expired leases). Live contexts are never touched. There is no other
-    // process-global YOLO state to release; ggml backends themselves are
-    // registered for the process lifetime by ggml_backend_load_all.
-    aicore::runtime::purge_inactive_backend_leases();
-}
+AICORE_CAPI void aicore_yolo_shutdown(void) { aicore_runtime_shutdown(); }
 
 AICORE_CAPI char* aicore_yolo_model_cache_dir(void) {
     return dup_cstr(aicore::yolo_model_cache_dir());

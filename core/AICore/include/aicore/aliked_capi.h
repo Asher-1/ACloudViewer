@@ -21,6 +21,7 @@
 
 #include "aicore/export.h"
 #include "aicore/lightglue_capi.h"
+#include "aicore/pipeline_timing.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -64,6 +65,8 @@ AICORE_CAPI aicore_aliked_ctx* aicore_aliked_load_opts(
 /** Releases a context returned by aicore_aliked_load_opts (also releases
  *  its backend lease; safe on NULL). */
 AICORE_CAPI void aicore_aliked_free(aicore_aliked_ctx* ctx);
+/** Reclaims inactive shared backend leases; safe and idempotent. */
+AICORE_CAPI void aicore_aliked_shutdown(void);
 /** True only after a context owns a successfully initialized extractor. */
 AICORE_CAPI int aicore_aliked_is_ready(const aicore_aliked_ctx* ctx);
 /** Returns the last error message of the context (empty string when none).
@@ -80,6 +83,8 @@ AICORE_CAPI int aicore_aliked_extract_rgb(aicore_aliked_ctx* ctx,
                                           int32_t height,
                                           int32_t row_stride,
                                           aicore_lightglue_features* out);
+AICORE_CAPI int aicore_aliked_last_pipeline_timings(
+        const aicore_aliked_ctx* ctx, aicore_pipeline_timings* out);
 
 /** Returns a JSON summary of the loaded model (name, geometry, ...).
  *  Caller frees with aicore_aliked_free_buffer. */

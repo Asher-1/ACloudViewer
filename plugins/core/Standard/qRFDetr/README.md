@@ -3,10 +3,10 @@
 RF-DETR real-time object detection / segmentation (COCO 91-class layout — 80
 named classes, see full list below) for ACloudViewer — **native C++ GGML**.
 
-**User guide:** [docs/guides/plugins/qRFDetr.md](../../../docs/guides/plugins/qRFDetr.md)
+**User guide:** [docs/guides/plugins/qRFDetr.md](../../../../docs/guides/plugins/qRFDetr.md)
 
 ```
-Image/Video → AICore RF-DETR GGML → detections JSON + masks → annotated ccImage → DB tree
+Image/Video → borrowed image view → AICore RF-DETR GGML → typed detections + raw masks → annotated ccImage → DB tree
 ```
 
 ## Build
@@ -26,8 +26,8 @@ fold optimization is applied as a ggml patch
 
 ### Unit tests (pure helpers)
 
-JSON envelope parsing, palette, segmentation-name detection and catalog mirror
-(no GGUF model required):
+Typed-result conversion, row-stride image handling, palette,
+segmentation-name detection and catalog mirror (no GGUF model required):
 
 ```bash
 cmake -DBUILD_GUI=ON -DAICore_ENABLED=ON -DPLUGIN_STANDARD_QRFDETR=ON \
@@ -91,7 +91,7 @@ your own dataset the class list changes accordingly.
 Only detect the classes you care about: expand **Class Filter (optional)** in
 the Image tab, uncheck the classes to ignore, then Run. Filtered classes are
 removed by the engine's post-processing, so they never appear in the result
-JSON, the annotation or the DB metadata — this also reduces false positives
+store, the annotation or the DB metadata — this also reduces false positives
 and speeds up display of busy scenes.
 
 - The list is filled automatically after the first run with the loaded

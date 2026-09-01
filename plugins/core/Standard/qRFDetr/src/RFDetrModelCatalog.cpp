@@ -130,21 +130,6 @@ QString modelDisplayLabel(const RFDetrModelEntry& entry) {
     return label;
 }
 
-const uchar* packedRgb888Data(const QImage& image, QByteArray* scratch) {
-    if (!scratch || image.isNull() || image.format() != QImage::Format_RGB888)
-        return nullptr;
-    scratch->clear();
-    const int rowBytes = image.width() * 3;
-    if (image.bytesPerLine() == rowBytes) return image.constBits();
-
-    scratch->resize(rowBytes * image.height());
-    for (int y = 0; y < image.height(); ++y) {
-        std::memcpy(scratch->data() + y * rowBytes, image.constScanLine(y),
-                    static_cast<size_t>(rowBytes));
-    }
-    return reinterpret_cast<const uchar*>(scratch->constData());
-}
-
 bool filenameIsSegmentation(const QString& filename) {
     const QString lower = filename.toLower();
     return lower.contains(QStringLiteral("seg"));

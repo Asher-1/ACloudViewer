@@ -10,6 +10,7 @@
 #include <QElapsedTimer>
 #include <QFile>
 #include <QFileInfo>
+#include <QtGlobal>
 #include <algorithm>
 #include <cmath>
 
@@ -25,6 +26,51 @@ void fillResolvedDevice(DA3DepthResult& res, aicore_depth_ctx* ctx) {
     if (const char* dev = aicore_depth_device_name(ctx)) {
         res.resolvedDevice = QString::fromUtf8(dev);
     }
+}
+
+aicore_image_format imageFormat(const QImage& image) {
+    switch (image.format()) {
+        case QImage::Format_RGB888:
+            return AICORE_IMAGE_RGB8;
+        case QImage::Format_RGBA8888:
+            return AICORE_IMAGE_RGBA8;
+        case QImage::Format_Grayscale8:
+            return AICORE_IMAGE_GRAY8;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+        case QImage::Format_BGR888:
+            return AICORE_IMAGE_BGR8;
+#endif
+#if Q_BYTE_ORDER == Q_LITTLE_ENDIAN
+        case QImage::Format_RGB32:
+        case QImage::Format_ARGB32:
+            return AICORE_IMAGE_BGRA8;
+#endif
+        default:
+            return static_cast<aicore_image_format>(0);
+    }
+}
+
+QImage inferenceImage(const QImage& image) {
+    return imageFormat(image) != 0
+                   ? image
+                   : image.convertToFormat(QImage::Format_RGB888);
+}
+
+aicore_image_view imageView(const QImage& image) {
+    return aicore_image_view{
+            reinterpret_cast<const uint8_t*>(image.constBits()), image.width(),
+            image.height(), static_cast<size_t>(image.bytesPerLine()),
+            imageFormat(image)};
+}
+
+QString inputName(const DA3Dialog::Settings& settings, int index = 0) {
+    if (!settings.inputImage.isNull()) {
+        return settings.inputImageName.isEmpty() ? QStringLiteral("db-image")
+                                                 : settings.inputImageName;
+    }
+    return index >= 0 && index < settings.inputPaths.size()
+                   ? QFileInfo(settings.inputPaths[index]).baseName()
+                   : QStringLiteral("image");
 }
 
 }  // namespace
@@ -191,7 +237,8 @@ DA3Worker::CtxGuard DA3Worker::loadModel() {
 }
 
 bool DA3Worker::runDepthSingle() {
-    if (m_settings.inputPaths.isEmpty()) {
+    const bool memoryInput = !m_settings.inputImage.isNull();
+    if (m_settings.inputPaths.isEmpty() && !memoryInput) {
         emit logMessage("[Error] No input image selected.");
         return false;
     }
@@ -199,7 +246,7 @@ bool DA3Worker::runDepthSingle() {
     auto guard = loadModel();
     if (!guard) return false;
 
-    int total = m_settings.inputPaths.size();
+    const int total = memoryInput ? 1 : m_settings.inputPaths.size();
     int okCount = 0;
     for (int i = 0; i < total; ++i) {
         if (isInterruptionRequested() || aicore_cancel_requested()) {
@@ -209,42 +256,51 @@ bool DA3Worker::runDepthSingle() {
         const int pctBase = 10 + (i * 80) / std::max(total, 1);
         const int pctNext = 10 + ((i + 1) * 80) / std::max(total, 1);
         emit progressUpdate(pctBase, 100);
-        emit logMessage("[DA3] Processing: " + m_settings.inputPaths[i]);
+        const QString source = inputName(m_settings, i);
+        emit logMessage("[DA3] Processing: " + source);
 
-        int h = 0, w = 0;
-        const std::string pathStr = m_settings.inputPaths[i].toStdString();
-        float* depth = nullptr;
         QElapsedTimer inferTimer;
         inferTimer.start();
-        depth = aicore_depth_depth_path(guard.ctx, pathStr.c_str(), &h, &w);
+        aicore_depth_dense_result dense{};
+        int ret = -1;
+        if (memoryInput) {
+            const QImage image = inferenceImage(m_settings.inputImage);
+            const aicore_image_view view = imageView(image);
+            ret = aicore_depth_depth_image(guard.ctx, &view, &dense);
+        } else {
+            const QByteArray path = m_settings.inputPaths[i].toUtf8();
+            ret = aicore_depth_depth_dense(guard.ctx, path.constData(), &dense);
+        }
         emit progressUpdate(pctNext, 100);
-        if (!depth) {
+        if (ret != 0 || !dense.depth) {
             const char* err = aicore_depth_last_error(guard.ctx);
             emit logMessage(QString("[Error] Depth estimation failed for: %1%2")
-                                    .arg(m_settings.inputPaths[i])
+                                    .arg(source)
                                     .arg(err && err[0]
                                                  ? QString(" — %1").arg(err)
                                                  : QString()));
+            aicore_depth_dense_result_free(&dense);
             continue;
         }
         ++okCount;
 
         DA3DepthResult res;
-        res.sourceName = QFileInfo(m_settings.inputPaths[i]).baseName();
+        res.sourceName = source;
         fillResolvedDevice(res, guard.ctx);
-        res.width = w;
-        res.height = h;
-        res.depth.resize(h * w);
-        std::copy(depth, depth + h * w, res.depth.begin());
+        res.width = dense.width;
+        res.height = dense.height;
+        res.depth.resize(dense.height * dense.width);
+        std::copy(dense.depth, dense.depth + res.depth.size(),
+                  res.depth.begin());
         res.hasPose = false;
         res.runtimeMs = inferTimer.elapsed();
-        aicore_depth_free_buffer(depth);
+        aicore_depth_dense_result_free(&dense);
 
         float dmin = *std::min_element(res.depth.begin(), res.depth.end());
         float dmax = *std::max_element(res.depth.begin(), res.depth.end());
         emit logMessage(QString("[DA3] Depth %1x%2 min=%3 max=%4")
-                                .arg(w)
-                                .arg(h)
+                                .arg(res.width)
+                                .arg(res.height)
                                 .arg(dmin, 0, 'f', 4)
                                 .arg(dmax, 0, 'f', 4));
 
@@ -263,7 +319,8 @@ bool DA3Worker::runDepthSingle() {
 }
 
 bool DA3Worker::runDepthPose() {
-    if (m_settings.inputPaths.isEmpty()) {
+    const bool memoryInput = !m_settings.inputImage.isNull();
+    if (m_settings.inputPaths.isEmpty() && !memoryInput) {
         emit logMessage("[Error] No input image selected.");
         return false;
     }
@@ -271,7 +328,7 @@ bool DA3Worker::runDepthPose() {
     auto guard = loadModel();
     if (!guard) return false;
 
-    int total = m_settings.inputPaths.size();
+    const int total = memoryInput ? 1 : m_settings.inputPaths.size();
     int okCount = 0;
     for (int i = 0; i < total; ++i) {
         if (isInterruptionRequested() || aicore_cancel_requested()) break;
@@ -285,12 +342,19 @@ bool DA3Worker::runDepthPose() {
         float* sky_ptr = nullptr;
         float ext[12] = {}, intr[9] = {};
 
-        const std::string pathStr = m_settings.inputPaths[i].toStdString();
+        const QString source = inputName(m_settings, i);
         QElapsedTimer inferTimer;
         inferTimer.start();
         aicore_depth_dense_result dense{};
-        const int ret =
-                aicore_depth_depth_dense(guard.ctx, pathStr.c_str(), &dense);
+        int ret = -1;
+        if (memoryInput) {
+            const QImage image = inferenceImage(m_settings.inputImage);
+            const aicore_image_view view = imageView(image);
+            ret = aicore_depth_depth_image(guard.ctx, &view, &dense);
+        } else {
+            const QByteArray path = m_settings.inputPaths[i].toUtf8();
+            ret = aicore_depth_depth_dense(guard.ctx, path.constData(), &dense);
+        }
         h = dense.height;
         w = dense.width;
         depth_ptr = dense.depth;
@@ -303,7 +367,7 @@ bool DA3Worker::runDepthPose() {
         if (ret != 0 || !depth_ptr) {
             const char* err = aicore_depth_last_error(guard.ctx);
             emit logMessage(QString("[Error] Depth+pose failed for: %1%2")
-                                    .arg(m_settings.inputPaths[i])
+                                    .arg(source)
                                     .arg(err && err[0]
                                                  ? QString(" — %1").arg(err)
                                                  : QString()));
@@ -313,7 +377,7 @@ bool DA3Worker::runDepthPose() {
         ++okCount;
 
         DA3DepthResult res;
-        res.sourceName = QFileInfo(m_settings.inputPaths[i]).baseName();
+        res.sourceName = source;
         fillResolvedDevice(res, guard.ctx);
         res.width = w;
         res.height = h;
@@ -415,11 +479,23 @@ bool DA3Worker::runDepthMultiView() {
 }
 
 bool DA3Worker::runReconstruct() {
-    if (m_settings.inputPaths.isEmpty()) {
+    if (m_settings.inputPaths.isEmpty() && m_settings.inputImage.isNull()) {
         emit logMessage("[Error] No input image selected.");
         return false;
     }
     emit logMessage("[DA3] Reconstructing 3D Gaussians...");
+
+    auto guard = loadModel();
+    if (!guard) return false;
+
+    QImage sourceImage = m_settings.inputImage;
+    if (sourceImage.isNull()) sourceImage.load(m_settings.inputPaths[0]);
+    if (sourceImage.isNull()) {
+        emit logMessage("[Error] Failed to load reconstruction input image.");
+        return false;
+    }
+    const QImage image = inferenceImage(sourceImage);
+    const aicore_image_view view = imageView(image);
 
     int H = 0;
     int W = 0;
@@ -428,10 +504,9 @@ bool DA3Worker::runReconstruct() {
     float* scales = nullptr;
     float* harmonics = nullptr;
     float* opacities = nullptr;
-    const int ret = aicore_depth_reconstruct_path(
-            m_settings.modelPath.toStdString().c_str(), m_settings.threads,
-            m_settings.inputPaths[0].toStdString().c_str(), &H, &W, &N, &means,
-            &scales, &harmonics, &opacities);
+    const int ret =
+            aicore_depth_reconstruct_image(guard.ctx, &view, &H, &W, &N, &means,
+                                           &scales, &harmonics, &opacities);
     if (ret != 0) {
         emit logMessage("[Error] Reconstruction failed.");
         return false;
@@ -443,7 +518,7 @@ bool DA3Worker::runReconstruct() {
                             .arg(H));
 
     DA3ReconResult res;
-    res.sourceName = QFileInfo(m_settings.inputPaths[0]).baseName();
+    res.sourceName = inputName(m_settings);
     res.count = N;
     if (N > 0 && means && scales && harmonics && opacities) {
         res.positions.resize(N * 3);
@@ -479,7 +554,8 @@ bool DA3Worker::runReconstruct() {
 }
 
 bool DA3Worker::runExportGLB() {
-    if (m_settings.inputPaths.isEmpty() || m_settings.outputDir.isEmpty()) {
+    if ((m_settings.inputPaths.isEmpty() && m_settings.inputImage.isNull()) ||
+        m_settings.outputDir.isEmpty()) {
         emit logMessage("[Error] Input image and output directory required.");
         return false;
     }
@@ -488,11 +564,20 @@ bool DA3Worker::runExportGLB() {
     auto guard = loadModel();
     if (!guard) return false;
 
-    QString outPath = m_settings.outputDir + "/" +
-                      QFileInfo(m_settings.inputPaths[0]).baseName() + ".glb";
-    int ret = aicore_depth_export_glb(
-            guard.ctx, m_settings.inputPaths[0].toStdString().c_str(),
-            outPath.toStdString().c_str());
+    const QString outPath =
+            m_settings.outputDir + "/" + inputName(m_settings) + ".glb";
+    const QByteArray output = outPath.toUtf8();
+    int ret = -1;
+    if (!m_settings.inputImage.isNull()) {
+        const QImage image = inferenceImage(m_settings.inputImage);
+        const aicore_image_view view = imageView(image);
+        ret = aicore_depth_export_glb_image(guard.ctx, &view,
+                                            output.constData());
+    } else {
+        const QByteArray path = m_settings.inputPaths[0].toUtf8();
+        ret = aicore_depth_export_glb(guard.ctx, path.constData(),
+                                      output.constData());
+    }
 
     if (ret == 0) {
         emit logMessage("[DA3] GLB exported: " + outPath);
@@ -503,7 +588,8 @@ bool DA3Worker::runExportGLB() {
 }
 
 bool DA3Worker::runExportCOLMAP() {
-    if (m_settings.inputPaths.isEmpty() || m_settings.outputDir.isEmpty()) {
+    if ((m_settings.inputPaths.isEmpty() && m_settings.inputImage.isNull()) ||
+        m_settings.outputDir.isEmpty()) {
         emit logMessage("[Error] Input image and output directory required.");
         return false;
     }
@@ -512,10 +598,23 @@ bool DA3Worker::runExportCOLMAP() {
     auto guard = loadModel();
     if (!guard) return false;
 
-    int ret = aicore_depth_export_colmap(
-            guard.ctx, m_settings.inputPaths[0].toStdString().c_str(),
-            m_settings.outputDir.toStdString().c_str(),
-            m_settings.colmapBinary ? 1 : 0);
+    const QByteArray outputDir = m_settings.outputDir.toUtf8();
+    int ret = -1;
+    if (!m_settings.inputImage.isNull()) {
+        const QImage image = inferenceImage(m_settings.inputImage);
+        const aicore_image_view view = imageView(image);
+        QString imageName = inputName(m_settings);
+        if (QFileInfo(imageName).suffix().isEmpty()) imageName += ".png";
+        const QByteArray name = imageName.toUtf8();
+        ret = aicore_depth_export_colmap_image(
+                guard.ctx, &view, name.constData(), outputDir.constData(),
+                m_settings.colmapBinary ? 1 : 0);
+    } else {
+        const QByteArray path = m_settings.inputPaths[0].toUtf8();
+        ret = aicore_depth_export_colmap(guard.ctx, path.constData(),
+                                         outputDir.constData(),
+                                         m_settings.colmapBinary ? 1 : 0);
+    }
 
     if (ret == 0) {
         emit logMessage(

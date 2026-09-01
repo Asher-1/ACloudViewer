@@ -331,10 +331,9 @@ void TrellisWorker::onProgress(int stage, int step, int total) {
 }
 
 bool TrellisWorker::resolveRmbgModel() {
-    // The rmbg model comes from the same Trellis2 mirror; prefer the q8
-    // variant (best accuracy/size trade, keeps host RAM low on the small-
-    // machine presets) and fall back to f16.
-    const QString cacheDir = TrellisHelpers::modelCacheDir();
+    // RMBG is a shared AICore task dependency. Its physical cache belongs to
+    // qRMBG, not to the TRELLIS pipeline weights.
+    const QString cacheDir = TrellisHelpers::rmbgModelCacheDir();
     for (const QString& name :
          {QStringLiteral("rmbg_q8.gguf"), QStringLiteral("rmbg_f16.gguf")}) {
         const QString path = cacheDir + QLatin1Char('/') + name;

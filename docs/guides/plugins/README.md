@@ -50,3 +50,13 @@ cmake --build build_app --target ACloudViewer QDA3_PLUGIN QFACEDETECT_PLUGIN QFR
 - Full plugin READMEs (developer details, tests, C API): [`plugins/core/Standard/qDA3/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qDA3/README.md), [`plugins/core/Standard/qDeepLSD/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qDeepLSD/README.md), [`plugins/core/Standard/qFaceDetect/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qFaceDetect/README.md), [`plugins/core/Standard/qLightGlue/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qLightGlue/README.md), [`plugins/core/Standard/qFreeSplatter/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qFreeSplatter/README.md), [`plugins/core/Standard/qSAM3/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qSAM3/README.md), [`plugins/core/Standard/qTrellis/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qTrellis/README.md)
 - Plugin catalog: [`plugins/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/README.md)
 - Sphinx doc build syncs the above READMEs into `docs/source/plugins/` (see `docs/source/conf.py`)
+
+## Image asset policy
+
+Plugin user guides in this directory must reference plugin-owned images through
+the GitHub `blob/main/...?...raw=1` URL, for example
+`https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qFaceDetect/images/qFaceDetect.png?raw=1`.
+This keeps direct GitHub Markdown viewing and Sphinx-rendered pages independent
+of their different relative directories. `docs/source/_static/plugin-assets/`
+remains for Sphinx-owned pages such as the documentation landing page; it is
+not the image source for guides in this directory.

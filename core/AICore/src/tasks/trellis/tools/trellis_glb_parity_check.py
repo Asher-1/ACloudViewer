@@ -17,8 +17,10 @@ import argparse
 import ctypes
 import io
 import json
+import os
 import struct
 import sys
+import tempfile
 
 
 def parse_t2mesh(path):
@@ -104,13 +106,12 @@ def main():
     ap.add_argument("--sidecar", required=True)
     ap.add_argument("--upstream", required=True)
     ap.add_argument("--lib", default=None)
-    ap.add_argument("--out", default="/tmp/acv_parity.glb")
+    ap.add_argument("--out", default=os.path.join(tempfile.gettempdir(), "acv_parity.glb"))
     ap.add_argument("--debug", action="store_true",
                     help="enable aicore DEBUG logs (unwrap path trace)")
     args = ap.parse_args()
 
     verts, normals, tris, pbr, nv, nt = parse_t2mesh(args.sidecar)
-    import os
     lib = args.lib
     if not lib:
         cand = os.path.join(os.path.dirname(__file__), "..", "..", "..",

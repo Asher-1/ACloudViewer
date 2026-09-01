@@ -19,6 +19,15 @@ extern "C" {
 
 typedef struct aicore_cancel_token aicore_cancel_token;
 
+/**
+ * Reclaims inactive backend leases held by completed task contexts.
+ *
+ * This call is idempotent and never destroys a live task context. Backends
+ * remain registered for the process lifetime; callers should invoke it after
+ * releasing a batch of task contexts or before unloading an embedding host.
+ */
+AICORE_CAPI void aicore_runtime_shutdown(void);
+
 #if defined(_MSC_VER)
 #define AICORE_LEGACY_API  \
     __declspec(deprecated( \

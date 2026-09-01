@@ -21,32 +21,6 @@ index 6e2bd31..2eef8ed 100644
      GGML_API struct ggml_tensor * ggml_conv_3d_direct(
              struct ggml_context * ctx,
              struct ggml_tensor  * a,   // kernel [KW, KH, KD, IC * OC]
-diff --git a/src/ggml-cuda/CMakeLists.txt b/src/ggml-cuda/CMakeLists.txt
-index 84fbb02..7c7176b 100644
---- a/src/ggml-cuda/CMakeLists.txt
-+++ b/src/ggml-cuda/CMakeLists.txt
-@@ -137,6 +137,21 @@ if (CUDAToolkit_FOUND)
-         target_link_libraries(ggml-cuda PRIVATE ${RMBG_CUDNN_LIBRARY})
-         target_compile_definitions(ggml-cuda PRIVATE GGML_CUDA_RMBG_CUDNN)
-     endif()
-+    if (GGML_CUDA_CUDNN)
-+        find_path(CUDNN_INCLUDE_DIR cudnn.h
-+            HINTS $ENV{CUDNN_ROOT} /usr/local/cudnn
-+            PATH_SUFFIXES include)
-+        find_library(CUDNN_LIBRARY cudnn
-+            HINTS $ENV{CUDNN_ROOT} /usr/local/cudnn
-+            PATH_SUFFIXES lib lib64)
-+        if (NOT CUDNN_INCLUDE_DIR OR NOT CUDNN_LIBRARY)
-+            message(FATAL_ERROR "GGML_CUDA_CUDNN requires cuDNN headers and library; set CUDNN_ROOT or disable YOLO_GGML_CUDNN")
-+        endif()
-+        target_include_directories(ggml-cuda PRIVATE ${CUDNN_INCLUDE_DIR})
-+        target_link_libraries(ggml-cuda PRIVATE ${CUDNN_LIBRARY})
-+        target_compile_definitions(ggml-cuda PRIVATE GGML_CUDA_USE_CUDNN)
-+        message(STATUS "Using cuDNN direct convolutions: ${CUDNN_LIBRARY}")
-+    endif()
- 
-     add_compile_definitions(GGML_CUDA_PEER_MAX_BATCH_SIZE=${GGML_CUDA_PEER_MAX_BATCH_SIZE})
- 
 diff --git a/src/ggml-cuda/binbcast.cu b/src/ggml-cuda/binbcast.cu
 index 2e38077..cf6ad57 100644
 --- a/src/ggml-cuda/binbcast.cu
@@ -76,24 +50,16 @@ index 2e38077..cf6ad57 100644
              (const float *) src0->data, (const float *) src1->data, (float *) dst->data,
              stream, std::make_index_sequence<n_fuse>{});
 diff --git a/src/ggml-cuda/common.cuh b/src/ggml-cuda/common.cuh
-index 14dd109..4d197ce 100644
+index 14dd109..e38f646 100644
 --- a/src/ggml-cuda/common.cuh
 +++ b/src/ggml-cuda/common.cuh
-@@ -1419,6 +1419,7 @@ struct ggml_backend_cuda_context {
- 
-     cudaStream_t streams[GGML_CUDA_MAX_DEVICES][GGML_CUDA_MAX_STREAMS] = { { nullptr } };
-     cublasHandle_t cublas_handles[GGML_CUDA_MAX_DEVICES][GGML_CUDA_MAX_STREAMS] = {nullptr};
-+    void * cudnn_context = nullptr;
-     void * cublas_workspaces[GGML_CUDA_MAX_DEVICES][GGML_CUDA_MAX_STREAMS] = {nullptr};
-     size_t cublas_workspace_sizes[GGML_CUDA_MAX_DEVICES] = {0};
- 
-@@ -1673,4 +1674,3 @@ static __inline__ void ggml_cuda_kernel_launch(Kernel kernel, const ggml_cuda_ke
+@@ -1673,4 +1673,3 @@ static __inline__ void ggml_cuda_kernel_launch(Kernel kernel, const ggml_cuda_ke
      kernel<<<launch_params.block_nums, launch_params.block_dims, launch_params.shmem, launch_params.stream>>>(std::forward<Args>(args)... );
      CUDA_CHECK(cudaGetLastError());
  }
 -
 diff --git a/src/ggml-cuda/conv2d-dw.cu b/src/ggml-cuda/conv2d-dw.cu
-index 7583233..53c6c66 100644
+index 7583233..f9cd149 100644
 --- a/src/ggml-cuda/conv2d-dw.cu
 +++ b/src/ggml-cuda/conv2d-dw.cu
 @@ -1,4 +1,6 @@
@@ -112,7 +78,7 @@ index 7583233..53c6c66 100644
      kernel_bounds bounds = calculate_kernel_bounds(out_x_idx, out_y_idx, params);
  
      for (int kern_y = bounds.y_min; kern_y < bounds.y_max; ++kern_y) {
-@@ -109,21 +111,24 @@ __global__ void conv2d_dw_kernel(const T * __restrict__ input, const T * __restr
+@@ -109,21 +111,21 @@ __global__ void conv2d_dw_kernel(const T * __restrict__ input, const T * __restr
              const T input_val  = input[Layout::input_index(batch_idx, channel_idx, in_y_idx, in_x_idx, params)];
              const T kernel_val = kernel[Layout::kernel_index(channel_idx, kern_y, kern_x, params)];
  
@@ -137,13 +103,10 @@ index 7583233..53c6c66 100644
 +    const bool f32 = kernel->type == GGML_TYPE_F32 && input->type == GGML_TYPE_F32 && dst->type == GGML_TYPE_F32;
 +    const bool f16 = kernel->type == GGML_TYPE_F16 && input->type == GGML_TYPE_F16 && dst->type == GGML_TYPE_F16;
 +    GGML_ASSERT(f32 || f16);
-+#ifdef GGML_CUDA_USE_CUDNN
-+    if (ggml_cuda_conv2d_cudnn(ctx, dst, true)) return;
-+#endif
  
      const int32_t * p          = (const int32_t *) dst->op_params;
      const int       stride_x   = p[0];
-@@ -147,14 +152,22 @@ void ggml_cuda_op_conv2d_dw(ggml_backend_cuda_context & ctx, ggml_tensor * dst)
+@@ -147,14 +149,22 @@ void ggml_cuda_op_conv2d_dw(ggml_backend_cuda_context & ctx, ggml_tensor * dst)
      const int total  = batches * channels * out_h * out_w;
      const int blocks = (total + CUDA_CONV2D_DW_BLOCK_SIZE - 1) / CUDA_CONV2D_DW_BLOCK_SIZE;
  
@@ -172,20 +135,15 @@ index 7583233..53c6c66 100644
          GGML_ABORT("Unsupported memory layout for conv_2d_dw");
      }
 diff --git a/src/ggml-cuda/conv2d-transpose.cu b/src/ggml-cuda/conv2d-transpose.cu
-index 6cbd6f8..139dee1 100644
+index 6cbd6f8..6afa6b3 100644
 --- a/src/ggml-cuda/conv2d-transpose.cu
 +++ b/src/ggml-cuda/conv2d-transpose.cu
-@@ -1,10 +1,16 @@
+@@ -1,10 +1,11 @@
  #include "conv2d-transpose.cuh"
  #include "convert.cuh"
  
 -template <typename kernel_t>
 -static __global__ void conv2d_transpose_kernel(const float * __restrict__ input,
-+#ifdef GGML_CUDA_USE_CUDNN
-+#include <cudnn.h>
-+#include <new>
-+#include <string>
-+#endif
 +
 +template <typename input_t, typename kernel_t, typename output_t>
 +static __global__ void conv2d_transpose_kernel(const input_t * __restrict__ input,
@@ -195,7 +153,7 @@ index 6cbd6f8..139dee1 100644
                                                 const int in_w,
                                                 const int in_h,
                                                 const int out_w,
-@@ -56,27 +62,144 @@ static __global__ void conv2d_transpose_kernel(const float * __restrict__ input,
+@@ -56,27 +57,27 @@ static __global__ void conv2d_transpose_kernel(const float * __restrict__ input,
                  const int kernel_idx =
                      (kernel_h * kernel_w * c_out) * c_in_idx + (kernel_h * kernel_w) * c_idx + (kernel_w) *kh + kw;
  
@@ -214,123 +172,6 @@ index 6cbd6f8..139dee1 100644
 +        ggml_cuda_cast<output_t>(accumulator);
  }
  
-+#ifdef GGML_CUDA_USE_CUDNN
-+namespace {
-+
-+struct transpose_cudnn_plan {
-+    cudnnHandle_t handle = nullptr;
-+    cudnnTensorDescriptor_t dx_desc = nullptr;
-+    cudnnTensorDescriptor_t dy_desc = nullptr;
-+    cudnnFilterDescriptor_t w_desc = nullptr;
-+    cudnnConvolutionDescriptor_t conv_desc = nullptr;
-+    cudnnConvolutionBwdDataAlgo_t algo = CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
-+    size_t workspace_bytes = 0;
-+    void * workspace = nullptr;
-+    std::string source_key;
-+    bool disabled = false;
-+    ~transpose_cudnn_plan() {
-+        if (workspace) cudaFree(workspace);
-+        if (conv_desc) cudnnDestroyConvolutionDescriptor(conv_desc);
-+        if (w_desc) cudnnDestroyFilterDescriptor(w_desc);
-+        if (dy_desc) cudnnDestroyTensorDescriptor(dy_desc);
-+        if (dx_desc) cudnnDestroyTensorDescriptor(dx_desc);
-+        if (handle) cudnnDestroy(handle);
-+    }
-+};
-+
-+static transpose_cudnn_plan & transpose_plan() {
-+    // A plan owns a cuDNN handle and descriptors. Keep one cache per worker
-+    // thread so independent sessions cannot race while rebuilding it.
-+    thread_local transpose_cudnn_plan plan;
-+    return plan;
-+}
-+
-+static std::string transpose_plan_key(const ggml_tensor * kernel, const ggml_tensor * input,
-+                                      const ggml_tensor * dst) {
-+    const int32_t stride = dst->op_params[0];
-+    return std::to_string(reinterpret_cast<uintptr_t>(kernel->data)) + ":" +
-+           std::to_string(input->ne[0]) + ":" + std::to_string(input->ne[1]) + ":" +
-+           std::to_string(input->ne[2]) + ":" + std::to_string(input->ne[3]) + ":" +
-+           std::to_string(dst->ne[0]) + ":" + std::to_string(dst->ne[1]) + ":" +
-+           std::to_string(dst->ne[2]) + ":" + std::to_string(dst->ne[3]) + ":" +
-+           std::to_string(kernel->ne[0]) + ":" + std::to_string(kernel->ne[1]) + ":" +
-+           std::to_string(kernel->ne[2]) + ":" + std::to_string(kernel->ne[3]) + ":" +
-+           std::to_string((int) input->type) + ":" + std::to_string((int) kernel->type) + ":" +
-+           std::to_string(stride);
-+}
-+
-+static bool transpose_cudnn(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
-+    const ggml_tensor * kernel = dst->src[0];
-+    const ggml_tensor * input = dst->src[1];
-+    if (input->type != dst->type || kernel->type != input->type ||
-+        (input->type != GGML_TYPE_F16 && input->type != GGML_TYPE_F32) || !ggml_is_contiguous(input) ||
-+        !ggml_is_contiguous(kernel) || !ggml_is_contiguous(dst)) {
-+        return false;
-+    }
-+
-+    auto & plan = transpose_plan();
-+    const std::string key = transpose_plan_key(kernel, input, dst);
-+    if (plan.source_key != key || plan.handle == nullptr) {
-+        if (plan.handle) {
-+            plan.~transpose_cudnn_plan();
-+            new (&plan) transpose_cudnn_plan();
-+        }
-+        if (cudnnCreate(&plan.handle) != CUDNN_STATUS_SUCCESS ||
-+            cudnnCreateTensorDescriptor(&plan.dx_desc) != CUDNN_STATUS_SUCCESS ||
-+            cudnnCreateTensorDescriptor(&plan.dy_desc) != CUDNN_STATUS_SUCCESS ||
-+            cudnnCreateFilterDescriptor(&plan.w_desc) != CUDNN_STATUS_SUCCESS ||
-+            cudnnCreateConvolutionDescriptor(&plan.conv_desc) != CUDNN_STATUS_SUCCESS) {
-+            return false;
-+        }
-+
-+        const int cin = input->ne[2], cout = dst->ne[2], kh = kernel->ne[1], kw = kernel->ne[0];
-+        const cudnnDataType_t type = input->type == GGML_TYPE_F16 ? CUDNN_DATA_HALF : CUDNN_DATA_FLOAT;
-+        if (cudnnSetTensor4dDescriptor(plan.dx_desc, CUDNN_TENSOR_NCHW, type,
-+                                       dst->ne[3], dst->ne[2], dst->ne[1], dst->ne[0]) != CUDNN_STATUS_SUCCESS ||
-+            cudnnSetTensor4dDescriptor(plan.dy_desc, CUDNN_TENSOR_NCHW, type,
-+                                       input->ne[3], input->ne[2], input->ne[1], input->ne[0]) != CUDNN_STATUS_SUCCESS ||
-+            // ConvTranspose weights are [Cin, Cout, Kh, Kw], exactly the filter
-+            // layout expected by backward-data where dy has Cin channels.
-+            cudnnSetFilter4dDescriptor(plan.w_desc, type, CUDNN_TENSOR_NCHW, cin, cout, kh, kw) != CUDNN_STATUS_SUCCESS ||
-+            cudnnSetConvolution2dDescriptor(plan.conv_desc, 0, 0, dst->op_params[0], dst->op_params[0], 1, 1,
-+                                            CUDNN_CROSS_CORRELATION, CUDNN_DATA_FLOAT) != CUDNN_STATUS_SUCCESS ||
-+            cudnnSetConvolutionMathType(plan.conv_desc, CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION) != CUDNN_STATUS_SUCCESS) {
-+            return false;
-+        }
-+        cudnnConvolutionBwdDataAlgoPerf_t perf[CUDNN_CONVOLUTION_BWD_DATA_ALGO_COUNT];
-+        int count = 0;
-+        if (cudaMalloc(&plan.workspace, 64ull << 20) != cudaSuccess ||
-+            cudnnFindConvolutionBackwardDataAlgorithmEx(plan.handle, plan.w_desc, kernel->data, plan.dy_desc,
-+                                                         input->data, plan.conv_desc, plan.dx_desc, dst->data,
-+                                                         CUDNN_CONVOLUTION_BWD_DATA_ALGO_COUNT, &count, perf,
-+                                                         plan.workspace, 64ull << 20) != CUDNN_STATUS_SUCCESS) {
-+            return false;
-+        }
-+        bool found_algorithm = false;
-+        for (int i = 0; i < count; ++i) {
-+            if (perf[i].status == CUDNN_STATUS_SUCCESS && perf[i].memory <= (64ull << 20)) {
-+                plan.algo = perf[i].algo;
-+                plan.workspace_bytes = perf[i].memory;
-+                found_algorithm = true;
-+                break;
-+            }
-+        }
-+        plan.source_key = key;
-+        plan.disabled = !found_algorithm;
-+    }
-+    if (plan.disabled) return false;
-+
-+    if (cudnnSetStream(plan.handle, ctx.stream()) != CUDNN_STATUS_SUCCESS) return false;
-+    const float alpha = 1.0f, beta = 0.0f;
-+    const cudnnStatus_t status = cudnnConvolutionBackwardData(
-+        plan.handle, &alpha, plan.w_desc, kernel->data, plan.dy_desc, input->data, plan.conv_desc, plan.algo,
-+        plan.workspace, plan.workspace_bytes, &beta, plan.dx_desc, dst->data);
-+    plan.disabled = status != CUDNN_STATUS_SUCCESS;
-+    return !plan.disabled;
-+}
-+
-+} // namespace
-+#endif
 +
  //input is (W, H, C_in, N), Kernel is (W, H, C_out, C_in)
  void ggml_cuda_conv_2d_transpose_p0(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
@@ -347,13 +188,10 @@ index 6cbd6f8..139dee1 100644
      const void *  kernel_data = kernel->data;
  
      const int input_w      = input->ne[0];
-@@ -99,17 +222,28 @@ void ggml_cuda_conv_2d_transpose_p0(ggml_backend_cuda_context & ctx, ggml_tensor
+@@ -99,17 +100,25 @@ void ggml_cuda_conv_2d_transpose_p0(ggml_backend_cuda_context & ctx, ggml_tensor
      GGML_ASSERT(ggml_is_contiguous(kernel));
      GGML_ASSERT(ggml_is_contiguous(dst));
  
-+#ifdef GGML_CUDA_USE_CUDNN
-+    if (transpose_cudnn(ctx, dst)) return;
-+#endif
 +
      const int total  = output_w * output_h * channels_out * batches;
      const int blocks = (total + CUDA_CONV2D_TRANSPOSE_BLOCK_SIZE - 1) / CUDA_CONV2D_TRANSPOSE_BLOCK_SIZE;
@@ -385,10 +223,10 @@ index 6cbd6f8..139dee1 100644
      }
  }
 diff --git a/src/ggml-cuda/conv2d.cu b/src/ggml-cuda/conv2d.cu
-index 14774d4..685cafb 100644
+index 14774d4..152c47d 100644
 --- a/src/ggml-cuda/conv2d.cu
 +++ b/src/ggml-cuda/conv2d.cu
-@@ -1,6 +1,25 @@
+@@ -1,6 +1,17 @@
  #include "conv2d.cuh"
  #include "convert.cuh"
  
@@ -402,19 +240,11 @@ index 14774d4..685cafb 100644
 +#include <mma.h> // WMMA tensor core API for the native implicit-GEMM conv
 +#endif
 +
-+#ifdef GGML_CUDA_USE_CUDNN
-+#include <cudnn.h>
-+
-+#include <algorithm>
-+#include <array>
-+#include <limits>
-+#include <vector>
-+#endif
 +
  struct conv_params {
      const int64_t IW, IH;
      const int64_t OW, OH;
-@@ -69,10 +88,10 @@ struct whcn_layout {
+@@ -69,10 +80,10 @@ struct whcn_layout {
      }
  };
  
@@ -429,7 +259,7 @@ index 14774d4..685cafb 100644
                                       const conv_params P) {
      const int64_t global_idx = blockIdx.x * blockDim.x + threadIdx.x;
  
-@@ -94,47 +113,1668 @@ static __global__ void conv2d_kernel(const float * __restrict__ input,
+@@ -94,47 +105,864 @@ static __global__ void conv2d_kernel(const float * __restrict__ input,
              for (int64_t kx = bounds.x_min; kx < bounds.x_max; ++kx) {
                  const int64_t in_x = calculate_input_coord(out_x, kx, P.ST_X, P.DL_X, P.PD_X);
  
@@ -480,809 +310,6 @@ index 14774d4..685cafb 100644
 +    }
 +}
 +
-+#ifdef GGML_CUDA_USE_CUDNN
-+
-+static __global__ void fp32_to_fp16_kernel(const float * src, half * dst, int64_t count) {
-+    const int64_t index = blockIdx.x * blockDim.x + threadIdx.x;
-+    if (index < count) dst[index] = __float2half(src[index]);
-+}
-+
-+template <typename T>
-+static __global__ void transpose_batched_kernel(
-+        const T * src, T * dst, int64_t rows, int64_t columns) {
-+    __shared__ T tile[32][33];
-+    const int64_t batch = blockIdx.z;
-+    const int64_t src_x = blockIdx.x * 32 + threadIdx.x;
-+    const int64_t src_y = blockIdx.y * 32 + threadIdx.y;
-+    const T * src_batch = src + batch * rows * columns;
-+    T * dst_batch = dst + batch * rows * columns;
-+    for (int offset = 0; offset < 32; offset += 8) {
-+        if (src_x < columns && src_y + offset < rows) {
-+            tile[threadIdx.y + offset][threadIdx.x] = src_batch[(src_y + offset) * columns + src_x];
-+        }
-+    }
-+    __syncthreads();
-+    const int64_t dst_x = blockIdx.y * 32 + threadIdx.x;
-+    const int64_t dst_y = blockIdx.x * 32 + threadIdx.y;
-+    for (int offset = 0; offset < 32; offset += 8) {
-+        if (dst_x < rows && dst_y + offset < columns) {
-+            dst_batch[(dst_y + offset) * rows + dst_x] = tile[threadIdx.x][threadIdx.y + offset];
-+        }
-+    }
-+}
-+
-+static void nchw_to_nhwc(const void * src, void * dst, cudnnDataType_t type,
-+                         int64_t batches, int64_t channels, int64_t height, int64_t width, cudaStream_t stream) {
-+    const int64_t total = batches * channels * height * width;
-+    GGML_UNUSED(total);
-+    const int64_t spatial = height * width;
-+    const dim3 blocks((spatial + 31) / 32, (channels + 31) / 32, batches);
-+    const dim3 threads(32, 8);
-+    if (type == CUDNN_DATA_HALF) {
-+        transpose_batched_kernel<<<blocks, threads, 0, stream>>>(
-+            (const half *) src, (half *) dst, channels, spatial);
-+    } else {
-+        transpose_batched_kernel<<<blocks, threads, 0, stream>>>(
-+            (const float *) src, (float *) dst, channels, spatial);
-+    }
-+}
-+
-+static void nhwc_to_nchw(const void * src, void * dst, cudnnDataType_t type,
-+                         int64_t batches, int64_t channels, int64_t height, int64_t width, cudaStream_t stream) {
-+    const int64_t spatial = height * width;
-+    const dim3 blocks((channels + 31) / 32, (spatial + 31) / 32, batches);
-+    const dim3 threads(32, 8);
-+    if (type == CUDNN_DATA_HALF) {
-+        transpose_batched_kernel<<<blocks, threads, 0, stream>>>(
-+            (const half *) src, (half *) dst, spatial, channels);
-+    } else {
-+        transpose_batched_kernel<<<blocks, threads, 0, stream>>>(
-+            (const float *) src, (float *) dst, spatial, channels);
-+    }
-+}
-+
-+namespace {
-+
-+// Minimal cudnnBackend (Graph API) wrappers replacing the cudnn-frontend
-+// dependency. The generated descriptors match what the retired frontend
-+// builders produced, so execution plans and kernels stay equivalent.
-+struct cudnn_backend_desc_deleter {
-+    void operator()(cudnnBackendStruct * desc) const { cudnnBackendDestroyDescriptor(desc); }
-+};
-+
-+// Shared ownership mirrors cudnn_frontend::ManagedOpaqueDescriptor: shape-keyed
-+// choices outlive the per-tensor plans that created the descriptor.
-+using cudnn_backend_desc_ptr = std::shared_ptr<cudnnBackendStruct>;
-+
-+static cudnn_backend_desc_ptr cudnn_backend_create(cudnnBackendDescriptorType_t type) {
-+    cudnnBackendDescriptor_t desc = nullptr;
-+    if (cudnnBackendCreateDescriptor(type, &desc) != CUDNN_STATUS_SUCCESS) return nullptr;
-+    return cudnn_backend_desc_ptr(desc, cudnn_backend_desc_deleter());
-+}
-+
-+static bool cudnn_set_attr(cudnnBackendDescriptor_t desc, cudnnBackendAttributeName_t name,
-+                           cudnnBackendAttributeType_t type, int64_t count, const void * values) {
-+    return cudnnBackendSetAttribute(desc, name, type, count, values) == CUDNN_STATUS_SUCCESS;
-+}
-+
-+static cudnn_backend_desc_ptr cudnn_make_tensor_desc(
-+        const int64_t * dims, const int64_t * strides, int64_t id, cudnnDataType_t data_type, bool is_virtual) {
-+    const int64_t alignment = 16;
-+    auto tensor = cudnn_backend_create(CUDNN_BACKEND_TENSOR_DESCRIPTOR);
-+    if (!tensor ||
-+        !cudnn_set_attr(tensor.get(), CUDNN_ATTR_TENSOR_DATA_TYPE, CUDNN_TYPE_DATA_TYPE, 1, &data_type) ||
-+        !cudnn_set_attr(tensor.get(), CUDNN_ATTR_TENSOR_DIMENSIONS, CUDNN_TYPE_INT64, 4, dims) ||
-+        !cudnn_set_attr(tensor.get(), CUDNN_ATTR_TENSOR_STRIDES, CUDNN_TYPE_INT64, 4, strides) ||
-+        !cudnn_set_attr(tensor.get(), CUDNN_ATTR_TENSOR_UNIQUE_ID, CUDNN_TYPE_INT64, 1, &id) ||
-+        !cudnn_set_attr(tensor.get(), CUDNN_ATTR_TENSOR_BYTE_ALIGNMENT, CUDNN_TYPE_INT64, 1, &alignment)) {
-+        return nullptr;
-+    }
-+    if (is_virtual) {
-+        const bool virtual_flag = true;
-+        if (!cudnn_set_attr(tensor.get(), CUDNN_ATTR_TENSOR_IS_VIRTUAL, CUDNN_TYPE_BOOLEAN, 1, &virtual_flag)) {
-+            return nullptr;
-+        }
-+    }
-+    return cudnnBackendFinalize(tensor.get()) == CUDNN_STATUS_SUCCESS ? tensor : nullptr;
-+}
-+
-+static cudnn_backend_desc_ptr cudnn_make_conv_desc(
-+        const int64_t * padding, const int64_t * stride, const int64_t * dilation) {
-+    const int64_t spatial_dims = 2;
-+    const cudnnConvolutionMode_t mode = CUDNN_CROSS_CORRELATION;
-+    const cudnnDataType_t compute_type = CUDNN_DATA_FLOAT;
-+    auto conv = cudnn_backend_create(CUDNN_BACKEND_CONVOLUTION_DESCRIPTOR);
-+    if (!conv ||
-+        !cudnn_set_attr(conv.get(), CUDNN_ATTR_CONVOLUTION_COMP_TYPE, CUDNN_TYPE_DATA_TYPE, 1, &compute_type) ||
-+        !cudnn_set_attr(conv.get(), CUDNN_ATTR_CONVOLUTION_CONV_MODE, CUDNN_TYPE_CONVOLUTION_MODE, 1, &mode) ||
-+        !cudnn_set_attr(conv.get(), CUDNN_ATTR_CONVOLUTION_SPATIAL_DIMS, CUDNN_TYPE_INT64, 1, &spatial_dims) ||
-+        !cudnn_set_attr(conv.get(), CUDNN_ATTR_CONVOLUTION_PRE_PADDINGS, CUDNN_TYPE_INT64, 2, padding) ||
-+        !cudnn_set_attr(conv.get(), CUDNN_ATTR_CONVOLUTION_POST_PADDINGS, CUDNN_TYPE_INT64, 2, padding) ||
-+        !cudnn_set_attr(conv.get(), CUDNN_ATTR_CONVOLUTION_FILTER_STRIDES, CUDNN_TYPE_INT64, 2, stride) ||
-+        !cudnn_set_attr(conv.get(), CUDNN_ATTR_CONVOLUTION_DILATIONS, CUDNN_TYPE_INT64, 2, dilation)) {
-+        return nullptr;
-+    }
-+    return cudnnBackendFinalize(conv.get()) == CUDNN_STATUS_SUCCESS ? conv : nullptr;
-+}
-+
-+static cudnn_backend_desc_ptr cudnn_make_pointwise_desc(cudnnPointwiseMode_t mode) {
-+    const cudnnDataType_t math_prec = CUDNN_DATA_FLOAT;
-+    auto desc = cudnn_backend_create(CUDNN_BACKEND_POINTWISE_DESCRIPTOR);
-+    if (!desc ||
-+        !cudnn_set_attr(desc.get(), CUDNN_ATTR_POINTWISE_MODE, CUDNN_TYPE_POINTWISE_MODE, 1, &mode) ||
-+        !cudnn_set_attr(desc.get(), CUDNN_ATTR_POINTWISE_MATH_PREC, CUDNN_TYPE_DATA_TYPE, 1, &math_prec)) {
-+        return nullptr;
-+    }
-+    return cudnnBackendFinalize(desc.get()) == CUDNN_STATUS_SUCCESS ? desc : nullptr;
-+}
-+
-+static cudnn_backend_desc_ptr cudnn_make_conv_op(
-+        const cudnnBackendDescriptor_t x, const cudnnBackendDescriptor_t y,
-+        const cudnnBackendDescriptor_t w, const cudnnBackendDescriptor_t conv) {
-+    const float alpha = 1.0f;
-+    const float beta = 0.0f;
-+    auto op = cudnn_backend_create(CUDNN_BACKEND_OPERATION_CONVOLUTION_FORWARD_DESCRIPTOR);
-+    if (!op ||
-+        !cudnn_set_attr(op.get(), CUDNN_ATTR_OPERATION_CONVOLUTION_FORWARD_X, CUDNN_TYPE_BACKEND_DESCRIPTOR, 1, &x) ||
-+        !cudnn_set_attr(op.get(), CUDNN_ATTR_OPERATION_CONVOLUTION_FORWARD_W, CUDNN_TYPE_BACKEND_DESCRIPTOR, 1, &w) ||
-+        !cudnn_set_attr(op.get(), CUDNN_ATTR_OPERATION_CONVOLUTION_FORWARD_Y, CUDNN_TYPE_BACKEND_DESCRIPTOR, 1, &y) ||
-+        !cudnn_set_attr(op.get(), CUDNN_ATTR_OPERATION_CONVOLUTION_FORWARD_CONV_DESC,
-+                        CUDNN_TYPE_BACKEND_DESCRIPTOR, 1, &conv) ||
-+        !cudnn_set_attr(op.get(), CUDNN_ATTR_OPERATION_CONVOLUTION_FORWARD_ALPHA, CUDNN_TYPE_FLOAT, 1, &alpha) ||
-+        !cudnn_set_attr(op.get(), CUDNN_ATTR_OPERATION_CONVOLUTION_FORWARD_BETA, CUDNN_TYPE_FLOAT, 1, &beta)) {
-+        return nullptr;
-+    }
-+    return cudnnBackendFinalize(op.get()) == CUDNN_STATUS_SUCCESS ? op : nullptr;
-+}
-+
-+// cudnn-frontend defaults pointwise alpha1/alpha2 to 1.0f when unset.
-+static cudnn_backend_desc_ptr cudnn_make_pointwise_op(
-+        const cudnnBackendDescriptor_t pw, const cudnnBackendDescriptor_t x,
-+        const cudnnBackendDescriptor_t y, const cudnnBackendDescriptor_t b) {
-+    const float alpha = 1.0f;
-+    auto op = cudnn_backend_create(CUDNN_BACKEND_OPERATION_POINTWISE_DESCRIPTOR);
-+    if (!op ||
-+        !cudnn_set_attr(op.get(), CUDNN_ATTR_OPERATION_POINTWISE_PW_DESCRIPTOR, CUDNN_TYPE_BACKEND_DESCRIPTOR, 1, &pw) ||
-+        !cudnn_set_attr(op.get(), CUDNN_ATTR_OPERATION_POINTWISE_XDESC, CUDNN_TYPE_BACKEND_DESCRIPTOR, 1, &x) ||
-+        !cudnn_set_attr(op.get(), CUDNN_ATTR_OPERATION_POINTWISE_YDESC, CUDNN_TYPE_BACKEND_DESCRIPTOR, 1, &y) ||
-+        !cudnn_set_attr(op.get(), CUDNN_ATTR_OPERATION_POINTWISE_ALPHA1, CUDNN_TYPE_FLOAT, 1, &alpha) ||
-+        !cudnn_set_attr(op.get(), CUDNN_ATTR_OPERATION_POINTWISE_ALPHA2, CUDNN_TYPE_FLOAT, 1, &alpha)) {
-+        return nullptr;
-+    }
-+    if (b && !cudnn_set_attr(op.get(), CUDNN_ATTR_OPERATION_POINTWISE_BDESC, CUDNN_TYPE_BACKEND_DESCRIPTOR, 1, &b)) {
-+        return nullptr;
-+    }
-+    return cudnnBackendFinalize(op.get()) == CUDNN_STATUS_SUCCESS ? op : nullptr;
-+}
-+
-+static cudnn_backend_desc_ptr cudnn_make_opgraph(
-+        cudnnHandle_t handle, const cudnnBackendDescriptor_t * ops, int64_t count) {
-+    auto graph = cudnn_backend_create(CUDNN_BACKEND_OPERATIONGRAPH_DESCRIPTOR);
-+    if (!graph ||
-+        !cudnn_set_attr(graph.get(), CUDNN_ATTR_OPERATIONGRAPH_OPS, CUDNN_TYPE_BACKEND_DESCRIPTOR, count, ops) ||
-+        !cudnn_set_attr(graph.get(), CUDNN_ATTR_OPERATIONGRAPH_HANDLE, CUDNN_TYPE_HANDLE, 1, &handle)) {
-+        return nullptr;
-+    }
-+    return cudnnBackendFinalize(graph.get()) == CUDNN_STATUS_SUCCESS ? graph : nullptr;
-+}
-+
-+// Mirrors cudnn_frontend::get_heuristics_list({"heuristics_instant",
-+// "heuristics_fallback"}, ..., /*evaluate_all=*/true): MODE_A first, then
-+// MODE_FALLBACK, and a failing mode does not abort the collection.
-+static void cudnn_collect_engine_configs(const cudnn_backend_desc_ptr & graph,
-+                                         std::vector<cudnn_backend_desc_ptr> & configs) {
-+    for (const cudnnBackendHeurMode_t mode : {CUDNN_HEUR_MODE_A, CUDNN_HEUR_MODE_FALLBACK}) {
-+        const cudnnBackendDescriptor_t graph_desc = graph.get();
-+        auto heur = cudnn_backend_create(CUDNN_BACKEND_ENGINEHEUR_DESCRIPTOR);
-+        if (!heur ||
-+            !cudnn_set_attr(heur.get(), CUDNN_ATTR_ENGINEHEUR_OPERATION_GRAPH,
-+                            CUDNN_TYPE_BACKEND_DESCRIPTOR, 1, &graph_desc) ||
-+            !cudnn_set_attr(heur.get(), CUDNN_ATTR_ENGINEHEUR_MODE, CUDNN_TYPE_HEUR_MODE, 1, &mode) ||
-+            cudnnBackendFinalize(heur.get()) != CUDNN_STATUS_SUCCESS) {
-+            continue;
-+        }
-+        int64_t count = 0;
-+        if (cudnnBackendGetAttribute(heur.get(), CUDNN_ATTR_ENGINEHEUR_RESULTS, CUDNN_TYPE_BACKEND_DESCRIPTOR, 0,
-+                                     &count, nullptr) != CUDNN_STATUS_SUCCESS || count <= 0) {
-+            continue;
-+        }
-+        std::vector<cudnn_backend_desc_ptr> results;
-+        std::vector<cudnnBackendDescriptor_t> raw;
-+        results.reserve(count);
-+        raw.reserve(count);
-+        bool ready = true;
-+        for (int64_t i = 0; i < count && ready; ++i) {
-+            results.push_back(cudnn_backend_create(CUDNN_BACKEND_ENGINECFG_DESCRIPTOR));
-+            ready = results.back() != nullptr;
-+            if (ready) raw.push_back(results.back().get());
-+        }
-+        if (!ready) continue;
-+        int64_t filled = 0;
-+        if (cudnnBackendGetAttribute(heur.get(), CUDNN_ATTR_ENGINEHEUR_RESULTS, CUDNN_TYPE_BACKEND_DESCRIPTOR,
-+                                     count, &filled, raw.data()) != CUDNN_STATUS_SUCCESS || filled <= 0) {
-+            continue;
-+        }
-+        results.resize(filled);
-+        configs.insert(configs.end(), std::make_move_iterator(results.begin()),
-+                       std::make_move_iterator(results.end()));
-+    }
-+}
-+
-+static cudnn_backend_desc_ptr cudnn_make_execution_plan(
-+        cudnnHandle_t handle, const cudnn_backend_desc_ptr & engine_config, int64_t * workspace_size) {
-+    const cudnnBackendDescriptor_t config_desc = engine_config.get();
-+    auto plan = cudnn_backend_create(CUDNN_BACKEND_EXECUTION_PLAN_DESCRIPTOR);
-+    if (!plan ||
-+        !cudnn_set_attr(plan.get(), CUDNN_ATTR_EXECUTION_PLAN_ENGINE_CONFIG,
-+                        CUDNN_TYPE_BACKEND_DESCRIPTOR, 1, &config_desc) ||
-+        !cudnn_set_attr(plan.get(), CUDNN_ATTR_EXECUTION_PLAN_HANDLE, CUDNN_TYPE_HANDLE, 1, &handle) ||
-+        cudnnBackendFinalize(plan.get()) != CUDNN_STATUS_SUCCESS ||
-+        cudnnBackendGetAttribute(plan.get(), CUDNN_ATTR_EXECUTION_PLAN_WORKSPACE_SIZE, CUDNN_TYPE_INT64, 1,
-+                                 workspace_size, nullptr) != CUDNN_STATUS_SUCCESS) {
-+        return nullptr;
-+    }
-+    return plan;
-+}
-+
-+static cudnn_backend_desc_ptr cudnn_make_variant_pack(
-+        void * workspace, void * const * data_ptrs, const int64_t * uids, int64_t count) {
-+    auto pack = cudnn_backend_create(CUDNN_BACKEND_VARIANT_PACK_DESCRIPTOR);
-+    if (!pack ||
-+        !cudnn_set_attr(pack.get(), CUDNN_ATTR_VARIANT_PACK_DATA_POINTERS, CUDNN_TYPE_VOID_PTR, count, data_ptrs) ||
-+        !cudnn_set_attr(pack.get(), CUDNN_ATTR_VARIANT_PACK_UNIQUE_IDS, CUDNN_TYPE_INT64, count, uids) ||
-+        !cudnn_set_attr(pack.get(), CUDNN_ATTR_VARIANT_PACK_WORKSPACE, CUDNN_TYPE_VOID_PTR, 1, &workspace)) {
-+        return nullptr;
-+    }
-+    return cudnnBackendFinalize(pack.get()) == CUDNN_STATUS_SUCCESS ? pack : nullptr;
-+}
-+
-+constexpr size_t CUDNN_WORKSPACE_BYTES = 64ull << 20;
-+
-+static bool env_enabled(const char * name) {
-+    const char * value = getenv(name);
-+    return value && value[0] != '\0' && strcmp(value, "0") != 0;
-+}
-+
-+struct cudnn_conv_plan {
-+    cudnnTensorDescriptor_t x_desc = nullptr;
-+    cudnnTensorDescriptor_t y_desc = nullptr;
-+    cudnnFilterDescriptor_t w_desc = nullptr;
-+    cudnnConvolutionDescriptor_t conv_desc = nullptr;
-+    std::array<cudnnConvolutionFwdAlgoPerf_t, CUDNN_CONVOLUTION_FWD_ALGO_COUNT> algorithms{};
-+    int algorithm_count = 0;
-+    int algorithm_index = 0;
-+    bool disabled = false;
-+    bool frontend_fused = false;
-+    float frontend_time_ms = std::numeric_limits<float>::max();
-+    void * frontend_input = nullptr;
-+    void * frontend_output = nullptr;
-+    void * frontend_weight = nullptr;
-+    void * frontend_bias = nullptr;
-+    cudnn_backend_desc_ptr frontend_plan;
-+
-+    ~cudnn_conv_plan() {
-+        if (frontend_weight) cudaFree(frontend_weight);
-+        if (frontend_output) cudaFree(frontend_output);
-+        if (frontend_input) cudaFree(frontend_input);
-+        if (frontend_bias) cudaFree(frontend_bias);
-+        if (conv_desc) cudnnDestroyConvolutionDescriptor(conv_desc);
-+        if (w_desc) cudnnDestroyFilterDescriptor(w_desc);
-+        if (y_desc) cudnnDestroyTensorDescriptor(y_desc);
-+        if (x_desc) cudnnDestroyTensorDescriptor(x_desc);
-+    }
-+};
-+
-+using cudnn_conv_shape = std::array<int64_t, 26>;
-+
-+struct cudnn_conv_shape_hash {
-+    size_t operator()(const cudnn_conv_shape & shape) const {
-+        size_t hash = 0;
-+        for (const int64_t value : shape) {
-+            hash ^= std::hash<int64_t>{}(value) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-+        }
-+        return hash;
-+    }
-+};
-+
-+enum class cudnn_conv_backend {
-+    frontend,
-+    legacy,
-+};
-+
-+struct cudnn_conv_choice {
-+    cudnn_conv_backend backend = cudnn_conv_backend::legacy;
-+    cudnn_backend_desc_ptr frontend_plan;
-+    bool frontend_fused = false;
-+    float frontend_time_ms = std::numeric_limits<float>::max();
-+    float legacy_time_ms = std::numeric_limits<float>::max();
-+    std::array<cudnnConvolutionFwdAlgoPerf_t, CUDNN_CONVOLUTION_FWD_ALGO_COUNT> algorithms{};
-+    int algorithm_count = 0;
-+    int algorithm_index = 0;
-+};
-+
-+static cudnn_conv_shape get_conv_shape(const ggml_tensor * dst, bool depthwise) {
-+    const ggml_tensor * kernel = dst->src[0];
-+    const ggml_tensor * input = dst->src[1];
-+    const ggml_tensor * bias = dst->src[2];
-+    const int32_t * p = (const int32_t *) dst->op_params;
-+    return {
-+        input->ne[0], input->ne[1], input->ne[2], input->ne[3],
-+        kernel->ne[0], kernel->ne[1], kernel->ne[2], kernel->ne[3],
-+        dst->ne[0], dst->ne[1], dst->ne[2], dst->ne[3],
-+        p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7],
-+        input->type, kernel->type, dst->type, depthwise, bias != nullptr, bias ? bias->type : -1,
-+    };
-+}
-+
-+
-+struct cudnn_conv_context {
-+    cudnnHandle_t handle = nullptr;
-+    void * workspace = nullptr;
-+    size_t workspace_bytes = 0;
-+    std::unordered_map<const ggml_tensor *, std::unique_ptr<cudnn_conv_plan>> plans;
-+    std::unordered_map<cudnn_conv_shape, cudnn_conv_choice, cudnn_conv_shape_hash> choices;
-+
-+    explicit cudnn_conv_context(int device) {
-+        ggml_cuda_set_device(device);
-+        if (cudnnCreate(&handle) != CUDNN_STATUS_SUCCESS) {
-+            handle = nullptr;
-+            return;
-+        }
-+        if (cudaMalloc(&workspace, CUDNN_WORKSPACE_BYTES) == cudaSuccess) {
-+            workspace_bytes = CUDNN_WORKSPACE_BYTES;
-+        } else {
-+            workspace = nullptr;
-+            cudaGetLastError();
-+        }
-+    }
-+
-+    ~cudnn_conv_context() {
-+        plans.clear();
-+        choices.clear();
-+        if (workspace) cudaFree(workspace);
-+        if (handle) cudnnDestroy(handle);
-+    }
-+};
-+
-+static bool prepare_nhwc_buffers(cudnn_conv_context & cctx, const ggml_tensor * dst,
-+                                 cudnn_conv_plan & plan, bool convert_bias) {
-+    const ggml_tensor * kernel = dst->src[0];
-+    const ggml_tensor * input = dst->src[1];
-+    const cudnnDataType_t data_type = input->type == GGML_TYPE_F16 ? CUDNN_DATA_HALF : CUDNN_DATA_FLOAT;
-+    if (!plan.frontend_input && cudaMalloc(&plan.frontend_input, ggml_nbytes(input)) != cudaSuccess) {
-+        cudaGetLastError();
-+        return false;
-+    }
-+    if (!plan.frontend_output && cudaMalloc(&plan.frontend_output, ggml_nbytes(dst)) != cudaSuccess) {
-+        cudaGetLastError();
-+        return false;
-+    }
-+    if (!plan.frontend_weight && cudaMalloc(&plan.frontend_weight, ggml_nbytes(kernel)) != cudaSuccess) {
-+        cudaGetLastError();
-+        return false;
-+    }
-+
-+    cudaStream_t stream = nullptr;
-+    cudnnGetStream(cctx.handle, &stream);
-+    nchw_to_nhwc(kernel->data, plan.frontend_weight, data_type, kernel->ne[3], kernel->ne[2],
-+                 kernel->ne[1], kernel->ne[0], stream);
-+    nchw_to_nhwc(input->data, plan.frontend_input, data_type, input->ne[3], input->ne[2],
-+                 input->ne[1], input->ne[0], stream);
-+
-+    if (convert_bias && data_type == CUDNN_DATA_HALF && !plan.frontend_bias) {
-+        const size_t bias_bytes = dst->ne[2] * sizeof(half);
-+        if (cudaMalloc(&plan.frontend_bias, bias_bytes) != cudaSuccess) {
-+            cudaGetLastError();
-+            return false;
-+        }
-+        const int blocks = (dst->ne[2] + CUDA_CONV2D_BLOCK_SIZE - 1) / CUDA_CONV2D_BLOCK_SIZE;
-+        fp32_to_fp16_kernel<<<blocks, CUDA_CONV2D_BLOCK_SIZE, 0, stream>>>(
-+            (const float *) dst->src[2]->data, (half *) plan.frontend_bias, dst->ne[2]);
-+    }
-+    return true;
-+}
-+
-+static bool create_frontend_plan(cudnn_conv_context & cctx, const ggml_tensor * dst, cudnn_conv_plan & plan) {
-+    const ggml_tensor * kernel = dst->src[0];
-+    const ggml_tensor * input = dst->src[1];
-+    const int32_t * p = (const int32_t *) dst->op_params;
-+    const cudnnDataType_t data_type = input->type == GGML_TYPE_F16 ? CUDNN_DATA_HALF : CUDNN_DATA_FLOAT;
-+
-+    int64_t x_dim[] = {input->ne[3], input->ne[2], input->ne[1], input->ne[0]};
-+    int64_t y_dim[] = {dst->ne[3], dst->ne[2], dst->ne[1], dst->ne[0]};
-+    int64_t w_dim[] = {kernel->ne[3], kernel->ne[2], kernel->ne[1], kernel->ne[0]};
-+    int64_t x_stride[] = {input->ne[1] * input->ne[0] * input->ne[2], 1, input->ne[0] * input->ne[2], input->ne[2]};
-+    int64_t y_stride[] = {dst->ne[1] * dst->ne[0] * dst->ne[2], 1, dst->ne[0] * dst->ne[2], dst->ne[2]};
-+    int64_t w_stride[] = {kernel->ne[1] * kernel->ne[0] * kernel->ne[2], 1,
-+                          kernel->ne[0] * kernel->ne[2], kernel->ne[2]};
-+    int64_t padding[] = {p[3], p[2]};
-+    int64_t stride[] = {p[1], p[0]};
-+    int64_t dilation[] = {p[5], p[4]};
-+    const bool fuse_bias_silu = dst->src[2] && p[7] == 1;
-+
-+    if (!prepare_nhwc_buffers(cctx, dst, plan, fuse_bias_silu)) return false;
-+    cudaStream_t frontend_stream = nullptr;
-+    cudnnGetStream(cctx.handle, &frontend_stream);
-+
-+    auto select_plan = [&](const cudnn_backend_desc_ptr & graph, bool fused) {
-+        std::vector<cudnn_backend_desc_ptr> configs;
-+        cudnn_collect_engine_configs(graph, configs);
-+
-+        cudnn_backend_desc_ptr candidate;
-+        for (const auto & config : configs) {
-+            int64_t workspace_size = std::numeric_limits<int64_t>::max();
-+            candidate = cudnn_make_execution_plan(cctx.handle, config, &workspace_size);
-+            if (candidate && workspace_size <= (int64_t) cctx.workspace_bytes) break;
-+            candidate.reset();
-+        }
-+        if (!candidate) return false;
-+        plan.frontend_plan = candidate;
-+
-+        void * data_ptrs[] = {
-+            plan.frontend_input, plan.frontend_output, plan.frontend_weight,
-+            plan.frontend_bias ? plan.frontend_bias : (dst->src[2] ? dst->src[2]->data : nullptr)};
-+        const int64_t uids[] = {'x', 'y', 'w', 'b'};
-+        const int64_t pointer_count = fused ? 4 : 3;
-+        auto variant = cudnn_make_variant_pack(cctx.workspace, data_ptrs, uids, pointer_count);
-+        if (!variant) {
-+            plan.frontend_plan.reset();
-+            return false;
-+        }
-+
-+        auto execute = [&]() {
-+            nchw_to_nhwc(input->data, plan.frontend_input, data_type, input->ne[3], input->ne[2],
-+                         input->ne[1], input->ne[0], frontend_stream);
-+            const cudnnStatus_t status = cudnnBackendExecute(cctx.handle, plan.frontend_plan.get(), variant.get());
-+            if (status == CUDNN_STATUS_SUCCESS) {
-+                nhwc_to_nchw(plan.frontend_output, dst->data, data_type, dst->ne[3], dst->ne[2],
-+                             dst->ne[1], dst->ne[0], frontend_stream);
-+            }
-+            return status;
-+        };
-+        if (execute() != CUDNN_STATUS_SUCCESS || cudaStreamSynchronize(frontend_stream) != cudaSuccess) {
-+            cudaGetLastError();
-+            plan.frontend_plan.reset();
-+            return false;
-+        }
-+        cudaEvent_t start = nullptr;
-+        cudaEvent_t stop = nullptr;
-+        cudaEventCreate(&start);
-+        cudaEventCreate(&stop);
-+        std::array<float, 3> times{};
-+        for (float & time : times) {
-+            cudaEventRecord(start, frontend_stream);
-+            if (execute() != CUDNN_STATUS_SUCCESS) {
-+                plan.frontend_plan.reset();
-+                break;
-+            }
-+            cudaEventRecord(stop, frontend_stream);
-+            cudaEventSynchronize(stop);
-+            cudaEventElapsedTime(&time, start, stop);
-+        }
-+        cudaEventDestroy(stop);
-+        cudaEventDestroy(start);
-+        if (!plan.frontend_plan) return false;
-+        std::sort(times.begin(), times.end());
-+        plan.frontend_time_ms = times[1];
-+        return true;
-+    };
-+
-+    auto x = cudnn_make_tensor_desc(x_dim, x_stride, 'x', data_type, false);
-+    auto w = cudnn_make_tensor_desc(w_dim, w_stride, 'w', data_type, false);
-+    auto y = cudnn_make_tensor_desc(y_dim, y_stride, 'y', data_type, false);
-+    auto conv = cudnn_make_conv_desc(padding, stride, dilation);
-+    if (!x || !w || !y || !conv) {
-+        GGML_LOG_WARN("cuDNN backend plan failed: descriptor construction\n");
-+        return false;
-+    }
-+    if (!fuse_bias_silu) {
-+        auto operation = cudnn_make_conv_op(x.get(), y.get(), w.get(), conv.get());
-+        if (!operation) {
-+            GGML_LOG_WARN("cuDNN backend plan failed: convolution operation\n");
-+            return false;
-+        }
-+        const cudnnBackendDescriptor_t ops[] = {operation.get()};
-+        auto graph = cudnn_make_opgraph(cctx.handle, ops, 1);
-+        if (!graph) {
-+            GGML_LOG_WARN("cuDNN backend plan failed: operation graph\n");
-+            return false;
-+        }
-+        return select_plan(graph, false);
-+    }
-+
-+    int64_t b_dim[] = {1, dst->ne[2], 1, 1};
-+    int64_t b_stride[] = {dst->ne[2], 1, dst->ne[2], dst->ne[2]};
-+    auto b = cudnn_make_tensor_desc(b_dim, b_stride, 'b', data_type, false);
-+    auto after_conv = cudnn_make_tensor_desc(y_dim, y_stride, 'c', data_type, true);
-+    auto after_bias = cudnn_make_tensor_desc(y_dim, y_stride, 'z', data_type, true);
-+    auto add = cudnn_make_pointwise_desc(CUDNN_POINTWISE_ADD);
-+    auto silu = cudnn_make_pointwise_desc(CUDNN_POINTWISE_SWISH_FWD);
-+    auto conv_op = cudnn_make_conv_op(x.get(), after_conv.get(), w.get(), conv.get());
-+    auto bias_op = cudnn_make_pointwise_op(add.get(), after_conv.get(), after_bias.get(), b.get());
-+    auto silu_op = cudnn_make_pointwise_op(silu.get(), after_bias.get(), y.get(), nullptr);
-+    if (!b || !after_conv || !after_bias || !add || !silu || !conv_op || !bias_op || !silu_op) {
-+        GGML_LOG_WARN("cuDNN backend plan failed: fused graph construction\n");
-+        return false;
-+    }
-+    const cudnnBackendDescriptor_t ops[] = {conv_op.get(), bias_op.get(), silu_op.get()};
-+    auto graph = cudnn_make_opgraph(cctx.handle, ops, 3);
-+    if (!graph) {
-+        GGML_LOG_WARN("cuDNN backend plan failed: operation graph\n");
-+        return false;
-+    }
-+    plan.frontend_fused = select_plan(graph, true);
-+    return plan.frontend_fused;
-+}
-+
-+static bool cudnn_ok(cudnnStatus_t status, const char * operation) {
-+    if (status == CUDNN_STATUS_SUCCESS) return true;
-+    GGML_LOG_WARN("cuDNN %s failed: %s\n", operation, cudnnGetErrorString(status));
-+    return false;
-+}
-+
-+static float time_legacy_plan(cudnn_conv_context & cctx, ggml_tensor * dst, cudnn_conv_plan & plan,
-+                              const cudnnConvolutionFwdAlgoPerf_t & candidate) {
-+    const float alpha = 1.0f;
-+    const float beta = 0.0f;
-+    cudaStream_t stream = nullptr;
-+    cudnnGetStream(cctx.handle, &stream);
-+    auto execute = [&]() {
-+        const cudnnStatus_t status = cudnnConvolutionForward(
-+            cctx.handle, &alpha, plan.x_desc, dst->src[1]->data, plan.w_desc, dst->src[0]->data,
-+            plan.conv_desc, candidate.algo, cctx.workspace, candidate.memory, &beta, plan.y_desc, dst->data);
-+        if (status == CUDNN_STATUS_SUCCESS) bias_silu_cuda(dst, stream);
-+        return status;
-+    };
-+
-+    if (execute() != CUDNN_STATUS_SUCCESS || cudaDeviceSynchronize() != cudaSuccess) {
-+        cudaGetLastError();
-+        return std::numeric_limits<float>::max();
-+    }
-+
-+    cudaEvent_t start = nullptr;
-+    cudaEvent_t stop = nullptr;
-+    if (cudaEventCreate(&start) != cudaSuccess || cudaEventCreate(&stop) != cudaSuccess) {
-+        if (start) cudaEventDestroy(start);
-+        if (stop) cudaEventDestroy(stop);
-+        cudaGetLastError();
-+        return std::numeric_limits<float>::max();
-+    }
-+
-+    std::array<float, 3> times{};
-+    bool valid = true;
-+    for (float & time : times) {
-+        if (cudaEventRecord(start, stream) != cudaSuccess || execute() != CUDNN_STATUS_SUCCESS ||
-+            cudaEventRecord(stop, stream) != cudaSuccess || cudaEventSynchronize(stop) != cudaSuccess ||
-+            cudaEventElapsedTime(&time, start, stop) != cudaSuccess) {
-+            valid = false;
-+            break;
-+        }
-+    }
-+    cudaEventDestroy(stop);
-+    cudaEventDestroy(start);
-+    if (!valid) {
-+        cudaGetLastError();
-+        return std::numeric_limits<float>::max();
-+    }
-+    std::sort(times.begin(), times.end());
-+    return times[1];
-+}
-+
-+static cudnn_conv_plan * create_cudnn_plan(cudnn_conv_context & cctx, const ggml_tensor * dst, bool depthwise) {
-+    const ggml_tensor * kernel = dst->src[0];
-+    const ggml_tensor * input = dst->src[1];
-+    const cudnnDataType_t data_type = input->type == GGML_TYPE_F16 ? CUDNN_DATA_HALF : CUDNN_DATA_FLOAT;
-+    auto plan = std::make_unique<cudnn_conv_plan>();
-+
-+    if (!cudnn_ok(cudnnCreateTensorDescriptor(&plan->x_desc), "create input descriptor") ||
-+        !cudnn_ok(cudnnCreateTensorDescriptor(&plan->y_desc), "create output descriptor") ||
-+        !cudnn_ok(cudnnCreateFilterDescriptor(&plan->w_desc), "create filter descriptor") ||
-+        !cudnn_ok(cudnnCreateConvolutionDescriptor(&plan->conv_desc), "create convolution descriptor")) {
-+        return nullptr;
-+    }
-+
-+    const int32_t * p = (const int32_t *) dst->op_params;
-+    if (!cudnn_ok(cudnnSetTensor4dDescriptor(plan->x_desc, CUDNN_TENSOR_NCHW, data_type,
-+                                              input->ne[3], input->ne[2], input->ne[1], input->ne[0]),
-+                  "set input descriptor") ||
-+        !cudnn_ok(cudnnSetTensor4dDescriptor(plan->y_desc, CUDNN_TENSOR_NCHW, data_type,
-+                                              dst->ne[3], dst->ne[2], dst->ne[1], dst->ne[0]),
-+                  "set output descriptor") ||
-+        !cudnn_ok(cudnnSetFilter4dDescriptor(plan->w_desc, data_type, CUDNN_TENSOR_NCHW,
-+                                              kernel->ne[3], kernel->ne[2], kernel->ne[1], kernel->ne[0]),
-+                  "set filter descriptor") ||
-+        !cudnn_ok(cudnnSetConvolution2dDescriptor(plan->conv_desc, p[3], p[2], p[1], p[0], p[5], p[4],
-+                                                   CUDNN_CROSS_CORRELATION, CUDNN_DATA_FLOAT),
-+                  "set convolution descriptor")) {
-+        return nullptr;
-+    }
-+    if (depthwise && !cudnn_ok(cudnnSetConvolutionGroupCount(plan->conv_desc, input->ne[2]), "set group count")) {
-+        return nullptr;
-+    }
-+    if (!cudnn_ok(cudnnSetConvolutionMathType(plan->conv_desc, CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION),
-+                  "enable tensor operations")) {
-+        return nullptr;
-+    }
-+
-+    const cudnn_conv_shape shape = get_conv_shape(dst, depthwise);
-+    float legacy_time = std::numeric_limits<float>::max();
-+    bool has_frontend_plan = false;
-+
-+    auto cached = cctx.choices.find(shape);
-+    if (cached != cctx.choices.end()) {
-+        const cudnn_conv_choice & choice = cached->second;
-+        plan->frontend_time_ms = choice.frontend_time_ms;
-+        legacy_time = choice.legacy_time_ms;
-+        plan->algorithms = choice.algorithms;
-+        plan->algorithm_count = choice.algorithm_count;
-+        plan->algorithm_index = choice.algorithm_index;
-+
-+        bool restored = false;
-+        if (choice.backend == cudnn_conv_backend::frontend && choice.frontend_plan &&
-+            prepare_nhwc_buffers(cctx, dst, *plan, choice.frontend_fused)) {
-+            plan->frontend_plan = choice.frontend_plan;
-+            plan->frontend_fused = choice.frontend_fused;
-+            has_frontend_plan = true;
-+            restored = true;
-+        }
-+        if (choice.backend == cudnn_conv_backend::legacy) {
-+            restored = plan->algorithm_index < plan->algorithm_count;
-+        }
-+
-+        if (restored) {
-+            if (env_enabled("GGML_CUDA_LOG_CUDNN_PLANS")) {
-+                const char * selected = choice.backend == cudnn_conv_backend::frontend ? "frontend" : "legacy";
-+                GGML_LOG_INFO("CUDA reused %s plan for %" PRId64 "x%" PRId64 "x%" PRId64
-+                              " -> %" PRId64 "x%" PRId64 "x%" PRId64 "\n",
-+                              selected, input->ne[0], input->ne[1], input->ne[2],
-+                              dst->ne[0], dst->ne[1], dst->ne[2]);
-+            }
-+            cudnn_conv_plan * result = plan.get();
-+            cctx.plans.emplace(dst, std::move(plan));
-+            return result;
-+        }
-+        cctx.choices.erase(cached);
-+    }
-+
-+    has_frontend_plan = !env_enabled("GGML_CUDA_DISABLE_CUDNN_FRONTEND") &&
-+                        create_frontend_plan(cctx, dst, *plan);
-+
-+    int count = 0;
-+    cudnnConvolutionFwdAlgoPerf_t perf[CUDNN_CONVOLUTION_FWD_ALGO_COUNT];
-+    if (!cudnn_ok(cudnnGetConvolutionForwardAlgorithm_v7(
-+                      cctx.handle, plan->x_desc, plan->w_desc, plan->conv_desc, plan->y_desc,
-+                      CUDNN_CONVOLUTION_FWD_ALGO_COUNT, &count, perf),
-+                  "query convolution algorithms") && !has_frontend_plan
-+                  ) {
-+        return nullptr;
-+    }
-+    for (int i = 0; i < count; ++i) {
-+        if (perf[i].status == CUDNN_STATUS_SUCCESS && perf[i].memory <= cctx.workspace_bytes) {
-+            plan->algorithms[plan->algorithm_count++] = perf[i];
-+        }
-+    }
-+    if (plan->algorithm_count > 0) {
-+        legacy_time = time_legacy_plan(cctx, const_cast<ggml_tensor *>(dst), *plan, plan->algorithms[0]);
-+        if (legacy_time == std::numeric_limits<float>::max()) {
-+            plan->algorithm_index = 1;
-+        } else {
-+            plan->algorithms[0].time = legacy_time;
-+        }
-+    }
-+    if (has_frontend_plan && legacy_time < plan->frontend_time_ms) {
-+        plan->frontend_plan.reset();
-+    }
-+    if (!plan->frontend_plan &&
-+        plan->algorithm_count == 0) return nullptr;
-+
-+    bool uses_nhwc = plan->frontend_plan != nullptr;
-+    if (!uses_nhwc) {
-+        cudaFree(plan->frontend_bias);
-+        cudaFree(plan->frontend_weight);
-+        cudaFree(plan->frontend_output);
-+        cudaFree(plan->frontend_input);
-+        plan->frontend_bias = nullptr;
-+        plan->frontend_weight = nullptr;
-+        plan->frontend_output = nullptr;
-+        plan->frontend_input = nullptr;
-+    }
-+
-+    cudnn_conv_choice choice;
-+    choice.backend = plan->frontend_plan ? cudnn_conv_backend::frontend :
-+                     cudnn_conv_backend::legacy;
-+    choice.frontend_plan = plan->frontend_plan;
-+    choice.frontend_fused = plan->frontend_fused;
-+    choice.frontend_time_ms = plan->frontend_time_ms;
-+    choice.legacy_time_ms = legacy_time;
-+    choice.algorithms = plan->algorithms;
-+    choice.algorithm_count = plan->algorithm_count;
-+    choice.algorithm_index = plan->algorithm_index;
-+    cctx.choices.emplace(shape, std::move(choice));
-+
-+    if (env_enabled("GGML_CUDA_LOG_CUDNN_PLANS")) {
-+        const char * selected = plan->frontend_plan ? "frontend" : "legacy";
-+        GGML_LOG_INFO("CUDA selected %s plan (frontend %.4f ms, legacy %.4f ms) for %" PRId64 "x%" PRId64
-+                      "x%" PRId64 " -> %" PRId64 "x%" PRId64 "x%" PRId64 "\n",
-+                      selected, plan->frontend_time_ms, legacy_time,
-+                      input->ne[0], input->ne[1], input->ne[2], dst->ne[0], dst->ne[1], dst->ne[2]);
-+    }
-+
-+    cudnn_conv_plan * result = plan.get();
-+    cctx.plans.emplace(dst, std::move(plan));
-+    return result;
- }
- 
--static void conv2d_cuda_f16(const float * X_D, const half * K_D, float * Y_D, const conv_params P, cudaStream_t st) {
--    conv2d_cuda<half>(X_D, K_D, Y_D, P, st);
-+static bool conv2d_cudnn(ggml_backend_cuda_context & ctx, ggml_tensor * dst, bool depthwise) {
-+    const bool f32 = dst->src[0]->type == GGML_TYPE_F32 && dst->src[1]->type == GGML_TYPE_F32 &&
-+                     dst->type == GGML_TYPE_F32;
-+    const bool f16 = dst->src[0]->type == GGML_TYPE_F16 && dst->src[1]->type == GGML_TYPE_F16 &&
-+                     dst->type == GGML_TYPE_F16;
-+    if (!f32 && !f16) {
-+        return false;
-+    }
-+    if (!ctx.cudnn_context) {
-+        ctx.cudnn_context = new cudnn_conv_context(ctx.device);
-+    }
-+    auto & cctx = *(cudnn_conv_context *) ctx.cudnn_context;
-+    if (!cctx.handle) return false;
-+    if (!cudnn_ok(cudnnSetStream(cctx.handle, ctx.stream()), "set stream")) return false;
-+
-+    auto it = cctx.plans.find(dst);
-+    cudnn_conv_plan * plan = it == cctx.plans.end() ? create_cudnn_plan(cctx, dst, depthwise) : it->second.get();
-+    if (!plan) return false;
-+    if (plan->disabled) return false;
-+
-+    const float alpha = 1.0f;
-+    const float beta = 0.0f;
-+    if (plan->frontend_plan) {
-+        const cudnnDataType_t data_type = dst->type == GGML_TYPE_F16 ? CUDNN_DATA_HALF : CUDNN_DATA_FLOAT;
-+        nchw_to_nhwc(dst->src[1]->data, plan->frontend_input, data_type,
-+                     dst->src[1]->ne[3], dst->src[1]->ne[2], dst->src[1]->ne[1], dst->src[1]->ne[0], ctx.stream());
-+        void * data_ptrs[] = {plan->frontend_input, plan->frontend_output, plan->frontend_weight,
-+                              plan->frontend_bias ? plan->frontend_bias : (dst->src[2] ? dst->src[2]->data : nullptr)};
-+        const int64_t uids[] = {'x', 'y', 'w', 'b'};
-+        const int64_t pointer_count = plan->frontend_fused ? 4 : 3;
-+        auto variant = cudnn_make_variant_pack(cctx.workspace, data_ptrs, uids, pointer_count);
-+        if (variant && cudnnBackendExecute(cctx.handle, plan->frontend_plan.get(), variant.get()) == CUDNN_STATUS_SUCCESS) {
-+            nhwc_to_nchw(plan->frontend_output, dst->data, data_type,
-+                         dst->ne[3], dst->ne[2], dst->ne[1], dst->ne[0], ctx.stream());
-+            if (!plan->frontend_fused) bias_silu_cuda(dst, ctx.stream());
-+            return true;
-+        }
-+        plan->frontend_plan.reset();
-+    }
-+    while (plan->algorithm_index < plan->algorithm_count) {
-+        const auto & candidate = plan->algorithms[plan->algorithm_index];
-+        const cudnnStatus_t status = cudnnConvolutionForward(
-+            cctx.handle, &alpha, plan->x_desc, dst->src[1]->data, plan->w_desc, dst->src[0]->data,
-+            plan->conv_desc, candidate.algo, cctx.workspace, candidate.memory, &beta, plan->y_desc, dst->data);
-+        if (status == CUDNN_STATUS_SUCCESS) {
-+            bias_silu_cuda(dst, ctx.stream());
-+            return true;
-+        }
-+        GGML_LOG_WARN("cuDNN convolution algorithm %d failed for %" PRId64 "x%" PRId64 "x%" PRId64
-+                      " -> %" PRId64 "x%" PRId64 "x%" PRId64 ": %s; trying fallback\n",
-+                      (int) candidate.algo, dst->src[1]->ne[0], dst->src[1]->ne[1], dst->src[1]->ne[2],
-+                      dst->ne[0], dst->ne[1], dst->ne[2], cudnnGetErrorString(status));
-+        ++plan->algorithm_index;
-+    }
-+    plan->disabled = true;
-+    return false;
-+}
-+
-+} // namespace
-+
-+bool ggml_cuda_conv2d_cudnn(ggml_backend_cuda_context & ctx, ggml_tensor * dst, bool depthwise) {
-+    return conv2d_cudnn(ctx, dst, depthwise);
-+}
-+
-+void ggml_cuda_free_cudnn(ggml_backend_cuda_context & ctx) {
-+    delete (cudnn_conv_context *) ctx.cudnn_context;
-+    ctx.cudnn_context = nullptr;
-+}
-+#endif
 +
 +#if !defined(GGML_USE_HIP)
 +
@@ -1324,10 +351,8 @@ index 14774d4..685cafb 100644
 +            dst_batch[(dst_y + offset) * rows + dst_x] = tile[threadIdx.x][threadIdx.y + offset];
 +        }
 +    }
- }
- 
--static void conv2d_cuda_f32(const float * X_D, const float * K_D, float * Y_D, const conv_params P, cudaStream_t st) {
--    conv2d_cuda<float>(X_D, K_D, Y_D, P, st);
++}
++
 +template <typename T>
 +static void igemm_nchw_to_nhwc(const void * src, void * dst,
 +                               int64_t batches, int64_t channels, int64_t height, int64_t width,
@@ -1337,8 +362,8 @@ index 14774d4..685cafb 100644
 +    const dim3 threads(32, 8);
 +    igemm_transpose_batched_kernel<<<blocks, threads, 0, stream>>>(
 +        (const T *) src, (T *) dst, channels, spatial);
- }
- 
++}
++
 +template <typename T>
 +static void igemm_nhwc_to_nchw(const void * src, void * dst,
 +                               int64_t batches, int64_t channels, int64_t height, int64_t width,
@@ -1842,8 +867,10 @@ index 14774d4..685cafb 100644
 +    // Placeholder body for pre-Ampere compilation passes; the host side never
 +    // launches this kernel on devices below cc 8.0 (see conv2d_igemm).
 +#endif
-+}
-+
+ }
+ 
+-static void conv2d_cuda_f16(const float * X_D, const half * K_D, float * Y_D, const conv_params P, cudaStream_t st) {
+-    conv2d_cuda<half>(X_D, K_D, Y_D, P, st);
 +template <bool C8>
 +static void igemm_conv_dispatch_f32(const dim3 & grid, bool with_bias, bool with_silu,
 +                                    const float * in_p, const float * w_p, const float * b_p, float * out_p,
@@ -1859,8 +886,10 @@ index 14774d4..685cafb 100644
 +        igemm_conv_f32_kernel<false, false, C8><<<grid, 128, IGEMM_SMEM_F32, stream>>>
 +            (in_p, w_p, b_p, out_p, H, W, C, P, Q, K, R, S, p[1], p[0], p[3], p[2], p[5], p[4]);
 +    }
-+}
-+
+ }
+ 
+-static void conv2d_cuda_f32(const float * X_D, const float * K_D, float * Y_D, const conv_params P, cudaStream_t st) {
+-    conv2d_cuda<float>(X_D, K_D, Y_D, P, st);
 +struct igemm_conv_plan {
 +    void * nhwc_input  = nullptr;
 +    void * nhwc_output = nullptr;
@@ -1889,8 +918,8 @@ index 14774d4..685cafb 100644
 +static bool igemm_env_enabled(const char * name) {
 +    const char * value = getenv(name);
 +    return value && value[0] != '\0' && strcmp(value, "0") != 0;
-+}
-+
+ }
+ 
 +static igemm_conv_plan * igemm_create_plan(ggml_tensor * dst, cudaStream_t stream) {
 +    const ggml_tensor * kernel = dst->src[0];
 +    const ggml_tensor * input  = dst->src[1];
@@ -2094,9 +1123,6 @@ index 14774d4..685cafb 100644
  
      cudaStream_t st = ctx.stream();
  
-+#ifdef GGML_CUDA_USE_CUDNN
-+    if (ggml_cuda_conv2d_cudnn(ctx, dst, false)) return;
-+#endif
 +#if !defined(GGML_USE_HIP)
 +    if (ggml_cuda_conv2d_igemm(ctx, dst)) return;
 +#endif
@@ -2113,7 +1139,7 @@ index 14774d4..685cafb 100644
      const int32_t * p    = (const int32_t *) dst->op_params;
      const int       ST_X = p[0];  // stride_x
      const int       ST_Y = p[1];  // stride_y
-@@ -159,9 +1799,13 @@ void ggml_cuda_op_conv2d(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
+@@ -159,9 +987,13 @@ void ggml_cuda_op_conv2d(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
      const int64_t total  = B * OC * OH * OW;
      conv_params   params = { IW, IH, OW, OH, KW, KH, ST_X, ST_Y, PD_X, PD_Y, DL_X, DL_Y, IC, OC, B, total };
  
@@ -2131,34 +1157,27 @@ index 14774d4..685cafb 100644
 +    bias_silu_cuda(dst, st);
  }
 diff --git a/src/ggml-cuda/conv2d.cuh b/src/ggml-cuda/conv2d.cuh
-index ce4802c..da97303 100644
+index ce4802c..dd0b0eb 100644
 --- a/src/ggml-cuda/conv2d.cuh
 +++ b/src/ggml-cuda/conv2d.cuh
-@@ -3,3 +3,8 @@
+@@ -3,3 +3,4 @@
  
  #define CUDA_CONV2D_BLOCK_SIZE 256
  void ggml_cuda_op_conv2d(ggml_backend_cuda_context & ctx, ggml_tensor * dst);
 +
-+#ifdef GGML_CUDA_USE_CUDNN
-+bool ggml_cuda_conv2d_cudnn(ggml_backend_cuda_context & ctx, ggml_tensor * dst, bool depthwise);
-+void ggml_cuda_free_cudnn(ggml_backend_cuda_context & ctx);
-+#endif
 diff --git a/src/ggml-cuda/ggml-cuda.cu b/src/ggml-cuda/ggml-cuda.cu
-index 6c92d48..62ce749 100644
+index 6c92d48..4310295 100644
 --- a/src/ggml-cuda/ggml-cuda.cu
 +++ b/src/ggml-cuda/ggml-cuda.cu
-@@ -704,6 +704,10 @@ ggml_backend_cuda_context::~ggml_backend_cuda_context() {
+@@ -704,6 +704,7 @@ ggml_backend_cuda_context::~ggml_backend_cuda_context() {
      std::unique_lock<std::mutex> lock(ggml_cuda_lock);
      ggml_cuda_lock_cv.wait(lock, []{ return ggml_cuda_lock_counter.load(std::memory_order_relaxed) == 0; });
  
-+#ifdef GGML_CUDA_USE_CUDNN
-+    ggml_cuda_free_cudnn(*this);
-+#endif
 +
      if (copy_event != nullptr) {
          CUDA_CHECK(cudaEventDestroy(copy_event));
      }
-@@ -5356,7 +5360,7 @@ static bool ggml_backend_cuda_device_supports_op(ggml_backend_dev_t dev, const g
+@@ -5356,7 +5357,7 @@ static bool ggml_backend_cuda_device_supports_op(ggml_backend_dev_t dev, const g
          case GGML_OP_CONV_2D:
              return (ggml_is_contiguous(op->src[0]) && ggml_is_contiguous(op->src[1]));
          case GGML_OP_CONV_2D_DW:
@@ -2385,7 +1404,7 @@ index 6bdf3cd..3b03e92 100644
                                   src0->ne[0], src0->ne[1], dst->ne[0], dst->ne[1], dst->ne[2], dst->ne[3],
                                   sf0, sf1, sf2, sf3, pixel_offset, stream);
 diff --git a/src/ggml-vulkan/ggml-vulkan.cpp b/src/ggml-vulkan/ggml-vulkan.cpp
-index 91ab2bc..dc26a9d 100644
+index 4db4fdb..ac2f078 100644
 --- a/src/ggml-vulkan/ggml-vulkan.cpp
 +++ b/src/ggml-vulkan/ggml-vulkan.cpp
 @@ -822,6 +822,7 @@ struct vk_device_struct {

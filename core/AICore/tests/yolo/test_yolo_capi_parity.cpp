@@ -36,6 +36,11 @@
 //   AICORE_TEST_YOLO_IMAGE
 //   AICORE_TEST_YOLO_CLASSES      (world/yoloe class list)
 //   AICORE_TEST_YOLO_TEXT_MODEL   (text-encoder GGUF for the class list)
+//   AICORE_TEST_YOLO_SEMANTIC_REFERENCE  optional raw uint8 full-resolution
+//                                  class map produced by PyTorch on the same
+//                                  image and input size. When present, both
+//                                  CPU and GPU are checked against this truth
+//                                  instead of treating CPU as the oracle.
 //   AICORE_TEST_YOLO_PARITY_DEVICE  force a device ("vulkan"/"cuda");
 //                                   default: probe cuda, then vulkan, then
 //                                   skip (CPU-only host has nothing to
@@ -53,6 +58,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <fstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -85,7 +91,9 @@ std::vector<std::string> list_ggufs(const std::string& dir) {
         const std::string name = e->d_name;
         if (name.size() > 5 && name.compare(name.size() - 5, 5, ".gguf") == 0) {
             // Text towers are not yolo-ctx inference targets.
-            if (name.rfind("clip-", 0) == 0 || name.rfind("mobileclip", 0) == 0)
+            if (name.rfind("clip-", 0) == 0 ||
+                name.rfind("mobileclip", 0) == 0 ||
+                name.rfind("mclip-", 0) == 0)
                 continue;
             out.push_back(dir + "/" + name);
         }
@@ -173,28 +181,27 @@ TaskOutput run_task(aicore_yolo_ctx* ctx, const uint8_t* rgb, int w, int h) {
     TaskOutput out;
     out.task = aicore_yolo_context_task(ctx);
     const char* task = out.task.c_str();
+    const aicore_image_view image{rgb, w, h, static_cast<size_t>(w) * 3,
+                                  AICORE_IMAGE_RGB8};
     if (std::strcmp(task, "detect") == 0) {
-        char* j = aicore_yolo_detect_rgb_json(ctx, rgb, w, h);
-        if (j == nullptr) return out;
-        // Minimal JSON walk: "class_id":N ... "score":F ... "box":[..]
-        const char* p = j;
-        while ((p = std::strstr(p, "\"class_id\":")) != nullptr) {
-            DetRef d{};
-            d.class_id = std::atoi(p + 11);
-            const char* sc = std::strstr(p, "\"score\":");
-            const char* bx = std::strstr(p, "\"box\":[");
-            if (sc == nullptr || bx == nullptr) break;
-            d.score = (float)std::atof(sc + 8);
-            if (std::sscanf(bx + 7, "%f,%f,%f,%f", &d.box[0], &d.box[1],
-                            &d.box[2], &d.box[3]) != 4)
-                break;
-            out.dets.push_back(d);
-            p = bx + 7;
+        if (aicore_yolo_detect_image(ctx, &image) != 0) return out;
+        const size_t count = aicore_yolo_detection_count(ctx);
+        out.dets.reserve(count);
+        for (size_t i = 0; i < count; ++i) {
+            const aicore_yolo_detection detection =
+                    aicore_yolo_detection_at(ctx, static_cast<int>(i));
+            DetRef ref{};
+            ref.class_id = detection.class_id;
+            ref.score = detection.score;
+            ref.box[0] = detection.x1;
+            ref.box[1] = detection.y1;
+            ref.box[2] = detection.x2;
+            ref.box[3] = detection.y2;
+            out.dets.push_back(ref);
         }
-        aicore_yolo_free_buffer(j);
         out.ok = true;
     } else if (std::strcmp(task, "segment") == 0) {
-        aicore_yolo_segment_result* r = aicore_yolo_seg_rgb(ctx, rgb, w, h);
+        aicore_yolo_segment_result* r = aicore_yolo_seg_image(ctx, &image);
         if (r == nullptr) return out;
         const int n = aicore_yolo_seg_det_count(r);
         for (int i = 0; i < n; ++i) {
@@ -220,7 +227,7 @@ TaskOutput run_task(aicore_yolo_ctx* ctx, const uint8_t* rgb, int w, int h) {
         aicore_yolo_seg_result_free(r);
         out.ok = true;
     } else if (std::strcmp(task, "pose") == 0) {
-        aicore_yolo_pose_result* r = aicore_yolo_pose_rgb(ctx, rgb, w, h);
+        aicore_yolo_pose_result* r = aicore_yolo_pose_image(ctx, &image);
         if (r == nullptr) return out;
         const int n = aicore_yolo_pose_det_count(r);
         const int nk = aicore_yolo_pose_kpt_count(r);
@@ -247,7 +254,7 @@ TaskOutput run_task(aicore_yolo_ctx* ctx, const uint8_t* rgb, int w, int h) {
         aicore_yolo_pose_result_free(r);
         out.ok = true;
     } else if (std::strcmp(task, "obb") == 0) {
-        aicore_yolo_obb_result* r = aicore_yolo_obb_rgb(ctx, rgb, w, h);
+        aicore_yolo_obb_result* r = aicore_yolo_obb_image(ctx, &image);
         if (r == nullptr) return out;
         const int n = aicore_yolo_obb_count(r);
         for (int i = 0; i < n; ++i) {
@@ -258,7 +265,7 @@ TaskOutput run_task(aicore_yolo_ctx* ctx, const uint8_t* rgb, int w, int h) {
         out.ok = true;
     } else if (std::strcmp(task, "depth") == 0) {
         int32_t dw = 0, dh = 0;
-        float* m = aicore_yolo_depth_rgb(ctx, rgb, w, h, &dw, &dh);
+        float* m = aicore_yolo_depth_image(ctx, &image, &dw, &dh);
         if (m == nullptr) return out;
         out.depth.assign(m, m + (size_t)dw * dh);
         out.depth_w = dw;
@@ -267,7 +274,7 @@ TaskOutput run_task(aicore_yolo_ctx* ctx, const uint8_t* rgb, int w, int h) {
         out.ok = true;
     } else if (std::strcmp(task, "semantic") == 0) {
         aicore_yolo_semantic_result* r =
-                aicore_yolo_semantic_rgb(ctx, rgb, w, h);
+                aicore_yolo_semantic_image(ctx, &image);
         if (r == nullptr) return out;
         const aicore_yolo_plane_view v = aicore_yolo_semantic_class_map(r);
         out.sem.assign(static_cast<const uint8_t*>(v.data),
@@ -279,7 +286,7 @@ TaskOutput run_task(aicore_yolo_ctx* ctx, const uint8_t* rgb, int w, int h) {
         out.ok = true;
     } else if (std::strcmp(task, "classify") == 0) {
         aicore_yolo_classify_result* r =
-                aicore_yolo_classify_rgb(ctx, rgb, w, h);
+                aicore_yolo_classify_image(ctx, &image);
         if (r == nullptr) return out;
         const int n = aicore_yolo_classify_count(r);
         out.probs.reserve((size_t)n);
@@ -295,7 +302,8 @@ TaskOutput run_task(aicore_yolo_ctx* ctx, const uint8_t* rgb, int w, int h) {
 void compare_outputs(const std::string& name,
                      const TaskOutput& ref,
                      const TaskOutput& gpu,
-                     bool f32) {
+                     bool f32,
+                     const std::vector<uint8_t>* semantic_truth) {
     const float gate_score = f32 ? 5e-3f : 2e-2f;
     const float gate_px = f32 ? 1.0f : 2.5f;
     const float gate_ang = f32 ? 5e-3f : 2e-2f;
@@ -414,9 +422,42 @@ void compare_outputs(const std::string& name,
             for (size_t i = 0; i < ref.sem.size(); ++i)
                 agree += ref.sem[i] == gpu.sem[i];
             const float rate = (float)agree / (float)ref.sem.size();
-            PARITY_CHECK(rate >= gate_sem,
-                         (name + ": semantic agreement " + std::to_string(rate))
-                                 .c_str());
+            std::printf("[yolo-parity] %s semantic cpu-vs-gpu agreement=%.6f\n",
+                        name.c_str(), rate);
+            if (semantic_truth != nullptr && !semantic_truth->empty()) {
+                PARITY_CHECK(
+                        semantic_truth->size() == ref.sem.size(),
+                        (name + ": semantic reference shape mismatch").c_str());
+                if (semantic_truth->size() == ref.sem.size()) {
+                    size_t cpu_agree = 0;
+                    size_t gpu_agree = 0;
+                    for (size_t i = 0; i < semantic_truth->size(); ++i) {
+                        cpu_agree += ref.sem[i] == (*semantic_truth)[i];
+                        gpu_agree += gpu.sem[i] == (*semantic_truth)[i];
+                    }
+                    const float cpu_rate =
+                            (float)cpu_agree / semantic_truth->size();
+                    const float gpu_rate =
+                            (float)gpu_agree / semantic_truth->size();
+                    const float truth_gate = f32 ? 0.99f : 0.98f;
+                    std::printf(
+                            "[yolo-parity] %s semantic reference agreement: "
+                            "cpu=%.6f gpu=%.6f gate=%.3f\n",
+                            name.c_str(), cpu_rate, gpu_rate, truth_gate);
+                    PARITY_CHECK(cpu_rate >= truth_gate,
+                                 (name + ": semantic CPU/reference agreement " +
+                                  std::to_string(cpu_rate))
+                                         .c_str());
+                    PARITY_CHECK(gpu_rate >= truth_gate,
+                                 (name + ": semantic GPU/reference agreement " +
+                                  std::to_string(gpu_rate))
+                                         .c_str());
+                }
+            } else {
+                PARITY_CHECK(rate >= gate_sem, (name + ": semantic agreement " +
+                                                std::to_string(rate))
+                                                       .c_str());
+            }
         }
     } else if (ref.task == "classify") {
         PARITY_CHECK(ref.probs.size() == gpu.probs.size() && !ref.probs.empty(),
@@ -451,6 +492,8 @@ int main() {
     const char* image = env_or("AICORE_TEST_YOLO_IMAGE", "AICORE_TEST_IMAGE");
     const char* classes_env = std::getenv("AICORE_TEST_YOLO_CLASSES");
     const char* text_model_env = std::getenv("AICORE_TEST_YOLO_TEXT_MODEL");
+    const char* semantic_reference_env =
+            std::getenv("AICORE_TEST_YOLO_SEMANTIC_REFERENCE");
     const char* device_env = std::getenv("AICORE_TEST_YOLO_PARITY_DEVICE");
 
     if ((models_dir == nullptr) &&
@@ -499,6 +542,27 @@ int main() {
         return 1;
     }
 
+    std::vector<uint8_t> semantic_truth;
+    if (semantic_reference_env != nullptr &&
+        semantic_reference_env[0] != '\0') {
+        std::ifstream stream(semantic_reference_env,
+                             std::ios::in | std::ios::binary);
+        semantic_truth.assign(std::istreambuf_iterator<char>(stream),
+                              std::istreambuf_iterator<char>());
+        if (!stream.is_open() || stream.bad() ||
+            semantic_truth.size() != (size_t)w * h) {
+            std::printf(
+                    "[yolo-parity] invalid semantic reference %s: expected "
+                    "%zu bytes, got %zu\n",
+                    semantic_reference_env, (size_t)w * h,
+                    semantic_truth.size());
+            aicore_yolo_free_buffer(reinterpret_cast<float*>(rgb));
+            return 1;
+        }
+        std::printf("[yolo-parity] semantic truth: %s (%zu bytes)\n",
+                    semantic_reference_env, semantic_truth.size());
+    }
+
     // Shared open-vocab options payload (parsed once).
     std::vector<std::string> class_storage;
     std::vector<const char*> class_ptrs;
@@ -525,6 +589,8 @@ int main() {
         const size_t slash = m.rfind('/');
         const std::string base =
                 slash == std::string::npos ? m : m.substr(slash + 1);
+        const bool open_vocabulary = base.rfind("yoloe", 0) == 0 ||
+                                     base.find("world") != std::string::npos;
 
         aicore_yolo_ctx* ctxs[2] = {nullptr, nullptr};
         const char* devices[2] = {"cpu", gpu_device.c_str()};
@@ -534,7 +600,7 @@ int main() {
         for (int i = 0; i < 2; ++i) {
             aicore_yolo_options* opts = aicore_yolo_options_new();
             aicore_yolo_options_set_device(opts, devices[i]);
-            if (!class_ptrs.empty()) {
+            if (open_vocabulary && !class_ptrs.empty()) {
                 aicore_yolo_options_set_classes(opts, class_ptrs.data(),
                                                 (int32_t)class_ptrs.size());
                 if (text_model_env != nullptr && text_model_env[0] != '\0') {
@@ -588,9 +654,12 @@ int main() {
                                           ? aicore_yolo_last_error(ctxs[1])
                                           : "?"));
         } else {
-            compare_outputs(base, ref, gpu, is_f32_model(m));
+            const int failures_before = g_failures;
+            compare_outputs(base, ref, gpu, is_f32_model(m),
+                            semantic_truth.empty() ? nullptr : &semantic_truth);
             std::printf("[yolo-parity] %s: %s (%s vs cpu)\n", base.c_str(),
-                        g_failures == 0 ? "PASS" : "FAIL", gpu_device.c_str());
+                        g_failures == failures_before ? "PASS" : "FAIL",
+                        gpu_device.c_str());
             ++compared;
         }
         for (aicore_yolo_ctx* c : ctxs) aicore_yolo_free(c);

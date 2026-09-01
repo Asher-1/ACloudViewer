@@ -1,29 +1,20 @@
 # AGENTS.md — ACloudViewer Guide
 
-**Version:** 3.9.5 · **Language:** C++17 · **GUI:** Qt 5/6
-
 Reference layout: Use this file when you need a **full-repo map** (build, modules, conventions). For scoped rules, also read `.agents/rules/*.mdc`.
 
-## For AI Agents — Start Here
+## Task Routing
 
-| Your task | Read first | Then |
-|-----------|------------|------|
-| Control / automate ACloudViewer | This file § Agent integration | `agent-integration/README.md`, `agent-integration/docs/CLI-QUICK-REFERENCE.md` |
-| Build or fix compile/link errors | This file § Build Instructions | Platform guide in `docs/guides/compiling_doc/`, `BUILD.md` |
-| Develop a plugin | `.agents/rules/acloudviewer-plugin-dev.mdc` | `plugins/core/<Category>/<Plugin>/README.md` |
-| Add JSON-RPC / MCP / CLI command | `.agents/rules/acloudviewer-agent-dev.mdc` | `agent-integration/docs/JSON-RPC-API.md` |
-| Modify ggml / AICore / GPU backend | `.agents/rules/acloudviewer-ggml-aicore.mdc` | This file § ggml Source Modification Rules, `3rdparty/ggml/patches/` |
-| Upgrade ggml version / verify perf regression | `docs/guides/ggml_upgrade_pipeline.md`, `.agents/skills/ggml-upgrade/SKILL.md` | `scripts/ggml_upgrade_verify.py` (one-click baseline/candidate A/B) |
-| Debug CI failure | `.agents/rules/acloudviewer-ci-debugging.mdc` | `.github/workflows/`, `util/ci_utils.sh` |
-| Understand a module | This file § Module Layers + Key Classes | Per-plugin README, Sphinx `docs/source/` |
+| Task | Authoritative instructions |
+|------|----------------------------|
+| AICore ABI, pipeline, plugin worker, performance, or ggml operator | `.agents/skills/acloudviewer-aicore-plugin/SKILL.md` |
+| ggml version upgrade and controlled A/B | `.agents/skills/ggml-upgrade/SKILL.md`, `docs/guides/ggml_upgrade_pipeline.md` |
+| General plugin structure and UI | `.agents/rules/acloudviewer-plugin-dev.mdc` |
+| ggml ExternalProject details | `.agents/rules/acloudviewer-ggml-aicore.mdc` |
+| Agent/RPC/CLI integration | `.agents/rules/acloudviewer-agent-dev.mdc`, `agent-integration/README.md` |
 
-**Hard rules for AI operators:**
-
-1. **Never guess binary CLI flags** — use `cli-anything-acloudviewer` (headless) or JSON-RPC (GUI).
-2. **Windows file ops** — prefer `--mode headless` to avoid RPC hang when port 6001 is stale.
-3. **ggml source modification** — **never** edit ggml sources by hand (including `build*/ggml/`, vendor tarballs, and any temporary extraction directory). Every change **must** be committed as a unified diff patch to `3rdparty/ggml/patches/` and applied automatically by CMake's ExternalProject at build time via `apply_ggml_patches.py` (`git apply`); see § ggml Source Modification Rules.
-4. **Doc edits** — incremental additions only; do not rewrite unrelated sections (reduces merge conflicts).
-5. **Conclusions must be based on facts; guessing/estimation is forbidden** — every conclusion and recommendation must cite verifiable evidence (code file paths, line numbers, function signatures, CMake variable names, version numbers, actual `rg`/`ctest`/`grep` output, etc.); never conclude from experience-based guessing or subjective estimation. Verify evidence first (read code, run commands), then conclude; anything that cannot be verified must be explicitly marked "unverified" rather than stated as fact. When a document contradicts the code, the actual code wins and the discrepancy must be called out.
+For AICore work, the skill is the engineering contract. Current public headers,
+CMake, `3rdparty/ggml/patches/manifest.yaml`, and current test output override
+stale prose or historical benchmark reports.
 
 ## Project Overview
 
@@ -35,14 +26,14 @@ Main deliverables:
 |--------|-------------|
 | **ACloudViewer** | Full Qt GUI (`app/`) |
 | **CloudViewer** | Library / lighter viewer build |
-| **libAICore.so** | Unified DA3 + FreeSplatter inference (`core/AICore/`) |
+| **libAICore.so** | Monolithic inference runtime for all AICore tasks (`core/AICore/`) |
 | **COLMAP** | Reconstruction stack (`libs/Reconstruction/`, optional) |
 | **Python** | `cloudViewer` package via pybind (`libs/Python/`) |
 | **Plugins** | Dynamic `.so` / `.dylib` under `plugins/core/` |
 
 Agent control: JSON-RPC WebSocket plugin, MCP server, CLI harness — see `agent-integration/README.md`.
 
-> **AI operating ACloudViewer (important):** all CLI interaction for AI / automation scripts **must** go through the `cli-anything-acloudviewer` toolchain provided by `agent-integration/` (headless calls the binary directly, GUI goes through JSON-RPC). **Never** guess binary flags. Read `agent-integration/README.md` and `agent-integration/docs/CLI-QUICK-REFERENCE.md` first. Install: `pip install git+https://github.com/Asher-1/CLI-Anything.git#subdirectory=acloudviewer/agent-harness` (v3.1.0 already installed on this machine).
+> **AI / automation must use the agent toolchain (important)**: all CLI interaction aimed at AI agents or automation scripts **must** go through the `cli-anything-acloudviewer` toolchain provided by `agent-integration/` (headless: calls the binary directly; GUI: goes through JSON-RPC). **Do not** guess binary arguments. Read `agent-integration/README.md` and `agent-integration/docs/CLI-QUICK-REFERENCE.md` first. Install: `pip install git+https://github.com/Asher-1/CLI-Anything.git#subdirectory=acloudviewer/agent-harness` (v3.1.0 installed on this machine).
 
 ## Directory Structure
 
@@ -64,20 +55,6 @@ Agent control: JSON-RPC WebSocket plugin, MCP server, CLI harness — see `agent
 | `.github/workflows/` | CI: Ubuntu, macOS, Windows, CUDA, docs, agent-integration |
 | `BUILD.md` | CMake option table and build recipes |
 | `plugins/README.md` | Plugin catalog index |
-| `.agents/` | Cursor rules (`.mdc`), skills, MCP config (`mcp.json`) |
-| `.ci/` | Conda environment YAMLs per platform / Qt version |
-
-### Cursor Agent Configuration (`.agents/`)
-
-| Path | Purpose |
-|------|---------|
-| `.agents/rules/acloudviewer-plugin-dev.mdc` | Plugin architecture, `AddPlugin()`, entity types |
-| `.agents/rules/acloudviewer-agent-dev.mdc` | JSON-RPC, MCP, CLI harness development |
-| `.agents/rules/acloudviewer-ggml-aicore.mdc` | ggml ExternalProject, patches, GPU backends |
-| `.agents/rules/acloudviewer-ci-debugging.mdc` | CI matrix, Docker layers, platform GPU policy |
-| `.agents/rules/pua.mdc` | Escalation/debugging methodology (after repeated failures) |
-| `.agents/mcp.json` | Pre-configured MCP servers: `acloudviewer`, `-headless`, `-gui` |
-| `.agents/skills/` | Repo-local skills (`codebase-summarizer`, `first-principles`, …) |
 
 ## Module Dependency Layers (bottom → top)
 
@@ -85,7 +62,7 @@ Agent control: JSON-RPC WebSocket plugin, MCP server, CLI harness — see `agent
 |-------|------|-------------|
 | Third-party | `3rdparty/` | ggml, Eigen, FLANN, zlib, optional OpenCV/FFmpeg |
 | Core algorithms | `core/` (`CVCoreLib`) | Point cloud structures, octree, scalar fields, basic processing |
-| AI inference | `core/AICore/` | `libAICore.so`: `depth_capi`, `gaussian_capi`, ggml backends |
+| AI inference | `core/AICore/` | One `libAICore`: public C ABI, task sessions, shared runtime, private ggml backends |
 | Database / entities | `libs/CV_db/` | `ccHObject`, `ccPointCloud`, `ccMesh`, `ecvImage`, DB tree model |
 | I/O | `libs/CV_io/` | File readers/writers shared with core |
 | Visualization | `libs/VtkEngine/` | VTK/GL pipeline, display tools, LOD |
@@ -113,21 +90,38 @@ Agent control: JSON-RPC WebSocket plugin, MCP server, CLI harness — see `agent
 | `DA3DepthController` | `libs/Reconstruction/src/controllers/` | DA3 sparse/dense integration with reconstruction |
 | `aicore_depth_*` | `core/AICore/include/aicore/depth_capi.h` | DA3 C API |
 | `aicore_gaussian_*` | `core/AICore/include/aicore/gaussian_capi.h` | FreeSplatter C API |
+| `aicore_image_view` | `core/AICore/include/aicore/image_view.h` | Borrowed, stride-aware decoded-image input |
+| `aicore_pipeline_timings` | `core/AICore/include/aicore/pipeline_timing.h` | Common stage timing contract |
+| `aicore_runtime_shutdown` | `core/AICore/include/aicore/runtime_capi.h` | Idempotent process-runtime cleanup |
 | `JsonRPCPlugin` | `plugins/core/Standard/qJSonRPCPlugin/` | WebSocket RPC for agents (port 6001) |
 | `ecvPropertiesTreeDelegate` | `app/db_tree/` | DB property panel (opacity, light, recursive group apply) |
-| `ecvViewManager` | `libs/VtkEngine/` | Multi-window view registry (v3.9.5+); per-view camera, VTK widget, display state |
-| `JsonRPCResult` | `plugins/core/Standard/qJSonRPCPlugin/` | RPC success/error envelope for all agent methods |
 
 Plugin entry: each plugin implements `QObject` + `ccStdPluginInterface`, ships `info.json` + `.qrc`.
 
-### Multi-View Architecture (v3.9.5+)
+## AICore Architecture Contract
 
-ACloudViewer supports multiple independent 3D/chart/ortho/comparative views (ParaView-style). Key implications for agents and plugin authors:
+- Keep one monolithic `libAICore`; do not add a shared library per task.
+- Plugins consume public `aicore/*` C headers. Qt, STL, OpenCV, exceptions, and
+  ggml types never cross the ABI.
+- Decoded images cross the boundary as borrowed `aicore_image_view` values with
+  their actual row stride and RGB/RGBA/GRAY/BGR/BGRA format.
+- Inference returns typed results. Path, tight-RGB, JSON, and encoded-image APIs
+  are compatibility/export boundaries and must not drive frame inference.
+- Every pipeline uses the common timing struct and reports only truthful stages
+  through `valid_fields`.
+- Each context owns model/session/cache state; physical backend handles may be
+  shared by `BackendLease`. Cache invalidation must be owner-scoped.
+- Per-task shutdown delegates to `aicore_runtime_shutdown()` and must not destroy
+  live contexts.
+- Task behavior is configured through options, never task-local environment
+  variables. Production code contains no developer-machine absolute paths.
+- ggml changes are ordered patches in `3rdparty/ggml/patches/manifest.yaml`;
+  extracted `build*/ggml/` trees are disposable.
+- Accuracy requires task-specific numeric gates. Backend parity does not replace
+  upstream-framework truth. Performance claims require controlled A/B evidence.
 
-- `ecvDisplayTools` is **per-view**, not a global singleton — pass `ecvViewContext&` where applicable.
-- Camera links, ortho slices, and chart views each have dedicated view types; redraw targets a specific view.
-- JSON-RPC view methods operate on the active view unless an explicit view ID is provided.
-- When debugging rendering issues, check `ecvViewManager` and per-view VTK widget state before assuming a global display bug.
+See `.agents/skills/acloudviewer-aicore-plugin/SKILL.md` for the full data-flow,
+lifecycle, plugin-worker, testing, and review checklist.
 
 ## Build Instructions
 
@@ -150,7 +144,7 @@ CMake option reference: **[BUILD.md](BUILD.md)**.
 | **macOS** | **Conda only** (see guide) | Same as Linux Option B; env from `.ci/conda_macos_cloudViewer.yml` |
 | **Windows** | **Conda only** (see guide) | Same as Linux Option B; run `scripts/setup_conda_env.ps1`; env from `.ci/conda_windows_cloudViewer.yml` |
 
-Linux Option A also runs `util/install_deps_ubuntu.sh assume-yes` and sets up **pyenv** Python 3.10–3.13 before configure. Conda paths on all platforms: create env → `conda activate cloudViewer` → export `PKG_CONFIG_PATH` / `LD_LIBRARY_PATH` (Linux) or `PATH` (macOS) as in the platform guide.
+Linux Option A also runs `utils/install_deps_ubuntu.sh assume-yes` and sets up **pyenv** Python 3.10–3.13 before configure. Conda paths on all platforms: create env → `conda activate cloudViewer` → export `PKG_CONFIG_PATH` / `LD_LIBRARY_PATH` (Linux) or `PATH` (macOS) as in the platform guide.
 
 > **Qt note:** Qt 6 only on Ubuntu 24.04+; on 20.04/22.04 use `-DUSE_QT6=OFF`. **macOS:** `PLUGIN_STANDARD_QSIBR=OFF` in CI (OpenGL/Metal limits).
 
@@ -179,7 +173,7 @@ If linking fails with “Killed” or “c++: fatal error: Killed”, reduce `BU
 ### Linux — Option A (pyenv + system packages)
 
 ```bash
-util/install_deps_ubuntu.sh assume-yes
+utils/install_deps_ubuntu.sh assume-yes
 # pyenv: install Python 3.12, then resolve paths (see linux guide § A2–A3)
 
 mkdir -p build_app && cd build_app
@@ -273,34 +267,6 @@ python .\scripts\build_win.py
 
 **Outputs:** Linux/macOS → `build_app/bin/ACloudViewer`, `build_app/bin/libAICore.so`, `build_app/bin/plugins/libQ*_PLUGIN.so`; Windows → `build_app/bin/Release/ACloudViewer.exe` (plus plugins under `Release/`).
 
-### Incremental Build Tips
-
-```bash
-# Reconfigure after CMake option change
-cd build_app && cmake ..
-
-# Rebuild single target
-cmake --build build_app --target ACloudViewer -j "${BUILD_JOBS:-4}"
-cmake --build build_app --target QDA3_PLUGIN -j4
-
-# After ggml.cmake config change — delete ExternalProject stamp first
-rm -f build_app/ggml/src/ext_ggml-stamp/ext_ggml-{install,done}
-cmake --build build_app --target ext_ggml -j4
-```
-
-### Python Package (optional)
-
-Requires `-DBUILD_PYTHON_MODULE=ON` (default ON). From `build_app/`:
-
-```bash
-make python-package          # build pybind module
-make pip-package             # build wheel
-make install-pip-package     # pip install the wheel
-pip uninstall cloudViewer    # remove
-```
-
-Wheel runtime checks: `docker/test_wheel_runtime.sh`, `check_aicore_runtime.py` (Docker CI is CPU-only; no Vulkan device required).
-
 ## Testing
 
 ```bash
@@ -311,11 +277,20 @@ cd build_app && ctest --output-on-failure
 cmake -DAICore_ENABLED=ON -DAICore_BUILD_TESTS=ON ..
 cmake --build build_app --target test_capi -j "${BUILD_JOBS:-4}"
 
-# AICore tiered CTests — entry targets (ubuntu.yml aicore-tests job):
-#   aicore-fast-tests     ctest -LE "model|gpu|e2e"        (no GGUF assets)
-#   aicore-contract-tests ctest -L capi -LE "model|gpu|e2e" (C API contract)
-#   aicore-model-tests    ctest -L model                    (needs GGUF assets;
-#                           skips exit 77 when absent, never fails)
+# Complete real-asset validation matrix (missing rows fail unless explicitly allowed)
+python3 core/AICore/scripts/validate_all.py \
+  --build build_app --backend cuda \
+  --output build_app/Testing/aicore_validation.json
+
+# Canonical one-click form: builds probes, verifies/downloads every catalog
+# model under ~/cloudViewer_data/extract, then runs the complete matrix.
+cmake --build build_app --target aicore-validate-all -j1
+
+# Local diagnosis only: unavailable downloads and exit-77 probes are recorded
+# and skipped; the report verdict is INCOMPLETE and is not release evidence.
+python3 core/AICore/scripts/validate_all.py \
+  --build build_app --backend cuda --allow-incomplete \
+  --output build_app/Testing/aicore_validation-incomplete.json
 
 # qManualCalib bag reader
 cmake -DPLUGIN_STANDARD_QMANUAL_CALIB=ON -DMCALIB_BUILD_TESTS=ON ..
@@ -328,14 +303,59 @@ pytest cli_anything/acloudviewer/tests/ -v
 
 Test data: `examples/test_data/` (CMake download list); qManualCalib ships `plugins/core/Standard/qManualCalib/tests/data/`.
 
+### Reusing the AICore one-click gate
+
+The default gate is always full for the selected backend and task set: it reads
+the built model catalog, validates pinned SHA-256 values, downloads missing or
+corrupt GGUF files into their task folders under
+`~/cloudViewer_data/extract`, and fails on any unavailable model, uncovered
+catalog row, probe skip, accuracy error, unstable output, or performance
+regression. It must not infer the supported matrix from whichever files happen
+to be cached locally.
+
+When repairing AICore or optimizing ggml ops, run the default command above on
+every affected backend. Preserve before/after build directories and pass
+`--baseline-build <before-build>` for controlled performance A/B. Use
+`--allow-incomplete` only for an explicitly incomplete local loop: downloads
+are still attempted, but unavailable models and their dependent scenarios are
+listed in the JSON/Markdown report and skipped while available rows continue.
+
+When adding an AICore task, model, pipeline, or dependent plugin, update all of:
+
+1. The task model catalog, stable release URL, destination folder, and
+   `core/AICore/include/aicore/asset_digests.h` SHA-256 entry.
+2. `test_catalog_dump_urls --json`, so the model participates in automatic
+   cache verification/download rather than private plugin logic.
+3. A task-specific accuracy/performance/stability probe and its CMake target.
+4. `core/AICore/scripts/validation_manifest.json`, including exact ownership,
+   coverage, dependencies, backend, pipeline, and quantization rows.
+5. Runner tests proving failed downloads, incomplete filtering, scenario
+   expansion, and that every catalog model has an inference consumer.
+
+For TRELLIS specifically, `core/AICore/src/tasks/trellis/model_catalog.cpp` is
+the source of truth for the complete published
+`Asher-1/Trellis2-models` Hugging Face inventory. It owns resolver URLs, exact
+LFS sizes, and SHA-256 values; qTrellis must read those values only through
+`aicore_trellis_model_entry`. When HF publishes a new GGUF, add it to this
+catalog, `asset_digests.h`, and a mandatory f16/q8/f32 manifest consumer before
+claiming complete regression coverage. Do not add a second plugin model table
+or mark published TRELLIS entries `local_only`. RMBG is a shared dependency:
+qTrellis resolves it from `rmbg_models` through the RMBG cache API, while only
+the TRELLIS pipeline weights belong in `trellis_models`; the regression catalog
+must register each RMBG file once.
+
+The authoritative detailed checklist and acceptance rules are in
+`.agents/skills/acloudviewer-aicore-plugin/SKILL.md`.
+
 ## Documentation
 
 | Audience | Location |
 |----------|----------|
 | Build / CMake | `BUILD.md`, `docs/guides/compiling_doc/` |
-| ggml upgrade pipeline (verify gain/regression) | `docs/guides/ggml_upgrade_pipeline.md`, `scripts/ggml_upgrade_verify.py` |
 | Plugin catalog | `plugins/README.md` |
-| AI user guides | `docs/guides/plugins/` (qDA3, qFreeSplatter, qManualCalib) |
+| AICore architecture and runtime | `core/AICore/README.md`, `core/AICore/docs/ARCHITECTURE.md` |
+| AICore engineering contract | `.agents/skills/acloudviewer-aicore-plugin/SKILL.md` |
+| AI user guides | `docs/guides/plugins/` |
 | Per-plugin dev docs | `plugins/core/<Category>/<Plugin>/README.md` |
 | Model / sample data cards | `plugins/core/Standard/q*/models/MODEL_CARD.md`, `qManualCalib/tests/data/DATA_CARD.md` |
 | Sphinx API | `docs/source/` (plugin READMEs synced at doc-build via `docs/source/conf.py`) |
@@ -376,39 +396,18 @@ New AICore / reconstruction code may use `snake_case` for functions and `PascalC
 
 - RPC methods: `category.action` in `JsonRPCPlugin::execute()`; update `rpcMethodsList()`
 - Scoped rules: `.agents/rules/acloudviewer-agent-dev.mdc`
-- **Three interface stacks** (details in `agent-integration/README.md`):
+- **Three interfaces** (see `agent-integration/README.md`):
   - **JSON-RPC** (WebSocket 6001, real-time GUI control) — plugin `qJSonRPCPlugin`, `PLUGIN_STANDARD_QJSONRPC=ON`
-  - **MCP Server** (stdio, for OpenClaw/Cursor/Claude Code) — `cli-anything-acloudviewer-mcp`; one-click Cursor setup in `.agents/mcp.json`
-  - **CLI Harness** (Click; headless calls the binary directly / GUI goes through RPC) — `cli-anything-acloudviewer`
+  - **MCP Server** (stdio, for OpenClaw/Cursor/Claude Code) — `cli-anything-acloudviewer-mcp`
+  - **CLI Harness** (Click, headless calls the binary directly / GUI via RPC) — `cli-anything-acloudviewer`
 - **Common CLI operations** (headless, no GUI needed):
   - `cli-anything-acloudviewer info` / `formats` — environment and formats
-  - `cli-anything-acloudviewer --mode headless convert in.ply out.obj` — format conversion (add `--mode headless` on Windows)
+  - `cli-anything-acloudviewer convert in.ply out.obj` — format conversion
   - `cli-anything-acloudviewer process <op> in.ply -o out.ply` — 55+ processing ops (subsample/normals/crop/icp/csf/ransac/m3c2/canupo/poisson/cork, etc.)
   - `cli-anything-acloudviewer reconstruct auto ./imgs -w ./ws` — COLMAP reconstruction
-  - `cli-anything-acloudviewer view screenshot out.png` — GUI screenshot (needs GUI)
+  - `cli-anything-acloudviewer view screenshot out.png` — GUI screenshot (requires GUI)
   - `cli-anything-acloudviewer --json scene list` — GUI scene tree
-- **Running Python scripts (qPythonRuntime)**: run manually from the plugin panel in GUI mode; from CLI use `ACloudViewer -SILENT -PYTHON_SCRIPT x.py` (headless). Script examples in `plugins/core/Standard/qPythonRuntime/script_examples/`
-
-**Agent integration docs:**
-
-| Doc | Content |
-|-----|---------|
-| `agent-integration/docs/CLI-QUICK-REFERENCE.md` | Full CLI command reference (55+ process ops) |
-| `agent-integration/docs/COMMAND-MAPPING.md` | CLI ↔ JSON-RPC ↔ binary flag mapping |
-| `agent-integration/docs/JSON-RPC-API.md` | WebSocket RPC method catalog |
-| `agent-integration/docs/SIBR-VIEWER-CLI.md` | SIBR Gaussian/ULR viewer commands |
-| `agent-integration/docs/TROUBLESHOOTING.md` | RPC hang, headless vs GUI, path issues |
-| `agent-integration/docs/TESTING.md` | Harness pytest, E2E with `ACLOUDVIEWER_E2E_GUI=1` |
-
-**Common agent mistakes:**
-
-| Mistake | Fix |
-|---------|-----|
-| Guessing `ACloudViewer` command-line flags | Use `cli-anything-acloudviewer` or read `COMMAND-MAPPING.md` |
-| Windows `auto` mode hangs on convert | Add `--mode headless` |
-| RPC returns empty / connection refused | Enable qJSonRPCPlugin, toggle server on port 6001 |
-| Headless crop with wrong bounds | Use six separate `--min-x` … `--max-z` flags (not colon-separated) |
-| Expecting GPU in Docker CI | CPU-only is valid; do not require `--expect-device vulkan` |
+- **Running Python scripts (qPythonRuntime)**: run manually from the plugin panel in GUI mode; in CLI use `ACloudViewer -SILENT -PYTHON_SCRIPT x.py` (headless). Script examples: `plugins/core/Standard/qPythonRuntime/script_examples/`
 
 ### Formatting
 
@@ -440,87 +439,15 @@ Large downloads: [cloudViewer_downloads](https://github.com/Asher-1/cloudViewer_
 
 > **macOS Vulkan defect:** MoltenVK SPIR-V → MSL translation fails for complex ggml compute shaders (conv_transpose, quantized matmul). Metal is both native and faster. Vulkan support was removed from macOS builds in v3.9.5.
 
-### ggml Source Modification Rules (mandatory)
-
-> **Every ggml source change must be applied automatically by the CMake build chain as a patch. Manually editing ggml sources is forbidden.**
-
-ggml is an **ExternalProject** in this repo (`3rdparty/ggml/ggml.cmake`): every configure/clean build **re-extracts** a fresh source tree from the tarball, then `3rdparty/ggml/patches/apply_ggml_patches.py` executes `git apply` on the patches in `manifest.yaml` order during the `PATCH_COMMAND` stage.
-
-**Version lock: ggml pinned to v0.18.1** (`3rdparty/ggml/ggml.cmake:24` `set(GGML_VERSION "0.18.1")`, URL `https://github.com/ggml-org/ggml/archive/refs/tags/v0.18.1.tar.gz`, SHA256 `e9679cc9a8f0480ddc137b0a650df31b7c955e53ac6fdded1967aac36790c5e3`). **Upgrading/downgrading is forbidden** — every patch hunk in manifest.yaml anchors to this version's sources; version drift breaks all AI plugins at once.
-
-#### Forbidden practices
-
-| Forbidden | Consequence |
-|------|------|
-| Editing `.c/.cpp/.h/.metal` under `build/ggml/`, `build_app/ggml/` etc. | May compile locally, but **cannot be committed**; lost in CI / for others / on clean builds |
-| Leaving ggml changes only in the worktree without a patch | PR has no diff, the fix **cannot be merged**, the problem reappears on the next build |
-| Hand-applying `patch -p1` bypassing `manifest.yaml` and not committing it | Non-reproducible; team and CI behavior diverge |
-| Editing the vendor copy in the upstream ggml directory without the patch flow | Same as above; the vendor tree is overwritten by ExternalProject |
-
-**The only allowed path:** commit the patch file → register in `manifest.yaml` → CMake applies it automatically at build time.
-
-#### Correct flow
-
-```
-1. Temporarily modify and verify in the extracted copy under build_app/ggml/... (experimentation only; never commit these files)
-2. Generate a unified diff:
-     diff -ruN orig/ modified/ > 3rdparty/ggml/patches/<subdir>/0001-description.patch
-   or generate the patch by comparing git state
-3. Put the *.patch into 3rdparty/ggml/patches/<subdir>/
-4. Register it in 3rdparty/ggml/patches/manifest.yaml (order matters; see existing entries)
-5. Clear the ExternalProject stamp and rebuild, confirming apply_ggml_patches.py succeeds:
-     rm -f build_app/ggml/src/ext_ggml-stamp/ext_ggml-{install,done}
-     cmake --build build_app --target ext_ggml -j4
-6. Commit only the patch + manifest.yaml (plus any necessary ggml.cmake / AICore glue code); **never** commit sources under build*/ggml/
-```
-
-Directory layout (manifest.yaml is the single source of truth; currently 13 patches; verify with `rg -n "file:" 3rdparty/ggml/patches/manifest.yaml`):
-
-```
-3rdparty/ggml/patches/
-├── manifest.yaml              # ordered list of all patches (single source of truth)
-├── apply_ggml_patches.py      # invoked by CMake at build time; uses git apply --directory
-├── aliked_merged/0001-vulkan-aliked.patch
-├── msvc_vulkan/0001-msvc-vulkan-hpp-compat.patch
-├── cpu_all_variants/0001-cpu-all-variants-compiler-checks.patch
-├── metal_merged/0001-metal-optimizations.patch
-├── vulkan_parallel/0001-vulkan-shaders-gen-skip-parallel-trycompile.patch
-├── rmbg_merged/0001-rmbg-custom-ops.patch
-├── rfdetr_merged/0001-ggml-cpu-fold-broadcast-iterations.patch
-├── yolo_merged/0001-yolo-ggml-backend-integration.patch
-├── sam3_merged/0001-sam3-ggml-custom-ops.patch
-├── trellis_merged/0001-ggml-cuda-cpy-q8_0.patch
-├── igemm_fix/0001-igemm-plan-rebuild-guards.patch
-├── glslc_fconvert/0001-pool-shaders-avoid-redundant-fconvert.patch
-└── cuda_merged/0001-cuda-downstream-fixes.patch   # mmq + mul_mat_f16_dst + rope_dup_mode
-```
-
-#### Why this is required
-
-- ExternalProject re-extracts from the tarball every time → **ggml sources in build directories are not persistent state**.
-- `apply_ggml_patches.py` first validates the whole patch chain with a forward replay, then `git apply` → cross-platform, reproducible, reviewable.
-- Historical in-place Python source mutators have all been **migrated** to unified diff patches; new work must keep using the patch flow.
-
-Detailed backend variables and debugging: `.agents/rules/acloudviewer-ggml-aicore.mdc` (`AICore_USE_CUDA`, `AICore_BUNDLE_CUDA_RUNTIME`, etc.).
-
 ## Notable Plugins (quick index)
 
 | Plugin | CMake | Notes |
 |--------|-------|-------|
-| qDA3 | `PLUGIN_STANDARD_QDA3` | Depth/pose/COLMAP; needs `AICore_ENABLED` + `BUILD_RECONSTRUCTION` for auto recon |
-| qDeepLSD | `PLUGIN_STANDARD_QDEEPLSD` | Line segment detection (GGUF); needs `AICore_ENABLED` |
-| qFaceDetect | `PLUGIN_STANDARD_QFACEDETECT` | Face detection/embedding (GGUF); needs `AICore_ENABLED` |
-| qLightGlue | `PLUGIN_STANDARD_QLIGHTGLUE` | Feature matching (GGUF); needs `AICore_ENABLED` |
+| qDA3 | `PLUGIN_STANDARD_QDA3` | Depth/pose/COLMAP; needs `AICore_ENABLED` |
 | qFreeSplatter | `PLUGIN_STANDARD_QFREESPLATTER` | 3D Gaussian splats; optional qSIBR viewer |
-| qRFDetr | `PLUGIN_STANDARD_QRFDETR` | RF-DETR detection/segmentation (GGUF); needs `AICore_ENABLED` |
-| qRMBG | `PLUGIN_STANDARD_QRMBG` | RMBG-2.0 background removal (GGUF); needs `AICore_ENABLED` |
-| qYOLO | `PLUGIN_STANDARD_QYOLO` | YOLO detection + segmentation + metric depth (GGUF); needs `AICore_ENABLED` |
 | qManualCalib | `PLUGIN_STANDARD_QMANUAL_CALIB` | Sensor/AVM calibration; sample data in-tree |
-| qPythonRuntime | `PLUGIN_PYTHON` | In-app Python scripting; headless via `-PYTHON_SCRIPT` |
 | qSIBR | `PLUGIN_STANDARD_QSIBR` | Gaussian / ULR viewers (CUDA, Linux/Win) |
 | qJSonRPCPlugin | `PLUGIN_STANDARD_QJSONRPC` | Agent WebSocket API |
-
-All AICore-backed plugins share one `libAICore.so` with a single ggml copy. Model cards: `plugins/core/Standard/q*/models/MODEL_CARD.md`. Downloads: [cloudViewer_downloads](https://github.com/Asher-1/cloudViewer_downloads) (GGUF tags `DA3`, `3dgs`, …).
 
 Full table: [plugins/README.md](plugins/README.md) and [BUILD.md](BUILD.md).
 
@@ -528,29 +455,13 @@ Full table: [plugins/README.md](plugins/README.md) and [BUILD.md](BUILD.md).
 
 - Workflows: `.github/workflows/ubuntu.yml`, `macos.yml`, `windows.yml`, `documentation.yml`, `agent-integration.yml`, `codeql.yml`
 - Local CI helpers: `util/ci_utils.sh` (Linux), `util/ci_utils.ps1` (Windows)
-- Docker CI: `docker/Dockerfile.ci`, `docker/docker_test.sh`, `docker/build-release.sh`
 - Version: `libs/cloudViewer/version.txt`; changelog: `CHANGELOG.md`
 
-### CI Matrix (quick reference)
 
-| Platform | Workflow | GPU backend | Notable constraints |
-|----------|----------|-------------|---------------------|
-| Ubuntu 20.04/22.04/24.04 | `ubuntu.yml` | Vulkan (CPU-only in Docker) | focal: shaderc from source; 24.04: Qt6 option |
-| macOS 13+ | `macos.yml` | Metal only | `PLUGIN_STANDARD_QSIBR=OFF`, `GGML_OPENMP=OFF` |
-| Windows 10/11 | `windows.yml` | Vulkan | Conda-only; path-space quoting in patch scripts |
-| CUDA variants | `ubuntu.yml` | CUDA → Vulkan → CPU | `AICore_USE_CUDA=ON` when `BUILD_CUDA_MODULE=ON` |
+<claude-mem-context>
+# Memory Context
 
-Debug workflow: read CI log **bottom-up** for the first error; distinguish Docker build layer vs test phase. See `.agents/rules/acloudviewer-ci-debugging.mdc`.
+# [ACloudViewer] recent context, 2026-08-03 6:54pm GMT+8
 
-## Troubleshooting (agent quick ref)
-
-| Symptom | Likely cause | Action |
-|---------|--------------|--------|
-| Link killed / OOM | Too many parallel jobs | Set `BUILD_JOBS=4`, disable heavy plugins |
-| `glslc is missing` (focal) | Vulkan install script stdout pollution | See CI rules; build output must go to stderr |
-| macOS crash on AICore load | Duplicate OpenMP | Verify `GGML_OPENMP=OFF`, `otool -L libggml-cpu.so \| grep omp` empty |
-| GPU inference fails on target machine | Missing CUDA runtime libs | `-DAICore_BUNDLE_CUDA_RUNTIME=ON`; launcher adds `lib/cuda-runtime/` to path |
-| RPC / CLI hang (Windows) | Stale port 6001 | `--mode headless` |
-| AICore test skip (exit 77) | Missing GGUF model assets | Download from cloudViewer_downloads or set skip |
-| Plugin not in menu | CMake option OFF or build target missing | Reconfigure with `-DPLUGIN_STANDARD_Q…=ON`, rebuild plugin target |
-| ggml fix works locally but not in CI/PR | `build*/ggml/` was edited by hand without a patch | Generate the patch and register it in `manifest.yaml` per § ggml Source Modification Rules |
+No previous sessions found.
+</claude-mem-context>

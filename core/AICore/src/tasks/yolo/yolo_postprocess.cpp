@@ -36,6 +36,49 @@ struct Cand {
     int cls;
 };
 
+struct LinearAxis {
+    std::vector<int> lo;
+    std::vector<int> hi;
+    std::vector<float> weight;
+};
+
+LinearAxis make_linear_axis(int src_size, int dst_size, int src_offset = 0) {
+    LinearAxis axis;
+    axis.lo.resize(dst_size);
+    axis.hi.resize(dst_size);
+    axis.weight.resize(dst_size);
+    const float scale = (float)src_size / dst_size;
+    for (int i = 0; i < dst_size; ++i) {
+        const float src = (i + 0.5f) * scale - 0.5f;
+        const int base = (int)std::floor(src);
+        axis.lo[i] = src_offset + std::clamp(base, 0, src_size - 1);
+        axis.hi[i] = src_offset + std::clamp(base + 1, 0, src_size - 1);
+        axis.weight[i] = src - base;
+    }
+    return axis;
+}
+
+void resize_horizontal_rows(const float* src,
+                            int src_w,
+                            int src_h,
+                            const LinearAxis& x_axis,
+                            float* dst,
+                            int dst_w) {
+#if defined(_OPENMP)
+#pragma omp parallel for schedule(static) num_threads(8) if (src_h >= 32)
+#endif
+    for (int y = 0; y < src_h; ++y) {
+        const float* src_row = src + (size_t)y * src_w;
+        float* dst_row = dst + (size_t)y * dst_w;
+        for (int x = 0; x < dst_w; ++x) {
+            const int x0 = x_axis.lo[x];
+            const int x1 = x_axis.hi[x];
+            const float wx = x_axis.weight[x];
+            dst_row[x] = src_row[x0] * (1.0f - wx) + src_row[x1] * wx;
+        }
+    }
+}
+
 }  // namespace
 
 std::vector<Detection> postprocess(const std::vector<float>& raw,
@@ -317,28 +360,103 @@ std::vector<OBBDetection> postprocess_obb(const std::vector<float>& raw,
     return out;
 }
 
-std::vector<uint8_t> semantic_argmax(const std::vector<float>& logits,
-                                     int nc,
-                                     int w,
-                                     int h) {
-    std::vector<uint8_t> cls((size_t)w * h);
-    if (nc <= 0 || nc > 255 || (int)logits.size() != nc * w * h) return cls;
-    for (int y = 0; y < h; y++) {
-        for (int x = 0; x < w; x++) {
-            const size_t px = (size_t)y * w + x;
-            int best = 0;
-            float bv = -INFINITY;
-            for (int c = 0; c < nc; c++) {
-                const float v = logits[(size_t)c * w * h + px];
-                if (v > bv) {
-                    bv = v;
-                    best = c;
+std::vector<uint8_t> semantic_restore_logits(const std::vector<float>& logits,
+                                             int nc,
+                                             int grid_w,
+                                             int grid_h,
+                                             int canvas_w,
+                                             int canvas_h,
+                                             int source_w,
+                                             int source_h) {
+    if (nc <= 0 || nc > 255 || grid_w <= 0 || grid_h <= 0 || canvas_w <= 0 ||
+        canvas_h <= 0 || source_w <= 0 || source_h <= 0 ||
+        logits.size() != (size_t)nc * grid_w * grid_h) {
+        return {};
+    }
+
+    // This is ops.scale_masks' exact padding calculation. nearbyint provides
+    // Python round's ties-to-even behavior under the default rounding mode.
+    const float gain =
+            std::min((float)canvas_h / source_h, (float)canvas_w / source_w);
+    const float pad_w =
+            (canvas_w - (int)std::nearbyint(source_w * gain)) / 2.0f;
+    const float pad_h =
+            (canvas_h - (int)std::nearbyint(source_h * gain)) / 2.0f;
+    const int left = (int)std::nearbyint(pad_w - 0.1f);
+    const int top = (int)std::nearbyint(pad_h - 0.1f);
+    const int right = canvas_w - (int)std::nearbyint(pad_w + 0.1f);
+    const int bottom = canvas_h - (int)std::nearbyint(pad_h + 0.1f);
+    const int crop_w = right - left;
+    const int crop_h = bottom - top;
+    if (left < 0 || top < 0 || right > canvas_w || bottom > canvas_h ||
+        crop_w <= 0 || crop_h <= 0) {
+        return {};
+    }
+
+    const LinearAxis grid_x = make_linear_axis(grid_w, canvas_w);
+    const LinearAxis grid_y = make_linear_axis(grid_h, canvas_h);
+    const LinearAxis source_x = make_linear_axis(crop_w, source_w, left);
+    const LinearAxis source_y = make_linear_axis(crop_h, source_h);
+
+    // Two separable stages preserve the exact bilinear operation order while
+    // avoiding four source reads for both dimensions at every output pixel.
+    // The first buffer is grid-height x canvas-width; the second is the
+    // cropped canvas-height x source-width. Both are reused for every class.
+    std::vector<float> grid_horizontal((size_t)grid_h * canvas_w);
+    std::vector<float> crop_horizontal((size_t)crop_h * source_w);
+    std::vector<float> best_score((size_t)source_w * source_h, -INFINITY);
+    std::vector<uint8_t> class_map((size_t)source_w * source_h, 0);
+    const size_t grid_plane = (size_t)grid_w * grid_h;
+
+    for (int c = 0; c < nc; ++c) {
+        resize_horizontal_rows(logits.data() + (size_t)c * grid_plane, grid_w,
+                               grid_h, grid_x, grid_horizontal.data(),
+                               canvas_w);
+#if defined(_OPENMP)
+#pragma omp parallel for schedule(static) num_threads(8) if (crop_h >= 64)
+#endif
+        for (int y = 0; y < crop_h; ++y) {
+            const int canvas_y = y + top;
+            const int y0 = grid_y.lo[canvas_y];
+            const int y1 = grid_y.hi[canvas_y];
+            const float wy = grid_y.weight[canvas_y];
+            float* dst = crop_horizontal.data() + (size_t)y * source_w;
+            for (int x = 0; x < source_w; ++x) {
+                const int x0 = source_x.lo[x];
+                const int x1 = source_x.hi[x];
+                const float wx = source_x.weight[x];
+                const float v0 =
+                        grid_horizontal[(size_t)y0 * canvas_w + x0] *
+                                (1.0f - wx) +
+                        grid_horizontal[(size_t)y0 * canvas_w + x1] * wx;
+                const float v1 =
+                        grid_horizontal[(size_t)y1 * canvas_w + x0] *
+                                (1.0f - wx) +
+                        grid_horizontal[(size_t)y1 * canvas_w + x1] * wx;
+                dst[x] = v0 * (1.0f - wy) + v1 * wy;
+            }
+        }
+#if defined(_OPENMP)
+#pragma omp parallel for schedule(static) num_threads(8) if (source_h >= 64)
+#endif
+        for (int y = 0; y < source_h; ++y) {
+            const int y0 = source_y.lo[y];
+            const int y1 = source_y.hi[y];
+            const float wy = source_y.weight[y];
+            for (int x = 0; x < source_w; ++x) {
+                const float score =
+                        crop_horizontal[(size_t)y0 * source_w + x] *
+                                (1.0f - wy) +
+                        crop_horizontal[(size_t)y1 * source_w + x] * wy;
+                const size_t px = (size_t)y * source_w + x;
+                if (score > best_score[px]) {
+                    best_score[px] = score;
+                    class_map[px] = (uint8_t)c;
                 }
             }
-            cls[px] = (uint8_t)best;
         }
     }
-    return cls;
+    return class_map;
 }
 
 std::vector<float> classify_softmax(const std::vector<float>& logits) {

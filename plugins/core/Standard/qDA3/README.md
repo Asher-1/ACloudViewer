@@ -4,7 +4,7 @@
 
 Integrates [Depth Anything 3](https://github.com/DepthAnything/Depth-Anything-V3) into ACloudViewer. Runs **GGUF models** via C++17 / [ggml](https://github.com/ggml-org/ggml) (derived from [depth-anything.cpp](https://github.com/mudler/depth-anything.cpp)) with no Python/PyTorch runtime.
 
-> **Build index:** see [plugins/README.md](../../README.md).
+> **Build index:** see [plugins/README.md](../../../README.md).
 
 [![Model on Hugging Face](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-md.svg)](https://huggingface.co/mudler/depth-anything.cpp-gguf)
 
@@ -32,7 +32,7 @@ flowchart TB
 
 | Component | Path | Role |
 |-----------|------|------|
-| `libAICore.so` | `core/AICore/` | Shared inference library (DA3 + FreeSplatter) |
+| `libAICore.so` | `core/AICore/` | Monolithic runtime shared by every AICore task and plugin |
 | `QDA3_PLUGIN` | This directory | Interactive depth / pose / export |
 | `DA3DepthController` | `libs/Reconstruction/` | Automatic reconstruction pipeline hook |
 

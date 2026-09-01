@@ -68,13 +68,13 @@ protected:
 private:
 #ifdef AICore_ENABLED
     bool runInference();
-    bool runDetect(const QImage& rgb, const uchar* rgbData);
-    bool runSegment(const QImage& rgb, const uchar* rgbData);
-    bool runDepth(const QImage& rgb, const uchar* rgbData);
-    bool runPose(const QImage& rgb, const uchar* rgbData);
-    bool runObb(const QImage& rgb, const uchar* rgbData);
-    bool runSemantic(const QImage& rgb, const uchar* rgbData);
-    bool runClassify(const QImage& rgb, const uchar* rgbData);
+    bool runDetect(const QImage& rgb);
+    bool runSegment(const QImage& rgb);
+    bool runDepth(const QImage& rgb);
+    bool runPose(const QImage& rgb);
+    bool runObb(const QImage& rgb);
+    bool runSemantic(const QImage& rgb);
+    bool runClassify(const QImage& rgb);
 #endif
 
     Settings m_settings;

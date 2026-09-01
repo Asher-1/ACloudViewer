@@ -23,6 +23,7 @@
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QSettings>
+#include <QStandardPaths>
 #include <QTemporaryFile>
 
 #include "ecvPersistentSettings.h"
@@ -245,10 +246,11 @@ void qTrellis::onExportRequested() {
         return;
     }
     TrellisDialog::Settings settings = m_currentSettings;
-    settings.saveGlbDir =
-            m_currentSettings.saveGlbDir.isEmpty()
-                    ? QDir::homePath() + QStringLiteral("/Downloads/TRELLIS")
-                    : m_currentSettings.saveGlbDir;
+    settings.saveGlbDir = m_currentSettings.saveGlbDir.isEmpty()
+                                  ? QStandardPaths::writableLocation(
+                                            QStandardPaths::DownloadLocation) +
+                                            QStringLiteral("/TRELLIS")
+                                  : m_currentSettings.saveGlbDir;
     const int texSize = m_dialog->exportTextureSize();
     const int compFilter = m_dialog->exportComponentFilter();
     saveResultGlbEx(result, settings, result.sourceImage, texSize, compFilter);

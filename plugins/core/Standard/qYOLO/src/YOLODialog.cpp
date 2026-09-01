@@ -392,10 +392,7 @@ void YOLODialog::setupUi() {
                                     img = QImage(path);
                                 }
                                 if (!img.isNull()) {
-                                    p.vpLabel->setPromptImage(
-                                            img,
-                                            QSize(ecvAICoreUi::previewSize(),
-                                                  ecvAICoreUi::previewSize()));
+                                    p.vpLabel->setPromptImage(img);
                                 }
                             }
                             return;
@@ -484,34 +481,49 @@ void YOLODialog::setupUi() {
                 "border: 1px solid palette(mid); background: palette(base);");
         panel.previewLabel->setText(tr("Preview"));
         previewCol->addWidget(panel.previewLabel);
-        // Visual-prompt canvas (yoloe tab): same size as the preview,
-        // swapped in while "Visual prompt" mode is active.
-        panel.vpLabel = new YOLOVisualPromptLabel(panel.tab);
-        panel.vpLabel->setFixedSize(ps, ps);
-        panel.vpLabel->setStyleSheet(
-                "border: 1px solid palette(mid); background: palette(base);");
-        panel.vpLabel->setText(tr("Preview"));
-        panel.vpLabel->setVisible(false);
-        previewCol->addWidget(panel.vpLabel);
-        auto* vpBtnRow = new QHBoxLayout;
-        vpBtnRow->setSpacing(ecvAICoreUi::hSpacing());
-        panel.vpClearBtn = new QPushButton(tr("Clear boxes"), panel.tab);
-        panel.vpClearBtn->setToolTip(tr("Remove all drawn example boxes"));
-        panel.vpClearBtn->setVisible(false);
-        connect(panel.vpClearBtn, &QPushButton::clicked, panel.vpLabel,
-                &YOLOVisualPromptLabel::clearBoxes);
-        vpBtnRow->addWidget(panel.vpClearBtn);
-        vpBtnRow->addStretch();
-        previewCol->addLayout(vpBtnRow);
-        auto* previewHint = new QLabel(tr("Tap to preview"), panel.tab);
-        previewHint->setAlignment(Qt::AlignCenter);
-        previewHint->setStyleSheet(
+        panel.previewHint = new QLabel(tr("Tap to preview"), panel.tab);
+        panel.previewHint->setAlignment(Qt::AlignCenter);
+        panel.previewHint->setStyleSheet(
                 QStringLiteral("color: palette(mid); font-size: 11px;"));
-        previewCol->addWidget(previewHint);
+        previewCol->addWidget(panel.previewHint);
         previewCol->addStretch();
         contentRow->addLayout(previewCol);
 
         layout->addLayout(contentRow);
+
+        // Visual-prompt canvas (yoloe tab, "Visual prompt" mode): a
+        // full-width drawing surface BELOW the config row, swapped in for
+        // the preview thumbnail while the mode is active — the 96 px
+        // preview slot is too small for precise example boxes on
+        // full-resolution photos. The canvas re-fits on resize.
+        panel.vpCanvasWrap = new QWidget(panel.tab);
+        auto* vpLay = new QVBoxLayout(panel.vpCanvasWrap);
+        vpLay->setContentsMargins(0, 0, 0, 0);
+        vpLay->setSpacing(ecvAICoreUi::vSpacing());
+        panel.vpLabel = new YOLOVisualPromptLabel(panel.vpCanvasWrap);
+        panel.vpLabel->setStyleSheet(
+                "border: 1px solid palette(mid); background: palette(base);");
+        panel.vpLabel->setText(tr("Preview"));
+        panel.vpLabel->setMinimumSize(ecvAICoreUi::dpiScaled(320),
+                                      ecvAICoreUi::dpiScaled(320));
+        panel.vpLabel->setMaximumHeight(ecvAICoreUi::dpiScaled(560));
+        panel.vpLabel->setSizePolicy(QSizePolicy::Expanding,
+                                     QSizePolicy::Expanding);
+        panel.vpLabel->setToolTip(
+                tr("Drag to draw one example box per target"));
+        vpLay->addWidget(panel.vpLabel);
+        auto* vpBtnRow = new QHBoxLayout;
+        vpBtnRow->setSpacing(ecvAICoreUi::hSpacing());
+        panel.vpClearBtn =
+                new QPushButton(tr("Clear boxes"), panel.vpCanvasWrap);
+        panel.vpClearBtn->setToolTip(tr("Remove all drawn example boxes"));
+        connect(panel.vpClearBtn, &QPushButton::clicked, panel.vpLabel,
+                &YOLOVisualPromptLabel::clearBoxes);
+        vpBtnRow->addWidget(panel.vpClearBtn);
+        vpBtnRow->addStretch();
+        vpLay->addLayout(vpBtnRow);
+        panel.vpCanvasWrap->setVisible(false);
+        layout->addWidget(panel.vpCanvasWrap);
 
         // Action row: add-to-DB + sample data + Run / Cancel.
         auto* actionRow = new QHBoxLayout;
@@ -1108,10 +1120,16 @@ void YOLODialog::applyPanelVisibility(YOLOTaskPanel& panel) {
         panel.promptModeRow->setVisible(panel.task == QStringLiteral("yoloe"));
     }
     if (panel.vpLabel) {
-        panel.vpLabel->setVisible(visual);
-        panel.vpLabel->setDrawingEnabled(visual);
+        // The inline canvas swaps in for the preview thumbnail while the
+        // visual mode is active (only one of the two is ever visible).
         panel.previewLabel->setVisible(!visual);
-        if (panel.vpClearBtn) panel.vpClearBtn->setVisible(visual);
+        if (panel.vpCanvasWrap) panel.vpCanvasWrap->setVisible(visual);
+        panel.vpLabel->setDrawingEnabled(visual);
+        if (panel.previewHint) {
+            panel.previewHint->setText(
+                    visual ? tr("Draw example boxes on the canvas below")
+                           : tr("Tap to preview"));
+        }
     }
 
     // Threshold row visible for the box/conf-driven tasks (detect, segment,
@@ -1288,7 +1306,30 @@ bool YOLODialog::ensureModelAvailable(PendingAction action) {
                        "example box on the preview first."));
             return false;
         }
-        return true;
+#ifdef AICore_ENABLED
+        // SAVPE weights pre-flight: the released YOLOE GGUFs ship the text
+        // graph only; visual prompts need yolo.savpe = 1. The backend load
+        // would fail later with the same diagnosis — fail here instead,
+        // before the download / worker spin-up, with the fix in hand.
+        const QString modelFile = panel->modelPath();
+        if (!modelFile.isEmpty() && QFileInfo::exists(modelFile) &&
+            aicore_yolo_gguf_has_savpe(modelFile.toUtf8().constData()) == 0) {
+            appendLog(
+                    tr("[Error] Visual prompts need a YOLOE GGUF with SAVPE "
+                       "weights (yolo.savpe=1); this checkpoint ships "
+                       "none — convert it once with core/AICore/src/tasks/"
+                       "yolo/tools/convert_yoloe_savpe_gguf.py (--gguf "
+                       "<this GGUF> --model <matching yoloe-*-seg.pt>), or "
+                       "pick a SAVPE-enabled checkpoint."));
+            return false;
+        }
+#endif
+        // Fall through to the shared model-availability check below: this
+        // branch used to return true, which silently bypassed the
+        // "model missing → download" step whenever the checkpoint was not
+        // yet in the cache dir — the worker then failed on the missing
+        // file, and the backend pre-flight misdiagnosed the open failure
+        // as "this checkpoint ships none".
     }
     // Non-prompt-free YOLOE checkpoints ship NO stored vocabulary: the
     // load rejects them with "no stored vocabulary for N classes" unless
@@ -1297,6 +1338,7 @@ bool YOLODialog::ensureModelAvailable(PendingAction action) {
     // prompt-free variants and custom GGUFs are exempt (a custom
     // checkpoint may carry txt_feats, and the backend reports it).
     if (panel->task == QStringLiteral("yoloe") &&
+        !panelUsesVisualPrompts(*panel) &&
         !YOLOHelpers::isPromptFreeFilename(filename) &&
         YOLOHelpers::findModelByFilename(filename, nullptr)) {
         bool hasClasses = false;
@@ -1486,10 +1528,10 @@ void YOLODialog::updateImagePreview() {
     m_previewLabel->setPreviewImage(
             img, QSize(ecvAICoreUi::previewSize(), ecvAICoreUi::previewSize()));
     // Keep the visual-prompt canvas in sync (yoloe tab): it shows the same
-    // image so example boxes can be drawn without reloading anything.
+    // image so example boxes can be drawn without reloading anything. No
+    // display size: the inline canvas scales to its own widget rect.
     if (YOLOTaskPanel* panel = currentTaskPanel(); panel && panel->vpLabel) {
-        panel->vpLabel->setPromptImage(img, QSize(ecvAICoreUi::previewSize(),
-                                                  ecvAICoreUi::previewSize()));
+        panel->vpLabel->setPromptImage(img);
     }
 }
 

@@ -19,7 +19,7 @@
 static int failures = 0;
 
 int main() {
-    AICORE_CHECK(aicore_facedetect_abi_version() >= 1);
+    AICORE_CHECK(aicore_facedetect_abi_version() >= 2);
 
     // Null-safe teardown.
     aicore_facedetect_free(nullptr);
@@ -30,6 +30,26 @@ int main() {
     AICORE_CHECK(aicore_facedetect_load_opts(nullptr, nullptr) == nullptr);
     AICORE_CHECK(aicore_facedetect_is_ready(nullptr) == 0);
     AICORE_CHECK(aicore_facedetect_last_error(nullptr) == nullptr);
+    AICORE_CHECK(aicore_facedetect_detect_image(nullptr, nullptr) == -1);
+    AICORE_CHECK(aicore_facedetect_analyze_image(nullptr, nullptr, 0.0f) == -1);
+    AICORE_CHECK(aicore_facedetect_analysis_count(nullptr) == 0);
+    AICORE_CHECK(aicore_facedetect_analysis_at(nullptr, 0, nullptr) == -1);
+    int32_t embedding_dim = 17;
+    AICORE_CHECK(aicore_facedetect_analysis_embedding(
+                         nullptr, 0, &embedding_dim) == nullptr &&
+                 embedding_dim == 0);
+    AICORE_CHECK(aicore_facedetect_dense_landmarks_image(nullptr, nullptr,
+                                                         nullptr, 0.0f) == -1);
+    AICORE_CHECK(aicore_facedetect_dense_face_count(nullptr) == 0);
+    AICORE_CHECK(aicore_facedetect_dense_detection_at(nullptr, 0, nullptr) ==
+                 -1);
+    AICORE_CHECK(aicore_facedetect_dense_point_count(nullptr, 0, 0) == 0);
+    AICORE_CHECK(aicore_facedetect_dense_point_at(nullptr, 0, 0, 0, nullptr) ==
+                 -1);
+    AICORE_CHECK(aicore_facedetect_verify_images(nullptr, nullptr, nullptr,
+                                                 nullptr, nullptr) == -1);
+    AICORE_CHECK(aicore_facedetect_last_pipeline_timings(nullptr, nullptr) ==
+                 -1);
 
     // Options lifecycle.
     aicore_facedetect_options* opts = aicore_facedetect_options_new();

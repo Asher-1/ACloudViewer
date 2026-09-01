@@ -2,10 +2,10 @@
 
 RMBG-2.0 (BiRefNet-Swin-L) background removal for ACloudViewer — **native C++ GGML**.
 
-**User guide:** [docs/guides/plugins/qRMBG.md](../../../docs/guides/plugins/qRMBG.md)
+**User guide:** [docs/guides/plugins/qRMBG.md](../../../../docs/guides/plugins/qRMBG.md)
 
 ```
-Image/Video → AICore RMBG-2.0 GGML → RGBA composite → ccImage (transparent) → DB tree
+Image/Video → borrowed image view → AICore RMBG-2.0 GGML → raw RGBA/alpha → ccImage / PNG export
 ```
 
 ## Build
@@ -22,6 +22,11 @@ RMBG-2.0 GGML sources live in `core/AICore/src/tasks/rmbg/` (in-tree port of
 [RMBG-2.0-GGML](https://github.com/Asher-1/RMBG-2.0-GGML)). The custom CUDA /
 Vulkan operators are applied as ggml patches (`3rdparty/ggml/patches/rmbg_merged/`);
 CPU and Metal fall back to vanilla ggml operators automatically.
+
+The interactive path preserves the Qt row stride through `aicore_image_view`
+and consumes raw RGBA or alpha output. It does not allocate a tightly packed
+RGB copy or encode/decode PNG between inference and preview; PNG is generated
+only for an explicit save/export request.
 
 ### Backend profiles and timing
 

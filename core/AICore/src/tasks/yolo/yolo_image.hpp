@@ -22,11 +22,15 @@
 
 namespace yolo {
 
-/* Non-owning view over an interleaved RGB8 image (borrowed from the caller
- * for the duration of the call; the C API never copies it). */
+/* Non-owning view over an interleaved RGB/RGBA/GRAY8 image. A zero stride
+ * means tightly packed. The alpha channel is ignored and gray is replicated
+ * to RGB by preprocessing, without an intermediate packed image. */
 struct Image {
     int w = 0, h = 0;
     const uint8_t* rgb = nullptr;
+    size_t row_stride_bytes = 0;
+    int channels = 3;
+    bool bgr = false;
 };
 
 // Ultralytics-equivalent LetterBox(auto=True, stride=32): resize keeping

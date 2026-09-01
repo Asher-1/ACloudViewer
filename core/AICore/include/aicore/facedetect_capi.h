@@ -18,6 +18,8 @@
 #include <stdint.h>
 
 #include "aicore/export.h"
+#include "aicore/image_view.h"
+#include "aicore/pipeline_timing.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,6 +31,43 @@ AICORE_CAPI int aicore_facedetect_abi_version(void);
 
 typedef struct aicore_facedetect_ctx aicore_facedetect_ctx;
 typedef struct aicore_facedetect_options aicore_facedetect_options;
+
+typedef struct aicore_facedetect_detection {
+    float score;
+    float x1;
+    float y1;
+    float x2;
+    float y2;
+    float landmarks_xy10[10];
+} aicore_facedetect_detection;
+
+typedef struct aicore_facedetect_analysis {
+    aicore_facedetect_detection detection;
+    int32_t age;
+    int32_t gender;    /**< 0 unknown, 1 female, 2 male. */
+    float spoof_score; /**< -1 when the model has no anti-spoof result. */
+} aicore_facedetect_analysis;
+
+typedef struct aicore_facedetect_landmark_point {
+    float x;
+    float y;
+    float z;
+} aicore_facedetect_landmark_point;
+
+typedef struct aicore_facedetect_verify_options {
+    float threshold;           /**< <= 0 uses the model default. */
+    float min_detection_score; /**< <= 0 uses the model default. */
+    int32_t anti_spoof;
+} aicore_facedetect_verify_options;
+
+typedef struct aicore_facedetect_verify_result {
+    float distance;
+    float threshold;
+    int32_t verified;
+    /** -1 when not requested, unavailable, or skipped after distance rejection;
+     * otherwise 0/1. */
+    int32_t anti_spoof_passed;
+} aicore_facedetect_verify_result;
 
 /** Creates a default options struct (device "auto", threads 0 = backend
  *  default). Release with aicore_facedetect_options_free. */
@@ -76,6 +115,22 @@ AICORE_CAPI char* aicore_facedetect_detect_rgb_json(aicore_facedetect_ctx* ctx,
                                                     int32_t width,
                                                     int32_t height);
 
+/** Detect faces into a context-owned typed result store. The image view is
+ * borrowed for the duration of the call and may have Qt row padding. */
+AICORE_CAPI int aicore_facedetect_detect_image(aicore_facedetect_ctx* ctx,
+                                               const aicore_image_view* image);
+/** Compatibility wrapper for tightly packed RGB input. */
+AICORE_CAPI int aicore_facedetect_detect_rgb(aicore_facedetect_ctx* ctx,
+                                             const uint8_t* rgb,
+                                             int32_t width,
+                                             int32_t height);
+AICORE_CAPI size_t
+aicore_facedetect_detection_count(const aicore_facedetect_ctx* ctx);
+AICORE_CAPI int aicore_facedetect_detection_at(
+        const aicore_facedetect_ctx* ctx,
+        size_t index,
+        aicore_facedetect_detection* out);
+
 /** Age/gender JSON for every detected face on a borrowed RGB buffer.
  *  When min_score > 0, faces below that detection score are omitted (same rule
  * as dense_landmarks). Pass 0 to return every face the detector found. */
@@ -84,6 +139,19 @@ AICORE_CAPI char* aicore_facedetect_analyze_rgb_json(aicore_facedetect_ctx* ctx,
                                                      int32_t width,
                                                      int32_t height,
                                                      float min_score);
+/** Typed, stride-aware analyze entry point. Results are owned by ctx until
+ * the next analyze call or context destruction. */
+AICORE_CAPI int aicore_facedetect_analyze_image(aicore_facedetect_ctx* ctx,
+                                                const aicore_image_view* image,
+                                                float min_score);
+AICORE_CAPI size_t
+aicore_facedetect_analysis_count(const aicore_facedetect_ctx* ctx);
+AICORE_CAPI int aicore_facedetect_analysis_at(const aicore_facedetect_ctx* ctx,
+                                              size_t index,
+                                              aicore_facedetect_analysis* out);
+/** Borrowed embedding for an analyzed face. Empty embeddings report NULL/0. */
+AICORE_CAPI const float* aicore_facedetect_analysis_embedding(
+        const aicore_facedetect_ctx* ctx, size_t index, int32_t* out_dim);
 
 /** Detect + dense landmarks (106 2D + 68 3D) using detector_ctx + landmark_ctx.
  *  Faces below min_score are skipped. JSON:
@@ -96,6 +164,29 @@ AICORE_CAPI char* aicore_facedetect_dense_landmarks_rgb_json(
         int32_t width,
         int32_t height,
         float min_score);
+/** Typed, stride-aware dense landmark entry point. Results are owned by
+ * detector_ctx until its next dense landmark call or destruction. */
+AICORE_CAPI int aicore_facedetect_dense_landmarks_image(
+        aicore_facedetect_ctx* detector_ctx,
+        aicore_facedetect_ctx* landmark_ctx,
+        const aicore_image_view* image,
+        float min_score);
+AICORE_CAPI size_t
+aicore_facedetect_dense_face_count(const aicore_facedetect_ctx* detector_ctx);
+AICORE_CAPI int aicore_facedetect_dense_detection_at(
+        const aicore_facedetect_ctx* detector_ctx,
+        size_t face_index,
+        aicore_facedetect_detection* out);
+AICORE_CAPI size_t
+aicore_facedetect_dense_point_count(const aicore_facedetect_ctx* detector_ctx,
+                                    size_t face_index,
+                                    int three_d);
+AICORE_CAPI int aicore_facedetect_dense_point_at(
+        const aicore_facedetect_ctx* detector_ctx,
+        size_t face_index,
+        int three_d,
+        size_t point_index,
+        aicore_facedetect_landmark_point* out);
 
 /** Primary-face L2-normalized embedding (512-d ArcFace or 128-d SFace).
  *  Faces below min_detection_score are ignored when picking the primary face
@@ -146,6 +237,18 @@ AICORE_CAPI int aicore_facedetect_verify_paths(aicore_facedetect_ctx* ctx,
                                                int anti_spoof,
                                                float* out_distance,
                                                int* out_verified);
+/** Typed in-memory verification with explicit threshold/detection/liveness
+ * options. Both views are borrowed only for the duration of the call. */
+AICORE_CAPI int aicore_facedetect_verify_images(
+        aicore_facedetect_ctx* ctx,
+        const aicore_image_view* image_a,
+        const aicore_image_view* image_b,
+        const aicore_facedetect_verify_options* options,
+        aicore_facedetect_verify_result* out_result);
+/** Common timing contract for the latest typed FaceDetect operation. FaceDetect
+ * currently reports only the observable E2E boundary. */
+AICORE_CAPI int aicore_facedetect_last_pipeline_timings(
+        const aicore_facedetect_ctx* ctx, aicore_pipeline_timings* out_timings);
 
 /** Returns a JSON summary of the loaded model. Caller frees with
  *  aicore_facedetect_free_buffer. */

@@ -17,6 +17,8 @@ struct rfdetr_image {
      * pointer; the caller must keep the buffer alive for the image's whole
      * lifetime. Owned images (load_file / from_rgb_buffer) never set it. */
     const uint8_t* borrowed_rgb = nullptr;
+    size_t row_stride_bytes = 0;
+    bool bgr = false;
 };
 
 #ifdef __cplusplus
@@ -74,4 +76,9 @@ bool rfdetr_encode_gray_png(const uint8_t* data, int width, int height,
  * semantics. Returns nullptr on invalid arguments / OOM. */
 rfdetr_image* rfdetr_image_borrow_rgb(const uint8_t* rgb, int width,
                                       int height, rfdetr_status* out_status);
+rfdetr_image* rfdetr_image_borrow_view(const uint8_t* data, int width,
+                                       int height, int channels,
+                                       bool bgr,
+                                       size_t row_stride_bytes,
+                                       rfdetr_status* out_status);
 #endif

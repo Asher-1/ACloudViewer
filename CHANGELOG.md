@@ -82,9 +82,6 @@ v3.9.5-Beta (Asher) - 08/04/2026
     - CI: fix macOS agent-integration to use Qt IFW silent install from DMG
     - CI: add missing Qt XCB runtime dependencies for Ubuntu agent-integration jobs
       (libxcb-icccm4, libxcb-image0, libxcb-keysyms1, libxcb-render-util0, libxcb-xkb1, libxkbcommon-x11-0)
-    - macOS: use dmgbuild for polished installer DMG (background image, correct icon
-      position, window size matching background); fallback to plain hdiutil if unavailable
-    - macOS: auto-launch ACloudViewer.app after installation when launch checkbox is checked
     - CI: fix Windows, macOS, and Ubuntu-focal test issues
     - Expand agent-integration docs: CLI-QUICK-REFERENCE with full command catalog,
       COMMAND-MAPPING with CLI↔MCP↔RPC cross-reference tables (including PCV, Compass,
@@ -307,90 +304,24 @@ v3.9.5-Beta (Asher) - 08/04/2026
         download/cache (SIFT / ALIKED matcher weights), match visualization in DB tree,
         JSON export, Model Info mode
       - CMake: `PLUGIN_STANDARD_QLIGHTGLUE=ON` + `AICore_ENABLED=ON` + `BUILD_OPENCV=ON`
-    - Add qYOLO plugin: YOLO object detection, instance segmentation, and metric depth
-      - YOLOv8 n/s/m/l/x + YOLO26 n/s/m/l/x detection (COCO 80 classes)
-      - YOLOv8-seg n/s/m/l/x + YOLO26-seg n/s/m/l/x instance segmentation
-      - yolo26n-depth absolute metric depth estimation
-      - SessionOptions: typed struct replaces implicit env-var configuration
-      - CUDA/Vulkan/Metal GPU acceleration through AICore unified backend
-      - Task-based tab UI: Object Detection / Instance Segmentation / Depth tabs
-        (per-task model filtering, task-specific controls)
-      - Live camera/video inference for all three task types
-      - CMake: `PLUGIN_STANDARD_QYOLO=ON` + `AICore_ENABLED=ON`
-    - Add qRMBG plugin: RMBG-2.0 background removal (matting)
-      - Native GGUF inference through AICore unified runtime
-      - Image and live camera/video background removal
-      - CMake: `PLUGIN_STANDARD_QRMBG=ON` + `AICore_ENABLED=ON`
-    - Add qRFDetr plugin: RF-DETR object detection and instance segmentation
-      - Native GGUF inference through AICore unified runtime
-      - RF-DETR base/large detection with COCO 91-class layout (80 named classes + 11 empty slots)
-      - Image and live camera/video inference
-      - CMake: `PLUGIN_STANDARD_QRFDETR=ON` + `AICore_ENABLED=ON`
-    - Add qTrellis plugin: TRELLIS.2 image-to-3D mesh generation with PBR
-      - Native GGUF inference through AICore unified runtime (`aicore_trellis_*`):
-        single image in, textured 3D mesh out — no PyTorch at runtime
-      - Three quality presets: Coarse 64³ preview / Standard 512³ + PBR (recommended)
-        / Full 1024³ cascade + PBR
-      - Per-vertex PBR materials: base color as RGB colors, metallic/roughness/alpha
-        as scalar fields; GLB export via xatlas + meshoptimizer
-      - AI background removal reusing the shared RMBG-2.0 engine (qRMBG models)
-      - Model auto-download from the Hugging Face mirror with streamed SHA-256 +
-        size + GGUF magic verification; one-click sample images
-      - CMake: `PLUGIN_STANDARD_QTRELLIS=ON` + `AICore_ENABLED=ON`
-    - Add qSAM3 plugin: SAM 2 / 2.1 / 3 image & video segmentation
-      - Native GGUF inference through AICore unified runtime (`aicore_sam3_*`)
-      - Four tabs: SAM 3 Full (text / point / box PVS + exemplar PCS),
-        SAM 3 Visual, SAM 2 / 2.1, and Video tracking
-      - Text-prompted detection, interactive point / box prompts, and
-        multi-exemplar (PCS) search with one-click sample images
-      - Video tab: frame-by-frame tracking with scrubber timeline and
-        per-instance presence bands, text-prompt tracking, and per-instance
-        mask / annotated frame export to the DB tree
-      - CMake: `PLUGIN_STANDARD_QSAM3=ON` + `AICore_ENABLED=ON`
-
+    - Add qManualCalib plugin: manual multi-sensor extrinsic calibration
+      (sensor / AVM / LiDAR-camera fusion)
+      - **Manual Sensor Calibration** dialog: Load Config (cameras/lidars/ground `.cfg`)
+        → Load Bag → 6-DOF per-sensor extrinsic fine-tune → Save Config / export
+      - Bird's Eye View (BEV) stitching with distance-weighted alpha fusion;
+        CUDA / OpenCL / CPU remap backends
+      - LiDAR-Camera fusion with depth coloring; BEV / LiDAR Projection / Single Frame modes
+      - Native ROS Bag v2.0 reader (BZ2/LZ4), multi-bag Flat / Nested / SingleFile layout
+        auto-discovery, topic-group time sync, HEVC/H.264 online camera decode (FFmpeg)
+      - **“use test data”** button (Sensor Calibration & AVM Adjust dialogs):
+        one-click download/cache/extract of sample bag + configs from
+        `cloudViewer_downloads` into `~/cloudViewer_data/extract/qcalib_test_data/`
+        with a live Qt download/extract progress bar; custom user data still
+        supported via Load Config / Load Bag
+      - Optional CLI tools (`MCALIB_BUILD_TOOLS`) and `test_bag_reader` (`MCALIB_BUILD_TESTS`)
+      - CMake: `PLUGIN_STANDARD_QMANUAL_CALIB=ON` + `BUILD_OPENCV=ON`
+  
 - New features:
-    - AICore YOLO upgrade (ultralytics-ggml segment + CUDA/Vulkan optimization):
-      - Segment task: instance mask support for YOLOv8-seg and YOLO26-seg
-      - CUDA: igemm direct-conv path with f16 tensor core (TF32-compatible), Q8_0 weights
-      - Vulkan: f16 direct-conv path, Q8_0-to-f16 host dequant, f32-to-f16 cast
-      - SessionOptions: typed struct replaces implicit env-var configuration
-      - Unified AICore macros: AICORE_AUTO_INCLUDE_CUDA / AICORE_VULKAN_ENABLED
-        replace per-task YOLO_USE_CUDA / YOLO_USE_VULKAN
-      - Removed all std::getenv() calls from yolo module
-      - Model catalog expanded from 33 to 63 entries (detect + depth + segment)
-    - AICore env-policy hardening (tasks carry no environment mechanism):
-      - ggml_env_bridge gains `apply_rmbg_math_profile()` — the RMBG
-        profile->ggml-switch translation moved out of tasks/rmbg; gaussian
-        scopes the macOS metal-optimizer disable through
-        `GpuResolveOptions` on `resolve_gpu_group()`; task modules now call
-        plain interfaces only
-      - `check_no_env_getenv.sh` rule 2: src/tasks/** must not include the
-        env bridge or reference any GgmlEnv*/apply_*_env symbol (interface
-        -only enforcement, positive + negative tested)
-    - ggml patch `rmbg_merged` fix: the scalar direct-conv pipelines were
-      created with 3 storage bindings while the yolo_merged conv2d shader
-      contract declares 4 (optional FP32 bias) — op_f32 always dispatches
-      4 descriptors, so RMBG's optimized math profile aborted on Vulkan at
-      `parameter_count == descriptor_buffer_infos.size()`; scalar pipelines
-      now create with parameter_count=4 (rmbg Vulkan perf test passes:
-      median 521.7 ms on RTX 3060, stable output hash)
-    - AICore YOLO GPU-parity fixes (real-GGUF parity across CPU/CUDA/Vulkan):
-      - ggml patch `sam3_merged`: guard the Vulkan 2x2/stride-2 conv_transpose
-        fast path to its F32-activation contract — F16 protos (YOLOE/v8seg
-        masks on the Vulkan F16 direct path) fell through to the generic
-        conv_transpose pipeline instead of being misread as F32 (fixes
-        Vulkan mask disagreement; optrace now shows all user-op outputs
-        matching and parity passes on yolov8n-seg / yoloe-seg / world f16)
-      - YOLO optrace tool: compare every user-op output across devices
-        (F16-aware), plus post-cast session outputs (what the C API reads)
-      - `yolo_graph`: keep_all_ops no longer wipes op_values at plan commit
-      - `test_yolo_capi_parity`: guard `env_or` against NULL fallback
-        (getenv(nullptr) crash when AICORE_TEST_YOLO_GGUF is unset)
-    - qYOLO plugin redesign:
-      - Task-based tab UI: Object Detection / Instance Segmentation / Depth tabs
-        (per-task model filtering, task-specific controls)
-      - Guard spaces for future tasks (Pose, Track, Heatmap)
-      - Live mode supports all three task types
     - Unified AICore inference core (`core/AICore` → `libAICore.so`)
       - Single ggml link for depth (DA3), gaussian (FreeSplatter), and lightglue modules
       - Public C APIs: `depth_capi.h`, `gaussian_capi.h`, `lightglue_capi.h`

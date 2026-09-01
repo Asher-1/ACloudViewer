@@ -9,7 +9,7 @@
 //
 // Usage:
 //   bench_sam3_backend_acceptance <sam3-visual-f16.gguf> <image> [runs=10]
-//                                 [backend=all|cpu|vulkan]
+//                                 [backend=all|cpu|cuda|vulkan|metal]
 //
 // The probe uses a fixed box prompt and requires every run to return a finite,
 // non-empty PVS mask. It executes load -> encode -> PVS -> tracker setup /
@@ -167,6 +167,7 @@ bool copy_result(aicore_sam3_seg_result *result, MaskResult *out) {
 bool run_backend(const char *device,
                  const char *model_path,
                  const Image &image,
+                 int warmup_runs,
                  int total_runs,
                  MaskResult *representative,
                  Timings *timings) {
@@ -181,7 +182,7 @@ bool run_backend(const char *device,
     prompt.use_box = 1;
     const size_t stride = static_cast<size_t>(image.width) * 3;
 
-    for (int run = -kWarmupRuns; run < total_runs; ++run) {
+    for (int run = -warmup_runs; run < total_runs; ++run) {
         const auto begin = std::chrono::steady_clock::now();
         aicore_sam3_options *options = aicore_sam3_options_new();
         aicore_sam3_options_set_device(options, device);
@@ -197,8 +198,11 @@ bool run_backend(const char *device,
             return false;
         }
         timings->backend = aicore_sam3_context_backend_name(ctx);
-        if (std::strcmp(device, "vulkan") == 0 &&
-            strncasecmp(timings->backend.c_str(), "vulkan", 6) != 0) {
+        const size_t selector_length = std::strcspn(device, ":");
+        if (std::strcmp(device, "cpu") != 0 &&
+            std::strcmp(device, "auto") != 0 &&
+            strncasecmp(timings->backend.c_str(), device, selector_length) !=
+                    0) {
             std::fprintf(stderr, "[%s] requested backend resolved to %s\n",
                          device, timings->backend.c_str());
             aicore_sam3_free(ctx);
@@ -309,6 +313,15 @@ bool run_backend(const char *device,
     return true;
 }
 
+uint64_t mask_hash(const MaskResult &result) {
+    uint64_t hash = 1469598103934665603ULL;
+    for (uint8_t value : result.mask) {
+        hash ^= value;
+        hash *= 1099511628211ULL;
+    }
+    return hash;
+}
+
 void print_report(const char *device, const Timings &t) {
     std::printf("\"%s\":{\"backend\":\"%s\",\"peak_vram_mib\":%lld,", device,
                 t.backend.c_str(), t.peak_vram_mib);
@@ -330,50 +343,64 @@ int main(int argc, char **argv) {
     if (argc < 3) {
         std::fprintf(stderr,
                      "usage: %s <sam3-visual-f16.gguf> <image> [runs=10] "
-                     "[backend=all|cpu|vulkan]\n",
+                     "[backend=all|cpu|cuda|vulkan|metal]\n",
                      argv[0]);
         return 2;
     }
     const int runs = argc >= 4 ? std::max(1, std::atoi(argv[3])) : 10;
     const std::string selected = argc >= 5 ? argv[4] : "all";
-    if (selected != "all" && selected != "cpu" && selected != "vulkan") {
-        std::fprintf(stderr, "unknown backend selector: %s\n",
-                     selected.c_str());
-        return 2;
-    }
+    if (selected.empty()) return 2;
     Image image;
     if (!load_image(argv[2], &image)) {
         std::fprintf(stderr, "unable to decode image: %s\n", argv[2]);
         return 2;
     }
-    MaskResult cpu, vulkan;
-    Timings cpu_t, vulkan_t;
-    const bool cpu_requested = selected == "all" || selected == "cpu";
-    const bool vk_requested = selected == "all" || selected == "vulkan";
-    const bool cpu_ok = !cpu_requested ||
-                        run_backend("cpu", argv[1], image, runs, &cpu, &cpu_t);
-    const bool vk_ok = !vk_requested || run_backend("vulkan", argv[1], image,
-                                                    runs, &vulkan, &vulkan_t);
-    const double iou = mask_iou(cpu, vulkan);
-    const float box_error = max_box_error(cpu.box, vulkan.box);
-    const float score_error = std::fabs(cpu.score - vulkan.score);
-    const bool parity_checked = cpu_requested && vk_requested;
-    const bool gates_ok = parity_checked
-                                  ? cpu_ok && vk_ok && iou >= kMinMaskIou &&
-                                            box_error <= kMaxBoxErrorPx &&
-                                            score_error <= kMaxScoreError
-                                  : cpu_ok && vk_ok;
+    const std::string candidate_device =
+            selected == "all" ? "vulkan" : selected;
+    MaskResult cpu, candidate;
+    Timings cpu_t, candidate_t;
+    const bool parity_checked = candidate_device != "cpu";
+    // CPU is the numeric oracle, not the performance candidate. One reference
+    // inference is sufficient; repeating the 320 s CPU tracker path for every
+    // candidate sample makes the all-model gate needlessly many hours longer.
+    const int cpu_runs = candidate_device == "cpu" ? runs : 1;
+    const int cpu_warmups = candidate_device == "cpu" ? kWarmupRuns : 0;
+    const bool cpu_ok = run_backend("cpu", argv[1], image, cpu_warmups,
+                                    cpu_runs, &cpu, &cpu_t);
+    const bool candidate_ok =
+            candidate_device == "cpu"
+                    ? cpu_ok
+                    : run_backend(candidate_device.c_str(), argv[1], image,
+                                  kWarmupRuns, runs, &candidate, &candidate_t);
+    if (candidate_device == "cpu") {
+        candidate = cpu;
+        candidate_t = cpu_t;
+    }
+    const double iou = parity_checked ? mask_iou(cpu, candidate) : 1.0;
+    const float box_error =
+            parity_checked ? max_box_error(cpu.box, candidate.box) : 0.0f;
+    const float score_error =
+            parity_checked ? std::fabs(cpu.score - candidate.score) : 0.0f;
+    const bool gates_ok =
+            parity_checked ? cpu_ok && candidate_ok && iou >= kMinMaskIou &&
+                                     box_error <= kMaxBoxErrorPx &&
+                                     score_error <= kMaxScoreError
+                           : cpu_ok;
     std::printf(
             "{\"runs\":%d,\"backend_selector\":\"%s\","
-            "\"cpu_nonzero\":%d,\"vulkan_nonzero\":%d,"
+            "\"cpu_nonzero\":%d,\"candidate_nonzero\":%d,"
             "\"mask_iou\":%.8f,\"box_error_px\":%.6f,\"score_error\":%.8f,"
-            "\"parity_checked\":%s,\"gates_passed\":%s,",
-            runs, selected.c_str(), cpu.nonzero, vulkan.nonzero, iou, box_error,
-            score_error, parity_checked ? "true" : "false",
-            gates_ok ? "true" : "false");
+            "\"parity_checked\":%s,\"gates_passed\":%s,"
+            "\"output_hash\":\"%016llx\",",
+            runs, selected.c_str(), cpu.nonzero, candidate.nonzero, iou,
+            box_error, score_error, parity_checked ? "true" : "false",
+            gates_ok ? "true" : "false",
+            static_cast<unsigned long long>(mask_hash(candidate)));
     print_report("cpu", cpu_t);
-    std::printf(",");
-    print_report("vulkan", vulkan_t);
+    if (candidate_device != "cpu") {
+        std::printf(",");
+        print_report(candidate_device.c_str(), candidate_t);
+    }
     std::printf("}\n");
     return gates_ok ? 0 : 1;
 }

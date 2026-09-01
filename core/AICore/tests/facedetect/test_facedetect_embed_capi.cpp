@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "aicore/facedetect_capi.h"
+#include "tests/common/validation_probe.hpp"
 
 namespace {
 
@@ -49,6 +50,8 @@ bool embedPath(aicore_facedetect_ctx* ctx,
 int main() {
     const char* gguf = std::getenv("AICORE_TEST_FACEDETECT_GGUF");
     const char* image = std::getenv("AICORE_TEST_FACEDETECT_IMAGE");
+    const char* device = std::getenv("AICORE_TEST_FACEDETECT_DEVICE");
+    if (!device || !device[0]) device = "auto";
     if (!gguf || !image) return 77;
 
     aicore_facedetect_options* opts = aicore_facedetect_options_new();
@@ -56,9 +59,7 @@ int main() {
         std::fprintf(stderr, "failed to allocate facedetect options\n");
         return 1;
     }
-    if (const char* device = std::getenv("AICORE_TEST_FACEDETECT_DEVICE")) {
-        aicore_facedetect_options_set_device(opts, device);
-    }
+    aicore_facedetect_options_set_device(opts, device);
     aicore_facedetect_ctx* ctx = aicore_facedetect_load_opts(gguf, opts);
     aicore_facedetect_options_free(opts);
     if (!aicore_facedetect_is_ready(ctx)) {
@@ -178,7 +179,18 @@ int main() {
     const float crossDist =
             cosineDistance(embPathA.data(), embLmk,
                            std::min(static_cast<int>(embPathA.size()), dimLmk));
+    const uint64_t output_hash = aicore::test::fnv1a(
+            embPathA.data(), embPathA.size() * sizeof(float));
+    aicore_pipeline_timings timings{};
+    if (aicore_facedetect_last_pipeline_timings(ctx, &timings) != 0) {
+        std::fprintf(stderr, "failed to query FaceDetect pipeline timings\n");
+        aicore_facedetect_free_buffer(embLmk);
+        aicore_facedetect_free(ctx);
+        return 1;
+    }
     aicore_facedetect_free_buffer(embLmk);
+    aicore::test::printValidationResult("facedetect", device, output_hash,
+                                        &timings);
     aicore_facedetect_free(ctx);
 
     if (crossDist > 0.05f) {

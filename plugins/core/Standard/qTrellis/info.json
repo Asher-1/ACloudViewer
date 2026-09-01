@@ -10,6 +10,6 @@
     { "text": "trellis-ggml: https://github.com/Asher-1/trellis-ggml" },
     { "text": "TRELLIS.2: https://github.com/microsoft/TRELLIS" },
     { "text": "Models (HF mirror): https://huggingface.co/Asher-1/Trellis2-models" },
-    { "text": "Models (legacy GitHub fallback): https://github.com/Asher-1/cloudViewer_downloads/releases/tag/trellis2-ggml" }
+    { "text": "Models: https://huggingface.co/Asher-1/Trellis2-models" }
   ]
 }

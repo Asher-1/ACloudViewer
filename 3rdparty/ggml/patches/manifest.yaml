@@ -17,7 +17,7 @@ patches:
   - file: vulkan_parallel/0001-vulkan-shaders-gen-skip-parallel-trycompile.patch
     note: "vulkan-shaders-gen: pre-seed CMAKE_C/CXX_ABI_COMPILED=1 so the nested configure skips the ABI/works try_compile, removing the MSBuild parallel file-lock race (MSB3491) on .lastbuildstate"
   - file: rmbg_merged/0001-rmbg-custom-ops.patch
-    note: "RMBG background-removal custom ops: fused CUDA layer-norm/affine/deform/conv/Swin kernels plus Vulkan scalar direct-conv, named CM1 matmul selection, Flash attention and task dispatch; cuDNN remains optional; CPU/Metal fall back to vanilla ggml ops"
+    note: "RMBG background-removal custom ops: fused CUDA layer-norm/affine/deform/conv/Swin kernels plus Vulkan scalar direct-conv, named CM1 matmul selection, Flash attention and task dispatch; zero cuDNN (the former CUDA cuDNN conv2d custom op was removed - the RMBG graph builder runs the conv as F16 im2col + F16-weight GEMM on the fast profile, pure F32 under strict_math); CPU/Metal fall back to vanilla ggml ops"
   - file: rfdetr_merged/0001-ggml-cpu-fold-broadcast-iterations.patch
     note: "RF-DETR CPU perf: fold broadcast iterations into the llamafile sgemm epilogue loop; inert when GGML_LLAMAFILE=OFF"
   - file: yolo_merged/0001-yolo-ggml-backend-integration.patch
@@ -28,6 +28,8 @@ patches:
     note: "TRELLIS.2 / general CUDA: Q8_0→Q8_0 direct block copy (cpy_blck_q8_0_q8_0 kernel), avoiding the dequant→F32→requant roundtrip when copying quantized weights between CUDA buffers; placed after sam3_merged because sam3's cpy.cu changes are at a different offset (641+) and would shift the hunk context if applied first"
   - file: igemm_fix/0001-igemm-plan-rebuild-guards.patch
     note: "YOLO igemm conv fix: the pointer-keyed plan/nhwc caches were not shape-aware, so a rebuilt ggml graph that recycled a dst tensor pointer could reuse a stale plan and write/read out of bounds (e.g. a 1x1 plan whose 2KB weight buffer served a 3x3 conv, or an erased plan whose buffers were still queued on the async stream). Records in/out/weight byte sizes on the plan, rebuilds the plan (after a stream sync) on any mismatch, validates the chained-consumer owner plan, and drops the fast path when the staged device pointers are not valid; inert when the igemm conv path is unused"
+  - file: igemm_session/0001-igemm-plan-session-generation.patch
+    note: "YOLO CUDA igemm cache ownership: stamp direct-conv nodes with the model-session generation and rebuild a pointer-keyed plan when the generation changes, preventing same-address/same-shape allocations from reusing transformed weights from a destroyed model session"
   - file: glslc_fconvert/0001-pool-shaders-avoid-redundant-fconvert.patch
     note: "glslc/spirv-opt same-bit-width FConvert fix (affects Ubuntu 24.04+ default shaderc 2023.8 and newer): pool1d.comp / pool2d.comp read A_TYPE values with `D_TYPE(data_a[...])`, which becomes a redundant `float16_t(float16_t)` cast for the f16 variants and generates `OpFConvert %half %half`, rejected by spirv-opt. Changed to `float(data_a[...])` to generate a proper f16->f32 conversion; f32 variants are unaffected (glslang elides float(float)). Same approach as upstream ggml's OPTIMIZATION_ERROR_WORKAROUND in copy.comp; inert when GGML_USE_VULKAN=OFF"
   - file: cuda_merged/0001-cuda-downstream-fixes.patch

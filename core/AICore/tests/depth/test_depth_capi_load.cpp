@@ -10,6 +10,7 @@
 
 #include "aicore/depth_capi.h"
 #include "tests/common/test_macros.hpp"
+#include "tests/common/validation_probe.hpp"
 
 static int failures = 0;
 
@@ -32,6 +33,8 @@ int main() {
     aicore_depth_free_buffer(json);
 
     const char* image = std::getenv("AICORE_TEST_DEPTH_IMAGE");
+    uint64_t output_hash = 0;
+    aicore_pipeline_timings timings{};
     if (image && image[0]) {
         aicore_depth_set_img_resize_target(ctx, 224);
         int height = 0;
@@ -39,10 +42,18 @@ int main() {
         float* depth = aicore_depth_depth_path(ctx, image, &height, &width);
         AICORE_CHECK(depth != nullptr);
         AICORE_CHECK(height > 0 && width > 0);
+        if (depth) {
+            output_hash = aicore::test::fnv1a(
+                    depth, static_cast<size_t>(height) * width * sizeof(float));
+            AICORE_CHECK(aicore_depth_last_pipeline_timings(ctx, &timings) ==
+                         0);
+        }
         aicore_depth_free_buffer(depth);
         std::fprintf(stderr, "depth inference ok: device=%s size=%dx%d\n",
                      device, width, height);
     }
+
+    aicore::test::printValidationResult("depth", device, output_hash, &timings);
 
     aicore_depth_release_gpu_working_memory(ctx);
     aicore_depth_free(ctx);

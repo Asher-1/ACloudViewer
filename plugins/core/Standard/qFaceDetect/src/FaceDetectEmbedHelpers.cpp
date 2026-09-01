@@ -15,6 +15,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QPainter>
+#include <QStandardPaths>
 #include <QVector3D>
 #include <algorithm>
 #include <cmath>
@@ -35,8 +36,9 @@ QString modelCacheDir() {
         return result;
     }
 #endif
-    return QDir::homePath() +
-           QStringLiteral("/cloudViewer_data/extract/facedetect_models");
+    return QDir(QStandardPaths::writableLocation(
+                        QStandardPaths::AppDataLocation))
+            .filePath(QStringLiteral("extract/facedetect_models"));
 }
 
 QImage padImageForDetection(const QImage& src) {
@@ -332,15 +334,30 @@ const uint8_t* tightRgb888Bytes(const QImage& rgb,
 std::vector<FaceDetectBox> detectBoxesFromRgb(aicore_facedetect_ctx* ctx,
                                               const QImage& rgb) {
     if (!ctx || rgb.isNull()) return {};
-    QByteArray tight;
-    int w = 0;
-    int h = 0;
-    const uint8_t* bytes = tightRgb888Bytes(rgb, &w, &h, &tight);
-    if (!bytes) return {};
-    char* json = aicore_facedetect_detect_rgb_json(ctx, bytes, w, h);
-    const QByteArray payload = json ? QByteArray(json) : QByteArray();
-    if (json) aicore_facedetect_free_buffer(json);
-    return parseDetectJson(payload);
+    const aicore_image_view view{
+            reinterpret_cast<const uint8_t*>(rgb.constBits()), rgb.width(),
+            rgb.height(), static_cast<size_t>(rgb.bytesPerLine()),
+            AICORE_IMAGE_RGB8};
+    if (aicore_facedetect_detect_image(ctx, &view) != 0) return {};
+    std::vector<FaceDetectBox> out;
+    const size_t count = aicore_facedetect_detection_count(ctx);
+    out.reserve(count);
+    for (size_t i = 0; i < count; ++i) {
+        aicore_facedetect_detection d{};
+        if (aicore_facedetect_detection_at(ctx, i, &d) != 0) continue;
+        FaceDetectBox box;
+        box.x1 = d.x1;
+        box.y1 = d.y1;
+        box.x2 = d.x2;
+        box.y2 = d.y2;
+        box.score = d.score;
+        for (int k = 0; k < 5; ++k) {
+            box.landmarks[k][0] = d.landmarks_xy10[2 * k];
+            box.landmarks[k][1] = d.landmarks_xy10[2 * k + 1];
+        }
+        out.push_back(box);
+    }
+    return out;
 }
 
 namespace {

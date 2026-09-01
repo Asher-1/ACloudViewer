@@ -30,8 +30,10 @@ vocabulary); a leftover class list is dropped at run time and the backend
 ignores `set_classes` for non-text models so the stored 4585-entry
 class-name table always reaches the labels. The YOLOE tab also offers a
 **Visual prompt** mode (official SAVPE): switch the prompt mode, draw one
-example box per target on the preview, and the checkpoint's SAVPE encoder
+example box per target, and the checkpoint's SAVPE encoder
 derives the class embeddings (results labeled object0, object1, …).
+Selecting the mode swaps a full-width drawing canvas in below the config
+row (re-fits with the dialog) — drag the boxes there.
 Visual prompts need a non-`-pf` YOLOE GGUF converted with savpe weights
 (`yolo.savpe = 1`, regenerate via
 `core/AICore/src/tasks/yolo/tools/convert_yoloe_savpe_gguf.py`; the loader rejects mismatched
@@ -46,10 +48,10 @@ YOLOE/World text-conditioned masks; bisect tool `test_yolo_world_optrace`
 compares every user-op output across CPU/GPU devices). The savpe run path is
 exercised by `test_yolo_capi_savpe` (model tier; skips without assets).
 
-**User guide:** [docs/guides/plugins/qYOLO.md](../../../docs/guides/plugins/qYOLO.md)
+**User guide:** [docs/guides/plugins/qYOLO.md](../../../../docs/guides/plugins/qYOLO.md)
 
 ```
-Image/Video → AICore YOLO GGML → detections JSON / metric depth map → annotated ccImage → DB tree
+Image/Video → borrowed image view → AICore YOLO GGML → typed task result → annotated ccImage → DB tree
 ```
 
 ## Build
@@ -63,12 +65,14 @@ make -j4 QYOLO_PLUGIN
 ```
 
 YOLO GGML sources live in `core/AICore/src/tasks/yolo/` (in-tree port of
-ultralytics-ggml; no ggml patches are required).
+ultralytics-ggml). Required backend integration is applied from
+`3rdparty/ggml/patches/yolo_merged/` through the central patch manifest.
 
 ### Unit tests (pure helpers)
 
-JSON envelope parsing, palette, depth-name detection, catalog mirror and the
-turbo depth colorization (no GGUF model required):
+Typed-result conversion, row-stride image handling, palette, depth-name
+detection, catalog mirror and turbo depth colorization (no GGUF model
+required):
 
 ```bash
 cmake -DBUILD_GUI=ON -DAICore_ENABLED=ON -DPLUGIN_STANDARD_QYOLO=ON \

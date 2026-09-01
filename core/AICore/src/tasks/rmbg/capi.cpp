@@ -17,6 +17,7 @@
 
 #include "aicore/backend_capi.h"
 #include "aicore/rmbg_capi.h"
+#include "aicore/runtime_capi.h"
 #include "common/capi_utils.hpp"
 #include "common/ggml_backend_registry.hpp"
 #include "common/ggml_backend_utils.hpp"
@@ -67,7 +68,7 @@ struct aicore_rmbg_ctx {
     bool has_timings = false;
 };
 
-AICORE_CAPI int aicore_rmbg_abi_version(void) { return 2; }
+AICORE_CAPI int aicore_rmbg_abi_version(void) { return 3; }
 
 AICORE_CAPI aicore_rmbg_options* aicore_rmbg_options_new(void) {
     return new (std::nothrow) aicore_rmbg_options();
@@ -195,6 +196,23 @@ AICORE_CAPI int aicore_rmbg_last_timings(const aicore_rmbg_ctx* ctx,
     return 0;
 }
 
+AICORE_CAPI int aicore_rmbg_last_pipeline_timings(
+        const aicore_rmbg_ctx* ctx, aicore_pipeline_timings* out_timings) {
+    if (ctx == nullptr || out_timings == nullptr || !ctx->has_timings) {
+        return -1;
+    }
+    *out_timings = aicore_pipeline_timings{
+            AICORE_PIPELINE_TIMINGS_ABI_VERSION,
+            AICORE_TIMING_PREPROCESS | AICORE_TIMING_INFERENCE |
+                    AICORE_TIMING_POSTPROCESS | AICORE_TIMING_E2E,
+            ctx->timings.preprocess_ms,
+            ctx->timings.inference_ms,
+            ctx->timings.postprocess_ms,
+            0.0,
+            ctx->timings.total_ms};
+    return 0;
+}
+
 AICORE_CAPI void aicore_rmbg_free_buffer(void* p) { std::free(p); }
 
 namespace {
@@ -216,12 +234,10 @@ void finish_request(aicore_rmbg_ctx* ctx, SteadyClock::time_point start) {
     ctx->has_timings = true;
 }
 
-// Shared inference core. `rgb` may be null when `encoded_bytes` is provided
+// Shared inference core. `image` may be null when `encoded_bytes` is provided
 // (file path / encoded image input); exactly one input must be set.
 bool run_inference(aicore_rmbg_ctx* ctx,
-                   const uint8_t* rgb,
-                   int32_t rgb_w,
-                   int32_t rgb_h,
+                   const aicore_image_view* image,
                    const uint8_t* encoded_bytes,
                    int encoded_len,
                    std::vector<uint8_t>& rgba,
@@ -236,11 +252,11 @@ bool run_inference(aicore_rmbg_ctx* ctx,
     std::vector<float> input;
     std::vector<uint8_t> original_rgba;
     const auto preprocess_start = SteadyClock::now();
-    if (rgb != nullptr) {
-        if (!rmbg::decode_preprocess_rgb(
-                    rgb, rgb_w, rgb_h, ctx->model.cfg.input_size,
-                    ctx->model.cfg.mean, ctx->model.cfg.std, original_rgba,
-                    width, height, input, err)) {
+    if (image != nullptr) {
+        if (!rmbg::decode_preprocess_view(*image, ctx->model.cfg.input_size,
+                                          ctx->model.cfg.mean,
+                                          ctx->model.cfg.std, original_rgba,
+                                          width, height, input, err)) {
             return false;
         }
     } else {
@@ -283,7 +299,7 @@ AICORE_CAPI int aicore_rmbg_remove_background_path(aicore_rmbg_ctx* ctx,
     std::vector<float> alpha;
     int width = 0, height = 0;
     std::string err;
-    if (!run_inference(ctx, nullptr, 0, 0, bytes.data(),
+    if (!run_inference(ctx, nullptr, bytes.data(),
                        static_cast<int>(bytes.size()), rgba, width, height,
                        alpha, err)) {
         ctx->last_error = err;
@@ -310,14 +326,13 @@ AICORE_CAPI int aicore_rmbg_remove_background_path(aicore_rmbg_ctx* ctx,
     return 0;
 }
 
-AICORE_CAPI int aicore_rmbg_remove_background_rgb(aicore_rmbg_ctx* ctx,
-                                                  const uint8_t* rgb,
-                                                  int32_t width,
-                                                  int32_t height,
-                                                  uint8_t** out_png,
-                                                  int* out_len) {
-    if (ctx == nullptr || rgb == nullptr || width <= 0 || height <= 0 ||
-        out_png == nullptr || out_len == nullptr) {
+AICORE_CAPI int aicore_rmbg_remove_background_image_view(
+        aicore_rmbg_ctx* ctx,
+        const aicore_image_view* image,
+        uint8_t** out_png,
+        int* out_len) {
+    if (ctx == nullptr || image == nullptr || out_png == nullptr ||
+        out_len == nullptr) {
         return -1;
     }
     *out_png = nullptr;
@@ -329,8 +344,8 @@ AICORE_CAPI int aicore_rmbg_remove_background_rgb(aicore_rmbg_ctx* ctx,
     std::vector<float> alpha;
     int out_w = 0, out_h = 0;
     std::string err;
-    if (!run_inference(ctx, rgb, width, height, nullptr, 0, rgba, out_w, out_h,
-                       alpha, err)) {
+    if (!run_inference(ctx, image, nullptr, 0, rgba, out_w, out_h, alpha,
+                       err)) {
         ctx->last_error = err;
         return -1;
     }
@@ -355,17 +370,28 @@ AICORE_CAPI int aicore_rmbg_remove_background_rgb(aicore_rmbg_ctx* ctx,
     return 0;
 }
 
-AICORE_CAPI int aicore_rmbg_remove_background_rgba(aicore_rmbg_ctx* ctx,
-                                                   const uint8_t* rgb,
-                                                   int32_t width,
-                                                   int32_t height,
-                                                   uint8_t** out_rgba,
-                                                   int32_t* out_width,
-                                                   int32_t* out_height,
-                                                   int* out_len) {
-    if (ctx == nullptr || rgb == nullptr || width <= 0 || height <= 0 ||
-        out_rgba == nullptr || out_width == nullptr || out_height == nullptr ||
-        out_len == nullptr) {
+AICORE_CAPI int aicore_rmbg_remove_background_rgb(aicore_rmbg_ctx* ctx,
+                                                  const uint8_t* rgb,
+                                                  int32_t width,
+                                                  int32_t height,
+                                                  uint8_t** out_png,
+                                                  int* out_len) {
+    const aicore_image_view image{
+            rgb, width, height, width > 0 ? static_cast<size_t>(width) * 3 : 0,
+            AICORE_IMAGE_RGB8};
+    return aicore_rmbg_remove_background_image_view(ctx, &image, out_png,
+                                                    out_len);
+}
+
+AICORE_CAPI int aicore_rmbg_remove_background_rgba_image_view(
+        aicore_rmbg_ctx* ctx,
+        const aicore_image_view* image,
+        uint8_t** out_rgba,
+        int32_t* out_width,
+        int32_t* out_height,
+        int* out_len) {
+    if (ctx == nullptr || image == nullptr || out_rgba == nullptr ||
+        out_width == nullptr || out_height == nullptr || out_len == nullptr) {
         return -1;
     }
     *out_rgba = nullptr;
@@ -379,8 +405,8 @@ AICORE_CAPI int aicore_rmbg_remove_background_rgba(aicore_rmbg_ctx* ctx,
     std::vector<float> alpha;
     int out_w = 0, out_h = 0;
     std::string err;
-    if (!run_inference(ctx, rgb, width, height, nullptr, 0, rgba, out_w, out_h,
-                       alpha, err)) {
+    if (!run_inference(ctx, image, nullptr, 0, rgba, out_w, out_h, alpha,
+                       err)) {
         ctx->last_error = err;
         return -1;
     }
@@ -408,15 +434,28 @@ AICORE_CAPI int aicore_rmbg_remove_background_rgba(aicore_rmbg_ctx* ctx,
     return 0;
 }
 
-AICORE_CAPI int aicore_rmbg_alpha_mat_rgb(aicore_rmbg_ctx* ctx,
-                                          const uint8_t* rgb,
-                                          int32_t width,
-                                          int32_t height,
-                                          uint8_t** out_alpha,
-                                          int32_t* out_width,
-                                          int32_t* out_height) {
-    if (ctx == nullptr || rgb == nullptr || width <= 0 || height <= 0 ||
-        out_alpha == nullptr || out_width == nullptr || out_height == nullptr) {
+AICORE_CAPI int aicore_rmbg_remove_background_rgba(aicore_rmbg_ctx* ctx,
+                                                   const uint8_t* rgb,
+                                                   int32_t width,
+                                                   int32_t height,
+                                                   uint8_t** out_rgba,
+                                                   int32_t* out_width,
+                                                   int32_t* out_height,
+                                                   int* out_len) {
+    const aicore_image_view image{
+            rgb, width, height, width > 0 ? static_cast<size_t>(width) * 3 : 0,
+            AICORE_IMAGE_RGB8};
+    return aicore_rmbg_remove_background_rgba_image_view(
+            ctx, &image, out_rgba, out_width, out_height, out_len);
+}
+
+AICORE_CAPI int aicore_rmbg_alpha_mat_image_view(aicore_rmbg_ctx* ctx,
+                                                 const aicore_image_view* image,
+                                                 uint8_t** out_alpha,
+                                                 int32_t* out_width,
+                                                 int32_t* out_height) {
+    if (ctx == nullptr || image == nullptr || out_alpha == nullptr ||
+        out_width == nullptr || out_height == nullptr) {
         return -1;
     }
     *out_alpha = nullptr;
@@ -429,8 +468,8 @@ AICORE_CAPI int aicore_rmbg_alpha_mat_rgb(aicore_rmbg_ctx* ctx,
     std::vector<float> alpha;
     int out_w = 0, out_h = 0;
     std::string err;
-    if (!run_inference(ctx, rgb, width, height, nullptr, 0, rgba, out_w, out_h,
-                       alpha, err)) {
+    if (!run_inference(ctx, image, nullptr, 0, rgba, out_w, out_h, alpha,
+                       err)) {
         ctx->last_error = err;
         return -1;
     }
@@ -456,6 +495,20 @@ AICORE_CAPI int aicore_rmbg_alpha_mat_rgb(aicore_rmbg_ctx* ctx,
     return 0;
 }
 
+AICORE_CAPI int aicore_rmbg_alpha_mat_rgb(aicore_rmbg_ctx* ctx,
+                                          const uint8_t* rgb,
+                                          int32_t width,
+                                          int32_t height,
+                                          uint8_t** out_alpha,
+                                          int32_t* out_width,
+                                          int32_t* out_height) {
+    const aicore_image_view image{
+            rgb, width, height, width > 0 ? static_cast<size_t>(width) * 3 : 0,
+            AICORE_IMAGE_RGB8};
+    return aicore_rmbg_alpha_mat_image_view(ctx, &image, out_alpha, out_width,
+                                            out_height);
+}
+
 AICORE_CAPI char* aicore_rmbg_info_json(aicore_rmbg_ctx* ctx) {
     if (ctx == nullptr || !ctx->model.graph_ready) return nullptr;
     std::ostringstream o;
@@ -476,12 +529,7 @@ AICORE_CAPI int aicore_rmbg_warmup_backend(const char* device) {
     return aicore_warmup_backend(device != nullptr ? device : "auto");
 }
 
-AICORE_CAPI void aicore_rmbg_shutdown(void) {
-    // Reclaims process-wide backend registry entries whose owners are gone
-    // (expired leases). Live contexts are never touched; ggml backends stay
-    // registered for the process lifetime.
-    aicore::runtime::purge_inactive_backend_leases();
-}
+AICORE_CAPI void aicore_rmbg_shutdown(void) { aicore_runtime_shutdown(); }
 
 AICORE_CAPI char* aicore_rmbg_model_cache_dir(void) {
     return dup_cstr(aicore::rmbg_model_cache_dir());

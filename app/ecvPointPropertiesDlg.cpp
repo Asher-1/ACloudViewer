@@ -73,32 +73,6 @@ ccPointPropertiesDlg::~ccPointPropertiesDlg() {
     m_rect2DLabel = nullptr;
 }
 
-void ccPointPropertiesDlg::restrictViewInteraction(
-        ecvGenericGLDisplay::INTERACTION_FLAGS flags) {
-    auto& vm = ecvViewManager::instance();
-    auto* target = vm.getEffectiveView();
-
-    // Release the flags previously set on another view: with multiple views
-    // the effective view may have changed since the restriction was applied
-    // (e.g. the user clicked another window during 2D-zone picking). Without
-    // this cleanup the old view keeps INTERACT_SEND_ALL_SIGNALS forever and
-    // no longer responds to camera rotate/pan/zoom.
-    if (m_restrictedView && m_restrictedView != target &&
-        vm.getAllViews().contains(m_restrictedView)) {
-        m_restrictedView->setInteractionMode(
-                ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA);
-    }
-
-    m_restrictedView =
-            (target && flags != ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA)
-                    ? target
-                    : nullptr;
-
-    if (target) {
-        target->setInteractionMode(flags);
-    }
-}
-
 bool ccPointPropertiesDlg::linkWith(QWidget* win) {
     assert(m_label && m_rect2DLabel);
 
@@ -109,9 +83,8 @@ bool ccPointPropertiesDlg::linkWith(QWidget* win) {
     if (auto* view = ecvViewManager::instance().getEffectiveView()) {
         view->removeFromOwnDB(m_label);
         view->removeFromOwnDB(m_rect2DLabel);
+        view->setInteractionMode(ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA);
     }
-    // Release any interaction restriction still held by the previous view
-    restrictViewInteraction(ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA);
 
     m_rect2DLabel->setVisible(false);  //=invalid
     m_rect2DLabel->setSelected(true);  //=closed
@@ -144,9 +117,12 @@ bool ccPointPropertiesDlg::start() {
 void ccPointPropertiesDlg::stop(bool state) {
     initializeState();
 
-    // Release the restriction on the view that actually holds it (which may
-    // no longer be the active view in a multi-view layout)
-    restrictViewInteraction(ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA);
+    if (ecvViewManager::instance().activeWidget()) {
+        if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+            view->setInteractionMode(
+                    ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA);
+        }
+    }
 
     ccPointPickingGenericInterface::stop(state);
 }
@@ -154,7 +130,12 @@ void ccPointPropertiesDlg::stop(bool state) {
 void ccPointPropertiesDlg::onClose() { stop(false); }
 
 void ccPointPropertiesDlg::activatePointPropertiesDisplay() {
-    restrictViewInteraction(ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA);
+    if (ecvViewManager::instance().activeWidget()) {
+        if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+            view->setInteractionMode(
+                    ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA);
+        }
+    }
 
     m_pickingMode = POINT_INFO;
     pointPropertiesButton->setDown(true);
@@ -174,7 +155,9 @@ void ccPointPropertiesDlg::activateDistanceDisplay() {
     m_label->setVisible(true);
     m_rect2DLabel->setVisible(false);
 
-    restrictViewInteraction(ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA);
+    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+        view->setInteractionMode(ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA);
+    }
 }
 
 void ccPointPropertiesDlg::activateAngleDisplay() {
@@ -186,7 +169,9 @@ void ccPointPropertiesDlg::activateAngleDisplay() {
     m_label->setVisible(true);
     m_rect2DLabel->setVisible(false);
 
-    restrictViewInteraction(ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA);
+    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+        view->setInteractionMode(ecvGenericGLDisplay::MODE_TRANSFORM_CAMERA);
+    }
 }
 
 void ccPointPropertiesDlg::activate2DZonePicking() {
@@ -198,7 +183,10 @@ void ccPointPropertiesDlg::activate2DZonePicking() {
     m_label->setVisible(false);
     // m_rect2DLabel->setVisible(false);
 
-    restrictViewInteraction(ecvGenericGLDisplay::INTERACT_SEND_ALL_SIGNALS);
+    if (auto* view = ecvViewManager::instance().getEffectiveView()) {
+        view->setInteractionMode(
+                ecvGenericGLDisplay::INTERACT_SEND_ALL_SIGNALS);
+    }
 }
 
 void ccPointPropertiesDlg::initializeState() {

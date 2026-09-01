@@ -22,6 +22,7 @@
 
 #include "aicore/backend_capi.h"
 #include "aicore/gaussian_capi.h"
+#include "aicore/runtime_capi.h"
 #include "common/capi_utils.hpp"
 #include "common/ggml_backend_utils.hpp"
 #include "tasks/gaussian/backend.hpp"
@@ -49,6 +50,7 @@ struct aicore_gaussian_ctx {
     aicore::gaussian::options opts;
     std::string error;
     bool ready = false;
+    aicore_pipeline_timings pipeline_timings{};
 };
 
 // ---- ABI ----
@@ -112,6 +114,7 @@ AICORE_CAPI aicore_gaussian_ctx* aicore_gaussian_load_opts(
 }
 
 AICORE_CAPI void aicore_gaussian_free(aicore_gaussian_ctx* ctx) { delete ctx; }
+AICORE_CAPI void aicore_gaussian_shutdown(void) { aicore_runtime_shutdown(); }
 
 AICORE_CAPI int aicore_gaussian_is_ready(const aicore_gaussian_ctx* ctx) {
     return ctx != nullptr && ctx->ready ? 1 : 0;
@@ -146,6 +149,7 @@ AICORE_CAPI int aicore_gaussian_run(aicore_gaussian_ctx* ctx,
                                     int32_t width,
                                     float** out,
                                     size_t* n_out) {
+    const auto started = aicore::capi::PipelineClock::now();
     if (out) *out = nullptr;
     if (n_out) *n_out = 0;
     if (!ctx || !images || !out || !n_out) return -1;
@@ -170,7 +174,14 @@ AICORE_CAPI int aicore_gaussian_run(aicore_gaussian_ctx* ctx,
     }
     std::memcpy(*out, result.data(), result.size() * sizeof(float));
     *n_out = result.size();
+    aicore::capi::record_pipeline_e2e(ctx->pipeline_timings, started);
     return 0;
+}
+
+AICORE_CAPI int aicore_gaussian_last_pipeline_timings(
+        const aicore_gaussian_ctx* ctx, aicore_pipeline_timings* out) {
+    return ctx ? aicore::capi::copy_pipeline_timings(ctx->pipeline_timings, out)
+               : -1;
 }
 
 AICORE_CAPI void aicore_gaussian_free_buffer(void* p) { free(p); }
@@ -182,6 +193,7 @@ AICORE_CAPI int aicore_gaussian_run_paths(aicore_gaussian_ctx* ctx,
                                           int32_t n_images,
                                           float** out,
                                           size_t* n_out) {
+    const auto started = aicore::capi::PipelineClock::now();
     if (out) *out = nullptr;
     if (n_out) *n_out = 0;
     if (!ctx || !image_paths || n_images < 1 || !out || !n_out) return -1;
@@ -198,8 +210,11 @@ AICORE_CAPI int aicore_gaussian_run_paths(aicore_gaussian_ctx* ctx,
         return -1;
     }
 
-    return aicore_gaussian_run(ctx, images.data(), n_images, size, size, out,
-                               n_out);
+    const int rc = aicore_gaussian_run(ctx, images.data(), n_images, size, size,
+                                       out, n_out);
+    if (rc == 0)
+        aicore::capi::record_pipeline_e2e(ctx->pipeline_timings, started);
+    return rc;
 }
 
 // ---- pose recovery ----
