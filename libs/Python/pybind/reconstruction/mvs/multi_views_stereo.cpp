@@ -45,7 +45,9 @@ void pybind_multi_views_stereo_methods(py::module &m) {
           py::call_guard<py::gil_scoped_release>(),
           "Function for the delaunay of mesh", "input_path"_a, "output_path"_a,
           "input_type"_a = "dense",
-          "delaunay_meshing_options"_a = colmap::mvs::DelaunayMeshingOptions());
+          "delaunay_meshing_options"_a = colmap::mvs::DelaunayMeshingOptions(),
+          "mesh_post_processing_options"_a =
+                  colmap::mvs::MeshPostProcessingOptions());
     docstring::FunctionDocInject(m, "mesh_delaunay",
                                  map_shared_argument_docstrings);
 
@@ -61,7 +63,9 @@ void pybind_multi_views_stereo_methods(py::module &m) {
     m.def("poisson_mesh", &MeshPoisson,
           py::call_guard<py::gil_scoped_release>(),
           "Function for the poisson of mesh", "input_path"_a, "output_path"_a,
-          "poisson_meshing_options"_a = colmap::mvs::PoissonMeshingOptions());
+          "poisson_meshing_options"_a = colmap::mvs::PoissonMeshingOptions(),
+          "mesh_post_processing_options"_a =
+                  colmap::mvs::MeshPostProcessingOptions());
     docstring::FunctionDocInject(m, "poisson_mesh",
                                  map_shared_argument_docstrings);
 

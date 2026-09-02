@@ -13,6 +13,72 @@
     "trellis",
     "yolo"
   ],
+  "input_assets": [
+    {
+      "id": "sacre-coeur-1",
+      "tasks": ["depth", "gaussian", "aliked", "deeplsd", "trellis"],
+      "relative_path": "lightglue_test_images/sacre_coeur1.jpg",
+      "url": "https://raw.githubusercontent.com/cvg/LightGlue/main/assets/sacre_coeur1.jpg",
+      "sha256": "d274c3780b671fe637040bc976166962e2e48f8f512fb7ce939b71b07c85af83",
+      "size_bytes": 201537
+    },
+    {
+      "id": "sacre-coeur-2",
+      "tasks": ["gaussian"],
+      "relative_path": "lightglue_test_images/sacre_coeur2.jpg",
+      "url": "https://raw.githubusercontent.com/cvg/LightGlue/main/assets/sacre_coeur2.jpg",
+      "sha256": "c6c0339235087c7c6c38faca5c6545250699bb59120b94b06f0fcf8227fbe64e",
+      "size_bytes": 259462
+    },
+    {
+      "id": "friends-faces",
+      "tasks": ["facedetect"],
+      "relative_path": "friends_faces.zip",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/qFaceDetect/friends_faces.zip",
+      "sha256": "eb2c2daff249f8bf50e9f95ae1a37c3ce7de06bc7e2a798c4512a179265a637b",
+      "size_bytes": 35590353,
+      "archive": true,
+      "extracted_files": [
+        {
+          "relative_path": "friends_faces/query/friends1.jpg",
+          "sha256": "461e238252eb786eab2e455af2e83123a6bc360e34e194d641c679835b60ec8e",
+          "size_bytes": 226027
+        }
+      ]
+    },
+    {
+      "id": "sam3-samples",
+      "tasks": ["sam3"],
+      "relative_path": "sam_test_data.zip",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/sam_test_data/sam_test_data.zip",
+      "sha256": "3c1d97fddc540dfbc134738aa29fa1607bba329c03aa5c0df37f1e6e13317e87",
+      "size_bytes": 31694047,
+      "archive": true,
+      "extracted_files": [
+        {
+          "relative_path": "sam_test_data/images/cand1.jpg",
+          "sha256": "6ea2a7111a7de3006d9c38c35966cec7b85c6c8cae473b53142dac8f3533ad0c",
+          "size_bytes": 592578
+        }
+      ]
+    },
+    {
+      "id": "objects-detection-samples",
+      "tasks": ["yolo"],
+      "relative_path": "objects_detection_data.zip",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/objects_detection_data/objects_detection_data.zip",
+      "sha256": "dec2c84dff7adefe992291533952f2314ff867a7c35cd705470c622d27515ef5",
+      "size_bytes": 62381393,
+      "archive": true,
+      "extracted_files": [
+        {
+          "relative_path": "objects_detection_data/images/bus.jpg",
+          "sha256": "c02019c4979c191eb739ddd944445ef408dad5679acab6fd520ef9d434bfbc63",
+          "size_bytes": 137419
+        }
+      ]
+    }
+  ],
   "scenarios": [
     {
       "id": "depth",
@@ -142,13 +208,18 @@
       "id": "sam3",
       "task": "sam3",
       "model_glob": "sam3_models/*.gguf",
+      "light_globs": [
+        "sam3_models/sam2_hiera_tiny_q8_0.gguf",
+        "sam3_models/sam2.1_hiera_tiny_q8_0.gguf"
+      ],
       "for_each_model": true,
       "executable": "binary:bench_sam3_backend_acceptance",
       "args": ["{model}", "{sam_image}", "{inference_runs}", "{backend}"],
       "env": {},
       "accuracy_gate": "finite non-empty mask, box/score gates, and repeat propagation",
       "fingerprint_policy": "stability_only",
-      "metric_parser": "sam3"
+      "metric_parser": "sam3",
+      "vram_overhead_mib": 2560
     },
     {
       "id": "trellis-coarse-f16",
@@ -160,67 +231,76 @@
       ],
       "executable": "python",
       "args": ["{repo}/core/AICore/src/tasks/trellis/tools/trellis_backend_ab.py", "--models", "{assets}/trellis_models", "--image", "{image}", "--device", "{backend}", "--pipeline", "coarse", "--quant", "f16", "--steps", "{trellis_steps}", "--seed", "42", "--lib", "{build}/bin/libAICore.so"],
-      "env": {}, "accuracy_gate": "fixed-seed finite mesh geometry hash", "fingerprint_policy": "exact", "metric_parser": "trellis"
+      "env": {}, "accuracy_gate": "fixed-seed finite mesh geometry hash", "fingerprint_policy": "exact", "metric_parser": "trellis",
+      "vram_estimate_mib": 8192
     },
     {
-      "id": "trellis-coarse-q8", "task": "trellis",
+      "id": "trellis-coarse-q8", "task": "trellis", "light": true,
       "covered_globs": ["trellis_models/dino_q8.gguf", "trellis_models/ss_flow_q8.gguf", "trellis_models/ss_dec_q8.gguf"],
       "executable": "python",
       "args": ["{repo}/core/AICore/src/tasks/trellis/tools/trellis_backend_ab.py", "--models", "{assets}/trellis_models", "--image", "{image}", "--device", "{backend}", "--pipeline", "coarse", "--quant", "q8", "--steps", "{trellis_steps}", "--seed", "42", "--lib", "{build}/bin/libAICore.so"],
-      "env": {}, "accuracy_gate": "fixed-seed finite mesh geometry hash", "fingerprint_policy": "exact", "metric_parser": "trellis"
+      "env": {}, "accuracy_gate": "fixed-seed finite mesh geometry hash", "fingerprint_policy": "exact", "metric_parser": "trellis",
+      "vram_estimate_mib": 6144
     },
     {
       "id": "trellis-coarse-f32", "task": "trellis",
       "covered_globs": ["trellis_models/dino_f32.gguf", "trellis_models/ss_flow_f32.gguf", "trellis_models/ss_dec_f32.gguf"],
       "executable": "python",
       "args": ["{repo}/core/AICore/src/tasks/trellis/tools/trellis_backend_ab.py", "--models", "{assets}/trellis_models", "--image", "{image}", "--device", "{backend}", "--pipeline", "coarse", "--quant", "f32", "--steps", "{trellis_steps}", "--seed", "42", "--lib", "{build}/bin/libAICore.so"],
-      "env": {}, "accuracy_gate": "fixed-seed finite f32 coarse mesh geometry hash", "fingerprint_policy": "exact", "metric_parser": "trellis"
+      "env": {}, "accuracy_gate": "fixed-seed finite f32 coarse mesh geometry hash", "fingerprint_policy": "exact", "metric_parser": "trellis",
+      "vram_estimate_mib": 12288
     },
     {
       "id": "trellis-512-f16", "task": "trellis",
       "covered_globs": ["trellis_models/dino_f16.gguf", "trellis_models/ss_flow_f16.gguf", "trellis_models/ss_dec_f16.gguf", "trellis_models/slat_flow_f16.gguf", "trellis_models/shape_dec_f16.gguf", "trellis_models/shape_enc_f16.gguf", "trellis_models/tex_dec_f16.gguf", "trellis_models/tex_slat_flow_512_f16.gguf"],
       "executable": "python",
       "args": ["{repo}/core/AICore/src/tasks/trellis/tools/trellis_backend_ab.py", "--models", "{assets}/trellis_models", "--image", "{image}", "--device", "{backend}", "--pipeline", "512", "--quant", "f16", "--steps", "{trellis_steps}", "--seed", "42", "--lib", "{build}/bin/libAICore.so"],
-      "env": {}, "accuracy_gate": "fixed-seed finite 512 mesh geometry hash", "fingerprint_policy": "exact", "metric_parser": "trellis"
+      "env": {}, "accuracy_gate": "fixed-seed finite 512 mesh geometry hash", "fingerprint_policy": "exact", "metric_parser": "trellis",
+      "vram_estimate_mib": 10240
     },
     {
       "id": "trellis-512-q8", "task": "trellis",
       "covered_globs": ["trellis_models/dino_q8.gguf", "trellis_models/ss_flow_q8.gguf", "trellis_models/ss_dec_q8.gguf", "trellis_models/slat_flow_q8.gguf", "trellis_models/shape_dec_f16.gguf", "trellis_models/shape_enc_f16.gguf", "trellis_models/tex_dec_f16.gguf", "trellis_models/tex_slat_flow_512_q8.gguf"],
       "executable": "python",
       "args": ["{repo}/core/AICore/src/tasks/trellis/tools/trellis_backend_ab.py", "--models", "{assets}/trellis_models", "--image", "{image}", "--device", "{backend}", "--pipeline", "512", "--quant", "q8", "--steps", "{trellis_steps}", "--seed", "42", "--lib", "{build}/bin/libAICore.so"],
-      "env": {}, "accuracy_gate": "fixed-seed finite 512 mesh geometry hash", "fingerprint_policy": "exact", "metric_parser": "trellis"
+      "env": {}, "accuracy_gate": "fixed-seed finite 512 mesh geometry hash", "fingerprint_policy": "exact", "metric_parser": "trellis",
+      "vram_estimate_mib": 7168
     },
     {
       "id": "trellis-512-f32", "task": "trellis",
       "covered_globs": ["trellis_models/dino_f32.gguf", "trellis_models/ss_flow_f32.gguf", "trellis_models/ss_dec_f32.gguf", "trellis_models/slat_flow_f32.gguf", "trellis_models/shape_dec_f32.gguf", "trellis_models/shape_enc_f16.gguf", "trellis_models/tex_dec_f16.gguf", "trellis_models/tex_slat_flow_512_f16.gguf"],
       "executable": "python",
       "args": ["{repo}/core/AICore/src/tasks/trellis/tools/trellis_backend_ab.py", "--models", "{assets}/trellis_models", "--image", "{image}", "--device", "{backend}", "--pipeline", "512", "--quant", "f32", "--steps", "{trellis_steps}", "--seed", "42", "--lib", "{build}/bin/libAICore.so"],
-      "env": {}, "accuracy_gate": "fixed-seed finite f32 512 mesh geometry hash", "fingerprint_policy": "exact", "metric_parser": "trellis"
+      "env": {}, "accuracy_gate": "fixed-seed finite f32 512 mesh geometry hash", "fingerprint_policy": "exact", "metric_parser": "trellis",
+      "vram_estimate_mib": 14336
     },
     {
       "id": "trellis-1024-f16", "task": "trellis",
       "covered_globs": ["trellis_models/dino_f16.gguf", "trellis_models/ss_flow_f16.gguf", "trellis_models/ss_dec_f16.gguf", "trellis_models/slat_flow_f16.gguf", "trellis_models/slat_flow_1024_f16.gguf", "trellis_models/shape_dec_f16.gguf", "trellis_models/shape_enc_f16.gguf", "trellis_models/tex_dec_f16.gguf", "trellis_models/tex_slat_flow_512_f16.gguf", "trellis_models/tex_slat_flow_1024_f16.gguf"],
       "executable": "python",
       "args": ["{repo}/core/AICore/src/tasks/trellis/tools/trellis_backend_ab.py", "--models", "{assets}/trellis_models", "--image", "{image}", "--device", "{backend}", "--pipeline", "1024", "--quant", "f16", "--steps", "{trellis_steps}", "--seed", "42", "--lib", "{build}/bin/libAICore.so"],
-      "env": {}, "accuracy_gate": "fixed-seed finite 1024 mesh geometry hash", "fingerprint_policy": "exact", "metric_parser": "trellis"
+      "env": {}, "accuracy_gate": "fixed-seed finite 1024 mesh geometry hash", "fingerprint_policy": "exact", "metric_parser": "trellis",
+      "vram_estimate_mib": 12288
     },
     {
       "id": "trellis-1024-q8", "task": "trellis",
       "covered_globs": ["trellis_models/dino_q8.gguf", "trellis_models/ss_flow_q8.gguf", "trellis_models/ss_dec_q8.gguf", "trellis_models/slat_flow_q8.gguf", "trellis_models/slat_flow_1024_q8.gguf", "trellis_models/shape_dec_f16.gguf", "trellis_models/shape_enc_f16.gguf", "trellis_models/tex_dec_f16.gguf", "trellis_models/tex_slat_flow_512_q8.gguf", "trellis_models/tex_slat_flow_1024_q8.gguf"],
       "executable": "python",
       "args": ["{repo}/core/AICore/src/tasks/trellis/tools/trellis_backend_ab.py", "--models", "{assets}/trellis_models", "--image", "{image}", "--device", "{backend}", "--pipeline", "1024", "--quant", "q8", "--steps", "{trellis_steps}", "--seed", "42", "--lib", "{build}/bin/libAICore.so"],
-      "env": {}, "accuracy_gate": "fixed-seed finite 1024 mesh geometry hash", "fingerprint_policy": "exact", "metric_parser": "trellis"
+      "env": {}, "accuracy_gate": "fixed-seed finite 1024 mesh geometry hash", "fingerprint_policy": "exact", "metric_parser": "trellis",
+      "vram_estimate_mib": 8192
     },
     {
       "id": "trellis-1024-f32", "task": "trellis",
       "covered_globs": ["trellis_models/dino_f32.gguf", "trellis_models/ss_flow_f32.gguf", "trellis_models/ss_dec_f32.gguf", "trellis_models/slat_flow_f32.gguf", "trellis_models/slat_flow_1024_f32.gguf", "trellis_models/shape_dec_f32.gguf", "trellis_models/shape_enc_f16.gguf", "trellis_models/tex_dec_f16.gguf", "trellis_models/tex_slat_flow_512_f16.gguf", "trellis_models/tex_slat_flow_1024_f16.gguf"],
       "executable": "python",
       "args": ["{repo}/core/AICore/src/tasks/trellis/tools/trellis_backend_ab.py", "--models", "{assets}/trellis_models", "--image", "{image}", "--device", "{backend}", "--pipeline", "1024", "--quant", "f32", "--steps", "{trellis_steps}", "--seed", "42", "--lib", "{build}/bin/libAICore.so"],
-      "env": {}, "accuracy_gate": "fixed-seed finite f32 1024 mesh geometry hash", "fingerprint_policy": "exact", "metric_parser": "trellis"
+      "env": {}, "accuracy_gate": "fixed-seed finite f32 1024 mesh geometry hash", "fingerprint_policy": "exact", "metric_parser": "trellis",
+      "vram_estimate_mib": 18432
     },
     {
       "id": "yolo-text-clip",
-      "task": "yolo",
+      "task": "yolo", "light": true,
       "owned_globs": ["yolo_models/clip-*.gguf"],
       "model_glob": "yolo_models/clip-*.gguf",
       "for_each_model": true,
@@ -234,7 +314,7 @@
     },
     {
       "id": "yolo-text-mobileclip",
-      "task": "yolo",
+      "task": "yolo", "light": true,
       "owned_globs": ["yolo_models/mobileclip*.gguf"],
       "model_glob": "yolo_models/mobileclip*.gguf",
       "for_each_model": true,
@@ -248,7 +328,7 @@
     },
     {
       "id": "yolo-text-mclip",
-      "task": "yolo",
+      "task": "yolo", "light": true,
       "owned_globs": ["yolo_models/mclip-*.gguf"],
       "model_glob": "yolo_models/mclip-*.gguf",
       "for_each_model": true,
@@ -262,9 +342,20 @@
     },
     {
       "id": "yolo",
-      "task": "yolo",
+      "task": "yolo", "light": true,
       "owned_globs": ["yolo_models/yolo*.gguf"],
       "covered_globs": ["yolo_models/yolo*.gguf"],
+      "light_globs": [
+        "yolo_models/yolo26n-q8_0.gguf",
+        "yolo_models/yolo26n-seg-q8_0.gguf",
+        "yolo_models/yolo26n-cls-q8_0.gguf",
+        "yolo_models/yolo26n-obb-q8_0.gguf",
+        "yolo_models/yolo26n-pose-q8_0.gguf",
+        "yolo_models/yolo26n-depth-q8_0.gguf",
+        "yolo_models/yolo26n-sem-q8_0.gguf",
+        "yolo_models/yolov8n-q8_0.gguf",
+        "yolo_models/yolov8s-worldv2-q8_0.gguf"
+      ],
       "required_globs": [
         "yolo_models/clip-ViT-B-32-f16.gguf",
         "yolo_models/mobileclip2_b-f16.gguf"
@@ -282,12 +373,14 @@
         "--backends", "cpu,{backend}",
         "--warmup", "{warmup_runs}",
         "--iters", "{inference_runs}",
+        "--model-globs", "{scenario_model_globs}",
         "--report", "{scenario_report}"
       ],
       "env": {},
       "accuracy_gate": "CPU/backend task-specific numeric parity for every model",
       "fingerprint_policy": "stability_only",
-      "metric_parser": "yolo"
+      "metric_parser": "yolo",
+      "vram_estimate_mib": 4096
     }
   ]
 }

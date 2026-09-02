@@ -40,6 +40,10 @@ int main() {
         int height = 0;
         int width = 0;
         float* depth = aicore_depth_depth_path(ctx, image, &height, &width);
+        if (!depth) {
+            std::fprintf(stderr, "depth inference failed: device=%s error=%s\n",
+                         device, aicore_depth_last_error(ctx));
+        }
         AICORE_CHECK(depth != nullptr);
         AICORE_CHECK(height > 0 && width > 0);
         if (depth) {

@@ -44,6 +44,7 @@
 #include "feature/matching.h"
 #include "mvs/da3_fusion.h"
 #include "mvs/fusion.h"
+#include "mvs/advancing_front_meshing.h"
 #include "mvs/meshing.h"
 #include "mvs/patch_match.h"
 #include "util/download.h"
@@ -999,6 +1000,8 @@ void AutomaticReconstructionController::RunDenseMapper() {
       meshing_path = JoinPaths(dense_path, "meshed-poisson.ply");
     } else if (options_.mesher == Mesher::DELAUNAY) {
       meshing_path = JoinPaths(dense_path, "meshed-delaunay.ply");
+    } else if (options_.mesher == Mesher::ADVANCING_FRONT) {
+      meshing_path = JoinPaths(dense_path, "meshed-advancing-front.ply");
     }
 
     const std::string undist_images = JoinPaths(dense_path, "images");
@@ -1196,8 +1199,20 @@ void AutomaticReconstructionController::RunDenseMapper() {
       } else {
         const int num_reg_images =
             reconstruction_manager_->Get(i).NumRegImages();
-        auto fusion_options = ApplyDA3ColmapStereoFusionProfile(
-            *option_manager_.stereo_fusion, num_reg_images, options_.quality);
+        auto fusion_options = *option_manager_.stereo_fusion;
+        if (use_da3_stereo_maps_ || da3_patchmatch_refine_) {
+          // DA3/hybrid pipelines need the relaxed profile to tolerate metric
+          // priors and sparse-view depth maps. Native COLMAP must retain the
+          // upstream StereoFusion defaults for reproducible GT alignment.
+          fusion_options = ApplyDA3ColmapStereoFusionProfile(
+              *option_manager_.stereo_fusion, num_reg_images, options_.quality);
+        } else {
+          // Match COLMAP's automatic_reconstruction.cc exactly for native
+          // COLMAP PatchMatch: with N registered views, at most N + 1 depth
+          // observations are required for a fused point.
+          fusion_options.min_num_pixels =
+              std::min(num_reg_images + 1, fusion_options.min_num_pixels);
+        }
         fusion_options.num_threads = options_.num_threads;
         const bool fuse_geometric_maps =
             da3_patchmatch_refine_ && !da3_skip_geometric_refine_ &&
@@ -1418,6 +1433,31 @@ void AutomaticReconstructionController::RunDenseMapper() {
         return;
 
 #endif  // CGAL_ENABLED
+      } else if (options_.mesher == Mesher::ADVANCING_FRONT) {
+#ifdef CGAL_ENABLED
+        RECON_LOG_DEBUG("Starting advancing-front meshing (this step cannot "
+                        "be interrupted until it finishes)...\n");
+        mvs::AdvancingFrontMeshing(*option_manager_.advancing_front_meshing,
+                                   dense_path, meshing_path);
+#else
+        RECON_LOG_WARN("WARNING: Skipping advancing-front meshing because "
+                       "CGAL is not available.\n");
+        return;
+#endif
+      }
+
+      if (ExistsFile(meshing_path) && options_.mesh_post_processing.enabled) {
+        mvs::MeshPostProcessingStats stats;
+        if (!mvs::PostProcessMeshFile(meshing_path, meshing_path,
+                                      options_.mesh_post_processing, &stats)) {
+          RECON_LOG_WARN("WARNING: Mesh post-processing failed; keeping the "
+                         "raw mesher output.\n");
+        } else {
+          RECON_LOG_INFO("Mesh post-processing: %zu -> %zu vertices, %zu -> "
+                         "%zu faces.\n",
+                         stats.input_vertices, stats.output_vertices,
+                         stats.input_faces, stats.output_faces);
+        }
       }
       
       // Hook for derived classes
@@ -1446,21 +1486,23 @@ void AutomaticReconstructionController::RunDenseMapper() {
           option_manager_.texturing->mesh_source = "poisson";
         } else if (options_.mesher == Mesher::DELAUNAY) {
           option_manager_.texturing->mesh_source = "delaunay";
+        } else if (options_.mesher == Mesher::ADVANCING_FRONT) {
+          option_manager_.texturing->mesh_source = "advancing_front";
         }
 
-        TexturingReconstruction texturing(
-                *option_manager_.texturing,
-                reconstruction_manager_->Get(i),
-                *option_manager_.image_path, dense_path);
+        TexturingReconstruction texturing(*option_manager_.texturing,
+                                          dense_path);
         active_thread_ = &texturing;
         texturing.Start();
         texturing.Wait();
         active_thread_ = nullptr;
 
-        if (ExistsFile(textured_path)) {
+        if (texturing.IsSuccess() && ExistsFile(textured_path)) {
           RECON_LOG_DEBUG("Writing textured mesh: %s\n", textured_path.c_str());
           // Hook for derived classes
           OnTexturedMeshGenerated(i, textured_path);
+        } else {
+          RECON_LOG_ERROR("Mesh texturing failed: %s\n", textured_path.c_str());
         }
       } else if (ExistsFile(textured_path)) {
         // Textured mesh already exists, notify derived classes

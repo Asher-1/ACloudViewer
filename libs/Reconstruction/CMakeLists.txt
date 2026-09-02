@@ -34,7 +34,7 @@ option(ALL_SOURCE_TARGET "Whether to create a target for all source files (for V
 option(DOWNLOAD_ENABLED "Whether to enable (automatic) download of resources (requires Curl/OpenSSL)" ON)
 set(GUI_ENABLED ${BUILD_COLMAP_GUI})
 set(OPENMP_ENABLED ${WITH_OPENMP})
-set(TESTS_ENABLED OFF)
+set(TESTS_ENABLED ${BUILD_UNIT_TESTS})
 set(CGAL_ENABLED ${CVCORELIB_USE_CGAL})
 set(SIMD_ENABLED ${USE_SIMD})
 set(OPENGL_ENABLED ON)
@@ -77,11 +77,11 @@ endif ()
 
 # Linux: boost must building from source due to _GLIBCXX_USE_CXX11_ABI=0 issues
 if (APPLE OR WIN32 OR ${GLIBCXX_USE_CXX11_ABI})
-    find_package(Boost REQUIRED COMPONENTS
-                graph
-                filesystem
-                program_options
-                system)
+    set(COLMAP_BOOST_COMPONENTS graph filesystem program_options system)
+    if (TESTS_ENABLED)
+        list(APPEND COLMAP_BOOST_COMPONENTS unit_test_framework)
+    endif ()
+    find_package(Boost REQUIRED COMPONENTS ${COLMAP_BOOST_COMPONENTS})
     # find_package(FreeImage REQUIRED)
     # find_package(Glog REQUIRED)
     # find_package(Ceres REQUIRED)

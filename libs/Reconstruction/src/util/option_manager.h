@@ -33,6 +33,9 @@ struct PatchMatchOptions;
 struct StereoFusionOptions;
 struct PoissonMeshingOptions;
 struct DelaunayMeshingOptions;
+struct AdvancingFrontMeshingOptions;
+struct MeshSimplificationOptions;
+struct MeshPostProcessingOptions;
 }  // namespace mvs
 
 class OptionManager {
@@ -73,6 +76,9 @@ public:
     void AddStereoFusionOptions();
     void AddPoissonMeshingOptions();
     void AddDelaunayMeshingOptions();
+    void AddAdvancingFrontMeshingOptions();
+    void AddMeshSimplificationOptions();
+    void AddMeshPostProcessingOptions();
     void AddTexturingOptions();
     void AddRenderOptions();
 
@@ -117,6 +123,9 @@ public:
     std::shared_ptr<mvs::StereoFusionOptions> stereo_fusion;
     std::shared_ptr<mvs::PoissonMeshingOptions> poisson_meshing;
     std::shared_ptr<mvs::DelaunayMeshingOptions> delaunay_meshing;
+    std::shared_ptr<mvs::AdvancingFrontMeshingOptions> advancing_front_meshing;
+    std::shared_ptr<mvs::MeshSimplificationOptions> mesh_simplification;
+    std::shared_ptr<mvs::MeshPostProcessingOptions> mesh_post_processing;
     std::shared_ptr<TexturingOptions> texturing;
 
     std::shared_ptr<RenderOptions> render;
@@ -159,6 +168,9 @@ private:
     bool added_stereo_fusion_options_;
     bool added_poisson_meshing_options_;
     bool added_delaunay_meshing_options_;
+    bool added_advancing_front_meshing_options_;
+    bool added_mesh_simplification_options_;
+    bool added_mesh_post_processing_options_;
     bool added_texturing_options_;
     bool added_render_options_;
 };

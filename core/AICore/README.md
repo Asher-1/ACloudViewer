@@ -154,7 +154,8 @@ cmake --build build_app --target aicore-contract-tests -j4
 # All C API tests selected by their CTest label
 ctest --test-dir build_app -L capi --output-on-failure -j1
 
-# Complete real-asset matrix for one backend
+# Real-asset matrix for one backend (default light tier; add --full for the
+# complete matrix including all sam3/trellis models)
 python3 core/AICore/scripts/validate_all.py \
   --build build_app --backend cuda \
   --output build_app/Testing/aicore_validation.json

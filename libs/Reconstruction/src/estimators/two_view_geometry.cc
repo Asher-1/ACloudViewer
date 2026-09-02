@@ -45,6 +45,7 @@
 #include "estimators/translation_transform.h"
 #include "optim/loransac.h"
 #include "optim/ransac.h"
+#include "optim/support_measurement.h"
 #include "util/random.h"
 
 namespace colmap {
@@ -260,22 +261,27 @@ void TwoViewGeometry::EstimateCalibrated(
        camera2.ImageToWorldThreshold(options.ransac_options.max_error)) /
       2;
 
-  LORANSAC<EssentialMatrixFivePointEstimator, EssentialMatrixFivePointEstimator>
+  LORANSAC<EssentialMatrixFivePointEstimator,
+           EssentialMatrixFivePointEstimator,
+           MEstimatorSupportMeasurer>
       E_ransac(E_ransac_options);
   const auto E_report =
       E_ransac.Estimate(matched_points1_normalized, matched_points2_normalized);
   E = E_report.model;
 
   LORANSAC<FundamentalMatrixSevenPointEstimator,
-           FundamentalMatrixEightPointEstimator>
+           FundamentalMatrixEightPointEstimator,
+           MEstimatorSupportMeasurer>
       F_ransac(options.ransac_options);
   const auto F_report = F_ransac.Estimate(matched_points1, matched_points2);
   F = F_report.model;
 
   // Estimate planar or panoramic model.
 
-  LORANSAC<HomographyMatrixEstimator, HomographyMatrixEstimator> H_ransac(
-      options.ransac_options);
+  LORANSAC<HomographyMatrixEstimator,
+           HomographyMatrixEstimator,
+           MEstimatorSupportMeasurer>
+      H_ransac(options.ransac_options);
   const auto H_report = H_ransac.Estimate(matched_points1, matched_points2);
   H = H_report.model;
 
@@ -384,15 +390,18 @@ void TwoViewGeometry::EstimateUncalibrated(
   // Estimate epipolar model.
 
   LORANSAC<FundamentalMatrixSevenPointEstimator,
-           FundamentalMatrixEightPointEstimator>
+           FundamentalMatrixEightPointEstimator,
+           MEstimatorSupportMeasurer>
       F_ransac(options.ransac_options);
   const auto F_report = F_ransac.Estimate(matched_points1, matched_points2);
   F = F_report.model;
 
   // Estimate planar or panoramic model.
 
-  LORANSAC<HomographyMatrixEstimator, HomographyMatrixEstimator> H_ransac(
-      options.ransac_options);
+  LORANSAC<HomographyMatrixEstimator,
+           HomographyMatrixEstimator,
+           MEstimatorSupportMeasurer>
+      H_ransac(options.ransac_options);
   const auto H_report = H_ransac.Estimate(matched_points1, matched_points2);
   H = H_report.model;
 
@@ -482,7 +491,9 @@ bool TwoViewGeometry::DetectWatermark(
   RANSACOptions ransac_options = options.ransac_options;
   ransac_options.min_inlier_ratio = options.watermark_min_inlier_ratio;
 
-  LORANSAC<TranslationTransformEstimator<2>, TranslationTransformEstimator<2>>
+  LORANSAC<TranslationTransformEstimator<2>,
+           TranslationTransformEstimator<2>,
+           MEstimatorSupportMeasurer>
       ransac(ransac_options);
   const auto report = ransac.Estimate(inlier_points1, inlier_points2);
 

@@ -95,6 +95,16 @@ void TestVocabTreeType() {
     BOOST_CHECK_EQUAL(image_scores.size(), 1);
     BOOST_CHECK_EQUAL(image_scores[0].image_id, 1);
 
+    // Candidate filtering must happen before top-N selection, otherwise the
+    // stronger image 1 would consume the only retrieval slot.
+    query_options.image_id_filter = [](const int image_id) {
+      return image_id != 1;
+    };
+    visual_index.Query(query_options, descriptors1, &image_scores);
+    BOOST_CHECK_EQUAL(image_scores.size(), 1);
+    BOOST_CHECK_EQUAL(image_scores[0].image_id, 2);
+    query_options.image_id_filter = {};
+
     query_options.max_num_images = 3;
     visual_index.Query(query_options, descriptors1, &image_scores);
     BOOST_CHECK_EQUAL(image_scores.size(), 2);

@@ -89,7 +89,8 @@ void MatchNearestNeighborsInVisualIndex(
     const int num_checks, const int num_images_after_verification,
     const int max_num_features, const std::vector<image_t>& image_ids,
     Thread* thread, FeatureMatcherCache* cache,
-    retrieval::VisualIndex<>* visual_index, SiftFeatureMatcher* matcher) {
+    retrieval::VisualIndex<>* visual_index, SiftFeatureMatcher* matcher,
+    const std::function<bool(image_t, image_t)>& image_pair_filter = {}) {
   struct Retrieval {
     image_t image_id = kInvalidImageId;
     std::vector<retrieval::ImageScore> image_scores;
@@ -116,7 +117,14 @@ void MatchNearestNeighborsInVisualIndex(
 
     Retrieval retrieval;
     retrieval.image_id = image_id;
-    visual_index->Query(query_options, keypoints, descriptors,
+    auto filtered_query_options = query_options;
+    if (image_pair_filter) {
+      filtered_query_options.image_id_filter =
+          [image_id, &image_pair_filter](const int candidate_id) {
+            return image_pair_filter(image_id, candidate_id);
+          };
+    }
+    visual_index->Query(filtered_query_options, keypoints, descriptors,
                         &retrieval.image_scores);
 
     CHECK(retrieval_queue.Push(retrieval));
@@ -182,6 +190,7 @@ bool SequentialMatchingOptions::Check() const {
   CHECK_OPTION_GT(overlap, 0);
   CHECK_OPTION_GT(loop_detection_period, 0);
   CHECK_OPTION_GT(loop_detection_num_images, 0);
+  CHECK_OPTION_GE(loop_detection_min_index_distance, 0);
   CHECK_OPTION_GT(loop_detection_num_nearest_neighbors, 0);
   CHECK_OPTION_GT(loop_detection_num_checks, 0);
   return true;
@@ -1159,13 +1168,34 @@ void SequentialFeatureMatcher::RunLoopDetection(
     match_image_ids.push_back(image_ids[i]);
   }
 
+  std::unordered_map<image_t, size_t> image_id_to_index;
+  image_id_to_index.reserve(image_ids.size());
+  for (size_t i = 0; i < image_ids.size(); ++i) {
+    image_id_to_index.emplace(image_ids[i], i);
+  }
+
   MatchNearestNeighborsInVisualIndex(
       match_options_.num_threads, options_.loop_detection_num_images,
       options_.loop_detection_num_nearest_neighbors,
       options_.loop_detection_num_checks,
       options_.loop_detection_num_images_after_verification,
-      options_.loop_detection_max_num_features, match_image_ids, this, cache_.get(),
-      &visual_index, &matcher_);
+      options_.loop_detection_max_num_features, match_image_ids, this,
+      cache_.get(), &visual_index, &matcher_,
+      [this, &image_id_to_index](const image_t image_id1,
+                                 const image_t image_id2) {
+        if (options_.loop_detection_min_index_distance == 0) {
+          return true;
+        }
+        const auto index1 = image_id_to_index.find(image_id1);
+        const auto index2 = image_id_to_index.find(image_id2);
+        CHECK(index1 != image_id_to_index.end());
+        CHECK(index2 != image_id_to_index.end());
+        const size_t index_distance = index1->second > index2->second
+                                          ? index1->second - index2->second
+                                          : index2->second - index1->second;
+        return index_distance >= static_cast<size_t>(
+                                     options_.loop_detection_min_index_distance);
+      });
 }
 
 VocabTreeFeatureMatcher::VocabTreeFeatureMatcher(

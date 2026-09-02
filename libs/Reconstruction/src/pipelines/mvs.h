@@ -10,6 +10,7 @@
 #include <string>
 
 #include "mvs/fusion.h"
+#include "mvs/mesh_postprocessing.h"
 #include "mvs/meshing.h"
 #include "mvs/patch_match.h"
 
@@ -20,7 +21,9 @@ int MeshDelaunay(
         const std::string& output_path,
         const std::string& input_type = "dense",
         const colmap::mvs::DelaunayMeshingOptions& delaunay_meshing_options =
-                colmap::mvs::DelaunayMeshingOptions());
+                colmap::mvs::DelaunayMeshingOptions(),
+        const colmap::mvs::MeshPostProcessingOptions& mesh_post_processing =
+                colmap::mvs::MeshPostProcessingOptions());
 
 int StereoPatchMatch(const std::string& workspace_path,
                      const std::string& config_path = "",
@@ -33,7 +36,9 @@ int MeshPoisson(
         const std::string& input_path,
         const std::string& output_path,
         const colmap::mvs::PoissonMeshingOptions& poisson_meshing_options =
-                colmap::mvs::PoissonMeshingOptions());
+                colmap::mvs::PoissonMeshingOptions(),
+        const colmap::mvs::MeshPostProcessingOptions& mesh_post_processing =
+                colmap::mvs::MeshPostProcessingOptions());
 
 int StereoFuse(const std::string& workspace_path,
                const std::string& output_path,

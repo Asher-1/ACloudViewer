@@ -276,21 +276,37 @@ Validation scales from contracts to numerical truth:
 The complete asset-driven runner is:
 
 ```bash
-# Build every probe and run the default complete gate. Missing/corrupt models
-# are SHA-256 checked and downloaded to ~/cloudViewer_data/extract first.
+# Build every probe and run the default gate (LIGHT tier: tasks that declare
+# a lightweight subset — sam3, trellis — run only that subset). Missing/corrupt
+# models are SHA-256 checked and downloaded to ~/cloudViewer_data/extract
+# first; pinned image/archive fixtures are also verified before inference
+# (archives remain under ~/cloudViewer_data/download and consumed files under
+# extract). Probe outputs and the model cache are kept by default;
+# --clean-probe-outputs / --clean-model-cache delete each task's raw probe
+# outputs / consumed cached models as its rows are summarized (CI runners).
 cmake --build build_app --target aicore-validate-all -j1
 
 # Equivalent direct invocation.
 python3 core/AICore/scripts/validate_all.py \
   --build build_app --backend cuda \
   --output build_app/Testing/aicore_validation.json
+
+# Complete matrix: add --full. Required before claiming a complete
+# regression, release, parity, or speedup result.
+python3 core/AICore/scripts/validate_all.py \
+  --build build_app --backend cuda --full \
+  --output build_app/Testing/aicore_validation.json
 ```
 
 The manifest is `core/AICore/scripts/validation_manifest.json`. A complete
 claim requires every requested pipeline x model x quantization x backend row.
-The default command is the release/regression gate: catalog, download, digest,
-missing scenario, exit 77, accuracy, stability, and performance failures all
-make it fail. It never silently shrinks the matrix to the local cache.
+The default command is the release/regression gate for the selected tier:
+catalog, download, digest, missing scenario, exit 77, accuracy, stability,
+and performance failures all make it fail. It never silently shrinks the
+matrix to the local cache. Tiered tasks declare their lightweight subset in
+the manifest (`"light": true` marks a light scenario, `"light_globs"`
+restricts a per-model scenario); preflight, coverage audit, and expansion
+shrink with the tier, and `--full` is the only complete-matrix evidence.
 
 Use incomplete mode only to continue local diagnosis when a model cannot be
 downloaded or a probe returns exit 77:
@@ -414,8 +430,14 @@ model parity/performance test on every affected backend and quantization.
       assets; upstream truth is distinguished from backend parity.
 - [ ] Every published model is in the validation catalog with URL, cache path,
       SHA-256, and at least one manifest scenario consumer.
-- [ ] The default `aicore-validate-all` gate downloads and executes all requested
-      rows; only explicit `--allow-incomplete` reports skipped model scenarios.
+- [ ] The `aicore-validate-all` gate downloads and executes all requested rows
+      of its tier (default light: sam3/trellis run only their declared
+      lightweight subsets); `--full` covers the complete matrix, and only
+      explicit `--allow-incomplete` reports skipped model scenarios.
+- [ ] A new task or model that is too large for the default gate declares its
+      lightweight subset via `"light": true` / `"light_globs"` in the
+      validation manifest, keeping the light tier fast without losing the
+      `--full` coverage contract.
 - [ ] Performance claims include controlled A/B evidence and p50/p95.
 - [ ] Still-image and live plugin paths preserve ownership, generation,
       cancellation, and consumer-driven completion.

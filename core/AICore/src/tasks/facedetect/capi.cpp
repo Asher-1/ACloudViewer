@@ -552,6 +552,9 @@ AICORE_CAPI int aicore_facedetect_embed_path(aicore_facedetect_ctx* ctx,
                                              float min_detection_score,
                                              float** out_vec,
                                              int* out_dim) {
+    // The embed entry points must also report truthful pipeline timings so
+    // the validation probe can query them after the run.
+    const auto request_start = FaceDetectClock::now();
     if (ctx == nullptr || ctx->model == nullptr || image_path == nullptr ||
         out_vec == nullptr || out_dim == nullptr) {
         return -1;
@@ -574,6 +577,7 @@ AICORE_CAPI int aicore_facedetect_embed_path(aicore_facedetect_ctx* ctx,
         }
         *out_vec = buf;
         *out_dim = static_cast<int>(emb.size());
+        record_facedetect_e2e(ctx, request_start);
         return 0;
     } catch (const std::exception& e) {
         ctx->last_error = e.what();
@@ -588,6 +592,7 @@ AICORE_CAPI int aicore_facedetect_embed_rgb(aicore_facedetect_ctx* ctx,
                                             float min_detection_score,
                                             float** out_vec,
                                             int* out_dim) {
+    const auto request_start = FaceDetectClock::now();
     if (ctx == nullptr || ctx->model == nullptr || rgb == nullptr ||
         width <= 0 || height <= 0 || out_vec == nullptr || out_dim == nullptr) {
         return -1;
@@ -608,6 +613,7 @@ AICORE_CAPI int aicore_facedetect_embed_rgb(aicore_facedetect_ctx* ctx,
         }
         *out_vec = buf;
         *out_dim = static_cast<int>(emb.size());
+        record_facedetect_e2e(ctx, request_start);
         return 0;
     } catch (const std::exception& e) {
         ctx->last_error = e.what();
@@ -623,6 +629,7 @@ AICORE_CAPI int aicore_facedetect_embed_rgb_landmarks(
         const float* landmarks_xy10,
         float** out_vec,
         int* out_dim) {
+    const auto request_start = FaceDetectClock::now();
     if (ctx == nullptr || ctx->model == nullptr || rgb == nullptr ||
         width <= 0 || height <= 0 || landmarks_xy10 == nullptr ||
         out_vec == nullptr || out_dim == nullptr) {
@@ -648,6 +655,7 @@ AICORE_CAPI int aicore_facedetect_embed_rgb_landmarks(
         }
         *out_vec = buf;
         *out_dim = static_cast<int>(emb.size());
+        record_facedetect_e2e(ctx, request_start);
         return 0;
     } catch (const std::exception& e) {
         ctx->last_error = e.what();

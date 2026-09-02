@@ -83,7 +83,6 @@ file(GLOB AICORE_YOLO_SOURCES CONFIGURE_DEPENDS ${AICORE_YOLO_SRC_DIR}/*.cpp)
 file(GLOB AICORE_SAM3_SOURCES CONFIGURE_DEPENDS ${AICORE_SAM3_SRC_DIR}/*.cpp)
 file(GLOB AICORE_TRELLIS_SOURCES CONFIGURE_DEPENDS
     ${AICORE_TRELLIS_SRC_DIR}/*.cpp
-    ${AICORE_TRELLIS_SRC_DIR}/third_party/meshoptimizer/*.cpp
     ${AICORE_TRELLIS_SRC_DIR}/third_party/xatlas/*.cpp
     ${AICORE_TRELLIS_SRC_DIR}/third_party/o-voxel-fdg/*.cpp)
 file(GLOB AICORE_API_HEADERS CONFIGURE_DEPENDS ${AICORE_INC_DIR}/aicore/*.h)
@@ -187,14 +186,14 @@ target_include_directories(${PROJECT_NAME}
         ${AICORE_SAM3_SRC_DIR}
         ${AICORE_TRELLIS_SRC_DIR}
         ${AICORE_TRELLIS_SRC_DIR}/third_party/xatlas
-        ${AICORE_TRELLIS_SRC_DIR}/third_party/meshoptimizer
         ${AICORE_TRELLIS_SRC_DIR}/third_party/o-voxel-fdg
         ${EIGEN_INCLUDE_DIRS}
 )
 
 add_dependencies(${PROJECT_NAME} 3rdparty_ggml)
+add_dependencies(${PROJECT_NAME} 3rdparty_meshoptimizer)
 # Build: ggml headers/targets stay PRIVATE (see AICore/README.md).
-target_link_libraries(${PROJECT_NAME} PRIVATE 3rdparty_ggml)
+target_link_libraries(${PROJECT_NAME} PRIVATE 3rdparty_ggml 3rdparty_meshoptimizer)
 if(MSVC)
     # UTF-8 source & execution character sets: AICore sources carry Unicode
     # literals (em-dashes in UI strings, the multilingual-bridge docs) — match
@@ -673,11 +672,10 @@ if(AICore_BUILD_TESTS)
             $<BUILD_INTERFACE:${AICORE_SAM3_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_TRELLIS_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_TRELLIS_SRC_DIR}/third_party/xatlas>
-            $<BUILD_INTERFACE:${AICORE_TRELLIS_SRC_DIR}/third_party/meshoptimizer>
             $<BUILD_INTERFACE:${AICORE_TRELLIS_SRC_DIR}/third_party/o-voxel-fdg>
         )
-        add_dependencies(AICore_test 3rdparty_ggml)
-        target_link_libraries(AICore_test PUBLIC 3rdparty_ggml CVCoreLib)
+        add_dependencies(AICore_test 3rdparty_ggml 3rdparty_meshoptimizer)
+        target_link_libraries(AICore_test PUBLIC 3rdparty_ggml 3rdparty_meshoptimizer CVCoreLib)
         if(DEFINED GGML_INCLUDE_DIRS)
             target_include_directories(AICore_test PUBLIC ${GGML_INCLUDE_DIRS})
         endif()

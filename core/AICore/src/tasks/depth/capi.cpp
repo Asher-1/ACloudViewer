@@ -228,6 +228,10 @@ AICORE_CAPI float* aicore_depth_depth_path(aicore_depth_ctx* c,
                                            const char* image_path,
                                            int* out_h,
                                            int* out_w) {
+    // Record an end-to-end timing for the single-image depth path so that
+    // every entry point reports a truthful pipeline timing (the validation
+    // probes query aicore_depth_last_pipeline_timings after every run).
+    const auto started = aicore::capi::PipelineClock::now();
     if (!c || !c->engine || !image_path) {
         if (c) c->last_error = "depth: bad args";
         return nullptr;
@@ -244,6 +248,15 @@ AICORE_CAPI float* aicore_depth_depth_path(aicore_depth_ctx* c,
             c->last_error = "depth: da2 failed";
             return nullptr;
         }
+    } else if (c->engine->is_mono()) {
+        // Mono (metric) models expose a depth+sky head instead of the
+        // DualDPT depth+conf head; the generic depth_native graph would
+        // misread it and yield an empty result.
+        std::vector<float> sky;
+        if (!c->engine->depth_mono_path(image_path, depth, sky, H, W)) {
+            c->last_error = "depth: mono failed";
+            return nullptr;
+        }
     } else if (!c->engine->depth_native(image_path, depth, conf, H, W)) {
         c->last_error = "depth: failed";
         return nullptr;
@@ -256,12 +269,14 @@ AICORE_CAPI float* aicore_depth_depth_path(aicore_depth_ctx* c,
     std::memcpy(p, depth.data(), depth.size() * sizeof(float));
     if (out_h) *out_h = H;
     if (out_w) *out_w = W;
+    aicore::capi::record_pipeline_e2e(c->pipeline_timings, started);
     return p;
 }
 AICORE_CAPI int aicore_depth_pose_path(aicore_depth_ctx* c,
                                        const char* image_path,
                                        float out_ext[12],
                                        float out_intr[9]) {
+    const auto started = aicore::capi::PipelineClock::now();
     if (!c || !c->engine || !image_path) {
         if (c) c->last_error = "pose: bad args";
         return -1;
@@ -283,6 +298,7 @@ AICORE_CAPI int aicore_depth_pose_path(aicore_depth_ctx* c,
     }
     if (out_ext) std::memcpy(out_ext, ext.data(), 12 * sizeof(float));
     if (out_intr) std::memcpy(out_intr, intr.data(), 9 * sizeof(float));
+    aicore::capi::record_pipeline_e2e(c->pipeline_timings, started);
     return 0;
 }
 

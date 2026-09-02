@@ -33,8 +33,10 @@
 
 #include "base/undistortion.h"
 #include "controllers/texturing_controller.h"
+#include "mvs/advancing_front_meshing.h"
 #include "mvs/fusion.h"
 #include "mvs/meshing.h"
+#include "mvs/mesh_postprocessing.h"
 #include "mvs/patch_match.h"
 #include "ui/main_window.h"
 
@@ -44,6 +46,8 @@ namespace {
 const static std::string kFusedFileName = "fused.ply";
 const static std::string kPoissonMeshedFileName = "meshed-poisson.ply";
 const static std::string kDelaunayMeshedFileName = "meshed-delaunay.ply";
+const static std::string kAdvancingFrontMeshedFileName =
+    "meshed-advancing-front.ply";
 
 class StereoOptionsTab : public OptionsWidget {
  public:
@@ -145,6 +149,53 @@ class MeshingOptionsTab : public OptionsWidget {
     AddOptionDouble(&options->delaunay_meshing->max_side_length_percentile,
                     "max_side_length_percentile", 0);
     AddOptionInt(&options->delaunay_meshing->num_threads, "num_threads", -1);
+
+    AddSection("Advancing Front Meshing");
+    AddOptionDouble(&options->advancing_front_meshing->max_edge_length,
+                    "max_edge_length", 0);
+    AddOptionBool(&options->advancing_front_meshing->visibility_filtering,
+                  "visibility_filtering");
+    AddOptionInt(
+        &options->advancing_front_meshing
+             ->visibility_filtering_max_intersections,
+        "visibility_filtering_max_intersections", 0);
+    AddOptionBool(
+        &options->advancing_front_meshing->visibility_post_filtering,
+        "visibility_post_filtering");
+    AddOptionDouble(
+        &options->advancing_front_meshing->visibility_ray_trim_offset,
+        "visibility_ray_trim_offset", 0);
+    AddOptionDouble(&options->advancing_front_meshing->block_size,
+                    "block_size", 0);
+    AddOptionDouble(&options->advancing_front_meshing->block_overlap,
+                    "block_overlap", 0, 1);
+    AddOptionInt(&options->advancing_front_meshing->num_threads,
+                 "num_threads", -1);
+
+    AddSection("Mesh Cleanup and Smoothing");
+    AddOptionBool(&options->mesh_post_processing->enabled, "enabled");
+    AddOptionBool(&options->mesh_post_processing->remove_small_components,
+                  "remove_small_components");
+    AddOptionBool(&options->mesh_post_processing->remove_degenerate_faces,
+                  "remove_degenerate_faces");
+    AddOptionBool(&options->mesh_post_processing->simplify, "simplify");
+    AddOptionBool(&options->mesh_post_processing->smooth, "smooth");
+    AddOptionBool(&options->mesh_post_processing->preserve_boundary,
+                  "preserve_boundary");
+    AddOptionDouble(&options->mesh_post_processing->prune_error, "prune_error",
+                    0, 1);
+    AddOptionDouble(&options->mesh_post_processing->target_face_ratio,
+                    "target_face_ratio", 0, 1);
+    AddOptionDouble(&options->mesh_post_processing->simplify_error,
+                    "simplify_error", 0, 1);
+    AddOptionDouble(&options->mesh_post_processing->max_aspect_ratio,
+                    "max_aspect_ratio", 0);
+    AddOptionInt(&options->mesh_post_processing->smoothing_iterations,
+                 "smoothing_iterations", 0);
+    AddOptionDouble(&options->mesh_post_processing->smoothing_lambda,
+                    "smoothing_lambda", 0, 1);
+    AddOptionDouble(&options->mesh_post_processing->smoothing_mu,
+                    "smoothing_mu", -1, 0);
   }
 };
 
@@ -161,6 +212,7 @@ class TexturingOptionsTab : public OptionsWidget {
     mesh_source_combo_->addItem("Auto (Delaunay preferred)", "auto");
     mesh_source_combo_->addItem("Delaunay", "delaunay");
     mesh_source_combo_->addItem("Poisson", "poisson");
+    mesh_source_combo_->addItem("Advancing Front", "advancing_front");
 
     // Connect signal to update option value
     connect(mesh_source_combo_,
@@ -177,35 +229,24 @@ class TexturingOptionsTab : public OptionsWidget {
                      "textured_file_path");
 
     AddSection("Advanced Options");
-    AddOptionBool(&options->texturing->use_depth_normal_maps,
-                  "use_depth_normal_maps");
-    
-    // Add depth_map_type selection
-    QComboBox* depth_type_combo = new QComboBox(this);
-    depth_type_combo->addItem("Geometric", "geometric");
-    depth_type_combo->addItem("Photometric", "photometric");
-    connect(depth_type_combo,
-            QOverload<int>::of(&QComboBox::currentIndexChanged),
-            [this, depth_type_combo, options](int index) {
-              QString data = depth_type_combo->itemData(index).toString();
-              options->texturing->depth_map_type = data.toStdString();
-            });
-    // Set initial value
-    if (options->texturing->depth_map_type == "geometric") {
-      depth_type_combo->setCurrentIndex(0);
-    } else {
-      depth_type_combo->setCurrentIndex(1);
-    }
-    AddWidgetRow("depth_map_type", depth_type_combo);
-    
-    AddOptionDouble(&options->texturing->max_depth_error, "max_depth_error",
-                    0, 1, 0.001, 3);
-    AddOptionDouble(&options->texturing->min_normal_consistency,
-                    "min_normal_consistency", -1, 1, 0.01, 2);
-    AddOptionDouble(&options->texturing->max_viewing_angle_deg,
-                    "max_viewing_angle_deg", 0, 180, 1, 1);
-    AddOptionBool(&options->texturing->use_gradient_magnitude,
-                  "use_gradient_magnitude");
+    AddOptionDouble(&options->texturing->min_cos_normal_angle,
+                    "min_cos_normal_angle", 0.001, 1, 0.01, 3);
+    AddOptionInt(&options->texturing->min_visible_vertices,
+                 "min_visible_vertices", 1, 3);
+    AddOptionInt(&options->texturing->view_selection_smoothing_iterations,
+                 "view_selection_smoothing_iterations", 0, 100);
+    AddOptionInt(&options->texturing->atlas_patch_padding,
+                 "atlas_patch_padding", 0, 128);
+    AddOptionInt(&options->texturing->inpaint_radius, "inpaint_radius", 0,
+                 128);
+    AddOptionBool(&options->texturing->apply_color_correction,
+                  "apply_color_correction");
+    AddOptionDouble(&options->texturing->color_correction_regularization,
+                    "color_correction_regularization", 0.000001, 100.0,
+                    0.01, 4);
+    AddOptionInt(&options->texturing->num_threads, "num_threads", -1, 256);
+    AddOptionDouble(&options->texturing->texture_scale_factor,
+                    "texture_scale_factor", 0.01, 8.0, 0.1, 2);
   }
 
  protected:
@@ -216,6 +257,8 @@ class TexturingOptionsTab : public OptionsWidget {
       std::string current_source = options_->texturing->mesh_source;
       if (current_source == "poisson") {
         mesh_source_combo_->setCurrentIndex(2);
+      } else if (current_source == "advancing_front") {
+        mesh_source_combo_->setCurrentIndex(3);
       } else if (current_source == "delaunay") {
         mesh_source_combo_->setCurrentIndex(1);
       } else {
@@ -319,34 +362,40 @@ DenseReconstructionWidget::DenseReconstructionWidget(MainWindow* main_window,
           &DenseReconstructionWidget::DelaunayMeshing);
   grid->addWidget(delaunay_meshing_button_, 0, 4, Qt::AlignLeft);
 
+  advancing_front_meshing_button_ =
+      new QPushButton(tr("Advancing Front"), this);
+  connect(advancing_front_meshing_button_, &QPushButton::released, this,
+          &DenseReconstructionWidget::AdvancingFrontMeshing);
+  grid->addWidget(advancing_front_meshing_button_, 0, 5, Qt::AlignLeft);
+
   texturing_button_ = new QPushButton(tr("Texturing"), this);
   connect(texturing_button_, &QPushButton::released, this,
           &DenseReconstructionWidget::Texturing);
-  grid->addWidget(texturing_button_, 0, 5, Qt::AlignLeft);
+  grid->addWidget(texturing_button_, 0, 6, Qt::AlignLeft);
 
   QPushButton* options_button = new QPushButton(tr("Options"), this);
   connect(options_button, &QPushButton::released, options_widget_,
           &OptionsWidget::show);
-  grid->addWidget(options_button, 0, 6, Qt::AlignLeft);
+  grid->addWidget(options_button, 0, 7, Qt::AlignLeft);
 
   QLabel* workspace_path_label = new QLabel("Workspace", this);
-  grid->addWidget(workspace_path_label, 0, 7, Qt::AlignRight);
+  grid->addWidget(workspace_path_label, 0, 8, Qt::AlignRight);
 
   workspace_path_text_ = new QLineEdit(this);
-  grid->addWidget(workspace_path_text_, 0, 8, Qt::AlignRight);
+  grid->addWidget(workspace_path_text_, 0, 9, Qt::AlignRight);
   connect(workspace_path_text_, &QLineEdit::textChanged, this,
           &DenseReconstructionWidget::RefreshWorkspace, Qt::QueuedConnection);
 
   QPushButton* refresh_path_button = new QPushButton(tr("Refresh"), this);
   connect(refresh_path_button, &QPushButton::released, this,
           &DenseReconstructionWidget::RefreshWorkspace, Qt::QueuedConnection);
-  grid->addWidget(refresh_path_button, 0, 9, Qt::AlignRight);
+  grid->addWidget(refresh_path_button, 0, 10, Qt::AlignRight);
 
   QPushButton* workspace_path_button = new QPushButton(tr("Select"), this);
   connect(workspace_path_button, &QPushButton::released, this,
           &DenseReconstructionWidget::SelectWorkspacePath,
           Qt::QueuedConnection);
-  grid->addWidget(workspace_path_button, 0, 10, Qt::AlignRight);
+  grid->addWidget(workspace_path_button, 0, 11, Qt::AlignRight);
 
   QStringList table_header;
   table_header << "image_name"
@@ -365,7 +414,7 @@ DenseReconstructionWidget::DenseReconstructionWidget(MainWindow* main_window,
   table_widget_->setEditTriggers(QAbstractItemView::NoEditTriggers);
   table_widget_->verticalHeader()->setDefaultSectionSize(25);
 
-  grid->addWidget(table_widget_, 1, 0, 1, 10);
+  grid->addWidget(table_widget_, 1, 0, 1, 12);
 
   grid->setColumnStretch(4, 1);
 
@@ -522,6 +571,12 @@ void DenseReconstructionWidget::PoissonMeshing() {
               *options_->poisson_meshing,
               JoinPaths(workspace_path, kFusedFileName),
               JoinPaths(workspace_path, kPoissonMeshedFileName));
+          if (options_->mesh_post_processing->enabled) {
+            mvs::PostProcessMeshFile(
+                JoinPaths(workspace_path, kPoissonMeshedFileName),
+                JoinPaths(workspace_path, kPoissonMeshedFileName),
+                *options_->mesh_post_processing);
+          }
           refresh_workspace_action_->trigger();
           show_meshing_info_action_->trigger();
         });
@@ -541,6 +596,12 @@ void DenseReconstructionWidget::DelaunayMeshing() {
           mvs::DenseDelaunayMeshing(
               *options_->delaunay_meshing, workspace_path,
               JoinPaths(workspace_path, kDelaunayMeshedFileName));
+          if (options_->mesh_post_processing->enabled) {
+            mvs::PostProcessMeshFile(
+                JoinPaths(workspace_path, kDelaunayMeshedFileName),
+                JoinPaths(workspace_path, kDelaunayMeshedFileName),
+                *options_->mesh_post_processing);
+          }
           refresh_workspace_action_->trigger();
           show_meshing_info_action_->trigger();
         });
@@ -548,6 +609,36 @@ void DenseReconstructionWidget::DelaunayMeshing() {
 #else
   QMessageBox::critical(this, "",
                         tr("Delaunay meshing requires CGAL, which "
+                           "is not available on your system."));
+#endif
+}
+
+void DenseReconstructionWidget::AdvancingFrontMeshing() {
+#ifdef CGAL_ENABLED
+  const std::string workspace_path = GetWorkspacePath();
+  if (workspace_path.empty()) {
+    return;
+  }
+
+  if (ExistsFile(JoinPaths(workspace_path, kFusedFileName))) {
+    thread_control_widget_->StartFunction(
+        "Advancing Front Meshing...", [this, workspace_path]() {
+          mvs::AdvancingFrontMeshing(
+              *options_->advancing_front_meshing, workspace_path,
+              JoinPaths(workspace_path, kAdvancingFrontMeshedFileName));
+          if (options_->mesh_post_processing->enabled) {
+            mvs::PostProcessMeshFile(
+                JoinPaths(workspace_path, kAdvancingFrontMeshedFileName),
+                JoinPaths(workspace_path, kAdvancingFrontMeshedFileName),
+                *options_->mesh_post_processing);
+          }
+          refresh_workspace_action_->trigger();
+          show_meshing_info_action_->trigger();
+        });
+  }
+#else
+  QMessageBox::critical(this, "",
+                        tr("Advancing Front meshing requires CGAL, which "
                            "is not available on your system."));
 #endif
 }
@@ -570,10 +661,13 @@ void DenseReconstructionWidget::Texturing() {
         JoinPaths(workspace_path, kPoissonMeshedFileName);
     const std::string delaunay_path =
         JoinPaths(workspace_path, kDelaunayMeshedFileName);
+    const std::string advancing_front_path =
+        JoinPaths(workspace_path, kAdvancingFrontMeshedFileName);
     const bool poisson_exists = ExistsFile(poisson_path);
     const bool delaunay_exists = ExistsFile(delaunay_path);
+    const bool advancing_front_exists = ExistsFile(advancing_front_path);
 
-    if (options_->texturing->mesh_source == "delaunayx") {
+    if (options_->texturing->mesh_source == "delaunay") {
       if (delaunay_exists) {
         options_->texturing->meshed_file_path = delaunay_path;
       } else {
@@ -591,15 +685,28 @@ void DenseReconstructionWidget::Texturing() {
                                  "run Poisson meshing first."));
         return;
       }
+    } else if (options_->texturing->mesh_source == "advancing_front") {
+      if (advancing_front_exists) {
+        options_->texturing->meshed_file_path = advancing_front_path;
+      } else {
+        QMessageBox::critical(
+            this, "",
+            tr("Advancing Front mesh file not found. Please run Advancing "
+               "Front meshing first."));
+        return;
+      }
     } else {  // "auto" - prefer Delaunay, fallback to Poisson
       if (delaunay_exists) {
         options_->texturing->meshed_file_path = delaunay_path;
       } else if (poisson_exists) {
         options_->texturing->meshed_file_path = poisson_path;
+      } else if (advancing_front_exists) {
+        options_->texturing->meshed_file_path = advancing_front_path;
       } else {
         QMessageBox::critical(this, "",
                               tr("No mesh file found. Please run "
-                                 "Poisson or Delaunay meshing first."));
+                                 "Delaunay, Poisson, or Advancing Front "
+                                 "meshing first."));
         return;
       }
     }
@@ -612,10 +719,12 @@ void DenseReconstructionWidget::Texturing() {
   }
 
   TexturingReconstruction* texturing_tool =
-      new TexturingReconstruction(*options_->texturing, *reconstruction_,
-                                  *options_->image_path, workspace_path);
-  texturing_tool->AddCallback(Thread::FINISHED_CALLBACK, [this]() {
-    show_meshing_info_action_->trigger();
+      new TexturingReconstruction(*options_->texturing, workspace_path);
+  texturing_tool->AddCallback(Thread::FINISHED_CALLBACK,
+                              [this, texturing_tool]() {
+    if (texturing_tool->IsSuccess()) {
+      show_meshing_info_action_->trigger();
+    }
   });
   thread_control_widget_->StartThread("Texturing...", true, texturing_tool);
 }
@@ -660,6 +769,7 @@ void DenseReconstructionWidget::RefreshWorkspace() {
     fusion_button_->setEnabled(false);
     poisson_meshing_button_->setEnabled(false);
     delaunay_meshing_button_->setEnabled(false);
+    advancing_front_meshing_button_->setEnabled(false);
     texturing_button_->setEnabled(false);
     return;
   }
@@ -681,6 +791,7 @@ void DenseReconstructionWidget::RefreshWorkspace() {
     fusion_button_->setEnabled(false);
     poisson_meshing_button_->setEnabled(false);
     delaunay_meshing_button_->setEnabled(false);
+    advancing_front_meshing_button_->setEnabled(false);
     texturing_button_->setEnabled(false);
     return;
   }
@@ -723,9 +834,13 @@ void DenseReconstructionWidget::RefreshWorkspace() {
       ExistsFile(JoinPaths(workspace_path, kFusedFileName)));
   delaunay_meshing_button_->setEnabled(
       ExistsFile(JoinPaths(workspace_path, kFusedFileName)));
+  advancing_front_meshing_button_->setEnabled(
+      ExistsFile(JoinPaths(workspace_path, kFusedFileName)));
   texturing_button_->setEnabled(
         ExistsFile(JoinPaths(workspace_path, kPoissonMeshedFileName)) ||
-        ExistsFile(JoinPaths(workspace_path, kDelaunayMeshedFileName)));
+        ExistsFile(JoinPaths(workspace_path, kDelaunayMeshedFileName)) ||
+        ExistsFile(
+            JoinPaths(workspace_path, kAdvancingFrontMeshedFileName)));
 }
 
 void DenseReconstructionWidget::WriteFusedPoints() {

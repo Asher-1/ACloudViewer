@@ -190,6 +190,11 @@ bool ModelLoader::load(const std::string& path) {
     }
     cfg_.img_mean = kv_f32_arr(gguf_, AICORE_DEPTH_KV_IMG_MEAN);
     cfg_.img_std = kv_f32_arr(gguf_, AICORE_DEPTH_KV_IMG_STD);
+    // The nested-metric converter omits the img mean/std KV, but every DA3
+    // checkpoint shares the same ImageNet preprocessing; fall back to the
+    // canonical values instead of failing preprocess on the missing KV.
+    if (cfg_.img_mean.size() < 3) cfg_.img_mean = {0.485f, 0.456f, 0.406f};
+    if (cfg_.img_std.size() < 3) cfg_.img_std = {0.229f, 0.224f, 0.225f};
     cfg_.img_resize_target =
             kv_u32(gguf_, AICORE_DEPTH_KV_IMG_RESIZE_TARGET, 504);
     cfg_.img_resize_mode =

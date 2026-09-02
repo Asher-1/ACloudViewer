@@ -929,16 +929,31 @@ if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
         test_yolo_capi_performance
         test_yolo_text_model_validation
         test_yolo_capi_parity)
+    # The validation runner launches C API executables directly.  Propagate the
+    # Qt runtime selected at configure time so it cannot accidentally resolve a
+    # compatible-but-older system Qt at test time.
+    set(_aicore_validation_runtime_env)
+    foreach(_aicore_qt_core_target Qt6::Core Qt5::Core)
+        if(TARGET ${_aicore_qt_core_target})
+            list(APPEND _aicore_validation_runtime_env
+                 "AICORE_QT_LIBRARY_DIR=$<TARGET_FILE_DIR:${_aicore_qt_core_target}>")
+            break()
+        endif()
+    endforeach()
     add_custom_target(aicore-validate-all
-        COMMAND ${Python3_EXECUTABLE}
+        COMMAND ${CMAKE_COMMAND} -E env ${_aicore_validation_runtime_env}
+                ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/validate_all.py
                 --build ${CMAKE_BINARY_DIR}
                 --assets ${AICORE_TEST_ASSET_ROOT}
                 --backend ${AICORE_TEST_DEVICE}
+                --timeout 14400
                 --output ${CMAKE_BINARY_DIR}/Testing/aicore_validation.json
         DEPENDS test_catalog_dump_urls ${_aicore_validation_targets}
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        COMMENT "Running complete AICore model/task regression matrix"
+        COMMENT "Running AICore model/task regression matrix (light tier: "
+                "sam3/trellis lightweight subsets; use validate_all.py --full "
+                "for the complete matrix)"
         USES_TERMINAL
         VERBATIM)
 

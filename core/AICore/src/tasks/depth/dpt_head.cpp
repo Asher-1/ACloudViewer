@@ -16,6 +16,7 @@
 #include <tuple>
 
 #include "common/ggml_extend.hpp"
+#include "tasks/depth/common.hpp"
 #include "tasks/depth/dpt_blocks.hpp"
 #include "tasks/depth/uv_posembed.hpp"
 
@@ -332,7 +333,11 @@ bool DptHead::run(const std::vector<std::vector<float>>& feats,
                   std::vector<std::vector<float>>* stages,
                   std::vector<float>* fused,
                   std::vector<float>* sky_out) {
-    if (feats.size() != 4) return false;
+    if (feats.size() != 4) {
+        DA_ERR("dpt run: expected 4 feature scales, got %zu (H=%d W=%d)",
+               feats.size(), H, W);
+        return false;
+    }
     const Config& cfg = ml_.config();
     const int patch = (int)cfg.patch_size;     // 14
     const int pw = W / patch, ph = H / patch;  // 16,16
@@ -341,8 +346,14 @@ bool DptHead::run(const std::vector<std::vector<float>>& feats,
     // 3072); cat_token false (metric ViT-L) -> norm(x) only = embed (1024).
     const int C = (cfg.cat_token ? 2 : 1) * (int)cfg.embed_dim;
 
-    for (const auto& f : feats)
-        if ((int)f.size() != N * C) return false;
+    for (const auto& f : feats) {
+        if ((int)f.size() != N * C) {
+            DA_ERR("dpt run: feature size %zu != N*C %d (H=%d W=%d C=%d "
+                   "cat_token=%d)",
+                   f.size(), N * C, H, W, C, (int)cfg.cat_token);
+            return false;
+        }
+    }
 
     auto t = [&](const std::string& n) { return ml_.tensor(n); };
 
@@ -378,10 +389,17 @@ bool DptHead::run(const std::vector<std::vector<float>>& feats,
                                          sky_out ? &sky_cap : nullptr);
             },
             logits);
-    if (!ok) return false;
+    if (!ok) {
+        DA_ERR("dpt run: head graph compute failed (H=%d W=%d)", H, W);
+        return false;
+    }
 
     const size_t HW = (size_t)H * W;
-    if (logits.size() != (size_t)output_dim * HW) return false;
+    if (logits.size() != (size_t)output_dim * HW) {
+        DA_ERR("dpt run: logits %zu != output_dim*HW %zu (dim=%d H=%d W=%d)",
+               logits.size(), (size_t)output_dim * HW, output_dim, H, W);
+        return false;
+    }
     // channel 0 = depth = exp(logits); channel 1 (if present) = conf =
     // exp(logits)+1.
     depth_out.resize(HW);
@@ -394,7 +412,10 @@ bool DptHead::run(const std::vector<std::vector<float>>& feats,
         conf_out.clear();
     }
     if (want_sky) {
-        if (sky_cap.size() != HW) return false;
+        if (sky_cap.size() != HW) {
+            DA_ERR("dpt run: sky capture %zu != HW %zu", sky_cap.size(), HW);
+            return false;
+        }
         sky_out->resize(HW);
         for (size_t i = 0; i < HW; ++i)
             sky_out->operator[](i) = std::max(0.0f, sky_cap[i]);  // relu

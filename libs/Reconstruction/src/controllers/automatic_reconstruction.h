@@ -12,6 +12,7 @@
 #include "base/reconstruction_manager.h"
 #include "controllers/da3_depth_controller.h"
 #include "controllers/da3_pipeline_defaults.h"
+#include "mvs/mesh_postprocessing.h"
 #include "retrieval/resources.h"
 #include "util/option_manager.h"
 #include "util/ply_point_filter.h"
@@ -23,7 +24,7 @@ class AutomaticReconstructionController : public Thread {
 public:
     enum class DataType { INDIVIDUAL, VIDEO, INTERNET };
     enum class Quality { LOW, MEDIUM, HIGH, EXTREME };
-    enum class Mesher { POISSON, DELAUNAY };
+    enum class Mesher { POISSON, DELAUNAY, ADVANCING_FRONT };
 
     struct Options {
         // The path to the workspace folder in which all results are stored.
@@ -64,7 +65,7 @@ public:
         Mesher mesher = Mesher::POISSON;
 #endif
 
-        // Whether to perform surface meshing (Poisson / Delaunay).
+        // Whether to perform surface meshing.
         bool meshing = true;
 
         // Whether to perform surface texturing.
@@ -128,6 +129,10 @@ public:
 
         // Optional voxel + SOR cleanup on fused.ply before Poisson meshing.
         FusedPointFilterOptions fused_point_filter;
+
+        // Shared meshoptimizer cleanup and boundary-preserving smoothing after
+        // surface meshing and before texturing. Enabled by default.
+        mvs::MeshPostProcessingOptions mesh_post_processing;
     };
 
     AutomaticReconstructionController(

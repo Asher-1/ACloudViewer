@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import json
 import os
 from pathlib import Path
@@ -93,6 +94,11 @@ def main() -> int:
         help="raw uint8 PyTorch semantic class map for the same image/input size",
     )
     parser.add_argument("--backends", default="cpu,cuda,vulkan")
+    parser.add_argument(
+        "--model-globs",
+        default=os.getenv("AICORE_TEST_YOLO_MODEL_GLOBS", ""),
+        help="comma-separated fnmatch patterns against model file names; "
+             "empty means every YOLO inference model in --models-dir")
     parser.add_argument("--warmup", type=int, default=5)
     parser.add_argument("--iters", type=int, default=20)
     parser.add_argument("--report")
@@ -111,8 +117,21 @@ def main() -> int:
         for path in models_dir.glob("*.gguf")
         if not path.name.startswith(("clip-", "mobileclip", "mclip-"))
     }
+    model_globs = [
+        item.strip() for item in args.model_globs.split(",") if item.strip()
+    ]
+    if model_globs:
+        expected_files = {
+            name
+            for name in expected_files
+            if any(fnmatch.fnmatchcase(name, pattern)
+                   for pattern in model_globs)
+        }
     if not expected_files:
-        print("[yolo-matrix] SKIP: no YOLO inference model assets")
+        print(
+            "[yolo-matrix] SKIP: no YOLO inference model assets"
+            + (f" matching {model_globs}" if model_globs else "")
+        )
         return 77
     world_text_model = args.world_text_model or args.text_model
     yoloe_text_model = args.yoloe_text_model or args.text_model

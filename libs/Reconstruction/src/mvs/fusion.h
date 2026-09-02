@@ -159,5 +159,9 @@ void WritePointsVisibility(
         const std::string& path,
         const std::vector<std::vector<int>>& points_visibility);
 
+// Read per-point visibility produced by WritePointsVisibility().
+std::vector<std::vector<int>> ReadPointsVisibility(const std::string& path,
+                                                   size_t num_points);
+
 }  // namespace mvs
 }  // namespace colmap

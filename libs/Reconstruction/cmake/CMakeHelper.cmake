@@ -279,11 +279,13 @@ macro(COLMAP_ADD_TEST TARGET_NAME)
             target_compile_options(${TARGET_NAME} PRIVATE "-Wno-deprecated-declarations")
         endif ()
 
-        add_test("${FOLDER_NAME}/${TARGET_NAME}" ${TARGET_NAME})
+        add_test(NAME "${FOLDER_NAME}/${TARGET_NAME}"
+                 COMMAND $<TARGET_FILE:${TARGET_NAME}>)
         # Enforce 3rd party dependencies
         cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
         cloudViewer_set_global_properties(${TARGET_NAME})
         cloudViewer_set_cloudViewer_lib_properties(${TARGET_NAME})
+        cloudViewer_set_targets_independent(${TARGET_NAME})
         COLMAP_LINK_3RDPARTY(${TARGET_NAME})
 
         # install

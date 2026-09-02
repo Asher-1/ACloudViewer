@@ -8,6 +8,7 @@
 #pragma once
 
 #include <array>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -48,6 +49,10 @@ struct SequentialMatchingOptions {
     // The number of images to retrieve in loop detection. This number should
     // be significantly bigger than the sequential matching overlap.
     int loop_detection_num_images = 50;
+
+    // Minimum distance in the sequential image order between a loop query and
+    // a retrieved candidate. Zero preserves the historical behavior.
+    int loop_detection_min_index_distance = 0;
 
     // Number of nearest neighbors to retrieve per query feature.
     int loop_detection_num_nearest_neighbors = 1;

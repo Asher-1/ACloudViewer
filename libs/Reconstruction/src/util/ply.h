@@ -30,10 +30,20 @@ struct PlyMeshVertex {
     PlyMeshVertex() : x(0), y(0), z(0) {}
     PlyMeshVertex(const float x, const float y, const float z)
         : x(x), y(y), z(z) {}
+    PlyMeshVertex(const float x,
+                  const float y,
+                  const float z,
+                  const uint8_t r,
+                  const uint8_t g,
+                  const uint8_t b)
+        : x(x), y(y), z(z), r(r), g(g), b(b) {}
 
     float x = 0.0f;
     float y = 0.0f;
     float z = 0.0f;
+    uint8_t r = 200;
+    uint8_t g = 200;
+    uint8_t b = 200;
 };
 
 struct PlyMeshFace {
@@ -55,6 +65,14 @@ struct PlyMesh {
     std::vector<PlyMeshFace> faces;
 };
 
+struct PlyTexturedMesh {
+    PlyMesh mesh;
+    // Six values per face: u1, v1, u2, v2, u3, v3.
+    std::vector<float> face_uvs;
+    // Referenced by the standard PLY "comment TextureFile" header field.
+    std::string texture_file;
+};
+
 // Read PLY point cloud from text or binary file.
 std::vector<PlyPoint> ReadPly(const std::string& path);
 
@@ -71,5 +89,7 @@ void WriteBinaryPlyPoints(const std::string& path,
 // Write PLY mesh to text or binary file.
 void WriteTextPlyMesh(const std::string& path, const PlyMesh& mesh);
 void WriteBinaryPlyMesh(const std::string& path, const PlyMesh& mesh);
+void WriteTextPlyMesh(const std::string& path, const PlyTexturedMesh& mesh);
+void WriteBinaryPlyMesh(const std::string& path, const PlyTexturedMesh& mesh);
 
 }  // namespace colmap

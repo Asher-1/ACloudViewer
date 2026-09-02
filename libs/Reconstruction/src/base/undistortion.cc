@@ -949,7 +949,8 @@ void UndistortImage(const UndistortCameraOptions& options,
                                distorted_bitmap.IsRGB());
   distorted_bitmap.CloneMetadata(undistorted_bitmap);
 
-  WarpImageBetweenCameras(distorted_camera, *undistorted_camera,
+  WarpImageBetweenCameras(options.warp_options, distorted_camera,
+                          *undistorted_camera,
                           distorted_bitmap, undistorted_bitmap);
 }
 
@@ -1064,10 +1065,12 @@ void RectifyAndUndistortStereoImages(
   RectifyStereoCameras(*undistorted_camera, *undistorted_camera, qvec, tvec,
                        &H1, &H2, Q);
 
-  WarpImageWithHomographyBetweenCameras(H1.inverse(), distorted_camera1,
+  WarpImageWithHomographyBetweenCameras(options.warp_options, H1.inverse(),
+                                        distorted_camera1,
                                         *undistorted_camera, distorted_image1,
                                         undistorted_image1);
-  WarpImageWithHomographyBetweenCameras(H2.inverse(), distorted_camera2,
+  WarpImageWithHomographyBetweenCameras(options.warp_options, H2.inverse(),
+                                        distorted_camera2,
                                         *undistorted_camera, distorted_image2,
                                         undistorted_image2);
 }

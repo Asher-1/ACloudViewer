@@ -29,6 +29,9 @@
 //
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
+#include <QGuiApplication>
+#include <memory>
+
 #include "exe/database.h"
 #include "exe/feature.h"
 #include "exe/gui.h"
@@ -38,10 +41,6 @@
 #include "exe/sfm.h"
 #include "exe/vocab_tree.h"
 #include "util/version.h"
-
-#include <memory>
-
-#include <QGuiApplication>
 
 namespace {
 
@@ -106,6 +105,7 @@ int main(int argc, char** argv) {
     commands.emplace_back("gui", &RunGraphicalUserInterface);
     commands.emplace_back("automatic_reconstructor",
                           &RunAutomaticReconstructor);
+    commands.emplace_back("advancing_front_mesher", &RunAdvancingFrontMesher);
     commands.emplace_back("bundle_adjuster", &RunBundleAdjuster);
     commands.emplace_back("color_extractor", &RunColorExtractor);
     commands.emplace_back("database_cleaner", &RunDatabaseCleaner);
@@ -124,6 +124,7 @@ int main(int argc, char** argv) {
     commands.emplace_back("image_undistorter", &RunImageUndistorter);
     commands.emplace_back("image_undistorter_standalone",
                           &RunImageUndistorterStandalone);
+    commands.emplace_back("mesh_simplifier", &RunMeshSimplifier);
     commands.emplace_back("mapper", &RunMapper);
     commands.emplace_back("matches_importer", &RunMatchesImporter);
     commands.emplace_back("model_aligner", &RunModelAligner);

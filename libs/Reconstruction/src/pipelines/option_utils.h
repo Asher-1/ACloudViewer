@@ -18,6 +18,7 @@
 #include "feature/matching.h"
 #include "feature/sift.h"
 #include "mvs/fusion.h"
+#include "mvs/mesh_postprocessing.h"
 #include "mvs/meshing.h"
 #include "mvs/patch_match.h"
 #include "optim/bundle_adjustment.h"
@@ -112,6 +113,8 @@ public:
             const colmap::mvs::PoissonMeshingOptions& poisson_meshing_options);
     void addDelaunayMeshingOptions(const colmap::mvs::DelaunayMeshingOptions&
                                            delaunay_meshing_options);
+    void addMeshPostProcessingOptions(
+            const colmap::mvs::MeshPostProcessingOptions& options);
 
 public:
     static void ReleaseOptions(int argc, char** argv) {

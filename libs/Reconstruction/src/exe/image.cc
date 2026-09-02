@@ -516,8 +516,6 @@ int RunImageTexturer(int argc, char** argv) {
     return EXIT_FAILURE;
   }
 
-  CreateDirIfNotExists(output_path);
-
   PrintHeading1("Reading reconstruction");
   Reconstruction reconstruction;
   reconstruction.Read(JoinPaths(input_path, "sparse"));
@@ -527,13 +525,29 @@ int RunImageTexturer(int argc, char** argv) {
             << std::endl;
 
   options.texturing->meshed_file_path = mesh_path;
-  options.texturing->textured_file_path = 
-      JoinPaths(output_path, "textured_mesh.obj");
+  std::string output_prefix;
+  std::string output_extension;
+  SplitFileExtension(output_path, &output_prefix, &output_extension);
+  if (output_extension == ".obj" || output_extension == ".OBJ") {
+    const std::string output_dir = GetParentDir(output_path);
+    if (!output_dir.empty()) {
+      CreateDirIfNotExists(output_dir);
+    }
+    options.texturing->textured_file_path = output_path;
+  } else {
+    CreateDirIfNotExists(output_path);
+    options.texturing->textured_file_path =
+        JoinPaths(output_path, "textured_mesh.obj");
+  }
 
-  TexturingReconstruction texturer(*options.texturing, reconstruction,
-                                   *options.image_path, input_path);
+  TexturingReconstruction texturer(*options.texturing, input_path);
   texturer.Start();
   texturer.Wait();
+
+  if (!texturer.IsSuccess()) {
+    std::cerr << "ERROR: mesh texturing failed" << std::endl;
+    return EXIT_FAILURE;
+  }
 
   return EXIT_SUCCESS;
 }

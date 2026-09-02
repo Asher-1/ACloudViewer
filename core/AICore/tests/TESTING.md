@@ -65,6 +65,10 @@ protected-branch check only where the corresponding hardware label exists.
 `core/AICore/scripts/validate_all.py` is the one-click gate to run after changing or
 adding a ggml operation. Before expanding the task matrix, it enumerates every
 supported GGUF from the built AICore catalogs, verifies the pinned SHA-256, and
+also verifies/downloads the pinned image and archive fixtures required by each
+task. Models are cached in `~/cloudViewer_data/extract`; shared fixture archives
+are cached in `~/cloudViewer_data/download` and their consumed extracted files
+are SHA-256 checked in `extract`.
 downloads missing or corrupt models into the corresponding directory under
 `~/cloudViewer_data/extract`. Downloads use temporary files and an atomic rename,
 so an interrupted transfer never becomes a cached model. By default, a catalog
@@ -74,15 +78,51 @@ JSON plus Markdown reports. A missing backend, exit 77, an uncovered new model,
 an accuracy failure, or unstable repeated output also makes a complete run fail.
 
 ```bash
-# Defaults: two process repeats; probes use two warmups and ten timed forwards
-# where their API supports repeated inference.
+# Defaults: two process repeats (the minimum needed to compare output
+# fingerprints across processes); probes use one warmup and five timed
+# forwards where their API supports repeated inference. For release-grade
+# A/B statistics pass --inference-runs 10 explicitly. The default tier is
+# LIGHT: tasks that declare a lightweight subset (sam3, trellis) run only
+# that subset and their heavy scenarios are skipped. Pass --full for the
+# complete matrix.
 python3 core/AICore/scripts/validate_all.py \
   --build build_app --backend cuda \
   --output build_app/Testing/aicore_validation.json
 
-# Equivalent CMake entry after configuring AICORE_TEST_DEVICE.
+# Complete matrix (all sam3/trellis models and pipeline scenarios). This is
+# the only form that is evidence for a complete regression or release claim.
+python3 core/AICore/scripts/validate_all.py \
+  --build build_app --backend cuda --full \
+  --output build_app/Testing/aicore_validation.json
+
+# Equivalent CMake entry after configuring AICORE_TEST_DEVICE (light tier;
+# add --full via a direct invocation for the complete matrix).
 cmake --build build_app --target aicore-validate-all -j1
 ```
+
+The light tier exists because the sam3 and trellis model families are large
+and slow: sam3 defaults to the two tiny q8_0 SAM variants, trellis defaults
+to the coarse q8 pipeline scenario, and the remaining heavy models/scenarios
+are skipped unless `--full` is passed. Tiered tasks declare their subset in
+`validation_manifest.json` (`"light": true` marks a light scenario,
+`"light_globs"` restricts a per-model scenario); the model-cache preflight,
+coverage audit, and scenario expansion all shrink to that subset, so the
+light run neither downloads nor audits the heavy models. Baseline A/B
+comparisons (`--baseline`, `--baseline-build`) require matching tiers; the
+report records which tier produced it.
+
+Probe outputs and the model cache are kept by default for inspection. On
+space-constrained hosts such as CI runners, pass `--clean-probe-outputs` to
+delete each task's raw per-probe JSON files under `Testing/probes/` and
+`Testing/baseline-probes/` as soon as its rows are summarized (the metrics
+and fingerprints they contained are already folded into the report rows),
+and `--clean-model-cache` to delete the model files this run consumed for
+that task from the asset cache root. The model prune only removes files the
+run's tier consumed, in the pinned catalog layout (`<*_models>/<name>.gguf`
+inside the assets root), and shared models survive until their last
+referencing task finishes; deleting them means the next run re-downloads.
+Shared fixture archives under `~/cloudViewer_data/download` and their
+extracted consumed files are never deleted.
 
 For an optimization gate, retain the before and after build directories and
 run the preferred controlled A/B form below. It alternates the old and new
@@ -113,8 +153,15 @@ the main YOLO matrix rejects missing or incompatible role-specific text
 towers instead of silently skipping those models.
 
 Use `--tasks rmbg,yolo` for a focused development loop and `--list` to populate
-and audit that subset's cache without inference. `--offline` performs the same
-complete SHA-256 cache audit but fails instead of downloading. `--allow-incomplete`
+and audit that subset's model and input caches without inference. Pass
+`--models` (comma-separated fnmatch patterns against model file names, with or
+without the `.gguf` suffix, or bundle scenario ids such as
+`trellis-coarse-q8`) to run individual models inside a task; an explicit
+selection bypasses the light tier for the selected tasks, narrows the
+model-cache preflight and the coverage audit to the selection, and a pattern
+that matches nothing is an error. `--offline`
+performs the same complete SHA-256 cache audit but fails instead of downloading.
+`--allow-incomplete`
 is local-diagnosis only: downloads are still attempted, but unavailable models,
 their dependent scenarios, and exit-77 probes are recorded and skipped while
 the remaining rows continue. Its verdict is `INCOMPLETE`, and it must not be
@@ -124,12 +171,22 @@ checks only the models already available in the local cache.
 The published catalog is the mandatory model set. TRELLIS uses the AICore
 runtime catalog as its single source of truth for the complete Hugging Face
 `Asher-1/Trellis2-models` release: every f16, q8, and published f32 GGUF has a
-resolver URL, exact LFS size, and SHA-256. The default gate downloads missing
-TRELLIS pipeline files into `~/cloudViewer_data/extract/trellis_models`,
-validates them, and runs f16, q8, and f32 pipeline scenarios. RMBG is a shared
+resolver URL, exact LFS size, and SHA-256. The full gate (`--full`) downloads
+missing TRELLIS pipeline files into `~/cloudViewer_data/extract/trellis_models`,
+validates them, and runs f16, q8, and f32 pipeline scenarios; the default
+light gate exercises only the coarse q8 pipeline. RMBG is a shared
 Trellis dependency: its files are downloaded and exercised once from
 `~/cloudViewer_data/extract/rmbg_models`. qTrellis consumes that same catalog;
 it must not introduce a private URL, size, or digest table.
+
+The YOLO inference matrix (one bundle scenario over every non-text-tower
+GGUF, each with CPU/CUDA benchmark and CPU-vs-GPU parity) is tiered the same
+way: the light gate runs a per-task-head subset (detection, segmentation,
+classification, OBB, pose, depth, semantic, plus the YOLO-World open-vocabulary
+representative, all q8_0) declared via `light_globs` and handed to the matrix
+script through `--model-globs`; `--full` or `--models` restores or narrows the
+complete matrix. The text-tower scenarios (CLIP, MobileCLIP, M-CLIP pairings)
+run in both tiers.
 
 ## YOLO upstream-parity benchmark
 

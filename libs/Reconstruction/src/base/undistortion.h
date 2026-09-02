@@ -8,6 +8,7 @@
 #pragma once
 
 #include "base/reconstruction.h"
+#include "base/warp.h"
 #include "util/alignment.h"
 #include "util/bitmap.h"
 #include "util/misc.h"
@@ -36,6 +37,10 @@ struct UndistortCameraOptions {
     double roi_min_y = 0.0;
     double roi_max_x = 1.0;
     double roi_max_y = 1.0;
+
+    // Controls direct target-resolution warping for undistortion and stereo
+    // rectification. The default avoids unnecessary source-resolution passes.
+    WarpImageOptions warp_options;
 };
 
 // Undistort images and export undistorted cameras, as required by the

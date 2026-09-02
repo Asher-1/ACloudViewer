@@ -124,7 +124,8 @@ int RunAutomaticReconstructor(int argc, char** argv) {
                            "Generate surface mesh from fused point cloud");
   options.AddDefaultOption("texturing", &reconstruction_options.texturing,
                            "Texture the reconstructed mesh");
-  options.AddDefaultOption("mesher", &mesher, "{poisson, delaunay}");
+  options.AddDefaultOption("mesher", &mesher,
+                           "{poisson, delaunay, advancing_front}");
   options.AddDefaultOption("num_threads", &reconstruction_options.num_threads);
   options.AddDefaultOption("use_gpu", &reconstruction_options.use_gpu);
   options.AddDefaultOption("gpu_index", &reconstruction_options.gpu_index);
@@ -215,6 +216,9 @@ int RunAutomaticReconstructor(int argc, char** argv) {
   } else if (mesher == "delaunay") {
     reconstruction_options.mesher =
         AutomaticReconstructionController::Mesher::DELAUNAY;
+  } else if (mesher == "advancing_front") {
+    reconstruction_options.mesher =
+        AutomaticReconstructionController::Mesher::ADVANCING_FRONT;
   } else {
     LOG(FATAL) << "Invalid mesher provided";
   }

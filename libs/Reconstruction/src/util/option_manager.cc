@@ -40,7 +40,10 @@
 #include "feature/extraction.h"
 #include "feature/matching.h"
 #include "feature/sift.h"
+#include "mvs/advancing_front_meshing.h"
 #include "mvs/fusion.h"
+#include "mvs/mesh_simplification.h"
+#include "mvs/mesh_postprocessing.h"
 #include "mvs/meshing.h"
 #include "mvs/patch_match.h"
 #include "optim/bundle_adjustment.h"
@@ -73,6 +76,9 @@ OptionManager::OptionManager(bool add_project_options) {
     stereo_fusion.reset(new mvs::StereoFusionOptions());
     poisson_meshing.reset(new mvs::PoissonMeshingOptions());
     delaunay_meshing.reset(new mvs::DelaunayMeshingOptions());
+    advancing_front_meshing.reset(new mvs::AdvancingFrontMeshingOptions());
+    mesh_simplification.reset(new mvs::MeshSimplificationOptions());
+    mesh_post_processing.reset(new mvs::MeshPostProcessingOptions());
     texturing.reset(new TexturingOptions());
     render.reset(new RenderOptions());
 
@@ -194,6 +200,9 @@ void OptionManager::AddAllOptions() {
     AddStereoFusionOptions();
     AddPoissonMeshingOptions();
     AddDelaunayMeshingOptions();
+    AddAdvancingFrontMeshingOptions();
+    AddMeshSimplificationOptions();
+    AddMeshPostProcessingOptions();
     AddRenderOptions();
 }
 
@@ -362,6 +371,9 @@ void OptionManager::AddSequentialMatchingOptions() {
     AddAndRegisterDefaultOption(
             "SequentialMatching.loop_detection_num_images",
             &sequential_matching->loop_detection_num_images);
+    AddAndRegisterDefaultOption(
+            "SequentialMatching.loop_detection_min_index_distance",
+            &sequential_matching->loop_detection_min_index_distance);
     AddAndRegisterDefaultOption(
             "SequentialMatching.loop_detection_num_nearest_neighbors",
             &sequential_matching->loop_detection_num_nearest_neighbors);
@@ -767,6 +779,82 @@ void OptionManager::AddDelaunayMeshingOptions() {
                                 &delaunay_meshing->num_threads);
 }
 
+void OptionManager::AddAdvancingFrontMeshingOptions() {
+    if (added_advancing_front_meshing_options_) {
+        return;
+    }
+    added_advancing_front_meshing_options_ = true;
+
+    AddAndRegisterDefaultOption("AdvancingFrontMeshing.max_edge_length",
+                                &advancing_front_meshing->max_edge_length);
+    AddAndRegisterDefaultOption("AdvancingFrontMeshing.visibility_filtering",
+                                &advancing_front_meshing->visibility_filtering);
+    AddAndRegisterDefaultOption(
+            "AdvancingFrontMeshing.visibility_filtering_max_intersections",
+            &advancing_front_meshing->visibility_filtering_max_intersections);
+    AddAndRegisterDefaultOption(
+            "AdvancingFrontMeshing.visibility_post_filtering",
+            &advancing_front_meshing->visibility_post_filtering);
+    AddAndRegisterDefaultOption(
+            "AdvancingFrontMeshing.visibility_ray_trim_offset",
+            &advancing_front_meshing->visibility_ray_trim_offset);
+    AddAndRegisterDefaultOption("AdvancingFrontMeshing.block_size",
+                                &advancing_front_meshing->block_size);
+    AddAndRegisterDefaultOption("AdvancingFrontMeshing.block_overlap",
+                                &advancing_front_meshing->block_overlap);
+    AddAndRegisterDefaultOption("AdvancingFrontMeshing.num_threads",
+                                &advancing_front_meshing->num_threads);
+}
+
+void OptionManager::AddMeshSimplificationOptions() {
+    if (added_mesh_simplification_options_) {
+        return;
+    }
+    added_mesh_simplification_options_ = true;
+
+    AddAndRegisterDefaultOption("MeshSimplification.target_face_ratio",
+                                &mesh_simplification->target_face_ratio);
+    AddAndRegisterDefaultOption("MeshSimplification.max_error",
+                                &mesh_simplification->max_error);
+    AddAndRegisterDefaultOption("MeshSimplification.boundary_weight",
+                                &mesh_simplification->boundary_weight);
+    AddAndRegisterDefaultOption("MeshSimplification.interpolate_colors",
+                                &mesh_simplification->interpolate_colors);
+    AddAndRegisterDefaultOption("MeshSimplification.num_threads",
+                                &mesh_simplification->num_threads);
+}
+
+void OptionManager::AddMeshPostProcessingOptions() {
+    if (added_mesh_post_processing_options_) return;
+    added_mesh_post_processing_options_ = true;
+    AddAndRegisterDefaultOption("MeshPostProcessing.enabled",
+                                &mesh_post_processing->enabled);
+    AddAndRegisterDefaultOption("MeshPostProcessing.remove_small_components",
+                                &mesh_post_processing->remove_small_components);
+    AddAndRegisterDefaultOption("MeshPostProcessing.remove_degenerate_faces",
+                                &mesh_post_processing->remove_degenerate_faces);
+    AddAndRegisterDefaultOption("MeshPostProcessing.simplify",
+                                &mesh_post_processing->simplify);
+    AddAndRegisterDefaultOption("MeshPostProcessing.smooth",
+                                &mesh_post_processing->smooth);
+    AddAndRegisterDefaultOption("MeshPostProcessing.preserve_boundary",
+                                &mesh_post_processing->preserve_boundary);
+    AddAndRegisterDefaultOption("MeshPostProcessing.prune_error",
+                                &mesh_post_processing->prune_error);
+    AddAndRegisterDefaultOption("MeshPostProcessing.target_face_ratio",
+                                &mesh_post_processing->target_face_ratio);
+    AddAndRegisterDefaultOption("MeshPostProcessing.simplify_error",
+                                &mesh_post_processing->simplify_error);
+    AddAndRegisterDefaultOption("MeshPostProcessing.max_aspect_ratio",
+                                &mesh_post_processing->max_aspect_ratio);
+    AddAndRegisterDefaultOption("MeshPostProcessing.smoothing_iterations",
+                                &mesh_post_processing->smoothing_iterations);
+    AddAndRegisterDefaultOption("MeshPostProcessing.smoothing_lambda",
+                                &mesh_post_processing->smoothing_lambda);
+    AddAndRegisterDefaultOption("MeshPostProcessing.smoothing_mu",
+                                &mesh_post_processing->smoothing_mu);
+}
+
 void OptionManager::AddRenderOptions() {
     if (added_render_options_) {
         return;
@@ -816,6 +904,9 @@ void OptionManager::Reset() {
     added_stereo_fusion_options_ = false;
     added_poisson_meshing_options_ = false;
     added_delaunay_meshing_options_ = false;
+    added_advancing_front_meshing_options_ = false;
+    added_mesh_simplification_options_ = false;
+    added_mesh_post_processing_options_ = false;
     added_texturing_options_ = false;
     added_render_options_ = false;
 }
@@ -841,6 +932,9 @@ void OptionManager::ResetOptions(const bool reset_paths) {
     *stereo_fusion = mvs::StereoFusionOptions();
     *poisson_meshing = mvs::PoissonMeshingOptions();
     *delaunay_meshing = mvs::DelaunayMeshingOptions();
+    *advancing_front_meshing = mvs::AdvancingFrontMeshingOptions();
+    *mesh_simplification = mvs::MeshSimplificationOptions();
+    *mesh_post_processing = mvs::MeshPostProcessingOptions();
     *texturing = TexturingOptions();
     *render = RenderOptions();
 }
@@ -877,6 +971,12 @@ bool OptionManager::Check() {
     if (stereo_fusion) success = success && stereo_fusion->Check();
     if (poisson_meshing) success = success && poisson_meshing->Check();
     if (delaunay_meshing) success = success && delaunay_meshing->Check();
+    if (advancing_front_meshing)
+        success = success && advancing_front_meshing->Check();
+    if (mesh_simplification) success = success && mesh_simplification->Check();
+    if (mesh_post_processing)
+        success = success && mesh_post_processing->Check();
+    if (texturing) success = success && texturing->Check();
 
 #ifdef GUI_ENABLED
     if (render) success = success && render->Check();
@@ -1033,18 +1133,25 @@ void OptionManager::AddTexturingOptions() {
                                 &texturing->meshed_file_path);
     AddAndRegisterDefaultOption("Texturing.textured_file_path",
                                 &texturing->textured_file_path);
-    AddAndRegisterDefaultOption("Texturing.use_depth_normal_maps",
-                                &texturing->use_depth_normal_maps);
-    AddAndRegisterDefaultOption("Texturing.depth_map_type",
-                                &texturing->depth_map_type);
-    AddAndRegisterDefaultOption("Texturing.max_depth_error",
-                                &texturing->max_depth_error);
-    AddAndRegisterDefaultOption("Texturing.min_normal_consistency",
-                                &texturing->min_normal_consistency);
-    AddAndRegisterDefaultOption("Texturing.max_viewing_angle_deg",
-                                &texturing->max_viewing_angle_deg);
-    AddAndRegisterDefaultOption("Texturing.use_gradient_magnitude",
-                                &texturing->use_gradient_magnitude);
+    AddAndRegisterDefaultOption("Texturing.min_cos_normal_angle",
+                                &texturing->min_cos_normal_angle);
+    AddAndRegisterDefaultOption("Texturing.min_visible_vertices",
+                                &texturing->min_visible_vertices);
+    AddAndRegisterDefaultOption(
+            "Texturing.view_selection_smoothing_iterations",
+            &texturing->view_selection_smoothing_iterations);
+    AddAndRegisterDefaultOption("Texturing.atlas_patch_padding",
+                                &texturing->atlas_patch_padding);
+    AddAndRegisterDefaultOption("Texturing.inpaint_radius",
+                                &texturing->inpaint_radius);
+    AddAndRegisterDefaultOption("Texturing.apply_color_correction",
+                                &texturing->apply_color_correction);
+    AddAndRegisterDefaultOption("Texturing.color_correction_regularization",
+                                &texturing->color_correction_regularization);
+    AddAndRegisterDefaultOption("Texturing.num_threads",
+                                &texturing->num_threads);
+    AddAndRegisterDefaultOption("Texturing.texture_scale_factor",
+                                &texturing->texture_scale_factor);
     AddAndRegisterDefaultOption("Texturing.mesh_source",
                                 &texturing->mesh_source);
 }

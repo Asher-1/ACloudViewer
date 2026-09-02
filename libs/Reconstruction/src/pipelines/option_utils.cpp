@@ -532,4 +532,29 @@ void OptionsParser::addDelaunayMeshingOptions(
                    &delaunay_meshing_options.num_threads);
 }
 
+void OptionsParser::addMeshPostProcessingOptions(
+        const colmap::mvs::MeshPostProcessingOptions& options) {
+    registerOption("MeshPostProcessing.enabled", &options.enabled);
+    registerOption("MeshPostProcessing.remove_small_components",
+                   &options.remove_small_components);
+    registerOption("MeshPostProcessing.remove_degenerate_faces",
+                   &options.remove_degenerate_faces);
+    registerOption("MeshPostProcessing.simplify", &options.simplify);
+    registerOption("MeshPostProcessing.smooth", &options.smooth);
+    registerOption("MeshPostProcessing.preserve_boundary",
+                   &options.preserve_boundary);
+    registerOption("MeshPostProcessing.prune_error", &options.prune_error);
+    registerOption("MeshPostProcessing.target_face_ratio",
+                   &options.target_face_ratio);
+    registerOption("MeshPostProcessing.simplify_error",
+                   &options.simplify_error);
+    registerOption("MeshPostProcessing.max_aspect_ratio",
+                   &options.max_aspect_ratio);
+    registerOption("MeshPostProcessing.smoothing_iterations",
+                   &options.smoothing_iterations);
+    registerOption("MeshPostProcessing.smoothing_lambda",
+                   &options.smoothing_lambda);
+    registerOption("MeshPostProcessing.smoothing_mu", &options.smoothing_mu);
+}
+
 }  // namespace cloudViewer

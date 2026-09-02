@@ -277,13 +277,25 @@ cd build_app && ctest --output-on-failure
 cmake -DAICore_ENABLED=ON -DAICore_BUILD_TESTS=ON ..
 cmake --build build_app --target test_capi -j "${BUILD_JOBS:-4}"
 
-# Complete real-asset validation matrix (missing rows fail unless explicitly allowed)
+# Real-asset validation; default LIGHT tier (sam3/trellis run only their
+# declared lightweight subsets). Missing rows fail unless explicitly allowed.
 python3 core/AICore/scripts/validate_all.py \
   --build build_app --backend cuda \
   --output build_app/Testing/aicore_validation.json
 
-# Canonical one-click form: builds probes, verifies/downloads every catalog
-# model under ~/cloudViewer_data/extract, then runs the complete matrix.
+# Complete real-asset matrix (all sam3/trellis models and pipeline scenarios)
+python3 core/AICore/scripts/validate_all.py \
+  --build build_app --backend cuda --full \
+  --output build_app/Testing/aicore_validation.json
+
+# Canonical one-click form: builds probes, verifies/downloads the catalog
+# models of the selected tier under ~/cloudViewer_data/extract plus pinned
+# task input fixtures, then runs that tier's matrix. Shared fixture archives
+# are retained under ~/cloudViewer_data/download and their extracted consumed
+# files are verified. Probe outputs and the model cache are kept by default;
+# pass --clean-probe-outputs and/or --clean-model-cache (e.g. on
+# space-constrained CI runners) to delete each task's raw probe outputs
+# and/or consumed cached models as its rows are summarized.
 cmake --build build_app --target aicore-validate-all -j1
 
 # Local diagnosis only: unavailable downloads and exit-77 probes are recorded
@@ -305,13 +317,30 @@ Test data: `examples/test_data/` (CMake download list); qManualCalib ships `plug
 
 ### Reusing the AICore one-click gate
 
-The default gate is always full for the selected backend and task set: it reads
-the built model catalog, validates pinned SHA-256 values, downloads missing or
-corrupt GGUF files into their task folders under
+The default gate is the LIGHT tier for the selected backend and task set: it
+reads the built model catalog, validates pinned SHA-256 values, downloads
+missing or corrupt GGUF files into their task folders under
 `~/cloudViewer_data/extract`, and fails on any unavailable model, uncovered
-catalog row, probe skip, accuracy error, unstable output, or performance
-regression. It must not infer the supported matrix from whichever files happen
-to be cached locally.
+catalog row (within the tier), probe skip, accuracy error, unstable output,
+or performance regression. It must not infer the supported matrix from
+whichever files happen to be cached locally. Tasks that declare a lightweight
+subset in `validation_manifest.json` (`"light": true` / `"light_globs"` —
+currently sam3: two tiny q8_0 SAM variants; trellis: coarse q8 pipeline;
+yolo: per-task-head q8_0 subset handed to the matrix script via
+`--model-globs`) run only that subset by default because their full
+families are large and slow; pass `--full` for the complete matrix — it is
+the only form that is evidence for a complete regression, release, parity,
+or speedup claim. `--models` (fnmatch patterns against model file names or
+bundle scenario ids) runs individual models, bypassing the tier for the
+selected tasks while narrowing the preflight and coverage audit to the
+selection. Raw probe
+outputs (`Testing/probes/`, `Testing/baseline-probes/`) and the model cache
+are kept by default; `--clean-probe-outputs` deletes each task's probe
+outputs and `--clean-model-cache` deletes the model files the run consumed
+for each task as soon as its rows are summarized (intended for
+space-constrained hosts such as CI runners; the model prune only removes
+the tier's consumed files in the pinned catalog layout, shared models wait
+for their last referencing task, and input fixtures are never deleted).
 
 When repairing AICore or optimizing ggml ops, run the default command above on
 every affected backend. Preserve before/after build directories and pass

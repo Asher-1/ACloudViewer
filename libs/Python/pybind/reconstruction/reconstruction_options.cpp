@@ -9,6 +9,7 @@
 
 #include <Logging.h>
 
+#include "mvs/mesh_postprocessing.h"
 #include "pipelines/option_utils.h"
 #include "pybind/docstring.h"
 
@@ -342,6 +343,12 @@ void pybind_sequential_matching_options(py::module& m) {
                            "retrieve in loop detection. "
                            "This number should be significantly bigger than "
                            "the sequential matching overlap.")
+            .def_readwrite(
+                    "loop_detection_min_index_distance",
+                    &colmap::SequentialMatchingOptions::
+                            loop_detection_min_index_distance,
+                    "int: (Default ``0``) Minimum sequential image-index "
+                    "distance for loop candidates. Zero disables filtering.")
             .def_readwrite("loop_detection_num_nearest_neighbors",
                            &colmap::SequentialMatchingOptions::
                                    loop_detection_num_nearest_neighbors,
@@ -1270,6 +1277,49 @@ void pybind_delaunay_meshing_options(py::module& m) {
                            "use for reconstruction. Default is all threads.");
 }
 
+void pybind_mesh_post_processing_options(py::module& m) {
+    py::class_<colmap::mvs::MeshPostProcessingOptions> options(
+            m, "MeshPostProcessingOptions",
+            "meshoptimizer cleanup and smoothing options.");
+    options.def(py::init<>())
+            .def("check", &colmap::mvs::MeshPostProcessingOptions::Check)
+            .def_readwrite("enabled",
+                           &colmap::mvs::MeshPostProcessingOptions::enabled)
+            .def_readwrite("remove_small_components",
+                           &colmap::mvs::MeshPostProcessingOptions::
+                                   remove_small_components)
+            .def_readwrite("remove_degenerate_faces",
+                           &colmap::mvs::MeshPostProcessingOptions::
+                                   remove_degenerate_faces)
+            .def_readwrite("simplify",
+                           &colmap::mvs::MeshPostProcessingOptions::simplify)
+            .def_readwrite("smooth",
+                           &colmap::mvs::MeshPostProcessingOptions::smooth)
+            .def_readwrite(
+                    "preserve_boundary",
+                    &colmap::mvs::MeshPostProcessingOptions::preserve_boundary)
+            .def_readwrite("prune_error",
+                           &colmap::mvs::MeshPostProcessingOptions::prune_error)
+            .def_readwrite(
+                    "target_face_ratio",
+                    &colmap::mvs::MeshPostProcessingOptions::target_face_ratio)
+            .def_readwrite(
+                    "simplify_error",
+                    &colmap::mvs::MeshPostProcessingOptions::simplify_error)
+            .def_readwrite(
+                    "max_aspect_ratio",
+                    &colmap::mvs::MeshPostProcessingOptions::max_aspect_ratio)
+            .def_readwrite("smoothing_iterations",
+                           &colmap::mvs::MeshPostProcessingOptions::
+                                   smoothing_iterations)
+            .def_readwrite(
+                    "smoothing_lambda",
+                    &colmap::mvs::MeshPostProcessingOptions::smoothing_lambda)
+            .def_readwrite(
+                    "smoothing_mu",
+                    &colmap::mvs::MeshPostProcessingOptions::smoothing_mu);
+}
+
 void pybind_reconstruction_options(py::module& m) {
     py::module m_submodule =
             m.def_submodule("options", "Reconstruction options");
@@ -1293,6 +1343,7 @@ void pybind_reconstruction_options(py::module& m) {
     pybind_stereo_fusion_options(m_submodule);
     pybind_poisson_meshing_options(m_submodule);
     pybind_delaunay_meshing_options(m_submodule);
+    pybind_mesh_post_processing_options(m_submodule);
 }
 
 }  // namespace options

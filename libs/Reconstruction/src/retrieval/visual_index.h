@@ -9,6 +9,7 @@
 
 #include <Eigen/Core>
 #include <boost/heap/fibonacci_heap.hpp>
+#include <functional>
 
 #include "FLANN/flann.hpp"
 #include "feature/types.h"
@@ -70,6 +71,10 @@ public:
 
         // The number of threads used in the index.
         int num_threads = kMaxNumThreads;
+
+        // Applied before ranking and top-N truncation. This lets callers keep
+        // invalid candidates from consuming the retrieval budget.
+        std::function<bool(int)> image_id_filter;
     };
 
     struct BuildOptions {
@@ -685,6 +690,16 @@ void VisualIndex<kDescType, kDescDim, kEmbeddingDim>::QueryAndFindWordIds(
     *word_ids = FindWordIds(descriptors, options.num_neighbors,
                             options.num_checks, options.num_threads);
     inverted_index_.Query(descriptors, *word_ids, image_scores);
+
+    if (options.image_id_filter) {
+        image_scores->erase(
+                std::remove_if(image_scores->begin(), image_scores->end(),
+                               [&options](const ImageScore& image_score) {
+                                   return !options.image_id_filter(
+                                           image_score.image_id);
+                               }),
+                image_scores->end());
+    }
 
     auto SortFunc = [](const ImageScore& score1, const ImageScore& score2) {
         return score1.score > score2.score;

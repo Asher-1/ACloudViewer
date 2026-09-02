@@ -55,6 +55,11 @@ set(CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM)
 
 set(CUSTOM_TARGET_PREFIX "CloudViewer")
 
+# Shared meshoptimizer target. It is linked explicitly by the consumers that
+# use it (AICore TRELLIS and Reconstruction), rather than every CloudViewer
+# target through the global private dependency list.
+include(${CloudViewer_3RDPARTY_DIR}/meshoptimizer/meshoptimizer.cmake)
+
 if (WIN32)
     # EXTERNAL INSTALL DIR
     set(CLOUDVIEWER_EXTERNAL_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/external")
