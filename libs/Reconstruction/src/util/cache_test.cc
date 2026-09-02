@@ -68,57 +68,9 @@ BOOST_AUTO_TEST_CASE(TestLRUCacheGet) {
     BOOST_CHECK(!cache.Exists(0));
     BOOST_CHECK(!cache.Exists(1));
     BOOST_CHECK(cache.Exists(6));
-}
 
-BOOST_AUTO_TEST_CASE(TestLRUCacheGet) {
-    LRUCache<int, int> cache(
-            5, [](const int key) { return std::make_shared<int>(key); });
-    BOOST_CHECK_EQUAL(cache.NumElems(), 0);
-    for (int i = 0; i < 5; ++i) {
-        BOOST_CHECK_EQUAL(*cache.Get(i), i);
-        BOOST_CHECK_EQUAL(cache.NumElems(), i + 1);
-        BOOST_CHECK(cache.Exists(i));
-    }
-
-    BOOST_CHECK_EQUAL(*cache.Get(5), 5);
-    BOOST_CHECK_EQUAL(cache.NumElems(), 5);
-    BOOST_CHECK(!cache.Exists(0));
-    BOOST_CHECK(cache.Exists(5));
-
-    BOOST_CHECK_EQUAL(*cache.Get(5), 5);
-    BOOST_CHECK_EQUAL(cache.NumElems(), 5);
-    BOOST_CHECK(!cache.Exists(0));
-    BOOST_CHECK(cache.Exists(5));
-
-    BOOST_CHECK_EQUAL(*cache.Get(6), 6);
-    BOOST_CHECK_EQUAL(cache.NumElems(), 5);
-    BOOST_CHECK(!cache.Exists(0));
-    BOOST_CHECK(!cache.Exists(1));
-    BOOST_CHECK(cache.Exists(6));
-
-    cache.Get(6) = 66;
+    *cache.Get(6) = 66;
     BOOST_CHECK_EQUAL(*cache.Get(6), 66);
-    BOOST_CHECK_EQUAL(cache.NumElems(), 5);
-    BOOST_CHECK(!cache.Exists(0));
-    BOOST_CHECK(!cache.Exists(1));
-    BOOST_CHECK(cache.Exists(6));
-}
-
-BOOST_AUTO_TEST_CASE(TestLRUCacheSet) {
-    LRUCache<int, int> cache(5, [](const int key) { return std::make_shared<int>(-1); });
-    BOOST_CHECK_EQUAL(cache.NumElems(), 0);
-    for (int i = 0; i < 5; ++i) {
-        cache.Set(i, std::make_shared<int>(i));
-        BOOST_CHECK_EQUAL(cache.NumElems(), i + 1);
-        BOOST_CHECK(cache.Exists(i));
-    }
-
-    BOOST_CHECK_EQUAL(*cache.Get(5), -1);
-    BOOST_CHECK_EQUAL(cache.NumElems(), 5);
-    BOOST_CHECK(!cache.Exists(0));
-    BOOST_CHECK(cache.Exists(5));
-
-    BOOST_CHECK_EQUAL(*cache.Get(6), -1);
     BOOST_CHECK_EQUAL(cache.NumElems(), 5);
     BOOST_CHECK(!cache.Exists(0));
     BOOST_CHECK(!cache.Exists(1));

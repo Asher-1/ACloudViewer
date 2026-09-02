@@ -32,6 +32,9 @@
 #define TEST_NAME "util/threading"
 #include "util/testing.h"
 
+#include <chrono>
+#include <thread>
+
 #include "util/logging.h"
 #include "util/threading.h"
 
