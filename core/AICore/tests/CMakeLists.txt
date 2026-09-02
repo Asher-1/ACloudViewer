@@ -735,6 +735,7 @@ endif()
 
 set(_aicore_contract_targets
     test_runtime_capi_contract
+    test_pipeline_timing_contract
     test_depth_capi_contract
     test_image_depth
     test_depth_capi_load
@@ -807,6 +808,7 @@ endif()
 set(_aicore_fast_targets
     test_data_root
     test_backend_registry
+    test_image_view_contract
     test_gguf_keys
     test_path_util
     test_compute_mode

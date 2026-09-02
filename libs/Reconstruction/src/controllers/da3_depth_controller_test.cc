@@ -11,6 +11,7 @@
 #include "controllers/da3_depth_controller.h"
 
 #include <filesystem>
+#include <fstream>
 
 using namespace colmap;
 
