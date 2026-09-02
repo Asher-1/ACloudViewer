@@ -108,6 +108,17 @@ public:
      */
     bool raiseLayer(const std::string& layer_id);
 
+    /** Fit the 2D camera to a single image layer (pixel-space zoom-fit).
+     *  fitImagesToWindow() refreshes every slice and leaves the camera on
+     *  the map-order last image, which is not necessarily the selected one.
+     *  Call after 2D image mode is active: updateImageSliceTransform only
+     *  moves the camera while m_imageInteraction2D is set, otherwise it
+     *  refreshes the slice alone (VtkVis owns the 3D camera).
+     *  @param layer_id Image layer ID (ccImage::getViewId())
+     *  @return true if the layer was found and fitted
+     */
+    bool fitLayerToWindow(const std::string& layer_id);
+
     /** @param layer_id Unique layer identifier
      *  @param x,y,width,height Layer bounds in pixels
      *  @param opacity Layer opacity (default 0.5)

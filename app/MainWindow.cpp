@@ -2459,6 +2459,20 @@ void MainWindow::initDBRoot() {
 
                 if (imageSelected) {
                     fitActiveViewForImageEntity(first, glView);
+                    // Multiple visible ccImage entities stack in the same
+                    // window in ViewProps insertion order, so the selected
+                    // image may stay hidden under a later-rebuilt one, and
+                    // the full-refresh fit leaves the camera on the last
+                    // map-order image.  Pin both to the selected entity so
+                    // the window shows the image clicked in the DB tree.
+                    if (first->isA(CV_TYPES::IMAGE)) {
+                        if (auto imgVis = glView->getImageVis()) {
+                            const std::string layerId =
+                                    first->getViewId().toStdString();
+                            imgVis->fitLayerToWindow(layerId);
+                            imgVis->raiseLayer(layerId);
+                        }
+                    }
                 } else if (was2D) {
                     const ccBBox bbox = first->getDisplayBB_recursive(false);
                     if (bbox.isValid()) {

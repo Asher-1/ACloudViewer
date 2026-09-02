@@ -292,6 +292,19 @@ bool ImageVis::raiseLayer(const std::string& layer_id) {
     return true;
 }
 
+bool ImageVis::fitLayerToWindow(const std::string& layer_id) {
+    auto it = m_imageInfoMap.find(layer_id);
+    if (it == m_imageInfoMap.end() || !it->second.imageSlice || !ren_) {
+        return false;
+    }
+
+    // Same pixel-space zoom-fit as the full refresh, but pinned to the
+    // selected image so the camera matches the entity picked in the DB tree.
+    updateImageSliceTransform(it->second.imageSlice, it->second.originalWidth,
+                              it->second.originalHeight);
+    return true;
+}
+
 void ImageVis::removeAllLayers() {
     std::vector<std::string> ids;
     for (const auto& kv : m_imageInfoMap) ids.push_back(kv.first);
