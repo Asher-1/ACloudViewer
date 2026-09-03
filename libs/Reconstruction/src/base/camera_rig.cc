@@ -31,9 +31,45 @@
 
 #include "base/camera_rig.h"
 
+#include <algorithm>
+#include <cmath>
+#include <limits>
+#include <unordered_set>
+
+#include "util/endian.h"
 #include "util/misc.h"
 
 namespace colmap {
+
+namespace {
+
+constexpr uint32_t kCameraRigBinaryMagic = 0x43525631;  // CRV1
+constexpr uint32_t kCameraRigFormatVersion = 1;
+constexpr uint64_t kMaxSerializedRigElements = 1000000;
+
+bool IsValidRelativePose(const Eigen::Vector4d& qvec,
+                         const Eigen::Vector3d& tvec) {
+  return qvec.allFinite() && tvec.allFinite() &&
+         qvec.squaredNorm() > std::numeric_limits<double>::epsilon();
+}
+
+bool IsValidSnapshots(const std::vector<std::vector<image_t>>& snapshots,
+                      const size_t num_cameras) {
+  std::unordered_set<image_t> image_ids;
+  for (const auto& snapshot : snapshots) {
+    if (snapshot.empty() || snapshot.size() > num_cameras) {
+      return false;
+    }
+    for (const image_t image_id : snapshot) {
+      if (!image_ids.insert(image_id).second) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+}  // namespace
 
 CameraRig::CameraRig() {}
 
@@ -63,6 +99,184 @@ std::vector<camera_t> CameraRig::GetCameraIds() const {
 
 const std::vector<std::vector<image_t>>& CameraRig::Snapshots() const {
   return snapshots_;
+}
+
+void CameraRig::WriteText(std::ostream* stream) const {
+  CHECK_NOTNULL(stream);
+  CHECK(stream->good());
+  stream->precision(17);
+  *stream << "# ACloudViewer CameraRig v1\n";
+  *stream << "RIG " << kCameraRigFormatVersion << " " << ref_camera_id_
+          << " " << NumCameras() << " " << NumSnapshots() << "\n";
+
+  std::vector<camera_t> camera_ids = GetCameraIds();
+  std::sort(camera_ids.begin(), camera_ids.end());
+  for (const camera_t camera_id : camera_ids) {
+    const Eigen::Vector4d& qvec = RelativeQvec(camera_id);
+    const Eigen::Vector3d& tvec = RelativeTvec(camera_id);
+    *stream << "CAMERA " << camera_id << " " << qvec(0) << " " << qvec(1)
+            << " " << qvec(2) << " " << qvec(3) << " " << tvec(0) << " "
+            << tvec(1) << " " << tvec(2) << "\n";
+  }
+  for (const auto& snapshot : snapshots_) {
+    *stream << "SNAPSHOT " << snapshot.size();
+    for (const image_t image_id : snapshot) {
+      *stream << " " << image_id;
+    }
+    *stream << "\n";
+  }
+}
+
+bool CameraRig::ReadText(std::istream* stream) {
+  if (stream == nullptr || !stream->good()) {
+    return false;
+  }
+
+  std::string tag;
+  while (*stream >> tag && tag[0] == '#') {
+    stream->ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+  }
+  if (!stream->good() || tag != "RIG") {
+    return false;
+  }
+
+  uint32_t version = 0;
+  camera_t ref_camera_id = kInvalidCameraId;
+  uint64_t num_cameras = 0;
+  uint64_t num_snapshots = 0;
+  if (!(*stream >> version >> ref_camera_id >> num_cameras >> num_snapshots) ||
+      version != kCameraRigFormatVersion || num_cameras == 0 ||
+      num_cameras > kMaxSerializedRigElements ||
+      num_snapshots > kMaxSerializedRigElements) {
+    return false;
+  }
+
+  CameraRig parsed;
+  for (uint64_t i = 0; i < num_cameras; ++i) {
+    Eigen::Vector4d qvec;
+    Eigen::Vector3d tvec;
+    camera_t camera_id = kInvalidCameraId;
+    if (!(*stream >> tag >> camera_id >> qvec(0) >> qvec(1) >> qvec(2) >>
+          qvec(3) >> tvec(0) >> tvec(1) >> tvec(2)) ||
+        tag != "CAMERA" || parsed.HasCamera(camera_id) ||
+        !IsValidRelativePose(qvec, tvec)) {
+      return false;
+    }
+    parsed.rig_cameras_.emplace(camera_id, RigCamera{qvec, tvec});
+  }
+  if (!parsed.HasCamera(ref_camera_id)) {
+    return false;
+  }
+  parsed.ref_camera_id_ = ref_camera_id;
+
+  for (uint64_t i = 0; i < num_snapshots; ++i) {
+    uint64_t num_images = 0;
+    if (!(*stream >> tag >> num_images) || tag != "SNAPSHOT" ||
+        num_images == 0 || num_images > num_cameras) {
+      return false;
+    }
+    std::vector<image_t> snapshot(num_images);
+    for (image_t& image_id : snapshot) {
+      if (!(*stream >> image_id)) {
+        return false;
+      }
+    }
+    parsed.snapshots_.push_back(std::move(snapshot));
+  }
+  if (!IsValidSnapshots(parsed.snapshots_, parsed.NumCameras())) {
+    return false;
+  }
+  *this = std::move(parsed);
+  return true;
+}
+
+void CameraRig::WriteBinary(std::ostream* stream) const {
+  CHECK_NOTNULL(stream);
+  CHECK(stream->good());
+  WriteBinaryLittleEndian<uint32_t>(stream, kCameraRigBinaryMagic);
+  WriteBinaryLittleEndian<uint32_t>(stream, kCameraRigFormatVersion);
+  WriteBinaryLittleEndian<camera_t>(stream, ref_camera_id_);
+  WriteBinaryLittleEndian<uint64_t>(stream, NumCameras());
+  WriteBinaryLittleEndian<uint64_t>(stream, NumSnapshots());
+
+  std::vector<camera_t> camera_ids = GetCameraIds();
+  std::sort(camera_ids.begin(), camera_ids.end());
+  for (const camera_t camera_id : camera_ids) {
+    WriteBinaryLittleEndian<camera_t>(stream, camera_id);
+    const Eigen::Vector4d& qvec = RelativeQvec(camera_id);
+    const Eigen::Vector3d& tvec = RelativeTvec(camera_id);
+    for (int i = 0; i < qvec.size(); ++i) {
+      WriteBinaryLittleEndian<double>(stream, qvec(i));
+    }
+    for (int i = 0; i < tvec.size(); ++i) {
+      WriteBinaryLittleEndian<double>(stream, tvec(i));
+    }
+  }
+  for (const auto& snapshot : snapshots_) {
+    WriteBinaryLittleEndian<uint64_t>(stream, snapshot.size());
+    for (const image_t image_id : snapshot) {
+      WriteBinaryLittleEndian<image_t>(stream, image_id);
+    }
+  }
+}
+
+bool CameraRig::ReadBinary(std::istream* stream) {
+  if (stream == nullptr || !stream->good()) {
+    return false;
+  }
+  const uint32_t magic = ReadBinaryLittleEndian<uint32_t>(stream);
+  const uint32_t version = ReadBinaryLittleEndian<uint32_t>(stream);
+  const camera_t ref_camera_id = ReadBinaryLittleEndian<camera_t>(stream);
+  const uint64_t num_cameras = ReadBinaryLittleEndian<uint64_t>(stream);
+  const uint64_t num_snapshots = ReadBinaryLittleEndian<uint64_t>(stream);
+  if (!stream->good() || magic != kCameraRigBinaryMagic ||
+      version != kCameraRigFormatVersion || num_cameras == 0 ||
+      num_cameras > kMaxSerializedRigElements ||
+      num_snapshots > kMaxSerializedRigElements) {
+    return false;
+  }
+
+  CameraRig parsed;
+  for (uint64_t i = 0; i < num_cameras; ++i) {
+    const camera_t camera_id = ReadBinaryLittleEndian<camera_t>(stream);
+    Eigen::Vector4d qvec;
+    Eigen::Vector3d tvec;
+    for (int j = 0; j < qvec.size(); ++j) {
+      qvec(j) = ReadBinaryLittleEndian<double>(stream);
+    }
+    for (int j = 0; j < tvec.size(); ++j) {
+      tvec(j) = ReadBinaryLittleEndian<double>(stream);
+    }
+    if (!stream->good() || parsed.HasCamera(camera_id) ||
+        !IsValidRelativePose(qvec, tvec)) {
+      return false;
+    }
+    parsed.rig_cameras_.emplace(camera_id, RigCamera{qvec, tvec});
+  }
+  if (!parsed.HasCamera(ref_camera_id)) {
+    return false;
+  }
+  parsed.ref_camera_id_ = ref_camera_id;
+
+  for (uint64_t i = 0; i < num_snapshots; ++i) {
+    const uint64_t num_images = ReadBinaryLittleEndian<uint64_t>(stream);
+    if (!stream->good() || num_images == 0 || num_images > num_cameras) {
+      return false;
+    }
+    std::vector<image_t> snapshot(num_images);
+    for (image_t& image_id : snapshot) {
+      image_id = ReadBinaryLittleEndian<image_t>(stream);
+    }
+    if (!stream->good()) {
+      return false;
+    }
+    parsed.snapshots_.push_back(std::move(snapshot));
+  }
+  if (!IsValidSnapshots(parsed.snapshots_, parsed.NumCameras())) {
+    return false;
+  }
+  *this = std::move(parsed);
+  return true;
 }
 
 void CameraRig::AddCamera(const camera_t camera_id,

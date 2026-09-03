@@ -10,6 +10,7 @@ dependencies:
   - pcl=1.15.1 # will auto install required dependencies like vtk-9.4.2 and qt-6.9.2
   - qt6-main>=6.4.*
   - cgal=6.*
+  - libomp # AppleClang does not ship OpenMP runtime; required by reconstruction/CVCoreLib
   - ffmpeg=7.1.*
   - mpv # libmpv: audio + hardware decode for video_base
   - xerces-c=3.2.* # reconstruction or PLUGIN_IO_QE57

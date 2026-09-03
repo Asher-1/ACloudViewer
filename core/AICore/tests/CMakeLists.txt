@@ -445,12 +445,17 @@ cloudviewer_set_aicore_test_runtime_layout(bench_sam3_backend_acceptance)
 # diagnostic (needs a local SAM3 GGUF + Vulkan GPU), not a CTest. The internal
 # implementation is deliberately compiled into this test-only static library;
 # no SAM3 C++ symbol is part of libAICore's production ABI.
+# Define SAM3_BUILD but never SAM3_SHARED here: SAM3_API must expand to
+# nothing. libAICore intentionally does not export the SAM3 C++ symbols, and
+# on MSVC a dllimport-consuming target cannot resolve __imp_?sam3_* against a
+# static library (archive members are selected by exact symbol name, so the
+# linker never pulls in the member defining the undecorated ?sam3_* symbol).
 add_library(AICore_sam3_diagnostics STATIC ${AICORE_SAM3_SRC_DIR}/sam3.cpp)
 target_include_directories(AICore_sam3_diagnostics PRIVATE
     ${AICORE_TEST_INC} ${AICORE_TEST_INC}/.. ${AICORE_INC_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../src ${AICORE_COMMON_SRC_DIR}
     ${AICORE_TASKS_SRC_DIR} ${AICORE_SAM3_SRC_DIR} ${GGML_INCLUDE_DIRS})
-target_compile_definitions(AICore_sam3_diagnostics PRIVATE SAM3_SHARED SAM3_BUILD)
+target_compile_definitions(AICore_sam3_diagnostics PRIVATE SAM3_BUILD)
 if(NOT MSVC)
     target_compile_options(AICore_sam3_diagnostics PRIVATE -fPIC)
 endif()
@@ -459,10 +464,17 @@ target_link_libraries(AICore_sam3_diagnostics PRIVATE AICore)
 
 add_executable(cmp_sam3_vit_stages sam3/cmp_sam3_vit_stages.cpp)
 target_link_libraries(cmp_sam3_vit_stages PRIVATE AICore_sam3_diagnostics AICore)
-target_compile_definitions(cmp_sam3_vit_stages PRIVATE SAM3_SHARED)
+# No SAM3_SHARED: the test TU must see SAM3_API as empty so its sam3.h calls
+# resolve directly against the AICore_sam3_diagnostics static library instead
+# of dllimport (__imp_) references that no import library provides.
+add_executable(cmp_sam3_mask_triage sam3/cmp_sam3_mask_triage.cpp)
+target_link_libraries(cmp_sam3_mask_triage PRIVATE AICore_sam3_diagnostics AICore)
+set_target_properties(cmp_sam3_mask_triage PROPERTIES POSITION_INDEPENDENT_CODE ON)
 if(NOT MSVC)
     target_compile_options(cmp_sam3_vit_stages PRIVATE -Wall -Wextra -fPIC)
     target_link_options(cmp_sam3_vit_stages PRIVATE "-no-pie")
+    target_compile_options(cmp_sam3_mask_triage PRIVATE -Wall -Wextra -fPIC)
+    target_link_options(cmp_sam3_mask_triage PRIVATE "-no-pie")
 endif()
 target_include_directories(cmp_sam3_vit_stages PRIVATE ${AICORE_TEST_INC})
 target_include_directories(cmp_sam3_vit_stages PRIVATE ${AICORE_TEST_INC}/../src)

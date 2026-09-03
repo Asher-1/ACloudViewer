@@ -101,4 +101,32 @@ public:
                           std::vector<double>* residuals);
 };
 
+// Locally refine a fundamental matrix by minimizing the signed Sampson
+// residuals. The update is deliberately self-contained (fixed-size normal
+// equations and an SVD rank-2 projection) so robust estimation does not gain a
+// new runtime dependency. This is the small/tiny refinement step used by
+// modern COLMAP after RANSAC has selected an inlier set.
+bool RefineFundamentalMatrixSampson(
+    const std::vector<Eigen::Vector2d>& points1,
+    const std::vector<Eigen::Vector2d>& points2,
+    Eigen::Matrix3d* F,
+    int max_num_iterations = 15);
+
+class FundamentalMatrixSampsonEstimator {
+public:
+    typedef Eigen::Vector2d X_t;
+    typedef Eigen::Vector2d Y_t;
+    typedef Eigen::Matrix3d M_t;
+
+    static const int kMinNumSamples = 8;
+
+    static std::vector<M_t> Estimate(const std::vector<X_t>& points1,
+                                     const std::vector<Y_t>& points2);
+
+    static void Residuals(const std::vector<X_t>& points1,
+                          const std::vector<Y_t>& points2,
+                          const M_t& F,
+                          std::vector<double>* residuals);
+};
+
 }  // namespace colmap

@@ -490,7 +490,7 @@ def _setup_linux_libraries():
         try_load_cdll('libboost_iostreams*')
         # Load Qt DBus and XcbQpa based on detected Qt version
         _load_qt_libraries(['DBus', 'XcbQpa'])
-        try_load_cdll('libfreeimage*')
+        try_load_cdll('libOpenImageIO*')
         try_load_cdll('libgflags*')
         try_load_cdll('libglog*')
         try_load_cdll('libatlas*')

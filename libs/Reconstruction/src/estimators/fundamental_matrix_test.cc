@@ -30,6 +30,8 @@
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
 #define TEST_NAME "estimators/fundamental_matrix"
+#include <numeric>
+
 #include "util/testing.h"
 
 #include "estimators/fundamental_matrix.h"
@@ -102,4 +104,30 @@ BOOST_AUTO_TEST_CASE(TestEightPoint) {
   BOOST_CHECK(std::abs(F(2, 0) - 0.248062) < 1e-5);
   BOOST_CHECK(std::abs(F(2, 1) - -0.429478) < 1e-5);
   BOOST_CHECK(std::abs(F(2, 2) - 0.0221019) < 1e-5);
+}
+
+BOOST_AUTO_TEST_CASE(TestSampsonRefinementPreservesOrImprovesResidual) {
+  std::vector<Eigen::Vector2d> points1;
+  std::vector<Eigen::Vector2d> points2;
+  for (int i = 0; i < 20; ++i) {
+    const double x = -0.8 + 0.07 * i;
+    const double y = 0.2 * std::sin(0.5 * i);
+    points1.emplace_back(x, y);
+    points2.emplace_back(x + 0.1, y + 0.03 * x);
+  }
+  // Add a small perturbation to a valid rank-2 model and verify the tiny
+  // refinement never accepts an uphill step.
+  Eigen::Matrix3d F;
+  F << 0.0, -0.2, 0.1, 0.2, 0.0, -0.3, -0.1, 0.3, 0.01;
+  std::vector<double> before;
+  FundamentalMatrixEightPointEstimator::Residuals(points1, points2, F,
+                                                   &before);
+  const double before_cost =
+      std::accumulate(before.begin(), before.end(), 0.0);
+  BOOST_CHECK(RefineFundamentalMatrixSampson(points1, points2, &F));
+  std::vector<double> after;
+  FundamentalMatrixEightPointEstimator::Residuals(points1, points2, F,
+                                                   &after);
+  const double after_cost = std::accumulate(after.begin(), after.end(), 0.0);
+  BOOST_CHECK_LE(after_cost, before_cost + 1e-10);
 }

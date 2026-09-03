@@ -30,6 +30,12 @@ option(BUILD_COLMAP_GUI "Builds COLMAP GUI" ON)
 option(BOOST_STATIC "With boost static library" OFF)
 option(CUDA_ENABLED "Whether to enable CUDA, if available" ON)
 option(PBA_ENABLED "Whether to enable PBA for parallel BA Optimization" ON)
+option(RECONSTRUCTION_FETCH_POSELIB
+       "Fetch the pinned PoseLib minimal solvers for reconstruction" ON)
+option(RECONSTRUCTION_CASPAR_ENABLED
+       "Enable COLMAP Caspar CUDA bundle adjustment" OFF)
+option(RECONSTRUCTION_CASPAR_USE_DOUBLE
+       "Use f64 generated Caspar kernels" OFF)
 option(ALL_SOURCE_TARGET "Whether to create a target for all source files (for Visual Studio / XCode development)" OFF)
 option(DOWNLOAD_ENABLED "Whether to enable (automatic) download of resources (requires Curl/OpenSSL)" ON)
 set(GUI_ENABLED ${BUILD_COLMAP_GUI})
@@ -82,7 +88,6 @@ if (APPLE OR WIN32 OR ${GLIBCXX_USE_CXX11_ABI})
         list(APPEND COLMAP_BOOST_COMPONENTS unit_test_framework)
     endif ()
     find_package(Boost REQUIRED COMPONENTS ${COLMAP_BOOST_COMPONENTS})
-    # find_package(FreeImage REQUIRED)
     # find_package(Glog REQUIRED)
     # find_package(Ceres REQUIRED)
     # find_package(Metis REQUIRED)
@@ -292,7 +297,6 @@ set(COLMAP_INCLUDE_DIRS
         ${Boost_INCLUDE_DIR}
         ${EIGEN_INCLUDE_DIRS}
         ${GLOG_INCLUDE_DIRS}
-        ${FREEIMAGE_INCLUDE_DIRS}
         ${CERES_INCLUDE_DIRS}
         ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/include
         )
@@ -309,6 +313,7 @@ if (WIN32)
         Boost::system
         Boost::filesystem
         Boost::program_options
+        3rdparty_openimageio
         )
 else()
     set(COLMAP_EXTERNAL_LIBRARIES
@@ -316,9 +321,9 @@ else()
         ${Boost_FILESYSTEM_LIBRARY}
         ${Boost_PROGRAM_OPTIONS_LIBRARY}
         ${Boost_SYSTEM_LIBRARY}
+        3rdparty_openimageio
         # ${GLOG_LIBRARIES}
         # ${CERES_LIBRARIES}
-        # ${FREEIMAGE_LIBRARIES}
         )
 endif()
         

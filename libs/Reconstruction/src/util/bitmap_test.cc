@@ -32,6 +32,8 @@
 #define TEST_NAME "util/bitmap"
 #include "util/testing.h"
 
+#include <boost/filesystem.hpp>
+
 #include "util/bitmap.h"
 
 using namespace colmap;
@@ -224,9 +226,9 @@ BOOST_AUTO_TEST_CASE(TestGetScanlineRGB) {
     for (size_t c = 0; c < 3; ++c) {
       BitmapColor<uint8_t> color;
       BOOST_CHECK(bitmap.GetPixel(r, c, &color));
-      BOOST_CHECK_EQUAL(scanline[c * 3 + FI_RGBA_RED], color.r);
-      BOOST_CHECK_EQUAL(scanline[c * 3 + FI_RGBA_GREEN], color.g);
-      BOOST_CHECK_EQUAL(scanline[c * 3 + FI_RGBA_BLUE], color.b);
+      BOOST_CHECK_EQUAL(scanline[c * 3], color.r);
+      BOOST_CHECK_EQUAL(scanline[c * 3 + 1], color.g);
+      BOOST_CHECK_EQUAL(scanline[c * 3 + 2], color.b);
     }
   }
 }
@@ -384,4 +386,21 @@ BOOST_AUTO_TEST_CASE(TestCloneAsGrey) {
   BOOST_CHECK_EQUAL(cloned_bitmap.Height(), 100);
   BOOST_CHECK_EQUAL(cloned_bitmap.Channels(), 1);
   BOOST_CHECK_NE(bitmap.Data(), cloned_bitmap.Data());
+}
+
+BOOST_AUTO_TEST_CASE(TestOpenImageIORoundTrip) {
+  const boost::filesystem::path path =
+      boost::filesystem::temp_directory_path() /
+      boost::filesystem::unique_path("colmap-bitmap-%%%%-%%%%.png");
+
+  Bitmap written;
+  BOOST_REQUIRE(written.Allocate(2, 1, true));
+  BOOST_REQUIRE(written.SetPixel(0, 0, BitmapColor<uint8_t>(1, 2, 3)));
+  BOOST_REQUIRE(written.SetPixel(1, 0, BitmapColor<uint8_t>(4, 5, 6)));
+  BOOST_REQUIRE(written.Write(path.string(), BitmapFormat::kPng));
+
+  Bitmap read;
+  BOOST_REQUIRE(read.Read(path.string(), true));
+  BOOST_CHECK(read.ConvertToRowMajorArray() == written.ConvertToRowMajorArray());
+  boost::filesystem::remove(path);
 }

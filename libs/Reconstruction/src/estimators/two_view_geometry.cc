@@ -42,6 +42,9 @@
 #include "estimators/essential_matrix.h"
 #include "estimators/fundamental_matrix.h"
 #include "estimators/homography_matrix.h"
+#if defined(RECONSTRUCTION_FETCH_POSELIB)
+#include "estimators/relpose_one_sided_focal.h"
+#endif
 #include "estimators/translation_transform.h"
 #include "optim/loransac.h"
 #include "optim/ransac.h"
@@ -50,6 +53,56 @@
 
 namespace colmap {
 namespace {
+
+struct FundamentalRansacReport {
+  bool success = false;
+  MEstimatorSupportMeasurer::Support support;
+  std::vector<char> inlier_mask;
+  Eigen::Matrix3d model = Eigen::Matrix3d::Zero();
+};
+
+#if defined(RECONSTRUCTION_FETCH_POSELIB)
+struct OneSidedFocalRansacReport {
+  bool success = false;
+  MEstimatorSupportMeasurer::Support support;
+  std::vector<char> inlier_mask;
+  RelativePoseOneSidedFocalEstimator::M_t model;
+};
+
+OneSidedFocalRansacReport EstimateOneSidedFocalRansac(
+    const RANSACOptions& options,
+    const std::vector<Eigen::Vector2d>& points1,
+    const std::vector<Eigen::Vector2d>& points2) {
+  LORANSAC<RelativePoseOneSidedFocalEstimator,
+           RelativePoseOneSidedFocalEstimator,
+           MEstimatorSupportMeasurer>
+      ransac(options);
+  const auto report = ransac.Estimate(points1, points2);
+  OneSidedFocalRansacReport result;
+  result.success = report.success;
+  result.support = report.support;
+  result.inlier_mask = report.inlier_mask;
+  result.model = report.model;
+  return result;
+}
+#endif
+
+template <typename LocalEstimator>
+FundamentalRansacReport EstimateFundamentalRansac(
+    const RANSACOptions& options,
+    const std::vector<Eigen::Vector2d>& points1,
+    const std::vector<Eigen::Vector2d>& points2) {
+  LORANSAC<FundamentalMatrixSevenPointEstimator, LocalEstimator,
+           MEstimatorSupportMeasurer>
+      ransac(options);
+  const auto report = ransac.Estimate(points1, points2);
+  FundamentalRansacReport result;
+  result.success = report.success;
+  result.support = report.support;
+  result.inlier_mask = report.inlier_mask;
+  result.model = report.model;
+  return result;
+}
 
 FeatureMatches ExtractInlierMatches(const FeatureMatches& matches,
                                     const size_t num_inliers,
@@ -109,6 +162,7 @@ void TwoViewGeometry::Invert() {
   for (auto& match : inlier_matches) {
     std::swap(match.point2D_idx1, match.point2D_idx2);
   }
+  estimated_focal_length = 0.0;
 }
 
 void TwoViewGeometry::Estimate(const Camera& camera1,
@@ -117,6 +171,38 @@ void TwoViewGeometry::Estimate(const Camera& camera1,
                                const std::vector<Eigen::Vector2d>& points2,
                                const FeatureMatches& matches,
                                const Options& options) {
+#if defined(RECONSTRUCTION_FETCH_POSELIB)
+  // Preserve the known calibration on the second view when only the first
+  // focal is unknown. The optional PoseLib solver is deliberately restricted
+  // to this asymmetric case; all other camera combinations retain the
+  // established COLMAP-compatible paths below.
+  if (!camera1.HasPriorFocalLength() && camera2.HasPriorFocalLength()) {
+    std::vector<Eigen::Vector2d> centered_points1(matches.size());
+    std::vector<Eigen::Vector2d> normalized_points2(matches.size());
+    for (size_t i = 0; i < matches.size(); ++i) {
+      centered_points1[i] =
+          points1[matches[i].point2D_idx1] -
+          Eigen::Vector2d(camera1.PrincipalPointX(), camera1.PrincipalPointY());
+      normalized_points2[i] =
+          camera2.ImageToWorld(points2[matches[i].point2D_idx2]);
+    }
+    auto focal_options = options.ransac_options;
+    const auto report = EstimateOneSidedFocalRansac(
+        focal_options, centered_points1, normalized_points2);
+    if (report.success && report.support.num_inliers >= options.min_num_inliers) {
+      config = ConfigurationType::CALIBRATED;
+      E = report.model.E;
+      estimated_focal_length = report.model.focal;
+      Camera estimated_camera1 = camera1;
+      estimated_camera1.SetFocalLength(report.model.focal);
+      F = camera2.CalibrationMatrix().inverse().transpose() * E *
+          estimated_camera1.CalibrationMatrix().inverse();
+      inlier_matches = ExtractInlierMatches(matches, report.support.num_inliers,
+                                            report.inlier_mask);
+      return;
+    }
+  }
+#endif
   if (camera1.HasPriorFocalLength() && camera2.HasPriorFocalLength()) {
     EstimateCalibrated(camera1, points1, camera2, points2, matches, options);
   } else {
@@ -174,6 +260,11 @@ bool TwoViewGeometry::EstimateRelativePose(
     return false;
   }
 
+  Camera effective_camera1 = camera1;
+  if (estimated_focal_length > 0.0) {
+    effective_camera1.SetFocalLength(estimated_focal_length);
+  }
+
   // Extract normalized inlier points.
   std::vector<Eigen::Vector2d> inlier_points1_normalized;
   inlier_points1_normalized.reserve(inlier_matches.size());
@@ -182,7 +273,8 @@ bool TwoViewGeometry::EstimateRelativePose(
   for (const auto& match : inlier_matches) {
     const point2D_t idx1 = match.point2D_idx1;
     const point2D_t idx2 = match.point2D_idx2;
-    inlier_points1_normalized.push_back(camera1.ImageToWorld(points1[idx1]));
+    inlier_points1_normalized.push_back(
+        effective_camera1.ImageToWorld(points1[idx1]));
     inlier_points2_normalized.push_back(camera2.ImageToWorld(points2[idx2]));
   }
 
@@ -269,11 +361,12 @@ void TwoViewGeometry::EstimateCalibrated(
       E_ransac.Estimate(matched_points1_normalized, matched_points2_normalized);
   E = E_report.model;
 
-  LORANSAC<FundamentalMatrixSevenPointEstimator,
-           FundamentalMatrixEightPointEstimator,
-           MEstimatorSupportMeasurer>
-      F_ransac(options.ransac_options);
-  const auto F_report = F_ransac.Estimate(matched_points1, matched_points2);
+  const FundamentalRansacReport F_report =
+      options.use_sampson_refinement
+          ? EstimateFundamentalRansac<FundamentalMatrixSampsonEstimator>(
+                options.ransac_options, matched_points1, matched_points2)
+          : EstimateFundamentalRansac<FundamentalMatrixEightPointEstimator>(
+                options.ransac_options, matched_points1, matched_points2);
   F = F_report.model;
 
   // Estimate planar or panoramic model.
@@ -389,11 +482,12 @@ void TwoViewGeometry::EstimateUncalibrated(
 
   // Estimate epipolar model.
 
-  LORANSAC<FundamentalMatrixSevenPointEstimator,
-           FundamentalMatrixEightPointEstimator,
-           MEstimatorSupportMeasurer>
-      F_ransac(options.ransac_options);
-  const auto F_report = F_ransac.Estimate(matched_points1, matched_points2);
+  const FundamentalRansacReport F_report =
+      options.use_sampson_refinement
+          ? EstimateFundamentalRansac<FundamentalMatrixSampsonEstimator>(
+                options.ransac_options, matched_points1, matched_points2)
+          : EstimateFundamentalRansac<FundamentalMatrixEightPointEstimator>(
+                options.ransac_options, matched_points1, matched_points2);
   F = F_report.model;
 
   // Estimate planar or panoramic model.

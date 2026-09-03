@@ -15,12 +15,6 @@
 #include <string>
 #include <vector>
 
-#ifdef _WIN32
-#define NOMINMAX
-#include <Windows.h>
-#endif
-#include <FreeImage.h>
-
 #include "util/string.h"
 
 namespace colmap {
@@ -47,24 +41,25 @@ struct BitmapColor {
     T b;
 };
 
-// Wrapper class around FreeImage bitmaps.
+// Cross-platform bitmap backed by OpenImageIO and tightly packed UINT8 data.
+enum class BitmapFormat { kUnknown, kPng, kJpeg, kTiff };
+enum class BitmapRescaleFilter { kBilinear, kBox };
+enum class BitmapMetadataModel { kMain, kExif, kGps };
+
 class Bitmap {
 public:
     Bitmap();
+    ~Bitmap();
 
     // Copy constructor.
     Bitmap(const Bitmap& other);
     // Move constructor.
-    Bitmap(Bitmap&& other);
-
-    // Create bitmap object from existing FreeImage bitmap object. Note that
-    // this class takes ownership of the object.
-    explicit Bitmap(FIBITMAP* data);
+    Bitmap(Bitmap&& other) noexcept;
 
     // Copy assignment.
     Bitmap& operator=(const Bitmap& other);
     // Move assignment.
-    Bitmap& operator=(Bitmap&& other);
+    Bitmap& operator=(Bitmap&& other) noexcept;
 
     // Allocate bitmap by overwriting the existing data.
     bool Allocate(const int width, const int height, const bool as_rgb);
@@ -72,25 +67,25 @@ public:
     // Deallocate the bitmap by releasing the existing data.
     void Deallocate();
 
-    // Get pointer to underlying FreeImage object.
-    inline const FIBITMAP* Data() const;
-    inline FIBITMAP* Data();
+    // Opaque pointer to the owned storage, retained for legacy null checks.
+    const void* Data() const;
+    void* Data();
 
     // Dimensions of bitmap.
-    inline int Width() const;
-    inline int Height() const;
-    inline int Channels() const;
+    int Width() const;
+    int Height() const;
+    int Channels() const;
 
     // Number of bits per pixel. This is 8 for grey and 24 for RGB image.
-    inline unsigned int BitsPerPixel() const;
+    unsigned int BitsPerPixel() const;
 
     // Scan width of bitmap which differs from the actual image width to achieve
     // 32 bit aligned memory. Also known as pitch or stride.
-    inline unsigned int ScanWidth() const;
+    unsigned int ScanWidth() const;
 
     // Check whether image is grey- or colorscale.
-    inline bool IsRGB() const;
-    inline bool IsGrey() const;
+    bool IsRGB() const;
+    bool IsGrey() const;
 
     // Number of bytes required to store image.
     size_t NumBytes() const;
@@ -131,10 +126,9 @@ public:
     // Read bitmap at given path and convert to grey- or colorscale.
     bool Read(const std::string& path, const bool as_rgb = true);
 
-    // Write image to file. Flags can be used to set e.g. the JPEG quality.
-    // Consult the FreeImage documentation for all available flags.
+    // Write image to file. For JPEG, flags is the requested quality [1, 100].
     bool Write(const std::string& path,
-               const FREE_IMAGE_FORMAT format = FIF_UNKNOWN,
+               const BitmapFormat format = BitmapFormat::kUnknown,
                const int flags = 0) const;
 
     // Smooth the image using a Gaussian kernel.
@@ -143,7 +137,7 @@ public:
     // Rescale image to the new dimensions.
     void Rescale(const int new_width,
                  const int new_height,
-                 const FREE_IMAGE_FILTER filter = FILTER_BILINEAR);
+                 const BitmapRescaleFilter filter = BitmapRescaleFilter::kBilinear);
 
     // Clone the image to a new bitmap object.
     Bitmap Clone() const;
@@ -154,20 +148,13 @@ public:
     void CloneMetadata(Bitmap* target) const;
 
     // Read specific EXIF tag.
-    bool ReadExifTag(const FREE_IMAGE_MDMODEL model,
+    bool ReadExifTag(const BitmapMetadataModel model,
                      const std::string& tag_name,
                      std::string* result) const;
 
 private:
-    typedef std::unique_ptr<FIBITMAP, decltype(&FreeImage_Unload)> FIBitmapPtr;
-
-    void SetPtr(FIBITMAP* data);
-
-    static bool IsPtrGrey(FIBITMAP* data);
-    static bool IsPtrRGB(FIBITMAP* data);
-    static bool IsPtrSupported(FIBITMAP* data);
-
-    FIBitmapPtr data_;
+    struct Storage;
+    std::unique_ptr<Storage> data_;
     int width_;
     int height_;
     int channels_;
@@ -242,24 +229,5 @@ std::ostream& operator<<(std::ostream& output, const BitmapColor<T>& color) {
                            static_cast<double>(color.b));
     return output;
 }
-
-FIBITMAP* Bitmap::Data() { return data_.get(); }
-const FIBITMAP* Bitmap::Data() const { return data_.get(); }
-
-int Bitmap::Width() const { return width_; }
-int Bitmap::Height() const { return height_; }
-int Bitmap::Channels() const { return channels_; }
-
-unsigned int Bitmap::BitsPerPixel() const {
-    return FreeImage_GetBPP(data_.get());
-}
-
-unsigned int Bitmap::ScanWidth() const {
-    return FreeImage_GetPitch(data_.get());
-}
-
-bool Bitmap::IsRGB() const { return channels_ == 3; }
-
-bool Bitmap::IsGrey() const { return channels_ == 1; }
 
 }  // namespace colmap

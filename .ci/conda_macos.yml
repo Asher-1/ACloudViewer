@@ -12,5 +12,6 @@ dependencies:
   - qt=5.15.* # reconstruction
   - xerces-c=3.2.* # reconstruction
   - cgal=5.* # facets
+  - libomp # AppleClang does not ship OpenMP runtime; required by reconstruction/CVCoreLib
   - ffmpeg=6.1.*
   - typing_extensions # fix pytorch import missing issues

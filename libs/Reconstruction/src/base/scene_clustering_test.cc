@@ -55,6 +55,23 @@ BOOST_AUTO_TEST_CASE(TestEmpty) {
   BOOST_CHECK_EQUAL(scene_clustering.GetLeafClusters().size(), 1);
 }
 
+BOOST_AUTO_TEST_CASE(TestDisconnectedImagesAreRetained) {
+  const std::vector<std::pair<image_t, image_t>> image_pairs = {{0, 1}};
+  const std::vector<int> num_inliers = {10};
+  const std::vector<image_t> all_image_ids = {0, 1, 2};
+  SceneClustering::Options options;
+  options.branching = 2;
+  options.image_overlap = 0;
+  options.leaf_max_num_images = 10;
+  SceneClustering scene_clustering(options);
+  scene_clustering.Partition(image_pairs, num_inliers, all_image_ids);
+  const auto* root = scene_clustering.GetRootCluster();
+  BOOST_REQUIRE(root != nullptr);
+  BOOST_CHECK_EQUAL(root->image_ids.size(), 3);
+  BOOST_CHECK(std::find(root->image_ids.begin(), root->image_ids.end(), 2) !=
+              root->image_ids.end());
+}
+
 BOOST_AUTO_TEST_CASE(TestOneLevel) {
   const std::vector<std::pair<image_t, image_t>> image_pairs = {{0, 1}};
   const std::vector<int> num_inliers = {10};

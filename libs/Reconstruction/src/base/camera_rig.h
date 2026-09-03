@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <iosfwd>
 #include <unordered_map>
 #include <vector>
 
@@ -44,6 +45,14 @@ public:
 
     // Get the snapshots of the camera rig.
     const std::vector<std::vector<image_t>>& Snapshots() const;
+
+    // Persist the legacy CameraRig calibration and its simultaneous-image
+    // snapshots. Both formats are explicitly versioned and preserve the
+    // reference-camera relative-pose convention consumed by RigBundleAdjuster.
+    bool ReadText(std::istream* stream);
+    void WriteText(std::ostream* stream) const;
+    bool ReadBinary(std::istream* stream);
+    void WriteBinary(std::ostream* stream) const;
 
     // Add a new camera to the rig. The relative pose may contain dummy values
     // and can then be computed automatically from a given reconstruction using

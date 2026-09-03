@@ -375,7 +375,7 @@ void StereoFusion::InitFusedPixelMask(int image_idx,
         mask.Read(mask_path, false)) {
         BitmapColor<uint8_t> color;
         mask.Rescale(static_cast<int>(width), static_cast<int>(height),
-                     FILTER_BOX);
+                     BitmapRescaleFilter::kBox);
         for (size_t row = 0; row < height; ++row) {
             for (size_t col = 0; col < width; ++col) {
                 mask.GetPixel(col, row, &color);

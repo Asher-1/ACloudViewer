@@ -32,6 +32,8 @@
 #define TEST_NAME "base/camera"
 #include "util/testing.h"
 
+#include <cmath>
+
 #include "base/camera.h"
 #include "base/camera_models.h"
 
@@ -74,6 +76,46 @@ BOOST_AUTO_TEST_CASE(TestModelId) {
                     static_cast<int>(SimpleRadialCameraModel::model_id));
   BOOST_CHECK_EQUAL(camera.ModelName(), "SIMPLE_RADIAL");
   BOOST_CHECK_EQUAL(camera.NumParams(), SimpleRadialCameraModel::num_params);
+}
+
+BOOST_AUTO_TEST_CASE(TestEquirectangularCamRayWithJac) {
+  Camera camera;
+  camera.InitializeWithId(EquirectangularCameraModel::kModelId, 0.0, 1000,
+                          500);
+  BOOST_CHECK_EQUAL(camera.ModelName(), "EQUIRECTANGULAR");
+  BOOST_CHECK_EQUAL(camera.Params().size(), 2);
+  BOOST_CHECK_EQUAL(camera.MeanFocalLength(), 0.0);
+  BOOST_CHECK(!camera.HasBogusParams(0.1, 10.0, 1.0));
+
+  const Eigen::Vector2d pixel(250.0, 200.0);
+  const auto ray_with_jac = camera.CamRayFromImgWithJac(pixel);
+  BOOST_REQUIRE(ray_with_jac.has_value());
+  BOOST_CHECK_SMALL((ray_with_jac->ray -
+                     Eigen::Vector3d(-std::cos(EIGEN_PI / 10.0),
+                                     -std::sin(EIGEN_PI / 10.0),
+                                     0.0))
+                            .norm(),
+                    1e-12);
+
+  constexpr double kStep = 1e-4;
+  for (int axis = 0; axis < 2; ++axis) {
+    Eigen::Vector2d backward = pixel;
+    Eigen::Vector2d forward = pixel;
+    backward[axis] -= kStep;
+    forward[axis] += kStep;
+    const auto ray_backward = camera.CamRayFromImgWithJac(backward);
+    const auto ray_forward = camera.CamRayFromImgWithJac(forward);
+    BOOST_REQUIRE(ray_backward.has_value());
+    BOOST_REQUIRE(ray_forward.has_value());
+    BOOST_CHECK_SMALL((ray_with_jac->jacobian.col(axis) -
+                       (ray_forward->ray - ray_backward->ray) / (2.0 * kStep))
+                              .norm(),
+                      1e-9);
+  }
+
+  camera.Rescale(2000, 1000);
+  BOOST_CHECK_EQUAL(camera.Params()[0], 2000.0);
+  BOOST_CHECK_EQUAL(camera.Params()[1], 1000.0);
 }
 
 BOOST_AUTO_TEST_CASE(TestWidthHeight) {

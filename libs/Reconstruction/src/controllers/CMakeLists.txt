@@ -35,6 +35,7 @@ COLMAP_ADD_SOURCES(
     automatic_reconstruction.h automatic_reconstruction.cc
     bundle_adjustment.h bundle_adjustment.cc
     da3_depth_controller.h da3_depth_controller.cc
+    global_mapper.h global_mapper.cc
     hierarchical_mapper.h hierarchical_mapper.cc
     incremental_mapper.h incremental_mapper.cc
     texturing_controller.h texturing_controller.cc

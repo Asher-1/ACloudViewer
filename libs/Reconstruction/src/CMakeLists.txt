@@ -55,6 +55,7 @@ endif ()
 
 COLMAP_ADD_STATIC_LIBRARY(${COLMAP_LIB_NAME} ${COLMAP_SOURCES})
 target_link_libraries(${COLMAP_LIB_NAME} PUBLIC 3rdparty_meshoptimizer)
+target_link_libraries(${COLMAP_LIB_NAME} PRIVATE 3rdparty_faiss)
 
 if (CUDA_ENABLED)
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --use_fast_math")
@@ -87,6 +88,17 @@ if(AICore_ENABLED AND TARGET AICore)
     # Propagate to ColmapLib translation units — PUBLIC link interface alone does not
     # always define AICore_ENABLED when compiling this static library's .cc files.
     target_compile_definitions(${COLMAP_LIB_NAME} PUBLIC AICore_ENABLED)
+endif()
+
+# PoseLib is an opt-in reconstruction dependency. Keep it scoped to ColmapLib
+# so unrelated CloudViewer targets do not inherit a minimal-solver library.
+if(RECONSTRUCTION_FETCH_POSELIB AND TARGET PoseLib::PoseLib)
+    target_link_libraries(${COLMAP_LIB_NAME} PRIVATE PoseLib::PoseLib)
+    target_compile_definitions(${COLMAP_LIB_NAME} PRIVATE RECONSTRUCTION_FETCH_POSELIB)
+endif()
+
+if(RECONSTRUCTION_CASPAR_ENABLED AND TARGET 3rdparty_caspar)
+    target_link_libraries(${COLMAP_LIB_NAME} PRIVATE 3rdparty_caspar)
 endif()
 
 # The embedded reconstruction widgets use QFutureWatcher/QtConcurrent for

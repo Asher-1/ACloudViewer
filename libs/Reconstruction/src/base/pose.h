@@ -15,6 +15,17 @@
 
 namespace colmap {
 
+// A unit camera bearing and the unprojection Jacobian d(bearing)/d(pixel).
+// Keeping both values together preserves correspondence indexing while a
+// robust estimator sub-samples its input.
+struct CamRayWithJac {
+    Eigen::Vector3d ray = Eigen::Vector3d::Zero();
+    Eigen::Matrix<double, 3, 2> jacobian =
+            Eigen::Matrix<double, 3, 2>::Zero();
+
+    static CamRayWithJac Zero() { return CamRayWithJac(); }
+};
+
 // Compose the skew symmetric cross product matrix from a vector.
 Eigen::Matrix3d CrossProductMatrix(const Eigen::Vector3d& vector);
 

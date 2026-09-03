@@ -52,6 +52,13 @@ public:
     void Partition(const std::vector<std::pair<image_t, image_t>>& image_pairs,
                    const std::vector<int>& num_inliers);
 
+    // Variant used by global/hierarchical mapping. Explicitly supplying all
+    // image ids keeps disconnected images in the scene graph instead of
+    // silently dropping them because they have no verified pair.
+    void Partition(const std::vector<std::pair<image_t, image_t>>& image_pairs,
+                   const std::vector<int>& num_inliers,
+                   const std::vector<image_t>& all_image_ids);
+
     const Cluster* GetRootCluster() const;
     std::vector<const Cluster*> GetLeafClusters() const;
 

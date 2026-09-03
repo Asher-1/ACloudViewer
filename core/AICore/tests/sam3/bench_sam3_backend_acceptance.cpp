@@ -43,12 +43,25 @@
 namespace {
 
 constexpr int kWarmupRuns = 2;
-// CPU vs Vulkan mask IoU gate. Measured 0.985 on sam3-visual-f16 @1008px
-// (RTX 3060): this is the FIRST valid parity number for windowed attention —
-// before ggml 0.21 + the runtime win_part dispatch, ggml-vulkan silently
-// skipped WIN_PART/WIN_UNPART nodes, so no valid GPU reference existed.
-// fp16 Vulkan flash-attention vs f32 CPU accounts for the ~1.5% gap.
-constexpr double kMinMaskIou = 0.98;
+// CPU vs GPU mask IoU gate, tiered by weight quantization:
+// - f16/f32/q8_0 models: 0.98. CUDA-measured background on cand1.jpg
+//   @1008px (RTX 3060) is 0.9997 for f16 (fp16 flash-attention vs f32 CPU);
+//   the older 0.985 figure was the Vulkan flash-attention background.
+// - q4_0/q4_1 models: 0.97. Both backends approximate the same quantized
+//   weights with Q8-quantized activations, but the CPU (serial sum) and
+//   CUDA (warp-tree reduction) activation-sum rounding orders differ, and
+//   that residual passes through the attention nonlinearity as a small
+//   cross-backend mask jitter. Measured envelope on cand1.jpg (RTX 3060)
+//   after the Q8_1 s-semantics fix: f16 cpu-vs-cuda 0.9997, q4_1
+//   cpu-vs-cuda 0.9987. The tier keeps a safety margin for other GPUs and
+//   drivers; real backend bugs (e.g. the Vulkan Q4_1 all-zero output,
+//   IoU 0.0) still fail it by a wide margin.
+inline double min_mask_iou_for_model(const char *model_path) {
+    const std::string path(model_path);
+    const bool q4_weights = path.find("-q4_0") != std::string::npos ||
+                            path.find("-q4_1") != std::string::npos;
+    return q4_weights ? 0.97 : 0.98;
+}
 constexpr float kMaxBoxErrorPx = 1.0f;
 // Presence score = sigmoid(logit). fp16 Vulkan vs f32 CPU shifts the logit by
 // ~0.1 around 21, i.e. an absolute score delta of ~1.5e-3 (measured). 5e-3
@@ -382,7 +395,8 @@ int main(int argc, char **argv) {
     const float score_error =
             parity_checked ? std::fabs(cpu.score - candidate.score) : 0.0f;
     const bool gates_ok =
-            parity_checked ? cpu_ok && candidate_ok && iou >= kMinMaskIou &&
+            parity_checked ? cpu_ok && candidate_ok &&
+                                     iou >= min_mask_iou_for_model(argv[1]) &&
                                      box_error <= kMaxBoxErrorPx &&
                                      score_error <= kMaxScoreError
                            : cpu_ok;

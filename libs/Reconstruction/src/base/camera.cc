@@ -31,7 +31,9 @@
 
 #include "base/camera.h"
 
+#include <cmath>
 #include <iomanip>
+#include <limits>
 
 #include "base/camera_models.h"
 #include "util/logging.h"
@@ -99,6 +101,9 @@ std::string Camera::ParamsInfo() const {
 
 double Camera::MeanFocalLength() const {
   const auto& focal_length_idxs = FocalLengthIdxs();
+  if (focal_length_idxs.empty()) {
+    return 0.0;
+  }
   double focal_length = 0;
   for (const auto idx : focal_length_idxs) {
     focal_length += params_[idx];
@@ -223,6 +228,78 @@ Eigen::Vector2d Camera::ImageToWorld(const Eigen::Vector2d& image_point) const {
   return world_point;
 }
 
+std::optional<CamRayWithJac> Camera::CamRayFromImgWithJac(
+        const Eigen::Vector2d& image_point) const {
+  if (model_id_ == EquirectangularCameraModel::kModelId) {
+    if (params_.size() != EquirectangularCameraModel::kNumParams ||
+        !(params_[0] > 0.0) || !(params_[1] > 0.0)) {
+      return std::nullopt;
+    }
+
+    const double theta =
+            2.0 * EIGEN_PI * (image_point.x() / params_[0] - 0.5);
+    const double phi =
+            EIGEN_PI * (0.5 - image_point.y() / params_[1]);
+    const double sin_theta = std::sin(theta);
+    const double cos_theta = std::cos(theta);
+    const double sin_phi = std::sin(phi);
+    const double cos_phi = std::cos(phi);
+
+    CamRayWithJac result;
+    result.ray = Eigen::Vector3d(cos_phi * sin_theta, -sin_phi,
+                                 cos_phi * cos_theta);
+    const Eigen::Vector3d d_ray_d_theta(cos_phi * cos_theta, 0.0,
+                                         -cos_phi * sin_theta);
+    const Eigen::Vector3d d_ray_d_phi(-sin_phi * sin_theta, -cos_phi,
+                                       -sin_phi * cos_theta);
+    result.jacobian.col(0) =
+            d_ray_d_theta * (2.0 * EIGEN_PI / params_[0]);
+    result.jacobian.col(1) = d_ray_d_phi * (-EIGEN_PI / params_[1]);
+    return result;
+  }
+
+  const auto unproject = [this](const Eigen::Vector2d& pixel)
+      -> std::optional<Eigen::Vector3d> {
+    const Eigen::Vector2d normalized = ImageToWorld(pixel);
+    const Eigen::Vector3d ray(normalized.x(), normalized.y(), 1.0);
+    const double norm = ray.norm();
+    if (!(norm > std::numeric_limits<double>::epsilon()) ||
+        !std::isfinite(norm)) {
+      return std::nullopt;
+    }
+    return ray / norm;
+  };
+
+  const std::optional<Eigen::Vector3d> center = unproject(image_point);
+  if (!center.has_value()) {
+    return std::nullopt;
+  }
+
+  // A quarter pixel keeps the truncation error below feature localization
+  // noise while remaining stable for the iterative undistortion models.
+  constexpr double kPixelStep = 0.25;
+  CamRayWithJac result;
+  result.ray = *center;
+  for (int axis = 0; axis < 2; ++axis) {
+    Eigen::Vector2d backward = image_point;
+    Eigen::Vector2d forward = image_point;
+    backward[axis] -= kPixelStep;
+    forward[axis] += kPixelStep;
+    const auto ray_backward = unproject(backward);
+    const auto ray_forward = unproject(forward);
+    if (!ray_backward.has_value() || !ray_forward.has_value()) {
+      return std::nullopt;
+    }
+    result.jacobian.col(axis) =
+            (*ray_forward - *ray_backward) / (2.0 * kPixelStep);
+  }
+
+  if (!result.jacobian.allFinite()) {
+    return std::nullopt;
+  }
+  return result;
+}
+
 double Camera::ImageToWorldThreshold(const double threshold) const {
   return CameraModelImageToWorldThreshold(model_id_, params_, threshold);
 }
@@ -242,6 +319,11 @@ void Camera::Rescale(const double scale) {
       std::round(scale * height_) / static_cast<double>(height_);
   width_ = static_cast<size_t>(std::round(scale * width_));
   height_ = static_cast<size_t>(std::round(scale * height_));
+  if (model_id_ == EquirectangularCameraModel::kModelId) {
+    params_[0] = static_cast<double>(width_);
+    params_[1] = static_cast<double>(height_);
+    return;
+  }
   SetPrincipalPointX(scale_x * PrincipalPointX());
   SetPrincipalPointY(scale_y * PrincipalPointY());
   if (FocalLengthIdxs().size() == 1) {
@@ -262,6 +344,11 @@ void Camera::Rescale(const size_t width, const size_t height) {
       static_cast<double>(height) / static_cast<double>(height_);
   width_ = width;
   height_ = height;
+  if (model_id_ == EquirectangularCameraModel::kModelId) {
+    params_[0] = static_cast<double>(width_);
+    params_[1] = static_cast<double>(height_);
+    return;
+  }
   SetPrincipalPointX(scale_x * PrincipalPointX());
   SetPrincipalPointY(scale_y * PrincipalPointY());
   if (FocalLengthIdxs().size() == 1) {

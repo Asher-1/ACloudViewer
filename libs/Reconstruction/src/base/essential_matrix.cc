@@ -32,6 +32,7 @@
 #include "base/essential_matrix.h"
 
 #include <array>
+#include <limits>
 
 #include "base/pose.h"
 #include "estimators/pose.h"
@@ -214,6 +215,35 @@ bool RefineEssentialMatrix(const ceres::Solver::Options& options,
   *E = EssentialMatrixFromPose(rot_mat, tvec);
 
   return true;
+}
+
+double ComputeSquaredTangentSampsonError(const CamRayWithJac& cam_ray1,
+                                         const CamRayWithJac& cam_ray2,
+                                         const Eigen::Matrix3d& E) {
+  const Eigen::Vector3d e_ray1 = E * cam_ray1.ray;
+  const Eigen::Vector3d et_ray2 = E.transpose() * cam_ray2.ray;
+  const double residual = cam_ray2.ray.dot(e_ray1);
+  const Eigen::Vector2d grad1 = cam_ray1.jacobian.transpose() * et_ray2;
+  const Eigen::Vector2d grad2 = cam_ray2.jacobian.transpose() * e_ray1;
+  const double denominator = grad1.squaredNorm() + grad2.squaredNorm();
+  if (!(denominator > std::numeric_limits<double>::epsilon()) ||
+      !std::isfinite(denominator)) {
+    return std::numeric_limits<double>::max();
+  }
+  return residual * residual / denominator;
+}
+
+void ComputeSquaredTangentSampsonError(
+        const std::vector<CamRayWithJac>& cam_rays1,
+        const std::vector<CamRayWithJac>& cam_rays2,
+        const Eigen::Matrix3d& E,
+        std::vector<double>* residuals) {
+  CHECK_EQ(cam_rays1.size(), cam_rays2.size());
+  residuals->resize(cam_rays1.size());
+  for (size_t i = 0; i < cam_rays1.size(); ++i) {
+    (*residuals)[i] =
+            ComputeSquaredTangentSampsonError(cam_rays1[i], cam_rays2[i], E);
+  }
 }
 
 }  // namespace colmap

@@ -182,12 +182,13 @@ int main(int argc, char** argv) {
     if (argc < 2) {
         std::fprintf(stderr,
                      "usage: %s <sam3-visual-f16.gguf> [max_blocks=32] "
-                     "[threads=4]\n",
+                     "[threads=4] [gpu=cuda|vulkan]\n",
                      argv[0]);
         return 2;
     }
     const int max_blocks = argc >= 3 ? std::max(1, std::atoi(argv[2])) : 32;
     const int n_threads = argc >= 4 ? std::max(1, std::atoi(argv[3])) : 4;
+    const std::string gpu = argc >= 5 ? argv[4] : "vulkan";
 
     sam3_params cpu_params;
     cpu_params.model_path = argv[1];
@@ -202,14 +203,16 @@ int main(int argc, char** argv) {
 
     sam3_params vk_params = cpu_params;
     vk_params.use_gpu = true;
-    vk_params.device = SAM3_DEVICE_VULKAN;
+    vk_params.device = (gpu == "cuda") ? SAM3_DEVICE_CUDA
+                                       : SAM3_DEVICE_VULKAN;
     auto vk_model = sam3_load_model(vk_params);
     if (!vk_model) {
-        std::fprintf(stderr, "vulkan load failed\n");
+        std::fprintf(stderr, "%s load failed\n", gpu.c_str());
         return 1;
     }
-    std::printf("{\"backend_cpu\":\"%s\",\"backend_vulkan\":\"%s\"}\n",
-                sam3_backend_name(*cpu_model), sam3_backend_name(*vk_model));
+    std::printf("{\"backend_cpu\":\"%s\",\"backend_gpu\":\"%s\",\"gpu\":\"%s\"}\n",
+                sam3_backend_name(*cpu_model), sam3_backend_name(*vk_model),
+                gpu.c_str());
 
     Geometry geo;
     if (!infer_geometry(*cpu_model, &geo)) {

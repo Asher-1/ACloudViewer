@@ -103,7 +103,8 @@ static const int kInvalidCameraModelId = -1;
     CAMERA_MODEL_CASE(OpenCVFisheyeCameraModel)       \
     CAMERA_MODEL_CASE(FullOpenCVCameraModel)          \
     CAMERA_MODEL_CASE(FOVCameraModel)                 \
-    CAMERA_MODEL_CASE(ThinPrismFisheyeCameraModel)
+    CAMERA_MODEL_CASE(ThinPrismFisheyeCameraModel)    \
+    CAMERA_MODEL_CASE(EquirectangularCameraModel)
 #endif
 
 #ifndef CAMERA_MODEL_SWITCH_CASES
@@ -325,6 +326,29 @@ struct RadialFisheyeCameraModel
 struct ThinPrismFisheyeCameraModel
     : public BaseCameraModel<ThinPrismFisheyeCameraModel> {
     CAMERA_MODEL_DEFINITIONS(10, "THIN_PRISM_FISHEYE", 12)
+};
+
+// Full 360x180 degree spherical panorama. The two parameters describe the
+// angular sampling grid, not focal lengths: w, h.
+struct EquirectangularCameraModel
+    : public BaseCameraModel<EquirectangularCameraModel> {
+    CAMERA_MODEL_DEFINITIONS(17, "EQUIRECTANGULAR", 2)
+
+    template <typename T>
+    static bool HasBogusParams(const std::vector<T>& params,
+                               const size_t /*width*/,
+                               const size_t /*height*/,
+                               const T /*min_focal_length_ratio*/,
+                               const T /*max_focal_length_ratio*/,
+                               const T /*max_extra_param*/) {
+        return params.size() != kNumParams || !(params[0] > T(0)) ||
+               !(params[1] > T(0));
+    }
+
+    template <typename T>
+    static T ImageToWorldThreshold(const T* params, const T threshold) {
+        return threshold * T(2.0 * EIGEN_PI) / params[0];
+    }
 };
 
 // Check whether camera model with given name or identifier exists.
@@ -1472,6 +1496,60 @@ void ThinPrismFisheyeCameraModel::Distortion(
     const T radial = k1 * r2 + k2 * r4 + k3 * r6 + k4 * r8;
     *du = u * radial + T(2) * p1 * uv + p2 * (r2 + T(2) * u2) + sx1 * r2;
     *dv = v * radial + T(2) * p2 * uv + p1 * (r2 + T(2) * v2) + sy1 * r2;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// EquirectangularCameraModel
+
+inline std::string EquirectangularCameraModel::InitializeParamsInfo() {
+    return "w, h";
+}
+
+inline std::vector<size_t>
+EquirectangularCameraModel::InitializeFocalLengthIdxs() {
+    return {};
+}
+
+inline std::vector<size_t>
+EquirectangularCameraModel::InitializePrincipalPointIdxs() {
+    return {};
+}
+
+inline std::vector<size_t>
+EquirectangularCameraModel::InitializeExtraParamsIdxs() {
+    return {};
+}
+
+inline std::vector<double> EquirectangularCameraModel::InitializeParams(
+        const double /*focal_length*/, const size_t width, const size_t height) {
+    return {static_cast<double>(width), static_cast<double>(height)};
+}
+
+template <typename T>
+void EquirectangularCameraModel::WorldToImage(
+        const T* params, const T u, const T v, T* x, T* y) {
+    const T theta = ceres::atan2(u, T(1));
+    const T phi = ceres::atan2(-v, ceres::sqrt(u * u + T(1)));
+    *x = (theta / T(2.0 * EIGEN_PI) + T(0.5)) * params[0];
+    *y = (T(0.5) - phi / T(EIGEN_PI)) * params[1];
+}
+
+template <typename T>
+void EquirectangularCameraModel::ImageToWorld(
+        const T* params, const T x, const T y, T* u, T* v) {
+    const T theta = T(2.0 * EIGEN_PI) * (x / params[0] - T(0.5));
+    const T phi = T(EIGEN_PI) * (T(0.5) - y / params[1]);
+    const T cos_phi = ceres::cos(phi);
+    const T z = cos_phi * ceres::cos(theta);
+    *u = cos_phi * ceres::sin(theta) / z;
+    *v = -ceres::sin(phi) / z;
+}
+
+template <typename T>
+void EquirectangularCameraModel::Distortion(
+        const T* /*extra_params*/, const T /*u*/, const T /*v*/, T* du, T* dv) {
+    *du = T(0);
+    *dv = T(0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

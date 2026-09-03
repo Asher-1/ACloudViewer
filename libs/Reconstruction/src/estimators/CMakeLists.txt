@@ -50,6 +50,11 @@ COLMAP_ADD_SOURCES(
     utils.h utils.cc
 )
 
+if(RECONSTRUCTION_FETCH_POSELIB)
+    COLMAP_ADD_SOURCES(relpose_one_sided_focal.h relpose_one_sided_focal.cc)
+    COLMAP_ADD_TEST(relpose_one_sided_focal_test relpose_one_sided_focal_test.cc)
+endif()
+
 COLMAP_ADD_TEST(absolute_pose_test absolute_pose_test.cc)
 COLMAP_ADD_TEST(affine_transform_test affine_transform_test.cc)
 COLMAP_ADD_TEST(coordinate_frame_test coordinate_frame_test.cc)

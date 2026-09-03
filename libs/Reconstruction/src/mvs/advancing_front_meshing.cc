@@ -72,7 +72,9 @@
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/boost/graph/Euler_operations.h>
 #include <boost/functional/hash.hpp>
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 
 namespace {
 
@@ -431,6 +433,7 @@ colmap::PlyMesh ReconstructBlock(
     LOG(INFO) << "Pre-filtering: casting " << rays.size()
               << " visibility rays...";
     const AFSRRayCaster ray_caster(triangulation);
+#ifdef _OPENMP
     const int num_omp_threads = omp_get_max_threads();
     std::vector<VisibilityCounter> thread_counters(num_omp_threads);
 #pragma omp parallel
@@ -458,6 +461,16 @@ colmap::PlyMesh ReconstructBlock(
         visibility_counter[facet] += count;
       }
     }
+#else
+    const int64_t num_rays = static_cast<int64_t>(rays.size());
+    std::vector<AFSRTriangulation::Facet> intersections;
+    for (int64_t i = 0; i < num_rays; ++i) {
+      ray_caster.CastRaySegment(rays[i], &intersections);
+      for (const auto& intersection : intersections) {
+        visibility_counter[intersection]++;
+      }
+    }
+#endif
     LOG(INFO) << "Visibility counter has " << visibility_counter.size()
               << " entries.";
   }
@@ -481,8 +494,9 @@ colmap::PlyMesh ReconstructBlock(
     LOG(INFO) << "Post-filtering: casting " << rays.size()
               << " visibility rays through mesh...";
     AABBTree tree(faces(mesh).first, faces(mesh).second, mesh);
-    const int num_omp_threads = omp_get_max_threads();
     using FaceIndex = SurfaceMesh::Face_index;
+#ifdef _OPENMP
+    const int num_omp_threads = omp_get_max_threads();
     std::vector<std::unordered_map<FaceIndex, int>> thread_counters(
         num_omp_threads);
 #pragma omp parallel
@@ -512,6 +526,19 @@ colmap::PlyMesh ReconstructBlock(
         face_vis_counts[f] += count;
       }
     }
+#else
+    std::unordered_map<FaceIndex, int> face_vis_counts;
+    std::vector<AABBTree::Primitive_id> primitives;
+    const int64_t num_rays = static_cast<int64_t>(rays.size());
+    for (int64_t i = 0; i < num_rays; ++i) {
+      primitives.clear();
+      tree.all_intersected_primitives(rays[i],
+                                      std::back_inserter(primitives));
+      for (const auto& f : primitives) {
+        face_vis_counts[f]++;
+      }
+    }
+#endif
     // Remove faces exceeding the visibility threshold.
     size_t num_removed = 0;
     for (const auto& [f, count] : face_vis_counts) {
@@ -773,11 +800,13 @@ colmap::PlyMesh ReconstructBlocks(
     thread_pool.AddTask([&, block_idx]() {
       // Disable OMP parallelism within each block task to avoid
       // oversubscription since ThreadPool handles inter-block parallelism.
+#ifdef _OPENMP
       omp_set_num_threads(1);
 #ifdef _MSC_VER
       omp_set_nested(0);
 #else
       omp_set_max_active_levels(1);
+#endif
 #endif
 
       const auto& indices = block_point_indices[block_idx];
@@ -903,6 +932,7 @@ void AdvancingFrontMeshing(const AdvancingFrontMeshingOptions& options,
       LOG(INFO) << "Built " << rays.size() << " visibility rays from "
                 << ply_points.size() << " points.";
     }
+#ifdef _OPENMP
 #pragma omp parallel num_threads(1)
     {
       omp_set_num_threads(GetEffectiveNumThreads(options.num_threads));
@@ -913,6 +943,9 @@ void AdvancingFrontMeshing(const AdvancingFrontMeshingOptions& options,
 #endif
       mesh = ReconstructBlock(ply_points, rays, options);
     }
+#else
+    mesh = ReconstructBlock(ply_points, rays, options);
+#endif
   }
 
   LOG(INFO) << "Writing mesh to " << output_path;

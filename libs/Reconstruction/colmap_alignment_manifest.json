@@ -1,0 +1,77 @@
+{
+  "upstream_repository": "/home/ludahai/develop/code/github/colmap",
+  "upstream_revision_checked": "a395b826",
+  "policy": "Only entries marked implemented are release claims. partial and blocked entries require a task-specific parity gate.",
+  "capabilities": [
+    {
+      "name": "tiny_sampson_fundamental",
+      "upstream_commit": "fa2d2b45",
+      "status": "implemented",
+      "entrypoint": "estimators/fundamental_matrix.{h,cc}",
+      "validation": "fundamental_matrix_test"
+    },
+    {
+      "name": "six_point_one_sided_focal",
+      "upstream_commit": "fff58c71",
+      "status": "partial",
+      "entrypoint": "estimators/relpose_one_sided_focal.{h,cc}, estimators/two_view_geometry.cc",
+      "validation": "relpose_one_sided_focal_test (exact 6-point and <6-point rejection gate)",
+      "reason": "The pinned PoseLib six-point adapter is integrated into the asymmetric known-second-camera RANSAC path and the deterministic exact-sample gate passes. It remains partial because the public adapter still accepts normalized 2D rays and lacks COLMAP's calibrated-ray unprojection Jacobian refinement for distorted and spherical models.",
+      "prerequisites": ["PoseLib source under 3rdparty (RECONSTRUCTION_FETCH_POSELIB=ON)", "calibrated-ray type carrying ray plus d(ray)/d(pixel)", "distorted/spherical Jacobian parity gate"],
+      "resolution": "Port CamRayWithJac-compatible data through the camera API, use the tangent Sampson denominator in RANSAC/LO, then add distorted and spherical numeric parity cases before promotion."
+    },
+    {
+      "name": "global_mapper_multi_component",
+      "upstream_commit": "d2da1944",
+      "status": "implemented",
+      "entrypoint": "controllers/global_mapper.{h,cc}, controllers/hierarchical_mapper.{h,cc}, base/scene_clustering.{h,cc}",
+      "validation": "scene_clustering_test; ColmapLib",
+      "reason": "The compatible equivalent is now implemented: all database images are partitioned, verified-match components are mapped independently, and component reconstructions are merged.",
+      "prerequisites": ["BUILD_RECONSTRUCTION=ON", "database with verified pair geometry"]
+    },
+    {
+      "name": "caspar_gpu_bundle_adjustment",
+      "upstream_commit": "c4ea0dd8",
+      "status": "blocked",
+      "reason": "Current tree has PBA and optional Ceres CUDA, but no Caspar kernels or reproducible parity benchmark.",
+      "prerequisites": ["CUDA toolkit", "compute capability >= 7.5", "generated Symforce-Caspar f32/f64 sources", "BA speed and reprojection parity gate"],
+      "resolution": "Import generated Caspar f32/f64 through 3rdparty, add the BA backend selector/fallback, then pass CUDA-vs-Ceres reprojection and controlled runtime gates."
+    },
+    {
+      "name": "loma_lightglue",
+      "upstream_commit": "77da2b87",
+      "status": "partial",
+      "entrypoint": "plugins/core/Standard/qLightGlue, core/AICore",
+      "reason": "LightGlue inference is ggml-backed; COLMAP LoMa weights and a ggml LoMa graph are not available. ONNX Runtime is not added and must remain absent.",
+      "prerequisites": ["LoMa weights converted to GGUF", "ggml graph/operator coverage", "feature/match precision gate"],
+      "resolution": "Convert the pinned LoMa weights to GGUF, implement the graph in the existing ggml task layer, and gate match precision/recall against the COLMAP reference; do not add ONNX Runtime."
+    },
+    {
+      "name": "hip_patchmatch",
+      "upstream_commit": "b09267a2",
+      "status": "blocked",
+      "reason": "PatchMatch is CUDA-only in this tree; HIP kernels require a separate ROCm build and device-parity gate.",
+      "prerequisites": ["ROCm hipcc", "CUDA-to-HIP compatibility header", "HIP PatchMatch build", "CUDA/HIP depth-map parity gate"],
+      "resolution": "Provide a ROCm runner with hipcc, add the CUDA-to-HIP shim and HIP translation unit in 3rdparty/mvs, then run depth-map parity and performance tests."
+    },
+    {
+      "name": "camera_models_and_rigs",
+      "upstream_commit": "92ac6332",
+      "status": "partial",
+      "entrypoint": "base/camera*, base/camera_rig.*, optim/bundle_adjustment.*",
+      "reason": "Existing camera and rig support is retained; modern spherical model and all upstream rig fixes need model-by-model API and reconstruction parity tests.",
+      "prerequisites": ["spherical camera model", "camera-model serialization compatibility", "rig relative-pose parity tests"],
+      "resolution": "Port the equirectangular model and spherical-aware geometry/BA paths, preserve camera text/binary serialization, and pass per-model plus rig reconstruction parity tests."
+    },
+    {
+      "name": "freeimage_to_openimageio",
+      "upstream_commit": "8e014c5b",
+      "status": "partial",
+      "entrypoint": "3rdparty/openimageio/openimageio.cmake; util/bitmap.{h,cc}",
+      "validation": "bitmap_test; local OIIO compile; stale-FreeImage source audit",
+      "reason": "The Reconstruction Bitmap ABI no longer exposes FreeImage and is backed by OpenImageIO. Conda-forge provides the pinned 3.1.17.0 package for linux-64, osx-64, osx-arm64, and win-64; its Linux glibc >=2.17 constraint covers Ubuntu 20.04 through 24.04. The four remote platform parity jobs still need to run before a release claim.",
+      "prerequisites": ["Ubuntu 20.04/22.04/24.04 image, EXIF, resize, undistortion, and texture parity jobs", "macOS and Windows Conda parity jobs"],
+      "resolution": "Run the pinned OIIO parity matrix in CI. Promote only when every platform produces matching bitmap, EXIF, resize, undistortion, and texture results."
+    }
+  ]
+}

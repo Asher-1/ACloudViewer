@@ -14,6 +14,7 @@
 
 #include "util/alignment.h"
 #include "util/types.h"
+#include "base/pose.h"
 
 namespace colmap {
 
@@ -131,5 +132,18 @@ bool RefineEssentialMatrix(const ceres::Solver::Options& options,
                            const std::vector<Eigen::Vector2d>& points2,
                            const std::vector<char>& inlier_mask,
                            Eigen::Matrix3d* E);
+
+// Squared Sampson error in pixel coordinates for arbitrary central cameras.
+// The input rays carry d(ray)/d(pixel), so the denominator is the tangent
+// gradient pulled back into the image plane rather than a focal-length proxy.
+double ComputeSquaredTangentSampsonError(const CamRayWithJac& cam_ray1,
+                                         const CamRayWithJac& cam_ray2,
+                                         const Eigen::Matrix3d& E);
+
+void ComputeSquaredTangentSampsonError(
+        const std::vector<CamRayWithJac>& cam_rays1,
+        const std::vector<CamRayWithJac>& cam_rays2,
+        const Eigen::Matrix3d& E,
+        std::vector<double>* residuals);
 
 }  // namespace colmap

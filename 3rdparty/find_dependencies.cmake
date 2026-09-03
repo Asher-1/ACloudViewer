@@ -805,6 +805,39 @@ endif()
 
 # OpenMP
 if (WITH_OPENMP)
+    if (APPLE)
+        # AppleClang does not ship OpenMP support: the driver rejects -fopenmp
+        # and there is no system libomp runtime, so FindOpenMP's try_compile
+        # probe fails when libomp.dylib lives in a non-default prefix (conda /
+        # Homebrew). Pre-set the FindOpenMP result variables from the first
+        # available libomp installation to skip the probe, following the
+        # upstream COLMAP macOS build recipe. Missing libomp only degrades to
+        # the no-OpenMP path (sources must guard omp usage with _OPENMP).
+        find_library(OpenMP_libomp_LIBRARY NAMES omp
+                     HINTS ${CONDA_PREFIX}/lib /opt/homebrew/lib /usr/local/lib)
+        find_path(OpenMP_omp_INCLUDE_DIR NAMES omp.h
+                  HINTS ${CONDA_PREFIX}/include /opt/homebrew/include /usr/local/include)
+        if (OpenMP_libomp_LIBRARY
+                AND OpenMP_omp_INCLUDE_DIR
+                AND NOT DEFINED OpenMP_CXX_FLAGS)
+            # Cache variables are mandatory here: FindOpenMP re-runs
+            # find_library(OpenMP_omp_LIBRARY) based on LIB_NAMES, and only an
+            # existing cache entry short-circuits that lookup.
+            set(OpenMP_C_FLAGS "-Xpreprocessor -fopenmp -I${OpenMP_omp_INCLUDE_DIR}"
+                    CACHE STRING "OpenMP C flags" FORCE)
+            set(OpenMP_C_LIB_NAMES omp CACHE STRING "OpenMP C library names" FORCE)
+            set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp -I${OpenMP_omp_INCLUDE_DIR}"
+                    CACHE STRING "OpenMP CXX flags" FORCE)
+            set(OpenMP_CXX_LIB_NAMES omp CACHE STRING "OpenMP CXX library names" FORCE)
+            set(OpenMP_omp_LIBRARY "${OpenMP_libomp_LIBRARY}"
+                    CACHE FILEPATH "OpenMP omp runtime library" FORCE)
+            mark_as_advanced(OpenMP_libomp_LIBRARY OpenMP_omp_LIBRARY OpenMP_omp_INCLUDE_DIR
+                    OpenMP_C_FLAGS OpenMP_C_LIB_NAMES OpenMP_CXX_FLAGS OpenMP_CXX_LIB_NAMES)
+            message(STATUS "AppleClang OpenMP: using libomp at ${OpenMP_libomp_LIBRARY}")
+        else()
+            message(STATUS "AppleClang OpenMP: libomp not found; install it with 'conda install -c conda-forge libomp' or 'brew install libomp' to enable OpenMP")
+        endif()
+    endif()
     find_package_3rdparty_library(3rdparty_openmp
             PACKAGE OpenMP
             PACKAGE_VERSION_VAR OpenMP_CXX_VERSION
@@ -2274,37 +2307,28 @@ else()
 endif()
 
 if (BUILD_RECONSTRUCTION)
-    # freeimage
-    if (WIN32)
-        find_package(FreeImage QUIET)
-        if (FREEIMAGE_FOUND)
-            message(STATUS "FreeImage found in system")
-        else ()
-            message(STATUS "FreeImage not found in system and use prebuild")
-            include(${CloudViewer_3RDPARTY_DIR}/freeimage/freeimage_build.cmake)
-            import_3rdparty_library(3rdparty_freeimage
-                    INCLUDE_DIRS ${FREEIMAGE_INCLUDE_DIRS}
-                    LIB_DIR ${FREEIMAGE_LIB_DIR}
-                    LIBRARIES ${EX_FREEIMAGE_LIBRARIES}
-                    DEPENDS ext_freeimage
-                    )
-            add_dependencies(3rdparty_freeimage ext_freeimage)
-            set(FREEIMAGE_TARGET "3rdparty_freeimage")
-            list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_freeimage)
-            # only for static freeimage usage
-            # target_compile_definitions(3rdparty_freeimage INTERFACE FREEIMAGE_LIB)
+    option(RECONSTRUCTION_FETCH_POSELIB
+           "Fetch the pinned PoseLib minimal solvers for reconstruction" ON)
+    if (RECONSTRUCTION_FETCH_POSELIB)
+        include(${CloudViewer_3RDPARTY_DIR}/PoseLib/poselib.cmake)
+        if (NOT TARGET PoseLib::PoseLib)
+            message(FATAL_ERROR "PoseLib was requested but did not define PoseLib::PoseLib")
         endif()
-    else ()
-        include(${CloudViewer_3RDPARTY_DIR}/freeimage/freeimage_build.cmake)
-        import_shared_3rdparty_library(3rdparty_freeimage ext_freeimage
-                INCLUDE_DIRS ${FREEIMAGE_INCLUDE_DIRS}
-                LIB_DIR ${FREEIMAGE_LIB_DIR}
-                LIBRARIES ${EX_FREEIMAGE_LIBRARIES}
-                )
-        add_dependencies(3rdparty_freeimage ext_freeimage)
-        set(FREEIMAGE_TARGET "3rdparty_freeimage")
-        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_freeimage)
     endif()
+
+    # OpenImageIO is a pinned Conda dependency on macOS/Windows and a system
+    # package on Ubuntu. Keep its discovery behind 3rdparty for one uniform
+    # reconstruction dependency contract.
+    include(${CloudViewer_3RDPARTY_DIR}/openimageio/openimageio.cmake)
+    # Reconstruction links OIIO explicitly. Do not add it to the global list:
+    # its bundled fmt headers must not be visible to unrelated CloudViewer code.
+
+    include(${CloudViewer_3RDPARTY_DIR}/faiss/faiss.cmake)
+    option(RECONSTRUCTION_CASPAR_ENABLED
+           "Enable COLMAP Caspar CUDA bundle adjustment" OFF)
+    option(RECONSTRUCTION_CASPAR_USE_DOUBLE
+           "Use f64 generated Caspar kernels" OFF)
+    include(${CloudViewer_3RDPARTY_DIR}/Symforce-Caspar/caspar.cmake)
 
     # other dependency
     if (WIN32 OR APPLE)

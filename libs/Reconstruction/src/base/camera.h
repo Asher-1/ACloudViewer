@@ -7,9 +7,12 @@
 
 #pragma once
 
+#include <optional>
 #include <vector>
 
 #include "util/types.h"
+
+#include "base/pose.h"
 
 namespace colmap {
 
@@ -110,6 +113,13 @@ public:
 
     // Project point in image plane to world / infinity.
     Eigen::Vector2d ImageToWorld(const Eigen::Vector2d& image_point) const;
+
+    // Unproject a pixel to a unit bearing together with the Jacobian of that
+    // bearing with respect to pixel coordinates. The Jacobian is evaluated
+    // with centered pixel differences so every current central camera model,
+    // including iterative distortion inverses, has one calibrated-ray path.
+    std::optional<CamRayWithJac> CamRayFromImgWithJac(
+            const Eigen::Vector2d& image_point) const;
 
     // Convert pixel threshold in image plane to world space.
     double ImageToWorldThreshold(const double threshold) const;

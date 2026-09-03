@@ -77,6 +77,11 @@ struct TwoViewGeometry {
         // Whether to ignore watermark models in multiple model estimation.
         bool multiple_ignore_watermark = true;
 
+        // Refine the RANSAC fundamental matrix on its inlier set with the
+        // rank-2 Sampson tiny solver. Enabled by default to match current
+        // COLMAP behavior; disable for a controlled legacy A/B run.
+        bool use_sampson_refinement = true;
+
         // Options used to robustly estimate the geometry.
         RANSACOptions ransac_options;
 
@@ -101,7 +106,8 @@ struct TwoViewGeometry {
           H(Eigen::Matrix3d::Zero()),
           qvec(Eigen::Vector4d::Zero()),
           tvec(Eigen::Vector3d::Zero()),
-          tri_angle(0) {}
+          tri_angle(0),
+          estimated_focal_length(0.0) {}
 
     // Invert the two-view geometry in-place.
     void Invert();
@@ -218,6 +224,10 @@ struct TwoViewGeometry {
 
     // Median triangulation angle.
     double tri_angle;
+
+    // Recovered focal length when the optional one-sided focal solver is used.
+    // Zero means that no focal was estimated.
+    double estimated_focal_length;
 };
 
 }  // namespace colmap

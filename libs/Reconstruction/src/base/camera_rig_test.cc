@@ -32,6 +32,8 @@
 #define TEST_NAME "base/camera_rig"
 #include "util/testing.h"
 
+#include <sstream>
+
 #include "base/camera_rig.h"
 
 using namespace colmap;
@@ -107,6 +109,53 @@ BOOST_AUTO_TEST_CASE(TestAddSnapshot) {
   BOOST_CHECK_EQUAL(camera_rig.Snapshots()[1].size(), 2);
   BOOST_CHECK_EQUAL(camera_rig.Snapshots()[1][0], 2);
   BOOST_CHECK_EQUAL(camera_rig.Snapshots()[1][1], 3);
+}
+
+BOOST_AUTO_TEST_CASE(TestSerializationPreservesRelativePoseAndSnapshots) {
+  CameraRig source;
+  source.AddCamera(7, ComposeIdentityQuaternion(), Eigen::Vector3d::Zero());
+  source.AddCamera(11, Eigen::Vector4d(0.9238795325, 0, 0.3826834324, 0),
+                   Eigen::Vector3d(0.3, -0.2, 1.1));
+  source.SetRefCameraId(7);
+  source.AddSnapshot({100, 101});
+  source.AddSnapshot({102});
+
+  std::stringstream text_stream;
+  source.WriteText(&text_stream);
+  CameraRig text_round_trip;
+  BOOST_REQUIRE(text_round_trip.ReadText(&text_stream));
+  BOOST_CHECK_EQUAL(text_round_trip.RefCameraId(), source.RefCameraId());
+  BOOST_CHECK_EQUAL(text_round_trip.GetCameraIds().size(), 2);
+  BOOST_CHECK_SMALL((text_round_trip.RelativeQvec(11) -
+                     source.RelativeQvec(11))
+                            .norm(),
+                    1e-15);
+  BOOST_CHECK_SMALL((text_round_trip.RelativeTvec(11) -
+                     source.RelativeTvec(11))
+                            .norm(),
+                    1e-15);
+  BOOST_CHECK_EQUAL_COLLECTIONS(text_round_trip.Snapshots()[0].begin(),
+                                text_round_trip.Snapshots()[0].end(),
+                                source.Snapshots()[0].begin(),
+                                source.Snapshots()[0].end());
+
+  std::stringstream binary_stream;
+  source.WriteBinary(&binary_stream);
+  CameraRig binary_round_trip;
+  BOOST_REQUIRE(binary_round_trip.ReadBinary(&binary_stream));
+  BOOST_CHECK_EQUAL(binary_round_trip.RefCameraId(), source.RefCameraId());
+  BOOST_CHECK_SMALL((binary_round_trip.RelativeQvec(11) -
+                     source.RelativeQvec(11))
+                            .norm(),
+                    1e-15);
+  BOOST_CHECK_SMALL((binary_round_trip.RelativeTvec(11) -
+                     source.RelativeTvec(11))
+                            .norm(),
+                    1e-15);
+  BOOST_CHECK_EQUAL_COLLECTIONS(binary_round_trip.Snapshots()[1].begin(),
+                                binary_round_trip.Snapshots()[1].end(),
+                                source.Snapshots()[1].begin(),
+                                source.Snapshots()[1].end());
 }
 
 BOOST_AUTO_TEST_CASE(TestCheck) {

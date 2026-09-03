@@ -7,6 +7,7 @@
 
 #include "exe/sfm.h"
 
+#include "controllers/global_mapper.h"
 #include "pipelines/option_utils.h"
 #include "pipelines/sfm.h"
 
@@ -150,6 +151,28 @@ int HierarchicalMapper(
     if (!parser.parseOptions()) return EXIT_FAILURE;
 
     return colmap::RunHierarchicalMapper(parser.getArgc(), parser.getArgv());
+}
+
+int GlobalMapper(
+        const std::string& database_path,
+        const std::string& image_path,
+        const std::string& output_path,
+        int num_workers /*= -1*/,
+        int min_component_size /*= 2*/,
+        const colmap::IncrementalMapperOptions& incremental_mapper_options) {
+    colmap::GlobalMapperController::Options options;
+    options.database_path = database_path;
+    options.image_path = image_path;
+    options.num_workers = num_workers;
+    options.min_component_size = min_component_size;
+    colmap::ReconstructionManager manager;
+    colmap::GlobalMapperController controller(options,
+                                               incremental_mapper_options,
+                                               &manager);
+    controller.Start();
+    controller.Wait();
+    manager.Write(output_path, nullptr);
+    return EXIT_SUCCESS;
 }
 
 int FilterPoints(const std::string& input_path,
