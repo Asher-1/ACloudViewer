@@ -800,14 +800,19 @@ set(_aicore_contract_targets
     test_gaussian_capi_load
     test_lightglue_capi_contract
     test_lightglue_aliked_e2e
+    test_lightglue_model_validation
     test_aliked_capi_contract
     test_aliked_capi_parity
     test_aliked_e2e_smoke
     test_deeplsd_capi_contract
+    test_loma_capi_contract
     test_facedetect_match_capi
     test_facedetect_capi_contract
     test_rfdetr_capi_contract
     test_yolo_capi_contract
+    test_yolo_capi_parity
+    test_yolo_capi_savpe
+    test_yolo_text_model_validation
     test_rmbg_capi_contract
     test_rmbg_capi_performance
     test_sam3_capi_contract

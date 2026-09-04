@@ -4,6 +4,7 @@ channels:
 dependencies:
   - cmake=3.31.8
   - python=3.8
+  - pip
   - ninja
   - pkg-config
   - eigen=3.4.*

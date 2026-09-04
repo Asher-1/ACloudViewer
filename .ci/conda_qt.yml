@@ -9,6 +9,6 @@ dependencies:
   - eigen=3.4.*
   - boost=1.84.*
   - qt=5.15.*
-  - zlib=1.2.*
+  - zlib
   - ffmpeg=6.1.*
   - laszip
