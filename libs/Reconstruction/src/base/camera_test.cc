@@ -116,6 +116,14 @@ BOOST_AUTO_TEST_CASE(TestEquirectangularCamRayWithJac) {
   camera.Rescale(2000, 1000);
   BOOST_CHECK_EQUAL(camera.Params()[0], 2000.0);
   BOOST_CHECK_EQUAL(camera.Params()[1], 1000.0);
+
+  const auto front = camera.ImgFromCam(Eigen::Vector3d(0, 0, 1));
+  const auto rear = camera.ImgFromCam(Eigen::Vector3d(0, 0, -1));
+  BOOST_REQUIRE(front.has_value());
+  BOOST_REQUIRE(rear.has_value());
+  BOOST_CHECK_SMALL((*front - Eigen::Vector2d(1000, 500)).norm(), 1e-12);
+  BOOST_CHECK_SMALL((*rear - Eigen::Vector2d(2000, 500)).norm(), 1e-12);
+  BOOST_CHECK(!camera.ImgFromCam(Eigen::Vector3d::Zero()).has_value());
 }
 
 BOOST_AUTO_TEST_CASE(TestWidthHeight) {

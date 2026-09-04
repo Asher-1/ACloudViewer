@@ -18,11 +18,13 @@
 
 #include "base/camera.h"
 #include "base/database.h"
+#include "base/frame.h"
 #include "base/image.h"
 #include "base/point2d.h"
 #include "base/point3d.h"
 #include "base/similarity_transform.h"
 #include "base/track.h"
+#include "base/rig.h"
 #include "estimators/similarity_transform.h"
 #include "optim/loransac.h"
 #include "util/types.h"
@@ -33,6 +35,7 @@ struct PlyPoint;
 struct RANSACOptions;
 class DatabaseCache;
 class CorrespondenceGraph;
+class CameraRig;
 
 // Reconstruction class holds all information about a single reconstructed
 // model. It is used by the mapping and bundle adjustment classes and can be
@@ -55,6 +58,8 @@ public:
     // Get number of objects.
     inline size_t NumCameras() const;
     inline size_t NumImages() const;
+    inline size_t NumRigs() const;
+    inline size_t NumFrames() const;
     inline size_t NumRegImages() const;
     inline size_t NumPoints3D() const;
     inline size_t NumImagePairs() const;
@@ -63,6 +68,8 @@ public:
     // Get const objects.
     inline const class Camera& Camera(const camera_t camera_id) const;
     inline const class Image& Image(const image_t image_id) const;
+    inline const class Rig& Rig(const rig_t rig_id) const;
+    inline const class Frame& Frame(const frame_t frame_id) const;
     inline const class Point3D& Point3D(const point3D_t point3D_id) const;
     inline const ImagePairStat& ImagePair(const image_pair_t pair_id) const;
     inline ImagePairStat& ImagePair(const image_t image_id1,
@@ -71,6 +78,8 @@ public:
     // Get mutable objects.
     inline class Camera& Camera(const camera_t camera_id);
     inline class Image& Image(const image_t image_id);
+    inline class Rig& Rig(const rig_t rig_id);
+    inline class Frame& Frame(const frame_t frame_id);
     inline class Point3D& Point3D(const point3D_t point3D_id);
     inline ImagePairStat& ImagePair(const image_pair_t pair_id);
     inline const ImagePairStat& ImagePair(const image_t image_id1,
@@ -79,6 +88,8 @@ public:
     // Get reference to all objects.
     inline const std::unordered_map<camera_t, class Camera>& Cameras() const;
     inline const std::unordered_map<image_t, class Image>& Images() const;
+    inline const std::unordered_map<rig_t, class Rig>& Rigs() const;
+    inline const std::unordered_map<frame_t, class Frame>& Frames() const;
     inline const std::vector<image_t>& RegImageIds() const;
     inline const std::unordered_map<point3D_t, class Point3D>& Points3D() const;
     inline const std::unordered_map<image_pair_t, ImagePairStat>& ImagePairs()
@@ -90,6 +101,8 @@ public:
     // Check whether specific object exists.
     inline bool ExistsCamera(const camera_t camera_id) const;
     inline bool ExistsImage(const image_t image_id) const;
+    inline bool ExistsRig(const rig_t rig_id) const;
+    inline bool ExistsFrame(const frame_t frame_id) const;
     inline bool ExistsPoint3D(const point3D_t point3D_id) const;
     inline bool ExistsImagePair(const image_pair_t pair_id) const;
 
@@ -114,6 +127,16 @@ public:
 
     // Add new image.
     void AddImage(const class Image& image);
+
+    // Persisted camera rig/frame data. The legacy CameraRig adapter preserves
+    // existing RigBundleAdjuster callers while keeping one source of truth in
+    // the reconstruction model. Generic non-camera sensor/data persistence is
+    // not represented by this legacy reconstruction database.
+    void AddRig(const class Rig& rig);
+    void AddFrame(const class Frame& frame);
+    class CameraRig CameraRigFromRig(const rig_t rig_id) const;
+    void UpdateRigFromCameraRig(const rig_t rig_id,
+                                const class CameraRig& camera_rig);
 
     // Add new 3D object, and return its unique ID.
     point3D_t AddPoint3D(
@@ -399,6 +422,10 @@ private:
     void ReadCamerasBinary(const std::string& path);
     void ReadImagesBinary(const std::string& path);
     void ReadPoints3DBinary(const std::string& path);
+    void ReadRigsText(const std::string& path);
+    void ReadFramesText(const std::string& path);
+    void ReadRigsBinary(const std::string& path);
+    void ReadFramesBinary(const std::string& path);
 
     void WriteCamerasText(const std::string& path) const;
     void WriteImagesText(const std::string& path) const;
@@ -406,6 +433,10 @@ private:
     void WriteCamerasBinary(const std::string& path) const;
     void WriteImagesBinary(const std::string& path) const;
     void WritePoints3DBinary(const std::string& path) const;
+    void WriteRigsText(const std::string& path) const;
+    void WriteFramesText(const std::string& path) const;
+    void WriteRigsBinary(const std::string& path) const;
+    void WriteFramesBinary(const std::string& path) const;
 
     void SetObservationAsTriangulated(const image_t image_id,
                                       const point2D_t point2D_idx,
@@ -418,6 +449,8 @@ private:
 
     std::unordered_map<camera_t, class Camera> cameras_;
     std::unordered_map<image_t, class Image> images_;
+    std::unordered_map<rig_t, class Rig> rigs_;
+    std::unordered_map<frame_t, class Frame> frames_;
     std::unordered_map<point3D_t, class Point3D> points3D_;
 
     std::unordered_map<image_pair_t, ImagePairStat> image_pair_stats_;
@@ -437,6 +470,10 @@ size_t Reconstruction::NumCameras() const { return cameras_.size(); }
 
 size_t Reconstruction::NumImages() const { return images_.size(); }
 
+size_t Reconstruction::NumRigs() const { return rigs_.size(); }
+
+size_t Reconstruction::NumFrames() const { return frames_.size(); }
+
 size_t Reconstruction::NumRegImages() const { return reg_image_ids_.size(); }
 
 size_t Reconstruction::NumPoints3D() const { return points3D_.size(); }
@@ -453,6 +490,14 @@ const class Camera& Reconstruction::Camera(const camera_t camera_id) const {
 
 const class Image& Reconstruction::Image(const image_t image_id) const {
     return images_.at(image_id);
+}
+
+const class Rig& Reconstruction::Rig(const rig_t rig_id) const {
+    return rigs_.at(rig_id);
+}
+
+const class Frame& Reconstruction::Frame(const frame_t frame_id) const {
+    return frames_.at(frame_id);
 }
 
 const class Point3D& Reconstruction::Point3D(const point3D_t point3D_id) const {
@@ -478,6 +523,12 @@ class Image& Reconstruction::Image(const image_t image_id) {
     return images_.at(image_id);
 }
 
+class Rig& Reconstruction::Rig(const rig_t rig_id) { return rigs_.at(rig_id); }
+
+class Frame& Reconstruction::Frame(const frame_t frame_id) {
+    return frames_.at(frame_id);
+}
+
 class Point3D& Reconstruction::Point3D(const point3D_t point3D_id) {
     return points3D_.at(point3D_id);
 }
@@ -501,6 +552,14 @@ const std::unordered_map<image_t, class Image>& Reconstruction::Images() const {
     return images_;
 }
 
+const std::unordered_map<rig_t, class Rig>& Reconstruction::Rigs() const {
+    return rigs_;
+}
+
+const std::unordered_map<frame_t, class Frame>& Reconstruction::Frames() const {
+    return frames_;
+}
+
 const std::vector<image_t>& Reconstruction::RegImageIds() const {
     return reg_image_ids_;
 }
@@ -520,6 +579,14 @@ bool Reconstruction::ExistsCamera(const camera_t camera_id) const {
 
 bool Reconstruction::ExistsImage(const image_t image_id) const {
     return images_.find(image_id) != images_.end();
+}
+
+bool Reconstruction::ExistsRig(const rig_t rig_id) const {
+    return rigs_.find(rig_id) != rigs_.end();
+}
+
+bool Reconstruction::ExistsFrame(const frame_t frame_id) const {
+    return frames_.find(frame_id) != frames_.end();
 }
 
 bool Reconstruction::ExistsPoint3D(const point3D_t point3D_id) const {

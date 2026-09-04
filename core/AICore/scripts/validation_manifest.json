@@ -7,6 +7,7 @@
     "facedetect",
     "gaussian",
     "lightglue",
+    "loma",
     "rfdetr",
     "rmbg",
     "sam3",
@@ -133,6 +134,65 @@
       "args": ["{model}", "{backend}", "{warmup_runs}", "{inference_runs}"],
       "env": {},
       "accuracy_gate": "model-role-correct deterministic features, finite non-empty stable matches",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "loma-default-triplet",
+      "task": "loma",
+      "light": true,
+      "owned_globs": ["loma_models/loma_detector.f32.gguf", "loma_models/loma_descriptor_dedode_g.f32.gguf", "loma_models/loma_matcher_B.f32.gguf"],
+      "covered_globs": ["loma_models/loma_detector.f32.gguf", "loma_models/loma_descriptor_dedode_g.f32.gguf", "loma_models/loma_matcher_B.f32.gguf"],
+      "executable": "binary:test_loma_default_triplet",
+      "env": {
+        "AICORE_TEST_LOMA_DETECTOR_GGUF": "{assets}/loma_models/loma_detector.f32.gguf",
+        "AICORE_TEST_LOMA_DESCRIPTOR_GGUF": "{assets}/loma_models/loma_descriptor_dedode_g.f32.gguf",
+        "AICORE_TEST_LOMA_MATCHER_GGUF": "{assets}/loma_models/loma_matcher_B.f32.gguf",
+        "AICORE_TEST_DEVICE": "{backend}"
+      },
+      "accuracy_gate": "DaD, DeDoDe-G and LoMa-B load and produce finite non-empty self-matches",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "loma-b128-triplet",
+      "task": "loma",
+      "owned_globs": ["loma_models/loma_descriptor_dedode_b.f32.gguf", "loma_models/loma_matcher_B128.f32.gguf"],
+      "covered_globs": ["loma_models/loma_descriptor_dedode_b.f32.gguf", "loma_models/loma_matcher_B128.f32.gguf"],
+      "executable": "binary:test_loma_default_triplet",
+      "env": {
+        "AICORE_TEST_LOMA_DETECTOR_GGUF": "{assets}/loma_models/loma_detector.f32.gguf",
+        "AICORE_TEST_LOMA_DESCRIPTOR_GGUF": "{assets}/loma_models/loma_descriptor_dedode_b.f32.gguf",
+        "AICORE_TEST_LOMA_MATCHER_GGUF": "{assets}/loma_models/loma_matcher_B128.f32.gguf",
+        "AICORE_TEST_LOMA_EXPECTED_DESCRIPTOR_DIM": "128",
+        "AICORE_TEST_DEVICE": "{backend}"
+      },
+      "accuracy_gate": "DaD, DeDoDe-B and LoMa-B128 load with the required 128D feature contract",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "loma-matcher-variants",
+      "task": "loma",
+      "model_glob": "loma_models/loma_matcher_[RLG].f32.gguf",
+      "for_each_model": true,
+      "executable": "binary:test_loma_matcher_e2e",
+      "env": {
+        "AICORE_TEST_LOMA_GGUF": "{model}",
+        "AICORE_TEST_DEVICE": "{backend}"
+      },
+      "accuracy_gate": "LoMa R/L/G load and produce deterministic finite 256D matches",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "loma-published-models",
+      "task": "loma",
+      "model_glob": "loma_models/*.gguf",
+      "owned_globs": ["loma_models/*.gguf"],
+      "for_each_model": true,
+      "executable": "binary:test_loma_published_model_gate",
+      "env": {
+        "AICORE_TEST_LOMA_GGUF": "{model}",
+        "AICORE_TEST_DEVICE": "{backend}"
+      },
+      "accuracy_gate": "each published GGUF loads into its declared LoMa graph and returns finite deterministic role output",
       "metric_parser": "generic"
     },
     {

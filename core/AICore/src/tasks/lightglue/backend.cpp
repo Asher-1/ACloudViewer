@@ -23,15 +23,20 @@
 namespace aicore {
 namespace lightglue {
 
-bool engine_backend::init(const std::string& device_req, int n_threads) {
+bool engine_backend::init(const std::string& device_req,
+                          int n_threads,
+                          bool parallel_cpu_backend) {
     release();
     if (n_threads <= 0) {
         n_threads = static_cast<int>(ggml_common::default_cpu_threads());
     }
     // The historical LIGHTGLUE_NTHREADS default override was an env fallback
     // and is removed; explicit threads/options win.
-    lease = aicore::runtime::acquire_backend_lease(device_req, n_threads,
-                                                   &error);
+    lease = parallel_cpu_backend
+                    ? aicore::runtime::acquire_parallel_backend_lease(
+                              device_req, n_threads, &error)
+                    : aicore::runtime::acquire_backend_lease(device_req,
+                                                             n_threads, &error);
     if (!lease) return false;
     be = lease.handle();
     device = lease.device();

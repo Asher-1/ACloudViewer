@@ -407,6 +407,13 @@ bool SiftMatchingOptions::Check() const {
     CHECK_OPTION_GT(max_ratio, 0.0);
     CHECK_OPTION_GT(max_distance, 0.0);
     CHECK_OPTION_GT(max_error, 0.0);
+    CHECK_OPTION_GE(loma_min_score, 0.0);
+    CHECK_OPTION_LE(loma_min_score, 1.0);
+    CHECK_OPTION(loma_matcher_variant == "b" ||
+                 loma_matcher_variant == "b128" ||
+                 loma_matcher_variant == "r" ||
+                 loma_matcher_variant == "l" ||
+                 loma_matcher_variant == "g");
     CHECK_OPTION_GE(min_num_trials, 0);
     CHECK_OPTION_GT(max_num_trials, 0);
     CHECK_OPTION_LE(min_num_trials, max_num_trials);

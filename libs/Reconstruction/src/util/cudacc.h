@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <cuda_runtime.h>
+#include "util/cuda_to_hip.h"
 
 #include <string>
 

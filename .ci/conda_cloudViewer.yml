@@ -2,6 +2,7 @@ name: cloudViewer
 channels:
   - conda-forge
 dependencies:
+  - cmake=3.31.8
   - python=3.8
   - ninja
   - openssl

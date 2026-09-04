@@ -35,7 +35,7 @@ Complete guide for building ACloudViewer from source code on Windows, Linux, and
 ### Core Build Dependencies
 
 **Required:**
-- **CMake** 3.19 or newer
+- **CMake** 3.24 or newer (CI and supported developer toolchains use 3.31.8)
 - **Python** 3.10+ (for build scripts)
 - **Qt** 5.12+ or Qt 6.2+
 - **C++17** compliant compiler

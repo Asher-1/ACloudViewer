@@ -58,6 +58,19 @@ int main() {
     if (second.handle() == different_threads.handle()) {
         return Fail("CPU thread configurations shared one backend");
     }
+
+    aicore::runtime::BackendLease parallel_first =
+            aicore::runtime::acquire_parallel_backend_lease("cpu", 1, &error);
+    aicore::runtime::BackendLease parallel_second =
+            aicore::runtime::acquire_parallel_backend_lease("cpu", 1, &error);
+    if (!parallel_first || !parallel_second) {
+        return Fail(error.empty() ? "parallel CPU lease failed"
+                                  : error.c_str());
+    }
+    if (parallel_first.handle() == parallel_second.handle() ||
+        parallel_first.handle() == second.handle()) {
+        return Fail("parallel CPU workers shared a serialized backend");
+    }
     const std::vector<aicore::runtime::BackendLease> group = {
             second, different_threads, second};
     const auto group_lock = aicore::runtime::lock_backend_leases(group);

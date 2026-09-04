@@ -228,6 +228,31 @@ Eigen::Vector2d Camera::ImageToWorld(const Eigen::Vector2d& image_point) const {
   return world_point;
 }
 
+std::optional<Eigen::Vector3d> Camera::CamRayFromImg(
+        const Eigen::Vector2d& image_point) const {
+  if (model_id_ == EquirectangularCameraModel::kModelId) {
+    if (params_.size() != EquirectangularCameraModel::kNumParams ||
+        !(params_[0] > 0.0) || !(params_[1] > 0.0)) {
+      return std::nullopt;
+    }
+
+    const double theta =
+            2.0 * EIGEN_PI * (image_point.x() / params_[0] - 0.5);
+    const double phi = EIGEN_PI * (0.5 - image_point.y() / params_[1]);
+    return Eigen::Vector3d(std::cos(phi) * std::sin(theta), -std::sin(phi),
+                           std::cos(phi) * std::cos(theta));
+  }
+
+  const Eigen::Vector2d normalized = ImageToWorld(image_point);
+  const Eigen::Vector3d ray(normalized.x(), normalized.y(), 1.0);
+  const double norm = ray.norm();
+  if (!(norm > std::numeric_limits<double>::epsilon()) ||
+      !std::isfinite(norm)) {
+    return std::nullopt;
+  }
+  return ray / norm;
+}
+
 std::optional<CamRayWithJac> Camera::CamRayFromImgWithJac(
         const Eigen::Vector2d& image_point) const {
   if (model_id_ == EquirectangularCameraModel::kModelId) {
@@ -258,26 +283,15 @@ std::optional<CamRayWithJac> Camera::CamRayFromImgWithJac(
     return result;
   }
 
-  const auto unproject = [this](const Eigen::Vector2d& pixel)
-      -> std::optional<Eigen::Vector3d> {
-    const Eigen::Vector2d normalized = ImageToWorld(pixel);
-    const Eigen::Vector3d ray(normalized.x(), normalized.y(), 1.0);
-    const double norm = ray.norm();
-    if (!(norm > std::numeric_limits<double>::epsilon()) ||
-        !std::isfinite(norm)) {
-      return std::nullopt;
-    }
-    return ray / norm;
-  };
-
-  const std::optional<Eigen::Vector3d> center = unproject(image_point);
+  const std::optional<Eigen::Vector3d> center = CamRayFromImg(image_point);
   if (!center.has_value()) {
     return std::nullopt;
   }
 
-  // A quarter pixel keeps the truncation error below feature localization
-  // noise while remaining stable for the iterative undistortion models.
-  constexpr double kPixelStep = 0.25;
+  // The tangent Sampson denominator is sensitive to the calibrated-ray
+  // derivative. A small centered step retains stable iterative undistortion
+  // while keeping its truncation error below the numeric acceptance gate.
+  constexpr double kPixelStep = 0.01;
   CamRayWithJac result;
   result.ray = *center;
   for (int axis = 0; axis < 2; ++axis) {
@@ -285,8 +299,8 @@ std::optional<CamRayWithJac> Camera::CamRayFromImgWithJac(
     Eigen::Vector2d forward = image_point;
     backward[axis] -= kPixelStep;
     forward[axis] += kPixelStep;
-    const auto ray_backward = unproject(backward);
-    const auto ray_forward = unproject(forward);
+    const auto ray_backward = CamRayFromImg(backward);
+    const auto ray_forward = CamRayFromImg(forward);
     if (!ray_backward.has_value() || !ray_forward.has_value()) {
       return std::nullopt;
     }
@@ -309,6 +323,32 @@ Eigen::Vector2d Camera::WorldToImage(const Eigen::Vector2d& world_point) const {
   CameraModelWorldToImage(model_id_, params_, world_point(0), world_point(1),
                           &image_point(0), &image_point(1));
   return image_point;
+}
+
+std::optional<Eigen::Vector2d> Camera::ImgFromCam(
+        const Eigen::Vector3d& camera_point) const {
+  if (!camera_point.allFinite() ||
+      camera_point.squaredNorm() <= std::numeric_limits<double>::epsilon()) {
+    return std::nullopt;
+  }
+
+  if (model_id_ == EquirectangularCameraModel::kModelId) {
+    if (params_.size() != EquirectangularCameraModel::kNumParams ||
+        !(params_[0] > 0.0) || !(params_[1] > 0.0)) {
+      return std::nullopt;
+    }
+    const double horizontal = std::hypot(camera_point.x(), camera_point.z());
+    const double theta = std::atan2(camera_point.x(), camera_point.z());
+    const double phi = std::atan2(-camera_point.y(), horizontal);
+    return Eigen::Vector2d(
+        (theta / (2.0 * EIGEN_PI) + 0.5) * params_[0],
+        (0.5 - phi / EIGEN_PI) * params_[1]);
+  }
+
+  if (camera_point.z() <= std::numeric_limits<double>::epsilon()) {
+    return std::nullopt;
+  }
+  return WorldToImage(camera_point.hnormalized());
 }
 
 void Camera::Rescale(const double scale) {

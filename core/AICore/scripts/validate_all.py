@@ -385,7 +385,17 @@ def parse_input_assets(manifest: dict[str, Any], selected: set[str]
         assets.append(InputAsset(asset_id, tasks, relative, url, digest, size,
                                  archive, tuple(extracted)))
     if not assets:
-        raise ValueError("manifest has no input assets for selected tasks")
+        input_tokens = ("{image}", "{image2}", "{face_image}", "{sam_image}",
+                        "{yolo_image}")
+        selected_scenarios = [scenario for scenario in manifest["scenarios"]
+                              if scenario["task"] in selected]
+        needs_input = any(
+            any(token in value for token in input_tokens)
+            for scenario in selected_scenarios
+            for value in list(scenario.get("args", [])) +
+            list(scenario.get("env", {}).values()))
+        if needs_input:
+            raise ValueError("manifest has no input assets for selected tasks")
     return assets
 
 

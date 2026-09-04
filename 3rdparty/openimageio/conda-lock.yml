@@ -1,6 +1,0 @@
-channels:
-  - conda-forge
-dependencies:
-  # Available for linux-64, osx-64, osx-arm64, and win-64. Linux package
-  # constrains glibc to >=2.17, which covers Ubuntu 20.04 through 24.04.
-  - openimageio=3.1.17.0

@@ -1,7 +1,7 @@
 {
   "upstream_repository": "/home/ludahai/develop/code/github/colmap",
   "upstream_revision_checked": "a395b826",
-  "policy": "Only entries marked implemented are release claims. partial and blocked entries require a task-specific parity gate.",
+  "policy": "Only entries marked implemented are release claims. partial and blocked entries require a task-specific parity gate. deferred entries are outside the active hardware support matrix and are excluded from its release gate.",
   "capabilities": [
     {
       "name": "tiny_sampson_fundamental",
@@ -13,12 +13,12 @@
     {
       "name": "six_point_one_sided_focal",
       "upstream_commit": "fff58c71",
-      "status": "partial",
+      "status": "implemented",
       "entrypoint": "estimators/relpose_one_sided_focal.{h,cc}, estimators/two_view_geometry.cc",
-      "validation": "relpose_one_sided_focal_test (exact 6-point and <6-point rejection gate)",
-      "reason": "The pinned PoseLib six-point adapter is integrated into the asymmetric known-second-camera RANSAC path and the deterministic exact-sample gate passes. It remains partial because the public adapter still accepts normalized 2D rays and lacks COLMAP's calibrated-ray unprojection Jacobian refinement for distorted and spherical models.",
-      "prerequisites": ["PoseLib source under 3rdparty (RECONSTRUCTION_FETCH_POSELIB=ON)", "calibrated-ray type carrying ray plus d(ray)/d(pixel)", "distorted/spherical Jacobian parity gate"],
-      "resolution": "Port CamRayWithJac-compatible data through the camera API, use the tangent Sampson denominator in RANSAC/LO, then add distorted and spherical numeric parity cases before promotion."
+      "validation": "reconstruction_camera_rig_parity_gate (exact 6-point, distorted calibrated ray, tangent-Sampson numeric, and <6-point rejection gates)",
+      "reason": "The pinned PoseLib six-point adapter is integrated into the asymmetric known-second-camera RANSAC path. It carries CamRayWithJac calibrated rays through the public camera API, scores the calibrated side with the tangent Sampson denominator, and performs TinySolver local refinement over pose direction and log focal before rescoring RANSAC support. Deterministic distorted-camera, tangent-Sampson, non-minimal rejection, and non-coplanar refinement-accuracy gates pass.",
+      "prerequisites": ["PoseLib source under 3rdparty (RECONSTRUCTION_FETCH_POSELIB=ON)", "reconstruction_camera_rig_parity_gate"],
+      "resolution": "Keep the ray/Jacobian and refinement-accuracy gates mandatory for every PoseLib-enabled reconstruction build."
     },
     {
       "name": "global_mapper_multi_component",
@@ -32,46 +32,52 @@
     {
       "name": "caspar_gpu_bundle_adjustment",
       "upstream_commit": "c4ea0dd8",
-      "status": "blocked",
-      "reason": "Current tree has PBA and optional Ceres CUDA, but no Caspar kernels or reproducible parity benchmark.",
-      "prerequisites": ["CUDA toolkit", "compute capability >= 7.5", "generated Symforce-Caspar f32/f64 sources", "BA speed and reprojection parity gate"],
-      "resolution": "Import generated Caspar f32/f64 through 3rdparty, add the BA backend selector/fallback, then pass CUDA-vs-Ceres reprojection and controlled runtime gates."
+      "status": "implemented",
+      "entrypoint": "3rdparty/Symforce-Caspar/caspar.cmake; optim/bundle_adjustment_caspar.{h,cc}; optim/bundle_adjustment.{h,cc}",
+      "validation": "reconstruction_caspar_parity_gate (direct generated-Caspar versus Ceres Pinhole RMS, Frame/Rig composition, merged factors, and all 11 split-intrinsic factor variants)",
+      "reason": "Generated Symforce-Caspar f32/f64 kernels are imported through the 3rdparty_caspar INTERFACE target. The backend selector executes Caspar directly for PINHOLE/SIMPLE_RADIAL BA, including fixed sensor_from_rig Frame/Rig observations and all 15 upstream pose/focal-and-extra/principal-point/point variability combinations. The split-intrinsic numeric gate covers its 11 generated factors with fixed pose and point combinations, verifies fixed groups remain unchanged, and compares reprojection error to Ceres. Upstream Caspar itself only provides Pinhole and SimpleRadial generated factors; spherical and other camera models correctly remain on Ceres. The current Ceres comparison build reports no cuDSS and falls back to CPU sparse solving, so the remaining gap is representative Ceres-CUDA A/B coverage, not factor parity.",
+      "prerequisites": ["CUDA toolkit", "compute capability >= 7.5", "generated Symforce-Caspar f32/f64 sources", "Ceres CUDA build with cuDSS", "controlled representative-scene runtime A/B gate"],
+      "resolution": "Run the direct RMS, split-intrinsic, and Frame/Rig consistency gates in every Caspar-enabled configuration, then add representative Ceres-CUDA versus Caspar timing fixtures before making a performance claim."
     },
     {
       "name": "loma_lightglue",
       "upstream_commit": "77da2b87",
       "status": "partial",
-      "entrypoint": "plugins/core/Standard/qLightGlue, core/AICore",
-      "reason": "LightGlue inference is ggml-backed; COLMAP LoMa weights and a ggml LoMa graph are not available. ONNX Runtime is not added and must remain absent.",
-      "prerequisites": ["LoMa weights converted to GGUF", "ggml graph/operator coverage", "feature/match precision gate"],
-      "resolution": "Convert the pinned LoMa weights to GGUF, implement the graph in the existing ggml task layer, and gate match precision/recall against the COLMAP reference; do not add ONNX Runtime."
+      "entrypoint": "core/AICore LoMa C API; feature/loma.{h,cc}; base/database float_descriptors protocol; legacy reconstruction scheduler",
+      "validation": "test_loma_detector_reference_gate; test_loma_descriptor_reference_gate; test_loma_b128_e2e_reference_gate; test_loma_matcher_reference_gate; test_loma_published_model_gate (all production paths load GGUF/ggml only; development fixtures are generated from pinned ONNX)",
+      "reason": "The GGUF/ggml chain covers DaD, DeDoDe-B, DeDoDe-G, LoMa-B128, and B/R/L/G matchers without ONNX Runtime. All 22 published F32/F16/Q8_0 artifacts are cataloged with shared-cache release URLs and SHA256 digests; legacy feature extraction writes the typed float_descriptors SQLite protocol and matching uses the legacy worker pipeline. A real ten-image CUDA run completed end to end: LoMa registered 10/10 images with 9020 sparse points and 68956 track observations, versus SIFT's 10/10, 145, and 689; LoMa took 82.59 seconds versus SIFT's 1.69 seconds on that fixture. The upstream ONNX comparator could not start because its locally built CUDA provider lacks libcublasLt.so.12. More importantly, the new DeDoDe-G CPU/CUDA ViT-L token gate exposes an unresolved CUDA flash-attention precision loss: the final token trace reports max absolute error 12.24 and relative L2 1.53e-2. The public CUDA workflow is functional, but this is not a strict numerical-equivalence claim.",
+      "prerequisites": ["F32 CUDA flash-attention path or equivalent ViT-L token-parity repair", "upstream LoMa comparator with a runnable external ONNX CUDA provider when an official A/B is required"],
+      "resolution": "Keep per-model reference and B/R/L/G matcher P/R gates mandatory, and retain the strict DeDoDe-G CPU/CUDA token gate. Do not claim CUDA DeDoDe-G numeric parity or a LoMa speedup until the F32 attention path passes it; do not add ONNX Runtime to ACloudViewer."
     },
     {
       "name": "hip_patchmatch",
       "upstream_commit": "b09267a2",
-      "status": "blocked",
-      "reason": "PatchMatch is CUDA-only in this tree; HIP kernels require a separate ROCm build and device-parity gate.",
+      "status": "deferred",
+      "entrypoint": "3rdparty/rocm/rocm.cmake; mvs/gpu_mat.h; mvs/gpu_mat_prng.cu; mvs/gpu_mat_ref_image.cu; mvs/patch_match_cuda.cu",
+      "validation": "HIP compile gate plus CUDA/HIP depth-map numeric and runtime parity gates",
+      "reason": "The ROCm 3rdparty interface target, HIP translation-unit path, CUDA-to-HIP shim, and POD GpuMatView kernel ABI remain default-off experimental code. HIP PatchMatch is explicitly outside the active alignment and release hardware matrix because no ROCm compiler or device is available; it is not a current release blocker or remaining implementation task.",
       "prerequisites": ["ROCm hipcc", "CUDA-to-HIP compatibility header", "HIP PatchMatch build", "CUDA/HIP depth-map parity gate"],
-      "resolution": "Provide a ROCm runner with hipcc, add the CUDA-to-HIP shim and HIP translation unit in 3rdparty/mvs, then run depth-map parity and performance tests."
+      "resolution": "When ROCm hardware becomes available, re-enter this capability into a dedicated HIP validation matrix and run the recorded compile, depth-map parity, and performance gates."
     },
     {
       "name": "camera_models_and_rigs",
       "upstream_commit": "92ac6332",
-      "status": "partial",
+      "status": "implemented",
       "entrypoint": "base/camera*, base/camera_rig.*, optim/bundle_adjustment.*",
-      "reason": "Existing camera and rig support is retained; modern spherical model and all upstream rig fixes need model-by-model API and reconstruction parity tests.",
-      "prerequisites": ["spherical camera model", "camera-model serialization compatibility", "rig relative-pose parity tests"],
-      "resolution": "Port the equirectangular model and spherical-aware geometry/BA paths, preserve camera text/binary serialization, and pass per-model plus rig reconstruction parity tests."
+      "validation": "reconstruction_camera_rig_parity_gate; cost_functions_test; rig_test; frame_test; database_test (full-sphere equirectangular projection/ray/Jacobian, variable/fixed/rig Ceres Jacobian central-difference gates, v1/v2 Rig/Frame serialization, generic reference-sensor and data-only Frame SQLite round-trips, and rotated relative-pose gates)",
+      "reason": "EQUIRECTANGULAR (id 17) has full-sphere bearing, signed 3D projection, calibrated-ray Jacobian, and normal/constant-pose/rig Ceres residuals with longitude-seam and central-difference Jacobian gates. Rig/Frame v2 text and binary records serialize tagged generic sensor/data ids while v1 camera/image records remain readable. SQLite migrates legacy rigs.ref_camera_id to ref_sensor_id/ref_sensor_type and persists arbitrary reference sensors and data-only Frames in rig_sensors/frame_data alongside legacy camera/image tables.",
+      "prerequisites": ["reconstruction_camera_rig_parity_gate", "cost_functions_test"],
+      "resolution": "Keep full-sphere, spherical-BA Jacobian, and mixed-sensor SQLite gates mandatory."
     },
     {
       "name": "freeimage_to_openimageio",
       "upstream_commit": "8e014c5b",
       "status": "partial",
       "entrypoint": "3rdparty/openimageio/openimageio.cmake; util/bitmap.{h,cc}",
-      "validation": "bitmap_test; local OIIO compile; stale-FreeImage source audit",
-      "reason": "The Reconstruction Bitmap ABI no longer exposes FreeImage and is backed by OpenImageIO. Conda-forge provides the pinned 3.1.17.0 package for linux-64, osx-64, osx-arm64, and win-64; its Linux glibc >=2.17 constraint covers Ubuntu 20.04 through 24.04. The four remote platform parity jobs still need to run before a release claim.",
-      "prerequisites": ["Ubuntu 20.04/22.04/24.04 image, EXIF, resize, undistortion, and texture parity jobs", "macOS and Windows Conda parity jobs"],
-      "resolution": "Run the pinned OIIO parity matrix in CI. Promote only when every platform produces matching bitmap, EXIF, resize, undistortion, and texture results."
+      "validation": "reconstruction_oiio_parity_gate (bitmap_test, undistortion_test, texture_mapping_test); PostInstall final-payload OIIO runtime check; stale-FreeImage source audit",
+      "reason": "The Reconstruction Bitmap ABI no longer exposes FreeImage and is backed by one pinned OpenImageIO 3.1.17.0 source ExternalProject on Linux, macOS, and Windows. Its required image/color closure is built when the host is too old, and USE_OPENCV=OFF prevents the system OIIO to system OpenCV 4.2 injection path. The focused parity target remains available for local investigation but is intentionally not executed by GitHub CI; PostInstall rejects packages that omit either OpenImageIO runtime library. The source build and package path have not yet completed on every remote platform.",
+      "prerequisites": ["Ubuntu 20.04/22.04/24.04 source-build and package jobs", "macOS and Windows source-build and package jobs"],
+      "resolution": "Promote only after the pinned OIIO source build and final package payload have completed on each platform. Run the focused bitmap/EXIF/resize/undistortion/texture target as a local or dedicated validation job when changing the image backend."
     }
   ]
 }

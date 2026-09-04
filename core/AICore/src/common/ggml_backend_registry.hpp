@@ -37,10 +37,15 @@ private:
 
     explicit BackendLease(std::shared_ptr<State> state)
         : state_(std::move(state)) {}
-    friend BackendLease acquire_backend_lease(const std::string&, int,
+    friend BackendLease acquire_backend_lease(const std::string&,
+                                              int,
                                               std::string*);
+    friend BackendLease acquire_parallel_backend_lease(const std::string&,
+                                                       int,
+                                                       std::string*);
     friend BackendLease adopt_backend_lease(ggml_backend_t,
-                                            const std::string&, int);
+                                            const std::string&,
+                                            int);
     friend BackendLeaseLock lock_backend_leases(
             const std::vector<BackendLease>&);
 };
@@ -64,6 +69,13 @@ private:
 BackendLease acquire_backend_lease(const std::string& device_request,
                                    int n_threads,
                                    std::string* error);
+
+// Acquires a session-private CPU backend, allowing independent worker graphs
+// to run concurrently. Non-CPU devices retain the normal shared lease and
+// execution lock because their physical command queues are shared.
+BackendLease acquire_parallel_backend_lease(const std::string& device_request,
+                                            int n_threads,
+                                            std::string* error);
 
 // Takes ownership of an already-created backend handle. Used by multi-GPU
 // schedulers after resolving a GPU group; a compatible existing lease wins and

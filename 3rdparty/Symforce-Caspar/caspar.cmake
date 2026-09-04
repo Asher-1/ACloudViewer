@@ -8,9 +8,9 @@ endif ()
 
 foreach (_caspar_arch IN LISTS CMAKE_CUDA_ARCHITECTURES)
     string(REGEX MATCH "^([0-9]+)" _caspar_arch_num "${_caspar_arch}")
-    if (_caspar_arch_num AND _caspar_arch_num LESS 70)
+    if (_caspar_arch_num AND _caspar_arch_num LESS 75)
         message(FATAL_ERROR
-            "RECONSTRUCTION_CASPAR_ENABLED requires CUDA architecture >= 70, "
+            "RECONSTRUCTION_CASPAR_ENABLED requires CUDA architecture >= 75, "
             "but CMAKE_CUDA_ARCHITECTURES contains '${_caspar_arch}'.")
     endif ()
 endforeach ()

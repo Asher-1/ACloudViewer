@@ -114,6 +114,11 @@ public:
     // Project point in image plane to world / infinity.
     Eigen::Vector2d ImageToWorld(const Eigen::Vector2d& image_point) const;
 
+    // Unproject a pixel to a unit calibrated bearing. This is the lightweight
+    // path for geometry consumers that do not need pixel derivatives.
+    std::optional<Eigen::Vector3d> CamRayFromImg(
+            const Eigen::Vector2d& image_point) const;
+
     // Unproject a pixel to a unit bearing together with the Jacobian of that
     // bearing with respect to pixel coordinates. The Jacobian is evaluated
     // with centered pixel differences so every current central camera model,
@@ -126,6 +131,12 @@ public:
 
     // Project point from world / infinity to image plane.
     Eigen::Vector2d WorldToImage(const Eigen::Vector2d& world_point) const;
+
+    // Project a camera-frame direction without discarding its depth sign.
+    // Perspective models reject directions behind the camera. Spherical
+    // models accept the complete non-zero sphere.
+    std::optional<Eigen::Vector2d> ImgFromCam(
+            const Eigen::Vector3d& camera_point) const;
 
     // Rescale camera dimensions and accordingly the focal length and
     // and the principal point.

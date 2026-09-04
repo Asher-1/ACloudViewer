@@ -33,9 +33,12 @@
 #include "util/testing.h"
 
 #include "base/camera_models.h"
+#include "base/camera_rig.h"
 #include "base/correspondence_graph.h"
+#include "base/frame.h"
 #include "base/pose.h"
 #include "base/reconstruction.h"
+#include "base/rig.h"
 #include "base/similarity_transform.h"
 
 using namespace colmap;
@@ -107,6 +110,49 @@ BOOST_AUTO_TEST_CASE(TestAddImage) {
   BOOST_CHECK_EQUAL(reconstruction.NumRegImages(), 0);
   BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 0);
   BOOST_CHECK_EQUAL(reconstruction.NumImagePairs(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(TestRigFrameCameraRigAdapter) {
+  Reconstruction reconstruction;
+  for (const camera_t camera_id : {1, 2}) {
+    Camera camera;
+    camera.SetCameraId(camera_id);
+    camera.InitializeWithId(SimplePinholeCameraModel::model_id, 1, 1, 1);
+    reconstruction.AddCamera(camera);
+
+    Image image;
+    image.SetImageId(camera_id);
+    image.SetCameraId(camera_id);
+    image.SetName("rig_image" + std::to_string(camera_id));
+    reconstruction.AddImage(image);
+  }
+
+  Rig rig;
+  rig.SetRigId(5);
+  rig.AddRefCamera(1);
+  rig.AddCamera(2,
+                ComposeIdentityQuaternion(),
+                Eigen::Vector3d(0.5, 0.0, 0.0));
+  reconstruction.AddRig(rig);
+
+  Frame frame;
+  frame.SetFrameId(9);
+  frame.SetRigId(5);
+  frame.AddImageId(1);
+  frame.AddImageId(2);
+  reconstruction.AddFrame(frame);
+
+  CameraRig legacy = reconstruction.CameraRigFromRig(5);
+  BOOST_CHECK_EQUAL(legacy.RefCameraId(), 1);
+  BOOST_CHECK_EQUAL(legacy.NumCameras(), 2);
+  BOOST_CHECK_EQUAL(legacy.NumSnapshots(), 1);
+  BOOST_CHECK(legacy.RelativeTvec(2).isApprox(Eigen::Vector3d(0.5, 0.0, 0.0)));
+
+  legacy.RelativeTvec(2) = Eigen::Vector3d(0.75, 0.0, 0.0);
+  reconstruction.UpdateRigFromCameraRig(5, legacy);
+  BOOST_CHECK(reconstruction.Rig(5).CamFromRigTvec(2).isApprox(
+      Eigen::Vector3d(0.75, 0.0, 0.0)));
+  BOOST_CHECK(reconstruction.Frame(9).HasPose());
 }
 
 BOOST_AUTO_TEST_CASE(TestAddPoint3D) {

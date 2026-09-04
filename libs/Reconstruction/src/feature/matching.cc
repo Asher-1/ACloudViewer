@@ -35,8 +35,10 @@
 #include <numeric>
 
 #include "SiftGPU/SiftGPU.h"
+#include "aicore/loma_capi.h"
 #include "base/gps.h"
 #include "feature/utils.h"
+#include "feature/loma.h"
 #include "retrieval/visual_index.h"
 #include "util/cuda.h"
 #include "util/download.h"
@@ -273,6 +275,14 @@ void FeatureMatcherCache::Setup() {
                   database_->ReadDescriptors(image_id));
             });
 
+    float_descriptors_cache_ =
+        std::make_unique<ThreadSafeLRUCache<image_t, FeatureDescriptorsFloat>>(
+            cache_size_, [this](const image_t image_id) {
+              std::lock_guard<std::mutex> lock(database_mutex_);
+              return std::make_shared<FeatureDescriptorsFloat>(
+                  database_->ReadFloatDescriptors(image_id));
+            });
+
     keypoints_exists_cache_ = std::make_unique<ThreadSafeLRUCache<image_t, bool>>(
         cache_size_, [this](const image_t image_id) {
           std::lock_guard<std::mutex> lock(database_mutex_);
@@ -285,6 +295,14 @@ void FeatureMatcherCache::Setup() {
               std::lock_guard<std::mutex> lock(database_mutex_);
               return std::make_shared<bool>(
                   database_->ExistsDescriptors(image_id));
+            });
+
+    float_descriptors_exists_cache_ =
+        std::make_unique<ThreadSafeLRUCache<image_t, bool>>(
+            cache_size_, [this](const image_t image_id) {
+              std::lock_guard<std::mutex> lock(database_mutex_);
+              return std::make_shared<bool>(
+                  database_->ExistsFloatDescriptors(image_id));
             });
 }
 
@@ -306,6 +324,17 @@ std::shared_ptr<FeatureKeypoints> FeatureMatcherCache::GetKeypoints(
 std::shared_ptr<FeatureDescriptors> FeatureMatcherCache::GetDescriptors(
     const image_t image_id) {
   return descriptors_cache_->Get(image_id);
+}
+
+std::shared_ptr<FeatureDescriptorsFloat> FeatureMatcherCache::GetFloatDescriptors(
+    const image_t image_id) {
+  return float_descriptors_cache_->Get(image_id);
+}
+
+FeatureDescriptorType FeatureMatcherCache::GetDescriptorType(
+    const image_t image_id) {
+  std::lock_guard<std::mutex> lock(database_mutex_);
+  return database_->ReadDescriptorType(image_id);
 }
 
 FeatureMatches FeatureMatcherCache::GetMatches(const image_t image_id1,
@@ -332,6 +361,10 @@ bool FeatureMatcherCache::ExistsKeypoints(const image_t image_id) {
 
 bool FeatureMatcherCache::ExistsDescriptors(const image_t image_id) {
   return *descriptors_exists_cache_->Get(image_id);
+}
+
+bool FeatureMatcherCache::ExistsFloatDescriptors(const image_t image_id) {
+  return *float_descriptors_exists_cache_->Get(image_id);
 }
 
 bool FeatureMatcherCache::ExistsMatches(const image_t image_id1,
@@ -415,6 +448,106 @@ void SiftCPUFeatureMatcher::Run() {
       CHECK(output_queue_->Push(data));
     }
   }
+}
+
+LomaFeatureMatcher::LomaFeatureMatcher(const SiftMatchingOptions& options,
+                                       FeatureMatcherCache* cache,
+                                       JobQueue<Input>* input_queue,
+                                       JobQueue<Output>* output_queue)
+    : FeatureMatcherThread(options, cache),
+      input_queue_(input_queue),
+      output_queue_(output_queue) {
+  CHECK(options_.Check());
+  CHECK(!options_.loma_matcher_model_path.empty());
+}
+
+void LomaFeatureMatcher::Run() {
+  aicore_loma_matcher_options* matcher_options =
+      aicore_loma_matcher_options_new();
+  aicore_loma_matcher_options_set_device(matcher_options,
+                                         options_.loma_device.c_str());
+  aicore_loma_matcher_options_set_min_score(matcher_options,
+                                             options_.loma_min_score);
+  aicore_loma_matcher_options_set_threads(matcher_options, 1);
+  aicore_loma_matcher_ctx* matcher = aicore_loma_matcher_load(
+      options_.loma_matcher_model_path.c_str(), matcher_options);
+  aicore_loma_matcher_options_free(matcher_options);
+  if (!aicore_loma_matcher_is_ready(matcher)) {
+    std::cerr << "ERROR: LoMa matcher worker could not load "
+              << options_.loma_matcher_model_path << ": "
+              << aicore_loma_matcher_last_error(matcher) << std::endl;
+    aicore_loma_matcher_free(matcher);
+    SignalInvalidSetup();
+    return;
+  }
+
+  SignalValidSetup();
+  while (!IsStopped()) {
+    const auto input_job = input_queue_->Pop();
+    if (!input_job.IsValid()) continue;
+    auto data = input_job.Data();
+    if (!cache_->ExistsKeypoints(data.image_id1) ||
+        !cache_->ExistsKeypoints(data.image_id2) ||
+        !cache_->ExistsFloatDescriptors(data.image_id1) ||
+        !cache_->ExistsFloatDescriptors(data.image_id2) ||
+        cache_->GetDescriptorType(data.image_id1) !=
+            cache_->GetDescriptorType(data.image_id2)) {
+      CHECK(output_queue_->Push(data));
+      continue;
+    }
+
+    const auto keypoints1 = cache_->GetKeypoints(data.image_id1);
+    const auto keypoints2 = cache_->GetKeypoints(data.image_id2);
+    const auto descriptors1 = cache_->GetFloatDescriptors(data.image_id1);
+    const auto descriptors2 = cache_->GetFloatDescriptors(data.image_id2);
+    if (descriptors1->rows() != static_cast<Eigen::Index>(keypoints1->size()) ||
+        descriptors2->rows() != static_cast<Eigen::Index>(keypoints2->size()) ||
+        descriptors1->cols() != descriptors2->cols()) {
+      CHECK(output_queue_->Push(data));
+      continue;
+    }
+
+    const auto& image1 = cache_->GetImage(data.image_id1);
+    const auto& image2 = cache_->GetImage(data.image_id2);
+    const auto& camera1 = cache_->GetCamera(image1.CameraId());
+    const auto& camera2 = cache_->GetCamera(image2.CameraId());
+    std::vector<aicore_loma_keypoint> points1(keypoints1->size());
+    std::vector<aicore_loma_keypoint> points2(keypoints2->size());
+    for (size_t index = 0; index < points1.size(); ++index) {
+      points1[index] = {(*keypoints1)[index].x, (*keypoints1)[index].y};
+    }
+    for (size_t index = 0; index < points2.size(); ++index) {
+      points2[index] = {(*keypoints2)[index].x, (*keypoints2)[index].y};
+    }
+    const aicore_loma_features features1 = {
+        points1.data(), static_cast<int32_t>(points1.size()),
+        descriptors1->data(), static_cast<int32_t>(descriptors1->cols()),
+        static_cast<int32_t>(camera1.Width()),
+        static_cast<int32_t>(camera1.Height())};
+    const aicore_loma_features features2 = {
+        points2.data(), static_cast<int32_t>(points2.size()),
+        descriptors2->data(), static_cast<int32_t>(descriptors2->cols()),
+        static_cast<int32_t>(camera2.Width()),
+        static_cast<int32_t>(camera2.Height())};
+    aicore_loma_match* raw_matches = nullptr;
+    int32_t match_count = 0;
+    if (aicore_loma_matcher_run(matcher, &features1, &features2,
+                                &raw_matches, &match_count) == 0) {
+      data.matches.reserve(static_cast<size_t>(match_count));
+      for (int32_t index = 0; index < match_count; ++index) {
+        data.matches.emplace_back(
+            static_cast<point2D_t>(raw_matches[index].idx0),
+            static_cast<point2D_t>(raw_matches[index].idx1));
+      }
+    } else {
+      std::cerr << "ERROR: LoMa matching failed for image pair ("
+                << data.image_id1 << ", " << data.image_id2 << "): "
+                << aicore_loma_matcher_last_error(matcher) << std::endl;
+    }
+    aicore_loma_free_matches(raw_matches);
+    CHECK(output_queue_->Push(data));
+  }
+  aicore_loma_matcher_free(matcher);
 }
 
 SiftGPUFeatureMatcher::SiftGPUFeatureMatcher(const SiftMatchingOptions& options,
@@ -735,6 +868,25 @@ SiftFeatureMatcher::SiftFeatureMatcher(const SiftMatchingOptions& options,
                                        FeatureMatcherCache* cache)
     : options_(options), database_(database), cache_(cache), is_setup_(false) {
   CHECK(options_.Check());
+  use_loma_ = options_.use_loma || !options_.loma_matcher_model_path.empty();
+  if (use_loma_) {
+    LomaMatchingOptions loma_options;
+    loma_options.matcher_model_path = options_.loma_matcher_model_path;
+    CHECK(ParseLomaMatcherVariant(options_.loma_matcher_variant,
+                                  &loma_options.matcher_variant));
+    loma_options.min_score = static_cast<float>(options_.loma_min_score);
+    loma_options.device = options_.loma_device;
+    ResolveDefaultLomaModelPaths(&loma_options);
+    CHECK(loma_options.Check());
+    options_.use_loma = true;
+    options_.loma_matcher_model_path = loma_options.matcher_model_path;
+  }
+  if (use_loma_ && options_.guided_matching) {
+    std::cerr << "WARNING: LoMa does not implement SIFT guided matching; "
+                 "using its native matcher followed by geometric verification."
+              << std::endl;
+    options_.guided_matching = false;
+  }
 
   const int num_threads = GetEffectiveNumThreads(options_.num_threads);
   CHECK_GT(num_threads, 0);
@@ -757,7 +909,13 @@ SiftFeatureMatcher::SiftFeatureMatcher(const SiftMatchingOptions& options,
   }
 #endif  // CUDA_ENABLED
 
-  if (options_.use_gpu) {
+  if (use_loma_) {
+    matchers_.reserve(num_threads);
+    for (int i = 0; i < num_threads; ++i) {
+      matchers_.emplace_back(new LomaFeatureMatcher(
+          options_, cache, &matcher_queue_, &verifier_queue_));
+    }
+  } else if (options_.use_gpu) {
     auto gpu_options = options_;
     matchers_.reserve(gpu_indices.size());
     for (const auto& gpu_index : gpu_indices) {
@@ -840,7 +998,8 @@ SiftFeatureMatcher::~SiftFeatureMatcher() {
 }
 
 bool SiftFeatureMatcher::Setup() {
-  const int max_num_features = CHECK_NOTNULL(database_)->MaxNumDescriptors();
+  const int max_num_features =
+      static_cast<int>(CHECK_NOTNULL(database_)->MaxNumKeypoints());
   options_.max_num_matches =
       std::min(options_.max_num_matches, max_num_features);
 

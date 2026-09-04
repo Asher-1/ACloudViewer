@@ -49,5 +49,8 @@ inline std::string trellis_model_cache_dir() {
 inline std::string sam3_model_cache_dir() {
     return extract_model_dir("sam3_models");
 }
+inline std::string loma_model_cache_dir() {
+    return extract_model_dir("loma_models");
+}
 
 }  // namespace aicore

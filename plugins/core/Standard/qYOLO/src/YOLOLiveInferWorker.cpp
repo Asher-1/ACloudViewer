@@ -277,7 +277,13 @@ void YOLOLiveInferWorker::runJobImpl(YOLOLiveInferWorker::Job job) {
         const aicore_yolo_detection det = aicore_yolo_detection_at(m_ctx, i);
         YOLODetection out;
         out.classId = static_cast<uint32_t>(det.class_id);
-        out.className = QStringLiteral("class %1").arg(det.class_id);
+        // Backend class table (open-vocabulary class-list override or the
+        // GGUF metadata); fall back to the deterministic label only when the
+        // model declares no name for this class.
+        const char* name = aicore_yolo_detection_class_name(m_ctx, i);
+        out.className = (name != nullptr && name[0] != '\0')
+                                ? QString::fromUtf8(name)
+                                : QStringLiteral("class %1").arg(det.class_id);
         out.x1 = det.x1;
         out.y1 = det.y1;
         out.x2 = det.x2;

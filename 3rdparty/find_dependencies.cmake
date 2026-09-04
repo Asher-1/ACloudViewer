@@ -2316,9 +2316,9 @@ if (BUILD_RECONSTRUCTION)
         endif()
     endif()
 
-    # OpenImageIO is a pinned Conda dependency on macOS/Windows and a system
-    # package on Ubuntu. Keep its discovery behind 3rdparty for one uniform
-    # reconstruction dependency contract.
+    # OpenImageIO is built from a pinned 3rdparty source archive on every
+    # platform. Its adapter owns the minimal image dependency closure and
+    # explicitly disables host OpenCV discovery.
     include(${CloudViewer_3RDPARTY_DIR}/openimageio/openimageio.cmake)
     # Reconstruction links OIIO explicitly. Do not add it to the global list:
     # its bundled fmt headers must not be visible to unrelated CloudViewer code.

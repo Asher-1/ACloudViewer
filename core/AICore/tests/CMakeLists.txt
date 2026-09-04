@@ -136,6 +136,28 @@ function(aicore_add_lightglue_capi_test name)
     set_tests_properties(${name} PROPERTIES LABELS "capi")
 endfunction()
 
+function(aicore_add_loma_capi_test name)
+    add_executable(${name} loma/${name}.cpp)
+    target_link_libraries(${name} PRIVATE AICore)
+    _aicore_capi_link(${name})
+    _aicore_test_common(${name})
+    if(NOT MSVC)
+        target_compile_options(${name} PRIVATE -fPIC)
+        target_link_options(${name} PRIVATE "-no-pie")
+    endif()
+    set_tests_properties(${name} PROPERTIES LABELS "capi")
+endfunction()
+
+function(aicore_add_loma_whitebox_test name)
+    if(NOT TARGET AICore_test)
+        return()
+    endif()
+    add_executable(${name} loma/${name}.cpp)
+    target_link_libraries(${name} PRIVATE AICore_test)
+    _aicore_test_common(${name})
+    set_tests_properties(${name} PROPERTIES LABELS "whitebox;model;reference;accuracy")
+endfunction()
+
 function(aicore_add_deeplsd_capi_test name)
     add_executable(${name} deeplsd/${name}.cpp)
     target_link_libraries(${name} PRIVATE AICore)
@@ -371,6 +393,29 @@ set_tests_properties(test_lightglue_aliked_e2e
     PROPERTIES LABELS "capi;model;gpu;e2e")
 set_tests_properties(test_lightglue_model_validation
     PROPERTIES LABELS "capi;model;gpu;validation")
+
+aicore_add_loma_capi_test(test_loma_capi_contract)
+aicore_add_loma_capi_test(test_loma_default_triplet)
+set_tests_properties(test_loma_default_triplet PROPERTIES LABELS "capi;model;e2e")
+aicore_add_loma_capi_test(test_loma_matcher_e2e)
+set_tests_properties(test_loma_matcher_e2e PROPERTIES LABELS "capi;model;e2e")
+aicore_add_loma_capi_test(test_loma_published_model_gate)
+set_tests_properties(test_loma_published_model_gate
+    PROPERTIES LABELS "capi;model;validation")
+aicore_add_loma_capi_test(test_loma_detector_reference_gate)
+set_tests_properties(test_loma_detector_reference_gate
+    PROPERTIES LABELS "capi;model;reference;accuracy")
+aicore_add_loma_capi_test(test_loma_descriptor_reference_gate)
+set_tests_properties(test_loma_descriptor_reference_gate
+    PROPERTIES LABELS "capi;model;reference;accuracy")
+aicore_add_loma_whitebox_test(test_loma_g_token_reference_gate)
+aicore_add_loma_whitebox_test(test_loma_g_backend_parity)
+aicore_add_loma_capi_test(test_loma_b128_e2e_reference_gate)
+set_tests_properties(test_loma_b128_e2e_reference_gate
+    PROPERTIES LABELS "capi;model;reference;accuracy;e2e")
+aicore_add_loma_capi_test(test_loma_matcher_reference_gate)
+set_tests_properties(test_loma_matcher_reference_gate
+    PROPERTIES LABELS "capi;model;validation")
 
 aicore_add_aliked_capi_test(test_aliked_capi_contract)
 aicore_add_aliked_capi_test(test_aliked_capi_parity)

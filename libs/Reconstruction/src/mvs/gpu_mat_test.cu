@@ -5,9 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(__HIPCC__)
 #define BOOST_PP_VARIADICS 0
-#endif  // __CUDACC__
+#endif  // __CUDACC__ || __HIPCC__
 
 #define TEST_NAME "mvs/gpu_mat_test"
 #include "mvs/gpu_mat.h"

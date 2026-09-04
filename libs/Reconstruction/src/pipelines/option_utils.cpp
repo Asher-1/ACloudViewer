@@ -420,6 +420,12 @@ void OptionsParser::addBundleAdjustmentOptions(
                    &bundle_adjustment_options.refine_extra_params);
     registerOption("BundleAdjustment.refine_extrinsics",
                    &bundle_adjustment_options.refine_extrinsics);
+    registerOption("BundleAdjustment.use_caspar",
+                   &bundle_adjustment_options.use_caspar);
+    registerOption("BundleAdjustment.caspar_gpu_index",
+                   &bundle_adjustment_options.caspar_gpu_index);
+    registerOption("BundleAdjustment.caspar_max_num_iterations",
+                   &bundle_adjustment_options.caspar_max_num_iterations);
 }
 
 void OptionsParser::addPatchMatchStereoOptions(

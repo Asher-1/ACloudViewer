@@ -67,4 +67,13 @@ if(CUDA_ENABLED)
     )
 
     COLMAP_ADD_CUDA_TEST(gpu_mat_test gpu_mat_test.cu)
+elseif(HIP_ENABLED)
+    COLMAP_ADD_HIP_SOURCES(
+        gpu_mat_prng.h gpu_mat_prng.cu
+        gpu_mat_ref_image.h gpu_mat_ref_image.cu
+        patch_match.h patch_match.cc
+        patch_match_cuda.h patch_match_cuda.cu
+    )
+
+    COLMAP_ADD_HIP_TEST(gpu_mat_test gpu_mat_test.cu)
 endif()

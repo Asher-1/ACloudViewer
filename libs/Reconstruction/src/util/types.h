@@ -34,6 +34,8 @@ typedef unsigned __int64 uint64_t;
 
 #include <Eigen/Core>
 
+#include <tuple>
+
 namespace Eigen {
 using Matrix3x4f = Matrix<float, 3, 4>;
 using Matrix3x4d = Matrix<double, 3, 4>;
@@ -60,6 +62,53 @@ typedef uint32_t camera_t;
 // Unique identifier for images.
 typedef uint32_t image_t;
 
+// Unique identifier for a rigid camera calibration and one of its captures.
+typedef uint32_t rig_t;
+typedef uint32_t frame_t;
+
+// A rig is a calibration container for all sensors, not just cameras. Keep
+// these identifiers separate from camera/image ids so database records can
+// represent upstream COLMAP's generic sensor/data associations.
+enum class SensorType : int32_t {
+    INVALID = -1,
+    CAMERA = 0,
+    IMU = 1,
+};
+
+struct sensor_t {
+    SensorType type = SensorType::INVALID;
+    uint32_t id = std::numeric_limits<uint32_t>::max();
+
+    constexpr sensor_t() = default;
+    constexpr sensor_t(const SensorType sensor_type, const uint32_t sensor_id)
+        : type(sensor_type), id(sensor_id) {}
+
+    bool operator==(const sensor_t& other) const {
+        return type == other.type && id == other.id;
+    }
+    bool operator!=(const sensor_t& other) const { return !(*this == other); }
+    bool operator<(const sensor_t& other) const {
+        return std::tie(type, id) < std::tie(other.type, other.id);
+    }
+};
+
+struct data_t {
+    sensor_t sensor_id;
+    uint64_t id = std::numeric_limits<uint64_t>::max();
+
+    constexpr data_t() = default;
+    constexpr data_t(const sensor_t& sensor, const uint64_t data_id)
+        : sensor_id(sensor), id(data_id) {}
+
+    bool operator==(const data_t& other) const {
+        return sensor_id == other.sensor_id && id == other.id;
+    }
+    bool operator!=(const data_t& other) const { return !(*this == other); }
+    bool operator<(const data_t& other) const {
+        return std::tie(sensor_id, id) < std::tie(other.sensor_id, other.id);
+    }
+};
+
 // Each image pair gets a unique ID, see `Database::ImagePairToPairId`.
 typedef uint64_t image_pair_t;
 
@@ -74,6 +123,8 @@ typedef uint64_t point3D_t;
 // Values for invalid identifiers or indices.
 const camera_t kInvalidCameraId = std::numeric_limits<camera_t>::max();
 const image_t kInvalidImageId = std::numeric_limits<image_t>::max();
+const rig_t kInvalidRigId = std::numeric_limits<rig_t>::max();
+const frame_t kInvalidFrameId = std::numeric_limits<frame_t>::max();
 const image_pair_t kInvalidImagePairId =
         std::numeric_limits<image_pair_t>::max();
 const point2D_t kInvalidPoint2DIdx = std::numeric_limits<point2D_t>::max();

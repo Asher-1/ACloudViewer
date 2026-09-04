@@ -39,6 +39,7 @@ set(AICORE_TASKS_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks)
 set(AICORE_DEPTH_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/depth)
 set(AICORE_GAUSSIAN_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/gaussian)
 set(AICORE_LIGHTGLUE_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/lightglue)
+set(AICORE_LOMA_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/loma)
 set(AICORE_DEEPLSD_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/deeplsd)
 set(AICORE_ALIKED_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/aliked)
 set(AICORE_FACEDETECT_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/facedetect)
@@ -74,6 +75,7 @@ file(GLOB GAUSSIAN_SOURCES CONFIGURE_DEPENDS ${AICORE_GAUSSIAN_SRC_DIR}/*.cpp)
 file(GLOB GAUSSIAN_HEADERS CONFIGURE_DEPENDS ${AICORE_GAUSSIAN_SRC_DIR}/*.hpp ${AICORE_GAUSSIAN_SRC_DIR}/*.h)
 file(GLOB LIGHTGLUE_SOURCES CONFIGURE_DEPENDS ${AICORE_LIGHTGLUE_SRC_DIR}/*.cpp)
 file(GLOB LIGHTGLUE_HEADERS CONFIGURE_DEPENDS ${AICORE_LIGHTGLUE_SRC_DIR}/*.hpp)
+file(GLOB AICORE_LOMA_SOURCES CONFIGURE_DEPENDS ${AICORE_LOMA_SRC_DIR}/*.cpp)
 file(GLOB AICORE_DEEPLSD_SOURCES CONFIGURE_DEPENDS ${AICORE_DEEPLSD_SRC_DIR}/*.cpp)
 file(GLOB AICORE_ALIKED_SOURCES CONFIGURE_DEPENDS ${AICORE_ALIKED_SRC_DIR}/*.cpp)
 file(GLOB AICORE_FACEDETECT_SOURCES CONFIGURE_DEPENDS ${AICORE_FACEDETECT_SRC_DIR}/*.cpp)
@@ -120,6 +122,7 @@ add_library(${PROJECT_NAME} SHARED
     ${DEPTH_SOURCES} ${DEPTH_HEADERS}
     ${GAUSSIAN_SOURCES} ${GAUSSIAN_HEADERS}
     ${LIGHTGLUE_SOURCES} ${LIGHTGLUE_HEADERS}
+    ${AICORE_LOMA_SOURCES}
     ${AICORE_DEEPLSD_SOURCES}
     ${AICORE_ALIKED_SOURCES}
     ${AICORE_FACEDETECT_SOURCES}
@@ -174,6 +177,7 @@ target_include_directories(${PROJECT_NAME}
         ${AICORE_DEPTH_SRC_DIR}
         ${AICORE_GAUSSIAN_SRC_DIR}
         ${AICORE_LIGHTGLUE_SRC_DIR}
+        ${AICORE_LOMA_SRC_DIR}
         ${AICORE_DEEPLSD_SRC_DIR}
         ${AICORE_ALIKED_SRC_DIR}
         ${AICORE_ALIKED_SRC_DIR}/cuda
@@ -636,6 +640,7 @@ if(AICore_BUILD_TESTS)
             ${DEPTH_SOURCES}
             ${GAUSSIAN_SOURCES}
             ${LIGHTGLUE_SOURCES}
+            ${AICORE_LOMA_SOURCES}
             ${AICORE_FACEDETECT_SOURCES}
             ${AICORE_RFDETR_SOURCES}
             ${AICORE_RMBG_SOURCES}
@@ -665,6 +670,7 @@ if(AICore_BUILD_TESTS)
             $<BUILD_INTERFACE:${AICORE_DEPTH_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_GAUSSIAN_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_LIGHTGLUE_SRC_DIR}>
+            $<BUILD_INTERFACE:${AICORE_LOMA_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_FACEDETECT_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_RFDETR_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_RMBG_SRC_DIR}>
@@ -711,7 +717,7 @@ if(AICore_BUILD_TESTS)
     message(STATUS "AICore: contract tests enabled")
 endif()
 
-message(STATUS "AICore (SHARED): tasks/depth + tasks/gaussian + tasks/lightglue + tasks/deeplsd + tasks/facedetect + tasks/rfdetr + tasks/rmbg + tasks/yolo + tasks/sam3 + tasks/trellis, ggml linked once")
+message(STATUS "AICore (SHARED): tasks/depth + tasks/gaussian + tasks/lightglue + tasks/loma + tasks/deeplsd + tasks/facedetect + tasks/rfdetr + tasks/rmbg + tasks/yolo + tasks/sam3 + tasks/trellis, ggml linked once")
 
 add_executable(aicore_gguf_quantize tools/aicore_gguf_quantize.cpp)
 target_link_libraries(aicore_gguf_quantize PRIVATE AICore)

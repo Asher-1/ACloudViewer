@@ -168,6 +168,7 @@ class SparseBundleCU : public ParallelBA, public ConfigBA {
 
  public:
   SparseBundleCU(int device);
+  ~SparseBundleCU() override;
   size_t GetMemCapacity();
 };
 

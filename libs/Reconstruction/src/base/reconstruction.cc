@@ -31,9 +31,11 @@
 
 #include "base/reconstruction.h"
 
+#include <algorithm>
 #include <fstream>
 
 #include "base/database_cache.h"
+#include "base/camera_rig.h"
 #include "base/gps.h"
 #include "base/pose.h"
 #include "base/projection.h"
@@ -51,6 +53,8 @@ Reconstruction::Reconstruction(const Reconstruction& other)
     : correspondence_graph_(other.GetCorrespondenceGraph()),
       cameras_(other.Cameras()),
       images_(other.Images()),
+      rigs_(other.Rigs()),
+      frames_(other.Frames()),
       points3D_(other.Points3D()),
       image_pair_stats_(other.ImagePairs()),
       reg_image_ids_(other.RegImageIds()),
@@ -61,6 +65,8 @@ Reconstruction& Reconstruction::operator=(const Reconstruction& other) {
         correspondence_graph_ = other.GetCorrespondenceGraph();
         cameras_ = other.Cameras();
         images_ = other.Images();
+        rigs_ = other.Rigs();
+        frames_ = other.Frames();
         points3D_ = other.Points3D();
         image_pair_stats_ = other.ImagePairs();
         reg_image_ids_ = other.RegImageIds();
@@ -184,6 +190,97 @@ void Reconstruction::AddCamera(const class Camera& camera) {
 void Reconstruction::AddImage(const class Image& image) {
     CHECK(!ExistsImage(image.ImageId()));
     images_[image.ImageId()] = image;
+}
+
+void Reconstruction::AddRig(const class Rig& rig) {
+    CHECK_NE(rig.RigId(), kInvalidRigId);
+    CHECK(!ExistsRig(rig.RigId()));
+    CHECK_GT(rig.NumCameras(), 0);
+    CHECK(rig.HasCamera(rig.RefCameraId()));
+    for (const camera_t camera_id : rig.CameraIds()) {
+        CHECK(ExistsCamera(camera_id));
+    }
+    rigs_.emplace(rig.RigId(), rig);
+}
+
+void Reconstruction::AddFrame(const class Frame& frame) {
+    CHECK_NE(frame.FrameId(), kInvalidFrameId);
+    CHECK(!ExistsFrame(frame.FrameId()));
+    CHECK(ExistsRig(frame.RigId()));
+    CHECK(!frame.ImageIds().empty());
+    const class Rig& rig = Rig(frame.RigId());
+    for (const image_t image_id : frame.ImageIds()) {
+        CHECK(ExistsImage(image_id));
+        CHECK(rig.HasCamera(Image(image_id).CameraId()));
+        for (const auto& existing_frame : frames_) {
+            CHECK(!existing_frame.second.HasImageId(image_id));
+        }
+    }
+    frames_.emplace(frame.FrameId(), frame);
+}
+
+CameraRig Reconstruction::CameraRigFromRig(const rig_t rig_id) const {
+    const class Rig& rig = Rig(rig_id);
+    CameraRig camera_rig;
+    for (const camera_t camera_id : rig.CameraIds()) {
+        camera_rig.AddCamera(camera_id,
+                             rig.CamFromRigQvec(camera_id),
+                             rig.CamFromRigTvec(camera_id));
+    }
+    camera_rig.SetRefCameraId(rig.RefCameraId());
+
+    std::vector<frame_t> frame_ids;
+    for (const auto& frame : frames_) {
+        if (frame.second.RigId() == rig_id) {
+            frame_ids.push_back(frame.first);
+        }
+    }
+    std::sort(frame_ids.begin(), frame_ids.end());
+    for (const frame_t frame_id : frame_ids) {
+        const class Frame& frame = Frame(frame_id);
+        std::vector<image_t> snapshot(frame.ImageIds().begin(),
+                                       frame.ImageIds().end());
+        camera_rig.AddSnapshot(snapshot);
+    }
+    camera_rig.Check(*this);
+    return camera_rig;
+}
+
+void Reconstruction::UpdateRigFromCameraRig(
+        const rig_t rig_id, const CameraRig& camera_rig) {
+    class Rig& rig = Rig(rig_id);
+    CHECK_EQ(camera_rig.RefCameraId(), rig.RefCameraId());
+    CHECK_EQ(camera_rig.NumCameras(), rig.NumCameras());
+    for (const camera_t camera_id : rig.CameraIds()) {
+        CHECK(camera_rig.HasCamera(camera_id));
+        if (camera_id == rig.RefCameraId()) continue;
+        rig.CamFromRigQvec(camera_id) =
+                NormalizeQuaternion(camera_rig.RelativeQvec(camera_id));
+        rig.CamFromRigTvec(camera_id) = camera_rig.RelativeTvec(camera_id);
+    }
+
+    std::vector<frame_t> frame_ids;
+    for (const auto& frame : frames_) {
+        if (frame.second.RigId() == rig_id) {
+            frame_ids.push_back(frame.first);
+        }
+    }
+    std::sort(frame_ids.begin(), frame_ids.end());
+    CHECK_EQ(camera_rig.NumSnapshots(), frame_ids.size());
+    for (size_t snapshot_idx = 0; snapshot_idx < frame_ids.size(); ++snapshot_idx) {
+        const class Frame& frame = Frame(frame_ids[snapshot_idx]);
+        const std::set<image_t> snapshot(camera_rig.Snapshots()[snapshot_idx].begin(),
+                                          camera_rig.Snapshots()[snapshot_idx].end());
+        CHECK(snapshot == frame.ImageIds());
+        Eigen::Vector4d rig_from_world_qvec;
+        Eigen::Vector3d rig_from_world_tvec;
+        camera_rig.ComputeAbsolutePose(snapshot_idx,
+                                       *this,
+                                       &rig_from_world_qvec,
+                                       &rig_from_world_tvec);
+        Frame(frame_ids[snapshot_idx])
+                .SetRigFromWorld(rig_from_world_qvec, rig_from_world_tvec);
+    }
 }
 
 point3D_t Reconstruction::AddPoint3D(const Eigen::Vector3d& xyz,
@@ -790,24 +887,158 @@ void Reconstruction::ReadText(const std::string& path) {
     ReadCamerasText(JoinPaths(path, "cameras.txt"));
     ReadImagesText(JoinPaths(path, "images.txt"));
     ReadPoints3DText(JoinPaths(path, "points3D.txt"));
+    if (ExistsFile(JoinPaths(path, "rigs.txt"))) {
+        ReadRigsText(JoinPaths(path, "rigs.txt"));
+    }
+    if (ExistsFile(JoinPaths(path, "frames.txt"))) {
+        ReadFramesText(JoinPaths(path, "frames.txt"));
+    }
 }
 
 void Reconstruction::ReadBinary(const std::string& path) {
     ReadCamerasBinary(JoinPaths(path, "cameras.bin"));
     ReadImagesBinary(JoinPaths(path, "images.bin"));
     ReadPoints3DBinary(JoinPaths(path, "points3D.bin"));
+    if (ExistsFile(JoinPaths(path, "rigs.bin"))) {
+        ReadRigsBinary(JoinPaths(path, "rigs.bin"));
+    }
+    if (ExistsFile(JoinPaths(path, "frames.bin"))) {
+        ReadFramesBinary(JoinPaths(path, "frames.bin"));
+    }
 }
 
 void Reconstruction::WriteText(const std::string& path) const {
     WriteCamerasText(JoinPaths(path, "cameras.txt"));
     WriteImagesText(JoinPaths(path, "images.txt"));
     WritePoints3DText(JoinPaths(path, "points3D.txt"));
+    WriteRigsText(JoinPaths(path, "rigs.txt"));
+    WriteFramesText(JoinPaths(path, "frames.txt"));
 }
 
 void Reconstruction::WriteBinary(const std::string& path) const {
     WriteCamerasBinary(JoinPaths(path, "cameras.bin"));
     WriteImagesBinary(JoinPaths(path, "images.bin"));
     WritePoints3DBinary(JoinPaths(path, "points3D.bin"));
+    WriteRigsBinary(JoinPaths(path, "rigs.bin"));
+    WriteFramesBinary(JoinPaths(path, "frames.bin"));
+}
+
+void Reconstruction::ReadRigsText(const std::string& path) {
+    std::ifstream file(path);
+    CHECK(file.is_open()) << path;
+    std::string tag;
+    uint32_t version = 0;
+    uint64_t num_rigs = 0;
+    CHECK(file >> tag >> version >> num_rigs);
+    CHECK_EQ(tag, "RIGS");
+    CHECK_EQ(version, 1);
+    rigs_.clear();
+    for (uint64_t i = 0; i < num_rigs; ++i) {
+        class Rig rig;
+        CHECK(rig.ReadText(&file)) << path;
+        AddRig(rig);
+    }
+}
+
+void Reconstruction::ReadFramesText(const std::string& path) {
+    std::ifstream file(path);
+    CHECK(file.is_open()) << path;
+    std::string tag;
+    uint32_t version = 0;
+    uint64_t num_frames = 0;
+    CHECK(file >> tag >> version >> num_frames);
+    CHECK_EQ(tag, "FRAMES");
+    CHECK_EQ(version, 1);
+    frames_.clear();
+    for (uint64_t i = 0; i < num_frames; ++i) {
+        class Frame frame;
+        CHECK(frame.ReadText(&file)) << path;
+        AddFrame(frame);
+    }
+}
+
+void Reconstruction::ReadRigsBinary(const std::string& path) {
+    std::ifstream file(path, std::ios::binary);
+    CHECK(file.is_open()) << path;
+    const uint64_t num_rigs = ReadBinaryLittleEndian<uint64_t>(&file);
+    rigs_.clear();
+    for (uint64_t i = 0; i < num_rigs; ++i) {
+        class Rig rig;
+        CHECK(rig.ReadBinary(&file)) << path;
+        AddRig(rig);
+    }
+}
+
+void Reconstruction::ReadFramesBinary(const std::string& path) {
+    std::ifstream file(path, std::ios::binary);
+    CHECK(file.is_open()) << path;
+    const uint64_t num_frames = ReadBinaryLittleEndian<uint64_t>(&file);
+    frames_.clear();
+    for (uint64_t i = 0; i < num_frames; ++i) {
+        class Frame frame;
+        CHECK(frame.ReadBinary(&file)) << path;
+        AddFrame(frame);
+    }
+}
+
+void Reconstruction::WriteRigsText(const std::string& path) const {
+    std::ofstream file(path, std::ios::trunc);
+    CHECK(file.is_open()) << path;
+    file << "RIGS 1 " << rigs_.size() << "\n";
+    std::vector<rig_t> rig_ids;
+    rig_ids.reserve(rigs_.size());
+    for (const auto& rig : rigs_) {
+        rig_ids.push_back(rig.first);
+    }
+    std::sort(rig_ids.begin(), rig_ids.end());
+    for (const rig_t rig_id : rig_ids) {
+        Rig(rig_id).WriteText(&file);
+    }
+}
+
+void Reconstruction::WriteFramesText(const std::string& path) const {
+    std::ofstream file(path, std::ios::trunc);
+    CHECK(file.is_open()) << path;
+    file << "FRAMES 1 " << frames_.size() << "\n";
+    std::vector<frame_t> frame_ids;
+    frame_ids.reserve(frames_.size());
+    for (const auto& frame : frames_) {
+        frame_ids.push_back(frame.first);
+    }
+    std::sort(frame_ids.begin(), frame_ids.end());
+    for (const frame_t frame_id : frame_ids) {
+        Frame(frame_id).WriteText(&file);
+    }
+}
+
+void Reconstruction::WriteRigsBinary(const std::string& path) const {
+    std::ofstream file(path, std::ios::binary | std::ios::trunc);
+    CHECK(file.is_open()) << path;
+    WriteBinaryLittleEndian<uint64_t>(&file, rigs_.size());
+    std::vector<rig_t> rig_ids;
+    rig_ids.reserve(rigs_.size());
+    for (const auto& rig : rigs_) {
+        rig_ids.push_back(rig.first);
+    }
+    std::sort(rig_ids.begin(), rig_ids.end());
+    for (const rig_t rig_id : rig_ids) {
+        Rig(rig_id).WriteBinary(&file);
+    }
+}
+
+void Reconstruction::WriteFramesBinary(const std::string& path) const {
+    std::ofstream file(path, std::ios::binary | std::ios::trunc);
+    CHECK(file.is_open()) << path;
+    WriteBinaryLittleEndian<uint64_t>(&file, frames_.size());
+    std::vector<frame_t> frame_ids;
+    frame_ids.reserve(frames_.size());
+    for (const auto& frame : frames_) {
+        frame_ids.push_back(frame.first);
+    }
+    std::sort(frame_ids.begin(), frame_ids.end());
+    for (const frame_t frame_id : frame_ids) {
+        Frame(frame_id).WriteBinary(&file);
+    }
 }
 
 std::vector<PlyPoint> Reconstruction::ConvertToPLY() const {

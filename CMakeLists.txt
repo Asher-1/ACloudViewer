@@ -1,9 +1,8 @@
-cmake_minimum_required(VERSION 3.19)
+cmake_minimum_required(VERSION 3.24)
 # If you're using Ubuntu 22.04, we suggest you install the latest CMake from the
-# official repository https://apt.kitware.com/.  CMake 3.19+ is required to
-# allow linking with OBJECT libraries, to prevent erroneous -gencode option
-# deduplication with CUDA, and to simplify generator expressions for selecting
-# compile flags and setting global hardened link flags.
+# official repository https://apt.kitware.com/. CMake 3.24+ matches Open3D's
+# minimum and is required by the pinned FAISS dependency as well as CUDA native
+# architecture selection.
 
 # Suppress CMP0167 warning
 if (POLICY CMP0167)
@@ -920,6 +919,9 @@ if (APPLE)
     endif()
     set(LIBS_FOLDER_NAME "Frameworks")
     set(PACK_SCRIPTS_PATH "${SCRIPTS_BASE_PATH}/platforms/mac")
+    # Source-built external shared libraries are not visible to macdeployqt.
+    # PostInstall uses this location to place OIIO in every app bundle.
+    set(EXTERNAL_INSTALL_DIRS ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR})
 elseif (UNIX)
     set(MACHINE_NAME "ubuntu${UBUNTU_VERSION}")
     if (LINUX_AARCH64)
@@ -944,9 +946,7 @@ elseif (WIN32)
     file(REAL_PATH "${CMAKE_BINARY_DIR}/${CloudViewer_INSTALL_BIN_DIR}/${CMAKE_BUILD_TYPE}" BINNARY_REAL_PATH)
     set(EXTERNAL_INSTALL_DIRS ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/bin ${BINNARY_REAL_PATH})
 endif()
-if (NOT APPLE) 
-    message(STATUS "EXTERNAL_INSTALL_DIRS: ${EXTERNAL_INSTALL_DIRS}")
-endif()
+message(STATUS "EXTERNAL_INSTALL_DIRS: ${EXTERNAL_INSTALL_DIRS}")
 set(ACLOUDVIEWER_PACKAGE_NAME "${MAIN_APP_NAME}-${CLOUDVIEWER_VERSION_FULL}-${MACHINE_NAME}-${ACLOUDVIEWER_DEVICE}-${ARC_NAME}")
 
 # Locate binarycreator at configure time so we can pass the full path to

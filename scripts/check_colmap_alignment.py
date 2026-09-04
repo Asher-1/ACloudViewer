@@ -2,8 +2,9 @@
 """Audit the locally recorded COLMAP alignment matrix.
 
 This is intentionally a source-of-truth check, not a claim generator: a
-release gate fails when a requested capability is not implemented or when its
-entrypoint/validation evidence is missing.
+release gate fails when an in-scope capability is not implemented or when its
+entrypoint/validation evidence is missing. Deferred capabilities are retained
+for provenance but explicitly excluded from the active hardware matrix.
 """
 
 import argparse
@@ -34,8 +35,7 @@ def probe_prerequisites(repo_root: Path) -> dict[str, bool]:
             "build_app/_deps/poselib-src/include/PoseLib",
         )
     ) or (repo_root / "build_app/_deps/poselib-src/PoseLib").is_dir()
-    colmap_root = repo_root.parent / "colmap"
-    caspar = (colmap_root / "src/thirdparty/Symforce-Caspar/generated/f32").is_dir()
+    caspar = (repo_root / "3rdparty/Symforce-Caspar/generated/f32").is_dir()
     loma_gguf = any(
         path.suffix.lower() == ".gguf"
         and "loma" in path.name.lower()
@@ -45,7 +45,7 @@ def probe_prerequisites(repo_root: Path) -> dict[str, bool]:
     freeimage_refs = False
     for root in (repo_root / "libs/Reconstruction", repo_root / "3rdparty"):
         for path in root.rglob("*"):
-            if path.is_file() and path.suffix in {".h", ".cc", ".cpp", ".cmake"}:
+            if path.is_file() and path.suffix in {".h", ".cc", ".cpp", ".cmake", ".txt"}:
                 try:
                     if "freeimage" in path.read_text(errors="ignore").lower():
                         freeimage_refs = True
@@ -57,7 +57,18 @@ def probe_prerequisites(repo_root: Path) -> dict[str, bool]:
     return {
         "nvcc": _command_exists("nvcc"),
         "hipcc": _command_exists("hipcc"),
-        "openimageio_pkg_config": _pkg_config_exists("OpenImageIO"),
+        "openimageio_source_recipe": (
+            "ExternalProject_Add(ext_openimageio"
+            in (repo_root / "3rdparty/openimageio/openimageio.cmake").read_text(
+                errors="ignore"
+            )
+        ),
+        "openimageio_opencv_disabled": (
+            "-DUSE_OPENCV=OFF"
+            in (repo_root / "3rdparty/openimageio/openimageio.cmake").read_text(
+                errors="ignore"
+            )
+        ),
         "poselib_source": poselib,
         "caspar_generated_source": caspar,
         "loma_gguf": loma_gguf,
@@ -84,7 +95,7 @@ def main() -> int:
     failures = []
     for item in manifest["capabilities"]:
         status = item.get("status")
-        if args.release and status != "implemented":
+        if args.release and status not in {"implemented", "deferred"}:
             failures.append(f"{item['name']}: status={status}")
         if status == "implemented":
             for key in ("entrypoint", "validation"):

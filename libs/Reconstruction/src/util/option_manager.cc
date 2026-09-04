@@ -278,6 +278,14 @@ void OptionManager::AddExtractionOptions() {
                                 &sift_extraction->max_image_size);
     AddAndRegisterDefaultOption("SiftExtraction.max_num_features",
                                 &sift_extraction->max_num_features);
+    AddAndRegisterDefaultOption("SiftExtraction.use_loma",
+                                &sift_extraction->use_loma);
+    AddAndRegisterDefaultOption("SiftExtraction.loma_detector_model",
+                                &sift_extraction->loma_detector_model_path);
+    AddAndRegisterDefaultOption("SiftExtraction.loma_descriptor_model",
+                                &sift_extraction->loma_descriptor_model_path);
+    AddAndRegisterDefaultOption("SiftExtraction.loma_device",
+                                &sift_extraction->loma_device);
     AddAndRegisterDefaultOption("SiftExtraction.first_octave",
                                 &sift_extraction->first_octave);
     AddAndRegisterDefaultOption("SiftExtraction.num_octaves",
@@ -338,6 +346,16 @@ void OptionManager::AddMatchingOptions() {
                                 &sift_matching->multiple_models);
     AddAndRegisterDefaultOption("SiftMatching.guided_matching",
                                 &sift_matching->guided_matching);
+    AddAndRegisterDefaultOption("SiftMatching.use_loma",
+                                &sift_matching->use_loma);
+    AddAndRegisterDefaultOption("SiftMatching.loma_matcher_model",
+                                &sift_matching->loma_matcher_model_path);
+    AddAndRegisterDefaultOption("SiftMatching.loma_matcher_variant",
+                                &sift_matching->loma_matcher_variant);
+    AddAndRegisterDefaultOption("SiftMatching.loma_min_score",
+                                &sift_matching->loma_min_score);
+    AddAndRegisterDefaultOption("SiftMatching.loma_device",
+                                &sift_matching->loma_device);
 }
 
 void OptionManager::AddExhaustiveMatchingOptions() {
@@ -488,6 +506,12 @@ void OptionManager::AddBundleAdjustmentOptions() {
                                 &bundle_adjustment->refine_extra_params);
     AddAndRegisterDefaultOption("BundleAdjustment.refine_extrinsics",
                                 &bundle_adjustment->refine_extrinsics);
+    AddAndRegisterDefaultOption("BundleAdjustment.use_caspar",
+                                &bundle_adjustment->use_caspar);
+    AddAndRegisterDefaultOption("BundleAdjustment.caspar_gpu_index",
+                                &bundle_adjustment->caspar_gpu_index);
+    AddAndRegisterDefaultOption("BundleAdjustment.caspar_max_num_iterations",
+                                &bundle_adjustment->caspar_max_num_iterations);
     AddAndRegisterDefaultOption("BundleAdjustment.use_gpu",
                                 &bundle_adjustment->use_gpu);
     AddAndRegisterDefaultOption("BundleAdjustment.gpu_index",

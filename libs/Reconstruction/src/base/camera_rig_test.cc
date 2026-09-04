@@ -334,6 +334,62 @@ BOOST_AUTO_TEST_CASE(TestComputeRelativePoses) {
   BOOST_CHECK_EQUAL(camera_rig.RelativeTvec(1), Eigen::Vector3d(1.5, 3, 4.5));
 }
 
+BOOST_AUTO_TEST_CASE(TestComputeRelativePosesWithRotationAndTranslation) {
+  CameraRig camera_rig;
+  camera_rig.AddCamera(3, ComposeIdentityQuaternion(), Eigen::Vector3d::Zero());
+  camera_rig.AddCamera(5, ComposeIdentityQuaternion(), Eigen::Vector3d::Zero());
+  camera_rig.SetRefCameraId(3);
+  camera_rig.AddSnapshot({30, 50});
+
+  Reconstruction reconstruction;
+  Camera ref_camera;
+  ref_camera.SetCameraId(3);
+  ref_camera.InitializeWithName("PINHOLE", 1.0, 1, 1);
+  reconstruction.AddCamera(ref_camera);
+  Camera other_camera;
+  other_camera.SetCameraId(5);
+  other_camera.InitializeWithName("PINHOLE", 1.0, 1, 1);
+  reconstruction.AddCamera(other_camera);
+
+  const Eigen::Vector4d ref_qvec(0.9238795325112867, 0.0, 0.0,
+                                  0.3826834323650898);
+  const Eigen::Vector3d ref_tvec(0.4, -0.2, 1.1);
+  const Eigen::Vector4d expected_relative_qvec(0.9659258262890683, 0.0,
+                                                0.2588190451025207, 0.0);
+  const Eigen::Vector3d expected_relative_tvec(-0.3, 0.7, 0.2);
+
+  Image ref_image;
+  ref_image.SetImageId(30);
+  ref_image.SetCameraId(3);
+  ref_image.SetQvec(ref_qvec);
+  ref_image.SetTvec(ref_tvec);
+  reconstruction.AddImage(ref_image);
+
+  Image other_image;
+  other_image.SetImageId(50);
+  other_image.SetCameraId(5);
+  other_image.SetQvec(
+      ConcatenateQuaternions(ref_qvec, expected_relative_qvec));
+  other_image.SetTvec(expected_relative_tvec +
+                       QuaternionRotatePoint(expected_relative_qvec, ref_tvec));
+  reconstruction.AddImage(other_image);
+
+  camera_rig.Check(reconstruction);
+  BOOST_REQUIRE(camera_rig.ComputeRelativePoses(reconstruction));
+  BOOST_CHECK_SMALL((QuaternionToRotationMatrix(camera_rig.RelativeQvec(3)) -
+                     Eigen::Matrix3d::Identity())
+                        .norm(),
+                    1e-12);
+  BOOST_CHECK_SMALL((camera_rig.RelativeTvec(3)).norm(), 1e-12);
+  BOOST_CHECK_SMALL(
+      (QuaternionToRotationMatrix(camera_rig.RelativeQvec(5)) -
+       QuaternionToRotationMatrix(expected_relative_qvec))
+          .norm(),
+      1e-12);
+  BOOST_CHECK_SMALL((camera_rig.RelativeTvec(5) - expected_relative_tvec).norm(),
+                    1e-12);
+}
+
 BOOST_AUTO_TEST_CASE(TestComputeAbsolutePose) {
   CameraRig camera_rig;
   camera_rig.AddCamera(0, ComposeIdentityQuaternion(),

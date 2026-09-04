@@ -34,6 +34,8 @@
 
 #include <boost/filesystem.hpp>
 
+#include <OpenImageIO/imageio.h>
+
 #include "util/bitmap.h"
 
 using namespace colmap;
@@ -132,15 +134,15 @@ BOOST_AUTO_TEST_CASE(TestConvertToRowMajorArrayRGB) {
   BOOST_CHECK_EQUAL(array[0], 0);
   BOOST_CHECK_EQUAL(array[1], 0);
   BOOST_CHECK_EQUAL(array[2], 0);
-  BOOST_CHECK_EQUAL(array[3], 0);
+  BOOST_CHECK_EQUAL(array[3], 2);
   BOOST_CHECK_EQUAL(array[4], 0);
-  BOOST_CHECK_EQUAL(array[5], 2);
-  BOOST_CHECK_EQUAL(array[6], 0);
+  BOOST_CHECK_EQUAL(array[5], 0);
+  BOOST_CHECK_EQUAL(array[6], 1);
   BOOST_CHECK_EQUAL(array[7], 0);
-  BOOST_CHECK_EQUAL(array[8], 1);
-  BOOST_CHECK_EQUAL(array[9], 0);
+  BOOST_CHECK_EQUAL(array[8], 0);
+  BOOST_CHECK_EQUAL(array[9], 3);
   BOOST_CHECK_EQUAL(array[10], 0);
-  BOOST_CHECK_EQUAL(array[11], 3);
+  BOOST_CHECK_EQUAL(array[11], 0);
 }
 
 BOOST_AUTO_TEST_CASE(TestConvertToRowMajorArrayGrey) {
@@ -168,17 +170,17 @@ BOOST_AUTO_TEST_CASE(TestConvertToColMajorArrayRGB) {
   const std::vector<uint8_t> array = bitmap.ConvertToColMajorArray();
   BOOST_CHECK_EQUAL(array.size(), 12);
   BOOST_CHECK_EQUAL(array[0], 0);
-  BOOST_CHECK_EQUAL(array[1], 0);
-  BOOST_CHECK_EQUAL(array[2], 0);
-  BOOST_CHECK_EQUAL(array[3], 0);
+  BOOST_CHECK_EQUAL(array[1], 1);
+  BOOST_CHECK_EQUAL(array[2], 2);
+  BOOST_CHECK_EQUAL(array[3], 3);
   BOOST_CHECK_EQUAL(array[4], 0);
   BOOST_CHECK_EQUAL(array[5], 0);
   BOOST_CHECK_EQUAL(array[6], 0);
   BOOST_CHECK_EQUAL(array[7], 0);
   BOOST_CHECK_EQUAL(array[8], 0);
-  BOOST_CHECK_EQUAL(array[9], 1);
-  BOOST_CHECK_EQUAL(array[10], 2);
-  BOOST_CHECK_EQUAL(array[11], 3);
+  BOOST_CHECK_EQUAL(array[9], 0);
+  BOOST_CHECK_EQUAL(array[10], 0);
+  BOOST_CHECK_EQUAL(array[11], 0);
 }
 
 BOOST_AUTO_TEST_CASE(TestConvertToColMajorArrayGrey) {
@@ -403,4 +405,59 @@ BOOST_AUTO_TEST_CASE(TestOpenImageIORoundTrip) {
   BOOST_REQUIRE(read.Read(path.string(), true));
   BOOST_CHECK(read.ConvertToRowMajorArray() == written.ConvertToRowMajorArray());
   boost::filesystem::remove(path);
+}
+
+BOOST_AUTO_TEST_CASE(TestOpenImageIOFormatParity) {
+  const boost::filesystem::path directory =
+      boost::filesystem::temp_directory_path() /
+      boost::filesystem::unique_path("colmap-bitmap-formats-%%%%-%%%%");
+  boost::filesystem::create_directories(directory);
+
+  Bitmap written;
+  BOOST_REQUIRE(written.Allocate(3, 2, true));
+  written.Fill(BitmapColor<uint8_t>(17, 34, 51));
+  for (const auto& extension : {".png", ".jpg", ".tiff"}) {
+    const boost::filesystem::path path = directory / ("bitmap" + std::string(extension));
+    BOOST_REQUIRE(written.Write(path.string()));
+    Bitmap read;
+    BOOST_REQUIRE(read.Read(path.string(), true));
+    BOOST_CHECK_EQUAL(read.Width(), written.Width());
+    BOOST_CHECK_EQUAL(read.Height(), written.Height());
+    BOOST_CHECK_EQUAL(read.Channels(), written.Channels());
+    if (std::string(extension) != ".jpg") {
+      BOOST_CHECK(read.ConvertToRowMajorArray() == written.ConvertToRowMajorArray());
+    }
+  }
+  boost::filesystem::remove_all(directory);
+}
+
+BOOST_AUTO_TEST_CASE(TestOpenImageIORescaleFilters) {
+  Bitmap bitmap;
+  BOOST_REQUIRE(bitmap.Allocate(4, 4, false));
+  bitmap.Fill(BitmapColor<uint8_t>(0));
+  BOOST_REQUIRE(bitmap.SetPixel(0, 0, BitmapColor<uint8_t>(255)));
+
+  Bitmap bilinear = bitmap.Clone();
+  bilinear.Rescale(1, 1, BitmapRescaleFilter::kBilinear);
+  Bitmap box = bitmap.Clone();
+  box.Rescale(1, 1, BitmapRescaleFilter::kBox);
+  BitmapColor<uint8_t> bilinear_color;
+  BitmapColor<uint8_t> box_color;
+  BOOST_REQUIRE(bilinear.GetPixel(0, 0, &bilinear_color));
+  BOOST_REQUIRE(box.GetPixel(0, 0, &box_color));
+  BOOST_CHECK_NE(bilinear_color.r, box_color.r);
+}
+
+BOOST_AUTO_TEST_CASE(TestOpenImageIONumericExif) {
+  const boost::filesystem::path path =
+      boost::filesystem::path(__FILE__).parent_path().parent_path().parent_path().parent_path().parent_path() /
+      "examples/test_data/image/objects_detection_data/images/deeplsd_examples.jpg";
+  Bitmap bitmap;
+  BOOST_REQUIRE(bitmap.Read(path.string(), true));
+  double value = 0.0;
+  BOOST_REQUIRE(bitmap.ExifFocalLength(&value));
+  BOOST_CHECK_CLOSE(value, 35.0 / 43.27 * std::hypot(640.0, 480.0), 0.01);
+  std::string camera_model;
+  BOOST_REQUIRE(bitmap.ExifCameraModel(&camera_model));
+  BOOST_CHECK_EQUAL(camera_model, "Panasonic-DMC-LC80-35.000000-640x480");
 }

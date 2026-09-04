@@ -118,7 +118,8 @@ ImageReader::Status ImageReader::Next(Camera* camera, Image* image,
     *image = database_->ReadImageWithName(image->Name());
     const bool exists_keypoints = database_->ExistsKeypoints(image->ImageId());
     const bool exists_descriptors =
-        database_->ExistsDescriptors(image->ImageId());
+        database_->ExistsDescriptors(image->ImageId()) ||
+        database_->ExistsFloatDescriptors(image->ImageId());
 
     if (exists_keypoints && exists_descriptors) {
       return Status::IMAGE_EXISTS;

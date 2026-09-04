@@ -2,6 +2,7 @@ name: python_qt6
 channels:
   - conda-forge
 dependencies:
+  - cmake=3.31.8
   - python=3.13
   - ninja
   - pkg-config

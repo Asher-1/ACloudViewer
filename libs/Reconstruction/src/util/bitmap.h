@@ -79,8 +79,7 @@ public:
     // Number of bits per pixel. This is 8 for grey and 24 for RGB image.
     unsigned int BitsPerPixel() const;
 
-    // Scan width of bitmap which differs from the actual image width to achieve
-    // 32 bit aligned memory. Also known as pitch or stride.
+    // Scan width in bytes. Bitmap storage is tightly packed row-major data.
     unsigned int ScanWidth() const;
 
     // Check whether image is grey- or colorscale.

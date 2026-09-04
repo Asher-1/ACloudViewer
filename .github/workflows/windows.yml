@@ -133,6 +133,8 @@ jobs:
           activate-environment: cloudViewer
           auto-activate-base: false
           environment-file: ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+      - name: Set up fixed CMake
+        uses: ./.github/actions/setup-cmake
 
       - name: Install dependencies
         # deploy QtIFW for installer and deploy 3rdparty_downloads.zip for fast building on windows
@@ -591,6 +593,8 @@ jobs:
         with:
           python-version: ${{ matrix.python_version }}
           auto-activate-base: true
+      - name: Set up fixed CMake
+        uses: ./.github/actions/setup-cmake
 
       - name: Install 3rdparty_downloads
         working-directory: ${{ env.SRC_DIR }}

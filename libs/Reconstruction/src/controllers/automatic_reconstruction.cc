@@ -41,6 +41,7 @@
 #include "controllers/incremental_mapper.h"
 #include "controllers/texturing_controller.h"
 #include "feature/extraction.h"
+#include "feature/loma.h"
 #include "feature/matching.h"
 #include "mvs/da3_fusion.h"
 #include "mvs/fusion.h"
@@ -453,8 +454,33 @@ AutomaticReconstructionController::AutomaticReconstructionController(
   option_manager_.mapper->ba_gpu_index = options_.gpu_index;
   option_manager_.bundle_adjustment->gpu_index = options_.gpu_index;
 
-  feature_extractor_.reset(new SiftFeatureExtractor(
-      reader_options, *option_manager_.sift_extraction));
+  const bool use_loma = option_manager_.sift_extraction->use_loma ||
+                        !option_manager_.sift_extraction->loma_detector_model_path.empty() ||
+                        !option_manager_.sift_extraction->loma_descriptor_model_path.empty();
+  if (use_loma) {
+    LomaExtractionOptions loma_options;
+    loma_options.detector_model_path =
+        option_manager_.sift_extraction->loma_detector_model_path;
+    loma_options.descriptor_model_path =
+        option_manager_.sift_extraction->loma_descriptor_model_path;
+    loma_options.device = option_manager_.sift_extraction->loma_device;
+    loma_options.max_num_features =
+        option_manager_.sift_extraction->max_num_features;
+    loma_options.descriptor_type = FeatureDescriptorType::kLomaG;
+    ResolveDefaultLomaModelPaths(&loma_options);
+    option_manager_.sift_matching->use_loma = true;
+    if (option_manager_.sift_matching->loma_matcher_model_path.empty()) {
+      LomaMatchingOptions loma_matching_options;
+      ResolveDefaultLomaModelPaths(&loma_matching_options);
+      option_manager_.sift_matching->loma_matcher_model_path =
+          loma_matching_options.matcher_model_path;
+    }
+    feature_extractor_.reset(new LomaFeatureExtractor(reader_options,
+                                                       loma_options));
+  } else {
+    feature_extractor_.reset(new SiftFeatureExtractor(
+        reader_options, *option_manager_.sift_extraction));
+  }
 
   exhaustive_matcher_.reset(new ExhaustiveFeatureMatcher(
       *option_manager_.exhaustive_matching, *option_manager_.sift_matching,

@@ -426,6 +426,12 @@ model parity/performance test on every affected backend and quantization.
 - [ ] No environment-controlled task logic or production absolute paths.
 - [ ] ggml changes exist only as a cleanly replayable manifest patch.
 - [ ] Contract tests cover every new export and the export whitelist passes.
+- [ ] Semantic result names (class names, model metadata names) reach the
+      plugin through the typed accessors or typed struct fields; a
+      hard-coded placeholder label ("class <id>", "object <n>") appears
+      only as the documented NULL fallback, never as the primary label.
+      When adding a typed result, verify every consumer (still, live,
+      export/metadata) renders the backend-provided name.
 - [ ] Numerical gates cover affected task/backend/quantization rows with fixed
       assets; upstream truth is distinguished from backend parity.
 - [ ] Every published model is in the validation catalog with URL, cache path,

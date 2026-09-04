@@ -35,6 +35,7 @@
 #include <thread>
 
 #include "base/database.h"
+#include "base/camera_models.h"
 #include "base/pose.h"
 
 using namespace colmap;
@@ -48,6 +49,136 @@ BOOST_AUTO_TEST_CASE(TestOpenCloseConstructorDestructor) {
 BOOST_AUTO_TEST_CASE(TestOpenClose) {
   Database database(kMemoryDatabasePath);
   database.Close();
+}
+
+BOOST_AUTO_TEST_CASE(TestRigFrameSqliteRoundTrip) {
+  Database database(kMemoryDatabasePath);
+
+  Camera camera1;
+  camera1.InitializeWithId(SimplePinholeCameraModel::model_id, 800.0, 640, 480);
+  camera1.SetCameraId(1);
+  database.WriteCamera(camera1, true);
+  Camera camera2 = camera1;
+  camera2.SetCameraId(2);
+  database.WriteCamera(camera2, true);
+
+  Image image1;
+  image1.SetImageId(1);
+  image1.SetCameraId(1);
+  image1.SetName("rig-frame-1");
+  database.WriteImage(image1, true);
+  Image image2;
+  image2.SetImageId(2);
+  image2.SetCameraId(2);
+  image2.SetName("rig-frame-2");
+  database.WriteImage(image2, true);
+
+  Rig rig;
+  rig.SetRigId(7);
+  rig.AddRefCamera(2);
+  rig.AddCamera(1, Eigen::Vector4d(0.0, 0.0, 0.0, 1.0),
+                Eigen::Vector3d(0.2, -0.1, 0.05));
+  rig.AddSensor(sensor_t(SensorType::IMU, 9),
+                Eigen::Vector4d(1.0, 0.0, 0.0, 0.0),
+                Eigen::Vector3d(0.01, 0.02, 0.03));
+  BOOST_CHECK_EQUAL(database.WriteRig(rig, true), 7);
+  BOOST_CHECK(database.ExistsRig(7));
+
+  Frame frame;
+  frame.SetFrameId(11);
+  frame.SetRigId(7);
+  frame.AddImageId(1);
+  frame.AddImageId(2);
+  frame.AddDataId(data_t(sensor_t(SensorType::IMU, 9), 42));
+  frame.SetRigFromWorld(Eigen::Vector4d(1.0, 0.0, 0.0, 0.0),
+                        Eigen::Vector3d(1.0, 2.0, 3.0));
+  BOOST_CHECK_EQUAL(database.WriteFrame(frame, true), 11);
+  BOOST_CHECK(database.ExistsFrame(11));
+
+  const Rig loaded_rig = database.ReadRig(7);
+  BOOST_CHECK_EQUAL(loaded_rig.RefCameraId(), 2);
+  BOOST_CHECK(loaded_rig.HasCamera(1));
+  BOOST_CHECK(loaded_rig.HasSensor(sensor_t(SensorType::IMU, 9)));
+  BOOST_CHECK(loaded_rig.HasSensorFromRig(sensor_t(SensorType::IMU, 9)));
+  BOOST_CHECK_SMALL((loaded_rig.CamFromRigTvec(1) -
+                     Eigen::Vector3d(0.2, -0.1, 0.05)).norm(), 1e-12);
+  const Frame loaded_frame = database.ReadFrame(11);
+  BOOST_CHECK_EQUAL(loaded_frame.RigId(), 7);
+  BOOST_CHECK(loaded_frame.HasImageId(1));
+  BOOST_CHECK(loaded_frame.HasImageId(2));
+  BOOST_CHECK(loaded_frame.HasDataId(data_t(sensor_t(SensorType::IMU, 9), 42)));
+  BOOST_CHECK(loaded_frame.HasPose());
+  BOOST_CHECK_SMALL((loaded_frame.RigFromWorldTvec() -
+                     Eigen::Vector3d(1.0, 2.0, 3.0)).norm(), 1e-12);
+  BOOST_CHECK_EQUAL(database.NumRigs(), 1);
+  BOOST_CHECK_EQUAL(database.NumFrames(), 1);
+}
+
+BOOST_AUTO_TEST_CASE(TestGenericRigReferenceSensorSqliteRoundTrip) {
+  Database database(kMemoryDatabasePath);
+  Camera camera;
+  camera.InitializeWithId(SimplePinholeCameraModel::model_id, 800.0, 640, 480);
+  camera.SetCameraId(1);
+  database.WriteCamera(camera, true);
+
+  Rig rig;
+  rig.SetRigId(12);
+  rig.AddRefSensor(sensor_t(SensorType::IMU, 5));
+  rig.AddCamera(1, Eigen::Vector4d(1.0, 0.0, 0.0, 0.0),
+                Eigen::Vector3d(0.0, 0.0, 0.1));
+  BOOST_CHECK_EQUAL(database.WriteRig(rig, true), 12);
+  const Rig loaded = database.ReadRig(12);
+  BOOST_CHECK(loaded.RefSensorId() == sensor_t(SensorType::IMU, 5));
+  BOOST_CHECK(loaded.HasCamera(1));
+  BOOST_CHECK(!loaded.HasSensorFromRig(sensor_t(SensorType::IMU, 5)));
+}
+
+BOOST_AUTO_TEST_CASE(TestGenericDataOnlyFrameSqliteRoundTrip) {
+  Database database(kMemoryDatabasePath);
+  Rig rig;
+  rig.SetRigId(13);
+  rig.AddRefSensor(sensor_t(SensorType::IMU, 8));
+  BOOST_CHECK_EQUAL(database.WriteRig(rig, true), 13);
+
+  Frame frame;
+  frame.SetFrameId(14);
+  frame.SetRigId(13);
+  const data_t imu_data(sensor_t(SensorType::IMU, 8), 99);
+  frame.AddDataId(imu_data);
+  BOOST_CHECK_EQUAL(database.WriteFrame(frame, true), 14);
+
+  const Frame loaded = database.ReadFrame(14);
+  BOOST_CHECK(loaded.HasDataId(imu_data));
+  BOOST_CHECK(loaded.ImageIds().empty());
+}
+
+BOOST_AUTO_TEST_CASE(TestFloatDescriptorSqliteRoundTrip) {
+  Database database(kMemoryDatabasePath);
+  Camera camera;
+  camera.InitializeWithId(SimplePinholeCameraModel::model_id, 800.0, 640, 480);
+  camera.SetCameraId(1);
+  database.WriteCamera(camera, true);
+  Image image;
+  image.SetImageId(1);
+  image.SetCameraId(1);
+  image.SetName("loma-float");
+  database.WriteImage(image, true);
+
+  FeatureKeypoints keypoints = {FeatureKeypoint(10.5f, 20.25f),
+                                FeatureKeypoint(30.0f, 40.0f)};
+  FeatureDescriptorsFloat descriptors(2, 3);
+  descriptors << 0.125f, -3.5f, 1.0e-7f, 1.0f, 2.5f, -9.25f;
+  database.WriteKeypoints(1, keypoints);
+  database.WriteFloatDescriptors(1, descriptors,
+                                 FeatureDescriptorType::kLomaG);
+
+  BOOST_CHECK(database.ExistsFloatDescriptors(1));
+  const auto loaded = database.ReadFloatDescriptors(1);
+  BOOST_CHECK_EQUAL(loaded.rows(), 2);
+  BOOST_CHECK_EQUAL(loaded.cols(), 3);
+  BOOST_CHECK((loaded - descriptors).cwiseAbs().maxCoeff() == 0.0f);
+  BOOST_CHECK(database.ReadDescriptorType(1) == FeatureDescriptorType::kLomaG);
+  BOOST_CHECK(!database.ExistsDescriptors(1));
 }
 
 BOOST_AUTO_TEST_CASE(TestTransaction) {

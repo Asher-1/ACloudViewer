@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.24)
 
 if(NOT DEFINED CMAKE_CUDA_COMPILER AND DEFINED ENV{CUDACXX})
   set(CMAKE_CUDA_COMPILER "$ENV{CUDACXX}" CACHE FILEPATH "CUDA compiler")
@@ -27,4 +27,3 @@ target_compile_options(caspar_lib_core PRIVATE
 set_target_properties(caspar_lib_core PROPERTIES
   POSITION_INDEPENDENT_CODE ON
 )
-

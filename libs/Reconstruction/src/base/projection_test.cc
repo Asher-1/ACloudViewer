@@ -123,6 +123,26 @@ BOOST_AUTO_TEST_CASE(TestCalculateSquaredReprojectionError) {
   BOOST_CHECK_CLOSE(error4, 2, 1e-6);
 }
 
+BOOST_AUTO_TEST_CASE(TestEquirectangularFullSphereProjection) {
+  Camera camera;
+  camera.InitializeWithId(EquirectangularCameraModel::model_id, 0.0, 1000,
+                          500);
+  const Eigen::Matrix3x4d projection =
+      ComposeProjectionMatrix(ComposeIdentityQuaternion(),
+                              Eigen::Vector3d::Zero());
+  const Eigen::Vector3d rear_point(0.0, 0.0, -2.0);
+  const Eigen::Vector2d rear_pixel =
+      ProjectPointToImage(rear_point, projection, camera);
+  BOOST_CHECK_SMALL((rear_pixel - Eigen::Vector2d(1000.0, 250.0)).norm(),
+                    1e-12);
+  BOOST_CHECK_SMALL(CalculateSquaredReprojectionError(
+                        rear_pixel, rear_point, projection, camera),
+                    1e-12);
+  BOOST_CHECK_SMALL(CalculateAngularError(rear_pixel, rear_point, projection,
+                                          camera),
+                    1e-12);
+}
+
 BOOST_AUTO_TEST_CASE(TestCalculateAngularError) {
   const Eigen::Vector4d qvec = ComposeIdentityQuaternion();
   const Eigen::Vector3d tvec = Eigen::Vector3d(0, 0, 0);

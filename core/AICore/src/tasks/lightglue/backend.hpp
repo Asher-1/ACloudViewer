@@ -7,7 +7,6 @@
 
 #include "common/ggml_backend_registry.hpp"
 
-
 namespace aicore {
 namespace lightglue {
 
@@ -19,7 +18,9 @@ struct engine_backend {
     std::string device;
     std::string error;
 
-    bool init(const std::string& device_req, int n_threads);
+    bool init(const std::string& device_req,
+              int n_threads,
+              bool parallel_cpu_backend = false);
     void release();
     ~engine_backend() { release(); }
 

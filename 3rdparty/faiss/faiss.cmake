@@ -8,8 +8,6 @@ FetchContent_Declare(
     URL https://github.com/facebookresearch/faiss/archive/refs/tags/v1.14.1.zip
     URL_HASH SHA256=4b1ae7e7a0a46385b4084f0e3945623a15fcf99d793bf44d82aae8e24f11e5f5
     DOWNLOAD_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/faiss"
-    PATCH_COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=<SOURCE_DIR>
-        -P ${CMAKE_CURRENT_LIST_DIR}/patch_cmake_minimum.cmake
 )
 
 if (NOT MSVC)

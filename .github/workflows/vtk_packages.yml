@@ -43,6 +43,8 @@ jobs:
           activate-environment: qt_env
           auto-activate-base: false
           environment-file: ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+      - name: Set up fixed CMake
+        uses: ./.github/actions/setup-cmake
 
       - name: CMake configure
         shell: bash -l {0}
@@ -106,6 +108,8 @@ jobs:
           activate-environment: qt_env
           auto-activate-base: false
           environment-file: ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+      - name: Set up fixed CMake
+        uses: ./.github/actions/setup-cmake
 
       - name: Config
         # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
@@ -164,6 +168,8 @@ jobs:
           activate-environment: qt_env
           auto-activate-base: false
           environment-file: ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+      - name: Set up fixed CMake
+        uses: ./.github/actions/setup-cmake
 
       - name: CMake configure
         shell: bash -l {0}

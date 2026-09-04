@@ -72,17 +72,52 @@ struct OneSidedFocalRansacReport {
 OneSidedFocalRansacReport EstimateOneSidedFocalRansac(
     const RANSACOptions& options,
     const std::vector<Eigen::Vector2d>& points1,
-    const std::vector<Eigen::Vector2d>& points2) {
+    const std::vector<CamRayWithJac>& rays2_with_jac) {
   LORANSAC<RelativePoseOneSidedFocalEstimator,
            RelativePoseOneSidedFocalEstimator,
            MEstimatorSupportMeasurer>
       ransac(options);
-  const auto report = ransac.Estimate(points1, points2);
+  const auto report = ransac.Estimate(points1, rays2_with_jac);
   OneSidedFocalRansacReport result;
   result.success = report.success;
   result.support = report.support;
   result.inlier_mask = report.inlier_mask;
   result.model = report.model;
+  if (!result.success || result.support.num_inliers <
+                             RelativePoseOneSidedFocalEstimator::kMinNumSamples) {
+    return result;
+  }
+
+  std::vector<Eigen::Vector2d> inlier_points1;
+  std::vector<CamRayWithJac> inlier_rays2;
+  inlier_points1.reserve(result.support.num_inliers);
+  inlier_rays2.reserve(result.support.num_inliers);
+  for (size_t i = 0; i < result.inlier_mask.size(); ++i) {
+    if (result.inlier_mask[i]) {
+      inlier_points1.push_back(points1[i]);
+      inlier_rays2.push_back(rays2_with_jac[i]);
+    }
+  }
+  RelativePoseOneSidedFocalEstimator::M_t refined_model = result.model;
+  if (!RelativePoseOneSidedFocalEstimator::Refine(inlier_points1, inlier_rays2,
+                                                  &refined_model)) {
+    return result;
+  }
+  std::vector<double> refined_residuals;
+  RelativePoseOneSidedFocalEstimator::Residuals(
+      points1, rays2_with_jac, refined_model, &refined_residuals);
+  MEstimatorSupportMeasurer measurer;
+  const auto refined_support = measurer.Evaluate(
+      refined_residuals, options.max_error * options.max_error);
+  if (measurer.Compare(refined_support, result.support)) {
+    result.support = refined_support;
+    result.model = refined_model;
+    result.inlier_mask.resize(refined_residuals.size());
+    for (size_t i = 0; i < refined_residuals.size(); ++i) {
+      result.inlier_mask[i] =
+          refined_residuals[i] <= options.max_error * options.max_error;
+    }
+  }
   return result;
 }
 #endif
@@ -178,25 +213,32 @@ void TwoViewGeometry::Estimate(const Camera& camera1,
   // established COLMAP-compatible paths below.
   if (!camera1.HasPriorFocalLength() && camera2.HasPriorFocalLength()) {
     std::vector<Eigen::Vector2d> centered_points1(matches.size());
-    std::vector<Eigen::Vector2d> normalized_points2(matches.size());
+    std::vector<CamRayWithJac> rays2_with_jac(matches.size());
     for (size_t i = 0; i < matches.size(); ++i) {
       centered_points1[i] =
           points1[matches[i].point2D_idx1] -
           Eigen::Vector2d(camera1.PrincipalPointX(), camera1.PrincipalPointY());
-      normalized_points2[i] =
-          camera2.ImageToWorld(points2[matches[i].point2D_idx2]);
+      rays2_with_jac[i] =
+          camera2.CamRayFromImgWithJac(points2[matches[i].point2D_idx2])
+              .value_or(CamRayWithJac::Zero());
     }
     auto focal_options = options.ransac_options;
     const auto report = EstimateOneSidedFocalRansac(
-        focal_options, centered_points1, normalized_points2);
+        focal_options, centered_points1, rays2_with_jac);
     if (report.success && report.support.num_inliers >= options.min_num_inliers) {
       config = ConfigurationType::CALIBRATED;
       E = report.model.E;
       estimated_focal_length = report.model.focal;
       Camera estimated_camera1 = camera1;
       estimated_camera1.SetFocalLength(report.model.focal);
-      F = camera2.CalibrationMatrix().inverse().transpose() * E *
-          estimated_camera1.CalibrationMatrix().inverse();
+      // An omnidirectional calibrated view has no projective calibration
+      // matrix, so only its essential matrix is meaningful.
+      if (camera2.FocalLengthIdxs().empty()) {
+        F.setZero();
+      } else {
+        F = camera2.CalibrationMatrix().inverse().transpose() * E *
+            estimated_camera1.CalibrationMatrix().inverse();
+      }
       inlier_matches = ExtractInlierMatches(matches, report.support.num_inliers,
                                             report.inlier_mask);
       return;

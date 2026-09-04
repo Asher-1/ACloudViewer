@@ -84,6 +84,8 @@ jobs:
           activate-environment: cloudViewer
           auto-activate-base: false
           environment-file: ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+      - name: Set up fixed CMake
+        uses: ./.github/actions/setup-cmake
       
       - name: Install dependencies
         run: |
@@ -348,6 +350,8 @@ jobs:
           activate-environment: python${{ matrix.python_version }}
           auto-activate-base: false
           environment-file: ${{ env.CONDA_DEP_FILE }}
+      - name: Set up fixed CMake
+        uses: ./.github/actions/setup-cmake
 
       - name: Install dependencies
         shell: bash -l {0}

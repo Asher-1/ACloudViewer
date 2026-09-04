@@ -29,6 +29,8 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CMakeHelper.cmake NO_POLICY_SCOPE)
 option(BUILD_COLMAP_GUI "Builds COLMAP GUI" ON)
 option(BOOST_STATIC "With boost static library" OFF)
 option(CUDA_ENABLED "Whether to enable CUDA, if available" ON)
+option(RECONSTRUCTION_HIP_ENABLED
+       "Build COLMAP PatchMatch with the ROCm HIP toolchain" OFF)
 option(PBA_ENABLED "Whether to enable PBA for parallel BA Optimization" ON)
 option(RECONSTRUCTION_FETCH_POSELIB
        "Fetch the pinned PoseLib minimal solvers for reconstruction" ON)
@@ -200,7 +202,22 @@ else ()
     message(STATUS "Disabling interprocedural optimization")
 endif ()
 
-if (BUILD_CUDA_MODULE)
+if (RECONSTRUCTION_HIP_ENABLED AND BUILD_CUDA_MODULE)
+    message(FATAL_ERROR
+        "RECONSTRUCTION_HIP_ENABLED and BUILD_CUDA_MODULE are mutually exclusive. "
+        "Configure the HIP PatchMatch runner with BUILD_CUDA_MODULE=OFF.")
+endif ()
+
+set(HIP_ENABLED OFF)
+if (RECONSTRUCTION_HIP_ENABLED)
+    # HIP is a toolchain dependency, but its imported targets are normalized
+    # through 3rdparty just like the other reconstruction dependencies.
+    include(${CloudViewer_3RDPARTY_DIR}/rocm/rocm.cmake)
+    enable_language(HIP)
+    set(HIP_ENABLED ON)
+    add_compile_definitions(COLMAP_HIP_ENABLED)
+    message(STATUS "Enabling HIP PatchMatch support (archs: ${CMAKE_HIP_ARCHITECTURES})")
+elseif (BUILD_CUDA_MODULE)
     # set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} ${CMAKE_CUDA_ARCHITECTURES}")
     if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
         message(
@@ -234,6 +251,7 @@ else()
     message(STATUS "Disabling CUDA support")
 endif ()
 message(STATUS "Colmap CUDA enabled: ${CUDA_ENABLED}")
+message(STATUS "Colmap HIP enabled: ${HIP_ENABLED}")
 
 if (GUI_ENABLED)
     add_compile_definitions(GUI_ENABLED)

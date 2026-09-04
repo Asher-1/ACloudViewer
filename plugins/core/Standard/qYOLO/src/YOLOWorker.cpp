@@ -340,7 +340,14 @@ bool YOLOWorker::runDetect(const QImage& rgb) {
                 aicore_yolo_detection_at(m_pendingCtx, i);
         YOLODetection d;
         d.classId = static_cast<uint32_t>(det.class_id);
-        d.className = QStringLiteral("class %1").arg(det.class_id);
+        // Backend class table (open-vocabulary class-list override or the
+        // GGUF metadata); fall back to the deterministic label only when the
+        // model declares no name for this class (same contract as the
+        // segment/pose/obb typed results).
+        const char* name = aicore_yolo_detection_class_name(m_pendingCtx, i);
+        d.className = (name != nullptr && name[0] != '\0')
+                              ? QString::fromUtf8(name)
+                              : QStringLiteral("class %1").arg(det.class_id);
         // Visual-prompt naming: a user-assigned prompt name replaces the
         // positional class-N/objectN label (detections are labeled by the
         // prompt index in visual-prompt mode).

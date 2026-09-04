@@ -60,6 +60,12 @@ if(CUDA_ENABLED)
         cuda.h cuda.cc
         cudacc.h cudacc.cc
     )
+elseif(HIP_ENABLED)
+    COLMAP_ADD_HIP_SOURCES(
+        cuda.h cuda.cc
+        cudacc.h cudacc.cc
+        cuda_to_hip.h
+    )
 endif()
 
 COLMAP_ADD_TEST(bitmap_test bitmap_test.cc)

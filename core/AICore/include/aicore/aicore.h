@@ -39,6 +39,7 @@
 #include "aicore/facedetect_capi.h"
 #include "aicore/gaussian_capi.h"
 #include "aicore/lightglue_capi.h"
+#include "aicore/loma_capi.h"
 #include "aicore/rfdetr_capi.h"
 #include "aicore/rmbg_capi.h"
 #include "aicore/sam3_capi.h"

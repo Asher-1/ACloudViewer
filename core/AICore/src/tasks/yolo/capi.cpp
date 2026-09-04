@@ -352,7 +352,8 @@ auto with_path_rgb(const char* image_path,
 // Effective class-name table: the open-vocabulary override (user class
 // list) wins over the GGUF metadata; result structs copy it so accessors
 // stay valid for the result lifetime.
-const std::vector<std::string>& effective_class_names(aicore_yolo_ctx* ctx) {
+const std::vector<std::string>& effective_class_names(
+        const aicore_yolo_ctx* ctx) {
     return !ctx->class_names_override.empty()
                    ? ctx->class_names_override
                    : ctx->engine->model.meta.class_names;
@@ -1228,6 +1229,19 @@ aicore_yolo_detection_at(const aicore_yolo_ctx* ctx, int index) {
     out.score = d.score;
     out.class_id = d.class_id;
     return out;
+}
+
+AICORE_CAPI const char* aicore_yolo_detection_class_name(
+        const aicore_yolo_ctx* ctx, int index) {
+    if (ctx == nullptr || ctx->engine == nullptr || index < 0 ||
+        static_cast<size_t>(index) >= ctx->last_detections.size()) {
+        return nullptr;
+    }
+    const int cid =
+            ctx->last_detections[static_cast<size_t>(index)].class_id;
+    const auto& names = effective_class_names(ctx);
+    if (cid < 0 || cid >= static_cast<int>(names.size())) return nullptr;
+    return names[static_cast<size_t>(cid)].c_str();
 }
 
 /** Runtime threshold update without rebuilding the context (validated: out

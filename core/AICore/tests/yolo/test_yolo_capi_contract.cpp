@@ -133,6 +133,14 @@ int main() {
     AICORE_CHECK(aicore_yolo_seg_det_class_name(nullptr, 0) == nullptr);
     AICORE_CHECK(aicore_yolo_seg_mask_at(nullptr, 0).data == nullptr);
 
+    // Detect typed accessors: NULL ctx and model-less ctx are null-safe
+    // (no engine -> no detections -> no names).
+    AICORE_CHECK(aicore_yolo_detection_count(nullptr) == -1);
+    AICORE_CHECK(aicore_yolo_detection_count(ctx) == 0);
+    AICORE_CHECK(aicore_yolo_detection_at(nullptr, 0).score == 0.0f);
+    AICORE_CHECK(aicore_yolo_detection_class_name(nullptr, 0) == nullptr);
+    AICORE_CHECK(aicore_yolo_detection_class_name(ctx, 0) == nullptr);
+
     // New-task inference entry points must reject a ctx with no loaded
     // model, and their accessors must be null-safe.
     AICORE_CHECK(aicore_yolo_pose_rgb(ctx, kRgb, 3, 3) == nullptr);

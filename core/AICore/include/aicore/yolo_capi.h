@@ -382,6 +382,13 @@ typedef struct aicore_yolo_detection {
 AICORE_CAPI int aicore_yolo_detection_count(const aicore_yolo_ctx* ctx);
 AICORE_CAPI aicore_yolo_detection
 aicore_yolo_detection_at(const aicore_yolo_ctx* ctx, int index);
+/** Class name of the i-th detection from the most recent detect call
+ *  (open-vocabulary class list override or the GGUF metadata; owned by the
+ *  context, valid until the next detect call or aicore_yolo_free). Returns
+ *  NULL when the index is out of range or the model declares no names for
+ *  this class — callers should fall back to "class <id>". */
+AICORE_CAPI const char* aicore_yolo_detection_class_name(
+        const aicore_yolo_ctx* ctx, int index);
 
 /** Non-owning view of a plane (segment mask, depth). Mask data is a
  *  full-size source-image bitmap (width x height, 1 byte per pixel:

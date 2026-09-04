@@ -171,11 +171,15 @@ public:
     const Image& GetImage(const image_t image_id);
     std::shared_ptr<FeatureKeypoints> GetKeypoints(const image_t image_id);
     std::shared_ptr<FeatureDescriptors> GetDescriptors(const image_t image_id);
+    std::shared_ptr<FeatureDescriptorsFloat> GetFloatDescriptors(
+        const image_t image_id);
+    FeatureDescriptorType GetDescriptorType(const image_t image_id);
     FeatureMatches GetMatches(const image_t image_id1, const image_t image_id2);
     std::vector<image_t> GetImageIds();
 
     bool ExistsKeypoints(const image_t image_id);
     bool ExistsDescriptors(const image_t image_id);
+    bool ExistsFloatDescriptors(const image_t image_id);
 
     bool ExistsMatches(const image_t image_id1, const image_t image_id2);
     bool ExistsInlierMatches(const image_t image_id1, const image_t image_id2);
@@ -203,9 +207,13 @@ private:
             keypoints_cache_;
     std::unique_ptr<ThreadSafeLRUCache<image_t, FeatureDescriptors>>
             descriptors_cache_;
+    std::unique_ptr<ThreadSafeLRUCache<image_t, FeatureDescriptorsFloat>>
+            float_descriptors_cache_;
     std::unique_ptr<ThreadSafeLRUCache<image_t, bool>> keypoints_exists_cache_;
     std::unique_ptr<ThreadSafeLRUCache<image_t, bool>>
             descriptors_exists_cache_;
+    std::unique_ptr<ThreadSafeLRUCache<image_t, bool>>
+            float_descriptors_exists_cache_;
 };
 
 class FeatureMatcherThread : public Thread {
@@ -231,6 +239,25 @@ public:
                           JobQueue<Output>* output_queue);
 
 protected:
+    void Run() override;
+
+    JobQueue<Input>* input_queue_;
+    JobQueue<Output>* output_queue_;
+};
+
+// LoMa uses the SIFT pair scheduler and geometry verifier, while loading a
+// ggml matcher once per worker and consuming float descriptors from SQLite.
+class LomaFeatureMatcher : public FeatureMatcherThread {
+public:
+    typedef internal::FeatureMatcherData Input;
+    typedef internal::FeatureMatcherData Output;
+
+    LomaFeatureMatcher(const SiftMatchingOptions& options,
+                       FeatureMatcherCache* cache,
+                       JobQueue<Input>* input_queue,
+                       JobQueue<Output>* output_queue);
+
+private:
     void Run() override;
 
     JobQueue<Input>* input_queue_;
@@ -358,6 +385,7 @@ private:
 
     std::vector<std::unique_ptr<FeatureMatcherThread>> matchers_;
     std::vector<std::unique_ptr<FeatureMatcherThread>> guided_matchers_;
+    bool use_loma_ = false;
     std::vector<std::unique_ptr<Thread>> verifiers_;
     std::unique_ptr<ThreadPool> thread_pool_;
 

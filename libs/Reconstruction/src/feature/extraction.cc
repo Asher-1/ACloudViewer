@@ -385,18 +385,21 @@ void SiftFeatureExtractorThread::Run() {
       auto image_data = input_job.Data();
 
       if (image_data.status == ImageReader::Status::SUCCESS) {
+        // OpenImageIO preserves RGB input. SIFT consumes luminance, while the
+        // original bitmap remains the coordinate reference for ScaleKeypoints.
+        const Bitmap sift_bitmap = image_data.bitmap.CloneAsGrey();
         bool success = false;
         if (sift_options_.estimate_affine_shape ||
             sift_options_.domain_size_pooling) {
           success = ExtractCovariantSiftFeaturesCPU(
-              sift_options_, image_data.bitmap, &image_data.keypoints,
+              sift_options_, sift_bitmap, &image_data.keypoints,
               &image_data.descriptors);
         } else if (sift_options_.use_gpu) {
           success = ExtractSiftFeaturesGPU(
-              sift_options_, image_data.bitmap, sift_gpu.get(),
+              sift_options_, sift_bitmap, sift_gpu.get(),
               &image_data.keypoints, &image_data.descriptors);
         } else {
-          success = ExtractSiftFeaturesCPU(sift_options_, image_data.bitmap,
+          success = ExtractSiftFeaturesCPU(sift_options_, sift_bitmap,
                                            &image_data.keypoints,
                                            &image_data.descriptors);
         }

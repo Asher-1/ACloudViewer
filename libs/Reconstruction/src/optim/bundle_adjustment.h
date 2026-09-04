@@ -23,6 +23,11 @@
 
 namespace colmap {
 
+// Keep the solver selection independent of the caller. Incremental mapping,
+// global mapping, the GUI controller, and the CLI all enter through
+// BundleAdjuster, so a backend must be selected here rather than in one caller.
+enum class BundleAdjustmentBackend { CERES, CASPAR };
+
 // Configuration container to setup bundle adjustment problems.
 class BundleAdjustmentConfig {
 public:
@@ -113,6 +118,16 @@ struct BundleAdjustmentOptions {
     // Whether to print a final summary.
     bool print_summary = true;
 
+    // Ceres remains the portable default. CASPAR is available only in CUDA
+    // builds that explicitly enable RECONSTRUCTION_CASPAR_ENABLED.
+    BundleAdjustmentBackend backend = BundleAdjustmentBackend::CERES;
+
+    // CLI/UI-facing switch until the legacy option parser can expose the enum
+    // directly. It is equivalent to backend == CASPAR.
+    bool use_caspar = false;
+    int caspar_gpu_index = -1;
+    int caspar_max_num_iterations = 200;
+
     // Whether to use Ceres' CUDA linear algebra library, if available.
     bool use_gpu = false;
     std::string gpu_index = "-1";
@@ -166,6 +181,17 @@ struct BundleAdjustmentOptions {
 
     bool Check() const;
 };
+
+#ifdef CASPAR_ENABLED
+// Runs the subset of Caspar's generated graph that is representable by the
+// legacy image-pose reconstruction model. Returns false without modifying the
+// reconstruction when a requested problem needs a Caspar factor variant that
+// has not yet been ported; BundleAdjuster then runs the Ceres path.
+bool SolveCasparBundleAdjustment(const BundleAdjustmentOptions& options,
+                                 const BundleAdjustmentConfig& config,
+                                 Reconstruction* reconstruction,
+                                 ceres::Solver::Summary* ceres_summary);
+#endif
 
 // Bundle adjustment based on Ceres-Solver. Enables most flexible configurations
 // and provides best solution quality.

@@ -31,6 +31,10 @@
 
 #include "optim/bundle_adjustment.h"
 
+#if defined(CASPAR_ENABLED)
+#include "optim/bundle_adjustment_caspar.h"
+#endif
+
 #include <iomanip>
 
 #ifdef OPENMP_ENABLED
@@ -373,6 +377,23 @@ bool BundleAdjuster::Solve(Reconstruction* reconstruction) {
     CHECK_NOTNULL(reconstruction);
     CHECK(!problem_) << "Cannot use the same BundleAdjuster multiple times";
 
+    const bool use_caspar =
+            options_.use_caspar ||
+            options_.backend == BundleAdjustmentBackend::CASPAR;
+    if (use_caspar) {
+#if defined(CASPAR_ENABLED)
+        if (SolveCasparBundleAdjustment(options_, config_, reconstruction,
+                                        &summary_)) {
+            return true;
+        }
+        LOG(WARNING) << "Caspar BA cannot represent this legacy problem; "
+                        "using the Ceres backend for this solve";
+#else
+        LOG(WARNING) << "Caspar BA was requested, but this build does not "
+                        "enable RECONSTRUCTION_CASPAR_ENABLED; using Ceres";
+#endif
+    }
+
     problem_.reset(new ceres::Problem());
 
     ceres::LossFunction* loss_function = options_.CreateLossFunction();
@@ -459,7 +480,12 @@ void BundleAdjuster::AddImageToProblem(const image_t image_id,
         ceres::CostFunction* cost_function = nullptr;
 
         if (constant_pose) {
-            switch (camera.ModelId()) {
+            if (camera.ModelId() == EquirectangularCameraModel::kModelId) {
+                cost_function =
+                        EquirectangularBundleAdjustmentConstantPoseCostFunction::Create(
+                                image.Qvec(), image.Tvec(), point2D.XY());
+            } else {
+                switch (camera.ModelId()) {
 #define CAMERA_MODEL_CASE(CameraModel)                                         \
     case CameraModel::kModelId:                                                \
         cost_function =                                                        \
@@ -471,12 +497,17 @@ void BundleAdjuster::AddImageToProblem(const image_t image_id,
 
 #undef CAMERA_MODEL_CASE
             }
+            }
 
             problem_->AddResidualBlock(cost_function, loss_function,
                                        point3D.XYZ().data(),
                                        camera_params_data);
         } else {
-            switch (camera.ModelId()) {
+            if (camera.ModelId() == EquirectangularCameraModel::kModelId) {
+                cost_function = EquirectangularBundleAdjustmentCostFunction::Create(
+                        point2D.XY());
+            } else {
+                switch (camera.ModelId()) {
 #define CAMERA_MODEL_CASE(CameraModel)                                     \
     case CameraModel::kModelId:                                            \
         cost_function = BundleAdjustmentCostFunction<CameraModel>::Create( \
@@ -486,6 +517,7 @@ void BundleAdjuster::AddImageToProblem(const image_t image_id,
                 CAMERA_MODEL_SWITCH_CASES
 
 #undef CAMERA_MODEL_CASE
+            }
             }
 
             problem_->AddResidualBlock(cost_function, loss_function, qvec_data,
@@ -552,7 +584,12 @@ void BundleAdjuster::AddPointToProblem(const point3D_t point3D_id,
 
         ceres::CostFunction* cost_function = nullptr;
 
-        switch (camera.ModelId()) {
+        if (camera.ModelId() == EquirectangularCameraModel::kModelId) {
+            cost_function =
+                    EquirectangularBundleAdjustmentConstantPoseCostFunction::Create(
+                            image.Qvec(), image.Tvec(), point2D.XY());
+        } else {
+            switch (camera.ModelId()) {
 #define CAMERA_MODEL_CASE(CameraModel)                                         \
     case CameraModel::kModelId:                                                \
         cost_function =                                                        \
@@ -563,6 +600,7 @@ void BundleAdjuster::AddPointToProblem(const point3D_t point3D_id,
             CAMERA_MODEL_SWITCH_CASES
 
 #undef CAMERA_MODEL_CASE
+        }
         }
         problem_->AddResidualBlock(cost_function, loss_function,
                                    point3D.XYZ().data(), camera.ParamsData());
@@ -1071,7 +1109,12 @@ void RigBundleAdjuster::AddImageToProblem(const image_t image_id,
 
         if (camera_rig == nullptr) {
             if (constant_pose) {
-                switch (camera.ModelId()) {
+                if (camera.ModelId() == EquirectangularCameraModel::kModelId) {
+                    cost_function =
+                            EquirectangularBundleAdjustmentConstantPoseCostFunction::Create(
+                                    image.Qvec(), image.Tvec(), point2D.XY());
+                } else {
+                    switch (camera.ModelId()) {
 #define CAMERA_MODEL_CASE(CameraModel)                                         \
     case CameraModel::kModelId:                                                \
         cost_function =                                                        \
@@ -1083,12 +1126,18 @@ void RigBundleAdjuster::AddImageToProblem(const image_t image_id,
 
 #undef CAMERA_MODEL_CASE
                 }
+                }
 
                 problem_->AddResidualBlock(cost_function, loss_function,
                                            point3D.XYZ().data(),
                                            camera_params_data);
             } else {
-                switch (camera.ModelId()) {
+                if (camera.ModelId() == EquirectangularCameraModel::kModelId) {
+                    cost_function =
+                            EquirectangularBundleAdjustmentCostFunction::Create(
+                                    point2D.XY());
+                } else {
+                    switch (camera.ModelId()) {
 #define CAMERA_MODEL_CASE(CameraModel)                                     \
     case CameraModel::kModelId:                                            \
         cost_function = BundleAdjustmentCostFunction<CameraModel>::Create( \
@@ -1099,13 +1148,18 @@ void RigBundleAdjuster::AddImageToProblem(const image_t image_id,
 
 #undef CAMERA_MODEL_CASE
                 }
+                }
 
                 problem_->AddResidualBlock(
                         cost_function, loss_function, qvec_data, tvec_data,
                         point3D.XYZ().data(), camera_params_data);
             }
         } else {
-            switch (camera.ModelId()) {
+            if (camera.ModelId() == EquirectangularCameraModel::kModelId) {
+                cost_function = EquirectangularRigBundleAdjustmentCostFunction::Create(
+                        point2D.XY());
+            } else {
+                switch (camera.ModelId()) {
 #define CAMERA_MODEL_CASE(CameraModel)                                        \
     case CameraModel::kModelId:                                               \
         cost_function = RigBundleAdjustmentCostFunction<CameraModel>::Create( \
@@ -1116,6 +1170,7 @@ void RigBundleAdjuster::AddImageToProblem(const image_t image_id,
                 CAMERA_MODEL_SWITCH_CASES
 
 #undef CAMERA_MODEL_CASE
+            }
             }
             problem_->AddResidualBlock(cost_function, loss_function,
                                        rig_qvec_data, rig_tvec_data, qvec_data,
@@ -1186,7 +1241,14 @@ void RigBundleAdjuster::AddPointToProblem(const point3D_t point3D_id,
 
         ceres::CostFunction* cost_function = nullptr;
 
-        switch (camera.ModelId()) {
+        if (camera.ModelId() == EquirectangularCameraModel::kModelId) {
+            cost_function =
+                    EquirectangularBundleAdjustmentConstantPoseCostFunction::Create(
+                            image.Qvec(), image.Tvec(), point2D.XY());
+            problem_->AddResidualBlock(cost_function, loss_function,
+                                       point3D.XYZ().data(), camera.ParamsData());
+        } else {
+            switch (camera.ModelId()) {
 #define CAMERA_MODEL_CASE(CameraModel)                                         \
     case CameraModel::kModelId:                                                \
         cost_function =                                                        \
@@ -1199,6 +1261,7 @@ void RigBundleAdjuster::AddPointToProblem(const point3D_t point3D_id,
             CAMERA_MODEL_SWITCH_CASES
 
 #undef CAMERA_MODEL_CASE
+        }
         }
     }
 }

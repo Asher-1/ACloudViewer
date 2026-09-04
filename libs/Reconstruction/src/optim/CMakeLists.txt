@@ -42,7 +42,14 @@ COLMAP_ADD_SOURCES(
     support_measurement.h support_measurement.cc
 )
 
+if (RECONSTRUCTION_CASPAR_ENABLED)
+    COLMAP_ADD_SOURCES(bundle_adjustment_caspar.h bundle_adjustment_caspar.cc)
+endif ()
+
 COLMAP_ADD_TEST(bundle_adjustment_test bundle_adjustment_test.cc)
+if (RECONSTRUCTION_CASPAR_ENABLED)
+    COLMAP_ADD_TEST(bundle_adjustment_caspar_test bundle_adjustment_caspar_test.cc)
+endif ()
 COLMAP_ADD_TEST(combination_sampler_test combination_sampler_test.cc)
 COLMAP_ADD_TEST(least_absolute_deviations_test
                 least_absolute_deviations_test.cc)

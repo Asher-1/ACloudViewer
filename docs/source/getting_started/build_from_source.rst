@@ -499,7 +499,7 @@ System Dependencies
    - CMake tools
    - Windows 10/11 SDK
 
-2. **CMake** (3.19+): https://cmake.org/download/
+2. **CMake** (3.24+; CI and Conda environments pin 3.31.8): https://cmake.org/download/
 
 3. **Git**: https://git-scm.com/download/win
 

@@ -53,8 +53,8 @@ OPTION:
 HOST_CLOUDVIEWER_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
 
 # Shared variables
-CMAKE_VERSION=cmake-3.29.2-linux-x86_64
-CMAKE_VERSION_AARCH64=cmake-3.24.4-linux-aarch64
+CMAKE_VERSION=cmake-3.31.8-linux-x86_64
+CMAKE_VERSION_AARCH64=cmake-3.31.8-linux-aarch64
 CUDA_VERSION=12.6.3-cudnn
 CUDA_VERSION_LATEST=12.6.3-cudnn
 UBUNTU_FOCAL=20.04

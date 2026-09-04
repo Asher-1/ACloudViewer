@@ -15,7 +15,7 @@
 #include "mvs/image.h"
 #include "mvs/model.h"
 #include "mvs/normal_map.h"
-#ifndef __CUDACC__
+#if !defined(__CUDACC__) && !defined(__HIPCC__)
 #include "util/threading.h"
 #endif
 
@@ -235,7 +235,7 @@ private:
 // images. Note that all specified images must be reconstructed in the COLMAP
 // reconstruction provided in the `sparse` folder.
 
-#ifndef __CUDACC__
+#if !defined(__CUDACC__) && !defined(__HIPCC__)
 
 class PatchMatchController : public Thread {
 public:

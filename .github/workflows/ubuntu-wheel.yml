@@ -126,6 +126,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: 'false'
+      - name: Set up fixed CMake
+        uses: ./.github/actions/setup-cmake
       - name: Additional space optimization
         run: |
           source util/ci_utils.sh
