@@ -7,11 +7,10 @@
 
 #pragma once
 
-#include "util/cuda_to_hip.h"
-
 #include <memory>
 
 #include "mvs/gpu_mat.h"
+#include "util/cuda_to_hip.h"
 #include "util/cudacc.h"
 #include "util/logging.h"
 

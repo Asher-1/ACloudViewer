@@ -1521,7 +1521,9 @@ EquirectangularCameraModel::InitializeExtraParamsIdxs() {
 }
 
 inline std::vector<double> EquirectangularCameraModel::InitializeParams(
-        const double /*focal_length*/, const size_t width, const size_t height) {
+        const double /*focal_length*/,
+        const size_t width,
+        const size_t height) {
     return {static_cast<double>(width), static_cast<double>(height)};
 }
 

@@ -15,10 +15,10 @@
 
 int main(int argc, char** argv) {
     if (argc != 5) {
-        std::fprintf(
-                stderr,
-                "usage: %s aliked|deeplsd|loma input.gguf output.gguf f16|q8_0\n",
-                argv[0]);
+        std::fprintf(stderr,
+                     "usage: %s aliked|deeplsd|loma input.gguf output.gguf "
+                     "f16|q8_0\n",
+                     argv[0]);
         return 2;
     }
     const char* module = argv[1];
@@ -33,7 +33,8 @@ int main(int argc, char** argv) {
     } else if (std::strcmp(module, "loma") == 0) {
         rc = aicore_loma_quantize_gguf(input, output, type);
     } else {
-        std::fprintf(stderr, "unknown module: %s (want aliked, deeplsd, or loma)\n",
+        std::fprintf(stderr,
+                     "unknown module: %s (want aliked, deeplsd, or loma)\n",
                      module);
         return 2;
     }

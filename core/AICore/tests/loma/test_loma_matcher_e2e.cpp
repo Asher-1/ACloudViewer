@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 // LoMa matcher smoke test.  The model is intentionally supplied by the test
 // environment: published weights remain outside the source tree.
 
@@ -39,8 +46,12 @@ OwnedFeatures MakeFeatures(int count, int dimension) {
             descriptor[dim] *= inverse_norm;
         }
     }
-    result.view = {result.keypoints.data(), count, result.descriptors.data(),
-                   dimension, 640, 480};
+    result.view = {result.keypoints.data(),
+                   count,
+                   result.descriptors.data(),
+                   dimension,
+                   640,
+                   480};
     return result;
 }
 
@@ -67,7 +78,8 @@ bool ValidAndEqual(const aicore_loma_match* left,
 int main() {
     const char* model = std::getenv("AICORE_TEST_LOMA_GGUF");
     const char* device = std::getenv("AICORE_TEST_DEVICE");
-    const char* dimension_env = std::getenv("AICORE_TEST_LOMA_EXPECTED_DESCRIPTOR_DIM");
+    const char* dimension_env =
+            std::getenv("AICORE_TEST_LOMA_EXPECTED_DESCRIPTOR_DIM");
     if (model == nullptr || model[0] == '\0') {
         std::fprintf(stderr, "SKIP: set AICORE_TEST_LOMA_GGUF\n");
         return 77;
@@ -78,15 +90,15 @@ int main() {
         descriptor_dim = std::atoi(dimension_env);
     }
     if (descriptor_dim != 128 && descriptor_dim != 256) {
-        std::fprintf(stderr, "unsupported LoMa descriptor dimension: %d\n", descriptor_dim);
+        std::fprintf(stderr, "unsupported LoMa descriptor dimension: %d\n",
+                     descriptor_dim);
         return 2;
     }
 
     aicore_loma_matcher_options* options = aicore_loma_matcher_options_new();
     aicore_loma_matcher_options_set_device(options, device);
     aicore_loma_matcher_options_set_min_score(options, 0.0);
-    aicore_loma_matcher_ctx* context =
-            aicore_loma_matcher_load(model, options);
+    aicore_loma_matcher_ctx* context = aicore_loma_matcher_load(model, options);
     aicore_loma_matcher_options_free(options);
     if (!aicore_loma_matcher_is_ready(context)) {
         std::fprintf(stderr, "LoMa load failed: %s\n",

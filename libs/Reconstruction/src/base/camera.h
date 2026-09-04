@@ -10,9 +10,8 @@
 #include <optional>
 #include <vector>
 
-#include "util/types.h"
-
 #include "base/pose.h"
+#include "util/types.h"
 
 namespace colmap {
 

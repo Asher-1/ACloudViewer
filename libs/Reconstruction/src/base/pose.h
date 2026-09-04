@@ -20,8 +20,7 @@ namespace colmap {
 // robust estimator sub-samples its input.
 struct CamRayWithJac {
     Eigen::Vector3d ray = Eigen::Vector3d::Zero();
-    Eigen::Matrix<double, 3, 2> jacobian =
-            Eigen::Matrix<double, 3, 2>::Zero();
+    Eigen::Matrix<double, 3, 2> jacobian = Eigen::Matrix<double, 3, 2>::Zero();
 
     static CamRayWithJac Zero() { return CamRayWithJac(); }
 };

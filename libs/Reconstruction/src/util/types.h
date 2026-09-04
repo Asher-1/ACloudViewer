@@ -33,7 +33,6 @@ typedef unsigned __int64 uint64_t;
 #define NON_MOVABLE(class_name) class_name(class_name&&) = delete;
 
 #include <Eigen/Core>
-
 #include <tuple>
 
 namespace Eigen {

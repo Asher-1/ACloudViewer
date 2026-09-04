@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 // CPU-to-accelerator parity gate for the production DeDoDe-G ViT-L graph.
 // The selected trace point keeps failures attributable to a concrete stage:
 // patch embedding (-3), positional encoding (-2), or transformer [0, 23].
@@ -18,11 +25,11 @@ constexpr int kTokenCount = 3137;
 constexpr int kEmbeddingDim = 1024;
 
 std::vector<uint8_t> MakeImage() {
-    std::vector<uint8_t> image(static_cast<size_t>(kImageSize) * kImageSize * 3);
+    std::vector<uint8_t> image(static_cast<size_t>(kImageSize) * kImageSize *
+                               3);
     for (int y = 0; y < kImageSize; ++y) {
         for (int x = 0; x < kImageSize; ++x) {
-            const size_t offset =
-                    (static_cast<size_t>(y) * kImageSize + x) * 3;
+            const size_t offset = (static_cast<size_t>(y) * kImageSize + x) * 3;
             image[offset] = static_cast<uint8_t>((x * 251 + y * 17) % 256);
             image[offset + 1] = static_cast<uint8_t>((x * 13 + y * 239) % 256);
             image[offset + 2] = static_cast<uint8_t>(
@@ -49,7 +56,8 @@ bool Trace(const char* model,
         return false;
     }
     const aicore_loma_keypoint point = {0.0f, 0.0f};
-    if (!descriptor.Describe(image, &point, 1, kImageSize, kImageSize, output)) {
+    if (!descriptor.Describe(image, &point, 1, kImageSize, kImageSize,
+                             output)) {
         *error = descriptor.error();
         return false;
     }
@@ -65,7 +73,8 @@ bool Trace(const char* model,
 int main() {
     const char* model = std::getenv("AICORE_TEST_LOMA_DESCRIPTOR_G_GGUF");
     const char* device = std::getenv("AICORE_TEST_LOMA_PARITY_DEVICE");
-    const char* block_text = std::getenv("AICORE_TEST_LOMA_DESCRIPTOR_G_TRACE_BLOCK");
+    const char* block_text =
+            std::getenv("AICORE_TEST_LOMA_DESCRIPTOR_G_TRACE_BLOCK");
     if (model == nullptr || model[0] == '\0') {
         std::fprintf(stderr, "SKIP: set AICORE_TEST_LOMA_DESCRIPTOR_G_GGUF\n");
         return 77;
@@ -106,14 +115,16 @@ int main() {
         squared_error += static_cast<double>(difference) * difference;
         reference_squared += static_cast<double>(cpu[index]) * cpu[index];
     }
-    const double relative_l2 = std::sqrt(squared_error /
-                                         std::max(reference_squared, 1e-30));
-    std::printf("{\"suite\":\"loma-dedode-g-backend-parity\","
-                "\"device\":\"%s\",\"trace_block\":%d,"
-                "\"max_absolute_error\":%.8g,\"relative_l2\":%.8g}\n",
-                device, block, max_absolute_error, relative_l2);
+    const double relative_l2 =
+            std::sqrt(squared_error / std::max(reference_squared, 1e-30));
+    std::printf(
+            "{\"suite\":\"loma-dedode-g-backend-parity\","
+            "\"device\":\"%s\",\"trace_block\":%d,"
+            "\"max_absolute_error\":%.8g,\"relative_l2\":%.8g}\n",
+            device, block, max_absolute_error, relative_l2);
     if (max_absolute_error > 2e-3f || relative_l2 > 2e-4) {
-        std::fprintf(stderr, "DeDoDe-G CPU/%s numerical parity gate failed\n", device);
+        std::fprintf(stderr, "DeDoDe-G CPU/%s numerical parity gate failed\n",
+                     device);
         return 1;
     }
     return 0;

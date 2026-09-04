@@ -1,11 +1,16 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 // ggml LoMa matcher bridge. It deliberately reuses the attention runtime but
 // exposes LoMa's own feature contract, so a LoMa GGUF cannot be loaded through
 // the public LightGlue ABI by accident.
 
-#include "aicore/loma_capi.h"
-
-#include <cstdlib>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <memory>
 #include <new>
@@ -13,12 +18,13 @@
 #include <vector>
 
 #include "aicore/backend_capi.h"
+#include "aicore/loma_capi.h"
 #include "common/capi_utils.hpp"
 #include "common/model_cache.hpp"
-#include "tasks/loma/detector.hpp"
-#include "tasks/loma/descriptor.hpp"
-#include "tasks/loma/quantize.hpp"
 #include "tasks/lightglue/types.hpp"
+#include "tasks/loma/descriptor.hpp"
+#include "tasks/loma/detector.hpp"
+#include "tasks/loma/quantize.hpp"
 
 namespace {
 
@@ -31,15 +37,18 @@ aicore::lightglue::Features ToNative(const aicore_loma_features* source) {
     if (source->keypoints != nullptr && source->n_keypoints > 0) {
         result.keypoints.resize(static_cast<size_t>(source->n_keypoints));
         for (int32_t index = 0; index < source->n_keypoints; ++index) {
-            result.keypoints[static_cast<size_t>(index)].x = source->keypoints[index].x;
-            result.keypoints[static_cast<size_t>(index)].y = source->keypoints[index].y;
+            result.keypoints[static_cast<size_t>(index)].x =
+                    source->keypoints[index].x;
+            result.keypoints[static_cast<size_t>(index)].y =
+                    source->keypoints[index].y;
         }
     }
     if (source->descriptors != nullptr && source->n_keypoints > 0 &&
         source->descriptor_dim > 0) {
         const size_t count = static_cast<size_t>(source->n_keypoints) *
                              static_cast<size_t>(source->descriptor_dim);
-        result.descriptors.assign(source->descriptors, source->descriptors + count);
+        result.descriptors.assign(source->descriptors,
+                                  source->descriptors + count);
     }
     return result;
 }
@@ -84,7 +93,8 @@ extern "C" {
 
 AICORE_CAPI int aicore_loma_abi_version(void) { return 4; }
 
-AICORE_CAPI aicore_loma_detector_options* aicore_loma_detector_options_new(void) {
+AICORE_CAPI aicore_loma_detector_options* aicore_loma_detector_options_new(
+        void) {
     return new (std::nothrow) aicore_loma_detector_options();
 }
 
@@ -95,7 +105,8 @@ AICORE_CAPI void aicore_loma_detector_options_free(
 
 AICORE_CAPI void aicore_loma_detector_options_set_device(
         aicore_loma_detector_options* options, const char* device) {
-    if (options != nullptr) options->value.device = device != nullptr ? device : "";
+    if (options != nullptr)
+        options->value.device = device != nullptr ? device : "";
 }
 
 AICORE_CAPI void aicore_loma_detector_options_set_threads(
@@ -113,8 +124,9 @@ AICORE_CAPI aicore_loma_detector_ctx* aicore_loma_detector_load(
     if (gguf_path == nullptr) return nullptr;
     auto* ctx = new (std::nothrow) aicore_loma_detector_ctx();
     if (ctx == nullptr) return nullptr;
-    const aicore::loma::DetectorOptions native = options != nullptr
-            ? options->value : aicore_loma_detector_options().value;
+    const aicore::loma::DetectorOptions native =
+            options != nullptr ? options->value
+                               : aicore_loma_detector_options().value;
     ctx->detector = std::make_unique<aicore::loma::Detector>();
     if (!ctx->detector->Load(gguf_path, native)) {
         ctx->error = ctx->detector->error();
@@ -127,7 +139,8 @@ AICORE_CAPI void aicore_loma_detector_free(aicore_loma_detector_ctx* ctx) {
     delete ctx;
 }
 
-AICORE_CAPI int aicore_loma_detector_is_ready(const aicore_loma_detector_ctx* ctx) {
+AICORE_CAPI int aicore_loma_detector_is_ready(
+        const aicore_loma_detector_ctx* ctx) {
     return ctx != nullptr && ctx->detector != nullptr ? 1 : 0;
 }
 
@@ -152,11 +165,14 @@ AICORE_CAPI int aicore_loma_detector_run(
         ctx->error = ctx->detector->error();
         return -1;
     }
-    const size_t points_bytes = native.keypoints.size() * sizeof(aicore_loma_keypoint);
+    const size_t points_bytes =
+            native.keypoints.size() * sizeof(aicore_loma_keypoint);
     const size_t scores_bytes = native.scores.size() * sizeof(float);
-    auto* keypoints = static_cast<aicore_loma_keypoint*>(std::malloc(points_bytes));
+    auto* keypoints =
+            static_cast<aicore_loma_keypoint*>(std::malloc(points_bytes));
     auto* scores = static_cast<float*>(std::malloc(scores_bytes));
-    if ((keypoints == nullptr || scores == nullptr) && !native.keypoints.empty()) {
+    if ((keypoints == nullptr || scores == nullptr) &&
+        !native.keypoints.empty()) {
         std::free(keypoints);
         std::free(scores);
         ctx->error = "failed to allocate DaD detector output";
@@ -183,7 +199,8 @@ AICORE_CAPI void aicore_loma_detected_features_free(
     *features = {};
 }
 
-AICORE_CAPI aicore_loma_descriptor_options* aicore_loma_descriptor_options_new(void) {
+AICORE_CAPI aicore_loma_descriptor_options* aicore_loma_descriptor_options_new(
+        void) {
     return new (std::nothrow) aicore_loma_descriptor_options();
 }
 
@@ -194,7 +211,8 @@ AICORE_CAPI void aicore_loma_descriptor_options_free(
 
 AICORE_CAPI void aicore_loma_descriptor_options_set_device(
         aicore_loma_descriptor_options* options, const char* device) {
-    if (options != nullptr) options->value.device = device != nullptr ? device : "";
+    if (options != nullptr)
+        options->value.device = device != nullptr ? device : "";
 }
 
 AICORE_CAPI void aicore_loma_descriptor_options_set_threads(
@@ -207,8 +225,9 @@ AICORE_CAPI aicore_loma_descriptor_ctx* aicore_loma_descriptor_load(
     if (gguf_path == nullptr) return nullptr;
     auto* ctx = new (std::nothrow) aicore_loma_descriptor_ctx();
     if (ctx == nullptr) return nullptr;
-    const aicore::loma::DescriptorOptions native = options != nullptr
-            ? options->value : aicore_loma_descriptor_options().value;
+    const aicore::loma::DescriptorOptions native =
+            options != nullptr ? options->value
+                               : aicore_loma_descriptor_options().value;
     ctx->descriptor = std::make_unique<aicore::loma::Descriptor>();
     if (!ctx->descriptor->Load(gguf_path, native)) {
         ctx->error = ctx->descriptor->error();
@@ -248,8 +267,8 @@ AICORE_CAPI int aicore_loma_descriptor_run(
     *out_features = {};
     std::vector<float> native;
     if (!ctx->descriptor->Describe(*image, keypoints, count,
-                                  keypoint_image_width, keypoint_image_height,
-                                  &native)) {
+                                   keypoint_image_width, keypoint_image_height,
+                                   &native)) {
         ctx->error = ctx->descriptor->error();
         return -1;
     }
@@ -285,7 +304,8 @@ AICORE_CAPI void aicore_loma_matcher_options_free(
 
 AICORE_CAPI void aicore_loma_matcher_options_set_device(
         aicore_loma_matcher_options* options, const char* device) {
-    if (options != nullptr) options->value.device = device != nullptr ? device : "";
+    if (options != nullptr)
+        options->value.device = device != nullptr ? device : "";
 }
 
 AICORE_CAPI void aicore_loma_matcher_options_set_threads(
@@ -303,12 +323,14 @@ AICORE_CAPI aicore_loma_matcher_ctx* aicore_loma_matcher_load(
     if (gguf_path == nullptr) return nullptr;
     auto* ctx = new (std::nothrow) aicore_loma_matcher_ctx();
     if (ctx == nullptr) return nullptr;
-    aicore::lightglue::MatchingOptions native = options != nullptr
-            ? options->value : aicore_loma_matcher_options().value;
+    aicore::lightglue::MatchingOptions native =
+            options != nullptr ? options->value
+                               : aicore_loma_matcher_options().value;
     native.type = aicore::lightglue::FeatureMatcherType::kLoma;
     native.model_path = gguf_path;
     if (native.device.empty()) native.device = "auto";
-    ctx->matcher = aicore::lightglue::create_feature_matcher(native, &ctx->error);
+    ctx->matcher =
+            aicore::lightglue::create_feature_matcher(native, &ctx->error);
     return ctx;
 }
 
@@ -316,7 +338,8 @@ AICORE_CAPI void aicore_loma_matcher_free(aicore_loma_matcher_ctx* ctx) {
     delete ctx;
 }
 
-AICORE_CAPI int aicore_loma_matcher_is_ready(const aicore_loma_matcher_ctx* ctx) {
+AICORE_CAPI int aicore_loma_matcher_is_ready(
+        const aicore_loma_matcher_ctx* ctx) {
     return ctx != nullptr && ctx->matcher != nullptr ? 1 : 0;
 }
 
@@ -326,12 +349,11 @@ AICORE_CAPI const char* aicore_loma_matcher_last_error(
     return ctx->error.empty() ? nullptr : ctx->error.c_str();
 }
 
-AICORE_CAPI int aicore_loma_matcher_run(
-        aicore_loma_matcher_ctx* ctx,
-        const aicore_loma_features* image0,
-        const aicore_loma_features* image1,
-        aicore_loma_match** out_matches,
-        int32_t* out_count) {
+AICORE_CAPI int aicore_loma_matcher_run(aicore_loma_matcher_ctx* ctx,
+                                        const aicore_loma_features* image0,
+                                        const aicore_loma_features* image1,
+                                        aicore_loma_match** out_matches,
+                                        int32_t* out_count) {
     const auto started = aicore::capi::PipelineClock::now();
     if (ctx == nullptr || ctx->matcher == nullptr || image0 == nullptr ||
         image1 == nullptr || out_matches == nullptr || out_count == nullptr) {
@@ -365,8 +387,9 @@ AICORE_CAPI void aicore_loma_free_matches(aicore_loma_match* matches) {
 
 AICORE_CAPI int aicore_loma_matcher_last_pipeline_timings(
         const aicore_loma_matcher_ctx* ctx, aicore_pipeline_timings* out) {
-    return ctx != nullptr ? aicore::capi::copy_pipeline_timings(ctx->timings, out)
-                          : -1;
+    return ctx != nullptr
+                   ? aicore::capi::copy_pipeline_timings(ctx->timings, out)
+                   : -1;
 }
 
 AICORE_CAPI int aicore_loma_warmup_backend(const char* device) {
@@ -374,11 +397,13 @@ AICORE_CAPI int aicore_loma_warmup_backend(const char* device) {
 }
 
 AICORE_CAPI int aicore_loma_quantize_gguf(const char* input_gguf,
-                                           const char* output_gguf,
-                                           const char* type) {
-    if (input_gguf == nullptr || output_gguf == nullptr || type == nullptr) return -1;
+                                          const char* output_gguf,
+                                          const char* type) {
+    if (input_gguf == nullptr || output_gguf == nullptr || type == nullptr)
+        return -1;
     std::string error;
-    if (aicore::loma::QuantizeModel(input_gguf, output_gguf, type, &error)) return 0;
+    if (aicore::loma::QuantizeModel(input_gguf, output_gguf, type, &error))
+        return 0;
     std::fprintf(stderr, "LoMa GGUF quantization failed: %s\n", error.c_str());
     return -1;
 }

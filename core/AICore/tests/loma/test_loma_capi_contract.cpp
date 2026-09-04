@@ -1,7 +1,14 @@
-#include "aicore/aicore.h"
-#include "tests/common/test_macros.hpp"
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #include <cstdlib>
+
+#include "aicore/aicore.h"
+#include "tests/common/test_macros.hpp"
 
 static int failures = 0;
 
@@ -10,11 +17,12 @@ int main() {
     AICORE_CHECK(aicore_loma_model_count() == 22);
     for (int role = AICORE_LOMA_MODEL_ROLE_DETECTOR;
          role <= AICORE_LOMA_MODEL_ROLE_MATCHER; ++role) {
-        const aicore_loma_model_entry* model =
-                aicore_loma_model_by_role(static_cast<aicore_loma_model_role>(role));
+        const aicore_loma_model_entry* model = aicore_loma_model_by_role(
+                static_cast<aicore_loma_model_role>(role));
         AICORE_CHECK(model != nullptr);
         AICORE_CHECK(model->filename != nullptr && model->filename[0] != '\0');
-        AICORE_CHECK(model->download_url != nullptr && model->download_url[0] != '\0');
+        AICORE_CHECK(model->download_url != nullptr &&
+                     model->download_url[0] != '\0');
         AICORE_CHECK(model->role == role);
     }
     for (int variant = AICORE_LOMA_MODEL_VARIANT_DAD;
@@ -42,8 +50,8 @@ int main() {
     AICORE_CHECK(aicore_loma_descriptor_load(nullptr, nullptr) == nullptr);
     AICORE_CHECK(aicore_loma_descriptor_is_ready(nullptr) == 0);
     AICORE_CHECK(aicore_loma_descriptor_last_error(nullptr) != nullptr);
-    AICORE_CHECK(aicore_loma_descriptor_run(nullptr, nullptr, nullptr, 0, 0,
-                                             0, nullptr) != 0);
+    AICORE_CHECK(aicore_loma_descriptor_run(nullptr, nullptr, nullptr, 0, 0, 0,
+                                            nullptr) != 0);
     aicore_loma_matcher_free(nullptr);
     aicore_loma_free_matches(nullptr);
     aicore_loma_matcher_options_free(nullptr);
@@ -51,7 +59,7 @@ int main() {
     AICORE_CHECK(aicore_loma_matcher_is_ready(nullptr) == 0);
     AICORE_CHECK(aicore_loma_matcher_last_error(nullptr) != nullptr);
     AICORE_CHECK(aicore_loma_matcher_run(nullptr, nullptr, nullptr, nullptr,
-                                          nullptr) != 0);
+                                         nullptr) != 0);
 
     aicore_loma_matcher_options* options = aicore_loma_matcher_options_new();
     AICORE_CHECK(options != nullptr);

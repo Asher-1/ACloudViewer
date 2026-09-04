@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 // LoMa feature C API. The detector, descriptor, and matcher implementations
 // are ggml-backed and never link an ONNX runtime.
 #pragma once
@@ -94,7 +101,8 @@ typedef struct {
 
 AICORE_CAPI int aicore_loma_abi_version(void);
 
-AICORE_CAPI aicore_loma_detector_options* aicore_loma_detector_options_new(void);
+AICORE_CAPI aicore_loma_detector_options* aicore_loma_detector_options_new(
+        void);
 AICORE_CAPI void aicore_loma_detector_options_free(
         aicore_loma_detector_options* options);
 AICORE_CAPI void aicore_loma_detector_options_set_device(
@@ -108,7 +116,8 @@ AICORE_CAPI void aicore_loma_detector_options_set_max_keypoints(
 AICORE_CAPI aicore_loma_detector_ctx* aicore_loma_detector_load(
         const char* gguf_path, const aicore_loma_detector_options* options);
 AICORE_CAPI void aicore_loma_detector_free(aicore_loma_detector_ctx* ctx);
-AICORE_CAPI int aicore_loma_detector_is_ready(const aicore_loma_detector_ctx* ctx);
+AICORE_CAPI int aicore_loma_detector_is_ready(
+        const aicore_loma_detector_ctx* ctx);
 AICORE_CAPI const char* aicore_loma_detector_last_error(
         const aicore_loma_detector_ctx* ctx);
 AICORE_CAPI int aicore_loma_detector_run(
@@ -118,7 +127,8 @@ AICORE_CAPI int aicore_loma_detector_run(
 AICORE_CAPI void aicore_loma_detected_features_free(
         aicore_loma_detected_features* features);
 
-AICORE_CAPI aicore_loma_descriptor_options* aicore_loma_descriptor_options_new(void);
+AICORE_CAPI aicore_loma_descriptor_options* aicore_loma_descriptor_options_new(
+        void);
 AICORE_CAPI void aicore_loma_descriptor_options_free(
         aicore_loma_descriptor_options* options);
 AICORE_CAPI void aicore_loma_descriptor_options_set_device(
@@ -128,7 +138,8 @@ AICORE_CAPI void aicore_loma_descriptor_options_set_threads(
 AICORE_CAPI aicore_loma_descriptor_ctx* aicore_loma_descriptor_load(
         const char* gguf_path, const aicore_loma_descriptor_options* options);
 AICORE_CAPI void aicore_loma_descriptor_free(aicore_loma_descriptor_ctx* ctx);
-AICORE_CAPI int aicore_loma_descriptor_is_ready(const aicore_loma_descriptor_ctx* ctx);
+AICORE_CAPI int aicore_loma_descriptor_is_ready(
+        const aicore_loma_descriptor_ctx* ctx);
 AICORE_CAPI const char* aicore_loma_descriptor_last_error(
         const aicore_loma_descriptor_ctx* ctx);
 /* image is the descriptor's already-resized RGB input. keypoint_image_width
@@ -158,18 +169,18 @@ AICORE_CAPI void aicore_loma_matcher_options_set_min_score(
 AICORE_CAPI aicore_loma_matcher_ctx* aicore_loma_matcher_load(
         const char* gguf_path, const aicore_loma_matcher_options* options);
 AICORE_CAPI void aicore_loma_matcher_free(aicore_loma_matcher_ctx* ctx);
-AICORE_CAPI int aicore_loma_matcher_is_ready(const aicore_loma_matcher_ctx* ctx);
+AICORE_CAPI int aicore_loma_matcher_is_ready(
+        const aicore_loma_matcher_ctx* ctx);
 AICORE_CAPI const char* aicore_loma_matcher_last_error(
         const aicore_loma_matcher_ctx* ctx);
 
 /* Pixel coordinates are normalized exactly as COLMAP LoMa: x/y map to [-1,1]
  * independently by image width/height before entering the matcher graph. */
-AICORE_CAPI int aicore_loma_matcher_run(
-        aicore_loma_matcher_ctx* ctx,
-        const aicore_loma_features* image0,
-        const aicore_loma_features* image1,
-        aicore_loma_match** out_matches,
-        int32_t* out_count);
+AICORE_CAPI int aicore_loma_matcher_run(aicore_loma_matcher_ctx* ctx,
+                                        const aicore_loma_features* image0,
+                                        const aicore_loma_features* image1,
+                                        aicore_loma_match** out_matches,
+                                        int32_t* out_count);
 AICORE_CAPI void aicore_loma_free_matches(aicore_loma_match* matches);
 AICORE_CAPI int aicore_loma_matcher_last_pipeline_timings(
         const aicore_loma_matcher_ctx* ctx, aicore_pipeline_timings* out);
@@ -183,8 +194,7 @@ AICORE_CAPI int aicore_loma_quantize_gguf(const char* input_gguf,
                                           const char* type);
 
 AICORE_CAPI int aicore_loma_model_count(void);
-AICORE_CAPI int aicore_loma_model_default_index(
-        aicore_loma_model_role role);
+AICORE_CAPI int aicore_loma_model_default_index(aicore_loma_model_role role);
 AICORE_CAPI const aicore_loma_model_entry* aicore_loma_model_at(int index);
 AICORE_CAPI const aicore_loma_model_entry* aicore_loma_model_by_role(
         aicore_loma_model_role role);

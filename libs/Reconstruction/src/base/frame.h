@@ -1,14 +1,16 @@
 // ----------------------------------------------------------------------------
 // -                        CloudViewer: www.cloudViewer.org                  -
 // ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #pragma once
 
+#include <Eigen/Core>
 #include <iosfwd>
 #include <set>
 #include <vector>
-
-#include <Eigen/Core>
 
 #include "base/pose.h"
 #include "util/types.h"

@@ -807,16 +807,17 @@ __global__ void RotateNormalMap(GpuMatView<float> normal_map) {
 }
 
 template <int kWindowSize, int kWindowStep>
-__global__ void ComputeInitialCost(GpuMatView<float> cost_map,
-                                   const GpuMatView<float> depth_map,
-                                   const GpuMatView<float> normal_map,
-                                   const cudaTextureObject_t ref_image_texture,
-                                   const GpuMatView<float> ref_sum_image,
-                                   const GpuMatView<float> ref_squared_sum_image,
-                                   const cudaTextureObject_t src_images_texture,
-                                   const cudaTextureObject_t poses_texture,
-                                   const float sigma_spatial,
-                                   const float sigma_color) {
+__global__ void ComputeInitialCost(
+        GpuMatView<float> cost_map,
+        const GpuMatView<float> depth_map,
+        const GpuMatView<float> normal_map,
+        const cudaTextureObject_t ref_image_texture,
+        const GpuMatView<float> ref_sum_image,
+        const GpuMatView<float> ref_squared_sum_image,
+        const cudaTextureObject_t src_images_texture,
+        const cudaTextureObject_t poses_texture,
+        const float sigma_spatial,
+        const float sigma_color) {
     const int col = blockDim.x * blockIdx.x + threadIdx.x;
 
     typedef PhotoConsistencyCostComputer<kWindowSize, kWindowStep>
@@ -1386,10 +1387,11 @@ void PatchMatchCuda::RunWithWindowSizeAndStep() {
                          kFilterPhotoConsistency, kFilterGeomConsistency> \
             <<<sweep_grid_size_, sweep_block_size_>>>(                    \
                     global_workspace_->View(), rand_state_map_->View(),   \
-                    cost_map_->View(), depth_map_->View(), normal_map_->View(), \
-                    consistency_mask_->View(), sel_prob_map_->View(),     \
-                    prev_sel_prob_map_->View(),                            \
-                    ref_image_texture_->GetObj(), ref_image_->sum_image->View(), \
+                    cost_map_->View(), depth_map_->View(),                \
+                    normal_map_->View(), consistency_mask_->View(),       \
+                    sel_prob_map_->View(), prev_sel_prob_map_->View(),    \
+                    ref_image_texture_->GetObj(),                         \
+                    ref_image_->sum_image->View(),                        \
                     ref_image_->squared_sum_image->View(),                \
                     src_images_texture_->GetObj(),                        \
                     src_depth_maps_texture_ == nullptr                    \

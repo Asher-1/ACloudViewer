@@ -90,8 +90,8 @@ void GpuMatRefImage::Filter(const uint8_t* image_data,
 
     FilterKernel<<<grid_size, block_size>>>(
             image_texture->GetObj(), image->View(), sum_image->View(),
-            squared_sum_image->View(),
-            window_radius, window_step, sigma_spatial, sigma_color);
+            squared_sum_image->View(), window_radius, window_step,
+            sigma_spatial, sigma_color);
     CUDA_SYNC_AND_CHECK();
 }
 

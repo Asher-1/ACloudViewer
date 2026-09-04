@@ -106,11 +106,10 @@ public:
 // equations and an SVD rank-2 projection) so robust estimation does not gain a
 // new runtime dependency. This is the small/tiny refinement step used by
 // modern COLMAP after RANSAC has selected an inlier set.
-bool RefineFundamentalMatrixSampson(
-    const std::vector<Eigen::Vector2d>& points1,
-    const std::vector<Eigen::Vector2d>& points2,
-    Eigen::Matrix3d* F,
-    int max_num_iterations = 15);
+bool RefineFundamentalMatrixSampson(const std::vector<Eigen::Vector2d>& points1,
+                                    const std::vector<Eigen::Vector2d>& points2,
+                                    Eigen::Matrix3d* F,
+                                    int max_num_iterations = 15);
 
 class FundamentalMatrixSampsonEstimator {
 public:

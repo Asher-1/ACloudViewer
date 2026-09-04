@@ -1237,8 +1237,7 @@ AICORE_CAPI const char* aicore_yolo_detection_class_name(
         static_cast<size_t>(index) >= ctx->last_detections.size()) {
         return nullptr;
     }
-    const int cid =
-            ctx->last_detections[static_cast<size_t>(index)].class_id;
+    const int cid = ctx->last_detections[static_cast<size_t>(index)].class_id;
     const auto& names = effective_class_names(ctx);
     if (cid < 0 || cid >= static_cast<int>(names.size())) return nullptr;
     return names[static_cast<size_t>(cid)].c_str();

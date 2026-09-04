@@ -12,14 +12,14 @@
 // divergence).
 //
 // Usage:
-//   cmp_sam3_mask_triage <image> <gguf1> <dev1> [<gguf2> <dev2>] [<gguf3> <dev3>]
+//   cmp_sam3_mask_triage <image> <gguf1> <dev1> [<gguf2> <dev2>] [<gguf3>
+//   <dev3>]
 //
 // Output: one JSON line per run, then a JSON summary with pairwise IoU.
 // Diagnostic locator only: exits 0 even when individual runs fail.
 
 #include <QImage>
 #include <QImageReader>
-
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -38,7 +38,9 @@ struct MaskResult {
     bool valid = false;
 };
 
-bool load_image(const char *path, std::vector<uint8_t> *rgb, int *width,
+bool load_image(const char *path,
+                std::vector<uint8_t> *rgb,
+                int *width,
                 int *height) {
     QImageReader reader(QString::fromUtf8(path));
     reader.setAutoTransform(true);
@@ -50,7 +52,8 @@ bool load_image(const char *path, std::vector<uint8_t> *rgb, int *width,
     rgb->resize(static_cast<size_t>(*width) * *height * 3);
     for (int y = 0; y < *height; ++y) {
         std::memcpy(rgb->data() + static_cast<size_t>(y) * *width * 3,
-                    converted.constScanLine(y), static_cast<size_t>(*width) * 3);
+                    converted.constScanLine(y),
+                    static_cast<size_t>(*width) * 3);
     }
     return true;
 }
@@ -88,9 +91,12 @@ double mask_iou(const MaskResult &a, const MaskResult &b) {
     return uni == 0 ? 0.0 : static_cast<double>(inter) / uni;
 }
 
-bool run_one(const char *gguf, const char *device,
+bool run_one(const char *gguf,
+             const char *device,
              const aicore_sam3_pvs_prompt &prompt,
-             const std::vector<uint8_t> &rgb, int width, int height,
+             const std::vector<uint8_t> &rgb,
+             int width,
+             int height,
              MaskResult *out) {
     aicore_sam3_options *options = aicore_sam3_options_new();
     aicore_sam3_options_set_device(options, device);
@@ -111,9 +117,9 @@ bool run_one(const char *gguf, const char *device,
         aicore_sam3_free(ctx);
         return false;
     }
-    aicore_sam3_seg_result *pvs = aicore_sam3_segment_pvs_rgb(
-            ctx, &prompt, rgb.data(), width, height,
-            static_cast<size_t>(width) * 3);
+    aicore_sam3_seg_result *pvs =
+            aicore_sam3_segment_pvs_rgb(ctx, &prompt, rgb.data(), width, height,
+                                        static_cast<size_t>(width) * 3);
     const bool ok = copy_result(pvs, out);
     if (!ok) {
         std::fprintf(stderr, "[%s] PVS failed: %s\n", device,
@@ -156,10 +162,11 @@ int main(int argc, char **argv) {
         const char *device = argv[3 + r * 2];
         const bool ok =
                 run_one(gguf, device, prompt, rgb, width, height, &masks[r]);
-        std::printf("{\"run\":%d,\"gguf\":\"%s\",\"device\":\"%s\",\"valid\":%s,"
-                    "\"nonzero\":%d,\"score\":%.6f}\n",
-                    r, gguf, device, ok ? "true" : "false", masks[r].nonzero,
-                    masks[r].score);
+        std::printf(
+                "{\"run\":%d,\"gguf\":\"%s\",\"device\":\"%s\",\"valid\":%s,"
+                "\"nonzero\":%d,\"score\":%.6f}\n",
+                r, gguf, device, ok ? "true" : "false", masks[r].nonzero,
+                masks[r].score);
     }
     std::printf("{\"pairwise_iou\":[");
     for (int a = 0; a < runs; ++a) {

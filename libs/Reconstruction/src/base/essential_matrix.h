@@ -12,9 +12,9 @@
 #include <Eigen/Core>
 #include <vector>
 
+#include "base/pose.h"
 #include "util/alignment.h"
 #include "util/types.h"
-#include "base/pose.h"
 
 namespace colmap {
 

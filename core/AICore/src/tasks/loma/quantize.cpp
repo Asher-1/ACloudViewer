@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 #include "tasks/loma/quantize.hpp"
 
 #include <ggml.h>
@@ -33,7 +40,8 @@ bool ToFloat(const ggml_tensor* tensor, std::vector<float>* output) {
     const int64_t count = ggml_nelements(tensor);
     output->resize(static_cast<size_t>(count));
     if (tensor->type == GGML_TYPE_F32) {
-        std::memcpy(output->data(), tensor->data, output->size() * sizeof(float));
+        std::memcpy(output->data(), tensor->data,
+                    output->size() * sizeof(float));
         return true;
     }
     if (tensor->type == GGML_TYPE_F16) {
@@ -42,14 +50,16 @@ bool ToFloat(const ggml_tensor* tensor, std::vector<float>* output) {
         return true;
     }
     const ggml_type_traits* traits = ggml_get_type_traits(tensor->type);
-    if (traits == nullptr || traits->to_float == nullptr || tensor->ne[0] <= 0) {
+    if (traits == nullptr || traits->to_float == nullptr ||
+        tensor->ne[0] <= 0) {
         return false;
     }
     const int64_t rows = count / tensor->ne[0];
     const size_t bytes_per_row = ggml_row_size(tensor->type, tensor->ne[0]);
     for (int64_t row = 0; row < rows; ++row) {
-        traits->to_float(static_cast<const uint8_t*>(tensor->data) + row * bytes_per_row,
-                         output->data() + row * tensor->ne[0], tensor->ne[0]);
+        traits->to_float(
+                static_cast<const uint8_t*>(tensor->data) + row * bytes_per_row,
+                output->data() + row * tensor->ne[0], tensor->ne[0]);
     }
     return true;
 }
@@ -69,8 +79,8 @@ bool IsWeight(const char* name, const ggml_tensor* tensor) {
 
 bool SupportsQ8(const ggml_tensor* tensor) {
     // LoMa's convolution paths consume dense F32/F16 kernels. Q8 is valid for
-    // the ViT and matcher mul_mat weights only; silently quantizing convolutions
-    // would create an artifact the graph cannot execute.
+    // the ViT and matcher mul_mat weights only; silently quantizing
+    // convolutions would create an artifact the graph cannot execute.
     return ggml_n_dims(tensor) == 2 && tensor->ne[0] % 32 == 0;
 }
 
@@ -82,7 +92,8 @@ bool QuantizeModel(const std::string& input_gguf,
                    std::string* error) {
     ggml_type requested = GGML_TYPE_F32;
     if (!ParseType(type_name, &requested)) {
-        SetError(error, "unknown LoMa type '" + type_name + "' (expected f16 or q8_0)");
+        SetError(error, "unknown LoMa type '" + type_name +
+                                "' (expected f16 or q8_0)");
         return false;
     }
 
@@ -96,7 +107,8 @@ bool QuantizeModel(const std::string& input_gguf,
         return false;
     }
     const int64_t architecture = gguf_find_key(input, "general.architecture");
-    if (architecture < 0 || std::strcmp(gguf_get_val_str(input, architecture), "loma") != 0) {
+    if (architecture < 0 ||
+        std::strcmp(gguf_get_val_str(input, architecture), "loma") != 0) {
         SetError(error, "input is not a LoMa GGUF");
         gguf_free(input);
         ggml_free(input_context);
@@ -109,14 +121,15 @@ bool QuantizeModel(const std::string& input_gguf,
     // Matchers name this initializer differently across B/R/L/G exports. The
     // runtime transposes it before mul_mat, an operation unsupported for Q8.
     // Read the graph-derived GGUF contract instead of relying on val_* names.
-    const char* rope_frequency_tensor = rope_frequency_key < 0
-            ? nullptr
-            : gguf_get_val_str(input, rope_frequency_key);
+    const char* rope_frequency_tensor =
+            rope_frequency_key < 0
+                    ? nullptr
+                    : gguf_get_val_str(input, rope_frequency_key);
     gguf_context* output = gguf_init_empty();
     gguf_set_kv(output, input);
-    ggml_init_params output_params{ggml_tensor_overhead() *
-                                           static_cast<size_t>(tensor_count + 8),
-                                   nullptr, /*no_alloc=*/true};
+    ggml_init_params output_params{
+            ggml_tensor_overhead() * static_cast<size_t>(tensor_count + 8),
+            nullptr, /*no_alloc=*/true};
     ggml_context* output_context = ggml_init(output_params);
     if (output_context == nullptr) {
         SetError(error, "failed to initialize LoMa quantization context");
@@ -148,12 +161,13 @@ bool QuantizeModel(const std::string& input_gguf,
             rewrite = false;
         }
         ggml_type destination_type = rewrite ? requested : source->type;
-        const int64_t dimensions[GGML_MAX_DIMS] = {source->ne[0], source->ne[1],
-                                                    source->ne[2], source->ne[3]};
+        const int64_t dimensions[GGML_MAX_DIMS] = {
+                source->ne[0], source->ne[1], source->ne[2], source->ne[3]};
         std::vector<uint8_t> bytes;
         if (rewrite) {
             if (!ToFloat(source, &floats)) {
-                SetError(error, std::string("cannot read LoMa tensor: ") + name);
+                SetError(error,
+                         std::string("cannot read LoMa tensor: ") + name);
                 success = false;
                 break;
             }
@@ -165,28 +179,34 @@ bool QuantizeModel(const std::string& input_gguf,
             size_t written = 0;
             if (destination_type == GGML_TYPE_F16) {
                 for (int64_t row = 0; row < rows; ++row) {
-                    ggml_fp32_to_fp16_row(floats.data() + row * row_size,
-                                          reinterpret_cast<ggml_fp16_t*>(bytes.data()) +
-                                                  row * row_size,
-                                          row_size);
+                    ggml_fp32_to_fp16_row(
+                            floats.data() + row * row_size,
+                            reinterpret_cast<ggml_fp16_t*>(bytes.data()) +
+                                    row * row_size,
+                            row_size);
                 }
                 written = expected;
             } else {
-                written = ggml_quantize_chunk(destination_type, floats.data(), bytes.data(),
-                                              0, rows, row_size, nullptr);
+                written = ggml_quantize_chunk(destination_type, floats.data(),
+                                              bytes.data(), 0, rows, row_size,
+                                              nullptr);
             }
             if (written != expected) {
-                SetError(error, std::string("LoMa quantized byte count mismatch: ") + name);
+                SetError(error,
+                         std::string("LoMa quantized byte count mismatch: ") +
+                                 name);
                 success = false;
                 break;
             }
             ++converted;
         } else {
             bytes.assign(static_cast<const uint8_t*>(source->data),
-                         static_cast<const uint8_t*>(source->data) + ggml_nbytes(source));
+                         static_cast<const uint8_t*>(source->data) +
+                                 ggml_nbytes(source));
         }
-        ggml_tensor* destination = ggml_new_tensor(output_context, destination_type,
-                                                   ggml_n_dims(source), dimensions);
+        ggml_tensor* destination =
+                ggml_new_tensor(output_context, destination_type,
+                                ggml_n_dims(source), dimensions);
         ggml_set_name(destination, name);
         storage.emplace_back(std::move(bytes));
         destination->data = storage.back().data();
@@ -196,10 +216,13 @@ bool QuantizeModel(const std::string& input_gguf,
         gguf_set_tensor_data(output, name, storage.back().data());
     }
     if (success && converted == 0) {
-        SetError(error, "no LoMa weights support requested quantization; refusing a no-op artifact");
+        SetError(error,
+                 "no LoMa weights support requested quantization; refusing a "
+                 "no-op artifact");
         success = false;
     }
-    if (success && !gguf_write_to_file(output, output_gguf.c_str(), /*only_meta=*/true)) {
+    if (success &&
+        !gguf_write_to_file(output, output_gguf.c_str(), /*only_meta=*/true)) {
         SetError(error, "failed to write LoMa GGUF metadata: " + output_gguf);
         success = false;
     }
@@ -216,13 +239,16 @@ bool QuantizeModel(const std::string& input_gguf,
         }
         std::vector<char> padding(alignment, 0);
         for (int64_t index = 0; success && index < tensor_count; ++index) {
-            const std::vector<uint8_t>& bytes = storage[static_cast<size_t>(index)];
+            const std::vector<uint8_t>& bytes =
+                    storage[static_cast<size_t>(index)];
             if (!bytes.empty()) {
                 stream.write(reinterpret_cast<const char*>(bytes.data()),
                              static_cast<std::streamsize>(bytes.size()));
             }
-            const size_t pad = (alignment - bytes.size() % alignment) % alignment;
-            if (pad != 0) stream.write(padding.data(), static_cast<std::streamsize>(pad));
+            const size_t pad =
+                    (alignment - bytes.size() % alignment) % alignment;
+            if (pad != 0)
+                stream.write(padding.data(), static_cast<std::streamsize>(pad));
             if (!stream) {
                 SetError(error, "failed while writing LoMa GGUF tensor data");
                 success = false;
@@ -232,7 +258,8 @@ bool QuantizeModel(const std::string& input_gguf,
         if (success) {
             ggml_context* verify_context = nullptr;
             gguf_init_params verify_params{/*no_alloc=*/true, &verify_context};
-            gguf_context* verify = gguf_init_from_file(output_gguf.c_str(), verify_params);
+            gguf_context* verify =
+                    gguf_init_from_file(output_gguf.c_str(), verify_params);
             if (verify == nullptr || verify_context == nullptr ||
                 gguf_get_n_tensors(verify) != tensor_count) {
                 SetError(error, "LoMa GGUF post-write validation failed");

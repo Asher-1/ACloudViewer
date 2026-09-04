@@ -172,7 +172,7 @@ public:
     std::shared_ptr<FeatureKeypoints> GetKeypoints(const image_t image_id);
     std::shared_ptr<FeatureDescriptors> GetDescriptors(const image_t image_id);
     std::shared_ptr<FeatureDescriptorsFloat> GetFloatDescriptors(
-        const image_t image_id);
+            const image_t image_id);
     FeatureDescriptorType GetDescriptorType(const image_t image_id);
     FeatureMatches GetMatches(const image_t image_id1, const image_t image_id2);
     std::vector<image_t> GetImageIds();

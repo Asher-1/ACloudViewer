@@ -1,5 +1,9 @@
-// Copyright (c), ETH Zurich and UNC Chapel Hill.
-// All rights reserved.
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #pragma once
 
@@ -7,10 +11,10 @@
 // so one kernel implementation serves both CUDA and ROCm builds.
 #if defined(COLMAP_HIP_ENABLED)
 
-#include <cstdio>
-
 #include <hip/hip_runtime.h>
 #include <hiprand/hiprand_kernel.h>
+
+#include <cstdio>
 
 using cudaError_t = hipError_t;
 using cudaStream_t = hipStream_t;

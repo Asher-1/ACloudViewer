@@ -134,9 +134,10 @@ public:
     void Smooth(const float sigma_x, const float sigma_y);
 
     // Rescale image to the new dimensions.
-    void Rescale(const int new_width,
-                 const int new_height,
-                 const BitmapRescaleFilter filter = BitmapRescaleFilter::kBilinear);
+    void Rescale(
+            const int new_width,
+            const int new_height,
+            const BitmapRescaleFilter filter = BitmapRescaleFilter::kBilinear);
 
     // Clone the image to a new bitmap object.
     Bitmap Clone() const;

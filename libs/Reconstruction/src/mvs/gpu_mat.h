@@ -7,8 +7,6 @@
 
 #pragma once
 
-#include "util/cuda_to_hip.h"
-
 #include <fstream>
 #include <iterator>
 #include <memory>
@@ -19,6 +17,7 @@
 #include "mvs/cuda_transpose.h"
 #include "mvs/mat.h"
 #include "util/cuda.h"
+#include "util/cuda_to_hip.h"
 #include "util/cudacc.h"
 #include "util/endian.h"
 
@@ -53,7 +52,9 @@ struct GpuMatView {
                          const size_t slice = 0) {
         return *((T*)((char*)ptr + pitch * (slice * height + row)) + col);
     }
-    __device__ void GetSlice(const size_t row, const size_t col, T* values) const {
+    __device__ void GetSlice(const size_t row,
+                             const size_t col,
+                             T* values) const {
         for (size_t slice = 0; slice < depth; ++slice) {
             values[slice] = Get(row, col, slice);
         }
@@ -67,7 +68,9 @@ struct GpuMatView {
     __device__ void Set(const size_t row, const size_t col, const T value) {
         Set(row, col, 0, value);
     }
-    __device__ void SetSlice(const size_t row, const size_t col, const T* values) {
+    __device__ void SetSlice(const size_t row,
+                             const size_t col,
+                             const T* values) {
         for (size_t slice = 0; slice < depth; ++slice) {
             Set(row, col, slice, values[slice]);
         }
@@ -196,10 +199,11 @@ __global__ void FillWithVectorKernel(const T* values, GpuMatView<T> output) {
 }
 
 template <typename T>
-__global__ void FillWithRandomNumbersKernel(GpuMatView<T> output,
-                                            GpuMatView<curandState> random_state,
-                                            const T min_value,
-                                            const T max_value) {
+__global__ void FillWithRandomNumbersKernel(
+        GpuMatView<T> output,
+        GpuMatView<curandState> random_state,
+        const T min_value,
+        const T max_value) {
     const size_t row = blockIdx.y * blockDim.y + threadIdx.y;
     const size_t col = blockIdx.x * blockDim.x + threadIdx.x;
     if (row < output.GetHeight() && col < output.GetWidth()) {

@@ -166,9 +166,8 @@ int GlobalMapper(
     options.num_workers = num_workers;
     options.min_component_size = min_component_size;
     colmap::ReconstructionManager manager;
-    colmap::GlobalMapperController controller(options,
-                                               incremental_mapper_options,
-                                               &manager);
+    colmap::GlobalMapperController controller(
+            options, incremental_mapper_options, &manager);
     controller.Start();
     controller.Wait();
     manager.Write(output_path, nullptr);

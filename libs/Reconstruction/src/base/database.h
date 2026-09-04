@@ -160,7 +160,8 @@ public:
     camera_t WriteCamera(const Camera& camera,
                          const bool use_camera_id = false) const;
     rig_t WriteRig(const Rig& rig, const bool use_rig_id = false) const;
-    frame_t WriteFrame(const Frame& frame, const bool use_frame_id = false) const;
+    frame_t WriteFrame(const Frame& frame,
+                       const bool use_frame_id = false) const;
 
     // Add new image and return its database identifier. If `use_image_id`
     // is false a new identifier is automatically generated.

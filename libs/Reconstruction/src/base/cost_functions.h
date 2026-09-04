@@ -30,8 +30,8 @@ inline void EquirectangularReprojectionResidual(const T* const camera_params,
                                      point_in_camera[2] * point_in_camera[2]);
     const T theta = ceres::atan2(point_in_camera[0], point_in_camera[2]);
     const T phi = ceres::atan2(-point_in_camera[1], horizontal);
-    const T observed_theta = T(2.0 * EIGEN_PI) *
-                             (T(observed_x) / width - T(0.5));
+    const T observed_theta =
+            T(2.0 * EIGEN_PI) * (T(observed_x) / width - T(0.5));
     const T wrapped_delta = ceres::atan2(ceres::sin(theta - observed_theta),
                                          ceres::cos(theta - observed_theta));
 
@@ -63,7 +63,8 @@ public:
         point_in_camera[1] += tvec[1];
         point_in_camera[2] += tvec[2];
         EquirectangularReprojectionResidual(camera_params, point_in_camera,
-                                            observed_x_, observed_y_, residuals);
+                                            observed_x_, observed_y_,
+                                            residuals);
         return true;
     }
 
@@ -108,7 +109,8 @@ public:
         point_in_camera[1] += T(ty_);
         point_in_camera[2] += T(tz_);
         EquirectangularReprojectionResidual(camera_params, point_in_camera,
-                                            observed_x_, observed_y_, residuals);
+                                            observed_x_, observed_y_,
+                                            residuals);
         return true;
     }
 
@@ -133,7 +135,8 @@ public:
     static ceres::CostFunction* Create(const Eigen::Vector2d& point2D) {
         return new ceres::AutoDiffCostFunction<
                 EquirectangularRigBundleAdjustmentCostFunction, 2, 4, 3, 4, 3,
-                3, 2>(new EquirectangularRigBundleAdjustmentCostFunction(point2D));
+                3, 2>(
+                new EquirectangularRigBundleAdjustmentCostFunction(point2D));
     }
 
     template <typename T>
@@ -157,7 +160,8 @@ public:
         point_in_camera[1] += tvec[1];
         point_in_camera[2] += tvec[2];
         EquirectangularReprojectionResidual(camera_params, point_in_camera,
-                                            observed_x_, observed_y_, residuals);
+                                            observed_x_, observed_y_,
+                                            residuals);
         return true;
     }
 

@@ -203,16 +203,16 @@ int main(int argc, char** argv) {
 
     sam3_params vk_params = cpu_params;
     vk_params.use_gpu = true;
-    vk_params.device = (gpu == "cuda") ? SAM3_DEVICE_CUDA
-                                       : SAM3_DEVICE_VULKAN;
+    vk_params.device = (gpu == "cuda") ? SAM3_DEVICE_CUDA : SAM3_DEVICE_VULKAN;
     auto vk_model = sam3_load_model(vk_params);
     if (!vk_model) {
         std::fprintf(stderr, "%s load failed\n", gpu.c_str());
         return 1;
     }
-    std::printf("{\"backend_cpu\":\"%s\",\"backend_gpu\":\"%s\",\"gpu\":\"%s\"}\n",
-                sam3_backend_name(*cpu_model), sam3_backend_name(*vk_model),
-                gpu.c_str());
+    std::printf(
+            "{\"backend_cpu\":\"%s\",\"backend_gpu\":\"%s\",\"gpu\":\"%s\"}\n",
+            sam3_backend_name(*cpu_model), sam3_backend_name(*vk_model),
+            gpu.c_str());
 
     Geometry geo;
     if (!infer_geometry(*cpu_model, &geo)) {

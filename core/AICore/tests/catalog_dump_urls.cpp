@@ -143,8 +143,7 @@ void emitFixedCatalogs() {
 void emitRuntimeCatalogs() {
     for (int i = 0; i < aicore_loma_model_count(); ++i) {
         const aicore_loma_model_entry* e = aicore_loma_model_at(i);
-        if (e)
-            emitAsset("loma", "loma_models", e->filename, e->download_url);
+        if (e) emitAsset("loma", "loma_models", e->filename, e->download_url);
     }
     for (int i = 0; i < aicore_facedetect_model_count(); ++i) {
         const aicore_facedetect_model_entry* e = aicore_facedetect_model_at(i);

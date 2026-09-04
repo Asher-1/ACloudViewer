@@ -1,3 +1,10 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
 // DaD detector graph for COLMAP LoMa.  This is a direct lowering of
 // loma/detector/dad.py: VGG11-BN (already fused in the ONNX export), the four
 // ConvRefiners, bicubic/bilinear half-pixel resampling, and the source's
@@ -72,9 +79,11 @@ public:
 
     ggml_tensor* Require(const std::string& name) {
         const auto device_tensor = device_tensors_.find(name);
-        if (device_tensor != device_tensors_.end()) return device_tensor->second;
+        if (device_tensor != device_tensors_.end())
+            return device_tensor->second;
         ggml_tensor* tensor = context_ == nullptr
-                ? nullptr : ggml_get_tensor(context_, name.c_str());
+                                      ? nullptr
+                                      : ggml_get_tensor(context_, name.c_str());
         if (tensor == nullptr && error_.empty()) {
             error_ = "DaD GGUF is missing tensor: " + name;
         }
@@ -87,8 +96,9 @@ public:
     }
     ggml_context* Context() const { return context_; }
     ggml_tensor* Tensor(int64_t index) const {
-        return context_ == nullptr ? nullptr
-                : ggml_get_tensor(context_, TensorName(index));
+        return context_ == nullptr
+                       ? nullptr
+                       : ggml_get_tensor(context_, TensorName(index));
     }
     void SetDeviceTensors(
             std::unordered_map<std::string, ggml_tensor*> device_tensors) {
@@ -100,7 +110,8 @@ private:
     std::string String(const char* key) {
         const int64_t index = gguf_find_key(gguf_, key);
         if (index < 0 || gguf_get_kv_type(gguf_, index) != GGUF_TYPE_STRING) {
-            if (error_.empty()) error_ = std::string("DaD GGUF is missing key: ") + key;
+            if (error_.empty())
+                error_ = std::string("DaD GGUF is missing key: ") + key;
             return {};
         }
         return gguf_get_val_str(gguf_, index);
@@ -123,16 +134,19 @@ ggml_tensor* SliceChannels(ggml_context* context,
                            ggml_tensor* value,
                            int64_t offset,
                            int64_t channels) {
-    return ggml_cont(context, ggml_view_4d(context, value, value->ne[0],
-                                            value->ne[1], channels, value->ne[3],
-                                            value->nb[1], value->nb[2], value->nb[3],
-                                            static_cast<size_t>(offset) * value->nb[2]));
+    return ggml_cont(
+            context,
+            ggml_view_4d(context, value, value->ne[0], value->ne[1], channels,
+                         value->ne[3], value->nb[1], value->nb[2], value->nb[3],
+                         static_cast<size_t>(offset) * value->nb[2]));
 }
 
 struct GraphBuilder {
-    GraphBuilder(ggml_context* context, ModelFile* model,
+    GraphBuilder(ggml_context* context,
+                 ModelFile* model,
                  bool use_accelerator_convolution)
-        : context(context), model(model),
+        : context(context),
+          model(model),
           use_accelerator_convolution(use_accelerator_convolution) {}
 
     ggml_tensor* Conv(ggml_tensor* input,
@@ -146,14 +160,14 @@ struct GraphBuilder {
         // for LoMa's learned filters. The portable im2col + matmul lowering is
         // already used by the device DPT path and agrees with CPU here. Keep
         // CPU direct convolution and device depthwise convolution unchanged.
-        ggml_tensor* output = depthwise
-                ? ggml_conv_2d_dw_direct(context, weight, input, 1, 1, padding,
-                                          padding, 1, 1)
+        ggml_tensor* output =
+                depthwise ? ggml_conv_2d_dw_direct(context, weight, input, 1, 1,
+                                                   padding, padding, 1, 1)
                 : use_accelerator_convolution
-                ? ggml_conv_2d(context, weight, input, 1, 1, padding, padding,
-                               1, 1)
-                : ggml_conv_2d_direct(context, weight, input, 1, 1, padding,
-                                      padding, 1, 1);
+                        ? ggml_conv_2d(context, weight, input, 1, 1, padding,
+                                       padding, 1, 1)
+                        : ggml_conv_2d_direct(context, weight, input, 1, 1,
+                                              padding, padding, 1, 1);
         return AddBias(context, output, bias);
     }
 
@@ -172,8 +186,8 @@ struct GraphBuilder {
         if (x == nullptr) return nullptr;
         ggml_tensor* residual = x;
         for (int block = 0; block < 3; ++block) {
-            const std::string prefix = root + ".hidden_blocks." +
-                                       std::to_string(block);
+            const std::string prefix =
+                    root + ".hidden_blocks." + std::to_string(block);
             x = Conv(x, prefix + ".0", 2, true);
             if (x == nullptr) return nullptr;
             x = ggml_relu(context, x);
@@ -192,7 +206,8 @@ struct GraphBuilder {
 bool ValidateImage(const aicore_loma_rgb_image& image, std::string* error) {
     if (image.rgb == nullptr || image.width < 8 || image.height < 8 ||
         image.row_stride_bytes < image.width * 3) {
-        *error = "DaD expects non-null RGB data, dimensions >= 8, and a valid row stride";
+        *error = "DaD expects non-null RGB data, dimensions >= 8, and a valid "
+                 "row stride";
         return false;
     }
     const int64_t pixels = static_cast<int64_t>(image.width) * image.height;
@@ -209,12 +224,14 @@ std::vector<float> NormalizeRgbToWhcn(const aicore_loma_rgb_image& image) {
     const size_t plane = static_cast<size_t>(image.width) * image.height;
     std::vector<float> result(plane * 3);
     for (int32_t y = 0; y < image.height; ++y) {
-        const uint8_t* row = image.rgb + static_cast<size_t>(y) * image.row_stride_bytes;
+        const uint8_t* row =
+                image.rgb + static_cast<size_t>(y) * image.row_stride_bytes;
         for (int32_t x = 0; x < image.width; ++x) {
             for (int channel = 0; channel < 3; ++channel) {
-                const float normalized = static_cast<float>(row[3 * x + channel]) /
-                                         255.0f;
-                result[static_cast<size_t>(x) + static_cast<size_t>(y) * image.width +
+                const float normalized =
+                        static_cast<float>(row[3 * x + channel]) / 255.0f;
+                result[static_cast<size_t>(x) +
+                       static_cast<size_t>(y) * image.width +
                        static_cast<size_t>(channel) * plane] =
                         (normalized - kMean[channel]) / kStd[channel];
             }
@@ -253,8 +270,11 @@ void SelectKeypoints(const std::vector<float>& logits,
                     const int32_t yy = y + dy;
                     const int32_t xx = x + dx;
                     if (yy >= 0 && yy < height && xx >= 0 && xx < width) {
-                        local_maximum = std::max(local_maximum,
-                                dense_probabilities[static_cast<size_t>(yy) * width + xx]);
+                        local_maximum = std::max(
+                                local_maximum,
+                                dense_probabilities[static_cast<size_t>(yy) *
+                                                            width +
+                                                    xx]);
                     }
                 }
             }
@@ -266,7 +286,8 @@ void SelectKeypoints(const std::vector<float>& logits,
     }
     std::partial_sort(candidates.begin(), candidates.begin() + count,
                       candidates.end(), [&](size_t left, size_t right) {
-                          return nms_probabilities[left] > nms_probabilities[right];
+                          return nms_probabilities[left] >
+                                 nms_probabilities[right];
                       });
     result->keypoints.resize(static_cast<size_t>(count));
     result->scores.resize(static_cast<size_t>(count));
@@ -281,8 +302,10 @@ void SelectKeypoints(const std::vector<float>& logits,
             for (int32_t dx = -1; dx <= 1; ++dx) {
                 const int32_t yy = y + dy;
                 const int32_t xx = x + dx;
-                const float value = yy >= 0 && yy < height && xx >= 0 && xx < width
-                        ? logits[static_cast<size_t>(yy) * width + xx] : 0.0f;
+                const float value =
+                        yy >= 0 && yy < height && xx >= 0 && xx < width
+                                ? logits[static_cast<size_t>(yy) * width + xx]
+                                : 0.0f;
                 patch[patch_index++] = value;
                 patch_maximum = std::max(patch_maximum, value / 0.5f);
             }
@@ -303,10 +326,11 @@ void SelectKeypoints(const std::vector<float>& logits,
                 offset_y += weight * (2.0f * dy / height);
             }
         }
-        const float normalized_x = 2.0f * (static_cast<float>(x) + 0.5f) / width -
-                                   1.0f + offset_x;
-        const float normalized_y = 2.0f * (static_cast<float>(y) + 0.5f) / height -
-                                   1.0f + offset_y;
+        const float normalized_x =
+                2.0f * (static_cast<float>(x) + 0.5f) / width - 1.0f + offset_x;
+        const float normalized_y =
+                2.0f * (static_cast<float>(y) + 0.5f) / height - 1.0f +
+                offset_y;
         result->keypoints[static_cast<size_t>(index)] = {
                 0.5f * (normalized_x + 1.0f) * width,
                 0.5f * (normalized_y + 1.0f) * height};
@@ -355,7 +379,8 @@ public:
         const auto lock = backend.lock();
         const int64_t count = model.TensorCount();
         ggml_init_params params{};
-        params.mem_size = ggml_tensor_overhead() * static_cast<size_t>(count + 8);
+        params.mem_size =
+                ggml_tensor_overhead() * static_cast<size_t>(count + 8);
         params.no_alloc = true;
         device_context = ggml_init(params);
         if (device_context == nullptr) {
@@ -385,16 +410,20 @@ public:
                     device_context, decode_to_f32 ? GGML_TYPE_F32 : host->type,
                     GGML_MAX_DIMS, host->ne);
             if (device == nullptr) {
-                error = std::string("failed to create DaD device tensor: ") + host->name;
+                error = std::string("failed to create DaD device tensor: ") +
+                        host->name;
                 return false;
             }
             ggml_set_name(device, host->name);
             device_tensors.emplace(model.TensorName(index), device);
             if (decode_to_f32) {
-                const ggml_type_traits* traits = ggml_get_type_traits(host->type);
+                const ggml_type_traits* traits =
+                        ggml_get_type_traits(host->type);
                 const int64_t elements = ggml_nelements(host);
-                if (traits == nullptr || traits->to_float == nullptr || elements <= 0) {
-                    error = std::string("cannot decode DaD weight for GPU: ") + host->name;
+                if (traits == nullptr || traits->to_float == nullptr ||
+                    elements <= 0) {
+                    error = std::string("cannot decode DaD weight for GPU: ") +
+                            host->name;
                     return false;
                 }
                 std::vector<float>& decoded = decoded_weights.emplace_back();
@@ -405,7 +434,8 @@ public:
                 uploads.emplace_back(device, host->data);
             }
         }
-        device_weights = ggml_backend_alloc_ctx_tensors(device_context, backend.be);
+        device_weights =
+                ggml_backend_alloc_ctx_tensors(device_context, backend.be);
         if (device_weights == nullptr) {
             error = "failed to allocate DaD weights on requested ggml backend";
             return false;
@@ -439,70 +469,88 @@ public:
             return false;
         }
         const auto free_context = [&] { ggml_free(context); };
-        ggml_tensor* input = ggml_new_tensor_4d(context, GGML_TYPE_F32,
-                                                 image.width, image.height, 3, 1);
+        ggml_tensor* input = ggml_new_tensor_4d(
+                context, GGML_TYPE_F32, image.width, image.height, 3, 1);
         GraphBuilder graph_builder(context, &model, !backend.is_cpu());
         ggml_tensor* x = graph_builder.Conv(input, "det.encoder.layers.0", 1);
         x = x != nullptr ? ggml_relu(context, x) : nullptr;
         ggml_tensor* f1 = x;
-        x = x != nullptr ? ggml_pool_2d(context, x, GGML_OP_POOL_MAX, 2, 2, 2, 2,
-                                         0, 0) : nullptr;
-        x = x != nullptr ? graph_builder.Conv(x, "det.encoder.layers.4", 1) : nullptr;
+        x = x != nullptr ? ggml_pool_2d(context, x, GGML_OP_POOL_MAX, 2, 2, 2,
+                                        2, 0, 0)
+                         : nullptr;
+        x = x != nullptr ? graph_builder.Conv(x, "det.encoder.layers.4", 1)
+                         : nullptr;
         x = x != nullptr ? ggml_relu(context, x) : nullptr;
         ggml_tensor* f2 = x;
-        x = x != nullptr ? ggml_pool_2d(context, x, GGML_OP_POOL_MAX, 2, 2, 2, 2,
-                                         0, 0) : nullptr;
-        x = x != nullptr ? graph_builder.Conv(x, "det.encoder.layers.8", 1) : nullptr;
+        x = x != nullptr ? ggml_pool_2d(context, x, GGML_OP_POOL_MAX, 2, 2, 2,
+                                        2, 0, 0)
+                         : nullptr;
+        x = x != nullptr ? graph_builder.Conv(x, "det.encoder.layers.8", 1)
+                         : nullptr;
         x = x != nullptr ? ggml_relu(context, x) : nullptr;
-        x = x != nullptr ? graph_builder.Conv(x, "det.encoder.layers.11", 1) : nullptr;
+        x = x != nullptr ? graph_builder.Conv(x, "det.encoder.layers.11", 1)
+                         : nullptr;
         x = x != nullptr ? ggml_relu(context, x) : nullptr;
         ggml_tensor* f4 = x;
-        x = x != nullptr ? ggml_pool_2d(context, x, GGML_OP_POOL_MAX, 2, 2, 2, 2,
-                                         0, 0) : nullptr;
-        x = x != nullptr ? graph_builder.Conv(x, "det.encoder.layers.15", 1) : nullptr;
+        x = x != nullptr ? ggml_pool_2d(context, x, GGML_OP_POOL_MAX, 2, 2, 2,
+                                        2, 0, 0)
+                         : nullptr;
+        x = x != nullptr ? graph_builder.Conv(x, "det.encoder.layers.15", 1)
+                         : nullptr;
         x = x != nullptr ? ggml_relu(context, x) : nullptr;
-        x = x != nullptr ? graph_builder.Conv(x, "det.encoder.layers.18", 1) : nullptr;
+        x = x != nullptr ? graph_builder.Conv(x, "det.encoder.layers.18", 1)
+                         : nullptr;
         x = x != nullptr ? ggml_relu(context, x) : nullptr;
         if (x == nullptr || !model.error().empty()) {
-            error = model.error().empty() ? "failed to build DaD encoder graph" : model.error();
+            error = model.error().empty() ? "failed to build DaD encoder graph"
+                                          : model.error();
             free_context();
             return false;
         }
         ggml_tensor* d8 = graph_builder.Refiner(x, nullptr, "8");
-        ggml_tensor* logits = d8 != nullptr ? SliceChannels(context, d8, 0, 1) : nullptr;
-        ggml_tensor* context8 = d8 != nullptr ? SliceChannels(context, d8, 1, 256) : nullptr;
+        ggml_tensor* logits =
+                d8 != nullptr ? SliceChannels(context, d8, 0, 1) : nullptr;
+        ggml_tensor* context8 =
+                d8 != nullptr ? SliceChannels(context, d8, 1, 256) : nullptr;
         if (logits == nullptr || context8 == nullptr) {
-            error = model.error().empty() ? "failed to build DaD scale-8 graph" : model.error();
+            error = model.error().empty() ? "failed to build DaD scale-8 graph"
+                                          : model.error();
             free_context();
             return false;
         }
         logits = ggml_interpolate(context, logits, f4->ne[0], f4->ne[1], 1, 1,
                                   GGML_SCALE_MODE_BICUBIC);
-        context8 = ggml_interpolate(context, context8, f4->ne[0], f4->ne[1],
-                                    context8->ne[2], 1, GGML_SCALE_MODE_BILINEAR);
+        context8 =
+                ggml_interpolate(context, context8, f4->ne[0], f4->ne[1],
+                                 context8->ne[2], 1, GGML_SCALE_MODE_BILINEAR);
         ggml_tensor* d4 = graph_builder.Refiner(f4, context8, "4");
         logits = ggml_add(context, logits, SliceChannels(context, d4, 0, 1));
         ggml_tensor* context4 = SliceChannels(context, d4, 1, 128);
         logits = ggml_interpolate(context, logits, f2->ne[0], f2->ne[1], 1, 1,
                                   GGML_SCALE_MODE_BICUBIC);
-        context4 = ggml_interpolate(context, context4, f2->ne[0], f2->ne[1],
-                                    context4->ne[2], 1, GGML_SCALE_MODE_BILINEAR);
+        context4 =
+                ggml_interpolate(context, context4, f2->ne[0], f2->ne[1],
+                                 context4->ne[2], 1, GGML_SCALE_MODE_BILINEAR);
         ggml_tensor* d2 = graph_builder.Refiner(f2, context4, "2");
         logits = ggml_add(context, logits, SliceChannels(context, d2, 0, 1));
         ggml_tensor* context2 = SliceChannels(context, d2, 1, 32);
         logits = ggml_interpolate(context, logits, f1->ne[0], f1->ne[1], 1, 1,
                                   GGML_SCALE_MODE_BICUBIC);
-        context2 = ggml_interpolate(context, context2, f1->ne[0], f1->ne[1],
-                                    context2->ne[2], 1, GGML_SCALE_MODE_BILINEAR);
+        context2 =
+                ggml_interpolate(context, context2, f1->ne[0], f1->ne[1],
+                                 context2->ne[2], 1, GGML_SCALE_MODE_BILINEAR);
         ggml_tensor* d1 = graph_builder.Refiner(f1, context2, "1");
         logits = ggml_add(context, logits, SliceChannels(context, d1, 0, 1));
-        if (d4 == nullptr || d2 == nullptr || d1 == nullptr || !model.error().empty()) {
-            error = model.error().empty() ? "failed to build DaD decoder graph" : model.error();
+        if (d4 == nullptr || d2 == nullptr || d1 == nullptr ||
+            !model.error().empty()) {
+            error = model.error().empty() ? "failed to build DaD decoder graph"
+                                          : model.error();
             free_context();
             return false;
         }
         ggml_set_output(logits);
-        ggml_cgraph* graph = ggml_new_graph_custom(context, kMaxGraphNodes, false);
+        ggml_cgraph* graph =
+                ggml_new_graph_custom(context, kMaxGraphNodes, false);
         ggml_build_forward_expand(graph, logits);
         if (!ggml_gallocr_alloc_graph(backend.galloc, graph)) {
             error = "failed to allocate DaD ggml graph";
@@ -510,16 +558,21 @@ public:
             return false;
         }
         const std::vector<float> pixels = NormalizeRgbToWhcn(image);
-        ggml_backend_tensor_set(input, pixels.data(), 0, pixels.size() * sizeof(float));
-        if (ggml_backend_graph_compute(backend.be, graph) != GGML_STATUS_SUCCESS) {
+        ggml_backend_tensor_set(input, pixels.data(), 0,
+                                pixels.size() * sizeof(float));
+        if (ggml_backend_graph_compute(backend.be, graph) !=
+            GGML_STATUS_SUCCESS) {
             error = "DaD ggml graph compute failed";
             free_context();
             return false;
         }
-        std::vector<float> output(static_cast<size_t>(image.width) * image.height);
-        ggml_backend_tensor_get(logits, output.data(), 0, output.size() * sizeof(float));
+        std::vector<float> output(static_cast<size_t>(image.width) *
+                                  image.height);
+        ggml_backend_tensor_get(logits, output.data(), 0,
+                                output.size() * sizeof(float));
         free_context();
-        SelectKeypoints(output, image.width, image.height, options.max_keypoints, result);
+        SelectKeypoints(output, image.width, image.height,
+                        options.max_keypoints, result);
         return true;
     }
 
@@ -556,7 +609,8 @@ bool Detector::Load(const std::string& path, const DetectorOptions& options) {
     return impl_->Load(path, options);
 }
 
-bool Detector::Detect(const aicore_loma_rgb_image& image, DetectorResult* result) {
+bool Detector::Detect(const aicore_loma_rgb_image& image,
+                      DetectorResult* result) {
     return impl_->Detect(image, result);
 }
 
