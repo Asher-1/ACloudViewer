@@ -15,6 +15,13 @@ namespace rmbg {
 // build time; defaults reproduce the historical "optimized" profile
 // bit-for-bit (see aicore_rmbg_options in rmbg_capi.h for the C ABI).
 struct GraphOptions {
+    // Resolved math profile ("strict" | "optimized" | "fast" |
+    // "unsafe-fast" | "default"), set by apply_profile_to_graph from
+    // aicore_rmbg_options_set_math_profile. GraphBuilder bakes the profile's
+    // Vulkan matmul-dispatch decision into the graph as output-name marks
+    // (rmbg_scalar_* / rmbg_tc_* / neutral rmbg_mm_*); the ggml patch routes
+    // by those names, replacing the former process-global env whitelist.
+    std::string math_profile;
     // Vulkan data flow.
     bool vulkan_direct_conv = true;   // was RMBG_VK_DIRECT_CONV=1 (optimized)
     bool vulkan_qkv_layout = true;    // was RMBG_VK_QKV_LAYOUT (default on)

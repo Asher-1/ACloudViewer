@@ -248,6 +248,61 @@ QImage renderMeshBlob(const char* data, int len, int size) {
     return img;
 }
 
+// Shaded vertex-splat render of the final mesh. Lambert-shaded with the
+// per-vertex PBR base colour when textured, the same amber as the mesh
+// keyframes otherwise. One z-tested splat per vertex: the uniformly
+// distributed surface vertices cover the 256 px thumbnail gap-free, while a
+// full triangle raster of a multi-million-triangle mesh would cost seconds.
+QImage renderResultPreview(const QVector<float>& verts,
+                           const QVector<float>& normals,
+                           const QVector<float>& pbr, int size) {
+    const int nv = verts.size() / 3;
+    if (nv <= 0 || size <= 0) return QImage();
+    QImage img(size, size, QImage::Format_ARGB32);
+    img.fill(0x00000000);
+    std::vector<float> depth((size_t)size * size, -1e9f);
+    const float scale = float(size - 8);
+    const float lx = 0.4f, ly = 0.7f, lz = 0.6f;
+    const bool textured = pbr.size() >= nv * 6;
+    const bool shaded = normals.size() >= nv * 3;
+    for (int i = 0; i < nv; ++i) {
+        const float* v = verts.constData() + i * 3;
+        const int px = int(4.0f + (v[0] + 0.5f) * scale);
+        const int py = int(4.0f + (0.5f - v[1]) * scale);
+        if (px < 0 || py < 0 || px >= size || py >= size) continue;
+        float shade = 1.0f;
+        if (shaded) {
+            const float* n = normals.constData() + i * 3;
+            const float nl = std::sqrt(n[0] * n[0] + n[1] * n[1] +
+                                       n[2] * n[2]) +
+                             1e-20f;
+            // Two-sided lambert: the structure-tensor normals may point away
+            // from the view; |dot| avoids black patches either way.
+            shade = 0.25f + 0.75f * std::fabs(
+                                      (n[0] * lx + n[1] * ly + n[2] * lz) / nl);
+        }
+        float R, G, B;
+        if (textured) {
+            const float* c = pbr.constData() + i * 6;
+            R = std::min(1.0f, c[0]) * shade;
+            G = std::min(1.0f, c[1]) * shade;
+            B = std::min(1.0f, c[2]) * shade;
+        } else {
+            R = 0.910f * shade;
+            G = 0.651f * shade;
+            B = 0.384f * shade;
+        }
+        float& d = depth[(size_t)py * size + px];
+        if (v[2] > d) {
+            d = v[2];
+            img.setPixel(px, py,
+                         qRgba(int(R * 255.0f), int(G * 255.0f),
+                               int(B * 255.0f), 255));
+        }
+    }
+    return img;
+}
+
 }  // namespace
 
 QImage TrellisWorker::renderPreviewBlob(const char* data, int len, int size) {
@@ -277,8 +332,20 @@ TrellisWorker::~TrellisWorker() {
 }
 
 void TrellisWorker::run() {
+    // QThread entry: an exception escaping here terminates the whole
+    // process (qTerminate). The AICore C ABI fences its own exceptions;
+    // this catch-all is the last-resort guard for this worker thread.
 #ifdef AICore_ENABLED
-    const bool ok = runInference();
+    bool ok = false;
+    try {
+        ok = runInference();
+    } catch (const std::exception &e) {
+        emit logMessage(QStringLiteral("[TRELLIS] Unexpected failure: %1")
+                                .arg(QString::fromUtf8(e.what())));
+    } catch (...) {
+        emit logMessage(QStringLiteral(
+                "[TRELLIS] Unexpected failure (unknown exception)."));
+    }
     emit taskFinished(ok);
 #else
     emit logMessage(QStringLiteral("[TRELLIS] AICore not enabled."));
@@ -488,8 +555,18 @@ bool TrellisWorker::runInference() {
     }
 
     if (!mesh) {
-        emit logMessage(QStringLiteral("[TRELLIS] Generation failed: %1")
-                                .arg(QString::fromUtf8(err)));
+        const QString failure = QString::fromUtf8(err);
+        emit logMessage(
+                QStringLiteral("[TRELLIS] Generation failed: %1").arg(failure));
+        if (failure.contains(QStringLiteral("OutOfDeviceMemory")) ||
+            failure.contains(QStringLiteral("out of memory"),
+                             Qt::CaseInsensitive)) {
+            emit logMessage(QStringLiteral(
+                    "[TRELLIS] The GPU ran out of memory mid-run. Switch "
+                    "Device to cpu (or cuda on an NVIDIA card), pick the "
+                    "Coarse preset or the q8 quantization chain, close other "
+                    "GPU applications, and retry."));
+        }
         aicore_trellis_free(ctx);
         m_ctx = nullptr;
         return false;
@@ -551,6 +628,12 @@ bool TrellisWorker::runInference() {
         }
     }
     aicore_trellis_mesh_free(mesh);
+
+    // Final strip preview: shaded vertex-splat render, O(nv) — see
+    // renderResultPreview. Runs before the GLB bake so the strip thumbnail
+    // is ready when the result lands.
+    result.previewImage = renderResultPreview(result.verts, result.normals,
+                                              result.pbr, 256);
 
     // Bake the UV-atlas textured GLB here on the worker thread: the
     // add-to-DB path imports it for the full PBR material display (vertex

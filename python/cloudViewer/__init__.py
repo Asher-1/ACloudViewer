@@ -495,6 +495,9 @@ def _setup_linux_libraries():
         try_load_cdll('libglog*')
         try_load_cdll('libatlas*')
         try_load_cdll('libblas*')
+        # netlib CBLAS (faiss' cblas_sgemm provider); distinct soname from
+        # libblas.so.3, so the 'libblas*' glob above does not cover it.
+        try_load_cdll('libcblas*')
         try_load_cdll('liblapack*')
         try_load_cdll('libceres*')
 

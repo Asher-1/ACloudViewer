@@ -59,6 +59,10 @@ struct TrellisRunResult {
     /** AI background-removal result (full-resolution RGBA), null when no
      *  RMBG model ran (e.g. solid-color fallback). */
     QImage rmbgImage;
+    /** Final shaded render of the generated mesh (256 px, per-vertex PBR
+     *  base colours when textured) for the pipeline-step strip; rendered on
+     *  the worker thread. */
+    QImage previewImage;
     double totalRuntimeMs = 0.0;
     /** Per-stage wall times (key: aicore_trellis_stage, value: ms). */
     QHash<int, double> stageMs;

@@ -49,6 +49,33 @@ if (WIN32 AND NOT USE_BLAS AND TARGET ext_mkl)
     endif()
     set(BLAS_LIBRARIES ${FAISS_MKL_LIBS} CACHE STRING "" FORCE)
     set(LAPACK_LIBRARIES ${FAISS_MKL_LIBS} CACHE STRING "" FORCE)
+elseif (UNIX AND NOT APPLE AND NOT BUILD_WITH_CONDA)
+    # faiss calls both the CBLAS interface (cblas_sgemm & friends) and the
+    # Fortran BLAS/LAPACK entry points (sgemm_, dpotrf_, ...). The netlib
+    # BLAS/LAPACK built for Ceres/SuiteSparse only exports the Fortran
+    # symbols from libblas.so.3/liblapack.so.3, and a CBLAS-capable system
+    # BLAS sharing those sonames loses to the bundled netlib copies at wheel
+    # load time (pack_ubuntu.sh dedups by basename, so the first same-name
+    # library processed wins), which surfaces as "undefined symbol:
+    # cblas_sgemm" at import. Pin faiss to the full netlib trio from
+    # ext_lapack: distinct sonames, all bundled by pack_ubuntu.sh and
+    # preloaded by cloudViewer/__init__.py.
+    # Conda builds are excluded: conda's libcblas.so.3/liblapack.so.3 are
+    # symlinks to libopenblas.so.0, so copying their real files under the
+    # cblas/lapack names would record a mismatched SONAME in the wheel.
+    set(FAISS_NETLIB_BLAS_LIBS
+        "${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}cblas${CMAKE_SHARED_LIBRARY_SUFFIX}"
+        "${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}blas${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    set(FAISS_NETLIB_LAPACK_LIB
+        "${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}lapack${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    set(BLAS_LIBRARIES ${FAISS_NETLIB_BLAS_LIBS} CACHE STRING "" FORCE)
+    set(LAPACK_LIBRARIES ${FAISS_NETLIB_LAPACK_LIB} CACHE STRING "" FORCE)
+else ()
+    # Drop any previously forced pin (e.g. after toggling BUILD_WITH_CONDA)
+    # so faiss falls back to its own discovery instead of reusing a stale
+    # cache entry pointing at a lib directory that no longer matches.
+    unset(BLAS_LIBRARIES CACHE)
+    unset(LAPACK_LIBRARIES CACHE)
 endif ()
 
 FetchContent_MakeAvailable(faiss)

@@ -74,7 +74,7 @@ brew install gcc --without-multilib
 PYTHON_VERSION=3.12
 
 cp .ci/conda_macos_cloudViewer.yml /tmp/conda_macos_cloudViewer.yml
-sed -i "" "s/3.8/${PYTHON_VERSION}/g" /tmp/conda_macos_cloudViewer.yml
+sed -i "" "s/3.10/${PYTHON_VERSION}/g" /tmp/conda_macos_cloudViewer.yml
 
 conda env create -f /tmp/conda_macos_cloudViewer.yml
 conda activate cloudViewer
@@ -209,7 +209,7 @@ make install -j"$(sysctl -n hw.logicalcpu)"
 PYTHON_VERSION=3.12
 
 cp .ci/conda_macos.yml /tmp/conda_macos.yml
-sed -i "" "s/3.8/${PYTHON_VERSION}/g" /tmp/conda_macos.yml
+sed -i "" "s/3.10/${PYTHON_VERSION}/g" /tmp/conda_macos.yml
 
 conda env create -f /tmp/conda_macos.yml
 conda activate python${PYTHON_VERSION}

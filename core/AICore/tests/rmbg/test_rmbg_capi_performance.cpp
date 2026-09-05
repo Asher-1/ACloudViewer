@@ -40,9 +40,40 @@ uint64_t fnv1a(const uint8_t* data, size_t size) {
     return hash;
 }
 
+// The math profile must travel as options; no rmbg call may write ggml-side
+// environment variables (the former RMBG_VK_* bridge leaked into unrelated
+// tasks in the same process, e.g. qTrellis DINO on coopmat2).
+const char* const kProfileEnvKeys[] = {
+        "RMBG_VK_COOPMAT_MATMUL", "RMBG_VK_SCALAR_DIRECT_CONV",
+        "RMBG_CUDA_CONV_TF32", "GGML_VK_DISABLE_F16"};
+
+std::string profile_env_snapshot() {
+    std::string snapshot;
+    for (const char* key : kProfileEnvKeys) {
+        const char* value = std::getenv(key);
+        snapshot += key;
+        snapshot += value ? std::string("=") + value : "=<unset>";
+        snapshot += ";";
+    }
+    return snapshot;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
+    const std::string env_before = profile_env_snapshot();
+    // Fails the probe when the rmbg C API wrote any ggml-side env var.
+    auto check_env_untouched = [&env_before]() {
+        if (profile_env_snapshot() != env_before) {
+            std::fprintf(stderr,
+                         "[rmbg-perf] ggml-side env vars were written by the "
+                         "rmbg C API (the math profile must travel as "
+                         "options, never as environment variables)\n");
+            return false;
+        }
+        return true;
+    };
+
     const char* model = std::getenv("AICORE_TEST_RMBG_GGUF");
     if (!model || !model[0]) {
         std::printf("[rmbg-perf] skipped: AICORE_TEST_RMBG_GGUF is unset\n");
@@ -51,6 +82,9 @@ int main(int argc, char** argv) {
     const char* device = argc > 1 ? argv[1]
                                   : env_or("AICORE_TEST_RMBG_DEVICE",
                                            "AICORE_TEST_DEVICE", "auto");
+    // Optional math profile override (argv[2]); default keeps the task's
+    // own profile resolution ("optimized").
+    const char* profile = argc > 2 ? argv[2] : nullptr;
     if (std::strcmp(device, "cpu") == 0) {
         std::printf(
                 "[rmbg-perf] skipped: GPU performance test requested CPU\n");
@@ -60,6 +94,9 @@ int main(int argc, char** argv) {
     aicore_rmbg_options* options = aicore_rmbg_options_new();
     if (!options) return 1;
     aicore_rmbg_options_set_device(options, device);
+    if (profile && profile[0]) {
+        aicore_rmbg_options_set_math_profile(options, profile);
+    }
     aicore_rmbg_ctx* ctx = aicore_rmbg_load_opts(model, options);
     aicore_rmbg_options_free(options);
     if (!ctx || !aicore_rmbg_is_ready(ctx)) {
@@ -68,7 +105,8 @@ int main(int argc, char** argv) {
                             ? aicore_rmbg_last_error(ctx)
                             : "backend or model unavailable");
         aicore_rmbg_free(ctx);
-        return 77;
+        const bool env_ok = check_env_untouched();
+        return env_ok ? 77 : 1;
     }
 
     char* info = aicore_rmbg_info_json(ctx);
@@ -199,9 +237,9 @@ int main(int argc, char** argv) {
             1;
     const double p95 = samples[p95_index];
     std::printf(
-            "[rmbg-perf] device=%s median_ms=%.3f p95_ms=%.3f "
+            "[rmbg-perf] device=%s profile=%s median_ms=%.3f p95_ms=%.3f "
             "output_hash=%llu\n",
-            device, median, p95,
+            device, profile && profile[0] ? profile : "default", median, p95,
             static_cast<unsigned long long>(reference_hash));
 
     const char* ceiling_env = std::getenv("AICORE_TEST_RMBG_MAX_MEDIAN_MS");
@@ -209,6 +247,9 @@ int main(int argc, char** argv) {
                                    ? std::strtod(ceiling_env, nullptr)
                                    : 0.0;
     aicore_rmbg_free(ctx);
+    if (!check_env_untouched()) {
+        return 1;
+    }
     if (ceiling > 0.0 && median > ceiling) {
         std::fprintf(stderr,
                      "[rmbg-perf] median %.3f ms exceeds %.3f ms ceiling\n",

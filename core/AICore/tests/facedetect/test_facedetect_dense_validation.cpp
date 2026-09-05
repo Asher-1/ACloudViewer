@@ -10,12 +10,18 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <string>
 #include <vector>
 
 #include "aicore/facedetect_capi.h"
 #include "tests/common/validation_probe.hpp"
 
 namespace {
+
+std::string parentDir(const std::string& path) {
+    const size_t slash = path.find_last_of("/\\");
+    return slash == std::string::npos ? std::string() : path.substr(0, slash);
+}
 
 double percentile(std::vector<double> values, double q) {
     std::sort(values.begin(), values.end());
@@ -34,24 +40,76 @@ aicore_facedetect_ctx* load(const char* path, const char* device) {
 }  // namespace
 
 int main(int argc, char** argv) {
-    if (argc < 5) {
+    char* cache_dir_buf = aicore_facedetect_model_cache_dir();
+    const std::string cache_dir = cache_dir_buf ? cache_dir_buf : "";
+    aicore_facedetect_free_buffer(cache_dir_buf);
+    // Bare `ctest` runs pass no args: resolve the published-catalog detector
+    // + landmark pair and the shared data-root face image so the probe skips
+    // (77) without local assets instead of failing on a usage error.
+    // Explicit args keep the manual contract.
+    // NOTE: aicore_facedetect_*_model_at(0) return a shared thread_local
+    // entry storage — the second call overwrites the first result, so copy
+    // each filename immediately.
+    const aicore_facedetect_model_entry* default_detector =
+            aicore_facedetect_detector_model_at(0);
+    const std::string default_detector_name =
+            default_detector && default_detector->filename
+                    ? std::string(default_detector->filename)
+                    : std::string();
+    const aicore_facedetect_model_entry* default_landmark =
+            aicore_facedetect_landmark_model_at(0);
+    const std::string default_landmark_name =
+            default_landmark && default_landmark->filename
+                    ? std::string(default_landmark->filename)
+                    : std::string();
+    const std::string detector_path =
+            argc >= 2
+                    ? std::string(argv[1])
+                    : (!default_detector_name.empty() && !cache_dir.empty()
+                               ? cache_dir + "/" + default_detector_name
+                               : std::string());
+    const std::string landmark_path =
+            argc >= 3
+                    ? std::string(argv[2])
+                    : (!default_landmark_name.empty() && !cache_dir.empty()
+                               ? cache_dir + "/" + default_landmark_name
+                               : std::string());
+    const char* image_env = std::getenv("AICORE_TEST_FACE_IMAGE");
+    const std::string image_path =
+            argc >= 4
+                    ? std::string(argv[3])
+                    : (image_env && image_env[0]
+                               ? std::string(image_env)
+                               : parentDir(cache_dir) +
+                                 "/friends_faces/query/friends1.jpg");
+    const char* device_env = std::getenv("AICORE_TEST_DEVICE");
+    const std::string device = argc >= 5
+            ? std::string(argv[4])
+            : (device_env && device_env[0] ? std::string(device_env)
+                                           : std::string("auto"));
+    for (const std::string* path : {&detector_path, &landmark_path, &image_path}) {
+        if (std::FILE* probe = std::fopen(path->c_str(), "rb")) {
+            std::fclose(probe);
+            continue;
+        }
         std::fprintf(stderr,
-                     "usage: %s <detector.gguf> <landmark.gguf> <image> "
-                     "<device> [warmups=2] [runs=10]\n",
-                     argv[0]);
-        return 2;
+                     "[facedetect-dense-validation] skipped: missing asset: "
+                     "%s\n",
+                     path->c_str());
+        return 77;
     }
     const int warmups = argc >= 6 ? std::max(0, std::atoi(argv[5])) : 2;
     const int runs = argc >= 7 ? std::max(1, std::atoi(argv[6])) : 10;
     uint8_t* rgb = nullptr;
     int32_t width = 0;
     int32_t height = 0;
-    if (aicore_facedetect_load_path_rgb(argv[3], &rgb, &width, &height) != 0) {
+    if (aicore_facedetect_load_path_rgb(image_path.c_str(), &rgb, &width,
+                                        &height) != 0) {
         std::fprintf(stderr, "unable to decode face image\n");
         return 1;
     }
-    aicore_facedetect_ctx* detector = load(argv[1], argv[4]);
-    aicore_facedetect_ctx* landmark = load(argv[2], argv[4]);
+    aicore_facedetect_ctx* detector = load(detector_path.c_str(), device.c_str());
+    aicore_facedetect_ctx* landmark = load(landmark_path.c_str(), device.c_str());
     if (!aicore_facedetect_is_ready(detector) ||
         !aicore_facedetect_is_ready(landmark)) {
         std::fprintf(stderr, "unable to load detector/landmark pair\n");
@@ -136,7 +194,7 @@ int main(int argc, char** argv) {
             "\"device\":\"%s\",\"faces\":%zu,"
             "\"inference_p50_ms\":%.6f,\"inference_p95_ms\":%.6f,"
             "\"output_hash\":\"%016llx\"}\n",
-            argv[4], reference_faces, percentile(timings, 0.5),
+            device.c_str(), reference_faces, percentile(timings, 0.5),
             percentile(timings, 0.95),
             static_cast<unsigned long long>(reference_hash));
     aicore_facedetect_free_buffer(rgb);

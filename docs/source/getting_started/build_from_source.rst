@@ -337,7 +337,7 @@ Python Environment (conda)
 .. code-block:: bash
 
    cp .ci/conda_macos_cloudViewer.yml /tmp/conda_macos_cloudViewer.yml
-   sed -i "" "s/3.8/3.12/g" /tmp/conda_macos_cloudViewer.yml
+   sed -i "" "s/3.10/3.12/g" /tmp/conda_macos_cloudViewer.yml
    conda env create -f /tmp/conda_macos_cloudViewer.yml
    conda activate cloudViewer
 
@@ -510,7 +510,7 @@ Python Environment (conda)
 
    $env:CLOUDVIEWER_SOURCE_ROOT = (Get-Location).Path
    Copy-Item (Join-Path $env:CLOUDVIEWER_SOURCE_ROOT ".ci\conda_windows_cloudViewer.yml") -Destination "$env:TEMP\conda_windows_cloudViewer.yml"
-   (Get-Content "$env:TEMP\conda_windows_cloudViewer.yml") -replace "3.8", "3.12" | Set-Content "$env:TEMP\conda_windows_cloudViewer.yml"
+   (Get-Content "$env:TEMP\conda_windows_cloudViewer.yml") -replace "3.10", "3.12" | Set-Content "$env:TEMP\conda_windows_cloudViewer.yml"
    
    conda env create -f "$env:TEMP\conda_windows_cloudViewer.yml"
    conda activate cloudViewer

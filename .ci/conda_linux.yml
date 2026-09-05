@@ -1,9 +1,9 @@
-name: python3.8
+name: python3.10
 channels:
   - conda-forge
 dependencies:
   - cmake=3.31.8
-  - python=3.8
+  - python=3.10
   - pip
   - ninja
   - openssl

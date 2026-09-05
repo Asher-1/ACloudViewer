@@ -472,7 +472,7 @@ if (Python3_FOUND)
     set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE} CACHE FILEPATH
             "Deprecated path to the Python executable (for 3rdparty only)")
 
-    # fix always pybind.cpython-36m-x86_64-linux-gnu.so regardless given other python version(eg: python2.7, python3.8)
+    # fix always pybind.cpython-36m-x86_64-linux-gnu.so regardless given other python version(eg: python3.10, python3.13)
     include(FindPythonLibsNew)
     set(PYTHON_INCLUDE_DIR ${PYTHON_INCLUDE_DIRS} CACHE PATH
             "Deprecated path to the Python include dir (for pybind only)")
@@ -642,6 +642,21 @@ if (BUILD_CUDA_MODULE)
     enable_language(CUDA)
     set(CMAKE_CUDA_STANDARD 17)
     set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+
+    # On Windows nvcc has no OpenMP support, but CMake's FindOpenMP probes a
+    # CUDA component for every enabled language, so any subproject calling
+    # find_package(OpenMP REQUIRED) (faiss, qHoughNormals) hard-fails configure
+    # with "Could NOT find OpenMP_CUDA". No target in this project links
+    # OpenMP::OpenMP_CUDA, so preset the component results: FindOpenMP then
+    # skips its doomed probe, and the empty LIB_NAMES mirrors what the module
+    # itself records for MSVC (the OpenMP runtime is implicit in the compiler).
+    if(WIN32)
+        set(OpenMP_CUDA_FLAGS "-Xcompiler=/openmp" CACHE STRING
+            "CUDA compiler flags for OpenMP parallelization (preset: nvcc forwards /openmp to the MSVC host compiler)" FORCE)
+        set(OpenMP_CUDA_LIB_NAMES "" CACHE STRING
+            "CUDA compiler libraries for OpenMP parallelization (preset: empty, MSVC runtime is implicit)" FORCE)
+    endif()
+
     if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA" AND CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "11.5")
         message(FATAL_ERROR "CUDA 11.4 and older are not supported. Please upgrade to CUDA 11.5 or newer.")
     endif ()

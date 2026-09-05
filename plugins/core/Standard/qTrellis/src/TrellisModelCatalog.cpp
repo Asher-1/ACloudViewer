@@ -93,6 +93,20 @@ QString hfDownloadUrl(const QString& filename) {
 #endif
 }
 
+QString hfMirrorUrl() {
+    // Derived from the catalog's own download URLs so the manual-recovery
+    // hint cannot drift from the published mirror.
+    const QVector<TrellisModelEntry> all = catalogModels();
+    for (const TrellisModelEntry& e : all) {
+        const int slash = e.downloadUrl.lastIndexOf(QLatin1Char('/'));
+        if (e.downloadUrl.startsWith(QStringLiteral("https://")) &&
+            slash > 0) {
+            return e.downloadUrl.left(slash + 1);
+        }
+    }
+    return QString();
+}
+
 bool isValidModelFile(const QString& path, const QString& filename) {
     HfModelInfo info;
     if (!hfModelInfo(filename, &info)) return false;

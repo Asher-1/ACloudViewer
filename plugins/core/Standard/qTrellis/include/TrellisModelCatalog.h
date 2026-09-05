@@ -55,6 +55,9 @@ QVector<TrellisModelEntry> modelsByRole(const QString& role);
 bool hfModelInfo(const QString& filename, HfModelInfo* out);
 /** Direct download URL on the HF mirror (empty when not published). */
 QString hfDownloadUrl(const QString& filename);
+/** Base URL of the published HF mirror (ends with '/'; empty when the
+ *  catalog has no mirror entry). Feeds the manual-download recovery hint. */
+QString hfMirrorUrl();
 /** True when path holds a valid GGUF whose size matches the published
  *  mirror size for filename. Lightweight (magic + size only, no full
  *  read) — this is the per-dialog presence check. */

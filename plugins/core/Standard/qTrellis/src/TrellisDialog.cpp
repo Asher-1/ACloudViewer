@@ -17,7 +17,6 @@
 #include <QHBoxLayout>
 #include <QImageReader>
 #include <QMessageBox>
-#include <QPixmap>
 #include <QSettings>
 #include <QStandardPaths>
 #include <QVBoxLayout>
@@ -312,9 +311,8 @@ void TrellisDialog::buildGeneratePage(QWidget* page) {
     for (const QString& name : kStepNames) {
         auto* cell = new QVBoxLayout();
         cell->setSpacing(1);
-        auto* thumbLabel = new QLabel(stripGroup);
+        auto* thumbLabel = new ecvClickableImageLabel(stripGroup);
         thumbLabel->setFixedSize(thumb, thumb);
-        thumbLabel->setAlignment(Qt::AlignCenter);
         thumbLabel->setStyleSheet(
                 "border: 1px solid #B8C4D0; border-radius: 3px; "
                 "background: #F4F7FA; color: #98A4B0;");
@@ -361,15 +359,21 @@ void TrellisDialog::buildGeneratePage(QWidget* page) {
     // Keep a floor width so the label never clips on narrow windows or
     // translated strings.
     runBtn->setMinimumWidth(ecvAICoreUi::dpiScaled(120));
+    runBtn->setToolTip(
+            tr("Run generation with the current settings. Outputs follow the "
+               "Output group: DB import via 'Add mesh to DB'; a GLB file is "
+               "written only when a Save GLB directory is set."));
     // One-click end-to-end: generate with the current settings AND write the
     // textured GLB into the Save-GLB directory (defaulted to ~/Downloads /
     // TRELLIS when empty), so the whole image -> portable-asset flow is one
     // button for non-expert users.
     auto* oneClickBtn = new QPushButton(tr("Generate + GLB"), this);
     oneClickBtn->setToolTip(
-            tr("One-click end-to-end: run generation and save the textured "
-               "GLB to the Save GLB directory (defaults to Downloads/"
-               "TRELLIS)."));
+            tr("One-click end-to-end: run generation AND guarantee a GLB "
+               "file — the Save GLB directory is defaulted to Downloads/"
+               "TRELLIS when empty, then generation runs exactly like "
+               "'Generate 3D' (the DB import follows the Output "
+               "checkboxes)."));
     oneClickBtn->setMinimumWidth(ecvAICoreUi::dpiScaled(120));
     auto* cancelBtn = new QPushButton(tr("Cancel"), this);
     cancelBtn->setEnabled(false);
@@ -424,7 +428,12 @@ void TrellisDialog::buildGeneratePage(QWidget* page) {
                 m_downloadInProgress = false;
                 if (!ok) {
                     m_pendingDownloads.clear();
-                    appendLog(tr("[TRELLIS] Download failed: %1").arg(path));
+                    appendLog(
+                            tr("[TRELLIS] Download failed: %1 — retry, or "
+                               "fetch the file manually from the mirror shown "
+                               "in the model-status tooltip and place it at "
+                               "that path.")
+                                    .arg(path));
                     updateModelStatus();
                     return;
                 }
@@ -541,6 +550,10 @@ void TrellisDialog::loadSettings() {
             settings.value("exportTextureSize", 2048).toInt());
     m_exportComponentFilter->setCurrentIndex(
             settings.value("exportComponentFilter", 0).toInt());
+    const int destination =
+            settings.value("exportDestination", int(kExportDb)).toInt();
+    m_exportDestination->setCurrentIndex(
+            qBound(0, destination, m_exportDestination->count() - 1));
     settings.endGroup();
 }
 
@@ -569,6 +582,8 @@ void TrellisDialog::saveSettings() const {
     settings.setValue("exportTextureSize", m_exportTextureSize->value());
     settings.setValue("exportComponentFilter",
                       m_exportComponentFilter->currentIndex());
+    settings.setValue("exportDestination",
+                      m_exportDestination->currentIndex());
     settings.endGroup();
 }
 
@@ -633,6 +648,25 @@ void TrellisDialog::setProgressStage(int stageId,
                                      int total) {
     m_stageLabel->setVisible(true);
     m_progress->setVisible(true);
+    // Chips without a live preview stream (preprocess / mesh before its
+    // keyframes / texture) light up while their stage runs, so no slot ever
+    // looks dead mid-generation.
+    switch (stageId) {
+        case AICORE_TRELLIS_STAGE_PREPROCESS:
+            setStageState(1, kStageActive);
+            break;
+        case AICORE_TRELLIS_STAGE_SLAT_FLOW:
+        case AICORE_TRELLIS_STAGE_SLAT_FLOW_HR:
+        case AICORE_TRELLIS_STAGE_SHAPE_DEC:
+        case AICORE_TRELLIS_STAGE_SHAPE_DEC_HR:
+            setStageState(3, kStageActive);
+            break;
+        case AICORE_TRELLIS_STAGE_TEXTURE:
+            setStageState(4, kStageActive);
+            break;
+        default:
+            break;
+    }
     // Map the 11 pipeline stages onto a single 0..100 sweep so the bar
     // advances monotonically with the real inference work (the C API reports
     // per-stage step counts, which alone would make the bar jump back to 0
@@ -758,13 +792,40 @@ void TrellisDialog::onPresetChanged(int index) {
 
 void TrellisDialog::updateModelStatus() {
     const QStringList missing = missingPresetFiles();
+    // Make the deployment location explicit (selectable for copy-paste) so a
+    // failed UI download is recoverable by a manual download into the AICore
+    // data root; the tooltip carries the per-file destination rows.
+    m_modelStatus->setTextInteractionFlags(Qt::TextSelectableByMouse);
     if (missing.isEmpty()) {
         m_modelStatus->setText(tr("\u2705 All models present."));
+        m_modelStatus->setToolTip(
+                tr("TRELLIS models: %1\nRMBG models: %2")
+                        .arg(TrellisHelpers::modelCacheDir(),
+                             TrellisHelpers::rmbgModelCacheDir()));
         m_downloadBtn->setEnabled(false);
     } else {
-        m_modelStatus->setText(tr("\u26a0 Missing %1 model(s): %2")
+        QStringList dests;
+        for (const QString& name : missing) {
+            dests << TrellisHelpers::modelCacheDirFor(name);
+        }
+        dests.removeDuplicates();
+        m_modelStatus->setText(tr("\u26a0 Missing %1 model(s): %2\nFolder: %3")
                                        .arg(missing.size())
-                                       .arg(missing.join(", ")));
+                                       .arg(missing.join(", "))
+                                       .arg(dests.join(", ")));
+        QStringList rows;
+        for (const QString& name : missing) {
+            rows << QStringLiteral("%1 \u2192 %2")
+                            .arg(name, TrellisHelpers::modelCacheDirFor(name));
+        }
+        const QString mirror = TrellisHelpers::hfMirrorUrl();
+        m_modelStatus->setToolTip(
+                tr("Manual download (if the button keeps failing):\n%1%2")
+                        .arg(rows.join(QLatin1Char('\n')),
+                             mirror.isEmpty()
+                                     ? QString()
+                                     : QStringLiteral("\nMirror: %1").arg(
+                                               mirror)));
         m_downloadBtn->setEnabled(true);
     }
 }
@@ -878,7 +939,10 @@ void TrellisDialog::downloadNextModel() {
     const QString url = TrellisHelpers::hfDownloadUrl(filename);
     const QString dest = TrellisHelpers::modelCacheDirFor(filename) +
                          QDir::separator() + filename;
-    appendLog(tr("[TRELLIS] Downloading %1...").arg(filename));
+    // Log the URL and destination: a failed download is manually recoverable
+    // with one copy-paste into a browser and this exact folder.
+    appendLog(tr("[TRELLIS] Downloading %1...\n  URL: %2\n  Dest: %3")
+                      .arg(filename, url, dest));
     m_downloadInProgress = true;
     ecvModelDownloader::Request req;
     req.url = url;
@@ -1052,14 +1116,25 @@ void TrellisDialog::buildExportPage(QWidget* page) {
     m_exportComponentFilter->addItem(tr("Largest component only"));
     m_exportComponentFilter->addItem(tr("Keep all"));
     glbLayout->addWidget(m_exportComponentFilter, 1, 1);
+    glbLayout->addWidget(new QLabel(tr("Destination:"), glbGroup), 2, 0);
+    m_exportDestination = new QComboBox(glbGroup);
+    m_exportDestination->addItem(tr("DB tree"));
+    m_exportDestination->addItem(tr("GLB file only"));
+    m_exportDestination->addItem(tr("DB tree + GLB file"));
+    m_exportDestination->setToolTip(
+            tr("Where the re-baked GLB goes. The GLB-file variants write "
+               "into the Save GLB directory from the Generate page "
+               "(default Downloads/TRELLIS)."));
+    glbLayout->addWidget(m_exportDestination, 2, 1);
     root->addWidget(glbGroup);
 
     auto* actions = new QHBoxLayout();
     m_rebakeBtn = new QPushButton(tr("Re-bake GLB..."), page);
     m_rebakeBtn->setToolTip(
             tr("Re-run the UV-unwrap + PBR atlas bake on the last generated "
-               "mesh with the settings above, and save it into the Save GLB "
-               "directory."));
+               "mesh with the settings above, then route it to the "
+               "destination selected above (DB tree by default; the GLB-file "
+               "destinations write into the Save GLB directory)."));
     m_printWrapBtn = new QPushButton(tr("Print wrap (CGAL)"), page);
     m_printWrapBtn->setToolTip(
             tr("Watertight Alpha-Wrap print mesh preview of the last "
@@ -1099,15 +1174,13 @@ void TrellisDialog::resetStageStrip(const QImage& input) {
         m_stageThumbs[i]->setStyleSheet(
                 "border: 1px solid #B8C4D0; border-radius: 3px; "
                 "background: #F4F7FA; color: #98A4B0;");
+        m_stageThumbs[i]->clearPreview();
         m_stageThumbs[i]->setText(QStringLiteral("-"));
-        m_stageThumbs[i]->setPixmap(QPixmap());
         m_stageCaptions[i]->setText(names[i]);
         m_stageCaptions[i]->setStyleSheet("color: #5A6672; font-size: 10px;");
     }
     if (!input.isNull() && !m_stageThumbs.isEmpty()) {
-        m_stageThumbs[0]->setPixmap(QPixmap::fromImage(
-                input.scaled(m_stageThumbs[0]->size(), Qt::KeepAspectRatio,
-                             Qt::SmoothTransformation)));
+        m_stageThumbs[0]->setPreviewImage(input, m_stageThumbs[0]->size());
     }
 }
 
@@ -1177,12 +1250,53 @@ void TrellisDialog::setStagePreview(const TrellisStagePreview& preview) {
     }
     if (slot < 0 || slot >= m_stageThumbs.size()) return;
     if (!preview.image.isNull()) {
-        m_stageThumbs[slot]->setPixmap(QPixmap::fromImage(preview.image.scaled(
-                m_stageThumbs[slot]->size(), Qt::KeepAspectRatio,
-                Qt::SmoothTransformation)));
+        m_stageThumbs[slot]->setPreviewImage(preview.image,
+                                             m_stageThumbs[slot]->size());
     }
     if (!preview.label.isEmpty()) {
         m_stageCaptions[slot]->setText(preview.label);
     }
     setStageState(slot, kStageActive);
+}
+
+void TrellisDialog::applyResultToStrip(const TrellisRunResult& result) {
+    // Slots without a live preview stream: fill them from the typed result
+    // once it lands (the worker renders; the GUI thread only blits). A
+    // successful run must leave NO chip blank — when a stage produced no
+    // image (RMBG skipped / untextured / no GLB) the chip shows the final
+    // render with an explicit state caption instead, so a blank slot can
+    // never read as a broken stage.
+    if (m_stageThumbs.size() < 6) return;
+    if (!result.rmbgImage.isNull()) {
+        m_stageThumbs[1]->setPreviewImage(result.rmbgImage,
+                                          m_stageThumbs[1]->size());
+        setStageState(1, kStageDone);
+    } else {
+        // The preprocess stage ran without AI matting (RMBG off or model
+        // missing, solid-color fallback): the input passed through as-is.
+        const QImage src = m_stageThumbs[0]->fullImage();
+        if (!src.isNull()) {
+            m_stageThumbs[1]->setPreviewImage(src, m_stageThumbs[1]->size());
+        }
+        m_stageCaptions[1]->setText(tr("Preprocess · no RMBG"));
+    }
+    if (!result.previewImage.isNull()) {
+        // Guaranteed mesh content: the live keyframes are best-effort and
+        // can stay empty on some presets.
+        m_stageThumbs[3]->setPreviewImage(result.previewImage,
+                                          m_stageThumbs[3]->size());
+        m_stageThumbs[4]->setPreviewImage(result.previewImage,
+                                          m_stageThumbs[4]->size());
+        m_stageCaptions[4]->setText(result.hasPbr
+                                            ? tr("Texture")
+                                            : tr("Texture · untextured"));
+        m_stageThumbs[5]->setPreviewImage(result.previewImage,
+                                          m_stageThumbs[5]->size());
+        m_stageCaptions[5]->setText(
+                result.glb.isEmpty()
+                        ? tr("GLB · none")
+                        : tr("GLB · %1 MB")
+                                  .arg(result.glb.size() / (1024.0 * 1024.0),
+                                       0, 'f', 1));
+    }
 }

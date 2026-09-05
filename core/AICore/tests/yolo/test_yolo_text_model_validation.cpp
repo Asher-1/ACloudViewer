@@ -44,6 +44,11 @@ std::string lowercase(const char* value) {
     return result;
 }
 
+std::string parentDir(const std::string& path) {
+    const size_t slash = path.find_last_of("/\\");
+    return slash == std::string::npos ? std::string() : path.substr(0, slash);
+}
+
 bool finiteDetection(const aicore_yolo_detection& detection) {
     return std::isfinite(detection.x1) && std::isfinite(detection.y1) &&
            std::isfinite(detection.x2) && std::isfinite(detection.y2) &&
@@ -112,22 +117,65 @@ bool inferAndHash(aicore_yolo_ctx* ctx,
 }  // namespace
 
 int main(int argc, char** argv) {
-    if (argc < 6) {
-        std::fprintf(stderr,
-                     "usage: %s <text.gguf> <detector.gguf> <image> <device> "
-                     "<runs> [warmups]\n",
-                     argv[0]);
-        return 2;
-    }
-    const int runs = std::max(1, std::atoi(argv[5]));
+    char* cache_dir_buf = aicore_yolo_model_cache_dir();
+    const std::string cache_dir = cache_dir_buf ? cache_dir_buf : "";
+    aicore_yolo_free_buffer(cache_dir_buf);
+    // Bare `ctest` runs pass no args: resolve the published-catalog CLIP
+    // text tower + world detector and the shared data-root image so the
+    // probe skips (77) without local assets instead of failing on a usage
+    // error. Explicit args keep the manual contract.
+    const aicore_yolo_model_entry* default_text =
+            aicore_yolo_model_by_filename("clip-ViT-B-32-f16.gguf");
+    const int default_detector_index =
+            aicore_yolo_model_default_index(AICORE_YOLO_ROLE_WORLD);
+    const aicore_yolo_model_entry* default_detector =
+            aicore_yolo_model_at(default_detector_index, AICORE_YOLO_ROLE_WORLD);
+    const std::string text_path =
+            argc >= 2
+                    ? std::string(argv[1])
+                    : (default_text && !cache_dir.empty()
+                               ? cache_dir + "/" + default_text->filename
+                               : std::string());
+    const std::string detector_path =
+            argc >= 3
+                    ? std::string(argv[2])
+                    : (default_detector && !cache_dir.empty()
+                               ? cache_dir + "/" + default_detector->filename
+                               : std::string());
+    const char* image_env = std::getenv("AICORE_TEST_YOLO_IMAGE");
+    const std::string image_path =
+            argc >= 4
+                    ? std::string(argv[3])
+                    : (image_env && image_env[0]
+                               ? std::string(image_env)
+                               : parentDir(cache_dir) +
+                                 "/objects_detection_data/images/bus.jpg");
+    const char* device_env = std::getenv("AICORE_TEST_DEVICE");
+    const std::string device = argc >= 5
+            ? std::string(argv[4])
+            : (device_env && device_env[0] ? std::string(device_env)
+                                           : std::string("auto"));
+    const int runs = argc >= 6 ? std::max(1, std::atoi(argv[5])) : 3;
     const int warmups = argc > 6 ? std::max(0, std::atoi(argv[6])) : 2;
+    for (const std::string* path : {&text_path, &detector_path, &image_path}) {
+        if (std::FILE* probe = std::fopen(path->c_str(), "rb")) {
+            std::fclose(probe);
+            continue;
+        }
+        std::fprintf(stderr,
+                     "[yolo-text-validation] skipped: missing asset: %s\n",
+                     path->c_str());
+        return 77;
+    }
 
     uint8_t* rgb = nullptr;
     int32_t width = 0;
     int32_t height = 0;
-    if (aicore_yolo_load_path_rgb(argv[3], &rgb, &width, &height) != 0 ||
+    if (aicore_yolo_load_path_rgb(image_path.c_str(), &rgb, &width,
+                                  &height) != 0 ||
         rgb == nullptr) {
-        std::fprintf(stderr, "failed to load image: %s\n", argv[3]);
+        std::fprintf(stderr, "failed to load image: %s\n",
+                     image_path.c_str());
         return 1;
     }
     const aicore_image_view image{rgb, width, height,
@@ -135,12 +183,12 @@ int main(int argc, char** argv) {
                                   AICORE_IMAGE_RGB8};
     const char* classes[] = {"person", "car", "bus", "dog"};
     aicore_yolo_options* options = aicore_yolo_options_new();
-    aicore_yolo_options_set_device(options, argv[4]);
+    aicore_yolo_options_set_device(options, device.c_str());
     aicore_yolo_options_set_conf_thres(options, 0.05f);
     aicore_yolo_options_set_classes(options, classes, 4);
-    aicore_yolo_options_set_text_model(options, argv[1]);
+    aicore_yolo_options_set_text_model(options, text_path.c_str());
     const auto loadBegin = Clock::now();
-    aicore_yolo_ctx* ctx = aicore_yolo_load_opts(argv[2], options);
+    aicore_yolo_ctx* ctx = aicore_yolo_load_opts(detector_path.c_str(), options);
     const double loadMs = elapsedMs(loadBegin);
     aicore_yolo_options_free(options);
     if (ctx == nullptr || !aicore_yolo_is_ready(ctx) ||
@@ -153,7 +201,7 @@ int main(int argc, char** argv) {
         aicore_yolo_free_buffer(rgb);
         return 1;
     }
-    const std::string requestedDevice = lowercase(argv[4]);
+    const std::string requestedDevice = lowercase(device.c_str());
     const std::string resolvedDevice =
             lowercase(aicore_yolo_context_device(ctx));
     if (requestedDevice != "auto" &&

@@ -36,8 +36,8 @@ class ValidateAllTests(unittest.TestCase):
             '{"suite":"aicore-validation","task":"depth",'
             '"inference_ms":12.5,"e2e_ms":15.0,'
             '"output_hash":"abc123"}',
-            "[rmbg-perf] device=cuda median_ms=561.5 p95_ms=580.4 "
-            "output_hash=12345",
+            "[rmbg-perf] device=cuda profile=strict median_ms=561.5 "
+            "p95_ms=580.4 output_hash=12345",
         ])
         metrics, fingerprints = VALIDATE_ALL.parse_output(
             output, "rmbg", Path("/does/not/exist"))
@@ -94,8 +94,8 @@ class ValidateAllTests(unittest.TestCase):
             "fingerprints": {"output": "a"},
             "fingerprint_policy": "stability_only",
         }
-        baseline = self.report([row | {
-            "metrics": {"mask_iou": 1.0, "json0/cuda/total/p50_ms": 10.0}}])
+        baseline = self.report([{**row, **{
+            "metrics": {"mask_iou": 1.0, "json0/cuda/total/p50_ms": 10.0}}}])
         current = self.report([row])
         self.assertEqual(VALIDATE_ALL.compare_report(
             current, baseline, 5.0, 3.0), [])
@@ -106,7 +106,7 @@ class ValidateAllTests(unittest.TestCase):
             "metrics": {"inference_ms": 10.0},
             "fingerprints": {"output": "a"}, "fingerprint_policy": "exact",
         }
-        current_row = base_row | {"fingerprints": {"output": "b"}}
+        current_row = {**base_row, **{"fingerprints": {"output": "b"}}}
         failures = VALIDATE_ALL.compare_report(
             self.report([current_row]), self.report([base_row]), 5.0, 3.0)
         self.assertEqual(failures,
@@ -119,7 +119,7 @@ class ValidateAllTests(unittest.TestCase):
             "fingerprints": {"output": "a"}, "fingerprint_policy": "exact",
         }
         failures = VALIDATE_ALL.compare_report(
-            self.report([row]), self.report([row | {"status": "fail"}]),
+            self.report([row]), self.report([{**row, **{"status": "fail"}}]),
             5.0, 3.0)
         self.assertEqual(
             failures, ["depth/depth/model.gguf: baseline status is fail"])
@@ -294,7 +294,7 @@ class ValidateAllTests(unittest.TestCase):
             "fingerprints": {"output": "a"},
             "fingerprint_policy": "exact", "status": "pass",
         }
-        missing = row | {"key": "demo/model/missing"}
+        missing = {**row, **{"key": "demo/model/missing"}}
         current = self.report([row])
         baseline = self.report([row, missing])
         self.assertEqual(VALIDATE_ALL.compare_report(
@@ -900,8 +900,8 @@ class ValidateAllTests(unittest.TestCase):
             "metrics": {}, "fingerprints": {},
             "fingerprint_policy": "exact", "status": "vram_skipped",
         }
-        baseline = self.report([row | {
-            "status": "pass", "metrics": {"inference_ms": 10.0}}])
+        baseline = self.report([{**row, **{
+            "status": "pass", "metrics": {"inference_ms": 10.0}}}])
         current = self.report([row])
         self.assertEqual(VALIDATE_ALL.compare_report(
             current, baseline, 5.0, 3.0), [])

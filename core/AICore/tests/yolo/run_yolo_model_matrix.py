@@ -228,10 +228,16 @@ def main() -> int:
         for backend, rows in rows_by_backend.items()
         for row in rows
     }
+    # The audited grid is whatever the selected models actually produce on any
+    # backend (union), not the global TASKS x QUANTS constants: the light tier
+    # deliberately narrows the file set (e.g. q8_0-only --model-globs), so
+    # demanding f16/f32 cells would fail every narrowed run regardless of the
+    # build. A backend missing a cell another backend produced still fails
+    # this audit (e.g. a task family crashing only on the GPU backend).
+    required_cells = {(task, quant) for task, quant, _ in covered_cells}
     missing_task_quant_backend = [
         {"task": task, "quant": quant, "backend": backend}
-        for task in TASKS
-        for quant in QUANTS
+        for task, quant in sorted(required_cells)
         for backend in backends
         if (task, quant, backend) not in covered_cells
     ]

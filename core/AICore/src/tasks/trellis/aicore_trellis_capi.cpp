@@ -52,6 +52,27 @@ void copy_err(char *err, int err_len, const std::string &msg) {
     std::snprintf(err, (size_t)err_len, "%s", msg.c_str());
 }
 
+// Exception fence for C ABI entry points whose error channel is the err
+// buffer. ggml backends throw C++ exceptions on runtime failures — the
+// Vulkan backend raises vk::SystemError "vk::Device::allocateMemory:
+// ErrorOutOfDeviceMemory" when a transient buffer exceeds the free VRAM
+// mid-run — and an exception escaping into the host's QThread entry aborts
+// the whole process (std::terminate). The C ABI contract forbids
+// exceptions from crossing: funnel what() into copy_err and return the
+// default-constructed (null) result. Callers with a non-zero failure code
+// (e.g. preprocess returning 1) keep a hand-written catch.
+template <class F>
+auto fenced(char *err, int err_len, F &&f) -> decltype(f()) {
+    try {
+        return f();
+    } catch (const std::exception &e) {
+        copy_err(err, err_len, e.what());
+    } catch (...) {
+        copy_err(err, err_len, "unknown exception");
+    }
+    return decltype(f()){};
+}
+
 // Rough peak VRAM the shape decode's transient buffers need at each tier
 // (measured on the reference image: ~2.4 GB at 512³, ~6.75 GB for the 1024³
 // level-3 conv output; rounded up for headroom). Mesh-dependent, so treated as
@@ -556,14 +577,25 @@ struct aicore_trellis_options {
 };
 
 aicore_trellis_options *aicore_trellis_options_new(void) {
-    return new aicore_trellis_options();
+    // Exception fence: std::bad_alloc must not cross the C ABI (the setters
+    // and free are NULL-safe, so nullptr propagates cleanly).
+    try {
+        return new aicore_trellis_options();
+    } catch (...) {
+        return nullptr;
+    }
 }
 
 void aicore_trellis_options_free(aicore_trellis_options *opts) { delete opts; }
 
 void aicore_trellis_options_set_device(aicore_trellis_options *opts,
                                        const char *device) {
-    if (opts && device) opts->device = device;
+    // Exception fence: the std::string assignment can only throw bad_alloc,
+    // which must not cross the C ABI (the option then keeps its default).
+    try {
+        if (opts && device) opts->device = device;
+    } catch (...) {
+    }
 }
 
 void aicore_trellis_options_set_threads(aicore_trellis_options *opts,
@@ -573,12 +605,18 @@ void aicore_trellis_options_set_threads(aicore_trellis_options *opts,
 
 void aicore_trellis_options_set_rmbg_gguf(aicore_trellis_options *opts,
                                           const char *rmbg_gguf) {
-    if (opts && rmbg_gguf) opts->rmbg_gguf = rmbg_gguf;
+    try {
+        if (opts && rmbg_gguf) opts->rmbg_gguf = rmbg_gguf;
+    } catch (...) {
+    }
 }
 
 void aicore_trellis_options_set_shape_dec_placement(
         aicore_trellis_options *opts, const char *placement) {
-    if (opts && placement) opts->shape_dec_placement = placement;
+    try {
+        if (opts && placement) opts->shape_dec_placement = placement;
+    } catch (...) {
+    }
 }
 
 void aicore_trellis_options_set_sdpa_exact(aicore_trellis_options *opts,
@@ -609,7 +647,6 @@ namespace {
 
 // Weights + graph activations ≈ 2x the weight bytes; plus a fixed base
 // margin for the CUDA/Vulkan context, graph buffers and fragmentation.
-constexpr double kWeightsVramFactor = 2.0;
 constexpr size_t kVramBaseMargin = 1u << 30;  // 1 GiB
 
 // GGUF payloads are stored uncompressed, so the file size ≈ weight bytes.
@@ -635,6 +672,41 @@ size_t coresident_weights_bytes(const aicore_trellis_model_paths *paths,
         total += fileSizeOrZero(opts->rmbg_gguf.c_str());
     }
     return total;
+}
+
+// Pipeline tier implied by the resolved file set (mirrors the AUTO
+// resolution in generate_impl): 1024 when the HR cascade flow is present,
+// 512 with a fine flow, coarse otherwise.
+int need_tier(const aicore_trellis_model_paths *paths) {
+    if (paths->slat_hr_flow_gguf && paths->slat_hr_flow_gguf[0]) {
+        return AICORE_TRELLIS_PIPE_1024;
+    }
+    if (paths->slat_flow_gguf && paths->slat_flow_gguf[0]) {
+        return AICORE_TRELLIS_PIPE_512;
+    }
+    return AICORE_TRELLIS_PIPE_COARSE;
+}
+
+// Weights still resident at the pipeline's VRAM peak. In the 1024 cascade
+// the LR flows (ss_flow + slat_flow) are dead once the LR slat is sampled —
+// generate frees them before the HR sampling (see the cascade branch) — so
+// they must not be counted against the peak.
+size_t resident_weights_bytes(const aicore_trellis_model_paths *paths,
+                              const aicore_trellis_options *opts) {
+    size_t total = coresident_weights_bytes(paths, opts);
+    if (paths->slat_hr_flow_gguf && paths->slat_hr_flow_gguf[0]) {
+        total -= fileSizeOrZero(paths->ss_flow_gguf);
+        total -= fileSizeOrZero(paths->slat_flow_gguf);
+    }
+    return total;
+}
+
+// Transient activation estimate per tier: the measured decode peak (see
+// decode_vram_peak: ~3 GB at 512, ~7.5 GB at 1024 — the dense conv output
+// dominates) plus a flow-sampling slack for the DiT activations and graph
+// scratch. Independent of weight quantization.
+size_t transient_bytes(int pipeline_type) {
+    return decode_vram_peak(pipeline_type) + ((size_t)2 << 30);
 }
 
 // Free VRAM on the want_idx-th GPU device of `family` (matching rules as in
@@ -678,9 +750,14 @@ std::string resolveVramAwareDevice(const std::string &requested,
     ggml_common::parse_device(requested, fam, want_idx);
     if (fam == "cpu") return "cpu";
 
-    const size_t weights = coresident_weights_bytes(paths, opts);
-    const size_t need =
-            (size_t)((double)weights * kWeightsVramFactor) + kVramBaseMargin;
+    // Need = resident weights at the peak + per-tier transient activations
+    // (measured decode peak + flow slack) + base margin. The former flat
+    // "weights x 2" heuristic mispriced both sides: it overcharged 512 presets
+    // (whose transient is far smaller than their weight bytes) and
+    // undercharged the 1024 cascade (whose transient exceeds its weight
+    // bytes and which frees its LR flows mid-run).
+    const size_t need = resident_weights_bytes(paths, opts) +
+                        transient_bytes(need_tier(paths)) + kVramBaseMargin;
 
     // Candidate order: the explicitly requested family first, then the
     // platform auto order (CUDA → Vulkan on Linux/Windows, Metal on macOS).
@@ -728,6 +805,29 @@ std::string resolveVramAwareDevice(const std::string &requested,
         }
     }
 
+    // An explicitly requested Vulkan device is never rewritten: with the
+    // process-wide sysmem fallback enabled (see ggml_env_bridge), an
+    // allocation that no longer fits VRAM degrades to host memory instead
+    // of failing, so a tight fit runs slower rather than not at all. Auto
+    // requests keep the conservative downgrade below (and CUDA has no
+    // sysmem fallback, so its requests still downgrade).
+    if (!generic && fam == "vulkan") {
+        const size_t free = familyFreeVram(fam, want_idx);
+        if (free > 0) {
+            char buf[400];
+            std::snprintf(buf, sizeof(buf),
+                          "'%s' VRAM is tight for this preset (~%.1f GiB "
+                          "needed, %.1f GiB free) — buffers that no longer "
+                          "fit fall back to system memory, so the run "
+                          "completes slower. Switching to q8 models or the "
+                          "coarse preset keeps everything in VRAM.",
+                          fam.c_str(), (double)need / (1u << 30),
+                          (double)free / (1u << 30));
+            *note = buf;
+            return want_idx > 0 ? fam + ":" + std::to_string(want_idx) : fam;
+        }
+    }
+
     // No GPU (CUDA/Vulkan, incl. iGPU) can hold the pipeline: fall back to
     // CPU with an explanation.  The user's GGUF selection is never changed
     // automatically — only the device downgrades; fitting a GPU requires a
@@ -751,7 +851,7 @@ std::string resolveVramAwareDevice(const std::string &requested,
 // Pipeline load / free / introspection
 // ─────────────────────────────────────────────────────────────────────────
 
-aicore_trellis_ctx *aicore_trellis_load_opts(
+static aicore_trellis_ctx *trellis_load_opts_impl(
         const aicore_trellis_model_paths *paths,
         const aicore_trellis_options *opts) {
     if (!paths || !paths->dino_gguf || !paths->dino_gguf[0] ||
@@ -978,6 +1078,24 @@ aicore_trellis_ctx *aicore_trellis_load_opts(
     return p;
 }
 
+aicore_trellis_ctx *aicore_trellis_load_opts(
+        const aicore_trellis_model_paths *paths,
+        const aicore_trellis_options *opts) {
+    // Exception fence (load has no err-buffer channel): a ggml backend
+    // failure (e.g. Vulkan ErrorOutOfDeviceMemory while allocating model
+    // weights) must reach the host as "load failed", not as an abort on the
+    // caller's worker thread. The specific error goes to the inference log.
+    try {
+        return trellis_load_opts_impl(paths, opts);
+    } catch (const std::exception &e) {
+        AICORE_LOG_ERROR("[trellis] ", "model load failed: %s\n", e.what());
+    } catch (...) {
+        AICORE_LOG_ERROR("[trellis] ",
+                         "model load failed: unknown exception\n");
+    }
+    return nullptr;
+}
+
 int aicore_trellis_caps(const aicore_trellis_ctx *p) {
     if (!p) return 0;
     int c = AICORE_TRELLIS_CAP_COARSE;
@@ -1097,8 +1215,18 @@ int aicore_trellis_preprocess_image_bytes(const void *image_bytes,
                                           int background_mode,
                                           char *err,
                                           int err_len) {
-    return preprocess_image_bytes_mode(image_bytes, image_len, out_size,
-                                       out_rgb, background_mode, err, err_len);
+    // Exception fence with an int failure code: 0 is success, so the
+    // catch path must return 1, not the default-constructed 0.
+    try {
+        return preprocess_image_bytes_mode(image_bytes, image_len, out_size,
+                                           out_rgb, background_mode, err,
+                                           err_len);
+    } catch (const std::exception &e) {
+        copy_err(err, err_len, e.what());
+    } catch (...) {
+        copy_err(err, err_len, "unknown exception");
+    }
+    return 1;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -1428,6 +1556,19 @@ aicore_trellis_mesh *generate_impl(aicore_trellis_ctx *p,
     } else {
         // ── 1024 cascade: upsample -> quantize -> HR flow -> decode grid 1024
         // ─
+        // The LR flows are dead after the LR slat was sampled. When free
+        // VRAM is tight, free them now so their ~3 GiB serves the HR
+        // sampling and the dense 1024 decode instead of lying dormant while
+        // activations spill to host memory; reload_flows() brings them back
+        // on the next generate. With VRAM to spare they stay resident and
+        // the next generate skips the reload cost.
+        if (trellis2_gpu_free_vram(p->device_family.c_str()) <
+            transient_bytes(AICORE_TRELLIS_PIPE_1024)) {
+            trellis2_ss_flow_free(p->flow);
+            p->flow = nullptr;
+            trellis2_slat_flow_free(p->slat);
+            p->slat = nullptr;
+        }
         if (progress) progress(user, AICORE_TRELLIS_STAGE_UPSAMPLE, 0, 0);
         std::vector<int32_t> up_coords;  // 512^3 candidate coords
         if (!trellis2_shape_dec_upsample(p->shapedec, slat.data(), L,
@@ -1607,9 +1748,10 @@ aicore_trellis_mesh *aicore_trellis_generate(
         char *err,
         int err_len) {
     const auto started = aicore::capi::PipelineClock::now();
-    aicore_trellis_mesh *mesh =
-            generate_impl(p, image_bytes, image_len, params, progress,
-                          progress_user, nullptr, nullptr, err, err_len);
+    aicore_trellis_mesh *mesh = fenced(err, err_len, [&] {
+        return generate_impl(p, image_bytes, image_len, params, progress,
+                             progress_user, nullptr, nullptr, err, err_len);
+    });
     if (mesh && p)
         aicore::capi::record_pipeline_e2e(p->pipeline_timings, started);
     return mesh;
@@ -1627,9 +1769,11 @@ aicore_trellis_mesh *aicore_trellis_generate_ex(
         char *err,
         int err_len) {
     const auto started = aicore::capi::PipelineClock::now();
-    aicore_trellis_mesh *mesh =
-            generate_impl(p, image_bytes, image_len, params, progress,
-                          progress_user, preview, preview_user, err, err_len);
+    aicore_trellis_mesh *mesh = fenced(err, err_len, [&] {
+        return generate_impl(p, image_bytes, image_len, params, progress,
+                             progress_user, preview, preview_user, err,
+                             err_len);
+    });
     if (mesh && p)
         aicore::capi::record_pipeline_e2e(p->pipeline_timings, started);
     return mesh;
@@ -1697,6 +1841,7 @@ aicore_trellis_mesh *aicore_trellis_texture_mesh(
         return nullptr;
     }
 
+    return fenced(err, err_len, [&]() -> aicore_trellis_mesh * {
     std::string e;
     const int S = (pipeline_type == AICORE_TRELLIS_PIPE_1024) ? 1024 : 512;
     if (progress) progress(user, AICORE_TRELLIS_STAGE_PREPROCESS, 0, 0);
@@ -1770,6 +1915,7 @@ aicore_trellis_mesh *aicore_trellis_texture_mesh(
     }
     r->pbr = std::move(pbr);
     return r;
+    });
 }
 
 aicore_trellis_mesh *aicore_trellis_prepare_mesh(const float *verts,
@@ -1788,21 +1934,23 @@ aicore_trellis_mesh *aicore_trellis_prepare_mesh(const float *verts,
         copy_err(err, err_len, "bad component filter");
         return nullptr;
     }
-    t2glb::MeshExportOptions opt;
-    opt.components = (t2glb::ComponentFilter)component_filter;
-    t2glb::PreparedMesh prepared;
-    std::string e;
-    if (!t2glb::prepare_mesh(verts, n_verts, (const int32_t *)tris, n_tris, pbr,
-                             opt, prepared, e)) {
-        copy_err(err, err_len, e);
-        return nullptr;
-    }
-    auto *r = new aicore_trellis_mesh();
-    r->verts = std::move(prepared.verts);
-    r->normals = std::move(prepared.normals);
-    r->tris.assign(prepared.tris.begin(), prepared.tris.end());
-    r->pbr = std::move(prepared.pbr);
-    return r;
+    return fenced(err, err_len, [&]() -> aicore_trellis_mesh * {
+        t2glb::MeshExportOptions opt;
+        opt.components = (t2glb::ComponentFilter)component_filter;
+        t2glb::PreparedMesh prepared;
+        std::string e;
+        if (!t2glb::prepare_mesh(verts, n_verts, (const int32_t *)tris, n_tris,
+                                 pbr, opt, prepared, e)) {
+            copy_err(err, err_len, e);
+            return nullptr;
+        }
+        auto *r = new aicore_trellis_mesh();
+        r->verts = std::move(prepared.verts);
+        r->normals = std::move(prepared.normals);
+        r->tris.assign(prepared.tris.begin(), prepared.tris.end());
+        r->pbr = std::move(prepared.pbr);
+        return r;
+    });
 }
 
 int aicore_trellis_print_remesh_available(void) {
@@ -1827,22 +1975,24 @@ aicore_trellis_mesh *aicore_trellis_prepare_print_mesh(const float *verts,
         copy_err(err, err_len, "bad component filter");
         return nullptr;
     }
-    t2glb::MeshExportOptions opt;
-    opt.components = (t2glb::ComponentFilter)component_filter;
-    t2glb::PreparedMesh prepared;
-    std::string e;
-    if (!t2glb::prepare_print_mesh(verts, n_verts, (const int32_t *)tris,
-                                   n_tris, pbr, opt, alpha_ratio, offset_ratio,
-                                   prepared, e)) {
-        copy_err(err, err_len, e);
-        return nullptr;
-    }
-    auto *r = new aicore_trellis_mesh();
-    r->verts = std::move(prepared.verts);
-    r->normals = std::move(prepared.normals);
-    r->tris.assign(prepared.tris.begin(), prepared.tris.end());
-    r->pbr = std::move(prepared.pbr);
-    return r;
+    return fenced(err, err_len, [&]() -> aicore_trellis_mesh * {
+        t2glb::MeshExportOptions opt;
+        opt.components = (t2glb::ComponentFilter)component_filter;
+        t2glb::PreparedMesh prepared;
+        std::string e;
+        if (!t2glb::prepare_print_mesh(verts, n_verts, (const int32_t *)tris,
+                                       n_tris, pbr, opt, alpha_ratio,
+                                       offset_ratio, prepared, e)) {
+            copy_err(err, err_len, e);
+            return nullptr;
+        }
+        auto *r = new aicore_trellis_mesh();
+        r->verts = std::move(prepared.verts);
+        r->normals = std::move(prepared.normals);
+        r->tris.assign(prepared.tris.begin(), prepared.tris.end());
+        r->pbr = std::move(prepared.pbr);
+        return r;
+    });
 }
 
 uint8_t *aicore_trellis_bake_projected_glb(const float *target_verts,
@@ -1870,27 +2020,29 @@ uint8_t *aicore_trellis_bake_projected_glb(const float *target_verts,
         copy_err(err, err_len, "bad component filter");
         return nullptr;
     }
-    t2glb::MeshExportOptions opt;
-    if (texture_size > 0) opt.texture_size = texture_size;
-    opt.components = (t2glb::ComponentFilter)source_component_filter;
-    std::vector<uint8_t> glb;
-    std::string e;
-    if (!t2glb::mesh_to_projected_glb(
-                target_verts, target_n_verts, (const int32_t *)target_tris,
-                target_n_tris, source_verts, source_n_verts,
-                (const int32_t *)source_tris, source_n_tris, source_pbr, opt,
-                glb, e)) {
-        copy_err(err, err_len, e);
-        return nullptr;
-    }
-    uint8_t *buf = (uint8_t *)std::malloc(glb.size());
-    if (!buf) {
-        copy_err(err, err_len, "out of memory");
-        return nullptr;
-    }
-    std::memcpy(buf, glb.data(), glb.size());
-    if (out_len) *out_len = (int)glb.size();
-    return buf;
+    return fenced(err, err_len, [&]() -> uint8_t * {
+        t2glb::MeshExportOptions opt;
+        if (texture_size > 0) opt.texture_size = texture_size;
+        opt.components = (t2glb::ComponentFilter)source_component_filter;
+        std::vector<uint8_t> glb;
+        std::string e;
+        if (!t2glb::mesh_to_projected_glb(
+                    target_verts, target_n_verts, (const int32_t *)target_tris,
+                    target_n_tris, source_verts, source_n_verts,
+                    (const int32_t *)source_tris, source_n_tris, source_pbr,
+                    opt, glb, e)) {
+            copy_err(err, err_len, e);
+            return nullptr;
+        }
+        uint8_t *buf = (uint8_t *)std::malloc(glb.size());
+        if (!buf) {
+            copy_err(err, err_len, "out of memory");
+            return nullptr;
+        }
+        std::memcpy(buf, glb.data(), glb.size());
+        if (out_len) *out_len = (int)glb.size();
+        return buf;
+    });
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -1967,23 +2119,26 @@ uint8_t *aicore_trellis_bake_glb(const float *verts,
         copy_err(err, err_len, "bad component filter");
         return nullptr;
     }
-    t2glb::MeshExportOptions opt;
-    if (texture_size > 0) opt.texture_size = texture_size;
-    opt.components = (t2glb::ComponentFilter)component_filter;
-    std::vector<uint8_t> glb;
-    std::string e;
-    if (!t2glb::mesh_to_glb(verts, n_verts, tris, n_tris, pbr, opt, glb, e)) {
-        copy_err(err, err_len, e);
-        return nullptr;
-    }
-    uint8_t *buf = (uint8_t *)std::malloc(glb.size());
-    if (!buf) {
-        copy_err(err, err_len, "out of memory");
-        return nullptr;
-    }
-    std::memcpy(buf, glb.data(), glb.size());
-    if (out_len) *out_len = (int)glb.size();
-    return buf;
+    return fenced(err, err_len, [&]() -> uint8_t * {
+        t2glb::MeshExportOptions opt;
+        if (texture_size > 0) opt.texture_size = texture_size;
+        opt.components = (t2glb::ComponentFilter)component_filter;
+        std::vector<uint8_t> glb;
+        std::string e;
+        if (!t2glb::mesh_to_glb(verts, n_verts, tris, n_tris, pbr, opt, glb,
+                                e)) {
+            copy_err(err, err_len, e);
+            return nullptr;
+        }
+        uint8_t *buf = (uint8_t *)std::malloc(glb.size());
+        if (!buf) {
+            copy_err(err, err_len, "out of memory");
+            return nullptr;
+        }
+        std::memcpy(buf, glb.data(), glb.size());
+        if (out_len) *out_len = (int)glb.size();
+        return buf;
+    });
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -1991,24 +2146,44 @@ uint8_t *aicore_trellis_bake_glb(const float *verts,
 // ─────────────────────────────────────────────────────────────────────────
 
 int aicore_trellis_warmup_backend(const char *device) {
-    return aicore_warmup_backend(device != nullptr ? device : "auto");
+    // Exception fence: backend init failures must not cross the C ABI.
+    try {
+        return aicore_warmup_backend(device != nullptr ? device : "auto");
+    } catch (const std::exception &e) {
+        AICORE_LOG_ERROR("[trellis] ", "backend warmup failed: %s\n",
+                         e.what());
+    } catch (...) {
+        AICORE_LOG_ERROR("[trellis] ",
+                         "backend warmup failed: unknown exception\n");
+    }
+    return -1;
 }
 
 void aicore_trellis_shutdown(void) { aicore_runtime_shutdown(); }
 
 char *aicore_trellis_model_cache_dir(void) {
-    return aicore::capi::dup_cstr(aicore::trellis_model_cache_dir());
+    try {
+        return aicore::capi::dup_cstr(aicore::trellis_model_cache_dir());
+    } catch (...) {
+        return nullptr;
+    }
 }
 
 char *aicore_trellis_info_json(aicore_trellis_ctx *ctx) {
     if (!ctx) return aicore::capi::dup_cstr("{\"error\":\"null context\"}");
-    std::string j = "{";
-    j += "\"caps\":" + std::to_string(aicore_trellis_caps(ctx));
-    j += ",\"backend\":\"" + aicore::capi::json_escape(ctx->backend) + "\"";
-    j += ",\"shapedec_gpu\":" +
-         std::string(ctx->shapedec_gpu ? "true" : "false");
-    j += "}";
-    return aicore::capi::dup_cstr(j);
+    // The string assembly below can only throw bad_alloc; fence it.
+    try {
+        std::string j = "{";
+        j += "\"caps\":" + std::to_string(aicore_trellis_caps(ctx));
+        j += ",\"backend\":\"" +
+             aicore::capi::json_escape(ctx->backend) + "\"";
+        j += ",\"shapedec_gpu\":" +
+             std::string(ctx->shapedec_gpu ? "true" : "false");
+        j += "}";
+        return aicore::capi::dup_cstr(j);
+    } catch (...) {
+        return nullptr;
+    }
 }
 
 }  // extern "C"

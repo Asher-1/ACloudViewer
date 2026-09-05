@@ -15,6 +15,7 @@
 #include "TrellisDialog.h"
 #include "TrellisWorker.h"
 
+class ccHObject;
 class ccMesh;
 class ecvMainAppInterface;
 
@@ -57,6 +58,21 @@ private:
                          const QString& sourceLabel,
                          int textureSize,
                          int componentFilter);
+    /** Bake the UV-atlas GLB from a typed result with explicit settings
+     *  (AICore call; logs and returns empty on failure). */
+    QByteArray bakeResultGlb(const TrellisRunResult& result,
+                             int textureSize,
+                             int componentFilter);
+    /** Timestamped GLB file path for a source label. */
+    QString glbFilePath(const QString& dir, const QString& sourceLabel) const;
+    /** Write GLB bytes to path (logs the destination on success). */
+    bool writeGlbFile(const QByteArray& glb, const QString& path);
+    /** Import GLB bytes through the shared file filters into a named,
+     *  metadata-tagged entity (full PBR material display). Null on failure
+     *  (logged). */
+    ccHObject* importGlbEntity(const QByteArray& glb,
+                               const TrellisRunResult& result,
+                               const QString& entityName);
 
     QAction* m_action = nullptr;
     TrellisDialog* m_dialog = nullptr;

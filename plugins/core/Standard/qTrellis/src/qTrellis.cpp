@@ -213,6 +213,7 @@ void qTrellis::onResultReady(const TrellisRunResult& result) {
     if (m_dialog) {
         // Step-strip completion + hand the result to the export page.
         m_dialog->setLastResult(result);
+        m_dialog->applyResultToStrip(result);
         m_dialog->setStageState(3, TrellisDialog::kStageDone);
         m_dialog->setStageState(4, result.hasPbr
                                            ? TrellisDialog::kStageDone
@@ -235,7 +236,9 @@ void qTrellis::onResultReady(const TrellisRunResult& result) {
 
 void qTrellis::onExportRequested() {
     // Export page: re-bake the textured GLB from the last generation with
-    // the page's texture size / component-filter settings.
+    // the page's texture size / component-filter settings, then route the
+    // same bytes to the persisted destination (DB tree by default, GLB
+    // file, or both).
 #ifdef AICore_ENABLED
     if (!m_dialog) return;
     const TrellisRunResult& result = m_dialog->lastResult();
@@ -245,15 +248,45 @@ void qTrellis::onExportRequested() {
                    "generation first."));
         return;
     }
+    const int destination = m_dialog->exportDestination();
+    const bool wantDb = destination != TrellisDialog::kExportFile;
+    const bool wantFile = destination != TrellisDialog::kExportDb;
     TrellisDialog::Settings settings = m_currentSettings;
-    settings.saveGlbDir = m_currentSettings.saveGlbDir.isEmpty()
-                                  ? QStandardPaths::writableLocation(
-                                            QStandardPaths::DownloadLocation) +
-                                            QStringLiteral("/TRELLIS")
-                                  : m_currentSettings.saveGlbDir;
-    const int texSize = m_dialog->exportTextureSize();
-    const int compFilter = m_dialog->exportComponentFilter();
-    saveResultGlbEx(result, settings, result.sourceImage, texSize, compFilter);
+    if (wantFile && settings.saveGlbDir.isEmpty()) {
+        settings.saveGlbDir =
+                QStandardPaths::writableLocation(
+                        QStandardPaths::DownloadLocation) +
+                QStringLiteral("/TRELLIS");
+    }
+    // One bake for every selected destination: the bytes are identical.
+    const QByteArray glb = bakeResultGlb(result, m_dialog->exportTextureSize(),
+                                         m_dialog->exportComponentFilter());
+    if (glb.isEmpty()) return;  // bakeResultGlb logged the failure
+    if (wantDb) {
+        const QString sourceName =
+                QFileInfo(result.sourceImage).completeBaseName();
+        const QString deviceTag = ecvPluginDbNaming::deviceTagFromName(
+                result.backend.isEmpty() ? settings.device : result.backend);
+        const QString name = ecvPluginDbNaming::makeUnique(
+                QStringLiteral("TRELLIS_%1_%2_%3px")
+                        .arg(sourceName, deviceTag)
+                        .arg(m_dialog->exportTextureSize()),
+                m_app);
+        if (ccHObject* imported = importGlbEntity(glb, result, name)) {
+            m_app->addToDB(imported);
+            m_app->refreshAll();
+            m_app->updateUI();
+            m_dialog->appendLog(
+                    tr("[TRELLIS] Re-baked GLB added to the DB tree as "
+                       "'%1' (full PBR material).")
+                            .arg(name));
+        }
+    }
+    if (wantFile) {
+        QDir().mkpath(settings.saveGlbDir);
+        writeGlbFile(glb,
+                     glbFilePath(settings.saveGlbDir, result.sourceImage));
+    }
     if (m_dialog) m_dialog->setStageState(5, TrellisDialog::kStageDone);
 #endif
 }
@@ -281,53 +314,19 @@ void qTrellis::addResultToDb(const TrellisRunResult& result,
 
 #ifdef AICore_ENABLED
     // Preferred display path: import the baked GLB through the shared file
-    // filters (qMeshIO's assimp glTF reader) so the entity carries the full
-    // PBR material (base-colour + metallic-roughness atlases, alpha blend,
-    // double-sided) — the same rendering the upstream GLB gives when opened
-    // in the viewer. Vertex colours cannot express metallic/roughness, so
-    // they remain only as the fallback when the bake or the import fails.
-    if (!result.glb.isEmpty()) {
-        QTemporaryFile tmp(QDir::tempPath() +
-                           QStringLiteral("/TRELLIS_XXXXXX.glb"));
-        if (tmp.open()) {
-            tmp.write(result.glb);
-            tmp.flush();
-            FileIOFilter::LoadParameters params;
-            params.alwaysDisplayLoadDialog = false;
-            params.shiftHandlingMode =
-                    ecvGlobalShiftManager::NO_DIALOG_AUTO_SHIFT;
-            CC_FILE_ERROR err = CC_FERR_NO_ERROR;
-            ccHObject* imported =
-                    FileIOFilter::LoadFromFile(tmp.fileName(), params, err);
-            tmp.close();
-            if (imported) {
-                imported->setName(name);
-                imported->setMetaData(QStringLiteral("Source"),
-                                      result.sourceImage);
-                imported->setMetaData(QStringLiteral("Preset"),
-                                      result.presetName);
-                imported->setMetaData(QStringLiteral("Runtime (ms)"),
-                                      result.totalRuntimeMs);
-                imported->setMetaData(QStringLiteral("Backend"),
-                                      result.backend);
-                imported->setMetaData(QStringLiteral("Model"),
-                                      QFileInfo(result.modelPath).fileName());
-                imported->setMetaData(QStringLiteral("Material"),
-                                      QStringLiteral("PBR textured GLB"));
-                m_app->addToDB(imported);
-                m_app->refreshAll();
-                m_app->updateUI();
-                m_dialog->appendLog(
-                        tr("[TRELLIS] Added textured GLB mesh '%1' to the DB "
-                           "tree (full PBR material).")
-                                .arg(name));
-                return;
-            }
-            m_dialog->appendLog(
-                    tr("[TRELLIS] GLB import failed (error %1); falling back "
-                       "to the vertex-colour mesh.")
-                            .arg(static_cast<int>(err)));
-        }
+    // filters so the entity carries the full PBR material (base-colour +
+    // metallic-roughness atlases, alpha blend, double-sided). Vertex colours
+    // cannot express metallic/roughness, so they remain only as the fallback
+    // when the bake or the import fails (importGlbEntity logs it).
+    if (ccHObject* imported = importGlbEntity(result.glb, result, name)) {
+        m_app->addToDB(imported);
+        m_app->refreshAll();
+        m_app->updateUI();
+        m_dialog->appendLog(
+                tr("[TRELLIS] Added textured GLB mesh '%1' to the DB "
+                   "tree (full PBR material).")
+                        .arg(name));
+        return;
     }
 #endif
 
@@ -493,43 +492,99 @@ void qTrellis::saveResultGlb(const TrellisRunResult& result,
 #endif
 }
 
+QByteArray qTrellis::bakeResultGlb(const TrellisRunResult& result,
+                                   int textureSize,
+                                   int componentFilter) {
+    QByteArray glb;
+#ifdef AICore_ENABLED
+    if (result.verts.isEmpty() || result.tris.isEmpty()) return glb;
+    char err[512] = {0};
+    int outLen = 0;
+    uint8_t* bytes = aicore_trellis_bake_glb(
+            result.verts.constData(), result.verts.size() / 3,
+            result.tris.constData(), result.tris.size() / 3,
+            result.hasPbr ? result.pbr.constData() : nullptr, textureSize,
+            componentFilter, &outLen, err, sizeof(err));
+    if (!bytes) {
+        m_dialog->appendLog(tr("[TRELLIS] GLB bake failed: %1")
+                                    .arg(QString::fromUtf8(err)));
+        return glb;
+    }
+    glb = QByteArray(reinterpret_cast<const char*>(bytes), outLen);
+    aicore_trellis_free_buffer(bytes);
+#else
+    Q_UNUSED(textureSize);
+    Q_UNUSED(componentFilter);
+#endif
+    return glb;
+}
+
+QString qTrellis::glbFilePath(const QString& dir,
+                              const QString& sourceLabel) const {
+    const QString base = QFileInfo(sourceLabel).completeBaseName();
+    return dir + QDir::separator() + QStringLiteral("TRELLIS_%1_%2.glb")
+                        .arg(base)
+                        .arg(QDateTime::currentDateTime().toString(
+                                "yyyyMMdd_hhmmss"));
+}
+
+bool qTrellis::writeGlbFile(const QByteArray& glb, const QString& path) {
+    if (glb.isEmpty()) return false;
+    QFile f(path);
+    if (!f.open(QIODevice::WriteOnly)) return false;
+    f.write(glb);
+    f.close();
+    m_dialog->appendLog(tr("[TRELLIS] GLB saved: %1").arg(path));
+    return true;
+}
+
+ccHObject* qTrellis::importGlbEntity(const QByteArray& glb,
+                                     const TrellisRunResult& result,
+                                     const QString& entityName) {
+    if (glb.isEmpty() || !m_app) return nullptr;
+    // Import through the shared file filters (qMeshIO's assimp glTF reader)
+    // so the entity carries the full PBR material (base-colour +
+    // metallic-roughness atlases, alpha blend, double-sided) — the same
+    // rendering the upstream GLB gives when opened in the viewer.
+    QTemporaryFile tmp(QDir::tempPath() +
+                       QStringLiteral("/TRELLIS_XXXXXX.glb"));
+    if (!tmp.open()) return nullptr;
+    tmp.write(glb);
+    tmp.flush();
+    FileIOFilter::LoadParameters params;
+    params.alwaysDisplayLoadDialog = false;
+    params.shiftHandlingMode = ecvGlobalShiftManager::NO_DIALOG_AUTO_SHIFT;
+    CC_FILE_ERROR err = CC_FERR_NO_ERROR;
+    ccHObject* imported =
+            FileIOFilter::LoadFromFile(tmp.fileName(), params, err);
+    tmp.close();
+    if (!imported) {
+        m_dialog->appendLog(
+                tr("[TRELLIS] GLB import failed (error %1); falling back to "
+                   "the vertex-colour mesh.")
+                        .arg(static_cast<int>(err)));
+        return nullptr;
+    }
+    imported->setName(entityName);
+    imported->setMetaData(QStringLiteral("Source"), result.sourceImage);
+    imported->setMetaData(QStringLiteral("Preset"), result.presetName);
+    imported->setMetaData(QStringLiteral("Runtime (ms)"), result.totalRuntimeMs);
+    imported->setMetaData(QStringLiteral("Backend"), result.backend);
+    imported->setMetaData(QStringLiteral("Model"),
+                          QFileInfo(result.modelPath).fileName());
+    imported->setMetaData(QStringLiteral("Material"),
+                          QStringLiteral("PBR textured GLB"));
+    return imported;
+}
+
 void qTrellis::saveResultGlbEx(const TrellisRunResult& result,
                                const TrellisDialog::Settings& settings,
                                const QString& sourceLabel,
                                int textureSize,
                                int componentFilter) {
-#ifdef AICore_ENABLED
     if (result.verts.isEmpty() || result.tris.isEmpty()) return;
-    const QString dir = settings.saveGlbDir;
-    QDir().mkpath(dir);
-    const QString base = QFileInfo(sourceLabel).completeBaseName();
-    const QString path = dir + QDir::separator() +
-                         QStringLiteral("TRELLIS_%1_%2.glb")
-                                 .arg(base)
-                                 .arg(QDateTime::currentDateTime().toString(
-                                         "yyyyMMdd_hhmmss"));
-    char err[512] = {0};
-    int outLen = 0;
-    uint8_t* glb = aicore_trellis_bake_glb(
-            result.verts.constData(), result.verts.size() / 3,
-            result.tris.constData(), result.tris.size() / 3,
-            result.hasPbr ? result.pbr.constData() : nullptr, textureSize,
-            componentFilter, &outLen, err, sizeof(err));
-    if (!glb) {
-        m_dialog->appendLog(tr("[TRELLIS] GLB bake failed: %1")
-                                    .arg(QString::fromUtf8(err)));
-        return;
-    }
-    QFile f(path);
-    if (f.open(QIODevice::WriteOnly)) {
-        f.write(reinterpret_cast<const char*>(glb), outLen);
-        f.close();
-        m_dialog->appendLog(tr("[TRELLIS] GLB saved: %1").arg(path));
-    }
-    aicore_trellis_free_buffer(glb);
-#else
-    Q_UNUSED(result);
-    Q_UNUSED(settings);
-    Q_UNUSED(sourceLabel);
-#endif
+    const QByteArray glb = bakeResultGlb(result, textureSize, componentFilter);
+    if (glb.isEmpty()) return;
+    QDir().mkpath(settings.saveGlbDir);
+    writeGlbFile(glb, glbFilePath(settings.saveGlbDir, sourceLabel));
 }

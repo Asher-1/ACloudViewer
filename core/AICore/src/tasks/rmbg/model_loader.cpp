@@ -34,6 +34,9 @@ namespace {
 // for the flow-defining switches, exactly like the historical configure
 // step overwriting the RMBG_VK_DIRECT_CONV variable.
 void apply_profile_to_graph(const std::string &profile, GraphOptions &opts) {
+    // Carried on the options so the graph builder can bake the Vulkan matmul
+    // dispatch marks (rmbg_scalar_* / rmbg_tc_*) into the graph; no env vars.
+    opts.math_profile = profile;
     if (profile == "strict") {
         opts.vulkan_direct_conv = false;
         opts.vk_f16_disabled = true;
@@ -117,12 +120,6 @@ bool load_gguf(const char *path,
     free_model(out);
 
     const std::string profile = normalize_math_profile(math_profile);
-    const std::string requested = lower(device && device[0] ? device : "auto");
-    // The ggml-side backend configuration implied by the profile must be
-    // applied before the backend instances are created (pick_backend below
-    // resolves the device). Interface-only: the env-mechanism translation
-    // lives in the common layer (aicore::apply_rmbg_math_profile).
-    aicore::apply_rmbg_math_profile(profile, requested);
 
     WeightMap weights;
     if (!weights.load_gguf(path, err)) return false;

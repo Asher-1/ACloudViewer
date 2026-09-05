@@ -88,10 +88,12 @@ public:
 
     /** Mark a strip slot done / active (see the kStage* constants). */
     void setStageState(int slot, int state);
+    /** Fill the strip slots that only exist after a generation completes
+     *  (Preprocess = RMBG-matted image; Mesh = guaranteed final render;
+     *  Texture / GLB = textured render). Safe to skip empty sources. */
+    void applyResultToStrip(const TrellisRunResult& result);
     /** Remember the last generation result for the export page. */
-    void setLastResult(const TrellisRunResult& result) {
-        m_lastResult = result;
-    }
+    void setLastResult(const TrellisRunResult& result) { m_lastResult = result; }
     const TrellisRunResult& lastResult() const { return m_lastResult; }
     /** Export-page settings + info line. */
     int exportTextureSize() const {
@@ -100,6 +102,17 @@ public:
     int exportComponentFilter() const {
         return m_exportComponentFilter ? m_exportComponentFilter->currentIndex()
                                        : 0;
+    }
+    /** Re-bake destination (persisted): DB-tree entity (default), GLB file
+     *  only, or both. */
+    enum ExportDestination {
+        kExportDb = 0,
+        kExportFile = 1,
+        kExportDbAndFile = 2
+    };
+    int exportDestination() const {
+        return m_exportDestination ? m_exportDestination->currentIndex()
+                                   : kExportDb;
     }
     void updateExportInfo(const TrellisRunResult& result);
 
@@ -124,6 +137,7 @@ private slots:
     void onTestImageSelected(int index);
     void onTestDataExtracted();
     void onPageChanged(int row);
+    void onExportPageAction();
 
 protected:
     void closeEvent(QCloseEvent* event) override;
@@ -169,14 +183,16 @@ private:
     QCheckBox* m_rmbgCheck = nullptr;
 
     // End-to-end step strip: six chips (source / preprocess / voxels / mesh /
-    // texture / GLB), each a thumbnail + caption driven by the live AICore
-    // preview callbacks and the stage progress.
-    QVector<QLabel*> m_stageThumbs;
+    // texture / GLB), each a clickable thumbnail + caption driven by the live
+    // AICore preview callbacks and the stage progress; clicking a chip opens
+    // the zoomable full-size preview (shared UI spec §13.3).
+    QVector<ecvClickableImageLabel*> m_stageThumbs;
     QVector<QLabel*> m_stageCaptions;
 
     // Export page (last-result GLB / print-wrap controls).
     QSpinBox* m_exportTextureSize = nullptr;
     QComboBox* m_exportComponentFilter = nullptr;
+    QComboBox* m_exportDestination = nullptr;
     QLabel* m_exportInfo = nullptr;
     QPushButton* m_rebakeBtn = nullptr;
     QPushButton* m_printWrapBtn = nullptr;

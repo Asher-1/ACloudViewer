@@ -248,6 +248,44 @@ struct GraphBuilder {
         return constant(GGML_TYPE_F32, {ne0, ne1}, data, "zero");
     }
 
+    // Historical RMBG_VK_COOPMAT_MATMUL whitelist of the optimized profile
+    // (substring semantics unchanged): layers whose numerics tolerate the
+    // cooperative-matrix F32 accumulation on CM1 hardware.
+    static bool tensor_core_whitelisted(const std::string &hint) {
+        static const char *const kTokens[] = {
+                "bb_layers_0", "bb_layers_1", "bb_layers_2", "bb_layers_3",
+                "sq0_", "db4_", "db3_", "db2_", "db1_"};
+        for (const char *token : kTokens) {
+            if (hint.find(token) != std::string::npos) return true;
+        }
+        return false;
+    }
+
+    // Name the mul_mat output so the ggml patch can route it (Vulkan reads
+    // these marks; other backends ignore them):
+    //   "rmbg_scalar_*" -> always run the exact scalar matmul pipelines;
+    //   "rmbg_tc_*"     -> cooperative F32 path on CM1/plain devices, forced
+    //                      scalar on coopmat2 (whose F32 matmul converts
+    //                      operands to F16); optimized-profile whitelist only;
+    //   "rmbg_mm_*"     -> neutral, normal fast dispatch (fast/default).
+    // strict_math pins every matmul to scalar; the optimized profile pins
+    // everything outside the whitelist. This replaces the per-matmul
+    // RMBG_VK_COOPMAT_MATMUL env whitelist, whose process-global state
+    // leaked into unrelated tasks and crashed qTrellis DINO on coopmat2.
+    ggml_tensor *mark_matmul(ggml_tensor *out, const std::string &hint) {
+        if (!out) return nullptr;
+        const char *mark = "rmbg_mm_";
+        if (opts.math_profile == "optimized") {
+            mark = tensor_core_whitelisted(hint) ? "rmbg_tc_" : "rmbg_scalar_";
+        } else if (opts.strict_math) {
+            mark = "rmbg_scalar_";
+        }
+        char name[GGML_MAX_NAME];
+        std::snprintf(name, sizeof(name), "%s%s", mark, hint.c_str());
+        ggml_set_name(out, name);
+        return out;
+    }
+
     ggml_tensor *scalar(float value) {
         return constant(GGML_TYPE_F32, {1}, std::vector<float>{value},
                         "scalar");
@@ -294,6 +332,7 @@ struct GraphBuilder {
         if (!w) return nullptr;
         ggml_tensor *out = ggml_mul_mat(ctx, w, x);
         if (!fp16) ggml_mul_mat_set_prec(out, GGML_PREC_F32);
+        out = mark_matmul(out, weight_name);
         return bias_name.empty() ? out : add_bias_tokens(out, bias_name);
     }
 
@@ -344,6 +383,7 @@ struct GraphBuilder {
                                         w16->ne[0] * w16->ne[1] * w16->ne[2],
                                         w16->ne[3]));
                 ggml_mul_mat_set_prec(out, GGML_PREC_F32);
+                out = mark_matmul(out, prefix);
                 out = ggml_reshape_4d(ctx, out, col16->ne[1], col16->ne[2],
                                       col16->ne[3], w16->ne[3]);
                 out = ggml_cont(ctx, ggml_permute(ctx, out, 0, 1, 3, 2));
@@ -371,6 +411,7 @@ struct GraphBuilder {
                                         w16->ne[0] * w16->ne[1] * w16->ne[2],
                                         w16->ne[3]));
                 ggml_mul_mat_set_prec(out, GGML_PREC_F32);
+                out = mark_matmul(out, prefix);
                 out = ggml_reshape_4d(ctx, out, col16->ne[1], col16->ne[2],
                                       col16->ne[3], w16->ne[3]);
                 out = ggml_cont(ctx, ggml_permute(ctx, out, 0, 1, 3, 2));
@@ -387,10 +428,8 @@ struct GraphBuilder {
                                 col->ne[1] * col->ne[2] * col->ne[3]),
                 ggml_reshape_2d(ctx, w, w->ne[0] * w->ne[1] * w->ne[2],
                                 w->ne[3]));
-        std::snprintf(custom_name, sizeof(custom_name), "rmbg_mm_%s",
-                      prefix.c_str());
-        ggml_set_name(out, custom_name);
         ggml_mul_mat_set_prec(out, GGML_PREC_F32);
+        out = mark_matmul(out, prefix);
         out = ggml_reshape_4d(ctx, out, col->ne[1], col->ne[2], col->ne[3],
                               w->ne[3]);
         out = ggml_cont(ctx, ggml_permute(ctx, out, 0, 1, 3, 2));
@@ -656,11 +695,8 @@ struct GraphBuilder {
                 ctx,
                 ggml_reshape_2d(ctx, regular, (int64_t)C * K, regular->ne[3]),
                 stacked);
-        char matmul_name[GGML_MAX_NAME];
-        std::snprintf(matmul_name, sizeof(matmul_name), "rmbg_mm_%s",
-                      prefix.c_str());
-        ggml_set_name(out, matmul_name);
         ggml_mul_mat_set_prec(out, GGML_PREC_F32);
+        out = mark_matmul(out, prefix);
         out = tokens_to_spatial(out, H, W);
         return weights.get_f32(bias_name.c_str())
                        ? add_bias_spatial(out, bias_name)
@@ -997,6 +1033,7 @@ struct GraphBuilder {
                     ggml_reshape_2d(ctx, windows, C, N * nW);
             ggml_tensor *qkv_mm = ggml_mul_mat(ctx, qkv_weight, windows_flat);
             ggml_mul_mat_set_prec(qkv_mm, GGML_PREC_F32);
+            mark_matmul(qkv_mm, p + "attn_qkv_weight");
             ggml_tensor *qkv = ggml_reshape_3d(ctx, qkv_mm, 3 * C, N, nW);
 
             // Vulkan consumes the QKV projection directly in the layout used by
@@ -1148,6 +1185,7 @@ struct GraphBuilder {
                 ggml_tensor *attn_scores = ggml_mul_mat(
                         ctx, k, ggml_scale(ctx, q, 1.f / std::sqrt((float)hd)));
                 ggml_mul_mat_set_prec(attn_scores, GGML_PREC_F32);
+                mark_matmul(attn_scores, "attn_scores");
                 attn_scores = ggml_add(ctx, attn_scores,
                                        constant(GGML_TYPE_F32, {N, N, heads, 1},
                                                 rpb, "rpb_strict"));
@@ -1163,12 +1201,14 @@ struct GraphBuilder {
                 ggml_tensor *vt = ggml_cont(ctx, ggml_transpose(ctx, v));
                 attended = ggml_mul_mat(ctx, vt, attn_scores);
                 ggml_mul_mat_set_prec(attended, GGML_PREC_F32);
+                mark_matmul(attended, "attn_av");
                 attended =
                         ggml_cont(ctx, ggml_permute(ctx, attended, 0, 2, 1, 3));
                 attended = ggml_reshape_2d(ctx, attended, C, N * nW);
             }
             ggml_tensor *proj_mm = ggml_mul_mat(ctx, proj_weight, attended);
             ggml_mul_mat_set_prec(proj_mm, GGML_PREC_F32);
+            mark_matmul(proj_mm, p + "attn_proj_weight");
             windows = ggml_reshape_3d(ctx, proj_mm, C, N, nW);
             windows = ggml_add(ctx, windows, proj_bias);
             if (taps && stage == 0 && block == 0)

@@ -7,32 +7,33 @@
 //
 // Explicit bridge for ggml-side environment configuration.
 //
-// ggml upstream (GGML_VK_*) and our ggml patches (RMBG_VK_*,
-// RMBG_CUDA_CONV_TF32) read a handful of environment variables when a backend
-// instance is created — there is no runtime API for them. This bridge is the
-// ONLY place in AICore that writes those variables:
+// ggml upstream (GGML_VK_*, GGML_METAL_*) reads a handful of environment
+// variables when a backend instance is created — there is no runtime API for
+// them. This bridge is the ONLY place in AICore that writes those variables:
 //
 //   explicit options -> GgmlEnvOverrides -> apply_ggml_env_overrides()
 //
 // The direction of control is "explicit interface drives env", never "env
-// drives logic". AICore's own code paths read no environment variables.
+// drives logic". AICore's own code paths read no environment variables, and
+// task behavior must never flow through this bridge: the RMBG math profile
+// (formerly translated here into RMBG_VK_* / RMBG_CUDA_CONV_TF32 variables)
+// is now carried as explicit GraphOptions and baked into the graph as
+// output-name marks the ggml patch routes on.
 //
 // Semantics per field (matching the historical setenv/unsetenv behavior):
-//   nullopt / nullopt string -> leave the variable untouched (shell wins)
-//   true / ""                -> set ("1" for bools; "" clears the string var)
-//   false / "value"          -> unset / set to "value"
+//   nullopt          -> leave the variable untouched (shell wins)
+//   true             -> set ("1" for bools)
+//   false            -> unset
 //
 // Application is immediate and process-global (last writer wins), exactly
 // like the setenv calls it replaces. ggml snapshots these variables when a
-// backend instance is CREATED, so for deterministic results a task must
+// backend instance is CREATED, so for deterministic results a caller must
 // apply its overrides before its first context creation; applying after the
 // backends were loaded prints a warning because existing instances keep
 // their snapshot.
 //
 // Task modules never touch this header (enforced by
-// tests/check_no_env_getenv.sh): they call the higher-level profile
-// interfaces below (apply_rmbg_math_profile) or the backend utilities with
-// plain option values, and those common-layer functions drive the overrides.
+// tests/check_no_env_getenv.sh); they use plain option values only.
 
 #pragma once
 
@@ -53,12 +54,6 @@ struct GgmlEnvOverrides {
     // ggml-metal instance switches (upstream interface, macOS only).
     std::optional<bool> metal_graph_optimize_disable;
     std::optional<bool> metal_fusion_disable;
-
-    // rmbg_merged patch switches (read by the patched custom ops).
-    std::optional<bool> rmbg_vk_scalar_direct_conv;
-    std::optional<std::string> rmbg_vk_coopmat_matmul;  // nullopt = untouched,
-    // "" = clear, non-empty = set
-    std::optional<bool> rmbg_cuda_conv_tf32;
 
     // cuBLAS TF32 switch. NOTE: process-global by nature (same as the
     // historical setenv) — it also affects any other cuBLAS user in the
@@ -84,19 +79,19 @@ GgmlEnvSnapshot take_ggml_env_snapshot(const std::vector<std::string>& keys);
  *  were unset go back to unset, set ones get their old value back. */
 void restore_ggml_env_snapshot(const GgmlEnvSnapshot& snapshot);
 
+/** Process-wide Vulkan runtime defaults, applied once before any ggml
+ *  device is initialized (ggml-vulkan snapshots instance-level variables at
+ *  first use). Enables the GGML_VK_ALLOW_SYSMEM_FALLBACK tier: when a
+ *  device allocation fails mid-run — VRAM exhausted by the desktop, the
+ *  host 3D viewport, or a larger-than-expected activation — the affected
+ *  buffer degrades to host-visible memory instead of throwing. Normal runs
+ *  never touch the fallback tier, so this only turns "failed run" into
+ *  "slower run". An explicit shell setting of the variable always wins. */
+void apply_vulkan_runtime_defaults();
+
 /** Internal: records that ggml backends have been registered, so later
  *  apply_ggml_env_overrides() calls can warn about the snapshot semantics.
  *  Called by ggml_common::load_backends_once(). */
 void mark_ggml_backends_loaded();
-
-/** RMBG math-profile -> ggml-side overrides, translated here so the rmbg
- *  task module stays free of any environment mechanism (interface-only
- *  control; see the header comment). Device-aware: the Vulkan switches are
- *  only applied when a Vulkan backend may load, the cuBLAS TF32 switch only
- *  for CUDA-bound requests. Call BEFORE the first backend instance is
- *  created (ggml snapshots these variables at instance creation).
- *  Profile: "strict" | "fast" | "unsafe-fast" | "optimized" (default). */
-void apply_rmbg_math_profile(const std::string& profile,
-                             const std::string& requested_device);
 
 }  // namespace aicore

@@ -65,17 +65,6 @@ void apply_ggml_env_overrides(const GgmlEnvOverrides& overrides) {
     apply_bool("GGML_METAL_GRAPH_OPTIMIZE_DISABLE",
                overrides.metal_graph_optimize_disable);
     apply_bool("GGML_METAL_FUSION_DISABLE", overrides.metal_fusion_disable);
-    apply_bool("RMBG_VK_SCALAR_DIRECT_CONV",
-               overrides.rmbg_vk_scalar_direct_conv);
-    apply_bool("RMBG_CUDA_CONV_TF32", overrides.rmbg_cuda_conv_tf32);
-    if (overrides.rmbg_vk_coopmat_matmul.has_value()) {
-        if (overrides.rmbg_vk_coopmat_matmul->empty()) {
-            clear_env("RMBG_VK_COOPMAT_MATMUL");
-        } else {
-            set_env("RMBG_VK_COOPMAT_MATMUL",
-                    overrides.rmbg_vk_coopmat_matmul->c_str());
-        }
-    }
     apply_bool("NVIDIA_TF32_OVERRIDE", overrides.nvidia_tf32_override);
 }
 
@@ -104,65 +93,30 @@ void restore_ggml_env_snapshot(const GgmlEnvSnapshot& snapshot) {
     }
 }
 
+void apply_vulkan_runtime_defaults() {
+    std::lock_guard<std::mutex> lock(g_mutex);
+    // Shell wins: an explicit GGML_VK_ALLOW_SYSMEM_FALLBACK setting (either
+    // direction) is the user's choice and is left untouched.
+    const char* shell = std::getenv("GGML_VK_ALLOW_SYSMEM_FALLBACK");
+    if (shell != nullptr) {
+        AICORE_LOG_INFO(
+                "[AICore] ",
+                "GGML_VK_ALLOW_SYSMEM_FALLBACK already set by the shell "
+                "('%s') — keeping it\n",
+                shell);
+        return;
+    }
+    set_env("GGML_VK_ALLOW_SYSMEM_FALLBACK", "1");
+    AICORE_LOG_INFO("[AICore] ",
+                    "Vulkan sysmem fallback enabled by default "
+                    "(GGML_VK_ALLOW_SYSMEM_FALLBACK=1): a device allocation "
+                    "that no longer fits VRAM degrades to host memory "
+                    "instead of failing the run\n");
+}
+
 void mark_ggml_backends_loaded() {
     std::lock_guard<std::mutex> lock(g_mutex);
     g_backends_loaded = true;
-}
-
-// ------------------------------------------------------------------
-// RMBG math-profile translation (moved out of tasks/rmbg — task modules
-// carry no environment mechanism; see the header comment).
-// ------------------------------------------------------------------
-
-namespace {
-
-// Coopmat matmul whitelist of the "optimized" profile (historical default
-// written into RMBG_VK_COOPMAT_MATMUL before the env bridge existed).
-constexpr const char* kOptimizedCoopmatWhitelist =
-        "bb_layers_0,bb_layers_1,bb_layers_2,bb_layers_3,sq0_,db4_,db3_,db2_"
-        ",db1_";
-
-}  // namespace
-
-void apply_rmbg_math_profile(const std::string& profile,
-                             const std::string& requested) {
-    GgmlEnvOverrides env;
-    const bool generic_gpu = requested == "gpu";
-    const bool may_vulkan = requested == "auto" || generic_gpu ||
-                            requested.rfind("vulkan", 0) == 0;
-    const bool may_cuda = requested == "auto" || generic_gpu ||
-                          requested.rfind("cuda", 0) == 0;
-    if (may_vulkan) {
-        if (profile == "strict") {
-            env.vk_disable_f16 = true;
-            env.vk_disable_coopmat = true;
-            env.vk_disable_coopmat2 = true;
-            env.vk_disable_integer_dot_product = true;
-            env.rmbg_vk_scalar_direct_conv = false;
-            env.rmbg_vk_coopmat_matmul = std::string("");
-        } else if (profile == "fast" || profile == "unsafe-fast") {
-            env.vk_disable_f16 = false;
-            env.vk_disable_coopmat = false;
-            env.vk_disable_coopmat2 = false;
-            env.vk_disable_integer_dot_product = false;
-            env.rmbg_vk_scalar_direct_conv = false;
-            env.rmbg_vk_coopmat_matmul = std::string("");
-        } else {  // "optimized" (default)
-            env.vk_disable_f16 = true;
-            env.vk_disable_coopmat = false;
-            env.vk_disable_coopmat2 = true;
-            env.vk_disable_integer_dot_product = true;
-            env.rmbg_vk_scalar_direct_conv = true;
-            env.rmbg_vk_coopmat_matmul =
-                    std::string(kOptimizedCoopmatWhitelist);
-        }
-    }
-    if (profile == "strict" && may_cuda) {
-        // Bit-stable FP32 GEMMs. The default keeps cuBLAS TF32 enabled; its
-        // measured alpha error remains below 1.4e-3.
-        env.nvidia_tf32_override = false;
-    }
-    apply_ggml_env_overrides(env);
 }
 
 }  // namespace aicore

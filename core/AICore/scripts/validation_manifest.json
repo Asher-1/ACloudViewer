@@ -265,6 +265,21 @@
       "metric_parser": "rmbg"
     },
     {
+      "id": "rmbg-strict",
+      "task": "rmbg",
+      "model_glob": "rmbg_models/*.gguf",
+      "for_each_model": true,
+      "executable": "binary:test_rmbg_capi_performance",
+      "args": ["{backend}", "strict"],
+      "env": {
+        "AICORE_TEST_RMBG_GGUF": "{model}",
+        "AICORE_TEST_DEVICE": "{backend}"
+      },
+      "accuracy_gate": "non-degenerate alpha and exact repeated-output hash",
+      "fingerprint_policy": "exact",
+      "metric_parser": "rmbg"
+    },
+    {
       "id": "sam3",
       "task": "sam3",
       "model_glob": "sam3_models/*.gguf",

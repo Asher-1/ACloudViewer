@@ -10,6 +10,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <string>
 #include <vector>
 
 #include "aicore/lightglue_capi.h"
@@ -81,21 +82,34 @@ uint64_t hashMatches(const aicore_lightglue_match* matches, int count) {
 }  // namespace
 
 int main(int argc, char** argv) {
-    if (argc < 3) {
-        std::fprintf(
-                stderr,
-                "usage: %s <matcher.gguf> <device> [warmups=2] [runs=10]\n",
-                argv[0]);
-        return 2;
-    }
+    char* cache_dir_buf = aicore_lightglue_model_cache_dir();
+    const std::string cache_dir = cache_dir_buf ? cache_dir_buf : "";
+    aicore_lightglue_free_buffer(cache_dir_buf);
+    // Bare `ctest` runs pass no args: resolve the published-catalog default
+    // matcher so the probe skips (77) without local assets instead of
+    // failing on a usage error. Explicit args keep the manual contract.
+    const std::string matcher =
+            argc >= 2 ? std::string(argv[1])
+                      : cache_dir + "/aliked-lightglue-f16.gguf";
+    const std::string device = argc >= 3 ? std::string(argv[2]) : "auto";
     const int warmups = argc >= 4 ? std::max(0, std::atoi(argv[3])) : 2;
     const int runs = argc >= 5 ? std::max(1, std::atoi(argv[4])) : 10;
+    if (std::FILE* probe = std::fopen(matcher.c_str(), "rb")) {
+        std::fclose(probe);
+    } else {
+        std::fprintf(stderr,
+                     "[lightglue-validation] skipped: matcher model not "
+                     "found: %s\n",
+                     matcher.c_str());
+        return 77;
+    }
 
     aicore_lightglue_options* options = aicore_lightglue_options_new();
-    aicore_lightglue_options_set_device(options, argv[2]);
+    aicore_lightglue_options_set_device(options, device.c_str());
     aicore_lightglue_options_set_matcher_type(options, 0);
     aicore_lightglue_options_set_min_score(options, 0.0);
-    aicore_lightglue_ctx* ctx = aicore_lightglue_load_opts(argv[1], options);
+    aicore_lightglue_ctx* ctx =
+            aicore_lightglue_load_opts(matcher.c_str(), options);
     aicore_lightglue_options_free(options);
     aicore_lightglue_geometry geometry{};
     if (!aicore_lightglue_is_ready(ctx) ||
@@ -161,7 +175,7 @@ int main(int argc, char** argv) {
             "\"device\":\"%s\",\"feature_type\":%d,\"matches\":%d,"
             "\"inference_p50_ms\":%.6f,\"inference_p95_ms\":%.6f,"
             "\"output_hash\":\"%016llx\"}\n",
-            argv[2], geometry.feature_type, reference_count,
+            device.c_str(), geometry.feature_type, reference_count,
             percentile(timings, 0.5), percentile(timings, 0.95),
             static_cast<unsigned long long>(reference_hash));
     aicore_lightglue_free(ctx);

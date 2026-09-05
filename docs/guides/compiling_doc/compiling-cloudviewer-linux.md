@@ -323,16 +323,16 @@ utils/install_deps_ubuntu.sh assume-yes
 
 ### B2. Create the Conda environment
 
-> **Important:** The default `conda_cloudViewer.yml` ships with `python=3.8`.
+> **Important:** The default `conda_cloudViewer.yml` ships with `python=3.10`.
 > ACloudViewer requires **Python 3.10 – 3.13**. The `sed` command below
-> replaces `3.8` with your chosen version. If you already have a `cloudViewer`
+> replaces `3.10` with your chosen version. If you already have a `cloudViewer`
 > Conda env with Python < 3.10, remove it first
 > (`conda env remove -n cloudViewer`) and recreate it.
 
 ```bash
 PYTHON_VERSION=3.12
 cp .ci/conda_cloudViewer.yml /tmp/conda_cloudViewer.yml
-sed -i "s/3.8/${PYTHON_VERSION}/g" /tmp/conda_cloudViewer.yml
+sed -i "s/3.10/${PYTHON_VERSION}/g" /tmp/conda_cloudViewer.yml
 
 conda env create -f /tmp/conda_cloudViewer.yml
 conda activate cloudViewer
@@ -466,7 +466,7 @@ Export paths so CMake can discover Conda packages:
 ```bash
 PYTHON_VERSION=3.12
 cp .ci/conda_linux.yml /tmp/conda_linux.yml
-sed -i "s/3.8/${PYTHON_VERSION}/g" /tmp/conda_linux.yml
+sed -i "s/3.10/${PYTHON_VERSION}/g" /tmp/conda_linux.yml
 
 conda env create -f /tmp/conda_linux.yml
 conda activate python${PYTHON_VERSION}

@@ -115,8 +115,13 @@ inline void load_backends_once() {
                     search_dir);
         }
 #endif
+        // Process-wide Vulkan runtime defaults must precede every device
+        // initialization: ggml-vulkan snapshots its instance-level
+        // variables once, at first device use (see ggml_env_bridge.hpp).
+        aicore::apply_vulkan_runtime_defaults();
         ggml_backend_load_all_from_path(search_dir);
 #else
+        aicore::apply_vulkan_runtime_defaults();
         ggml_backend_load_all();
 #endif
 #ifndef NDEBUG

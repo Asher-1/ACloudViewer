@@ -3,7 +3,7 @@ channels:
   - conda-forge
 dependencies:
   - cmake=3.31.8
-  - python=3.8
+  - python=3.10
   - pip
   - ninja
   - eigen=3.4.*

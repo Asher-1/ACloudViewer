@@ -11,13 +11,35 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <string>
 
 #include "aicore/rmbg_capi.h"
 #include "tests/common/test_macros.hpp"
 
 static int failures = 0;
 
+namespace {
+// The math profile must reach ggml through graph-level marks, never through
+// process environment variables: the former RMBG_VK_* bridge leaked into
+// unrelated tasks in the same process (e.g. qTrellis DINO on coopmat2).
+const char* const kProfileEnvKeys[] = {
+        "RMBG_VK_COOPMAT_MATMUL", "RMBG_VK_SCALAR_DIRECT_CONV",
+        "RMBG_CUDA_CONV_TF32", "GGML_VK_DISABLE_F16"};
+
+std::string profile_env_snapshot() {
+    std::string snapshot;
+    for (const char* key : kProfileEnvKeys) {
+        const char* value = std::getenv(key);
+        snapshot += key;
+        snapshot += value ? std::string("=") + value : "=<unset>";
+        snapshot += ";";
+    }
+    return snapshot;
+}
+}  // namespace
+
 int main() {
+    const std::string env_before = profile_env_snapshot();
     AICORE_CHECK(aicore_rmbg_abi_version() >= 3);
 
     // Null-safe teardown / lifecycle.
@@ -151,6 +173,10 @@ int main() {
     // Shutdown is idempotent and must not disturb later warmups.
     aicore_rmbg_shutdown();
     aicore_rmbg_shutdown();
+
+    // No rmbg C API call may write ggml-side environment variables: the math
+    // profile travels as options and is baked into the graph by the builder.
+    AICORE_CHECK(profile_env_snapshot() == env_before);
 
     if (failures == 0) {
         std::printf("[rmbg] contract test passed\n");

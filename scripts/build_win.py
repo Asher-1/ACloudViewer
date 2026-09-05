@@ -222,7 +222,7 @@ def build():
     else:
         exit(1)
 
-    logging.info("\nStart to build wheel for python3.8-3.12 On Windows...\n")
+    logging.info("\nStart to build wheel for python3.10-3.12 On Windows...\n")
     for version in ["3.10", "3.11", "3.12"]:
         logging.info("#" * 80)
         success = build_python_wheel(version)
