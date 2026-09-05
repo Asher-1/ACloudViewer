@@ -23,30 +23,10 @@ set(MAIN_DEPLOY_PATH ${DEPLOY_ROOT_PATH}/packages/${MAIN_APP_NAME}/data)
 set(CLOUDVIEWER_DEPLOY_PATH ${DEPLOY_ROOT_PATH}/packages/${CLOUDVIEWER_APP_NAME}/data)
 set(DEPLOY_LIB_PATH ${MAIN_DEPLOY_PATH}/${LIBS_FOLDER_NAME})
 
-# OIIO is a direct Reconstruction dependency. Verify that the final payload,
-# not only the build host, contains its shared runtime before packaging.
-function(verify_oiio_runtime_payload deploy_root)
-    if(NOT BUILD_RECONSTRUCTION)
-        return()
-    endif()
-    if(APPLE)
-        file(GLOB _oiio_runtime
-             "${deploy_root}/*.app/Contents/Frameworks/libOpenImageIO.dylib"
-             "${deploy_root}/*.app/Contents/Frameworks/libOpenImageIO.[0-9]*.dylib")
-        file(GLOB _oiio_util_runtime
-             "${deploy_root}/*.app/Contents/Frameworks/libOpenImageIO_Util*.dylib")
-    elseif(WIN32)
-        file(GLOB _oiio_runtime "${deploy_root}/lib/OpenImageIO.dll")
-        file(GLOB _oiio_util_runtime "${deploy_root}/lib/OpenImageIO_Util*.dll")
-    else()
-        file(GLOB _oiio_runtime "${deploy_root}/lib/libOpenImageIO.so*")
-        file(GLOB _oiio_util_runtime "${deploy_root}/lib/libOpenImageIO_Util.so*")
-    endif()
-    if(NOT _oiio_runtime OR NOT _oiio_util_runtime)
-        message(FATAL_ERROR
-            "Reconstruction package is missing the OpenImageIO runtime closure under ${deploy_root}")
-    endif()
-endfunction()
+# OIIO is a direct Reconstruction dependency. This module copies the two
+# source-built runtime libraries explicitly into every independently
+# installable component and verifies the final payload afterwards.
+include("${CMAKE_CURRENT_LIST_DIR}/OpenImageIOPackageRuntime.cmake")
 
 function(replace_version_in_file file_path)
     # read contents
@@ -121,32 +101,6 @@ function(ensure_ggml_backends_in_app app_frameworks_dir install_lib_dir module_s
     endif()
 endfunction()
 
-# OIIO is linked through Reconstruction rather than Qt, so macdeployqt does
-# not own its deployment. Copy the exact source-built dylib closure into every
-# application bundle before the existing macOS fixup/sign steps run.
-function(ensure_oiio_runtime_in_app app_frameworks_dir external_install_dir)
-    if(NOT BUILD_RECONSTRUCTION OR NOT APPLE)
-        return()
-    endif()
-    if(NOT IS_DIRECTORY "${app_frameworks_dir}" OR
-       NOT IS_DIRECTORY "${external_install_dir}")
-        message(FATAL_ERROR
-            "OpenImageIO deployment requires ${app_frameworks_dir} and "
-            "${external_install_dir}")
-    endif()
-    file(GLOB _oiio_dylibs
-         "${external_install_dir}/Frameworks/libOpenImageIO*.dylib")
-    list(FILTER _oiio_dylibs INCLUDE REGEX
-         "/libOpenImageIO(_Util)?(\\.[0-9]+)*\\.dylib$")
-    if(NOT _oiio_dylibs)
-        message(FATAL_ERROR
-            "OpenImageIO source build did not install its macOS runtime under "
-            "${external_install_dir}/Frameworks")
-    endif()
-    file(COPY ${_oiio_dylibs} DESTINATION "${app_frameworks_dir}"
-         USE_SOURCE_PERMISSIONS)
-endfunction()
-
 # 1. Config
 ## update ACloudViewer version and build time
 replace_version_in_file("${CONFIG_FILE_PATH}")
@@ -170,11 +124,6 @@ endif()
 set(SOURCE_BIN_PATH ${CMAKE_INSTALL_PREFIX}/${CloudViewer_INSTALL_BIN_DIR})
 if (APPLE AND GGML_MODULE_SUFFIX)
     set(_GGML_SRC_DIR "${CMAKE_INSTALL_PREFIX}/${CloudViewer_INSTALL_LIB_DIR}")
-endif()
-if (APPLE)
-    ensure_oiio_runtime_in_app(
-        "${MAIN_DEPLOY_PATH}/${MAIN_APP_NAME}${APP_EXTENSION}/Contents/${LIBS_FOLDER_NAME}"
-        "${EXTERNAL_INSTALL_DIRS}")
 endif()
 ## deploy ACloudViewer
 file(COPY "${SOURCE_BIN_PATH}/${MAIN_APP_NAME}/${MAIN_APP_NAME}${APP_EXTENSION}"
@@ -349,7 +298,9 @@ elseif (WIN32)
     endif()
 endif()
 
-verify_oiio_runtime_payload("${MAIN_DEPLOY_PATH}")
+deploy_oiio_runtime("${MAIN_DEPLOY_PATH}" "${MAIN_APP_NAME}"
+                    "${OIIO_EXTERNAL_INSTALL_DIR}")
+verify_oiio_runtime_payload("${MAIN_DEPLOY_PATH}" "${MAIN_APP_NAME}")
 
 ## deploy CloudViewer
 if (${BUILD_GUI} STREQUAL "ON")
@@ -364,11 +315,10 @@ if (${BUILD_GUI} STREQUAL "ON")
             "${SOURCE_BIN_PATH}/${CLOUDVIEWER_APP_NAME}/${CLOUDVIEWER_APP_NAME}${APP_EXTENSION}/Contents/${LIBS_FOLDER_NAME}"
             "${_GGML_SRC_DIR}" "${GGML_MODULE_SUFFIX}")
     endif()
-    if (APPLE)
-        ensure_oiio_runtime_in_app(
-            "${CLOUDVIEWER_DEPLOY_PATH}/${CLOUDVIEWER_APP_NAME}${APP_EXTENSION}/Contents/${LIBS_FOLDER_NAME}"
-            "${EXTERNAL_INSTALL_DIRS}")
-    endif()
+    deploy_oiio_runtime("${CLOUDVIEWER_DEPLOY_PATH}" "${CLOUDVIEWER_APP_NAME}"
+                        "${OIIO_EXTERNAL_INSTALL_DIR}")
+    verify_oiio_runtime_payload("${CLOUDVIEWER_DEPLOY_PATH}"
+                                "${CLOUDVIEWER_APP_NAME}")
     if ((WIN32 OR UNIX) AND NOT APPLE)
         file(COPY "${SOURCE_BIN_PATH}/${CLOUDVIEWER_APP_NAME}/resources"
                 DESTINATION "${CLOUDVIEWER_DEPLOY_PATH}"
@@ -388,11 +338,9 @@ if (${BUILD_RECONSTRUCTION} STREQUAL "ON")
             "${SOURCE_BIN_PATH}/${COLMAP_APP_NAME}/${COLMAP_APP_NAME}${APP_EXTENSION}/Contents/${LIBS_FOLDER_NAME}"
             "${_GGML_SRC_DIR}" "${GGML_MODULE_SUFFIX}")
     endif()
-    if (APPLE)
-        ensure_oiio_runtime_in_app(
-            "${COLMAP_DEPLOY_PATH}/${COLMAP_APP_NAME}${APP_EXTENSION}/Contents/${LIBS_FOLDER_NAME}"
-            "${EXTERNAL_INSTALL_DIRS}")
-    endif()
+    deploy_oiio_runtime("${COLMAP_DEPLOY_PATH}" "${COLMAP_APP_NAME}"
+                        "${OIIO_EXTERNAL_INSTALL_DIR}")
+    verify_oiio_runtime_payload("${COLMAP_DEPLOY_PATH}" "${COLMAP_APP_NAME}")
 
     if (UNIX AND NOT APPLE)
         # for Colmap deps

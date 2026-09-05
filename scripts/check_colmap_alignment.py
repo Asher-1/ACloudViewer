@@ -90,8 +90,15 @@ def main() -> int:
     manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
     if args.probe or args.release:
         print("local prerequisites:")
+        deferred_names = set()
+        for item in manifest["capabilities"]:
+            if item.get("status") == "deferred" and item.get("name") == "hip_patchmatch":
+                deferred_names.add("hipcc")
         for name, available in probe_prerequisites(args.manifest.parents[1].parent).items():
-            print(f"  {'ready' if available else 'missing':7s} {name}")
+            if name in deferred_names:
+                print(f"  {'deferred':7s} {name} (outside active hardware matrix)")
+            else:
+                print(f"  {'ready' if available else 'missing':7s} {name}")
     failures = []
     for item in manifest["capabilities"]:
         status = item.get("status")
