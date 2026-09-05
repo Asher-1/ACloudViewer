@@ -1842,79 +1842,81 @@ aicore_trellis_mesh *aicore_trellis_texture_mesh(
     }
 
     return fenced(err, err_len, [&]() -> aicore_trellis_mesh * {
-    std::string e;
-    const int S = (pipeline_type == AICORE_TRELLIS_PIPE_1024) ? 1024 : 512;
-    if (progress) progress(user, AICORE_TRELLIS_STAGE_PREPROCESS, 0, 0);
+        std::string e;
+        const int S = (pipeline_type == AICORE_TRELLIS_PIPE_1024) ? 1024 : 512;
+        if (progress) progress(user, AICORE_TRELLIS_STAGE_PREPROCESS, 0, 0);
 
-    // Single decode pass (Qt QImage), then optional in-tree RMBG matting,
-    // then preprocessing — mirrors the integrated generate path.
-    std::vector<uint8_t> src_rgba;
-    int iw = 0, ih = 0;
-    if (!decode_image_rgba(image_bytes, image_len, src_rgba, iw, ih, e)) {
-        copy_err(err, err_len, e);
-        return nullptr;
-    }
+        // Single decode pass (Qt QImage), then optional in-tree RMBG matting,
+        // then preprocessing — mirrors the integrated generate path.
+        std::vector<uint8_t> src_rgba;
+        int iw = 0, ih = 0;
+        if (!decode_image_rgba(image_bytes, image_len, src_rgba, iw, ih, e)) {
+            copy_err(err, err_len, e);
+            return nullptr;
+        }
 #ifdef TRELLIS2_HAVE_RMBG
-    if (p->rmbg) {
-        uint8_t *rmbg_out = nullptr;
-        int rmbg_out_len = 0;
-        std::string rmbg_err;
-        int rc = trellis2_rmbg_remove_background(p->rmbg, src_rgba.data(), iw,
-                                                 ih, &rmbg_out, &rmbg_out_len,
-                                                 &rmbg_err);
-        if (rc != 0 || !rmbg_out) {
-            copy_err(err, err_len, "RMBG: " + rmbg_err);
-            return nullptr;
+        if (p->rmbg) {
+            uint8_t *rmbg_out = nullptr;
+            int rmbg_out_len = 0;
+            std::string rmbg_err;
+            int rc = trellis2_rmbg_remove_background(p->rmbg, src_rgba.data(),
+                                                     iw, ih, &rmbg_out,
+                                                     &rmbg_out_len, &rmbg_err);
+            if (rc != 0 || !rmbg_out) {
+                copy_err(err, err_len, "RMBG: " + rmbg_err);
+                return nullptr;
+            }
+            src_rgba.assign(rmbg_out, rmbg_out + (size_t)rmbg_out_len);
+            trellis2_rmbg_free_buffer(rmbg_out);
+            background_mode = AICORE_TRELLIS_BG_KEEP;
         }
-        src_rgba.assign(rmbg_out, rmbg_out + (size_t)rmbg_out_len);
-        trellis2_rmbg_free_buffer(rmbg_out);
-        background_mode = AICORE_TRELLIS_BG_KEEP;
-    }
 #endif
-    std::vector<unsigned char> rgb((size_t)S * S * 3);
-    if (!trellis2_preprocess_rgba(src_rgba.data(), iw, ih, S, rgb, &e)) {
-        copy_err(err, err_len, "preprocess failed: " + e);
-        return nullptr;
-    }
-
-    if (progress) progress(user, AICORE_TRELLIS_STAGE_DINO, 0, 0);
-    trellis2_dino_cond cond;
-    if (!trellis2_dino_encode_rgb(p->dino, rgb.data(), S, cond, &e)) {
-        copy_err(err, err_len, "dino encode: " + e);
-        return nullptr;
-    }
-
-    auto *r = new aicore_trellis_mesh();
-    r->verts.assign(verts, verts + (size_t)n_verts * 3);
-    r->tris.assign(tris, tris + (size_t)n_tris * 3);
-    r->normals = fdg::vertex_normals(fdg::Mesh{r->verts, r->tris});
-    r->grid_res = grid_res;
-
-    std::vector<float> pbr;
-    if (use_qef) {
-        std::vector<int32_t> qef_coords;
-        if (!run_texture_stage_qef(p, verts, n_verts, tris, n_tris, grid_res,
-                                   r->verts, pipeline_type, cond, seed,
-                                   texture_steps, progress, user, pbr,
-                                   qef_coords, e)) {
-            copy_err(err, err_len, "texture: " + e);
-            delete r;
+        std::vector<unsigned char> rgb((size_t)S * S * 3);
+        if (!trellis2_preprocess_rgba(src_rgba.data(), iw, ih, S, rgb, &e)) {
+            copy_err(err, err_len, "preprocess failed: " + e);
             return nullptr;
         }
-        r->grid_coords = std::move(qef_coords);
-    } else {
-        r->grid_feats.assign(grid_feats, grid_feats + (size_t)grid_nvox * 7);
-        r->grid_coords.assign(grid_coords, grid_coords + (size_t)grid_nvox * 3);
-        if (!run_texture_stage(p, r->grid_feats, r->grid_coords, r->verts,
-                               grid_res, pipeline_type, cond, seed,
-                               texture_steps, progress, user, pbr, e)) {
-            copy_err(err, err_len, "texture: " + e);
-            delete r;
+
+        if (progress) progress(user, AICORE_TRELLIS_STAGE_DINO, 0, 0);
+        trellis2_dino_cond cond;
+        if (!trellis2_dino_encode_rgb(p->dino, rgb.data(), S, cond, &e)) {
+            copy_err(err, err_len, "dino encode: " + e);
             return nullptr;
         }
-    }
-    r->pbr = std::move(pbr);
-    return r;
+
+        auto *r = new aicore_trellis_mesh();
+        r->verts.assign(verts, verts + (size_t)n_verts * 3);
+        r->tris.assign(tris, tris + (size_t)n_tris * 3);
+        r->normals = fdg::vertex_normals(fdg::Mesh{r->verts, r->tris});
+        r->grid_res = grid_res;
+
+        std::vector<float> pbr;
+        if (use_qef) {
+            std::vector<int32_t> qef_coords;
+            if (!run_texture_stage_qef(p, verts, n_verts, tris, n_tris,
+                                       grid_res, r->verts, pipeline_type, cond,
+                                       seed, texture_steps, progress, user, pbr,
+                                       qef_coords, e)) {
+                copy_err(err, err_len, "texture: " + e);
+                delete r;
+                return nullptr;
+            }
+            r->grid_coords = std::move(qef_coords);
+        } else {
+            r->grid_feats.assign(grid_feats,
+                                 grid_feats + (size_t)grid_nvox * 7);
+            r->grid_coords.assign(grid_coords,
+                                  grid_coords + (size_t)grid_nvox * 3);
+            if (!run_texture_stage(p, r->grid_feats, r->grid_coords, r->verts,
+                                   grid_res, pipeline_type, cond, seed,
+                                   texture_steps, progress, user, pbr, e)) {
+                copy_err(err, err_len, "texture: " + e);
+                delete r;
+                return nullptr;
+            }
+        }
+        r->pbr = std::move(pbr);
+        return r;
     });
 }
 
@@ -2150,8 +2152,7 @@ int aicore_trellis_warmup_backend(const char *device) {
     try {
         return aicore_warmup_backend(device != nullptr ? device : "auto");
     } catch (const std::exception &e) {
-        AICORE_LOG_ERROR("[trellis] ", "backend warmup failed: %s\n",
-                         e.what());
+        AICORE_LOG_ERROR("[trellis] ", "backend warmup failed: %s\n", e.what());
     } catch (...) {
         AICORE_LOG_ERROR("[trellis] ",
                          "backend warmup failed: unknown exception\n");
@@ -2175,8 +2176,7 @@ char *aicore_trellis_info_json(aicore_trellis_ctx *ctx) {
     try {
         std::string j = "{";
         j += "\"caps\":" + std::to_string(aicore_trellis_caps(ctx));
-        j += ",\"backend\":\"" +
-             aicore::capi::json_escape(ctx->backend) + "\"";
+        j += ",\"backend\":\"" + aicore::capi::json_escape(ctx->backend) + "\"";
         j += ",\"shapedec_gpu\":" +
              std::string(ctx->shapedec_gpu ? "true" : "false");
         j += "}";

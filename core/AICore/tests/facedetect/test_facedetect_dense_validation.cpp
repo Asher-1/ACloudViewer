@@ -63,31 +63,29 @@ int main(int argc, char** argv) {
                     ? std::string(default_landmark->filename)
                     : std::string();
     const std::string detector_path =
-            argc >= 2
-                    ? std::string(argv[1])
-                    : (!default_detector_name.empty() && !cache_dir.empty()
-                               ? cache_dir + "/" + default_detector_name
-                               : std::string());
+            argc >= 2 ? std::string(argv[1])
+                      : (!default_detector_name.empty() && !cache_dir.empty()
+                                 ? cache_dir + "/" + default_detector_name
+                                 : std::string());
     const std::string landmark_path =
-            argc >= 3
-                    ? std::string(argv[2])
-                    : (!default_landmark_name.empty() && !cache_dir.empty()
-                               ? cache_dir + "/" + default_landmark_name
-                               : std::string());
+            argc >= 3 ? std::string(argv[2])
+                      : (!default_landmark_name.empty() && !cache_dir.empty()
+                                 ? cache_dir + "/" + default_landmark_name
+                                 : std::string());
     const char* image_env = std::getenv("AICORE_TEST_FACE_IMAGE");
     const std::string image_path =
-            argc >= 4
-                    ? std::string(argv[3])
-                    : (image_env && image_env[0]
-                               ? std::string(image_env)
-                               : parentDir(cache_dir) +
-                                 "/friends_faces/query/friends1.jpg");
+            argc >= 4 ? std::string(argv[3])
+                      : (image_env && image_env[0]
+                                 ? std::string(image_env)
+                                 : parentDir(cache_dir) +
+                                           "/friends_faces/query/friends1.jpg");
     const char* device_env = std::getenv("AICORE_TEST_DEVICE");
-    const std::string device = argc >= 5
-            ? std::string(argv[4])
-            : (device_env && device_env[0] ? std::string(device_env)
-                                           : std::string("auto"));
-    for (const std::string* path : {&detector_path, &landmark_path, &image_path}) {
+    const std::string device =
+            argc >= 5 ? std::string(argv[4])
+                      : (device_env && device_env[0] ? std::string(device_env)
+                                                     : std::string("auto"));
+    for (const std::string* path :
+         {&detector_path, &landmark_path, &image_path}) {
         if (std::FILE* probe = std::fopen(path->c_str(), "rb")) {
             std::fclose(probe);
             continue;
@@ -108,8 +106,10 @@ int main(int argc, char** argv) {
         std::fprintf(stderr, "unable to decode face image\n");
         return 1;
     }
-    aicore_facedetect_ctx* detector = load(detector_path.c_str(), device.c_str());
-    aicore_facedetect_ctx* landmark = load(landmark_path.c_str(), device.c_str());
+    aicore_facedetect_ctx* detector =
+            load(detector_path.c_str(), device.c_str());
+    aicore_facedetect_ctx* landmark =
+            load(landmark_path.c_str(), device.c_str());
     if (!aicore_facedetect_is_ready(detector) ||
         !aicore_facedetect_is_ready(landmark)) {
         std::fprintf(stderr, "unable to load detector/landmark pair\n");

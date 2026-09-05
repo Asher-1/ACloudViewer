@@ -253,10 +253,9 @@ void qTrellis::onExportRequested() {
     const bool wantFile = destination != TrellisDialog::kExportDb;
     TrellisDialog::Settings settings = m_currentSettings;
     if (wantFile && settings.saveGlbDir.isEmpty()) {
-        settings.saveGlbDir =
-                QStandardPaths::writableLocation(
-                        QStandardPaths::DownloadLocation) +
-                QStringLiteral("/TRELLIS");
+        settings.saveGlbDir = QStandardPaths::writableLocation(
+                                      QStandardPaths::DownloadLocation) +
+                              QStringLiteral("/TRELLIS");
     }
     // One bake for every selected destination: the bytes are identical.
     const QByteArray glb = bakeResultGlb(result, m_dialog->exportTextureSize(),
@@ -284,8 +283,7 @@ void qTrellis::onExportRequested() {
     }
     if (wantFile) {
         QDir().mkpath(settings.saveGlbDir);
-        writeGlbFile(glb,
-                     glbFilePath(settings.saveGlbDir, result.sourceImage));
+        writeGlbFile(glb, glbFilePath(settings.saveGlbDir, result.sourceImage));
     }
     if (m_dialog) m_dialog->setStageState(5, TrellisDialog::kStageDone);
 #endif
@@ -522,10 +520,11 @@ QByteArray qTrellis::bakeResultGlb(const TrellisRunResult& result,
 QString qTrellis::glbFilePath(const QString& dir,
                               const QString& sourceLabel) const {
     const QString base = QFileInfo(sourceLabel).completeBaseName();
-    return dir + QDir::separator() + QStringLiteral("TRELLIS_%1_%2.glb")
-                        .arg(base)
-                        .arg(QDateTime::currentDateTime().toString(
-                                "yyyyMMdd_hhmmss"));
+    return dir + QDir::separator() +
+           QStringLiteral("TRELLIS_%1_%2.glb")
+                   .arg(base)
+                   .arg(QDateTime::currentDateTime().toString(
+                           "yyyyMMdd_hhmmss"));
 }
 
 bool qTrellis::writeGlbFile(const QByteArray& glb, const QString& path) {
@@ -568,7 +567,8 @@ ccHObject* qTrellis::importGlbEntity(const QByteArray& glb,
     imported->setName(entityName);
     imported->setMetaData(QStringLiteral("Source"), result.sourceImage);
     imported->setMetaData(QStringLiteral("Preset"), result.presetName);
-    imported->setMetaData(QStringLiteral("Runtime (ms)"), result.totalRuntimeMs);
+    imported->setMetaData(QStringLiteral("Runtime (ms)"),
+                          result.totalRuntimeMs);
     imported->setMetaData(QStringLiteral("Backend"), result.backend);
     imported->setMetaData(QStringLiteral("Model"),
                           QFileInfo(result.modelPath).fileName());

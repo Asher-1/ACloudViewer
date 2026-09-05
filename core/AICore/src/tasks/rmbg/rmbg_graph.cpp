@@ -253,8 +253,9 @@ struct GraphBuilder {
     // cooperative-matrix F32 accumulation on CM1 hardware.
     static bool tensor_core_whitelisted(const std::string &hint) {
         static const char *const kTokens[] = {
-                "bb_layers_0", "bb_layers_1", "bb_layers_2", "bb_layers_3",
-                "sq0_", "db4_", "db3_", "db2_", "db1_"};
+                "bb_layers_0", "bb_layers_1", "bb_layers_2",
+                "bb_layers_3", "sq0_",        "db4_",
+                "db3_",        "db2_",        "db1_"};
         for (const char *token : kTokens) {
             if (hint.find(token) != std::string::npos) return true;
         }

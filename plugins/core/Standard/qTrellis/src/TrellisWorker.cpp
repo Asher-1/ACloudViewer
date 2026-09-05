@@ -255,7 +255,8 @@ QImage renderMeshBlob(const char* data, int len, int size) {
 // full triangle raster of a multi-million-triangle mesh would cost seconds.
 QImage renderResultPreview(const QVector<float>& verts,
                            const QVector<float>& normals,
-                           const QVector<float>& pbr, int size) {
+                           const QVector<float>& pbr,
+                           int size) {
     const int nv = verts.size() / 3;
     if (nv <= 0 || size <= 0) return QImage();
     QImage img(size, size, QImage::Format_ARGB32);
@@ -273,13 +274,12 @@ QImage renderResultPreview(const QVector<float>& verts,
         float shade = 1.0f;
         if (shaded) {
             const float* n = normals.constData() + i * 3;
-            const float nl = std::sqrt(n[0] * n[0] + n[1] * n[1] +
-                                       n[2] * n[2]) +
-                             1e-20f;
+            const float nl =
+                    std::sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]) + 1e-20f;
             // Two-sided lambert: the structure-tensor normals may point away
             // from the view; |dot| avoids black patches either way.
-            shade = 0.25f + 0.75f * std::fabs(
-                                      (n[0] * lx + n[1] * ly + n[2] * lz) / nl);
+            shade = 0.25f +
+                    0.75f * std::fabs((n[0] * lx + n[1] * ly + n[2] * lz) / nl);
         }
         float R, G, B;
         if (textured) {
@@ -339,7 +339,7 @@ void TrellisWorker::run() {
     bool ok = false;
     try {
         ok = runInference();
-    } catch (const std::exception &e) {
+    } catch (const std::exception& e) {
         emit logMessage(QStringLiteral("[TRELLIS] Unexpected failure: %1")
                                 .arg(QString::fromUtf8(e.what())));
     } catch (...) {
@@ -632,8 +632,8 @@ bool TrellisWorker::runInference() {
     // Final strip preview: shaded vertex-splat render, O(nv) — see
     // renderResultPreview. Runs before the GLB bake so the strip thumbnail
     // is ready when the result lands.
-    result.previewImage = renderResultPreview(result.verts, result.normals,
-                                              result.pbr, 256);
+    result.previewImage =
+            renderResultPreview(result.verts, result.normals, result.pbr, 256);
 
     // Bake the UV-atlas textured GLB here on the worker thread: the
     // add-to-DB path imports it for the full PBR material display (vertex

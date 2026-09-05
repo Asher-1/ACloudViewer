@@ -10,8 +10,8 @@
 #include <QDialog>
 #include <QHBoxLayout>
 #include <QMouseEvent>
-#include <QScrollBar>
 #include <QScrollArea>
+#include <QScrollBar>
 #include <QVBoxLayout>
 #include <QWheelEvent>
 #include <algorithm>
@@ -27,16 +27,18 @@ namespace {
 class PreviewZoomController : public QObject {
 public:
     PreviewZoomController(QLabel* label, QScrollArea* scroll, QImage image)
-        : QObject(scroll), m_label(label), m_scroll(scroll),
+        : QObject(scroll),
+          m_label(label),
+          m_scroll(scroll),
           m_image(std::move(image)) {
         // Working-copy cap: smooth-rescaling a 16K source on every wheel
         // tick would stall the GUI; ~4096 px keeps far more detail than the
         // dialog can display at any supported zoom.
         constexpr int kMaxWorkPx = 4096;
         if (m_image.width() > kMaxWorkPx || m_image.height() > kMaxWorkPx) {
-            m_image = m_image.scaled(kMaxWorkPx, kMaxWorkPx,
-                                     Qt::KeepAspectRatio,
-                                     Qt::SmoothTransformation);
+            m_image =
+                    m_image.scaled(kMaxWorkPx, kMaxWorkPx, Qt::KeepAspectRatio,
+                                   Qt::SmoothTransformation);
         }
         m_scroll->viewport()->installEventFilter(this);
         if (QWidget* win = m_scroll->window()) {
@@ -51,7 +53,8 @@ protected:
             switch (event->type()) {
                 case QEvent::Wheel:
                     zoomAt(QCursor::pos(),
-                           static_cast<QWheelEvent*>(event)->angleDelta().y() >= 0
+                           static_cast<QWheelEvent*>(event)->angleDelta().y() >=
+                                           0
                                    ? 1.25
                                    : 0.8);
                     return true;
@@ -77,8 +80,9 @@ protected:
                     }
                     break;
                 case QEvent::MouseButtonRelease:
-                    if (m_panning && static_cast<QMouseEvent*>(event)->button() ==
-                                             Qt::LeftButton) {
+                    if (m_panning &&
+                        static_cast<QMouseEvent*>(event)->button() ==
+                                Qt::LeftButton) {
                         m_panning = false;
                         m_scroll->viewport()->unsetCursor();
                         return true;
@@ -116,7 +120,8 @@ private:
         if (std::fabs(newZoom - m_zoom) < 1e-9 || m_image.isNull()) return;
         // Anchor: the image point currently under the cursor must stay
         // under the cursor after the rescale.
-        const QPoint viewPos = m_scroll->viewport()->mapFromGlobal(cursorGlobalPos);
+        const QPoint viewPos =
+                m_scroll->viewport()->mapFromGlobal(cursorGlobalPos);
         const QSize oldSize = m_currentSize;
         const QPoint contentPos(
                 m_scroll->horizontalScrollBar()->value() + viewPos.x(),
@@ -137,12 +142,10 @@ private:
     }
 
     void apply() {
-        m_currentSize = QSize(
-                std::max(1, qRound(m_image.width() * m_zoom)),
-                std::max(1, qRound(m_image.height() * m_zoom)));
-        m_label->setPixmap(QPixmap::fromImage(
-                m_image.scaled(m_currentSize, Qt::KeepAspectRatio,
-                               Qt::SmoothTransformation)));
+        m_currentSize = QSize(std::max(1, qRound(m_image.width() * m_zoom)),
+                              std::max(1, qRound(m_image.height() * m_zoom)));
+        m_label->setPixmap(QPixmap::fromImage(m_image.scaled(
+                m_currentSize, Qt::KeepAspectRatio, Qt::SmoothTransformation)));
         m_label->resize(m_currentSize);
     }
 
@@ -234,8 +237,7 @@ void ecvClickableImageLabel::showEnlargedImage(QWidget* parent,
     hint->setStyleSheet(
             QStringLiteral("color: palette(mid); font-size: 11px;"));
 
-    dlg.resize(qMin(image.width() + 48, 1280),
-               qMin(image.height() + 48, 900));
+    dlg.resize(qMin(image.width() + 48, 1280), qMin(image.height() + 48, 900));
 
     auto* layout = new QVBoxLayout(&dlg);
     layout->setContentsMargins(8, 8, 8, 8);

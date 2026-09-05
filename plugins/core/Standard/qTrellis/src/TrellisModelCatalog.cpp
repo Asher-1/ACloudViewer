@@ -99,8 +99,7 @@ QString hfMirrorUrl() {
     const QVector<TrellisModelEntry> all = catalogModels();
     for (const TrellisModelEntry& e : all) {
         const int slash = e.downloadUrl.lastIndexOf(QLatin1Char('/'));
-        if (e.downloadUrl.startsWith(QStringLiteral("https://")) &&
-            slash > 0) {
+        if (e.downloadUrl.startsWith(QStringLiteral("https://")) && slash > 0) {
             return e.downloadUrl.left(slash + 1);
         }
     }

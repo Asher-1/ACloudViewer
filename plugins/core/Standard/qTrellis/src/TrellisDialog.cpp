@@ -582,8 +582,7 @@ void TrellisDialog::saveSettings() const {
     settings.setValue("exportTextureSize", m_exportTextureSize->value());
     settings.setValue("exportComponentFilter",
                       m_exportComponentFilter->currentIndex());
-    settings.setValue("exportDestination",
-                      m_exportDestination->currentIndex());
+    settings.setValue("exportDestination", m_exportDestination->currentIndex());
     settings.endGroup();
 }
 
@@ -822,10 +821,9 @@ void TrellisDialog::updateModelStatus() {
         m_modelStatus->setToolTip(
                 tr("Manual download (if the button keeps failing):\n%1%2")
                         .arg(rows.join(QLatin1Char('\n')),
-                             mirror.isEmpty()
-                                     ? QString()
-                                     : QStringLiteral("\nMirror: %1").arg(
-                                               mirror)));
+                             mirror.isEmpty() ? QString()
+                                              : QStringLiteral("\nMirror: %1")
+                                                        .arg(mirror)));
         m_downloadBtn->setEnabled(true);
     }
 }
@@ -1287,16 +1285,15 @@ void TrellisDialog::applyResultToStrip(const TrellisRunResult& result) {
                                           m_stageThumbs[3]->size());
         m_stageThumbs[4]->setPreviewImage(result.previewImage,
                                           m_stageThumbs[4]->size());
-        m_stageCaptions[4]->setText(result.hasPbr
-                                            ? tr("Texture")
-                                            : tr("Texture · untextured"));
+        m_stageCaptions[4]->setText(result.hasPbr ? tr("Texture")
+                                                  : tr("Texture · untextured"));
         m_stageThumbs[5]->setPreviewImage(result.previewImage,
                                           m_stageThumbs[5]->size());
         m_stageCaptions[5]->setText(
                 result.glb.isEmpty()
                         ? tr("GLB · none")
                         : tr("GLB · %1 MB")
-                                  .arg(result.glb.size() / (1024.0 * 1024.0),
-                                       0, 'f', 1));
+                                  .arg(result.glb.size() / (1024.0 * 1024.0), 0,
+                                       'f', 1));
     }
 }
