@@ -2051,7 +2051,11 @@ else ()
         target_compile_options(3rdparty_blas INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:-m64>")
         target_link_libraries(3rdparty_blas INTERFACE 3rdparty_threads ${CMAKE_DL_LIBS})
     endif()
-    target_compile_definitions(3rdparty_blas INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")
+    if(UNIX)
+        # Windows links the LP64 interface so that faiss (32-bit indices) and
+        # the linalg wrappers share one MKL interface layer; see faiss.cmake.
+        target_compile_definitions(3rdparty_blas INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")
+    endif()
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_blas)
 endif ()
 

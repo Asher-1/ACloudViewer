@@ -1,16 +1,47 @@
 include(ExternalProject)
 
-# Ceres 2.2 is the first pinned release with the CUDA dense linear algebra
-# backend used by reconstruction's Ceres-vs-Caspar gate. It remains optional
-# and follows BUILD_CUDA_MODULE, so macOS and CPU-only configurations do not
-# acquire a CUDA runtime dependency.
+# Ceres 2.2 is the first pinned release with a CUDA dense linear algebra
+# backend, used by reconstruction's Ceres-vs-Caspar reference gate. It is
+# DISABLED BY DEFAULT and must stay that way for distributed artifacts:
+# enabling it gives libceres hard DT_NEEDED entries on CUDA runtime
+# libraries (libcudart/libcublas/libcusolver/libcusparse), which
+# scripts/platforms/linux/pack_ubuntu.sh excludes by design (see the
+# VerifyNoDynamicCuda contract) and which lock every host to one CUDA
+# toolkit major version. GPU Bundle Adjustment ships through the
+# Symforce-Caspar backend instead, whose runtime path is the only supported
+# CUDA solver for reconstruction. Flip CERES_ENABLE_CUDA=ON solely for
+# developer/CI gates that carry their own CUDA runtime closure, or once a
+# static cudart/cublas/cusolver/cusparse link route is adopted.
+option(CERES_ENABLE_CUDA
+       "Enable the Ceres CUDA dense linear algebra backend (adds hard CUDA \
+runtime dependencies to libceres; see the comment above)" OFF)
+
 set(CERES_URL https://github.com/ceres-solver/ceres-solver/archive/refs/tags/2.2.0.tar.gz)
 set(CERES_URL_HASH 12efacfadbfdc1bbfa203c236e96f4d3c210bed96994288b3ff0c8e7c6f350d4)
 
-# ExternalProject receives CMAKE_ARGS as a CMake list. Preserve a multi-arch
-# CUDA value as one argument rather than splitting it at every semicolon.
-string(REPLACE ";" "$<SEMICOLON>" CERES_CUDA_ARCHITECTURES_ESCAPED
-       "${CMAKE_CUDA_ARCHITECTURES}")
+# CUDA-only ExternalProject inputs, assembled here so the default OFF path
+# passes no CUDA arguments at all. ExternalProject receives CMAKE_ARGS as a
+# CMake list; the string(REPLACE ...) preserves a multi-arch CUDA value as
+# one argument rather than splitting it at every semicolon.
+set(CERES_CUDA_ARGS "")
+set(_CERES_PATCH_COMMAND
+        ${CMAKE_COMMAND} -E copy
+        ${CloudViewer_3RDPARTY_DIR}/ceres-solver/FindTBB.cmake <SOURCE_DIR>/cmake)
+if (CERES_ENABLE_CUDA)
+    string(REPLACE ";" "$<SEMICOLON>" CERES_CUDA_ARCHITECTURES_ESCAPED
+           "${CMAKE_CUDA_ARCHITECTURES}")
+    list(APPEND CERES_CUDA_ARGS
+            -DCMAKE_CUDA_COMPILER=${CMAKE_CUDA_COMPILER}
+            -DCMAKE_CUDA_ARCHITECTURES=${CERES_CUDA_ARCHITECTURES_ESCAPED}
+            -DCERES_CUDA_ARCHITECTURES=${CERES_CUDA_ARCHITECTURES_ESCAPED}
+            -DCMAKE_CUDA_STANDARD=17)
+    # Keep the parent reconstruction build's architecture list so the Ceres
+    # reference solver and Caspar use the same GPU code targets.
+    list(APPEND _CERES_PATCH_COMMAND
+            COMMAND ${CMAKE_COMMAND}
+                    -DSOURCE_DIR=<SOURCE_DIR>
+                    -P ${CloudViewer_3RDPARTY_DIR}/ceres-solver/patch_respect_cuda_architectures.cmake)
+endif ()
 
 ExternalProject_Add(ext_ceres
         # A versioned prefix prevents a configured build directory from
@@ -25,10 +56,7 @@ ExternalProject_Add(ext_ceres
         INSTALL_DIR ${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}
         UPDATE_COMMAND ""
         # PATCH_COMMAND sed "s/tbb_stddef.h/tbb.h/" -i <SOURCE_DIR>/cmake/FindTBB.cmake
-        PATCH_COMMAND ${CMAKE_COMMAND} -E copy ${CloudViewer_3RDPARTY_DIR}/ceres-solver/FindTBB.cmake <SOURCE_DIR>/cmake
-        COMMAND ${CMAKE_COMMAND}
-                -DSOURCE_DIR=<SOURCE_DIR>
-                -P ${CloudViewer_3RDPARTY_DIR}/ceres-solver/patch_respect_cuda_architectures.cmake
+        PATCH_COMMAND ${_CERES_PATCH_COMMAND}
         CMAKE_ARGS
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5
             ${EIGEN_CMAKE_FLAGS}
@@ -37,6 +65,9 @@ ExternalProject_Add(ext_ceres
             ${GFLAGS_CMAKE_FLAGS}
             ${SUITESPARSE_CMAKE_FLAGS}
             -DBUILD_SHARED_LIBS=$<$<PLATFORM_ID:Linux>:ON:OFF>
+            # Installed shared ceres must resolve its own NEEDED glog/gflags/lapack:
+            # consumer RUNPATHs are non-transitive on Linux.
+            -DCMAKE_INSTALL_RPATH=$ORIGIN
             -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
             -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
             -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
@@ -51,11 +82,8 @@ ExternalProject_Add(ext_ceres
             -DLAPACK=ON
             -DSUITESPARSE=ON
             -DOPENMP=${WITH_OPENMP}
-            -DUSE_CUDA=${BUILD_CUDA_MODULE}
-            -DCMAKE_CUDA_COMPILER=${CMAKE_CUDA_COMPILER}
-            -DCMAKE_CUDA_ARCHITECTURES=${CERES_CUDA_ARCHITECTURES_ESCAPED}
-            -DCERES_CUDA_ARCHITECTURES=${CERES_CUDA_ARCHITECTURES_ESCAPED}
-            -DCMAKE_CUDA_STANDARD=17
+            -DUSE_CUDA=${CERES_ENABLE_CUDA}
+            ${CERES_CUDA_ARGS}
             -DBUILD_BENCHMARKS=OFF
             -DBUILD_TESTING=OFF
             -DBUILD_EXAMPLES=OFF

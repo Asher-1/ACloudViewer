@@ -39,7 +39,7 @@ ExternalProject_Add(ext_openimageio
         ${_openimageio_util_link}
     PATCH_COMMAND ${CMAKE_COMMAND}
         -DSOURCE_DIR=<SOURCE_DIR>
-        -DPATCH_FILE=${CMAKE_CURRENT_LIST_DIR}/patches/0001-provide-local-ocio-pystring-to-config.patch
+        -DPATCH_DIR=${CMAKE_CURRENT_LIST_DIR}/patches
         -DGIT_EXECUTABLE=${GIT_EXECUTABLE}
         -P ${CMAKE_CURRENT_LIST_DIR}/patches/apply_openimageio_patch.cmake
     CMAKE_ARGS
@@ -73,6 +73,14 @@ ExternalProject_Add(ext_openimageio
         -DUSE_WEBP=OFF
         -DUSE_JXL=OFF
         -DOpenImageIO_BUILD_MISSING_DEPS=required
+        # Never discover a host libtiff. The macOS wheel env (.ci/conda_macos.yml)
+        # ships no libtiff, so find_package(TIFF) fell through to the legacy
+        # copy bundled in Mono.framework on GitHub runners; its uint64 is
+        # unsigned long while OIIO passes uint64_t* to TIFFWriteCustomDirectory(),
+        # which fails to compile. Force OIIO's own pinned local build
+        # (src/cmake/build_TIFF.cmake, libtiff 4.7.1) on every platform so the
+        # TIFF backend stays host-independent, like the OpenCV exclusion above.
+        -DOpenImageIO_BUILD_LOCAL_DEPS=TIFF
     DEPENDS ext_zlib)
 
 ExternalProject_Get_Property(ext_openimageio INSTALL_DIR)

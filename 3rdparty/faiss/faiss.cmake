@@ -18,6 +18,39 @@ set(FAISS_ENABLE_PYTHON OFF CACHE BOOL "" FORCE)
 set(FAISS_ENABLE_MKL OFF CACHE BOOL "" FORCE)
 set(FAISS_ENABLE_EXTRAS OFF CACHE BOOL "" FORCE)
 set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+
+# faiss resolves BLAS/LAPACK with CMake's FindBLAS/FindLAPACK inside its own
+# subdirectory. Windows ships no system BLAS, and the pinned static MKL is
+# installed by ext_mkl at build time, so a configure-time find_library() scan
+# cannot see it. Preset the result with the same pinned static MKL that
+# 3rdparty_blas uses: a preset cache value makes FindBLAS/FindLAPACK skip
+# their vendor probing and link these libraries directly. faiss indexes with
+# 32-bit ints, so it must use the LP64 interface (mkl_intel_lp64) rather than
+# the ILP64 one selected on UNIX - see mkl.cmake. Library order follows
+# Intel's link-line advisor (interface -> threading -> core) so every
+# dependency resolves downwards during the single-pass MSVC scan.
+#
+# mkl_tbb_thread (Release) carries ~6k undefined references into oneTBB, so
+# the tbb import library is appended after it, taken from whichever target
+# provides TBB: the FetchContent shared `tbb` target (USE_SYSTEM_TBB=OFF,
+# default) or the imported `TBB::tbb` from the system package
+# (USE_SYSTEM_TBB=ON). $<TARGET_LINKER_FILE> cannot be evaluated on the
+# INTERFACE target 3rdparty_tbb, hence the two-way dispatch.
+if (WIN32 AND NOT USE_BLAS AND TARGET ext_mkl)
+    set(FAISS_MKL_LIBS
+        "${STATIC_MKL_LIB_DIR}/mkl_intel_lp64.lib"
+        "$<$<CONFIG:Debug>:${STATIC_MKL_LIB_DIR}/mkl_sequential.lib>"
+        "$<$<CONFIG:Release>:${STATIC_MKL_LIB_DIR}/mkl_tbb_thread.lib>"
+        "${STATIC_MKL_LIB_DIR}/mkl_core.lib")
+    if(TARGET tbb)
+        list(APPEND FAISS_MKL_LIBS "$<$<CONFIG:Release>:$<TARGET_LINKER_FILE:tbb>>")
+    elseif(TARGET TBB::tbb)
+        list(APPEND FAISS_MKL_LIBS "$<$<CONFIG:Release>:$<TARGET_LINKER_FILE:TBB::tbb>>")
+    endif()
+    set(BLAS_LIBRARIES ${FAISS_MKL_LIBS} CACHE STRING "" FORCE)
+    set(LAPACK_LIBRARIES ${FAISS_MKL_LIBS} CACHE STRING "" FORCE)
+endif ()
+
 FetchContent_MakeAvailable(faiss)
 
 if (WIN32)

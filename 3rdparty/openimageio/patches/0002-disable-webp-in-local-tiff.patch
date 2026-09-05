@@ -1,0 +1,11 @@
+diff --git a/src/cmake/build_TIFF.cmake b/src/cmake/build_TIFF.cmake
+--- a/src/cmake/build_TIFF.cmake
++++ b/src/cmake/build_TIFF.cmake
+@@ -46,6 +46,7 @@ build_dependency_with_cmake(TIFF
+         -D libdeflate=ON
+         -D lzma=OFF
+         -D zstd=OFF
++        -D webp=OFF
+         -D jbig=OFF
+         -D lerc=OFF
+         ${MORE_TIFF_CMAKE_ARGS}
