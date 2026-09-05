@@ -77,10 +77,23 @@ ExternalProject_Add(ext_openimageio
         # ships no libtiff, so find_package(TIFF) fell through to the legacy
         # copy bundled in Mono.framework on GitHub runners; its uint64 is
         # unsigned long while OIIO passes uint64_t* to TIFFWriteCustomDirectory(),
-        # which fails to compile. Force OIIO's own pinned local build
-        # (src/cmake/build_TIFF.cmake, libtiff 4.7.1) on every platform so the
-        # TIFF backend stays host-independent, like the OpenCV exclusion above.
+        # which fails to compile. Two guards enforce that, on every platform:
+        #   - OpenImageIO_BUILD_LOCAL_DEPS=TIFF skips find_package(TIFF) entirely
+        #     and builds OIIO's own pinned libtiff (src/cmake/build_TIFF.cmake,
+        #     4.7.1), keeping the TIFF backend host-independent like the OpenCV
+        #     exclusion above. OIIO's build_dependency_with_cmake swallows
+        #     sub-build failures, so if that local build ever fails,
+        #     build_TIFF.cmake's final find_package(TIFF REQUIRED) would fall
+        #     back to a host tiff again - which the next two flags prevent:
+        #   - CMAKE_IGNORE_PATH discards any find result under Mono.framework.
+        #   - CMAKE_FIND_FRAMEWORK=NEVER removes framework search altogether
+        #     (OIIO and its local dep builds need no Apple frameworks).
+        # If the local TIFF build ever fails, configure now aborts with an
+        # explicit "Could NOT find TIFF" instead of silently compiling the
+        # runner's incompatible libtiff.
         -DOpenImageIO_BUILD_LOCAL_DEPS=TIFF
+        -DCMAKE_IGNORE_PATH=/Library/Frameworks/Mono.framework
+        -DCMAKE_FIND_FRAMEWORK=NEVER
     DEPENDS ext_zlib)
 
 ExternalProject_Get_Property(ext_openimageio INSTALL_DIR)
