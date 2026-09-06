@@ -1106,11 +1106,10 @@ static ggml_backend_t sam3_backend_init(sam3_device device, bool use_gpu) {
                                  "backend\n",
                                  __func__);
             } else {
-                AICORE_LOG_ERROR(
-                        "[sam3] ",
-                        "%s: requested device unavailable; using CPU "
-                        "backend\n",
-                        __func__);
+                AICORE_LOG_ERROR("[sam3] ",
+                                 "%s: requested device unavailable; using CPU "
+                                 "backend\n",
+                                 __func__);
             }
         }
     }

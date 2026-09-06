@@ -538,7 +538,8 @@ void SAM3Dialog::setupUi() {
     deviceRow->addStretch();
     mainLayout->addLayout(deviceRow);
 
-    // ── Page shell (qYOLO-style: left page list + stacked pages) ────────────────────
+    // ── Page shell (qYOLO-style: left page list + stacked pages)
+    // ────────────────────
     m_pageList = new QListWidget(this);
     m_pageList->setFixedWidth(ecvAICoreUi::dpiScaled(132));
     m_pageList->setSpacing(ecvAICoreUi::dpiScaled(2));
@@ -1496,9 +1497,8 @@ void SAM3Dialog::onPageChanged(int index) {
     // Video page is identified by widget identity, not by position (index 3
     // today): adding a page after Video must not inherit its exclusive-GPU
     // teardown semantics.
-    const bool isVideoPage =
-            m_videoTab && m_pageStack &&
-            m_pageStack->widget(index) == m_videoTab;
+    const bool isVideoPage = m_videoTab && m_pageStack &&
+                             m_pageStack->widget(index) == m_videoTab;
     if (isVideoPage) {
         // Image and video contexts can each consume multiple GiB. Keep only
         // the active domain resident so opening Video cannot fail while an
@@ -1520,8 +1520,8 @@ void SAM3Dialog::onPageChanged(int index) {
     // interactivity must follow the tab switch).
     updateSegmentButtonState();
     if (m_worker && m_worker->context() && modelSelectionChanged()) {
-        QListWidgetItem* page = m_pageList ? m_pageList->currentItem()
-                                           : nullptr;
+        QListWidgetItem* page =
+                m_pageList ? m_pageList->currentItem() : nullptr;
         appendLog(tr("Switched to %1 model family. The new model will load "
                      "automatically on the next Segment / click / box.")
                           .arg(page ? page->text() : QString()));
