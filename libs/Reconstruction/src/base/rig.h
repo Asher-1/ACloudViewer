@@ -36,9 +36,10 @@ public:
     bool IsRefSensor(const sensor_t& sensor_id) const;
     const sensor_t& RefSensorId() const;
     // Upstream-parity (COLMAP 4.x sensor/rig.h): non-reference sensors with
-    // their (optional) sensor-from-rig transformations.
-    std::map<sensor_t, std::optional<Rigid3d>>& NonRefSensors();
-    const std::map<sensor_t, std::optional<Rigid3d>>& NonRefSensors() const;
+    // their (optional) sensor-from-rig transformations. The fork stores the
+    // poses as qvec/tvec pairs, so the upstream Rigid3d-valued map is
+    // materialized on demand; mutation goes through AddSensor().
+    std::map<sensor_t, std::optional<Rigid3d>> NonRefSensors() const;
     std::vector<sensor_t> SensorIds() const;
     bool HasSensorFromRig(const sensor_t& sensor_id) const;
 

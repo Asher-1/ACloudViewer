@@ -335,4 +335,22 @@ bool Rig::ReadBinary(std::istream* stream) {
     return true;
 }
 
+std::map<sensor_t, std::optional<Rigid3d>> Rig::NonRefSensors() const {
+    std::map<sensor_t, std::optional<Rigid3d>> non_ref_sensors;
+    for (const auto& [sensor_id, pose] : sensors_) {
+        if (sensor_id == ref_sensor_id_) {
+            continue;
+        }
+        if (pose.has_value()) {
+            const Eigen::Quaterniond rotation(
+                pose->qvec(0), pose->qvec(1), pose->qvec(2), pose->qvec(3));
+            non_ref_sensors.emplace(sensor_id,
+                                    Rigid3d(rotation, pose->tvec));
+        } else {
+            non_ref_sensors.emplace(sensor_id, std::nullopt);
+        }
+    }
+    return non_ref_sensors;
+}
+
 }  // namespace colmap

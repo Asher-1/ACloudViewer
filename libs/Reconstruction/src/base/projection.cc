@@ -136,6 +136,19 @@ double CalculateSquaredReprojectionError(const Eigen::Vector2d& point2D,
   return (*proj_point2D - point2D).squaredNorm();
 }
 
+// Upstream-parity overload used by Reconstruction::UpdatePoint3DErrors: the
+// world-to-camera transform is a Rigid3d instead of a projection matrix.
+double CalculateSquaredReprojectionError(const Eigen::Vector2d& point2D,
+                                         const Eigen::Vector3d& point3D,
+                                         const Rigid3d& cam_from_world,
+                                         const Camera& camera) {
+  const Eigen::Vector3d proj_point3D = cam_from_world * point3D;
+  const auto proj_point2D = camera.ImgFromCam(proj_point3D);
+  if (!proj_point2D.has_value()) return std::numeric_limits<double>::max();
+
+  return (*proj_point2D - point2D).squaredNorm();
+}
+
 double CalculateAngularError(const Eigen::Vector2d& point2D,
                              const Eigen::Vector3d& point3D,
                              const Eigen::Vector4d& qvec,
