@@ -72,26 +72,54 @@ ExternalProject_Add(ext_openimageio
         -DUSE_PTEX=OFF
         -DUSE_WEBP=OFF
         -DUSE_JXL=OFF
+        # NOTE: USE_OPENCOLORIO must stay ON. color_ocio.cpp is part of
+        # libOpenImageIO itself (not a plugin) and includes
+        # <OpenColorIO/OpenColorIO.h> and <tsl/robin_map.h> unconditionally,
+        # so OCIO, yaml-cpp and Robinmap are hard dependencies of the
+        # library on every platform. Their cross-version host-scavenging
+        # mismatches are handled by the patch set + OpenImageIO_BUILD_LOCAL_DEPS
+        # below instead.
         -DOpenImageIO_BUILD_MISSING_DEPS=required
-        # Never discover a host libtiff. The macOS wheel env (.ci/conda_macos.yml)
-        # ships no libtiff, so find_package(TIFF) fell through to the legacy
-        # copy bundled in Mono.framework on GitHub runners; its uint64 is
-        # unsigned long while OIIO passes uint64_t* to TIFFWriteCustomDirectory(),
-        # which fails to compile. Two guards enforce that, on every platform:
-        #   - OpenImageIO_BUILD_LOCAL_DEPS=TIFF skips find_package(TIFF) entirely
-        #     and builds OIIO's own pinned libtiff (src/cmake/build_TIFF.cmake,
-        #     4.7.1), keeping the TIFF backend host-independent like the OpenCV
-        #     exclusion above. OIIO's build_dependency_with_cmake swallows
-        #     sub-build failures, so if that local build ever fails,
-        #     build_TIFF.cmake's final find_package(TIFF REQUIRED) would fall
-        #     back to a host tiff again - which the next two flags prevent:
+        # Every image-codec dependency must be sourced from OIIO's own
+        # pinned builds, never scavenged from the host. Two reasons:
+        #   - Portability/ABI: OIIO would otherwise pull ZLIB/PNG/libjpeg-turbo
+        #     from the conda env and Imath/OpenEXR/yaml-cpp from homebrew,
+        #     whose dylibs are built for a newer macOS than our deployment
+        #     target. OpenImageIO_BUILD_LOCAL_DEPS forces the same
+        #     pinned-source set on every platform; local dep builds are static,
+        #     land in deps/dist, and the produced dylib ends up depending on
+        #     no host image library at all. (This is also what bit us first:
+        #     libtiff built against a host libdeflate whose symbols vanished
+        #     at the final link because the consuming scope resolved a
+        #     different libdeflate than the one tiff was compiled against.)
+        #   - Host TIFF is outright incompatible: the macOS wheel env
+        #     (.ci/conda_macos.yml) ships no libtiff, so find_package(TIFF) fell
+        #     through to the legacy copy bundled in Mono.framework on GitHub
+        #     runners; its uint64 is unsigned long while OIIO passes uint64_t*
+        #     to TIFFWriteCustomDirectory(), which fails to compile. Listing
+        #     TIFF skips find_package(TIFF) entirely and builds OIIO's own
+        #     pinned libtiff (src/cmake/build_TIFF.cmake, 4.7.1). OIIO's
+        #     build_dependency_with_cmake swallows sub-build failures, so if
+        #     that local build ever fails, build_TIFF.cmake's final
+        #     find_package(TIFF REQUIRED) would fall back to a host tiff again
+        #     - which the next two flags prevent:
         #   - CMAKE_IGNORE_PATH discards any find result under Mono.framework.
         #   - CMAKE_FIND_FRAMEWORK=NEVER removes framework search altogether
         #     (OIIO and its local dep builds need no Apple frameworks).
         # If the local TIFF build ever fails, configure now aborts with an
         # explicit "Could NOT find TIFF" instead of silently compiling the
         # runner's incompatible libtiff.
-        -DOpenImageIO_BUILD_LOCAL_DEPS=TIFF
+        #
+        # Entries must match OIIO's checked_find_package names: ZLIB, PNG,
+        # libjpeg-turbo, Imath, OpenEXR, yaml-cpp. The semicolon-separated
+        # list must survive ExternalProject's command-line round-trip, hence
+        # the $<SEMICOLON> generator expression, exactly like
+        # CMAKE_PREFIX_PATH above.
+        -DOpenImageIO_BUILD_LOCAL_DEPS=TIFF$<SEMICOLON>ZLIB$<SEMICOLON>PNG$<SEMICOLON>libjpeg-turbo$<SEMICOLON>Imath$<SEMICOLON>OpenEXR$<SEMICOLON>yaml-cpp
+        # OIIO's LOCAL_BUILD_SHARED_LIBS_DEFAULT is ON for local dep builds,
+        # which would leave a libz.dylib in deps/dist for the produced dylib
+        # to dangle on. Every local dep must ship static.
+        -DZLIB_BUILD_SHARED_LIBS=OFF
         -DCMAKE_IGNORE_PATH=/Library/Frameworks/Mono.framework
         -DCMAKE_FIND_FRAMEWORK=NEVER
     DEPENDS ext_zlib)

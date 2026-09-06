@@ -1,0 +1,308 @@
+# OpenImageIO 3.1.17.0 - combined build fixes for the ACloudViewer
+# self-contained Reconstruction image backend.
+#
+# One patch file replaces the former 0001..0013 series so the
+# apply_openimageio_patch.cmake idempotency check runs as a single
+# whole-tree forward/reverse transaction (cross-patch hunk context
+# cannot break it anymore).
+#
+# Contents, by file:
+#   src/cmake/build_OpenColorIO.cmake   pin yaml-cpp_DIR / Imath_DIR of the
+#                                       OCIO sub-build to the copy OIIO
+#                                       already resolved (001+0005+0007)
+#   src/cmake/build_TIFF.cmake          disable webp/libdeflate in the local
+#                                       TIFF, hand it the local JPEG
+#                                       headers/lib (0002/0003/0009)
+#   src/cmake/dependency_utils.cmake    inherit macOS deployment target +
+#                                       zlib into dep sub-builds, give every
+#                                       sub-build CMAKE_PREFIX_PATH=deps/dist
+#                                       (0004/0010)
+#   src/cmake/externalpackages.cmake    alias libjpeg-turbo::jpeg-static as
+#                                       JPEG::JPEG; guard the OpenColorIO
+#                                       include probe (0008/0011)
+#   src/cmake/build_Imath.cmake         align Imath refind with OpenEXR (0006)
+#   src/cmake/build_OpenEXR.cmake       (0006)
+#   src/cmake/build_ZLIB.cmake          delete shared libz artifacts after
+#                                       install; zlib always builds both
+#                                       (0013)
+#   src/libOpenImageIO/CMakeLists.txt   guard the OpenColorIO link reference
+#                                       with $<TARGET_NAME_IF_EXISTS:> (0012)
+#
+# Acceptance: fresh tree applies cleanly; reused tree passes the reverse
+# check; libOpenImageIO.dylib links with no host library references
+# (otool -L) and minos 11.0.
+
+diff --git a/src/cmake/build_Imath.cmake b/src/cmake/build_Imath.cmake
+index d3e672b..8af5451 100644
+--- a/src/cmake/build_Imath.cmake
++++ b/src/cmake/build_Imath.cmake
+@@ -6,10 +6,10 @@
+ # Imath by hand!
+ ######################################################################
+ 
+-set_cache (Imath_BUILD_VERSION 3.1.10 "Imath version for local builds")
++set_cache (Imath_BUILD_VERSION 3.1.12 "Imath version for local builds")
+ set (Imath_GIT_REPOSITORY "https://github.com/AcademySoftwareFoundation/Imath")
+ set (Imath_GIT_TAG "v${Imath_BUILD_VERSION}")
+-set (Imath_GIT_COMMIT "9fe5ed213cd99237976f2eb48b8bf86e112d90fa")
++set (Imath_GIT_COMMIT "c0396a055a01bc537d32f435aee11a9b7ed6f0b5")
+ set_cache (Imath_BUILD_SHARED_LIBS ${LOCAL_BUILD_SHARED_LIBS_DEFAULT}
+            DOC "Should a local Imath build, if necessary, build shared libraries" ADVANCED)
+ 
+diff --git a/src/cmake/build_OpenColorIO.cmake b/src/cmake/build_OpenColorIO.cmake
+index 1eb314d..3c747cc 100644
+--- a/src/cmake/build_OpenColorIO.cmake
++++ b/src/cmake/build_OpenColorIO.cmake
+@@ -56,12 +56,42 @@ build_dependency_with_cmake(OpenColorIO
+         # Fix for yaml-cpp breaking against cmake 4.0.
+         # Remove when yaml-cpp is fixed to declare its own minimum high enough.
+         -D CMAKE_POLICY_VERSION_MINIMUM=3.5
++        # Pin yaml-cpp to exactly the copy OIIO already resolved (the local
++        # deps build when OpenImageIO_BUILD_LOCAL_DEPS includes yaml-cpp).
++        # Without this the OCIO sub-build re-searches the host on its own and
++        # can compile against a different yaml-cpp than the one OIIO finally
++        # links - the same cross-scope mismatch class that broke libdeflate.
++        # An empty value keeps OCIO's own missing-deps fallback working.
++        -D yaml-cpp_DIR=${yaml-cpp_DIR}
++        # Same cross-scope pin, for Imath: the OCIO sub-build re-finds Imath
++        # on its own, and left to itself it scavenges the host (e.g.
++        # Homebrew). The host config propagates <prefix>/include ahead of
++        # the local deps include dirs, so OCIO's yaml-cpp headers then
++        # resolve to the host's yaml-cpp - a different version from the
++        # pinned static library (missing YAML::FpToString at link time).
++        # Pointing OCIO at OIIO's resolved local Imath keeps every include
++        # dir inside the self-contained deps tree. An empty value keeps
++        # OCIO's own missing-deps fallback working.
++        -D Imath_DIR=${Imath_DIR}
+     )
+ 
+ # Set some things up that we'll need for a subsequent find_package to work
+ set (OpenColorIO_ROOT ${OpenColorIO_LOCAL_INSTALL_DIR})
+ set (OpenColorIO_DIR ${OpenColorIO_LOCAL_INSTALL_DIR})
+ 
++# OCIO's installed config re-finds pystring, but when OCIO builds pystring as
++# an internal dependency it lives under its build tree rather than the OIIO
++# dependency prefix. Supply its platform-native static artifact explicitly so
++# the re-find is independent of host packages.
++set (_OpenColorIO_LOCAL_EXT_ROOT
++     "${CMAKE_BINARY_DIR}/deps/OpenColorIO-build/ext/dist")
++set (pystring_INCLUDE_DIR
++     "${_OpenColorIO_LOCAL_EXT_ROOT}/${CMAKE_INSTALL_INCLUDEDIR}/pystring"
++     CACHE PATH "Local OCIO pystring include directory" FORCE)
++set (pystring_LIBRARY
++     "${_OpenColorIO_LOCAL_EXT_ROOT}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}pystring${CMAKE_STATIC_LIBRARY_SUFFIX}"
++     CACHE FILEPATH "Local OCIO pystring library" FORCE)
++
+ # Signal to caller that we need to find again at the installed location
+ # set (OpenColorIO_REFIND TRUE)
+ # set (OpenColorIO_REFIND_ARGS CONFIG)
+diff --git a/src/cmake/build_OpenEXR.cmake b/src/cmake/build_OpenEXR.cmake
+index cf25b9e..6146aa1 100644
+--- a/src/cmake/build_OpenEXR.cmake
++++ b/src/cmake/build_OpenEXR.cmake
+@@ -20,6 +20,14 @@ build_dependency_with_cmake(OpenEXR
+     CMAKE_ARGS
+         -D BUILD_SHARED_LIBS=${OpenEXR_BUILD_SHARED_LIBS}
+         -D OPENEXR_FORCE_INTERNAL_DEFLATE=ON
++        # Pin Imath to the OIIO-resolved config (the local deps build).
++        # Without this the OpenEXR sub-build re-searches the host and can
++        # compile against a different Imath than the headers OIIO uses;
++        # Imf template instantiations are mangled with the Imath namespace,
++        # so a version split leaves those instantiations undefined at the
++        # final link. An empty value falls back to OpenEXR's own
++        # OPENEXR_IMATH_TAG auto-build.
++        -D Imath_DIR=${Imath_DIR}
+         # Don't built unnecessary parts of OpenEXR
+         -D BUILD_TESTING=OFF
+         -D BUILD_WEBSITE=OFF
+diff --git a/src/cmake/build_TIFF.cmake b/src/cmake/build_TIFF.cmake
+index 228c8b7..c9297f2 100644
+--- a/src/cmake/build_TIFF.cmake
++++ b/src/cmake/build_TIFF.cmake
+@@ -14,11 +14,6 @@ set_cache (TIFF_GIT_COMMIT "5fe20d0e9aba49a6a350ed533459d1505203838f"
+ set_cache (TIFF_BUILD_SHARED_LIBS  ${LOCAL_BUILD_SHARED_LIBS_DEFAULT}
+            "Should a local TIFF build, if necessary, build shared libraries" ADVANCED)
+ 
+-# We need libdeflate to build libtiff
+-checked_find_package (libdeflate REQUIRED
+-                      VERSION_MIN 1.18)
+-alias_library_if_not_exists (Deflate::Deflate libdeflate::libdeflate_static)
+-
+ if (TARGET libjpeg-turbo::jpeg)
+     # We've had some trouble with TIFF finding the JPEG resources it needs to
+     # build if we're using libjpeg-turbo, TIFF needs an extra nudge.
+@@ -30,6 +25,26 @@ if (TARGET libjpeg-turbo::jpeg)
+          -D JPEG_LIBRARY=${JPEG_LIBRARIES} )
+ endif ()
+ 
++if (TARGET libjpeg-turbo::jpeg-static AND NOT TARGET libjpeg-turbo::jpeg)
++    # A static-only local build exports `jpeg-static` but no plain `jpeg`,
++    # so the block above did nothing and MORE_TIFF_CMAKE_ARGS was left
++    # unset; the TIFF sub-build would then scavenge host JPEG resources
++    # (on macOS: Mono.framework headers, with the old libjpeg v6b struct
++    # layout, plus a Homebrew libjpeg), whose ABI does not match the
++    # static libjpeg-turbo linked into the final dylib. Resolve both paths
++    # from the static target's IMPORTED_LOCATION instead and hand the
++    # sub-build's FindJPEG a complete answer.
++    get_target_property(JPEG_INCLUDE_DIRS libjpeg-turbo::jpeg-static INTERFACE_INCLUDE_DIRECTORIES)
++    get_target_property(JPEG_LIBRARY libjpeg-turbo::jpeg-static IMPORTED_LOCATION)
++    if (NOT JPEG_LIBRARY)
++        get_target_property(JPEG_LIBRARY libjpeg-turbo::jpeg-static IMPORTED_LOCATION_RELEASE)
++    endif ()
++    set (JPEG_FOUND TRUE)
++    set (MORE_TIFF_CMAKE_ARGS
++         -D JPEG_INCLUDE_DIR=${JPEG_INCLUDE_DIRS}
++         -D JPEG_LIBRARY=${JPEG_LIBRARY} )
++endif ()
++
+ build_dependency_with_cmake(TIFF
+     VERSION         ${TIFF_BUILD_VERSION}
+     GIT_REPOSITORY  ${TIFF_GIT_REPOSITORY}
+@@ -43,9 +58,10 @@ build_dependency_with_cmake(TIFF
+         -D tiff-contrib=OFF
+         -D tiff-tests=OFF
+         -D tiff-docs=OFF
+-        -D libdeflate=ON
++        -D libdeflate=OFF
+         -D lzma=OFF
+         -D zstd=OFF
++        -D webp=OFF
+         -D jbig=OFF
+         -D lerc=OFF
+         ${MORE_TIFF_CMAKE_ARGS}
+diff --git a/src/cmake/build_ZLIB.cmake b/src/cmake/build_ZLIB.cmake
+index 24257d8..8f88496 100644
+--- a/src/cmake/build_ZLIB.cmake
++++ b/src/cmake/build_ZLIB.cmake
+@@ -30,6 +30,20 @@ build_dependency_with_cmake(ZLIB
+         -D CMAKE_POLICY_VERSION_MINIMUM=3.5
+     )
+ 
++# zlib's upstream CMakeLists unconditionally adds `add_library(zlib SHARED
++# ...)` next to the static one -- no option exists to disable it -- so
++# every local build installs libz dylibs into deps/dist alongside libz.a,
++# and FindZLIB then prefers the dylib, leaving a @rpath/libz.1.dylib
++# dependency in the shipped libOpenImageIO that nothing in our install
++# closure carries. Delete the shared artifacts so only the static
++# library remains linkable.
++file (GLOB _ZLIB_SHARED_ARTIFACTS
++      "${ZLIB_LOCAL_INSTALL_DIR}/lib/libz*.dylib")
++if (_ZLIB_SHARED_ARTIFACTS)
++    file (REMOVE ${_ZLIB_SHARED_ARTIFACTS})
++endif ()
++unset (_ZLIB_SHARED_ARTIFACTS)
++
+ # Set some things up that we'll need for a subsequent find_package to work
+ set (ZLIB_ROOT ${ZLIB_LOCAL_INSTALL_DIR})
+ 
+diff --git a/src/cmake/dependency_utils.cmake b/src/cmake/dependency_utils.cmake
+index 17b698f..dc9661f 100644
+--- a/src/cmake/dependency_utils.cmake
++++ b/src/cmake/dependency_utils.cmake
+@@ -732,11 +732,57 @@ macro (build_dependency_with_cmake pkgname)
+         list(APPEND _pkg_CMAKE_ARGS "-DCMAKE_IGNORE_PATH=${CMAKE_IGNORE_PATH_ESCAPED}")
+     endif()
+ 
++    # Give every dependency sub-build a direct view of the shared local
++    # deps install prefix. Sub-builds run in their own cmake process, so
++    # the CMAKE_PREFIX_PATH this project accumulates (one deps/dist
++    # append per install) never crosses that process boundary. A
++    # sub-build resolving any transitive dependency on its own -- OCIO
++    # re-finding Imath, expat or pystring, TIFF finding zlib, ... --
++    # otherwise scavenges the host (Homebrew, conda, the SDK) and
++    # reintroduces exactly the cross-version mismatches these patches
++    # exist to prevent. A command-line -D becomes a cache entry, ranking
++    # ahead of every host search prefix, so config and find_path/library
++    # searches inside the sub-build resolve to the pinned static tree
++    # first. Skipped while deps/dist does not yet exist (first dep).
++    if (IS_DIRECTORY "${${pkgname}_LOCAL_INSTALL_DIR}")
++        list (APPEND _pkg_CMAKE_ARGS
++              -DCMAKE_PREFIX_PATH=${${pkgname}_LOCAL_INSTALL_DIR})
++    endif()
++
+     # Pass along any CMAKE_MSVC_RUNTIME_LIBRARY
+     if (WIN32 AND CMAKE_MSVC_RUNTIME_LIBRARY)
+         list (APPEND _pkg_CMAKE_ARGS -DCMAKE_MSVC_RUNTIME_LIBRARY=${CMAKE_MSVC_RUNTIME_LIBRARY})
+     endif ()
+ 
++    # Inherit the macOS deployment target and architectures. Without this,
++    # dependency sub-builds compile against the SDK's default minOS (26.x on
++    # current Xcode), so every object installed into deps/dist carries a
++    # minOS newer than the project target, breaking old-OS compatibility of
++    # the final dylib (and spamming ld with "built for newer macOS" warnings).
++    if (APPLE)
++        if (CMAKE_OSX_DEPLOYMENT_TARGET)
++            list (APPEND _pkg_CMAKE_ARGS
++                  -DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET})
++        endif ()
++        if (CMAKE_OSX_ARCHITECTURES)
++            list (APPEND _pkg_CMAKE_ARGS
++                  -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES})
++        endif ()
++    endif ()
++
++    # Hand the already-located zlib to dependency sub-builds (TIFF, PNG,
++    # minizip-ng and OpenColorIO all need it). Sub-builds run in their own
++    # cmake process with no CMAKE_PREFIX_PATH, so left to themselves they
++    # scavenge whatever zlib happens to be on the host instead of the pinned
++    # one OIIO resolved (local deps build or otherwise). FindZLIB accepts
++    # these standard cache variables and skips its search when both are set;
++    # ZLIB_LIBRARY_RELEASE is a single path, so no list escaping is needed.
++    if (ZLIB_INCLUDE_DIR AND ZLIB_LIBRARY_RELEASE)
++        list (APPEND _pkg_CMAKE_ARGS
++              -DZLIB_INCLUDE_DIR=${ZLIB_INCLUDE_DIR}
++              -DZLIB_LIBRARY=${ZLIB_LIBRARY_RELEASE})
++    endif ()
++
+     execute_process (COMMAND
+         ${CMAKE_COMMAND}
+             # Put things in our special local build areas
+diff --git a/src/cmake/externalpackages.cmake b/src/cmake/externalpackages.cmake
+index 14fc82a..d2de308 100644
+--- a/src/cmake/externalpackages.cmake
++++ b/src/cmake/externalpackages.cmake
+@@ -80,6 +80,14 @@ if (TARGET libjpeg-turbo::jpeg) # Try to find the non-turbo version
+     # Doctor it so libjpeg-turbo is aliased as JPEG::JPEG
+     alias_library_if_not_exists (JPEG::JPEG libjpeg-turbo::jpeg)
+     set (JPEG_FOUND TRUE)
++elseif (TARGET libjpeg-turbo::jpeg-static)
++    # A static-only local build (ENABLE_SHARED=OFF, the default for local
++    # deps) exports `jpeg-static` but no plain `jpeg` target. Without this
++    # branch the fallback below scavenges a host JPEG (conda/Homebrew), so
++    # the libjpeg-turbo just built locally is never linked and the final
++    # dylib picks up a host library dependency.
++    alias_library_if_not_exists (JPEG::JPEG libjpeg-turbo::jpeg-static)
++    set (JPEG_FOUND TRUE)
+ else ()
+     # Try to find the non-turbo version
+     checked_find_package (JPEG REQUIRED)
+@@ -156,7 +164,12 @@ checked_find_package (OpenColorIO REQUIRED
+                       VERSION_MAX 2.9
+                      )
+ if (NOT OPENCOLORIO_INCLUDES)
+-    get_target_property(OPENCOLORIO_INCLUDES OpenColorIO::OpenColorIO INTERFACE_INCLUDE_DIRECTORIES)
++    # With USE_OPENCOLORIO=OFF the checked_find_package above is forced
++    # optional and no OpenColorIO::OpenColorIO target exists; probing it
++    # unconditionally is a fatal configure error. Guard the probe.
++    if (TARGET OpenColorIO::OpenColorIO)
++        get_target_property(OPENCOLORIO_INCLUDES OpenColorIO::OpenColorIO INTERFACE_INCLUDE_DIRECTORIES)
++    endif ()
+ endif ()
+ include_directories(BEFORE ${OPENCOLORIO_INCLUDES})
+ 
+diff --git a/src/libOpenImageIO/CMakeLists.txt b/src/libOpenImageIO/CMakeLists.txt
+index 03e59d3..0163c3e 100644
+--- a/src/libOpenImageIO/CMakeLists.txt
++++ b/src/libOpenImageIO/CMakeLists.txt
+@@ -149,7 +149,10 @@ target_link_libraries (OpenImageIO
+         PRIVATE
+             ${OPENIMAGEIO_OPENEXR_TARGETS}
+             ${format_plugin_libs} # Add all the target link libraries from the plugins
+-            OpenColorIO::OpenColorIO
++            # With USE_OPENCOLORIO=OFF no OpenColorIO target exists; every
++            # other optional dependency here is already guarded by
++            # $<TARGET_NAME_IF_EXISTS:...>, only this one wasn't.
++            $<TARGET_NAME_IF_EXISTS:OpenColorIO::OpenColorIO>
+             $<TARGET_NAME_IF_EXISTS:OpenColorIO::OpenColorIOHeaders>
+             $<TARGET_NAME_IF_EXISTS:pugixml::pugixml>
+             $<TARGET_NAME_IF_EXISTS:TBB::tbb>

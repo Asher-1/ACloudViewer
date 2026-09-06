@@ -117,14 +117,19 @@ public:
                                    : kExportDb;
     }
     void updateExportInfo(const TrellisRunResult& result);
+    /** Export-page busy state: both action buttons disable while a print
+     *  wrap runs, restored per build-time availability when done. */
+    void setPrintWrapRunning(bool running);
 
 signals:
     void runRequested(const TrellisDialog::Settings& settings);
     void cancelRequested();
     void refreshDbImagesRequested();
     void browseImageRequested();
-    /** Re-bake / print-wrap request on the last result (export page). */
+    /** Re-bake request on the last result (export page). */
     void exportRequested();
+    /** Watertight Alpha-Wrap print mesh of the last result (export page). */
+    void printWrapRequested();
 
 private slots:
     void onBrowseImage();
@@ -139,7 +144,6 @@ private slots:
     void onTestImageSelected(int index);
     void onTestDataExtracted();
     void onPageChanged(int row);
-    void onExportPageAction();
 
 protected:
     void closeEvent(QCloseEvent* event) override;
@@ -198,6 +202,10 @@ private:
     QLabel* m_exportInfo = nullptr;
     QPushButton* m_rebakeBtn = nullptr;
     QPushButton* m_printWrapBtn = nullptr;
+    // Build-time availability of the export-page actions (the CGAL print
+    // wrap and the AICore-enabled re-bake), honored by setPrintWrapRunning.
+    bool m_rebakeAvailable = true;
+    bool m_printWrapAvailable = false;
 
     // Parameters (each row: "use default" checkbox + numeric spinbox).
     QCheckBox* m_stepsAuto = nullptr;

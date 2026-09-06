@@ -81,6 +81,9 @@ ExternalProject_Add(ext_ceres
             -DEIGENMETIS=OFF
             -DLAPACK=ON
             -DSUITESPARSE=ON
+            # No-op: Ceres 2.2 removed its OpenMP option entirely (C++11
+            # threads only, find_package(Threads) in internal/ceres). Kept so
+            # both ExternalProjects see the same WITH_OPENMP knob.
             -DOPENMP=${WITH_OPENMP}
             -DUSE_CUDA=${CERES_ENABLE_CUDA}
             ${CERES_CUDA_ARGS}

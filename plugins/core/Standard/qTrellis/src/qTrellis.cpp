@@ -39,6 +39,7 @@ qTrellis::qTrellis(QObject* parent)
     qRegisterMetaType<TrellisRunResult>("TrellisRunResult");
     qRegisterMetaType<TrellisStagePreview>("TrellisStagePreview");
     qRegisterMetaType<TrellisDialog::Settings>("TrellisDialog::Settings");
+    qRegisterMetaType<TrellisPrintResult>("TrellisPrintResult");
     m_action = new QAction(tr("TRELLIS.2 Image to 3D"), this);
     m_action->setToolTip(
             tr("Generate a textured 3D mesh from a single image "
@@ -75,6 +76,8 @@ void qTrellis::showDialog() {
                 &qTrellis::cancelTask);
         connect(m_dialog, &TrellisDialog::exportRequested, this,
                 &qTrellis::onExportRequested);
+        connect(m_dialog, &TrellisDialog::printWrapRequested, this,
+                &qTrellis::onPrintWrapRequested);
     }
     m_dialog->refreshModelState();
     m_dialog->show();
@@ -289,6 +292,155 @@ void qTrellis::onExportRequested() {
 #endif
 }
 
+void qTrellis::onPrintWrapRequested() {
+    // Export page: watertight CGAL Alpha-Wrap print mesh of the last
+    // generation, routed with the same destination combo as the re-bake
+    // (DB tree by default, GLB file, or both). The wrap is pure CPU
+    // geometry (no AICore context), so it runs on its own worker without
+    // taking the inference device lock.
+    if (!m_dialog) return;
+    if (m_printWorker && m_printWorker->isRunning()) {
+        m_dialog->appendLog(
+                tr("[TRELLIS] Print wrap already running — wait for it to "
+                   "finish."));
+        return;
+    }
+    const TrellisRunResult result = m_dialog->lastResult();  // snapshot copy
+    if (result.verts.isEmpty() || result.tris.isEmpty()) {
+        m_dialog->appendLog(
+                tr("[TRELLIS] Nothing to export yet — run a "
+                   "generation first."));
+        return;
+    }
+#ifdef AICore_ENABLED
+    if (!aicore_trellis_print_remesh_available()) {
+        m_dialog->appendLog(
+                tr("[TRELLIS] Print wrap unavailable: rebuild ACloudViewer "
+                   "with CGAL >= 5.5 to enable the Alpha Wrap."));
+        return;
+    }
+    TrellisPrintRequest request;
+    request.source = result;
+    request.componentFilter = m_dialog->exportComponentFilter();
+    request.textureSize = m_dialog->exportTextureSize();
+    request.bakeGlb = result.hasPbr;  // projected bake requires source PBR
+    m_printDestination = static_cast<TrellisDialog::ExportDestination>(
+            m_dialog->exportDestination());
+
+    m_printWorker = new TrellisPrintWorker(request, this);
+    connect(m_printWorker, &TrellisPrintWorker::logMessage, m_dialog,
+            &TrellisDialog::appendLog, Qt::QueuedConnection);
+    connect(m_printWorker, &TrellisPrintWorker::printResultReady, this,
+            &qTrellis::onPrintWrapReady, Qt::QueuedConnection);
+    connect(m_printWorker, &TrellisPrintWorker::taskFinished, this,
+            &qTrellis::onPrintWrapFinished, Qt::QueuedConnection);
+    // Destruction must wait for run() to return: finished fires from the
+    // worker thread after the queued results have landed on the GUI thread.
+    connect(m_printWorker, &QThread::finished, m_printWorker,
+            &QObject::deleteLater);
+    m_dialog->setPrintWrapRunning(true);
+    m_dialog->appendLog(
+            tr("[TRELLIS] Print wrap started (CGAL Alpha Wrap) on the "
+               "worker thread..."));
+    m_printWorker->start();
+#endif
+}
+
+void qTrellis::onPrintWrapReady(const TrellisPrintResult& print) {
+    if (!m_app || !m_dialog) return;
+    const TrellisRunResult& result = m_dialog->lastResult();
+    const QString sourceName = QFileInfo(result.sourceImage).completeBaseName();
+    const bool wantDb = m_printDestination != TrellisDialog::kExportFile;
+    const bool wantFile = m_printDestination != TrellisDialog::kExportDb;
+    TrellisDialog::Settings settings = m_currentSettings;
+    if (wantFile && settings.saveGlbDir.isEmpty()) {
+        settings.saveGlbDir = QStandardPaths::writableLocation(
+                                      QStandardPaths::DownloadLocation) +
+                              QStringLiteral("/TRELLIS");
+    }
+    const QString deviceTag = ecvPluginDbNaming::deviceTagFromName(
+            result.backend.isEmpty() ? settings.device : result.backend);
+
+    if (wantDb) {
+        const QString name = ecvPluginDbNaming::makeUnique(
+                QStringLiteral("TRELLIS_PRINT_%1_%2")
+                        .arg(sourceName, deviceTag),
+                m_app);
+        // Preferred display path: the projected GLB carries the full PBR
+        // material projected from the dense source onto the wrap geometry;
+        // the vertex-colour fallback shows the projected per-vertex preview.
+        ccHObject* entity = nullptr;
+        if (!print.glb.isEmpty()) {
+            entity = importGlbEntity(print.glb, result, name);
+            if (entity) {
+                entity->setMetaData(
+                        QStringLiteral("Material"),
+                        QStringLiteral("PBR projected GLB (print wrap)"));
+            }
+        }
+        if (!entity) {
+            auto* mesh =
+                    buildVertexColorMesh(print.verts, print.normals, print.pbr,
+                                         print.hasPbr, print.tris, name);
+            if (mesh) {
+                mesh->setMetaData(QStringLiteral("Source"), result.sourceImage);
+                mesh->setMetaData(QStringLiteral("Preset"), result.presetName);
+                mesh->setMetaData(QStringLiteral("Backend"), result.backend);
+                mesh->setMetaData(QStringLiteral("Model"),
+                                  QFileInfo(result.modelPath).fileName());
+                mesh->setMetaData(
+                        QStringLiteral("Material"),
+                        QStringLiteral("vertex colours (print wrap)"));
+                entity = mesh;
+            }
+        }
+        if (entity) {
+            entity->setMetaData(QStringLiteral("Print wrap (ms)"),
+                                print.wrapMs);
+            m_app->addToDB(entity);
+            m_app->refreshAll();
+            m_app->updateUI();
+            m_dialog->appendLog(
+                    tr("[TRELLIS] Watertight print mesh added to the DB "
+                       "tree as '%1' (%2 verts / %3 tris, wrap %4 ms).")
+                            .arg(name)
+                            .arg(print.verts.size() / 3)
+                            .arg(print.tris.size() / 3)
+                            .arg(print.wrapMs, 0, 'f', 0));
+        }
+    }
+    if (wantFile) {
+        if (print.glb.isEmpty()) {
+            // Untextured generation: the projected bake is impossible (the
+            // C API requires source PBR) — say so instead of writing a stub.
+            m_dialog->appendLog(
+                    tr("[TRELLIS] GLB file export skipped: the projected bake "
+                       "needs a textured generation."));
+        } else {
+            QDir().mkpath(settings.saveGlbDir);
+            const QString path =
+                    settings.saveGlbDir + QDir::separator() +
+                    QStringLiteral("TRELLIS_PRINT_%1_%2_%3.glb")
+                            .arg(sourceName, deviceTag)
+                            .arg(QDateTime::currentDateTime().toString(
+                                    "yyyyMMdd_hhmmss"));
+            writeGlbFile(print.glb, path);
+        }
+    }
+}
+
+void qTrellis::onPrintWrapFinished(bool success) {
+    if (m_dialog) {
+        m_dialog->setPrintWrapRunning(false);
+        if (!success) {
+            m_dialog->appendLog(tr("[TRELLIS] Print wrap failed."));
+        }
+    }
+    // The QThread::finished -> deleteLater connection owns destruction;
+    // drop only our pointer (run() may still be finishing on the thread).
+    m_printWorker = nullptr;
+}
+
 void qTrellis::onTaskFinished(bool success) {
     m_inferenceHeartbeat->stop();
     if (m_dialog) {
@@ -328,33 +480,55 @@ void qTrellis::addResultToDb(const TrellisRunResult& result,
     }
 #endif
 
+    ccMesh* mesh =
+            buildVertexColorMesh(result.verts, result.normals, result.pbr,
+                                 result.hasPbr, result.tris, name);
+    if (!mesh) return;
+
+    mesh->setMetaData(QStringLiteral("Source"), result.sourceImage);
+    mesh->setMetaData(QStringLiteral("Preset"), result.presetName);
+    mesh->setMetaData(QStringLiteral("Runtime (ms)"), result.totalRuntimeMs);
+    mesh->setMetaData(QStringLiteral("Backend"), result.backend);
+    mesh->setMetaData(QStringLiteral("Model"),
+                      QFileInfo(result.modelPath).fileName());
+
+    m_app->addToDB(mesh);
+    m_app->refreshAll();
+    m_app->updateUI();
+}
+
+ccMesh* qTrellis::buildVertexColorMesh(const QVector<float>& verts,
+                                       const QVector<float>& normals,
+                                       const QVector<float>& pbr,
+                                       bool hasPbr,
+                                       const QVector<int>& tris,
+                                       const QString& name) {
     auto* cloud = new ccPointCloud(name);
-    const int nv = result.verts.size() / 3;
+    const int nv = verts.size() / 3;
     if (!cloud->reserve(nv)) {
         delete cloud;
-        return;
+        return nullptr;
     }
     for (int i = 0; i < nv; ++i) {
-        cloud->addPoint(CCVector3(result.verts[i * 3], result.verts[i * 3 + 1],
-                                  result.verts[i * 3 + 2]));
+        cloud->addPoint(
+                CCVector3(verts[i * 3], verts[i * 3 + 1], verts[i * 3 + 2]));
     }
 
     // PBR -> vertex colors (base_color rgb) + scalar fields.
-    if (result.hasPbr && result.pbr.size() == nv * 6) {
+    if (hasPbr && pbr.size() == nv * 6) {
         if (cloud->resizeTheRGBTable()) {
             for (int i = 0; i < nv; ++i) {
-                const float* pbr = result.pbr.constData() + i * 6;
+                const float* c = pbr.constData() + i * 6;
                 cloud->setPointColor(
-                        i,
-                        ecvColor::Rgb(
-                                static_cast<ColorCompType>(pbr[0] * 255.0f),
-                                static_cast<ColorCompType>(pbr[1] * 255.0f),
-                                static_cast<ColorCompType>(pbr[2] * 255.0f)));
+                        i, ecvColor::Rgb(
+                                   static_cast<ColorCompType>(c[0] * 255.0f),
+                                   static_cast<ColorCompType>(c[1] * 255.0f),
+                                   static_cast<ColorCompType>(c[2] * 255.0f)));
             }
         }
-        if (result.normals.size() == nv * 3 && cloud->resizeTheNormsTable()) {
+        if (normals.size() == nv * 3 && cloud->resizeTheNormsTable()) {
             for (int i = 0; i < nv; ++i) {
-                const float* n = result.normals.constData() + i * 3;
+                const float* n = normals.constData() + i * 3;
                 cloud->setPointNormal(i, CCVector3(n[0], n[1], n[2]));
             }
         }
@@ -372,10 +546,10 @@ void qTrellis::addResultToDb(const TrellisRunResult& result,
             ccScalarField* sfA =
                     static_cast<ccScalarField*>(cloud->getScalarField(idxA));
             for (int i = 0; i < nv; ++i) {
-                const float* pbr = result.pbr.constData() + i * 6;
-                sfM->setValue(i, pbr[3]);
-                sfR->setValue(i, pbr[4]);
-                sfA->setValue(i, pbr[5]);
+                const float* c = pbr.constData() + i * 6;
+                sfM->setValue(i, c[3]);
+                sfR->setValue(i, c[4]);
+                sfA->setValue(i, c[5]);
             }
             sfM->computeMinAndMax();
             sfR->computeMinAndMax();
@@ -387,25 +561,25 @@ void qTrellis::addResultToDb(const TrellisRunResult& result,
             cloud->showSF(false);
             cloud->showColors(true);
         }
-    } else if (result.normals.size() == nv * 3) {
+    } else if (normals.size() == nv * 3) {
         if (cloud->resizeTheNormsTable()) {
             for (int i = 0; i < nv; ++i) {
-                const float* n = result.normals.constData() + i * 3;
+                const float* n = normals.constData() + i * 3;
                 cloud->setPointNormal(i, CCVector3(n[0], n[1], n[2]));
             }
         }
     }
 
-    ccMesh* mesh = new ccMesh(cloud);
+    auto* mesh = new ccMesh(cloud);
     mesh->addChild(cloud);
-    const int nt = result.tris.size() / 3;
+    const int nt = tris.size() / 3;
     if (!mesh->reserve(nt)) {
+        // The cloud is a child of the mesh: freed with it.
         delete mesh;
-        return;
+        return nullptr;
     }
     for (int i = 0; i < nt; ++i) {
-        mesh->addTriangle(result.tris[i * 3], result.tris[i * 3 + 1],
-                          result.tris[i * 3 + 2]);
+        mesh->addTriangle(tris[i * 3], tris[i * 3 + 1], tris[i * 3 + 2]);
     }
     // Keep the robust structure-tensor normals produced by fdg::vertex_normals
     // (aicore_trellis_capi): ccMesh::computePerVertexNormals would overwrite
@@ -417,17 +591,7 @@ void qTrellis::addResultToDb(const TrellisRunResult& result,
         mesh->computeNormals(true);
     }
     mesh->showNormals(true);
-
-    mesh->setMetaData(QStringLiteral("Source"), result.sourceImage);
-    mesh->setMetaData(QStringLiteral("Preset"), result.presetName);
-    mesh->setMetaData(QStringLiteral("Runtime (ms)"), result.totalRuntimeMs);
-    mesh->setMetaData(QStringLiteral("Backend"), result.backend);
-    mesh->setMetaData(QStringLiteral("Model"),
-                      QFileInfo(result.modelPath).fileName());
-
-    m_app->addToDB(mesh);
-    m_app->refreshAll();
-    m_app->updateUI();
+    return mesh;
 }
 
 void qTrellis::addRmbgImageToDb(const TrellisRunResult& result,

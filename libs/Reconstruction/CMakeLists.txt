@@ -145,6 +145,13 @@ if (CGAL_FOUND)
     message(STATUS "Found CGAL")
     message(STATUS "  Includes : ${CGAL_INCLUDE_DIRS}")
     message(STATUS "  Libraries : ${CGAL_LIBRARY}")
+
+    # AppleClang 21 rejects the broken `operator bool()` bodies shipped in
+    # CGAL <= 5.6.1's BGL iterator.h at template-definition time; shadow the
+    # header with a patched copy (no-op on fixed CGAL installs).  See
+    # cmake/CGALBglIteratorPatch.cmake.
+    include(${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/CGALBglIteratorPatch.cmake)
+    acv_enable_cgal_bgl_iterator_patch()
 endif ()
 
 ################################################################################

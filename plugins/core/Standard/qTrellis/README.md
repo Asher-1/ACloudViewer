@@ -48,8 +48,10 @@ image ──► (RMBG-2.0 background removal, optional) ──► preprocess
 - **One-click export** — *Generate + GLB* runs the full chain and writes the
   textured GLB into the Save-GLB directory (defaults to `~/Downloads/TRELLIS`).
   The **Export / Print** page re-bakes the last result with a chosen atlas
-  size / component filter and reports print-wrap (CGAL Alpha Wrap)
-  availability.
+  size / component filter, and **Print wrap (CGAL)** re-meshes it into a
+  watertight Alpha-Wrap print mesh on a worker thread (vertex-PBR preview
+  entity in the DB tree, plus a full projected-PBR GLB for textured
+  generations) when the build ships CGAL >= 5.5.
 - **Backend numerical parity** — the engine matches the upstream reference
   numerics on every backend: exact materialized F32 attention (chunked above
   the 12 GiB score budget; flash opt-in), F32-accumulate matmuls in the

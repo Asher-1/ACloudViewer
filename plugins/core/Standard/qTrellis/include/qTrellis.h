@@ -40,6 +40,12 @@ private slots:
     void onWorkerProgress(int stage, int step, int total);
     /** Export page: re-bake the textured GLB from the last generation. */
     void onExportRequested();
+    /** Export page: watertight Alpha-Wrap print mesh of the last result. */
+    void onPrintWrapRequested();
+    /** Print-wrap worker delivered the watertight mesh (+ projected GLB). */
+    void onPrintWrapReady(const TrellisPrintResult& result);
+    /** Print-wrap worker finished (success or failure): restore buttons. */
+    void onPrintWrapFinished(bool success);
 
 private:
     bool resolveInputPath(const QString& rawPath,
@@ -73,10 +79,23 @@ private:
     ccHObject* importGlbEntity(const QByteArray& glb,
                                const TrellisRunResult& result,
                                const QString& entityName);
+    /** Vertex-colour fallback mesh entity (cloud + mesh child) from typed
+     *  buffers: PBR base colours + metallic/roughness/alpha scalar fields,
+     *  pipeline normals preserved. Null on allocation failure. */
+    ccMesh* buildVertexColorMesh(const QVector<float>& verts,
+                                 const QVector<float>& normals,
+                                 const QVector<float>& pbr,
+                                 bool hasPbr,
+                                 const QVector<int>& tris,
+                                 const QString& name);
 
     QAction* m_action = nullptr;
     TrellisDialog* m_dialog = nullptr;
     TrellisWorker* m_worker = nullptr;
+    TrellisPrintWorker* m_printWorker = nullptr;
+    /** Export-page destination snapshot taken when a print wrap started. */
+    TrellisDialog::ExportDestination m_printDestination =
+            TrellisDialog::kExportDb;
     QTimer* m_inferenceHeartbeat = nullptr;
     int m_inferenceElapsedSeconds = 0;
     TrellisDialog::Settings m_currentSettings;

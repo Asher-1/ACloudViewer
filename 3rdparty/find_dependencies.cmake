@@ -864,6 +864,26 @@ else ()
     set(WITH_OPENMP OFF)
 endif ()
 
+# Steering arguments for vendored ExternalProjects that run their own
+# find_package(OpenMP) (today: ext_suitesparse's metis; ExternalProject sub
+# CMake processes do not inherit this project's OpenMP_* cache variables).
+# Presetting FindOpenMP's documented extension points (OpenMP_libomp_LIBRARY
+# and OpenMP_<lang>_INCLUDE_DIR, see Modules/FindOpenMP.cmake) short-circuits
+# their find_library/find_path, so their probe resolves the SAME libomp this
+# build uses (conda llvm-openmp / Homebrew) instead of whatever the build
+# host happens to expose. The find_* variables above only exist on the
+# AppleClang path, so this stays empty on Linux/Windows.
+if(APPLE AND WITH_OPENMP AND OpenMP_libomp_LIBRARY AND OpenMP_omp_INCLUDE_DIR)
+    set(OPENMP_EXTERNAL_STEER_ARGS
+            "-DOpenMP_libomp_LIBRARY:FILEPATH=${OpenMP_libomp_LIBRARY}"
+            "-DOpenMP_C_INCLUDE_DIR:PATH=${OpenMP_omp_INCLUDE_DIR}"
+            "-DOpenMP_CXX_INCLUDE_DIR:PATH=${OpenMP_omp_INCLUDE_DIR}")
+    message(STATUS "ExternalProject OpenMP steering: "
+            "libomp=${OpenMP_libomp_LIBRARY}, omp.h=${OpenMP_omp_INCLUDE_DIR}")
+else()
+    set(OPENMP_EXTERNAL_STEER_ARGS "")
+endif()
+
 
 if (${GLIBCXX_USE_CXX11_ABI})
     set(CUSTOM_GLIBCXX_USE_CXX11_ABI 1)

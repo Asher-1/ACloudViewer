@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <QByteArray>
 #include <QElapsedTimer>
 #include <QHash>
 #include <QImage>
@@ -138,4 +139,54 @@ private:
 
     Settings m_settings;
     struct aicore_trellis_ctx* m_ctx = nullptr;
+};
+
+/** Print-wrap (CGAL Alpha Wrap) job input: a private snapshot of the last
+ *  generation result plus the export-page settings. The snapshot decouples
+ *  the job from the dialog (a new generation may land while the wrap runs). */
+struct TrellisPrintRequest {
+    TrellisRunResult source;  // deep copy of the last generation result
+    int componentFilter = 0;  // export-page component filter (0/1/2)
+    int textureSize = 2048;   // projected-GLB atlas hint (0 = default)
+    bool bakeGlb = false;     // projected PBR GLB (textured sources only)
+};
+
+/** Print-wrap job output: watertight wrap mesh plus the optional projected
+ *  PBR GLB (wrap geometry as target, dense source for texture projection). */
+struct TrellisPrintResult {
+    QVector<float> verts;    // 3 * nVerts (centered unit cube)
+    QVector<float> normals;  // 3 * nVerts
+    QVector<float> pbr;      // 6 * nVerts projected per-vertex preview
+    QVector<int> tris;       // 3 * nTris
+    bool hasPbr = false;
+    QByteArray glb;  // projected PBR GLB (empty when skipped/failed)
+    double wrapMs = 0.0;
+    double bakeMs = 0.0;
+    int sourceNVerts = 0;  // input mesh size for the completion log
+    int sourceNTris = 0;
+};
+
+Q_DECLARE_METATYPE(TrellisPrintResult)
+
+/** Background CGAL Alpha-Wrap print remeshing of the last generation result.
+ *  Pure CPU geometry work: no model context and no AICore device lock, so it
+ *  may run alongside an active generation (CPU contention only). */
+class TrellisPrintWorker : public QThread {
+    Q_OBJECT
+
+public:
+    explicit TrellisPrintWorker(const TrellisPrintRequest& request,
+                                QObject* parent = nullptr);
+    ~TrellisPrintWorker() override;
+
+signals:
+    void logMessage(const QString& msg);
+    void printResultReady(const TrellisPrintResult& result);
+    void taskFinished(bool success);
+
+protected:
+    void run() override;
+
+private:
+    TrellisPrintRequest m_request;
 };

@@ -685,3 +685,144 @@ bool TrellisWorker::runInference() {
 }
 
 #endif  // AICore_ENABLED
+
+// ── TrellisPrintWorker: CGAL Alpha-Wrap print remesh of the last result ────
+
+TrellisPrintWorker::TrellisPrintWorker(const TrellisPrintRequest& request,
+                                       QObject* parent)
+    : QThread(parent), m_request(request) {}
+
+TrellisPrintWorker::~TrellisPrintWorker() {
+    // Same join-only discipline as TrellisWorker: the wrap state belongs to
+    // the worker thread; this destructor never touches it, it just joins a
+    // still-running thread so nothing leaks behind a fast shutdown.
+    if (isRunning()) {
+        requestInterruption();
+        wait(5000);
+    }
+}
+
+void TrellisPrintWorker::run() {
+    // QThread entry: an exception escaping here terminates the whole
+    // process. The AICore C ABI fences its own exceptions; this catch-all
+    // is the last-resort guard for this worker thread.
+#ifdef AICore_ENABLED
+    try {
+        // Alpha-Wrap ratios as fractions of the component-filtered input
+        // bounding-box diagonal (trellis_capi.h recommended start).
+        constexpr float kAlphaRatio = 0.01f;
+        constexpr float kOffsetRatio = 0.01f / 30.0f;
+
+        TrellisPrintResult out;
+        out.sourceNVerts = m_request.source.verts.size() / 3;
+        out.sourceNTris = m_request.source.tris.size() / 3;
+        if (out.sourceNVerts <= 0 || out.sourceNTris <= 0) {
+            emit logMessage(QStringLiteral(
+                    "[TRELLIS] Print wrap skipped: no generation result."));
+            emit taskFinished(false);
+            return;
+        }
+
+        QElapsedTimer timer;
+        timer.start();
+        char err[512] = {0};
+        aicore_trellis_mesh* wrap = aicore_trellis_prepare_print_mesh(
+                m_request.source.verts.constData(), out.sourceNVerts,
+                m_request.source.tris.constData(), out.sourceNTris,
+                m_request.source.hasPbr ? m_request.source.pbr.constData()
+                                        : nullptr,
+                m_request.componentFilter, kAlphaRatio, kOffsetRatio, err,
+                sizeof(err));
+        if (!wrap) {
+            emit logMessage(
+                    QStringLiteral("[TRELLIS] Print wrap failed: %1")
+                            .arg(err[0] ? QString::fromUtf8(err)
+                                        : QStringLiteral("unknown error")));
+            emit taskFinished(false);
+            return;
+        }
+        out.wrapMs = timer.elapsed();
+
+        // Copy the wrap buffers out before the handle is freed.
+        const int nv = aicore_trellis_mesh_n_verts(wrap);
+        const int nt = aicore_trellis_mesh_n_tris(wrap);
+        if (nv > 0) {
+            out.verts.resize(nv * 3);
+            std::memcpy(out.verts.data(), aicore_trellis_mesh_verts(wrap),
+                        sizeof(float) * nv * 3);
+            if (const float* nn = aicore_trellis_mesh_normals(wrap)) {
+                out.normals.resize(nv * 3);
+                std::memcpy(out.normals.data(), nn, sizeof(float) * nv * 3);
+            }
+        }
+        if (nt > 0) {
+            out.tris.resize(nt * 3);
+            std::memcpy(out.tris.data(), aicore_trellis_mesh_tris(wrap),
+                        sizeof(int) * nt * 3);
+        }
+        if (aicore_trellis_mesh_has_pbr(wrap)) {
+            out.pbr.resize(nv * 6);
+            std::memcpy(out.pbr.data(), aicore_trellis_mesh_pbr(wrap),
+                        sizeof(float) * nv * 6);
+            out.hasPbr = true;
+        }
+        aicore_trellis_mesh_free(wrap);
+
+        emit logMessage(
+                QStringLiteral("[TRELLIS] Alpha-Wrap print mesh ready: %1 "
+                               "verts / %2 tris (watertight) in %3 ms")
+                        .arg(nv)
+                        .arg(nt)
+                        .arg(out.wrapMs, 0, 'f', 0));
+
+        // Projected PBR GLB: wrap geometry as target, dense textured source
+        // for the per-texel projection. The C API requires source PBR, so
+        // untextured results stay on the vertex-colour path.
+        if (m_request.bakeGlb && out.hasPbr) {
+            emit logMessage(QStringLiteral(
+                    "[TRELLIS] Baking projected PBR GLB of the print mesh "
+                    "(closest-surface projection from the dense source)..."));
+            timer.restart();
+            int glbLen = 0;
+            uint8_t* glb = aicore_trellis_bake_projected_glb(
+                    out.verts.constData(), nv, out.tris.constData(), nt,
+                    m_request.source.verts.constData(), out.sourceNVerts,
+                    m_request.source.tris.constData(), out.sourceNTris,
+                    m_request.source.pbr.constData(), m_request.textureSize,
+                    m_request.componentFilter, &glbLen, err, sizeof(err));
+            out.bakeMs = timer.elapsed();
+            if (glb && glbLen > 0) {
+                out.glb =
+                        QByteArray(reinterpret_cast<const char*>(glb), glbLen);
+                emit logMessage(
+                        QStringLiteral("[TRELLIS] Projected print GLB baked "
+                                       "(%1 MB) in %2 ms")
+                                .arg(glbLen / (1024.0 * 1024.0), 0, 'f', 1)
+                                .arg(out.bakeMs, 0, 'f', 0));
+            } else {
+                emit logMessage(
+                        QStringLiteral("[TRELLIS] Projected GLB bake failed "
+                                       "(%1); keeping the vertex-colour "
+                                       "print mesh")
+                                .arg(err[0] ? QString::fromUtf8(err)
+                                            : QStringLiteral("unknown error")));
+            }
+            if (glb) {
+                aicore_trellis_free_buffer(glb);
+            }
+        }
+
+        emit printResultReady(out);
+        emit taskFinished(true);
+    } catch (const std::exception& e) {
+        emit logMessage(QStringLiteral("[TRELLIS] Unexpected print-wrap "
+                                       "failure: %1")
+                                .arg(QString::fromUtf8(e.what())));
+        emit taskFinished(false);
+    }
+#else
+    Q_UNUSED(m_request);
+    emit logMessage(QStringLiteral("[TRELLIS] AICore not enabled."));
+    emit taskFinished(false);
+#endif
+}

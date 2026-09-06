@@ -1145,6 +1145,7 @@ void TrellisDialog::buildExportPage(QWidget* page) {
 
 #ifdef AICore_ENABLED
     const bool printable = aicore_trellis_print_remesh_available() != 0;
+    m_printWrapAvailable = printable;
     m_printWrapBtn->setEnabled(printable);
     if (!printable) {
         m_printWrapBtn->setToolTip(
@@ -1152,12 +1153,24 @@ void TrellisDialog::buildExportPage(QWidget* page) {
                    "enable the print wrap."));
     }
 #else
+    m_printWrapAvailable = false;
+    m_rebakeAvailable = false;
     m_printWrapBtn->setEnabled(false);
     m_rebakeBtn->setEnabled(false);
 #endif
 
     connect(m_rebakeBtn, &QPushButton::clicked, this,
             [this]() { emit exportRequested(); });
+    connect(m_printWrapBtn, &QPushButton::clicked, this,
+            [this]() { emit printWrapRequested(); });
+}
+
+void TrellisDialog::setPrintWrapRunning(bool running) {
+    // Both export-page actions disable while the wrap (a long CGAL job)
+    // runs; the restore path honors the build-time availability flags so a
+    // CGAL-less build keeps its buttons dark.
+    m_rebakeBtn->setEnabled(!running && m_rebakeAvailable);
+    m_printWrapBtn->setEnabled(!running && m_printWrapAvailable);
 }
 
 QString TrellisDialog::quantization() const {
