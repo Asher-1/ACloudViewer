@@ -1,6 +1,6 @@
 {
-  "upstream_repository": "/home/ludahai/develop/code/github/colmap",
-  "upstream_revision_checked": "a395b826",
+  "upstream_repository": "/home/asher/develop/code/github/MVS/colmap",
+  "upstream_revision_checked": "dbb41680",
   "policy": "Only entries marked implemented are release claims. partial and blocked entries require a task-specific parity gate. deferred entries are outside the active hardware support matrix and are excluded from its release gate.",
   "capabilities": [
     {
@@ -17,7 +17,10 @@
       "entrypoint": "estimators/relpose_one_sided_focal.{h,cc}, estimators/two_view_geometry.cc",
       "validation": "reconstruction_camera_rig_parity_gate (exact 6-point, distorted calibrated ray, tangent-Sampson numeric, and <6-point rejection gates)",
       "reason": "The pinned PoseLib six-point adapter is integrated into the asymmetric known-second-camera RANSAC path. It carries CamRayWithJac calibrated rays through the public camera API, scores the calibrated side with the tangent Sampson denominator, and performs TinySolver local refinement over pose direction and log focal before rescoring RANSAC support. Deterministic distorted-camera, tangent-Sampson, non-minimal rejection, and non-coplanar refinement-accuracy gates pass.",
-      "prerequisites": ["PoseLib source under 3rdparty (RECONSTRUCTION_FETCH_POSELIB=ON)", "reconstruction_camera_rig_parity_gate"],
+      "prerequisites": [
+        "PoseLib source under 3rdparty (RECONSTRUCTION_FETCH_POSELIB=ON)",
+        "reconstruction_camera_rig_parity_gate"
+      ],
       "resolution": "Keep the ray/Jacobian and refinement-accuracy gates mandatory for every PoseLib-enabled reconstruction build."
     },
     {
@@ -27,7 +30,10 @@
       "entrypoint": "controllers/global_mapper.{h,cc}, controllers/hierarchical_mapper.{h,cc}, base/scene_clustering.{h,cc}",
       "validation": "scene_clustering_test; ColmapLib",
       "reason": "The compatible equivalent is now implemented: all database images are partitioned, verified-match components are mapped independently, and component reconstructions are merged.",
-      "prerequisites": ["BUILD_RECONSTRUCTION=ON", "database with verified pair geometry"]
+      "prerequisites": [
+        "BUILD_RECONSTRUCTION=ON",
+        "database with verified pair geometry"
+      ]
     },
     {
       "name": "caspar_gpu_bundle_adjustment",
@@ -36,7 +42,12 @@
       "entrypoint": "3rdparty/Symforce-Caspar/caspar.cmake; optim/bundle_adjustment_caspar.{h,cc}; optim/bundle_adjustment.{h,cc}",
       "validation": "reconstruction_caspar_parity_gate (direct generated-Caspar versus Ceres Pinhole RMS, Frame/Rig composition, merged factors, and all 11 split-intrinsic factor variants)",
       "reason": "Generated Symforce-Caspar f32/f64 kernels are imported through the 3rdparty_caspar INTERFACE target. The backend selector executes Caspar directly for PINHOLE/SIMPLE_RADIAL BA, including fixed sensor_from_rig Frame/Rig observations and all 15 upstream pose/focal-and-extra/principal-point/point variability combinations. The split-intrinsic numeric gate covers its 11 generated factors with fixed pose and point combinations, verifies fixed groups remain unchanged, and compares reprojection error to the portable CPU-Ceres reference. Upstream Caspar itself only provides Pinhole and SimpleRadial generated factors; spherical and other camera models correctly remain on Ceres. Ceres is hard-disabled for CUDA so packages do not acquire toolkit-major-version runtime dependencies; Caspar remains the independent GPU BA backend.",
-      "prerequisites": ["CUDA toolkit", "compute capability >= 7.5", "generated Symforce-Caspar f32/f64 sources", "controlled representative-scene CPU-Ceres versus Caspar runtime A/B gate"],
+      "prerequisites": [
+        "CUDA toolkit",
+        "compute capability >= 7.5",
+        "generated Symforce-Caspar f32/f64 sources",
+        "controlled representative-scene CPU-Ceres versus Caspar runtime A/B gate"
+      ],
       "resolution": "Keep the direct RMS, split-intrinsic, and Frame/Rig consistency gates mandatory in every Caspar-enabled configuration. Report performance only from controlled CPU-Ceres versus Caspar runs; never enable Ceres CUDA."
     },
     {
@@ -46,7 +57,10 @@
       "entrypoint": "core/AICore LoMa C API; feature/loma.{h,cc}; base/database float_descriptors protocol; legacy reconstruction scheduler",
       "validation": "test_loma_detector_reference_gate; test_loma_descriptor_reference_gate; test_loma_g_token_reference_gate; test_loma_b128_e2e_reference_gate; test_loma_matcher_reference_gate; test_loma_published_model_gate (all production paths load GGUF/ggml only; development fixtures are generated from pinned ONNX)",
       "reason": "The GGUF/ggml chain covers DaD, DeDoDe-B, DeDoDe-G, LoMa-B128, and B/R/L/G matchers without ONNX Runtime. All 22 published F32/F16/Q8_0 artifacts are cataloged with shared-cache release URLs and SHA256 digests; legacy feature extraction writes the typed float_descriptors SQLite protocol and matching uses the legacy worker pipeline. A real ten-image CUDA run completed end to end: LoMa registered 10/10 images with 9020 sparse points and 68956 track observations, versus SIFT's 10/10, 145, and 689; LoMa took 82.59 seconds versus SIFT's 1.69 seconds on that fixture. DaD, DeDoDe-B, DeDoDe-G, LoMa-B128 and B/R/L/G matcher ONNX-reference gates pass. On CUDA 11.8/RTX 3060 the strict DeDoDe-G ViT-L token fixture passes without runtime workarounds (max absolute error 1.9836426e-4, relative L2 6.7295686e-6; limits 2e-3 and 2e-4); B/R/L/G matcher P/R is 1.0 with max score errors 4.77e-7, 8.40e-6, 4.77e-7, and 5.96e-7 respectively. The repair materializes F32 SDPA and prevents direct F32 convolution from entering CUDA's TF32 IGEMM path. No ONNX Runtime is linked into ACloudViewer.",
-      "prerequisites": ["test_loma_g_token_reference_gate with the pinned ONNX token fixture", "per-model DaD/DeDoDe and B/R/L/G matcher reference gates"],
+      "prerequisites": [
+        "test_loma_g_token_reference_gate with the pinned ONNX token fixture",
+        "per-model DaD/DeDoDe and B/R/L/G matcher reference gates"
+      ],
       "resolution": "Keep the pinned ONNX token-reference gate and the per-model B/R/L/G matcher P/R gates mandatory. The recorded real-scene timing is not a LoMa speedup claim; make any speed claim only from a controlled same-hardware A/B."
     },
     {
@@ -56,7 +70,12 @@
       "entrypoint": "3rdparty/rocm/rocm.cmake; mvs/gpu_mat.h; mvs/gpu_mat_prng.cu; mvs/gpu_mat_ref_image.cu; mvs/patch_match_cuda.cu",
       "validation": "HIP compile gate plus CUDA/HIP depth-map numeric and runtime parity gates",
       "reason": "The ROCm 3rdparty interface target, HIP translation-unit path, CUDA-to-HIP shim, and POD GpuMatView kernel ABI remain default-off experimental code. HIP PatchMatch is explicitly outside the active alignment and release hardware matrix because no ROCm compiler or device is available; it is not a current release blocker or remaining implementation task.",
-      "prerequisites": ["ROCm hipcc", "CUDA-to-HIP compatibility header", "HIP PatchMatch build", "CUDA/HIP depth-map parity gate"],
+      "prerequisites": [
+        "ROCm hipcc",
+        "CUDA-to-HIP compatibility header",
+        "HIP PatchMatch build",
+        "CUDA/HIP depth-map parity gate"
+      ],
       "resolution": "When ROCm hardware becomes available, re-enter this capability into a dedicated HIP validation matrix and run the recorded compile, depth-map parity, and performance gates."
     },
     {
@@ -66,7 +85,10 @@
       "entrypoint": "base/camera*, base/camera_rig.*, optim/bundle_adjustment.*",
       "validation": "reconstruction_camera_rig_parity_gate; cost_functions_test; rig_test; frame_test; database_test (full-sphere equirectangular projection/ray/Jacobian, variable/fixed/rig Ceres Jacobian central-difference gates, v1/v2 Rig/Frame serialization, generic reference-sensor and data-only Frame SQLite round-trips, and rotated relative-pose gates)",
       "reason": "EQUIRECTANGULAR (id 17) has full-sphere bearing, signed 3D projection, calibrated-ray Jacobian, and normal/constant-pose/rig Ceres residuals with longitude-seam and central-difference Jacobian gates. Rig/Frame v2 text and binary records serialize tagged generic sensor/data ids while v1 camera/image records remain readable. SQLite migrates legacy rigs.ref_camera_id to ref_sensor_id/ref_sensor_type and persists arbitrary reference sensors and data-only Frames in rig_sensors/frame_data alongside legacy camera/image tables.",
-      "prerequisites": ["reconstruction_camera_rig_parity_gate", "cost_functions_test"],
+      "prerequisites": [
+        "reconstruction_camera_rig_parity_gate",
+        "cost_functions_test"
+      ],
       "resolution": "Keep full-sphere, spherical-BA Jacobian, and mixed-sensor SQLite gates mandatory."
     },
     {
@@ -76,8 +98,74 @@
       "entrypoint": "3rdparty/openimageio/openimageio.cmake; util/bitmap.{h,cc}",
       "validation": "reconstruction_oiio_parity_gate (bitmap_test, undistortion_test, texture_mapping_test); PostInstall resolved OIIO runtime-closure check for ACloudViewer/CloudViewer/Colmap; installer payload closure checks on Ubuntu, macOS, and Windows; stale-FreeImage source audit",
       "reason": "The Reconstruction Bitmap ABI no longer exposes FreeImage and is backed by one pinned OpenImageIO 3.1.17.0 source ExternalProject on Linux, macOS, and Windows. Its required image/color closure is built when the host is too old, while local TIFF is always built from its upstream-pinned source to avoid the macOS Mono.framework ABI hazard. USE_OPENCV=OFF prevents the system OIIO to system OpenCV 4.2 injection path. The focused parity target remains available for local investigation but is intentionally not executed by GitHub CI. PostInstall uses CMake's native runtime-dependency resolver to copy the source-built OIIO libraries and every non-system resolved dependency into each independently installable ACloudViewer, CloudViewer, and Colmap component; macOS then rewrites those dylibs to @rpath. Ubuntu, macOS, and Windows installer jobs assert the OIIO closure before any platform dependency search path is added. The source build and package path have not yet completed on every remote platform.",
-      "prerequisites": ["Ubuntu 20.04/22.04/24.04 source-build and package jobs", "macOS and Windows source-build and package jobs"],
+      "prerequisites": [
+        "Ubuntu 20.04/22.04/24.04 source-build and package jobs",
+        "macOS and Windows source-build and package jobs"
+      ],
       "resolution": "Promote only after the pinned OIIO source build and final package payload have completed on each platform. Run the focused bitmap/EXIF/resize/undistortion/texture target as a local or dedicated validation job when changing the image backend."
+    },
+    {
+      "name": "database_version_migration",
+      "upstream_commit": "dbb41680",
+      "status": "implemented",
+      "entrypoint": "util/version.{h,cc}, util/version.h.in, base/database.{h,cc}",
+      "validation": "reconstruction_db_migration_gate: rebuilt after the two-view revert; PostMigrateTables refuses newer schemas with std::runtime_error and migrates legacy-395 sentinels (identity qvec LE F03F prefix, zero tvec, zero F/E/H) to NULL; database_test green.",
+      "reason": "The upstream user_version migration machinery is ported into the concrete Database as Pre/PostMigrateTables: version-gated row migrations (identity/zero qvec-tvec and zero E/F/H sentinels to NULL, descriptors.type) run for legacy upstream databases and for the fork-legacy numbering 395; the fork-legacy rigs column migration is preserved; two_view_geometries gains the camera1/camera2 blob columns. Databases written by a newer schema are refused at open instead of being silently misread. The COLMAP engine version is decoupled from the CLOUDVIEWER package version so the schema number tracks the aligned upstream (4.3.0.dev0 -> 4030000).",
+      "prerequisites": [
+        "reconstruction_db_migration_gate"
+      ],
+      "resolution": "Bump COLMAP_DATABASE_SCHEMA_REVISION (not the upstream version) when new versioned migrations land (e.g. pose_priors with W7). Keep the fork's own tables (float_descriptors/rig_cameras/frame_images) outside upstream migrations. Parity gates must run ctest from ${CMAKE_BINARY_DIR}/libs/Reconstruction where enable_testing() rooted the test tree."
+    },
+    {
+      "name": "ba_backend_surface",
+      "upstream_commit": "c9729fa0",
+      "status": "implemented",
+      "entrypoint": "optim/bundle_adjustment.{h,cc}, controllers/incremental_mapper.{h,cc}, sfm/incremental_mapper.{h,cc}, pipelines/option_utils.cpp, util/option_manager.cc, ui/license_widget.{h,cc}, ui/reconstruction_options_widget.cc",
+      "validation": "optim/bundle_adjustment_test (TestCheckIfStopped cooperative-cancellation gate; full ColmapLib ctest suite green apart from pre-existing environment failures: polynomial numeric, DA3 model path, GPU SIFT count, gpu_mat Not Run)",
+      "reason": "The bundle adjustment backend surface now matches upstream: BundleAdjustmentOptions.backend (CERES/CASPAR) is authoritative with use_caspar as the CLI alias; mapper options gain ba_local_backend/ba_global_backend (default CERES, wired into Local/GlobalBundleAdjustment); check_if_stopped is honored through a Ceres iteration callback in both BundleAdjuster and RigBundleAdjuster (the self-built Ceres reports USER_FAILURE for callback SOLVER_ABORT, so the test asserts the behavioral contract instead of the enum). PBA is fully retired from the build, options, UI, license widget, pybind surface, and app definitions per upstream c9729fa0 (CUDA 12+ compatibility); lib/PBA remains orphaned on disk pending physical pruning.",
+      "prerequisites": [
+        "optim/bundle_adjustment_test",
+        "reconstruction_db_migration_gate"
+      ],
+      "resolution": "Do not reintroduce PBA. When extending the backend surface (e.g. rig BA factors in W3), extend the caspar parity gate matrix in the same change. The ACloudViewer app link with the retired PBA define must be covered by the next CI run."
+    },
+    {
+      "name": "synthetic_dataset",
+      "upstream_commit": "dbb41680",
+      "status": "partial",
+      "entrypoint": "scene/synthetic.{h,cc} (ported, not yet in ColmapLib sources), math/union_find.h, math/random_eigen.h, util/hash_containers.h, geometry/rigid3.{h,cc} (wired), util/logging.h THROW_CHECK family (wired), util/types.h Vector7d (wired)",
+      "validation": "W3-2a frame-aware data model landed: Image gains frame_id/CameraPtr/FramePtr/CamFromWorld/DataId/HasPose (upstream pointer-wiring semantics), Frame gains rig_ptr + SensorFromWorld + SetRigFromWorld(Rigid3d)/RigFromWorld(), Rig gains NonRefSensors, Reconstruction gains the upstream Add* pointer-wiring bodies + WithTrivial variants + UpdatePoint3DErrors + RegFrameIds, Database gains the pose_priors table with Write/Read/ReadAll/Update/Clear persistence (geometry/pose_prior + util/enum_utils ported, base/gps kept at the fork's legacy API). Remaining before enabling scene/synthetic: ~10 symbol adaptations in synthetic.cc (GPSTransform EllipsoidToENU/ENUToEllipsoid vs the legacy EllToXYZ/XYZToEll API, EssentialMatrixFromPose/FundamentalFromEssential Matrix overloads, ShouldSwapImagePair, DataId assignment, descriptors type strip) plus the synthetic_test gtest port.",
+      "reason": "synthetic.{h,cc,test.cc} are copied and include-adapted; the shared infrastructure they need is already landed (hash containers with the STD-default backend semantics of #4673, union-find, random aliases, THROW_CHECK macros, Rigid3d). Remaining adaptation before enabling the build: a Frame/Rig pose bridge (Rigid3d <-> qvec/tvec) plus a sensor_t accessor, Reconstruction::RegFrameIds() or equivalent iteration, and the pose-prior options/blocks which are trimmed until W7 lands (pose_priors table + Database pose-prior API).",
+      "prerequisites": [
+        "W3 frame-aware data model adaptation",
+        "W7 pose-prior database API"
+      ],
+      "resolution": "Finish the Frame/Rig bridge, enable scene/CMakeLists.txt sources, rewrite the gtest subset as Boost.Test, and promote to implemented with a synthetic-based e2e gate shared by W3/W4."
+    },
+    {
+      "name": "degensac_estimator",
+      "upstream_commit": "dbb41680",
+      "status": "implemented",
+      "entrypoint": "estimators/fundamental_matrix_degensac.{h,cc} (compiled into ColmapLib), optim/ransac.h + optim/loransac.h (upstream-parity constructors with default-argument estimators), estimators/homography_matrix.{h,cc} (ComputeSquaredHomographyError)",
+      "validation": "FundamentalMatrixDegensacEstimator compiled and wired via the upstream EstimateFundamentalMatrix use_degensac branch inside the swapped two_view_geometry.cc. ComputeSquaredHomographyError landed in estimators/homography_matrix. Legacy test port pending with the two_view_geometry_test rewrite.",
+      "reason": "FundamentalMatrixDegensacEstimator (7-pt plane-degeneracy detection with plane-and-parallax completion and Sampson polish) is ported and compiles. The optim layer was modernized to the upstream constructor form RANSAC(options, estimator=Estimator(), support_measurer, sampler) / LORANSAC(options, estimator, local_estimator, ...) with default arguments, so estimators that bind data at construction time (non-default-constructible) are supported while every existing call site stays source-compatible. ComputeSquaredHomographyError was added to estimators/homography_matrix for the DEGENSAC degeneracy scoring.",
+      "prerequisites": [
+        "upstream full gtest suite port (blocked on W9 synthetic_dataset)"
+      ],
+      "resolution": "Wire use_degensac into TwoViewGeometryOptions and two_view_geometry.cc, port relpose_shared_focal with the tiny-solver headers, then promote to implemented via the two-view parity tests."
+    },
+    {
+      "name": "two_view_estimator_infra",
+      "upstream_commit": "dbb41680",
+      "status": "implemented",
+      "entrypoint": "estimators/two_view_geometry.{h,cc} (upstream swap), base/two_view_geometry.{h,cc}, estimators/solvers/* (registered), estimators/cost_functions/*, base/normalization.{h,cc}, base/camera_models.h classification+CamRayFromImg, base/camera.h upstream-parity accessors, base/essential_matrix.{h,cc} TangentSampson/Sampson/ray-pose additions, base/homography_matrix ray wrapper, base/polynomial FindCubicPolynomialRoots, base/generalized_pose (copied, unregistered), optim/tiny_solver.h, optim/ransac.h+loransac.h dual-form dispatch, Camera::CreateFromModelId/Name factories, testing framework switched to googletest (D6)",
+      "validation": "estimators/two_view_geometry.{h,cc} upstream swap complete. W3-1 landed: CorrespondenceGraph gained the per-pair TwoViewGeometry cache (ImagePair.two_view_geometry + Set/Extract/Update/ImagePairs, upstream parity with the legacy AddCorrespondences edge construction preserved) wired in DatabaseCache::Load. MaybeDecomposeRelativePoses restored (iterates the cache via the CorrespondenceGraph accessor). ray-space PoseFromHomographyMatrix now uses the real upstream implementation with CheckCheiralityAndReprojErrorSum; base/homography_matrix DecomposeHomographyMatrix upgraded to the upstream Rigid3d signature (no external consumers) with the legacy points-space PoseFromHomography adapted. Boost parity gate two_view_geometry_test green. Full build EXIT=0; ctest 73/77 (pre-existing environment failures only). Still deferred: EstimateRigTwoViewGeometries (needs the generalized-pose cost machinery, W3-2).",
+      "reason": "The estimator-side modernization (W5+W6 batch) landed as infrastructure: every leaf dependency of the upstream two_view_geometry rewrite is ported and compiles; only the central file swap remains, gated by the numbered bridge list above. Kept out of ColmapLib to preserve a green build.",
+      "prerequisites": [
+        "two_view_geometry_test upstream Boost.Test port",
+        "math/polynomial.cc consumers verification"
+      ]
     }
-  ]
+  ],
+  "testing_framework": "googletest (v1.16 FetchContent; decision D6, 2026-09-06). All Reconstruction *_test.cc converted from Boost.Test; COLMAP_ADD_TEST links gtest_main."
 }

@@ -187,36 +187,79 @@ void Reconstruction::AddCamera(const class Camera& camera) {
     cameras_.emplace(camera.CameraId(), camera);
 }
 
-void Reconstruction::AddImage(const class Image& image) {
-    CHECK(!ExistsImage(image.ImageId()));
-    images_[image.ImageId()] = image;
+void Reconstruction::AddImage(class Image image) {
+  THROW_CHECK(image.HasCameraId());
+  auto& camera = Camera(image.CameraId());
+  if (image.HasCameraPtr()) {
+    THROW_CHECK_EQ(image.CameraPtr(), &camera);
+  } else {
+    image.SetCameraPtr(&camera);
+  }
+  THROW_CHECK(image.HasFrameId());
+  auto& frame = Frame(image.FrameId());
+  THROW_CHECK(frame.HasDataId(image.DataId()));
+  if (image.HasFramePtr()) {
+    THROW_CHECK_EQ(image.FramePtr(), &frame);
+  } else {
+    image.SetFramePtr(&frame);
+  }
+  const image_t image_id = image.ImageId();
+  THROW_CHECK(images_.emplace(image_id, std::move(image)).second);
 }
 
-void Reconstruction::AddRig(const class Rig& rig) {
-    CHECK_NE(rig.RigId(), kInvalidRigId);
-    CHECK(!ExistsRig(rig.RigId()));
-    CHECK_GT(rig.NumCameras(), 0);
-    CHECK(rig.HasCamera(rig.RefCameraId()));
-    for (const camera_t camera_id : rig.CameraIds()) {
-        CHECK(ExistsCamera(camera_id));
+void Reconstruction::AddRig(class Rig rig) {
+  auto check_exists_sensor = [&](const auto& sensor_id) {
+    switch (sensor_id.type) {
+      case SensorType::CAMERA:
+        THROW_CHECK(ExistsCamera(sensor_id.id))
+            << "Camera " << sensor_id.id << " from rig " << rig.RigId()
+            << " not found in the reconstruction. Note that AddCamera "
+               "should be called before AddRig.";
+        break;
+      case SensorType::IMU:
+      case SensorType::INVALID:
+        break;
     }
-    rigs_.emplace(rig.RigId(), rig);
+  };
+
+  check_exists_sensor(rig.RefSensorId());
+  for (const auto& [sensor_id, _] : rig.NonRefSensors()) {
+    check_exists_sensor(sensor_id);
+  }
+
+  const rig_t rig_id = rig.RigId();
+  THROW_CHECK(rigs_.emplace(rig_id, std::move(rig)).second);
 }
 
-void Reconstruction::AddFrame(const class Frame& frame) {
-    CHECK_NE(frame.FrameId(), kInvalidFrameId);
-    CHECK(!ExistsFrame(frame.FrameId()));
-    CHECK(ExistsRig(frame.RigId()));
-    CHECK(!frame.ImageIds().empty());
-    const class Rig& rig = Rig(frame.RigId());
-    for (const image_t image_id : frame.ImageIds()) {
-        CHECK(ExistsImage(image_id));
-        CHECK(rig.HasCamera(Image(image_id).CameraId()));
-        for (const auto& existing_frame : frames_) {
-            CHECK(!existing_frame.second.HasImageId(image_id));
-        }
+void Reconstruction::AddFrame(class Frame frame) {
+  THROW_CHECK(frame.HasRigId());
+  auto& rig = Rig(frame.RigId());
+  for (const auto& data_id : frame.DataIds()) {
+    switch (data_id.sensor_id.type) {
+      case SensorType::CAMERA:
+        THROW_CHECK(rig.HasSensor(data_id.sensor_id));
+        break;
+      case SensorType::IMU:
+        // Note that we do not (yet) support IMU measurement data.
+        break;
+      case SensorType::INVALID:
+        LOG(FATAL) << "Invalid sensor type: "
+                      << static_cast<int>(data_id.sensor_id.type);
+        break;
     }
-    frames_.emplace(frame.FrameId(), frame);
+  }
+  if (frame.HasRigPtr()) {
+    THROW_CHECK_EQ(frame.RigPtr(), &rig);
+  } else {
+    frame.SetRigPtr(&rig);
+  }
+  const bool is_registered = frame.HasPose();
+  const frame_t frame_id = frame.FrameId();
+  auto [it, inserted] = frames_.emplace(frame_id, std::move(frame));
+  THROW_CHECK(inserted);
+  (void)is_registered;
+  // NOTE: the upstream version registers posed frames here; this fork keeps
+  // the image-level registration model until W3-2b.
 }
 
 CameraRig Reconstruction::CameraRigFromRig(const rig_t rig_id) const {
@@ -2434,4 +2477,83 @@ void Reconstruction::ResetTriObservations(const image_t image_id,
     }
 }
 
+
+std::unordered_set<frame_t> Reconstruction::RegFrameIds() const {
+  std::unordered_set<frame_t> frame_ids;
+  frame_ids.reserve(frames_.size());
+  for (const auto& [frame_id, frame] : frames_) {
+    if (frame.HasPose()) {
+      frame_ids.insert(frame_id);
+    }
+  }
+  return frame_ids;
+}
+
+void Reconstruction::AddCameraWithTrivialRig(struct Camera camera) {
+  THROW_CHECK(!ExistsRig(camera.CameraId()))
+      << "AddCameraWithTrivialRig tried to add a rig with the same id as the "
+         "camera, but failed because Rig "
+      << camera.CameraId() << "already exists in the reconstruction. ";
+  class Rig rig;
+  rig.SetRigId(camera.CameraId());
+  rig.AddRefSensor(camera.SensorId());
+  AddCamera(std::move(camera));
+  AddRig(std::move(rig));
+}
+
+
+void Reconstruction::AddImageWithTrivialFrame(class Image image) {
+  THROW_CHECK(!ExistsFrame(image.ImageId()))
+      << "AddImageWithTrivialFrame tried to add a frame with the same id as "
+         "the image, but failed because Frame "
+      << image.ImageId() << "already exists in the reconstruction.";
+  THROW_CHECK(ExistsRig(image.CameraId()))
+      << "Rig " << image.CameraId() << " that contains Camera "
+      << image.CameraId() << " does not exist in the reconstruction.";
+  auto& rig = Rig(image.CameraId());
+  THROW_CHECK_EQ(rig.NumSensors(), 1)
+      << "AddImageWithTrivialFrame requires that the camera is from a rig that "
+         "contains exactly one sensor (the camera itself).";
+  THROW_CHECK(rig.IsRefSensor(Camera(image.CameraId()).SensorId()));
+  class Frame frame;
+  frame.SetFrameId(image.ImageId());
+  frame.SetRigId(image.CameraId());
+  frame.AddDataId(image.DataId());
+  if (image.HasFrameId()) {
+    THROW_CHECK_EQ(image.FrameId(), frame.FrameId());
+  } else {
+    image.SetFrameId(frame.FrameId());
+  }
+  AddFrame(std::move(frame));
+  AddImage(std::move(image));
+}
+
+void Reconstruction::AddImageWithTrivialFrame(class Image image,
+                                              const Rigid3d& cam_from_world) {
+  const frame_t frame_id = image.ImageId();
+  AddImageWithTrivialFrame(std::move(image));
+  Frame(frame_id).SetRigFromWorld(cam_from_world);
+  // Frame-level registration lands with W3-2b; image-level
+        // registration below keeps the legacy model.
+        RegisterImage(frame_id);
+}
+
+
+void Reconstruction::UpdatePoint3DErrors() {
+  for (auto& [_, point3D] : points3D_) {
+    if (point3D.Track().Length() == 0) {
+      point3D.SetError(0);
+      continue;
+    }
+    double error_sum = 0;
+    for (const auto& track_el : point3D.Track().Elements()) {
+      const auto& image = Image(track_el.image_id);
+      const auto& point2D = image.Point2D(track_el.point2D_idx);
+      const auto& camera = *image.CameraPtr();
+      error_sum += std::sqrt(CalculateSquaredReprojectionError(
+          point2D.XY(), point3D.XYZ(), image.CamFromWorld(), camera));
+    }
+    point3D.SetError(error_sum / point3D.Track().Length());
+  }
+}
 }  // namespace colmap

@@ -49,5 +49,13 @@ else()
     set(GIT_COMMIT_DATE "Unknown")
 endif()
 
+# Parse the aligned upstream COLMAP version into components for the database
+# schema version (see src/util/version.h).
+string(REGEX MATCH "^([0-9]+)\\.([0-9]+)\\.([0-9]+)"
+       _colmap_version_match "${COLMAP_VERSION}")
+set(COLMAP_VERSION_MAJOR "${CMAKE_MATCH_1}")
+set(COLMAP_VERSION_MINOR "${CMAKE_MATCH_2}")
+set(COLMAP_VERSION_PATCH "${CMAKE_MATCH_3}")
+
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/util/version.h.in"
                "${CMAKE_CURRENT_SOURCE_DIR}/src/util/version.h")

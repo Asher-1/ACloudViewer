@@ -292,12 +292,6 @@ void OptionsParser::addMapperOptions(
                    &incremental_mapper_options.ba_local_function_tolerance);
     registerOption("Mapper.ba_local_max_num_iterations",
                    &incremental_mapper_options.ba_local_max_num_iterations);
-#ifdef PBA_ENABLED
-    registerOption("Mapper.ba_global_use_pba",
-                   &incremental_mapper_options.ba_global_use_pba);
-    registerOption("Mapper.ba_global_pba_gpu_index",
-                   &incremental_mapper_options.ba_global_pba_gpu_index);
-#endif
     registerOption("Mapper.ba_global_images_ratio",
                    &incremental_mapper_options.ba_global_images_ratio);
     registerOption("Mapper.ba_global_points_ratio",

@@ -1,5 +1,10 @@
 # qTrellis — TRELLIS.2 Image-to-3D (GGML)
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qTrellis/images/qTrellis_f16_1024_pbr.png" width="49%" alt="TRELLIS.2 Full 1024 PBR result">
+  <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qTrellis/images/qTrellis_q8_512_pbr.png" width="49%" alt="TRELLIS.2 Standard 512 PBR result">
+</p>
+
 Turns a single image into a 3D triangle mesh with per-vertex PBR materials,
 running **natively in-process on ggml** (CPU / CUDA / Vulkan / Metal) — no
 Python, PyTorch or external services. In-tree port of

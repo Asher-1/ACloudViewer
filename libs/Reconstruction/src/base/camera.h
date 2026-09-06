@@ -10,6 +10,7 @@
 #include <optional>
 #include <vector>
 
+#include "base/camera_models.h"
 #include "base/pose.h"
 #include "util/types.h"
 
@@ -40,6 +41,41 @@ public:
     inline void SetHeight(const size_t height);
 
     // Access focal length parameters.
+    // ---- Upstream-parity API (COLMAP 4.x scene/camera.h) ----
+    // Whether the model is perspective with a finite pinhole image plane.
+    // Upstream-parity factories (COLMAP 4.x scene/camera.h): initialize
+    // parameters for the given model with the principal point at the image
+    // center.
+    static Camera CreateFromModelId(camera_t camera_id,
+                                    CameraModelId model_id,
+                                    double focal_length,
+                                    size_t width,
+                                    size_t height);
+    static Camera CreateFromModelName(camera_t camera_id,
+                                      const std::string& model_name,
+                                      double focal_length,
+                                      size_t width,
+                                      size_t height);
+
+    // Upstream-parity: the camera as a sensor in a rig.
+    inline sensor_t SensorId() const {
+        return sensor_t(SensorType::CAMERA, camera_id_);
+    }
+    inline bool IsPerspectivePinhole() const {
+        return CameraModelIsPerspectivePinhole(model_id_);
+    }
+    // Whether the model is a spherical (equirectangular) panorama model.
+    inline bool IsSpherical() const {
+        return CameraModelIsSpherical(model_id_);
+    }
+    inline bool IsPerspectiveFisheye() const {
+        return CameraModelIsPerspectiveFisheye(model_id_);
+    }
+    // Principal point as a 2D point (pixels).
+    inline Eigen::Vector2d PrincipalPoint() const {
+        return Eigen::Vector2d(PrincipalPointX(), PrincipalPointY());
+    }
+
     double MeanFocalLength() const;
     double FocalLength() const;
     double FocalLengthX() const;

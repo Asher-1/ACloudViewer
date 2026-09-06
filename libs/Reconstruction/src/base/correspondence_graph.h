@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "base/database.h"
+#include "base/two_view_geometry.h"
 #include "util/types.h"
 
 namespace colmap {
@@ -108,6 +109,22 @@ public:
     bool IsTwoViewObservation(const image_t image_id,
                               const point2D_t point2D_idx) const;
 
+    // ---- Upstream-parity per-pair two-view geometry cache (W3-1) ----
+    // All image pairs in the correspondence graph.
+    std::vector<image_pair_t> ImagePairs() const;
+    // Cache the two-view geometry for a pair (edges are built separately by
+    // AddCorrespondences, preserving the legacy construction behavior).
+    void SetTwoViewGeometry(image_t image_id1, image_t image_id2,
+                            TwoViewGeometry two_view_geometry);
+    // Return the cached two-view geometry, inverted when the pair is stored
+    // swapped; optionally overwrite inlier_matches with the graph edges.
+    TwoViewGeometry ExtractTwoViewGeometry(image_t image_id1,
+                                           image_t image_id2,
+                                           bool extract_inlier_matches) const;
+    // Replace the cached two-view geometry for a pair.
+    void UpdateTwoViewGeometry(image_t image_id1, image_t image_id2,
+                               TwoViewGeometry two_view_geometry);
+
 private:
     struct Image {
         // Number of 2D points with at least one correspondence to another
@@ -125,6 +142,11 @@ private:
     struct ImagePair {
         // The number of correspondences between pairs of images.
         point2D_t num_correspondences = 0;
+
+        // Upstream-parity (COLMAP 4.x W3-1): the cached two-view geometry
+        // for this pair, maintained by Set/Update/ExtractTwoViewGeometry.
+        // The graph edges themselves are still built by AddCorrespondences.
+        TwoViewGeometry two_view_geometry;
     };
 
     std::unordered_map<image_t, Image> images_;
@@ -134,8 +156,8 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 // Implementation
 ////////////////////////////////////////////////////////////////////////////////
-
 size_t CorrespondenceGraph::NumImages() const { return images_.size(); }
+
 
 size_t CorrespondenceGraph::NumImagePairs() const {
     return image_pairs_.size();

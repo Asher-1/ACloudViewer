@@ -1,5 +1,10 @@
 # qRMBG — RMBG-2.0 Background Removal Plugin
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qRMBG/images/qRMBG.jpg" width="49%" alt="qRMBG image tab">
+  <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qRMBG/images/qRMBG_video.jpg" width="49%" alt="qRMBG live tab">
+</p>
+
 Run **RMBG-2.0 (BiRefNet-Swin-L) GGUF** in ACloudViewer (C++ / [ggml](https://github.com/ggml-org/ggml)) for high-quality image background removal with transparent output.
 
 ## Architecture

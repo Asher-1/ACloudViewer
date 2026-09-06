@@ -1,5 +1,7 @@
 # qRMBG
 
+![Plugin icon](images/qRMBG.svg)
+
 RMBG-2.0 (BiRefNet-Swin-L) background removal for ACloudViewer — **native C++ GGML**.
 
 **User guide:** [docs/guides/plugins/qRMBG.md](../../../../docs/guides/plugins/qRMBG.md)
@@ -7,6 +9,10 @@ RMBG-2.0 (BiRefNet-Swin-L) background removal for ACloudViewer — **native C++ 
 ```
 Image/Video → borrowed image view → AICore RMBG-2.0 GGML → raw RGBA/alpha → ccImage / PNG export
 ```
+
+![RMBG-2.0 one-click background removal](images/qRMBG.jpg)
+
+*Image tab — RMBG-2.0 F16 removes the background in one click; the transparent RGBA result is added to the DB tree (metadata includes alpha mean / foreground ratio) and can be saved as PNG.*
 
 ## Build
 
@@ -105,6 +111,10 @@ background is clearly visible.
 Play a video file or use the camera. Playback is inference-paced: the next frame
 is decoded only after the current background-removal result has been displayed.
 Snapshot the current result into the DB tree with the capture button.
+
+![RMBG live video background removal](images/qRMBG_video.jpg)
+
+*Live tab — video background removal; the preview composites the result over a checkerboard so removed regions are clearly visible.*
 
 ## Outputs
 

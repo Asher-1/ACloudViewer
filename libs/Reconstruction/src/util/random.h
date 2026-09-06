@@ -32,6 +32,13 @@ void SetPRNGSeed(unsigned seed = kDefaultPRNGSeed);
 template <typename T>
 T RandomInteger(const T min, const T max);
 
+// Upstream-parity aliases (COLMAP 4.x renamed RandomInteger/RandomReal).
+template <typename T>
+T RandomUniformInteger(const T min, const T max);
+
+template <typename T>
+T RandomUniformReal(const T min, const T max);
+
 // Generate uniformly distributed random real number.
 //
 // This implementation is unbiased and thread-safe in contrast to `rand()`.
@@ -80,6 +87,16 @@ T RandomReal(const T min, const T max) {
     std::uniform_real_distribution<T> distribution(min, max);
 
     return distribution(*PRNG);
+}
+
+template <typename T>
+T RandomUniformInteger(const T min, const T max) {
+    return RandomInteger(min, max);
+}
+
+template <typename T>
+T RandomUniformReal(const T min, const T max) {
+    return RandomReal(min, max);
 }
 
 template <typename T>

@@ -315,7 +315,7 @@ macro(COLMAP_ADD_TEST TARGET_NAME)
         add_executable(${TARGET_NAME} ${ARGN})
         set_target_properties(${TARGET_NAME} PROPERTIES FOLDER
                 ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME})
-        target_link_libraries(${TARGET_NAME} PRIVATE ${COLMAP_LIB_NAME} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
+        target_link_libraries(${TARGET_NAME} PRIVATE ${COLMAP_LIB_NAME} gtest_main)
 
         if (MSVC)
             # fix compiling error on windows platform
@@ -346,7 +346,7 @@ macro(COLMAP_ADD_CUDA_TEST TARGET_NAME)
         # ${ARGN} will store the list of source files passed to this function.
         add_executable(${TARGET_NAME} ${ARGN})
         set_target_properties(${TARGET_NAME} PROPERTIES FOLDER ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME})
-        target_link_libraries(${TARGET_NAME} PRIVATE ${COLMAP_LIB_NAME} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
+        target_link_libraries(${TARGET_NAME} PRIVATE ${COLMAP_LIB_NAME} gtest_main)
 
         if (MSVC)
             # fix compiling error on windows platform
@@ -385,7 +385,7 @@ macro(COLMAP_ADD_HIP_TEST TARGET_NAME)
         add_executable(${TARGET_NAME} ${HIP_TEST_SOURCES})
         set_target_properties(${TARGET_NAME} PROPERTIES FOLDER ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME})
         target_link_libraries(${TARGET_NAME} PRIVATE ${COLMAP_LIB_NAME}
-                              ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} 3rdparty_rocm)
+                              gtest_main 3rdparty_rocm)
 
         if (MSVC)
             target_compile_options(${TARGET_NAME} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/sdl->")

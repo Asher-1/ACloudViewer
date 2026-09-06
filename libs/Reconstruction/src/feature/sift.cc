@@ -1066,8 +1066,13 @@ void MatchGuidedSiftFeaturesCPU(const SiftMatchingOptions& match_options,
     const float max_residual =
             match_options.max_error * match_options.max_error;
 
-    const Eigen::Matrix3f F = two_view_geometry->F.cast<float>();
-    const Eigen::Matrix3f H = two_view_geometry->H.cast<float>();
+    static const Eigen::Matrix3d kIdentity3d = Eigen::Matrix3d::Identity();
+    const Eigen::Matrix3f F = two_view_geometry->F.has_value()
+                                      ? two_view_geometry->F->cast<float>()
+                                      : kIdentity3d.cast<float>();
+    const Eigen::Matrix3f H = two_view_geometry->H.has_value()
+                                      ? two_view_geometry->H->cast<float>()
+                                      : kIdentity3d.cast<float>();
 
     std::function<bool(float, float, float, float)> guided_filter;
     if (two_view_geometry->config == TwoViewGeometry::CALIBRATED ||
@@ -1326,13 +1331,17 @@ void MatchGuidedSiftFeaturesGPU(const SiftMatchingOptions& match_options,
     float* H_ptr = nullptr;
     if (two_view_geometry->config == TwoViewGeometry::CALIBRATED ||
         two_view_geometry->config == TwoViewGeometry::UNCALIBRATED) {
-        F = two_view_geometry->F.cast<float>();
+        F = two_view_geometry->F.has_value()
+                    ? Eigen::Matrix3f(two_view_geometry->F->cast<float>())
+                    : Eigen::Matrix3f::Identity();
         F_ptr = F.data();
     } else if (two_view_geometry->config == TwoViewGeometry::PLANAR ||
                two_view_geometry->config == TwoViewGeometry::PANORAMIC ||
                two_view_geometry->config ==
                        TwoViewGeometry::PLANAR_OR_PANORAMIC) {
-        H = two_view_geometry->H.cast<float>();
+        H = two_view_geometry->H.has_value()
+                    ? Eigen::Matrix3f(two_view_geometry->H->cast<float>())
+                    : Eigen::Matrix3f::Identity();
         H_ptr = H.data();
     } else {
         return;

@@ -35,22 +35,6 @@
 
 #include "util/testing.h"
 
-#define TEST(suite, name) BOOST_AUTO_TEST_CASE(suite##_##name)
-#define EXPECT_TRUE(value) BOOST_CHECK(value)
-#define EXPECT_FALSE(value) BOOST_CHECK(!(value))
-#define EXPECT_EQ(lhs, rhs) BOOST_CHECK_EQUAL(lhs, rhs)
-#define ASSERT_EQ(lhs, rhs) BOOST_REQUIRE_EQUAL(lhs, rhs)
-#define EXPECT_NE(lhs, rhs) BOOST_CHECK_NE(lhs, rhs)
-#define EXPECT_LT(lhs, rhs) BOOST_CHECK_LT(lhs, rhs)
-#define EXPECT_LE(lhs, rhs) BOOST_CHECK_LE(lhs, rhs)
-#define EXPECT_GT(lhs, rhs) BOOST_CHECK_GT(lhs, rhs)
-#define EXPECT_GE(lhs, rhs) BOOST_CHECK_GE(lhs, rhs)
-#define EXPECT_NEAR(lhs, rhs, tolerance)                  \
-    BOOST_CHECK_SMALL(static_cast<double>((lhs) - (rhs)), \
-                      static_cast<double>(tolerance))
-#define EXPECT_THROW(statement, exception_type) \
-    BOOST_CHECK_THROW(statement, exception_type)
-
 namespace colmap {
 namespace mvs {
 namespace {

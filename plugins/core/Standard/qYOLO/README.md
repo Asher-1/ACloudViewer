@@ -1,5 +1,7 @@
 # qYOLO — YOLO Detect, Segment, Depth, Pose, OBB, Classify, Semantic, World & YOLOE
 
+![Plugin icon](images/qYOLO.svg)
+
 Ultralytics YOLO object detection (COCO 80 classes — see full list below),
 instance segmentation, metric depth, keypoint pose (COCO-17), oriented boxes
 (DOTA-15), image classification (ImageNet-1000), semantic segmentation
@@ -53,6 +55,44 @@ exercised by `test_yolo_capi_savpe` (model tier; skips without assets).
 ```
 Image/Video → borrowed image view → AICore YOLO GGML → typed task result → annotated ccImage → DB tree
 ```
+
+## Task gallery
+
+One dialog, every YOLO task family — closed-set tasks plus the open-vocabulary
+World / YOLOE panels. Every result lands as an annotated `ccImage` entity in
+the DB tree with full per-detection metadata.
+
+### Closed-set tasks
+
+| Instance segmentation (mask tint + per-instance mask viewer) | Metric depth (turbo colormap + legend) |
+|:---:|:---:|
+| ![YOLO instance segmentation](images/yolo-seg.jpg) | ![YOLO metric depth](images/yolo-depth.jpg) |
+| **Pose (COCO-17 keypoints)** | **Oriented boxes (DOTA-15)** |
+| ![YOLO pose keypoints](images/yolo-pose.jpg) | ![YOLO oriented boxes](images/yolo-obb.jpg) |
+| **Classification (ImageNet top-5)** | **Live (camera / video)** |
+| ![YOLO classification](images/yolo-cls.jpg) | ![YOLO live video segmentation](images/yolo-video-seg.jpg) |
+
+### Open-vocabulary — YOLO-World (CLIP text)
+
+| English prompt via the native CLIP tower | Chinese prompt via the Multilingual CLIP Bridge (100+ languages) |
+|:---:|:---:|
+| ![YOLO-World English prompt](images/yolo-world-english-prompt.jpg) | ![YOLO-World Chinese prompt](images/yolo-world-chinese-prompt.jpg) |
+
+A multi-class prompt list (`person, bus, car`) detects every listed class in
+one run:
+
+![YOLO-World multi-class prompt](images/yolo-world-no-prompt.jpg)
+
+### Open-vocabulary — YOLOE (MobileCLIP text / visual / prompt-free)
+
+| Text prompt (`hats`) with the MobileCLIP2-B tower | Visual prompt (official SAVPE example boxes) |
+|:---:|:---:|
+| ![YOLOE text prompt](images/yoloe-text.jpg) | ![YOLOE visual prompt](images/yoloe-visual.jpg) |
+
+The prompt-free `-pf` checkpoints need no input at all — they match against
+the built-in 4585-class vocabulary (20 segments on the same scene):
+
+![YOLOE prompt-free](images/yoloe-prompt-free.jpg)
 
 ## Build
 

@@ -50,7 +50,7 @@ void CheckCostFunctionJacobians(ceres::CostFunction* cost_function,
   constexpr double kTolerance = 2e-4;
   const std::vector<int32_t>& block_sizes =
       cost_function->parameter_block_sizes();
-  BOOST_REQUIRE_EQUAL(block_sizes.size(), parameters.size());
+  ASSERT_EQ(block_sizes.size(), parameters.size());
 
   std::vector<const double*> const_parameters(parameters.begin(),
                                               parameters.end());
@@ -61,7 +61,7 @@ void CheckCostFunctionJacobians(ceres::CostFunction* cost_function,
     jacobian_ptrs.push_back(analytic_jacobians.back().data());
   }
   double residuals[2];
-  BOOST_REQUIRE(cost_function->Evaluate(const_parameters.data(), residuals,
+  ASSERT_TRUE(cost_function->Evaluate(const_parameters.data(), residuals,
                                        jacobian_ptrs.data()));
 
   for (size_t block = 0; block < parameters.size(); ++block) {
@@ -69,11 +69,11 @@ void CheckCostFunctionJacobians(ceres::CostFunction* cost_function,
       double& parameter = parameters[block][column];
       parameter += kStep;
       double plus[2];
-      BOOST_REQUIRE(cost_function->Evaluate(const_parameters.data(), plus,
+      ASSERT_TRUE(cost_function->Evaluate(const_parameters.data(), plus,
                                            nullptr));
       parameter -= 2.0 * kStep;
       double minus[2];
-      BOOST_REQUIRE(cost_function->Evaluate(const_parameters.data(), minus,
+      ASSERT_TRUE(cost_function->Evaluate(const_parameters.data(), minus,
                                            nullptr));
       parameter += kStep;
       for (int residual = 0; residual < 2; ++residual) {
@@ -81,7 +81,7 @@ void CheckCostFunctionJacobians(ceres::CostFunction* cost_function,
                                (2.0 * kStep);
         const double analytic = analytic_jacobians[block]
                                 [residual * block_sizes[block] + column];
-        BOOST_CHECK_SMALL(analytic - numeric, kTolerance);
+        ASSERT_LE(std::abs(analytic - numeric), kTolerance);
       }
     }
   }
@@ -89,7 +89,7 @@ void CheckCostFunctionJacobians(ceres::CostFunction* cost_function,
 
 }  // namespace
 
-BOOST_AUTO_TEST_CASE(TestBundleAdjustmentCostFunction) {
+TEST(base_cost_functions, TestBundleAdjustmentCostFunction) {
   ceres::CostFunction* cost_function =
       BundleAdjustmentCostFunction<SimplePinholeCameraModel>::Create(
           Eigen::Vector2d::Zero());
@@ -99,27 +99,27 @@ BOOST_AUTO_TEST_CASE(TestBundleAdjustmentCostFunction) {
   double camera_params[3] = {1, 0, 0};
   double residuals[2];
   const double* parameters[4] = {qvec, tvec, point3D, camera_params};
-  BOOST_CHECK(cost_function->Evaluate(parameters, residuals, nullptr));
-  BOOST_CHECK_EQUAL(residuals[0], 0);
-  BOOST_CHECK_EQUAL(residuals[1], 0);
+  EXPECT_TRUE(cost_function->Evaluate(parameters, residuals, nullptr));
+  EXPECT_EQ(residuals[0], 0);
+  EXPECT_EQ(residuals[1], 0);
 
   point3D[1] = 1;
-  BOOST_CHECK(cost_function->Evaluate(parameters, residuals, nullptr));
-  BOOST_CHECK_EQUAL(residuals[0], 0);
-  BOOST_CHECK_EQUAL(residuals[1], 1);
+  EXPECT_TRUE(cost_function->Evaluate(parameters, residuals, nullptr));
+  EXPECT_EQ(residuals[0], 0);
+  EXPECT_EQ(residuals[1], 1);
 
   camera_params[0] = 2;
-  BOOST_CHECK(cost_function->Evaluate(parameters, residuals, nullptr));
-  BOOST_CHECK_EQUAL(residuals[0], 0);
-  BOOST_CHECK_EQUAL(residuals[1], 2);
+  EXPECT_TRUE(cost_function->Evaluate(parameters, residuals, nullptr));
+  EXPECT_EQ(residuals[0], 0);
+  EXPECT_EQ(residuals[1], 2);
 
   point3D[0] = -1;
-  BOOST_CHECK(cost_function->Evaluate(parameters, residuals, nullptr));
-  BOOST_CHECK_EQUAL(residuals[0], -2);
-  BOOST_CHECK_EQUAL(residuals[1], 2);
+  EXPECT_TRUE(cost_function->Evaluate(parameters, residuals, nullptr));
+  EXPECT_EQ(residuals[0], -2);
+  EXPECT_EQ(residuals[1], 2);
 }
 
-BOOST_AUTO_TEST_CASE(TestBundleAdjustmentConstantPoseCostFunction) {
+TEST(base_cost_functions, TestBundleAdjustmentConstantPoseCostFunction) {
   ceres::CostFunction* cost_function = BundleAdjustmentConstantPoseCostFunction<
       SimplePinholeCameraModel>::Create(ComposeIdentityQuaternion(),
                                         Eigen::Vector3d::Zero(),
@@ -128,27 +128,27 @@ BOOST_AUTO_TEST_CASE(TestBundleAdjustmentConstantPoseCostFunction) {
   double camera_params[3] = {1, 0, 0};
   double residuals[2];
   const double* parameters[2] = {point3D, camera_params};
-  BOOST_CHECK(cost_function->Evaluate(parameters, residuals, nullptr));
-  BOOST_CHECK_EQUAL(residuals[0], 0);
-  BOOST_CHECK_EQUAL(residuals[1], 0);
+  EXPECT_TRUE(cost_function->Evaluate(parameters, residuals, nullptr));
+  EXPECT_EQ(residuals[0], 0);
+  EXPECT_EQ(residuals[1], 0);
 
   point3D[1] = 1;
-  BOOST_CHECK(cost_function->Evaluate(parameters, residuals, nullptr));
-  BOOST_CHECK_EQUAL(residuals[0], 0);
-  BOOST_CHECK_EQUAL(residuals[1], 1);
+  EXPECT_TRUE(cost_function->Evaluate(parameters, residuals, nullptr));
+  EXPECT_EQ(residuals[0], 0);
+  EXPECT_EQ(residuals[1], 1);
 
   camera_params[0] = 2;
-  BOOST_CHECK(cost_function->Evaluate(parameters, residuals, nullptr));
-  BOOST_CHECK_EQUAL(residuals[0], 0);
-  BOOST_CHECK_EQUAL(residuals[1], 2);
+  EXPECT_TRUE(cost_function->Evaluate(parameters, residuals, nullptr));
+  EXPECT_EQ(residuals[0], 0);
+  EXPECT_EQ(residuals[1], 2);
 
   point3D[0] = -1;
-  BOOST_CHECK(cost_function->Evaluate(parameters, residuals, nullptr));
-  BOOST_CHECK_EQUAL(residuals[0], -2);
-  BOOST_CHECK_EQUAL(residuals[1], 2);
+  EXPECT_TRUE(cost_function->Evaluate(parameters, residuals, nullptr));
+  EXPECT_EQ(residuals[0], -2);
+  EXPECT_EQ(residuals[1], 2);
 }
 
-BOOST_AUTO_TEST_CASE(TestRigBundleAdjustmentCostFunction) {
+TEST(base_cost_functions, TestRigBundleAdjustmentCostFunction) {
   ceres::CostFunction* cost_function =
       RigBundleAdjustmentCostFunction<SimplePinholeCameraModel>::Create(
           Eigen::Vector2d::Zero());
@@ -161,27 +161,27 @@ BOOST_AUTO_TEST_CASE(TestRigBundleAdjustmentCostFunction) {
   double residuals[2];
   const double* parameters[6] = {rig_qvec, rig_tvec, rel_qvec,
                                  rel_tvec, point3D,  camera_params};
-  BOOST_CHECK(cost_function->Evaluate(parameters, residuals, nullptr));
-  BOOST_CHECK_EQUAL(residuals[0], 0);
-  BOOST_CHECK_EQUAL(residuals[1], 0);
+  EXPECT_TRUE(cost_function->Evaluate(parameters, residuals, nullptr));
+  EXPECT_EQ(residuals[0], 0);
+  EXPECT_EQ(residuals[1], 0);
 
   point3D[1] = 1;
-  BOOST_CHECK(cost_function->Evaluate(parameters, residuals, nullptr));
-  BOOST_CHECK_EQUAL(residuals[0], 0);
-  BOOST_CHECK_EQUAL(residuals[1], 1);
+  EXPECT_TRUE(cost_function->Evaluate(parameters, residuals, nullptr));
+  EXPECT_EQ(residuals[0], 0);
+  EXPECT_EQ(residuals[1], 1);
 
   camera_params[0] = 2;
-  BOOST_CHECK(cost_function->Evaluate(parameters, residuals, nullptr));
-  BOOST_CHECK_EQUAL(residuals[0], 0);
-  BOOST_CHECK_EQUAL(residuals[1], 2);
+  EXPECT_TRUE(cost_function->Evaluate(parameters, residuals, nullptr));
+  EXPECT_EQ(residuals[0], 0);
+  EXPECT_EQ(residuals[1], 2);
 
   point3D[0] = -1;
-  BOOST_CHECK(cost_function->Evaluate(parameters, residuals, nullptr));
-  BOOST_CHECK_EQUAL(residuals[0], -2);
-  BOOST_CHECK_EQUAL(residuals[1], 2);
+  EXPECT_TRUE(cost_function->Evaluate(parameters, residuals, nullptr));
+  EXPECT_EQ(residuals[0], -2);
+  EXPECT_EQ(residuals[1], 2);
 }
 
-BOOST_AUTO_TEST_CASE(TestEquirectangularBundleAdjustmentCostFunctions) {
+TEST(base_cost_functions, TestEquirectangularBundleAdjustmentCostFunctions) {
   const double pi = EIGEN_PI;
   const double observed_near_left[2] = {0.5, 250.0};
   const double camera_params[2] = {1000.0, 500.0};
@@ -195,18 +195,18 @@ BOOST_AUTO_TEST_CASE(TestEquirectangularBundleAdjustmentCostFunctions) {
   std::unique_ptr<ceres::CostFunction> variable_cost(
       EquirectangularBundleAdjustmentCostFunction::Create(
           Eigen::Vector2d(observed_near_left[0], observed_near_left[1])));
-  BOOST_REQUIRE(variable_cost->Evaluate(parameters, residuals, nullptr));
-  BOOST_CHECK_SMALL(residuals[0], 1e-10);
-  BOOST_CHECK_SMALL(residuals[1], 1e-10);
+  ASSERT_TRUE(variable_cost->Evaluate(parameters, residuals, nullptr));
+  ASSERT_LE(std::abs(residuals[0]), 1e-10);
+  ASSERT_LE(std::abs(residuals[1]), 1e-10);
 
   std::unique_ptr<ceres::CostFunction> constant_cost(
       EquirectangularBundleAdjustmentConstantPoseCostFunction::Create(
           ComposeIdentityQuaternion(), Eigen::Vector3d::Zero(),
           Eigen::Vector2d(observed_near_left[0], observed_near_left[1])));
   const double* constant_parameters[2] = {point3D, camera_params};
-  BOOST_REQUIRE(constant_cost->Evaluate(constant_parameters, residuals, nullptr));
-  BOOST_CHECK_SMALL(residuals[0], 1e-10);
-  BOOST_CHECK_SMALL(residuals[1], 1e-10);
+  ASSERT_TRUE(constant_cost->Evaluate(constant_parameters, residuals, nullptr));
+  ASSERT_LE(std::abs(residuals[0]), 1e-10);
+  ASSERT_LE(std::abs(residuals[1]), 1e-10);
 
   std::unique_ptr<ceres::CostFunction> rig_cost(
       EquirectangularRigBundleAdjustmentCostFunction::Create(
@@ -215,12 +215,12 @@ BOOST_AUTO_TEST_CASE(TestEquirectangularBundleAdjustmentCostFunctions) {
   double rel_tvec[3] = {0, 0, 0};
   const double* rig_parameters[6] = {qvec, tvec, rel_qvec,
                                      rel_tvec, point3D, camera_params};
-  BOOST_REQUIRE(rig_cost->Evaluate(rig_parameters, residuals, nullptr));
-  BOOST_CHECK_SMALL(residuals[0], 1e-10);
-  BOOST_CHECK_SMALL(residuals[1], 1e-10);
+  ASSERT_TRUE(rig_cost->Evaluate(rig_parameters, residuals, nullptr));
+  ASSERT_LE(std::abs(residuals[0]), 1e-10);
+  ASSERT_LE(std::abs(residuals[1]), 1e-10);
 }
 
-BOOST_AUTO_TEST_CASE(TestEquirectangularBundleAdjustmentJacobians) {
+TEST(base_cost_functions, TestEquirectangularBundleAdjustmentJacobians) {
   // This generic bearing stays away from the longitude seam and both poles,
   // so central differences test the smooth residual branch used by BA.
   const Eigen::Vector2d observation(571.0, 227.0);
@@ -251,23 +251,23 @@ BOOST_AUTO_TEST_CASE(TestEquirectangularBundleAdjustmentJacobians) {
                               point3D, camera_params});
 }
 
-BOOST_AUTO_TEST_CASE(TestRelativePoseCostFunction) {
+TEST(base_cost_functions, TestRelativePoseCostFunction) {
   ceres::CostFunction* cost_function = RelativePoseCostFunction::Create(
       Eigen::Vector2d(0, 0), Eigen::Vector2d(0, 0));
   double qvec[4] = {1, 0, 0, 0};
   double tvec[3] = {0, 1, 0};
   double residuals[1];
   const double* parameters[2] = {qvec, tvec};
-  BOOST_CHECK(cost_function->Evaluate(parameters, residuals, nullptr));
-  BOOST_CHECK_EQUAL(residuals[0], 0);
+  EXPECT_TRUE(cost_function->Evaluate(parameters, residuals, nullptr));
+  EXPECT_EQ(residuals[0], 0);
 
   cost_function = RelativePoseCostFunction::Create(Eigen::Vector2d(0, 0),
                                                    Eigen::Vector2d(1, 0));
-  BOOST_CHECK(cost_function->Evaluate(parameters, residuals, nullptr));
-  BOOST_CHECK_EQUAL(residuals[0], 0.5);
+  EXPECT_TRUE(cost_function->Evaluate(parameters, residuals, nullptr));
+  EXPECT_EQ(residuals[0], 0.5);
 
   cost_function = RelativePoseCostFunction::Create(Eigen::Vector2d(0, 0),
                                                    Eigen::Vector2d(1, 1));
-  BOOST_CHECK(cost_function->Evaluate(parameters, residuals, nullptr));
-  BOOST_CHECK_EQUAL(residuals[0], 0.5);
+  EXPECT_TRUE(cost_function->Evaluate(parameters, residuals, nullptr));
+  EXPECT_EQ(residuals[0], 0.5);
 }

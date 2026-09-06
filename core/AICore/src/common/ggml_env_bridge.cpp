@@ -7,11 +7,13 @@
 
 #include "common/ggml_env_bridge.hpp"
 
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <mutex>
 
 #include "common/aicore_log.hpp"
+#include "ggml.h"
 
 namespace aicore {
 namespace {
@@ -117,6 +119,47 @@ void apply_vulkan_runtime_defaults() {
 void mark_ggml_backends_loaded() {
     std::lock_guard<std::mutex> lock(g_mutex);
     g_backends_loaded = true;
+}
+
+namespace {
+
+void ggml_log_forward_cb(enum ggml_log_level level,
+                         const char* text,
+                         void* user) {
+    (void)user;
+    if (!text || !*text) return;
+    // INFO/DEBUG/CONT: byte-identical to ggml_log_callback_default (fputs to
+    // stderr). The bridge must be strictly additive — dropping these levels
+    // would silently remove backend diagnostics every task used to see.
+    switch (level) {
+        case GGML_LOG_LEVEL_WARN:
+        case GGML_LOG_LEVEL_ERROR:
+            break;
+        default:
+            fputs(text, stderr);
+            return;
+    }
+    // Trim ggml's trailing newline: the AICORE_LOG macros append one.
+    std::string msg(text);
+    while (!msg.empty() && (msg.back() == '\n' || msg.back() == '\r')) {
+        msg.pop_back();
+    }
+    if (msg.empty()) return;
+    if (level == GGML_LOG_LEVEL_WARN) {
+        AICORE_LOG_WARN("[ggml] ", "%s", msg.c_str());
+    } else {
+        AICORE_LOG_ERROR("[ggml] ", "%s", msg.c_str());
+    }
+}
+
+}  // namespace
+
+void install_ggml_log_bridge() {
+    static const bool installed = [] {
+        ggml_log_set(ggml_log_forward_cb, nullptr);
+        return true;
+    }();
+    (void)installed;
 }
 
 }  // namespace aicore

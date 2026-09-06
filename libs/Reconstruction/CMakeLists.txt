@@ -7,8 +7,13 @@ endif()
 
 project(COLMAP)
 
-set(COLMAP_VERSION "${CLOUDVIEWER_VERSION}")
-set(COLMAP_VERSION_NUMBER "${CLOUDVIEWER_VERSION_MAJOR}${CLOUDVIEWER_VERSION_MINOR}${CLOUDVIEWER_VERSION_PATCH}")
+# The COLMAP engine version this inlined fork is aligned with. It drives the
+# database schema version (see src/util/version.h) and is decoupled from the
+# CLOUDVIEWER package version on purpose.
+set(COLMAP_VERSION "4.3.0.dev0")
+set(COLMAP_VERSION_MAJOR "4")
+set(COLMAP_VERSION_MINOR "3")
+set(COLMAP_VERSION_PATCH "0")
 
 ################################################################################
 # Include CMake dependencies
@@ -31,7 +36,7 @@ option(BOOST_STATIC "With boost static library" OFF)
 option(CUDA_ENABLED "Whether to enable CUDA, if available" ON)
 option(RECONSTRUCTION_HIP_ENABLED
        "Build COLMAP PatchMatch with the ROCm HIP toolchain" OFF)
-option(PBA_ENABLED "Whether to enable PBA for parallel BA Optimization" ON)
+option(PBA_ENABLED "Whether to enable PBA for parallel BA Optimization" OFF) # deprecated: PBA backend retired with the COLMAP alignment (c9729fa0)
 option(RECONSTRUCTION_FETCH_POSELIB
        "Fetch the pinned PoseLib minimal solvers for reconstruction" ON)
 option(RECONSTRUCTION_CASPAR_ENABLED
@@ -56,6 +61,9 @@ endif ()
 
 if (TESTS_ENABLED)
     enable_testing()
+    if (NOT TARGET gtest_main)
+        include(${CloudViewer_3RDPARTY_DIR}/googletest/googletest.cmake)
+    endif ()
 endif ()
 
 if (BOOST_STATIC)
@@ -241,16 +249,6 @@ elseif (BUILD_CUDA_MODULE)
     # Do not show warnings if the architectures are deprecated.
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Wno-deprecated-gpu-targets")
 
-    message(STATUS "PBA enabled - CUDA ${CUDAToolkit_VERSION} supports modern texture API")
-    # Check CUDA version for PBA compatibility
-    # if(CUDAToolkit_VERSION VERSION_LESS "12.0")
-    #     set(PBA_ENABLED ON)
-    #     message(STATUS "PBA enabled - CUDA ${CUDAToolkit_VERSION} supports modern texture API")
-    # else()
-    #     set(PBA_ENABLED OFF)
-    #     message(STATUS "PBA disabled - requires CUDA 11.x or below (but found CUDA ${CUDAToolkit_VERSION})")
-    # endif()
-
     message(STATUS "Enabling CUDA support (version: ${CUDAToolkit_VERSION},"
             " archs: ${CMAKE_CUDA_ARCHITECTURES})")
 else()
@@ -381,13 +379,9 @@ set(COLMAP_INTERNAL_LIBRARIES
         lsd
         )
 
-# Add PBA conditionally based on CUDA version
-if(PBA_ENABLED)
-    list(APPEND COLMAP_INTERNAL_LIBRARIES pba)
-    add_compile_definitions(PBA_ENABLED)
-else()
-    message(STATUS "PBA library excluded from build")
-endif()
+# PBA has been removed from the build: upstream COLMAP dropped the PBA
+# bundle-adjustment backend (c9729fa0) for CUDA 12+ compatibility, and the
+# aligned backend surface is Ceres + Caspar (see optim/bundle_adjustment.h).
 
 list(APPEND COLMAP_INTERNAL_LIBRARIES
         poisson_recon
@@ -415,7 +409,6 @@ COLMAP_ADD_SOURCE_DIR(lib/FLANN LIB_FLANN_SRCS *.h *.cpp *.hpp *.cu)
 COLMAP_ADD_SOURCE_DIR(lib/Graclus LIB_GRACLUS_SRCS *.h *.c)
 COLMAP_ADD_SOURCE_DIR(lib/LSD LIB_LSD_SRCS *.h *.c)
 
-COLMAP_ADD_SOURCE_DIR(lib/PBA LIB_PBA_SRCS *.h *.cpp *.cu)
 COLMAP_ADD_SOURCE_DIR(lib/SiftGPU LIB_SIFT_GPU_SRCS *.h *.cpp *.cu)
 COLMAP_ADD_SOURCE_DIR(lib/PoissonRecon LIB_POISSON_RECON_SRCS *.h *.cpp *.inl)
 COLMAP_ADD_SOURCE_DIR(lib/SQLite LIB_SQLITE_SRCS *.h *.c)
@@ -426,9 +419,12 @@ COLMAP_ADD_SOURCE_DIR(src/controllers CONTROLLERS_SRCS *.h *.cc)
 COLMAP_ADD_SOURCE_DIR(src/estimators ESTIMATORS_SRCS *.h *.cc)
 COLMAP_ADD_SOURCE_DIR(src/exe EXE_SRCS *.h *.cc)
 COLMAP_ADD_SOURCE_DIR(src/feature FEATURE_SRCS *.h *.cc)
+COLMAP_ADD_SOURCE_DIR(src/geometry GEOMETRY_SRCS *.h *.cc)
 COLMAP_ADD_SOURCE_DIR(src/mvs MVS_SRCS *.h *.cc *.cu)
 COLMAP_ADD_SOURCE_DIR(src/optim OPTIM_SRCS *.h *.cc)
+COLMAP_ADD_SOURCE_DIR(src/math MATH_SRCS *.h *.cc)
 COLMAP_ADD_SOURCE_DIR(src/retrieval RETRIEVAL_SRCS *.h *.cc)
+COLMAP_ADD_SOURCE_DIR(src/scene SCENE_SRCS *.h *.cc)
 COLMAP_ADD_SOURCE_DIR(src/sfm SFM_SRCS *.h *.cc)
 COLMAP_ADD_SOURCE_DIR(src/tools TOOLS_SRCS *.h *.cc)
 COLMAP_ADD_SOURCE_DIR(src/ui UI_SRCS *.h *.cc)
@@ -443,7 +439,6 @@ if(ALL_SOURCE_TARGET)
             ${LIB_FLANN_SRCS}
             ${LIB_GRACLUS_SRCS}
             ${LIB_LSD_SRCS}
-            ${LIB_PBA_SRCS}
             ${LIB_POISSON_RECON_SRCS}
             ${LIB_SIFT_GPU_SRCS}
             ${LIB_SQLITE_SRCS}
@@ -453,9 +448,12 @@ if(ALL_SOURCE_TARGET)
             ${ESTIMATORS_SRCS}
             ${EXE_SRCS}
             ${FEATURE_SRCS}
+            ${GEOMETRY_SRCS}
+            ${MATH_SRCS}
             ${MVS_SRCS}
             ${OPTIM_SRCS}
             ${RETRIEVAL_SRCS}
+            ${SCENE_SRCS}
             ${SFM_SRCS}
             ${TOOLS_SRCS}
             ${UI_SRCS}

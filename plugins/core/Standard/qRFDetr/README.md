@@ -1,5 +1,7 @@
 # qRFDetr
 
+![Plugin icon](images/qRFDetr.svg)
+
 RF-DETR real-time object detection / segmentation (COCO 91-class layout — 80
 named classes, see full list below) for ACloudViewer — **native C++ GGML**.
 
@@ -8,6 +10,10 @@ named classes, see full list below) for ACloudViewer — **native C++ GGML**.
 ```
 Image/Video → borrowed image view → AICore RF-DETR GGML → typed detections + raw masks → annotated ccImage → DB tree
 ```
+
+![RF-DETR image detection with segmentation mask tint](images/qRFDetr.jpg)
+
+*Image tab — RF-DETR Seg-Nano F16 on the bundled sample: boxes + class/score labels, mask tint for segmentation models, per-detection metadata in the DB tree.*
 
 ## Build
 
@@ -137,6 +143,10 @@ Play a video file or use the camera. Playback is inference-paced: each decoded
 frame is displayed only after its detections have been drawn, so boxes cannot
 drift onto a later frame. Snapshot the current annotated frame into the DB tree
 with the capture button.
+
+![RF-DETR live video detection](images/qRFDetr_video.jpg)
+
+*Live tab — bundled traffic video: 18 objects at ~33 ms per frame (CUDA); the sample loads with one click via **Try sample data**.*
 
 ## Outputs
 

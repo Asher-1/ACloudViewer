@@ -1,9 +1,35 @@
 # COLMAP alignment status
 
-The checked upstream tree is `/home/ludahai/develop/code/github/colmap` at
-revision `a395b826`. The machine-readable source of truth is
+The checked upstream tree is `/home/asher/develop/code/github/MVS/colmap` at
+revision `dbb41680` (4.3.0.dev0). The machine-readable source of truth is
 `libs/Reconstruction/colmap_alignment_manifest.json`; run
 `python3 scripts/check_colmap_alignment.py` for the current matrix.
+The implementation roadmap for closing the remaining gaps, including the
+dual-path mesh texturing decision (upstream `mesh_texturer` as the default,
+`image_texturer` kept as an alternative) and the fusion of upstream pycolmap
+bindings into the existing `cloudViewer.reconstruction` Python module with
+deduplicated interfaces, is tracked in
+[COLMAP_ALIGNMENT_PLAN.md](COLMAP_ALIGNMENT_PLAN.md).
+
+## Execution progress (2026-09-06)
+
+Work packages from [COLMAP_ALIGNMENT_PLAN.md](COLMAP_ALIGNMENT_PLAN.md):
+
+| WP | State |
+|---|---|
+| W1 database version migration | done (migration gate green) |
+| W2 BA backend surface + PBA retirement | done |
+| W5 solver unification | done (solvers/* registered, PoseLib hard dep) |
+| W6 two-view increments | done (upstream two_view_geometry swap + parity gate) |
+| W9 synthetic dataset | partial (W3-1 graph cache landed; enable next) |
+| W3-1 correspondence graph cache | done (per-pair TwoViewGeometry cache + MaybeDecomposeRelativePoses + ray homography restored) |
+| W3-2a frame-aware data model | done (Image/Frame/Rig/Reconstruction pointer wiring + Database pose_priors + OIIO ZLIB pin fix) |
+| W3-2b (frame-aware mapper/BA + synthetic enablement), W4, W7, W8, W10-W16 | pending |
+
+Testing: the whole Reconstruction test suite runs on **googletest**
+(decision D6); `COLMAP_ADD_TEST` links `gtest_main` and upstream test files
+can land unconverted. Full build is green and the suite reports 73/77 with
+the four pre-existing environment failures.
 
 ## Implemented in this tree
 

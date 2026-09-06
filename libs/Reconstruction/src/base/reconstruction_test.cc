@@ -68,51 +68,51 @@ void GenerateReconstruction(const image_t num_images,
   reconstruction->SetUp(correspondence_graph);
 }
 
-BOOST_AUTO_TEST_CASE(TestEmpty) {
+TEST(base_reconstruction, TestEmpty) {
   Reconstruction reconstruction;
-  BOOST_CHECK_EQUAL(reconstruction.NumCameras(), 0);
-  BOOST_CHECK_EQUAL(reconstruction.NumImages(), 0);
-  BOOST_CHECK_EQUAL(reconstruction.NumRegImages(), 0);
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 0);
-  BOOST_CHECK_EQUAL(reconstruction.NumImagePairs(), 0);
+  EXPECT_EQ(reconstruction.NumCameras(), 0);
+  EXPECT_EQ(reconstruction.NumImages(), 0);
+  EXPECT_EQ(reconstruction.NumRegImages(), 0);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 0);
+  EXPECT_EQ(reconstruction.NumImagePairs(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(TestAddCamera) {
+TEST(base_reconstruction, TestAddCamera) {
   Reconstruction reconstruction;
   Camera camera;
   camera.SetCameraId(1);
   camera.InitializeWithId(SimplePinholeCameraModel::model_id, 1, 1, 1);
   reconstruction.AddCamera(camera);
-  BOOST_CHECK(reconstruction.ExistsCamera(camera.CameraId()));
-  BOOST_CHECK_EQUAL(reconstruction.Camera(camera.CameraId()).CameraId(),
+  EXPECT_TRUE(reconstruction.ExistsCamera(camera.CameraId()));
+  EXPECT_EQ(reconstruction.Camera(camera.CameraId()).CameraId(),
                     camera.CameraId());
-  BOOST_CHECK_EQUAL(reconstruction.Cameras().count(camera.CameraId()), 1);
-  BOOST_CHECK_EQUAL(reconstruction.Cameras().size(), 1);
-  BOOST_CHECK_EQUAL(reconstruction.NumCameras(), 1);
-  BOOST_CHECK_EQUAL(reconstruction.NumImages(), 0);
-  BOOST_CHECK_EQUAL(reconstruction.NumRegImages(), 0);
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 0);
-  BOOST_CHECK_EQUAL(reconstruction.NumImagePairs(), 0);
+  EXPECT_EQ(reconstruction.Cameras().count(camera.CameraId()), 1);
+  EXPECT_EQ(reconstruction.Cameras().size(), 1);
+  EXPECT_EQ(reconstruction.NumCameras(), 1);
+  EXPECT_EQ(reconstruction.NumImages(), 0);
+  EXPECT_EQ(reconstruction.NumRegImages(), 0);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 0);
+  EXPECT_EQ(reconstruction.NumImagePairs(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(TestAddImage) {
+TEST(base_reconstruction, TestAddImage) {
   Reconstruction reconstruction;
   Image image;
   image.SetImageId(1);
   reconstruction.AddImage(image);
-  BOOST_CHECK(reconstruction.ExistsImage(1));
-  BOOST_CHECK_EQUAL(reconstruction.Image(1).ImageId(), 1);
-  BOOST_CHECK_EQUAL(reconstruction.Image(1).IsRegistered(), false);
-  BOOST_CHECK_EQUAL(reconstruction.Images().count(1), 1);
-  BOOST_CHECK_EQUAL(reconstruction.Images().size(), 1);
-  BOOST_CHECK_EQUAL(reconstruction.NumCameras(), 0);
-  BOOST_CHECK_EQUAL(reconstruction.NumImages(), 1);
-  BOOST_CHECK_EQUAL(reconstruction.NumRegImages(), 0);
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 0);
-  BOOST_CHECK_EQUAL(reconstruction.NumImagePairs(), 0);
+  EXPECT_TRUE(reconstruction.ExistsImage(1));
+  EXPECT_EQ(reconstruction.Image(1).ImageId(), 1);
+  EXPECT_EQ(reconstruction.Image(1).IsRegistered(), false);
+  EXPECT_EQ(reconstruction.Images().count(1), 1);
+  EXPECT_EQ(reconstruction.Images().size(), 1);
+  EXPECT_EQ(reconstruction.NumCameras(), 0);
+  EXPECT_EQ(reconstruction.NumImages(), 1);
+  EXPECT_EQ(reconstruction.NumRegImages(), 0);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 0);
+  EXPECT_EQ(reconstruction.NumImagePairs(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(TestRigFrameCameraRigAdapter) {
+TEST(base_reconstruction, TestRigFrameCameraRigAdapter) {
   Reconstruction reconstruction;
   for (const camera_t camera_id : {1, 2}) {
     Camera camera;
@@ -143,35 +143,35 @@ BOOST_AUTO_TEST_CASE(TestRigFrameCameraRigAdapter) {
   reconstruction.AddFrame(frame);
 
   CameraRig legacy = reconstruction.CameraRigFromRig(5);
-  BOOST_CHECK_EQUAL(legacy.RefCameraId(), 1);
-  BOOST_CHECK_EQUAL(legacy.NumCameras(), 2);
-  BOOST_CHECK_EQUAL(legacy.NumSnapshots(), 1);
-  BOOST_CHECK(legacy.RelativeTvec(2).isApprox(Eigen::Vector3d(0.5, 0.0, 0.0)));
+  EXPECT_EQ(legacy.RefCameraId(), 1);
+  EXPECT_EQ(legacy.NumCameras(), 2);
+  EXPECT_EQ(legacy.NumSnapshots(), 1);
+  EXPECT_TRUE(legacy.RelativeTvec(2).isApprox(Eigen::Vector3d(0.5, 0.0, 0.0)));
 
   legacy.RelativeTvec(2) = Eigen::Vector3d(0.75, 0.0, 0.0);
   reconstruction.UpdateRigFromCameraRig(5, legacy);
-  BOOST_CHECK(reconstruction.Rig(5).CamFromRigTvec(2).isApprox(
+  EXPECT_TRUE(reconstruction.Rig(5).CamFromRigTvec(2).isApprox(
       Eigen::Vector3d(0.75, 0.0, 0.0)));
-  BOOST_CHECK(reconstruction.Frame(9).HasPose());
+  EXPECT_TRUE(reconstruction.Frame(9).HasPose());
 }
 
-BOOST_AUTO_TEST_CASE(TestAddPoint3D) {
+TEST(base_reconstruction, TestAddPoint3D) {
   Reconstruction reconstruction;
   const point3D_t point3D_id =
       reconstruction.AddPoint3D(Eigen::Vector3d::Random(), Track());
-  BOOST_CHECK(reconstruction.ExistsPoint3D(point3D_id));
-  BOOST_CHECK_EQUAL(reconstruction.Point3D(point3D_id).Track().Length(), 0);
-  BOOST_CHECK_EQUAL(reconstruction.Points3D().count(point3D_id), 1);
-  BOOST_CHECK_EQUAL(reconstruction.Points3D().size(), 1);
-  BOOST_CHECK_EQUAL(reconstruction.NumCameras(), 0);
-  BOOST_CHECK_EQUAL(reconstruction.NumImages(), 0);
-  BOOST_CHECK_EQUAL(reconstruction.NumRegImages(), 0);
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 1);
-  BOOST_CHECK_EQUAL(reconstruction.NumImagePairs(), 0);
-  BOOST_CHECK_EQUAL(reconstruction.Point3DIds().count(point3D_id), 1);
+  EXPECT_TRUE(reconstruction.ExistsPoint3D(point3D_id));
+  EXPECT_EQ(reconstruction.Point3D(point3D_id).Track().Length(), 0);
+  EXPECT_EQ(reconstruction.Points3D().count(point3D_id), 1);
+  EXPECT_EQ(reconstruction.Points3D().size(), 1);
+  EXPECT_EQ(reconstruction.NumCameras(), 0);
+  EXPECT_EQ(reconstruction.NumImages(), 0);
+  EXPECT_EQ(reconstruction.NumRegImages(), 0);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 1);
+  EXPECT_EQ(reconstruction.NumImagePairs(), 0);
+  EXPECT_EQ(reconstruction.Point3DIds().count(point3D_id), 1);
 }
 
-BOOST_AUTO_TEST_CASE(TestAddObservation) {
+TEST(base_reconstruction, TestAddObservation) {
   Reconstruction reconstruction;
   CorrespondenceGraph correspondence_graph;
   GenerateReconstruction(1, &reconstruction, &correspondence_graph);
@@ -179,18 +179,18 @@ BOOST_AUTO_TEST_CASE(TestAddObservation) {
   track.AddElement(1, 0);
   const point3D_t point3D_id =
       reconstruction.AddPoint3D(Eigen::Vector3d::Random(), track);
-  BOOST_CHECK_EQUAL(reconstruction.Image(1).NumPoints3D(), 1);
-  BOOST_CHECK(reconstruction.Image(1).Point2D(0).HasPoint3D());
-  BOOST_CHECK(!reconstruction.Image(1).Point2D(1).HasPoint3D());
-  BOOST_CHECK_EQUAL(reconstruction.Point3D(point3D_id).Track().Length(), 1);
+  EXPECT_EQ(reconstruction.Image(1).NumPoints3D(), 1);
+  EXPECT_TRUE(reconstruction.Image(1).Point2D(0).HasPoint3D());
+  EXPECT_FALSE(reconstruction.Image(1).Point2D(1).HasPoint3D());
+  EXPECT_EQ(reconstruction.Point3D(point3D_id).Track().Length(), 1);
   reconstruction.AddObservation(point3D_id, TrackElement(1, 1));
-  BOOST_CHECK_EQUAL(reconstruction.Image(1).NumPoints3D(), 2);
-  BOOST_CHECK(reconstruction.Image(1).Point2D(0).HasPoint3D());
-  BOOST_CHECK(reconstruction.Image(1).Point2D(1).HasPoint3D());
-  BOOST_CHECK_EQUAL(reconstruction.Point3D(point3D_id).Track().Length(), 2);
+  EXPECT_EQ(reconstruction.Image(1).NumPoints3D(), 2);
+  EXPECT_TRUE(reconstruction.Image(1).Point2D(0).HasPoint3D());
+  EXPECT_TRUE(reconstruction.Image(1).Point2D(1).HasPoint3D());
+  EXPECT_EQ(reconstruction.Point3D(point3D_id).Track().Length(), 2);
 }
 
-BOOST_AUTO_TEST_CASE(TestMergePoints3D) {
+TEST(base_reconstruction, TestMergePoints3D) {
   Reconstruction reconstruction;
   CorrespondenceGraph correspondence_graph;
   GenerateReconstruction(2, &reconstruction, &correspondence_graph);
@@ -208,25 +208,25 @@ BOOST_AUTO_TEST_CASE(TestMergePoints3D) {
       Eigen::Matrix<uint8_t, 3, 1>(20, 20, 20);
   const point3D_t merged_point3D_id =
       reconstruction.MergePoints3D(point3D_id1, point3D_id2);
-  BOOST_CHECK(!reconstruction.ExistsPoint3D(point3D_id1));
-  BOOST_CHECK(!reconstruction.ExistsPoint3D(point3D_id2));
-  BOOST_CHECK(reconstruction.ExistsPoint3D(merged_point3D_id));
-  BOOST_CHECK_EQUAL(reconstruction.Image(1).Point2D(0).Point3DId(),
+  EXPECT_FALSE(reconstruction.ExistsPoint3D(point3D_id1));
+  EXPECT_FALSE(reconstruction.ExistsPoint3D(point3D_id2));
+  EXPECT_TRUE(reconstruction.ExistsPoint3D(merged_point3D_id));
+  EXPECT_EQ(reconstruction.Image(1).Point2D(0).Point3DId(),
                     merged_point3D_id);
-  BOOST_CHECK_EQUAL(reconstruction.Image(1).Point2D(1).Point3DId(),
+  EXPECT_EQ(reconstruction.Image(1).Point2D(1).Point3DId(),
                     merged_point3D_id);
-  BOOST_CHECK_EQUAL(reconstruction.Image(2).Point2D(0).Point3DId(),
+  EXPECT_EQ(reconstruction.Image(2).Point2D(0).Point3DId(),
                     merged_point3D_id);
-  BOOST_CHECK_EQUAL(reconstruction.Image(2).Point2D(1).Point3DId(),
+  EXPECT_EQ(reconstruction.Image(2).Point2D(1).Point3DId(),
                     merged_point3D_id);
-  BOOST_CHECK(reconstruction.Point3D(merged_point3D_id)
+  EXPECT_TRUE(reconstruction.Point3D(merged_point3D_id)
                   .XYZ()
                   .isApprox(Eigen::Vector3d(0.5, 0.5, 0.5)));
-  BOOST_CHECK_EQUAL(reconstruction.Point3D(merged_point3D_id).Color(),
+  EXPECT_EQ(reconstruction.Point3D(merged_point3D_id).Color(),
                     Eigen::Vector3ub(10, 10, 10));
 }
 
-BOOST_AUTO_TEST_CASE(TestDeletePoint3D) {
+TEST(base_reconstruction, TestDeletePoint3D) {
   Reconstruction reconstruction;
   CorrespondenceGraph correspondence_graph;
   GenerateReconstruction(1, &reconstruction, &correspondence_graph);
@@ -234,11 +234,11 @@ BOOST_AUTO_TEST_CASE(TestDeletePoint3D) {
       reconstruction.AddPoint3D(Eigen::Vector3d::Random(), Track());
   reconstruction.AddObservation(point3D_id, TrackElement(1, 0));
   reconstruction.DeletePoint3D(point3D_id);
-  BOOST_CHECK(!reconstruction.ExistsPoint3D(point3D_id));
-  BOOST_CHECK_EQUAL(reconstruction.Image(1).NumPoints3D(), 0);
+  EXPECT_FALSE(reconstruction.ExistsPoint3D(point3D_id));
+  EXPECT_EQ(reconstruction.Image(1).NumPoints3D(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(TestDeleteObservation) {
+TEST(base_reconstruction, TestDeleteObservation) {
   Reconstruction reconstruction;
   CorrespondenceGraph correspondence_graph;
   GenerateReconstruction(2, &reconstruction, &correspondence_graph);
@@ -248,32 +248,32 @@ BOOST_AUTO_TEST_CASE(TestDeleteObservation) {
   reconstruction.AddObservation(point3D_id, TrackElement(1, 1));
   reconstruction.AddObservation(point3D_id, TrackElement(1, 2));
   reconstruction.DeleteObservation(1, 0);
-  BOOST_CHECK_EQUAL(reconstruction.Point3D(point3D_id).Track().Length(), 2);
-  BOOST_CHECK(!reconstruction.Image(point3D_id).Point2D(0).HasPoint3D());
+  EXPECT_EQ(reconstruction.Point3D(point3D_id).Track().Length(), 2);
+  EXPECT_FALSE(reconstruction.Image(point3D_id).Point2D(0).HasPoint3D());
   reconstruction.DeleteObservation(1, 1);
-  BOOST_CHECK(!reconstruction.ExistsPoint3D(point3D_id));
-  BOOST_CHECK(!reconstruction.Image(point3D_id).Point2D(1).HasPoint3D());
-  BOOST_CHECK(!reconstruction.Image(point3D_id).Point2D(2).HasPoint3D());
+  EXPECT_FALSE(reconstruction.ExistsPoint3D(point3D_id));
+  EXPECT_FALSE(reconstruction.Image(point3D_id).Point2D(1).HasPoint3D());
+  EXPECT_FALSE(reconstruction.Image(point3D_id).Point2D(2).HasPoint3D());
 }
 
-BOOST_AUTO_TEST_CASE(TestRegisterImage) {
+TEST(base_reconstruction, TestRegisterImage) {
   Reconstruction reconstruction;
   CorrespondenceGraph correspondence_graph;
   GenerateReconstruction(1, &reconstruction, &correspondence_graph);
-  BOOST_CHECK_EQUAL(reconstruction.NumRegImages(), 1);
-  BOOST_CHECK_EQUAL(reconstruction.Image(1).IsRegistered(), true);
-  BOOST_CHECK(reconstruction.IsImageRegistered(1));
+  EXPECT_EQ(reconstruction.NumRegImages(), 1);
+  EXPECT_EQ(reconstruction.Image(1).IsRegistered(), true);
+  EXPECT_TRUE(reconstruction.IsImageRegistered(1));
   reconstruction.RegisterImage(1);
-  BOOST_CHECK_EQUAL(reconstruction.NumRegImages(), 1);
-  BOOST_CHECK_EQUAL(reconstruction.Image(1).IsRegistered(), true);
-  BOOST_CHECK(reconstruction.IsImageRegistered(1));
+  EXPECT_EQ(reconstruction.NumRegImages(), 1);
+  EXPECT_EQ(reconstruction.Image(1).IsRegistered(), true);
+  EXPECT_TRUE(reconstruction.IsImageRegistered(1));
   reconstruction.DeRegisterImage(1);
-  BOOST_CHECK_EQUAL(reconstruction.NumRegImages(), 0);
-  BOOST_CHECK_EQUAL(reconstruction.Image(1).IsRegistered(), false);
-  BOOST_CHECK(!reconstruction.IsImageRegistered(1));
+  EXPECT_EQ(reconstruction.NumRegImages(), 0);
+  EXPECT_EQ(reconstruction.Image(1).IsRegistered(), false);
+  EXPECT_FALSE(reconstruction.IsImageRegistered(1));
 }
 
-BOOST_AUTO_TEST_CASE(TestNormalize) {
+TEST(base_reconstruction, TestNormalize) {
   Reconstruction reconstruction;
   CorrespondenceGraph correspondence_graph;
   GenerateReconstruction(3, &reconstruction, &correspondence_graph);
@@ -284,24 +284,24 @@ BOOST_AUTO_TEST_CASE(TestNormalize) {
   reconstruction.DeRegisterImage(2);
   reconstruction.DeRegisterImage(3);
   reconstruction.Normalize();
-  BOOST_CHECK_LT(std::abs(reconstruction.Image(1).Tvec(2) + 10), 1e-6);
-  BOOST_CHECK_LT(std::abs(reconstruction.Image(2).Tvec(2)), 1e-6);
-  BOOST_CHECK_LT(std::abs(reconstruction.Image(3).Tvec(2) - 10), 1e-6);
+  EXPECT_LT(std::abs(reconstruction.Image(1).Tvec(2) + 10), 1e-6);
+  EXPECT_LT(std::abs(reconstruction.Image(2).Tvec(2)), 1e-6);
+  EXPECT_LT(std::abs(reconstruction.Image(3).Tvec(2) - 10), 1e-6);
   reconstruction.RegisterImage(1);
   reconstruction.RegisterImage(2);
   reconstruction.RegisterImage(3);
   reconstruction.Normalize();
-  BOOST_CHECK_LT(std::abs(reconstruction.Image(1).Tvec(2) + 5), 1e-6);
-  BOOST_CHECK_LT(std::abs(reconstruction.Image(2).Tvec(2)), 1e-6);
-  BOOST_CHECK_LT(std::abs(reconstruction.Image(3).Tvec(2) - 5), 1e-6);
+  EXPECT_LT(std::abs(reconstruction.Image(1).Tvec(2) + 5), 1e-6);
+  EXPECT_LT(std::abs(reconstruction.Image(2).Tvec(2)), 1e-6);
+  EXPECT_LT(std::abs(reconstruction.Image(3).Tvec(2) - 5), 1e-6);
   reconstruction.Normalize(5);
-  BOOST_CHECK_LT(std::abs(reconstruction.Image(1).Tvec(2) + 2.5), 1e-6);
-  BOOST_CHECK_LT(std::abs(reconstruction.Image(2).Tvec(2)), 1e-6);
-  BOOST_CHECK_LT(std::abs(reconstruction.Image(3).Tvec(2) - 2.5), 1e-6);
+  EXPECT_LT(std::abs(reconstruction.Image(1).Tvec(2) + 2.5), 1e-6);
+  EXPECT_LT(std::abs(reconstruction.Image(2).Tvec(2)), 1e-6);
+  EXPECT_LT(std::abs(reconstruction.Image(3).Tvec(2) - 2.5), 1e-6);
   reconstruction.Normalize(10, 0.0, 1.0);
-  BOOST_CHECK_LT(std::abs(reconstruction.Image(1).Tvec(2) + 5), 1e-6);
-  BOOST_CHECK_LT(std::abs(reconstruction.Image(2).Tvec(2)), 1e-6);
-  BOOST_CHECK_LT(std::abs(reconstruction.Image(3).Tvec(2) - 5), 1e-6);
+  EXPECT_LT(std::abs(reconstruction.Image(1).Tvec(2) + 5), 1e-6);
+  EXPECT_LT(std::abs(reconstruction.Image(2).Tvec(2)), 1e-6);
+  EXPECT_LT(std::abs(reconstruction.Image(3).Tvec(2) - 5), 1e-6);
   reconstruction.Normalize(20);
   Image image;
   image.SetImageId(4);
@@ -322,30 +322,30 @@ BOOST_AUTO_TEST_CASE(TestNormalize) {
   reconstruction.Image(7).Tvec(2) = 7.5;
   reconstruction.RegisterImage(7);
   reconstruction.Normalize(10, 0.0, 1.0);
-  BOOST_CHECK_LT(std::abs(reconstruction.Image(1).Tvec(2) + 5), 1e-6);
-  BOOST_CHECK_LT(std::abs(reconstruction.Image(2).Tvec(2)), 1e-6);
-  BOOST_CHECK_LT(std::abs(reconstruction.Image(3).Tvec(2) - 5), 1e-6);
-  BOOST_CHECK_LT(std::abs(reconstruction.Image(4).Tvec(2) + 3.75), 1e-6);
-  BOOST_CHECK_LT(std::abs(reconstruction.Image(5).Tvec(2) + 2.5), 1e-6);
-  BOOST_CHECK_LT(std::abs(reconstruction.Image(6).Tvec(2) - 2.5), 1e-6);
-  BOOST_CHECK_LT(std::abs(reconstruction.Image(7).Tvec(2) - 3.75), 1e-6);
+  EXPECT_LT(std::abs(reconstruction.Image(1).Tvec(2) + 5), 1e-6);
+  EXPECT_LT(std::abs(reconstruction.Image(2).Tvec(2)), 1e-6);
+  EXPECT_LT(std::abs(reconstruction.Image(3).Tvec(2) - 5), 1e-6);
+  EXPECT_LT(std::abs(reconstruction.Image(4).Tvec(2) + 3.75), 1e-6);
+  EXPECT_LT(std::abs(reconstruction.Image(5).Tvec(2) + 2.5), 1e-6);
+  EXPECT_LT(std::abs(reconstruction.Image(6).Tvec(2) - 2.5), 1e-6);
+  EXPECT_LT(std::abs(reconstruction.Image(7).Tvec(2) - 3.75), 1e-6);
 }
 
-BOOST_AUTO_TEST_CASE(TestComputeBoundsAndCentroid) {
+TEST(base_reconstruction, TestComputeBoundsAndCentroid) {
   Reconstruction reconstruction;
 
   // Test emtpy reconstruction first
   auto centroid = reconstruction.ComputeCentroid(0.0, 1.0);
   auto bbox = reconstruction.ComputeBoundingBox(0.0, 1.0);
-  BOOST_CHECK_LT(std::abs(centroid(0)), 1e-6);
-  BOOST_CHECK_LT(std::abs(centroid(1)), 1e-6);
-  BOOST_CHECK_LT(std::abs(centroid(2)), 1e-6);
-  BOOST_CHECK_LT(std::abs(bbox.first(0)), 1e-6);
-  BOOST_CHECK_LT(std::abs(bbox.first(1)), 1e-6);
-  BOOST_CHECK_LT(std::abs(bbox.first(2)), 1e-6);
-  BOOST_CHECK_LT(std::abs(bbox.second(0)), 1e-6);
-  BOOST_CHECK_LT(std::abs(bbox.second(1)), 1e-6);
-  BOOST_CHECK_LT(std::abs(bbox.second(2)), 1e-6);
+  EXPECT_LT(std::abs(centroid(0)), 1e-6);
+  EXPECT_LT(std::abs(centroid(1)), 1e-6);
+  EXPECT_LT(std::abs(centroid(2)), 1e-6);
+  EXPECT_LT(std::abs(bbox.first(0)), 1e-6);
+  EXPECT_LT(std::abs(bbox.first(1)), 1e-6);
+  EXPECT_LT(std::abs(bbox.first(2)), 1e-6);
+  EXPECT_LT(std::abs(bbox.second(0)), 1e-6);
+  EXPECT_LT(std::abs(bbox.second(1)), 1e-6);
+  EXPECT_LT(std::abs(bbox.second(2)), 1e-6);
 
   // Test reconstruction with 3D points
   reconstruction.AddPoint3D(Eigen::Vector3d(3.0, 0.0, 0.0), Track());
@@ -353,18 +353,18 @@ BOOST_AUTO_TEST_CASE(TestComputeBoundsAndCentroid) {
   reconstruction.AddPoint3D(Eigen::Vector3d(0.0, 0.0, 3.0), Track());
   centroid = reconstruction.ComputeCentroid(0.0, 1.0);
   bbox = reconstruction.ComputeBoundingBox(0.0, 1.0);
-  BOOST_CHECK_LT(std::abs(centroid(0) - 1.0), 1e-6);
-  BOOST_CHECK_LT(std::abs(centroid(1) - 1.0), 1e-6);
-  BOOST_CHECK_LT(std::abs(centroid(2) - 1.0), 1e-6);
-  BOOST_CHECK_LT(std::abs(bbox.first(0)), 1e-6);
-  BOOST_CHECK_LT(std::abs(bbox.first(1)), 1e-6);
-  BOOST_CHECK_LT(std::abs(bbox.first(2)), 1e-6);
-  BOOST_CHECK_LT(std::abs(bbox.second(0) - 3.0), 1e-6);
-  BOOST_CHECK_LT(std::abs(bbox.second(1) - 3.0), 1e-6);
-  BOOST_CHECK_LT(std::abs(bbox.second(2) - 3.0), 1e-6);
+  EXPECT_LT(std::abs(centroid(0) - 1.0), 1e-6);
+  EXPECT_LT(std::abs(centroid(1) - 1.0), 1e-6);
+  EXPECT_LT(std::abs(centroid(2) - 1.0), 1e-6);
+  EXPECT_LT(std::abs(bbox.first(0)), 1e-6);
+  EXPECT_LT(std::abs(bbox.first(1)), 1e-6);
+  EXPECT_LT(std::abs(bbox.first(2)), 1e-6);
+  EXPECT_LT(std::abs(bbox.second(0) - 3.0), 1e-6);
+  EXPECT_LT(std::abs(bbox.second(1) - 3.0), 1e-6);
+  EXPECT_LT(std::abs(bbox.second(2) - 3.0), 1e-6);
 }
 
-BOOST_AUTO_TEST_CASE(TestCrop) {
+TEST(base_reconstruction, TestCrop) {
   Reconstruction reconstruction;
   CorrespondenceGraph correspondence_graph;
   GenerateReconstruction(3, &reconstruction, &correspondence_graph);
@@ -381,10 +381,10 @@ BOOST_AUTO_TEST_CASE(TestCrop) {
   reconstruction.AddObservation(point_id, TrackElement(3, 5));
 
   // Check correct reconstruction setup
-  BOOST_CHECK_EQUAL(reconstruction.NumCameras(), 1);
-  BOOST_CHECK_EQUAL(reconstruction.NumImages(), 3);
-  BOOST_CHECK_EQUAL(reconstruction.NumRegImages(), 3);
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 5);
+  EXPECT_EQ(reconstruction.NumCameras(), 1);
+  EXPECT_EQ(reconstruction.NumImages(), 3);
+  EXPECT_EQ(reconstruction.NumRegImages(), 3);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 5);
 
   std::pair<Eigen::Vector3d, Eigen::Vector3d> bbox;
 
@@ -392,25 +392,25 @@ BOOST_AUTO_TEST_CASE(TestCrop) {
   bbox.first = Eigen::Vector3d(-1, -1, -1);
   bbox.second = Eigen::Vector3d(-0.5, -0.5, -0.5);
   Reconstruction recon1 = reconstruction.Crop(bbox);
-  BOOST_CHECK_EQUAL(recon1.NumCameras(), 1);
-  BOOST_CHECK_EQUAL(recon1.NumImages(), 3);
-  BOOST_CHECK_EQUAL(recon1.NumRegImages(), 0);
-  BOOST_CHECK_EQUAL(recon1.NumPoints3D(), 0);
+  EXPECT_EQ(recon1.NumCameras(), 1);
+  EXPECT_EQ(recon1.NumImages(), 3);
+  EXPECT_EQ(recon1.NumRegImages(), 0);
+  EXPECT_EQ(recon1.NumPoints3D(), 0);
 
   // Test reconstruction with contents after cropping
   bbox.first = Eigen::Vector3d(0.0, 0.0, 0.0);
   bbox.second = Eigen::Vector3d(0.75, 0.75, 0.75);
   Reconstruction recon2 = reconstruction.Crop(bbox);
-  BOOST_CHECK_EQUAL(recon2.NumCameras(), 1);
-  BOOST_CHECK_EQUAL(recon2.NumImages(), 3);
-  BOOST_CHECK_EQUAL(recon2.NumRegImages(), 2);
-  BOOST_CHECK_EQUAL(recon2.NumPoints3D(), 3);
-  BOOST_CHECK(recon2.IsImageRegistered(1));
-  BOOST_CHECK(recon2.IsImageRegistered(2));
-  BOOST_CHECK(!recon2.IsImageRegistered(3));
+  EXPECT_EQ(recon2.NumCameras(), 1);
+  EXPECT_EQ(recon2.NumImages(), 3);
+  EXPECT_EQ(recon2.NumRegImages(), 2);
+  EXPECT_EQ(recon2.NumPoints3D(), 3);
+  EXPECT_TRUE(recon2.IsImageRegistered(1));
+  EXPECT_TRUE(recon2.IsImageRegistered(2));
+  EXPECT_FALSE(recon2.IsImageRegistered(3));
 }
 
-BOOST_AUTO_TEST_CASE(TestTransform) {
+TEST(base_reconstruction, TestTransform) {
   Reconstruction reconstruction;
   CorrespondenceGraph correspondence_graph;
   GenerateReconstruction(3, &reconstruction, &correspondence_graph);
@@ -420,164 +420,164 @@ BOOST_AUTO_TEST_CASE(TestTransform) {
   reconstruction.AddObservation(point3D_id, TrackElement(2, 1));
   reconstruction.Transform(SimilarityTransform3(2, ComposeIdentityQuaternion(),
                                                 Eigen::Vector3d(0, 1, 2)));
-  BOOST_CHECK_EQUAL(reconstruction.Image(1).ProjectionCenter(),
+  EXPECT_EQ(reconstruction.Image(1).ProjectionCenter(),
                     Eigen::Vector3d(0, 1, 2));
-  BOOST_CHECK_EQUAL(reconstruction.Point3D(point3D_id).XYZ(),
+  EXPECT_EQ(reconstruction.Point3D(point3D_id).XYZ(),
                     Eigen::Vector3d(2, 3, 4));
 }
 
-BOOST_AUTO_TEST_CASE(TestFindImageWithName) {
+TEST(base_reconstruction, TestFindImageWithName) {
   Reconstruction reconstruction;
   CorrespondenceGraph correspondence_graph;
   GenerateReconstruction(2, &reconstruction, &correspondence_graph);
-  BOOST_CHECK_EQUAL(reconstruction.FindImageWithName("image1"),
+  EXPECT_EQ(reconstruction.FindImageWithName("image1"),
                     &reconstruction.Image(1));
-  BOOST_CHECK_EQUAL(reconstruction.FindImageWithName("image2"),
+  EXPECT_EQ(reconstruction.FindImageWithName("image2"),
                     &reconstruction.Image(2));
-  BOOST_CHECK(reconstruction.FindImageWithName("image3") == nullptr);
+  EXPECT_TRUE(reconstruction.FindImageWithName("image3") == nullptr);
 }
 
-BOOST_AUTO_TEST_CASE(TestFilterPoints3D) {
+TEST(base_reconstruction, TestFilterPoints3D) {
   Reconstruction reconstruction;
   CorrespondenceGraph correspondence_graph;
   GenerateReconstruction(2, &reconstruction, &correspondence_graph);
   const point3D_t point3D_id1 =
       reconstruction.AddPoint3D(Eigen::Vector3d::Random(), Track());
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 1);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 1);
   reconstruction.FilterPoints3D(0.0, 0.0, std::unordered_set<point3D_t>{});
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 1);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 1);
   reconstruction.FilterPoints3D(0.0, 0.0,
                                 std::unordered_set<point3D_t>{point3D_id1 + 1});
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 1);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 1);
   reconstruction.FilterPoints3D(0.0, 0.0,
                                 std::unordered_set<point3D_t>{point3D_id1});
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 0);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 0);
   const point3D_t point3D_id2 =
       reconstruction.AddPoint3D(Eigen::Vector3d::Random(), Track());
   reconstruction.AddObservation(point3D_id2, TrackElement(1, 0));
   reconstruction.FilterPoints3D(0.0, 0.0,
                                 std::unordered_set<point3D_t>{point3D_id2});
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 0);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 0);
   const point3D_t point3D_id3 =
       reconstruction.AddPoint3D(Eigen::Vector3d(-0.5, -0.5, 1), Track());
   reconstruction.AddObservation(point3D_id3, TrackElement(1, 0));
   reconstruction.AddObservation(point3D_id3, TrackElement(2, 0));
   reconstruction.FilterPoints3D(0.0, 0.0,
                                 std::unordered_set<point3D_t>{point3D_id3});
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 1);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 1);
   reconstruction.FilterPoints3D(0.0, 1e-3,
                                 std::unordered_set<point3D_t>{point3D_id3});
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 0);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 0);
   const point3D_t point3D_id4 =
       reconstruction.AddPoint3D(Eigen::Vector3d(-0.6, -0.5, 1), Track());
   reconstruction.AddObservation(point3D_id4, TrackElement(1, 0));
   reconstruction.AddObservation(point3D_id4, TrackElement(2, 0));
   reconstruction.FilterPoints3D(0.1, 0.0,
                                 std::unordered_set<point3D_t>{point3D_id4});
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 1);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 1);
   reconstruction.FilterPoints3D(0.09, 0.0,
                                 std::unordered_set<point3D_t>{point3D_id4});
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 0);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(TestFilterPoints3DInImages) {
+TEST(base_reconstruction, TestFilterPoints3DInImages) {
   Reconstruction reconstruction;
   CorrespondenceGraph correspondence_graph;
   GenerateReconstruction(2, &reconstruction, &correspondence_graph);
   const point3D_t point3D_id1 =
       reconstruction.AddPoint3D(Eigen::Vector3d::Random(), Track());
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 1);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 1);
   reconstruction.FilterPoints3DInImages(0.0, 0.0,
                                         std::unordered_set<image_t>{});
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 1);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 1);
   reconstruction.FilterPoints3DInImages(0.0, 0.0,
                                         std::unordered_set<image_t>{1});
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 1);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 1);
   reconstruction.AddObservation(point3D_id1, TrackElement(1, 0));
   reconstruction.FilterPoints3DInImages(0.0, 0.0,
                                         std::unordered_set<image_t>{2});
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 1);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 1);
   reconstruction.FilterPoints3DInImages(0.0, 0.0,
                                         std::unordered_set<image_t>{1});
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 0);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 0);
   const point3D_t point3D_id3 =
       reconstruction.AddPoint3D(Eigen::Vector3d(-0.5, -0.5, 1), Track());
   reconstruction.AddObservation(point3D_id3, TrackElement(1, 0));
   reconstruction.AddObservation(point3D_id3, TrackElement(2, 0));
   reconstruction.FilterPoints3DInImages(0.0, 0.0,
                                         std::unordered_set<image_t>{1});
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 1);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 1);
   reconstruction.FilterPoints3DInImages(0.0, 1e-3,
                                         std::unordered_set<image_t>{1});
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 0);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 0);
   const point3D_t point3D_id4 =
       reconstruction.AddPoint3D(Eigen::Vector3d(-0.6, -0.5, 1), Track());
   reconstruction.AddObservation(point3D_id4, TrackElement(1, 0));
   reconstruction.AddObservation(point3D_id4, TrackElement(2, 0));
   reconstruction.FilterPoints3DInImages(0.1, 0.0,
                                         std::unordered_set<image_t>{1});
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 1);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 1);
   reconstruction.FilterPoints3DInImages(0.09, 0.0,
                                         std::unordered_set<image_t>{1});
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 0);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(TestFilterAllPoints) {
+TEST(base_reconstruction, TestFilterAllPoints) {
   Reconstruction reconstruction;
   CorrespondenceGraph correspondence_graph;
   GenerateReconstruction(2, &reconstruction, &correspondence_graph);
   reconstruction.AddPoint3D(Eigen::Vector3d::Random(), Track());
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 1);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 1);
   reconstruction.FilterAllPoints3D(0.0, 0.0);
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 0);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 0);
   const point3D_t point3D_id2 =
       reconstruction.AddPoint3D(Eigen::Vector3d::Random(), Track());
   reconstruction.AddObservation(point3D_id2, TrackElement(1, 0));
   reconstruction.FilterAllPoints3D(0.0, 0.0);
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 0);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 0);
   const point3D_t point3D_id3 =
       reconstruction.AddPoint3D(Eigen::Vector3d(-0.5, -0.5, 1), Track());
   reconstruction.AddObservation(point3D_id3, TrackElement(1, 0));
   reconstruction.AddObservation(point3D_id3, TrackElement(2, 0));
   reconstruction.FilterAllPoints3D(0.0, 0.0);
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 1);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 1);
   reconstruction.FilterAllPoints3D(0.0, 1e-3);
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 0);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 0);
   const point3D_t point3D_id4 =
       reconstruction.AddPoint3D(Eigen::Vector3d(-0.6, -0.5, 1), Track());
   reconstruction.AddObservation(point3D_id4, TrackElement(1, 0));
   reconstruction.AddObservation(point3D_id4, TrackElement(2, 0));
   reconstruction.FilterAllPoints3D(0.1, 0.0);
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 1);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 1);
   reconstruction.FilterAllPoints3D(0.09, 0.0);
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 0);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(TestFilterObservationsWithNegativeDepth) {
+TEST(base_reconstruction, TestFilterObservationsWithNegativeDepth) {
   Reconstruction reconstruction;
   CorrespondenceGraph correspondence_graph;
   GenerateReconstruction(2, &reconstruction, &correspondence_graph);
   const point3D_t point3D_id1 =
       reconstruction.AddPoint3D(Eigen::Vector3d(0, 0, 1), Track());
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 1);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 1);
   reconstruction.FilterObservationsWithNegativeDepth();
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 1);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 1);
   reconstruction.Point3D(point3D_id1).XYZ(2) = 0.001;
   reconstruction.FilterObservationsWithNegativeDepth();
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 1);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 1);
   reconstruction.Point3D(point3D_id1).XYZ(2) = 0.0;
   reconstruction.FilterObservationsWithNegativeDepth();
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 1);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 1);
   reconstruction.AddObservation(point3D_id1, TrackElement(1, 0));
   reconstruction.Point3D(point3D_id1).XYZ(2) = 0.001;
   reconstruction.FilterObservationsWithNegativeDepth();
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 1);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 1);
   reconstruction.Point3D(point3D_id1).XYZ(2) = 0.0;
   reconstruction.FilterObservationsWithNegativeDepth();
-  BOOST_CHECK_EQUAL(reconstruction.NumPoints3D(), 0);
+  EXPECT_EQ(reconstruction.NumPoints3D(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(TestFilterImages) {
+TEST(base_reconstruction, TestFilterImages) {
   Reconstruction reconstruction;
   CorrespondenceGraph correspondence_graph;
   GenerateReconstruction(4, &reconstruction, &correspondence_graph);
@@ -587,73 +587,73 @@ BOOST_AUTO_TEST_CASE(TestFilterImages) {
   reconstruction.AddObservation(point3D_id1, TrackElement(2, 0));
   reconstruction.AddObservation(point3D_id1, TrackElement(3, 0));
   reconstruction.FilterImages(0.0, 10.0, 1.0);
-  BOOST_CHECK_EQUAL(reconstruction.NumRegImages(), 3);
+  EXPECT_EQ(reconstruction.NumRegImages(), 3);
   reconstruction.DeleteObservation(3, 0);
   reconstruction.FilterImages(0.0, 10.0, 1.0);
-  BOOST_CHECK_EQUAL(reconstruction.NumRegImages(), 2);
+  EXPECT_EQ(reconstruction.NumRegImages(), 2);
   reconstruction.FilterImages(0.0, 0.9, 1.0);
-  BOOST_CHECK_EQUAL(reconstruction.NumRegImages(), 0);
+  EXPECT_EQ(reconstruction.NumRegImages(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(TestComputeNumObservations) {
+TEST(base_reconstruction, TestComputeNumObservations) {
   Reconstruction reconstruction;
   CorrespondenceGraph correspondence_graph;
   GenerateReconstruction(2, &reconstruction, &correspondence_graph);
   const point3D_t point3D_id1 =
       reconstruction.AddPoint3D(Eigen::Vector3d::Random(), Track());
-  BOOST_CHECK_EQUAL(reconstruction.ComputeNumObservations(), 0);
+  EXPECT_EQ(reconstruction.ComputeNumObservations(), 0);
   reconstruction.AddObservation(point3D_id1, TrackElement(1, 0));
-  BOOST_CHECK_EQUAL(reconstruction.ComputeNumObservations(), 1);
+  EXPECT_EQ(reconstruction.ComputeNumObservations(), 1);
   reconstruction.AddObservation(point3D_id1, TrackElement(1, 1));
-  BOOST_CHECK_EQUAL(reconstruction.ComputeNumObservations(), 2);
+  EXPECT_EQ(reconstruction.ComputeNumObservations(), 2);
   reconstruction.AddObservation(point3D_id1, TrackElement(2, 0));
-  BOOST_CHECK_EQUAL(reconstruction.ComputeNumObservations(), 3);
+  EXPECT_EQ(reconstruction.ComputeNumObservations(), 3);
 }
 
-BOOST_AUTO_TEST_CASE(TestComputeMeanTrackLength) {
+TEST(base_reconstruction, TestComputeMeanTrackLength) {
   Reconstruction reconstruction;
   CorrespondenceGraph correspondence_graph;
   GenerateReconstruction(2, &reconstruction, &correspondence_graph);
-  BOOST_CHECK_EQUAL(reconstruction.ComputeMeanTrackLength(), 0);
+  EXPECT_EQ(reconstruction.ComputeMeanTrackLength(), 0);
   const point3D_t point3D_id1 =
       reconstruction.AddPoint3D(Eigen::Vector3d::Random(), Track());
-  BOOST_CHECK_EQUAL(reconstruction.ComputeMeanTrackLength(), 0);
+  EXPECT_EQ(reconstruction.ComputeMeanTrackLength(), 0);
   reconstruction.AddObservation(point3D_id1, TrackElement(1, 0));
-  BOOST_CHECK_EQUAL(reconstruction.ComputeMeanTrackLength(), 1);
+  EXPECT_EQ(reconstruction.ComputeMeanTrackLength(), 1);
   reconstruction.AddObservation(point3D_id1, TrackElement(1, 1));
-  BOOST_CHECK_EQUAL(reconstruction.ComputeMeanTrackLength(), 2);
+  EXPECT_EQ(reconstruction.ComputeMeanTrackLength(), 2);
   reconstruction.AddObservation(point3D_id1, TrackElement(2, 0));
-  BOOST_CHECK_EQUAL(reconstruction.ComputeMeanTrackLength(), 3);
+  EXPECT_EQ(reconstruction.ComputeMeanTrackLength(), 3);
 }
 
-BOOST_AUTO_TEST_CASE(TestComputeMeanObservationsPerRegImage) {
+TEST(base_reconstruction, TestComputeMeanObservationsPerRegImage) {
   Reconstruction reconstruction;
   CorrespondenceGraph correspondence_graph;
   GenerateReconstruction(2, &reconstruction, &correspondence_graph);
-  BOOST_CHECK_EQUAL(reconstruction.ComputeMeanObservationsPerRegImage(), 0);
+  EXPECT_EQ(reconstruction.ComputeMeanObservationsPerRegImage(), 0);
   const point3D_t point3D_id1 =
       reconstruction.AddPoint3D(Eigen::Vector3d::Random(), Track());
-  BOOST_CHECK_EQUAL(reconstruction.ComputeMeanObservationsPerRegImage(), 0);
+  EXPECT_EQ(reconstruction.ComputeMeanObservationsPerRegImage(), 0);
   reconstruction.AddObservation(point3D_id1, TrackElement(1, 0));
-  BOOST_CHECK_EQUAL(reconstruction.ComputeMeanObservationsPerRegImage(), 0.5);
+  EXPECT_EQ(reconstruction.ComputeMeanObservationsPerRegImage(), 0.5);
   reconstruction.AddObservation(point3D_id1, TrackElement(1, 1));
-  BOOST_CHECK_EQUAL(reconstruction.ComputeMeanObservationsPerRegImage(), 1.0);
+  EXPECT_EQ(reconstruction.ComputeMeanObservationsPerRegImage(), 1.0);
   reconstruction.AddObservation(point3D_id1, TrackElement(2, 0));
-  BOOST_CHECK_EQUAL(reconstruction.ComputeMeanObservationsPerRegImage(), 1.5);
+  EXPECT_EQ(reconstruction.ComputeMeanObservationsPerRegImage(), 1.5);
 }
 
-BOOST_AUTO_TEST_CASE(TestComputeMeanReprojectionError) {
+TEST(base_reconstruction, TestComputeMeanReprojectionError) {
   Reconstruction reconstruction;
   CorrespondenceGraph correspondence_graph;
   GenerateReconstruction(2, &reconstruction, &correspondence_graph);
-  BOOST_CHECK_EQUAL(reconstruction.ComputeMeanReprojectionError(), 0);
+  EXPECT_EQ(reconstruction.ComputeMeanReprojectionError(), 0);
   const point3D_t point3D_id1 =
       reconstruction.AddPoint3D(Eigen::Vector3d::Random(), Track());
-  BOOST_CHECK_EQUAL(reconstruction.ComputeMeanReprojectionError(), 0);
+  EXPECT_EQ(reconstruction.ComputeMeanReprojectionError(), 0);
   reconstruction.Point3D(point3D_id1).SetError(0.0);
-  BOOST_CHECK_EQUAL(reconstruction.ComputeMeanReprojectionError(), 0);
+  EXPECT_EQ(reconstruction.ComputeMeanReprojectionError(), 0);
   reconstruction.Point3D(point3D_id1).SetError(1.0);
-  BOOST_CHECK_EQUAL(reconstruction.ComputeMeanReprojectionError(), 1);
+  EXPECT_EQ(reconstruction.ComputeMeanReprojectionError(), 1);
   reconstruction.Point3D(point3D_id1).SetError(2.0);
-  BOOST_CHECK_EQUAL(reconstruction.ComputeMeanReprojectionError(), 2.0);
+  EXPECT_EQ(reconstruction.ComputeMeanReprojectionError(), 2.0);
 }

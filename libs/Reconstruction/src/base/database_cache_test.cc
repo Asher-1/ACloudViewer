@@ -36,51 +36,51 @@
 
 using namespace colmap;
 
-BOOST_AUTO_TEST_CASE(TestEmpty) {
+TEST(base_database_cache, TestEmpty) {
   DatabaseCache cache;
-  BOOST_CHECK_EQUAL(cache.NumCameras(), 0);
-  BOOST_CHECK_EQUAL(cache.NumImages(), 0);
+  EXPECT_EQ(cache.NumCameras(), 0);
+  EXPECT_EQ(cache.NumImages(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(TestAddCamera) {
+TEST(base_database_cache, TestAddCamera) {
   DatabaseCache cache;
   Camera camera;
   camera.SetCameraId(1);
   camera.InitializeWithId(SimplePinholeCameraModel::model_id, 1, 1, 1);
   cache.AddCamera(camera);
-  BOOST_CHECK_EQUAL(cache.NumCameras(), 1);
-  BOOST_CHECK_EQUAL(cache.NumImages(), 0);
-  BOOST_CHECK(cache.ExistsCamera(camera.CameraId()));
-  BOOST_CHECK_EQUAL(cache.Camera(camera.CameraId()).ModelId(),
+  EXPECT_EQ(cache.NumCameras(), 1);
+  EXPECT_EQ(cache.NumImages(), 0);
+  EXPECT_TRUE(cache.ExistsCamera(camera.CameraId()));
+  EXPECT_EQ(cache.Camera(camera.CameraId()).ModelId(),
                     camera.ModelId());
 }
 
-BOOST_AUTO_TEST_CASE(TestDegenerateCamera) {
+TEST(base_database_cache, TestDegenerateCamera) {
   DatabaseCache cache;
   Camera camera;
   camera.InitializeWithId(SimplePinholeCameraModel::model_id, 1, 1, 1);
   cache.AddCamera(camera);
-  BOOST_CHECK_EQUAL(cache.NumCameras(), 1);
-  BOOST_CHECK_EQUAL(cache.NumImages(), 0);
-  BOOST_CHECK(cache.ExistsCamera(camera.CameraId()));
-  BOOST_CHECK_EQUAL(cache.Camera(camera.CameraId()).MeanFocalLength(), 1);
+  EXPECT_EQ(cache.NumCameras(), 1);
+  EXPECT_EQ(cache.NumImages(), 0);
+  EXPECT_TRUE(cache.ExistsCamera(camera.CameraId()));
+  EXPECT_EQ(cache.Camera(camera.CameraId()).MeanFocalLength(), 1);
 }
 
-BOOST_AUTO_TEST_CASE(TestAddImage) {
+TEST(base_database_cache, TestAddImage) {
   DatabaseCache cache;
   Image image;
   image.SetImageId(1);
   image.SetPoints2D(std::vector<Eigen::Vector2d>(10));
   cache.AddImage(image);
-  BOOST_CHECK_EQUAL(cache.NumCameras(), 0);
-  BOOST_CHECK_EQUAL(cache.NumImages(), 1);
-  BOOST_CHECK(cache.ExistsImage(image.ImageId()));
-  BOOST_CHECK_EQUAL(cache.Image(image.ImageId()).NumPoints2D(),
+  EXPECT_EQ(cache.NumCameras(), 0);
+  EXPECT_EQ(cache.NumImages(), 1);
+  EXPECT_TRUE(cache.ExistsImage(image.ImageId()));
+  EXPECT_EQ(cache.Image(image.ImageId()).NumPoints2D(),
                     image.NumPoints2D());
-  BOOST_CHECK(cache.CorrespondenceGraph().ExistsImage(image.ImageId()));
-  BOOST_CHECK_EQUAL(
+  EXPECT_TRUE(cache.CorrespondenceGraph().ExistsImage(image.ImageId()));
+  EXPECT_EQ(
       cache.CorrespondenceGraph().NumCorrespondencesForImage(image.ImageId()),
       0);
-  BOOST_CHECK_EQUAL(
+  EXPECT_EQ(
       cache.CorrespondenceGraph().NumObservationsForImage(image.ImageId()), 0);
 }

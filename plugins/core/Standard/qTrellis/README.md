@@ -1,5 +1,7 @@
 # qTrellis — TRELLIS.2 image-to-3D (GGML)
 
+![Plugin icon](images/qTrellis.svg)
+
 Turns a single image into a 3D mesh with per-vertex PBR materials, entirely in
 C++/ggml (no PyTorch at runtime). In-tree port of
 [trellis-ggml](https://github.com/Asher-1/trellis-ggml), integrated into the
@@ -13,6 +15,14 @@ image ──► (RMBG-2.0 background removal, optional) ──► preprocess
       ──► shape-SLAT flow ──► shape decode (512³ / 1024³ dual grid)
       ──► mesh extraction ──► (PBR texture stage) ──► ccMesh / GLB
 ```
+
+![TRELLIS.2 result — Full 1024 cascade + PBR (f16)](images/qTrellis_f16_1024_pbr.png)
+
+*One image → textured 3D mesh with per-vertex PBR, generated entirely by the C++/ggml runtime (**Full 1024 cascade + PBR**, f16 reference chain).*
+
+![TRELLIS.2 result — Standard 512 + PBR (q8)](images/qTrellis_q8_512_pbr.png)
+
+*The recommended **Standard 512 + PBR** preset with **q8** quantization fits ~8 GB GPUs while keeping full PBR materials; the "Pipeline steps" strip streams live stage thumbnails.*
 
 ## Features
 

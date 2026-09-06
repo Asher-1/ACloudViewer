@@ -29,6 +29,7 @@
 //
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
+#include "estimators/two_view_geometry.h"
 #include "sfm/incremental_mapper.h"
 
 #include <array>
@@ -289,8 +290,12 @@ bool IncrementalMapper::RegisterInitialImagePair(const Options& options,
 
     image1.Qvec() = ComposeIdentityQuaternion();
     image1.Tvec() = Eigen::Vector3d(0, 0, 0);
-    image2.Qvec() = prev_init_two_view_geometry_.qvec;
-    image2.Tvec() = prev_init_two_view_geometry_.tvec;
+    if (prev_init_two_view_geometry_.cam2_from_cam1) {
+        const Eigen::Quaterniond& q =
+                prev_init_two_view_geometry_.cam2_from_cam1->rotation();
+        image2.Qvec() = Eigen::Vector4d(q.w(), q.x(), q.y(), q.z());
+        image2.Tvec() = prev_init_two_view_geometry_.cam2_from_cam1->translation();
+    }
 
     const Eigen::Matrix3x4d proj_matrix1 = image1.ProjectionMatrix();
     const Eigen::Matrix3x4d proj_matrix2 = image2.ProjectionMatrix();
@@ -734,41 +739,6 @@ bool IncrementalMapper::AdjustGlobalBundle(
     return true;
 }
 
-#ifdef PBA_ENABLED
-bool IncrementalMapper::AdjustParallelGlobalBundle(
-        const BundleAdjustmentOptions& ba_options,
-        const ParallelBundleAdjuster::Options& parallel_ba_options) {
-    CHECK_NOTNULL(reconstruction_);
-
-    const std::vector<image_t>& reg_image_ids = reconstruction_->RegImageIds();
-
-    CHECK_GE(reg_image_ids.size(), 2)
-            << "At least two images must be registered for global "
-               "bundle-adjustment";
-
-    // Avoid degeneracies in bundle adjustment.
-    reconstruction_->FilterObservationsWithNegativeDepth();
-
-    // Configure bundle adjustment.
-    BundleAdjustmentConfig ba_config;
-    for (const image_t image_id : reg_image_ids) {
-        ba_config.AddImage(image_id);
-    }
-
-    // Run bundle adjustment.
-    ParallelBundleAdjuster bundle_adjuster(parallel_ba_options, ba_options,
-                                           ba_config);
-    if (!bundle_adjuster.Solve(reconstruction_)) {
-        return false;
-    }
-
-    // Normalize scene for numerical stability and
-    // to avoid large scale changes in viewer.
-    reconstruction_->Normalize();
-
-    return true;
-}
-#endif
 
 size_t IncrementalMapper::FilterImages(const Options& options) {
     CHECK_NOTNULL(reconstruction_);
@@ -1206,20 +1176,22 @@ bool IncrementalMapper::EstimateInitialTwoViewGeometry(
     }
 
     TwoViewGeometry two_view_geometry;
-    TwoViewGeometry::Options two_view_geometry_options;
+    TwoViewGeometryOptions two_view_geometry_options;
     two_view_geometry_options.ransac_options.min_num_trials = 30;
     two_view_geometry_options.ransac_options.max_error = options.init_max_error;
-    two_view_geometry.EstimateCalibrated(camera1, points1, camera2, points2,
-                                         matches, two_view_geometry_options);
-
-    if (!two_view_geometry.EstimateRelativePose(camera1, points1, camera2,
-                                                points2)) {
+    // The upstream estimator folds the relative-pose decomposition into the
+    // estimation, so cam2_from_cam1 carries what the legacy member call
+    // EstimateRelativePose produced.
+    two_view_geometry = EstimateTwoViewGeometry(camera1, points1, camera2,
+                                                points2, matches,
+                                                two_view_geometry_options);
+    if (!two_view_geometry.cam2_from_cam1) {
         return false;
     }
 
     if (static_cast<int>(two_view_geometry.inlier_matches.size()) >=
                 options.init_min_num_inliers &&
-        std::abs(two_view_geometry.tvec.z()) <
+        std::abs(two_view_geometry.cam2_from_cam1->translation().z()) <
                 options.init_max_forward_motion &&
         two_view_geometry.tri_angle > DegToRad(options.init_min_tri_angle)) {
         prev_init_image_pair_id_ = image_pair_id;

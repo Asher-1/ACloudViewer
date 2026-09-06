@@ -5,11 +5,6 @@
 
 #include <algorithm>
 
-#define TEST(suite, name) BOOST_AUTO_TEST_CASE(suite##_##name)
-#define EXPECT_TRUE(value) BOOST_CHECK(value)
-#define EXPECT_EQ(lhs, rhs) BOOST_CHECK_EQUAL(lhs, rhs)
-#define EXPECT_NE(lhs, rhs) BOOST_CHECK_NE(lhs, rhs)
-#define ASSERT_NE(lhs, rhs) BOOST_REQUIRE_NE(lhs, rhs)
 
 namespace colmap {
 namespace mvs {

@@ -12,6 +12,7 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <cfloat>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -1607,6 +1608,59 @@ double CameraModelImageToWorldThreshold(const int model_id,
     }
 
     return -1;
+}
+
+// ----------------------------------------------------------------------------
+// Upstream-parity camera classification and bearing-vector unprojection
+// (COLMAP 4.x sensor/models.h). The per-model CamRayFromCam specializations
+// are folded into model-family dispatch on the integer model id.
+// ----------------------------------------------------------------------------
+inline bool CameraModelIsSpherical(const int model_id) {
+    // EQUIRECTANGULAR (id 17) is the only spherical model in this fork.
+    return model_id == 17;
+}
+
+inline bool CameraModelIsPerspectiveFisheye(const int model_id) {
+    // OPENCV_FISHEYE(5), SIMPLE_RADIAL_FISHEYE(8), RADIAL_FISHEYE(9),
+    // THIN_PRISM_FISHEYE(10): angle-parameterized normalized coordinates.
+    return model_id == 5 || model_id == 8 || model_id == 9 || model_id == 10;
+}
+
+inline bool CameraModelIsPerspective(const int model_id) {
+    return !CameraModelIsSpherical(model_id);
+}
+
+inline bool CameraModelIsPerspectivePinhole(const int model_id) {
+    return CameraModelIsPerspective(model_id) &&
+           !CameraModelIsPerspectiveFisheye(model_id);
+}
+
+// Unproject a pixel to a unit bearing vector in the camera frame.
+// Perspective pinhole models map to the z=1 normalized plane; fisheye models
+// use angle coordinates (r == theta) and map to (sin/cos) on the unit sphere;
+// EQUIRECTANGULAR maps (lon, lat) to the standard spherical parameterization,
+// matching the upstream BaseSphericalCameraModel convention.
+inline std::optional<Eigen::Vector3d> CameraModelCamRayFromImg(
+        const int model_id,
+        const std::vector<double>& params,
+        const Eigen::Vector2d& xy) {
+    double u = 0, v = 0;
+    CameraModelImageToWorld(model_id, params, xy.x(), xy.y(), &u, &v);
+    if (CameraModelIsSpherical(model_id)) {
+        const double lon = u;
+        const double lat = v;
+        return Eigen::Vector3d(std::cos(lat) * std::sin(lon), std::sin(lat),
+                               std::cos(lat) * std::cos(lon));
+    }
+    if (CameraModelIsPerspectiveFisheye(model_id)) {
+        const double r = std::hypot(u, v);
+        if (r < std::numeric_limits<double>::epsilon()) {
+            return Eigen::Vector3d(0.0, 0.0, 1.0);
+        }
+        return Eigen::Vector3d(u / r * std::sin(r), v / r * std::sin(r),
+                               std::cos(r));
+    }
+    return Eigen::Vector3d(u, v, 1.0).normalized();
 }
 
 }  // namespace colmap

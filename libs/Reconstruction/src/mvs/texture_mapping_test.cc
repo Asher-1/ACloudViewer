@@ -29,7 +29,9 @@ Image MakeImage(float camera_z, const BitmapColor<uint8_t>& color) {
   const float T[3] = {-0.5f, 0.5f, camera_z};
   Image image("test.png", kSize, kSize, K, R, T);
   Bitmap bitmap;
-  BOOST_REQUIRE(bitmap.Allocate(kSize, kSize, /*as_rgb=*/true));
+  if (!bitmap.Allocate(kSize, kSize, /*as_rgb=*/true)) {
+    return Image();
+  }
   bitmap.Fill(color);
   image.SetBitmap(bitmap);
   return image;
@@ -45,7 +47,7 @@ MeshTextureMappingOptions TestOptions() {
 
 }  // namespace
 
-BOOST_AUTO_TEST_CASE(EndToEnd) {
+TEST(mvs_texture_mapping_test, EndToEnd) {
   const PlyMesh mesh = MakeQuad();
   const BitmapColor<uint8_t> source_color(200, 50, 25);
   const std::vector<Image> images = {MakeImage(5.0f, source_color)};
@@ -53,15 +55,15 @@ BOOST_AUTO_TEST_CASE(EndToEnd) {
   const MeshTextureMappingResult result =
       MeshTextureMapping(mesh, images, TestOptions());
 
-  BOOST_CHECK_GT(result.atlas_width, 0);
-  BOOST_CHECK_GT(result.atlas_height, 0);
-  BOOST_CHECK_EQUAL(result.face_uvs.size(), mesh.faces.size() * 6);
-  BOOST_REQUIRE_EQUAL(result.face_view_ids.size(), mesh.faces.size());
-  BOOST_CHECK_EQUAL(result.face_view_ids[0], 0);
-  BOOST_CHECK_EQUAL(result.face_view_ids[1], 0);
+  EXPECT_GT(result.atlas_width, 0);
+  EXPECT_GT(result.atlas_height, 0);
+  EXPECT_EQ(result.face_uvs.size(), mesh.faces.size() * 6);
+  ASSERT_EQ(result.face_view_ids.size(), mesh.faces.size());
+  EXPECT_EQ(result.face_view_ids[0], 0);
+  EXPECT_EQ(result.face_view_ids[1], 0);
   for (float uv : result.face_uvs) {
-    BOOST_CHECK_GE(uv, 0.0f);
-    BOOST_CHECK_LE(uv, 1.0f);
+    EXPECT_GE(uv, 0.0f);
+    EXPECT_LE(uv, 1.0f);
   }
 
   bool found_source_color = false;
@@ -75,29 +77,29 @@ BOOST_AUTO_TEST_CASE(EndToEnd) {
       }
     }
   }
-  BOOST_CHECK(found_source_color);
+  EXPECT_TRUE(found_source_color);
 }
 
-BOOST_AUTO_TEST_CASE(FaceBehindCameraIsRejected) {
+TEST(mvs_texture_mapping_test, FaceBehindCameraIsRejected) {
   const PlyMesh mesh = MakeQuad();
   const std::vector<Image> images = {
       MakeImage(-5.0f, BitmapColor<uint8_t>(128))};
   const MeshTextureMappingResult result =
       MeshTextureMapping(mesh, images, TestOptions());
-  BOOST_REQUIRE_EQUAL(result.face_view_ids.size(), mesh.faces.size());
-  BOOST_CHECK_EQUAL(result.face_view_ids[0], -1);
-  BOOST_CHECK_EQUAL(result.face_view_ids[1], -1);
+  ASSERT_EQ(result.face_view_ids.size(), mesh.faces.size());
+  EXPECT_EQ(result.face_view_ids[0], -1);
+  EXPECT_EQ(result.face_view_ids[1], -1);
 }
 
-BOOST_AUTO_TEST_CASE(EmptyMeshIsStable) {
+TEST(mvs_texture_mapping_test, EmptyMeshIsStable) {
   const std::vector<Image> images = {
       MakeImage(5.0f, BitmapColor<uint8_t>(128))};
   const MeshTextureMappingResult result =
       MeshTextureMapping(PlyMesh(), images, TestOptions());
-  BOOST_CHECK_EQUAL(result.atlas_width, 0);
-  BOOST_CHECK_EQUAL(result.atlas_height, 0);
-  BOOST_CHECK(result.face_uvs.empty());
-  BOOST_CHECK(result.face_view_ids.empty());
+  EXPECT_EQ(result.atlas_width, 0);
+  EXPECT_EQ(result.atlas_height, 0);
+  EXPECT_TRUE(result.face_uvs.empty());
+  EXPECT_TRUE(result.face_view_ids.empty());
 }
 
 }  // namespace mvs

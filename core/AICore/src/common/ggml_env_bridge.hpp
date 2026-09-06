@@ -89,6 +89,15 @@ void restore_ggml_env_snapshot(const GgmlEnvSnapshot& snapshot);
  *  "slower run". An explicit shell setting of the variable always wins. */
 void apply_vulkan_runtime_defaults();
 
+/** Route ggml backend warnings/errors (memory fallbacks, allocation
+ *  failures, device issues) into the AICore application log. Without this
+ *  bridge ggml only prints to stderr, which GUI users never see — the
+ *  Vulkan host-memory fallback in particular is fully silent there and was
+ *  indistinguishable from a hang. Installed once in
+ *  ggml_common::load_backends_once() before any backend registration; INFO
+ *  and below stay on stderr so the app log keeps a low noise floor. */
+void install_ggml_log_bridge();
+
 /** Internal: records that ggml backends have been registered, so later
  *  apply_ggml_env_overrides() calls can warn about the snapshot semantics.
  *  Called by ggml_common::load_backends_once(). */

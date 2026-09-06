@@ -2,6 +2,10 @@
 
 ![Plugin icon](images/qDA3.svg)
 
+![qDA3 dialog and depth result](images/qDA3.png)
+
+*The DA3 dialog in **Depth (single)** mode: the estimated depth map and the 3D-unprojected point cloud are added to the DB tree and rendered in the viewer.*
+
 Integrates [Depth Anything 3](https://github.com/DepthAnything/Depth-Anything-V3) into ACloudViewer. Runs **GGUF models** via C++17 / [ggml](https://github.com/ggml-org/ggml) (derived from [depth-anything.cpp](https://github.com/mudler/depth-anything.cpp)) with no Python/PyTorch runtime.
 
 > **Build index:** see [plugins/README.md](../../../README.md).
@@ -71,6 +75,15 @@ flowchart TD
 | **Export COLMAP** | `cameras/` / `images/` / `points3D` |
 | **Quantize Model** | Convert to f16 / q8_0 / q4_k GGUF |
 | **Model Info** | GGUF JSON metadata |
+
+### Visual results
+
+Depth maps for every model family / quantization pair (small → giant, f32 →
+q4_k) are pre-rendered under `examples/demos/`; one photo through all of them:
+
+![DA3 depth comparison across models](https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qDA3/examples/demos/comparison/canyon_all_models.png)
+
+*Same canyon photo, depth maps from all shipped model / quantization combos — see [`examples/demos/BENCHMARK.md`](examples/demos/BENCHMARK.md).*
 
 ### Typical workflow
 

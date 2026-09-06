@@ -49,6 +49,53 @@ double now_s() {
 }
 #define GLBLOG(...) AICORE_LOG_DEBUG("trellis", "[glb] " __VA_ARGS__)
 
+// Bake stages run seconds-to-minutes and were historically invisible (the
+// fine-grained trace above stays at DEBUG), so a stalled bake gave the
+// console nothing to attribute the time to (observed: 12.5 s vs 243.9 s for
+// same-scale meshes, mesh-shape dependent). BakeStage logs each stage at
+// INFO on entry and with its duration on done(); in a log the stage whose
+// done-line is missing is the one that stalled.
+class BakeStage {
+public:
+    BakeStage(const char *what, const MeshExportOptions &opt)
+        : what_(what), opt_(opt), t0_(now_s()) {
+        AICORE_LOG_INFO("trellis", "[glb] bake: %s ...", what_);
+    }
+    void done() {
+        if (done_) return;
+        done_ = true;
+        const double elapsed = now_s() - t0_;
+        AICORE_LOG_INFO("trellis", "[glb] bake: %s done in %.2f s", what_,
+                        elapsed);
+        if (opt_.progress) opt_.progress(what_, elapsed, opt_.progress_user);
+    }
+    /** Cooperative-cancel + progress hook for the stage that is about to
+     *  run; throws (caught by the C ABI fence) when the cancel flag is set,
+     *  so a pathological stage is abandoned at the next boundary. */
+    void checkpoint() {
+        if (done_) return;
+        if (opt_.cancel && *opt_.cancel != 0)
+            throw std::runtime_error("bake cancelled");
+        // Throttle interim progress to 1 s so long stages do not flood the
+        // console (done() carries the final duration).
+        const double elapsed = now_s() - t0_;
+        if (opt_.progress && elapsed - last_fired_ >= 1.0) {
+            last_fired_ = elapsed;
+            opt_.progress(what_, elapsed, opt_.progress_user);
+        }
+    }
+    ~BakeStage() { done(); }
+    BakeStage(const BakeStage &) = delete;
+    BakeStage &operator=(const BakeStage &) = delete;
+
+private:
+    const char *what_;
+    const MeshExportOptions &opt_;
+    double t0_;
+    double last_fired_ = 0.0;
+    bool done_ = false;
+};
+
 // ─────────────────────────────────────────────────────────────────────────
 // Copy the original topology while dropping only invalid/degenerate faces and
 // unreferenced vertices. Export and showcase deliberately retain full polygon
@@ -1646,10 +1693,13 @@ bool bake_atlas_locked(const PreparedMesh &mesh,
     // charting; Simple skips GPU/xatlas and starts at cone clustering.
     const bool force_xatlas = opt.unwrap == UnwrapMode::XAtlas;
     bool unwrapped = false;
+    const char *unwrap_mode = "none";
+    BakeStage bs_unwrap("uv unwrap chain", opt);
     if (force_xatlas) {
         unwrapped = xatlas_unwrap(mesh.verts, mesh.normals, mesh.pbr, dnv,
                                   mesh.tris, dnt, opt, TS, opos, onrm, ouv,
                                   opbr, oidx, AW, AH, err);
+        if (unwrapped) unwrap_mode = "bare xatlas charting";
         if (!unwrapped)
             GLBLOG("xatlas unwrap failed (%s); falling back", err.c_str());
     }
@@ -1662,6 +1712,7 @@ bool bake_atlas_locked(const PreparedMesh &mesh,
         unwrapped = cumesh_unwrap(mesh.verts, mesh.normals, mesh.pbr, dnv,
                                   mesh.tris, dnt, opt, TS, opos, onrm, ouv,
                                   opbr, oidx, AW, AH, err);
+        if (unwrapped) unwrap_mode = "cumesh GPU clustering";
         if (!unwrapped)
             GLBLOG("cumesh unwrap failed (%s); falling back to CPU cone "
                    "clustering",
@@ -1672,20 +1723,32 @@ bool bake_atlas_locked(const PreparedMesh &mesh,
         unwrapped = cone_cluster_unwrap(mesh.verts, mesh.normals, mesh.pbr, dnv,
                                         mesh.tris, dnt, opt, TS, opos, onrm,
                                         ouv, opbr, oidx, AW, AH, err);
+        if (unwrapped)
+            unwrap_mode =
+                    "cone-cluster charts + xatlas "
+                    "parameterize/pack";
         if (!unwrapped)
             GLBLOG("cone clustering unwrap failed (%s); falling back to "
                    "simple_unwrap",
                    err.c_str());
     }
-    if (!unwrapped && !simple_unwrap(mesh.verts, mesh.normals, mesh.pbr, dnv,
-                                     mesh.tris, dnt, TS, opt.padding, opos,
-                                     onrm, ouv, opbr, oidx, AW, AH, err))
-        return false;
+    if (!unwrapped) {
+        BakeStage bs_simple("uv unwrap: 6-bin simple projection", opt);
+        if (!simple_unwrap(mesh.verts, mesh.normals, mesh.pbr, dnv, mesh.tris,
+                           dnt, TS, opt.padding, opos, onrm, ouv, opbr, oidx,
+                           AW, AH, err))
+            return false;
+        unwrap_mode = "simple 6-bin projection";
+    }
+    AICORE_LOG_INFO("trellis", "[glb] bake: uv unwrap succeeded via %s",
+                    unwrap_mode);
+    bs_unwrap.done();
     const uint32_t onv = (uint32_t)(opos.size() / 3);
     const uint32_t ntri = (uint32_t)(oidx.size() / 3);
 
     GLBLOG("rasterizing %u tris%s ...", ntri,
            projected_pbr ? " for source-surface PBR projection" : "");
+    BakeStage bs_raster("rasterize triangles into atlas", opt);
     const int NP = AW * AH;
     std::vector<float> bc((size_t)NP * 3, 0.0f), met(NP, 0.0f), rou(NP, 0.0f),
             alp(NP, 0.0f);
@@ -1705,6 +1768,7 @@ bool bake_atlas_locked(const PreparedMesh &mesh,
     };
 
     for (uint32_t t = 0; t < ntri; ++t) {
+        if ((t & 0xFFFF) == 0) bs_raster.checkpoint();  // ~65k-tri cadence
         const uint32_t ia = oidx[3 * t + 0], ib = oidx[3 * t + 1],
                        ic = oidx[3 * t + 2];
         const float ax = ouv[2 * ia + 0], ay = ouv[2 * ia + 1];
@@ -1771,6 +1835,8 @@ bool bake_atlas_locked(const PreparedMesh &mesh,
     if (projected_pbr) {
         GLBLOG("projecting %zu covered texels to %zu source tris ...",
                query_pixels.size(), projection_source->tris.size() / 3);
+        BakeStage bs_project("project PBR (closest-surface per covered texel)",
+                             opt);
         std::vector<float> query_pbr;
         if (!t2print::project_pbr(
                     projection_source->verts, projection_source->tris,
@@ -1881,6 +1947,7 @@ bool bake_atlas_locked(const PreparedMesh &mesh,
     }
     const bool transparent =
             translucent > 0 && (int64_t)translucent * 1000 >= (int64_t)covered;
+    BakeStage bs_encode("dilate + inpaint + PNG encode", opt);
     GLBLOG("inpaint + PNG encode ...");
     std::vector<uint8_t> bc_png, mr_png;
     if (!encode_png(AW, AH, 4, bc8.data(), bc_png) ||
@@ -2235,6 +2302,7 @@ static bool export_atlas_glb(const PreparedMesh &source,
     const size_t target_tris = (size_t)std::max(1, opt.decimation_target);
     GLBLOG("atlas export: %zu source tris -> target %zu (T2GLB_DECIMATION)",
            source.tris.size() / 3, target_tris);
+    BakeStage bs_dec1("decimate topology pass 1 (meshopt)", opt);
 
     PreparedMesh target = source;
     if (!decimate_topology(target, target_tris, opt.decimation_error, err))
@@ -2248,6 +2316,8 @@ static bool export_atlas_glb(const PreparedMesh &source,
         // simplify-then-unwrap on a manifold mesh). Sloppy decimation remains
         // the fallback for meshes that still stall.
         if (target.tris.size() / 3 > target_tris) {
+            BakeStage bs_manifold("manifoldize + decimate topology pass 2",
+                                  opt);
             manifoldize(target.verts, target.normals, target.pbr, target.tris);
             target.normals.clear();
             vertex_normals(target.verts, target.tris, target.normals);
@@ -2256,6 +2326,7 @@ static bool export_atlas_glb(const PreparedMesh &source,
                 return false;
         }
         if (target.tris.size() / 3 > target_tris) {
+            BakeStage bs_sloppy("decimate sloppy fallback (sliver-prone)", opt);
             if (!decimate_sloppy(target, target_tris, opt.decimation_error,
                                  opt.sliver_aspect, err))
                 return false;
@@ -2352,6 +2423,7 @@ bool mesh_to_glb(const float *verts,
     }
 
     std::lock_guard<std::mutex> lock(g_bake_mu);
+    BakeStage bs_prepare("prepare (component filter + cleanup)", opt);
 
     // All knobs come from the explicit MeshExportOptions (the T2GLB_*
     // environment overrides upstream have no in-tree equivalent).

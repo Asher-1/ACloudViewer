@@ -91,43 +91,16 @@ std::vector<HomographyMatrixEstimator::M_t> HomographyMatrixEstimator::Estimate(
   return models;
 }
 
-void HomographyMatrixEstimator::Residuals(const std::vector<X_t>& points1,
-                                          const std::vector<Y_t>& points2,
-                                          const M_t& H,
-                                          std::vector<double>* residuals) {
-  CHECK_EQ(points1.size(), points2.size());
 
-  residuals->resize(points1.size());
 
-  // Note that this code might not be as nice as Eigen expressions,
-  // but it is significantly faster in various tests.
-
-  const double H_00 = H(0, 0);
-  const double H_01 = H(0, 1);
-  const double H_02 = H(0, 2);
-  const double H_10 = H(1, 0);
-  const double H_11 = H(1, 1);
-  const double H_12 = H(1, 2);
-  const double H_20 = H(2, 0);
-  const double H_21 = H(2, 1);
-  const double H_22 = H(2, 2);
-
-  for (size_t i = 0; i < points1.size(); ++i) {
-    const double s_0 = points1[i](0);
-    const double s_1 = points1[i](1);
-    const double d_0 = points2[i](0);
-    const double d_1 = points2[i](1);
-
-    const double pd_0 = H_00 * s_0 + H_01 * s_1 + H_02;
-    const double pd_1 = H_10 * s_0 + H_11 * s_1 + H_12;
-    const double pd_2 = H_20 * s_0 + H_21 * s_1 + H_22;
-
-    const double inv_pd_2 = 1.0 / pd_2;
-    const double dd_0 = d_0 - pd_0 * inv_pd_2;
-    const double dd_1 = d_1 - pd_1 * inv_pd_2;
-
-    (*residuals)[i] = dd_0 * dd_0 + dd_1 * dd_1;
+double ComputeSquaredHomographyError(const Eigen::Vector2d& point1,
+                                     const Eigen::Vector2d& point2,
+                                     const Eigen::Matrix3d& H) {
+  const Eigen::Vector3d Hp1 = H * point1.homogeneous();
+  if (Hp1[2] == 0) {
+    return std::numeric_limits<double>::max();
   }
+  return (point2 - Hp1.hnormalized()).squaredNorm();
 }
 
 }  // namespace colmap

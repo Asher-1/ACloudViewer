@@ -12,6 +12,7 @@
 #include <limits>
 #include <vector>
 
+#include "geometry/rigid3.h"
 #include "base/camera.h"
 
 namespace colmap {
@@ -83,6 +84,13 @@ double CalculateSquaredReprojectionError(const Eigen::Vector2d& point2D,
                                          const Eigen::Vector3d& point3D,
                                          const Eigen::Vector4d& qvec,
                                          const Eigen::Vector3d& tvec,
+                                         const Camera& camera);
+
+// Upstream-parity (COLMAP 4.x scene/projection.h): angular reprojection
+// error for a world-space point and a rigid transform.
+double CalculateSquaredReprojectionError(const Eigen::Vector2d& point2D,
+                                         const Eigen::Vector3d& point3D,
+                                         const Rigid3d& cam_from_world,
                                          const Camera& camera);
 double CalculateSquaredReprojectionError(const Eigen::Vector2d& point2D,
                                          const Eigen::Vector3d& point3D,

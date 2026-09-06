@@ -30,6 +30,7 @@
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
 #include "feature/matching.h"
+#include "estimators/two_view_geometry.h"
 
 #include <fstream>
 #include <numeric>
@@ -841,15 +842,13 @@ void TwoViewGeometryVerifier::Run() {
         const auto points1 = FeatureKeypointsToPointsVector(*keypoints1);
         const auto points2 = FeatureKeypointsToPointsVector(*keypoints2);
 
-        if (options_.multiple_models) {
-          data.two_view_geometry.EstimateMultiple(camera1, points1, camera2,
-                                                  points2, data.matches,
-                                                  two_view_geometry_options_);
-        } else {
-          data.two_view_geometry.Estimate(camera1, points1, camera2, points2,
-                                          data.matches,
-                                          two_view_geometry_options_);
-        }
+        // EstimateTwoViewGeometry dispatches on options.multiple_models
+        // internally (upstream behavior).
+        (void)options_.multiple_models;
+        data.two_view_geometry =
+                EstimateTwoViewGeometry(camera1, points1, camera2, points2,
+                                        data.matches,
+                                        two_view_geometry_options_);
       } catch (const std::exception& e) {
         std::cerr << "ERROR: TwoViewGeometryVerifier failed for image pair ("
                   << data.image_id1 << ", " << data.image_id2 << "): "
@@ -1945,7 +1944,7 @@ void FeaturePairsFeatureMatcher::Run() {
       const auto keypoints2 = cache_.GetKeypoints(image2.ImageId());
 
       TwoViewGeometry two_view_geometry;
-      TwoViewGeometry::Options two_view_geometry_options;
+      TwoViewGeometryOptions two_view_geometry_options;
       two_view_geometry_options.min_num_inliers =
           static_cast<size_t>(match_options_.min_num_inliers);
       two_view_geometry_options.ransac_options.max_error =
@@ -1959,10 +1958,14 @@ void FeaturePairsFeatureMatcher::Run() {
       two_view_geometry_options.ransac_options.min_inlier_ratio =
           match_options_.min_inlier_ratio;
 
-      two_view_geometry.Estimate(
-          camera1, FeatureKeypointsToPointsVector(*keypoints1), camera2,
-          FeatureKeypointsToPointsVector(*keypoints2), matches,
-          two_view_geometry_options);
+      two_view_geometry =
+              EstimateTwoViewGeometry(camera1,
+                                      FeatureKeypointsToPointsVector(
+                                              *keypoints1),
+                                      camera2,
+                                      FeatureKeypointsToPointsVector(
+                                              *keypoints2),
+                                      matches, two_view_geometry_options);
 
       database_.WriteTwoViewGeometry(image1.ImageId(), image2.ImageId(),
                                      two_view_geometry);

@@ -402,4 +402,31 @@ void Camera::Rescale(const size_t width, const size_t height) {
   }
 }
 
+
+Camera Camera::CreateFromModelId(camera_t camera_id,
+                                 CameraModelId model_id,
+                                 double focal_length,
+                                 size_t width,
+                                 size_t height) {
+    THROW_CHECK(ExistsCameraModelWithId(model_id));
+    Camera camera;
+    camera.SetModelId(model_id);
+    camera.SetCameraId(camera_id);
+    camera.SetWidth(width);
+    camera.SetHeight(height);
+    camera.Params() = CameraModelInitializeParams(model_id, focal_length,
+                                                 width, height);
+    camera.SetPriorFocalLength(true);
+    return camera;
+}
+
+Camera Camera::CreateFromModelName(camera_t camera_id,
+                                   const std::string& model_name,
+                                   double focal_length,
+                                   size_t width,
+                                   size_t height) {
+    return CreateFromModelId(
+            camera_id, CameraModelNameToId(model_name), focal_length, width,
+            height);
+}
 }  // namespace colmap

@@ -1,5 +1,7 @@
 # qSAM3 — SAM 2 / 2.1 / 3 Image & Video Segmentation
 
+![Plugin icon](images/qSAM3.svg)
+
 Segment Anything 2 / 2.1 / 3 interactive segmentation for ACloudViewer —
 **native C++ GGML** (CPU / CUDA / Vulkan / Metal, no Python or PyTorch).
 
@@ -15,6 +17,14 @@ standard patch chain (`3rdparty/ggml/patches/sam3_merged/`,
 `igemm_fix/`).
 
 **User guide:** [docs/guides/plugins/qSAM3.md](../../../../docs/guides/plugins/qSAM3.md)
+
+![SAM3 text-prompted segmentation](images/qSam3_full.jpg)
+
+*SAM 3 Full tab — one text prompt (`"watermelon"`) finds 10 instances with per-instance colored masks, scores and a detection list.*
+
+![SAM3 visual-only box prompt](images/qSam3_visual.jpg)
+
+*SAM 3 Visual tab — no text needed: drag a box (PVS) and the visual-only model returns the instance masks it contains.*
 
 ## Build
 
@@ -83,6 +93,10 @@ catalog. Recommended default:
    panel; the detection list shows per-instance score / IoU / box
 
 ### Video tab (segmentation & tracking)
+
+![SAM3 video tracking](images/qSam3_full_video.jpg)
+
+*Video tab — track an instance through the clip; the timeline shows the processed range, the playhead and one colored band per tracked instance.*
 
 Qt re-implementation of the upstream `examples/main_video.cpp`:
 

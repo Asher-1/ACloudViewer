@@ -260,4 +260,60 @@ bool CorrespondenceGraph::IsTwoViewObservation(
   return other_corrs.size() == 1;
 }
 
+
+std::vector<image_pair_t> CorrespondenceGraph::ImagePairs() const {
+  std::vector<image_pair_t> image_pairs;
+  image_pairs.reserve(image_pairs_.size());
+  for (const auto& [pair_id, _] : image_pairs_) {
+    image_pairs.push_back(pair_id);
+  }
+  return image_pairs;
+}
+
+void CorrespondenceGraph::SetTwoViewGeometry(
+    const image_t image_id1, const image_t image_id2,
+    TwoViewGeometry two_view_geometry) {
+  const image_pair_t pair_id = Database::ImagePairToPairId(image_id1, image_id2);
+  auto [image_pair_it, inserted] = image_pairs_.try_emplace(pair_id);
+  if (inserted) {
+    const point2D_t num_matches =
+        static_cast<point2D_t>(two_view_geometry.inlier_matches.size());
+    image_pair_it->second.num_correspondences = num_matches;
+  }
+  if (Database::SwapImagePair(image_id1, image_id2)) {
+    two_view_geometry.Invert();
+  }
+  image_pair_it->second.two_view_geometry = std::move(two_view_geometry);
+}
+
+TwoViewGeometry CorrespondenceGraph::ExtractTwoViewGeometry(
+    const image_t image_id1, const image_t image_id2,
+    const bool extract_inlier_matches) const {
+  const image_pair_t pair_id = Database::ImagePairToPairId(image_id1, image_id2);
+  const auto image_pair_it = image_pairs_.find(pair_id);
+  THROW_CHECK(image_pair_it != image_pairs_.end());
+  TwoViewGeometry two_view_geometry = image_pair_it->second.two_view_geometry;
+  if (Database::SwapImagePair(image_id1, image_id2)) {
+    two_view_geometry.Invert();
+  }
+  // Extract after inversion, as they are extracted in the correct order.
+  if (extract_inlier_matches) {
+    two_view_geometry.inlier_matches =
+        FindCorrespondencesBetweenImages(image_id1, image_id2);
+  }
+  return two_view_geometry;
+}
+
+void CorrespondenceGraph::UpdateTwoViewGeometry(
+    const image_t image_id1, const image_t image_id2,
+    TwoViewGeometry two_view_geometry) {
+  const image_pair_t pair_id = Database::ImagePairToPairId(image_id1, image_id2);
+  auto image_pair_it = image_pairs_.find(pair_id);
+  THROW_CHECK(image_pair_it != image_pairs_.end());
+  FeatureMatches().swap(two_view_geometry.inlier_matches);
+  if (Database::SwapImagePair(image_id1, image_id2)) {
+    two_view_geometry.Invert();
+  }
+  image_pair_it->second.two_view_geometry = std::move(two_view_geometry);
+}
 }  // namespace colmap

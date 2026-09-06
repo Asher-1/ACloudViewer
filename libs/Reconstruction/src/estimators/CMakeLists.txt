@@ -36,6 +36,7 @@ COLMAP_ADD_SOURCES(
     affine_transform.h affine_transform.cc
     coordinate_frame.h coordinate_frame.cc
     essential_matrix.h essential_matrix.cc
+    fundamental_matrix_degensac.h fundamental_matrix_degensac.cc
     euclidean_transform.h
     fundamental_matrix.h fundamental_matrix.cc
     generalized_absolute_pose.h generalized_absolute_pose.cc
@@ -48,12 +49,28 @@ COLMAP_ADD_SOURCES(
     triangulation.h triangulation.cc
     two_view_geometry.h two_view_geometry.cc
     utils.h utils.cc
+
+    cost_functions/tiny_manifold.h
+    cost_functions/tiny_sampson_error.h
+
+    solvers/essential_matrix.h solvers/essential_matrix.cc
+    solvers/essential_matrix_coeffs.h
+    solvers/essential_matrix_poly.h
+    solvers/fundamental_matrix.h solvers/fundamental_matrix.cc
+    solvers/homography_matrix.h solvers/homography_matrix.cc
+    solvers/poselib_utils.h solvers/poselib_utils.cc
+    solvers/relpose_shared_focal.h solvers/relpose_shared_focal.cc
+    solvers/translation_transform.h
 )
 
-if(RECONSTRUCTION_FETCH_POSELIB)
-    COLMAP_ADD_SOURCES(relpose_one_sided_focal.h relpose_one_sided_focal.cc)
-    COLMAP_ADD_TEST(relpose_one_sided_focal_test relpose_one_sided_focal_test.cc)
-endif()
+# PoseLib is a hard dependency of the modernized two-view estimator stack
+# (relpose_one_sided_focal / relpose_shared_focal / poselib_utils), matching
+# upstream. RECONSTRUCTION_FETCH_POSELIB only controls how the sources are
+# obtained, not whether these translation units compile.
+COLMAP_ADD_SOURCES(solvers/relpose_one_sided_focal.h
+                   solvers/relpose_one_sided_focal.cc)
+COLMAP_ADD_TEST(relpose_one_sided_focal_test
+                solvers/relpose_one_sided_focal_test.cc)
 
 COLMAP_ADD_TEST(absolute_pose_test absolute_pose_test.cc)
 COLMAP_ADD_TEST(affine_transform_test affine_transform_test.cc)
@@ -65,4 +82,6 @@ COLMAP_ADD_TEST(generalized_absolute_pose_test generalized_absolute_pose_test.cc
 COLMAP_ADD_TEST(generalized_relative_pose_test generalized_relative_pose_test.cc)
 COLMAP_ADD_TEST(homography_matrix_test homography_matrix_test.cc)
 COLMAP_ADD_TEST(translation_transform_test translation_transform_test.cc)
+# Minimal Boost.Test parity gate for the modernized two-view estimator; the
+# full upstream gtest suite follows the W9 synthetic-dataset port.
 COLMAP_ADD_TEST(two_view_geometry_test two_view_geometry_test.cc)

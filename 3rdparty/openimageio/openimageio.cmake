@@ -119,6 +119,11 @@ ExternalProject_Add(ext_openimageio
         # OIIO's LOCAL_BUILD_SHARED_LIBS_DEFAULT is ON for local dep builds,
         # which would leave a libz.dylib in deps/dist for the produced dylib
         # to dangle on. Every local dep must ship static.
+        # Pin ZLIB to the repo-built zlib 1.3.1 (ext_zlib): the OIIO local
+        # deps refind would otherwise pick up the system zlib (1.2.11 on
+        # Ubuntu 22.04), which fails the >=1.3.1 version check.
+        -DZLIB_LIBRARY=${CMAKE_BINARY_DIR}/zlib/lib/libz.so
+        -DZLIB_INCLUDE_DIR=${CMAKE_BINARY_DIR}/zlib/include
         -DZLIB_BUILD_SHARED_LIBS=OFF
         -DCMAKE_IGNORE_PATH=/Library/Frameworks/Mono.framework
         -DCMAKE_FIND_FRAMEWORK=NEVER

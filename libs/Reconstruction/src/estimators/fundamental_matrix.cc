@@ -143,11 +143,6 @@ FundamentalMatrixSevenPointEstimator::Estimate(
   return models;
 }
 
-void FundamentalMatrixSevenPointEstimator::Residuals(
-    const std::vector<X_t>& points1, const std::vector<Y_t>& points2,
-    const M_t& F, std::vector<double>* residuals) {
-  ComputeSquaredSampsonError(points1, points2, F, residuals);
-}
 
 std::vector<FundamentalMatrixEightPointEstimator::M_t>
 FundamentalMatrixEightPointEstimator::Estimate(
@@ -193,11 +188,6 @@ FundamentalMatrixEightPointEstimator::Estimate(
   return models;
 }
 
-void FundamentalMatrixEightPointEstimator::Residuals(
-    const std::vector<X_t>& points1, const std::vector<Y_t>& points2,
-    const M_t& E, std::vector<double>* residuals) {
-  ComputeSquaredSampsonError(points1, points2, E, residuals);
-}
 
 namespace {
 
@@ -319,10 +309,5 @@ FundamentalMatrixSampsonEstimator::Estimate(
   return models;
 }
 
-void FundamentalMatrixSampsonEstimator::Residuals(
-    const std::vector<X_t>& points1, const std::vector<Y_t>& points2,
-    const M_t& F, std::vector<double>* residuals) {
-  ComputeSquaredSampsonError(points1, points2, F, residuals);
-}
 
 }  // namespace colmap

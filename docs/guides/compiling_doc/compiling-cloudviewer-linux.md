@@ -7,6 +7,16 @@
 > ./docker/build-release-conda.sh  # conda-based build
 > ```
 >
+> **One-click local builder (Ubuntu, pyenv path):** the script below automates
+> the whole Option A flow for a **fresh machine** — apt packages (skips what is
+> already installed), pyenv + Python 3.12, Vulkan SDK, VTK/PCL (prebuilt
+> tarball via `docker/build_vtk_pcl_deps.sh consume`, source-build fallback),
+> configure, build and the `.run` installer:
+>
+> ```bash
+> bash docs/guides/compiling_doc/setup_and_build_acloudviewer_linux.sh --jobs 24
+> ```
+>
 > **AI plugins (qDA3 / qDeepLSD / qFaceDetect / qFreeSplatter / qLightGlue):** see [docs/guides/plugins/](../../guides/plugins/README.md) for usage; enable with `-DAICore_ENABLED=ON -DAICore_USE_VULKAN=ON` (Linux default) plus `-DPLUGIN_STANDARD_QDA3=ON -DPLUGIN_STANDARD_QDEEPLSD=ON -DPLUGIN_STANDARD_QFACEDETECT=ON -DPLUGIN_STANDARD_QFREESPLATTER=ON -DPLUGIN_STANDARD_QLIGHTGLUE=ON`.
 
 ---
@@ -78,6 +88,18 @@ This script installs all required system packages (`xorg-dev`, `libglu1-mesa-dev
 Ubuntu release, and runs `util/vulkan/install_vulkan_env.sh` to install the **Vulkan build
 environment** (LunarG SDK headers, `glslc`, SPIR-V headers) used by AICore/qDA3.
 
+> **Note:** `install_deps_ubuntu.sh` does **not** install the Qt5 development
+> packages, but the APP build needs them. Install the same list the CI image
+> uses (idempotent — already-installed packages are skipped):
+>
+> ```bash
+> sudo apt-get install -y qtbase5-dev libqt5svg5-dev libqt5opengl5-dev \
+>     qttools5-dev qttools5-dev-tools libqt5websockets5-dev \
+>     libqt5xmlpatterns5-dev libqt5x11extras5-dev qtdeclarative5-dev \
+>     qtdeclarative5-dev-tools libqt5quickcontrols2-5 libqt5networkauth5-dev \
+>     qt5-image-formats-plugins qttranslations5-l10n libxxf86vm-dev libudev-dev
+> ```
+
 Reload the generated env in new shells before `cmake`:
 
 ```bash
@@ -97,46 +119,61 @@ export PYENV_ROOT=~/.pyenv
 export PYTHON_VERSION=3.12
 export PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
 
-curl https://pyenv.run | bash \
-    && pyenv update \
-    && pyenv install $PYTHON_VERSION \
+# Install pyenv itself only when missing; `-s` skips versions that already
+# exist (note: a partial version like 3.12 resolves to the *latest* 3.12.x,
+# so an already-built 3.12.12 is reused through the symlink below).
+command -v pyenv >/dev/null 2>&1 || curl https://pyenv.run | bash
+pyenv update \
+    && pyenv install -s $PYTHON_VERSION \
     && pyenv global $PYTHON_VERSION \
-    && pyenv rehash \
-    && ln -s "$PYENV_ROOT/versions/${PYTHON_VERSION}"* "$PYENV_ROOT/versions/${PYTHON_VERSION}"
+    && pyenv rehash
+# Pin "3.12" to the newest installed 3.12.x build (-sfn keeps this re-runnable).
+_real=$(ls -d "$PYENV_ROOT"/versions/${PYTHON_VERSION}.* 2>/dev/null | sort -V | tail -1 | xargs basename)
+if [[ -n "${_real}" && "${_real}" != "${PYTHON_VERSION}" ]]; then
+    ln -sfn "$PYENV_ROOT/versions/${_real}" "$PYENV_ROOT/versions/${PYTHON_VERSION}"
+fi
 
 python --version && pip --version
 ```
+
+> **VTK / PCL:** the APP build with `USE_VTK_BACKEND=ON` and
+> `BUILD_RECONSTRUCTION=ON` needs system VTK and PCL. On Ubuntu the apt
+> versions are older than what CI uses; deploy the CI-pinned versions
+> (VTK 9.3.1 + PCL 1.14.1, installed under `/usr/local`) with
+> `docker/build_vtk_pcl_deps.sh consume` — it downloads a prebuilt tarball
+> when available and falls back to a source build. The one-click script above
+> handles this step (and skips it when VTK/PCL are already installed).
 
 ### A3. Build the APP (GUI + CLI)
 
 > **Note:** Qt 6 is only supported on Ubuntu 24.04+. On 20.04/22.04 set `-DUSE_QT6=OFF`.
 
 ```bash
-# Resolve Python paths for CMake
-PYTHON_EXE=$(pyenv which python)
-PYTHON_ROOT=$(python -c "import sysconfig, os; print(os.path.dirname(os.path.dirname(sysconfig.get_path('include'))))")
-PYTHON_INCLUDE=$(python -c "import sysconfig; print(sysconfig.get_path('include'))")
-PYTHON_LIB_DIR=$(python -c "import sysconfig, os; libdir = sysconfig.get_config_var('LIBDIR'); print(os.path.realpath(libdir) if os.path.islink(libdir) else libdir)")
-PYTHON_LIB_NAME=$(python -c "import sysconfig; print(sysconfig.get_config_var('LDLIBRARY'))")
-PYTHON_LIB="${PYTHON_LIB_DIR}/${PYTHON_LIB_NAME}"
+# All Option A commands below assume the repository root as the working
+# directory (not the parent!):
+cd ACloudViewer   # skip if you are already at the repository root
+CLOUDVIEWER_SOURCE_ROOT=$(pwd)
 
-CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/ >/dev/null 2>&1 && pwd)"
-
-# (Optional) Install Python plugin requirements
+# Mandatory when PLUGIN_PYTHON=ON (the configure step hard-fails without
+# these modules): install the release deps into the pyenv Python.
 python -m pip install -r \
     "${CLOUDVIEWER_SOURCE_ROOT}/plugins/core/Standard/qPythonRuntime/requirements-release.txt"
 
-# Set your Qt installation path — common locations:
-#   Ubuntu apt:          /usr/lib/x86_64-linux-gnu/qt5
-#   Qt online installer: /opt/qt515/lib/cmake  or  /opt/Qt/5.15.2/gcc_64
-#   Custom build:        /path/to/your/qt5
-QT_DIR="/usr/lib/x86_64-linux-gnu/qt5"
+# Set your Qt installation path — cmake needs a prefix that actually contains
+# the Qt5 cmake configs:
+#   Ubuntu apt (qtbase5-dev): /usr            (configs at
+#       /usr/lib/<arch>/cmake/Qt5 — NOT /usr/lib/x86_64-linux-gnu/qt5, which
+#       only holds plugins/qml)
+#   Qt online installer:      /opt/Qt/5.15.2/gcc_64  (or /opt/Qt5.14.2/5.14.2/gcc_64)
+QT_DIR="/opt/Qt5.14.2/5.14.2/gcc_64"
 
-cd ACloudViewer
 mkdir -p build_app && cd build_app
 
 # AICore (qDA3 / qFreeSplatter / qLightGlue): Vulkan is ON by default on Linux.
 source "${HOME}/.local/share/acloudviewer/acloudviewer-vulkan-env.sh"
+# nvcc must be reachable through PATH: BUILD_CUDA_MODULE=ON enables the CUDA
+# language in the parent project and the ggml CUDA backend reuses it.
+export PATH="/usr/local/cuda/bin:${PATH}"
 
 cmake \
     -DDEVELOPER_BUILD=OFF \
@@ -158,7 +195,8 @@ cmake \
     -DBUILD_WEBRTC=OFF \
     -DBUILD_OPENCV=ON \
     -DBUILD_RECONSTRUCTION=ON \
-    -DBUILD_CUDA_MODULE=OFF \
+    -DBUILD_CUDA_MODULE=ON \
+    -DBUILD_COMMON_CUDA_ARCHS=ON \
     -DBUILD_JUPYTER_EXTENSION=OFF \
     -DBUILD_LIBREALSENSE=OFF \
     -DBUILD_AZURE_KINECT=OFF \
@@ -229,21 +267,32 @@ cmake \
     -DBUILD_PYTHON_MODULE=ON \
     ..
 
-make -j"$(nproc)"
+make -j"$(nproc)"          # or -j24 on large machines; reduce if the linker is OOM-killed
 make install -j"$(nproc)"
 ```
+
+> **Why `BUILD_CUDA_MODULE=ON`:** `AICore_USE_CUDA=ON` requires the parent
+> project to have the CUDA language enabled — the ggml ExternalProject
+> inherits `CMAKE_CUDA_COMPILER` from it. With `BUILD_CUDA_MODULE=OFF` the
+> parent never finds nvcc and `ext_ggml` configure fails with
+> `No CMAKE_CUDA_COMPILER could be found` (an empty
+> `-DCMAKE_CUDA_COMPILER=` disables the automatic search). Keep both ON
+> together, or drop `AICore_USE_CUDA` and rely on Vulkan.
 
 ### A4. Build the Python wheel
 
 ```bash
-cd ACloudViewer
+cd ACloudViewer   # from the repository root
 
-# set CLOUDVIEWER_ML_ROOT path
+# CloudViewer-ML provides the ML ops Python wrappers bundled into the wheel:
+[[ -d ~/develop/code/github/CloudViewer-ML ]] || \
+    git clone --depth 1 https://github.com/Asher-1/CloudViewer-ML.git \
+        ~/develop/code/github/CloudViewer-ML -b main
 export CLOUDVIEWER_ML_ROOT=~/develop/code/github/CloudViewer-ML
 # export CLOUDVIEWER_ML_ROOT=~/develop/code/github/CloudViewer/CloudViewer-ML
 
-# Source CI utilities
-CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/ >/dev/null 2>&1 && pwd)"
+# Source CI utilities (run from the repository root)
+CLOUDVIEWER_SOURCE_ROOT=$(pwd)
 source "${CLOUDVIEWER_SOURCE_ROOT}/util/ci_utils.sh"
 
 export BUILD_PYTORCH_OPS=ON
@@ -732,5 +781,8 @@ Set `-DGLIBCXX_USE_CXX11_ABI=OFF` (or `ON`) to match the frameworks you depend o
 | Segfault on `import cloudViewer` | ABI mismatch — see [CXX ABI compatibility](#cxx-abi-compatibility) |
 | CUDA not detected | Install CUDA toolkit and verify `nvcc -V` works |
 | `AICore_USE_VULKAN=ON but Vulkan dependencies are missing` (ggml may print `GGML_USE_VULKAN` internally) | Run `util/vulkan/install_vulkan_env.sh`, then `source ~/.local/share/acloudviewer/acloudviewer-vulkan-env.sh` before `cmake` |
+| `ext_ggml` configure fails with `No CMAKE_CUDA_COMPILER could be found` | You combined `AICore_USE_CUDA=ON` with `BUILD_CUDA_MODULE=OFF`. Enable both together (see [A3](#a3-build-the-app-gui--cli)) or drop `AICore_USE_CUDA` and rely on Vulkan |
+| `BundleGgmlCudaRuntime failed: no CUDA runtime libraries were bundled` | The CUDA toolkit lib dir is not registered in `ldconfig`, so `ldd` reports `libcublas.so.12 => not found` and the bundler finds nothing. Fixed in `scripts/platforms/linux/bundle_cuda_runtime.sh` (unresolved sonames are now searched in `EXTRA_LIB_DIRS`); alternatively `export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH` before `make install` |
+| `'begin' was not declared in this scope` in `Reconstruction/src/base/frame.cc` (or Eigen brace-init errors) | An old system-wide Eigen (< 3.4) shadows the bundled 3.4 headers used by the prebuilt VTK/PCL. Align it: `sudo rsync -a --delete build_app/external/include/eigen3/ /usr/local/include/eigen3/` (after the first configure), then rebuild |
 | `libggml-vulkan.so` missing in wheel | Reconfigure with `-DAICore_USE_VULKAN=ON` and rebuild; do not use `without_vulkan` in `ci_utils.sh` |
 | `clang: not found` on Ubuntu 20.04 | Run `install_deps_ubuntu.sh` — it installs version-specific clang |

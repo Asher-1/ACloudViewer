@@ -1,5 +1,10 @@
 # qRFDetr — RF-DETR Object Detection & Segmentation Plugin
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qRFDetr/images/qRFDetr.jpg" width="49%" alt="qRFDetr image tab">
+  <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qRFDetr/images/qRFDetr_video.jpg" width="49%" alt="qRFDetr live tab">
+</p>
+
 Run **RF-DETR GGUF models** in ACloudViewer (C++ / [ggml](https://github.com/ggml-org/ggml)) for real-time object detection (COCO 91-class layout, 80 real classes) and optional instance segmentation, with a per-class allowlist filter.
 
 ## Architecture

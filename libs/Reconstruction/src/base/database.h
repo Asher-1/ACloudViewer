@@ -15,9 +15,10 @@
 #include "SQLite/sqlite3.h"
 #include "base/camera.h"
 #include "base/frame.h"
+#include "geometry/pose_prior.h"
 #include "base/image.h"
 #include "base/rig.h"
-#include "estimators/two_view_geometry.h"
+#include "base/two_view_geometry.h"
 #include "feature/types.h"
 #include "util/types.h"
 
@@ -30,6 +31,18 @@ namespace colmap {
 // and trailing `EndTransaction`.
 class Database {
 public:
+    // ---- Upstream-parity pose-prior persistence (COLMAP 4.x) ----
+    bool ExistsPosePrior(pose_prior_t pose_prior_id) const;
+    size_t NumPosePriors() const;
+    PosePrior ReadPosePrior(pose_prior_t pose_prior_id) const;
+    std::vector<PosePrior> ReadAllPosePriors() const;
+    pose_prior_t WritePosePrior(const PosePrior& pose_prior,
+                                bool use_pose_prior_id = false);
+    void UpdatePosePrior(const PosePrior& pose_prior);
+    void ClearPosePriors();
+
+    
+
     const static int kSchemaVersion = 1;
 
     // The maximum number of images, that can be stored in the database.
@@ -112,6 +125,14 @@ public:
     inline static void PairIdToImagePair(const image_pair_t pair_id,
                                          image_t* image_id1,
                                          image_t* image_id2);
+
+    // Upstream-parity overload returning the image pair by value.
+    inline static std::pair<image_t, image_t> PairIdToImagePair(
+            const image_pair_t pair_id) {
+        std::pair<image_t, image_t> image_ids;
+        PairIdToImagePair(pair_id, &image_ids.first, &image_ids.second);
+        return image_ids;
+    }
 
     // Return true if image pairs should be swapped. Used to enforce a specific
     // image order to generate unique image pair identifiers independent of the
@@ -262,6 +283,15 @@ private:
     void CreateMatchesTable() const;
     void CreateTwoViewGeometriesTable() const;
 
+// Legacy-schema preparation before CreateTables() (upstream parity).
+    void PreMigrateTables() const;
+
+    // Version-gated migrations and the user_version stamp (upstream parity).
+    void PostMigrateTables() const;
+
+    // Reads the raw PRAGMA user_version value.
+    int ReadUserVersion() const;
+
     void UpdateSchema() const;
 
     bool ExistsTable(const std::string& table_name) const;
@@ -344,6 +374,12 @@ private:
     sqlite3_stmt* sql_stmt_delete_two_view_geometry_ = nullptr;
 
     // clear_*
+    sqlite3_stmt* sql_stmt_write_pose_prior_ = nullptr;
+    sqlite3_stmt* sql_stmt_read_pose_prior_ = nullptr;
+    sqlite3_stmt* sql_stmt_read_pose_priors_ = nullptr;
+    sqlite3_stmt* sql_stmt_update_pose_prior_ = nullptr;
+    sqlite3_stmt* sql_stmt_exists_pose_prior_ = nullptr;
+    sqlite3_stmt* sql_stmt_clear_pose_priors_ = nullptr;
     sqlite3_stmt* sql_stmt_clear_cameras_ = nullptr;
     sqlite3_stmt* sql_stmt_clear_images_ = nullptr;
     sqlite3_stmt* sql_stmt_clear_descriptors_ = nullptr;

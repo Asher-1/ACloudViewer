@@ -28,9 +28,20 @@ struct TrellisStagePreview {
     int total = 0;
     QString label;  // human-readable stage + step tag
     QImage image;
+    /** Raw AICore payload for voxel stages (T2VOX01), retained so the chip
+     *  click can open the 3D voxel viewer; empty for mesh stages. */
+    QByteArray rawBlob;
 };
 
 Q_DECLARE_METATYPE(TrellisStagePreview)
+
+/** What one worker run should do:
+ *  Full — inference + GLB bake (the classic one-click flow);
+ *  GeometryOnly — inference only, no bake (the result lands untextured and
+ *    the GLB can be baked later from the Export page or Generate + GLB);
+ *  BakeOnly — no inference: bake the retained result (see bakeInput) into a
+ *    GLB and emit bakeGlbReady (the Export page's re-bake path). */
+enum class TrellisRunMode { Full, GeometryOnly, BakeOnly };
 
 /** Result envelope of one TRELLIS.2 image-to-3D generation. Buffers are
  *  copied out of the AICore mesh handle before it is freed. */
@@ -64,6 +75,12 @@ struct TrellisRunResult {
      *  base colours when textured) for the pipeline-step strip; rendered on
      *  the worker thread. */
     QImage previewImage;
+    /** Geometry-only render (256 px, amber shading, no PBR) for the Mesh
+     *  chip: the textured render belongs to the Texture/GLB chips, and
+     *  filling Mesh with the same image read as a broken stage. Rendered
+     *  only for textured runs (an untextured previewImage already is the
+     *  geometry render). */
+    QImage geometryPreview;
     double totalRuntimeMs = 0.0;
     /** Per-stage wall times (key: aicore_trellis_stage, value: ms). */
     QHash<int, double> stageMs;
@@ -102,6 +119,13 @@ public:
         /** Live per-step previews (T2VOX01 voxel sets + mesh keyframes) via
          *  aicore_trellis_generate_ex. */
         bool livePreview = true;
+        /** Full / GeometryOnly / BakeOnly — see TrellisRunMode. */
+        TrellisRunMode runMode = TrellisRunMode::Full;
+        /** BakeOnly: the retained result to bake (mesh arrays only; the
+         *  inference context is NOT needed by the bake). */
+        TrellisRunResult bakeInput;
+        int bakeTextureSize = 2048;
+        int bakeComponentFilter = 0;
     };
 
     explicit TrellisWorker(const Settings& settings, QObject* parent = nullptr);
@@ -111,11 +135,24 @@ public:
      *  Exposed for the unit tests. */
     static QImage renderPreviewBlob(const char* data, int len, int size = 256);
 
+    /** Cooperative bake cancel: checked at AICore bake stage boundaries
+     *  (takes effect at the next boundary, not mid-library-call). */
+    void cancelBake() { m_bakeCancel = 1; }
+
 signals:
     void logMessage(const QString& msg);
     void progressUpdate(int stage, int step, int total);
+    /** BakeOnly: fired at AICore bake stage boundaries (BakeStage
+     *  checkpoint / done) with the human-readable stage description and the
+     *  seconds elapsed since that stage started. The bake has no global step
+     *  count, so consumers show a busy bar + stage text instead of a
+     *  percentage. */
+    void bakeProgress(const QString& stage, double elapsedS);
     void stagePreview(const TrellisStagePreview& preview);
     void resultReady(const TrellisRunResult& result);
+    /** BakeOnly: the finished GLB bytes; routed by the plugin to the export
+     *  destination. */
+    void bakeGlbReady(const QByteArray& glb);
     void taskFinished(bool success);
 
 protected:
@@ -132,9 +169,20 @@ private:
      *  per-stage wall times (the C callback is capture-less, so the state
      *  lives on the worker). */
     void onProgress(int stage, int step, int total);
+    /** Post-run console digest: end-to-end wall time, per-stage wall times
+     *  with one-line explanations, and mesh/quality stats. */
+    void emitRunSummary(const TrellisRunResult& result, double glbBakeMs);
+    static void bakeProgressTrampoline(const char* stage,
+                                       double elapsed_s,
+                                       void* user);
+    void onBakeProgress(const QString& stage, double elapsedS);
+    bool runBakeOnly();
     QElapsedTimer m_stageTimer;
     int m_lastStage = -1;
     QHash<int, double> m_stageMs;
+    /** Bake cooperative-cancel flag; written from the GUI thread, polled at
+     *  AICore bake stage boundaries (relaxed int flag). */
+    volatile int m_bakeCancel = 0;
 #endif
 
     Settings m_settings;

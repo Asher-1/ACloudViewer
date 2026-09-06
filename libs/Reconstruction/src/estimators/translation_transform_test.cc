@@ -40,7 +40,7 @@
 
 using namespace colmap;
 
-BOOST_AUTO_TEST_CASE(TestEstimate) {
+TEST(estimators_translation_transform, TestEstimate) {
   SetPRNGSeed(0);
 
   std::vector<Eigen::Vector2d> src;
@@ -59,14 +59,14 @@ BOOST_AUTO_TEST_CASE(TestEstimate) {
   const auto estimated_translation =
       TranslationTransformEstimator<2>::Estimate(src, dst)[0];
 
-  BOOST_CHECK_CLOSE(translation(0), estimated_translation(0), 1e-6);
-  BOOST_CHECK_CLOSE(translation(1), estimated_translation(1), 1e-6);
+  EXPECT_NEAR(translation(0), estimated_translation(0), std::abs(estimated_translation(0)) * (1e-6) / 100.0);
+  EXPECT_NEAR(translation(1), estimated_translation(1), std::abs(estimated_translation(1)) * (1e-6) / 100.0);
 
   std::vector<double> residuals;
   TranslationTransformEstimator<2>::Residuals(src, dst, estimated_translation,
                                               &residuals);
 
   for (size_t i = 0; i < residuals.size(); ++i) {
-    BOOST_CHECK(residuals[i] < 1e-6);
+    EXPECT_TRUE(residuals[i] < 1e-6);
   }
 }

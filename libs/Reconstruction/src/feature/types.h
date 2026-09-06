@@ -14,6 +14,17 @@
 
 namespace colmap {
 
+// Feature extractor types persisted in the database `descriptors.type`
+// column. Values must stay in sync with upstream COLMAP (SIFT = 0).
+enum class FeatureExtractorType {
+    UNDEFINED = -1,
+    SIFT = 0,
+    ALIKED_N16ROT = 1,
+    ALIKED_N32 = 2,
+    LOMA_B = 3,
+    LOMA_B128 = 4,
+};
+
 struct FeatureKeypoint {
     FeatureKeypoint();
     FeatureKeypoint(const float x, const float y);

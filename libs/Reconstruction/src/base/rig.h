@@ -11,6 +11,8 @@
 #include <iosfwd>
 #include <map>
 #include <optional>
+
+#include "geometry/rigid3.h"
 #include <vector>
 
 #include "base/pose.h"
@@ -34,8 +36,22 @@ public:
     size_t NumSensors() const;
     bool IsRefSensor(const sensor_t& sensor_id) const;
     const sensor_t& RefSensorId() const;
+    // Upstream-parity (COLMAP 4.x sensor/rig.h): non-reference sensors with
+    // their (optional) sensor-from-rig transformations.
+    std::map<sensor_t, std::optional<Rigid3d>>& NonRefSensors();
+    const std::map<sensor_t, std::optional<Rigid3d>>& NonRefSensors() const;
     std::vector<sensor_t> SensorIds() const;
     bool HasSensorFromRig(const sensor_t& sensor_id) const;
+
+    // Upstream-parity rig accessor (COLMAP 4.x): SensorFromRig returns the
+    // identity for the reference sensor.
+    Rigid3d SensorFromRig(const sensor_t& sensor_id) const {
+        if (!HasSensorFromRig(sensor_id)) {
+            return Rigid3d();
+        }
+        return Rigid3d(Eigen::Quaterniond(SensorFromRigQvec(sensor_id)),
+                       SensorFromRigTvec(sensor_id));
+    }
     const Eigen::Vector4d& SensorFromRigQvec(const sensor_t& sensor_id) const;
     const Eigen::Vector3d& SensorFromRigTvec(const sensor_t& sensor_id) const;
 

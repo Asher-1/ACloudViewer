@@ -76,7 +76,7 @@ ACloudViewer: A Modern Library for 3D Point Cloud Processing
 AICore AI Plugins
 -----------------
 
-Five GUI plugins share one native inference library — **libAICore.so** (`ggml <https://github.com/ggml-org/ggml>`_).
+Ten GUI plugins share one native inference library — **libAICore.so** (`ggml <https://github.com/ggml-org/ggml>`_).
 Run quantized **GGUF** models on **CUDA / Vulkan / Metal / CPU** with **no Python or PyTorch** at runtime.
 Results land directly in the DB tree and plug into reconstruction, COLMAP, and SIBR workflows.
 
@@ -115,6 +115,41 @@ Results land directly in the DB tree and plug into reconstruction, COLMAP, and S
      - ``PLUGIN_STANDARD_QLIGHTGLUE``
      - ``PLUGIN_STANDARD_QFREESPLATTER``
 
+.. list-table::
+   :header-rows: 1
+   :widths: 10 18 18 18 18 18
+
+   * -
+     - **qYOLO**
+     - **qSAM3**
+     - **qTrellis**
+     - **qRFDetr**
+     - **qRMBG**
+   * - Task
+     - Detect / seg / depth / pose / OBB / classify + open-vocab
+     - Promptable segmentation + video tracking
+     - Single image → 3D mesh with PBR
+     - RF-DETR detection & instance masks
+     - Background removal
+   * - Model
+     - YOLOv8 / YOLO26 GGUF (63 models)
+     - SAM2 / 2.1 / 3 GGUF (39 models)
+     - TRELLIS.2 GGUF (DINOv3 + flow DiTs)
+     - RF-DETR GGUF (44 models)
+     - RMBG-2.0 (BiRefNet-Swin-L) GGUF
+   * - Standout
+     - 9 task families incl. World / YOLOE prompts
+     - Text / box / point prompts, video tracking
+     - PBR-textured GLB in one click
+     - 13 ms GPU latency + class allowlist
+     - Transparent RGBA + raw alpha matte
+   * - CMake
+     - ``PLUGIN_STANDARD_QYOLO``
+     - ``PLUGIN_STANDARD_QSAM3``
+     - ``PLUGIN_STANDARD_QTRELLIS``
+     - ``PLUGIN_STANDARD_QRFDETR``
+     - ``PLUGIN_STANDARD_QRMBG``
+
 .. raw:: html
 
    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:20px; margin:28px 0;">
@@ -139,6 +174,30 @@ Results land directly in the DB tree and plug into reconstruction, COLMAP, and S
          <img src="_static/plugin-assets/qFaceDetect/qFaceDetect_video.png" alt="qFaceDetect live recognition" style="width:100%; border-radius:8px; border:1px solid rgba(0,0,0,.08);">
        </div>
        <figcaption style="margin-top:10px; font-size:.9em; color:#475569;"><strong>qFaceDetect</strong> — identity registry, verification, and live multi-face recognition in one plugin</figcaption>
+     </figure>
+     <figure style="margin:0; text-align:center;">
+       <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qDeepLSD/images/qDeepLSD.png" alt="DeepLSD line extraction" style="width:100%; border-radius:8px; border:1px solid rgba(0,0,0,.08);">
+       <figcaption style="margin-top:10px; font-size:.9em; color:#475569;"><strong>qDeepLSD</strong> — AFM + LSD line-segment extraction on photos</figcaption>
+     </figure>
+     <figure style="margin:0; text-align:center;">
+       <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qYOLO/images/yolo-seg.jpg" alt="YOLO instance segmentation" style="width:100%; border-radius:8px; border:1px solid rgba(0,0,0,.08);">
+       <figcaption style="margin-top:10px; font-size:.9em; color:#475569;"><strong>qYOLO</strong> — detection, segmentation, metric depth, pose, OBB, classification and open-vocab prompts</figcaption>
+     </figure>
+     <figure style="margin:0; text-align:center;">
+       <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qRFDetr/images/qRFDetr.jpg" alt="RF-DETR detection" style="width:100%; border-radius:8px; border:1px solid rgba(0,0,0,.08);">
+       <figcaption style="margin-top:10px; font-size:.9em; color:#475569;"><strong>qRFDetr</strong> — real-time RF-DETR detection &amp; instance masks with per-class allowlist</figcaption>
+     </figure>
+     <figure style="margin:0; text-align:center;">
+       <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qRMBG/images/qRMBG.jpg" alt="RMBG background removal" style="width:100%; border-radius:8px; border:1px solid rgba(0,0,0,.08);">
+       <figcaption style="margin-top:10px; font-size:.9em; color:#475569;"><strong>qRMBG</strong> — one-click transparent background removal (image &amp; live video)</figcaption>
+     </figure>
+     <figure style="margin:0; text-align:center;">
+       <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qSAM3/images/qSam3_full.jpg" alt="SAM3 segmentation" style="width:100%; border-radius:8px; border:1px solid rgba(0,0,0,.08);">
+       <figcaption style="margin-top:10px; font-size:.9em; color:#475569;"><strong>qSAM3</strong> — point / box / text prompts and video object tracking (SAM 2 / 2.1 / 3)</figcaption>
+     </figure>
+     <figure style="margin:0; text-align:center;">
+       <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qTrellis/images/qTrellis_f16_1024_pbr.png" alt="TRELLIS.2 PBR mesh" style="width:100%; border-radius:8px; border:1px solid rgba(0,0,0,.08);">
+       <figcaption style="margin-top:10px; font-size:.9em; color:#475569;"><strong>qTrellis</strong> — single image → PBR-textured 3D mesh &amp; GLB (TRELLIS.2)</figcaption>
      </figure>
    </div>
 
@@ -178,7 +237,10 @@ See :doc:`guides/plugins/README` for an overview,
 :doc:`guides/plugins/qLightGlue`,
 :doc:`guides/plugins/qFreeSplatter`,
 :doc:`guides/plugins/qSAM3`,
-and :doc:`guides/plugins/qTrellis` for usage and build instructions.
+:doc:`guides/plugins/qTrellis`,
+:doc:`guides/plugins/qYOLO`,
+:doc:`guides/plugins/qRFDetr`,
+and :doc:`guides/plugins/qRMBG` for usage and build instructions.
 Full build options: :doc:`getting_started/build_from_source`.
 
 .. toctree::
@@ -193,6 +255,9 @@ Full build options: :doc:`getting_started/build_from_source`.
    guides/plugins/qFreeSplatter
    guides/plugins/qSAM3
    guides/plugins/qTrellis
+   guides/plugins/qYOLO
+   guides/plugins/qRFDetr
+   guides/plugins/qRMBG
 
 .. toctree::
    :maxdepth: 1

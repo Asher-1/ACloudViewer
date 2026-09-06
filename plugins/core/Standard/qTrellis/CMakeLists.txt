@@ -27,6 +27,9 @@ if( PLUGIN_STANDARD_QTRELLIS )
 
     # Qt::Sql is guaranteed by root find_package (CMakeExternalLibs.cmake)
     target_link_libraries(${PROJECT_NAME} Qt::Sql)
+    # Qt::OpenGL (also in the root QT_COMPONENTS): QOpenGLWidget for the
+    # pipeline-step 3D viewer.
+    target_link_libraries(${PROJECT_NAME} Qt::OpenGL)
 
     if(MSVC)
         target_compile_definitions(${PROJECT_NAME} PRIVATE _USE_MATH_DEFINES)

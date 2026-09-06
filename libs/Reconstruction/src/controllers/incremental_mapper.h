@@ -74,13 +74,12 @@ public:
     // The maximum number of local bundle adjustment iterations.
     int ba_local_max_num_iterations = 25;
 
-#ifdef PBA_ENABLED
-    // Whether to use PBA in global bundle adjustment.
-    bool ba_global_use_pba = false;
+    // The bundle adjustment backend for local/global BA. CASPAR is only
+    // available in builds with RECONSTRUCTION_CASPAR_ENABLED; unsupported
+    // requests fall back to Ceres with a warning.
+    BundleAdjustmentBackend ba_local_backend = BundleAdjustmentBackend::CERES;
+    BundleAdjustmentBackend ba_global_backend = BundleAdjustmentBackend::CERES;
 
-    // The GPU index for PBA bundle adjustment.
-    int ba_global_pba_gpu_index = -1;
-#endif
     // The growth rates after which to perform global bundle adjustment.
     double ba_global_images_ratio = 1.1;
     double ba_global_points_ratio = 1.1;
@@ -123,9 +122,6 @@ public:
     IncrementalTriangulator::Options Triangulation() const;
     BundleAdjustmentOptions LocalBundleAdjustment() const;
     BundleAdjustmentOptions GlobalBundleAdjustment() const;
-#ifdef PBA_ENABLED
-    ParallelBundleAdjuster::Options ParallelGlobalBundleAdjustment() const;
-#endif
 
     bool Check() const;
 };

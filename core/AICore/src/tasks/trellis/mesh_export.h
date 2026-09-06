@@ -44,6 +44,11 @@ enum class ComponentFilter {
 //             dual-grid geometry, seconds-fast)
 enum class UnwrapMode { Auto = 0, XAtlas = 1, Simple = 2 };
 
+/** Bake progress sink: fired at each bake stage boundary with the stage
+ *  description and the seconds elapsed since that stage started. */
+typedef void (*t2glb_bake_progress_fn)(const char* stage, double elapsed_s,
+                                       void* user);
+
 struct MeshExportOptions {
     int texture_size = 2048;  // atlas width/height (T2GLB_TEXTURE_SIZE env)
     int padding = 2;          // xatlas chart padding (texels)
@@ -57,6 +62,12 @@ struct MeshExportOptions {
     int decimation_target = 500000;  // max triangles before atlas export
     ComponentFilter components = ComponentFilter::RemoveTiny;
     UnwrapMode unwrap = UnwrapMode::Auto;
+    /** Stage-boundary progress sink + cooperative cancel flag
+     *  (polled with relaxed semantics at the same boundaries;
+     *  both null by default = silent, uncancellable bake). */
+    t2glb_bake_progress_fn progress = nullptr;
+    void* progress_user = nullptr;
+    const volatile int* cancel = nullptr;
     // meshopt_simplify error limit; 2e-1 lets a 3.7M-tri mesh reach a 281K
     // target without stalling into the sloppy path (was T2GLB_DECIMATION_ERROR
     // upstream).

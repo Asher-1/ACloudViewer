@@ -1,5 +1,10 @@
 # qYOLO — YOLO Object Detection, Instance Segmentation & Metric Depth Plugin
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qYOLO/images/yolo-seg.jpg" width="49%" alt="YOLO instance segmentation">
+  <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qYOLO/images/yolo-depth.jpg" width="49%" alt="YOLO metric depth">
+</p>
+
 Run **Ultralytics YOLO GGUF models** (YOLOv8 + YOLO26) in ACloudViewer (C++ / [ggml](https://github.com/ggml-org/ggml)) for real-time COCO-80 object detection, instance segmentation and metric (absolute) depth estimation.
 
 ## Architecture

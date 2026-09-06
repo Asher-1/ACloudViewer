@@ -1,5 +1,10 @@
 # qSAM3 — SAM 2 / 2.1 / 3 Segmentation
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qSAM3/images/qSam3_full.jpg" width="49%" alt="qSAM3 dialog">
+  <img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qSAM3/images/qSam3_visual.jpg" width="49%" alt="qSAM3 visual prompting">
+</p>
+
 Interactive image segmentation with Segment Anything 2 / 2.1 / 3 models,
 running **natively in-process on ggml** (CPU / CUDA / Vulkan / Metal) — no
 Python, PyTorch or external services. The plugin is a Qt re-implementation of

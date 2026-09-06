@@ -132,6 +132,7 @@ void qTrellis::executeTask(const TrellisDialog::Settings& settings) {
     workerSettings.device = settings.device;
     workerSettings.shapeDecPlacement = settings.shapeDecPlacement;
     workerSettings.useRmbg = settings.useRmbg;
+    workerSettings.runMode = settings.runMode;
     workerSettings.textureEnabled = settings.textureEnabled;
     workerSettings.quantization = settings.quantization;
     workerSettings.livePreview = true;
@@ -163,7 +164,11 @@ void qTrellis::executeTask(const TrellisDialog::Settings& settings) {
 
 void qTrellis::cancelTask() {
     if (m_worker && m_worker->isRunning()) {
+        m_worker->cancelBake();
         m_worker->requestInterruption();
+    }
+    if (m_bakeWorker && m_bakeWorker->isRunning()) {
+        m_bakeWorker->cancelBake();
     }
 }
 
@@ -251,6 +256,46 @@ void qTrellis::onExportRequested() {
                    "generation first."));
         return;
     }
+    if (m_worker && m_worker->isRunning()) {
+        m_dialog->appendLog(
+                tr("[TRELLIS] A generation is running - wait for it to "
+                   "finish before re-baking."));
+        return;
+    }
+    // The bake runs on its own worker (GUI stays responsive; minutes-long
+    // bakes are cancellable) and routes on completion — see onBakeGlbReady.
+    if (m_bakeWorker && m_bakeWorker->isRunning()) {
+        m_dialog->appendLog(tr("[TRELLIS] A bake is already running."));
+        return;
+    }
+    delete m_bakeWorker;
+    TrellisWorker::Settings bs;
+    bs.runMode = TrellisRunMode::BakeOnly;
+    bs.bakeInput = result;
+    bs.bakeTextureSize = m_dialog->exportTextureSize();
+    bs.bakeComponentFilter = m_dialog->exportComponentFilter();
+    m_bakeWorker = new TrellisWorker(bs, this);
+    connect(m_bakeWorker, &TrellisWorker::bakeGlbReady, this,
+            &qTrellis::onBakeGlbReady);
+    connect(m_bakeWorker, &TrellisWorker::logMessage, m_dialog,
+            &TrellisDialog::appendLog);
+    connect(m_bakeWorker, &TrellisWorker::bakeProgress, m_dialog,
+            &TrellisDialog::setBakeProgress, Qt::QueuedConnection);
+    connect(m_bakeWorker, &TrellisWorker::taskFinished, this, [this](bool ok) {
+        m_dialog->setRunning(false);
+        m_dialog->setExportBusy(false,
+                                ok ? tr("Bake finished.")
+                                   : tr("Bake stopped (failed or cancelled)."));
+        m_bakeWorker->deleteLater();
+        m_bakeWorker = nullptr;
+    });
+    m_dialog->setRunning(true);
+    m_dialog->setExportBusy(true);
+    m_bakeWorker->start();
+}
+
+void qTrellis::onBakeGlbReady(const QByteArray& glb) {
+    const TrellisRunResult& result = m_dialog->lastResult();
     const int destination = m_dialog->exportDestination();
     const bool wantDb = destination != TrellisDialog::kExportFile;
     const bool wantFile = destination != TrellisDialog::kExportDb;
@@ -260,10 +305,6 @@ void qTrellis::onExportRequested() {
                                       QStandardPaths::DownloadLocation) +
                               QStringLiteral("/TRELLIS");
     }
-    // One bake for every selected destination: the bytes are identical.
-    const QByteArray glb = bakeResultGlb(result, m_dialog->exportTextureSize(),
-                                         m_dialog->exportComponentFilter());
-    if (glb.isEmpty()) return;  // bakeResultGlb logged the failure
     if (wantDb) {
         const QString sourceName =
                 QFileInfo(result.sourceImage).completeBaseName();
@@ -572,6 +613,10 @@ ccMesh* qTrellis::buildVertexColorMesh(const QVector<float>& verts,
 
     auto* mesh = new ccMesh(cloud);
     mesh->addChild(cloud);
+    // The vertices cloud is a child container that carries the colours and
+    // normals — drawing it as points over the mesh reads as a green stipple
+    // overlay. Keep it in the DB tree for inspection, hidden by default.
+    cloud->setVisible(false);
     const int nt = tris.size() / 3;
     if (!mesh->reserve(nt)) {
         // The cloud is a child of the mesh: freed with it.
@@ -591,6 +636,10 @@ ccMesh* qTrellis::buildVertexColorMesh(const QVector<float>& verts,
         mesh->computeNormals(true);
     }
     mesh->showNormals(true);
+    // Render the PBR vertex colours: without this the mesh falls back to
+    // the entity's default display colour (green), regardless of the
+    // colours set on the vertices cloud.
+    mesh->showColors(true);
     return mesh;
 }
 

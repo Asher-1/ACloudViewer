@@ -42,11 +42,13 @@ set_property(GLOBAL PROPERTY COLMAP_SOURCES "")
 add_subdirectory(base)
 add_subdirectory(controllers)
 add_subdirectory(estimators)
+add_subdirectory(geometry)
 add_subdirectory(exe)
 add_subdirectory(feature)
 add_subdirectory(mvs)
 add_subdirectory(optim)
 add_subdirectory(retrieval)
+add_subdirectory(scene)
 add_subdirectory(sfm)
 add_subdirectory(tools)
 add_subdirectory(util)
@@ -126,11 +128,14 @@ endif()
 # bitmap_test covers format I/O, numeric EXIF, and resampling; the other two
 # exercise the downstream undistortion and texture callers using Bitmap.
 if (TESTS_ENABLED)
+    # All parity gates run ctest from the subtree where enable_testing() was
+    # called: the build-tree root has no CTestTestfile.cmake, so a plain
+    # ${CMAKE_BINARY_DIR} working directory would silently discover zero tests.
     add_custom_target(reconstruction_oiio_parity_gate
         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
                 -R "^(util/bitmap_test|base/undistortion_test|mvs/texture_mapping_test)$"
         DEPENDS bitmap_test undistortion_test texture_mapping_test
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/libs/Reconstruction"
         USES_TERMINAL
         VERBATIM)
 
@@ -158,7 +163,19 @@ if (TESTS_ENABLED)
         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
                 -R "^(${RECONSTRUCTION_CAMERA_RIG_PARITY_REGEX})$"
         DEPENDS ${RECONSTRUCTION_CAMERA_RIG_PARITY_DEPS}
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/libs/Reconstruction"
+        USES_TERMINAL
+        VERBATIM)
+
+    # Database user_version migration machinery: proves that legacy fork and
+    # legacy upstream databases are migrated (sentinel poses/matrices -> NULL,
+    # descriptors.type) and that databases written by a newer schema are
+    # refused instead of being silently misread.
+    add_custom_target(reconstruction_db_migration_gate
+        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+                -R "^base/database_test$"
+        DEPENDS database_test
+        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/libs/Reconstruction"
         USES_TERMINAL
         VERBATIM)
 endif()
@@ -171,7 +188,7 @@ if (TESTS_ENABLED AND RECONSTRUCTION_CASPAR_ENABLED)
         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
                 -R "^optim/bundle_adjustment_caspar_test$"
         DEPENDS bundle_adjustment_caspar_test
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/libs/Reconstruction"
         USES_TERMINAL
         VERBATIM)
 endif()

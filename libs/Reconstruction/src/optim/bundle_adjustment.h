@@ -10,12 +10,10 @@
 #include <ceres/ceres.h>
 
 #include <Eigen/Core>
+#include <functional>
 #include <memory>
 #include <unordered_set>
 
-#ifdef PBA_ENABLED
-#include "PBA/pba.h"
-#endif
 #include "base/camera_rig.h"
 #include "base/reconstruction.h"
 #include "optim/manifold.h"
@@ -128,6 +126,11 @@ struct BundleAdjustmentOptions {
     int caspar_gpu_index = -1;
     int caspar_max_num_iterations = 200;
 
+    // Optional cooperative cancellation hook, checked once per Ceres
+    // iteration. Return true to abort the solve while keeping intermediate
+    // results; used by the graceful-shutdown path.
+    std::function<bool()> check_if_stopped;
+
     // Whether to use Ceres' CUDA linear algebra library, if available.
     bool use_gpu = false;
     std::string gpu_index = "-1";
@@ -229,73 +232,6 @@ protected:
     std::unordered_set<camera_t> camera_ids_;
     std::unordered_map<point3D_t, size_t> point3D_num_observations_;
 };
-
-#ifdef PBA_ENABLED
-// Bundle adjustment using PBA (GPU or CPU). Less flexible and accurate than
-// Ceres-Solver bundle adjustment but much faster. Only supports SimpleRadial
-// camera model.
-class ParallelBundleAdjuster {
-public:
-    struct Options {
-        // Whether to print a final summary.
-        bool print_summary = true;
-
-        // Maximum number of iterations.
-        int max_num_iterations = 50;
-
-        // Index of the GPU used for bundle adjustment.
-        int gpu_index = -1;
-
-        // Number of threads for CPU based bundle adjustment.
-        int num_threads = -1;
-
-        // Minimum number of residuals to enable multi-threading. Note that
-        // single-threaded is typically better for small bundle adjustment
-        // problems due to the overhead of threading.
-        int min_num_residuals_for_cpu_multi_threading = 50000;
-
-        bool Check() const;
-    };
-
-    ParallelBundleAdjuster(const Options& options,
-                           const BundleAdjustmentOptions& ba_options,
-                           const BundleAdjustmentConfig& config);
-
-    bool Solve(Reconstruction* reconstruction);
-
-    // Get the Ceres solver summary for the last call to `Solve`.
-    const ceres::Solver::Summary& Summary() const;
-
-    // Check whether PBA is supported for the given reconstruction. If the
-    // reconstruction is not supported, the PBA solver will exit ungracefully.
-    static bool IsSupported(const BundleAdjustmentOptions& options,
-                            const Reconstruction& reconstruction);
-
-private:
-    void SetUp(Reconstruction* reconstruction);
-    void TearDown(Reconstruction* reconstruction);
-
-    void AddImagesToProblem(Reconstruction* reconstruction);
-    void AddPointsToProblem(Reconstruction* reconstruction);
-
-    const Options options_;
-    const BundleAdjustmentOptions ba_options_;
-    BundleAdjustmentConfig config_;
-    ceres::Solver::Summary summary_;
-
-    size_t num_measurements_;
-    std::vector<pba::CameraT> cameras_;
-    std::vector<pba::Point3D> points3D_;
-    std::vector<pba::Point2D> measurements_;
-    std::unordered_set<camera_t> camera_ids_;
-    std::unordered_set<point3D_t> point3D_ids_;
-    std::vector<int> camera_idxs_;
-    std::vector<int> point3D_idxs_;
-    std::vector<image_t> ordered_image_ids_;
-    std::vector<point3D_t> ordered_point3D_ids_;
-    std::unordered_map<image_t, int> image_id_to_camera_idx_;
-};
-#endif
 
 class RigBundleAdjuster : public BundleAdjuster {
 public:

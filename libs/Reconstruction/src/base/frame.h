@@ -12,6 +12,9 @@
 #include <set>
 #include <vector>
 
+#include "base/rig.h"
+#include "geometry/rigid3.h"
+#include "util/logging.h"
 #include "base/pose.h"
 #include "util/types.h"
 
@@ -24,6 +27,7 @@ class Frame {
 public:
     frame_t FrameId() const;
     void SetFrameId(frame_t frame_id);
+    bool HasRigId() const { return rig_id_ != kInvalidRigId; }
     rig_t RigId() const;
     void SetRigId(rig_t rig_id);
 
@@ -36,6 +40,26 @@ public:
     const std::set<image_t>& ImageIds() const;
 
     bool HasPose() const;
+
+    // Upstream-parity (COLMAP 4.x scene/frame.h): the owning rig and the
+    // composition of sensor_from_rig and rig_from_world for a sensor.
+    inline class Rig* RigPtr() const;
+    inline void SetRigPtr(class Rig* rig);
+    inline void ResetRigPtr();
+    inline bool HasRigPtr() const;
+    inline Rigid3d SensorFromWorld(sensor_t sensor_id) const;
+    // Upstream-parity overload (COLMAP 4.x geometry/rigid3d based API).
+    void SetRigFromWorld(const Rigid3d& cam_from_world) {
+        const Eigen::Quaterniond& q = cam_from_world.rotation();
+        SetRigFromWorld(Eigen::Vector4d(q.w(), q.x(), q.y(), q.z()),
+                        cam_from_world.translation());
+    }
+    Rigid3d RigFromWorld() const {
+        const Eigen::Vector4d& q = RigFromWorldQvec();
+        return Rigid3d(Eigen::Quaterniond(q(0), q(1), q(2), q(3)),
+                       RigFromWorldTvec());
+    }
+
     void SetRigFromWorld(const Eigen::Vector4d& qvec,
                          const Eigen::Vector3d& tvec);
     void ResetPose();
@@ -52,9 +76,22 @@ private:
     rig_t rig_id_ = kInvalidRigId;
     std::set<data_t> data_ids_;
     std::set<image_t> image_ids_;
+    class Rig* rig_ptr_ = nullptr;
     bool has_pose_ = false;
     Eigen::Vector4d rig_from_world_qvec_ = ComposeIdentityQuaternion();
     Eigen::Vector3d rig_from_world_tvec_ = Eigen::Vector3d::Zero();
 };
 
+
+inline class Rig* Frame::RigPtr() const { return rig_ptr_; }
+inline void Frame::SetRigPtr(class Rig* rig) { rig_ptr_ = rig; }
+inline void Frame::ResetRigPtr() { rig_ptr_ = nullptr; }
+inline bool Frame::HasRigPtr() const { return rig_ptr_ != nullptr; }
+inline Rigid3d Frame::SensorFromWorld(sensor_t sensor_id) const {
+    THROW_CHECK_NOTNULL(rig_ptr_);
+    if (rig_ptr_->IsRefSensor(sensor_id)) {
+        return RigFromWorld();
+    }
+    return rig_ptr_->SensorFromRig(sensor_id) * RigFromWorld();
+}
 }  // namespace colmap

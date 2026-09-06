@@ -36,7 +36,7 @@
 
 using namespace colmap;
 
-BOOST_AUTO_TEST_CASE(TestEllToXYZGRS80) {
+TEST(base_gps, TestEllToXYZGRS80) {
   std::vector<Eigen::Vector3d> ell;
   ell.emplace_back(48 + 8. / 60 + 51.70361 / 3600,
                    11 + 34. / 60 + 10.51777 / 3600, 561.1851);
@@ -53,13 +53,13 @@ BOOST_AUTO_TEST_CASE(TestEllToXYZGRS80) {
   const auto xyz = gps_tform.EllToXYZ(ell);
 
   for (size_t i = 0; i < ell.size(); ++i) {
-    BOOST_CHECK(std::abs(xyz[i](0) - ref_xyz[i](0)) < 1e-8);
-    BOOST_CHECK(std::abs(xyz[i](1) - ref_xyz[i](1)) < 1e-8);
-    BOOST_CHECK(std::abs(xyz[i](2) - ref_xyz[i](2)) < 1e-8);
+    EXPECT_TRUE(std::abs(xyz[i](0) - ref_xyz[i](0)) < 1e-8);
+    EXPECT_TRUE(std::abs(xyz[i](1) - ref_xyz[i](1)) < 1e-8);
+    EXPECT_TRUE(std::abs(xyz[i](2) - ref_xyz[i](2)) < 1e-8);
   }
 }
 
-BOOST_AUTO_TEST_CASE(TestEllToXYZWGS84) {
+TEST(base_gps, TestEllToXYZWGS84) {
   std::vector<Eigen::Vector3d> ell;
   ell.emplace_back(48 + 8. / 60 + 51.70361 / 3600,
                    11 + 34. / 60 + 10.51777 / 3600, 561.1851);
@@ -76,13 +76,13 @@ BOOST_AUTO_TEST_CASE(TestEllToXYZWGS84) {
   const auto xyz = gps_tform.EllToXYZ(ell);
 
   for (size_t i = 0; i < ell.size(); ++i) {
-    BOOST_CHECK(std::abs(xyz[i](0) - ref_xyz[i](0)) < 1e-8);
-    BOOST_CHECK(std::abs(xyz[i](1) - ref_xyz[i](1)) < 1e-8);
-    BOOST_CHECK(std::abs(xyz[i](2) - ref_xyz[i](2)) < 1e-8);
+    EXPECT_TRUE(std::abs(xyz[i](0) - ref_xyz[i](0)) < 1e-8);
+    EXPECT_TRUE(std::abs(xyz[i](1) - ref_xyz[i](1)) < 1e-8);
+    EXPECT_TRUE(std::abs(xyz[i](2) - ref_xyz[i](2)) < 1e-8);
   }
 }
 
-BOOST_AUTO_TEST_CASE(TestXYZToEll_GRS80) {
+TEST(base_gps, TestXYZToEll_GRS80) {
   std::vector<Eigen::Vector3d> xyz;
   xyz.emplace_back(4.1772397090808507e6, 0.85515377993121441e6,
                    4.7282674046563692e6);
@@ -99,13 +99,13 @@ BOOST_AUTO_TEST_CASE(TestXYZToEll_GRS80) {
   const auto ell = gps_tform.XYZToEll(xyz);
 
   for (size_t i = 0; i < xyz.size(); ++i) {
-    BOOST_CHECK(std::abs(ell[i](0) - ref_ell[i](0)) < 1e-5);
-    BOOST_CHECK(std::abs(ell[i](1) - ref_ell[i](1)) < 1e-5);
-    BOOST_CHECK(std::abs(ell[i](2) - ref_ell[i](2)) < 1e-5);
+    EXPECT_TRUE(std::abs(ell[i](0) - ref_ell[i](0)) < 1e-5);
+    EXPECT_TRUE(std::abs(ell[i](1) - ref_ell[i](1)) < 1e-5);
+    EXPECT_TRUE(std::abs(ell[i](2) - ref_ell[i](2)) < 1e-5);
   }
 }
 
-BOOST_AUTO_TEST_CASE(TestXYZToEll_WGS84) {
+TEST(base_gps, TestXYZToEll_WGS84) {
   std::vector<Eigen::Vector3d> xyz;
   xyz.emplace_back(4.1772397090808507e6, 0.85515377993121441e6,
                    4.7282674046563692e6);
@@ -122,13 +122,13 @@ BOOST_AUTO_TEST_CASE(TestXYZToEll_WGS84) {
   const auto ell = gps_tform.XYZToEll(xyz);
 
   for (size_t i = 0; i < xyz.size(); ++i) {
-    BOOST_CHECK(std::abs(ell[i](0) - ref_ell[i](0)) < 1e-5);
-    BOOST_CHECK(std::abs(ell[i](1) - ref_ell[i](1)) < 1e-5);
-    BOOST_CHECK(std::abs(ell[i](2) - ref_ell[i](2)) < 1e-5);
+    EXPECT_TRUE(std::abs(ell[i](0) - ref_ell[i](0)) < 1e-5);
+    EXPECT_TRUE(std::abs(ell[i](1) - ref_ell[i](1)) < 1e-5);
+    EXPECT_TRUE(std::abs(ell[i](2) - ref_ell[i](2)) < 1e-5);
   }
 }
 
-BOOST_AUTO_TEST_CASE(TestXYZToEllToXYZ_GRS80) {
+TEST(base_gps, TestXYZToEllToXYZ_GRS80) {
   std::vector<Eigen::Vector3d> xyz;
   xyz.emplace_back(4.177239709080851e6, 0.855153779931214e6,
                    4.728267404656370e6);
@@ -141,13 +141,13 @@ BOOST_AUTO_TEST_CASE(TestXYZToEllToXYZ_GRS80) {
   const auto xyz2 = gps_tform.EllToXYZ(ell);
 
   for (size_t i = 0; i < xyz.size(); ++i) {
-    BOOST_CHECK(std::abs(xyz[i](0) - xyz2[i](0)) < 1e-5);
-    BOOST_CHECK(std::abs(xyz[i](1) - xyz2[i](1)) < 1e-5);
-    BOOST_CHECK(std::abs(xyz[i](2) - xyz2[i](2)) < 1e-5);
+    EXPECT_TRUE(std::abs(xyz[i](0) - xyz2[i](0)) < 1e-5);
+    EXPECT_TRUE(std::abs(xyz[i](1) - xyz2[i](1)) < 1e-5);
+    EXPECT_TRUE(std::abs(xyz[i](2) - xyz2[i](2)) < 1e-5);
   }
 }
 
-BOOST_AUTO_TEST_CASE(TestXYZToEllToXYZ_WGS84) {
+TEST(base_gps, TestXYZToEllToXYZ_WGS84) {
   std::vector<Eigen::Vector3d> xyz;
   xyz.emplace_back(4.177239709080851e6, 0.855153779931214e6,
                    4.728267404656370e6);
@@ -160,8 +160,8 @@ BOOST_AUTO_TEST_CASE(TestXYZToEllToXYZ_WGS84) {
   const auto xyz2 = gps_tform.EllToXYZ(ell);
 
   for (size_t i = 0; i < xyz.size(); ++i) {
-    BOOST_CHECK(std::abs(xyz[i](0) - xyz2[i](0)) < 1e-5);
-    BOOST_CHECK(std::abs(xyz[i](1) - xyz2[i](1)) < 1e-5);
-    BOOST_CHECK(std::abs(xyz[i](2) - xyz2[i](2)) < 1e-5);
+    EXPECT_TRUE(std::abs(xyz[i](0) - xyz2[i](0)) < 1e-5);
+    EXPECT_TRUE(std::abs(xyz[i](1) - xyz2[i](1)) < 1e-5);
+    EXPECT_TRUE(std::abs(xyz[i](2) - xyz2[i](2)) < 1e-5);
   }
 }

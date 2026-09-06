@@ -40,6 +40,8 @@ COLMAP_ADD_SOURCES(
     database.h database.cc
     database_cache.h database_cache.cc
     essential_matrix.h essential_matrix.cc
+    normalization.h normalization.cc
+    two_view_geometry.h two_view_geometry.cc
     frame.h frame.cc
     gps.h gps.cc
     graph_cut.h graph_cut.cc

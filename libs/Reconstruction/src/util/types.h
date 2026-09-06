@@ -39,10 +39,12 @@ namespace Eigen {
 using Matrix3x4f = Matrix<float, 3, 4>;
 using Matrix3x4d = Matrix<double, 3, 4>;
 using Matrix2x3d = Matrix<double, 2, 3>;
+using Matrix3x2d = Matrix<double, 3, 2>;
 using Matrix6d = Matrix<double, 6, 6>;
 using Vector3ub = Matrix<uint8_t, 3, 1>;
 using Vector4ub = Matrix<uint8_t, 4, 1>;
 using Vector6d = Matrix<double, 6, 1>;
+using Vector7d = Matrix<double, 7, 1>;
 using RowMajorMatrixXf = Matrix<float, Dynamic, Dynamic, RowMajor>;
 using RowMajorMatrixXd = Matrix<double, Dynamic, Dynamic, RowMajor>;
 using RowMajorMatrixXi = Matrix<int, Dynamic, Dynamic, RowMajor>;
@@ -75,6 +77,8 @@ enum class SensorType : int32_t {
 };
 
 struct sensor_t {
+    constexpr static uint32_t kInvalidId = std::numeric_limits<uint32_t>::max();
+
     SensorType type = SensorType::INVALID;
     uint32_t id = std::numeric_limits<uint32_t>::max();
 
@@ -92,6 +96,8 @@ struct sensor_t {
 };
 
 struct data_t {
+    constexpr static uint32_t kInvalidId = std::numeric_limits<uint32_t>::max();
+
     sensor_t sensor_id;
     uint64_t id = std::numeric_limits<uint64_t>::max();
 
@@ -107,6 +113,9 @@ struct data_t {
         return std::tie(sensor_id, id) < std::tie(other.sensor_id, other.id);
     }
 };
+
+constexpr sensor_t kInvalidSensorId =
+    sensor_t(SensorType::INVALID, sensor_t::kInvalidId);
 
 // Each image pair gets a unique ID, see `Database::ImagePairToPairId`.
 typedef uint64_t image_pair_t;
@@ -128,6 +137,27 @@ const image_pair_t kInvalidImagePairId =
         std::numeric_limits<image_pair_t>::max();
 const point2D_t kInvalidPoint2DIdx = std::numeric_limits<point2D_t>::max();
 const point3D_t kInvalidPoint3DId = std::numeric_limits<point3D_t>::max();
+
+
+using pose_prior_t = uint32_t;
+constexpr pose_prior_t kInvalidPosePriorId =
+    std::numeric_limits<pose_prior_t>::max();
+constexpr data_t kInvalidDataId = data_t(kInvalidSensorId, data_t::kInvalidId);
+
+// Hash functor for (image_t, image_t) pairs and generic uint64 pairs
+// (upstream parity, COLMAP 4.x util/types.h).
+// Upstream-parity alias: camera model identifiers are plain ints in this
+// fork (see base/camera_models.h CAMERA_MODEL_DEFINITIONS ids).
+using CameraModelId = int;
+
+struct PairHash {
+    template <typename T1, typename T2>
+    std::size_t operator()(const std::pair<T1, T2>& pair) const {
+        const auto h1 = std::hash<T1>()(pair.first);
+        const auto h2 = std::hash<T2>()(pair.second);
+        return h1 ^ (h2 << (sizeof(std::size_t) * 4));
+    }
+};
 
 }  // namespace colmap
 

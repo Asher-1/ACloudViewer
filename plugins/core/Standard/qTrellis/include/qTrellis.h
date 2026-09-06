@@ -46,6 +46,9 @@ private slots:
     void onPrintWrapReady(const TrellisPrintResult& result);
     /** Print-wrap worker finished (success or failure): restore buttons. */
     void onPrintWrapFinished(bool success);
+    /** BakeOnly worker completion: route the GLB bytes to the export
+     *  destination (DB tree / file) chosen on the Export page. */
+    void onBakeGlbReady(const QByteArray& glb);
 
 private:
     bool resolveInputPath(const QString& rawPath,
@@ -96,6 +99,7 @@ private:
     /** Export-page destination snapshot taken when a print wrap started. */
     TrellisDialog::ExportDestination m_printDestination =
             TrellisDialog::kExportDb;
+    TrellisWorker* m_bakeWorker = nullptr;  // Export-page async re-bake
     QTimer* m_inferenceHeartbeat = nullptr;
     int m_inferenceElapsedSeconds = 0;
     TrellisDialog::Settings m_currentSettings;

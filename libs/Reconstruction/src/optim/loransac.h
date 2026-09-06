@@ -31,7 +31,11 @@ class LORANSAC : public RANSAC<Estimator, SupportMeasurer, Sampler> {
 public:
     using typename RANSAC<Estimator, SupportMeasurer, Sampler>::Report;
 
-    explicit LORANSAC(const RANSACOptions& options);
+    explicit LORANSAC(const RANSACOptions& options,
+                      Estimator estimator = Estimator(),
+                      LocalEstimator local_estimator = LocalEstimator(),
+                      SupportMeasurer support_measurer = SupportMeasurer(),
+                      Sampler sampler = Sampler(Estimator::kMinNumSamples));
 
     // Robustly estimate model with RANSAC (RANdom SAmple Consensus).
     //
@@ -61,8 +65,16 @@ template <typename Estimator,
           typename SupportMeasurer,
           typename Sampler>
 LORANSAC<Estimator, LocalEstimator, SupportMeasurer, Sampler>::LORANSAC(
-        const RANSACOptions& options)
-    : RANSAC<Estimator, SupportMeasurer, Sampler>(options) {}
+        const RANSACOptions& options,
+        Estimator estimator,
+        LocalEstimator local_estimator,
+        SupportMeasurer support_measurer,
+        Sampler sampler)
+    : RANSAC<Estimator, SupportMeasurer, Sampler>(options,
+                                                  std::move(estimator),
+                                                  std::move(support_measurer),
+                                                  std::move(sampler)),
+      local_estimator(std::move(local_estimator)) {}
 
 template <typename Estimator,
           typename LocalEstimator,
@@ -116,9 +128,15 @@ LORANSAC<Estimator, LocalEstimator, SupportMeasurer, Sampler>::Estimate(
 
         sampler.SampleXY(X, Y, &X_rand, &Y_rand);
 
-        // Estimate model for current subset.
-        const std::vector<typename Estimator::M_t> sample_models =
-                estimator.Estimate(X_rand, Y_rand);
+        // Estimate model for current subset (dual-form, see HasReturnValueEstimate).
+        std::vector<typename Estimator::M_t> sample_models;
+        if constexpr (HasReturnValueEstimate<Estimator,
+                                             typename Estimator::X_t,
+                                             typename Estimator::Y_t>::value) {
+            sample_models = estimator.Estimate(X_rand, Y_rand);
+        } else {
+            estimator.Estimate(X_rand, Y_rand, &sample_models);
+        }
 
         // Iterate through all estimated models
         for (const auto& sample_model : sample_models) {
@@ -153,9 +171,34 @@ LORANSAC<Estimator, LocalEstimator, SupportMeasurer, Sampler>::Estimate(
                             }
                         }
 
-                        const std::vector<typename LocalEstimator::M_t>
-                                local_models = local_estimator.Estimate(
-                                        X_inlier, Y_inlier);
+                        std::vector<typename LocalEstimator::M_t>
+                                local_models;
+                        if constexpr (HasReturnValueEstimate<
+                                              LocalEstimator,
+                                              typename LocalEstimator::X_t,
+                                              typename LocalEstimator::Y_t>::
+                                              value) {
+                            local_models =
+                                    local_estimator.Estimate(X_inlier,
+                                                             Y_inlier);
+                        } else if constexpr (
+                                HasRefineMember<LocalEstimator,
+                                                typename LocalEstimator::X_t,
+                                                typename LocalEstimator::Y_t>::
+                                        value) {
+                            // Upstream-parity residual-only local estimators
+                            // (e.g. Sampson): refine the current best model
+                            // in place on the inlier set.
+                            typename LocalEstimator::M_t refined_model =
+                                    best_model;
+                            if (local_estimator.Refine(X_inlier, Y_inlier,
+                                                       &refined_model)) {
+                                local_models.push_back(refined_model);
+                            }
+                        } else {
+                            local_estimator.Estimate(X_inlier, Y_inlier,
+                                                     &local_models);
+                        }
 
                         const size_t prev_best_num_inliers =
                                 best_support.num_inliers;

@@ -160,22 +160,22 @@ BundleAdjustmentOptions CreateParityOptions() {
 
 }  // namespace
 
-BOOST_AUTO_TEST_CASE(TestRejectsUnportedFactorVariantsBeforeCudaExecution) {
+TEST(optim_bundle_adjustment_caspar, TestRejectsUnportedFactorVariantsBeforeCudaExecution) {
   Reconstruction reconstruction;
   BundleAdjustmentOptions options;
   BundleAdjustmentConfig config;
   config.AddConstantPoint(1);
   ceres::Solver::Summary summary;
-  BOOST_CHECK(!SolveCasparBundleAdjustment(options, config, &reconstruction,
+  EXPECT_FALSE(SolveCasparBundleAdjustment(options, config, &reconstruction,
                                            &summary));
 }
 
-BOOST_AUTO_TEST_CASE(TestPinholeCeresCasparReprojectionParity) {
+TEST(optim_bundle_adjustment_caspar, TestPinholeCeresCasparReprojectionParity) {
   // Caspar remains a GPU backend, while the reference Ceres solve is always
   // CPU-only to keep libceres portable across hosts and CUDA toolkit versions.
   int cuda_device_count = 0;
-  BOOST_REQUIRE_EQUAL(cudaGetDeviceCount(&cuda_device_count), cudaSuccess);
-  BOOST_REQUIRE_GT(cuda_device_count, 0);
+  ASSERT_EQ(cudaGetDeviceCount(&cuda_device_count), cudaSuccess);
+  ASSERT_GT(cuda_device_count, 0);
 
   const Reconstruction initial = CreatePinholeParityReconstruction();
   Reconstruction ceres_reconstruction = initial;
@@ -189,24 +189,24 @@ BOOST_AUTO_TEST_CASE(TestPinholeCeresCasparReprojectionParity) {
   ceres::Problem options_probe;
   const ceres::Solver::Options effective_ceres_options =
       ceres_options.CreateSolverOptions(config, options_probe);
-  BOOST_REQUIRE_NE(effective_ceres_options.dense_linear_algebra_library_type,
+  ASSERT_NE(effective_ceres_options.dense_linear_algebra_library_type,
                    ceres::CUDA);
   BundleAdjuster ceres_adjuster(ceres_options, config);
-  BOOST_REQUIRE(ceres_adjuster.Solve(&ceres_reconstruction));
+  ASSERT_TRUE(ceres_adjuster.Solve(&ceres_reconstruction));
 
   BundleAdjustmentOptions caspar_options = CreateParityOptions();
   caspar_options.backend = BundleAdjustmentBackend::CASPAR;
   ceres::Solver::Summary caspar_summary;
   // Call the adapter directly so a future dispatcher fallback to Ceres cannot
   // make this numerical parity test pass without executing Caspar kernels.
-  BOOST_REQUIRE(SolveCasparBundleAdjustment(caspar_options, config,
+  ASSERT_TRUE(SolveCasparBundleAdjustment(caspar_options, config,
                                              &caspar_reconstruction,
                                              &caspar_summary));
 
   const double ceres_rms = ComputeRmsReprojectionError(ceres_reconstruction);
   const double caspar_rms =
       ComputeRmsReprojectionError(caspar_reconstruction);
-  BOOST_TEST_MESSAGE("Ceres CPU BA: rms=" << ceres_rms
+  std::cout << ("Ceres CPU BA: rms=" << ceres_rms
                                                      << " time="
                                                      << ceres_adjuster.Summary()
                                                             .total_time_in_seconds
@@ -214,23 +214,23 @@ BOOST_AUTO_TEST_CASE(TestPinholeCeresCasparReprojectionParity) {
                                                      << caspar_rms << " time="
                                                      << caspar_summary.total_time_in_seconds
                                                      << "s");
-  BOOST_CHECK(std::isfinite(ceres_rms));
-  BOOST_CHECK(std::isfinite(caspar_rms));
-  BOOST_CHECK_LT(caspar_rms, 1.0);
-  BOOST_CHECK_LE(caspar_rms, ceres_rms * 1.25 + 1e-3);
-  BOOST_CHECK_GT(ceres_adjuster.Summary().total_time_in_seconds, 0.0);
-  BOOST_CHECK_GT(caspar_summary.total_time_in_seconds, 0.0);
+  EXPECT_TRUE(std::isfinite(ceres_rms));
+  EXPECT_TRUE(std::isfinite(caspar_rms));
+  EXPECT_LT(caspar_rms, 1.0);
+  EXPECT_LE(caspar_rms, ceres_rms * 1.25 + 1e-3);
+  EXPECT_GT(ceres_adjuster.Summary().total_time_in_seconds, 0.0);
+  EXPECT_GT(caspar_summary.total_time_in_seconds, 0.0);
   // The fixture is intentionally small for CI. This catches runtime or graph
   // regressions without claiming a speedup from a noisy microbenchmark.
-  BOOST_CHECK_LE(caspar_summary.total_time_in_seconds,
+  EXPECT_LE(caspar_summary.total_time_in_seconds,
                  ceres_adjuster.Summary().total_time_in_seconds * 20.0 +
                      0.25);
 }
 
-BOOST_AUTO_TEST_CASE(TestCasparSynchronizesFixedSensorFromRigFramePose) {
+TEST(optim_bundle_adjustment_caspar, TestCasparSynchronizesFixedSensorFromRigFramePose) {
   int cuda_device_count = 0;
-  BOOST_REQUIRE_EQUAL(cudaGetDeviceCount(&cuda_device_count), cudaSuccess);
-  BOOST_REQUIRE_GT(cuda_device_count, 0);
+  ASSERT_EQ(cudaGetDeviceCount(&cuda_device_count), cudaSuccess);
+  ASSERT_GT(cuda_device_count, 0);
 
   Reconstruction reconstruction = CreateFixedSensorFromRigReconstruction();
   BundleAdjustmentConfig config;
@@ -240,9 +240,9 @@ BOOST_AUTO_TEST_CASE(TestCasparSynchronizesFixedSensorFromRigFramePose) {
   BundleAdjustmentOptions options = CreateParityOptions();
   options.backend = BundleAdjustmentBackend::CASPAR;
   ceres::Solver::Summary summary;
-  BOOST_REQUIRE(SolveCasparBundleAdjustment(options, config, &reconstruction,
+  ASSERT_TRUE(SolveCasparBundleAdjustment(options, config, &reconstruction,
                                              &summary));
-  BOOST_REQUIRE(reconstruction.Frame(1).HasPose());
+  ASSERT_TRUE(reconstruction.Frame(1).HasPose());
 
   const Rig& rig = reconstruction.Rig(1);
   const Frame& frame = reconstruction.Frame(1);
@@ -254,16 +254,16 @@ BOOST_AUTO_TEST_CASE(TestCasparSynchronizesFixedSensorFromRigFramePose) {
                      rig.CamFromRigTvec(image.CameraId()),
                      frame.RigFromWorldQvec(), frame.RigFromWorldTvec(),
                      &expected_qvec, &expected_tvec);
-    BOOST_CHECK_SMALL((image.Qvec() - expected_qvec).norm(), 1e-10);
-    BOOST_CHECK_SMALL((image.Tvec() - expected_tvec).norm(), 1e-10);
+    ASSERT_LE(std::abs((image.Qvec() - expected_qvec).norm()), 1e-10);
+    ASSERT_LE(std::abs((image.Tvec() - expected_tvec).norm()), 1e-10);
   }
-  BOOST_CHECK_GT(summary.total_time_in_seconds, 0.0);
+  EXPECT_GT(summary.total_time_in_seconds, 0.0);
 }
 
-BOOST_AUTO_TEST_CASE(TestCasparMergedFixedPoseAndPointFactorVariants) {
+TEST(optim_bundle_adjustment_caspar, TestCasparMergedFixedPoseAndPointFactorVariants) {
   int cuda_device_count = 0;
-  BOOST_REQUIRE_EQUAL(cudaGetDeviceCount(&cuda_device_count), cudaSuccess);
-  BOOST_REQUIRE_GT(cuda_device_count, 0);
+  ASSERT_EQ(cudaGetDeviceCount(&cuda_device_count), cudaSuccess);
+  ASSERT_GT(cuda_device_count, 0);
 
   Reconstruction reconstruction = CreatePinholeParityReconstruction();
   const Eigen::Vector4d fixed_qvec = reconstruction.Image(1).Qvec();
@@ -279,21 +279,18 @@ BOOST_AUTO_TEST_CASE(TestCasparMergedFixedPoseAndPointFactorVariants) {
   BundleAdjustmentOptions options = CreateParityOptions();
   options.backend = BundleAdjustmentBackend::CASPAR;
   ceres::Solver::Summary summary;
-  BOOST_REQUIRE(SolveCasparBundleAdjustment(options, config, &reconstruction,
+  ASSERT_TRUE(SolveCasparBundleAdjustment(options, config, &reconstruction,
                                              &summary));
-  BOOST_CHECK_EQUAL(summary.num_residuals_reduced, 2 * 2 * 64);
-  BOOST_CHECK_SMALL((reconstruction.Image(1).Qvec() - fixed_qvec).norm(),
-                    1e-14);
-  BOOST_CHECK_SMALL((reconstruction.Image(1).Tvec() - fixed_tvec).norm(),
-                    1e-14);
-  BOOST_CHECK_SMALL((reconstruction.Point3D(1).XYZ() - fixed_point).norm(),
-                    1e-14);
+  EXPECT_EQ(summary.num_residuals_reduced, 2 * 2 * 64);
+  ASSERT_LE(std::abs((reconstruction.Image(1).Qvec() - fixed_qvec).norm()), 1e-14);
+  ASSERT_LE(std::abs((reconstruction.Image(1).Tvec() - fixed_tvec).norm()), 1e-14);
+  ASSERT_LE(std::abs((reconstruction.Point3D(1).XYZ() - fixed_point).norm()), 1e-14);
 }
 
-BOOST_AUTO_TEST_CASE(TestCasparSplitIntrinsicFactorVariantsCeresParity) {
+TEST(optim_bundle_adjustment_caspar, TestCasparSplitIntrinsicFactorVariantsCeresParity) {
   int cuda_device_count = 0;
-  BOOST_REQUIRE_EQUAL(cudaGetDeviceCount(&cuda_device_count), cudaSuccess);
-  BOOST_REQUIRE_GT(cuda_device_count, 0);
+  ASSERT_EQ(cudaGetDeviceCount(&cuda_device_count), cudaSuccess);
+  ASSERT_GT(cuda_device_count, 0);
 
   // These three runs cover every generated split factor.  Each run has a
   // fixed pose (image 1), a variable pose (image 2), a fixed point (point 1),
@@ -324,49 +321,45 @@ BOOST_AUTO_TEST_CASE(TestCasparSplitIntrinsicFactorVariantsCeresParity) {
     ceres_options.refine_extra_params = refine_focal_and_extra;
     ceres_options.refine_principal_point = refine_principal_point;
     BundleAdjuster ceres_adjuster(ceres_options, config);
-    BOOST_REQUIRE(ceres_adjuster.Solve(&ceres_reconstruction));
+    ASSERT_TRUE(ceres_adjuster.Solve(&ceres_reconstruction));
 
     BundleAdjustmentOptions caspar_options = ceres_options;
     caspar_options.backend = BundleAdjustmentBackend::CASPAR;
     ceres::Solver::Summary caspar_summary;
-    BOOST_REQUIRE(SolveCasparBundleAdjustment(caspar_options, config,
+    ASSERT_TRUE(SolveCasparBundleAdjustment(caspar_options, config,
                                                &caspar_reconstruction,
                                                &caspar_summary));
 
     const Eigen::Vector4d caspar_params = camera_params(caspar_reconstruction);
     const Eigen::Vector4d ceres_params = camera_params(ceres_reconstruction);
     if (!refine_focal_and_extra) {
-      BOOST_CHECK_SMALL((caspar_params.head<2>() - initial_params.head<2>()).norm(),
-                        1e-12);
+      ASSERT_LE(std::abs((caspar_params.head<2>() - initial_params.head<2>()).norm()), 1e-12);
     } else {
-      BOOST_CHECK_SMALL((caspar_params.head<2>() - ceres_params.head<2>()).norm(),
-                        5e-2);
+      ASSERT_LE(std::abs((caspar_params.head<2>() - ceres_params.head<2>()).norm()), 5e-2);
     }
     if (!refine_principal_point) {
-      BOOST_CHECK_SMALL((caspar_params.tail<2>() - initial_params.tail<2>()).norm(),
-                        1e-12);
+      ASSERT_LE(std::abs((caspar_params.tail<2>() - initial_params.tail<2>()).norm()), 1e-12);
     } else {
-      BOOST_CHECK_SMALL((caspar_params.tail<2>() - ceres_params.tail<2>()).norm(),
-                        2e-2);
+      ASSERT_LE(std::abs((caspar_params.tail<2>() - ceres_params.tail<2>()).norm()), 2e-2);
     }
 
     const double ceres_rms = ComputeRmsReprojectionError(ceres_reconstruction);
     const double caspar_rms =
         ComputeRmsReprojectionError(caspar_reconstruction);
-    BOOST_TEST_MESSAGE("split intrinsics focal=" << refine_focal_and_extra
+    std::cout << ("split intrinsics focal=" << refine_focal_and_extra
                                                    << " pp="
                                                    << refine_principal_point
                                                    << " Ceres rms=" << ceres_rms
                                                    << " Caspar rms=" << caspar_rms);
-    BOOST_CHECK(std::isfinite(caspar_rms));
-    BOOST_CHECK_LE(caspar_rms, ceres_rms * 1.25 + 1e-3);
+    EXPECT_TRUE(std::isfinite(caspar_rms));
+    EXPECT_LE(caspar_rms, ceres_rms * 1.25 + 1e-3);
     // The focal=false/principal-point=false run has one fully fixed residual
     // (fixed pose plus fixed point). Caspar has no all-fixed factor and, like
     // upstream, omits it from the active graph.
     const int expected_residuals =
         refine_focal_and_extra || refine_principal_point ? 2 * 2 * 64
                                                           : 2 * (2 * 64 - 1);
-    BOOST_CHECK_EQUAL(caspar_summary.num_residuals_reduced, expected_residuals);
+    EXPECT_EQ(caspar_summary.num_residuals_reduced, expected_residuals);
   };
 
   check_variant_family(false, true);

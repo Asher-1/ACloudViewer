@@ -180,6 +180,8 @@ void DatabaseCache::Load(const Database& database, const size_t min_num_matches,
       if (image_ids.count(image_id1) > 0 && image_ids.count(image_id2) > 0) {
         correspondence_graph_.AddCorrespondences(
             image_id1, image_id2, two_view_geometries[i].inlier_matches);
+        correspondence_graph_.SetTwoViewGeometry(
+            image_id1, image_id2, two_view_geometries[i]);
       } else {
         num_ignored_image_pairs += 1;
       }

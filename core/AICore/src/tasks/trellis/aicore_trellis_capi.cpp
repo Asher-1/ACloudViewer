@@ -74,13 +74,29 @@ auto fenced(char *err, int err_len, F &&f) -> decltype(f()) {
 }
 
 // Rough peak VRAM the shape decode's transient buffers need at each tier
-// (measured on the reference image: ~2.4 GB at 512³, ~6.75 GB for the 1024³
-// level-3 conv output; rounded up for headroom). Mesh-dependent, so treated as
-// a threshold, not an exact reservation — the free-flows fallback then gives a
-// several-GB cushion if the estimate is low.
+// (measured per-allocation with GGML_VK_MEMORY_LOGGER on a dense 1024³
+// decode: 1.72 + 3.72 + 1.95 GiB step transients plus ~1.5 GiB of window
+// persistents; rounded up. ~2.4 GB at 512³ from the reference image).
+// Mesh-dependent, so treated as a threshold, not an exact reservation —
+// the unconditional dead-flow release before a GPU decode (see
+// ensure_decode_vram) then gives a several-GB cushion if the estimate is
+// low.
 size_t decode_vram_peak(int pipeline_type) {
     const double GB = (double)(1ULL << 30);
-    return (size_t)((pipeline_type == AICORE_TRELLIS_PIPE_1024 ? 7.5 : 3.0) *
+    return (size_t)((pipeline_type == AICORE_TRELLIS_PIPE_1024 ? 8.5 : 3.0) *
+                    GB);
+}
+
+// Peak transient the PBR texture stage needs on top of its co-resident
+// weights (shape_enc + tex_dec + tex_flow[_hr]). Measured with
+// GGML_VK_MEMORY_LOGGER on the dense T.png 1024 cascade: the texture-flow
+// sampling steps spike ~13.8 GiB above the stage's weight residency (per
+// step: ~3.72 + 2 x 1.95 GiB scratch). Mesh-dependent like decode_vram_peak;
+// the 512 value keeps the geometry formula (decode peak + 2 GiB flow slack)
+// as a conservative unmeasured proxy.
+size_t texture_transient_bytes(int pipeline_type) {
+    const double GB = (double)(1ULL << 30);
+    return (size_t)((pipeline_type == AICORE_TRELLIS_PIPE_1024 ? 14.0 : 5.0) *
                     GB);
 }
 
@@ -160,21 +176,26 @@ bool reload_flows(aicore_trellis_ctx *p, std::string &e) {
     return true;
 }
 
-// Before a GPU shape decode, make room: if the decode's transient buffers would
-// not fit in current free VRAM, free the flow DiTs (all finished by decode
-// time) to reclaim their ~5-7 GB. reload_flows() brings them back on the next
-// generate. No-op for a CPU decoder or when the decode already fits.
+// Before a GPU shape decode, free the flow DiTs: by decode time every one of
+// them is dead (LR flows after their sampling, the HR flow after its
+// sampling), and the texture stage frees them unconditionally on GPU runs
+// anyway, so keeping them here only risks pushing the decode's dense
+// transients into host memory (a PCIe-bound run that takes 100x longer).
+// The measured cost of this "waste" is bounded: reload_flows() rebuilds the
+// freed DiTs on the next generate (seconds) — previously a zero-cushion
+// threshold ("free only when free < decode peak") kept them resident
+// whenever the decode barely seemed to fit, and the mesh-dependent decode
+// transient then silently spilled ~7 GiB to host memory (70+ minute runs
+// observed). No-op for a CPU decoder.
 void ensure_decode_vram(aicore_trellis_ctx *p, int pipeline_type) {
+    (void)pipeline_type;
     if (!p->shapedec_gpu) return;
-    if (trellis2_gpu_free_vram(p->device_family.c_str()) <
-        decode_vram_peak(pipeline_type)) {
-        trellis2_ss_flow_free(p->flow);
-        p->flow = nullptr;
-        trellis2_slat_flow_free(p->slat);
-        p->slat = nullptr;
-        trellis2_slat_flow_free(p->slat_hr);
-        p->slat_hr = nullptr;
-    }
+    trellis2_ss_flow_free(p->flow);
+    p->flow = nullptr;
+    trellis2_slat_flow_free(p->slat);
+    p->slat = nullptr;
+    trellis2_slat_flow_free(p->slat_hr);
+    p->slat_hr = nullptr;
 }
 
 // Shared tail: shape_enc -> tex_flow -> tex_dec -> vertex PBR sample.
@@ -560,7 +581,7 @@ struct ss_preview_ctx {
 
 extern "C" {
 
-int aicore_trellis_abi_version(void) { return 3; }
+int aicore_trellis_abi_version(void) { return 4; }
 
 // ─────────────────────────────────────────────────────────────────────────
 // Options builder
@@ -687,10 +708,13 @@ int need_tier(const aicore_trellis_model_paths *paths) {
     return AICORE_TRELLIS_PIPE_COARSE;
 }
 
+bool has_path(const char *s) { return s && s[0]; }
+
 // Weights still resident at the pipeline's VRAM peak. In the 1024 cascade
 // the LR flows (ss_flow + slat_flow) are dead once the LR slat is sampled —
-// generate frees them before the HR sampling (see the cascade branch) — so
-// they must not be counted against the peak.
+// generate releases them before the HR sampling when VRAM is tight (cascade
+// branch) and unconditionally before a GPU decode (ensure_decode_vram) —
+// so they must not be counted against the decode window.
 size_t resident_weights_bytes(const aicore_trellis_model_paths *paths,
                               const aicore_trellis_options *opts) {
     size_t total = coresident_weights_bytes(paths, opts);
@@ -750,14 +774,41 @@ std::string resolveVramAwareDevice(const std::string &requested,
     ggml_common::parse_device(requested, fam, want_idx);
     if (fam == "cpu") return "cpu";
 
-    // Need = resident weights at the peak + per-tier transient activations
-    // (measured decode peak + flow slack) + base margin. The former flat
-    // "weights x 2" heuristic mispriced both sides: it overcharged 512 presets
-    // (whose transient is far smaller than their weight bytes) and
-    // undercharged the 1024 cascade (whose transient exceeds its weight
-    // bytes and which frees its LR flows mid-run).
-    const size_t need = resident_weights_bytes(paths, opts) +
-                        transient_bytes(need_tier(paths)) + kVramBaseMargin;
+    // Need = the largest of the pipeline's VRAM windows; each window is its
+    // co-resident weights + its measured transient + base margin:
+    //   sampling: every model loaded while the flow DiTs sample (nothing is
+    //             dead yet; the cascade's pre-HR release is a mid-run
+    //             mitigation, not something the estimate may assume)
+    //   decode:   the dead flow DiTs are freed unconditionally before a GPU
+    //             decode (see ensure_decode_vram)
+    //   texture:  geometry flows freed, tex weights + the texture stage's
+    //             own transient (PBR presets only; the previous single-
+    //             window estimate omitted this entirely, which let 24 GB
+    //             cards silently spill ~9 GiB to host memory mid-run)
+    const int tier = need_tier(paths);
+    const size_t sampling_window = coresident_weights_bytes(paths, opts) +
+                                   transient_bytes(tier) + kVramBaseMargin;
+    const size_t decode_window = resident_weights_bytes(paths, opts) +
+                                 decode_vram_peak(tier) + kVramBaseMargin;
+    size_t texture_window = 0;
+    if (has_path(paths->shape_enc_gguf) && has_path(paths->tex_dec_gguf) &&
+        has_path(paths->tex_flow_gguf)) {
+        texture_window =
+                fileSizeOrZero(paths->dino_gguf) +       // stays loaded
+                fileSizeOrZero(paths->shape_dec_gguf) +  // stays loaded
+                fileSizeOrZero(opts && !opts->rmbg_gguf.empty()
+                                       ? opts->rmbg_gguf.c_str()
+                                       : "") +
+                fileSizeOrZero(paths->shape_enc_gguf) +
+                fileSizeOrZero(paths->tex_dec_gguf) +
+                fileSizeOrZero(paths->tex_flow_gguf) +
+                (has_path(paths->tex_flow_hr_gguf)
+                         ? fileSizeOrZero(paths->tex_flow_hr_gguf)
+                         : 0) +
+                texture_transient_bytes(tier) + kVramBaseMargin;
+    }
+    const size_t need =
+            std::max(std::max(sampling_window, decode_window), texture_window);
 
     // Candidate order: the explicitly requested family first, then the
     // platform auto order (CUDA → Vulkan on Linux/Windows, Metal on macOS).
@@ -819,8 +870,9 @@ std::string resolveVramAwareDevice(const std::string &requested,
                           "'%s' VRAM is tight for this preset (~%.1f GiB "
                           "needed, %.1f GiB free) — buffers that no longer "
                           "fit fall back to system memory, so the run "
-                          "completes slower. Switching to q8 models or the "
-                          "coarse preset keeps everything in VRAM.",
+                          "completes much slower. Disabling PBR texturing, "
+                          "switching to q8 models, or the coarse preset "
+                          "keeps everything in VRAM.",
                           fam.c_str(), (double)need / (1u << 30),
                           (double)free / (1u << 30));
             *note = buf;
@@ -840,8 +892,9 @@ std::string resolveVramAwareDevice(const std::string &requested,
     std::snprintf(buf, sizeof(buf),
                   "GPU VRAM too small for this preset (~%.1f GiB needed, "
                   "best available %.1f GiB) — falling back to CPU "
-                  "inference (your GGUF selection is unchanged). Switching "
-                  "to q8 models or the coarse preset would fit the GPU.",
+                  "inference (your GGUF selection is unchanged). Disabling "
+                  "PBR texturing, switching to q8 models, or the coarse "
+                  "preset would fit the GPU.",
                   (double)need / (1u << 30), (double)best / (1u << 30));
     *note = buf;
     return "cpu";
@@ -1542,9 +1595,9 @@ aicore_trellis_mesh *generate_impl(aicore_trellis_ctx *p,
     if (pt == AICORE_TRELLIS_PIPE_512) {
         // ── 512 fine: decode the LR slat directly at grid 512 ────────────────
         if (progress) progress(user, AICORE_TRELLIS_STAGE_SHAPE_DEC, 0, 0);
-        ensure_decode_vram(
-                p, AICORE_TRELLIS_PIPE_512);  // free the flow DiTs if a GPU
-                                              // decode needs the room
+        ensure_decode_vram(p,
+                           AICORE_TRELLIS_PIPE_512);  // free the (dead) flow
+                                                      // DiTs for the GPU decode
         if (!trellis2_shape_dec_decode(p->shapedec, slat.data(), L,
                                        coords.data(), dec_feats, dec_coords,
                                        nullptr, &e)) {
@@ -2102,16 +2155,19 @@ void aicore_trellis_mesh_free(aicore_trellis_mesh *r) { delete r; }
 // GLB export
 // ─────────────────────────────────────────────────────────────────────────
 
-uint8_t *aicore_trellis_bake_glb(const float *verts,
-                                 int n_verts,
-                                 const int *tris,
-                                 int n_tris,
-                                 const float *pbr,
-                                 int texture_size,
-                                 int component_filter,
-                                 int *out_len,
-                                 char *err,
-                                 int err_len) {
+static uint8_t *bake_glb_impl(const float *verts,
+                              int n_verts,
+                              const int *tris,
+                              int n_tris,
+                              const float *pbr,
+                              int texture_size,
+                              int component_filter,
+                              aicore_trellis_bake_progress_fn progress,
+                              void *progress_user,
+                              const volatile int *cancel,
+                              int *out_len,
+                              char *err,
+                              int err_len) {
     if (out_len) *out_len = 0;
     if (!verts || !tris || n_verts <= 0 || n_tris <= 0) {
         copy_err(err, err_len, "empty mesh");
@@ -2125,6 +2181,9 @@ uint8_t *aicore_trellis_bake_glb(const float *verts,
         t2glb::MeshExportOptions opt;
         if (texture_size > 0) opt.texture_size = texture_size;
         opt.components = (t2glb::ComponentFilter)component_filter;
+        opt.progress = progress;
+        opt.progress_user = progress_user;
+        opt.cancel = cancel;
         std::vector<uint8_t> glb;
         std::string e;
         if (!t2glb::mesh_to_glb(verts, n_verts, tris, n_tris, pbr, opt, glb,
@@ -2141,6 +2200,39 @@ uint8_t *aicore_trellis_bake_glb(const float *verts,
         if (out_len) *out_len = (int)glb.size();
         return buf;
     });
+}
+
+uint8_t *aicore_trellis_bake_glb(const float *verts,
+                                 int n_verts,
+                                 const int *tris,
+                                 int n_tris,
+                                 const float *pbr,
+                                 int texture_size,
+                                 int component_filter,
+                                 int *out_len,
+                                 char *err,
+                                 int err_len) {
+    return bake_glb_impl(verts, n_verts, tris, n_tris, pbr, texture_size,
+                         component_filter, nullptr, nullptr, nullptr, out_len,
+                         err, err_len);
+}
+
+uint8_t *aicore_trellis_bake_glb_ex(const float *verts,
+                                    int n_verts,
+                                    const int *tris,
+                                    int n_tris,
+                                    const float *pbr,
+                                    int texture_size,
+                                    int component_filter,
+                                    aicore_trellis_bake_progress_fn progress,
+                                    void *progress_user,
+                                    const volatile int *cancel,
+                                    int *out_len,
+                                    char *err,
+                                    int err_len) {
+    return bake_glb_impl(verts, n_verts, tris, n_tris, pbr, texture_size,
+                         component_filter, progress, progress_user, cancel,
+                         out_len, err, err_len);
 }
 
 // ─────────────────────────────────────────────────────────────────────────

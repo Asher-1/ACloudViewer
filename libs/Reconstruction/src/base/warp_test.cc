@@ -54,41 +54,41 @@ void GenerateRandomBitmap(const int width, const int height, const bool as_rgb,
 
 // Check that the two bitmaps are equal, ignoring a 1px boundary.
 void CheckBitmapsEqual(const Bitmap& bitmap1, const Bitmap& bitmap2) {
-  BOOST_REQUIRE_EQUAL(bitmap1.IsGrey(), bitmap2.IsGrey());
-  BOOST_REQUIRE_EQUAL(bitmap1.IsRGB(), bitmap2.IsRGB());
-  BOOST_REQUIRE_EQUAL(bitmap1.Width(), bitmap2.Width());
-  BOOST_REQUIRE_EQUAL(bitmap1.Height(), bitmap2.Height());
+  ASSERT_EQ(bitmap1.IsGrey(), bitmap2.IsGrey());
+  ASSERT_EQ(bitmap1.IsRGB(), bitmap2.IsRGB());
+  ASSERT_EQ(bitmap1.Width(), bitmap2.Width());
+  ASSERT_EQ(bitmap1.Height(), bitmap2.Height());
   for (int x = 1; x < bitmap1.Width() - 1; ++x) {
     for (int y = 1; y < bitmap1.Height() - 1; ++y) {
       BitmapColor<uint8_t> color1;
       BitmapColor<uint8_t> color2;
-      BOOST_CHECK(bitmap1.GetPixel(x, y, &color1));
-      BOOST_CHECK(bitmap2.GetPixel(x, y, &color2));
-      BOOST_CHECK_EQUAL(color1, color2);
+      EXPECT_TRUE(bitmap1.GetPixel(x, y, &color1));
+      EXPECT_TRUE(bitmap2.GetPixel(x, y, &color2));
+      EXPECT_EQ(color1, color2);
     }
   }
 }
 
 // Check that the two bitmaps are equal, ignoring a 1px boundary.
 void CheckBitmapsTransposed(const Bitmap& bitmap1, const Bitmap& bitmap2) {
-  BOOST_REQUIRE_EQUAL(bitmap1.IsGrey(), bitmap2.IsGrey());
-  BOOST_REQUIRE_EQUAL(bitmap1.IsRGB(), bitmap2.IsRGB());
-  BOOST_REQUIRE_EQUAL(bitmap1.Width(), bitmap2.Width());
-  BOOST_REQUIRE_EQUAL(bitmap1.Height(), bitmap2.Height());
+  ASSERT_EQ(bitmap1.IsGrey(), bitmap2.IsGrey());
+  ASSERT_EQ(bitmap1.IsRGB(), bitmap2.IsRGB());
+  ASSERT_EQ(bitmap1.Width(), bitmap2.Width());
+  ASSERT_EQ(bitmap1.Height(), bitmap2.Height());
   for (int x = 1; x < bitmap1.Width() - 1; ++x) {
     for (int y = 1; y < bitmap1.Height() - 1; ++y) {
       BitmapColor<uint8_t> color1;
       BitmapColor<uint8_t> color2;
-      BOOST_CHECK(bitmap1.GetPixel(x, y, &color1));
-      BOOST_CHECK(bitmap2.GetPixel(y, x, &color2));
-      BOOST_CHECK_EQUAL(color1, color2);
+      EXPECT_TRUE(bitmap1.GetPixel(x, y, &color1));
+      EXPECT_TRUE(bitmap2.GetPixel(y, x, &color2));
+      EXPECT_EQ(color1, color2);
     }
   }
 }
 
 }  // namespace
 
-BOOST_AUTO_TEST_CASE(TestIdenticalCameras) {
+TEST(base_warp, TestIdenticalCameras) {
   Camera source_camera;
   source_camera.InitializeWithName("PINHOLE", 1, 100, 100);
   Camera target_camera = source_camera;
@@ -106,7 +106,7 @@ BOOST_AUTO_TEST_CASE(TestIdenticalCameras) {
   CheckBitmapsEqual(source_image_rgb, target_image_rgb);
 }
 
-BOOST_AUTO_TEST_CASE(TestShiftedCameras) {
+TEST(base_warp, TestShiftedCameras) {
   Camera source_camera;
   source_camera.InitializeWithName("PINHOLE", 1, 100, 100);
   Camera target_camera = source_camera;
@@ -119,21 +119,21 @@ BOOST_AUTO_TEST_CASE(TestShiftedCameras) {
   for (int x = 0; x < target_image_gray.Width(); ++x) {
     for (int y = 0; y < target_image_gray.Height(); ++y) {
       BitmapColor<uint8_t> color;
-      BOOST_CHECK(target_image_gray.GetPixel(x, y, &color));
+      EXPECT_TRUE(target_image_gray.GetPixel(x, y, &color));
       if (x >= 50) {
-        BOOST_CHECK_EQUAL(color, BitmapColor<uint8_t>(0));
+        EXPECT_EQ(color, BitmapColor<uint8_t>(0));
       } else {
         BitmapColor<uint8_t> source_color;
         if (source_image_gray.GetPixel(x + 50, y, &source_color) &&
             color != BitmapColor<uint8_t>(0)) {
-          BOOST_CHECK_EQUAL(color, source_color);
+          EXPECT_EQ(color, source_color);
         }
       }
     }
   }
 }
 
-BOOST_AUTO_TEST_CASE(TestWarpImageWithHomographyIdentity) {
+TEST(base_warp, TestWarpImageWithHomographyIdentity) {
   Bitmap source_image_gray;
   GenerateRandomBitmap(100, 100, false, &source_image_gray);
   Bitmap target_image_gray;
@@ -151,7 +151,7 @@ BOOST_AUTO_TEST_CASE(TestWarpImageWithHomographyIdentity) {
   CheckBitmapsEqual(source_image_rgb, target_image_rgb);
 }
 
-BOOST_AUTO_TEST_CASE(TestWarpImageWithHomographyTransposed) {
+TEST(base_warp, TestWarpImageWithHomographyTransposed) {
   Eigen::Matrix3d H;
   H << 0, 1, 0, 1, 0, 0, 0, 0, 1;
 
@@ -170,7 +170,7 @@ BOOST_AUTO_TEST_CASE(TestWarpImageWithHomographyTransposed) {
   CheckBitmapsTransposed(source_image_rgb, target_image_rgb);
 }
 
-BOOST_AUTO_TEST_CASE(TestWarpImageWithHomographyBetweenCamerasIdentity) {
+TEST(base_warp, TestWarpImageWithHomographyBetweenCamerasIdentity) {
   Camera source_camera;
   source_camera.InitializeWithName("PINHOLE", 1, 100, 100);
   Camera target_camera = source_camera;
@@ -194,7 +194,7 @@ BOOST_AUTO_TEST_CASE(TestWarpImageWithHomographyBetweenCamerasIdentity) {
   CheckBitmapsEqual(source_image_rgb, target_image_rgb);
 }
 
-BOOST_AUTO_TEST_CASE(TestWarpImageWithHomographyBetweenCamerasTransposed) {
+TEST(base_warp, TestWarpImageWithHomographyBetweenCamerasTransposed) {
   Camera source_camera;
   source_camera.InitializeWithName("PINHOLE", 1, 100, 100);
   Camera target_camera = source_camera;
@@ -219,7 +219,7 @@ BOOST_AUTO_TEST_CASE(TestWarpImageWithHomographyBetweenCamerasTransposed) {
   CheckBitmapsTransposed(source_image_rgb, target_image_rgb);
 }
 
-BOOST_AUTO_TEST_CASE(TestResampleImageBilinear) {
+TEST(base_warp, TestResampleImageBilinear) {
   std::vector<float> image(16);
   for (size_t i = 0; i < image.size(); ++i) {
     image[i] = i;
@@ -228,13 +228,13 @@ BOOST_AUTO_TEST_CASE(TestResampleImageBilinear) {
   std::vector<float> resampled(4);
   ResampleImageBilinear(image.data(), 4, 4, 2, 2, resampled.data());
 
-  BOOST_CHECK_EQUAL(resampled[0], 2.5);
-  BOOST_CHECK_EQUAL(resampled[1], 4.5);
-  BOOST_CHECK_EQUAL(resampled[2], 10.5);
-  BOOST_CHECK_EQUAL(resampled[3], 12.5);
+  EXPECT_EQ(resampled[0], 2.5);
+  EXPECT_EQ(resampled[1], 4.5);
+  EXPECT_EQ(resampled[2], 10.5);
+  EXPECT_EQ(resampled[3], 12.5);
 }
 
-BOOST_AUTO_TEST_CASE(TestSmoothImage) {
+TEST(base_warp, TestSmoothImage) {
   std::vector<float> image(16);
   for (size_t i = 0; i < image.size(); ++i) {
     image[i] = i;
@@ -243,17 +243,17 @@ BOOST_AUTO_TEST_CASE(TestSmoothImage) {
   std::vector<float> smoothed(16);
   SmoothImage(image.data(), 4, 4, 1, 1, smoothed.data());
 
-  BOOST_CHECK_CLOSE(smoothed[0], 1.81673253, 1e-3);
-  BOOST_CHECK_CLOSE(smoothed[1], 2.51182437, 1e-3);
-  BOOST_CHECK_CLOSE(smoothed[2], 3.39494729, 1e-3);
-  BOOST_CHECK_CLOSE(smoothed[3], 4.09003973, 1e-3);
-  BOOST_CHECK_CLOSE(smoothed[4], 4.59710073, 1e-3);
-  BOOST_CHECK_CLOSE(smoothed[5], 5.29219341, 1e-3);
-  BOOST_CHECK_CLOSE(smoothed[6], 6.17531633, 1e-3);
-  BOOST_CHECK_CLOSE(smoothed[7], 6.87040806, 1e-3);
+  EXPECT_NEAR(smoothed[0], 1.81673253, std::abs(1.81673253) * (1e-3) / 100.0);
+  EXPECT_NEAR(smoothed[1], 2.51182437, std::abs(2.51182437) * (1e-3) / 100.0);
+  EXPECT_NEAR(smoothed[2], 3.39494729, std::abs(3.39494729) * (1e-3) / 100.0);
+  EXPECT_NEAR(smoothed[3], 4.09003973, std::abs(4.09003973) * (1e-3) / 100.0);
+  EXPECT_NEAR(smoothed[4], 4.59710073, std::abs(4.59710073) * (1e-3) / 100.0);
+  EXPECT_NEAR(smoothed[5], 5.29219341, std::abs(5.29219341) * (1e-3) / 100.0);
+  EXPECT_NEAR(smoothed[6], 6.17531633, std::abs(6.17531633) * (1e-3) / 100.0);
+  EXPECT_NEAR(smoothed[7], 6.87040806, std::abs(6.87040806) * (1e-3) / 100.0);
 }
 
-BOOST_AUTO_TEST_CASE(TestDownsampleImage) {
+TEST(base_warp, TestDownsampleImage) {
   std::vector<float> image(16);
   for (size_t i = 0; i < image.size(); ++i) {
     image[i] = i;
@@ -262,8 +262,8 @@ BOOST_AUTO_TEST_CASE(TestDownsampleImage) {
   std::vector<float> downsampled(4);
   DownsampleImage(image.data(), 4, 4, 2, 2, downsampled.data());
 
-  BOOST_CHECK_CLOSE(downsampled[0], 2.76810598, 1e-3);
-  BOOST_CHECK_CLOSE(downsampled[1], 4.66086388, 1e-3);
-  BOOST_CHECK_CLOSE(downsampled[2], 10.3391361, 1e-3);
-  BOOST_CHECK_CLOSE(downsampled[3], 12.2318935, 1e-3);
+  EXPECT_NEAR(downsampled[0], 2.76810598, std::abs(2.76810598) * (1e-3) / 100.0);
+  EXPECT_NEAR(downsampled[1], 4.66086388, std::abs(4.66086388) * (1e-3) / 100.0);
+  EXPECT_NEAR(downsampled[2], 10.3391361, std::abs(10.3391361) * (1e-3) / 100.0);
+  EXPECT_NEAR(downsampled[3], 12.2318935, std::abs(12.2318935) * (1e-3) / 100.0);
 }

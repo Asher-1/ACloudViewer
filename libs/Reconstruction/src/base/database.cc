@@ -32,6 +32,7 @@
 #include "base/database.h"
 
 #include <fstream>
+#include <stdexcept>
 
 #include "util/sqlite3_utils.h"
 #include "util/string.h"
@@ -307,8 +308,9 @@ void Database::Open(const std::string& path) {
   // Enable auto vacuum to reduce DB file size
   SQLITE3_EXEC(database_, "PRAGMA auto_vacuum=1", nullptr);
 
+  PreMigrateTables();
   CreateTables();
-  UpdateSchema();
+  PostMigrateTables();
   PrepareSQLStatements();
 }
 
@@ -718,23 +720,31 @@ TwoViewGeometry Database::ReadTwoViewGeometry(const image_t image_id1,
   two_view_geometry.config = static_cast<int>(
       sqlite3_column_int64(sql_stmt_read_two_view_geometry_, 3));
 
-  two_view_geometry.F = ReadStaticMatrixBlob<Eigen::Matrix3d>(
+  // Bridge the fork's legacy two-view blob layout (plain F/E/H + qvec/tvec)
+  // to the upstream struct with optional members.
+  const Eigen::Matrix3d F_legacy = ReadStaticMatrixBlob<Eigen::Matrix3d>(
       sql_stmt_read_two_view_geometry_, rc, 4);
-  two_view_geometry.E = ReadStaticMatrixBlob<Eigen::Matrix3d>(
+  const Eigen::Matrix3d E_legacy = ReadStaticMatrixBlob<Eigen::Matrix3d>(
       sql_stmt_read_two_view_geometry_, rc, 5);
-  two_view_geometry.H = ReadStaticMatrixBlob<Eigen::Matrix3d>(
+  const Eigen::Matrix3d H_legacy = ReadStaticMatrixBlob<Eigen::Matrix3d>(
       sql_stmt_read_two_view_geometry_, rc, 6);
-  two_view_geometry.qvec = ReadStaticMatrixBlob<Eigen::Vector4d>(
+  const Eigen::Vector4d qvec_legacy = ReadStaticMatrixBlob<Eigen::Vector4d>(
       sql_stmt_read_two_view_geometry_, rc, 7);
-  two_view_geometry.tvec = ReadStaticMatrixBlob<Eigen::Vector3d>(
+  const Eigen::Vector3d tvec_legacy = ReadStaticMatrixBlob<Eigen::Vector3d>(
       sql_stmt_read_two_view_geometry_, rc, 8);
+  two_view_geometry.cam2_from_cam1 =
+      Rigid3d(Eigen::Quaterniond(qvec_legacy(0), qvec_legacy(1),
+                                 qvec_legacy(2), qvec_legacy(3)),
+              tvec_legacy);
 
   SQLITE3_CALL(sqlite3_reset(sql_stmt_read_two_view_geometry_));
 
   two_view_geometry.inlier_matches = FeatureMatchesFromBlob(blob);
-  two_view_geometry.F.transposeInPlace();
-  two_view_geometry.E.transposeInPlace();
-  two_view_geometry.H.transposeInPlace();
+  // The write path stores the transposed matrix so that its column-major
+  // memory equals the row-major original; undo that transpose here.
+  two_view_geometry.F = F_legacy.transpose();
+  two_view_geometry.E = E_legacy.transpose();
+  two_view_geometry.H = H_legacy.transpose();
 
   if (SwapImagePair(image_id1, image_id2)) {
     two_view_geometry.Invert();
@@ -762,20 +772,23 @@ void Database::ReadTwoViewGeometries(
     two_view_geometry.config = static_cast<int>(
         sqlite3_column_int64(sql_stmt_read_two_view_geometries_, 4));
 
-    two_view_geometry.F = ReadStaticMatrixBlob<Eigen::Matrix3d>(
+    const Eigen::Matrix3d F_legacy = ReadStaticMatrixBlob<Eigen::Matrix3d>(
         sql_stmt_read_two_view_geometries_, rc, 5);
-    two_view_geometry.E = ReadStaticMatrixBlob<Eigen::Matrix3d>(
+    const Eigen::Matrix3d E_legacy = ReadStaticMatrixBlob<Eigen::Matrix3d>(
         sql_stmt_read_two_view_geometries_, rc, 6);
-    two_view_geometry.H = ReadStaticMatrixBlob<Eigen::Matrix3d>(
+    const Eigen::Matrix3d H_legacy = ReadStaticMatrixBlob<Eigen::Matrix3d>(
         sql_stmt_read_two_view_geometries_, rc, 7);
-    two_view_geometry.qvec = ReadStaticMatrixBlob<Eigen::Vector4d>(
+    const Eigen::Vector4d qvec_legacy = ReadStaticMatrixBlob<Eigen::Vector4d>(
         sql_stmt_read_two_view_geometries_, rc, 8);
-    two_view_geometry.tvec = ReadStaticMatrixBlob<Eigen::Vector3d>(
+    const Eigen::Vector3d tvec_legacy = ReadStaticMatrixBlob<Eigen::Vector3d>(
         sql_stmt_read_two_view_geometries_, rc, 9);
-
-    two_view_geometry.F.transposeInPlace();
-    two_view_geometry.E.transposeInPlace();
-    two_view_geometry.H.transposeInPlace();
+    two_view_geometry.F = F_legacy.transpose();
+    two_view_geometry.E = E_legacy.transpose();
+    two_view_geometry.H = H_legacy.transpose();
+    two_view_geometry.cam2_from_cam1 =
+        Rigid3d(Eigen::Quaterniond(qvec_legacy(0), qvec_legacy(1),
+                                   qvec_legacy(2), qvec_legacy(3)),
+                tvec_legacy);
 
     two_view_geometries->push_back(two_view_geometry);
   }
@@ -1053,11 +1066,26 @@ void Database::WriteTwoViewGeometry(
   // Transpose the matrices to obtain row-major data layout.
   // Important: Do not move these objects inside the if-statement, because
   // the objects must live until `sqlite3_step` is called on the statement.
-  const Eigen::Matrix3d Ft = two_view_geometry_ptr->F.transpose();
-  const Eigen::Matrix3d Et = two_view_geometry_ptr->E.transpose();
-  const Eigen::Matrix3d Ht = two_view_geometry_ptr->H.transpose();
-  const Eigen::Vector4d& qvec = two_view_geometry_ptr->qvec;
-  const Eigen::Vector3d& tvec = two_view_geometry_ptr->tvec;
+  // Bridge the upstream optional members to the fork's legacy blob layout:
+  // absent matrices serialize as empty blobs; the pose as zero qvec/tvec.
+  static const Eigen::Matrix3d kZero3d = Eigen::Matrix3d::Zero();
+  const Eigen::Matrix3d Ft = two_view_geometry_ptr->F
+                                 ? two_view_geometry_ptr->F->transpose()
+                                 : kZero3d;
+  const Eigen::Matrix3d Et = two_view_geometry_ptr->E
+                                 ? two_view_geometry_ptr->E->transpose()
+                                 : kZero3d;
+  const Eigen::Matrix3d Ht = two_view_geometry_ptr->H
+                                 ? two_view_geometry_ptr->H->transpose()
+                                 : kZero3d;
+  Eigen::Vector4d qvec = Eigen::Vector4d::Zero();
+  Eigen::Vector3d tvec = Eigen::Vector3d::Zero();
+  if (two_view_geometry_ptr->cam2_from_cam1) {
+    const Eigen::Quaterniond& q =
+        two_view_geometry_ptr->cam2_from_cam1->rotation();
+    qvec << q.w(), q.x(), q.y(), q.z();
+    tvec = two_view_geometry_ptr->cam2_from_cam1->translation();
+  }
 
   if (two_view_geometry_ptr->inlier_matches.size() > 0) {
     WriteStaticMatrixBlob(sql_stmt_write_two_view_geometry_, Ft, 6);
@@ -1832,6 +1860,101 @@ void Database::CreateTwoViewGeometriesTable() const {
   }
 }
 
+
+namespace {
+
+// Returns whether the given table has a column of the given name.
+bool ExistsColumnImpl(sqlite3* db, const std::string& table_name,
+                      const std::string& column_name) {
+    sqlite3_stmt* stmt;
+    const std::string sql =
+            "SELECT name FROM pragma_table_info('" + table_name +
+            "') WHERE name = ?;";
+    SQLITE3_CALL(sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr));
+    SQLITE3_CALL(
+            sqlite3_bind_text(stmt, 1, column_name.c_str(), -1, SQLITE_STATIC));
+    const bool exists =
+            SQLITE3_CALL(sqlite3_step(stmt)) == SQLITE_ROW;
+    SQLITE3_CALL(sqlite3_finalize(stmt));
+    return exists;
+}
+
+}  // namespace
+
+void Database::PreMigrateTables() const {
+    // Legacy upstream databases keyed pose priors by image IDs; the table is
+    // renamed so that CreateTables() can recreate it in the new schema.
+    if (ExistsTable("pose_priors") &&
+        ExistsColumnImpl(database_, "pose_priors", "image_id")) {
+        SQLITE3_EXEC(database_,
+                     "ALTER TABLE pose_priors RENAME TO pose_priors_old;",
+                     nullptr);
+    }
+}
+
+int Database::ReadUserVersion() const {
+    sqlite3_stmt* version_stmt;
+    SQLITE3_CALL(sqlite3_prepare_v2(database_, "PRAGMA user_version;", -1,
+                                    &version_stmt, nullptr));
+    int user_version = 0;
+    if (SQLITE3_CALL(sqlite3_step(version_stmt)) == SQLITE_ROW) {
+        user_version = sqlite3_column_int(version_stmt, 0);
+    }
+    SQLITE3_CALL(sqlite3_finalize(version_stmt));
+    return user_version;
+}
+
+void Database::PostMigrateTables() const {
+    // Refuse databases written by a newer schema than this build supports.
+    const int user_version = ReadUserVersion();
+    if (user_version > GetDatabaseVersionNumber()) {
+        throw std::runtime_error(
+                "Database schema version " + std::to_string(user_version) +
+                " is newer than the supported version " +
+                std::to_string(GetDatabaseVersionNumber()) + ".");
+    }
+
+    // Legacy fork databases (pre user_version migration machinery, version
+    // 395) stored sentinel poses/matrices for unknown values; migrate them
+    // to NULL. Sentinels: identity qvec (w=1, little-endian) + zero tvec,
+    // zero F/E/H matrices.
+    if (user_version == kLegacyForkDatabaseVersionNumber) {
+        const std::string zero48(48, '0');
+        const std::string zero144(144, '0');
+        SQLITE3_EXEC(
+                database_,
+                ("UPDATE two_view_geometries SET qvec = NULL WHERE qvec ="
+                 " X'000000000000F03F" + std::string(48, '0') + "';")
+                        .c_str(),
+                nullptr);
+        SQLITE3_EXEC(database_,
+                     ("UPDATE two_view_geometries SET tvec = NULL WHERE tvec"
+                      " = X'" + zero48 + "';")
+                             .c_str(),
+                     nullptr);
+        SQLITE3_EXEC(database_,
+                     ("UPDATE two_view_geometries SET F = NULL WHERE F ="
+                      " X'" + zero144 + "';")
+                             .c_str(),
+                     nullptr);
+        SQLITE3_EXEC(database_,
+                     ("UPDATE two_view_geometries SET E = NULL WHERE E ="
+                      " X'" + zero144 + "';")
+                             .c_str(),
+                     nullptr);
+        SQLITE3_EXEC(database_,
+                     ("UPDATE two_view_geometries SET H = NULL WHERE H ="
+                      " X'" + zero144 + "';")
+                             .c_str(),
+                     nullptr);
+    }
+
+    // Stamp the schema version (moved from the legacy UpdateSchema tail).
+    std::unique_lock<std::mutex> lock(update_schema_mutex_);
+    const std::string update_user_version_sql =
+            StringPrintf("PRAGMA user_version = %d;", GetDatabaseVersionNumber());
+    SQLITE3_EXEC(database_, update_user_version_sql.c_str(), nullptr);
+}
 void Database::UpdateSchema() const {
   if (!ExistsColumn("rigs", "ref_sensor_id")) {
     SQLITE3_EXEC(database_, "ALTER TABLE rigs ADD COLUMN ref_sensor_id INTEGER;", nullptr);
@@ -2019,5 +2142,134 @@ DatabaseTransaction::DatabaseTransaction(Database* database)
 }
 
 DatabaseTransaction::~DatabaseTransaction() { database_->EndTransaction(); }
+
+
+namespace {
+
+// Row reader shared by ReadPosePrior and ReadAllPosePriors. The SELECT
+// column order matches the pose_priors table definition.
+PosePrior ReadPosePriorRow(sqlite3_stmt* sql_stmt) {
+  PosePrior pose_prior;
+  pose_prior.pose_prior_id = static_cast<pose_prior_t>(
+      sqlite3_column_int64(sql_stmt, 0));
+  const data_t corr_data(
+      sensor_t(static_cast<SensorType>(sqlite3_column_int(sql_stmt, 2)),
+               static_cast<uint32_t>(sqlite3_column_int64(sql_stmt, 1))),
+      0);
+  pose_prior.corr_data_id = corr_data;
+  pose_prior.position =
+      ReadStaticMatrixBlob<Eigen::Vector3d>(sql_stmt, SQLITE_ROW, 3);
+  pose_prior.position_covariance =
+      ReadStaticMatrixBlob<Eigen::Matrix3d>(sql_stmt, SQLITE_ROW, 4);
+  pose_prior.gravity =
+      ReadStaticMatrixBlob<Eigen::Vector3d>(sql_stmt, SQLITE_ROW, 6);
+  pose_prior.coordinate_system =
+      static_cast<PosePrior::CoordinateSystem>(
+          sqlite3_column_int(sql_stmt, 5));
+  return pose_prior;
+}
+
+}  // namespace
+
+bool Database::ExistsPosePrior(pose_prior_t pose_prior_id) const {
+  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_exists_pose_prior_, 1,
+                                  static_cast<sqlite3_int64>(pose_prior_id)));
+  const int rc = SQLITE3_CALL(sqlite3_step(sql_stmt_exists_pose_prior_));
+  SQLITE3_CALL(sqlite3_reset(sql_stmt_exists_pose_prior_));
+  return rc == SQLITE_ROW;
+}
+
+size_t Database::NumPosePriors() const {
+  sqlite3_stmt* sql_stmt;
+  SQLITE3_CALL(sqlite3_prepare_v2(database_, "SELECT COUNT(*) FROM"
+                                 " pose_priors;", -1, &sql_stmt, nullptr));
+  const int rc = SQLITE3_CALL(sqlite3_step(sql_stmt));
+  const size_t count = static_cast<size_t>(sqlite3_column_int64(sql_stmt, 0));
+  SQLITE3_CALL(sqlite3_finalize(sql_stmt));
+  THROW_CHECK_EQ(rc, SQLITE_ROW);
+  return count;
+}
+
+PosePrior Database::ReadPosePrior(pose_prior_t pose_prior_id) const {
+  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_read_pose_prior_, 1,
+                                  static_cast<sqlite3_int64>(pose_prior_id)));
+  PosePrior pose_prior;
+  const int rc = SQLITE3_CALL(sqlite3_step(sql_stmt_read_pose_prior_));
+  if (rc == SQLITE_ROW) {
+    pose_prior = ReadPosePriorRow(sql_stmt_read_pose_prior_);
+  }
+  SQLITE3_CALL(sqlite3_reset(sql_stmt_read_pose_prior_));
+  return pose_prior;
+}
+
+std::vector<PosePrior> Database::ReadAllPosePriors() const {
+  std::vector<PosePrior> pose_priors;
+  while (SQLITE3_CALL(sqlite3_step(sql_stmt_read_pose_priors_)) ==
+         SQLITE_ROW) {
+    pose_priors.push_back(ReadPosePriorRow(sql_stmt_read_pose_priors_));
+  }
+  SQLITE3_CALL(sqlite3_reset(sql_stmt_read_pose_priors_));
+  return pose_priors;
+}
+
+pose_prior_t Database::WritePosePrior(const PosePrior& pose_prior,
+                                      bool use_pose_prior_id) {
+  if (use_pose_prior_id) {
+    SQLITE3_CALL(sqlite3_bind_int64(
+        sql_stmt_write_pose_prior_, 1,
+        static_cast<sqlite3_int64>(pose_prior.pose_prior_id)));
+  } else {
+    SQLITE3_CALL(sqlite3_bind_null(sql_stmt_write_pose_prior_, 1));
+  }
+  SQLITE3_CALL(sqlite3_bind_int64(
+      sql_stmt_write_pose_prior_, 2,
+      static_cast<sqlite3_int64>(pose_prior.corr_data_id.id)));
+  SQLITE3_CALL(sqlite3_bind_int64(
+      sql_stmt_write_pose_prior_, 3,
+      static_cast<sqlite3_int64>(pose_prior.corr_data_id.sensor_id.id)));
+  SQLITE3_CALL(sqlite3_bind_int64(
+      sql_stmt_write_pose_prior_, 4,
+      static_cast<sqlite3_int64>(pose_prior.corr_data_id.sensor_id.type)));
+  WriteStaticMatrixBlob(sql_stmt_write_pose_prior_, pose_prior.position, 5);
+  WriteStaticMatrixBlob(sql_stmt_write_pose_prior_,
+                        pose_prior.position_covariance, 6);
+  SQLITE3_CALL(sqlite3_bind_int64(
+      sql_stmt_write_pose_prior_, 7,
+      static_cast<sqlite3_int64>(pose_prior.coordinate_system)));
+  WriteStaticMatrixBlob(sql_stmt_write_pose_prior_, pose_prior.gravity, 8);
+  SQLITE3_CALL(sqlite3_step(sql_stmt_write_pose_prior_));
+  SQLITE3_CALL(sqlite3_reset(sql_stmt_write_pose_prior_));
+  return static_cast<pose_prior_t>(
+      sqlite3_last_insert_rowid(database_));
+}
+
+void Database::UpdatePosePrior(const PosePrior& pose_prior) {
+  SQLITE3_CALL(sqlite3_bind_int64(
+      sql_stmt_update_pose_prior_, 1,
+      static_cast<sqlite3_int64>(pose_prior.corr_data_id.id)));
+  SQLITE3_CALL(sqlite3_bind_int64(
+      sql_stmt_update_pose_prior_, 2,
+      static_cast<sqlite3_int64>(pose_prior.corr_data_id.sensor_id.id)));
+  SQLITE3_CALL(sqlite3_bind_int64(
+      sql_stmt_update_pose_prior_, 3,
+      static_cast<sqlite3_int64>(pose_prior.corr_data_id.sensor_id.type)));
+  WriteStaticMatrixBlob(sql_stmt_update_pose_prior_, pose_prior.position, 4);
+  WriteStaticMatrixBlob(sql_stmt_update_pose_prior_,
+                        pose_prior.position_covariance, 5);
+  SQLITE3_CALL(sqlite3_bind_int64(
+      sql_stmt_update_pose_prior_, 6,
+      static_cast<sqlite3_int64>(pose_prior.coordinate_system)));
+  WriteStaticMatrixBlob(sql_stmt_update_pose_prior_, pose_prior.gravity, 7);
+  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_update_pose_prior_, 8,
+                                  static_cast<sqlite3_int64>(
+                                      pose_prior.pose_prior_id)));
+  SQLITE3_CALL(sqlite3_step(sql_stmt_update_pose_prior_));
+  SQLITE3_CALL(sqlite3_reset(sql_stmt_update_pose_prior_));
+}
+
+void Database::ClearPosePriors() {
+  SQLITE3_CALL(sqlite3_step(sql_stmt_clear_pose_priors_));
+  SQLITE3_CALL(sqlite3_reset(sql_stmt_clear_pose_priors_));
+}
 
 }  // namespace colmap

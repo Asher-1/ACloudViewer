@@ -596,7 +596,13 @@ bool WriteExifPlaceholderSparseModel(const std::string& image_root,
         image.Qvec(2) = 0.0;
         image.Qvec(3) = 0.0;
         image.SetTvec(Eigen::Vector3d::Zero());
-        reconstruction.AddImage(image);
+        // Upstream-parity: a trivial frame is created per image and the
+        // identity pose is registered with it.
+        const Eigen::Quaterniond cam_q(
+            image.Qvec()(0), image.Qvec()(1), image.Qvec()(2),
+            image.Qvec()(3));
+        reconstruction.AddImageWithTrivialFrame(
+            image, Rigid3d(cam_q, image.Tvec()));
         reconstruction.RegisterImage(image.ImageId());
         ++registered;
     }

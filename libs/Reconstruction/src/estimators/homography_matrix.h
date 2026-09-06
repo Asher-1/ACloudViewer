@@ -53,4 +53,10 @@ public:
                           std::vector<double>* residuals);
 };
 
+// Calculate the squared reprojection error for a single point pair under
+// a homography transformation. Upstream-parity helper used by DEGENSAC.
+double ComputeSquaredHomographyError(const Eigen::Vector2d& point1,
+                                     const Eigen::Vector2d& point2,
+                                     const Eigen::Matrix3d& H);
+
 }  // namespace colmap

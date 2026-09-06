@@ -36,34 +36,34 @@
 
 using namespace colmap;
 
-BOOST_AUTO_TEST_CASE(TestIsNaN) {
-  BOOST_CHECK(!IsNaN(Eigen::Vector3f::Zero()));
-  BOOST_CHECK(!IsNaN(Eigen::Vector3d::Zero()));
-  BOOST_CHECK(IsNaN(
+TEST(util_matrix, TestIsNaN) {
+  EXPECT_FALSE(IsNaN(Eigen::Vector3f::Zero()));
+  EXPECT_FALSE(IsNaN(Eigen::Vector3d::Zero()));
+  EXPECT_TRUE(IsNaN(
       Eigen::Vector3f(std::numeric_limits<float>::quiet_NaN(), 0.0f, 0.0f)));
-  BOOST_CHECK(IsNaN(
+  EXPECT_TRUE(IsNaN(
       Eigen::Vector3d(std::numeric_limits<double>::quiet_NaN(), 0.0f, 0.0f)));
 }
 
-BOOST_AUTO_TEST_CASE(TestIsInf) {
-  BOOST_CHECK(!IsInf(Eigen::Vector3f::Zero()));
-  BOOST_CHECK(!IsInf(Eigen::Vector3d::Zero()));
-  BOOST_CHECK(IsInf(
+TEST(util_matrix, TestIsInf) {
+  EXPECT_FALSE(IsInf(Eigen::Vector3f::Zero()));
+  EXPECT_FALSE(IsInf(Eigen::Vector3d::Zero()));
+  EXPECT_TRUE(IsInf(
       Eigen::Vector3f(std::numeric_limits<float>::infinity(), 0.0f, 0.0f)));
-  BOOST_CHECK(IsInf(
+  EXPECT_TRUE(IsInf(
       Eigen::Vector3d(std::numeric_limits<double>::infinity(), 0.0f, 0.0f)));
 }
 
-BOOST_AUTO_TEST_CASE(TestDecomposeMatrixRQ) {
+TEST(util_matrix, TestDecomposeMatrixRQ) {
   for (int i = 0; i < 10; ++i) {
     const Eigen::Matrix4d A = Eigen::Matrix4d::Random();
 
     Eigen::Matrix4d R, Q;
     DecomposeMatrixRQ(A, &R, &Q);
 
-    BOOST_CHECK(R.bottomRows(4).isUpperTriangular());
-    BOOST_CHECK(Q.isUnitary());
-    BOOST_CHECK_CLOSE(Q.determinant(), 1.0, 1e-6);
-    BOOST_CHECK(A.isApprox(R * Q, 1e-6));
+    EXPECT_TRUE(R.bottomRows(4).isUpperTriangular());
+    EXPECT_TRUE(Q.isUnitary());
+    EXPECT_NEAR(Q.determinant(), 1.0, std::abs(1.0) * (1e-6) / 100.0);
+    EXPECT_TRUE(A.isApprox(R * Q, 1e-6));
   }
 }

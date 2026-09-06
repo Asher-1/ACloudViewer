@@ -61,6 +61,9 @@ public:
         /** Weight-precision chain ("q8" default | "f16"). Resolved by
          *  TrellisHelpers::resolvePresetFiles into concrete GGUF paths. */
         QString quantization = QStringLiteral("q8");
+        /** Full (Generate + GLB) or GeometryOnly (Generate 3D — the GLB bake
+         *  is skipped and can be run later from the Export page). */
+        TrellisRunMode runMode = TrellisRunMode::Full;
     };
 
     explicit TrellisDialog(QWidget* parent = nullptr);
@@ -68,6 +71,7 @@ public:
 
     void setAppInterface(ecvMainAppInterface* app);
     Settings getSettings() const;
+    void runWithMode(TrellisRunMode mode);
     void appendLog(const QString& msg);
     void setProgressStage(int stageId,
                           const QString& stage,
@@ -92,6 +96,10 @@ public:
      *  (Preprocess = RMBG-matted image; Mesh = guaranteed final render;
      *  Texture / GLB = textured render). Safe to skip empty sources. */
     void applyResultToStrip(const TrellisRunResult& result);
+    /** Open the orbit 3D viewer for a mesh-bearing strip slot (3 = Mesh,
+     *  4 = Texture, 5 = GLB); falls back to the image zoom when no result
+     *  mesh is available. */
+    void openMesh3D(int slot);
     /** Remember the last generation result for the export page. */
     void setLastResult(const TrellisRunResult& result) {
         m_lastResult = result;
@@ -120,6 +128,12 @@ public:
     /** Export-page busy state: both action buttons disable while a print
      *  wrap runs, restored per build-time availability when done. */
     void setPrintWrapRunning(bool running);
+    /** Export-page bake progress: busy bar + AICore bake stage text (the
+     *  bake reports stage boundaries with elapsed seconds, no percentage). */
+    void setBakeProgress(const QString& stage, double elapsedS);
+    /** Export-page busy state: shows the bake progress section while a bake
+     *  runs and sets its final status text when it ends. */
+    void setExportBusy(bool busy, const QString& finalText = QString());
 
 signals:
     void runRequested(const TrellisDialog::Settings& settings);
@@ -194,6 +208,11 @@ private:
     // the zoomable full-size preview (shared UI spec §13.3).
     QVector<ecvClickableImageLabel*> m_stageThumbs;
     QVector<QLabel*> m_stageCaptions;
+    TrellisRunMode m_runMode = TrellisRunMode::Full;
+    /** Raw T2VOX01 payload of the last voxel preview (Voxels chip 3D). */
+    QByteArray m_lastVoxelBlob;
+    // The Mesh/Texture/GLB chips' 3D viewer reads m_lastResult (the export
+    // page already owned it) via applyResultToStrip's setLastResult().
 
     // Export page (last-result GLB / print-wrap controls).
     QSpinBox* m_exportTextureSize = nullptr;
@@ -202,9 +221,14 @@ private:
     QLabel* m_exportInfo = nullptr;
     QPushButton* m_rebakeBtn = nullptr;
     QPushButton* m_printWrapBtn = nullptr;
-    // Build-time availability of the export-page actions (the CGAL print
-    // wrap and the AICore-enabled re-bake), honored by setPrintWrapRunning.
-    bool m_rebakeAvailable = true;
+    /** Export-page bake progress section (busy bar + stage text + cancel). */
+    QLabel* m_exportStageLabel = nullptr;
+    QProgressBar* m_exportProgress = nullptr;
+    QPushButton* m_exportCancelBtn = nullptr;
+    // Build-time availability of the export-page actions (the AICore-enabled
+    // re-bake and the CGAL print wrap), set by buildExportPage and honored
+    // by setRunning / setPrintWrapRunning on every unlock path.
+    bool m_rebakeAvailable = false;
     bool m_printWrapAvailable = false;
 
     // Parameters (each row: "use default" checkbox + numeric spinbox).

@@ -17,9 +17,13 @@
 #include <QHBoxLayout>
 #include <QImageReader>
 #include <QMessageBox>
+#include <QMouseEvent>
 #include <QSettings>
 #include <QStandardPaths>
 #include <QVBoxLayout>
+#include <functional>
+
+#include "TrellisMeshViewer.h"
 
 #ifdef AICore_ENABLED
 #include "aicore/backend_capi.h"
@@ -28,6 +32,86 @@
 #endif
 #include "ecvAICoreUiHelper.h"
 #include "ecvPersistentSettings.h"
+
+// Build a shaded unit-cube mesh from a T2VOX01 preview payload (one 24-vert
+// cube per occupied cell, per-face normals, blue shades matching the strip
+// thumbnails). 20k voxels -> ~240k tris: well within the GL viewer's budget.
+static bool voxelBlobToMesh(const QByteArray& blob,
+                            QVector<float>& verts,
+                            QVector<float>& normals,
+                            QVector<float>& colors,
+                            QVector<int>& tris) {
+    if (blob.size() < 16 || !blob.startsWith("T2VOX01")) return false;
+    quint32 res = 0, nvox = 0;
+    std::memcpy(&res, blob.constData() + 8, 4);
+    std::memcpy(&nvox, blob.constData() + 12, 4);
+    if (res == 0 || res > 4096 || nvox == 0) return false;
+    if (blob.size() < int(16 + size_t(nvox) * 6)) return false;
+    const unsigned char* cells = (const unsigned char*)blob.constData() + 16;
+    const float s = 1.0f / float(res);
+    // Per-face: normal + 4 CCW corners on the unit cube.
+    static const float kFaceN[6][3] = {{0, -1, 0}, {0, 1, 0},  {-1, 0, 0},
+                                       {1, 0, 0},  {0, 0, -1}, {0, 0, 1}};
+    static const float kFaceV[6][4][3] = {
+            {{0, 0, 1}, {1, 0, 1}, {1, 0, 0}, {0, 0, 0}},
+            {{0, 1, 0}, {1, 1, 0}, {1, 1, 1}, {0, 1, 1}},
+            {{0, 0, 0}, {0, 1, 0}, {0, 1, 1}, {0, 0, 1}},
+            {{1, 0, 1}, {1, 1, 1}, {1, 1, 0}, {1, 0, 0}},
+            {{1, 0, 0}, {1, 1, 0}, {0, 1, 0}, {0, 0, 0}},
+            {{0, 0, 1}, {0, 1, 1}, {1, 1, 1}, {1, 0, 1}},
+    };
+    // Per-face blue shades matching the strip thumbnails (top/side/front).
+    static const float kFaceC[6][3] = {{52, 92, 138},  {126, 174, 224},
+                                       {72, 118, 168}, {72, 118, 168},
+                                       {52, 92, 138},  {72, 118, 168}};
+    verts.reserve(int(nvox * 24 * 3));
+    normals.reserve(int(nvox * 24 * 3));
+    colors.reserve(int(nvox * 24 * 3));
+    tris.reserve(int(nvox * 36));
+    for (quint32 i = 0; i < nvox; ++i) {
+        // Cell coords are u16 pairs in the T2VOX01 payload (see AICore
+        // emit_voxels); widening via a float memcpy would leave the float's
+        // upper bytes as stack garbage and blow the geometry far off-screen.
+        quint16 xi, yi, zi;
+        std::memcpy(&xi, cells + (size_t)i * 6 + 0, 2);
+        std::memcpy(&yi, cells + (size_t)i * 6 + 2, 2);
+        std::memcpy(&zi, cells + (size_t)i * 6 + 4, 2);
+        const float x = xi, y = yi, z = zi;
+        for (int f = 0; f < 6; ++f) {
+            const int base = verts.size() / 3;
+            for (int cnr = 0; cnr < 4; ++cnr) {
+                verts << (x + kFaceV[f][cnr][0]) * s - 0.5f;
+                verts << (y + kFaceV[f][cnr][1]) * s - 0.5f;
+                verts << (z + kFaceV[f][cnr][2]) * s - 0.5f;
+                normals << kFaceN[f][0] << kFaceN[f][1] << kFaceN[f][2];
+                colors << kFaceC[f][0] / 255.0f << kFaceC[f][1] / 255.0f
+                       << kFaceC[f][2] / 255.0f << 0.0f << 0.0f << 0.0f;
+            }
+            tris << base << base + 1 << base + 2 << base << base + 2
+                 << base + 3;
+        }
+    }
+    return true;
+}
+
+// Pipeline-strip chip for the mesh-bearing stages (Mesh / Texture / GLB):
+// the click opens the 3D orbit viewer when a result mesh is available and
+// falls back to the shared image zoom otherwise.
+class MeshStageChip : public ecvClickableImageLabel {
+public:
+    using ecvClickableImageLabel::ecvClickableImageLabel;
+
+    std::function<void()> openViewer;
+
+protected:
+    void mousePressEvent(QMouseEvent* event) override {
+        if (openViewer && event->button() == Qt::LeftButton) {
+            openViewer();
+            return;
+        }
+        ecvClickableImageLabel::mousePressEvent(event);
+    }
+};
 
 namespace {
 
@@ -329,10 +413,20 @@ void TrellisDialog::buildGeneratePage(QWidget* page) {
                                     tr("Voxels"),  tr("Mesh"),
                                     tr("Texture"), tr("GLB")};
     const int thumb = ecvAICoreUi::dpiScaled(72);
+    int slotIndex = 0;
     for (const QString& name : kStepNames) {
         auto* cell = new QVBoxLayout();
         cell->setSpacing(1);
-        auto* thumbLabel = new ecvClickableImageLabel(stripGroup);
+        ecvClickableImageLabel* thumbLabel = nullptr;
+        if (slotIndex >= 2) {
+            auto* meshChip = new MeshStageChip(stripGroup);
+            meshChip->openViewer = [this, slotIndex]() {
+                openMesh3D(slotIndex);
+            };
+            thumbLabel = meshChip;
+        } else {
+            thumbLabel = new ecvClickableImageLabel(stripGroup);
+        }
         thumbLabel->setFixedSize(thumb, thumb);
         thumbLabel->setStyleSheet(
                 "border: 1px solid #B8C4D0; border-radius: 3px; "
@@ -346,6 +440,7 @@ void TrellisDialog::buildGeneratePage(QWidget* page) {
         stripLayout->addLayout(cell);
         m_stageThumbs << thumbLabel;
         m_stageCaptions << caption;
+        ++slotIndex;
     }
     stripLayout->addStretch(1);
     root->addWidget(stripGroup);
@@ -375,26 +470,30 @@ void TrellisDialog::buildGeneratePage(QWidget* page) {
 
     // ── Progress / log ───────────────────────────────────────────────────
     ecvAICoreUi::setupProgressSection(root, m_stageLabel, m_progress);
-    auto* runBtn = new QPushButton(tr("Generate 3D"), this);
+    auto* runBtn = new QPushButton(tr("Generate Mesh (fast)"), this);
     runBtn->setDefault(true);
     // Keep a floor width so the label never clips on narrow windows or
     // translated strings.
     runBtn->setMinimumWidth(ecvAICoreUi::dpiScaled(120));
     runBtn->setToolTip(
-            tr("Run generation with the current settings. Outputs follow the "
-               "Output group: DB import via 'Add mesh to DB'; a GLB file is "
-               "written only when a Save GLB directory is set."));
+            tr("FAST PREVIEW — inference only, no GLB bake. The mesh lands "
+               "in the DB shaded with the generated colours as vertex "
+               "colours ('PBR textures' checked) or plain geometry, in "
+               "about half the time of a full run. Use it to iterate on "
+               "shape and parameters; bake the textured GLB afterwards "
+               "from the Export page or with the full-run button."));
     // One-click end-to-end: generate with the current settings AND write the
     // textured GLB into the Save-GLB directory (defaulted to ~/Downloads /
     // TRELLIS when empty), so the whole image -> portable-asset flow is one
     // button for non-expert users.
-    auto* oneClickBtn = new QPushButton(tr("Generate + GLB"), this);
+    auto* oneClickBtn = new QPushButton(tr("Generate + Bake GLB (full)"), this);
     oneClickBtn->setToolTip(
-            tr("One-click end-to-end: run generation AND guarantee a GLB "
-               "file — the Save GLB directory is defaulted to Downloads/"
-               "TRELLIS when empty, then generation runs exactly like "
-               "'Generate 3D' (the DB import follows the Output "
-               "checkboxes)."));
+            tr("FULL PIPELINE — inference + textured GLB UV bake "
+               "(exportable asset; the bake is CPU-bound and can take "
+               "minutes on complex meshes). Use the fast preview button "
+               "instead when you only need a quick shape look. Requires "
+               "'PBR textures' to be checked (an untextured run has "
+               "nothing to bake)."));
     oneClickBtn->setMinimumWidth(ecvAICoreUi::dpiScaled(120));
     auto* cancelBtn = new QPushButton(tr("Cancel"), this);
     cancelBtn->setEnabled(false);
@@ -632,6 +731,7 @@ TrellisDialog::Settings TrellisDialog::getSettings() const {
     s.addResultToDb = m_addToDbCheck->isChecked();
     s.addRmbgImageToDb = m_addRmbgToDbCheck->isChecked();
     s.saveGlbDir = m_saveGlbDir->text().trimmed();
+    s.runMode = m_runMode;
     s.pipelineType =
             m_presetCombo->currentIndex() == 0
                     ? 1                                       /* coarse */
@@ -746,6 +846,13 @@ void TrellisDialog::setRunning(bool running) {
     m_addToDbCheck->setEnabled(!running);
     m_addRmbgToDbCheck->setEnabled(!running && m_rmbgCheck->isChecked());
     m_saveGlbDir->setEnabled(!running);
+    // Export page: the re-bake shares the runtime and consumes the last
+    // result, so its controls lock while any run (generation or bake) is on.
+    m_exportTextureSize->setEnabled(!running);
+    m_exportComponentFilter->setEnabled(!running);
+    m_exportDestination->setEnabled(!running);
+    m_rebakeBtn->setEnabled(!running && m_rebakeAvailable);
+    m_printWrapBtn->setEnabled(!running && m_printWrapAvailable);
     if (running) {
         // Reset the inference sweep so the first stage callback is visible
         // instead of leaving the bar at a stale download/previous-run value.
@@ -754,6 +861,40 @@ void TrellisDialog::setRunning(bool running) {
         m_progress->setValue(0);
         m_stageLabel->setVisible(true);
         m_stageLabel->setText(tr("Stage: starting..."));
+    }
+}
+
+void TrellisDialog::setBakeProgress(const QString& stage, double elapsedS) {
+    if (!m_exportStageLabel || !m_exportProgress) return;
+    m_exportProgress->setVisible(true);
+    m_exportStageLabel->setText(
+            tr("Stage: %1 - %2 s elapsed").arg(stage).arg(elapsedS, 0, 'f', 0));
+    // Mirror on the Generate page so the bake stays visible on both tabs.
+    m_stageLabel->setVisible(true);
+    m_stageLabel->setText(
+            tr("Bake: %1 (%2 s)").arg(stage).arg(elapsedS, 0, 'f', 0));
+}
+
+void TrellisDialog::setExportBusy(bool busy, const QString& finalText) {
+    if (!m_exportProgress || !m_exportStageLabel || !m_exportCancelBtn) {
+        return;
+    }
+    m_exportProgress->setVisible(busy);
+    m_exportCancelBtn->setEnabled(busy);
+    if (busy) {
+        // The AICore bake reports stage boundaries with elapsed seconds only,
+        // so both bars run as busy indicators (no fake percentage).
+        m_exportProgress->setRange(0, 0);
+        m_exportStageLabel->setText(tr("Stage: starting..."));
+        m_progress->setRange(0, 0);
+        return;
+    }
+    m_exportProgress->setRange(0, 100);
+    m_exportProgress->setValue(0);
+    m_progress->setRange(0, 100);
+    m_progress->setValue(0);
+    if (!finalText.isEmpty()) {
+        m_exportStageLabel->setText(finalText);
     }
 }
 
@@ -1073,7 +1214,7 @@ void TrellisDialog::onTestDataExtracted() {
     }
 }
 
-void TrellisDialog::onRun() {
+void TrellisDialog::runWithMode(TrellisRunMode mode) {
     if (m_imagePath->text().trimmed().isEmpty()) {
         appendLog(tr("[TRELLIS] Select an input image first."));
         return;
@@ -1087,9 +1228,16 @@ void TrellisDialog::onRun() {
         onDownloadModels();
         return;
     }
+    m_runMode = mode;
     saveSettings();
     resetStageStrip(m_lastPreviewImage);
     emit runRequested(getSettings());
+}
+
+void TrellisDialog::onRun() {
+    // "Generate 3D": inference only — the mesh lands in the DB untextured
+    // and the GLB can be baked later (Export page / Generate + GLB).
+    runWithMode(TrellisRunMode::GeometryOnly);
 }
 
 void TrellisDialog::onRunOneClick() {
@@ -1100,7 +1248,7 @@ void TrellisDialog::onRunOneClick() {
                 QStandardPaths::DownloadLocation);
         m_saveGlbDir->setText(downloads + QStringLiteral("/TRELLIS"));
     }
-    onRun();
+    runWithMode(TrellisRunMode::Full);
 }
 
 void TrellisDialog::onCancel() { emit cancelRequested(); }
@@ -1164,10 +1312,35 @@ void TrellisDialog::buildExportPage(QWidget* page) {
     actions->addWidget(m_printWrapBtn);
     actions->addStretch(1);
     root->addLayout(actions);
+
+    // Bake progress: the re-bake is a minutes-long CPU stage driven by AICore
+    // stage-boundary callbacks (stage text + elapsed seconds, no global
+    // percentage), so the bar is a busy indicator and the label tracks the
+    // current stage; the cancel button trips the cooperative bake cancel.
+    auto* bakeGroup = new QGroupBox(tr("Bake progress"), page);
+    ecvAICoreUi::tightenGroupBox(bakeGroup);
+    auto* bakeLayout = new QVBoxLayout(bakeGroup);
+    m_exportStageLabel = new QLabel(
+            tr("Idle. Click Re-bake GLB to bake the last result."), bakeGroup);
+    m_exportStageLabel->setWordWrap(true);
+    bakeLayout->addWidget(m_exportStageLabel);
+    m_exportProgress = new QProgressBar(bakeGroup);
+    m_exportProgress->setRange(0, 0);  // indeterminate / busy indicator
+    m_exportProgress->setTextVisible(false);
+    m_exportProgress->setVisible(false);
+    bakeLayout->addWidget(m_exportProgress);
+    m_exportCancelBtn = new QPushButton(tr("Cancel bake"), bakeGroup);
+    m_exportCancelBtn->setToolTip(
+            tr("Cancel the running bake at the next AICore bake stage "
+               "boundary; the retained result is unchanged."));
+    m_exportCancelBtn->setEnabled(false);
+    bakeLayout->addWidget(m_exportCancelBtn);
+    root->addWidget(bakeGroup);
     root->addStretch(1);
 
 #ifdef AICore_ENABLED
     const bool printable = aicore_trellis_print_remesh_available() != 0;
+    m_rebakeAvailable = true;
     m_printWrapAvailable = printable;
     m_printWrapBtn->setEnabled(printable);
     if (!printable) {
@@ -1176,8 +1349,8 @@ void TrellisDialog::buildExportPage(QWidget* page) {
                    "enable the print wrap."));
     }
 #else
-    m_printWrapAvailable = false;
     m_rebakeAvailable = false;
+    m_printWrapAvailable = false;
     m_printWrapBtn->setEnabled(false);
     m_rebakeBtn->setEnabled(false);
 #endif
@@ -1213,6 +1386,7 @@ void TrellisDialog::resetStageStrip(const QImage& input) {
         m_stageCaptions[i]->setText(names[i]);
         m_stageCaptions[i]->setStyleSheet("color: #5A6672; font-size: 10px;");
     }
+    m_lastVoxelBlob.clear();
     if (!input.isNull() && !m_stageThumbs.isEmpty()) {
         m_stageThumbs[0]->setPreviewImage(input, m_stageThumbs[0]->size());
     }
@@ -1263,6 +1437,7 @@ void TrellisDialog::setStageState(int slot, int state) {
 }
 
 void TrellisDialog::setStagePreview(const TrellisStagePreview& preview) {
+    if (!preview.rawBlob.isEmpty()) m_lastVoxelBlob = preview.rawBlob;
     // Map the AICore stage onto the strip slot: voxel sets (SS_FLOW /
     // SS_DEC / UPSAMPLE) light the Voxels chip, mesh keyframes and decodes
     // (SLAT_FLOW* / SHAPE_DEC*) the Mesh chip.
@@ -1301,6 +1476,7 @@ void TrellisDialog::applyResultToStrip(const TrellisRunResult& result) {
     // render with an explicit state caption instead, so a blank slot can
     // never read as a broken stage.
     if (m_stageThumbs.size() < 6) return;
+    setLastResult(result);
     if (!result.rmbgImage.isNull()) {
         m_stageThumbs[1]->setPreviewImage(result.rmbgImage,
                                           m_stageThumbs[1]->size());
@@ -1317,19 +1493,74 @@ void TrellisDialog::applyResultToStrip(const TrellisRunResult& result) {
     if (!result.previewImage.isNull()) {
         // Guaranteed mesh content: the live keyframes are best-effort and
         // can stay empty on some presets.
-        m_stageThumbs[3]->setPreviewImage(result.previewImage,
+        // Geometry chip: untextured amber render (matches the live mesh
+        // keyframes); the textured render belongs to Texture/GLB.
+        m_stageThumbs[3]->setPreviewImage(result.geometryPreview.isNull()
+                                                  ? result.previewImage
+                                                  : result.geometryPreview,
                                           m_stageThumbs[3]->size());
         m_stageThumbs[4]->setPreviewImage(result.previewImage,
                                           m_stageThumbs[4]->size());
-        m_stageCaptions[4]->setText(result.hasPbr ? tr("Texture")
-                                                  : tr("Texture · untextured"));
-        m_stageThumbs[5]->setPreviewImage(result.previewImage,
+        m_stageCaptions[4]->setText(
+                result.hasPbr ? (m_runMode == TrellisRunMode::GeometryOnly
+                                         ? tr("Texture · vertex colours")
+                                         : tr("Texture"))
+                              : tr("Texture · untextured"));
+        // GLB chip: an unbaked run must not show the textured render under
+        // the GLB label (it reads as "a GLB exists"); the amber geometry
+        // render + explicit caption states what actually happened.
+        const QImage& glbChipImage = result.glb.isEmpty()
+                                             ? result.geometryPreview
+                                             : result.previewImage;
+        m_stageThumbs[5]->setPreviewImage(glbChipImage,
                                           m_stageThumbs[5]->size());
         m_stageCaptions[5]->setText(
                 result.glb.isEmpty()
-                        ? tr("GLB · none")
+                        ? (m_runMode == TrellisRunMode::GeometryOnly
+                                   ? tr("GLB · none (bake skipped)")
+                                   : tr("GLB · none"))
                         : tr("GLB · %1 MB")
                                   .arg(result.glb.size() / (1024.0 * 1024.0), 0,
                                        'f', 1));
     }
+}
+
+void TrellisDialog::openMesh3D(int slot) {
+    if (slot < 0 || slot >= m_stageThumbs.size()) return;
+    const QImage& chip = m_stageThumbs[slot]->fullImage();
+    if (slot == 2) {
+        // Voxels: rebuild the 3D cube mesh from the retained preview payload.
+        QVector<float> verts, normals, colors;
+        QVector<int> tris;
+        if (m_lastVoxelBlob.isEmpty() ||
+            !voxelBlobToMesh(m_lastVoxelBlob, verts, normals, colors, tris)) {
+            if (!chip.isNull())
+                ecvClickableImageLabel::showEnlargedImage(
+                        this, chip, m_stageCaptions[slot]->text());
+            return;
+        }
+        TrellisMeshViewerDialog viewer(
+                verts, normals, tris, colors, true,
+                QStringLiteral("TRELLIS.2 — %1")
+                        .arg(m_stageCaptions[slot]->text()),
+                this);
+        viewer.exec();
+        return;
+    }
+    const bool textured = slot != 3;
+    if (m_lastResult.verts.isEmpty()) {
+        // No result mesh yet (mid-run / failed generation): keep the shared
+        // image zoom as the fallback so the chip never feels dead.
+        if (!chip.isNull())
+            ecvClickableImageLabel::showEnlargedImage(
+                    this, chip, m_stageCaptions[slot]->text());
+        return;
+    }
+    TrellisMeshViewerDialog viewer(
+            m_lastResult.verts, m_lastResult.normals, m_lastResult.tris,
+            textured ? m_lastResult.pbr : QVector<float>(),
+            textured && m_lastResult.hasPbr,
+            QStringLiteral("TRELLIS.2 — %1").arg(m_stageCaptions[slot]->text()),
+            this);
+    viewer.exec();
 }

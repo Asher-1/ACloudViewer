@@ -39,15 +39,15 @@
 
 using namespace colmap;
 
-BOOST_AUTO_TEST_CASE(TestPRNGSeed) {
-  BOOST_CHECK(PRNG == nullptr);
+TEST(util_random, TestPRNGSeed) {
+  EXPECT_TRUE(PRNG == nullptr);
   SetPRNGSeed();
-  BOOST_CHECK(PRNG != nullptr);
+  EXPECT_TRUE(PRNG != nullptr);
   SetPRNGSeed(0);
-  BOOST_CHECK(PRNG != nullptr);
+  EXPECT_TRUE(PRNG != nullptr);
 }
 
-BOOST_AUTO_TEST_CASE(TestRepeatability) {
+TEST(util_random, TestRepeatability) {
   SetPRNGSeed(0);
   std::vector<int> numbers1;
   for (size_t i = 0; i < 100; ++i) {
@@ -63,34 +63,33 @@ BOOST_AUTO_TEST_CASE(TestRepeatability) {
   for (size_t i = 0; i < 100; ++i) {
     numbers3.push_back(RandomInteger(0, 10000));
   }
-  BOOST_CHECK_EQUAL_COLLECTIONS(numbers1.begin(), numbers1.end(),
-                                numbers3.begin(), numbers3.end());
+  ASSERT_TRUE(std::equal(numbers1.begin(), numbers1.end(), numbers3.begin(), numbers3.end()));
   bool all_equal = true;
   for (size_t i = 0; i < numbers1.size(); ++i) {
     if (numbers1[i] != numbers2[i]) {
       all_equal = false;
     }
   }
-  BOOST_CHECK(!all_equal);
+  EXPECT_FALSE(all_equal);
 }
 
-BOOST_AUTO_TEST_CASE(TestRandomInteger) {
+TEST(util_random, TestRandomInteger) {
   SetPRNGSeed();
   for (size_t i = 0; i < 1000; ++i) {
-    BOOST_CHECK_GE(RandomInteger(-100, 100), -100);
-    BOOST_CHECK_LE(RandomInteger(-100, 100), 100);
+    EXPECT_GE(RandomInteger(-100, 100), -100);
+    EXPECT_LE(RandomInteger(-100, 100), 100);
   }
 }
 
-BOOST_AUTO_TEST_CASE(TestRandomReal) {
+TEST(util_random, TestRandomReal) {
   SetPRNGSeed();
   for (size_t i = 0; i < 1000; ++i) {
-    BOOST_CHECK_GE(RandomReal(-100.0, 100.0), -100.0);
-    BOOST_CHECK_LE(RandomReal(-100.0, 100.0), 100.0);
+    EXPECT_GE(RandomReal(-100.0, 100.0), -100.0);
+    EXPECT_LE(RandomReal(-100.0, 100.0), 100.0);
   }
 }
 
-BOOST_AUTO_TEST_CASE(TestRandomGaussian) {
+TEST(util_random, TestRandomGaussian) {
   SetPRNGSeed(0);
   const double kMean = 1.0;
   const double kSigma = 1.0;
@@ -99,23 +98,21 @@ BOOST_AUTO_TEST_CASE(TestRandomGaussian) {
   for (size_t i = 0; i < kNumValues; ++i) {
     values.push_back(RandomGaussian(kMean, kSigma));
   }
-  BOOST_CHECK_LE(std::abs(Mean(values) - kMean), 1e-2);
-  BOOST_CHECK_LE(std::abs(StdDev(values) - kSigma), 1e-2);
+  EXPECT_LE(std::abs(Mean(values) - kMean), 1e-2);
+  EXPECT_LE(std::abs(StdDev(values) - kSigma), 1e-2);
 }
 
-BOOST_AUTO_TEST_CASE(TestShuffleNone) {
+TEST(util_random, TestShuffleNone) {
   SetPRNGSeed();
   std::vector<int> numbers(0);
   Shuffle(0, &numbers);
   numbers = {1, 2, 3, 4, 5};
   std::vector<int> shuffled_numbers = numbers;
   Shuffle(0, &shuffled_numbers);
-  BOOST_CHECK_EQUAL_COLLECTIONS(numbers.begin(), numbers.end(),
-                                shuffled_numbers.begin(),
-                                shuffled_numbers.end());
+  ASSERT_TRUE(std::equal(numbers.begin(), numbers.end(), shuffled_numbers.begin(), shuffled_numbers.end()));
 }
 
-BOOST_AUTO_TEST_CASE(TestShuffleAll) {
+TEST(util_random, TestShuffleAll) {
   SetPRNGSeed(0);
   std::vector<int> numbers(1000);
   std::iota(numbers.begin(), numbers.end(), 0);
@@ -127,5 +124,5 @@ BOOST_AUTO_TEST_CASE(TestShuffleAll) {
       num_shuffled += 1;
     }
   }
-  BOOST_CHECK_GT(num_shuffled, 0);
+  EXPECT_GT(num_shuffled, 0);
 }

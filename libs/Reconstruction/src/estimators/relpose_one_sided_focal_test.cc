@@ -15,7 +15,7 @@
 
 using namespace colmap;
 
-BOOST_AUTO_TEST_CASE(TestExactMinimalSampleRecoversFocalAndPose) {
+TEST(estimators_relpose_one_sided_focal, TestExactMinimalSampleRecoversFocalAndPose) {
     constexpr double kFocal = 800.0;
     const Eigen::Matrix3d rotation =
         Eigen::AngleAxisd(0.18, Eigen::Vector3d(0.2, -0.4, 0.7).normalized())
@@ -40,13 +40,13 @@ BOOST_AUTO_TEST_CASE(TestExactMinimalSampleRecoversFocalAndPose) {
         const Eigen::Vector2d pixel = camera2.WorldToImage(
             Eigen::Vector2d(point2.x() / point2.z(), point2.y() / point2.z()));
         const auto ray_with_jac = camera2.CamRayFromImgWithJac(pixel);
-        BOOST_REQUIRE(ray_with_jac.has_value());
+        ASSERT_TRUE(ray_with_jac.has_value());
         points2.push_back(*ray_with_jac);
     }
 
     const auto models =
         RelativePoseOneSidedFocalEstimator::Estimate(points1, points2);
-    BOOST_REQUIRE(!models.empty());
+    ASSERT_TRUE(!models.empty());
 
     Eigen::Matrix3d expected_tx;
     const Eigen::Vector3d t = translation.normalized();
@@ -73,17 +73,17 @@ BOOST_AUTO_TEST_CASE(TestExactMinimalSampleRecoversFocalAndPose) {
             break;
         }
     }
-    BOOST_CHECK(found);
+    EXPECT_TRUE(found);
 }
 
-BOOST_AUTO_TEST_CASE(TestRejectsNonMinimalInput) {
+TEST(estimators_relpose_one_sided_focal, TestRejectsNonMinimalInput) {
     const std::vector<Eigen::Vector2d> points1(5, Eigen::Vector2d::Zero());
     const std::vector<CamRayWithJac> points2(5, CamRayWithJac::Zero());
-    BOOST_CHECK(RelativePoseOneSidedFocalEstimator::Estimate(points1, points2)
+    EXPECT_TRUE(RelativePoseOneSidedFocalEstimator::Estimate(points1, points2)
                     .empty());
 }
 
-BOOST_AUTO_TEST_CASE(TestTinySolverRefinementReducesTangentSampsonCost) {
+TEST(estimators_relpose_one_sided_focal, TestTinySolverRefinementReducesTangentSampsonCost) {
     constexpr double kFocal = 800.0;
     const Eigen::Matrix3d rotation =
         Eigen::AngleAxisd(0.23, Eigen::Vector3d(0.3, -0.2, 0.7).normalized())
@@ -107,7 +107,7 @@ BOOST_AUTO_TEST_CASE(TestTinySolverRefinementReducesTangentSampsonCost) {
         const Eigen::Vector2d pixel = camera2.WorldToImage(
             Eigen::Vector2d(point2.x() / point2.z(), point2.y() / point2.z()));
         const auto ray_with_jac = camera2.CamRayFromImgWithJac(pixel);
-        BOOST_REQUIRE(ray_with_jac.has_value());
+        ASSERT_TRUE(ray_with_jac.has_value());
         points2.push_back(*ray_with_jac);
     }
 
@@ -125,16 +125,16 @@ BOOST_AUTO_TEST_CASE(TestTinySolverRefinementReducesTangentSampsonCost) {
                                                    &before);
     const double before_cost =
         std::accumulate(before.begin(), before.end(), 0.0);
-    BOOST_REQUIRE(RelativePoseOneSidedFocalEstimator::Refine(points1, points2,
+    ASSERT_TRUE(RelativePoseOneSidedFocalEstimator::Refine(points1, points2,
                                                               &model));
     std::vector<double> after;
     RelativePoseOneSidedFocalEstimator::Residuals(points1, points2, model,
                                                    &after);
     const double after_cost = std::accumulate(after.begin(), after.end(), 0.0);
-    BOOST_CHECK(after_cost < before_cost);
-    BOOST_TEST_MESSAGE("TinySolver focal=" << model.focal
+    EXPECT_TRUE(after_cost < before_cost);
+    std::cout << ("TinySolver focal=" << model.focal
                                              << ", tangent cost "
                                              << before_cost << " -> "
                                              << after_cost);
-    BOOST_CHECK(std::abs(model.focal - kFocal) / kFocal < 0.02);
+    EXPECT_TRUE(std::abs(model.focal - kFocal) / kFocal < 0.02);
 }

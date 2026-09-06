@@ -71,7 +71,9 @@ std::vector<PlyPoint> MakeSpherePoints() {
 
 size_t ReadPlyFaceCount(const std::filesystem::path& path) {
     std::ifstream file(path, std::ios::binary);
-    BOOST_REQUIRE(file.is_open());
+    if (!file.is_open()) {
+      return 0;
+    }
     std::string line;
     while (std::getline(file, line) && line != "end_header") {
         constexpr char kPrefix[] = "element face ";
@@ -84,7 +86,7 @@ size_t ReadPlyFaceCount(const std::filesystem::path& path) {
 
 }  // namespace
 
-BOOST_AUTO_TEST_CASE(ReconstructsSurfaceWithoutVisibility) {
+TEST(mvs_advancing_front_meshing_test, ReconstructsSurfaceWithoutVisibility) {
     TemporaryDirectory temporary_directory;
     const auto fused_path = temporary_directory.path / "fused.ply";
     const auto output_path = temporary_directory.path / "mesh.ply";
@@ -96,18 +98,18 @@ BOOST_AUTO_TEST_CASE(ReconstructsSurfaceWithoutVisibility) {
     options.num_threads = 1;
     AdvancingFrontMeshing(options, temporary_directory.path, output_path);
 
-    BOOST_REQUIRE(std::filesystem::is_regular_file(output_path));
-    BOOST_CHECK_GT(std::filesystem::file_size(output_path), 0);
-    BOOST_CHECK_GT(ReadPlyFaceCount(output_path), 0);
+    ASSERT_TRUE(std::filesystem::is_regular_file(output_path));
+    EXPECT_GT(std::filesystem::file_size(output_path), 0);
+    EXPECT_GT(ReadPlyFaceCount(output_path), 0);
 }
 
-BOOST_AUTO_TEST_CASE(RejectsInvalidOptions) {
+TEST(mvs_advancing_front_meshing_test, RejectsInvalidOptions) {
     AdvancingFrontMeshingOptions options;
     options.block_overlap = 1.1;
-    BOOST_CHECK(!options.Check());
+    EXPECT_FALSE(options.Check());
     options.block_overlap = 0.2;
     options.num_threads = 0;
-    BOOST_CHECK(!options.Check());
+    EXPECT_FALSE(options.Check());
 }
 
 }  // namespace mvs

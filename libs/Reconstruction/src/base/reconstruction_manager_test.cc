@@ -36,46 +36,46 @@
 
 using namespace colmap;
 
-BOOST_AUTO_TEST_CASE(TestEmpty) {
+TEST(base_reconstruction_manager, TestEmpty) {
   ReconstructionManager reconstruction_manager;
-  BOOST_CHECK_EQUAL(reconstruction_manager.Size(), 0);
+  EXPECT_EQ(reconstruction_manager.Size(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(TestAddGet) {
+TEST(base_reconstruction_manager, TestAddGet) {
   ReconstructionManager reconstruction_manager;
-  BOOST_CHECK_EQUAL(reconstruction_manager.Size(), 0);
+  EXPECT_EQ(reconstruction_manager.Size(), 0);
   for (size_t i = 0; i < 10; ++i) {
     const size_t idx = reconstruction_manager.Add();
-    BOOST_CHECK_EQUAL(reconstruction_manager.Size(), i + 1);
-    BOOST_CHECK_EQUAL(idx, i);
-    BOOST_CHECK_EQUAL(reconstruction_manager.Get(idx).NumCameras(), 0);
-    BOOST_CHECK_EQUAL(reconstruction_manager.Get(idx).NumImages(), 0);
-    BOOST_CHECK_EQUAL(reconstruction_manager.Get(idx).NumPoints3D(), 0);
+    EXPECT_EQ(reconstruction_manager.Size(), i + 1);
+    EXPECT_EQ(idx, i);
+    EXPECT_EQ(reconstruction_manager.Get(idx).NumCameras(), 0);
+    EXPECT_EQ(reconstruction_manager.Get(idx).NumImages(), 0);
+    EXPECT_EQ(reconstruction_manager.Get(idx).NumPoints3D(), 0);
   }
 }
 
-BOOST_AUTO_TEST_CASE(TestDelete) {
+TEST(base_reconstruction_manager, TestDelete) {
   ReconstructionManager reconstruction_manager;
-  BOOST_CHECK_EQUAL(reconstruction_manager.Size(), 0);
+  EXPECT_EQ(reconstruction_manager.Size(), 0);
   for (size_t i = 0; i < 10; ++i) {
     reconstruction_manager.Add();
   }
 
-  BOOST_CHECK_EQUAL(reconstruction_manager.Size(), 10);
+  EXPECT_EQ(reconstruction_manager.Size(), 10);
   for (size_t i = 0; i < 10; ++i) {
     reconstruction_manager.Delete(0);
-    BOOST_CHECK_EQUAL(reconstruction_manager.Size(), 9 - i);
+    EXPECT_EQ(reconstruction_manager.Size(), 9 - i);
   }
 }
 
-BOOST_AUTO_TEST_CASE(TestClear) {
+TEST(base_reconstruction_manager, TestClear) {
   ReconstructionManager reconstruction_manager;
-  BOOST_CHECK_EQUAL(reconstruction_manager.Size(), 0);
+  EXPECT_EQ(reconstruction_manager.Size(), 0);
   for (size_t i = 0; i < 10; ++i) {
     reconstruction_manager.Add();
   }
 
-  BOOST_CHECK_EQUAL(reconstruction_manager.Size(), 10);
+  EXPECT_EQ(reconstruction_manager.Size(), 10);
   reconstruction_manager.Clear();
-  BOOST_CHECK_EQUAL(reconstruction_manager.Size(), 0);
+  EXPECT_EQ(reconstruction_manager.Size(), 0);
 }

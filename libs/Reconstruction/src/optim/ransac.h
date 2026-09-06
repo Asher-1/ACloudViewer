@@ -12,6 +12,7 @@
 #include <stdexcept>
 #include <vector>
 
+#include "util/random.h"
 #include "optim/random_sampler.h"
 #include "optim/support_measurement.h"
 #include "util/alignment.h"
@@ -39,6 +40,10 @@ struct RANSACOptions {
     // Number of random trials to estimate model from random subset.
     size_t min_num_trials = 0;
     size_t max_num_trials = std::numeric_limits<size_t>::max();
+
+    // PRNG seed for randomized samplers. Set to -1 for nondeterministic
+    // behavior, or a fixed value to make results reproducible.
+    int random_seed = -1;
 
     void Check() const {
         CHECK_GT(max_error, 0);
@@ -72,7 +77,10 @@ public:
         typename Estimator::M_t model;
     };
 
-    explicit RANSAC(const RANSACOptions& options);
+    explicit RANSAC(const RANSACOptions& options,
+                    Estimator estimator = Estimator(),
+                    SupportMeasurer support_measurer = SupportMeasurer(),
+                    Sampler sampler = Sampler(Estimator::kMinNumSamples));
 
     // Determine the maximum number of trials required to sample at least one
     // outlier-free random set of samples with the specified confidence,
@@ -112,15 +120,57 @@ protected:
     RANSACOptions options_;
 };
 
+
+// Detection trait: legacy estimators return the models by value from a
+// two-argument Estimate; upstream 4.x estimators write through the models
+// output parameter. Both forms are supported transparently at the call
+// sites below, so ported upstream estimators and the fork's own estimators
+// can coexist inside the same RANSAC/LORANSAC machinery.
+template <typename Estimator, typename X_t, typename Y_t, typename = void>
+struct HasReturnValueEstimate : std::false_type {};
+
+template <typename Estimator, typename X_t, typename Y_t>
+struct HasReturnValueEstimate<
+        Estimator, X_t, Y_t,
+        std::void_t<decltype(std::declval<const Estimator&>().Estimate(
+                std::declval<const std::vector<X_t>&>(),
+                std::declval<const std::vector<Y_t>&>()))>>
+    : std::true_type {};
+
+
+// Detection trait: upstream residual-only local estimators (e.g. the
+// Sampson fundamental-matrix estimator) expose a static
+// Refine(points1, points2, M_t*) instead of Estimate.
+template <typename Estimator, typename X_t, typename Y_t, typename = void>
+struct HasRefineMember : std::false_type {};
+
+template <typename Estimator, typename X_t, typename Y_t>
+struct HasRefineMember<
+        Estimator, X_t, Y_t,
+        std::void_t<decltype(std::declval<const Estimator&>().Refine(
+                std::declval<const std::vector<X_t>&>(),
+                std::declval<const std::vector<Y_t>&>(),
+                std::declval<typename Estimator::M_t*>()))>>
+    : std::true_type {};
+
 ////////////////////////////////////////////////////////////////////////////////
 // Implementation
 ////////////////////////////////////////////////////////////////////////////////
 
 template <typename Estimator, typename SupportMeasurer, typename Sampler>
 RANSAC<Estimator, SupportMeasurer, Sampler>::RANSAC(
-        const RANSACOptions& options)
-    : sampler(Sampler(Estimator::kMinNumSamples)), options_(options) {
+        const RANSACOptions& options,
+        Estimator estimator,
+        SupportMeasurer support_measurer,
+        Sampler sampler)
+    : estimator(std::move(estimator)),
+      sampler(std::move(sampler)),
+      support_measurer(std::move(support_measurer)),
+      options_(options) {
     options.Check();
+    if (options.random_seed >= 0) {
+        SetPRNGSeed(static_cast<unsigned>(options.random_seed));
+    }
 
     // Determine max_num_trials based on assumed `min_inlier_ratio`.
     const size_t kNumSamples = 100000;
@@ -198,9 +248,16 @@ RANSAC<Estimator, SupportMeasurer, Sampler>::Estimate(
 
         sampler.SampleXY(X, Y, &X_rand, &Y_rand);
 
-        // Estimate model for current subset.
-        const std::vector<typename Estimator::M_t> sample_models =
-                estimator.Estimate(X_rand, Y_rand);
+        // Estimate model for current subset (legacy estimators return the
+        // models; upstream estimators write through the output parameter).
+        std::vector<typename Estimator::M_t> sample_models;
+        if constexpr (HasReturnValueEstimate<Estimator,
+                                             typename Estimator::X_t,
+                                             typename Estimator::Y_t>::value) {
+            sample_models = estimator.Estimate(X_rand, Y_rand);
+        } else {
+            estimator.Estimate(X_rand, Y_rand, &sample_models);
+        }
 
         // Iterate through all estimated models.
         for (const auto& sample_model : sample_models) {

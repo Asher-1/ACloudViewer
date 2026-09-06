@@ -90,6 +90,12 @@ public:
     inline const std::unordered_map<image_t, class Image>& Images() const;
     inline const std::unordered_map<rig_t, class Rig>& Rigs() const;
     inline const std::unordered_map<frame_t, class Frame>& Frames() const;
+
+    // Upstream-parity (COLMAP 4.x): IDs of registered (posed) frames.
+    std::unordered_set<frame_t> RegFrameIds() const;
+    // Upstream-parity (COLMAP 4.x): recompute the reprojection error of all
+    // points after batch modifications.
+    void UpdatePoint3DErrors();
     inline const std::vector<image_t>& RegImageIds() const;
     inline const std::unordered_map<point3D_t, class Point3D>& Points3D() const;
     inline const std::unordered_map<image_pair_t, ImagePairStat>& ImagePairs()
@@ -126,14 +132,21 @@ public:
     void AddCamera(const class Camera& camera);
 
     // Add new image.
-    void AddImage(const class Image& image);
+    // Upstream-parity (COLMAP 4.x): the Add* methods wire the camera /
+    // frame / rig back pointers and validate sensor consistency.
+    void AddCameraWithTrivialRig(struct Camera camera);
+    void AddImage(class Image image);
+    void AddFrameWithTrivialRig(class Frame frame, const Rigid3d& cam_from_world);
+    void AddImageWithTrivialFrame(class Image image);
+    void AddImageWithTrivialFrame(class Image image,
+                                  const Rigid3d& cam_from_world);
 
     // Persisted camera rig/frame data. The legacy CameraRig adapter preserves
     // existing RigBundleAdjuster callers while keeping one source of truth in
     // the reconstruction model. Generic non-camera sensor/data persistence is
     // not represented by this legacy reconstruction database.
-    void AddRig(const class Rig& rig);
-    void AddFrame(const class Frame& frame);
+    void AddRig(class Rig rig);
+    void AddFrame(class Frame frame);
     class CameraRig CameraRigFromRig(const rig_t rig_id) const;
     void UpdateRigFromCameraRig(const rig_t rig_id,
                                 const class CameraRig& camera_rig);

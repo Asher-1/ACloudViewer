@@ -41,19 +41,7 @@ void AdjustGlobalBundle(const IncrementalMapperOptions& options,
     }
 
     PrintHeading1("Global bundle adjustment");
-#ifdef PBA_ENABLED
-    if (options.ba_global_use_pba && !options.fix_existing_images &&
-        num_reg_images >= kMinNumRegImagesForFastBA &&
-        ParallelBundleAdjuster::IsSupported(custom_ba_options,
-                                            mapper->GetReconstruction())) {
-        mapper->AdjustParallelGlobalBundle(
-                custom_ba_options, options.ParallelGlobalBundleAdjustment());
-    } else {
-        mapper->AdjustGlobalBundle(options.Mapper(), custom_ba_options);
-    }
-#else
     mapper->AdjustGlobalBundle(options.Mapper(), custom_ba_options);
-#endif
 }
 
 void IterativeLocalRefinement(const IncrementalMapperOptions& options,
@@ -219,6 +207,7 @@ BundleAdjustmentOptions IncrementalMapperOptions::LocalBundleAdjustment()
             BundleAdjustmentOptions::LossFunctionType::SOFT_L1;
     options.use_gpu = ba_use_gpu;
     options.gpu_index = ba_gpu_index;
+    options.backend = ba_local_backend;
     return options;
 }
 
@@ -245,22 +234,9 @@ BundleAdjustmentOptions IncrementalMapperOptions::GlobalBundleAdjustment()
             BundleAdjustmentOptions::LossFunctionType::TRIVIAL;
     options.use_gpu = ba_use_gpu;
     options.gpu_index = ba_gpu_index;
+    options.backend = ba_global_backend;
     return options;
 }
-
-#ifdef PBA_ENABLED
-ParallelBundleAdjuster::Options
-IncrementalMapperOptions::ParallelGlobalBundleAdjustment() const {
-    ParallelBundleAdjuster::Options options;
-    options.max_num_iterations = ba_global_max_num_iterations;
-    options.print_summary = true;
-    options.gpu_index = ba_global_pba_gpu_index;
-    options.num_threads = num_threads;
-    options.min_num_residuals_for_cpu_multi_threading =
-            ba_min_num_residuals_for_cpu_multi_threading;
-    return options;
-}
-#endif
 
 bool IncrementalMapperOptions::Check() const {
     CHECK_OPTION_GT(min_num_matches, 0);

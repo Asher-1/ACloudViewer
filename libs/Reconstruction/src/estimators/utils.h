@@ -10,6 +10,7 @@
 #include <Eigen/Core>
 #include <vector>
 
+#include "base/normalization.h"
 #include "util/alignment.h"
 #include "util/types.h"
 
@@ -30,10 +31,6 @@ namespace colmap {
 // @param points          Image coordinates.
 // @param normed_points   Transformed image coordinates.
 // @param matrix          3x3 transformation matrix.
-void CenterAndNormalizeImagePoints(const std::vector<Eigen::Vector2d>& points,
-                                   std::vector<Eigen::Vector2d>* normed_points,
-                                   Eigen::Matrix3d* matrix);
-
 // Calculate the residuals of a set of corresponding points and a given
 // fundamental or essential matrix.
 //
