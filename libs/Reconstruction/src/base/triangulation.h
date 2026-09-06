@@ -88,11 +88,9 @@ std::vector<double> CalculateTriangulationAngles(
         const Eigen::Vector3d& proj_center2,
         const std::vector<Eigen::Vector3d>& points3D);
 
-
 // Upstream-parity helper (COLMAP 4.x geometry/triangulation.h).
 double CalculateAngleBetweenVectors(const Eigen::Vector3d& v1,
                                     const Eigen::Vector3d& v2);
-
 
 // Upstream-parity (COLMAP 4.x geometry/triangulation.h).
 bool TriangulateMidPoint(const Rigid3d& cam2_from_cam1,

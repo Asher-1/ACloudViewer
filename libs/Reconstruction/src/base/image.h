@@ -16,7 +16,6 @@
 
 #include "base/camera.h"
 #include "base/frame.h"
-#include "util/logging.h"
 #include "base/point2d.h"
 #include "base/visibility_pyramid.h"
 #include "util/logging.h"
@@ -54,9 +53,7 @@ public:
     // Upstream-parity frame association (COLMAP 4.x): the frame this image
     // belongs to. kInvalidFrameId means the image is not yet part of a frame.
     inline frame_t FrameId() const { return frame_id_; }
-    inline bool HasFrameId() const {
-        return frame_id_ != kInvalidFrameId;
-    }
+    inline bool HasFrameId() const { return frame_id_ != kInvalidFrameId; }
     inline void SetFrameId(const frame_t frame_id) { frame_id_ = frame_id; }
 
     // Upstream-parity (COLMAP 4.x scene/image.h): the data id of this image
@@ -392,7 +389,6 @@ bool Image::IsPoint3DVisible(const point2D_t point2D_idx) const {
     return num_correspondences_have_point3D_.at(point2D_idx) > 0;
 }
 
-
 inline struct Camera* Image::CameraPtr() const {
     return THROW_CHECK_NOTNULL(camera_ptr_);
 }
@@ -409,11 +405,11 @@ inline bool Image::IsRefInFrame() const {
     THROW_CHECK_NOTNULL(frame_ptr_);
     THROW_CHECK_NOTNULL(camera_ptr_);
     return frame_ptr_->RigPtr()->IsRefSensor(
-        sensor_t(SensorType::CAMERA, camera_id_));
+            sensor_t(SensorType::CAMERA, camera_id_));
 }
 inline Rigid3d Image::CamFromWorld() const {
     return THROW_CHECK_NOTNULL(frame_ptr_)
-        ->SensorFromWorld(sensor_t(SensorType::CAMERA, camera_id_));
+            ->SensorFromWorld(sensor_t(SensorType::CAMERA, camera_id_));
 }
 inline bool Image::HasPose() const {
     if (frame_ptr_ == nullptr) {

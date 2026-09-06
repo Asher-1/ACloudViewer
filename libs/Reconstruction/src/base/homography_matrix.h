@@ -81,7 +81,6 @@ Eigen::Matrix3d HomographyMatrixFromPose(const Eigen::Matrix3d& K1,
                                          const Eigen::Vector3d& n,
                                          const double d);
 
-
 // Upstream-parity: decompose a homography given camera rays instead of
 // image points (used by the spherical/panoramic two-view path).
 void PoseFromHomographyMatrix(const Eigen::Matrix3d& H,

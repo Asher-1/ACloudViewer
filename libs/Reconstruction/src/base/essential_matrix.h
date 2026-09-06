@@ -13,8 +13,8 @@
 #include <optional>
 #include <vector>
 
-#include "geometry/rigid3.h"
 #include "base/pose.h"
+#include "geometry/rigid3.h"
 #include "util/alignment.h"
 #include "util/types.h"
 
@@ -202,10 +202,8 @@ inline double SquaredPixelGradientNorm(const Eigen::Matrix3x2d& J,
 // @param E           3x3 essential matrix.
 // @return            Squared tangent Sampson error, in squared pixels.
 
-
 // Upstream-parity overload taking a rigid transform (COLMAP 4.x).
 Eigen::Matrix3d EssentialMatrixFromPose(const Rigid3d& cam2_from_cam1);
-
 
 // Upstream-parity: recover the relative pose from an essential matrix and
 // camera rays, keeping only the candidates with positive-depth observations.
@@ -214,7 +212,6 @@ void PoseFromEssentialMatrix(const Eigen::Matrix3d& E,
                              const std::vector<Eigen::Vector3d>& cam_rays2,
                              Rigid3d* cam2_from_cam1,
                              std::vector<int>* valid_indices);
-
 
 double ComputeSquaredSampsonError(const Eigen::Vector3d& point1,
                                   const Eigen::Vector3d& point2,
@@ -231,9 +228,9 @@ void ComputeSquaredSampsonError(const std::vector<Eigen::Vector3d>& points1,
                                 std::vector<double>* residuals);
 
 void ComputeSquaredTangentSampsonErrorWithCheirality(
-    const std::vector<CamRayWithJac>& cam_rays1_with_jac,
-    const std::vector<CamRayWithJac>& cam_rays2_with_jac,
-    const Eigen::Matrix3d& E,
-    std::vector<double>* residuals);
+        const std::vector<CamRayWithJac>& cam_rays1_with_jac,
+        const std::vector<CamRayWithJac>& cam_rays2_with_jac,
+        const Eigen::Matrix3d& E,
+        std::vector<double>* residuals);
 
 }  // namespace colmap

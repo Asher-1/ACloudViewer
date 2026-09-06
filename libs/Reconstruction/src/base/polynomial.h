@@ -73,7 +73,6 @@ T EvaluatePolynomial(const Eigen::VectorXd& coeffs, const T& x) {
     return value;
 }
 
-
 // Upstream-parity convenience wrapper (COLMAP 4.x math/polynomial.h):
 // real roots of x^3 + c2*x^2 + c1*x + c0 = 0.
 int FindCubicPolynomialRoots(double c2,

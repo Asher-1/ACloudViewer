@@ -129,7 +129,6 @@ private:
     std::ostringstream stream_;
 };
 
-
 // ----------------------------------------------------------------------------
 // Streaming-capable THROW_CHECK family (upstream parity). A temporary
 // ThrowCheckStream is bound to the condition; if the condition is false its
@@ -137,8 +136,10 @@ private:
 // returns the same object so upstream call sites compile unchanged.
 // ----------------------------------------------------------------------------
 class ThrowCheckStream {
- public:
-    ThrowCheckStream(const bool ok, const char* file, const int line,
+public:
+    ThrowCheckStream(const bool ok,
+                     const char* file,
+                     const int line,
                      const std::string& message)
         : ok_(ok), file_(file), line_(line), message_(message) {}
 
@@ -146,8 +147,7 @@ class ThrowCheckStream {
         if (!ok_) {
             throw std::invalid_argument(
                     "[" + std::string(__GetConstFileBaseName(file_)) + ":" +
-                    std::to_string(line_) + "] " + message_ +
-                    stream_.str());
+                    std::to_string(line_) + "] " + message_ + stream_.str());
         }
     }
 
@@ -159,7 +159,7 @@ class ThrowCheckStream {
 
     std::ostringstream& stream() { return stream_; }
 
- private:
+private:
     bool ok_;
     const char* file_;
     int line_;
@@ -168,15 +168,14 @@ class ThrowCheckStream {
 };
 
 #undef THROW_CHECK
-#define THROW_CHECK(condition) \
-    colmap::ThrowCheckStream( \
-            static_cast<bool>(condition), __FILE__, __LINE__, \
-            std::string("Check failed: ") + #condition)
+#define THROW_CHECK(condition)                                                 \
+    colmap::ThrowCheckStream(static_cast<bool>(condition), __FILE__, __LINE__, \
+                             std::string("Check failed: ") + #condition)
 
 #undef THROW_CHECK_OP
-#define THROW_CHECK_OP(op, a, b) \
-    colmap::ThrowCheckStream( \
-            static_cast<bool>((a) op (b)), __FILE__, __LINE__, \
+#define THROW_CHECK_OP(op, a, b)                             \
+    colmap::ThrowCheckStream(                                \
+            static_cast<bool>((a)op(b)), __FILE__, __LINE__, \
             std::string("Check failed: ") + #a + " " + #op + " " + #b)
 
 #undef THROW_CHECK_EQ

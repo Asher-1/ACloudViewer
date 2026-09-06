@@ -12,8 +12,8 @@
 #include <limits>
 #include <vector>
 
-#include "geometry/rigid3.h"
 #include "base/camera.h"
+#include "geometry/rigid3.h"
 
 namespace colmap {
 

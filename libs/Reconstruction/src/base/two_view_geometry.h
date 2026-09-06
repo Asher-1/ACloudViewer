@@ -1,107 +1,86 @@
-// Copyright (c), ETH Zurich and UNC Chapel Hill.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above copyright
-//       notice, this list of conditions and the following disclaimer in the
-//       documentation and/or other materials provided with the distribution.
-//
-//     * Neither the name of ETH Zurich and UNC Chapel Hill nor the names of
-//       its contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #pragma once
 
+#include <optional>
+
+#include "base/camera.h"
 #include "feature/types.h"
 #include "geometry/rigid3.h"
-#include "base/camera.h"
-
-#include <optional>
 
 namespace colmap {
 
 // Two-view geometry.
 struct TwoViewGeometry {
-  // The configuration of the two-view geometry.
-  enum ConfigurationType {
-    UNDEFINED = 0,
-    // Degenerate configuration (e.g., no overlap or not enough inliers).
-    DEGENERATE = 1,
+    // The configuration of the two-view geometry.
+    enum ConfigurationType {
+        UNDEFINED = 0,
+        // Degenerate configuration (e.g., no overlap or not enough inliers).
+        DEGENERATE = 1,
+        // Essential matrix.
+        CALIBRATED = 2,
+        // Relative pose (metric) from calibrated (non-panoramic) rig.
+        CALIBRATED_RIG = 9,
+        // Fundamental matrix. A pair whose focal length(s) were recovered by
+        // the two-view solver (e.g. the shared-focal essential-matrix solver)
+        // is also UNCALIBRATED: it carries F built from the estimated focal,
+        // and exposes the estimated intrinsics via `camera1`/`camera2` (see
+        // below) so consumers can seed them without trusting the camera's
+        // placeholder focal.
+        UNCALIBRATED = 3,
+        // Homography, planar scene with baseline.
+        PLANAR = 4,
+        // Homography, pure rotation without baseline.
+        PANORAMIC = 5,
+        // Homography, planar or panoramic.
+        PLANAR_OR_PANORAMIC = 6,
+        // Watermark, pure 2D translation in image borders.
+        WATERMARK = 7,
+        // Multi-model configuration, i.e. the inlier matches result from
+        // multiple individual, non-degenerate configurations.
+        MULTIPLE = 8,
+    };
+
+    // Defaulted but defined out-of-line to avoid a spurious GCC -Wuninitialized
+    // from inlined moves of the std::optional<Camera> members.
+    TwoViewGeometry() = default;
+    TwoViewGeometry(const TwoViewGeometry&);
+    TwoViewGeometry(TwoViewGeometry&&) noexcept;
+    TwoViewGeometry& operator=(const TwoViewGeometry&);
+    TwoViewGeometry& operator=(TwoViewGeometry&&) noexcept;
+    ~TwoViewGeometry();
+
+    // One of `ConfigurationType`.
+    int config = ConfigurationType::UNDEFINED;
+
     // Essential matrix.
-    CALIBRATED = 2,
-    // Relative pose (metric) from calibrated (non-panoramic) rig.
-    CALIBRATED_RIG = 9,
-    // Fundamental matrix. A pair whose focal length(s) were recovered by the
-    // two-view solver (e.g. the shared-focal essential-matrix solver) is also
-    // UNCALIBRATED: it carries F built from the estimated focal, and exposes
-    // the estimated intrinsics via `camera1`/`camera2` (see below) so consumers
-    // can seed them without trusting the camera's placeholder focal.
-    UNCALIBRATED = 3,
-    // Homography, planar scene with baseline.
-    PLANAR = 4,
-    // Homography, pure rotation without baseline.
-    PANORAMIC = 5,
-    // Homography, planar or panoramic.
-    PLANAR_OR_PANORAMIC = 6,
-    // Watermark, pure 2D translation in image borders.
-    WATERMARK = 7,
-    // Multi-model configuration, i.e. the inlier matches result from multiple
-    // individual, non-degenerate configurations.
-    MULTIPLE = 8,
-  };
+    std::optional<Eigen::Matrix3d> E;
+    // Fundamental matrix.
+    std::optional<Eigen::Matrix3d> F;
+    // Homography matrix.
+    std::optional<Eigen::Matrix3d> H;
 
-  // Defaulted but defined out-of-line to avoid a spurious GCC -Wuninitialized
-  // from inlined moves of the std::optional<Camera> members.
-  TwoViewGeometry() = default;
-  TwoViewGeometry(const TwoViewGeometry&);
-  TwoViewGeometry(TwoViewGeometry&&) noexcept;
-  TwoViewGeometry& operator=(const TwoViewGeometry&);
-  TwoViewGeometry& operator=(TwoViewGeometry&&) noexcept;
-  ~TwoViewGeometry();
+    // Relative pose.
+    std::optional<Rigid3d> cam2_from_cam1;
 
-  // One of `ConfigurationType`.
-  int config = ConfigurationType::UNDEFINED;
+    // Per-side intrinsics recovered by the two-view solver: `cameraN` holds
+    // side N's estimated intrinsics, or nullopt if that side was not estimated.
+    std::optional<Camera> camera1;
+    std::optional<Camera> camera2;
 
-  // Essential matrix.
-  std::optional<Eigen::Matrix3d> E;
-  // Fundamental matrix.
-  std::optional<Eigen::Matrix3d> F;
-  // Homography matrix.
-  std::optional<Eigen::Matrix3d> H;
+    // Inlier matches of the configuration.
+    FeatureMatches inlier_matches;
 
-  // Relative pose.
-  std::optional<Rigid3d> cam2_from_cam1;
+    // Median triangulation angle.
+    double tri_angle = -1;
 
-  // Per-side intrinsics recovered by the two-view solver: `cameraN` holds side
-  // N's estimated intrinsics, or nullopt if that side was not estimated.
-  std::optional<Camera> camera1;
-  std::optional<Camera> camera2;
-
-  // Inlier matches of the configuration.
-  FeatureMatches inlier_matches;
-
-  // Median triangulation angle.
-  double tri_angle = -1;
-
-  // Invert the geometry to match swapped cameras.
-  void Invert();
+    // Invert the geometry to match swapped cameras.
+    void Invert();
 };
 
 }  // namespace colmap

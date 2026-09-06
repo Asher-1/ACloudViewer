@@ -115,7 +115,7 @@ struct data_t {
 };
 
 constexpr sensor_t kInvalidSensorId =
-    sensor_t(SensorType::INVALID, sensor_t::kInvalidId);
+        sensor_t(SensorType::INVALID, sensor_t::kInvalidId);
 
 // Each image pair gets a unique ID, see `Database::ImagePairToPairId`.
 typedef uint64_t image_pair_t;
@@ -138,10 +138,9 @@ const image_pair_t kInvalidImagePairId =
 const point2D_t kInvalidPoint2DIdx = std::numeric_limits<point2D_t>::max();
 const point3D_t kInvalidPoint3DId = std::numeric_limits<point3D_t>::max();
 
-
 using pose_prior_t = uint32_t;
 constexpr pose_prior_t kInvalidPosePriorId =
-    std::numeric_limits<pose_prior_t>::max();
+        std::numeric_limits<pose_prior_t>::max();
 constexpr data_t kInvalidDataId = data_t(kInvalidSensorId, data_t::kInvalidId);
 
 // Hash functor for (image_t, image_t) pairs and generic uint64 pairs

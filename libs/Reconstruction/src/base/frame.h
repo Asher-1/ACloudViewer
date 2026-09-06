@@ -12,10 +12,10 @@
 #include <set>
 #include <vector>
 
+#include "base/pose.h"
 #include "base/rig.h"
 #include "geometry/rigid3.h"
 #include "util/logging.h"
-#include "base/pose.h"
 #include "util/types.h"
 
 namespace colmap {
@@ -81,7 +81,6 @@ private:
     Eigen::Vector4d rig_from_world_qvec_ = ComposeIdentityQuaternion();
     Eigen::Vector3d rig_from_world_tvec_ = Eigen::Vector3d::Zero();
 };
-
 
 inline class Rig* Frame::RigPtr() const { return rig_ptr_; }
 inline void Frame::SetRigPtr(class Rig* rig) { rig_ptr_ = rig; }

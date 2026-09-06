@@ -11,11 +11,10 @@
 #include <iosfwd>
 #include <map>
 #include <optional>
-
-#include "geometry/rigid3.h"
 #include <vector>
 
 #include "base/pose.h"
+#include "geometry/rigid3.h"
 #include "util/types.h"
 
 namespace colmap {

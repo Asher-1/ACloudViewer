@@ -136,7 +136,8 @@ public:
     // frame / rig back pointers and validate sensor consistency.
     void AddCameraWithTrivialRig(struct Camera camera);
     void AddImage(class Image image);
-    void AddFrameWithTrivialRig(class Frame frame, const Rigid3d& cam_from_world);
+    void AddFrameWithTrivialRig(class Frame frame,
+                                const Rigid3d& cam_from_world);
     void AddImageWithTrivialFrame(class Image image);
     void AddImageWithTrivialFrame(class Image image,
                                   const Rigid3d& cam_from_world);

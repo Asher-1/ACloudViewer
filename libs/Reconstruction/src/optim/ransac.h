@@ -12,11 +12,11 @@
 #include <stdexcept>
 #include <vector>
 
-#include "util/random.h"
 #include "optim/random_sampler.h"
 #include "optim/support_measurement.h"
 #include "util/alignment.h"
 #include "util/logging.h"
+#include "util/random.h"
 
 namespace colmap {
 
@@ -120,7 +120,6 @@ protected:
     RANSACOptions options_;
 };
 
-
 // Detection trait: legacy estimators return the models by value from a
 // two-argument Estimate; upstream 4.x estimators write through the models
 // output parameter. Both forms are supported transparently at the call
@@ -131,12 +130,12 @@ struct HasReturnValueEstimate : std::false_type {};
 
 template <typename Estimator, typename X_t, typename Y_t>
 struct HasReturnValueEstimate<
-        Estimator, X_t, Y_t,
+        Estimator,
+        X_t,
+        Y_t,
         std::void_t<decltype(std::declval<const Estimator&>().Estimate(
                 std::declval<const std::vector<X_t>&>(),
-                std::declval<const std::vector<Y_t>&>()))>>
-    : std::true_type {};
-
+                std::declval<const std::vector<Y_t>&>()))>> : std::true_type {};
 
 // Detection trait: upstream residual-only local estimators (e.g. the
 // Sampson fundamental-matrix estimator) expose a static
@@ -146,12 +145,14 @@ struct HasRefineMember : std::false_type {};
 
 template <typename Estimator, typename X_t, typename Y_t>
 struct HasRefineMember<
-        Estimator, X_t, Y_t,
+        Estimator,
+        X_t,
+        Y_t,
         std::void_t<decltype(std::declval<const Estimator&>().Refine(
                 std::declval<const std::vector<X_t>&>(),
                 std::declval<const std::vector<Y_t>&>(),
-                std::declval<typename Estimator::M_t*>()))>>
-    : std::true_type {};
+                std::declval<typename Estimator::M_t*>()))>> : std::true_type {
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 // Implementation
@@ -251,8 +252,7 @@ RANSAC<Estimator, SupportMeasurer, Sampler>::Estimate(
         // Estimate model for current subset (legacy estimators return the
         // models; upstream estimators write through the output parameter).
         std::vector<typename Estimator::M_t> sample_models;
-        if constexpr (HasReturnValueEstimate<Estimator,
-                                             typename Estimator::X_t,
+        if constexpr (HasReturnValueEstimate<Estimator, typename Estimator::X_t,
                                              typename Estimator::Y_t>::value) {
             sample_models = estimator.Estimate(X_rand, Y_rand);
         } else {

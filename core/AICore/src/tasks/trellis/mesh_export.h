@@ -46,7 +46,8 @@ enum class UnwrapMode { Auto = 0, XAtlas = 1, Simple = 2 };
 
 /** Bake progress sink: fired at each bake stage boundary with the stage
  *  description and the seconds elapsed since that stage started. */
-typedef void (*t2glb_bake_progress_fn)(const char* stage, double elapsed_s,
+typedef void (*t2glb_bake_progress_fn)(const char* stage,
+                                       double elapsed_s,
                                        void* user);
 
 struct MeshExportOptions {

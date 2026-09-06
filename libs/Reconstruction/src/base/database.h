@@ -15,11 +15,11 @@
 #include "SQLite/sqlite3.h"
 #include "base/camera.h"
 #include "base/frame.h"
-#include "geometry/pose_prior.h"
 #include "base/image.h"
 #include "base/rig.h"
 #include "base/two_view_geometry.h"
 #include "feature/types.h"
+#include "geometry/pose_prior.h"
 #include "util/types.h"
 
 namespace colmap {
@@ -40,8 +40,6 @@ public:
                                 bool use_pose_prior_id = false);
     void UpdatePosePrior(const PosePrior& pose_prior);
     void ClearPosePriors();
-
-    
 
     const static int kSchemaVersion = 1;
 
@@ -283,7 +281,7 @@ private:
     void CreateMatchesTable() const;
     void CreateTwoViewGeometriesTable() const;
 
-// Legacy-schema preparation before CreateTables() (upstream parity).
+    // Legacy-schema preparation before CreateTables() (upstream parity).
     void PreMigrateTables() const;
 
     // Version-gated migrations and the user_version stamp (upstream parity).

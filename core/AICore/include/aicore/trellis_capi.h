@@ -302,19 +302,20 @@ typedef void (*aicore_trellis_bake_progress_fn)(const char* stage,
  *  boundaries; set *cancel to non-zero to abandon the bake — the call then
  *  returns null with err "bake cancelled"). progress / cancel may be NULL.
  *  Identical output to aicore_trellis_bake_glb. */
-AICORE_CAPI uint8_t* aicore_trellis_bake_glb_ex(const float* verts,
-                                                int n_verts,
-                                                const int* tris,
-                                                int n_tris,
-                                                const float* pbr,
-                                                int texture_size,
-                                                int component_filter,
-                                                aicore_trellis_bake_progress_fn progress,
-                                                void* progress_user,
-                                                const volatile int* cancel,
-                                                int* out_len,
-                                                char* err,
-                                                int err_len);
+AICORE_CAPI uint8_t* aicore_trellis_bake_glb_ex(
+        const float* verts,
+        int n_verts,
+        const int* tris,
+        int n_tris,
+        const float* pbr,
+        int texture_size,
+        int component_filter,
+        aicore_trellis_bake_progress_fn progress,
+        void* progress_user,
+        const volatile int* cancel,
+        int* out_len,
+        char* err,
+        int err_len);
 
 /** Standalone PBR texturing: mesh + reference image -> textured mesh.
  *  Pass grid_feats = NULL / grid_nvox = 0 to derive the shape-encoder input

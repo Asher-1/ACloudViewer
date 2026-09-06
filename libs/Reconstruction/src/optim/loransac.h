@@ -128,10 +128,10 @@ LORANSAC<Estimator, LocalEstimator, SupportMeasurer, Sampler>::Estimate(
 
         sampler.SampleXY(X, Y, &X_rand, &Y_rand);
 
-        // Estimate model for current subset (dual-form, see HasReturnValueEstimate).
+        // Estimate model for current subset (dual-form, see
+        // HasReturnValueEstimate).
         std::vector<typename Estimator::M_t> sample_models;
-        if constexpr (HasReturnValueEstimate<Estimator,
-                                             typename Estimator::X_t,
+        if constexpr (HasReturnValueEstimate<Estimator, typename Estimator::X_t,
                                              typename Estimator::Y_t>::value) {
             sample_models = estimator.Estimate(X_rand, Y_rand);
         } else {
@@ -171,21 +171,19 @@ LORANSAC<Estimator, LocalEstimator, SupportMeasurer, Sampler>::Estimate(
                             }
                         }
 
-                        std::vector<typename LocalEstimator::M_t>
-                                local_models;
+                        std::vector<typename LocalEstimator::M_t> local_models;
                         if constexpr (HasReturnValueEstimate<
                                               LocalEstimator,
                                               typename LocalEstimator::X_t,
                                               typename LocalEstimator::Y_t>::
                                               value) {
-                            local_models =
-                                    local_estimator.Estimate(X_inlier,
-                                                             Y_inlier);
+                            local_models = local_estimator.Estimate(X_inlier,
+                                                                    Y_inlier);
                         } else if constexpr (
-                                HasRefineMember<LocalEstimator,
-                                                typename LocalEstimator::X_t,
-                                                typename LocalEstimator::Y_t>::
-                                        value) {
+                                HasRefineMember<
+                                        LocalEstimator,
+                                        typename LocalEstimator::X_t,
+                                        typename LocalEstimator::Y_t>::value) {
                             // Upstream-parity residual-only local estimators
                             // (e.g. Sampson): refine the current best model
                             // in place on the inlier set.

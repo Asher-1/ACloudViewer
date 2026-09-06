@@ -221,7 +221,6 @@ Eigen::Vector4d ComposeIdentityQuaternion() {
     return Eigen::Vector4d(1, 0, 0, 0);
 }
 
-
 // Upstream-parity cheirality check on camera rays (COLMAP 4.x pose.h).
 bool CheckCheirality(const Rigid3d& cam2_from_cam1,
                      const std::vector<Eigen::Vector3d>& cam_rays1,

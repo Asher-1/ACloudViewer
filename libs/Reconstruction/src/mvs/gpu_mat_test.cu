@@ -52,10 +52,9 @@ void TestTransposeImage(const size_t width,
     for (size_t r = 0; r < height; ++r) {
         for (size_t c = 0; c < width; ++c) {
             for (size_t d = 0; d < depth; ++d) {
-                EXPECT_EQ(
-                        array_host[d * width * height + r * width + c],
-                        array_transposed_host[d * width * height + c * height +
-                                              r]);
+                EXPECT_EQ(array_host[d * width * height + r * width + c],
+                          array_transposed_host[d * width * height +
+                                                c * height + r]);
             }
         }
     }
@@ -99,10 +98,9 @@ void TestFlipHorizontalImage(const size_t width,
     for (size_t r = 0; r < height; ++r) {
         for (size_t c = 0; c < width; ++c) {
             for (size_t d = 0; d < depth; ++d) {
-                EXPECT_EQ(
-                        array_host[d * width * height + r * width + c],
-                        array_flipped_host[d * width * height + r * width +
-                                           width - 1 - c]);
+                EXPECT_EQ(array_host[d * width * height + r * width + c],
+                          array_flipped_host[d * width * height + r * width +
+                                             width - 1 - c]);
             }
         }
     }
@@ -155,10 +153,9 @@ void TestRotateImage(const size_t width,
                 const size_t rotr = std::round(
                         std::sin(angle) * (c - arrayCenterH) +
                         std::cos(angle) * (r - arrayCenterV) + arrayCenterH);
-                EXPECT_EQ(
-                        array_host[d * width * height + r * width + c],
-                        array_rotated_host[d * width * height + rotr * height +
-                                           rotc]);
+                EXPECT_EQ(array_host[d * width * height + r * width + c],
+                          array_rotated_host[d * width * height +
+                                             rotr * height + rotc]);
             }
         }
     }

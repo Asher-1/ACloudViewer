@@ -114,7 +114,8 @@ public:
     std::vector<image_pair_t> ImagePairs() const;
     // Cache the two-view geometry for a pair (edges are built separately by
     // AddCorrespondences, preserving the legacy construction behavior).
-    void SetTwoViewGeometry(image_t image_id1, image_t image_id2,
+    void SetTwoViewGeometry(image_t image_id1,
+                            image_t image_id2,
                             TwoViewGeometry two_view_geometry);
     // Return the cached two-view geometry, inverted when the pair is stored
     // swapped; optionally overwrite inlier_matches with the graph edges.
@@ -122,7 +123,8 @@ public:
                                            image_t image_id2,
                                            bool extract_inlier_matches) const;
     // Replace the cached two-view geometry for a pair.
-    void UpdateTwoViewGeometry(image_t image_id1, image_t image_id2,
+    void UpdateTwoViewGeometry(image_t image_id1,
+                               image_t image_id2,
                                TwoViewGeometry two_view_geometry);
 
 private:
@@ -157,7 +159,6 @@ private:
 // Implementation
 ////////////////////////////////////////////////////////////////////////////////
 size_t CorrespondenceGraph::NumImages() const { return images_.size(); }
-
 
 size_t CorrespondenceGraph::NumImagePairs() const {
     return image_pairs_.size();
