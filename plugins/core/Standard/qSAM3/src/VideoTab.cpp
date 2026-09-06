@@ -8,6 +8,7 @@
 #include "VideoTab.h"
 
 #include <CVLog.h>
+#include <aicore/backend_capi.h>
 #include <aicore/sam3_capi.h>
 #include <ecvAICoreUiHelper.h>
 #include <ecvImage.h>
@@ -311,8 +312,15 @@ void VideoTab::setupUi() {
     m_loadBtn->setVisible(false);
 
     // Hidden device widgets (keep for internal state tracking, not visible).
+    // Items carry the runtime registry device ids (aicore/backend_capi.h),
+    // matching what SAM3Dialog forwards via setDevice(); item text stays the
+    // id so onLoadModel()'s currentText() is the C-API device string.
     m_deviceCombo = new QComboBox(this);
-    m_deviceCombo->addItems({"Auto", "CPU", "CUDA", "Vulkan"});
+    for (int i = 0; i < aicore_device_count(); ++i) {
+        const aicore_device_info* dev = aicore_device_at(i);
+        if (!dev || !dev->id) continue;
+        m_deviceCombo->addItem(QString::fromUtf8(dev->id));
+    }
     m_deviceCombo->hide();
     m_backendLabel = new QLabel(tr("Backend: none"), this);
     m_backendLabel->hide();

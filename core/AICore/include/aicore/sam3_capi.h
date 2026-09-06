@@ -50,8 +50,9 @@ enum aicore_sam3_model_type {
 AICORE_CAPI aicore_sam3_options* aicore_sam3_options_new(void);
 /** Releases an options struct created by aicore_sam3_options_new. */
 AICORE_CAPI void aicore_sam3_options_free(aicore_sam3_options* opts);
-/** Selects the inference device: NULL or "auto" (CUDA -> Vulkan -> CPU),
- *  "cpu", "cuda", "vulkan" (Linux/Windows), "metal" (macOS). */
+/** Selects the inference device: NULL or "auto" (platform order: Metal ->
+ *  CPU on macOS, CUDA -> CPU on Linux/Windows), "cpu", "cuda", "vulkan",
+ *  "metal" (macOS). */
 AICORE_CAPI void aicore_sam3_options_set_device(aicore_sam3_options* opts,
                                                 const char* device);
 /** CPU thread count; <= 0 picks the backend default. */

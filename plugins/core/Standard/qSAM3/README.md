@@ -62,11 +62,12 @@ catalog. Recommended default:
 
 ## Usage
 
-### Image tabs (Points / Box / Exemplar)
+### Image pages (Points / Box / Exemplar)
 
 1. **Plugins -> SAM3 Image & Video Segmentation**
 2. Pick a model in the combo (or **Browse...** a local GGUF), choose the
-   device (Auto / CPU / CUDA / Vulkan), then **Load**
+   device (Auto / Metal / CPU on macOS — the combo lists only the backends
+   registered on this platform; Vulkan/CUDA on Linux/Windows), then **Load**
 3. Open an image (file picker or drag & drop onto the canvas)
 4. Prompt:
    - **Points** — left-click adds a foreground (green) point, right-click a

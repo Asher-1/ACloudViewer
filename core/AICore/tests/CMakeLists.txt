@@ -495,7 +495,12 @@ cloudviewer_set_aicore_test_runtime_layout(bench_sam3_backend_acceptance)
 # on MSVC a dllimport-consuming target cannot resolve __imp_?sam3_* against a
 # static library (archive members are selected by exact symbol name, so the
 # linker never pulls in the member defining the undecorated ?sam3_* symbol).
-add_library(AICore_sam3_diagnostics STATIC ${AICORE_SAM3_SRC_DIR}/sam3.cpp)
+add_library(AICore_sam3_diagnostics STATIC
+    ${AICORE_SAM3_SRC_DIR}/sam3.cpp
+    # sam3.cpp discovers backends via ggml_common::load_backends_once() (same
+    # mechanism as every other task), whose implementation calls into the
+    # env-bridge TU — it must be part of this archive's closure.
+    ${AICORE_COMMON_SRC_DIR}/ggml_env_bridge.cpp)
 target_include_directories(AICore_sam3_diagnostics PRIVATE
     ${AICORE_TEST_INC} ${AICORE_TEST_INC}/.. ${AICORE_INC_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../src ${AICORE_COMMON_SRC_DIR}

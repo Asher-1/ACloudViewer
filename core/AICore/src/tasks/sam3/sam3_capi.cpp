@@ -79,6 +79,7 @@ sam3_device resolve_device(const std::string& device) {
     if (device == "cpu") return SAM3_DEVICE_CPU;
     if (device == "cuda") return SAM3_DEVICE_CUDA;
     if (device == "vulkan") return SAM3_DEVICE_VULKAN;
+    if (device == "metal") return SAM3_DEVICE_METAL;
     return SAM3_DEVICE_AUTO;  // "auto" / NULL / anything else
 }
 

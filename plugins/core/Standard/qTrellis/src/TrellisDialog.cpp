@@ -22,6 +22,7 @@
 #include <QVBoxLayout>
 
 #ifdef AICore_ENABLED
+#include "aicore/backend_capi.h"
 #include "aicore/inference_log.h"
 #include "aicore/trellis_capi.h"
 #endif
@@ -129,11 +130,31 @@ void TrellisDialog::buildGeneratePage(QWidget* page) {
 
     // ── Runtime parameters (shared row) ─────────────────────────────────
     m_deviceCombo = new QComboBox(this);
-    m_deviceCombo->addItems({tr("auto"), tr("cpu"), tr("vulkan"), tr("cuda")});
+    // Device ids follow the runtime backend registry (aicore/backend_capi.h):
+    // the combo lists only the backends registered on this platform — Metal
+    // -> CPU on macOS, Vulkan/CUDA -> CPU on Linux/Windows — never a device
+    // the core cannot resolve. Item data carries the id passed to the C
+    // API; the label is display-only.
+#ifdef AICore_ENABLED
+    for (int i = 0; i < aicore_device_count(); ++i) {
+        const aicore_device_info* dev = aicore_device_at(i);
+        if (!dev || !dev->id) continue;
+        m_deviceCombo->addItem(QString::fromUtf8(dev->label),
+                               QString::fromUtf8(dev->id));
+        if (dev->is_default) m_deviceCombo->setCurrentIndex(i);
+    }
     m_deviceCombo->setToolTip(
             tr("Inference backend. 'auto' picks the best device whose free "
-               "VRAM fits this preset (CUDA \u2192 Vulkan \u2192 CPU); a "
-               "low-VRAM card falls back gracefully instead of failing."));
+               "VRAM fits this preset (%1); a low-VRAM card falls back "
+               "gracefully instead of failing.")
+                    .arg(QString::fromUtf8(aicore_auto_device_order())));
+#else
+    m_deviceCombo->addItem(tr("auto"), QStringLiteral("auto"));
+    m_deviceCombo->addItem(tr("cpu"), QStringLiteral("cpu"));
+    m_deviceCombo->setToolTip(
+            tr("Inference backend. 'auto' picks the best available device; "
+               "a low-VRAM card falls back gracefully instead of failing."));
+#endif
     m_threads = new QSpinBox(this);
     m_threads->setRange(0, 128);
     m_threads->setValue(0);
@@ -537,7 +558,9 @@ void TrellisDialog::loadSettings() {
     m_seed->setEnabled(seed != 0);
     const QString device =
             settings.value("device", QStringLiteral("auto")).toString();
-    const int di = m_deviceCombo->findText(device);
+    // Item data holds the device id; a stale persisted id (e.g. "vulkan" on
+    // a Metal-only build) falls back to the registry default.
+    const int di = m_deviceCombo->findData(device);
     if (di >= 0) m_deviceCombo->setCurrentIndex(di);
     m_threads->setValue(settings.value("threads", 0).toInt());
     m_addToDbCheck->setChecked(settings.value("addToDb", true).toBool());
@@ -574,7 +597,7 @@ void TrellisDialog::saveSettings() const {
                                               ? 0
                                               : m_textureSteps->value());
     settings.setValue("seed", m_seedRandom->isChecked() ? 0 : m_seed->value());
-    settings.setValue("device", m_deviceCombo->currentText());
+    settings.setValue("device", m_deviceCombo->currentData().toString());
     settings.setValue("threads", m_threads->value());
     settings.setValue("addToDb", m_addToDbCheck->isChecked());
     settings.setValue("saveGlbDir", m_saveGlbDir->text());
@@ -602,7 +625,7 @@ TrellisDialog::Settings TrellisDialog::getSettings() const {
             m_textureStepsAuto->isChecked() ? 0 : m_textureSteps->value();
     s.seed = m_seedRandom->isChecked() ? 0
                                        : static_cast<uint64_t>(m_seed->value());
-    s.device = m_deviceCombo->currentText();
+    s.device = m_deviceCombo->currentData().toString();
     s.threads = m_threads->value();
     s.useRmbg = m_rmbgCheck->isChecked();
     s.textureEnabled = m_textureCheck->isChecked();

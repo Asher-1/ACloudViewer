@@ -133,22 +133,24 @@ struct sam3_result {
 ** Configuration for model loading, segmentation, and video tracking.
 *****************************************************************************/
 
-// Backend device selection. AUTO probes the ggml backend registry in order
-// (CUDA -> Vulkan -> CPU) and uses the first one that initialises.
+// Backend device selection. AUTO follows the platform auto order (Metal ->
+// CPU on macOS, CUDA -> CPU on Linux/Windows; Vulkan is deliberately skipped
+// in AUTO — see sam3_backend_init) and uses the first one that initialises.
 // `use_gpu = false` still forces CPU for backwards compatibility.
 enum sam3_device {
     SAM3_DEVICE_AUTO = 0,
     SAM3_DEVICE_CPU = 1,
     SAM3_DEVICE_CUDA = 2,
     SAM3_DEVICE_VULKAN = 3,
+    SAM3_DEVICE_METAL = 4,
 };
 
 struct sam3_params {
     std::string model_path;
     int n_threads = 4;
     bool use_gpu = true;
-    sam3_device device =
-            SAM3_DEVICE_AUTO;  // explicit device; AUTO picks CUDA->Vulkan->CPU
+    sam3_device device = SAM3_DEVICE_AUTO;  // explicit device; AUTO follows
+                                            // the platform auto order
     int seed = 42;
     int encode_img_size = 0;  // 0 = model default; override input resolution
 };

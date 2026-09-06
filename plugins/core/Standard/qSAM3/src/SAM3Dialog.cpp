@@ -8,6 +8,7 @@
 #include "SAM3Dialog.h"
 
 #include <CVLog.h>
+#include <aicore/backend_capi.h>
 #include <aicore/sam3_capi.h>
 
 #ifdef HAS_OPENCV_FACE_CAPTURE
@@ -34,6 +35,7 @@
 #include <QImage>
 #include <QLabel>
 #include <QLineEdit>
+#include <QListWidget>
 #include <QMessageBox>
 #include <QMimeData>
 #include <QPainter>
@@ -44,7 +46,7 @@
 #include <QSettings>
 #include <QShowEvent>
 #include <QSplitter>
-#include <QTabWidget>
+#include <QStackedWidget>
 #include <QVBoxLayout>
 #include <cstring>
 
@@ -490,8 +492,8 @@ void SAM3Dialog::resizeEvent(QResizeEvent* e) {
 SAM3Dialog::~SAM3Dialog() {
     saveSettings();
     stopWorker();
-    // Teardown guard: QObject destroys children (QTabWidget -> VideoTab)
-    // AFTER this class's members (m_tabs, m_backendLabel) are gone. The
+    // Teardown guard: QObject destroys children (page shell -> VideoTab)
+    // AFTER this class's members (m_pageStack, m_backendLabel) are gone. The
     // VideoTab destructor calls releaseModel(), which emits backendChanged;
     // the setupUi() lambda connected with `this` context would then run on
     // destroyed members (SIGSEGV in QFunctorSlotObject). Disconnect before
@@ -511,7 +513,18 @@ void SAM3Dialog::setupUi() {
 
     auto* deviceLabel = new QLabel(tr("Device:"));
     m_deviceCombo = new QComboBox();
-    m_deviceCombo->addItems({"Auto", "CPU", "CUDA", "Vulkan"});
+    // Devices follow the runtime backend registry (aicore/backend_capi.h),
+    // which lists only the backends registered on this platform — Metal ->
+    // CPU on macOS, Vulkan/CUDA -> CPU on Linux/Windows — so the combo never
+    // offers a device the core cannot resolve. Item data carries the device
+    // id passed to the C API; labels are display-only.
+    for (int i = 0; i < aicore_device_count(); ++i) {
+        const aicore_device_info* dev = aicore_device_at(i);
+        if (!dev || !dev->id) continue;
+        m_deviceCombo->addItem(QString::fromUtf8(dev->label),
+                               QString::fromUtf8(dev->id));
+        if (dev->is_default) m_deviceCombo->setCurrentIndex(i);
+    }
     connect(m_deviceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &SAM3Dialog::onDeviceChanged);
 
@@ -525,9 +538,24 @@ void SAM3Dialog::setupUi() {
     deviceRow->addStretch();
     mainLayout->addLayout(deviceRow);
 
-    // ── Tabs: one self-contained page per model family ────────────────────
-    m_tabs = new QTabWidget(this);
-    ecvAICoreUi::styleTabWidget(m_tabs);
+    // ── Page shell (qYOLO-style: left page list + stacked pages) ────────────────────
+    m_pageList = new QListWidget(this);
+    m_pageList->setFixedWidth(ecvAICoreUi::dpiScaled(132));
+    m_pageList->setSpacing(ecvAICoreUi::dpiScaled(2));
+    // Palette-based list styling lifted from YOLODialog::setupUi: tracks
+    // light/dark themes without hardcoded colors. Four short-titled pages
+    // never overflow, so a fixed-width list (TrellisDialog rendition) needs
+    // no draggable splitter / persisted splitter state.
+    m_pageList->setStyleSheet(
+            QStringLiteral("QListWidget { background: palette(base); border: "
+                           "1px solid palette(mid); border-radius: 3px; "
+                           "padding: 2px; }"
+                           "QListWidget::item { padding: 4px 6px; "
+                           "border-radius: 3px; }"
+                           "QListWidget::item:selected { background: "
+                           "palette(highlight); color: "
+                           "palette(highlighted-text); }"));
+    m_pageStack = new QStackedWidget(this);
 
     // Model-switch hint: the new model loads lazily on the next Segment /
     // click / box (no reload while the dialog is idle).
@@ -768,7 +796,8 @@ void SAM3Dialog::setupUi() {
         u.detectionLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
         layout->addWidget(u.detectionLabel);
 
-        m_tabs->addTab(u.tab, title);
+        m_pageStack->addWidget(u.tab);
+        m_pageList->addItem(title);
     };
 
     buildImageTab(Sam3Tab::Full, tr("SAM 3 Full"), /*isFull=*/true);
@@ -786,22 +815,28 @@ void SAM3Dialog::setupUi() {
     connect(m_deviceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, [this](int) {
                 if (m_videoTab) {
-                    m_videoTab->setDevice(m_deviceCombo->currentText());
+                    m_videoTab->setDevice(
+                            m_deviceCombo->currentData().toString());
                 }
             });
     connect(m_videoTab, &VideoTab::backendChanged, this,
             [this](const QString& backend) {
-                if (m_tabs && m_videoTab &&
-                    m_tabs->currentWidget() == m_videoTab) {
+                if (m_pageStack && m_videoTab &&
+                    m_pageStack->currentWidget() == m_videoTab) {
                     m_backendLabel->setText(tr("Backend: %1").arg(backend));
                 }
             });
-    m_tabs->addTab(m_videoTab, tr("Video"));
+    m_pageStack->addWidget(m_videoTab);
+    m_pageList->addItem(tr("Video"));
 #endif
 
-    // The tab area holds the self-contained pages; it expands to fill the
-    // dialog so each page's canvas gets all the remaining space.
-    mainLayout->addWidget(m_tabs, 1);
+    // The page shell holds the self-contained pages: the list routes, the
+    // stack expands to fill the dialog so each page's canvas gets all the
+    // remaining space.
+    auto* bodyRow = new QHBoxLayout();
+    bodyRow->addWidget(m_pageList);
+    bodyRow->addWidget(m_pageStack, 1);
+    mainLayout->addLayout(bodyRow, 1);
 
     // ── Progress section (shared helper, hidden by default) ────────────────
     ecvAICoreUi::setupProgressSection(mainLayout, m_downloadLabel, m_progress);
@@ -823,8 +858,12 @@ void SAM3Dialog::setupUi() {
     });
 
     // ── Connections ─────────────────────────────────────────────────────────
-    connect(m_tabs, &QTabWidget::currentChanged, this,
-            &SAM3Dialog::onTabChanged);
+    // QListWidget does not auto-select its first item (QTabWidget did), so
+    // set the initial highlight before wiring the callback — the initial
+    // onPageChanged-equivalent never fired during construction there either.
+    m_pageList->setCurrentRow(0);
+    connect(m_pageList, &QListWidget::currentRowChanged, this,
+            &SAM3Dialog::onPageChanged);
 
     // Shared test data repository (SAM3 dataset).
     auto& repo = ecvTestDataRepository::instance();
@@ -939,13 +978,11 @@ void SAM3Dialog::loadSettings() {
     m_settings.modelVisual = settings.value("modelVisual").toString();
     m_settings.modelSam2 = settings.value("modelSam2").toString();
 
-    for (int i = 0; i < m_deviceCombo->count(); ++i) {
-        if (m_deviceCombo->itemText(i).compare(m_settings.device,
-                                               Qt::CaseInsensitive) == 0) {
-            m_deviceCombo->setCurrentIndex(i);
-            break;
-        }
-    }
+    // Device ids live in item data (labels are display-only). A stale
+    // persisted id (e.g. "vulkan" on a Metal-only build) falls back to the
+    // registry default.
+    const int di = m_deviceCombo->findData(m_settings.device);
+    if (di >= 0) m_deviceCombo->setCurrentIndex(di);
     // Export-to-DB is intentionally NOT persisted: it must be off by
     // default on every start (the user opts in per session; all previews
     // live in the plugin UI). Restoring a previously saved "on" state
@@ -1137,7 +1174,7 @@ void SAM3Dialog::onLoadModel() {
     }
 
     m_modelPath = path;
-    m_settings.device = m_deviceCombo->currentText().toLower();
+    m_settings.device = m_deviceCombo->currentData().toString();
     ImageTabUi& u = currentUi();
     if (u.segmentBtn) u.segmentBtn->setEnabled(false);
     setBusy(true);
@@ -1448,8 +1485,21 @@ void SAM3Dialog::onCanvasBox(QRectF box) {
     runSegmentation(true);
 }
 
-void SAM3Dialog::onTabChanged(int index) {
-    if (index >= 3) {
+void SAM3Dialog::onPageChanged(int index) {
+    // The page list and the stack are separate widgets (unlike QTabWidget,
+    // which switched its internal stack before emitting currentChanged):
+    // sync the stack here so the right pane actually shows the selected
+    // entry.
+    if (m_pageStack && index >= 0 && index < m_pageStack->count()) {
+        m_pageStack->setCurrentIndex(index);
+    }
+    // Video page is identified by widget identity, not by position (index 3
+    // today): adding a page after Video must not inherit its exclusive-GPU
+    // teardown semantics.
+    const bool isVideoPage =
+            m_videoTab && m_pageStack &&
+            m_pageStack->widget(index) == m_videoTab;
+    if (isVideoPage) {
         // Image and video contexts can each consume multiple GiB. Keep only
         // the active domain resident so opening Video cannot fail while an
         // image model and its cached graph still occupy the same GPU.
@@ -1470,9 +1520,11 @@ void SAM3Dialog::onTabChanged(int index) {
     // interactivity must follow the tab switch).
     updateSegmentButtonState();
     if (m_worker && m_worker->context() && modelSelectionChanged()) {
+        QListWidgetItem* page = m_pageList ? m_pageList->currentItem()
+                                           : nullptr;
         appendLog(tr("Switched to %1 model family. The new model will load "
                      "automatically on the next Segment / click / box.")
-                          .arg(m_tabs->tabText(m_tabs->currentIndex())));
+                          .arg(page ? page->text() : QString()));
     }
 }
 
@@ -1506,9 +1558,10 @@ void SAM3Dialog::onModeChanged() {
 }
 
 void SAM3Dialog::onDeviceChanged(int idx) {
-    const QStringList devNames = {"auto", "cpu", "cuda", "vulkan"};
-    m_settings.device =
-            (idx >= 0 && idx < devNames.size()) ? devNames[idx] : "auto";
+    m_settings.device = m_deviceCombo->itemData(idx).toString();
+    if (m_settings.device.isEmpty()) {
+        m_settings.device = QStringLiteral("auto");
+    }
     // Hot-swap: with a model loaded, re-load it on the newly selected
     // backend right away (upstream main_image.cpp Devices combo triggers
     // reload_model() on the fly). loadSettings() also fires this slot
@@ -1537,7 +1590,7 @@ void SAM3Dialog::startWorker(SAM3WorkerAction action) {
     // The worker is shared, but every callback must land on the tab that
     // started the task (a Ctrl+Tab during a busy run must not write a
     // sibling tab's UI/state).
-    m_taskTab = m_tabs ? qBound(0, m_tabs->currentIndex(), 2) : 0;
+    m_taskTab = m_pageStack ? qBound(0, m_pageStack->currentIndex(), 2) : 0;
     stopWorker();
     ImageTabUi& u = m_tabsUi[m_taskTab];
     SAM3Worker::Settings s;
@@ -1616,8 +1669,8 @@ void SAM3Dialog::startWorker(SAM3WorkerAction action) {
             const bool canvasPrompt = m_retryCanvasPrompt;
             m_retryAfterModelLoad = false;
             m_retryCanvasPrompt = false;
-            if (m_tabs && m_tabs->currentIndex() != m_taskTab) {
-                m_tabs->setCurrentIndex(m_taskTab);
+            if (m_pageList && m_pageList->currentRow() != m_taskTab) {
+                m_pageList->setCurrentRow(m_taskTab);
             }
             runSegmentation(canvasPrompt);
         }
@@ -1649,7 +1702,7 @@ bool SAM3Dialog::autoLoadModelIfAvailable() {
         return false;
     }
     m_modelPath = path;
-    m_settings.device = m_deviceCombo->currentText().toLower();
+    m_settings.device = m_deviceCombo->currentData().toString();
     appendLog(tr("Auto-loading model: %1 ...").arg(QFileInfo(path).fileName()));
     setBusy(true);
     startWorker(SAM3WorkerAction::LoadModel);
@@ -1887,7 +1940,7 @@ void SAM3Dialog::exportToDb(ImageTabUi* target) {
 // ── Tab helpers ────────────────────────────────────────────────────────────
 
 SAM3Dialog::Sam3Tab SAM3Dialog::currentTab() const {
-    const int idx = m_tabs ? m_tabs->currentIndex() : 0;
+    const int idx = m_pageStack ? m_pageStack->currentIndex() : 0;
     if (idx <= 0) return Sam3Tab::Full;
     if (idx == 1) return Sam3Tab::Visual;
     return Sam3Tab::Sam2;
@@ -1929,7 +1982,9 @@ void SAM3Dialog::requestTestData() {
     }
     // Remember which tab asked for the data; the auto-load after extraction
     // lands there even if the user switches tabs while downloading.
-    if (m_tabs) m_testDataTab = qBound(0, m_tabs->currentIndex(), 2);
+    if (m_pageStack) {
+        m_testDataTab = qBound(0, m_pageStack->currentIndex(), 2);
+    }
     if (loadRequestedTestData()) return;
 
     auto& repo = ecvTestDataRepository::instance();
@@ -2071,8 +2126,8 @@ void SAM3Dialog::onTestDataExtractionFinished(
     // the (first) sample so the one-click flow completes automatically on
     // the tab that requested the download.
     populateTestDataCombos();
-    if (m_tabs && m_tabs->currentIndex() != m_testDataTab) {
-        m_tabs->setCurrentIndex(m_testDataTab);
+    if (m_pageList && m_pageList->currentRow() != m_testDataTab) {
+        m_pageList->setCurrentRow(m_testDataTab);
     }
     if (!loadRequestedTestData()) {
         appendLog(tr("[Test data] Sample image not found in the archive."));

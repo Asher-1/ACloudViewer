@@ -7,16 +7,17 @@
 // SAM3 interactive segmentation dialog.
 //
 // Qt-based replacement for the upstream ImGui demo (examples/main_image.cpp).
-// Layout (mirrors the upstream single-panel strategy):
-//   Shared device row at the top, then one tab per model family:
+// Layout (qYOLO-style page shell, cf. YOLODialog / TrellisDialog):
+//   Shared device row at the top, then a left-hand page list driving a
+//   stacked content area — one self-contained page per model family:
 //     SAM 3 Full (ViT + text detector) → Points / Box (PVS) / Exemplar (PCS)
 //     SAM 3 Visual (no text encoder)   → Points / Box (PVS)
 //     SAM 2 / 2.1 (visual-only Hiera)  → Points / Box (PVS)
-//     Video (self-contained tracking tab)
-//   Each image tab is self-contained and compact: two control rows, the
+//     Video (self-contained tracking page)
+//   Each image page is self-contained and compact: two control rows, the
 //   canvas expanding to fill all remaining space, a compact bottom bar
 //   (score / show masks / export to DB / multimask / Clear / Export masks /
-//   status) and the detection list. No tab's layout affects another one.
+//   status) and the detection list. No page's layout affects another one.
 //   Canvas mouse interaction: left-click → +point, right-click → -point,
 //                             drag → bounding box
 
@@ -45,15 +46,16 @@ class QComboBox;
 class QDoubleSpinBox;
 class QLabel;
 class QLineEdit;
+class QListWidget;
 class QProgressBar;
 class QPushButton;
 class QRadioButton;
 class QSlider;
-class QTabWidget;
+class QStackedWidget;
 class QTimer;
 class ecvMainAppInterface;
 class ecvModelDownloader;
-class VideoTab;  // video tracking tab (VideoTab.h; built with OpenCV only)
+class VideoTab;  // video tracking page (VideoTab.h; built with OpenCV only)
 
 /** Detection box + label drawn on the image canvas, mirroring upstream
  *  examples/main_image.cpp detection boxes. */
@@ -234,7 +236,7 @@ private slots:
     void onCanvasBox(QRectF box);
     void onModeChanged();
     void onDeviceChanged(int idx);
-    void onTabChanged(int index);
+    void onPageChanged(int index);
     void requestTestData();
     void onTestDataDownloadFinished(bool success,
                                     ecvTestDataRepository::Dataset kind);
@@ -325,8 +327,9 @@ private:
      *  Returns the number of images added (0 when no app interface). */
     int exportMasksToDb(ImageTabUi* target = nullptr);
 
-    // UI widgets (top bar)
-    QTabWidget* m_tabs = nullptr;
+    // UI widgets (qYOLO-style page shell: left page list + stacked pages)
+    QListWidget* m_pageList = nullptr;
+    QStackedWidget* m_pageStack = nullptr;
     /** Widgets + state of the three image tabs (indexed by Sam3Tab). */
     ImageTabUi m_tabsUi[3];
 

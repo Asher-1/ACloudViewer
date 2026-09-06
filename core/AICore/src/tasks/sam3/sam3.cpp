@@ -11,6 +11,9 @@
 
 #include "sam3.h"
 
+/* AICore common runtime (shared dynamic-backend discovery) */
+#include "common/ggml_backend_utils.hpp"
+
 /* ggml */
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
@@ -33,6 +36,7 @@
 /* C++ standard library */
 #include <algorithm>
 #include <cassert>
+#include <cctype>
 #include <chrono>
 #include <climits>
 #include <cmath>
@@ -1017,26 +1021,37 @@ static bool sam3_backend_is_cuda() {
         return false;
     }
     ggml_backend_dev_t dev = ggml_backend_get_device(g_sam3_backend);
-    const char* name = dev ? ggml_backend_dev_name(dev) : nullptr;
-    return name && strncasecmp(name, "cuda", 4) == 0;
+    // Canonical family id — same normalizer as sam3_find_dev_by_name.
+    const char* reg =
+            dev ? ggml_backend_reg_name(ggml_backend_dev_backend_reg(dev))
+                : nullptr;
+    return reg && ggml_common::registry_backend_id(reg) == "cuda";
 }
 
 // Initialise a backend via the runtime registry. Device selection mirrors the
-// other ggml projects: explicit sam3_device (CUDA/Vulkan/CPU) or AUTO which
-// probes CUDA -> Vulkan -> CPU and uses the first one that initialises.
-// `use_gpu = false` forces CPU for backwards compatibility. Works with both
-// GGML_BACKEND_DL=ON shared-DLL builds and statically-linked ggml builds —
-// `ggml_backend_load_all()` is a no-op in the latter and a one-shot discovery
-// scan in the former.
+// other AICore tasks: explicit sam3_device (Metal/CUDA/Vulkan/CPU) or AUTO
+// which follows the platform auto order — Metal -> CPU on macOS, CUDA -> CPU
+// on Linux/Windows — and uses the first one that initialises.
+// Works with both GGML_BACKEND_DL=ON shared-DLL builds and statically-linked
+// ggml builds — load_backends_once() is a no-op repeat call in the latter and
+// a one-shot discovery scan in the former.
 static ggml_backend_dev_t sam3_find_dev_by_name(const char* prefix) {
     const size_t n = ggml_backend_dev_count();
     for (size_t i = 0; i < n; ++i) {
         ggml_backend_dev_t dev = ggml_backend_dev_get(i);
-        if (ggml_backend_dev_type(dev) != GGML_BACKEND_DEVICE_TYPE_GPU) {
+        const auto type = ggml_backend_dev_type(dev);
+        if (type != GGML_BACKEND_DEVICE_TYPE_GPU &&
+            type != GGML_BACKEND_DEVICE_TYPE_IGPU) {
             continue;
         }
-        const char* name = ggml_backend_dev_name(dev);
-        if (name && strncasecmp(name, prefix, strlen(prefix)) == 0) {
+        // Canonical family id via the shared normalizer: this ggml names the
+        // Metal backend AND its devices "MTL"/"MTL0" (GGML_METAL_NAME), so
+        // raw-name prefix matching silently misses Metal. Every other AICore
+        // probe (find_gpu_backend, backend_capi build_devices) maps through
+        // the same registry_backend_id() ("MTL" → "metal").
+        const char* reg =
+                ggml_backend_reg_name(ggml_backend_dev_backend_reg(dev));
+        if (reg && ggml_common::registry_backend_id(reg) == prefix) {
             return dev;
         }
     }
@@ -1044,7 +1059,12 @@ static ggml_backend_dev_t sam3_find_dev_by_name(const char* prefix) {
 }
 
 static ggml_backend_t sam3_backend_init(sam3_device device, bool use_gpu) {
-    ggml_backend_load_all();
+    // Shared process-wide discovery (dladdr-locates libAICore and loads the
+    // ggml backend modules next to it) — same mechanism every other task
+    // uses; a bare ggml_backend_load_all() only scans the executable
+    // directory + cwd, which breaks installed layouts where libAICore lives
+    // elsewhere.
+    ggml_common::load_backends_once();
     if (device == SAM3_DEVICE_AUTO && !use_gpu) {
         device = SAM3_DEVICE_CPU;
     }
@@ -1052,13 +1072,19 @@ static ggml_backend_t sam3_backend_init(sam3_device device, bool use_gpu) {
     ggml_backend_dev_t dev = nullptr;
     switch (device) {
         case SAM3_DEVICE_AUTO:
-            // Probe CUDA first, then CPU.
+            // Probe Metal first (registered only on macOS), then CUDA, then
+            // CPU. The non-Mac order matches the platform auto order in
+            // ggml_common::auto_backend_ids().
             // NOTE: ggml v0.18.1 Vulkan backend crashes all SAM/SAM2 models
             // with VK_ERROR_DEVICE_LOST during graph compute on NVIDIA driver
             // 550.144.03 (and likely other versions). Skip Vulkan in AUTO and
             // let the explicit SAM3_DEVICE_VULKAN path below handle users who
             // knowingly opt in.
-            dev = sam3_find_dev_by_name("cuda");
+            dev = sam3_find_dev_by_name("metal");
+            if (!dev) dev = sam3_find_dev_by_name("cuda");
+            break;
+        case SAM3_DEVICE_METAL:
+            dev = sam3_find_dev_by_name("metal");
             break;
         case SAM3_DEVICE_CUDA:
             dev = sam3_find_dev_by_name("cuda");
@@ -1072,10 +1098,20 @@ static ggml_backend_t sam3_backend_init(sam3_device device, bool use_gpu) {
     if (!dev) {
         dev = ggml_backend_dev_by_type(GGML_BACKEND_DEVICE_TYPE_CPU);
         if (dev) {
-            AICORE_LOG_ERROR(
-                    "[sam3] ",
-                    "%s: requested device unavailable; using CPU backend\n",
-                    __func__);
+            if (device == SAM3_DEVICE_AUTO) {
+                // Auto on a GPU-less host (or backend set) is a normal CPU
+                // outcome, not an error — keep it at INFO.
+                AICORE_LOG_PRINT("[sam3] ",
+                                 "%s: no GPU backend found; using CPU "
+                                 "backend\n",
+                                 __func__);
+            } else {
+                AICORE_LOG_ERROR(
+                        "[sam3] ",
+                        "%s: requested device unavailable; using CPU "
+                        "backend\n",
+                        __func__);
+            }
         }
     }
     if (!dev) {
@@ -3253,6 +3289,17 @@ const char* sam3_backend_name(const sam3_model& model) {
     if (!dev) {
         return "unknown";
     }
+    // Canonical family id via the shared normalizer: reg_name here is
+    // "MTL" for Metal (GGML_METAL_NAME), not "metal". CPU / CUDA / Vulkan
+    // keep their familiar dev_name display ("CPU", "CUDA0", "Vulkan0");
+    // Metal's dev_name "MTL0" is meaningless to users.
+    const char* reg = ggml_backend_reg_name(ggml_backend_dev_backend_reg(dev));
+    if (!reg || !reg[0]) {
+        return "unknown";
+    }
+    if (ggml_common::registry_backend_id(reg) == "metal") {
+        return "Metal";
+    }
     return ggml_backend_dev_name(dev);
 }
 
@@ -3907,16 +3954,26 @@ static struct ggml_tensor* sam3_win_unpart_compat(
     return ggml_cont(ctx, view);
 }
 
-// Backend lacks a native WIN_PART kernel (ggml-vulkan / ggml-cuda): use the
-// pad + reshape + permute + cont expansion. CPU and Metal keep the native
-// single-op form (faster, fewer graph nodes). g_sam3_backend is set by
+// Only ggml-cpu ships a native WIN_PART/WIN_UNPART kernel — ggml-cuda,
+// ggml-vulkan AND ggml-metal all lack it, and this fork's backends ABORT on
+// unsupported ops ("unsupported op 'WIN_PART'", ggml-metal-ops.cpp) instead
+// of failing gracefully. (The old "CPU and Metal keep the native form"
+// assumption was never executed: Metal was unreachable until device
+// resolution was fixed.) Fail-safe default: every non-CPU backend gets the
+// pad + reshape + permute + cont expansion, built entirely from ops the
+// Metal op table confirms are supported. g_sam3_backend is set by
 // sam3_backend_init() before any graph is built.
 static inline bool sam3_backend_needs_win_part_compat() {
     if (!g_sam3_backend) return false;
     ggml_backend_dev_t dev = ggml_backend_get_device(g_sam3_backend);
-    const char* name = dev ? ggml_backend_dev_name(dev) : nullptr;
-    return name && (strncasecmp(name, "cuda", 4) == 0 ||
-                    strncasecmp(name, "vulkan", 6) == 0);
+    // Canonical family id — same normalizer as sam3_find_dev_by_name.
+    const char* reg =
+            dev ? ggml_backend_reg_name(ggml_backend_dev_backend_reg(dev))
+                : nullptr;
+    if (!reg) return false;
+    // Fail-safe: only ggml-cpu is known to ship WIN_PART/WIN_UNPART; every
+    // GPU backend — current or future — takes the standard-op expansion.
+    return ggml_common::registry_backend_id(reg) != "cpu";
 }
 
 static inline struct ggml_tensor* sam3_win_part(struct ggml_context* ctx,
@@ -3970,9 +4027,14 @@ static inline struct ggml_tensor* sam3_global_mean_dim0(
 static inline bool sam3_backend_needs_mean_dim0() {
     if (!g_sam3_backend) return false;
     ggml_backend_dev_t dev = ggml_backend_get_device(g_sam3_backend);
-    const char* name = dev ? ggml_backend_dev_name(dev) : nullptr;
-    return name && (strncasecmp(name, "cuda", 4) == 0 ||
-                    strncasecmp(name, "vulkan", 6) == 0);
+    // Canonical family id — same normalizer as
+    // sam3_backend_needs_win_part_compat().
+    const char* reg =
+            dev ? ggml_backend_reg_name(ggml_backend_dev_backend_reg(dev))
+                : nullptr;
+    if (!reg) return false;
+    const std::string fam = ggml_common::registry_backend_id(reg);
+    return fam == "cuda" || fam == "vulkan";
 }
 
 static inline struct ggml_tensor* sam3_global_mean_dim0(
