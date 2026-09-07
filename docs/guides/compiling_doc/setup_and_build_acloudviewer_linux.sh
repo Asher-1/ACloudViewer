@@ -47,7 +47,11 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "${JOBS}" ]]; then
-    JOBS=$(( $(nproc) > 24 ? 24 : $(nproc) ))
+    # Cap at 12: the pybind module links with -flto=auto and GCC 9's LTO is
+    # known to hit "lto1: internal compiler error: resolution sub id not in
+    # object file" at high link parallelism (observed with -j24 on a 48-core
+    # Ubuntu 20.04 machine; -j12 and -j4 build fine).
+    JOBS=$(( $(nproc) > 12 ? 12 : $(nproc) ))
 fi
 
 log() { printf '\n\033[1;34m[%s] %s\033[0m\n' "$(date +%H:%M:%S)" "$*"; }
@@ -85,7 +89,15 @@ ${SUDO} apt-get install -y -q \
     libqt5websockets5-dev libqt5xmlpatterns5-dev libqt5x11extras5-dev \
     qtdeclarative5-dev qtdeclarative5-dev-tools libqt5quickcontrols2-5 \
     libqt5networkauth5-dev qt5-image-formats-plugins qttranslations5-l10n \
-    libxxf86vm-dev libudev-dev
+    libxxf86vm-dev libudev-dev qt5-gtk-platformtheme
+
+# pyenv builds CPython from source; these interpreter build deps are not
+# covered by install_deps_ubuntu.sh either. Without libreadline/ncurses the
+# pyenv install still succeeds but produces a crippled python; without
+# libffi/openssl headers it can fail outright.
+log "[1/7] Installing pyenv Python build dependencies"
+${SUDO} apt-get install -y -q zlib1g-dev libbz2-dev libreadline-dev \
+    libsqlite3-dev libffi-dev liblzma-dev libncurses-dev libxmlsec1-dev
 
 # ---------------------------------------------------------------------------
 # [2/7] pyenv + Python (skip when the requested version already exists)
@@ -140,9 +152,12 @@ source "${VULKAN_ENV_FILE}"
 log "[4/7] VTK ${VTK_VERSION} + PCL ${PCL_VERSION}"
 _vtk_ok=false
 _pcl_ok=false
-ls -d /usr/local/lib/cmake/vtk-* >/dev/null 2>&1 && _vtk_ok=true
-[[ -n "$(find /usr/local -maxdepth 2 -iname "PCLConfig.cmake" 2>/dev/null)" ]] && _pcl_ok=true
-[[ -n "$(find /usr -maxdepth 4 -name "PCLConfig.cmake" 2>/dev/null)" ]] && _pcl_ok=true
+# Version-exact check of the CI-prebuilt layer in /usr/local only. The old
+# find-based probe was both depth-broken (PCLConfig.cmake sits at depth 3
+# under /usr/local/share/pcl-x.y, deeper than -maxdepth 2) and semantically
+# wrong (/usr hits would treat an apt PCL 1.10 as "already installed").
+[[ -f "/usr/local/lib/cmake/vtk-${VTK_VERSION}/vtk-config.cmake" ]] && _vtk_ok=true
+[[ -d "/usr/local/share/pcl-${PCL_VERSION}" ]] && _pcl_ok=true
 
 if ${_vtk_ok} && ${_pcl_ok}; then
     echo "VTK/PCL already installed — skipping."
@@ -197,12 +212,53 @@ if [[ -z "${QT_PREFIX}" ]]; then
     fi
 fi
 
+# --- CUDA: enable only when a toolkit is actually present (doc pins >= 11.8) ---
+# nvcc usually lives in /usr/local/cuda/bin which is NOT on PATH in
+# non-interactive shells, so probe the standard location explicitly.
+CUDA_FLAGS=()
+if [[ -x /usr/local/cuda/bin/nvcc ]] || command -v nvcc >/dev/null 2>&1; then
+    export PATH="/usr/local/cuda/bin:${PATH}"
+    CUDA_FLAGS=(-DBUILD_CUDA_MODULE=ON -DBUILD_COMMON_CUDA_ARCHS=ON
+                -DAICore_USE_CUDA=ON -DAICore_BUNDLE_CUDA_RUNTIME=ON
+                -DCUDAToolkit_ROOT=/usr/local/cuda)
+    _nvcc_major=$(nvcc --version 2>/dev/null | grep -oE 'release [0-9]+' | grep -oE '[0-9]+' || echo 0)
+    _gcc_major=$(gcc -dumpversion | cut -d. -f1)
+    if [[ "${_nvcc_major}" -le 11 && "${_gcc_major:-0}" -ge 13 ]]; then
+        warn "CUDA ${_nvcc_major}.x does not support the gcc ${_gcc_major} host compiler;"
+        warn "nvcc will fail. Install CUDA >= 12.4 (Ubuntu 24.04) or a lower gcc."
+    fi
+    echo "CUDA toolkit detected (nvcc ${_nvcc_major}.x, host gcc ${_gcc_major}) - building with CUDA."
+else
+    warn "No CUDA toolkit found - building without CUDA (AICore falls back to Vulkan/CPU)."
+    CUDA_FLAGS=(-DBUILD_CUDA_MODULE=OFF -DAICore_USE_CUDA=OFF -DAICore_BUNDLE_CUDA_RUNTIME=OFF)
+fi
+
+# --- Explicit find_package hints for the CI-prebuilt dependency layer ---
+# Without these, find_package() can resolve the older apt PCL (1.10) / VTK
+# (7.1) first; the apt PCLConfig then reads /usr/include/eigen3 which the
+# consume step moved aside, and configure dies with "file failed to open for
+# reading: /usr/include/eigen3/Eigen/src/Core/util/Macros.h" (observed on
+# Ubuntu 20.04).
+DEPS_PREFIX="/usr/local"
+PCL_DIR_HINT=""
+VTK_DIR_HINT=""
+EIGEN_DIR_HINT=""
+[[ -f "${DEPS_PREFIX}/share/pcl-${PCL_VERSION}/PCLConfig.cmake" ]] && \
+    PCL_DIR_HINT="-DPCL_DIR=${DEPS_PREFIX}/share/pcl-${PCL_VERSION}"
+[[ -f "${DEPS_PREFIX}/lib/cmake/vtk-${VTK_VERSION}/vtk-config.cmake" ]] && \
+    VTK_DIR_HINT="-DVTK_DIR=${DEPS_PREFIX}/lib/cmake/vtk-${VTK_VERSION}"
+[[ -f "${DEPS_PREFIX}/share/eigen3/cmake/Eigen3Config.cmake" ]] && \
+    EIGEN_DIR_HINT="-DEigen3_DIR=${DEPS_PREFIX}/share/eigen3/cmake"
+
 cmake \
     -DDEVELOPER_BUILD=OFF \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
     -DBUILD_WITH_CONDA=OFF \
-    -DCMAKE_PREFIX_PATH="${QT_PREFIX}" \
+    -DCMAKE_PREFIX_PATH="${DEPS_PREFIX};${QT_PREFIX}" \
+    ${PCL_DIR_HINT} \
+    ${VTK_DIR_HINT} \
+    ${EIGEN_DIR_HINT} \
     -DPython3_EXECUTABLE="${PYTHON_EXE}" \
     -DPython3_ROOT_DIR="${PYTHON_ROOT}" \
     -DPython3_LIBRARY="${PYTHON_LIB}" \
@@ -217,8 +273,7 @@ cmake \
     -DBUILD_WEBRTC=OFF \
     -DBUILD_OPENCV=ON \
     -DBUILD_RECONSTRUCTION=ON \
-    -DBUILD_CUDA_MODULE=ON \
-    -DBUILD_COMMON_CUDA_ARCHS=ON \
+    "${CUDA_FLAGS[@]}" \
     -DBUILD_JUPYTER_EXTENSION=OFF \
     -DBUILD_LIBREALSENSE=OFF \
     -DBUILD_AZURE_KINECT=OFF \
@@ -273,8 +328,6 @@ cmake \
     -DPLUGIN_STANDARD_QSIBR=ON \
     -DAICore_ENABLED=ON \
     -DAICore_USE_VULKAN=ON \
-    -DAICore_USE_CUDA=ON \
-    -DAICore_BUNDLE_CUDA_RUNTIME=ON \
     -DPLUGIN_STANDARD_QDA3=ON \
     -DPLUGIN_STANDARD_QDEEPLSD=ON \
     -DPLUGIN_STANDARD_QFACEDETECT=ON \
