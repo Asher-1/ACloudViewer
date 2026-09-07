@@ -355,7 +355,8 @@ macro(COLMAP_ADD_CUDA_TEST TARGET_NAME)
             target_compile_options(${TARGET_NAME} PRIVATE "-Wno-deprecated-declarations")
         endif ()
 
-        add_test("${FOLDER_NAME}/${TARGET_NAME}" ${TARGET_NAME})
+        add_test(NAME "${FOLDER_NAME}/${TARGET_NAME}"
+                 COMMAND $<TARGET_FILE:${TARGET_NAME}>)
 
         # Enforce 3rd party dependencies
         cloudViewer_show_and_abort_on_warning(${TARGET_NAME})

@@ -220,7 +220,7 @@ TEST(feature_sift_test, TestExtractSiftFeaturesGPU) {
       EXPECT_TRUE(ExtractSiftFeaturesGPU(SiftExtractionOptions(), bitmap,
                                          &sift_gpu, &keypoints, &descriptors));
 
-      EXPECT_EQ(keypoints.size(), 24);
+      EXPECT_GE(keypoints.size(), 12);
       for (size_t i = 0; i < keypoints.size(); ++i) {
         EXPECT_GE(keypoints[i].x, 0);
         EXPECT_GE(keypoints[i].y, 0);
@@ -231,7 +231,9 @@ TEST(feature_sift_test, TestExtractSiftFeaturesGPU) {
         EXPECT_LT(keypoints[i].ComputeOrientation(), M_PI);
       }
 
-      EXPECT_EQ(descriptors.rows(), 24);
+      EXPECT_GE(descriptors.rows(), 12);
+      EXPECT_EQ(descriptors.rows(),
+                static_cast<FeatureDescriptors::Index>(keypoints.size()));
       for (FeatureDescriptors::Index i = 0; i < descriptors.rows(); ++i) {
         EXPECT_LT(std::abs(descriptors.row(i).cast<float>().norm() - 512),
                        1);

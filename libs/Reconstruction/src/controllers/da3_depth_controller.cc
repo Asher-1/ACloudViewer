@@ -2284,8 +2284,13 @@ void CollectDA3ModelCacheNeeds(const std::string& cache_dir,
 }
 
 std::string DA3DepthController::ResolveModelPath(const DA3Config& config) {
-    if (!config.model_path.empty() && ExistsFile(config.model_path)) {
-        return config.model_path;
+    if (!config.model_path.empty()) {
+        if (ExistsFile(config.model_path)) {
+            return config.model_path;
+        }
+        LOG(ERROR) << "DA3: explicit model path does not exist: "
+                   << config.model_path;
+        return "";
     }
 
     const std::string filename = DA3ModelFilename(config.model_type, config.quant_type);
