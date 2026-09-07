@@ -29,7 +29,7 @@ Reconstruction CreatePinholeParityReconstruction() {
   camera.SetCameraId(1);
   camera.InitializeWithId(PinholeCameraModel::model_id, 900.0, kImageWidth,
                           kImageHeight);
-  reconstruction.AddCamera(camera);
+  reconstruction.AddCameraWithTrivialRig(camera);
 
   std::vector<point3D_t> point_ids;
   point_ids.reserve(kNumPoints);
@@ -66,7 +66,7 @@ Reconstruction CreatePinholeParityReconstruction() {
     }
     image.SetPoints2D(points2D);
     image.SetRegistered(true);
-    reconstruction.AddImage(image);
+    reconstruction.AddImageWithTrivialFrame(image);
     correspondence_graph.AddImage(image_id, points2D.size());
   }
 
@@ -103,21 +103,18 @@ Reconstruction CreateFixedSensorFromRigReconstruction() {
   reconstruction.AddCamera(secondary_camera);
   reconstruction.Image(2).SetCameraId(secondary_camera.CameraId());
 
-  Rig rig;
-  rig.SetRigId(1);
-  rig.AddRefCamera(1);
+  // Join camera 2 into the trivial rig of camera 1 (rig id 1) and claim
+  // both images for the trivial frame of image 1, mirroring the
+  // pre-frame-aware two-camera rig fixture.
+  Rig& rig = reconstruction.Rig(1);
   rig.AddCamera(secondary_camera.CameraId(), ComposeIdentityQuaternion(),
                 Eigen::Vector3d(0.28, -0.06, 0.02));
-  reconstruction.AddRig(rig);
 
-  Frame frame;
-  frame.SetFrameId(1);
-  frame.SetRigId(rig.RigId());
+  Frame& frame = reconstruction.Frame(1);
   frame.AddImageId(1);
   frame.AddImageId(2);
   frame.SetRigFromWorld(ComposeIdentityQuaternion(),
                         Eigen::Vector3d(0.02, -0.01, 0.03));
-  reconstruction.AddFrame(frame);
   return reconstruction;
 }
 

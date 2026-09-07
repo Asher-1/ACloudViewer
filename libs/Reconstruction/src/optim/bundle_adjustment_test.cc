@@ -140,7 +140,7 @@ void GenerateReconstruction(const size_t num_images, const size_t num_points,
                             kFocalLengthFactor * kImageSize, kImageSize,
                             kImageSize);
     camera.SetCameraId(camera_id);
-    reconstruction->AddCamera(camera);
+    reconstruction->AddCameraWithTrivialRig(camera);
 
     Image image;
     image.SetImageId(image_id);
@@ -150,7 +150,7 @@ void GenerateReconstruction(const size_t num_images, const size_t num_points,
     image.Tvec() =
         Eigen::Vector3d(RandomReal(-1.0, 1.0), RandomReal(-1.0, 1.0), 10);
     image.SetRegistered(true);
-    reconstruction->AddImage(image);
+    reconstruction->AddImageWithTrivialFrame(image);
 
     const Eigen::Matrix3x4d proj_matrix = image.ProjectionMatrix();
 

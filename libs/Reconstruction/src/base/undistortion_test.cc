@@ -187,7 +187,7 @@ TEST(base_undistortion, TestUndistortReconstruction) {
   camera.SetCameraId(1);
   camera.InitializeWithName("OPENCV", 1, 1, 1);
   camera.Params(4) = 1.0;
-  reconstruction.AddCamera(camera);
+  reconstruction.AddCameraWithTrivialRig(camera);
 
   for (image_t image_id = 1; image_id <= kNumImages; ++image_id) {
     Image image;
@@ -196,7 +196,7 @@ TEST(base_undistortion, TestUndistortReconstruction) {
     image.SetName("image" + std::to_string(image_id));
     image.SetPoints2D(
         std::vector<Eigen::Vector2d>(kNumPoints2D, Eigen::Vector2d::Ones()));
-    reconstruction.AddImage(image);
+    reconstruction.AddImageWithTrivialFrame(image);
     reconstruction.RegisterImage(image_id);
   }
 

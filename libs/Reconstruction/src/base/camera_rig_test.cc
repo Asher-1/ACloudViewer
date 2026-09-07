@@ -164,32 +164,32 @@ TEST(base_camera_rig, TestCheck) {
   Camera camera1;
   camera1.SetCameraId(0);
   camera1.InitializeWithName("PINHOLE", 1, 1, 1);
-  reconstruction.AddCamera(camera1);
+  reconstruction.AddCameraWithTrivialRig(camera1);
 
   Camera camera2;
   camera2.SetCameraId(1);
   camera2.InitializeWithName("PINHOLE", 1, 1, 1);
-  reconstruction.AddCamera(camera2);
+  reconstruction.AddCameraWithTrivialRig(camera2);
 
   Image image1;
   image1.SetImageId(0);
   image1.SetCameraId(camera1.CameraId());
-  reconstruction.AddImage(image1);
+  reconstruction.AddImageWithTrivialFrame(image1);
 
   Image image2;
   image2.SetImageId(1);
   image2.SetCameraId(camera2.CameraId());
-  reconstruction.AddImage(image2);
+  reconstruction.AddImageWithTrivialFrame(image2);
 
   Image image3;
   image3.SetImageId(2);
   image3.SetCameraId(camera1.CameraId());
-  reconstruction.AddImage(image3);
+  reconstruction.AddImageWithTrivialFrame(image3);
 
   Image image4;
   image4.SetImageId(3);
   image4.SetCameraId(camera2.CameraId());
-  reconstruction.AddImage(image4);
+  reconstruction.AddImageWithTrivialFrame(image4);
 
   camera_rig.SetRefCameraId(0);
   camera_rig.Check(reconstruction);
@@ -209,26 +209,26 @@ TEST(base_camera_rig, TestComputeScale) {
   Camera camera1;
   camera1.SetCameraId(0);
   camera1.InitializeWithName("PINHOLE", 1, 1, 1);
-  reconstruction.AddCamera(camera1);
+  reconstruction.AddCameraWithTrivialRig(camera1);
 
   Camera camera2;
   camera2.SetCameraId(1);
   camera2.InitializeWithName("PINHOLE", 1, 1, 1);
-  reconstruction.AddCamera(camera2);
+  reconstruction.AddCameraWithTrivialRig(camera2);
 
   Image image1;
   image1.SetImageId(0);
   image1.SetCameraId(camera1.CameraId());
   image1.SetQvec(ComposeIdentityQuaternion());
   image1.SetTvec(Eigen::Vector3d(0, 0, 0));
-  reconstruction.AddImage(image1);
+  reconstruction.AddImageWithTrivialFrame(image1);
 
   Image image2;
   image2.SetImageId(1);
   image2.SetCameraId(camera2.CameraId());
   image2.SetQvec(ComposeIdentityQuaternion());
   image2.SetTvec(Eigen::Vector3d(1, 2, 3));
-  reconstruction.AddImage(image2);
+  reconstruction.AddImageWithTrivialFrame(image2);
 
   camera_rig.SetRefCameraId(0);
   camera_rig.Check(reconstruction);
@@ -253,26 +253,26 @@ TEST(base_camera_rig, TestComputeRelativePoses) {
   Camera camera1;
   camera1.SetCameraId(0);
   camera1.InitializeWithName("PINHOLE", 1, 1, 1);
-  reconstruction.AddCamera(camera1);
+  reconstruction.AddCameraWithTrivialRig(camera1);
 
   Camera camera2;
   camera2.SetCameraId(1);
   camera2.InitializeWithName("PINHOLE", 1, 1, 1);
-  reconstruction.AddCamera(camera2);
+  reconstruction.AddCameraWithTrivialRig(camera2);
 
   Image image1;
   image1.SetImageId(0);
   image1.SetCameraId(camera1.CameraId());
   image1.SetQvec(ComposeIdentityQuaternion());
   image1.SetTvec(Eigen::Vector3d(0, 0, 0));
-  reconstruction.AddImage(image1);
+  reconstruction.AddImageWithTrivialFrame(image1);
 
   Image image2;
   image2.SetImageId(1);
   image2.SetCameraId(camera2.CameraId());
   image2.SetQvec(ComposeIdentityQuaternion());
   image2.SetTvec(Eigen::Vector3d(1, 2, 3));
-  reconstruction.AddImage(image2);
+  reconstruction.AddImageWithTrivialFrame(image2);
 
   camera_rig.SetRefCameraId(0);
   camera_rig.Check(reconstruction);
@@ -290,14 +290,14 @@ TEST(base_camera_rig, TestComputeRelativePoses) {
   image3.SetCameraId(camera1.CameraId());
   image3.SetQvec(ComposeIdentityQuaternion());
   image3.SetTvec(Eigen::Vector3d(0, 0, 0));
-  reconstruction.AddImage(image3);
+  reconstruction.AddImageWithTrivialFrame(image3);
 
   Image image4;
   image4.SetImageId(3);
   image4.SetCameraId(camera2.CameraId());
   image4.SetQvec(ComposeIdentityQuaternion());
   image4.SetTvec(Eigen::Vector3d(2, 4, 6));
-  reconstruction.AddImage(image4);
+  reconstruction.AddImageWithTrivialFrame(image4);
 
   camera_rig.Check(reconstruction);
   camera_rig.ComputeRelativePoses(reconstruction);
@@ -314,7 +314,7 @@ TEST(base_camera_rig, TestComputeRelativePoses) {
   image5.SetCameraId(camera1.CameraId());
   image5.SetQvec(ComposeIdentityQuaternion());
   image5.SetTvec(Eigen::Vector3d(0, 0, 0));
-  reconstruction.AddImage(image5);
+  reconstruction.AddImageWithTrivialFrame(image5);
 
   camera_rig.Check(reconstruction);
   camera_rig.ComputeRelativePoses(reconstruction);
@@ -335,11 +335,11 @@ TEST(base_camera_rig, TestComputeRelativePosesWithRotationAndTranslation) {
   Camera ref_camera;
   ref_camera.SetCameraId(3);
   ref_camera.InitializeWithName("PINHOLE", 1.0, 1, 1);
-  reconstruction.AddCamera(ref_camera);
+  reconstruction.AddCameraWithTrivialRig(ref_camera);
   Camera other_camera;
   other_camera.SetCameraId(5);
   other_camera.InitializeWithName("PINHOLE", 1.0, 1, 1);
-  reconstruction.AddCamera(other_camera);
+  reconstruction.AddCameraWithTrivialRig(other_camera);
 
   const Eigen::Vector4d ref_qvec(0.9238795325112867, 0.0, 0.0,
                                   0.3826834323650898);
@@ -353,7 +353,7 @@ TEST(base_camera_rig, TestComputeRelativePosesWithRotationAndTranslation) {
   ref_image.SetCameraId(3);
   ref_image.SetQvec(ref_qvec);
   ref_image.SetTvec(ref_tvec);
-  reconstruction.AddImage(ref_image);
+  reconstruction.AddImageWithTrivialFrame(ref_image);
 
   Image other_image;
   other_image.SetImageId(50);
@@ -362,7 +362,7 @@ TEST(base_camera_rig, TestComputeRelativePosesWithRotationAndTranslation) {
       ConcatenateQuaternions(ref_qvec, expected_relative_qvec));
   other_image.SetTvec(expected_relative_tvec +
                        QuaternionRotatePoint(expected_relative_qvec, ref_tvec));
-  reconstruction.AddImage(other_image);
+  reconstruction.AddImageWithTrivialFrame(other_image);
 
   camera_rig.Check(reconstruction);
   ASSERT_TRUE(camera_rig.ComputeRelativePoses(reconstruction));
@@ -390,26 +390,26 @@ TEST(base_camera_rig, TestComputeAbsolutePose) {
   Camera camera1;
   camera1.SetCameraId(0);
   camera1.InitializeWithName("PINHOLE", 1, 1, 1);
-  reconstruction.AddCamera(camera1);
+  reconstruction.AddCameraWithTrivialRig(camera1);
 
   Camera camera2;
   camera2.SetCameraId(1);
   camera2.InitializeWithName("PINHOLE", 1, 1, 1);
-  reconstruction.AddCamera(camera2);
+  reconstruction.AddCameraWithTrivialRig(camera2);
 
   Image image1;
   image1.SetImageId(0);
   image1.SetCameraId(camera1.CameraId());
   image1.SetQvec(ComposeIdentityQuaternion());
   image1.SetTvec(Eigen::Vector3d(0, 0, 0));
-  reconstruction.AddImage(image1);
+  reconstruction.AddImageWithTrivialFrame(image1);
 
   Image image2;
   image2.SetImageId(1);
   image2.SetCameraId(camera2.CameraId());
   image2.SetQvec(ComposeIdentityQuaternion());
   image2.SetTvec(Eigen::Vector3d(3, 3, 3));
-  reconstruction.AddImage(image2);
+  reconstruction.AddImageWithTrivialFrame(image2);
 
   camera_rig.SetRefCameraId(0);
   camera_rig.Check(reconstruction);

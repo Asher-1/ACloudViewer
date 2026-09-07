@@ -33,6 +33,7 @@
 #include "util/testing.h"
 
 #include "estimators/coordinate_frame.h"
+#include "base/camera_models.h"
 #include "base/gps.h"
 
 using namespace colmap;
@@ -59,12 +60,17 @@ TEST(estimators_coordinate_frame, TestAlignToPrincipalPlane) {
   // axis.
   SimilarityTransform3 tform;
   Reconstruction reconstruction;
+  Camera camera;
+  camera.SetCameraId(1);
+  camera.InitializeWithId(SimplePinholeCameraModel::model_id, 1, 1, 1);
+  reconstruction.AddCameraWithTrivialRig(camera);
   // Setup image with projection center at (1, 0, 0)
   Image image;
   image.SetImageId(1);
+  image.SetCameraId(1);
   image.Qvec() = Eigen::Vector4d(1.0, 0.0, 0.0, 0.0);
   image.Tvec() = Eigen::Vector3d(-1.0, 0.0, 0.0);
-  reconstruction.AddImage(image);
+  reconstruction.AddImageWithTrivialFrame(image);
   // Setup 4 points on the Y-Z plane
   point3D_t p1 =
       reconstruction.AddPoint3D(Eigen::Vector3d(0.0, -1.0, 0.0), Track());

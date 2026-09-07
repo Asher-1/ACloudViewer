@@ -51,7 +51,7 @@ void GenerateReconstruction(const image_t num_images,
   Camera camera;
   camera.SetCameraId(1);
   camera.InitializeWithName("PINHOLE", 1, 1, 1);
-  reconstruction->AddCamera(camera);
+  reconstruction->AddCameraWithTrivialRig(camera);
 
   for (image_t image_id = 1; image_id <= num_images; ++image_id) {
     Image image;
@@ -60,7 +60,7 @@ void GenerateReconstruction(const image_t num_images,
     image.SetName("image" + std::to_string(image_id));
     image.SetPoints2D(
         std::vector<Eigen::Vector2d>(kNumPoints2D, Eigen::Vector2d::Zero()));
-    reconstruction->AddImage(image);
+    reconstruction->AddImageWithTrivialFrame(image);
     reconstruction->RegisterImage(image_id);
     correspondence_graph->AddImage(image_id, kNumPoints2D);
   }
@@ -97,15 +97,20 @@ TEST(base_reconstruction, TestAddCamera) {
 
 TEST(base_reconstruction, TestAddImage) {
   Reconstruction reconstruction;
+  Camera camera;
+  camera.SetCameraId(1);
+  camera.InitializeWithId(SimplePinholeCameraModel::model_id, 1, 1, 1);
+  reconstruction.AddCameraWithTrivialRig(camera);
   Image image;
   image.SetImageId(1);
-  reconstruction.AddImage(image);
+  image.SetCameraId(1);
+  reconstruction.AddImageWithTrivialFrame(image);
   EXPECT_TRUE(reconstruction.ExistsImage(1));
   EXPECT_EQ(reconstruction.Image(1).ImageId(), 1);
   EXPECT_EQ(reconstruction.Image(1).IsRegistered(), false);
   EXPECT_EQ(reconstruction.Images().count(1), 1);
   EXPECT_EQ(reconstruction.Images().size(), 1);
-  EXPECT_EQ(reconstruction.NumCameras(), 0);
+  EXPECT_EQ(reconstruction.NumCameras(), 1);
   EXPECT_EQ(reconstruction.NumImages(), 1);
   EXPECT_EQ(reconstruction.NumRegImages(), 0);
   EXPECT_EQ(reconstruction.NumPoints3D(), 0);
@@ -118,13 +123,13 @@ TEST(base_reconstruction, TestRigFrameCameraRigAdapter) {
     Camera camera;
     camera.SetCameraId(camera_id);
     camera.InitializeWithId(SimplePinholeCameraModel::model_id, 1, 1, 1);
-    reconstruction.AddCamera(camera);
+    reconstruction.AddCameraWithTrivialRig(camera);
 
     Image image;
     image.SetImageId(camera_id);
     image.SetCameraId(camera_id);
     image.SetName("rig_image" + std::to_string(camera_id));
-    reconstruction.AddImage(image);
+    reconstruction.AddImageWithTrivialFrame(image);
   }
 
   Rig rig;
@@ -140,6 +145,7 @@ TEST(base_reconstruction, TestRigFrameCameraRigAdapter) {
   frame.SetRigId(5);
   frame.AddImageId(1);
   frame.AddImageId(2);
+  frame.SetRigFromWorld(ComposeIdentityQuaternion(), Eigen::Vector3d::Zero());
   reconstruction.AddFrame(frame);
 
   CameraRig legacy = reconstruction.CameraRigFromRig(5);
@@ -305,16 +311,17 @@ TEST(base_reconstruction, TestNormalize) {
   reconstruction.Normalize(20);
   Image image;
   image.SetImageId(4);
-  reconstruction.AddImage(image);
+  image.SetCameraId(1);
+  reconstruction.AddImageWithTrivialFrame(image);
   reconstruction.RegisterImage(4);
   image.SetImageId(5);
-  reconstruction.AddImage(image);
+  reconstruction.AddImageWithTrivialFrame(image);
   reconstruction.RegisterImage(5);
   image.SetImageId(6);
-  reconstruction.AddImage(image);
+  reconstruction.AddImageWithTrivialFrame(image);
   reconstruction.RegisterImage(6);
   image.SetImageId(7);
-  reconstruction.AddImage(image);
+  reconstruction.AddImageWithTrivialFrame(image);
   reconstruction.RegisterImage(7);
   reconstruction.Image(4).Tvec(2) = -7.5;
   reconstruction.Image(5).Tvec(2) = -5.0;

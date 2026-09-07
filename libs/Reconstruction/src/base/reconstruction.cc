@@ -606,14 +606,20 @@ Reconstruction Reconstruction::Crop(
     // add all cameras and images. Only the registered images will be used.
     Reconstruction reconstruction;
     for (const auto& camera_el : cameras_) {
-        reconstruction.AddCamera(camera_el.second);
+        reconstruction.AddCameraWithTrivialRig(camera_el.second);
     }
     for (const auto& image_el : images_) {
-        reconstruction.AddImage(image_el.second);
-        auto& image = reconstruction.Image(image_el.first);
-        image.SetRegistered(false);
-        for (point2D_t pid = 0; pid < image.NumPoints2D(); ++pid) {
-            image.ResetPoint3DForPoint2D(pid);
+        // The copied image carries back pointers into *this* reconstruction;
+        // reset them so AddImage re-wires them into the cropped copy. The
+        // trivial frame is seeded from the image's legacy pose.
+        class Image image = image_el.second;
+        image.ResetCameraPtr();
+        image.ResetFramePtr();
+        reconstruction.AddImageWithTrivialFrame(image);
+        auto& cropped_image = reconstruction.Image(image_el.first);
+        cropped_image.SetRegistered(false);
+        for (point2D_t pid = 0; pid < cropped_image.NumPoints2D(); ++pid) {
+            cropped_image.ResetPoint3DForPoint2D(pid);
         }
     }
     for (const auto& point_el : points3D_) {
@@ -662,12 +668,22 @@ bool Reconstruction::Merge(const Reconstruction& reconstruction,
 
     for (const auto image_id : missing_image_ids) {
         auto reg_image = reconstruction.Image(image_id);
-        reg_image.SetRegistered(false);
-        AddImage(reg_image);
-        RegisterImage(image_id);
         if (!ExistsCamera(reg_image.CameraId())) {
-            AddCamera(reconstruction.Camera(reg_image.CameraId()));
+            AddCameraWithTrivialRig(reconstruction.Camera(reg_image.CameraId()));
+        } else if (!ExistsRig(reg_image.CameraId())) {
+            class Rig rig;
+            rig.SetRigId(reg_image.CameraId());
+            rig.AddRefSensor(
+                sensor_t(SensorType::CAMERA, reg_image.CameraId()));
+            AddRig(std::move(rig));
         }
+        // Reset the source reconstruction's back pointers so AddImage re-wires
+        // them here; the trivial frame is seeded from the legacy pose.
+        reg_image.ResetCameraPtr();
+        reg_image.ResetFramePtr();
+        reg_image.SetRegistered(false);
+        AddImageWithTrivialFrame(reg_image);
+        RegisterImage(image_id);
         auto& image = Image(image_id);
         tform.TransformPose(&image.Qvec(), &image.Tvec());
     }
@@ -2524,6 +2540,9 @@ void Reconstruction::AddImageWithTrivialFrame(class Image image) {
   } else {
     image.SetFrameId(frame.FrameId());
   }
+  // Seed the frame pose from the image's legacy qvec/tvec pose so the
+  // trivial frame mirrors the image-level pose of the legacy model.
+  frame.SetRigFromWorld(image.Qvec(), image.Tvec());
   AddFrame(std::move(frame));
   AddImage(std::move(image));
 }

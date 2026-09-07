@@ -60,7 +60,7 @@ public:
     // as a camera sensor and its owning frame / camera back pointers. These
     // are typically set when the image is added to a reconstruction.
     inline data_t DataId() const {
-        return data_t(sensor_t(SensorType::CAMERA, ImageId()), 0);
+        return data_t(sensor_t(SensorType::CAMERA, CameraId()), ImageId());
     }
     inline struct Camera* CameraPtr() const;
     inline void SetCameraPtr(struct Camera* camera);
