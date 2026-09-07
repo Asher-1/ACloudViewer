@@ -203,14 +203,10 @@ TEST(optim_bundle_adjustment_caspar, TestPinholeCeresCasparReprojectionParity) {
   const double ceres_rms = ComputeRmsReprojectionError(ceres_reconstruction);
   const double caspar_rms =
       ComputeRmsReprojectionError(caspar_reconstruction);
-  std::cout << ("Ceres CPU BA: rms=" << ceres_rms
-                                                     << " time="
-                                                     << ceres_adjuster.Summary()
-                                                            .total_time_in_seconds
-                                                     << "s; Caspar: rms="
-                                                     << caspar_rms << " time="
-                                                     << caspar_summary.total_time_in_seconds
-                                                     << "s");
+  std::cout << "Ceres CPU BA: rms=" << ceres_rms
+            << " time=" << ceres_adjuster.Summary().total_time_in_seconds
+            << "s; Caspar: rms=" << caspar_rms
+            << " time=" << caspar_summary.total_time_in_seconds << "s";
   EXPECT_TRUE(std::isfinite(ceres_rms));
   EXPECT_TRUE(std::isfinite(caspar_rms));
   EXPECT_LT(caspar_rms, 1.0);
@@ -343,11 +339,9 @@ TEST(optim_bundle_adjustment_caspar, TestCasparSplitIntrinsicFactorVariantsCeres
     const double ceres_rms = ComputeRmsReprojectionError(ceres_reconstruction);
     const double caspar_rms =
         ComputeRmsReprojectionError(caspar_reconstruction);
-    std::cout << ("split intrinsics focal=" << refine_focal_and_extra
-                                                   << " pp="
-                                                   << refine_principal_point
-                                                   << " Ceres rms=" << ceres_rms
-                                                   << " Caspar rms=" << caspar_rms);
+    std::cout << "split intrinsics focal=" << refine_focal_and_extra
+              << " pp=" << refine_principal_point << " Ceres rms=" << ceres_rms
+              << " Caspar rms=" << caspar_rms;
     EXPECT_TRUE(std::isfinite(caspar_rms));
     EXPECT_LE(caspar_rms, ceres_rms * 1.25 + 1e-3);
     // The focal=false/principal-point=false run has one fully fixed residual

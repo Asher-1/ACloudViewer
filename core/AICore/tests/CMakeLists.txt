@@ -511,6 +511,10 @@ if(NOT MSVC)
 endif()
 aicore_apply_compile_definitions(AICore_sam3_diagnostics)
 target_link_libraries(AICore_sam3_diagnostics PRIVATE AICore)
+# sam3.cpp calls dladdr() through ggml_backend_utils.hpp.  Because this
+# implementation is archived into a static library, the final executable
+# must carry the platform's dynamic-loader library explicitly.
+target_link_libraries(AICore_sam3_diagnostics PRIVATE ${CMAKE_DL_LIBS})
 
 add_executable(cmp_sam3_vit_stages sam3/cmp_sam3_vit_stages.cpp)
 target_link_libraries(cmp_sam3_vit_stages PRIVATE AICore_sam3_diagnostics AICore)
