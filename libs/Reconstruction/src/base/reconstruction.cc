@@ -258,8 +258,11 @@ void Reconstruction::AddFrame(class Frame frame) {
   auto [it, inserted] = frames_.emplace(frame_id, std::move(frame));
   THROW_CHECK(inserted);
   (void)is_registered;
-  // NOTE: the upstream version registers posed frames here; this fork keeps
-  // the image-level registration model until W3-2b.
+  // NOTE: the upstream version registers posed frames here (RegisterFrame);
+  // this fork keeps the image-level registration model until W3-2b, and the
+  // synthetic dataset generator performs the equivalent image registration
+  // after its AddImage() calls (the images do not exist in the
+  // reconstruction yet at this point).
 }
 
 CameraRig Reconstruction::CameraRigFromRig(const rig_t rig_id) const {

@@ -30,6 +30,7 @@
 #include "scene/synthetic.h"
 
 #include "estimators/essential_matrix.h"
+#include "base/essential_matrix.h"
 #include "base/gps.h"
 #include "util/math.h"
 #include "util/random.h"
@@ -155,7 +156,7 @@ void WriteTwoViewGeometryToDatabase(const image_pair_t pair_id,
   if (!database->ExistsMatches(image_id1, image_id2)) {
     database->WriteMatches(image_id1, image_id2, matches);
   }
-  if (!database->ExistsInlierMatches(image_id1, image_id2)) {
+  if (!database->ExistsTwoViewGeometry(image_id1, image_id2)) {
     database->WriteTwoViewGeometry(image_id1, image_id2, two_view_geometry);
   }
 }
@@ -389,8 +390,9 @@ void SynthesizeDataset(const SyntheticDatasetOptions& options,
       desc_dim = 0;
       break;
     default:
-      LOG(FATAL) << "Invalid FeatureExtractorType specified: "
-                       << static_cast<int>(options.feature_type);
+      LOG_FATAL_THROW(std::invalid_argument)
+          << "Invalid FeatureExtractorType specified: "
+          << static_cast<int>(options.feature_type);
   }
 
   for (int rig_idx = 0; rig_idx < options.num_rigs; ++rig_idx) {
@@ -401,16 +403,16 @@ void SynthesizeDataset(const SyntheticDatasetOptions& options,
     for (int camera_idx = 0; camera_idx < options.num_cameras_per_rig;
          ++camera_idx) {
       Camera camera;
-      camera.Width() = options.camera_width;
-      camera.Height() = options.camera_height;
-      camera.ModelId() = options.camera_model_id;
+      camera.SetWidth(options.camera_width);
+      camera.SetHeight(options.camera_height);
+      camera.SetModelId(options.camera_model_id);
       camera.Params() = options.camera_params;
       THROW_CHECK(camera.VerifyParams());
-      camera.HasPriorFocalLength() = options.camera_has_prior_focal_length;
-      camera.CameraId() =
+      camera.SetPriorFocalLength(options.camera_has_prior_focal_length);
+      camera.SetCameraId(
           (database == nullptr)
               ? (rig_idx * options.num_cameras_per_rig + camera_idx + 1)
-              : database->WriteCamera(camera);
+              : database->WriteCamera(camera));
       reconstruction->AddCamera(camera);
 
       if (rig.NumSensors() == 0) {
@@ -437,7 +439,14 @@ void SynthesizeDataset(const SyntheticDatasetOptions& options,
               RandomGaussian<double>(
                   0, options.sensor_from_rig_translation_stddev));
         }
-        rig.AddSensor(camera.SensorId(), sensor_from_rig);
+        // Fork parity: Rig::AddSensor takes the pose as optional qvec/tvec
+        // pairs (the qvec convention is [w, x, y, z]).
+        const Eigen::Quaterniond& q = sensor_from_rig.rotation();
+        rig.AddSensor(camera.SensorId(),
+                      std::optional<Eigen::Vector4d>(
+                          Eigen::Vector4d(q.w(), q.x(), q.y(), q.z())),
+                      std::optional<Eigen::Vector3d>(
+                          sensor_from_rig.translation()));
       }
 
       camera_sensor_ids.push_back(camera.SensorId());
@@ -536,6 +545,13 @@ void SynthesizeDataset(const SyntheticDatasetOptions& options,
         const Rigid3d& cam_from_world = cams_from_world[camera_idx];
 
         image.SetFrameId(frame_id);
+        // Fork parity: keep the legacy image pose members in sync with the
+        // frame-derived pose so ProjectionCenter/ViewingDirection agree with
+        // CamFromWorld(). The qvec convention is [w, x, y, z].
+        const Eigen::Quaterniond& cam_q = cam_from_world.rotation();
+        image.SetQvec(
+            Eigen::Vector4d(cam_q.w(), cam_q.x(), cam_q.y(), cam_q.z()));
+        image.SetTvec(cam_from_world.translation());
 
         std::vector<Point2D> points2D;
         points2D.reserve(options.num_points3D +
@@ -556,7 +572,7 @@ void SynthesizeDataset(const SyntheticDatasetOptions& options,
           point2D.XY() = *proj_point2D;
           if (point2D.XY()(0) >= 0 && point2D.XY()(1) >= 0 &&
               point2D.XY()(0) <= camera.Width() && point2D.XY()(1) <= camera.Height()) {
-            point2D.Point3DId() = point3D_id;
+            point2D.SetPoint3DId(point3D_id);
             points2D.push_back(point2D);
           }
         }
@@ -578,7 +594,7 @@ void SynthesizeDataset(const SyntheticDatasetOptions& options,
           FeatureKeypoints keypoints;
           keypoints.reserve(points2D.size());
           FeatureDescriptors descriptors;
-          descriptors.data.resize(points2D.size(), desc_dim);
+          descriptors.resize(points2D.size(), desc_dim);
           std::uniform_int_distribution<int> feature_distribution(0, 255);
           for (point2D_t point2D_idx = 0; point2D_idx < points2D.size();
                ++point2D_idx) {
@@ -591,8 +607,8 @@ void SynthesizeDataset(const SyntheticDatasetOptions& options,
                                                ? point2D.Point3DId()
                                                : options.num_points3D +
                                                      (++total_num_descriptors));
-            for (int d = 0; d < descriptors.data.cols(); ++d) {
-              descriptors.data(point2D_idx, d) =
+            for (int d = 0; d < descriptors.cols(); ++d) {
+              descriptors(point2D_idx, d) =
                   feature_distribution(feature_generator);
             }
           }
@@ -615,6 +631,11 @@ void SynthesizeDataset(const SyntheticDatasetOptions& options,
           database->UpdateImage(image);
         }
         reconstruction->AddImage(image);
+        // Fork parity: upstream AddFrame() auto-registers posed frames, so
+        // every synthesized image ends up in RegImageIds(). The fork keeps
+        // the image-level registration model until W3-2b and the images do
+        // not exist yet when AddFrame() runs, so register here instead.
+        reconstruction->RegisterImage(image.ImageId());
       }
     }
   }
@@ -641,7 +662,8 @@ void SynthesizeDataset(const SyntheticDatasetOptions& options,
                                 database);
         break;
       default:
-        LOG(FATAL) << "Invalid MatchConfig specified";
+        LOG_FATAL_THROW(std::invalid_argument)
+            << "Invalid MatchConfig specified";
     }
   }
 
@@ -681,7 +703,9 @@ void SynthesizeNoise(const SyntheticNoiseOptions& options,
   THROW_CHECK_GE(options.prior_gravity_stddev, 0.);
 
   for (const frame_t frame_id : reconstruction->RegFrameIds()) {
-    Rigid3d& rig_from_world = reconstruction->Frame(frame_id).RigFromWorld();
+    // Fork parity: RigFromWorld() returns by value; mutate and write back
+    // through SetRigFromWorld.
+    Rigid3d rig_from_world = reconstruction->Frame(frame_id).RigFromWorld();
 
     if (options.rig_from_world_rotation_stddev > 0.0) {
       const double angle = std::clamp(
@@ -698,6 +722,8 @@ void SynthesizeNoise(const SyntheticNoiseOptions& options,
           RandomGaussian<double>(0, options.rig_from_world_translation_stddev),
           RandomGaussian<double>(0, options.rig_from_world_translation_stddev));
     }
+
+    reconstruction->Frame(frame_id).SetRigFromWorld(rig_from_world);
   }
 
   if (options.point2D_stddev > 0.0) {
@@ -716,7 +742,7 @@ void SynthesizeNoise(const SyntheticNoiseOptions& options,
           keypoints[point2D_idx].x = image.Point2D(point2D_idx).XY()(0);
           keypoints[point2D_idx].y = image.Point2D(point2D_idx).XY()(1);
         }
-        database->WriteKeypoints(image.ImageId(), keypoints);
+        database->UpdateKeypoints(image.ImageId(), keypoints);
       }
     }
   }
@@ -783,7 +809,8 @@ void SynthesizeImages(const SyntheticImageOptions& options,
   for (const auto& [image_id, image] : reconstruction.Images()) {
     const Camera& camera = *image.CameraPtr();
 
-    Bitmap bitmap(camera.Width(), camera.Height(), /*as_rgb=*/true);
+    Bitmap bitmap;
+    bitmap.Allocate(camera.Width(), camera.Height(), /*as_rgb=*/true);
     bitmap.Fill(BitmapColor<uint8_t>(0, 0, 0));
 
     for (const auto& point2D : image.Points2D()) {

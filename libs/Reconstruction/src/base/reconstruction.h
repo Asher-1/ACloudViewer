@@ -60,6 +60,9 @@ public:
     inline size_t NumImages() const;
     inline size_t NumRigs() const;
     inline size_t NumFrames() const;
+    // Upstream-parity accessor (COLMAP 4.x scene/reconstruction.h): number of
+    // registered (pose-estimated) frames.
+    inline size_t NumRegFrames() const { return RegFrameIds().size(); }
     inline size_t NumRegImages() const;
     inline size_t NumPoints3D() const;
     inline size_t NumImagePairs() const;

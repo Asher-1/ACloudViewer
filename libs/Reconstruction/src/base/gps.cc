@@ -38,11 +38,14 @@ namespace colmap {
 GPSTransform::GPSTransform(const int ellipsoid) {
   switch (ellipsoid) {
     case GRS80:
-    case WGS84:
       a_ = 6378137.0;
-      // Using flattening factor and semi-minor axis calculation from Bing maps.
-      // New calculations are marginally more accurate than the original values.
-      f_ = 1.0 / 298.257222101;
+      f_ = 1.0 / 298.257222100882711243162837;
+      b_ = (1.0 - f_) * a_;
+      break;
+    case WGS84:
+      // Upstream COLMAP parity: WGS84 uses its own flattening, not GRS80's.
+      a_ = 6378137.0;
+      f_ = 1.0 / 298.257223563;
       b_ = (1.0 - f_) * a_;
       break;
     default:
@@ -93,16 +96,19 @@ std::vector<Eigen::Vector3d> GPSTransform::XYZToEll(
 
     // Latitude
     double lat = atan2(z, radius_xy);
-    double alt;
+    double alt = 0.0;
 
     for (size_t j = 0; j < 100; ++j) {
       const double sin_lat0 = sin(lat);
       const double N = a_ / sqrt(1 - e2_ * sin_lat0 * sin_lat0);
+      const double prev_alt = alt;
       alt = radius_xy / cos(lat) - N;
       const double prev_lat = lat;
       lat = atan((z / radius_xy) * 1 / (1 - e2_ * N / (N + alt)));
 
-      if (std::abs(prev_lat - lat) < kEps) {
+      // Upstream parity (dbb41680 ECEFToEllipsoid): require both latitude and
+      // altitude to settle before breaking out of the iteration.
+      if (std::abs(prev_lat - lat) < kEps && std::abs(prev_alt - alt) < kEps) {
         break;
       }
     }
@@ -116,6 +122,82 @@ std::vector<Eigen::Vector3d> GPSTransform::XYZToEll(
   }
 
   return ell;
+}
+
+std::vector<Eigen::Vector3d> GPSTransform::EllipsoidToENU(
+        const std::vector<Eigen::Vector3d>& lat_lon_alt,
+        const double ref_lat,
+        const double ref_lon,
+        const double ref_alt) const {
+  std::vector<Eigen::Vector3d> xyz_in_ecef = EllToXYZ(lat_lon_alt);
+  const Eigen::Vector3d ref_ecef =
+      EllToXYZ({Eigen::Vector3d(ref_lat, ref_lon, ref_alt)})[0];
+  return ECEFToENU(xyz_in_ecef, ref_ecef);
+}
+
+std::vector<Eigen::Vector3d> GPSTransform::ECEFToENU(
+        const std::vector<Eigen::Vector3d>& xyz_in_ecef,
+        const Eigen::Vector3d& ref_ecef) const {
+  // Reference: https://en.wikipedia.org/wiki/Geographic_coordinate_conversion
+  std::vector<Eigen::Vector3d> xyz_in_enu(xyz_in_ecef.size());
+
+  // Compute lat/lon of reference point for rotation matrix.
+  const Eigen::Vector3d ref_ell = XYZToEll({ref_ecef})[0];
+  const double ref_lat = ref_ell(0);
+  const double ref_lon = ref_ell(1);
+
+  // Build ECEF to ENU rotation matrix.
+  const double cos_lat = std::cos(DegToRad(ref_lat));
+  const double sin_lat = std::sin(DegToRad(ref_lat));
+  const double cos_lon = std::cos(DegToRad(ref_lon));
+  const double sin_lon = std::sin(DegToRad(ref_lon));
+
+  Eigen::Matrix3d R;
+  R << -sin_lon, cos_lon, 0., -sin_lat * cos_lon, -sin_lat * sin_lon, cos_lat,
+          cos_lat * cos_lon, cos_lat * sin_lon, sin_lat;
+
+  for (size_t i = 0; i < xyz_in_ecef.size(); ++i) {
+    xyz_in_enu[i] = R * (xyz_in_ecef[i] - ref_ecef);
+  }
+
+  return xyz_in_enu;
+}
+
+std::vector<Eigen::Vector3d> GPSTransform::ENUToEllipsoid(
+        const std::vector<Eigen::Vector3d>& xyz_in_enu,
+        const double ref_lat,
+        const double ref_lon,
+        const double ref_alt) const {
+  return XYZToEll(ENUToECEF(xyz_in_enu, ref_lat, ref_lon, ref_alt));
+}
+
+std::vector<Eigen::Vector3d> GPSTransform::ENUToECEF(
+        const std::vector<Eigen::Vector3d>& xyz_in_enu,
+        const double ref_lat,
+        const double ref_lon,
+        const double ref_alt) const {
+  std::vector<Eigen::Vector3d> xyz_in_ecef(xyz_in_enu.size());
+
+  // Compute ECEF coordinates of the reference point.
+  const Eigen::Vector3d ref_xyz_in_ecef =
+      EllToXYZ({Eigen::Vector3d(ref_lat, ref_lon, ref_alt)})[0];
+
+  // Build ENU to ECEF rotation matrix (transpose of ECEF to ENU).
+  const double cos_lat = std::cos(DegToRad(ref_lat));
+  const double sin_lat = std::sin(DegToRad(ref_lat));
+  const double cos_lon = std::cos(DegToRad(ref_lon));
+  const double sin_lon = std::sin(DegToRad(ref_lon));
+
+  Eigen::Matrix3d R;
+  R << -sin_lon, cos_lon, 0., -sin_lat * cos_lon, -sin_lat * sin_lon, cos_lat,
+          cos_lat * cos_lon, cos_lat * sin_lon, sin_lat;
+  R.transposeInPlace();
+
+  for (size_t i = 0; i < xyz_in_enu.size(); ++i) {
+    xyz_in_ecef[i] = (R * xyz_in_enu[i]) + ref_xyz_in_ecef;
+  }
+
+  return xyz_in_ecef;
 }
 
 }  // namespace colmap

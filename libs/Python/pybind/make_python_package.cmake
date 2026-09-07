@@ -52,6 +52,53 @@ if(NOT _copied_pybind)
         "COMPILED_MODULE_PATH_LIST=${COMPILED_MODULE_PATH_LIST}; "
         "PYTHON_COMPILED_MODULE_DIR=${PYTHON_COMPILED_MODULE_DIR}")
 endif()
+
+# cloudViewer/__init__.py resolves the device API at import time and falls
+# back to cloudViewer.cpu.pybind whenever no CUDA device is available (GPU-less
+# machines, CI runners). A CUDA wheel without the CPU-linked bindings therefore
+# cannot import at all on such hosts; fail the packaging here instead of
+# shipping a wheel that breaks at import. The CPU variant is normally left
+# behind by the CPU pass (BUILD_CUDA_MODULE=OFF) of the two-pass wheel build
+# (see build_pip_package in util/ci_utils.sh).
+file(GLOB _cpu_pybind_modules "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/cpu/pybind*")
+file(GLOB _cuda_pybind_modules "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/cuda/pybind*")
+if(BUILD_CUDA_MODULE AND NOT _cuda_pybind_modules)
+    message(FATAL_ERROR
+        "python-package: cloudViewer/cuda/pybind module missing from the "
+        "staging tree. BUILD_CUDA_MODULE=ON builds the pybind module into "
+        "${PYTHON_COMPILED_MODULE_DIR}; check that the CUDA build succeeded.")
+endif()
+if(NOT _cpu_pybind_modules)
+    if(BUILD_CUDA_MODULE)
+        set(_pybind_guard_hint
+            "The CPU variant is produced by the CPU pass (BUILD_CUDA_MODULE=OFF) "
+            "of the two-pass wheel build (see build_pip_package in util/ci_utils.sh); "
+            "make sure that pass completed successfully.")
+    else()
+        set(_pybind_guard_hint
+            "Check that the pybind target built into "
+            "${PYTHON_COMPILED_MODULE_DIR}.")
+    endif()
+    message(FATAL_ERROR
+        "python-package: cloudViewer/cpu/pybind module missing from the "
+        "staging tree. cloudViewer/__init__.py requires it as the runtime "
+        "fallback when no CUDA device is available. ${_pybind_guard_hint}")
+endif()
+unset(_pybind_guard_hint)
+
+# Mark cloudViewer.cpu / cloudViewer.cuda as regular Python packages when the
+# staging copy created them. Without __init__.py, `find_packages()` in
+# setup.py prunes these dirs and setuptools reports "Package would be ignored";
+# the compiled modules then only ship via the MANIFEST.in graft, which is
+# ambiguous and fragile across setuptools versions.
+foreach(_arch cpu cuda)
+    if(IS_DIRECTORY "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/${_arch}")
+        file(WRITE
+             "${PYTHON_PACKAGE_DST_DIR}/cloudViewer/${_arch}/__init__.py"
+             "# Created by make_python_package.cmake so that setuptools ships the "
+             "compiled ${_arch} modules in this subpackage.\n")
+    endif()
+endforeach()
 # Include additional libraries that may be absent from the user system
 # eg: libc++.so and libc++abi.so (needed by filament)
 # The linker recognizes only library.so.MAJOR, so remove .MINOR from the filename

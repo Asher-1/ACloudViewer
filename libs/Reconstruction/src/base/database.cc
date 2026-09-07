@@ -377,6 +377,12 @@ bool Database::ExistsInlierMatches(const image_t image_id1,
                      ImagePairToPairId(image_id1, image_id2));
 }
 
+bool Database::ExistsTwoViewGeometry(const image_t image_id1,
+                                     const image_t image_id2) const {
+  return ExistsRowId(sql_stmt_exists_two_view_geometry_,
+                     ImagePairToPairId(image_id1, image_id2));
+}
+
 size_t Database::NumCameras() const { return CountRows("cameras"); }
 size_t Database::NumRigs() const { return CountRows("rigs"); }
 size_t Database::NumFrames() const { return CountRows("frames"); }
@@ -539,14 +545,6 @@ Frame Database::ReadFrame(const frame_t frame_id) const {
   }
   SQLITE3_CALL(sqlite3_finalize(frame_stmt));
   if (frame.FrameId() == kInvalidFrameId) return frame;
-  sqlite3_stmt* image_stmt = nullptr;
-  SQLITE3_CALL(sqlite3_prepare_v2(database_, "SELECT image_id FROM frame_images "
-                                  "WHERE frame_id=? ORDER BY image_id;", -1, &image_stmt, nullptr));
-  SQLITE3_CALL(sqlite3_bind_int64(image_stmt, 1, frame_id));
-  while (SQLITE3_CALL(sqlite3_step(image_stmt)) == SQLITE_ROW) {
-    frame.AddImageId(static_cast<image_t>(sqlite3_column_int64(image_stmt, 0)));
-  }
-  SQLITE3_CALL(sqlite3_finalize(image_stmt));
   sqlite3_stmt* data_stmt = nullptr;
   SQLITE3_CALL(sqlite3_prepare_v2(
       database_, "SELECT data_id, sensor_id, sensor_type FROM frame_data "
@@ -559,6 +557,20 @@ Frame Database::ReadFrame(const frame_t frame_id) const {
         static_cast<uint64_t>(sqlite3_column_int64(data_stmt, 0))));
   }
   SQLITE3_CALL(sqlite3_finalize(data_stmt));
+  if (frame.DataIds().empty()) {
+    // Fork-legacy fallback: rows written before the W3-2a dual-write have no
+    // frame_data entries, so derive them from frame_images. AddImageId's
+    // image_id == camera_id assumption would otherwise duplicate the data
+    // ids that the frame_data read above already restored.
+    sqlite3_stmt* image_stmt = nullptr;
+    SQLITE3_CALL(sqlite3_prepare_v2(database_, "SELECT image_id FROM frame_images "
+                                    "WHERE frame_id=? ORDER BY image_id;", -1, &image_stmt, nullptr));
+    SQLITE3_CALL(sqlite3_bind_int64(image_stmt, 1, frame_id));
+    while (SQLITE3_CALL(sqlite3_step(image_stmt)) == SQLITE_ROW) {
+      frame.AddImageId(static_cast<image_t>(sqlite3_column_int64(image_stmt, 0)));
+    }
+    SQLITE3_CALL(sqlite3_finalize(image_stmt));
+  }
   return frame;
 }
 
@@ -794,6 +806,18 @@ void Database::ReadTwoViewGeometries(
   }
 
   SQLITE3_CALL(sqlite3_reset(sql_stmt_read_two_view_geometries_));
+}
+
+std::map<image_pair_t, TwoViewGeometry> Database::ReadTwoViewGeometries()
+        const {
+  std::vector<image_pair_t> image_pair_ids;
+  std::vector<TwoViewGeometry> two_view_geometries;
+  ReadTwoViewGeometries(&image_pair_ids, &two_view_geometries);
+  std::map<image_pair_t, TwoViewGeometry> result;
+  for (size_t i = 0; i < image_pair_ids.size(); ++i) {
+    result.emplace(image_pair_ids[i], two_view_geometries[i]);
+  }
+  return result;
 }
 
 void Database::ReadTwoViewGeometryNumInliers(
@@ -1236,6 +1260,27 @@ void Database::UpdateImage(const Image& image) const {
   SQLITE3_CALL(sqlite3_reset(sql_stmt_update_image_));
 }
 
+void Database::UpdateKeypoints(const image_t image_id,
+                               const FeatureKeypoints& keypoints) const {
+  const FeatureKeypointsBlob blob = FeatureKeypointsToBlob(keypoints);
+
+  // UPDATE keypoints has four independent parameters: rows, cols, data and
+  // the WHERE image_id (upstream dbb41680 UpdateKeypoints layout).
+  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_update_keypoints_, 1,
+                                  static_cast<sqlite3_int64>(blob.rows())));
+  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_update_keypoints_, 2,
+                                  static_cast<sqlite3_int64>(blob.cols())));
+  SQLITE3_CALL(
+      sqlite3_bind_blob(sql_stmt_update_keypoints_, 3, blob.data(),
+                        static_cast<int>(blob.size() * sizeof(float)),
+                        SQLITE_STATIC));
+
+  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_update_keypoints_, 4, image_id));
+
+  SQLITE3_CALL(sqlite3_step(sql_stmt_update_keypoints_));
+  SQLITE3_CALL(sqlite3_reset(sql_stmt_update_keypoints_));
+}
+
 void Database::DeleteMatches(const image_t image_id1,
                              const image_t image_id2) const {
   const image_pair_t pair_id = ImagePairToPairId(image_id1, image_id2);
@@ -1493,6 +1538,11 @@ void Database::PrepareSQLStatements() {
                                   &sql_stmt_exists_two_view_geometry_, 0));
   sql_stmts_.push_back(sql_stmt_exists_two_view_geometry_);
 
+  sql = "SELECT 1 FROM pose_priors WHERE pose_prior_id = ?;";
+  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
+                                  &sql_stmt_exists_pose_prior_, 0));
+  sql_stmts_.push_back(sql_stmt_exists_pose_prior_);
+
   //////////////////////////////////////////////////////////////////////////////
   // add_*
   //////////////////////////////////////////////////////////////////////////////
@@ -1605,6 +1655,21 @@ void Database::PrepareSQLStatements() {
                                   0));
   sql_stmts_.push_back(sql_stmt_read_two_view_geometry_num_inliers_);
 
+  // Column order matches the pose_priors table definition and
+  // ReadPosePriorRow below.
+  sql = "SELECT pose_prior_id, data_id, sensor_id, sensor_type, position, "
+        "position_covariance, coordinate_system, gravity FROM pose_priors "
+        "WHERE pose_prior_id = ?;";
+  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
+                                  &sql_stmt_read_pose_prior_, 0));
+  sql_stmts_.push_back(sql_stmt_read_pose_prior_);
+
+  sql = "SELECT pose_prior_id, data_id, sensor_id, sensor_type, position, "
+        "position_covariance, coordinate_system, gravity FROM pose_priors;";
+  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
+                                  &sql_stmt_read_pose_priors_, 0));
+  sql_stmts_.push_back(sql_stmt_read_pose_priors_);
+
   //////////////////////////////////////////////////////////////////////////////
   // write_*
   //////////////////////////////////////////////////////////////////////////////
@@ -1612,6 +1677,18 @@ void Database::PrepareSQLStatements() {
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_write_keypoints_, 0));
   sql_stmts_.push_back(sql_stmt_write_keypoints_);
+
+  sql = "UPDATE keypoints SET rows=?, cols=?, data=? WHERE image_id=?;";
+  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
+                                  &sql_stmt_update_keypoints_, 0));
+  sql_stmts_.push_back(sql_stmt_update_keypoints_);
+
+  sql = "UPDATE pose_priors SET data_id=?, sensor_id=?, sensor_type=?, "
+        "position=?, position_covariance=?, coordinate_system=?, gravity=? "
+        "WHERE pose_prior_id=?;";
+  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
+                                  &sql_stmt_update_pose_prior_, 0));
+  sql_stmts_.push_back(sql_stmt_update_pose_prior_);
 
   sql =
       "INSERT INTO descriptors(image_id, rows, cols, data) VALUES(?, ?, ?, ?);";
@@ -1629,12 +1706,18 @@ void Database::PrepareSQLStatements() {
                                   &sql_stmt_write_matches_, 0));
   sql_stmts_.push_back(sql_stmt_write_matches_);
 
-  sql =
-      "INSERT INTO two_view_geometries(pair_id, rows, cols, data, config, F, "
+  sql = "INSERT INTO two_view_geometries(pair_id, rows, cols, data, config, F, "
       "E, H, qvec, tvec) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_write_two_view_geometry_, 0));
   sql_stmts_.push_back(sql_stmt_write_two_view_geometry_);
+
+  sql = "INSERT INTO pose_priors(pose_prior_id, data_id, sensor_id, "
+        "sensor_type, position, position_covariance, coordinate_system, "
+        "gravity) VALUES(?, ?, ?, ?, ?, ?, ?, ?);";
+  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
+                                  &sql_stmt_write_pose_prior_, 0));
+  sql_stmts_.push_back(sql_stmt_write_pose_prior_);
 
   //////////////////////////////////////////////////////////////////////////////
   // delete_*
@@ -1686,6 +1769,11 @@ void Database::PrepareSQLStatements() {
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_clear_two_view_geometries_, 0));
   sql_stmts_.push_back(sql_stmt_clear_two_view_geometries_);
+
+  sql = "DELETE FROM pose_priors;";
+  SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
+                                  &sql_stmt_clear_pose_priors_, 0));
+  sql_stmts_.push_back(sql_stmt_clear_pose_priors_);
 }
 
 void Database::FinalizeSQLStatements() {
@@ -1708,6 +1796,7 @@ void Database::CreateTables() const {
   CreateFloatDescriptorsTable();
   CreateMatchesTable();
   CreateTwoViewGeometriesTable();
+  CreatePosePriorsTable();
 }
 
 void Database::CreateRigTable() const {
@@ -1858,6 +1947,23 @@ void Database::CreateTwoViewGeometriesTable() const {
         "    tvec     BLOB);";
     SQLITE3_EXEC(database_, sql.c_str(), nullptr);
   }
+}
+
+void Database::CreatePosePriorsTable() const {
+  // Upstream dbb41680 column order without the data-table foreign key (this
+  // fork has no unified `data` table; the fork-legacy tables carry the
+  // sensor references instead).
+  SQLITE3_EXEC(database_,
+               "CREATE TABLE IF NOT EXISTS pose_priors"
+               "   (pose_prior_id  INTEGER  PRIMARY KEY  AUTOINCREMENT,"
+               "    data_id        INTEGER               NOT NULL,"
+               "    sensor_id      INTEGER               NOT NULL,"
+               "    sensor_type    INTEGER               NOT NULL,"
+               "    position       BLOB,"
+               "    position_covariance BLOB,"
+               "    coordinate_system   INTEGER          NOT NULL,"
+               "    gravity        BLOB);",
+               nullptr);
 }
 
 
@@ -2153,19 +2259,19 @@ PosePrior ReadPosePriorRow(sqlite3_stmt* sql_stmt) {
   pose_prior.pose_prior_id = static_cast<pose_prior_t>(
       sqlite3_column_int64(sql_stmt, 0));
   const data_t corr_data(
-      sensor_t(static_cast<SensorType>(sqlite3_column_int(sql_stmt, 2)),
-               static_cast<uint32_t>(sqlite3_column_int64(sql_stmt, 1))),
-      0);
+      sensor_t(static_cast<SensorType>(sqlite3_column_int(sql_stmt, 3)),
+               static_cast<uint32_t>(sqlite3_column_int64(sql_stmt, 2))),
+      static_cast<uint32_t>(sqlite3_column_int64(sql_stmt, 1)));
   pose_prior.corr_data_id = corr_data;
   pose_prior.position =
-      ReadStaticMatrixBlob<Eigen::Vector3d>(sql_stmt, SQLITE_ROW, 3);
+      ReadStaticMatrixBlob<Eigen::Vector3d>(sql_stmt, SQLITE_ROW, 4);
   pose_prior.position_covariance =
-      ReadStaticMatrixBlob<Eigen::Matrix3d>(sql_stmt, SQLITE_ROW, 4);
+      ReadStaticMatrixBlob<Eigen::Matrix3d>(sql_stmt, SQLITE_ROW, 5);
   pose_prior.gravity =
-      ReadStaticMatrixBlob<Eigen::Vector3d>(sql_stmt, SQLITE_ROW, 6);
+      ReadStaticMatrixBlob<Eigen::Vector3d>(sql_stmt, SQLITE_ROW, 7);
   pose_prior.coordinate_system =
       static_cast<PosePrior::CoordinateSystem>(
-          sqlite3_column_int(sql_stmt, 5));
+          sqlite3_column_int(sql_stmt, 6));
   return pose_prior;
 }
 

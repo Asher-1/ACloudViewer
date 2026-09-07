@@ -71,6 +71,11 @@ public:
     bool ExistsMatches(const image_t image_id1, const image_t image_id2) const;
     bool ExistsInlierMatches(const image_t image_id1,
                              const image_t image_id2) const;
+    // Upstream COLMAP dbb41680 API name. The legacy ExistsInlierMatches above
+    // already queries the two_view_geometries table; both names share the
+    // same prepared statement.
+    bool ExistsTwoViewGeometry(const image_t image_id1,
+                               const image_t image_id2) const;
 
     // Number of rows in `cameras` table.
     size_t NumCameras() const;
@@ -167,6 +172,9 @@ public:
     void ReadTwoViewGeometries(
             std::vector<image_pair_t>* image_pair_ids,
             std::vector<TwoViewGeometry>* two_view_geometries) const;
+    // Upstream-parity overload (COLMAP 4.x scene/database.h): all verified
+    // pairs keyed by the image pair id.
+    std::map<image_pair_t, TwoViewGeometry> ReadTwoViewGeometries() const;
 
     // Read all image pairs that have an entry in the `NumVerifiedImagePairs`
     // table with at least one inlier match and their number of inlier matches.
@@ -213,6 +221,11 @@ public:
     // Update an existing image in the database. The user is responsible for
     // making sure that the entry already exists.
     void UpdateImage(const Image& image) const;
+
+    // Update an existing image's keypoints in the database. The user is
+    // responsible for making sure that the entry already exists.
+    void UpdateKeypoints(const image_t image_id,
+                         const FeatureKeypoints& keypoints) const;
 
     // Delete matches of an image pair.
     void DeleteMatches(const image_t image_id1, const image_t image_id2) const;
@@ -280,6 +293,7 @@ private:
     void CreateFloatDescriptorsTable() const;
     void CreateMatchesTable() const;
     void CreateTwoViewGeometriesTable() const;
+    void CreatePosePriorsTable() const;
 
     // Legacy-schema preparation before CreateTables() (upstream parity).
     void PreMigrateTables() const;
@@ -343,6 +357,7 @@ private:
     // update_*
     sqlite3_stmt* sql_stmt_update_camera_ = nullptr;
     sqlite3_stmt* sql_stmt_update_image_ = nullptr;
+    sqlite3_stmt* sql_stmt_update_keypoints_ = nullptr;
 
     // read_*
     sqlite3_stmt* sql_stmt_read_camera_ = nullptr;

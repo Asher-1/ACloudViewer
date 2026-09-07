@@ -36,19 +36,26 @@
 #include "math/union_find.h"
 #include "base/database.h"
 #include "base/projection.h"
+#include "base/triangulation.h"
 #include "util/bitmap.h"
-#include ""
-#include "util/misc.h"
+#include "util/eigen_matchers.h"
 #include "util/hash_containers.h"
 #include "util/testing.h"
 
 #include <gtest/gtest.h>
 
+#include <memory>
+
 namespace colmap {
 namespace {
 
+// Fork parity: upstream tests use Database::Open(kInMemorySqliteDatabasePath);
+// the fork Database is a concrete class constructed directly with the
+// in-memory path (same pattern as base/database_test.cc).
+const static std::string kMemoryDatabasePath = ":memory:";
+
 TEST(SynthesizeDataset, Nominal) {
-  auto database = Database::Open(kInMemorySqliteDatabasePath);
+  auto database = std::make_unique<Database>(kMemoryDatabasePath);
   Reconstruction reconstruction;
   SyntheticDatasetOptions options;
   options.num_rigs = 2;
@@ -73,7 +80,7 @@ TEST(SynthesizeDataset, Nominal) {
             options.num_rigs * options.num_cameras_per_rig);
   for (const auto& [camera_id, camera] : reconstruction.Cameras()) {
     EXPECT_EQ(camera, database->ReadCamera(camera_id));
-    EXPECT_EQ(camera.model_id, options.camera_model_id);
+    EXPECT_EQ(camera.ModelId(), options.camera_model_id);
   }
 
   EXPECT_EQ(database->NumFrames(),
@@ -83,8 +90,17 @@ TEST(SynthesizeDataset, Nominal) {
   for (const auto& [frame_id, frame] : reconstruction.Frames()) {
     Frame reconstruction_frame = frame;
     EXPECT_TRUE(reconstruction_frame.HasPose());
-    reconstruction_frame.ResetPose();
-    EXPECT_EQ(reconstruction_frame, database->ReadFrame(frame_id));
+    // Fork parity: the fork-legacy schema persists the frame pose
+    // (has_pose/qvec/tvec columns), so ReadFrame restores a posed frame;
+    // upstream compares ResetPose'd frames because its schema does not
+    // persist the pose. Compare the persisted fields directly instead.
+    Frame database_frame = database->ReadFrame(frame_id);
+    EXPECT_EQ(database_frame.DataIds(), reconstruction_frame.DataIds());
+    EXPECT_EQ(database_frame.HasPose(), reconstruction_frame.HasPose());
+    EXPECT_EQ(database_frame.RigFromWorldQvec(),
+              reconstruction_frame.RigFromWorldQvec());
+    EXPECT_EQ(database_frame.RigFromWorldTvec(),
+              reconstruction_frame.RigFromWorldTvec());
     EXPECT_EQ(reconstruction_frame.NumDataIds(),
               reconstruction_frame.RigPtr()->NumSensors());
   }
@@ -104,8 +120,8 @@ TEST(SynthesizeDataset, Nominal) {
     image_names.insert(image.Name());
     EXPECT_EQ(image.NumPoints2D(), database->ReadKeypoints(image_id).size());
     EXPECT_EQ(image.NumPoints2D(),
-              database->ReadDescriptors(image_id).data.rows());
-    EXPECT_EQ(database->ReadDescriptors(image_id).data.cols(), 128);
+              database->ReadDescriptors(image_id).rows());
+    EXPECT_EQ(database->ReadDescriptors(image_id).cols(), 128);
     EXPECT_EQ(image.NumPoints2D(),
               options.num_points3D + options.num_points2D_without_point3D);
     EXPECT_EQ(image.NumPoints3D(), options.num_points3D);
@@ -137,24 +153,24 @@ TEST(SynthesizeDataset, Nominal) {
 
     // Make sure all descriptors of the same 3D point have identical features.
     const FeatureDescriptors desc0 =
-        database->ReadDescriptors(point3D.track.Element(0).image_id);
+        database->ReadDescriptors(point3D.Track().Element(0).image_id);
     const auto descriptors =
-        desc0.data.row(point3D.track.Element(0).point2D_idx);
+        desc0.row(point3D.Track().Element(0).point2D_idx);
 
     double max_tri_angle = 0;
-    for (size_t i1 = 0; i1 < point3D.track.Length(); ++i1) {
-      const auto& track_el = point3D.track.Element(i1);
+    for (size_t i1 = 0; i1 < point3D.Track().Length(); ++i1) {
+      const auto& track_el = point3D.Track().Element(i1);
       const image_t image_id1 = track_el.image_id;
       const Image& image1 = reconstruction.Image(image_id1);
       const Camera& camera1 = reconstruction.Camera(image1.CameraId());
       const Point2D& point2D = image1.Point2D(track_el.point2D_idx);
       const double squared_reproj_error = CalculateSquaredReprojectionError(
-          point2D.xy, point3D.xyz, image1.CamFromWorld(), camera1);
+          point2D.XY(), point3D.XYZ(), image1.CamFromWorld(), camera1);
       EXPECT_LE(squared_reproj_error, kMaxReprojError * kMaxReprojError);
       const FeatureDescriptors desc1 =
-          database->ReadDescriptors(point3D.track.Element(i1).image_id);
+          database->ReadDescriptors(point3D.Track().Element(i1).image_id);
       EXPECT_EQ(descriptors,
-                desc1.data.row(point3D.track.Element(i1).point2D_idx));
+                desc1.row(point3D.Track().Element(i1).point2D_idx));
 
       Eigen::Vector3d proj_center1;
       if (proj_centers.count(image_id1) == 0) {
@@ -165,11 +181,11 @@ TEST(SynthesizeDataset, Nominal) {
       }
 
       for (size_t i2 = 0; i2 < i1; ++i2) {
-        const image_t image_id2 = point3D.track.Element(i2).image_id;
+        const image_t image_id2 = point3D.Track().Element(i2).image_id;
         const Eigen::Vector3d& proj_center2 = proj_centers.at(image_id2);
         max_tri_angle = std::max(max_tri_angle,
                                  CalculateTriangulationAngle(
-                                     proj_center1, proj_center2, point3D.xyz));
+                                     proj_center1, proj_center2, point3D.XYZ()));
       }
     }
 
@@ -178,7 +194,7 @@ TEST(SynthesizeDataset, Nominal) {
 }
 
 TEST(SynthesizeDataset, MultipleTimes) {
-  auto database = Database::Open(kInMemorySqliteDatabasePath);
+  auto database = std::make_unique<Database>(kMemoryDatabasePath);
   Reconstruction reconstruction;
   SyntheticDatasetOptions options;
   options.num_rigs = 2;
@@ -211,7 +227,7 @@ TEST(SynthesizeDataset, MultipleTimes) {
 }
 
 TEST(SynthesizeDataset, WithPriors) {
-  auto database = Database::Open(kInMemorySqliteDatabasePath);
+  auto database = std::make_unique<Database>(kMemoryDatabasePath);
   Reconstruction reconstruction;
   SyntheticDatasetOptions options;
   options.prior_position = true;
@@ -238,7 +254,7 @@ TEST(SynthesizeDataset, WithPriors) {
 }
 
 TEST(SynthesizeDataset, MultiReconstruction) {
-  auto database = Database::Open(kInMemorySqliteDatabasePath);
+  auto database = std::make_unique<Database>(kMemoryDatabasePath);
   Reconstruction reconstruction1;
   Reconstruction reconstruction2;
   SyntheticDatasetOptions options;
@@ -262,7 +278,7 @@ TEST(SynthesizeDataset, MultiReconstruction) {
 }
 
 TEST(SynthesizeDataset, ExhaustiveMatches) {
-  auto database = Database::Open(kInMemorySqliteDatabasePath);
+  auto database = std::make_unique<Database>(kMemoryDatabasePath);
   Reconstruction reconstruction;
   SyntheticDatasetOptions options;
   options.match_config = SyntheticDatasetOptions::MatchConfig::EXHAUSTIVE;
@@ -278,7 +294,7 @@ TEST(SynthesizeDataset, ExhaustiveMatches) {
 }
 
 TEST(SynthesizeDataset, ChainedMatches) {
-  auto database = Database::Open(kInMemorySqliteDatabasePath);
+  auto database = std::make_unique<Database>(kMemoryDatabasePath);
   Reconstruction reconstruction;
   SyntheticDatasetOptions options;
   options.match_config = SyntheticDatasetOptions::MatchConfig::CHAINED;
@@ -292,17 +308,17 @@ TEST(SynthesizeDataset, ChainedMatches) {
   EXPECT_EQ(database->NumInlierMatches(),
             num_image_pairs * options.num_points3D);
   for (const auto& [pair_id, _] : database->ReadAllMatches()) {
-    const auto [image_id1, image_id2] = PairIdToImagePair(pair_id);
+    const auto [image_id1, image_id2] = Database::PairIdToImagePair(pair_id);
     EXPECT_EQ(image_id1 + 1, image_id2);
   }
   for (const auto& [pair_id, _] : database->ReadTwoViewGeometries()) {
-    const auto [image_id1, image_id2] = PairIdToImagePair(pair_id);
+    const auto [image_id1, image_id2] = Database::PairIdToImagePair(pair_id);
     EXPECT_EQ(image_id1 + 1, image_id2);
   }
 }
 
 TEST(SynthesizeDataset, SparseMatchesZeroSparsity) {
-  auto database = Database::Open(kInMemorySqliteDatabasePath);
+  auto database = std::make_unique<Database>(kMemoryDatabasePath);
   Reconstruction reconstruction;
   SyntheticDatasetOptions options;
   options.match_config = SyntheticDatasetOptions::MatchConfig::SPARSE;
@@ -316,7 +332,7 @@ TEST(SynthesizeDataset, SparseMatchesZeroSparsity) {
 }
 
 TEST(SynthesizeDataset, SparseMatchesFullSparsity) {
-  auto database = Database::Open(kInMemorySqliteDatabasePath);
+  auto database = std::make_unique<Database>(kMemoryDatabasePath);
   Reconstruction reconstruction;
   SyntheticDatasetOptions options;
   options.match_config = SyntheticDatasetOptions::MatchConfig::SPARSE;
@@ -327,7 +343,7 @@ TEST(SynthesizeDataset, SparseMatchesFullSparsity) {
 }
 
 TEST(SynthesizeDataset, SparseMatchesPartialSparsity) {
-  auto database = Database::Open(kInMemorySqliteDatabasePath);
+  auto database = std::make_unique<Database>(kMemoryDatabasePath);
   Reconstruction reconstruction;
   SyntheticDatasetOptions options;
   options.num_rigs = 1;
@@ -346,7 +362,7 @@ TEST(SynthesizeDataset, SparseMatchesPartialSparsity) {
   UnionFind<image_t> uf;
   uf.Reserve(num_images);
   for (const auto& [pair_id, _] : database->ReadAllMatches()) {
-    const auto [image_id1, image_id2] = PairIdToImagePair(pair_id);
+    const auto [image_id1, image_id2] = Database::PairIdToImagePair(pair_id);
     uf.Union(image_id1, image_id2);
   }
   const image_t root = uf.Find(*reconstruction.RegImageIds().begin());
@@ -356,7 +372,7 @@ TEST(SynthesizeDataset, SparseMatchesPartialSparsity) {
 }
 
 TEST(SynthesizeDataset, NoDatabase) {
-  auto database = Database::Open(kInMemorySqliteDatabasePath);
+  auto database = std::make_unique<Database>(kMemoryDatabasePath);
   SyntheticDatasetOptions options;
   Reconstruction reconstruction;
   SynthesizeDataset(options, &reconstruction);
@@ -402,7 +418,7 @@ TEST(SynthesizeDataset, Determinism) {
 }
 
 TEST(SynthesizeNoise, Point2DNoise) {
-  auto database = Database::Open(kInMemorySqliteDatabasePath);
+  auto database = std::make_unique<Database>(kMemoryDatabasePath);
   Reconstruction reconstruction;
   SyntheticDatasetOptions options;
   SynthesizeDataset(options, &reconstruction, database.get());
@@ -419,13 +435,13 @@ TEST(SynthesizeNoise, Point2DNoise) {
          ++point2D_idx) {
       EXPECT_THAT(
           Eigen::Vector2d(keypoints[point2D_idx].x, keypoints[point2D_idx].y),
-          EigenMatrixNear(image.Point2D(point2D_idx).xy, 1e-6));
+          EigenMatrixNear(image.Point2D(point2D_idx).XY(), 1e-6));
     }
   }
 }
 
 TEST(SynthesizeNoise, Point3DNoise) {
-  auto database = Database::Open(kInMemorySqliteDatabasePath);
+  auto database = std::make_unique<Database>(kMemoryDatabasePath);
   Reconstruction reconstruction;
   SyntheticDatasetOptions options;
 
@@ -439,7 +455,7 @@ TEST(SynthesizeNoise, Point3DNoise) {
 }
 
 TEST(SynthesizeNoise, RigFromWorldNoise) {
-  auto database = Database::Open(kInMemorySqliteDatabasePath);
+  auto database = std::make_unique<Database>(kMemoryDatabasePath);
   Reconstruction reconstruction;
   SyntheticDatasetOptions options;
 
@@ -462,7 +478,7 @@ NodeHashMap<pose_prior_t, PosePrior> ReadPosePriors(Database& database) {
 }
 
 TEST(SynthesizeNoise, PriorPositionNoise) {
-  auto database = Database::Open(kInMemorySqliteDatabasePath);
+  auto database = std::make_unique<Database>(kMemoryDatabasePath);
   Reconstruction reconstruction;
   SyntheticDatasetOptions options;
   options.prior_position = true;
@@ -494,7 +510,7 @@ TEST(SynthesizeNoise, PriorPositionNoise) {
 }
 
 TEST(SynthesizeNoise, PriorGravityNoise) {
-  auto database = Database::Open(kInMemorySqliteDatabasePath);
+  auto database = std::make_unique<Database>(kMemoryDatabasePath);
   Reconstruction reconstruction;
   SyntheticDatasetOptions options;
   options.prior_gravity = true;
@@ -536,8 +552,8 @@ TEST(SynthesizeImages, Nominal) {
   for (const auto& [image_id, image] : reconstruction.Images()) {
     Bitmap bitmap;
     EXPECT_TRUE(bitmap.Read(image_path / image.Name()));
-    EXPECT_EQ(bitmap.Width(), image.CameraPtr()->width);
-    EXPECT_EQ(bitmap.Height(), image.CameraPtr()->height);
+    EXPECT_EQ(bitmap.Width(), image.CameraPtr()->Width());
+    EXPECT_EQ(bitmap.Height(), image.CameraPtr()->Height());
   }
 }
 

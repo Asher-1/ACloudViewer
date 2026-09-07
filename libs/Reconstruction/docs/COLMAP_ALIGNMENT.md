@@ -21,16 +21,41 @@ Work packages from [COLMAP_ALIGNMENT_PLAN.md](COLMAP_ALIGNMENT_PLAN.md):
 | W2 BA backend surface + PBA retirement | done |
 | W5 solver unification | done (solvers/* registered, PoseLib hard dep) |
 | W6 two-view increments | done (upstream two_view_geometry swap + parity gate) |
-| W9 synthetic dataset | partial (W3-1 graph cache landed; enable next) |
+| W9 synthetic dataset | done (enabled in ColmapLib; synthetic_test 18/18 + upstream gps ENU gates green) |
 | W3-1 correspondence graph cache | done (per-pair TwoViewGeometry cache + MaybeDecomposeRelativePoses + ray homography restored) |
 | W3-2a frame-aware data model | done (Image/Frame/Rig/Reconstruction pointer wiring + Database pose_priors + OIIO ZLIB pin fix) |
 | W3-2a build & fixture completion | done (Image::DataId corrected to the upstream form, NonRefSensors materialized by value, Rigid3d projection-error overload defined, Crop/Merge pointer reset + trivial wiring, six legacy test fixtures migrated to AddCameraWithTrivialRig/AddImageWithTrivialFrame; full build EXIT=0, ctest 73/77) |
-| W3-2b (frame-aware mapper/BA + synthetic enablement), W4, W7, W8, W10-W16 | pending |
+| W3-2b (frame-aware mapper/BA), W4, W7, W8, W10-W16 | pending |
 
 Testing: the whole Reconstruction test suite runs on **googletest**
 (decision D6); `COLMAP_ADD_TEST` links `gtest_main` and upstream test files
-can land unconverted. Full build is green and the suite reports 73/77 with
-the four pre-existing environment failures.
+can land unconverted. Full build is green and the suite reports 78/79 with
+one remaining failure (the caspar split-intrinsics focal=0 pp=0 parity
+case) that is independent of the W9 work: it fails with bit-identical rms
+values under the old and new SensorFromRig/SetPoints2D code paths and its
+sources are identical to HEAD. The four previously recorded environment
+failures (polynomial, da3_depth_controller, sift GPU, gpu_mat) all pass in
+the current environment, so the baseline comparison is not
+environment-stable.
+
+## W9 execution notes (2026-09-07)
+
+Enabling `scene/synthetic.{h,cc}` surfaced and fixed five fork defects, all
+recorded in the manifest entry: the `Rig::SensorFromRig` quaternion-order
+bug (Eigen's Vector4d constructor is [x,y,z,w] while the fork qvec is
+[w,x,y,z]), the WGS84 flattening and XYZToEll convergence parity in
+`base/gps.cc`, the missing pose_priors table creation and prepared
+statements (plus the ReadPosePriorRow column fix), the `Frame::AddImageId`
+camera-data duplication for image_id != camera_id (ReadFrame now falls back
+to frame_images only when frame_data is empty), and the stale
+`Image::num_points3D_` after `SetPoints2D`. Database also gained the
+upstream `ExistsTwoViewGeometry`/`UpdateKeypoints`/`ReadTwoViewGeometries()`
+API names, and the test infrastructure gained `util/eigen_matchers.h`,
+`CreateTestDir`/`CreateDirIfNotExists` and a gmock link for upstream tests.
+The `Frame::AddImageId` legacy bridge (image_id == camera_id data-id
+back-insertion) is kept for the frame_test/caspar fixtures and
+`Database::ReadFrame` falls back to it only when a frame has no frame_data
+rows.
 
 ## Implemented in this tree
 

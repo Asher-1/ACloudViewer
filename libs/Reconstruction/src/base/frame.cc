@@ -59,6 +59,9 @@ const std::set<data_t>& Frame::DataIds() const { return data_ids_; }
 void Frame::AddImageId(const image_t image_id) {
     CHECK_NE(image_id, kInvalidImageId);
     image_ids_.insert(image_id);
+    // Fork-legacy bridge: image ids imply a camera data entry under the
+    // historical image_id == camera_id assumption. Database::ReadFrame only
+    // falls back to this path for legacy rows that lack frame_data entries.
     data_ids_.insert(data_t(sensor_t(SensorType::CAMERA, image_id), image_id));
 }
 

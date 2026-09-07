@@ -315,7 +315,9 @@ macro(COLMAP_ADD_TEST TARGET_NAME)
         add_executable(${TARGET_NAME} ${ARGN})
         set_target_properties(${TARGET_NAME} PROPERTIES FOLDER
                 ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME})
-        target_link_libraries(${TARGET_NAME} PRIVATE ${COLMAP_LIB_NAME} gtest_main)
+        # gmock provides the matcher infrastructure used by upstream test
+        # files (e.g. util/eigen_matchers.h).
+        target_link_libraries(${TARGET_NAME} PRIVATE ${COLMAP_LIB_NAME} gtest_main gmock)
 
         if (MSVC)
             # fix compiling error on windows platform

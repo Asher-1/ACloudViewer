@@ -34,6 +34,8 @@ public:
     void AddDataId(const data_t& data_id);
     bool HasDataId(const data_t& data_id) const;
     const std::set<data_t>& DataIds() const;
+    // Upstream-parity accessor (COLMAP 4.x scene/frame.h).
+    size_t NumDataIds() const { return data_ids_.size(); }
 
     void AddImageId(image_t image_id);
     bool HasImageId(image_t image_id) const;
@@ -65,6 +67,18 @@ public:
     void ResetPose();
     const Eigen::Vector4d& RigFromWorldQvec() const;
     const Eigen::Vector3d& RigFromWorldTvec() const;
+
+    // Upstream-parity equality (COLMAP 4.x scene/frame.h): the pose is only
+    // compared when both frames have one; this fork tracks it with the
+    // has_pose_ flag and qvec/tvec storage instead of an optional Rigid3d.
+    bool operator==(const Frame& other) const {
+        return frame_id_ == other.frame_id_ && rig_id_ == other.rig_id_ &&
+               data_ids_ == other.data_ids_ && has_pose_ == other.has_pose_ &&
+               (!has_pose_ ||
+                (rig_from_world_qvec_ == other.rig_from_world_qvec_ &&
+                 rig_from_world_tvec_ == other.rig_from_world_tvec_));
+    }
+    bool operator!=(const Frame& other) const { return !(*this == other); }
 
     bool ReadText(std::istream* stream);
     void WriteText(std::ostream* stream) const;

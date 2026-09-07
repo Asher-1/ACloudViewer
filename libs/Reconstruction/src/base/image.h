@@ -156,6 +156,15 @@ public:
     inline const class Point2D& Point2D(const point2D_t point2D_idx) const;
     inline class Point2D& Point2D(const point2D_t point2D_idx);
     inline const std::vector<class Point2D>& Points2D() const;
+    // Upstream COLMAP dbb41680 API parity: mutable access to the 2D points
+    // (the fork previously only exposed the const overload).
+    inline std::vector<class Point2D>& Points2D();
+
+    // Upstream-parity equality (COLMAP 4.x scene/image.h): the world pose is
+    // derived from the frame, which this fork resolves to qvec/tvec
+    // components instead of a Rigid3d member.
+    bool operator==(const Image& other) const;
+    bool operator!=(const Image& other) const;
     void SetPoints2D(const std::vector<Eigen::Vector2d>& points);
     void SetPoints2D(const std::vector<class Point2D>& points);
 
@@ -384,6 +393,30 @@ class Point2D& Image::Point2D(const point2D_t point2D_idx) {
 }
 
 const std::vector<class Point2D>& Image::Points2D() const { return points2D_; }
+
+std::vector<class Point2D>& Image::Points2D() { return points2D_; }
+
+inline bool Image::operator==(const Image& other) const {
+    const bool result = image_id_ == other.image_id_ &&          //
+                        camera_id_ == other.camera_id_ &&        //
+                        frame_id_ == other.frame_id_ &&          //
+                        name_ == other.name_ &&                  //
+                        num_points3D_ == other.num_points3D_ &&  //
+                        points2D_ == other.points2D_ &&          //
+                        HasPose() == other.HasPose();
+    if (!result || !HasPose()) {
+        return result;
+    }
+    const Rigid3d cam_from_world = CamFromWorld();
+    const Rigid3d other_cam_from_world = other.CamFromWorld();
+    return cam_from_world.rotation().coeffs() ==
+                   other_cam_from_world.rotation().coeffs() &&
+           cam_from_world.translation() == other_cam_from_world.translation();
+}
+
+inline bool Image::operator!=(const Image& other) const {
+    return !(*this == other);
+}
 
 bool Image::IsPoint3DVisible(const point2D_t point2D_idx) const {
     return num_correspondences_have_point3D_.at(point2D_idx) > 0;

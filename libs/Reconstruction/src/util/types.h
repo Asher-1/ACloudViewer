@@ -120,6 +120,14 @@ constexpr sensor_t kInvalidSensorId =
 // Each image pair gets a unique ID, see `Database::ImagePairToPairId`.
 typedef uint64_t image_pair_t;
 
+// Return true if image pairs should be swapped. Used to enforce a specific
+// image order to generate unique image pair identifiers independent of the
+// order in which the image identifiers are used. Upstream COLMAP dbb41680
+// util/types.h parity.
+inline bool ShouldSwapImagePair(image_t image_id1, image_t image_id2) {
+    return image_id1 > image_id2;
+}
+
 // Index per image, i.e. determines maximum number of 2D points per image.
 typedef uint32_t point2D_t;
 

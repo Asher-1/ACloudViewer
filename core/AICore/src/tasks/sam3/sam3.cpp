@@ -10298,14 +10298,16 @@ static sam3_dec_result sam3_build_sam_dec_graph(
         tok = ggml_cont(ctx, tok);  // [D, 1, 1]
 
         // MLP: 3 layers, 256→256→256→32, ReLU on first two
-        auto* hyper =
+        // NOTE: do not name this "hyper" — Windows SDK's rpcndr.h typedefs
+        // `hyper` to __int64, which makes MSVC reject it as a variable name.
+        auto* hyper_out =
                 sam3_mlp_forward(ctx, tok, dec.hyper_w[m], dec.hyper_b[m], 3);
-        // hyper: [32, 1, 1]
+        // hyper_out: [32, 1, 1]
 
-        // Dot product: hyper^T @ up_flat → [1, 288*288, 1]
-        // Use mul_mat: up_flat^T [288*288, 32] @ hyper [32, 1] → [288*288, 1,
-        // 1]
-        auto* mask = ggml_mul_mat(ctx, up_flat, hyper);  // [288*288, 1, 1]
+        // Dot product: hyper_out^T @ up_flat → [1, 288*288, 1]
+        // Use mul_mat: up_flat^T [288*288, 32] @ hyper_out [32, 1] →
+        // [288*288, 1, 1]
+        auto* mask = ggml_mul_mat(ctx, up_flat, hyper_out);  // [288*288, 1, 1]
         mask_list[m] = mask;
     }
 

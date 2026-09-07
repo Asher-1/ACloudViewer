@@ -43,13 +43,40 @@ public:
     std::vector<sensor_t> SensorIds() const;
     bool HasSensorFromRig(const sensor_t& sensor_id) const;
 
+    // Upstream-parity equality (COLMAP 4.x sensor/rig.h): this fork stores
+    // the sensor poses as optional qvec/tvec pairs instead of optional
+    // Rigid3d values.
+    bool operator==(const Rig& other) const {
+        if (rig_id_ != other.rig_id_ ||
+            ref_sensor_id_ != other.ref_sensor_id_ ||
+            sensors_.size() != other.sensors_.size()) {
+            return false;
+        }
+        for (const auto& [sensor_id, pose] : sensors_) {
+            const auto other_it = other.sensors_.find(sensor_id);
+            if (other_it == other.sensors_.end() ||
+                pose.has_value() != other_it->second.has_value()) {
+                return false;
+            }
+            if (pose.has_value() && (pose->qvec != other_it->second->qvec ||
+                                     pose->tvec != other_it->second->tvec)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    bool operator!=(const Rig& other) const { return !(*this == other); }
+
     // Upstream-parity rig accessor (COLMAP 4.x): SensorFromRig returns the
     // identity for the reference sensor.
     Rigid3d SensorFromRig(const sensor_t& sensor_id) const {
         if (!HasSensorFromRig(sensor_id)) {
             return Rigid3d();
         }
-        return Rigid3d(Eigen::Quaterniond(SensorFromRigQvec(sensor_id)),
+        // Fork qvec convention is [w, x, y, z]: construct from the four
+        // scalars (Eigen's Vector4d constructor assumes [x, y, z, w] order).
+        const Eigen::Vector4d& q = SensorFromRigQvec(sensor_id);
+        return Rigid3d(Eigen::Quaterniond(q(0), q(1), q(2), q(3)),
                        SensorFromRigTvec(sensor_id));
     }
     const Eigen::Vector4d& SensorFromRigQvec(const sensor_t& sensor_id) const;
