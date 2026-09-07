@@ -32,11 +32,20 @@ endif()
 # Linux-only suffix here: the path is embedded into OIIO's sub-build as a
 # hard file prerequisite, so a missing artifact fails it with
 # "No rule to make target" (make) / LNK1181 (MSVC).
+#
+# The pin must be the STATIC archive on every platform. FindZLIB skips its
+# release/debug search and select_library_configurations() entirely when
+# ZLIB_LIBRARY is preset, so on a fresh configure ZLIB_LIBRARY_RELEASE is
+# never populated and ZLIB::ZLIB imports exactly this file. Pinning the
+# shared dylib therefore embeds @rpath/libz.1.dylib into libOpenImageIO,
+# which verify_oiio_runtime_payload() rejects during PostInstall: the
+# dependency only resolves through the build tree's LC_RPATH, i.e. outside
+# the package payload ("resolves OIIO dependency outside its payload").
 if(MSVC)
     set(_openimageio_zlib_library "${CMAKE_BINARY_DIR}/zlib/lib/zlibstatic.lib")
 else()
     set(_openimageio_zlib_library
-        "${CMAKE_BINARY_DIR}/zlib/lib/${CMAKE_SHARED_LIBRARY_PREFIX}z${CMAKE_SHARED_LIBRARY_SUFFIX}")
+        "${CMAKE_BINARY_DIR}/zlib/lib/${CMAKE_STATIC_LIBRARY_PREFIX}z${CMAKE_STATIC_LIBRARY_SUFFIX}")
 endif()
 
 ExternalProject_Add(ext_openimageio
@@ -136,7 +145,7 @@ ExternalProject_Add(ext_openimageio
         # Pin ZLIB to the repo-built zlib 1.3.1 (ext_zlib): the OIIO local
         # deps refind would otherwise pick up the system zlib (1.2.11 on
         # Ubuntu 22.04), which fails the >=1.3.1 version check.
-        # Artifact name is platform-specific (libz.so / libz.dylib /
+        # Artifact name is platform-specific (static libz.a on non-MSVC,
         # zlibstatic.lib under MSVC) — see _openimageio_zlib_library above.
         -DZLIB_LIBRARY=${_openimageio_zlib_library}
         -DZLIB_INCLUDE_DIR=${CMAKE_BINARY_DIR}/zlib/include
