@@ -42,6 +42,15 @@ endif()
 # Linux-only suffix here either: the path is embedded into OIIO's sub-build
 # as a hard file prerequisite, so a missing artifact fails it with
 # "No rule to make target" (make) / LNK1181 (MSVC).
+#
+# The pin must be the STATIC archive on every platform. FindZLIB skips its
+# release/debug search and select_library_configurations() entirely when
+# ZLIB_LIBRARY is preset, so on a fresh configure ZLIB_LIBRARY_RELEASE is
+# never populated and ZLIB::ZLIB imports exactly this file. Pinning the
+# shared dylib therefore embeds @rpath/libz.1.dylib into libOpenImageIO,
+# which verify_oiio_runtime_payload() rejects during PostInstall: the
+# dependency only resolves through the build tree's LC_RPATH, i.e. outside
+# the package payload ("resolves OIIO dependency outside its payload").
 if(MSVC)
     set(_openimageio_zlib_library "${CMAKE_BINARY_DIR}/zlib/lib/zlibstatic.lib")
 else()
