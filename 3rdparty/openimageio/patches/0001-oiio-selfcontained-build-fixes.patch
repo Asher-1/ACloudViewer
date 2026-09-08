@@ -9,7 +9,19 @@
 # Contents, by file:
 #   src/cmake/build_OpenColorIO.cmake   pin yaml-cpp_DIR / Imath_DIR of the
 #                                       OCIO sub-build to the copy OIIO
-#                                       already resolved (001+0005+0007)
+#                                       already resolved (001+0005+0007);
+#                                       hard-pin yaml-cpp_INCLUDE_DIR /
+#                                       yaml-cpp_LIBRARY / yaml-cpp_ROOT so
+#                                       OCIO's Findyaml-cpp fallback cannot
+#                                       resolve a host yaml-cpp newer than
+#                                       0.8.0 on Windows (OCIOYaml.obj then
+#                                       references YAML::FpToString and
+#                                       Emitter::Write(const char*, size_t)
+#                                       that the pinned 0.8.0 static library
+#                                       does not define - LNK2019); raise
+#                                       the sub-build's CMAKE_MESSAGE_LOG_
+#                                       LEVEL so its dependency resolution
+#                                       stays visible in CI logs (0014)
 #   src/cmake/build_TIFF.cmake          disable webp/libdeflate in the local
 #                                       TIFF, hand it the local JPEG
 #                                       headers/lib (0002/0003/0009)
@@ -50,10 +62,33 @@ index d3e672b..8af5451 100644
             DOC "Should a local Imath build, if necessary, build shared libraries" ADVANCED)
  
 diff --git a/src/cmake/build_OpenColorIO.cmake b/src/cmake/build_OpenColorIO.cmake
-index 1eb314d..3c747cc 100644
+index 1eb314d..e97cdf7 100644
 --- a/src/cmake/build_OpenColorIO.cmake
 +++ b/src/cmake/build_OpenColorIO.cmake
-@@ -56,12 +56,42 @@ build_dependency_with_cmake(OpenColorIO
+@@ -27,6 +27,22 @@ unset (OpenColorIO_DIR)
+ checked_find_package(pystring VERSION_MIN 1.1.3)
+ checked_find_package(expat REQUIRED VERSION_MIN 2.6)
+ checked_find_package(yaml-cpp REQUIRED VERSION_MIN 0.8.0)
++# Capture the yaml-cpp artifact OIIO already resolved so the OCIO sub-build
++# can be pinned to the exact same headers and library, not merely the same
++# config directory. On Windows the sub-build's own dependency search has been
++# observed to resolve a host yaml-cpp newer than 0.8.0 whose Emitter API
++# (YAML::FpToString, Emitter::Write(const char*, size_t)) ends up referenced
++# by OCIOYaml.obj, while OIIO links the pinned 0.8.0 static library -
++# LNK2019 at the final link. The explicit INCLUDE_DIR/LIBRARY/ROOT pins below
++# close every search path OCIO's Findyaml-cpp.cmake could take instead.
++get_target_property (_yaml-cpp_include_dir yaml-cpp::yaml-cpp INTERFACE_INCLUDE_DIRECTORIES)
++get_target_property (_yaml-cpp_location yaml-cpp::yaml-cpp IMPORTED_LOCATION)
++if (NOT _yaml-cpp_location)
++    get_target_property (_yaml-cpp_location yaml-cpp::yaml-cpp IMPORTED_LOCATION_RELEASE)
++endif ()
++if (NOT _yaml-cpp_location)
++    get_target_property (_yaml-cpp_location yaml-cpp::yaml-cpp IMPORTED_LOCATION_DEBUG)
++endif ()
+ checked_find_package(minizip-ng REQUIRED VERSION_MIN 4.0.10)
+ 
+ string (MAKE_C_IDENTIFIER ${OpenColorIO_BUILD_VERSION} OpenColorIO_VERSION_IDENT)
+@@ -56,12 +72,60 @@ build_dependency_with_cmake(OpenColorIO
          # Fix for yaml-cpp breaking against cmake 4.0.
          # Remove when yaml-cpp is fixed to declare its own minimum high enough.
          -D CMAKE_POLICY_VERSION_MINIMUM=3.5
@@ -64,6 +99,24 @@ index 1eb314d..3c747cc 100644
 +        # links - the same cross-scope mismatch class that broke libdeflate.
 +        # An empty value keeps OCIO's own missing-deps fallback working.
 +        -D yaml-cpp_DIR=${yaml-cpp_DIR}
++        # Close the fallback find_path/find_library of OCIO's Findyaml-cpp
++        # module with explicit cache answers (yaml-cpp_ROOT is its first
++        # HINT), so no host prefix, system prefix or PATH entry can resolve
++        # a different yaml-cpp than the one OIIO finally links. Empty values
++        # keep OCIO's own missing-deps fallback working.
++        -D yaml-cpp_ROOT=${yaml-cpp_ROOT}
++        -D yaml-cpp_INCLUDE_DIR=${_yaml-cpp_include_dir}
++        -D yaml-cpp_LIBRARY=${_yaml-cpp_location}
++        # Keep the OCIO sub-build's dependency-resolution STATUS output
++        # visible in CI logs: build_dependency_with_cmake defaults sub-builds
++        # to CMAKE_MESSAGE_LOG_LEVEL=ERROR, which hides exactly the lines
++        # needed to debug a cross-scope mismatch like this one.
++        -DCMAKE_MESSAGE_LOG_LEVEL=STATUS
++        # Windows defense in depth: stop find_path/find_library inside the
++        # OCIO sub-build from following PATH environment entries, whose
++        # <dir>/include projections may carry a yaml-cpp other than the
++        # pinned one.
++        -DCMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH=OFF
 +        # Same cross-scope pin, for Imath: the OCIO sub-build re-finds Imath
 +        # on its own, and left to itself it scavenges the host (e.g.
 +        # Homebrew). The host config propagates <prefix>/include ahead of

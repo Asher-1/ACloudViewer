@@ -25,18 +25,28 @@ else()
         "<INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}OpenImageIO_Util${CMAKE_SHARED_LIBRARY_SUFFIX}")
 endif()
 
-# ext_zlib artifact consumed via ZLIB_LIBRARY below. zlib always builds the
-# static `zlibstatic` target; non-MSVC renames it to `z` (libz.a) alongside
-# the shared `libz.so`/`libz.dylib`, while MSVC builds with
-# BUILD_SHARED_LIBS=OFF and keeps `zlibstatic.lib`. Never hardcode a
-# Linux-only suffix here: the path is embedded into OIIO's sub-build as a
-# hard file prerequisite, so a missing artifact fails it with
+# ext_zlib artifact consumed via ZLIB_LIBRARY below, pinned to the STATIC
+# archive on every platform. zlib always builds the static `zlibstatic`
+# target; non-MSVC renames it to `z` (libz.a) alongside the shared
+# `libz.so`/`libz.dylib`, while MSVC builds with BUILD_SHARED_LIBS=OFF and
+# keeps `zlibstatic.lib`. The static pin is required, not stylistic:
+# libOpenImageIO ships inside every independently installable component, and
+# macOS records a shared zlib dependency in its LC_LOAD_DYLIB as the
+# build-tree install name (`libz.1.dylib`/`@rpath/libz.1.dylib`) while the
+# payload copy lands under the real file name — the install-name rewrite in
+# OpenImageIOPackageRuntime.cmake cannot match that pair, leaving a reference
+# into the build tree that verify_oiio_runtime_payload rejects. Embedding
+# zlib keeps the OIIO runtime closure to its own two dylibs — the same
+# static-only rule the local dep builds enforce (patches/build_ZLIB.cmake
+# deletes OIIO's own shared libz for exactly this reason). Never hardcode a
+# Linux-only suffix here either: the path is embedded into OIIO's sub-build
+# as a hard file prerequisite, so a missing artifact fails it with
 # "No rule to make target" (make) / LNK1181 (MSVC).
 if(MSVC)
     set(_openimageio_zlib_library "${CMAKE_BINARY_DIR}/zlib/lib/zlibstatic.lib")
 else()
     set(_openimageio_zlib_library
-        "${CMAKE_BINARY_DIR}/zlib/lib/${CMAKE_SHARED_LIBRARY_PREFIX}z${CMAKE_SHARED_LIBRARY_SUFFIX}")
+        "${CMAKE_BINARY_DIR}/zlib/lib/${CMAKE_STATIC_LIBRARY_PREFIX}z${CMAKE_STATIC_LIBRARY_SUFFIX}")
 endif()
 
 ExternalProject_Add(ext_openimageio
@@ -136,8 +146,9 @@ ExternalProject_Add(ext_openimageio
         # Pin ZLIB to the repo-built zlib 1.3.1 (ext_zlib): the OIIO local
         # deps refind would otherwise pick up the system zlib (1.2.11 on
         # Ubuntu 22.04), which fails the >=1.3.1 version check.
-        # Artifact name is platform-specific (libz.so / libz.dylib /
-        # zlibstatic.lib under MSVC) — see _openimageio_zlib_library above.
+        # Artifact is the static archive on every platform (libz.a /
+        # zlibstatic.lib under MSVC) — see _openimageio_zlib_library above
+        # for why the shared libz.so/libz.dylib must never be consumed here.
         -DZLIB_LIBRARY=${_openimageio_zlib_library}
         -DZLIB_INCLUDE_DIR=${CMAKE_BINARY_DIR}/zlib/include
         -DZLIB_BUILD_SHARED_LIBS=OFF
