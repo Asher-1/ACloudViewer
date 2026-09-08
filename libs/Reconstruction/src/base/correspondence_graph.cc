@@ -40,6 +40,16 @@ namespace colmap {
 
 CorrespondenceGraph::CorrespondenceGraph() {}
 
+NodeHashMap<image_pair_t, point2D_t>
+CorrespondenceGraph::NumMatchesBetweenAllImages() const {
+  NodeHashMap<image_pair_t, point2D_t> num_matches_between_images;
+  num_matches_between_images.reserve(image_pairs_.size());
+  for (const auto& [pair_id, pair] : image_pairs_) {
+    num_matches_between_images.emplace(pair_id, pair.num_correspondences);
+  }
+  return num_matches_between_images;
+}
+
 std::unordered_map<image_pair_t, point2D_t>
 CorrespondenceGraph::NumCorrespondencesBetweenImages() const {
   std::unordered_map<image_pair_t, point2D_t> num_corrs_between_images;

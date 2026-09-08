@@ -13,6 +13,16 @@ set(OPENIMAGEIO_SHA256
 string(REPLACE ";" "$<SEMICOLON>" OPENIMAGEIO_PREFIX_PATH
        "${CMAKE_PREFIX_PATH}")
 
+# OIIO is delivered statically on every platform (ceres/lapack policy), so
+# the archives embed into libCloudViewer/pybind and no shared payload exists
+# to bundle: packaging needs no OIIO deployment, collection, or rpath handling
+# anywhere. OIIO's own local-dep system would otherwise default to shared
+# libraries under MSVC, which would leave a static OIIO depending on a pile of
+# deps DLLs that no packaging search path covers, so LOCAL_BUILD_SHARED_LIBS_DEFAULT
+# is forced off and the static closure is discovered after the build through a
+# linker response file (see generate_static_closure.cmake). The PIC switch is
+# required for Linux, where the static closure links into the pybind module;
+# patch 0002 propagates it to every local dep sub-build.
 if(WIN32)
     set(_openimageio_link
         "<INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/OpenImageIO.lib")
@@ -20,23 +30,21 @@ if(WIN32)
         "<INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/OpenImageIO_Util.lib")
 else()
     set(_openimageio_link
-        "<INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}OpenImageIO${CMAKE_SHARED_LIBRARY_SUFFIX}")
+        "<INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}OpenImageIO${CMAKE_STATIC_LIBRARY_SUFFIX}")
     set(_openimageio_util_link
-        "<INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}OpenImageIO_Util${CMAKE_SHARED_LIBRARY_SUFFIX}")
+        "<INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}OpenImageIO_Util${CMAKE_STATIC_LIBRARY_SUFFIX}")
 endif()
 
 # ext_zlib artifact consumed via ZLIB_LIBRARY below, pinned to the STATIC
 # archive on every platform. zlib always builds the static `zlibstatic`
 # target; non-MSVC renames it to `z` (libz.a) alongside the shared
 # `libz.so`/`libz.dylib`, while MSVC builds with BUILD_SHARED_LIBS=OFF and
-# keeps `zlibstatic.lib`. The static pin is required, not stylistic:
-# libOpenImageIO ships inside every independently installable component, and
-# macOS records a shared zlib dependency in its LC_LOAD_DYLIB as the
-# build-tree install name (`libz.1.dylib`/`@rpath/libz.1.dylib`) while the
-# payload copy lands under the real file name — the install-name rewrite in
-# OpenImageIOPackageRuntime.cmake cannot match that pair, leaving a reference
-# into the build tree that verify_oiio_runtime_payload rejects. Embedding
-# zlib keeps the OIIO runtime closure to its own two dylibs — the same
+# keeps `zlibstatic.lib`. The static pin is required, not stylistic: a shared
+# zlib would embed a build-tree install name (macOS records the full dylib
+# path in LC_LOAD_DYLIB, e.g. @rpath/libz.1.dylib pointing outside deps/dist)
+# into the static closure, reintroducing exactly the cross-payload runtime
+# dependency the all-static delivery exists to eliminate. Embedding zlib
+# keeps the OIIO runtime closure to its own two archives — the same
 # static-only rule the local dep builds enforce (patches/build_ZLIB.cmake
 # deletes OIIO's own shared libz for exactly this reason). Never hardcode a
 # Linux-only suffix here either: the path is embedded into OIIO's sub-build
@@ -47,10 +55,10 @@ endif()
 # release/debug search and select_library_configurations() entirely when
 # ZLIB_LIBRARY is preset, so on a fresh configure ZLIB_LIBRARY_RELEASE is
 # never populated and ZLIB::ZLIB imports exactly this file. Pinning the
-# shared dylib therefore embeds @rpath/libz.1.dylib into libOpenImageIO,
-# which verify_oiio_runtime_payload() rejects during PostInstall: the
-# dependency only resolves through the build tree's LC_RPATH, i.e. outside
-# the package payload ("resolves OIIO dependency outside its payload").
+# shared dylib would therefore embed @rpath/libz.1.dylib into libOpenImageIO:
+# a dylib outside the static closure that no consumer ships, so the import
+# fails at load time - pinning the archive keeps every entry of the rsp a
+# real static dependency.
 if(MSVC)
     set(_openimageio_zlib_library "${CMAKE_BINARY_DIR}/zlib/lib/zlibstatic.lib")
 else()
@@ -82,7 +90,16 @@ ExternalProject_Add(ext_openimageio
         -DCMAKE_PREFIX_PATH=${OPENIMAGEIO_PREFIX_PATH}
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DCMAKE_INSTALL_LIBDIR=${CloudViewer_INSTALL_LIB_DIR}
-        -DBUILD_SHARED_LIBS=ON
+        -DBUILD_SHARED_LIBS=OFF
+        # OIIO's local-dep system defaults to shared libraries under MSVC
+        # (upstream never got them working static there); force the same
+        # static-deps policy everywhere so the static archive closes over
+        # deps/dist on every platform. See generate_static_closure.cmake.
+        -DLOCAL_BUILD_SHARED_LIBS_DEFAULT=OFF
+        # The static closure links into the pybind module (a shared object);
+        # Linux rejects non-PIC archives in -fPIC links. patch 0002 propagates
+        # this to every local dep sub-build.
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON
         -DBUILD_TESTING=OFF
         -DOIIO_BUILD_TESTS=OFF
         -DOIIO_BUILD_TOOLS=OFF
@@ -144,11 +161,18 @@ ExternalProject_Add(ext_openimageio
         # runner's incompatible libtiff.
         #
         # Entries must match OIIO's checked_find_package names: ZLIB, PNG,
-        # libjpeg-turbo, Imath, OpenEXR, yaml-cpp. The semicolon-separated
-        # list must survive ExternalProject's command-line round-trip, hence
-        # the $<SEMICOLON> generator expression, exactly like
+        # libjpeg-turbo, Imath, OpenEXR, yaml-cpp, minizip-ng. The semicolon-
+        # separated list must survive ExternalProject's command-line round-
+        # trip, hence the $<SEMICOLON> generator expression, exactly like
         # CMAKE_PREFIX_PATH above.
-        -DOpenImageIO_BUILD_LOCAL_DEPS=TIFF$<SEMICOLON>ZLIB$<SEMICOLON>PNG$<SEMICOLON>libjpeg-turbo$<SEMICOLON>Imath$<SEMICOLON>OpenEXR$<SEMICOLON>yaml-cpp
+        # minizip-ng must be in this list, not merely a missing-deps fallback:
+        # a host carrying minizip-ng >= 4.0.10 would otherwise be found by
+        # find_package and silently scavenged into the closure instead of the
+        # pinned build (whose 0003 patch renames mz_zip_writer_add_file so it
+        # can never collide with the miniz copy embedded in libassimp.a).
+        # Forcing the local
+        # build also guarantees the rename flag is always compiled in.
+        -DOpenImageIO_BUILD_LOCAL_DEPS=TIFF$<SEMICOLON>ZLIB$<SEMICOLON>PNG$<SEMICOLON>libjpeg-turbo$<SEMICOLON>Imath$<SEMICOLON>OpenEXR$<SEMICOLON>yaml-cpp$<SEMICOLON>minizip-ng
         # OIIO's LOCAL_BUILD_SHARED_LIBS_DEFAULT is ON for local dep builds,
         # which would leave a libz.dylib in deps/dist for the produced dylib
         # to dangle on. Every local dep must ship static.
@@ -157,7 +181,8 @@ ExternalProject_Add(ext_openimageio
         # Ubuntu 22.04), which fails the >=1.3.1 version check.
         # Artifact is the static archive on every platform (libz.a /
         # zlibstatic.lib under MSVC) — see _openimageio_zlib_library above
-        # for why the shared libz.so/libz.dylib must never be consumed here.
+        # for why the shared libz.so/libz.dylib/libz.1.dylib must never be
+        # consumed here.
         -DZLIB_LIBRARY=${_openimageio_zlib_library}
         -DZLIB_INCLUDE_DIR=${CMAKE_BINARY_DIR}/zlib/include
         -DZLIB_BUILD_SHARED_LIBS=OFF
@@ -165,22 +190,36 @@ ExternalProject_Add(ext_openimageio
         -DCMAKE_FIND_FRAMEWORK=NEVER
     DEPENDS ext_zlib)
 
+# Discover the static closure after the install finished (macOS only; the
+# shared builds need no closure because their dylib/dll records it). The step
+# reruns on every OIIO build so the rsp never goes stale.
+ExternalProject_Add_Step(ext_openimageio generate_static_closure
+    COMMAND ${CMAKE_COMMAND}
+        -DLIB_PREFIX=${CMAKE_STATIC_LIBRARY_PREFIX}
+        -DLIB_SUFFIX=${CMAKE_STATIC_LIBRARY_SUFFIX}
+        -DOIIO_INSTALL_LIB=<INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}
+        -DOIIO_BINARY_DIR=<BINARY_DIR>
+        -DEXTRA_LIBS=${_openimageio_zlib_library}
+        -DOUT_RSP=<INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/oiio_static_closure.rsp
+        -P ${CMAKE_CURRENT_LIST_DIR}/generate_static_closure.cmake
+    DEPENDEES install
+    BYPRODUCTS <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/oiio_static_closure.rsp
+    )
+
 ExternalProject_Get_Property(ext_openimageio INSTALL_DIR)
-string(REPLACE "<INSTALL_DIR>" "${INSTALL_DIR}" _openimageio_link
-       "${_openimageio_link}")
-string(REPLACE "<INSTALL_DIR>" "${INSTALL_DIR}" _openimageio_util_link
-       "${_openimageio_util_link}")
 
-# Reconstruction has no OIIO types in its public ABI. Expose only an interface
-# target and keep OIIO's internal fmt headers out of unrelated targets.
-add_library(3rdparty_openimageio INTERFACE)
-target_include_directories(3rdparty_openimageio SYSTEM INTERFACE
-    "$<BUILD_INTERFACE:${INSTALL_DIR}/include>")
-target_link_libraries(3rdparty_openimageio INTERFACE
-    "$<BUILD_INTERFACE:${_openimageio_link}>"
-    "$<BUILD_INTERFACE:${_openimageio_util_link}>")
-add_dependencies(3rdparty_openimageio ext_openimageio)
+# Consumed through the shared import_3rdparty_library / import_shared_3rdparty_library
+# interface in find_dependencies.cmake, exactly like ext_ceres: the triple of
+# variables below is the only contract, so the platform-dependent link form
+# (macOS static archives vs Linux/Windows shared libraries) is decided by the
+# same helper every other ExternalProject goes through.
+set(OPENIMAGEIO_INCLUDE_DIRS "${INSTALL_DIR}/include")
+set(OPENIMAGEIO_LIB_DIR "${INSTALL_DIR}/${CloudViewer_INSTALL_LIB_DIR}")
+set(EXT_OPENIMAGEIO_LIBRARIES OpenImageIO OpenImageIO_Util)
+# Static closure discovered after the build (see generate_static_closure.cmake;
+# only generated in static mode, i.e. everywhere but Linux).
+# find_dependencies.cmake appends it as an extra link option on macOS/Windows.
+set(OPENIMAGEIO_RSP_FILE "${OPENIMAGEIO_LIB_DIR}/oiio_static_closure.rsp")
 
-set(OPENIMAGEIO_TARGET 3rdparty_openimageio)
 message(STATUS
     "Reconstruction image backend: OpenImageIO ${OPENIMAGEIO_VERSION} from 3rdparty source (OpenCV disabled)")

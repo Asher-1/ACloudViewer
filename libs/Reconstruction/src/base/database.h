@@ -211,6 +211,10 @@ public:
     void WriteTwoViewGeometry(const image_t image_id1,
                               const image_t image_id2,
                               const TwoViewGeometry& two_view_geometry) const;
+    // Upstream COLMAP dbb41680 API: update an existing two view geometry.
+    void UpdateTwoViewGeometry(const image_t image_id1,
+                               const image_t image_id2,
+                               const TwoViewGeometry& two_view_geometry) const;
 
     // Update an existing camera in the database. The user is responsible for
     // making sure that the entry already exists.

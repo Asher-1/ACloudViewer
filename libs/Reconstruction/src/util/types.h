@@ -45,6 +45,8 @@ using Vector3ub = Matrix<uint8_t, 3, 1>;
 using Vector4ub = Matrix<uint8_t, 4, 1>;
 using Vector6d = Matrix<double, 6, 1>;
 using Vector7d = Matrix<double, 7, 1>;
+// Upstream COLMAP dbb41680 parity (Sim3d packed params, W4).
+using Vector8d = Matrix<double, 8, 1>;
 using RowMajorMatrixXf = Matrix<float, Dynamic, Dynamic, RowMajor>;
 using RowMajorMatrixXd = Matrix<double, Dynamic, Dynamic, RowMajor>;
 using RowMajorMatrixXi = Matrix<int, Dynamic, Dynamic, RowMajor>;
@@ -166,6 +168,98 @@ struct PairHash {
     }
 };
 
+// Simple implementation of C++20's std::ranges::filter_view.
+// Upstream COLMAP dbb41680 util/types.h parity (W4 GLomap consumers).
+
+template <class Iterator, class Predicate>
+struct filter_iterator {
+    template <class OtherIterator, class OtherPredicate>
+    friend struct filter_iterator;
+
+    using base_category =
+            typename std::iterator_traits<Iterator>::iterator_category;
+    using iterator_category = typename std::conditional<
+            std::is_same<base_category, std::random_access_iterator_tag>::value,
+            std::bidirectional_iterator_tag,
+            base_category>::type;
+
+    using value_type = typename std::iterator_traits<Iterator>::value_type;
+    using reference = typename std::iterator_traits<Iterator>::reference;
+    using pointer = typename std::iterator_traits<Iterator>::pointer;
+    using difference_type =
+            typename std::iterator_traits<Iterator>::difference_type;
+
+    filter_iterator() = default;
+    filter_iterator(const Predicate& filter, Iterator it, Iterator end)
+        : filter_(filter), it_(std::move(it)), end_(std::move(end)) {
+        while (it_ != end_ && !filter_(*it_)) {
+            ++it_;
+        }
+    }
+
+    // Enable conversion from const to non-const iterator and vice versa.
+    template <class OtherIterator>
+    explicit filter_iterator(
+            const filter_iterator<OtherIterator, Predicate>& f,
+            typename std::enable_if<
+                    std::is_convertible<OtherIterator,
+                                        Iterator>::value>::type* = nullptr)
+        : filter_(f.filter_), it_(f.it_), end_(f.end_) {}
+
+    reference operator*() const { return *it_; }
+    pointer operator->() { return std::addressof(*it_); }
+
+    filter_iterator& operator++() {
+        do {
+            ++it_;
+        } while (it_ != end_ && !filter_(*it_));
+        return *this;
+    }
+
+    filter_iterator operator++(int) {
+        filter_iterator copy = *this;
+        ++it_;
+        return copy;
+    }
+
+    inline friend bool operator==(const filter_iterator& left,
+                                  const filter_iterator& right) {
+        return left.it_ == right.it_;
+    }
+
+    inline friend bool operator!=(const filter_iterator& left,
+                                  const filter_iterator& right) {
+        return left.it_ != right.it_;
+    }
+
+private:
+    const Predicate& filter_;
+    Iterator it_;
+    const Iterator end_;
+};
+
+template <class Iterator, class Predicate>
+struct filter_view {
+public:
+    filter_view(Predicate filter, Iterator beg, Iterator end)
+        : filter_(std::move(filter)),
+          beg_(filter_, beg, end),
+          end_(filter_, end, end) {}
+
+    filter_iterator<Iterator, Predicate> begin() const { return beg_; }
+    filter_iterator<Iterator, Predicate> end() const { return end_; }
+
+private:
+    const Predicate filter_;
+    const filter_iterator<Iterator, Predicate> beg_;
+    const filter_iterator<Iterator, Predicate> end_;
+};
+
+// Folds `value` into `seed`, following the classic boost::hash_combine spread.
+inline std::size_t HashCombine(std::size_t seed, std::size_t value) {
+    return seed ^ (value + 0x9e3779b9 + (seed << 6) + (seed >> 2));
+}
+
 }  // namespace colmap
 
 // This file provides specializations of the templated hash function for
@@ -179,6 +273,26 @@ struct hash<std::pair<uint32_t, uint32_t>> {
         const uint64_t s = (static_cast<uint64_t>(p.first) << 32) +
                            static_cast<uint64_t>(p.second);
         return std::hash<uint64_t>()(s);
+    }
+};
+
+// Upstream COLMAP dbb41680 parity: hash specializations for the typed
+// sensor/data identifiers (required by std::unordered_map<sensor_t, ...>
+// consumers such as the W4 global positioning stack).
+template <>
+struct hash<colmap::sensor_t> {
+    std::size_t operator()(const colmap::sensor_t& s) const noexcept {
+        return hash<std::pair<uint32_t, uint32_t>>()(
+                std::make_pair(static_cast<uint32_t>(s.type), s.id));
+    }
+};
+
+template <>
+struct hash<colmap::data_t> {
+    std::size_t operator()(const colmap::data_t& d) const noexcept {
+        const size_t h1 = hash<colmap::sensor_t>()(d.sensor_id);
+        const size_t h2 = std::hash<uint64_t>()(d.id);
+        return h1 ^ (h2 + 0x9e3779b9 + (h1 << 6) + (h1 >> 2));
     }
 };
 

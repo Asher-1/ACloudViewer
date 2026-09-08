@@ -294,4 +294,9 @@ T2 TruncateCast(const T1 value) {
             std::max(static_cast<T1>(std::numeric_limits<T2>::min()), value));
 }
 
+// 95% chi-square quantile for 3 degrees of freedom. Upstream COLMAP
+// dbb41680 math/math.h parity; used by the robust model alignment (W10)
+// and the GLomap stack (W4).
+constexpr double kChiSquare95ThreeDof = 7.814727903251179;
+
 }  // namespace colmap

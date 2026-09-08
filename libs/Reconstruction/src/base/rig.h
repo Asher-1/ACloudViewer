@@ -15,6 +15,7 @@
 
 #include "base/pose.h"
 #include "geometry/rigid3.h"
+#include "util/logging.h"
 #include "util/types.h"
 
 namespace colmap {
@@ -78,6 +79,37 @@ public:
         const Eigen::Vector4d& q = SensorFromRigQvec(sensor_id);
         return Rigid3d(Eigen::Quaterniond(q(0), q(1), q(2), q(3)),
                        SensorFromRigTvec(sensor_id));
+    }
+
+    // Upstream COLMAP dbb41680 sensor/rig.h parity: nullopt when the sensor
+    // is the reference or has no known pose yet.
+    std::optional<Rigid3d> MaybeSensorFromRig(const sensor_t& sensor_id) const {
+        if (!HasSensorFromRig(sensor_id)) {
+            return std::nullopt;
+        }
+        return SensorFromRig(sensor_id);
+    }
+
+    // Upstream COLMAP dbb41680 sensor/rig.h parity: set/update the pose of a
+    // non-reference sensor.
+    void SetSensorFromRig(const sensor_t& sensor_id,
+                          const Rigid3d& sensor_from_rig) {
+        const Eigen::Quaterniond& q = sensor_from_rig.rotation();
+        AddSensor(
+                sensor_id,
+                std::optional<Eigen::Vector4d>(
+                        Eigen::Vector4d(q.w(), q.x(), q.y(), q.z())),
+                std::optional<Eigen::Vector3d>(sensor_from_rig.translation()));
+    }
+
+    // Upstream COLMAP dbb41680 sensor/rig.h parity: mark the pose of a
+    // non-reference sensor as unknown.
+    void ResetSensorFromRig(const sensor_t& sensor_id) {
+        auto it = sensors_.find(sensor_id);
+        if (it == sensors_.end()) {
+            throw std::invalid_argument("Sensor does not exist in the rig");
+        }
+        it->second.reset();
     }
     const Eigen::Vector4d& SensorFromRigQvec(const sensor_t& sensor_id) const;
     const Eigen::Vector3d& SensorFromRigTvec(const sensor_t& sensor_id) const;

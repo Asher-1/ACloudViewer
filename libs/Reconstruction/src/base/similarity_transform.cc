@@ -34,7 +34,7 @@
 #include "base/pose.h"
 #include "base/projection.h"
 #include "base/reconstruction.h"
-#include "estimators/similarity_transform.h"
+#include "estimators/solvers/similarity_transform.h"
 #include "optim/loransac.h"
 
 #include <fstream>
@@ -299,8 +299,10 @@ bool ComputeAlignmentBetweenReconstructions(
   std::vector<const Image*> src_images(common_image_ids.size());
   std::vector<const Image*> ref_images(common_image_ids.size());
   for (size_t i = 0; i < common_image_ids.size(); ++i) {
-    src_images[i] = &src_reconstruction.Image(common_image_ids[i]);
-    ref_images[i] = &ref_reconstruction.Image(common_image_ids[i]);
+    // Upstream FindCommonRegImageIds semantics: (this_id, other_id) pairs
+    // matched by name.
+    src_images[i] = &src_reconstruction.Image(common_image_ids[i].first);
+    ref_images[i] = &ref_reconstruction.Image(common_image_ids[i].second);
   }
 
   const auto report = ransac.Estimate(src_images, ref_images);

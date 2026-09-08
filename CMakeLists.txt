@@ -1011,10 +1011,6 @@ endif()
 # for libs deps
 install(CODE "set(BUILD_LIB_PATH \"${CMAKE_RUNTIME_OUTPUT_DIRECTORY}\")")
 install(CODE "set(EXTERNAL_INSTALL_DIRS \"${EXTERNAL_INSTALL_DIRS}\")")
-# OIIO is source-built into the external prefix.  PostInstall must use this
-# exact prefix rather than a platform-specific dependency search list when it
-# creates the independent ACloudViewer / CloudViewer / Colmap components.
-install(CODE "set(OIIO_EXTERNAL_INSTALL_DIR \"${CLOUDVIEWER_EXTERNAL_INSTALL_DIR}\")")
 install(CODE "set(CONDA_PREFIX \"${CONDA_PREFIX}\")")
 install(CODE "set(BUILD_WITH_CONDA \"${BUILD_WITH_CONDA}\")")
 install(CODE "set(LINK_GFLAGS_FILE_PATH \"${LINK_GFLAGS_FILE_PATH}\")")

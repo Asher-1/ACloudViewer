@@ -224,7 +224,17 @@ set(PACKAGE_TOOL "${PYTHON_PACKAGE_SRC_DIR}/../scripts/platforms/${PACK_SCRIPTS}
 if (APPLE)
     set(DEST_PATH "${PYTHON_PACKAGE_DST_DIR}/cloudViewer")
     execute_process(COMMAND python ${PACKAGE_TOOL} ${DEST_PATH} 
-                    WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR})
+                    WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
+                    RESULT_VARIABLE _mac_wheel_bundle_result)
+    # The bundler raises when an @rpath dependency cannot be resolved
+    # (e.g. a missing source-built dylib). Without this check the
+    # traceback is only logged and a wheel that fails at import ships.
+    if(NOT _mac_wheel_bundle_result EQUAL 0)
+        message(FATAL_ERROR
+            "macOS wheel bundling failed (exit ${_mac_wheel_bundle_result}); "
+            "see the CCWheelBundler traceback above. Shipping the wheel "
+            "anyway would break at import.")
+    endif()
 elseif (UNIX)
     set(CPU_FOLDER_PATH "${PYTHON_PACKAGE_DST_DIR}/../${CMAKE_BUILD_TYPE}/Python/cpu")
     set(CUDA_FOLDER_PATH "${PYTHON_PACKAGE_DST_DIR}/../${CMAKE_BUILD_TYPE}/Python/cuda")

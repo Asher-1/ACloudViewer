@@ -368,19 +368,43 @@ class CCWheelBundler:
             # we can take advantage of that...
             if self.config.extra_pathlib not in abs_search_paths:
                 abs_search_paths.append(self.config.extra_pathlib)
+            # Libraries already staged in the wheel payload (e.g. the
+            # source-built OIIO dylibs pre-copied by make_python_package.cmake,
+            # like the ggml backend modules) are legitimate resolution
+            # targets for @rpath dependencies of other payload members.
+            if self.config.lib_path not in abs_search_paths:
+                abs_search_paths.append(self.config.lib_path)
 
             # TODO: check if exists, else throw and exception
             for dependency in lib_deps:
+                abslib_path = None
                 for abs_rp in abs_search_paths:
-                    abslib_path = abs_rp / dependency
-                    if abslib_path.is_file():
-                        if should_skip_cuda_runtime_lib(abslib_path):
-                            logger.info("Skip NVIDIA CUDA runtime dependency: %s", abslib_path)
-                            break
-                        if abslib_path not in libs_to_check and abslib_path not in libs_found:
-                            # if this lib was not checked for dependencies yet, we append it to the list of lib to check
-                            libs_to_check.append(abslib_path)
+                    candidate = abs_rp / dependency
+                    if candidate.is_file():
+                        abslib_path = candidate
                         break
+                if abslib_path is None and "/" not in dependency:
+                    # An unresolvable @rpath dependency would be silently
+                    # missing from the wheel and crash at import time
+                    # ("Library not loaded: @rpath/..."). Fail the
+                    # packaging here instead, matching the packaging guards
+                    # in make_python_package.cmake. Multi-component @rpath
+                    # paths (e.g. Foo.framework/Versions/A/Foo) keep the
+                    # legacy silent skip.
+                    raise RuntimeError(
+                        f"CCWheelBundler: cannot resolve @rpath dependency "
+                        f"'{dependency}' of {lib2check} from its rpaths "
+                        f"{rpaths_str} plus extra pathlib "
+                        f"{self.config.extra_pathlib}; the built wheel "
+                        f"would fail at import. Make sure the dependency is "
+                        f"built or installed into a directory listed on the "
+                        f"consuming binary's build rpath.")
+                if abslib_path is not None:
+                    if should_skip_cuda_runtime_lib(abslib_path):
+                        logger.info("Skip NVIDIA CUDA runtime dependency: %s", abslib_path)
+                    elif abslib_path not in libs_to_check and abslib_path not in libs_found:
+                        # if this lib was not checked for dependencies yet, we append it to the list of lib to check
+                        libs_to_check.append(abslib_path)
 
             # TODO: handle lib_ex here
             # for dependency in lib_ex:...

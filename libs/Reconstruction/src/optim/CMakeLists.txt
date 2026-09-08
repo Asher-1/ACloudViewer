@@ -37,6 +37,7 @@ COLMAP_ADD_SOURCES(
     least_absolute_deviations.h least_absolute_deviations.cc
     progressive_sampler.h progressive_sampler.cc
     random_sampler.h random_sampler.cc
+    sparse_cholesky.h sparse_cholesky.cc
     sprt.h sprt.cc
     manifold.h
     support_measurement.h support_measurement.cc

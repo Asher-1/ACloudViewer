@@ -8,8 +8,10 @@ set(FOLDER_NAME "scene")
 # (synthetic_dataset).
 COLMAP_ADD_SOURCES(
     synthetic.h synthetic.cc
+    pose_graph.h pose_graph.cc
 )
 
 if (TESTS_ENABLED)
     COLMAP_ADD_TEST(synthetic_test synthetic_test.cc)
+    COLMAP_ADD_TEST(pose_graph_test pose_graph_test.cc)
 endif ()

@@ -25,7 +25,8 @@ Work packages from [COLMAP_ALIGNMENT_PLAN.md](COLMAP_ALIGNMENT_PLAN.md):
 | W3-1 correspondence graph cache | done (per-pair TwoViewGeometry cache + MaybeDecomposeRelativePoses + ray homography restored) |
 | W3-2a frame-aware data model | done (Image/Frame/Rig/Reconstruction pointer wiring + Database pose_priors + OIIO ZLIB pin fix) |
 | W3-2a build & fixture completion | done (Image::DataId corrected to the upstream form, NonRefSensors materialized by value, Rigid3d projection-error overload defined, Crop/Merge pointer reset + trivial wiring, six legacy test fixtures migrated to AddCameraWithTrivialRig/AddImageWithTrivialFrame; full build EXIT=0, ctest 73/77) |
-| W3-2b (frame-aware mapper/BA), W4, W7, W8, W10-W16 | pending |
+| W4 GLomap global SfM stack | layer 1 done (solver stacks + PoseGraph + math helpers ported, compiled into ColmapLib; global_positioning/connected_components/spanning_tree tests green); layer 2 (sfm/global_mapper + controllers + CLI) pending on W3-2b cache assembly |
+| W3-2b (frame-aware mapper/BA), W7, W8, W10-W16 | pending (W10 estimator subset alignment/sim3 landed early with W4) |
 
 Testing: the whole Reconstruction test suite runs on **googletest**
 (decision D6); `COLMAP_ADD_TEST` links `gtest_main` and upstream test files
@@ -56,6 +57,27 @@ The `Frame::AddImageId` legacy bridge (image_id == camera_id data-id
 back-insertion) is kept for the frame_test/caspar fixtures and
 `Database::ReadFrame` falls back to it only when a frame has no frame_data
 rows.
+
+## W4 layer 1 notes (2026-09-08)
+
+The three GLomap solver stacks (rotation averaging with its impl header,
+global positioning, view graph calibration), the PoseGraph data structure,
+the math helpers (connected components, spanning tree, sparse Cholesky with
+a portable Eigen LDLT), and the W10 estimator subset (alignment, Sim3,
+Umeyama solver in estimators/solvers) are ported and compiled into
+ColmapLib. Base/pose gained the upstream helpers (unit-vector averaging,
+Markley quaternion averaging, TransformCameraWorld, gravity/angle-axis
+utilities); base/rig gained MaybeSensorFromRig/SetSensorFromRig/
+ResetSensorFromRig; base/frame gained MaybeRigFromWorld and SetCamFromWorld;
+base/reconstruction gained the Sim3d Transform overload and summary
+operator<<. Three of six upstream test suites pass; the other three are
+blocked on one root cause: DatabaseCache::Load/Reconstruction::Load do not
+yet assemble rigs and frames, so AddImage throws HasFrameId (gdb backtrace
+confirmed the throw comes from Reconstruction::Load, not the ported
+solvers). That assembly is exactly W3-2b step 1 and is the next task. Two
+environment issues were also fixed en route: the missing cmake binary in
+~/.local/opt (restored from the official 3.31.8 release) and a disk-full
+cleanup of 57 GB of stale /tmp test probes.
 
 ## Implemented in this tree
 

@@ -37,7 +37,7 @@
 
 #include "base/pose.h"
 #include "base/similarity_transform.h"
-#include "estimators/similarity_transform.h"
+#include "estimators/solvers/similarity_transform.h"
 #include "optim/ransac.h"
 #include "util/random.h"
 

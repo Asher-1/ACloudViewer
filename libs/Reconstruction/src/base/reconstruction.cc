@@ -604,6 +604,68 @@ void Reconstruction::Transform(const SimilarityTransform3& tform) {
     }
 }
 
+// Upstream COLMAP dbb41680 scene/reconstruction.cc parity: summary printing
+// (required by the test matchers in scene/reconstruction_matchers.h).
+std::ostream& operator<<(std::ostream& stream,
+                         const Reconstruction& reconstruction) {
+  stream << "Reconstruction(" << "num_rigs=" << reconstruction.NumRigs()
+         << ", num_cameras=" << reconstruction.NumCameras()
+         << ", num_frames=" << reconstruction.NumFrames()
+         << ", num_reg_frames=" << reconstruction.NumRegFrames()
+         << ", num_images=" << reconstruction.NumImages()
+         << ", num_points3D=" << reconstruction.NumPoints3D() << ")";
+  return stream;
+}
+
+// Upstream COLMAP dbb41680 scene/reconstruction.cc. The fork additionally
+// keeps the legacy per-image qvec/tvec pose members in sync (the upstream
+// 4.x model stores the pose on the frame only).
+void Reconstruction::Transform(const Sim3d& new_from_old_world) {
+    for (auto& [rig_id, rig] : rigs_) {
+        (void)rig_id;
+        for (const sensor_t& sensor_id : rig.SensorIds()) {
+            if (rig.IsRefSensor(sensor_id) || !rig.HasSensorFromRig(sensor_id)) {
+                continue;
+            }
+            Rigid3d sensor_from_rig = rig.SensorFromRig(sensor_id);
+            sensor_from_rig.translation() *= new_from_old_world.scale();
+            const Eigen::Quaterniond& q = sensor_from_rig.rotation();
+            rig.AddSensor(
+                    sensor_id,
+                    std::optional<Eigen::Vector4d>(Eigen::Vector4d(
+                            q.w(), q.x(), q.y(), q.z())),
+                    std::optional<Eigen::Vector3d>(
+                            sensor_from_rig.translation()));
+        }
+    }
+    for (auto& [frame_id, frame] : frames_) {
+        (void)frame_id;
+        if (frame.HasPose()) {
+            frame.SetRigFromWorld(TransformCameraWorld(new_from_old_world,
+                                                       frame.RigFromWorld()));
+        }
+    }
+    for (auto& [image_id, image] : images_) {
+        (void)image_id;
+        if (image.HasPose()) {
+            // Fork qvec convention is [w, x, y, z]: construct from the four
+            // scalars (Eigen's Vector4d constructor assumes [x, y, z, w]).
+            const Eigen::Vector4d& qvec = image.Qvec();
+            const Rigid3d cam_from_world = TransformCameraWorld(
+                    new_from_old_world,
+                    Rigid3d(Eigen::Quaterniond(qvec(0), qvec(1), qvec(2),
+                                               qvec(3)),
+                            image.Tvec()));
+            const Eigen::Quaterniond& q = cam_from_world.rotation();
+            image.SetQvec(Eigen::Vector4d(q.w(), q.x(), q.y(), q.z()));
+            image.SetTvec(cam_from_world.translation());
+        }
+    }
+    for (auto& point3D : points3D_) {
+        point3D.second.XYZ() = new_from_old_world * point3D.second.XYZ();
+    }
+}
+
 Reconstruction Reconstruction::Crop(
         const std::pair<Eigen::Vector3d, Eigen::Vector3d>& bbox) const {
     // add all cameras and images. Only the registered images will be used.
@@ -750,15 +812,17 @@ const class Image* Reconstruction::FindImageWithName(
     return nullptr;
 }
 
-std::vector<image_t> Reconstruction::FindCommonRegImageIds(
-        const Reconstruction& reconstruction) const {
-    std::vector<image_t> common_reg_image_ids;
-    for (const auto image_id : reg_image_ids_) {
-        if (reconstruction.ExistsImage(image_id) &&
-            reconstruction.IsImageRegistered(image_id)) {
-            CHECK_EQ(Image(image_id).Name(),
-                     reconstruction.Image(image_id).Name());
-            common_reg_image_ids.push_back(image_id);
+// Upstream COLMAP dbb41680 semantics: common registered images matched by
+// name, returned as (this_id, other_id) pairs.
+std::vector<std::pair<image_t, image_t>> Reconstruction::FindCommonRegImageIds(
+        const Reconstruction& other) const {
+    std::vector<std::pair<image_t, image_t>> common_reg_image_ids;
+    for (const image_t image_id : reg_image_ids_) {
+        const class Image& image = Image(image_id);
+        const class Image* other_image = other.FindImageWithName(image.Name());
+        if (other_image != nullptr && other_image->HasPose()) {
+            common_reg_image_ids.emplace_back(image.ImageId(),
+                                              other_image->ImageId());
         }
     }
     return common_reg_image_ids;

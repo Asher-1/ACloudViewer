@@ -25,7 +25,8 @@
 #include "base/rig.h"
 #include "base/similarity_transform.h"
 #include "base/track.h"
-#include "estimators/similarity_transform.h"
+#include "estimators/solvers/similarity_transform.h"
+#include "geometry/sim3.h"
 #include "optim/loransac.h"
 #include "util/types.h"
 
@@ -216,6 +217,9 @@ public:
 
     // Apply the 3D similarity transformation to all images and points.
     void Transform(const SimilarityTransform3& tform);
+    // Upstream COLMAP dbb41680 scene/reconstruction.h: similarity transform
+    // driven by Sim3d; keeps rigs, frames, images and points3D consistent.
+    void Transform(const Sim3d& new_from_old_world);
 
     // Creates a cropped reconstruction using the input bounds as corner points
     // of the bounding box containing the included 3D points of the new
@@ -254,8 +258,10 @@ public:
     const class Image* FindImageWithName(const std::string& name) const;
 
     // Find images that are both present in this and the given reconstruction.
-    std::vector<image_t> FindCommonRegImageIds(
-            const Reconstruction& reconstruction) const;
+    // Upstream COLMAP dbb41680 semantics: common registered images matched
+    // by name, returned as (this_id, other_id) pairs.
+    std::vector<std::pair<image_t, image_t>> FindCommonRegImageIds(
+            const Reconstruction& other) const;
 
     // Update the image identifiers to match the ones in the database by
     // matching the names of the images.
@@ -736,5 +742,10 @@ bool Reconstruction::AlignRobust(const std::vector<std::string>& image_names,
 
     return true;
 }
+
+// Upstream COLMAP dbb41680 scene/reconstruction.h parity: summary printing
+// (required by the test matchers in scene/reconstruction_matchers.h).
+std::ostream& operator<<(std::ostream& stream,
+                         const Reconstruction& reconstruction);
 
 }  // namespace colmap

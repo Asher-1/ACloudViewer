@@ -12,6 +12,7 @@
 #include <cmath>
 
 #include "ModelViewerWidget.h"
+#include "base/projection.h"
 #include "ui/qt_utils.h"
 #include "util/bitmap.h"
 #include "util/misc.h"

@@ -424,9 +424,10 @@ int RunModelComparer(int argc, char** argv) {
     std::vector<double> translation_errors(num_images, 0.0);
     std::vector<double> proj_center_errors(num_images, 0.0);
     for (size_t i = 0; i < num_images; ++i) {
-        const image_t image_id = common_image_ids[i];
-        const Image& image1 = reconstruction1.Image(image_id);
-        Image& image2 = reconstruction2.Image(image_id);
+        // Upstream FindCommonRegImageIds semantics: (recon1_id, recon2_id).
+        const Image& image1 =
+                reconstruction1.Image(common_image_ids[i].first);
+        Image& image2 = reconstruction2.Image(common_image_ids[i].second);
         tform.TransformPose(&image2.Qvec(), &image2.Tvec());
 
         const Eigen::Vector4d normalized_qvec1 = NormalizeQuaternion(image1.Qvec());

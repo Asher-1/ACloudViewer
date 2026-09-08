@@ -12,6 +12,7 @@
 
 #include "base/database.h"
 #include "base/two_view_geometry.h"
+#include "util/hash_containers.h"
 #include "util/types.h"
 
 namespace colmap {
@@ -54,6 +55,9 @@ public:
     // Get the number of correspondences between a pair of images.
     inline point2D_t NumCorrespondencesBetweenImages(
             const image_t image_id1, const image_t image_id2) const;
+    // Upstream COLMAP dbb41680 scene/correspondence_graph.h parity: number of
+    // raw matches for every verified pair, keyed by image pair id.
+    NodeHashMap<image_pair_t, point2D_t> NumMatchesBetweenAllImages() const;
 
     // Get the number of correspondences between all images.
     std::unordered_map<image_pair_t, point2D_t>

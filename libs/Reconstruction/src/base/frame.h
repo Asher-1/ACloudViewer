@@ -62,6 +62,28 @@ public:
                        RigFromWorldTvec());
     }
 
+    // Upstream COLMAP dbb41680 scene/frame.h: set the pose of a camera
+    // sensor from its cam-from-world pose, inverting the rig extrinsics.
+    void SetCamFromWorld(camera_t camera_id, const Rigid3d& cam_from_world) {
+        THROW_CHECK_NOTNULL(rig_ptr_);
+        const sensor_t sensor_id(SensorType::CAMERA, camera_id);
+        if (rig_ptr_->IsRefSensor(sensor_id)) {
+            SetRigFromWorld(cam_from_world);
+        } else {
+            SetRigFromWorld(Inverse(rig_ptr_->SensorFromRig(sensor_id)) *
+                            cam_from_world);
+        }
+    }
+
+    // Upstream COLMAP dbb41680 scene/frame.h parity: nullopt when the frame
+    // has no pose yet.
+    std::optional<Rigid3d> MaybeRigFromWorld() const {
+        if (!HasPose()) {
+            return std::nullopt;
+        }
+        return RigFromWorld();
+    }
+
     void SetRigFromWorld(const Eigen::Vector4d& qvec,
                          const Eigen::Vector3d& tvec);
     void ResetPose();

@@ -36,6 +36,20 @@
       ]
     },
     {
+      "name": "global_mapper_glomap",
+      "upstream_commit": "dbb41680",
+      "status": "partial",
+      "entrypoint": "estimators/rotation_averaging.{h,cc}+rotation_averaging_impl.{h,cc}, estimators/global_positioning.{h,cc}, estimators/view_graph_calibration.{h,cc}+cost_functions/{motion_averaging,calibration}.h, scene/pose_graph.{h,cc}, math/{connected_components.h,spanning_tree.{h,cc}}, optim/sparse_cholesky.{h,cc} (portable Eigen LDLT), estimators/alignment.{h,cc}+geometry/sim3.{h,cc}+estimators/solvers/similarity_transform.{h,cc} (W10 estimator subset pulled in early), base/pose.{h,cc} upstream helpers (AverageUnitVectors/AverageDirections/AverageQuaternions/TransformCameraWorld/GravityAlignedRotation/angle-axis utils), geometry/rigid3_matchers.h, scene/reconstruction_matchers.h",
+      "validation": "3 of 6 upstream gtest suites green: global_positioning_test, math/connected_components_test, math/spanning_tree_test. rotation_averaging_test (15 cases), view_graph_calibration_test and pose_graph_test are blocked on a single known root cause: DatabaseCache::Load and Reconstruction::Load do not yet assemble rigs/frames (fork image-level cache model), so Reconstruction::AddImage throws HasFrameId. gdb backtrace confirmed the throw originates in Reconstruction::Load, not in the ported solvers.",
+      "reason": "W4 layer 1 (the three GLomap solver stacks plus the PoseGraph data structure and math helpers) is ported under strategy C and compiles into ColmapLib; solver numerics are exercised through global_positioning_test. Remaining work is layer 2: DatabaseCache/Reconstruction Load must assemble rigs and frames with the frame-level cache model (W3-2b step 1) before sfm/global_mapper.{h,cc}, controllers/global_pipeline and the CLI commands (global_mapper/rotation_averager/view_graph_calibrator) can land. The W10 estimator subset (alignment/sim3/solvers) was pulled in early because reconstruction_matchers.h requires ComputeImageAlignmentError. The upstream CHOLMOD acceleration for optim/sparse_cholesky is deferred: the fork uses the portable Eigen SimplicialLDLT implementation until a conditional SuiteSparse dependency is introduced (a full static OIIO EP chain rebuild was also required this round after build cache corruption).",
+      "prerequisites": [
+        "W3-2b step 1: DatabaseCache/Reconstruction rig and frame assembly",
+        "rotation_averaging_test/view_graph_calibration_test/pose_graph_test green",
+        "reconstruction_glomap_gate (multi-component e2e via synthetic fixtures)"
+      ],
+      "resolution": "Land layer 2 (sfm/global_mapper + controllers/global_pipeline + CLI) immediately after W3-2b cache assembly lands; promote to implemented only when all four upstream suites and the glomap gate are green."
+    },
+    {
       "name": "caspar_gpu_bundle_adjustment",
       "upstream_commit": "c4ea0dd8",
       "status": "implemented",

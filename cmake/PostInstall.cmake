@@ -23,10 +23,9 @@ set(MAIN_DEPLOY_PATH ${DEPLOY_ROOT_PATH}/packages/${MAIN_APP_NAME}/data)
 set(CLOUDVIEWER_DEPLOY_PATH ${DEPLOY_ROOT_PATH}/packages/${CLOUDVIEWER_APP_NAME}/data)
 set(DEPLOY_LIB_PATH ${MAIN_DEPLOY_PATH}/${LIBS_FOLDER_NAME})
 
-# OIIO is a direct Reconstruction dependency. This module copies the two
-# source-built runtime libraries explicitly into every independently
-# installable component and verifies the final payload afterwards.
-include("${CMAKE_CURRENT_LIST_DIR}/OpenImageIOPackageRuntime.cmake")
+# OIIO is delivered statically on every platform (see 3rdparty/openimageio):
+# the archives embed into the consuming binaries, so there is no OIIO runtime
+# deployment or payload verification in any installable component.
 
 function(replace_version_in_file file_path)
     # read contents
@@ -298,10 +297,6 @@ elseif (WIN32)
     endif()
 endif()
 
-deploy_oiio_runtime("${MAIN_DEPLOY_PATH}" "${MAIN_APP_NAME}"
-                    "${OIIO_EXTERNAL_INSTALL_DIR}")
-verify_oiio_runtime_payload("${MAIN_DEPLOY_PATH}" "${MAIN_APP_NAME}")
-
 ## deploy CloudViewer
 if (${BUILD_GUI} STREQUAL "ON")
     file(COPY "${SOURCE_BIN_PATH}/${CLOUDVIEWER_APP_NAME}/${CLOUDVIEWER_APP_NAME}${APP_EXTENSION}"
@@ -315,10 +310,6 @@ if (${BUILD_GUI} STREQUAL "ON")
             "${SOURCE_BIN_PATH}/${CLOUDVIEWER_APP_NAME}/${CLOUDVIEWER_APP_NAME}${APP_EXTENSION}/Contents/${LIBS_FOLDER_NAME}"
             "${_GGML_SRC_DIR}" "${GGML_MODULE_SUFFIX}")
     endif()
-    deploy_oiio_runtime("${CLOUDVIEWER_DEPLOY_PATH}" "${CLOUDVIEWER_APP_NAME}"
-                        "${OIIO_EXTERNAL_INSTALL_DIR}")
-    verify_oiio_runtime_payload("${CLOUDVIEWER_DEPLOY_PATH}"
-                                "${CLOUDVIEWER_APP_NAME}")
     if ((WIN32 OR UNIX) AND NOT APPLE)
         file(COPY "${SOURCE_BIN_PATH}/${CLOUDVIEWER_APP_NAME}/resources"
                 DESTINATION "${CLOUDVIEWER_DEPLOY_PATH}"
@@ -338,9 +329,6 @@ if (${BUILD_RECONSTRUCTION} STREQUAL "ON")
             "${SOURCE_BIN_PATH}/${COLMAP_APP_NAME}/${COLMAP_APP_NAME}${APP_EXTENSION}/Contents/${LIBS_FOLDER_NAME}"
             "${_GGML_SRC_DIR}" "${GGML_MODULE_SUFFIX}")
     endif()
-    deploy_oiio_runtime("${COLMAP_DEPLOY_PATH}" "${COLMAP_APP_NAME}"
-                        "${OIIO_EXTERNAL_INSTALL_DIR}")
-    verify_oiio_runtime_payload("${COLMAP_DEPLOY_PATH}" "${COLMAP_APP_NAME}")
 
     if (UNIX AND NOT APPLE)
         # for Colmap deps

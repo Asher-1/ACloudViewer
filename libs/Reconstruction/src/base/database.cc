@@ -1281,6 +1281,16 @@ void Database::UpdateKeypoints(const image_t image_id,
   SQLITE3_CALL(sqlite3_reset(sql_stmt_update_keypoints_));
 }
 
+// Upstream COLMAP dbb41680 API: update an existing two view geometry. The
+// fork implements it as delete + write on the pair_id primary key, reusing
+// the write path's swap-inversion and legacy blob bridging.
+void Database::UpdateTwoViewGeometry(
+        const image_t image_id1, const image_t image_id2,
+        const TwoViewGeometry& two_view_geometry) const {
+  DeleteInlierMatches(image_id1, image_id2);
+  WriteTwoViewGeometry(image_id1, image_id2, two_view_geometry);
+}
+
 void Database::DeleteMatches(const image_t image_id1,
                              const image_t image_id2) const {
   const image_pair_t pair_id = ImagePairToPairId(image_id1, image_id2);

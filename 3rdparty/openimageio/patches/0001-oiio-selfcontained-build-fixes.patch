@@ -25,10 +25,24 @@
 #   src/cmake/build_TIFF.cmake          disable webp/libdeflate in the local
 #                                       TIFF, hand it the local JPEG
 #                                       headers/lib (0002/0003/0009)
+#   src/cmake/build_minizip-ng.cmake    rename mz_zip_writer_add_file to
+#                                       mz_zip_writer_add_file_ng: assimp's
+#                                       vendored contrib/zip (embedded miniz)
+#                                       exports the same name, and the pybind
+#                                       module / app link both static archives
+#                                       together while nothing calls it
+#                                       through minizip-ng (OCIO only uses the
+#                                       reader/writer handle API); pair with
+#                                       minizip-ng in
+#                                       OpenImageIO_BUILD_LOCAL_DEPS
+#                                       (openimageio.cmake)
 #   src/cmake/dependency_utils.cmake    inherit macOS deployment target +
 #                                       zlib into dep sub-builds, give every
-#                                       sub-build CMAKE_PREFIX_PATH=deps/dist
-#                                       (0004/0010)
+#                                       sub-build CMAKE_PREFIX_PATH=deps/dist,
+#                                       propagate the parent PIC choice so
+#                                       static local deps link into the shared
+#                                       consumers (pybind module) on Linux
+#                                       (0004/0010/PIC)
 #   src/cmake/externalpackages.cmake    alias libjpeg-turbo::jpeg-static as
 #                                       JPEG::JPEG; guard the OpenColorIO
 #                                       include probe (0008/0011)
@@ -88,7 +102,7 @@ index 1eb314d..e97cdf7 100644
  checked_find_package(minizip-ng REQUIRED VERSION_MIN 4.0.10)
  
  string (MAKE_C_IDENTIFIER ${OpenColorIO_BUILD_VERSION} OpenColorIO_VERSION_IDENT)
-@@ -56,12 +72,60 @@ build_dependency_with_cmake(OpenColorIO
+@@ -56,12 +72,55 @@ build_dependency_with_cmake(OpenColorIO
          # Fix for yaml-cpp breaking against cmake 4.0.
          # Remove when yaml-cpp is fixed to declare its own minimum high enough.
          -D CMAKE_POLICY_VERSION_MINIMUM=3.5
@@ -112,11 +126,6 @@ index 1eb314d..e97cdf7 100644
 +        # to CMAKE_MESSAGE_LOG_LEVEL=ERROR, which hides exactly the lines
 +        # needed to debug a cross-scope mismatch like this one.
 +        -DCMAKE_MESSAGE_LOG_LEVEL=STATUS
-+        # Windows defense in depth: stop find_path/find_library inside the
-+        # OCIO sub-build from following PATH environment entries, whose
-+        # <dir>/include projections may carry a yaml-cpp other than the
-+        # pinned one.
-+        -DCMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH=OFF
 +        # Same cross-scope pin, for Imath: the OCIO sub-build re-finds Imath
 +        # on its own, and left to itself it scavenges the host (e.g.
 +        # Homebrew). The host config propagates <prefix>/include ahead of
@@ -248,11 +257,32 @@ index 24257d8..8f88496 100644
  # Set some things up that we'll need for a subsequent find_package to work
  set (ZLIB_ROOT ${ZLIB_LOCAL_INSTALL_DIR})
  
+diff --git a/src/cmake/build_minizip-ng.cmake b/src/cmake/build_minizip-ng.cmake
+--- a/src/cmake/build_minizip-ng.cmake
++++ b/src/cmake/build_minizip-ng.cmake
+@@ -35,7 +35,17 @@
+         -D MZ_OPENSSL=OFF
+         -D MZ_LIBBSD=OFF
+         -D MZ_BUILD_TESTS=OFF
+         -D MZ_COMPAT=OFF
++        # ACloudViewer: mz_zip_rw.c exports mz_zip_writer_add_file, the exact
++        # symbol name assimp's vendored contrib/zip (embedded miniz) exports
++        # too. The pybind module and the app link libassimp.a together with
++        # this archive, and nothing anywhere calls this function through
++        # minizip-ng (OCIO only uses the reader/writer handle API), so rename
++        # it at preprocessing time, scoped to this sub-build. Should a future
++        # consumer ever call mz_zip_writer_add_file through minizip-ng, the
++        # link fails with an undefined reference instead of silently binding
++        # the wrong zip implementation.
++        -D CMAKE_C_FLAGS=-Dmz_zip_writer_add_file=mz_zip_writer_add_file_ng
+         -D MZ_BZIP2=OFF
+         -D MZ_LZMA=OFF
+         -D MZ_LIBCOMP=OFF
 diff --git a/src/cmake/dependency_utils.cmake b/src/cmake/dependency_utils.cmake
 index 17b698f..dc9661f 100644
 --- a/src/cmake/dependency_utils.cmake
 +++ b/src/cmake/dependency_utils.cmake
-@@ -732,11 +732,57 @@ macro (build_dependency_with_cmake pkgname)
+@@ -732,11 +732,63 @@ macro (build_dependency_with_cmake pkgname)
          list(APPEND _pkg_CMAKE_ARGS "-DCMAKE_IGNORE_PATH=${CMAKE_IGNORE_PATH_ESCAPED}")
      endif()
  
@@ -278,6 +308,12 @@ index 17b698f..dc9661f 100644
          list (APPEND _pkg_CMAKE_ARGS -DCMAKE_MSVC_RUNTIME_LIBRARY=${CMAKE_MSVC_RUNTIME_LIBRARY})
      endif ()
  
++    # Propagate the parent build's PIC choice so every static local dep can
++    # link into the shared consumers (pybind module, executables) on Linux.
++    if (CMAKE_POSITION_INDEPENDENT_CODE)
++        list (APPEND _pkg_CMAKE_ARGS -DCMAKE_POSITION_INDEPENDENT_CODE=${CMAKE_POSITION_INDEPENDENT_CODE})
++    endif ()
++
 +    # Inherit the macOS deployment target and architectures. Without this,
 +    # dependency sub-builds compile against the SDK's default minOS (26.x on
 +    # current Xcode), so every object installed into deps/dist carries a
