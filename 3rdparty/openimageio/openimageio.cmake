@@ -97,7 +97,7 @@ ExternalProject_Add(ext_openimageio
         # deps/dist on every platform. See generate_static_closure.cmake.
         -DLOCAL_BUILD_SHARED_LIBS_DEFAULT=OFF
         # The static closure links into the pybind module (a shared object);
-        # Linux rejects non-PIC archives in -fPIC links. patch 0002 propagates
+        # Linux rejects non-PIC archives in -fPIC links. patch 0001 propagates
         # this to every local dep sub-build.
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON
         -DBUILD_TESTING=OFF
@@ -168,7 +168,7 @@ ExternalProject_Add(ext_openimageio
         # minizip-ng must be in this list, not merely a missing-deps fallback:
         # a host carrying minizip-ng >= 4.0.10 would otherwise be found by
         # find_package and silently scavenged into the closure instead of the
-        # pinned build (whose 0003 patch renames mz_zip_writer_add_file so it
+        # pinned build (whose 0001 patch renames mz_zip_writer_add_file so it
         # can never collide with the miniz copy embedded in libassimp.a).
         # Forcing the local
         # build also guarantees the rename flag is always compiled in.
@@ -189,6 +189,22 @@ ExternalProject_Add(ext_openimageio
         -DCMAKE_IGNORE_PATH=/Library/Frameworks/Mono.framework
         -DCMAKE_FIND_FRAMEWORK=NEVER
     DEPENDS ext_zlib)
+
+# The patch step is stamp-gated on the extracted source tree alone, and
+# UPDATE_COMMAND is empty: editing a patch file in the repo used to leave
+# every existing build tree building with the previous patch set (observed
+# as the mz_zip_writer_add_file duplicate-symbol link failure after the
+# rename was added to 0001). Tie the patch step to the patch files so a
+# patch edit re-runs it; on a tree that no longer matches, the apply script
+# aborts with wipe-and-re-extract instructions instead of silently keeping
+# the stale binaries.
+file(GLOB _openimageio_patch_files "${CMAKE_CURRENT_LIST_DIR}/patches/*.patch")
+ExternalProject_Add_StepDependencies(ext_openimageio patch ${_openimageio_patch_files})
+# NOTE for patch authors: a changed patch set invalidates more than the
+# source tree. Wipe the whole ext_openimageio prefix (source AND build
+# directories) before rebuilding -- stale dep caches and clones (e.g. an
+# old Imath_BUILD_VERSION or a shallow clone pinned to a bumped tag)
+# otherwise conflict with the new patch set at configure time.
 
 # Discover the static closure after the install finished (macOS only; the
 # shared builds need no closure because their dylib/dll records it). The step

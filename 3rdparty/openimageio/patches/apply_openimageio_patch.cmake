@@ -58,6 +58,10 @@ foreach(_openimageio_patch IN LISTS _openimageio_patches)
         ERROR_QUIET)
     if(NOT _openimageio_reverse_check EQUAL 0)
         message(FATAL_ERROR
-            "OpenImageIO patch ${_openimageio_patch_name} cannot be applied or verified")
+            "OpenImageIO patch ${_openimageio_patch_name} cannot be applied or verified. "
+            "The extracted source tree no longer matches the patch set in "
+            "${PATCH_DIR} (the patch set changed after this tree was patched). "
+            "Delete the ext_openimageio source and build directories and rebuild "
+            "to re-extract and re-patch")
     endif()
 endforeach()
