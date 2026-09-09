@@ -236,6 +236,10 @@ TEST(base_camera_rig, TestComputeScale) {
   EXPECT_EQ(camera_rig.ComputeScale(reconstruction), 2.0);
 
   reconstruction.Image(1).SetTvec(Eigen::Vector3d(0, 0, 0));
+  // Frame-aware model: keep the trivial frame in sync with the directly
+  // mutated legacy translation.
+  reconstruction.Frame(1).SetRigFromWorld(
+      reconstruction.Image(1).Qvec(), Eigen::Vector3d(0, 0, 0));
   EXPECT_TRUE(IsNaN(camera_rig.ComputeScale(reconstruction)));
 }
 

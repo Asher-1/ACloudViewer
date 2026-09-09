@@ -31,6 +31,16 @@ class Image {
 public:
     Image();
 
+    // Upstream-parity semantics for the fork's back-pointer members: a copied
+    // image is a pure data copy. The camera/frame back pointers refer to
+    // objects inside the source reconstruction and would dangle in the
+    // copy, so they are reset and must be re-wired by the owning container
+    // (e.g. Reconstruction::RewireObjectPointers or AddImage).
+    Image(const Image& other);
+    Image& operator=(const Image& other);
+    Image(Image&& other) = default;
+    Image& operator=(Image&& other) = default;
+
     // Setup / tear down the image and necessary internal data structures before
     // and after being used in reconstruction.
     void SetUp(const Camera& camera);

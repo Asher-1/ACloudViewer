@@ -286,6 +286,15 @@ TEST(base_reconstruction, TestNormalize) {
   reconstruction.Image(1).Tvec(2) = -10.0;
   reconstruction.Image(2).Tvec(2) = 0.0;
   reconstruction.Image(3).Tvec(2) = 10.0;
+  // Frame-aware model: keep the trivial frames in sync with the directly
+  // mutated legacy per-image translations.
+  for (const image_t image_id : {1, 2, 3}) {
+    auto& im = reconstruction.Image(image_id);
+    reconstruction.Frame(image_id).SetRigFromWorld(
+        Rigid3d(Eigen::Quaterniond(im.Qvec()(0), im.Qvec()(1), im.Qvec()(2),
+                                   im.Qvec()(3)),
+                im.Tvec()));
+  }
   reconstruction.DeRegisterImage(1);
   reconstruction.DeRegisterImage(2);
   reconstruction.DeRegisterImage(3);

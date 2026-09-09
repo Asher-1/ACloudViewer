@@ -194,6 +194,11 @@ public:
     // reset the frame pose. Ignored with a warning if the frame has no pose.
     void DeRegisterFrame(const frame_t frame_id);
 
+    // Upstream-parity (COLMAP 4.x scene/reconstruction.h): rebind every
+    // frame/image back pointer into this object's containers after the copy
+    // constructor or assignment.
+    void RewireObjectPointers();
+
     // Check if image is registered.
     inline bool IsImageRegistered(const image_t image_id) const;
 

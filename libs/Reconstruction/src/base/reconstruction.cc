@@ -58,7 +58,9 @@ Reconstruction::Reconstruction(const Reconstruction& other)
       points3D_(other.Points3D()),
       image_pair_stats_(other.ImagePairs()),
       reg_image_ids_(other.RegImageIds()),
-      num_added_points3D_(other.NumAddedPoints3D()) {}
+      num_added_points3D_(other.NumAddedPoints3D()) {
+    RewireObjectPointers();
+}
 
 Reconstruction& Reconstruction::operator=(const Reconstruction& other) {
     if (this != &other) {
@@ -71,8 +73,27 @@ Reconstruction& Reconstruction::operator=(const Reconstruction& other) {
         image_pair_stats_ = other.ImagePairs();
         reg_image_ids_ = other.RegImageIds();
         num_added_points3D_ = other.NumAddedPoints3D();
+        RewireObjectPointers();
     }
     return *this;
+}
+
+void Reconstruction::RewireObjectPointers() {
+    // Upstream COLMAP dbb41680 parity (scene/reconstruction.cc copy ctor and
+    // assignment): the copied frames/images must point into this object's
+    // rigs/cameras/frames, not into the source object's. Without this the
+    // pose stored in this->rigs_ is invisible through image.CamFromWorld(),
+    // which silently reads the source object's (stale) rig.
+    for (auto& [_, frame] : frames_) {
+        frame.ResetRigPtr();
+        frame.SetRigPtr(&Rig(frame.RigId()));
+    }
+    for (auto& [_, image] : images_) {
+        image.ResetCameraPtr();
+        image.SetCameraPtr(&Camera(image.CameraId()));
+        image.ResetFramePtr();
+        image.SetFramePtr(&Frame(image.FrameId()));
+    }
 }
 
 std::unordered_set<point3D_t> Reconstruction::Point3DIds() const {
@@ -152,8 +173,8 @@ void Reconstruction::Load(const DatabaseCache& database_cache) {
 
     // Add image pairs (fork-specific statistics kept for the legacy
     // observation bookkeeping).
-    for (const auto& image_pair : database_cache.CorrespondenceGraph()
-                                          ->NumCorrespondencesBetweenImages()) {
+    for (const auto& image_pair :
+         database_cache.CorrespondenceGraph()->NumMatchesBetweenAllImages()) {
         ImagePairStat image_pair_stat;
         image_pair_stat.num_total_corrs = image_pair.second;
         image_pair_stats_.emplace(image_pair.first, image_pair_stat);
@@ -644,12 +665,15 @@ Reconstruction::ComputeBoundsAndCentroid(const double p0,
 }
 
 void Reconstruction::Transform(const SimilarityTransform3& tform) {
-    for (auto& image : images_) {
-        tform.TransformPose(&image.second.Qvec(), &image.second.Tvec());
-    }
-    for (auto& point3D : points3D_) {
-        tform.TransformPoint(&point3D.second.XYZ());
-    }
+    // Upstream COLMAP dbb41680 parity: a single Transform implementation
+    // updates the whole frame-aware object graph (rigs, frames, images,
+    // points). The fork's legacy SimilarityTransform3 overload previously
+    // only rewrote the per-image qvec/tvec members, leaving the frame and
+    // rig poses stale.
+    const Eigen::Vector4d qvec = tform.Rotation();  // [w, x, y, z]
+    Transform(Sim3d(tform.Scale(),
+                    Eigen::Quaterniond(qvec(0), qvec(1), qvec(2), qvec(3)),
+                    tform.Translation()));
 }
 
 // Upstream COLMAP dbb41680 scene/reconstruction.cc parity: summary printing
@@ -689,25 +713,32 @@ void Reconstruction::Transform(const Sim3d& new_from_old_world) {
     for (auto& [frame_id, frame] : frames_) {
         (void)frame_id;
         if (frame.HasPose()) {
-            frame.SetRigFromWorld(TransformCameraWorld(new_from_old_world,
-                                                       frame.RigFromWorld()));
+            const Rigid3d transformed = TransformCameraWorld(
+                    new_from_old_world, frame.RigFromWorld());
+            frame.SetRigFromWorld(transformed);
         }
     }
     for (auto& [image_id, image] : images_) {
         (void)image_id;
-        if (image.HasPose()) {
-            // Fork qvec convention is [w, x, y, z]: construct from the four
-            // scalars (Eigen's Vector4d constructor assumes [x, y, z, w]).
-            const Eigen::Vector4d& qvec = image.Qvec();
-            const Rigid3d cam_from_world = TransformCameraWorld(
-                    new_from_old_world,
-                    Rigid3d(Eigen::Quaterniond(qvec(0), qvec(1), qvec(2),
-                                               qvec(3)),
-                            image.Tvec()));
-            const Eigen::Quaterniond& q = cam_from_world.rotation();
-            image.SetQvec(Eigen::Vector4d(q.w(), q.x(), q.y(), q.z()));
-            image.SetTvec(cam_from_world.translation());
+        // Frame-wired images without a pose have nothing to transform. All
+        // other images (frame-wired with pose, or fork-legacy standalone
+        // images whose pose lives only in qvec/tvec) need their legacy
+        // members transformed; frame-wired ones keep them in sync with the
+        // frame pose updated above.
+        if (image.HasFramePtr() && !image.HasPose()) {
+            continue;
         }
+        // Fork qvec convention is [w, x, y, z]: construct from the four
+        // scalars (Eigen's Vector4d constructor assumes [x, y, z, w]).
+        const Eigen::Vector4d& qvec = image.Qvec();
+        const Rigid3d cam_from_world = TransformCameraWorld(
+                new_from_old_world,
+                Rigid3d(Eigen::Quaterniond(qvec(0), qvec(1), qvec(2),
+                                           qvec(3)),
+                        image.Tvec()));
+        const Eigen::Quaterniond& q = cam_from_world.rotation();
+        image.SetQvec(Eigen::Vector4d(q.w(), q.x(), q.y(), q.z()));
+        image.SetTvec(cam_from_world.translation());
     }
     for (auto& point3D : points3D_) {
         point3D.second.XYZ() = new_from_old_world * point3D.second.XYZ();
@@ -2551,23 +2582,24 @@ void Reconstruction::SetObservationAsTriangulated(
 
     const class Image& image = Image(image_id);
     const Point2D& point2D = image.Point2D(point2D_idx);
-    const std::vector<CorrespondenceGraph::Correspondence>& corrs =
+    const CorrespondenceGraph::CorrespondenceRange corrs =
             correspondence_graph_->FindCorrespondences(image_id, point2D_idx);
 
     CHECK(image.IsRegistered());
     CHECK(point2D.HasPoint3D());
 
-    for (const auto& corr : corrs) {
-        class Image& corr_image = Image(corr.image_id);
-        const Point2D& corr_point2D = corr_image.Point2D(corr.point2D_idx);
-        corr_image.IncrementCorrespondenceHasPoint3D(corr.point2D_idx);
+    for (const CorrespondenceGraph::Correspondence* corr = corrs.beg;
+         corr < corrs.end; ++corr) {
+        class Image& corr_image = Image(corr->image_id);
+        const Point2D& corr_point2D = corr_image.Point2D(corr->point2D_idx);
+        corr_image.IncrementCorrespondenceHasPoint3D(corr->point2D_idx);
         // Update number of shared 3D points between image pairs and make sure
         // to only count the correspondences once (not twice forward and
         // backward).
         if (point2D.Point3DId() == corr_point2D.Point3DId() &&
-            (is_continued_point3D || image_id < corr.image_id)) {
+            (is_continued_point3D || image_id < corr->image_id)) {
             const image_pair_t pair_id =
-                    Database::ImagePairToPairId(image_id, corr.image_id);
+                    Database::ImagePairToPairId(image_id, corr->image_id);
             image_pair_stats_[pair_id].num_tri_corrs += 1;
             CHECK_LE(image_pair_stats_[pair_id].num_tri_corrs,
                      image_pair_stats_[pair_id].num_total_corrs)
@@ -2587,23 +2619,24 @@ void Reconstruction::ResetTriObservations(const image_t image_id,
 
     const class Image& image = Image(image_id);
     const Point2D& point2D = image.Point2D(point2D_idx);
-    const std::vector<CorrespondenceGraph::Correspondence>& corrs =
+    const CorrespondenceGraph::CorrespondenceRange corrs =
             correspondence_graph_->FindCorrespondences(image_id, point2D_idx);
 
     CHECK(image.IsRegistered());
     CHECK(point2D.HasPoint3D());
 
-    for (const auto& corr : corrs) {
-        class Image& corr_image = Image(corr.image_id);
-        const Point2D& corr_point2D = corr_image.Point2D(corr.point2D_idx);
-        corr_image.DecrementCorrespondenceHasPoint3D(corr.point2D_idx);
+    for (const CorrespondenceGraph::Correspondence* corr = corrs.beg;
+         corr < corrs.end; ++corr) {
+        class Image& corr_image = Image(corr->image_id);
+        const Point2D& corr_point2D = corr_image.Point2D(corr->point2D_idx);
+        corr_image.DecrementCorrespondenceHasPoint3D(corr->point2D_idx);
         // Update number of shared 3D points between image pairs and make sure
         // to only count the correspondences once (not twice forward and
         // backward).
         if (point2D.Point3DId() == corr_point2D.Point3DId() &&
-            (!is_deleted_point3D || image_id < corr.image_id)) {
+            (!is_deleted_point3D || image_id < corr->image_id)) {
             const image_pair_t pair_id =
-                    Database::ImagePairToPairId(image_id, corr.image_id);
+                    Database::ImagePairToPairId(image_id, corr->image_id);
             image_pair_stats_[pair_id].num_tri_corrs -= 1;
             CHECK_GE(image_pair_stats_[pair_id].num_tri_corrs, 0)
                     << "The scene graph graph must not contain duplicate "

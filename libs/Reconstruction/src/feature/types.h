@@ -83,6 +83,17 @@ struct FeatureMatch {
 
     // Feature index in second image.
     point2D_t point2D_idx2 = kInvalidPoint2DIdx;
+
+    // Upstream COLMAP dbb41680 parity (feature/types.h): equality so that
+    // std::vector<FeatureMatch> can be compared directly in tests.
+    inline bool operator==(const FeatureMatch& other) const {
+        return point2D_idx1 == other.point2D_idx1 &&
+               point2D_idx2 == other.point2D_idx2;
+    }
+
+    inline bool operator!=(const FeatureMatch& other) const {
+        return !(*this == other);
+    }
 };
 
 typedef std::vector<FeatureKeypoint> FeatureKeypoints;

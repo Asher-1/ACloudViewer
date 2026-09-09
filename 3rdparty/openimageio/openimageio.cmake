@@ -176,7 +176,10 @@ ExternalProject_Add(ext_openimageio
         # which satisfies OIIO's VERSION_MIN, so OCIO links the host SHARED
         # expat, no libexpat.a lands in deps/dist, and the static closure
         # cannot resolve OCIO's XML_* references. Pinning the local build
-        # keeps expat inside deps/dist on every platform.
+        # keeps expat inside deps/dist on every platform. yaml-cpp is already
+        # on this list upstream, so the same short-circuit protects the
+        # windows wheel from host-yaml-cpp pollution (see the OCIO pins in
+        # build_OpenColorIO.cmake inside patch 0001).
         -DOpenImageIO_BUILD_LOCAL_DEPS=TIFF$<SEMICOLON>ZLIB$<SEMICOLON>PNG$<SEMICOLON>libjpeg-turbo$<SEMICOLON>Imath$<SEMICOLON>OpenEXR$<SEMICOLON>yaml-cpp$<SEMICOLON>minizip-ng$<SEMICOLON>expat
         # OIIO's LOCAL_BUILD_SHARED_LIBS_DEFAULT is ON for local dep builds,
         # which would leave a libz.dylib in deps/dist for the produced dylib

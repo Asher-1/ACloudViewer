@@ -185,6 +185,31 @@ class CCWheelBundler:
             ) as f:
                 json.dump(self.warnings, f, sort_keys=True, indent=4)
 
+    @staticmethod
+    def _get_install_name(mainlib: Path) -> str | None:
+        """Return the LC_ID_DYLIB install name of a dylib (otool -D).
+
+        Executables carry no install name; otool -D then prints only the
+        '<path>:' header and None is returned.
+
+        Args:
+        ----
+            mainlib (Path): Path to a binary (lib, executable)
+
+        Returns:
+        -------
+            str | None: install name (e.g. '@rpath/libfoo.dylib') or None
+
+        """
+        with subprocess.Popen(["otool", "-D", str(mainlib)], stdout=subprocess.PIPE) as proc:
+            lines = proc.stdout.readlines()
+        if len(lines) < 2:
+            return None
+        vals = lines[1].split()
+        if not vals:
+            return None
+        return vals[0].decode()
+
     def _get_lib_dependencies(self, mainlib: Path) -> tuple[list[str], list[str]]:
         """List dependencies of mainlib (using otool -L).
 
@@ -205,16 +230,26 @@ class CCWheelBundler:
         libs: list[Path] = []
         lib_ex: list[Path] = []
         warning_libs = []
+        install_name = self._get_install_name(mainlib)
         with subprocess.Popen(["otool", "-L", str(mainlib)], stdout=subprocess.PIPE) as proc:
             lines = proc.stdout.readlines()
             logger.debug(mainlib)
             lines.pop(0)  # Drop the first line as it contains the name of the lib / binary
-            # now first line is LC_ID_DYLIB (should be @rpath/libname)
+            # The first remaining dylib record is LC_ID_DYLIB: the library's
+            # OWN install name repeated by otool -L, not a dependency. Every
+            # @rpath-installed dylib therefore used to sprout a fake
+            # self-dependency here, silently ignored until the missing-
+            # dependency guard started rejecting unresolvable single-component
+            # names (observed as 'cannot resolve cloudViewer_torch_ops.dylib'
+            # on the macOS wheel CI). Filter it out with otool -D's answer.
             for line in lines:
                 vals = line.split()
                 if len(vals) < 2:
                     continue
                 pathlib = vals[0].decode()
+                if install_name is not None and pathlib == install_name:
+                    logger.debug("%s: skipping own install name %s", mainlib, pathlib)
+                    continue
                 logger.debug("->pathlib: %s", pathlib)
                 if pathlib == self.config.extra_pathlib:
                     logger.info("%s lib from additional extra pathlib", mainlib)

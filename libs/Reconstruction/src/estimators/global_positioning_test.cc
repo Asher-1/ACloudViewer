@@ -127,6 +127,7 @@ TEST(GlobalPositioning, MultiCameraRig) {
       RunGlobalPositioning(options, pose_graph, reconstruction);
   ASSERT_TRUE(success);
 
+
   EXPECT_THAT(gt_reconstruction,
               ReconstructionNear(reconstruction,
                                  /*max_rotation_error_deg=*/0.1,

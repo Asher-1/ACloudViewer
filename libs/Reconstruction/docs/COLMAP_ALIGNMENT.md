@@ -25,9 +25,12 @@ Work packages from [COLMAP_ALIGNMENT_PLAN.md](COLMAP_ALIGNMENT_PLAN.md):
 | W3-1 correspondence graph cache | done (per-pair TwoViewGeometry cache + MaybeDecomposeRelativePoses + ray homography restored) |
 | W3-2a frame-aware data model | done (Image/Frame/Rig/Reconstruction pointer wiring + Database pose_priors + OIIO ZLIB pin fix) |
 | W3-2a build & fixture completion | done (Image::DataId corrected to the upstream form, NonRefSensors materialized by value, Rigid3d projection-error overload defined, Crop/Merge pointer reset + trivial wiring, six legacy test fixtures migrated to AddCameraWithTrivialRig/AddImageWithTrivialFrame; full build EXIT=0, ctest 73/77) |
-| W4 GLomap global SfM stack | layer 1 done (solver stacks + PoseGraph + math helpers ported, compiled into ColmapLib; global_positioning/connected_components/spanning_tree tests green); W3-2b step 1 done (frame-aware DatabaseCache + Reconstruction::Load assembly, 2026-09-08) unblocked the three blocked suites: view_graph_calibration_test and pose_graph_test are now fully green, rotation_averaging_test is 13/15 (two numeric cases scoped to step 2); layer 2 (sfm/global_mapper + controllers + CLI) pending on the two numeric cases |
+| W4 GLomap global SfM stack | layer 1 done (solver stacks + PoseGraph + math helpers ported, compiled into ColmapLib; global_positioning/connected_components/spanning_tree tests green); W3-2b step 1 done (frame-aware DatabaseCache + Reconstruction::Load assembly, 2026-09-08) unblocked the three blocked suites: view_graph_calibration_test and pose_graph_test are now fully green; W3-2b step 2 numeric closure done (2026-09-09): rotation_averaging_test 15/15; layer 2 (sfm/global_mapper + controllers + CLI) pending on the correspondence_graph range work |
 | W3-2b step 1 (frame-aware cache assembly) | done (upstream DatabaseCache::Options Load with rigs/cameras/frames/images/pose_priors, shared_ptr correspondence graph, CreateFromCache, frame-level image filtering, ENU conversion; upstream Reconstruction::Load pointer wiring + DeRegisterFrame; upstream database_cache_test ported 7/7; surfaced and fixed five fork defects: WriteRig bad_optional_access for NULL extrinsics, empty-keypoint abort, two-view geometry optional blob semantics, Rig AddSensor/SetSensorFromRig insert-vs-update overloads, SetRigFromWorld NaN placeholder) |
-| W3-2b (step 2-4: mapper/BA), W7, W8, W10-W16 | pending (W10 estimator subset alignment/sim3 landed early with W4) |
+| W3-2b step 2a (RA numeric closure) | done (2026-09-09; rotation_averaging_test 15/15) via a sixth fork defect fix: Reconstruction copy ctor/assignment now rebinds frame/image back pointers (RewireObjectPointers, upstream parity) - the fork copied rigs_/frames_/images_ without rebinding, so any copied reconstruction silently read poses through the source object's stale pointers |
+| W3-2b step 2 (stale-pointer hazard cleanup) | done (2026-09-09; the RA fix surfaced the same hazard everywhere: Image copy ctor/assignment now reset back pointers with default move members, Reconstruction::Transform legacy overload delegates to the frame-aware Sim3d path, Image projection-derived accessors read CamFromWorld when frame-wired with a legacy fallback, legacy fixtures (TestNormalize/TestTransform/TestComputeScale) keep trivial frames in sync; global_positioning_test assertions are no longer vacuously true - Nominal/RefineSensorFromRig genuinely green, MultiCameraRig retains a 0.169 deg alignment-rotation residual vs the 0.1 deg threshold, recorded as a convergence-quality edge case) |
+| W3-2b step 2b (correspondence graph range migration) | done (2026-09-09; full upstream dbb41680 parity: flat_corrs/flat_corr_begs flattened storage with CorrespondenceRange FindCorrespondences, ExtractCorrespondences/ExtractTransitiveCorrespondences/ExtractMatchesBetweenImages output-parameter interfaces, NumMatchesBetweenImages, Finalize flattening without image removal, FlatHashMap image_pairs_; all consumers migrated to the Range/Extract forms; upstream correspondence_graph_test ported 11/11 incl. Finalize/NotFinalize parameterized cases; FeatureMatch gained upstream operator==) |
+| W3-2b (step 3-4 mapper/BA), W7, W8, W10-W16 | pending (W10 estimator subset alignment/sim3 landed early with W4) |
 
 Testing: the whole Reconstruction test suite runs on **googletest**
 (decision D6); `COLMAP_ADD_TEST` links `gtest_main` and upstream test files
@@ -115,6 +118,95 @@ are unknown - the RA solver and its driver are line-identical to upstream
 modulo API naming, so the residual is scoped to W3-2b step 2; the caspar
 split-intrinsics failure is the pre-existing baseline recorded under
 synthetic_dataset.
+
+## W3-2b step 2a notes (2026-09-09)
+
+The two remaining rotation-averaging numeric cases closed with a one-root-
+cause fix. Diagnostic instrumentation (per-frame/per-sensor quaternion dumps
+inside RunAndVerifyRotationAveraging) showed the solver output was correct
+in the reconstruction's rig/frame containers while `image.CamFromWorld()`
+still reported the source object's poses: the fork's Reconstruction copy
+constructor and assignment copied `rigs_`/`frames_`/`images_` without
+rebinding the frame->rig and image->frame/camera back pointers, so a
+copied reconstruction silently read the source object's (stale) rig -
+the ~0.44 rad offset was exactly the un-composed sensor_from_rig rotation
+of the non-reference camera. `Reconstruction::RewireObjectPointers()` now
+performs the upstream pointer-rebinding pass after every copy (upstream
+scene/reconstruction.cc parity), and rotation_averaging_test is 15/15.
+This fix is global: every copy of a Reconstruction (hierarchical mapper,
+bundle adjustment expansion, tests) previously had the same stale-pointer
+hazard. Full build EXIT=0; full ctest 84/85 (only the pre-existing caspar
+split-intrinsics baseline failure remains). Remaining W3-2b step 2 work is
+the correspondence_graph flat-range lookup migration (flat_corrs/
+CorrespondenceRange/Extract* interfaces with consumer migration), scoped
+before layer 2 of the GLomap stack.
+
+## W3-2b step 2 stale-pointer cleanup notes (2026-09-09)
+
+The RewireObjectPointers fix surfaced the same stale back-pointer hazard in
+three more places, all fixed in this round:
+
+- `Image` copy ctor/assignment now reset `camera_ptr_`/`frame_ptr_` (a
+  copied image is a pure data copy; owning containers re-wire via AddImage
+  or Reconstruction::RewireObjectPointers). Declaring the copy ctor had
+  suppressed the implicit move ctor, which silently nulled re-wired pointers
+  inside `AddImage`'s `emplace(std::move(image))`; default move members are
+  declared explicitly.
+- `Reconstruction::Transform` was split between a legacy
+  `SimilarityTransform3` overload (rewrote per-image qvec/tvec only) and the
+  frame-aware `Sim3d` overload; the legacy overload now delegates to the
+  Sim3d implementation so rigs/frames/images/points transform together.
+- `Image` projection-derived accessors (ProjectionCenter,
+  ProjectionMatrix, RotationMatrix, ViewingDirection,
+  InverseProjectionMatrix) read the pose from CamFromWorld when the image is
+  frame-wired and fall back to qvec/tvec for standalone legacy images.
+- Legacy fixtures that mutate `Image::Tvec` directly were updated to keep
+  the trivial frames in sync (reconstruction_test TestNormalize/TestTransform,
+  camera_rig_test TestComputeScale).
+
+The previously-green global_positioning_test was reading GT poses through
+stale pointers (its assertions were vacuously true). With live assertions,
+Nominal and RefineSensorFromRig are genuinely green; MultiCameraRig retains
+a 0.169 deg rotation residual against the 0.1 deg threshold - per
+instrumentation all frame/sensor rotations are exact and the residual is the
+Sim3-alignment-estimated rotation of the GP solution shape (final Ceres cost
+0.149), i.e. a convergence-quality edge case under the seed-42
+initialization, recorded as a known item for step 2b. Full build EXIT=0;
+full ctest 84/85 (the only other failure is the pre-existing caspar
+split-intrinsics baseline).
+
+## W3-2b step 2b notes (2026-09-09)
+
+The correspondence graph was fully aligned to the upstream dbb41680 design:
+
+- `Finalize` flattens the per-point correspondence vectors into
+  `flat_corrs`/`flat_corr_begs` and sets the `finalized_` flag. The fork's
+  removal of images without observations was removed (upstream keeps every
+  added image; the DatabaseCache observation-counter bridge already guards
+  with `ExistsImage`).
+- `FindCorrespondences` returns a `CorrespondenceRange` (identical semantics
+  before and after `Finalize`); `ExtractCorrespondences`,
+  `ExtractTransitiveCorrespondences` and `ExtractMatchesBetweenImages`
+  replace the vector-returning variants; `NumMatchesBetweenImages` replaces
+  the per-pair `NumCorrespondencesBetweenImages`; `image_pairs_` is a
+  `FlatHashMap` (insert-only during construction, read-only afterwards) with
+  the upstream `num_matches` field name.
+- All consumers were migrated: Reconstruction's
+  SetObservationAsTriangulated/ResetTriObservations, IncrementalMapper
+  (FindInitialImage candidates, FindSecondInitialImage, two-view matches),
+  and IncrementalTriangulator (Create/Merge/Continue).
+- The fork-only `AddCorrespondences` entry was removed; `AddTwoViewGeometry`
+  is the single upstream edge entry (landed in step 1).
+- The upstream `correspondence_graph_test` was ported verbatim (11/11,
+  including the Finalize/NotFinalize parameterized TwoView/ThreeView suites,
+  OutOfBounds, Duplicate, and UpdateTwoViewGeometry[Swapped]);
+  `FeatureMatch` gained the upstream `operator==`/`!=`.
+
+Full build EXIT=0; full ctest 84/85. Remaining known items: the
+`global_positioning_test` MultiCameraRig 0.169 deg convergence-quality
+residual (see above) and the pre-existing caspar split-intrinsics baseline.
+Next: layer 2 of the GLomap stack (sfm/global_mapper + controllers + CLI)
+after triaging the MultiCameraRig item.
 
 ## Implemented in this tree
 

@@ -2385,6 +2385,16 @@ if (BUILD_RECONSTRUCTION)
         target_link_libraries(3rdparty_openimageio
                 INTERFACE ${CMAKE_DL_LIBS})
     endif ()
+    # Match OIIO's installed OpenImageIOTargets.cmake, which exports
+    # OIIO_STATIC_DEFINE=1 for a static OIIO build: clients must compile
+    # OIIO_API without __declspec(dllimport). This custom import target
+    # carries only INCLUDE_DIRS/LIBRARIES, so without the definition every
+    # Windows consumer of the static closure links __imp_-prefixed symbols
+    # the archive does not define - LNK2001 on TypeDesc/ParamValue/
+    # ParamValueSpan/ImageSpec (ubuntu windows CI). On Linux/macOS export.h
+    # takes the visibility branch and the macro is unused.
+    target_compile_definitions(3rdparty_openimageio
+            INTERFACE OIIO_STATIC_DEFINE=1)
 
     include(${CloudViewer_3RDPARTY_DIR}/faiss/faiss.cmake)
     option(RECONSTRUCTION_CASPAR_ENABLED

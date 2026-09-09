@@ -313,9 +313,9 @@ bool IncrementalMapper::RegisterInitialImagePair(const Options& options,
 
     const CorrespondenceGraph& correspondence_graph =
             *database_cache_->CorrespondenceGraph();
-    const FeatureMatches& corrs =
-            correspondence_graph.FindCorrespondencesBetweenImages(image_id1,
-                                                                  image_id2);
+    FeatureMatches corrs;
+    correspondence_graph.ExtractMatchesBetweenImages(image_id1, image_id2,
+                                                     corrs);
 
     const double min_tri_angle_rad = DegToRad(options.init_min_tri_angle);
 
@@ -382,9 +382,9 @@ bool IncrementalMapper::RegisterNextImage(const Options& options,
         const Point2D& point2D = image.Point2D(point2D_idx);
         const CorrespondenceGraph& correspondence_graph =
                 *database_cache_->CorrespondenceGraph();
-        const std::vector<CorrespondenceGraph::Correspondence> corrs =
-                correspondence_graph.FindTransitiveCorrespondences(
-                        image_id, point2D_idx, kCorrTransitivity);
+        std::vector<CorrespondenceGraph::Correspondence> corrs;
+        correspondence_graph.ExtractTransitiveCorrespondences(
+                image_id, point2D_idx, kCorrTransitivity, &corrs);
 
         std::unordered_set<point3D_t> point3D_ids;
 
@@ -873,11 +873,14 @@ std::vector<image_t> IncrementalMapper::FindSecondInitialImage(
     std::unordered_map<image_t, point2D_t> num_correspondences;
     for (point2D_t point2D_idx = 0; point2D_idx < image1.NumPoints2D();
          ++point2D_idx) {
-        for (const auto& corr :
-             correspondence_graph.FindCorrespondences(image_id1, point2D_idx)) {
-            if (num_registrations_.count(corr.image_id) == 0 ||
-                num_registrations_.at(corr.image_id) == 0) {
-                num_correspondences[corr.image_id] += 1;
+        const auto corr_range =
+                correspondence_graph.FindCorrespondences(image_id1,
+                                                         point2D_idx);
+        for (const CorrespondenceGraph::Correspondence* corr = corr_range.beg;
+             corr < corr_range.end; ++corr) {
+            if (num_registrations_.count(corr->image_id) == 0 ||
+                num_registrations_.at(corr->image_id) == 0) {
+                num_correspondences[corr->image_id] += 1;
             }
         }
     }
@@ -1159,9 +1162,9 @@ bool IncrementalMapper::EstimateInitialTwoViewGeometry(
 
     const CorrespondenceGraph& correspondence_graph =
             *database_cache_->CorrespondenceGraph();
-    const FeatureMatches matches =
-            correspondence_graph.FindCorrespondencesBetweenImages(image_id1,
-                                                                  image_id2);
+    FeatureMatches matches;
+    correspondence_graph.ExtractMatchesBetweenImages(image_id1, image_id2,
+                                                     matches);
 
     std::vector<Eigen::Vector2d> points1;
     points1.reserve(image1.NumPoints2D());
