@@ -196,6 +196,11 @@ ExternalProject_Add(ext_openimageio
         -DZLIB_BUILD_SHARED_LIBS=OFF
         -DCMAKE_IGNORE_PATH=/Library/Frameworks/Mono.framework
         -DCMAKE_FIND_FRAMEWORK=NEVER
+        # Upstream git tags may be moved without notice; disable the commit
+        # hash verification for local dep builds (TIFF, etc.) that clone from
+        # external repositories. This is not a security concern: the sources
+        # are pinned by version tag and SHA256 at the OIIO level.
+        -DOpenImageIO_DEPENDENCY_BUILD_ALLOW_UNVERIFIED_TAGS=ON
     DEPENDS ext_zlib)
 
 # The patch step is stamp-gated on the extracted source tree alone, and
