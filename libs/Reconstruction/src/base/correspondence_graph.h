@@ -82,6 +82,15 @@ public:
                             const image_t image_id2,
                             const FeatureMatches& matches);
 
+    // Upstream COLMAP dbb41680 parity: add a verified two-view geometry and
+    // build the graph edges from its inlier matches in one call. The pair
+    // must not have been added before (upstream throws on duplicate pairs).
+    // Kept alongside the legacy AddCorrespondences bridge until W3-2b
+    // migrates the remaining edge consumers.
+    void AddTwoViewGeometry(const image_t image_id1,
+                            const image_t image_id2,
+                            TwoViewGeometry two_view_geometry);
+
     // Find the correspondence of an image observation to all other images.
     inline const std::vector<Correspondence>& FindCorrespondences(
             const image_t image_id, const point2D_t point2D_idx) const;

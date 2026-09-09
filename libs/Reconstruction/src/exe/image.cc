@@ -266,11 +266,13 @@ int RunImageRegistrator(int argc, char** argv) {
     Database database(*options.database_path);
     Timer timer;
     timer.Start();
-    const size_t min_num_matches =
+    DatabaseCache::Options cache_options;
+    cache_options.min_num_matches =
         static_cast<size_t>(options.mapper->min_num_matches);
-    database_cache.Load(database, min_num_matches,
-                        options.mapper->ignore_watermarks,
-                        options.mapper->image_names);
+    cache_options.ignore_watermarks = options.mapper->ignore_watermarks;
+    cache_options.image_names = {options.mapper->image_names.begin(),
+                                 options.mapper->image_names.end()};
+    database_cache.Load(database, cache_options);
     std::cout << std::endl;
     timer.PrintMinutes();
   }

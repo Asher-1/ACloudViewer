@@ -91,37 +91,69 @@ void Reconstruction::Load(const DatabaseCache& database_cache) {
 
     // Add cameras.
     cameras_.reserve(database_cache.NumCameras());
-    for (const auto& camera : database_cache.Cameras()) {
-        if (!ExistsCamera(camera.first)) {
-            AddCamera(camera.second);
+    for (const auto& [camera_id, camera] : database_cache.Cameras()) {
+        if (ExistsCamera(camera_id)) {
+            struct Camera& existing_camera = Camera(camera_id);
+            THROW_CHECK_EQ(existing_camera.ModelId(), camera.ModelId());
+            THROW_CHECK_EQ(existing_camera.Width(), camera.Width());
+            THROW_CHECK_EQ(existing_camera.Height(), camera.Height());
+        } else {
+            AddCamera(camera);
         }
-        // Else: camera was added before, e.g. with `ReadAllCameras`.
+    }
+
+    // Add rigs.
+    rigs_.reserve(database_cache.NumRigs());
+    for (const auto& [rig_id, rig] : database_cache.Rigs()) {
+        if (ExistsRig(rig_id)) {
+            class Rig& existing_rig = Rig(rig_id);
+            THROW_CHECK(existing_rig.RefSensorId() == rig.RefSensorId());
+            THROW_CHECK(existing_rig.SensorIds() == rig.SensorIds());
+        } else {
+            AddRig(rig);
+        }
+    }
+
+    // Add frames.
+    frames_.reserve(database_cache.NumFrames());
+    for (const auto& [frame_id, frame] : database_cache.Frames()) {
+        if (ExistsFrame(frame_id)) {
+            class Frame& existing_frame = Frame(frame_id);
+            THROW_CHECK(existing_frame.RigId() == frame.RigId());
+            THROW_CHECK(existing_frame.DataIds() == frame.DataIds());
+        } else {
+            AddFrame(frame);
+        }
     }
 
     // Add images.
     images_.reserve(database_cache.NumImages());
 
-    for (const auto& image : database_cache.Images()) {
-        if (ExistsImage(image.second.ImageId())) {
-            class Image& existing_image = Image(image.second.ImageId());
-            CHECK_EQ(existing_image.Name(), image.second.Name());
+    for (const auto& [image_id, image] : database_cache.Images()) {
+        if (ExistsImage(image_id)) {
+            class Image& existing_image = Image(image_id);
+            THROW_CHECK_EQ(existing_image.Name(), image.Name());
             if (existing_image.NumPoints2D() == 0) {
-                existing_image.SetPoints2D(image.second.Points2D());
+                existing_image.SetPoints2D(image.Points2D());
             } else {
-                CHECK_EQ(image.second.NumPoints2D(),
-                         existing_image.NumPoints2D());
+                THROW_CHECK_EQ(image.NumPoints2D(),
+                               existing_image.NumPoints2D());
             }
-            existing_image.SetNumObservations(image.second.NumObservations());
+            // Fork bridge: keep the legacy per-image counters in sync from
+            // the cache (upstream derives them from the correspondence
+            // graph alone).
+            existing_image.SetNumObservations(image.NumObservations());
             existing_image.SetNumCorrespondences(
-                    image.second.NumCorrespondences());
+                    image.NumCorrespondences());
         } else {
-            AddImage(image.second);
+            AddImage(image);
         }
     }
 
-    // Add image pairs.
+    // Add image pairs (fork-specific statistics kept for the legacy
+    // observation bookkeeping).
     for (const auto& image_pair : database_cache.CorrespondenceGraph()
-                                          .NumCorrespondencesBetweenImages()) {
+                                          ->NumCorrespondencesBetweenImages()) {
         ImagePairStat image_pair_stat;
         image_pair_stat.num_total_corrs = image_pair.second;
         image_pair_stats_.emplace(image_pair.first, image_pair_stat);
@@ -485,6 +517,22 @@ void Reconstruction::DeRegisterImage(const image_t image_id) {
     reg_image_ids_.erase(
             std::remove(reg_image_ids_.begin(), reg_image_ids_.end(), image_id),
             reg_image_ids_.end());
+}
+
+void Reconstruction::DeRegisterFrame(const frame_t frame_id) {
+    if (!ExistsFrame(frame_id) || !Frame(frame_id).HasPose()) {
+        LOG(WARNING) << "Ignoring de-registration of frame " << frame_id
+                     << ", which is not registered.";
+        return;
+    }
+
+    class Frame& frame = Frame(frame_id);
+    for (const image_t image_id : frame.ImageIds()) {
+        if (ExistsImage(image_id) && Image(image_id).IsRegistered()) {
+            DeRegisterImage(image_id);
+        }
+    }
+    frame.ResetPose();
 }
 
 void Reconstruction::Normalize(const double extent,
@@ -1010,27 +1058,31 @@ void Reconstruction::Read(const std::string& path) {
 void Reconstruction::Write(const std::string& path) const { WriteBinary(path); }
 
 void Reconstruction::ReadText(const std::string& path) {
-    ReadCamerasText(JoinPaths(path, "cameras.txt"));
-    ReadImagesText(JoinPaths(path, "images.txt"));
-    ReadPoints3DText(JoinPaths(path, "points3D.txt"));
+    // Upstream COLMAP dbb41680 ordering: rigs and frames are read before the
+    // images so that AddImage can wire the frame/rig back pointers. The
+    // rigs/frames files are optional for legacy models.
     if (ExistsFile(JoinPaths(path, "rigs.txt"))) {
         ReadRigsText(JoinPaths(path, "rigs.txt"));
     }
+    ReadCamerasText(JoinPaths(path, "cameras.txt"));
     if (ExistsFile(JoinPaths(path, "frames.txt"))) {
         ReadFramesText(JoinPaths(path, "frames.txt"));
     }
+    ReadImagesText(JoinPaths(path, "images.txt"));
+    ReadPoints3DText(JoinPaths(path, "points3D.txt"));
 }
 
 void Reconstruction::ReadBinary(const std::string& path) {
-    ReadCamerasBinary(JoinPaths(path, "cameras.bin"));
-    ReadImagesBinary(JoinPaths(path, "images.bin"));
-    ReadPoints3DBinary(JoinPaths(path, "points3D.bin"));
+    // Upstream COLMAP dbb41680 ordering (see ReadText).
     if (ExistsFile(JoinPaths(path, "rigs.bin"))) {
         ReadRigsBinary(JoinPaths(path, "rigs.bin"));
     }
+    ReadCamerasBinary(JoinPaths(path, "cameras.bin"));
     if (ExistsFile(JoinPaths(path, "frames.bin"))) {
         ReadFramesBinary(JoinPaths(path, "frames.bin"));
     }
+    ReadImagesBinary(JoinPaths(path, "images.bin"));
+    ReadPoints3DBinary(JoinPaths(path, "points3D.bin"));
 }
 
 void Reconstruction::WriteText(const std::string& path) const {

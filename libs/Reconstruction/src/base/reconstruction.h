@@ -189,6 +189,11 @@ public:
     // De-register an existing image, and all its references.
     void DeRegisterImage(const image_t image_id);
 
+    // Upstream-parity (COLMAP 4.x scene/reconstruction.h): de-register a
+    // registered frame: clean up the observations of all its images and
+    // reset the frame pose. Ignored with a warning if the frame has no pose.
+    void DeRegisterFrame(const frame_t frame_id);
+
     // Check if image is registered.
     inline bool IsImageRegistered(const image_t image_id) const;
 

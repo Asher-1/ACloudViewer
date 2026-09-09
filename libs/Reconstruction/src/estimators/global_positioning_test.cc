@@ -58,11 +58,11 @@ TEST(GlobalPositioning, Nominal) {
       synthetic_dataset_options, &gt_reconstruction, database.get());
 
   DatabaseCache database_cache;
-  database_cache.Load(*database, /*min_num_matches=*/0,
-                      /*ignore_watermarks=*/false, /*image_names=*/{});
+  DatabaseCache::Options cache_options;
+  database_cache.Load(*database, cache_options);
 
   PoseGraph pose_graph;
-  pose_graph.Load(database_cache.CorrespondenceGraph());
+  pose_graph.Load(*database_cache.CorrespondenceGraph());
 
   // Copy GT reconstruction and keep only rotations (reset translations).
   Reconstruction reconstruction = gt_reconstruction;
@@ -104,11 +104,11 @@ TEST(GlobalPositioning, MultiCameraRig) {
       synthetic_dataset_options, &gt_reconstruction, database.get());
 
   DatabaseCache database_cache;
-  database_cache.Load(*database, /*min_num_matches=*/0,
-                      /*ignore_watermarks=*/false, /*image_names=*/{});
+  DatabaseCache::Options cache_options;
+  database_cache.Load(*database, cache_options);
 
   PoseGraph pose_graph;
-  pose_graph.Load(database_cache.CorrespondenceGraph());
+  pose_graph.Load(*database_cache.CorrespondenceGraph());
 
   // Copy GT reconstruction and keep only rotations (reset translations).
   Reconstruction reconstruction = gt_reconstruction;
@@ -152,11 +152,11 @@ TEST(GlobalPositioning, RefineSensorFromRigFalsePreservesRig) {
       synthetic_dataset_options, &gt_reconstruction, database.get());
 
   DatabaseCache database_cache;
-  database_cache.Load(*database, /*min_num_matches=*/0,
-                      /*ignore_watermarks=*/false, /*image_names=*/{});
+  DatabaseCache::Options cache_options;
+  database_cache.Load(*database, cache_options);
 
   PoseGraph pose_graph;
-  pose_graph.Load(database_cache.CorrespondenceGraph());
+  pose_graph.Load(*database_cache.CorrespondenceGraph());
 
   // Copy GT reconstruction and keep only rotations on frames (reset
   // their translations); leave the rig calibration as-is.

@@ -170,6 +170,113 @@ void CorrespondenceGraph::AddCorrespondences(const image_t image_id1,
   }
 }
 
+void CorrespondenceGraph::AddTwoViewGeometry(
+    const image_t image_id1,
+    const image_t image_id2,
+    TwoViewGeometry two_view_geometry) {
+  // Avoid self-matches - should only happen, if user provides custom matches.
+  if (image_id1 == image_id2) {
+    std::cout << "WARNING: Cannot use self-matches for image_id=" << image_id1
+              << std::endl;
+    return;
+  }
+
+  // Corresponding images.
+  struct Image& image1 = images_.at(image_id1);
+  struct Image& image2 = images_.at(image_id2);
+
+  // Store number of correspondences for each image to find good initial pair.
+  image1.num_correspondences += two_view_geometry.inlier_matches.size();
+  image2.num_correspondences += two_view_geometry.inlier_matches.size();
+
+  // Set the number of all correspondences for this image pair. Further
+  // below, we will make sure that only unique correspondences are counted.
+  const image_pair_t pair_id =
+      Database::ImagePairToPairId(image_id1, image_id2);
+  auto [image_pair_it, inserted] = image_pairs_.try_emplace(pair_id);
+  THROW_CHECK(inserted)
+      << "Two view geometry for image pair was already added: image_id1="
+      << image_id1 << ", image_id2=" << image_id2;
+  image_pair_it->second.num_correspondences =
+      static_cast<point2D_t>(two_view_geometry.inlier_matches.size());
+
+  // Store all matches in correspondence graph data structure. This data-
+  // structure uses more memory than storing the raw match matrices, but is
+  // significantly more efficient when updating the correspondences in case
+  // an observation is triangulated.
+
+  for (const auto& match : two_view_geometry.inlier_matches) {
+    const bool valid_idx1 = match.point2D_idx1 < image1.corrs.size();
+    const bool valid_idx2 = match.point2D_idx2 < image2.corrs.size();
+
+    if (valid_idx1 && valid_idx2) {
+      auto& corrs1 = image1.corrs[match.point2D_idx1];
+      auto& corrs2 = image2.corrs[match.point2D_idx2];
+
+      // We add valid correspondences bidirectionally, so checking from
+      // only one side is sufficient to detect duplicated matches.
+      const bool duplicate =
+          std::find_if(corrs1.begin(),
+                       corrs1.end(),
+                       [image_id2, &match](const Correspondence& corr) {
+                         return corr.image_id == image_id2 &&
+                                corr.point2D_idx == match.point2D_idx2;
+                       }) != corrs1.end();
+
+      if (duplicate) {
+        image1.num_correspondences -= 1;
+        image2.num_correspondences -= 1;
+        image_pair_it->second.num_correspondences -= 1;
+        std::cout << StringPrintf(
+                         "WARNING: Duplicate correspondence between "
+                         "point2D_idx=%d in image_id=%d and point2D_idx=%d in "
+                         "image_id=%d",
+                         match.point2D_idx1,
+                         image_id1,
+                         match.point2D_idx2,
+                         image_id2)
+                  << std::endl;
+      } else {
+        corrs1.emplace_back(image_id2, match.point2D_idx2);
+        // First correspondence makes this point an observation.
+        if (corrs1.size() == 1) {
+          image1.num_observations += 1;
+        }
+        corrs2.emplace_back(image_id1, match.point2D_idx1);
+        if (corrs2.size() == 1) {
+          image2.num_observations += 1;
+        }
+      }
+    } else {
+      image1.num_correspondences -= 1;
+      image2.num_correspondences -= 1;
+      image_pair_it->second.num_correspondences -= 1;
+      if (!valid_idx1) {
+        std::cout
+            << StringPrintf(
+                   "WARNING: point2D_idx=%d in image_id=%d does not exist",
+                   match.point2D_idx1, image_id1)
+            << std::endl;
+      }
+      if (!valid_idx2) {
+        std::cout
+            << StringPrintf(
+                   "WARNING: point2D_idx=%d in image_id=%d does not exist",
+                   match.point2D_idx2, image_id2)
+            << std::endl;
+      }
+    }
+  }
+
+  // Store the two-view geometry without its inlier matches (they live in
+  // the graph edges); invert if the canonical pair order is swapped.
+  FeatureMatches().swap(two_view_geometry.inlier_matches);
+  if (Database::SwapImagePair(image_id1, image_id2)) {
+    two_view_geometry.Invert();
+  }
+  image_pair_it->second.two_view_geometry = std::move(two_view_geometry);
+}
+
 std::vector<CorrespondenceGraph::Correspondence>
 CorrespondenceGraph::FindTransitiveCorrespondences(
     const image_t image_id, const point2D_t point2D_idx,

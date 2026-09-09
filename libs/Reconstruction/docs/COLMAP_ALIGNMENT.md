@@ -25,8 +25,9 @@ Work packages from [COLMAP_ALIGNMENT_PLAN.md](COLMAP_ALIGNMENT_PLAN.md):
 | W3-1 correspondence graph cache | done (per-pair TwoViewGeometry cache + MaybeDecomposeRelativePoses + ray homography restored) |
 | W3-2a frame-aware data model | done (Image/Frame/Rig/Reconstruction pointer wiring + Database pose_priors + OIIO ZLIB pin fix) |
 | W3-2a build & fixture completion | done (Image::DataId corrected to the upstream form, NonRefSensors materialized by value, Rigid3d projection-error overload defined, Crop/Merge pointer reset + trivial wiring, six legacy test fixtures migrated to AddCameraWithTrivialRig/AddImageWithTrivialFrame; full build EXIT=0, ctest 73/77) |
-| W4 GLomap global SfM stack | layer 1 done (solver stacks + PoseGraph + math helpers ported, compiled into ColmapLib; global_positioning/connected_components/spanning_tree tests green); layer 2 (sfm/global_mapper + controllers + CLI) pending on W3-2b cache assembly |
-| W3-2b (frame-aware mapper/BA), W7, W8, W10-W16 | pending (W10 estimator subset alignment/sim3 landed early with W4) |
+| W4 GLomap global SfM stack | layer 1 done (solver stacks + PoseGraph + math helpers ported, compiled into ColmapLib; global_positioning/connected_components/spanning_tree tests green); W3-2b step 1 done (frame-aware DatabaseCache + Reconstruction::Load assembly, 2026-09-08) unblocked the three blocked suites: view_graph_calibration_test and pose_graph_test are now fully green, rotation_averaging_test is 13/15 (two numeric cases scoped to step 2); layer 2 (sfm/global_mapper + controllers + CLI) pending on the two numeric cases |
+| W3-2b step 1 (frame-aware cache assembly) | done (upstream DatabaseCache::Options Load with rigs/cameras/frames/images/pose_priors, shared_ptr correspondence graph, CreateFromCache, frame-level image filtering, ENU conversion; upstream Reconstruction::Load pointer wiring + DeRegisterFrame; upstream database_cache_test ported 7/7; surfaced and fixed five fork defects: WriteRig bad_optional_access for NULL extrinsics, empty-keypoint abort, two-view geometry optional blob semantics, Rig AddSensor/SetSensorFromRig insert-vs-update overloads, SetRigFromWorld NaN placeholder) |
+| W3-2b (step 2-4: mapper/BA), W7, W8, W10-W16 | pending (W10 estimator subset alignment/sim3 landed early with W4) |
 
 Testing: the whole Reconstruction test suite runs on **googletest**
 (decision D6); `COLMAP_ADD_TEST` links `gtest_main` and upstream test files
@@ -78,6 +79,42 @@ solvers). That assembly is exactly W3-2b step 1 and is the next task. Two
 environment issues were also fixed en route: the missing cmake binary in
 ~/.local/opt (restored from the official 3.31.8 release) and a disk-full
 cleanup of 57 GB of stale /tmp test probes.
+
+## W3-2b step 1 notes (2026-09-08)
+
+The frame-aware cache assembly landed: `DatabaseCache` now owns the full
+object graph (rigs, cameras, frames, images, pose priors) behind the
+upstream `DatabaseCache::Options` Load surface, including the
+backwards-compatible per-camera-rig and per-image-frame fallbacks for legacy
+databases, frame-level `image_names` filtering (all images of a matched
+frame are loaded for multi-camera rigs), optional `load_all_images`, and
+`ConvertPosePriorsToENU`. `Reconstruction::Load` assembles cameras, rigs,
+frames, and images with upstream-parity existing-object validation and
+wires every image into its rig/frame/camera back pointers; the three W4
+test fixtures now run the upstream form (`Load(database, options)` +
+`*cache.CorrespondenceGraph()`) verbatim. The port surfaced and fixed five
+fork defects: (1) `Database::WriteRig` threw bad_optional_access for rigs
+with unknown non-reference camera extrinsics (unknown extrinsics now
+persist through the rig_sensors NULL path); (2) `FeatureKeypointsFromBlob`
+aborted on databases without keypoints instead of returning an empty set;
+(3) the two-view geometry blob bridge materialized F/E/H and the relative
+pose as values, breaking the upstream optional semantics for spherical
+pairs (all-zero blobs read back as nullopt); (4) `Rig` gained the upstream
+`AddSensor(sensor, optional<Rigid3d>)` insert and
+`SetSensorFromRig(sensor, optional<Rigid3d>)` update overloads, replacing
+the insert-shaped wrapper that crashed the rotation-averaging expand path;
+(5) `Frame::SetRigFromWorld` no longer rejects the upstream NaN
+unknown-pose placeholder. `Reconstruction` gained the upstream
+`DeRegisterFrame`. The upstream `database_cache_test` was ported as the
+step-1 gate (7/7, including frame-level filtering and the legacy
+no-rigs/no-frames compat cases). Full build EXIT=0; full ctest 83/85: the
+two remaining rotation-averaging numeric cases
+(WithoutNoiseWithNonTrivialUnknownRig, WeightedReducesErrorWithNoisyLowMatchEdges)
+show a constant ~0.44 rad offset on non-reference cameras whose extrinsics
+are unknown - the RA solver and its driver are line-identical to upstream
+modulo API naming, so the residual is scoped to W3-2b step 2; the caspar
+split-intrinsics failure is the pre-existing baseline recorded under
+synthetic_dataset.
 
 ## Implemented in this tree
 

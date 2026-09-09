@@ -383,7 +383,9 @@ class CCWheelBundler:
                     if candidate.is_file():
                         abslib_path = candidate
                         break
-                if abslib_path is None and "/" not in dependency:
+                # dependency comes from _get_lib_dependencies as a Path;
+                # `in` on a Path raises TypeError, so test its string form.
+                if abslib_path is None and "/" not in str(dependency):
                     # An unresolvable @rpath dependency would be silently
                     # missing from the wheel and crash at import time
                     # ("Library not loaded: @rpath/..."). Fail the

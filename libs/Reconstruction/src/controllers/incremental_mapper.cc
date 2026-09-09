@@ -330,10 +330,12 @@ bool IncrementalMapperController::LoadDatabase() {
     Database database(database_path_);
     Timer timer;
     timer.Start();
-    const size_t min_num_matches =
+    DatabaseCache::Options cache_options;
+    cache_options.min_num_matches =
             static_cast<size_t>(options_->min_num_matches);
-    database_cache_.Load(database, min_num_matches, options_->ignore_watermarks,
-                         image_names);
+    cache_options.ignore_watermarks = options_->ignore_watermarks;
+    cache_options.image_names = {image_names.begin(), image_names.end()};
+    database_cache_.Load(database, cache_options);
     std::cout << std::endl;
     timer.PrintMinutes();
 

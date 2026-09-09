@@ -552,11 +552,13 @@ int RunPointTriangulator(int argc, char** argv) {
 
     Database database(*options.database_path);
 
-    const size_t min_num_matches =
+    DatabaseCache::Options cache_options;
+    cache_options.min_num_matches =
         static_cast<size_t>(mapper_options.min_num_matches);
-    database_cache.Load(database, min_num_matches,
-                        mapper_options.ignore_watermarks,
-                        mapper_options.image_names);
+    cache_options.ignore_watermarks = mapper_options.ignore_watermarks;
+    cache_options.image_names = {mapper_options.image_names.begin(),
+                                 mapper_options.image_names.end()};
+    database_cache.Load(database, cache_options);
 
     if (clear_points) {
       reconstruction.DeleteAllPoints2DAndPoints3D();

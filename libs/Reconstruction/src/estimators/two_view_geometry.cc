@@ -1651,11 +1651,11 @@ void MaybeDecomposeRelativePoses(DatabaseCache* database_cache) {
   size_t decompose_count = 0;
   size_t decompose_failed_count = 0;
 
-  for (const image_pair_t pair_id : correspondence_graph.ImagePairs()) {
+  for (const image_pair_t pair_id : correspondence_graph->ImagePairs()) {
     const auto [image_id1, image_id2] = Database::PairIdToImagePair(pair_id);
 
     TwoViewGeometry two_view_geometry =
-        correspondence_graph.ExtractTwoViewGeometry(
+        correspondence_graph->ExtractTwoViewGeometry(
             image_id1, image_id2, /*extract_inlier_matches=*/true);
 
     if (two_view_geometry.cam2_from_cam1.has_value()) {
@@ -1737,7 +1737,7 @@ void MaybeDecomposeRelativePoses(DatabaseCache* database_cache) {
       if (norm > 1e-12) {
         two_view_geometry.cam2_from_cam1->translation() /= norm;
       }
-      correspondence_graph.UpdateTwoViewGeometry(
+      correspondence_graph->UpdateTwoViewGeometry(
           image_id1, image_id2, two_view_geometry);
     } else {
       decompose_failed_count++;

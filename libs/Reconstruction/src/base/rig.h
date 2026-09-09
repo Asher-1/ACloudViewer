@@ -32,6 +32,23 @@ public:
     void AddSensor(const sensor_t& sensor_id,
                    const std::optional<Eigen::Vector4d>& sensor_from_rig_qvec,
                    const std::optional<Eigen::Vector3d>& sensor_from_rig_tvec);
+
+    // Upstream COLMAP dbb41680 sensor/rig.h parity: insert a sensor with an
+    // optional pose (nullopt = unknown extrinsic). The reference sensor must
+    // be added first and the sensor must not exist yet.
+    void AddSensor(const sensor_t& sensor_id,
+                   const std::optional<Rigid3d>& sensor_from_rig) {
+        if (sensor_from_rig) {
+            const Eigen::Quaterniond& q = sensor_from_rig->rotation();
+            AddSensor(sensor_id,
+                      std::optional<Eigen::Vector4d>(
+                              Eigen::Vector4d(q.w(), q.x(), q.y(), q.z())),
+                      std::optional<Eigen::Vector3d>(
+                              sensor_from_rig->translation()));
+        } else {
+            AddSensor(sensor_id, std::nullopt, std::nullopt);
+        }
+    }
     bool HasSensor(const sensor_t& sensor_id) const;
     size_t NumSensors() const;
     bool IsRefSensor(const sensor_t& sensor_id) const;
@@ -91,15 +108,32 @@ public:
     }
 
     // Upstream COLMAP dbb41680 sensor/rig.h parity: set/update the pose of a
-    // non-reference sensor.
+    // non-reference sensor. The sensor must already be part of the rig
+    // (FindSensorFromRigOrThrow semantics), and updating overwrites any
+    // previously known or unknown (nullopt) extrinsic.
     void SetSensorFromRig(const sensor_t& sensor_id,
                           const Rigid3d& sensor_from_rig) {
+        THROW_CHECK(sensor_id != ref_sensor_id_)
+                << "The reference sensor does not have a SensorFromRig "
+                   "transformation, which is fixed to identity";
+        auto it = sensors_.find(sensor_id);
+        THROW_CHECK(it != sensors_.end())
+                << "Sensor (" << static_cast<int>(sensor_id.type) << ", "
+                << sensor_id.id << ") not found in the rig";
         const Eigen::Quaterniond& q = sensor_from_rig.rotation();
-        AddSensor(
-                sensor_id,
-                std::optional<Eigen::Vector4d>(
-                        Eigen::Vector4d(q.w(), q.x(), q.y(), q.z())),
-                std::optional<Eigen::Vector3d>(sensor_from_rig.translation()));
+        it->second = SensorPose{Eigen::Vector4d(q.w(), q.x(), q.y(), q.z()),
+                                sensor_from_rig.translation()};
+    }
+
+    // Upstream COLMAP dbb41680 sensor/rig.h parity: optional overload that
+    // resets the extrinsic when nullopt is passed.
+    void SetSensorFromRig(const sensor_t& sensor_id,
+                          const std::optional<Rigid3d>& sensor_from_rig) {
+        if (sensor_from_rig) {
+            SetSensorFromRig(sensor_id, *sensor_from_rig);
+        } else {
+            ResetSensorFromRig(sensor_id);
+        }
     }
 
     // Upstream COLMAP dbb41680 sensor/rig.h parity: mark the pose of a

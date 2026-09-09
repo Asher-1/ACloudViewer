@@ -75,9 +75,9 @@ bool Frame::HasPose() const { return has_pose_; }
 
 void Frame::SetRigFromWorld(const Eigen::Vector4d& qvec,
                             const Eigen::Vector3d& tvec) {
-    CHECK(qvec.allFinite());
-    CHECK(tvec.allFinite());
-    CHECK_GT(qvec.squaredNorm(), 0.0);
+    // Upstream parity (dbb41680): no finiteness checks here. The rotation
+    // averaging stack legally seeds un-estimated frames with a NaN
+    // "unknown pose" placeholder before overwriting it with the solution.
     rig_from_world_qvec_ = NormalizeQuaternion(qvec);
     rig_from_world_tvec_ = tvec;
     has_pose_ = true;

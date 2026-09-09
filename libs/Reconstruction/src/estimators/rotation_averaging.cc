@@ -154,7 +154,7 @@ Reconstruction CreateExpandedReconstruction(
     for (const auto& [sensor_id, sensor_from_rig] : rig.NonRefSensors()) {
       if (sensor_id.type != SensorType::CAMERA) continue;
       if (rig.MaybeSensorFromRig(sensor_id).has_value()) {
-        rig_expanded.SetSensorFromRig(sensor_id, *sensor_from_rig);
+        rig_expanded.AddSensor(sensor_id, sensor_from_rig);
       } else {
         // Create singleton rig for this camera.
         const rig_t singleton_rig_id = next_rig_id++;
@@ -469,7 +469,7 @@ bool RotationEstimator::MaybeSolveGravityAlignedSubset(
              gravity_rig.NonRefSensors()) {
           if (!gravity_rig.HasSensorFromRig(sensor_id)) continue;
           reconstruction.Rig(gravity_rig_id)
-              .SetSensorFromRig(sensor_id, *sensor_from_rig);
+              .SetSensorFromRig(sensor_id, sensor_from_rig);
         }
       }
     }
@@ -713,11 +713,7 @@ bool RunRotationAveraging(const RotationEstimatorOptions& options,
     for (const frame_t frame_id : reg_frame_ids_snapshot) {
       THROW_CHECK(reconstruction.Frame(frame_id).HasPose());
       if (!active_frame_ids.count(frame_id)) {
-        // Fork parity: image-level registration until W3-2b.
-        for (const image_t registered_image_id :
-             reconstruction.Frame(frame_id).ImageIds()) {
-          reconstruction.DeRegisterImage(registered_image_id);
-        }
+        reconstruction.DeRegisterFrame(frame_id);
       }
     }
   }

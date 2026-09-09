@@ -68,7 +68,11 @@ FeatureKeypointsBlob FeatureKeypointsToBlob(const FeatureKeypoints& keypoints) {
 
 FeatureKeypoints FeatureKeypointsFromBlob(const FeatureKeypointsBlob& blob) {
   FeatureKeypoints keypoints(static_cast<size_t>(blob.rows()));
-  if (blob.cols() == 2) {
+  if (blob.rows() == 0) {
+    // Upstream parity: images without keypoints (e.g. match-only test
+    // fixtures) load as empty rather than failing the column check.
+    return keypoints;
+  } else if (blob.cols() == 2) {
     for (FeatureKeypointsBlob::Index i = 0; i < blob.rows(); ++i) {
       keypoints[i] = FeatureKeypoint(blob(i, 0), blob(i, 1));
     }
@@ -263,6 +267,16 @@ Image ReadImageRow(sqlite3_stmt* sql_stmt) {
     if (sqlite3_column_type(sql_stmt, i + 7) != SQLITE_NULL) {
       image.TvecPrior(i) = sqlite3_column_double(sql_stmt, i + 7);
     }
+  }
+
+  // Upstream parity (dbb41680): the last column of the image read statements
+  // carries the owning frame id, resolved by joining frame_data (with the
+  // fork-legacy frame_images fallback). NULL means the image is not yet part
+  // of a frame.
+  if (sqlite3_column_count(sql_stmt) > 10 &&
+      sqlite3_column_type(sql_stmt, 10) != SQLITE_NULL) {
+    image.SetFrameId(
+        static_cast<frame_t>(sqlite3_column_int64(sql_stmt, 10)));
   }
 
   return image;
@@ -754,9 +768,25 @@ TwoViewGeometry Database::ReadTwoViewGeometry(const image_t image_id1,
   two_view_geometry.inlier_matches = FeatureMatchesFromBlob(blob);
   // The write path stores the transposed matrix so that its column-major
   // memory equals the row-major original; undo that transpose here.
-  two_view_geometry.F = F_legacy.transpose();
-  two_view_geometry.E = E_legacy.transpose();
-  two_view_geometry.H = H_legacy.transpose();
+  // Upstream optional semantics: the fork-legacy blob layout encodes absent
+  // matrices and poses as all-zero blobs; zero is not a valid F/E/H or pose
+  // quaternion, so read them back as nullopt exactly like the upstream
+  // NULL columns.
+  if (!F_legacy.isZero(0)) {
+    two_view_geometry.F = F_legacy.transpose();
+  }
+  if (!E_legacy.isZero(0)) {
+    two_view_geometry.E = E_legacy.transpose();
+  }
+  if (!H_legacy.isZero(0)) {
+    two_view_geometry.H = H_legacy.transpose();
+  }
+  if (!qvec_legacy.isZero(0)) {
+    two_view_geometry.cam2_from_cam1 =
+        Rigid3d(Eigen::Quaterniond(qvec_legacy(0), qvec_legacy(1),
+                                   qvec_legacy(2), qvec_legacy(3)),
+                tvec_legacy);
+  }
 
   if (SwapImagePair(image_id1, image_id2)) {
     two_view_geometry.Invert();
@@ -794,14 +824,23 @@ void Database::ReadTwoViewGeometries(
         sql_stmt_read_two_view_geometries_, rc, 8);
     const Eigen::Vector3d tvec_legacy = ReadStaticMatrixBlob<Eigen::Vector3d>(
         sql_stmt_read_two_view_geometries_, rc, 9);
-    two_view_geometry.F = F_legacy.transpose();
-    two_view_geometry.E = E_legacy.transpose();
-    two_view_geometry.H = H_legacy.transpose();
-    two_view_geometry.cam2_from_cam1 =
-        Rigid3d(Eigen::Quaterniond(qvec_legacy(0), qvec_legacy(1),
-                                   qvec_legacy(2), qvec_legacy(3)),
-                tvec_legacy);
-
+    // Upstream optional semantics (see ReadTwoViewGeometry): all-zero blobs
+    // encode absent values in the fork-legacy layout.
+    if (!F_legacy.isZero(0)) {
+      two_view_geometry.F = F_legacy.transpose();
+    }
+    if (!E_legacy.isZero(0)) {
+      two_view_geometry.E = E_legacy.transpose();
+    }
+    if (!H_legacy.isZero(0)) {
+      two_view_geometry.H = H_legacy.transpose();
+    }
+    if (!qvec_legacy.isZero(0)) {
+      two_view_geometry.cam2_from_cam1 =
+          Rigid3d(Eigen::Quaterniond(qvec_legacy(0), qvec_legacy(1),
+                                     qvec_legacy(2), qvec_legacy(3)),
+                  tvec_legacy);
+    }
     two_view_geometries->push_back(two_view_geometry);
   }
 
@@ -901,6 +940,15 @@ rig_t Database::WriteRig(const Rig& rig, const bool use_rig_id) const {
   SQLITE3_CALL(sqlite3_prepare_v2(database_, "INSERT INTO rig_cameras(rig_id, camera_id, qvec, tvec) "
                                   "VALUES(?, ?, ?, ?);", -1, &camera_stmt, nullptr));
   for (const camera_t camera_id : rig.CameraIds()) {
+    const sensor_t camera_sensor_id(SensorType::CAMERA, camera_id);
+    // Upstream parity: the sensor-from-rig pose is optional. Cameras without
+    // an estimated extrinsic are persisted with NULL blobs through the
+    // generic rig_sensors table below; the legacy rig_cameras protocol has
+    // no NULL representation, so they must not go through CamFromRig*
+    // (which would throw bad_optional_access).
+    if (!rig.HasSensorFromRig(camera_sensor_id)) {
+      continue;
+    }
     SQLITE3_CALL(sqlite3_bind_int64(camera_stmt, 1, rig_id));
     SQLITE3_CALL(sqlite3_bind_int64(camera_stmt, 2, camera_id));
     BindPoseBlob(camera_stmt, 3, 4, rig.CamFromRigQvec(camera_id),
@@ -1602,17 +1650,32 @@ void Database::PrepareSQLStatements() {
                                   &sql_stmt_read_cameras_, 0));
   sql_stmts_.push_back(sql_stmt_read_cameras_);
 
-  sql = "SELECT * FROM images WHERE image_id = ?;";
+  // Upstream parity (dbb41680): the image-to-frame association is resolved
+  // at read time by joining frame_data on (data_id, sensor_type=CAMERA), not
+  // stored in the images table. The fork-legacy frame_images table is kept
+  // as a fallback for databases written before the W3-2a dual-write.
+  sql = "SELECT images.*, COALESCE(fd.frame_id, fi.frame_id) FROM images "
+        "LEFT JOIN frame_data fd ON fd.data_id = images.image_id AND "
+        "fd.sensor_type = 0 "
+        "LEFT JOIN frame_images fi ON fi.image_id = images.image_id "
+        "WHERE images.image_id = ?;";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_read_image_id_, 0));
   sql_stmts_.push_back(sql_stmt_read_image_id_);
 
-  sql = "SELECT * FROM images WHERE name = ?;";
+  sql = "SELECT images.*, COALESCE(fd.frame_id, fi.frame_id) FROM images "
+        "LEFT JOIN frame_data fd ON fd.data_id = images.image_id AND "
+        "fd.sensor_type = 0 "
+        "LEFT JOIN frame_images fi ON fi.image_id = images.image_id "
+        "WHERE images.name = ?;";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_read_image_name_, 0));
   sql_stmts_.push_back(sql_stmt_read_image_name_);
 
-  sql = "SELECT * FROM images;";
+  sql = "SELECT images.*, COALESCE(fd.frame_id, fi.frame_id) FROM images "
+        "LEFT JOIN frame_data fd ON fd.data_id = images.image_id AND "
+        "fd.sensor_type = 0 "
+        "LEFT JOIN frame_images fi ON fi.image_id = images.image_id;";
   SQLITE3_CALL(sqlite3_prepare_v2(database_, sql.c_str(), -1,
                                   &sql_stmt_read_images_, 0));
   sql_stmts_.push_back(sql_stmt_read_images_);

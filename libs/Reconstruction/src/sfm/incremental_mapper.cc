@@ -109,9 +109,9 @@ void IncrementalMapper::BeginReconstruction(Reconstruction* reconstruction) {
     CHECK(reconstruction_ == nullptr);
     reconstruction_ = reconstruction;
     reconstruction_->Load(*database_cache_);
-    reconstruction_->SetUp(&database_cache_->CorrespondenceGraph());
+    reconstruction_->SetUp(database_cache_->CorrespondenceGraph().get());
     triangulator_.reset(new IncrementalTriangulator(
-            &database_cache_->CorrespondenceGraph(), reconstruction));
+            database_cache_->CorrespondenceGraph().get(), reconstruction));
 
     num_shared_reg_images_ = 0;
     num_reg_images_per_camera_.clear();
@@ -312,7 +312,7 @@ bool IncrementalMapper::RegisterInitialImagePair(const Options& options,
     RegisterImageEvent(image_id2);
 
     const CorrespondenceGraph& correspondence_graph =
-            database_cache_->CorrespondenceGraph();
+            *database_cache_->CorrespondenceGraph();
     const FeatureMatches& corrs =
             correspondence_graph.FindCorrespondencesBetweenImages(image_id1,
                                                                   image_id2);
@@ -381,7 +381,7 @@ bool IncrementalMapper::RegisterNextImage(const Options& options,
          ++point2D_idx) {
         const Point2D& point2D = image.Point2D(point2D_idx);
         const CorrespondenceGraph& correspondence_graph =
-                database_cache_->CorrespondenceGraph();
+                *database_cache_->CorrespondenceGraph();
         const std::vector<CorrespondenceGraph::Correspondence> corrs =
                 correspondence_graph.FindTransitiveCorrespondences(
                         image_id, point2D_idx, kCorrTransitivity);
@@ -865,7 +865,7 @@ std::vector<image_t> IncrementalMapper::FindFirstInitialImage(
 std::vector<image_t> IncrementalMapper::FindSecondInitialImage(
         const Options& options, const image_t image_id1) const {
     const CorrespondenceGraph& correspondence_graph =
-            database_cache_->CorrespondenceGraph();
+            *database_cache_->CorrespondenceGraph();
 
     // Collect images that are connected to the first seed image and have
     // not been registered before in other reconstructions.
@@ -1158,7 +1158,7 @@ bool IncrementalMapper::EstimateInitialTwoViewGeometry(
     const Camera& camera2 = database_cache_->Camera(image2.CameraId());
 
     const CorrespondenceGraph& correspondence_graph =
-            database_cache_->CorrespondenceGraph();
+            *database_cache_->CorrespondenceGraph();
     const FeatureMatches matches =
             correspondence_graph.FindCorrespondencesBetweenImages(image_id1,
                                                                   image_id2);

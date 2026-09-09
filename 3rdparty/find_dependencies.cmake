@@ -2355,17 +2355,35 @@ if (BUILD_RECONSTRUCTION)
             LIBRARIES ${EXT_OPENIMAGEIO_LIBRARIES}
             DEPENDS ext_openimageio
             )
-    # MSVC link.exe takes bare @response_file; Apple/GNU ld takes -Wl,@file.
+    # Apple/GNU ld expands @rsp from the link line, so those platforms
+    # consume the response file directly. MSVC link.exe cannot: MSBuild and
+    # the Ninja generator wrap every link line in their own response file,
+    # and link.exe expands no @file inside a response file - the @rsp item
+    # arrives nested and fails with
+    # "LNK1104: cannot open file '@...rsp.lib'" (link.exe then retries the
+    # literal name with a .lib suffix). On Windows the closure is therefore
+    # physically merged into one archive by lib.exe during the
+    # generate_static_closure step, linked here as a plain library item.
     # The closure must be an INTERFACE *library item* (not a link option):
     # link options land before the object libraries in the final link line,
     # and the static archives inside the rsp then precede their first
     # reference, leaving the exr/imath symbols unresolved.
     if (MSVC)
         target_link_libraries(3rdparty_openimageio
-                INTERFACE "@${OPENIMAGEIO_RSP_FILE}")
+                INTERFACE
+                "$<BUILD_INTERFACE:${OPENIMAGEIO_MERGED_LIB}>")
     else ()
         target_link_libraries(3rdparty_openimageio
                 INTERFACE "-Wl,@${OPENIMAGEIO_RSP_FILE}")
+    endif ()
+    # OIIO's plugin.cpp uses dlopen/dlclose. glibc < 2.34 (ubuntu-focal CI)
+    # keeps them in a separate libdl, and every consumer of the static closure
+    # must link it explicitly: pybind pulls -ldl transitively via Python/CUDA,
+    # but plain executables (the unit-test binaries) do not. CMAKE_DL_LIBS is
+    # empty where dl lives in libc (macOS, Windows, glibc >= 2.34).
+    if (CMAKE_DL_LIBS)
+        target_link_libraries(3rdparty_openimageio
+                INTERFACE ${CMAKE_DL_LIBS})
     endif ()
 
     include(${CloudViewer_3RDPARTY_DIR}/faiss/faiss.cmake)

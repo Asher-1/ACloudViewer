@@ -269,11 +269,11 @@ TEST(PoseGraph, Load) {
 
   // Load into DatabaseCache with relative poses.
   DatabaseCache cache;
-  cache.Load(*database, /*min_num_matches=*/0, /*ignore_watermarks=*/false,
-             /*image_names=*/{});
+  DatabaseCache::Options options;
+  cache.Load(*database, options);
 
   PoseGraph pose_graph;
-  pose_graph.Load(cache.CorrespondenceGraph());
+  pose_graph.Load(*cache.CorrespondenceGraph());
 
   EXPECT_EQ(pose_graph.NumEdges(), 2);
   EXPECT_TRUE(pose_graph.HasEdge(1, 2));

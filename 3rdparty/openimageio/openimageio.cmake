@@ -161,10 +161,10 @@ ExternalProject_Add(ext_openimageio
         # runner's incompatible libtiff.
         #
         # Entries must match OIIO's checked_find_package names: ZLIB, PNG,
-        # libjpeg-turbo, Imath, OpenEXR, yaml-cpp, minizip-ng. The semicolon-
-        # separated list must survive ExternalProject's command-line round-
-        # trip, hence the $<SEMICOLON> generator expression, exactly like
-        # CMAKE_PREFIX_PATH above.
+        # libjpeg-turbo, Imath, OpenEXR, yaml-cpp, minizip-ng, expat. The
+        # semicolon-separated list must survive ExternalProject's command-
+        # line round-trip, hence the $<SEMICOLON> generator expression,
+        # exactly like CMAKE_PREFIX_PATH above.
         # minizip-ng must be in this list, not merely a missing-deps fallback:
         # a host carrying minizip-ng >= 4.0.10 would otherwise be found by
         # find_package and silently scavenged into the closure instead of the
@@ -172,7 +172,12 @@ ExternalProject_Add(ext_openimageio
         # can never collide with the miniz copy embedded in libassimp.a).
         # Forcing the local
         # build also guarantees the rename flag is always compiled in.
-        -DOpenImageIO_BUILD_LOCAL_DEPS=TIFF$<SEMICOLON>ZLIB$<SEMICOLON>PNG$<SEMICOLON>libjpeg-turbo$<SEMICOLON>Imath$<SEMICOLON>OpenEXR$<SEMICOLON>yaml-cpp$<SEMICOLON>minizip-ng
+        # expat is the same story (ubuntu-noble CI): noble ships expat 2.6.x,
+        # which satisfies OIIO's VERSION_MIN, so OCIO links the host SHARED
+        # expat, no libexpat.a lands in deps/dist, and the static closure
+        # cannot resolve OCIO's XML_* references. Pinning the local build
+        # keeps expat inside deps/dist on every platform.
+        -DOpenImageIO_BUILD_LOCAL_DEPS=TIFF$<SEMICOLON>ZLIB$<SEMICOLON>PNG$<SEMICOLON>libjpeg-turbo$<SEMICOLON>Imath$<SEMICOLON>OpenEXR$<SEMICOLON>yaml-cpp$<SEMICOLON>minizip-ng$<SEMICOLON>expat
         # OIIO's LOCAL_BUILD_SHARED_LIBS_DEFAULT is ON for local dep builds,
         # which would leave a libz.dylib in deps/dist for the produced dylib
         # to dangle on. Every local dep must ship static.
@@ -206,9 +211,41 @@ ExternalProject_Add_StepDependencies(ext_openimageio patch ${_openimageio_patch_
 # old Imath_BUILD_VERSION or a shallow clone pinned to a bumped tag)
 # otherwise conflict with the new patch set at configure time.
 
-# Discover the static closure after the install finished (macOS only; the
-# shared builds need no closure because their dylib/dll records it). The step
-# reruns on every OIIO build so the rsp never goes stale.
+# Discover the static closure after the install finished. The step reruns on
+# every OIIO build so the rsp never goes stale.
+#
+# Apple/GNU linkers expand @rsp from their own response files, so those
+# platforms consume the rsp directly as a link item. MSVC link.exe cannot
+# expand a nested @rsp (MSBuild/Ninja wrap every link line in their own
+# response file, and link.exe treats the inner @path as a plain library
+# input, failing with "LNK1104: cannot open file '@...rsp.lib'"). On Windows
+# the closure is therefore physically merged into ONE archive by lib.exe
+# (CMAKE_AR) inside this step, and the consumer links that single known-name
+# archive. MSVC resolves static-archive members with repeated scans, so the
+# merged archive needs neither the doubled entries nor any ordering the
+# two-pass rsp relies on.
+if(MSVC)
+    if(NOT CMAKE_AR)
+        message(FATAL_ERROR
+            "OIIO static closure: MSVC builds merge the closure with "
+            "CMAKE_AR (lib.exe), but CMAKE_AR is unset. Configure with a "
+            "complete MSVC toolchain before enabling BUILD_RECONSTRUCTION.")
+    endif()
+    set(_openimageio_closure_rsp
+        <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/oiio_static_closure.rsp)
+    set(_openimageio_closure_merged
+        <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/oiio_static_closure.lib)
+    set(_openimageio_closure_byproducts
+        BYPRODUCTS ${_openimageio_closure_rsp} ${_openimageio_closure_merged})
+    set(_openimageio_closure_extra_args -DMERGE_LIB_TOOL=${CMAKE_AR})
+else()
+    set(_openimageio_closure_rsp
+        <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/oiio_static_closure.rsp)
+    set(_openimageio_closure_byproducts
+        BYPRODUCTS ${_openimageio_closure_rsp})
+    set(_openimageio_closure_extra_args "")
+endif()
+
 ExternalProject_Add_Step(ext_openimageio generate_static_closure
     COMMAND ${CMAKE_COMMAND}
         -DLIB_PREFIX=${CMAKE_STATIC_LIBRARY_PREFIX}
@@ -217,9 +254,10 @@ ExternalProject_Add_Step(ext_openimageio generate_static_closure
         -DOIIO_BINARY_DIR=<BINARY_DIR>
         -DEXTRA_LIBS=${_openimageio_zlib_library}
         -DOUT_RSP=<INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/oiio_static_closure.rsp
+        ${_openimageio_closure_extra_args}
         -P ${CMAKE_CURRENT_LIST_DIR}/generate_static_closure.cmake
     DEPENDEES install
-    BYPRODUCTS <INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/oiio_static_closure.rsp
+    ${_openimageio_closure_byproducts}
     )
 
 ExternalProject_Get_Property(ext_openimageio INSTALL_DIR)
@@ -232,10 +270,11 @@ ExternalProject_Get_Property(ext_openimageio INSTALL_DIR)
 set(OPENIMAGEIO_INCLUDE_DIRS "${INSTALL_DIR}/include")
 set(OPENIMAGEIO_LIB_DIR "${INSTALL_DIR}/${CloudViewer_INSTALL_LIB_DIR}")
 set(EXT_OPENIMAGEIO_LIBRARIES OpenImageIO OpenImageIO_Util)
-# Static closure discovered after the build (see generate_static_closure.cmake;
-# only generated in static mode, i.e. everywhere but Linux).
-# find_dependencies.cmake appends it as an extra link option on macOS/Windows.
+# Static closure discovered after the build (see generate_static_closure.cmake):
+# GNU/Apple linkers consume the rsp file; MSVC links the lib.exe-merged
+# single archive (see the step comment above for why nested @rsp fails).
 set(OPENIMAGEIO_RSP_FILE "${OPENIMAGEIO_LIB_DIR}/oiio_static_closure.rsp")
+set(OPENIMAGEIO_MERGED_LIB "${OPENIMAGEIO_LIB_DIR}/oiio_static_closure.lib")
 
 message(STATUS
     "Reconstruction image backend: OpenImageIO ${OPENIMAGEIO_VERSION} from 3rdparty source (OpenCV disabled)")

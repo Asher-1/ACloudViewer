@@ -53,10 +53,10 @@ void LoadReconstructionAndPoseGraph(const Database& database,
                                     Reconstruction* reconstruction,
                                     PoseGraph* pose_graph) {
   DatabaseCache database_cache;
-  database_cache.Load(database, /*min_num_matches=*/0,
-                      /*ignore_watermarks=*/false, /*image_names=*/{});
+  DatabaseCache::Options options;
+  database_cache.Load(database, options);
   reconstruction->Load(database_cache);
-  pose_graph->Load(database_cache.CorrespondenceGraph());
+  pose_graph->Load(*database_cache.CorrespondenceGraph());
 }
 
 struct TestData {
