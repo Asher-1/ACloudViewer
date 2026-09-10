@@ -22,7 +22,7 @@
 | HIP PatchMatch | deferred，无 ROCm 硬件即不进发布矩阵 | manifest `hip_patchmatch: deferred` |
 | FreeImage→OpenImageIO | 继续按平台门推进（属依赖替换，按对齐口径不计入） | manifest `freeimage_to_openimageio: partial` |
 | DA3 系自研扩展（da3_*、photometric_* 选项等） | 全部保留，不受对齐影响 | 本地产品能力 |
-| 目录结构差异（本地 `base/` 扁平 vs 上游分层） | 不做整体重构 | 见 2.3 策略 C |
+| 目录结构差异（本地 `base/` 扁平 vs 上游分层） | 不做整体重构；**选择性结构拆分/退役/冻结声明见 W17 系列** | 见 2.3 策略 C + §4 W17 |
 
 ### 1.3 决策记录（Decision Log）
 
@@ -244,6 +244,22 @@ CLI。因此 D1 的实现量比原估小：见 W15。
   `reconstruction_glomap_gate`（多组件 e2e 用 W9）。
 - manifest：`global_mapper_glomap`（partial → implemented）。
 - 依赖：W9（测试）；与 W3 无耦合。
+- 执行进度（2026-09-09，W4 layer 2）：`sfm/global_mapper.{h,cc}`、
+  `controllers/global_pipeline.{h,cc}`、`util/base_controller.{h,cc}`、
+  `util/cancellation.{h,cc}` 与 `global_mapper` CLI 命令
+  （exe/sfm.cc + colmap.cc + OptionManager::AddGlobalMapperOptions）全部落地；
+  `global_pipeline_test` 移植 12/13、`global_mapper_test` 3/5（WithoutNoise、
+  WithNoiseAndOutliers、RefineSensorFromRig 绿）。连锁修复 fork 缺陷 (10)–(17)
+  （DeleteAllPoints2DAndPoints3D 丢反指针、SetPoints2D 防御 CHECK、
+  GP ConvertBack AddSensor→SetSensorFromRig、BA 双轨桥、Transform rig 段、
+  Database::DeleteTwoViewGeometry、TearDown 升级 frame 级、Reconstruction
+  move 成员）。已知项：GP rig 分支（ConstantRig 边缘角 / cams_in_rig 未知
+  外参）在本机 gcc9 工具链下不收敛到上游 basin（GP 与上游 line-identical，
+  fixture 几何已验证健康；根因为 libstdc++ std::shuffle/uniform_int_distribution
+  的 gcc 版本序列差异）；`rotation_averager`/`view_graph_calibrator` 命令
+  待 controllers/rotation_averaging 与 estimators/gravity_refinement 移植。
+  剩余：GP rig 分支两用例关闭、controllers/rotation_averaging +
+  gravity_refinement、两 CLI 命令、reconstruction_glomap_gate。
 
 #### W7 位姿先验栈 [L]（依赖 W1、W3-1）
 
@@ -345,7 +361,6 @@ ACloudViewer 集成层（ccMesh + `PinholeCameraTrajectory`）；`image_texturer
    texture_mapping_test 的归属说明；`docs/COLMAP_ALIGNMENT.md` 增一行结论。
 
 #### W16 pycolmap 融合进 `cloudViewer.reconstruction`（D2）[L]
-
 **设计修正（2026-09-05 用户评审）**：不新建平行 Python 包；与既有绑定模块
 **融合去重、合并接口**。
 
@@ -432,6 +447,137 @@ pipeline、mvs、retrieval）。
 
 ---
 
+### 新增工作包（结构对齐系列 W17，2026-09-08 评审定稿）
+
+> 依据 first-principles 结构差异分析（scene/ 主例推广至全模块）：fork 是
+> "内容对齐、结构未对齐"——上游 scene/ 74 个 h/cc 中仅 7 个在正确路径
+> （pose_graph/synthetic/reconstruction_matchers），15 个族内容冻结在
+> `base/`；`base/reconstruction.cc`（2742 行）内嵌上游已拆出的
+> reconstruction_io 5 文件族（43 处 Read/Write 调用）、`base/database.cc`
+> （2463 行）内嵌 database_sqlite（上游 2614 行单文件）；sfm 缺
+> observation_manager（上游 670 行）与 incremental_mapper_impl（上游 749 行）
+> 拆分；完全缺失 reconstruction_clustering(182 行)/reconstruction_pruning
+> (169 行)/io_test/matchers_test。
+>
+> **判定律（第一性原理）**：迁移成本 = 消费者数 × include 重写 + 零行为验证
+> （一次性），收益 = 该文件上游演进时 diff 定位归零（持续性）。上游已删除
+> 文件迁移收益为零（应退役消费者后删除）；上游活跃演进 + fork 内嵌漂移区
+> 拆分为双重收益（最高优先）；高消费者 + 含 frame-aware 增强的 base/ 几何
+> 族冻结 + 声明映射优于物理迁移（base/pose.h 41 消费者、essential_matrix.h
+> 15、triangulation.h 11）。
+>
+> **上游形态基线（dbb41680 实测）**：`Database` 为抽象接口
+> （`virtual ~Database() = 0` + `static Database::Open` 工厂，实现全在
+> database_sqlite.cc 的 SQLiteDatabase）；`Reconstruction::Read/Write{Text,
+> Binary}` 仍为成员函数（声明 reconstruction.h L249–254，实现在
+> reconstruction_io_{text,binary}.cc）；分节器
+> `Read/Write{Rigs,Cameras,Frames,Images,Points3D}{Text,Binary}` 为自由函数
+> （istream + path 双重载，reconstruction_io_{text,binary}.h）；`Export*`
+> 为自由函数 `bool ExportNVM(const Reconstruction&, path, ...)`
+> （reconstruction_io.h）；共享 helper `ExtractSortedIds`/
+> `CreateOneRigPerCamera`/`CreateFrameForImage`/`ExtractImageToFramePtr`
+> 在 reconstruction_io_utils.h（69 行）。
+>
+> Phase 2 项（gravity_refinement + controllers/rotation_averaging +
+> rotation_averager/view_graph_calibrator 两 CLI 命令）为 W4 前置清单既有
+> 项，见 W4 执行进度尾注，不在本系列重复立项。
+
+#### W17.1 reconstruction_io 族拆分（P1b-i）[M]
+
+- 内容：新建 `src/scene/reconstruction_io_utils.{h,cc}`、
+  `reconstruction_io_text.{h,cc}`、`reconstruction_io_binary.{h,cc}`、
+  `reconstruction_io.{h,cc}`（上游 5 文件 1741 行；fork 的成员分节器改为
+  上游自由函数形态，内部复用 fork 现有装配逻辑）；`base/reconstruction.cc`
+  删除 IO 段（Read/Write{Text,Binary} 薄壳**保留成员形态**与上游声明一致，
+  实现搬到 io_text/io_binary.cc；Export* 成员 → 上游自由函数）；
+  `base/reconstruction.h` 删 Export* 成员声明（保留 Read/Write 成员声明）。
+- 消费者迁移（`recon.ExportNVM(...)` → `ExportNVM(recon, ...)`，共 4 处
+  代码文件）：`base/undistortion.cc`、`exe/model.cc`、`ui/main_window.cc`、
+  `app/reconstruction/ReconstructionWidget.cpp`。
+- scene/CMakeLists.txt 注册 + 上游 `reconstruction_io_test` 移植。
+- gate：全量构建 EXIT=0 + ctest ≥195/199。
+- manifest：`reconstruction_io_split`。
+- 执行进度（2026-09-09，✅ 已完成）：8 个新文件落地（上游 1741 行同构，
+  include 适配 + fork API getter/setter 机械适配）；base/reconstruction.cc
+  2742→~1900 行；20 个成员分节器 + 6 个 Export* 成员删除；薄壳换上游形态
+  （filesystem::path + clear + cameras→rigs→frames 顺序）；4 消费者迁移
+  （undistortion.cc、exe/model.cc、ui/main_window.cc、app
+  ReconstructionWidget.cpp）；reconstruction_io_test 上游 19/19 全绿。
+  连带 fork 缺陷修复 (18) Camera::FocalLengthX/Y 对单 focal 模型的错误
+  CHECK（上游 no-CHECK 单 focal 语义）、(19) SetModelId 预填 params 与 io
+  批量读叠加致 params 翻倍（io 读侧 clear + fork SetModelId 语义保留）、
+  (20) Frame::SetRigFromWorld 重复归一化破坏往返位等价（幂等归一化：
+  |norm-1|≤1e-12 原样存储）、(21) 补 Reconstruction::AddPoint3D(id, Point3D)
+  上游重载、(22) util/types.h SensorType 接入 enum_utils（FromString/
+  ToString/流输出）、(23) util/misc.h 补 THROW_CHECK_FILE_OPEN 与
+  filesystem CreateDirIfNotExists 重载。fork 旧 'RIGS' tag 序列化格式退役
+  （Rig::ReadText/WriteText 保留供 Database rig_sensors 使用）；OIIO 外部
+  工程因补丁合并遗留的过期校验在复用树上挂起——apply_openimageio_patch.cmake
+  增加完成树跳过逻辑（环境修复，非对齐项）。
+
+#### W17.2 database_sqlite 拆分（P1b-ii）[M]
+
+- 内容：`base/database.cc`（2463 行）的 SQL 实现体全部搬至
+  `src/scene/database_sqlite.cc`（**文件名对齐上游**）；database.cc 保留
+  PairId/Blob 桥/版本迁移等非表实现；`base/database.h` 具体类形态本轮不动。
+- 完整接口化（Database 抽象基类 + SQLiteDatabase + `Database::Open` 工厂 +
+  全部构造点迁移）列为独立后续包 W17.2b，**不阻塞**上游 database_sqlite.cc
+  的函数级 diff 定位（本轮目标——fork 版 database_sqlite.cc 是具体类成员
+  定义，函数名/SQL/迁移逻辑与上游逐函数可比）。
+- gate：同上；重点回归 database_test / database_cache_test / database_version_migration。
+- manifest：`database_sqlite_split`。
+
+#### W17.3 sfm 同构拆分（P1c）[M]
+
+- 内容：从 `sfm/incremental_mapper.cc` 拆出 `sfm/observation_manager.{h,cc}`
+  （过滤/写回逻辑段）与 `sfm/incremental_mapper_impl.{h,cc}`（注册主循环段），
+  文件级对齐上游；移植上游 `observation_manager_test`。
+- 完整上游类对齐（ObservationManager/IncrementalMapperImpl 类 API、
+  frame-aware RegisterNextImageFallback 等）仍归 W3-3（见 W3 step 3），
+  本包只做文件拆分：为其减负，并为 W3-2b step 4（frame-aware BA）铺路
+  （上游 BA 位姿写回逻辑在 observation_manager 中）。
+- manifest：`sfm_file_split`。
+
+#### W17.4 scene 纯增量移植（P1d）[S]
+
+- 内容：`scene/reconstruction_clustering.{h,cc}`（上游 182 行）+test、
+  `scene/reconstruction_pruning.{h,cc}`（上游 169 行，
+  `FindRedundantPoints3D`）+test、`scene/reconstruction_matchers_test.cc`。
+- 与 W8 关系：本包只落 scene/ 文件与测试；CLI `model_clusterer` 与 mapper
+  剪枝选项接线（`ba_global_ignore_redundant_points3D_min_coverage_gain`）
+  仍归 W8。
+- manifest：并入 `model_clustering_pruning`（partial：文件+测试已落地）。
+
+#### W17.5 孤儿退役（P1a）[S]
+
+- 内容：`base/camera_database`（上游已删除；实测仅 1 消费者，迁移后删除
+  h/cc/test）；`base/camera_rig` 族（上游以 sensor/rig 取代该概念；
+  reconstruction.cc 的 `CameraRigFromRig` 桥仅测试消费，迁移后删除
+  camera_rig.{h,cc}+test，共 4 文件）。
+- 风险：无上游演进面；删除后上游 diff 面进一步收窄。
+- manifest：`orphan_retirement`。
+
+#### W17.6 冻结族永久映射声明（最后）[S]
+
+- 内容：manifest policy 增"永久映射表"（**不物理迁移**，消除每次新增代码
+  的落位判断税）：base/pose → geometry/pose + estimators/pose；
+  base/{essential_matrix,homography_matrix,gps,normalization} → geometry/；
+  base/triangulation → geometry/triangulation + estimators/triangulation；
+  base/{graph_cut,polynomial} → math/；base/{line,warp,undistortion} →
+  image/；base/camera_models → sensor/models(+models_jacobian)；
+  util/bitmap → sensor/bitmap；util/camera_specs → sensor/specs；
+  util/{random,math,matrix} → math/；base/image_reader →
+  controllers/image_reader；util/option_manager → controllers/option_manager；
+  base/{reconstruction_manager,scene_clustering} 维持 base/（上游 scene/
+  同名，映射在 manifest 已知）；geometry/sim3 补 matchers+test 随 W10。
+- 执行顺序：W17.1 → W17.2 → W17.3 → W17.4 → W17.5 → W17.6。
+- 通用 gate：每包全量构建 EXIT=0 + ctest ≥195/199 基线；移动 = 纯搬家 +
+  include 重写，禁止顺手改内容；frame-aware 增强文件（camera/image/frame/
+  rig/reconstruction）拆分前在 manifest 记录增强清单，拆分 diff 中增强代码
+  原样搬运。
+
+---
+
 ## 5. 依赖拓扑与里程碑
 
 ```
@@ -490,3 +636,4 @@ W15 依赖 W2（AutomaticReconstruction 选项面变更方式），其余独立
 | 2026-09-09 | W3-2b step 2a（RA 数值收敛）落地：诊断仪表（RunAndVerifyRotationAveraging 内逐帧/逐 sensor 四元数 dump）显示求解器写入的 rig/frame 容器数据正确，而 `image.CamFromWorld()` 仍报源对象的位姿——根因是 fork 的 Reconstruction 拷贝构造/赋值在拷贝 rigs_/frames_/images_ 后**未重建 frame→rig 与 image→frame/camera 回指针**，任何拷贝出的重建（RA 测试、hierarchical mapper、BA）都静默经源对象的陈旧指针读位姿，~0.44 rad 偏移恰为 non-ref camera 未被合成的 sensor_from_rig 旋转。新增 `Reconstruction::RewireObjectPointers()`（上游 scene/reconstruction.cc parity）在每次拷贝后执行指针重绑，rotation_averaging_test **15/15 全绿**。修复为全局性（此前所有 Reconstruction 拷贝场景均带同款陈旧指针隐患）。全量构建 EXIT=0，ctest **84/85**（仅余 caspar split-intrinsics 预存基线）。W4 layer 1 的全部 6 个上游测试套件绿。剩余：step 2b（correspondence_graph flat-range 查找迁移）→ layer 2（sfm/global_mapper + controllers + CLI 三命令）。manifest frame_aware_mapper/global_mapper_glomap 条目同步更新 |
 | 2026-09-09 | W3-2b step 2（陈旧指针隐患清理）落地：RewireObjectPointers 修复暴露同款隐患于三处并全部修复——(7) Image 拷贝构造/赋值重置 camera_ptr_/frame_ptr_（拷贝=纯数据拷贝，容器经 AddImage/Rewire 重接），并显式补 default move 构造/赋值（声明拷贝构造抑制了隐式 move，导致 AddImage 的 emplace(std::move) 静默清空已重接指针——RA 回归的根因）；(8) Reconstruction::Transform 的 legacy SimilarityTransform3 重载委托到 frame-aware Sim3d 实现（rigs/frames/images/points 整体变换）；(9) Image 投影派生访问器（ProjectionCenter/ProjectionMatrix/RotationMatrix/ViewingDirection/InverseProjectionMatrix）在 frame 接线时读 CamFromWorld、独立 legacy image 回退 qvec/tvec。global_positioning_test 此前经陈旧指针读 GT 位姿（断言恒真/假绿）；断言生效后 Nominal/RefineSensorFromRig 真绿，MultiCameraRig 保留 0.169° 旋转残差 vs 0.1° 阈值（仪表证实全部 frame/sensor 旋转精确，残差为 GP 解形状的 Sim3 对齐旋转估计，seed-42 初值下的收敛质量边缘项，记录为 step 2b 已知项）；legacy fixture（TestNormalize/TestTransform/TestComputeScale）直改 Image::Tvec 处补 frame 同步。全量构建 EXIT=0，ctest 84/85（caspar split-intrinsics 为预存基线）。剩余：step 2b（correspondence_graph flat-range 迁移）→ layer 2 |
 | 2026-09-09 | W3-2b step 2b（correspondence_graph Range 迁移）落地：`base/correspondence_graph.{h,cc}` 完全对齐上游 dbb41680——Finalize 拍平到 flat_corrs/flat_corr_begs（移除 fork 的无观测 image 删除行为，上游保留全部 image；DatabaseCache 观测数桥已有 ExistsImage 防御）、FindCorrespondences 返回 CorrespondenceRange（Finalize 前后语义一致）、ExtractCorrespondences/ExtractTransitiveCorrespondences/ExtractMatchesBetweenImages 输出参数接口替代 vector 返回变体、NumMatchesBetweenImages 替代逐对 NumCorrespondencesBetweenImages、image_pairs_ 改 FlatHashMap + 上游 num_matches 字段名、删除 fork 独有 AddCorrespondences（AddTwoViewGeometry 为唯一上游边入口）；消费者全部迁移（Reconstruction 三角化簿记、IncrementalMapper×4、IncrementalTriangulator×6）；上游 correspondence_graph_test 原样移植 11/11（含 Finalize/NotFinalize 参数化 TwoView/ThreeView、OutOfBounds、Duplicate、UpdateTwoViewGeometry[Swapped]）；FeatureMatch 补上游 operator==/!=。全量构建 EXIT=0，ctest 84/85（global_positioning MultiCameraRig 0.169° 收敛质量项 + caspar 预存基线）。W3-2b step 2 全部完成，下一步：triage MultiCameraRig 收敛项 → layer 2（sfm/global_mapper + controllers/global_pipeline + CLI 三命令） |
+| 2026-09-08 | 新增结构对齐系列 **W17.1–W17.6**（first-principles 结构差异分析定稿：W17.1 reconstruction_io 族拆分 + Export* 自由函数化与 4 消费者迁移、W17.2 database_sqlite 拆分（具体类搬家，完整接口化列 W17.2b）、W17.3 sfm observation_manager/incremental_mapper_impl 文件拆分、W17.4 clustering/pruning/matchers_test 纯增量、W17.5 camera_database/camera_rig 孤儿退役、W17.6 冻结族永久映射声明）；§1.2 目录结构差异行同步修正。执行顺序 W17.1→W17.6，每包 gate 全量构建 EXIT=0 + ctest ≥195/199 |

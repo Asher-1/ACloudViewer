@@ -500,6 +500,17 @@ bool GlobalMapper::GlobalPositioning(
     double max_angular_reproj_error_deg,
     double max_normalized_reproj_error,
     double min_tri_angle_deg) {
+  if (getenv("GM_DIAG")) {
+    for (const auto& [rig_id, rig] : reconstruction_->Rigs()) {
+      for (const auto& [sensor_id, pose] : rig.NonRefSensors()) {
+        const Rigid3d sr = pose ? *pose : Rigid3d();
+        LOG(INFO) << "GM_DIAG: pre-GP rig " << rig_id << " sensor "
+                  << sensor_id.id << " t_isnan="
+                  << sr.translation().hasNaN()
+                  << " rot_ok=" << sr.rotation().coeffs().allFinite();
+      }
+    }
+  }
   if (!RunGlobalPositioning(options, *pose_graph_, *reconstruction_)) {
     return false;
   }

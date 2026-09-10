@@ -1348,6 +1348,15 @@ void Database::DeleteMatches(const image_t image_id1,
   SQLITE3_CALL(sqlite3_reset(sql_stmt_delete_matches_));
 }
 
+void Database::DeleteTwoViewGeometry(const image_t image_id1,
+                                     const image_t image_id2) const {
+  const image_pair_t pair_id = ImagePairToPairId(image_id1, image_id2);
+  SQLITE3_CALL(sqlite3_bind_int64(sql_stmt_delete_two_view_geometry_, 1,
+                                  static_cast<sqlite3_int64>(pair_id)));
+  SQLITE3_CALL(sqlite3_step(sql_stmt_delete_two_view_geometry_));
+  SQLITE3_CALL(sqlite3_reset(sql_stmt_delete_two_view_geometry_));
+}
+
 void Database::DeleteInlierMatches(const image_t image_id1,
                                    const image_t image_id2) const {
   const image_pair_t pair_id = ImagePairToPairId(image_id1, image_id2);

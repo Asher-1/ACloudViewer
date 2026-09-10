@@ -56,6 +56,12 @@ public:
     Reconstruction(const Reconstruction& other);
     Reconstruction& operator=(const Reconstruction& other);
 
+    // Move construct/assign. The hashed containers move their nodes without
+    // rehashing, so the back pointers of the moved-from objects stay valid;
+    // the source is expected to be discarded immediately afterwards.
+    Reconstruction(Reconstruction&&) = default;
+    Reconstruction& operator=(Reconstruction&&) = default;
+
     // Get number of objects.
     inline size_t NumCameras() const;
     inline size_t NumImages() const;
@@ -161,6 +167,9 @@ public:
             const Eigen::Vector3d& xyz,
             const Track& track,
             const Eigen::Vector3ub& color = Eigen::Vector3ub::Zero());
+
+    // Add new 3D point with known ID (upstream parity, dbb41680).
+    void AddPoint3D(const point3D_t point3D_id, struct Point3D point3D);
 
     // Add observation to existing 3D point.
     void AddObservation(const point3D_t point3D_id,
@@ -317,12 +326,12 @@ public:
     void Write(const std::string& path) const;
 
     // Read data from binary/text file.
-    void ReadText(const std::string& path);
-    void ReadBinary(const std::string& path);
+    void ReadText(const std::filesystem::path& path);
+    void ReadBinary(const std::filesystem::path& path);
 
     // Write data from binary/text file.
-    void WriteText(const std::string& path) const;
-    void WriteBinary(const std::string& path) const;
+    void WriteText(const std::filesystem::path& path) const;
+    void WriteBinary(const std::filesystem::path& path) const;
 
     // Convert 3D points in reconstruction to PLY point cloud.
     std::vector<PlyPoint> ConvertToPLY() const;
@@ -331,84 +340,6 @@ public:
     // only intended for visualization of data and usable for reconstruction.
     void ImportPLY(const std::string& path);
     void ImportPLY(const std::vector<PlyPoint>& ply_points);
-
-    // Export to other data formats.
-
-    // Exports in NVM format http://ccwu.me/vsfm/doc.html#nvm. Only supports
-    // SIMPLE_RADIAL camera model when exporting distortion parameters. When
-    // skip_distortion == true it supports all camera models with the caveat
-    // that it's using the mean focal length which will be inaccurate for camera
-    // models with two focal lengths and distortion.
-    bool ExportNVM(const std::string& path, bool skip_distortion = false) const;
-
-    // Exports in CAM format which is a simple text file that contains pose
-    // information and camera intrinsics for each image and exports one file per
-    // image; it does not include information on the 3D points. The format is as
-    // follows (2 lines of text with space separated numbers):
-    // <Tvec; 3 values> <Rotation matrix in row-major format; 9 values>
-    // <focal_length> <k1> <k2> 1.0 <principal point X> <principal point Y>
-    // Note that focal length is relative to the image max(width, height),
-    // and principal points x and y are relative to width and height
-    // respectively.
-    //
-    // Only supports SIMPLE_RADIAL and RADIAL camera models when exporting
-    // distortion parameters. When skip_distortion == true it supports all
-    // camera models with the caveat that it's using the mean focal length which
-    // will be inaccurate for camera models with two focal lengths and
-    // distortion.
-    bool ExportCam(const std::string& path, bool skip_distortion = false) const;
-
-    // Exports in Recon3D format which consists of three text files with the
-    // following format and content:
-    // 1) imagemap_0.txt: a list of image numeric IDs with one entry per line.
-    // 2) urd-images.txt: A list of images with one entry per line as:
-    //    <image file name> <width> <height>
-    // 3) synth_0.out: Contains information for image poses, camera intrinsics,
-    //    and 3D points as:
-    //    <N; num images> <M; num points>
-    //    <N lines of image entries>
-    //    <M lines of point entries>
-    //
-    //    Each image entry consists of 5 lines as:
-    //    <focal length> <k1> <k2>
-    //    <Rotation matrix; 3x3 array>
-    //    <Tvec; 3 values>
-    //    Note that the focal length is scaled by 1 / max(width, height)
-    //
-    //    Each point entry consists of 3 lines as:
-    //    <point x, y, z coordinates>
-    //    <point RGB color>
-    //    <K; num track elements> <Track Element 1> ... <Track Element K>
-    //
-    //    Each track elemenet is a sequence of 5 values as:
-    //    <image ID> <2D point ID> -1.0 <X> <Y>
-    //    Note that the 2D point coordinates are centered around the principal
-    //    point and scaled by 1 / max(width, height).
-    //
-    // When skip_distortion == true it supports all camera models with the
-    // caveat that it's using the mean focal length which will be inaccurate
-    // for camera models with two focal lengths and distortion.
-    bool ExportRecon3D(const std::string& path,
-                       bool skip_distortion = false) const;
-
-    // Exports in Bundler format https://www.cs.cornell.edu/~snavely/bundler/.
-    // Supports SIMPLE_PINHOLE, PINHOLE, SIMPLE_RADIAL and RADIAL camera models
-    // when exporting distortion parameters. When skip_distortion == true it
-    // supports all camera models with the caveat that it's using the mean focal
-    // length which will be inaccurate for camera models with two focal lengths
-    // and distortion.
-    bool ExportBundler(const std::string& path,
-                       const std::string& list_path,
-                       bool skip_distortion = false) const;
-
-    // Exports 3D points only in PLY format.
-    void ExportPLY(const std::string& path) const;
-
-    // Exports in VRML format https://en.wikipedia.org/wiki/VRML.
-    void ExportVRML(const std::string& images_path,
-                    const std::string& points3D_path,
-                    const double image_scale,
-                    const Eigen::Vector3d& image_rgb) const;
 
     // Extract colors for 3D points of given image. Colors will be extracted
     // only for 3D points which are completely black.
@@ -448,28 +379,6 @@ private:
     ComputeBoundsAndCentroid(const double p0,
                              const double p1,
                              const bool use_images) const;
-
-    void ReadCamerasText(const std::string& path);
-    void ReadImagesText(const std::string& path);
-    void ReadPoints3DText(const std::string& path);
-    void ReadCamerasBinary(const std::string& path);
-    void ReadImagesBinary(const std::string& path);
-    void ReadPoints3DBinary(const std::string& path);
-    void ReadRigsText(const std::string& path);
-    void ReadFramesText(const std::string& path);
-    void ReadRigsBinary(const std::string& path);
-    void ReadFramesBinary(const std::string& path);
-
-    void WriteCamerasText(const std::string& path) const;
-    void WriteImagesText(const std::string& path) const;
-    void WritePoints3DText(const std::string& path) const;
-    void WriteCamerasBinary(const std::string& path) const;
-    void WriteImagesBinary(const std::string& path) const;
-    void WritePoints3DBinary(const std::string& path) const;
-    void WriteRigsText(const std::string& path) const;
-    void WriteFramesText(const std::string& path) const;
-    void WriteRigsBinary(const std::string& path) const;
-    void WriteFramesBinary(const std::string& path) const;
 
     void SetObservationAsTriangulated(const image_t image_id,
                                       const point2D_t point2D_idx,

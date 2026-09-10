@@ -22,6 +22,10 @@
 #                                       the sub-build's CMAKE_MESSAGE_LOG_
 #                                       LEVEL so its dependency resolution
 #                                       stays visible in CI logs (0014)
+#   src/cmake/build_libjpeg-turbo.cmake disable WITH_TESTS/WITH_TURBOJPEG in
+#                                       the local JPEG (tjunittest-static
+#                                       races its md5 objects under a
+#                                       parallel make -> md5hl.c.o gone)
 #   src/cmake/build_TIFF.cmake          disable webp/libdeflate in the local
 #                                       TIFF, hand it the local JPEG
 #                                       headers/lib (0002/0003/0009)
@@ -36,7 +40,10 @@
 #                                       minizip-ng in
 #                                       OpenImageIO_BUILD_LOCAL_DEPS
 #                                       (openimageio.cmake)
-#   src/cmake/dependency_utils.cmake    inherit macOS deployment target +
+#   src/cmake/dependency_utils.cmake    fail loudly on a failed tag checkout
+#                                       (stale/incomplete cached clone ->
+#                                       pathspec errors downstream);
+#                                       inherit macOS deployment target +
 #                                       zlib into dep sub-builds, give every
 #                                       sub-build CMAKE_PREFIX_PATH=deps/dist,
 #                                       propagate the parent PIC choice so
@@ -76,7 +83,7 @@ index d3e672b..8af5451 100644
             DOC "Should a local Imath build, if necessary, build shared libraries" ADVANCED)
  
 diff --git a/src/cmake/build_OpenColorIO.cmake b/src/cmake/build_OpenColorIO.cmake
-index 1eb314d..e97cdf7 100644
+index 1eb314d..1a19a1e 100644
 --- a/src/cmake/build_OpenColorIO.cmake
 +++ b/src/cmake/build_OpenColorIO.cmake
 @@ -27,6 +27,22 @@ unset (OpenColorIO_DIR)
@@ -102,7 +109,7 @@ index 1eb314d..e97cdf7 100644
  checked_find_package(minizip-ng REQUIRED VERSION_MIN 4.0.10)
  
  string (MAKE_C_IDENTIFIER ${OpenColorIO_BUILD_VERSION} OpenColorIO_VERSION_IDENT)
-@@ -56,12 +72,55 @@ build_dependency_with_cmake(OpenColorIO
+@@ -56,12 +72,64 @@ build_dependency_with_cmake(OpenColorIO
          # Fix for yaml-cpp breaking against cmake 4.0.
          # Remove when yaml-cpp is fixed to declare its own minimum high enough.
          -D CMAKE_POLICY_VERSION_MINIMUM=3.5
@@ -136,6 +143,15 @@ index 1eb314d..e97cdf7 100644
 +        # dir inside the self-contained deps tree. An empty value keeps
 +        # OCIO's own missing-deps fallback working.
 +        -D Imath_DIR=${Imath_DIR}
++        # Repair the OCIO sub-build's yaml-cpp resolution in place (see
++        # src/cmake/ocio_subbuild_project_include.cmake): without it, MSVC
++        # multi-config generators make OCIO's Findyaml-cpp generic LOCATION
++        # read come back NOTFOUND, FPHSA fails, and OCIO falls back to
++        # Installyaml-cpp whose ext headers can drift from the pinned 0.8.0
++        # archive - the windows wheel YAML::FpToString / Emitter::Write(
++        # const char*, size_t) LNK2001 x3. CMAKE_PROJECT_INCLUDE runs right
++        # after project() in the sub-build.
++        -DCMAKE_PROJECT_INCLUDE=${PROJECT_SOURCE_DIR}/src/cmake/ocio_subbuild_project_include.cmake
      )
  
  # Set some things up that we'll need for a subsequent find_package to work
@@ -257,11 +273,29 @@ index 24257d8..8f88496 100644
  # Set some things up that we'll need for a subsequent find_package to work
  set (ZLIB_ROOT ${ZLIB_LOCAL_INSTALL_DIR})
  
+diff --git a/src/cmake/build_libjpeg-turbo.cmake b/src/cmake/build_libjpeg-turbo.cmake
+index 315a344..a887781 100644
+--- a/src/cmake/build_libjpeg-turbo.cmake
++++ b/src/cmake/build_libjpeg-turbo.cmake
+@@ -19,6 +19,13 @@ build_dependency_with_cmake(libjpeg-turbo
+     CMAKE_ARGS
+         -D ENABLE_SHARED=${libjpeg-turbo_BUILD_SHARED_LIBS}
+         -D WITH_JPEG8=1
++        # WITH_TESTS=ON builds tjunittest-static among the default "all"
++        # targets; under a parallel make its md5 objects race the generated
++        # headers and the link dies with "md5hl.c.o: No such file or
++        # directory" (observed on the ubuntu rebuild after wiping
++        # openimageio-3.1.17.0). Local deps ship libraries only.
++        -D WITH_TESTS=0
++        -D WITH_TURBOJPEG=0
+         -D CMAKE_INSTALL_LIBDIR=lib
+         -D CMAKE_POSITION_INDEPENDENT_CODE=1
+ 
 diff --git a/src/cmake/build_minizip-ng.cmake b/src/cmake/build_minizip-ng.cmake
+index eddc034..db9f388 100644
 --- a/src/cmake/build_minizip-ng.cmake
 +++ b/src/cmake/build_minizip-ng.cmake
-@@ -35,7 +35,17 @@
-         -D MZ_OPENSSL=OFF
+@@ -36,6 +36,16 @@ build_dependency_with_cmake(minizip-ng
          -D MZ_LIBBSD=OFF
          -D MZ_BUILD_TESTS=OFF
          -D MZ_COMPAT=OFF
@@ -279,10 +313,31 @@ diff --git a/src/cmake/build_minizip-ng.cmake b/src/cmake/build_minizip-ng.cmake
          -D MZ_LZMA=OFF
          -D MZ_LIBCOMP=OFF
 diff --git a/src/cmake/dependency_utils.cmake b/src/cmake/dependency_utils.cmake
-index 17b698f..dc9661f 100644
+index 17b698f..b5c92c9 100644
 --- a/src/cmake/dependency_utils.cmake
 +++ b/src/cmake/dependency_utils.cmake
-@@ -732,11 +732,63 @@ macro (build_dependency_with_cmake pkgname)
+@@ -671,7 +671,20 @@ macro (build_dependency_with_cmake pkgname)
+         # Both tag and commit: checkout tag, verify it matches expected commit.
+         execute_process(COMMAND ${GIT_EXECUTABLE} checkout ${_pkg_GIT_TAG}
+                         WORKING_DIRECTORY ${${pkgname}_LOCAL_SOURCE_DIR}
++                        RESULT_VARIABLE ${pkgname}_checkout_result
+                         ${_pkg_exec_quiet})
++        # OCIO_EMPTY_TAG_GUARD companion: a stale or interrupted clone makes
++        # the checkout fail here ("pathspec '<tag>' did not match"); letting
++        # that slide produces baffling downstream errors ("does not appear to
++        # contain CMakeLists.txt", empty build dirs). Fail with the recovery
++        # action instead.
++        if (NOT ${pkgname}_checkout_result EQUAL 0)
++            message (FATAL_ERROR
++                "${pkgname}: git checkout ${_pkg_GIT_TAG} failed in "
++                "${${pkgname}_LOCAL_SOURCE_DIR} (exit ${${pkgname}_checkout_result}). "
++                "The cached clone is stale or incomplete - delete that directory "
++                "and rebuild to re-clone.")
++        endif ()
+         execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse HEAD
+                         WORKING_DIRECTORY ${${pkgname}_LOCAL_SOURCE_DIR}
+                         OUTPUT_VARIABLE _pkg_actual_commit
+@@ -732,11 +745,63 @@ macro (build_dependency_with_cmake pkgname)
          list(APPEND _pkg_CMAKE_ARGS "-DCMAKE_IGNORE_PATH=${CMAKE_IGNORE_PATH_ESCAPED}")
      endif()
  
@@ -379,6 +434,97 @@ index 14fc82a..d2de308 100644
  endif ()
  include_directories(BEFORE ${OPENCOLORIO_INCLUDES})
  
+diff --git a/b/src/cmake/ocio_subbuild_project_include.cmake b/src/cmake/ocio_subbuild_project_include.cmake
+new file mode 100644
+index 0000000..416a2f5
+--- /dev/null
++++ b/src/cmake/ocio_subbuild_project_include.cmake
+@@ -0,0 +1,85 @@
++# Included right after project() inside the OpenColorIO sub-build via
++# -DCMAKE_PROJECT_INCLUDE (see build_OpenColorIO.cmake in the OIIO patch
++# set). Two in-place repairs, both idempotent, both limited to the cloned
++# OCIO sources inside the build tree:
++#
++# 1. OCIO's Findyaml-cpp.cmake reads the *generic* IMPORTED_LOCATION of
++#    yaml-cpp::yaml-cpp. MSVC multi-config generators only write
++#    IMPORTED_LOCATION_<CONFIG> into yaml-cpp-targets.cmake, so the read
++#    comes back *-NOTFOUND, find_package_handle_standard_args fails, and
++#    OCIO falls back to Installyaml-cpp. That ext fallback compiles
++#    OCIOYaml.cpp against whatever yaml-cpp headers the ext tree carries;
++#    when the version chain yields a newer tree than the pinned 0.8.0
++#    archive OIIO links, the final link fails with the windows-wheel
++#    YAML::FpToString / Emitter::Write(const char*, size_t) LNK2001 set.
++#    Recovering the per-config location makes the pinned config find
++#    succeed, so OCIO compiles against the same 0.8.0 headers it links.
++# 2. Guard Installyaml-cpp.cmake against an empty GIT_TAG: with no tag
++#    ExternalProject clones the default branch (a moving 0.9.x-dev tree),
++#    which is exactly the version drift above. Fail loudly instead.
++
++set(_ocio_root "${CMAKE_CURRENT_SOURCE_DIR}")
++
++set(_ocio_find_mod "${_ocio_root}/share/cmake/modules/Findyaml-cpp.cmake")
++if(EXISTS "${_ocio_find_mod}")
++    file(READ "${_ocio_find_mod}" _ocio_yaml_src)
++    if(NOT _ocio_yaml_src MATCHES "OCIO_MSVC_LOCATION_FIX")
++        set(_ocio_needle
++            "    get_target_property(yaml-cpp_LIBRARY yaml-cpp::yaml-cpp LOCATION)")
++        set(_ocio_fix_lines
++            ""
++            "    # OCIO_MSVC_LOCATION_FIX (ACloudViewer patch 0001): recover the"
++            "    # per-config import location on multi-config generators; the"
++            "    # generic LOCATION read above comes back NOTFOUND under MSVC,"
++            "    # FPHSA then fails and OCIO falls back to Installyaml-cpp"
++            "    # whose ext headers can drift from the pinned 0.8.0 archive"
++            "    # (windows wheel YAML::FpToString LNK2001)."
++            "    if(yaml-cpp_LIBRARY MATCHES \"NOTFOUND$\")"
++            "        get_target_property(yaml-cpp_LIBRARY yaml-cpp::yaml-cpp IMPORTED_LOCATION_RELEASE)"
++            "        if(NOT yaml-cpp_LIBRARY)"
++            "            get_target_property(yaml-cpp_LIBRARY yaml-cpp::yaml-cpp IMPORTED_LOCATION_DEBUG)"
++            "        endif()"
++            "    endif()")
++        set(_ocio_fix "")
++        foreach(_ocio_line IN LISTS _ocio_fix_lines)
++            string(CONCAT _ocio_fix "${_ocio_fix}" "${_ocio_line}" "\n")
++        endforeach()
++        if(_ocio_yaml_src MATCHES "yaml-cpp::yaml-cpp LOCATION")
++            string(REPLACE "${_ocio_needle}\n"
++                           "${_ocio_needle}\n${_ocio_fix}"
++                           _ocio_yaml_src "${_ocio_yaml_src}")
++            file(WRITE "${_ocio_find_mod}" "${_ocio_yaml_src}")
++            message(STATUS
++                "OCIO sub-build fixup: Findyaml-cpp.cmake LOCATION recovery applied (OCIO_MSVC_LOCATION_FIX)")
++        endif()
++    endif()
++endif()
++
++set(_ocio_install_mod "${_ocio_root}/share/cmake/modules/install/Installyaml-cpp.cmake")
++if(EXISTS "${_ocio_install_mod}")
++    file(READ "${_ocio_install_mod}" _ocio_inst_src)
++    if(NOT _ocio_inst_src MATCHES "OCIO_EMPTY_TAG_GUARD")
++        set(_ocio_tag_needle
++            "        set(yaml-cpp_GIT_TAG \"\${yaml-cpp_VERSION}\")")
++        set(_ocio_tag_lines
++            "        # OCIO_EMPTY_TAG_GUARD (ACloudViewer patch 0001): an empty"
++            "        # tag makes ExternalProject clone the default branch - a"
++            "        # moving 0.9.x-dev tree whose headers mismatch the pinned"
++            "        # 0.8.0 closure archive. Fail loudly instead."
++            "        if(NOT yaml-cpp_GIT_TAG)"
++            "            message(FATAL_ERROR \"OCIO ext yaml-cpp: empty install version; refusing to clone a moving branch\")"
++            "        endif()")
++        set(_ocio_tag_fix "")
++        foreach(_ocio_line IN LISTS _ocio_tag_lines)
++            string(CONCAT _ocio_tag_fix "${_ocio_tag_fix}" "${_ocio_line}" "\n")
++        endforeach()
++        if(_ocio_inst_src MATCHES "set\\(yaml-cpp_GIT_TAG")
++            string(REPLACE "${_ocio_tag_needle}\n"
++                           "${_ocio_tag_needle}\n${_ocio_tag_fix}"
++                           _ocio_inst_src "${_ocio_inst_src}")
++            file(WRITE "${_ocio_install_mod}" "${_ocio_inst_src}")
++            message(STATUS
++                "OCIO sub-build fixup: Installyaml-cpp.cmake empty-GIT_TAG guard applied (OCIO_EMPTY_TAG_GUARD)")
++        endif()
++    endif()
++endif()
 diff --git a/src/libOpenImageIO/CMakeLists.txt b/src/libOpenImageIO/CMakeLists.txt
 index 03e59d3..0163c3e 100644
 --- a/src/libOpenImageIO/CMakeLists.txt

@@ -8,6 +8,7 @@
 #pragma once
 
 #include <boost/program_options.hpp>
+#include <filesystem>
 #include <memory>
 
 #include "util/logging.h"
@@ -25,6 +26,7 @@ struct TransitiveMatchingOptions;
 struct ImagePairsMatchingOptions;
 struct BundleAdjustmentOptions;
 struct IncrementalMapperOptions;
+struct GlobalPipelineOptions;
 struct TexturingOptions;
 struct RenderOptions;
 
@@ -72,6 +74,9 @@ public:
     void AddImagePairsMatchingOptions();
     void AddBundleAdjustmentOptions();
     void AddMapperOptions();
+    // Upstream parity (dbb41680 controllers/option_manager.h): options for
+    // the global SfM pipeline (the global_mapper command).
+    void AddGlobalMapperOptions();
     void AddPatchMatchStereoOptions();
     void AddStereoFusionOptions();
     void AddPoissonMeshingOptions();
@@ -118,6 +123,7 @@ public:
 
     std::shared_ptr<BundleAdjustmentOptions> bundle_adjustment;
     std::shared_ptr<IncrementalMapperOptions> mapper;
+    std::shared_ptr<GlobalPipelineOptions> global_mapper;
 
     std::shared_ptr<mvs::PatchMatchOptions> patch_match_stereo;
     std::shared_ptr<mvs::StereoFusionOptions> stereo_fusion;
@@ -164,6 +170,8 @@ private:
     bool added_image_pairs_match_options_;
     bool added_ba_options_;
     bool added_mapper_options_;
+    bool added_global_mapper_options_ = false;
+    std::filesystem::path global_mapper_image_list_path_;
     bool added_patch_match_stereo_options_;
     bool added_stereo_fusion_options_;
     bool added_poisson_meshing_options_;

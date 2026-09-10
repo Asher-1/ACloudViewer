@@ -36,9 +36,12 @@ COLMAP_ADD_SOURCES(
     bundle_adjustment.h bundle_adjustment.cc
     da3_depth_controller.h da3_depth_controller.cc
     global_mapper.h global_mapper.cc
+    global_pipeline.h global_pipeline.cc
     hierarchical_mapper.h hierarchical_mapper.cc
     incremental_mapper.h incremental_mapper.cc
     texturing_controller.h texturing_controller.cc
 )
 
 COLMAP_ADD_TEST(da3_depth_controller_test da3_depth_controller_test.cc)
+
+COLMAP_ADD_TEST(global_pipeline_test global_pipeline_test.cc)

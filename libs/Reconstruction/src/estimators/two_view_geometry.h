@@ -148,6 +148,11 @@ TwoViewGeometry EstimateTwoViewGeometry(
 // EstimateRigTwoViewGeometries is deferred to W3 together with
 // MaybeDecomposeRelativePoses and the generalized-pose cost machinery.
 
+// Decompose the relative poses of all two-view geometries that have a
+// calibrated prior and no decomposed pose yet (upstream parity: the global
+// pipeline calls this once after loading the database cache).
+void MaybeDecomposeRelativePoses(DatabaseCache* database_cache);
+
 // Estimate relative pose for two-view geometry.
 //
 // @param camera1         Camera of first image.

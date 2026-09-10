@@ -31,6 +31,8 @@
 
 #include "util/option_manager.h"
 
+#include "controllers/global_pipeline.h"
+
 #include <boost/filesystem/operations.hpp>
 #include <boost/property_tree/ini_parser.hpp>
 
@@ -61,6 +63,7 @@ OptionManager::OptionManager(bool add_project_options) {
     database_path.reset(new std::string());
     image_path.reset(new std::string());
 
+    global_mapper.reset(new GlobalPipelineOptions());
     image_reader.reset(new ImageReaderOptions());
     sift_extraction.reset(new SiftExtractionOptions());
     sift_matching.reset(new SiftMatchingOptions());
@@ -663,6 +666,104 @@ void OptionManager::AddMapperOptions() {
                                 &mapper->triangulation.min_angle);
     AddAndRegisterDefaultOption("Mapper.tri_ignore_two_view_tracks",
                                 &mapper->triangulation.ignore_two_view_tracks);
+}
+
+void OptionManager::AddGlobalMapperOptions() {
+    if (added_global_mapper_options_) {
+        return;
+    }
+    added_global_mapper_options_ = true;
+
+    // Global pipeline options (upstream parity, dbb41680
+    // controllers/option_manager.cc AddGlobalMapperOptions; flags bound to
+    // fields that exist in the fork's options structs).
+    AddDefaultOption("GlobalMapper.min_num_matches",
+                     &global_mapper->min_num_matches);
+    AddDefaultOption("GlobalMapper.ignore_watermarks",
+                     &global_mapper->ignore_watermarks);
+    AddDefaultOption("GlobalMapper.num_threads",
+                     &global_mapper->num_threads);
+    AddDefaultOption("GlobalMapper.random_seed",
+                     &global_mapper->random_seed);
+    AddDefaultOption("GlobalMapper.decompose_relative_pose",
+                     &global_mapper->decompose_relative_pose);
+    AddDefaultOption("GlobalMapper.multiple_models",
+                     &global_mapper->multiple_models);
+    AddDefaultOption("GlobalMapper.min_model_size",
+                     &global_mapper->min_model_size);
+    AddDefaultOption("GlobalMapper.ba_num_iterations",
+                     &global_mapper->mapper.ba_num_iterations);
+    AddDefaultOption("GlobalMapper.skip_rotation_averaging",
+                     &global_mapper->mapper.skip_rotation_averaging);
+    AddDefaultOption("GlobalMapper.skip_track_establishment",
+                     &global_mapper->mapper.skip_track_establishment);
+    AddDefaultOption("GlobalMapper.skip_global_positioning",
+                     &global_mapper->mapper.skip_global_positioning);
+    AddDefaultOption("GlobalMapper.skip_bundle_adjustment",
+                     &global_mapper->mapper.skip_bundle_adjustment);
+    AddDefaultOption("GlobalMapper.skip_retriangulation",
+                     &global_mapper->mapper.skip_retriangulation);
+    AddDefaultOption("GlobalMapper.max_angular_reproj_error_deg",
+                     &global_mapper->mapper.max_angular_reproj_error_deg);
+    AddDefaultOption("GlobalMapper.max_normalized_reproj_error",
+                     &global_mapper->mapper.max_normalized_reproj_error);
+    AddDefaultOption("GlobalMapper.min_tri_angle_deg",
+                     &global_mapper->mapper.min_tri_angle_deg);
+
+    // Track establishment options.
+    AddDefaultOption(
+        "GlobalMapper.track_intra_image_consistency_threshold",
+        &global_mapper->mapper.track_intra_image_consistency_threshold);
+    AddDefaultOption("GlobalMapper.track_required_tracks_per_view",
+                     &global_mapper->mapper.track_required_tracks_per_view);
+    AddDefaultOption("GlobalMapper.track_min_num_views_per_track",
+                     &global_mapper->mapper.track_min_num_views_per_track);
+    AddDefaultOption("GlobalMapper.keep_max_num_tracks",
+                     &global_mapper->mapper.keep_max_num_tracks);
+
+    // Global positioning options.
+    AddDefaultOption("GlobalMapper.gp_use_gpu",
+                     &global_mapper->mapper.global_positioning.use_gpu);
+    AddDefaultOption("GlobalMapper.gp_gpu_index",
+                     &global_mapper->mapper.global_positioning.gpu_index);
+    AddDefaultOption(
+        "GlobalMapper.gp_optimize_positions",
+        &global_mapper->mapper.global_positioning.optimize_positions);
+    AddDefaultOption(
+        "GlobalMapper.gp_optimize_points",
+        &global_mapper->mapper.global_positioning.optimize_points);
+    AddDefaultOption(
+        "GlobalMapper.gp_optimize_scales",
+        &global_mapper->mapper.global_positioning.optimize_scales);
+    AddDefaultOption(
+        "GlobalMapper.gp_loss_function_scale",
+        &global_mapper->mapper.global_positioning.loss_function_scale);
+    AddDefaultOption("GlobalMapper.gp_max_num_iterations",
+                     &global_mapper->mapper.global_positioning.solver_options
+                          .max_num_iterations);
+
+    // Bundle adjustment options.
+    AddDefaultOption(
+        "GlobalMapper.ba_refine_focal_length",
+        &global_mapper->mapper.bundle_adjustment.refine_focal_length);
+    AddDefaultOption(
+        "GlobalMapper.ba_refine_principal_point",
+        &global_mapper->mapper.bundle_adjustment.refine_principal_point);
+    AddDefaultOption(
+        "GlobalMapper.ba_refine_extra_params",
+        &global_mapper->mapper.bundle_adjustment.refine_extra_params);
+    AddDefaultOption("GlobalMapper.refine_sensor_from_rig",
+                     &global_mapper->mapper.refine_sensor_from_rig);
+    AddDefaultOption("GlobalMapper.ba_gpu_index",
+                     &global_mapper->mapper.ba_gpu_index);
+    AddDefaultOption("GlobalMapper.ba_skip_fixed_rotation_stage",
+                     &global_mapper->mapper.ba_skip_fixed_rotation_stage);
+    AddDefaultOption("GlobalMapper.ba_skip_joint_optimization_stage",
+                     &global_mapper->mapper.ba_skip_joint_optimization_stage);
+    // Fork note: the upstream ba_refine_rig_from_world /
+    // ba_refine_points3D / ba_min_track_length / ba_backend / ceres-specific
+    // and retriangulation flags bind to fields that land with W3-2b step 4
+    // (frame-aware BA options) and are deferred accordingly.
 }
 
 void OptionManager::AddPatchMatchStereoOptions() {

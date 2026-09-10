@@ -2,6 +2,16 @@ if(NOT DEFINED SOURCE_DIR OR NOT DEFINED PATCH_DIR OR NOT DEFINED GIT_EXECUTABLE
     message(FATAL_ERROR "SOURCE_DIR, PATCH_DIR, and GIT_EXECUTABLE are required")
 endif()
 
+# Fork note: a reused build tree whose build stamp already exists was patched
+# and verified when it was first extracted; the generate_static_closure step
+# may have since touched files a patch hunk also covers, which makes the
+# idempotent reverse check below fail on every subsequent main build. Skip
+# the check for completed trees (delete the ext_openimageio source/build dirs
+# or the stamp to force a fresh extraction + patch).
+if(NOT DEFINED ALOUD_OPENIMAGEIO_REPATCH AND EXISTS "${SOURCE_DIR}/../ext_openimageio-stamp/ext_openimageio-done")
+    return()
+endif()
+
 # git apply resolves patch paths against the enclosing repository's work tree
 # whenever repository discovery finds one above SOURCE_DIR — and the
 # ExternalProject source directory lives inside the ACloudViewer checkout on

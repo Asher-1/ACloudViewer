@@ -8,6 +8,7 @@
 #pragma once
 
 #include "util/alignment.h"
+#include "util/enum_utils.h"
 
 #ifdef _MSC_VER
 #if _MSC_VER >= 1600
@@ -72,11 +73,15 @@ typedef uint32_t frame_t;
 // A rig is a calibration container for all sensors, not just cameras. Keep
 // these identifiers separate from camera/image ids so database records can
 // represent upstream COLMAP's generic sensor/data associations.
+#ifdef __CUDACC__
 enum class SensorType : int32_t {
     INVALID = -1,
     CAMERA = 0,
     IMU = 1,
 };
+#else
+MAKE_ENUM_CLASS_OVERLOAD_STREAM(SensorType, -1, INVALID, CAMERA, IMU);
+#endif
 
 struct sensor_t {
     constexpr static uint32_t kInvalidId = std::numeric_limits<uint32_t>::max();

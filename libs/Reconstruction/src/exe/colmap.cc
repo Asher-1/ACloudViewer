@@ -116,6 +116,7 @@ int main(int argc, char** argv) {
     commands.emplace_back("feature_extractor", &RunFeatureExtractor);
     commands.emplace_back("feature_importer", &RunFeatureImporter);
     commands.emplace_back("hierarchical_mapper", &RunHierarchicalMapper);
+    commands.emplace_back("global_mapper", &RunGlobalMapper);
     commands.emplace_back("image_deleter", &RunImageDeleter);
     commands.emplace_back("image_filterer", &RunImageFilterer);
     commands.emplace_back("image_rectifier", &RunImageRectifier);

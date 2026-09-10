@@ -78,7 +78,18 @@ void Frame::SetRigFromWorld(const Eigen::Vector4d& qvec,
     // Upstream parity (dbb41680): no finiteness checks here. The rotation
     // averaging stack legally seeds un-estimated frames with a NaN
     // "unknown pose" placeholder before overwriting it with the solution.
-    rig_from_world_qvec_ = NormalizeQuaternion(qvec);
+    // Fork note: normalize idempotently. The fork stores the pose as a
+    // qvec/tvec pair while callers hand over Rigid3d values, so every
+    // round-trip through RigFromWorld()/SetRigFromWorld() re-enters here;
+    // re-normalizing an already-normalized quaternion perturbs the
+    // components at the 1e-16 level and breaks bit-exact equality (e.g. the
+    // reconstruction_io round-trip tests). Skip the divide when the input is
+    // already unit-length within double rounding.
+    if (std::abs(qvec.norm() - 1.0) > 1e-12) {
+        rig_from_world_qvec_ = NormalizeQuaternion(qvec);
+    } else {
+        rig_from_world_qvec_ = qvec;
+    }
     rig_from_world_tvec_ = tvec;
     has_pose_ = true;
 }

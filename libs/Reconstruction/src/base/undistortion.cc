@@ -31,6 +31,8 @@
 
 #include "base/undistortion.h"
 
+#include "scene/reconstruction_io.h"
+
 #include <fstream>
 
 #include "base/camera_models.h"
@@ -347,8 +349,7 @@ void PMVSUndistorter::Run() {
   std::cout << "Writing bundle file..." << std::endl;
   UndistortReconstruction(options_, reconstruction_);
   const std::string bundle_path = JoinPaths(output_path_, "pmvs/bundle.rd.out");
-  reconstruction_->ExportBundler(bundle_path,
-                                 bundle_path + ".list.txt");
+  ExportBundler(*reconstruction_, bundle_path, bundle_path + ".list.txt");
 
   std::cout << "Writing visibility file..." << std::endl;
   WriteVisibilityData();

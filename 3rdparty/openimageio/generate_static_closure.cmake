@@ -119,6 +119,10 @@ endif()
 set(_install_tree "${OIIO_INSTALL_LIB}/")
 set(_merged_entries "")
 set(_seen_basenames "")
+# The rsp deliberately repeats every deps archive for the GNU two-pass
+# scan; drop the exact duplicates first so the basename warning below only
+# fires for a genuinely different root.
+list(REMOVE_DUPLICATES _rsp_entries)
 foreach(_entry IN LISTS _rsp_entries)
     # string(FIND), not MATCHES: the install path can contain regex
     # metacharacters (version dirs like openimageio-3.1.17.0).
@@ -127,10 +131,20 @@ foreach(_entry IN LISTS _rsp_entries)
         continue()
     endif()
     get_filename_component(_base "${_entry}" NAME)
-    if(NOT _base IN_LIST _seen_basenames)
-        list(APPEND _seen_basenames "${_base}")
-        list(APPEND _merged_entries "${_entry}")
+    if(_base IN_LIST _seen_basenames)
+        # Same basename from two roots is benign when both copies are the
+        # same pinned version (zlibstatic.lib from deps/dist and from
+        # ext_zlib), but it is exactly what a version drift looks like:
+        # e.g. an OCIO ext fallback that built a yaml-cpp whose headers are
+        # newer than the deps/dist archive that survives this dedup
+        # (windows wheel: YAML::FpToString LNK2001). Keep it visible.
+        message(WARNING
+            "generate_static_closure: duplicate archive basename '${_base}' "
+            "from a second root, dropping ${_entry}")
+        continue()
     endif()
+    list(APPEND _seen_basenames "${_base}")
+    list(APPEND _merged_entries "${_entry}")
 endforeach()
 list(LENGTH _merged_entries _merged_count)
 if(_merged_count EQUAL 0)

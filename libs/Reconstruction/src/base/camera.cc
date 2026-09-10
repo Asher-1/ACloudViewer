@@ -118,15 +118,15 @@ double Camera::FocalLength() const {
 }
 
 double Camera::FocalLengthX() const {
-  const std::vector<size_t>& idxs = FocalLengthIdxs();
-  CHECK_EQ(idxs.size(), 2);
-  return params_[idxs[0]];
+    // Upstream parity (dbb41680 scene/camera.h): single-focal-length models
+    // are legal here (x == y); only the setters require two focal params.
+    const std::vector<size_t>& idxs = FocalLengthIdxs();
+    return params_[idxs[0]];
 }
 
 double Camera::FocalLengthY() const {
-  const std::vector<size_t>& idxs = FocalLengthIdxs();
-  CHECK_EQ(idxs.size(), 2);
-  return params_[idxs[1]];
+    const std::vector<size_t>& idxs = FocalLengthIdxs();
+    return params_[idxs[(idxs.size() == 1) ? 0 : 1]];
 }
 
 void Camera::SetFocalLength(const double focal_length) {

@@ -8,6 +8,7 @@
 #pragma once
 
 #include <boost/filesystem.hpp>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -54,6 +55,19 @@ bool ExistsPath(const std::string& path);
 
 // Create the directory if it does not exist.
 void CreateDirIfNotExists(const std::string& path);
+
+// Fork parity of upstream util/file.h CreateDirIfNotExists(path):
+// filesystem::path overload for the reconstruction IO split (W17.1).
+inline void CreateDirIfNotExists(const std::filesystem::path& path) {
+    CreateDirIfNotExists(path.string());
+}
+
+// Upstream parity (dbb41680 util/file.h): check that an open file stream
+// is usable, with a message that points at the path.
+#define THROW_CHECK_FILE_OPEN(file, path)  \
+    THROW_CHECK((file).is_open())          \
+            << "Could not open " << (path) \
+            << ". Is the path a directory or does the parent dir not exist?";
 
 // Extract the base name of a path, e.g., "image.jpg" for "/dir/image.jpg".
 std::string GetPathBaseName(const std::string& path);

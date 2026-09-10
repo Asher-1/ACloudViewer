@@ -33,7 +33,9 @@ set(FOLDER_NAME "util")
 
 COLMAP_ADD_SOURCES(
     alignment.h
+    base_controller.h base_controller.cc
     bitmap.h bitmap.cc
+    cancellation.h cancellation.cc
     cache.h
     camera_specs.h camera_specs.cc
     download.h download.cc

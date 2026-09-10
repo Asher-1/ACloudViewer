@@ -234,6 +234,11 @@ public:
     // Delete matches of an image pair.
     void DeleteMatches(const image_t image_id1, const image_t image_id2) const;
 
+    // Deletes a two-view geometry entry (upstream parity; the matches and
+    // inlier matches tables are unaffected).
+    void DeleteTwoViewGeometry(const image_t image_id1,
+                               const image_t image_id2) const;
+
     // Delete inlier matches of an image pair.
     void DeleteInlierMatches(const image_t image_id1,
                              const image_t image_id2) const;

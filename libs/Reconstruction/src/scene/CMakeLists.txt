@@ -9,9 +9,14 @@ set(FOLDER_NAME "scene")
 COLMAP_ADD_SOURCES(
     synthetic.h synthetic.cc
     pose_graph.h pose_graph.cc
+    reconstruction_io_utils.h reconstruction_io_utils.cc
+    reconstruction_io_text.h reconstruction_io_text.cc
+    reconstruction_io_binary.h reconstruction_io_binary.cc
+    reconstruction_io.h reconstruction_io.cc
 )
 
 if (TESTS_ENABLED)
     COLMAP_ADD_TEST(synthetic_test synthetic_test.cc)
     COLMAP_ADD_TEST(pose_graph_test pose_graph_test.cc)
+    COLMAP_ADD_TEST(reconstruction_io_test reconstruction_io_test.cc)
 endif ()

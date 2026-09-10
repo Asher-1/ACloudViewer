@@ -32,9 +32,11 @@
 #include "base/reconstruction.h"
 
 #include <algorithm>
+#include <filesystem>
 #include <fstream>
 
 #include "base/database_cache.h"
+#include "scene/reconstruction_io.h"
 #include "base/camera_rig.h"
 #include "base/gps.h"
 #include "base/pose.h"
@@ -204,25 +206,46 @@ void Reconstruction::SetUp(const CorrespondenceGraph* correspondence_graph) {
 }
 
 void Reconstruction::TearDown() {
-    correspondence_graph_ = nullptr;
+    // Upstream parity (dbb41680 scene/reconstruction.cc): frame-level
+    // teardown. Frames without a pose are removed together with their
+    // images; rigs without kept frames are removed together with their
+    // sensors' cameras.
+    (void)correspondence_graph_;
     image_pair_stats_.clear();
 
-    // Remove all not yet registered images.
-    std::unordered_set<camera_t> keep_camera_ids;
-    for (auto it = images_.begin(); it != images_.end();) {
-        if (it->second.IsRegistered()) {
-            keep_camera_ids.insert(it->second.CameraId());
-            it->second.TearDown();
-            ++it;
+    // Remove all non-registered frames/images.
+    FlatHashSet<rig_t> keep_rig_ids;
+    for (auto frame_it = frames_.begin(); frame_it != frames_.end();) {
+        for (const image_t image_id : frame_it->second.ImageIds()) {
+            auto image_it = images_.find(image_id);
+            if (!frame_it->second.HasPose() && image_it != images_.end()) {
+                images_.erase(image_it);
+            }
+        }
+        if (frame_it->second.HasPose()) {
+            keep_rig_ids.insert(frame_it->second.RigId());
+            ++frame_it;
         } else {
-            it = images_.erase(it);
+            // erase(it++) rather than it = erase(it): portable across hash map
+            // backends; frames_ is node-based.
+            frames_.erase(frame_it++);
         }
     }
 
-    // Remove all unused cameras.
-    for (auto it = cameras_.begin(); it != cameras_.end();) {
-        if (keep_camera_ids.count(it->first) == 0) {
-            it = cameras_.erase(it);
+    // Remove all unused rigs and corresponding sensors.
+    for (auto it = rigs_.begin(); it != rigs_.end();) {
+        if (keep_rig_ids.count(it->first) == 0) {
+            for (const sensor_t& sensor_id : it->second.SensorIds()) {
+                switch (sensor_id.type) {
+                    case SensorType::CAMERA:
+                        cameras_.erase(sensor_id.id);
+                        break;
+                    case SensorType::IMU:
+                    case SensorType::INVALID:
+                        break;
+                }
+            }
+            rigs_.erase(it++);
         } else {
             ++it;
         }
@@ -409,6 +432,26 @@ point3D_t Reconstruction::AddPoint3D(const Eigen::Vector3d& xyz,
     }
 
     return point3D_id;
+}
+
+// Add new 3D point with known ID (upstream parity, dbb41680 scene/reconstruction.cc).
+void Reconstruction::AddPoint3D(const point3D_t point3D_id,
+                                struct Point3D point3D) {
+    // Fork parity: the fork allocates ids from num_added_points3D_; bump it
+    // so subsequent allocating AddPoint3D calls never collide with loaded ids.
+    num_added_points3D_ = std::max(num_added_points3D_, point3D_id);
+
+    for (const auto& track_el : point3D.Track().Elements()) {
+        class Image& image = Image(track_el.image_id);
+        const Point2D& point2D = image.Point2D(track_el.point2D_idx);
+        if (point2D.HasPoint3D()) {
+            THROW_CHECK_EQ(point2D.Point3DId(), point3D_id);
+        } else {
+            image.SetPoint3DForPoint2D(track_el.point2D_idx, point3D_id);
+        }
+        THROW_CHECK_LE(image.NumPoints3D(), image.NumPoints2D());
+    }
+    THROW_CHECK(points3D_.emplace(point3D_id, std::move(point3D)).second);
 }
 
 void Reconstruction::AddObservation(const point3D_t point3D_id,
@@ -1079,167 +1122,71 @@ void Reconstruction::Read(const std::string& path) {
 
 void Reconstruction::Write(const std::string& path) const { WriteBinary(path); }
 
-void Reconstruction::ReadText(const std::string& path) {
-    // Upstream COLMAP dbb41680 ordering: rigs and frames are read before the
-    // images so that AddImage can wire the frame/rig back pointers. The
-    // rigs/frames files are optional for legacy models.
-    if (ExistsFile(JoinPaths(path, "rigs.txt"))) {
-        ReadRigsText(JoinPaths(path, "rigs.txt"));
-    }
-    ReadCamerasText(JoinPaths(path, "cameras.txt"));
-    if (ExistsFile(JoinPaths(path, "frames.txt"))) {
-        ReadFramesText(JoinPaths(path, "frames.txt"));
-    }
-    ReadImagesText(JoinPaths(path, "images.txt"));
-    ReadPoints3DText(JoinPaths(path, "points3D.txt"));
-}
-
-void Reconstruction::ReadBinary(const std::string& path) {
-    // Upstream COLMAP dbb41680 ordering (see ReadText).
-    if (ExistsFile(JoinPaths(path, "rigs.bin"))) {
-        ReadRigsBinary(JoinPaths(path, "rigs.bin"));
-    }
-    ReadCamerasBinary(JoinPaths(path, "cameras.bin"));
-    if (ExistsFile(JoinPaths(path, "frames.bin"))) {
-        ReadFramesBinary(JoinPaths(path, "frames.bin"));
-    }
-    ReadImagesBinary(JoinPaths(path, "images.bin"));
-    ReadPoints3DBinary(JoinPaths(path, "points3D.bin"));
-}
-
-void Reconstruction::WriteText(const std::string& path) const {
-    WriteCamerasText(JoinPaths(path, "cameras.txt"));
-    WriteImagesText(JoinPaths(path, "images.txt"));
-    WritePoints3DText(JoinPaths(path, "points3D.txt"));
-    WriteRigsText(JoinPaths(path, "rigs.txt"));
-    WriteFramesText(JoinPaths(path, "frames.txt"));
-}
-
-void Reconstruction::WriteBinary(const std::string& path) const {
-    WriteCamerasBinary(JoinPaths(path, "cameras.bin"));
-    WriteImagesBinary(JoinPaths(path, "images.bin"));
-    WritePoints3DBinary(JoinPaths(path, "points3D.bin"));
-    WriteRigsBinary(JoinPaths(path, "rigs.bin"));
-    WriteFramesBinary(JoinPaths(path, "frames.bin"));
-}
-
-void Reconstruction::ReadRigsText(const std::string& path) {
-    std::ifstream file(path);
-    CHECK(file.is_open()) << path;
-    std::string tag;
-    uint32_t version = 0;
-    uint64_t num_rigs = 0;
-    CHECK(file >> tag >> version >> num_rigs);
-    CHECK_EQ(tag, "RIGS");
-    CHECK_EQ(version, 1);
+void Reconstruction::ReadText(const std::filesystem::path& path) {
+    cameras_.clear();
     rigs_.clear();
-    for (uint64_t i = 0; i < num_rigs; ++i) {
-        class Rig rig;
-        CHECK(rig.ReadText(&file)) << path;
-        AddRig(rig);
-    }
-}
-
-void Reconstruction::ReadFramesText(const std::string& path) {
-    std::ifstream file(path);
-    CHECK(file.is_open()) << path;
-    std::string tag;
-    uint32_t version = 0;
-    uint64_t num_frames = 0;
-    CHECK(file >> tag >> version >> num_frames);
-    CHECK_EQ(tag, "FRAMES");
-    CHECK_EQ(version, 1);
     frames_.clear();
-    for (uint64_t i = 0; i < num_frames; ++i) {
-        class Frame frame;
-        CHECK(frame.ReadText(&file)) << path;
-        AddFrame(frame);
+    images_.clear();
+    points3D_.clear();
+    ReadCamerasText(*this, path / "cameras.txt");
+    const auto rigs_path = path / "rigs.txt";
+    if (ExistsFile(rigs_path.string())) {
+        ReadRigsText(*this, rigs_path);
     }
+    const auto frames_path = path / "frames.txt";
+    if (ExistsFile(frames_path.string())) {
+        ReadFramesText(*this, frames_path);
+    }
+    ReadImagesText(*this, path / "images.txt");
+    ReadPoints3DText(*this, path / "points3D.txt");
 }
 
-void Reconstruction::ReadRigsBinary(const std::string& path) {
-    std::ifstream file(path, std::ios::binary);
-    CHECK(file.is_open()) << path;
-    const uint64_t num_rigs = ReadBinaryLittleEndian<uint64_t>(&file);
+void Reconstruction::ReadBinary(const std::filesystem::path& path) {
+    cameras_.clear();
     rigs_.clear();
-    for (uint64_t i = 0; i < num_rigs; ++i) {
-        class Rig rig;
-        CHECK(rig.ReadBinary(&file)) << path;
-        AddRig(rig);
-    }
-}
-
-void Reconstruction::ReadFramesBinary(const std::string& path) {
-    std::ifstream file(path, std::ios::binary);
-    CHECK(file.is_open()) << path;
-    const uint64_t num_frames = ReadBinaryLittleEndian<uint64_t>(&file);
     frames_.clear();
-    for (uint64_t i = 0; i < num_frames; ++i) {
-        class Frame frame;
-        CHECK(frame.ReadBinary(&file)) << path;
-        AddFrame(frame);
+    images_.clear();
+    points3D_.clear();
+    ReadCamerasBinary(*this, path / "cameras.bin");
+    const auto rigs_path = path / "rigs.bin";
+    if (ExistsFile(rigs_path.string())) {
+        ReadRigsBinary(*this, rigs_path);
     }
+    const auto frames_path = path / "frames.bin";
+    if (ExistsFile(frames_path.string())) {
+        ReadFramesBinary(*this, frames_path);
+    }
+    ReadImagesBinary(*this, path / "images.bin");
+    ReadPoints3DBinary(*this, path / "points3D.bin");
 }
 
-void Reconstruction::WriteRigsText(const std::string& path) const {
-    std::ofstream file(path, std::ios::trunc);
-    CHECK(file.is_open()) << path;
-    file << "RIGS 1 " << rigs_.size() << "\n";
-    std::vector<rig_t> rig_ids;
-    rig_ids.reserve(rigs_.size());
-    for (const auto& rig : rigs_) {
-        rig_ids.push_back(rig.first);
-    }
-    std::sort(rig_ids.begin(), rig_ids.end());
-    for (const rig_t rig_id : rig_ids) {
-        Rig(rig_id).WriteText(&file);
-    }
+void Reconstruction::WriteText(const std::filesystem::path& path) const {
+    THROW_CHECK(ExistsDir(path.string()))
+            << "Directory does not exist: " << path;
+    WriteRigsText(*this, path / "rigs.txt");
+    WriteCamerasText(*this, path / "cameras.txt");
+    WriteFramesText(*this, path / "frames.txt");
+    WriteImagesText(*this, path / "images.txt");
+    WritePoints3DText(*this, path / "points3D.txt");
 }
 
-void Reconstruction::WriteFramesText(const std::string& path) const {
-    std::ofstream file(path, std::ios::trunc);
-    CHECK(file.is_open()) << path;
-    file << "FRAMES 1 " << frames_.size() << "\n";
-    std::vector<frame_t> frame_ids;
-    frame_ids.reserve(frames_.size());
-    for (const auto& frame : frames_) {
-        frame_ids.push_back(frame.first);
-    }
-    std::sort(frame_ids.begin(), frame_ids.end());
-    for (const frame_t frame_id : frame_ids) {
-        Frame(frame_id).WriteText(&file);
-    }
+void Reconstruction::WriteBinary(const std::filesystem::path& path) const {
+    THROW_CHECK(ExistsDir(path.string()))
+            << "Directory does not exist: " << path;
+    WriteRigsBinary(*this, path / "rigs.bin");
+    WriteCamerasBinary(*this, path / "cameras.bin");
+    WriteFramesBinary(*this, path / "frames.bin");
+    WriteImagesBinary(*this, path / "images.bin");
+    WritePoints3DBinary(*this, path / "points3D.bin");
 }
 
-void Reconstruction::WriteRigsBinary(const std::string& path) const {
-    std::ofstream file(path, std::ios::binary | std::ios::trunc);
-    CHECK(file.is_open()) << path;
-    WriteBinaryLittleEndian<uint64_t>(&file, rigs_.size());
-    std::vector<rig_t> rig_ids;
-    rig_ids.reserve(rigs_.size());
-    for (const auto& rig : rigs_) {
-        rig_ids.push_back(rig.first);
-    }
-    std::sort(rig_ids.begin(), rig_ids.end());
-    for (const rig_t rig_id : rig_ids) {
-        Rig(rig_id).WriteBinary(&file);
-    }
-}
 
-void Reconstruction::WriteFramesBinary(const std::string& path) const {
-    std::ofstream file(path, std::ios::binary | std::ios::trunc);
-    CHECK(file.is_open()) << path;
-    WriteBinaryLittleEndian<uint64_t>(&file, frames_.size());
-    std::vector<frame_t> frame_ids;
-    frame_ids.reserve(frames_.size());
-    for (const auto& frame : frames_) {
-        frame_ids.push_back(frame.first);
-    }
-    std::sort(frame_ids.begin(), frame_ids.end());
-    for (const frame_t frame_id : frame_ids) {
-        Frame(frame_id).WriteBinary(&file);
-    }
-}
+
+
+
+
+
+
 
 std::vector<PlyPoint> Reconstruction::ConvertToPLY() const {
     std::vector<PlyPoint> ply_points;
@@ -1283,511 +1230,11 @@ void Reconstruction::ImportPLY(const std::vector<PlyPoint>& ply_points) {
     }
 }
 
-bool Reconstruction::ExportNVM(const std::string& path,
-                               bool skip_distortion) const {
-    std::ofstream file(path, std::ios::trunc);
-    CHECK(file.is_open()) << path;
 
-    // Ensure that we don't lose any precision by storing in text.
-    file.precision(17);
 
-    // White space added for compatibility with Meshlab.
-    file << "NVM_V3 " << std::endl << " " << std::endl;
-    file << reg_image_ids_.size() << "  " << std::endl;
 
-    std::unordered_map<image_t, size_t> image_id_to_idx_;
-    size_t image_idx = 0;
 
-    for (const auto image_id : reg_image_ids_) {
-        const class Image& image = Image(image_id);
-        const class Camera& camera = Camera(image.CameraId());
 
-        double k;
-        if (skip_distortion ||
-            camera.ModelId() == SimplePinholeCameraModel::model_id ||
-            camera.ModelId() == PinholeCameraModel::model_id) {
-            k = 0.0;
-        } else if (camera.ModelId() == SimpleRadialCameraModel::model_id) {
-            k = -1 *
-                camera.Params(SimpleRadialCameraModel::extra_params_idxs[0]);
-        } else {
-            std::cout << "WARNING: NVM only supports `SIMPLE_RADIAL` "
-                         "and pinhole camera models."
-                      << std::endl;
-            return false;
-        }
-
-        const Eigen::Vector3d proj_center = image.ProjectionCenter();
-
-        file << image.Name() << " ";
-        file << camera.MeanFocalLength() << " ";
-        file << image.Qvec(0) << " ";
-        file << image.Qvec(1) << " ";
-        file << image.Qvec(2) << " ";
-        file << image.Qvec(3) << " ";
-        file << proj_center(0) << " ";
-        file << proj_center(1) << " ";
-        file << proj_center(2) << " ";
-        file << k << " ";
-        file << 0 << std::endl;
-
-        image_id_to_idx_[image_id] = image_idx;
-        image_idx += 1;
-    }
-
-    file << std::endl << points3D_.size() << std::endl;
-
-    for (const auto& point3D : points3D_) {
-        file << point3D.second.XYZ()(0) << " ";
-        file << point3D.second.XYZ()(1) << " ";
-        file << point3D.second.XYZ()(2) << " ";
-        file << static_cast<int>(point3D.second.Color(0)) << " ";
-        file << static_cast<int>(point3D.second.Color(1)) << " ";
-        file << static_cast<int>(point3D.second.Color(2)) << " ";
-
-        std::ostringstream line;
-
-        std::unordered_set<image_t> image_ids;
-        for (const auto& track_el : point3D.second.Track().Elements()) {
-            // Make sure that each point only has a single observation per
-            // image, since VisualSfM does not support with multiple
-            // observations.
-            if (image_ids.count(track_el.image_id) == 0) {
-                const class Image& image = Image(track_el.image_id);
-                const Point2D& point2D = image.Point2D(track_el.point2D_idx);
-                line << image_id_to_idx_[track_el.image_id] << " ";
-                line << track_el.point2D_idx << " ";
-                line << point2D.X() << " ";
-                line << point2D.Y() << " ";
-                image_ids.insert(track_el.image_id);
-            }
-        }
-
-        std::string line_string = line.str();
-        line_string = line_string.substr(0, line_string.size() - 1);
-
-        file << image_ids.size() << " ";
-        file << line_string << std::endl;
-    }
-
-    return true;
-}
-
-bool Reconstruction::ExportCam(const std::string& path,
-                               bool skip_distortion) const {
-    CreateImageDirs(path);
-    for (const auto image_id : reg_image_ids_) {
-        std::string name, ext;
-        const class Image& image = Image(image_id);
-        const class Camera& camera = Camera(image.CameraId());
-
-        SplitFileExtension(image.Name(), &name, &ext);
-        name = JoinPaths(path, name + ".cam");
-        std::ofstream file(name, std::ios::trunc);
-
-        CHECK(file.is_open()) << name;
-
-        // Ensure that we don't lose any precision by storing in text.
-        file.precision(17);
-
-        double k1, k2;
-        if (skip_distortion ||
-            camera.ModelId() == SimplePinholeCameraModel::model_id ||
-            camera.ModelId() == PinholeCameraModel::model_id) {
-            k1 = 0.0;
-            k2 = 0.0;
-        } else if (camera.ModelId() == SimpleRadialCameraModel::model_id) {
-            k1 = camera.Params(SimpleRadialCameraModel::extra_params_idxs[0]);
-            k2 = 0.0;
-        } else if (camera.ModelId() == RadialCameraModel::model_id) {
-            k1 = camera.Params(RadialCameraModel::extra_params_idxs[0]);
-            k2 = camera.Params(RadialCameraModel::extra_params_idxs[1]);
-        } else {
-            std::cout
-                    << "WARNING: CAM only supports `SIMPLE_RADIAL`, `RADIAL`, "
-                       "and pinhole camera models."
-                    << std::endl;
-            return false;
-        }
-
-        // If both k1 and k2 values are non-zero, then the CAM format assumes
-        // a Bundler-like radial distortion model, which converts well from
-        // COLMAP. However, if k2 is zero, then a different model is used
-        // that does not translate as well, so we avoid setting k2 to zero.
-        if (k1 != 0.0 && k2 == 0.0) {
-            k2 = 1e-10;
-        }
-
-        double fx, fy;
-        if (camera.FocalLengthIdxs().size() == 2) {
-            fx = camera.FocalLengthX();
-            fy = camera.FocalLengthY();
-        } else {
-            fx = fy = camera.MeanFocalLength();
-        }
-
-        double focal_length;
-        if (camera.Width() * fy < camera.Height() * fx) {
-            focal_length = fy / camera.Height();
-        } else {
-            focal_length = fx / camera.Width();
-        }
-
-        const Eigen::Matrix3d rot_mat = image.RotationMatrix();
-        file << image.Tvec(0) << " " << image.Tvec(1) << " " << image.Tvec(2)
-             << " " << rot_mat(0, 0) << " " << rot_mat(0, 1) << " "
-             << rot_mat(0, 2) << " " << rot_mat(1, 0) << " " << rot_mat(1, 1)
-             << " " << rot_mat(1, 2) << " " << rot_mat(2, 0) << " "
-             << rot_mat(2, 1) << " " << rot_mat(2, 2) << std::endl;
-        file << focal_length << " " << k1 << " " << k2 << " " << fy / fx << " "
-             << camera.PrincipalPointX() / camera.Width() << " "
-             << camera.PrincipalPointY() / camera.Height() << std::endl;
-    }
-
-    return true;
-}
-
-bool Reconstruction::ExportRecon3D(const std::string& path,
-                                   bool skip_distortion) const {
-    std::string base_path = EnsureTrailingSlash(StringReplace(path, "\\", "/"));
-    CreateDirIfNotExists(base_path);
-    base_path = base_path.append("Recon/");
-    CreateDirIfNotExists(base_path);
-    std::string synth_path = base_path + "synth_0.out";
-    std::string image_list_path = base_path + "urd-images.txt";
-    std::string image_map_path = base_path + "imagemap_0.txt";
-
-    std::ofstream synth_file(synth_path, std::ios::trunc);
-    CHECK(synth_file.is_open()) << synth_path;
-    std::ofstream image_list_file(image_list_path, std::ios::trunc);
-    CHECK(image_list_file.is_open()) << image_list_path;
-    std::ofstream image_map_file(image_map_path, std::ios::trunc);
-    CHECK(image_map_file.is_open()) << image_map_path;
-
-    // Ensure that we don't lose any precision by storing in text.
-    synth_file.precision(17);
-
-    // Write header info
-    synth_file << "colmap 1.0" << std::endl;
-    synth_file << reg_image_ids_.size() << " " << points3D_.size() << std::endl;
-
-    std::unordered_map<image_t, size_t> image_id_to_idx_;
-    size_t image_idx = 0;
-
-    // Write image/camera info
-    for (const auto image_id : reg_image_ids_) {
-        const class Image& image = Image(image_id);
-        const class Camera& camera = Camera(image.CameraId());
-
-        double k1, k2;
-        if (skip_distortion ||
-            camera.ModelId() == SimplePinholeCameraModel::model_id ||
-            camera.ModelId() == PinholeCameraModel::model_id) {
-            k1 = 0.0;
-            k2 = 0.0;
-        } else if (camera.ModelId() == SimpleRadialCameraModel::model_id) {
-            k1 = -1 *
-                 camera.Params(SimpleRadialCameraModel::extra_params_idxs[0]);
-            k2 = 0.0;
-        } else if (camera.ModelId() == RadialCameraModel::model_id) {
-            k1 = -1 * camera.Params(RadialCameraModel::extra_params_idxs[0]);
-            k2 = -1 * camera.Params(RadialCameraModel::extra_params_idxs[1]);
-        } else {
-            std::cout << "WARNING: Recon3D only supports `SIMPLE_RADIAL`, "
-                         "`RADIAL`, and pinhole camera models."
-                      << std::endl;
-            return false;
-        }
-
-        const double scale =
-                1.0 / (double)std::max(camera.Width(), camera.Height());
-        synth_file << scale * camera.MeanFocalLength() << " " << k1 << " " << k2
-                   << std::endl;
-        synth_file << QuaternionToRotationMatrix(
-                              NormalizeQuaternion(image.Qvec()))
-                   << std::endl;
-        synth_file << image.Tvec(0) << " " << image.Tvec(1) << " "
-                   << image.Tvec(2) << std::endl;
-
-        image_id_to_idx_[image_id] = image_idx;
-        image_list_file << image.Name() << std::endl
-                        << camera.Width() << " " << camera.Height()
-                        << std::endl;
-        image_map_file << image_idx << std::endl;
-
-        image_idx += 1;
-    }
-    image_list_file.close();
-    image_map_file.close();
-
-    // Write point info
-    for (const auto& point3D : points3D_) {
-        auto& p = point3D.second;
-        synth_file << p.XYZ()(0) << " " << p.XYZ()(1) << " " << p.XYZ()(2)
-                   << std::endl;
-        synth_file << (int)p.Color(0) << " " << (int)p.Color(1) << " "
-                   << (int)p.Color(2) << std::endl;
-
-        std::ostringstream line;
-
-        std::unordered_set<image_t> image_ids;
-        for (const auto& track_el : p.Track().Elements()) {
-            // Make sure that each point only has a single observation per
-            // image, since VisualSfM does not support with multiple
-            // observations.
-            if (image_ids.count(track_el.image_id) == 0) {
-                const class Image& image = Image(track_el.image_id);
-                const class Camera& camera = Camera(image.CameraId());
-                const Point2D& point2D = image.Point2D(track_el.point2D_idx);
-
-                const double scale =
-                        1.0 / (double)std::max(camera.Width(), camera.Height());
-
-                line << image_id_to_idx_[track_el.image_id] << " ";
-                line << track_el.point2D_idx << " ";
-                // Use a scale of -1.0 to mark as invalid as it is not needed
-                // currently
-                line << "-1.0 ";
-                line << (point2D.X() - camera.PrincipalPointX()) * scale << " ";
-                line << (point2D.Y() - camera.PrincipalPointY()) * scale << " ";
-                image_ids.insert(track_el.image_id);
-            }
-        }
-
-        std::string line_string = line.str();
-        line_string = line_string.substr(0, line_string.size() - 1);
-
-        synth_file << image_ids.size() << " ";
-        synth_file << line_string << std::endl;
-    }
-    synth_file.close();
-
-    return true;
-}
-
-bool Reconstruction::ExportBundler(const std::string& path,
-                                   const std::string& list_path,
-                                   bool skip_distortion) const {
-    std::ofstream file(path, std::ios::trunc);
-    CHECK(file.is_open()) << path;
-
-    std::ofstream list_file(list_path, std::ios::trunc);
-    CHECK(list_file.is_open()) << list_path;
-
-    // Ensure that we don't lose any precision by storing in text.
-    file.precision(17);
-
-    file << "# Bundle file v0.3" << std::endl;
-
-    file << reg_image_ids_.size() << " " << points3D_.size() << std::endl;
-
-    std::unordered_map<image_t, size_t> image_id_to_idx_;
-    size_t image_idx = 0;
-
-    for (const image_t image_id : reg_image_ids_) {
-        const class Image& image = Image(image_id);
-        const class Camera& camera = Camera(image.CameraId());
-
-        double k1, k2;
-        if (skip_distortion ||
-            camera.ModelId() == SimplePinholeCameraModel::model_id ||
-            camera.ModelId() == PinholeCameraModel::model_id) {
-            k1 = 0.0;
-            k2 = 0.0;
-        } else if (camera.ModelId() == SimpleRadialCameraModel::model_id) {
-            k1 = camera.Params(SimpleRadialCameraModel::extra_params_idxs[0]);
-            k2 = 0.0;
-        } else if (camera.ModelId() == RadialCameraModel::model_id) {
-            k1 = camera.Params(RadialCameraModel::extra_params_idxs[0]);
-            k2 = camera.Params(RadialCameraModel::extra_params_idxs[1]);
-        } else {
-            std::cout << "WARNING: Bundler only supports `SIMPLE_RADIAL`, "
-                         "`RADIAL`, and pinhole camera models."
-                      << std::endl;
-            return false;
-        }
-
-        file << camera.MeanFocalLength() << " " << k1 << " " << k2 << std::endl;
-
-        const Eigen::Matrix3d R = image.RotationMatrix();
-        file << R(0, 0) << " " << R(0, 1) << " " << R(0, 2) << std::endl;
-        file << -R(1, 0) << " " << -R(1, 1) << " " << -R(1, 2) << std::endl;
-        file << -R(2, 0) << " " << -R(2, 1) << " " << -R(2, 2) << std::endl;
-
-        file << image.Tvec(0) << " ";
-        file << -image.Tvec(1) << " ";
-        file << -image.Tvec(2) << std::endl;
-
-        list_file << image.Name() << std::endl;
-
-        image_id_to_idx_[image_id] = image_idx;
-        image_idx += 1;
-    }
-
-    for (const auto& point3D : points3D_) {
-        file << point3D.second.XYZ()(0) << " ";
-        file << point3D.second.XYZ()(1) << " ";
-        file << point3D.second.XYZ()(2) << std::endl;
-
-        file << static_cast<int>(point3D.second.Color(0)) << " ";
-        file << static_cast<int>(point3D.second.Color(1)) << " ";
-        file << static_cast<int>(point3D.second.Color(2)) << std::endl;
-
-        std::ostringstream line;
-
-        line << point3D.second.Track().Length() << " ";
-
-        for (const auto& track_el : point3D.second.Track().Elements()) {
-            const class Image& image = Image(track_el.image_id);
-            const class Camera& camera = Camera(image.CameraId());
-
-            // Bundler output assumes image coordinate system origin
-            // in the lower left corner of the image with the center of
-            // the lower left pixel being (0, 0). Our coordinate system
-            // starts in the upper left corner with the center of the
-            // upper left pixel being (0.5, 0.5).
-
-            const Point2D& point2D = image.Point2D(track_el.point2D_idx);
-
-            line << image_id_to_idx_.at(track_el.image_id) << " ";
-            line << track_el.point2D_idx << " ";
-            line << point2D.X() - camera.PrincipalPointX() << " ";
-            line << camera.PrincipalPointY() - point2D.Y() << " ";
-        }
-
-        std::string line_string = line.str();
-        line_string = line_string.substr(0, line_string.size() - 1);
-
-        file << line_string << std::endl;
-    }
-
-    return true;
-}
-
-void Reconstruction::ExportPLY(const std::string& path) const {
-    const auto ply_points = ConvertToPLY();
-
-    const bool kWriteNormal = false;
-    const bool kWriteRGB = true;
-    WriteBinaryPlyPoints(path, ply_points, kWriteNormal, kWriteRGB);
-}
-
-void Reconstruction::ExportVRML(const std::string& images_path,
-                                const std::string& points3D_path,
-                                const double image_scale,
-                                const Eigen::Vector3d& image_rgb) const {
-    std::ofstream images_file(images_path, std::ios::trunc);
-    CHECK(images_file.is_open()) << images_path;
-
-    const double six = image_scale * 0.15;
-    const double siy = image_scale * 0.1;
-
-    std::vector<Eigen::Vector3d> points;
-    points.emplace_back(-six, -siy, six * 1.0 * 2.0);
-    points.emplace_back(+six, -siy, six * 1.0 * 2.0);
-    points.emplace_back(+six, +siy, six * 1.0 * 2.0);
-    points.emplace_back(-six, +siy, six * 1.0 * 2.0);
-    points.emplace_back(0, 0, 0);
-    points.emplace_back(-six / 3.0, -siy / 3.0, six * 1.0 * 2.0);
-    points.emplace_back(+six / 3.0, -siy / 3.0, six * 1.0 * 2.0);
-    points.emplace_back(+six / 3.0, +siy / 3.0, six * 1.0 * 2.0);
-    points.emplace_back(-six / 3.0, +siy / 3.0, six * 1.0 * 2.0);
-
-    for (const auto& image : images_) {
-        if (!image.second.IsRegistered()) {
-            continue;
-        }
-
-        images_file << "Shape{\n";
-        images_file << " appearance Appearance {\n";
-        images_file << "  material DEF Default-ffRffGffB Material {\n";
-        images_file << "  ambientIntensity 0\n";
-        images_file << "  diffuseColor "
-                    << " " << image_rgb(0) << " " << image_rgb(1) << " "
-                    << image_rgb(2) << "\n";
-        images_file << "  emissiveColor 0.1 0.1 0.1 } }\n";
-        images_file << " geometry IndexedFaceSet {\n";
-        images_file << " solid FALSE \n";
-        images_file << " colorPerVertex TRUE \n";
-        images_file << " ccw TRUE \n";
-
-        images_file << " coord Coordinate {\n";
-        images_file << " point [\n";
-
-        Eigen::Transform<double, 3, Eigen::Affine> transform;
-        transform.matrix().topLeftCorner<3, 4>() =
-                image.second.InverseProjectionMatrix();
-
-        // Move camera base model to camera pose.
-        for (size_t i = 0; i < points.size(); i++) {
-            const Eigen::Vector3d point = transform * points[i];
-            images_file << point(0) << " " << point(1) << " " << point(2)
-                        << "\n";
-        }
-
-        images_file << " ] }\n";
-
-        images_file << "color Color {color [\n";
-        for (size_t p = 0; p < points.size(); p++) {
-            images_file << " " << image_rgb(0) << " " << image_rgb(1) << " "
-                        << image_rgb(2) << "\n";
-        }
-
-        images_file << "\n] }\n";
-
-        images_file << "coordIndex [\n";
-        images_file << " 0, 1, 2, 3, -1\n";
-        images_file << " 5, 6, 4, -1\n";
-        images_file << " 6, 7, 4, -1\n";
-        images_file << " 7, 8, 4, -1\n";
-        images_file << " 8, 5, 4, -1\n";
-        images_file << " \n] \n";
-
-        images_file << " texCoord TextureCoordinate { point [\n";
-        images_file << "  1 1,\n";
-        images_file << "  0 1,\n";
-        images_file << "  0 0,\n";
-        images_file << "  1 0,\n";
-        images_file << "  0 0,\n";
-        images_file << "  0 0,\n";
-        images_file << "  0 0,\n";
-        images_file << "  0 0,\n";
-        images_file << "  0 0,\n";
-
-        images_file << " ] }\n";
-        images_file << "} }\n";
-    }
-
-    // Write 3D points
-
-    std::ofstream points3D_file(points3D_path, std::ios::trunc);
-    CHECK(points3D_file.is_open()) << points3D_path;
-
-    points3D_file << "#VRML V2.0 utf8\n";
-    points3D_file << "Background { skyColor [1.0 1.0 1.0] } \n";
-    points3D_file << "Shape{ appearance Appearance {\n";
-    points3D_file << " material Material {emissiveColor 1 1 1} }\n";
-    points3D_file << " geometry PointSet {\n";
-    points3D_file << " coord Coordinate {\n";
-    points3D_file << "  point [\n";
-
-    for (const auto& point3D : points3D_) {
-        points3D_file << point3D.second.XYZ()(0) << ", ";
-        points3D_file << point3D.second.XYZ()(1) << ", ";
-        points3D_file << point3D.second.XYZ()(2) << std::endl;
-    }
-
-    points3D_file << " ] }\n";
-    points3D_file << " color Color { color [\n";
-
-    for (const auto& point3D : points3D_) {
-        points3D_file << point3D.second.Color(0) / 255.0 << ", ";
-        points3D_file << point3D.second.Color(1) / 255.0 << ", ";
-        points3D_file << point3D.second.Color(2) / 255.0 << std::endl;
-    }
-
-    points3D_file << " ] } } }\n";
-}
 
 bool Reconstruction::ExtractColorsForImage(const image_t image_id,
                                            const std::string& path) {
@@ -2010,558 +1457,17 @@ size_t Reconstruction::FilterPoints3DWithLargeReprojectionError(
     return num_filtered;
 }
 
-void Reconstruction::ReadCamerasText(const std::string& path) {
-    cameras_.clear();
 
-    std::ifstream file(path);
-    CHECK(file.is_open()) << path;
 
-    std::string line;
-    std::string item;
 
-    while (std::getline(file, line)) {
-        StringTrim(&line);
 
-        if (line.empty() || line[0] == '#') {
-            continue;
-        }
 
-        std::stringstream line_stream(line);
 
-        class Camera camera;
 
-        // ID
-        std::getline(line_stream, item, ' ');
-        camera.SetCameraId(std::stoul(item));
 
-        // MODEL
-        std::getline(line_stream, item, ' ');
-        camera.SetModelIdFromName(item);
 
-        // WIDTH
-        std::getline(line_stream, item, ' ');
-        camera.SetWidth(std::stoll(item));
 
-        // HEIGHT
-        std::getline(line_stream, item, ' ');
-        camera.SetHeight(std::stoll(item));
 
-        // PARAMS
-        camera.Params().clear();
-        while (!line_stream.eof()) {
-            std::getline(line_stream, item, ' ');
-            camera.Params().push_back(std::stold(item));
-        }
-
-        CHECK(camera.VerifyParams());
-
-        cameras_.emplace(camera.CameraId(), std::move(camera));
-    }
-}
-
-void Reconstruction::ReadImagesText(const std::string& path) {
-    images_.clear();
-
-    std::ifstream file(path);
-    CHECK(file.is_open()) << path;
-
-    std::string line;
-    std::string item;
-
-    while (std::getline(file, line)) {
-        StringTrim(&line);
-
-        if (line.empty() || line[0] == '#') {
-            continue;
-        }
-
-        std::stringstream line_stream1(line);
-
-        // ID
-        std::getline(line_stream1, item, ' ');
-        const image_t image_id = std::stoul(item);
-
-        class Image image;
-        image.SetImageId(image_id);
-
-        image.SetRegistered(true);
-        reg_image_ids_.push_back(image_id);
-
-        // QVEC (qw, qx, qy, qz)
-        std::getline(line_stream1, item, ' ');
-        image.Qvec(0) = std::stold(item);
-
-        std::getline(line_stream1, item, ' ');
-        image.Qvec(1) = std::stold(item);
-
-        std::getline(line_stream1, item, ' ');
-        image.Qvec(2) = std::stold(item);
-
-        std::getline(line_stream1, item, ' ');
-        image.Qvec(3) = std::stold(item);
-
-        image.NormalizeQvec();
-
-        // TVEC
-        std::getline(line_stream1, item, ' ');
-        image.Tvec(0) = std::stold(item);
-
-        std::getline(line_stream1, item, ' ');
-        image.Tvec(1) = std::stold(item);
-
-        std::getline(line_stream1, item, ' ');
-        image.Tvec(2) = std::stold(item);
-
-        // CAMERA_ID
-        std::getline(line_stream1, item, ' ');
-        image.SetCameraId(std::stoul(item));
-
-        // NAME
-        std::getline(line_stream1, item, ' ');
-        image.SetName(item);
-
-        // POINTS2D
-        if (!std::getline(file, line)) {
-            break;
-        }
-
-        StringTrim(&line);
-        std::stringstream line_stream2(line);
-
-        std::vector<Eigen::Vector2d> points2D;
-        std::vector<point3D_t> point3D_ids;
-
-        if (!line.empty()) {
-            while (!line_stream2.eof()) {
-                Eigen::Vector2d point;
-
-                std::getline(line_stream2, item, ' ');
-                point.x() = std::stold(item);
-
-                std::getline(line_stream2, item, ' ');
-                point.y() = std::stold(item);
-
-                points2D.push_back(point);
-
-                std::getline(line_stream2, item, ' ');
-                if (item == "-1") {
-                    point3D_ids.push_back(kInvalidPoint3DId);
-                } else {
-                    point3D_ids.push_back(std::stoll(item));
-                }
-            }
-        }
-
-        image.SetUp(Camera(image.CameraId()));
-        image.SetPoints2D(points2D);
-
-        for (point2D_t point2D_idx = 0; point2D_idx < image.NumPoints2D();
-             ++point2D_idx) {
-            if (point3D_ids[point2D_idx] != kInvalidPoint3DId) {
-                image.SetPoint3DForPoint2D(point2D_idx,
-                                           point3D_ids[point2D_idx]);
-            }
-        }
-
-        images_.emplace(image.ImageId(), std::move(image));
-    }
-}
-
-void Reconstruction::ReadPoints3DText(const std::string& path) {
-    points3D_.clear();
-
-    std::ifstream file(path);
-    CHECK(file.is_open()) << path;
-
-    std::string line;
-    std::string item;
-
-    while (std::getline(file, line)) {
-        StringTrim(&line);
-
-        if (line.empty() || line[0] == '#') {
-            continue;
-        }
-
-        std::stringstream line_stream(line);
-
-        // ID
-        std::getline(line_stream, item, ' ');
-        const point3D_t point3D_id = std::stoll(item);
-
-        // Make sure, that we can add new 3D points after reading 3D points
-        // without overwriting existing 3D points.
-        num_added_points3D_ = std::max(num_added_points3D_, point3D_id);
-
-        class Point3D point3D;
-
-        // XYZ
-        std::getline(line_stream, item, ' ');
-        point3D.XYZ(0) = std::stold(item);
-
-        std::getline(line_stream, item, ' ');
-        point3D.XYZ(1) = std::stold(item);
-
-        std::getline(line_stream, item, ' ');
-        point3D.XYZ(2) = std::stold(item);
-
-        // Color
-        std::getline(line_stream, item, ' ');
-        point3D.Color(0) = static_cast<uint8_t>(std::stoi(item));
-
-        std::getline(line_stream, item, ' ');
-        point3D.Color(1) = static_cast<uint8_t>(std::stoi(item));
-
-        std::getline(line_stream, item, ' ');
-        point3D.Color(2) = static_cast<uint8_t>(std::stoi(item));
-
-        // ERROR
-        std::getline(line_stream, item, ' ');
-        point3D.SetError(std::stold(item));
-
-        // TRACK
-        while (!line_stream.eof()) {
-            TrackElement track_el;
-
-            std::getline(line_stream, item, ' ');
-            StringTrim(&item);
-            if (item.empty()) {
-                break;
-            }
-            track_el.image_id = std::stoul(item);
-
-            std::getline(line_stream, item, ' ');
-            track_el.point2D_idx = std::stoul(item);
-
-            point3D.Track().AddElement(track_el);
-        }
-
-        point3D.Track().Compress();
-
-        points3D_.emplace(point3D_id, std::move(point3D));
-    }
-}
-
-void Reconstruction::ReadCamerasBinary(const std::string& path) {
-    std::ifstream file(path, std::ios::binary);
-    CHECK(file.is_open()) << path;
-
-    const size_t num_cameras = ReadBinaryLittleEndian<uint64_t>(&file);
-    for (size_t i = 0; i < num_cameras; ++i) {
-        class Camera camera;
-        camera.SetCameraId(ReadBinaryLittleEndian<camera_t>(&file));
-        camera.SetModelId(ReadBinaryLittleEndian<int>(&file));
-        camera.SetWidth(ReadBinaryLittleEndian<uint64_t>(&file));
-        camera.SetHeight(ReadBinaryLittleEndian<uint64_t>(&file));
-        ReadBinaryLittleEndian<double>(&file, &camera.Params());
-        CHECK(camera.VerifyParams());
-        cameras_.emplace(camera.CameraId(), std::move(camera));
-    }
-}
-
-void Reconstruction::ReadImagesBinary(const std::string& path) {
-    std::ifstream file(path, std::ios::binary);
-    CHECK(file.is_open()) << path;
-
-    const size_t num_reg_images = ReadBinaryLittleEndian<uint64_t>(&file);
-    for (size_t i = 0; i < num_reg_images; ++i) {
-        class Image image;
-
-        image.SetImageId(ReadBinaryLittleEndian<image_t>(&file));
-
-        image.Qvec(0) = ReadBinaryLittleEndian<double>(&file);
-        image.Qvec(1) = ReadBinaryLittleEndian<double>(&file);
-        image.Qvec(2) = ReadBinaryLittleEndian<double>(&file);
-        image.Qvec(3) = ReadBinaryLittleEndian<double>(&file);
-        image.NormalizeQvec();
-
-        image.Tvec(0) = ReadBinaryLittleEndian<double>(&file);
-        image.Tvec(1) = ReadBinaryLittleEndian<double>(&file);
-        image.Tvec(2) = ReadBinaryLittleEndian<double>(&file);
-
-        image.SetCameraId(ReadBinaryLittleEndian<camera_t>(&file));
-
-        char name_char;
-        do {
-            file.read(&name_char, 1);
-            if (name_char != '\0') {
-                image.Name() += name_char;
-            }
-        } while (name_char != '\0');
-
-        const size_t num_points2D = ReadBinaryLittleEndian<uint64_t>(&file);
-
-        std::vector<Eigen::Vector2d> points2D;
-        points2D.reserve(num_points2D);
-        std::vector<point3D_t> point3D_ids;
-        point3D_ids.reserve(num_points2D);
-        for (size_t j = 0; j < num_points2D; ++j) {
-            const double x = ReadBinaryLittleEndian<double>(&file);
-            const double y = ReadBinaryLittleEndian<double>(&file);
-            points2D.emplace_back(x, y);
-            point3D_ids.push_back(ReadBinaryLittleEndian<point3D_t>(&file));
-        }
-
-        image.SetUp(Camera(image.CameraId()));
-        image.SetPoints2D(points2D);
-
-        for (point2D_t point2D_idx = 0; point2D_idx < image.NumPoints2D();
-             ++point2D_idx) {
-            if (point3D_ids[point2D_idx] != kInvalidPoint3DId) {
-                image.SetPoint3DForPoint2D(point2D_idx,
-                                           point3D_ids[point2D_idx]);
-            }
-        }
-
-        image.SetRegistered(true);
-        reg_image_ids_.push_back(image.ImageId());
-
-        images_.emplace(image.ImageId(), std::move(image));
-    }
-}
-
-void Reconstruction::ReadPoints3DBinary(const std::string& path) {
-    std::ifstream file(path, std::ios::binary);
-    CHECK(file.is_open()) << path;
-
-    const size_t num_points3D = ReadBinaryLittleEndian<uint64_t>(&file);
-    for (size_t i = 0; i < num_points3D; ++i) {
-        class Point3D point3D;
-
-        const point3D_t point3D_id = ReadBinaryLittleEndian<point3D_t>(&file);
-        num_added_points3D_ = std::max(num_added_points3D_, point3D_id);
-
-        point3D.XYZ()(0) = ReadBinaryLittleEndian<double>(&file);
-        point3D.XYZ()(1) = ReadBinaryLittleEndian<double>(&file);
-        point3D.XYZ()(2) = ReadBinaryLittleEndian<double>(&file);
-        point3D.Color(0) = ReadBinaryLittleEndian<uint8_t>(&file);
-        point3D.Color(1) = ReadBinaryLittleEndian<uint8_t>(&file);
-        point3D.Color(2) = ReadBinaryLittleEndian<uint8_t>(&file);
-        point3D.SetError(ReadBinaryLittleEndian<double>(&file));
-
-        const size_t track_length = ReadBinaryLittleEndian<uint64_t>(&file);
-        for (size_t j = 0; j < track_length; ++j) {
-            const image_t image_id = ReadBinaryLittleEndian<image_t>(&file);
-            const point2D_t point2D_idx =
-                    ReadBinaryLittleEndian<point2D_t>(&file);
-            point3D.Track().AddElement(image_id, point2D_idx);
-        }
-        point3D.Track().Compress();
-
-        points3D_.emplace(point3D_id, std::move(point3D));
-    }
-}
-
-void Reconstruction::WriteCamerasText(const std::string& path) const {
-    std::ofstream file(path, std::ios::trunc);
-    CHECK(file.is_open()) << path;
-
-    // Ensure that we don't loose any precision by storing in text.
-    file.precision(17);
-
-    file << "# Camera list with one line of data per camera:" << std::endl;
-    file << "#   CAMERA_ID, MODEL, WIDTH, HEIGHT, PARAMS[]" << std::endl;
-    file << "# Number of cameras: " << cameras_.size() << std::endl;
-
-    for (const auto& camera : cameras_) {
-        std::ostringstream line;
-
-        line << camera.first << " ";
-        line << camera.second.ModelName() << " ";
-        line << camera.second.Width() << " ";
-        line << camera.second.Height() << " ";
-
-        for (const double param : camera.second.Params()) {
-            line << param << " ";
-        }
-
-        std::string line_string = line.str();
-        line_string = line_string.substr(0, line_string.size() - 1);
-
-        file << line_string << std::endl;
-    }
-}
-
-void Reconstruction::WriteImagesText(const std::string& path) const {
-    std::ofstream file(path, std::ios::trunc);
-    CHECK(file.is_open()) << path;
-
-    // Ensure that we don't loose any precision by storing in text.
-    file.precision(17);
-
-    file << "# Image list with two lines of data per image:" << std::endl;
-    file << "#   IMAGE_ID, QW, QX, QY, QZ, TX, TY, TZ, CAMERA_ID, "
-            "NAME"
-         << std::endl;
-    file << "#   POINTS2D[] as (X, Y, POINT3D_ID)" << std::endl;
-    file << "# Number of images: " << reg_image_ids_.size()
-         << ", mean observations per image: "
-         << ComputeMeanObservationsPerRegImage() << std::endl;
-
-    for (const auto& image : images_) {
-        if (!image.second.IsRegistered()) {
-            continue;
-        }
-
-        std::ostringstream line;
-        std::string line_string;
-
-        line << image.first << " ";
-
-        // QVEC (qw, qx, qy, qz)
-        const Eigen::Vector4d normalized_qvec =
-                NormalizeQuaternion(image.second.Qvec());
-        line << normalized_qvec(0) << " ";
-        line << normalized_qvec(1) << " ";
-        line << normalized_qvec(2) << " ";
-        line << normalized_qvec(3) << " ";
-
-        // TVEC
-        line << image.second.Tvec(0) << " ";
-        line << image.second.Tvec(1) << " ";
-        line << image.second.Tvec(2) << " ";
-
-        line << image.second.CameraId() << " ";
-
-        line << image.second.Name();
-
-        file << line.str() << std::endl;
-
-        line.str("");
-        line.clear();
-
-        for (const Point2D& point2D : image.second.Points2D()) {
-            line << point2D.X() << " ";
-            line << point2D.Y() << " ";
-            if (point2D.HasPoint3D()) {
-                line << point2D.Point3DId() << " ";
-            } else {
-                line << -1 << " ";
-            }
-        }
-        line_string = line.str();
-        line_string = line_string.substr(0, line_string.size() - 1);
-        file << line_string << std::endl;
-    }
-}
-
-void Reconstruction::WritePoints3DText(const std::string& path) const {
-    std::ofstream file(path, std::ios::trunc);
-    CHECK(file.is_open()) << path;
-
-    // Ensure that we don't loose any precision by storing in text.
-    file.precision(17);
-
-    file << "# 3D point list with one line of data per point:" << std::endl;
-    file << "#   POINT3D_ID, X, Y, Z, R, G, B, ERROR, "
-            "TRACK[] as (IMAGE_ID, POINT2D_IDX)"
-         << std::endl;
-    file << "# Number of points: " << points3D_.size()
-         << ", mean track length: " << ComputeMeanTrackLength() << std::endl;
-
-    for (const auto& point3D : points3D_) {
-        file << point3D.first << " ";
-        file << point3D.second.XYZ()(0) << " ";
-        file << point3D.second.XYZ()(1) << " ";
-        file << point3D.second.XYZ()(2) << " ";
-        file << static_cast<int>(point3D.second.Color(0)) << " ";
-        file << static_cast<int>(point3D.second.Color(1)) << " ";
-        file << static_cast<int>(point3D.second.Color(2)) << " ";
-        file << point3D.second.Error() << " ";
-
-        std::ostringstream line;
-
-        for (const auto& track_el : point3D.second.Track().Elements()) {
-            line << track_el.image_id << " ";
-            line << track_el.point2D_idx << " ";
-        }
-
-        std::string line_string = line.str();
-        line_string = line_string.substr(0, line_string.size() - 1);
-
-        file << line_string << std::endl;
-    }
-}
-
-void Reconstruction::WriteCamerasBinary(const std::string& path) const {
-    std::ofstream file(path, std::ios::trunc | std::ios::binary);
-    CHECK(file.is_open()) << path;
-
-    WriteBinaryLittleEndian<uint64_t>(&file, cameras_.size());
-
-    for (const auto& camera : cameras_) {
-        WriteBinaryLittleEndian<camera_t>(&file, camera.first);
-        WriteBinaryLittleEndian<int>(&file, camera.second.ModelId());
-        WriteBinaryLittleEndian<uint64_t>(&file, camera.second.Width());
-        WriteBinaryLittleEndian<uint64_t>(&file, camera.second.Height());
-        for (const double param : camera.second.Params()) {
-            WriteBinaryLittleEndian<double>(&file, param);
-        }
-    }
-}
-
-void Reconstruction::WriteImagesBinary(const std::string& path) const {
-    std::ofstream file(path, std::ios::trunc | std::ios::binary);
-    CHECK(file.is_open()) << path;
-
-    WriteBinaryLittleEndian<uint64_t>(&file, reg_image_ids_.size());
-
-    for (const auto& image : images_) {
-        if (!image.second.IsRegistered()) {
-            continue;
-        }
-
-        WriteBinaryLittleEndian<image_t>(&file, image.first);
-
-        const Eigen::Vector4d normalized_qvec =
-                NormalizeQuaternion(image.second.Qvec());
-        WriteBinaryLittleEndian<double>(&file, normalized_qvec(0));
-        WriteBinaryLittleEndian<double>(&file, normalized_qvec(1));
-        WriteBinaryLittleEndian<double>(&file, normalized_qvec(2));
-        WriteBinaryLittleEndian<double>(&file, normalized_qvec(3));
-
-        WriteBinaryLittleEndian<double>(&file, image.second.Tvec(0));
-        WriteBinaryLittleEndian<double>(&file, image.second.Tvec(1));
-        WriteBinaryLittleEndian<double>(&file, image.second.Tvec(2));
-
-        WriteBinaryLittleEndian<camera_t>(&file, image.second.CameraId());
-
-        const std::string name = image.second.Name() + '\0';
-        file.write(name.c_str(), name.size());
-
-        WriteBinaryLittleEndian<uint64_t>(&file, image.second.NumPoints2D());
-        for (const Point2D& point2D : image.second.Points2D()) {
-            WriteBinaryLittleEndian<double>(&file, point2D.X());
-            WriteBinaryLittleEndian<double>(&file, point2D.Y());
-            WriteBinaryLittleEndian<point3D_t>(&file, point2D.Point3DId());
-        }
-    }
-}
-
-void Reconstruction::WritePoints3DBinary(const std::string& path) const {
-    std::ofstream file(path, std::ios::trunc | std::ios::binary);
-    CHECK(file.is_open()) << path;
-
-    WriteBinaryLittleEndian<uint64_t>(&file, points3D_.size());
-
-    for (const auto& point3D : points3D_) {
-        WriteBinaryLittleEndian<point3D_t>(&file, point3D.first);
-        WriteBinaryLittleEndian<double>(&file, point3D.second.XYZ()(0));
-        WriteBinaryLittleEndian<double>(&file, point3D.second.XYZ()(1));
-        WriteBinaryLittleEndian<double>(&file, point3D.second.XYZ()(2));
-        WriteBinaryLittleEndian<uint8_t>(&file, point3D.second.Color(0));
-        WriteBinaryLittleEndian<uint8_t>(&file, point3D.second.Color(1));
-        WriteBinaryLittleEndian<uint8_t>(&file, point3D.second.Color(2));
-        WriteBinaryLittleEndian<double>(&file, point3D.second.Error());
-
-        WriteBinaryLittleEndian<uint64_t>(&file,
-                                          point3D.second.Track().Length());
-        for (const auto& track_el : point3D.second.Track().Elements()) {
-            WriteBinaryLittleEndian<image_t>(&file, track_el.image_id);
-            WriteBinaryLittleEndian<point2D_t>(&file, track_el.point2D_idx);
-        }
-    }
-}
 
 void Reconstruction::SetObservationAsTriangulated(
         const image_t image_id,

@@ -31,6 +31,8 @@
 
 #include "exe/sfm.h"
 
+#include "controllers/global_pipeline.h"
+
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
@@ -878,6 +880,68 @@ int RunRigBundleAdjuster(int argc, char** argv) {
 
   reconstruction.Write(output_path);
 
+  return EXIT_SUCCESS;
+}
+
+
+namespace {
+
+// Upstream parity (dbb41680 exe/sfm.cc RunGlobalMapperImpl). The fork's
+// Database is constructed directly (no Database::Open factory).
+bool RunGlobalMapperImpl(
+    const std::filesystem::path& database_path,
+    const std::filesystem::path& image_path,
+    const std::filesystem::path& output_path,
+    const std::shared_ptr<GlobalPipelineOptions>& mapper_options,
+    const OptionManager& options,
+    std::shared_ptr<ReconstructionManager>& reconstruction_manager) {
+  GlobalPipelineOptions pipeline_options = *mapper_options;
+  pipeline_options.image_path = image_path;
+
+  GlobalPipeline global_mapper(std::move(pipeline_options),
+                               std::make_shared<Database>(database_path),
+                               reconstruction_manager);
+  global_mapper.Run();
+
+  if (reconstruction_manager->Size() == 0) {
+    LOG(ERROR) << "Failed to create sparse model";
+    return false;
+  }
+
+  // Fork parity: the fork's manager Write also persists options; the fork's
+  // OptionManager::Parse returns void (errors abort via CHECK).
+  reconstruction_manager->Write(output_path.string(), &options);
+  return true;
+}
+
+}  // namespace
+
+int RunGlobalMapper(int argc, char** argv) {
+  std::filesystem::path output_path;
+
+  OptionManager options;
+  options.AddDatabaseOptions();
+  options.AddImageOptions();
+  options.AddRequiredOption("output_path", &output_path);
+  options.AddGlobalMapperOptions();
+  options.Parse(argc, argv);
+
+  if (!ExistsDir(output_path)) {
+    LOG(ERROR) << "`output_path` is not a directory.";
+    return EXIT_FAILURE;
+  }
+
+  auto reconstruction_manager = std::make_shared<ReconstructionManager>();
+  if (!RunGlobalMapperImpl(*options.database_path,
+                           *options.image_path,
+                           output_path,
+                           options.global_mapper,
+                           options,
+                           reconstruction_manager)) {
+    return EXIT_FAILURE;
+  }
+
+  options.Write(output_path.string());
   return EXIT_SUCCESS;
 }
 

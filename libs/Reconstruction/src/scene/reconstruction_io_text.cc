@@ -1,0 +1,656 @@
+// Copyright (c), ETH Zurich and UNC Chapel Hill.
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+//
+//     * Redistributions in binary form must reproduce the above copyright
+//       notice, this list of conditions and the following disclaimer in the
+//       documentation and/or other materials provided with the distribution.
+//
+//     * Neither the name of ETH Zurich and UNC Chapel Hill nor the names of
+//       its contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+
+#include "geometry/rigid3.h"
+#include "base/camera.h"
+#include "base/image.h"
+#include "base/point2d.h"
+#include "base/point3d.h"
+#include "base/reconstruction.h"
+#include "scene/reconstruction_io_utils.h"
+#include "base/track.h"
+#include "util/misc.h"
+#include "util/hash_containers.h"
+#include "util/types.h"
+
+#include <fstream>
+#include <locale>
+
+namespace colmap {
+
+void ReadRigsText(Reconstruction& reconstruction, std::istream& stream) {
+  THROW_CHECK(stream.good());
+  stream.imbue(std::locale::classic());
+
+  std::string line;
+  std::string item;
+
+  while (std::getline(stream, line)) {
+    StringTrim(&line);
+
+    if (line.empty() || line[0] == '#') {
+      continue;
+    }
+
+    std::stringstream line_stream(line);
+    line_stream.imbue(std::locale::classic());
+
+    Rig rig;
+
+    // ID, NUM_SENSORS
+    camera_t rig_id;
+    uint64_t num_sensors;
+    THROW_CHECK(line_stream >> rig_id >> num_sensors);
+    rig.SetRigId(rig_id);
+
+    if (num_sensors > 0) {
+      // REF_SENSOR
+      sensor_t ref_sensor_id;
+      THROW_CHECK(line_stream >> item >> ref_sensor_id.id);
+      ref_sensor_id.type = SensorTypeFromString(item);
+      rig.AddRefSensor(ref_sensor_id);
+    }
+
+    // SENSORS
+    if (num_sensors > 1) {
+      for (uint64_t i = 0; i < num_sensors - 1; ++i) {
+        sensor_t sensor_id;
+        int has_pose_int;
+        THROW_CHECK(line_stream >> item >> sensor_id.id >> has_pose_int);
+        sensor_id.type = SensorTypeFromString(item);
+        const bool has_pose = has_pose_int == 1;
+
+        std::optional<Rigid3d> sensor_from_rig;
+        if (has_pose) {
+          sensor_from_rig = Rigid3d();
+
+          THROW_CHECK(line_stream >> sensor_from_rig->rotation().w() >>
+                      sensor_from_rig->rotation().x() >>
+                      sensor_from_rig->rotation().y() >>
+                      sensor_from_rig->rotation().z() >>
+                      sensor_from_rig->translation().x() >>
+                      sensor_from_rig->translation().y() >>
+                      sensor_from_rig->translation().z());
+        }
+
+        rig.AddSensor(sensor_id, sensor_from_rig);
+      }
+    }
+
+    reconstruction.AddRig(std::move(rig));
+  }
+}
+
+void ReadRigsText(Reconstruction& reconstruction,
+                  const std::filesystem::path& path) {
+  std::ifstream file(path);
+  THROW_CHECK_FILE_OPEN(file, path);
+  ReadRigsText(reconstruction, file);
+}
+
+void ReadCamerasText(Reconstruction& reconstruction, std::istream& stream) {
+  THROW_CHECK(stream.good());
+  stream.imbue(std::locale::classic());
+
+  std::string line;
+  std::string item;
+
+  while (std::getline(stream, line)) {
+    StringTrim(&line);
+
+    if (line.empty() || line[0] == '#') {
+      continue;
+    }
+
+    std::stringstream line_stream(line);
+    line_stream.imbue(std::locale::classic());
+
+    struct Camera camera;
+
+    // ID, MODEL, WIDTH, HEIGHT
+    camera_t camera_id;
+    size_t width = 0;
+    size_t height = 0;
+    THROW_CHECK(line_stream >> camera_id >> item >> width >> height);
+    camera.SetCameraId(camera_id);
+    camera.SetWidth(width);
+    camera.SetHeight(height);
+    camera.SetModelId(CameraModelNameToId(item));
+
+    // PARAMS
+    // Fork note: the fork's SetModelId pre-sizes params_ to the model's
+    // parameter count; clear it so the bulk push below yields exactly the
+    // written parameters (upstream assigns model_id without resizing).
+    camera.Params().clear();
+    camera.Params().reserve(CameraModelNumParams(camera.ModelId()));
+    double param;
+    while (line_stream >> param) {
+      camera.Params().push_back(param);
+    }
+    THROW_CHECK(camera.VerifyParams());
+    reconstruction.AddCamera(std::move(camera));
+  }
+}
+
+void ReadCamerasText(Reconstruction& reconstruction,
+                     const std::filesystem::path& path) {
+  std::ifstream file(path);
+  THROW_CHECK_FILE_OPEN(file, path);
+  ReadCamerasText(reconstruction, file);
+}
+
+void ReadFramesText(Reconstruction& reconstruction, std::istream& stream) {
+  THROW_CHECK(stream.good());
+  stream.imbue(std::locale::classic());
+
+  std::string line;
+  std::string item;
+
+  while (std::getline(stream, line)) {
+    StringTrim(&line);
+
+    if (line.empty() || line[0] == '#') {
+      continue;
+    }
+
+    std::stringstream line_stream(line);
+    line_stream.imbue(std::locale::classic());
+
+    Frame frame;
+
+    // ID, RIG_ID
+    frame_t frame_id;
+    camera_t rig_id;
+    THROW_CHECK(line_stream >> frame_id >> rig_id);
+    frame.SetFrameId(frame_id);
+    frame.SetRigId(rig_id);
+
+    // RIG_FROM_WORLD, DATA_IDS
+    Rigid3d rig_from_world;
+    uint32_t num_data_ids;
+    THROW_CHECK(
+        line_stream >> rig_from_world.rotation().w() >>
+        rig_from_world.rotation().x() >> rig_from_world.rotation().y() >>
+        rig_from_world.rotation().z() >> rig_from_world.translation().x() >>
+        rig_from_world.translation().y() >> rig_from_world.translation().z() >>
+        num_data_ids);
+    frame.SetRigFromWorld(rig_from_world);
+    for (uint32_t i = 0; i < num_data_ids; ++i) {
+      data_t data_id;
+      THROW_CHECK(line_stream >> item >> data_id.sensor_id.id >> data_id.id);
+      data_id.sensor_id.type = SensorTypeFromString(item);
+      frame.AddDataId(data_id);
+    }
+
+    reconstruction.AddFrame(std::move(frame));
+  }
+}
+
+void ReadFramesText(Reconstruction& reconstruction,
+                    const std::filesystem::path& path) {
+  std::ifstream file(path);
+  THROW_CHECK_FILE_OPEN(file, path);
+  ReadFramesText(reconstruction, file);
+}
+
+void ReadImagesText(Reconstruction& reconstruction, std::istream& stream) {
+  THROW_CHECK(stream.good());
+  stream.imbue(std::locale::classic());
+
+  // Handle backwards-compatibility for when we didn't have rigs and frames.
+  const bool is_legacy_reconstruction =
+      reconstruction.NumRigs() == 0 && reconstruction.NumFrames() == 0;
+  if (is_legacy_reconstruction) {
+    CreateOneRigPerCamera(reconstruction);
+  }
+
+  const NodeHashMap<image_t, Frame*> image_to_frame =
+      ExtractImageToFramePtr(reconstruction);
+
+  std::string line;
+  std::vector<Eigen::Vector2d> points2D;
+  std::vector<point3D_t> point3D_ids;
+
+  while (std::getline(stream, line)) {
+    StringTrim(&line);
+
+    if (line.empty() || line[0] == '#') {
+      continue;
+    }
+
+    std::stringstream line_stream1(line);
+    line_stream1.imbue(std::locale::classic());
+
+    // ID, CAM_FROM_WORLD, CAMERA_ID
+    image_t image_id;
+    Rigid3d cam_from_world;
+    camera_t camera_id;
+    THROW_CHECK(
+        line_stream1 >> image_id >> cam_from_world.rotation().w() >>
+        cam_from_world.rotation().x() >> cam_from_world.rotation().y() >>
+        cam_from_world.rotation().z() >> cam_from_world.translation().x() >>
+        cam_from_world.translation().y() >> cam_from_world.translation().z() >>
+        camera_id);
+
+    class Image image;
+    image.SetImageId(image_id);
+    image.SetCameraId(camera_id);
+
+    if (is_legacy_reconstruction) {
+      CreateFrameForImage(image, cam_from_world, reconstruction);
+      image.SetFrameId(image.ImageId());
+      image.SetFramePtr(&reconstruction.Frame(image.ImageId()));
+    } else {
+      Frame* frame = image_to_frame.at(image.ImageId());
+      image.SetFrameId(frame->FrameId());
+      image.SetFramePtr(frame);
+    }
+
+    // NAME
+    THROW_CHECK(line_stream1 >> image.Name());
+
+    // POINTS2D
+    if (!std::getline(stream, line)) {
+      break;
+    }
+
+    StringTrim(&line);
+    std::stringstream line_stream2(line);
+    line_stream2.imbue(std::locale::classic());
+
+    points2D.clear();
+    point3D_ids.clear();
+
+    if (!line.empty()) {
+      Eigen::Vector2d point;
+      while (line_stream2 >> point.x() >> point.y()) {
+        points2D.push_back(point);
+
+        int64_t point3D_id_signed;
+        THROW_CHECK(line_stream2 >> point3D_id_signed);
+        if (point3D_id_signed == -1) {
+          point3D_ids.push_back(kInvalidPoint3DId);
+        } else {
+          point3D_ids.push_back(static_cast<point3D_t>(point3D_id_signed));
+        }
+      }
+    }
+
+    image.SetPoints2D(points2D);
+
+    for (point2D_t point2D_idx = 0; point2D_idx < image.NumPoints2D();
+         ++point2D_idx) {
+      if (point3D_ids[point2D_idx] != kInvalidPoint3DId) {
+        image.SetPoint3DForPoint2D(point2D_idx, point3D_ids[point2D_idx]);
+      }
+    }
+
+    reconstruction.AddImage(std::move(image));
+  }
+}
+
+void ReadImagesText(Reconstruction& reconstruction,
+                    const std::filesystem::path& path) {
+  std::ifstream file(path);
+  THROW_CHECK_FILE_OPEN(file, path);
+  ReadImagesText(reconstruction, file);
+}
+
+void ReadPoints3DText(Reconstruction& reconstruction, std::istream& stream) {
+  THROW_CHECK(stream.good());
+  stream.imbue(std::locale::classic());
+
+  std::string line;
+
+  while (std::getline(stream, line)) {
+    StringTrim(&line);
+
+    if (line.empty() || line[0] == '#') {
+      continue;
+    }
+
+    std::stringstream line_stream(line);
+    line_stream.imbue(std::locale::classic());
+
+    // ID
+    point3D_t point3D_id;
+
+    struct Point3D point3D;
+
+    // ID, XYZ, RGB
+    int r, g, b;
+    THROW_CHECK(line_stream >> point3D_id >> point3D.XYZ()(0) >> point3D.XYZ()(1) >>
+                point3D.XYZ()(2) >> r >> g >> b);
+    point3D.Color()(0) = static_cast<uint8_t>(r);
+    point3D.Color()(1) = static_cast<uint8_t>(g);
+    point3D.Color()(2) = static_cast<uint8_t>(b);
+
+    // ERROR
+    double error = 0.0;
+    THROW_CHECK(line_stream >> error);
+    point3D.SetError(error);
+
+    // TRACK
+    {
+      TrackElement track_el;
+      while (line_stream >> track_el.image_id >> track_el.point2D_idx) {
+        point3D.Track().AddElement(track_el);
+      }
+    }
+
+    point3D.Track().Compress();
+
+    reconstruction.AddPoint3D(point3D_id, std::move(point3D));
+  }
+}
+
+void ReadPoints3DText(Reconstruction& reconstruction,
+                      const std::filesystem::path& path) {
+  std::ifstream file(path);
+  THROW_CHECK_FILE_OPEN(file, path);
+  ReadPoints3DText(reconstruction, file);
+}
+
+void WriteRigsText(const Reconstruction& reconstruction, std::ostream& stream) {
+  THROW_CHECK(stream.good());
+
+  // Ensure that we don't loose any precision by storing in text.
+  stream.imbue(std::locale::classic());
+  stream.precision(17);
+
+  stream << "# Rig calib list with one line of data per calib:\n";
+  stream << "#   RIG_ID, NUM_SENSORS, REF_SENSOR_TYPE, REF_SENSOR_ID, "
+            "SENSORS[] as (SENSOR_TYPE, SENSOR_ID, HAS_POSE, [QW, QX, QY, QZ, "
+            "TX, TY, TZ])\n";
+  stream << "# Number of rigs: " << reconstruction.NumRigs() << '\n';
+
+  for (const camera_t rig_id : ExtractSortedIds(reconstruction.Rigs())) {
+    const Rig& rig = reconstruction.Rig(rig_id);
+
+    std::ostringstream line;
+    line.imbue(std::locale::classic());
+    line.precision(17);
+
+    line << rig_id << " ";
+
+    line << rig.NumSensors() << " ";
+
+    if (rig.NumSensors() > 0) {
+      const sensor_t ref_sensor_id = rig.RefSensorId();
+      line << ref_sensor_id.type << " ";
+      line << ref_sensor_id.id << " ";
+    }
+
+    for (const auto& [sensor_id, sensor_from_rig] : rig.NonRefSensors()) {
+      line << sensor_id.type << " ";
+      line << sensor_id.id << " ";
+      if (sensor_from_rig.has_value()) {
+        line << "1 ";
+        line << sensor_from_rig->rotation().w() << " ";
+        line << sensor_from_rig->rotation().x() << " ";
+        line << sensor_from_rig->rotation().y() << " ";
+        line << sensor_from_rig->rotation().z() << " ";
+        line << sensor_from_rig->translation().x() << " ";
+        line << sensor_from_rig->translation().y() << " ";
+        line << sensor_from_rig->translation().z() << " ";
+      } else {
+        line << "0 ";
+      }
+    }
+
+    std::string line_string = line.str();
+    line_string = line_string.substr(0, line_string.size() - 1);
+
+    stream << line_string << '\n';
+  }
+}
+
+void WriteRigsText(const Reconstruction& reconstruction,
+                   const std::filesystem::path& path) {
+  std::ofstream file(path, std::ios::trunc);
+  THROW_CHECK_FILE_OPEN(file, path);
+  WriteRigsText(reconstruction, file);
+}
+
+void WriteCamerasText(const Reconstruction& reconstruction,
+                      std::ostream& stream) {
+  THROW_CHECK(stream.good());
+
+  // Ensure that we don't loose any precision by storing in text.
+  stream.imbue(std::locale::classic());
+  stream.precision(17);
+
+  stream << "# Camera list with one line of data per camera:\n";
+  stream << "#   CAMERA_ID, MODEL, WIDTH, HEIGHT, PARAMS[]\n";
+  stream << "# Number of cameras: " << reconstruction.NumCameras() << '\n';
+
+  for (const camera_t camera_id : ExtractSortedIds(reconstruction.Cameras())) {
+    const Camera& camera = reconstruction.Camera(camera_id);
+
+    std::ostringstream line;
+    line.imbue(std::locale::classic());
+    line.precision(17);
+
+    line << camera_id << " ";
+    line << camera.ModelName() << " ";
+    line << camera.Width() << " ";
+    line << camera.Height() << " ";
+
+    for (const double param : camera.Params()) {
+      line << param << " ";
+    }
+
+    std::string line_string = line.str();
+    line_string = line_string.substr(0, line_string.size() - 1);
+
+    stream << line_string << '\n';
+  }
+}
+
+void WriteCamerasText(const Reconstruction& reconstruction,
+                      const std::filesystem::path& path) {
+  std::ofstream file(path, std::ios::trunc);
+  THROW_CHECK_FILE_OPEN(file, path);
+  WriteCamerasText(reconstruction, file);
+}
+
+void WriteFramesText(const Reconstruction& reconstruction,
+                     std::ostream& stream) {
+  THROW_CHECK(stream.good());
+
+  const std::vector<frame_t> frame_ids = ExtractSortedIds<frame_t, Frame>(
+      reconstruction.Frames(),
+      [](const Frame& frame) { return frame.HasPose(); });
+
+  // Ensure that we don't loose any precision by storing in text.
+  stream.imbue(std::locale::classic());
+  stream.precision(17);
+
+  stream << "# Frame list with one line of data per frame:\n";
+  stream << "#   FRAME_ID, RIG_ID, "
+            "RIG_FROM_WORLD[QW, QX, QY, QZ, TX, TY, TZ], NUM_DATA_IDS, "
+            "DATA_IDS[] as (SENSOR_TYPE, SENSOR_ID, DATA_ID)\n";
+  stream << "# Number of frames: " << frame_ids.size() << '\n';
+
+  stream.precision(17);
+
+  for (const frame_t frame_id : frame_ids) {
+    const Frame& frame = reconstruction.Frame(frame_id);
+
+    stream << frame_id << " ";
+    stream << frame.RigId() << " ";
+
+    const Rigid3d& rig_from_world = frame.RigFromWorld();
+    stream << rig_from_world.rotation().w() << " ";
+    stream << rig_from_world.rotation().x() << " ";
+    stream << rig_from_world.rotation().y() << " ";
+    stream << rig_from_world.rotation().z() << " ";
+    stream << rig_from_world.translation().x() << " ";
+    stream << rig_from_world.translation().y() << " ";
+    stream << rig_from_world.translation().z() << " ";
+
+    const std::set<data_t>& data_ids = frame.DataIds();
+    stream << data_ids.size();
+    for (const data_t& data_id : data_ids) {
+      stream << " " << data_id.sensor_id.type << " " << data_id.sensor_id.id
+             << " " << data_id.id;
+    }
+
+    stream << '\n';
+  }
+}
+
+void WriteFramesText(const Reconstruction& reconstruction,
+                     const std::filesystem::path& path) {
+  std::ofstream file(path, std::ios::trunc);
+  THROW_CHECK_FILE_OPEN(file, path);
+  WriteFramesText(reconstruction, file);
+}
+
+void WriteImagesText(const Reconstruction& reconstruction,
+                     std::ostream& stream) {
+  THROW_CHECK(stream.good());
+
+  // Ensure that we don't loose any precision by storing in text.
+  stream.imbue(std::locale::classic());
+  stream.precision(17);
+
+  stream << "# Image list with two lines of data per image:\n";
+  stream << "#   IMAGE_ID, QW, QX, QY, QZ, TX, TY, TZ, CAMERA_ID, "
+            "NAME\n";
+  stream << "#   POINTS2D[] as (X, Y, POINT3D_ID)\n";
+  stream << "# Number of images: " << reconstruction.NumRegImages()
+         << ", mean observations per image: "
+         << reconstruction.ComputeMeanObservationsPerRegImage() << '\n';
+
+  std::ostringstream line;
+  line.imbue(std::locale::classic());
+  line.precision(17);
+
+  for (const image_t image_id : reconstruction.RegImageIds()) {
+    const Image& image = reconstruction.Image(image_id);
+
+    line.str("");
+    line.clear();
+
+    line << image_id << " ";
+
+    const Rigid3d& cam_from_world = image.CamFromWorld();
+    line << cam_from_world.rotation().w() << " ";
+    line << cam_from_world.rotation().x() << " ";
+    line << cam_from_world.rotation().y() << " ";
+    line << cam_from_world.rotation().z() << " ";
+    line << cam_from_world.translation().x() << " ";
+    line << cam_from_world.translation().y() << " ";
+    line << cam_from_world.translation().z() << " ";
+
+    line << image.CameraId() << " ";
+
+    line << image.Name();
+
+    stream << line.str() << '\n';
+
+    line.str("");
+    line.clear();
+
+    for (const Point2D& point2D : image.Points2D()) {
+      line << point2D.XY()(0) << " ";
+      line << point2D.XY()(1) << " ";
+      if (point2D.HasPoint3D()) {
+        line << point2D.Point3DId() << " ";
+      } else {
+        line << -1 << " ";
+      }
+    }
+    if (image.NumPoints2D() > 0) {
+      line.seekp(-1, std::ios_base::end);
+    }
+    stream << line.str() << '\n';
+  }
+}
+
+void WriteImagesText(const Reconstruction& reconstruction,
+                     const std::filesystem::path& path) {
+  std::ofstream file(path, std::ios::trunc);
+  THROW_CHECK_FILE_OPEN(file, path);
+  WriteImagesText(reconstruction, file);
+}
+
+void WritePoints3DText(const Reconstruction& reconstruction,
+                       std::ostream& stream) {
+  THROW_CHECK(stream.good());
+
+  // Ensure that we don't loose any precision by storing in text.
+  stream.imbue(std::locale::classic());
+  stream.precision(17);
+
+  stream << "# 3D point list with one line of data per point:\n";
+  stream << "#   POINT3D_ID, X, Y, Z, R, G, B, ERROR, "
+            "TRACK[] as (IMAGE_ID, POINT2D_IDX)\n";
+  stream << "# Number of points: " << reconstruction.NumPoints3D()
+         << ", mean track length: " << reconstruction.ComputeMeanTrackLength()
+         << '\n';
+
+  for (const point3D_t point3D_id :
+       ExtractSortedIds(reconstruction.Points3D())) {
+    const Point3D& point3D = reconstruction.Point3D(point3D_id);
+
+    stream << point3D_id << " ";
+    stream << point3D.XYZ()(0) << " ";
+    stream << point3D.XYZ()(1) << " ";
+    stream << point3D.XYZ()(2) << " ";
+    stream << static_cast<int>(point3D.Color()(0)) << " ";
+    stream << static_cast<int>(point3D.Color()(1)) << " ";
+    stream << static_cast<int>(point3D.Color()(2)) << " ";
+    stream << point3D.Error() << " ";
+
+    std::ostringstream line;
+    line.imbue(std::locale::classic());
+    line.precision(17);
+
+    for (const auto& track_el : point3D.Track().Elements()) {
+      line << track_el.image_id << " ";
+      line << track_el.point2D_idx << " ";
+    }
+
+    std::string line_string = line.str();
+    line_string = line_string.substr(0, line_string.size() - 1);
+
+    stream << line_string << '\n';
+  }
+}
+
+void WritePoints3DText(const Reconstruction& reconstruction,
+                       const std::filesystem::path& path) {
+  std::ofstream file(path, std::ios::trunc);
+  THROW_CHECK_FILE_OPEN(file, path);
+  WritePoints3DText(reconstruction, file);
+}
+
+}  // namespace colmap

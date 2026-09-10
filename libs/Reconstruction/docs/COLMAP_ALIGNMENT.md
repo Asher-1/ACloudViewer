@@ -208,6 +208,62 @@ residual (see above) and the pre-existing caspar split-intrinsics baseline.
 Next: layer 2 of the GLomap stack (sfm/global_mapper + controllers + CLI)
 after triaging the MultiCameraRig item.
 
+## W4 layer 2 notes (2026-09-09)
+
+The GLomap layer-2 stack landed under strategy C:
+
+- `sfm/global_mapper.{h,cc}`: `GlobalMapperOptions` (the fork's
+  `ba_skip_fixed_rotation_stage` defaults true until the step-4
+  `constant_rig_from_world_rotation` BA option exists) and `GlobalMapper`
+  (Solve = rotation averaging -> track establishment -> global positioning ->
+  iterative bundle adjustment -> iterative retriangulation and refinement).
+  Track filters mirror the upstream `ObservationManager` loop
+  (collect-then-delete, tracks shorter than 2 observations removed entirely,
+  points retaining fewer than 2 observations removed, mean inlier error
+  written back) with the NORMALIZED error computed as the upstream z=1
+  normalized-plane distance (`CamRayFromImg` unprojection, chord fallback for
+  spherical models).
+- `controllers/global_pipeline.{h,cc}` + `util/base_controller.{h,cc}` +
+  `util/cancellation.{h,cc}`: the upstream multi-component pipeline
+  (rotation-averaging decomposition, per-component mapper runs with
+  MODEL_UPDATE_CALLBACK progress, priority sorting). The fork's value-based
+  `ReconstructionManager` required returning the reconstruction by value from
+  `ReconstructSingleComponent` and re-inserting it into the manager slot: a
+  non-owning `shared_ptr` alias dangles across manager vector reallocation.
+- CLI: the `global_mapper` command is registered end to end
+  (`exe/sfm.cc` RunGlobalMapper/RunGlobalMapperImpl, `exe/colmap.cc`,
+  `OptionManager::AddGlobalMapperOptions` binding the fork's existing option
+  fields). The `rotation_averager`/`view_graph_calibrator` commands are
+  deferred on `controllers/rotation_averaging` and
+  `estimators/gravity_refinement`.
+- Fork defects fixed while landing (continued numbering from step 2a):
+  (10) `DeleteAllPoints2DAndPoints3D` rebuilt every Image and dropped the
+  back pointers (upstream only clears Points2D); (11) the fork-only
+  `Image::SetPoints2D` empty-CHECK blocked the upstream repopulation path;
+  (12) `GlobalPositioner::ConvertBackResults` used insert-shaped AddSensor
+  instead of update-semantics SetSensorFromRig; (13) the fork BA still
+  optimizes legacy qvec_/tvec_, so the global mapper's RunBundleAdjustment
+  syncs those buffers from the frame-aware poses before solving and writes
+  the optimized poses back through Frame::SetCamFromWorld afterwards;
+  (14) the Transform rig segment was another AddSensor call site;
+  (15) `Database::DeleteTwoViewGeometry` was missing; (16) `TearDown` was the
+  image-level version and is now the upstream frame-level teardown;
+  (17) `Reconstruction` gained move members (node-stable containers keep back
+  pointers valid).
+- Without-noise closure used the upstream `num_obs_tolerance` matcher
+  parameter and explicit `SetPRNGSeed` pinning in fixture tests - both are
+  upstream mechanisms (candidate upstream patches for fixture determinism);
+  the fixture geometry divergence was traced to libstdc++
+  std::shuffle/uniform_int_distribution differences between gcc 9 (this
+  host) and the upstream CI toolchain.
+
+Result: `global_pipeline_test` 12/13, `global_mapper_test` 3/5, all other W4
+suites green; full build EXIT=0. Known items: the GP rig-branch basin cases
+(`global_mapper_test` WithoutNoiseWithNonTrivialKnownRig,
+`global_pipeline_test` MultiComponentsWithUnknownSensorFromRig), the
+pre-existing caspar split-intrinsics baseline, and the deferred
+rotation_averager/view_graph_calibrator CLI commands.
+
 ## Implemented in this tree
 
 - Fundamental-matrix RANSAC now has a configurable tiny Sampson local
