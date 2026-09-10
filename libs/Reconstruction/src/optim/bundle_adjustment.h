@@ -94,8 +94,9 @@ private:
 };
 
 struct BundleAdjustmentOptions {
-    // Loss function types: Trivial (non-robust) and Cauchy (robust) loss.
-    enum class LossFunctionType { TRIVIAL, SOFT_L1, CAUCHY };
+    // Loss function types: Trivial (non-robust) and Cauchy/Huber (robust)
+    // losses. HUBER is the upstream COLMAP default for the global mapper.
+    enum class LossFunctionType { TRIVIAL, SOFT_L1, CAUCHY, HUBER };
     LossFunctionType loss_function_type = LossFunctionType::TRIVIAL;
 
     // Scaling factor determines residual at which robustification takes place.

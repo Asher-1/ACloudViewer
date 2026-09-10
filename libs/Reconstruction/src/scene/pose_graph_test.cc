@@ -241,7 +241,7 @@ TEST(PoseGraph, ValidEdges) {
 
 TEST(PoseGraph, Load) {
   const auto test_dir = CreateTestDir();
-  auto database = std::make_unique<Database>(test_dir / "database.db");
+  auto database = std::make_unique<Database>((test_dir / "database.db").string());
 
   Camera camera = Camera::CreateFromModelId(
       kInvalidCameraId, SimplePinholeCameraModel::model_id, 1, 1, 1);

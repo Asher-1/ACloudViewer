@@ -435,17 +435,13 @@ void GlobalPositioner::ConvertBackResults(Reconstruction& reconstruction) {
       if (!rig.HasSensor(sensor_id) || !rig.HasSensorFromRig(sensor_id)) {
         continue;
       }
-      // Fork parity: rig pose mutation goes through AddSensor with the
-      // [w, x, y, z] qvec convention.
+      // Update-in-place semantics: the sensor already exists in the rig
+      // (upstream mutates the Rigid3d reference returned by SensorFromRig).
       Rigid3d sensor_from_rig =
           reconstruction.Rig(rig_id).SensorFromRig(sensor_id);
       sensor_from_rig.translation() = sensor_from_rig.rotation() * -center;
-      const Eigen::Quaterniond& q = sensor_from_rig.rotation();
-      reconstruction.Rig(rig_id).AddSensor(
-              sensor_id,
-              std::optional<Eigen::Vector4d>(Eigen::Vector4d(
-                      q.w(), q.x(), q.y(), q.z())),
-              std::optional<Eigen::Vector3d>(sensor_from_rig.translation()));
+      reconstruction.Rig(rig_id).SetSensorFromRig(sensor_id,
+                                                  sensor_from_rig);
       break;
     }
   }

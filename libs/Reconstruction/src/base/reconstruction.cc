@@ -501,17 +501,12 @@ void Reconstruction::DeleteObservation(const image_t image_id,
 void Reconstruction::DeleteAllPoints2DAndPoints3D() {
     points3D_.clear();
     for (auto& image : images_) {
-        class Image new_image;
-        new_image.SetImageId(image.second.ImageId());
-        new_image.SetName(image.second.Name());
-        new_image.SetCameraId(image.second.CameraId());
-        new_image.SetRegistered(image.second.IsRegistered());
-        new_image.SetNumCorrespondences(image.second.NumCorrespondences());
-        new_image.SetQvec(image.second.Qvec());
-        new_image.SetQvecPrior(image.second.QvecPrior());
-        new_image.SetTvec(image.second.Tvec());
-        new_image.SetTvecPrior(image.second.TvecPrior());
-        image.second = new_image;
+        // Upstream parity: only clear the 2D points; images keep their
+        // identity, poses, and back-pointers (a full Image rebuild would
+        // drop the camera/frame wiring).
+        image.second.SetPoints2D(std::vector<Eigen::Vector2d>(0));
+        // Fork parity: reset the legacy observation counter as well.
+        image.second.SetNumObservations(0);
     }
 }
 
@@ -701,13 +696,9 @@ void Reconstruction::Transform(const Sim3d& new_from_old_world) {
             }
             Rigid3d sensor_from_rig = rig.SensorFromRig(sensor_id);
             sensor_from_rig.translation() *= new_from_old_world.scale();
-            const Eigen::Quaterniond& q = sensor_from_rig.rotation();
-            rig.AddSensor(
-                    sensor_id,
-                    std::optional<Eigen::Vector4d>(Eigen::Vector4d(
-                            q.w(), q.x(), q.y(), q.z())),
-                    std::optional<Eigen::Vector3d>(
-                            sensor_from_rig.translation()));
+            // Update-in-place semantics: the sensor already exists in the
+            // rig (upstream mutates the optional Rigid3d reference).
+            rig.SetSensorFromRig(sensor_id, sensor_from_rig);
         }
     }
     for (auto& [frame_id, frame] : frames_) {

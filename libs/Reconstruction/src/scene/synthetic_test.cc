@@ -66,7 +66,7 @@ TEST(SynthesizeDataset, Nominal) {
   const auto test_dir = CreateTestDir();
   const auto sparse_path = test_dir / "sparse";
   CreateDirIfNotExists(sparse_path);
-  reconstruction.Write(sparse_path);
+  reconstruction.Write(sparse_path.string());
 
   EXPECT_EQ(database->NumRigs(), options.num_rigs);
   EXPECT_EQ(reconstruction.NumRigs(), options.num_rigs);

@@ -120,9 +120,12 @@ void Image::TearDown() {
 }
 
 void Image::SetPoints2D(const std::vector<Eigen::Vector2d>& points) {
-    CHECK(points2D_.empty());
+    // Upstream parity (dbb41680 scene/image.cc): bulk-setting the 2D points
+    // is allowed on both empty and populated images (it clears any previous
+    // triangulation associations by replacing the container).
     points2D_.resize(points.size());
     num_correspondences_have_point3D_.resize(points.size(), 0);
+    num_points3D_ = 0;
     for (point2D_t point2D_idx = 0; point2D_idx < points.size();
          ++point2D_idx) {
         points2D_[point2D_idx].SetXY(points[point2D_idx]);
@@ -130,7 +133,8 @@ void Image::SetPoints2D(const std::vector<Eigen::Vector2d>& points) {
 }
 
 void Image::SetPoints2D(const std::vector<class Point2D>& points) {
-    CHECK(points2D_.empty());
+    // Upstream parity: allow repopulating a populated image (see the
+    // Eigen::Vector2d overload above).
     points2D_ = points;
     num_correspondences_have_point3D_.resize(points.size(), 0);
     // Upstream parity (dbb41680 scene/image.cc): recompute the number of
