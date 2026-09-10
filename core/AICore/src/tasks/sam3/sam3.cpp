@@ -1010,17 +1010,59 @@ static void sam3_backend_set_n_threads(ggml_backend_t backend, int n_threads) {
     }
 }
 
-// Backend used by graph-build capability probes. Keep this thread-local: the
-// C API permits independent contexts on worker threads, so a process-global
-// pointer would let one model reload change another context's graph decisions.
-// The backend lifetime remains owned by the corresponding SAM3 context.
+// Backend recorded by sam3_backend_init() on the loading thread. Historical
+// probe source; kept as a fallback only. Thread-local because the C API
+// permits independent contexts on worker threads, so a process-global pointer
+// would let one model reload change another context's graph decisions. The
+// backend lifetime remains owned by the corresponding SAM3 context.
+//
+// DO NOT read this from graph-build code: the plugin worker loads the model
+// on one thread and encodes on another (every SAM3Worker::start() is a fresh
+// QThread), so this is nullptr there. Graph topology decided from a null
+// probe put native WIN_PART/WIN_UNPART nodes into graphs that Metal (and
+// every other GPU backend) rejects with a fatal "unsupported op" abort.
+// Graph-build probes must use sam3_probe_backend(), which prefers the
+// model-scoped backend installed by sam3_probe_backend_scope.
 static thread_local ggml_backend_t g_sam3_backend = nullptr;
 
+// Backend used by graph-build capability probes (win_part expansion,
+// mean-dim0 routing, CUDA fused ops, flash-attention selection). Every
+// top-level graph-build entry scopes the model's OWN backend for the build,
+// so the probes resolve the same value on any thread and reflect the backend
+// that will actually execute the graph. Unset outside a build.
+static thread_local ggml_backend_t g_sam3_probe_backend = nullptr;
+
+class sam3_probe_backend_scope {
+public:
+    explicit sam3_probe_backend_scope(const sam3_model& model)
+        : m_prev(g_sam3_probe_backend) {
+        g_sam3_probe_backend = model.backend;
+    }
+    ~sam3_probe_backend_scope() { g_sam3_probe_backend = m_prev; }
+    sam3_probe_backend_scope(const sam3_probe_backend_scope&) = delete;
+    sam3_probe_backend_scope& operator=(const sam3_probe_backend_scope&) =
+            delete;
+
+private:
+    ggml_backend_t m_prev;
+};
+
+// Probe backend for graph-build decisions: the scoped model backend when a
+// build is active, else the loading thread's backend (legacy single-thread
+// paths), else nullptr — probes must fail safe on nullptr.
+static inline ggml_backend_t sam3_probe_backend() {
+    if (g_sam3_probe_backend) {
+        return g_sam3_probe_backend;
+    }
+    return g_sam3_backend;
+}
+
 static bool sam3_backend_is_cuda() {
-    if (!g_sam3_backend) {
+    ggml_backend_t backend = sam3_probe_backend();
+    if (!backend) {
         return false;
     }
-    ggml_backend_dev_t dev = ggml_backend_get_device(g_sam3_backend);
+    ggml_backend_dev_t dev = ggml_backend_get_device(backend);
     // Canonical family id — same normalizer as sam3_find_dev_by_name.
     const char* reg =
             dev ? ggml_backend_reg_name(ggml_backend_dev_backend_reg(dev))
@@ -3664,7 +3706,7 @@ static struct ggml_tensor* sam3_apply_rope(struct ggml_context* ctx,
                               ? ggml_rope_custom_freqs_cast(ctx, x, freqs_cis,
                                                             GGML_TYPE_F32)
                               : ggml_rope_custom_freqs(ctx, x, freqs_cis);
-        if (ggml_backend_supports_op(g_sam3_backend, fused)) {
+        if (ggml_backend_supports_op(sam3_probe_backend(), fused)) {
             return fused;
         }
     }
@@ -3724,7 +3766,7 @@ static struct ggml_tensor* sam3_vit_mul_mat(struct ggml_context* ctx,
                                             struct ggml_tensor* input) {
     if (sam3_backend_is_cuda() && weight->type == GGML_TYPE_F16) {
         auto* result = ggml_mul_mat_cast(ctx, weight, input, GGML_TYPE_F16);
-        if (ggml_backend_supports_op(g_sam3_backend, result)) {
+        if (ggml_backend_supports_op(sam3_probe_backend(), result)) {
             return result;
         }
     }
@@ -3824,7 +3866,7 @@ static struct ggml_tensor* sam3_attn_ext(
     // restriction; the DETR cross-attention box-RPB bias carries a per-head
     // dimension (mask ne[2] = NH). Route such masks through the manual path
     // below — ggml_soft_max_ext handles 4D masks on every backend.
-    if (sam3_fattn_hd_supported(g_sam3_backend, Q->ne[0]) &&
+    if (sam3_fattn_hd_supported(sam3_probe_backend(), Q->ne[0]) &&
         (mask == nullptr || mask->ne[2] == 1)) {
         return ggml_flash_attn_ext(ctx, Q, K, V, mask, scale, max_bias,
                                    logit_softcap);
@@ -3960,16 +4002,28 @@ static struct ggml_tensor* sam3_win_unpart_compat(
 // assumption was never executed: Metal was unreachable until device
 // resolution was fixed.) Fail-safe default: every non-CPU backend gets the
 // pad + reshape + permute + cont expansion, built entirely from ops the
-// Metal op table confirms are supported. g_sam3_backend is set by
-// sam3_backend_init() before any graph is built.
+// Metal op table confirms are supported.
+//
+// The decision must come from the model's own backend via
+// sam3_probe_backend(): the plugin worker builds graphs on a thread where
+// the load-time g_sam3_backend is not set, and a null probe previously
+// selected the native form — the root cause of the Metal encode abort.
 static inline bool sam3_backend_needs_win_part_compat() {
-    if (!g_sam3_backend) return false;
-    ggml_backend_dev_t dev = ggml_backend_get_device(g_sam3_backend);
+    ggml_backend_t backend = sam3_probe_backend();
+    if (!backend) {
+        // No resolvable backend: the expansion runs correctly on every
+        // backend including CPU, so build it rather than risking a native
+        // op the executing backend may not ship.
+        return true;
+    }
+    ggml_backend_dev_t dev = ggml_backend_get_device(backend);
     // Canonical family id — same normalizer as sam3_find_dev_by_name.
     const char* reg =
             dev ? ggml_backend_reg_name(ggml_backend_dev_backend_reg(dev))
                 : nullptr;
-    if (!reg) return false;
+    if (!reg) {
+        return true;
+    }
     // Fail-safe: only ggml-cpu is known to ship WIN_PART/WIN_UNPART; every
     // GPU backend — current or future — takes the standard-op expansion.
     return ggml_common::registry_backend_id(reg) != "cpu";
@@ -4024,14 +4078,19 @@ static inline struct ggml_tensor* sam3_global_mean_dim0(
 // route through ggml_mean — the canonical "mean along dim 0" op — while CPU
 // and Metal keep the native pool_1d form.
 static inline bool sam3_backend_needs_mean_dim0() {
-    if (!g_sam3_backend) return false;
-    ggml_backend_dev_t dev = ggml_backend_get_device(g_sam3_backend);
+    ggml_backend_t backend = sam3_probe_backend();
+    if (!backend) {
+        // Fail safe: ggml_mean is implemented on every backend while pool_1d
+        // is missing from CUDA/Vulkan (they abort on unsupported ops).
+        return true;
+    }
+    ggml_backend_dev_t dev = ggml_backend_get_device(backend);
     // Canonical family id — same normalizer as
     // sam3_backend_needs_win_part_compat().
     const char* reg =
             dev ? ggml_backend_reg_name(ggml_backend_dev_backend_reg(dev))
                 : nullptr;
-    if (!reg) return false;
+    if (!reg) return true;
     const std::string fam = ggml_common::registry_backend_id(reg);
     return fam == "cuda" || fam == "vulkan";
 }
@@ -4096,7 +4155,7 @@ static struct ggml_tensor* sam3_vit_block_forward(struct ggml_context* ctx,
             blk.freqs_cis) {
             auto* candidate =
                     ggml_rope_custom_qkv(ctx, cur, blk.freqs_cis, HD, NH);
-            if (ggml_backend_supports_op(g_sam3_backend, candidate)) {
+            if (ggml_backend_supports_op(sam3_probe_backend(), candidate)) {
                 packed = candidate;
             }
         }
@@ -5057,6 +5116,7 @@ static void sam2_build_fpn_neck_graph(struct ggml_context* ctx,
 static bool sam2_encode_image_hiera(sam3_state& state,
                                     const sam3_model& model,
                                     const sam3_image& image) {
+    sam3_probe_backend_scope scope(model);
     auto t_start = std::chrono::high_resolution_clock::now();
     const auto& hp = model.hparams;
     const int img_size = sam3_eff_img_size(state, hp);
@@ -5315,6 +5375,7 @@ static bool sam3_encode_image_impl(sam3_state& state,
 #if SAM3_LOG_LEVEL >= 1
     auto t_start = std::chrono::high_resolution_clock::now();
 #endif
+    sam3_probe_backend_scope scope(model);
     const auto& hp = model.hparams;
     const int img_size = sam3_eff_img_size(state, hp);
 
@@ -5636,6 +5697,7 @@ bool sam3_encode_vit_from_preprocessed_selective(
         const float* chw_data,
         int img_size,
         const std::vector<std::string>& output_tensors) {
+    sam3_probe_backend_scope scope(model);
     const auto& hp = model.hparams;
 
     if (img_size != hp.img_size) {
@@ -5815,6 +5877,7 @@ bool sam3_test_run_vit_prefix_stage(const sam3_model& model,
                                     std::vector<float>& output_data,
                                     int64_t output_ne[4],
                                     int n_threads) {
+    sam3_probe_backend_scope scope(model);
     if (!input_data) {
         AICORE_LOG_ERROR("[sam3] ", "%s: input_data is null\n", __func__);
         return false;
@@ -6342,6 +6405,7 @@ bool sam3_test_run_vit_block_stage(const sam3_model& model,
                                    std::vector<float>& output_data,
                                    int64_t output_ne[4],
                                    int n_threads) {
+    sam3_probe_backend_scope scope(model);
     if (!input_data) {
         AICORE_LOG_ERROR("[sam3] ", "%s: input_data is null\n", __func__);
         return false;
@@ -6479,6 +6543,7 @@ bool sam3_encode_image_from_preprocessed(sam3_state& state,
                                          const sam3_model& model,
                                          const float* chw_data,
                                          int img_size) {
+    sam3_probe_backend_scope scope(model);
     auto t_start = std::chrono::high_resolution_clock::now();
     const auto& hp = model.hparams;
 
@@ -9210,6 +9275,7 @@ static sam3_box sam3_cxcywh_to_xyxy(
 sam3_result sam3_segment_pcs(sam3_state& state,
                              const sam3_model& model,
                              const sam3_pcs_params& params) {
+    sam3_probe_backend_scope scope(model);
     if (model.hparams.visual_only || model.hparams.is_sam2()) {
         AICORE_LOG_ERROR("[sam3] ",
                          "%s: ERROR: PCS not available on %s model\n", __func__,
@@ -10359,6 +10425,7 @@ static sam3_dec_result sam3_build_sam_dec_graph(
 sam3_result sam3_segment_pvs(sam3_state& state,
                              const sam3_model& model,
                              const sam3_pvs_params& params) {
+    sam3_probe_backend_scope scope(model);
 #if SAM3_LOG_LEVEL >= 1
     auto t_start = std::chrono::high_resolution_clock::now();
 #endif
@@ -11454,6 +11521,7 @@ sam3_result sam3_track_frame(sam3_tracker& tracker,
                              sam3_state& state,
                              const sam3_model& model,
                              const sam3_image& frame) {
+    sam3_probe_backend_scope scope(model);
     if (model.hparams.visual_only) {
         AICORE_LOG_ERROR(
                 "[sam3] ",
@@ -11998,6 +12066,7 @@ sam3_result sam3_propagate_frame(sam3_tracker& tracker,
                                  sam3_state& state,
                                  const sam3_model& model,
                                  const sam3_image& frame) {
+    sam3_probe_backend_scope scope(model);
     sam3_result result;
     const int D = model.hparams.neck_dim;
     if (!sam3_encode_image(state, model, frame)) return result;
