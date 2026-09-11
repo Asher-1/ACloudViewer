@@ -436,10 +436,10 @@ index 14fc82a..d2de308 100644
  
 diff --git a/b/src/cmake/ocio_subbuild_project_include.cmake b/src/cmake/ocio_subbuild_project_include.cmake
 new file mode 100644
-index 0000000..a20167a
+index 0000000..b120869
 --- /dev/null
 +++ b/src/cmake/ocio_subbuild_project_include.cmake
-@@ -0,0 +1,82 @@
+@@ -0,0 +1,96 @@
 +# Included right after project() inside the OpenColorIO sub-build via
 +# -DCMAKE_PROJECT_INCLUDE (see build_OpenColorIO.cmake in the OIIO patch
 +# set). Two in-place repairs, both idempotent, both limited to the cloned
@@ -493,6 +493,16 @@ index 0000000..a20167a
 +            file(WRITE "${_ocio_find_mod}" "${_ocio_yaml_src}")
 +            message(STATUS
 +                "OCIO sub-build fixup: Findyaml-cpp.cmake LOCATION recovery applied (OCIO_MSVC_LOCATION_FIX)")
++        else()
++            # Upstream changed the module layout (OpenColorIO upgrade): the
++            # needle no longer matches. Loudly note that the MSVC recovery is
++            # NOT in effect instead of silently shipping a build that links
++            # against a yaml-cpp whose headers may drift from the pinned
++            # 0.8.0 archive.
++            message(WARNING
++                "OCIO sub-build fixup: Findyaml-cpp.cmake layout changed "
++                "(OpenColorIO upgrade?) - OCIO_MSVC_LOCATION_FIX NOT applied; "
++                "on MSVC a yaml-cpp version mismatch may resurface at link time")
 +        endif()
 +    endif()
 +endif()
@@ -519,6 +529,10 @@ index 0000000..a20167a
 +            file(WRITE "${_ocio_install_mod}" "${_ocio_inst_src}")
 +            message(STATUS
 +                "OCIO sub-build fixup: Installyaml-cpp.cmake empty-GIT_TAG guard applied (OCIO_EMPTY_TAG_GUARD)")
++        else()
++            message(WARNING
++                "OCIO sub-build fixup: Installyaml-cpp.cmake layout changed "
++                "(OpenColorIO upgrade?) - OCIO_EMPTY_TAG_GUARD NOT applied")
 +        endif()
 +    endif()
 +endif()
