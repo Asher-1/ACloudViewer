@@ -157,6 +157,13 @@ int SignOfNumber(const T val) {
     return (T(0) < val) - (val < T(0));
 }
 
+// Clamp the given value to a low and maximum value (upstream parity,
+// dbb41680 math/math.h).
+template <typename T>
+inline T Clamp(const T& value, const T& low, const T& high) {
+    return std::max(low, std::min(value, high));
+}
+
 bool IsNaN(const float x) { return x != x; }
 bool IsNaN(const double x) { return x != x; }
 
@@ -203,6 +210,23 @@ double Median(const std::vector<T>& elems) {
     } else {
         return ordered_elems[mid_idx];
     }
+}
+
+// Compute median absolute deviation (MAD) (upstream parity, dbb41680
+// math/math.h): returns {median, MAD} of the elements.
+template <typename T>
+std::pair<double, double> MedianAbsoluteDeviation(std::vector<T>& elems) {
+    const double median = Median(elems);
+    std::vector<double> abs_deviations(elems.size());
+    for (size_t i = 0; i < elems.size(); i++) {
+        abs_deviations[i] = std::abs(static_cast<double>(elems[i]) - median);
+    }
+    return {median, Median(abs_deviations)};
+}
+
+template <typename T>
+std::pair<double, double> MedianAbsoluteDeviation(std::vector<T>&& elems) {
+    return MedianAbsoluteDeviation(elems);
 }
 
 template <typename T>

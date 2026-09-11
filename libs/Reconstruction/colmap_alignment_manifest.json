@@ -200,6 +200,28 @@
       "status": "implemented",
       "entrypoint": "scene/reconstruction_io.{h,cc} (ExportNVM/Cam/Recon3D/Bundler/PLY/VRML as upstream free functions), scene/reconstruction_io_text.{h,cc} (upstream line-format Read/Write{Rigs,Cameras,Frames,Images,Points3D}Text free functions over istream/path + the Reconstruction::Read/WriteText member shells), scene/reconstruction_io_binary.{h,cc} (binary counterparts), scene/reconstruction_io_utils.{h,cc} (ExtractSortedIds/CreateOneRigPerCamera/CreateFrameForImage/ExtractImageToFramePtr). base/reconstruction.cc slimmed from 2742 to ~1900 lines: the fork's legacy 'RIGS'-tag section readers and in-cc Export* members were removed in favour of the upstream COLMAP text/binary formats; Read/Write{Text,Binary} keep the upstream member-shell shape (filesystem::path, upstream clear+ordering cameras->rigs->frames->images->points3D). Consumers migrated from member calls to free functions: base/undistortion.cc, exe/model.cc, ui/main_window.cc, app/reconstruction/ReconstructionWidget.cpp. Supporting parity fixes landed with the split: Reconstruction::AddPoint3D(point3D_id, Point3D) upstream overload (fork allocates from num_added_points3D_), Camera::FocalLengthX/Y upstream no-CHECK single-focal semantics, SensorType via MAKE_ENUM_CLASS_OVERLOAD_STREAM in util/types.h, THROW_CHECK_FILE_OPEN + filesystem CreateDirIfNotExists overload in util/misc.h. NOTE: fork-format (legacy tag/version 'rigs.txt'/'rigs.bin' files) is retired by this change; Rig::ReadText/WriteText remain for the Database rig_sensors serialization.",
       "validation": "reconstruction_io_test 19/19 (upstream suite, includes TextIO LocaleIndependentRoundtrip + 8 parameterized reader/writer roundtrips over 3-rig synthetic fixtures)"
+    },
+    {
+      "name": "database_sqlite_split",
+      "upstream_commit": "dbb41680",
+      "status": "implemented",
+      "entrypoint": "scene/database_sqlite.cc (2334 lines: the full SQL implementation face — ctor/dtor/Open/Close, Exists*/Num*/Read*/Write*/Update*/Delete*/Clear*, PrepareSQLStatements/CreateTables/Create*Table, version migration and ExistsTable/ExistsColumn/CountRows/SumColumn/MaxColumn, PosePrior family, blob bridges and row readers) under the upstream file name; base/database.cc slimmed to 177 lines in the upstream database.cc shape (static constants, Merge, DatabaseTransaction). Function-for-function comparable with upstream database_sqlite.cc. The concrete Database class stays in base/database.h; the abstract-interface split (Database as pure interface + SQLiteDatabase + Database::Open factory + constructor-site migration) is tracked as W17.2b.",
+      "validation": "database_test 22/22, database_cache_test 7/7, database_version_migration green; full build EXIT=0"
+    },
+    {
+      "name": "model_clustering_pruning",
+      "upstream_commit": "dbb41680",
+      "status": "partial",
+      "entrypoint": "scene/reconstruction_clustering.{h,cc} (182 lines: model clustering on the view graph via connected components + gain-ordered expansion) and scene/reconstruction_pruning.{h,cc} (169 lines: FindRedundantPoints3D coverage-gain pruning) landed under the upstream file names with the upstream tests ported; plus the supporting upstream basics util/types.h kMaxNumImages + ImagePairToPairId/PairIdToImagePair inline free functions (upstream parity) and util/math.h Clamp/MedianAbsoluteDeviation.",
+      "validation": "reconstruction_clustering_test 9/9, reconstruction_pruning_test 4/4, reconstruction_matchers_test 2/2",
+      "reason": "scene/ layer files and tests are complete; the CLI model_clusterer command and the mapper pruning option ba_global_ignore_redundant_points3D_min_coverage_gain remain and are owned by W8 (W17.4 scope was the scene/ layer only).",
+      "prerequisites": [
+        "W8: CLI model_clusterer registration (exe/model.{h,cc})",
+        "W8: mapper option ba_global_ignore_redundant_points3D_min_coverage_gain wiring"
+      ],
+      "resolution": [
+        "W8 lands the CLI and mapper wiring, then flips this entry to implemented"
+      ]
     }
   ],
   "testing_framework": "googletest (v1.16 FetchContent; decision D6, 2026-09-06). All Reconstruction *_test.cc converted from Boost.Test; COLMAP_ADD_TEST links gtest_main."

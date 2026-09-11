@@ -124,7 +124,13 @@ struct data_t {
 constexpr sensor_t kInvalidSensorId =
         sensor_t(SensorType::INVALID, sensor_t::kInvalidId);
 
-// Each image pair gets a unique ID, see `Database::ImagePairToPairId`.
+// The maximum number of images that can be stored in the database, as we
+// generate unique image_pair_ids based on the image ids (upstream parity,
+// dbb41680 util/types.h).
+constexpr size_t kMaxNumImages =
+        static_cast<size_t>(std::numeric_limits<int32_t>::max());
+
+// Each image pair gets a unique ID, see `ImagePairToPairId`.
 typedef uint64_t image_pair_t;
 
 // Return true if image pairs should be swapped. Used to enforce a specific
@@ -150,6 +156,35 @@ const rig_t kInvalidRigId = std::numeric_limits<rig_t>::max();
 const frame_t kInvalidFrameId = std::numeric_limits<frame_t>::max();
 const image_pair_t kInvalidImagePairId =
         std::numeric_limits<image_pair_t>::max();
+
+inline void ThrowIfGtMaxImages(image_t image_id) {
+    if (image_id >= kMaxNumImages) {
+        throw std::runtime_error("image_id=" + std::to_string(image_id) +
+                                 " >= kMaxNumImages.");
+    }
+}
+
+// Convert pair of image identifiers to unique image pair identifier.
+inline image_pair_t ImagePairToPairId(image_t image_id1, image_t image_id2) {
+    ThrowIfGtMaxImages(image_id1);
+    ThrowIfGtMaxImages(image_id2);
+    if (ShouldSwapImagePair(image_id1, image_id2)) {
+        return static_cast<image_pair_t>(kMaxNumImages) * image_id2 + image_id1;
+    } else {
+        return static_cast<image_pair_t>(kMaxNumImages) * image_id1 + image_id2;
+    }
+}
+
+// Convert unique image pair identifier to pair of image identifiers.
+inline std::pair<image_t, image_t> PairIdToImagePair(image_pair_t pair_id) {
+    const image_t image_id2 = static_cast<image_t>(pair_id % kMaxNumImages);
+    const image_t image_id1 =
+            static_cast<image_t>((pair_id - image_id2) / kMaxNumImages);
+    ThrowIfGtMaxImages(image_id1);
+    ThrowIfGtMaxImages(image_id2);
+    return std::make_pair(image_id1, image_id2);
+}
+
 const point2D_t kInvalidPoint2DIdx = std::numeric_limits<point2D_t>::max();
 const point3D_t kInvalidPoint3DId = std::numeric_limits<point3D_t>::max();
 

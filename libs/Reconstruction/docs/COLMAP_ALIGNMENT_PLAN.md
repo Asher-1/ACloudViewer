@@ -526,6 +526,16 @@ pipeline、mvs、retrieval）。
   定义，函数名/SQL/迁移逻辑与上游逐函数可比）。
 - gate：同上；重点回归 database_test / database_cache_test / database_version_migration。
 - manifest：`database_sqlite_split`。
+- 执行进度（2026-09-09，✅ 已完成）：`scene/database_sqlite.cc`（2334 行）
+  承接全部 SQL 实现面（构造/析构/Open/Close、Exists*/Num*/Read*/Write*/
+  Update*/Delete*/Clear*、PrepareSQLStatements/CreateTables/Create*Table、
+  版本迁移与 ExistsTable/ExistsColumn/CountRows/SumColumn/MaxColumn、
+  PosePrior 全系、Blob 桥与行解析 helper）；`base/database.cc` 瘦身至 177 行
+  （上游 database.cc 形态：静态常量、Merge、DatabaseTransaction）。文件按
+  上游名落位、函数逐一可比。gate：database_test 22/22、database_cache_test
+  7/7、database_version_migration 绿；全量构建 EXIT=0。W17.2b（Database
+  抽象接口化 + SQLiteDatabase 类 + Database::Open 工厂 + 构造点迁移）保留为
+  独立后续包。
 
 #### W17.3 sfm 同构拆分（P1c）[M]
 
@@ -547,6 +557,17 @@ pipeline、mvs、retrieval）。
   剪枝选项接线（`ba_global_ignore_redundant_points3D_min_coverage_gain`）
   仍归 W8。
 - manifest：并入 `model_clustering_pruning`（partial：文件+测试已落地）。
+- 执行进度（2026-09-09，✅ 已完成）：`scene/reconstruction_clustering.{h,cc}`
+  （182 行）、`scene/reconstruction_pruning.{h,cc}`（169 行，
+  `FindRedundantPoints3D`）、三个上游测试原样移植（fork 适配：include 路径、
+  `Point3D::Track()`/`Point2D::SetXY`/`Camera::Width()` 等 getter/setter、
+  `Frame::RigFromWorld()` 值返回语义下的扰动改走 `SetRigFromWorld`）。
+  连带补齐上游基础件：`util/types.h` 增 `kMaxNumImages` 常量与
+  `ShouldSwapImagePair`/`ThrowIfGtMaxImages`/`ImagePairToPairId`/
+  `PairIdToImagePair` inline 自由函数（上游 parity；`Database::` 同名静态
+  成员保留、类作用域优先不受影响）、`util/math.h` 增 `Clamp` 与
+  `MedianAbsoluteDeviation`。gate：reconstruction_clustering_test 9/9、
+  reconstruction_pruning_test 4/4、reconstruction_matchers_test 2/2 全绿。
 
 #### W17.5 孤儿退役（P1a）[S]
 

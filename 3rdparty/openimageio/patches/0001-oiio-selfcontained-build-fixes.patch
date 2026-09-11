@@ -436,10 +436,10 @@ index 14fc82a..d2de308 100644
  
 diff --git a/b/src/cmake/ocio_subbuild_project_include.cmake b/src/cmake/ocio_subbuild_project_include.cmake
 new file mode 100644
-index 0000000..416a2f5
+index 0000000..a20167a
 --- /dev/null
 +++ b/src/cmake/ocio_subbuild_project_include.cmake
-@@ -0,0 +1,85 @@
+@@ -0,0 +1,82 @@
 +# Included right after project() inside the OpenColorIO sub-build via
 +# -DCMAKE_PROJECT_INCLUDE (see build_OpenColorIO.cmake in the OIIO patch
 +# set). Two in-place repairs, both idempotent, both limited to the cloned
@@ -459,6 +459,10 @@ index 0000000..416a2f5
 +# 2. Guard Installyaml-cpp.cmake against an empty GIT_TAG: with no tag
 +#    ExternalProject clones the default branch (a moving 0.9.x-dev tree),
 +#    which is exactly the version drift above. Fail loudly instead.
++#
++# NOTE: the inserted fixup text is assembled with string(CONCAT) instead of
++# a foreach over a list - list elements would be split at every literal
++# semicolon inside the comment lines and garble the patched module.
 +
 +set(_ocio_root "${CMAKE_CURRENT_SOURCE_DIR}")
 +
@@ -468,24 +472,20 @@ index 0000000..416a2f5
 +    if(NOT _ocio_yaml_src MATCHES "OCIO_MSVC_LOCATION_FIX")
 +        set(_ocio_needle
 +            "    get_target_property(yaml-cpp_LIBRARY yaml-cpp::yaml-cpp LOCATION)")
-+        set(_ocio_fix_lines
-+            ""
-+            "    # OCIO_MSVC_LOCATION_FIX (ACloudViewer patch 0001): recover the"
-+            "    # per-config import location on multi-config generators; the"
-+            "    # generic LOCATION read above comes back NOTFOUND under MSVC,"
-+            "    # FPHSA then fails and OCIO falls back to Installyaml-cpp"
-+            "    # whose ext headers can drift from the pinned 0.8.0 archive"
-+            "    # (windows wheel YAML::FpToString LNK2001)."
-+            "    if(yaml-cpp_LIBRARY MATCHES \"NOTFOUND$\")"
-+            "        get_target_property(yaml-cpp_LIBRARY yaml-cpp::yaml-cpp IMPORTED_LOCATION_RELEASE)"
-+            "        if(NOT yaml-cpp_LIBRARY)"
-+            "            get_target_property(yaml-cpp_LIBRARY yaml-cpp::yaml-cpp IMPORTED_LOCATION_DEBUG)"
-+            "        endif()"
-+            "    endif()")
-+        set(_ocio_fix "")
-+        foreach(_ocio_line IN LISTS _ocio_fix_lines)
-+            string(CONCAT _ocio_fix "${_ocio_fix}" "${_ocio_line}" "\n")
-+        endforeach()
++        string(CONCAT _ocio_fix
++            "\n"
++            "    # OCIO_MSVC_LOCATION_FIX (ACloudViewer patch 0001): recover the\n"
++            "    # per-config import location on multi-config generators because\n"
++            "    # the generic LOCATION read above comes back NOTFOUND under\n"
++            "    # MSVC, FPHSA then fails and OCIO falls back to Installyaml-cpp\n"
++            "    # whose ext headers can drift from the pinned 0.8.0 archive\n"
++            "    # (windows wheel YAML::FpToString LNK2001).\n"
++            "    if(yaml-cpp_LIBRARY MATCHES \"NOTFOUND$\")\n"
++            "        get_target_property(yaml-cpp_LIBRARY yaml-cpp::yaml-cpp IMPORTED_LOCATION_RELEASE)\n"
++            "        if(NOT yaml-cpp_LIBRARY)\n"
++            "            get_target_property(yaml-cpp_LIBRARY yaml-cpp::yaml-cpp IMPORTED_LOCATION_DEBUG)\n"
++            "        endif()\n"
++            "    endif()\n")
 +        if(_ocio_yaml_src MATCHES "yaml-cpp::yaml-cpp LOCATION")
 +            string(REPLACE "${_ocio_needle}\n"
 +                           "${_ocio_needle}\n${_ocio_fix}"
@@ -503,18 +503,15 @@ index 0000000..416a2f5
 +    if(NOT _ocio_inst_src MATCHES "OCIO_EMPTY_TAG_GUARD")
 +        set(_ocio_tag_needle
 +            "        set(yaml-cpp_GIT_TAG \"\${yaml-cpp_VERSION}\")")
-+        set(_ocio_tag_lines
-+            "        # OCIO_EMPTY_TAG_GUARD (ACloudViewer patch 0001): an empty"
-+            "        # tag makes ExternalProject clone the default branch - a"
-+            "        # moving 0.9.x-dev tree whose headers mismatch the pinned"
-+            "        # 0.8.0 closure archive. Fail loudly instead."
-+            "        if(NOT yaml-cpp_GIT_TAG)"
-+            "            message(FATAL_ERROR \"OCIO ext yaml-cpp: empty install version; refusing to clone a moving branch\")"
-+            "        endif()")
-+        set(_ocio_tag_fix "")
-+        foreach(_ocio_line IN LISTS _ocio_tag_lines)
-+            string(CONCAT _ocio_tag_fix "${_ocio_tag_fix}" "${_ocio_line}" "\n")
-+        endforeach()
++        string(CONCAT _ocio_tag_fix
++            "\n"
++            "        # OCIO_EMPTY_TAG_GUARD (ACloudViewer patch 0001): an empty\n"
++            "        # tag makes ExternalProject clone the default branch - a\n"
++            "        # moving 0.9.x-dev tree whose headers mismatch the pinned\n"
++            "        # 0.8.0 closure archive. Fail loudly instead.\n"
++            "        if(NOT yaml-cpp_GIT_TAG)\n"
++            "            message(FATAL_ERROR \"OCIO ext yaml-cpp: empty install version; refusing to clone a moving branch\")\n"
++            "        endif()\n")
 +        if(_ocio_inst_src MATCHES "set\\(yaml-cpp_GIT_TAG")
 +            string(REPLACE "${_ocio_tag_needle}\n"
 +                           "${_ocio_tag_needle}\n${_ocio_tag_fix}"

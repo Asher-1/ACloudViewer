@@ -13,10 +13,16 @@ COLMAP_ADD_SOURCES(
     reconstruction_io_text.h reconstruction_io_text.cc
     reconstruction_io_binary.h reconstruction_io_binary.cc
     reconstruction_io.h reconstruction_io.cc
+    database_sqlite.cc
+    reconstruction_clustering.h reconstruction_clustering.cc
+    reconstruction_pruning.h reconstruction_pruning.cc
 )
 
 if (TESTS_ENABLED)
     COLMAP_ADD_TEST(synthetic_test synthetic_test.cc)
     COLMAP_ADD_TEST(pose_graph_test pose_graph_test.cc)
     COLMAP_ADD_TEST(reconstruction_io_test reconstruction_io_test.cc)
+    COLMAP_ADD_TEST(reconstruction_clustering_test reconstruction_clustering_test.cc)
+    COLMAP_ADD_TEST(reconstruction_pruning_test reconstruction_pruning_test.cc)
+    COLMAP_ADD_TEST(reconstruction_matchers_test reconstruction_matchers_test.cc)
 endif ()
