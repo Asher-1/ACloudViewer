@@ -35,6 +35,9 @@ COLMAP_ADD_SOURCES(
     global_mapper.h global_mapper.cc
     incremental_mapper.h incremental_mapper.cc
     incremental_triangulator.h incremental_triangulator.cc
+    observation_manager.h observation_manager.cc
 )
 
 COLMAP_ADD_TEST(global_mapper_test global_mapper_test.cc)
+
+COLMAP_ADD_TEST(observation_manager_test observation_manager_test.cc)

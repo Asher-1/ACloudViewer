@@ -142,6 +142,20 @@ double CalculateSquaredReprojectionError(const Eigen::Vector2d& point2D,
                                          const Eigen::Vector3d& point3D,
                                          const Rigid3d& cam_from_world,
                                          const Camera& camera) {
+  // Upstream parity (dbb41680 scene/projection.cc): spherical cameras report
+  // the viewing-ray angle converted to an equivalent pixel error at the
+  // equator (width / 2pi pixels per radian). This makes the error continuous
+  // across the equirectangular seam and uniform over the sphere, where the
+  // raw pixel distance would wrongly report a ~width error.
+  if (camera.IsSpherical()) {
+    const double angular_error = CalculateAngularError(
+        point2D, point3D, cam_from_world.ToMatrix(), camera);
+    const double pixels_per_radian =
+        static_cast<double>(camera.Width()) / (2.0 * EIGEN_PI);
+    const double pixel_error = angular_error * pixels_per_radian;
+    return pixel_error * pixel_error;
+  }
+
   const Eigen::Vector3d proj_point3D = cam_from_world * point3D;
   const auto proj_point2D = camera.ImgFromCam(proj_point3D);
   if (!proj_point2D.has_value()) return std::numeric_limits<double>::max();

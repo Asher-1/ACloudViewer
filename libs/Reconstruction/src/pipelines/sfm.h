@@ -96,13 +96,4 @@ int TriangulatePoints(
         const colmap::IncrementalMapperOptions& incremental_mapper_options =
                 colmap::IncrementalMapperOptions());
 
-int RigBundleAdjust(
-        const std::string& input_path,
-        const std::string& output_path,
-        const std::string& rig_config_path,
-        bool estimate_rig_relative_poses = true,
-        bool refine_relative_poses = true,
-        const colmap::BundleAdjustmentOptions& bundle_adjustment_options =
-                colmap::BundleAdjustmentOptions());
-
 }  // namespace cloudViewer

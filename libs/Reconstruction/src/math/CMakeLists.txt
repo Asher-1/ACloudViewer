@@ -12,4 +12,6 @@ COLMAP_ADD_SOURCES(
 if (TESTS_ENABLED)
     COLMAP_ADD_TEST(connected_components_test connected_components_test.cc)
     COLMAP_ADD_TEST(spanning_tree_test spanning_tree_test.cc)
+    COLMAP_ADD_TEST(random_eigen_test random_eigen_test.cc)
+    COLMAP_ADD_TEST(union_find_test union_find_test.cc)
 endif ()

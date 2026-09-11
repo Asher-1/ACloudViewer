@@ -548,6 +548,28 @@ bool SolveCasparBundleAdjustment(const BundleAdjustmentOptions& options,
         return false;
     }
 
+    // W3-2b step 4 parity with the Ceres path: the Caspar factor pools read
+    // poses from the frame storage, so forward-sync the legacy per-image
+    // buffers into the frames first (legacy image-level writers such as the
+    // parity fixture's post-registration perturbation would otherwise be
+    // invisible to the solver).
+    for (const image_t image_id : config.Images()) {
+        if (!reconstruction->ExistsImage(image_id)) {
+            continue;
+        }
+        Image& image = reconstruction->Image(image_id);
+        if (!image.HasFrameId() || !image.HasPose() ||
+            !reconstruction->ExistsFrame(image.FrameId())) {
+            continue;
+        }
+        const Rigid3d cam_from_world(
+                Eigen::Quaterniond(image.Qvec()(0), image.Qvec()(1),
+                                   image.Qvec()(2), image.Qvec()(3)),
+                image.Tvec());
+        reconstruction->Frame(image.FrameId())
+                .SetCamFromWorld(image.CameraId(), cam_from_world);
+    }
+
     CasparModelData simple_radial;
     CasparModelData pinhole;
     std::unordered_map<point3D_t, unsigned int> point_indices;
@@ -785,7 +807,6 @@ bool SolveCasparBundleAdjustment(const BundleAdjustmentOptions& options,
     solver.finish_indices();
     const caspar::SolveResult result = solver.solve(
             options.solver_options.minimizer_progress_to_stdout, false);
-
     if (!point_ids.empty()) {
         solver.GetPointNodesToStackedHost(points.data(), 0, point_ids.size());
     }

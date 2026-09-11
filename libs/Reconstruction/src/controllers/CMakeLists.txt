@@ -37,6 +37,7 @@ COLMAP_ADD_SOURCES(
     da3_depth_controller.h da3_depth_controller.cc
     global_mapper.h global_mapper.cc
     global_pipeline.h global_pipeline.cc
+    rotation_averaging.h rotation_averaging.cc
     hierarchical_mapper.h hierarchical_mapper.cc
     incremental_mapper.h incremental_mapper.cc
     texturing_controller.h texturing_controller.cc

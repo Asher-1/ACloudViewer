@@ -96,6 +96,10 @@ void Frame::SetRigFromWorld(const Eigen::Vector4d& qvec,
 
 void Frame::ResetPose() { has_pose_ = false; }
 
+Eigen::Vector4d& Frame::RigFromWorldQvec() { return rig_from_world_qvec_; }
+
+Eigen::Vector3d& Frame::RigFromWorldTvec() { return rig_from_world_tvec_; }
+
 const Eigen::Vector4d& Frame::RigFromWorldQvec() const {
     CHECK(has_pose_);
     return rig_from_world_qvec_;

@@ -117,6 +117,8 @@ int main(int argc, char** argv) {
     commands.emplace_back("feature_importer", &RunFeatureImporter);
     commands.emplace_back("hierarchical_mapper", &RunHierarchicalMapper);
     commands.emplace_back("global_mapper", &RunGlobalMapper);
+    commands.emplace_back("rotation_averager", &RunRotationAverager);
+    commands.emplace_back("view_graph_calibrator", &RunViewGraphCalibrator);
     commands.emplace_back("image_deleter", &RunImageDeleter);
     commands.emplace_back("image_filterer", &RunImageFilterer);
     commands.emplace_back("image_rectifier", &RunImageRectifier);
@@ -143,7 +145,6 @@ int main(int argc, char** argv) {
     commands.emplace_back("point_triangulator", &RunPointTriangulator);
     commands.emplace_back("poisson_mesher", &RunPoissonMesher);
     commands.emplace_back("project_generator", &RunProjectGenerator);
-    commands.emplace_back("rig_bundle_adjuster", &RunRigBundleAdjuster);
     commands.emplace_back("sequential_matcher", &RunSequentialMatcher);
     commands.emplace_back("spatial_matcher", &RunSpatialMatcher);
     commands.emplace_back("stereo_fusion", &RunStereoFuser);

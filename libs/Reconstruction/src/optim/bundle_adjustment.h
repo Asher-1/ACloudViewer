@@ -11,10 +11,10 @@
 
 #include <Eigen/Core>
 #include <functional>
+#include <map>
 #include <memory>
 #include <unordered_set>
 
-#include "base/camera_rig.h"
 #include "base/reconstruction.h"
 #include "optim/manifold.h"
 #include "util/alignment.h"
@@ -113,6 +113,25 @@ struct BundleAdjustmentOptions {
 
     // Whether to refine the extrinsic parameter group.
     bool refine_extrinsics = true;
+
+    // Whether to refine the rig-from-world poses of frames (upstream parity,
+    // dbb41680 estimators/bundle_adjustment.h). Until the frame-shared
+    // parameter blocks land, this gates the legacy per-image extrinsic
+    // blocks.
+    bool refine_rig_from_world = true;
+
+    // Minimum track length for a 3D point to be included in bundle
+    // adjustment (upstream parity, dbb41680). Zero disables the filter.
+    int min_track_length = 0;
+
+    // Whether to refine the sensor-from-rig poses of non-reference rig
+    // sensors (upstream parity, dbb41680).
+    bool refine_sensor_from_rig = true;
+
+    // Whether to keep the rotation of all rig-from-world poses constant,
+    // refining positions only (upstream parity, dbb41680; the global
+    // mapper's fixed-rotation stage enables this per pass).
+    bool constant_rig_from_world_rotation = false;
 
     // Whether to print a final summary.
     bool print_summary = true;
@@ -232,66 +251,26 @@ protected:
     ceres::Solver::Summary summary_;
     std::unordered_set<camera_t> camera_ids_;
     std::unordered_map<point3D_t, size_t> point3D_num_observations_;
-};
 
-class RigBundleAdjuster : public BundleAdjuster {
-public:
-    struct Options {
-        // Whether to optimize the relative poses of the camera rigs.
-        bool refine_relative_poses = true;
-
-        // The maximum allowed reprojection error for an observation to be
-        // considered in the bundle adjustment. Some observations might have
-        // large reprojection errors due to the concatenation of the absolute
-        // and relative rig poses, which might be different from the absolute
-        // pose of the image in the reconstruction.
-        double max_reproj_error = 1000.0;
+    // W3-2b step 4: shadow parameter blocks for refined sensor_from_rig
+    // poses, in the fork's [w, x, y, z] qvec convention (the fork stores
+    // sensor_from_rig as a Rigid3d whose Eigen quaternion coefficients are
+    // [x, y, z, w]). Node-based map so block addresses stay stable while
+    // SetUp adds images.
+    struct SensorPoseBlock {
+        rig_t rig_id;
+        sensor_t sensor_id;
+        Eigen::Vector4d qvec;
+        Eigen::Vector3d tvec;
     };
+    std::map<std::pair<rig_t, sensor_t>, SensorPoseBlock> sensor_blocks_;
+    // Frame blocks are shared by every image of a frame; guard the one-time
+    // quaternion manifold installation (repeated installation aborts).
+    std::unordered_set<const double*> manifold_marked_blocks_;
 
-    RigBundleAdjuster(const BundleAdjustmentOptions& options,
-                      const Options& rig_options,
-                      const BundleAdjustmentConfig& config);
-
-    bool Solve(Reconstruction* reconstruction,
-               std::vector<CameraRig>* camera_rigs);
-
-private:
-    void SetUp(Reconstruction* reconstruction,
-               std::vector<CameraRig>* camera_rigs,
-               ceres::LossFunction* loss_function);
-    void TearDown(Reconstruction* reconstruction,
-                  const std::vector<CameraRig>& camera_rigs);
-
-    void AddImageToProblem(const image_t image_id,
-                           Reconstruction* reconstruction,
-                           std::vector<CameraRig>* camera_rigs,
-                           ceres::LossFunction* loss_function);
-
-    void AddPointToProblem(const point3D_t point3D_id,
-                           Reconstruction* reconstruction,
-                           ceres::LossFunction* loss_function);
-
-    void ComputeCameraRigPoses(const Reconstruction& reconstruction,
-                               const std::vector<CameraRig>& camera_rigs);
-
-    void ParameterizeCameraRigs(Reconstruction* reconstruction);
-
-    const Options rig_options_;
-
-    // Mapping from images to camera rigs.
-    std::unordered_map<image_t, CameraRig*> image_id_to_camera_rig_;
-
-    // Mapping from images to the absolute camera rig poses.
-    std::unordered_map<image_t, Eigen::Vector4d*> image_id_to_rig_qvec_;
-    std::unordered_map<image_t, Eigen::Vector3d*> image_id_to_rig_tvec_;
-
-    // For each camera rig, the absolute camera rig poses.
-    std::vector<std::vector<Eigen::Vector4d>> camera_rig_qvecs_;
-    std::vector<std::vector<Eigen::Vector3d>> camera_rig_tvecs_;
-
-    // The Quaternions added to the problem, used to set the local
-    // parameterization once after setting up the problem.
-    std::unordered_set<double*> parameterized_qvec_data_;
+    SensorPoseBlock& GetOrCreateSensorBlock(rig_t rig_id,
+                                            sensor_t sensor_id,
+                                            const Rigid3d& sensor_from_rig);
 };
 
 void PrintSolverSummary(const ceres::Solver::Summary& summary);

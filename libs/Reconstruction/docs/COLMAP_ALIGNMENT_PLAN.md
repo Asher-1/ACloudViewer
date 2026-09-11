@@ -220,6 +220,50 @@ CLI。因此 D1 的实现量比原估小：见 W15。
    `std::vector<CameraRig>` API；`rig_bundle_adjuster` 命令随 W2 移除）；
    Caspar 因子矩阵从 11 组合扩到上游 15 组合（manifest caspar 条目的
    resolution 要求）。
+   - 执行进度（2026-09-09，W3-2b step 4 切片一+核心 ✅）：旧
+     `std::vector<CameraRig>` API 已随 W17.5 退役。
+     切片一：选项面增 `refine_rig_from_world`（legacy constant_pose 门控）
+     与 `min_track_length`（AddPointToProblem 短轨道剪除，默认 0 恒等）；
+     BA 位姿写回内化进 `BundleAdjuster::TearDown`。
+     核心（帧共享参数化）：位姿参数块从 image 级 qvec/tvec 缓冲切换为
+     **帧存储共享块**（`Frame::RigFromWorldQvec/Tvec` 非常量访问器）——
+     同帧多图共用一个 rig_from_world 块；`Frame::RigFromWorld() *
+     sensor_from_rig` 组合残差走新 functor
+     `FrameRigBundleAdjustmentCostFunction`（上游组合序，旧
+     RigBundleAdjustmentCostFunction 为 CameraRig 反序保留不动），
+     sensor_from_rig 经 BundleAdjuster 影子块（[w,x,y,z] 约定、
+     node-based map 稳地址）参数化并在 TearDown 写回 Rig；
+     `refine_sensor_from_rig`（默认 true，false 时影子块常量）、
+     `constant_rig_from_world_rotation`（qvec 块 SetParameterBlockConstant，
+     位置-only 优化）接线；SetUp 头部前向双轨同步（image 缓冲→frame，
+     覆盖 legacy image 级写入方）、TearDown 反向同步（frame→image 缓冲，
+     多传感器组合 cam_from_world）；常量位姿图像走冻结组合位姿的
+     constant-pose functor（不注册帧块）；流形安装用
+     manifold_marked_blocks_ 去重（帧块多次 SetQuaternionManifold 会
+     abort）。global_mapper 固定旋转阶段实现并默认启用
+     （`ba_skip_fixed_rotation_stage=false`，CASPAR 后端自动回退 Ceres）。
+     无帧图（legacy fixture）回退 image 缓冲路径，bundle_adjustment_test
+     11/11 不受影响。
+     残余：Caspar 因子矩阵 11→15 组合；多传感器等距柱状相机的组合
+     functor（当前冻结组合位姿兜底）。
+     Caspar split-intrinsic 预存失败 **已修复（2026-09-09，fork 缺陷 (25)）**：
+     三个家族全红的根因不是生成内核，而是 `SolveCasparBundleAdjustment`
+     缺少 W3-2b step 4 给 Ceres 路径加的前向双轨同步——Caspar 因子池从
+     帧存储读位姿，而 fixture（与一切 legacy image 级写入方）在
+     AddImageWithTrivialFrame 之后只扰动 image 缓冲，GPU 求解从过期位姿
+     起步而 Ceres 参照从扰动后位姿起步。修复 = 镜像
+     BundleAdjuster::SetUp 的同步循环（config 内带帧图像
+     Frame::SetCamFromWorld）。修复后三家族全绿（5.7e-4 / 1.0e-3 /
+     1.00105 vs 1.00027），caspar_test 5/5。附带结论：16 项 FactorPool
+     查找表、常量内参烘焙与 15 池 setter 上传布局核验一致（旧"11→15"
+     清单项实际早已实现）；生成 solver 的 initial_score 字段为未初始化
+     垃圾值，不可作为诊断依据。
+     GP basin 攻坚（2026-09-09）：fixture 钉定使
+     global_positioning_test 3/3 全绿（MultiCameraRig seed=43）；
+     global_mapper_test KnownRig/UnknownRig 与 global_pipeline
+     UnknownSensorFromRig 在 8/4 个 fixture seed 下均红——系统性 GP
+     cams_in_rig 分支收敛限制（gcc9，非 fixture 随机性），保留确定性
+     钉定与已知项记录，待 W3-3 或同工具链上游对照。
 - 测试与 gate：移植上游 `correspondence_graph_test`/`incremental_mapper_test`
   等；新 gate `reconstruction_frame_rig_pipeline_gate`（W9 合成 rig 数据 e2e）。
 - manifest：`frame_aware_mapper`（分步 partial → implemented）。
@@ -258,8 +302,15 @@ CLI。因此 D1 的实现量比原估小：见 W15。
   fixture 几何已验证健康；根因为 libstdc++ std::shuffle/uniform_int_distribution
   的 gcc 版本序列差异）；`rotation_averager`/`view_graph_calibrator` 命令
   待 controllers/rotation_averaging 与 estimators/gravity_refinement 移植。
-  剩余：GP rig 分支两用例关闭、controllers/rotation_averaging +
-  gravity_refinement、两 CLI 命令、reconstruction_glomap_gate。
+  执行进度（2026-09-09，W4 CLI 补全 ✅）：`controllers/rotation_averaging.{h,cc}`
+  （RotationAveragingPipeline，上游 227 行同构）、
+  `estimators/gravity_refinement.{h,cc}`（GravityRefiner，上游 317 行同构，
+  球面流形走 fork 原生 `SetSphereManifold<3>`）落地；`rotation_averager` 与
+  `view_graph_calibrator` 两 CLI 命令端到端注册（exe/sfm.cc + colmap.cc +
+  OptionManager::AddGravityRefinerOptions，`CalibrateViewGraph` 直连 fork
+  既有实现）；fork 适配：Database 直接构造（无 Open 工厂）、
+  OptionManager::Parse 返回 void、Reconstruction::Write(string)。
+  剩余：GP rig 分支两用例关闭、reconstruction_glomap_gate。
 
 #### W7 位姿先验栈 [L]（依赖 W1、W3-1）
 
@@ -447,6 +498,45 @@ pipeline、mvs、retrieval）。
 
 ---
 
+### 新增工作包（文件账本清零系列 W18，2026-09-09 立项）
+
+> 依据逐文件账本（上游 585 = 同路径 311 + 冻结区 143 + 真缺失 131）。
+> 真缺失的 131 个文件中约 70 个为上游测试（既有实现的纯增益闸门），
+> 其余为真实功能模块缺口。执行批次：
+
+- **W18.1 geometry/math 补齐 [S]（✅ 2026-09-09）**：
+  `geometry/{bbox.{h,cc}+test, normalization.{h,cc}+test, rigid3_test,
+  rigid3_matchers_test, sim3_test, sim3_matchers.h+test, pose_prior_test}`、
+  `math/{random_eigen_test, union_find_test}` 共 16 文件。冻结族测试
+  （pose/polynomial/graph_cut/math/matrix/random）保留在 base//util/
+  （目标名冲突去重）。连带修复 fork 缺陷 (26)：
+  `PosePrior::operator<<` 把 SensorType 打成裸 int（static_cast<int>
+  绕过了 W17.1 的 enum_utils 流重载）——直接输出枚举，上游 parity。
+  gate：9 新测试套件全绿（rigid3 18/matchers 6/sim3 13/matchers 8/
+  pose_prior 5/bbox 4/normalization 5/random_eigen 8/union_find 18）。
+- **W18.2 测试账本清零 [M]**：剩余 ~60 个上游 `_test.cc`（estimators
+  cost_functions 族、alignment、covariance、feature 既有实现、mvs、
+  optim、util）。依赖：无新实现者直接移植；有缺口者随对应批次。
+- **W18.3 feature/matching 层 [XL]**：`feature/{extractor,matcher,index,
+  aliked,onnx_matchers,onnx_utils}` + `controllers/{feature_extraction,
+  feature_matching(+utils),pairing,matcher_cache}`（~32 文件）——
+  上游 4.x 特征抽象层重构，fork 现状为 CloudCompare 时代 feature/
+  旧接口，需先做接口映射设计。
+- **W18.4 sensor 模型拆分 [M]**：`sensor/models.{h,cc}+models_jacobian
+  (+tests)` 与 `sensor/specs.{h,cc}`——冻结族 base/camera_models.h、
+  util/camera_specs.h 的上游路径对齐版（策略 C：新文件上游路径 +
+  base/ 冻结声明，或反向收编，需评审）。
+- **W18.5 estimators BA 接口化 [M]**：`estimators/bundle_adjustment_ceres.
+  {h,cc}`（上游 CeresBundleAdjustmentOptions pimpl 重构）+ covariance——
+  与 W17.2b 同型。
+- **W18.6 mvs 网面 [M]**：`mvs/{patch_match_options,delaunay_meshing,
+  poisson_meshing}(+tests)`。
+- **W18.7 util 杂项 [S]**：`util/{file.{h,cc},controller_thread,
+  oiio_utils,timestamp,glog_macros}`(+tests)、`ui/mesh_painter`。
+- gate：全批次统一为全量构建 EXIT=0 + 全量 ctest 零回归。
+
+---
+
 ### 新增工作包（结构对齐系列 W17，2026-09-08 评审定稿）
 
 > 依据 first-principles 结构差异分析（scene/ 主例推广至全模块）：fork 是
@@ -547,6 +637,30 @@ pipeline、mvs、retrieval）。
   本包只做文件拆分：为其减负，并为 W3-2b step 4（frame-aware BA）铺路
   （上游 BA 位姿写回逻辑在 observation_manager 中）。
 - manifest：`sfm_file_split`。
+- 执行进度（2026-09-09，✅ observation_manager 部分完成）：
+  实测修正了本包前提——fork 的过滤/簿记逻辑不在 incremental_mapper.cc
+  （其 1208 行全为 IncrementalMapper 方法），而在 base/reconstruction.cc
+  （12 个成员函数，stats 在 Image/image_pair_stats_）。据此调整为移植上游
+  **状态所有者模式**：`sfm/observation_manager.{h,cc}`（269+681 行，上游
+  944 行同构）落地——ReprojectionErrorType 枚举、
+  MergeAndFilterReconstructions、ObservationManager 类（自有
+  image_stats_/image_pair_stats_ 统计、AddPoint3D/AddObservation/
+  DeleteObservation/MergePoints3D、Filter 全系含 NORMALIZED/ANGULAR
+  误差类型、FindFramesToFilter、RegisterFrame/DeRegisterFrame）；
+  fork Reconstruction 旧簿记在测试不接 graph 时 no-op（对应 graph 早退），
+  与 facade 双状态零冲突，W3-3 收编。fork 适配：getter/setter、
+  Frame::ImageIds() 直出 image_t、NORMALIZED 误差用 CamRayFromImg 复用
+  （免加 Camera::CamFromImg）、Point3DIds() unordered_set→FlatHashSet、
+  RegisterFrame 走 fork 图像级 RegisterImage。**连带修复 fork 缺陷 (24)**：
+  base/projection.cc CalculateSquaredReprojectionError(Rigid3d) 补球面
+  接缝不变分支（上游 SquaredSphericalReprojectionError：角度×width/2π
+  等效像素误差，修复等距柱状接缝处误删）。gate：
+  observation_manager_test **14/14 全绿**（含 SphericalSeam/
+  LargeReprojectionErrorTypes/VisibilityScore/AddImage 流式）。
+  **incremental_mapper_impl 拆分缓议**：fork 注册助手（FindFirst/
+  SecondInitialImage、FindLocalBundle）是 IncrementalMapper 成员
+  （image-based 流），上游 impl 为自由签名助手——抽取需 frame-aware
+  mapper 重写（W3-3 本体）且无独立测试闸门，随 W3-3 一并落地。
 
 #### W17.4 scene 纯增量移植（P1d）[S]
 
@@ -577,6 +691,24 @@ pipeline、mvs、retrieval）。
   camera_rig.{h,cc}+test，共 4 文件）。
 - 风险：无上游演进面；删除后上游 diff 面进一步收窄。
 - manifest：`orphan_retirement`。
+- 执行进度（2026-09-09，✅ 完成，范围按实测修正）：
+  实测推翻了"两族均为上游已删除孤儿"的前提——上游 dbb41680 把
+  CameraDatabase 重构为 `sensor/database.{h,cc}`（class→struct，
+  bitmap.cc 仍消费），CameraRig 则确实已删除。据此：
+  ① camera_database **按上游路径搬迁**：`sensor/database.{h,cc}` +
+     `database_test.cc`（195 行，specs 指向冻结的 util/camera_specs.h），
+     util/bitmap.cc 消费者迁移，base/ 三文件删除（测试目标改名
+     sensor_database_test 避让 base database_test）；
+  ② camera_rig **真退役**：fork 唯一生产链路是 exe 独立 CLI
+     `rig_bundle_adjuster`（RunRigBundleAdjuster + ReadCameraRigConfig），
+     上游 bundle_adjustment.h 已无任何 rig 面——删除 RigBundleAdjuster
+     （h L240-295 + cc L665-1036）、rig 测试 4 用例与宏、reconstruction
+     的 CameraRigFromRig/UpdateRigFromCameraRig 桥及测试、exe 两函数与
+     注册，base/camera_rig.{h,cc}+test 共 6 文件删除。
+  连带修复：reconstruction.h 声明切割过贪误吞 AddRig/AddFrame（HEAD 区域
+  比对后精确回插）。gate：sensor_database_test 3/3、database_test 22/22、
+  bundle_adjustment_test 15/15、reconstruction_test 24/24 全绿；
+  全量构建 EXIT=0 + ctest 无回归。
 
 #### W17.6 冻结族永久映射声明（最后）[S]
 

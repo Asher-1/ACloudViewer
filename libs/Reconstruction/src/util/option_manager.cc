@@ -30,6 +30,7 @@
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
 #include "util/option_manager.h"
+#include "estimators/gravity_refinement.h"
 
 #include "controllers/global_pipeline.h"
 
@@ -64,6 +65,7 @@ OptionManager::OptionManager(bool add_project_options) {
     image_path.reset(new std::string());
 
     global_mapper.reset(new GlobalPipelineOptions());
+    gravity_refiner.reset(new GravityRefinerOptions());
     image_reader.reset(new ImageReaderOptions());
     sift_extraction.reset(new SiftExtractionOptions());
     sift_matching.reset(new SiftMatchingOptions());
@@ -764,6 +766,20 @@ void OptionManager::AddGlobalMapperOptions() {
     // ba_refine_points3D / ba_min_track_length / ba_backend / ceres-specific
     // and retriangulation flags bind to fields that land with W3-2b step 4
     // (frame-aware BA options) and are deferred accordingly.
+}
+
+void OptionManager::AddGravityRefinerOptions() {
+    if (added_gravity_refiner_options_) {
+        return;
+    }
+    added_gravity_refiner_options_ = true;
+
+    AddDefaultOption("GravityRefiner.max_outlier_ratio",
+                     &gravity_refiner->max_outlier_ratio);
+    AddDefaultOption("GravityRefiner.max_gravity_error",
+                     &gravity_refiner->max_gravity_error);
+    AddDefaultOption("GravityRefiner.min_num_neighbors",
+                     &gravity_refiner->min_num_neighbors);
 }
 
 void OptionManager::AddPatchMatchStereoOptions() {

@@ -33,9 +33,7 @@ set(FOLDER_NAME "base")
 
 COLMAP_ADD_SOURCES(
     camera.h camera.cc
-    camera_database.h camera_database.cc
     camera_models.h camera_models.cc
-    camera_rig.h camera_rig.cc
     correspondence_graph.h correspondence_graph.cc
     database.h database.cc
     database_cache.h database_cache.cc
@@ -66,9 +64,7 @@ COLMAP_ADD_SOURCES(
     warp.h warp.cc
 )
 
-COLMAP_ADD_TEST(camera_database_test camera_database_test.cc)
 COLMAP_ADD_TEST(camera_models_test camera_models_test.cc)
-COLMAP_ADD_TEST(camera_rig_test camera_rig_test.cc)
 COLMAP_ADD_TEST(camera_test camera_test.cc)
 COLMAP_ADD_TEST(correspondence_graph_test correspondence_graph_test.cc)
 COLMAP_ADD_TEST(cost_functions_test cost_functions_test.cc)

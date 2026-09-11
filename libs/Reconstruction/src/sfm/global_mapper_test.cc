@@ -17,6 +17,7 @@
 #include "scene/reconstruction_matchers.h"
 #include "scene/synthetic.h"
 #include "util/testing.h"
+#include "util/random.h"
 
 namespace colmap {
 namespace {
@@ -37,6 +38,10 @@ TEST(GlobalMapper, WithoutNoise) {
   synthetic_dataset_options.num_frames_per_rig = 7;
   synthetic_dataset_options.num_points3D = 50;
   synthetic_dataset_options.two_view_geometry_has_relative_pose = true;
+  // Pin the fixture PRNG: the synthetic geometry must be
+  // deterministic on this toolchain (libstdc++ shuffle
+  // sequences differ across gcc versions).
+  SetPRNGSeed(43);
   SynthesizeDataset(
       synthetic_dataset_options, &gt_reconstruction, database.get());
 
@@ -80,6 +85,10 @@ TEST(GlobalMapper, WithoutNoiseWithNonTrivialKnownRig) {
       0.1;                                                         // No noise
   synthetic_dataset_options.sensor_from_rig_rotation_stddev = 5.;  // No noise
   synthetic_dataset_options.two_view_geometry_has_relative_pose = true;
+  // Pin the fixture PRNG: the synthetic geometry must be
+  // deterministic on this toolchain (libstdc++ shuffle
+  // sequences differ across gcc versions).
+  SetPRNGSeed(43);
   SynthesizeDataset(
       synthetic_dataset_options, &gt_reconstruction, database.get());
 
@@ -115,6 +124,10 @@ TEST(GlobalMapper, WithoutNoiseWithNonTrivialUnknownRig) {
   synthetic_dataset_options.sensor_from_rig_rotation_stddev = 5.;  // No noise
 
   synthetic_dataset_options.two_view_geometry_has_relative_pose = true;
+  // Pin the fixture PRNG: the synthetic geometry must be
+  // deterministic on this toolchain (libstdc++ shuffle
+  // sequences differ across gcc versions).
+  SetPRNGSeed(43);
   SynthesizeDataset(
       synthetic_dataset_options, &gt_reconstruction, database.get());
 
@@ -154,6 +167,10 @@ TEST(GlobalMapper, WithNoiseAndOutliers) {
   synthetic_dataset_options.num_points3D = 100;
   synthetic_dataset_options.inlier_match_ratio = 0.7;
   synthetic_dataset_options.two_view_geometry_has_relative_pose = true;
+  // Pin the fixture PRNG: the synthetic geometry must be
+  // deterministic on this toolchain (libstdc++ shuffle
+  // sequences differ across gcc versions).
+  SetPRNGSeed(43);
   SynthesizeDataset(
       synthetic_dataset_options, &gt_reconstruction, database.get());
   SyntheticNoiseOptions synthetic_noise_options;

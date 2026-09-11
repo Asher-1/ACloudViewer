@@ -89,7 +89,10 @@ struct GlobalMapperOptions {
     // Fork note: the fixed-rotation stage requires the per-frame
     // constant_rig_from_world_rotation bundle-adjustment option that lands with
     // W3-2b step 4, so the default here is true until then.
-    bool ba_skip_fixed_rotation_stage = true;
+    // Upstream parity (dbb41680): the fixed-rotation stage runs by default
+    // now that the frame-aware constant_rig_from_world_rotation BA option
+    // exists (W3-2b step 4).
+    bool ba_skip_fixed_rotation_stage = false;
 
     // Whether to skip the joint optimization stage in bundle adjustment.
     // When set to true, only the fixed-rotation stage is run (optimizing

@@ -36,7 +36,6 @@ struct PlyPoint;
 struct RANSACOptions;
 class DatabaseCache;
 class CorrespondenceGraph;
-class CameraRig;
 
 // Reconstruction class holds all information about a single reconstructed
 // model. It is used by the mapping and bundle adjustment classes and can be
@@ -152,15 +151,8 @@ public:
     void AddImageWithTrivialFrame(class Image image,
                                   const Rigid3d& cam_from_world);
 
-    // Persisted camera rig/frame data. The legacy CameraRig adapter preserves
-    // existing RigBundleAdjuster callers while keeping one source of truth in
-    // the reconstruction model. Generic non-camera sensor/data persistence is
-    // not represented by this legacy reconstruction database.
     void AddRig(class Rig rig);
     void AddFrame(class Frame frame);
-    class CameraRig CameraRigFromRig(const rig_t rig_id) const;
-    void UpdateRigFromCameraRig(const rig_t rig_id,
-                                const class CameraRig& camera_rig);
 
     // Add new 3D object, and return its unique ID.
     point3D_t AddPoint3D(

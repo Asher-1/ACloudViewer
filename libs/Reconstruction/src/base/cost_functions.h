@@ -351,6 +351,71 @@ private:
     const double observed_y_;
 };
 
+// Frame-aware rig cost function (W3-2b step 4, upstream COLMAP 4.x
+// semantics): the camera pose composes as
+// cam_from_world = rig_from_world * sensor_from_rig. The legacy
+// RigBundleAdjustmentCostFunction above composes in the opposite
+// (CameraRig) order. Parameter blocks: rig qvec/tvec and sensor qvec/tvec
+// ([w, x, y, z]), 3D point, camera params.
+template <typename CameraModel>
+class FrameRigBundleAdjustmentCostFunction {
+public:
+    explicit FrameRigBundleAdjustmentCostFunction(
+            const Eigen::Vector2d& point2D)
+        : observed_x_(point2D(0)), observed_y_(point2D(1)) {}
+
+    static ceres::CostFunction* Create(const Eigen::Vector2d& point2D) {
+        return (new ceres::AutoDiffCostFunction<
+                FrameRigBundleAdjustmentCostFunction<CameraModel>, 2, 4, 3, 4,
+                3, 3, CameraModel::kNumParams>(
+                new FrameRigBundleAdjustmentCostFunction(point2D)));
+    }
+
+    template <typename T>
+    bool operator()(const T* const rig_qvec,
+                    const T* const rig_tvec,
+                    const T* const sensor_qvec,
+                    const T* const sensor_tvec,
+                    const T* const point3D,
+                    const T* const camera_params,
+                    T* residuals) const {
+        // cam_from_world = rig_from_world * sensor_from_rig
+        T qvec[4];
+        ceres::QuaternionProduct(rig_qvec, sensor_qvec, qvec);
+
+        T tvec[3];
+        ceres::UnitQuaternionRotatePoint(rig_qvec, sensor_tvec, tvec);
+        tvec[0] += rig_tvec[0];
+        tvec[1] += rig_tvec[1];
+        tvec[2] += rig_tvec[2];
+
+        // Rotate and translate.
+        T projection[3];
+        ceres::UnitQuaternionRotatePoint(qvec, point3D, projection);
+        projection[0] += tvec[0];
+        projection[1] += tvec[1];
+        projection[2] += tvec[2];
+
+        // Project to image plane.
+        projection[0] /= projection[2];
+        projection[1] /= projection[2];
+
+        // Distort and transform to pixel space.
+        CameraModel::WorldToImage(camera_params, projection[0], projection[1],
+                                  &residuals[0], &residuals[1]);
+
+        // Re-projection error.
+        residuals[0] -= T(observed_x_);
+        residuals[1] -= T(observed_y_);
+
+        return true;
+    }
+
+private:
+    const double observed_x_;
+    const double observed_y_;
+};
+
 // Cost function for refining two-view geometry based on the Sampson-Error.
 //
 // First pose is assumed to be located at the origin with 0 rotation. Second

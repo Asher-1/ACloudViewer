@@ -34,6 +34,7 @@
 #include "scene/reconstruction_matchers.h"
 #include "scene/synthetic.h"
 #include "util/testing.h"
+#include "util/random.h"
 
 #include <map>
 #include <utility>
@@ -54,6 +55,10 @@ TEST(GlobalPositioning, Nominal) {
   synthetic_dataset_options.num_frames_per_rig = 10;
   synthetic_dataset_options.num_points3D = 200;
   synthetic_dataset_options.two_view_geometry_has_relative_pose = true;
+  // Pin the global PRNG so the synthetic fixture geometry is
+  // deterministic on this toolchain (the GP solve itself re-seeds via
+  // options.random_seed below).
+  SetPRNGSeed(43);
   SynthesizeDataset(
       synthetic_dataset_options, &gt_reconstruction, database.get());
 
@@ -100,6 +105,10 @@ TEST(GlobalPositioning, MultiCameraRig) {
   synthetic_dataset_options.num_frames_per_rig = 5;
   synthetic_dataset_options.num_points3D = 200;
   synthetic_dataset_options.two_view_geometry_has_relative_pose = true;
+  // Pin the global PRNG so the synthetic fixture geometry is
+  // deterministic on this toolchain (the GP solve itself re-seeds via
+  // options.random_seed below).
+  SetPRNGSeed(43);
   SynthesizeDataset(
       synthetic_dataset_options, &gt_reconstruction, database.get());
 
@@ -149,6 +158,10 @@ TEST(GlobalPositioning, RefineSensorFromRigFalsePreservesRig) {
   synthetic_dataset_options.num_frames_per_rig = 5;
   synthetic_dataset_options.num_points3D = 200;
   synthetic_dataset_options.two_view_geometry_has_relative_pose = true;
+  // Pin the global PRNG so the synthetic fixture geometry is
+  // deterministic on this toolchain (the GP solve itself re-seeds via
+  // options.random_seed below).
+  SetPRNGSeed(43);
   SynthesizeDataset(
       synthetic_dataset_options, &gt_reconstruction, database.get());
 

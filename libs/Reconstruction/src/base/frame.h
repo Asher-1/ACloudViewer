@@ -89,6 +89,10 @@ public:
     void ResetPose();
     const Eigen::Vector4d& RigFromWorldQvec() const;
     const Eigen::Vector3d& RigFromWorldTvec() const;
+    // Mutable raw access for bundle-adjustment parameter blocks (W3-2b step
+    // 4: the optimizer refines the frame pose storage in place).
+    Eigen::Vector4d& RigFromWorldQvec();
+    Eigen::Vector3d& RigFromWorldTvec();
 
     // Upstream-parity equality (COLMAP 4.x scene/frame.h): the pose is only
     // compared when both frames have one; this fork tracks it with the

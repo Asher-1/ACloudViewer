@@ -1,4 +1,4 @@
-// Copyright (c) 2018, ETH Zurich and UNC Chapel Hill.
+// Copyright (c), ETH Zurich and UNC Chapel Hill.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -26,34 +26,37 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
-// Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
-#define TEST_NAME "base/camera_database"
-#include "util/testing.h"
+#include "geometry/bbox.h"
 
-#include "base/camera_database.h"
+#include "util/logging.h"
 
-using namespace colmap;
+namespace colmap {
 
-TEST(base_camera_database, TestInitialization) {
-  CameraDatabase database;
-  camera_specs_t specs = InitializeCameraSpecs();
-  EXPECT_EQ(database.NumEntries(), specs.size());
+std::vector<Eigen::AlignedBox3d> ComputeEqualPartsBboxes(
+    const Eigen::AlignedBox3d& bbox, const Eigen::Vector3i& split) {
+  THROW_CHECK_GT(split(0), 0);
+  THROW_CHECK_GT(split(1), 0);
+  THROW_CHECK_GT(split(2), 0);
+
+  const Eigen::Vector3d extent = bbox.diagonal();
+  const Eigen::Vector3d size(
+      extent(0) / split(0), extent(1) / split(1), extent(2) / split(2));
+
+  std::vector<Eigen::AlignedBox3d> bboxes;
+  bboxes.reserve(split(0) * split(1) * split(2));
+  for (int k = 0; k < split(2); ++k) {
+    for (int j = 0; j < split(1); ++j) {
+      for (int i = 0; i < split(0); ++i) {
+        Eigen::Vector3d min(bbox.min().x() + i * size(0),
+                            bbox.min().y() + j * size(1),
+                            bbox.min().z() + k * size(2));
+        bboxes.emplace_back(min, min + size);
+      }
+    }
+  }
+
+  return bboxes;
 }
 
-TEST(base_camera_database, TestExactMatch) {
-  CameraDatabase database;
-  double sensor_width;
-  EXPECT_TRUE(
-      database.QuerySensorWidth("canon", "digitalixus100is", &sensor_width));
-  EXPECT_EQ(sensor_width, 6.1600f);
-}
-
-TEST(base_camera_database, TestAmbiguousMatch) {
-  CameraDatabase database;
-  double sensor_width;
-  EXPECT_TRUE(
-      !database.QuerySensorWidth("canon", "digitalixus", &sensor_width));
-  EXPECT_EQ(sensor_width, 6.1600f);
-}
+}  // namespace colmap

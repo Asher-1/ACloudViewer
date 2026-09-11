@@ -37,7 +37,6 @@
 
 #include "base/database_cache.h"
 #include "scene/reconstruction_io.h"
-#include "base/camera_rig.h"
 #include "base/gps.h"
 #include "base/pose.h"
 #include "base/projection.h"
@@ -339,70 +338,6 @@ void Reconstruction::AddFrame(class Frame frame) {
   // synthetic dataset generator performs the equivalent image registration
   // after its AddImage() calls (the images do not exist in the
   // reconstruction yet at this point).
-}
-
-CameraRig Reconstruction::CameraRigFromRig(const rig_t rig_id) const {
-    const class Rig& rig = Rig(rig_id);
-    CameraRig camera_rig;
-    for (const camera_t camera_id : rig.CameraIds()) {
-        camera_rig.AddCamera(camera_id,
-                             rig.CamFromRigQvec(camera_id),
-                             rig.CamFromRigTvec(camera_id));
-    }
-    camera_rig.SetRefCameraId(rig.RefCameraId());
-
-    std::vector<frame_t> frame_ids;
-    for (const auto& frame : frames_) {
-        if (frame.second.RigId() == rig_id) {
-            frame_ids.push_back(frame.first);
-        }
-    }
-    std::sort(frame_ids.begin(), frame_ids.end());
-    for (const frame_t frame_id : frame_ids) {
-        const class Frame& frame = Frame(frame_id);
-        std::vector<image_t> snapshot(frame.ImageIds().begin(),
-                                       frame.ImageIds().end());
-        camera_rig.AddSnapshot(snapshot);
-    }
-    camera_rig.Check(*this);
-    return camera_rig;
-}
-
-void Reconstruction::UpdateRigFromCameraRig(
-        const rig_t rig_id, const CameraRig& camera_rig) {
-    class Rig& rig = Rig(rig_id);
-    CHECK_EQ(camera_rig.RefCameraId(), rig.RefCameraId());
-    CHECK_EQ(camera_rig.NumCameras(), rig.NumCameras());
-    for (const camera_t camera_id : rig.CameraIds()) {
-        CHECK(camera_rig.HasCamera(camera_id));
-        if (camera_id == rig.RefCameraId()) continue;
-        rig.CamFromRigQvec(camera_id) =
-                NormalizeQuaternion(camera_rig.RelativeQvec(camera_id));
-        rig.CamFromRigTvec(camera_id) = camera_rig.RelativeTvec(camera_id);
-    }
-
-    std::vector<frame_t> frame_ids;
-    for (const auto& frame : frames_) {
-        if (frame.second.RigId() == rig_id) {
-            frame_ids.push_back(frame.first);
-        }
-    }
-    std::sort(frame_ids.begin(), frame_ids.end());
-    CHECK_EQ(camera_rig.NumSnapshots(), frame_ids.size());
-    for (size_t snapshot_idx = 0; snapshot_idx < frame_ids.size(); ++snapshot_idx) {
-        const class Frame& frame = Frame(frame_ids[snapshot_idx]);
-        const std::set<image_t> snapshot(camera_rig.Snapshots()[snapshot_idx].begin(),
-                                          camera_rig.Snapshots()[snapshot_idx].end());
-        CHECK(snapshot == frame.ImageIds());
-        Eigen::Vector4d rig_from_world_qvec;
-        Eigen::Vector3d rig_from_world_tvec;
-        camera_rig.ComputeAbsolutePose(snapshot_idx,
-                                       *this,
-                                       &rig_from_world_qvec,
-                                       &rig_from_world_tvec);
-        Frame(frame_ids[snapshot_idx])
-                .SetRigFromWorld(rig_from_world_qvec, rig_from_world_tvec);
-    }
 }
 
 point3D_t Reconstruction::AddPoint3D(const Eigen::Vector3d& xyz,

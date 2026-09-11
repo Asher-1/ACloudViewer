@@ -27,6 +27,7 @@ struct ImagePairsMatchingOptions;
 struct BundleAdjustmentOptions;
 struct IncrementalMapperOptions;
 struct GlobalPipelineOptions;
+struct GravityRefinerOptions;
 struct TexturingOptions;
 struct RenderOptions;
 
@@ -77,6 +78,9 @@ public:
     // Upstream parity (dbb41680 controllers/option_manager.h): options for
     // the global SfM pipeline (the global_mapper command).
     void AddGlobalMapperOptions();
+    // Upstream parity (dbb41680 controllers/option_manager.h): options for
+    // the gravity refinement pass (the rotation_averager command).
+    void AddGravityRefinerOptions();
     void AddPatchMatchStereoOptions();
     void AddStereoFusionOptions();
     void AddPoissonMeshingOptions();
@@ -124,6 +128,9 @@ public:
     std::shared_ptr<BundleAdjustmentOptions> bundle_adjustment;
     std::shared_ptr<IncrementalMapperOptions> mapper;
     std::shared_ptr<GlobalPipelineOptions> global_mapper;
+    // Upstream parity (dbb41680 controllers/option_manager.h): the gravity
+    // refiner options consumed by the rotation_averager command.
+    std::shared_ptr<GravityRefinerOptions> gravity_refiner;
 
     std::shared_ptr<mvs::PatchMatchOptions> patch_match_stereo;
     std::shared_ptr<mvs::StereoFusionOptions> stereo_fusion;
@@ -171,7 +178,9 @@ private:
     bool added_ba_options_;
     bool added_mapper_options_;
     bool added_global_mapper_options_ = false;
+    bool added_gravity_refiner_options_ = false;
     std::filesystem::path global_mapper_image_list_path_;
+
     bool added_patch_match_stereo_options_;
     bool added_stereo_fusion_options_;
     bool added_poisson_meshing_options_;

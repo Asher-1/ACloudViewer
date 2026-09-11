@@ -71,7 +71,7 @@ std::ostream& operator<<(std::ostream& stream, const PosePrior& prior) {
   const static Eigen::IOFormat kVecFmt(
       Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ");
   stream << "PosePrior(pose_prior_id=" << prior.pose_prior_id
-         << ", corr_data_id=(" << static_cast<int>(prior.corr_data_id.sensor_id.type) << ", "
+         << ", corr_data_id=(" << prior.corr_data_id.sensor_id.type << ", "
          << prior.corr_data_id.sensor_id.id << ", " << prior.corr_data_id.id
          << "), position=[" << prior.position.format(kVecFmt)
          << "], position_covariance=["

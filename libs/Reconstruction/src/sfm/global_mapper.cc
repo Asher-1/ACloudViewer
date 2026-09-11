@@ -40,40 +40,24 @@ bool RunBundleAdjustment(const BundleAdjustmentOptions& options,
     }
   }
 
-  // Fork note: the bundle adjuster still optimizes the legacy per-image
-  // qvec_/tvec_ buffers (frame-aware BA lands with W3-2b step 4). Sync
-  // those buffers from the frame-aware poses before solving and write the
-  // optimized poses back to the frames afterwards, so both pose tracks
-  // stay consistent. The qvec convention is [w, x, y, z].
-  std::vector<image_t> posed_image_ids;
-  posed_image_ids.reserve(reconstruction.NumImages());
+  // Fork note: the bundle adjuster optimizes the legacy per-image
+  // qvec_/tvec_ buffers (frame-shared parameter blocks land with the rest of
+  // W3-2b step 4). Sync those buffers from the frame-aware poses before
+  // solving; the optimized poses are written back to the frames by
+  // BundleAdjuster::TearDown. The qvec convention is [w, x, y, z].
   for (const auto& [image_id, image] : reconstruction.Images()) {
-    if (image.HasPose()) {
-      posed_image_ids.push_back(image_id);
+    if (!image.HasPose()) {
+      continue;
     }
-  }
-  for (const image_t image_id : posed_image_ids) {
-    Image& image = reconstruction.Image(image_id);
-    const Rigid3d cam_from_world = image.CamFromWorld();
+    Image& image_mut = reconstruction.Image(image_id);
+    const Rigid3d cam_from_world = image_mut.CamFromWorld();
     const Eigen::Quaterniond q = cam_from_world.rotation();
-    image.SetQvec(Eigen::Vector4d(q.w(), q.x(), q.y(), q.z()));
-    image.SetTvec(cam_from_world.translation());
+    image_mut.SetQvec(Eigen::Vector4d(q.w(), q.x(), q.y(), q.z()));
+    image_mut.SetTvec(cam_from_world.translation());
   }
 
   BundleAdjuster ba(options, ba_config);
-  const bool success = ba.Solve(&reconstruction);
-
-  for (const image_t image_id : posed_image_ids) {
-    const Image& image = reconstruction.Image(image_id);
-    const Eigen::Vector4d& qvec = image.Qvec();
-    const Rigid3d cam_from_world(
-        Eigen::Quaterniond(qvec(0), qvec(1), qvec(2), qvec(3)),
-        image.Tvec());
-    reconstruction.Frame(image.FrameId())
-        .SetCamFromWorld(image.CameraId(), cam_from_world);
-  }
-
-  return success;
+  return ba.Solve(&reconstruction);
 }
 
 // Fork-legacy stand-in for the upstream ObservationManager filters: the
@@ -551,11 +535,26 @@ bool GlobalMapper::IterativeBundleAdjustment(
     bool skip_fixed_rotation_stage,
     bool skip_joint_optimization_stage,
     const std::function<bool()>& on_progress) {
-  // Fork note: the fixed-rotation stage requires the per-frame
-  // constant_rig_from_world_rotation bundle-adjustment option that lands
-  // with W3-2b step 4; until then the stage is silently skipped and the
-  // joint optimization runs instead.
   for (int ite = 0; ite < num_iterations; ite++) {
+    // Optional fixed-rotation stage: optimize positions only (upstream
+    // parity; the frame-aware constant_rig_from_world_rotation BA option
+    // from W3-2b step 4 keeps every rig rotation constant).
+    if (!skip_fixed_rotation_stage) {
+      BundleAdjustmentOptions opts_position_only = options;
+      opts_position_only.constant_rig_from_world_rotation = true;
+      // Caspar's pose node is a single retracted Pose3 (rotation and
+      // translation together) with no mechanism to hold the rotation
+      // constant while the translation is free.
+      if (opts_position_only.backend == BundleAdjustmentBackend::CASPAR) {
+        opts_position_only.backend = BundleAdjustmentBackend::CERES;
+      }
+      if (!RunBundleAdjustment(opts_position_only, *reconstruction_)) {
+        return false;
+      }
+      LOG(INFO) << "Global bundle adjustment iteration " << ite + 1 << " / "
+                << num_iterations << ", fixed-rotation stage finished";
+    }
+
     // Joint optimization stage: default BA
     if (!skip_joint_optimization_stage) {
       if (!RunBundleAdjustment(options, *reconstruction_)) {

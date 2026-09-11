@@ -210,26 +210,4 @@ int TriangulatePoints(
     return colmap::RunPointTriangulator(parser.getArgc(), parser.getArgv());
 }
 
-int RigBundleAdjust(
-        const std::string& input_path,
-        const std::string& output_path,
-        const std::string& rig_config_path,
-        bool estimate_rig_relative_poses /*= true*/,
-        bool refine_relative_poses /*= true*/,
-        const colmap::BundleAdjustmentOptions& bundle_adjustment_options) {
-    OptionsParser parser;
-    parser.registerOption("input_path", &input_path);
-    parser.registerOption("output_path", &output_path);
-    parser.registerOption("rig_config_path", &rig_config_path);
-    // Whether to optimize the relative poses of the camera rigs.
-    parser.registerOption("estimate_rig_relative_poses",
-                          &estimate_rig_relative_poses);
-    parser.registerOption("RigBundleAdjustment.refine_relative_poses",
-                          &refine_relative_poses);
-    parser.addBundleAdjustmentOptions(bundle_adjustment_options);
-    if (!parser.parseOptions()) return EXIT_FAILURE;
-
-    return colmap::RunRigBundleAdjuster(parser.getArgc(), parser.getArgv());
-}
-
 }  // namespace cloudViewer

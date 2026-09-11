@@ -53,6 +53,7 @@ COLMAP_ADD_SOURCES(
     two_view_geometry.h two_view_geometry.cc
     utils.h utils.cc
     view_graph_calibration.h view_graph_calibration.cc
+    gravity_refinement.h gravity_refinement.cc
 
     cost_functions/tiny_manifold.h
     cost_functions/tiny_sampson_error.h
