@@ -196,7 +196,7 @@ SimilarityTransform3::SimilarityTransform3(const double scale,
   transform_.matrix() = matrix;
 }
 
-void SimilarityTransform3::Write(const std::string& path) {
+void SimilarityTransform3::Write(const std::filesystem::path& path) {
   std::ofstream file(path, std::ios::trunc);
   CHECK(file.is_open()) << path;
   // Ensure that we don't loose any precision by storing in text.

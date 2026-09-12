@@ -8,6 +8,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <filesystem>
 #include <mutex>
 #include <unordered_map>
 #include <vector>
@@ -50,12 +51,12 @@ public:
     const static size_t kMaxNumImages;
 
     Database();
-    explicit Database(const std::string& path);
+    explicit Database(const std::filesystem::path& path);
     ~Database();
 
     // Open and close database. The same database should not be opened
     // concurrently in multiple threads or processes.
-    void Open(const std::string& path);
+    void Open(const std::filesystem::path& path);
     void Close();
 
     // Check if entry already exists in database. For image pairs, the order of

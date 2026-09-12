@@ -1127,7 +1127,7 @@ void SiftFeatureMatcher::Match(
 
 ExhaustiveFeatureMatcher::ExhaustiveFeatureMatcher(
     const ExhaustiveMatchingOptions& options,
-    const SiftMatchingOptions& match_options, const std::string& database_path)
+    const SiftMatchingOptions& match_options, const std::filesystem::path& database_path)
     : options_(options),
       match_options_(match_options) {
   CHECK(options_.Check());
@@ -1204,7 +1204,7 @@ void ExhaustiveFeatureMatcher::Run() {
 
 SequentialFeatureMatcher::SequentialFeatureMatcher(
     const SequentialMatchingOptions& options,
-    const SiftMatchingOptions& match_options, const std::string& database_path)
+    const SiftMatchingOptions& match_options, const std::filesystem::path& database_path)
     : options_(options),
       match_options_(match_options),
       database_(database_path),
@@ -1358,7 +1358,7 @@ void SequentialFeatureMatcher::RunLoopDetection(
 
 VocabTreeFeatureMatcher::VocabTreeFeatureMatcher(
     const VocabTreeMatchingOptions& options,
-    const SiftMatchingOptions& match_options, const std::string& database_path)
+    const SiftMatchingOptions& match_options, const std::filesystem::path& database_path)
     : options_(options),
       match_options_(match_options),
       database_(database_path),
@@ -1438,7 +1438,7 @@ void VocabTreeFeatureMatcher::Run() {
 
 SpatialFeatureMatcher::SpatialFeatureMatcher(
     const SpatialMatchingOptions& options,
-    const SiftMatchingOptions& match_options, const std::string& database_path)
+    const SiftMatchingOptions& match_options, const std::filesystem::path& database_path)
     : options_(options),
       match_options_(match_options),
       database_(database_path),
@@ -1623,7 +1623,7 @@ void SpatialFeatureMatcher::Run() {
 
 TransitiveFeatureMatcher::TransitiveFeatureMatcher(
     const TransitiveMatchingOptions& options,
-    const SiftMatchingOptions& match_options, const std::string& database_path)
+    const SiftMatchingOptions& match_options, const std::filesystem::path& database_path)
     : options_(options),
       match_options_(match_options),
       database_(database_path),
@@ -1721,7 +1721,7 @@ void TransitiveFeatureMatcher::Run() {
 
 ImagePairsFeatureMatcher::ImagePairsFeatureMatcher(
     const ImagePairsMatchingOptions& options,
-    const SiftMatchingOptions& match_options, const std::string& database_path)
+    const SiftMatchingOptions& match_options, const std::filesystem::path& database_path)
     : options_(options),
       match_options_(match_options),
       database_(database_path),
@@ -1836,7 +1836,7 @@ void ImagePairsFeatureMatcher::Run() {
 
 FeaturePairsFeatureMatcher::FeaturePairsFeatureMatcher(
     const FeaturePairsMatchingOptions& options,
-    const SiftMatchingOptions& match_options, const std::string& database_path)
+    const SiftMatchingOptions& match_options, const std::filesystem::path& database_path)
     : options_(options),
       match_options_(match_options),
       database_(database_path),

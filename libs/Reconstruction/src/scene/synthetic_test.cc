@@ -40,6 +40,7 @@
 #include "util/bitmap.h"
 #include "util/eigen_matchers.h"
 #include "util/hash_containers.h"
+#include "util/misc.h"
 #include "util/testing.h"
 
 #include <gtest/gtest.h>
@@ -66,7 +67,7 @@ TEST(SynthesizeDataset, Nominal) {
   const auto test_dir = CreateTestDir();
   const auto sparse_path = test_dir / "sparse";
   CreateDirIfNotExists(sparse_path);
-  reconstruction.Write(sparse_path.string());
+  reconstruction.Write(sparse_path);
 
   EXPECT_EQ(database->NumRigs(), options.num_rigs);
   EXPECT_EQ(reconstruction.NumRigs(), options.num_rigs);
@@ -551,7 +552,7 @@ TEST(SynthesizeImages, Nominal) {
 
   for (const auto& [image_id, image] : reconstruction.Images()) {
     Bitmap bitmap;
-    EXPECT_TRUE(bitmap.Read((image_path / image.Name()).string()));
+    EXPECT_TRUE(bitmap.Read(image_path / image.Name()));
     EXPECT_EQ(bitmap.Width(), image.CameraPtr()->Width());
     EXPECT_EQ(bitmap.Height(), image.CameraPtr()->Height());
   }

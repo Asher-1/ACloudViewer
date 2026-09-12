@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <filesystem>
+
 #include "estimators/two_view_geometry.h"
 #include "feature/types.h"
 #include "util/bitmap.h"
@@ -208,7 +210,7 @@ bool ExtractSiftFeaturesGPU(const SiftExtractionOptions& options,
 //    0.32 0.12 1.23 1.0 1 2 3 4
 //    0.32 0.12 1.23 1.0 1 2 3 4
 //
-void LoadSiftFeaturesFromTextFile(const std::string& path,
+void LoadSiftFeaturesFromTextFile(const std::filesystem::path& path,
                                   FeatureKeypoints* keypoints,
                                   FeatureDescriptors* descriptors);
 

@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <filesystem>
+
 #include "base/reconstruction_manager.h"
 #include "controllers/incremental_mapper.h"
 #include "util/threading.h"
@@ -19,8 +21,8 @@ namespace colmap {
 class GlobalMapperController : public Thread {
 public:
     struct Options {
-        std::string image_path;
-        std::string database_path;
+        std::filesystem::path image_path;
+        std::filesystem::path database_path;
         int min_component_size = 2;
         int num_workers = -1;
         int init_num_trials = 10;

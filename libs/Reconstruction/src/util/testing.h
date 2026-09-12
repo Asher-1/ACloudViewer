@@ -56,18 +56,3 @@ inline std::filesystem::path CreateTestDir() {
 }
 
 }  // namespace colmap
-
-// Upstream util/file.h parity (COLMAP dbb41680): creates the directory if it
-// does not exist yet; returns true on success. Kept as a free function in
-// namespace colmap alongside the test helpers until the fork grows a full
-// util/file.h port.
-namespace colmap {
-inline bool CreateDirIfNotExists(const std::filesystem::path& path,
-                                 bool recursive = false) {
-    if (!std::filesystem::is_directory(path)) {
-        return recursive ? std::filesystem::create_directories(path)
-                         : std::filesystem::create_directory(path);
-    }
-    return true;
-}
-}  // namespace colmap

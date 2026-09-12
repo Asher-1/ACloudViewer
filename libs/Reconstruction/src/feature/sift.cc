@@ -947,13 +947,13 @@ bool ExtractSiftFeaturesGPU(const SiftExtractionOptions& options,
     return true;
 }
 
-void LoadSiftFeaturesFromTextFile(const std::string& path,
+void LoadSiftFeaturesFromTextFile(const std::filesystem::path& path,
                                   FeatureKeypoints* keypoints,
                                   FeatureDescriptors* descriptors) {
     CHECK_NOTNULL(keypoints);
     CHECK_NOTNULL(descriptors);
 
-    std::ifstream file(path.c_str());
+    std::ifstream file(path);
     CHECK(file.is_open()) << path;
 
     std::string line;

@@ -9,6 +9,7 @@
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include <filesystem>
 #include <vector>
 
 #include "estimators/solvers/similarity_transform.h"
@@ -34,7 +35,7 @@ public:
                          const Eigen::Vector4d& qvec,
                          const Eigen::Vector3d& tvec);
 
-    void Write(const std::string& path);
+    void Write(const std::filesystem::path& path);
 
     template <bool kEstimateScale = true>
     bool Estimate(const std::vector<Eigen::Vector3d>& src,

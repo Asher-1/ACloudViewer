@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -74,22 +75,24 @@ struct PlyTexturedMesh {
 };
 
 // Read PLY point cloud from text or binary file.
-std::vector<PlyPoint> ReadPly(const std::string& path);
+std::vector<PlyPoint> ReadPly(const std::filesystem::path& path);
 
 // Write PLY point cloud to text or binary file.
-void WriteTextPlyPoints(const std::string& path,
+void WriteTextPlyPoints(const std::filesystem::path& path,
                         const std::vector<PlyPoint>& points,
                         const bool write_normal = true,
                         const bool write_rgb = true);
-void WriteBinaryPlyPoints(const std::string& path,
+void WriteBinaryPlyPoints(const std::filesystem::path& path,
                           const std::vector<PlyPoint>& points,
                           const bool write_normal = true,
                           const bool write_rgb = true);
 
 // Write PLY mesh to text or binary file.
-void WriteTextPlyMesh(const std::string& path, const PlyMesh& mesh);
-void WriteBinaryPlyMesh(const std::string& path, const PlyMesh& mesh);
-void WriteTextPlyMesh(const std::string& path, const PlyTexturedMesh& mesh);
-void WriteBinaryPlyMesh(const std::string& path, const PlyTexturedMesh& mesh);
+void WriteTextPlyMesh(const std::filesystem::path& path, const PlyMesh& mesh);
+void WriteBinaryPlyMesh(const std::filesystem::path& path, const PlyMesh& mesh);
+void WriteTextPlyMesh(const std::filesystem::path& path,
+                      const PlyTexturedMesh& mesh);
+void WriteBinaryPlyMesh(const std::filesystem::path& path,
+                        const PlyTexturedMesh& mesh);
 
 }  // namespace colmap

@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <filesystem>
+
 #include "base/reconstruction.h"
 #include "base/warp.h"
 #include "util/alignment.h"
@@ -50,8 +52,8 @@ public:
     COLMAPUndistorter(
             const UndistortCameraOptions& options,
             Reconstruction* reconstruction,
-            const std::string& image_path,
-            const std::string& output_path,
+            const std::filesystem::path& image_path,
+            const std::filesystem::path& output_path,
             const int num_related_images = 20,
             const CopyType copy_type = CopyType::COPY,
             const std::vector<image_t>& image_ids = std::vector<image_t>());
@@ -79,8 +81,8 @@ class PMVSUndistorter : public Thread {
 public:
     PMVSUndistorter(const UndistortCameraOptions& options,
                     Reconstruction* reconstruction,
-                    const std::string& image_path,
-                    const std::string& output_path);
+                    const std::filesystem::path& image_path,
+                    const std::filesystem::path& output_path);
 
 private:
     void Run();
@@ -104,8 +106,8 @@ class CMPMVSUndistorter : public Thread {
 public:
     CMPMVSUndistorter(const UndistortCameraOptions& options,
                       Reconstruction* reconstruction,
-                      const std::string& image_path,
-                      const std::string& output_path);
+                      const std::filesystem::path& image_path,
+                      const std::filesystem::path& output_path);
 
 private:
     void Run();
@@ -124,8 +126,8 @@ private:
 class PureImageUndistorter : public Thread {
 public:
     PureImageUndistorter(const UndistortCameraOptions& options,
-                         const std::string& image_path,
-                         const std::string& output_path,
+                         const std::filesystem::path& image_path,
+                         const std::filesystem::path& output_path,
                          const std::vector<std::pair<std::string, Camera>>&
                                  image_names_and_cameras);
 

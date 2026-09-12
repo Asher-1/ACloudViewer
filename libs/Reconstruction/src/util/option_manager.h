@@ -106,13 +106,13 @@ public:
     bool Check();
 
     void Parse(const int argc, char** argv);
-    bool Read(const std::string& path);
-    bool ReRead(const std::string& path);
-    void Write(const std::string& path) const;
+    bool Read(const std::filesystem::path& path);
+    bool ReRead(const std::filesystem::path& path);
+    void Write(const std::filesystem::path& path) const;
 
-    std::shared_ptr<std::string> project_path;
-    std::shared_ptr<std::string> database_path;
-    std::shared_ptr<std::string> image_path;
+    std::shared_ptr<std::filesystem::path> project_path;
+    std::shared_ptr<std::filesystem::path> database_path;
+    std::shared_ptr<std::filesystem::path> image_path;
 
     std::shared_ptr<ImageReaderOptions> image_reader;
     std::shared_ptr<SiftExtractionOptions> sift_extraction;
@@ -162,6 +162,8 @@ private:
     std::vector<std::pair<std::string, const int*>> options_int_;
     std::vector<std::pair<std::string, const double*>> options_double_;
     std::vector<std::pair<std::string, const std::string*>> options_string_;
+    std::vector<std::pair<std::string, const std::filesystem::path*>>
+            options_path_;
 
     bool added_log_options_;
     bool added_random_options_;
@@ -248,6 +250,9 @@ void OptionManager::RegisterOption(const std::string& name, const T* option) {
     } else if (std::is_same<T, std::string>::value) {
         options_string_.emplace_back(
                 name, reinterpret_cast<const std::string*>(option));
+    } else if (std::is_same<T, std::filesystem::path>::value) {
+        options_path_.emplace_back(
+                name, reinterpret_cast<const std::filesystem::path*>(option));
     } else {
         LOG(FATAL) << "Unsupported option type";
     }

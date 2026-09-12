@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <filesystem>
 #include <ios>
 #include <limits>
 #include <memory>
@@ -123,10 +124,10 @@ public:
     bool ExifAltitude(double* altitude) const;
 
     // Read bitmap at given path and convert to grey- or colorscale.
-    bool Read(const std::string& path, const bool as_rgb = true);
+    bool Read(const std::filesystem::path& path, const bool as_rgb = true);
 
     // Write image to file. For JPEG, flags is the requested quality [1, 100].
-    bool Write(const std::string& path,
+    bool Write(const std::filesystem::path& path,
                const BitmapFormat format = BitmapFormat::kUnknown,
                const int flags = 0) const;
 

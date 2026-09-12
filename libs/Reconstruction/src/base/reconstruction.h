@@ -11,6 +11,7 @@
 #include "util/alignment.h"
 // clang-format on
 
+#include <filesystem>
 #include <tuple>
 #include <unordered_map>
 #include <unordered_set>
@@ -314,8 +315,8 @@ public:
     double ComputeMeanReprojectionError() const;
 
     // Read data from text or binary file. Prefer binary data if it exists.
-    void Read(const std::string& path);
-    void Write(const std::string& path) const;
+    void Read(const std::filesystem::path& path);
+    void Write(const std::filesystem::path& path) const;
 
     // Read data from binary/text file.
     void ReadText(const std::filesystem::path& path);
@@ -330,7 +331,7 @@ public:
 
     // Import from other data formats. Note that these import functions are
     // only intended for visualization of data and usable for reconstruction.
-    void ImportPLY(const std::string& path);
+    void ImportPLY(const std::filesystem::path& path);
     void ImportPLY(const std::vector<PlyPoint>& ply_points);
 
     // Extract colors for 3D points of given image. Colors will be extracted
@@ -342,7 +343,8 @@ public:
     //                      root path and the name of the image.
     //
     // @return              True if image could be read at given path.
-    bool ExtractColorsForImage(const image_t image_id, const std::string& path);
+    bool ExtractColorsForImage(const image_t image_id,
+                               const std::filesystem::path& path);
 
     // Extract colors for all 3D points by computing the mean color of all
     // images.
@@ -350,10 +352,10 @@ public:
     // @param path          Absolute or relative path to root folder of image.
     //                      The image path is determined by concatenating the
     //                      root path and the name of the image.
-    void ExtractColorsForAllImages(const std::string& path);
+    void ExtractColorsForAllImages(const std::filesystem::path& path);
 
     // Create all image sub-directories in the given path.
-    void CreateImageDirs(const std::string& path) const;
+    void CreateImageDirs(const std::filesystem::path& path) const;
 
     // Access the correspondence graph.
     inline const CorrespondenceGraph* GetCorrespondenceGraph() const;

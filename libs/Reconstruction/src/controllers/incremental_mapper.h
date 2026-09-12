@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <filesystem>
+
 #include "base/reconstruction_manager.h"
 #include "sfm/incremental_mapper.h"
 #include "util/threading.h"
@@ -105,7 +107,7 @@ public:
     // Path to a folder with reconstruction snapshots during incremental
     // reconstruction. Snapshots will be saved according to the specified
     // frequency of registered images.
-    std::string snapshot_path = "";
+    std::filesystem::path snapshot_path;
     int snapshot_images_freq = 0;
 
     // Which images to reconstruct. If no images are specified, all images will
@@ -137,8 +139,8 @@ public:
     };
 
     IncrementalMapperController(const IncrementalMapperOptions* options,
-                                const std::string& image_path,
-                                const std::string& database_path,
+                                const std::filesystem::path& image_path,
+                                const std::filesystem::path& database_path,
                                 ReconstructionManager* reconstruction_manager);
 
 private:

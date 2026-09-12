@@ -774,7 +774,7 @@ bool RunGlobalMapperImpl(
 
   // Fork parity: the fork's manager Write also persists options; the fork's
   // OptionManager::Parse returns void (errors abort via CHECK).
-  reconstruction_manager->Write(output_path.string(), &options);
+  reconstruction_manager->Write(output_path, &options);
   return true;
 }
 
@@ -805,7 +805,7 @@ int RunGlobalMapper(int argc, char** argv) {
     return EXIT_FAILURE;
   }
 
-  options.Write(output_path.string());
+  options.Write(output_path);
   return EXIT_SUCCESS;
 }
 
@@ -838,10 +838,10 @@ int RunRotationAverager(int argc, char** argv) {
   controller_options.gravity_refiner = *options.gravity_refiner;
 
   if (!image_list_path.empty()) {
-    controller_options.image_names = ReadTextFileLines(image_list_path.string());
+    controller_options.image_names = ReadTextFileLines(image_list_path);
   }
 
-  if (!ExistsDir(output_path.string())) {
+  if (!ExistsDir(output_path)) {
     LOG(ERROR) << "`output_path` is not a directory";
     return EXIT_FAILURE;
   }
@@ -860,7 +860,7 @@ int RunRotationAverager(int argc, char** argv) {
   }
 
   LOG(INFO) << "Writing reconstruction to " << output_path;
-  reconstruction->Write(output_path.string());
+  reconstruction->Write(output_path);
 
   return EXIT_SUCCESS;
 }

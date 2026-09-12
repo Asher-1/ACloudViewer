@@ -8,6 +8,7 @@
 #pragma once
 
 #include <array>
+#include <filesystem>
 #include <functional>
 #include <memory>
 #include <mutex>
@@ -69,7 +70,7 @@ struct SequentialMatchingOptions {
     int loop_detection_max_num_features = -1;
 
     // Path to the vocabulary tree.
-    std::string vocab_tree_path = retrieval::kDefaultVocabTreeUri;
+    std::filesystem::path vocab_tree_path = retrieval::kDefaultVocabTreeUri;
 
     bool Check() const;
 };
@@ -93,10 +94,10 @@ struct VocabTreeMatchingOptions {
     int max_num_features = -1;
 
     // Path to the vocabulary tree.
-    std::string vocab_tree_path = retrieval::kDefaultVocabTreeUri;
+    std::filesystem::path vocab_tree_path = retrieval::kDefaultVocabTreeUri;
 
     // Optional path to file with specific image names to match.
-    std::string match_list_path = "";
+    std::filesystem::path match_list_path;
 
     bool Check() const;
 };
@@ -134,7 +135,7 @@ struct ImagePairsMatchingOptions {
     int block_size = 1225;
 
     // Path to the file with the matches.
-    std::string match_list_path = "";
+    std::filesystem::path match_list_path;
 
     bool Check() const;
 };
@@ -144,7 +145,7 @@ struct FeaturePairsMatchingOptions {
     bool verify_matches = true;
 
     // Path to the file with the matches.
-    std::string match_list_path = "";
+    std::filesystem::path match_list_path;
 
     bool Check() const;
 };
@@ -422,7 +423,7 @@ class ExhaustiveFeatureMatcher : public Thread {
 public:
     ExhaustiveFeatureMatcher(const ExhaustiveMatchingOptions& options,
                              const SiftMatchingOptions& match_options,
-                             const std::string& database_path);
+                             const std::filesystem::path& database_path);
 
 private:
     void Run() override;
@@ -456,7 +457,7 @@ class SequentialFeatureMatcher : public Thread {
 public:
     SequentialFeatureMatcher(const SequentialMatchingOptions& options,
                              const SiftMatchingOptions& match_options,
-                             const std::string& database_path);
+                             const std::filesystem::path& database_path);
 
 private:
     void Run() override;
@@ -477,7 +478,7 @@ class VocabTreeFeatureMatcher : public Thread {
 public:
     VocabTreeFeatureMatcher(const VocabTreeMatchingOptions& options,
                             const SiftMatchingOptions& match_options,
-                            const std::string& database_path);
+                            const std::filesystem::path& database_path);
 
 private:
     void Run() override;
@@ -495,7 +496,7 @@ class SpatialFeatureMatcher : public Thread {
 public:
     SpatialFeatureMatcher(const SpatialMatchingOptions& options,
                           const SiftMatchingOptions& match_options,
-                          const std::string& database_path);
+                          const std::filesystem::path& database_path);
 
 private:
     void Run() override;
@@ -515,7 +516,7 @@ class TransitiveFeatureMatcher : public Thread {
 public:
     TransitiveFeatureMatcher(const TransitiveMatchingOptions& options,
                              const SiftMatchingOptions& match_options,
-                             const std::string& database_path);
+                             const std::filesystem::path& database_path);
 
 private:
     void Run() override;
@@ -540,7 +541,7 @@ class ImagePairsFeatureMatcher : public Thread {
 public:
     ImagePairsFeatureMatcher(const ImagePairsMatchingOptions& options,
                              const SiftMatchingOptions& match_options,
-                             const std::string& database_path);
+                             const std::filesystem::path& database_path);
 
 private:
     void Run() override;
@@ -571,7 +572,7 @@ class FeaturePairsFeatureMatcher : public Thread {
 public:
     FeaturePairsFeatureMatcher(const FeaturePairsMatchingOptions& options,
                                const SiftMatchingOptions& match_options,
-                               const std::string& database_path);
+                               const std::filesystem::path& database_path);
 
 private:
     const static size_t kCacheSize = 100;

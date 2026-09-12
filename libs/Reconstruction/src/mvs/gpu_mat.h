@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <filesystem>
 #include <fstream>
 #include <iterator>
 #include <memory>
@@ -132,9 +133,9 @@ public:
     // Rotate array in counter-clockwise direction.
     void Rotate(GpuMat<T>* output);
 
-    void Read(const std::string& path);
-    void Write(const std::string& path);
-    void Write(const std::string& path, const size_t slice);
+    void Read(const std::filesystem::path& path);
+    void Write(const std::filesystem::path& path);
+    void Write(const std::filesystem::path& path, const size_t slice);
 
 protected:
     void ComputeCudaConfig();
@@ -409,7 +410,7 @@ void GpuMat<T>::Rotate(GpuMat<T>* output) {
 }
 
 template <typename T>
-void GpuMat<T>::Read(const std::string& path) {
+void GpuMat<T>::Read(const std::filesystem::path& path) {
     std::fstream text_file(path, std::ios::in | std::ios::binary);
     CHECK(text_file.is_open()) << path;
 
@@ -433,7 +434,7 @@ void GpuMat<T>::Read(const std::string& path) {
 }
 
 template <typename T>
-void GpuMat<T>::Write(const std::string& path) {
+void GpuMat<T>::Write(const std::filesystem::path& path) {
     std::vector<T> dest(width_ * height_ * depth_);
     CopyToHost(dest.data(), width_ * sizeof(T));
 
@@ -448,7 +449,7 @@ void GpuMat<T>::Write(const std::string& path) {
 }
 
 template <typename T>
-void GpuMat<T>::Write(const std::string& path, const size_t slice) {
+void GpuMat<T>::Write(const std::filesystem::path& path, const size_t slice) {
     std::vector<T> dest(width_ * height_);
     CUDA_SAFE_CALL(cudaMemcpy2D(
             (void*)dest.data(), width_ * sizeof(T),

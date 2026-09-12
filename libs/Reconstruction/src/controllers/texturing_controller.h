@@ -8,6 +8,7 @@
 #pragma once
 
 #include <atomic>
+#include <filesystem>
 #include <string>
 
 #include "util/threading.h"
@@ -20,10 +21,10 @@ struct TexturingOptions {
     bool verbose = true;
 
     // Textured mesh file path (input)
-    std::string meshed_file_path = "";
+    std::filesystem::path meshed_file_path;
 
     // Textured mesh output path
-    std::string textured_file_path = "";
+    std::filesystem::path textured_file_path;
 
     // COLMAP mesh texture mapping controls.
     double min_cos_normal_angle = 0.1;

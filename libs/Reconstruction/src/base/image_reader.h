@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <filesystem>
 #include <unordered_set>
 
 #include "base/database.h"
@@ -17,10 +18,10 @@ namespace colmap {
 
 struct ImageReaderOptions {
     // Path to database in which to store the extracted data.
-    std::string database_path = "";
+    std::filesystem::path database_path;
 
     // Root path to folder which contains the images.
-    std::string image_path = "";
+    std::filesystem::path image_path;
 
     // Optional root path to folder which contains image masks. For a given
     // image, the corresponding mask must have the same sub-path below this root
@@ -29,7 +30,7 @@ struct ImageReaderOptions {
     // image_path/abc/012.jpg, the mask would be mask_path/abc/012.jpg.png. No
     // features will be extracted in regions where the mask image is black
     // (pixel intensity value 0 in grayscale).
-    std::string mask_path = "";
+    std::filesystem::path mask_path;
 
     // Optional list of images to read. The list must contain the relative path
     // of the images with respect to the image_path.
@@ -63,7 +64,7 @@ struct ImageReaderOptions {
     // Optional path to an image file specifying a mask for all images. No
     // features will be extracted in regions where the mask is black (pixel
     // intensity value 0 in grayscale).
-    std::string camera_mask_path = "";
+    std::filesystem::path camera_mask_path;
 
     bool Check() const;
 };

@@ -769,8 +769,8 @@ void DenseReconstructionWidget::Texturing() {
                 options_->texturing->textured_file_path);
         CreateDirIfNotExists(parent_path);
         std::string name, ext;
-        SplitFileExtension(options_->texturing->textured_file_path, &name,
-                           &ext);
+        SplitFileExtension(options_->texturing->textured_file_path.string(),
+                           &name, &ext);
         // only support obj textured mesh file extention
         if (ext != ".obj" && ext != ".OBJ") {
             options_->texturing->textured_file_path =

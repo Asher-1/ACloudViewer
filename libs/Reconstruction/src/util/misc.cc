@@ -48,18 +48,26 @@ std::string EnsureTrailingSlash(const std::string& str) {
   return str;
 }
 
-bool HasFileExtension(const std::string& file_name, const std::string& ext) {
+bool HasFileExtension(const std::filesystem::path& file_name,
+                      const std::string& ext) {
   CHECK(!ext.empty());
   CHECK_EQ(ext.at(0), '.');
   std::string ext_lower = ext;
   StringToLower(&ext_lower);
-  if (file_name.size() >= ext_lower.size()) {
-    std::string suffix =
-        file_name.substr(file_name.size() - ext_lower.size(), ext_lower.size());
+  const std::string name = file_name.string();
+  if (name.size() >= ext_lower.size()) {
+    std::string suffix = name.substr(name.size() - ext_lower.size(),
+                                     ext_lower.size());
     StringToLower(&suffix);
     if (suffix == ext_lower) return true;
   }
   return false;
+}
+
+std::filesystem::path AddFileExtension(std::filesystem::path path,
+                                       const std::string& ext) {
+  path += ext;
+  return path;
 }
 
 void SplitFileExtension(const std::string& path, std::string* root,
@@ -83,42 +91,55 @@ void SplitFileExtension(const std::string& path, std::string* root,
   }
 }
 
-void FileCopy(const std::string& src_path, const std::string& dst_path,
+void FileCopy(const std::filesystem::path& src_path,
+              const std::filesystem::path& dst_path,
               CopyType type) {
+  // boost::filesystem::path is not constructible from std::filesystem::path
+  // (would require two user-defined conversions), so convert explicitly.
+  const boost::filesystem::path src = src_path.string();
+  const boost::filesystem::path dst = dst_path.string();
   switch (type) {
     case CopyType::COPY:
-      boost::filesystem::copy_file(src_path, dst_path);
+      boost::filesystem::copy_file(src, dst);
       break;
     case CopyType::HARD_LINK:
-      boost::filesystem::create_hard_link(src_path, dst_path);
+      boost::filesystem::create_hard_link(src, dst);
       break;
     case CopyType::SOFT_LINK:
-      boost::filesystem::create_symlink(src_path, dst_path);
+      boost::filesystem::create_symlink(src, dst);
       break;
   }
 }
 
-bool ExistsFile(const std::string& path) {
-  return boost::filesystem::is_regular_file(path);
+bool ExistsFile(const std::filesystem::path& path) {
+  return std::filesystem::is_regular_file(path);
 }
 
-bool ExistsDir(const std::string& path) {
-  return boost::filesystem::is_directory(path);
+bool ExistsDir(const std::filesystem::path& path) {
+  return std::filesystem::is_directory(path);
 }
 
-bool ExistsPath(const std::string& path) {
-  return boost::filesystem::exists(path);
+bool ExistsPath(const std::filesystem::path& path) {
+  return std::filesystem::exists(path);
 }
 
-void CreateDirIfNotExists(const std::string& path) {
-  if (!ExistsDir(path)) {
-    CHECK(boost::filesystem::create_directory(path));
+void CreateDirIfNotExists(const std::filesystem::path& path,
+                          bool recursive) {
+  if (ExistsDir(path)) {
+    return;
+  }
+  if (recursive) {
+    THROW_CHECK(std::filesystem::create_directories(path))
+            << "Could not create directory: " << path;
+  } else {
+    THROW_CHECK(std::filesystem::create_directory(path))
+            << "Could not create directory: " << path;
   }
 }
 
-std::string GetPathBaseName(const std::string& path) {
+std::string GetPathBaseName(const std::filesystem::path& path) {
   const std::vector<std::string> names =
-      StringSplit(StringReplace(path, "\\", "/"), "/");
+      StringSplit(StringReplace(path.string(), "\\", "/"), "/");
   if (names.size() > 1 && names.back() == "") {
     return names[names.size() - 2];
   } else {
@@ -126,19 +147,22 @@ std::string GetPathBaseName(const std::string& path) {
   }
 }
 
-std::string GetParentDir(const std::string& path) {
-  return boost::filesystem::path(path).parent_path().string();
+std::string GetParentDir(const std::filesystem::path& path) {
+  // Preserve the historical boost behavior: parent of "/" is "" rather
+  // than "/" (std::filesystem differs on this edge case).
+  return boost::filesystem::path(path.string()).parent_path().string();
 }
 
-std::string GetRelativePath(const std::string& from, const std::string& to) {
+std::string GetRelativePath(const std::filesystem::path& from,
+                            const std::filesystem::path& to) {
   // This implementation is adapted from:
   // https://stackoverflow.com/questions/10167382
   // A native implementation in boost::filesystem is only available starting
   // from boost version 1.60.
   using namespace boost::filesystem;
 
-  path from_path = canonical(path(from));
-  path to_path = canonical(path(to));
+  path from_path = canonical(path(from.string()));
+  path to_path = canonical(path(to.string()));
 
   // Start at the root path and while they are the same then do nothing then
   // when they first diverge take the entire from path, swap it with '..'
@@ -169,55 +193,49 @@ std::string GetRelativePath(const std::string& from, const std::string& to) {
   return rel_path.string();
 }
 
-std::vector<std::string> GetFileList(const std::string& path) {
+std::vector<std::string> GetFileList(const std::filesystem::path& path) {
   std::vector<std::string> file_list;
-  for (auto it = boost::filesystem::directory_iterator(path);
-       it != boost::filesystem::directory_iterator(); ++it) {
-    if (boost::filesystem::is_regular_file(*it)) {
-      const boost::filesystem::path file_path = *it;
-      file_list.push_back(file_path.string());
+  for (const auto& entry : std::filesystem::directory_iterator(path)) {
+    if (std::filesystem::is_regular_file(entry.path())) {
+      file_list.push_back(entry.path().string());
     }
   }
   return file_list;
 }
 
-std::vector<std::string> GetRecursiveFileList(const std::string& path) {
+std::vector<std::string> GetRecursiveFileList(const std::filesystem::path& path) {
   std::vector<std::string> file_list;
-  for (auto it = boost::filesystem::recursive_directory_iterator(path);
-       it != boost::filesystem::recursive_directory_iterator(); ++it) {
-    if (boost::filesystem::is_regular_file(*it)) {
-      const boost::filesystem::path file_path = *it;
-      file_list.push_back(file_path.string());
+  for (const auto& entry :
+       std::filesystem::recursive_directory_iterator(path)) {
+    if (std::filesystem::is_regular_file(entry.path())) {
+      file_list.push_back(entry.path().string());
     }
   }
   return file_list;
 }
 
-std::vector<std::string> GetDirList(const std::string& path) {
+std::vector<std::string> GetDirList(const std::filesystem::path& path) {
   std::vector<std::string> dir_list;
-  for (auto it = boost::filesystem::directory_iterator(path);
-       it != boost::filesystem::directory_iterator(); ++it) {
-    if (boost::filesystem::is_directory(*it)) {
-      const boost::filesystem::path dir_path = *it;
-      dir_list.push_back(dir_path.string());
+  for (const auto& entry : std::filesystem::directory_iterator(path)) {
+    if (std::filesystem::is_directory(entry.path())) {
+      dir_list.push_back(entry.path().string());
     }
   }
   return dir_list;
 }
 
-std::vector<std::string> GetRecursiveDirList(const std::string& path) {
+std::vector<std::string> GetRecursiveDirList(const std::filesystem::path& path) {
   std::vector<std::string> dir_list;
-  for (auto it = boost::filesystem::recursive_directory_iterator(path);
-       it != boost::filesystem::recursive_directory_iterator(); ++it) {
-    if (boost::filesystem::is_directory(*it)) {
-      const boost::filesystem::path dir_path = *it;
-      dir_list.push_back(dir_path.string());
+  for (const auto& entry :
+       std::filesystem::recursive_directory_iterator(path)) {
+    if (std::filesystem::is_directory(entry.path())) {
+      dir_list.push_back(entry.path().string());
     }
   }
   return dir_list;
 }
 
-size_t GetFileSize(const std::string& path) {
+size_t GetFileSize(const std::filesystem::path& path) {
   std::ifstream file(path, std::ifstream::ate | std::ifstream::binary);
   CHECK(file.is_open()) << path;
   return file.tellg();
@@ -306,7 +324,7 @@ std::vector<double> CSVToVector(const std::string& csv) {
   return values;
 }
 
-std::vector<std::string> ReadTextFileLines(const std::string& path) {
+std::vector<std::string> ReadTextFileLines(const std::filesystem::path& path) {
   std::ifstream file(path);
   CHECK(file.is_open()) << path;
 

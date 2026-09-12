@@ -199,6 +199,47 @@ QLineEdit* OptionsWidget::AddOptionDirPath(std::string* option,
   return line_edit;
 }
 
+QLineEdit* OptionsWidget::AddOptionFilePath(
+        std::filesystem::path* option, const std::string& label_text) {
+  QLineEdit* line_edit = new QLineEdit(this);
+
+  AddOptionRow(label_text, line_edit, option);
+
+  auto SelectPathFunc = [this, line_edit]() {
+    line_edit->setText(QFileDialog::getOpenFileName(this, tr("Select file")));
+  };
+
+  QPushButton* select_button = new QPushButton(tr("Select file"), this);
+  select_button->setFont(font());
+  connect(select_button, &QPushButton::released, this, SelectPathFunc);
+  grid_layout_->addWidget(select_button, grid_layout_->rowCount(), 1);
+
+  options_fspath_.emplace_back(line_edit, option);
+
+  return line_edit;
+}
+
+QLineEdit* OptionsWidget::AddOptionDirPath(
+        std::filesystem::path* option, const std::string& label_text) {
+  QLineEdit* line_edit = new QLineEdit(this);
+
+  AddOptionRow(label_text, line_edit, option);
+
+  auto SelectPathFunc = [this, line_edit]() {
+    line_edit->setText(
+        QFileDialog::getExistingDirectory(this, tr("Select folder")));
+  };
+
+  QPushButton* select_button = new QPushButton(tr("Select folder"), this);
+  select_button->setFont(font());
+  connect(select_button, &QPushButton::released, this, SelectPathFunc);
+  grid_layout_->addWidget(select_button, grid_layout_->rowCount(), 1);
+
+  options_fspath_.emplace_back(line_edit, option);
+
+  return line_edit;
+}
+
 void OptionsWidget::AddSpacer() {
   QLabel* label = new QLabel("", this);
   label->setFont(font());
@@ -237,6 +278,10 @@ void OptionsWidget::ReadOptions() {
   for (auto& option : options_path_) {
     option.first->setText(QString::fromStdString(*option.second));
   }
+
+  for (auto& option : options_fspath_) {
+    option.first->setText(QString::fromStdString(option.second->string()));
+  }
 }
 
 void OptionsWidget::WriteOptions() {
@@ -261,6 +306,10 @@ void OptionsWidget::WriteOptions() {
   }
 
   for (auto& option : options_path_) {
+    *option.second = option.first->text().toUtf8().constData();
+  }
+
+  for (auto& option : options_fspath_) {
     *option.second = option.first->text().toUtf8().constData();
   }
 }

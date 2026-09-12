@@ -8,6 +8,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <filesystem>
 
 #include "base/reconstruction.h"
 
@@ -44,7 +45,7 @@ Eigen::Vector3d EstimateGravityVectorFromImageOrientation(
 Eigen::Matrix3d EstimateManhattanWorldFrame(
         const ManhattanWorldFrameEstimationOptions& options,
         const Reconstruction& reconstruction,
-        const std::string& image_path);
+        const std::filesystem::path& image_path);
 
 // Aligns the reconstruction to the plane defined by running PCA on the 3D
 // points. The model centroid is at the origin of the new coordinate system

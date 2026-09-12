@@ -40,7 +40,7 @@
 
 namespace colmap {
 
-std::vector<PlyPoint> ReadPly(const std::string& path) {
+std::vector<PlyPoint> ReadPly(const std::filesystem::path& path) {
   std::ifstream file(path, std::ios::binary);
   CHECK(file.is_open()) << path;
 
@@ -320,7 +320,7 @@ std::vector<PlyPoint> ReadPly(const std::string& path) {
   return points;
 }
 
-void WriteTextPlyPoints(const std::string& path,
+void WriteTextPlyPoints(const std::filesystem::path& path,
                         const std::vector<PlyPoint>& points,
                         const bool write_normal, const bool write_rgb) {
   std::ofstream file(path);
@@ -366,7 +366,7 @@ void WriteTextPlyPoints(const std::string& path,
   file.close();
 }
 
-void WriteBinaryPlyPoints(const std::string& path,
+void WriteBinaryPlyPoints(const std::filesystem::path& path,
                           const std::vector<PlyPoint>& points,
                           const bool write_normal, const bool write_rgb) {
   std::fstream text_file(path, std::ios::out);
@@ -420,7 +420,7 @@ void WriteBinaryPlyPoints(const std::string& path,
   binary_file.close();
 }
 
-void WriteTextPlyMesh(const std::string& path, const PlyMesh& mesh) {
+void WriteTextPlyMesh(const std::filesystem::path& path, const PlyMesh& mesh) {
   std::fstream file(path, std::ios::out);
   CHECK(file.is_open());
 
@@ -445,7 +445,8 @@ void WriteTextPlyMesh(const std::string& path, const PlyMesh& mesh) {
   }
 }
 
-void WriteBinaryPlyMesh(const std::string& path, const PlyMesh& mesh) {
+void WriteBinaryPlyMesh(const std::filesystem::path& path,
+                        const PlyMesh& mesh) {
   std::fstream text_file(path, std::ios::out);
   CHECK(text_file.is_open());
 
@@ -484,7 +485,7 @@ void WriteBinaryPlyMesh(const std::string& path, const PlyMesh& mesh) {
   binary_file.close();
 }
 
-void WriteTextPlyMesh(const std::string& path,
+void WriteTextPlyMesh(const std::filesystem::path& path,
                       const PlyTexturedMesh& textured_mesh) {
   const PlyMesh& mesh = textured_mesh.mesh;
   const bool has_texcoords = !textured_mesh.face_uvs.empty();
@@ -524,7 +525,7 @@ void WriteTextPlyMesh(const std::string& path,
   }
 }
 
-void WriteBinaryPlyMesh(const std::string& path,
+void WriteBinaryPlyMesh(const std::filesystem::path& path,
                         const PlyTexturedMesh& textured_mesh) {
   const PlyMesh& mesh = textured_mesh.mesh;
   const bool has_texcoords = !textured_mesh.face_uvs.empty();

@@ -220,7 +220,7 @@ void TexturingReconstruction::Run() {
 
     std::string output_prefix;
     std::string output_extension;
-    SplitFileExtension(options_.textured_file_path, &output_prefix,
+    SplitFileExtension(options_.textured_file_path.string(), &output_prefix,
                        &output_extension);
     const std::string output_dir = GetParentDir(output_prefix);
     if (!output_dir.empty()) {

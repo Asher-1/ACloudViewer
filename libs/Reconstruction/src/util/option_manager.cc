@@ -60,9 +60,9 @@ namespace config = boost::program_options;
 namespace colmap {
 
 OptionManager::OptionManager(bool add_project_options) {
-    project_path.reset(new std::string());
-    database_path.reset(new std::string());
-    image_path.reset(new std::string());
+    project_path.reset(new std::filesystem::path());
+    database_path.reset(new std::filesystem::path());
+    image_path.reset(new std::filesystem::path());
 
     global_mapper.reset(new GlobalPipelineOptions());
     gravity_refiner.reset(new GravityRefinerOptions());
@@ -95,7 +95,8 @@ OptionManager::OptionManager(bool add_project_options) {
     AddLogOptions();
 
     if (add_project_options) {
-        desc_->add_options()("project_path", config::value<std::string>());
+        desc_->add_options()("project_path",
+                             config::value<std::filesystem::path>());
     }
 }
 
@@ -1143,7 +1144,7 @@ void OptionManager::Parse(const int argc, char** argv) {
         }
 
         if (vmap.count("project_path")) {
-            *project_path = vmap["project_path"].as<std::string>();
+            *project_path = vmap["project_path"].as<std::filesystem::path>();
             if (!Read(*project_path)) {
                 exit(EXIT_FAILURE);
             }
@@ -1166,7 +1167,7 @@ void OptionManager::Parse(const int argc, char** argv) {
     }
 }
 
-bool OptionManager::Read(const std::string& path) {
+bool OptionManager::Read(const std::filesystem::path& path) {
     config::variables_map vmap;
 
     if (!ExistsFile(path)) {
@@ -1192,13 +1193,13 @@ bool OptionManager::Read(const std::string& path) {
     return Check();
 }
 
-bool OptionManager::ReRead(const std::string& path) {
+bool OptionManager::ReRead(const std::filesystem::path& path) {
     Reset();
     AddAllOptions();
     return Read(path);
 }
 
-void OptionManager::Write(const std::string& path) const {
+void OptionManager::Write(const std::filesystem::path& path) const {
     boost::property_tree::ptree pt;
 
     // First, put all options without a section and then those with a section.
@@ -1230,6 +1231,12 @@ void OptionManager::Write(const std::string& path) const {
         }
     }
 
+    for (const auto& option : options_path_) {
+        if (!StringContains(option.first, ".")) {
+            pt.put(option.first, option.second->string());
+        }
+    }
+
     for (const auto& option : options_bool_) {
         if (StringContains(option.first, ".")) {
             pt.put(option.first, *option.second);
@@ -1254,7 +1261,13 @@ void OptionManager::Write(const std::string& path) const {
         }
     }
 
-    boost::property_tree::write_ini(path, pt);
+    for (const auto& option : options_path_) {
+        if (StringContains(option.first, ".")) {
+            pt.put(option.first, option.second->string());
+        }
+    }
+
+    boost::property_tree::write_ini(path.string(), pt);
 }
 
 void OptionManager::AddTexturingOptions() {

@@ -34,6 +34,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <set>
 
 #include "base/database_cache.h"
 #include "scene/reconstruction_io.h"
@@ -1040,14 +1041,14 @@ double Reconstruction::ComputeMeanReprojectionError() const {
     }
 }
 
-void Reconstruction::Read(const std::string& path) {
-    if (ExistsFile(JoinPaths(path, "cameras.bin")) &&
-        ExistsFile(JoinPaths(path, "images.bin")) &&
-        ExistsFile(JoinPaths(path, "points3D.bin"))) {
+void Reconstruction::Read(const std::filesystem::path& path) {
+    if (ExistsFile(path / "cameras.bin") &&
+        ExistsFile(path / "images.bin") &&
+        ExistsFile(path / "points3D.bin")) {
         ReadBinary(path);
-    } else if (ExistsFile(JoinPaths(path, "cameras.txt")) &&
-               ExistsFile(JoinPaths(path, "images.txt")) &&
-               ExistsFile(JoinPaths(path, "points3D.txt"))) {
+    } else if (ExistsFile(path / "cameras.txt") &&
+               ExistsFile(path / "images.txt") &&
+               ExistsFile(path / "points3D.txt")) {
         ReadText(path);
     } else {
         LOG(FATAL) << "cameras, images, points3D files do not exist at "
@@ -1055,7 +1056,9 @@ void Reconstruction::Read(const std::string& path) {
     }
 }
 
-void Reconstruction::Write(const std::string& path) const { WriteBinary(path); }
+void Reconstruction::Write(const std::filesystem::path& path) const {
+    WriteBinary(path);
+}
 
 void Reconstruction::ReadText(const std::filesystem::path& path) {
     cameras_.clear();
@@ -1065,11 +1068,11 @@ void Reconstruction::ReadText(const std::filesystem::path& path) {
     points3D_.clear();
     ReadCamerasText(*this, path / "cameras.txt");
     const auto rigs_path = path / "rigs.txt";
-    if (ExistsFile(rigs_path.string())) {
+    if (ExistsFile(rigs_path)) {
         ReadRigsText(*this, rigs_path);
     }
     const auto frames_path = path / "frames.txt";
-    if (ExistsFile(frames_path.string())) {
+    if (ExistsFile(frames_path)) {
         ReadFramesText(*this, frames_path);
     }
     ReadImagesText(*this, path / "images.txt");
@@ -1084,11 +1087,11 @@ void Reconstruction::ReadBinary(const std::filesystem::path& path) {
     points3D_.clear();
     ReadCamerasBinary(*this, path / "cameras.bin");
     const auto rigs_path = path / "rigs.bin";
-    if (ExistsFile(rigs_path.string())) {
+    if (ExistsFile(rigs_path)) {
         ReadRigsBinary(*this, rigs_path);
     }
     const auto frames_path = path / "frames.bin";
-    if (ExistsFile(frames_path.string())) {
+    if (ExistsFile(frames_path)) {
         ReadFramesBinary(*this, frames_path);
     }
     ReadImagesBinary(*this, path / "images.bin");
@@ -1096,7 +1099,7 @@ void Reconstruction::ReadBinary(const std::filesystem::path& path) {
 }
 
 void Reconstruction::WriteText(const std::filesystem::path& path) const {
-    THROW_CHECK(ExistsDir(path.string()))
+    THROW_CHECK(ExistsDir(path))
             << "Directory does not exist: " << path;
     WriteRigsText(*this, path / "rigs.txt");
     WriteCamerasText(*this, path / "cameras.txt");
@@ -1106,7 +1109,7 @@ void Reconstruction::WriteText(const std::filesystem::path& path) const {
 }
 
 void Reconstruction::WriteBinary(const std::filesystem::path& path) const {
-    THROW_CHECK(ExistsDir(path.string()))
+    THROW_CHECK(ExistsDir(path))
             << "Directory does not exist: " << path;
     WriteRigsBinary(*this, path / "rigs.bin");
     WriteCamerasBinary(*this, path / "cameras.bin");
@@ -1141,7 +1144,7 @@ std::vector<PlyPoint> Reconstruction::ConvertToPLY() const {
     return ply_points;
 }
 
-void Reconstruction::ImportPLY(const std::string& path) {
+void Reconstruction::ImportPLY(const std::filesystem::path& path) {
     points3D_.clear();
 
     const auto ply_points = ReadPly(path);
@@ -1172,11 +1175,11 @@ void Reconstruction::ImportPLY(const std::vector<PlyPoint>& ply_points) {
 
 
 bool Reconstruction::ExtractColorsForImage(const image_t image_id,
-                                           const std::string& path) {
+                                           const std::filesystem::path& path) {
     const class Image& image = Image(image_id);
 
     Bitmap bitmap;
-    if (!bitmap.Read(JoinPaths(path, image.Name()))) {
+    if (!bitmap.Read(path / image.Name())) {
         return false;
     }
 
@@ -1201,18 +1204,20 @@ bool Reconstruction::ExtractColorsForImage(const image_t image_id,
     return true;
 }
 
-void Reconstruction::ExtractColorsForAllImages(const std::string& path) {
+void Reconstruction::ExtractColorsForAllImages(
+        const std::filesystem::path& path) {
     std::unordered_map<point3D_t, Eigen::Vector3d> color_sums;
     std::unordered_map<point3D_t, size_t> color_counts;
 
     for (size_t i = 0; i < reg_image_ids_.size(); ++i) {
         const class Image& image = Image(reg_image_ids_[i]);
-        const std::string image_path = JoinPaths(path, image.Name());
+        const std::filesystem::path image_path = path / image.Name();
 
         Bitmap bitmap;
         if (!bitmap.Read(image_path)) {
             std::cout << StringPrintf("Could not read image %s at path %s.",
-                                      image.Name().c_str(), image_path.c_str())
+                                      image.Name().c_str(),
+                                      image_path.string().c_str())
                       << std::endl;
             continue;
         }
@@ -1257,21 +1262,21 @@ void Reconstruction::ExtractColorsForAllImages(const std::string& path) {
     }
 }
 
-void Reconstruction::CreateImageDirs(const std::string& path) const {
-    std::unordered_set<std::string> image_dirs;
+void Reconstruction::CreateImageDirs(const std::filesystem::path& path) const {
+    std::set<std::filesystem::path> image_dirs;
     for (const auto& image : images_) {
         const std::vector<std::string> name_split =
                 StringSplit(image.second.Name(), "/");
         if (name_split.size() > 1) {
-            std::string dir = path;
+            std::filesystem::path dir = path;
             for (size_t i = 0; i < name_split.size() - 1; ++i) {
-                dir = JoinPaths(dir, name_split[i]);
+                dir = dir / name_split[i];
                 image_dirs.insert(dir);
             }
         }
     }
     for (const auto& dir : image_dirs) {
-        CreateDirIfNotExists(dir);
+        CreateDirIfNotExists(dir, /*recursive=*/true);
     }
 }
 

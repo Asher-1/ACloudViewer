@@ -266,12 +266,12 @@ bool IncrementalMapperOptions::Check() const {
 
 IncrementalMapperController::IncrementalMapperController(
         const IncrementalMapperOptions* options,
-        const std::string& image_path,
-        const std::string& database_path,
+        const std::filesystem::path& image_path,
+        const std::filesystem::path& database_path,
         ReconstructionManager* reconstruction_manager)
     : options_(options),
-      image_path_(image_path),
-      database_path_(database_path),
+      image_path_(image_path.string()),
+      database_path_(database_path.string()),
       reconstruction_manager_(reconstruction_manager) {
     CHECK(options_->Check());
     RegisterCallback(INITIAL_IMAGE_PAIR_REG_CALLBACK);

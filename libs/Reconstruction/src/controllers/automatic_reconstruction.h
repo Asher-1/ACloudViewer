@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <filesystem>
 #include <string>
 
 #include "base/reconstruction_manager.h"
@@ -28,16 +29,16 @@ public:
 
     struct Options {
         // The path to the workspace folder in which all results are stored.
-        std::string workspace_path;
+        std::filesystem::path workspace_path;
 
         // The path to the image folder which are used as input.
-        std::string image_path;
+        std::filesystem::path image_path;
 
         // The path to the mask folder which are used as input.
-        std::string mask_path;
+        std::filesystem::path mask_path;
 
         // The path to the vocabulary tree for feature matching.
-        std::string vocab_tree_path = retrieval::kDefaultVocabTreeUri;
+        std::filesystem::path vocab_tree_path = retrieval::kDefaultVocabTreeUri;
 
         // The type of input data used to choose optimal mapper settings.
         DataType data_type = DataType::INDIVIDUAL;

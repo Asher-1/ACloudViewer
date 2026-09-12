@@ -117,12 +117,12 @@ bool Bitmap::InterpolateBilinear(const double x, const double y, BitmapColor<flo
   return true;
 }
 
-bool Bitmap::Read(const std::string& path, const bool as_rgb) {
+bool Bitmap::Read(const std::filesystem::path& path, const bool as_rgb) {
   if (!ExistsFile(path)) return false;
   OIIO::ImageSpec config;
   config["oiio:reorient"] = 0;
   config["oiio:UnassociatedAlpha"] = 1;
-  auto input = OIIO::ImageInput::open(path, &config);
+  auto input = OIIO::ImageInput::open(path.string(), &config);
   if (!input) return false;
   const OIIO::ImageSpec spec = input->spec();
   if (spec.width <= 0 || spec.height <= 0 ||
@@ -148,11 +148,11 @@ bool Bitmap::Read(const std::string& path, const bool as_rgb) {
   storage->image_spec.nchannels = file_channels;
   data_ = std::move(storage); width_ = spec.width; height_ = spec.height; channels_ = data_->channels; return true;
 }
-bool Bitmap::Write(const std::string& path, const BitmapFormat format, const int flags) const {
+bool Bitmap::Write(const std::filesystem::path& path, const BitmapFormat format, const int flags) const {
   if (!data_) return false;
-  std::string filename = path;
+  std::string filename = path.string();
   if (format != BitmapFormat::kUnknown &&
-      std::filesystem::path(path).extension().empty()) {
+      path.extension().empty()) {
     filename += format == BitmapFormat::kJpeg
                     ? ".jpg"
                     : format == BitmapFormat::kTiff ? ".tif" : ".png";

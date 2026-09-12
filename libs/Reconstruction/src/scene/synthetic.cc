@@ -875,10 +875,7 @@ void SynthesizeImages(const SyntheticImageOptions& options,
     }
 
     const auto output_image_path = image_path / image.Name();
-    // std::filesystem::path only implicitly converts to std::string on POSIX
-    // (string_type is std::wstring under MSVC), so convert explicitly for the
-    // string-based Bitmap API.
-    if (!bitmap.Write(output_image_path.string())) {
+    if (!bitmap.Write(output_image_path)) {
       LOG(ERROR) << "Failed to write image to " << output_image_path;
     }
   }

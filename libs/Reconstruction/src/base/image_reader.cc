@@ -103,8 +103,9 @@ ImageReader::Status ImageReader::Next(Camera* camera, Image* image,
   image->SetName(image_path);
   image->SetName(StringReplace(image->Name(), "\\", "/"));
   image->SetName(
-      image->Name().substr(options_.image_path.size(),
-                           image->Name().size() - options_.image_path.size()));
+      image->Name().substr(options_.image_path.string().size(),
+                           image->Name().size() -
+                               options_.image_path.string().size()));
 
   const std::string image_folder = GetParentDir(image->Name());
 

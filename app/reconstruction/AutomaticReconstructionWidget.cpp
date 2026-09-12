@@ -685,7 +685,8 @@ void AutomaticReconstructionWidget::Run() {
     }
 
     // Check if vocab_tree_path is a URI and needs to be downloaded
-    std::string vocab_tree_path = options_.vocab_tree_path;
+    // MSVC has no implicit path-to-string conversion, so bridge explicitly.
+    std::string vocab_tree_path = options_.vocab_tree_path.string();
     if (vocab_tree_path.empty()) {
         vocab_tree_path = retrieval::kDefaultVocabTreeUri;
     }
@@ -802,13 +803,15 @@ void AutomaticReconstructionWidget::showEvent(QShowEvent* event) {
     colmap::DA3ReconstructionUiBindings::Sync(da3_ui_controls_);
 
     // Double-check: if UI is still empty after ReadOptions, set it explicitly
-    // This handles the case where options_.vocab_tree_path was empty before
-    for (auto& option : options_path_) {
+    // This handles the case where options_.vocab_tree_path was empty before.
+    // vocab_tree_path registers through the std::filesystem::path overload,
+    // so it lives in options_fspath_ rather than options_path_.
+    for (auto& option : options_fspath_) {
         if (option.second == &options_.vocab_tree_path) {
             if (option.first->text().isEmpty() &&
                 !options_.vocab_tree_path.empty()) {
-                option.first->setText(
-                        QString::fromStdString(options_.vocab_tree_path));
+                option.first->setText(QString::fromStdString(
+                        options_.vocab_tree_path.string()));
             }
             break;
         }

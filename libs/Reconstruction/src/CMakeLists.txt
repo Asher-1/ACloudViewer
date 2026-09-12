@@ -148,11 +148,11 @@ if (TESTS_ENABLED)
     set(RECONSTRUCTION_CAMERA_RIG_PARITY_TESTS
         base/camera_test
         base/projection_test
-        base/camera_rig_test
+        base/rig_test
         estimators/essential_matrix_test
         estimators/two_view_geometry_test)
     set(RECONSTRUCTION_CAMERA_RIG_PARITY_DEPS
-        camera_test projection_test camera_rig_test essential_matrix_test
+        camera_test projection_test rig_test essential_matrix_test
         two_view_geometry_test)
     if (RECONSTRUCTION_FETCH_POSELIB)
         list(APPEND RECONSTRUCTION_CAMERA_RIG_PARITY_TESTS

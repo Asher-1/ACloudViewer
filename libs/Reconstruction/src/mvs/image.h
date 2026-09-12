@@ -8,6 +8,7 @@
 #pragma once
 
 #include <cstdint>
+#include <filesystem>
 #include <fstream>
 #include <set>
 #include <string>
@@ -22,7 +23,7 @@ namespace mvs {
 class Image {
 public:
     Image();
-    Image(const std::string& path,
+    Image(const std::filesystem::path& path,
           const size_t width,
           const size_t height,
           const float* K,

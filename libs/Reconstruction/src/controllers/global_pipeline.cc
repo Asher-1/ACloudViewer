@@ -249,7 +249,7 @@ void GlobalPipeline::Run() {
       // Fork note: the fork's ExtractColorsForAllImages has no num_threads
       // argument yet.
       reconstruction_manager_->Get(i).ExtractColorsForAllImages(
-          options_.image_path.string());
+          options_.image_path);
     }
   }
 

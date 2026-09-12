@@ -650,7 +650,7 @@ void StereoFusion::Fuse(const int thread_id,
 }
 
 void WritePointsVisibility(
-        const std::string& path,
+        const std::filesystem::path& path,
         const std::vector<std::vector<int>>& points_visibility) {
     std::fstream file(path, std::ios::out | std::ios::binary);
     CHECK(file.is_open()) << path;
@@ -665,8 +665,8 @@ void WritePointsVisibility(
     }
 }
 
-std::vector<std::vector<int>> ReadPointsVisibility(const std::string& path,
-                                                   size_t num_points) {
+std::vector<std::vector<int>> ReadPointsVisibility(
+        const std::filesystem::path& path, size_t num_points) {
     std::fstream file(path, std::ios::in | std::ios::binary);
     CHECK(file.is_open()) << path;
 

@@ -293,11 +293,13 @@ Image ReadImageRow(sqlite3_stmt* sql_stmt) {
 }  // namespace
 Database::Database() : database_(nullptr) {}
 
-Database::Database(const std::string& path) : Database() { Open(path); }
+Database::Database(const std::filesystem::path& path) : Database() {
+  Open(path);
+}
 
 Database::~Database() { Close(); }
 
-void Database::Open(const std::string& path) {
+void Database::Open(const std::filesystem::path& path) {
   Close();
 
   // SQLITE_OPEN_NOMUTEX specifies that the connection should not have a
@@ -305,7 +307,7 @@ void Database::Open(const std::string& path) {
   // Modifications to the database will still be serialized, but multiple
   // connections can read concurrently.
   SQLITE3_CALL(sqlite3_open_v2(
-      path.c_str(), &database_,
+      path.string().c_str(), &database_,
       SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_NOMUTEX,
       nullptr));
 

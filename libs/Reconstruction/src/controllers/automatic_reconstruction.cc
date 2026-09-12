@@ -487,7 +487,7 @@ AutomaticReconstructionController::AutomaticReconstructionController(
       *option_manager_.database_path));
 
   // Resolve vocab_tree_path: use default if empty, and download/cache if URI
-  std::string resolved_vocab_tree_path = options_.vocab_tree_path;
+  std::string resolved_vocab_tree_path = options_.vocab_tree_path.string();
   if (resolved_vocab_tree_path.empty()) {
     resolved_vocab_tree_path = retrieval::kDefaultVocabTreeUri;
   }
@@ -754,7 +754,7 @@ void AutomaticReconstructionController::RunDA3SparseMapper() {
       const std::string freshness_root =
           da3_unified_undistorted_ && synced_undistorted
               ? JoinPaths(options_.workspace_path, "dense", "0", "images")
-              : options_.image_path;
+              : options_.image_path.string();
       if (!DA3OutputsAreStale(freshness_root, sparse_marker,
                               options_.da3_force_recompute)) {
         RECON_LOG_WARN(
@@ -825,7 +825,9 @@ void AutomaticReconstructionController::RunDA3SparseMapper() {
     }
   }
 
-  RECON_LOG_DEBUG("DA3 sparse: model_path=%s  image_path=%s\n", da3_config.model_path.c_str(), options_.image_path.c_str());
+  RECON_LOG_DEBUG("DA3 sparse: model_path=%s  image_path=%s\n",
+                  da3_config.model_path.c_str(),
+                  options_.image_path.string().c_str());
 
   DA3DepthController da3_controller(
       da3_config, options_.image_path, options_.workspace_path);
@@ -1034,7 +1036,8 @@ void AutomaticReconstructionController::RunDenseMapper() {
     const bool fusion_freshness_root_is_undist =
         use_da3_stereo_maps_ && ExistsDir(undist_images);
     const std::string fusion_freshness_root =
-        fusion_freshness_root_is_undist ? undist_images : options_.image_path;
+        fusion_freshness_root_is_undist ? undist_images
+                                        : options_.image_path.string();
 
     if (options_.da3_force_recompute) {
       RemovePathIfExists(fused_path);

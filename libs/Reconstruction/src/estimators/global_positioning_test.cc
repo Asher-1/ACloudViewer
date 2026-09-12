@@ -47,7 +47,7 @@ namespace {
 TEST(GlobalPositioning, Nominal) {
   const auto database_path = CreateTestDir() / "database.db";
 
-  auto database = std::make_unique<Database>(database_path.string());
+  auto database = std::make_unique<Database>(database_path);
   Reconstruction gt_reconstruction;
   SyntheticDatasetOptions synthetic_dataset_options;
   synthetic_dataset_options.num_rigs = 1;
@@ -97,7 +97,7 @@ TEST(GlobalPositioning, Nominal) {
 TEST(GlobalPositioning, MultiCameraRig) {
   const auto database_path = CreateTestDir() / "database.db";
 
-  auto database = std::make_unique<Database>(database_path.string());
+  auto database = std::make_unique<Database>(database_path);
   Reconstruction gt_reconstruction;
   SyntheticDatasetOptions synthetic_dataset_options;
   synthetic_dataset_options.num_rigs = 2;
@@ -148,7 +148,7 @@ TEST(GlobalPositioning, MultiCameraRig) {
 TEST(GlobalPositioning, RefineSensorFromRigFalsePreservesRig) {
   const auto database_path = CreateTestDir() / "database.db";
 
-  auto database = std::make_unique<Database>(database_path.string());
+  auto database = std::make_unique<Database>(database_path);
   Reconstruction gt_reconstruction;
   // Multi-camera rig so the sensor offsets are non-trivial — both
   // rotation and translation must round-trip.

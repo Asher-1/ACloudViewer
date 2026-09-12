@@ -9,6 +9,7 @@
 
 #include <Eigen/Core>
 #include <boost/heap/fibonacci_heap.hpp>
+#include <filesystem>
 #include <functional>
 
 #include "FLANN/flann.hpp"
@@ -132,8 +133,8 @@ public:
 
     // Read and write the visual index. This can be done for an index with and
     // without indexed images.
-    void Read(const std::string& path);
-    void Write(const std::string& path);
+    void Read(const std::filesystem::path& path);
+    void Write(const std::filesystem::path& path);
 
 private:
     // Quantize the descriptor space into visual words.
@@ -547,7 +548,7 @@ void VisualIndex<kDescType, kDescDim, kEmbeddingDim>::Build(
 
 template <typename kDescType, int kDescDim, int kEmbeddingDim>
 void VisualIndex<kDescType, kDescDim, kEmbeddingDim>::Read(
-        const std::string& path) {
+        const std::filesystem::path& path) {
     long int file_offset = 0;
 
     // Read the visual words.
@@ -575,7 +576,7 @@ void VisualIndex<kDescType, kDescDim, kEmbeddingDim>::Read(
             flann::AutotunedIndex<flann::L2<kDescType>>(visual_words_);
 
     {
-        FILE* fin = fopen(path.c_str(), "rb");
+        FILE* fin = fopen(path.string().c_str(), "rb");
         CHECK_NOTNULL(fin);
         fseek(fin, file_offset, SEEK_SET);
         visual_word_index_.loadIndex(fin);
@@ -598,7 +599,7 @@ void VisualIndex<kDescType, kDescDim, kEmbeddingDim>::Read(
 
 template <typename kDescType, int kDescDim, int kEmbeddingDim>
 void VisualIndex<kDescType, kDescDim, kEmbeddingDim>::Write(
-        const std::string& path) {
+        const std::filesystem::path& path) {
     // Write the visual words.
 
     {
@@ -615,7 +616,7 @@ void VisualIndex<kDescType, kDescDim, kEmbeddingDim>::Write(
     // Write the visual words search index.
 
     {
-        FILE* fout = fopen(path.c_str(), "ab");
+        FILE* fout = fopen(path.string().c_str(), "ab");
         CHECK_NOTNULL(fout);
         visual_word_index_.saveIndex(fout);
         fclose(fout);
