@@ -29,6 +29,7 @@
 //
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
+#include "estimators/two_view_geometry.h"
 #include "sfm/incremental_mapper.h"
 
 #include <array>
@@ -108,9 +109,9 @@ void IncrementalMapper::BeginReconstruction(Reconstruction* reconstruction) {
     CHECK(reconstruction_ == nullptr);
     reconstruction_ = reconstruction;
     reconstruction_->Load(*database_cache_);
-    reconstruction_->SetUp(&database_cache_->CorrespondenceGraph());
+    reconstruction_->SetUp(database_cache_->CorrespondenceGraph().get());
     triangulator_.reset(new IncrementalTriangulator(
-            &database_cache_->CorrespondenceGraph(), reconstruction));
+            database_cache_->CorrespondenceGraph().get(), reconstruction));
 
     num_shared_reg_images_ = 0;
     num_reg_images_per_camera_.clear();
@@ -289,8 +290,12 @@ bool IncrementalMapper::RegisterInitialImagePair(const Options& options,
 
     image1.Qvec() = ComposeIdentityQuaternion();
     image1.Tvec() = Eigen::Vector3d(0, 0, 0);
-    image2.Qvec() = prev_init_two_view_geometry_.qvec;
-    image2.Tvec() = prev_init_two_view_geometry_.tvec;
+    if (prev_init_two_view_geometry_.cam2_from_cam1) {
+        const Eigen::Quaterniond& q =
+                prev_init_two_view_geometry_.cam2_from_cam1->rotation();
+        image2.Qvec() = Eigen::Vector4d(q.w(), q.x(), q.y(), q.z());
+        image2.Tvec() = prev_init_two_view_geometry_.cam2_from_cam1->translation();
+    }
 
     const Eigen::Matrix3x4d proj_matrix1 = image1.ProjectionMatrix();
     const Eigen::Matrix3x4d proj_matrix2 = image2.ProjectionMatrix();
@@ -307,10 +312,10 @@ bool IncrementalMapper::RegisterInitialImagePair(const Options& options,
     RegisterImageEvent(image_id2);
 
     const CorrespondenceGraph& correspondence_graph =
-            database_cache_->CorrespondenceGraph();
-    const FeatureMatches& corrs =
-            correspondence_graph.FindCorrespondencesBetweenImages(image_id1,
-                                                                  image_id2);
+            *database_cache_->CorrespondenceGraph();
+    FeatureMatches corrs;
+    correspondence_graph.ExtractMatchesBetweenImages(image_id1, image_id2,
+                                                     corrs);
 
     const double min_tri_angle_rad = DegToRad(options.init_min_tri_angle);
 
@@ -376,10 +381,10 @@ bool IncrementalMapper::RegisterNextImage(const Options& options,
          ++point2D_idx) {
         const Point2D& point2D = image.Point2D(point2D_idx);
         const CorrespondenceGraph& correspondence_graph =
-                database_cache_->CorrespondenceGraph();
-        const std::vector<CorrespondenceGraph::Correspondence> corrs =
-                correspondence_graph.FindTransitiveCorrespondences(
-                        image_id, point2D_idx, kCorrTransitivity);
+                *database_cache_->CorrespondenceGraph();
+        std::vector<CorrespondenceGraph::Correspondence> corrs;
+        correspondence_graph.ExtractTransitiveCorrespondences(
+                image_id, point2D_idx, kCorrTransitivity, &corrs);
 
         std::unordered_set<point3D_t> point3D_ids;
 
@@ -734,41 +739,6 @@ bool IncrementalMapper::AdjustGlobalBundle(
     return true;
 }
 
-#ifdef PBA_ENABLED
-bool IncrementalMapper::AdjustParallelGlobalBundle(
-        const BundleAdjustmentOptions& ba_options,
-        const ParallelBundleAdjuster::Options& parallel_ba_options) {
-    CHECK_NOTNULL(reconstruction_);
-
-    const std::vector<image_t>& reg_image_ids = reconstruction_->RegImageIds();
-
-    CHECK_GE(reg_image_ids.size(), 2)
-            << "At least two images must be registered for global "
-               "bundle-adjustment";
-
-    // Avoid degeneracies in bundle adjustment.
-    reconstruction_->FilterObservationsWithNegativeDepth();
-
-    // Configure bundle adjustment.
-    BundleAdjustmentConfig ba_config;
-    for (const image_t image_id : reg_image_ids) {
-        ba_config.AddImage(image_id);
-    }
-
-    // Run bundle adjustment.
-    ParallelBundleAdjuster bundle_adjuster(parallel_ba_options, ba_options,
-                                           ba_config);
-    if (!bundle_adjuster.Solve(reconstruction_)) {
-        return false;
-    }
-
-    // Normalize scene for numerical stability and
-    // to avoid large scale changes in viewer.
-    reconstruction_->Normalize();
-
-    return true;
-}
-#endif
 
 size_t IncrementalMapper::FilterImages(const Options& options) {
     CHECK_NOTNULL(reconstruction_);
@@ -895,7 +865,7 @@ std::vector<image_t> IncrementalMapper::FindFirstInitialImage(
 std::vector<image_t> IncrementalMapper::FindSecondInitialImage(
         const Options& options, const image_t image_id1) const {
     const CorrespondenceGraph& correspondence_graph =
-            database_cache_->CorrespondenceGraph();
+            *database_cache_->CorrespondenceGraph();
 
     // Collect images that are connected to the first seed image and have
     // not been registered before in other reconstructions.
@@ -903,11 +873,14 @@ std::vector<image_t> IncrementalMapper::FindSecondInitialImage(
     std::unordered_map<image_t, point2D_t> num_correspondences;
     for (point2D_t point2D_idx = 0; point2D_idx < image1.NumPoints2D();
          ++point2D_idx) {
-        for (const auto& corr :
-             correspondence_graph.FindCorrespondences(image_id1, point2D_idx)) {
-            if (num_registrations_.count(corr.image_id) == 0 ||
-                num_registrations_.at(corr.image_id) == 0) {
-                num_correspondences[corr.image_id] += 1;
+        const auto corr_range =
+                correspondence_graph.FindCorrespondences(image_id1,
+                                                         point2D_idx);
+        for (const CorrespondenceGraph::Correspondence* corr = corr_range.beg;
+             corr < corr_range.end; ++corr) {
+            if (num_registrations_.count(corr->image_id) == 0 ||
+                num_registrations_.at(corr->image_id) == 0) {
+                num_correspondences[corr->image_id] += 1;
             }
         }
     }
@@ -1188,10 +1161,10 @@ bool IncrementalMapper::EstimateInitialTwoViewGeometry(
     const Camera& camera2 = database_cache_->Camera(image2.CameraId());
 
     const CorrespondenceGraph& correspondence_graph =
-            database_cache_->CorrespondenceGraph();
-    const FeatureMatches matches =
-            correspondence_graph.FindCorrespondencesBetweenImages(image_id1,
-                                                                  image_id2);
+            *database_cache_->CorrespondenceGraph();
+    FeatureMatches matches;
+    correspondence_graph.ExtractMatchesBetweenImages(image_id1, image_id2,
+                                                     matches);
 
     std::vector<Eigen::Vector2d> points1;
     points1.reserve(image1.NumPoints2D());
@@ -1206,20 +1179,22 @@ bool IncrementalMapper::EstimateInitialTwoViewGeometry(
     }
 
     TwoViewGeometry two_view_geometry;
-    TwoViewGeometry::Options two_view_geometry_options;
+    TwoViewGeometryOptions two_view_geometry_options;
     two_view_geometry_options.ransac_options.min_num_trials = 30;
     two_view_geometry_options.ransac_options.max_error = options.init_max_error;
-    two_view_geometry.EstimateCalibrated(camera1, points1, camera2, points2,
-                                         matches, two_view_geometry_options);
-
-    if (!two_view_geometry.EstimateRelativePose(camera1, points1, camera2,
-                                                points2)) {
+    // The upstream estimator folds the relative-pose decomposition into the
+    // estimation, so cam2_from_cam1 carries what the legacy member call
+    // EstimateRelativePose produced.
+    two_view_geometry = EstimateTwoViewGeometry(camera1, points1, camera2,
+                                                points2, matches,
+                                                two_view_geometry_options);
+    if (!two_view_geometry.cam2_from_cam1) {
         return false;
     }
 
     if (static_cast<int>(two_view_geometry.inlier_matches.size()) >=
                 options.init_min_num_inliers &&
-        std::abs(two_view_geometry.tvec.z()) <
+        std::abs(two_view_geometry.cam2_from_cam1->translation().z()) <
                 options.init_max_forward_motion &&
         two_view_geometry.tri_angle > DegToRad(options.init_min_tri_angle)) {
         prev_init_image_pair_id_ = image_pair_id;

@@ -41,9 +41,11 @@
 #include "controllers/incremental_mapper.h"
 #include "controllers/texturing_controller.h"
 #include "feature/extraction.h"
+#include "feature/loma.h"
 #include "feature/matching.h"
 #include "mvs/da3_fusion.h"
 #include "mvs/fusion.h"
+#include "mvs/advancing_front_meshing.h"
 #include "mvs/meshing.h"
 #include "mvs/patch_match.h"
 #include "util/download.h"
@@ -452,15 +454,40 @@ AutomaticReconstructionController::AutomaticReconstructionController(
   option_manager_.mapper->ba_gpu_index = options_.gpu_index;
   option_manager_.bundle_adjustment->gpu_index = options_.gpu_index;
 
-  feature_extractor_.reset(new SiftFeatureExtractor(
-      reader_options, *option_manager_.sift_extraction));
+  const bool use_loma = option_manager_.sift_extraction->use_loma ||
+                        !option_manager_.sift_extraction->loma_detector_model_path.empty() ||
+                        !option_manager_.sift_extraction->loma_descriptor_model_path.empty();
+  if (use_loma) {
+    LomaExtractionOptions loma_options;
+    loma_options.detector_model_path =
+        option_manager_.sift_extraction->loma_detector_model_path;
+    loma_options.descriptor_model_path =
+        option_manager_.sift_extraction->loma_descriptor_model_path;
+    loma_options.device = option_manager_.sift_extraction->loma_device;
+    loma_options.max_num_features =
+        option_manager_.sift_extraction->max_num_features;
+    loma_options.descriptor_type = FeatureDescriptorType::kLomaG;
+    ResolveDefaultLomaModelPaths(&loma_options);
+    option_manager_.sift_matching->use_loma = true;
+    if (option_manager_.sift_matching->loma_matcher_model_path.empty()) {
+      LomaMatchingOptions loma_matching_options;
+      ResolveDefaultLomaModelPaths(&loma_matching_options);
+      option_manager_.sift_matching->loma_matcher_model_path =
+          loma_matching_options.matcher_model_path;
+    }
+    feature_extractor_.reset(new LomaFeatureExtractor(reader_options,
+                                                       loma_options));
+  } else {
+    feature_extractor_.reset(new SiftFeatureExtractor(
+        reader_options, *option_manager_.sift_extraction));
+  }
 
   exhaustive_matcher_.reset(new ExhaustiveFeatureMatcher(
       *option_manager_.exhaustive_matching, *option_manager_.sift_matching,
       *option_manager_.database_path));
 
   // Resolve vocab_tree_path: use default if empty, and download/cache if URI
-  std::string resolved_vocab_tree_path = options_.vocab_tree_path;
+  std::string resolved_vocab_tree_path = options_.vocab_tree_path.string();
   if (resolved_vocab_tree_path.empty()) {
     resolved_vocab_tree_path = retrieval::kDefaultVocabTreeUri;
   }
@@ -727,7 +754,7 @@ void AutomaticReconstructionController::RunDA3SparseMapper() {
       const std::string freshness_root =
           da3_unified_undistorted_ && synced_undistorted
               ? JoinPaths(options_.workspace_path, "dense", "0", "images")
-              : options_.image_path;
+              : options_.image_path.string();
       if (!DA3OutputsAreStale(freshness_root, sparse_marker,
                               options_.da3_force_recompute)) {
         RECON_LOG_WARN(
@@ -798,7 +825,9 @@ void AutomaticReconstructionController::RunDA3SparseMapper() {
     }
   }
 
-  RECON_LOG_DEBUG("DA3 sparse: model_path=%s  image_path=%s\n", da3_config.model_path.c_str(), options_.image_path.c_str());
+  RECON_LOG_DEBUG("DA3 sparse: model_path=%s  image_path=%s\n",
+                  da3_config.model_path.c_str(),
+                  options_.image_path.string().c_str());
 
   DA3DepthController da3_controller(
       da3_config, options_.image_path, options_.workspace_path);
@@ -999,13 +1028,16 @@ void AutomaticReconstructionController::RunDenseMapper() {
       meshing_path = JoinPaths(dense_path, "meshed-poisson.ply");
     } else if (options_.mesher == Mesher::DELAUNAY) {
       meshing_path = JoinPaths(dense_path, "meshed-delaunay.ply");
+    } else if (options_.mesher == Mesher::ADVANCING_FRONT) {
+      meshing_path = JoinPaths(dense_path, "meshed-advancing-front.ply");
     }
 
     const std::string undist_images = JoinPaths(dense_path, "images");
     const bool fusion_freshness_root_is_undist =
         use_da3_stereo_maps_ && ExistsDir(undist_images);
     const std::string fusion_freshness_root =
-        fusion_freshness_root_is_undist ? undist_images : options_.image_path;
+        fusion_freshness_root_is_undist ? undist_images
+                                        : options_.image_path.string();
 
     if (options_.da3_force_recompute) {
       RemovePathIfExists(fused_path);
@@ -1196,8 +1228,20 @@ void AutomaticReconstructionController::RunDenseMapper() {
       } else {
         const int num_reg_images =
             reconstruction_manager_->Get(i).NumRegImages();
-        auto fusion_options = ApplyDA3ColmapStereoFusionProfile(
-            *option_manager_.stereo_fusion, num_reg_images, options_.quality);
+        auto fusion_options = *option_manager_.stereo_fusion;
+        if (use_da3_stereo_maps_ || da3_patchmatch_refine_) {
+          // DA3/hybrid pipelines need the relaxed profile to tolerate metric
+          // priors and sparse-view depth maps. Native COLMAP must retain the
+          // upstream StereoFusion defaults for reproducible GT alignment.
+          fusion_options = ApplyDA3ColmapStereoFusionProfile(
+              *option_manager_.stereo_fusion, num_reg_images, options_.quality);
+        } else {
+          // Match COLMAP's automatic_reconstruction.cc exactly for native
+          // COLMAP PatchMatch: with N registered views, at most N + 1 depth
+          // observations are required for a fused point.
+          fusion_options.min_num_pixels =
+              std::min(num_reg_images + 1, fusion_options.min_num_pixels);
+        }
         fusion_options.num_threads = options_.num_threads;
         const bool fuse_geometric_maps =
             da3_patchmatch_refine_ && !da3_skip_geometric_refine_ &&
@@ -1418,6 +1462,31 @@ void AutomaticReconstructionController::RunDenseMapper() {
         return;
 
 #endif  // CGAL_ENABLED
+      } else if (options_.mesher == Mesher::ADVANCING_FRONT) {
+#ifdef CGAL_ENABLED
+        RECON_LOG_DEBUG("Starting advancing-front meshing (this step cannot "
+                        "be interrupted until it finishes)...\n");
+        mvs::AdvancingFrontMeshing(*option_manager_.advancing_front_meshing,
+                                   dense_path, meshing_path);
+#else
+        RECON_LOG_WARN("WARNING: Skipping advancing-front meshing because "
+                       "CGAL is not available.\n");
+        return;
+#endif
+      }
+
+      if (ExistsFile(meshing_path) && options_.mesh_post_processing.enabled) {
+        mvs::MeshPostProcessingStats stats;
+        if (!mvs::PostProcessMeshFile(meshing_path, meshing_path,
+                                      options_.mesh_post_processing, &stats)) {
+          RECON_LOG_WARN("WARNING: Mesh post-processing failed; keeping the "
+                         "raw mesher output.\n");
+        } else {
+          RECON_LOG_INFO("Mesh post-processing: %zu -> %zu vertices, %zu -> "
+                         "%zu faces.\n",
+                         stats.input_vertices, stats.output_vertices,
+                         stats.input_faces, stats.output_faces);
+        }
       }
       
       // Hook for derived classes
@@ -1446,21 +1515,23 @@ void AutomaticReconstructionController::RunDenseMapper() {
           option_manager_.texturing->mesh_source = "poisson";
         } else if (options_.mesher == Mesher::DELAUNAY) {
           option_manager_.texturing->mesh_source = "delaunay";
+        } else if (options_.mesher == Mesher::ADVANCING_FRONT) {
+          option_manager_.texturing->mesh_source = "advancing_front";
         }
 
-        TexturingReconstruction texturing(
-                *option_manager_.texturing,
-                reconstruction_manager_->Get(i),
-                *option_manager_.image_path, dense_path);
+        TexturingReconstruction texturing(*option_manager_.texturing,
+                                          dense_path);
         active_thread_ = &texturing;
         texturing.Start();
         texturing.Wait();
         active_thread_ = nullptr;
 
-        if (ExistsFile(textured_path)) {
+        if (texturing.IsSuccess() && ExistsFile(textured_path)) {
           RECON_LOG_DEBUG("Writing textured mesh: %s\n", textured_path.c_str());
           // Hook for derived classes
           OnTexturedMeshGenerated(i, textured_path);
+        } else {
+          RECON_LOG_ERROR("Mesh texturing failed: %s\n", textured_path.c_str());
         }
       } else if (ExistsFile(textured_path)) {
         // Textured mesh already exists, notify derived classes

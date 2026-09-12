@@ -32,6 +32,7 @@
 #include "base/essential_matrix.h"
 
 #include <array>
+#include <limits>
 
 #include "base/pose.h"
 #include "estimators/pose.h"
@@ -214,6 +215,158 @@ bool RefineEssentialMatrix(const ceres::Solver::Options& options,
   *E = EssentialMatrixFromPose(rot_mat, tvec);
 
   return true;
+}
+
+double ComputeSquaredTangentSampsonError(const CamRayWithJac& cam_ray1,
+                                         const CamRayWithJac& cam_ray2,
+                                         const Eigen::Matrix3d& E) {
+  const Eigen::Vector3d e_ray1 = E * cam_ray1.ray;
+  const Eigen::Vector3d et_ray2 = E.transpose() * cam_ray2.ray;
+  const double residual = cam_ray2.ray.dot(e_ray1);
+  const Eigen::Vector2d grad1 = cam_ray1.jacobian.transpose() * et_ray2;
+  const Eigen::Vector2d grad2 = cam_ray2.jacobian.transpose() * e_ray1;
+  const double denominator = grad1.squaredNorm() + grad2.squaredNorm();
+  if (!(denominator > std::numeric_limits<double>::epsilon()) ||
+      !std::isfinite(denominator)) {
+    return std::numeric_limits<double>::max();
+  }
+  return residual * residual / denominator;
+}
+
+void ComputeSquaredTangentSampsonError(
+        const std::vector<CamRayWithJac>& cam_rays1,
+        const std::vector<CamRayWithJac>& cam_rays2,
+        const Eigen::Matrix3d& E,
+        std::vector<double>* residuals) {
+  CHECK_EQ(cam_rays1.size(), cam_rays2.size());
+  residuals->resize(cam_rays1.size());
+  for (size_t i = 0; i < cam_rays1.size(); ++i) {
+    (*residuals)[i] =
+            ComputeSquaredTangentSampsonError(cam_rays1[i], cam_rays2[i], E);
+  }
+}
+
+
+// ---- Upstream-parity additions (COLMAP 4.x geometry/essential_matrix.cc) ----
+Eigen::Matrix3d FundamentalFromEssentialMatrix(const Eigen::Matrix3d& K2,
+                                               const Eigen::Matrix3d& E,
+                                               const Eigen::Matrix3d& K1) {
+  return K2.transpose().inverse() * E * K1.inverse();
+}
+
+Eigen::Matrix3d EssentialFromFundamentalMatrix(const Eigen::Matrix3d& K2,
+                                               const Eigen::Matrix3d& F,
+                                               const Eigen::Matrix3d& K1) {
+  return K2.transpose() * F * K1;
+}
+
+
+
+
+
+Eigen::Matrix3d EssentialMatrixFromPose(const Rigid3d& cam2_from_cam1) {
+    return EssentialMatrixFromPose(cam2_from_cam1.rotation().toRotationMatrix(),
+                                   cam2_from_cam1.translation());
+}
+
+void PoseFromEssentialMatrix(const Eigen::Matrix3d& E,
+                             const std::vector<Eigen::Vector3d>& cam_rays1,
+                             const std::vector<Eigen::Vector3d>& cam_rays2,
+                             Rigid3d* cam2_from_cam1,
+                             std::vector<int>* valid_indices) {
+  THROW_CHECK_EQ(cam_rays1.size(), cam_rays2.size());
+
+  Eigen::Matrix3d R1;
+  Eigen::Matrix3d R2;
+  Eigen::Vector3d t;
+  DecomposeEssentialMatrix(E, &R1, &R2, &t);
+
+  const Eigen::Quaterniond quat1(R1);
+  const Eigen::Quaterniond quat2(R2);
+
+  // Generate all possible pose combinations.
+  const std::array<Rigid3d, 4> cams2_from_cams1{{Rigid3d(quat1, t),
+                                                 Rigid3d(quat2, t),
+                                                 Rigid3d(quat1, -t),
+                                                 Rigid3d(quat2, -t)}};
+
+  valid_indices->clear();
+  std::vector<int> tentative_valid_indices;
+  for (size_t i = 0; i < cams2_from_cams1.size(); ++i) {
+    CheckCheirality(
+        cams2_from_cams1[i], cam_rays1, cam_rays2, &tentative_valid_indices);
+    if (tentative_valid_indices.size() >= valid_indices->size()) {
+      *cam2_from_cam1 = cams2_from_cams1[i];
+      std::swap(*valid_indices, tentative_valid_indices);
+    }
+  }
+}
+
+
+double ComputeSquaredSampsonError(const Eigen::Vector3d& point1,
+                                  const Eigen::Vector3d& point2,
+                                  const Eigen::Matrix3d& E) {
+  const Eigen::Vector3d epipolar_line1 = E * point1;
+  const double num = point2.dot(epipolar_line1);
+  const Eigen::Vector4d denom(point2.dot(E.col(0)),
+                              point2.dot(E.col(1)),
+                              epipolar_line1.x(),
+                              epipolar_line1.y());
+  const double denom_sq_norm = denom.squaredNorm();
+  if (denom_sq_norm == 0) {
+    return std::numeric_limits<double>::max();
+  }
+  return num * num / denom_sq_norm;
+}
+
+void ComputeSquaredSampsonError(const std::vector<Eigen::Vector3d>& points1,
+                                const std::vector<Eigen::Vector3d>& points2,
+                                const Eigen::Matrix3d& E,
+                                std::vector<double>* residuals) {
+  const size_t num_points1 = points1.size();
+  THROW_CHECK_EQ(num_points1, points2.size());
+  residuals->resize(num_points1);
+  for (size_t i = 0; i < num_points1; ++i) {
+    (*residuals)[i] = ComputeSquaredSampsonError(points1[i], points2[i], E);
+  }
+}
+
+void ComputeSquaredTangentSampsonErrorWithCheirality(
+    const std::vector<CamRayWithJac>& cam_rays1_with_jac,
+    const std::vector<CamRayWithJac>& cam_rays2_with_jac,
+    const Eigen::Matrix3d& E,
+    std::vector<double>* residuals) {
+  const size_t num_rays = cam_rays1_with_jac.size();
+  THROW_CHECK_EQ(num_rays, cam_rays2_with_jac.size());
+  residuals->resize(num_rays);
+
+  // Recover the relative pose from E (resolving the four-fold decomposition
+  // ambiguity by cheirality voting) and flag which correspondences triangulate
+  // in front of both cameras. Only the bearings are materialized, since that is
+  // all PoseFromEssentialMatrix needs; the Jacobians are read in place below.
+  std::vector<Eigen::Vector3d> rays1(num_rays);
+  std::vector<Eigen::Vector3d> rays2(num_rays);
+  for (size_t i = 0; i < num_rays; ++i) {
+    rays1[i] = cam_rays1_with_jac[i].ray;
+    rays2[i] = cam_rays2_with_jac[i].ray;
+  }
+
+  Rigid3d cam2_from_cam1;
+  std::vector<int> valid_indices;
+  PoseFromEssentialMatrix(E, rays1, rays2, &cam2_from_cam1, &valid_indices);
+  std::vector<bool> is_cheiral(num_rays, false);
+  for (const int idx : valid_indices) {
+    is_cheiral[idx] = true;
+  }
+
+  // Correspondences behind either camera are not valid inliers for the relative
+  // pose regardless of their residual, so they get an infinite residual.
+  for (size_t i = 0; i < num_rays; ++i) {
+    (*residuals)[i] = is_cheiral[i]
+                          ? ComputeSquaredTangentSampsonError(
+                                cam_rays1_with_jac[i], cam_rays2_with_jac[i], E)
+                          : std::numeric_limits<double>::max();
+  }
 }
 
 }  // namespace colmap

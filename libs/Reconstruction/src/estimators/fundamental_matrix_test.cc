@@ -30,13 +30,15 @@
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
 #define TEST_NAME "estimators/fundamental_matrix"
+#include <numeric>
+
 #include "util/testing.h"
 
 #include "estimators/fundamental_matrix.h"
 
 using namespace colmap;
 
-BOOST_AUTO_TEST_CASE(TestSevenPoint) {
+TEST(estimators_fundamental_matrix, TestSevenPoint) {
   const double points1_raw[] = {0.4964, 1.0577,  0.3650,  -0.0919, -0.5412,
                                 0.0159, -0.5239, 0.9467,  0.3467,  0.5301,
                                 0.2797, 0.0012,  -0.1986, 0.0460};
@@ -58,18 +60,18 @@ BOOST_AUTO_TEST_CASE(TestSevenPoint) {
   const auto F = estimator.Estimate(points1, points2)[0];
 
   // Reference values obtained from Matlab.
-  BOOST_CHECK_CLOSE(F(0, 0), 4.81441976, 1e-6);
-  BOOST_CHECK_CLOSE(F(0, 1), -8.16978909, 1e-6);
-  BOOST_CHECK_CLOSE(F(0, 2), 6.73133404, 1e-6);
-  BOOST_CHECK_CLOSE(F(1, 0), 5.16247992, 1e-6);
-  BOOST_CHECK_CLOSE(F(1, 1), 0.19325606, 1e-6);
-  BOOST_CHECK_CLOSE(F(1, 2), -2.87239381, 1e-6);
-  BOOST_CHECK_CLOSE(F(2, 0), -9.92570126, 1e-6);
-  BOOST_CHECK_CLOSE(F(2, 1), 3.64159554, 1e-6);
-  BOOST_CHECK_CLOSE(F(2, 2), 1., 1e-6);
+  EXPECT_NEAR(F(0, 0), 4.81441976, std::abs(4.81441976) * (1e-6) / 100.0);
+  EXPECT_NEAR(F(0, 1), -8.16978909, std::abs(-8.16978909) * (1e-6) / 100.0);
+  EXPECT_NEAR(F(0, 2), 6.73133404, std::abs(6.73133404) * (1e-6) / 100.0);
+  EXPECT_NEAR(F(1, 0), 5.16247992, std::abs(5.16247992) * (1e-6) / 100.0);
+  EXPECT_NEAR(F(1, 1), 0.19325606, std::abs(0.19325606) * (1e-6) / 100.0);
+  EXPECT_NEAR(F(1, 2), -2.87239381, std::abs(-2.87239381) * (1e-6) / 100.0);
+  EXPECT_NEAR(F(2, 0), -9.92570126, std::abs(-9.92570126) * (1e-6) / 100.0);
+  EXPECT_NEAR(F(2, 1), 3.64159554, std::abs(3.64159554) * (1e-6) / 100.0);
+  EXPECT_NEAR(F(2, 2), 1., std::abs(1.) * (1e-6) / 100.0);
 }
 
-BOOST_AUTO_TEST_CASE(TestEightPoint) {
+TEST(estimators_fundamental_matrix, TestEightPoint) {
   const double points1_raw[] = {1.839035, 1.924743, 0.543582,  0.375221,
                                 0.473240, 0.142522, 0.964910,  0.598376,
                                 0.102388, 0.140092, 15.994343, 9.622164,
@@ -93,13 +95,39 @@ BOOST_AUTO_TEST_CASE(TestEightPoint) {
   const auto F = estimator.Estimate(points1, points2)[0];
 
   // Reference values obtained from Matlab.
-  BOOST_CHECK(std::abs(F(0, 0) - -0.217859) < 1e-5);
-  BOOST_CHECK(std::abs(F(0, 1) - 0.419282) < 1e-5);
-  BOOST_CHECK(std::abs(F(0, 2) - -0.0343075) < 1e-5);
-  BOOST_CHECK(std::abs(F(1, 0) - -0.0717941) < 1e-5);
-  BOOST_CHECK(std::abs(F(1, 1) - 0.0451643) < 1e-5);
-  BOOST_CHECK(std::abs(F(1, 2) - 0.0216073) < 1e-5);
-  BOOST_CHECK(std::abs(F(2, 0) - 0.248062) < 1e-5);
-  BOOST_CHECK(std::abs(F(2, 1) - -0.429478) < 1e-5);
-  BOOST_CHECK(std::abs(F(2, 2) - 0.0221019) < 1e-5);
+  EXPECT_TRUE(std::abs(F(0, 0) - -0.217859) < 1e-5);
+  EXPECT_TRUE(std::abs(F(0, 1) - 0.419282) < 1e-5);
+  EXPECT_TRUE(std::abs(F(0, 2) - -0.0343075) < 1e-5);
+  EXPECT_TRUE(std::abs(F(1, 0) - -0.0717941) < 1e-5);
+  EXPECT_TRUE(std::abs(F(1, 1) - 0.0451643) < 1e-5);
+  EXPECT_TRUE(std::abs(F(1, 2) - 0.0216073) < 1e-5);
+  EXPECT_TRUE(std::abs(F(2, 0) - 0.248062) < 1e-5);
+  EXPECT_TRUE(std::abs(F(2, 1) - -0.429478) < 1e-5);
+  EXPECT_TRUE(std::abs(F(2, 2) - 0.0221019) < 1e-5);
+}
+
+TEST(estimators_fundamental_matrix, TestSampsonRefinementPreservesOrImprovesResidual) {
+  std::vector<Eigen::Vector2d> points1;
+  std::vector<Eigen::Vector2d> points2;
+  for (int i = 0; i < 20; ++i) {
+    const double x = -0.8 + 0.07 * i;
+    const double y = 0.2 * std::sin(0.5 * i);
+    points1.emplace_back(x, y);
+    points2.emplace_back(x + 0.1, y + 0.03 * x);
+  }
+  // Add a small perturbation to a valid rank-2 model and verify the tiny
+  // refinement never accepts an uphill step.
+  Eigen::Matrix3d F;
+  F << 0.0, -0.2, 0.1, 0.2, 0.0, -0.3, -0.1, 0.3, 0.01;
+  std::vector<double> before;
+  FundamentalMatrixEightPointEstimator::Residuals(points1, points2, F,
+                                                   &before);
+  const double before_cost =
+      std::accumulate(before.begin(), before.end(), 0.0);
+  EXPECT_TRUE(RefineFundamentalMatrixSampson(points1, points2, &F));
+  std::vector<double> after;
+  FundamentalMatrixEightPointEstimator::Residuals(points1, points2, F,
+                                                   &after);
+  const double after_cost = std::accumulate(after.begin(), after.end(), 0.0);
+  EXPECT_LE(after_cost, before_cost + 1e-10);
 }

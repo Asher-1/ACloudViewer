@@ -5,15 +5,15 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "sface_graph.hpp"
+#include "tasks/facedetect/sface_graph.hpp"
 
 #include <cmath>
 #include <stdexcept>
 
 #include "antispoof_graph.hpp"  // run_onnx_graph (shared ONNX-graph interpreter)
-#include "common.hpp"
-#include "model_loader.hpp"
-#include "preprocess.hpp"
+#include "tasks/facedetect/common.hpp"
+#include "tasks/facedetect/model_loader.hpp"
+#include "tasks/facedetect/preprocess.hpp"
 
 namespace fd {
 

@@ -7,8 +7,11 @@
 
 #pragma once
 
+#include <optional>
 #include <vector>
 
+#include "base/camera_models.h"
+#include "base/pose.h"
 #include "util/types.h"
 
 namespace colmap {
@@ -38,6 +41,41 @@ public:
     inline void SetHeight(const size_t height);
 
     // Access focal length parameters.
+    // ---- Upstream-parity API (COLMAP 4.x scene/camera.h) ----
+    // Whether the model is perspective with a finite pinhole image plane.
+    // Upstream-parity factories (COLMAP 4.x scene/camera.h): initialize
+    // parameters for the given model with the principal point at the image
+    // center.
+    static Camera CreateFromModelId(camera_t camera_id,
+                                    CameraModelId model_id,
+                                    double focal_length,
+                                    size_t width,
+                                    size_t height);
+    static Camera CreateFromModelName(camera_t camera_id,
+                                      const std::string& model_name,
+                                      double focal_length,
+                                      size_t width,
+                                      size_t height);
+
+    // Upstream-parity: the camera as a sensor in a rig.
+    inline sensor_t SensorId() const {
+        return sensor_t(SensorType::CAMERA, camera_id_);
+    }
+    inline bool IsPerspectivePinhole() const {
+        return CameraModelIsPerspectivePinhole(model_id_);
+    }
+    // Whether the model is a spherical (equirectangular) panorama model.
+    inline bool IsSpherical() const {
+        return CameraModelIsSpherical(model_id_);
+    }
+    inline bool IsPerspectiveFisheye() const {
+        return CameraModelIsPerspectiveFisheye(model_id_);
+    }
+    // Principal point as a 2D point (pixels).
+    inline Eigen::Vector2d PrincipalPoint() const {
+        return Eigen::Vector2d(PrincipalPointX(), PrincipalPointY());
+    }
+
     double MeanFocalLength() const;
     double FocalLength() const;
     double FocalLengthX() const;
@@ -111,11 +149,29 @@ public:
     // Project point in image plane to world / infinity.
     Eigen::Vector2d ImageToWorld(const Eigen::Vector2d& image_point) const;
 
+    // Unproject a pixel to a unit calibrated bearing. This is the lightweight
+    // path for geometry consumers that do not need pixel derivatives.
+    std::optional<Eigen::Vector3d> CamRayFromImg(
+            const Eigen::Vector2d& image_point) const;
+
+    // Unproject a pixel to a unit bearing together with the Jacobian of that
+    // bearing with respect to pixel coordinates. The Jacobian is evaluated
+    // with centered pixel differences so every current central camera model,
+    // including iterative distortion inverses, has one calibrated-ray path.
+    std::optional<CamRayWithJac> CamRayFromImgWithJac(
+            const Eigen::Vector2d& image_point) const;
+
     // Convert pixel threshold in image plane to world space.
     double ImageToWorldThreshold(const double threshold) const;
 
     // Project point from world / infinity to image plane.
     Eigen::Vector2d WorldToImage(const Eigen::Vector2d& world_point) const;
+
+    // Project a camera-frame direction without discarding its depth sign.
+    // Perspective models reject directions behind the camera. Spherical
+    // models accept the complete non-zero sphere.
+    std::optional<Eigen::Vector2d> ImgFromCam(
+            const Eigen::Vector3d& camera_point) const;
 
     // Rescale camera dimensions and accordingly the focal length and
     // and the principal point.

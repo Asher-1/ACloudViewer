@@ -19,8 +19,7 @@
 //
 // Everything is f64, row-major, and header-only. Sizes are tiny (<=12) so the
 // O(n^3) Jacobi sweeps are negligible next to the engine forward pass.
-#ifndef FREE_SPLATTER_LINALG_H
-#define FREE_SPLATTER_LINALG_H
+#pragma once
 
 #include <algorithm>
 #include <array>
@@ -246,5 +245,3 @@ inline void svd3(const Mat3& M, Mat3& U, Vec3& s, Mat3& V) {
 }
 
 }  // namespace fsla
-
-#endif  // FREE_SPLATTER_LINALG_H

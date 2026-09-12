@@ -19,6 +19,15 @@ extern "C" {
 
 typedef struct aicore_cancel_token aicore_cancel_token;
 
+/**
+ * Reclaims inactive backend leases held by completed task contexts.
+ *
+ * This call is idempotent and never destroys a live task context. Backends
+ * remain registered for the process lifetime; callers should invoke it after
+ * releasing a batch of task contexts or before unloading an embedding host.
+ */
+AICORE_CAPI void aicore_runtime_shutdown(void);
+
 #if defined(_MSC_VER)
 #define AICORE_LEGACY_API  \
     __declspec(deprecated( \
@@ -33,14 +42,19 @@ typedef struct aicore_cancel_token aicore_cancel_token;
 
 /** Allocate an independent task cancellation token. */
 AICORE_CAPI aicore_cancel_token* aicore_cancel_token_new(void);
+/** Releases a token created by aicore_cancel_token_new; safe on NULL. */
 AICORE_CAPI void aicore_cancel_token_free(aicore_cancel_token* token);
+/** Clears a pending cancellation request on the token. */
 AICORE_CAPI void aicore_cancel_token_reset(aicore_cancel_token* token);
+/** Requests cooperative cancellation for the token (thread-safe). */
 AICORE_CAPI void aicore_cancel_token_request(aicore_cancel_token* token);
+/** Returns 1 when cancellation was requested on the token, else 0. */
 AICORE_CAPI int aicore_cancel_token_requested(const aicore_cancel_token* token);
 
 /** Bind a token to the calling inference thread without clearing a pending
  *  request. Backend checks use the innermost token until matching scope_end. */
 AICORE_CAPI void aicore_cancel_scope_begin(aicore_cancel_token* token);
+/** Unbinds the innermost token bound by aicore_cancel_scope_begin. */
 AICORE_CAPI void aicore_cancel_scope_end(aicore_cancel_token* token);
 
 /* ---- cooperative cancel (checked between graph runs / batch items) ---- */

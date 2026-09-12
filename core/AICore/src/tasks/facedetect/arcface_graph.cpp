@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "arcface_graph.hpp"
+#include "tasks/facedetect/arcface_graph.hpp"
 
 #include <cmath>
 #include <cstdlib>
@@ -13,14 +13,14 @@
 #include <stdexcept>
 #include <string>
 
-#include "antispoof_graph.hpp"
-#include "backend.hpp"
-#include "common.hpp"
-#include "directconv.hpp"
 #include "ggml.h"
-#include "graph_ops.hpp"
-#include "model_loader.hpp"
-#include "preprocess.hpp"
+#include "tasks/facedetect/antispoof_graph.hpp"
+#include "tasks/facedetect/backend.hpp"
+#include "tasks/facedetect/common.hpp"
+#include "tasks/facedetect/directconv.hpp"
+#include "tasks/facedetect/graph_ops.hpp"
+#include "tasks/facedetect/model_loader.hpp"
+#include "tasks/facedetect/preprocess.hpp"
 
 namespace fd {
 
@@ -261,20 +261,13 @@ ggml_tensor* arcface_ir_block_blocked(ggml_context* ctx,
 // How many leading IR blocks to run inside the blocked island.
 // FACEDETECT_BLOCKED_BACKBONE override: "0"/"off" forces the per-conv path (the
 // shape-gated directconv/Winograd via conv2d); "all"/"on" runs every block
-// blocked (the whole backbone is ONE island, exactly 2 reorders); a positive
-// integer runs that many leading blocks blocked (incremental island growth +
-// re-gating). UNSET defaults to the whole backbone IFF the AVX-512 blocked fast
-// path is available at runtime; on non-AVX512 hosts it defaults OFF so they
-// keep the AVX2 per-conv path.
+// blocked (the whole backbone is ONE island, exactly 2 reorders). The
+// historical FACEDETECT_BLOCKED_BACKBONE override (0|off|all|on|N) was an A/B
+// scaffold and is removed: the whole backbone runs blocked IFF the AVX-512
+// blocked fast path is available at runtime; on non-AVX512 hosts it defaults
+// OFF so they keep the AVX2 per-conv path.
 int blocked_island_blocks(int n_blocks) {
-    const char* e = std::getenv("FACEDETECT_BLOCKED_BACKBONE");
-    if (!e || !e[0]) return directconv_blocked_available() ? n_blocks : 0;
-    if (!std::strcmp(e, "0") || !std::strcmp(e, "off")) return 0;
-    if (!std::strcmp(e, "all") || !std::strcmp(e, "on")) return n_blocks;
-    int v = std::atoi(e);
-    if (v < 0) v = 0;
-    if (v > n_blocks) v = n_blocks;
-    return v;
+    return directconv_blocked_available() ? n_blocks : 0;
 }
 }  // namespace
 

@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/CC/plugin/qYOLO">
+        <file>info.json</file>
+        <file>images/qYOLO.svg</file>
+    </qresource>
+</RCC>

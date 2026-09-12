@@ -39,7 +39,7 @@
 
 using namespace colmap;
 
-BOOST_AUTO_TEST_CASE(TestTriangulatePoint) {
+TEST(base_triangulation, TestTriangulatePoint) {
   std::vector<Eigen::Vector3d> points3D(6);
   points3D[0] = Eigen::Vector3d(0, 0.1, 0.1);
   points3D[1] = Eigen::Vector3d(0, 1, 3);
@@ -71,23 +71,18 @@ BOOST_AUTO_TEST_CASE(TestTriangulatePoint) {
         const Eigen::Vector3d tri_point3D = TriangulatePoint(
             proj_matrix1, proj_matrix2, point2D1_N, point2D2_N);
 
-        BOOST_CHECK((point3D - tri_point3D).norm() < 1e-10);
+        EXPECT_TRUE((point3D - tri_point3D).norm() < 1e-10);
       }
     }
   }
 }
 
-BOOST_AUTO_TEST_CASE(TestCalculateTriangulationAngle) {
+TEST(base_triangulation, TestCalculateTriangulationAngle) {
   const Eigen::Vector3d tvec1(0, 0, 0);
   const Eigen::Vector3d tvec2(0, 1, 0);
 
-  BOOST_CHECK_CLOSE(
-      CalculateTriangulationAngle(tvec1, tvec2, Eigen::Vector3d(0, 0, 100)),
-      0.009999666687, 1e-8);
-  BOOST_CHECK_CLOSE(
-      CalculateTriangulationAngle(tvec1, tvec2, Eigen::Vector3d(0, 0, 50)),
-      0.019997333973, 1e-8);
-  BOOST_CHECK_CLOSE(CalculateTriangulationAngles(
-                        tvec1, tvec2, {Eigen::Vector3d(0, 0, 50)})[0],
-                    0.019997333973, 1e-8);
+  EXPECT_NEAR(CalculateTriangulationAngle(tvec1, tvec2, Eigen::Vector3d(0, 0, 100)), 0.009999666687, std::abs(0.009999666687) * (1e-8) / 100.0);
+  EXPECT_NEAR(CalculateTriangulationAngle(tvec1, tvec2, Eigen::Vector3d(0, 0, 50)), 0.019997333973, std::abs(0.019997333973) * (1e-8) / 100.0);
+  EXPECT_NEAR(CalculateTriangulationAngles(
+                        tvec1, tvec2, {Eigen::Vector3d(0, 0, 50)})[0], 0.019997333973, std::abs(0.019997333973) * (1e-8) / 100.0);
 }

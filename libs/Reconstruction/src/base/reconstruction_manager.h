@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <filesystem>
+
 #include "base/reconstruction.h"
 
 namespace colmap {
@@ -38,12 +40,13 @@ public:
     void Clear();
 
     // Read and add a new reconstruction and return its index.
-    size_t Read(const std::string& path);
+    size_t Read(const std::filesystem::path& path);
 
     // Write all managed reconstructions into sub-folders "0", "1", "2", ...
     // If the option manager object is not null, the options are written
     // to each respective reconstruction folder as well.
-    void Write(const std::string& path, const OptionManager* options) const;
+    void Write(const std::filesystem::path& path,
+               const OptionManager* options) const;
 
 private:
     NON_COPYABLE(ReconstructionManager)

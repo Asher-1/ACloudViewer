@@ -36,7 +36,7 @@
 
 using namespace colmap;
 
-BOOST_AUTO_TEST_CASE(TestComputeMinGraphCutStoerWagner) {
+TEST(base_graph_cut, TestComputeMinGraphCutStoerWagner) {
   const std::vector<std::pair<int, int>> edges = {
       {3, 4}, {3, 6}, {3, 5}, {0, 4}, {0, 1}, {0, 6}, {0, 7}, {0, 5},
       {0, 2}, {4, 1}, {1, 6}, {1, 5}, {6, 7}, {7, 5}, {5, 2}, {3, 4}};
@@ -45,15 +45,15 @@ BOOST_AUTO_TEST_CASE(TestComputeMinGraphCutStoerWagner) {
   int cut_weight;
   std::vector<char> cut_labels;
   ComputeMinGraphCutStoerWagner(edges, weights, &cut_weight, &cut_labels);
-  BOOST_CHECK_EQUAL(cut_weight, 7);
-  BOOST_CHECK_EQUAL(cut_labels.size(), 8);
+  EXPECT_EQ(cut_weight, 7);
+  EXPECT_EQ(cut_labels.size(), 8);
   for (const auto& label : cut_labels) {
-    BOOST_CHECK_GE(label, 0);
-    BOOST_CHECK_LT(label, 2);
+    EXPECT_GE(label, 0);
+    EXPECT_LT(label, 2);
   }
 }
 
-BOOST_AUTO_TEST_CASE(TestComputeMinGraphCutStoerWagnerDuplicateEdge) {
+TEST(base_graph_cut, TestComputeMinGraphCutStoerWagnerDuplicateEdge) {
   const std::vector<std::pair<int, int>> edges = {
       {3, 4}, {3, 6}, {3, 5}, {0, 4}, {0, 1}, {0, 6}, {0, 7}, {0, 5}, {0, 2},
       {4, 1}, {1, 6}, {1, 5}, {6, 7}, {7, 5}, {5, 2}, {3, 4}, {3, 4}};
@@ -62,15 +62,15 @@ BOOST_AUTO_TEST_CASE(TestComputeMinGraphCutStoerWagnerDuplicateEdge) {
   int cut_weight;
   std::vector<char> cut_labels;
   ComputeMinGraphCutStoerWagner(edges, weights, &cut_weight, &cut_labels);
-  BOOST_CHECK_EQUAL(cut_weight, 7);
-  BOOST_CHECK_EQUAL(cut_labels.size(), 8);
+  EXPECT_EQ(cut_weight, 7);
+  EXPECT_EQ(cut_labels.size(), 8);
   for (const auto& label : cut_labels) {
-    BOOST_CHECK_GE(label, 0);
-    BOOST_CHECK_LT(label, 2);
+    EXPECT_GE(label, 0);
+    EXPECT_LT(label, 2);
   }
 }
 
-BOOST_AUTO_TEST_CASE(TestComputeMinGraphCutStoerWagnerMissingVertex) {
+TEST(base_graph_cut, TestComputeMinGraphCutStoerWagnerMissingVertex) {
   const std::vector<std::pair<int, int>> edges = {
       {3, 4}, {3, 6}, {3, 5}, {0, 1}, {0, 6}, {0, 7}, {0, 5},
       {0, 2}, {4, 1}, {1, 6}, {1, 5}, {6, 7}, {7, 5}, {5, 2}};
@@ -78,113 +78,113 @@ BOOST_AUTO_TEST_CASE(TestComputeMinGraphCutStoerWagnerMissingVertex) {
   int cut_weight;
   std::vector<char> cut_labels;
   ComputeMinGraphCutStoerWagner(edges, weights, &cut_weight, &cut_labels);
-  BOOST_CHECK_EQUAL(cut_weight, 2);
-  BOOST_CHECK_EQUAL(cut_labels.size(), 8);
+  EXPECT_EQ(cut_weight, 2);
+  EXPECT_EQ(cut_labels.size(), 8);
   for (const auto& label : cut_labels) {
-    BOOST_CHECK_GE(label, 0);
-    BOOST_CHECK_LT(label, 2);
+    EXPECT_GE(label, 0);
+    EXPECT_LT(label, 2);
   }
 }
 
-BOOST_AUTO_TEST_CASE(TestComputeMinGraphCutStoerWagnerDisconnected) {
+TEST(base_graph_cut, TestComputeMinGraphCutStoerWagnerDisconnected) {
   const std::vector<std::pair<int, int>> edges = {{0, 1}, {1, 2}, {3, 4}};
   const std::vector<int> weights = {1, 3, 1};
   int cut_weight;
   std::vector<char> cut_labels;
   ComputeMinGraphCutStoerWagner(edges, weights, &cut_weight, &cut_labels);
-  BOOST_CHECK_EQUAL(cut_weight, 0);
-  BOOST_CHECK_EQUAL(cut_labels.size(), 5);
+  EXPECT_EQ(cut_weight, 0);
+  EXPECT_EQ(cut_labels.size(), 5);
   for (const auto& label : cut_labels) {
-    BOOST_CHECK_GE(label, 0);
-    BOOST_CHECK_LT(label, 2);
+    EXPECT_GE(label, 0);
+    EXPECT_LT(label, 2);
   }
 }
 
-BOOST_AUTO_TEST_CASE(TestComputeNormalizedMinGraphCut) {
+TEST(base_graph_cut, TestComputeNormalizedMinGraphCut) {
   const std::vector<std::pair<int, int>> edges = {
       {3, 4}, {3, 6}, {3, 5}, {0, 4}, {0, 1}, {0, 6}, {0, 7}, {0, 5},
       {0, 2}, {4, 1}, {1, 6}, {1, 5}, {6, 7}, {7, 5}, {5, 2}, {3, 4}};
   const std::vector<int> weights = {0, 3, 1, 3,  1, 2, 6, 1,
                                     8, 1, 1, 80, 2, 1, 1, 4};
   const auto cut_labels = ComputeNormalizedMinGraphCut(edges, weights, 2);
-  BOOST_CHECK_EQUAL(cut_labels.size(), 8);
+  EXPECT_EQ(cut_labels.size(), 8);
   for (const auto& label : cut_labels) {
-    BOOST_CHECK_GE(label.second, 0);
-    BOOST_CHECK_LT(label.second, 2);
+    EXPECT_GE(label.second, 0);
+    EXPECT_LT(label.second, 2);
   }
 }
 
-BOOST_AUTO_TEST_CASE(TestComputeNormalizedMinGraphCutDuplicateEdge) {
+TEST(base_graph_cut, TestComputeNormalizedMinGraphCutDuplicateEdge) {
   const std::vector<std::pair<int, int>> edges = {
       {3, 4}, {3, 6}, {3, 5}, {0, 4}, {0, 1}, {0, 6}, {0, 7}, {0, 5}, {0, 2},
       {4, 1}, {1, 6}, {1, 5}, {6, 7}, {7, 5}, {5, 2}, {3, 4}, {3, 4}};
   const std::vector<int> weights = {0, 3, 1,  3, 1, 2, 6, 1, 8,
                                     1, 1, 80, 2, 1, 1, 4, 4};
   const auto cut_labels = ComputeNormalizedMinGraphCut(edges, weights, 2);
-  BOOST_CHECK_EQUAL(cut_labels.size(), 8);
+  EXPECT_EQ(cut_labels.size(), 8);
   for (const auto& label : cut_labels) {
-    BOOST_CHECK_GE(label.second, 0);
-    BOOST_CHECK_LT(label.second, 2);
+    EXPECT_GE(label.second, 0);
+    EXPECT_LT(label.second, 2);
   }
 }
 
-BOOST_AUTO_TEST_CASE(TestComputeNormalizedMinGraphCutMissingVertex) {
+TEST(base_graph_cut, TestComputeNormalizedMinGraphCutMissingVertex) {
   const std::vector<std::pair<int, int>> edges = {
       {3, 4}, {3, 6}, {3, 5}, {0, 1}, {0, 6}, {0, 7}, {0, 5},
       {0, 2}, {4, 1}, {1, 6}, {1, 5}, {6, 7}, {7, 5}, {5, 2}};
   const std::vector<int> weights = {0, 3, 1, 3, 1, 2, 6, 1, 8, 1, 1, 80, 2, 1};
   const auto cut_labels = ComputeNormalizedMinGraphCut(edges, weights, 2);
-  BOOST_CHECK_EQUAL(cut_labels.size(), 8);
+  EXPECT_EQ(cut_labels.size(), 8);
   for (const auto& label : cut_labels) {
-    BOOST_CHECK_GE(label.second, 0);
-    BOOST_CHECK_LT(label.second, 2);
+    EXPECT_GE(label.second, 0);
+    EXPECT_LT(label.second, 2);
   }
 }
 
-BOOST_AUTO_TEST_CASE(TestComputeNormalizedMinGraphCutDisconnected) {
+TEST(base_graph_cut, TestComputeNormalizedMinGraphCutDisconnected) {
   const std::vector<std::pair<int, int>> edges = {{0, 1}, {1, 2}, {3, 4}};
   const std::vector<int> weights = {1, 3, 1};
   const auto cut_labels = ComputeNormalizedMinGraphCut(edges, weights, 2);
-  BOOST_CHECK_EQUAL(cut_labels.size(), 5);
+  EXPECT_EQ(cut_labels.size(), 5);
   for (const auto& label : cut_labels) {
-    BOOST_CHECK_GE(label.second, 0);
-    BOOST_CHECK_LT(label.second, 2);
+    EXPECT_GE(label.second, 0);
+    EXPECT_LT(label.second, 2);
   }
 }
 
-BOOST_AUTO_TEST_CASE(TestMinSTGraphCut1) {
+TEST(base_graph_cut, TestMinSTGraphCut1) {
   MinSTGraphCut<int, int> graph(2);
-  BOOST_CHECK_EQUAL(graph.NumNodes(), 2);
-  BOOST_CHECK_EQUAL(graph.NumEdges(), 0);
+  EXPECT_EQ(graph.NumNodes(), 2);
+  EXPECT_EQ(graph.NumEdges(), 0);
   graph.AddNode(0, 5, 1);
   graph.AddNode(1, 2, 6);
   graph.AddEdge(0, 1, 3, 4);
-  BOOST_CHECK_EQUAL(graph.NumEdges(), 10);
-  BOOST_CHECK_EQUAL(graph.Compute(), 6);
-  BOOST_CHECK(graph.IsConnectedToSource(0));
-  BOOST_CHECK(graph.IsConnectedToSink(1));
+  EXPECT_EQ(graph.NumEdges(), 10);
+  EXPECT_EQ(graph.Compute(), 6);
+  EXPECT_TRUE(graph.IsConnectedToSource(0));
+  EXPECT_TRUE(graph.IsConnectedToSink(1));
 }
 
-BOOST_AUTO_TEST_CASE(TestMinSTGraphCut2) {
+TEST(base_graph_cut, TestMinSTGraphCut2) {
   MinSTGraphCut<int, int> graph(2);
   graph.AddNode(0, 1, 5);
   graph.AddNode(1, 2, 6);
   graph.AddEdge(0, 1, 3, 4);
-  BOOST_CHECK_EQUAL(graph.NumEdges(), 10);
-  BOOST_CHECK_EQUAL(graph.Compute(), 3);
-  BOOST_CHECK(graph.IsConnectedToSink(0));
-  BOOST_CHECK(graph.IsConnectedToSink(1));
+  EXPECT_EQ(graph.NumEdges(), 10);
+  EXPECT_EQ(graph.Compute(), 3);
+  EXPECT_TRUE(graph.IsConnectedToSink(0));
+  EXPECT_TRUE(graph.IsConnectedToSink(1));
 }
 
-BOOST_AUTO_TEST_CASE(TestMinSTGraphCut3) {
+TEST(base_graph_cut, TestMinSTGraphCut3) {
   MinSTGraphCut<int, int> graph(3);
   graph.AddNode(0, 6, 4);
   graph.AddNode(2, 3, 6);
   graph.AddEdge(0, 1, 2, 4);
   graph.AddEdge(1, 2, 3, 5);
-  BOOST_CHECK_EQUAL(graph.NumEdges(), 12);
-  BOOST_CHECK_EQUAL(graph.Compute(), 9);
-  BOOST_CHECK(graph.IsConnectedToSource(0));
-  BOOST_CHECK(graph.IsConnectedToSink(1));
-  BOOST_CHECK(graph.IsConnectedToSink(2));
+  EXPECT_EQ(graph.NumEdges(), 12);
+  EXPECT_EQ(graph.Compute(), 9);
+  EXPECT_TRUE(graph.IsConnectedToSource(0));
+  EXPECT_TRUE(graph.IsConnectedToSink(1));
+  EXPECT_TRUE(graph.IsConnectedToSink(2));
 }

@@ -35,9 +35,14 @@ COLMAP_ADD_SOURCES(
     automatic_reconstruction.h automatic_reconstruction.cc
     bundle_adjustment.h bundle_adjustment.cc
     da3_depth_controller.h da3_depth_controller.cc
+    global_mapper.h global_mapper.cc
+    global_pipeline.h global_pipeline.cc
+    rotation_averaging.h rotation_averaging.cc
     hierarchical_mapper.h hierarchical_mapper.cc
     incremental_mapper.h incremental_mapper.cc
     texturing_controller.h texturing_controller.cc
 )
 
 COLMAP_ADD_TEST(da3_depth_controller_test da3_depth_controller_test.cc)
+
+COLMAP_ADD_TEST(global_pipeline_test global_pipeline_test.cc)

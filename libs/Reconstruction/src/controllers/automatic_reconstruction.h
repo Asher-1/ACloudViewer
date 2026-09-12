@@ -7,11 +7,13 @@
 
 #pragma once
 
+#include <filesystem>
 #include <string>
 
 #include "base/reconstruction_manager.h"
 #include "controllers/da3_depth_controller.h"
 #include "controllers/da3_pipeline_defaults.h"
+#include "mvs/mesh_postprocessing.h"
 #include "retrieval/resources.h"
 #include "util/option_manager.h"
 #include "util/ply_point_filter.h"
@@ -23,20 +25,20 @@ class AutomaticReconstructionController : public Thread {
 public:
     enum class DataType { INDIVIDUAL, VIDEO, INTERNET };
     enum class Quality { LOW, MEDIUM, HIGH, EXTREME };
-    enum class Mesher { POISSON, DELAUNAY };
+    enum class Mesher { POISSON, DELAUNAY, ADVANCING_FRONT };
 
     struct Options {
         // The path to the workspace folder in which all results are stored.
-        std::string workspace_path;
+        std::filesystem::path workspace_path;
 
         // The path to the image folder which are used as input.
-        std::string image_path;
+        std::filesystem::path image_path;
 
         // The path to the mask folder which are used as input.
-        std::string mask_path;
+        std::filesystem::path mask_path;
 
         // The path to the vocabulary tree for feature matching.
-        std::string vocab_tree_path = retrieval::kDefaultVocabTreeUri;
+        std::filesystem::path vocab_tree_path = retrieval::kDefaultVocabTreeUri;
 
         // The type of input data used to choose optimal mapper settings.
         DataType data_type = DataType::INDIVIDUAL;
@@ -64,7 +66,7 @@ public:
         Mesher mesher = Mesher::POISSON;
 #endif
 
-        // Whether to perform surface meshing (Poisson / Delaunay).
+        // Whether to perform surface meshing.
         bool meshing = true;
 
         // Whether to perform surface texturing.
@@ -128,6 +130,10 @@ public:
 
         // Optional voxel + SOR cleanup on fused.ply before Poisson meshing.
         FusedPointFilterOptions fused_point_filter;
+
+        // Shared meshoptimizer cleanup and boundary-preserving smoothing after
+        // surface meshing and before texturing. Enabled by default.
+        mvs::MeshPostProcessingOptions mesh_post_processing;
     };
 
     AutomaticReconstructionController(

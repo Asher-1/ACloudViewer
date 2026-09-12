@@ -9,9 +9,10 @@
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include <filesystem>
 #include <vector>
 
-#include "estimators/similarity_transform.h"
+#include "estimators/solvers/similarity_transform.h"
 #include "util/alignment.h"
 #include "util/types.h"
 
@@ -34,7 +35,7 @@ public:
                          const Eigen::Vector4d& qvec,
                          const Eigen::Vector3d& tvec);
 
-    void Write(const std::string& path);
+    void Write(const std::filesystem::path& path);
 
     template <bool kEstimateScale = true>
     bool Estimate(const std::vector<Eigen::Vector3d>& src,
@@ -76,9 +77,10 @@ bool ComputeAlignmentBetweenReconstructions(
 template <bool kEstimateScale>
 bool SimilarityTransform3::Estimate(const std::vector<Eigen::Vector3d>& src,
                                     const std::vector<Eigen::Vector3d>& dst) {
-    const auto results =
-            SimilarityTransformEstimator<3, kEstimateScale>().Estimate(src,
-                                                                       dst);
+    // Upstream solvers/similarity_transform.h uses the output-parameter form.
+    std::vector<Eigen::Matrix3x4d> results;
+    SimilarityTransformEstimator<3, kEstimateScale>().Estimate(src, dst,
+                                                               &results);
     if (results.empty()) {
         return false;
     }

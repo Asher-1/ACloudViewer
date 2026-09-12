@@ -32,6 +32,7 @@
 #include "estimators/fundamental_matrix.h"
 
 #include <cfloat>
+#include <cmath>
 #include <complex>
 #include <vector>
 
@@ -142,11 +143,6 @@ FundamentalMatrixSevenPointEstimator::Estimate(
   return models;
 }
 
-void FundamentalMatrixSevenPointEstimator::Residuals(
-    const std::vector<X_t>& points1, const std::vector<Y_t>& points2,
-    const M_t& F, std::vector<double>* residuals) {
-  ComputeSquaredSampsonError(points1, points2, F, residuals);
-}
 
 std::vector<FundamentalMatrixEightPointEstimator::M_t>
 FundamentalMatrixEightPointEstimator::Estimate(
@@ -192,10 +188,126 @@ FundamentalMatrixEightPointEstimator::Estimate(
   return models;
 }
 
-void FundamentalMatrixEightPointEstimator::Residuals(
-    const std::vector<X_t>& points1, const std::vector<Y_t>& points2,
-    const M_t& E, std::vector<double>* residuals) {
-  ComputeSquaredSampsonError(points1, points2, E, residuals);
+
+namespace {
+
+double SampsonCost(const std::vector<Eigen::Vector2d>& points1,
+                   const std::vector<Eigen::Vector2d>& points2,
+                   const Eigen::Matrix3d& F) {
+  std::vector<double> residuals;
+  ComputeSquaredSampsonError(points1, points2, F, &residuals);
+  double cost = 0.0;
+  for (const double residual : residuals) {
+    if (std::isfinite(residual)) {
+      cost += residual;
+    }
+  }
+  return cost;
 }
+
+Eigen::Matrix3d ProjectRankTwo(const Eigen::Matrix3d& matrix) {
+  Eigen::JacobiSVD<Eigen::Matrix3d> svd(
+      matrix, Eigen::ComputeFullU | Eigen::ComputeFullV);
+  Eigen::Vector3d singular_values = svd.singularValues();
+  singular_values(2) = 0.0;
+  Eigen::Matrix3d result = svd.matrixU() * singular_values.asDiagonal() *
+                           svd.matrixV().transpose();
+  const double scale = result.norm();
+  if (scale <= 1e-15) {
+    return Eigen::Matrix3d::Zero();
+  }
+  return result / scale;
+}
+
+}  // namespace
+
+bool RefineFundamentalMatrixSampson(
+    const std::vector<Eigen::Vector2d>& points1,
+    const std::vector<Eigen::Vector2d>& points2,
+    Eigen::Matrix3d* F,
+    const int max_num_iterations) {
+  if (F == nullptr || points1.size() != points2.size() ||
+      points1.size() < FundamentalMatrixSampsonEstimator::kMinNumSamples ||
+      max_num_iterations <= 0 || !F->allFinite()) {
+    return false;
+  }
+
+  Eigen::Matrix3d current = ProjectRankTwo(*F);
+  if (current.isZero(1e-15)) {
+    return false;
+  }
+  double current_cost = SampsonCost(points1, points2, current);
+  if (!std::isfinite(current_cost)) {
+    return false;
+  }
+
+  // Finite differences keep the implementation allocation-free at the model
+  // level and are adequate for the tiny nine-parameter update. A small
+  // diagonal damping term prevents singular normal equations on near-planar
+  // samples.
+  constexpr double kStep = 1e-6;
+  for (int iteration = 0; iteration < max_num_iterations; ++iteration) {
+    Eigen::Matrix<double, 9, 9> normal =
+        Eigen::Matrix<double, 9, 9>::Zero();
+    Eigen::Matrix<double, 9, 1> gradient =
+        Eigen::Matrix<double, 9, 1>::Zero();
+    std::vector<double> base_residuals;
+    ComputeSquaredSampsonError(points1, points2, current, &base_residuals);
+    for (size_t i = 0; i < base_residuals.size(); ++i) {
+      const double residual = std::sqrt(std::max(0.0, base_residuals[i]));
+      Eigen::Matrix<double, 1, 9> jacobian;
+      for (int parameter = 0; parameter < 9; ++parameter) {
+        Eigen::Matrix3d perturbed = current;
+        perturbed(parameter / 3, parameter % 3) += kStep;
+        perturbed = ProjectRankTwo(perturbed);
+        std::vector<Eigen::Vector2d> p1(1, points1[i]);
+        std::vector<Eigen::Vector2d> p2(1, points2[i]);
+        std::vector<double> residuals;
+        ComputeSquaredSampsonError(p1, p2, perturbed, &residuals);
+        const double perturbed_residual =
+            std::sqrt(std::max(0.0, residuals.empty() ? 0.0 : residuals[0]));
+        jacobian(parameter) = (perturbed_residual - residual) / kStep;
+      }
+      normal += jacobian.transpose() * jacobian;
+      gradient += jacobian.transpose() * residual;
+    }
+    normal.diagonal().array() += 1e-8;
+    const Eigen::Matrix<double, 9, 1> delta =
+        -normal.ldlt().solve(gradient);
+    if (!delta.allFinite() || delta.norm() < 1e-10) {
+      break;
+    }
+    Eigen::Matrix3d candidate = current;
+    for (int parameter = 0; parameter < 9; ++parameter) {
+      candidate(parameter / 3, parameter % 3) += delta(parameter);
+    }
+    candidate = ProjectRankTwo(candidate);
+    const double candidate_cost = SampsonCost(points1, points2, candidate);
+    if (!std::isfinite(candidate_cost) || candidate_cost > current_cost) {
+      break;
+    }
+    current = candidate;
+    current_cost = candidate_cost;
+  }
+
+  *F = current;
+  return true;
+}
+
+std::vector<FundamentalMatrixSampsonEstimator::M_t>
+FundamentalMatrixSampsonEstimator::Estimate(
+    const std::vector<X_t>& points1, const std::vector<Y_t>& points2) {
+  if (points1.size() != points2.size() ||
+      points1.size() < kMinNumSamples) {
+    return {};
+  }
+  std::vector<M_t> models = FundamentalMatrixEightPointEstimator::Estimate(
+      points1, points2);
+  if (!models.empty()) {
+    RefineFundamentalMatrixSampson(points1, points2, &models[0]);
+  }
+  return models;
+}
+
 
 }  // namespace colmap

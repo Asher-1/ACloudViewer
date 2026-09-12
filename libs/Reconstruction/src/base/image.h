@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "base/camera.h"
+#include "base/frame.h"
 #include "base/point2d.h"
 #include "base/visibility_pyramid.h"
 #include "util/logging.h"
@@ -29,6 +30,16 @@ namespace colmap {
 class Image {
 public:
     Image();
+
+    // Upstream-parity semantics for the fork's back-pointer members: a copied
+    // image is a pure data copy. The camera/frame back pointers refer to
+    // objects inside the source reconstruction and would dangle in the
+    // copy, so they are reset and must be re-wired by the owning container
+    // (e.g. Reconstruction::RewireObjectPointers or AddImage).
+    Image(const Image& other);
+    Image& operator=(const Image& other);
+    Image(Image&& other) = default;
+    Image& operator=(Image&& other) = default;
 
     // Setup / tear down the image and necessary internal data structures before
     // and after being used in reconstruction.
@@ -48,7 +59,32 @@ public:
     // might share the same camera.
     inline camera_t CameraId() const;
     inline void SetCameraId(const camera_t camera_id);
+
+    // Upstream-parity frame association (COLMAP 4.x): the frame this image
+    // belongs to. kInvalidFrameId means the image is not yet part of a frame.
+    inline frame_t FrameId() const { return frame_id_; }
+    inline bool HasFrameId() const { return frame_id_ != kInvalidFrameId; }
+    inline void SetFrameId(const frame_t frame_id) { frame_id_ = frame_id; }
+
+    // Upstream-parity (COLMAP 4.x scene/image.h): the data id of this image
+    // as a camera sensor and its owning frame / camera back pointers. These
+    // are typically set when the image is added to a reconstruction.
+    inline data_t DataId() const {
+        return data_t(sensor_t(SensorType::CAMERA, CameraId()), ImageId());
+    }
+    inline struct Camera* CameraPtr() const;
+    inline void SetCameraPtr(struct Camera* camera);
+    inline void ResetCameraPtr();
+    inline bool HasCameraPtr() const;
+    inline class Frame* FramePtr() const;
+    inline void SetFramePtr(class Frame* frame);
+    inline void ResetFramePtr();
+    inline bool HasFramePtr() const;
+    inline bool IsRefInFrame() const;
+    inline Rigid3d CamFromWorld() const;
+    inline bool HasPose() const;
     // Check whether identifier of camera has been set.
+    inline bool HasCameraId() const { return camera_id_ != kInvalidCameraId; }
     inline bool HasCamera() const;
 
     // Check if image is registered.
@@ -130,6 +166,15 @@ public:
     inline const class Point2D& Point2D(const point2D_t point2D_idx) const;
     inline class Point2D& Point2D(const point2D_t point2D_idx);
     inline const std::vector<class Point2D>& Points2D() const;
+    // Upstream COLMAP dbb41680 API parity: mutable access to the 2D points
+    // (the fork previously only exposed the const overload).
+    inline std::vector<class Point2D>& Points2D();
+
+    // Upstream-parity equality (COLMAP 4.x scene/image.h): the world pose is
+    // derived from the frame, which this fork resolves to qvec/tvec
+    // components instead of a Rigid3d member.
+    bool operator==(const Image& other) const;
+    bool operator!=(const Image& other) const;
     void SetPoints2D(const std::vector<Eigen::Vector2d>& points);
     void SetPoints2D(const std::vector<class Point2D>& points);
 
@@ -191,6 +236,9 @@ private:
     // The identifier of the associated camera. Note that multiple images might
     // share the same camera. If not specified `kInvalidCameraId`.
     camera_t camera_id_;
+    frame_t frame_id_ = kInvalidFrameId;
+    struct Camera* camera_ptr_ = nullptr;
+    class Frame* frame_ptr_ = nullptr;
 
     // Whether the image is successfully registered in the reconstruction.
     bool registered_;
@@ -356,8 +404,60 @@ class Point2D& Image::Point2D(const point2D_t point2D_idx) {
 
 const std::vector<class Point2D>& Image::Points2D() const { return points2D_; }
 
+std::vector<class Point2D>& Image::Points2D() { return points2D_; }
+
+inline bool Image::operator==(const Image& other) const {
+    const bool result = image_id_ == other.image_id_ &&          //
+                        camera_id_ == other.camera_id_ &&        //
+                        frame_id_ == other.frame_id_ &&          //
+                        name_ == other.name_ &&                  //
+                        num_points3D_ == other.num_points3D_ &&  //
+                        points2D_ == other.points2D_ &&          //
+                        HasPose() == other.HasPose();
+    if (!result || !HasPose()) {
+        return result;
+    }
+    const Rigid3d cam_from_world = CamFromWorld();
+    const Rigid3d other_cam_from_world = other.CamFromWorld();
+    return cam_from_world.rotation().coeffs() ==
+                   other_cam_from_world.rotation().coeffs() &&
+           cam_from_world.translation() == other_cam_from_world.translation();
+}
+
+inline bool Image::operator!=(const Image& other) const {
+    return !(*this == other);
+}
+
 bool Image::IsPoint3DVisible(const point2D_t point2D_idx) const {
     return num_correspondences_have_point3D_.at(point2D_idx) > 0;
 }
 
+inline struct Camera* Image::CameraPtr() const {
+    return THROW_CHECK_NOTNULL(camera_ptr_);
+}
+inline void Image::SetCameraPtr(struct Camera* camera) { camera_ptr_ = camera; }
+inline void Image::ResetCameraPtr() { camera_ptr_ = nullptr; }
+inline bool Image::HasCameraPtr() const { return camera_ptr_ != nullptr; }
+inline class Frame* Image::FramePtr() const {
+    return THROW_CHECK_NOTNULL(frame_ptr_);
+}
+inline void Image::SetFramePtr(class Frame* frame) { frame_ptr_ = frame; }
+inline void Image::ResetFramePtr() { frame_ptr_ = nullptr; }
+inline bool Image::HasFramePtr() const { return frame_ptr_ != nullptr; }
+inline bool Image::IsRefInFrame() const {
+    THROW_CHECK_NOTNULL(frame_ptr_);
+    THROW_CHECK_NOTNULL(camera_ptr_);
+    return frame_ptr_->RigPtr()->IsRefSensor(
+            sensor_t(SensorType::CAMERA, camera_id_));
+}
+inline Rigid3d Image::CamFromWorld() const {
+    return THROW_CHECK_NOTNULL(frame_ptr_)
+            ->SensorFromWorld(sensor_t(SensorType::CAMERA, camera_id_));
+}
+inline bool Image::HasPose() const {
+    if (frame_ptr_ == nullptr) {
+        return false;
+    }
+    return frame_ptr_->HasPose();
+}
 }  // namespace colmap

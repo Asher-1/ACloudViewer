@@ -77,7 +77,11 @@ QImage _getEmbeddedTexture(unsigned int inTextureIndex,
         return image;
     }
 
-    // Uncompressed embedded texture: BGRA8 pixels (mWidth x mHeight)
+    // Uncompressed embedded texture: BGRA8 pixels (mWidth x mHeight).
+    // Note: stored as-is (row 0 = top scanline). Assimp delivers mesh UVs
+    // already normalized to the OpenGL convention (v=0 at image bottom) —
+    // see glTF2Importer.cpp "Flip Y coords" — so textures must be stored
+    // unflipped here; the VTK texture upload handles the final flip.
     if (texture->mWidth == 0 || texture->mHeight == 0 || !texture->pcData) {
         CVLog::Warning(
                 QStringLiteral(
@@ -89,8 +93,8 @@ QImage _getEmbeddedTexture(unsigned int inTextureIndex,
     image = QImage(static_cast<int>(texture->mWidth),
                    static_cast<int>(texture->mHeight), QImage::Format_ARGB32);
     for (unsigned y = 0; y < texture->mHeight; ++y) {
-        auto *scanLine = reinterpret_cast<QRgb *>(
-                image.scanLine(static_cast<int>(texture->mHeight - 1 - y)));
+        auto *scanLine =
+                reinterpret_cast<QRgb *>(image.scanLine(static_cast<int>(y)));
         const aiTexel *src = texture->pcData + y * texture->mWidth;
         for (unsigned x = 0; x < texture->mWidth; ++x) {
             scanLine[x] = qRgba(src[x].r, src[x].g, src[x].b, src[x].a);
@@ -181,7 +185,8 @@ bool aiMeshHasUsableNormals(const aiMesh *mesh) {
 namespace IoUtils {
 ccMaterialSet *createMaterialSetForMesh(const aiMesh *inMesh,
                                         const QString &inPath,
-                                        const aiScene *inScene) {
+                                        const aiScene *inScene,
+                                        const QString &inSourceFileName) {
     if (inScene->mNumMaterials == 0) {
         return nullptr;
     }
@@ -238,18 +243,38 @@ ccMaterialSet *createMaterialSetForMesh(const aiMesh *inMesh,
                 }
 
                 if (!image.isNull()) {
-                    QString storagePath = CVTools::ToNativeSeparators(
-                            QStringLiteral("%1/%2").arg(inPath,
-                                                        texturePath.C_Str()));
+                    // Scope embedded-texture keys by the source file name:
+                    // embedded textures are stored under virtual paths, and
+                    // two different files in the same directory (e.g. several
+                    // GLB exports with same-name/unnamed textures) must never
+                    // share entries in the global texture DB.
+                    const QString sourceId = inSourceFileName.isEmpty()
+                                                     ? QStringLiteral("file")
+                                                     : inSourceFileName;
+                    QString storagePath;
                     if (match.hasMatch()) {
                         // glTF/GLB embedded textures use Assimp paths like
                         // "*0".
                         storagePath = CVTools::ToNativeSeparators(
-                                QStringLiteral("%1/#embedded/%2")
-                                        .arg(inPath, match.captured("index")));
+                                QStringLiteral("%1/%2/#embedded/%3")
+                                        .arg(inPath, sourceId,
+                                             match.captured("index")));
                         ccMaterial::AddTexture(image, storagePath);
-                    } else if (!QFile::exists(storagePath)) {
+                    } else if (!QFile::exists(path) && inScene->HasTextures()) {
+                        // Embedded texture referenced by name (not on disk)
+                        storagePath = CVTools::ToNativeSeparators(
+                                QStringLiteral("%1/%2/#embedded/%3")
+                                        .arg(inPath, sourceId,
+                                             texturePath.C_Str()));
                         ccMaterial::AddTexture(image, storagePath);
+                    } else {
+                        // Regular texture file on disk
+                        storagePath = CVTools::ToNativeSeparators(
+                                QStringLiteral("%1/%2").arg(
+                                        inPath, texturePath.C_Str()));
+                        if (!QFile::exists(storagePath)) {
+                            ccMaterial::AddTexture(image, storagePath);
+                        }
                     }
 
                     if (newMaterial->loadAndSetTextureMap(ccType,

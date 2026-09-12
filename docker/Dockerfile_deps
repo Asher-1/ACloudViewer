@@ -71,6 +71,8 @@ RUN apt-get update --fix-missing -y &&apt-get install -y apt-utils software-prop
         libavformat-dev \
         libavutil-dev \
         libswscale-dev \
+        # for video_base (libmpv audio + hardware decode, system package)
+        libmpv-dev \
         libjpeg-dev \
         libpng-dev \
         libtiff-dev \

@@ -8,7 +8,7 @@
 #include <cstdio>
 #include <cstring>
 
-#include "depth_gguf_keys.h"
+#include "tasks/depth/depth_gguf_keys.h"
 
 static int failures = 0;
 #define CHECK(cond)                                                      \

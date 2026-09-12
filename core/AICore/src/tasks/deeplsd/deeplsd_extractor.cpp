@@ -15,10 +15,10 @@
 #include <string>
 #include <vector>
 
-#include "deeplsd.hpp"
-#include "deeplsd_line_detect.hpp"
-#include "ggml_backend_registry.hpp"
-#include "gguf_loader.hpp"
+#include "common/ggml_backend_registry.hpp"
+#include "tasks/deeplsd/deeplsd.hpp"
+#include "tasks/deeplsd/deeplsd_line_detect.hpp"
+#include "tasks/deeplsd/gguf_loader.hpp"
 
 namespace deeplsd {
 namespace {

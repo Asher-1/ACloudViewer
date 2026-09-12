@@ -33,7 +33,9 @@ set(FOLDER_NAME "util")
 
 COLMAP_ADD_SOURCES(
     alignment.h
+    base_controller.h base_controller.cc
     bitmap.h bitmap.cc
+    cancellation.h cancellation.cc
     cache.h
     camera_specs.h camera_specs.cc
     download.h download.cc
@@ -59,6 +61,12 @@ if(CUDA_ENABLED)
     COLMAP_ADD_CUDA_SOURCES(
         cuda.h cuda.cc
         cudacc.h cudacc.cc
+    )
+elseif(HIP_ENABLED)
+    COLMAP_ADD_HIP_SOURCES(
+        cuda.h cuda.cc
+        cudacc.h cudacc.cc
+        cuda_to_hip.h
     )
 endif()
 

@@ -94,6 +94,11 @@ cpp_test_only() {
         export BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE} \
      && cd build \
      && ./bin/tests --gtest_shuffle --gtest_filter=-*Reduce*Sum* \
+     && cmake --build . --target reconstruction_oiio_parity_gate -j2 \
+     && cmake --build . --target reconstruction_camera_rig_parity_gate -j2 \
+     && if cmake -L -N . | grep -q '^RECONSTRUCTION_CASPAR_ENABLED:BOOL=ON$'; then \
+            cmake --build . --target reconstruction_caspar_parity_gate -j2; \
+        fi \
      && if test -f bin/libAICore.so; then \
             python ../util/check_aicore_runtime.py bin/libAICore.so; \
         fi \
@@ -140,6 +145,11 @@ cpp_python_command_tools_test() {
     ${docker_run} -i --rm ${DOCKER_TAG} /bin/bash -c " \
         cd build \
      && ./bin/tests --gtest_shuffle --gtest_filter=-*Reduce*Sum* \
+     && cmake --build . --target reconstruction_oiio_parity_gate -j2 \
+     && cmake --build . --target reconstruction_camera_rig_parity_gate -j2 \
+     && if cmake -L -N . | grep -q '^RECONSTRUCTION_CASPAR_ENABLED:BOOL=ON$'; then \
+            cmake --build . --target reconstruction_caspar_parity_gate -j2; \
+        fi \
      && if test -f bin/libAICore.so; then \
             python ../util/check_aicore_runtime.py bin/libAICore.so; \
         fi \

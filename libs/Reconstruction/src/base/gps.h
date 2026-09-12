@@ -29,6 +29,39 @@ public:
     std::vector<Eigen::Vector3d> XYZToEll(
             const std::vector<Eigen::Vector3d>& xyz) const;
 
+    // Upstream COLMAP ENU API (dbb41680). EllToXYZ/XYZToEll above are the
+    // fork-legacy spellings of EllipsoidToECEF/ECEFToEllipsoid and remain the
+    // single implementation source for the ECEF conversion below.
+    // Convert ellipsoidal (lat/lon/alt) to ENU coordinates.
+    // The reference point (ref_lat, ref_lon, ref_alt) defines the ENU origin.
+    std::vector<Eigen::Vector3d> EllipsoidToENU(
+            const std::vector<Eigen::Vector3d>& lat_lon_alt,
+            double ref_lat,
+            double ref_lon,
+            double ref_alt) const;
+
+    // Convert ECEF to ENU coordinates.
+    // The reference point (ref_ecef) defines the ENU origin.
+    std::vector<Eigen::Vector3d> ECEFToENU(
+            const std::vector<Eigen::Vector3d>& xyz_in_ecef,
+            const Eigen::Vector3d& ref_ecef) const;
+
+    // Convert ENU to ellipsoidal (lat/lon/alt) coordinates.
+    // The reference point (ref_lat, ref_lon, ref_alt) defines the ENU origin.
+    std::vector<Eigen::Vector3d> ENUToEllipsoid(
+            const std::vector<Eigen::Vector3d>& xyz_in_enu,
+            double ref_lat,
+            double ref_lon,
+            double ref_alt) const;
+
+    // Convert ENU to ECEF coordinates.
+    // The reference point (ref_lat, ref_lon, ref_alt) defines the ENU origin.
+    std::vector<Eigen::Vector3d> ENUToECEF(
+            const std::vector<Eigen::Vector3d>& xyz_in_enu,
+            double ref_lat,
+            double ref_lon,
+            double ref_alt) const;
+
 private:
     // Semimajor axis.
     double a_;

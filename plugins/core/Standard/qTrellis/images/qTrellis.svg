@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <!-- TRELLIS.2 image-to-3D: photo (left) -> 3D triangle-mesh sphere with PBR
+       highlights (right), brand text at the bottom. Teal gradient matches the
+       ACloudViewer plugin family (qDA3/qRMBG/qYOLO). -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#26c6da"/>
+      <stop offset="1" stop-color="#00695c"/>
+    </linearGradient>
+    <linearGradient id="photo" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#e0f2f1"/>
+    </linearGradient>
+  </defs>
+
+  <!-- rounded tile background -->
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#bg)"/>
+
+  <!-- input: photo card with sun + mountain -->
+  <rect x="4" y="6" width="18" height="14" rx="2.5" fill="url(#photo)"/>
+  <circle cx="9" cy="11" r="2.4" fill="#00897b"/>
+  <path d="M6 17.5 L11.5 12.5 L14.5 15 L17.5 11.5 L20.5 16 L20.5 18 L6 18 Z" fill="#26c6da"/>
+
+  <!-- conversion arrow -->
+  <path d="M25.5 10 L31.5 10 L31.5 7 L36.5 13 L31.5 19 L31.5 16 L25.5 16 Z" fill="#e0f2f1"/>
+
+  <!-- output: 3D triangle-mesh sphere (FlexiDualGrid VAE look) -->
+  <g stroke="#ffffff" stroke-width="1.3" fill="none">
+    <circle cx="47" cy="14" r="13"/>
+    <ellipse cx="47" cy="14" rx="13" ry="4.6"/>
+    <ellipse cx="47" cy="14" rx="4.6" ry="13"/>
+    <path d="M34 10 Q47 5 60 10"/>
+    <path d="M34 18 Q47 23 60 18"/>
+    <path d="M38.3 2.4 Q47 9.5 55.7 2.4"/>
+    <path d="M38.3 25.6 Q47 18.5 55.7 25.6"/>
+  </g>
+  <!-- shaded faces (PBR base-color hint) -->
+  <path d="M47 1 L60 14 L47 14 Z" fill="#ffffff" opacity="0.30"/>
+  <path d="M47 1 L34 14 L47 14 Z" fill="#e0f2f1" opacity="0.18"/>
+  <path d="M47 14 L60 14 L60 27 L47 27 Z" fill="#ffffff" opacity="0.12"/>
+  <!-- PBR specular highlights -->
+  <circle cx="42.5" cy="9.5" r="1.8" fill="#ffffff" opacity="0.95"/>
+  <circle cx="53.5" cy="21" r="1.1" fill="#ffffff" opacity="0.65"/>
+
+  <!-- brand text -->
+  <text x="32" y="52" font-family="Arial,Helvetica,sans-serif" font-size="10"
+        font-weight="bold" fill="#ffffff" text-anchor="middle"
+        letter-spacing="0.3">qTrellis</text>
+</svg>

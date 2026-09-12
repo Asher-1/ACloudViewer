@@ -15,6 +15,9 @@
 #include "ggml-cpu.h"
 #endif
 
+#include "common/ggml_env_bridge.hpp"
+
+
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
@@ -69,6 +72,8 @@ inline void parse_device(const std::string& req, std::string& name, int& index) 
 // On macOS app bundles the executable is inside Contents/MacOS/ while backend
 // dylibs live alongside libAICore.dylib, so we resolve our own dylib's
 // directory and pass it to ggml_backend_load_all_from_path().
+// Registers that the backends are loaded so later ggml env overrides (see
+// aicore::apply_ggml_env_overrides) can warn about the snapshot semantics.
 inline void load_backends_once() {
     static const bool done = [] {
 #if defined(AICORE_BACKEND_DL)
@@ -110,8 +115,17 @@ inline void load_backends_once() {
                     search_dir);
         }
 #endif
+        // Process-wide Vulkan runtime defaults must precede every device
+        // initialization: ggml-vulkan snapshots its instance-level
+        // variables once, at first device use (see ggml_env_bridge.hpp).
+        // The log bridge goes first so backend registration issues are
+        // already visible in the application log.
+        aicore::install_ggml_log_bridge();
+        aicore::apply_vulkan_runtime_defaults();
         ggml_backend_load_all_from_path(search_dir);
 #else
+        aicore::install_ggml_log_bridge();
+        aicore::apply_vulkan_runtime_defaults();
         ggml_backend_load_all();
 #endif
 #ifndef NDEBUG
@@ -125,6 +139,7 @@ inline void load_backends_once() {
                     ggml_backend_reg_name(ggml_backend_dev_backend_reg(dev)));
         }
 #endif
+        aicore::mark_ggml_backends_loaded();
         return true;
     }();
     (void)done;
@@ -200,13 +215,13 @@ inline ggml_backend_t find_integrated_gpu_backend(std::string& resolved_name) {
     return nullptr;
 }
 
-// Runtime auto-pick follows the release/developer order configured at build time.
-// When AICore_CUDA was built (AICORE_AUTO_INCLUDE_CUDA), CUDA precedes Vulkan on
-// Linux/Windows so Auto and explicit "cuda" agree on the same backend.
+// Runtime auto-pick follows the build's backend order. When a CUDA backend
+// was built (AICORE_CUDA_BUILT), CUDA precedes Vulkan on Linux/Windows so Auto
+// and explicit "cuda" agree on the same backend family.
 inline const char* const* auto_backend_ids() {
 #if defined(__APPLE__)
     static const char* kOrder[] = {"metal", nullptr};
-#elif defined(AICORE_AUTO_INCLUDE_CUDA)
+#elif defined(AICORE_CUDA_BUILT)
     static const char* kOrder[] = {"cuda", "vulkan", nullptr};
 #else
     static const char* kOrder[] = {"vulkan", nullptr};
@@ -231,6 +246,17 @@ inline std::string registry_backend_id(const char* reg_name) {
     return name;
 }
 
+// Optional knobs for resolve_gpu_group(). All control stays interface-only:
+// any ggml-side environment translation happens inside the common layer
+// (see common/ggml_env_bridge.hpp), never in the calling task module.
+struct GpuResolveOptions {
+    // macOS only: scope the ggml-metal graph-optimizer/fusion disable
+    // switches to the backend-creation window inside resolve_gpu_group
+    // (ggml-metal's optimizer mis-handles the FreeSplatter graph). The
+    // shell's values are restored before returning.
+    bool disable_metal_graph_opt = false;
+};
+
 // All GPU backends for a device request. "auto" collects every GPU of the first
 // auto-priority backend family (e.g. both cuda:0 and cuda:1); "cuda:1" selects one.
 struct GpuBackendGroup {
@@ -253,12 +279,33 @@ struct GpuBackendGroup {
     }
 };
 
-inline GpuBackendGroup resolve_gpu_group(const std::string& device_req) {
+inline GpuBackendGroup resolve_gpu_group(const std::string& device_req,
+                                         const GpuResolveOptions& opts = {}) {
     load_backends_once();
     GpuBackendGroup group;
     std::string name;
     int want_idx = 0;
     parse_device(device_req, name, want_idx);
+
+#ifdef __APPLE__
+    // Interface-only metal-optimizer disable: the env-mechanism scope
+    // (snapshot -> apply -> resolve -> restore) lives here in the common
+    // layer, so the calling task module carries no environment references.
+    const bool metal_env_scoped =
+            opts.disable_metal_graph_opt &&
+            (name.empty() || name == "auto" || name == "gpu" ||
+             name == "metal");
+    aicore::GgmlEnvSnapshot metal_env_snapshot;
+    if (metal_env_scoped) {
+        metal_env_snapshot = aicore::take_ggml_env_snapshot(
+                {"GGML_METAL_GRAPH_OPTIMIZE_DISABLE",
+                 "GGML_METAL_FUSION_DISABLE"});
+        aicore::GgmlEnvOverrides disable;
+        disable.metal_graph_optimize_disable = true;
+        disable.metal_fusion_disable = true;
+        aicore::apply_ggml_env_overrides(disable);
+    }
+#endif
 
     auto append_gpu = [&](ggml_backend_dev_t dev) {
         if (ggml_backend_t be = ggml_backend_dev_init(dev, nullptr)) {
@@ -304,6 +351,11 @@ inline GpuBackendGroup resolve_gpu_group(const std::string& device_req) {
             group.names.push_back(resolved);
         }
     }
+#ifdef __APPLE__
+    if (metal_env_scoped) {
+        aicore::restore_ggml_env_snapshot(metal_env_snapshot);
+    }
+#endif
     return group;
 }
 

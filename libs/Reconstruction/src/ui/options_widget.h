@@ -9,6 +9,7 @@
 
 #include <QtCore>
 #include <QtWidgets>
+#include <filesystem>
 #include <unordered_map>
 
 namespace colmap {
@@ -46,6 +47,14 @@ public:
                                  const std::string& label_text);
     QLineEdit* AddOptionDirPath(std::string* option,
                                 const std::string& label_text);
+    // Overloads for options whose path fields migrated to
+    // std::filesystem::path; the std::string* overloads remain for legacy
+    // string path fields. Pointer parameters cannot be built from string
+    // literals, so the two overloads never introduce ambiguity.
+    QLineEdit* AddOptionFilePath(std::filesystem::path* option,
+                                 const std::string& label_text);
+    QLineEdit* AddOptionDirPath(std::filesystem::path* option,
+                                const std::string& label_text);
 
     void AddSpacer();
     void AddSection(const std::string& title);
@@ -79,6 +88,7 @@ protected:
     std::vector<std::pair<QCheckBox*, bool*>> options_bool_;
     std::vector<std::pair<QLineEdit*, std::string*>> options_text_;
     std::vector<std::pair<QLineEdit*, std::string*>> options_path_;
+    std::vector<std::pair<QLineEdit*, std::filesystem::path*>> options_fspath_;
 };
 
 }  // namespace colmap

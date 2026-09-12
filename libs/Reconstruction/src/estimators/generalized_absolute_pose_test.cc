@@ -45,7 +45,7 @@
 
 using namespace colmap;
 
-BOOST_AUTO_TEST_CASE(Estimate) {
+TEST(base_generalized_absolute_pose, Estimate) {
   SetPRNGSeed(0);
 
   std::vector<Eigen::Vector3d> points3D;
@@ -103,26 +103,26 @@ BOOST_AUTO_TEST_CASE(Estimate) {
       RANSAC<GP3PEstimator> ransac(options);
       const auto report = ransac.Estimate(points2D, points3D);
 
-      BOOST_CHECK_EQUAL(report.success, true);
+      EXPECT_EQ(report.success, true);
 
       // Test if correct transformation has been determined.
       const double matrix_diff =
           (orig_tforms[kRefTform].Matrix().topLeftCorner<3, 4>() - report.model)
               .norm();
-      BOOST_CHECK(matrix_diff < 1e-2);
+      EXPECT_TRUE(matrix_diff < 1e-2);
 
       // Test residuals of exact points.
       std::vector<double> residuals;
       ransac.estimator.Residuals(points2D, points3D, report.model, &residuals);
       for (size_t i = 0; i < residuals.size(); ++i) {
-        BOOST_CHECK(residuals[i] < 1e-10);
+        EXPECT_TRUE(residuals[i] < 1e-10);
       }
 
       // Test residuals of faulty points.
       ransac.estimator.Residuals(points2D, points3D_faulty, report.model,
                                  &residuals);
       for (size_t i = 0; i < residuals.size(); ++i) {
-        BOOST_CHECK(residuals[i] > 1e-10);
+        EXPECT_TRUE(residuals[i] > 1e-10);
       }
     }
   }

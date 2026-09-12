@@ -1,7 +1,10 @@
 #pragma once
-#include "model_loader.hpp"
-#include "backend.hpp"
-#include "rope2d.hpp"
+#include "tasks/depth/model_loader.hpp"
+
+#include "tasks/depth/backend.hpp"
+
+#include "tasks/depth/rope2d.hpp"
+
 #include <vector>
 namespace aicore {
 namespace depth {

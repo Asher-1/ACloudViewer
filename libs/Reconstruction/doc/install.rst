@@ -80,7 +80,7 @@ Dependencies from the default Ubuntu repositories::
         libboost-test-dev \
         libeigen3-dev \
         libsuitesparse-dev \
-        libfreeimage-dev \
+        libopenimageio-dev \
         libgoogle-glog-dev \
         libgflags-dev \
         libglew-dev \
@@ -134,7 +134,7 @@ Dependencies from `Homebrew <http://brew.sh/>`_::
         cmake \
         boost \
         eigen \
-        freeimage \
+        openimageio \
         glog \
         gflags \
         suite-sparse \

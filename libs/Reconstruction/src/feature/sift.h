@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <filesystem>
+
 #include "estimators/two_view_geometry.h"
 #include "feature/types.h"
 #include "util/bitmap.h"
@@ -36,6 +38,13 @@ struct SiftExtractionOptions {
 
     // Maximum number of features to detect, keeping larger-scale features.
     int max_num_features = 8192;
+
+    // LoMa model paths are optional; when set by the feature command they
+    // select the learned extractor while preserving the SIFT option object.
+    bool use_loma = false;
+    std::string loma_detector_model_path;
+    std::string loma_descriptor_model_path;
+    std::string loma_device = "auto";
 
     // First octave in the pyramid, i.e. -1 upsamples the image by one level.
     int first_octave = -1;
@@ -145,6 +154,15 @@ struct SiftMatchingOptions {
     // Whether to perform guided matching, if geometric verification succeeds.
     bool guided_matching = false;
 
+    // Optional LoMa matcher dispatch for databases containing float
+    // descriptors. Empty keeps the legacy SIFT-only scheduler unchanged.
+    bool use_loma = false;
+    std::string loma_matcher_model_path;
+    // b, b128, r, l, or g. The default exactly matches COLMAP's LoMa-B.
+    std::string loma_matcher_variant = "b";
+    double loma_min_score = 0.1;
+    std::string loma_device = "auto";
+
     bool Check() const;
 };
 
@@ -192,7 +210,7 @@ bool ExtractSiftFeaturesGPU(const SiftExtractionOptions& options,
 //    0.32 0.12 1.23 1.0 1 2 3 4
 //    0.32 0.12 1.23 1.0 1 2 3 4
 //
-void LoadSiftFeaturesFromTextFile(const std::string& path,
+void LoadSiftFeaturesFromTextFile(const std::filesystem::path& path,
                                   FeatureKeypoints* keypoints,
                                   FeatureDescriptors* descriptors);
 

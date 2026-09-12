@@ -32,9 +32,12 @@
 #define TEST_NAME "estimators/essential_matrix"
 #include "util/testing.h"
 
+#include <cmath>
+
 #include <Eigen/Core>
 
 #include "base/camera_models.h"
+#include "base/camera.h"
 #include "base/essential_matrix.h"
 #include "base/pose.h"
 #include "base/projection.h"
@@ -44,7 +47,80 @@
 
 using namespace colmap;
 
-BOOST_AUTO_TEST_CASE(TestFivePoint) {
+TEST(estimators_essential_matrix, TestCamRayWithJacPinholeNumericalGate) {
+  Camera camera;
+  camera.InitializeWithId(SimplePinholeCameraModel::kModelId, 800.0, 1600,
+                          1200);
+  const Eigen::Vector2d pixel(960.0, 480.0);
+  const auto ray_with_jac = camera.CamRayFromImgWithJac(pixel);
+  ASSERT_TRUE(ray_with_jac.has_value());
+
+  const Eigen::Vector3d unnormalized(0.2, -0.15, 1.0);
+  const Eigen::Vector3d expected_ray = unnormalized.normalized();
+  const Eigen::Matrix3d normalizer =
+          (Eigen::Matrix3d::Identity() - expected_ray * expected_ray.transpose()) /
+          unnormalized.norm();
+  Eigen::Matrix<double, 3, 2> expected_jac;
+  expected_jac.col(0) = normalizer * Eigen::Vector3d(1.0 / 800.0, 0, 0);
+  expected_jac.col(1) = normalizer * Eigen::Vector3d(0, 1.0 / 800.0, 0);
+
+  ASSERT_LE(std::abs((ray_with_jac->ray - expected_ray).norm()), 1e-12);
+  ASSERT_LE(std::abs((ray_with_jac->jacobian - expected_jac).norm()), 1e-9);
+}
+
+TEST(estimators_essential_matrix, TestTangentSampsonNumericalGate) {
+  Camera camera;
+  camera.InitializeWithId(SimplePinholeCameraModel::kModelId, 900.0, 1800,
+                          1200);
+  const Eigen::Vector2d point1(950, 640);
+  const Eigen::Vector2d point2(1000, 640);
+  const auto ray1 = camera.CamRayFromImgWithJac(point1);
+  const auto ray2 = camera.CamRayFromImgWithJac(point2);
+  ASSERT_TRUE(ray1.has_value());
+  ASSERT_TRUE(ray2.has_value());
+
+  Eigen::Matrix3d E = Eigen::Matrix3d::Zero();
+  E(1, 2) = -1.0;
+  E(2, 1) = 1.0;
+  const double error = ComputeSquaredTangentSampsonError(*ray1, *ray2, E);
+  EXPECT_TRUE(std::isfinite(error));
+  EXPECT_LT(error, 1e-12);
+
+  // Compare the tangent denominator with an independently evaluated centered
+  // finite-difference pixel gradient. This is the numerical acceptance gate
+  // used by ray-based solvers, not merely a zero-residual smoke test.
+  const Eigen::Vector2d perturbation(0.35, -0.45);
+  const auto perturbed_ray2 =
+          camera.CamRayFromImgWithJac(point2 + perturbation);
+  ASSERT_TRUE(perturbed_ray2.has_value());
+  const double tangent_error =
+          ComputeSquaredTangentSampsonError(*ray1, *perturbed_ray2, E);
+  const double residual = perturbed_ray2->ray.dot(E * ray1->ray);
+  constexpr double kStep = 1e-4;
+  Eigen::Vector2d numerical_gradient;
+  for (int axis = 0; axis < 2; ++axis) {
+    Eigen::Vector2d backward = point2 + perturbation;
+    Eigen::Vector2d forward = point2 + perturbation;
+    backward[axis] -= kStep;
+    forward[axis] += kStep;
+    const auto ray_backward = camera.CamRayFromImgWithJac(backward);
+    const auto ray_forward = camera.CamRayFromImgWithJac(forward);
+    ASSERT_TRUE(ray_backward.has_value());
+    ASSERT_TRUE(ray_forward.has_value());
+    numerical_gradient[axis] =
+            (ray_forward->ray.dot(E * ray1->ray) -
+             ray_backward->ray.dot(E * ray1->ray)) /
+            (2.0 * kStep);
+  }
+  const Eigen::Vector2d gradient1 =
+          ray1->jacobian.transpose() * E.transpose() * perturbed_ray2->ray;
+  const double expected = residual * residual /
+                          (gradient1.squaredNorm() +
+                           numerical_gradient.squaredNorm());
+  ASSERT_LE(std::abs(tangent_error - expected), 1e-9);
+}
+
+TEST(estimators_essential_matrix, TestFivePoint) {
   const double points1_raw[] = {
       0.4964, 1.0577, 0.3650,  -0.0919, -0.5412, 0.0159, -0.5239, 0.9467,
       0.3467, 0.5301, 0.2797,  0.0012,  -0.1986, 0.0460, -0.1622, 0.5347,
@@ -81,14 +157,14 @@ BOOST_AUTO_TEST_CASE(TestFivePoint) {
                                                &residuals);
 
   for (size_t i = 0; i < 10; ++i) {
-    BOOST_CHECK_LE(residuals[i], options.max_error * options.max_error);
+    EXPECT_LE(residuals[i], options.max_error * options.max_error);
   }
 
-  BOOST_CHECK(!report.inlier_mask[10]);
-  BOOST_CHECK(!report.inlier_mask[11]);
+  EXPECT_FALSE(report.inlier_mask[10]);
+  EXPECT_FALSE(report.inlier_mask[11]);
 }
 
-BOOST_AUTO_TEST_CASE(TestEightPoint) {
+TEST(estimators_essential_matrix, TestEightPoint) {
   const double points1_raw[] = {1.839035, 1.924743, 0.543582,  0.375221,
                                 0.473240, 0.142522, 0.964910,  0.598376,
                                 0.102388, 0.140092, 15.994343, 9.622164,
@@ -112,20 +188,20 @@ BOOST_AUTO_TEST_CASE(TestEightPoint) {
   const auto E = estimator.Estimate(points1, points2)[0];
 
   // Reference values.
-  BOOST_CHECK(std::abs(E(0, 0) - -0.0368602) < 1e-5);
-  BOOST_CHECK(std::abs(E(0, 1) - 0.265019) < 1e-5);
-  BOOST_CHECK(std::abs(E(0, 2) - -0.0625948) < 1e-5);
-  BOOST_CHECK(std::abs(E(1, 0) - -0.299679) < 1e-5);
-  BOOST_CHECK(std::abs(E(1, 1) - -0.110667) < 1e-5);
-  BOOST_CHECK(std::abs(E(1, 2) - 0.147114) < 1e-5);
-  BOOST_CHECK(std::abs(E(2, 0) - 0.169381) < 1e-5);
-  BOOST_CHECK(std::abs(E(2, 1) - -0.21072) < 1e-5);
-  BOOST_CHECK(std::abs(E(2, 2) - -0.00401306) < 1e-5);
+  EXPECT_TRUE(std::abs(E(0, 0) - -0.0368602) < 1e-5);
+  EXPECT_TRUE(std::abs(E(0, 1) - 0.265019) < 1e-5);
+  EXPECT_TRUE(std::abs(E(0, 2) - -0.0625948) < 1e-5);
+  EXPECT_TRUE(std::abs(E(1, 0) - -0.299679) < 1e-5);
+  EXPECT_TRUE(std::abs(E(1, 1) - -0.110667) < 1e-5);
+  EXPECT_TRUE(std::abs(E(1, 2) - 0.147114) < 1e-5);
+  EXPECT_TRUE(std::abs(E(2, 0) - 0.169381) < 1e-5);
+  EXPECT_TRUE(std::abs(E(2, 1) - -0.21072) < 1e-5);
+  EXPECT_TRUE(std::abs(E(2, 2) - -0.00401306) < 1e-5);
 
   // Check that the internal constraint is satisfied (two singular values equal
   // and one zero).
   Eigen::JacobiSVD<Eigen::Matrix3d> svd(E);
   Eigen::Vector3d s = svd.singularValues();
-  BOOST_CHECK(std::abs(s(0) - s(1)) < 1e-5);
-  BOOST_CHECK(std::abs(s(2)) < 1e-5);
+  EXPECT_TRUE(std::abs(s(0) - s(1)) < 1e-5);
+  EXPECT_TRUE(std::abs(s(2)) < 1e-5);
 }

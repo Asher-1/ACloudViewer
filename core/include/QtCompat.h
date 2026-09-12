@@ -84,6 +84,11 @@
 //    - Qt6: Supported via iterator range constructors
 //    - Functions: qtCompatQSetFromVector(), qtCompatQVectorFromSet()
 //
+// 14. Atomic Integer Relaxed Access:
+//    - QAtomicInteger::loadRelaxed() / storeRelaxed() (Qt5.14+, Qt6)
+//    - Qt5.0-5.13: load() / store() only
+//    - Functions: qtCompatLoadRelaxed(), qtCompatStoreRelaxed()
+//
 // USAGE EXAMPLES:
 //
 //   Regular Expression:
@@ -134,6 +139,7 @@
 
 #pragma once
 
+#include <QAtomicInteger>
 #include <QMap>
 #include <QMultiMap>
 #include <QPoint>
@@ -144,6 +150,7 @@
 #include <QTextStream>
 #include <QVector>
 #include <QtGlobal>
+#include <iterator>
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 // Qt6 includes
@@ -1078,3 +1085,57 @@ template <typename T>
 inline QVector<T> qVectorFromSet(const QSet<T>& set) {
     return qtCompatQVectorFromSet(set);
 }
+
+// Helper to create QVector from an arbitrary iterator range [first, last).
+// This covers raw pointer ranges (e.g. float* arrays from C APIs) which
+// qtCompatQVectorFromSet/qtCompatQSetFromVector do not handle.
+template <typename T, typename InputIt>
+inline QVector<T> qtCompatQVectorFromRange(InputIt first, InputIt last) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+    return QVector<T>(first, last);
+#else
+    // Qt5.0-5.14: no iterator-range constructor — manual copy loop
+    QVector<T> result;
+    result.reserve(static_cast<int>(std::distance(first, last)));
+    while (first != last) {
+        result.append(*first);
+        ++first;
+    }
+    return result;
+#endif
+}
+
+// ----------------------------------------------------------------------------
+// QAtomicInteger Relaxed Load/Store Compatibility
+// ----------------------------------------------------------------------------
+// Qt5.0-5.13: load() / store()
+// Qt5.14+/Qt6: loadRelaxed() / storeRelaxed() (load()/store() deprecated)
+// ----------------------------------------------------------------------------
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+// Qt5.14+/Qt6: relaxed accessors are the canonical API
+
+template <typename T>
+inline T qtCompatLoadRelaxed(const QBasicAtomicInteger<T>& atomic) noexcept {
+    return atomic.loadRelaxed();
+}
+
+template <typename T>
+inline void qtCompatStoreRelaxed(QBasicAtomicInteger<T>& atomic,
+                                 T value) noexcept {
+    atomic.storeRelaxed(value);
+}
+#else
+// Qt5.0-5.13: load()/store() are the relaxed equivalents
+
+template <typename T>
+inline T qtCompatLoadRelaxed(const QBasicAtomicInteger<T>& atomic) noexcept {
+    return atomic.load();
+}
+
+template <typename T>
+inline void qtCompatStoreRelaxed(QBasicAtomicInteger<T>& atomic,
+                                 T value) noexcept {
+    atomic.store(value);
+}
+#endif

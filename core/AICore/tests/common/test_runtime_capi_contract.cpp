@@ -10,7 +10,16 @@
 #include <cstdio>
 #include <thread>
 
+#include "aicore/aliked_capi.h"
+#include "aicore/backend_capi.h"
+#include "aicore/deeplsd_capi.h"
+#include "aicore/depth_capi.h"
+#include "aicore/facedetect_capi.h"
+#include "aicore/gaussian_capi.h"
+#include "aicore/lightglue_capi.h"
+#include "aicore/rfdetr_capi.h"
 #include "aicore/runtime_capi.h"
+#include "aicore/yolo_capi.h"
 
 namespace {
 
@@ -21,7 +30,45 @@ int Fail(const char* message) {
 
 }  // namespace
 
+// The legacy process-wide cancel / inference-lock entry points are marked
+// AICORE_LEGACY_API (deprecated). This contract test intentionally verifies
+// they still work, so suppress the deprecation warnings for the whole file.
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#elif defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4996)
+#endif
+
 int main() {
+    // Runtime shutdown is intentionally idempotent and can be called between
+    // task batches without invalidating live contexts.
+    aicore_runtime_shutdown();
+    aicore_runtime_shutdown();
+
+    // Every task owns the same idempotent shutdown contract. Invalid image
+    // calls must fail synchronously without dereferencing a context or view.
+    aicore_aliked_shutdown();
+    aicore_deeplsd_shutdown();
+    aicore_depth_shutdown();
+    aicore_gaussian_shutdown();
+    aicore_lightglue_shutdown();
+    aicore_rfdetr_shutdown();
+    aicore_yolo_shutdown();
+    if (aicore_depth_depth_image(nullptr, nullptr, nullptr) == 0) {
+        return Fail("null depth image call unexpectedly succeeded");
+    }
+    if (aicore_facedetect_detect_rgb(nullptr, nullptr, 0, 0) == 0) {
+        return Fail("null face image call unexpectedly succeeded");
+    }
+    if (aicore_rfdetr_detect_rgb(nullptr, nullptr, 0, 0, 0.0F, 0) == 0) {
+        return Fail("null RF-DETR image call unexpectedly succeeded");
+    }
+    if (aicore_yolo_detect_rgb(nullptr, nullptr, 0, 0) == 0) {
+        return Fail("null YOLO image call unexpectedly succeeded");
+    }
+
     aicore_cancel_token* outer = aicore_cancel_token_new();
     aicore_cancel_token* inner = aicore_cancel_token_new();
     if (!outer || !inner) return Fail("token allocation failed");
@@ -84,5 +131,38 @@ int main() {
 
     aicore_cancel_token_free(inner);
     aicore_cancel_token_free(outer);
+
+    // Global serial inference lock: acquire, hold, try, release.
+    if (aicore_inference_lock() != 0) return Fail("inference lock failed");
+    if (aicore_inference_try_lock() != -1) {
+        aicore_inference_unlock();
+        return Fail("nested inference lock unexpectedly succeeded");
+    }
+    aicore_inference_unlock();
+    if (aicore_inference_try_lock() != 0) {
+        return Fail("inference try-lock failed after unlock");
+    }
+    aicore_inference_unlock();
+
+    // Device capability bitmask: "cpu" is compute+cancel (no GPU bits).
+    // "gpu" may resolve to a real accelerator when present, or fall back to
+    // cpu on runners without one — either way the mask must be non-zero.
+    // nullptr is treated as "auto" by the runtime (documented contract), so
+    // it must also resolve to a non-zero mask.
+    if (aicore_device_capabilities("cpu") == 0) {
+        return Fail("cpu capabilities unresolved");
+    }
+    if (aicore_device_capabilities("gpu") == 0) {
+        return Fail("gpu capabilities unresolved");
+    }
+    if (aicore_device_capabilities(nullptr) == 0) {
+        return Fail("null (auto) capabilities unresolved");
+    }
     return 0;
 }
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
+#pragma warning(pop)
+#endif

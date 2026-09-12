@@ -292,12 +292,6 @@ void OptionsParser::addMapperOptions(
                    &incremental_mapper_options.ba_local_function_tolerance);
     registerOption("Mapper.ba_local_max_num_iterations",
                    &incremental_mapper_options.ba_local_max_num_iterations);
-#ifdef PBA_ENABLED
-    registerOption("Mapper.ba_global_use_pba",
-                   &incremental_mapper_options.ba_global_use_pba);
-    registerOption("Mapper.ba_global_pba_gpu_index",
-                   &incremental_mapper_options.ba_global_pba_gpu_index);
-#endif
     registerOption("Mapper.ba_global_images_ratio",
                    &incremental_mapper_options.ba_global_images_ratio);
     registerOption("Mapper.ba_global_points_ratio",
@@ -420,6 +414,12 @@ void OptionsParser::addBundleAdjustmentOptions(
                    &bundle_adjustment_options.refine_extra_params);
     registerOption("BundleAdjustment.refine_extrinsics",
                    &bundle_adjustment_options.refine_extrinsics);
+    registerOption("BundleAdjustment.use_caspar",
+                   &bundle_adjustment_options.use_caspar);
+    registerOption("BundleAdjustment.caspar_gpu_index",
+                   &bundle_adjustment_options.caspar_gpu_index);
+    registerOption("BundleAdjustment.caspar_max_num_iterations",
+                   &bundle_adjustment_options.caspar_max_num_iterations);
 }
 
 void OptionsParser::addPatchMatchStereoOptions(
@@ -530,6 +530,31 @@ void OptionsParser::addDelaunayMeshingOptions(
                    &delaunay_meshing_options.max_side_length_percentile);
     registerOption("DelaunayMeshing.num_threads",
                    &delaunay_meshing_options.num_threads);
+}
+
+void OptionsParser::addMeshPostProcessingOptions(
+        const colmap::mvs::MeshPostProcessingOptions& options) {
+    registerOption("MeshPostProcessing.enabled", &options.enabled);
+    registerOption("MeshPostProcessing.remove_small_components",
+                   &options.remove_small_components);
+    registerOption("MeshPostProcessing.remove_degenerate_faces",
+                   &options.remove_degenerate_faces);
+    registerOption("MeshPostProcessing.simplify", &options.simplify);
+    registerOption("MeshPostProcessing.smooth", &options.smooth);
+    registerOption("MeshPostProcessing.preserve_boundary",
+                   &options.preserve_boundary);
+    registerOption("MeshPostProcessing.prune_error", &options.prune_error);
+    registerOption("MeshPostProcessing.target_face_ratio",
+                   &options.target_face_ratio);
+    registerOption("MeshPostProcessing.simplify_error",
+                   &options.simplify_error);
+    registerOption("MeshPostProcessing.max_aspect_ratio",
+                   &options.max_aspect_ratio);
+    registerOption("MeshPostProcessing.smoothing_iterations",
+                   &options.smoothing_iterations);
+    registerOption("MeshPostProcessing.smoothing_lambda",
+                   &options.smoothing_lambda);
+    registerOption("MeshPostProcessing.smoothing_mu", &options.smoothing_mu);
 }
 
 }  // namespace cloudViewer

@@ -14,12 +14,21 @@ ExternalProject_Add(ext_lapack
         CMAKE_ARGS
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5
             -DBUILD_SHARED_LIBS=$<$<PLATFORM_ID:Linux>:ON:OFF>
+            # Installed shared lapack must resolve its own NEEDED libblas:
+            # consumer RUNPATHs are non-transitive on Linux.
+            -DCMAKE_INSTALL_RPATH=$ORIGIN
             -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
             -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
             -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
             -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
             -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
             -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+            # The netlib CBLAS wrapper (libcblas.so.3) exposes cblas_sgemm and
+            # friends over the Fortran BLAS. faiss needs this C interface; the
+            # plain libblas.so.3 above only exports the Fortran symbols, and
+            # any same-soname system BLAS loses to this bundled copy at wheel
+            # load time (undefined symbol: cblas_sgemm).
+            -DCBLAS=ON
             -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
         DEPENDS 3rdparty_glog
 )

@@ -7,7 +7,7 @@
 
 // PLY export implementation for SIBR Gaussian viewer compatibility.
 // Converts free-splatter's activated Gaussians to 3DGS PLY format.
-#include "ply_export.hpp"
+#include "tasks/gaussian/ply_export.hpp"
 
 #include <algorithm>
 #include <cmath>

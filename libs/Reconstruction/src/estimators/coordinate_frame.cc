@@ -155,7 +155,8 @@ Eigen::Vector3d EstimateGravityVectorFromImageOrientation(
 
 Eigen::Matrix3d EstimateManhattanWorldFrame(
     const ManhattanWorldFrameEstimationOptions& options,
-    const Reconstruction& reconstruction, const std::string& image_path) {
+    const Reconstruction& reconstruction,
+    const std::filesystem::path& image_path) {
   std::vector<Eigen::Vector3d> rightward_axes;
   std::vector<Eigen::Vector3d> downward_axes;
   for (size_t i = 0; i < reconstruction.NumRegImages(); ++i) {
@@ -170,7 +171,7 @@ Eigen::Matrix3d EstimateManhattanWorldFrame(
     std::cout << "Reading image..." << std::endl;
 
     colmap::Bitmap bitmap;
-    CHECK(bitmap.Read(colmap::JoinPaths(image_path, image.Name())));
+    CHECK(bitmap.Read(image_path / image.Name()));
 
     std::cout << "Undistorting image..." << std::endl;
 

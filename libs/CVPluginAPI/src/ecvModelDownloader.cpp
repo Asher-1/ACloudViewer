@@ -7,6 +7,7 @@
 
 #include "ecvModelDownloader.h"
 
+#include <QCryptographicHash>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -17,47 +18,12 @@
 #include <QSslConfiguration>
 #include <QSslError>
 #include <QSslSocket>
-#include <cstring>
 
 ecvModelDownloader::ecvModelDownloader(QObject* parent) : QObject(parent) {
     m_net = new QNetworkAccessManager(this);
 }
 
 ecvModelDownloader::~ecvModelDownloader() { cancel(); }
-
-// GGUF file format magic. The first 4 bytes of every valid GGUF file are
-// the ASCII characters "GGUF" (0x46475547 in little-endian). Validating
-// against this magic — instead of guessing a per-model size floor — lets
-// us accept the smallest quantized ALIKED extractor (~714 KiB) while
-// still rejecting truncated/empty/HTML responses.
-static constexpr const char kGgufMagic[4] = {'G', 'G', 'U', 'F'};
-
-static bool hasGgufMagic(const QString& path) {
-    QFile f(path);
-    if (!f.open(QIODevice::ReadOnly)) return false;
-    char head[4] = {0, 0, 0, 0};
-    const qint64 read = f.read(head, sizeof(head));
-    f.close();
-    if (read != sizeof(head)) return false;
-    return std::memcmp(head, kGgufMagic, sizeof(kGgufMagic)) == 0;
-}
-
-bool ecvModelDownloader::isValidCachedFile(const QString& path,
-                                           qint64 minBytes,
-                                           bool requireGgufMagic) {
-    const QFileInfo fi(path);
-    if (!fi.isFile() || fi.size() < minBytes) return false;
-    if (requireGgufMagic && !hasGgufMagic(path)) return false;
-    return true;
-}
-
-void ecvModelDownloader::removeInvalidCacheFile(const QString& path,
-                                                qint64 minBytes,
-                                                bool requireGgufMagic) {
-    if (!isValidCachedFile(path, minBytes, requireGgufMagic)) {
-        QFile::remove(path);
-    }
-}
 
 QString ecvModelDownloader::formatFileSize(qint64 bytes) {
     if (bytes < 0) {
@@ -101,6 +67,8 @@ void ecvModelDownloader::cleanupActiveReply() {
         m_reply->deleteLater();
         m_reply = nullptr;
     }
+    delete m_hash;
+    m_hash = nullptr;
     if (!m_tmpPath.isEmpty()) {
         QFile::remove(m_tmpPath);
         m_tmpPath.clear();
@@ -112,6 +80,12 @@ void ecvModelDownloader::cancel() {
     if (!m_busy) return;
     cleanupActiveReply();
     emit logMessage(tr("[Download] Cancelled."));
+}
+
+QUrl ecvModelDownloader::hfDownloadUrl(const QString& repoId,
+                                       const QString& filename) {
+    return QUrl(QStringLiteral("https://huggingface.co/%1/resolve/main/%2")
+                        .arg(repoId, filename));
 }
 
 void ecvModelDownloader::download(const Request& request) {
@@ -126,8 +100,16 @@ void ecvModelDownloader::download(const Request& request) {
 
     m_destPath = request.destPath;
     m_minValidBytes = request.minBytes > 0 ? request.minBytes : 64 * 1024;
+    m_contentAnchor = request.contentAnchor;
+    m_ingestExactSize = request.ingestExactSize;
     m_requireGgufMagic = request.requireGgufMagic;
     m_tmpPath = m_destPath + QStringLiteral(".part");
+    // Stream the content digest while writing: for multi-GB models this
+    // avoids a second full read pass that a post-download hash check would
+    // need.
+    m_hash = m_contentAnchor.digestHex.isEmpty()
+                     ? nullptr
+                     : new QCryptographicHash(m_contentAnchor.algo);
 
     QDir().mkpath(QFileInfo(m_destPath).absolutePath());
     QFile::remove(m_tmpPath);
@@ -161,7 +143,11 @@ void ecvModelDownloader::download(const Request& request) {
 
     connect(m_reply, &QNetworkReply::readyRead, this, [this]() {
         if (m_outFile && m_reply) {
-            m_outFile->write(m_reply->readAll());
+            const QByteArray chunk = m_reply->readAll();
+            m_outFile->write(chunk);
+            if (m_hash) {
+                m_hash->addData(chunk);
+            }
         }
     });
     connect(m_reply, &QNetworkReply::downloadProgress, this,
@@ -180,8 +166,10 @@ void ecvModelDownloader::download(const Request& request) {
             if (!ok) {
                 emit logMessage(
                         tr("[Download] Failed to finalize %1").arg(m_destPath));
-            } else if (!isValidCachedFile(m_destPath, m_minValidBytes,
-                                          m_requireGgufMagic)) {
+                ecvAssetIntegrity::invalidate(m_destPath);
+            } else if (!ecvAssetIntegrity::passesCheapChecks(
+                               m_destPath, m_minValidBytes,
+                               m_requireGgufMagic)) {
                 // Surface the actual reason (too small vs wrong magic) so
                 // operators can distinguish a truncated connection from a
                 // genuine 200-with-wrong-content response (e.g. a captive
@@ -203,7 +191,42 @@ void ecvModelDownloader::download(const Request& request) {
                                             .arg(m_destPath));
                 }
                 QFile::remove(m_destPath);
+                ecvAssetIntegrity::invalidate(m_destPath);
                 ok = false;
+            } else if (!m_contentAnchor.digestHex.isEmpty()) {
+                // Content-level check: the digest was streamed while
+                // writing, so no second read pass is needed.
+                const QByteArray actual =
+                        m_hash ? m_hash->result().toHex() : QByteArray();
+                if (actual.compare(m_contentAnchor.digestHex,
+                                   Qt::CaseInsensitive) != 0) {
+                    emit logMessage(
+                            tr("[Download] Content digest mismatch after "
+                               "download: %1 (got %2, expected %3)")
+                                    .arg(m_destPath)
+                                    .arg(QString::fromLatin1(actual))
+                                    .arg(QString::fromLatin1(
+                                            m_contentAnchor.digestHex)));
+                    QFile::remove(m_destPath);
+                    ecvAssetIntegrity::invalidate(m_destPath);
+                    ok = false;
+                }
+            } else if (m_ingestExactSize > 0 &&
+                       QFileInfo(m_destPath).size() != m_ingestExactSize) {
+                emit logMessage(tr("[Download] File size mismatch after "
+                                   "download: %1 (%2 bytes, expected "
+                                   "%3)")
+                                        .arg(m_destPath)
+                                        .arg(QFileInfo(m_destPath).size())
+                                        .arg(m_ingestExactSize));
+                QFile::remove(m_destPath);
+                ecvAssetIntegrity::invalidate(m_destPath);
+                ok = false;
+            }
+            if (ok) {
+                // Record the verified state so every later presence check
+                // is a stat-only lookup (no re-hashing of multi-GB files).
+                ecvAssetIntegrity::markVerified(m_destPath, m_contentAnchor);
             }
         } else if (m_reply) {
             emit logMessage(

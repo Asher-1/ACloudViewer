@@ -10,9 +10,10 @@
 #include <string>
 #include <vector>
 
-#include "dino_backbone.hpp"
-#include "model_loader.hpp"
-#include "parity.hpp"
+#include "tasks/depth/dino_backbone.hpp"
+#include "tasks/depth/model_loader.hpp"
+#include "tests/depth/whitebox/parity.hpp"
+
 // M4b: multi-view (S=4) backbone WITH reference-view selection
 // (saddle_balanced). Verifies (a) the internally-selected reference index b_idx
 // matches the dumped refsel_b_idx, and (b) per-view feat/cam parity in ORIGINAL

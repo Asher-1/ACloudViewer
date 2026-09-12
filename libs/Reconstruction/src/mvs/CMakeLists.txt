@@ -32,15 +32,18 @@
 set(FOLDER_NAME "mvs")
 
 COLMAP_ADD_SOURCES(
+    advancing_front_meshing.h advancing_front_meshing.cc
     consistency_graph.h consistency_graph.cc
     depth_map.h depth_map.cc
     fusion.h fusion.cc
     da3_fusion.h da3_fusion.cc
     image.h image.cc
+    mesh_postprocessing.h mesh_postprocessing.cc
+    mesh_simplification.h mesh_simplification.cc
     meshing.h meshing.cc
     model.h model.cc
     normal_map.h normal_map.cc
-    texturing.h texturing.cc
+    texture_mapping.h texture_mapping.cc
     workspace.h workspace.cc
 )
 
@@ -48,6 +51,12 @@ COLMAP_ADD_TEST(consistency_graph_test consistency_graph_test.cc)
 COLMAP_ADD_TEST(depth_map_test depth_map_test.cc)
 COLMAP_ADD_TEST(mat_test mat_test.cc)
 COLMAP_ADD_TEST(normal_map_test normal_map_test.cc)
+COLMAP_ADD_TEST(texture_mapping_test texture_mapping_test.cc)
+COLMAP_ADD_TEST(mesh_simplification_test mesh_simplification_test.cc)
+COLMAP_ADD_TEST(mesh_postprocessing_test mesh_postprocessing_test.cc)
+if(CGAL_ENABLED)
+    COLMAP_ADD_TEST(advancing_front_meshing_test advancing_front_meshing_test.cc)
+endif()
 
 if(CUDA_ENABLED)
     COLMAP_ADD_CUDA_SOURCES(
@@ -58,4 +67,13 @@ if(CUDA_ENABLED)
     )
 
     COLMAP_ADD_CUDA_TEST(gpu_mat_test gpu_mat_test.cu)
+elseif(HIP_ENABLED)
+    COLMAP_ADD_HIP_SOURCES(
+        gpu_mat_prng.h gpu_mat_prng.cu
+        gpu_mat_ref_image.h gpu_mat_ref_image.cu
+        patch_match.h patch_match.cc
+        patch_match_cuda.h patch_match_cuda.cu
+    )
+
+    COLMAP_ADD_HIP_TEST(gpu_mat_test gpu_mat_test.cu)
 endif()

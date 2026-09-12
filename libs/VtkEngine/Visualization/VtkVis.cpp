@@ -2338,7 +2338,8 @@ void VtkVis::displayText(const CC_DRAW_CONTEXT& context) {
 }
 
 bool VtkVis::updateTexture(const CC_DRAW_CONTEXT& context,
-                           const ccMaterialSet* materials) {
+                           const ccMaterialSet* materials,
+                           bool forceApply) {
     std::string viewID = CVTools::FromQString(context.viewID);
     if (!contains(viewID)) return false;
     auto actor = getActorById(viewID);
@@ -2347,6 +2348,30 @@ bool VtkVis::updateTexture(const CC_DRAW_CONTEXT& context,
     if (!materials || materials->empty()) {
         CVLog::Warning("[VtkVis::updateTexture] No materials provided");
         return false;
+    }
+
+    // Plain scene redraws re-walk every entity. Re-running the full
+    // texture/PBR setup for an unchanged material set only invalidates
+    // actor/shader state and makes selection & property edits feel sluggish
+    // with many/large textured entities, so skip it when the very same
+    // material set is already applied. Explicit updates (property edits,
+    // material/texture reloads) pass forceApply=true and always apply.
+    if (!forceApply && !context.forceRedraw) {
+        auto it = m_autoAppliedMaterials.find(viewID);
+        if (it != m_autoAppliedMaterials.end() &&
+            it->second.first == static_cast<const void*>(materials) &&
+            it->second.second == materials->size()) {
+            // The cached apply also implies an untinted (white) actor color:
+            // re-apply when a temporary color override (setTempColor/
+            // setPointCloudUniqueColor) left a tint behind, so that clearing
+            // the override restores the textured look on the next redraw.
+            const double* rgb = actor->GetProperty()->GetColor();
+            if (std::abs(rgb[0] - 1.0) < 1e-6 &&
+                std::abs(rgb[1] - 1.0) < 1e-6 &&
+                std::abs(rgb[2] - 1.0) < 1e-6) {
+                return true;
+            }
+        }
     }
 
     // Reset actor color to white so textures are not tinted by a previously
@@ -2382,6 +2407,7 @@ bool VtkVis::updateTexture(const CC_DRAW_CONTEXT& context,
         // reset actor opacity from MTL values.
         setMeshOpacity(context.opacity, viewID, context.defaultViewPort);
         actor->Modified();
+        m_autoAppliedMaterials[viewID] = {materials, materials->size()};
     }
     return success;
 }
@@ -3100,6 +3126,13 @@ void VtkVis::resetScalarColor(const std::string& viewID,
     vtkPVLODActor* actor = vtkPVLODActor::SafeDownCast(getActorById(viewID));
 
     if (actor) {
+        vtkMapper* mapper = actor->GetMapper();
+        // Early-out when the scalar visibility already matches: avoids a
+        // needless actor->Modified() on every plain scene redraw (large
+        // multi-entity scenes pay this per entity per redraw).
+        if (mapper && mapper->GetScalarVisibility() == (flag ? 1 : 0)) {
+            return;
+        }
         if (flag) {
             actor->GetMapper()->ScalarVisibilityOn();
         } else {
@@ -3539,6 +3572,17 @@ void VtkVis::setMeshRenderingMode(MESH_RENDERING_MODE mode,
                 "please check again...");
         return;
     }
+    // Early-out when the representation already matches (plain scene redraws
+    // call this for every entity; avoid a needless actor->Modified()).
+    const int targetRepresentation =
+            (mode == MESH_RENDERING_MODE::ECV_POINTS_MODE
+                     ? VTK_POINTS
+                     : (mode == MESH_RENDERING_MODE::ECV_WIREFRAME_MODE
+                                ? VTK_WIREFRAME
+                                : VTK_SURFACE));
+    if (actor->GetProperty()->GetRepresentation() == targetRepresentation) {
+        return;
+    }
     switch (mode) {
         case MESH_RENDERING_MODE::ECV_POINTS_MODE: {
             actor->GetProperty()->SetRepresentationToPoints();
@@ -3561,6 +3605,10 @@ void VtkVis::setMeshStippling(bool enabled,
                               int viewport) {
     vtkActor* actor = getActorById(viewID);
     if (!actor) return;
+
+    // Disabling is a no-op (stippling is simulated by directly setting a
+    // 50% opacity when enabled); skip the actor churn on plain redraws.
+    if (!enabled) return;
 
     // CloudCompare stippling = 50%-density checkerboard via glPolygonStipple.
     // VTK's OpenGL2 backend doesn't support glPolygonStipple, so we

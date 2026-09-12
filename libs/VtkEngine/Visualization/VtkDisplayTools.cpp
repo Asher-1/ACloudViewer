@@ -614,7 +614,11 @@ void VtkDisplayTools::drawMesh(CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
                 if (applyMaterials || showTextures) {
                     const ccMaterialSet* materials = mesh->getMaterialSet();
                     if (materials) {
-                        if (!vis->updateTexture(context, materials)) {
+                        // Non-forced: skips the full texture/PBR re-apply
+                        // when the material set is unchanged (selection &
+                        // camera redraws keep large scenes responsive).
+                        if (!vis->updateTexture(context, materials,
+                                                /*forceApply=*/false)) {
                             CVLog::Warning(
                                     "[VtkDisplayTools::drawMesh] Update "
                                     "texture failed!");

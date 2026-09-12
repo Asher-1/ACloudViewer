@@ -31,11 +31,32 @@
 
 #include "base/warp.h"
 
+#include <algorithm>
+
 #include "VLFeat/imopv.h"
 #include "util/logging.h"
 
 namespace colmap {
 namespace {
+
+bool ShouldWarpDirectly(const Camera& source_camera,
+                        const Camera& target_camera,
+                        const WarpImageOptions& options) {
+  CHECK_GE(options.direct_warp_min_scale, 0.0);
+  CHECK_GT(source_camera.Width(), 0);
+  CHECK_GT(source_camera.Height(), 0);
+  CHECK_GT(target_camera.Width(), 0);
+  CHECK_GT(target_camera.Height(), 0);
+  if (source_camera.Width() == target_camera.Width() &&
+      source_camera.Height() == target_camera.Height()) {
+    return true;
+  }
+  const double sx = static_cast<double>(target_camera.Width()) /
+                    static_cast<double>(source_camera.Width());
+  const double sy = static_cast<double>(target_camera.Height()) /
+                    static_cast<double>(source_camera.Height());
+  return std::min(sx, sy) >= options.direct_warp_min_scale;
+}
 
 float GetPixelConstantBorder(const float* data, const int rows, const int cols,
                              const int row, const int col) {
@@ -48,23 +69,27 @@ float GetPixelConstantBorder(const float* data, const int rows, const int cols,
 
 }  // namespace
 
-void WarpImageBetweenCameras(const Camera& source_camera,
+void WarpImageBetweenCameras(const WarpImageOptions& options,
+                             const Camera& source_camera,
                              const Camera& target_camera,
                              const Bitmap& source_image, Bitmap* target_image) {
   CHECK_EQ(source_camera.Width(), source_image.Width());
   CHECK_EQ(source_camera.Height(), source_image.Height());
   CHECK_NOTNULL(target_image);
 
-  target_image->Allocate(static_cast<int>(source_camera.Width()),
-                         static_cast<int>(source_camera.Height()),
+  const bool warp_directly =
+      ShouldWarpDirectly(source_camera, target_camera, options);
+  target_image->Allocate(warp_directly ? target_camera.Width()
+                                       : source_camera.Width(),
+                         warp_directly ? target_camera.Height()
+                                       : source_camera.Height(),
                          source_image.IsRGB());
 
   // To avoid aliasing, perform the warping in the source resolution and
   // then rescale the image at the end.
-  Camera scaled_target_camera = target_camera;
-  if (target_camera.Width() != source_camera.Width() ||
-      target_camera.Height() != source_camera.Height()) {
-    scaled_target_camera.Rescale(source_camera.Width(), source_camera.Height());
+  Camera warp_target_camera = target_camera;
+  if (!warp_directly) {
+    warp_target_camera.Rescale(source_camera.Width(), source_camera.Height());
   }
 
   Eigen::Vector2d image_point;
@@ -75,7 +100,7 @@ void WarpImageBetweenCameras(const Camera& source_camera,
 
       // Camera models assume that the upper left pixel center is (0.5, 0.5).
       const Eigen::Vector2d world_point =
-          scaled_target_camera.ImageToWorld(image_point);
+          warp_target_camera.ImageToWorld(image_point);
       const Eigen::Vector2d source_point =
           source_camera.WorldToImage(world_point);
 
@@ -89,10 +114,17 @@ void WarpImageBetweenCameras(const Camera& source_camera,
     }
   }
 
-  if (target_camera.Width() != source_camera.Width() ||
-      target_camera.Height() != source_camera.Height()) {
+  if (!warp_directly) {
     target_image->Rescale(target_camera.Width(), target_camera.Height());
   }
+}
+
+void WarpImageBetweenCameras(const Camera& source_camera,
+                             const Camera& target_camera,
+                             const Bitmap& source_image,
+                             Bitmap* target_image) {
+  WarpImageBetweenCameras(WarpImageOptions(), source_camera, target_camera,
+                          source_image, target_image);
 }
 
 void WarpImageWithHomography(const Eigen::Matrix3d& H,
@@ -121,7 +153,8 @@ void WarpImageWithHomography(const Eigen::Matrix3d& H,
   }
 }
 
-void WarpImageWithHomographyBetweenCameras(const Eigen::Matrix3d& H,
+void WarpImageWithHomographyBetweenCameras(const WarpImageOptions& options,
+                                           const Eigen::Matrix3d& H,
                                            const Camera& source_camera,
                                            const Camera& target_camera,
                                            const Bitmap& source_image,
@@ -130,18 +163,16 @@ void WarpImageWithHomographyBetweenCameras(const Eigen::Matrix3d& H,
   CHECK_EQ(source_camera.Height(), source_image.Height());
   CHECK_NOTNULL(target_image);
 
-  target_image->Allocate(static_cast<int>(source_camera.Width()),
-                         static_cast<int>(source_camera.Height()),
+  const bool warp_directly =
+      ShouldWarpDirectly(source_camera, target_camera, options);
+  target_image->Allocate(warp_directly ? target_camera.Width()
+                                       : source_camera.Width(),
+                         warp_directly ? target_camera.Height()
+                                       : source_camera.Height(),
                          source_image.IsRGB());
 
   // To avoid aliasing, perform the warping in the source resolution and
   // then rescale the image at the end.
-  Camera scaled_target_camera = target_camera;
-  if (target_camera.Width() != source_camera.Width() ||
-      target_camera.Height() != source_camera.Height()) {
-    scaled_target_camera.Rescale(source_camera.Width(), source_camera.Height());
-  }
-
   Eigen::Vector3d image_point(0, 0, 1);
   for (int y = 0; y < target_image->Height(); ++y) {
     image_point.y() = y + 0.5;
@@ -165,10 +196,19 @@ void WarpImageWithHomographyBetweenCameras(const Eigen::Matrix3d& H,
     }
   }
 
-  if (target_camera.Width() != source_camera.Width() ||
-      target_camera.Height() != source_camera.Height()) {
+  if (!warp_directly) {
     target_image->Rescale(target_camera.Width(), target_camera.Height());
   }
+}
+
+void WarpImageWithHomographyBetweenCameras(const Eigen::Matrix3d& H,
+                                           const Camera& source_camera,
+                                           const Camera& target_camera,
+                                           const Bitmap& source_image,
+                                           Bitmap* target_image) {
+  WarpImageWithHomographyBetweenCameras(WarpImageOptions(), H, source_camera,
+                                        target_camera, source_image,
+                                        target_image);
 }
 
 void ResampleImageBilinear(const float* data, const int rows, const int cols,

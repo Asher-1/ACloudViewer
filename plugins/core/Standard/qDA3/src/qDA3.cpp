@@ -28,7 +28,6 @@
 #include <QMessageBox>
 #include <QSettings>
 #include <QStandardPaths>
-#include <QUuid>
 #include <algorithm>
 #include <cmath>
 
@@ -89,16 +88,21 @@ void qDA3::refreshDbImages() {
     ccHObject::Container images;
     root->filterChildren(images, true, CV_TYPES::IMAGE, false);
 
-    QStringList names;
+    QList<DA3DbImageEntry> entries;
     for (ccHObject* obj : images) {
         if (!obj || !obj->isEnabled()) continue;
         ccImage* img = dynamic_cast<ccImage*>(obj);
         // Skip images without pixel data — selecting an empty ccImage
         // would fail at inference time with a confusing error.
         if (!img || img->data().isNull()) continue;
-        names.append(obj->getName());
+        DA3DbImageEntry entry;
+        entry.name = obj->getName();
+        // Full-resolution image so the dialog's click-to-enlarge preview
+        // works for DB-tree inputs.
+        entry.preview = img->data();
+        entries.append(entry);
     }
-    m_dialog->setDbImages(names);
+    m_dialog->setDbImages(entries);
 }
 
 ccImage* qDA3::findDbImage(const QString& name) const {
@@ -170,8 +174,6 @@ void qDA3::executeTask(const DA3Dialog::Settings& settings) {
         m_worker->deleteLater();
         m_worker = nullptr;
     }
-    clearStagedInputFiles();
-
     m_hasDepthResult = false;
     m_allDepthResults.clear();
     m_lastDepthResult = {};
@@ -190,28 +192,17 @@ void qDA3::executeTask(const DA3Dialog::Settings& settings) {
                                         .arg(settings.dbImageName));
             return;
         }
-        QString tmpDir = DA3Dialog::modelCacheDir() + "/../tmp";
-        QDir().mkpath(tmpDir);
-        const QString tmpPath =
-                tmpDir + "/da3-" +
-                QUuid::createUuid().toString(QUuid::WithoutBraces) + ".png";
-        if (img->data().save(tmpPath)) {
-            m_stagedInputFiles << tmpPath;
-            resolvedSettings.inputPaths = QStringList() << tmpPath;
-            m_dialog->appendLog(tr("[DA3] Using DB image: %1 (%2x%3)")
-                                        .arg(settings.dbImageName)
-                                        .arg(img->getW())
-                                        .arg(img->getH()));
-        } else {
-            m_dialog->appendLog(tr("[Error] Failed to export DB image: %1")
-                                        .arg(settings.dbImageName));
-            return;
-        }
+        resolvedSettings.inputImage = img->data();
+        resolvedSettings.inputImageName = settings.dbImageName;
+        resolvedSettings.inputPaths.clear();
+        m_dialog->appendLog(tr("[DA3] Using DB image in memory: %1 (%2x%3)")
+                                    .arg(settings.dbImageName)
+                                    .arg(img->getW())
+                                    .arg(img->getH()));
     }
 
     if (resolvedSettings.modelPath.isEmpty() &&
         resolvedSettings.mode != DA3Dialog::Mode::Quantize) {
-        clearStagedInputFiles();
         m_dialog->appendLog("[Error] Please select a GGUF model file.");
         return;
     }
@@ -235,7 +226,8 @@ void qDA3::executeTask(const DA3Dialog::Settings& settings) {
 
     bool needsInput = (resolvedSettings.mode != DA3Dialog::Mode::Quantize &&
                        resolvedSettings.mode != DA3Dialog::Mode::ModelInfo);
-    if (needsInput && resolvedSettings.inputPaths.isEmpty()) {
+    if (needsInput && resolvedSettings.inputPaths.isEmpty() &&
+        resolvedSettings.inputImage.isNull()) {
         m_dialog->appendLog(
                 "[Error] No input image selected. Use 'Browse...' to select "
                 "an image file, or choose an image from 'DB Images' dropdown.");
@@ -272,13 +264,6 @@ void qDA3::executeTask(const DA3Dialog::Settings& settings) {
     m_dialog->setRunning(true);
     m_dialog->appendLog("[DA3] Starting task...");
     m_worker->start();
-}
-
-void qDA3::clearStagedInputFiles() {
-    for (const QString& path : m_stagedInputFiles) {
-        QFile::remove(path);
-    }
-    m_stagedInputFiles.clear();
 }
 
 void qDA3::cancelTask() {
@@ -638,8 +623,6 @@ void qDA3::onTaskFinished(bool success) {
         m_worker->deleteLater();
         m_worker = nullptr;
     }
-
-    clearStagedInputFiles();
 
     if (m_app) {
         m_app->updateUI();

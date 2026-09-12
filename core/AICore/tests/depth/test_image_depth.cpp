@@ -6,7 +6,7 @@
 // ----------------------------------------------------------------------------
 
 #include "aicore/aicore.h"
-#include "common/test_macros.hpp"
+#include "tests/common/test_macros.hpp"
 
 static int failures = 0;
 

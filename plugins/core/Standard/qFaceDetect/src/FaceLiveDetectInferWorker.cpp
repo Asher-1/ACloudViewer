@@ -84,16 +84,33 @@ bool FaceLiveDetectInferWorker::ensureModel(const Job& job) {
 
 bool FaceLiveDetectInferWorker::runDetectJob(const Job& job, Result* out) {
     if (!out || !ensureModel(job)) return false;
-    // inferRgb is already Format_RGB888 from cvMatToQImage — no conversion.
-    char* json = aicore_facedetect_detect_rgb_json(
-            m_ctx, job.inferRgb.constBits(), job.inferRgb.width(),
-            job.inferRgb.height());
-    if (!json) return false;
-    const QByteArray payload(json);
-    aicore_facedetect_free_string(json);
-
-    // Keep boxes in infer coordinates for annotation at infer resolution.
-    auto allFaces = FaceDetectEmbed::parseDetectJson(payload);
+    const aicore_image_view view{
+            reinterpret_cast<const uint8_t*>(job.inferRgb.constBits()),
+            job.inferRgb.width(), job.inferRgb.height(),
+            static_cast<size_t>(job.inferRgb.bytesPerLine()),
+            AICORE_IMAGE_RGB8};
+    if (aicore_facedetect_detect_image(m_ctx, &view) != 0) return false;
+    std::vector<FaceDetectBox> allFaces;
+    const size_t count = aicore_facedetect_detection_count(m_ctx);
+    allFaces.reserve(count);
+    for (size_t i = 0; i < count; ++i) {
+        aicore_facedetect_detection d{};
+        if (aicore_facedetect_detection_at(m_ctx, i, &d) != 0) continue;
+        FaceDetectBox box;
+        box.x1 = d.x1;
+        box.y1 = d.y1;
+        box.x2 = d.x2;
+        box.y2 = d.y2;
+        box.score = d.score;
+        for (int k = 0; k < 5; ++k) {
+            box.landmarks[k][0] = d.landmarks_xy10[2 * k];
+            box.landmarks[k][1] = d.landmarks_xy10[2 * k + 1];
+        }
+        allFaces.push_back(box);
+    }
+    // Typed results stay in memory; JSON is generated only by the explicit
+    // compatibility API, keeping the live-video hot path allocation-free.
+    const QByteArray payload;
 
     out->snapshot.resultJson = payload;
     out->snapshot.totalDetected = static_cast<int>(allFaces.size());
@@ -115,7 +132,6 @@ bool FaceLiveDetectInferWorker::runDetectJob(const Job& job, Result* out) {
                                  Qt::IgnoreAspectRatio, Qt::FastTransformation);
     }
     out->snapshot.annotatedImage = annotated;
-    out->displayImage = annotated;
 
     // Scale boxes to display coordinates for snapshot consumers.
     FaceDetectEmbed::scaleFaceBoxes(&out->snapshot.faces, job.inferScale);
@@ -124,16 +140,31 @@ bool FaceLiveDetectInferWorker::runDetectJob(const Job& job, Result* out) {
 
 bool FaceLiveDetectInferWorker::runRecognizeJob(const Job& job, Result* out) {
     if (!out || !ensureModel(job)) return false;
-    // inferRgb is already Format_RGB888 from cvMatToQImage — no conversion.
-    char* json = aicore_facedetect_detect_rgb_json(
-            m_ctx, job.inferRgb.constBits(), job.inferRgb.width(),
-            job.inferRgb.height());
-    if (!json) return false;
-    const QByteArray payload(json);
-    aicore_facedetect_free_string(json);
-
-    // Keep boxes in infer coordinates for annotation at infer resolution.
-    auto allFaces = FaceDetectEmbed::parseDetectJson(payload);
+    const aicore_image_view view{
+            reinterpret_cast<const uint8_t*>(job.inferRgb.constBits()),
+            job.inferRgb.width(), job.inferRgb.height(),
+            static_cast<size_t>(job.inferRgb.bytesPerLine()),
+            AICORE_IMAGE_RGB8};
+    if (aicore_facedetect_detect_image(m_ctx, &view) != 0) return false;
+    std::vector<FaceDetectBox> allFaces;
+    const size_t count = aicore_facedetect_detection_count(m_ctx);
+    allFaces.reserve(count);
+    for (size_t i = 0; i < count; ++i) {
+        aicore_facedetect_detection d{};
+        if (aicore_facedetect_detection_at(m_ctx, i, &d) != 0) continue;
+        FaceDetectBox box;
+        box.x1 = d.x1;
+        box.y1 = d.y1;
+        box.x2 = d.x2;
+        box.y2 = d.y2;
+        box.score = d.score;
+        for (int k = 0; k < 5; ++k) {
+            box.landmarks[k][0] = d.landmarks_xy10[2 * k];
+            box.landmarks[k][1] = d.landmarks_xy10[2 * k + 1];
+        }
+        allFaces.push_back(box);
+    }
+    const QByteArray payload;
 
     out->snapshot.resultJson = payload;
     out->snapshot.totalDetected = static_cast<int>(allFaces.size());
@@ -205,7 +236,6 @@ bool FaceLiveDetectInferWorker::runRecognizeJob(const Job& job, Result* out) {
                                  Qt::IgnoreAspectRatio, Qt::FastTransformation);
     }
     out->snapshot.annotatedImage = annotated;
-    out->displayImage = annotated;
 
     // Scale boxes to display coordinates for snapshot consumers.
     FaceDetectEmbed::scaleFaceBoxes(&out->snapshot.faces, job.inferScale);

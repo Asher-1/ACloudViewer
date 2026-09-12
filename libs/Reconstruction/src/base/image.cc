@@ -57,6 +57,57 @@ Image::Image()
       qvec_prior_(kNaN, kNaN, kNaN, kNaN),
       tvec_prior_(kNaN, kNaN, kNaN) {}
 
+// Upstream-parity semantics for the fork's back-pointer members: a copied
+// image is a pure data copy whose camera/frame back pointers refer to
+// objects inside the source reconstruction and would dangle in the copy,
+// so they are reset here and re-wired by the owning container (e.g.
+// Reconstruction::RewireObjectPointers or AddImage).
+Image::Image(const Image& other)
+    : image_id_(other.image_id_),
+      name_(other.name_),
+      camera_id_(other.camera_id_),
+      frame_id_(other.frame_id_),
+      camera_ptr_(nullptr),
+      frame_ptr_(nullptr),
+      registered_(other.registered_),
+      num_points3D_(other.num_points3D_),
+      num_observations_(other.num_observations_),
+      num_correspondences_(other.num_correspondences_),
+      num_visible_points3D_(other.num_visible_points3D_),
+      qvec_(other.qvec_),
+      tvec_(other.tvec_),
+      qvec_prior_(other.qvec_prior_),
+      tvec_prior_(other.tvec_prior_),
+      points2D_(other.points2D_),
+      num_correspondences_have_point3D_(
+          other.num_correspondences_have_point3D_),
+      point3D_visibility_pyramid_(other.point3D_visibility_pyramid_) {}
+
+Image& Image::operator=(const Image& other) {
+    if (this != &other) {
+        image_id_ = other.image_id_;
+        name_ = other.name_;
+        camera_id_ = other.camera_id_;
+        frame_id_ = other.frame_id_;
+        camera_ptr_ = nullptr;
+        frame_ptr_ = nullptr;
+        registered_ = other.registered_;
+        num_points3D_ = other.num_points3D_;
+        num_observations_ = other.num_observations_;
+        num_correspondences_ = other.num_correspondences_;
+        num_visible_points3D_ = other.num_visible_points3D_;
+        qvec_ = other.qvec_;
+        tvec_ = other.tvec_;
+        qvec_prior_ = other.qvec_prior_;
+        tvec_prior_ = other.tvec_prior_;
+        points2D_ = other.points2D_;
+        num_correspondences_have_point3D_ =
+            other.num_correspondences_have_point3D_;
+        point3D_visibility_pyramid_ = other.point3D_visibility_pyramid_;
+    }
+    return *this;
+}
+
 void Image::SetUp(const class Camera& camera) {
     CHECK_EQ(camera_id_, camera.CameraId());
     point3D_visibility_pyramid_ =
@@ -69,9 +120,12 @@ void Image::TearDown() {
 }
 
 void Image::SetPoints2D(const std::vector<Eigen::Vector2d>& points) {
-    CHECK(points2D_.empty());
+    // Upstream parity (dbb41680 scene/image.cc): bulk-setting the 2D points
+    // is allowed on both empty and populated images (it clears any previous
+    // triangulation associations by replacing the container).
     points2D_.resize(points.size());
     num_correspondences_have_point3D_.resize(points.size(), 0);
+    num_points3D_ = 0;
     for (point2D_t point2D_idx = 0; point2D_idx < points.size();
          ++point2D_idx) {
         points2D_[point2D_idx].SetXY(points[point2D_idx]);
@@ -79,9 +133,18 @@ void Image::SetPoints2D(const std::vector<Eigen::Vector2d>& points) {
 }
 
 void Image::SetPoints2D(const std::vector<class Point2D>& points) {
-    CHECK(points2D_.empty());
+    // Upstream parity: allow repopulating a populated image (see the
+    // Eigen::Vector2d overload above).
     points2D_ = points;
     num_correspondences_have_point3D_.resize(points.size(), 0);
+    // Upstream parity (dbb41680 scene/image.cc): recompute the number of
+    // triangulated points when bulk-setting the 2D points.
+    num_points3D_ = 0;
+    for (const auto& point2D : points2D_) {
+        if (point2D.HasPoint3D()) {
+            num_points3D_ += 1;
+        }
+    }
 }
 
 void Image::SetPoint3DForPoint2D(const point2D_t point2D_idx,
@@ -138,18 +201,34 @@ void Image::DecrementCorrespondenceHasPoint3D(const point2D_t point2D_idx) {
 void Image::NormalizeQvec() { qvec_ = NormalizeQuaternion(qvec_); }
 
 Eigen::Matrix3x4d Image::ProjectionMatrix() const {
+    // Upstream COLMAP dbb41680 parity: pose-derived accessors read the pose
+    // from the owning frame/rig (CamFromWorld) when the image is wired into
+    // a reconstruction. Standalone images (legacy fixtures without a frame)
+    // fall back to the fork's qvec/tvec storage.
+    if (HasFramePtr()) {
+        const Rigid3d cam_from_world = CamFromWorld();
+        return ComposeProjectionMatrix(
+                cam_from_world.rotation().toRotationMatrix(),
+                cam_from_world.translation());
+    }
     return ComposeProjectionMatrix(qvec_, tvec_);
 }
 
 Eigen::Matrix3x4d Image::InverseProjectionMatrix() const {
-    return InvertProjectionMatrix(ComposeProjectionMatrix(qvec_, tvec_));
+    return InvertProjectionMatrix(ProjectionMatrix());
 }
 
 Eigen::Matrix3d Image::RotationMatrix() const {
+    if (HasFramePtr()) {
+        return CamFromWorld().rotation().toRotationMatrix();
+    }
     return QuaternionToRotationMatrix(qvec_);
 }
 
 Eigen::Vector3d Image::ProjectionCenter() const {
+    if (HasFramePtr()) {
+        return CamFromWorld().TgtOriginInSrc();
+    }
     return ProjectionCenterFromPose(qvec_, tvec_);
 }
 

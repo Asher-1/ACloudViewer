@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "scrfd_graph.hpp"
+#include "tasks/facedetect/scrfd_graph.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -14,13 +14,13 @@
 #include <string>
 #include <vector>
 
-#include "antispoof_graph.hpp"
-#include "backend.hpp"
-#include "common.hpp"
 #include "ggml.h"
-#include "graph_ops.hpp"
-#include "model_loader.hpp"
-#include "preprocess.hpp"
+#include "tasks/facedetect/antispoof_graph.hpp"
+#include "tasks/facedetect/backend.hpp"
+#include "tasks/facedetect/common.hpp"
+#include "tasks/facedetect/graph_ops.hpp"
+#include "tasks/facedetect/model_loader.hpp"
+#include "tasks/facedetect/preprocess.hpp"
 
 namespace fd {
 
@@ -89,13 +89,10 @@ std::vector<float> flatten_head(
 // differs by at most 1 on a minority of pixels. This is off the Task 3.1 graph
 // gate (which feeds the reference's exact letterbox pixels); it is the
 // production preprocess used by the decode path.
-void cv_resize_linear_u8(const uint8_t* src,
-                         int sw,
-                         int sh,
-                         uint8_t* dst,
-                         int dw,
-                         int dh,
-                         int cn) {
+void cv_resize_linear_u8(
+        const Image& src, uint8_t* dst, int dw, int dh, int cn) {
+    const int sw = src.width;
+    const int sh = src.height;
     const int BITS = 11;
     const float SCALE = (float)(1 << BITS);  // 2048
     auto sat_short = [](float v) -> int {
@@ -142,15 +139,15 @@ void cv_resize_linear_u8(const uint8_t* src,
     for (int dy = 0; dy < dh; ++dy) {
         const int sy0 = yofs[dy], sy1 = std::min(sy0 + 1, sh - 1);
         const int b0 = ibeta[dy * 2], b1 = ibeta[dy * 2 + 1];
-        const uint8_t* r0 = src + (size_t)sy0 * sw * cn;
-        const uint8_t* r1 = src + (size_t)sy1 * sw * cn;
         uint8_t* drow = dst + (size_t)dy * dw * cn;
         for (int dx = 0; dx < dw; ++dx) {
             const int sx = xofs[dx], sx1 = std::min(sx + 1, sw - 1);
             const int a0 = ialpha[dx * 2], a1 = ialpha[dx * 2 + 1];
             for (int c = 0; c < cn; ++c) {
-                const int p0 = r0[sx * cn + c] * a0 + r0[sx1 * cn + c] * a1;
-                const int p1 = r1[sx * cn + c] * a0 + r1[sx1 * cn + c] * a1;
+                const int p0 = src.channel(sx, sy0, c) * a0 +
+                               src.channel(sx1, sy0, c) * a1;
+                const int p1 = src.channel(sx, sy1, c) * a0 +
+                               src.channel(sx1, sy1, c) * a1;
                 int v = ((int64_t)p0 * b0 + (int64_t)p1 * b1 + (1 << 21)) >> 22;
                 v = v < 0 ? 0 : (v > 255 ? 255 : v);
                 drow[dx * cn + c] = (uint8_t)v;
@@ -176,11 +173,13 @@ void scrfd_letterbox(const Image& src, int size, Image& out, float& det_scale) {
     det_scale = (float)new_h / (float)oh;
 
     std::vector<uint8_t> resized((size_t)new_w * new_h * 3);
-    cv_resize_linear_u8(src.rgb.data(), ow, oh, resized.data(), new_w, new_h,
-                        3);
+    cv_resize_linear_u8(src, resized.data(), new_w, new_h, 3);
 
     out.width = size;
     out.height = size;
+    out.borrowed_data = nullptr;
+    out.row_stride_bytes = static_cast<size_t>(size) * 3;
+    out.channels = 3;
     out.rgb.assign((size_t)size * size * 3, 0);  // top-left zero pad
     for (int y = 0; y < new_h; ++y) {
         std::memcpy(&out.rgb[((size_t)y * size) * 3],

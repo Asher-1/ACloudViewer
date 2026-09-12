@@ -1,7 +1,9 @@
 #pragma once
 #include "ggml.h"
-#include "model_loader.hpp"
-#include "rope2d.hpp"
+#include "tasks/depth/model_loader.hpp"
+
+#include "tasks/depth/rope2d.hpp"
+
 namespace aicore {
 namespace depth {
 struct AttnWeights {

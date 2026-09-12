@@ -33,13 +33,14 @@ set(FOLDER_NAME "base")
 
 COLMAP_ADD_SOURCES(
     camera.h camera.cc
-    camera_database.h camera_database.cc
     camera_models.h camera_models.cc
-    camera_rig.h camera_rig.cc
     correspondence_graph.h correspondence_graph.cc
     database.h database.cc
     database_cache.h database_cache.cc
     essential_matrix.h essential_matrix.cc
+    normalization.h normalization.cc
+    two_view_geometry.h two_view_geometry.cc
+    frame.h frame.cc
     gps.h gps.cc
     graph_cut.h graph_cut.cc
     homography_matrix.h homography_matrix.cc
@@ -53,6 +54,7 @@ COLMAP_ADD_SOURCES(
     projection.h projection.cc
     reconstruction.h reconstruction.cc
     reconstruction_manager.h reconstruction_manager.cc
+    rig.h rig.cc
     scene_clustering.h scene_clustering.cc
     similarity_transform.h similarity_transform.cc
     track.h track.cc
@@ -62,15 +64,14 @@ COLMAP_ADD_SOURCES(
     warp.h warp.cc
 )
 
-COLMAP_ADD_TEST(camera_database_test camera_database_test.cc)
 COLMAP_ADD_TEST(camera_models_test camera_models_test.cc)
-COLMAP_ADD_TEST(camera_rig_test camera_rig_test.cc)
 COLMAP_ADD_TEST(camera_test camera_test.cc)
 COLMAP_ADD_TEST(correspondence_graph_test correspondence_graph_test.cc)
 COLMAP_ADD_TEST(cost_functions_test cost_functions_test.cc)
 COLMAP_ADD_TEST(database_cache_test database_cache_test.cc)
 COLMAP_ADD_TEST(database_test database_test.cc)
 COLMAP_ADD_TEST(essential_matrix_utils_test essential_matrix_test.cc)
+COLMAP_ADD_TEST(frame_test frame_test.cc)
 COLMAP_ADD_TEST(gps_test gps_test.cc)
 COLMAP_ADD_TEST(graph_cut_test graph_cut_test.cc)
 COLMAP_ADD_TEST(homography_matrix_utils_test homography_matrix_test.cc)
@@ -83,6 +84,7 @@ COLMAP_ADD_TEST(pose_test pose_test.cc)
 COLMAP_ADD_TEST(projection_test projection_test.cc)
 COLMAP_ADD_TEST(reconstruction_test reconstruction_test.cc)
 COLMAP_ADD_TEST(reconstruction_manager_test reconstruction_manager_test.cc)
+COLMAP_ADD_TEST(rig_test rig_test.cc)
 COLMAP_ADD_TEST(scene_clustering_test scene_clustering_test.cc)
 COLMAP_ADD_TEST(similarity_transform_test similarity_transform_test.cc)
 COLMAP_ADD_TEST(track_test track_test.cc)

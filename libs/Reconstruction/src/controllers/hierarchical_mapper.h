@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <filesystem>
+
 #include "base/reconstruction_manager.h"
 #include "base/scene_clustering.h"
 #include "controllers/incremental_mapper.h"
@@ -23,10 +25,10 @@ class HierarchicalMapperController : public Thread {
 public:
     struct Options {
         // The path to the image folder which are used as input.
-        std::string image_path;
+        std::filesystem::path image_path;
 
         // The path to the database file which is used as input.
-        std::string database_path;
+        std::filesystem::path database_path;
 
         // The maximum number of trials to initialize a cluster.
         int init_num_trials = 10;

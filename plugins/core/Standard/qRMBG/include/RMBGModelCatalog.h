@@ -1,0 +1,104 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
+
+#include <QByteArray>
+#include <QImage>
+#include <QString>
+#include <QStringList>
+#include <QVector>
+#include <cstdint>
+
+#include "aicore/image_view.h"
+
+/** Result envelope of one RMBG-2.0 background removal. */
+struct RMBGRunResult {
+    QString imagePath;
+    QString imageName;
+    /** RGBA image with the background removed (transparent pixels). */
+    QImage resultImage;
+    /** Graph-only inference time, directly comparable with upstream RMBG. */
+    double runtimeMs = 0.0;
+    double preprocessMs = 0.0;
+    double postprocessMs = 0.0;
+    double totalRuntimeMs = 0.0;
+    /** Mean alpha over the image (0..1); 1.0 = fully opaque. */
+    double alphaMean = 0.0;
+    /** Fraction of pixels with alpha >= 128 (foreground coverage). */
+    double foregroundRatio = 0.0;
+    QString modelVariant;
+    int inputSize = 0;
+    QString backend;
+    QString mathProfile;
+    QString resolvedDevice;
+    QString modelPath;
+    QByteArray infoJson;
+};
+
+Q_DECLARE_METATYPE(RMBGRunResult)
+
+/** Catalog entry mirroring aicore_rmbg_model_entry. */
+struct RMBGModelEntry {
+    QString filename;
+    QString downloadUrl;
+    QString displayName;
+    QString quantNote;
+    QString licenseNote;
+};
+
+namespace RMBGHelpers {
+
+/** Enumerate the published catalog from AICore. */
+QVector<RMBGModelEntry> catalogModels();
+/** Index of the catalog-declared default row (aicore_rmbg_model_default_index);
+ *  -1 when AICore is not available. */
+int catalogDefaultIndex();
+/** Lookup by GGUF filename; returns false when unknown. */
+bool findModelByFilename(const QString& filename, RMBGModelEntry* out);
+
+/** Model cache directory for qRMBG (aicore_rmbg_model_cache_dir). */
+QString modelCacheDir();
+
+/** Build the user-facing catalog label without duplicating a quantization
+ *  note that is already part of displayName. */
+QString modelDisplayLabel(const RMBGModelEntry& entry);
+
+/** Build a borrowed stride-aware AICore view. Unsupported Qt formats are
+ *  converted once in-place to RGBA8888; common camera formats stay zero-copy.
+ */
+bool imageView(QImage* image, aicore_image_view* out);
+
+/** Parse the AICore RMBG info JSON into a run result. Returns true on
+ *  success. */
+bool parseInfoJson(const QByteArray& json, RMBGRunResult* out);
+
+/** Alpha statistics over the RGBA result image. Pure pixel logic — unit
+ *  tested without AICore. */
+void computeAlphaStats(const QImage& rgba,
+                       double* alphaMean,
+                       double* foregroundRatio);
+
+/** Binary threshold over the alpha channel: pixels with alpha <
+ *  threshold*255 become fully transparent, others keep their alpha.
+ *  Returns a copy; the input is left untouched. threshold is clamped to
+ *  [0,1]; 0 disables the pass-through (no-op). Pure pixel logic — unit
+ *  tested without AICore. */
+QImage applyAlphaThreshold(const QImage& rgba, float threshold);
+
+/** Render a checkerboard pattern of the given size (transparent preview
+ *  background). */
+QImage makeCheckerboard(const QSize& size, int cellSize = 8);
+
+/** Composite the RGBA result over a checkerboard background (preview /
+ *  thumbnail rendering). Returns a fully opaque image of the same size. */
+QImage compositeOnCheckerboard(const QImage& rgba, int cellSize = 8);
+
+/** Format the alpha stats for a status line ("alpha 82.3%, fg 45.6%"). */
+QString formatAlphaStats(double alphaMean, double foregroundRatio);
+
+}  // namespace RMBGHelpers

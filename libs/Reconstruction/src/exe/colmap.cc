@@ -29,6 +29,9 @@
 //
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
+#include <QGuiApplication>
+#include <memory>
+
 #include "exe/database.h"
 #include "exe/feature.h"
 #include "exe/gui.h"
@@ -38,10 +41,6 @@
 #include "exe/sfm.h"
 #include "exe/vocab_tree.h"
 #include "util/version.h"
-
-#include <memory>
-
-#include <QGuiApplication>
 
 namespace {
 
@@ -106,6 +105,7 @@ int main(int argc, char** argv) {
     commands.emplace_back("gui", &RunGraphicalUserInterface);
     commands.emplace_back("automatic_reconstructor",
                           &RunAutomaticReconstructor);
+    commands.emplace_back("advancing_front_mesher", &RunAdvancingFrontMesher);
     commands.emplace_back("bundle_adjuster", &RunBundleAdjuster);
     commands.emplace_back("color_extractor", &RunColorExtractor);
     commands.emplace_back("database_cleaner", &RunDatabaseCleaner);
@@ -116,6 +116,9 @@ int main(int argc, char** argv) {
     commands.emplace_back("feature_extractor", &RunFeatureExtractor);
     commands.emplace_back("feature_importer", &RunFeatureImporter);
     commands.emplace_back("hierarchical_mapper", &RunHierarchicalMapper);
+    commands.emplace_back("global_mapper", &RunGlobalMapper);
+    commands.emplace_back("rotation_averager", &RunRotationAverager);
+    commands.emplace_back("view_graph_calibrator", &RunViewGraphCalibrator);
     commands.emplace_back("image_deleter", &RunImageDeleter);
     commands.emplace_back("image_filterer", &RunImageFilterer);
     commands.emplace_back("image_rectifier", &RunImageRectifier);
@@ -124,6 +127,7 @@ int main(int argc, char** argv) {
     commands.emplace_back("image_undistorter", &RunImageUndistorter);
     commands.emplace_back("image_undistorter_standalone",
                           &RunImageUndistorterStandalone);
+    commands.emplace_back("mesh_simplifier", &RunMeshSimplifier);
     commands.emplace_back("mapper", &RunMapper);
     commands.emplace_back("matches_importer", &RunMatchesImporter);
     commands.emplace_back("model_aligner", &RunModelAligner);
@@ -141,7 +145,6 @@ int main(int argc, char** argv) {
     commands.emplace_back("point_triangulator", &RunPointTriangulator);
     commands.emplace_back("poisson_mesher", &RunPoissonMesher);
     commands.emplace_back("project_generator", &RunProjectGenerator);
-    commands.emplace_back("rig_bundle_adjuster", &RunRigBundleAdjuster);
     commands.emplace_back("sequential_matcher", &RunSequentialMatcher);
     commands.emplace_back("spatial_matcher", &RunSpatialMatcher);
     commands.emplace_back("stereo_fusion", &RunStereoFuser);

@@ -29,6 +29,7 @@
 //
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
+#include "geometry/rigid3.h"
 #include "base/triangulation.h"
 
 #include "base/essential_matrix.h"
@@ -178,6 +179,59 @@ std::vector<double> CalculateTriangulationAngles(
   }
 
   return angles;
+}
+
+
+double CalculateAngleBetweenVectors(const Eigen::Vector3d& v1,
+                                    const Eigen::Vector3d& v2) {
+    const double squared_norm1 = v1.squaredNorm();
+    const double squared_norm2 = v2.squaredNorm();
+    if (squared_norm1 == 0.0 || squared_norm2 == 0.0) {
+        return 0.0;
+    }
+    return std::acos(std::clamp(
+            v1.dot(v2) / std::sqrt(squared_norm1 * squared_norm2), -1.0,
+            1.0));
+}
+
+bool TriangulateMidPoint(const Rigid3d& cam2_from_cam1,
+                         const Eigen::Vector3d& cam_ray1,
+                         const Eigen::Vector3d& cam_ray2,
+                         Eigen::Vector3d* point3D_in_cam1) {
+  const Eigen::Quaterniond cam1_from_cam2_rotation =
+      cam2_from_cam1.rotation().inverse();
+  const Eigen::Vector3d cam_ray2_in_cam1 = cam1_from_cam2_rotation * cam_ray2;
+  const Eigen::Vector3d cam2_in_cam1 =
+      cam1_from_cam2_rotation * -cam2_from_cam1.translation();
+
+  Eigen::Matrix3d A;
+  A << cam_ray1(0), -cam_ray2_in_cam1(0), -cam2_in_cam1(0), cam_ray1(1),
+      -cam_ray2_in_cam1(1), -cam2_in_cam1(1), cam_ray1(2), -cam_ray2_in_cam1(2),
+      -cam2_in_cam1(2);
+
+  const Eigen::JacobiSVD<Eigen::Matrix3d> svd(A, Eigen::ComputeFullV);
+#if EIGEN_VERSION_AT_LEAST(3, 4, 0)
+  if (svd.info() != Eigen::Success) {
+    return false;
+  }
+#endif
+
+  if (svd.matrixV()(2, 2) == 0) {
+    return false;
+  }
+
+  const Eigen::Vector2d lambda = svd.matrixV().col(2).hnormalized();
+
+  // Check if point is behind cameras.
+  if (lambda(0) <= std::numeric_limits<double>::epsilon() ||
+      lambda(1) <= std::numeric_limits<double>::epsilon()) {
+    return false;
+  }
+
+  *point3D_in_cam1 = 0.5 * (lambda(0) * cam_ray1 + cam2_in_cam1 +
+                            lambda(1) * cam_ray2_in_cam1);
+
+  return true;
 }
 
 }  // namespace colmap

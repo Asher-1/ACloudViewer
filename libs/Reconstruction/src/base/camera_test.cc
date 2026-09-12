@@ -32,347 +32,393 @@
 #define TEST_NAME "base/camera"
 #include "util/testing.h"
 
+#include <cmath>
+
 #include "base/camera.h"
 #include "base/camera_models.h"
 
 using namespace colmap;
 
-BOOST_AUTO_TEST_CASE(TestEmpty) {
+TEST(base_camera, TestEmpty) {
   Camera camera;
-  BOOST_CHECK_EQUAL(camera.CameraId(), kInvalidCameraId);
-  BOOST_CHECK_EQUAL(camera.ModelId(), kInvalidCameraModelId);
-  BOOST_CHECK_EQUAL(camera.ModelName(), "");
-  BOOST_CHECK_EQUAL(camera.Width(), 0);
-  BOOST_CHECK_EQUAL(camera.Height(), 0);
-  BOOST_CHECK_EQUAL(camera.HasPriorFocalLength(), false);
-  BOOST_CHECK_THROW(camera.FocalLengthIdxs(), std::domain_error);
-  BOOST_CHECK_THROW(camera.ParamsInfo(), std::domain_error);
-  BOOST_CHECK_EQUAL(camera.ParamsToString(), "");
-  BOOST_CHECK_EQUAL(camera.NumParams(), 0);
-  BOOST_CHECK_EQUAL(camera.Params().size(), 0);
-  BOOST_CHECK_EQUAL(camera.ParamsData(), camera.Params().data());
+  EXPECT_EQ(camera.CameraId(), kInvalidCameraId);
+  EXPECT_EQ(camera.ModelId(), kInvalidCameraModelId);
+  EXPECT_EQ(camera.ModelName(), "");
+  EXPECT_EQ(camera.Width(), 0);
+  EXPECT_EQ(camera.Height(), 0);
+  EXPECT_EQ(camera.HasPriorFocalLength(), false);
+  EXPECT_THROW(camera.FocalLengthIdxs(), std::domain_error);
+  EXPECT_THROW(camera.ParamsInfo(), std::domain_error);
+  EXPECT_EQ(camera.ParamsToString(), "");
+  EXPECT_EQ(camera.NumParams(), 0);
+  EXPECT_EQ(camera.Params().size(), 0);
+  EXPECT_EQ(camera.ParamsData(), camera.Params().data());
 }
 
-BOOST_AUTO_TEST_CASE(TestCameraId) {
+TEST(base_camera, TestCameraId) {
   Camera camera;
-  BOOST_CHECK_EQUAL(camera.CameraId(), kInvalidCameraId);
+  EXPECT_EQ(camera.CameraId(), kInvalidCameraId);
   camera.SetCameraId(1);
-  BOOST_CHECK_EQUAL(camera.CameraId(), 1);
+  EXPECT_EQ(camera.CameraId(), 1);
 }
 
-BOOST_AUTO_TEST_CASE(TestModelId) {
+TEST(base_camera, TestModelId) {
   Camera camera;
-  BOOST_CHECK_EQUAL(camera.ModelId(), kInvalidCameraModelId);
-  BOOST_CHECK_EQUAL(camera.ModelName(), "");
+  EXPECT_EQ(camera.ModelId(), kInvalidCameraModelId);
+  EXPECT_EQ(camera.ModelName(), "");
   camera.SetModelId(SimplePinholeCameraModel::model_id);
-  BOOST_CHECK_EQUAL(camera.ModelId(),
+  EXPECT_EQ(camera.ModelId(),
                     static_cast<int>(SimplePinholeCameraModel::model_id));
-  BOOST_CHECK_EQUAL(camera.ModelName(), "SIMPLE_PINHOLE");
-  BOOST_CHECK_EQUAL(camera.NumParams(), SimplePinholeCameraModel::num_params);
+  EXPECT_EQ(camera.ModelName(), "SIMPLE_PINHOLE");
+  EXPECT_EQ(camera.NumParams(), SimplePinholeCameraModel::num_params);
   camera.SetModelIdFromName("SIMPLE_RADIAL");
-  BOOST_CHECK_EQUAL(camera.ModelId(),
+  EXPECT_EQ(camera.ModelId(),
                     static_cast<int>(SimpleRadialCameraModel::model_id));
-  BOOST_CHECK_EQUAL(camera.ModelName(), "SIMPLE_RADIAL");
-  BOOST_CHECK_EQUAL(camera.NumParams(), SimpleRadialCameraModel::num_params);
+  EXPECT_EQ(camera.ModelName(), "SIMPLE_RADIAL");
+  EXPECT_EQ(camera.NumParams(), SimpleRadialCameraModel::num_params);
 }
 
-BOOST_AUTO_TEST_CASE(TestWidthHeight) {
+TEST(base_camera, TestEquirectangularCamRayWithJac) {
   Camera camera;
-  BOOST_CHECK_EQUAL(camera.Width(), 0);
-  BOOST_CHECK_EQUAL(camera.Height(), 0);
-  camera.SetWidth(1);
-  BOOST_CHECK_EQUAL(camera.Width(), 1);
-  BOOST_CHECK_EQUAL(camera.Height(), 0);
-  camera.SetHeight(1);
-  BOOST_CHECK_EQUAL(camera.Width(), 1);
-  BOOST_CHECK_EQUAL(camera.Height(), 1);
+  camera.InitializeWithId(EquirectangularCameraModel::kModelId, 0.0, 1000,
+                          500);
+  EXPECT_EQ(camera.ModelName(), "EQUIRECTANGULAR");
+  EXPECT_EQ(camera.Params().size(), 2);
+  EXPECT_EQ(camera.MeanFocalLength(), 0.0);
+  EXPECT_FALSE(camera.HasBogusParams(0.1, 10.0, 1.0));
+
+  const Eigen::Vector2d pixel(250.0, 200.0);
+  const auto ray_with_jac = camera.CamRayFromImgWithJac(pixel);
+  ASSERT_TRUE(ray_with_jac.has_value());
+  ASSERT_LE(std::abs((ray_with_jac->ray -
+                     Eigen::Vector3d(-std::cos(EIGEN_PI / 10.0),
+                                     -std::sin(EIGEN_PI / 10.0),
+                                     0.0))
+                            .norm()), 1e-12);
+
+  constexpr double kStep = 1e-4;
+  for (int axis = 0; axis < 2; ++axis) {
+    Eigen::Vector2d backward = pixel;
+    Eigen::Vector2d forward = pixel;
+    backward[axis] -= kStep;
+    forward[axis] += kStep;
+    const auto ray_backward = camera.CamRayFromImgWithJac(backward);
+    const auto ray_forward = camera.CamRayFromImgWithJac(forward);
+    ASSERT_TRUE(ray_backward.has_value());
+    ASSERT_TRUE(ray_forward.has_value());
+    ASSERT_LE(std::abs((ray_with_jac->jacobian.col(axis) -
+                       (ray_forward->ray - ray_backward->ray) / (2.0 * kStep))
+                              .norm()), 1e-9);
+  }
+
+  camera.Rescale(2000, 1000);
+  EXPECT_EQ(camera.Params()[0], 2000.0);
+  EXPECT_EQ(camera.Params()[1], 1000.0);
+
+  const auto front = camera.ImgFromCam(Eigen::Vector3d(0, 0, 1));
+  const auto rear = camera.ImgFromCam(Eigen::Vector3d(0, 0, -1));
+  ASSERT_TRUE(front.has_value());
+  ASSERT_TRUE(rear.has_value());
+  ASSERT_LE(std::abs((*front - Eigen::Vector2d(1000, 500)).norm()), 1e-12);
+  ASSERT_LE(std::abs((*rear - Eigen::Vector2d(2000, 500)).norm()), 1e-12);
+  EXPECT_FALSE(camera.ImgFromCam(Eigen::Vector3d::Zero()).has_value());
 }
 
-BOOST_AUTO_TEST_CASE(TestFocalLength) {
+TEST(base_camera, TestWidthHeight) {
+  Camera camera;
+  EXPECT_EQ(camera.Width(), 0);
+  EXPECT_EQ(camera.Height(), 0);
+  camera.SetWidth(1);
+  EXPECT_EQ(camera.Width(), 1);
+  EXPECT_EQ(camera.Height(), 0);
+  camera.SetHeight(1);
+  EXPECT_EQ(camera.Width(), 1);
+  EXPECT_EQ(camera.Height(), 1);
+}
+
+TEST(base_camera, TestFocalLength) {
   Camera camera;
   camera.InitializeWithId(SimplePinholeCameraModel::model_id, 1.0, 1, 1);
-  BOOST_CHECK_EQUAL(camera.FocalLength(), 1.0);
+  EXPECT_EQ(camera.FocalLength(), 1.0);
   camera.SetFocalLength(2.0);
-  BOOST_CHECK_EQUAL(camera.FocalLength(), 2.0);
+  EXPECT_EQ(camera.FocalLength(), 2.0);
   camera.InitializeWithId(PinholeCameraModel::model_id, 1.0, 1, 1);
-  BOOST_CHECK_EQUAL(camera.FocalLengthX(), 1.0);
-  BOOST_CHECK_EQUAL(camera.FocalLengthY(), 1.0);
+  EXPECT_EQ(camera.FocalLengthX(), 1.0);
+  EXPECT_EQ(camera.FocalLengthY(), 1.0);
   camera.SetFocalLengthX(2.0);
-  BOOST_CHECK_EQUAL(camera.FocalLengthX(), 2.0);
-  BOOST_CHECK_EQUAL(camera.FocalLengthY(), 1.0);
+  EXPECT_EQ(camera.FocalLengthX(), 2.0);
+  EXPECT_EQ(camera.FocalLengthY(), 1.0);
   camera.SetFocalLengthY(2.0);
-  BOOST_CHECK_EQUAL(camera.FocalLengthX(), 2.0);
-  BOOST_CHECK_EQUAL(camera.FocalLengthY(), 2.0);
+  EXPECT_EQ(camera.FocalLengthX(), 2.0);
+  EXPECT_EQ(camera.FocalLengthY(), 2.0);
 }
 
-BOOST_AUTO_TEST_CASE(TestPriorFocalLength) {
+TEST(base_camera, TestPriorFocalLength) {
   Camera camera;
-  BOOST_CHECK_EQUAL(camera.HasPriorFocalLength(), false);
+  EXPECT_EQ(camera.HasPriorFocalLength(), false);
   camera.SetPriorFocalLength(true);
-  BOOST_CHECK_EQUAL(camera.HasPriorFocalLength(), true);
+  EXPECT_EQ(camera.HasPriorFocalLength(), true);
   camera.SetPriorFocalLength(false);
-  BOOST_CHECK_EQUAL(camera.HasPriorFocalLength(), false);
+  EXPECT_EQ(camera.HasPriorFocalLength(), false);
 }
 
-BOOST_AUTO_TEST_CASE(TestPrincipalPoint) {
+TEST(base_camera, TestPrincipalPoint) {
   Camera camera;
   camera.InitializeWithId(PinholeCameraModel::model_id, 1.0, 1, 1);
-  BOOST_CHECK_EQUAL(camera.PrincipalPointX(), 0.5);
-  BOOST_CHECK_EQUAL(camera.PrincipalPointY(), 0.5);
+  EXPECT_EQ(camera.PrincipalPointX(), 0.5);
+  EXPECT_EQ(camera.PrincipalPointY(), 0.5);
   camera.SetPrincipalPointX(2.0);
-  BOOST_CHECK_EQUAL(camera.PrincipalPointX(), 2.0);
-  BOOST_CHECK_EQUAL(camera.PrincipalPointY(), 0.5);
+  EXPECT_EQ(camera.PrincipalPointX(), 2.0);
+  EXPECT_EQ(camera.PrincipalPointY(), 0.5);
   camera.SetPrincipalPointY(2.0);
-  BOOST_CHECK_EQUAL(camera.PrincipalPointX(), 2.0);
-  BOOST_CHECK_EQUAL(camera.PrincipalPointY(), 2.0);
+  EXPECT_EQ(camera.PrincipalPointX(), 2.0);
+  EXPECT_EQ(camera.PrincipalPointY(), 2.0);
 }
 
-BOOST_AUTO_TEST_CASE(TestParamIdxs) {
+TEST(base_camera, TestParamIdxs) {
   Camera camera;
-  BOOST_CHECK_THROW(camera.FocalLengthIdxs(), std::domain_error);
-  BOOST_CHECK_THROW(camera.PrincipalPointIdxs(), std::domain_error);
-  BOOST_CHECK_THROW(camera.ExtraParamsIdxs(), std::domain_error);
+  EXPECT_THROW(camera.FocalLengthIdxs(), std::domain_error);
+  EXPECT_THROW(camera.PrincipalPointIdxs(), std::domain_error);
+  EXPECT_THROW(camera.ExtraParamsIdxs(), std::domain_error);
   camera.SetModelId(FullOpenCVCameraModel::model_id);
-  BOOST_CHECK_EQUAL(camera.FocalLengthIdxs().size(), 2);
-  BOOST_CHECK_EQUAL(camera.PrincipalPointIdxs().size(), 2);
-  BOOST_CHECK_EQUAL(camera.ExtraParamsIdxs().size(), 8);
+  EXPECT_EQ(camera.FocalLengthIdxs().size(), 2);
+  EXPECT_EQ(camera.PrincipalPointIdxs().size(), 2);
+  EXPECT_EQ(camera.ExtraParamsIdxs().size(), 8);
 }
 
-BOOST_AUTO_TEST_CASE(TestCalibrationMatrix) {
+TEST(base_camera, TestCalibrationMatrix) {
   Camera camera;
   camera.InitializeWithId(PinholeCameraModel::model_id, 1.0, 1, 1);
   const Eigen::Matrix3d K = camera.CalibrationMatrix();
   Eigen::Matrix3d K_ref;
   K_ref << 1, 0, 0.5, 0, 1, 0.5, 0, 0, 1;
-  BOOST_CHECK_EQUAL(K, K_ref);
+  EXPECT_EQ(K, K_ref);
 }
 
-BOOST_AUTO_TEST_CASE(TestParamsInfo) {
+TEST(base_camera, TestParamsInfo) {
   Camera camera;
-  BOOST_CHECK_THROW(camera.ParamsInfo(), std::domain_error);
+  EXPECT_THROW(camera.ParamsInfo(), std::domain_error);
   camera.SetModelId(SimpleRadialCameraModel::model_id);
-  BOOST_CHECK_EQUAL(camera.ParamsInfo(), "f, cx, cy, k");
+  EXPECT_EQ(camera.ParamsInfo(), "f, cx, cy, k");
 }
 
-BOOST_AUTO_TEST_CASE(TestParams) {
+TEST(base_camera, TestParams) {
   Camera camera;
-  BOOST_CHECK_EQUAL(camera.NumParams(), 0);
-  BOOST_CHECK_EQUAL(camera.Params().size(), camera.NumParams());
+  EXPECT_EQ(camera.NumParams(), 0);
+  EXPECT_EQ(camera.Params().size(), camera.NumParams());
   camera.InitializeWithId(SimplePinholeCameraModel::model_id, 1.0, 1, 1);
-  BOOST_CHECK_EQUAL(camera.NumParams(), 3);
-  BOOST_CHECK_EQUAL(camera.Params().size(), camera.NumParams());
-  BOOST_CHECK_EQUAL(camera.ParamsData(), camera.Params().data());
-  BOOST_CHECK_EQUAL(camera.Params(0), 1.0);
-  BOOST_CHECK_EQUAL(camera.Params(1), 0.5);
-  BOOST_CHECK_EQUAL(camera.Params(2), 0.5);
-  BOOST_CHECK_EQUAL(camera.Params()[0], 1.0);
-  BOOST_CHECK_EQUAL(camera.Params()[1], 0.5);
-  BOOST_CHECK_EQUAL(camera.Params()[2], 0.5);
+  EXPECT_EQ(camera.NumParams(), 3);
+  EXPECT_EQ(camera.Params().size(), camera.NumParams());
+  EXPECT_EQ(camera.ParamsData(), camera.Params().data());
+  EXPECT_EQ(camera.Params(0), 1.0);
+  EXPECT_EQ(camera.Params(1), 0.5);
+  EXPECT_EQ(camera.Params(2), 0.5);
+  EXPECT_EQ(camera.Params()[0], 1.0);
+  EXPECT_EQ(camera.Params()[1], 0.5);
+  EXPECT_EQ(camera.Params()[2], 0.5);
   camera.SetParams({2.0, 1.0, 1.0});
-  BOOST_CHECK_EQUAL(camera.Params(0), 2.0);
-  BOOST_CHECK_EQUAL(camera.Params(1), 1.0);
-  BOOST_CHECK_EQUAL(camera.Params(2), 1.0);
+  EXPECT_EQ(camera.Params(0), 2.0);
+  EXPECT_EQ(camera.Params(1), 1.0);
+  EXPECT_EQ(camera.Params(2), 1.0);
 }
 
-BOOST_AUTO_TEST_CASE(TestParamsToString) {
+TEST(base_camera, TestParamsToString) {
   Camera camera;
   camera.InitializeWithId(SimplePinholeCameraModel::model_id, 1.0, 1, 1);
-  BOOST_CHECK_EQUAL(camera.ParamsToString(), "1.000000, 0.500000, 0.500000");
+  EXPECT_EQ(camera.ParamsToString(), "1.000000, 0.500000, 0.500000");
 }
 
-BOOST_AUTO_TEST_CASE(TestParamsFromString) {
+TEST(base_camera, TestParamsFromString) {
   Camera camera;
   camera.SetModelId(SimplePinholeCameraModel::model_id);
-  BOOST_CHECK(camera.SetParamsFromString("1.000000, 0.500000, 0.500000"));
+  EXPECT_TRUE(camera.SetParamsFromString("1.000000, 0.500000, 0.500000"));
   const std::vector<double> params{1.0, 0.5, 0.5};
-  BOOST_CHECK_EQUAL_COLLECTIONS(camera.Params().begin(), camera.Params().end(),
-                                params.begin(), params.end());
-  BOOST_CHECK(!camera.SetParamsFromString("1.000000, 0.500000"));
-  BOOST_CHECK_EQUAL_COLLECTIONS(camera.Params().begin(), camera.Params().end(),
-                                params.begin(), params.end());
+  ASSERT_TRUE(std::equal(camera.Params().begin(), camera.Params().end(), params.begin(), params.end()));
+  EXPECT_FALSE(camera.SetParamsFromString("1.000000, 0.500000"));
+  ASSERT_TRUE(std::equal(camera.Params().begin(), camera.Params().end(), params.begin(), params.end()));
 }
 
-BOOST_AUTO_TEST_CASE(TestVerifyParams) {
+TEST(base_camera, TestVerifyParams) {
   Camera camera;
-  BOOST_CHECK_THROW(camera.VerifyParams(), std::domain_error);
+  EXPECT_THROW(camera.VerifyParams(), std::domain_error);
   camera.InitializeWithId(SimplePinholeCameraModel::model_id, 1.0, 1, 1);
-  BOOST_CHECK_EQUAL(camera.VerifyParams(), true);
+  EXPECT_EQ(camera.VerifyParams(), true);
   camera.Params().resize(2);
-  BOOST_CHECK_EQUAL(camera.VerifyParams(), false);
+  EXPECT_EQ(camera.VerifyParams(), false);
 }
 
-BOOST_AUTO_TEST_CASE(TestIsUndistorted) { 
+TEST(base_camera, TestIsUndistorted) { 
   Camera camera;
   camera.InitializeWithId(SimplePinholeCameraModel::model_id, 1.0, 1, 1);
-  BOOST_CHECK(camera.IsUndistorted());
+  EXPECT_TRUE(camera.IsUndistorted());
   camera.InitializeWithId(SimpleRadialCameraModel::model_id, 1.0, 1, 1);
-  BOOST_CHECK(camera.IsUndistorted());
+  EXPECT_TRUE(camera.IsUndistorted());
   camera.SetParams({1.0, 0.5, 0.5, 0.005});
-  BOOST_CHECK(!camera.IsUndistorted());
+  EXPECT_FALSE(camera.IsUndistorted());
   camera.InitializeWithId(RadialCameraModel::model_id, 1.0, 1, 1);
-  BOOST_CHECK(camera.IsUndistorted());
+  EXPECT_TRUE(camera.IsUndistorted());
   camera.SetParams({1.0, 0.5, 0.5, 0.0, 0.005});
-  BOOST_CHECK(!camera.IsUndistorted());
+  EXPECT_FALSE(camera.IsUndistorted());
   camera.InitializeWithId(OpenCVCameraModel::model_id, 1.0, 1, 1);
-  BOOST_CHECK(camera.IsUndistorted());
+  EXPECT_TRUE(camera.IsUndistorted());
   camera.SetParams({1.0, 1.0, 0.5, 0.5, 0.0, 0.0, 0.0, 0.001});
-  BOOST_CHECK(!camera.IsUndistorted());
+  EXPECT_FALSE(camera.IsUndistorted());
   camera.InitializeWithId(FullOpenCVCameraModel::model_id, 1.0, 1, 1);
-  BOOST_CHECK(camera.IsUndistorted());
+  EXPECT_TRUE(camera.IsUndistorted());
   camera.SetParams({1.0, 1.0, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.001});
-  BOOST_CHECK(!camera.IsUndistorted());
+  EXPECT_FALSE(camera.IsUndistorted());
 }
 
-BOOST_AUTO_TEST_CASE(TestHasBogusParams) {
+TEST(base_camera, TestHasBogusParams) {
   Camera camera;
-  BOOST_CHECK_THROW(camera.HasBogusParams(0.0, 0.0, 0.0), std::domain_error);
+  EXPECT_THROW(camera.HasBogusParams(0.0, 0.0, 0.0), std::domain_error);
   camera.InitializeWithId(SimplePinholeCameraModel::model_id, 1.0, 1, 1);
-  BOOST_CHECK_EQUAL(camera.HasBogusParams(0.1, 1.1, 1.0), false);
-  BOOST_CHECK_EQUAL(camera.HasBogusParams(0.1, 1.1, 0.0), false);
-  BOOST_CHECK_EQUAL(camera.HasBogusParams(0.1, 0.99, 1.0), true);
-  BOOST_CHECK_EQUAL(camera.HasBogusParams(1.01, 1.1, 1.0), true);
+  EXPECT_EQ(camera.HasBogusParams(0.1, 1.1, 1.0), false);
+  EXPECT_EQ(camera.HasBogusParams(0.1, 1.1, 0.0), false);
+  EXPECT_EQ(camera.HasBogusParams(0.1, 0.99, 1.0), true);
+  EXPECT_EQ(camera.HasBogusParams(1.01, 1.1, 1.0), true);
   camera.InitializeWithId(SimpleRadialCameraModel::model_id, 1.0, 1, 1);
-  BOOST_CHECK_EQUAL(camera.HasBogusParams(0.1, 1.1, 1.0), false);
+  EXPECT_EQ(camera.HasBogusParams(0.1, 1.1, 1.0), false);
   camera.Params(3) = 1.01;
-  BOOST_CHECK_EQUAL(camera.HasBogusParams(0.1, 1.1, 1.0), true);
+  EXPECT_EQ(camera.HasBogusParams(0.1, 1.1, 1.0), true);
   camera.Params(3) = -0.5;
-  BOOST_CHECK_EQUAL(camera.HasBogusParams(0.1, 1.1, 1.0), false);
+  EXPECT_EQ(camera.HasBogusParams(0.1, 1.1, 1.0), false);
   camera.Params(3) = -1.01;
-  BOOST_CHECK_EQUAL(camera.HasBogusParams(0.1, 1.1, 1.0), true);
+  EXPECT_EQ(camera.HasBogusParams(0.1, 1.1, 1.0), true);
 }
 
-BOOST_AUTO_TEST_CASE(TestInitializeWithId) {
+TEST(base_camera, TestInitializeWithId) {
   Camera camera;
   camera.InitializeWithId(SimplePinholeCameraModel::model_id, 1.0, 1, 1);
-  BOOST_CHECK_EQUAL(camera.CameraId(), kInvalidCameraId);
-  BOOST_CHECK_EQUAL(camera.ModelId(),
+  EXPECT_EQ(camera.CameraId(), kInvalidCameraId);
+  EXPECT_EQ(camera.ModelId(),
                     static_cast<int>(SimplePinholeCameraModel::model_id));
-  BOOST_CHECK_EQUAL(camera.ModelName(), "SIMPLE_PINHOLE");
-  BOOST_CHECK_EQUAL(camera.Width(), 1);
-  BOOST_CHECK_EQUAL(camera.Height(), 1);
-  BOOST_CHECK_EQUAL(camera.HasPriorFocalLength(), false);
-  BOOST_CHECK_EQUAL(camera.FocalLengthIdxs().size(), 1);
-  BOOST_CHECK_EQUAL(camera.PrincipalPointIdxs().size(), 2);
-  BOOST_CHECK_EQUAL(camera.ExtraParamsIdxs().size(), 0);
-  BOOST_CHECK_EQUAL(camera.ParamsInfo(), "f, cx, cy");
-  BOOST_CHECK_EQUAL(camera.ParamsToString(), "1.000000, 0.500000, 0.500000");
-  BOOST_CHECK_EQUAL(camera.FocalLength(), 1.0);
-  BOOST_CHECK_EQUAL(camera.PrincipalPointX(), 0.5);
-  BOOST_CHECK_EQUAL(camera.PrincipalPointY(), 0.5);
-  BOOST_CHECK_EQUAL(camera.VerifyParams(), true);
-  BOOST_CHECK_EQUAL(camera.HasBogusParams(0.1, 2.0, 1.0), false);
-  BOOST_CHECK_EQUAL(camera.HasBogusParams(0.1, 0.5, 1.0), true);
-  BOOST_CHECK_EQUAL(camera.NumParams(),
+  EXPECT_EQ(camera.ModelName(), "SIMPLE_PINHOLE");
+  EXPECT_EQ(camera.Width(), 1);
+  EXPECT_EQ(camera.Height(), 1);
+  EXPECT_EQ(camera.HasPriorFocalLength(), false);
+  EXPECT_EQ(camera.FocalLengthIdxs().size(), 1);
+  EXPECT_EQ(camera.PrincipalPointIdxs().size(), 2);
+  EXPECT_EQ(camera.ExtraParamsIdxs().size(), 0);
+  EXPECT_EQ(camera.ParamsInfo(), "f, cx, cy");
+  EXPECT_EQ(camera.ParamsToString(), "1.000000, 0.500000, 0.500000");
+  EXPECT_EQ(camera.FocalLength(), 1.0);
+  EXPECT_EQ(camera.PrincipalPointX(), 0.5);
+  EXPECT_EQ(camera.PrincipalPointY(), 0.5);
+  EXPECT_EQ(camera.VerifyParams(), true);
+  EXPECT_EQ(camera.HasBogusParams(0.1, 2.0, 1.0), false);
+  EXPECT_EQ(camera.HasBogusParams(0.1, 0.5, 1.0), true);
+  EXPECT_EQ(camera.NumParams(),
                     static_cast<int>(SimplePinholeCameraModel::num_params));
-  BOOST_CHECK_EQUAL(camera.Params().size(),
+  EXPECT_EQ(camera.Params().size(),
                     static_cast<int>(SimplePinholeCameraModel::num_params));
 }
 
-BOOST_AUTO_TEST_CASE(TestInitializeWithName) {
+TEST(base_camera, TestInitializeWithName) {
   Camera camera;
   camera.InitializeWithName("SIMPLE_PINHOLE", 1.0, 1, 1);
-  BOOST_CHECK_EQUAL(camera.CameraId(), kInvalidCameraId);
-  BOOST_CHECK_EQUAL(camera.ModelId(),
+  EXPECT_EQ(camera.CameraId(), kInvalidCameraId);
+  EXPECT_EQ(camera.ModelId(),
                     static_cast<int>(SimplePinholeCameraModel::model_id));
-  BOOST_CHECK_EQUAL(camera.ModelName(), "SIMPLE_PINHOLE");
-  BOOST_CHECK_EQUAL(camera.Width(), 1);
-  BOOST_CHECK_EQUAL(camera.Height(), 1);
-  BOOST_CHECK_EQUAL(camera.HasPriorFocalLength(), false);
-  BOOST_CHECK_EQUAL(camera.FocalLengthIdxs().size(), 1);
-  BOOST_CHECK_EQUAL(camera.PrincipalPointIdxs().size(), 2);
-  BOOST_CHECK_EQUAL(camera.ExtraParamsIdxs().size(), 0);
-  BOOST_CHECK_EQUAL(camera.ParamsInfo(), "f, cx, cy");
-  BOOST_CHECK_EQUAL(camera.ParamsToString(), "1.000000, 0.500000, 0.500000");
-  BOOST_CHECK_EQUAL(camera.FocalLength(), 1.0);
-  BOOST_CHECK_EQUAL(camera.PrincipalPointX(), 0.5);
-  BOOST_CHECK_EQUAL(camera.PrincipalPointY(), 0.5);
-  BOOST_CHECK_EQUAL(camera.VerifyParams(), true);
-  BOOST_CHECK_EQUAL(camera.HasBogusParams(0.1, 2.0, 1.0), false);
-  BOOST_CHECK_EQUAL(camera.HasBogusParams(0.1, 0.5, 1.0), true);
-  BOOST_CHECK_EQUAL(camera.NumParams(),
+  EXPECT_EQ(camera.ModelName(), "SIMPLE_PINHOLE");
+  EXPECT_EQ(camera.Width(), 1);
+  EXPECT_EQ(camera.Height(), 1);
+  EXPECT_EQ(camera.HasPriorFocalLength(), false);
+  EXPECT_EQ(camera.FocalLengthIdxs().size(), 1);
+  EXPECT_EQ(camera.PrincipalPointIdxs().size(), 2);
+  EXPECT_EQ(camera.ExtraParamsIdxs().size(), 0);
+  EXPECT_EQ(camera.ParamsInfo(), "f, cx, cy");
+  EXPECT_EQ(camera.ParamsToString(), "1.000000, 0.500000, 0.500000");
+  EXPECT_EQ(camera.FocalLength(), 1.0);
+  EXPECT_EQ(camera.PrincipalPointX(), 0.5);
+  EXPECT_EQ(camera.PrincipalPointY(), 0.5);
+  EXPECT_EQ(camera.VerifyParams(), true);
+  EXPECT_EQ(camera.HasBogusParams(0.1, 2.0, 1.0), false);
+  EXPECT_EQ(camera.HasBogusParams(0.1, 0.5, 1.0), true);
+  EXPECT_EQ(camera.NumParams(),
                     static_cast<int>(SimplePinholeCameraModel::num_params));
-  BOOST_CHECK_EQUAL(camera.Params().size(),
+  EXPECT_EQ(camera.Params().size(),
                     static_cast<int>(SimplePinholeCameraModel::num_params));
 }
 
-BOOST_AUTO_TEST_CASE(TestImageToWorld) {
+TEST(base_camera, TestImageToWorld) {
   Camera camera;
-  BOOST_CHECK_THROW(camera.ImageToWorld(Eigen::Vector2d::Zero()),
+  EXPECT_THROW(camera.ImageToWorld(Eigen::Vector2d::Zero()),
                     std::domain_error);
   camera.InitializeWithName("SIMPLE_PINHOLE", 1.0, 1, 1);
-  BOOST_CHECK_EQUAL(camera.ImageToWorld(Eigen::Vector2d(0.0, 0.0))(0), -0.5);
-  BOOST_CHECK_EQUAL(camera.ImageToWorld(Eigen::Vector2d(0.0, 0.0))(1), -0.5);
-  BOOST_CHECK_EQUAL(camera.ImageToWorld(Eigen::Vector2d(0.5, 0.5))(0), 0.0);
-  BOOST_CHECK_EQUAL(camera.ImageToWorld(Eigen::Vector2d(0.5, 0.5))(1), 0.0);
+  EXPECT_EQ(camera.ImageToWorld(Eigen::Vector2d(0.0, 0.0))(0), -0.5);
+  EXPECT_EQ(camera.ImageToWorld(Eigen::Vector2d(0.0, 0.0))(1), -0.5);
+  EXPECT_EQ(camera.ImageToWorld(Eigen::Vector2d(0.5, 0.5))(0), 0.0);
+  EXPECT_EQ(camera.ImageToWorld(Eigen::Vector2d(0.5, 0.5))(1), 0.0);
 }
 
-BOOST_AUTO_TEST_CASE(TestImageToWorldThreshold) {
+TEST(base_camera, TestImageToWorldThreshold) {
   Camera camera;
-  BOOST_CHECK_THROW(camera.ImageToWorldThreshold(0), std::domain_error);
+  EXPECT_THROW(camera.ImageToWorldThreshold(0), std::domain_error);
   camera.InitializeWithName("SIMPLE_PINHOLE", 1.0, 1, 1);
-  BOOST_CHECK_EQUAL(camera.ImageToWorldThreshold(0), 0);
-  BOOST_CHECK_EQUAL(camera.ImageToWorldThreshold(1), 1);
+  EXPECT_EQ(camera.ImageToWorldThreshold(0), 0);
+  EXPECT_EQ(camera.ImageToWorldThreshold(1), 1);
   camera.SetFocalLength(2.0);
-  BOOST_CHECK_EQUAL(camera.ImageToWorldThreshold(1), 0.5);
+  EXPECT_EQ(camera.ImageToWorldThreshold(1), 0.5);
   camera.InitializeWithName("PINHOLE", 1.0, 1, 1);
   camera.SetFocalLengthY(3.0);
-  BOOST_CHECK_EQUAL(camera.ImageToWorldThreshold(1), 0.5);
+  EXPECT_EQ(camera.ImageToWorldThreshold(1), 0.5);
 }
 
-BOOST_AUTO_TEST_CASE(TestWorldToImage) {
+TEST(base_camera, TestWorldToImage) {
   Camera camera;
-  BOOST_CHECK_THROW(camera.WorldToImage(Eigen::Vector2d::Zero()),
+  EXPECT_THROW(camera.WorldToImage(Eigen::Vector2d::Zero()),
                     std::domain_error);
   camera.InitializeWithName("SIMPLE_PINHOLE", 1.0, 1, 1);
-  BOOST_CHECK_EQUAL(camera.WorldToImage(Eigen::Vector2d(0.0, 0.0))(0), 0.5);
-  BOOST_CHECK_EQUAL(camera.WorldToImage(Eigen::Vector2d(0.0, 0.0))(1), 0.5);
-  BOOST_CHECK_EQUAL(camera.WorldToImage(Eigen::Vector2d(-0.5, -0.5))(0), 0.0);
-  BOOST_CHECK_EQUAL(camera.WorldToImage(Eigen::Vector2d(-0.5, -0.5))(1), 0.0);
+  EXPECT_EQ(camera.WorldToImage(Eigen::Vector2d(0.0, 0.0))(0), 0.5);
+  EXPECT_EQ(camera.WorldToImage(Eigen::Vector2d(0.0, 0.0))(1), 0.5);
+  EXPECT_EQ(camera.WorldToImage(Eigen::Vector2d(-0.5, -0.5))(0), 0.0);
+  EXPECT_EQ(camera.WorldToImage(Eigen::Vector2d(-0.5, -0.5))(1), 0.0);
 }
 
-BOOST_AUTO_TEST_CASE(TestRescale) {
+TEST(base_camera, TestRescale) {
   Camera camera;
   camera.InitializeWithName("SIMPLE_PINHOLE", 1.0, 1, 1);
   camera.Rescale(2.0);
-  BOOST_CHECK_EQUAL(camera.Width(), 2);
-  BOOST_CHECK_EQUAL(camera.Height(), 2);
-  BOOST_CHECK_EQUAL(camera.FocalLength(), 2);
-  BOOST_CHECK_EQUAL(camera.PrincipalPointX(), 1);
-  BOOST_CHECK_EQUAL(camera.PrincipalPointY(), 1);
+  EXPECT_EQ(camera.Width(), 2);
+  EXPECT_EQ(camera.Height(), 2);
+  EXPECT_EQ(camera.FocalLength(), 2);
+  EXPECT_EQ(camera.PrincipalPointX(), 1);
+  EXPECT_EQ(camera.PrincipalPointY(), 1);
 
   camera.InitializeWithName("PINHOLE", 1.0, 1, 1);
   camera.Rescale(2.0);
-  BOOST_CHECK_EQUAL(camera.Width(), 2);
-  BOOST_CHECK_EQUAL(camera.Height(), 2);
-  BOOST_CHECK_EQUAL(camera.FocalLengthX(), 2);
-  BOOST_CHECK_EQUAL(camera.FocalLengthY(), 2);
-  BOOST_CHECK_EQUAL(camera.PrincipalPointX(), 1);
-  BOOST_CHECK_EQUAL(camera.PrincipalPointY(), 1);
+  EXPECT_EQ(camera.Width(), 2);
+  EXPECT_EQ(camera.Height(), 2);
+  EXPECT_EQ(camera.FocalLengthX(), 2);
+  EXPECT_EQ(camera.FocalLengthY(), 2);
+  EXPECT_EQ(camera.PrincipalPointX(), 1);
+  EXPECT_EQ(camera.PrincipalPointY(), 1);
 
   camera.InitializeWithName("PINHOLE", 1.0, 2, 2);
   camera.Rescale(0.5);
-  BOOST_CHECK_EQUAL(camera.Width(), 1);
-  BOOST_CHECK_EQUAL(camera.Height(), 1);
-  BOOST_CHECK_EQUAL(camera.FocalLengthX(), 0.5);
-  BOOST_CHECK_EQUAL(camera.FocalLengthY(), 0.5);
-  BOOST_CHECK_EQUAL(camera.PrincipalPointX(), 0.5);
-  BOOST_CHECK_EQUAL(camera.PrincipalPointY(), 0.5);
+  EXPECT_EQ(camera.Width(), 1);
+  EXPECT_EQ(camera.Height(), 1);
+  EXPECT_EQ(camera.FocalLengthX(), 0.5);
+  EXPECT_EQ(camera.FocalLengthY(), 0.5);
+  EXPECT_EQ(camera.PrincipalPointX(), 0.5);
+  EXPECT_EQ(camera.PrincipalPointY(), 0.5);
 
   camera.InitializeWithName("PINHOLE", 1.0, 2, 2);
   camera.Rescale(1, 1);
-  BOOST_CHECK_EQUAL(camera.Width(), 1);
-  BOOST_CHECK_EQUAL(camera.Height(), 1);
-  BOOST_CHECK_EQUAL(camera.FocalLengthX(), 0.5);
-  BOOST_CHECK_EQUAL(camera.FocalLengthY(), 0.5);
-  BOOST_CHECK_EQUAL(camera.PrincipalPointX(), 0.5);
-  BOOST_CHECK_EQUAL(camera.PrincipalPointY(), 0.5);
+  EXPECT_EQ(camera.Width(), 1);
+  EXPECT_EQ(camera.Height(), 1);
+  EXPECT_EQ(camera.FocalLengthX(), 0.5);
+  EXPECT_EQ(camera.FocalLengthY(), 0.5);
+  EXPECT_EQ(camera.PrincipalPointX(), 0.5);
+  EXPECT_EQ(camera.PrincipalPointY(), 0.5);
 
   camera.InitializeWithName("PINHOLE", 1.0, 2, 2);
   camera.Rescale(4, 4);
-  BOOST_CHECK_EQUAL(camera.Width(), 4);
-  BOOST_CHECK_EQUAL(camera.Height(), 4);
-  BOOST_CHECK_EQUAL(camera.FocalLengthX(), 2);
-  BOOST_CHECK_EQUAL(camera.FocalLengthY(), 2);
-  BOOST_CHECK_EQUAL(camera.PrincipalPointX(), 2);
-  BOOST_CHECK_EQUAL(camera.PrincipalPointY(), 2);
+  EXPECT_EQ(camera.Width(), 4);
+  EXPECT_EQ(camera.Height(), 4);
+  EXPECT_EQ(camera.FocalLengthX(), 2);
+  EXPECT_EQ(camera.FocalLengthY(), 2);
+  EXPECT_EQ(camera.PrincipalPointX(), 2);
+  EXPECT_EQ(camera.PrincipalPointY(), 2);
 }

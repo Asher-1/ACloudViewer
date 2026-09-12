@@ -131,14 +131,8 @@ AICORE_CAPI int aicore_facedetect_landmark_model_count(void) {
 
 AICORE_CAPI const aicore_facedetect_model_entry*
 aicore_facedetect_landmark_model_at(int index) {
-    int seen = -1;
-    for (size_t i = 0; i < sizeof(kModels) / sizeof(kModels[0]); ++i) {
-        if (kModels[i].detector_capable) continue;
-        if (seen == index)
-            return aicore_facedetect_model_at(static_cast<int>(i));
-        ++seen;
-    }
-    return nullptr;
+    const int mapped = landmark_index_map(index);
+    return mapped < 0 ? nullptr : aicore_facedetect_model_at(mapped);
 }
 
 AICORE_CAPI const aicore_facedetect_model_entry*

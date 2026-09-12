@@ -5,9 +5,6 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include <QDir>
-#include <QStandardPaths>
-#include <QTemporaryFile>
 #include <cstring>
 
 #include "aicore/backend_capi.h"
@@ -25,29 +22,49 @@ bool loadContext(const QString& model_path,
                  const QString& device,
                  aicore_depth_ctx*& ctx) {
     const int threads = n_threads > 0 ? n_threads : 1;
+    aicore_depth_options* opts = aicore_depth_options_new();
+    if (!opts) return false;
+    aicore_depth_options_set_threads(opts, threads);
+    if (!device.isEmpty())
+        aicore_depth_options_set_device(opts, device.toUtf8().constData());
     if (metric_model_path.isEmpty()) {
-        ctx = aicore_depth_load_device(model_path.toUtf8().constData(), threads,
-                                       device.toUtf8().constData());
+        ctx = aicore_depth_load_opts(model_path.toUtf8().constData(), opts);
     } else {
-        ctx = aicore_depth_load_nested_device(
+        ctx = aicore_depth_load_nested_opts(
                 model_path.toUtf8().constData(),
-                metric_model_path.toUtf8().constData(), threads,
-                device.toUtf8().constData());
+                metric_model_path.toUtf8().constData(), opts);
     }
+    aicore_depth_options_free(opts);
     return ctx != nullptr;
 }
 
-bool writeTempPng(const QImage& image, QTemporaryFile& tmp) {
-    if (image.isNull()) return false;
-    QString cache =
-            QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
-    if (cache.isEmpty()) cache = QDir::tempPath();
-    QDir().mkpath(cache + QStringLiteral("/aicore_depth"));
-    tmp.setFileTemplate(cache + "/aicore_depth/image_XXXXXX.png");
-    if (!tmp.open()) return false;
-    if (!image.save(&tmp, "PNG")) return false;
-    tmp.close();
-    return true;
+aicore_image_format image_format(const QImage& image) {
+    switch (image.format()) {
+        case QImage::Format_RGB888:
+            return AICORE_IMAGE_RGB8;
+        case QImage::Format_RGBA8888:
+            return AICORE_IMAGE_RGBA8;
+        case QImage::Format_Grayscale8:
+            return AICORE_IMAGE_GRAY8;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+        case QImage::Format_BGR888:
+            return AICORE_IMAGE_BGR8;
+#endif
+#if Q_BYTE_ORDER == Q_LITTLE_ENDIAN
+        case QImage::Format_RGB32:
+        case QImage::Format_ARGB32:
+            return AICORE_IMAGE_BGRA8;
+#endif
+        default:
+            return static_cast<aicore_image_format>(0);
+    }
+}
+
+QImage inference_view_image(const QImage& source) {
+    if (source.isNull()) return {};
+    return image_format(source) != 0
+                   ? source
+                   : source.convertToFormat(QImage::Format_RGB888);
 }
 
 }  // namespace
@@ -90,26 +107,28 @@ bool ImageDepth::estimateDepth(const QImage& image,
                                aicore_cancel_token* cancel_token) {
     ImageDepthTaskScope task(device, cancel_token);
     if (!task.active()) return false;
-    QTemporaryFile tmp;
-    if (!writeTempPng(image, tmp)) return false;
+    const QImage rgb = inference_view_image(image);
+    if (rgb.isNull()) return false;
 
     aicore_depth_ctx* ctx = nullptr;
     if (!loadContext(model_path, metric_model_path, n_threads, device, ctx))
         return false;
 
-    int h = 0, w = 0;
-    float* depth = aicore_depth_depth_path(
-            ctx, tmp.fileName().toUtf8().constData(), &h, &w);
-    if (!depth) {
+    aicore_image_view view{reinterpret_cast<const uint8_t*>(rgb.constBits()),
+                           rgb.width(), rgb.height(),
+                           static_cast<size_t>(rgb.bytesPerLine()),
+                           image_format(rgb)};
+    aicore_depth_dense_result dense{};
+    if (aicore_depth_depth_image(ctx, &view, &dense) != 0 || !dense.depth) {
         aicore_depth_free(ctx);
         return false;
     }
 
-    out.width = w;
-    out.height = h;
-    out.depth.assign(depth, depth + h * w);
+    out.width = dense.width;
+    out.height = dense.height;
+    out.depth.assign(dense.depth, dense.depth + dense.width * dense.height);
     out.has_pose = false;
-    aicore_depth_free_floats(depth);
+    aicore_depth_dense_result_free(&dense);
     aicore_depth_free(ctx);
     return true;
 }
@@ -123,41 +142,38 @@ bool ImageDepth::estimateDepthAndPose(const QImage& image,
                                       aicore_cancel_token* cancel_token) {
     ImageDepthTaskScope task(device, cancel_token);
     if (!task.active()) return false;
-    QTemporaryFile tmp;
-    if (!writeTempPng(image, tmp)) return false;
+    const QImage rgb = inference_view_image(image);
+    if (rgb.isNull()) return false;
 
     aicore_depth_ctx* ctx = nullptr;
     if (!loadContext(model_path, metric_model_path, n_threads, device, ctx))
         return false;
 
-    int h = 0, w = 0, is_metric = 0;
-    float* depth_ptr = nullptr;
-    float* conf_ptr = nullptr;
-    float* sky_ptr = nullptr;
-    float ext[12] = {}, intr[9] = {};
-
-    const int ret = aicore_depth_depth_dense(
-            ctx, tmp.fileName().toUtf8().constData(), &h, &w, &depth_ptr,
-            &conf_ptr, &sky_ptr, ext, intr, &is_metric);
-    if (ret != 0 || !depth_ptr) {
+    aicore_image_view view{reinterpret_cast<const uint8_t*>(rgb.constBits()),
+                           rgb.width(), rgb.height(),
+                           static_cast<size_t>(rgb.bytesPerLine()),
+                           image_format(rgb)};
+    aicore_depth_dense_result dense{};
+    const int ret = aicore_depth_depth_image(ctx, &view, &dense);
+    if (ret != 0 || !dense.depth) {
+        aicore_depth_dense_result_free(&dense);
         aicore_depth_free(ctx);
         return false;
     }
 
-    out.width = w;
-    out.height = h;
-    out.depth.assign(depth_ptr, depth_ptr + h * w);
-    if (conf_ptr) {
-        out.confidence.assign(conf_ptr, conf_ptr + h * w);
-        aicore_depth_free_floats(conf_ptr);
+    out.width = dense.width;
+    out.height = dense.height;
+    out.depth.assign(dense.depth, dense.depth + dense.height * dense.width);
+    if (dense.conf) {
+        out.confidence.assign(dense.conf,
+                              dense.conf + dense.height * dense.width);
     }
-    if (sky_ptr) aicore_depth_free_floats(sky_ptr);
 
     out.has_pose = true;
-    std::memcpy(out.extrinsics, ext, sizeof(ext));
-    std::memcpy(out.intrinsics, intr, sizeof(intr));
+    std::memcpy(out.extrinsics, dense.ext, sizeof(out.extrinsics));
+    std::memcpy(out.intrinsics, dense.intr, sizeof(out.intrinsics));
 
-    aicore_depth_free_floats(depth_ptr);
+    aicore_depth_dense_result_free(&dense);
     aicore_depth_free(ctx);
     return true;
 }

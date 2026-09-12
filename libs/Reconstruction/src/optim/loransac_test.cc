@@ -37,24 +37,24 @@
 
 #include "base/pose.h"
 #include "base/similarity_transform.h"
-#include "estimators/similarity_transform.h"
+#include "estimators/solvers/similarity_transform.h"
 #include "optim/loransac.h"
 #include "util/random.h"
 
 using namespace colmap;
 
-BOOST_AUTO_TEST_CASE(TestReport) {
+TEST(optim_ransac, TestReport) {
   LORANSAC<SimilarityTransformEstimator<3>,
            SimilarityTransformEstimator<3>>::Report report;
-  BOOST_CHECK_EQUAL(report.success, false);
-  BOOST_CHECK_EQUAL(report.num_trials, 0);
-  BOOST_CHECK_EQUAL(report.support.num_inliers, 0);
-  BOOST_CHECK_EQUAL(report.support.residual_sum,
+  EXPECT_EQ(report.success, false);
+  EXPECT_EQ(report.num_trials, 0);
+  EXPECT_EQ(report.support.num_inliers, 0);
+  EXPECT_EQ(report.support.residual_sum,
                     std::numeric_limits<double>::max());
-  BOOST_CHECK_EQUAL(report.inlier_mask.size(), 0);
+  EXPECT_EQ(report.inlier_mask.size(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(TestSimilarityTransform) {
+TEST(optim_ransac, TestSimilarityTransform) {
   SetPRNGSeed(0);
 
   const size_t num_samples = 1000;
@@ -87,21 +87,21 @@ BOOST_AUTO_TEST_CASE(TestSimilarityTransform) {
       ransac(options);
   const auto report = ransac.Estimate(src, dst);
 
-  BOOST_CHECK_EQUAL(report.success, true);
-  BOOST_CHECK_GT(report.num_trials, 0);
+  EXPECT_EQ(report.success, true);
+  EXPECT_GT(report.num_trials, 0);
 
   // Make sure outliers were detected correctly.
-  BOOST_CHECK_EQUAL(report.support.num_inliers, num_samples - num_outliers);
+  EXPECT_EQ(report.support.num_inliers, num_samples - num_outliers);
   for (size_t i = 0; i < num_samples; ++i) {
     if (i < num_outliers) {
-      BOOST_CHECK(!report.inlier_mask[i]);
+      EXPECT_FALSE(report.inlier_mask[i]);
     } else {
-      BOOST_CHECK(report.inlier_mask[i]);
+      EXPECT_TRUE(report.inlier_mask[i]);
     }
   }
 
   // Make sure original transformation is estimated correctly.
   const double matrix_diff =
       (orig_tform.Matrix().topLeftCorner<3, 4>() - report.model).norm();
-  BOOST_CHECK(std::abs(matrix_diff) < 1e-6);
+  EXPECT_TRUE(std::abs(matrix_diff) < 1e-6);
 }

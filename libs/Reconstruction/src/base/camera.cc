@@ -31,7 +31,9 @@
 
 #include "base/camera.h"
 
+#include <cmath>
 #include <iomanip>
+#include <limits>
 
 #include "base/camera_models.h"
 #include "util/logging.h"
@@ -99,6 +101,9 @@ std::string Camera::ParamsInfo() const {
 
 double Camera::MeanFocalLength() const {
   const auto& focal_length_idxs = FocalLengthIdxs();
+  if (focal_length_idxs.empty()) {
+    return 0.0;
+  }
   double focal_length = 0;
   for (const auto idx : focal_length_idxs) {
     focal_length += params_[idx];
@@ -113,15 +118,15 @@ double Camera::FocalLength() const {
 }
 
 double Camera::FocalLengthX() const {
-  const std::vector<size_t>& idxs = FocalLengthIdxs();
-  CHECK_EQ(idxs.size(), 2);
-  return params_[idxs[0]];
+    // Upstream parity (dbb41680 scene/camera.h): single-focal-length models
+    // are legal here (x == y); only the setters require two focal params.
+    const std::vector<size_t>& idxs = FocalLengthIdxs();
+    return params_[idxs[0]];
 }
 
 double Camera::FocalLengthY() const {
-  const std::vector<size_t>& idxs = FocalLengthIdxs();
-  CHECK_EQ(idxs.size(), 2);
-  return params_[idxs[1]];
+    const std::vector<size_t>& idxs = FocalLengthIdxs();
+    return params_[idxs[(idxs.size() == 1) ? 0 : 1]];
 }
 
 void Camera::SetFocalLength(const double focal_length) {
@@ -223,6 +228,92 @@ Eigen::Vector2d Camera::ImageToWorld(const Eigen::Vector2d& image_point) const {
   return world_point;
 }
 
+std::optional<Eigen::Vector3d> Camera::CamRayFromImg(
+        const Eigen::Vector2d& image_point) const {
+  if (model_id_ == EquirectangularCameraModel::kModelId) {
+    if (params_.size() != EquirectangularCameraModel::kNumParams ||
+        !(params_[0] > 0.0) || !(params_[1] > 0.0)) {
+      return std::nullopt;
+    }
+
+    const double theta =
+            2.0 * EIGEN_PI * (image_point.x() / params_[0] - 0.5);
+    const double phi = EIGEN_PI * (0.5 - image_point.y() / params_[1]);
+    return Eigen::Vector3d(std::cos(phi) * std::sin(theta), -std::sin(phi),
+                           std::cos(phi) * std::cos(theta));
+  }
+
+  const Eigen::Vector2d normalized = ImageToWorld(image_point);
+  const Eigen::Vector3d ray(normalized.x(), normalized.y(), 1.0);
+  const double norm = ray.norm();
+  if (!(norm > std::numeric_limits<double>::epsilon()) ||
+      !std::isfinite(norm)) {
+    return std::nullopt;
+  }
+  return ray / norm;
+}
+
+std::optional<CamRayWithJac> Camera::CamRayFromImgWithJac(
+        const Eigen::Vector2d& image_point) const {
+  if (model_id_ == EquirectangularCameraModel::kModelId) {
+    if (params_.size() != EquirectangularCameraModel::kNumParams ||
+        !(params_[0] > 0.0) || !(params_[1] > 0.0)) {
+      return std::nullopt;
+    }
+
+    const double theta =
+            2.0 * EIGEN_PI * (image_point.x() / params_[0] - 0.5);
+    const double phi =
+            EIGEN_PI * (0.5 - image_point.y() / params_[1]);
+    const double sin_theta = std::sin(theta);
+    const double cos_theta = std::cos(theta);
+    const double sin_phi = std::sin(phi);
+    const double cos_phi = std::cos(phi);
+
+    CamRayWithJac result;
+    result.ray = Eigen::Vector3d(cos_phi * sin_theta, -sin_phi,
+                                 cos_phi * cos_theta);
+    const Eigen::Vector3d d_ray_d_theta(cos_phi * cos_theta, 0.0,
+                                         -cos_phi * sin_theta);
+    const Eigen::Vector3d d_ray_d_phi(-sin_phi * sin_theta, -cos_phi,
+                                       -sin_phi * cos_theta);
+    result.jacobian.col(0) =
+            d_ray_d_theta * (2.0 * EIGEN_PI / params_[0]);
+    result.jacobian.col(1) = d_ray_d_phi * (-EIGEN_PI / params_[1]);
+    return result;
+  }
+
+  const std::optional<Eigen::Vector3d> center = CamRayFromImg(image_point);
+  if (!center.has_value()) {
+    return std::nullopt;
+  }
+
+  // The tangent Sampson denominator is sensitive to the calibrated-ray
+  // derivative. A small centered step retains stable iterative undistortion
+  // while keeping its truncation error below the numeric acceptance gate.
+  constexpr double kPixelStep = 0.01;
+  CamRayWithJac result;
+  result.ray = *center;
+  for (int axis = 0; axis < 2; ++axis) {
+    Eigen::Vector2d backward = image_point;
+    Eigen::Vector2d forward = image_point;
+    backward[axis] -= kPixelStep;
+    forward[axis] += kPixelStep;
+    const auto ray_backward = CamRayFromImg(backward);
+    const auto ray_forward = CamRayFromImg(forward);
+    if (!ray_backward.has_value() || !ray_forward.has_value()) {
+      return std::nullopt;
+    }
+    result.jacobian.col(axis) =
+            (*ray_forward - *ray_backward) / (2.0 * kPixelStep);
+  }
+
+  if (!result.jacobian.allFinite()) {
+    return std::nullopt;
+  }
+  return result;
+}
+
 double Camera::ImageToWorldThreshold(const double threshold) const {
   return CameraModelImageToWorldThreshold(model_id_, params_, threshold);
 }
@@ -234,6 +325,32 @@ Eigen::Vector2d Camera::WorldToImage(const Eigen::Vector2d& world_point) const {
   return image_point;
 }
 
+std::optional<Eigen::Vector2d> Camera::ImgFromCam(
+        const Eigen::Vector3d& camera_point) const {
+  if (!camera_point.allFinite() ||
+      camera_point.squaredNorm() <= std::numeric_limits<double>::epsilon()) {
+    return std::nullopt;
+  }
+
+  if (model_id_ == EquirectangularCameraModel::kModelId) {
+    if (params_.size() != EquirectangularCameraModel::kNumParams ||
+        !(params_[0] > 0.0) || !(params_[1] > 0.0)) {
+      return std::nullopt;
+    }
+    const double horizontal = std::hypot(camera_point.x(), camera_point.z());
+    const double theta = std::atan2(camera_point.x(), camera_point.z());
+    const double phi = std::atan2(-camera_point.y(), horizontal);
+    return Eigen::Vector2d(
+        (theta / (2.0 * EIGEN_PI) + 0.5) * params_[0],
+        (0.5 - phi / EIGEN_PI) * params_[1]);
+  }
+
+  if (camera_point.z() <= std::numeric_limits<double>::epsilon()) {
+    return std::nullopt;
+  }
+  return WorldToImage(camera_point.hnormalized());
+}
+
 void Camera::Rescale(const double scale) {
   CHECK_GT(scale, 0.0);
   const double scale_x =
@@ -242,6 +359,11 @@ void Camera::Rescale(const double scale) {
       std::round(scale * height_) / static_cast<double>(height_);
   width_ = static_cast<size_t>(std::round(scale * width_));
   height_ = static_cast<size_t>(std::round(scale * height_));
+  if (model_id_ == EquirectangularCameraModel::kModelId) {
+    params_[0] = static_cast<double>(width_);
+    params_[1] = static_cast<double>(height_);
+    return;
+  }
   SetPrincipalPointX(scale_x * PrincipalPointX());
   SetPrincipalPointY(scale_y * PrincipalPointY());
   if (FocalLengthIdxs().size() == 1) {
@@ -262,6 +384,11 @@ void Camera::Rescale(const size_t width, const size_t height) {
       static_cast<double>(height) / static_cast<double>(height_);
   width_ = width;
   height_ = height;
+  if (model_id_ == EquirectangularCameraModel::kModelId) {
+    params_[0] = static_cast<double>(width_);
+    params_[1] = static_cast<double>(height_);
+    return;
+  }
   SetPrincipalPointX(scale_x * PrincipalPointX());
   SetPrincipalPointY(scale_y * PrincipalPointY());
   if (FocalLengthIdxs().size() == 1) {
@@ -275,4 +402,31 @@ void Camera::Rescale(const size_t width, const size_t height) {
   }
 }
 
+
+Camera Camera::CreateFromModelId(camera_t camera_id,
+                                 CameraModelId model_id,
+                                 double focal_length,
+                                 size_t width,
+                                 size_t height) {
+    THROW_CHECK(ExistsCameraModelWithId(model_id));
+    Camera camera;
+    camera.SetModelId(model_id);
+    camera.SetCameraId(camera_id);
+    camera.SetWidth(width);
+    camera.SetHeight(height);
+    camera.Params() = CameraModelInitializeParams(model_id, focal_length,
+                                                 width, height);
+    camera.SetPriorFocalLength(true);
+    return camera;
+}
+
+Camera Camera::CreateFromModelName(camera_t camera_id,
+                                   const std::string& model_name,
+                                   double focal_length,
+                                   size_t width,
+                                   size_t height) {
+    return CreateFromModelId(
+            camera_id, CameraModelNameToId(model_name), focal_length, width,
+            height);
+}
 }  // namespace colmap

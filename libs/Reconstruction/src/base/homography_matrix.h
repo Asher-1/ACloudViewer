@@ -10,6 +10,7 @@
 #include <Eigen/Core>
 #include <vector>
 
+#include "geometry/rigid3.h"
 #include "util/alignment.h"
 #include "util/types.h"
 
@@ -33,9 +34,8 @@ namespace colmap {
 void DecomposeHomographyMatrix(const Eigen::Matrix3d& H,
                                const Eigen::Matrix3d& K1,
                                const Eigen::Matrix3d& K2,
-                               std::vector<Eigen::Matrix3d>* R,
-                               std::vector<Eigen::Vector3d>* t,
-                               std::vector<Eigen::Vector3d>* n);
+                               std::vector<Rigid3d>* cams2_from_cams1,
+                               std::vector<Eigen::Vector3d>* normals);
 
 // Recover the most probable pose from the given homography matrix.
 //
@@ -80,5 +80,16 @@ Eigen::Matrix3d HomographyMatrixFromPose(const Eigen::Matrix3d& K1,
                                          const Eigen::Vector3d& t,
                                          const Eigen::Vector3d& n,
                                          const double d);
+
+// Upstream-parity: decompose a homography given camera rays instead of
+// image points (used by the spherical/panoramic two-view path).
+void PoseFromHomographyMatrix(const Eigen::Matrix3d& H,
+                              const Eigen::Matrix3d& K1,
+                              const Eigen::Matrix3d& K2,
+                              const std::vector<Eigen::Vector3d>& cam_rays1,
+                              const std::vector<Eigen::Vector3d>& cam_rays2,
+                              Rigid3d* cam2_from_cam1,
+                              Eigen::Vector3d* normal,
+                              std::vector<Eigen::Vector3d>* points3D);
 
 }  // namespace colmap

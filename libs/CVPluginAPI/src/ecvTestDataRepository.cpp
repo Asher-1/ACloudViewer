@@ -29,14 +29,17 @@ extern "C" {
 
 namespace {
 
-// Monstree dataset
+// Monstree dataset. Content anchor verified once at ingestion (streamed
+// digest) and recorded in the <zip>.cvintegrity ledger; later access
+// checks are stat-only. SHA-256 pins were computed from MD5-verified
+// release artifacts.
 constexpr const char* kMonstreeZipName = "dataset_monstree.zip";
 constexpr const char* kMonstreeExtractDir = "dataset_monstree";
 constexpr const char* kMonstreeDownloadUrl =
         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
         "reconstruction_data/dataset_monstree.zip";
-constexpr const char* kMonstreeExpectedMd5 = "10730009514e2db7b47d16f75627561c";
-constexpr qint64 kMonstreeExpectedSize = 100 * 1024 * 1024;  // ~100 MB
+constexpr const char* kMonstreeSha256 =
+        "db890a8f64780ef3c491a088a3be9d34fa4cbb26eeca31394e715b0cd4cce46c";
 
 // FriendsFaces dataset
 constexpr const char* kFriendsZipName = "friends_faces.zip";
@@ -44,8 +47,39 @@ constexpr const char* kFriendsExtractDir = "friends_faces";
 constexpr const char* kFriendsDownloadUrl =
         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
         "qFaceDetect/friends_faces.zip";
-constexpr const char* kFriendsExpectedMd5 = "1d1ffebb97edac790b55c6f0f3c9d9fc";
-constexpr qint64 kFriendsExpectedSize = 30 * 1024 * 1024;  // ~30 MB
+constexpr const char* kFriendsSha256 =
+        "eb2c2daff249f8bf50e9f95ae1a37c3ce7de06bc7e2a798c4512a179265a637b";
+
+// Shared object detection / background removal / line detection samples.
+// SHA-256 computed from the MD5-pinned release artifact
+// (78b6cfa17cdcb99a54dda160b242a52f, 62381393 bytes).
+constexpr const char* kObjectsDetectionZipName = "objects_detection_data.zip";
+constexpr const char* kObjectsDetectionExtractDir = "objects_detection_data";
+constexpr const char* kObjectsDetectionDownloadUrl =
+        "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
+        "objects_detection_data/objects_detection_data.zip";
+constexpr const char* kObjectsDetectionSha256 =
+        "dec2c84dff7adefe992291533952f2314ff867a7c35cd705470c622d27515ef5";
+
+// Single-image-to-3D samples (qTrellis): 33 curated images in examples_images/
+// plus multi-view (mv/), texture (example_texturing/), HDRI and webp extras.
+constexpr const char* kImage2MeshZipName = "image_to_mesh_data.zip";
+constexpr const char* kImage2MeshExtractDir = "image_to_mesh_data";
+constexpr const char* kImage2MeshDownloadUrl =
+        "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
+        "Image2MeshData/image_to_mesh_data.zip";
+constexpr const char* kImage2MeshSha256 =
+        "3a6f4c4156f5b4554f7a002dc898d7a09b2061300e205c06230400e44d65cf41";
+
+// SAM3 segmentation samples (qSAM3): 14 images in images/ + 7 tracking
+// videos in videos/.
+constexpr const char* kSam3ZipName = "sam_test_data.zip";
+constexpr const char* kSam3ExtractDir = "sam_test_data";
+constexpr const char* kSam3DownloadUrl =
+        "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
+        "sam_test_data/sam_test_data.zip";
+constexpr const char* kSam3Sha256 =
+        "3c1d97fddc540dfbc134738aa29fa1607bba329c03aa5c0df37f1e6e13317e87";
 
 }  // namespace
 
@@ -75,6 +109,33 @@ QString ecvTestDataRepository::extractPath(Dataset kind) {
     return QDir(extractDir()).filePath(info.extractDirName);
 }
 
+QString ecvTestDataRepository::findDatasetFile(Dataset kind,
+                                               const QString& fileName) {
+    if (fileName.isEmpty() || QFileInfo(fileName).fileName() != fileName) {
+        return {};
+    }
+
+    const QString root = extractPath(kind);
+    if (!QDir(root).exists()) return {};
+
+    const QString direct = QDir(root).filePath(fileName);
+    if (QFileInfo(direct).isFile()) {
+        return QFileInfo(direct).absoluteFilePath();
+    }
+
+    QString match;
+    QDirIterator it(root, QStringList{fileName}, QDir::Files,
+                    QDirIterator::Subdirectories);
+    while (it.hasNext()) {
+        const QString candidate = QFileInfo(it.next()).absoluteFilePath();
+        if (!match.isEmpty()) {
+            return {};  // Ambiguous archive contents must not pick arbitrarily.
+        }
+        match = candidate;
+    }
+    return match;
+}
+
 // ----------------------------------------------------------------------------
 // Dataset metadata
 // ----------------------------------------------------------------------------
@@ -88,16 +149,37 @@ ecvTestDataRepository::DatasetInfo ecvTestDataRepository::getDatasetInfo(
                     QString::fromLatin1(kMonstreeZipName),
                     QString::fromLatin1(kMonstreeExtractDir),
                     QString::fromLatin1(kMonstreeDownloadUrl),
-                    QString::fromLatin1(kMonstreeExpectedMd5),
-                    kMonstreeExpectedSize};
+                    {QCryptographicHash::Sha256, QByteArray(kMonstreeSha256)}};
         case Dataset::FriendsFaces:
             return {kind,
                     QStringLiteral("FriendsFaces"),
                     QString::fromLatin1(kFriendsZipName),
                     QString::fromLatin1(kFriendsExtractDir),
                     QString::fromLatin1(kFriendsDownloadUrl),
-                    QString::fromLatin1(kFriendsExpectedMd5),
-                    kFriendsExpectedSize};
+                    {QCryptographicHash::Sha256, QByteArray(kFriendsSha256)}};
+        case Dataset::ObjectsDetection:
+            return {kind,
+                    QStringLiteral("ObjectsDetection"),
+                    QString::fromLatin1(kObjectsDetectionZipName),
+                    QString::fromLatin1(kObjectsDetectionExtractDir),
+                    QString::fromLatin1(kObjectsDetectionDownloadUrl),
+                    {QCryptographicHash::Sha256,
+                     QByteArray(kObjectsDetectionSha256)}};
+        case Dataset::Image2Mesh:
+            return {kind,
+                    QStringLiteral("Image2Mesh"),
+                    QString::fromLatin1(kImage2MeshZipName),
+                    QString::fromLatin1(kImage2MeshExtractDir),
+                    QString::fromLatin1(kImage2MeshDownloadUrl),
+                    {QCryptographicHash::Sha256,
+                     QByteArray(kImage2MeshSha256)}};
+        case Dataset::SAM3:
+            return {kind,
+                    QStringLiteral("SAM3"),
+                    QString::fromLatin1(kSam3ZipName),
+                    QString::fromLatin1(kSam3ExtractDir),
+                    QString::fromLatin1(kSam3DownloadUrl),
+                    {QCryptographicHash::Sha256, QByteArray(kSam3Sha256)}};
     }
     Q_UNREACHABLE();
     return {};
@@ -123,45 +205,60 @@ ecvTestDataRepository::ecvTestDataRepository(QObject* parent)
 ecvTestDataRepository::~ecvTestDataRepository() = default;
 
 // ----------------------------------------------------------------------------
-// Integrity verification
+// Availability query
 // ----------------------------------------------------------------------------
 
-bool ecvTestDataRepository::verifyZipIntegrity(const QString& zipPath,
-                                               const QString& expectedMd5,
-                                               qint64 expectedMinSize) {
-    if (zipPath.isEmpty() || !QFileInfo::exists(zipPath)) return false;
-
-    const QFileInfo fi(zipPath);
-
-    // Check file size first (fast rejection of truncated downloads)
-    if (expectedMinSize > 0 && fi.size() < expectedMinSize) return false;
-
-    // If no expected MD5 provided, just check file exists and is non-empty
-    if (expectedMd5.isEmpty()) {
-        return fi.size() > 0;
-    }
-
-    QFile file(zipPath);
-    if (!file.open(QIODevice::ReadOnly)) return false;
-
-    QCryptographicHash hash(QCryptographicHash::Md5);
-    if (!hash.addData(&file)) return false;
-    file.close();
-
-    const QString actual = QString::fromLatin1(hash.result().toHex());
-    return actual.compare(expectedMd5, Qt::CaseInsensitive) == 0;
-}
-
 bool ecvTestDataRepository::isDatasetAvailable(Dataset kind) const {
-    // Check extract dir FIRST — dataset may be extracted even if zip was
-    // deleted
+    // A directory alone is not a valid cache marker: an interrupted extract
+    // leaves the root behind. Validate the files that each consumer needs so
+    // a partial cache can fall through to the intact zip or a fresh download.
     const QString extract = extractPath(kind);
-    if (QDir(extract).exists()) return true;
+    bool extractedComplete = false;
+    switch (kind) {
+        case Dataset::Monstree:
+            extractedComplete = !getMonstreeImages(extract).isEmpty();
+            break;
+        case Dataset::FriendsFaces:
+            extractedComplete = !findFriendsVideo(extract).isEmpty();
+            break;
+        case Dataset::ObjectsDetection: {
+            const QStringList required = {
+                    QStringLiteral("bus.jpg"),
+                    QStringLiteral("000000397133.jpg"),
+                    QStringLiteral("cat.jpg"),
+                    QStringLiteral("aerial_airport.jpg"),
+                    QStringLiteral("deeplsd_examples.jpg"),
+                    QStringLiteral("supervision_demo.mp4"),
+                    QStringLiteral("traffic.mp4")};
+            extractedComplete = true;
+            for (const QString& fileName : required) {
+                if (findDatasetFile(kind, fileName).isEmpty()) {
+                    extractedComplete = false;
+                    break;
+                }
+            }
+            break;
+        }
+        case Dataset::Image2Mesh:
+            // The main single-image-to-3D samples live in examples_images/.
+            extractedComplete = !getImage2MeshImages(extract).isEmpty();
+            break;
+        case Dataset::SAM3:
+            // Both the segmentation images and the tracking videos must be
+            // present for the qSAM3 sample-data flow to work.
+            extractedComplete = !getSamImages(extract).isEmpty() &&
+                                !getSamVideos(extract).isEmpty();
+            break;
+    }
+    if (extractedComplete) return true;
 
-    // Check if a valid zip is cached
+    // Check if a verified zip is cached. DeepVerify self-heals archives
+    // downloaded before the integrity ledger existed (one hash pass, then
+    // the state is recorded and later checks are stat-only).
     const auto info = getDatasetInfo(kind);
     const QString zip = zipPath(kind);
-    return verifyZipIntegrity(zip, info.expectedMd5, info.expectedSize);
+    return ecvAssetIntegrity::isVerified(zip, info.anchor, 0, false,
+                                         ecvAssetIntegrity::OnMiss::DeepVerify);
 }
 
 // ----------------------------------------------------------------------------
@@ -184,8 +281,9 @@ void ecvTestDataRepository::startDownload(Dataset kind) {
 
     const QString destPath = zipPath(kind);
 
-    // Check if already downloaded and valid (size + MD5)
-    if (verifyZipIntegrity(destPath, info.expectedMd5, info.expectedSize)) {
+    // Check if already downloaded and verified
+    if (ecvAssetIntegrity::isVerified(destPath, info.anchor, 0, false,
+                                      ecvAssetIntegrity::OnMiss::DeepVerify)) {
         emit downloadLogMessage(
                 QStringLiteral("[Info] %1 dataset already downloaded")
                         .arg(info.displayName));
@@ -194,9 +292,11 @@ void ecvTestDataRepository::startDownload(Dataset kind) {
         return;
     }
 
-    // Remove invalid cached file
+    // Remove invalid cached file (and its ledger, so the artifact and the
+    // recorded evidence never diverge).
     if (QFileInfo::exists(destPath)) {
         QFile::remove(destPath);
+        ecvAssetIntegrity::invalidate(destPath);
     }
 
     m_downloadInProgress = true;
@@ -206,8 +306,9 @@ void ecvTestDataRepository::startDownload(Dataset kind) {
     ecvModelDownloader::Request request;
     request.url = info.downloadUrl;
     request.destPath = destPath;
-    request.minBytes = 1024 * 1024;    // At least 1 MB
-    request.requireGgufMagic = false;  // Not a GGUF file
+    request.minBytes = 1024 * 1024;       // At least 1 MB
+    request.requireGgufMagic = false;     // Not a GGUF file
+    request.contentAnchor = info.anchor;  // streamed digest check at ingestion
 
     m_downloader->download(request);
 }
@@ -244,16 +345,9 @@ void ecvTestDataRepository::onDownloaderFinished(bool ok,
         return;
     }
 
-    // Verify integrity (size + MD5)
-    if (!verifyZipIntegrity(destPath, info.expectedMd5, info.expectedSize)) {
-        emit downloadLogMessage(
-                QStringLiteral("[Error] Downloaded file failed integrity "
-                               "check"));
-        QFile::remove(destPath);
-        emit downloadFinished(false, m_currentDataset);
-        return;
-    }
-
+    // Content verification already happened inside the downloader (the
+    // digest was streamed while writing) and the verified state is
+    // recorded in the zip's integrity ledger — nothing to re-hash here.
     emit downloadLogMessage(
             QStringLiteral("[Info] Downloaded %1 dataset successfully")
                     .arg(info.displayName));
@@ -429,9 +523,11 @@ bool ecvTestDataRepository::extractDataset(Dataset kind) {
     const QString zip = zipPath(kind);
     const QString extract = extractDir();
 
-    if (!QFileInfo::exists(zip)) {
+    if (!ecvAssetIntegrity::isVerified(zip, info.anchor, 0, false,
+                                       ecvAssetIntegrity::OnMiss::DeepVerify)) {
         emit downloadLogMessage(
-                QStringLiteral("[Error] Zip file not found: %1").arg(zip));
+                QStringLiteral("[Error] Zip file is missing or invalid: %1")
+                        .arg(zip));
         emit extractionFinished(false, kind);
         return false;
     }
@@ -537,4 +633,76 @@ QString ecvTestDataRepository::findFriendsVideo(const QString& bundleRoot) {
         if (best.isEmpty()) best = QFileInfo(path).absoluteFilePath();
     }
     return best;
+}
+
+QStringList ecvTestDataRepository::getImage2MeshImages(
+        const QString& bundleRoot) {
+    if (bundleRoot.isEmpty()) return {};
+
+    // The curated single-image-to-3D samples live in examples_images/.
+    const QString imageDir =
+            QDir(bundleRoot).filePath(QStringLiteral("examples_images"));
+    if (!QDir(imageDir).exists()) return {};
+
+    const QStringList patterns = {
+            QStringLiteral("*.jpg"), QStringLiteral("*.jpeg"),
+            QStringLiteral("*.png"), QStringLiteral("*.webp")};
+
+    QStringList images;
+    QDirIterator it(imageDir, patterns, QDir::Files);
+    while (it.hasNext()) {
+        const QString path = it.next();
+        const QString fileName = QFileInfo(path).fileName();
+        if (fileName.startsWith(QLatin1Char('.'))) continue;
+        images.append(QFileInfo(path).absoluteFilePath());
+    }
+    images.sort(Qt::CaseInsensitive);
+    return images;
+}
+
+QStringList ecvTestDataRepository::getSamImages(const QString& bundleRoot) {
+    if (bundleRoot.isEmpty()) return {};
+
+    const QString imageDir =
+            QDir(bundleRoot).filePath(QStringLiteral("images"));
+    if (!QDir(imageDir).exists()) return {};
+
+    const QStringList patterns = {
+            QStringLiteral("*.jpg"), QStringLiteral("*.jpeg"),
+            QStringLiteral("*.png"), QStringLiteral("*.webp")};
+
+    QStringList images;
+    QDirIterator it(imageDir, patterns, QDir::Files);
+    while (it.hasNext()) {
+        const QString path = it.next();
+        const QString fileName = QFileInfo(path).fileName();
+        if (fileName.startsWith(QLatin1Char('.'))) continue;
+        images.append(QFileInfo(path).absoluteFilePath());
+    }
+    images.sort(Qt::CaseInsensitive);
+    return images;
+}
+
+QStringList ecvTestDataRepository::getSamVideos(const QString& bundleRoot) {
+    if (bundleRoot.isEmpty()) return {};
+
+    const QString videoDir =
+            QDir(bundleRoot).filePath(QStringLiteral("videos"));
+    if (!QDir(videoDir).exists()) return {};
+
+    const QStringList patterns = {
+            QStringLiteral("*.mp4"), QStringLiteral("*.mov"),
+            QStringLiteral("*.avi"), QStringLiteral("*.mkv"),
+            QStringLiteral("*.webm")};
+
+    QStringList videos;
+    QDirIterator it(videoDir, patterns, QDir::Files);
+    while (it.hasNext()) {
+        const QString path = it.next();
+        const QString fileName = QFileInfo(path).fileName();
+        if (fileName.startsWith(QLatin1Char('.'))) continue;
+        videos.append(QFileInfo(path).absoluteFilePath());
+    }
+    videos.sort(Qt::CaseInsensitive);
+    return videos;
 }

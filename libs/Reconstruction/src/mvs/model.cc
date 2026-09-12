@@ -41,7 +41,7 @@
 namespace colmap {
 namespace mvs {
 
-void Model::Read(const std::string& path, const std::string& format) {
+void Model::Read(const std::filesystem::path& path, const std::string& format) {
   auto format_lower_case = format;
   StringToLower(&format_lower_case);
   if (format_lower_case == "colmap") {
@@ -53,7 +53,7 @@ void Model::Read(const std::string& path, const std::string& format) {
   }
 }
 
-void Model::ReadFromCOLMAP(const std::string& path,
+void Model::ReadFromCOLMAP(const std::filesystem::path& path,
                            const std::string& sparse_path,
                            const std::string& images_path) {
   Reconstruction reconstruction;
@@ -161,7 +161,7 @@ void Model::LoadVisDat(const std::string& path) {
   }
 }
 
-void Model::ReadFromPMVS(const std::string& path) {
+void Model::ReadFromPMVS(const std::filesystem::path& path) {
   if (ReadFromBundlerPMVS(path)) {
     return;
   } else if (ReadFromRawPMVS(path)) {
@@ -340,7 +340,7 @@ std::vector<std::map<int, float>> Model::ComputeTriangulationAngles(
   return triangulation_angles;
 }
 
-bool Model::ReadFromBundlerPMVS(const std::string& path) {
+bool Model::ReadFromBundlerPMVS(const std::filesystem::path& path) {
   const std::string bundle_file_path = JoinPaths(path, "bundle.rd.out");
 
   if (!ExistsFile(bundle_file_path)) {
@@ -418,7 +418,7 @@ bool Model::ReadFromBundlerPMVS(const std::string& path) {
   return true;
 }
 
-bool Model::ReadFromRawPMVS(const std::string& path) {
+bool Model::ReadFromRawPMVS(const std::filesystem::path& path) {
   const std::string vis_dat_path = JoinPaths(path, "vis.dat");
   if (!ExistsFile(vis_dat_path)) {
     return false;

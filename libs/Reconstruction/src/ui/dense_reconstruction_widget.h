@@ -39,6 +39,7 @@ private:
     void Fusion();
     void PoissonMeshing();
     void DelaunayMeshing();
+    void AdvancingFrontMeshing();
     void Texturing();
 
     void SelectWorkspacePath();
@@ -64,6 +65,7 @@ private:
     QPushButton* fusion_button_;
     QPushButton* poisson_meshing_button_;
     QPushButton* delaunay_meshing_button_;
+    QPushButton* advancing_front_meshing_button_;
     QPushButton* texturing_button_;
     QAction* refresh_workspace_action_;
     QAction* write_fused_points_action_;

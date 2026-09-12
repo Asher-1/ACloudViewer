@@ -1,0 +1,14 @@
+{
+  "type": "Standard",
+  "core": true,
+  "name": "RF-DETR Detect",
+  "icon": ":/CC/plugin/qRFDetr/images/qRFDetr.svg",
+  "description": "RF-DETR real-time object detection and segmentation (COCO 80 classes) via native GGML inference.",
+  "authors": [{ "name": "ACloudViewer Contributors" }],
+  "maintainers": [{ "name": "ACloudViewer Team" }],
+  "references": [
+    { "text": "rf-detr.cpp: https://github.com/mudler/rf-detr.cpp" },
+    { "text": "Roboflow RF-DETR: https://github.com/roboflow/rf-detr" },
+    { "text": "Models: https://github.com/Asher-1/cloudViewer_downloads/releases/tag/RF-DETR-GGUF" }
+  ]
+}

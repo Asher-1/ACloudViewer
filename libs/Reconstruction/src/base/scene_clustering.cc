@@ -51,10 +51,18 @@ SceneClustering::SceneClustering(const Options& options) : options_(options) {
 void SceneClustering::Partition(
     const std::vector<std::pair<image_t, image_t>>& image_pairs,
     const std::vector<int>& num_inliers) {
+  Partition(image_pairs, num_inliers, {});
+}
+
+void SceneClustering::Partition(
+    const std::vector<std::pair<image_t, image_t>>& image_pairs,
+    const std::vector<int>& num_inliers,
+    const std::vector<image_t>& all_image_ids) {
   CHECK(!root_cluster_);
   CHECK_EQ(image_pairs.size(), num_inliers.size());
 
   std::set<image_t> image_ids;
+  image_ids.insert(all_image_ids.begin(), all_image_ids.end());
   std::vector<std::pair<int, int>> edges;
   edges.reserve(image_pairs.size());
   for (const auto& image_pair : image_pairs) {
@@ -290,9 +298,14 @@ SceneClustering SceneClustering::Create(const Options& options,
   std::vector<int> num_inliers;
   database.ReadTwoViewGeometryNumInliers(&image_pairs, &num_inliers);
 
+  std::vector<image_t> all_image_ids;
+  for (const auto& image : database.ReadAllImages()) {
+    all_image_ids.push_back(image.ImageId());
+  }
+
   std::cout << "Partitioning scene graph..." << std::endl;
   SceneClustering scene_clustering(options);
-  scene_clustering.Partition(image_pairs, num_inliers);
+  scene_clustering.Partition(image_pairs, num_inliers, all_image_ids);
   return scene_clustering;
 }
 

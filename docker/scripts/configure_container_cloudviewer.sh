@@ -6,6 +6,12 @@
 # export DISPLAY=10.147.17.208:0.0
 # export DISPLAY=:0
 
+# Host-side mount sources are derived from this script's location (repo root
+# and its sibling CloudViewer-ML checkout). Override CLOUDVIEWER_ML_ROOT
+# when the ML repo lives elsewhere.
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ML_ROOT="${CLOUDVIEWER_ML_ROOT:-$(dirname "$REPO_ROOT")/CloudViewer-ML}"
+
 # create container instance
 docker run -dit --name=test_cloudviewer_dep_ubuntu2004 \
   --shm-size="16g" \
@@ -25,10 +31,10 @@ docker run -dit --name=test_cloudviewer_dep_ubuntu2004 \
   -e "QT_X11_NO_MITSHM=1" \
   -v /etc/localtime:/etc/localtime:ro \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
-  -v /home/ludahai/develop/code/github/ACloudViewer:/root/ACloudViewer \
-  -v /home/ludahai/develop/code/github/CloudViewer-ML:/root/CloudViewer-ML \
-  -v /home/ludahai/develop/code/github/ACloudViewer/docker_cache/install:/root/install \
-  -v /home/ludahai/develop/code/github/ACloudViewer/docker_cache/build:/root/ACloudViewer/build \
+  -v "$REPO_ROOT":/root/ACloudViewer \
+  -v "$ML_ROOT":/root/CloudViewer-ML \
+  -v "$REPO_ROOT/docker_cache/install":/root/install \
+  -v "$REPO_ROOT/docker_cache/build":/root/ACloudViewer/build \
   cloudviewer-deps:develop-ubuntu20.04-cuda12.6.3-cudnn
 
 docker exec -it test_cloudviewer_dep_ubuntu2004 /bin/bash
@@ -54,10 +60,10 @@ docker run -dit --name=test_cloudviewer_dep_ubuntu2204 \
   -e "QT_X11_NO_MITSHM=1" \
   -v /etc/localtime:/etc/localtime:ro \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
-  -v /home/asher/develop/code/github/CloudViewer/ACloudViewer:/root/ACloudViewer \
-  -v /home/asher/develop/code/github/CloudViewer/CloudViewer-ML:/root/CloudViewer-ML \
-  -v /home/asher/develop/code/github/CloudViewer/ACloudViewer/docker_cache/install:/root/install \
-  -v /home/asher/develop/code/github/CloudViewer/ACloudViewer/docker_cache/build:/root/ACloudViewer/build \
+  -v "$REPO_ROOT":/root/ACloudViewer \
+  -v "$ML_ROOT":/root/CloudViewer-ML \
+  -v "$REPO_ROOT/docker_cache/install":/root/install \
+  -v "$REPO_ROOT/docker_cache/build":/root/ACloudViewer/build \
   cloudviewer-deps:develop-ubuntu22.04-cuda12.6.3-cudnn
 
 # attach into container instance
@@ -84,10 +90,10 @@ docker run -dit --name=test_cloudviewer \
   -e "QT_X11_NO_MITSHM=1" \
   -v /etc/localtime:/etc/localtime:ro \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
-  -v /home/asher/develop/code/github/CloudViewer/ACloudViewer:/root/ACloudViewer \
-  -v /home/asher/develop/code/github/CloudViewer/CloudViewer-ML:/root/CloudViewer-ML \
-  -v /home/asher/develop/code/github/CloudViewer/ACloudViewer/docker_cache/install:/root/install \
-  -v /home/asher/develop/code/github/CloudViewer/ACloudViewer/docker_cache/build:/root/ACloudViewer/build \
+  -v "$REPO_ROOT":/root/ACloudViewer \
+  -v "$ML_ROOT":/root/CloudViewer-ML \
+  -v "$REPO_ROOT/docker_cache/install":/root/install \
+  -v "$REPO_ROOT/docker_cache/build":/root/ACloudViewer/build \
   cloudviewer:develop-ubuntu18.04-cuda12.6.3-cudnn
 
 

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "aicore_log.hpp"
+#include "common/aicore_log.hpp"
+
 
 #define LG_LOG(...) AICORE_LOG_PRINT("[LG] ", __VA_ARGS__)
 #define LG_DEBUG_LOG(...) AICORE_LOG_DEBUG("[LG] ", __VA_ARGS__)

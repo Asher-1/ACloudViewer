@@ -126,6 +126,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: 'false'
+      - name: Set up fixed CMake
+        uses: ./.github/actions/setup-cmake
       - name: Additional space optimization
         run: |
           source util/ci_utils.sh
@@ -181,6 +183,15 @@ jobs:
           name: ubuntu-wheel-build-log-py${{ matrix.python_version }}
           path: /tmp/ubuntu-wheel-build.log
           if-no-files-found: ignore
+
+      - name: Validate produced wheels
+        # basename(1) leaves a literal glob pattern when nothing matched, so a
+        # silently missing wheel would otherwise only surface later in the
+        # test job. Fail here with a clear message instead.
+        run: |
+          echo "CUDA wheel: ${PIP_PKG_NAME}"
+          echo "CPU wheel:  ${PIP_CPU_PKG_NAME}"
+          ls -l ${PIP_PKG_NAME} ${PIP_CPU_PKG_NAME}
 
       - name: Upload Wheel to GitHub artifacts
         uses: actions/upload-artifact@v4

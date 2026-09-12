@@ -31,6 +31,8 @@
 
 #include "base/projection.h"
 
+#include <algorithm>
+
 #include "base/pose.h"
 #include "util/matrix.h"
 
@@ -105,7 +107,8 @@ Eigen::Vector2d ProjectPointToImage(const Eigen::Vector3d& point3D,
                                     const Eigen::Matrix3x4d& proj_matrix,
                                     const Camera& camera) {
   const Eigen::Vector3d world_point = proj_matrix * point3D.homogeneous();
-  return camera.WorldToImage(world_point.hnormalized());
+  return camera.ImgFromCam(world_point).value_or(
+      Eigen::Vector2d::Constant(std::numeric_limits<double>::max()));
 }
 
 double CalculateSquaredReprojectionError(const Eigen::Vector2d& point2D,
@@ -116,36 +119,48 @@ double CalculateSquaredReprojectionError(const Eigen::Vector2d& point2D,
   const Eigen::Vector3d proj_point3D =
       QuaternionRotatePoint(qvec, point3D) + tvec;
 
-  // Check that point is infront of camera.
-  if (proj_point3D.z() < std::numeric_limits<double>::epsilon()) {
-    return std::numeric_limits<double>::max();
-  }
+  const auto proj_point2D = camera.ImgFromCam(proj_point3D);
+  if (!proj_point2D.has_value()) return std::numeric_limits<double>::max();
 
-  const Eigen::Vector2d proj_point2D =
-      camera.WorldToImage(proj_point3D.hnormalized());
-
-  return (proj_point2D - point2D).squaredNorm();
+  return (*proj_point2D - point2D).squaredNorm();
 }
 
 double CalculateSquaredReprojectionError(const Eigen::Vector2d& point2D,
                                          const Eigen::Vector3d& point3D,
                                          const Eigen::Matrix3x4d& proj_matrix,
                                          const Camera& camera) {
-  const double proj_z = proj_matrix.row(2).dot(point3D.homogeneous());
+  const Eigen::Vector3d proj_point3D = proj_matrix * point3D.homogeneous();
+  const auto proj_point2D = camera.ImgFromCam(proj_point3D);
+  if (!proj_point2D.has_value()) return std::numeric_limits<double>::max();
 
-  // Check that point is infront of camera.
-  if (proj_z < std::numeric_limits<double>::epsilon()) {
-    return std::numeric_limits<double>::max();
+  return (*proj_point2D - point2D).squaredNorm();
+}
+
+// Upstream-parity overload used by Reconstruction::UpdatePoint3DErrors: the
+// world-to-camera transform is a Rigid3d instead of a projection matrix.
+double CalculateSquaredReprojectionError(const Eigen::Vector2d& point2D,
+                                         const Eigen::Vector3d& point3D,
+                                         const Rigid3d& cam_from_world,
+                                         const Camera& camera) {
+  // Upstream parity (dbb41680 scene/projection.cc): spherical cameras report
+  // the viewing-ray angle converted to an equivalent pixel error at the
+  // equator (width / 2pi pixels per radian). This makes the error continuous
+  // across the equirectangular seam and uniform over the sphere, where the
+  // raw pixel distance would wrongly report a ~width error.
+  if (camera.IsSpherical()) {
+    const double angular_error = CalculateAngularError(
+        point2D, point3D, cam_from_world.ToMatrix(), camera);
+    const double pixels_per_radian =
+        static_cast<double>(camera.Width()) / (2.0 * EIGEN_PI);
+    const double pixel_error = angular_error * pixels_per_radian;
+    return pixel_error * pixel_error;
   }
 
-  const double proj_x = proj_matrix.row(0).dot(point3D.homogeneous());
-  const double proj_y = proj_matrix.row(1).dot(point3D.homogeneous());
-  const double inv_proj_z = 1.0 / proj_z;
+  const Eigen::Vector3d proj_point3D = cam_from_world * point3D;
+  const auto proj_point2D = camera.ImgFromCam(proj_point3D);
+  if (!proj_point2D.has_value()) return std::numeric_limits<double>::max();
 
-  const Eigen::Vector2d proj_point2D = camera.WorldToImage(
-      Eigen::Vector2d(inv_proj_z * proj_x, inv_proj_z * proj_y));
-
-  return (proj_point2D - point2D).squaredNorm();
+  return (*proj_point2D - point2D).squaredNorm();
 }
 
 double CalculateAngularError(const Eigen::Vector2d& point2D,
@@ -153,16 +168,29 @@ double CalculateAngularError(const Eigen::Vector2d& point2D,
                              const Eigen::Vector4d& qvec,
                              const Eigen::Vector3d& tvec,
                              const Camera& camera) {
-  return CalculateNormalizedAngularError(camera.ImageToWorld(point2D), point3D,
-                                         qvec, tvec);
+  const auto ray = camera.CamRayFromImg(point2D);
+  const Eigen::Vector3d point_in_camera =
+      QuaternionRotatePoint(qvec, point3D) + tvec;
+  if (!ray.has_value() || point_in_camera.squaredNorm() <=
+                              std::numeric_limits<double>::epsilon()) {
+    return std::numeric_limits<double>::max();
+  }
+  return std::acos(std::clamp(ray->dot(point_in_camera.normalized()),
+                              -1.0, 1.0));
 }
 
 double CalculateAngularError(const Eigen::Vector2d& point2D,
                              const Eigen::Vector3d& point3D,
                              const Eigen::Matrix3x4d& proj_matrix,
                              const Camera& camera) {
-  return CalculateNormalizedAngularError(camera.ImageToWorld(point2D), point3D,
-                                         proj_matrix);
+  const auto ray = camera.CamRayFromImg(point2D);
+  const Eigen::Vector3d point_in_camera = proj_matrix * point3D.homogeneous();
+  if (!ray.has_value() || point_in_camera.squaredNorm() <=
+                              std::numeric_limits<double>::epsilon()) {
+    return std::numeric_limits<double>::max();
+  }
+  return std::acos(std::clamp(ray->dot(point_in_camera.normalized()),
+                              -1.0, 1.0));
 }
 
 double CalculateNormalizedAngularError(const Eigen::Vector2d& point2D,

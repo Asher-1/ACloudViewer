@@ -31,6 +31,8 @@
 
 #include "base/undistortion.h"
 
+#include "scene/reconstruction_io.h"
+
 #include <fstream>
 
 #include "base/camera_models.h"
@@ -153,14 +155,14 @@ void WriteCOLMAPCommands(const bool geometric,
 
 COLMAPUndistorter::COLMAPUndistorter(const UndistortCameraOptions& options,
                                      Reconstruction* reconstruction,
-                                     const std::string& image_path,
-                                     const std::string& output_path,
+                                     const std::filesystem::path& image_path,
+                                     const std::filesystem::path& output_path,
                                      const int num_patch_match_src_images,
                                      const CopyType copy_type,
                                      const std::vector<image_t>& image_ids)
     : options_(options),
-      image_path_(image_path),
-      output_path_(output_path),
+      image_path_(image_path.string()),
+      output_path_(output_path.string()),
       copy_type_(copy_type),
       num_patch_match_src_images_(num_patch_match_src_images),
       reconstruction_(CHECK_NOTNULL(reconstruction)),
@@ -304,11 +306,11 @@ void COLMAPUndistorter::WriteScript(const bool geometric) const {
 
 PMVSUndistorter::PMVSUndistorter(const UndistortCameraOptions& options,
                                  Reconstruction* reconstruction,
-                                 const std::string& image_path,
-                                 const std::string& output_path)
+                                 const std::filesystem::path& image_path,
+                                 const std::filesystem::path& output_path)
     : options_(options),
-      image_path_(image_path),
-      output_path_(output_path),
+      image_path_(image_path.string()),
+      output_path_(output_path.string()),
       reconstruction_(CHECK_NOTNULL(reconstruction)) {}
 
 void PMVSUndistorter::Run() {
@@ -347,8 +349,7 @@ void PMVSUndistorter::Run() {
   std::cout << "Writing bundle file..." << std::endl;
   UndistortReconstruction(options_, reconstruction_);
   const std::string bundle_path = JoinPaths(output_path_, "pmvs/bundle.rd.out");
-  reconstruction_->ExportBundler(bundle_path,
-                                 bundle_path + ".list.txt");
+  ExportBundler(*reconstruction_, bundle_path, bundle_path + ".list.txt");
 
   std::cout << "Writing visibility file..." << std::endl;
   WriteVisibilityData();
@@ -535,11 +536,11 @@ void PMVSUndistorter::WriteOptionFile() const {
 
 CMPMVSUndistorter::CMPMVSUndistorter(const UndistortCameraOptions& options,
                                      Reconstruction* reconstruction,
-                                     const std::string& image_path,
-                                     const std::string& output_path)
+                                     const std::filesystem::path& image_path,
+                                     const std::filesystem::path& output_path)
     : options_(options),
-      image_path_(image_path),
-      output_path_(output_path),
+      image_path_(image_path.string()),
+      output_path_(output_path.string()),
       reconstruction_(CHECK_NOTNULL(reconstruction)) {}
 
 void CMPMVSUndistorter::Run() {
@@ -596,12 +597,13 @@ bool CMPMVSUndistorter::Undistort(const size_t reg_image_idx) const {
 }
 
 PureImageUndistorter::PureImageUndistorter(
-    const UndistortCameraOptions& options, const std::string& image_path,
-    const std::string& output_path,
+    const UndistortCameraOptions& options,
+    const std::filesystem::path& image_path,
+    const std::filesystem::path& output_path,
     const std::vector<std::pair<std::string, Camera>>& image_names_and_cameras)
     : options_(options),
-      image_path_(image_path),
-      output_path_(output_path),
+      image_path_(image_path.string()),
+      output_path_(output_path.string()),
       image_names_and_cameras_(image_names_and_cameras) {}
 
 void PureImageUndistorter::Run() {
@@ -949,7 +951,8 @@ void UndistortImage(const UndistortCameraOptions& options,
                                distorted_bitmap.IsRGB());
   distorted_bitmap.CloneMetadata(undistorted_bitmap);
 
-  WarpImageBetweenCameras(distorted_camera, *undistorted_camera,
+  WarpImageBetweenCameras(options.warp_options, distorted_camera,
+                          *undistorted_camera,
                           distorted_bitmap, undistorted_bitmap);
 }
 
@@ -1064,10 +1067,12 @@ void RectifyAndUndistortStereoImages(
   RectifyStereoCameras(*undistorted_camera, *undistorted_camera, qvec, tvec,
                        &H1, &H2, Q);
 
-  WarpImageWithHomographyBetweenCameras(H1.inverse(), distorted_camera1,
+  WarpImageWithHomographyBetweenCameras(options.warp_options, H1.inverse(),
+                                        distorted_camera1,
                                         *undistorted_camera, distorted_image1,
                                         undistorted_image1);
-  WarpImageWithHomographyBetweenCameras(H2.inverse(), distorted_camera2,
+  WarpImageWithHomographyBetweenCameras(options.warp_options, H2.inverse(),
+                                        distorted_camera2,
                                         *undistorted_camera, distorted_image2,
                                         undistorted_image2);
 }

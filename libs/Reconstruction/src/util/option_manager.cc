@@ -30,6 +30,9 @@
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
 #include "util/option_manager.h"
+#include "estimators/gravity_refinement.h"
+
+#include "controllers/global_pipeline.h"
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/property_tree/ini_parser.hpp>
@@ -40,7 +43,10 @@
 #include "feature/extraction.h"
 #include "feature/matching.h"
 #include "feature/sift.h"
+#include "mvs/advancing_front_meshing.h"
 #include "mvs/fusion.h"
+#include "mvs/mesh_simplification.h"
+#include "mvs/mesh_postprocessing.h"
 #include "mvs/meshing.h"
 #include "mvs/patch_match.h"
 #include "optim/bundle_adjustment.h"
@@ -54,10 +60,12 @@ namespace config = boost::program_options;
 namespace colmap {
 
 OptionManager::OptionManager(bool add_project_options) {
-    project_path.reset(new std::string());
-    database_path.reset(new std::string());
-    image_path.reset(new std::string());
+    project_path.reset(new std::filesystem::path());
+    database_path.reset(new std::filesystem::path());
+    image_path.reset(new std::filesystem::path());
 
+    global_mapper.reset(new GlobalPipelineOptions());
+    gravity_refiner.reset(new GravityRefinerOptions());
     image_reader.reset(new ImageReaderOptions());
     sift_extraction.reset(new SiftExtractionOptions());
     sift_matching.reset(new SiftMatchingOptions());
@@ -73,6 +81,9 @@ OptionManager::OptionManager(bool add_project_options) {
     stereo_fusion.reset(new mvs::StereoFusionOptions());
     poisson_meshing.reset(new mvs::PoissonMeshingOptions());
     delaunay_meshing.reset(new mvs::DelaunayMeshingOptions());
+    advancing_front_meshing.reset(new mvs::AdvancingFrontMeshingOptions());
+    mesh_simplification.reset(new mvs::MeshSimplificationOptions());
+    mesh_post_processing.reset(new mvs::MeshPostProcessingOptions());
     texturing.reset(new TexturingOptions());
     render.reset(new RenderOptions());
 
@@ -84,7 +95,8 @@ OptionManager::OptionManager(bool add_project_options) {
     AddLogOptions();
 
     if (add_project_options) {
-        desc_->add_options()("project_path", config::value<std::string>());
+        desc_->add_options()("project_path",
+                             config::value<std::filesystem::path>());
     }
 }
 
@@ -194,6 +206,9 @@ void OptionManager::AddAllOptions() {
     AddStereoFusionOptions();
     AddPoissonMeshingOptions();
     AddDelaunayMeshingOptions();
+    AddAdvancingFrontMeshingOptions();
+    AddMeshSimplificationOptions();
+    AddMeshPostProcessingOptions();
     AddRenderOptions();
 }
 
@@ -269,6 +284,14 @@ void OptionManager::AddExtractionOptions() {
                                 &sift_extraction->max_image_size);
     AddAndRegisterDefaultOption("SiftExtraction.max_num_features",
                                 &sift_extraction->max_num_features);
+    AddAndRegisterDefaultOption("SiftExtraction.use_loma",
+                                &sift_extraction->use_loma);
+    AddAndRegisterDefaultOption("SiftExtraction.loma_detector_model",
+                                &sift_extraction->loma_detector_model_path);
+    AddAndRegisterDefaultOption("SiftExtraction.loma_descriptor_model",
+                                &sift_extraction->loma_descriptor_model_path);
+    AddAndRegisterDefaultOption("SiftExtraction.loma_device",
+                                &sift_extraction->loma_device);
     AddAndRegisterDefaultOption("SiftExtraction.first_octave",
                                 &sift_extraction->first_octave);
     AddAndRegisterDefaultOption("SiftExtraction.num_octaves",
@@ -329,6 +352,16 @@ void OptionManager::AddMatchingOptions() {
                                 &sift_matching->multiple_models);
     AddAndRegisterDefaultOption("SiftMatching.guided_matching",
                                 &sift_matching->guided_matching);
+    AddAndRegisterDefaultOption("SiftMatching.use_loma",
+                                &sift_matching->use_loma);
+    AddAndRegisterDefaultOption("SiftMatching.loma_matcher_model",
+                                &sift_matching->loma_matcher_model_path);
+    AddAndRegisterDefaultOption("SiftMatching.loma_matcher_variant",
+                                &sift_matching->loma_matcher_variant);
+    AddAndRegisterDefaultOption("SiftMatching.loma_min_score",
+                                &sift_matching->loma_min_score);
+    AddAndRegisterDefaultOption("SiftMatching.loma_device",
+                                &sift_matching->loma_device);
 }
 
 void OptionManager::AddExhaustiveMatchingOptions() {
@@ -362,6 +395,9 @@ void OptionManager::AddSequentialMatchingOptions() {
     AddAndRegisterDefaultOption(
             "SequentialMatching.loop_detection_num_images",
             &sequential_matching->loop_detection_num_images);
+    AddAndRegisterDefaultOption(
+            "SequentialMatching.loop_detection_min_index_distance",
+            &sequential_matching->loop_detection_min_index_distance);
     AddAndRegisterDefaultOption(
             "SequentialMatching.loop_detection_num_nearest_neighbors",
             &sequential_matching->loop_detection_num_nearest_neighbors);
@@ -476,6 +512,12 @@ void OptionManager::AddBundleAdjustmentOptions() {
                                 &bundle_adjustment->refine_extra_params);
     AddAndRegisterDefaultOption("BundleAdjustment.refine_extrinsics",
                                 &bundle_adjustment->refine_extrinsics);
+    AddAndRegisterDefaultOption("BundleAdjustment.use_caspar",
+                                &bundle_adjustment->use_caspar);
+    AddAndRegisterDefaultOption("BundleAdjustment.caspar_gpu_index",
+                                &bundle_adjustment->caspar_gpu_index);
+    AddAndRegisterDefaultOption("BundleAdjustment.caspar_max_num_iterations",
+                                &bundle_adjustment->caspar_max_num_iterations);
     AddAndRegisterDefaultOption("BundleAdjustment.use_gpu",
                                 &bundle_adjustment->use_gpu);
     AddAndRegisterDefaultOption("BundleAdjustment.gpu_index",
@@ -544,12 +586,6 @@ void OptionManager::AddMapperOptions() {
                                 &mapper->ba_local_function_tolerance);
     AddAndRegisterDefaultOption("Mapper.ba_local_max_num_iterations",
                                 &mapper->ba_local_max_num_iterations);
-#ifdef PBA_ENABLED
-    AddAndRegisterDefaultOption("Mapper.ba_global_use_pba",
-                                &mapper->ba_global_use_pba);
-    AddAndRegisterDefaultOption("Mapper.ba_global_pba_gpu_index",
-                                &mapper->ba_global_pba_gpu_index);
-#endif
     AddAndRegisterDefaultOption("Mapper.ba_global_images_ratio",
                                 &mapper->ba_global_images_ratio);
     AddAndRegisterDefaultOption("Mapper.ba_global_points_ratio",
@@ -633,6 +669,118 @@ void OptionManager::AddMapperOptions() {
                                 &mapper->triangulation.min_angle);
     AddAndRegisterDefaultOption("Mapper.tri_ignore_two_view_tracks",
                                 &mapper->triangulation.ignore_two_view_tracks);
+}
+
+void OptionManager::AddGlobalMapperOptions() {
+    if (added_global_mapper_options_) {
+        return;
+    }
+    added_global_mapper_options_ = true;
+
+    // Global pipeline options (upstream parity, dbb41680
+    // controllers/option_manager.cc AddGlobalMapperOptions; flags bound to
+    // fields that exist in the fork's options structs).
+    AddDefaultOption("GlobalMapper.min_num_matches",
+                     &global_mapper->min_num_matches);
+    AddDefaultOption("GlobalMapper.ignore_watermarks",
+                     &global_mapper->ignore_watermarks);
+    AddDefaultOption("GlobalMapper.num_threads",
+                     &global_mapper->num_threads);
+    AddDefaultOption("GlobalMapper.random_seed",
+                     &global_mapper->random_seed);
+    AddDefaultOption("GlobalMapper.decompose_relative_pose",
+                     &global_mapper->decompose_relative_pose);
+    AddDefaultOption("GlobalMapper.multiple_models",
+                     &global_mapper->multiple_models);
+    AddDefaultOption("GlobalMapper.min_model_size",
+                     &global_mapper->min_model_size);
+    AddDefaultOption("GlobalMapper.ba_num_iterations",
+                     &global_mapper->mapper.ba_num_iterations);
+    AddDefaultOption("GlobalMapper.skip_rotation_averaging",
+                     &global_mapper->mapper.skip_rotation_averaging);
+    AddDefaultOption("GlobalMapper.skip_track_establishment",
+                     &global_mapper->mapper.skip_track_establishment);
+    AddDefaultOption("GlobalMapper.skip_global_positioning",
+                     &global_mapper->mapper.skip_global_positioning);
+    AddDefaultOption("GlobalMapper.skip_bundle_adjustment",
+                     &global_mapper->mapper.skip_bundle_adjustment);
+    AddDefaultOption("GlobalMapper.skip_retriangulation",
+                     &global_mapper->mapper.skip_retriangulation);
+    AddDefaultOption("GlobalMapper.max_angular_reproj_error_deg",
+                     &global_mapper->mapper.max_angular_reproj_error_deg);
+    AddDefaultOption("GlobalMapper.max_normalized_reproj_error",
+                     &global_mapper->mapper.max_normalized_reproj_error);
+    AddDefaultOption("GlobalMapper.min_tri_angle_deg",
+                     &global_mapper->mapper.min_tri_angle_deg);
+
+    // Track establishment options.
+    AddDefaultOption(
+        "GlobalMapper.track_intra_image_consistency_threshold",
+        &global_mapper->mapper.track_intra_image_consistency_threshold);
+    AddDefaultOption("GlobalMapper.track_required_tracks_per_view",
+                     &global_mapper->mapper.track_required_tracks_per_view);
+    AddDefaultOption("GlobalMapper.track_min_num_views_per_track",
+                     &global_mapper->mapper.track_min_num_views_per_track);
+    AddDefaultOption("GlobalMapper.keep_max_num_tracks",
+                     &global_mapper->mapper.keep_max_num_tracks);
+
+    // Global positioning options.
+    AddDefaultOption("GlobalMapper.gp_use_gpu",
+                     &global_mapper->mapper.global_positioning.use_gpu);
+    AddDefaultOption("GlobalMapper.gp_gpu_index",
+                     &global_mapper->mapper.global_positioning.gpu_index);
+    AddDefaultOption(
+        "GlobalMapper.gp_optimize_positions",
+        &global_mapper->mapper.global_positioning.optimize_positions);
+    AddDefaultOption(
+        "GlobalMapper.gp_optimize_points",
+        &global_mapper->mapper.global_positioning.optimize_points);
+    AddDefaultOption(
+        "GlobalMapper.gp_optimize_scales",
+        &global_mapper->mapper.global_positioning.optimize_scales);
+    AddDefaultOption(
+        "GlobalMapper.gp_loss_function_scale",
+        &global_mapper->mapper.global_positioning.loss_function_scale);
+    AddDefaultOption("GlobalMapper.gp_max_num_iterations",
+                     &global_mapper->mapper.global_positioning.solver_options
+                          .max_num_iterations);
+
+    // Bundle adjustment options.
+    AddDefaultOption(
+        "GlobalMapper.ba_refine_focal_length",
+        &global_mapper->mapper.bundle_adjustment.refine_focal_length);
+    AddDefaultOption(
+        "GlobalMapper.ba_refine_principal_point",
+        &global_mapper->mapper.bundle_adjustment.refine_principal_point);
+    AddDefaultOption(
+        "GlobalMapper.ba_refine_extra_params",
+        &global_mapper->mapper.bundle_adjustment.refine_extra_params);
+    AddDefaultOption("GlobalMapper.refine_sensor_from_rig",
+                     &global_mapper->mapper.refine_sensor_from_rig);
+    AddDefaultOption("GlobalMapper.ba_gpu_index",
+                     &global_mapper->mapper.ba_gpu_index);
+    AddDefaultOption("GlobalMapper.ba_skip_fixed_rotation_stage",
+                     &global_mapper->mapper.ba_skip_fixed_rotation_stage);
+    AddDefaultOption("GlobalMapper.ba_skip_joint_optimization_stage",
+                     &global_mapper->mapper.ba_skip_joint_optimization_stage);
+    // Fork note: the upstream ba_refine_rig_from_world /
+    // ba_refine_points3D / ba_min_track_length / ba_backend / ceres-specific
+    // and retriangulation flags bind to fields that land with W3-2b step 4
+    // (frame-aware BA options) and are deferred accordingly.
+}
+
+void OptionManager::AddGravityRefinerOptions() {
+    if (added_gravity_refiner_options_) {
+        return;
+    }
+    added_gravity_refiner_options_ = true;
+
+    AddDefaultOption("GravityRefiner.max_outlier_ratio",
+                     &gravity_refiner->max_outlier_ratio);
+    AddDefaultOption("GravityRefiner.max_gravity_error",
+                     &gravity_refiner->max_gravity_error);
+    AddDefaultOption("GravityRefiner.min_num_neighbors",
+                     &gravity_refiner->min_num_neighbors);
 }
 
 void OptionManager::AddPatchMatchStereoOptions() {
@@ -767,6 +915,82 @@ void OptionManager::AddDelaunayMeshingOptions() {
                                 &delaunay_meshing->num_threads);
 }
 
+void OptionManager::AddAdvancingFrontMeshingOptions() {
+    if (added_advancing_front_meshing_options_) {
+        return;
+    }
+    added_advancing_front_meshing_options_ = true;
+
+    AddAndRegisterDefaultOption("AdvancingFrontMeshing.max_edge_length",
+                                &advancing_front_meshing->max_edge_length);
+    AddAndRegisterDefaultOption("AdvancingFrontMeshing.visibility_filtering",
+                                &advancing_front_meshing->visibility_filtering);
+    AddAndRegisterDefaultOption(
+            "AdvancingFrontMeshing.visibility_filtering_max_intersections",
+            &advancing_front_meshing->visibility_filtering_max_intersections);
+    AddAndRegisterDefaultOption(
+            "AdvancingFrontMeshing.visibility_post_filtering",
+            &advancing_front_meshing->visibility_post_filtering);
+    AddAndRegisterDefaultOption(
+            "AdvancingFrontMeshing.visibility_ray_trim_offset",
+            &advancing_front_meshing->visibility_ray_trim_offset);
+    AddAndRegisterDefaultOption("AdvancingFrontMeshing.block_size",
+                                &advancing_front_meshing->block_size);
+    AddAndRegisterDefaultOption("AdvancingFrontMeshing.block_overlap",
+                                &advancing_front_meshing->block_overlap);
+    AddAndRegisterDefaultOption("AdvancingFrontMeshing.num_threads",
+                                &advancing_front_meshing->num_threads);
+}
+
+void OptionManager::AddMeshSimplificationOptions() {
+    if (added_mesh_simplification_options_) {
+        return;
+    }
+    added_mesh_simplification_options_ = true;
+
+    AddAndRegisterDefaultOption("MeshSimplification.target_face_ratio",
+                                &mesh_simplification->target_face_ratio);
+    AddAndRegisterDefaultOption("MeshSimplification.max_error",
+                                &mesh_simplification->max_error);
+    AddAndRegisterDefaultOption("MeshSimplification.boundary_weight",
+                                &mesh_simplification->boundary_weight);
+    AddAndRegisterDefaultOption("MeshSimplification.interpolate_colors",
+                                &mesh_simplification->interpolate_colors);
+    AddAndRegisterDefaultOption("MeshSimplification.num_threads",
+                                &mesh_simplification->num_threads);
+}
+
+void OptionManager::AddMeshPostProcessingOptions() {
+    if (added_mesh_post_processing_options_) return;
+    added_mesh_post_processing_options_ = true;
+    AddAndRegisterDefaultOption("MeshPostProcessing.enabled",
+                                &mesh_post_processing->enabled);
+    AddAndRegisterDefaultOption("MeshPostProcessing.remove_small_components",
+                                &mesh_post_processing->remove_small_components);
+    AddAndRegisterDefaultOption("MeshPostProcessing.remove_degenerate_faces",
+                                &mesh_post_processing->remove_degenerate_faces);
+    AddAndRegisterDefaultOption("MeshPostProcessing.simplify",
+                                &mesh_post_processing->simplify);
+    AddAndRegisterDefaultOption("MeshPostProcessing.smooth",
+                                &mesh_post_processing->smooth);
+    AddAndRegisterDefaultOption("MeshPostProcessing.preserve_boundary",
+                                &mesh_post_processing->preserve_boundary);
+    AddAndRegisterDefaultOption("MeshPostProcessing.prune_error",
+                                &mesh_post_processing->prune_error);
+    AddAndRegisterDefaultOption("MeshPostProcessing.target_face_ratio",
+                                &mesh_post_processing->target_face_ratio);
+    AddAndRegisterDefaultOption("MeshPostProcessing.simplify_error",
+                                &mesh_post_processing->simplify_error);
+    AddAndRegisterDefaultOption("MeshPostProcessing.max_aspect_ratio",
+                                &mesh_post_processing->max_aspect_ratio);
+    AddAndRegisterDefaultOption("MeshPostProcessing.smoothing_iterations",
+                                &mesh_post_processing->smoothing_iterations);
+    AddAndRegisterDefaultOption("MeshPostProcessing.smoothing_lambda",
+                                &mesh_post_processing->smoothing_lambda);
+    AddAndRegisterDefaultOption("MeshPostProcessing.smoothing_mu",
+                                &mesh_post_processing->smoothing_mu);
+}
+
 void OptionManager::AddRenderOptions() {
     if (added_render_options_) {
         return;
@@ -816,6 +1040,9 @@ void OptionManager::Reset() {
     added_stereo_fusion_options_ = false;
     added_poisson_meshing_options_ = false;
     added_delaunay_meshing_options_ = false;
+    added_advancing_front_meshing_options_ = false;
+    added_mesh_simplification_options_ = false;
+    added_mesh_post_processing_options_ = false;
     added_texturing_options_ = false;
     added_render_options_ = false;
 }
@@ -841,6 +1068,9 @@ void OptionManager::ResetOptions(const bool reset_paths) {
     *stereo_fusion = mvs::StereoFusionOptions();
     *poisson_meshing = mvs::PoissonMeshingOptions();
     *delaunay_meshing = mvs::DelaunayMeshingOptions();
+    *advancing_front_meshing = mvs::AdvancingFrontMeshingOptions();
+    *mesh_simplification = mvs::MeshSimplificationOptions();
+    *mesh_post_processing = mvs::MeshPostProcessingOptions();
     *texturing = TexturingOptions();
     *render = RenderOptions();
 }
@@ -877,6 +1107,12 @@ bool OptionManager::Check() {
     if (stereo_fusion) success = success && stereo_fusion->Check();
     if (poisson_meshing) success = success && poisson_meshing->Check();
     if (delaunay_meshing) success = success && delaunay_meshing->Check();
+    if (advancing_front_meshing)
+        success = success && advancing_front_meshing->Check();
+    if (mesh_simplification) success = success && mesh_simplification->Check();
+    if (mesh_post_processing)
+        success = success && mesh_post_processing->Check();
+    if (texturing) success = success && texturing->Check();
 
 #ifdef GUI_ENABLED
     if (render) success = success && render->Check();
@@ -908,7 +1144,7 @@ void OptionManager::Parse(const int argc, char** argv) {
         }
 
         if (vmap.count("project_path")) {
-            *project_path = vmap["project_path"].as<std::string>();
+            *project_path = vmap["project_path"].as<std::filesystem::path>();
             if (!Read(*project_path)) {
                 exit(EXIT_FAILURE);
             }
@@ -931,7 +1167,7 @@ void OptionManager::Parse(const int argc, char** argv) {
     }
 }
 
-bool OptionManager::Read(const std::string& path) {
+bool OptionManager::Read(const std::filesystem::path& path) {
     config::variables_map vmap;
 
     if (!ExistsFile(path)) {
@@ -957,13 +1193,13 @@ bool OptionManager::Read(const std::string& path) {
     return Check();
 }
 
-bool OptionManager::ReRead(const std::string& path) {
+bool OptionManager::ReRead(const std::filesystem::path& path) {
     Reset();
     AddAllOptions();
     return Read(path);
 }
 
-void OptionManager::Write(const std::string& path) const {
+void OptionManager::Write(const std::filesystem::path& path) const {
     boost::property_tree::ptree pt;
 
     // First, put all options without a section and then those with a section.
@@ -995,6 +1231,12 @@ void OptionManager::Write(const std::string& path) const {
         }
     }
 
+    for (const auto& option : options_path_) {
+        if (!StringContains(option.first, ".")) {
+            pt.put(option.first, option.second->string());
+        }
+    }
+
     for (const auto& option : options_bool_) {
         if (StringContains(option.first, ".")) {
             pt.put(option.first, *option.second);
@@ -1019,7 +1261,13 @@ void OptionManager::Write(const std::string& path) const {
         }
     }
 
-    boost::property_tree::write_ini(path, pt);
+    for (const auto& option : options_path_) {
+        if (StringContains(option.first, ".")) {
+            pt.put(option.first, option.second->string());
+        }
+    }
+
+    boost::property_tree::write_ini(path.string(), pt);
 }
 
 void OptionManager::AddTexturingOptions() {
@@ -1033,18 +1281,25 @@ void OptionManager::AddTexturingOptions() {
                                 &texturing->meshed_file_path);
     AddAndRegisterDefaultOption("Texturing.textured_file_path",
                                 &texturing->textured_file_path);
-    AddAndRegisterDefaultOption("Texturing.use_depth_normal_maps",
-                                &texturing->use_depth_normal_maps);
-    AddAndRegisterDefaultOption("Texturing.depth_map_type",
-                                &texturing->depth_map_type);
-    AddAndRegisterDefaultOption("Texturing.max_depth_error",
-                                &texturing->max_depth_error);
-    AddAndRegisterDefaultOption("Texturing.min_normal_consistency",
-                                &texturing->min_normal_consistency);
-    AddAndRegisterDefaultOption("Texturing.max_viewing_angle_deg",
-                                &texturing->max_viewing_angle_deg);
-    AddAndRegisterDefaultOption("Texturing.use_gradient_magnitude",
-                                &texturing->use_gradient_magnitude);
+    AddAndRegisterDefaultOption("Texturing.min_cos_normal_angle",
+                                &texturing->min_cos_normal_angle);
+    AddAndRegisterDefaultOption("Texturing.min_visible_vertices",
+                                &texturing->min_visible_vertices);
+    AddAndRegisterDefaultOption(
+            "Texturing.view_selection_smoothing_iterations",
+            &texturing->view_selection_smoothing_iterations);
+    AddAndRegisterDefaultOption("Texturing.atlas_patch_padding",
+                                &texturing->atlas_patch_padding);
+    AddAndRegisterDefaultOption("Texturing.inpaint_radius",
+                                &texturing->inpaint_radius);
+    AddAndRegisterDefaultOption("Texturing.apply_color_correction",
+                                &texturing->apply_color_correction);
+    AddAndRegisterDefaultOption("Texturing.color_correction_regularization",
+                                &texturing->color_correction_regularization);
+    AddAndRegisterDefaultOption("Texturing.num_threads",
+                                &texturing->num_threads);
+    AddAndRegisterDefaultOption("Texturing.texture_scale_factor",
+                                &texturing->texture_scale_factor);
     AddAndRegisterDefaultOption("Texturing.mesh_source",
                                 &texturing->mesh_source);
 }

@@ -86,6 +86,30 @@ AutomaticReconstructionWidget::AutomaticReconstructionWidget(
     AddOptionBool(&options_.sparse, "Sparse model");
     dense_cb_ = AddOptionBool(&options_.dense, "Dense model");
     meshing_cb_ = AddOptionBool(&options_.meshing, "Surface meshing");
+    AddOptionBool(&options_.mesh_post_processing.enabled,
+                  "Mesh cleanup and smoothing");
+    AddOptionBool(&options_.mesh_post_processing.remove_small_components,
+                  "Remove small components");
+    AddOptionBool(&options_.mesh_post_processing.remove_degenerate_faces,
+                  "Remove degenerate faces");
+    AddOptionBool(&options_.mesh_post_processing.simplify, "Simplify mesh");
+    AddOptionBool(&options_.mesh_post_processing.smooth, "Smooth mesh");
+    AddOptionBool(&options_.mesh_post_processing.preserve_boundary,
+                  "Preserve boundary");
+    AddOptionDouble(&options_.mesh_post_processing.prune_error, "Prune error",
+                    0, 1);
+    AddOptionDouble(&options_.mesh_post_processing.target_face_ratio,
+                    "Target face ratio", 0, 1);
+    AddOptionDouble(&options_.mesh_post_processing.simplify_error,
+                    "Simplify error", 0, 1);
+    AddOptionDouble(&options_.mesh_post_processing.max_aspect_ratio,
+                    "Max aspect ratio", 0);
+    AddOptionInt(&options_.mesh_post_processing.smoothing_iterations,
+                 "Smoothing iterations", 0);
+    AddOptionDouble(&options_.mesh_post_processing.smoothing_lambda,
+                    "Smoothing lambda", 0, 1);
+    AddOptionDouble(&options_.mesh_post_processing.smoothing_mu, "Smoothing mu",
+                    -1, 0);
     texturing_cb_ = AddOptionBool(&options_.texturing, "Mesh texturing");
     AddOptionBool(&options_.autoVisualization, "Auto visualization");
 
@@ -97,6 +121,7 @@ AutomaticReconstructionWidget::AutomaticReconstructionWidget(
     mesher_cb_ = new QComboBox(this);
     mesher_cb_->addItem("Delaunay");
     mesher_cb_->addItem("Poisson");
+    mesher_cb_->addItem("Advancing Front");
     mesher_cb_->setCurrentIndex(0);
     grid_layout_->addWidget(mesher_cb_, grid_layout_->rowCount() - 1, 1);
 
@@ -491,6 +516,10 @@ void AutomaticReconstructionWidget::Run() {
             options_.mesher =
                     AutomaticReconstructionController::Mesher::POISSON;
             break;
+        case 2:
+            options_.mesher =
+                    AutomaticReconstructionController::Mesher::ADVANCING_FRONT;
+            break;
         default:
             options_.mesher =
                     AutomaticReconstructionController::Mesher::DELAUNAY;
@@ -656,7 +685,8 @@ void AutomaticReconstructionWidget::Run() {
     }
 
     // Check if vocab_tree_path is a URI and needs to be downloaded
-    std::string vocab_tree_path = options_.vocab_tree_path;
+    // MSVC has no implicit path-to-string conversion, so bridge explicitly.
+    std::string vocab_tree_path = options_.vocab_tree_path.string();
     if (vocab_tree_path.empty()) {
         vocab_tree_path = retrieval::kDefaultVocabTreeUri;
     }
@@ -773,13 +803,15 @@ void AutomaticReconstructionWidget::showEvent(QShowEvent* event) {
     colmap::DA3ReconstructionUiBindings::Sync(da3_ui_controls_);
 
     // Double-check: if UI is still empty after ReadOptions, set it explicitly
-    // This handles the case where options_.vocab_tree_path was empty before
-    for (auto& option : options_path_) {
+    // This handles the case where options_.vocab_tree_path was empty before.
+    // vocab_tree_path registers through the std::filesystem::path overload,
+    // so it lives in options_fspath_ rather than options_path_.
+    for (auto& option : options_fspath_) {
         if (option.second == &options_.vocab_tree_path) {
             if (option.first->text().isEmpty() &&
                 !options_.vocab_tree_path.empty()) {
-                option.first->setText(
-                        QString::fromStdString(options_.vocab_tree_path));
+                option.first->setText(QString::fromStdString(
+                        options_.vocab_tree_path.string()));
             }
             break;
         }

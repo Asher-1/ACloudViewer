@@ -1,0 +1,14 @@
+{
+  "type": "Standard",
+  "core": true,
+  "name": "SAM3 Image & Video Segmentation",
+  "icon": ":/CC/plugin/qSAM3/images/qSAM3.svg",
+  "description": "Segment Anything 2 / 2.1 / 3: interactive point, box, text-prompt and video tracking via native GGML inference.",
+  "authors": [{ "name": "ACloudViewer Contributors" }],
+  "maintainers": [{ "name": "ACloudViewer Team" }],
+  "references": [
+    { "text": "sam3-ggml: https://github.com/Asher-1/sam3-ggml" },
+    { "text": "Segment Anything: https://github.com/facebookresearch/segment-anything" },
+    { "text": "Models: https://github.com/Asher-1/cloudViewer_downloads/releases/tag/sam" }
+  ]
+}

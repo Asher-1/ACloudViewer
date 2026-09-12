@@ -13,6 +13,19 @@
 
 namespace colmap {
 
+struct WarpImageOptions {
+    // Warp directly at target resolution when this ratio is met. Smaller
+    // reductions use source-resolution warp followed by resize to avoid
+    // aliasing.
+    double direct_warp_min_scale = 0.5;
+};
+
+void WarpImageBetweenCameras(const WarpImageOptions& options,
+                             const Camera& source_camera,
+                             const Camera& target_camera,
+                             const Bitmap& source_image,
+                             Bitmap* target_image);
+
 // Warp source image to target image by projecting the pixels of the target
 // image up to infinity and projecting it down into the source image
 // (i.e. an inverse mapping). The function allocates the target image.
@@ -20,6 +33,13 @@ void WarpImageBetweenCameras(const Camera& source_camera,
                              const Camera& target_camera,
                              const Bitmap& source_image,
                              Bitmap* target_image);
+
+void WarpImageWithHomographyBetweenCameras(const WarpImageOptions& options,
+                                           const Eigen::Matrix3d& H,
+                                           const Camera& source_camera,
+                                           const Camera& target_camera,
+                                           const Bitmap& source_image,
+                                           Bitmap* target_image);
 
 // Warp an image with the given homography, where H defines the pixel mapping
 // from the target to source image. Note that the pixel centers are assumed to

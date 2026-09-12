@@ -7,16 +7,19 @@
 
 #pragma once
 
-#include <unordered_map>
 #include <vector>
 
 #include "base/database.h"
+#include "base/two_view_geometry.h"
+#include "util/hash_containers.h"
+#include "util/string.h"
 #include "util/types.h"
 
 namespace colmap {
 
-// Scene graph represents the graph of image to image and feature to feature
-// correspondences of a dataset. It should be accessed from the DatabaseCache.
+// Correspondence graph represents the graph of image to image and feature to
+// feature correspondences of a dataset. It should be accessed from the
+// DatabaseCache.
 class CorrespondenceGraph {
 public:
     struct Correspondence {
@@ -32,7 +35,21 @@ public:
         point2D_t point2D_idx;
     };
 
-    CorrespondenceGraph();
+    // Range of correspondences from [beg, end). Empty if beg == end.
+    struct CorrespondenceRange {
+        const Correspondence* beg = nullptr;
+        const Correspondence* end = nullptr;
+    };
+
+    CorrespondenceGraph() = default;
+
+    // Finalize the correspondence graph.
+    //
+    // - Calculates the number of observations per image by counting the number
+    //   of image points that have at least one correspondence.
+    // - Flattens the per-point correspondence vectors into a compact
+    //   representation for cache-friendly lookups afterwards.
+    void Finalize();
 
     // Number of added images.
     inline size_t NumImages() const;
@@ -40,73 +57,86 @@ public:
     // Number of added images.
     inline size_t NumImagePairs() const;
 
-    // Check whether image exists.
-    inline bool ExistsImage(const image_t image_id) const;
-
     // Get the number of observations in an image. An observation is an image
     // point that has at least one correspondence.
-    inline point2D_t NumObservationsForImage(const image_t image_id) const;
+    inline point2D_t NumObservationsForImage(image_t image_id) const;
 
     // Get the number of correspondences per image.
-    inline point2D_t NumCorrespondencesForImage(const image_t image_id) const;
+    inline point2D_t NumCorrespondencesForImage(image_t image_id) const;
 
-    // Get the number of correspondences between a pair of images.
-    inline point2D_t NumCorrespondencesBetweenImages(
-            const image_t image_id1, const image_t image_id2) const;
+    // Get the number of matches between a pair of images.
+    inline point2D_t NumMatchesBetweenImages(image_t image_id1,
+                                             image_t image_id2) const;
 
-    // Get the number of correspondences between all images.
-    std::unordered_map<image_pair_t, point2D_t>
-    NumCorrespondencesBetweenImages() const;
+    // Get the number of matches between all images.
+    NodeHashMap<image_pair_t, point2D_t> NumMatchesBetweenAllImages() const;
 
-    // Finalize the database manager.
-    //
-    // - Calculates the number of observations per image by counting the number
-    //   of image points that have at least one correspondence.
-    // - Deletes images without observations, as they are useless for SfM.
-    // - Shrinks the correspondence vectors to their size to save memory.
-    void Finalize();
+    // Check whether image exists.
+    inline bool ExistsImage(image_t image_id) const;
+
+    // All image pairs in the correspondence graph.
+    std::vector<image_pair_t> ImagePairs() const;
 
     // Add new image to the correspondence graph.
-    void AddImage(const image_t image_id, const size_t num_points2D);
+    void AddImage(image_t image_id, size_t num_points2D);
 
-    // Add correspondences between images. This function ignores invalid
-    // correspondences where the point indices are out of bounds or duplicate
-    // correspondences between the same image points. Whenever either of the two
-    // cases occur this function prints a warning to the standard output.
-    void AddCorrespondences(const image_t image_id1,
-                            const image_t image_id2,
-                            const FeatureMatches& matches);
+    // Add two-view geometry and inlier matches between images. This function
+    // ignores invalid matches where the point indices are out of bounds or
+    // duplicate matches between the same image points. Whenever either of the
+    // two cases occur this function prints a warning to the standard output.
+    void AddTwoViewGeometry(image_t image_id1,
+                            image_t image_id2,
+                            TwoViewGeometry two_view_geometry);
 
-    // Find the correspondence of an image observation to all other images.
-    inline const std::vector<Correspondence>& FindCorrespondences(
-            const image_t image_id, const point2D_t point2D_idx) const;
+    // Find range of correspondences of an image observation to all other
+    // images.
+    CorrespondenceRange FindCorrespondences(image_t image_id,
+                                            point2D_t point2D_idx) const;
 
-    // Find correspondences to the given observation.
+    // Helper method to extract found correspondences into a vector.
+    void ExtractCorrespondences(image_t image_id,
+                                point2D_t point2D_idx,
+                                std::vector<Correspondence>* corrs) const;
+
+    // Extract correspondences to the given observation.
     //
     // Transitively collects correspondences to the given observation by first
     // finding correspondences to the given observation, then looking for
     // correspondences to the collected correspondences in the first step, and
     // so forth until the transitivity is exhausted or no more correspondences
-    // are found. The returned list does not contain duplicates and contains the
-    // given observation.
-    std::vector<Correspondence> FindTransitiveCorrespondences(
-            const image_t image_id,
-            const point2D_t point2D_idx,
-            const size_t transitivity) const;
+    // are found. The returned list does not contain duplicates and contains
+    // the given observation.
+    void ExtractTransitiveCorrespondences(
+            image_t image_id,
+            point2D_t point2D_idx,
+            size_t transitivity,
+            std::vector<Correspondence>* corrs) const;
 
-    // Find all correspondences between two images.
-    FeatureMatches FindCorrespondencesBetweenImages(
-            const image_t image_id1, const image_t image_id2) const;
+    // Find all matches between two images.
+    void ExtractMatchesBetweenImages(image_t image_id1,
+                                     image_t image_id2,
+                                     FeatureMatches& matches) const;
+
+    // Two-view geometry with optional inlier matches. Inverted if necessary.
+    TwoViewGeometry ExtractTwoViewGeometry(image_t image_id1,
+                                           image_t image_id2,
+                                           bool extract_inlier_matches) const;
+
+    // Update the two-view geometry for an existing image pair. The
+    // inlier_matches field of the provided geometry is ignored (matches are
+    // stored separately).
+    void UpdateTwoViewGeometry(image_t image_id1,
+                               image_t image_id2,
+                               TwoViewGeometry two_view_geometry);
 
     // Check whether the image point has correspondences.
-    inline bool HasCorrespondences(const image_t image_id,
-                                   const point2D_t point2D_idx) const;
+    inline bool HasCorrespondences(image_t image_id,
+                                   point2D_t point2D_idx) const;
 
     // Check whether the given observation is part of a two-view track, i.e.
     // it only has one correspondence and that correspondence has the given
     // observation as its only correspondence.
-    bool IsTwoViewObservation(const image_t image_id,
-                              const point2D_t point2D_idx) const;
+    bool IsTwoViewObservation(image_t image_id, point2D_t point2D_idx) const;
 
 private:
     struct Image {
@@ -115,21 +145,44 @@ private:
         point2D_t num_observations = 0;
 
         // Total number of correspondences to other images. This measure is
-        // useful to find a good initial pair, that is connected to many images.
+        // useful to find a good initial pair, that is connected to many
+        // images.
         point2D_t num_correspondences = 0;
 
         // Correspondences to other images per image point.
+        // Added correspondences before Finalize(), empty afterwards.
         std::vector<std::vector<Correspondence>> corrs;
+        // Flattened correspondences after Finalize(), empty before.
+        std::vector<Correspondence> flat_corrs;
+        // For each point, determines the beginning of the correspondences in
+        // the flat_corrs vector. The end of point i is determined by the
+        // beginning of the next point. The length of this vector is
+        // num_points2D + 1, where the last element is equivalent to the size
+        // of flat_corrs.
+        std::vector<point2D_t> flat_corr_begs;
     };
 
     struct ImagePair {
-        // The number of correspondences between pairs of images.
-        point2D_t num_correspondences = 0;
+        // The number of inlier matches between pairs of images.
+        point2D_t num_matches = 0;
+        // The two-view geometry of the image pair without matches.
+        TwoViewGeometry two_view_geometry;
     };
 
-    std::unordered_map<image_t, Image> images_;
-    std::unordered_map<image_pair_t, ImagePair> image_pairs_;
+    bool finalized_ = false;
+    // image_pairs_ is only inserted into during graph construction and is
+    // read-only after Finalize(), so a flat (open-addressing) map is safe and
+    // faster. images_ hands out const Image& references during correspondence
+    // traversal, so it uses a node-based map to keep those references stable.
+    NodeHashMap<image_t, Image> images_;
+    FlatHashMap<image_pair_t, ImagePair> image_pairs_;
 };
+
+std::ostream& operator<<(
+        std::ostream& stream,
+        const CorrespondenceGraph::Correspondence& correspondence);
+std::ostream& operator<<(std::ostream& stream,
+                         const CorrespondenceGraph& correspondence_graph);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Implementation
@@ -147,35 +200,40 @@ bool CorrespondenceGraph::ExistsImage(const image_t image_id) const {
 
 point2D_t CorrespondenceGraph::NumObservationsForImage(
         const image_t image_id) const {
-    return images_.at(image_id).num_observations;
+    try {
+        return images_.at(image_id).num_observations;
+    } catch (const std::out_of_range&) {
+        throw std::out_of_range(
+                StringPrintf("Image with ID %d does not exist", image_id));
+    }
 }
 
 point2D_t CorrespondenceGraph::NumCorrespondencesForImage(
         const image_t image_id) const {
-    return images_.at(image_id).num_correspondences;
+    try {
+        return images_.at(image_id).num_correspondences;
+    } catch (const std::out_of_range&) {
+        throw std::out_of_range(
+                StringPrintf("Image with ID %d does not exist", image_id));
+    }
 }
 
-point2D_t CorrespondenceGraph::NumCorrespondencesBetweenImages(
+point2D_t CorrespondenceGraph::NumMatchesBetweenImages(
         const image_t image_id1, const image_t image_id2) const {
     const image_pair_t pair_id =
             Database::ImagePairToPairId(image_id1, image_id2);
     const auto it = image_pairs_.find(pair_id);
     if (it == image_pairs_.end()) {
         return 0;
-    } else {
-        return static_cast<point2D_t>(it->second.num_correspondences);
     }
-}
-
-const std::vector<CorrespondenceGraph::Correspondence>&
-CorrespondenceGraph::FindCorrespondences(const image_t image_id,
-                                         const point2D_t point2D_idx) const {
-    return images_.at(image_id).corrs.at(point2D_idx);
+    return it->second.num_matches;
 }
 
 bool CorrespondenceGraph::HasCorrespondences(
         const image_t image_id, const point2D_t point2D_idx) const {
-    return !images_.at(image_id).corrs.at(point2D_idx).empty();
+    const CorrespondenceRange range =
+            FindCorrespondences(image_id, point2D_idx);
+    return range.beg != range.end;
 }
 
 }  // namespace colmap

@@ -1,7 +1,50 @@
-diff -ruN a/src/ggml-metal/ggml-metal-context.m b/src/ggml-metal/ggml-metal-context.m
---- a/src/ggml-metal/ggml-metal-context.m	2026-08-04 16:44:52
-+++ b/src/ggml-metal/ggml-metal-context.m	2026-08-08 10:24:57
-@@ -17,7 +17,7 @@
+diff --git a/include/ggml-metal.h b/include/ggml-metal.h
+--- a/include/ggml-metal.h
++++ b/include/ggml-metal.h
+@@ -46,6 +46,13 @@ GGML_BACKEND_API bool ggml_backend_is_metal(ggml_backend_t backend);
+ 
+ GGML_BACKEND_API void ggml_backend_metal_set_abort_callback(ggml_backend_t backend, ggml_abort_callback abort_callback, void * user_data);
+ 
++
++// ACV: per-node progress reporting while a graph is being encoded (Metal
++// only).  Invoked from the backend's parallel encode threads with the
++// accumulated encoded-node count; the callback must be thread-safe.
++typedef void (*ggml_metal_progress_cb)(int node_index, int n_nodes, void * user_data);
++GGML_BACKEND_API void ggml_backend_metal_set_progress_callback(ggml_backend_t backend, ggml_metal_progress_cb progress_callback, void * user_data);
++
+ // helper to check if the device supports a specific family
+ // ideally, the user code should be doing these checks
+ // ref: https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
+diff --git a/src/ggml-metal/ggml-metal-context.h b/src/ggml-metal/ggml-metal-context.h
+--- a/src/ggml-metal/ggml-metal-context.h
++++ b/src/ggml-metal/ggml-metal-context.h
+@@ -33,6 +33,14 @@ ggml_metal_event_t ggml_metal_get_ev_cpy(ggml_metal_t ctx);
+ 
+ void ggml_metal_set_n_cb            (ggml_metal_t ctx, int n_cb);
+ void ggml_metal_set_abort_callback  (ggml_metal_t ctx, ggml_abort_callback abort_callback, void * user_data);
++
++// ACV: per-node progress reporting while encoding a graph (see
++// ggml_backend_metal_set_progress_callback).  Called from the encoding
++// threads with an accumulated count of encoded nodes; n_nodes is the total
++// graph size.  The callback must be thread-safe.
++typedef void (*ggml_metal_progress_cb)(int node_index, int n_nodes, void * user_data);
++void ggml_metal_set_progress_callback(ggml_metal_t ctx, ggml_metal_progress_cb progress_callback, void * user_data);
++
+ bool ggml_metal_supports_family     (ggml_metal_t ctx, int family);
+ void ggml_metal_capture_next_compute(ggml_metal_t ctx);
+ 
+diff --git a/src/ggml-metal/ggml-metal-context.m b/src/ggml-metal/ggml-metal-context.m
+--- a/src/ggml-metal/ggml-metal-context.m
++++ b/src/ggml-metal/ggml-metal-context.m
+@@ -11,13 +11,15 @@
+ 
+ #import <Metal/Metal.h>
+ 
++#import <stdatomic.h>
++
+ #undef MIN
+ #undef MAX
+ #define MIN(a, b) ((a) < (b) ? (a) : (b))
  #define MAX(a, b) ((a) > (b) ? (a) : (b))
  
  // max number of MTLCommandBuffer used to submit a graph for processing
@@ -10,7 +53,21 @@ diff -ruN a/src/ggml-metal/ggml-metal-context.m b/src/ggml-metal/ggml-metal-cont
  
  struct ggml_metal_command_buffer {
      id<MTLCommandBuffer> obj;
-@@ -189,6 +189,27 @@
+@@ -76,6 +78,13 @@
+     ggml_abort_callback abort_callback;
+     void *              abort_callback_data;
+ 
++    // ACV: per-node progress reporting while encoding (see
++    // ggml_metal_set_progress_callback).  progress_count accumulates the
++    // encoded nodes across the parallel encode threads.
++    ggml_metal_progress_cb progress_cb;
++    void *                 progress_cb_data;
++    atomic_int             progress_count;
++
+     // error state - set when a command buffer fails during synchronize
+     // once set, graph_compute will return GGML_STATUS_FAILED until the backend is recreated
+     bool has_error;
+@@ -189,6 +198,27 @@ ggml_metal_t ggml_metal_init(ggml_metal_device_t dev) {
  void ggml_metal_free(ggml_metal_t ctx) {
      GGML_LOG_INFO("%s: deallocating\n", __func__);
  
@@ -38,7 +95,7 @@ diff -ruN a/src/ggml-metal/ggml-metal-context.m b/src/ggml-metal/ggml-metal-cont
      for (int i = 0; i < GGML_METAL_MAX_COMMAND_BUFFERS; ++i) {
          if (ctx->cmd_bufs[i].obj) {
              [ctx->cmd_bufs[i].obj release];
-@@ -265,7 +286,11 @@
+@@ -265,7 +295,11 @@ void ggml_metal_synchronize(ggml_metal_t ctx) {
          }
      }
  
@@ -51,7 +108,7 @@ diff -ruN a/src/ggml-metal/ggml-metal-context.m b/src/ggml-metal/ggml-metal-cont
      if (ctx->cmd_bufs_ext.count > 0) {
          for (size_t i = 0; i < ctx->cmd_bufs_ext.count; ++i) {
              id<MTLCommandBuffer> cmd_buf = ctx->cmd_bufs_ext[i];
-@@ -277,20 +302,10 @@
+@@ -277,20 +311,10 @@ void ggml_metal_synchronize(ggml_metal_t ctx) {
                      GGML_LOG_ERROR("error: %s\n", [[cmd_buf error].localizedDescription UTF8String]);
                  }
  
@@ -72,7 +129,7 @@ diff -ruN a/src/ggml-metal/ggml-metal-context.m b/src/ggml-metal/ggml-metal-cont
      }
  }
  
-@@ -441,8 +456,39 @@
+@@ -441,8 +465,39 @@ enum ggml_status ggml_metal_graph_compute(ggml_metal_t ctx, struct ggml_cgraph *
          return GGML_STATUS_FAILED;
      }
  
@@ -114,10 +171,428 @@ diff -ruN a/src/ggml-metal/ggml-metal-context.m b/src/ggml-metal/ggml-metal-cont
  
      // number of threads in addition to the main thread
      const int n_cb = ctx->n_cb;
-diff -ruN a/src/ggml-metal/ggml-metal-ops.cpp b/src/ggml-metal/ggml-metal-ops.cpp
---- a/src/ggml-metal/ggml-metal-ops.cpp	2026-08-04 16:44:52
-+++ b/src/ggml-metal/ggml-metal-ops.cpp	2026-08-08 09:54:35
-@@ -2965,7 +2965,10 @@
+@@ -711,6 +766,19 @@ void ggml_metal_set_n_cb(ggml_metal_t ctx, int n_cb) {
+             }
+ 
+             idx += res - 1;
++
++            // ACV: report encoding progress.  Accumulated across the parallel
++            // encode threads; the callback is invoked from the encode threads,
++            // so it must be thread-safe (the AICore bridge only forwards an
++            // atomic counter, and the GUI throttles UI updates).
++            if (ctx->progress_cb) {
++                const int done = atomic_fetch_add_explicit(
++                                         &ctx->progress_count, res,
++                                         memory_order_relaxed) +
++                                 res;
++                ctx->progress_cb(done, ctx->gf->n_nodes,
++                                 ctx->progress_cb_data);
++            }
+         }
+ 
+         ggml_metal_op_free(ctx_op);
+@@ -726,6 +794,12 @@ void ggml_metal_set_abort_callback(ggml_metal_t ctx, ggml_abort_callback abort_c
+     ctx->abort_callback_data = user_data;
+ }
+ 
++void ggml_metal_set_progress_callback(ggml_metal_t ctx, ggml_metal_progress_cb progress_callback, void * user_data) {
++    ctx->progress_cb = progress_callback;
++    ctx->progress_cb_data = user_data;
++    atomic_store(&ctx->progress_count, 0);
++}
++
+ bool ggml_metal_supports_family(ggml_metal_t ctx, int family) {
+     GGML_ASSERT(ctx->dev != nil);
+ 
+diff --git a/src/ggml-metal/ggml-metal-device.cpp b/src/ggml-metal/ggml-metal-device.cpp
+--- a/src/ggml-metal/ggml-metal-device.cpp
++++ b/src/ggml-metal/ggml-metal-device.cpp
+@@ -160,6 +160,21 @@ ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_get_rows(ggml_me
+     return res;
+ }
+ 
++ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_get_rows_flat(ggml_metal_library_t lib) {
++    char base[256];
++    char name[256];
++
++    snprintf(base, 256, "kernel_get_rows_flat_f32");
++    snprintf(name, 256, "%s", base);
++
++    ggml_metal_pipeline_with_params res = ggml_metal_library_get_pipeline(lib, name);
++    if (!res.pipeline) {
++        res = ggml_metal_library_compile_pipeline(lib, base, name, nullptr);
++    }
++
++    return res;
++}
++
+ ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_set_rows(ggml_metal_library_t lib, const ggml_tensor * op) {
+     char base[256];
+     char name[256];
+@@ -280,6 +295,30 @@ ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_unary(ggml_metal
+     const bool is_c4 = op->src[0]->ne[0] % 4 == 0;
+     const bool is_cnt = ggml_is_contiguous(op->src[0]) && ggml_nelements(op) < 32768;
+ 
++    // ACV: flat-grid unary for the F32 case - the stock per-row threadgroup
++    // dispatch serializes long 1-D activations ([1, 3.2M]) onto a single GPU
++    // core (see kernel_unary_flat_f32_f32[_4] in ggml-metal.metal).
++    const bool use_flat = !is_cnt &&
++                          op->src[0]->type == GGML_TYPE_F32 &&
++                          op->type         == GGML_TYPE_F32;
++
++    if (use_flat) {
++        snprintf(base, 256, is_c4 ? "kernel_unary_flat_f32_f32_4"
++                                  : "kernel_unary_flat_f32_f32");
++        snprintf(name, 256, "%s_op=%d", base, op_num);
++
++        ggml_metal_pipeline_with_params res = ggml_metal_library_get_pipeline(lib, name);
++        if (!res.pipeline) {
++            ggml_metal_cv_t cv = ggml_metal_cv_init();
++            ggml_metal_cv_set_int16(cv, op_num, FC_UNARY + 0);
++            res = ggml_metal_library_compile_pipeline(lib, base, name, cv);
++            ggml_metal_cv_free(cv);
++        }
++        res.c4  = is_c4;
++        res.cnt = false;
++        return res;
++    }
++
+     snprintf(base, 256, "kernel_unary_%s_%s%s", t0_str, t_str, is_c4 ? "_4" : "");
+     snprintf(name, 256, "%s_op=%d_cnt=%d", base, op_num, is_cnt);
+ 
+@@ -512,6 +551,18 @@ ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_dsv4_hc(ggml_met
+     return res;
+ }
+ 
++ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_rmbg_swin_qkv_layout(ggml_metal_library_t lib) {
++    char base[256];
++    snprintf(base, 256, "kernel_rmbg_swin_qkv_layout_f32");
++
++    ggml_metal_pipeline_with_params res = ggml_metal_library_get_pipeline(lib, base);
++    if (!res.pipeline) {
++        res = ggml_metal_library_compile_pipeline(lib, base, base, nullptr);
++    }
++
++    return res;
++}
++
+ ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_ssm_conv(ggml_metal_library_t lib, const ggml_tensor * op) {
+     GGML_ASSERT(op->src[0]->type == GGML_TYPE_F32);
+     GGML_ASSERT(op->src[1]->type == GGML_TYPE_F32);
+@@ -1621,6 +1672,41 @@ ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_bin(ggml_metal_l
+     const bool is_cb = op->src[0]->ne[0] != op->src[1]->ne[0];
+     const bool is_rb = ggml_is_contiguous(op->src[0]) && ggml_is_contiguous(op->src[1]) && (ggml_nrows(op->src[1]) == 1) && ggml_nelements(op) < 65536;
+ 
++    // ACV: flat-grid bin for the common no-fusion F32 case - the stock
++    // per-row threadgroup dispatch serializes long 1-D tensors onto a single
++    // GPU core (see kernel_bin_flat_f32_f32_f32[_4] in ggml-metal.metal).
++    // Both the vectorized (c4) and scalar variants are covered; the scalar
++    // path matters for bias broadcasts like [3.2M, 1] + [1] whose src1 does
++    // not satisfy the c4 alignment test.
++    const bool use_flat = n_fuse == 1 &&
++                          op->src[0]->type == GGML_TYPE_F32 &&
++                          op->src[1]->type == GGML_TYPE_F32 &&
++                          op->type         == GGML_TYPE_F32;
++
++    if (use_flat) {
++        snprintf(base, 256, "kernel_bin_flat_f32_f32_f32%s", is_c4 ? "_4" : "");
++        snprintf(name, 256, "%s_op=%d", base, op_num);
++
++        ggml_metal_pipeline_with_params res = ggml_metal_library_get_pipeline(lib, name);
++        if (!res.pipeline) {
++            ggml_metal_cv_t cv = ggml_metal_cv_init();
++
++            ggml_metal_cv_set_int16(cv, op_num, FC_BIN + 0);
++            ggml_metal_cv_set_int16(cv, n_fuse, FC_BIN + 1);
++            ggml_metal_cv_set_bool (cv, is_rb,  FC_BIN + 2);
++            ggml_metal_cv_set_bool (cv, is_cb,  FC_BIN + 3);
++
++            res = ggml_metal_library_compile_pipeline(lib, base, name, cv);
++
++            ggml_metal_cv_free(cv);
++        }
++
++        res.c4  = is_c4;
++        res.cnt = false;
++
++        return res;
++    }
++
+     snprintf(base, 256, "kernel_bin_fuse_%s_%s_%s%s", t0_str, t1_str, t_str, is_c4 ? "_4" : "");
+     snprintf(name, 256, "%s_op=%d_nf=%d_rb=%d_cb=%d", base, op_num, n_fuse, is_rb, is_cb);
+ 
+@@ -1823,10 +1909,19 @@ ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_im2col(ggml_meta
+     const int64_t KH = is_2D ? ne01 : 1;
+     const int64_t KW = ne00;
+ 
++    // ACV: flat-grid fast im2col for the common 2D batch-1 case - the stock
++    // kernel's per-(IC,OH,OW) threadgroup dispatch is scheduling-bound for
++    // large feature maps (see kernel_im2col_fast in ggml-metal.metal).
++    const int64_t N = op->src[1]->ne[is_2D ? 3 : 2];
++    const int64_t CHW = op->src[1]->ne[is_2D ? 2 : 1] * KH * KW;
++    const bool use_fast = is_2D && N == 1 && (CHW & 3) == 0;
++
+     char base[256];
+     char name[256];
+ 
+-    if (KH*KW <= 1024) {
++    if (use_fast) {
++        snprintf(base, 256, "kernel_im2col_fast_%s", ggml_type_name(op->type));
++    } else if (KH*KW <= 1024) {
+         snprintf(base, 256, "kernel_im2col_%s", ggml_type_name(op->type));
+     } else {
+         snprintf(base, 256, "kernel_im2col_ext_%s", ggml_type_name(op->type));
+diff --git a/src/ggml-metal/ggml-metal-device.h b/src/ggml-metal/ggml-metal-device.h
+--- a/src/ggml-metal/ggml-metal-device.h
++++ b/src/ggml-metal/ggml-metal-device.h
+@@ -112,6 +112,7 @@ struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_cpy
+ struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_pool_1d           (ggml_metal_library_t lib, const struct ggml_tensor * op, enum ggml_op_pool op_pool);
+ struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_pool_2d           (ggml_metal_library_t lib, const struct ggml_tensor * op, enum ggml_op_pool op_pool);
+ struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_get_rows          (ggml_metal_library_t lib, enum ggml_type tsrc);
++struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_get_rows_flat      (ggml_metal_library_t lib);
+ struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_set_rows          (ggml_metal_library_t lib, const struct ggml_tensor * op);
+ struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_diag              (ggml_metal_library_t lib, const struct ggml_tensor * op);
+ struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_repeat            (ggml_metal_library_t lib, enum ggml_type tsrc);
+@@ -128,6 +129,7 @@ struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_soft_max
+ struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_lightning_indexer (ggml_metal_library_t lib, const struct ggml_tensor * op);
+ struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_dsv4_hc           (ggml_metal_library_t lib, enum ggml_op op);
+ struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_ssm_conv          (ggml_metal_library_t lib, const struct ggml_tensor * op);
++struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_rmbg_swin_qkv_layout (ggml_metal_library_t lib);
+ struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_ssm_conv_batched  (ggml_metal_library_t lib, const struct ggml_tensor * op, int ssm_conv_bs);
+ struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_ssm_scan          (ggml_metal_library_t lib, const struct ggml_tensor * op);
+ struct ggml_metal_pipeline_with_params ggml_metal_library_get_pipeline_rwkv              (ggml_metal_library_t lib, const struct ggml_tensor * op);
+diff --git a/src/ggml-metal/ggml-metal-device.m b/src/ggml-metal/ggml-metal-device.m
+--- a/src/ggml-metal/ggml-metal-device.m
++++ b/src/ggml-metal/ggml-metal-device.m
+@@ -1341,6 +1341,20 @@ bool ggml_metal_device_supports_op(ggml_metal_device_t dev, const struct ggml_te
+                 default:
+                     return false;
+             }
++        case GGML_OP_CUSTOM:
++            // ACV RMBG fused kernels, matched by op name (see rmbg_graph.cpp
++            // GraphBuilder): the qkv split/layout op consumes F32 qkv+bias
++            // and writes one contiguous [hd, N, heads, nW] segment.
++            if (op->name[0] != '\0' &&
++                strncmp(op->name, "rmbg_swin_qkv_layout_k", 22) == 0) {
++                return op->src[0]->type == GGML_TYPE_F32 &&
++                       op->src[1]->type == GGML_TYPE_F32 &&
++                       op->type         == GGML_TYPE_F32 &&
++                       ggml_is_contiguous(op->src[0]) &&
++                       ggml_is_contiguous(op->src[1]) &&
++                       ggml_is_contiguous(op);
++            }
++            return false;
+         case GGML_OP_DSV4_HC_COMB:
+             return has_simdgroup_reduction &&
+                 op->src[0]->type == GGML_TYPE_F32 &&
+diff --git a/src/ggml-metal/ggml-metal-impl.h b/src/ggml-metal/ggml-metal-impl.h
+--- a/src/ggml-metal/ggml-metal-impl.h
++++ b/src/ggml-metal/ggml-metal-impl.h
+@@ -715,6 +715,8 @@ typedef struct {
+     int32_t  KH;
+     int32_t  KW;
+     int32_t  KHW; // KH * KW, pre-computed on CPU to save GPU resources
++    int32_t  OH; // output height, for the flat-grid fast im2col kernel
++    int32_t  OW; // output width,  for the flat-grid fast im2col kernel
+ } ggml_metal_kargs_im2col;
+ 
+ typedef struct {
+@@ -870,6 +872,17 @@ typedef struct {
+     uint64_t nb2;
+ } ggml_metal_kargs_ssm_conv;
+ 
++// ACV RMBG fused QKV split + bias (+ head/lane layout), see
++// ggml_metal_op_rmbg_swin_qkv_layout and kernel_rmbg_swin_qkv_layout_f32.
++typedef struct {
++    int32_t C;      // channels per segment (hd * heads)
++    int32_t N;      // tokens per window
++    int32_t heads;
++    int32_t nW;     // window count (flash-attn batch)
++    int32_t kind;   // 0=q, 1=k, 2=v
++    int32_t total;  // C * N * nW elements per segment
++} ggml_metal_kargs_rmbg_swin_qkv_layout;
++
+ typedef struct {
+     int64_t  d_state;
+     int64_t  d_inner;
+@@ -979,6 +992,8 @@ typedef struct {
+     uint64_t nb10;
+     uint64_t nb11;
+     uint64_t nb12;
++    int32_t  ne11; // src1 rows, for the flat-grid get_rows kernel
++    int32_t  ne12; // src1 depth, for the flat-grid get_rows kernel
+     uint64_t nb1;
+     uint64_t nb2;
+     uint64_t nb3;
+diff --git a/src/ggml-metal/ggml-metal-ops.cpp b/src/ggml-metal/ggml-metal-ops.cpp
+--- a/src/ggml-metal/ggml-metal-ops.cpp
++++ b/src/ggml-metal/ggml-metal-ops.cpp
+@@ -9,10 +9,13 @@
+ #include "ggml-metal-device.h"
+ 
+ #include <cassert>
++#include <cstring>
+ #include <algorithm>
+ #include <limits>
+ #include <cmath>
+ 
++static bool ggml_metal_op_is_rmbg_swin_qkv_layout(const ggml_tensor * dst);
++
+ static ggml_metal_buffer_id ggml_metal_get_buffer_id(const ggml_tensor * t) {
+     if (!t) {
+         return { nullptr, 0 };
+@@ -334,6 +337,14 @@ static int ggml_metal_op_encode_impl(ggml_metal_op_t ctx, int idx) {
+             {
+                 n_fuse = ggml_metal_op_soft_max(ctx, idx);
+             } break;
++        case GGML_OP_CUSTOM:
++            {
++                // ACV RMBG fused kernels matched by op name; anything else
++                // falls back to the CPU backend via the scheduler.
++                if (ggml_metal_op_is_rmbg_swin_qkv_layout(node)) {
++                    n_fuse = ggml_metal_op_rmbg_swin_qkv_layout(ctx, idx);
++                }
++            } break;
+         case GGML_OP_SSM_CONV:
+             {
+                 n_fuse = ggml_metal_op_ssm_conv(ctx, idx);
+@@ -844,6 +855,18 @@ int ggml_metal_op_unary(ggml_metal_op_t ctx, int idx) {
+     ggml_metal_encoder_set_buffer  (enc, bid_src0, 1);
+     ggml_metal_encoder_set_buffer  (enc, bid_dst,  2);
+ 
++    // ACV: flat-grid dispatch for the F32 unary path - see
++    // kernel_unary_flat_f32_f32[_4].  One thread per element keeps long 1-D
++    // activations spread over all GPU cores instead of one threadgroup.
++    if (!pipeline.cnt && op->src[0]->type == GGML_TYPE_F32) {
++        const int nth = 256;
++        const int total = args.ne0 * ne01 * ne02 * ne03;
++        const int n_tg  = (total + nth - 1) / nth;
++
++        ggml_metal_encoder_dispatch_threadgroups(enc, n_tg, 1, 1, nth, 1, 1);
++        return 1;
++    }
++
+     if (pipeline.cnt) {
+         const int n = pipeline.c4 ? ggml_nelements(op)/4 : ggml_nelements(op);
+ 
+@@ -1187,11 +1210,36 @@ int ggml_metal_op_get_rows(ggml_metal_op_t ctx, int idx) {
+         /*.nb10  =*/ nb10,
+         /*.nb11  =*/ nb11,
+         /*.nb12  =*/ nb12,
++        /*.ne11  =*/ ne11,
++        /*.ne12  =*/ ne12,
+         /*.nb1   =*/ nb1,
+         /*.nb2   =*/ nb2,
+         /*.nb3   =*/ nb3,
+     };
+ 
++    // ACV: flat-grid get_rows for the F32 aligned case - the stock per-row
++    // threadgroup dispatch serializes long row-index tensors (see
++    // kernel_get_rows_flat_f32 in ggml-metal.metal).
++    if (op->src[0]->type == GGML_TYPE_F32 && (ne00 & 3) == 0 &&
++        ggml_is_contiguous(op->src[0]) && ggml_is_contiguous(op)) {
++        auto pipeline_flat =
++                ggml_metal_library_get_pipeline_get_rows_flat(lib);
++
++        const int nth = 256;
++        const int total = ne00 * ne10 * ne11 * ne12;
++        const int n_tg = (total + nth * 4 - 1) / (nth * 4);
++
++        ggml_metal_encoder_set_pipeline(enc, pipeline_flat);
++        ggml_metal_encoder_set_bytes   (enc, &args, sizeof(args), 0);
++        ggml_metal_encoder_set_buffer  (enc, ggml_metal_get_buffer_id(op->src[0]), 1);
++        ggml_metal_encoder_set_buffer  (enc, ggml_metal_get_buffer_id(op->src[1]), 2);
++        ggml_metal_encoder_set_buffer  (enc, ggml_metal_get_buffer_id(op),         3);
++
++        ggml_metal_encoder_dispatch_threadgroups(enc, n_tg, 1, 1, nth, 1, 1);
++
++        return 1;
++    }
++
+     const int nth = std::min(args.ne00t, ggml_metal_pipeline_max_theads_per_threadgroup(pipeline));
+ 
+     const int nw0 = (args.ne00t + nth - 1)/nth;
+@@ -1598,6 +1646,62 @@ int ggml_metal_op_soft_max(ggml_metal_op_t ctx, int idx) {
+     return 1;
+ }
+ 
++static bool ggml_metal_op_is_rmbg_swin_qkv_layout(const ggml_tensor * dst) {
++    return dst && dst->op == GGML_OP_CUSTOM &&
++           dst->name[0] != '\0' &&
++           std::strncmp(dst->name, "rmbg_swin_qkv_layout_k", 22) == 0;
++}
++
++int ggml_metal_op_rmbg_swin_qkv_layout(ggml_metal_op_t ctx, int idx) {
++    ggml_tensor * op = ctx->node(idx);
++    ggml_metal_library_t lib = ctx->lib;
++    ggml_metal_encoder_t enc = ctx->enc;
++
++    ggml_tensor * qkv  = op->src[0];
++    ggml_tensor * bias = op->src[1];
++
++    GGML_ASSERT(qkv->type  == GGML_TYPE_F32);
++    GGML_ASSERT(bias->type == GGML_TYPE_F32);
++    GGML_ASSERT(op->type   == GGML_TYPE_F32);
++    GGML_ASSERT(ggml_is_contiguous(qkv) && ggml_is_contiguous(bias) &&
++                ggml_is_contiguous(op));
++
++    int kind = -1;
++    GGML_ASSERT(std::sscanf(ggml_get_name(op), "rmbg_swin_qkv_layout_k%d", &kind) == 1 &&
++                kind >= 0 && kind < 3);
++    GGML_ASSERT(qkv->ne[0] % 3 == 0);
++    GGML_ASSERT(qkv->ne[0] / 3 == op->ne[0] * op->ne[2]);
++    GGML_ASSERT(qkv->ne[1] == op->ne[1] && qkv->ne[2] == op->ne[3]);
++
++    ggml_metal_kargs_rmbg_swin_qkv_layout args = {
++        /*.C     =*/ (int32_t) (qkv->ne[0] / 3),
++        /*.N     =*/ (int32_t)  qkv->ne[1],
++        /*.heads =*/ (int32_t)  op->ne[2],
++        /*.nW    =*/ (int32_t)  qkv->ne[2],
++        /*.kind  =*/ kind,
++        /*.total =*/ (int32_t) (ggml_nelements(qkv) / 3),
++    };
++
++    auto pipeline = ggml_metal_library_get_pipeline_rmbg_swin_qkv_layout(lib);
++
++    ggml_metal_encoder_set_pipeline(enc, pipeline);
++    ggml_metal_encoder_set_bytes(enc, &args, sizeof(args), 0);
++    ggml_metal_encoder_set_buffer(enc, ggml_metal_get_buffer_id(qkv),  1);
++    ggml_metal_encoder_set_buffer(enc, ggml_metal_get_buffer_id(bias), 2);
++    ggml_metal_encoder_set_buffer(enc, ggml_metal_get_buffer_id(op),   3);
++
++    // ACV: one thread per element, or per 4 channels when C and hd are both
++    // multiples of 4 (matches the kernel fast path); 256 threads per group.
++    const int total = args.total;
++    const int per_thread =
++            ((args.C & 3) == 0 && ((args.C / args.heads) & 3) == 0) ? 4 : 1;
++    ggml_metal_encoder_dispatch_threadgroups(
++            enc, (total + 255 * per_thread) / (256 * per_thread), 1, 1, 256,
++            1, 1);
++
++    return 1;
++}
++
+ int ggml_metal_op_ssm_conv(ggml_metal_op_t ctx, int idx) {
+     ggml_tensor * op = ctx->node(idx);
+ 
+@@ -2437,8 +2541,14 @@ int ggml_metal_op_mul_mat(ggml_metal_op_t ctx, int idx) {
+         !ggml_is_transposed(op->src[1]) &&
+         // for now the matrix-matrix multiplication kernel only works on A14+/M1+ SoCs
+         // AMD GPU and older A-chips will reuse matrix-vector multiplication kernel
+-        props_dev->has_simdgroup_mm && ne00 >= 64 && ne11 > ne11_mm_min) {
+-        //GGML_LOG_INFO("matrix: ne00 = %6d, ne01 = %6d, ne02 = %6d, ne11 = %6d, ne12 = %6d\n", ne00, ne01, ne02, ne11, ne12);
++        // ACV: K threshold relaxed from 64 to 16 for the F16 path - the short-K
++        // conv GEMMs (3x3xRGB=27, patch_embed=48) were stuck on the scalar
++        // mul_mv kernel at ~0.1 TFLOPS; the F16 matrix-unit mul_mm is faster
++        // even at K=16.  F32 stays at 64 (measured regression at K<64).
++        props_dev->has_simdgroup_mm &&
++        ((ne00 >= 16 && op->src[0]->type == GGML_TYPE_F16 && op->src[1]->type == GGML_TYPE_F16) ||
++         (ne00 >= 64)) &&
++        ne11 > ne11_mm_min) {
+ 
+         // some Metal matrix data types require aligned pointers
+         // ref: https://developer.apple.com/metal/Metal-Shading-Language-Specification.pdf (Table 2.5)
+@@ -2965,7 +3075,10 @@ int ggml_metal_op_flash_attn_ext(ggml_metal_op_t ctx, int idx) {
      const float m0 = powf(2.0f, -(max_bias       ) / n_head_log2);
      const float m1 = powf(2.0f, -(max_bias / 2.0f) / n_head_log2);
  
@@ -129,7 +604,59 @@ diff -ruN a/src/ggml-metal/ggml-metal-ops.cpp b/src/ggml-metal/ggml-metal-ops.cp
  
      ggml_metal_buffer_id bid_src0 = ggml_metal_get_buffer_id(op->src[0]);
      ggml_metal_buffer_id bid_src1 = ggml_metal_get_buffer_id(op->src[1]);
-@@ -4421,11 +4424,13 @@
+@@ -3530,6 +3643,20 @@ int ggml_metal_op_bin(ggml_metal_op_t ctx, int idx) {
+     ggml_metal_encoder_set_buffer  (enc, bid_src1, 2);
+     ggml_metal_encoder_set_buffer  (enc, bid_dst,  3);
+ 
++    // ACV: flat-grid dispatch for the no-fusion F32 path - see
++    // kernel_bin_flat_f32_f32_f32[_4].  One thread per element (or per 4
++    // float4s when the row width allows) keeps long 1-D tensors spread over
++    // all GPU cores instead of one threadgroup.
++    if (n_fuse == 1 && op->src[0]->type == GGML_TYPE_F32) {
++        const int nth = 256;
++        const int total = args.ne0 * ne01 * ne02 * ne03;
++        const int per_thread = (pipeline.c4 && (args.ne0 & 3) == 0) ? 4 : 1;
++        const int n_tg  = (total + nth * per_thread - 1) / (nth * per_thread);
++
++        ggml_metal_encoder_dispatch_threadgroups(enc, n_tg, 1, 1, nth, 1, 1);
++        return 1;
++    }
++
+     if (pipeline.cnt) {
+         ggml_metal_encoder_dispatch_threadgroups(enc, args.ne0, ggml_nrows(op), 1, 1, 1, 1);
+     } else {
+@@ -3982,10 +4109,30 @@ int ggml_metal_op_im2col(ggml_metal_op_t ctx, int idx) {
+         /*.KH   =*/ KH,
+         /*.KW   =*/ KW,
+         /*.KHW  =*/ KH * KW,
++        /*.OH   =*/ OH,
++        /*.OW   =*/ OW,
+     };
+ 
+     auto pipeline = ggml_metal_library_get_pipeline_im2col(lib, op);
+ 
++    // ACV: flat-grid fast path (matches the pipeline selection in the
++    // library getter): one-dimensional grid over CHW*OH*OW elements with 256
++    // threads per threadgroup, 16 channels per thread when CHW is a multiple
++    // of 16 (the kernel falls back to 4 channels per thread otherwise).
++    if (is_2D && N == 1 && (CHW & 3) == 0) {
++        const uint64_t total = (uint64_t) CHW * OH * OW;
++        const uint64_t per_thread = (CHW & 15) == 0 ? 16 : 4;
++        const uint64_t n_tg  = (total + 256 * per_thread - 1) / (256 * per_thread);
++
++        ggml_metal_encoder_set_pipeline(enc, pipeline);
++        ggml_metal_encoder_set_bytes   (enc, &args, sizeof(args), 0);
++        ggml_metal_encoder_set_buffer  (enc, ggml_metal_get_buffer_id(op->src[1]), 1);
++        ggml_metal_encoder_set_buffer  (enc, ggml_metal_get_buffer_id(op),         2);
++
++        ggml_metal_encoder_dispatch_threadgroups(enc, n_tg, 1, 1, 256, 1, 1);
++        return 1;
++    }
++
+     if (KH*KW <= ggml_metal_pipeline_max_theads_per_threadgroup(pipeline)) {
+         const uint64_t ntptg0 = std::min(ggml_metal_pipeline_max_theads_per_threadgroup(pipeline)/(KH*KW), N);
+ 
+@@ -4421,11 +4568,13 @@ int ggml_metal_op_conv_transpose_2d(ggml_metal_op_t ctx, int idx) {
      ggml_metal_encoder_set_buffer  (enc, ggml_metal_get_buffer_id(op->src[1]), 2);
      ggml_metal_encoder_set_buffer  (enc, ggml_metal_get_buffer_id(op),         3);
  
@@ -146,10 +673,541 @@ diff -ruN a/src/ggml-metal/ggml-metal-ops.cpp b/src/ggml-metal/ggml-metal-ops.cp
  
      return 1;
  }
-diff -ruN a/src/ggml-metal/ggml-metal.metal b/src/ggml-metal/ggml-metal.metal
---- a/src/ggml-metal/ggml-metal.metal	2026-08-04 16:44:52
-+++ b/src/ggml-metal/ggml-metal.metal	2026-08-08 09:54:35
-@@ -5474,48 +5474,52 @@
+diff --git a/src/ggml-metal/ggml-metal-ops.h b/src/ggml-metal/ggml-metal-ops.h
+--- a/src/ggml-metal/ggml-metal-ops.h
++++ b/src/ggml-metal/ggml-metal-ops.h
+@@ -58,6 +58,7 @@ int ggml_metal_op_lightning_indexer (ggml_metal_op_t ctx, int idx);
+ int ggml_metal_op_dsv4_hc           (ggml_metal_op_t ctx, int idx);
+ int ggml_metal_op_soft_max          (ggml_metal_op_t ctx, int idx);
+ int ggml_metal_op_ssm_conv          (ggml_metal_op_t ctx, int idx);
++int ggml_metal_op_rmbg_swin_qkv_layout (ggml_metal_op_t ctx, int idx);
+ int ggml_metal_op_ssm_scan          (ggml_metal_op_t ctx, int idx);
+ int ggml_metal_op_rwkv              (ggml_metal_op_t ctx, int idx);
+ int ggml_metal_op_gated_delta_net   (ggml_metal_op_t ctx, int idx);
+diff --git a/src/ggml-metal/ggml-metal.cpp b/src/ggml-metal/ggml-metal.cpp
+--- a/src/ggml-metal/ggml-metal.cpp
++++ b/src/ggml-metal/ggml-metal.cpp
+@@ -565,6 +565,14 @@ static void ggml_backend_metal_set_n_cb(ggml_backend_t backend, int n_cb) {
+     ggml_metal_set_n_cb(ctx, n_cb);
+ }
+ 
++void ggml_backend_metal_set_progress_callback(ggml_backend_t backend, ggml_metal_progress_cb progress_callback, void * user_data) {
++    GGML_ASSERT(ggml_backend_is_metal(backend));
++
++    ggml_metal_t ctx = (ggml_metal_t)backend->context;
++
++    ggml_metal_set_progress_callback(ctx, progress_callback, user_data);
++}
++
+ static ggml_backend_i ggml_backend_metal_i = {
+     /* .get_name                = */ ggml_backend_metal_name,
+     /* .free                    = */ ggml_backend_metal_free,
+@@ -872,6 +880,9 @@ static void * ggml_backend_metal_get_proc_address(ggml_backend_reg_t reg, const
+     if (strcmp(name, "ggml_backend_get_features") == 0) {
+         return (void *)ggml_backend_metal_get_features;
+     }
++    if (strcmp(name, "ggml_backend_metal_set_progress_callback") == 0) {
++        return (void *)ggml_backend_metal_set_progress_callback;
++    }
+ 
+     return NULL;
+ 
+diff --git a/src/ggml-metal/ggml-metal.metal b/src/ggml-metal/ggml-metal.metal
+--- a/src/ggml-metal/ggml-metal.metal
++++ b/src/ggml-metal/ggml-metal.metal
+@@ -1255,6 +1255,142 @@ template [[host_name("kernel_unary_f32_f32_4")]] kernel kernel_unary_t kernel_un
+ template [[host_name("kernel_unary_f16_f16")]]   kernel kernel_unary_t kernel_unary_impl<half,   half,   float>;
+ template [[host_name("kernel_unary_f16_f16_4")]] kernel kernel_unary_t kernel_unary_impl<half4,  half4,  float4>;
+ 
++// ACV: flat-grid unary kernel.  The stock kernel launches one threadgroup
++// per row; for a [1, 3.2M] activation that is a single thread on one GPU
++// core.  This variant fans the grid out over every element (or float4),
++// mirroring kernel_bin_flat; op selection stays a function constant so only
++// the requested op is compiled into each pipeline.
++template <typename T0, typename T, typename TC>
++kernel void kernel_unary_flat_impl(
++        constant ggml_metal_kargs_unary & args,
++        device const char * src0,
++        device       char * dst,
++        uint3   tgpig[[threadgroup_position_in_grid]],
++        ushort3 tpitg[[thread_position_in_threadgroup]],
++        ushort3   ntg[[threads_per_threadgroup]]) {
++#define FC_OP  FC_unary_op
++
++    const int idx = tgpig.x * ntg.x + tpitg.x;
++    const int total = args.ne0 * args.ne1 * args.ne2 * args.ne3;
++    if (idx >= total) {
++        return;
++    }
++
++    int rem = idx;
++    const int i0  = rem % args.ne0; rem /= args.ne0;
++    const int i01 = rem % args.ne1; rem /= args.ne1;
++    const int i02 = rem % args.ne2; rem /= args.ne2;
++    const int i03 = rem;
++
++    device const T0 * src0_ptr = (device const T0 *) (src0 + i03*args.nb3 + i02*args.nb2 + i01*args.nb1);
++    device       T  * dst_ptr  = (device       T  *) (dst  + i03*args.nb3 + i02*args.nb2 + i01*args.nb1);
++
++    const TC x = (TC) src0_ptr[i0];
++
++    if (FC_OP == OP_UNARY_NUM_SCALE) {
++        dst_ptr[i0] = (T) (args.scale * x + args.bias);
++    }
++    if (FC_OP == OP_UNARY_NUM_FILL) {
++        dst_ptr[i0] = (T) args.val;
++    }
++    if (FC_OP == OP_UNARY_NUM_CLAMP) {
++        dst_ptr[i0] = (T) clamp(x, args.min, args.max);
++    }
++    if (FC_OP == OP_UNARY_NUM_SQR) {
++        dst_ptr[i0] = (T) (x * x);
++    }
++    if (FC_OP == OP_UNARY_NUM_SQRT) {
++        dst_ptr[i0] = (T) sqrt(x);
++    }
++    if (FC_OP == OP_UNARY_NUM_SIN) {
++        dst_ptr[i0] = (T) sin(x);
++    }
++    if (FC_OP == OP_UNARY_NUM_COS) {
++        dst_ptr[i0] = (T) cos(x);
++    }
++    if (FC_OP == OP_UNARY_NUM_LOG) {
++        dst_ptr[i0] = (T) log(x);
++    }
++    if (FC_OP == OP_UNARY_NUM_LEAKY_RELU) {
++        dst_ptr[i0] = (T) (TC(x > 0)*x + TC(x <= 0)*(x * args.slope));
++    }
++    if (FC_OP == OP_UNARY_NUM_TANH) {
++        dst_ptr[i0] = (T) precise::tanh(x);
++    }
++    if (FC_OP == OP_UNARY_NUM_RELU) {
++        dst_ptr[i0] = (T) fmax(0, x);
++    }
++    if (FC_OP == OP_UNARY_NUM_SIGMOID) {
++        dst_ptr[i0] = (T) (1 / (1 + exp(-x)));
++    }
++    if (FC_OP == OP_UNARY_NUM_GELU) {
++        dst_ptr[i0] = (T) (0.5*x*(1 + precise::tanh(SQRT_2_OVER_PI*x*(1 + GELU_COEF_A*x*x))));
++    }
++    if (FC_OP == OP_UNARY_NUM_GELU_ERF) {
++        dst_ptr[i0] = (T) (0.5*x*(1 + erf_approx(SQRT_2_INV*x)));
++    }
++    if (FC_OP == OP_UNARY_NUM_GELU_QUICK) {
++        dst_ptr[i0] = (T) (x * (1/(1 + exp(GELU_QUICK_COEF*x))));
++    }
++    if (FC_OP == OP_UNARY_NUM_SILU) {
++        dst_ptr[i0] = (T) (x / (1 + exp(-x)));
++    }
++    if (FC_OP == OP_UNARY_NUM_NEG) {
++        dst_ptr[i0] = (T) -x;
++    }
++    if (FC_OP == OP_UNARY_NUM_ABS) {
++        dst_ptr[i0] = (T) fabs(x);
++    }
++    if (FC_OP == OP_UNARY_NUM_SGN) {
++        dst_ptr[i0] = T(x > 0) - T(x < 0);
++    }
++    if (FC_OP == OP_UNARY_NUM_STEP) {
++        dst_ptr[i0] = T(x > 0);
++    }
++    if (FC_OP == OP_UNARY_NUM_HARDSWISH) {
++        dst_ptr[i0] = (T) (x * fmax(0, fmin(1, x/6 + 0.5)));
++    }
++    if (FC_OP == OP_UNARY_NUM_HARDSIGMOID) {
++        dst_ptr[i0] = (T) fmax(0, fmin(1, x/6 + 0.5));
++    }
++    if (FC_OP == OP_UNARY_NUM_EXP) {
++        dst_ptr[i0] = (T) exp(x);
++    }
++    if (FC_OP == OP_UNARY_NUM_SOFTPLUS) {
++        dst_ptr[i0] = (T) select(log(1 + exp(x)), x, x > 20);
++    }
++    if (FC_OP == OP_UNARY_NUM_EXPM1) {
++        dst_ptr[i0] = (T) (exp(x) - 1);
++    }
++    if (FC_OP == OP_UNARY_NUM_FLOOR) {
++        dst_ptr[i0] = (T) floor(x);
++    }
++    if (FC_OP == OP_UNARY_NUM_CEIL) {
++        dst_ptr[i0] = (T) ceil(x);
++    }
++    if (FC_OP == OP_UNARY_NUM_ROUND) {
++        dst_ptr[i0] = (T) round(x);
++    }
++    if (FC_OP == OP_UNARY_NUM_TRUNC) {
++        dst_ptr[i0] = (T) trunc(x);
++    }
++    if (FC_OP == OP_UNARY_NUM_XIELU) {
++        const TC xi      = x;
++        const TC gate    = TC(xi > TC(0.0f));
++        const TC clamped = fmin(xi, TC(args.val));
++        const TC y_pos   = TC(args.scale) * xi * xi + TC(args.bias) * xi;
++        const TC y_neg   = (exp(clamped) - TC(1.0f) - xi) * TC(args.slope) + TC(args.bias) * xi;
++        dst_ptr[i0] = (T) (gate * y_pos + (TC(1.0f) - gate) * y_neg);
++    }
++
++#undef FC_OP
++}
++
++typedef decltype(kernel_unary_flat_impl<float,  float,  float>) kernel_unary_flat_t;
++
++template [[host_name("kernel_unary_flat_f32_f32")]]   kernel kernel_unary_flat_t kernel_unary_flat_impl<float,  float,  float>;
++template [[host_name("kernel_unary_flat_f32_f32_4")]] kernel kernel_unary_flat_t kernel_unary_flat_impl<float4, float4, float4>;
++
+ kernel void kernel_silu_back_f32(
+         constant ggml_metal_kargs_silu_back & args,
+         device const float * dy,
+@@ -1435,6 +1571,123 @@ template [[host_name("kernel_bin_fuse_f32_f32_f32_4")]] kernel kernel_bin_fuse_t
+ template [[host_name("kernel_bin_fuse_f16_f16_f16")]]   kernel kernel_bin_fuse_t kernel_bin_fuse_impl<half,   half,   half>;
+ template [[host_name("kernel_bin_fuse_f16_f16_f16_4")]] kernel kernel_bin_fuse_t kernel_bin_fuse_impl<half4,  half4,  half4>;
+ 
++// ACV: flat vectorized bin kernel.  The stock bin dispatch launches one
++// threadgroup per row, which for a long 1-D tensor (e.g. the RMBG decoder
++// adds, [3.2M, 1]) leaves a single threadgroup running on one GPU core.
++// This variant fans the grid out over every float4 element so all cores
++// participate; broadcast indices are handled modulo per dimension.
++template <typename T0, typename T1, typename T>
++kernel void kernel_bin_flat_impl(
++        constant ggml_metal_kargs_bin & args,
++        device const char * src0,
++        device const char * src1,
++        device       char * dst,
++        uint3   tgpig[[threadgroup_position_in_grid]],
++        ushort3 tpitg[[thread_position_in_threadgroup]],
++        ushort3   ntg[[threads_per_threadgroup]]) {
++
++    const int idx = tgpig.x * ntg.x + tpitg.x;
++    const int total = args.ne0 * args.ne01 * args.ne02 * args.ne03;
++    if (idx >= total) {
++        return;
++    }
++
++    // ACV fast path: 4 contiguous elements (float4s) per thread when the
++    // row width is a multiple of 4.  The flat decomposition is computed once
++    // and amortized over 4 elements; the per-element src1 broadcast modulo is
++    // eliminated for the two common cases (scalar broadcast, full row).
++    if ((args.ne0 & 3) == 0) {
++        const int total4 = total >> 2;
++        if (idx >= total4) {
++            return;
++        }
++        const int di = idx << 2;
++
++        int rem = di;
++        const int i0  = rem % args.ne0; rem /= args.ne0;
++        const int i01 = rem % args.ne01; rem /= args.ne01;
++        const int i02 = rem % args.ne02; rem /= args.ne02;
++        const int i03 = rem;
++
++        // broadcast indices into src1
++        const int i13 = i03 % args.ne13;
++        const int i12 = i02 % args.ne12;
++        const int i11 = i01 % args.ne11;
++
++        device const T0 * a = (device const T0 *) (src0 + i03*args.nb03 + i02*args.nb02 + i01*args.nb01);
++        device const T1 * b = (device const T1 *) (src1 + args.o1[0]  + i13*args.nb13 + i12*args.nb12 + i11*args.nb11);
++        device       T  * d = (device       T  *) (dst  + i03*args.nb3  + i02*args.nb2  + i01*args.nb1);
++
++        // scalar broadcast (ne10 == 0 after the c4 halving of a 1-wide row)
++        // and full-row broadcast skip the modulo entirely; any other stride
++        // keeps it per element.
++        const bool b_scalar = args.ne10 <= 1;
++        const bool b_row    = args.ne10 == args.ne0;
++
++        if (FC_bin_op == 0) {
++            for (int j = 0; j < 4; ++j) {
++                const int i0j = i0 + j;
++                const int i10 = b_scalar ? 0 : (b_row ? i0j : i0j % args.ne10);
++                d[i0j] = a[i0j] + b[i10];
++            }
++        } else if (FC_bin_op == 1) {
++            for (int j = 0; j < 4; ++j) {
++                const int i0j = i0 + j;
++                const int i10 = b_scalar ? 0 : (b_row ? i0j : i0j % args.ne10);
++                d[i0j] = a[i0j] - b[i10];
++            }
++        } else if (FC_bin_op == 2) {
++            for (int j = 0; j < 4; ++j) {
++                const int i0j = i0 + j;
++                const int i10 = b_scalar ? 0 : (b_row ? i0j : i0j % args.ne10);
++                d[i0j] = a[i0j] * b[i10];
++            }
++        } else {
++            for (int j = 0; j < 4; ++j) {
++                const int i0j = i0 + j;
++                const int i10 = b_scalar ? 0 : (b_row ? i0j : i0j % args.ne10);
++                d[i0j] = a[i0j] / b[i10];
++            }
++        }
++        return;
++    }
++
++    // decompose the flat index into (i0, i01, i02, i03)
++    int rem = idx;
++    const int i0  = rem % args.ne0; rem /= args.ne0;
++    const int i01 = rem % args.ne01; rem /= args.ne01;
++    const int i02 = rem % args.ne02; rem /= args.ne02;
++    const int i03 = rem;
++
++    // broadcast indices into src1
++    const int i13 = i03 % args.ne13;
++    const int i12 = i02 % args.ne12;
++    const int i11 = i01 % args.ne11;
++    const int i10 = i0  % args.ne10;
++
++    device const T0 * a = (device const T0 *) (src0 + i03*args.nb03 + i02*args.nb02 + i01*args.nb01 + i0*sizeof(T0));
++    device const T1 * b = (device const T1 *) (src1 + args.o1[0]  + i13*args.nb13 + i12*args.nb12 + i11*args.nb11 + i10*sizeof(T1));
++    device       T  * d = (device       T  *) (dst  + i03*args.nb3  + i02*args.nb2  + i01*args.nb1  + i0*sizeof(T));
++
++    if (FC_bin_op == 0) {
++        *d = *a + *b;
++    }
++    if (FC_bin_op == 1) {
++        *d = *a - *b;
++    }
++    if (FC_bin_op == 2) {
++        *d = *a * *b;
++    }
++    if (FC_bin_op == 3) {
++        *d = *a / *b;
++    }
++}
++
++typedef decltype(kernel_bin_flat_impl<float4, float4, float4>) kernel_bin_flat_t;
++
++template [[host_name("kernel_bin_flat_f32_f32_f32_4")]] kernel kernel_bin_flat_t kernel_bin_flat_impl<float4, float4, float4>;
++template [[host_name("kernel_bin_flat_f32_f32_f32")]]   kernel kernel_bin_flat_t kernel_bin_flat_impl<float,   float,   float>;
++
+ kernel void kernel_add_id(
+         constant ggml_metal_kargs_add_id & args,
+         device const char * src0,
+@@ -2185,6 +2438,74 @@ template [[host_name("kernel_soft_max_f16_4")]] kernel kernel_soft_max_4_t kerne
+ template [[host_name("kernel_soft_max_f32_4")]] kernel kernel_soft_max_4_t kernel_soft_max_4<float4>;
+ 
+ // ref: ggml.c:ggml_compute_forward_ssm_conv_f32
++// ACV RMBG fused QKV split + bias for the Swin attention layout:
++// qkv [3C, N, nW] (+ bias [3C]) -> dst [hd, N, heads, nW] contiguous
++// segment (kind 0/1/2 selects q/k/v).  Replaces the primitive
++// add + 3x(cont + permute) chain with one pass; the F32 flash-attn
++// path consumes this exact layout directly.
++kernel void kernel_rmbg_swin_qkv_layout_f32(
++        constant ggml_metal_kargs_rmbg_swin_qkv_layout & args,
++        device const  float * qkv,
++        device const  float * bias,
++        device       float * dst,
++        uint3 tgpig[[threadgroup_position_in_grid]],
++        uint3 tpitg[[thread_position_in_threadgroup]]) {
++    const int64_t index = (int64_t) tgpig.x * 256 + tpitg.x;
++    if (index >= args.total) {
++        return;
++    }
++    // ACV fast path: 4 channels per thread.  The channel decomposition is
++    // computed once and amortized over 4 elements; qkv and bias reads stay
++    // contiguous (vectorized float4), and the dst head/lane walk only needs
++    // one head boundary check per group since hd is a multiple of 4.
++    if ((args.C & 3) == 0 && ((args.C / args.heads) & 3) == 0) {
++        const int64_t total4 = args.total >> 2;
++        if (index >= total4) {
++            return;
++        }
++        const int64_t di = index << 2;
++        const int64_t c0    = di % args.C;
++        const int64_t token = (di / args.C) % args.N;
++        const int64_t win   = di / ((int64_t) args.C * args.N);
++        const int64_t hd    = args.C / args.heads;
++        const int64_t src_base = (int64_t) args.kind * args.C +
++                                 3 * args.C * (token + (int64_t) args.N * win);
++        const int64_t bias_base = (int64_t) args.kind * args.C;
++
++        device const float4 * qv =
++                (device const float4 *) (qkv + src_base + c0);
++        device const float4 * bs =
++                (device const float4 *) (bias + bias_base + c0);
++        const float4 v = *qv + *bs;
++
++        int64_t head = c0 / hd;
++        int64_t lane = c0 % hd;
++        int64_t dst_off =
++                hd * (token + (int64_t) args.N * (head + args.heads * win));
++        for (int j = 0; j < 4; ++j) {
++            dst[dst_off + lane] = v[j];
++            ++lane;
++            if (lane == hd) {
++                lane = 0;
++                dst_off += hd * args.N;
++            }
++        }
++        return;
++    }
++    const int channel = (int) (index % args.C);
++    const int token   = (int) ((index / args.C) % args.N);
++    const int win     = (int) (index / ((int64_t) args.C * args.N));
++    const int hd      = args.C / args.heads;
++    const int head    = channel / hd;
++    const int lane    = channel % hd;
++    const int64_t src = channel + (int64_t) args.kind * args.C +
++                        (int64_t) 3 * args.C * (token + (int64_t) args.N * win);
++    const int64_t dst_idx =
++            lane + (int64_t) hd * (token + (int64_t) args.N *
++                                              (head + args.heads * win));
++    dst[dst_idx] = qkv[src] + bias[channel + (int64_t) args.kind * args.C];
++}
++
+ kernel void kernel_ssm_conv_f32_f32(
+         constant ggml_metal_kargs_ssm_conv & args,
+         device const  void * src0,
+@@ -4944,6 +5265,149 @@ kernel void kernel_im2col(
+ template [[host_name("kernel_im2col_f32")]] kernel im2col_t kernel_im2col<float>;
+ template [[host_name("kernel_im2col_f16")]] kernel im2col_t kernel_im2col<half>;
+ 
++// ACV: flat-grid im2col kernel.  The stock kernel dispatches one tiny
++// threadgroup per (IC, OH, OW) grid cell - with N=1 that is 9 threads per
++// threadgroup and O(100M) threadgroups for a 1024x1024 feature map, so
++// threadgroup scheduling overhead (not memory bandwidth) dominates.  Here a
++// one-dimensional grid over the output elements writes 4 contiguous channels
++// per thread with a vectorized store, cutting the threadgroup count by ~4K.
++template <typename T>
++struct im2col_vec4 { typedef vec<T, 4> type; };
++
++template <typename T>
++kernel void kernel_im2col_fast(
++        constant ggml_metal_kargs_im2col & args,
++        device const float * x,
++        device        char * dst,
++        uint3 tgpig[[threadgroup_position_in_grid]],
++        uint3  tgpg[[threadgroups_per_grid]],
++        uint3 tpitg[[thread_position_in_threadgroup]],
++        uint3   ntg[[threads_per_threadgroup]]) {
++
++    const int64_t CHW = args.CHW;
++    const int64_t OHW = (int64_t) args.OH * args.OW;
++    const int64_t total = (int64_t) args.N * CHW * OHW;
++
++    const int64_t tid = (int64_t) tgpig.x * ntg.x + tpitg.x;
++
++    // fast path: 16 contiguous channels per thread (4 vectorized stores).
++    // Channel decomposition advances by incrementing hw with carry into ic,
++    // so only two divisions per element remain (ikh/ikw); CHW % 16 == 0 is
++    // enforced by the dispatcher, keeping every store aligned.
++    if ((CHW & 15) == 0) {
++        const int64_t total16 = total >> 4;
++        if (tid >= total16) {
++            return;
++        }
++        const int64_t di16 = tid << 4;
++        const int64_t n    = di16 / (CHW * OHW);
++        const int64_t rem  = di16 % (CHW * OHW);
++        const int64_t pos  = rem / CHW; // oh * OW + ow
++        const int64_t c    = rem % CHW;
++        const int64_t oh   = pos / args.OW;
++        const int64_t ow   = pos % args.OW;
++
++        int64_t ic  = c / args.KHW;
++        int64_t hw  = c % args.KHW;
++        int64_t ikh = hw / args.KW;
++        int64_t ikw = hw % args.KW;
++
++        typename im2col_vec4<T>::type v[4];
++        for (int j = 0; j < 16; ++j) {
++            const int64_t iih = oh * args.s1 + ikh * args.d1 - args.p1;
++            const int64_t iiw = ow * args.s0 + ikw * args.d0 - args.p0;
++            if (iih < 0 || iih >= args.IH || iiw < 0 || iiw >= args.IW) {
++                v[j >> 2][j & 3] = (T) 0.0f;
++            } else {
++                v[j >> 2][j & 3] =
++                        (T) x[n * args.ofs0 + ic * args.ofs1 + iih * args.IW + iiw];
++            }
++            // advance hw with carry into ikw/ikh/ic - no division inside
++            // the group
++            ++hw;
++            if (hw == args.KHW) {
++                hw = 0;
++                ikh = 0;
++                ikw = 0;
++                ++ic;
++            } else {
++                ++ikw;
++                if (ikw == args.KW) {
++                    ikw = 0;
++                    ++ikh;
++                }
++            }
++        }
++        device typename im2col_vec4<T>::type * pdst =
++                (device typename im2col_vec4<T>::type *) dst;
++        pdst[(di16 >> 2) + 0] = v[0];
++        pdst[(di16 >> 2) + 1] = v[1];
++        pdst[(di16 >> 2) + 2] = v[2];
++        pdst[(di16 >> 2) + 3] = v[3];
++        return;
++    }
++
++    // fast path: 4 contiguous channels per thread, vectorized store.  The
++    // destination layout is [CHW, OW, OH, N] with CHW % 4 == 0 enforced by
++    // the dispatcher, so the store stays 16/8-byte aligned.
++    if ((CHW & 3) == 0) {
++        const int64_t total4 = total >> 2;
++        if (tid >= total4) {
++            return;
++        }
++        const int64_t di4 = tid << 2;
++        const int64_t n   = di4 / (CHW * OHW);
++        const int64_t rem = di4 % (CHW * OHW);
++        const int64_t pos = rem / CHW; // oh * OW + ow
++        const int64_t c   = rem % CHW;
++        const int64_t oh  = pos / args.OW;
++        const int64_t ow  = pos % args.OW;
++
++        typename im2col_vec4<T>::type v;
++        for (int j = 0; j < 4; ++j) {
++            const int64_t cj  = c + j;
++            const int64_t ic  = cj / args.KHW;
++            const int64_t hw  = cj % args.KHW;
++            const int64_t ikh = hw / args.KW;
++            const int64_t ikw = hw % args.KW;
++            const int64_t iih = oh * args.s1 + ikh * args.d1 - args.p1;
++            const int64_t iiw = ow * args.s0 + ikw * args.d0 - args.p0;
++            if (iih < 0 || iih >= args.IH || iiw < 0 || iiw >= args.IW) {
++                v[j] = (T) 0.0f;
++            } else {
++                v[j] = (T) x[n * args.ofs0 + ic * args.ofs1 + iih * args.IW + iiw];
++            }
++        }
++        ((device typename im2col_vec4<T>::type *) dst)[di4 >> 2] = v;
++        return;
++    }
++
++    // scalar fallback (CHW not a multiple of 4)
++    if (tid >= total) {
++        return;
++    }
++    const int64_t n   = tid / (CHW * OHW);
++    const int64_t rem = tid % (CHW * OHW);
++    const int64_t pos = rem / CHW;
++    const int64_t c   = rem % CHW;
++    const int64_t oh  = pos / args.OW;
++    const int64_t ow  = pos % args.OW;
++    const int64_t ic  = c / args.KHW;
++    const int64_t hw  = c % args.KHW;
++    const int64_t ikh = hw / args.KW;
++    const int64_t ikw = hw % args.KW;
++    const int64_t iih = oh * args.s1 + ikh * args.d1 - args.p1;
++    const int64_t iiw = ow * args.s0 + ikw * args.d0 - args.p0;
++    float val = 0.0f;
++    if (iih >= 0 && iih < args.IH && iiw >= 0 && iiw < args.IW) {
++        val = x[n * args.ofs0 + ic * args.ofs1 + iih * args.IW + iiw];
++    }
++    ((device T *) dst)[tid] = (T) val;
++}
++
++template [[host_name("kernel_im2col_fast_f32")]] kernel im2col_t kernel_im2col_fast<float>;
++template [[host_name("kernel_im2col_fast_f16")]] kernel im2col_t kernel_im2col_fast<half>;
++
+ // TODO: optimize
+ typedef void (im2col_ext_t)(
+         constant ggml_metal_kargs_im2col & args,
+@@ -5474,48 +5938,52 @@ kernel void kernel_conv_transpose_2d(
      const int64_t out_y = tgpig[1];
      const int64_t out_c = tgpig[2];
  
@@ -223,3 +1281,54 @@ diff -ruN a/src/ggml-metal/ggml-metal.metal b/src/ggml-metal/ggml-metal.metal
      }
  }
  
+@@ -9901,6 +10369,45 @@ kernel void kernel_get_rows_f(
+ typedef decltype(kernel_get_rows_f<float, float>) get_rows_f_t;
+ 
+ template [[host_name("kernel_get_rows_f32")]]  kernel get_rows_f_t kernel_get_rows_f<float, float>;
++
++// ACV: flat-grid get_rows for the F32 case.  The stock kernel launches one
++// threadgroup per gathered row, which for a [64, 3.2M] row index tensor is
++// 3.2M threadgroups of 64 threads - threadgroup scheduling bound.  Here a
++// one-dimensional grid covers every float4 of the output so all cores
++// participate; the src1 row index is decomposed once per thread.
++kernel void kernel_get_rows_flat_f32(
++        constant ggml_metal_kargs_get_rows & args,
++        device const void * src0,
++        device const void * src1,
++        device       void * dst,
++        uint3 tgpig[[threadgroup_position_in_grid]],
++        ushort tiitg[[thread_index_in_threadgroup]],
++        ushort3 ntg[[threads_per_threadgroup]]) {
++    const int32_t idx = tgpig.x * ntg.x + tiitg;
++    const int32_t total = args.ne00 * args.ne10 * args.ne11 * args.ne12;
++    const int32_t total4 = total >> 2; // ne00 % 4 == 0 enforced by dispatch
++    if (idx >= total4) {
++        return;
++    }
++    const int32_t di = idx << 2;
++    const int32_t i0 = di % args.ne00; // 4-aligned
++    const int32_t i1 = di / args.ne00;
++
++    const int32_t i10 = i1 % args.ne10;
++    const int32_t i11 = (i1 / args.ne10) % args.ne11;
++    const int32_t i12 = i1 / (args.ne10 * args.ne11);
++
++    const int32_t r = ((const device int32_t *) ((const device char *) src1 + i12*args.nb12 + i11*args.nb11 + i10*args.nb10))[0];
++
++    const int32_t i02 = i11;
++    const int32_t i03 = i12;
++
++    device const float4 * psrc = (device const float4 *) ((const device char *) src0 + i03*args.nb03 + i02*args.nb02 + (int64_t) r*args.nb01 + i0*4);
++    device       float4 * pdst = (device       float4 *) ((      device char *)  dst + i12*args.nb3  + i11*args.nb2  + i10*args.nb1  + i0*4);
++
++    *pdst = *psrc;
++}
++
+ template [[host_name("kernel_get_rows_f16")]]  kernel get_rows_f_t kernel_get_rows_f<half,  float>;
+ template [[host_name("kernel_get_rows_i32")]]  kernel get_rows_f_t kernel_get_rows_f<int32_t, int32_t>;
+ #if defined(GGML_METAL_HAS_BF16)
+@@ -11617,3 +12124,4 @@ kernel void kernel_dsv4_hc_post_f32(
+         *(device float *) (dst + i0*args.nb_d0 + idst*args.nb_d1 + it*args.nb_d2) = result[idst];
+     }
+ }
++

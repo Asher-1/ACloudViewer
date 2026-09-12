@@ -8,15 +8,19 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <filesystem>
 #include <mutex>
 #include <unordered_map>
 #include <vector>
 
 #include "SQLite/sqlite3.h"
 #include "base/camera.h"
+#include "base/frame.h"
 #include "base/image.h"
-#include "estimators/two_view_geometry.h"
+#include "base/rig.h"
+#include "base/two_view_geometry.h"
 #include "feature/types.h"
+#include "geometry/pose_prior.h"
 #include "util/types.h"
 
 namespace colmap {
@@ -28,6 +32,16 @@ namespace colmap {
 // and trailing `EndTransaction`.
 class Database {
 public:
+    // ---- Upstream-parity pose-prior persistence (COLMAP 4.x) ----
+    bool ExistsPosePrior(pose_prior_t pose_prior_id) const;
+    size_t NumPosePriors() const;
+    PosePrior ReadPosePrior(pose_prior_t pose_prior_id) const;
+    std::vector<PosePrior> ReadAllPosePriors() const;
+    pose_prior_t WritePosePrior(const PosePrior& pose_prior,
+                                bool use_pose_prior_id = false);
+    void UpdatePosePrior(const PosePrior& pose_prior);
+    void ClearPosePriors();
+
     const static int kSchemaVersion = 1;
 
     // The maximum number of images, that can be stored in the database.
@@ -37,27 +51,37 @@ public:
     const static size_t kMaxNumImages;
 
     Database();
-    explicit Database(const std::string& path);
+    explicit Database(const std::filesystem::path& path);
     ~Database();
 
     // Open and close database. The same database should not be opened
     // concurrently in multiple threads or processes.
-    void Open(const std::string& path);
+    void Open(const std::filesystem::path& path);
     void Close();
 
     // Check if entry already exists in database. For image pairs, the order of
     // `image_id1` and `image_id2` does not matter.
     bool ExistsCamera(const camera_t camera_id) const;
+    bool ExistsRig(const rig_t rig_id) const;
+    bool ExistsFrame(const frame_t frame_id) const;
     bool ExistsImage(const image_t image_id) const;
     bool ExistsImageWithName(std::string name) const;
     bool ExistsKeypoints(const image_t image_id) const;
     bool ExistsDescriptors(const image_t image_id) const;
+    bool ExistsFloatDescriptors(const image_t image_id) const;
     bool ExistsMatches(const image_t image_id1, const image_t image_id2) const;
     bool ExistsInlierMatches(const image_t image_id1,
                              const image_t image_id2) const;
+    // Upstream COLMAP dbb41680 API name. The legacy ExistsInlierMatches above
+    // already queries the two_view_geometries table; both names share the
+    // same prepared statement.
+    bool ExistsTwoViewGeometry(const image_t image_id1,
+                               const image_t image_id2) const;
 
     // Number of rows in `cameras` table.
     size_t NumCameras() const;
+    size_t NumRigs() const;
+    size_t NumFrames() const;
 
     //  Number of rows in `images` table.
     size_t NumImages() const;
@@ -106,6 +130,14 @@ public:
                                          image_t* image_id1,
                                          image_t* image_id2);
 
+    // Upstream-parity overload returning the image pair by value.
+    inline static std::pair<image_t, image_t> PairIdToImagePair(
+            const image_pair_t pair_id) {
+        std::pair<image_t, image_t> image_ids;
+        PairIdToImagePair(pair_id, &image_ids.first, &image_ids.second);
+        return image_ids;
+    }
+
     // Return true if image pairs should be swapped. Used to enforce a specific
     // image order to generate unique image pair identifiers independent of the
     // order in which the image identifiers are used.
@@ -118,12 +150,19 @@ public:
     Camera ReadCamera(const camera_t camera_id) const;
     std::vector<Camera> ReadAllCameras() const;
 
+    Rig ReadRig(const rig_t rig_id) const;
+    std::vector<Rig> ReadAllRigs() const;
+    Frame ReadFrame(const frame_t frame_id) const;
+    std::vector<Frame> ReadAllFrames() const;
+
     Image ReadImage(const image_t image_id) const;
     Image ReadImageWithName(const std::string& name) const;
     std::vector<Image> ReadAllImages() const;
 
     FeatureKeypoints ReadKeypoints(const image_t image_id) const;
     FeatureDescriptors ReadDescriptors(const image_t image_id) const;
+    FeatureDescriptorsFloat ReadFloatDescriptors(const image_t image_id) const;
+    FeatureDescriptorType ReadDescriptorType(const image_t image_id) const;
 
     FeatureMatches ReadMatches(const image_t image_id1,
                                const image_t image_id2) const;
@@ -134,6 +173,9 @@ public:
     void ReadTwoViewGeometries(
             std::vector<image_pair_t>* image_pair_ids,
             std::vector<TwoViewGeometry>* two_view_geometries) const;
+    // Upstream-parity overload (COLMAP 4.x scene/database.h): all verified
+    // pairs keyed by the image pair id.
+    std::map<image_pair_t, TwoViewGeometry> ReadTwoViewGeometries() const;
 
     // Read all image pairs that have an entry in the `NumVerifiedImagePairs`
     // table with at least one inlier match and their number of inlier matches.
@@ -145,6 +187,9 @@ public:
     // is false a new identifier is automatically generated.
     camera_t WriteCamera(const Camera& camera,
                          const bool use_camera_id = false) const;
+    rig_t WriteRig(const Rig& rig, const bool use_rig_id = false) const;
+    frame_t WriteFrame(const Frame& frame,
+                       const bool use_frame_id = false) const;
 
     // Add new image and return its database identifier. If `use_image_id`
     // is false a new identifier is automatically generated.
@@ -158,23 +203,42 @@ public:
                         const FeatureKeypoints& keypoints) const;
     void WriteDescriptors(const image_t image_id,
                           const FeatureDescriptors& descriptors) const;
+    void WriteFloatDescriptors(const image_t image_id,
+                               const FeatureDescriptorsFloat& descriptors,
+                               FeatureDescriptorType type) const;
     void WriteMatches(const image_t image_id1,
                       const image_t image_id2,
                       const FeatureMatches& matches) const;
     void WriteTwoViewGeometry(const image_t image_id1,
                               const image_t image_id2,
                               const TwoViewGeometry& two_view_geometry) const;
+    // Upstream COLMAP dbb41680 API: update an existing two view geometry.
+    void UpdateTwoViewGeometry(const image_t image_id1,
+                               const image_t image_id2,
+                               const TwoViewGeometry& two_view_geometry) const;
 
     // Update an existing camera in the database. The user is responsible for
     // making sure that the entry already exists.
     void UpdateCamera(const Camera& camera) const;
+    void UpdateRig(const Rig& rig) const;
+    void UpdateFrame(const Frame& frame) const;
 
     // Update an existing image in the database. The user is responsible for
     // making sure that the entry already exists.
     void UpdateImage(const Image& image) const;
 
+    // Update an existing image's keypoints in the database. The user is
+    // responsible for making sure that the entry already exists.
+    void UpdateKeypoints(const image_t image_id,
+                         const FeatureKeypoints& keypoints) const;
+
     // Delete matches of an image pair.
     void DeleteMatches(const image_t image_id1, const image_t image_id2) const;
+
+    // Deletes a two-view geometry entry (upstream parity; the matches and
+    // inlier matches tables are unaffected).
+    void DeleteTwoViewGeometry(const image_t image_id1,
+                               const image_t image_id2) const;
 
     // Delete inlier matches of an image pair.
     void DeleteInlierMatches(const image_t image_id1,
@@ -185,6 +249,8 @@ public:
 
     // Clear the entire cameras table
     void ClearCameras() const;
+    void ClearRigs() const;
+    void ClearFrames() const;
 
     // Clear the entire images, keypoints, and descriptors tables
     void ClearImages() const;
@@ -225,11 +291,28 @@ private:
     // Create database tables, if not existing, called when opening a database.
     void CreateTables() const;
     void CreateCameraTable() const;
+    void CreateRigTable() const;
+    void CreateRigSensorsTable() const;
+    void CreateRigCamerasTable() const;
+    void CreateFrameTable() const;
+    void CreateFrameDataTable() const;
+    void CreateFrameImagesTable() const;
     void CreateImageTable() const;
     void CreateKeypointsTable() const;
     void CreateDescriptorsTable() const;
+    void CreateFloatDescriptorsTable() const;
     void CreateMatchesTable() const;
     void CreateTwoViewGeometriesTable() const;
+    void CreatePosePriorsTable() const;
+
+    // Legacy-schema preparation before CreateTables() (upstream parity).
+    void PreMigrateTables() const;
+
+    // Version-gated migrations and the user_version stamp (upstream parity).
+    void PostMigrateTables() const;
+
+    // Reads the raw PRAGMA user_version value.
+    int ReadUserVersion() const;
 
     void UpdateSchema() const;
 
@@ -273,6 +356,7 @@ private:
     sqlite3_stmt* sql_stmt_exists_image_name_ = nullptr;
     sqlite3_stmt* sql_stmt_exists_keypoints_ = nullptr;
     sqlite3_stmt* sql_stmt_exists_descriptors_ = nullptr;
+    sqlite3_stmt* sql_stmt_exists_float_descriptors_ = nullptr;
     sqlite3_stmt* sql_stmt_exists_matches_ = nullptr;
     sqlite3_stmt* sql_stmt_exists_two_view_geometry_ = nullptr;
 
@@ -283,6 +367,7 @@ private:
     // update_*
     sqlite3_stmt* sql_stmt_update_camera_ = nullptr;
     sqlite3_stmt* sql_stmt_update_image_ = nullptr;
+    sqlite3_stmt* sql_stmt_update_keypoints_ = nullptr;
 
     // read_*
     sqlite3_stmt* sql_stmt_read_camera_ = nullptr;
@@ -292,6 +377,8 @@ private:
     sqlite3_stmt* sql_stmt_read_images_ = nullptr;
     sqlite3_stmt* sql_stmt_read_keypoints_ = nullptr;
     sqlite3_stmt* sql_stmt_read_descriptors_ = nullptr;
+    sqlite3_stmt* sql_stmt_read_float_descriptors_ = nullptr;
+    sqlite3_stmt* sql_stmt_read_descriptor_type_ = nullptr;
     sqlite3_stmt* sql_stmt_read_matches_ = nullptr;
     sqlite3_stmt* sql_stmt_read_matches_all_ = nullptr;
     sqlite3_stmt* sql_stmt_read_two_view_geometry_ = nullptr;
@@ -301,6 +388,7 @@ private:
     // write_*
     sqlite3_stmt* sql_stmt_write_keypoints_ = nullptr;
     sqlite3_stmt* sql_stmt_write_descriptors_ = nullptr;
+    sqlite3_stmt* sql_stmt_write_float_descriptors_ = nullptr;
     sqlite3_stmt* sql_stmt_write_matches_ = nullptr;
     sqlite3_stmt* sql_stmt_write_two_view_geometry_ = nullptr;
 
@@ -309,9 +397,16 @@ private:
     sqlite3_stmt* sql_stmt_delete_two_view_geometry_ = nullptr;
 
     // clear_*
+    sqlite3_stmt* sql_stmt_write_pose_prior_ = nullptr;
+    sqlite3_stmt* sql_stmt_read_pose_prior_ = nullptr;
+    sqlite3_stmt* sql_stmt_read_pose_priors_ = nullptr;
+    sqlite3_stmt* sql_stmt_update_pose_prior_ = nullptr;
+    sqlite3_stmt* sql_stmt_exists_pose_prior_ = nullptr;
+    sqlite3_stmt* sql_stmt_clear_pose_priors_ = nullptr;
     sqlite3_stmt* sql_stmt_clear_cameras_ = nullptr;
     sqlite3_stmt* sql_stmt_clear_images_ = nullptr;
     sqlite3_stmt* sql_stmt_clear_descriptors_ = nullptr;
+    sqlite3_stmt* sql_stmt_clear_float_descriptors_ = nullptr;
     sqlite3_stmt* sql_stmt_clear_keypoints_ = nullptr;
     sqlite3_stmt* sql_stmt_clear_matches_ = nullptr;
     sqlite3_stmt* sql_stmt_clear_two_view_geometries_ = nullptr;

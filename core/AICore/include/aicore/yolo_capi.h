@@ -1,0 +1,575 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+//
+// YOLO C API: detection / instance segmentation / metric depth / pose /
+// oriented boxes / semantic segmentation / classification plus the
+// open-vocabulary YOLO-World (CLIP text) and YOLOE (MobileCLIP text)
+// families.
+//
+// The ggml engine under core/AICore/src/tasks/yolo/ is an in-tree port of
+// ultralytics-ggml cpp_ggml (https://github.com/Asher-1/ultralytics-ggml),
+// extended with typed results, persistent sessions (video-friendly canvas
+// rebuilds) and the yolo26n-depth absolute-depth support. The upstream
+// source is AGPL-3.0; this port keeps the license until a written
+// relicensing decision is recorded (see
+// ultralytics-ggml-integration-plan.md §5).
+
+#pragma once
+
+#include <stddef.h>
+#include <stdint.h>
+
+#include "aicore/export.h"
+#include "aicore/image_view.h"
+#include "aicore/pipeline_timing.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/** Returns the ABI version of the YOLO C API (bump on breaking ABI
+ *  changes). */
+AICORE_CAPI int aicore_yolo_abi_version(void);
+
+typedef struct aicore_yolo_ctx aicore_yolo_ctx;
+typedef struct aicore_yolo_options aicore_yolo_options;
+
+/** Creates a default options struct (device "auto", threads 0 = backend
+ *  default). Release with aicore_yolo_options_free. */
+AICORE_CAPI aicore_yolo_options* aicore_yolo_options_new(void);
+/** Releases an options struct created by aicore_yolo_options_new. */
+AICORE_CAPI void aicore_yolo_options_free(aicore_yolo_options* opts);
+/** Selects the inference device: NULL or "auto", "cpu", "gpu", "vulkan"
+ *  (optionally ":N"), "cuda" (Linux/Windows). */
+AICORE_CAPI void aicore_yolo_options_set_device(aicore_yolo_options* opts,
+                                                const char* device);
+/** CPU thread count; <= 0 picks the backend default. */
+AICORE_CAPI void aicore_yolo_options_set_threads(aicore_yolo_options* opts,
+                                                 int n_threads);
+/** Detection confidence threshold (default 0.25). */
+AICORE_CAPI void aicore_yolo_options_set_conf_thres(aicore_yolo_options* opts,
+                                                    float conf_thres);
+/** NMS IoU threshold (default 0.7). */
+AICORE_CAPI void aicore_yolo_options_set_iou_thres(aicore_yolo_options* opts,
+                                                   float iou_thres);
+/** Caps the returned detections (0 = model default max_det). */
+AICORE_CAPI void aicore_yolo_options_set_top_k(aicore_yolo_options* opts,
+                                               uint32_t top_k);
+/* Session-level debug/tuning knobs (default: model metadata / off). 0 clears
+ * back to the default. log_level: 0=DEBUG,1=INFO,2=WARN,3=ERROR. */
+AICORE_CAPI void aicore_yolo_options_set_log_level(aicore_yolo_options* opts,
+                                                   int log_level);
+/* Override the inference input size (0 = use the square imgsz from the GGUF
+ * metadata; both dimensions must be > 0 once set). */
+AICORE_CAPI void aicore_yolo_options_set_input_size(aicore_yolo_options* opts,
+                                                    int width,
+                                                    int height);
+/* Debug: keep every op output alive / print a per-op wall-time table /
+ * per-stage timing on stderr (default off). */
+AICORE_CAPI void aicore_yolo_options_set_keep_all_ops(aicore_yolo_options* opts,
+                                                      int enabled);
+/** Debug: print a per-op wall-time table on stderr (default off). */
+AICORE_CAPI void aicore_yolo_options_set_profile_ops(aicore_yolo_options* opts,
+                                                     int enabled);
+/** Debug: print per-stage upload/compute/readback timing gaps on stderr
+ *  (default off). */
+AICORE_CAPI void aicore_yolo_options_set_profile_gaps(aicore_yolo_options* opts,
+                                                      int enabled);
+
+/** Open-vocabulary class list for YOLO-World / YOLOE models (plain text,
+ *  e.g. "person", "bus"). The list is copied; NULL classes or count <= 0
+ *  clears it (= use the vocabulary embedded in the GGUF, if any). The class
+ *  count fixes the graph text-input shape, so it must be set before
+ *  aicore_yolo_load_opts. An empty class name ("") is a real class row (the
+ *  background prompt of the YOLO-World docs). */
+AICORE_CAPI void aicore_yolo_options_set_classes(aicore_yolo_options* opts,
+                                                 const char* const* classes,
+                                                 int32_t count);
+/** Text-encoder GGUF used to encode the open-vocabulary class list:
+ *  clip-ViT-B-32-*.gguf for YOLO-World, mobileclip2_b-*.gguf for YOLOE.
+ *  The string is copied; pass NULL to clear. Ignored for closed-set
+ *  models. */
+AICORE_CAPI void aicore_yolo_options_set_text_model(
+        aicore_yolo_options* opts, const char* text_model_path);
+
+/** YOLOE visual prompts (SAVPE): example boxes on the image in original-
+ *  image pixel coordinates, [x1, y1, x2, y2] per box. The checkpoint's
+ *  visual prompt encoder derives one class embedding per box; results are
+ *  labeled "object0", "object1", ... (official YOLOE semantics). Requires
+ *  a YOLOE GGUF converted with savpe weights (yolo.savpe = 1 — probe with
+ *  aicore_yolo_gguf_has_savpe); otherwise the load fails. Passing NULL
+ *  boxes or count <= 0 clears the prompts (back to the text path). Must be
+ *  set before aicore_yolo_load_opts: the prompt count fixes the graph
+ *  shape, and visual prompts take precedence over aicore_yolo_options_set_
+ *  classes when both are present. */
+AICORE_CAPI void aicore_yolo_options_set_visual_prompts(
+        aicore_yolo_options* opts, const float* boxes_xyxy, int32_t count);
+/** Number of visual prompts currently set (0 = text/vocabulary path). */
+AICORE_CAPI int32_t
+aicore_yolo_options_get_visual_prompt_count(const aicore_yolo_options* opts);
+/** 1 when the GGUF carries YOLOE savpe weights (yolo.savpe = 1) and thus
+ *  supports visual prompts. Header-only probe (no tensor mapping); returns
+ *  0 on unreadable files. */
+AICORE_CAPI int aicore_yolo_gguf_has_savpe(const char* gguf_path);
+/** 1 when the loaded context runs in visual-prompt mode (class embeddings
+ *  derived from the prompted boxes instead of text/vocabulary). */
+AICORE_CAPI int aicore_yolo_context_has_visual_prompts(
+        const aicore_yolo_ctx* ctx);
+
+/** Get the recommended default confidence threshold for this model. */
+AICORE_CAPI float aicore_yolo_options_get_conf_thres(
+        const aicore_yolo_options* opts);
+/** Get the recommended default IoU threshold for this model. */
+AICORE_CAPI float aicore_yolo_options_get_iou_thres(
+        const aicore_yolo_options* opts);
+
+/** Load a YOLO GGUF (detection or depth variant; the task is read from the
+ *  GGUF's yolo.task metadata). Returns NULL on failure; inspect
+ *  aicore_yolo_last_error() for the reason. */
+AICORE_CAPI aicore_yolo_ctx* aicore_yolo_load_opts(
+        const char* gguf_path, const aicore_yolo_options* opts);
+/** Releases a context returned by aicore_yolo_load_opts; safe on NULL. */
+AICORE_CAPI void aicore_yolo_free(aicore_yolo_ctx* ctx);
+/** Returns 1 only when the context owns a successfully loaded model. */
+AICORE_CAPI int aicore_yolo_is_ready(const aicore_yolo_ctx* ctx);
+/** Returns the last error message of the context (empty when none). */
+AICORE_CAPI const char* aicore_yolo_last_error(const aicore_yolo_ctx* ctx);
+
+/** Releases any buffer returned by an aicore_yolo_* function (string or
+ *  float array; unified entry point). Safe on NULL. */
+AICORE_CAPI void aicore_yolo_free_buffer(void* p);
+
+/** Load an image file as tightly-packed RGB (HWC, 3 bytes/pixel). Caller frees
+ *  \p out_rgb with aicore_yolo_free_buffer. */
+AICORE_CAPI int aicore_yolo_load_path_rgb(const char* image_path,
+                                          uint8_t** out_rgb,
+                                          int32_t* out_width,
+                                          int32_t* out_height);
+
+/** Run detection on a borrowed RGB buffer (HWC, 3 bytes/pixel; no copy).
+ *  JSON output:
+ *  {"model": "<name>", "task": "detect", "image_size": N,
+ *   "num_classes": N, "end2end": 0|1,
+ *   "image": {"width": W, "height": H},
+ *   "detections":[{"class_id":N,"class_name":"..","score":F,
+ *                  "box":[x1,y1,x2,y2]}, ...]}
+ *  Boxes are in original-image pixel coordinates. Detection thresholds are
+ *  the single configuration point of the context: seed them via
+ *  aicore_yolo_options_set_conf_thres / _iou_thres / _top_k at load, or
+ *  adjust live via aicore_yolo_set_detect_thresholds.
+ *  For depth models the call fails; use aicore_yolo_depth_rgb(). */
+AICORE_CAPI char* aicore_yolo_detect_path_json(aicore_yolo_ctx* ctx,
+                                               const char* image_path);
+/** Same as aicore_yolo_detect_path_json but on a borrowed RGB buffer. */
+AICORE_CAPI char* aicore_yolo_detect_rgb_json(aicore_yolo_ctx* ctx,
+                                              const uint8_t* rgb,
+                                              int32_t width,
+                                              int32_t height);
+/** Typed hot-path detection. Populates a context-owned result store without
+ * allocating a JSON envelope. */
+AICORE_CAPI int aicore_yolo_detect_rgb(aicore_yolo_ctx* ctx,
+                                       const uint8_t* rgb,
+                                       int32_t width,
+                                       int32_t height);
+/** Stride-aware equivalent; accepts RGB/RGBA/GRAY/BGR/BGRA borrowed views. */
+AICORE_CAPI int aicore_yolo_detect_image(aicore_yolo_ctx* ctx,
+                                         const aicore_image_view* image);
+/** Update detection thresholds at runtime without rebuilding the context.
+ *  Out-of-range values keep the previous value (0 for top_k = model
+ *  max_det). */
+AICORE_CAPI void aicore_yolo_set_detect_thresholds(aicore_yolo_ctx* ctx,
+                                                   float conf_thres,
+                                                   float iou_thres,
+                                                   uint32_t top_k);
+
+/** Drop the host-side copies of the model weights to halve the session's
+ *  host memory footprint. The device weight buffer is untouched, so
+ *  inference and canvas rebuilds keep working. Reload the copies on demand
+ *  with aicore_yolo_ensure_host_weights. Returns 0 on success, -1 when the
+ *  context has no loaded engine. */
+AICORE_CAPI int aicore_yolo_release_host_weights(aicore_yolo_ctx* ctx);
+/** Reload released host weight copies from the GGUF file (no-op when they
+ *  are present). Returns 0 on success, -1 on failure. */
+AICORE_CAPI int aicore_yolo_ensure_host_weights(aicore_yolo_ctx* ctx);
+
+/** Run metric depth estimation on a borrowed RGB buffer. Returns a malloc'd
+ *  float array (meters, row-major [out_height, out_width] at the ORIGINAL
+ *  image resolution — the map is already restored from the letterbox canvas)
+ *  or NULL on failure; free with aicore_yolo_free_buffer(). Summary statistics
+ *  of the returned map are available via aicore_yolo_last_depth_json(). */
+AICORE_CAPI float* aicore_yolo_depth_path(aicore_yolo_ctx* ctx,
+                                          const char* image_path,
+                                          int32_t* out_width,
+                                          int32_t* out_height);
+/** Same as aicore_yolo_depth_path but on a borrowed RGB buffer. */
+AICORE_CAPI float* aicore_yolo_depth_rgb(aicore_yolo_ctx* ctx,
+                                         const uint8_t* rgb,
+                                         int32_t width,
+                                         int32_t height,
+                                         int32_t* out_width,
+                                         int32_t* out_height);
+/** Stride-aware depth entry point; accepts RGB/RGBA/GRAY/BGR/BGRA views. */
+AICORE_CAPI float* aicore_yolo_depth_image(aicore_yolo_ctx* ctx,
+                                           const aicore_image_view* image,
+                                           int32_t* out_width,
+                                           int32_t* out_height);
+
+/** Typed statistics from the most recent successful depth call. */
+typedef struct aicore_yolo_depth_stats {
+    int32_t image_width;
+    int32_t image_height;
+    int32_t depth_width;
+    int32_t depth_height;
+    float min_depth;
+    float max_depth;
+    float mean_depth;
+    float p95_depth;
+    uint64_t valid_pixels;
+} aicore_yolo_depth_stats;
+
+/** Copies the latest depth statistics. Returns 0 on success, -1 before the
+ * first successful depth inference or for invalid arguments. */
+AICORE_CAPI int aicore_yolo_last_depth_stats(
+        const aicore_yolo_ctx* ctx, aicore_yolo_depth_stats* out_stats);
+
+/** Statistics of the most recent aicore_yolo_depth_* call:
+ *  {"model": "..", "task": "depth", "image_size": N,
+ *   "image": {"width": W, "height": H},
+ *   "depth_width": W, "depth_height": H,
+ *   "min_depth": F, "max_depth": F, "mean_depth": F, "p95_depth": F,
+ *   "valid_pixels": N}
+ *  Returns NULL when no depth call has run. */
+AICORE_CAPI char* aicore_yolo_last_depth_json(aicore_yolo_ctx* ctx);
+
+/** Model introspection. */
+/** Task of the loaded model: "detect", "segment", "depth", "pose", "obb",
+ *  "semantic" or "classify" ("" when not ready). */
+AICORE_CAPI const char* aicore_yolo_context_task(aicore_yolo_ctx* ctx);
+/** 1 when the loaded model is text-conditioned (YOLO-World / YOLOE; its
+ *  class vocabulary is the list passed via aicore_yolo_options_set_classes
+ *  or the checkpoint-embedded one). */
+AICORE_CAPI int aicore_yolo_context_has_text_input(const aicore_yolo_ctx* ctx);
+/** GGUF-declared model name. */
+AICORE_CAPI const char* aicore_yolo_context_model_name(aicore_yolo_ctx* ctx);
+/** Model input resolution (square, from GGUF metadata). */
+AICORE_CAPI uint32_t aicore_yolo_context_image_size(aicore_yolo_ctx* ctx);
+/** Number of classes the model was trained on. */
+AICORE_CAPI uint32_t aicore_yolo_context_num_classes(aicore_yolo_ctx* ctx);
+/** 1 when the head already emits NMS-free detections (yolo26, reg_max=1). */
+AICORE_CAPI int aicore_yolo_context_end2end(aicore_yolo_ctx* ctx);
+/** Backend-RESOLVED device name ("Vulkan0 (…)", "cpu", ...). Differs from
+ *  the requested device when the GPU lease can't be acquired — surfaces
+ *  silent CPU fallbacks. Owned by ctx; copy before freeing. */
+AICORE_CAPI const char* aicore_yolo_context_device(aicore_yolo_ctx* ctx);
+/** Effective CPU thread count after the auto (<=0) resolution. */
+AICORE_CAPI int aicore_yolo_context_threads(aicore_yolo_ctx* ctx);
+
+/** Returns a JSON summary of the loaded model. Caller frees with
+ *  aicore_yolo_free_buffer. */
+AICORE_CAPI char* aicore_yolo_info_json(aicore_yolo_ctx* ctx);
+/** Warms up the backend for `device`; returns 0 on success. */
+AICORE_CAPI int aicore_yolo_warmup_backend(const char* device);
+/** Releases process-wide YOLO backend resources (idempotent). */
+AICORE_CAPI void aicore_yolo_shutdown(void);
+/** Returns the local model cache directory. Caller frees with
+ *  aicore_yolo_free_buffer. */
+AICORE_CAPI char* aicore_yolo_model_cache_dir(void);
+
+/** Per-stage wall-clock timings of the most recent aicore_yolo_* inference,
+ *  in milliseconds. Mirrors the upstream ultralytics-ggml bench fields so
+ *  integrated latency can be compared 1:1 with the upstream matrix:
+ *  preprocess (letterbox) / inference (upload + graph + readback) /
+ *  postprocess (NMS, mask compose, depth restore) / e2e (all of the above).
+ *  json_ms covers only the optional JSON serialization (detect_*_json) and
+ *  is NOT part of e2e_ms. All fields stay 0 until the first call. */
+typedef struct aicore_yolo_timings {
+    double preprocess_ms;
+    double inference_ms;
+    double postprocess_ms;
+    double json_ms;
+    double e2e_ms;
+} aicore_yolo_timings;
+
+/** Copy the most recent successful inference timings into out_timings.
+ *  Returns 0 on success, -1 when ctx has never run an inference. */
+AICORE_CAPI int aicore_yolo_last_timings(const aicore_yolo_ctx* ctx,
+                                         aicore_yolo_timings* out_timings);
+/** Common timing contract adapter for the most recent inference. */
+AICORE_CAPI int aicore_yolo_last_pipeline_timings(
+        const aicore_yolo_ctx* ctx, aicore_pipeline_timings* out_timings);
+
+/** Published GGUF catalog (cloudViewer_downloads yolo_gguf_models release). */
+typedef struct aicore_yolo_model_entry {
+    const char* filename;
+    const char* download_url;
+    const char* display_name;
+    const char* quant_note;
+    const char* license_note;
+    const char* task;   // "detect" | "segment" | "depth" | "pose" | "obb" |
+                        // "semantic" | "classify" | "text"
+    int depth_capable;  // 1 for the yolo26*-depth absolute-depth variants
+    int end2end;        // 1 for the yolo26 family (NMS-free head)
+    int text_input;     // 1 for YOLO-World / YOLOE / text encoders
+} aicore_yolo_model_entry;
+
+/** Catalog role filter for the unified query entry points. */
+enum aicore_yolo_model_role {
+    AICORE_YOLO_ROLE_ANY = 0,       /**< every catalog entry */
+    AICORE_YOLO_ROLE_DETECTION = 1, /**< closed-set detection-capable */
+    AICORE_YOLO_ROLE_DEPTH = 2,     /**< absolute-depth variants */
+    AICORE_YOLO_ROLE_SEGMENT = 3,   /**< closed-set instance segmentation */
+    AICORE_YOLO_ROLE_POSE = 4,      /**< keypoint (COCO-17) variants */
+    AICORE_YOLO_ROLE_OBB = 5,       /**< oriented-box (DOTA-15) variants */
+    AICORE_YOLO_ROLE_CLASSIFY = 6,  /**< classification variants */
+    AICORE_YOLO_ROLE_SEMANTIC = 7,  /**< semantic segmentation variants */
+    AICORE_YOLO_ROLE_WORLD = 8,     /**< YOLO-World (CLIP text) detectors */
+    AICORE_YOLO_ROLE_YOLOE = 9,     /**< YOLOE (MobileCLIP text) segments */
+    AICORE_YOLO_ROLE_TEXT = 10, /**< text-encoder towers (CLIP/MobileCLIP) */
+};
+
+/** Number of catalog entries matching the role filter. */
+AICORE_CAPI int aicore_yolo_model_count(enum aicore_yolo_model_role role);
+/** Returns the role-filtered catalog entry at `index` (NULL when out of
+ *  range). Returned pointers are stable for the process lifetime. */
+AICORE_CAPI const aicore_yolo_model_entry* aicore_yolo_model_at(
+        int index, enum aicore_yolo_model_role role);
+/** Index (relative to the same role-filtered view) of the entry the
+ *  catalog declares as its default — the first row carrying the visible
+ *  "(recommended)" marker. UI combos should select this row when no
+ *  explicit user choice is persisted. Returns 0 for empty/unknown views. */
+AICORE_CAPI int aicore_yolo_model_default_index(
+        enum aicore_yolo_model_role role);
+/** Returns the catalog entry whose filename matches (NULL when not
+ *  found). */
+AICORE_CAPI const aicore_yolo_model_entry* aicore_yolo_model_by_filename(
+        const char* filename);
+/** Returns the base URL of the published model release. */
+AICORE_CAPI const char* aicore_yolo_model_download_base(void);
+
+/** Per-layer result of aicore_yolo_verify_model: 1 = passed, 0 = failed.
+ *  Layers without an official catalog baseline (currently the segment
+ *  assets) report 1 — their byte count / SHA-256 are not published yet. */
+typedef struct aicore_yolo_verify_report {
+    int filename_ok; /* basename matches a catalog entry */
+    int size_ok;     /* exact byte count (no baseline -> 1) */
+    int hash_ok;     /* SHA-256 match (no baseline -> 1) */
+    int magic_ok;    /* GGUF magic */
+    int task_ok;     /* GGUF yolo.task matches the catalog entry */
+} aicore_yolo_verify_report;
+
+/** Verify a downloaded model file against the official catalog: basename,
+ *  exact byte count, SHA-256, GGUF magic and yolo.task metadata. Returns 0
+ *  when every layer passes, -1 on the first failing layer (out->*_ok shows
+ *  which one). Layers without an official baseline are skipped. NULL-safe
+ *  (NULL path / NULL out returns -1). */
+AICORE_CAPI int aicore_yolo_verify_model(const char* path,
+                                         aicore_yolo_verify_report* out);
+
+// ---- Segment API (typed results, not JSON) ----
+
+typedef struct aicore_yolo_segment_result aicore_yolo_segment_result;
+
+/** Typed detection (used by segment result accessors). */
+typedef struct aicore_yolo_detection {
+    float x1, y1, x2, y2;
+    float score;
+    int32_t class_id;
+} aicore_yolo_detection;
+AICORE_CAPI int aicore_yolo_detection_count(const aicore_yolo_ctx* ctx);
+AICORE_CAPI aicore_yolo_detection
+aicore_yolo_detection_at(const aicore_yolo_ctx* ctx, int index);
+/** Class name of the i-th detection from the most recent detect call
+ *  (open-vocabulary class list override or the GGUF metadata; owned by the
+ *  context, valid until the next detect call or aicore_yolo_free). Returns
+ *  NULL when the index is out of range or the model declares no names for
+ *  this class — callers should fall back to "class <id>". */
+AICORE_CAPI const char* aicore_yolo_detection_class_name(
+        const aicore_yolo_ctx* ctx, int index);
+
+/** Non-owning view of a plane (segment mask, depth). Mask data is a
+ *  full-size source-image bitmap (width x height, 1 byte per pixel:
+ *  0 = background, 1 = foreground), already unscaled from the model's
+ *  letterbox canvas so it aligns 1:1 with the detection boxes. */
+typedef struct aicore_yolo_plane_view {
+    const void* data;
+    int32_t width;
+    int32_t height;
+    size_t row_stride_bytes;
+} aicore_yolo_plane_view;
+
+/** Run segment inference on a borrowed RGB buffer. Detection thresholds come
+ *  from the context (see aicore_yolo_set_detect_thresholds).
+ *  Returns NULL on failure; inspect aicore_yolo_last_error() for the reason.
+ *  The result is valid until aicore_yolo_seg_result_free(). */
+AICORE_CAPI aicore_yolo_segment_result* aicore_yolo_seg_rgb(
+        aicore_yolo_ctx* ctx,
+        const uint8_t* rgb,
+        int32_t width,
+        int32_t height);
+/** Stride-aware equivalent; accepts RGB/RGBA/GRAY/BGR/BGRA borrowed views. */
+AICORE_CAPI aicore_yolo_segment_result* aicore_yolo_seg_image(
+        aicore_yolo_ctx* ctx, const aicore_image_view* image);
+
+/** Number of detections in the segment result. */
+AICORE_CAPI int aicore_yolo_seg_det_count(
+        const aicore_yolo_segment_result* res);
+
+/** Get the i-th detection (shallow copy). */
+AICORE_CAPI aicore_yolo_detection
+aicore_yolo_seg_det_at(const aicore_yolo_segment_result* res, int index);
+
+/** Class name of the i-th detection (owned by the result; copy the string
+ *  before aicore_yolo_seg_result_free). Returns NULL when the index is out
+ *  of range or the model declares no names for this class — callers should
+ *  fall back to "class <id>". */
+AICORE_CAPI const char* aicore_yolo_seg_det_class_name(
+        const aicore_yolo_segment_result* res, int index);
+
+/** Get the mask for the i-th detection (borrowed; valid while res lives). */
+AICORE_CAPI aicore_yolo_plane_view
+aicore_yolo_seg_mask_at(const aicore_yolo_segment_result* res, int index);
+
+/** Release a segment result. Safe on NULL. */
+AICORE_CAPI void aicore_yolo_seg_result_free(aicore_yolo_segment_result* res);
+
+// ---- Pose API (typed results) ----
+
+/** COCO-17 keypoint (source-image pixels): visibility is the sigmoided
+ *  third head channel when the model declares 3 dims per keypoint, always
+ *  1.0 for 2-dim models. */
+typedef struct aicore_yolo_keypoint {
+    float x, y;
+    float visibility;
+} aicore_yolo_keypoint;
+
+typedef struct aicore_yolo_pose_result aicore_yolo_pose_result;
+
+/** Run pose estimation on a borrowed RGB buffer (person boxes + COCO-17
+ *  keypoints). Thresholds come from the context (see
+ *  aicore_yolo_set_detect_thresholds). Returns NULL on failure; inspect
+ *  aicore_yolo_last_error(). Valid until aicore_yolo_pose_result_free. */
+AICORE_CAPI aicore_yolo_pose_result* aicore_yolo_pose_rgb(aicore_yolo_ctx* ctx,
+                                                          const uint8_t* rgb,
+                                                          int32_t width,
+                                                          int32_t height);
+/** Stride-aware equivalent; accepts RGB/RGBA/GRAY/BGR/BGRA borrowed views. */
+AICORE_CAPI aicore_yolo_pose_result* aicore_yolo_pose_image(
+        aicore_yolo_ctx* ctx, const aicore_image_view* image);
+/** Number of pose detections. */
+AICORE_CAPI int aicore_yolo_pose_det_count(const aicore_yolo_pose_result* res);
+/** Get the i-th detection box (shallow copy). */
+AICORE_CAPI aicore_yolo_detection
+aicore_yolo_pose_det_at(const aicore_yolo_pose_result* res, int index);
+/** Keypoint count per detection (17 for the shipped COCO models). */
+AICORE_CAPI int aicore_yolo_pose_kpt_count(const aicore_yolo_pose_result* res);
+/** Get the k-th keypoint of the i-th detection (zeroed when out of
+ *  range). */
+AICORE_CAPI aicore_yolo_keypoint
+aicore_yolo_pose_kpt_at(const aicore_yolo_pose_result* res, int index, int kpt);
+/** Class name of the i-th detection (owned by the result). */
+AICORE_CAPI const char* aicore_yolo_pose_det_class_name(
+        const aicore_yolo_pose_result* res, int index);
+/** Release a pose result. Safe on NULL. */
+AICORE_CAPI void aicore_yolo_pose_result_free(aicore_yolo_pose_result* res);
+
+// ---- OBB API (typed results) ----
+
+/** Oriented box in source-image pixels; angle in radians, unrotated w/h. */
+typedef struct aicore_yolo_obb_box {
+    float cx, cy, w, h;
+    float angle;
+    float score;
+    int32_t class_id;
+} aicore_yolo_obb_box;
+
+typedef struct aicore_yolo_obb_result aicore_yolo_obb_result;
+
+/** Run oriented-box detection on a borrowed RGB buffer. Returns NULL on
+ *  failure; inspect aicore_yolo_last_error(). Valid until
+ *  aicore_yolo_obb_result_free. */
+AICORE_CAPI aicore_yolo_obb_result* aicore_yolo_obb_rgb(aicore_yolo_ctx* ctx,
+                                                        const uint8_t* rgb,
+                                                        int32_t width,
+                                                        int32_t height);
+/** Stride-aware equivalent; accepts RGB/RGBA/GRAY/BGR/BGRA borrowed views. */
+AICORE_CAPI aicore_yolo_obb_result* aicore_yolo_obb_image(
+        aicore_yolo_ctx* ctx, const aicore_image_view* image);
+/** Number of oriented boxes. */
+AICORE_CAPI int aicore_yolo_obb_count(const aicore_yolo_obb_result* res);
+/** Get the i-th oriented box (shallow copy). */
+AICORE_CAPI aicore_yolo_obb_box
+aicore_yolo_obb_at(const aicore_yolo_obb_result* res, int index);
+/** Class name of the i-th box (owned by the result). */
+AICORE_CAPI const char* aicore_yolo_obb_class_name(
+        const aicore_yolo_obb_result* res, int index);
+/** Release an OBB result. Safe on NULL. */
+AICORE_CAPI void aicore_yolo_obb_result_free(aicore_yolo_obb_result* res);
+
+// ---- Semantic segmentation API (typed results) ----
+
+typedef struct aicore_yolo_semantic_result aicore_yolo_semantic_result;
+
+/** Run semantic segmentation on a borrowed RGB buffer. The class map is
+ *  restored to the FULL source-image resolution by bilinearly resizing the
+ *  logits before argmax, aligned 1:1 with the input pixels. Returns NULL on
+ *  failure; inspect aicore_yolo_last_error(). Valid until
+ *  aicore_yolo_semantic_result_free. */
+AICORE_CAPI aicore_yolo_semantic_result* aicore_yolo_semantic_rgb(
+        aicore_yolo_ctx* ctx,
+        const uint8_t* rgb,
+        int32_t width,
+        int32_t height);
+/** Stride-aware equivalent; accepts RGB/RGBA/GRAY/BGR/BGRA borrowed views. */
+AICORE_CAPI aicore_yolo_semantic_result* aicore_yolo_semantic_image(
+        aicore_yolo_ctx* ctx, const aicore_image_view* image);
+/** Class map of the most recent call (borrowed; width*height bytes, one
+ *  class id per source pixel) — same layout as aicore_yolo_plane_view. */
+AICORE_CAPI aicore_yolo_plane_view
+aicore_yolo_semantic_class_map(const aicore_yolo_semantic_result* res);
+/** Number of classes the model predicts (19 for Cityscapes). */
+AICORE_CAPI int aicore_yolo_semantic_num_classes(
+        const aicore_yolo_semantic_result* res);
+/** Class name for a class id (owned by the result; NULL when out of
+ *  range). */
+AICORE_CAPI const char* aicore_yolo_semantic_class_name(
+        const aicore_yolo_semantic_result* res, int class_id);
+/** Release a semantic result. Safe on NULL. */
+AICORE_CAPI void aicore_yolo_semantic_result_free(
+        aicore_yolo_semantic_result* res);
+
+// ---- Classify API (typed results) ----
+
+typedef struct aicore_yolo_classify_result aicore_yolo_classify_result;
+
+/** Run image classification on a borrowed RGB buffer. Returns NULL on
+ *  failure; inspect aicore_yolo_last_error(). Valid until
+ *  aicore_yolo_classify_result_free. */
+AICORE_CAPI aicore_yolo_classify_result* aicore_yolo_classify_rgb(
+        aicore_yolo_ctx* ctx,
+        const uint8_t* rgb,
+        int32_t width,
+        int32_t height);
+/** Stride-aware equivalent; accepts RGB/RGBA/GRAY/BGR/BGRA borrowed views. */
+AICORE_CAPI aicore_yolo_classify_result* aicore_yolo_classify_image(
+        aicore_yolo_ctx* ctx, const aicore_image_view* image);
+/** Number of classes (full softmax table; callers apply their own top-k). */
+AICORE_CAPI int aicore_yolo_classify_count(
+        const aicore_yolo_classify_result* res);
+/** Probability of the i-th class (softmax, descending NOT guaranteed). */
+AICORE_CAPI float aicore_yolo_classify_prob_at(
+        const aicore_yolo_classify_result* res, int index);
+/** Class name of the i-th class (owned by the result; NULL when the model
+ *  declares no name — fall back to "class <id>"). */
+AICORE_CAPI const char* aicore_yolo_classify_class_name(
+        const aicore_yolo_classify_result* res, int index);
+/** Release a classify result. Safe on NULL. */
+AICORE_CAPI void aicore_yolo_classify_result_free(
+        aicore_yolo_classify_result* res);
+
+#ifdef __cplusplus
+}
+#endif

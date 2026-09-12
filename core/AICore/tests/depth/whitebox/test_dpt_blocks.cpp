@@ -13,10 +13,10 @@
 #include <string>
 #include <vector>
 
-#include "backend.hpp"
-#include "dpt_blocks.hpp"
-#include "model_loader.hpp"
-#include "parity.hpp"
+#include "tasks/depth/backend.hpp"
+#include "tasks/depth/dpt_blocks.hpp"
+#include "tasks/depth/model_loader.hpp"
+#include "tests/depth/whitebox/parity.hpp"
 
 using aicore::depth::conv2d;
 using aicore::depth::conv_transpose2d_p0;

@@ -123,7 +123,7 @@ jobs:
 
       - name: Set up python version
         run: |
-          (Get-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}) -replace "3.8", "${{ matrix.python_version }}" | Set-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+          (Get-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}) -replace "3.10", "${{ matrix.python_version }}" | Set-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
 
       # DGM: without caching, using conda on Windows takes a long time...
       - name: Set up Python environment
@@ -133,6 +133,8 @@ jobs:
           activate-environment: cloudViewer
           auto-activate-base: false
           environment-file: ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+      - name: Set up fixed CMake
+        uses: ./.github/actions/setup-cmake
 
       - name: Install dependencies
         # deploy QtIFW for installer and deploy 3rdparty_downloads.zip for fast building on windows
@@ -351,7 +353,7 @@ jobs:
 
       - name: Set up python version
         run: |
-          (Get-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}) -replace "3.8", "${{ matrix.python_version }}" | Set-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
+          (Get-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}) -replace "3.10", "${{ matrix.python_version }}" | Set-Content ${{ env.CONDA_DEP_FILE_CLOUDVIEWER }}
 
       - name: Set up Python environment (conda, same as build)
         uses: conda-incubator/setup-miniconda@v3
@@ -591,6 +593,8 @@ jobs:
         with:
           python-version: ${{ matrix.python_version }}
           auto-activate-base: true
+      - name: Set up fixed CMake
+        uses: ./.github/actions/setup-cmake
 
       - name: Install 3rdparty_downloads
         working-directory: ${{ env.SRC_DIR }}

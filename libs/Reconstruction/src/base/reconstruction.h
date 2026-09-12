@@ -11,6 +11,7 @@
 #include "util/alignment.h"
 // clang-format on
 
+#include <filesystem>
 #include <tuple>
 #include <unordered_map>
 #include <unordered_set>
@@ -18,12 +19,15 @@
 
 #include "base/camera.h"
 #include "base/database.h"
+#include "base/frame.h"
 #include "base/image.h"
 #include "base/point2d.h"
 #include "base/point3d.h"
+#include "base/rig.h"
 #include "base/similarity_transform.h"
 #include "base/track.h"
-#include "estimators/similarity_transform.h"
+#include "estimators/solvers/similarity_transform.h"
+#include "geometry/sim3.h"
 #include "optim/loransac.h"
 #include "util/types.h"
 
@@ -52,9 +56,20 @@ public:
     Reconstruction(const Reconstruction& other);
     Reconstruction& operator=(const Reconstruction& other);
 
+    // Move construct/assign. The hashed containers move their nodes without
+    // rehashing, so the back pointers of the moved-from objects stay valid;
+    // the source is expected to be discarded immediately afterwards.
+    Reconstruction(Reconstruction&&) = default;
+    Reconstruction& operator=(Reconstruction&&) = default;
+
     // Get number of objects.
     inline size_t NumCameras() const;
     inline size_t NumImages() const;
+    inline size_t NumRigs() const;
+    inline size_t NumFrames() const;
+    // Upstream-parity accessor (COLMAP 4.x scene/reconstruction.h): number of
+    // registered (pose-estimated) frames.
+    inline size_t NumRegFrames() const { return RegFrameIds().size(); }
     inline size_t NumRegImages() const;
     inline size_t NumPoints3D() const;
     inline size_t NumImagePairs() const;
@@ -63,6 +78,8 @@ public:
     // Get const objects.
     inline const class Camera& Camera(const camera_t camera_id) const;
     inline const class Image& Image(const image_t image_id) const;
+    inline const class Rig& Rig(const rig_t rig_id) const;
+    inline const class Frame& Frame(const frame_t frame_id) const;
     inline const class Point3D& Point3D(const point3D_t point3D_id) const;
     inline const ImagePairStat& ImagePair(const image_pair_t pair_id) const;
     inline ImagePairStat& ImagePair(const image_t image_id1,
@@ -71,6 +88,8 @@ public:
     // Get mutable objects.
     inline class Camera& Camera(const camera_t camera_id);
     inline class Image& Image(const image_t image_id);
+    inline class Rig& Rig(const rig_t rig_id);
+    inline class Frame& Frame(const frame_t frame_id);
     inline class Point3D& Point3D(const point3D_t point3D_id);
     inline ImagePairStat& ImagePair(const image_pair_t pair_id);
     inline const ImagePairStat& ImagePair(const image_t image_id1,
@@ -79,6 +98,14 @@ public:
     // Get reference to all objects.
     inline const std::unordered_map<camera_t, class Camera>& Cameras() const;
     inline const std::unordered_map<image_t, class Image>& Images() const;
+    inline const std::unordered_map<rig_t, class Rig>& Rigs() const;
+    inline const std::unordered_map<frame_t, class Frame>& Frames() const;
+
+    // Upstream-parity (COLMAP 4.x): IDs of registered (posed) frames.
+    std::unordered_set<frame_t> RegFrameIds() const;
+    // Upstream-parity (COLMAP 4.x): recompute the reprojection error of all
+    // points after batch modifications.
+    void UpdatePoint3DErrors();
     inline const std::vector<image_t>& RegImageIds() const;
     inline const std::unordered_map<point3D_t, class Point3D>& Points3D() const;
     inline const std::unordered_map<image_pair_t, ImagePairStat>& ImagePairs()
@@ -90,6 +117,8 @@ public:
     // Check whether specific object exists.
     inline bool ExistsCamera(const camera_t camera_id) const;
     inline bool ExistsImage(const image_t image_id) const;
+    inline bool ExistsRig(const rig_t rig_id) const;
+    inline bool ExistsFrame(const frame_t frame_id) const;
     inline bool ExistsPoint3D(const point3D_t point3D_id) const;
     inline bool ExistsImagePair(const image_pair_t pair_id) const;
 
@@ -113,13 +142,27 @@ public:
     void AddCamera(const class Camera& camera);
 
     // Add new image.
-    void AddImage(const class Image& image);
+    // Upstream-parity (COLMAP 4.x): the Add* methods wire the camera /
+    // frame / rig back pointers and validate sensor consistency.
+    void AddCameraWithTrivialRig(struct Camera camera);
+    void AddImage(class Image image);
+    void AddFrameWithTrivialRig(class Frame frame,
+                                const Rigid3d& cam_from_world);
+    void AddImageWithTrivialFrame(class Image image);
+    void AddImageWithTrivialFrame(class Image image,
+                                  const Rigid3d& cam_from_world);
+
+    void AddRig(class Rig rig);
+    void AddFrame(class Frame frame);
 
     // Add new 3D object, and return its unique ID.
     point3D_t AddPoint3D(
             const Eigen::Vector3d& xyz,
             const Track& track,
             const Eigen::Vector3ub& color = Eigen::Vector3ub::Zero());
+
+    // Add new 3D point with known ID (upstream parity, dbb41680).
+    void AddPoint3D(const point3D_t point3D_id, struct Point3D point3D);
 
     // Add observation to existing 3D point.
     void AddObservation(const point3D_t point3D_id,
@@ -147,6 +190,16 @@ public:
 
     // De-register an existing image, and all its references.
     void DeRegisterImage(const image_t image_id);
+
+    // Upstream-parity (COLMAP 4.x scene/reconstruction.h): de-register a
+    // registered frame: clean up the observations of all its images and
+    // reset the frame pose. Ignored with a warning if the frame has no pose.
+    void DeRegisterFrame(const frame_t frame_id);
+
+    // Upstream-parity (COLMAP 4.x scene/reconstruction.h): rebind every
+    // frame/image back pointer into this object's containers after the copy
+    // constructor or assignment.
+    void RewireObjectPointers();
 
     // Check if image is registered.
     inline bool IsImageRegistered(const image_t image_id) const;
@@ -176,6 +229,9 @@ public:
 
     // Apply the 3D similarity transformation to all images and points.
     void Transform(const SimilarityTransform3& tform);
+    // Upstream COLMAP dbb41680 scene/reconstruction.h: similarity transform
+    // driven by Sim3d; keeps rigs, frames, images and points3D consistent.
+    void Transform(const Sim3d& new_from_old_world);
 
     // Creates a cropped reconstruction using the input bounds as corner points
     // of the bounding box containing the included 3D points of the new
@@ -214,8 +270,10 @@ public:
     const class Image* FindImageWithName(const std::string& name) const;
 
     // Find images that are both present in this and the given reconstruction.
-    std::vector<image_t> FindCommonRegImageIds(
-            const Reconstruction& reconstruction) const;
+    // Upstream COLMAP dbb41680 semantics: common registered images matched
+    // by name, returned as (this_id, other_id) pairs.
+    std::vector<std::pair<image_t, image_t>> FindCommonRegImageIds(
+            const Reconstruction& other) const;
 
     // Update the image identifiers to match the ones in the database by
     // matching the names of the images.
@@ -257,102 +315,24 @@ public:
     double ComputeMeanReprojectionError() const;
 
     // Read data from text or binary file. Prefer binary data if it exists.
-    void Read(const std::string& path);
-    void Write(const std::string& path) const;
+    void Read(const std::filesystem::path& path);
+    void Write(const std::filesystem::path& path) const;
 
     // Read data from binary/text file.
-    void ReadText(const std::string& path);
-    void ReadBinary(const std::string& path);
+    void ReadText(const std::filesystem::path& path);
+    void ReadBinary(const std::filesystem::path& path);
 
     // Write data from binary/text file.
-    void WriteText(const std::string& path) const;
-    void WriteBinary(const std::string& path) const;
+    void WriteText(const std::filesystem::path& path) const;
+    void WriteBinary(const std::filesystem::path& path) const;
 
     // Convert 3D points in reconstruction to PLY point cloud.
     std::vector<PlyPoint> ConvertToPLY() const;
 
     // Import from other data formats. Note that these import functions are
     // only intended for visualization of data and usable for reconstruction.
-    void ImportPLY(const std::string& path);
+    void ImportPLY(const std::filesystem::path& path);
     void ImportPLY(const std::vector<PlyPoint>& ply_points);
-
-    // Export to other data formats.
-
-    // Exports in NVM format http://ccwu.me/vsfm/doc.html#nvm. Only supports
-    // SIMPLE_RADIAL camera model when exporting distortion parameters. When
-    // skip_distortion == true it supports all camera models with the caveat
-    // that it's using the mean focal length which will be inaccurate for camera
-    // models with two focal lengths and distortion.
-    bool ExportNVM(const std::string& path, bool skip_distortion = false) const;
-
-    // Exports in CAM format which is a simple text file that contains pose
-    // information and camera intrinsics for each image and exports one file per
-    // image; it does not include information on the 3D points. The format is as
-    // follows (2 lines of text with space separated numbers):
-    // <Tvec; 3 values> <Rotation matrix in row-major format; 9 values>
-    // <focal_length> <k1> <k2> 1.0 <principal point X> <principal point Y>
-    // Note that focal length is relative to the image max(width, height),
-    // and principal points x and y are relative to width and height
-    // respectively.
-    //
-    // Only supports SIMPLE_RADIAL and RADIAL camera models when exporting
-    // distortion parameters. When skip_distortion == true it supports all
-    // camera models with the caveat that it's using the mean focal length which
-    // will be inaccurate for camera models with two focal lengths and
-    // distortion.
-    bool ExportCam(const std::string& path, bool skip_distortion = false) const;
-
-    // Exports in Recon3D format which consists of three text files with the
-    // following format and content:
-    // 1) imagemap_0.txt: a list of image numeric IDs with one entry per line.
-    // 2) urd-images.txt: A list of images with one entry per line as:
-    //    <image file name> <width> <height>
-    // 3) synth_0.out: Contains information for image poses, camera intrinsics,
-    //    and 3D points as:
-    //    <N; num images> <M; num points>
-    //    <N lines of image entries>
-    //    <M lines of point entries>
-    //
-    //    Each image entry consists of 5 lines as:
-    //    <focal length> <k1> <k2>
-    //    <Rotation matrix; 3x3 array>
-    //    <Tvec; 3 values>
-    //    Note that the focal length is scaled by 1 / max(width, height)
-    //
-    //    Each point entry consists of 3 lines as:
-    //    <point x, y, z coordinates>
-    //    <point RGB color>
-    //    <K; num track elements> <Track Element 1> ... <Track Element K>
-    //
-    //    Each track elemenet is a sequence of 5 values as:
-    //    <image ID> <2D point ID> -1.0 <X> <Y>
-    //    Note that the 2D point coordinates are centered around the principal
-    //    point and scaled by 1 / max(width, height).
-    //
-    // When skip_distortion == true it supports all camera models with the
-    // caveat that it's using the mean focal length which will be inaccurate
-    // for camera models with two focal lengths and distortion.
-    bool ExportRecon3D(const std::string& path,
-                       bool skip_distortion = false) const;
-
-    // Exports in Bundler format https://www.cs.cornell.edu/~snavely/bundler/.
-    // Supports SIMPLE_PINHOLE, PINHOLE, SIMPLE_RADIAL and RADIAL camera models
-    // when exporting distortion parameters. When skip_distortion == true it
-    // supports all camera models with the caveat that it's using the mean focal
-    // length which will be inaccurate for camera models with two focal lengths
-    // and distortion.
-    bool ExportBundler(const std::string& path,
-                       const std::string& list_path,
-                       bool skip_distortion = false) const;
-
-    // Exports 3D points only in PLY format.
-    void ExportPLY(const std::string& path) const;
-
-    // Exports in VRML format https://en.wikipedia.org/wiki/VRML.
-    void ExportVRML(const std::string& images_path,
-                    const std::string& points3D_path,
-                    const double image_scale,
-                    const Eigen::Vector3d& image_rgb) const;
 
     // Extract colors for 3D points of given image. Colors will be extracted
     // only for 3D points which are completely black.
@@ -363,7 +343,8 @@ public:
     //                      root path and the name of the image.
     //
     // @return              True if image could be read at given path.
-    bool ExtractColorsForImage(const image_t image_id, const std::string& path);
+    bool ExtractColorsForImage(const image_t image_id,
+                               const std::filesystem::path& path);
 
     // Extract colors for all 3D points by computing the mean color of all
     // images.
@@ -371,10 +352,10 @@ public:
     // @param path          Absolute or relative path to root folder of image.
     //                      The image path is determined by concatenating the
     //                      root path and the name of the image.
-    void ExtractColorsForAllImages(const std::string& path);
+    void ExtractColorsForAllImages(const std::filesystem::path& path);
 
     // Create all image sub-directories in the given path.
-    void CreateImageDirs(const std::string& path) const;
+    void CreateImageDirs(const std::filesystem::path& path) const;
 
     // Access the correspondence graph.
     inline const CorrespondenceGraph* GetCorrespondenceGraph() const;
@@ -393,20 +374,6 @@ private:
                              const double p1,
                              const bool use_images) const;
 
-    void ReadCamerasText(const std::string& path);
-    void ReadImagesText(const std::string& path);
-    void ReadPoints3DText(const std::string& path);
-    void ReadCamerasBinary(const std::string& path);
-    void ReadImagesBinary(const std::string& path);
-    void ReadPoints3DBinary(const std::string& path);
-
-    void WriteCamerasText(const std::string& path) const;
-    void WriteImagesText(const std::string& path) const;
-    void WritePoints3DText(const std::string& path) const;
-    void WriteCamerasBinary(const std::string& path) const;
-    void WriteImagesBinary(const std::string& path) const;
-    void WritePoints3DBinary(const std::string& path) const;
-
     void SetObservationAsTriangulated(const image_t image_id,
                                       const point2D_t point2D_idx,
                                       const bool is_continued_point3D);
@@ -418,6 +385,8 @@ private:
 
     std::unordered_map<camera_t, class Camera> cameras_;
     std::unordered_map<image_t, class Image> images_;
+    std::unordered_map<rig_t, class Rig> rigs_;
+    std::unordered_map<frame_t, class Frame> frames_;
     std::unordered_map<point3D_t, class Point3D> points3D_;
 
     std::unordered_map<image_pair_t, ImagePairStat> image_pair_stats_;
@@ -437,6 +406,10 @@ size_t Reconstruction::NumCameras() const { return cameras_.size(); }
 
 size_t Reconstruction::NumImages() const { return images_.size(); }
 
+size_t Reconstruction::NumRigs() const { return rigs_.size(); }
+
+size_t Reconstruction::NumFrames() const { return frames_.size(); }
+
 size_t Reconstruction::NumRegImages() const { return reg_image_ids_.size(); }
 
 size_t Reconstruction::NumPoints3D() const { return points3D_.size(); }
@@ -453,6 +426,14 @@ const class Camera& Reconstruction::Camera(const camera_t camera_id) const {
 
 const class Image& Reconstruction::Image(const image_t image_id) const {
     return images_.at(image_id);
+}
+
+const class Rig& Reconstruction::Rig(const rig_t rig_id) const {
+    return rigs_.at(rig_id);
+}
+
+const class Frame& Reconstruction::Frame(const frame_t frame_id) const {
+    return frames_.at(frame_id);
 }
 
 const class Point3D& Reconstruction::Point3D(const point3D_t point3D_id) const {
@@ -478,6 +459,12 @@ class Image& Reconstruction::Image(const image_t image_id) {
     return images_.at(image_id);
 }
 
+class Rig& Reconstruction::Rig(const rig_t rig_id) { return rigs_.at(rig_id); }
+
+class Frame& Reconstruction::Frame(const frame_t frame_id) {
+    return frames_.at(frame_id);
+}
+
 class Point3D& Reconstruction::Point3D(const point3D_t point3D_id) {
     return points3D_.at(point3D_id);
 }
@@ -501,6 +488,14 @@ const std::unordered_map<image_t, class Image>& Reconstruction::Images() const {
     return images_;
 }
 
+const std::unordered_map<rig_t, class Rig>& Reconstruction::Rigs() const {
+    return rigs_;
+}
+
+const std::unordered_map<frame_t, class Frame>& Reconstruction::Frames() const {
+    return frames_;
+}
+
 const std::vector<image_t>& Reconstruction::RegImageIds() const {
     return reg_image_ids_;
 }
@@ -520,6 +515,14 @@ bool Reconstruction::ExistsCamera(const camera_t camera_id) const {
 
 bool Reconstruction::ExistsImage(const image_t image_id) const {
     return images_.find(image_id) != images_.end();
+}
+
+bool Reconstruction::ExistsRig(const rig_t rig_id) const {
+    return rigs_.find(rig_id) != rigs_.end();
+}
+
+bool Reconstruction::ExistsFrame(const frame_t frame_id) const {
+    return frames_.find(frame_id) != frames_.end();
 }
 
 bool Reconstruction::ExistsPoint3D(const point3D_t point3D_id) const {
@@ -652,5 +655,10 @@ bool Reconstruction::AlignRobust(const std::vector<std::string>& image_names,
 
     return true;
 }
+
+// Upstream COLMAP dbb41680 scene/reconstruction.h parity: summary printing
+// (required by the test matchers in scene/reconstruction_matchers.h).
+std::ostream& operator<<(std::ostream& stream,
+                         const Reconstruction& reconstruction);
 
 }  // namespace colmap

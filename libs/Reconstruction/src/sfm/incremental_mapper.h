@@ -187,14 +187,9 @@ public:
             const image_t image_id,
             const std::unordered_set<point3D_t>& point3D_ids);
 
-    // Global bundle adjustment using Ceres Solver or PBA.
+    // Global bundle adjustment with the configured backend.
     bool AdjustGlobalBundle(const Options& options,
                             const BundleAdjustmentOptions& ba_options);
-#ifdef PBA_ENABLED
-    bool AdjustParallelGlobalBundle(
-            const BundleAdjustmentOptions& ba_options,
-            const ParallelBundleAdjuster::Options& parallel_ba_options);
-#endif
     // Filter images and point observations.
     size_t FilterImages(const Options& options);
     size_t FilterPoints(const Options& options);

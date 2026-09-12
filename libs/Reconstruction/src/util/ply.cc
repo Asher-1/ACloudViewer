@@ -40,7 +40,7 @@
 
 namespace colmap {
 
-std::vector<PlyPoint> ReadPly(const std::string& path) {
+std::vector<PlyPoint> ReadPly(const std::filesystem::path& path) {
   std::ifstream file(path, std::ios::binary);
   CHECK(file.is_open()) << path;
 
@@ -320,7 +320,7 @@ std::vector<PlyPoint> ReadPly(const std::string& path) {
   return points;
 }
 
-void WriteTextPlyPoints(const std::string& path,
+void WriteTextPlyPoints(const std::filesystem::path& path,
                         const std::vector<PlyPoint>& points,
                         const bool write_normal, const bool write_rgb) {
   std::ofstream file(path);
@@ -366,7 +366,7 @@ void WriteTextPlyPoints(const std::string& path,
   file.close();
 }
 
-void WriteBinaryPlyPoints(const std::string& path,
+void WriteBinaryPlyPoints(const std::filesystem::path& path,
                           const std::vector<PlyPoint>& points,
                           const bool write_normal, const bool write_rgb) {
   std::fstream text_file(path, std::ios::out);
@@ -420,7 +420,7 @@ void WriteBinaryPlyPoints(const std::string& path,
   binary_file.close();
 }
 
-void WriteTextPlyMesh(const std::string& path, const PlyMesh& mesh) {
+void WriteTextPlyMesh(const std::filesystem::path& path, const PlyMesh& mesh) {
   std::fstream file(path, std::ios::out);
   CHECK(file.is_open());
 
@@ -445,7 +445,8 @@ void WriteTextPlyMesh(const std::string& path, const PlyMesh& mesh) {
   }
 }
 
-void WriteBinaryPlyMesh(const std::string& path, const PlyMesh& mesh) {
+void WriteBinaryPlyMesh(const std::filesystem::path& path,
+                        const PlyMesh& mesh) {
   std::fstream text_file(path, std::ios::out);
   CHECK(text_file.is_open());
 
@@ -482,6 +483,97 @@ void WriteBinaryPlyMesh(const std::string& path, const PlyMesh& mesh) {
   }
 
   binary_file.close();
+}
+
+void WriteTextPlyMesh(const std::filesystem::path& path,
+                      const PlyTexturedMesh& textured_mesh) {
+  const PlyMesh& mesh = textured_mesh.mesh;
+  const bool has_texcoords = !textured_mesh.face_uvs.empty();
+  if (has_texcoords) {
+    CHECK_EQ(textured_mesh.face_uvs.size(), mesh.faces.size() * 6);
+  }
+
+  std::fstream file(path, std::ios::out);
+  CHECK(file.is_open()) << path;
+  file << "ply\nformat ascii 1.0\n";
+  if (!textured_mesh.texture_file.empty()) {
+    file << "comment TextureFile " << textured_mesh.texture_file << "\n";
+  }
+  file << "element vertex " << mesh.vertices.size()
+       << "\nproperty float x\nproperty float y\nproperty float z\n";
+  file << "element face " << mesh.faces.size()
+       << "\nproperty list uchar int vertex_indices\n";
+  if (has_texcoords) {
+    file << "property list uchar float texcoord\n";
+  }
+  file << "end_header\n";
+
+  for (const auto& vertex : mesh.vertices) {
+    file << vertex.x << " " << vertex.y << " " << vertex.z << "\n";
+  }
+  for (size_t i = 0; i < mesh.faces.size(); ++i) {
+    const auto& face = mesh.faces[i];
+    file << "3 " << face.vertex_idx1 << " " << face.vertex_idx2 << " "
+         << face.vertex_idx3;
+    if (has_texcoords) {
+      file << " 6";
+      for (size_t j = 0; j < 6; ++j) {
+        file << " " << textured_mesh.face_uvs[i * 6 + j];
+      }
+    }
+    file << "\n";
+  }
+}
+
+void WriteBinaryPlyMesh(const std::filesystem::path& path,
+                        const PlyTexturedMesh& textured_mesh) {
+  const PlyMesh& mesh = textured_mesh.mesh;
+  const bool has_texcoords = !textured_mesh.face_uvs.empty();
+  if (has_texcoords) {
+    CHECK_EQ(textured_mesh.face_uvs.size(), mesh.faces.size() * 6);
+  }
+
+  std::fstream text_file(path, std::ios::out);
+  CHECK(text_file.is_open()) << path;
+  text_file << "ply\nformat binary_little_endian 1.0\n";
+  if (!textured_mesh.texture_file.empty()) {
+    text_file << "comment TextureFile " << textured_mesh.texture_file << "\n";
+  }
+  text_file << "element vertex " << mesh.vertices.size()
+            << "\nproperty float x\nproperty float y\nproperty float z\n";
+  text_file << "element face " << mesh.faces.size()
+            << "\nproperty list uchar int vertex_indices\n";
+  if (has_texcoords) {
+    text_file << "property list uchar float texcoord\n";
+  }
+  text_file << "end_header\n";
+  text_file.close();
+
+  std::fstream binary_file(path,
+                           std::ios::out | std::ios::binary | std::ios::app);
+  CHECK(binary_file.is_open()) << path;
+  for (const auto& vertex : mesh.vertices) {
+    WriteBinaryLittleEndian<float>(&binary_file, vertex.x);
+    WriteBinaryLittleEndian<float>(&binary_file, vertex.y);
+    WriteBinaryLittleEndian<float>(&binary_file, vertex.z);
+  }
+  for (size_t i = 0; i < mesh.faces.size(); ++i) {
+    const auto& face = mesh.faces[i];
+    CHECK_LT(face.vertex_idx1, mesh.vertices.size());
+    CHECK_LT(face.vertex_idx2, mesh.vertices.size());
+    CHECK_LT(face.vertex_idx3, mesh.vertices.size());
+    WriteBinaryLittleEndian<uint8_t>(&binary_file, 3);
+    WriteBinaryLittleEndian<int>(&binary_file, face.vertex_idx1);
+    WriteBinaryLittleEndian<int>(&binary_file, face.vertex_idx2);
+    WriteBinaryLittleEndian<int>(&binary_file, face.vertex_idx3);
+    if (has_texcoords) {
+      WriteBinaryLittleEndian<uint8_t>(&binary_file, 6);
+      for (size_t j = 0; j < 6; ++j) {
+        WriteBinaryLittleEndian<float>(&binary_file,
+                                       textured_mesh.face_uvs[i * 6 + j]);
+      }
+    }
+  }
 }
 
 }  // namespace colmap

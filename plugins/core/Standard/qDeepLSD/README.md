@@ -40,4 +40,5 @@ F32 and Q8_0 variants are also listed in the model combo.
 ## References
 
 - [DeepLSD](https://github.com/cvg/DeepLSD) (upstream PyTorch)
+- [DeepLSD-GGML](https://github.com/Asher-1/DeepLSD-GGLM) (upstream ggml)
 - GGML parity: `DeepLSD/cpp/BENCHMARK.md`

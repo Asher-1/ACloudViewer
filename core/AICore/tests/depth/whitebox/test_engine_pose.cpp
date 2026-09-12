@@ -9,9 +9,10 @@
 #include <cstdlib>
 #include <vector>
 
-#include "engine.hpp"
-#include "image_io.hpp"
-#include "parity.hpp"
+#include "tasks/depth/engine.hpp"
+#include "tasks/depth/image_io.hpp"
+#include "tests/depth/whitebox/parity.hpp"
+
 int main() {
     const char* gguf = std::getenv("AICORE_TEST_DEPTH_GGUF");
     const char* base = std::getenv("AICORE_TEST_DEPTH_BASELINE");
@@ -21,7 +22,7 @@ int main() {
     if (!da_parity::load_baseline(base, "raw_image", raw, s)) return 77;
     da_parity::load_baseline(base, "extrinsics", rext, s);
     da_parity::load_baseline(base, "intrinsics", rintr, s);
-    auto eng = aicore::depth::Engine::load(gguf, 0);
+    auto eng = aicore::depth::Engine::load(gguf, {});
     if (!eng) return 1;
     aicore::depth::Image img;
     img.w = 224;

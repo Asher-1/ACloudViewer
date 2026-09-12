@@ -72,6 +72,15 @@ int HierarchicalMapper(
         const colmap::IncrementalMapperOptions& incremental_mapper_options =
                 colmap::IncrementalMapperOptions());
 
+int GlobalMapper(
+        const std::string& database_path,
+        const std::string& image_path,
+        const std::string& output_path,
+        int num_workers = -1,
+        int min_component_size = 2,
+        const colmap::IncrementalMapperOptions& incremental_mapper_options =
+                colmap::IncrementalMapperOptions());
+
 int FilterPoints(const std::string& input_path,
                  const std::string& output_path,
                  std::size_t min_track_len = 2,
@@ -86,14 +95,5 @@ int TriangulatePoints(
         bool clear_points = false,
         const colmap::IncrementalMapperOptions& incremental_mapper_options =
                 colmap::IncrementalMapperOptions());
-
-int RigBundleAdjust(
-        const std::string& input_path,
-        const std::string& output_path,
-        const std::string& rig_config_path,
-        bool estimate_rig_relative_poses = true,
-        bool refine_relative_poses = true,
-        const colmap::BundleAdjustmentOptions& bundle_adjustment_options =
-                colmap::BundleAdjustmentOptions());
 
 }  // namespace cloudViewer

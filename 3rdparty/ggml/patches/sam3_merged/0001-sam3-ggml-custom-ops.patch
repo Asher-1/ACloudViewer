@@ -1,0 +1,1376 @@
+diff --git a/include/ggml.h b/include/ggml.h
+index 2eef8ed..b9701a8 100644
+--- a/include/ggml.h
++++ b/include/ggml.h
+@@ -252,6 +252,8 @@
+ #define GGML_ROPE_TYPE_MROPE  8
+ #define GGML_ROPE_TYPE_VISION 24
+ #define GGML_ROPE_TYPE_IMROPE 40 // binary: 101000
++#define GGML_ROPE_TYPE_CUSTOM_FREQS 64
++#define GGML_ROPE_TYPE_CUSTOM_QKV 65
+ 
+ #define GGML_MROPE_SECTIONS   4
+ 
+@@ -1430,6 +1432,16 @@ extern "C" {
+             struct ggml_tensor  * a,
+             struct ggml_tensor  * b);
+ 
++    // Matrix multiplication with an explicit output type. Backends may support
++    // fewer output types than ggml_mul_mat; callers must query supports_op.
++    // CUDA supports F16 output for F16-weight GEMMs, avoiding the otherwise
++    // mandatory F16 -> F32 conversion when the following ops stay in F16.
++    GGML_API struct ggml_tensor * ggml_mul_mat_cast(
++            struct ggml_context * ctx,
++            struct ggml_tensor  * a,
++            struct ggml_tensor  * b,
++            enum ggml_type        type);
++
+     // change the precision of a matrix multiplication
+     // set to GGML_PREC_F32 for higher precision (useful for phi-2)
+     GGML_API void ggml_mul_mat_set_prec(
+@@ -1787,6 +1799,27 @@ extern "C" {
+             int                   n_dims,
+             int                   mode);
+ 
++    // Apply interleaved complex RoPE using precomputed [2, head_dim/2, n_token]
++    // F32 (cos, sin) pairs. This avoids decomposing a complex multiply into
++    // multiple elementwise graph nodes when frequencies are model tensors.
++    GGML_API struct ggml_tensor * ggml_rope_custom_freqs(
++            struct ggml_context * ctx,
++            struct ggml_tensor  * a,
++            struct ggml_tensor  * freqs);
++
++    GGML_API struct ggml_tensor * ggml_rope_custom_freqs_cast(
++            struct ggml_context * ctx,
++            struct ggml_tensor  * a,
++            struct ggml_tensor  * freqs,
++            enum ggml_type        type);
++
++    GGML_API struct ggml_tensor * ggml_rope_custom_qkv(
++            struct ggml_context * ctx,
++            struct ggml_tensor  * qkv,
++            struct ggml_tensor  * freqs,
++            int                   head_dim,
++            int                   n_heads);
++
+     // in-place, returns view(a)
+     GGML_API struct ggml_tensor * ggml_rope_inplace(
+             struct ggml_context * ctx,
+diff --git a/src/ggml-cuda/conv2d-transpose.cu b/src/ggml-cuda/conv2d-transpose.cu
+index 6afa6b3..2861204 100644
+--- a/src/ggml-cuda/conv2d-transpose.cu
++++ b/src/ggml-cuda/conv2d-transpose.cu
+@@ -1,6 +1,115 @@
+ #include "conv2d-transpose.cuh"
+ #include "convert.cuh"
+ 
++#include <cublas_v2.h>
++
++// ── Fast path: 2x2 kernel, stride 2 (SAM3-style upsampling) ──────────────────
++//
++// out[2y+dy, 2x+dx, co] = sum_ci in[y, x, ci] * w[dx + 2*dy + 4*co + 4*C_out*ci]
++//
++// The four output phases (dy,dx) are independent 1x1 convolutions of the
++// input, so the whole op reduces to 4 GEMMs (one per phase) plus an
++// interleave write-back. The naive kernel below runs at ~0.1 TFLOPS on a
++// 3060; this path uses cuBLAS and reaches ~10-30 TFLOPS.
++
++// Copy the 4 strided [C_out, C_in] phase matrices of w into one contiguous
++// [4, C_out, C_in] buffer so cuBLAS sees dense column-major matrices.
++static __global__ void conv2d_transpose_reorder_kernel(
++        const void * __restrict__ w_src,
++        float *       __restrict__ w_dst,
++        const int C_out,
++        const int C_in,
++        const bool f16) {
++    const int idx = blockIdx.x * blockDim.x + threadIdx.x;
++    const int total = 4 * C_out * C_in;
++    if (idx >= total) {
++        return;
++    }
++    const int ci = idx % C_in;
++    const int co = (idx / C_in) % C_out;
++    const int ph = idx / (C_in * C_out);
++    const int dx = ph & 1;
++    const int dy = ph >> 1;
++    const int src = dx + 2 * dy + 4 * co + 4 * C_out * ci;
++    const float v = f16 ? __half2float(((const __half *) w_src)[src])
++                        : ((const float *) w_src)[src];
++    // cuBLAS sees the phase matrices as column-major [C_out, C_in]
++    // (co fastest), so dst is co + C_out*ci within each phase block.
++    w_dst[co + C_out * ci + (C_out * C_in) * ph] = v;
++}
++
++// Write the four [C_out, W*H] phase matrices back into the interleaved
++// [2W, 2H, C_out] output (ggml layout: x fastest).
++static __global__ void conv2d_transpose_interleave_kernel(
++        const float * __restrict__ ph,
++        float *       __restrict__ out,
++        const int W,
++        const int H,
++        const int C_out) {
++    const int idx = blockIdx.x * blockDim.x + threadIdx.x;
++    const int total = (2 * W) * (2 * H) * C_out;
++    if (idx >= total) {
++        return;
++    }
++    const int ox = idx % (2 * W);
++    const int oy = (idx / (2 * W)) % (2 * H);
++    const int co = idx / ((2 * W) * (2 * H));
++    const int dx = ox & 1;
++    const int dy = oy & 1;
++    const int pix = (ox >> 1) + W * (oy >> 1);
++    out[idx] = ph[(dy * 2 + dx) * (C_out * (W * H)) + co + C_out * pix];
++}
++
++// The 2x2/stride-2 fast path. Keeps the f32 in/out contract of the naive
++// kernel — only the internal arithmetic changes.
++static void ggml_cuda_conv_2d_transpose_p0_fast(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
++    const ggml_tensor * kernel = dst->src[0];  // [2, 2, C_out, C_in]
++    const ggml_tensor * input  = dst->src[1];  // [W, H, C_in] f32
++
++    GGML_ASSERT(kernel->type == GGML_TYPE_F16 || kernel->type == GGML_TYPE_F32);
++    GGML_ASSERT(input->type == GGML_TYPE_F32 && dst->type == GGML_TYPE_F32);
++    GGML_ASSERT(kernel->ne[0] == 2 && kernel->ne[1] == 2);
++    GGML_ASSERT(dst->op_params[0] == 2);
++
++    const int W     = input->ne[0];
++    const int H     = input->ne[1];
++    const int C_in  = input->ne[2];
++    const int C_out = kernel->ne[2];
++    const int WH    = W * H;
++
++    cudaStream_t st = ctx.stream();
++    // cuBLAS must run on the same stream as the reorder/interleave kernels,
++    // otherwise the GEMMs race with them (the handle defaults to stream 0).
++    CUBLAS_CHECK(cublasSetStream(ctx.cublas_handle(), st));
++
++    // 1. reorder the strided phase matrices into 4 contiguous [C_out, C_in]
++    ggml_cuda_pool_alloc<float> w_ph(ctx.pool(), 4 * C_out * C_in);
++    {
++        const int n = 4 * C_out * C_in;
++        conv2d_transpose_reorder_kernel<<<(n + 255) / 256, 256, 0, st>>>(
++            kernel->data, w_ph.get(), C_out, C_in, kernel->type == GGML_TYPE_F16);
++    }
++
++    // 2. one GEMM per phase: ph[co, pix] = sum_ci w_ph[co, ci] * in[pix, ci]
++    //    in (ggml [W,H,C]) is a column-major [WH, C_in] matrix with lda=WH,
++    //    so cublas sees B^T and we use CUBLAS_OP_T on B.
++    ggml_cuda_pool_alloc<float> ph(ctx.pool(), 4 * C_out * WH);
++    const float alpha = 1.0f;
++    const float beta  = 0.0f;
++    for (int p = 0; p < 4; ++p) {
++        CUBLAS_CHECK(cublasSgemm(ctx.cublas_handle(), CUBLAS_OP_N, CUBLAS_OP_T,
++                                 C_out, WH, C_in, &alpha,
++                                 w_ph.get() + p * C_out * C_in, C_out,
++                                 (const float *) input->data, WH,
++                                 &beta, ph.get() + p * C_out * WH, C_out));
++    }
++
++    // 3. interleave the phases into the strided output
++    const int total = (2 * W) * (2 * H) * C_out;
++    conv2d_transpose_interleave_kernel<<<(total + 255) / 256, 256, 0, st>>>(
++        ph.get(), (float *) dst->data, W, H, C_out);
++}
++
+ 
+ template <typename input_t, typename kernel_t, typename output_t>
+ static __global__ void conv2d_transpose_kernel(const input_t * __restrict__ input,
+@@ -75,6 +184,13 @@ void ggml_cuda_conv_2d_transpose_p0(ggml_backend_cuda_context & ctx, ggml_tensor
+     const ggml_tensor * kernel = dst->src[0];
+     const ggml_tensor * input  = dst->src[1];
+ 
++    // 2x2 kernel + stride 2: use the 4-phase cuBLAS path (10-50x faster than
++    // the generic kernel below for SAM3-style upsampling).
++    if (kernel->ne[0] == 2 && kernel->ne[1] == 2 && dst->op_params[0] == 2) {
++        ggml_cuda_conv_2d_transpose_p0_fast(ctx, dst);
++        return;
++    }
++
+     GGML_ASSERT(kernel->type == GGML_TYPE_F16 || kernel->type == GGML_TYPE_F32);
+     GGML_ASSERT(input->type == dst->type);
+     GGML_ASSERT(input->type == GGML_TYPE_F16 || input->type == GGML_TYPE_F32);
+diff --git a/src/ggml-cuda/conv2d-transpose.cu.rej b/src/ggml-cuda/conv2d-transpose.cu.rej
+new file mode 100644
+index 0000000..03c4a89
+--- /dev/null
++++ b/src/ggml-cuda/conv2d-transpose.cu.rej
+@@ -0,0 +1,114 @@
++diff a/src/ggml-cuda/conv2d-transpose.cu b/src/ggml-cuda/conv2d-transpose.cu	(rejected hunks)
++@@ -1,3 +1,112 @@
++ #include "conv2d-transpose.cuh"
++ #include "convert.cuh"
++ 
+++#include <cublas_v2.h>
+++
+++// ── Fast path: 2x2 kernel, stride 2 (SAM3-style upsampling) ──────────────────
+++//
+++// out[2y+dy, 2x+dx, co] = sum_ci in[y, x, ci] * w[dx + 2*dy + 4*co + 4*C_out*ci]
+++//
+++// The four output phases (dy,dx) are independent 1x1 convolutions of the
+++// input, so the whole op reduces to 4 GEMMs (one per phase) plus an
+++// interleave write-back. The naive kernel below runs at ~0.1 TFLOPS on a
+++// 3060; this path uses cuBLAS and reaches ~10-30 TFLOPS.
+++
+++// Copy the 4 strided [C_out, C_in] phase matrices of w into one contiguous
+++// [4, C_out, C_in] buffer so cuBLAS sees dense column-major matrices.
+++static __global__ void conv2d_transpose_reorder_kernel(
+++        const void * __restrict__ w_src,
+++        float *       __restrict__ w_dst,
+++        const int C_out,
+++        const int C_in,
+++        const bool f16) {
+++    const int idx = blockIdx.x * blockDim.x + threadIdx.x;
+++    const int total = 4 * C_out * C_in;
+++    if (idx >= total) {
+++        return;
+++    }
+++    const int ci = idx % C_in;
+++    const int co = (idx / C_in) % C_out;
+++    const int ph = idx / (C_in * C_out);
+++    const int dx = ph & 1;
+++    const int dy = ph >> 1;
+++    const int src = dx + 2 * dy + 4 * co + 4 * C_out * ci;
+++    const float v = f16 ? __half2float(((const __half *) w_src)[src])
+++                        : ((const float *) w_src)[src];
+++    // cuBLAS sees the phase matrices as column-major [C_out, C_in]
+++    // (co fastest), so dst is co + C_out*ci within each phase block.
+++    w_dst[co + C_out * ci + (C_out * C_in) * ph] = v;
+++}
+++
+++// Write the four [C_out, W*H] phase matrices back into the interleaved
+++// [2W, 2H, C_out] output (ggml layout: x fastest).
+++static __global__ void conv2d_transpose_interleave_kernel(
+++        const float * __restrict__ ph,
+++        float *       __restrict__ out,
+++        const int W,
+++        const int H,
+++        const int C_out) {
+++    const int idx = blockIdx.x * blockDim.x + threadIdx.x;
+++    const int total = (2 * W) * (2 * H) * C_out;
+++    if (idx >= total) {
+++        return;
+++    }
+++    const int ox = idx % (2 * W);
+++    const int oy = (idx / (2 * W)) % (2 * H);
+++    const int co = idx / ((2 * W) * (2 * H));
+++    const int dx = ox & 1;
+++    const int dy = oy & 1;
+++    const int pix = (ox >> 1) + W * (oy >> 1);
+++    out[idx] = ph[(dy * 2 + dx) * (C_out * (W * H)) + co + C_out * pix];
+++}
+++
+++// The 2x2/stride-2 fast path. Keeps the f32 in/out contract of the naive
+++// kernel — only the internal arithmetic changes.
+++static void ggml_cuda_conv_2d_transpose_p0_fast(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
+++    const ggml_tensor * kernel = dst->src[0];  // [2, 2, C_out, C_in]
+++    const ggml_tensor * input  = dst->src[1];  // [W, H, C_in] f32
+++
+++    GGML_ASSERT(kernel->type == GGML_TYPE_F16 || kernel->type == GGML_TYPE_F32);
+++    GGML_ASSERT(input->type == GGML_TYPE_F32 && dst->type == GGML_TYPE_F32);
+++    GGML_ASSERT(kernel->ne[0] == 2 && kernel->ne[1] == 2);
+++    GGML_ASSERT(dst->op_params[0] == 2);
+++
+++    const int W     = input->ne[0];
+++    const int H     = input->ne[1];
+++    const int C_in  = input->ne[2];
+++    const int C_out = kernel->ne[2];
+++    const int WH    = W * H;
+++
+++    cudaStream_t st = ctx.stream();
+++    // cuBLAS must run on the same stream as the reorder/interleave kernels,
+++    // otherwise the GEMMs race with them (the handle defaults to stream 0).
+++    CUBLAS_CHECK(cublasSetStream(ctx.cublas_handle(), st));
+++
+++    // 1. reorder the strided phase matrices into 4 contiguous [C_out, C_in]
+++    ggml_cuda_pool_alloc<float> w_ph(ctx.pool(), 4 * C_out * C_in);
+++    {
+++        const int n = 4 * C_out * C_in;
+++        conv2d_transpose_reorder_kernel<<<(n + 255) / 256, 256, 0, st>>>(
+++            kernel->data, w_ph.get(), C_out, C_in, kernel->type == GGML_TYPE_F16);
+++    }
+++
+++    // 2. one GEMM per phase: ph[co, pix] = sum_ci w_ph[co, ci] * in[pix, ci]
+++    //    in (ggml [W,H,C]) is a column-major [WH, C_in] matrix with lda=WH,
+++    //    so cublas sees B^T and we use CUBLAS_OP_T on B.
+++    ggml_cuda_pool_alloc<float> ph(ctx.pool(), 4 * C_out * WH);
+++    const float alpha = 1.0f;
+++    const float beta  = 0.0f;
+++    for (int p = 0; p < 4; ++p) {
+++        CUBLAS_CHECK(cublasSgemm(ctx.cublas_handle(), CUBLAS_OP_N, CUBLAS_OP_T,
+++                                 C_out, WH, C_in, &alpha,
+++                                 w_ph.get() + p * C_out * C_in, C_out,
+++                                 (const float *) input->data, WH,
+++                                 &beta, ph.get() + p * C_out * WH, C_out));
+++    }
+++
+++    // 3. interleave the phases into the strided output
+++    const int total = (2 * W) * (2 * H) * C_out;
+++    conv2d_transpose_interleave_kernel<<<(total + 255) / 256, 256, 0, st>>>(
+++        ph.get(), (float *) dst->data, W, H, C_out);
+++}
+++
+diff --git a/src/ggml-cuda/cpy.cu b/src/ggml-cuda/cpy.cu
+index fd7ffc0..4d1ed0e 100644
+--- a/src/ggml-cuda/cpy.cu
++++ b/src/ggml-cuda/cpy.cu
+@@ -615,3 +615,80 @@ void ggml_cuda_dup(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
+     const ggml_tensor * src0 = dst->src[0];
+     ggml_cuda_cpy(ctx, src0, dst);
+ }
++
++static __global__ void win_part_f32x4(const float4 * src, float4 * dst,
++                                      int64_t nc4, int64_t src_w, int64_t src_h,
++                                      int64_t win, int64_t npx, int64_t total) {
++    const int64_t idx = (int64_t) blockIdx.x * blockDim.x + threadIdx.x;
++    if (idx >= total) {
++        return;
++    }
++
++    int64_t rem = idx;
++    const int64_t c4 = rem % nc4;
++    rem /= nc4;
++    const int64_t xw = rem % win;
++    rem /= win;
++    const int64_t yw = rem % win;
++    const int64_t window = rem / win;
++    const int64_t px = window % npx;
++    const int64_t py = window / npx;
++    const int64_t x = px * win + xw;
++    const int64_t y = py * win + yw;
++
++    dst[idx] = (x < src_w && y < src_h)
++        ? src[c4 + nc4 * (x + src_w * y)]
++        : make_float4(0.0f, 0.0f, 0.0f, 0.0f);
++}
++
++static __global__ void win_unpart_f32x4(const float4 * src, float4 * dst,
++                                        int64_t nc4, int64_t dst_w, int64_t dst_h,
++                                        int64_t win, int64_t npx, int64_t total) {
++    const int64_t idx = (int64_t) blockIdx.x * blockDim.x + threadIdx.x;
++    if (idx >= total) {
++        return;
++    }
++
++    int64_t rem = idx;
++    const int64_t c4 = rem % nc4;
++    rem /= nc4;
++    const int64_t x = rem % dst_w;
++    const int64_t y = rem / dst_w;
++    const int64_t px = x / win;
++    const int64_t py = y / win;
++    const int64_t xw = x % win;
++    const int64_t yw = y % win;
++    const int64_t window = py * npx + px;
++    dst[idx] = src[c4 + nc4 * (xw + win * (yw + win * window))];
++}
++
++void ggml_cuda_win_part(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
++    const ggml_tensor * src = dst->src[0];
++    GGML_ASSERT(src->type == GGML_TYPE_F32 && dst->type == GGML_TYPE_F32);
++    GGML_ASSERT(ggml_is_contiguous(src) && ggml_is_contiguous(dst));
++    GGML_ASSERT(src->ne[0] % 4 == 0);
++
++    const int64_t npx = ((const int32_t *) dst->op_params)[0];
++    const int64_t win = ((const int32_t *) dst->op_params)[2];
++    const int64_t total = ggml_nelements(dst) / 4;
++    const int blocks = (int) ((total + CUDA_CPY_BLOCK_SIZE - 1) / CUDA_CPY_BLOCK_SIZE);
++    win_part_f32x4<<<blocks, CUDA_CPY_BLOCK_SIZE, 0, ctx.stream()>>>(
++        (const float4 *) src->data, (float4 *) dst->data, src->ne[0] / 4,
++        src->ne[1], src->ne[2], win, npx, total);
++}
++
++void ggml_cuda_win_unpart(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
++    const ggml_tensor * src = dst->src[0];
++    GGML_ASSERT(src->type == GGML_TYPE_F32 && dst->type == GGML_TYPE_F32);
++    GGML_ASSERT(ggml_is_contiguous(src) && ggml_is_contiguous(dst));
++    GGML_ASSERT(src->ne[0] % 4 == 0);
++
++    const int64_t win = ((const int32_t *) dst->op_params)[0];
++    const int64_t px = (win - dst->ne[1] % win) % win;
++    const int64_t npx = (dst->ne[1] + px) / win;
++    const int64_t total = ggml_nelements(dst) / 4;
++    const int blocks = (int) ((total + CUDA_CPY_BLOCK_SIZE - 1) / CUDA_CPY_BLOCK_SIZE);
++    win_unpart_f32x4<<<blocks, CUDA_CPY_BLOCK_SIZE, 0, ctx.stream()>>>(
++        (const float4 *) src->data, (float4 *) dst->data, dst->ne[0] / 4,
++        dst->ne[1], dst->ne[2], win, npx, total);
++}
+diff --git a/src/ggml-cuda/cpy.cuh b/src/ggml-cuda/cpy.cuh
+index a7a87d8..d95f939 100644
+--- a/src/ggml-cuda/cpy.cuh
++++ b/src/ggml-cuda/cpy.cuh
+@@ -5,3 +5,6 @@
+ void ggml_cuda_cpy(ggml_backend_cuda_context & ctx, const ggml_tensor * src0, ggml_tensor * src1);
+ 
+ void ggml_cuda_dup(ggml_backend_cuda_context & ctx, ggml_tensor * dst);
++
++void ggml_cuda_win_part(ggml_backend_cuda_context & ctx, ggml_tensor * dst);
++void ggml_cuda_win_unpart(ggml_backend_cuda_context & ctx, ggml_tensor * dst);
+diff --git a/src/ggml-cuda/fattn-tile.cu b/src/ggml-cuda/fattn-tile.cu
+index e563729..93b1b00 100644
+--- a/src/ggml-cuda/fattn-tile.cu
++++ b/src/ggml-cuda/fattn-tile.cu
+@@ -5,6 +5,18 @@ void ggml_cuda_flash_attn_ext_tile(ggml_backend_cuda_context & ctx, ggml_tensor
+     const ggml_tensor * K = dst->src[1];
+     const ggml_tensor * V = dst->src[2];
+     switch (K->ne[0]) {
++        case  16: {
++            GGML_ASSERT(V->ne[0] == K->ne[0]);
++            ggml_cuda_flash_attn_ext_tile_case< 16,  16>(ctx, dst);
++        } break;
++        case  32: {
++            GGML_ASSERT(V->ne[0] == K->ne[0]);
++            ggml_cuda_flash_attn_ext_tile_case< 32,  32>(ctx, dst);
++        } break;
++        case  56: {
++            GGML_ASSERT(V->ne[0] == K->ne[0]);
++            ggml_cuda_flash_attn_ext_tile_case< 56,  56>(ctx, dst);
++        } break;
+         case  40: {
+             GGML_ASSERT(V->ne[0] == K->ne[0]);
+             ggml_cuda_flash_attn_ext_tile_case< 40,  40>(ctx, dst);
+diff --git a/src/ggml-cuda/fattn-tile.cuh b/src/ggml-cuda/fattn-tile.cuh
+index d1164b8..d7d7f73 100644
+--- a/src/ggml-cuda/fattn-tile.cuh
++++ b/src/ggml-cuda/fattn-tile.cuh
+@@ -19,6 +19,23 @@
+     }                                                                                                 \
+ 
+ static constexpr __host__ __device__ uint32_t ggml_cuda_fattn_tile_get_config_nvidia_fp16(const int DKQ, const int DV, const int ncols) {
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 16,  16,  2,  64, 2,  32,  16)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 16,  16,  4, 128, 2,  32,  16)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 16,  16,  8, 256, 2,  32,  16)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 16,  16, 16, 256, 2,  32,  16)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 16,  16, 32, 256, 2,  32,  16)
++
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 32,  32,  2,  64, 2,  32,  32)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 32,  32,  4, 128, 2,  32,  32)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 32,  32,  8, 256, 2,  32,  32)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 32,  32, 16, 256, 2,  32,  32)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 32,  32, 32, 256, 2,  32,  32)
++
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 56,  56,  2,  64, 2,  64,  56)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 56,  56,  4, 128, 2,  64,  56)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 56,  56,  8, 256, 2,  64,  56)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 56,  56, 16, 256, 2,  64,  56)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 56,  56, 32, 256, 2,  64,  56)
+     GGML_CUDA_FATTN_TILE_CONFIG_CASE( 40,  40,  2,  64, 2,  64,  40)
+     GGML_CUDA_FATTN_TILE_CONFIG_CASE( 40,  40,  4, 128, 2,  64,  40)
+     GGML_CUDA_FATTN_TILE_CONFIG_CASE( 40,  40,  8, 256, 2,  64,  40)
+@@ -88,6 +105,23 @@ static constexpr __host__ __device__ uint32_t ggml_cuda_fattn_tile_get_config_nv
+ }
+ 
+ static constexpr __host__ __device__ uint32_t ggml_cuda_fattn_tile_get_config_nvidia_fp32(const int DKQ, const int DV, const int ncols) {
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 16,  16,  2,  64, 2,  32,  16)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 16,  16,  4, 128, 2,  32,  16)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 16,  16,  8, 256, 2,  32,  16)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 16,  16, 16, 256, 2,  32,  16)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 16,  16, 32, 256, 2,  32,  16)
++
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 32,  32,  2,  64, 2,  32,  32)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 32,  32,  4, 128, 2,  32,  32)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 32,  32,  8, 256, 2,  32,  32)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 32,  32, 16, 256, 2,  32,  32)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 32,  32, 32, 256, 2,  32,  32)
++
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 56,  56,  2,  64, 2,  64,  56)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 56,  56,  4, 128, 2,  64,  56)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 56,  56,  8, 256, 2,  64,  56)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 56,  56, 16, 256, 2,  64,  56)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 56,  56, 32, 256, 2,  64,  56)
+     GGML_CUDA_FATTN_TILE_CONFIG_CASE( 40,  40,  2,  64, 2,  32,  40)
+     GGML_CUDA_FATTN_TILE_CONFIG_CASE( 40,  40,  4, 128, 2,  32,  40)
+     GGML_CUDA_FATTN_TILE_CONFIG_CASE( 40,  40,  8, 256, 2,  32,  40)
+@@ -157,6 +191,26 @@ static constexpr __host__ __device__ uint32_t ggml_cuda_fattn_tile_get_config_nv
+ }
+ 
+ static constexpr __host__ __device__ uint32_t ggml_cuda_fattn_tile_get_config_amd(const int DKQ, const int DV, const int ncols) {
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 16,  16,  2,  64, 2,  32,  16)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 16,  16,  4, 128, 2,  32,  16)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 16,  16,  8, 256, 2,  32,  16)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 16,  16, 16, 256, 2,  32,  16)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 16,  16, 32, 256, 2,  32,  16)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 16,  16, 64, 256, 2,  32,  16)
++
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 32,  32,  2,  64, 2,  32,  32)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 32,  32,  4, 128, 2,  32,  32)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 32,  32,  8, 256, 2,  32,  32)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 32,  32, 16, 256, 2,  32,  32)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 32,  32, 32, 256, 2,  32,  32)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 32,  32, 64, 256, 2,  32,  32)
++
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 56,  56,  2,  64, 2,  64,  56)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 56,  56,  4, 128, 2,  64,  56)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 56,  56,  8, 256, 2,  64,  56)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 56,  56, 16, 256, 2,  64,  56)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 56,  56, 32, 256, 2,  64,  56)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 56,  56, 64, 256, 2,  64,  56)
+     GGML_CUDA_FATTN_TILE_CONFIG_CASE( 40,  40,  2,  64, 2,  32,  40)
+     GGML_CUDA_FATTN_TILE_CONFIG_CASE( 40,  40,  4, 128, 2,  32,  40)
+     GGML_CUDA_FATTN_TILE_CONFIG_CASE( 40,  40,  8, 256, 2,  32,  40)
+@@ -235,6 +289,26 @@ static constexpr __host__ __device__ uint32_t ggml_cuda_fattn_tile_get_config_am
+ }
+ 
+ static constexpr __host__ __device__ uint32_t ggml_cuda_fattn_tile_get_config_amd_rdna(const int DKQ, const int DV, const int ncols) {
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 16,  16,  2,  64, 2,  32,  16)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 16,  16,  4, 128, 2,  32,  16)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 16,  16,  8, 256, 2,  32,  16)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 16,  16, 16, 256, 2,  32,  16)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 16,  16, 32, 256, 2,  32,  16)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 16,  16, 64, 256, 2,  32,  16)
++
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 32,  32,  2,  64, 2,  32,  32)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 32,  32,  4, 128, 2,  32,  32)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 32,  32,  8, 256, 2,  32,  32)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 32,  32, 16, 256, 2,  32,  32)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 32,  32, 32, 256, 2,  32,  32)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 32,  32, 64, 256, 2,  32,  32)
++
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 56,  56,  2,  64, 2,  64,  56)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 56,  56,  4, 128, 2,  64,  56)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 56,  56,  8, 256, 2,  64,  56)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 56,  56, 16, 256, 2,  64,  56)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 56,  56, 32, 256, 2,  64,  56)
++    GGML_CUDA_FATTN_TILE_CONFIG_CASE( 56,  56, 64, 256, 2,  64,  56)
+     GGML_CUDA_FATTN_TILE_CONFIG_CASE( 40,  40,  2,  64, 2,  32,  40)
+     GGML_CUDA_FATTN_TILE_CONFIG_CASE( 40,  40,  4, 128, 2,  32,  40)
+     GGML_CUDA_FATTN_TILE_CONFIG_CASE( 40,  40,  8, 256, 2,  32,  40)
+@@ -1341,6 +1415,9 @@ void ggml_cuda_flash_attn_ext_tile(ggml_backend_cuda_context & ctx, ggml_tensor
+     template void ggml_cuda_flash_attn_ext_tile_case              \
+     <DKQ, DV>(ggml_backend_cuda_context & ctx, ggml_tensor * dst) \
+ 
++extern DECL_FATTN_TILE_CASE( 16,  16);
++extern DECL_FATTN_TILE_CASE( 32,  32);
++extern DECL_FATTN_TILE_CASE( 56,  56);
+ extern DECL_FATTN_TILE_CASE( 40,  40);
+ extern DECL_FATTN_TILE_CASE( 64,  64);
+ extern DECL_FATTN_TILE_CASE( 72,  72);
+diff --git a/src/ggml-cuda/fattn.cu b/src/ggml-cuda/fattn.cu
+index ab7a3b2..ad83eca 100644
+--- a/src/ggml-cuda/fattn.cu
++++ b/src/ggml-cuda/fattn.cu
+@@ -391,7 +391,10 @@ static best_fattn_kernel ggml_cuda_get_best_fattn_kernel(const int device, const
+     const int cc = ggml_cuda_info().devices[device].cc;
+ 
+     switch (K->ne[0]) {
++        case  16:
++        case  32:
+         case  40:
++        case  56:
+         case  64:
+         case  72:
+         case  80:
+@@ -458,7 +461,7 @@ static best_fattn_kernel ggml_cuda_get_best_fattn_kernel(const int device, const
+     const bool can_use_vector_kernel = Q->ne[0] <= 256 && Q->ne[0] % 64 == 0 && Q->ne[0] != 192 && K->ne[1] % FATTN_KQ_STRIDE == 0;
+ 
+     // If Turing tensor cores are available, use them:
+-    if (turing_mma_available(cc) && Q->ne[0] != 40 && Q->ne[0] != 72) {
++    if (turing_mma_available(cc) && Q->ne[0] != 16 && Q->ne[0] != 32 && Q->ne[0] != 40 && Q->ne[0] != 56 && Q->ne[0] != 72) {
+         if (can_use_vector_kernel) {
+             if (!ggml_is_quantized(K->type) && !ggml_is_quantized(V->type)) {
+                 if (cc >= GGML_CUDA_CC_ADA_LOVELACE && Q->ne[1] == 1 && Q->ne[3] == 1 && !(gqa_ratio > 4 && K->ne[1] >= 8192)) {
+@@ -488,7 +491,7 @@ static best_fattn_kernel ggml_cuda_get_best_fattn_kernel(const int device, const
+         gqa_ratio_eff *= 2;
+     }
+ 
+-    if (volta_mma_available(cc) && Q->ne[0] != 40 && Q->ne[0] != 72) {
++    if (volta_mma_available(cc) && Q->ne[0] != 16 && Q->ne[0] != 32 && Q->ne[0] != 40 && Q->ne[0] != 56 && Q->ne[0] != 72) {
+         if (can_use_vector_kernel && Q->ne[1] * gqa_ratio_eff <= 2) {
+             return BEST_FATTN_KERNEL_VEC;
+         }
+@@ -499,7 +502,7 @@ static best_fattn_kernel ggml_cuda_get_best_fattn_kernel(const int device, const
+     }
+ 
+     // AMD MFMA needs a certain minimum batch size to outscale the tile kernel for large head sizes.
+-    if ((amd_mfma_available(cc) && Q->ne[0] <= 256) && Q->ne[0] != 40 && Q->ne[0] != 72) {
++    if ((amd_mfma_available(cc) && Q->ne[0] <= 256) && Q->ne[0] != 16 && Q->ne[0] != 32 && Q->ne[0] != 40 && Q->ne[0] != 56 && Q->ne[0] != 72) {
+         if ((Q->ne[0] <= 64 && Q->ne[1] * gqa_ratio_eff > 8)) {
+             return BEST_FATTN_KERNEL_MMA_F16;
+         }
+@@ -512,7 +515,7 @@ static best_fattn_kernel ggml_cuda_get_best_fattn_kernel(const int device, const
+     }
+ 
+     // AMD WMMA is always faster than the tile kernel if the full tile width of 16 can be utilized.
+-    if ((amd_wmma_available(cc) && gqa_opt_applies && Q->ne[0] <= 128) && Q->ne[0] != 40 && Q->ne[0] != 72 && Q->ne[1] * gqa_ratio_eff > 8) {
++    if ((amd_wmma_available(cc) && gqa_opt_applies && Q->ne[0] <= 128) && Q->ne[0] != 16 && Q->ne[0] != 32 && Q->ne[0] != 40 && Q->ne[0] != 56 && Q->ne[0] != 72 && Q->ne[1] * gqa_ratio_eff > 8) {
+         return BEST_FATTN_KERNEL_MMA_F16;
+     }
+ 
+diff --git a/src/ggml-cuda/ggml-cuda.cu b/src/ggml-cuda/ggml-cuda.cu
+index 2cf7b16..9d7f6cd 100644
+--- a/src/ggml-cuda/ggml-cuda.cu
++++ b/src/ggml-cuda/ggml-cuda.cu
+@@ -1434,7 +1434,8 @@ static void ggml_cuda_mul_mat_cublas_impl(ggml_backend_cuda_context & ctx, const
+     int64_t s12 = nb12 / src1_ts;
+     int64_t s13 = nb13 / src1_ts;
+ 
+-    float * dst_ddf = (float *) dst->data;
++    GGML_ASSERT(dst->type == GGML_TYPE_F32 || dst->type == compute_type);
++    float * dst_ddf = dst->type == GGML_TYPE_F32 ? (float *) dst->data : nullptr;
+ 
+     const cuda_t * src0_ptr = nullptr;
+     const cuda_t * src1_ptr = nullptr;
+@@ -2224,6 +2225,12 @@ static bool ggml_cuda_compute_forward(ggml_backend_cuda_context & ctx, struct gg
+         case GGML_OP_CONCAT:
+             ggml_cuda_op_concat(ctx, dst);
+             break;
++        case GGML_OP_WIN_PART:
++            ggml_cuda_win_part(ctx, dst);
++            break;
++        case GGML_OP_WIN_UNPART:
++            ggml_cuda_win_unpart(ctx, dst);
++            break;
+         case GGML_OP_UPSCALE:
+             ggml_cuda_op_upscale(ctx, dst);
+             break;
+@@ -5042,6 +5049,9 @@ static bool ggml_backend_cuda_device_supports_op(ggml_backend_dev_t dev, const g
+                 if (b->type == GGML_TYPE_F16 && a->type != GGML_TYPE_F16) {
+                     return false;
+                 }
++                if (op->type != GGML_TYPE_F32 && !(op->type == GGML_TYPE_F16 && a->type == GGML_TYPE_F16)) {
++                    return false;
++                }
+ #ifdef GGML_USE_MUSA
+                 const int cc = ggml_cuda_info().devices[dev_ctx->device].cc;
+                 if (b->ne[2]*b->ne[3] > 1 && !ggml_is_transposed(a) && !ggml_is_transposed(b)) {
+@@ -5351,6 +5361,10 @@ static bool ggml_backend_cuda_device_supports_op(ggml_backend_dev_t dev, const g
+         case GGML_OP_ROPE_BACK: {
+             return op->src[0]->nb[0] == ggml_type_size(op->src[0]->type) && ggml_is_contiguous_2(op->src[0]);
+         }
++        case GGML_OP_WIN_PART:
++        case GGML_OP_WIN_UNPART:
++            return op->src[0]->type == GGML_TYPE_F32 && ggml_is_contiguous(op->src[0]) &&
++                   op->src[0]->ne[0] % 4 == 0;
+         case GGML_OP_IM2COL:
+         case GGML_OP_IM2COL_3D:
+         case GGML_OP_CONV_2D:
+diff --git a/src/ggml-cuda/rope.cu b/src/ggml-cuda/rope.cu
+index e546fb6..8e1068c 100644
+--- a/src/ggml-cuda/rope.cu
++++ b/src/ggml-cuda/rope.cu
+@@ -532,6 +532,92 @@ static void rope_vision_cuda(const T *            x,
+     }
+ }
+ 
++template <typename T, typename D>
++static __global__ void rope_custom_freqs(
++        const T * x, D * dst, const float * freqs,
++        int64_t ne00, int64_t ne01, int64_t ne02,
++        size_t s01, size_t s02, size_t s03,
++        size_t d01, size_t d02, size_t d03,
++        int64_t n_pairs) {
++    const int64_t pair = (int64_t) blockIdx.x * blockDim.x + threadIdx.x;
++    if (pair >= n_pairs) {
++        return;
++    }
++
++    const int64_t half = ne00 / 2;
++    const int64_t d = pair % half;
++    const int64_t row = pair / half;
++    const int64_t i1 = row % ne01;
++    const int64_t i2 = (row / ne01) % ne02;
++    const int64_t i3 = row / (ne01 * ne02);
++    const int64_t src = i1 * s01 + i2 * s02 + i3 * s03 + 2 * d;
++    const int64_t out = i1 * d01 + i2 * d02 + i3 * d03 + 2 * d;
++    const int64_t f = i1 * ne00 + 2 * d;
++
++    const float re = (float) x[src + 0];
++    const float im = (float) x[src + 1];
++    const float cs = freqs[f + 0];
++    const float sn = freqs[f + 1];
++    dst[out + 0] = (D) (re * cs - im * sn);
++    dst[out + 1] = (D) (re * sn + im * cs);
++}
++
++template <typename T, typename D>
++static void rope_custom_freqs_cuda(const T * x, D * dst, const float * freqs,
++                                   const ggml_tensor * src, const ggml_tensor * out,
++                                   cudaStream_t stream) {
++    const int64_t n_pairs = ggml_nelements(src) / 2;
++    const int blocks = (int) ((n_pairs + CUDA_ROPE_BLOCK_SIZE - 1) / CUDA_ROPE_BLOCK_SIZE);
++    rope_custom_freqs<T, D><<<blocks, CUDA_ROPE_BLOCK_SIZE, 0, stream>>>(
++        x, dst, freqs, src->ne[0], src->ne[1], src->ne[2],
++        src->nb[1] / sizeof(T), src->nb[2] / sizeof(T), src->nb[3] / sizeof(T),
++        out->nb[1] / sizeof(D), out->nb[2] / sizeof(D), out->nb[3] / sizeof(D), n_pairs);
++}
++
++static __global__ void rope_custom_qkv_f16(
++        const half * qkv, half * dst, const float * freqs,
++        int64_t head_dim, int64_t n_tokens, int64_t n_heads,
++        int64_t n_head_batches, int64_t n_pairs) {
++    const int64_t pair = (int64_t) blockIdx.x * blockDim.x + threadIdx.x;
++    if (pair >= n_pairs) {
++        return;
++    }
++
++    const int64_t half_dim = head_dim / 2;
++    const int64_t d        = pair % half_dim;
++    const int64_t row      = pair / half_dim;
++    const int64_t token    = row % n_tokens;
++    const int64_t hb       = (row / n_tokens) % n_head_batches;
++    const int64_t kind     = row / (n_tokens * n_head_batches);
++    const int64_t head     = hb % n_heads;
++    const int64_t batch    = hb / n_heads;
++    const int64_t embed    = head_dim * n_heads;
++    const int64_t src      = kind * embed + head * head_dim + 2 * d +
++                             3 * embed * (token + n_tokens * batch);
++
++    const float re = (float) qkv[src + 0];
++    const float im = (float) qkv[src + 1];
++    if (kind < 2) {
++        const int64_t f = token * head_dim + 2 * d;
++        const float cs = freqs[f + 0];
++        const float sn = freqs[f + 1];
++        dst[2 * pair + 0] = (half) (re * cs - im * sn);
++        dst[2 * pair + 1] = (half) (re * sn + im * cs);
++    } else {
++        dst[2 * pair + 0] = qkv[src + 0];
++        dst[2 * pair + 1] = qkv[src + 1];
++    }
++}
++
++static void rope_custom_qkv_cuda(const half * qkv, half * dst, const float * freqs,
++                                 const ggml_tensor * out, int64_t n_heads,
++                                 cudaStream_t stream) {
++    const int64_t n_pairs = ggml_nelements(out) / 2;
++    const int blocks = (int) ((n_pairs + CUDA_ROPE_BLOCK_SIZE - 1) / CUDA_ROPE_BLOCK_SIZE);
++    rope_custom_qkv_f16<<<blocks, CUDA_ROPE_BLOCK_SIZE, 0, stream>>>(
++        qkv, dst, freqs, out->ne[0], out->ne[1], n_heads, out->ne[2], n_pairs);
++}
++
+ template <bool forward>
+ void ggml_cuda_op_rope_impl(ggml_backend_cuda_context & ctx,
+                             ggml_tensor *               dst,
+@@ -557,11 +643,14 @@ void ggml_cuda_op_rope_impl(ggml_backend_cuda_context & ctx,
+     }
+     cudaStream_t stream = ctx.stream();
+ 
++    const int mode = ((int32_t *) dst->op_params)[2];
++
+     GGML_ASSERT(src0->type == GGML_TYPE_F32 || src0->type == GGML_TYPE_F16);
+     GGML_ASSERT( dst->type == GGML_TYPE_F32 ||  dst->type == GGML_TYPE_F16);
+     // When not fused, src0 and dst types must match
+     // When fused (ROPE+VIEW+SET_ROWS), src0 may be F32 and dst may be F16
+-    GGML_ASSERT(src0->type == dst->type || (src0->type == GGML_TYPE_F32 && dst->type == GGML_TYPE_F16));
++    GGML_ASSERT(src0->type == dst->type || (src0->type == GGML_TYPE_F32 && dst->type == GGML_TYPE_F16) ||
++                (mode == GGML_ROPE_TYPE_CUSTOM_FREQS && src0->type == GGML_TYPE_F16 && dst->type == GGML_TYPE_F32));
+ 
+     const int64_t ne00 = src0->ne[0]; // head dims
+     const int64_t ne01 = src0->ne[1]; // num heads
+@@ -608,6 +697,37 @@ void ggml_cuda_op_rope_impl(ggml_backend_cuda_context & ctx,
+     const bool is_imrope = mode == GGML_ROPE_TYPE_IMROPE;
+     const bool is_vision = mode == GGML_ROPE_TYPE_VISION;
+ 
++    if (mode == GGML_ROPE_TYPE_CUSTOM_FREQS) {
++        GGML_ASSERT(forward && set_rows == nullptr);
++        GGML_ASSERT(src1->type == GGML_TYPE_F32);
++        GGML_ASSERT(src1->ne[0] == 2 && src1->ne[1] == ne00 / 2 && src1->ne[2] == ne01);
++        if (src0->type == GGML_TYPE_F16 && dst->type == GGML_TYPE_F32) {
++            rope_custom_freqs_cuda((const half *) src0_d, (float *) dst_d,
++                                   (const float *) src1_d, src0, dst, stream);
++        } else if (src0->type == GGML_TYPE_F16) {
++            rope_custom_freqs_cuda((const half *) src0_d, (half *) dst_d,
++                                   (const float *) src1_d, src0, dst, stream);
++        } else if (dst->type == GGML_TYPE_F32) {
++            rope_custom_freqs_cuda((const float *) src0_d, (float *) dst_d,
++                                   (const float *) src1_d, src0, dst, stream);
++        } else {
++            GGML_ABORT("unsupported custom RoPE type conversion");
++        }
++        return;
++    }
++
++    if (mode == GGML_ROPE_TYPE_CUSTOM_QKV) {
++        const int64_t n_heads = ((int32_t *) dst->op_params)[3];
++        GGML_ASSERT(forward && set_rows == nullptr);
++        GGML_ASSERT(src0->type == GGML_TYPE_F16 && dst->type == GGML_TYPE_F16);
++        GGML_ASSERT(src1->type == GGML_TYPE_F32);
++        GGML_ASSERT(src0->ne[0] == 3 * dst->ne[0] * n_heads);
++        GGML_ASSERT(src1->ne[0] == 2 && src1->ne[1] == dst->ne[0] / 2 && src1->ne[2] == dst->ne[1]);
++        rope_custom_qkv_cuda((const half *) src0_d, (half *) dst_d,
++                             (const float *) src1_d, dst, n_heads, stream);
++        return;
++    }
++
+     if (is_mrope) {
+         GGML_ASSERT(sections.v[0] > 0 || sections.v[1] > 0 || sections.v[2] > 0);
+     }
+diff --git a/src/ggml-cuda/template-instances/fattn-tile-instance-dkq16-dv16.cu b/src/ggml-cuda/template-instances/fattn-tile-instance-dkq16-dv16.cu
+new file mode 100644
+index 0000000..088b27f
+--- /dev/null
++++ b/src/ggml-cuda/template-instances/fattn-tile-instance-dkq16-dv16.cu
+@@ -0,0 +1,5 @@
++// This file has been autogenerated by generate_cu_files.py, do not edit manually.
++
++#include "../fattn-tile.cuh"
++
++DECL_FATTN_TILE_CASE(16, 16);
+diff --git a/src/ggml-cuda/template-instances/fattn-tile-instance-dkq32-dv32.cu b/src/ggml-cuda/template-instances/fattn-tile-instance-dkq32-dv32.cu
+new file mode 100644
+index 0000000..45bc7fc
+--- /dev/null
++++ b/src/ggml-cuda/template-instances/fattn-tile-instance-dkq32-dv32.cu
+@@ -0,0 +1,5 @@
++// This file has been autogenerated by generate_cu_files.py, do not edit manually.
++
++#include "../fattn-tile.cuh"
++
++DECL_FATTN_TILE_CASE(32, 32);
+diff --git a/src/ggml-cuda/template-instances/fattn-tile-instance-dkq56-dv56.cu b/src/ggml-cuda/template-instances/fattn-tile-instance-dkq56-dv56.cu
+new file mode 100644
+index 0000000..00edd30
+--- /dev/null
++++ b/src/ggml-cuda/template-instances/fattn-tile-instance-dkq56-dv56.cu
+@@ -0,0 +1,5 @@
++// This file has been autogenerated by generate_cu_files.py, do not edit manually.
++
++#include "../fattn-tile.cuh"
++
++DECL_FATTN_TILE_CASE(56, 56);
+diff --git a/src/ggml-metal/ggml-metal-device.m b/src/ggml-metal/ggml-metal-device.m
+index 73f224e..71c88d2 100644
+--- a/src/ggml-metal/ggml-metal-device.m
++++ b/src/ggml-metal/ggml-metal-device.m
+@@ -1273,9 +1273,11 @@ bool ggml_metal_device_supports_op(ggml_metal_device_t dev, const struct ggml_te
+             return ggml_is_contiguous(op->src[0]);
+         case GGML_OP_FLASH_ATTN_EXT:
+             // for new head sizes, add checks here
+-            if (op->src[0]->ne[0] != 32 &&
++            if (op->src[0]->ne[0] != 16 &&
++                op->src[0]->ne[0] != 32 &&
+                 op->src[0]->ne[0] != 40 &&
+                 op->src[0]->ne[0] != 48 &&
++                op->src[0]->ne[0] != 56 &&
+                 op->src[0]->ne[0] != 64 &&
+                 op->src[0]->ne[0] != 72 &&
+                 op->src[0]->ne[0] != 80 &&
+diff --git a/src/ggml-metal/ggml-metal.metal b/src/ggml-metal/ggml-metal.metal
+index 035a0d7..5ec7537 100644
+--- a/src/ggml-metal/ggml-metal.metal
++++ b/src/ggml-metal/ggml-metal.metal
+@@ -7708,9 +7708,11 @@ kernel void kernel_flash_attn_ext(
+ 
+ typedef decltype(kernel_flash_attn_ext<FA_TYPES, half4x4, 1, dequantize_f16, half4x4, 1, dequantize_f16, 64, 64>) flash_attn_ext_t;
+ 
++template [[host_name("kernel_flash_attn_ext_f32_dk16_dv16" )]]  kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES_F32, float4x4,   1, dequantize_f32,  float4x4,   1, dequantize_f32,  16, 16>;
+ template [[host_name("kernel_flash_attn_ext_f32_dk32_dv32"  )]]  kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES_F32, float4x4,   1, dequantize_f32,  float4x4,   1, dequantize_f32,  32,  32>;
+ template [[host_name("kernel_flash_attn_ext_f32_dk40_dv40"  )]]  kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES_F32, float4x4,   1, dequantize_f32,  float4x4,   1, dequantize_f32,  40,  40>;
+ template [[host_name("kernel_flash_attn_ext_f32_dk48_dv48"  )]]  kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES_F32, float4x4,   1, dequantize_f32,  float4x4,   1, dequantize_f32,  48,  48>;
++template [[host_name("kernel_flash_attn_ext_f32_dk56_dv56" )]]  kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES_F32, float4x4,   1, dequantize_f32,  float4x4,   1, dequantize_f32,  56, 56>;
+ template [[host_name("kernel_flash_attn_ext_f32_dk64_dv64"  )]]  kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES_F32, float4x4,   1, dequantize_f32,  float4x4,   1, dequantize_f32,  64,  64>;
+ template [[host_name("kernel_flash_attn_ext_f32_dk72_dv72"  )]]  kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES_F32, float4x4,   1, dequantize_f32,  float4x4,   1, dequantize_f32,  72,  72>;
+ template [[host_name("kernel_flash_attn_ext_f32_dk80_dv80"  )]]  kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES_F32, float4x4,   1, dequantize_f32,  float4x4,   1, dequantize_f32,  80,  80>;
+@@ -7724,9 +7726,11 @@ template [[host_name("kernel_flash_attn_ext_f32_dk320_dv256")]]  kernel flash_at
+ template [[host_name("kernel_flash_attn_ext_f32_dk512_dv512")]]  kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES_F32, float4x4,   1, dequantize_f32,  float4x4,   1, dequantize_f32,  512, 512>;
+ template [[host_name("kernel_flash_attn_ext_f32_dk576_dv512")]]  kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES_F32, float4x4,   1, dequantize_f32,  float4x4,   1, dequantize_f32,  576, 512>;
+ 
++template [[host_name("kernel_flash_attn_ext_f16_dk16_dv16" )]]  kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    half4x4,    1, dequantize_f16,  half4x4,    1, dequantize_f16,  16, 16>;
+ template [[host_name("kernel_flash_attn_ext_f16_dk32_dv32"  )]]  kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    half4x4,    1, dequantize_f16,  half4x4,    1, dequantize_f16,  32,  32>;
+ template [[host_name("kernel_flash_attn_ext_f16_dk40_dv40"  )]]  kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    half4x4,    1, dequantize_f16,  half4x4,    1, dequantize_f16,  40,  40>;
+ template [[host_name("kernel_flash_attn_ext_f16_dk48_dv48"  )]]  kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    half4x4,    1, dequantize_f16,  half4x4,    1, dequantize_f16,  48,  48>;
++template [[host_name("kernel_flash_attn_ext_f16_dk56_dv56" )]]  kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    half4x4,    1, dequantize_f16,  half4x4,    1, dequantize_f16,  56, 56>;
+ template [[host_name("kernel_flash_attn_ext_f16_dk64_dv64"  )]]  kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    half4x4,    1, dequantize_f16,  half4x4,    1, dequantize_f16,  64,  64>;
+ template [[host_name("kernel_flash_attn_ext_f16_dk72_dv72"  )]]  kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    half4x4,    1, dequantize_f16,  half4x4,    1, dequantize_f16,  72,  72>;
+ template [[host_name("kernel_flash_attn_ext_f16_dk80_dv80"  )]]  kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    half4x4,    1, dequantize_f16,  half4x4,    1, dequantize_f16,  80,  80>;
+@@ -7741,9 +7745,11 @@ template [[host_name("kernel_flash_attn_ext_f16_dk512_dv512")]]  kernel flash_at
+ template [[host_name("kernel_flash_attn_ext_f16_dk576_dv512")]]  kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    half4x4,    1, dequantize_f16,  half4x4,    1, dequantize_f16,  576, 512>;
+ 
+ #if defined(GGML_METAL_HAS_BF16)
++template [[host_name("kernel_flash_attn_ext_bf16_dk16_dv16" )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES_BF, bfloat4x4,  1, dequantize_bf16, bfloat4x4,  1, dequantize_bf16, 16, 16>;
+ template [[host_name("kernel_flash_attn_ext_bf16_dk32_dv32"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES_BF, bfloat4x4,  1, dequantize_bf16, bfloat4x4,  1, dequantize_bf16, 32,  32>;
+ template [[host_name("kernel_flash_attn_ext_bf16_dk40_dv40"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES_BF, bfloat4x4,  1, dequantize_bf16, bfloat4x4,  1, dequantize_bf16, 40,  40>;
+ template [[host_name("kernel_flash_attn_ext_bf16_dk48_dv48"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES_BF, bfloat4x4,  1, dequantize_bf16, bfloat4x4,  1, dequantize_bf16, 48,  48>;
++template [[host_name("kernel_flash_attn_ext_bf16_dk56_dv56" )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES_BF, bfloat4x4,  1, dequantize_bf16, bfloat4x4,  1, dequantize_bf16, 56, 56>;
+ template [[host_name("kernel_flash_attn_ext_bf16_dk64_dv64"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES_BF, bfloat4x4,  1, dequantize_bf16, bfloat4x4,  1, dequantize_bf16, 64,  64>;
+ template [[host_name("kernel_flash_attn_ext_bf16_dk72_dv72"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES_BF, bfloat4x4,  1, dequantize_bf16, bfloat4x4,  1, dequantize_bf16, 72,  72>;
+ template [[host_name("kernel_flash_attn_ext_bf16_dk80_dv80"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES_BF, bfloat4x4,  1, dequantize_bf16, bfloat4x4,  1, dequantize_bf16, 80,  80>;
+@@ -7758,9 +7764,11 @@ template [[host_name("kernel_flash_attn_ext_bf16_dk512_dv512")]] kernel flash_at
+ template [[host_name("kernel_flash_attn_ext_bf16_dk576_dv512")]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES_BF, bfloat4x4,  1, dequantize_bf16, bfloat4x4,  1, dequantize_bf16, 576, 512>;
+ #endif
+ 
++template [[host_name("kernel_flash_attn_ext_q4_0_dk16_dv16" )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q4_0, 2, dequantize_q4_0, block_q4_0, 2, dequantize_q4_0, 16, 16>;
+ template [[host_name("kernel_flash_attn_ext_q4_0_dk32_dv32"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q4_0, 2, dequantize_q4_0, block_q4_0, 2, dequantize_q4_0, 32,  32>;
+ template [[host_name("kernel_flash_attn_ext_q4_0_dk40_dv40"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q4_0, 2, dequantize_q4_0, block_q4_0, 2, dequantize_q4_0, 40,  40>;
+ template [[host_name("kernel_flash_attn_ext_q4_0_dk48_dv48"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q4_0, 2, dequantize_q4_0, block_q4_0, 2, dequantize_q4_0, 48,  48>;
++template [[host_name("kernel_flash_attn_ext_q4_0_dk56_dv56" )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q4_0, 2, dequantize_q4_0, block_q4_0, 2, dequantize_q4_0, 56, 56>;
+ template [[host_name("kernel_flash_attn_ext_q4_0_dk64_dv64"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q4_0, 2, dequantize_q4_0, block_q4_0, 2, dequantize_q4_0, 64,  64>;
+ template [[host_name("kernel_flash_attn_ext_q4_0_dk72_dv72"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q4_0, 2, dequantize_q4_0, block_q4_0, 2, dequantize_q4_0, 72,  72>;
+ template [[host_name("kernel_flash_attn_ext_q4_0_dk80_dv80"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q4_0, 2, dequantize_q4_0, block_q4_0, 2, dequantize_q4_0, 80,  80>;
+@@ -7774,9 +7782,11 @@ template [[host_name("kernel_flash_attn_ext_q4_0_dk320_dv256")]] kernel flash_at
+ template [[host_name("kernel_flash_attn_ext_q4_0_dk512_dv512")]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q4_0, 2, dequantize_q4_0, block_q4_0, 2, dequantize_q4_0, 512, 512>;
+ template [[host_name("kernel_flash_attn_ext_q4_0_dk576_dv512")]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q4_0, 2, dequantize_q4_0, block_q4_0, 2, dequantize_q4_0, 576, 512>;
+ 
++template [[host_name("kernel_flash_attn_ext_q4_1_dk16_dv16" )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q4_1, 2, dequantize_q4_1, block_q4_1, 2, dequantize_q4_1, 16, 16>;
+ template [[host_name("kernel_flash_attn_ext_q4_1_dk32_dv32"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q4_1, 2, dequantize_q4_1, block_q4_1, 2, dequantize_q4_1, 32,  32>;
+ template [[host_name("kernel_flash_attn_ext_q4_1_dk40_dv40"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q4_1, 2, dequantize_q4_1, block_q4_1, 2, dequantize_q4_1, 40,  40>;
+ template [[host_name("kernel_flash_attn_ext_q4_1_dk48_dv48"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q4_1, 2, dequantize_q4_1, block_q4_1, 2, dequantize_q4_1, 48,  48>;
++template [[host_name("kernel_flash_attn_ext_q4_1_dk56_dv56" )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q4_1, 2, dequantize_q4_1, block_q4_1, 2, dequantize_q4_1, 56, 56>;
+ template [[host_name("kernel_flash_attn_ext_q4_1_dk64_dv64"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q4_1, 2, dequantize_q4_1, block_q4_1, 2, dequantize_q4_1, 64,  64>;
+ template [[host_name("kernel_flash_attn_ext_q4_1_dk72_dv72"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q4_1, 2, dequantize_q4_1, block_q4_1, 2, dequantize_q4_1, 72,  72>;
+ template [[host_name("kernel_flash_attn_ext_q4_1_dk80_dv80"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q4_1, 2, dequantize_q4_1, block_q4_1, 2, dequantize_q4_1, 80,  80>;
+@@ -7790,9 +7800,11 @@ template [[host_name("kernel_flash_attn_ext_q4_1_dk320_dv256")]] kernel flash_at
+ template [[host_name("kernel_flash_attn_ext_q4_1_dk512_dv512")]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q4_1, 2, dequantize_q4_1, block_q4_1, 2, dequantize_q4_1, 512, 512>;
+ template [[host_name("kernel_flash_attn_ext_q4_1_dk576_dv512")]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q4_1, 2, dequantize_q4_1, block_q4_1, 2, dequantize_q4_1, 576, 512>;
+ 
++template [[host_name("kernel_flash_attn_ext_q5_0_dk16_dv16" )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q5_0, 2, dequantize_q5_0, block_q5_0, 2, dequantize_q5_0, 16, 16>;
+ template [[host_name("kernel_flash_attn_ext_q5_0_dk32_dv32"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q5_0, 2, dequantize_q5_0, block_q5_0, 2, dequantize_q5_0, 32,  32>;
+ template [[host_name("kernel_flash_attn_ext_q5_0_dk40_dv40"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q5_0, 2, dequantize_q5_0, block_q5_0, 2, dequantize_q5_0, 40,  40>;
+ template [[host_name("kernel_flash_attn_ext_q5_0_dk48_dv48"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q5_0, 2, dequantize_q5_0, block_q5_0, 2, dequantize_q5_0, 48,  48>;
++template [[host_name("kernel_flash_attn_ext_q5_0_dk56_dv56" )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q5_0, 2, dequantize_q5_0, block_q5_0, 2, dequantize_q5_0, 56, 56>;
+ template [[host_name("kernel_flash_attn_ext_q5_0_dk64_dv64"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q5_0, 2, dequantize_q5_0, block_q5_0, 2, dequantize_q5_0, 64,  64>;
+ template [[host_name("kernel_flash_attn_ext_q5_0_dk72_dv72"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q5_0, 2, dequantize_q5_0, block_q5_0, 2, dequantize_q5_0, 72,  72>;
+ template [[host_name("kernel_flash_attn_ext_q5_0_dk80_dv80"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q5_0, 2, dequantize_q5_0, block_q5_0, 2, dequantize_q5_0, 80,  80>;
+@@ -7806,9 +7818,11 @@ template [[host_name("kernel_flash_attn_ext_q5_0_dk320_dv256")]] kernel flash_at
+ template [[host_name("kernel_flash_attn_ext_q5_0_dk512_dv512")]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q5_0, 2, dequantize_q5_0, block_q5_0, 2, dequantize_q5_0, 512, 512>;
+ template [[host_name("kernel_flash_attn_ext_q5_0_dk576_dv512")]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q5_0, 2, dequantize_q5_0, block_q5_0, 2, dequantize_q5_0, 576, 512>;
+ 
++template [[host_name("kernel_flash_attn_ext_q5_1_dk16_dv16" )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q5_1, 2, dequantize_q5_1, block_q5_1, 2, dequantize_q5_1, 16, 16>;
+ template [[host_name("kernel_flash_attn_ext_q5_1_dk32_dv32"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q5_1, 2, dequantize_q5_1, block_q5_1, 2, dequantize_q5_1, 32,  32>;
+ template [[host_name("kernel_flash_attn_ext_q5_1_dk40_dv40"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q5_1, 2, dequantize_q5_1, block_q5_1, 2, dequantize_q5_1, 40,  40>;
+ template [[host_name("kernel_flash_attn_ext_q5_1_dk48_dv48"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q5_1, 2, dequantize_q5_1, block_q5_1, 2, dequantize_q5_1, 48,  48>;
++template [[host_name("kernel_flash_attn_ext_q5_1_dk56_dv56" )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q5_1, 2, dequantize_q5_1, block_q5_1, 2, dequantize_q5_1, 56, 56>;
+ template [[host_name("kernel_flash_attn_ext_q5_1_dk64_dv64"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q5_1, 2, dequantize_q5_1, block_q5_1, 2, dequantize_q5_1, 64,  64>;
+ template [[host_name("kernel_flash_attn_ext_q5_1_dk72_dv72"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q5_1, 2, dequantize_q5_1, block_q5_1, 2, dequantize_q5_1, 72,  72>;
+ template [[host_name("kernel_flash_attn_ext_q5_1_dk80_dv80"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q5_1, 2, dequantize_q5_1, block_q5_1, 2, dequantize_q5_1, 80,  80>;
+@@ -7822,9 +7836,11 @@ template [[host_name("kernel_flash_attn_ext_q5_1_dk320_dv256")]] kernel flash_at
+ template [[host_name("kernel_flash_attn_ext_q5_1_dk512_dv512")]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q5_1, 2, dequantize_q5_1, block_q5_1, 2, dequantize_q5_1, 512, 512>;
+ template [[host_name("kernel_flash_attn_ext_q5_1_dk576_dv512")]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q5_1, 2, dequantize_q5_1, block_q5_1, 2, dequantize_q5_1, 576, 512>;
+ 
++template [[host_name("kernel_flash_attn_ext_q8_0_dk16_dv16" )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q8_0, 2, dequantize_q8_0, block_q8_0, 2, dequantize_q8_0, 16, 16>;
+ template [[host_name("kernel_flash_attn_ext_q8_0_dk32_dv32"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q8_0, 2, dequantize_q8_0, block_q8_0, 2, dequantize_q8_0, 32,  32>;
+ template [[host_name("kernel_flash_attn_ext_q8_0_dk40_dv40"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q8_0, 2, dequantize_q8_0, block_q8_0, 2, dequantize_q8_0, 40,  40>;
+ template [[host_name("kernel_flash_attn_ext_q8_0_dk48_dv48"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q8_0, 2, dequantize_q8_0, block_q8_0, 2, dequantize_q8_0, 48,  48>;
++template [[host_name("kernel_flash_attn_ext_q8_0_dk56_dv56" )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q8_0, 2, dequantize_q8_0, block_q8_0, 2, dequantize_q8_0, 56, 56>;
+ template [[host_name("kernel_flash_attn_ext_q8_0_dk64_dv64"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q8_0, 2, dequantize_q8_0, block_q8_0, 2, dequantize_q8_0, 64,  64>;
+ template [[host_name("kernel_flash_attn_ext_q8_0_dk72_dv72"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q8_0, 2, dequantize_q8_0, block_q8_0, 2, dequantize_q8_0, 72,  72>;
+ template [[host_name("kernel_flash_attn_ext_q8_0_dk80_dv80"  )]] kernel flash_attn_ext_t kernel_flash_attn_ext<FA_TYPES,    block_q8_0, 2, dequantize_q8_0, block_q8_0, 2, dequantize_q8_0, 80,  80>;
+diff --git a/src/ggml-vulkan/ggml-vulkan.cpp b/src/ggml-vulkan/ggml-vulkan.cpp
+index ac2f078..424551d 100644
+--- a/src/ggml-vulkan/ggml-vulkan.cpp
++++ b/src/ggml-vulkan/ggml-vulkan.cpp
+@@ -1103,6 +1103,9 @@ struct vk_device_struct {
+     std::map<vk_conv3d_pipeline_state, vk_pipeline> pipeline_conv3d_f16_f32[CONV_SHAPE_COUNT];
+     vk_pipeline pipeline_conv2d_dw_whcn_f32, pipeline_conv2d_dw_whcn_f16_f32, pipeline_conv2d_dw_whcn_f16;
+     vk_pipeline pipeline_conv2d_dw_cwhn_f32, pipeline_conv2d_dw_cwhn_f16_f32, pipeline_conv2d_dw_cwhn_f16;
++    // fast-path helpers for CONV_TRANSPOSE_2D with 2x2 kernel + stride 2
++    vk_pipeline pipeline_conv_transpose_2d_reorder_f32, pipeline_conv_transpose_2d_reorder_f16;
++    vk_pipeline pipeline_conv_transpose_2d_interleave_f32;
+ 
+     std::map<vk_fa_pipeline_state, vk_pipeline> pipeline_flash_attn_f32_f16;
+ 
+@@ -1998,6 +2001,20 @@ template <> void init_pushconst_fastdiv(vk_op_conv2d_push_constants &p) {
+     init_fastdiv_values(p.OW*p.OH,  p.OWOHmp,  p.OWOHL);
+ }
+ 
++// fast-path helpers for CONV_TRANSPOSE_2D with 2x2 kernel + stride 2
++struct vk_op_conv_transpose_2d_reorder_push_constants {
++    uint32_t Cout;
++    uint32_t Cin;
++    uint32_t total; // 4 * Cout * Cin
++};
++
++struct vk_op_conv_transpose_2d_interleave_push_constants {
++    uint32_t W;
++    uint32_t H;
++    uint32_t Cout;
++    uint32_t total; // 2W * 2H * Cout
++};
++
+ struct vk_op_conv3d_push_constants {
+     uint32_t OC;
+     uint32_t IC;
+@@ -5974,6 +5991,9 @@ static void ggml_vk_load_shaders(vk_device& device, vk_pipeline requested) {
+     ggml_vk_create_pipeline(device, device->pipeline_timestep_embedding_f32, "timestep_embedding_f32", timestep_embedding_f32_len, timestep_embedding_f32_data, "main", 2, sizeof(vk_op_timestep_embedding_push_constants), {256, 1, 1}, {}, 1);
+ 
+     ggml_vk_create_pipeline(device, device->pipeline_conv_transpose_1d_f32, "conv_transpose_1d_f32", conv_transpose_1d_f32_len, conv_transpose_1d_f32_data, "main", 3, sizeof(vk_op_conv_transpose_1d_push_constants), {1, 1, 1}, {}, 1);
++    ggml_vk_create_pipeline(device, device->pipeline_conv_transpose_2d_reorder_f32, "conv_transpose_2d_reorder_f32", conv_transpose_2d_reorder_f32_len, conv_transpose_2d_reorder_f32_data, "main", 2, sizeof(vk_op_conv_transpose_2d_reorder_push_constants), {256, 1, 1}, {}, 1);
++    ggml_vk_create_pipeline(device, device->pipeline_conv_transpose_2d_reorder_f16, "conv_transpose_2d_reorder_f16", conv_transpose_2d_reorder_f16_len, conv_transpose_2d_reorder_f16_data, "main", 2, sizeof(vk_op_conv_transpose_2d_reorder_push_constants), {256, 1, 1}, {}, 1);
++    ggml_vk_create_pipeline(device, device->pipeline_conv_transpose_2d_interleave_f32, "conv_transpose_2d_interleave_f32", conv_transpose_2d_interleave_f32_len, conv_transpose_2d_interleave_f32_data, "main", 2, sizeof(vk_op_conv_transpose_2d_interleave_push_constants), {256, 1, 1}, {}, 1);
+     ggml_vk_create_pipeline(device, device->pipeline_col2im_1d_f32,  "col2im_1d_f32",  col2im_1d_f32_len,  col2im_1d_f32_data,  "main", 2, sizeof(vk_op_col2im_1d_push_constants), {256, 1, 1}, {}, 1, true);
+     ggml_vk_create_pipeline(device, device->pipeline_col2im_1d_f16,  "col2im_1d_f16",  col2im_1d_f16_len,  col2im_1d_f16_data,  "main", 2, sizeof(vk_op_col2im_1d_push_constants), {256, 1, 1}, {}, 1, true);
+     ggml_vk_create_pipeline(device, device->pipeline_col2im_1d_bf16, "col2im_1d_bf16", col2im_1d_bf16_len, col2im_1d_bf16_data, "main", 2, sizeof(vk_op_col2im_1d_push_constants), {256, 1, 1}, {}, 1, true);
+@@ -14757,6 +14777,133 @@ static void ggml_vk_pool_2d(ggml_backend_vk_context * ctx, vk_context& subctx, c
+     });
+ }
+ 
++// Fast path for CONV_TRANSPOSE_2D with a 2x2 kernel and stride 2 (SAM3-style
++// upsampling). The four output phases (dy,dx) are independent 1x1
++// convolutions of the input, so the whole op reduces to a single GEMM with
++// K = 4*Cout (one phase block per output channel) plus an interleave
++// write-back. This replaces the generic transposed-conv shader, which walks
++// every output pixel and discards 3 of 4 stride-misaligned taps.
++static void ggml_vk_conv_transpose_2d_fast(ggml_backend_vk_context * ctx, vk_context & subctx,
++                                           const ggml_tensor * src0, const ggml_tensor * src1,
++                                           ggml_tensor * dst) {
++    const bool kernel_f16 = src0->type == GGML_TYPE_F16;
++
++    const uint32_t W    = (uint32_t)src1->ne[0];
++    const uint32_t H    = (uint32_t)src1->ne[1];
++    const uint32_t Cin  = (uint32_t)src1->ne[2];
++    const uint32_t Cout = (uint32_t)src0->ne[2];
++    const uint32_t WH   = W * H;
++    const uint32_t K    = 4 * Cout;
++
++    // temp buffers: reordered kernel [Cin, 4*Cout] + dense phase output [W, H, 4*Cout]
++    const size_t size_k  = (size_t)4 * Cout * Cin * (kernel_f16 ? sizeof(ggml_fp16_t) : sizeof(float));
++    const size_t size_ph = (size_t)4 * Cout * WH * sizeof(float);
++    if (ctx->prealloc_size_x < size_k) {
++        ctx->prealloc_size_x = size_k;
++        ggml_vk_preallocate_buffers(ctx, subctx);
++    }
++    if (ctx->prealloc_size_y < size_ph) {
++        ctx->prealloc_size_y = size_ph;
++        ggml_vk_preallocate_buffers(ctx, subctx);
++    }
++    if (ctx->prealloc_x_need_sync || ctx->prealloc_y_need_sync) {
++        ggml_vk_sync_buffers(ctx, subctx);
++    }
++
++    vk_subbuffer buf_k  = ggml_vk_subbuffer(ctx, ctx->prealloc_x);
++    vk_subbuffer buf_ph = ggml_vk_subbuffer(ctx, ctx->prealloc_y);
++    vk_subbuffer buf_w  = ggml_vk_tensor_subbuffer(ctx, src0, true);
++    vk_subbuffer buf_in = ggml_vk_tensor_subbuffer(ctx, src1, true);
++    vk_subbuffer buf_out = ggml_vk_tensor_subbuffer(ctx, dst, true);
++
++    // 1. reorder the strided kernel into the dense [Cin, 4*Cout] layout
++    vk_pipeline reorder_pipeline = kernel_f16 ? ctx->device->pipeline_conv_transpose_2d_reorder_f16
++                                              : ctx->device->pipeline_conv_transpose_2d_reorder_f32;
++    ggml_pipeline_request_descriptor_sets(ctx, reorder_pipeline, 1);
++    const uint32_t reorder_total = 4 * Cout * Cin;
++    ggml_vk_dispatch_pipeline(ctx, subctx, reorder_pipeline, { buf_w, buf_k },
++        vk_op_conv_transpose_2d_reorder_push_constants{ Cout, Cin, reorder_total },
++        { reorder_total, 1, 1 });
++    ggml_vk_sync_buffers(ctx, subctx);
++
++    // 2. one 1x1 conv GEMM: [K, Cin] @ [Cin, WH] = [K, WH]
++    const vk_conv_shapes shape = ggml_vk_conv_select_shape(ctx, K, WH);
++    const uint32_t BS_K   = vk_conv_block_sizes[shape].K;
++    const uint32_t BS_CRS = vk_conv_block_sizes[shape].CRS;
++    const uint32_t BS_NPQ = vk_conv_block_sizes[shape].NPQ;
++    const uint32_t aligned = ((K   % BS_K   == 0) &&
++                              (Cin % BS_CRS == 0) &&
++                              (WH  % BS_NPQ == 0)) ? 1u : 0u;
++    vk_conv2d_pipeline_state conv_state(1, 1, 0, 0, 1, 1, 1, 1, aligned);
++
++    std::map<vk_conv2d_pipeline_state, vk_pipeline> *pipelines = nullptr;
++    if (kernel_f16) {
++        pipelines = &ctx->device->pipeline_conv2d_f16_f32[shape];
++    } else {
++        pipelines = &ctx->device->pipeline_conv2d_f32[shape];
++    }
++    vk_pipeline conv_pipeline = nullptr;
++    {
++        std::lock_guard<std::mutex> guard(ctx->device->compile_mutex);
++        auto it = pipelines->find(conv_state);
++        if (it != pipelines->end()) {
++            conv_pipeline = it->second;
++        } else {
++            (*pipelines)[conv_state] = conv_pipeline = std::make_shared<vk_pipeline_struct>();
++        }
++    }
++    ggml_pipeline_request_descriptor_sets(ctx, conv_pipeline, 1);
++
++    vk_op_conv2d_push_constants p{};
++    p.Cout = K;
++    p.Cin  = Cin;
++    p.N    = 1;
++    p.W  = W;
++    p.H  = H;
++    p.OW = W;
++    p.OH = H;
++    // Reordered kernel is a contiguous [Cin, K] matrix. The regular CONV_2D
++    // shader indexes it as kw + kh*nb01 + ci*nb02 + co*nb03; with 1x1
++    // geometry the only nonzero dimensions must therefore be ci and co.
++    p.nb01 = 1;
++    p.nb02 = 1;
++    p.nb03 = Cin;
++    // input [W,H,Cin]
++    p.nb11 = W;
++    p.nb12 = WH;
++    p.nb13 = WH * Cin;
++    // dst [W,H,K]
++    p.nb1 = W;
++    p.nb2 = WH;
++    p.nb3 = WH * K;
++    init_pushconst_fastdiv(p);
++
++    const uint32_t NPQ_blocks = CEIL_DIV(WH, BS_NPQ);
++    std::array<uint32_t, 3> elements = { K, NPQ_blocks, 1 };
++    if (elements[1] > 512) {
++        elements[2] = CEIL_DIV(elements[1], 512);
++        elements[1] = 512;
++    }
++    // The conv2d pipeline declares 4 storage bindings (A/B/D + optional Bias
++    // added by the YOLO direct_bias_silu path). The fast path never sets
++    // fuse_bias_silu, so binding 3 is unused — pass buf_k as a dummy to keep
++    // parameter_count in sync (upstream passes 3 for the vanilla 3-binding
++    // shader).
++    ggml_vk_dispatch_pipeline(ctx, subctx, conv_pipeline, { buf_k, buf_in, buf_ph, buf_k }, p, elements);
++    ggml_vk_sync_buffers(ctx, subctx);
++
++    // 3. interleave the four [Cout, WH] phase matrices into the strided output
++    vk_pipeline interleave_pipeline = ctx->device->pipeline_conv_transpose_2d_interleave_f32;
++    ggml_pipeline_request_descriptor_sets(ctx, interleave_pipeline, 1);
++    const uint32_t interleave_total = 4 * WH * Cout;
++    ggml_vk_dispatch_pipeline(ctx, subctx, interleave_pipeline, { buf_ph, buf_out },
++        vk_op_conv_transpose_2d_interleave_push_constants{ W, H, Cout, interleave_total },
++        { interleave_total, 1, 1 });
++
++    ctx->prealloc_x_need_sync = true;
++    ctx->prealloc_y_need_sync = true;
++}
++
+ static void ggml_vk_conv_2d(ggml_backend_vk_context * ctx, vk_context & subctx, const ggml_tensor * src0,
+                             const ggml_tensor * src1, const ggml_tensor * src2, ggml_tensor * dst) {
+     GGML_ASSERT(src0->type == GGML_TYPE_F32 || src0->type == GGML_TYPE_F16);
+@@ -14770,6 +14917,22 @@ static void ggml_vk_conv_2d(ggml_backend_vk_context * ctx, vk_context & subctx,
+ 
+     bool transpose = dst->op == GGML_OP_CONV_TRANSPOSE_2D;
+ 
++    // 2x2 kernel + stride 2 (SAM3-style upsampling): 4-phase fast path.
++    // Contract guard: the reorder->f32-GEMM->interleave chain reads src1 and
++    // writes dst as F32 (conv2d_f16_f32/f32 GEMM, interleave_f32), i.e. it
++    // only matches the SAM3 F32-activation flow. An F16 activation/output
++    // flow (e.g. YOLOE/v8seg protos on the Vulkan F16 direct path) must fall
++    // through to the generic conv_transpose pipeline, which handles F16
++    // natively — feeding F16 tensors into this path misinterprets the raw
++    // buffer as F32 and produces garbage masks.
++    if (transpose && src0->ne[0] == 2 && src0->ne[1] == 2 && dst->op_params[0] == 2 &&
++        src1->type == GGML_TYPE_F32 && dst->type == GGML_TYPE_F32 &&
++        src1->ne[3] == 1 && ggml_is_contiguous(src0) && ggml_is_contiguous(src1) && ggml_is_contiguous(dst) &&
++        getenv("GGML_VK_DISABLE_SAM3_CONV_TRANSPOSE_FAST_PATH") == nullptr) {
++        ggml_vk_conv_transpose_2d_fast(ctx, subctx, src0, src1, dst);
++        return;
++    }
++
+     vk_op_conv2d_push_constants p{};
+     p.Cout = static_cast<uint32_t>(!transpose ? ne03 : ne02);
+     p.Cin  = static_cast<uint32_t>(!transpose ? ne02 : ne03);
+diff --git a/src/ggml-vulkan/vulkan-shaders/conv_transpose_2d_interleave.comp b/src/ggml-vulkan/vulkan-shaders/conv_transpose_2d_interleave.comp
+new file mode 100644
+index 0000000..b2d6c21
+--- /dev/null
++++ b/src/ggml-vulkan/vulkan-shaders/conv_transpose_2d_interleave.comp
+@@ -0,0 +1,43 @@
++#version 450
++
++#include "types.glsl"
++
++#extension GL_EXT_shader_16bit_storage : require
++
++// Fast path helper for CONV_TRANSPOSE_2D with a 2x2 kernel and stride 2
++// (SAM3-style upsampling). Takes the dense [W, H, 4*Cout] output of the
++// 1x1 conv GEMM (one channel block per phase) and writes it back into the
++// interleaved [2W, 2H, Cout] transposed-conv output:
++//
++//   dst[ox + oy*2W + co*4WH] = ph[(ox>>1) + W*(oy>>1) + WH*(phase*Cout + co)]
++//   phase = (oy&1)*2 + (ox&1)
++//
++// Both tensors use the ggml layout (x fastest).
++
++layout(push_constant) uniform parameter {
++    uint W;
++    uint H;
++    uint Cout;
++    uint total; // 2W * 2H * Cout
++} p;
++
++layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
++
++layout(binding = 0) readonly buffer X { float data_a[]; };
++layout(binding = 1) writeonly buffer D { float data_d[]; };
++
++void main() {
++    const uint idx = gl_GlobalInvocationID.x;
++    if (idx >= p.total) {
++        return;
++    }
++
++    const uint ox = idx % (2u * p.W);
++    const uint oy = (idx / (2u * p.W)) % (2u * p.H);
++    const uint co = idx / (4u * p.W * p.H);
++
++    const uint pix = (ox >> 1u) + p.W * (oy >> 1u);
++    const uint phase = (oy & 1u) * 2u + (ox & 1u);
++
++    data_d[idx] = data_a[pix + p.W * p.H * (phase * p.Cout + co)];
++}
+diff --git a/src/ggml-vulkan/vulkan-shaders/conv_transpose_2d_reorder.comp b/src/ggml-vulkan/vulkan-shaders/conv_transpose_2d_reorder.comp
+new file mode 100644
+index 0000000..b4d9986
+--- /dev/null
++++ b/src/ggml-vulkan/vulkan-shaders/conv_transpose_2d_reorder.comp
+@@ -0,0 +1,45 @@
++#version 450
++
++#include "types.glsl"
++
++#extension GL_EXT_shader_16bit_storage : require
++
++// Fast path helper for CONV_TRANSPOSE_2D with a 2x2 kernel and stride 2
++// (SAM3-style upsampling). The four output phases (dy,dx) are independent
++// 1x1 convolutions of the input, so the transposed conv reduces to one GEMM
++// with K = 4*Cout plus an interleave write-back. This shader reorders the
++// strided kernel [2,2,Cout,Cin] into the dense [Cin, 4*Cout] layout that the
++// 1x1 conv GEMM expects (phase block-major, channel-minor):
++//
++//   w_ph[ci + (ph*Cout + co)*Cin] = w[dx + 2*dy + 4*co + 4*Cout*ci]
++//   ph = dy*2 + dx
++//
++// A_TYPE matches the kernel element type (float16_t for F16 kernels), so
++// reordering is a pure index remap with no arithmetic.
++
++layout(push_constant) uniform parameter {
++    uint Cout;  // output channels of the original transposed conv
++    uint Cin;   // input channels
++    uint total; // 4 * Cout * Cin
++} p;
++
++layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
++
++layout(binding = 0) readonly buffer X { A_TYPE data_a[]; };
++layout(binding = 1) writeonly buffer D { A_TYPE data_d[]; };
++
++void main() {
++    const uint idx = gl_GlobalInvocationID.x;
++    if (idx >= p.total) {
++        return;
++    }
++
++    const uint ci = idx % p.Cin;
++    const uint co = (idx / p.Cin) % p.Cout;
++    const uint ph = idx / (p.Cin * p.Cout);
++    const uint dx = ph & 1u;
++    const uint dy = ph >> 1u;
++
++    const uint src = dx + 2u * dy + 4u * co + 4u * p.Cout * ci;
++    data_d[idx] = data_a[src];
++}
+diff --git a/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp b/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
+index 54882d7..3c8cb5c 100644
+--- a/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
++++ b/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
+@@ -1122,6 +1122,16 @@ void process_shaders() {
+         }
+     }
+ 
++    // fast-path helpers for CONV_TRANSPOSE_2D with 2x2 kernel + stride 2
++    // (SAM3-style upsampling): kernel reorder + phase interleave
++    for (auto a_f16 : {false, true}) {
++        string_to_spv(std::string("conv_transpose_2d_reorder") + (a_f16 ? "_f16" : "_f32"),
++                      "conv_transpose_2d_reorder.comp",
++                      merge_maps(base_dict, {{"A_TYPE", a_f16 ? "float16_t" : "float"}}));
++    }
++    string_to_spv("conv_transpose_2d_interleave_f32", "conv_transpose_2d_interleave.comp",
++                  merge_maps(base_dict, {{"A_TYPE", "float"}}));
++
+     for (auto unroll : {false, true}) {
+         for (auto a_f16 : {false, true}) {
+             std::map<std::string, std::string> defines = {
+diff --git a/src/ggml.c b/src/ggml.c
+index da00cc6..c0b9b52 100644
+--- a/src/ggml.c
++++ b/src/ggml.c
+@@ -3275,15 +3275,17 @@ static inline bool ggml_can_mul_mat(const struct ggml_tensor * t0, const struct
+            (t1->ne[3]%t0->ne[3] == 0);
+ }
+ 
+-struct ggml_tensor * ggml_mul_mat(
++struct ggml_tensor * ggml_mul_mat_cast(
+         struct ggml_context * ctx,
+         struct ggml_tensor  * a,
+-        struct ggml_tensor  * b) {
++        struct ggml_tensor  * b,
++        enum ggml_type        type) {
+     GGML_ASSERT(ggml_can_mul_mat(a, b));
+     GGML_ASSERT(!ggml_is_transposed(a));
++    GGML_ASSERT(type == GGML_TYPE_F32 || type == GGML_TYPE_F16);
+ 
+     const int64_t ne[4] = { a->ne[1], b->ne[1], b->ne[2], b->ne[3] };
+-    struct ggml_tensor * result = ggml_new_tensor(ctx, GGML_TYPE_F32, 4, ne);
++    struct ggml_tensor * result = ggml_new_tensor(ctx, type, 4, ne);
+ 
+     result->op     = GGML_OP_MUL_MAT;
+     result->src[0] = a;
+@@ -3292,6 +3294,13 @@ struct ggml_tensor * ggml_mul_mat(
+     return result;
+ }
+ 
++struct ggml_tensor * ggml_mul_mat(
++        struct ggml_context * ctx,
++        struct ggml_tensor  * a,
++        struct ggml_tensor  * b) {
++    return ggml_mul_mat_cast(ctx, a, b, GGML_TYPE_F32);
++}
++
+ void ggml_mul_mat_set_prec(
+         struct ggml_tensor * a,
+         enum ggml_prec       prec) {
+@@ -4235,6 +4244,66 @@ struct ggml_tensor * ggml_rope(
+     );
+ }
+ 
++struct ggml_tensor * ggml_rope_custom_freqs_cast(
++        struct ggml_context * ctx,
++        struct ggml_tensor  * a,
++        struct ggml_tensor  * freqs,
++        enum ggml_type        type) {
++    GGML_ASSERT(a->ne[0] % 2 == 0);
++    GGML_ASSERT(freqs->type == GGML_TYPE_F32);
++    GGML_ASSERT(freqs->ne[0] == 2);
++    GGML_ASSERT(freqs->ne[1] == a->ne[0] / 2);
++    GGML_ASSERT(freqs->ne[2] == a->ne[1]);
++
++    struct ggml_tensor * result = ggml_new_tensor(ctx, type, GGML_MAX_DIMS, a->ne);
++    int32_t params[15] = { 0 };
++    params[1] = (int32_t) a->ne[0];
++    params[2] = GGML_ROPE_TYPE_CUSTOM_FREQS;
++    ggml_set_op_params(result, params, sizeof(params));
++
++    result->op     = GGML_OP_ROPE;
++    result->src[0] = a;
++    result->src[1] = freqs;
++
++    return result;
++}
++
++struct ggml_tensor * ggml_rope_custom_freqs(
++        struct ggml_context * ctx,
++        struct ggml_tensor  * a,
++        struct ggml_tensor  * freqs) {
++    return ggml_rope_custom_freqs_cast(ctx, a, freqs, a->type);
++}
++
++struct ggml_tensor * ggml_rope_custom_qkv(
++        struct ggml_context * ctx,
++        struct ggml_tensor  * qkv,
++        struct ggml_tensor  * freqs,
++        int                   head_dim,
++        int                   n_heads) {
++    GGML_ASSERT(qkv->type == GGML_TYPE_F16);
++    GGML_ASSERT(head_dim > 0 && head_dim % 2 == 0 && n_heads > 0);
++    GGML_ASSERT(qkv->ne[0] == 3LL * head_dim * n_heads);
++    GGML_ASSERT(freqs->type == GGML_TYPE_F32 && freqs->ne[0] == 2);
++
++    const int64_t n_tokens = qkv->ne[1] * qkv->ne[2];
++    GGML_ASSERT(freqs->ne[1] == head_dim / 2 && freqs->ne[2] == n_tokens);
++
++    struct ggml_tensor * result = ggml_new_tensor_4d(
++        ctx, GGML_TYPE_F16, head_dim, n_tokens, n_heads * qkv->ne[3], 3);
++    int32_t params[15] = { 0 };
++    params[1] = head_dim;
++    params[2] = GGML_ROPE_TYPE_CUSTOM_QKV;
++    params[3] = n_heads;
++    ggml_set_op_params(result, params, sizeof(params));
++
++    result->op     = GGML_OP_ROPE;
++    result->src[0] = qkv;
++    result->src[1] = freqs;
++
++    return result;
++}
++
+ struct ggml_tensor * ggml_rope_multi(
+         struct ggml_context * ctx,
+         struct ggml_tensor  * a,

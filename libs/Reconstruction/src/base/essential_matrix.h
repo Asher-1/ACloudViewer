@@ -10,8 +10,11 @@
 #include <ceres/ceres.h>
 
 #include <Eigen/Core>
+#include <optional>
 #include <vector>
 
+#include "base/pose.h"
+#include "geometry/rigid3.h"
 #include "util/alignment.h"
 #include "util/types.h"
 
@@ -131,5 +134,103 @@ bool RefineEssentialMatrix(const ceres::Solver::Options& options,
                            const std::vector<Eigen::Vector2d>& points2,
                            const std::vector<char>& inlier_mask,
                            Eigen::Matrix3d* E);
+
+// Squared Sampson error in pixel coordinates for arbitrary central cameras.
+// The input rays carry d(ray)/d(pixel), so the denominator is the tangent
+// gradient pulled back into the image plane rather than a focal-length proxy.
+double ComputeSquaredTangentSampsonError(const CamRayWithJac& cam_ray1,
+                                         const CamRayWithJac& cam_ray2,
+                                         const Eigen::Matrix3d& E);
+
+void ComputeSquaredTangentSampsonError(
+        const std::vector<CamRayWithJac>& cam_rays1,
+        const std::vector<CamRayWithJac>& cam_rays2,
+        const Eigen::Matrix3d& E,
+        std::vector<double>* residuals);
+
+// ---- Upstream-parity additions (COLMAP 4.x geometry/essential_matrix.h) ----
+Eigen::Matrix3d FundamentalFromEssentialMatrix(const Eigen::Matrix3d& K2,
+                                               const Eigen::Matrix3d& E,
+                                               const Eigen::Matrix3d& K1);
+Eigen::Matrix3d EssentialFromFundamentalMatrix(const Eigen::Matrix3d& K2,
+                                               const Eigen::Matrix3d& F,
+                                               const Eigen::Matrix3d& K1);
+
+inline double SquaredPixelGradientNorm(const Eigen::Matrix3x2d& J,
+                                       const Eigen::Vector3d& g) {
+    const double gx = J(0, 0) * g[0] + J(1, 0) * g[1] + J(2, 0) * g[2];
+    const double gy = J(0, 1) * g[0] + J(1, 1) * g[1] + J(2, 1) * g[2];
+    return gx * gx + gy * gy;
+}
+
+// Calculate the squared tangent Sampson error for a single ray pair and a given
+// essential matrix.
+//
+// The Sampson approximation is C(z)^2 / ||dC/dz||^2 for a constraint C and
+// measurements z. Taking z to be the *pixel* coordinates, rather than the rays,
+// yields an error in pixel units for any central camera model:
+//
+//     C            = ray2^T E ray1
+//     dC/dpx1      = J1^T (E^T ray2)
+//     dC/dpx2      = J2^T (E ray1)
+//     error        = C^2 / (||dC/dpx1||^2 + ||dC/dpx2||^2)
+//
+// where J = d(ray) / d(pixel) is the unprojection Jacobian, obtainable via
+// Camera::CamRayFromImgWithJac. This is the tangent Sampson error of Terekhov
+// and Larsson, "Tangent Sampson Error: Fast Approximate Two-view Reprojection
+// Error for Central Camera Models", ICCV 2023.
+//
+// Pixels are the space in which feature detection noise is (approximately)
+// isotropic and uniform, so a threshold on this residual is meaningful in
+// pixels across the whole image and for every camera model - unlike the plain
+// Sampson error on unit bearings, whose pixel-equivalent tolerance grows with
+// the angle from the principal direction.
+//
+// Note that the Sampson approximation is not invariant to the choice of
+// homogeneous representative when that choice varies with the measurements:
+// rescaling the constraint by g(z) perturbs the result by a term proportional
+// to the residual. For an undistorted pinhole this reduces *exactly* to f^2
+// times the Sampson error on normalized image coordinates when the (u, v, 1)
+// representative is used (its Jacobian being the constant 1/f), and to first
+// order in the residual when unit bearings are used. The latter is the sense in
+// which this is an approximation of the true reprojection error.
+//
+// @param cam_ray1_with_jac  First bearing with its Jacobian d(ray1) /
+// d(pixel1).
+// @param cam_ray2_with_jac  Second bearing with its Jacobian d(ray2) /
+// d(pixel2).
+// @param E           3x3 essential matrix.
+// @return            Squared tangent Sampson error, in squared pixels.
+
+// Upstream-parity overload taking a rigid transform (COLMAP 4.x).
+Eigen::Matrix3d EssentialMatrixFromPose(const Rigid3d& cam2_from_cam1);
+
+// Upstream-parity: recover the relative pose from an essential matrix and
+// camera rays, keeping only the candidates with positive-depth observations.
+void PoseFromEssentialMatrix(const Eigen::Matrix3d& E,
+                             const std::vector<Eigen::Vector3d>& cam_rays1,
+                             const std::vector<Eigen::Vector3d>& cam_rays2,
+                             Rigid3d* cam2_from_cam1,
+                             std::vector<int>* valid_indices);
+
+double ComputeSquaredSampsonError(const Eigen::Vector3d& point1,
+                                  const Eigen::Vector3d& point2,
+                                  const Eigen::Matrix3d& E);
+
+void ComputeSquaredSampsonError(const std::vector<Eigen::Vector2d>& points1,
+                                const std::vector<Eigen::Vector2d>& points2,
+                                const Eigen::Matrix3d& E,
+                                std::vector<double>* residuals);
+
+void ComputeSquaredSampsonError(const std::vector<Eigen::Vector3d>& points1,
+                                const std::vector<Eigen::Vector3d>& points2,
+                                const Eigen::Matrix3d& E,
+                                std::vector<double>* residuals);
+
+void ComputeSquaredTangentSampsonErrorWithCheirality(
+        const std::vector<CamRayWithJac>& cam_rays1_with_jac,
+        const std::vector<CamRayWithJac>& cam_rays2_with_jac,
+        const Eigen::Matrix3d& E,
+        std::vector<double>* residuals);
 
 }  // namespace colmap

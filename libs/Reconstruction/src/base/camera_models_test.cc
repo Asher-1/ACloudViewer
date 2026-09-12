@@ -42,11 +42,11 @@ void TestWorldToImageToWorld(const std::vector<double> params, const double u0,
   double u, v, x, y, xx, yy;
   CameraModel::WorldToImage(params.data(), u0, v0, &x, &y);
   CameraModelWorldToImage(CameraModel::model_id, params, u0, v0, &xx, &yy);
-  BOOST_CHECK_EQUAL(x, xx);
-  BOOST_CHECK_EQUAL(y, yy);
+  EXPECT_EQ(x, xx);
+  EXPECT_EQ(y, yy);
   CameraModel::ImageToWorld(params.data(), x, y, &u, &v);
-  BOOST_CHECK_LT(std::abs(u - u0), 1e-6);
-  BOOST_CHECK_LT(std::abs(v - v0), 1e-6);
+  EXPECT_LT(std::abs(u - u0), 1e-6);
+  EXPECT_LT(std::abs(v - v0), 1e-6);
 }
 
 template <typename CameraModel>
@@ -55,61 +55,61 @@ void TestImageToWorldToImage(const std::vector<double> params, const double x0,
   double u, v, x, y, uu, vv;
   CameraModel::ImageToWorld(params.data(), x0, y0, &u, &v);
   CameraModelImageToWorld(CameraModel::model_id, params, x0, y0, &uu, &vv);
-  BOOST_CHECK_EQUAL(u, uu);
-  BOOST_CHECK_EQUAL(v, vv);
+  EXPECT_EQ(u, uu);
+  EXPECT_EQ(v, vv);
   CameraModel::WorldToImage(params.data(), u, v, &x, &y);
-  BOOST_CHECK_LT(std::abs(x - x0), 1e-6);
-  BOOST_CHECK_LT(std::abs(y - y0), 1e-6);
+  EXPECT_LT(std::abs(x - x0), 1e-6);
+  EXPECT_LT(std::abs(y - y0), 1e-6);
 }
 
 template <typename CameraModel>
 void TestModel(const std::vector<double>& params) {
-  BOOST_CHECK(CameraModelVerifyParams(CameraModel::model_id, params));
+  EXPECT_TRUE(CameraModelVerifyParams(CameraModel::model_id, params));
 
   const std::vector<double> default_params =
       CameraModelInitializeParams(CameraModel::model_id, 100, 100, 100);
-  BOOST_CHECK(CameraModelVerifyParams(CameraModel::model_id, default_params));
+  EXPECT_TRUE(CameraModelVerifyParams(CameraModel::model_id, default_params));
 
-  BOOST_CHECK_EQUAL(CameraModelParamsInfo(CameraModel::model_id),
+  EXPECT_EQ(CameraModelParamsInfo(CameraModel::model_id),
                     CameraModel::params_info);
-  BOOST_CHECK_EQUAL(&CameraModelFocalLengthIdxs(CameraModel::model_id),
+  EXPECT_EQ(&CameraModelFocalLengthIdxs(CameraModel::model_id),
                     &CameraModel::focal_length_idxs);
-  BOOST_CHECK_EQUAL(&CameraModelPrincipalPointIdxs(CameraModel::model_id),
+  EXPECT_EQ(&CameraModelPrincipalPointIdxs(CameraModel::model_id),
                     &CameraModel::principal_point_idxs);
-  BOOST_CHECK_EQUAL(&CameraModelExtraParamsIdxs(CameraModel::model_id),
+  EXPECT_EQ(&CameraModelExtraParamsIdxs(CameraModel::model_id),
                     &CameraModel::extra_params_idxs);
-  BOOST_CHECK_EQUAL(CameraModelNumParams(CameraModel::model_id),
+  EXPECT_EQ(CameraModelNumParams(CameraModel::model_id),
                     CameraModel::num_params);
 
-  BOOST_CHECK(!CameraModelHasBogusParams(CameraModel::model_id, default_params,
+  EXPECT_FALSE(CameraModelHasBogusParams(CameraModel::model_id, default_params,
                                          100, 100, 0.1, 2.0, 1.0));
-  BOOST_CHECK(CameraModelHasBogusParams(CameraModel::model_id, default_params,
+  EXPECT_TRUE(CameraModelHasBogusParams(CameraModel::model_id, default_params,
                                         100, 100, 0.1, 0.5, 1.0));
-  BOOST_CHECK(CameraModelHasBogusParams(CameraModel::model_id, default_params,
+  EXPECT_TRUE(CameraModelHasBogusParams(CameraModel::model_id, default_params,
                                         100, 100, 1.5, 2.0, 1.0));
   if (CameraModel::extra_params_idxs.size() > 0) {
-    BOOST_CHECK(CameraModelHasBogusParams(CameraModel::model_id, default_params,
+    EXPECT_TRUE(CameraModelHasBogusParams(CameraModel::model_id, default_params,
                                           100, 100, 0.1, 2.0, -0.1));
   }
 
-  BOOST_CHECK_EQUAL(
+  EXPECT_EQ(
       CameraModelImageToWorldThreshold(CameraModel::model_id, params, 0), 0);
-  BOOST_CHECK_GT(
+  EXPECT_GT(
       CameraModelImageToWorldThreshold(CameraModel::model_id, params, 1), 0);
-  BOOST_CHECK_EQUAL(CameraModelImageToWorldThreshold(CameraModel::model_id,
+  EXPECT_EQ(CameraModelImageToWorldThreshold(CameraModel::model_id,
                                                      default_params, 1),
                     1.0 / 100.0);
 
-  BOOST_CHECK(ExistsCameraModelWithName(CameraModel::model_name));
-  BOOST_CHECK(!ExistsCameraModelWithName(CameraModel::model_name + "FOO"));
+  EXPECT_TRUE(ExistsCameraModelWithName(CameraModel::model_name));
+  EXPECT_FALSE(ExistsCameraModelWithName(CameraModel::model_name + "FOO"));
 
-  BOOST_CHECK(ExistsCameraModelWithId(CameraModel::model_id));
-  BOOST_CHECK(!ExistsCameraModelWithId(CameraModel::model_id + 123456789));
+  EXPECT_TRUE(ExistsCameraModelWithId(CameraModel::model_id));
+  EXPECT_FALSE(ExistsCameraModelWithId(CameraModel::model_id + 123456789));
 
-  BOOST_CHECK_EQUAL(
+  EXPECT_EQ(
       CameraModelNameToId(CameraModelIdToName(CameraModel::model_id)),
       CameraModel::model_id);
-  BOOST_CHECK_EQUAL(
+  EXPECT_EQ(
       CameraModelIdToName(CameraModelNameToId(CameraModel::model_name)),
       CameraModel::model_name);
 
@@ -130,24 +130,24 @@ void TestModel(const std::vector<double>& params) {
                                        params[pp_idxs.at(1)]);
 }
 
-BOOST_AUTO_TEST_CASE(TestSimplePinhole) {
+TEST(base_camera_models, TestSimplePinhole) {
   std::vector<double> params = {655.123, 386.123, 511.123};
   TestModel<SimplePinholeCameraModel>(params);
 }
 
-BOOST_AUTO_TEST_CASE(TestPinhole) {
+TEST(base_camera_models, TestPinhole) {
   std::vector<double> params = {651.123, 655.123, 386.123, 511.123};
   TestModel<PinholeCameraModel>(params);
 }
 
-BOOST_AUTO_TEST_CASE(TestSimpleRadial) {
+TEST(base_camera_models, TestSimpleRadial) {
   std::vector<double> params = {651.123, 386.123, 511.123, 0};
   TestModel<SimpleRadialCameraModel>(params);
   params[3] = 0.1;
   TestModel<SimpleRadialCameraModel>(params);
 }
 
-BOOST_AUTO_TEST_CASE(TestRadial) {
+TEST(base_camera_models, TestRadial) {
   std::vector<double> params = {651.123, 386.123, 511.123, 0, 0};
   TestModel<RadialCameraModel>(params);
   params[3] = 0.1;
@@ -158,26 +158,26 @@ BOOST_AUTO_TEST_CASE(TestRadial) {
   TestModel<RadialCameraModel>(params);
 }
 
-BOOST_AUTO_TEST_CASE(TestOpenCV) {
+TEST(base_camera_models, TestOpenCV) {
   std::vector<double> params = {651.123, 655.123, 386.123, 511.123,
                                 -0.471,  0.223,   -0.001,  0.001};
   TestModel<OpenCVCameraModel>(params);
 }
 
-BOOST_AUTO_TEST_CASE(TestOpenCVFisheye) {
+TEST(base_camera_models, TestOpenCVFisheye) {
   std::vector<double> params = {651.123, 655.123, 386.123, 511.123,
                                 -0.471,  0.223,   -0.001,  0.001};
   TestModel<OpenCVFisheyeCameraModel>(params);
 }
 
-BOOST_AUTO_TEST_CASE(TestFullOpenCV) {
+TEST(base_camera_models, TestFullOpenCV) {
   std::vector<double> params = {651.123, 655.123, 386.123, 511.123,
                                 -0.471,  0.223,   -0.001,  0.001,
                                 0.001,   0.02,    -0.02,   0.001};
   TestModel<FullOpenCVCameraModel>(params);
 }
 
-BOOST_AUTO_TEST_CASE(TestFOV) {
+TEST(base_camera_models, TestFOV) {
   std::vector<double> params = {651.123, 655.123, 386.123, 511.123, 0.9};
   TestModel<FOVCameraModel>(params);
   params[4] = 0;
@@ -186,20 +186,20 @@ BOOST_AUTO_TEST_CASE(TestFOV) {
   TestModel<FOVCameraModel>(params);
   params[4] = 1e-2;
   TestModel<FOVCameraModel>(params);
-  BOOST_CHECK_EQUAL(
+  EXPECT_EQ(
       CameraModelInitializeParams(FOVCameraModel::model_id, 100, 100, 100)
           .back(),
       1e-2);
 }
 
-BOOST_AUTO_TEST_CASE(TestSimpleRadialFisheye) {
+TEST(base_camera_models, TestSimpleRadialFisheye) {
   std::vector<double> params = {651.123, 386.123, 511.123, 0};
   TestModel<SimpleRadialFisheyeCameraModel>(params);
   params[3] = 0.1;
   TestModel<SimpleRadialFisheyeCameraModel>(params);
 }
 
-BOOST_AUTO_TEST_CASE(TestRadialFisheye) {
+TEST(base_camera_models, TestRadialFisheye) {
   std::vector<double> params = {651.123, 386.123, 511.123, 0, 0};
   TestModel<RadialFisheyeCameraModel>(params);
   params[3] = 0.1;
@@ -210,7 +210,7 @@ BOOST_AUTO_TEST_CASE(TestRadialFisheye) {
   TestModel<RadialFisheyeCameraModel>(params);
 }
 
-BOOST_AUTO_TEST_CASE(TestThinPrismFisheye) {
+TEST(base_camera_models, TestThinPrismFisheye) {
   std::vector<double> params = {651.123, 655.123, 386.123, 511.123,
                                 -0.471,  0.223,   -0.001,  0.001,
                                 0.001,   0.02,    -0.02,   0.001};

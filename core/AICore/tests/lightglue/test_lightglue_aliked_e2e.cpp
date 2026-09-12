@@ -19,6 +19,7 @@
 
 #include "aicore/aliked_capi.h"
 #include "aicore/lightglue_capi.h"
+#include "tests/common/validation_probe.hpp"
 
 namespace {
 
@@ -119,6 +120,10 @@ int main(int argc, char** argv) {
     // reverse-order test misses shared-backend lifetime regressions.
     aicore_lightglue_options* options = aicore_lightglue_options_new();
     aicore_lightglue_options_set_device(options, device);
+    // This GGUF exports 0.1 as its filtering configuration. The product
+    // default remains 0.5; keep the fixture-specific setting explicit so the
+    // test does not redefine the UI/API policy.
+    aicore_lightglue_options_set_min_score(options, 0.1);
     aicore_lightglue_options_set_matcher_type(options, 2);
     aicore_lightglue_ctx* ctx = aicore_lightglue_load_opts(matcher, options);
     aicore_lightglue_options_free(options);
@@ -183,6 +188,26 @@ int main(int argc, char** argv) {
             resize,
             std::chrono::duration<double, std::milli>(t_match_b - t_match_a)
                     .count());
+    uint64_t output_hash = aicore::test::fnv1a(
+            features0.keypoints,
+            static_cast<size_t>(features0.n_keypoints) * 2 * sizeof(float));
+    output_hash = aicore::test::fnv1aAppend(
+            output_hash, features1.keypoints,
+            static_cast<size_t>(features1.n_keypoints) * 2 * sizeof(float));
+    output_hash = aicore::test::fnv1aAppend(
+            output_hash, matches,
+            static_cast<size_t>(match_count) * sizeof(aicore_lightglue_match));
+    aicore_pipeline_timings timings{};
+    if (aicore_lightglue_last_pipeline_timings(ctx, &timings) != 0) {
+        std::fprintf(stderr, "FAIL: unable to query LightGlue timings\n");
+        aicore_lightglue_free_matches(matches);
+        aicore_lightglue_free_features(&features0);
+        aicore_lightglue_free_features(&features1);
+        aicore_lightglue_free(ctx);
+        return 1;
+    }
+    aicore::test::printValidationResult("lightglue", device, output_hash,
+                                        &timings);
     aicore_lightglue_free_matches(matches);
     aicore_lightglue_free_features(&features0);
     aicore_lightglue_free_features(&features1);

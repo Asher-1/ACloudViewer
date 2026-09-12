@@ -7,7 +7,10 @@
 
 #pragma once
 
+#include <filesystem>
+
 #include "base/reconstruction.h"
+#include "base/warp.h"
 #include "util/alignment.h"
 #include "util/bitmap.h"
 #include "util/misc.h"
@@ -36,6 +39,10 @@ struct UndistortCameraOptions {
     double roi_min_y = 0.0;
     double roi_max_x = 1.0;
     double roi_max_y = 1.0;
+
+    // Controls direct target-resolution warping for undistortion and stereo
+    // rectification. The default avoids unnecessary source-resolution passes.
+    WarpImageOptions warp_options;
 };
 
 // Undistort images and export undistorted cameras, as required by the
@@ -45,8 +52,8 @@ public:
     COLMAPUndistorter(
             const UndistortCameraOptions& options,
             Reconstruction* reconstruction,
-            const std::string& image_path,
-            const std::string& output_path,
+            const std::filesystem::path& image_path,
+            const std::filesystem::path& output_path,
             const int num_related_images = 20,
             const CopyType copy_type = CopyType::COPY,
             const std::vector<image_t>& image_ids = std::vector<image_t>());
@@ -74,8 +81,8 @@ class PMVSUndistorter : public Thread {
 public:
     PMVSUndistorter(const UndistortCameraOptions& options,
                     Reconstruction* reconstruction,
-                    const std::string& image_path,
-                    const std::string& output_path);
+                    const std::filesystem::path& image_path,
+                    const std::filesystem::path& output_path);
 
 private:
     void Run();
@@ -99,8 +106,8 @@ class CMPMVSUndistorter : public Thread {
 public:
     CMPMVSUndistorter(const UndistortCameraOptions& options,
                       Reconstruction* reconstruction,
-                      const std::string& image_path,
-                      const std::string& output_path);
+                      const std::filesystem::path& image_path,
+                      const std::filesystem::path& output_path);
 
 private:
     void Run();
@@ -119,8 +126,8 @@ private:
 class PureImageUndistorter : public Thread {
 public:
     PureImageUndistorter(const UndistortCameraOptions& options,
-                         const std::string& image_path,
-                         const std::string& output_path,
+                         const std::filesystem::path& image_path,
+                         const std::filesystem::path& output_path,
                          const std::vector<std::pair<std::string, Camera>>&
                                  image_names_and_cameras);
 

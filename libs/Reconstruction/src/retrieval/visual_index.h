@@ -9,6 +9,8 @@
 
 #include <Eigen/Core>
 #include <boost/heap/fibonacci_heap.hpp>
+#include <filesystem>
+#include <functional>
 
 #include "FLANN/flann.hpp"
 #include "feature/types.h"
@@ -70,6 +72,10 @@ public:
 
         // The number of threads used in the index.
         int num_threads = kMaxNumThreads;
+
+        // Applied before ranking and top-N truncation. This lets callers keep
+        // invalid candidates from consuming the retrieval budget.
+        std::function<bool(int)> image_id_filter;
     };
 
     struct BuildOptions {
@@ -127,8 +133,8 @@ public:
 
     // Read and write the visual index. This can be done for an index with and
     // without indexed images.
-    void Read(const std::string& path);
-    void Write(const std::string& path);
+    void Read(const std::filesystem::path& path);
+    void Write(const std::filesystem::path& path);
 
 private:
     // Quantize the descriptor space into visual words.
@@ -542,7 +548,7 @@ void VisualIndex<kDescType, kDescDim, kEmbeddingDim>::Build(
 
 template <typename kDescType, int kDescDim, int kEmbeddingDim>
 void VisualIndex<kDescType, kDescDim, kEmbeddingDim>::Read(
-        const std::string& path) {
+        const std::filesystem::path& path) {
     long int file_offset = 0;
 
     // Read the visual words.
@@ -570,7 +576,7 @@ void VisualIndex<kDescType, kDescDim, kEmbeddingDim>::Read(
             flann::AutotunedIndex<flann::L2<kDescType>>(visual_words_);
 
     {
-        FILE* fin = fopen(path.c_str(), "rb");
+        FILE* fin = fopen(path.string().c_str(), "rb");
         CHECK_NOTNULL(fin);
         fseek(fin, file_offset, SEEK_SET);
         visual_word_index_.loadIndex(fin);
@@ -593,7 +599,7 @@ void VisualIndex<kDescType, kDescDim, kEmbeddingDim>::Read(
 
 template <typename kDescType, int kDescDim, int kEmbeddingDim>
 void VisualIndex<kDescType, kDescDim, kEmbeddingDim>::Write(
-        const std::string& path) {
+        const std::filesystem::path& path) {
     // Write the visual words.
 
     {
@@ -610,7 +616,7 @@ void VisualIndex<kDescType, kDescDim, kEmbeddingDim>::Write(
     // Write the visual words search index.
 
     {
-        FILE* fout = fopen(path.c_str(), "ab");
+        FILE* fout = fopen(path.string().c_str(), "ab");
         CHECK_NOTNULL(fout);
         visual_word_index_.saveIndex(fout);
         fclose(fout);
@@ -685,6 +691,16 @@ void VisualIndex<kDescType, kDescDim, kEmbeddingDim>::QueryAndFindWordIds(
     *word_ids = FindWordIds(descriptors, options.num_neighbors,
                             options.num_checks, options.num_threads);
     inverted_index_.Query(descriptors, *word_ids, image_scores);
+
+    if (options.image_id_filter) {
+        image_scores->erase(
+                std::remove_if(image_scores->begin(), image_scores->end(),
+                               [&options](const ImageScore& image_score) {
+                                   return !options.image_id_filter(
+                                           image_score.image_id);
+                               }),
+                image_scores->end());
+    }
 
     auto SortFunc = [](const ImageScore& score1, const ImageScore& score2) {
         return score1.score > score2.score;

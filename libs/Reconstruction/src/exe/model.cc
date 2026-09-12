@@ -31,6 +31,8 @@
 
 #include "exe/model.h"
 
+#include "scene/reconstruction_io.h"
+
 #include "base/gps.h"
 #include "base/pose.h"
 #include "base/similarity_transform.h"
@@ -424,9 +426,10 @@ int RunModelComparer(int argc, char** argv) {
     std::vector<double> translation_errors(num_images, 0.0);
     std::vector<double> proj_center_errors(num_images, 0.0);
     for (size_t i = 0; i < num_images; ++i) {
-        const image_t image_id = common_image_ids[i];
-        const Image& image1 = reconstruction1.Image(image_id);
-        Image& image2 = reconstruction2.Image(image_id);
+        // Upstream FindCommonRegImageIds semantics: (recon1_id, recon2_id).
+        const Image& image1 =
+                reconstruction1.Image(common_image_ids[i].first);
+        Image& image2 = reconstruction2.Image(common_image_ids[i].second);
         tform.TransformPose(&image2.Qvec(), &image2.Tvec());
 
         const Eigen::Vector4d normalized_qvec1 = NormalizeQuaternion(image1.Qvec());
@@ -483,21 +486,21 @@ int RunModelConverter(int argc, char** argv) {
     } else if (output_type == "txt") {
         reconstruction.WriteText(output_path);
     } else if (output_type == "nvm") {
-        reconstruction.ExportNVM(output_path, skip_distortion);
+        ExportNVM(reconstruction, output_path, skip_distortion);
     } else if (output_type == "bundler") {
-        reconstruction.ExportBundler(output_path + ".bundle.out",
-                                     output_path + ".list.txt", skip_distortion);
+        ExportBundler(reconstruction, output_path + ".bundle.out",
+                            output_path + ".list.txt", skip_distortion);
     } else if (output_type == "r3d") {
-        reconstruction.ExportRecon3D(output_path, skip_distortion);
+        ExportRecon3D(reconstruction, output_path, skip_distortion);
     } else if (output_type == "cam") {
-        reconstruction.ExportCam(output_path, skip_distortion);
+        ExportCam(reconstruction, output_path, skip_distortion);
     } else if (output_type == "ply") {
-        reconstruction.ExportPLY(output_path);
+        ExportPLY(reconstruction, output_path);
     } else if (output_type == "vrml") {
         const auto base_path = output_path.substr(0, output_path.find_last_of("."));
-        reconstruction.ExportVRML(base_path + ".images.wrl",
-                                  base_path + ".points3D.wrl", 1,
-                                  Eigen::Vector3d(1, 0, 0));
+        ExportVRML(reconstruction, base_path + ".images.wrl",
+                           base_path + ".points3D.wrl", 1,
+                           Eigen::Vector3d(1, 0, 0));
     } else {
         std::cerr << "ERROR: Invalid `output_type`" << std::endl;
         return EXIT_FAILURE;
@@ -916,7 +919,7 @@ int RunModelTransformer(int argc, char** argv) {
 
     std::cout << "Writing output: " << output_path << std::endl;
     if (is_dense) {
-        recon.ExportPLY(output_path);
+        ExportPLY(recon, output_path);
     } else {
         recon.Write(output_path);
     }

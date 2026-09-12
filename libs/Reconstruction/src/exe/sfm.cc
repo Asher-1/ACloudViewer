@@ -31,6 +31,10 @@
 
 #include "exe/sfm.h"
 
+#include "controllers/global_pipeline.h"
+#include "controllers/rotation_averaging.h"
+#include "estimators/view_graph_calibration.h"
+
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
@@ -124,7 +128,8 @@ int RunAutomaticReconstructor(int argc, char** argv) {
                            "Generate surface mesh from fused point cloud");
   options.AddDefaultOption("texturing", &reconstruction_options.texturing,
                            "Texture the reconstructed mesh");
-  options.AddDefaultOption("mesher", &mesher, "{poisson, delaunay}");
+  options.AddDefaultOption("mesher", &mesher,
+                           "{poisson, delaunay, advancing_front}");
   options.AddDefaultOption("num_threads", &reconstruction_options.num_threads);
   options.AddDefaultOption("use_gpu", &reconstruction_options.use_gpu);
   options.AddDefaultOption("gpu_index", &reconstruction_options.gpu_index);
@@ -215,6 +220,9 @@ int RunAutomaticReconstructor(int argc, char** argv) {
   } else if (mesher == "delaunay") {
     reconstruction_options.mesher =
         AutomaticReconstructionController::Mesher::DELAUNAY;
+  } else if (mesher == "advancing_front") {
+    reconstruction_options.mesher =
+        AutomaticReconstructionController::Mesher::ADVANCING_FRONT;
   } else {
     LOG(FATAL) << "Invalid mesher provided";
   }
@@ -548,11 +556,13 @@ int RunPointTriangulator(int argc, char** argv) {
 
     Database database(*options.database_path);
 
-    const size_t min_num_matches =
+    DatabaseCache::Options cache_options;
+    cache_options.min_num_matches =
         static_cast<size_t>(mapper_options.min_num_matches);
-    database_cache.Load(database, min_num_matches,
-                        mapper_options.ignore_watermarks,
-                        mapper_options.image_names);
+    cache_options.ignore_watermarks = mapper_options.ignore_watermarks;
+    cache_options.image_names = {mapper_options.image_names.begin(),
+                                 mapper_options.image_names.end()};
+    database_cache.Load(database, cache_options);
 
     if (clear_points) {
       reconstruction.DeleteAllPoints2DAndPoints3D();
@@ -736,142 +746,171 @@ namespace {
 //            frame002.png
 //            ...
 //
-std::vector<CameraRig> ReadCameraRigConfig(const std::string& rig_config_path,
-                                           const Reconstruction& reconstruction,
-                                           bool estimate_rig_relative_poses) {
-  boost::property_tree::ptree pt;
-  boost::property_tree::read_json(rig_config_path.c_str(), pt);
+}  // namespace
 
-  std::vector<CameraRig> camera_rigs;
-  for (const auto& rig_config : pt) {
-    CameraRig camera_rig;
+namespace {
 
-    std::vector<std::string> image_prefixes;
-    for (const auto& camera : rig_config.second.get_child("cameras")) {
-      const int camera_id = camera.second.get<int>("camera_id");
-      image_prefixes.push_back(camera.second.get<std::string>("image_prefix"));
-      Eigen::Vector3d rel_tvec;
-      Eigen::Vector4d rel_qvec;
-      int index = 0;
-      auto rel_tvec_node = camera.second.get_child_optional("rel_tvec");
-      if (rel_tvec_node) {
-        for (const auto& node : rel_tvec_node.get()) {
-          rel_tvec[index++] = node.second.get_value<double>();
-        }
-      } else {
-        estimate_rig_relative_poses = true;
-      }
-      index = 0;
-      auto rel_qvec_node = camera.second.get_child_optional("rel_qvec");
-      if (rel_qvec_node) {
-        for (const auto& node : rel_qvec_node.get()) {
-          rel_qvec[index++] = node.second.get_value<double>();
-        }
-      } else {
-        estimate_rig_relative_poses = true;
-      }
+// Upstream parity (dbb41680 exe/sfm.cc RunGlobalMapperImpl). The fork's
+// Database is constructed directly (no Database::Open factory).
+bool RunGlobalMapperImpl(
+    const std::filesystem::path& database_path,
+    const std::filesystem::path& image_path,
+    const std::filesystem::path& output_path,
+    const std::shared_ptr<GlobalPipelineOptions>& mapper_options,
+    const OptionManager& options,
+    std::shared_ptr<ReconstructionManager>& reconstruction_manager) {
+  GlobalPipelineOptions pipeline_options = *mapper_options;
+  pipeline_options.image_path = image_path;
 
-      camera_rig.AddCamera(camera_id, rel_qvec, rel_tvec);
-    }
+  GlobalPipeline global_mapper(std::move(pipeline_options),
+                               std::make_shared<Database>(database_path),
+                               reconstruction_manager);
+  global_mapper.Run();
 
-    camera_rig.SetRefCameraId(rig_config.second.get<int>("ref_camera_id"));
-
-    std::unordered_map<std::string, std::vector<image_t>> snapshots;
-    for (const auto image_id : reconstruction.RegImageIds()) {
-      const auto& image = reconstruction.Image(image_id);
-      for (const auto& image_prefix : image_prefixes) {
-        if (StringContains(image.Name(), image_prefix)) {
-          const std::string image_suffix =
-              StringGetAfter(image.Name(), image_prefix);
-          snapshots[image_suffix].push_back(image_id);
-        }
-      }
-    }
-
-    for (const auto& snapshot : snapshots) {
-      bool has_ref_camera = false;
-      for (const auto image_id : snapshot.second) {
-        const auto& image = reconstruction.Image(image_id);
-        if (image.CameraId() == camera_rig.RefCameraId()) {
-          has_ref_camera = true;
-        }
-      }
-
-      if (has_ref_camera) {
-        camera_rig.AddSnapshot(snapshot.second);
-      }
-    }
-
-    camera_rig.Check(reconstruction);
-    if (estimate_rig_relative_poses) {
-      PrintHeading2("Estimating relative rig poses");
-      if (!camera_rig.ComputeRelativePoses(reconstruction)) {
-        std::cout << "WARN: Failed to estimate rig poses from reconstruction; "
-                     "cannot use rig BA"
-                  << std::endl;
-        return std::vector<CameraRig>();
-      }
-    }
-
-    camera_rigs.push_back(camera_rig);
+  if (reconstruction_manager->Size() == 0) {
+    LOG(ERROR) << "Failed to create sparse model";
+    return false;
   }
 
-  return camera_rigs;
+  // Fork parity: the fork's manager Write also persists options; the fork's
+  // OptionManager::Parse returns void (errors abort via CHECK).
+  reconstruction_manager->Write(output_path, &options);
+  return true;
 }
 
 }  // namespace
 
-int RunRigBundleAdjuster(int argc, char** argv) {
-  std::string input_path;
-  std::string output_path;
-  std::string rig_config_path;
-  bool estimate_rig_relative_poses = true;
-
-  RigBundleAdjuster::Options rig_ba_options;
+int RunGlobalMapper(int argc, char** argv) {
+  std::filesystem::path output_path;
 
   OptionManager options;
-  options.AddRequiredOption("input_path", &input_path);
+  options.AddDatabaseOptions();
+  options.AddImageOptions();
   options.AddRequiredOption("output_path", &output_path);
-  options.AddRequiredOption("rig_config_path", &rig_config_path);
-  options.AddDefaultOption("estimate_rig_relative_poses",
-                           &estimate_rig_relative_poses);
-  options.AddDefaultOption("RigBundleAdjustment.refine_relative_poses",
-                           &rig_ba_options.refine_relative_poses);
-  options.AddBundleAdjustmentOptions();
+  options.AddGlobalMapperOptions();
   options.Parse(argc, argv);
 
-  Reconstruction reconstruction;
-  reconstruction.Read(input_path);
-
-  PrintHeading1("Camera rig configuration");
-
-  auto camera_rigs = ReadCameraRigConfig(rig_config_path, reconstruction,
-                                         estimate_rig_relative_poses);
-
-  BundleAdjustmentConfig config;
-  for (size_t i = 0; i < camera_rigs.size(); ++i) {
-    const auto& camera_rig = camera_rigs[i];
-    PrintHeading2(StringPrintf("Camera Rig %d", i + 1));
-    std::cout << StringPrintf("Cameras: %d", camera_rig.NumCameras())
-              << std::endl;
-    std::cout << StringPrintf("Snapshots: %d", camera_rig.NumSnapshots())
-              << std::endl;
-
-    // Add all registered images to the bundle adjustment configuration.
-    for (const auto image_id : reconstruction.RegImageIds()) {
-      config.AddImage(image_id);
-    }
+  if (!ExistsDir(output_path)) {
+    LOG(ERROR) << "`output_path` is not a directory.";
+    return EXIT_FAILURE;
   }
 
-  PrintHeading1("Rig bundle adjustment");
+  auto reconstruction_manager = std::make_shared<ReconstructionManager>();
+  if (!RunGlobalMapperImpl(*options.database_path,
+                           *options.image_path,
+                           output_path,
+                           options.global_mapper,
+                           options,
+                           reconstruction_manager)) {
+    return EXIT_FAILURE;
+  }
 
-  BundleAdjustmentOptions ba_options = *options.bundle_adjustment;
-  ba_options.solver_options.minimizer_progress_to_stdout = true;
-  RigBundleAdjuster bundle_adjuster(ba_options, rig_ba_options, config);
-  CHECK(bundle_adjuster.Solve(&reconstruction, &camera_rigs));
+  options.Write(output_path);
+  return EXIT_SUCCESS;
+}
 
-  reconstruction.Write(output_path);
 
+int RunRotationAverager(int argc, char** argv) {
+  std::filesystem::path output_path;
+  std::filesystem::path image_list_path;
+
+  RotationAveragingPipelineOptions controller_options;
+
+  OptionManager options;
+  options.AddDatabaseOptions();
+  options.AddRequiredOption("output_path", &output_path);
+  options.AddDefaultOption("image_list_path", &image_list_path);
+  options.AddDefaultOption("min_num_matches",
+                           &controller_options.min_num_matches);
+  options.AddDefaultOption("ignore_watermarks",
+                           &controller_options.ignore_watermarks);
+  options.AddDefaultOption("num_threads", &controller_options.num_threads);
+  options.AddDefaultOption("random_seed", &controller_options.random_seed);
+  options.AddDefaultOption("use_gravity",
+                           &controller_options.rotation_estimation.use_gravity);
+  options.AddDefaultOption(
+      "use_stratified", &controller_options.rotation_estimation.use_stratified);
+  options.AddDefaultOption("refine_gravity",
+                           &controller_options.refine_gravity);
+  options.AddGravityRefinerOptions();
+  options.Parse(argc, argv);
+
+  controller_options.gravity_refiner = *options.gravity_refiner;
+
+  if (!image_list_path.empty()) {
+    controller_options.image_names = ReadTextFileLines(image_list_path);
+  }
+
+  if (!ExistsDir(output_path)) {
+    LOG(ERROR) << "`output_path` is not a directory";
+    return EXIT_FAILURE;
+  }
+
+  // Fork parity: the fork constructs the Database directly (no Open factory).
+  auto database = std::make_shared<Database>(*options.database_path);
+  auto reconstruction = std::make_shared<Reconstruction>();
+
+  RotationAveragingPipeline controller(
+      controller_options, std::move(database), reconstruction);
+  controller.Run();
+
+  if (reconstruction->NumRegFrames() == 0) {
+    LOG(ERROR) << "No frames registered";
+    return EXIT_FAILURE;
+  }
+
+  LOG(INFO) << "Writing reconstruction to " << output_path;
+  reconstruction->Write(output_path);
+
+  return EXIT_SUCCESS;
+}
+
+int RunViewGraphCalibrator(int argc, char** argv) {
+  ViewGraphCalibrationOptions calibration_options;
+
+  OptionManager options;
+  options.AddDatabaseOptions();
+  options.AddDefaultOption(
+      "cross_validate_prior_focal_lengths",
+      &calibration_options.cross_validate_prior_focal_lengths,
+      "Cross-validate prior focal lengths");
+  options.AddDefaultOption(
+      "min_calibrated_pair_ratio",
+      &calibration_options.min_calibrated_pair_ratio,
+      "Minimum ratio of calibrated pairs for cross-validation");
+  options.AddDefaultOption("reestimate_relative_pose",
+                           &calibration_options.reestimate_relative_pose,
+                           "Re-estimate relative poses after calibration");
+  options.AddDefaultOption("min_focal_length_ratio",
+                           &calibration_options.min_focal_length_ratio,
+                           "Minimum ratio of estimated to prior focal length");
+  options.AddDefaultOption("max_focal_length_ratio",
+                           &calibration_options.max_focal_length_ratio,
+                           "Maximum ratio of estimated to prior focal length");
+  options.AddDefaultOption("max_calibration_error",
+                           &calibration_options.max_calibration_error,
+                           "Maximum calibration error for an image pair");
+  options.AddDefaultOption("relpose_max_error",
+                           &calibration_options.relpose_max_error,
+                           "Maximum error for relative pose re-estimation");
+  options.AddDefaultOption("relpose_min_num_inliers",
+                           &calibration_options.relpose_min_num_inliers,
+                           "Minimum inliers for relative pose re-estimation");
+  options.AddDefaultOption(
+      "relpose_min_inlier_ratio",
+      &calibration_options.relpose_min_inlier_ratio,
+      "Minimum inlier ratio for relative pose re-estimation");
+  options.Parse(argc, argv);
+
+  // Fork parity: the fork constructs the Database directly (no Open factory).
+  auto database = std::make_shared<Database>(*options.database_path);
+
+  if (!CalibrateViewGraph(calibration_options, database.get())) {
+    LOG(ERROR) << "View graph calibration failed";
+    return EXIT_FAILURE;
+  }
+
+  LOG(INFO) << "View graph calibration completed successfully";
   return EXIT_SUCCESS;
 }
 

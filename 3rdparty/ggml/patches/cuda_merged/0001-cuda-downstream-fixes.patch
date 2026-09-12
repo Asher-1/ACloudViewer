@@ -1,0 +1,115 @@
+diff --git a/src/ggml-cuda/CMakeLists.txt b/src/ggml-cuda/CMakeLists.txt
+index d3953ee..8eb9f98 100644
+--- a/src/ggml-cuda/CMakeLists.txt
++++ b/src/ggml-cuda/CMakeLists.txt
+@@ -163,17 +163,45 @@ if (CUDAToolkit_FOUND)
+             if (GGML_CUDA_CUB_3DOT2)
+                 target_link_libraries(ggml-cuda PRIVATE  CCCL::CCCL)
+             endif()
++            # When FORCE_MMQ is ON, no cuBLAS is needed — MMQ kernels handle
++            # all quantized matmul operations without external BLAS.
++            # Also switch to cudart_static for driver-only self-containment.
+             if (CUDAToolkit_VERSION VERSION_GREATER_EQUAL "10.1")
+-                target_link_libraries(ggml-cuda PRIVATE  CUDA::cudart_static CUDA::cublas_static CUDA::cublasLt_static)
++                if (GGML_CUDA_FORCE_MMQ)
++                    target_link_libraries(ggml-cuda PRIVATE  CUDA::cudart_static)
++                else()
++                    target_link_libraries(ggml-cuda PRIVATE  CUDA::cudart_static CUDA::cublas_static CUDA::cublasLt_static)
++                endif()
+             else()
+-                target_link_libraries(ggml-cuda PRIVATE  CUDA::cudart_static CUDA::cublas_static)
++                if (GGML_CUDA_FORCE_MMQ)
++                    target_link_libraries(ggml-cuda PRIVATE  CUDA::cudart_static)
++                else()
++                    target_link_libraries(ggml-cuda PRIVATE  CUDA::cudart_static CUDA::cublas_static)
++                endif()
+             endif()
+         endif()
+     else()
+         if (GGML_CUDA_CUB_3DOT2)
+             target_link_libraries(ggml-cuda PRIVATE  CCCL::CCCL)
+         endif()
+-        target_link_libraries(ggml-cuda PRIVATE CUDA::cudart CUDA::cublas)
++        # Dynamic backend mode (default Release path): FORCE_MMQ switches
++        # to static cudart for driver-only self-containment, but cuBLAS must
++        # stay linked: non-quantized matmul (F32/F16/BF16) always calls cuBLAS
++        # and is not behind the GGML_CUDA_FORCE_MMQ ifdef in ggml source.
++        if (GGML_CUDA_FORCE_MMQ)
++            if(WIN32)
++                # Windows: no CUDA::cudart_static (MSVC CRT conflict /MT vs /MD).
++                # Keep CUDA::cublas: FORCE_MMQ only prefers MMQ kernels at runtime
++                # while the cuBLAS code path is still compiled; the Windows DLL
++                # linker requires all symbols to resolve. cublas64_*.dll is
++                # bundled via bundle_cuda_runtime.ps1.
++                target_link_libraries(ggml-cuda PRIVATE CUDA::cudart CUDA::cublas)
++            else()
++                target_link_libraries(ggml-cuda PRIVATE CUDA::cudart_static CUDA::cublas)
++            endif()
++        else()
++            target_link_libraries(ggml-cuda PRIVATE CUDA::cudart CUDA::cublas)
++        endif()
+     endif()
+ 
+     if (GGML_CUDA_NO_VMM)
+diff --git a/src/ggml-cuda/ggml-cuda.cu b/src/ggml-cuda/ggml-cuda.cu
+index a8a1c09..f17930f 100644
+--- a/src/ggml-cuda/ggml-cuda.cu
++++ b/src/ggml-cuda/ggml-cuda.cu
+@@ -1514,20 +1514,29 @@ static void ggml_cuda_mul_mat_cublas_impl(ggml_backend_cuda_context & ctx, const
+         prefer_f32_output = !GGML_CUDA_CC_IS_RDNA3(cc) && !GGML_CUDA_CC_IS_CDNA(cc);
+     }
+ 
+-    if (prefer_f32_output) {
++    if (prefer_f32_output && dst_ddf != nullptr) {
++        // F32 output: write directly into the F32 destination.
+         dst_ptr = (char *) dst_ddf;
+         cu_compute_type = batched_mul_mat_traits<GGML_TYPE_F32>::compute_type;
+         cu_data_type = batched_mul_mat_traits<GGML_TYPE_F32>::data_type;
+         alpha = batched_mul_mat_traits<GGML_TYPE_F32>::get_alpha();
+         beta = batched_mul_mat_traits<GGML_TYPE_F32>::get_beta();
+-    } else {
++    } else if (dst_ddf != nullptr) {
+         if constexpr (compute_type == GGML_TYPE_F32) {
+             dst_ptr = (char *) dst_ddf;  // Direct F32 output
+         } else {
++            // F32 destination, native-type compute: temp buffer + convert.
+             dst_ptr = (char *) dst_temp.alloc(ne_dst);
+             nbd2 /= sizeof(float) / sizeof(cuda_t);
+             nbd3 /= sizeof(float) / sizeof(cuda_t);
+         }
++    } else {
++        // F16/BF16 destination (e.g. ggml_mul_mat_cast): cu_data_type is
++        // still the native compute type, so write directly to the correctly
++        // sized destination. Routing this through dst_temp changes batched
++        // destination strides and corrupts SAM3 ViT QKV/MLP results.
++        GGML_ASSERT(dst->type == compute_type);
++        dst_ptr = (char *) dst->data;
+     }
+ 
+     GGML_ASSERT(ne12 % ne02 == 0);
+@@ -1612,8 +1621,9 @@ static void ggml_cuda_mul_mat_cublas_impl(ggml_backend_cuda_context & ctx, const
+                 CUBLAS_GEMM_DEFAULT_TENSOR_OP));
+     }
+ 
+-    // Convert output back to F32 if needed
+-    if (cu_data_type != CUDA_R_32F) {
++    // Native F16/BF16 destinations were written directly above. Only an F32
++    // destination needs conversion from the temporary native-type buffer.
++    if (dst_ddf != nullptr && cu_data_type != CUDA_R_32F) {
+         const to_fp32_cuda_t to_fp32_cuda = ggml_get_to_fp32_cuda(traits::ggml_type_val);
+         to_fp32_cuda(dst_temp.get(), dst_ddf, ne_dst, main_stream);
+     }
+diff --git a/src/ggml-cuda/rope.cu b/src/ggml-cuda/rope.cu
+index e546fb6..93db3b5 100644
+--- a/src/ggml-cuda/rope.cu
++++ b/src/ggml-cuda/rope.cu
+@@ -578,7 +578,8 @@ void ggml_cuda_op_rope_impl(ggml_backend_cuda_context & ctx,
+ 
+     //const int n_past     = ((int32_t *) dst->op_params)[0];
+     const int n_dims     = ((int32_t *) dst->op_params)[1];
+-    const int mode       = ((int32_t *) dst->op_params)[2];
++    // `mode` is already declared at the top of this function; nvcc <= 11.8
++    // rejects the duplicate declaration ("mode has already been declared").
+     //const int n_ctx      = ((int32_t *) dst->op_params)[3];
+     const int n_ctx_orig = ((int32_t *) dst->op_params)[4];
+     const int n_offs     = ((int32_t *) dst->op_params)[15];

@@ -15,6 +15,7 @@
 #include "MainWindow.h"
 #include "ReconstructionOptionsWidget.h"
 #include "RenderOptionsWidget.h"
+#include "scene/reconstruction_io.h"
 #include "ui/render_options.h"
 #include "util/misc.h"
 #include "util/version.h"
@@ -964,18 +965,18 @@ void ReconstructionWidget::ExportAs() {
         const Reconstruction& reconstruction =
                 reconstruction_manager_.Get(SelectedReconstructionIdx());
         if (filter == "NVM (*.nvm)") {
-            reconstruction.ExportNVM(export_path);
+            colmap::ExportNVM(reconstruction, export_path);
         } else if (filter == "Bundler (*.out)") {
-            reconstruction.ExportBundler(export_path,
-                                         export_path + ".list.txt");
+            colmap::ExportBundler(reconstruction, export_path,
+                                  export_path + ".list.txt");
         } else if (filter == "PLY (*.ply)") {
-            reconstruction.ExportPLY(export_path);
+            colmap::ExportPLY(reconstruction, export_path);
         } else if (filter == "VRML (*.wrl)") {
             const auto base_path =
                     export_path.substr(0, export_path.find_last_of("."));
-            reconstruction.ExportVRML(base_path + ".images.wrl",
-                                      base_path + ".points3D.wrl", 1,
-                                      Eigen::Vector3d(1, 0, 0));
+            colmap::ExportVRML(reconstruction, base_path + ".images.wrl",
+                               base_path + ".points3D.wrl", 1,
+                               Eigen::Vector3d(1, 0, 0));
         }
     });
 }

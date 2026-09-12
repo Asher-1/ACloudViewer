@@ -8,6 +8,8 @@
 #pragma once
 
 #include <array>
+#include <filesystem>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -49,6 +51,10 @@ struct SequentialMatchingOptions {
     // be significantly bigger than the sequential matching overlap.
     int loop_detection_num_images = 50;
 
+    // Minimum distance in the sequential image order between a loop query and
+    // a retrieved candidate. Zero preserves the historical behavior.
+    int loop_detection_min_index_distance = 0;
+
     // Number of nearest neighbors to retrieve per query feature.
     int loop_detection_num_nearest_neighbors = 1;
 
@@ -64,7 +70,7 @@ struct SequentialMatchingOptions {
     int loop_detection_max_num_features = -1;
 
     // Path to the vocabulary tree.
-    std::string vocab_tree_path = retrieval::kDefaultVocabTreeUri;
+    std::filesystem::path vocab_tree_path = retrieval::kDefaultVocabTreeUri;
 
     bool Check() const;
 };
@@ -88,10 +94,10 @@ struct VocabTreeMatchingOptions {
     int max_num_features = -1;
 
     // Path to the vocabulary tree.
-    std::string vocab_tree_path = retrieval::kDefaultVocabTreeUri;
+    std::filesystem::path vocab_tree_path = retrieval::kDefaultVocabTreeUri;
 
     // Optional path to file with specific image names to match.
-    std::string match_list_path = "";
+    std::filesystem::path match_list_path;
 
     bool Check() const;
 };
@@ -129,7 +135,7 @@ struct ImagePairsMatchingOptions {
     int block_size = 1225;
 
     // Path to the file with the matches.
-    std::string match_list_path = "";
+    std::filesystem::path match_list_path;
 
     bool Check() const;
 };
@@ -139,7 +145,7 @@ struct FeaturePairsMatchingOptions {
     bool verify_matches = true;
 
     // Path to the file with the matches.
-    std::string match_list_path = "";
+    std::filesystem::path match_list_path;
 
     bool Check() const;
 };
@@ -166,11 +172,15 @@ public:
     const Image& GetImage(const image_t image_id);
     std::shared_ptr<FeatureKeypoints> GetKeypoints(const image_t image_id);
     std::shared_ptr<FeatureDescriptors> GetDescriptors(const image_t image_id);
+    std::shared_ptr<FeatureDescriptorsFloat> GetFloatDescriptors(
+            const image_t image_id);
+    FeatureDescriptorType GetDescriptorType(const image_t image_id);
     FeatureMatches GetMatches(const image_t image_id1, const image_t image_id2);
     std::vector<image_t> GetImageIds();
 
     bool ExistsKeypoints(const image_t image_id);
     bool ExistsDescriptors(const image_t image_id);
+    bool ExistsFloatDescriptors(const image_t image_id);
 
     bool ExistsMatches(const image_t image_id1, const image_t image_id2);
     bool ExistsInlierMatches(const image_t image_id1, const image_t image_id2);
@@ -198,9 +208,13 @@ private:
             keypoints_cache_;
     std::unique_ptr<ThreadSafeLRUCache<image_t, FeatureDescriptors>>
             descriptors_cache_;
+    std::unique_ptr<ThreadSafeLRUCache<image_t, FeatureDescriptorsFloat>>
+            float_descriptors_cache_;
     std::unique_ptr<ThreadSafeLRUCache<image_t, bool>> keypoints_exists_cache_;
     std::unique_ptr<ThreadSafeLRUCache<image_t, bool>>
             descriptors_exists_cache_;
+    std::unique_ptr<ThreadSafeLRUCache<image_t, bool>>
+            float_descriptors_exists_cache_;
 };
 
 class FeatureMatcherThread : public Thread {
@@ -226,6 +240,25 @@ public:
                           JobQueue<Output>* output_queue);
 
 protected:
+    void Run() override;
+
+    JobQueue<Input>* input_queue_;
+    JobQueue<Output>* output_queue_;
+};
+
+// LoMa uses the SIFT pair scheduler and geometry verifier, while loading a
+// ggml matcher once per worker and consuming float descriptors from SQLite.
+class LomaFeatureMatcher : public FeatureMatcherThread {
+public:
+    typedef internal::FeatureMatcherData Input;
+    typedef internal::FeatureMatcherData Output;
+
+    LomaFeatureMatcher(const SiftMatchingOptions& options,
+                       FeatureMatcherCache* cache,
+                       JobQueue<Input>* input_queue,
+                       JobQueue<Output>* output_queue);
+
+private:
     void Run() override;
 
     JobQueue<Input>* input_queue_;
@@ -319,7 +352,7 @@ protected:
     void Run() override;
 
     const SiftMatchingOptions options_;
-    TwoViewGeometry::Options two_view_geometry_options_;
+    TwoViewGeometryOptions two_view_geometry_options_;
     FeatureMatcherCache* cache_;
     JobQueue<Input>* input_queue_;
     JobQueue<Output>* output_queue_;
@@ -353,6 +386,7 @@ private:
 
     std::vector<std::unique_ptr<FeatureMatcherThread>> matchers_;
     std::vector<std::unique_ptr<FeatureMatcherThread>> guided_matchers_;
+    bool use_loma_ = false;
     std::vector<std::unique_ptr<Thread>> verifiers_;
     std::unique_ptr<ThreadPool> thread_pool_;
 
@@ -389,7 +423,7 @@ class ExhaustiveFeatureMatcher : public Thread {
 public:
     ExhaustiveFeatureMatcher(const ExhaustiveMatchingOptions& options,
                              const SiftMatchingOptions& match_options,
-                             const std::string& database_path);
+                             const std::filesystem::path& database_path);
 
 private:
     void Run() override;
@@ -423,7 +457,7 @@ class SequentialFeatureMatcher : public Thread {
 public:
     SequentialFeatureMatcher(const SequentialMatchingOptions& options,
                              const SiftMatchingOptions& match_options,
-                             const std::string& database_path);
+                             const std::filesystem::path& database_path);
 
 private:
     void Run() override;
@@ -444,7 +478,7 @@ class VocabTreeFeatureMatcher : public Thread {
 public:
     VocabTreeFeatureMatcher(const VocabTreeMatchingOptions& options,
                             const SiftMatchingOptions& match_options,
-                            const std::string& database_path);
+                            const std::filesystem::path& database_path);
 
 private:
     void Run() override;
@@ -462,7 +496,7 @@ class SpatialFeatureMatcher : public Thread {
 public:
     SpatialFeatureMatcher(const SpatialMatchingOptions& options,
                           const SiftMatchingOptions& match_options,
-                          const std::string& database_path);
+                          const std::filesystem::path& database_path);
 
 private:
     void Run() override;
@@ -482,7 +516,7 @@ class TransitiveFeatureMatcher : public Thread {
 public:
     TransitiveFeatureMatcher(const TransitiveMatchingOptions& options,
                              const SiftMatchingOptions& match_options,
-                             const std::string& database_path);
+                             const std::filesystem::path& database_path);
 
 private:
     void Run() override;
@@ -507,7 +541,7 @@ class ImagePairsFeatureMatcher : public Thread {
 public:
     ImagePairsFeatureMatcher(const ImagePairsMatchingOptions& options,
                              const SiftMatchingOptions& match_options,
-                             const std::string& database_path);
+                             const std::filesystem::path& database_path);
 
 private:
     void Run() override;
@@ -538,7 +572,7 @@ class FeaturePairsFeatureMatcher : public Thread {
 public:
     FeaturePairsFeatureMatcher(const FeaturePairsMatchingOptions& options,
                                const SiftMatchingOptions& match_options,
-                               const std::string& database_path);
+                               const std::filesystem::path& database_path);
 
 private:
     const static size_t kCacheSize = 100;

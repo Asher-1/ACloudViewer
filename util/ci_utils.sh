@@ -1,11 +1,25 @@
 #!/usr/bin/env bash
-# Detect if script is being sourced (for VS Code terminal compatibility)
+# Strict-mode handling:
+# - Executed directly: enable strict mode.
+# - Sourced by an INTERACTIVE shell (VS Code terminal): relax strict mode so a
+#   failed command cannot close the terminal.
+# - Sourced by a NON-interactive script (docker/build_*.sh, CI run blocks):
+#   leave the caller's shell options untouched. The old unconditional
+#   `set +e +u +o pipefail` here silently disabled the strict mode declared by
+#   sourcing scripts (e.g. `set -euo pipefail` in docker/build_cloudviewer_whl.sh),
+#   which let a failed wheel build continue and ship broken wheels.
 if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
-    # Script is being sourced - disable strict mode to prevent terminal crash
     _CI_UTILS_SOURCED=1
-    set +e  # Don't exit on error when sourced
-    set +u  # Don't exit on unset variables when sourced
-    set +o pipefail  # Don't exit on pipe failures when sourced
+    case $- in
+        *i*)
+            set +e # Don't exit on error in an interactive terminal
+            set +u # Don't exit on unset variables in an interactive terminal
+            set +o pipefail # Don't exit on pipe failures in an interactive terminal
+            ;;
+        *)
+            : # Sourced by a script: preserve the caller's shell options
+            ;;
+    esac
 else
     # Script is being executed - enable strict mode
     _CI_UTILS_SOURCED=0
@@ -645,6 +659,11 @@ build_gui_app() {
                 "-DPLUGIN_STANDARD_QFACEDETECT=ON"
                 "-DPLUGIN_STANDARD_QFREESPLATTER=ON"
                 "-DPLUGIN_STANDARD_QLIGHTGLUE=ON"
+                "-DPLUGIN_STANDARD_QRFDETR=ON"
+                "-DPLUGIN_STANDARD_QRMBG=ON"
+                "-DPLUGIN_STANDARD_QYOLO=ON"
+                "-DPLUGIN_STANDARD_QSAM3=ON"
+                "-DPLUGIN_STANDARD_QTRELLIS=ON"
                 "-DPLUGIN_PYTHON=ON"
                 "-DBUILD_PYTHON_MODULE=ON"
                 "-DCONDA_PREFIX=$CONDA_PREFIX"
@@ -782,7 +801,19 @@ build_pip_package() {
     echo "Packaging CloudViewer CPU pip package..."
     make VERBOSE=1 -j"$NPROC" pip-package
     echo "Finish make pip-package for cpu"
-    mv lib/python_package/pip_package/cloudviewer*.whl . # save CPU wheel
+    # Fail loudly if the CPU pass did not produce a wheel. Without the CPU
+    # wheel, the later CUDA wheel cannot bundle the cloudViewer/cpu fallback
+    # bindings and imports fail on GPU-less machines (the two-pass scheme
+    # reuses the CPU pass artifacts; see make_python_package.cmake).
+    _cpu_wheels=(lib/python_package/pip_package/cloudviewer*.whl)
+    if [ ! -f "${_cpu_wheels[0]}" ]; then
+        echo "ERROR: 'make pip-package' produced no wheel (expected" \
+             "lib/python_package/pip_package/cloudviewer*.whl)." >&2
+        echo "Inspect the make output above for the root cause (compile error or" \
+             "third-party download failure)." >&2
+        exit 1
+    fi
+    mv -v "${_cpu_wheels[@]}" . # save CPU wheel
 
     if [ "$BUILD_CUDA_MODULE" == "ON" ]; then
         echo
@@ -816,7 +847,15 @@ build_pip_package() {
     echo "Packaging CloudViewer full pip package..."
     make VERBOSE=1 -j"$NPROC" pip-package
     echo "Finish make CloudViewer full pip package"
-    mv cloudviewer*.whl lib/python_package/pip_package/ # restore CPU wheel
+    # The CUDA wheel must contain cloudViewer/cpu/pybind*.so (runtime fallback
+    # for GPU-less machines); make_python_package.cmake enforces the staging
+    # side. Restoring the CPU wheel keeps both variants in pip_package.
+    _saved_wheels=(cloudviewer*.whl)
+    if [ -f "${_saved_wheels[0]}" ]; then
+        mv -v "${_saved_wheels[@]}" lib/python_package/pip_package/ # restore CPU wheel
+    else
+        echo "WARNING: no CPU wheel was saved to restore into pip_package." >&2
+    fi
     popd                                           # PWD=ACloudViewer
 }
 

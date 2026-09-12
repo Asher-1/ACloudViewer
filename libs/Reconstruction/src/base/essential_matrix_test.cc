@@ -40,7 +40,7 @@
 
 using namespace colmap;
 
-BOOST_AUTO_TEST_CASE(TestDecomposeEssentialMatrix) {
+TEST(base_essential_matrix, TestDecomposeEssentialMatrix) {
   const Eigen::Matrix3d R = EulerAnglesToRotationMatrix(0, 1, 1);
   const Eigen::Vector3d t = Eigen::Vector3d(0.5, 1, 1).normalized();
   const Eigen::Matrix3d E = EssentialMatrixFromPose(R, t);
@@ -50,22 +50,22 @@ BOOST_AUTO_TEST_CASE(TestDecomposeEssentialMatrix) {
   Eigen::Vector3d tt;
   DecomposeEssentialMatrix(E, &R1, &R2, &tt);
 
-  BOOST_CHECK((R1 - R).norm() < 1e-10 || (R2 - R).norm() < 1e-10);
-  BOOST_CHECK((tt - t).norm() < 1e-10 || (tt + t).norm() < 1e-10);
+  EXPECT_TRUE((R1 - R).norm() < 1e-10 || (R2 - R).norm() < 1e-10);
+  EXPECT_TRUE((tt - t).norm() < 1e-10 || (tt + t).norm() < 1e-10);
 }
 
-BOOST_AUTO_TEST_CASE(TestEssentialMatrixFromPose) {
-  BOOST_CHECK_EQUAL(
+TEST(base_essential_matrix, TestEssentialMatrixFromPose) {
+  EXPECT_EQ(
       EssentialMatrixFromPose(EulerAnglesToRotationMatrix(0, 0, 0),
                               Eigen::Vector3d(0, 0, 1)),
       (Eigen::MatrixXd(3, 3) << 0, -1, 0, 1, 0, 0, 0, 0, 0).finished());
-  BOOST_CHECK_EQUAL(
+  EXPECT_EQ(
       EssentialMatrixFromPose(EulerAnglesToRotationMatrix(0, 0, 0),
                               Eigen::Vector3d(0, 0, 2)),
       (Eigen::MatrixXd(3, 3) << 0, -1, 0, 1, 0, 0, 0, 0, 0).finished());
 }
 
-BOOST_AUTO_TEST_CASE(TestEssentialMatrixFromPoses) {
+TEST(base_essential_matrix, TestEssentialMatrixFromPoses) {
   const Eigen::Matrix3d R1 = EulerAnglesToRotationMatrix(0, 0, 0);
   const Eigen::Matrix3d R2 = EulerAnglesToRotationMatrix(0, 1, 2);
   const Eigen::Vector3d t1(0, 0, 0);
@@ -75,10 +75,10 @@ BOOST_AUTO_TEST_CASE(TestEssentialMatrixFromPoses) {
   const Eigen::Matrix3d E2 = EssentialMatrixFromAbsolutePoses(
       ComposeProjectionMatrix(R1, t1), ComposeProjectionMatrix(R2, t2));
 
-  BOOST_CHECK_CLOSE((E1 - E2).norm(), 0, 1e-6);
+  EXPECT_NEAR((E1 - E2).norm(), 0, std::abs(0) * (1e-6) / 100.0);
 }
 
-BOOST_AUTO_TEST_CASE(TestPoseFromEssentialMatrix) {
+TEST(base_essential_matrix, TestPoseFromEssentialMatrix) {
   const Eigen::Matrix3d R = EulerAnglesToRotationMatrix(0, 0, 0);
   const Eigen::Vector3d t = Eigen::Vector3d(1, 0, 0).normalized();
   const Eigen::Matrix3d E = EssentialMatrixFromPose(R, t);
@@ -107,13 +107,13 @@ BOOST_AUTO_TEST_CASE(TestPoseFromEssentialMatrix) {
   Eigen::Vector3d tt;
   PoseFromEssentialMatrix(E, points1, points2, &RR, &tt, &points3D);
 
-  BOOST_CHECK_EQUAL(points3D.size(), 4);
+  EXPECT_EQ(points3D.size(), 4);
 
-  BOOST_CHECK(RR.isApprox(R));
-  BOOST_CHECK(tt.isApprox(t));
+  EXPECT_TRUE(RR.isApprox(R));
+  EXPECT_TRUE(tt.isApprox(t));
 }
 
-BOOST_AUTO_TEST_CASE(TestFindOptimalImageObservations) {
+TEST(base_essential_matrix, TestFindOptimalImageObservations) {
   const Eigen::Matrix3d R = EulerAnglesToRotationMatrix(0, 0, 0);
   const Eigen::Vector3d t = Eigen::Vector3d(1, 0, 0).normalized();
   const Eigen::Matrix3d E = EssentialMatrixFromPose(R, t);
@@ -139,34 +139,34 @@ BOOST_AUTO_TEST_CASE(TestFindOptimalImageObservations) {
     Eigen::Vector2d optimal_point2;
     FindOptimalImageObservations(E, point1, point2, &optimal_point1,
                                  &optimal_point2);
-    BOOST_CHECK(point1.isApprox(optimal_point1));
-    BOOST_CHECK(point2.isApprox(optimal_point2));
+    EXPECT_TRUE(point1.isApprox(optimal_point1));
+    EXPECT_TRUE(point2.isApprox(optimal_point2));
   }
 }
 
-BOOST_AUTO_TEST_CASE(TestEpipoleFromEssentialMatrix) {
+TEST(base_essential_matrix, TestEpipoleFromEssentialMatrix) {
   const Eigen::Matrix3d R = EulerAnglesToRotationMatrix(0, 0, 0);
   const Eigen::Vector3d t = Eigen::Vector3d(0, 0, -1).normalized();
   const Eigen::Matrix3d E = EssentialMatrixFromPose(R, t);
 
   const Eigen::Vector3d left_epipole = EpipoleFromEssentialMatrix(E, true);
   const Eigen::Vector3d right_epipole = EpipoleFromEssentialMatrix(E, false);
-  BOOST_CHECK(left_epipole.isApprox(Eigen::Vector3d(0, 0, 1)));
-  BOOST_CHECK(right_epipole.isApprox(Eigen::Vector3d(0, 0, 1)));
+  EXPECT_TRUE(left_epipole.isApprox(Eigen::Vector3d(0, 0, 1)));
+  EXPECT_TRUE(right_epipole.isApprox(Eigen::Vector3d(0, 0, 1)));
 }
 
-BOOST_AUTO_TEST_CASE(TestInvertEssentialMatrix) {
+TEST(base_essential_matrix, TestInvertEssentialMatrix) {
   for (size_t i = 1; i < 10; ++i) {
     const Eigen::Matrix3d R = EulerAnglesToRotationMatrix(0, 0.1, 0);
     const Eigen::Vector3d t = Eigen::Vector3d(0, 0, i).normalized();
     const Eigen::Matrix3d E = EssentialMatrixFromPose(R, t);
     const Eigen::Matrix3d inv_inv_E =
         InvertEssentialMatrix(InvertEssentialMatrix(E));
-    BOOST_CHECK(E.isApprox(inv_inv_E));
+    EXPECT_TRUE(E.isApprox(inv_inv_E));
   }
 }
 
-BOOST_AUTO_TEST_CASE(TestRefineEssentialMatrix) {
+TEST(base_essential_matrix, TestRefineEssentialMatrix) {
   const Eigen::Matrix3d R = EulerAnglesToRotationMatrix(0, 0, 0);
   const Eigen::Vector3d t = Eigen::Vector3d(1, 0, 0).normalized();
   const Eigen::Matrix3d E = EssentialMatrixFromPose(R, t);
@@ -201,5 +201,5 @@ BOOST_AUTO_TEST_CASE(TestRefineEssentialMatrix) {
   RefineEssentialMatrix(options, points1, points2,
                         std::vector<char>(points1.size(), true), &E_refined);
 
-  BOOST_CHECK_LE((E - E_refined).norm(), (E - E_pertubated).norm());
+  EXPECT_LE((E - E_refined).norm(), (E - E_pertubated).norm());
 }

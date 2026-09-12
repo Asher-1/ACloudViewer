@@ -10,10 +10,22 @@
 #include <Eigen/Core>
 #include <vector>
 
+#include "geometry/rigid3.h"
+#include "geometry/sim3.h"
 #include "util/alignment.h"
 #include "util/types.h"
 
 namespace colmap {
+
+// A unit camera bearing and the unprojection Jacobian d(bearing)/d(pixel).
+// Keeping both values together preserves correspondence indexing while a
+// robust estimator sub-samples its input.
+struct CamRayWithJac {
+    Eigen::Vector3d ray = Eigen::Vector3d::Zero();
+    Eigen::Matrix<double, 3, 2> jacobian = Eigen::Matrix<double, 3, 2>::Zero();
+
+    static CamRayWithJac Zero() { return CamRayWithJac(); }
+};
 
 // Compose the skew symmetric cross product matrix from a vector.
 Eigen::Matrix3d CrossProductMatrix(const Eigen::Vector3d& vector);
@@ -209,5 +221,48 @@ bool CheckCheirality(const Eigen::Matrix3d& R,
 Eigen::Vector4d ComposeIdentityQuaternion() {
     return Eigen::Vector4d(1, 0, 0, 0);
 }
+
+// Upstream-parity cheirality check on camera rays (COLMAP 4.x pose.h).
+bool CheckCheirality(const Rigid3d& cam2_from_cam1,
+                     const std::vector<Eigen::Vector3d>& cam_rays1,
+                     const std::vector<Eigen::Vector3d>& cam_rays2,
+                     std::vector<int>* indices);
+
+// Upstream COLMAP dbb41680 geometry/pose.h: weighted average of unit
+// vectors via the principal singular vector, sign-aligned with the
+// weighted majority. Used by the GLomap rotation averaging stack (W4).
+Eigen::VectorXd AverageUnitVectors(const Eigen::MatrixXd& vectors,
+                                   const Eigen::VectorXd& weights = {});
+Eigen::Vector3d AverageDirections(
+        const std::vector<Eigen::Vector3d>& directions,
+        const std::vector<double>& weights = {});
+
+// Upstream COLMAP dbb41680 geometry/pose.h: Markley quaternion averaging
+// built on AverageUnitVectors (overload of the legacy Vector4d version).
+Eigen::Quaterniond AverageQuaternions(
+        const std::vector<Eigen::Quaterniond>& quats,
+        const std::vector<double>& weights);
+
+// Upstream COLMAP dbb41680 geometry/pose.h: compose the camera pose from
+// world after a similarity transform of the world frame.
+Rigid3d TransformCameraWorld(const Sim3d& new_from_old_world,
+                             const Rigid3d& cam_from_world);
+
+// Convert rotation matrix to/from angle axis.
+Eigen::Vector3d RotationMatrixToAngleAxis(const Eigen::Matrix3d& R);
+Eigen::Matrix3d AngleAxisToRotationMatrix(const Eigen::Vector3d& w);
+
+// Compute a gravity-aligned rotation matrix from a gravity direction via
+// Householder QR. The second column of the output matrix is the gravity
+// direction. Upstream parity, used by the GLomap gravity refinement (W4/W7).
+Eigen::Matrix3d GravityAlignedRotation(const Eigen::Vector3d& gravity);
+
+// Convert 3D rotation matrix to Euler angles (convention R = Rz * Ry * Rx,
+// right-handed). Upstream parity, used by the GLomap gravity refinement.
+double YAxisAngleFromRotation(const Eigen::Matrix3d& rotation);
+
+// Construct gravity-aligned rotation matrix from yaw angle, i.e., a rotation
+// about the Y-axis (gravity direction).
+Eigen::Matrix3d RotationFromYAxisAngle(double angle);
 
 }  // namespace colmap

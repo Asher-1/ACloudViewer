@@ -9,7 +9,9 @@ ImageNet normalization; the fixture is already a multiple of 14 so the resize
 policy is not exercised here (documented for the converter/dump scripts)."""
 import os, sys, numpy as np, torch
 
-DA2_SRC        = os.environ.get("DA2_SRC", "/tmp/da2-src")
+DA2_SRC        = os.environ.get("DA2_SRC", "")
+if not DA2_SRC:
+    raise RuntimeError("DA2_SRC must point to the upstream depth-anything-v2 checkout")
 DA2_METRIC_SRC = os.path.join(DA2_SRC, "metric_depth")
 
 DA2_CONFIGS = {

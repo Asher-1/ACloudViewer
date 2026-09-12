@@ -7,120 +7,90 @@
 
 #pragma once
 
+#include <vector>
+
 #include "base/camera.h"
+#include "base/image.h"
+#include "base/two_view_geometry.h"
 #include "feature/types.h"
 #include "optim/ransac.h"
-#include "util/alignment.h"
-#include "util/logging.h"
+#include "util/hash_containers.h"
 
 namespace colmap {
 
-// Two-view geometry estimator.
-struct TwoViewGeometry {
-    // The configuration of the estimated two-view geometry.
-    enum ConfigurationType {
-        UNDEFINED = 0,
-        // Degenerate configuration (e.g., no overlap or not enough inliers).
-        DEGENERATE = 1,
-        // Essential matrix.
-        CALIBRATED = 2,
-        // Fundamental matrix.
-        UNCALIBRATED = 3,
-        // Homography, planar scene with baseline.
-        PLANAR = 4,
-        // Homography, pure rotation without baseline.
-        PANORAMIC = 5,
-        // Homography, planar or panoramic.
-        PLANAR_OR_PANORAMIC = 6,
-        // Watermark, pure 2D translation in image borders.
-        WATERMARK = 7,
-        // Multi-model configuration, i.e. the inlier matches result from
-        // multiple individual, non-degenerate configurations.
-        MULTIPLE = 8,
-    };
+class DatabaseCache;
+class Rig;
 
-    // Estimation options.
-    struct Options {
-        // Minimum number of inliers for non-degenerate two-view geometry.
-        size_t min_num_inliers = 15;
+// Estimation options.
+struct TwoViewGeometryOptions {
+    // Minimum number of inliers for non-degenerate two-view geometry.
+    int min_num_inliers = 15;
 
-        // In case both cameras are calibrated, the calibration is verified by
-        // estimating an essential and fundamental matrix and comparing their
-        // fractions of number of inliers. If the essential matrix produces
-        // a similar number of inliers (`min_E_F_inlier_ratio * F_num_inliers`),
-        // the calibration is assumed to be correct.
-        double min_E_F_inlier_ratio = 0.95;
+    // Minimum ratio of inliers to total matches for non-degenerate geometry.
+    // Disabled by default, only effective when > 0.
+    double min_inlier_ratio = 0.0;
 
-        // In case an epipolar geometry can be verified, it is checked whether
-        // the geometry describes a planar scene or panoramic view (pure
-        // rotation) described by a homography. This is a degenerate case, since
-        // epipolar geometry is only defined for a moving camera. If the inlier
-        // ratio of a homography comes close to the inlier ratio of the epipolar
-        // geometry, a planar or panoramic configuration is assumed.
-        double max_H_inlier_ratio = 0.8;
+    // In case both cameras are calibrated, the calibration is verified by
+    // estimating an essential and fundamental matrix and comparing their
+    // fractions of number of inliers. If the essential matrix produces
+    // a similar number of inliers (`min_E_F_inlier_ratio * F_num_inliers`),
+    // the calibration is assumed to be correct.
+    double min_E_F_inlier_ratio = 0.95;
 
-        // In case of valid two-view geometry, it is checked whether the
-        // geometry describes a pure translation in the border region of the
-        // image. If more than a certain ratio of inlier points conform with a
-        // pure image translation, a watermark is assumed.
-        double watermark_min_inlier_ratio = 0.7;
+    // In case an epipolar geometry can be verified, it is checked whether
+    // the geometry describes a planar scene or panoramic view (pure rotation)
+    // described by a homography. This is a degenerate case, since epipolar
+    // geometry is only defined for a moving camera. If the inlier ratio of
+    // a homography comes close to the inlier ratio of the epipolar geometry,
+    // a planar or panoramic configuration is assumed.
+    double max_H_inlier_ratio = 0.8;
 
-        // Watermark matches have to be in the border region of the image. The
-        // border region is defined as the area around the image borders and
-        // is defined as a fraction of the image diagonal.
-        double watermark_border_size = 0.1;
+    // In case of valid two-view geometry, it is checked whether the geometry
+    // describes a pure translation in the border region of the image. If more
+    // than a certain ratio of inlier points conform with a pure image
+    // translation, a watermark is assumed.
+    double watermark_min_inlier_ratio = 0.7;
 
-        // Whether to enable watermark detection. A watermark causes a pure
-        // translation in the image space with inliers in the border region.
-        bool detect_watermark = true;
+    // Watermark matches have to be in the border region of the image. The
+    // border region is defined as the area around the image borders and
+    // is defined as a fraction of the image diagonal.
+    double watermark_border_size = 0.1;
 
-        // Whether to ignore watermark models in multiple model estimation.
-        bool multiple_ignore_watermark = true;
+    // Whether to enable watermark detection. A watermark causes a pure
+    // translation in the image space with inliers in the border region.
+    bool detect_watermark = true;
 
-        // Options used to robustly estimate the geometry.
-        RANSACOptions ransac_options;
+    // Whether to ignore watermark models in multiple model estimation.
+    bool multiple_ignore_watermark = true;
 
-        void Check() const {
-            CHECK_GE(min_num_inliers, 0);
-            CHECK_GE(min_E_F_inlier_ratio, 0);
-            CHECK_LE(min_E_F_inlier_ratio, 1);
-            CHECK_GE(max_H_inlier_ratio, 0);
-            CHECK_LE(max_H_inlier_ratio, 1);
-            CHECK_GE(watermark_min_inlier_ratio, 0);
-            CHECK_LE(watermark_min_inlier_ratio, 1);
-            CHECK_GE(watermark_border_size, 0);
-            CHECK_LE(watermark_border_size, 1);
-            ransac_options.Check();
-        }
-    };
+    // Maximum translational error of matched points to be considered
+    // inliers of a watermark.
+    double watermark_detection_max_error = 4.0;
 
-    TwoViewGeometry()
-        : config(ConfigurationType::UNDEFINED),
-          E(Eigen::Matrix3d::Zero()),
-          F(Eigen::Matrix3d::Zero()),
-          H(Eigen::Matrix3d::Zero()),
-          qvec(Eigen::Vector4d::Zero()),
-          tvec(Eigen::Vector3d::Zero()),
-          tri_angle(0) {}
+    // Whether to filter stationary matches. This is useful when a camera is
+    // rigidly mounted on a moving vehicle and the vehicle itself is visible.
+    bool filter_stationary_matches = false;
 
-    // Invert the two-view geometry in-place.
-    void Invert();
+    // Maximum displacement for points to be considered stationary matches.
+    double stationary_matches_max_error = 4.0;
 
-    // Estimate two-view geometry from calibrated or uncalibrated image pair,
-    // depending on whether a prior focal length is given or not.
-    //
-    // @param camera1         Camera of first image.
-    // @param points1         Feature points in first image.
-    // @param camera2         Camera of second image.
-    // @param points2         Feature points in second image.
-    // @param matches         Feature matches between first and second image.
-    // @param options         Two-view geometry estimation options.
-    void Estimate(const Camera& camera1,
-                  const std::vector<Eigen::Vector2d>& points1,
-                  const Camera& camera2,
-                  const std::vector<Eigen::Vector2d>& points2,
-                  const FeatureMatches& matches,
-                  const Options& options);
+    // In case the user asks for it, only going to estimate a Homography
+    // between both cameras.
+    bool force_H_use = false;
+
+    // Use DEGENSAC (Chum et al., CVPR 2005) for the fundamental matrix instead
+    // of plain LO-RANSAC, making estimation robust to a dominant scene plane.
+    bool use_degensac = false;
+
+    // Locally optimize the fundamental matrix by nonlinearly minimizing the
+    // Sampson error over the inlier set, instead of refitting the linear
+    // eight-point algorithm. The refinement optimizes the same residual RANSAC
+    // scores and keeps the model rank 2 throughout, so no singular value has to
+    // be truncated afterwards. On by default.
+    bool use_sampson_refinement = true;
+
+    // Whether to compute the relative pose between the two views.
+    bool compute_relative_pose = false;
 
     // Recursively estimate multiple configurations by removing the previous set
     // of inliers from the matches until not enough inliers are found. Inlier
@@ -131,95 +101,177 @@ struct TwoViewGeometry {
     //
     // Note that in case the model type is `MULTIPLE`, only the `inlier_matches`
     // field will be initialized.
-    //
-    // @param camera1         Camera of first image.
-    // @param points1         Feature points in first image.
-    // @param camera2         Camera of second image.
-    // @param points2         Feature points in second image.
-    // @param matches         Feature matches between first and second image.
-    // @param options         Two-view geometry estimation options.
-    void EstimateMultiple(const Camera& camera1,
-                          const std::vector<Eigen::Vector2d>& points1,
-                          const Camera& camera2,
-                          const std::vector<Eigen::Vector2d>& points2,
-                          const FeatureMatches& matches,
-                          const Options& options);
+    bool multiple_models = false;
 
-    // Estimate two-view geometry and its relative pose from a calibrated or an
-    // uncalibrated image pair.
-    //
-    // @param camera1         Camera of first image.
-    // @param points1         Feature points in first image.
-    // @param camera2         Camera of second image.
-    // @param points2         Feature points in second image.
-    // @param matches         Feature matches between first and second image.
-    // @param options         Two-view geometry estimation options.
-    bool EstimateRelativePose(const Camera& camera1,
-                              const std::vector<Eigen::Vector2d>& points1,
-                              const Camera& camera2,
-                              const std::vector<Eigen::Vector2d>& points2);
+    // TwoViewGeometryOptions used to robustly estimate the geometry.
+    RANSACOptions ransac_options;
 
-    // Estimate two-view geometry from calibrated image pair.
-    //
-    // @param camera1         Camera of first image.
-    // @param points1         Feature points in first image.
-    // @param camera2         Camera of second image.
-    // @param points2         Feature points in second image.
-    // @param matches         Feature matches between first and second image.
-    // @param options         Two-view geometry estimation options.
-    void EstimateCalibrated(const Camera& camera1,
+    TwoViewGeometryOptions() {
+        ransac_options.max_error = 4.0;
+        ransac_options.confidence = 0.999;
+        ransac_options.min_num_trials = 100;
+        ransac_options.max_num_trials = 10000;
+        ransac_options.min_inlier_ratio = 0.25;
+    }
+
+    bool Check() const;
+};
+
+// Estimate two-view geometry from calibrated or uncalibrated image pair,
+// depending on whether a prior focal length is given or not.
+//
+// @param camera1         Camera of first image.
+// @param points1         Feature points in first image.
+// @param camera2         Camera of second image.
+// @param points2         Feature points in second image.
+// @param matches         Feature matches between first and second image.
+// @param options         Two-view geometry estimation options.
+TwoViewGeometry EstimateTwoViewGeometry(
+        const Camera& camera1,
+        const std::vector<Eigen::Vector2d>& points1,
+        const Camera& camera2,
+        const std::vector<Eigen::Vector2d>& points2,
+        FeatureMatches matches,
+        const TwoViewGeometryOptions& options);
+
+// Estimate the two-view geometries for all matched images between a pair of
+// rigs.
+//
+// @param rig1            First rig.
+// @param rig2            Second rig.
+// @param images          Images in first and second rig.
+// @param cameras         Cameras in first and second rig.
+// @param matches         Feature matches between first and second rig.
+// @param options         Two-view geometry estimation options.
+//
+// @return                Two-view geometries for all matched images.
+// EstimateRigTwoViewGeometries is deferred to W3 together with
+// MaybeDecomposeRelativePoses and the generalized-pose cost machinery.
+
+// Decompose the relative poses of all two-view geometries that have a
+// calibrated prior and no decomposed pose yet (upstream parity: the global
+// pipeline calls this once after loading the database cache).
+void MaybeDecomposeRelativePoses(DatabaseCache* database_cache);
+
+// Estimate relative pose for two-view geometry.
+//
+// @param camera1         Camera of first image.
+// @param points1         Feature points in first image.
+// @param camera2         Camera of second image.
+// @param points2         Feature points in second image.
+// @param options         Two-view geometry estimation options.
+bool EstimateTwoViewGeometryPose(const Camera& camera1,
+                                 const std::vector<Eigen::Vector2d>& points1,
+                                 const Camera& camera2,
+                                 const std::vector<Eigen::Vector2d>& points2,
+                                 TwoViewGeometry* geometry);
+
+// Estimate two-view geometry from calibrated image pair.
+//
+// @param camera1         Camera of first image.
+// @param points1         Feature points in first image.
+// @param camera2         Camera of second image.
+// @param points2         Feature points in second image.
+// @param matches         Feature matches between first and second image.
+// @param options         Two-view geometry estimation options.
+TwoViewGeometry EstimateCalibratedTwoViewGeometry(
+        const Camera& camera1,
+        const std::vector<Eigen::Vector2d>& points1,
+        const Camera& camera2,
+        const std::vector<Eigen::Vector2d>& points2,
+        const FeatureMatches& matches,
+        const TwoViewGeometryOptions& options);
+
+// Estimate two-view geometry from an image pair captured by a single,
+// uncalibrated camera with an unknown but shared focal length.
+//
+// Runs PoseLib's 6-point shared-focal relative-pose solver (with nonlinear
+// local optimization) against a homography model to reject planar/panoramic
+// degeneracies. On success the returned geometry has the UNCALIBRATED
+// configuration with `E`, `F`, and the estimated shared camera in
+// `camera1`/`camera2` set.
+//
+// Both images are assumed to reference the same pinhole-projection camera
+// (perspective, non-fisheye); `camera` is that shared camera and provides the
+// principal point. A single isotropic focal length is recovered; multi-focal
+// models (e.g. PINHOLE) are seeded fx = fy = f and refined later. Any current
+// distortion is ignored by the epipolar fit (as in the fundamental-matrix path)
+// and refined later by bundle adjustment.
+//
+// @param camera          Shared camera of both images.
+// @param points1         Feature points in first image.
+// @param points2         Feature points in second image.
+// @param matches         Feature matches between first and second image.
+// @param options         Two-view geometry estimation options.
+TwoViewGeometry EstimateSharedFocalTwoViewGeometry(
+        const Camera& camera,
+        const std::vector<Eigen::Vector2d>& points1,
+        const std::vector<Eigen::Vector2d>& points2,
+        const FeatureMatches& matches,
+        const TwoViewGeometryOptions& options);
+
+// Estimate two-view geometry when exactly one of the two cameras has a known
+// focal length, by jointly recovering the relative pose and the other camera's
+// focal (LO-RANSAC over a minimal 6-point one-sided focal solver) against a
+// homography model to reject planar/panoramic degeneracies.
+//
+// When the epipolar model wins, the geometry has the UNCALIBRATED configuration
+// with `E` and `F` set, and the estimated camera in whichever of
+// `camera1`/`camera2` is the uncalibrated image; the other stays unset, its
+// intrinsics being an input rather than an estimate.
+//
+// Exactly one of `camera1`/`camera2` must have `has_prior_focal_length` set,
+// and the uncalibrated one must use a pinhole projection. A single isotropic
+// focal is recovered; multi-focal models are seeded fx = fy = f and refined
+// later. Distortion on the uncalibrated side is absorbed by the epipolar fit,
+// as in the fundamental-matrix path; on the calibrated side it is undone
+// exactly.
+//
+// @param camera1         Camera of first image.
+// @param points1         Feature points in first image.
+// @param camera2         Camera of second image.
+// @param points2         Feature points in second image.
+// @param matches         Feature matches between first and second image.
+// @param options         Two-view geometry estimation options.
+TwoViewGeometry EstimateOneSidedFocalTwoViewGeometry(
+        const Camera& camera1,
+        const std::vector<Eigen::Vector2d>& points1,
+        const Camera& camera2,
+        const std::vector<Eigen::Vector2d>& points2,
+        const FeatureMatches& matches,
+        const TwoViewGeometryOptions& options);
+
+// Detect if inlier matches are caused by a watermark, where a
+// watermark causes a pure translation in the border of the image.
+bool DetectWatermarkMatches(const Camera& camera1,
                             const std::vector<Eigen::Vector2d>& points1,
                             const Camera& camera2,
                             const std::vector<Eigen::Vector2d>& points2,
-                            const FeatureMatches& matches,
-                            const Options& options);
+                            size_t num_inliers,
+                            const std::vector<char>& inlier_mask,
+                            const TwoViewGeometryOptions& options);
 
-    // Estimate two-view geometry from uncalibrated image pair.
-    //
-    // @param camera1         Camera of first image.
-    // @param points1         Feature points in first image.
-    // @param camera2         Camera of second image.
-    // @param points2         Feature points in second image.
-    // @param matches         Feature matches between first and second image.
-    // @param options         Two-view geometry estimation options.
-    void EstimateUncalibrated(const Camera& camera1,
-                              const std::vector<Eigen::Vector2d>& points1,
-                              const Camera& camera2,
-                              const std::vector<Eigen::Vector2d>& points2,
-                              const FeatureMatches& matches,
-                              const Options& options);
+// Remove matches that are caused by static content that has the same
+// position in both images.
+void FilterStationaryMatches(double max_error,
+                             const std::vector<Eigen::Vector2d>& points1,
+                             const std::vector<Eigen::Vector2d>& points2,
+                             FeatureMatches* matches);
 
-    // Detect if inlier matches are caused by a watermark.
-    // A watermark causes a pure translation in the border are of the image.
-    static bool DetectWatermark(const Camera& camera1,
-                                const std::vector<Eigen::Vector2d>& points1,
-                                const Camera& camera2,
-                                const std::vector<Eigen::Vector2d>& points2,
-                                const size_t num_inliers,
-                                const std::vector<char>& inlier_mask,
-                                const Options& options);
+// Compute two-view geometry from known relative pose and input matches.
+TwoViewGeometry TwoViewGeometryFromKnownRelativePose(
+        const Camera& camera1,
+        const std::vector<Eigen::Vector2d>& points1,
+        const Camera& camera2,
+        const std::vector<Eigen::Vector2d>& points2,
+        const Rigid3d& cam2_from_cam1,
+        const FeatureMatches& matches,
+        int min_num_inliers = 15,
+        double max_error = 4.0);
 
-    // One of `ConfigurationType`.
-    int config;
-
-    // Essential matrix.
-    Eigen::Matrix3d E;
-    // Fundamental matrix.
-    Eigen::Matrix3d F;
-    // Homography matrix.
-    Eigen::Matrix3d H;
-
-    // Relative pose.
-    Eigen::Vector4d qvec;
-    Eigen::Vector3d tvec;
-
-    // Inlier matches of the configuration.
-    FeatureMatches inlier_matches;
-
-    // Median triangulation angle.
-    double tri_angle;
-};
+// Decompose relative poses from two-view geometries in the database cache and
+// update the results in-memory. Skips pairs that already have a relative
+// pose or have invalid two-view geometries (UNDEFINED, DEGENERATE, WATERMARK,
+// MULTIPLE).
 
 }  // namespace colmap
-
-// EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(colmap::TwoViewGeometry)

@@ -232,75 +232,6 @@ def build_eigen(args):
     build_cmake_project(args, os.path.join(path, "__build__"))
 
 
-def build_freeimage(args):
-    path = os.path.join(args.build_path, "freeimage")
-    if os.path.exists(path):
-        return
-
-    if PLATFORM_IS_WINDOWS:
-        url = "https://kent.dl.sourceforge.net/project/freeimage/" \
-              "Binary%20Distribution/3.18.0/FreeImage3180Win32Win64.zip"
-        archive_path = os.path.join(args.download_path, "freeimage-3.18.0.zip")
-        download_zipfile(url, archive_path, args.build_path,
-                         "393d3df75b14cbcb4887da1c395596e2")
-        shutil.move(os.path.join(args.build_path, "FreeImage"), path)
-        copy_file_if_not_exists(
-            os.path.join(path, "Dist/x64/FreeImage.h"),
-            os.path.join(args.install_path, "include/FreeImage.h"))
-        copy_file_if_not_exists(
-            os.path.join(path, "Dist/x64/FreeImage.lib"),
-            os.path.join(args.install_path, "lib/FreeImage.lib"))
-        copy_file_if_not_exists(
-            os.path.join(path, "Dist/x64/FreeImage.dll"),
-            os.path.join(args.install_path, "lib/FreeImage.dll"))
-    else:
-        url = "https://kent.dl.sourceforge.net/project/freeimage/" \
-              "Source%20Distribution/3.18.0/FreeImage3180.zip"
-        archive_path = os.path.join(args.download_path, "freeimage-3.18.0.zip")
-        download_zipfile(url, archive_path, args.build_path,
-                         "f8ba138a3be233a3eed9c456e42e2578")
-        shutil.move(os.path.join(args.build_path, "FreeImage"), path)
-
-        if PLATFORM_IS_MAC:
-            with fileinput.FileInput(os.path.join(path, "Makefile.gnu"),
-                                     inplace=True, backup=".bak") as fid:
-                for line in fid:
-                    if "cp *.so Dist/" in line:
-                        continue
-                    if "FreeImage: $(STATICLIB) $(SHAREDLIB)" in line:
-                        line = "FreeImage: $(STATICLIB)"
-                    print(line, end="")
-        elif PLATFORM_IS_LINUX:
-            with fileinput.FileInput(
-                    os.path.join(path, "Source/LibWebP/src/dsp/"
-                                 "upsampling_mips_dsp_r2.c"),
-                    inplace=True, backup=".bak") as fid:
-                for i, line in enumerate(fid):
-                    if i >= 36 and i <= 44:
-                        line = line.replace("%[\"", "%[\" ")
-                        line = line.replace("\"],", " \"],")
-                    print(line, end="")
-            with fileinput.FileInput(
-                    os.path.join(path, "Source/LibWebP/src/dsp/"
-                                 "yuv_mips_dsp_r2.c"),
-                    inplace=True, backup=".bak") as fid:
-                for i, line in enumerate(fid):
-                    if i >= 56 and i <= 58:
-                        line = line.replace("\"#", "\"# ")
-                        line = line.replace("\"(%", " \"(%")
-                    print(line, end="")
-
-        subprocess.call(["make", "-f", "Makefile.gnu",
-                         "-j{}".format(multiprocessing.cpu_count())], cwd=path)
-
-        copy_file_if_not_exists(
-            os.path.join(path, "Source/FreeImage.h"),
-            os.path.join(args.install_path, "include/FreeImage.h"))
-        copy_file_if_not_exists(
-            os.path.join(path, "libfreeimage.a"),
-            os.path.join(args.install_path, "lib/libfreeimage.a"))
-
-
 def build_glew(args):
     path = os.path.join(args.build_path, "glew")
     if os.path.exists(path):
@@ -531,7 +462,6 @@ def main():
     mkdir_if_not_exists(os.path.join(args.install_path, "share"))
 
     build_eigen(args)
-    build_freeimage(args)
     build_glew(args)
     build_gflags(args)
     build_glog(args)

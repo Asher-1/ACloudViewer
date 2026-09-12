@@ -12,8 +12,16 @@ int RunBundleAdjuster(int argc, char** argv);
 int RunColorExtractor(int argc, char** argv);
 int RunMapper(int argc, char** argv);
 int RunHierarchicalMapper(int argc, char** argv);
+
+// Upstream parity (dbb41680 exe/sfm.h): the global SfM pipeline command.
+int RunGlobalMapper(int argc, char** argv);
+
+// Upstream parity (dbb41680 exe/sfm.h): the rotation averaging command.
+int RunRotationAverager(int argc, char** argv);
+
+// Upstream parity (dbb41680 exe/sfm.h): the view graph calibration command.
+int RunViewGraphCalibrator(int argc, char** argv);
 int RunPointFiltering(int argc, char** argv);
 int RunPointTriangulator(int argc, char** argv);
-int RunRigBundleAdjuster(int argc, char** argv);
 
 }  // namespace colmap

@@ -36,103 +36,103 @@
 
 using namespace colmap;
 
-BOOST_AUTO_TEST_CASE(TestDefault) {
+TEST(base_image, TestDefault) {
   Image image;
-  BOOST_CHECK_EQUAL(image.ImageId(), kInvalidImageId);
-  BOOST_CHECK_EQUAL(image.Name(), "");
-  BOOST_CHECK_EQUAL(image.CameraId(), kInvalidCameraId);
-  BOOST_CHECK_EQUAL(image.HasCamera(), false);
-  BOOST_CHECK_EQUAL(image.IsRegistered(), false);
-  BOOST_CHECK_EQUAL(image.NumPoints2D(), 0);
-  BOOST_CHECK_EQUAL(image.NumPoints3D(), 0);
-  BOOST_CHECK_EQUAL(image.NumObservations(), 0);
-  BOOST_CHECK_EQUAL(image.NumCorrespondences(), 0);
-  BOOST_CHECK_EQUAL(image.NumVisiblePoints3D(), 0);
-  BOOST_CHECK_EQUAL(image.Point3DVisibilityScore(), 0);
-  BOOST_CHECK_EQUAL(image.Qvec(0), 1.0);
-  BOOST_CHECK_EQUAL(image.Qvec(1), 0.0);
-  BOOST_CHECK_EQUAL(image.Qvec(2), 0.0);
-  BOOST_CHECK_EQUAL(image.Qvec(3), 0.0);
-  BOOST_CHECK(IsNaN(image.QvecPrior(0)));
-  BOOST_CHECK(IsNaN(image.QvecPrior(1)));
-  BOOST_CHECK(IsNaN(image.QvecPrior(2)));
-  BOOST_CHECK(IsNaN(image.QvecPrior(3)));
-  BOOST_CHECK_EQUAL(image.Tvec(0), 0.0);
-  BOOST_CHECK_EQUAL(image.Tvec(1), 0.0);
-  BOOST_CHECK_EQUAL(image.Tvec(2), 0.0);
-  BOOST_CHECK(IsNaN(image.TvecPrior(0)));
-  BOOST_CHECK(IsNaN(image.TvecPrior(1)));
-  BOOST_CHECK(IsNaN(image.TvecPrior(2)));
-  BOOST_CHECK_EQUAL(image.HasQvecPrior(), false);
-  BOOST_CHECK_EQUAL(image.HasTvecPrior(), false);
-  BOOST_CHECK_EQUAL(image.Points2D().size(), 0);
+  EXPECT_EQ(image.ImageId(), kInvalidImageId);
+  EXPECT_EQ(image.Name(), "");
+  EXPECT_EQ(image.CameraId(), kInvalidCameraId);
+  EXPECT_EQ(image.HasCamera(), false);
+  EXPECT_EQ(image.IsRegistered(), false);
+  EXPECT_EQ(image.NumPoints2D(), 0);
+  EXPECT_EQ(image.NumPoints3D(), 0);
+  EXPECT_EQ(image.NumObservations(), 0);
+  EXPECT_EQ(image.NumCorrespondences(), 0);
+  EXPECT_EQ(image.NumVisiblePoints3D(), 0);
+  EXPECT_EQ(image.Point3DVisibilityScore(), 0);
+  EXPECT_EQ(image.Qvec(0), 1.0);
+  EXPECT_EQ(image.Qvec(1), 0.0);
+  EXPECT_EQ(image.Qvec(2), 0.0);
+  EXPECT_EQ(image.Qvec(3), 0.0);
+  EXPECT_TRUE(IsNaN(image.QvecPrior(0)));
+  EXPECT_TRUE(IsNaN(image.QvecPrior(1)));
+  EXPECT_TRUE(IsNaN(image.QvecPrior(2)));
+  EXPECT_TRUE(IsNaN(image.QvecPrior(3)));
+  EXPECT_EQ(image.Tvec(0), 0.0);
+  EXPECT_EQ(image.Tvec(1), 0.0);
+  EXPECT_EQ(image.Tvec(2), 0.0);
+  EXPECT_TRUE(IsNaN(image.TvecPrior(0)));
+  EXPECT_TRUE(IsNaN(image.TvecPrior(1)));
+  EXPECT_TRUE(IsNaN(image.TvecPrior(2)));
+  EXPECT_EQ(image.HasQvecPrior(), false);
+  EXPECT_EQ(image.HasTvecPrior(), false);
+  EXPECT_EQ(image.Points2D().size(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(TestImageId) {
+TEST(base_image, TestImageId) {
   Image image;
-  BOOST_CHECK_EQUAL(image.ImageId(), kInvalidImageId);
+  EXPECT_EQ(image.ImageId(), kInvalidImageId);
   image.SetImageId(1);
-  BOOST_CHECK_EQUAL(image.ImageId(), 1);
+  EXPECT_EQ(image.ImageId(), 1);
 }
 
-BOOST_AUTO_TEST_CASE(TestName) {
+TEST(base_image, TestName) {
   Image image;
-  BOOST_CHECK_EQUAL(image.Name(), "");
+  EXPECT_EQ(image.Name(), "");
   image.SetName("test1");
-  BOOST_CHECK_EQUAL(image.Name(), "test1");
+  EXPECT_EQ(image.Name(), "test1");
   image.Name() = "test2";
-  BOOST_CHECK_EQUAL(image.Name(), "test2");
+  EXPECT_EQ(image.Name(), "test2");
 }
 
-BOOST_AUTO_TEST_CASE(TestCameraId) {
+TEST(base_image, TestCameraId) {
   Image image;
-  BOOST_CHECK_EQUAL(image.CameraId(), kInvalidCameraId);
+  EXPECT_EQ(image.CameraId(), kInvalidCameraId);
   image.SetCameraId(1);
-  BOOST_CHECK_EQUAL(image.CameraId(), 1);
+  EXPECT_EQ(image.CameraId(), 1);
 }
 
-BOOST_AUTO_TEST_CASE(TestRegistered) {
+TEST(base_image, TestRegistered) {
   Image image;
-  BOOST_CHECK_EQUAL(image.IsRegistered(), false);
+  EXPECT_EQ(image.IsRegistered(), false);
   image.SetRegistered(true);
-  BOOST_CHECK_EQUAL(image.IsRegistered(), true);
+  EXPECT_EQ(image.IsRegistered(), true);
   image.SetRegistered(false);
-  BOOST_CHECK_EQUAL(image.IsRegistered(), false);
+  EXPECT_EQ(image.IsRegistered(), false);
 }
 
-BOOST_AUTO_TEST_CASE(TestNumPoints2D) {
+TEST(base_image, TestNumPoints2D) {
   Image image;
-  BOOST_CHECK_EQUAL(image.NumPoints2D(), 0);
+  EXPECT_EQ(image.NumPoints2D(), 0);
   image.SetPoints2D(std::vector<Eigen::Vector2d>(10));
-  BOOST_CHECK_EQUAL(image.NumPoints2D(), 10);
+  EXPECT_EQ(image.NumPoints2D(), 10);
 }
 
-BOOST_AUTO_TEST_CASE(TestNumPoints3D) {
+TEST(base_image, TestNumPoints3D) {
   Image image;
   image.SetPoints2D(std::vector<Eigen::Vector2d>(10));
-  BOOST_CHECK_EQUAL(image.NumPoints3D(), 0);
+  EXPECT_EQ(image.NumPoints3D(), 0);
   image.SetPoint3DForPoint2D(0, 0);
-  BOOST_CHECK_EQUAL(image.NumPoints3D(), 1);
+  EXPECT_EQ(image.NumPoints3D(), 1);
   image.SetPoint3DForPoint2D(0, 1);
   image.SetPoint3DForPoint2D(1, 2);
-  BOOST_CHECK_EQUAL(image.NumPoints3D(), 2);
+  EXPECT_EQ(image.NumPoints3D(), 2);
 }
 
-BOOST_AUTO_TEST_CASE(TestNumObservations) {
+TEST(base_image, TestNumObservations) {
   Image image;
-  BOOST_CHECK_EQUAL(image.NumObservations(), 0);
+  EXPECT_EQ(image.NumObservations(), 0);
   image.SetNumObservations(10);
-  BOOST_CHECK_EQUAL(image.NumObservations(), 10);
+  EXPECT_EQ(image.NumObservations(), 10);
 }
 
-BOOST_AUTO_TEST_CASE(TestNumCorrespondences) {
+TEST(base_image, TestNumCorrespondences) {
   Image image;
-  BOOST_CHECK_EQUAL(image.NumCorrespondences(), 0);
+  EXPECT_EQ(image.NumCorrespondences(), 0);
   image.SetNumCorrespondences(10);
-  BOOST_CHECK_EQUAL(image.NumCorrespondences(), 10);
+  EXPECT_EQ(image.NumCorrespondences(), 10);
 }
 
-BOOST_AUTO_TEST_CASE(TestNumVisiblePoints3D) {
+TEST(base_image, TestNumVisiblePoints3D) {
   Image image;
   image.SetPoints2D(std::vector<Eigen::Vector2d>(10));
   image.SetNumObservations(10);
@@ -140,21 +140,21 @@ BOOST_AUTO_TEST_CASE(TestNumVisiblePoints3D) {
   camera.SetWidth(10);
   camera.SetHeight(10);
   image.SetUp(camera);
-  BOOST_CHECK_EQUAL(image.NumVisiblePoints3D(), 0);
+  EXPECT_EQ(image.NumVisiblePoints3D(), 0);
   image.IncrementCorrespondenceHasPoint3D(0);
-  BOOST_CHECK_EQUAL(image.NumVisiblePoints3D(), 1);
+  EXPECT_EQ(image.NumVisiblePoints3D(), 1);
   image.IncrementCorrespondenceHasPoint3D(0);
   image.IncrementCorrespondenceHasPoint3D(1);
-  BOOST_CHECK_EQUAL(image.NumVisiblePoints3D(), 2);
+  EXPECT_EQ(image.NumVisiblePoints3D(), 2);
   image.DecrementCorrespondenceHasPoint3D(0);
-  BOOST_CHECK_EQUAL(image.NumVisiblePoints3D(), 2);
+  EXPECT_EQ(image.NumVisiblePoints3D(), 2);
   image.DecrementCorrespondenceHasPoint3D(0);
-  BOOST_CHECK_EQUAL(image.NumVisiblePoints3D(), 1);
+  EXPECT_EQ(image.NumVisiblePoints3D(), 1);
   image.DecrementCorrespondenceHasPoint3D(1);
-  BOOST_CHECK_EQUAL(image.NumVisiblePoints3D(), 0);
+  EXPECT_EQ(image.NumVisiblePoints3D(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(TestPoint3DVisibilityScore) {
+TEST(base_image, TestPoint3DVisibilityScore) {
   Image image;
   std::vector<Eigen::Vector2d> points2D;
   for (size_t i = 0; i < 4; ++i) {
@@ -173,197 +173,197 @@ BOOST_AUTO_TEST_CASE(TestPoint3DVisibilityScore) {
   for (int i = 1; i <= image.kNumPoint3DVisibilityPyramidLevels; ++i) {
     scores(i - 1) = (1 << i) * (1 << i);
   }
-  BOOST_CHECK_EQUAL(image.Point3DVisibilityScore(), 0);
+  EXPECT_EQ(image.Point3DVisibilityScore(), 0);
   image.IncrementCorrespondenceHasPoint3D(0);
-  BOOST_CHECK_EQUAL(image.Point3DVisibilityScore(), scores.sum());
+  EXPECT_EQ(image.Point3DVisibilityScore(), scores.sum());
   image.IncrementCorrespondenceHasPoint3D(0);
-  BOOST_CHECK_EQUAL(image.Point3DVisibilityScore(), scores.sum());
+  EXPECT_EQ(image.Point3DVisibilityScore(), scores.sum());
   image.IncrementCorrespondenceHasPoint3D(1);
-  BOOST_CHECK_EQUAL(image.Point3DVisibilityScore(),
+  EXPECT_EQ(image.Point3DVisibilityScore(),
                     scores.sum() + scores.bottomRows(scores.size() - 1).sum());
   image.IncrementCorrespondenceHasPoint3D(1);
   image.IncrementCorrespondenceHasPoint3D(1);
   image.IncrementCorrespondenceHasPoint3D(4);
-  BOOST_CHECK_EQUAL(
+  EXPECT_EQ(
       image.Point3DVisibilityScore(),
       scores.sum() + 2 * scores.bottomRows(scores.size() - 1).sum());
   image.IncrementCorrespondenceHasPoint3D(4);
   image.IncrementCorrespondenceHasPoint3D(5);
-  BOOST_CHECK_EQUAL(
+  EXPECT_EQ(
       image.Point3DVisibilityScore(),
       scores.sum() + 3 * scores.bottomRows(scores.size() - 1).sum());
   image.DecrementCorrespondenceHasPoint3D(0);
-  BOOST_CHECK_EQUAL(
+  EXPECT_EQ(
       image.Point3DVisibilityScore(),
       scores.sum() + 3 * scores.bottomRows(scores.size() - 1).sum());
   image.DecrementCorrespondenceHasPoint3D(0);
-  BOOST_CHECK_EQUAL(
+  EXPECT_EQ(
       image.Point3DVisibilityScore(),
       scores.sum() + 2 * scores.bottomRows(scores.size() - 1).sum());
   image.IncrementCorrespondenceHasPoint3D(2);
-  BOOST_CHECK_EQUAL(
+  EXPECT_EQ(
       image.Point3DVisibilityScore(),
       2 * scores.sum() + 2 * scores.bottomRows(scores.size() - 1).sum());
 }
 
-BOOST_AUTO_TEST_CASE(TestQvec) {
+TEST(base_image, TestQvec) {
   Image image;
-  BOOST_CHECK_EQUAL(image.Qvec(0), 1.0);
-  BOOST_CHECK_EQUAL(image.Qvec(1), 0.0);
-  BOOST_CHECK_EQUAL(image.Qvec(2), 0.0);
-  BOOST_CHECK_EQUAL(image.Qvec(3), 0.0);
+  EXPECT_EQ(image.Qvec(0), 1.0);
+  EXPECT_EQ(image.Qvec(1), 0.0);
+  EXPECT_EQ(image.Qvec(2), 0.0);
+  EXPECT_EQ(image.Qvec(3), 0.0);
   image.Qvec(0) = 2.0;
-  BOOST_CHECK_EQUAL(image.Qvec(0), 2.0);
+  EXPECT_EQ(image.Qvec(0), 2.0);
   image.SetQvec(Eigen::Vector4d(3.0, 0.0, 0.0, 0.0));
-  BOOST_CHECK_EQUAL(image.Qvec(0), 3.0);
+  EXPECT_EQ(image.Qvec(0), 3.0);
   image.Qvec() = Eigen::Vector4d(4.0, 0.0, 0.0, 0.0);
-  BOOST_CHECK_EQUAL(image.Qvec(0), 4.0);
+  EXPECT_EQ(image.Qvec(0), 4.0);
 }
 
-BOOST_AUTO_TEST_CASE(TestQvecPrior) {
+TEST(base_image, TestQvecPrior) {
   Image image;
-  BOOST_CHECK(IsNaN(image.QvecPrior(0)));
-  BOOST_CHECK(IsNaN(image.QvecPrior(1)));
-  BOOST_CHECK(IsNaN(image.QvecPrior(2)));
-  BOOST_CHECK(IsNaN(image.QvecPrior(3)));
-  BOOST_CHECK_EQUAL(image.HasQvecPrior(), false);
+  EXPECT_TRUE(IsNaN(image.QvecPrior(0)));
+  EXPECT_TRUE(IsNaN(image.QvecPrior(1)));
+  EXPECT_TRUE(IsNaN(image.QvecPrior(2)));
+  EXPECT_TRUE(IsNaN(image.QvecPrior(3)));
+  EXPECT_EQ(image.HasQvecPrior(), false);
   image.QvecPrior(0) = 2.0;
-  BOOST_CHECK_EQUAL(image.HasQvecPrior(), false);
+  EXPECT_EQ(image.HasQvecPrior(), false);
   image.QvecPrior(1) = 2.0;
-  BOOST_CHECK_EQUAL(image.HasQvecPrior(), false);
+  EXPECT_EQ(image.HasQvecPrior(), false);
   image.QvecPrior(2) = 2.0;
-  BOOST_CHECK_EQUAL(image.HasQvecPrior(), false);
+  EXPECT_EQ(image.HasQvecPrior(), false);
   image.QvecPrior(3) = 2.0;
-  BOOST_CHECK_EQUAL(image.HasQvecPrior(), true);
-  BOOST_CHECK_EQUAL(image.QvecPrior(0), 2.0);
-  BOOST_CHECK_EQUAL(image.QvecPrior(1), 2.0);
-  BOOST_CHECK_EQUAL(image.QvecPrior(2), 2.0);
-  BOOST_CHECK_EQUAL(image.QvecPrior(3), 2.0);
+  EXPECT_EQ(image.HasQvecPrior(), true);
+  EXPECT_EQ(image.QvecPrior(0), 2.0);
+  EXPECT_EQ(image.QvecPrior(1), 2.0);
+  EXPECT_EQ(image.QvecPrior(2), 2.0);
+  EXPECT_EQ(image.QvecPrior(3), 2.0);
   image.SetQvecPrior(Eigen::Vector4d(3.0, 0.0, 0.0, 0.0));
-  BOOST_CHECK_EQUAL(image.QvecPrior(0), 3.0);
+  EXPECT_EQ(image.QvecPrior(0), 3.0);
   image.QvecPrior() = Eigen::Vector4d(4.0, 0.0, 0.0, 0.0);
-  BOOST_CHECK_EQUAL(image.QvecPrior(0), 4.0);
+  EXPECT_EQ(image.QvecPrior(0), 4.0);
 }
 
-BOOST_AUTO_TEST_CASE(TestTvec) {
+TEST(base_image, TestTvec) {
   Image image;
-  BOOST_CHECK_EQUAL(image.Tvec(0), 0.0);
-  BOOST_CHECK_EQUAL(image.Tvec(1), 0.0);
-  BOOST_CHECK_EQUAL(image.Tvec(2), 0.0);
+  EXPECT_EQ(image.Tvec(0), 0.0);
+  EXPECT_EQ(image.Tvec(1), 0.0);
+  EXPECT_EQ(image.Tvec(2), 0.0);
   image.Tvec(0) = 2.0;
-  BOOST_CHECK_EQUAL(image.Tvec(0), 2.0);
+  EXPECT_EQ(image.Tvec(0), 2.0);
   image.SetTvec(Eigen::Vector3d(3.0, 0.0, 0.0));
-  BOOST_CHECK_EQUAL(image.Tvec(0), 3.0);
+  EXPECT_EQ(image.Tvec(0), 3.0);
   image.Tvec() = Eigen::Vector3d(4.0, 0.0, 0.0);
-  BOOST_CHECK_EQUAL(image.Tvec(0), 4.0);
+  EXPECT_EQ(image.Tvec(0), 4.0);
 }
 
-BOOST_AUTO_TEST_CASE(TestTvecPrior) {
+TEST(base_image, TestTvecPrior) {
   Image image;
-  BOOST_CHECK(IsNaN(image.TvecPrior(0)));
-  BOOST_CHECK(IsNaN(image.TvecPrior(1)));
-  BOOST_CHECK(IsNaN(image.TvecPrior(2)));
-  BOOST_CHECK_EQUAL(image.HasTvecPrior(), false);
+  EXPECT_TRUE(IsNaN(image.TvecPrior(0)));
+  EXPECT_TRUE(IsNaN(image.TvecPrior(1)));
+  EXPECT_TRUE(IsNaN(image.TvecPrior(2)));
+  EXPECT_EQ(image.HasTvecPrior(), false);
   image.TvecPrior(0) = 2.0;
-  BOOST_CHECK_EQUAL(image.HasTvecPrior(), false);
+  EXPECT_EQ(image.HasTvecPrior(), false);
   image.TvecPrior(1) = 2.0;
-  BOOST_CHECK_EQUAL(image.HasTvecPrior(), false);
+  EXPECT_EQ(image.HasTvecPrior(), false);
   image.TvecPrior(2) = 2.0;
-  BOOST_CHECK_EQUAL(image.HasTvecPrior(), true);
-  BOOST_CHECK_EQUAL(image.TvecPrior(0), 2.0);
-  BOOST_CHECK_EQUAL(image.TvecPrior(1), 2.0);
-  BOOST_CHECK_EQUAL(image.TvecPrior(2), 2.0);
+  EXPECT_EQ(image.HasTvecPrior(), true);
+  EXPECT_EQ(image.TvecPrior(0), 2.0);
+  EXPECT_EQ(image.TvecPrior(1), 2.0);
+  EXPECT_EQ(image.TvecPrior(2), 2.0);
   image.SetTvecPrior(Eigen::Vector3d(3.0, 0.0, 0.0));
-  BOOST_CHECK_EQUAL(image.TvecPrior(0), 3.0);
+  EXPECT_EQ(image.TvecPrior(0), 3.0);
   image.TvecPrior() = Eigen::Vector3d(4.0, 0.0, 0.0);
-  BOOST_CHECK_EQUAL(image.TvecPrior(0), 4.0);
+  EXPECT_EQ(image.TvecPrior(0), 4.0);
 }
 
-BOOST_AUTO_TEST_CASE(TestPoints2D) {
+TEST(base_image, TestPoints2D) {
   Image image;
-  BOOST_CHECK_EQUAL(image.Points2D().size(), 0);
+  EXPECT_EQ(image.Points2D().size(), 0);
   std::vector<Eigen::Vector2d> points2D(10);
   points2D[0] = Eigen::Vector2d(1.0, 2.0);
   image.SetPoints2D(points2D);
-  BOOST_CHECK_EQUAL(image.Points2D().size(), 10);
-  BOOST_CHECK_EQUAL(image.Point2D(0).X(), 1.0);
-  BOOST_CHECK_EQUAL(image.Point2D(0).Y(), 2.0);
+  EXPECT_EQ(image.Points2D().size(), 10);
+  EXPECT_EQ(image.Point2D(0).X(), 1.0);
+  EXPECT_EQ(image.Point2D(0).Y(), 2.0);
 }
 
-BOOST_AUTO_TEST_CASE(TestPoint3D) {
+TEST(base_image, TestPoint3D) {
   Image image;
   image.SetPoints2D(std::vector<Eigen::Vector2d>(2));
-  BOOST_CHECK(!image.Point2D(0).HasPoint3D());
-  BOOST_CHECK(!image.Point2D(1).HasPoint3D());
-  BOOST_CHECK_EQUAL(image.NumPoints3D(), 0);
+  EXPECT_FALSE(image.Point2D(0).HasPoint3D());
+  EXPECT_FALSE(image.Point2D(1).HasPoint3D());
+  EXPECT_EQ(image.NumPoints3D(), 0);
   image.SetPoint3DForPoint2D(0, 0);
-  BOOST_CHECK(image.Point2D(0).HasPoint3D());
-  BOOST_CHECK(!image.Point2D(1).HasPoint3D());
-  BOOST_CHECK_EQUAL(image.NumPoints3D(), 1);
-  BOOST_CHECK(image.HasPoint3D(0));
+  EXPECT_TRUE(image.Point2D(0).HasPoint3D());
+  EXPECT_FALSE(image.Point2D(1).HasPoint3D());
+  EXPECT_EQ(image.NumPoints3D(), 1);
+  EXPECT_TRUE(image.HasPoint3D(0));
   image.SetPoint3DForPoint2D(0, 1);
-  BOOST_CHECK(image.Point2D(0).HasPoint3D());
-  BOOST_CHECK(!image.Point2D(1).HasPoint3D());
-  BOOST_CHECK_EQUAL(image.NumPoints3D(), 1);
-  BOOST_CHECK(!image.HasPoint3D(0));
-  BOOST_CHECK(image.HasPoint3D(1));
+  EXPECT_TRUE(image.Point2D(0).HasPoint3D());
+  EXPECT_FALSE(image.Point2D(1).HasPoint3D());
+  EXPECT_EQ(image.NumPoints3D(), 1);
+  EXPECT_FALSE(image.HasPoint3D(0));
+  EXPECT_TRUE(image.HasPoint3D(1));
   image.SetPoint3DForPoint2D(1, 0);
-  BOOST_CHECK(image.Point2D(0).HasPoint3D());
-  BOOST_CHECK(image.Point2D(1).HasPoint3D());
-  BOOST_CHECK_EQUAL(image.NumPoints3D(), 2);
-  BOOST_CHECK(image.HasPoint3D(0));
-  BOOST_CHECK(image.HasPoint3D(1));
+  EXPECT_TRUE(image.Point2D(0).HasPoint3D());
+  EXPECT_TRUE(image.Point2D(1).HasPoint3D());
+  EXPECT_EQ(image.NumPoints3D(), 2);
+  EXPECT_TRUE(image.HasPoint3D(0));
+  EXPECT_TRUE(image.HasPoint3D(1));
   image.ResetPoint3DForPoint2D(0);
-  BOOST_CHECK(!image.Point2D(0).HasPoint3D());
-  BOOST_CHECK(image.Point2D(1).HasPoint3D());
-  BOOST_CHECK_EQUAL(image.NumPoints3D(), 1);
-  BOOST_CHECK(image.HasPoint3D(0));
-  BOOST_CHECK(!image.HasPoint3D(1));
+  EXPECT_FALSE(image.Point2D(0).HasPoint3D());
+  EXPECT_TRUE(image.Point2D(1).HasPoint3D());
+  EXPECT_EQ(image.NumPoints3D(), 1);
+  EXPECT_TRUE(image.HasPoint3D(0));
+  EXPECT_FALSE(image.HasPoint3D(1));
   image.ResetPoint3DForPoint2D(1);
-  BOOST_CHECK(!image.Point2D(0).HasPoint3D());
-  BOOST_CHECK(!image.Point2D(1).HasPoint3D());
-  BOOST_CHECK_EQUAL(image.NumPoints3D(), 0);
-  BOOST_CHECK(!image.HasPoint3D(0));
-  BOOST_CHECK(!image.HasPoint3D(1));
+  EXPECT_FALSE(image.Point2D(0).HasPoint3D());
+  EXPECT_FALSE(image.Point2D(1).HasPoint3D());
+  EXPECT_EQ(image.NumPoints3D(), 0);
+  EXPECT_FALSE(image.HasPoint3D(0));
+  EXPECT_FALSE(image.HasPoint3D(1));
   image.ResetPoint3DForPoint2D(0);
-  BOOST_CHECK(!image.Point2D(0).HasPoint3D());
-  BOOST_CHECK(!image.Point2D(1).HasPoint3D());
-  BOOST_CHECK_EQUAL(image.NumPoints3D(), 0);
-  BOOST_CHECK(!image.HasPoint3D(0));
-  BOOST_CHECK(!image.HasPoint3D(1));
+  EXPECT_FALSE(image.Point2D(0).HasPoint3D());
+  EXPECT_FALSE(image.Point2D(1).HasPoint3D());
+  EXPECT_EQ(image.NumPoints3D(), 0);
+  EXPECT_FALSE(image.HasPoint3D(0));
+  EXPECT_FALSE(image.HasPoint3D(1));
 }
 
-BOOST_AUTO_TEST_CASE(TestNormalizeQvec) {
+TEST(base_image, TestNormalizeQvec) {
   Image image;
-  BOOST_CHECK_LT(std::abs(image.Qvec().norm() - 1.0), 1e-10);
+  EXPECT_LT(std::abs(image.Qvec().norm() - 1.0), 1e-10);
   image.Qvec(0) = 2.0;
-  BOOST_CHECK_LT(std::abs(image.Qvec().norm() - 2.0), 1e-10);
+  EXPECT_LT(std::abs(image.Qvec().norm() - 2.0), 1e-10);
   image.NormalizeQvec();
-  BOOST_CHECK_LT(std::abs(image.Qvec().norm() - 1.0), 1e-10);
+  EXPECT_LT(std::abs(image.Qvec().norm() - 1.0), 1e-10);
 }
 
-BOOST_AUTO_TEST_CASE(TestProjectionMatrix) {
+TEST(base_image, TestProjectionMatrix) {
   Image image;
-  BOOST_CHECK(image.ProjectionMatrix().isApprox(Eigen::Matrix3x4d::Identity()));
+  EXPECT_TRUE(image.ProjectionMatrix().isApprox(Eigen::Matrix3x4d::Identity()));
 }
 
-BOOST_AUTO_TEST_CASE(TestInverseProjectionMatrix) {
+TEST(base_image, TestInverseProjectionMatrix) {
   Image image;
-  BOOST_CHECK(
+  EXPECT_TRUE(
       image.InverseProjectionMatrix().isApprox(Eigen::Matrix3x4d::Identity()));
 }
 
-BOOST_AUTO_TEST_CASE(TestRotationMatrix) {
+TEST(base_image, TestRotationMatrix) {
   Image image;
-  BOOST_CHECK(image.RotationMatrix().isApprox(Eigen::Matrix3d::Identity()));
+  EXPECT_TRUE(image.RotationMatrix().isApprox(Eigen::Matrix3d::Identity()));
 }
 
-BOOST_AUTO_TEST_CASE(TestProjectionCenter) {
+TEST(base_image, TestProjectionCenter) {
   Image image;
-  BOOST_CHECK(image.ProjectionCenter().isApprox(Eigen::Vector3d::Zero()));
+  EXPECT_TRUE(image.ProjectionCenter().isApprox(Eigen::Vector3d::Zero()));
 }
 
-BOOST_AUTO_TEST_CASE(TestViewingDirection) {
+TEST(base_image, TestViewingDirection) {
   Image image;
-  BOOST_CHECK(image.ViewingDirection().isApprox(Eigen::Vector3d(0, 0, 1)));
+  EXPECT_TRUE(image.ViewingDirection().isApprox(Eigen::Vector3d(0, 0, 1)));
 }

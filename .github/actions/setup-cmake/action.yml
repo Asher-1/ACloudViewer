@@ -1,0 +1,15 @@
+name: Setup CMake 3.31.8
+description: Install the repository's fixed CMake version and reject runner drift.
+runs:
+  using: composite
+  steps:
+    - uses: lukka/get-cmake@latest
+      with:
+        cmakeVersion: 3.31.8
+    - name: Verify CMake version
+      shell: pwsh
+      run: |
+        $cmakeVersion = ((& cmake --version | Select-Object -First 1) -split '\s+')[-1]
+        if ($cmakeVersion -ne '3.31.8') {
+          throw "Expected CMake 3.31.8, got $cmakeVersion"
+        }

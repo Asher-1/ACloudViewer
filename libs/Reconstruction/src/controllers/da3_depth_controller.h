@@ -40,7 +40,7 @@ std::vector<DA3QuantType> DA3SupportedQuantTypes(DA3ModelType model);
 // Returns true if the given model+quant combination is a known GGUF model.
 bool DA3ModelExists(DA3ModelType model, DA3QuantType quant);
 
-// True for nested anyview/metric models (aicore_depth_load_nested).
+// True for nested anyview/metric models (aicore_depth_load_nested_opts).
 bool DA3ModelIsNested(DA3ModelType model);
 
 // DA3 stereo / dense depth maps require nested metric alignment.

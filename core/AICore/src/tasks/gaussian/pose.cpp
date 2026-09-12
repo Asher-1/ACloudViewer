@@ -15,7 +15,7 @@
 // bit-exact vs upstream estimate_poses on real engine output). All linear
 // algebra goes through the self-contained Jacobi eigensolver in linalg.h — no
 // Eigen, no OpenCV.
-#include "pose.h"
+#include "tasks/gaussian/pose.h"
 
 #include <algorithm>
 #include <cmath>

@@ -21,12 +21,14 @@ enum class FeatureType {
     kAliked,
     kSift,
     kDogHardNet,
+    kLoma,
 };
 
 enum class FeatureMatcherType {
     kAuto,
     kSiftLightGlue,
     kAlikedLightGlue,
+    kLoma,
 };
 
 struct Keypoint {
@@ -72,6 +74,7 @@ struct ModelGeometry {
     int32_t num_layers = 0;
     int32_t feature_type = 0;
     int32_t add_scale_orientation = 0;
+    int32_t is_loma = 0;
 };
 
 class FeatureMatcher {

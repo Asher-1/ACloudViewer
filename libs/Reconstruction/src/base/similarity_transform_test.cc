@@ -41,37 +41,37 @@
 
 using namespace colmap;
 
-BOOST_AUTO_TEST_CASE(TestDefaultInitialization) {
+TEST(base_similarity_transform, TestDefaultInitialization) {
   const SimilarityTransform3 tform;
 
-  BOOST_CHECK_EQUAL(tform.Scale(), 1);
+  EXPECT_EQ(tform.Scale(), 1);
 
-  BOOST_CHECK_EQUAL(tform.Rotation()[0], 1);
-  BOOST_CHECK_EQUAL(tform.Rotation()[1], 0);
-  BOOST_CHECK_EQUAL(tform.Rotation()[2], 0);
-  BOOST_CHECK_EQUAL(tform.Rotation()[3], 0);
+  EXPECT_EQ(tform.Rotation()[0], 1);
+  EXPECT_EQ(tform.Rotation()[1], 0);
+  EXPECT_EQ(tform.Rotation()[2], 0);
+  EXPECT_EQ(tform.Rotation()[3], 0);
 
-  BOOST_CHECK_EQUAL(tform.Translation()[0], 0);
-  BOOST_CHECK_EQUAL(tform.Translation()[1], 0);
-  BOOST_CHECK_EQUAL(tform.Translation()[2], 0);
+  EXPECT_EQ(tform.Translation()[0], 0);
+  EXPECT_EQ(tform.Translation()[1], 0);
+  EXPECT_EQ(tform.Translation()[2], 0);
 }
 
-BOOST_AUTO_TEST_CASE(TestInitialization) {
+TEST(base_similarity_transform, TestInitialization) {
   const Eigen::Vector4d qvec =
       NormalizeQuaternion(Eigen::Vector4d(0.1, 0.3, 0.2, 0.4));
 
   const SimilarityTransform3 tform(2, qvec, Eigen::Vector3d(100, 10, 0.5));
 
-  BOOST_CHECK_CLOSE(tform.Scale(), 2, 1e-10);
+  EXPECT_NEAR(tform.Scale(), 2, std::abs(2) * (1e-10) / 100.0);
 
-  BOOST_CHECK_CLOSE(tform.Rotation()[0], qvec(0), 1e-10);
-  BOOST_CHECK_CLOSE(tform.Rotation()[1], qvec(1), 1e-10);
-  BOOST_CHECK_CLOSE(tform.Rotation()[2], qvec(2), 1e-10);
-  BOOST_CHECK_CLOSE(tform.Rotation()[3], qvec(3), 1e-10);
+  EXPECT_NEAR(tform.Rotation()[0], qvec(0), std::abs(qvec(0)) * (1e-10) / 100.0);
+  EXPECT_NEAR(tform.Rotation()[1], qvec(1), std::abs(qvec(1)) * (1e-10) / 100.0);
+  EXPECT_NEAR(tform.Rotation()[2], qvec(2), std::abs(qvec(2)) * (1e-10) / 100.0);
+  EXPECT_NEAR(tform.Rotation()[3], qvec(3), std::abs(qvec(3)) * (1e-10) / 100.0);
 
-  BOOST_CHECK_CLOSE(tform.Translation()[0], 100, 1e-10);
-  BOOST_CHECK_CLOSE(tform.Translation()[1], 10, 1e-10);
-  BOOST_CHECK_CLOSE(tform.Translation()[2], 0.5, 1e-10);
+  EXPECT_NEAR(tform.Translation()[0], 100, std::abs(100) * (1e-10) / 100.0);
+  EXPECT_NEAR(tform.Translation()[1], 10, std::abs(10) * (1e-10) / 100.0);
+  EXPECT_NEAR(tform.Translation()[2], 0.5, std::abs(0.5) * (1e-10) / 100.0);
 }
 
 void TestEstimationWithNumCoords(const size_t num_coords) {
@@ -88,20 +88,20 @@ void TestEstimationWithNumCoords(const size_t num_coords) {
   }
 
   SimilarityTransform3 est_tform;
-  BOOST_CHECK(est_tform.Estimate(src, dst));
+  EXPECT_TRUE(est_tform.Estimate(src, dst));
 
-  BOOST_CHECK((orig_tform.Matrix() - est_tform.Matrix()).norm() < 1e-6);
+  EXPECT_TRUE((orig_tform.Matrix() - est_tform.Matrix()).norm() < 1e-6);
 
   std::vector<Eigen::Vector3d> invalid_src_dst(3, Eigen::Vector3d::Zero());
-  BOOST_CHECK(!est_tform.Estimate(invalid_src_dst, invalid_src_dst));
+  EXPECT_FALSE(est_tform.Estimate(invalid_src_dst, invalid_src_dst));
 }
 
-BOOST_AUTO_TEST_CASE(TestEstimation) {
+TEST(base_similarity_transform, TestEstimation) {
   TestEstimationWithNumCoords(3);
   TestEstimationWithNumCoords(100);
 }
 
-BOOST_AUTO_TEST_CASE(TestFromFile) {
+TEST(base_similarity_transform, TestFromFile) {
   // Create transform file
   const std::string path = "test_from_file_transform.txt";
   {
@@ -110,9 +110,9 @@ BOOST_AUTO_TEST_CASE(TestFromFile) {
         << std::endl;
   }
   SimilarityTransform3 tform = SimilarityTransform3::FromFile(path);
-  BOOST_CHECK_CLOSE(tform.Scale(), 2.0, 1e-10);
-  BOOST_CHECK_LE((tform.Translation() - Eigen::Vector3d(3.0, 4.0, 5.0)).norm(),
+  EXPECT_NEAR(tform.Scale(), 2.0, std::abs(2.0) * (1e-10) / 100.0);
+  EXPECT_LE((tform.Translation() - Eigen::Vector3d(3.0, 4.0, 5.0)).norm(),
                  1e-6);
-  BOOST_CHECK_LE(
+  EXPECT_LE(
       (tform.Rotation() - Eigen::Vector4d(-0.5, 0.5, 0.5, 0.5)).norm(), 1e-6);
 }

@@ -2,6 +2,20 @@
 
 Reference layout: Use this file when you need a **full-repo map** (build, modules, conventions). For scoped rules, also read `.agents/rules/*.mdc`.
 
+## Task Routing
+
+| Task | Authoritative instructions |
+|------|----------------------------|
+| AICore ABI, pipeline, plugin worker, performance, or ggml operator | `.agents/skills/acloudviewer-aicore-plugin/SKILL.md` |
+| ggml version upgrade and controlled A/B | `.agents/skills/ggml-upgrade/SKILL.md`, `docs/guides/ggml_upgrade_pipeline.md` |
+| General plugin structure and UI | `.agents/rules/acloudviewer-plugin-dev.mdc` |
+| ggml ExternalProject details | `.agents/rules/acloudviewer-ggml-aicore.mdc` |
+| Agent/RPC/CLI integration | `.agents/rules/acloudviewer-agent-dev.mdc`, `agent-integration/README.md` |
+
+For AICore work, the skill is the engineering contract. Current public headers,
+CMake, `3rdparty/ggml/patches/manifest.yaml`, and current test output override
+stale prose or historical benchmark reports.
+
 ## Project Overview
 
 ACloudViewer is an open-source **3D point cloud and mesh processing** application and library, descended from CloudCompare with integrations for Open3D, ParaView-style visualization, **COLMAP** reconstruction, VTK rendering, Python bindings, and optional **AI inference** (Depth Anything V3, FreeSplatter via ggml). Primary language: **C++17**. GUI: **Qt 5/6**. Optional **CUDA**, **Vulkan** (Linux/Windows), **Metal** (macOS), and **Python 3.10+**.
@@ -12,14 +26,14 @@ Main deliverables:
 |--------|-------------|
 | **ACloudViewer** | Full Qt GUI (`app/`) |
 | **CloudViewer** | Library / lighter viewer build |
-| **libAICore.so** | Unified DA3 + FreeSplatter inference (`core/AICore/`) |
+| **libAICore.so** | Monolithic inference runtime for all AICore tasks (`core/AICore/`) |
 | **COLMAP** | Reconstruction stack (`libs/Reconstruction/`, optional) |
 | **Python** | `cloudViewer` package via pybind (`libs/Python/`) |
 | **Plugins** | Dynamic `.so` / `.dylib` under `plugins/core/` |
 
 Agent control: JSON-RPC WebSocket plugin, MCP server, CLI harness — see `agent-integration/README.md`.
 
-> **AI 操作 ACloudViewer（重要）**：所有面向 AI / 自动化脚本的 CLI 交互，**必须**通过 `agent-integration/` 提供的 `cli-anything-acloudviewer` 工具链（headless 直接调用二进制，GUI 走 JSON-RPC）。**不要**直接猜二进制参数。先读 `agent-integration/README.md` 与 `agent-integration/docs/CLI-QUICK-REFERENCE.md`。安装：`pip install git+https://github.com/Asher-1/CLI-Anything.git#subdirectory=acloudviewer/agent-harness`（本机已装 v3.1.0）。
+> **AI / automation must use the agent toolchain (important)**: all CLI interaction aimed at AI agents or automation scripts **must** go through the `cli-anything-acloudviewer` toolchain provided by `agent-integration/` (headless: calls the binary directly; GUI: goes through JSON-RPC). **Do not** guess binary arguments. Read `agent-integration/README.md` and `agent-integration/docs/CLI-QUICK-REFERENCE.md` first. Install: `pip install git+https://github.com/Asher-1/CLI-Anything.git#subdirectory=acloudviewer/agent-harness` (v3.1.0 installed on this machine).
 
 ## Directory Structure
 
@@ -48,7 +62,7 @@ Agent control: JSON-RPC WebSocket plugin, MCP server, CLI harness — see `agent
 |-------|------|-------------|
 | Third-party | `3rdparty/` | ggml, Eigen, FLANN, zlib, optional OpenCV/FFmpeg |
 | Core algorithms | `core/` (`CVCoreLib`) | Point cloud structures, octree, scalar fields, basic processing |
-| AI inference | `core/AICore/` | `libAICore.so`: `depth_capi`, `gaussian_capi`, ggml backends |
+| AI inference | `core/AICore/` | One `libAICore`: public C ABI, task sessions, shared runtime, private ggml backends |
 | Database / entities | `libs/CV_db/` | `ccHObject`, `ccPointCloud`, `ccMesh`, `ecvImage`, DB tree model |
 | I/O | `libs/CV_io/` | File readers/writers shared with core |
 | Visualization | `libs/VtkEngine/` | VTK/GL pipeline, display tools, LOD |
@@ -76,10 +90,38 @@ Agent control: JSON-RPC WebSocket plugin, MCP server, CLI harness — see `agent
 | `DA3DepthController` | `libs/Reconstruction/src/controllers/` | DA3 sparse/dense integration with reconstruction |
 | `aicore_depth_*` | `core/AICore/include/aicore/depth_capi.h` | DA3 C API |
 | `aicore_gaussian_*` | `core/AICore/include/aicore/gaussian_capi.h` | FreeSplatter C API |
+| `aicore_image_view` | `core/AICore/include/aicore/image_view.h` | Borrowed, stride-aware decoded-image input |
+| `aicore_pipeline_timings` | `core/AICore/include/aicore/pipeline_timing.h` | Common stage timing contract |
+| `aicore_runtime_shutdown` | `core/AICore/include/aicore/runtime_capi.h` | Idempotent process-runtime cleanup |
 | `JsonRPCPlugin` | `plugins/core/Standard/qJSonRPCPlugin/` | WebSocket RPC for agents (port 6001) |
 | `ecvPropertiesTreeDelegate` | `app/db_tree/` | DB property panel (opacity, light, recursive group apply) |
 
 Plugin entry: each plugin implements `QObject` + `ccStdPluginInterface`, ships `info.json` + `.qrc`.
+
+## AICore Architecture Contract
+
+- Keep one monolithic `libAICore`; do not add a shared library per task.
+- Plugins consume public `aicore/*` C headers. Qt, STL, OpenCV, exceptions, and
+  ggml types never cross the ABI.
+- Decoded images cross the boundary as borrowed `aicore_image_view` values with
+  their actual row stride and RGB/RGBA/GRAY/BGR/BGRA format.
+- Inference returns typed results. Path, tight-RGB, JSON, and encoded-image APIs
+  are compatibility/export boundaries and must not drive frame inference.
+- Every pipeline uses the common timing struct and reports only truthful stages
+  through `valid_fields`.
+- Each context owns model/session/cache state; physical backend handles may be
+  shared by `BackendLease`. Cache invalidation must be owner-scoped.
+- Per-task shutdown delegates to `aicore_runtime_shutdown()` and must not destroy
+  live contexts.
+- Task behavior is configured through options, never task-local environment
+  variables. Production code contains no developer-machine absolute paths.
+- ggml changes are ordered patches in `3rdparty/ggml/patches/manifest.yaml`;
+  extracted `build*/ggml/` trees are disposable.
+- Accuracy requires task-specific numeric gates. Backend parity does not replace
+  upstream-framework truth. Performance claims require controlled A/B evidence.
+
+See `.agents/skills/acloudviewer-aicore-plugin/SKILL.md` for the full data-flow,
+lifecycle, plugin-worker, testing, and review checklist.
 
 ## Build Instructions
 
@@ -235,6 +277,33 @@ cd build_app && ctest --output-on-failure
 cmake -DAICore_ENABLED=ON -DAICore_BUILD_TESTS=ON ..
 cmake --build build_app --target test_capi -j "${BUILD_JOBS:-4}"
 
+# Real-asset validation; default LIGHT tier (sam3/trellis run only their
+# declared lightweight subsets). Missing rows fail unless explicitly allowed.
+python3 core/AICore/scripts/validate_all.py \
+  --build build_app --backend cuda \
+  --output build_app/Testing/aicore_validation.json
+
+# Complete real-asset matrix (all sam3/trellis models and pipeline scenarios)
+python3 core/AICore/scripts/validate_all.py \
+  --build build_app --backend cuda --full \
+  --output build_app/Testing/aicore_validation.json
+
+# Canonical one-click form: builds probes, verifies/downloads the catalog
+# models of the selected tier under ~/cloudViewer_data/extract plus pinned
+# task input fixtures, then runs that tier's matrix. Shared fixture archives
+# are retained under ~/cloudViewer_data/download and their extracted consumed
+# files are verified. Probe outputs and the model cache are kept by default;
+# pass --clean-probe-outputs and/or --clean-model-cache (e.g. on
+# space-constrained CI runners) to delete each task's raw probe outputs
+# and/or consumed cached models as its rows are summarized.
+cmake --build build_app --target aicore-validate-all -j1
+
+# Local diagnosis only: unavailable downloads and exit-77 probes are recorded
+# and skipped; the report verdict is INCOMPLETE and is not release evidence.
+python3 core/AICore/scripts/validate_all.py \
+  --build build_app --backend cuda --allow-incomplete \
+  --output build_app/Testing/aicore_validation-incomplete.json
+
 # qManualCalib bag reader
 cmake -DPLUGIN_STANDARD_QMANUAL_CALIB=ON -DMCALIB_BUILD_TESTS=ON ..
 cmake --build build_app --target test_bag_reader -j
@@ -246,13 +315,76 @@ pytest cli_anything/acloudviewer/tests/ -v
 
 Test data: `examples/test_data/` (CMake download list); qManualCalib ships `plugins/core/Standard/qManualCalib/tests/data/`.
 
+### Reusing the AICore one-click gate
+
+The default gate is the LIGHT tier for the selected backend and task set: it
+reads the built model catalog, validates pinned SHA-256 values, downloads
+missing or corrupt GGUF files into their task folders under
+`~/cloudViewer_data/extract`, and fails on any unavailable model, uncovered
+catalog row (within the tier), probe skip, accuracy error, unstable output,
+or performance regression. It must not infer the supported matrix from
+whichever files happen to be cached locally. Tasks that declare a lightweight
+subset in `validation_manifest.json` (`"light": true` / `"light_globs"` —
+currently sam3: two tiny q8_0 SAM variants; trellis: coarse q8 pipeline;
+yolo: per-task-head q8_0 subset handed to the matrix script via
+`--model-globs`) run only that subset by default because their full
+families are large and slow; pass `--full` for the complete matrix — it is
+the only form that is evidence for a complete regression, release, parity,
+or speedup claim. `--models` (fnmatch patterns against model file names or
+bundle scenario ids) runs individual models, bypassing the tier for the
+selected tasks while narrowing the preflight and coverage audit to the
+selection. Raw probe
+outputs (`Testing/probes/`, `Testing/baseline-probes/`) and the model cache
+are kept by default; `--clean-probe-outputs` deletes each task's probe
+outputs and `--clean-model-cache` deletes the model files the run consumed
+for each task as soon as its rows are summarized (intended for
+space-constrained hosts such as CI runners; the model prune only removes
+the tier's consumed files in the pinned catalog layout, shared models wait
+for their last referencing task, and input fixtures are never deleted).
+
+When repairing AICore or optimizing ggml ops, run the default command above on
+every affected backend. Preserve before/after build directories and pass
+`--baseline-build <before-build>` for controlled performance A/B. Use
+`--allow-incomplete` only for an explicitly incomplete local loop: downloads
+are still attempted, but unavailable models and their dependent scenarios are
+listed in the JSON/Markdown report and skipped while available rows continue.
+
+When adding an AICore task, model, pipeline, or dependent plugin, update all of:
+
+1. The task model catalog, stable release URL, destination folder, and
+   `core/AICore/include/aicore/asset_digests.h` SHA-256 entry.
+2. `test_catalog_dump_urls --json`, so the model participates in automatic
+   cache verification/download rather than private plugin logic.
+3. A task-specific accuracy/performance/stability probe and its CMake target.
+4. `core/AICore/scripts/validation_manifest.json`, including exact ownership,
+   coverage, dependencies, backend, pipeline, and quantization rows.
+5. Runner tests proving failed downloads, incomplete filtering, scenario
+   expansion, and that every catalog model has an inference consumer.
+
+For TRELLIS specifically, `core/AICore/src/tasks/trellis/model_catalog.cpp` is
+the source of truth for the complete published
+`Asher-1/Trellis2-models` Hugging Face inventory. It owns resolver URLs, exact
+LFS sizes, and SHA-256 values; qTrellis must read those values only through
+`aicore_trellis_model_entry`. When HF publishes a new GGUF, add it to this
+catalog, `asset_digests.h`, and a mandatory f16/q8/f32 manifest consumer before
+claiming complete regression coverage. Do not add a second plugin model table
+or mark published TRELLIS entries `local_only`. RMBG is a shared dependency:
+qTrellis resolves it from `rmbg_models` through the RMBG cache API, while only
+the TRELLIS pipeline weights belong in `trellis_models`; the regression catalog
+must register each RMBG file once.
+
+The authoritative detailed checklist and acceptance rules are in
+`.agents/skills/acloudviewer-aicore-plugin/SKILL.md`.
+
 ## Documentation
 
 | Audience | Location |
 |----------|----------|
 | Build / CMake | `BUILD.md`, `docs/guides/compiling_doc/` |
 | Plugin catalog | `plugins/README.md` |
-| AI user guides | `docs/guides/plugins/` (qDA3, qFreeSplatter, qManualCalib) |
+| AICore architecture and runtime | `core/AICore/README.md`, `core/AICore/docs/ARCHITECTURE.md` |
+| AICore engineering contract | `.agents/skills/acloudviewer-aicore-plugin/SKILL.md` |
+| AI user guides | `docs/guides/plugins/` |
 | Per-plugin dev docs | `plugins/core/<Category>/<Plugin>/README.md` |
 | Model / sample data cards | `plugins/core/Standard/q*/models/MODEL_CARD.md`, `qManualCalib/tests/data/DATA_CARD.md` |
 | Sphinx API | `docs/source/` (plugin READMEs synced at doc-build via `docs/source/conf.py`) |
@@ -293,18 +425,18 @@ New AICore / reconstruction code may use `snake_case` for functions and `PascalC
 
 - RPC methods: `category.action` in `JsonRPCPlugin::execute()`; update `rpcMethodsList()`
 - Scoped rules: `.agents/rules/acloudviewer-agent-dev.mdc`
-- **三套接口**（详见 `agent-integration/README.md`）：
-  - **JSON-RPC**（WebSocket 6001，GUI 实时控制）— 插件 `qJSonRPCPlugin`，`PLUGIN_STANDARD_QJSONRPC=ON`
-  - **MCP Server**（stdio，供 OpenClaw/Cursor/Claude Code）— `cli-anything-acloudviewer-mcp`
-  - **CLI Harness**（Click，headless 直接调二进制 / GUI 走 RPC）— `cli-anything-acloudviewer`
-- **CLI 常用操作**（headless 无需 GUI）：
-  - `cli-anything-acloudviewer info` / `formats` — 环境与格式
-  - `cli-anything-acloudviewer convert in.ply out.obj` — 格式转换
-  - `cli-anything-acloudviewer process <op> in.ply -o out.ply` — 55+ 处理算子（subsample/normals/crop/icp/csf/ransac/m3c2/canupo/poisson/cork 等）
-  - `cli-anything-acloudviewer reconstruct auto ./imgs -w ./ws` — COLMAP 重建
-  - `cli-anything-acloudviewer view screenshot out.png` — GUI 截图（需 GUI）
-  - `cli-anything-acloudviewer --json scene list` — GUI 场景树
-- **运行 Python 脚本（qPythonRuntime）**：GUI 模式下在插件面板手动运行；CLI 可用 `ACloudViewer -SILENT -PYTHON_SCRIPT x.py`（headless）。脚本示例见 `plugins/core/Standard/qPythonRuntime/script_examples/`
+- **Three interfaces** (see `agent-integration/README.md`):
+  - **JSON-RPC** (WebSocket 6001, real-time GUI control) — plugin `qJSonRPCPlugin`, `PLUGIN_STANDARD_QJSONRPC=ON`
+  - **MCP Server** (stdio, for OpenClaw/Cursor/Claude Code) — `cli-anything-acloudviewer-mcp`
+  - **CLI Harness** (Click, headless calls the binary directly / GUI via RPC) — `cli-anything-acloudviewer`
+- **Common CLI operations** (headless, no GUI needed):
+  - `cli-anything-acloudviewer info` / `formats` — environment and formats
+  - `cli-anything-acloudviewer convert in.ply out.obj` — format conversion
+  - `cli-anything-acloudviewer process <op> in.ply -o out.ply` — 55+ processing ops (subsample/normals/crop/icp/csf/ransac/m3c2/canupo/poisson/cork, etc.)
+  - `cli-anything-acloudviewer reconstruct auto ./imgs -w ./ws` — COLMAP reconstruction
+  - `cli-anything-acloudviewer view screenshot out.png` — GUI screenshot (requires GUI)
+  - `cli-anything-acloudviewer --json scene list` — GUI scene tree
+- **Running Python scripts (qPythonRuntime)**: run manually from the plugin panel in GUI mode; in CLI use `ACloudViewer -SILENT -PYTHON_SCRIPT x.py` (headless). Script examples: `plugins/core/Standard/qPythonRuntime/script_examples/`
 
 ### Formatting
 

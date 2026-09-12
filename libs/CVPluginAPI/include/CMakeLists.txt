@@ -3,6 +3,7 @@ target_sources( ${PROJECT_NAME}
 	PRIVATE
 		${CMAKE_CURRENT_LIST_DIR}/CVPluginAPI.h
 		${CMAKE_CURRENT_LIST_DIR}/cvFileDialog.h
+		${CMAKE_CURRENT_LIST_DIR}/ecvAssetIntegrity.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvColorScaleSelector.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvColorScaleEditorDlg.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvColorScaleEditorWidget.h
@@ -15,6 +16,7 @@ target_sources( ${PROJECT_NAME}
 		${CMAKE_CURRENT_LIST_DIR}/ecvPickingHub.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvPickingListener.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvPluginDbNaming.h
+		${CMAKE_CURRENT_LIST_DIR}/ecvAICoreUiHelper.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvQtHelpers.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvRenderToFileDlg.h
 		${CMAKE_CURRENT_LIST_DIR}/ecvTestDataRepository.h

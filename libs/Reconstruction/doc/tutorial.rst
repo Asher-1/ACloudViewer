@@ -161,8 +161,8 @@ Data Structure
 
 COLMAP assumes that all input images are in one input directory with potentially
 nested sub-directories. It recursively considers all images stored in this
-directory, and it supports various different image formats (see `FreeImage
-<http://freeimage.sourceforge.net/documentation.html>`_). Other files are
+directory, and it supports the image formats provided by `OpenImageIO
+<https://openimageio.readthedocs.io/>`_. Other files are
 automatically ignored. If high performance is a requirement, then you should
 separate any files that are not images. Images are identified uniquely by their
 relative file path. For later processing, such as image undistortion or dense
