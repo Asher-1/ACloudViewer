@@ -35,7 +35,7 @@
 #include <unordered_set>
 
 #include "optim/combination_sampler.h"
-#include "util/math.h"
+#include "math/math.h"
 
 using namespace colmap;
 

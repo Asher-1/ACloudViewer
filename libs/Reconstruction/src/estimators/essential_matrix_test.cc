@@ -36,20 +36,20 @@
 
 #include <Eigen/Core>
 
-#include "base/camera_models.h"
-#include "base/camera.h"
-#include "base/essential_matrix.h"
-#include "base/pose.h"
-#include "base/projection.h"
+#include "sensor/models.h"
+#include "scene/camera.h"
+#include "geometry/essential_matrix.h"
+#include "geometry/pose.h"
+#include "scene/projection.h"
 #include "estimators/essential_matrix.h"
 #include "optim/ransac.h"
-#include "util/random.h"
+#include "math/random.h"
 
 using namespace colmap;
 
 TEST(estimators_essential_matrix, TestCamRayWithJacPinholeNumericalGate) {
   Camera camera;
-  camera.InitializeWithId(SimplePinholeCameraModel::kModelId, 800.0, 1600,
+  camera.InitializeWithId(SimplePinholeCameraModel::model_id, 800.0, 1600,
                           1200);
   const Eigen::Vector2d pixel(960.0, 480.0);
   const auto ray_with_jac = camera.CamRayFromImgWithJac(pixel);
@@ -70,7 +70,7 @@ TEST(estimators_essential_matrix, TestCamRayWithJacPinholeNumericalGate) {
 
 TEST(estimators_essential_matrix, TestTangentSampsonNumericalGate) {
   Camera camera;
-  camera.InitializeWithId(SimplePinholeCameraModel::kModelId, 900.0, 1800,
+  camera.InitializeWithId(SimplePinholeCameraModel::model_id, 900.0, 1800,
                           1200);
   const Eigen::Vector2d point1(950, 640);
   const Eigen::Vector2d point2(1000, 640);

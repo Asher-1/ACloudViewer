@@ -36,12 +36,12 @@
 
 #include <Eigen/Core>
 
-#include "base/pose.h"
-#include "base/projection.h"
-#include "base/similarity_transform.h"
+#include "geometry/pose.h"
+#include "scene/projection.h"
+#include "geometry/similarity_transform.h"
 #include "estimators/generalized_absolute_pose.h"
 #include "optim/ransac.h"
-#include "util/random.h"
+#include "math/random.h"
 
 using namespace colmap;
 

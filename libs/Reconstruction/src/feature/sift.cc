@@ -43,7 +43,7 @@
 #include "feature/utils.h"
 #include "util/cuda.h"
 #include "util/logging.h"
-#include "util/math.h"
+#include "math/math.h"
 #include "util/misc.h"
 #include "util/opengl_utils.h"
 

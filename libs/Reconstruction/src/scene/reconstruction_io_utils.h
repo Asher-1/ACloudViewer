@@ -10,7 +10,7 @@
 #include <functional>
 #include <vector>
 
-#include "base/reconstruction.h"
+#include "scene/reconstruction.h"
 #include "util/hash_containers.h"
 
 namespace colmap {

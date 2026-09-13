@@ -30,10 +30,10 @@
 #include "estimators/alignment.h"
 
 #include "estimators/solvers/similarity_transform.h"
-#include "base/pose.h"
-#include "util/math.h"
+#include "geometry/pose.h"
+#include "math/math.h"
 #include "optim/loransac.h"
-#include "base/projection.h"
+#include "scene/projection.h"
 #include "util/hash_containers.h"
 #include "util/logging.h"
 

@@ -24,11 +24,11 @@
 #include "ReconstructionManagerWidget.h"
 #include "ReconstructionStatsWidget.h"
 #include "UndistortionWidget.h"
-#include "base/reconstruction.h"
-#include "base/reconstruction_manager.h"
-#include "controllers/incremental_mapper.h"
-#include "util/bitmap.h"
-#include "util/option_manager.h"
+#include "controllers/incremental_pipeline.h"
+#include "controllers/option_manager.h"
+#include "scene/reconstruction.h"
+#include "scene/reconstruction_manager.h"
+#include "sensor/bitmap.h"
 
 class MainWindow;
 

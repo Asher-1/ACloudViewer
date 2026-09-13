@@ -35,7 +35,7 @@
 #include <Eigen/LU>
 #include <Eigen/SVD>
 
-#include "base/projection.h"
+#include "scene/projection.h"
 #include "estimators/utils.h"
 #include "util/logging.h"
 

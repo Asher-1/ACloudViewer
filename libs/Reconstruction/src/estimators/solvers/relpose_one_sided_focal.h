@@ -10,7 +10,7 @@
 #include <Eigen/Core>
 #include <vector>
 
-#include "base/pose.h"
+#include "geometry/pose.h"
 
 namespace colmap {
 

@@ -9,11 +9,11 @@
 
 #include <ceres/ceres.h>
 
-#include "base/reconstruction.h"
 #include "geometry/pose_prior.h"
+#include "math/math.h"
 #include "scene/pose_graph.h"
+#include "scene/reconstruction.h"
 #include "util/hash_containers.h"
-#include "util/math.h"
 
 namespace colmap {
 

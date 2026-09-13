@@ -35,22 +35,23 @@
 #include <cstring>
 #include <filesystem>
 
-#include "base/undistortion.h"
-#include "base/database.h"
+#include "image/undistortion.h"
+#include "scene/database.h"
 #include "controllers/da3_depth_controller.h"
-#include "controllers/incremental_mapper.h"
+#include "controllers/incremental_pipeline.h"
 #include "controllers/texturing_controller.h"
-#include "feature/extraction.h"
+#include "controllers/feature_extraction.h"
 #include "feature/loma.h"
 #include "feature/matching.h"
 #include "mvs/da3_fusion.h"
 #include "mvs/fusion.h"
 #include "mvs/advancing_front_meshing.h"
-#include "mvs/meshing.h"
+#include "mvs/delaunay_meshing.h"
+#include "mvs/poisson_meshing.h"
 #include "mvs/patch_match.h"
 #include "util/download.h"
 #include "util/misc.h"
-#include "util/option_manager.h"
+#include "controllers/option_manager.h"
 #include "util/ply.h"
 #include "util/ply_point_filter.h"
 #include "util/reconstruction_log.h"
@@ -327,7 +328,7 @@ void RemovePathIfExists(const std::string& path) {
 }
 
 void LoadWorkspaceSparseIfEmpty(ReconstructionManager* reconstruction_manager,
-                                const std::string& workspace_path) {
+                                const std::filesystem::path& workspace_path) {
   if (reconstruction_manager == nullptr || reconstruction_manager->Size() > 0) {
     return;
   }
@@ -689,8 +690,8 @@ void AutomaticReconstructionController::RunFeatureMatching() {
     matcher = sequential_matcher_.get();
   } else if (options_.data_type == DataType::INDIVIDUAL ||
              options_.data_type == DataType::INTERNET) {
-    Database database(*option_manager_.database_path);
-    const size_t num_images = database.NumImages();
+    auto database = Database::Open(*option_manager_.database_path);
+    const size_t num_images = database->NumImages();
     // Use vocab tree matcher if it was created (vocab_tree_path was resolved) and num_images >= 200
     if (vocab_tree_matcher_ && num_images >= 200) {
       matcher = vocab_tree_matcher_.get();
@@ -1517,6 +1518,17 @@ void AutomaticReconstructionController::RunDenseMapper() {
           option_manager_.texturing->mesh_source = "delaunay";
         } else if (options_.mesher == Mesher::ADVANCING_FRONT) {
           option_manager_.texturing->mesh_source = "advancing_front";
+        }
+
+        if (options_.texturing_type ==
+            AutomaticReconstructionController::Options::TexturingType::IMAGE_TEXTUREUR) {
+          // D1 alternative path: the fork's own MvsTexturing engine is not
+          // wired into the automatic reconstruction flow yet (no workspace ->
+          // PinholeCameraTrajectory adapter and no validation gate); fall
+          // back to the upstream-equivalent mesh texturer with a warning.
+          LOG(WARNING) << "image_texturer engine is not wired into the "
+                          "automatic reconstruction flow; falling back to "
+                          "the upstream mesh_texturer flow";
         }
 
         TexturingReconstruction texturing(*option_manager_.texturing,

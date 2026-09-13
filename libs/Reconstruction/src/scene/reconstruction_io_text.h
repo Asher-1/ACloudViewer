@@ -10,7 +10,7 @@
 #include <filesystem>
 #include <iostream>
 
-#include "base/reconstruction.h"
+#include "scene/reconstruction.h"
 
 namespace colmap {
 

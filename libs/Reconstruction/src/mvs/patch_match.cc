@@ -37,7 +37,7 @@
 #include "mvs/consistency_graph.h"
 #include "mvs/patch_match_cuda.h"
 #include "mvs/workspace.h"
-#include "util/math.h"
+#include "math/math.h"
 #include "util/misc.h"
 
 #define PrintOption(option) std::cout << #option ": " << option << std::endl
@@ -49,37 +49,6 @@ PatchMatch::PatchMatch(const PatchMatchOptions& options, const Problem& problem)
     : options_(options), problem_(problem) {}
 
 PatchMatch::~PatchMatch() {}
-
-void PatchMatchOptions::Print() const {
-  PrintHeading2("PatchMatchOptions");
-  PrintOption(max_image_size);
-  PrintOption(gpu_index);
-  PrintOption(depth_min);
-  PrintOption(depth_max);
-  PrintOption(window_radius);
-  PrintOption(window_step);
-  PrintOption(sigma_spatial);
-  PrintOption(sigma_color);
-  PrintOption(num_samples);
-  PrintOption(ncc_sigma);
-  PrintOption(min_triangulation_angle);
-  PrintOption(incident_angle_sigma);
-  PrintOption(num_iterations);
-  PrintOption(geom_consistency);
-  PrintOption(geom_consistency_regularizer);
-  PrintOption(geom_consistency_max_cost);
-  PrintOption(filter);
-  PrintOption(filter_min_ncc);
-  PrintOption(filter_min_triangulation_angle);
-  PrintOption(filter_min_num_consistent);
-  PrintOption(filter_geom_consistency_max_cost);
-  PrintOption(write_consistency_graph);
-  PrintOption(allow_missing_files);
-  PrintOption(photometric_force_recompute);
-  PrintOption(photometric_use_existing_as_init);
-  PrintOption(skip_photometric_pass);
-}
-
 void PatchMatch::Problem::Print() const {
   PrintHeading2("PatchMatch::Problem");
 

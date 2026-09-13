@@ -31,15 +31,17 @@
 
 #include "exe/mvs.h"
 
-#include "base/reconstruction.h"
+#include "scene/reconstruction.h"
 #include "mvs/advancing_front_meshing.h"
 #include "mvs/fusion.h"
 #include "mvs/mesh_simplification.h"
 #include "mvs/mesh_postprocessing.h"
-#include "mvs/meshing.h"
+#include "mvs/delaunay_meshing.h"
+#include "mvs/poisson_meshing.h"
+#include "mvs/texture_mapping.h"
 #include "mvs/patch_match.h"
 #include "util/misc.h"
-#include "util/option_manager.h"
+#include "controllers/option_manager.h"
 #include "util/ply.h"
 
 // CV_IO_LIB
@@ -180,6 +182,87 @@ int RunDelaunayMesher(int argc, char** argv) {
 
     return EXIT_SUCCESS;
 #endif  // CGAL_ENABLED
+}
+
+int RunMeshTexturer(int argc, char** argv) {
+    std::filesystem::path workspace_path;
+    std::filesystem::path input_path;
+    std::filesystem::path output_path;
+    std::string output_type = "BIN";
+
+    OptionManager options;
+    options.AddRequiredOption(
+            "workspace_path",
+            &workspace_path,
+            "Path to the workspace folder containing undistorted images and "
+            "sparse reconstruction");
+    options.AddRequiredOption("input_path",
+                              &input_path,
+                              "Path to the input PLY mesh file");
+    options.AddRequiredOption(
+            "output_path",
+            &output_path,
+            "Path to the output directory. The textured mesh PLY and texture "
+            "atlas image will be written here");
+    options.AddDefaultOption("output_type", &output_type, "{BIN, TXT}");
+    options.AddMeshTextureMappingOptions();
+    options.Parse(argc, argv);
+
+    StringToLower(&output_type);
+    THROW_CHECK(output_type == "bin" || output_type == "txt")
+            << "Invalid `output_type` " << output_type
+            << " - supported values are 'BIN' and 'TXT'.";
+
+    LOG(INFO) << "Reading model...";
+    mvs::Model model;
+    model.ReadFromCOLMAP(workspace_path);
+
+    LOG(INFO) << "Loading " << model.images.size() << " images...";
+    for (auto& image : model.images) {
+        Bitmap bitmap;
+        THROW_CHECK(bitmap.Read(image.GetPath(), /*as_rgb=*/true))
+                << "Failed to read image: " << image.GetPath();
+        if (bitmap.Width() != static_cast<int>(image.GetWidth()) ||
+            bitmap.Height() != static_cast<int>(image.GetHeight())) {
+            bitmap.Rescale(static_cast<int>(image.GetWidth()),
+                           static_cast<int>(image.GetHeight()));
+        }
+        image.SetBitmap(std::move(bitmap));
+    }
+
+    LOG(INFO) << "Reading input mesh from " << input_path << "...";
+    const PlyMesh mesh = ReadPlyMesh(input_path).mesh;
+    LOG(INFO) << "Mesh has " << mesh.vertices.size() << " vertices and "
+              << mesh.faces.size() << " faces";
+
+    options.mesh_texture_mapping->Print();
+
+    LOG(INFO) << "Running surface texture mapping...";
+    const mvs::MeshTextureMappingResult result = mvs::MeshTextureMapping(
+            mesh, model.images, *options.mesh_texture_mapping);
+
+    CreateDirIfNotExists(output_path);
+
+    const std::filesystem::path texture_filename = "texture.png";
+    const std::filesystem::path texture_path = output_path / texture_filename;
+    LOG(INFO) << "Writing texture atlas to " << texture_path << "...";
+    result.texture_atlas.Write(texture_path);
+
+    PlyTexturedMesh textured_mesh;
+    textured_mesh.mesh = mesh;
+    textured_mesh.face_uvs = result.face_uvs;
+    textured_mesh.texture_file = texture_filename.string();
+
+    const std::filesystem::path mesh_path = output_path / "mesh.ply";
+    LOG(INFO) << "Writing textured mesh to " << mesh_path << "...";
+    if (output_type == "bin") {
+        WriteBinaryPlyMesh(mesh_path, textured_mesh);
+    } else {
+        WriteTextPlyMesh(mesh_path, textured_mesh);
+    }
+
+    LOG(INFO) << "Mesh texture mapping complete";
+    return EXIT_SUCCESS;
 }
 
 int RunMeshSimplifier(int argc, char** argv) {

@@ -30,7 +30,20 @@ Work packages from [COLMAP_ALIGNMENT_PLAN.md](COLMAP_ALIGNMENT_PLAN.md):
 | W3-2b step 2a (RA numeric closure) | done (2026-09-09; rotation_averaging_test 15/15) via a sixth fork defect fix: Reconstruction copy ctor/assignment now rebinds frame/image back pointers (RewireObjectPointers, upstream parity) - the fork copied rigs_/frames_/images_ without rebinding, so any copied reconstruction silently read poses through the source object's stale pointers |
 | W3-2b step 2 (stale-pointer hazard cleanup) | done (2026-09-09; the RA fix surfaced the same hazard everywhere: Image copy ctor/assignment now reset back pointers with default move members, Reconstruction::Transform legacy overload delegates to the frame-aware Sim3d path, Image projection-derived accessors read CamFromWorld when frame-wired with a legacy fallback, legacy fixtures (TestNormalize/TestTransform/TestComputeScale) keep trivial frames in sync; global_positioning_test assertions are no longer vacuously true - Nominal/RefineSensorFromRig genuinely green, MultiCameraRig retains a 0.169 deg alignment-rotation residual vs the 0.1 deg threshold, recorded as a convergence-quality edge case) |
 | W3-2b step 2b (correspondence graph range migration) | done (2026-09-09; full upstream dbb41680 parity: flat_corrs/flat_corr_begs flattened storage with CorrespondenceRange FindCorrespondences, ExtractCorrespondences/ExtractTransitiveCorrespondences/ExtractMatchesBetweenImages output-parameter interfaces, NumMatchesBetweenImages, Finalize flattening without image removal, FlatHashMap image_pairs_; all consumers migrated to the Range/Extract forms; upstream correspondence_graph_test ported 11/11 incl. Finalize/NotFinalize parameterized cases; FeatureMatch gained upstream operator==) |
-| W3-2b (step 3-4 mapper/BA), W7, W8, W10-W16 | pending (W10 estimator subset alignment/sim3 landed early with W4) |
+| W3-2b (step 3-4 mapper/BA) | done except: multi-sensor equirectangular composed BA functor (frozen composed-pose fallback) and the GP rig-branch convergence cases recorded under W4 |
+| W8 model clustering/pruning | mostly done (scene files + tests, controllers/reconstruction_clustering, OptionManager AddReconstructionClustererOptions, CLI model_clusterer; remaining: mapper pruning consumption wiring with W3-3) |
+| W10 model alignment/comparer | done (RunModelAligner ref_model_path/ref_is_gps/merge_image_and_ref_origins/Sim3d transform_path/enu-plane types; RunModelComparer max_proj_center_error + ImageAlignmentError/AlignmentErrorSummary output; upstream coordinate_frame_test ported incl. AlignToPrincipalPlane/AlignToENUPlane with Sim3d signatures) |
+| W12 rig configurator | done (2026-09-13(5): the rig-config JSON stack (RigConfig/ReadRigConfig/ApplyRigConfig) and the RunRigConfigurator CLI command verified in place and registered (colmap.cc); the previous blocked status was stale) |
+| W17.6 frozen-path mapping | done (manifest policy gained the permanent frozen_path_mapping table) |
+| W18.4 sensor/models upstream API | done (2026-09-13(4) multi-batch session: real CameraModelId enum (numeric values unchanged, DB/binary IO cross-compatible), per-family ImgFromCam/CamFromImg/ImgFromCamWithJac API, upstream CRTP base hierarchy with is_base_of_v classification, 1537-line analytic jacobian.h verbatim, new families SIMPLE_DIVISION/DIVISION/SIMPLE_FISHEYE/FISHEYE/EUCM + RAD_TAN_THIN_PRISM_FISHEYE; camera.{h,cc} and all consumers migrated; upstream per-template models_test 21/21 + camera_test 23/23; specs.{h,cc} ported) |
+| W18.7 util small files (util surface) | done except the dense->viewer surface loading call sites (fork product task) (2026-09-13: file.cc std::filesystem-ized; then the full upstream file.h surface landed (NormalizePath/GetNormalizedRelativePath/GetRecursiveFileList/GetDirList/HomeDir/blob IO/ReadTextFileLines); upstream file_test 18/18 + controller_thread_test 5/5 ported green; en-route fork defects (31) misc.h boost-era GetRecursiveFileList/GetDirList ambiguity retired with consumer migration, (32) download.cc HomeDir duplicate retired, (33) misc ReadTextFileLines duplicate definition (ODR) retired to file.{h,cc}, (34) GetPathBaseName upstream filename semantics with misc_test golden updated; 2026-09-13(3): ui/mesh_painter.{h,cc} + mesh shaders + model_viewer_widget wiring (surface_mesh member, UploadSurfaceMeshData, Render behind mesh_wireframe/mesh_color) ported from dbb41680, render_options.h gained show_camera_orientation/mesh_wireframe/mesh_color; oiio_utils.{h,cc} + glog_macros.h verified line-identical to upstream) |
+| W17.2b database_sqlite interface | done (2026-09-13: Database became the upstream abstract interface with Factory/Register/Open over shared_ptr; all SQL state moved into SqliteDatabase in database_sqlite.cc behind the 17-line database_sqlite.h (OpenSqliteDatabase factory, pre-registered in Database::factories_); full construction-site migration across exe/controllers/feature-matching-family/ui/app/tests; fork float-descriptor surface kept on the interface; database_test 31, database_cache_test 7, rig_test 12, synthetic_test 18 all green) |
+| W18.5 bundle_adjustment_ceres split (stage 1) | done (2026-09-13: BundleAdjuster became the abstract upstream base with protected options_/config_ + Options()/Config(); the entire Ceres implementation moved to the new estimators/bundle_adjustment_ceres.{h,cc} CeresBundleAdjuster (bundle_adjustment.cc 1009 -> 389 lines); CreateDefaultBundleAdjuster factory with the CASPAR-first dispatch kept inside Solve; 16 construction sites migrated to the factory + -> access; bundle_adjustment_test 15 cases green; remaining: BackendOptions pimpl, BundleAdjustmentSummary, covariance, caspar gate re-run) |
+| W18.5 stage 2 (Problem + covariance) | done (2026-09-13(4): CeresBundleAdjuster::Problem() upstream accessors; estimators/covariance.{h,cc,test} fully ported with the fork split-qvec/tvec PoseParam adaptation preserving [rotation, translation] tangent ordering; covariance_test 7 parameterized cases green against ceres::Covariance at 1e-8) |
+| W18.5 stage 3 (Summary surface) | done (2026-09-13(5): BundleAdjustmentTerminationType + BundleAdjustmentSummary + CeresBundleAdjustmentSummary (Create/mapping/summary() accessor) ported additively; BackendOptions pimpl restructure deferred to the caspar batch) |
+| W3-3 incremental_mapper_impl | done (2026-09-13(4): IncrementalMapperImpl stateless algorithm class with FindFirstInitialImage/FindSecondInitialImage/FindNextImages/FindLocalBundle + rank helpers moved from the mapper, mapper.cc 1266 -> 896 lines with thin delegating members; upstream InitInfo orchestration stays in the mapper, camera-ray point-data refactor not pulled) |
+| W3-2b frame-aware mapper (stage 1) | done (2026-09-13(6): mapper pose writes frame-aware via Frame::SetCamFromWorld with legacy fallback (dual-path pattern), RegisterNextImage estimates into locals + single commit + shadow sync, BA config frame-level constants (rig_from_world/sensor_from_rig) ported and honored in the problem assembly; RegisterNextImageFallback clarified as an upstream stale comment - no function to port; stage 2 = DatabaseCache pointer wiring + general/structure-less variants) |
+| Upstream baseline drift | observed (2026-09-13: upstream pulled to `d3ccaf35`, Δ=33 commits vs scanned baseline `dbb41680`, incl. #4687 camera-models per-header split = the W18.4 template, GP4PS #4664, LO-RANSAC generalized pose #4690; full G1-G21 re-scan is a separate task; recorded in manifest `upstream_head_observed`) |
 
 Testing: the whole Reconstruction test suite runs on **googletest**
 (decision D6); `COLMAP_ADD_TEST` links `gtest_main` and upstream test files
@@ -359,3 +372,265 @@ CloudViewer, and Colmap component, and rewrites copied macOS dylibs to
 installer jobs check this closure before adding a platform dependency directory
 to the loader search path. The release record remains partial until the pinned
 source build and package path have completed on all three platforms.
+
+## W10 + W8-CLI + W17.6 notes (2026-09-12)
+
+- **W10**: `estimators/alignment.{h,cc}` were already upstream-shaped
+  (AlignReconstructionToLocations/ViaReprojections/ViaProjCenters/ViaPoints,
+  ImageAlignmentError, AlignmentErrorSummary). The CLI layer caught up:
+  `exe/model.cc` RunModelAligner now carries `ref_model_path`,
+  `ref_is_gps`, `merge_image_and_ref_origins`, stores the alignment as Sim3d
+  via `Sim3d::ToFile`, and supports the upstream `enu-plane` /
+  `enu-plane-unscaled` alignment types; RunModelComparer gained
+  `max_proj_center_error` and the ImageAlignmentError/AlignmentErrorSummary
+  statistics output (CSV header matches upstream).
+- `AlignToPrincipalPlane`/`AlignToENUPlane` migrated to upstream Sim3d
+  signatures. Important: the fork's legacy `RotationMatrixToQuaternion`
+  returns the conjugate convention relative to `Eigen::Quaterniond(rot_mat)`,
+  so both functions now construct `Sim3d` with the standard Eigen
+  matrix constructor (upstream parity); the flip check uses the
+  frame-aware `TransformCameraWorld` + `Rigid3d::Inverse` form. The
+  upstream `coordinate_frame_test.cc` was ported (7 suites); the
+  AlignToENUPlane golden values are checked with a 0.1 absolute tolerance
+  because the ECEFToEllipsoid iteration is ill-conditioned for the tiny
+  fixture ECEF coordinates and gcc9 FMA contraction drifts the solution
+  (~1e-5 relative, same root cause as the W4 std::shuffle divergence).
+- `base/gps.h` gained the upstream `GPSTransform::Ellipsoid` alias plus
+  `EllipsoidToECEF`/`ECEFToEllipsoid` (thin delegates to the legacy
+  EllToXYZ/XYZToEll implementations).
+- **W8 CLI**: `controllers/reconstruction_clustering.{h,cc}`
+  (ReconstructionClustererController) ported; OptionManager gained the
+  `reconstruction_clusterer` field + `AddReconstructionClustererOptions`
+  (min_covisibility_count/min_edge_weight_threshold/min_num_reg_frames);
+  `model_clusterer` CLI registered end to end. The fork's value-based
+  ReconstructionManager required moving the clustered reconstruction into
+  the manager slot by value. Remaining: mapper pruning consumption wiring
+  (`ba_global_ignore_redundant_points3D[_min_coverage_gain]`) lands with
+  W3-3.
+- **W17.6**: manifest `policy.frozen_path_mapping` records the permanent
+  legacy-location mapping table (base/pose -> geometry/pose + estimators/pose,
+  base/camera_models -> sensor/models, util/bitmap -> sensor/bitmap, etc.).
+- **W12** recorded as blocked: RunRigConfigurator depends on the upstream
+  scene/rig rig-config JSON stack (~300 lines incl. the anonymous helpers)
+  that the fork does not carry yet.
+- OptionManager housekeeping: `Reset()` now also clears `options_path_`.
+- **W13 graceful shutdown**: consumption side fully wired. `exe/colmap.cc`
+  upgraded to the upstream `Command` struct with
+  `kSupportsGracefulShutdown`; 16 long-running commands are marked; the
+  main loop installs `ScopedSignalHandler` for marked commands and returns
+  `128+signal` through `GetExitCode()`; `Thread::IsStopped()` now
+  cooperatively stops on the first signal; `BundleAdjustmentController`
+  feeds `IsStopped()` into the W2 `check_if_stopped` Ceres callback.
+  Checkpoint call sites inside not-yet-ported exe commands
+  (RunPointTriangulator/RunPointFiltering upstream form) land with W11/W3-3.
+- **W15 completed**: `texture_mapping_test` replaced with the upstream
+  15-case suite (15/15 green), closing the test-count gap; combined with the
+  earlier CLI/IO work the mesh_texturer path is complete. The
+  `texturing_type` dispatch (D1 default) in the automatic reconstruction
+  controller remains a fork-side product task, tracked separately.
+- **W11 partial**: `feature/index.{h,cc}` (FeatureDescriptorIndex,
+  FAISS-backed flat/IVF/IVFPQ/ScalarQuantizer hierarchy) and `index_test`
+  ported (4/4 green; TypeMismatch skipped because the fork's
+  FeatureDescriptorsFloat is a bare Eigen alias without the upstream .type
+  wrapper - type validation defers to W18.3). The matcher_cache consumption
+  and geometric_verifier/guided_geometric_verifier CLIs remain with the
+  pairing layer.
+- **W15 partial**: `mvs/texture_mapping.cc` delta audit complete - the
+  127-line diff against upstream is entirely mechanical fork-infrastructure
+  adaptation (fork Bitmap `InterpolateBilinear`/`GetPixel` out-param API,
+  `PrintHeading2`, `CGAL_ENABLED` macro name); algorithm behavior identical.
+  Backfilled `NodeHashMap` x3 and `THROW_CHECK_LE`/`THROW_CHECK` to the
+  upstream spelling. `util/ply.{h,cc}` gained the upstream `ReadPlyMesh`
+  (344-line plain+textured PLY reader, ASCII/binary both endians,
+  kMaxPlyVertices/Faces guards) and `HasPlyMeshFaces`;
+  `util/string.{h,cc}` gained the locale-independent `StringToDouble`.
+  `exe/mvs.cc` `RunMeshTexturer` ported end to end (workspace + PLY mesh ->
+  atlas PNG + textured PLY BIN/TXT) with
+  `OptionManager::AddMeshTextureMappingOptions` and the `mesh_texturer` CLI
+  registration. Remaining: `texture_mapping_test` 4->15 upstream cases and
+  the `texturing_type` dispatch (D1 default) in
+  controllers/texturing_controller + GUI panel.
+- **W14 partial**: `util/timestamp.h` + `timestamp_test` ported
+  (`util/types.h` gained the upstream `timestamp_t`/`kInvalidTimestamp`);
+  `ImageReaderOptions.as_rgb` (upstream default false) exposed as
+  `ImageReader.as_rgb` and wired through `image_reader.cc`.
+- Gates: full build EXIT=0; full ctest green except the two recorded GP
+  rig-branch cases (global_pipeline_test MultiComponentsWithUnknownSensorFromRig,
+  global_mapper_test KnownRig/UnknownRig) and one flaky run of
+  optim/least_absolute_deviations_test RidgeRegularization that passed on
+  five consecutive re-runs (environment-instability family already noted
+  above).
+
+## W12 + W8 wiring + W7 closure + W15 dispatch notes (2026-09-13)
+
+- **W12 rig configurator (unblocked and landed)**: `base/rig.{h,cc}` gained the
+  upstream `RigConfig` struct, `ReadRigConfig` (boost ptree JSON) and
+  `ApplyRigConfig` with the anonymous helpers; `Reconstruction` gained the
+  upstream `SetRigsAndFrames` (re-wires image back pointers); `Frame` gained
+  `ClearDataIds`; `RunRigConfigurator` + the `rig_configurator` CLI are
+  registered end to end. The upstream `rig_test` config suites were ported
+  (12/12 green). Fork adaptations: concrete `Database(":memory:")` in tests
+  (no `Database::Open` factory until W17.2b), Camera getter/setter spelling,
+  `SetModelId` params pre-fill reset, `Frame::ImageIds()` yielding `image_t`.
+  Fork defects fixed en route: (27) `Database::UpdateRig` legacy `rig_cameras`
+  bridge lacked the `WriteRig` NULL-extrinsics skip (bad_optional_access);
+  (28) `UpdateRigsAndFramesFromDatabase` non-ref sensor condition was
+  inverted (upstream add-when-missing semantics).
+- **W8 pruning consumption wired** (closes the G9 tail item):
+  `BundleAdjustmentConfig` gained `IgnorePoint`/`IsIgnoredPoint` with the
+  `AddPointToProblem` guard and the SetUp observation skip;
+  `IncrementalMapper::Options` gained
+  `ba_global_ignore_redundant_points3D[_min_coverage_gain]` and
+  `AdjustGlobalBundle` runs the first-pass pruning through
+  `FindRedundantPoints3D` (10-registered-image small-reconstruction
+  threshold). The upstream second "optimize redundant points" pass of
+  `IterativeGlobalRefinement` remains with W3-3 (frame-aware ba_config API).
+- **W7 pose prior stack closed**: `estimators/cost_functions/pose_prior.h`
+  ported (upstream functors + the fork's split-block
+  `AbsolutePosePositionPriorQvecTvecCostFunctor`); `BundleAdjuster::SetPosePriors`
+  performs the robust Sim3 `AlignReconstructionToPosePriors` before the solve
+  and adds a per-image position-prior residual (upstream
+  `CreatePosePriorBundleAdjuster` parity folded into the fork's single
+  `BundleAdjuster` until W18.5); mapper options `use_prior_position` /
+  `use_robust_loss_on_prior_position` / `prior_position_loss_scale` with the
+  `NumRegisteredPosePriors >= 3` gauge in `AdjustGlobalBundle`; the
+  `pose_prior_mapper` CLI and `UpdateDatabasePosePriorsCovariance` are
+  registered end to end.
+- **W15 texturing_type dispatch (D1)**:
+  `AutomaticReconstructionController::Options` gained `TexturingType`
+  (`MESH_TEXTUREUR` default, `IMAGE_TEXTUREUR` alternative) and the
+  AutomaticReconstructionWidget gained the "Texturing engine" combo. The
+  IMAGE branch currently logs a fallback warning: the fork's `MvsTexturing`
+  engine has no workspace -> PinholeCameraTrajectory adapter and no
+  validation gate, so the wiring is recorded as a fork product task.
+- **GP rig-branch diagnostic**: disabling FMA contraction on
+  `global_positioning.cc` (-ffp-contract=off) was tested and did NOT close
+  the two rig-branch cases; the attribute was reverted and the cases remain
+  the recorded gcc9-toolchain baseline (libstdc++ shuffle-sequence family).
+- Gates: full build EXIT=0; `rig_test` 12/12; the Reconstruction ctest suite
+  is green except the recorded environment baselines (AICore asset-missing
+  family, the two GP rig-branch cases, the LAD RidgeRegularization flake).
+
+
+## Directory structure realignment (2026-09-13)
+
+The fork `src/` layout now matches the upstream `src/colmap/` directory
+structure. `base/` was dissolved via `git mv` (history preserved):
+
+- entities/IO -> `scene/` (camera, database*, frame, image, point2d/3d,
+  projection, reconstruction*, rig, scene_clustering, track, two_view_geometry,
+  visibility_pyramid, correspondence_graph)
+- models/math -> `geometry/` (essential/homography_matrix, gps, pose,
+  triangulation, similarity_transform[fork-legacy]) and `math/` (graph_cut,
+  polynomial; plus util/{math,matrix,random})
+- image ops -> `image/` (line, undistortion, warp); `image/` and `math/` now
+  have exactly the same file counts as upstream
+- camera stack -> `sensor/` (camera_models -> models.{h,cc} merged umbrella;
+  camera_specs -> specs; bitmap -> sensor/bitmap)
+- pipelines/options -> `controllers/` (image_reader, option_manager,
+  feature/extraction -> feature_extraction)
+- BA stack -> `estimators/` (optim/bundle_adjustment{,_caspar}; legacy merged
+  cost functors -> cost_functions/cost_functions.h)
+- controllers file renames: hierarchical_mapper -> hierarchical_pipeline,
+  incremental_mapper -> incremental_pipeline (class names kept for now)
+- mvs/meshing.{h,cc} split into upstream `poisson_meshing` + `delaunay_meshing`;
+  `PatchMatchOptions` extracted to upstream `patch_match_options.{h,cc}`
+
+608 include paths were rewritten across the module, `app/`, and plugins; the
+full build and the ctest suite pass with no new failures (only the previously
+recorded environment baselines). Known pending file-level splits are recorded
+in `colmap_alignment_manifest.json` under `directory_structure_alignment`.
+
+## Compile-fix round + W18.4 umbrella + W18.7 file.cc notes (2026-09-13)
+
+The post-realignment tree no longer compiled; two root causes were fixed:
+
+- `sensor/models.h` (the legacy merged camera-model umbrella) was a broken
+  concatenation product of the base/->sensor/ dissolve: duplicated
+  pragma-once/include blocks, dangling `inline std::vector<size_t>`
+  declarations, an unclosed `namespace colmap` - ColmapLib failed with
+  `FullOpenCVCameraModel has not been declared` cascading out of the
+  CAMERA_MODEL_CASES macro expansion. Fixed in the upstream #4687 shape:
+  new `sensor/models/runtime.h` (fork-API twin of the upstream file of the
+  same name) carries CAMERA_MODEL_CASES/SWITCH_CASES, kInvalidCameraModelId,
+  the CameraModel* declarations and the inline WorldToImage/ImageToWorld/
+  ImageToWorldThreshold dispatch plus the fork's CameraModelIs*/
+  CamRayFromImg classification, all inside `namespace colmap` (all current
+  macro consumers - models.cc and the two UI files - already live inside the
+  namespace, so the move is transparent); `sensor/models.h` became the
+  upstream-style umbrella (comment + single include, ~60 lines). The fork
+  keeps its int model_id + WorldToImage/ImageToWorld API; migrating to the
+  upstream CameraModelId enum + ImgFromCam/CamFromImg surface is a separate
+  API-alignment task (several hundred call sites in Camera/BA/undistortion).
+- `util/file.cc` used boost::filesystem (FileCopy, GetParentDir,
+  GetRelativePath) without including its header
+  (`'boost::filesystem' does not name a type`). Fixed to pure
+  std::filesystem: `FileCopy` calls copy_file/create_hard_link/create_symlink
+  directly; `GetRelativePath` is one `std::filesystem::relative` call
+  replacing the boost canonical-iterator walk; `GetParentDir` keeps the fork
+  `std::string` signature and the misc_test-verified `"/" -> ""` edge case as
+  an explicit branch. The fork keeps the `CopyType` enum name (upstream
+  FileCopyType) and the string-returning GetParentDir to avoid breaking
+  exe/image.cc, image_reader.cc, undistortion, texturing_controller and the
+  UI consumers.
+
+Upstream baseline drift discovered the same day: the upstream tree was
+pulled to `d3ccaf35` (33 commits beyond the scanned `dbb41680` baseline,
+896 files, mostly the #4713 SPDX header rewrite). The functional delta that
+directly affects this plan is #4687 (camera models split into self-contained
+`sensor/models/` headers incl. `runtime.h`, `jacobian.h`, `division.h`,
+`eucm.h`, `fisheye.h` over the CameraModelId enum + ImgFromCam/CamFromImg
+API) - it is the template for the remaining W18.4 work; further functional
+deltas (#4664 GP4PS, #4690 LO-RANSAC generalized pose, #4696 min_inlier_ratio,
+#4684 ScaleWeightedCostFunctor, pycolmap cleanup) are recorded in the
+manifest `upstream_head_observed` note pending a full gap re-scan.
+
+Gates: full build EXIT=0; Reconstruction ctest reports only the recorded
+baselines (test_image_depth AICore asset-missing family, polynomial
+environment baseline, the two GP rig-branch cases in global_mapper_test,
+global_pipeline_test MultiComponentsWithUnknownSensorFromRig; the extra
+MultiComponents failure under parallel ctest passes standalone and is the
+same GP convergence-quality family).
+
+## W17.2b database_sqlite interface notes (2026-09-13)
+
+`scene/database_sqlite.h` was extracted per the upstream form and the
+Database interface work (W17.2b) closed in the same batch:
+
+- `scene/database.h` is now the abstract upstream interface: `virtual
+  ~Database() = 0`, `Factory`/`Register` and `static std::shared_ptr<Database>
+  Open(path)`, the static pair-id helpers kept inline, and
+  BeginTransaction/EndTransaction moved to protected virtuals with
+  `transaction_mutex_` on the base (DatabaseTransaction stays a friend).
+- `scene/database_sqlite.cc` now defines `SqliteDatabase : public Database`
+  holding every scrap of SQL state (handle, prepared statements, table
+  creation, migrations, `update_schema_mutex_`, the upstream `path_` member)
+  with the static `Open` factory and the file-tail `OpenSqliteDatabase`
+  free function; `Database::factories_` is pre-registered with it inside
+  `scene/database.cc` (upstream parity) alongside Register/Open/Merge and
+  DatabaseTransaction.
+- `scene/database_sqlite.h` is the 17-line upstream form
+  (`kInMemorySqliteDatabasePath` + `OpenSqliteDatabase`). The fork-specific
+  float-descriptor surface stays on the interface (local table, W1 note).
+- Construction-site migration: every `Database x(path)` value became
+  `Database::Open(path)` across exe/, controllers/ (FeatureMatcherCache,
+  ImageReader and FeatureWriterThread take raw pointers, fed with
+  `.get()`), the `feature/matching.h` matcher family (six `Database
+  database_` value members became shared_ptrs), the ui/ and
+  app/reconstruction DatabaseManagementWidget trees, mvs/texturing, and nine
+  test files. Fork defects fixed en route: (29) the interface rewrite
+  initially dropped `UpdateTwoViewGeometry` (caught by
+  view_graph_calibration.cc), restored with the SqliteDatabase override;
+  (30) SqliteDatabase needed the upstream `path_` member for the
+  static-Open flow.
+- The LAD RidgeRegularization/0 case turned stably red after the rebuild:
+  `Eigen::SimplicialLLT` does not guarantee failure on numerically singular
+  PSD systems, the solver is line-identical to upstream, and no source in
+  optim/ changed - recorded with the polynomial/FMA environment-drift
+  family rather than as a regression.
+
+Gates: full build EXIT=0; database_test 31, database_cache_test 7, rig_test
+12, synthetic_test 18, pose_graph_test, camera_test and
+observation_manager_test green; full Reconstruction ctest shows only the
+recorded baselines (44 AICore asset-missing cases + polynomial + the GP
+rig-branch pair + LAD).

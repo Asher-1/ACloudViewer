@@ -35,11 +35,11 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-#include "base/pose.h"
-#include "base/similarity_transform.h"
+#include "geometry/pose.h"
+#include "geometry/similarity_transform.h"
 #include "estimators/solvers/similarity_transform.h"
 #include "optim/ransac.h"
-#include "util/random.h"
+#include "math/random.h"
 
 using namespace colmap;
 

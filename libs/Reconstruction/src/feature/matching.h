@@ -16,9 +16,9 @@
 #include <unordered_map>
 #include <vector>
 
-#include "base/database.h"
 #include "feature/sift.h"
 #include "retrieval/resources.h"
+#include "scene/database.h"
 #include "util/alignment.h"
 #include "util/cache.h"
 #include "util/opengl_utils.h"
@@ -468,7 +468,7 @@ private:
 
     const SequentialMatchingOptions options_;
     const SiftMatchingOptions match_options_;
-    Database database_;
+    std::shared_ptr<Database> database_;
     const std::shared_ptr<FeatureMatcherCache> cache_;
     SiftFeatureMatcher matcher_;
 };
@@ -485,7 +485,7 @@ private:
 
     const VocabTreeMatchingOptions options_;
     const SiftMatchingOptions match_options_;
-    Database database_;
+    std::shared_ptr<Database> database_;
     FeatureMatcherCache cache_;
     SiftFeatureMatcher matcher_;
 };
@@ -503,7 +503,7 @@ private:
 
     const SpatialMatchingOptions options_;
     const SiftMatchingOptions match_options_;
-    Database database_;
+    std::shared_ptr<Database> database_;
     FeatureMatcherCache cache_;
     SiftFeatureMatcher matcher_;
 };
@@ -523,7 +523,7 @@ private:
 
     const TransitiveMatchingOptions options_;
     const SiftMatchingOptions match_options_;
-    Database database_;
+    std::shared_ptr<Database> database_;
     FeatureMatcherCache cache_;
     SiftFeatureMatcher matcher_;
 };
@@ -548,7 +548,7 @@ private:
 
     const ImagePairsMatchingOptions options_;
     const SiftMatchingOptions match_options_;
-    Database database_;
+    std::shared_ptr<Database> database_;
     FeatureMatcherCache cache_;
     SiftFeatureMatcher matcher_;
 };
@@ -581,7 +581,7 @@ private:
 
     const FeaturePairsMatchingOptions options_;
     const SiftMatchingOptions match_options_;
-    Database database_;
+    std::shared_ptr<Database> database_;
     FeatureMatcherCache cache_;
 };
 

@@ -34,12 +34,12 @@
 
 #include <array>
 
-#include "base/pose.h"
-#include "base/projection.h"
-#include "base/similarity_transform.h"
+#include "geometry/pose.h"
+#include "scene/projection.h"
+#include "geometry/similarity_transform.h"
 #include "estimators/generalized_relative_pose.h"
 #include "optim/loransac.h"
-#include "util/random.h"
+#include "math/random.h"
 
 using namespace colmap;
 

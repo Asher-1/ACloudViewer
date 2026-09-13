@@ -10,10 +10,10 @@
 #include <Eigen/Core>
 #include <vector>
 
-#include "base/camera.h"
 #include "estimators/pose.h"
 #include "geometry/rigid3.h"
 #include "optim/ransac.h"
+#include "scene/camera.h"
 
 namespace colmap {
 

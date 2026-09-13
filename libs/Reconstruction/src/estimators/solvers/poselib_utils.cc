@@ -29,7 +29,7 @@
 
 #include "estimators/solvers/poselib_utils.h"
 
-#include "base/camera_models.h"
+#include "sensor/models.h"
 
 namespace colmap {
 

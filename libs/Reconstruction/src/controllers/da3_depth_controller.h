@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <filesystem>
 #include <functional>
 #include <memory>
 #include <string>
@@ -119,14 +120,15 @@ bool DA3ConfigsMatchForStereoReuse(const DA3Config& sparse,
                                    const DA3Config& stereo);
 
 // Copy dense/<i>/sparse into workspace/sparse/<i> (unified undistorted poses).
-bool SyncWorkspaceSparseFromDense(const std::string& workspace_path,
-                                  const std::string& dense_path,
+bool SyncWorkspaceSparseFromDense(const std::filesystem::path& workspace_path,
+                                  const std::filesystem::path& dense_path,
                                   int reconstruction_index = 0);
 
 // Minimal sparse/0 from EXIF intrinsics + identity poses (undistort bootstrap).
-bool WriteExifPlaceholderSparseModel(const std::string& image_root,
-                                     const std::string& sparse_output_path,
-                                     double default_focal_length_factor = 1.2);
+bool WriteExifPlaceholderSparseModel(
+        const std::filesystem::path& image_root,
+        const std::filesystem::path& sparse_output_path,
+        double default_focal_length_factor = 1.2);
 
 // Longest-side preprocess target aligned with undistorted image size.
 int ComputeDA3ImgResizeTarget(const std::vector<std::string>& image_paths,
@@ -134,7 +136,7 @@ int ComputeDA3ImgResizeTarget(const std::vector<std::string>& image_paths,
 
 // Count images under image_root (recursive), same set as
 // CollectDA3ImageEntries.
-size_t CountDA3Images(const std::string& image_root);
+size_t CountDA3Images(const std::filesystem::path& image_root);
 
 // At or above this count, automatic reconstruction uses COLMAP SfM for globally
 // consistent camera poses and DA3 sequential per-view depth only. Per-view DA3
@@ -148,16 +150,16 @@ constexpr int kDA3UnifiedUndistortedMaxViews = 8;
 
 // Collect images under image_root (recursive), sorted by colmap_name.
 std::vector<DA3ImageEntry> CollectDA3ImageEntries(
-        const std::string& image_root);
+        const std::filesystem::path& image_root);
 
 // Write a minimal database.db (cameras + images, no features) for DA3-only
 // runs.
-void WriteDA3PlaceholderDatabase(const std::string& database_path,
+void WriteDA3PlaceholderDatabase(const std::filesystem::path& database_path,
                                  const Reconstruction& reconstruction);
 
 // True when any source image is newer than the output marker file/dir.
-bool DA3OutputsAreStale(const std::string& image_root,
-                        const std::string& output_marker_path,
+bool DA3OutputsAreStale(const std::filesystem::path& image_root,
+                        const std::filesystem::path& output_marker_path,
                         bool force_recompute);
 
 // True when dense/<i>/stereo/depth_maps contains at least one non-empty map.
@@ -194,8 +196,8 @@ public:
             int current, int total, const std::string& status)>;
 
     DA3DepthController(const DA3Config& config,
-                       const std::string& image_path,
-                       const std::string& output_path);
+                       const std::filesystem::path& image_path,
+                       const std::filesystem::path& output_path);
 
     void SetProgressCallback(ProgressCallback cb) {
         progress_cb_ = std::move(cb);

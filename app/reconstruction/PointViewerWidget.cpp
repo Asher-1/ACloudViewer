@@ -12,11 +12,11 @@
 #include <cmath>
 
 #include "ModelViewerWidget.h"
-#include "base/projection.h"
+#include "controllers/option_manager.h"
+#include "scene/projection.h"
+#include "sensor/bitmap.h"
 #include "ui/qt_utils.h"
-#include "util/bitmap.h"
 #include "util/misc.h"
-#include "util/option_manager.h"
 
 namespace cloudViewer {
 

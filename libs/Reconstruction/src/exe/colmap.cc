@@ -40,14 +40,34 @@
 #include "exe/mvs.h"
 #include "exe/sfm.h"
 #include "exe/vocab_tree.h"
+#include "util/cancellation.h"
 #include "util/version.h"
 
 namespace {
 
-typedef std::function<int(int, char**)> command_func_t;
+using command_func_t = std::function<int(int, char**)>;
 
-int ShowHelp(
-        const std::vector<std::pair<std::string, command_func_t>>& commands) {
+// Commands that stream results to disk while running mark themselves with
+// kSupportsGracefulShutdown: a first SIGINT/SIGTERM then requests a
+// cooperative stop (through colmap::ScopedSignalHandler) so that partial
+// results are finalized and flushed, and a second signal terminates the
+// process immediately (upstream dbb41680 parity).
+constexpr bool kSupportsGracefulShutdown = true;
+
+struct Command {
+    Command(std::string name,
+            command_func_t function,
+            const bool supports_graceful_shutdown = false)
+        : name(std::move(name)),
+          function(std::move(function)),
+          supports_graceful_shutdown(supports_graceful_shutdown) {}
+
+    std::string name;
+    command_func_t function;
+    bool supports_graceful_shutdown;
+};
+
+int ShowHelp(const std::vector<Command>& commands) {
     std::cout << colmap::StringPrintf(
                          "%s -- Structure-from-Motion and Multi-View Stereo\n"
                          "              (%s)",
@@ -84,7 +104,7 @@ int ShowHelp(
     std::cout << "Available commands:" << std::endl;
     std::cout << "  help" << std::endl;
     for (const auto& command : commands) {
-        std::cout << "  " << command.first << std::endl;
+        std::cout << "  " << command.name << std::endl;
     }
     std::cout << std::endl;
 
@@ -101,20 +121,25 @@ int main(int argc, char** argv) {
     Q_INIT_RESOURCE(resources);
 #endif
 
-    std::vector<std::pair<std::string, command_func_t>> commands;
+    std::vector<Command> commands;
     commands.emplace_back("gui", &RunGraphicalUserInterface);
     commands.emplace_back("automatic_reconstructor",
                           &RunAutomaticReconstructor);
     commands.emplace_back("advancing_front_mesher", &RunAdvancingFrontMesher);
-    commands.emplace_back("bundle_adjuster", &RunBundleAdjuster);
+    commands.emplace_back("bundle_adjuster", &RunBundleAdjuster,
+                          kSupportsGracefulShutdown);
     commands.emplace_back("color_extractor", &RunColorExtractor);
     commands.emplace_back("database_cleaner", &RunDatabaseCleaner);
     commands.emplace_back("database_creator", &RunDatabaseCreator);
     commands.emplace_back("database_merger", &RunDatabaseMerger);
+    commands.emplace_back("rig_configurator", &RunRigConfigurator);
     commands.emplace_back("delaunay_mesher", &RunDelaunayMesher);
-    commands.emplace_back("exhaustive_matcher", &RunExhaustiveMatcher);
-    commands.emplace_back("feature_extractor", &RunFeatureExtractor);
-    commands.emplace_back("feature_importer", &RunFeatureImporter);
+    commands.emplace_back("exhaustive_matcher", &RunExhaustiveMatcher,
+                          kSupportsGracefulShutdown);
+    commands.emplace_back("feature_extractor", &RunFeatureExtractor,
+                          kSupportsGracefulShutdown);
+    commands.emplace_back("feature_importer", &RunFeatureImporter,
+                          kSupportsGracefulShutdown);
     commands.emplace_back("hierarchical_mapper", &RunHierarchicalMapper);
     commands.emplace_back("global_mapper", &RunGlobalMapper);
     commands.emplace_back("rotation_averager", &RunRotationAverager);
@@ -122,15 +147,23 @@ int main(int argc, char** argv) {
     commands.emplace_back("image_deleter", &RunImageDeleter);
     commands.emplace_back("image_filterer", &RunImageFilterer);
     commands.emplace_back("image_rectifier", &RunImageRectifier);
-    commands.emplace_back("image_registrator", &RunImageRegistrator);
+    commands.emplace_back("image_registrator", &RunImageRegistrator,
+                          kSupportsGracefulShutdown);
     commands.emplace_back("image_texturer", &RunImageTexturer);
-    commands.emplace_back("image_undistorter", &RunImageUndistorter);
+    commands.emplace_back("image_undistorter", &RunImageUndistorter,
+                          kSupportsGracefulShutdown);
     commands.emplace_back("image_undistorter_standalone",
-                          &RunImageUndistorterStandalone);
+                          &RunImageUndistorterStandalone,
+                          kSupportsGracefulShutdown);
+    commands.emplace_back("mesh_texturer", &RunMeshTexturer);
     commands.emplace_back("mesh_simplifier", &RunMeshSimplifier);
-    commands.emplace_back("mapper", &RunMapper);
-    commands.emplace_back("matches_importer", &RunMatchesImporter);
+    commands.emplace_back("pose_prior_mapper", &RunPosePriorMapper);
+    commands.emplace_back("mapper", &RunMapper,
+                          kSupportsGracefulShutdown);
+    commands.emplace_back("matches_importer", &RunMatchesImporter,
+                          kSupportsGracefulShutdown);
     commands.emplace_back("model_aligner", &RunModelAligner);
+    commands.emplace_back("model_clusterer", &RunModelClusterer);
     commands.emplace_back("model_analyzer", &RunModelAnalyzer);
     commands.emplace_back("model_comparer", &RunModelComparer);
     commands.emplace_back("model_converter", &RunModelConverter);
@@ -140,17 +173,24 @@ int main(int argc, char** argv) {
                           &RunModelOrientationAligner);
     commands.emplace_back("model_splitter", &RunModelSplitter);
     commands.emplace_back("model_transformer", &RunModelTransformer);
-    commands.emplace_back("patch_match_stereo", &RunPatchMatchStereo);
+    commands.emplace_back("patch_match_stereo", &RunPatchMatchStereo,
+                          kSupportsGracefulShutdown);
     commands.emplace_back("point_filtering", &RunPointFiltering);
-    commands.emplace_back("point_triangulator", &RunPointTriangulator);
+    commands.emplace_back("point_triangulator", &RunPointTriangulator,
+                          kSupportsGracefulShutdown);
     commands.emplace_back("poisson_mesher", &RunPoissonMesher);
     commands.emplace_back("project_generator", &RunProjectGenerator);
-    commands.emplace_back("sequential_matcher", &RunSequentialMatcher);
-    commands.emplace_back("spatial_matcher", &RunSpatialMatcher);
-    commands.emplace_back("stereo_fusion", &RunStereoFuser);
-    commands.emplace_back("transitive_matcher", &RunTransitiveMatcher);
+    commands.emplace_back("sequential_matcher", &RunSequentialMatcher,
+                          kSupportsGracefulShutdown);
+    commands.emplace_back("spatial_matcher", &RunSpatialMatcher,
+                          kSupportsGracefulShutdown);
+    commands.emplace_back("stereo_fusion", &RunStereoFuser,
+                          kSupportsGracefulShutdown);
+    commands.emplace_back("transitive_matcher", &RunTransitiveMatcher,
+                          kSupportsGracefulShutdown);
     commands.emplace_back("vocab_tree_builder", &RunVocabTreeBuilder);
-    commands.emplace_back("vocab_tree_matcher", &RunVocabTreeMatcher);
+    commands.emplace_back("vocab_tree_matcher", &RunVocabTreeMatcher,
+                          kSupportsGracefulShutdown);
     commands.emplace_back("vocab_tree_retriever", &RunVocabTreeRetriever);
 
     if (argc == 1) {
@@ -164,14 +204,14 @@ int main(int argc, char** argv) {
     if (command == "help" || command == "-h" || command == "--help") {
         return ShowHelp(commands);
     } else {
-        command_func_t matched_command_func = nullptr;
-        for (const auto& command_func : commands) {
-            if (command == command_func.first) {
-                matched_command_func = command_func.second;
+        const Command* matched_command = nullptr;
+        for (const auto& command_entry : commands) {
+            if (command == command_entry.name) {
+                matched_command = &command_entry;
                 break;
             }
         }
-        if (matched_command_func == nullptr) {
+        if (matched_command == nullptr) {
             std::cerr << StringPrintf(
                                  "ERROR: Command `%s` not recognized. To list "
                                  "the "
@@ -193,7 +233,21 @@ int main(int argc, char** argv) {
                 headless_app.reset(new QGuiApplication(argc, argv));
             }
 
-            return matched_command_func(command_argc, command_argv);
+            std::unique_ptr<colmap::ScopedSignalHandler> signal_handler;
+            if (matched_command->supports_graceful_shutdown) {
+                signal_handler =
+                        std::make_unique<colmap::ScopedSignalHandler>();
+            }
+
+            const int exit_code =
+                    matched_command->function(command_argc, command_argv);
+            if (signal_handler && signal_handler->ReceivedSignal() != 0) {
+                LOG(INFO) << "Graceful shutdown completed after receiving "
+                             "signal "
+                          << signal_handler->ReceivedSignal();
+                return signal_handler->GetExitCode();
+            }
+            return exit_code;
         }
     }
 

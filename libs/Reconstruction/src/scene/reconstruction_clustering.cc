@@ -29,7 +29,7 @@
 
 #include "scene/reconstruction_clustering.h"
 
-#include "util/math.h"
+#include "math/math.h"
 #include "math/union_find.h"
 #include "util/hash_containers.h"
 #include "util/logging.h"

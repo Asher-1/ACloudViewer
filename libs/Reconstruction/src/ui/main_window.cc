@@ -1326,7 +1326,7 @@ void MainWindow::UpdateWindowTitle() {
   if (*options_.project_path == "") {
     setWindowTitle(QString::fromStdString("COLMAP"));
   } else {
-    std::string project_title = *options_.project_path;
+    std::string project_title = options_.project_path->string();
     if (project_title.size() > 80) {
       project_title =
           "..." + project_title.substr(project_title.size() - 77, 77);

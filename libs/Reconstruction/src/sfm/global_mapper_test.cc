@@ -11,13 +11,13 @@
 
 #include "sfm/global_mapper.h"
 
-#include "base/database.h"
-#include "base/reconstruction.h"
-#include "base/triangulation.h"
+#include "scene/database.h"
+#include "scene/reconstruction.h"
+#include "geometry/triangulation.h"
 #include "scene/reconstruction_matchers.h"
 #include "scene/synthetic.h"
 #include "util/testing.h"
-#include "util/random.h"
+#include "math/random.h"
 
 namespace colmap {
 namespace {
@@ -30,7 +30,7 @@ std::shared_ptr<DatabaseCache> CreateDatabaseCache(const Database& database) {
 TEST(GlobalMapper, WithoutNoise) {
   const auto database_path = CreateTestDir() / "database.db";
 
-  auto database = std::make_shared<Database>(database_path);
+  auto database = Database::Open(database_path);
   Reconstruction gt_reconstruction;
   SyntheticDatasetOptions synthetic_dataset_options;
   synthetic_dataset_options.num_rigs = 2;
@@ -74,7 +74,7 @@ TEST(GlobalMapper, WithoutNoise) {
 TEST(GlobalMapper, WithoutNoiseWithNonTrivialKnownRig) {
   const auto database_path = CreateTestDir() / "database.db";
 
-  auto database = std::make_shared<Database>(database_path);
+  auto database = Database::Open(database_path);
   Reconstruction gt_reconstruction;
   SyntheticDatasetOptions synthetic_dataset_options;
   synthetic_dataset_options.num_rigs = 2;
@@ -112,7 +112,7 @@ TEST(GlobalMapper, WithoutNoiseWithNonTrivialKnownRig) {
 TEST(GlobalMapper, WithoutNoiseWithNonTrivialUnknownRig) {
   const auto database_path = CreateTestDir() / "database.db";
 
-  auto database = std::make_shared<Database>(database_path);
+  auto database = Database::Open(database_path);
   Reconstruction gt_reconstruction;
   SyntheticDatasetOptions synthetic_dataset_options;
   synthetic_dataset_options.num_rigs = 2;
@@ -158,7 +158,7 @@ TEST(GlobalMapper, WithoutNoiseWithNonTrivialUnknownRig) {
 TEST(GlobalMapper, WithNoiseAndOutliers) {
   const auto database_path = CreateTestDir() / "database.db";
 
-  auto database = std::make_shared<Database>(database_path);
+  auto database = Database::Open(database_path);
   Reconstruction gt_reconstruction;
   SyntheticDatasetOptions synthetic_dataset_options;
   synthetic_dataset_options.num_rigs = 2;

@@ -11,7 +11,7 @@
 
 #include "estimators/two_view_geometry.h"
 #include "feature/types.h"
-#include "util/bitmap.h"
+#include "sensor/bitmap.h"
 
 class SiftGPU;
 class SiftMatchGPU;

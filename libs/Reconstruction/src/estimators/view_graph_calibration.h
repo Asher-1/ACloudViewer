@@ -11,7 +11,7 @@
 
 #include <memory>
 
-#include "base/database.h"
+#include "scene/database.h"
 
 namespace colmap {
 

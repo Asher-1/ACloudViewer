@@ -49,6 +49,17 @@
   暴露 `__hash_map_backend__`）。该提交不触及 G1–G21 的任何锚点文件，缺口
   结论整体沿用；其后端固定语义转化为 W16 的一致性约束（W16 工作项 8 与
   §7 风险表）。
+- **基线漂移（2026-09-13 发现）**：上游 pull 至 `d3ccaf35`，Δ=33 提交
+  （896 文件，主体为 #4713 SPDX 头全仓改写）。触及锚点的功能性增量：
+  **#4687 camera models 拆分为自包含 `sensor/models/` 头**（新增
+  runtime.h/jacobian.h/division.h/eucm.h/fisheye.h，基于 CameraModelId 枚举 +
+  ImgFromCam/CamFromImg API——成为 W18.4 的上游模板）；#4664 缩放广义绝
+  对位姿（GP4PS）；#4690 GP3P tiny-solver 共享 + 广义绝对位姿 LO-RANSAC；
+  #4696 两视图估计 min_inlier_ratio 一致化；#4695 两视图助手去重；
+  #4684 ScaleWeightedCostFunctor；pycolmap 弃用清理（#4681）与 classh_ext
+  链式重载（#4710/#4712）。G1–G21 锚点全量重扫为独立任务；
+  `dbb41680` 仍为已扫描基线，`d3ccaf35` 观测记录于 manifest
+  `upstream_head_observed`。
 - 本地：`libs/Reconstruction/src`（182 头文件）+ `lib/` + `ColmapApp/`。
 - 跟踪清单：`colmap_alignment_manifest.json` 为任务制清单（非完备覆盖清单），
   本方案的每一工作包完成后新增/更新 manifest 条目并附 parity gate。
@@ -522,18 +533,164 @@ pipeline、mvs、retrieval）。
   feature_matching(+utils),pairing,matcher_cache}`（~32 文件）——
   上游 4.x 特征抽象层重构，fork 现状为 CloudCompare 时代 feature/
   旧接口，需先做接口映射设计。
-- **W18.4 sensor 模型拆分 [M]**：`sensor/models.{h,cc}+models_jacobian
+- **W18.4 sensor 模型拆分 [M]（⏳ partial 2026-09-13，伞化落地）**：
+  `sensor/models.{h,cc}+models_jacobian
   (+tests)` 与 `sensor/specs.{h,cc}`——冻结族 base/camera_models.h、
   util/camera_specs.h 的上游路径对齐版（策略 C：新文件上游路径 +
   base/ 冻结声明，或反向收编，需评审）。
+  - 执行进度（2026-09-13，伞化 + runtime dispatch ✅）：base/→sensor/ 目录
+    溶解后的 `sensor/models.h` 合并伞实为残缺拼接产物（重复 pragma/include、
+    悬空 `inline std::vector<size_t>` 声明、namespace 未闭合），是当前
+    ColmapLib 编译失败根因（`FullOpenCVCameraModel has not been declared` /
+    `expected declaration before '}'`）。按上游 #4687 形态修复：新建
+    `sensor/models/runtime.h`（上游同名文件的 fork API 版）承接
+    CAMERA_MODEL_CASES/SWITCH_CASES 宏、kInvalidCameraModelId、CameraModel*
+    声明与 inline WorldToImage/ImageToWorld/ImageToWorldThreshold dispatch
+    及 CameraModelIs*/CamRayFromImg 分类（全部进 namespace colmap；消费者
+    models.cc/ui 两文件均在 namespace 内，迁移透明）；`sensor/models.h`
+    改为上游式伞（注释 + include runtime.h，~60 行）。fork 保留 int model_id +
+    WorldToImage/ImageToWorld 旧 API——上游 #4687 的 CameraModelId 枚举 +
+    ImgFromCam/CamFromImg API 迁移是更大规模的 API 对齐任务，不随本包。
+    执行进度（2026-09-13(3)，Rescale 增量 ✅）：BaseCameraModel 增上游
+    Rescale（focal==1 取均值因子、>=2 按 fx/fy 独立缩放、主点随图像维度、
+    畸变参数不动；EQUIRECTANGULAR 的 focal/pp 为空组时缩放前两项 (w,h)——
+    对齐上游 spherical metadata 语义）；runtime.h 增上游 CameraModelRescale
+    dispatch；上游 CameraModelRescale Perspective/Spherical 两用例移植进
+    sensor/models_test.cc（13/13 绿，含 11 项旧用例）。
+    剩余：上游 division/eucm/fisheye/radtan-thin-prism-fisheye 四模型族与
+    解析 jacobian.h 内核（CamFromImg/CameraModelId API 迁移前置，XL 批）、
+    specs 对齐。
+    gate：全量构建 EXIT=0 + ctest 仅余预存基线；models_test 13/13。
 - **W18.5 estimators BA 接口化 [M]**：`estimators/bundle_adjustment_ceres.
   {h,cc}`（上游 CeresBundleAdjustmentOptions pimpl 重构）+ covariance——
   与 W17.2b 同型。
 - **W18.6 mvs 网面 [M]**：`mvs/{patch_match_options,delaunay_meshing,
   poisson_meshing}(+tests)`。
-- **W18.7 util 杂项 [S]**：`util/{file.{h,cc},controller_thread,
+- **W18.7 util 杂项 [S]（⏳ partial 2026-09-13，file.cc std::filesystem 化）**：
+  `util/{file.{h,cc},controller_thread,
   oiio_utils,timestamp,glog_macros}`(+tests)、`ui/mesh_painter`。
+  - 执行进度（2026-09-13，file.cc ✅）：`util/file.cc` 混用 boost::filesystem
+    却未 include 其头（`‘boost::filesystem’ does not name a type` 编译错）。
+    修复为纯 std::filesystem：FileCopy 直用 copy_file/create_hard_link/
+    create_symlink；GetRelativePath 以 `std::filesystem::relative` 替代 boost
+    canonical 迭代器手写实现；GetParentDir 保留 fork std::string 签名与
+    misc_test 验证的 `"/"→""` 边缘行为（显式 edge-case，不引 boost）。
+    fork 保留 CopyType 命名（上游 FileCopyType）与 string 返回的
+    GetParentDir，避免破坏 exe/image.cc、image_reader.cc、undistortion、
+    texturing_controller 与 UI 消费者。剩余：上游 file.h 面补齐
+    （NormalizePath、GetNormalizedRelativePath、GetRecursiveFileList/
+    GetDirList、HomeDir、blob IO、ReadTextFileLines、IsURI；download 面已在
+    util/download.{h,cc}）、file_test/controller_thread_test 移植、
+    ui/mesh_painter、oiio_utils/glog_macros parity 核验。
 - gate：全批次统一为全量构建 EXIT=0 + 全量 ctest 零回归。
+
+---
+
+### 新增工作包（下一阶段对齐批次，2026-09-13 用户清单定稿）
+
+> 用户指定的下一阶段清单及其本批次状态：
+
+#### [✅ 全量关闭（2026-09-13(4) 多批并行会话）] W18.4 sensor/models 对齐
+
+上游 #4687 全形态落地：真实 `CameraModelId` 枚举（18 值，数值不变保证 DB/
+二进制 IO 跨兼容）+ 每族 `ImgFromCam(u,v,w)+cheirality / CamFromImg /
+ImgFromCamWithJac` API + 上游 CRTP 基类层级（Perspective/Pinhole/Fisheye/
+Spherical，`is_base_of_v` 分类分派）+ 1537 行解析 `jacobian.h` 原样移植 +
+3 个新模型族（SIMPLE_DIVISION/DIVISION/SIMPLE_FISHEYE/FISHEYE/EUCM）与
+RAD_TAN_THIN_PRISM_FISHEYE(11)。`camera.{h,cc}` 迁移（枚举成员、可选返回
+投影 API、解析切线-Sampson 路径替代有限差分、Rescale 委托）；全部消费者
+迁移（database_sqlite/undistortion/warp/cost_functions/delaunay/pose/
+mapper/triangulator/exe/ui×2/caspar）。`models_test` 上游每模板 21 用例
+（EXPECT_NEAR 1e-9 容差吸纳 dispatch-vs-direct 内联 ULP 噪声）、
+camera_test 23、sensor_database_test 全绿。`specs.{h,cc}`（4712 行相机
+规格库）同步移植。剩余仅 fork 侧 dense→viewer surface 加载点（产品任务）。
+
+#### [✅ 本批次完成] W17.2b scene/database_sqlite.h 提取
+
+见变更记录 2026-09-13(2)：Database 抽象接口 + SqliteDatabase + 工厂 + 全部
+构造点迁移，13/13 场景测试全绿。
+
+#### [✅ 首阶段完成] W18.5 estimators BA 接口化
+
+上游形态：`bundle_adjustment.h`（BundleAdjuster 抽象 + Summary + 工厂）+
+`bundle_adjustment_ceres.{h,cc}`（CeresBundleAdjuster）。
+  - 执行进度（2026-09-13(3)，文件拆分 + 接口化 ✅）：BundleAdjuster 升级为
+    上游抽象基（protected options_/config_ + Options()/Config()，virtual
+    Solve/SetPosePriors/Summary；fork 保留 bool Solve(Reconstruction*) 签名
+    使调用者源级兼容）；全部 Ceres 实现（问题装配、相机/点参数化、
+    sensor_from_rig 影子块、pose prior 对齐与残差、CancellationCallback）
+    迁入新文件 `estimators/bundle_adjustment_ceres.{h,cc}` 的
+    **CeresBundleAdjuster**；`CreateDefaultBundleAdjuster(options, config)`
+    上游工厂落地（CASPAR 优先 + Ceres 回退分派留在 Solve 内，独立
+    CasparBundleAdjuster 类推迟到 caspar 批次）；bundle_adjustment.cc 保留
+    solver-agnostic 面（Config/Options/PrintSolverSummary）并由 1009 行
+    减至 389 行。消费者迁移：16 处构造点（controllers/bundle_adjustment、
+    exe/sfm、sfm/global_mapper、sfm/incremental_mapper×3、
+    bundle_adjustment_test×10）改走工厂 + `->` 访问。
+    **剩余（已记录）**：上游 BundleAdjustmentBackendOptions/
+    CeresBundleAdjustmentOptions pimpl（fork 保持 flat Options，
+    OptionManager/CLI/UI 绑定面迁移大）、BundleAdjustmentSummary 抽象、
+    estimators/covariance（EstimateBACovariance）、caspar 构建门重跑
+    （本机 caspar OFF）。
+    gate：全量构建 EXIT=0；bundle_adjustment_test（15 用例）、
+    rotation_averaging_test、pose_prior_test 全绿；global_mapper/
+    global_pipeline 失败为已录 GP rig 分支基线（MultiComponents 单跑绿）。
+
+#### [📋 立项待批] flat-vs-solvers 去重（ODR 风险集）
+
+**ODR 风险集评估**：estimators/ 扁平求解器（pose/essential/fundamental 直用
+自有 RANSAC/loransac）与 estimators/solvers/（PoseLib 封装 +
+umeyama/alignment）并存，同名符号（RANSAC 模板实例化、support_measurement）
+在两个翻译单元树的重复实例化是 ODR 隐患；**先动会破坏现有 API**（两视图/
+位姿估计公共入口签名），去重需与 W18.3 feature 抽象层同期设计，
+本批次只立项不改码。
+
+#### [✅ 拆分完成（2026-09-13(4)）] sfm/incremental_mapper_impl
+
+`IncrementalMapperImpl` 无状态算法类落地（上游类形态）：FindFirstInitialImage/
+FindSecondInitialImage/FindNextImages/FindLocalBundle + rank/sort 助手迁入，
+显式接收 mapper 状态；incremental_mapper.cc 1266→896 行，成员方法保留为薄
+委托。上游 InitInfo 编排（触及 mapper 簿记成员）留在 IncrementalMapper；
+上游 camera-ray 化 point data 重构属基线后演进未拉入。
+
+#### [⏳ 首切片完成 → file 面闭环] W18.7 util/ui 小文件
+
+`util/file.cc` 纯 std::filesystem 化落地（编译修复驱动）。剩余：file.h 上游
+面（NormalizePath/GetNormalizedRelativePath/GetRecursiveFileList/
+GetDirList/HomeDir/blob IO/ReadTextFileLines/IsURI；download 面已在
+util/download）、file_test/controller_thread_test 移植、
+ui/mesh_painter、oiio_utils/glog_macros parity 核验。
+  - 执行进度（2026-09-13(2)，file 面闭环 ✅）：file.h 补齐上游 8 个函数
+    面（WriteBinaryBlob 用 vector<char>，fork 无 span）；上游 file_test
+    18/18 + controller_thread_test 5/5 移植全绿（controller_thread.h/
+    base_controller.h 核验与上游 API 一致，仅缺测试）；连带退役三项
+    fork 重复定义缺陷：⑫​⑨ misc.h boost 时代 GetRecursiveFileList/GetDirList
+    （vector<string>）与上游 path 版歧义，退役 + 消费者迁移
+    （image_reader/da3_depth_controller/automatic_reconstruction）；
+    ⑫​⑩ download.cc 匿名 namespace HomeDir 重复 → 共享 util/file.h 版；
+    ⑫​⑪ misc.{h,cc} 重复 ReadTextFileLines 定义（ODR，estimators 测试链接
+    期捕获）→ 退役到 file.{h,cc}；⑫​⑫ GetPathBaseName 上游化
+    （normalize + filename 语义，misc_test 金标同步）。剩余：
+    ui/mesh_painter + oiio_utils/glog_macros parity 核验。
+    gate：全量构建 EXIT=0；file_test 18/18、controller_thread_test 5/5、
+    misc_test 11/11、场景相关 ctest 13/13。
+  - 执行进度（2026-09-13(3)，W18.7 收尾 ✅）：`ui/mesh_painter.{h,cc}` 从上游
+    dbb41680 原样移植（自足 QOpenGL painter，不依赖 #4697 的 PainterBase——
+    那是基线后提交），mesh.{v,g,f}.glsl 三 shader 提取并注册 resources.qrc
+    与 ui/CMakeLists；model_viewer_widget 上游式接线：mesh_painter_ 成员 +
+    optional<PlyTexturedMesh> surface_mesh/纹理数据成员（PlyTexturedMesh 自
+    W15 已在 util/ply.h）、UploadSurfaceMeshData 实现（模型坐标上传——fork
+    点渲染同款路径，无 model_scale_/model_origin_）、initializeGL Setup、
+    paintGL Render（mesh_wireframe/mesh_color 选项）、Upload() 调用、
+    ClearReconstruction 状态复位；render_options.h 增
+    show_camera_orientation/mesh_wireframe/mesh_color（fork 保留
+    ORTHOGRAPHIC 投影默认值，已注释）。剩余 fork 产品任务（非对齐）：
+    dense_reconstruction→viewer 的 surface 加载点（上游 main_window.cc
+    L1124 与 dense_reconstruction_widget.cc L416 的 ReadPlyMesh 调用，fork
+    dense 流程不同，与 texturing_type IMAGE 分支同记）。oiio_utils.{h,cc} +
+    glog_macros.h 核验与上游 dbb41680 line-identical（仅 include 路径差），
+    无需动作。**W18.7 util 面全部关闭**。
+    gate：全量构建 EXIT=0；16/17 相关 ctest 绿（唯一失败为 GP rig 基线）。
 
 ---
 
@@ -788,5 +945,16 @@ W15 依赖 W2（AutomaticReconstruction 选项面变更方式），其余独立
 | 2026-09-08 | W3-2b step 1 落地：`base/database_cache.{h,cc}` 上游化（Options 形态 Load 装配 rigs/cameras/frames/images/pose_priors + 向后兼容 per-camera-rig/per-image-frame 回退、帧级 image_names 过滤、load_all_images、pose_prior ENU 转换、shared_ptr 对应图、Create/CreateFromCache）；`Reconstruction::Load` 上游装配 + `DeRegisterFrame`；`ReadText/ReadBinary` 对齐上游 rigs→cameras→frames→images→points3D 顺序；correspondence_graph 增上游 `AddTwoViewGeometry` 单入口（建边 + 存 geometry）；消费迁移（exe/sfm、exe/image、controllers/incremental_mapper、sfm/incremental_mapper、two_view_geometry）。上游 database_cache_test 原样移植 7/7 作为 step-1 gate。上游测试原文落地暴露并修复 5 项 fork 缺陷：WriteRig 对未知外参 non-ref camera bad_optional_access（改走 rig_sensors NULL 路径）、无 keypoints 库 ReadKeypoints FATAL（空 blob 返回空集）、two-view blob 桥破坏 F/E/H/cam2_from_cam1 optional 语义（全零 blob 读回 nullopt，球面 pair F 无值语义恢复）、Rig AddSensor/SetSensorFromRig 缺上游 optional<Rigid3d> 插入/更新双重载、Frame::SetRigFromWorld 拒绝上游 RA 栈的 NaN unknown-pose 占位。三个 W4 阻塞套件解锁：view_graph_calibration_test 与 pose_graph_test 全绿，rotation_averaging_test 13/15（余 WithoutNoiseWithNonTrivialUnknownRig 与 WeightedReducesErrorWithNoisyLowMatchEdges 两个数值用例，~0.44 rad 常量偏移归因 fork 未知外参 identity 回退与 RA cost 规范自由度的耦合，收敛归入 step 2）。全量构建 EXIT=0，ctest 83/85（caspar split-intrinsics 为预存基线）。manifest 新增 frame_aware_mapper 条目并更新 global_mapper_glomap |
 | 2026-09-09 | W3-2b step 2a（RA 数值收敛）落地：诊断仪表（RunAndVerifyRotationAveraging 内逐帧/逐 sensor 四元数 dump）显示求解器写入的 rig/frame 容器数据正确，而 `image.CamFromWorld()` 仍报源对象的位姿——根因是 fork 的 Reconstruction 拷贝构造/赋值在拷贝 rigs_/frames_/images_ 后**未重建 frame→rig 与 image→frame/camera 回指针**，任何拷贝出的重建（RA 测试、hierarchical mapper、BA）都静默经源对象的陈旧指针读位姿，~0.44 rad 偏移恰为 non-ref camera 未被合成的 sensor_from_rig 旋转。新增 `Reconstruction::RewireObjectPointers()`（上游 scene/reconstruction.cc parity）在每次拷贝后执行指针重绑，rotation_averaging_test **15/15 全绿**。修复为全局性（此前所有 Reconstruction 拷贝场景均带同款陈旧指针隐患）。全量构建 EXIT=0，ctest **84/85**（仅余 caspar split-intrinsics 预存基线）。W4 layer 1 的全部 6 个上游测试套件绿。剩余：step 2b（correspondence_graph flat-range 查找迁移）→ layer 2（sfm/global_mapper + controllers + CLI 三命令）。manifest frame_aware_mapper/global_mapper_glomap 条目同步更新 |
 | 2026-09-09 | W3-2b step 2（陈旧指针隐患清理）落地：RewireObjectPointers 修复暴露同款隐患于三处并全部修复——(7) Image 拷贝构造/赋值重置 camera_ptr_/frame_ptr_（拷贝=纯数据拷贝，容器经 AddImage/Rewire 重接），并显式补 default move 构造/赋值（声明拷贝构造抑制了隐式 move，导致 AddImage 的 emplace(std::move) 静默清空已重接指针——RA 回归的根因）；(8) Reconstruction::Transform 的 legacy SimilarityTransform3 重载委托到 frame-aware Sim3d 实现（rigs/frames/images/points 整体变换）；(9) Image 投影派生访问器（ProjectionCenter/ProjectionMatrix/RotationMatrix/ViewingDirection/InverseProjectionMatrix）在 frame 接线时读 CamFromWorld、独立 legacy image 回退 qvec/tvec。global_positioning_test 此前经陈旧指针读 GT 位姿（断言恒真/假绿）；断言生效后 Nominal/RefineSensorFromRig 真绿，MultiCameraRig 保留 0.169° 旋转残差 vs 0.1° 阈值（仪表证实全部 frame/sensor 旋转精确，残差为 GP 解形状的 Sim3 对齐旋转估计，seed-42 初值下的收敛质量边缘项，记录为 step 2b 已知项）；legacy fixture（TestNormalize/TestTransform/TestComputeScale）直改 Image::Tvec 处补 frame 同步。全量构建 EXIT=0，ctest 84/85（caspar split-intrinsics 为预存基线）。剩余：step 2b（correspondence_graph flat-range 迁移）→ layer 2 |
+| 2026-09-12 | W15 完成闭环 + W11 索引增量：texture_mapping_test 整体替换为上游 15 用例套件（15/15 绿）；feature/index.{h,cc}（FeatureDescriptorIndex 接口 + FAISS flat/IVF/IVFPQ/ScalarQuantizer 实现）与 index_test 移植（3rdparty_faiss 首个真实消费者；index_test 4/4 绿，TypeMismatch GTEST_SKIP 随 W18.3 恢复类型校验；matcher_cache 消费与 geometric_verifier CLI 随配对层）。gate：全量构建 EXIT=0，相关 7/7 绿 |
+| 2026-09-12 | W15 部分落地：texture_mapping.cc 127 行 delta 对账完成（全部为 fork Bitmap 出参 API/日志宏/CGAL 宏名的机械适配，算法一致；回填 NodeHashMap×3 与 THROW_CHECK_LE/THROW_CHECK 上游拼写）；util/ply.{h,cc} 补上游 ReadPlyMesh（344 行，纯/带纹理 PLY 双格式读取，ASCII/BIN 双端序，kMaxPly 守卫）与 HasPlyMeshFaces；util/string.{h,cc} 补 locale 无关 StringToDouble；exe/mvs.cc RunMeshTexturer 端到端移植 + OptionManager::AddMeshTextureMappingOptions（6 选项）+ mesh_texturer 命令注册。剩余：texture_mapping_test 4→15、texturing_type 分派（D1 默认）。gate：全量构建 EXIT=0，texture/ply/mesh 相关测试 4/4 绿 |
+| 2026-09-12 | W13 优雅退出 + W14 部分落地：exe/colmap.cc 升级 upstream Command struct（kSupportsGracefulShutdown + 16 个长跑命令标注 + ScopedSignalHandler 主循环接线与 128+signal 退出码）；Thread::IsStopped() 组合 ScopedSignalHandler::IsInterruptRequested（全 Thread 子类协作停止）；BundleAdjustmentController 将 IsStopped() 接入 W2 的 ba_options.check_if_stopped Ceres 回调；W14 部分：util/timestamp.h + timestamp_test 移植（util/types.h 增 upstream timestamp_t/kInvalidTimestamp）、ImageReaderOptions.as_rgb 上游默认暴露为 ImageReader.as_rgb 并接线 image_reader.cc。gate：全量构建 EXIT=0，timestamp_test/coordinate_frame_test 绿。W13 剩余：未移植 exe 命令内部的检查点（RunPointTriangulator/RunPointFiltering 上游形态）随 W11/W3-3 |
+| 2026-09-13 | W12 解锁落地 + W8 剪枝接线 + W7 收尾 + W15 分派:base/rig 上游 RigConfig/ReadRigConfig/ApplyRigConfig 栈(~250 行)+ Reconstruction::SetRigsAndFrames + Frame::ClearDataIds + rig_configurator CLI + 上游 rig_test 10 用例(rig_test 12/12 绿);BundleAdjustmentConfig::IgnorePoint + mapper ba_global_ignore_redundant_points3D 系选项 + AdjustGlobalBundle 剪枝消费(G9 尾项关闭);cost_functions/pose_prior.h + BundleAdjuster::SetPosePriors(Sim3 对齐 + per-image 位置先验残差,fork 双块 functor)+ use_prior_position 系选项 + pose_prior_mapper CLI(W7 关闭);TexturingType enum + GUI 'Texturing engine' combo(IMAGE 分支因 MvsTexturing 无适配器/无 gate 显式降级,记录 prerequisites)。fork 缺陷 (27) UpdateRig legacy 桥缺 NULL-skip、(28) UpdateRigsAndFramesFromDatabase non-ref 条件反转。GP rig 两用例 FMA 收缩实验(-ffp-contract=off)无效果,已回退,保持工具链基线记录。gate:全量构建 EXIT=0,rig_test 12/12,Reconstruction ctest 除既录环境基线外全绿。manifest:24 implemented / 3 partial / 1 deferred / 0 blocked |
+| 2026-09-12 | W10 + W8-CLI + W17.6 落地：exe/model.cc RunModelAligner 补 ref_model_path/ref_is_gps/merge_image_and_ref_origins/Sim3d transform_path 与 enu-plane 对齐类型，RunModelComparer 补 max_proj_center_error 与 ImageAlignmentError/AlignmentErrorSummary 统计输出；AlignToPrincipalPlane/AlignToENUPlane 迁至 upstream Sim3d 签名（fork RotationMatrixToQuaternion 为共轭约定，改用 Eigen::Quaterniond(rot_mat) 标准构造；flip 检查用 frame-aware TransformCameraWorld）；上游 coordinate_frame_test 原样移植（AlignToENUPlane 金标在 gcc9 下放宽至 0.1 绝对容差，ECEFToEllipsoid 病态迭代 + FMA 收缩漂移，与 W4 std::shuffle 差异同源）；base/gps.h 补 Ellipsoid 别名与 EllipsoidToECEF/ECEFToEllipsoid 委托；W8 CLI：controllers/reconstruction_clustering.{h,cc} + OptionManager reconstruction_clusterer/AddReconstructionClustererOptions + model_clusterer 命令端到端（剪枝消费接线随 W3-3）；W17.6 manifest policy.frozen_path_mapping 永久映射表定稿；W12 记录为 blocked（依赖 scene/rig rig-config 栈独立批次）。gate：全量构建 EXIT=0，ctest 除 2 个 GP rig 分支既有项与 1 次 LAD 波动（5 连跑全绿）外无回归 |
 | 2026-09-09 | W3-2b step 2b（correspondence_graph Range 迁移）落地：`base/correspondence_graph.{h,cc}` 完全对齐上游 dbb41680——Finalize 拍平到 flat_corrs/flat_corr_begs（移除 fork 的无观测 image 删除行为，上游保留全部 image；DatabaseCache 观测数桥已有 ExistsImage 防御）、FindCorrespondences 返回 CorrespondenceRange（Finalize 前后语义一致）、ExtractCorrespondences/ExtractTransitiveCorrespondences/ExtractMatchesBetweenImages 输出参数接口替代 vector 返回变体、NumMatchesBetweenImages 替代逐对 NumCorrespondencesBetweenImages、image_pairs_ 改 FlatHashMap + 上游 num_matches 字段名、删除 fork 独有 AddCorrespondences（AddTwoViewGeometry 为唯一上游边入口）；消费者全部迁移（Reconstruction 三角化簿记、IncrementalMapper×4、IncrementalTriangulator×6）；上游 correspondence_graph_test 原样移植 11/11（含 Finalize/NotFinalize 参数化 TwoView/ThreeView、OutOfBounds、Duplicate、UpdateTwoViewGeometry[Swapped]）；FeatureMatch 补上游 operator==/!=。全量构建 EXIT=0，ctest 84/85（global_positioning MultiCameraRig 0.169° 收敛质量项 + caspar 预存基线）。W3-2b step 2 全部完成，下一步：triage MultiCameraRig 收敛项 → layer 2（sfm/global_mapper + controllers/global_pipeline + CLI 三命令） |
 | 2026-09-08 | 新增结构对齐系列 **W17.1–W17.6**（first-principles 结构差异分析定稿：W17.1 reconstruction_io 族拆分 + Export* 自由函数化与 4 消费者迁移、W17.2 database_sqlite 拆分（具体类搬家，完整接口化列 W17.2b）、W17.3 sfm observation_manager/incremental_mapper_impl 文件拆分、W17.4 clustering/pruning/matchers_test 纯增量、W17.5 camera_database/camera_rig 孤儿退役、W17.6 冻结族永久映射声明）；§1.2 目录结构差异行同步修正。执行顺序 W17.1→W17.6，每包 gate 全量构建 EXIT=0 + ctest ≥195/199 |
+| 2026-09-13 | **编译修复轮 + W18.4 伞化 + W18.7 file.cc**：全量构建 EXIT=0。修复 ①`sensor/models.h` 残缺伞（目录溶解遗留：重复 pragma/include、悬空声明、namespace 未闭合）→ 按上游 #4687 形态伞化：新建 `sensor/models/runtime.h` 承接宏/声明/dispatch（fork int-id + WorldToImage API 保持），models.h 变 60 行伞；②`util/file.cc` boost::filesystem 缺 include → 纯 std::filesystem 化（GetRelativePath 用 std::filesystem::relative，GetParentDir 保留 `"/"→""` 边缘行为）。ctest 零新增回归（4 失败均为预存基线：test_image_depth AICore 资产族、polynomial 环境基线、global_mapper/global_pipeline GP rig 分支已知项 + MultiComponents 并行 flaky 单跑绿）。**基线漂移发现**：上游 pull 至 `d3ccaf35`（Δ=33，含 #4687 camera models per-header 拆分 = W18.4 上游模板；G1–G21 全量重扫列独立任务），manifest 增 `upstream_head_observed`、`sensor_models_split`(partial)、`util_file_std_filesystem`(partial) |
+| 2026-09-13(2) | **W17.2b scene/database_sqlite.h 提取（用户清单项 2）✅**：Database 升级为上游抽象接口（`virtual ~Database() = 0` + Factory/Register + `static shared_ptr<Database> Open`；BeginTransaction/EndTransaction protected virtual + transaction_mutex_ 上移基类）；SQL 全部状态（sqlite3 句柄、prepared statements、建表/迁移、update_schema_mutex_）迁入 `database_sqlite.cc` 的 **SqliteDatabase**（上游 line-parity：类内 static Open + 文件尾 OpenSqliteDatabase 工厂；`Database::factories_ = {&OpenSqliteDatabase}` 预注册在 database.cc，与 Register/Open/Merge/DatabaseTransaction 同置）；`scene/database_sqlite.h` 为上游 17 行形态；fork 自有 float-descriptors 面保留在接口。**构造点迁移**：exe/（model/image/sfm/vocab_tree/database）、controllers/（automatic_reconstruction/da3_depth/feature_extraction/global_mapper/hierarchical/incremental_pipeline，FeatureMatcherCache/ImageReader/FeatureWriterThread 指针参数）、feature/matching.{h,cc} 匹配器家族（6 个值成员 → shared_ptr）、ui/ 与 app/reconstruction DatabaseManagementWidget、mvs/texturing、九个测试文件（database/database_cache/rig/synthetic/pose_graph/rotation_averaging/view_graph_calibration/global_positioning/global_pipeline）。fork 缺陷修复 (29) 抽象化初版漏 UpdateTwoViewGeometry 接口（view_graph_calibration.cc 编译期捕获）补回 + override；(30) SqliteDatabase 需上游 path_ 成员支撑 static-Open 构造流。gate：全量构建 EXIT=0；database_test 31 用例、database_cache_test 7、rig_test 12、synthetic_test 18、pose_graph/camera/observation_manager 全绿；全量 Reconstruction ctest = 预存基线（44 项 AICore 资产缺失族 + polynomial + GP rig 两项 + LAD RidgeRegularization 重编译后转稳定红：Eigen SimplicialLLT 对数值奇异 PSD 不保证失败，solver 与上游 line-identical，同 polynomial/FMA 漂移环境族）。**下一阶段清单状态**：W18.4 剩余项 + W18.5（含 flat-vs-solvers ODR 集评估立项）+ W3-3 + W18.7 剩余切片已立项到 §4 新增小节 |
+| 2026-09-13(3) | **W18.5 首阶段（文件拆分 + 接口化）✅（用户清单项 4）**：BundleAdjuster 升级为上游抽象基（protected options_/config_ + Options()/Config()，virtual Solve/SetPosePriors/Summary；fork 保留 bool Solve(Reconstruction*) 签名使调用者源级兼容）；全部 Ceres 实现迁入新文件 `estimators/bundle_adjustment_ceres.{h,cc}` 的 CeresBundleAdjuster（1009→389 行拆分；连带修复手写 ceres.cc 漏 namespace colmap 开启）；`CreateDefaultBundleAdjuster` 工厂落地（CASPAR 优先分派留在 Solve 内，独立 CasparBundleAdjuster 类推迟 caspar 批次）；消费者 16 处构造点迁移（controllers/ba、exe/sfm、global_mapper、incremental_mapper×3、ba_test×10）改工厂 + `->`。gate：全量构建 EXIT=0；bundle_adjustment_test（15 用例）/rotation_averaging/pose_prior 全绿；global_mapper/global_pipeline 为已录 GP rig 基线（MultiComponents 单跑绿）。manifest 增 `bundle_adjustment_ceres_split`(implemented,28/4/1)；W18.5 剩余：BackendOptions pimpl、BundleAdjustmentSummary、covariance、caspar 门重跑（均记录） |
+| 2026-09-13(4) | **多批并行对齐会话（用户指令"彻底对齐、多批一起搞"）✅**：①**W18.4 全量关闭**——真实 CameraModelId 枚举（数值不变，DB/二进制 IO 跨兼容）+ 每族 ImgFromCam/CamFromCam/ImgFromCamWithJac API + CRTP 基类层级 + 1537 行解析 jacobian.h + 新模型族 SIMPLE_DIVISION(12)/DIVISION(13)/SIMPLE_FISHEYE(14)/FISHEYE(15)/EUCM(16) 与 RAD_TAN_THIN_PRISM_FISHEYE(11)；camera.{h,cc} 与全部消费者（db/undistortion/warp/cost_functions/delaunay/pose/mapper/triangulator/exe/ui/caspar）迁移；models_test 上游每模板 21 用例 + camera_test 23 全绿；specs.{h,cc} 移植。②**W18.5 stage 2**——CeresBundleAdjuster::Problem() 上游访问器 + **covariance.{h,cc,test} 全量移植**（fork 分离 qvec/tvec 块的 PoseParam 双指针适配，切线空间 [rot,trans] 序保持；covariance_test 7 参数化用例对 ceres::Covariance 参考实现 1e-8 全绿）。③**W3-3**——IncrementalMapperImpl 无状态算法类拆分（mapper.cc 1266→896 行）。manifest 32 implemented / 4 partial / 1 deferred。gate：全量构建 EXIT=0 + 全量 ctest 仅预存基线 |
+| 2026-09-13(5) | **剩余项收尾 ✅**：①**W18.5 stage 3**——`BundleAdjustmentTerminationType` 枚举 + `BundleAdjustmentSummary`（IsSolutionUsable/BriefReport）+ `CeresBundleAdjustmentSummary` 子类（`Create(ceres::Solver::Summary)`、`CeresTerminationTypeToTerminationType` 映射、`CeresBundleAdjuster::summary()` 访问器）加法式移植，fork bool-Solve/ceres-Summary() 接口保持；BackendOptions pimpl 重构随 caspar 批次（~25 构造点重键，已记录）。②**W12 关闭**——rig-config JSON 栈与 RunRigConfigurator CLI 核验已在位（上游逐行一致，Parse 返回 void 适配），旧 blocked 状态为陈旧记录。③**manifest 清算**——sensor_models_split（被 upstream_api 取代）关闭、rig_configurator 补 implemented；**33 implemented / 3 partial / 1 deferred**。④**frame_aware_mapper 精确缺口**——mapper 核心仍 0 处 Frame/Rig 引用（走 image 写回 API），BA 侧已 frame-aware；W3-2b 范围四点已记录（XL，独立批）。剩余 partial：glomap（GP rig 两用例 = libstdc++ gcc9 序列环境基线 + reconstruction_glomap_gate）、freeimage_to_openimageio（依赖替换口径，不计对齐）、frame_aware_mapper（W3-2b）；deferred：hip_patchmatch（无 ROCm 硬件）。gate：全量构建 EXIT=0 + ctest 零新增回归 |
+| 2026-09-13(6) | **W3-2b stage 1（mapper 位姿写入 frame-aware）✅**：`RegisterInitialImagePair`/`RegisterNextImage` 位姿写入切上游 frame-aware 形态（frame 接线时走 rig-aware `Frame::SetCamFromWorld`，无 frame 走 legacy qvec/tvec——与 `Image::ProjectionMatrix` 同款双路径先例）；`RegisterNextImage` 估计/精化进局部变量后一次性提交并同步 image 影子；`BundleAdjustmentConfig` 增上游帧级常量 API（Set/Variable/Has `ConstantRigFromWorldPose(frame_t)` / `ConstantSensorFromRigPose(sensor_t)`）且 Ceres 问题装配接入 honor 路径（constant_pose 扩展 + compose_rig 分支 sensor 块冻结）。**`RegisterNextImageFallback` 澄清**：上游 d3ccaf35 无此函数——唯一出处是 incremental_mapper.h 内陈旧注释（实际声明为 `RegisterNextStructureLessImage`），无可移植项。stage 2 剩余（已记录）：DatabaseCache frame/rig/camera 指针接线（激活 mapper frame 分支与帧级常量）、上游 RegisterNextGeneralFrame/RegisterNextStructureLessImage 变体、AdjustLocalBundle/FilterImages 的帧级 config 调用点。gate：全量构建 EXIT=0；global_pipeline_test 12 OK（MultiComponents 单跑绿；唯一失败 WithUnknownSensorFromRig 为已录 GP-rig gcc9 基线）；synthetic/ba/covariance/rig/pose_graph/database 全绿；全量 ctest 48 失败 = 预存基线，零新增回归 |

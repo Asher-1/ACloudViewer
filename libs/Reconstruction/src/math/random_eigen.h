@@ -11,7 +11,7 @@
 #include <Eigen/Geometry>
 #include <cmath>
 
-#include "util/random.h"
+#include "math/random.h"
 
 namespace colmap {
 

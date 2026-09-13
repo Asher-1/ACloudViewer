@@ -9,8 +9,8 @@
 
 #include <filesystem>
 
-#include "base/reconstruction_manager.h"
-#include "controllers/incremental_mapper.h"
+#include "controllers/incremental_pipeline.h"
+#include "scene/reconstruction_manager.h"
 #include "util/threading.h"
 
 namespace colmap {

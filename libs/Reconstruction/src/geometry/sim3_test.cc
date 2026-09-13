@@ -29,7 +29,7 @@
 
 #include "geometry/sim3.h"
 
-#include "util/random.h"
+#include "math/random.h"
 #include "math/random_eigen.h"
 #include "util/eigen_alignment.h"
 #include "util/eigen_matchers.h"

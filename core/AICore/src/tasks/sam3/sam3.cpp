@@ -124,6 +124,15 @@ struct sam3_hparams {
     int32_t mem_attn_layers = 4;
     int32_t num_maskmem = 7;
     int32_t max_obj_ptrs = 16;
+    // Official select_closest_cond_frames cap (SAM3 tracker: 4; SAM2 video
+    // predictor keeps every conditioning frame = -1).
+    int32_t max_cond_frames_in_attn = -1;
+    // Official memory selection (apply_temporal_disambiguation): when 1, the
+    // non-conditioning memory/pointer frames are chosen via the official
+    // frame_filter (eff_iou_score > mf_threshold + must-include adjacent
+    // frame). SAM3 enables it by default, SAM2 does not.
+    int32_t use_memory_selection = 0;
+    int32_t mf_threshold_x100 = 1;  // 0.01
 
     int32_t n_amb_experts = 2;
 
@@ -867,18 +876,39 @@ struct sam3_memory_slot {
     struct ggml_tensor* spatial_pe = nullptr;     // [64, 72, 72]
     int frame_index = -1;
     bool is_cond_frame = false;
+    // Official eff_iou_score (cal_mem_score): sigmoid(obj_logit) rescaled to
+    // [0,1] and multiplied by the selected mask IoU — drives the
+    // memory-selection frame_filter. < 0 marks "not scored" (cond frames,
+    // mask-pinned seeds) so frame_filter skips them.
+    float eff_iou_score = -1.0f;
+};
+
+// One stored object pointer. `is_cond` mirrors the official
+// is_selected_cond_frame flag: prompt/seed frames keep the cond identity,
+// every propagated frame is a non-conditioning pointer.
+struct sam3_ptr_slot {
+    int frame_index = -1;
+    struct ggml_tensor* ptr = nullptr;  // [256]
+    bool is_cond = false;
 };
 
 struct sam3_tracker {
     sam3_video_params params;
     int frame_index = 0;
     int next_inst_id = 1;
+    // Optional total video length hint (sam3_video_params::total_frames);
+    // <= 0 = unknown, the max_obj_ptrs default applies.
+    int total_frames = 0;
 
     std::vector<sam3_masklet> masklets;
     std::vector<sam3_masklet> pending;
 
     std::map<int, std::vector<sam3_memory_slot>> mem_banks;
-    std::map<int, std::vector<std::pair<int, struct ggml_tensor*>>> ptr_banks;
+    std::map<int, std::vector<sam3_ptr_slot>> ptr_banks;
+    // Durable per-instance eff_iou_score history (full session), the scan
+    // source of the official frame_filter (the memory bank is a sliding
+    // window and would forget old frames).
+    std::map<int, std::map<int, float>> eff_history;
 
     struct ggml_context* ctx = nullptr;
     ggml_backend_buffer_t buffer = nullptr;
@@ -1767,6 +1797,12 @@ static bool sam3_load_hparams(const gguf_kv& r, sam3_hparams& hp) {
     hp.mem_attn_layers = rd("sam3.hparams.mem_attn_layers", hp.mem_attn_layers);
     hp.num_maskmem = rd("sam3.hparams.num_maskmem", hp.num_maskmem);
     hp.max_obj_ptrs = rd("sam3.hparams.max_obj_ptrs", hp.max_obj_ptrs);
+    hp.max_cond_frames_in_attn = rd("sam3.hparams.max_cond_frames_in_attn",
+                                    hp.max_cond_frames_in_attn);
+    hp.use_memory_selection =
+            rd("sam3.hparams.use_memory_selection", hp.use_memory_selection);
+    hp.mf_threshold_x100 =
+            rd("sam3.hparams.mf_threshold_x100", hp.mf_threshold_x100);
     hp.n_amb_experts = rd("sam3.hparams.n_amb_experts", hp.n_amb_experts);
     hp.visual_only = rd("sam3.hparams.visual_only", hp.visual_only);
     return r.err.empty();
@@ -8664,7 +8700,10 @@ static sam3_prompt_data sam3_build_prompt_and_pos(
         // provided, the per-frame GPU reads are skipped (hot path only).
         const std::vector<float>* tpos_enc_cache = nullptr,
         const std::vector<float>* ptr_tpos_w_cache = nullptr,
-        const std::vector<float>* ptr_tpos_b_cache = nullptr) {
+        const std::vector<float>* ptr_tpos_b_cache = nullptr,
+        // Official sine-PE denominator: min(num_frames, max_obj_ptrs) - 1.
+        // Callers without a declared video length keep the 16-frame default.
+        int ptr_t_diff_max = 15) {
     const auto& hp = model.hparams;
     const int MD = hp.mem_out_dim;  // 64
     const int D = hp.neck_dim;      // 256
@@ -8735,10 +8774,11 @@ static sam3_prompt_data sam3_build_prompt_and_pos(
         int rel = ptr_tpos[p];
         if (rel < 0) continue;
 
-        // 1D sine PE for temporal position (normalized by max_obj_ptrs - 1 =
-        // 15)
+        // 1D sine PE for temporal position, normalized by the official
+        // t_diff_max (min(num_frames, max_obj_ptrs) - 1; 15 by default).
         std::vector<float> sine_pe(D);
-        sam3_get_1d_sine_pe(sine_pe.data(), (float)rel / 15.0f, D);
+        sam3_get_1d_sine_pe(sine_pe.data(), (float)rel / (float)ptr_t_diff_max,
+                            D);
 
         // Project 256-dim sine PE → 64-dim via obj_ptr_tpos_proj (CPU matmul)
         // W is [D=256, MD=64] in ggml; y[j] = sum_i W[i + j*D] * x[i] + b[j]
@@ -10774,26 +10814,186 @@ static void sam3_ensure_tracker_pe_caches(sam3_tracker& tracker,
     tracker.pe_caches_valid = true;
 }
 
+// Official select_closest_cond_frames (sam3_tracker_utils.py): up to
+// `max_cond` conditioning frames closest to the current frame — the closest
+// one before it, the closest one at/after it, then the rest by |t - frame_idx|
+// ascending. max_cond < 0 (SAM2 video predictor) keeps every frame.
+static std::vector<int> sam3_select_closest_cond(
+        const std::vector<int>& cond_frames, int frame_idx, int max_cond) {
+    if (max_cond < 0 || (int)cond_frames.size() <= max_cond) return cond_frames;
+    int before = INT_MIN, after = INT_MAX;
+    for (int t : cond_frames) {
+        if (t < frame_idx && t > before) before = t;
+        if (t >= frame_idx && t < after) after = t;
+    }
+    std::vector<int> selected;
+    if (before != INT_MIN) selected.push_back(before);
+    if (after != INT_MAX) selected.push_back(after);
+    std::vector<int> rest;
+    for (int t : cond_frames)
+        if (t != before && t != after) rest.push_back(t);
+    std::stable_sort(rest.begin(), rest.end(), [&](int a, int b) {
+        return std::abs(a - frame_idx) < std::abs(b - frame_idx);
+    });
+    for (int t : rest) {
+        if ((int)selected.size() >= max_cond) break;
+        selected.push_back(t);
+    }
+    return selected;
+}
+
+// Official cal_mem_score (video_tracking_multiplex.py): per-frame memory
+// selection score — sigmoid(obj_logit) rescaled to [0,1] (0 when the object
+// is absent) times the best mask IoU — stored on the just-written
+// non-conditioning memory slot for the next frame's frame_filter.
+static void sam3_store_eff_iou_score(sam3_tracker& tracker,
+                                     int inst_id,
+                                     int frame_idx,
+                                     float obj_logit,
+                                     const std::vector<float>& iou_scores) {
+    float best_iou = 0.0f;
+    for (float v : iou_scores) best_iou = std::max(best_iou, v);
+    const float sig = 1.0f / (1.0f + std::exp(-obj_logit));
+    const float norm = obj_logit > 0.0f ? sig * 2.0f - 1.0f : 0.0f;
+    auto it = tracker.mem_banks.find(inst_id);
+    if (it != tracker.mem_banks.end()) {
+        for (auto s = it->second.rbegin(); s != it->second.rend(); ++s)
+            if (s->frame_index == frame_idx) {
+                s->eff_iou_score = norm * best_iou;
+                break;
+            }
+    }
+    tracker.eff_history[inst_id][frame_idx] = norm * best_iou;
+}
+
 static sam3_prop_output sam3_propagate_single(
         sam3_tracker& tracker,
         sam3_state& state,
         const sam3_model& model,
         const sam3_masklet& masklet,
         const std::vector<sam3_memory_slot>& mem_bank,
-        const std::vector<std::pair<int, struct ggml_tensor*>>& ptr_bank) {
+        const std::vector<sam3_ptr_slot>& ptr_bank,
+        int frame_idx,
+        bool reverse) {
     sam3_prop_output output = {};
     const auto& hp = model.hparams;
     const int D = hp.neck_dim, MD = hp.mem_out_dim;
     const int H = sam3_eff_feat_size(state, hp);
     const int N = H * H;
 
-    auto sel = sam3_select_memory_frames(mem_bank, hp.num_maskmem);
+    // ── Memory slot selection (official _prepare_memory_conditioned_features)
+    // Conditioning frames first (official select_closest_cond_frames — no
+    // directional filter: a reverse pass still attends to the prompt frame
+    // recorded on the other side of the current frame), then non-conditioning
+    // frames from the tracking-order past side, earliest first (t_pos = 1 ..
+    // num_maskmem-1). With use_memory_selection the non-conditioning set is
+    // the official frame_filter result (eff_iou_score threshold + adjacent
+    // must-include); without it the bank's sliding window applies.
+    std::vector<int> cond_slot_idx, nc_slot_idx;
+    for (int i = 0; i < (int)mem_bank.size(); ++i)
+        (mem_bank[i].is_cond_frame ? cond_slot_idx : nc_slot_idx).push_back(i);
+
+    auto side_dist = [&](int slot) {
+        return reverse ? mem_bank[slot].frame_index - frame_idx
+                       : frame_idx - mem_bank[slot].frame_index;
+    };
+
+    std::vector<int> sel;
+    {
+        std::vector<int> cond_frames;
+        for (int i : cond_slot_idx)
+            cond_frames.push_back(mem_bank[i].frame_index);
+        for (int t : sam3_select_closest_cond(cond_frames, frame_idx,
+                                              hp.max_cond_frames_in_attn))
+            for (int i : cond_slot_idx)
+                if (mem_bank[i].frame_index == t) {
+                    sel.push_back(i);
+                    break;
+                }
+    }
+    const int n_cond = (int)sel.size();
+
+    // frame_filter valid frame indices (ascending, nearest last) — shared by
+    // the non-conditioning memory slots and the object pointers, exactly as
+    // in the official track_step.
+    std::vector<int> ff_valid;
+    if (hp.use_memory_selection) {
+        const bool at_boundary =
+                tracker.total_frames > 0 &&
+                ((frame_idx == 0 && !reverse) ||
+                 (frame_idx == tracker.total_frames - 1 && reverse));
+        if (!at_boundary) {
+            const int max_num =
+                    std::min(tracker.total_frames > 0 ? tracker.total_frames
+                                                      : hp.max_obj_ptrs,
+                             (int)hp.max_obj_ptrs);
+            const float mf_thr = hp.mf_threshold_x100 / 100.0f;
+            const int must_include = reverse ? frame_idx + 1 : frame_idx - 1;
+            // Candidates: the full-session eff_iou_score history on the
+            // tracking-order past side. The official frame_filter scans the
+            // whole (untrimmed) non-cond output dict; the memory bank's
+            // sliding window alone would forget old frames, so the durable
+            // eff_history is the scan source. Frames whose memory slot or
+            // pointer has been evicted simply miss in the consumers below,
+            // exactly like an official dict miss.
+            std::vector<std::pair<int, float>>
+                    scan;  // (frame, eff), nearest first
+            auto hist = tracker.eff_history.find(masklet.instance_id);
+            if (hist != tracker.eff_history.end())
+                for (const auto& [t, e] : hist->second)
+                    if ((reverse ? t - frame_idx : frame_idx - t) >= 1)
+                        scan.push_back({t, e});
+            std::stable_sort(scan.begin(), scan.end(),
+                             [&](const std::pair<int, float>& a,
+                                 const std::pair<int, float>& b) {
+                                 const int da = reverse ? a.first - frame_idx
+                                                        : frame_idx - a.first;
+                                 const int db = reverse ? b.first - frame_idx
+                                                        : frame_idx - b.first;
+                                 return da < db;
+                             });
+            for (const auto& [t, e] : scan) {
+                if ((int)ff_valid.size() >= max_num - 1) break;
+                if (e > mf_thr) ff_valid.insert(ff_valid.begin(), t);
+            }
+            // The official filter appends the adjacent frame unconditionally
+            // when missing from the list (a frame that was never processed
+            // simply misses in the later dict lookup — same here).
+            bool has_must = false;
+            for (int t : ff_valid)
+                if (t == must_include) {
+                    has_must = true;
+                    break;
+                }
+            if (!has_must) ff_valid.push_back(must_include);
+        }
+    }
+
+    std::vector<int> nc;
+    if (hp.use_memory_selection) {
+        for (int t : ff_valid)
+            for (int i : nc_slot_idx)
+                if (mem_bank[i].frame_index == t) {
+                    nc.push_back(i);
+                    break;
+                }
+    } else {
+        // Fixed sliding window: distance-ordered non-cond slots (earliest
+        // first, closest last) on the tracking-order past side only.
+        for (int i : nc_slot_idx)
+            if (side_dist(i) >= 0) nc.push_back(i);
+        std::stable_sort(nc.begin(), nc.end(), [&](int a, int b) {
+            return side_dist(a) > side_dist(b);
+        });
+    }
+    sel.insert(sel.end(), nc.begin(), nc.end());
     if (sel.empty()) return output;
 
     // ── Build prompt and prompt_pos via sam3_build_prompt_and_pos ─────────
     const int N_per_slot = N;
 
-    int n_sel = (int)sel.size();
+    const int n_sel = (int)sel.size();
+    const int L = n_sel - n_cond;  // non-cond slots, earliest-first
     std::vector<std::vector<float>> slot_feats(n_sel), slot_pes(n_sel);
     std::vector<int> spatial_tpos(n_sel, 1);  // default t_pos=1 for non-cond
     sam3_ensure_tracker_pe_caches(tracker, hp, H);
@@ -10805,26 +11005,101 @@ static sam3_prop_output sam3_propagate_single(
         // The stored spatial PE is the same sinusoidal grid, so reuse the CPU
         // cache instead of downloading it from the GPU for every memory slot.
         slot_pes[s] = tracker.cached_sinpe_64;
-        spatial_tpos[s] = mem_bank[sel[s]].is_cond_frame ? 0 : (n_sel - s);
+        // Official temporal position: cond -> 0; non-cond slot j (0-based,
+        // earliest first) -> num_maskmem - (L - j), i.e. POSITIONAL, not the
+        // raw frame distance. The closest non-cond slot gets t_pos =
+        // num_maskmem-1 -> maskmem_tpos_enc[0], exactly as in Python.
+        spatial_tpos[s] =
+                (s < n_cond) ? 0 : (hp.num_maskmem - L + (s - n_cond));
     }
 
-    int P = std::min((int)ptr_bank.size(), hp.max_obj_ptrs);
+    // ── Object pointers (official use_obj_ptrs_in_encoder selection) ──────
+    // Conditioning-frame pointers first (same closest-cond set as the memory
+    // slots), then up to max_obj_ptrs-1 non-conditioning pointers from the
+    // tracking-order past side only (frame_idx-1, -2, ... forward;
+    // frame_idx+1, +2, ... reverse — official L1505-1527). Temporal positions
+    // are non-negative tracking-order distances; with memory selection they
+    // are the 1-based position in the frame_filter valid list (the raw frame
+    // distance changes meaning once the filter drops frames). 0 is legal (the
+    // conditioning frame itself, re-processed by the first forward call).
+    std::vector<const sam3_ptr_slot*> sel_ptrs;
+    {
+        // Per-identity lookup: the same frame may legitimately hold both a
+        // cond pointer (the prompt pass) and a non-cond one (its re-processed
+        // pass), mirroring the official cond/non-cond output dicts.
+        auto pick = [&](int t, bool cond) -> const sam3_ptr_slot* {
+            const sam3_ptr_slot* best = nullptr;
+            for (const auto& s : ptr_bank)
+                if (s.frame_index == t && s.is_cond == cond) best = &s;
+            return best;
+        };
+        std::vector<int> cond_frames;
+        for (const auto& s : ptr_bank)
+            if (s.is_cond) cond_frames.push_back(s.frame_index);
+        for (int t : sam3_select_closest_cond(cond_frames, frame_idx,
+                                              hp.max_cond_frames_in_attn)) {
+            const sam3_ptr_slot* s = pick(t, true);
+            if (s) sel_ptrs.push_back(s);
+        }
+        if (hp.use_memory_selection) {
+            for (int d = 1; d <= (int)ff_valid.size() && d < hp.max_obj_ptrs;
+                 ++d) {
+                const sam3_ptr_slot* s =
+                        pick(ff_valid[ff_valid.size() - d], false);
+                if (s) sel_ptrs.push_back(s);
+            }
+        } else {
+            std::vector<const sam3_ptr_slot*> cand;
+            for (const auto& s : ptr_bank) {
+                const int dist = reverse ? s.frame_index - frame_idx
+                                         : frame_idx - s.frame_index;
+                if (!s.is_cond && dist >= 1 && dist < hp.max_obj_ptrs)
+                    cand.push_back(&s);
+            }
+            std::stable_sort(
+                    cand.begin(), cand.end(),
+                    [&](const sam3_ptr_slot* a, const sam3_ptr_slot* b) {
+                        const int da = reverse ? a->frame_index - frame_idx
+                                               : frame_idx - a->frame_index;
+                        const int db = reverse ? b->frame_index - frame_idx
+                                               : frame_idx - b->frame_index;
+                        return da < db;  // nearest first (t_diff order)
+                    });
+            sel_ptrs.insert(sel_ptrs.end(), cand.begin(), cand.end());
+        }
+    }
+    const int P = (int)sel_ptrs.size();
     std::vector<std::vector<float>> obj_ptrs(P);
     std::vector<int> ptr_tpos(P);
-    int cur_frame = tracker.frame_index;
     for (int p = 0; p < P; ++p) {
         obj_ptrs[p].resize(D);
-        ggml_backend_tensor_get(ptr_bank[p].second, obj_ptrs[p].data(), 0,
+        ggml_backend_tensor_get(sel_ptrs[p]->ptr, obj_ptrs[p].data(), 0,
                                 D * sizeof(float));
-        // Use actual frame distance (matches Python: abs(frame_idx - t))
-        ptr_tpos[p] = std::abs(cur_frame - ptr_bank[p].first);
-        if (ptr_tpos[p] < 1) ptr_tpos[p] = 1;  // minimum distance of 1
+        if (hp.use_memory_selection && !sel_ptrs[p]->is_cond) {
+            // position in the frame_filter valid list, nearest = 1
+            const int t = sel_ptrs[p]->frame_index;
+            ptr_tpos[p] = (int)ff_valid.size() -
+                          (int)(std::find(ff_valid.begin(), ff_valid.end(), t) -
+                                ff_valid.begin());
+        } else {
+            // Official: relative distance in tracking order, sign-folded by
+            // tpos_sign_mul — the non-negative distance is identical in both
+            // directions.
+            ptr_tpos[p] = std::abs(frame_idx - sel_ptrs[p]->frame_index);
+        }
     }
+
+    // Sine-PE normalization: official divides by (min(num_frames,
+    // max_obj_ptrs) - 1). Without a declared video length the denominator
+    // is max_obj_ptrs - 1, which is exact for videos of 16+ frames.
+    int t_diff_max = hp.max_obj_ptrs - 1;
+    if (tracker.total_frames > 0)
+        t_diff_max = std::min(tracker.total_frames, hp.max_obj_ptrs) - 1;
 
     auto pd = sam3_build_prompt_and_pos(
             model, slot_feats, slot_pes, spatial_tpos, obj_ptrs, ptr_tpos, H,
             &tracker.mem_tpos_enc, &tracker.mem_ptr_tpos_w,
-            &tracker.mem_ptr_tpos_b);
+            &tracker.mem_ptr_tpos_b, t_diff_max);
 
     // ── RoPE frequencies (cached) ──────────────────────────────────────
     sam3_ensure_tracker_pe_caches(tracker, hp, H);
@@ -11198,9 +11473,14 @@ static std::vector<std::pair<int, int>> sam3_match_detections(
     return matches;
 }
 
-static void sam3_update_tracker(sam3_tracker& tracker, int frame_idx) {
+static void sam3_update_tracker(sam3_tracker& tracker,
+                                int frame_idx,
+                                bool reverse) {
+    // Hotstart age / keep-alive staleness are measured in *tracking order*,
+    // so they fold to the frame distance in either direction.
     for (auto it = tracker.pending.begin(); it != tracker.pending.end();) {
-        int age = frame_idx - it->first_frame;
+        int age = reverse ? (it->first_frame - frame_idx)
+                          : (frame_idx - it->first_frame);
         if (age >= tracker.params.hotstart_delay && it->mds_sum > 0) {
             it->confirmed = true;
             tracker.masklets.push_back(std::move(*it));
@@ -11211,9 +11491,12 @@ static void sam3_update_tracker(sam3_tracker& tracker, int frame_idx) {
             ++it;
     }
     for (auto it = tracker.masklets.begin(); it != tracker.masklets.end();) {
-        if (frame_idx - it->last_seen > tracker.params.max_keep_alive) {
+        int idle = reverse ? (it->last_seen - frame_idx)
+                           : (frame_idx - it->last_seen);
+        if (idle > tracker.params.max_keep_alive) {
             tracker.mem_banks.erase(it->instance_id);
             tracker.ptr_banks.erase(it->instance_id);
+            tracker.eff_history.erase(it->instance_id);
             it = tracker.masklets.erase(it);
         } else
             ++it;
@@ -11477,7 +11760,8 @@ static void sam3_store_obj_ptr(sam3_tracker& tracker,
                                const sam3_model& model,
                                int inst_id,
                                const float* pd,
-                               int frame_idx) {
+                               int frame_idx,
+                               bool is_cond) {
     const int D = model.hparams.neck_dim;
     if (!tracker.ctx) {
         struct ggml_init_params tp = {ggml_tensor_overhead() * 4096, nullptr,
@@ -11491,8 +11775,38 @@ static void sam3_store_obj_ptr(sam3_tracker& tracker,
     tracker.owned_buffers.push_back(pb);
     ggml_backend_tensor_set(pt, pd, 0, D * sizeof(float));
     auto& bk = tracker.ptr_banks[inst_id];
-    bk.push_back({frame_idx, pt});
-    while ((int)bk.size() > model.hparams.max_obj_ptrs) bk.erase(bk.begin());
+    // Same frame + same conditioning identity → replace (official per-dict
+    // one-output-per-frame, e.g. refine re-prompting the same frame).
+    // Same frame with the OTHER identity → keep both: the official flow
+    // stores the re-processed prompt frame in non_cond_frame_outputs while
+    // cond_frame_outputs[0] remains, and both pointers participate in the
+    // encoder selection.
+    for (auto& s : bk)
+        if (s.frame_index == frame_idx && s.is_cond == is_cond) {
+            s.ptr = pt;
+            return;
+        }
+    bk.push_back({frame_idx, pt, is_cond});
+    // Evict oldest non-cond slots only: conditioning-frame pointers are kept
+    // for the whole session (the official cond_frame_outputs dict never
+    // evicts), so a long forward run cannot starve the prompt-frame pointer
+    // that reverse passes and the closest-cond selection rely on. With the
+    // closest-cond selection active (max_cond >= 0) the cap grows by the
+    // reserved cond budget; SAM2 (max_cond = -1) keeps the plain cap.
+    const int cap = model.hparams.max_obj_ptrs +
+                    (model.hparams.max_cond_frames_in_attn > 0
+                             ? model.hparams.max_cond_frames_in_attn
+                             : 0);
+    while ((int)bk.size() > cap) {
+        bool evicted = false;
+        for (auto it = bk.begin(); it != bk.end(); ++it)
+            if (!it->is_cond) {
+                bk.erase(it);
+                evicted = true;
+                break;
+            }
+        if (!evicted) bk.erase(bk.begin());
+    }
 }
 
 sam3_tracker_ptr sam3_create_tracker(const sam3_model& model,
@@ -11507,6 +11821,7 @@ sam3_tracker_ptr sam3_create_tracker(const sam3_model& model,
     }
     sam3_tracker_ptr tracker(new sam3_tracker());
     tracker->params = params;
+    tracker->total_frames = params.total_frames;
     SAM3_LOG(1, "%s: tracker created (hotstart=%d, max_keep_alive=%d)\n",
              __func__, params.hotstart_delay, params.max_keep_alive);
     return tracker;
@@ -11543,7 +11858,7 @@ sam3_result sam3_track_frame(sam3_tracker& tracker,
         auto im = tracker.mem_banks.find(id);
         if (im == tracker.mem_banks.end() || im->second.empty()) continue;
         po[id] = sam3_propagate_single(tracker, state, model, ml, im->second,
-                                       tracker.ptr_banks[id]);
+                                       tracker.ptr_banks[id], fi, false);
         if (po[id].mask_logits.empty()) continue;
         auto rs = sam3_bilinear_interpolate(
                 po[id].mask_logits.data(), po[id].mask_w, po[id].mask_h,
@@ -11567,7 +11882,7 @@ sam3_result sam3_track_frame(sam3_tracker& tracker,
         auto im = tracker.mem_banks.find(id);
         if (im == tracker.mem_banks.end() || im->second.empty()) continue;
         auto p2 = sam3_propagate_single(tracker, state, model, ml, im->second,
-                                        tracker.ptr_banks[id]);
+                                        tracker.ptr_banks[id], fi, false);
         if (!p2.mask_logits.empty()) {
             ml.last_score = p2.iou_scores[0];
             ml.last_seen = fi;
@@ -11581,10 +11896,13 @@ sam3_result sam3_track_frame(sam3_tracker& tracker,
             ml.mds_sum += (c2 > 0.001f && p2.obj_score > 0.0f) ? 1 : -1;
             sam3_encode_memory(tracker, state, model, id, p2.mask_logits.data(),
                                p2.mask_h, p2.mask_w, fi, false, p2.obj_score);
+            if (model.hparams.use_memory_selection)
+                sam3_store_eff_iou_score(tracker, id, fi, p2.obj_score,
+                                         p2.iou_scores);
             std::vector<float> op(D);
             sam3_extract_obj_ptr_cpu(model, p2.sam_token.data(), p2.obj_score,
                                      op.data());
-            sam3_store_obj_ptr(tracker, model, id, op.data(), fi);
+            sam3_store_obj_ptr(tracker, model, id, op.data(), fi, false);
         }
     }
     sam3_result nd;
@@ -11682,7 +12000,7 @@ sam3_result sam3_track_frame(sam3_tracker& tracker,
                                         D * sizeof(float));
             }
             sam3_store_obj_ptr(tracker, model, ml.instance_id, no_ptr.data(),
-                               fi);
+                               fi, true);
         }
 
         tracker.pending.push_back(std::move(ml));
@@ -11694,12 +12012,15 @@ sam3_result sam3_track_frame(sam3_tracker& tracker,
         sam3_encode_memory(tracker, state, model, id,
                            it->second.mask_logits.data(), it->second.mask_h,
                            it->second.mask_w, fi, false, it->second.obj_score);
+        if (model.hparams.use_memory_selection)
+            sam3_store_eff_iou_score(tracker, id, fi, it->second.obj_score,
+                                     po[id].iou_scores);
         std::vector<float> op(D);
         sam3_extract_obj_ptr_cpu(model, it->second.sam_token.data(),
                                  it->second.obj_score, op.data());
-        sam3_store_obj_ptr(tracker, model, id, op.data(), fi);
+        sam3_store_obj_ptr(tracker, model, id, op.data(), fi, false);
     }
-    sam3_update_tracker(tracker, fi);
+    sam3_update_tracker(tracker, fi, false);
 
     // Helper: build detection from a mask and add to result
     auto add_mask_to_result = [&](int inst_id, float score,
@@ -11767,7 +12088,8 @@ bool sam3_refine_instance(sam3_tracker& tracker,
                           const sam3_model& model,
                           int instance_id,
                           const std::vector<sam3_point>& pos_points,
-                          const std::vector<sam3_point>& neg_points) {
+                          const std::vector<sam3_point>& neg_points,
+                          int frame_idx) {
     const int D = model.hparams.neck_dim;
     sam3_masklet* tgt = nullptr;
     for (auto& ml : tracker.masklets)
@@ -11792,9 +12114,15 @@ bool sam3_refine_instance(sam3_tracker& tracker,
     pvs.multimask = false;
     auto r = sam3_segment_pvs(state, model, pvs);
     if (r.detections.empty()) return false;
-    // tracker.frame_index points to the *next* frame; the refinement applies
-    // to the frame that was last tracked / encoded.
-    int fi = std::max(0, tracker.frame_index - 1);
+    // Conditioning frame: -1 = the frame just tracked / encoded; an explicit
+    // value conditions on that frame (official add_prompt at any frame).
+    if (frame_idx < -1) {
+        AICORE_LOG_ERROR("[sam3] ", "%s: invalid frame_idx %d\n", __func__,
+                         frame_idx);
+        return false;
+    }
+    int fi =
+            (frame_idx >= 0) ? frame_idx : std::max(0, tracker.frame_index - 1);
     const auto& rdet = r.detections[0];
     tgt->last_score = rdet.score;
     tgt->last_seen = fi;
@@ -11805,14 +12133,18 @@ bool sam3_refine_instance(sam3_tracker& tracker,
     } else {
         std::fill(op.begin(), op.end(), 0.0f);
     }
-    sam3_store_obj_ptr(tracker, model, instance_id, op.data(), fi);
+    sam3_store_obj_ptr(tracker, model, instance_id, op.data(), fi, false);
+    // Official propagate_in_video(start_frame_idx) semantics: the next
+    // forward propagate re-processes the refined frame first.
+    tracker.frame_index = fi;
     return true;
 }
 
 int sam3_tracker_add_instance(sam3_tracker& tracker,
                               sam3_state& state,
                               const sam3_model& model,
-                              const sam3_pvs_params& pvs_params) {
+                              const sam3_pvs_params& pvs_params,
+                              int frame_idx) {
     const int D = model.hparams.neck_dim;
     const int mask_hw = sam3_eff_feat_size(state, model.hparams) * 4;
 
@@ -11830,10 +12162,17 @@ int sam3_tracker_add_instance(sam3_tracker& tracker,
     }
 
     int inst_id = tracker.next_inst_id++;
-    // tracker.frame_index points to the *next* frame to process;
-    // the instance is being added on the frame that was just tracked.
-    int fi = tracker.frame_index - 1;
-    if (fi < 0) fi = 0;
+    // Conditioning frame: -1 = the frame just tracked / encoded (frame 0 on a
+    // fresh tracker); an explicit value conditions on that frame — the caller
+    // must have encoded its image. This is what enables starting a track at
+    // an arbitrary video position (e.g. reverse tracking from frame N).
+    if (frame_idx < -1) {
+        AICORE_LOG_ERROR("[sam3] ", "%s: invalid frame_idx %d\n", __func__,
+                         frame_idx);
+        return -1;
+    }
+    int fi =
+            (frame_idx >= 0) ? frame_idx : std::max(0, tracker.frame_index - 1);
 
     // Create synthetic 288x288 logits from the binary mask.
     // sam3_encode_memory applies sigmoid then scale/bias, so +6/-6 gives
@@ -11869,7 +12208,7 @@ int sam3_tracker_add_instance(sam3_tracker& tracker,
     } else {
         std::fill(op.begin(), op.end(), 0.0f);
     }
-    sam3_store_obj_ptr(tracker, model, inst_id, op.data(), fi);
+    sam3_store_obj_ptr(tracker, model, inst_id, op.data(), fi, true);
 
     // Create confirmed masklet
     sam3_masklet ml;
@@ -11881,6 +12220,11 @@ int sam3_tracker_add_instance(sam3_tracker& tracker,
     ml.mds_sum = 1;
     tracker.masklets.push_back(std::move(ml));
 
+    // Official propagate_in_video semantics: forward propagation re-processes
+    // the prompt frame first (range(start, end]); reverse starts at fi-1
+    // (range(start-1, ..., -1)).
+    tracker.frame_index = fi;
+
     return inst_id;
 }
 
@@ -11888,7 +12232,8 @@ int sam3_tracker_add_instance_from_mask(sam3_tracker& tracker,
                                         sam3_state& state,
                                         const sam3_model& model,
                                         const sam3_mask& mask,
-                                        float obj_score) {
+                                        float obj_score,
+                                        int frame_idx) {
     const int D = model.hparams.neck_dim;
     const int mask_hw = sam3_eff_feat_size(state, model.hparams) * 4;
 
@@ -11903,10 +12248,16 @@ int sam3_tracker_add_instance_from_mask(sam3_tracker& tracker,
     }
 
     int inst_id = tracker.next_inst_id++;
-    // tracker.frame_index points to the *next* frame to process; the instance
-    // is being added on the frame that was just encoded.
-    int fi = tracker.frame_index - 1;
-    if (fi < 0) fi = 0;
+    // Conditioning frame: -1 = the frame just encoded (frame 0 on a fresh
+    // tracker); an explicit value conditions on that frame — the caller must
+    // have encoded its image (same convention as sam3_tracker_add_instance).
+    if (frame_idx < -1) {
+        AICORE_LOG_ERROR("[sam3] ", "%s: invalid frame_idx %d\n", __func__,
+                         frame_idx);
+        return -1;
+    }
+    int fi =
+            (frame_idx >= 0) ? frame_idx : std::max(0, tracker.frame_index - 1);
 
     // Resample the supplied binary mask to the memory resolution and turn it
     // into synthetic logits. sam3_encode_memory applies sigmoid then
@@ -11952,12 +12303,12 @@ int sam3_tracker_add_instance_from_mask(sam3_tracker& tracker,
         if (mb != tracker.mem_banks.end() && !mb->second.empty()) {
             // sam3_propagate_single reads no masklet fields; a default probe is
             // fine.
-            const std::vector<std::pair<int, struct ggml_tensor*>>
-                    empty_ptr_bank;
+            const std::vector<sam3_ptr_slot> empty_ptr_bank;
             sam3_masklet probe;
             probe.instance_id = inst_id;
             sam3_prop_output seed = sam3_propagate_single(
-                    tracker, state, model, probe, mb->second, empty_ptr_bank);
+                    tracker, state, model, probe, mb->second, empty_ptr_bank,
+                    fi, false);
             if ((int)seed.sam_token.size() == D) {
                 // seed.obj_score is the raw presence logit (thresholded at 0
                 // inside sam3_extract_obj_ptr_cpu), matching the propagate
@@ -11976,7 +12327,7 @@ int sam3_tracker_add_instance_from_mask(sam3_tracker& tracker,
         ggml_backend_tensor_get(model.no_obj_ptr, obj_ptr.data(), 0,
                                 D * sizeof(float));
     }
-    sam3_store_obj_ptr(tracker, model, inst_id, obj_ptr.data(), fi);
+    sam3_store_obj_ptr(tracker, model, inst_id, obj_ptr.data(), fi, true);
 
     // Create confirmed masklet
     sam3_masklet ml;
@@ -11987,6 +12338,10 @@ int sam3_tracker_add_instance_from_mask(sam3_tracker& tracker,
     ml.confirmed = true;
     ml.mds_sum = 1;
     tracker.masklets.push_back(std::move(ml));
+
+    // Official propagate_in_video semantics: forward propagation re-processes
+    // the prompt frame first (range(start, end]); reverse starts at fi-1.
+    tracker.frame_index = fi;
 
     return inst_id;
 }
@@ -12002,6 +12357,7 @@ void sam3_tracker_reset(sam3_tracker& tracker) {
     tracker.pending.clear();
     tracker.mem_banks.clear();
     tracker.ptr_banks.clear();
+    tracker.eff_history.clear();
     for (auto* b : tracker.owned_buffers)
         if (b) ggml_backend_buffer_free(b);
     tracker.owned_buffers.clear();
@@ -12055,8 +12411,10 @@ sam3_tracker_ptr sam3_create_visual_tracker(
     vp.max_keep_alive = params.max_keep_alive;
     vp.recondition_every = params.recondition_every;
     vp.fill_hole_area = params.fill_hole_area;
+    vp.total_frames = params.total_frames;
     sam3_tracker_ptr tracker(new sam3_tracker());
     tracker->params = vp;
+    tracker->total_frames = params.total_frames;
     SAM3_LOG(1, "%s: visual-only tracker created (max_keep_alive=%d)\n",
              __func__, params.max_keep_alive);
     return tracker;
@@ -12080,7 +12438,7 @@ sam3_result sam3_propagate_frame(sam3_tracker& tracker,
         auto im = tracker.mem_banks.find(id);
         if (im == tracker.mem_banks.end() || im->second.empty()) continue;
         po[id] = sam3_propagate_single(tracker, state, model, ml, im->second,
-                                       tracker.ptr_banks[id]);
+                                       tracker.ptr_banks[id], fi, false);
         if (po[id].mask_logits.empty()) continue;
         auto rs = sam3_bilinear_interpolate(
                 po[id].mask_logits.data(), po[id].mask_w, po[id].mask_h,
@@ -12106,7 +12464,7 @@ sam3_result sam3_propagate_frame(sam3_tracker& tracker,
         auto im = tracker.mem_banks.find(id);
         if (im == tracker.mem_banks.end() || im->second.empty()) continue;
         auto p2 = sam3_propagate_single(tracker, state, model, ml, im->second,
-                                        tracker.ptr_banks[id]);
+                                        tracker.ptr_banks[id], fi, false);
         if (!p2.mask_logits.empty()) {
             ml.last_score = p2.iou_scores[0];
             ml.last_seen = fi;
@@ -12125,10 +12483,13 @@ sam3_result sam3_propagate_frame(sam3_tracker& tracker,
                 pm[id].data[p] = r2[p] > 0.0f ? 255 : 0;
             sam3_encode_memory(tracker, state, model, id, p2.mask_logits.data(),
                                p2.mask_h, p2.mask_w, fi, false, p2.obj_score);
+            if (model.hparams.use_memory_selection)
+                sam3_store_eff_iou_score(tracker, id, fi, p2.obj_score,
+                                         p2.iou_scores);
             std::vector<float> op(D);
             sam3_extract_obj_ptr_cpu(model, p2.sam_token.data(), p2.obj_score,
                                      op.data());
-            sam3_store_obj_ptr(tracker, model, id, op.data(), fi);
+            sam3_store_obj_ptr(tracker, model, id, op.data(), fi, false);
         }
     }
 
@@ -12140,14 +12501,17 @@ sam3_result sam3_propagate_frame(sam3_tracker& tracker,
         sam3_encode_memory(tracker, state, model, id,
                            it->second.mask_logits.data(), it->second.mask_h,
                            it->second.mask_w, fi, false, it->second.obj_score);
+        if (model.hparams.use_memory_selection)
+            sam3_store_eff_iou_score(tracker, id, fi, it->second.obj_score,
+                                     po[id].iou_scores);
         std::vector<float> op(D);
         sam3_extract_obj_ptr_cpu(model, it->second.sam_token.data(),
                                  it->second.obj_score, op.data());
-        sam3_store_obj_ptr(tracker, model, id, op.data(), fi);
+        sam3_store_obj_ptr(tracker, model, id, op.data(), fi, false);
     }
 
     // ── Update tracker state (confirmation / eviction) ───────────────────
-    sam3_update_tracker(tracker, fi);
+    sam3_update_tracker(tracker, fi, false);
 
     // ── Build result ─────────────────────────────────────────────────────
     auto add_mask_to_result = [&](int inst_id, float score,

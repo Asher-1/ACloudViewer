@@ -9,10 +9,10 @@
 
 #include <filesystem>
 
-#include "base/camera_models.h"
-#include "base/database.h"
-#include "base/reconstruction.h"
 #include "feature/types.h"
+#include "scene/database.h"
+#include "scene/reconstruction.h"
+#include "sensor/models.h"
 
 namespace colmap {
 

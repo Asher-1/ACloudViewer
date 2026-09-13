@@ -29,7 +29,7 @@
 
 #include "geometry/pose_prior.h"
 
-#include "util/math.h"
+#include "math/math.h"
 #include "util/logging.h"
 
 namespace colmap {

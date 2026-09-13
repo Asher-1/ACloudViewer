@@ -212,6 +212,11 @@ struct sam3_video_params {
     int max_keep_alive = 30;
     int recondition_every = 16;
     int fill_hole_area = 16;
+    /* Optional total video length hint. The official tracker normalizes the
+    ** object-pointer temporal encoding by min(num_frames, 16) - 1; when this
+    ** is <= 0 (unknown, e.g. streaming), max_obj_ptrs (16) is assumed, which
+    ** is exact for videos of 16+ frames. */
+    int total_frames = -1;
 };
 
 struct sam3_video_info {
@@ -330,23 +335,39 @@ SAM3_API sam3_result sam3_track_frame(sam3_tracker& tracker,
                                       const sam3_model& model,
                                       const sam3_image& frame);
 
-/* Refine a tracked instance with interactive point prompts. */
+/*
+** Refine a tracked instance with interactive point prompts. The image of the
+** refined frame must already be encoded. frame_idx selects the frame the
+** refinement applies to: -1 (default) = the frame just processed
+** (tracker.frame_index - 1); an explicit value must be < tracker.frame_index.
+** After the call, tracker.frame_index points at the refined frame, so the
+** next forward propagate re-processes it first (official
+** propagate_in_video(start_frame_idx) semantics).
+*/
 SAM3_API bool sam3_refine_instance(sam3_tracker& tracker,
                                    sam3_state& state,
                                    const sam3_model& model,
                                    int instance_id,
                                    const std::vector<sam3_point>& pos_points,
-                                   const std::vector<sam3_point>& neg_points);
+                                   const std::vector<sam3_point>& neg_points,
+                                   int frame_idx = -1);
 
 /*
-** Add a new instance to the tracker from PVS prompts (points/box) on the
-** current frame.  The image must already be encoded (via sam3_track_frame
-** or sam3_encode_image).  Returns assigned instance_id, or -1 on failure.
+** Add a new instance to the tracker from PVS prompts (points/box).  The image
+** of the prompt frame must already be encoded (via sam3_track_frame,
+** sam3_encode_image, or sam3_propagate_frame).  frame_idx selects the
+** conditioning frame: -1 (default) = the frame just processed
+** (tracker.frame_index - 1, or frame 0 on a fresh tracker); an explicit
+** value conditions on that frame (the caller must have encoded its image)
+** and positions the tracker there — forward propagation then starts by
+** re-processing the prompt frame (official range(start, end]).
+** Returns assigned instance_id, or -1 on failure.
 */
 SAM3_API int sam3_tracker_add_instance(sam3_tracker& tracker,
                                        sam3_state& state,
                                        const sam3_model& model,
-                                       const sam3_pvs_params& pvs_params);
+                                       const sam3_pvs_params& pvs_params,
+                                       int frame_idx = -1);
 
 /*
 ** Add a new instance to the tracker from an existing binary mask on the
@@ -355,7 +376,8 @@ SAM3_API int sam3_tracker_add_instance(sam3_tracker& tracker,
 ** sam3_encode_image).  The mask (0/255, any resolution) is resampled to the
 ** tracker's memory resolution and written straight into the memory bank as a
 ** conditioning frame, so propagation tracks exactly the supplied mask rather
-** than a mask re-derived from points/box.
+** than a mask re-derived from points/box.  frame_idx follows the same
+** convention as sam3_tracker_add_instance.
 **
 ** The prompt path produces no SAM decoder token, so the object pointer is
 ** instead obtained by running one propagation decode against the just-written
@@ -370,7 +392,8 @@ SAM3_API int sam3_tracker_add_instance_from_mask(sam3_tracker& tracker,
                                                  sam3_state& state,
                                                  const sam3_model& model,
                                                  const sam3_mask& mask,
-                                                 float obj_score = 1.0f);
+                                                 float obj_score = 1.0f,
+                                                 int frame_idx = -1);
 
 /* Return the current frame index of the tracker. */
 SAM3_API int sam3_tracker_frame_index(const sam3_tracker& tracker);
@@ -387,6 +410,9 @@ struct sam3_visual_track_params {
     int max_keep_alive = 30;
     int recondition_every = 16;
     int fill_hole_area = 16;
+    /* Optional total video length hint for the object-pointer temporal
+    ** encoding (see sam3_video_params::total_frames). */
+    int total_frames = -1;
 };
 
 /*

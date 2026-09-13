@@ -31,8 +31,8 @@
 
 #include "estimators/cost_functions/calibration.h"
 #include "estimators/two_view_geometry.h"
-#include "base/essential_matrix.h"
-#include "base/two_view_geometry.h"
+#include "geometry/essential_matrix.h"
+#include "scene/two_view_geometry.h"
 #include "util/hash_containers.h"
 #include "util/logging.h"
 #include "util/threading.h"

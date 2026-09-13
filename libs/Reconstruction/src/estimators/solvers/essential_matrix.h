@@ -10,7 +10,7 @@
 #include <Eigen/Core>
 #include <vector>
 
-#include "base/essential_matrix.h"
+#include "geometry/essential_matrix.h"
 
 namespace colmap {
 

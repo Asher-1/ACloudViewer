@@ -54,7 +54,7 @@ downloaded.
 ## Models
 
 All published GGUF models of the
-[cloudViewer_downloads "sam" release](https://github.com/Asher-1/cloudViewer_downloads/releases/tag/sam)
+[Hugging Face mirror Asher-1/sam3-gguf](https://huggingface.co/Asher-1/sam3-gguf)
 (39 models) are listed in the model combo, grouped by family.
 See [models/MODEL_CARD.md](models/MODEL_CARD.md) for the complete model catalog
 with sizes and recommended defaults.
@@ -66,9 +66,9 @@ with sizes and recommended defaults.
 | `sam2.1_hiera_{tiny,small,base_plus,large}-*` | f16 / f32 / q4_0 / q4_1 / q8_0 | ❌ |
 | `sam2_hiera_{tiny,base_plus,large}-*` | f16 / f32 / q4_0 / q4_1 / q8_0 | ❌ |
 
-`sam3-f32` is intentionally not published (too large) and absent from the
+`sam3-f32` is intentionally absent from the
 catalog. Recommended default:
-[`sam2.1_hiera_tiny_f16.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/sam/sam2.1_hiera_tiny_f16.gguf).
+[`sam2.1_hiera_tiny_f16.gguf`](https://huggingface.co/Asher-1/sam3-gguf/resolve/main/sam2.1_hiera_tiny_f16.gguf).
 
 ## Usage
 
@@ -128,4 +128,4 @@ video tab builds only when OpenCV capture is available
 - [sam3-ggml](https://github.com/Asher-1/sam3-ggml) (upstream C++ engine)
 - [Segment Anything](https://github.com/facebookresearch/segment-anything)
   (SAM 2 / 2.1 / 3 models)
-- [cloudViewer_downloads sam release](https://github.com/Asher-1/cloudViewer_downloads/releases/tag/sam)
+- [Hugging Face mirror Asher-1/sam3-gguf](https://huggingface.co/Asher-1/sam3-gguf)

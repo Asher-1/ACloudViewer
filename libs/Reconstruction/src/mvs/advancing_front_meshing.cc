@@ -43,7 +43,7 @@
 #if defined(COLMAP_ADVANCING_FRONT_MESHING_ENABLED)
 
 #include "mvs/fusion.h"
-#include "base/reconstruction.h"
+#include "scene/reconstruction.h"
 #include "util/misc.h"
 #include "util/ply.h"
 #include "util/threading.h"

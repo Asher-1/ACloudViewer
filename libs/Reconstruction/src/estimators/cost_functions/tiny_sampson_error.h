@@ -13,8 +13,8 @@
 #include <cmath>
 #include <vector>
 
-#include "base/pose.h"
 #include "estimators/cost_functions/sampson_error.h"
+#include "geometry/pose.h"
 #include "util/types.h"
 
 namespace colmap {

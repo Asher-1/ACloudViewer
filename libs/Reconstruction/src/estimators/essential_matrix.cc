@@ -37,10 +37,10 @@
 #include <Eigen/LU>
 #include <Eigen/SVD>
 
-#include "base/polynomial.h"
+#include "math/polynomial.h"
 #include "estimators/utils.h"
 #include "util/logging.h"
-#include "util/math.h"
+#include "math/math.h"
 
 namespace colmap {
 

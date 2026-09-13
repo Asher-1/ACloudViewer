@@ -7,11 +7,11 @@
 
 #include "controllers/da3_depth_controller.h"
 
-#include "base/camera.h"
-#include "base/database.h"
-#include "base/image.h"
-#include "base/point3d.h"
-#include "base/reconstruction.h"
+#include "scene/camera.h"
+#include "scene/database.h"
+#include "scene/image.h"
+#include "scene/point3d.h"
+#include "scene/reconstruction.h"
 #include "util/logging.h"
 #include "util/misc.h"
 #include "util/threading.h"
@@ -31,7 +31,7 @@
 #include "util/download.h"
 #endif
 
-#include "util/bitmap.h"
+#include "sensor/bitmap.h"
 
 #include <Eigen/Core>
 
@@ -208,10 +208,13 @@ bool IsImageFile(const std::string& path) {
 }  // namespace
 
 std::vector<DA3ImageEntry> CollectDA3ImageEntries(
-    const std::string& image_root) {
+    const std::filesystem::path& image_root) {
     const std::string root =
-        EnsureTrailingSlash(StringReplace(image_root, "\\", "/"));
-    std::vector<std::string> files = GetRecursiveFileList(root);
+        EnsureTrailingSlash(StringReplace(image_root.string(), "\\", "/"));
+    std::vector<std::string> files;
+    for (const auto& path : GetRecursiveFileList(root)) {
+      files.push_back(path.string());
+    }
     std::sort(files.begin(), files.end());
 
     std::vector<DA3ImageEntry> entries;
@@ -239,8 +242,8 @@ bool DA3ConfigsMatchForStereoReuse(const DA3Config& sparse,
            DA3ModelSupportsStereo(stereo.model_type);
 }
 
-bool DA3OutputsAreStale(const std::string& image_root,
-                        const std::string& output_marker_path,
+bool DA3OutputsAreStale(const std::filesystem::path& image_root,
+                        const std::filesystem::path& output_marker_path,
                         bool force_recompute) {
     if (force_recompute) {
         return true;
@@ -435,22 +438,22 @@ void RemoveColmapGeometricStereoMaps(const std::string& dense_path) {
     RemoveStereoMapsWithSuffix(dense_path, ".geometric.bin");
 }
 
-void WriteDA3PlaceholderDatabase(const std::string& database_path,
+void WriteDA3PlaceholderDatabase(const std::filesystem::path& database_path,
                                  const Reconstruction& reconstruction) {
-    Database database(database_path);
+    auto database = Database::Open(database_path);
     std::unordered_map<camera_t, camera_t> camera_id_map;
     for (const auto& [camera_id, camera] : reconstruction.Cameras()) {
-        camera_id_map[camera_id] = database.WriteCamera(camera);
+        camera_id_map[camera_id] = database->WriteCamera(camera);
     }
     for (const auto image_id : reconstruction.RegImageIds()) {
         Image image = reconstruction.Image(image_id);
         image.SetCameraId(camera_id_map.at(image.CameraId()));
-        database.WriteImage(image);
+        database->WriteImage(image);
     }
 }
 
-bool SyncWorkspaceSparseFromDense(const std::string& workspace_path,
-                                  const std::string& dense_path,
+bool SyncWorkspaceSparseFromDense(const std::filesystem::path& workspace_path,
+                                  const std::filesystem::path& dense_path,
                                   int reconstruction_index) {
     std::string src_sparse = JoinPaths(dense_path, "sparse");
     if (!ExistsFile(JoinPaths(src_sparse, "images.bin")) &&
@@ -505,7 +508,7 @@ bool SyncWorkspaceSparseFromDense(const std::string& workspace_path,
     return true;
 }
 
-size_t CountDA3Images(const std::string& image_root) {
+size_t CountDA3Images(const std::filesystem::path& image_root) {
     return CollectDA3ImageEntries(image_root).size();
 }
 
@@ -534,9 +537,10 @@ int ComputeDA3ImgResizeTarget(const std::vector<std::string>& image_paths,
     return long_edge;
 }
 
-bool WriteExifPlaceholderSparseModel(const std::string& image_root,
-                                     const std::string& sparse_output_path,
-                                     double default_focal_length_factor) {
+bool WriteExifPlaceholderSparseModel(
+    const std::filesystem::path& image_root,
+    const std::filesystem::path& sparse_output_path,
+    double default_focal_length_factor) {
     const auto entries = CollectDA3ImageEntries(image_root);
     if (entries.empty()) {
         LOG(ERROR) << "EXIF bootstrap: no images under " << image_root;
@@ -613,7 +617,7 @@ bool WriteExifPlaceholderSparseModel(const std::string& image_root,
     }
 
     if (!ExistsDir(sparse_output_path)) {
-        boost::filesystem::create_directories(sparse_output_path);
+        boost::filesystem::create_directories(sparse_output_path.string());
     }
     reconstruction.Write(sparse_output_path);
 
@@ -624,7 +628,8 @@ bool WriteExifPlaceholderSparseModel(const std::string& image_root,
     }
 
     RECON_LOG_DEBUG("DA3 EXIF bootstrap: wrote placeholder sparse model (%d images, %zu cameras) to %s\n",
-                    registered, camera_key_to_id.size(), sparse_output_path.c_str());
+                    registered, camera_key_to_id.size(),
+                    sparse_output_path.string().c_str());
     return true;
 }
 
@@ -2355,10 +2360,13 @@ std::string DA3DepthController::ResolveModelPath(const DA3Config& config) {
 #endif
 }
 
-DA3DepthController::DA3DepthController(const DA3Config& config,
-                                       const std::string& image_path,
-                                       const std::string& output_path)
-    : config_(config), image_path_(image_path), output_path_(output_path) {}
+DA3DepthController::DA3DepthController(
+    const DA3Config& config,
+    const std::filesystem::path& image_path,
+    const std::filesystem::path& output_path)
+    : config_(config),
+      image_path_(image_path.string()),
+      output_path_(output_path.string()) {}
 
 void DA3DepthController::Run() {
     success_ = true;

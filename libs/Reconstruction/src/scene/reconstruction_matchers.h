@@ -12,8 +12,8 @@
 #include <limits>
 #include <optional>
 
-#include "base/reconstruction.h"
 #include "estimators/alignment.h"
+#include "scene/reconstruction.h"
 
 namespace colmap {
 

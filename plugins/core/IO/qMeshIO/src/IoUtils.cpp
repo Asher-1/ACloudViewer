@@ -343,10 +343,10 @@ ccMesh *newCCMeshFromAIMesh(const aiMesh *inMesh) {
         name = QStringLiteral("Mesh");
     }
 
-    CVLog::Print(QStringLiteral("[qMeshIO] Mesh '%1' has %2 verts & %3 faces")
-                         .arg(name,
-                              QLocale::system().toString(inMesh->mNumVertices),
-                              QLocale::system().toString(inMesh->mNumFaces)));
+    CVLog::PrintVerbose(
+            QStringLiteral("[qMeshIO] Mesh '%1' has %2 verts & %3 faces")
+                    .arg(name, QLocale::system().toString(inMesh->mNumVertices),
+                         QLocale::system().toString(inMesh->mNumFaces)));
 
     if (!inMesh->HasPositions() || !inMesh->HasFaces()) {
         CVLog::Warning(
@@ -505,7 +505,7 @@ ccMesh *newCCMeshFromAIMesh(const aiMesh *inMesh) {
     newMesh->setVisible(true);
 
     if (!newPC->hasNormals()) {
-        CVLog::Warning(
+        CVLog::PrintVerbose(
                 QStringLiteral("[qMeshIO] Mesh '%1' does not have normals - "
                                "will compute them per vertex automatically!")
                         .arg(name));
@@ -518,6 +518,88 @@ ccMesh *newCCMeshFromAIMesh(const aiMesh *inMesh) {
     newMesh->addChild(newPC);
 
     return newMesh;
+}
+
+ccPointCloud *newCCPointCloudFromAIMesh(const aiMesh *inMesh) {
+    QString name(inMesh->mName.C_Str());
+
+    if (name.isEmpty()) {
+        name = QStringLiteral("Points");
+    }
+
+    CVLog::Print(QStringLiteral("[qMeshIO] Point cloud '%1' has %2 points")
+                         .arg(name, QLocale::system().toString(
+                                            inMesh->mNumVertices)));
+
+    if (inMesh->mNumVertices == 0) {
+        CVLog::Warning(
+                QStringLiteral(
+                        "[qMeshIO] Point cloud '%1' does not have any points")
+                        .arg(name));
+        return nullptr;
+    }
+
+    auto newPC = new ccPointCloud(name);
+
+    if (!newPC->reserveThePointsTable(inMesh->mNumVertices)) {
+        CVLog::Warning(
+                QStringLiteral(
+                        "[qMeshIO] Cannot allocate points for point cloud '%1'")
+                        .arg(name));
+        delete newPC;
+        return nullptr;
+    }
+
+    // vertex colors
+    bool hasVertexColors = inMesh->HasVertexColors(0);
+    if (hasVertexColors && !newPC->reserveTheRGBTable()) {
+        hasVertexColors = false;
+        CVLog::Warning(
+                QStringLiteral(
+                        "[qMeshIO] Cannot allocate colors for point cloud '%1'")
+                        .arg(name));
+    }
+
+    // normals - ignore Assimp normal arrays that contain zero-length
+    // placeholders (same rule as newCCMeshFromAIMesh)
+    bool hasUsableNormals = aiMeshHasUsableNormals(inMesh);
+    if (hasUsableNormals && !newPC->reserveTheNormsTable()) {
+        hasUsableNormals = false;
+        CVLog::Warning(QStringLiteral("[qMeshIO] Cannot allocate normals for "
+                                      "point cloud '%1'")
+                               .arg(name));
+    }
+
+    for (unsigned int i = 0; i < inMesh->mNumVertices; ++i) {
+        const aiVector3D &point = inMesh->mVertices[i];
+
+        newPC->addPoint(CCVector3(static_cast<PointCoordinateType>(point.x),
+                                  static_cast<PointCoordinateType>(point.y),
+                                  static_cast<PointCoordinateType>(point.z)));
+
+        if (hasVertexColors) {
+            const aiColor4D &colors = inMesh->mColors[0][i];
+
+            newPC->addRGBColor(
+                    ecvColor::Rgb(static_cast<ColorCompType>(colors.r * 255),
+                                  static_cast<ColorCompType>(colors.g * 255),
+                                  static_cast<ColorCompType>(colors.b * 255)));
+        }
+
+        if (hasUsableNormals) {
+            const aiVector3D &normal = inMesh->mNormals[i];
+
+            newPC->addNorm(
+                    CCVector3(static_cast<PointCoordinateType>(normal.x),
+                              static_cast<PointCoordinateType>(normal.y),
+                              static_cast<PointCoordinateType>(normal.z)));
+        }
+    }
+
+    newPC->showColors(hasVertexColors);
+    newPC->showNormals(hasUsableNormals);
+
+    return newPC;
 }
 
 ccGLMatrix convertMatrix(const aiMatrix4x4 &inAssimpMatrix) {

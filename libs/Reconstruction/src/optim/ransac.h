@@ -12,11 +12,11 @@
 #include <stdexcept>
 #include <vector>
 
+#include "math/random.h"
 #include "optim/random_sampler.h"
 #include "optim/support_measurement.h"
 #include "util/alignment.h"
 #include "util/logging.h"
-#include "util/random.h"
 
 namespace colmap {
 

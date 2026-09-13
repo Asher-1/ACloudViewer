@@ -15,7 +15,7 @@ same layout and interactions.
 
 - Built with `-DAICore_ENABLED=ON -DPLUGIN_STANDARD_QSAM3=ON`
 - A GGUF model from the
-  [cloudViewer_downloads "sam" release](https://github.com/Asher-1/cloudViewer_downloads/releases/tag/sam)
+  [Hugging Face mirror Asher-1/sam3-gguf](https://huggingface.co/Asher-1/sam3-gguf)
   (the plugin's model combo lists all 39 published models; a local file can be
   loaded via **Browse...**)
 

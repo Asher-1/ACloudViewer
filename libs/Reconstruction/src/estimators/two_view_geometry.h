@@ -9,11 +9,11 @@
 
 #include <vector>
 
-#include "base/camera.h"
-#include "base/image.h"
-#include "base/two_view_geometry.h"
 #include "feature/types.h"
 #include "optim/ransac.h"
+#include "scene/camera.h"
+#include "scene/image.h"
+#include "scene/two_view_geometry.h"
 #include "util/hash_containers.h"
 
 namespace colmap {

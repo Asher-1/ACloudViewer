@@ -357,6 +357,29 @@ ecvGenericGLDisplay* applyLightIntensityToObjects(ccHObject* obj,
         return nullptr;
     }
 
+    // Composite fast path: a container owning a composite group carries one
+    // shared material — apply the intensity at group level (O(1)) instead of
+    // recursing per leaf. The per-leaf recursion used to evict ALL leaves
+    // from the group (one [light] eviction each), destroying the aggregation
+    // and blanking every mesh until the next full draw-tree rebuild.
+    const QString containerId = obj->getViewId();
+    if (!containerId.isEmpty() && view->hasCompositeGroup(containerId)) {
+        view->setObjectLightIntensity(containerId, intensity, triggerRender);
+        ecvGenericGLDisplay* previewView = view;
+        for (unsigned i = 0; i < obj->getChildrenNumber(); ++i) {
+            ccHObject* child = obj->getChild(i);
+            const QString childId = child ? child->getViewId() : QString();
+            if (!childId.isEmpty() && view->isCompositeLeafEntity(childId)) {
+                continue;  // covered by the group material
+            }
+            if (auto* childView = applyLightIntensityToObjects(
+                        child, intensity, view, triggerRender)) {
+                previewView = childView;
+            }
+        }
+        return previewView;
+    }
+
     ecvGenericGLDisplay* previewView = nullptr;
     if (isOpacityRenderable(obj)) {
         const QString viewID = obj->getViewId();
@@ -1123,7 +1146,18 @@ void ccPropertiesTreeDelegate::fillWithPointCloud(ccGenericPointCloud* _obj) {
     setPointGaussianSubPropsEnabled(_obj->pointGaussianEnabled());
 
     // scalar field
+    // Selection-chain probe: the scalar-field section (histogram over all
+    // scalar values) is the dominant suspect of the fillModel cost on
+    // massive clouds.
+    QElapsedTimer sfSectionTimer;
+    sfSectionTimer.start();
     fillSFWithPointCloud(_obj);
+    if (sfSectionTimer.elapsed() > 20) {
+        CVLog::Print(
+                "[selection] fillSFWithPointCloud took %lld ms (%llu values)",
+                static_cast<long long>(sfSectionTimer.elapsed()),
+                static_cast<unsigned long long>(_obj->size()));
+    }
 
     // scan grid structure(s), waveform, etc.
     if (_obj->isA(CV_TYPES::POINT_CLOUD)) {
@@ -1315,6 +1349,23 @@ void ccPropertiesTreeDelegate::fillWithMesh(ccGenericMesh* _obj) {
     assert(_obj && m_model);
 
     bool isSubMesh = _obj->isA(CV_TYPES::SUB_MESH);
+
+    // Display-state probe (ACV_DIAGNOSTICS=1): settles which consumer
+    // owns each mesh appearance state (wire/points/normals/stipple/gaussian)
+    // after load and edits. Off by default — fillModel runs per selection.
+    if (CVLog::diagnosticsEnabled()) {
+        CVLog::Print(
+                "[mesh-state] '%s' wire=%d points=%d hasNormals=%d "
+                "normalsShown=%d "
+                "stipple=%d gaussian=%d materials=%d tex=%d",
+                _obj->getName().toLatin1().constData(),
+                _obj->isShownAsWire() ? 1 : 0, _obj->isShownAsPoints() ? 1 : 0,
+                _obj->hasNormals() ? 1 : 0, _obj->normalsShown() ? 1 : 0,
+                _obj->stipplingEnabled() ? 1 : 0,
+                _obj->pointGaussianEnabled() ? 1 : 0,
+                _obj->hasMaterials() && _obj->materialsShown() ? 1 : 0,
+                _obj->hasTextures() && _obj->materialsShown() ? 1 : 0);
+    }
 
     addSeparator(isSubMesh ? tr("Sub-mesh") : tr("Mesh"));
 
@@ -2885,11 +2936,18 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
                 }
             }
 
-            // Set both controls (slider triggers spinbox sync via signal)
+            // Set both controls. Programmatic init must NOT emit
+            // valueChanged: the slider/spinbox are wired to
+            // lightIntensityChanged, whose handler mutates the render
+            // pipeline. On massive GLB imports that init emission evicted the
+            // picked leaf from its composite group (and folder selections
+            // evicted every leaf — a 19.5s UI freeze per selection).
             if (slider) {
+                QSignalBlocker sliderBlocker(slider);
                 slider->setValue(static_cast<int>(intensity * 100.0));
             }
             if (spinBox) {
+                QSignalBlocker spinBlocker(spinBox);
                 spinBox->setValue(intensity);
             }
         } break;
@@ -2948,11 +3006,16 @@ void ccPropertiesTreeDelegate::setEditorData(QWidget* editor,
                 }
             }
 
-            // Set both controls (slider triggers spinbox sync via signal)
+            // Set both controls. Same init-emit guard as the light intensity
+            // editor: opacityChanged applies the value to the render pipeline,
+            // so programmatic initialization must stay silent (user drags
+            // still emit normally).
             if (slider) {
+                QSignalBlocker sliderBlocker(slider);
                 slider->setValue(static_cast<int>(opacity * 100.0f));
             }
             if (spinBox) {
+                QSignalBlocker spinBlocker(spinBox);
                 spinBox->setValue(static_cast<double>(opacity));
             }
             break;
@@ -3386,6 +3449,28 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
             assert(mesh);
             mesh->showWired(item->checkState() == Qt::Checked);
 
+            // VTK-backend bridge: the representation lives in the per-view
+            // viewRep (context.meshRenderingMode) — the classic-OpenGL state
+            // alone is invisible to VTK meshes. drawMesh's aggregation gate
+            // routes non-surface leaves to dedicated actors, so this works
+            // for aggregated and standalone meshes alike.
+            {
+                const auto mode =
+                        mesh->isShownAsWire()
+                                ? ecvViewRepresentation::RenderMode::Wireframe
+                                : ecvViewRepresentation::RenderMode::Surface;
+                if (auto* v = ecvViewManager::instance().getEffectiveView()) {
+                    auto* rep =
+                            ecvRepresentationManager::instance()
+                                    .ensureRepresentation(m_currentObject, v);
+                    if (rep) {
+                        auto props = rep->properties();
+                        props.renderMode = mode;
+                        rep->setProperties(props);
+                    }
+                }
+            }
+
             // unchecked points frame mode
             if (mesh->isShownAsWire()) {
                 QStandardItem* item =
@@ -3403,6 +3488,24 @@ void ccPropertiesTreeDelegate::updateItem(QStandardItem* item) {
                     ccHObjectCaster::ToGenericMesh(m_currentObject);
             assert(mesh);
             mesh->showPoints(item->checkState() == Qt::Checked);
+
+            // VTK-backend bridge (same as OBJECT_MESH_WIRE).
+            {
+                const auto mode =
+                        mesh->isShownAsPoints()
+                                ? ecvViewRepresentation::RenderMode::Points
+                                : ecvViewRepresentation::RenderMode::Surface;
+                if (auto* v = ecvViewManager::instance().getEffectiveView()) {
+                    auto* rep =
+                            ecvRepresentationManager::instance()
+                                    .ensureRepresentation(m_currentObject, v);
+                    if (rep) {
+                        auto props = rep->properties();
+                        props.renderMode = mode;
+                        rep->setProperties(props);
+                    }
+                }
+            }
 
             // unchecked wired frame mode
             if (mesh->isShownAsPoints()) {
@@ -3865,7 +3968,11 @@ void ccPropertiesTreeDelegate::octreeDisplayModeChanged(int pos) {
         }
 
         updateDisplay();
-        MainWindow::TheInstance()->refreshObject(m_currentObject, false, true);
+        // Property edits (opacity/color/visibility) are carried by actor /
+        // composite block attributes — no geometry rebuild needed. Forcing a
+        // redraw here re-converted all aggregated leaves on every property
+        // change (multi-second stalls on massive imports).
+        MainWindow::TheInstance()->refreshObject(m_currentObject, false, false);
         updateModel();
     }
 }
@@ -3887,7 +3994,11 @@ void ccPropertiesTreeDelegate::octreeDisplayedLevelChanged(int val) {
         }
 
         updateDisplay();
-        MainWindow::TheInstance()->refreshObject(m_currentObject, false, true);
+        // Property edits (opacity/color/visibility) are carried by actor /
+        // composite block attributes — no geometry rebuild needed. Forcing a
+        // redraw here re-converted all aggregated leaves on every property
+        // change (multi-second stalls on massive imports).
+        MainWindow::TheInstance()->refreshObject(m_currentObject, false, false);
 
         // record item role to force the scroll focus (see 'createEditor').
         m_lastFocusItemRole = OBJECT_OCTREE_LEVEL;

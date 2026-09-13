@@ -1,8 +1,8 @@
 #include "estimators/rotation_averaging.h"
 
 #include "estimators/rotation_averaging_impl.h"
-#include "base/pose.h"
-#include "util/math.h"
+#include "geometry/pose.h"
+#include "math/math.h"
 #include "math/spanning_tree.h"
 #include "util/hash_containers.h"
 

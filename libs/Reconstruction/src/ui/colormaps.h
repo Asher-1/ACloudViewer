@@ -9,7 +9,7 @@
 
 #include <Eigen/Core>
 
-#include "base/reconstruction.h"
+#include "scene/reconstruction.h"
 #include "util/alignment.h"
 #include "util/types.h"
 

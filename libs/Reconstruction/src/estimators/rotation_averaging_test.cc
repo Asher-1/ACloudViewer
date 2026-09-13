@@ -29,10 +29,10 @@
 
 #include "estimators/rotation_averaging.h"
 
-#include "util/math.h"
-#include "util/random.h"
-#include "base/database_cache.h"
-#include "base/database.h"
+#include "math/math.h"
+#include "math/random.h"
+#include "scene/database_cache.h"
+#include "scene/database.h"
 #include "scene/pose_graph.h"
 #include "scene/synthetic.h"
 #include "util/hash_containers.h"
@@ -70,7 +70,7 @@ struct TestData {
 TestData CreateTestData(const SyntheticDatasetOptions& dataset_options,
                         const SyntheticNoiseOptions* noise_options = nullptr) {
   TestData data;
-  data.database = std::make_unique<Database>(kMemoryDatabasePath);
+  data.database = Database::Open(kMemoryDatabasePath);
   SynthesizeDataset(
       dataset_options, &data.gt_reconstruction, data.database.get());
   if (noise_options) {

@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <limits>
+
 #include "util/alignment.h"
 #include "util/enum_utils.h"
 
@@ -195,9 +197,12 @@ constexpr data_t kInvalidDataId = data_t(kInvalidSensorId, data_t::kInvalidId);
 
 // Hash functor for (image_t, image_t) pairs and generic uint64 pairs
 // (upstream parity, COLMAP 4.x util/types.h).
-// Upstream-parity alias: camera model identifiers are plain ints in this
-// fork (see base/camera_models.h CAMERA_MODEL_DEFINITIONS ids).
-using CameraModelId = int;
+// CameraModelId is the strongly-typed enum from sensor/models/base.h
+// (upstream parity, COLMAP d3ccaf35 sensor/models #4687 shape).
+using timestamp_t = int64_t;
+
+constexpr timestamp_t kInvalidTimestamp =
+        std::numeric_limits<timestamp_t>::min();
 
 struct PairHash {
     template <typename T1, typename T2>

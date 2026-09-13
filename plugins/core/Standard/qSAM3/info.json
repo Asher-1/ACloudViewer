@@ -9,6 +9,6 @@
   "references": [
     { "text": "sam3-ggml: https://github.com/Asher-1/sam3-ggml" },
     { "text": "Segment Anything: https://github.com/facebookresearch/segment-anything" },
-    { "text": "Models: https://github.com/Asher-1/cloudViewer_downloads/releases/tag/sam" }
+    { "text": "Models: https://huggingface.co/Asher-1/sam3-gguf" }
   ]
 }

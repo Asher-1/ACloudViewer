@@ -34,6 +34,7 @@ set(FOLDER_NAME "sfm")
 COLMAP_ADD_SOURCES(
     global_mapper.h global_mapper.cc
     incremental_mapper.h incremental_mapper.cc
+    incremental_mapper_impl.h incremental_mapper_impl.cc
     incremental_triangulator.h incremental_triangulator.cc
     observation_manager.h observation_manager.cc
 )

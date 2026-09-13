@@ -22,7 +22,7 @@
 
 #include "meshoptimizer.h"
 #include "util/logging.h"
-#include "util/option_manager.h"
+#include "controllers/option_manager.h"
 
 namespace colmap {
 namespace mvs {

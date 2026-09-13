@@ -87,6 +87,12 @@ void WriteBinaryPlyPoints(const std::filesystem::path& path,
                           const bool write_normal = true,
                           const bool write_rgb = true);
 
+// Read PLY mesh (plain or textured) from text or binary file.
+PlyTexturedMesh ReadPlyMesh(const std::filesystem::path& path);
+
+// Returns true if the PLY file contains face elements (i.e., is a mesh).
+bool HasPlyMeshFaces(const std::filesystem::path& path);
+
 // Write PLY mesh to text or binary file.
 void WriteTextPlyMesh(const std::filesystem::path& path, const PlyMesh& mesh);
 void WriteBinaryPlyMesh(const std::filesystem::path& path, const PlyMesh& mesh);

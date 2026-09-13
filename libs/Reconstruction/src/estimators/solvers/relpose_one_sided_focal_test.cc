@@ -29,13 +29,13 @@
 
 #include "estimators/solvers/relpose_one_sided_focal.h"
 
-#include "base/essential_matrix.h"
+#include "geometry/essential_matrix.h"
 #include "geometry/rigid3.h"
-#include "util/math.h"
-#include "util/random.h"
+#include "math/math.h"
+#include "math/random.h"
 #include "math/random_eigen.h"
-#include "base/camera.h"
-#include "base/camera_models.h"
+#include "scene/camera.h"
+#include "sensor/models.h"
 
 #include <algorithm>
 #include <limits>

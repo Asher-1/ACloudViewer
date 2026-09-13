@@ -13,6 +13,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "math/math.h"
 #include "mvs/depth_map.h"
 #include "mvs/image.h"
 #include "mvs/mat.h"
@@ -21,7 +22,6 @@
 #include "mvs/workspace.h"
 #include "util/alignment.h"
 #include "util/cache.h"
-#include "util/math.h"
 #include "util/ply.h"
 #include "util/threading.h"
 

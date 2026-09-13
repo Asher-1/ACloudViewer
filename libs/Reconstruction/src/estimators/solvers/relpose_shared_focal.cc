@@ -32,7 +32,7 @@
 #include "estimators/cost_functions/tiny_manifold.h"
 #include "estimators/cost_functions/tiny_sampson_error.h"
 #include "estimators/solvers/poselib_utils.h"
-#include "base/essential_matrix.h"
+#include "geometry/essential_matrix.h"
 #include "geometry/rigid3.h"
 #include "optim/tiny_solver.h"
 #include "util/logging.h"

@@ -10,7 +10,7 @@
 #include <string>
 
 #include "aicore/loma_capi.h"
-#include "base/image_reader.h"
+#include "controllers/image_reader.h"
 #include "feature/types.h"
 #include "util/threading.h"
 

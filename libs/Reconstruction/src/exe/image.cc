@@ -31,13 +31,13 @@
 
 #include "exe/image.h"
 
-#include "base/reconstruction.h"
-#include "base/undistortion.h"
+#include "scene/reconstruction.h"
+#include "image/undistortion.h"
 #include "controllers/texturing_controller.h"
-#include "controllers/incremental_mapper.h"
+#include "controllers/incremental_pipeline.h"
 #include "sfm/incremental_mapper.h"
 #include "util/misc.h"
-#include "util/option_manager.h"
+#include "controllers/option_manager.h"
 
 namespace colmap {
 namespace {
@@ -263,7 +263,7 @@ int RunImageRegistrator(int argc, char** argv) {
   DatabaseCache database_cache;
 
   {
-    Database database(*options.database_path);
+    auto database = Database::Open(*options.database_path);
     Timer timer;
     timer.Start();
     DatabaseCache::Options cache_options;
@@ -272,7 +272,7 @@ int RunImageRegistrator(int argc, char** argv) {
     cache_options.ignore_watermarks = options.mapper->ignore_watermarks;
     cache_options.image_names = {options.mapper->image_names.begin(),
                                  options.mapper->image_names.end()};
-    database_cache.Load(database, cache_options);
+    database_cache.Load(*database, cache_options);
     std::cout << std::endl;
     timer.PrintMinutes();
   }

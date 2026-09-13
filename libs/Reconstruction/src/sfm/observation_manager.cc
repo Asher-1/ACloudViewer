@@ -16,13 +16,13 @@
 
 #include "sfm/observation_manager.h"
 
-#include "base/camera.h"
-#include "base/image.h"
-#include "base/projection.h"
-#include "base/triangulation.h"
+#include "scene/camera.h"
+#include "scene/image.h"
+#include "scene/projection.h"
+#include "geometry/triangulation.h"
 #include "estimators/alignment.h"
 #include "util/logging.h"
-#include "util/math.h"
+#include "math/math.h"
 
 #include <cmath>
 #include <limits>

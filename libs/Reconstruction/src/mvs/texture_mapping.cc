@@ -30,6 +30,7 @@
 #include "mvs/texture_mapping.h"
 
 #include "util/logging.h"
+#include "util/hash_containers.h"
 #include "util/misc.h"
 
 #include <algorithm>
@@ -154,7 +155,7 @@ std::vector<Eigen::Vector3f> ComputeFaceNormals(const PlyMesh& mesh) {
 
 FaceAdjacencyMap BuildFaceAdjacency(const PlyMesh& mesh) {
   const size_t num_faces = mesh.faces.size();
-  std::unordered_map<uint64_t, std::vector<size_t>> edge_to_faces;
+  NodeHashMap<uint64_t, std::vector<size_t>> edge_to_faces;
   edge_to_faces.reserve(num_faces * 3);
 
   for (size_t fi = 0; fi < num_faces; ++fi) {
@@ -376,7 +377,7 @@ std::vector<int> SelectViews(const PlyMesh& mesh,
     for (size_t fi = 0; fi < num_faces; ++fi) {
       if (view_per_face[fi] < 0) continue;
 
-      std::unordered_map<int, int> label_counts;
+      NodeHashMap<int, int> label_counts;
       for (const size_t ni : adjacency[fi]) {
         if (view_per_face[ni] >= 0) {
           ++label_counts[view_per_face[ni]];
@@ -574,7 +575,7 @@ AtlasLayout PackAtlas(const std::vector<RegionProjection>& projections,
   std::vector<PackRect> placements;
   constexpr int kMaxAtlasDim = 1 << 16;  // 65536
   while (!TryPack(atlas_width, atlas_height, placements)) {
-    CHECK_LE(atlas_width, kMaxAtlasDim)
+    THROW_CHECK_LE(atlas_width, kMaxAtlasDim)
         << "Atlas dimensions exceeded maximum (" << kMaxAtlasDim << ")";
     atlas_width *= 2;
     atlas_height *= 2;
@@ -797,7 +798,7 @@ void ApplyGlobalColorCorrection(
 
   // Build per-region vertex-to-variable mapping.
   struct RegionVertexMap {
-    std::unordered_map<size_t, size_t> vert_to_var;
+    NodeHashMap<size_t, size_t> vert_to_var;
   };
   std::vector<RegionVertexMap> region_vert_maps(regions.size());
 
@@ -1064,7 +1065,7 @@ MeshTextureMappingResult MeshTextureMapping(
     const PlyMesh& mesh,
     const std::vector<Image>& images,
     const MeshTextureMappingOptions& options) {
-  CHECK(options.Check());
+  THROW_CHECK(options.Check());
 
 #if !defined(CGAL_ENABLED)
   LOG(WARNING) << "CGAL is disabled; occlusion testing will be skipped. "

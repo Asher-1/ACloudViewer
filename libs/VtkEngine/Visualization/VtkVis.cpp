@@ -38,7 +38,14 @@
 #include "vtkGLView.h"
 
 // SYSTEM
+#include <vtkCamera.h>
+#include <vtkCellArray.h>
+#include <vtkCompositeDataDisplayAttributes.h>
+#include <vtkGenericCell.h>
+#include <vtkMatrix4x4.h>
+#include <vtkRenderer.h>
 #include <vtkTextActor.h>
+#include <vtkVersion.h>
 
 #include <QImage>
 #include <QJsonArray>
@@ -46,6 +53,7 @@
 #include <algorithm>
 #include <cmath>
 #include <functional>
+#include <limits>
 #include <vector>
 
 // CV_CORE_LIB
@@ -69,9 +77,11 @@
 #include <ecvMaterial.h>
 #include <ecvMaterialSet.h>
 #include <ecvOrientedBBox.h>
+#include <ecvRepresentationManager.h>
 #include <ecvScalarField.h>
 #include <ecvUndoManager.h>
 #include <ecvViewContext.h>
+#include <ecvViewRepresentation.h>
 
 // VTK Extension
 #include <VTKExtensions/Core/vtkMemberFunctionCommand.h>
@@ -112,11 +122,14 @@
 #include <vtkCellArray.h>
 #include <vtkCellData.h>
 #include <vtkCubeSource.h>
+#include <vtkDataObject.h>
 #include <vtkDataSetMapper.h>
 #include <vtkFieldData.h>
 #include <vtkFloatArray.h>
 #include <vtkFollower.h>
+#include <vtkHardwareSelector.h>
 #include <vtkImageSlice.h>
+#include <vtkInformation.h>
 #include <vtkInteractorObserver.h>
 #include <vtkJPEGReader.h>
 #include <vtkLineSource.h>
@@ -145,6 +158,8 @@
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
 #include <vtkRendererCollection.h>
+#include <vtkSelection.h>
+#include <vtkSelectionNode.h>
 #include <vtkSphereSource.h>
 #include <vtkStringArray.h>
 #include <vtkTIFFReader.h>
@@ -158,6 +173,8 @@
 #include <vtkWidgetEvent.h>
 #include <vtkWidgetEventTranslator.h>
 #include <vtkWindowToImageFilter.h>
+
+#include <chrono>
 
 // Support for VTK 7.1 upwards
 #ifdef vtkGenericDataArray_h
@@ -1213,6 +1230,19 @@ bool VtkVis::updatePointCloud(vtkSmartPointer<vtkPolyData> polydata,
 }
 
 bool VtkVis::removePointCloud(const std::string& id, int viewport) {
+    m_leafGeometryKey.erase(id);
+    // Composite leaves: drop the block; when its group runs empty its actor
+    // must leave the renderer too (grab it before the registry destroys it).
+    if (m_compositeRegistry.containsLeaf(id)) {
+        const std::string groupId = m_compositeRegistry.groupOfLeaf(id);
+        vtkActor* doomedGroupActor = m_compositeRegistry.groupActor(groupId);
+        std::string emptiedGroup;
+        m_compositeRegistry.removeLeaf(id, &emptiedGroup);
+        if (!emptiedGroup.empty() && doomedGroupActor) {
+            removeActorFromRenderer(doomedGroupActor, viewport);
+        }
+    }
+
     auto it = cloud_actor_map_->find(id);
     if (it == cloud_actor_map_->end()) return false;
     if (it->second.actor) removeActorFromRenderer(it->second.actor, viewport);
@@ -1579,6 +1609,9 @@ static bool AddPolygonMeshPolyData(vtkSmartPointer<vtkPolyData> polydata,
 void VtkVis::drawPointCloud(const CC_DRAW_CONTEXT& context,
                             ccPointCloud* cloud,
                             bool lightweight) {
+    // Bottleneck probe: the first conversion of a multi-million-point cloud
+    // dominates massive-model loading; aggregate probe, no per-point logs.
+    const auto t0pc = std::chrono::steady_clock::now();
     if (!cloud || cloud->size() == 0) return;
 
     const std::string viewID = CVTools::FromQString(context.viewID);
@@ -1620,10 +1653,53 @@ void VtkVis::drawPointCloud(const CC_DRAW_CONTEXT& context,
     }
 
     updateShadingMode(context, cloud);
+
+    const double pcMs = std::chrono::duration<double, std::milli>(
+                                std::chrono::steady_clock::now() - t0pc)
+                                .count();
+    if (pcMs > 200.0 && CVLog::diagnosticsEnabled()) {
+        CVLog::Print("[draw] point cloud '%s' (%zu pts) drew in %.1f ms",
+                     cloud->getName().toLatin1().constData(), cloud->size(),
+                     pcMs);
+    }
 }
+
+namespace {
+
+// Threshold mirrors qMeshIO's leaf-merge group size so both paths agree on
+// what "many parts" means; below it a handful of actors is cheaper than the
+// aggregation bookkeeping.
+constexpr size_t kMinLeavesForComposite = 8;
+
+size_t CountLeafMeshes(ccHObject* container) {
+    if (!container) return 0;
+    size_t count = 0;
+    for (unsigned int i = 0; i < container->getChildrenNumber(); ++i) {
+        ccHObject* child = container->getChild(i);
+        if (!child) continue;
+        if (child->isA(CV_TYPES::MESH)) {
+            ++count;
+        } else {
+            count += CountLeafMeshes(child);
+        }
+    }
+    return count;
+}
+
+bool CompositeMeshEligible(ccGenericMesh* mesh, size_t containerLeafCount) {
+    // Material/texture/scalar-coloring driven rendering has no per-block
+    // equivalent in VTK composite display attributes: keep those parts on
+    // dedicated actors.
+    if (mesh->hasMaterials() && mesh->materialsShown()) return false;
+    if (mesh->hasDisplayedScalarField() && mesh->sfShown()) return false;
+    return containerLeafCount >= kMinLeavesForComposite;
+}
+
+}  // namespace
 
 void VtkVis::drawMesh(const CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
     if (!mesh) return;
+    const auto t0 = std::chrono::steady_clock::now();
 
     std::string viewID = CVTools::FromQString(context.viewID);
     int viewport = context.defaultViewPort;
@@ -1632,21 +1708,283 @@ void VtkVis::drawMesh(const CC_DRAW_CONTEXT& context, ccGenericMesh* mesh) {
             const_cast<ccGenericPointCloud*>(mesh->getAssociatedCloud()));
     if (!pc) return;
 
+    // Reconciliation signature: every input that MeshToPolyData consumes,
+    // collected with O(1) getters BEFORE the conversion so unchanged leaves
+    // skip the conversion entirely. Normals/colors/SF/materials toggles and
+    // SF range edits all change the signature; the old mesh-pointer-only
+    // key left those property changes silently unapplied.
+    const ccScalarField* dispSF = pc->getCurrentDisplayedScalarField();
+    CompositeLeafKey key;
+    key.mesh = mesh;
+    key.triCount = mesh->size();
+    key.sfShown = mesh->hasDisplayedScalarField() && mesh->sfShown();
+    key.colorsShown = mesh->hasColors() && mesh->colorsShown();
+    key.hasNormalsExport = mesh->hasTriNormals() || mesh->hasNormals();
+    key.hasMaterials = mesh->hasMaterials();
+    key.displayedSF = dispSF;
+    key.sfGreyNaN = dispSF ? dispSF->areNaNValuesShownInGrey() : false;
+    key.visCount = pc->getTheVisibilityArray().size();
+    if (dispSF) {
+        key.sfStart = dispSF->displayRange().start();
+        key.sfStop = dispSF->displayRange().stop();
+    }
+
+    // ParaView-style composite aggregation: massive same-material import
+    // groups render as blocks of ONE actor so the frame loop stays O(1) per
+    // group. Data layer (DB tree, selection, export) is untouched; textured
+    // or material-driven parts keep their dedicated actors because VTK
+    // composite display attributes carry no per-block texture. The container
+    // leaf count is cached: recomputing it per drawMesh call made first draws
+    // O(N^2) over the whole import group.
+    const ccHObject* container = mesh->getParent();
+    size_t containerLeafCount = 0;
+    if (container) {
+        auto cit = m_containerLeafCountCache.find(container);
+        if (cit != m_containerLeafCountCache.end()) {
+            containerLeafCount = cit->second;
+        } else {
+            containerLeafCount =
+                    CountLeafMeshes(const_cast<ccHObject*>(container));
+            m_containerLeafCountCache.emplace(container, containerLeafCount);
+        }
+    }
+    // NOTE: visFiltering must NOT gate aggregation here — VtkDisplayTools
+    // sets it on every standard mesh draw, which silently disabled the whole
+    // composite path and left 287 individual actors in the renderer.
+    // VTK version guard: the composite pipeline needs VTK >= 9 (see
+    // compositeRenderingSupported); older VTK renders all-dedicated with
+    // identical visuals.
+    const bool compositeOK = compositeRenderingSupported();
+    // Per-entity appearance states WITHOUT a per-block equivalent in VTK
+    // composite attributes require a DEDICATED actor: representation
+    // (wireframe/points), normals-driven interpolation (normals off = flat),
+    // the gaussian-splat mapper swap, and stippling. Evaluating them HERE in
+    // the gate — which re-runs on stable state every pass — keeps styled
+    // leaves dedicated and un-styled ones aggregated, without any
+    // evict/re-aggregate oscillation.
+    // Per-view normals resolution: the gate must agree with the shading the
+    // draw pass applies. ecvMesh::draw resolves showNorms through the
+    // per-view ecvViewRepresentation override (context.display); consulting
+    // only the global entity state here made a leaf aggregate into the
+    // smooth group in a view whose rep requested normals-off (flat), so the
+    // dedicated/aggregate split diverged between windows.
+    bool normalsShownForView = mesh->normalsShown();
+    if (context.display) {
+        auto* viewRep = ecvRepresentationManager::instance().getRepresentation(
+                mesh, context.display);
+        if (viewRep && viewRep->properties().showNormals.has_value()) {
+            normalsShownForView = viewRep->effectiveShowNormals();
+        }
+    }
+    const bool needsDedicatedActor =
+            context.meshRenderingMode !=
+                    MESH_RENDERING_MODE::ECV_SURFACE_MODE ||
+            mesh->pointGaussianEnabled() || mesh->stipplingEnabled() ||
+            (mesh->hasNormals() && !normalsShownForView);
+    if (compositeOK && m_compositeRegistry.containsLeaf(viewID) &&
+        (needsDedicatedActor ||
+         !CompositeMeshEligible(mesh, containerLeafCount))) {
+        removeFromComposite(viewID, viewport);
+    }
+    if (compositeOK &&
+        (m_compositeRegistry.containsLeaf(viewID) ||
+         (CompositeMeshEligible(mesh, containerLeafCount) &&
+          !needsDedicatedActor &&
+          // Leaves with a per-entity light override render on dedicated
+          // actors: composite groups carry a single material.
+          !m_objectLightIntensity.count(viewID)))) {
+        const std::string groupId =
+                container ? CVTools::FromQString(container->getViewId())
+                          : viewID;
+        // Same-source skip FIRST: the polydata conversion below is the
+        // expensive step (~5ms per leaf); re-registering unchanged blocks
+        // would also trigger a full composite VBO rebuild. The signature key
+        // already covers every display-state input, and real data changes
+        // arm the entity's redraw flag (redrawCCObject etc.), so a pass-level
+        // forceRedraw no longer bypasses the skip here — property edits like
+        // scalar-field range changes used to re-convert all aggregated
+        // leaves per slider tick.
+        auto srcIt = m_leafGeometryKey.find(viewID);
+        if (m_compositeRegistry.containsLeaf(viewID) &&
+            srcIt != m_leafGeometryKey.end() && srcIt->second == key &&
+            !mesh->isRedraw()) {
+            return;
+        }
+
+        auto polydata = Converters::Cc2Vtk::MeshToPolyData(pc, mesh);
+        if (!polydata) return;
+
+        // Normal-less block hygiene: the group actor carries ONE
+        // interpolation mode shared by ALL blocks, so every block must
+        // present normals. A leaf without normal data gets per-point FACE
+        // normals (SplittingOn splits vertices at face borders), which
+        // renders exactly like the dedicated Flat actor it would otherwise
+        // require — without letting this leaf's missing data flatten (or be
+        // flattened by) its smooth siblings on every re-block.
+        if (!polydata->GetPointData()->GetNormals()) {
+            vtkNew<vtkPolyDataNormals> normalGen;
+            normalGen->SetInputData(polydata);
+            normalGen->ComputePointNormalsOn();
+            normalGen->ComputeCellNormalsOff();
+            normalGen->SplittingOn();
+            normalGen->ConsistencyOn();
+            normalGen->Update();
+            polydata = normalGen->GetOutput();
+        }
+
+        // A colorless block (Color source = None) among vertex-colored
+        // sibling blocks breaks the group mapper's scalar coloring — the
+        // reported "RGB -> None renders wrong until an axes-grid toggle
+        // forced a rebuild". Pin the per-block color to the same default
+        // mesh color the dedicated-actor sync would apply; colored blocks
+        // follow their vertex colors instead.
+        if (!polydata->GetPointData()->GetScalars()) {
+            const ecvColor::Rgbf defaultColor =
+                    ecvTools::TransFormRGB(context.defaultMeshColor);
+            const double pinned[3] = {defaultColor.r, defaultColor.g,
+                                      defaultColor.b};
+            m_compositeRegistry.setLeafColor(viewID, pinned);
+            if (CVLog::diagnosticsEnabled()) {
+                CVLog::Print(
+                        "[color-chain] leaf '%s' block pin (%.2f, %.2f, %.2f)",
+                        viewID.c_str(), pinned[0], pinned[1], pinned[2]);
+            }
+        } else {
+            m_compositeRegistry.setLeafColor(viewID, nullptr);
+            if (CVLog::diagnosticsEnabled()) {
+                CVLog::Print(
+                        "[color-chain] leaf '%s' block pin cleared "
+                        "(vertex colors present)",
+                        viewID.c_str());
+            }
+        }
+
+        // Re-aggregating a previously dedicated leaf (representation reverted
+        // to surface, light override cleared): drop the stale dedicated
+        // actor, otherwise it double-renders next to its block.
+        if (contains(viewID)) {
+            removeMesh(viewID, viewport);
+        }
+
+        m_leafGeometryKey[viewID] = key;
+        // Register the leaf's source object: the wrapper's firstShow-gated
+        // setCurrentSourceObject never fires for aggregated leaves, leaving
+        // per-entity features (data axes grid bounds, property lookups)
+        // unable to resolve the entity. setCurrentSourceObject is a cheap
+        // map write here (its scalar-field sync early-returns because a
+        // composite leaf owns no entry in the actor maps).
+        setCurrentSourceObject(mesh, viewID);
+        const bool groupNew = !m_compositeRegistry.hasGroup(groupId);
+        m_compositeRegistry.setLeafBlock(viewID, groupId, polydata);
+        if (vtkActor* groupActor = m_compositeRegistry.groupActor(groupId)) {
+            if (groupNew) {
+                addActorToRenderer(groupActor, viewport);
+            }
+            // Interpolation unification: the group actor is ALWAYS Gouraud.
+            // Every block now carries normals (face normals are generated
+            // above for normal-less leaves), so one smooth group renders
+            // smooth leaves smooth AND normal-less leaves faceted. The
+            // previous "flatten the whole group when THIS leaf lacks
+            // normals" write let any re-blocked leaf stamp Flat onto every
+            // smooth sibling — the recurring "Normals toggle shows no/stale
+            // effect" symptom. ensureGroup defaults to Flat; the first
+            // (re)block below upgrades the group to Gouraud.
+            groupActor->GetProperty()->SetInterpolationToGouraud();
+            // Group-level lighting is an actor property baked from the
+            // resolved intensity at apply time: re-apply after every
+            // (re)block so per-object overrides survive block replacement.
+            applyLightPropertiesToActor(groupActor, groupId);
+        }
+        if (groupNew && CVLog::diagnosticsEnabled()) {
+            CVLog::Print(
+                    "[composite] group '%s' aggregated %zu leaves in %.1f ms",
+                    groupId.c_str(), containerLeafCount,
+                    std::chrono::duration<double, std::milli>(
+                            std::chrono::steady_clock::now() - t0)
+                            .count());
+        } else {
+            // Redraw of an already-aggregated leaf: flags VBO rebuilds of the
+            // whole composite mapper (selection-triggered redraws pay this).
+            const double redrawMs =
+                    std::chrono::duration<double, std::milli>(
+                            std::chrono::steady_clock::now() - t0)
+                            .count();
+            if (redrawMs > 50.0 && CVLog::diagnosticsEnabled()) {
+                CVLog::Print("[composite] leaf '%s' re-blocked in %.1f ms",
+                             viewID.c_str(), redrawMs);
+            }
+        }
+        return;
+    }
+
     auto polydata = Converters::Cc2Vtk::MeshToPolyData(pc, mesh);
     if (!polydata) return;
+
+    // Per-entity leaves evicted by the aggregation gate (wireframe/points,
+    // normals-off, gaussian, stippling) build their dedicated actor HERE.
+    // A scalars-less polydata (Color = None) would render with the VTK
+    // default white — the same "green turns gray" bug the light-intensity
+    // eviction had — so pin the default display color on the fresh actor.
+    const bool colorlessLeaf =
+            !polydata->GetPointData()->GetScalars() &&
+            !(mesh->hasMaterials() && mesh->materialsShown());
 
     if (context.visFiltering) {
         if (contains(viewID)) removeMesh(viewID, viewport);
         AddPolygonMeshPolyData(polydata, viewID, viewport, this,
                                cloud_actor_map_);
         vtkActor* actor = getActorById(viewID);
-        if (actor) applyLightPropertiesToActor(actor, viewID);
+        if (actor) {
+            applyLightPropertiesToActor(actor, viewID);
+            if (colorlessLeaf) {
+                const ecvColor::Rgbf& def =
+                        m_ownerDisplay
+                                ? m_ownerDisplay->getDisplayParameters()
+                                          .meshFrontDiff
+                                : ecvColor::Rgbf(
+                                          ecvColor::defaultMeshFrontDiff);
+                actor->GetProperty()->SetColor(def.r, def.g, def.b);
+                if (vtkMapper* mapper = actor->GetMapper()) {
+                    mapper->ScalarVisibilityOff();
+                }
+            }
+            if (CVLog::diagnosticsEnabled()) {
+                double c[3] = {0, 0, 0};
+                actor->GetProperty()->GetColor(c);
+                CVLog::Print(
+                        "[color-chain] dedicated actor '%s' built "
+                        "(visFiltering path) color=(%.2f, %.2f, %.2f)",
+                        viewID.c_str(), c[0], c[1], c[2]);
+            }
+        }
     } else {
         if (!UpdatePointCloudPolyData(polydata, viewID, cloud_actor_map_)) {
             AddPolygonMeshPolyData(polydata, viewID, viewport, this,
                                    cloud_actor_map_);
             vtkActor* actor = getActorById(viewID);
-            if (actor) applyLightPropertiesToActor(actor, viewID);
+            if (actor) {
+                applyLightPropertiesToActor(actor, viewID);
+                if (colorlessLeaf) {
+                    const ecvColor::Rgbf& def =
+                            m_ownerDisplay
+                                    ? m_ownerDisplay->getDisplayParameters()
+                                              .meshFrontDiff
+                                    : ecvColor::Rgbf(
+                                              ecvColor::defaultMeshFrontDiff);
+                    actor->GetProperty()->SetColor(def.r, def.g, def.b);
+                    if (vtkMapper* mapper = actor->GetMapper()) {
+                        mapper->ScalarVisibilityOff();
+                    }
+                }
+            }
+            if (CVLog::diagnosticsEnabled()) {
+                double c[3] = {0, 0, 0};
+                actor->GetProperty()->GetColor(c);
+                CVLog::Print(
+                        "[color-chain] dedicated actor '%s' built "
+                        "(update path) color=(%.2f, %.2f, %.2f)",
+                        viewID.c_str(), c[0], c[1], c[2]);
+            }
         }
     }
 
@@ -1762,6 +2100,19 @@ void VtkVis::drawLineSet(const CC_DRAW_CONTEXT& context,
 void VtkVis::applyGLTransform(const ccGLMatrix& glTrans,
                               const std::string& viewID,
                               int viewport) {
+    if (m_compositeRegistry.containsLeaf(viewID)) {
+        // No per-block transform in VTK composite mappers: bake it into the
+        // block geometry (same data object, attributes preserved).
+        vtkSmartPointer<vtkMatrix4x4> mat44 =
+                vtkSmartPointer<vtkMatrix4x4>::New();
+        const float* data = glTrans.data();
+        for (int r = 0; r < 4; ++r)
+            for (int c = 0; c < 4; ++c)
+                mat44->SetElement(r, c, static_cast<double>(data[c * 4 + r]));
+        m_compositeRegistry.bakeLeafTransform(viewID, mat44);
+        return;
+    }
+
     vtkActor* actor = getActorById(viewID);
     if (!actor) return;
 
@@ -1797,6 +2148,15 @@ void VtkVis::clearGLTransform(const std::string& viewID, int viewport) {
 void VtkVis::transformEntities(const CC_DRAW_CONTEXT& context) {
     if (context.transformInfo.isApplyTransform()) {
         std::string viewID = CVTools::FromQString(context.viewID);
+        if (m_compositeRegistry.containsLeaf(viewID)) {
+            // No per-block transform in VTK composite mappers: bake the
+            // transform into the block geometry (apply-style tool, not drag).
+            CCVector3d zeroOrigin(0, 0, 0);
+            vtkSmartPointer<vtkTransform> trans =
+                    getTransformation(context, zeroOrigin);
+            m_compositeRegistry.bakeLeafTransform(viewID, trans->GetMatrix());
+            return;
+        }
         vtkActor* actor = getActorById(viewID);
         if (actor) {
             if (context.transformInfo.isPositionChanged) {
@@ -1925,7 +2285,7 @@ void VtkVis::updateShadingMode(const CC_DRAW_CONTEXT& context,
                                ccPointCloud* cloud) {
     const std::string viewID = CVTools::FromQString(context.viewID);
     int viewport = context.defaultViewPort;
-    auto actor = getActorById(viewID);
+    auto actor = actorForRenderingProperties(viewID);
     if (!actor) return;
     auto polydata = vtkPolyData::SafeDownCast(actor->GetMapper()->GetInput());
     if (!polydata || !cloud) return;
@@ -2820,6 +3180,12 @@ void VtkVis::hideShowActors(bool visibility,
                             int viewport) {
     int opacity = visibility ? 1 : 0;
 
+    // Composite leaves: visibility is a per-block display attribute.
+    if (m_compositeRegistry.containsLeaf(viewID)) {
+        m_compositeRegistry.setLeafVisibility(viewID, visibility);
+        return;
+    }
+
     vtkActor* actor = getActorById(viewID);
     if (actor) {
         actor->SetVisibility(opacity);
@@ -2910,11 +3276,26 @@ bool VtkVis::removeEntities(const CC_DRAW_CONTEXT& context) {
     int viewport = context.defaultViewPort;
     switch (context.removeEntityType) {
         case ENTITY_TYPE::ECV_POINT_CLOUD: {
+            RemoveDataAxesGrid(removeViewID);
             removePointClouds(removeViewID, viewport);
             removeFlag = true;
             break;
         }
+        case ENTITY_TYPE::ECV_HIERARCHY_OBJECT: {
+            // A folder owning a composite group: destroying it must take the
+            // group actor out of the renderer (its blocks go with it), or the
+            // removed import keeps rendering as ghost geometry.
+            if (hasCompositeGroup(removeViewID)) {
+                removeCompositeGroupEntity(removeViewID, viewport);
+                removeFlag = true;
+            }
+        } break;
         case ENTITY_TYPE::ECV_MESH: {
+            RemoveDataAxesGrid(removeViewID);
+            // Composite teardown FIRST: an aggregated leaf owns no actor-map
+            // entries, so removeMesh alone was a silent no-op and the removed
+            // mesh kept rendering as ghost geometry.
+            removeCompositeLeafEntity(removeViewID, viewport);
             removeMesh(removeViewID, viewport);
             removePointClouds(removeViewID, viewport);
             removeFlag = true;
@@ -2939,7 +3320,7 @@ bool VtkVis::removeEntities(const CC_DRAW_CONTEXT& context) {
             break;
         }
         case ENTITY_TYPE::ECV_TEXT2D: {
-            removeText2D(removeViewID, viewport);
+            removeFlag = removeText2D(removeViewID, viewport);
             break;
         }
         case ENTITY_TYPE::ECV_CAPTION:
@@ -2975,6 +3356,8 @@ bool VtkVis::removeWidgets(const std::string& viewId, int viewport) {
 }
 
 void VtkVis::removePointClouds(const std::string& viewId, int viewport) {
+    // NOTE: no RemoveDataAxesGrid here — same reason as removeMesh; grid
+    // lifecycle is owned by VtkVis::removeEntities.
     if (contains(viewId)) {
         removePointCloud(viewId, viewport);
     }
@@ -2994,11 +3377,13 @@ void VtkVis::removeShapes(const std::string& viewId, int viewport) {
 }
 
 void VtkVis::removeMesh(const std::string& viewId, int viewport) {
+    // NOTE: no RemoveDataAxesGrid here — this function also runs on transient
+    // per-actor redraws (drawMesh's visFiltering branch), which used to
+    // destroy the entity's data axes grid on every redraw. Grid lifecycle is
+    // owned by the real-removal path (VtkVis::removeEntities).
     if (contains(viewId)) {
         removePolygonMesh(viewId, viewport);
     }
-
-    RemoveDataAxesGrid(viewId);
 }
 
 void VtkVis::removeText3D(const std::string& viewId, int viewport) {
@@ -3007,7 +3392,7 @@ void VtkVis::removeText3D(const std::string& viewId, int viewport) {
     }
 }
 
-void VtkVis::removeText2D(const std::string& viewId, int viewport) {
+bool VtkVis::removeText2D(const std::string& viewId, int viewport) {
     // Only remove text actors keyed with composite IDs (e.g. "viewId#text"),
     // NOT the entity's own shape actor which shares the same plain viewId.
     // The old code called removeShapes(viewId) which incorrectly destroyed
@@ -3022,9 +3407,21 @@ void VtkVis::removeText2D(const std::string& viewId, int viewport) {
     for (const auto& id : toRemove) {
         removeShape(id, viewport);
     }
+    return !toRemove.empty();
 }
 
 void VtkVis::removeALL(int viewport) {
+    // Per-entity data axes grids are no longer cleared by the per-ID removal
+    // helpers (transient redraws reuse them); sweep them explicitly here.
+    for (auto& kv : m_dataAxesGridMap) {
+        if (kv.second) {
+            if (vtkRenderer* renderer = getCurrentRenderer()) {
+                renderer->RemoveViewProp(kv.second);
+            }
+        }
+    }
+    m_dataAxesGridMap.clear();
+
     // Remove all point clouds (also removes normals and data axes grids)
     std::vector<std::string> cloudIds;
     for (const auto& kv : *cloud_actor_map_) cloudIds.push_back(kv.first);
@@ -3409,12 +3806,26 @@ void VtkVis::setShapeOpacity(double opacity,
 void VtkVis::setMeshOpacity(double opacity,
                             const std::string& viewID,
                             int viewport) {
+    // Composite leaves: opacity is a per-block display attribute.
+    if (m_compositeRegistry.containsLeaf(viewID)) {
+        m_compositeRegistry.setLeafOpacity(viewID, opacity);
+        return;
+    }
+
     vtkPVLODActor* lodActor = vtkPVLODActor::SafeDownCast(getActorById(viewID));
     vtkActor* actor = lodActor;
     if (!actor) {
         actor = vtkActor::SafeDownCast(getActorById(viewID));
     }
     if (!actor) {
+        // An aggregated-evicted leaf owns no dedicated actor until its next
+        // draw recreates one (the entity's opacity is re-applied then).
+        // Persist the edit on the entity for that recreation instead of
+        // warning about the transient state on every slider tick.
+        if (ccHObject* obj = getSourceObject(viewID)) {
+            obj->setOpacity(static_cast<float>(opacity));
+            return;
+        }
         CVLog::Warning("[VtkVis::setMeshOpacity] Mesh with id <%s> not found",
                        viewID.c_str());
         return;
@@ -3510,12 +3921,37 @@ void VtkVis::setShapeShadingMode(SHADING_MODE mode,
 void VtkVis::setMeshShadingMode(SHADING_MODE mode,
                                 const std::string& viewID,
                                 int viewport) {
-    vtkActor* actor = getActorById(viewID);
+    // Composite leaves share the group actor: a per-entity shading write
+    // here would restyle every sibling block (e.g. Render Options applied
+    // to one aggregated leaf repainting the whole group). Their
+    // interpolation is owned by the (re)block path — always Gouraud — and
+    // the entity's normals state is enforced by the aggregation gate,
+    // which evicts normals-off leaves to dedicated Flat actors.
+    if (m_compositeRegistry.containsLeaf(viewID)) {
+        return;
+    }
+    vtkActor* actor = actorForRenderingProperties(viewID);
     if (!actor) {
         CVLog::Warning(
                 "[VtkVis::SetMeshRenderingMode] Requested viewID not found, "
                 "please check again...");
         return;
+    }
+
+    // Unchanged-interpolation early-out: the draw sync calls this per frame
+    // for every dedicated mesh; an unconditional write would Modified() the
+    // actor (and re-evaluate shaders) on every pass.
+    const int targetInterpolation =
+            (mode == SHADING_MODE::ECV_SHADING_FLAT
+                     ? VTK_FLAT
+                     : (mode == SHADING_MODE::ECV_SHADING_GOURAUD ? VTK_GOURAUD
+                                                                  : VTK_PHONG));
+    if (actor->GetProperty()->GetInterpolation() == targetInterpolation) {
+        return;
+    }
+    if (CVLog::diagnosticsEnabled()) {
+        CVLog::Print("[shading] leaf '%s' interpolation -> %d", viewID.c_str(),
+                     targetInterpolation);
     }
 
     switch (mode) {
@@ -3565,7 +4001,17 @@ void VtkVis::setMeshShadingMode(SHADING_MODE mode,
 void VtkVis::setMeshRenderingMode(MESH_RENDERING_MODE mode,
                                   const std::string& viewID,
                                   int viewport) {
-    vtkActor* actor = getActorById(viewID);
+    // Composite leaves render through the group's shared SURFACE material:
+    // per-block representation does not exist in VTK composite attributes.
+    // An unstyled (surface) sync must stay a no-op — resolving the actor
+    // here would un-aggregate the leaf for nothing. Only a genuine
+    // non-surface per-entity mode un-aggregates it (via
+    // actorForRenderingProperties below).
+    if (m_compositeRegistry.containsLeaf(viewID) &&
+        mode == MESH_RENDERING_MODE::ECV_SURFACE_MODE) {
+        return;
+    }
+    vtkActor* actor = actorForRenderingProperties(viewID);
     if (!actor) {
         CVLog::Warning(
                 "[VtkVis::SetMeshRenderingMode] Requested viewID not found, "
@@ -3603,7 +4049,7 @@ void VtkVis::setMeshRenderingMode(MESH_RENDERING_MODE mode,
 void VtkVis::setMeshStippling(bool enabled,
                               const std::string& viewID,
                               int viewport) {
-    vtkActor* actor = getActorById(viewID);
+    vtkActor* actor = actorForRenderingProperties(viewID);
     if (!actor) return;
 
     // Disabling is a no-op (stippling is simulated by directly setting a
@@ -3748,7 +4194,7 @@ void VtkVis::setPointGaussianRendering(bool enabled,
 }
 
 void VtkVis::setLightMode(const std::string& viewID, int viewport) {
-    vtkActor* actor = getActorById(viewID);
+    vtkActor* actor = actorForRenderingProperties(viewID);
     if (actor) {
         // actor->GetProperty()->SetAmbient(1.0);
         actor->GetProperty()->SetLighting(false);
@@ -3761,7 +4207,7 @@ void VtkVis::setLineWidth(const unsigned char lineWidth,
                           int viewport) {
     unsigned char width =
             std::max<unsigned char>(1, std::min<unsigned char>(lineWidth, 16));
-    vtkActor* actor = getActorById(viewID);
+    vtkActor* actor = actorForRenderingProperties(viewID);
     if (actor) {
         actor->GetProperty()->SetLineWidth(float(width));
         actor->Modified();
@@ -4435,6 +4881,14 @@ std::string VtkVis::getIdByActor(vtkProp* actor) {
         }
     }
 
+    // Composite group actors: the caller gets the group id; leaf resolution
+    // happens through pickLeafViewId's hardware COMPOSITE_INDEX pass.
+    const std::string groupId =
+            m_compositeRegistry.groupIdOfActor(vtkActor::SafeDownCast(actor));
+    if (!groupId.empty()) {
+        return groupId;
+    }
+
     // HW selection may return a different vtkProp wrapper for the same dataset.
     vtkActor* pickedActor = vtkActor::SafeDownCast(actor);
     vtkPolyData* pickedPoly = nullptr;
@@ -4812,10 +5266,414 @@ vtkActor* VtkVis::pickActor(double x, double y) {
     return m_propPicker->GetActor();
 }
 
+vtkActor* VtkVis::actorForRenderingProperties(const std::string& viewID) {
+    // Composite leaves resolve to the GROUP actor: the group carries one
+    // shared material, and resolving here must never mutate the aggregation
+    // (a resolve-time eviction oscillated with drawMesh's re-aggregation —
+    // the leaves flipped dedicated/composite every frame). Styled leaves are
+    // kept out of the group by drawMesh's aggregation gate instead, so the
+    // sync below only ever writes default-valued state for them.
+    if (m_compositeRegistry.containsLeaf(viewID)) {
+        const std::string groupId = m_compositeRegistry.groupOfLeaf(viewID);
+        return m_compositeRegistry.groupActor(groupId);
+    }
+    return getActorById(viewID);
+}
+
+// VTK version guard: the composite pipeline needs VTK >= 9
+// (vtkCompositePolyDataMapper2 + composite selection attributes). On older
+// VTK the aggregation gate falls back to the pre-aggregation all-dedicated
+// rendering — identical visuals, O(leaves) frame cost.
+bool VtkVis::compositeRenderingSupported() {
+#if VTK_MAJOR_VERSION >= 9
+    return true;
+#else
+    return false;
+#endif
+}
+
+void VtkVis::removeCompositeLeafEntity(const std::string& leafId,
+                                       int viewport) {
+    if (!m_compositeRegistry.containsLeaf(leafId)) {
+        return;
+    }
+    const std::string groupId = m_compositeRegistry.groupOfLeaf(leafId);
+    vtkActor* doomedGroupActor =
+            groupId.empty() ? nullptr : m_compositeRegistry.groupActor(groupId);
+    std::string emptiedGroup;
+    m_compositeRegistry.removeLeaf(leafId, &emptiedGroup);
+    m_leafGeometryKey.erase(leafId);
+    m_objectLightIntensity.erase(leafId);
+    if (!emptiedGroup.empty() && doomedGroupActor) {
+        removeActorFromRenderer(doomedGroupActor, viewport);
+    }
+}
+
+void VtkVis::removeCompositeGroupEntity(const std::string& groupId,
+                                        int viewport) {
+    vtkActor* groupActor = m_compositeRegistry.groupActor(groupId);
+    if (!groupActor) {
+        return;
+    }
+    removeActorFromRenderer(groupActor, viewport);
+    m_compositeRegistry.destroyGroup(groupId);
+}
+
+void VtkVis::removeFromComposite(const std::string& viewID, int viewport) {
+    const std::string groupId = m_compositeRegistry.groupOfLeaf(viewID);
+    vtkActor* doomedGroupActor =
+            groupId.empty() ? nullptr : m_compositeRegistry.groupActor(groupId);
+    std::string emptiedGroup;
+    m_compositeRegistry.removeLeaf(viewID, &emptiedGroup);
+    m_leafGeometryKey.erase(viewID);
+    if (!emptiedGroup.empty() && doomedGroupActor) {
+        removeActorFromRenderer(doomedGroupActor, viewport);
+    }
+    if (CVLog::diagnosticsEnabled()) {
+        CVLog::Print(
+                "[composite] leaf '%s' left group '%s' for per-entity "
+                "properties",
+                viewID.c_str(), groupId.c_str());
+    }
+}
+
+vtkActor* VtkVis::evictCompositeLeaf(const std::string& viewID, int viewport) {
+    removeFromComposite(viewID, viewport);
+
+    // Rebuild the dedicated actor synchronously: camera-only renders do not
+    // run the draw tree, so without this the evicted leaf stayed invisible
+    // until the next selection/property change.
+    if (ccHObject* src = getSourceObject(viewID)) {
+        if (ccGenericMesh* mesh = ccHObjectCaster::ToGenericMesh(src)) {
+            if (ccPointCloud* pc = ccHObjectCaster::ToPointCloud(
+                        const_cast<ccGenericPointCloud*>(
+                                mesh->getAssociatedCloud()))) {
+                if (auto polydata =
+                            Converters::Cc2Vtk::MeshToPolyData(pc, mesh)) {
+                    AddPolygonMeshPolyData(polydata, viewID, viewport, this,
+                                           cloud_actor_map_);
+                    // Carry the leaf's display color: for Color=None leaves
+                    // that is the default mesh color (defaultMeshFrontDiff —
+                    // the green), matching the composite block pin. Without
+                    // this the rebuilt actor keeps the VTK default white and
+                    // the first light-intensity edit turned the green mesh
+                    // gray.
+                    vtkActor* rebuilt = getActorById(viewID);
+                    if (rebuilt && !mesh->colorsShown() && !mesh->sfShown() &&
+                        !(mesh->hasMaterials() && mesh->materialsShown())) {
+                        const ecvColor::Rgbf& def =
+                                m_ownerDisplay
+                                        ? m_ownerDisplay->getDisplayParameters()
+                                                  .meshFrontDiff
+                                        : ecvColor::Rgbf(
+                                                  ecvColor::
+                                                          defaultMeshFrontDiff);
+                        rebuilt->GetProperty()->SetColor(def.r, def.g, def.b);
+                        if (vtkMapper* mapper = rebuilt->GetMapper()) {
+                            mapper->ScalarVisibilityOff();
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return getActorById(viewID);
+}
+
+namespace {
+
+// Slab-test ray vs axis-aligned box. @return true when the ray intersects;
+// @param tNear receives the entry distance along the (unnormalized) ray.
+bool RayAABB(const double o[3],
+             const double d[3],
+             const double bmin[3],
+             const double bmax[3],
+             double& tNear) {
+    double t0 = 0.0;
+    double t1 = std::numeric_limits<double>::max();
+    for (int a = 0; a < 3; ++a) {
+        if (std::abs(d[a]) < 1e-15) {
+            if (o[a] < bmin[a] || o[a] > bmax[a]) return false;
+        } else {
+            const double inv = 1.0 / d[a];
+            double tn = (bmin[a] - o[a]) * inv;
+            double tf = (bmax[a] - o[a]) * inv;
+            if (tn > tf) std::swap(tn, tf);
+            t0 = std::max(t0, tn);
+            t1 = std::min(t1, tf);
+            if (t0 > t1) return false;
+        }
+    }
+    tNear = t0;
+    return true;
+}
+
+// Möller–Trumbore ray vs triangle; @param t receives the hit distance along
+// the (unnormalized) ray, valid only when true is returned.
+bool RayTriangle(const double o[3],
+                 const double d[3],
+                 const double v0[3],
+                 const double v1[3],
+                 const double v2[3],
+                 double& t) {
+    const double e1[3] = {v1[0] - v0[0], v1[1] - v0[1], v1[2] - v0[2]};
+    const double e2[3] = {v2[0] - v0[0], v2[1] - v0[1], v2[2] - v0[2]};
+    const double p[3] = {d[1] * e2[2] - d[2] * e2[1],
+                         d[2] * e2[0] - d[0] * e2[2],
+                         d[0] * e2[1] - d[1] * e2[0]};
+    const double det = e1[0] * p[0] + e1[1] * p[1] + e1[2] * p[2];
+    if (std::abs(det) < 1e-15) return false;
+    const double invDet = 1.0 / det;
+    const double s[3] = {o[0] - v0[0], o[1] - v0[1], o[2] - v0[2]};
+    const double u = (s[0] * p[0] + s[1] * p[1] + s[2] * p[2]) * invDet;
+    if (u < -1e-9 || u > 1.0 + 1e-9) return false;
+    const double q[3] = {s[1] * e1[2] - s[2] * e1[1],
+                         s[2] * e1[0] - s[0] * e1[2],
+                         s[0] * e1[1] - s[1] * e1[0]};
+    const double v = (d[0] * q[0] + d[1] * q[1] + d[2] * q[2]) * invDet;
+    if (v < -1e-9 || u + v > 1.0 + 1e-9) return false;
+    t = (e2[0] * q[0] + e2[1] * q[1] + e2[2] * q[2]) * invDet;
+    return t > 1e-9;
+}
+
+}  // namespace
+
+std::string VtkVis::cpuPickCompositeLeaf(double x, double y) {
+    auto* ren = getRendererCollection()->GetFirstRenderer();
+    if (!ren || !ren->GetActiveCamera()) return std::string();
+
+    // World-space pick ray through the display pixel: VTK display→world at
+    // z=0 (near plane) and z=1 (far plane), perspective-divided (same pattern
+    // as vtkPicker::Pick). Complexity: O(groups × leaves) AABB slab tests,
+    // per-triangle work only for AABB candidates — tiny aggregated leaves
+    // keep this well under a millisecond.
+    auto worldRay = [ren](double px, double py, double outO[3],
+                          double outD[3]) -> bool {
+        double a[4] = {px, py, 0.0, 1.0};
+        double b[4] = {px, py, 1.0, 1.0};
+        double w0[4], w1[4];
+        ren->SetDisplayPoint(a);
+        ren->DisplayToWorld();
+        ren->GetWorldPoint(w0);
+        ren->SetDisplayPoint(b);
+        ren->DisplayToWorld();
+        ren->GetWorldPoint(w1);
+        if (std::abs(w0[3]) < 1e-12 || std::abs(w1[3]) < 1e-12) return false;
+        outO[0] = w0[0] / w0[3];
+        outO[1] = w0[1] / w0[3];
+        outO[2] = w0[2] / w0[3];
+        outD[0] = w1[0] / w1[3] - outO[0];
+        outD[1] = w1[1] / w1[3] - outO[1];
+        outD[2] = w1[2] / w1[3] - outO[2];
+        return true;
+    };
+
+    // Neighbor rays (+/-1.5 px) give a small pixel tolerance for thin beams.
+    const double offsets[5][2] = {
+            {0, 0}, {1.5, 0}, {-1.5, 0}, {0, 1.5}, {0, -1.5}};
+
+    std::string bestLeaf;
+    double bestT = std::numeric_limits<double>::max();
+
+    vtkNew<vtkGenericCell> cell;
+    for (const auto& gid : m_compositeRegistry.groupIds()) {
+        vtkActor* groupActor = m_compositeRegistry.groupActor(gid);
+        if (!groupActor || !groupActor->GetVisibility() ||
+            !groupActor->GetPickable()) {
+            continue;
+        }
+        // Inverse actor matrix: block geometry is stored untransformed, the
+        // group actor matrix carries the group-level transform.
+        vtkNew<vtkMatrix4x4> inv;
+        vtkMatrix4x4::Invert(groupActor->GetMatrix(), inv);
+
+        for (const auto& off : offsets) {
+            double o[3], d[3];
+            if (!worldRay(x + off[0], y + off[1], o, d)) continue;
+            double lo[4] = {o[0], o[1], o[2], 1.0};
+            double lf[4] = {o[0] + d[0], o[1] + d[1], o[2] + d[2], 1.0};
+            double lrot[4], lft[4];
+            inv->MultiplyPoint(lo, lrot);
+            inv->MultiplyPoint(lf, lft);
+            const double rr[3] = {lrot[0], lrot[1], lrot[2]};
+            const double rd[3] = {lft[0] - lrot[0], lft[1] - lrot[1],
+                                  lft[2] - lrot[2]};
+
+            const vtkIdType slotCount = m_compositeRegistry.leafSlotCount(gid);
+            for (vtkIdType slot = 0; slot < slotCount; ++slot) {
+                const std::string leafId =
+                        m_compositeRegistry.leafAtFlatIndex(gid, slot);
+                if (leafId.empty()) continue;  // reusable hole
+                auto* poly = vtkPolyData::SafeDownCast(
+                        m_compositeRegistry.blockAtFlatIndex(gid, slot));
+                if (!poly) continue;
+                if (!m_compositeRegistry.blockVisible(gid, slot)) continue;
+                double bb[6];
+                poly->GetBounds(bb);
+                double tEntry = 0.0;
+                if (!RayAABB(rr, rd, bb, bb + 3, tEntry)) continue;
+                if (tEntry >= bestT) continue;  // cannot beat the best hit
+
+                const vtkIdType nTris = poly->GetNumberOfCells();
+                for (vtkIdType c = 0; c < nTris; ++c) {
+                    poly->GetCell(c, cell);
+                    if (cell->GetNumberOfPoints() != 3) continue;
+                    double a[3], b2[3], cc2[3];
+                    cell->GetPoints()->GetPoint(0, a);
+                    cell->GetPoints()->GetPoint(1, b2);
+                    cell->GetPoints()->GetPoint(2, cc2);
+                    double t = 0.0;
+                    if (RayTriangle(rr, rd, a, b2, cc2, t) && t < bestT) {
+                        bestT = t;
+                        bestLeaf = leafId;
+                    }
+                }
+            }
+        }
+    }
+    return bestLeaf;
+}
+
+std::string VtkVis::pickLeafViewId(double x, double y) {
+    auto* ren = getRendererCollection()->GetFirstRenderer();
+    if (!ren) return std::string();
+    const auto t0 = std::chrono::steady_clock::now();
+
+    // GPU picking (ParaView-style): a single hardware pass resolves both the
+    // actor and the composite block index. The previous path ran a software
+    // propPicker first, which re-renders the whole scene on every pick and
+    // stalls on multi-million-point scenes.
+    auto runHwPass = [ren](double px,
+                           double py) -> vtkSmartPointer<vtkSelection> {
+        vtkSmartPointer<vtkHardwareSelector> selector =
+                vtkHardwareSelector::New();
+        selector->SetRenderer(ren);
+        selector->SetArea(static_cast<int>(px), static_cast<int>(py),
+                          static_cast<int>(px), static_cast<int>(py));
+        selector->SetFieldAssociation(vtkDataObject::FIELD_ASSOCIATION_POINTS);
+        vtkSmartPointer<vtkSelection> sel;
+        sel.TakeReference(selector->Select());
+        return sel;
+    };
+
+    // ParaView PrepareSelect note: the selection pass must sample a freshly
+    // rendered frame. A retry-with-UpdateScreen was tried here and reverted:
+    // the CPU ray-cast fallback below covers the composite-miss case without
+    // touching the render pipeline during picking.
+    vtkSmartPointer<vtkSelection> selection = runHwPass(x, y);
+
+    if (selection && selection->GetNumberOfNodes() > 0) {
+        vtkSelectionNode* node = selection->GetNode(0);
+        vtkActor* actor = nullptr;
+        if (node && node->GetProperties()->Has(vtkSelectionNode::PROP())) {
+            actor = vtkActor::SafeDownCast(vtkProp::SafeDownCast(
+                    node->GetProperties()->Get(vtkSelectionNode::PROP())));
+        }
+        if (actor) {
+            const std::string groupId =
+                    m_compositeRegistry.groupIdOfActor(actor);
+            if (groupId.empty()) {
+                const std::string id = getIdByActor(actor);
+                if (CVLog::diagnosticsEnabled()) {
+                    CVLog::Print("[pick] leaf entity '%s' in %.1f ms",
+                                 id.c_str(),
+                                 std::chrono::duration<double, std::milli>(
+                                         std::chrono::steady_clock::now() - t0)
+                                         .count());
+                }
+                return id;
+            }
+            const bool hasCompositeIndex = node->GetProperties()->Has(
+                    vtkSelectionNode::COMPOSITE_INDEX());
+            if (hasCompositeIndex) {
+                const vtkIdType compositeIndex = node->GetProperties()->Get(
+                        vtkSelectionNode::COMPOSITE_INDEX());
+                const std::string leafId = m_compositeRegistry.leafAtFlatIndex(
+                        groupId, compositeIndex - 1);
+                if (!leafId.empty()) {
+                    if (CVLog::diagnosticsEnabled()) {
+                        CVLog::Print(
+                                "[pick] composite leaf '%s' (block %lld) in "
+                                "%.1f ms",
+                                leafId.c_str(),
+                                static_cast<long long>(compositeIndex - 1),
+                                std::chrono::duration<double, std::milli>(
+                                        std::chrono::steady_clock::now() - t0)
+                                        .count());
+                    }
+                    return leafId;
+                }
+                if (CVLog::diagnosticsEnabled()) {
+                    CVLog::Print(
+                            "[pick-probe] flat index %lld not mapped in group "
+                            "'%s' -> cpu ray-cast",
+                            static_cast<long long>(compositeIndex - 1),
+                            groupId.c_str());
+                }
+            } else {
+                if (CVLog::diagnosticsEnabled()) {
+                    CVLog::Print(
+                            "[pick-probe] hw hit composite of group '%s' "
+                            "without "
+                            "COMPOSITE_INDEX -> cpu ray-cast",
+                            groupId.c_str());
+                }
+            }
+            // The hw pass confirmed geometry under the cursor but the block
+            // index is unusable: resolve the leaf against the registry's own
+            // block geometry. Group id stays the last resort (the fragment
+            // belongs to this group's meshes).
+            {
+                const std::string cpuLeaf = cpuPickCompositeLeaf(x, y);
+                if (!cpuLeaf.empty()) {
+                    if (CVLog::diagnosticsEnabled()) {
+                        CVLog::Print("[pick] cpu ray-cast leaf '%s'",
+                                     cpuLeaf.c_str());
+                    }
+                    return cpuLeaf;
+                }
+            }
+            return groupId;
+        }
+    }
+
+    // Pixel-accurate hardware miss: either true background or the composite
+    // actor again produced no selection fragments. CPU ray-cast against the
+    // composite blocks disambiguates the two; the former propPicker fallback
+    // cannot — its world-space tolerance hit the GROUP actor from background
+    // pixels and selected the whole folder.
+    {
+        const std::string cpuLeaf = cpuPickCompositeLeaf(x, y);
+        if (!cpuLeaf.empty()) {
+            if (CVLog::diagnosticsEnabled()) {
+                CVLog::Print(
+                        "[pick] hw miss -> cpu ray-cast leaf '%s' in %.1f ms",
+                        cpuLeaf.c_str(),
+                        std::chrono::duration<double, std::milli>(
+                                std::chrono::steady_clock::now() - t0)
+                                .count());
+            }
+            return cpuLeaf;
+        }
+    }
+    if (CVLog::diagnosticsEnabled()) {
+        CVLog::Print("[pick] hw miss at (%.0f, %.0f) in %.1f ms", x, y,
+                     std::chrono::duration<double, std::milli>(
+                             std::chrono::steady_clock::now() - t0)
+                             .count());
+    }
+    return std::string();
+}
+
 std::string VtkVis::pickItem(double x0 /* = -1*/,
                              double y0 /* = -1*/,
                              double x1 /*= 5.0*/,
                              double y1 /*= 5.0*/) {
+    // Timing probe only: the original vtkAreaPicker semantics are kept
+    // verbatim because other selection tools depend on its frustum/geometry
+    // behavior. Measure first, optimize only what the numbers indict.
+    QElapsedTimer pickTimer;
+    pickTimer.start();
     if (!m_area_picker) {
         m_area_picker = vtkSmartPointer<vtkAreaPicker>::New();
     }
@@ -4825,11 +5683,18 @@ std::string VtkVis::pickItem(double x0 /* = -1*/,
     if (!firstRen) return {};
     m_area_picker->AreaPick(pos[0], pos[1], pos[0] + x1, pos[1] + y1, firstRen);
     vtkActor* pickedActor = m_area_picker->GetActor();
+    const qint64 pickMs = pickTimer.elapsed();
     if (pickedActor) {
-        return getIdByActor(pickedActor);
-    } else {
-        return std::string("-1");
+        const std::string id = getIdByActor(pickedActor);
+        CVLog::Print("[pickItem] hit '%s' in %lld ms", id.c_str(),
+                     static_cast<long long>(pickMs));
+        return id;
     }
+    if (CVLog::diagnosticsEnabled()) {
+        CVLog::Print("[pickItem] no hit in %lld ms",
+                     static_cast<long long>(pickMs));
+    }
+    return std::string("-1");
 }
 
 QImage VtkVis::renderToImage(int zoomFactor,
@@ -4999,11 +5864,69 @@ void VtkVis::setObjectLightIntensity(const std::string& viewID,
                                      bool triggerRender) {
     Q_UNUSED(viewport);
     intensity = std::max(0.0, std::min(1.0, intensity));
+
+    // Group-level lighting: applying to the container that OWNS a composite
+    // group resolves on the group actor (one shared material), O(1) and with
+    // no eviction. The recursive group-apply in the property panel routes
+    // here for the container; leaves must NOT be evicted one by one — that
+    // storm destroyed the aggregation and emptied the whole group.
+    if (m_compositeRegistry.hasGroup(viewID)) {
+        m_objectLightIntensity[viewID] = intensity;
+        if (vtkActor* groupActor = m_compositeRegistry.groupActor(viewID)) {
+            applyLightPropertiesToActor(groupActor, viewID);
+        }
+        if (triggerRender) {
+            UpdateScreen();
+            if (auto rw = getRenderWindow()) {
+                rw->Render();
+            }
+        }
+        return;
+    }
+
+    // Per-entity lighting: the override belongs to the LEAF entity (the
+    // caller applies it to exactly the selected entity's subtree). Aggregated
+    // leaves have no dedicated actor and VTK composite mappers expose one
+    // material per group, so a leaf with its own intensity must leave the
+    // group; the next draw builds it a dedicated actor carrying the override.
     m_objectLightIntensity[viewID] = intensity;
+
+    // Equal-to-group guard: requesting exactly the group's resolved intensity
+    // must NOT evict the leaf. Eviction is one-way for the session (a stored
+    // override blocks re-aggregation in drawMesh), so a redundant equal-value
+    // apply would permanently downgrade O(1) group rendering back to 287
+    // standalone actors.
+    if (m_compositeRegistry.containsLeaf(viewID)) {
+        const std::string groupId = m_compositeRegistry.groupOfLeaf(viewID);
+        auto git = m_objectLightIntensity.find(groupId);
+        const double resolved = git != m_objectLightIntensity.end()
+                                        ? git->second
+                                        : m_lightIntensity;
+        if (std::abs(resolved - intensity) < 1e-9) {
+            m_objectLightIntensity.erase(viewID);
+            if (triggerRender) {
+                UpdateScreen();
+                if (auto rw = getRenderWindow()) {
+                    rw->Render();
+                }
+            }
+            return;
+        }
+    }
 
     vtkActor* actor = getActorById(viewID);
     if (actor) {
+        // A previously evicted leaf: per-entity override applies to its own
+        // actor directly (no composite state involved).
         applyLightPropertiesToActor(actor, viewID);
+    } else if (m_compositeRegistry.containsLeaf(viewID)) {
+        // Genuine per-entity intensity on an aggregated leaf: the group
+        // carries one material, so the leaf must leave the group. One-way
+        // for the session (pre-existing semantics).
+        vtkActor* rebuilt = evictCompositeLeaf(viewID, viewport);
+        if (rebuilt) {
+            applyLightPropertiesToActor(rebuilt, viewID);
+        }
     }
 
     if (triggerRender) {
@@ -5067,6 +5990,15 @@ void VtkVis::setLightIntensity(double intensity) {
     // Update headlight intensity
     headlight->SetIntensity(m_lightIntensity);
     renderer->LightFollowCameraOn();
+
+    // Global lighting change: composite group actors bake ambient/diffuse
+    // from the resolved intensity at apply time, so re-apply to every group
+    // (their blocks are unaffected; this is an O(groups) property update).
+    for (const std::string& gid : m_compositeRegistry.groupIds()) {
+        if (vtkActor* groupActor = m_compositeRegistry.groupActor(gid)) {
+            applyLightPropertiesToActor(groupActor, gid);
+        }
+    }
 
     if (cloud_actor_map_) {
         for (auto& kv : *cloud_actor_map_) {
@@ -5348,6 +6280,21 @@ void VtkVis::SetDataAxesGridProperties(const std::string& viewID,
     }
 
     dataAxesGrid->Modified();
+
+    // Low-frequency probe (checkbox clicks): final actor state after the
+    // property write — distinguishes bounds-resolution failures from
+    // visibility/renderer issues in one log line.
+    {
+        double gb[6] = {0, 0, 0, 0, 0, 0};
+        dataAxesGrid->GetGridBounds(gb);
+        if (CVLog::diagnosticsEnabled()) {
+            CVLog::Print(
+                    "[axesGrid] viewID='%s' visible=%d gridBounds=[%.2f %.2f "
+                    "%.2f | %.2f %.2f %.2f]",
+                    viewID.c_str(), dataAxesGrid->GetVisibility() ? 1 : 0,
+                    gb[0], gb[2], gb[4], gb[1], gb[3], gb[5]);
+        }
+    }
 
     UpdateScreen();
     if (auto rw = getRenderWindow()) {

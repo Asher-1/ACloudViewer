@@ -10,7 +10,7 @@
 #include <vector>
 
 #include "mvs/image.h"
-#include "util/bitmap.h"
+#include "sensor/bitmap.h"
 #include "util/ply.h"
 
 namespace colmap {

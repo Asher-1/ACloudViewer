@@ -29,6 +29,12 @@ ccMaterialSet *createMaterialSetForMesh(const aiMesh *inMesh,
 
 ccMesh *newCCMeshFromAIMesh(const aiMesh *inMesh);
 
+// Converts a glTF POINT primitive (assimp: aiMesh without triangle faces) to
+// a plain point cloud. Routing such meshes through ccMesh creates one
+// degenerate one-vertex face per point and later triple-expands them in the
+// VTK converter; a point cloud keeps them on the cheap point path.
+ccPointCloud *newCCPointCloudFromAIMesh(const aiMesh *inMesh);
+
 ccGLMatrix convertMatrix(const aiMatrix4x4 &inAssimpMatrix);
 
 QVariant convertMetaValueToVariant(aiMetadata *inData,

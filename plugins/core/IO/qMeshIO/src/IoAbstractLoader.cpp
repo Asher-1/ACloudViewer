@@ -139,6 +139,23 @@ private:
             const auto cMeshIndex = inNode->mMeshes[j];
             const auto mesh = inScene->mMeshes[cMeshIndex];
 
+            // glTF POINT primitives are point clouds, not meshes: through
+            // ccMesh they become one degenerate face per point (millions for
+            // a TRELLIS splat export) and triple-expand in the VTK converter.
+            const bool pointPrimitive =
+                    (mesh->mPrimitiveTypes & aiPrimitiveType_POINT) != 0 &&
+                    (mesh->mPrimitiveTypes & aiPrimitiveType_TRIANGLE) == 0;
+            if (pointPrimitive) {
+                auto pointCloud = IoUtils::newCCPointCloudFromAIMesh(mesh);
+
+                if (pointCloud == nullptr) {
+                    continue;
+                }
+
+                currentObject->addChild(pointCloud);
+                continue;
+            }
+
             ccMesh *newMesh = IoUtils::newCCMeshFromAIMesh(mesh);
 
             if (newMesh == nullptr) {

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 #include "estimators/relpose_one_sided_focal.h"
 
-#include "base/essential_matrix.h"
+#include "geometry/essential_matrix.h"
 
 #include <ceres/tiny_solver.h>
 

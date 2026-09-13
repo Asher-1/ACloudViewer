@@ -35,7 +35,7 @@
 #include <unordered_set>
 
 #include "feature/types.h"
-#include "util/math.h"
+#include "math/math.h"
 
 using namespace colmap;
 

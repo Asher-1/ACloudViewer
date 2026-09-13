@@ -12,7 +12,7 @@
 #include <QtWidgets>
 #include <unordered_map>
 
-#include "base/reconstruction.h"
+#include "scene/reconstruction.h"
 
 namespace colmap {
 

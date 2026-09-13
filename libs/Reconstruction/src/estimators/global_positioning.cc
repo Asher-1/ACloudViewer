@@ -1,7 +1,7 @@
 #include "estimators/global_positioning.h"
 
 #include "estimators/cost_functions/motion_averaging.h"
-#include "util/random.h"
+#include "math/random.h"
 #include "util/cuda.h"
 #include "util/hash_containers.h"
 #include "util/misc.h"

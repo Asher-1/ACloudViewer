@@ -39,10 +39,10 @@ endif ()
 
 set_property(GLOBAL PROPERTY COLMAP_SOURCES "")
 
-add_subdirectory(base)
 add_subdirectory(controllers)
 add_subdirectory(estimators)
 add_subdirectory(geometry)
+add_subdirectory(image)
 add_subdirectory(exe)
 add_subdirectory(feature)
 add_subdirectory(math)

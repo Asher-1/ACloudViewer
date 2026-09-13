@@ -1,0 +1,670 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#pragma once
+
+// clang-format off
+#include "util/alignment.h"
+// clang-format on
+
+#include <filesystem>
+#include <tuple>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+
+#include "estimators/solvers/similarity_transform.h"
+#include "geometry/sim3.h"
+#include "geometry/similarity_transform.h"
+#include "optim/loransac.h"
+#include "scene/camera.h"
+#include "scene/database.h"
+#include "scene/frame.h"
+#include "scene/image.h"
+#include "scene/point2d.h"
+#include "scene/point3d.h"
+#include "scene/rig.h"
+#include "scene/track.h"
+#include "util/types.h"
+
+namespace colmap {
+
+struct PlyPoint;
+struct RANSACOptions;
+class DatabaseCache;
+class CorrespondenceGraph;
+
+// Reconstruction class holds all information about a single reconstructed
+// model. It is used by the mapping and bundle adjustment classes and can be
+// written to and read from disk.
+class Reconstruction {
+public:
+    struct ImagePairStat {
+        // The number of triangulated correspondences between two images.
+        size_t num_tri_corrs = 0;
+        // The number of total correspondences/matches between two images.
+        size_t num_total_corrs = 0;
+    };
+
+    Reconstruction();
+
+    // Copy construct/assign. Updates camera pointers.
+    Reconstruction(const Reconstruction& other);
+    Reconstruction& operator=(const Reconstruction& other);
+
+    // Move construct/assign. The hashed containers move their nodes without
+    // rehashing, so the back pointers of the moved-from objects stay valid;
+    // the source is expected to be discarded immediately afterwards.
+    Reconstruction(Reconstruction&&) = default;
+    Reconstruction& operator=(Reconstruction&&) = default;
+
+    // Get number of objects.
+    inline size_t NumCameras() const;
+    inline size_t NumImages() const;
+    inline size_t NumRigs() const;
+    inline size_t NumFrames() const;
+    // Upstream-parity accessor (COLMAP 4.x scene/reconstruction.h): number of
+    // registered (pose-estimated) frames.
+    inline size_t NumRegFrames() const { return RegFrameIds().size(); }
+    inline size_t NumRegImages() const;
+    inline size_t NumPoints3D() const;
+    inline size_t NumImagePairs() const;
+    inline size_t NumAddedPoints3D() const;
+
+    // Get const objects.
+    inline const class Camera& Camera(const camera_t camera_id) const;
+    inline const class Image& Image(const image_t image_id) const;
+    inline const class Rig& Rig(const rig_t rig_id) const;
+    inline const class Frame& Frame(const frame_t frame_id) const;
+    inline const class Point3D& Point3D(const point3D_t point3D_id) const;
+    inline const ImagePairStat& ImagePair(const image_pair_t pair_id) const;
+    inline ImagePairStat& ImagePair(const image_t image_id1,
+                                    const image_t image_id2);
+
+    // Get mutable objects.
+    inline class Camera& Camera(const camera_t camera_id);
+    inline class Image& Image(const image_t image_id);
+    inline class Rig& Rig(const rig_t rig_id);
+    inline class Frame& Frame(const frame_t frame_id);
+    inline class Point3D& Point3D(const point3D_t point3D_id);
+    inline ImagePairStat& ImagePair(const image_pair_t pair_id);
+    inline const ImagePairStat& ImagePair(const image_t image_id1,
+                                          const image_t image_id2) const;
+
+    // Get reference to all objects.
+    inline const std::unordered_map<camera_t, class Camera>& Cameras() const;
+    inline const std::unordered_map<image_t, class Image>& Images() const;
+    inline const std::unordered_map<rig_t, class Rig>& Rigs() const;
+    inline const std::unordered_map<frame_t, class Frame>& Frames() const;
+
+    // Upstream-parity (COLMAP 4.x): IDs of registered (posed) frames.
+    std::unordered_set<frame_t> RegFrameIds() const;
+    // Upstream-parity (COLMAP 4.x): recompute the reprojection error of all
+    // points after batch modifications.
+    void UpdatePoint3DErrors();
+    inline const std::vector<image_t>& RegImageIds() const;
+    inline const std::unordered_map<point3D_t, class Point3D>& Points3D() const;
+    inline const std::unordered_map<image_pair_t, ImagePairStat>& ImagePairs()
+            const;
+
+    // Identifiers of all 3D points.
+    std::unordered_set<point3D_t> Point3DIds() const;
+
+    // Check whether specific object exists.
+    inline bool ExistsCamera(const camera_t camera_id) const;
+    inline bool ExistsImage(const image_t image_id) const;
+    inline bool ExistsRig(const rig_t rig_id) const;
+    inline bool ExistsFrame(const frame_t frame_id) const;
+    inline bool ExistsPoint3D(const point3D_t point3D_id) const;
+    inline bool ExistsImagePair(const image_pair_t pair_id) const;
+
+    // Load data from given `DatabaseCache`.
+    void Load(const DatabaseCache& database_cache);
+
+    // Setup all relevant data structures before reconstruction. Note the
+    // correspondence graph object must live until `TearDown` is called.
+    void SetUp(const CorrespondenceGraph* correspondence_graph);
+
+    // Finalize the Reconstruction after the reconstruction has finished.
+    //
+    // Once a scene has been finalized, it cannot be used for reconstruction.
+    //
+    // This removes all not yet registered images and unused cameras, in order
+    // to save memory.
+    void TearDown();
+
+    // Add new camera. There is only one camera per image, while multiple images
+    // might be taken by the same camera.
+    void AddCamera(const class Camera& camera);
+
+    // Add new image.
+    // Upstream-parity (COLMAP 4.x): the Add* methods wire the camera /
+    // frame / rig back pointers and validate sensor consistency.
+    void AddCameraWithTrivialRig(struct Camera camera);
+    void AddImage(class Image image);
+    void AddFrameWithTrivialRig(class Frame frame,
+                                const Rigid3d& cam_from_world);
+    void AddImageWithTrivialFrame(class Image image);
+    void AddImageWithTrivialFrame(class Image image,
+                                  const Rigid3d& cam_from_world);
+
+    void AddRig(class Rig rig);
+    void AddFrame(class Frame frame);
+
+    // Sets all rigs and frames of the reconstruction and re-wires the
+    // corresponding image back pointers (upstream scene/reconstruction.h
+    // parity, used by the rig configurator).
+    void SetRigsAndFrames(std::vector<class Rig> rigs,
+                          std::vector<class Frame> frames);
+
+    // Add new 3D object, and return its unique ID.
+    point3D_t AddPoint3D(
+            const Eigen::Vector3d& xyz,
+            const Track& track,
+            const Eigen::Vector3ub& color = Eigen::Vector3ub::Zero());
+
+    // Add new 3D point with known ID (upstream parity, dbb41680).
+    void AddPoint3D(const point3D_t point3D_id, struct Point3D point3D);
+
+    // Add observation to existing 3D point.
+    void AddObservation(const point3D_t point3D_id,
+                        const TrackElement& track_el);
+
+    // Merge two 3D points and return new identifier of new 3D point.
+    // The location of the merged 3D point is a weighted average of the two
+    // original 3D point's locations according to their track lengths.
+    point3D_t MergePoints3D(const point3D_t point3D_id1,
+                            const point3D_t point3D_id2);
+
+    // Delete a 3D point, and all its references in the observed images.
+    void DeletePoint3D(const point3D_t point3D_id);
+
+    // Delete one observation from an image and the corresponding 3D point.
+    // Note that this deletes the entire 3D point, if the track has two elements
+    // prior to calling this method.
+    void DeleteObservation(const image_t image_id, const point2D_t point2D_idx);
+
+    // Delete all 2D points of all images and all 3D points.
+    void DeleteAllPoints2DAndPoints3D();
+
+    // Register an existing image.
+    void RegisterImage(const image_t image_id);
+
+    // De-register an existing image, and all its references.
+    void DeRegisterImage(const image_t image_id);
+
+    // Upstream-parity (COLMAP 4.x scene/reconstruction.h): de-register a
+    // registered frame: clean up the observations of all its images and
+    // reset the frame pose. Ignored with a warning if the frame has no pose.
+    void DeRegisterFrame(const frame_t frame_id);
+
+    // Upstream-parity (COLMAP 4.x scene/reconstruction.h): rebind every
+    // frame/image back pointer into this object's containers after the copy
+    // constructor or assignment.
+    void RewireObjectPointers();
+
+    // Check if image is registered.
+    inline bool IsImageRegistered(const image_t image_id) const;
+
+    // Normalize scene by scaling and translation to avoid degenerate
+    // visualization after bundle adjustment and to improve numerical
+    // stability of algorithms.
+    //
+    // Translates scene such that the mean of the camera centers or point
+    // locations are at the origin of the coordinate system.
+    //
+    // Scales scene such that the minimum and maximum camera centers are at the
+    // given `extent`, whereas `p0` and `p1` determine the minimum and
+    // maximum percentiles of the camera centers considered.
+    void Normalize(const double extent = 10.0,
+                   const double p0 = 0.1,
+                   const double p1 = 0.9,
+                   const bool use_images = true);
+
+    // Compute the centroid of the 3D points
+    Eigen::Vector3d ComputeCentroid(const double p0 = 0.1,
+                                    const double p1 = 0.9) const;
+
+    // Compute the bounding box corners of the 3D points
+    std::pair<Eigen::Vector3d, Eigen::Vector3d> ComputeBoundingBox(
+            const double p0 = 0.0, const double p1 = 1.0) const;
+
+    // Apply the 3D similarity transformation to all images and points.
+    void Transform(const SimilarityTransform3& tform);
+    // Upstream COLMAP dbb41680 scene/reconstruction.h: similarity transform
+    // driven by Sim3d; keeps rigs, frames, images and points3D consistent.
+    void Transform(const Sim3d& new_from_old_world);
+
+    // Creates a cropped reconstruction using the input bounds as corner points
+    // of the bounding box containing the included 3D points of the new
+    // reconstruction. Only the cameras and images of the included points are
+    // registered.
+    Reconstruction Crop(
+            const std::pair<Eigen::Vector3d, Eigen::Vector3d>& bbox) const;
+
+    // Merge the given reconstruction into this reconstruction by registering
+    // the images registered in the given but not in this reconstruction and by
+    // merging the two clouds and their tracks. The coordinate frames of the two
+    // reconstructions are aligned using the projection centers of common
+    // registered images. Return true if the two reconstructions could be
+    // merged.
+    bool Merge(const Reconstruction& reconstruction,
+               const double max_reproj_error);
+
+    // Align the given reconstruction with a set of pre-defined camera
+    // positions. Assuming that locations[i] gives the 3D coordinates of the
+    // center of projection of the image with name image_names[i].
+    template <bool kEstimateScale = true>
+    bool Align(const std::vector<std::string>& image_names,
+               const std::vector<Eigen::Vector3d>& locations,
+               const int min_common_images,
+               SimilarityTransform3* tform = nullptr);
+
+    // Robust alignment using RANSAC.
+    template <bool kEstimateScale = true>
+    bool AlignRobust(const std::vector<std::string>& image_names,
+                     const std::vector<Eigen::Vector3d>& locations,
+                     const int min_common_images,
+                     const RANSACOptions& ransac_options,
+                     SimilarityTransform3* tform = nullptr);
+
+    // Find specific image by name. Note that this uses linear search.
+    const class Image* FindImageWithName(const std::string& name) const;
+
+    // Find images that are both present in this and the given reconstruction.
+    // Upstream COLMAP dbb41680 semantics: common registered images matched
+    // by name, returned as (this_id, other_id) pairs.
+    std::vector<std::pair<image_t, image_t>> FindCommonRegImageIds(
+            const Reconstruction& other) const;
+
+    // Update the image identifiers to match the ones in the database by
+    // matching the names of the images.
+    void TranscribeImageIdsToDatabase(const Database& database);
+
+    // Filter 3D points with large reprojection error, negative depth, or
+    // insufficient triangulation angle.
+    //
+    // @param max_reproj_error    The maximum reprojection error.
+    // @param min_tri_angle       The minimum triangulation angle.
+    // @param point3D_ids         The points to be filtered.
+    //
+    // @return                    The number of filtered observations.
+    size_t FilterPoints3D(const double max_reproj_error,
+                          const double min_tri_angle,
+                          const std::unordered_set<point3D_t>& point3D_ids);
+    size_t FilterPoints3DInImages(const double max_reproj_error,
+                                  const double min_tri_angle,
+                                  const std::unordered_set<image_t>& image_ids);
+    size_t FilterAllPoints3D(const double max_reproj_error,
+                             const double min_tri_angle);
+
+    // Filter observations that have negative depth.
+    //
+    // @return    The number of filtered observations.
+    size_t FilterObservationsWithNegativeDepth();
+
+    // Filter images without observations or bogus camera parameters.
+    //
+    // @return    The identifiers of the filtered images.
+    std::vector<image_t> FilterImages(const double min_focal_length_ratio,
+                                      const double max_focal_length_ratio,
+                                      const double max_extra_param);
+
+    // Compute statistics for scene.
+    size_t ComputeNumObservations() const;
+    double ComputeMeanTrackLength() const;
+    double ComputeMeanObservationsPerRegImage() const;
+    double ComputeMeanReprojectionError() const;
+
+    // Read data from text or binary file. Prefer binary data if it exists.
+    void Read(const std::filesystem::path& path);
+    void Write(const std::filesystem::path& path) const;
+
+    // Read data from binary/text file.
+    void ReadText(const std::filesystem::path& path);
+    void ReadBinary(const std::filesystem::path& path);
+
+    // Write data from binary/text file.
+    void WriteText(const std::filesystem::path& path) const;
+    void WriteBinary(const std::filesystem::path& path) const;
+
+    // Convert 3D points in reconstruction to PLY point cloud.
+    std::vector<PlyPoint> ConvertToPLY() const;
+
+    // Import from other data formats. Note that these import functions are
+    // only intended for visualization of data and usable for reconstruction.
+    void ImportPLY(const std::filesystem::path& path);
+    void ImportPLY(const std::vector<PlyPoint>& ply_points);
+
+    // Extract colors for 3D points of given image. Colors will be extracted
+    // only for 3D points which are completely black.
+    //
+    // @param image_id      Identifier of the image for which to extract colors.
+    // @param path          Absolute or relative path to root folder of image.
+    //                      The image path is determined by concatenating the
+    //                      root path and the name of the image.
+    //
+    // @return              True if image could be read at given path.
+    bool ExtractColorsForImage(const image_t image_id,
+                               const std::filesystem::path& path);
+
+    // Extract colors for all 3D points by computing the mean color of all
+    // images.
+    //
+    // @param path          Absolute or relative path to root folder of image.
+    //                      The image path is determined by concatenating the
+    //                      root path and the name of the image.
+    void ExtractColorsForAllImages(const std::filesystem::path& path);
+
+    // Create all image sub-directories in the given path.
+    void CreateImageDirs(const std::filesystem::path& path) const;
+
+    // Access the correspondence graph.
+    inline const CorrespondenceGraph* GetCorrespondenceGraph() const;
+    inline bool HasCorrespondenceGraph() const;
+
+private:
+    size_t FilterPoints3DWithSmallTriangulationAngle(
+            const double min_tri_angle,
+            const std::unordered_set<point3D_t>& point3D_ids);
+    size_t FilterPoints3DWithLargeReprojectionError(
+            const double max_reproj_error,
+            const std::unordered_set<point3D_t>& point3D_ids);
+
+    std::tuple<Eigen::Vector3d, Eigen::Vector3d, Eigen::Vector3d>
+    ComputeBoundsAndCentroid(const double p0,
+                             const double p1,
+                             const bool use_images) const;
+
+    void SetObservationAsTriangulated(const image_t image_id,
+                                      const point2D_t point2D_idx,
+                                      const bool is_continued_point3D);
+    void ResetTriObservations(const image_t image_id,
+                              const point2D_t point2D_idx,
+                              const bool is_deleted_point3D);
+
+    const CorrespondenceGraph* correspondence_graph_;
+
+    std::unordered_map<camera_t, class Camera> cameras_;
+    std::unordered_map<image_t, class Image> images_;
+    std::unordered_map<rig_t, class Rig> rigs_;
+    std::unordered_map<frame_t, class Frame> frames_;
+    std::unordered_map<point3D_t, class Point3D> points3D_;
+
+    std::unordered_map<image_pair_t, ImagePairStat> image_pair_stats_;
+
+    // { image_id, ... } where `images_.at(image_id).registered == true`.
+    std::vector<image_t> reg_image_ids_;
+
+    // Total number of added 3D points, used to generate unique identifiers.
+    point3D_t num_added_points3D_;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+// Implementation
+////////////////////////////////////////////////////////////////////////////////
+
+size_t Reconstruction::NumCameras() const { return cameras_.size(); }
+
+size_t Reconstruction::NumImages() const { return images_.size(); }
+
+size_t Reconstruction::NumRigs() const { return rigs_.size(); }
+
+size_t Reconstruction::NumFrames() const { return frames_.size(); }
+
+size_t Reconstruction::NumRegImages() const { return reg_image_ids_.size(); }
+
+size_t Reconstruction::NumPoints3D() const { return points3D_.size(); }
+
+size_t Reconstruction::NumImagePairs() const {
+    return image_pair_stats_.size();
+}
+
+size_t Reconstruction::NumAddedPoints3D() const { return num_added_points3D_; }
+
+const class Camera& Reconstruction::Camera(const camera_t camera_id) const {
+    return cameras_.at(camera_id);
+}
+
+const class Image& Reconstruction::Image(const image_t image_id) const {
+    return images_.at(image_id);
+}
+
+const class Rig& Reconstruction::Rig(const rig_t rig_id) const {
+    return rigs_.at(rig_id);
+}
+
+const class Frame& Reconstruction::Frame(const frame_t frame_id) const {
+    return frames_.at(frame_id);
+}
+
+const class Point3D& Reconstruction::Point3D(const point3D_t point3D_id) const {
+    return points3D_.at(point3D_id);
+}
+
+const Reconstruction::ImagePairStat& Reconstruction::ImagePair(
+        const image_pair_t pair_id) const {
+    return image_pair_stats_.at(pair_id);
+}
+
+const Reconstruction::ImagePairStat& Reconstruction::ImagePair(
+        const image_t image_id1, const image_t image_id2) const {
+    const auto pair_id = Database::ImagePairToPairId(image_id1, image_id2);
+    return image_pair_stats_.at(pair_id);
+}
+
+class Camera& Reconstruction::Camera(const camera_t camera_id) {
+    return cameras_.at(camera_id);
+}
+
+class Image& Reconstruction::Image(const image_t image_id) {
+    return images_.at(image_id);
+}
+
+class Rig& Reconstruction::Rig(const rig_t rig_id) { return rigs_.at(rig_id); }
+
+class Frame& Reconstruction::Frame(const frame_t frame_id) {
+    return frames_.at(frame_id);
+}
+
+class Point3D& Reconstruction::Point3D(const point3D_t point3D_id) {
+    return points3D_.at(point3D_id);
+}
+
+Reconstruction::ImagePairStat& Reconstruction::ImagePair(
+        const image_pair_t pair_id) {
+    return image_pair_stats_.at(pair_id);
+}
+
+Reconstruction::ImagePairStat& Reconstruction::ImagePair(
+        const image_t image_id1, const image_t image_id2) {
+    const auto pair_id = Database::ImagePairToPairId(image_id1, image_id2);
+    return image_pair_stats_.at(pair_id);
+}
+
+const std::unordered_map<camera_t, Camera>& Reconstruction::Cameras() const {
+    return cameras_;
+}
+
+const std::unordered_map<image_t, class Image>& Reconstruction::Images() const {
+    return images_;
+}
+
+const std::unordered_map<rig_t, class Rig>& Reconstruction::Rigs() const {
+    return rigs_;
+}
+
+const std::unordered_map<frame_t, class Frame>& Reconstruction::Frames() const {
+    return frames_;
+}
+
+const std::vector<image_t>& Reconstruction::RegImageIds() const {
+    return reg_image_ids_;
+}
+
+const std::unordered_map<point3D_t, Point3D>& Reconstruction::Points3D() const {
+    return points3D_;
+}
+
+const std::unordered_map<image_pair_t, Reconstruction::ImagePairStat>&
+Reconstruction::ImagePairs() const {
+    return image_pair_stats_;
+}
+
+bool Reconstruction::ExistsCamera(const camera_t camera_id) const {
+    return cameras_.find(camera_id) != cameras_.end();
+}
+
+bool Reconstruction::ExistsImage(const image_t image_id) const {
+    return images_.find(image_id) != images_.end();
+}
+
+bool Reconstruction::ExistsRig(const rig_t rig_id) const {
+    return rigs_.find(rig_id) != rigs_.end();
+}
+
+bool Reconstruction::ExistsFrame(const frame_t frame_id) const {
+    return frames_.find(frame_id) != frames_.end();
+}
+
+bool Reconstruction::ExistsPoint3D(const point3D_t point3D_id) const {
+    return points3D_.find(point3D_id) != points3D_.end();
+}
+
+bool Reconstruction::ExistsImagePair(const image_pair_t pair_id) const {
+    return image_pair_stats_.find(pair_id) != image_pair_stats_.end();
+}
+
+bool Reconstruction::IsImageRegistered(const image_t image_id) const {
+    return Image(image_id).IsRegistered();
+}
+
+const CorrespondenceGraph* Reconstruction::GetCorrespondenceGraph() const {
+    return correspondence_graph_;
+}
+
+bool Reconstruction::HasCorrespondenceGraph() const {
+    return correspondence_graph_ != nullptr;
+}
+
+template <bool kEstimateScale>
+bool Reconstruction::Align(const std::vector<std::string>& image_names,
+                           const std::vector<Eigen::Vector3d>& locations,
+                           const int min_common_images,
+                           SimilarityTransform3* tform) {
+    CHECK_GE(min_common_images, 3);
+    CHECK_EQ(image_names.size(), locations.size());
+
+    // Find out which images are contained in the reconstruction and get the
+    // positions of their camera centers.
+    std::unordered_set<image_t> common_image_ids;
+    std::vector<Eigen::Vector3d> src;
+    std::vector<Eigen::Vector3d> dst;
+    for (size_t i = 0; i < image_names.size(); ++i) {
+        const class Image* image = FindImageWithName(image_names[i]);
+        if (image == nullptr) {
+            continue;
+        }
+
+        if (!IsImageRegistered(image->ImageId())) {
+            continue;
+        }
+
+        // Ignore duplicate images.
+        if (common_image_ids.count(image->ImageId()) > 0) {
+            continue;
+        }
+
+        common_image_ids.insert(image->ImageId());
+        src.push_back(image->ProjectionCenter());
+        dst.push_back(locations[i]);
+    }
+
+    // Only compute the alignment if there are enough correspondences.
+    if (common_image_ids.size() < static_cast<size_t>(min_common_images)) {
+        return false;
+    }
+
+    SimilarityTransform3 transform;
+    if (!transform.Estimate<kEstimateScale>(src, dst)) {
+        return false;
+    }
+
+    Transform(transform);
+
+    if (tform != nullptr) {
+        *tform = transform;
+    }
+
+    return true;
+}
+
+template <bool kEstimateScale>
+bool Reconstruction::AlignRobust(const std::vector<std::string>& image_names,
+                                 const std::vector<Eigen::Vector3d>& locations,
+                                 const int min_common_images,
+                                 const RANSACOptions& ransac_options,
+                                 SimilarityTransform3* tform) {
+    CHECK_GE(min_common_images, 3);
+    CHECK_EQ(image_names.size(), locations.size());
+
+    // Find out which images are contained in the reconstruction and get the
+    // positions of their camera centers.
+    std::unordered_set<image_t> common_image_ids;
+    std::vector<Eigen::Vector3d> src;
+    std::vector<Eigen::Vector3d> dst;
+    for (size_t i = 0; i < image_names.size(); ++i) {
+        const class Image* image = FindImageWithName(image_names[i]);
+        if (image == nullptr) {
+            continue;
+        }
+
+        if (!IsImageRegistered(image->ImageId())) {
+            continue;
+        }
+
+        // Ignore duplicate images.
+        if (common_image_ids.count(image->ImageId()) > 0) {
+            continue;
+        }
+
+        common_image_ids.insert(image->ImageId());
+        src.push_back(image->ProjectionCenter());
+        dst.push_back(locations[i]);
+    }
+
+    // Only compute the alignment if there are enough correspondences.
+    if (common_image_ids.size() < static_cast<size_t>(min_common_images)) {
+        return false;
+    }
+
+    LORANSAC<SimilarityTransformEstimator<3, kEstimateScale>,
+             SimilarityTransformEstimator<3, kEstimateScale>>
+            ransac(ransac_options);
+
+    const auto report = ransac.Estimate(src, dst);
+
+    if (report.support.num_inliers < static_cast<size_t>(min_common_images)) {
+        return false;
+    }
+
+    SimilarityTransform3 transform = SimilarityTransform3(report.model);
+    Transform(transform);
+
+    if (tform != nullptr) {
+        *tform = transform;
+    }
+
+    return true;
+}
+
+// Upstream COLMAP dbb41680 scene/reconstruction.h parity: summary printing
+// (required by the test matchers in scene/reconstruction_matchers.h).
+std::ostream& operator<<(std::ostream& stream,
+                         const Reconstruction& reconstruction);
+
+}  // namespace colmap

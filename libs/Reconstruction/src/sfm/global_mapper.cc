@@ -7,11 +7,11 @@
 
 #include "sfm/global_mapper.h"
 
-#include "base/projection.h"
-#include "base/triangulation.h"
+#include "scene/projection.h"
+#include "geometry/triangulation.h"
 #include "estimators/rotation_averaging.h"
 #include "math/union_find.h"
-#include "optim/bundle_adjustment_caspar.h"
+#include "estimators/bundle_adjustment_caspar.h"
 #include "sfm/incremental_mapper.h"
 #include "util/logging.h"
 #include "util/misc.h"
@@ -56,8 +56,8 @@ bool RunBundleAdjustment(const BundleAdjustmentOptions& options,
     image_mut.SetTvec(cam_from_world.translation());
   }
 
-  BundleAdjuster ba(options, ba_config);
-  return ba.Solve(&reconstruction);
+  auto ba = CreateDefaultBundleAdjuster(options, ba_config);
+  return ba->Solve(&reconstruction);
 }
 
 // Fork-legacy stand-in for the upstream ObservationManager filters: the

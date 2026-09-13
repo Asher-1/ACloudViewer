@@ -11,9 +11,9 @@
 
 #include <Eigen/Core>
 
-#include "base/pose.h"
 #include "estimators/cost_functions/quaternion_utils.h"
 #include "estimators/cost_functions/utils.h"
+#include "geometry/pose.h"
 
 namespace colmap {
 

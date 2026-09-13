@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "base/database_cache.h"
-#include "base/reconstruction.h"
+#include "scene/database_cache.h"
+#include "scene/reconstruction.h"
 #include "util/alignment.h"
 
 namespace colmap {

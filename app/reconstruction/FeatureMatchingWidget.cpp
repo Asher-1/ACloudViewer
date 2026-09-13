@@ -8,10 +8,10 @@
 #include "FeatureMatchingWidget.h"
 
 #include "ThreadControlWidget.h"
+#include "controllers/option_manager.h"
 #include "feature/matching.h"
 #include "ui/options_widget.h"
 #include "util/misc.h"
-#include "util/option_manager.h"
 
 namespace cloudViewer {
 

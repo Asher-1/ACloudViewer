@@ -10,7 +10,7 @@
 #include <Eigen/Core>
 #include <vector>
 
-#include "base/camera.h"
+#include "scene/camera.h"
 
 namespace colmap {
 

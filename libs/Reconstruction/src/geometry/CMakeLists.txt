@@ -23,3 +23,22 @@ if (TESTS_ENABLED)
     COLMAP_ADD_TEST(bbox_test bbox_test.cc)
     COLMAP_ADD_TEST(normalization_test normalization_test.cc)
 endif ()
+
+# Moved from base/ (upstream geometry/ parity). similarity_transform is the
+# fork-legacy transform class (upstream uses sim3.h); kept for location parity.
+COLMAP_ADD_SOURCES(
+    essential_matrix.h essential_matrix.cc
+    gps.h gps.cc
+    homography_matrix.h homography_matrix.cc
+    pose.h pose.cc
+    triangulation.h triangulation.cc
+    similarity_transform.h similarity_transform.cc
+)
+if (TESTS_ENABLED)
+    COLMAP_ADD_TEST(essential_matrix_utils_test essential_matrix_test.cc)
+    COLMAP_ADD_TEST(gps_test gps_test.cc)
+    COLMAP_ADD_TEST(homography_matrix_utils_test homography_matrix_test.cc)
+    COLMAP_ADD_TEST(pose_test pose_test.cc)
+    COLMAP_ADD_TEST(triangulation_test triangulation_test.cc)
+    COLMAP_ADD_TEST(similarity_transform_test similarity_transform_test.cc)
+endif ()

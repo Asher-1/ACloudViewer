@@ -38,16 +38,16 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
-#include "base/reconstruction.h"
+#include "scene/reconstruction.h"
 #include "controllers/automatic_reconstruction.h"
 #include "controllers/da3_depth_controller.h"
 #include "controllers/da3_pipeline_defaults.h"
 #include "controllers/bundle_adjustment.h"
-#include "controllers/hierarchical_mapper.h"
+#include "controllers/hierarchical_pipeline.h"
 #include "exe/gui.h"
 #include "util/misc.h"
 #include "util/opengl_utils.h"
-#include "util/option_manager.h"
+#include "controllers/option_manager.h"
 
 namespace colmap {
 
@@ -359,6 +359,26 @@ int RunColorExtractor(int argc, char** argv) {
   return EXIT_SUCCESS;
 }
 
+namespace {
+
+void UpdateDatabasePosePriorsCovariance(
+    const std::filesystem::path& database_path,
+    const Eigen::Matrix3d& covariance) {
+  auto database = Database::Open(database_path);
+  DatabaseTransaction database_transaction(database.get());
+
+  LOG(INFO)
+      << "Setting up database pose priors with the same covariance matrix: \n"
+      << covariance << '\n';
+
+  for (auto& pose_prior : database->ReadAllPosePriors()) {
+    pose_prior.position_covariance = covariance;
+    database->UpdatePosePrior(pose_prior);
+  }
+}
+
+}  // namespace
+
 int RunMapper(int argc, char** argv) {
   std::string input_path;
   std::string output_path;
@@ -430,6 +450,79 @@ int RunMapper(int argc, char** argv) {
   // In case the reconstruction is continued from an existing reconstruction, do
   // not create sub-folders but directly write the results.
   if (input_path != "" && reconstruction_manager.Size() > 0) {
+    reconstruction_manager.Get(0).Write(output_path);
+  }
+
+  return EXIT_SUCCESS;
+}
+
+int RunPosePriorMapper(int argc, char** argv) {
+  std::filesystem::path input_path;
+  std::filesystem::path output_path;
+
+  bool overwrite_priors_covariance = false;
+  double prior_position_std_x = 1.;
+  double prior_position_std_y = 1.;
+  double prior_position_std_z = 1.;
+
+  OptionManager options;
+  options.AddDatabaseOptions();
+  options.AddImageOptions();
+  options.AddDefaultOption("input_path", &input_path);
+  options.AddRequiredOption("output_path", &output_path);
+  options.AddMapperOptions();
+
+  options.mapper->mapper.use_prior_position = true;
+
+  options.AddDefaultOption(
+      "overwrite_priors_covariance",
+      &overwrite_priors_covariance,
+      "Priors covariance read from database. If true, overwrite the priors "
+      "covariance using the following prior_position_std_... options");
+  options.AddDefaultOption("prior_position_std_x", &prior_position_std_x);
+  options.AddDefaultOption("prior_position_std_y", &prior_position_std_y);
+  options.AddDefaultOption("prior_position_std_z", &prior_position_std_z);
+  options.AddDefaultOption("use_robust_loss_on_prior_position",
+                           &options.mapper->mapper.use_robust_loss_on_prior_position);
+  options.AddDefaultOption("prior_position_loss_scale",
+                           &options.mapper->mapper.prior_position_loss_scale);
+  options.Parse(argc, argv);
+
+  if (!ExistsDir(output_path)) {
+    std::cerr << "ERROR: `output_path` is not a directory." << std::endl;
+    return EXIT_FAILURE;
+  }
+
+  if (overwrite_priors_covariance) {
+    const Eigen::Matrix3d covariance =
+        Eigen::Vector3d(
+            prior_position_std_x, prior_position_std_y, prior_position_std_z)
+            .cwiseAbs2()
+            .asDiagonal();
+    UpdateDatabasePosePriorsCovariance(*options.database_path, covariance);
+  }
+
+  ReconstructionManager reconstruction_manager;
+  if (!input_path.empty()) {
+    if (!ExistsDir(input_path)) {
+      std::cerr << "ERROR: `input_path` is not a directory." << std::endl;
+      return EXIT_FAILURE;
+    }
+    reconstruction_manager.Read(input_path);
+  }
+
+  IncrementalMapperController mapper(options.mapper.get(), *options.image_path,
+                                     *options.database_path,
+                                     &reconstruction_manager);
+  mapper.Start();
+  mapper.Wait();
+
+  if (reconstruction_manager.Size() == 0) {
+    std::cerr << "ERROR: failed to create sparse model" << std::endl;
+    return EXIT_FAILURE;
+  }
+
+  if (!input_path.empty() && reconstruction_manager.Size() > 0) {
     reconstruction_manager.Get(0).Write(output_path);
   }
 
@@ -554,7 +647,7 @@ int RunPointTriangulator(int argc, char** argv) {
     Timer timer;
     timer.Start();
 
-    Database database(*options.database_path);
+    auto database = Database::Open(*options.database_path);
 
     DatabaseCache::Options cache_options;
     cache_options.min_num_matches =
@@ -562,11 +655,11 @@ int RunPointTriangulator(int argc, char** argv) {
     cache_options.ignore_watermarks = mapper_options.ignore_watermarks;
     cache_options.image_names = {mapper_options.image_names.begin(),
                                  mapper_options.image_names.end()};
-    database_cache.Load(database, cache_options);
+    database_cache.Load(*database, cache_options);
 
     if (clear_points) {
       reconstruction.DeleteAllPoints2DAndPoints3D();
-      reconstruction.TranscribeImageIdsToDatabase(database);
+      reconstruction.TranscribeImageIdsToDatabase(*database);
     }
 
     std::cout << std::endl;
@@ -639,8 +732,8 @@ int RunPointTriangulator(int argc, char** argv) {
     const size_t num_observations = reconstruction.ComputeNumObservations();
 
     PrintHeading1("Bundle adjustment");
-    BundleAdjuster bundle_adjuster(ba_options, ba_config);
-    CHECK(bundle_adjuster.Solve(&reconstruction));
+    auto bundle_adjuster = CreateDefaultBundleAdjuster(ba_options, ba_config);
+    CHECK(bundle_adjuster->Solve(&reconstruction));
 
     size_t num_changed_observations = 0;
     num_changed_observations += CompleteAndMergeTracks(mapper_options, &mapper);
@@ -763,7 +856,7 @@ bool RunGlobalMapperImpl(
   pipeline_options.image_path = image_path;
 
   GlobalPipeline global_mapper(std::move(pipeline_options),
-                               std::make_shared<Database>(database_path),
+                               Database::Open(database_path),
                                reconstruction_manager);
   global_mapper.Run();
 
@@ -847,7 +940,7 @@ int RunRotationAverager(int argc, char** argv) {
   }
 
   // Fork parity: the fork constructs the Database directly (no Open factory).
-  auto database = std::make_shared<Database>(*options.database_path);
+  auto database = Database::Open(*options.database_path);
   auto reconstruction = std::make_shared<Reconstruction>();
 
   RotationAveragingPipeline controller(
@@ -903,7 +996,7 @@ int RunViewGraphCalibrator(int argc, char** argv) {
   options.Parse(argc, argv);
 
   // Fork parity: the fork constructs the Database directly (no Open factory).
-  auto database = std::make_shared<Database>(*options.database_path);
+  auto database = Database::Open(*options.database_path);
 
   if (!CalibrateViewGraph(calibration_options, database.get())) {
     LOG(ERROR) << "View graph calibration failed";

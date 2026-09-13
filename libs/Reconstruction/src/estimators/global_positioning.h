@@ -11,8 +11,8 @@
 
 #include <string>
 
-#include "base/reconstruction.h"
 #include "scene/pose_graph.h"
+#include "scene/reconstruction.h"
 #include "util/hash_containers.h"
 
 namespace colmap {

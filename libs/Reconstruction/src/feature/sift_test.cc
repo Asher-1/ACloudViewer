@@ -41,9 +41,9 @@
 #include "SiftGPU/SiftGPU.h"
 #include "feature/sift.h"
 #include "feature/utils.h"
-#include "util/math.h"
+#include "math/math.h"
 #include "util/opengl_utils.h"
-#include "util/random.h"
+#include "math/random.h"
 
 using namespace colmap;
 

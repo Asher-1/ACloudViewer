@@ -31,8 +31,8 @@
 
 #include "ui/feature_extraction_widget.h"
 
-#include "base/camera_models.h"
-#include "feature/extraction.h"
+#include "sensor/models.h"
+#include "controllers/feature_extraction.h"
 #include "ui/options_widget.h"
 #include "ui/qt_utils.h"
 #include "ui/thread_control_widget.h"
@@ -246,7 +246,7 @@ void FeatureExtractionWidget::ReadOptions() {
   const auto camera_code =
       CameraModelNameToId(options_->image_reader->camera_model);
   for (size_t i = 0; i < camera_model_ids_.size(); ++i) {
-    if (camera_model_ids_[i] == camera_code) {
+    if (static_cast<CameraModelId>(camera_model_ids_[i]) == camera_code) {
       SelectCameraModel(i);
       camera_model_cb_->setCurrentIndex(i);
       break;
@@ -260,8 +260,9 @@ void FeatureExtractionWidget::ReadOptions() {
 }
 
 void FeatureExtractionWidget::WriteOptions() {
-  options_->image_reader->camera_model =
-      CameraModelIdToName(camera_model_ids_[camera_model_cb_->currentIndex()]);
+  options_->image_reader->camera_model = CameraModelIdToName(
+      static_cast<CameraModelId>(
+          camera_model_ids_[camera_model_cb_->currentIndex()]));
   options_->image_reader->single_camera = single_camera_cb_->isChecked();
   options_->image_reader->single_camera_per_folder =
       single_camera_per_folder_cb_->isChecked();
@@ -271,8 +272,10 @@ void FeatureExtractionWidget::WriteOptions() {
 
 void FeatureExtractionWidget::SelectCameraModel(const int idx) {
   const int code = camera_model_ids_[idx];
+  const auto model_id = static_cast<CameraModelId>(code);
   camera_params_info_->setText(QString::fromStdString(StringPrintf(
-      "<small>Parameters: %s</small>", CameraModelParamsInfo(code).c_str())));
+      "<small>Parameters: %s</small>",
+      CameraModelParamsInfo(model_id).c_str())));
 }
 
 void FeatureExtractionWidget::Extract() {

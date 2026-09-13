@@ -36,7 +36,7 @@
 
 #include "estimators/translation_transform.h"
 #include "optim/ransac.h"
-#include "util/random.h"
+#include "math/random.h"
 
 using namespace colmap;
 

@@ -40,7 +40,8 @@ COLMAP_ADD_SOURCES(
     image.h image.cc
     mesh_postprocessing.h mesh_postprocessing.cc
     mesh_simplification.h mesh_simplification.cc
-    meshing.h meshing.cc
+    poisson_meshing.h poisson_meshing.cc
+    delaunay_meshing.h delaunay_meshing.cc
     model.h model.cc
     normal_map.h normal_map.cc
     texture_mapping.h texture_mapping.cc
@@ -63,6 +64,7 @@ if(CUDA_ENABLED)
         gpu_mat_prng.h gpu_mat_prng.cu
         gpu_mat_ref_image.h gpu_mat_ref_image.cu
         patch_match.h patch_match.cc
+    patch_match_options.h patch_match_options.cc
         patch_match_cuda.h patch_match_cuda.cu
     )
 
@@ -72,6 +74,7 @@ elseif(HIP_ENABLED)
         gpu_mat_prng.h gpu_mat_prng.cu
         gpu_mat_ref_image.h gpu_mat_ref_image.cu
         patch_match.h patch_match.cc
+    patch_match_options.h patch_match_options.cc
         patch_match_cuda.h patch_match_cuda.cu
     )
 

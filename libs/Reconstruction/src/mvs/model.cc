@@ -31,11 +31,11 @@
 
 #include "mvs/model.h"
 
-#include "base/camera_models.h"
-#include "base/pose.h"
-#include "base/projection.h"
-#include "base/reconstruction.h"
-#include "base/triangulation.h"
+#include "sensor/models.h"
+#include "geometry/pose.h"
+#include "scene/projection.h"
+#include "scene/reconstruction.h"
+#include "geometry/triangulation.h"
 #include "util/misc.h"
 
 namespace colmap {

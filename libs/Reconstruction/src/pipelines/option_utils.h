@@ -12,16 +12,17 @@
 #include <string>
 #include <vector>
 
-#include "base/image_reader.h"
-#include "controllers/incremental_mapper.h"
-#include "feature/extraction.h"
+#include "controllers/feature_extraction.h"
+#include "controllers/image_reader.h"
+#include "controllers/incremental_pipeline.h"
+#include "estimators/bundle_adjustment.h"
 #include "feature/matching.h"
 #include "feature/sift.h"
+#include "mvs/delaunay_meshing.h"
 #include "mvs/fusion.h"
 #include "mvs/mesh_postprocessing.h"
-#include "mvs/meshing.h"
 #include "mvs/patch_match.h"
-#include "optim/bundle_adjustment.h"
+#include "mvs/poisson_meshing.h"
 
 namespace cloudViewer {
 

@@ -15,7 +15,7 @@
 #include <optional>
 #include <vector>
 
-#include "base/reconstruction_manager.h"
+#include "scene/reconstruction_manager.h"
 #include "sfm/global_mapper.h"
 #include "util/base_controller.h"
 

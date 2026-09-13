@@ -31,9 +31,9 @@
 
 #include "estimators/cost_functions/tiny_manifold.h"
 #include "estimators/cost_functions/tiny_sampson_error.h"
-#include "base/essential_matrix.h"
-#include "base/normalization.h"
-#include "base/polynomial.h"
+#include "geometry/essential_matrix.h"
+#include "geometry/normalization.h"
+#include "math/polynomial.h"
 #include "optim/tiny_solver.h"
 #include "util/logging.h"
 

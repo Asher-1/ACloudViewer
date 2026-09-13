@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "base/reconstruction.h"
+#include "scene/reconstruction.h"
 #include "util/hash_containers.h"
 #include "util/logging.h"
 #include "util/types.h"

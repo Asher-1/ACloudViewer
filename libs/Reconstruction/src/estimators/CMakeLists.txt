@@ -59,6 +59,7 @@ COLMAP_ADD_SOURCES(
     cost_functions/tiny_sampson_error.h
     cost_functions/motion_averaging.h
     cost_functions/calibration.h
+    cost_functions/cost_functions.h
 
     solvers/essential_matrix.h solvers/essential_matrix.cc
     solvers/essential_matrix_coeffs.h
@@ -96,3 +97,19 @@ COLMAP_ADD_TEST(view_graph_calibration_test view_graph_calibration_test.cc)
 # Minimal Boost.Test parity gate for the modernized two-view estimator; the
 # full upstream gtest suite follows the W9 synthetic-dataset port.
 COLMAP_ADD_TEST(two_view_geometry_test two_view_geometry_test.cc)
+
+# Moved from base/ (legacy merged BA cost functors, pending W18.5 split) and
+# optim/ (bundle_adjustment interface + ceres backend, upstream estimators/
+# parity; the ceres implementation stays merged until W18.5).
+COLMAP_ADD_SOURCES(bundle_adjustment.h bundle_adjustment.cc)
+COLMAP_ADD_SOURCES(bundle_adjustment_ceres.h bundle_adjustment_ceres.cc)
+COLMAP_ADD_SOURCES(covariance.h covariance.cc)
+if (RECONSTRUCTION_CASPAR_ENABLED)
+    COLMAP_ADD_SOURCES(bundle_adjustment_caspar.h bundle_adjustment_caspar.cc)
+endif ()
+COLMAP_ADD_TEST(cost_functions_test cost_functions/cost_functions_test.cc)
+COLMAP_ADD_TEST(bundle_adjustment_test bundle_adjustment_test.cc)
+COLMAP_ADD_TEST(covariance_test covariance_test.cc)
+if (RECONSTRUCTION_CASPAR_ENABLED)
+    COLMAP_ADD_TEST(bundle_adjustment_caspar_test bundle_adjustment_caspar_test.cc)
+endif ()

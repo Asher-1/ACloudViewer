@@ -31,7 +31,7 @@
 
 #include "ui/reconstruction_options_widget.h"
 
-#include "controllers/incremental_mapper.h"
+#include "controllers/incremental_pipeline.h"
 
 namespace colmap {
 

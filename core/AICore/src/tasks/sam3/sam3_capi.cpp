@@ -11,7 +11,7 @@
 //   - borrowed RGB input (stride-aware, no ownership transfer)
 //   - typed segmentation results with borrowed mask views
 //   - video tracker with add-instance / refine / reset
-//   - published model catalog (cloudViewer_downloads "sam" release)
+//   - published model catalog (HF mirror Asher-1/sam3-gguf)
 
 #include "aicore/sam3_capi.h"
 
@@ -1011,7 +1011,7 @@ AICORE_CAPI int aicore_sam3_tracker_last_pipeline_timings(
 }
 
 // ---------------------------------------------------------------------------
-// Model catalog (cloudViewer_downloads "sam" release)
+// Model catalog (HF mirror Asher-1/sam3-gguf)
 // ---------------------------------------------------------------------------
 
 namespace {
@@ -1023,21 +1023,21 @@ struct ModelEntry {
     const char* quant_note;
 };
 
-// Published assets of the "sam" release, verified against the GitHub Release
-// API (39 models; sam3-f32 intentionally absent — too large to publish).
+// Published assets of the Hugging Face mirror Asher-1/sam3-gguf (39 models;
+// sam3-f32 is published on the mirror but intentionally absent from the
+// catalog — too large for the default download path).
 constexpr const char* kSamDownloadBase =
-        "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
-        "sam/";
+        "https://huggingface.co/Asher-1/sam3-gguf/resolve/main/";
 
 constexpr ModelEntry kModels[] = {
         // SAM 3 (full: ViT + text detector + tracker)
-        {"sam3-f16.gguf", "sam3", 1837924096LL,
+        {"sam3-f16.gguf", "sam3", 1837924320LL,
          "F16 \xe2\x80\x94 half precision (recommended)"},
-        {"sam3-q8_0.gguf", "sam3", 1099442368LL,
+        {"sam3-q8_0.gguf", "sam3", 1099442592LL,
          "Q8_0 \xe2\x80\x94 8-bit quant, best accuracy/size trade"},
-        {"sam3-q4_1.gguf", "sam3", 755755328LL,
+        {"sam3-q4_1.gguf", "sam3", 755755552LL,
          "Q4_1 \xe2\x80\x94 4-bit quant with bias"},
-        {"sam3-q4_0.gguf", "sam3", 706657216LL,
+        {"sam3-q4_0.gguf", "sam3", 748672928LL,
          "Q4_0 \xe2\x80\x94 smallest SAM3 quant"},
         // SAM 3 visual-only (no text encoder)
         {"sam3-visual-f16.gguf", "sam3-visual", 945529696LL,

@@ -14,12 +14,12 @@
 #define TEST_NAME "estimators/two_view_geometry"
 #include "util/testing.h"
 
-#include "base/camera_models.h"
-#include "base/camera.h"
+#include "sensor/models.h"
+#include "scene/camera.h"
 #include "estimators/two_view_geometry.h"
 #include "estimators/solvers/relpose_shared_focal.h"
 #include "geometry/rigid3.h"
-#include "util/random.h"
+#include "math/random.h"
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>

@@ -10,12 +10,12 @@
 #include <filesystem>
 #include <string>
 
-#include "base/reconstruction_manager.h"
 #include "controllers/da3_depth_controller.h"
 #include "controllers/da3_pipeline_defaults.h"
+#include "controllers/option_manager.h"
 #include "mvs/mesh_postprocessing.h"
 #include "retrieval/resources.h"
-#include "util/option_manager.h"
+#include "scene/reconstruction_manager.h"
 #include "util/ply_point_filter.h"
 #include "util/threading.h"
 
@@ -71,6 +71,14 @@ public:
 
         // Whether to perform surface texturing.
         bool texturing = true;
+
+        // Which texturing engine to run after meshing (product decision D1).
+        // MESH_TEXTUREUR is the upstream mesh_texturer equivalent flow
+        // (MeshTextureMapping atlas via TexturingReconstruction) and is the
+        // default; IMAGE_TEXTUREUR selects the fork's own MvsTexturing
+        // integration engine (mvs/texturing.h).
+        enum class TexturingType { MESH_TEXTUREUR, IMAGE_TEXTUREUR };
+        TexturingType texturing_type = TexturingType::MESH_TEXTUREUR;
 
         // The number of threads to use in all stages.
         int num_threads = -1;

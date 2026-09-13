@@ -22,7 +22,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "base/reconstruction.h"
+#include "scene/reconstruction.h"
 #include "mvs/workspace.h"
 #include "util/logging.h"
 #include "util/misc.h"

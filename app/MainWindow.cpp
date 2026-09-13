@@ -5779,6 +5779,8 @@ void MainWindow::disableAll() {
 }
 
 void MainWindow::updateUIWithSelection() {
+    QElapsedTimer selTimer;
+    selTimer.start();
     dbTreeSelectionInfo selInfo;
 
     m_selectedEntities.clear();
@@ -5789,6 +5791,15 @@ void MainWindow::updateUIWithSelection() {
     }
 
     enableUIItems(selInfo);
+
+    // Bottleneck probe: selection switches must stay sub-second even with
+    // thousands of entities in the DB tree.
+    const qint64 selMs = selTimer.elapsed();
+    if (selMs > 50 && CVLog::diagnosticsEnabled()) {
+        CVLog::Print(
+                "[selection] updateUIWithSelection took %lld ms (%zu selected)",
+                static_cast<long long>(selMs), m_selectedEntities.size());
+    }
 }
 
 void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo) {

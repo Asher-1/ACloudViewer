@@ -31,15 +31,15 @@
 
 #include "exe/feature.h"
 
-#include "base/camera_models.h"
-#include "base/image_reader.h"
+#include "sensor/models.h"
+#include "controllers/image_reader.h"
 #include "exe/gui.h"
-#include "feature/extraction.h"
+#include "controllers/feature_extraction.h"
 #include "feature/loma.h"
 #include "feature/matching.h"
 #include "util/misc.h"
 #include "util/opengl_utils.h"
-#include "util/option_manager.h"
+#include "controllers/option_manager.h"
 
 namespace colmap {
 namespace {
@@ -52,7 +52,7 @@ bool VerifyCameraParams(const std::string& camera_model,
     }
 
     const std::vector<double> camera_params = CSVToVector<double>(params);
-    const int camera_model_id = CameraModelNameToId(camera_model);
+    const CameraModelId camera_model_id = CameraModelNameToId(camera_model);
 
     if (camera_params.size() > 0 &&
         !CameraModelVerifyParams(camera_model_id, camera_params)) {

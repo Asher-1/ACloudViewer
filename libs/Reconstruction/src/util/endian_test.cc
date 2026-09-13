@@ -33,7 +33,7 @@
 #include "util/testing.h"
 
 #include "util/endian.h"
-#include "util/random.h"
+#include "math/random.h"
 
 using namespace colmap;
 

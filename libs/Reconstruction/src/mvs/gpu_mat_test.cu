@@ -6,9 +6,9 @@
 // ----------------------------------------------------------------------------
 
 #define TEST_NAME "mvs/gpu_mat_test"
+#include "math/math.h"
 #include "mvs/gpu_mat.h"
 #include "mvs/gpu_mat_prng.h"
-#include "util/math.h"
 #include "util/testing.h"
 
 using namespace colmap;

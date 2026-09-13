@@ -9,10 +9,11 @@
 
 #include <string>
 
+#include "mvs/delaunay_meshing.h"
 #include "mvs/fusion.h"
 #include "mvs/mesh_postprocessing.h"
-#include "mvs/meshing.h"
 #include "mvs/patch_match.h"
+#include "mvs/poisson_meshing.h"
 
 namespace cloudViewer {
 

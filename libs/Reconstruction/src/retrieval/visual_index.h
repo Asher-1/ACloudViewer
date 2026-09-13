@@ -14,13 +14,13 @@
 
 #include "FLANN/flann.hpp"
 #include "feature/types.h"
+#include "math/math.h"
 #include "retrieval/inverted_file.h"
 #include "retrieval/inverted_index.h"
 #include "retrieval/vote_and_verify.h"
 #include "util/alignment.h"
 #include "util/endian.h"
 #include "util/logging.h"
-#include "util/math.h"
 
 namespace colmap {
 namespace retrieval {

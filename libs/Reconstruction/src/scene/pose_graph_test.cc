@@ -30,7 +30,7 @@
 #include "scene/pose_graph.h"
 
 #include "math/random_eigen.h"
-#include "base/database_cache.h"
+#include "scene/database_cache.h"
 #include "scene/synthetic.h"
 #include "util/hash_containers.h"
 #include "util/testing.h"
@@ -242,7 +242,7 @@ TEST(PoseGraph, ValidEdges) {
 TEST(PoseGraph, Load) {
   const auto test_dir = CreateTestDir();
   auto database =
-      std::make_unique<Database>(test_dir / "database.db");
+      Database::Open(test_dir / "database.db");
 
   Camera camera = Camera::CreateFromModelId(
       kInvalidCameraId, SimplePinholeCameraModel::model_id, 1, 1, 1);

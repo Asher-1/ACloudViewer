@@ -2,7 +2,7 @@
 
 #include "optim/manifold.h"
 #include "estimators/cost_functions/utils.h"
-#include "base/pose.h"
+#include "geometry/pose.h"
 #include "util/hash_containers.h"
 #include "util/logging.h"
 #include "util/threading.h"

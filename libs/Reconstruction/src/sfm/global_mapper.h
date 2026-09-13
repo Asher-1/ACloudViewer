@@ -11,12 +11,12 @@
 #include <functional>
 #include <limits>
 
-#include "base/database_cache.h"
-#include "base/reconstruction.h"
+#include "estimators/bundle_adjustment.h"
 #include "estimators/global_positioning.h"
 #include "estimators/rotation_averaging.h"
-#include "optim/bundle_adjustment.h"
+#include "scene/database_cache.h"
 #include "scene/pose_graph.h"
+#include "scene/reconstruction.h"
 #include "sfm/incremental_triangulator.h"
 
 namespace colmap {

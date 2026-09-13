@@ -109,6 +109,7 @@ ENTITY_TYPE convertClassToEntityType(CV_CLASS_ENUM type) {
 #include <numeric>
 
 // Qt
+#include <QElapsedTimer>
 #include <QIcon>
 
 namespace {
@@ -1553,6 +1554,9 @@ bool ccHObject::fromFile_MeOnly(QFile& in,
 }
 
 void ccHObject::drawNameIn3D() {
+    // Latch the overlay: keyed by this entity's viewID, it exists until the
+    // one-shot cleanup in ccHObject::draw removes it.
+    m_nameIn3DOverlayCreated = true;
     ecvGenericGLDisplay* disp = mergeDisplay(nullptr, this);
     QFont font = QApplication::font();
     const ecvGui::ParamStruct* fontParams = nullptr;
@@ -1586,7 +1590,60 @@ void ccHObject::drawNameIn3D() {
     }
 }
 
+namespace {
+
+// Per-pass self-time probe for ccHObject::draw: attributes the draw-tree
+// time that falls outside VtkDisplayTools' buckets to the recursion body
+// segments. Reset/logged per redraw pass from vtkGLView.
+double g_pPre = 0.0;
+double g_pDrawEnt = 0.0;
+double g_pDmo = 0.0;
+double g_pHideShowBlk = 0.0;
+double g_pNameBlk = 0.0;
+double g_pNameWalk = 0.0;
+double g_pNameOn = 0.0;
+double g_pNameOff = 0.0;
+double g_pChildren = 0.0;
+double g_pTail = 0.0;
+int g_pN = 0;
+
+struct SelfProbeScope {
+    double& ms;
+    QElapsedTimer t;
+    explicit SelfProbeScope(double& m) : ms(m) { t.start(); }
+    ~SelfProbeScope() { ms += double(t.nsecsElapsed()) / 1e6; }
+};
+
+}  // namespace
+
+void ccHObject::resetDrawSelfProbe() {
+    g_pPre = g_pDrawEnt = g_pDmo = g_pHideShowBlk = 0.0;
+    g_pNameBlk = g_pNameWalk = g_pNameOn = g_pNameOff = 0.0;
+    g_pChildren = g_pTail = 0.0;
+    g_pN = 0;
+}
+
+void ccHObject::logDrawSelfProbe() {
+    if (g_pN == 0) return;
+    if (!CVLog::diagnosticsEnabled()) {
+        resetDrawSelfProbe();
+        return;
+    }
+    const double total = g_pPre + g_pDrawEnt + g_pHideShowBlk + g_pNameBlk +
+                         g_pChildren + g_pTail;
+    if (total < 100.0) return;
+    CVLog::Print(
+            "[selfProbe] N=%d pre=%.1f drawEnt=%.1f(dmo=%.1f) "
+            "hideShowBlk=%.1f nameBlk=%.1f(walk=%.1f on=%.1f off=%.1f) "
+            "children=%.1f tail=%.1f",
+            g_pN, g_pPre, g_pDrawEnt, g_pDmo, g_pHideShowBlk, g_pNameBlk,
+            g_pNameWalk, g_pNameOn, g_pNameOff, g_pChildren, g_pTail);
+    resetDrawSelfProbe();
+}
+
 void ccHObject::draw(CC_DRAW_CONTEXT& context) {
+    SelfProbeScope preProbe(g_pPre);
+    ++g_pN;
     // for polyline fast removement
     if (getRemoveFlag()) {
         setRemoveType(context);
@@ -1705,6 +1762,7 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
 
     // draw entity
     if (m_visible && drawInThisContext && context.forceRedraw) {
+        SelfProbeScope drawEntProbe(g_pDrawEnt);
         if ((!m_selected || !MACRO_SkipSelected(context)) &&
             (m_selected || !MACRO_SkipUnselected(context))) {
             // enable clipping planes (if any)
@@ -1713,7 +1771,10 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
                 toggleClipPlanes(context, true);
             }
 
-            drawMeOnly(context);
+            {
+                SelfProbeScope dmoProbe(g_pDmo);
+                drawMeOnly(context);
+            }
 
             if (viewRep && viewRep->isDirty()) {
                 viewRep->setDirty(false);
@@ -1728,6 +1789,7 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
 
     // hide or show entities
     {
+        SelfProbeScope hideShowBlkProbe(g_pHideShowBlk);
         setHideShowType(context);
         context.display = mergeDisplay(context.display, this);
 
@@ -1769,6 +1831,7 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
     // disabled, must not draw names.
     // Guard with isDisplayedIn() to prevent accessing the wrong VTK pipeline
     // when the object belongs to a secondary view but the primary redraws.
+    SelfProbeScope nameWalkProbe(g_pNameWalk);
     bool hierarchyAllowsNames = true;
     for (const ccHObject* parent = m_parent; parent;
          parent = parent->getParent()) {
@@ -1782,7 +1845,9 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
                           isDisplayedIn(context.display) && isBranchEnabled() &&
                           drawInThisContext && cascadeVisible &&
                           hierarchyAllowsNames;
+    SelfProbeScope nameBlkProbe(g_pNameBlk);
     if (shouldDrawName) {
+        SelfProbeScope nameOnProbe(g_pNameOn);
         if (MACRO_Draw3D(context)) {
             ccBBox bBox = getBB_recursive(true);
             if (bBox.isValid()) {
@@ -1802,14 +1867,24 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
         } else if (MACRO_Draw2D(context) && MACRO_Foreground(context)) {
             drawNameIn3D();
         }
-    } else if (!shouldDrawName && isDisplayedIn(context.display)) {
+    } else if (!shouldDrawName && m_nameIn3DOverlayCreated &&
+               isDisplayedIn(context.display)) {
         // IMAGE entities render through a dedicated 2D overlay (ImageVis)
         // keyed by the same viewID.  The removeWidgets(WIDGET_T2D) call
         // would cascade into removeEntities(ECV_TEXT2D) which blindly
         // removes any 2D layer with that viewID — including the image
         // layer.  Skip the cleanup for IMAGE since they never create
         // T2D/RECTANGLE_2D widgets.
+        // One-shot cleanup: the overlay keyed by this viewID can only exist
+        // if drawNameIn3D dispatched it (latched). Dispatching the removal
+        // machinery for every entity on every traversal is O(N) dead weight
+        // on massive scenes.
+        // Latch first: entities whose name overlay was never dispatched
+        // (the default) must not even evaluate isDisplayedIn here — on
+        // massive scenes that per-entity virtual call chain was measurable
+        // on every traversal.
         if (!isKindOf(CV_TYPES::LABEL_2D) && !isKindOf(CV_TYPES::IMAGE)) {
+            SelfProbeScope nameOffProbe(g_pNameOff);
             WIDGETS_PARAMETER wpTxt(WIDGETS_TYPE::WIDGET_T2D, getViewId());
             wpTxt.context.display = mergeDisplay(context.display, this);
             if (wpTxt.context.display)
@@ -1819,14 +1894,19 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
             wpRect.context.display = mergeDisplay(context.display, this);
             if (wpRect.context.display)
                 wpRect.context.display->removeWidgets(wpRect);
+            m_nameIn3DOverlayCreated = false;
         }
     }
 
     // draw entity's children
-    for (auto child : m_children) {
-        context.visible = cascadeVisible;
-        child->draw(context);
+    {
+        SelfProbeScope childrenProbe(g_pChildren);
+        for (auto child : m_children) {
+            context.visible = cascadeVisible;
+            child->draw(context);
+        }
     }
+    SelfProbeScope tailProbe(g_pTail);
 
     // if the entity is currently selected, we draw its bounding-box
     if (m_selected && draw3D && drawInThisContext &&
@@ -1879,7 +1959,12 @@ void ccHObject::draw(CC_DRAW_CONTEXT& context) {
     context.glTransAccum = savedGLTransAccum;
     context.hasGLTransAccum = savedHasGLTransAccum;
 
-    setRedraw(true);
+    // Drawing reconciled the entity with its VTK state: clear the redraw
+    // flag so subsequent redraws skip unchanged entities. Display-state
+    // setters (ecvDrawableObject) and RedrawObject re-arm the flag when
+    // something actually changes; leaving it set here forced a full
+    // geometry rebuild of every entity on every redraw.
+    setRedraw(false);
     setForceRedraw(false);
 }
 

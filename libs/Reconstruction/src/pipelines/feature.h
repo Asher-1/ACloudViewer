@@ -9,8 +9,8 @@
 
 #include <string>
 
-#include "base/image_reader.h"
-#include "feature/extraction.h"
+#include "controllers/feature_extraction.h"
+#include "controllers/image_reader.h"
 #include "feature/matching.h"
 #include "feature/sift.h"
 

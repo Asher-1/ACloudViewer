@@ -10,9 +10,9 @@
 #include <Eigen/Core>
 #include <vector>
 
-#include "base/reconstruction.h"
 #include "geometry/pose_prior.h"
 #include "scene/pose_graph.h"
+#include "scene/reconstruction.h"
 #include "util/enum_utils.h"
 #include "util/hash_containers.h"
 

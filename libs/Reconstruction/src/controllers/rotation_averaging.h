@@ -10,10 +10,10 @@
 #include <memory>
 #include <vector>
 
-#include "base/database_cache.h"
-#include "base/reconstruction.h"
 #include "estimators/gravity_refinement.h"
 #include "estimators/rotation_averaging.h"
+#include "scene/database_cache.h"
+#include "scene/reconstruction.h"
 #include "util/base_controller.h"
 
 namespace colmap {

@@ -35,7 +35,7 @@
 #include <unordered_set>
 
 #include "optim/support_measurement.h"
-#include "util/math.h"
+#include "math/math.h"
 
 using namespace colmap;
 

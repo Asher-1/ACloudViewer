@@ -9,9 +9,10 @@
 
 #include <QtCore>
 #include <QtWidgets>
+#include <filesystem>
 
+#include "controllers/option_manager.h"
 #include "util/misc.h"
-#include "util/option_manager.h"
 
 namespace cloudViewer {
 
@@ -24,14 +25,14 @@ public:
     bool IsValid() const;
     void Reset();
 
-    void persistSave(const std::string& project_path,
-                     const std::string& database_path,
-                     const std::string& image_path);
+    void persistSave(const std::filesystem::path& project_path,
+                     const std::filesystem::path& database_path,
+                     const std::filesystem::path& image_path);
 
     std::string GetDatabasePath() const;
     std::string GetImagePath() const;
-    void SetDatabasePath(const std::string& path);
-    void SetImagePath(const std::string& path);
+    void SetDatabasePath(const std::filesystem::path& path);
+    void SetImagePath(const std::filesystem::path& path);
 
 private:
     void Save();

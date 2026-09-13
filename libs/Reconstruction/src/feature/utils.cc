@@ -31,7 +31,7 @@
 
 #include "feature/utils.h"
 
-#include "util/math.h"
+#include "math/math.h"
 
 namespace colmap {
 

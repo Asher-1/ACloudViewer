@@ -33,7 +33,7 @@
 
 #include <numeric>
 
-#include "base/database.h"
+#include "scene/database.h"
 #include "exe/gui.h"
 #include "feature/matching.h"
 #include "feature/sift.h"
@@ -43,7 +43,7 @@
 #include "util/download.h"
 #include "util/misc.h"
 #include "util/opengl_utils.h"
-#include "util/option_manager.h"
+#include "controllers/option_manager.h"
 
 namespace colmap {
 namespace {
@@ -53,10 +53,10 @@ namespace {
 // subset of images are selected.
 FeatureDescriptors LoadRandomDatabaseDescriptors(
     const std::string& database_path, const int max_num_images) {
-  Database database(database_path);
-  DatabaseTransaction database_transaction(&database);
+  auto database = Database::Open(database_path);
+  DatabaseTransaction database_transaction(database.get());
 
-  const std::vector<Image> images = database.ReadAllImages();
+  const std::vector<Image> images = database->ReadAllImages();
 
   FeatureDescriptors descriptors;
 
@@ -66,7 +66,7 @@ FeatureDescriptors LoadRandomDatabaseDescriptors(
     // All images in the database.
     image_idxs.resize(images.size());
     std::iota(image_idxs.begin(), image_idxs.end(), 0);
-    num_descriptors = database.NumDescriptors();
+    num_descriptors = database->NumDescriptors();
   } else {
     // Random subset of images in the database.
     CHECK_LE(max_num_images, images.size());
@@ -75,7 +75,7 @@ FeatureDescriptors LoadRandomDatabaseDescriptors(
     image_idxs = random_sampler.Sample();
     for (const auto image_idx : image_idxs) {
       const auto& image = images.at(image_idx);
-      num_descriptors += database.NumDescriptorsForImage(image.ImageId());
+      num_descriptors += database->NumDescriptorsForImage(image.ImageId());
     }
   }
 
@@ -85,7 +85,7 @@ FeatureDescriptors LoadRandomDatabaseDescriptors(
   for (const auto image_idx : image_idxs) {
     const auto& image = images.at(image_idx);
     const FeatureDescriptors image_descriptors =
-        database.ReadDescriptors(image.ImageId());
+        database->ReadDescriptors(image.ImageId());
     descriptors.block(descriptor_row, 0, image_descriptors.rows(), 128) =
         image_descriptors;
     descriptor_row += image_descriptors.rows();
@@ -183,13 +183,13 @@ int RunVocabTreeRetriever(int argc, char** argv) {
   retrieval::VisualIndex<> visual_index;
   visual_index.Read(resolved_vocab_tree_path);
 
-  Database database(*options.database_path);
+  auto database = Database::Open(*options.database_path);
 
   const auto database_images =
-      ReadVocabTreeRetrievalImageList(database_image_list_path, &database);
+      ReadVocabTreeRetrievalImageList(database_image_list_path, database.get());
   const auto query_images =
       (!query_image_list_path.empty() || output_index_path.empty())
-          ? ReadVocabTreeRetrievalImageList(query_image_list_path, &database)
+          ? ReadVocabTreeRetrievalImageList(query_image_list_path, database.get())
           : std::vector<Image>();
 
   //////////////////////////////////////////////////////////////////////////////
@@ -209,8 +209,8 @@ int RunVocabTreeRetriever(int argc, char** argv) {
       continue;
     }
 
-    auto keypoints = database.ReadKeypoints(database_images[i].ImageId());
-    auto descriptors = database.ReadDescriptors(database_images[i].ImageId());
+    auto keypoints = database->ReadKeypoints(database_images[i].ImageId());
+    auto descriptors = database->ReadDescriptors(database_images[i].ImageId());
     if (max_num_features > 0 && descriptors.rows() > max_num_features) {
       ExtractTopScaleFeatures(&keypoints, &descriptors, max_num_features);
     }
@@ -253,8 +253,8 @@ int RunVocabTreeRetriever(int argc, char** argv) {
                               query_images.size())
               << std::flush;
 
-    auto keypoints = database.ReadKeypoints(query_images[i].ImageId());
-    auto descriptors = database.ReadDescriptors(query_images[i].ImageId());
+    auto keypoints = database->ReadKeypoints(query_images[i].ImageId());
+    auto descriptors = database->ReadDescriptors(query_images[i].ImageId());
     if (max_num_features > 0 && descriptors.rows() > max_num_features) {
       ExtractTopScaleFeatures(&keypoints, &descriptors, max_num_features);
     }

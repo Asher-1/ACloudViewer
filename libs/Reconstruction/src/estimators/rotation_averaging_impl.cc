@@ -1,8 +1,8 @@
 #include "estimators/rotation_averaging_impl.h"
 
-#include "base/pose.h"
-#include "util/math.h"
-#include "util/random.h"
+#include "geometry/pose.h"
+#include "math/math.h"
+#include "math/random.h"
 #include "optim/least_absolute_deviations.h"
 #include "optim/sparse_cholesky.h"
 #include "util/hash_containers.h"

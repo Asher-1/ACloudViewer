@@ -34,12 +34,12 @@
 
 #include <Eigen/Core>
 
-#include "base/pose.h"
-#include "base/similarity_transform.h"
+#include "geometry/pose.h"
+#include "geometry/similarity_transform.h"
 #include "estimators/absolute_pose.h"
 #include "estimators/essential_matrix.h"
 #include "optim/ransac.h"
-#include "util/random.h"
+#include "math/random.h"
 
 using namespace colmap;
 

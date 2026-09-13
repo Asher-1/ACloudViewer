@@ -29,6 +29,7 @@
 
 // VtkRendering
 #include <VtkRendering/Core/ActorMap.h>
+#include <VtkRendering/Core/CompositeBlockRegistry.h>
 
 // Forward declaration
 namespace Visualization {
@@ -968,7 +969,7 @@ private:
     void removePointClouds(const std::string& viewId, int viewport = 0);
     void removeShapes(const std::string& viewId, int viewport = 0);
     void removeMesh(const std::string& viewId, int viewport = 0);
-    void removeText2D(const std::string& viewId, int viewport = 0);
+    bool removeText2D(const std::string& viewId, int viewport = 0);
     void removeText3D(const std::string& viewId, int viewport = 0);
     void removeALL(int viewport = 0);
 
@@ -1030,6 +1031,68 @@ public:
      *  @return Picked actor or nullptr
      */
     vtkActor* pickActor(double x, double y);
+    /** Picks and resolves a leaf view ID: for entities aggregated in a
+     *  composite group the block under the cursor is resolved via a hardware
+     *  COMPOSITE_INDEX pass; other entities resolve through their actor.
+     *  @return Leaf (or group) view ID, empty when nothing was hit
+     */
+    std::string pickLeafViewId(double x, double y);
+    /** CPU ray-cast fallback for composite groups: the VTK selection pass
+     *  may produce no fragments for the composite actor (VTK 9.3 composite
+     *  pick regression), which degraded every mesh click to the group/folder.
+     *  Casts the display-pixel ray against the registry's own block geometry
+     *  (O(groups × leaves) AABBs, then per-triangle only for candidates) and
+     *  returns the nearest visible leaf under the cursor.
+     */
+    std::string cpuPickCompositeLeaf(double x, double y);
+    /** @return True when the view ID is rendered as a composite block */
+    bool isCompositeLeaf(const std::string& viewID) const {
+        return m_compositeRegistry.containsLeaf(viewID);
+    }
+    /** @return True when the view ID owns a composite group (it is the
+     *  container whose viewID names the group actor); group-level properties
+     *  (e.g. light intensity) resolve on the group actor without eviction. */
+    bool hasCompositeGroup(const std::string& viewID) const {
+        return m_compositeRegistry.hasGroup(viewID);
+    }
+    /** Unified rendering-property resolution: composite leaves return their
+     *  group actor (group-shared properties like shading/width/light apply
+     *  to the whole group, matching ParaView's representation-level
+     *  attributes); every other entity resolves through its own actor. */
+    vtkActor* actorForRenderingProperties(const std::string& viewID);
+    /** Un-aggregates a composite leaf into a dedicated actor and returns it.
+     *  The composite group carries ONE material/representation for all
+     *  blocks, so per-entity property edits (representation, shading,
+     *  stippling, line width, per-entity light) routed to the group actor
+     *  corrupted every sibling. Eviction gives the edit a private actor;
+     *  the leaf renders standalone from here on (pre-aggregation
+     *  semantics). The one-time rebuild is user-edit cost only.
+     */
+    vtkActor* evictCompositeLeaf(const std::string& viewID, int viewport);
+    /** VTK version guard for the composite pipeline: vtkCompositePolyData
+     *  Mapper2 + the composite selection attributes require VTK >= 9. On
+     *  older VTK the aggregation gate falls back to the pre-aggregation
+     *  all-dedicated rendering (identical visuals, O(leaves) frame cost),
+     *  keeping behavior consistent across versions.
+     */
+    static bool compositeRenderingSupported();
+    /** Un-aggregates a composite leaf WITHOUT rebuilding a dedicated actor;
+     *  the caller's draw pass builds it right after (removes the block from
+     *  the group, cleans up an emptied group's actor, drops the geometry
+     *  key). Used by drawMesh's aggregation gate for leaves whose per-entity
+     *  representation is not the group's shared surface.
+     */
+    void removeFromComposite(const std::string& viewID, int viewport);
+    /** Entity-removal teardown for composite state: an aggregated leaf's
+     *  block leaves the group (an emptied group's actor leaves the renderer
+     *  with it). Safe no-op for non-composite ids.
+     */
+    void removeCompositeLeafEntity(const std::string& leafId, int viewport);
+    /** Entity-removal teardown for a folder owning a composite group: the
+     *  group actor leaves the renderer and all blocks are destroyed.
+     *  Safe no-op when the group does not exist.
+     */
+    void removeCompositeGroupEntity(const std::string& groupId, int viewport);
     /** @param x0,y0,x1,y1 Pick rectangle (default: single point)
      *  @return View ID of picked item or empty string
      */
@@ -1418,6 +1481,42 @@ protected:
     vtkSmartPointer<vtkPointPicker> m_point_picker;
     vtkSmartPointer<vtkAreaPicker> m_area_picker;
     vtkSmartPointer<vtkPropPicker> m_propPicker;
+
+    /// ParaView-style composite aggregation for massive same-kind import
+    /// groups (one actor per group, leaves as blocks); per-view state.
+    VtkRendering::CompositeBlockRegistry m_compositeRegistry;
+
+    /// Container leaf-count cache for the aggregation eligibility test
+    /// (avoids recomputing an O(leaves) walk on every drawMesh call).
+    std::unordered_map<const ccHObject*, size_t> m_containerLeafCountCache;
+    /// Reconciliation signature for an aggregated leaf: every input that
+    /// MeshToPolyData consumes, collected with O(1) getters. Redraws whose
+    /// signature is unchanged skip the polydata re-conversion and block
+    /// replacement entirely; normals/colors/SF/materials toggles and SF
+    /// range edits all change the signature so they re-apply.
+    struct CompositeLeafKey {
+        const ccGenericMesh* mesh = nullptr;
+        unsigned triCount = 0;
+        bool sfShown = false;
+        bool colorsShown = false;
+        bool hasNormalsExport = false;
+        bool hasMaterials = false;
+        const void* displayedSF = nullptr;
+        double sfStart = 0.0;
+        double sfStop = 0.0;
+        bool sfGreyNaN = false;
+        size_t visCount = 0;
+        bool operator==(const CompositeLeafKey& o) const {
+            return mesh == o.mesh && triCount == o.triCount &&
+                   sfShown == o.sfShown && colorsShown == o.colorsShown &&
+                   hasNormalsExport == o.hasNormalsExport &&
+                   hasMaterials == o.hasMaterials &&
+                   displayedSF == o.displayedSF && sfStart == o.sfStart &&
+                   sfStop == o.sfStop && sfGreyNaN == o.sfGreyNaN &&
+                   visCount == o.visCount;
+        }
+    };
+    std::unordered_map<std::string, CompositeLeafKey> m_leafGeometryKey;
 
     std::vector<int> m_selected_slice;
 

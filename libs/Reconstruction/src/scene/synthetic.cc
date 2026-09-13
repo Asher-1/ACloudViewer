@@ -30,13 +30,13 @@
 #include "scene/synthetic.h"
 
 #include "estimators/essential_matrix.h"
-#include "base/essential_matrix.h"
-#include "base/gps.h"
-#include "util/math.h"
-#include "util/random.h"
+#include "geometry/essential_matrix.h"
+#include "geometry/gps.h"
+#include "math/math.h"
+#include "math/random.h"
 #include "math/random_eigen.h"
 #include "math/union_find.h"
-#include "util/bitmap.h"
+#include "sensor/bitmap.h"
 #include "util/hash_containers.h"
 
 #include <Eigen/Geometry>

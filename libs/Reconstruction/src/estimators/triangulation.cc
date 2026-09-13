@@ -33,13 +33,13 @@
 
 #include <Eigen/Geometry>
 
-#include "base/projection.h"
-#include "base/triangulation.h"
+#include "scene/projection.h"
+#include "geometry/triangulation.h"
 #include "estimators/essential_matrix.h"
 #include "optim/combination_sampler.h"
 #include "optim/loransac.h"
 #include "util/logging.h"
-#include "util/math.h"
+#include "math/math.h"
 
 namespace colmap {
 

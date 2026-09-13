@@ -31,11 +31,12 @@
 
 #include "ui/dense_reconstruction_widget.h"
 
-#include "base/undistortion.h"
+#include "image/undistortion.h"
 #include "controllers/texturing_controller.h"
 #include "mvs/advancing_front_meshing.h"
 #include "mvs/fusion.h"
-#include "mvs/meshing.h"
+#include "mvs/delaunay_meshing.h"
+#include "mvs/poisson_meshing.h"
 #include "mvs/mesh_postprocessing.h"
 #include "mvs/patch_match.h"
 #include "ui/main_window.h"
@@ -469,7 +470,7 @@ void DenseReconstructionWidget::showEvent(QShowEvent* event) {
         // 3. Try image_path (it's usually already a directory)
         if (options_->image_path && !options_->image_path->empty()) {
             // First try image_path itself
-            default_workspace = *options_->image_path;
+            default_workspace = options_->image_path->string();
             if (ExistsDir(default_workspace)) {
                 // Use parent of image_path as workspace
                 default_workspace = GetParentDir(default_workspace);

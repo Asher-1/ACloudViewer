@@ -9,7 +9,7 @@
 
 #include <string>
 
-#include "util/camera_specs.h"
+#include "sensor/specs.h"
 
 namespace colmap {
 

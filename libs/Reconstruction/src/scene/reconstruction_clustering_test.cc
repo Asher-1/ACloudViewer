@@ -29,8 +29,8 @@
 
 #include "scene/reconstruction_clustering.h"
 
-#include "util/random.h"
-#include "base/reconstruction.h"
+#include "math/random.h"
+#include "scene/reconstruction.h"
 #include "scene/synthetic.h"
 #include "util/hash_containers.h"
 

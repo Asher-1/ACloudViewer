@@ -8,8 +8,8 @@
 
 #include <Eigen/Geometry>
 
-#include "base/camera.h"
-#include "base/camera_models.h"
+#include "scene/camera.h"
+#include "sensor/models.h"
 #include "estimators/relpose_one_sided_focal.h"
 #include "util/testing.h"
 
@@ -27,7 +27,7 @@ TEST(estimators_relpose_one_sided_focal, TestExactMinimalSampleRecoversFocalAndP
         {-0.3, -0.4, 2.5}, {0.1, 0.5, 3.4}, {-0.6, -0.2, 3.0}};
     std::vector<Eigen::Vector2d> points1;
     Camera camera2;
-    camera2.InitializeWithId(SimpleRadialCameraModel::kModelId, 800.0, 1600,
+    camera2.InitializeWithId(SimpleRadialCameraModel::model_id, 800.0, 1600,
                              1200);
     camera2.Params(3) = 0.06;
     std::vector<CamRayWithJac> points2;
@@ -37,8 +37,10 @@ TEST(estimators_relpose_one_sided_focal, TestExactMinimalSampleRecoversFocalAndP
         const Eigen::Vector3d point2 = rotation * point + translation;
         points1.emplace_back(kFocal * point.x() / point.z(),
                              kFocal * point.y() / point.z());
-        const Eigen::Vector2d pixel = camera2.WorldToImage(
-            Eigen::Vector2d(point2.x() / point2.z(), point2.y() / point2.z()));
+        const Eigen::Vector2d pixel =
+                *camera2.ImgFromCam(Eigen::Vector2d(
+                    point2.x() / point2.z(), point2.y() / point2.z())
+                                        .homogeneous());
         const auto ray_with_jac = camera2.CamRayFromImgWithJac(pixel);
         ASSERT_TRUE(ray_with_jac.has_value());
         points2.push_back(*ray_with_jac);
@@ -90,7 +92,7 @@ TEST(estimators_relpose_one_sided_focal, TestTinySolverRefinementReducesTangentS
             .toRotationMatrix();
     const Eigen::Vector3d translation(0.5, -0.3, 0.8);
     Camera camera2;
-    camera2.InitializeWithId(SimpleRadialCameraModel::kModelId, 800.0, 1600,
+    camera2.InitializeWithId(SimpleRadialCameraModel::model_id, 800.0, 1600,
                              1200);
     camera2.Params(3) = 0.04;
 
@@ -104,8 +106,10 @@ TEST(estimators_relpose_one_sided_focal, TestTinySolverRefinementReducesTangentS
         const Eigen::Vector3d point2 = rotation * point + translation;
         points1.emplace_back(kFocal * point.x() / point.z(),
                              kFocal * point.y() / point.z());
-        const Eigen::Vector2d pixel = camera2.WorldToImage(
-            Eigen::Vector2d(point2.x() / point2.z(), point2.y() / point2.z()));
+        const Eigen::Vector2d pixel =
+                *camera2.ImgFromCam(Eigen::Vector2d(
+                    point2.x() / point2.z(), point2.y() / point2.z())
+                                        .homogeneous());
         const auto ray_with_jac = camera2.CamRayFromImgWithJac(pixel);
         ASSERT_TRUE(ray_with_jac.has_value());
         points2.push_back(*ray_with_jac);

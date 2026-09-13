@@ -32,7 +32,7 @@
 #include "estimators/gravity_refinement.h"
 #include "estimators/rotation_averaging.h"
 #include "estimators/two_view_geometry.h"
-#include "base/pose.h"
+#include "geometry/pose.h"
 #include "scene/pose_graph.h"
 #include "util/hash_containers.h"
 #include "util/logging.h"

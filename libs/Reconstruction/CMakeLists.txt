@@ -414,7 +414,7 @@ COLMAP_ADD_SOURCE_DIR(lib/PoissonRecon LIB_POISSON_RECON_SRCS *.h *.cpp *.inl)
 COLMAP_ADD_SOURCE_DIR(lib/SQLite LIB_SQLITE_SRCS *.h *.c)
 COLMAP_ADD_SOURCE_DIR(lib/VLFeat LIB_VLFEAT_SRCS *.h *.c *.tc)
 
-COLMAP_ADD_SOURCE_DIR(src/base BASE_SRCS *.h *.cc)
+COLMAP_ADD_SOURCE_DIR(src/image IMAGE_SRCS *.h *.cc)
 COLMAP_ADD_SOURCE_DIR(src/controllers CONTROLLERS_SRCS *.h *.cc)
 COLMAP_ADD_SOURCE_DIR(src/estimators ESTIMATORS_SRCS *.h *.cc)
 COLMAP_ADD_SOURCE_DIR(src/exe EXE_SRCS *.h *.cc)
@@ -444,7 +444,7 @@ if(ALL_SOURCE_TARGET)
             ${LIB_SIFT_GPU_SRCS}
             ${LIB_SQLITE_SRCS}
             ${LIB_VLFEAT_SRCS}
-            ${BASE_SRCS}
+            ${IMAGE_SRCS}
             ${CONTROLLERS_SRCS}
             ${ESTIMATORS_SRCS}
             ${EXE_SRCS}

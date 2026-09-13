@@ -10,7 +10,7 @@
 #include <Eigen/Core>
 #include <filesystem>
 
-#include "base/reconstruction.h"
+#include "scene/reconstruction.h"
 #include "scene/reconstruction_io_binary.h"
 #include "scene/reconstruction_io_text.h"
 

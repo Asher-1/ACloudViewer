@@ -30,10 +30,10 @@
 #include "estimators/view_graph_calibration.h"
 
 #include "geometry/rigid3_matchers.h"
-#include "util/random.h"
-#include "base/database.h"
+#include "math/random.h"
+#include "scene/database.h"
 #include "scene/synthetic.h"
-#include "base/camera_models.h"
+#include "sensor/models.h"
 #include "util/hash_containers.h"
 
 #include <gtest/gtest.h>
@@ -46,7 +46,7 @@ namespace {
 const static std::string kMemoryDatabasePath = ":memory:";
 
 TEST(CalibrateViewGraph, Nominal) {
-  auto database = std::make_unique<Database>(kMemoryDatabasePath);
+  auto database = Database::Open(kMemoryDatabasePath);
 
   SyntheticDatasetOptions options;
   options.num_rigs = 10;
@@ -99,7 +99,7 @@ TEST(CalibrateViewGraph, Nominal) {
 }
 
 TEST(CalibrateViewGraph, PriorFocalLength) {
-  auto database = std::make_unique<Database>(kMemoryDatabasePath);
+  auto database = Database::Open(kMemoryDatabasePath);
 
   SyntheticDatasetOptions options;
   options.num_rigs = 10;
@@ -131,7 +131,7 @@ TEST(CalibrateViewGraph, PriorFocalLength) {
 }
 
 TEST(CalibrateViewGraph, ConfigTagging) {
-  auto database = std::make_unique<Database>(kMemoryDatabasePath);
+  auto database = Database::Open(kMemoryDatabasePath);
 
   SyntheticDatasetOptions options;
   options.num_rigs = 10;
@@ -172,7 +172,7 @@ TEST(CalibrateViewGraph, ConfigTagging) {
 }
 
 TEST(CalibrateViewGraph, RelativePoseReestimation) {
-  auto database = std::make_unique<Database>(kMemoryDatabasePath);
+  auto database = Database::Open(kMemoryDatabasePath);
 
   SyntheticDatasetOptions options;
   options.num_rigs = 10;
@@ -237,7 +237,7 @@ TEST(CalibrateViewGraph, RelativePoseReestimation) {
 }
 
 TEST(CalibrateViewGraph, SphericalCamerasAreIgnored) {
-  auto database = std::make_unique<Database>(kMemoryDatabasePath);
+  auto database = Database::Open(kMemoryDatabasePath);
 
   // Spherical (omnidirectional) cameras have no focal length and produce
   // CALIBRATED two-view geometries without a fundamental matrix. View graph
@@ -282,7 +282,7 @@ TEST(CalibrateViewGraph, SphericalCamerasAreIgnored) {
 }
 
 TEST(CalibrateViewGraph, FisheyeCamerasAreIgnored) {
-  auto database = std::make_unique<Database>(kMemoryDatabasePath);
+  auto database = Database::Open(kMemoryDatabasePath);
 
   // A fisheye camera projects angularly, so its focal length cannot be
   // recovered from a fundamental matrix. View graph calibration must skip it

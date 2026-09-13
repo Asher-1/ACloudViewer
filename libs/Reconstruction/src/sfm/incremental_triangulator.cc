@@ -31,7 +31,7 @@
 
 #include "sfm/incremental_triangulator.h"
 
-#include "base/projection.h"
+#include "scene/projection.h"
 #include "estimators/triangulation.h"
 #include "util/misc.h"
 
@@ -201,8 +201,12 @@ size_t IncrementalTriangulator::CompleteImage(const Options& options,
         for (size_t i = 0; i < corrs_data.size(); ++i) {
             const CorrData& corr_data = corrs_data[i];
             point_data[i].point = corr_data.point2D->XY();
+            // See the note in Continue/Resection: pixels of an image
+            // unproject in their own camera; Zero only for out-of-domain
+            // pixels of finite-domain models.
             point_data[i].point_normalized =
-                    corr_data.camera->ImageToWorld(point_data[i].point);
+                    corr_data.camera->CamFromImg(point_data[i].point)
+                            .value_or(Eigen::Vector2d::Zero());
             pose_data[i].proj_matrix = corr_data.image->ProjectionMatrix();
             pose_data[i].proj_center = corr_data.image->ProjectionCenter();
             pose_data[i].camera = corr_data.camera;
@@ -523,7 +527,8 @@ size_t IncrementalTriangulator::Create(
         const CorrData& corr_data = create_corrs_data[i];
         point_data[i].point = corr_data.point2D->XY();
         point_data[i].point_normalized =
-                corr_data.camera->ImageToWorld(point_data[i].point);
+                    corr_data.camera->CamFromImg(point_data[i].point)
+                            .value_or(Eigen::Vector2d::Zero());
         pose_data[i].proj_matrix = corr_data.image->ProjectionMatrix();
         pose_data[i].proj_center = corr_data.image->ProjectionCenter();
         pose_data[i].camera = corr_data.camera;

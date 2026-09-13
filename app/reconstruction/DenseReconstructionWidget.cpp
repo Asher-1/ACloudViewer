@@ -11,15 +11,16 @@
 #include <memory>
 
 #include "ReconstructionWidget.h"
-#include "base/undistortion.h"
+#include "controllers/option_manager.h"
 #include "controllers/texturing_controller.h"
+#include "image/undistortion.h"
 #include "mvs/advancing_front_meshing.h"
+#include "mvs/delaunay_meshing.h"
 #include "mvs/fusion.h"
 #include "mvs/mesh_postprocessing.h"
-#include "mvs/meshing.h"
 #include "mvs/patch_match.h"
+#include "mvs/poisson_meshing.h"
 #include "ui/render_options.h"
-#include "util/option_manager.h"
 
 // CV_CORE_LIB
 #include <FileSystem.h>
@@ -480,7 +481,7 @@ void DenseReconstructionWidget::showEvent(QShowEvent* event) {
         // 3. Try image_path (it's usually already a directory)
         if (options_->image_path && !options_->image_path->empty()) {
             // First try image_path itself
-            default_workspace = *options_->image_path;
+            default_workspace = options_->image_path->string();
             if (ExistsDir(default_workspace)) {
                 // Use parent of image_path as workspace
                 default_workspace = GetParentDir(default_workspace);

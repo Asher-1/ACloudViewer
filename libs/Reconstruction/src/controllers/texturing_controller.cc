@@ -80,7 +80,7 @@ std::vector<Eigen::Vector3f> ComputeVertexNormals(const PlyMesh& mesh) {
     return normals;
 }
 
-bool WriteObjMaterial(const std::string& obj_path,
+bool WriteObjMaterial(const std::filesystem::path& obj_path,
                       const std::string& texture_filename,
                       const PlyMesh& mesh,
                       const std::vector<float>& face_uvs) {
@@ -88,7 +88,7 @@ bool WriteObjMaterial(const std::string& obj_path,
 
     std::string prefix;
     std::string extension;
-    SplitFileExtension(obj_path, &prefix, &extension);
+    SplitFileExtension(obj_path.string(), &prefix, &extension);
     const std::string mtl_path = prefix + ".mtl";
     const std::string mtl_filename = GetPathBaseName(mtl_path);
 
@@ -167,7 +167,7 @@ void TexturingReconstruction::Run() {
     }
     cloudViewer::io::ReadTriangleMeshOptions mesh_options;
     mesh_options.print_progress = false;
-    if (!cloudViewer::io::AutoReadMesh(options_.meshed_file_path, mesh,
+    if (!cloudViewer::io::AutoReadMesh(options_.meshed_file_path.string(), mesh,
                                        mesh_options)) {
         LOG(ERROR) << "Failed to load mesh: " << options_.meshed_file_path;
         return;

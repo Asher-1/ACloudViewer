@@ -10,7 +10,7 @@
 #include <Eigen/Core>
 #include <vector>
 
-#include "base/normalization.h"
+#include "geometry/normalization.h"
 #include "util/alignment.h"
 #include "util/types.h"
 

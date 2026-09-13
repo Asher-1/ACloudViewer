@@ -20,6 +20,9 @@ unsigned int AssimpGltf::_assimpPostProcessFlags() const {
     // Skip aiProcess_FindInvalidData: many glTF exporters (e.g. neural mesh
     // pipelines) ship zero-length placeholder normals. IoUtils drops invalid
     // normals and recomputes them from geometry when needed.
-    return aiProcess_JoinIdenticalVertices | aiProcess_RemoveComponent |
-           aiProcess_Triangulate | aiProcess_ValidateDataStructure;
+    // Skip aiProcess_JoinIdenticalVertices: glTF shares vertices through
+    // indices, so the join pass re-hashes every vertex for nothing - on a
+    // TRELLIS splat export that is an O(millions) no-op hash.
+    return aiProcess_RemoveComponent | aiProcess_Triangulate |
+           aiProcess_ValidateDataStructure;
 }

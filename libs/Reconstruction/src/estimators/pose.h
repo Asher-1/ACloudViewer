@@ -12,9 +12,9 @@
 #include <Eigen/Core>
 #include <vector>
 
-#include "base/camera.h"
-#include "base/camera_models.h"
 #include "optim/loransac.h"
+#include "scene/camera.h"
+#include "sensor/models.h"
 #include "util/alignment.h"
 #include "util/logging.h"
 #include "util/threading.h"

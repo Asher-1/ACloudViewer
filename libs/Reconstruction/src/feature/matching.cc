@@ -37,7 +37,7 @@
 
 #include "SiftGPU/SiftGPU.h"
 #include "aicore/loma_capi.h"
-#include "base/gps.h"
+#include "geometry/gps.h"
 #include "feature/utils.h"
 #include "feature/loma.h"
 #include "retrieval/visual_index.h"
@@ -1133,7 +1133,7 @@ ExhaustiveFeatureMatcher::ExhaustiveFeatureMatcher(
   CHECK(options_.Check());
   CHECK(match_options_.Check());
   
-  database_ = std::make_shared<Database>(database_path);
+  database_ = Database::Open(database_path);
   cache_ = std::make_shared<FeatureMatcherCache>(5 * options_.block_size, database_.get());
   matcher_ = std::make_shared<SiftFeatureMatcher>(match_options, database_.get(), cache_.get());
 }
@@ -1207,10 +1207,10 @@ SequentialFeatureMatcher::SequentialFeatureMatcher(
     const SiftMatchingOptions& match_options, const std::filesystem::path& database_path)
     : options_(options),
       match_options_(match_options),
-      database_(database_path),
+      database_(Database::Open(database_path)),
       cache_(std::make_shared<FeatureMatcherCache>(std::max(5 * options_.loop_detection_num_images,
-            5 * options_.overlap), &database_)),
-      matcher_(match_options, &database_, cache_.get()) {
+            5 * options_.overlap), database_.get())),
+      matcher_(match_options, database_.get(), cache_.get()) {
   CHECK(options_.Check());
   CHECK(match_options_.Check());
 }
@@ -1293,7 +1293,7 @@ void SequentialFeatureMatcher::RunSequentialMatching(
       }
     }
 
-    DatabaseTransaction database_transaction(&database_);
+    DatabaseTransaction database_transaction(database_.get());
     matcher_.Match(image_pairs);
 
     PrintElapsedTime(timer);
@@ -1305,7 +1305,7 @@ void SequentialFeatureMatcher::RunLoopDetection(
   // Read the pre-trained vocabulary tree from disk.
   // Automatically download and cache if URI format is provided.
   std::string vocab_tree_path =
-      MaybeDownloadAndCacheFile(options_.vocab_tree_path).string();
+      MaybeDownloadAndCacheFile(options_.vocab_tree_path.string()).string();
   retrieval::VisualIndex<> visual_index;
   visual_index.Read(vocab_tree_path);
 
@@ -1361,9 +1361,9 @@ VocabTreeFeatureMatcher::VocabTreeFeatureMatcher(
     const SiftMatchingOptions& match_options, const std::filesystem::path& database_path)
     : options_(options),
       match_options_(match_options),
-      database_(database_path),
-      cache_(5 * options_.num_images, &database_),
-      matcher_(match_options, &database_, &cache_) {
+      database_(Database::Open(database_path)),
+      cache_(5 * options_.num_images, database_.get()),
+      matcher_(match_options, database_.get(), &cache_) {
   CHECK(options_.Check());
   CHECK(match_options_.Check());
 }
@@ -1380,7 +1380,7 @@ void VocabTreeFeatureMatcher::Run() {
   // Read the pre-trained vocabulary tree from disk.
   // Automatically download and cache if URI format is provided.
   std::string vocab_tree_path =
-      MaybeDownloadAndCacheFile(options_.vocab_tree_path).string();
+      MaybeDownloadAndCacheFile(options_.vocab_tree_path.string()).string();
   retrieval::VisualIndex<> visual_index;
   visual_index.Read(vocab_tree_path);
 
@@ -1441,9 +1441,9 @@ SpatialFeatureMatcher::SpatialFeatureMatcher(
     const SiftMatchingOptions& match_options, const std::filesystem::path& database_path)
     : options_(options),
       match_options_(match_options),
-      database_(database_path),
-      cache_(5 * options_.max_num_neighbors, &database_),
-      matcher_(match_options, &database_, &cache_) {
+      database_(Database::Open(database_path)),
+      cache_(5 * options_.max_num_neighbors, database_.get()),
+      matcher_(match_options, database_.get(), &cache_) {
   CHECK(options_.Check());
   CHECK(match_options_.Check());
 }
@@ -1612,7 +1612,7 @@ void SpatialFeatureMatcher::Run() {
       image_pairs.emplace_back(image_id, nn_image_id);
     }
 
-    DatabaseTransaction database_transaction(&database_);
+    DatabaseTransaction database_transaction(database_.get());
     matcher_.Match(image_pairs);
 
     PrintElapsedTime(timer);
@@ -1626,9 +1626,9 @@ TransitiveFeatureMatcher::TransitiveFeatureMatcher(
     const SiftMatchingOptions& match_options, const std::filesystem::path& database_path)
     : options_(options),
       match_options_(match_options),
-      database_(database_path),
-      cache_(options_.batch_size, &database_),
-      matcher_(match_options, &database_, &cache_) {
+      database_(Database::Open(database_path)),
+      cache_(options_.batch_size, database_.get()),
+      matcher_(match_options, database_.get(), &cache_) {
   CHECK(options_.Check());
   CHECK(match_options_.Check());
 }
@@ -1662,7 +1662,7 @@ void TransitiveFeatureMatcher::Run() {
 
     std::vector<std::pair<image_t, image_t>> existing_image_pairs;
     std::vector<int> existing_num_inliers;
-    database_.ReadTwoViewGeometryNumInliers(&existing_image_pairs,
+    database_->ReadTwoViewGeometryNumInliers(&existing_image_pairs,
                                             &existing_num_inliers);
 
     CHECK_EQ(existing_image_pairs.size(), existing_num_inliers.size());
@@ -1692,7 +1692,7 @@ void TransitiveFeatureMatcher::Run() {
                 num_batches += 1;
                 std::cout << StringPrintf("  Batch %d", num_batches)
                           << std::flush;
-                DatabaseTransaction database_transaction(&database_);
+                DatabaseTransaction database_transaction(database_.get());
                 matcher_.Match(image_pairs);
                 image_pairs.clear();
                 PrintElapsedTime(timer);
@@ -1711,7 +1711,7 @@ void TransitiveFeatureMatcher::Run() {
 
     num_batches += 1;
     std::cout << StringPrintf("  Batch %d", num_batches) << std::flush;
-    DatabaseTransaction database_transaction(&database_);
+    DatabaseTransaction database_transaction(database_.get());
     matcher_.Match(image_pairs);
     PrintElapsedTime(timer);
   }
@@ -1724,9 +1724,9 @@ ImagePairsFeatureMatcher::ImagePairsFeatureMatcher(
     const SiftMatchingOptions& match_options, const std::filesystem::path& database_path)
     : options_(options),
       match_options_(match_options),
-      database_(database_path),
-      cache_(options.block_size, &database_),
-      matcher_(match_options, &database_, &cache_) {
+      database_(Database::Open(database_path)),
+      cache_(options.block_size, database_.get()),
+      matcher_(match_options, database_.get(), &cache_) {
   CHECK(options_.Check());
   CHECK(match_options_.Check());
 }
@@ -1825,7 +1825,7 @@ void ImagePairsFeatureMatcher::Run() {
       block_image_pairs.push_back(image_pairs[j]);
     }
 
-    DatabaseTransaction database_transaction(&database_);
+    DatabaseTransaction database_transaction(database_.get());
     matcher_.Match(block_image_pairs);
 
     PrintElapsedTime(timer);
@@ -1839,8 +1839,8 @@ FeaturePairsFeatureMatcher::FeaturePairsFeatureMatcher(
     const SiftMatchingOptions& match_options, const std::filesystem::path& database_path)
     : options_(options),
       match_options_(match_options),
-      database_(database_path),
-      cache_(kCacheSize, &database_) {
+      database_(Database::Open(database_path)),
+      cache_(kCacheSize, database_.get()) {
   CHECK(options_.Check());
   CHECK(match_options_.Check());
 }
@@ -1903,7 +1903,7 @@ void FeaturePairsFeatureMatcher::Run() {
     const Image& image2 = *image_name_to_image[image_name2];
 
     bool skip_pair = false;
-    if (database_.ExistsInlierMatches(image1.ImageId(), image2.ImageId())) {
+    if (database_->ExistsInlierMatches(image1.ImageId(), image2.ImageId())) {
       std::cout << "SKIP: Matches for image pair already exist in database."
                 << std::endl;
       skip_pair = true;
@@ -1938,7 +1938,7 @@ void FeaturePairsFeatureMatcher::Run() {
     const Camera& camera2 = cache_.GetCamera(image2.CameraId());
 
     if (options_.verify_matches) {
-      database_.WriteMatches(image1.ImageId(), image2.ImageId(), matches);
+      database_->WriteMatches(image1.ImageId(), image2.ImageId(), matches);
 
       const auto keypoints1 = cache_.GetKeypoints(image1.ImageId());
       const auto keypoints2 = cache_.GetKeypoints(image2.ImageId());
@@ -1967,7 +1967,7 @@ void FeaturePairsFeatureMatcher::Run() {
                                               *keypoints2),
                                       matches, two_view_geometry_options);
 
-      database_.WriteTwoViewGeometry(image1.ImageId(), image2.ImageId(),
+      database_->WriteTwoViewGeometry(image1.ImageId(), image2.ImageId(),
                                      two_view_geometry);
     } else {
       TwoViewGeometry two_view_geometry;
@@ -1980,7 +1980,7 @@ void FeaturePairsFeatureMatcher::Run() {
 
       two_view_geometry.inlier_matches = matches;
 
-      database_.WriteTwoViewGeometry(image1.ImageId(), image2.ImageId(),
+      database_->WriteTwoViewGeometry(image1.ImageId(), image2.ImageId(),
                                      two_view_geometry);
     }
   }

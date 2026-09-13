@@ -11,10 +11,10 @@
 #include <QtWidgets>
 #include <unordered_map>
 
-#include "base/database.h"
+#include "controllers/option_manager.h"
+#include "scene/database.h"
 #include "ui/image_viewer_widget.h"
 #include "util/misc.h"
-#include "util/option_manager.h"
 
 namespace colmap {
 
@@ -154,7 +154,7 @@ private:
     QWidget* parent_;
 
     OptionManager* options_;
-    Database database_;
+    std::shared_ptr<Database> database_;
 
     QTabWidget* tab_widget_;
     ImageTab* image_tab_;

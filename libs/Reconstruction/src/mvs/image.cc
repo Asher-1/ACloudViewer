@@ -33,7 +33,7 @@
 
 #include <Eigen/Core>
 
-#include "base/projection.h"
+#include "scene/projection.h"
 #include "util/logging.h"
 
 namespace colmap {

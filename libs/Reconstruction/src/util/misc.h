@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "util/endian.h"
+#include "util/file.h"
 #include "util/logging.h"
 #include "util/string.h"
 
@@ -26,61 +27,7 @@ namespace colmap {
 #define STRINGIFY_(s) #s
 #endif  // STRINGIFY
 
-enum class CopyType { COPY, HARD_LINK, SOFT_LINK };
-
 // Append trailing slash to string if it does not yet end with a slash.
-std::string EnsureTrailingSlash(const std::string& str);
-
-// Check whether file name has the file extension (case insensitive).
-bool HasFileExtension(const std::filesystem::path& file_name,
-                      const std::string& ext);
-
-// Add a file extension, e.g., "file" + ".jpg" -> "file.jpg".
-std::filesystem::path AddFileExtension(std::filesystem::path path,
-                                       const std::string& ext);
-
-// Split the path into its root and extension, for example,
-// "dir/file.jpg" into "dir/file" and ".jpg".
-void SplitFileExtension(const std::string& path,
-                        std::string* root,
-                        std::string* ext);
-
-// Copy or link file from source to destination path
-void FileCopy(const std::filesystem::path& src_path,
-              const std::filesystem::path& dst_path,
-              CopyType type = CopyType::COPY);
-
-// Check if the path points to an existing directory.
-bool ExistsFile(const std::filesystem::path& path);
-
-// Check if the path points to an existing directory.
-bool ExistsDir(const std::filesystem::path& path);
-
-// Check if the path points to an existing file or directory.
-bool ExistsPath(const std::filesystem::path& path);
-
-// Create the directory if it does not exist. If "recursive" is true, all
-// missing parent directories are created as well (upstream parity).
-void CreateDirIfNotExists(const std::filesystem::path& path,
-                          bool recursive = false);
-
-// Upstream parity (dbb41680 util/file.h): check that an open file stream
-// is usable, with a message that points at the path.
-#define THROW_CHECK_FILE_OPEN(file, path)  \
-    THROW_CHECK((file).is_open())          \
-            << "Could not open " << (path) \
-            << ". Is the path a directory or does the parent dir not exist?";
-
-// Extract the base name of a path, e.g., "image.jpg" for "/dir/image.jpg".
-std::string GetPathBaseName(const std::filesystem::path& path);
-
-// Get the path of the parent directory for the given path.
-std::string GetParentDir(const std::filesystem::path& path);
-
-// Get the relative path between from and to. Both the from and to paths must
-// exist.
-std::string GetRelativePath(const std::filesystem::path& from,
-                            const std::filesystem::path& to);
 
 // Join multiple paths into one path.
 template <typename... T>
@@ -89,13 +36,9 @@ std::string JoinPaths(T const&... paths);
 // Return list of files in directory.
 std::vector<std::string> GetFileList(const std::filesystem::path& path);
 
-// Return list of files, recursively in all sub-directories.
-std::vector<std::string> GetRecursiveFileList(
-        const std::filesystem::path& path);
-
-// Return list of directories, recursively in all sub-directories.
-std::vector<std::string> GetDirList(const std::filesystem::path& path);
-
+// GetRecursiveFileList/GetDirList moved to util/file.h (upstream parity,
+// returning std::filesystem::path); the recursive-directory variant below is
+// a fork-only extension.
 // Return list of directories, recursively in all sub-directories.
 std::vector<std::string> GetRecursiveDirList(const std::filesystem::path& path);
 
@@ -132,9 +75,7 @@ template <typename T>
 void WriteBinaryBlob(const std::filesystem::path& path,
                      const std::vector<T>& data);
 
-// Read each line of a text file into a separate element. Empty lines are
-// ignored and leading/trailing whitespace is removed.
-std::vector<std::string> ReadTextFileLines(const std::filesystem::path& path);
+// ReadTextFileLines moved to util/file.{h,cc} (upstream parity).
 
 // Remove an argument from the list of command-line arguments.
 void RemoveCommandLineArgument(const std::string& arg, int* argc, char** argv);

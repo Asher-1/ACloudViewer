@@ -311,7 +311,7 @@ AICORE_CAPI int aicore_sam3_tracker_last_pipeline_timings(
         const aicore_sam3_tracker_ctx* tracker,
         aicore_pipeline_timings* out_timings);
 
-/** ---- Published model catalog (cloudViewer_downloads "sam" release) ---- */
+/** ---- Published model catalog (HF mirror Asher-1/sam3-gguf) ---- */
 
 typedef struct aicore_sam3_model_entry {
     const char* filename;     /**< e.g. "sam3-f16.gguf" */

@@ -12,7 +12,7 @@
 
 #include "aicore/asset_digests.h"
 #include "aicore/loma_capi.h"
-#include "base/database.h"
+#include "scene/database.h"
 #include "util/download.h"
 #include "util/misc.h"
 
@@ -468,8 +468,8 @@ LomaFeatureExtractor::LomaFeatureExtractor(
 
 void LomaFeatureExtractor::Run() {
     succeeded_ = false;
-    Database database(reader_options_.database_path);
-    ImageReader reader(reader_options_, &database);
+    auto database = Database::Open(reader_options_.database_path);
+    ImageReader reader(reader_options_, database.get());
     PrintHeading1("LoMa feature extraction");
     aicore_loma_detector_ctx* detector = nullptr;
     aicore_loma_descriptor_ctx* descriptor = nullptr;
@@ -503,12 +503,12 @@ void LomaFeatureExtractor::Run() {
             succeeded_ = false;
             continue;
         }
-        DatabaseTransaction transaction(&database);
+        DatabaseTransaction transaction(database.get());
         if (image.ImageId() == kInvalidImageId)
-            image.SetImageId(database.WriteImage(image));
-        database.WriteKeypoints(image.ImageId(), keypoints);
-        database.WriteFloatDescriptors(image.ImageId(), descriptors,
-                                       loma_options_.descriptor_type);
+            image.SetImageId(database->WriteImage(image));
+        database->WriteKeypoints(image.ImageId(), keypoints);
+        database->WriteFloatDescriptors(image.ImageId(), descriptors,
+                                        loma_options_.descriptor_type);
     }
     aicore_loma_detector_free(detector);
     aicore_loma_descriptor_free(descriptor);

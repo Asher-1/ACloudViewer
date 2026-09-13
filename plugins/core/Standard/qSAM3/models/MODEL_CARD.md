@@ -9,7 +9,7 @@
 | Input        | RGB image (any size, internally resized to the model's stride)        |
 | Output       | Segmentation masks + confidence scores + bounding boxes per instance  |
 | License      | [Apache 2.0](https://github.com/facebookresearch/segment-anything) (SAM 2/2.1/3) |
-| Source       | [sam3-ggml](https://github.com/Asher-1/sam3-ggml) conversion → `sam` release (hosted on cloudViewer_downloads) |
+| Source       | [sam3-ggml](https://github.com/Asher-1/sam3-ggml) conversion → Hugging Face mirror [Asher-1/sam3-gguf](https://huggingface.co/Asher-1/sam3-gguf) |
 
 ## Architecture by model family
 
@@ -20,12 +20,12 @@
 | `sam2.1_hiera_*` | Hiera (tiny/base+/small/large) | ❌ visual-only | ✅ | 5 quant variants × 4 sizes |
 | `sam2_hiera_*` | Hiera (tiny/base+/large) (SAM 2, not 2.1) | ❌ visual-only | ✅ | 5 quant variants × 3 sizes |
 
-`sam3-f32` is intentionally not published (GGUF too large at ~7 GB). All 39 published entries are enumerated below.
+`sam3-f32` exists on the mirror but is intentionally absent from the catalog. All 39 catalog entries are enumerated below.
 
 ## Files
 
 **39 GGUF files** in the
-[sam release](https://github.com/Asher-1/cloudViewer_downloads/releases/tag/sam).
+[Hugging Face mirror Asher-1/sam3-gguf](https://huggingface.co/Asher-1/sam3-gguf).
 
 ### SAM 3 — text + tracking (4 models)
 
@@ -34,7 +34,7 @@
 | sam3-f16.gguf | 1.84 GB | F16 — half precision |
 | sam3-q8_0.gguf | 1.10 GB | Q8_0 — 8-bit quant |
 | sam3-q4_1.gguf | 756 MB | Q4_1 — 4-bit quant with bias |
-| sam3-q4_0.gguf | 707 MB | Q4_0 — smallest SAM3 quant |
+| sam3-q4_0.gguf | 749 MB | Q4_0 — smallest SAM3 quant |
 
 ### SAM 3 Visual — visual-only (4 models)
 
@@ -88,9 +88,9 @@
 
 ## Download
 
-Mirror hosted by ACloudViewer:
+Hugging Face mirror:
 
-`https://github.com/Asher-1/cloudViewer_downloads/releases/download/sam/<filename>`
+`https://huggingface.co/Asher-1/sam3-gguf/resolve/main/<filename>`
 
 The model cache directory is `~/cloudViewer_data/extract/sam3_models/`
 (`$CLOUDVIEWER_DATA_ROOT/extract/sam3_models` when the environment variable

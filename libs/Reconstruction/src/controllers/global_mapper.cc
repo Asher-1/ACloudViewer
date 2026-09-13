@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <unordered_map>
 
-#include "base/database.h"
+#include "scene/database.h"
 
 namespace colmap {
 namespace {
@@ -55,8 +55,8 @@ GlobalMapperController::GlobalMapperController(
 }
 
 void GlobalMapperController::Run() {
-    Database database(options_.database_path);
-    const auto images = database.ReadAllImages();
+    auto database = Database::Open(options_.database_path);
+    const auto images = database->ReadAllImages();
     std::vector<image_t> image_ids;
     std::unordered_map<image_t, std::string> image_id_to_name;
     image_ids.reserve(images.size());
@@ -68,7 +68,7 @@ void GlobalMapperController::Run() {
     DisjointSet components(image_ids);
     std::vector<std::pair<image_t, image_t>> image_pairs;
     std::vector<int> num_inliers;
-    database.ReadTwoViewGeometryNumInliers(&image_pairs, &num_inliers);
+    database->ReadTwoViewGeometryNumInliers(&image_pairs, &num_inliers);
     for (const auto& pair : image_pairs) components.Union(pair.first, pair.second);
 
     std::unordered_map<image_t, std::vector<image_t>> grouped;

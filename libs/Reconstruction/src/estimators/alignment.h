@@ -9,9 +9,9 @@
 
 #include <vector>
 
-#include "base/reconstruction.h"
 #include "geometry/sim3.h"
 #include "optim/ransac.h"
+#include "scene/reconstruction.h"
 #include "util/hash_containers.h"
 
 namespace colmap {

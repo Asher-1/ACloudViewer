@@ -10,10 +10,10 @@
 #include <memory>
 #include <ostream>
 
-#include "base/correspondence_graph.h"
-#include "base/reconstruction.h"
-#include "base/track.h"
-#include "base/visibility_pyramid.h"
+#include "scene/correspondence_graph.h"
+#include "scene/reconstruction.h"
+#include "scene/track.h"
+#include "scene/visibility_pyramid.h"
 #include "util/enum_utils.h"
 #include "util/hash_containers.h"
 #include "util/types.h"

@@ -9,9 +9,9 @@
 
 #include <vector>
 
-#include "base/correspondence_graph.h"
-#include "base/reconstruction.h"
 #include "geometry/rigid3.h"
+#include "scene/correspondence_graph.h"
+#include "scene/reconstruction.h"
 #include "util/hash_containers.h"
 #include "util/types.h"
 

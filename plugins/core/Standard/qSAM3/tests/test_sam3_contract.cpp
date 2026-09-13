@@ -68,12 +68,12 @@ TEST(SAM3Contract, ModelEntries) {
         // No f32 in catalog (too large)
         EXPECT_EQ(nullptr, strstr(e->filename, "-f32")) << e->filename;
 
-        // Verify download URLs
+        // Verify download URLs (Hugging Face mirror, same as qTrellis)
         std::string url(e->download_url);
         EXPECT_EQ(url, base + e->filename);
         urls.push_back(url);
-        EXPECT_TRUE(url.find("cloudViewer_downloads") != std::string::npos ||
-                    url.find("github.com") != std::string::npos);
+        EXPECT_TRUE(url.find("huggingface.co/Asher-1/sam3-gguf/") !=
+                    std::string::npos);
 
         if (strcmp(e->model_family, "sam3") == 0) foundSam3 = true;
         if (strstr(e->model_family, "sam2.1")) foundSam21 = true;

@@ -9,8 +9,8 @@
 
 #include <PoseLib/camera_pose.h>
 
-#include "base/camera.h"
 #include "geometry/rigid3.h"
+#include "scene/camera.h"
 
 namespace colmap {
 

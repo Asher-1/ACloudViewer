@@ -13,8 +13,8 @@
 
 #include "estimators/view_graph_calibration.h"
 #include "math/random_eigen.h"
-#include "util/random.h"
-#include "base/database.h"
+#include "math/random.h"
+#include "scene/database.h"
 #include "scene/reconstruction_matchers.h"
 #include "scene/synthetic.h"
 #include "util/hash_containers.h"
@@ -42,7 +42,7 @@ TEST(GlobalPipeline, Nominal) {
   SetPRNGSeed(42);
   const auto database_path = CreateTestDir() / "database.db";
 
-  auto database = std::make_shared<Database>(database_path);
+  auto database = Database::Open(database_path);
   Reconstruction gt_reconstruction;
   SyntheticDatasetOptions synthetic_dataset_options;
   synthetic_dataset_options.num_rigs = 2;
@@ -88,7 +88,7 @@ TEST(GlobalPipeline, SfMWithRandomSeedStability) {
   SetPRNGSeed(42);
   const auto database_path = CreateTestDir() / "database.db";
 
-  auto database = std::make_shared<Database>(database_path);
+  auto database = Database::Open(database_path);
   Reconstruction gt_reconstruction;
   SyntheticDatasetOptions synthetic_dataset_options;
   synthetic_dataset_options.num_rigs = 2;
@@ -156,7 +156,7 @@ TEST(GlobalPipeline, WithExistingRelativePoses) {
   // mapping fail outright).
   SetPRNGSeed(42);
   const auto database_path = CreateTestDir() / "database.db";
-  auto database = std::make_shared<Database>(database_path);
+  auto database = Database::Open(database_path);
   Reconstruction gt_reconstruction;
   SyntheticDatasetOptions synthetic_dataset_options;
   synthetic_dataset_options.num_rigs = 2;
@@ -194,7 +194,7 @@ TEST(GlobalPipeline, WithNoisyExistingRelativePoses) {
   // mapping fail outright).
   SetPRNGSeed(42);
   const auto database_path = CreateTestDir() / "database.db";
-  auto database = std::make_shared<Database>(database_path);
+  auto database = Database::Open(database_path);
   Reconstruction gt_reconstruction;
   SyntheticDatasetOptions synthetic_dataset_options;
   synthetic_dataset_options.num_rigs = 2;
@@ -357,7 +357,7 @@ void BridgeGroupsWithOutlierEdges(
 TEST(GlobalPipeline, MultiComponents) {
   SetPRNGSeed(1);
   const auto database_path = CreateTestDir() / "database.db";
-  auto database = std::make_shared<Database>(database_path);
+  auto database = Database::Open(database_path);
   Reconstruction gt_reconstruction;
   SyntheticDatasetOptions synthetic_dataset_options;
   synthetic_dataset_options.num_rigs = 2;
@@ -414,7 +414,7 @@ TEST(GlobalPipeline, MultiComponents) {
 TEST(GlobalPipeline, ReconstructOnlyLargestComponent) {
   SetPRNGSeed(1);
   const auto database_path = CreateTestDir() / "database.db";
-  auto database = std::make_shared<Database>(database_path);
+  auto database = Database::Open(database_path);
   Reconstruction gt_reconstruction;
   SyntheticDatasetOptions synthetic_dataset_options;
   synthetic_dataset_options.num_rigs = 2;
@@ -446,7 +446,7 @@ TEST(GlobalPipeline, ReconstructOnlyLargestComponent) {
 TEST(GlobalPipeline, MultiComponentsStopAfterFirstComponent) {
   SetPRNGSeed(1);
   const auto database_path = CreateTestDir() / "database.db";
-  auto database = std::make_shared<Database>(database_path);
+  auto database = Database::Open(database_path);
   Reconstruction gt_reconstruction;
   SyntheticDatasetOptions synthetic_dataset_options;
   synthetic_dataset_options.num_rigs = 2;
@@ -487,7 +487,7 @@ TEST(GlobalPipeline, MultiComponentsStopAfterFirstComponent) {
 TEST(GlobalPipeline, MultiComponentsBelowMinModelSize) {
   SetPRNGSeed(1);
   const auto database_path = CreateTestDir() / "database.db";
-  auto database = std::make_shared<Database>(database_path);
+  auto database = Database::Open(database_path);
   Reconstruction gt_reconstruction;
   SyntheticDatasetOptions synthetic_dataset_options;
   synthetic_dataset_options.num_rigs = 2;
@@ -522,7 +522,7 @@ TEST(GlobalPipeline, MultiComponentsBelowMinModelSize) {
 TEST(GlobalPipeline, MultiComponentsBelowMinModelSizeAfterRotationFiltering) {
   SetPRNGSeed(1);
   const auto database_path = CreateTestDir() / "database.db";
-  auto database = std::make_shared<Database>(database_path);
+  auto database = Database::Open(database_path);
   Reconstruction gt_reconstruction;
   SyntheticDatasetOptions synthetic_dataset_options;
   synthetic_dataset_options.num_rigs = 2;
@@ -584,7 +584,7 @@ TEST(GlobalPipeline, MultiComponentsBelowMinModelSizeAfterRotationFiltering) {
 TEST(GlobalPipeline, MultiComponentsWithUnknownSensorFromRig) {
   SetPRNGSeed(1);
   const auto database_path = CreateTestDir() / "database.db";
-  auto database = std::make_shared<Database>(database_path);
+  auto database = Database::Open(database_path);
   Reconstruction gt_reconstruction;
   SyntheticDatasetOptions synthetic_dataset_options;
   synthetic_dataset_options.num_rigs = 2;
@@ -629,7 +629,7 @@ TEST(GlobalPipeline, MultiComponentsWithUnknownSensorFromRig) {
 TEST(GlobalPipeline, MultiComponentsWithOutlierEdges) {
   SetPRNGSeed(1);
   const auto database_path = CreateTestDir() / "database.db";
-  auto database = std::make_shared<Database>(database_path);
+  auto database = Database::Open(database_path);
   Reconstruction gt_reconstruction;
   SyntheticDatasetOptions synthetic_dataset_options;
   synthetic_dataset_options.num_rigs = 2;
@@ -675,7 +675,7 @@ TEST(GlobalPipeline, MultiComponentsWithOutlierEdges) {
 TEST(GlobalPipeline, MultiComponentsWithOutlierEdgesUsingGravity) {
   SetPRNGSeed(1);
   const auto database_path = CreateTestDir() / "database.db";
-  auto database = std::make_shared<Database>(database_path);
+  auto database = Database::Open(database_path);
   Reconstruction gt_reconstruction;
   SyntheticDatasetOptions synthetic_dataset_options;
   synthetic_dataset_options.num_rigs = 2;
@@ -727,7 +727,7 @@ TEST(GlobalPipeline, MultiComponentsWithOutlierEdgesUsingGravity) {
 TEST(GlobalPipeline, MultiComponentsEmptyViewGraph) {
   SetPRNGSeed(1);
   const auto database_path = CreateTestDir() / "database.db";
-  auto database = std::make_shared<Database>(database_path);
+  auto database = Database::Open(database_path);
   Reconstruction gt_reconstruction;
   SyntheticDatasetOptions synthetic_dataset_options;
   synthetic_dataset_options.num_rigs = 1;

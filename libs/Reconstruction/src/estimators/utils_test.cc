@@ -32,7 +32,7 @@
 #define TEST_NAME "estimators/utils"
 #include "util/testing.h"
 
-#include "base/essential_matrix.h"
+#include "geometry/essential_matrix.h"
 #include "estimators/utils.h"
 
 using namespace colmap;

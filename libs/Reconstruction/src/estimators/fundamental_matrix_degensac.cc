@@ -35,7 +35,7 @@
 #include "estimators/essential_matrix.h"
 #include "estimators/homography_matrix.h"
 #include "geometry/rigid3.h"
-#include "util/random.h"
+#include "math/random.h"
 #include "optim/loransac.h"
 #include "optim/support_measurement.h"
 #include "util/logging.h"

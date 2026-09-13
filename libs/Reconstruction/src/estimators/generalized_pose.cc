@@ -40,7 +40,7 @@
 #include "geometry/rigid3.h"
 #include "optim/loransac.h"
 #include "optim/support_measurement.h"
-#include "base/camera.h"
+#include "scene/camera.h"
 #include "util/hash_containers.h"
 #include "util/logging.h"
 

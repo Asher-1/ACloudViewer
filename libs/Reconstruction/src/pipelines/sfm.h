@@ -9,8 +9,8 @@
 
 #include <string>
 
-#include "controllers/incremental_mapper.h"
-#include "optim/bundle_adjustment.h"
+#include "controllers/incremental_pipeline.h"
+#include "estimators/bundle_adjustment.h"
 
 namespace cloudViewer {
 

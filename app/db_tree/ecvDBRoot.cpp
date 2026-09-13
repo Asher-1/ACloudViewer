@@ -465,6 +465,8 @@ void ccDBRoot::unloadAll() {
 ccHObject* ccDBRoot::getRootEntity() { return m_treeRoot; }
 
 void ccDBRoot::addElement(ccHObject* object, bool autoExpand /*=true*/) {
+    QElapsedTimer addTimer;
+    addTimer.start();
     if (!m_treeRoot) {
         assert(false);
         return;
@@ -517,6 +519,14 @@ void ccDBRoot::addElement(ccHObject* object, bool autoExpand /*=true*/) {
 
     if (wasEmpty && m_treeRoot->getChildrenNumber() != 0) {
         emit dbIsNotEmptyAnymore();
+    }
+
+    // Bottleneck probe: massive imports must stay O(1) per element here.
+    const qint64 addMs = addTimer.elapsed();
+    if (addMs > 5) {
+        CVLog::Print("[DBTree] addElement '%s' took %lld ms",
+                     object ? object->getName().toLatin1().constData() : "?",
+                     static_cast<long long>(addMs));
     }
 }
 
@@ -1371,7 +1381,11 @@ void ccDBRoot::changeSelection(const QItemSelection& selected,
     emit selectionChanged();
 
     ecvViewManager::instance().setRedrawRecursive(false);
-    MainWindow::TheInstance()->refreshAll(false, true);
+    // Selection is a STATE change (L2): the selected/deselected entities'
+    // bounding-box highlights are drawn in the plain redraw pass, so no
+    // forced rebuild is needed — a forced pass re-converted all aggregated
+    // leaves on every DBTree selection (~230ms each click).
+    MainWindow::TheInstance()->refreshAll(false, false);
 }
 
 void ccDBRoot::unselectEntity(ccHObject* obj) {
@@ -1395,6 +1409,8 @@ void ccDBRoot::unselectAllEntities() {
 
 void ccDBRoot::selectEntity(ccHObject* obj,
                             bool forceAdditiveSelection /*=false*/) {
+    QElapsedTimer selProbe;
+    selProbe.start();
     bool additiveSelection =
             forceAdditiveSelection ||
             (QApplication::keyboardModifiers() & Qt::ControlModifier);
@@ -1445,6 +1461,10 @@ void ccDBRoot::selectEntity(ccHObject* obj,
     // otherwise we clear current selection (if CTRL is not pushed)
     else if (!additiveSelection) {
         selectionModel->clear();
+    }
+    if (selProbe.elapsed() > 50 && CVLog::diagnosticsEnabled()) {
+        CVLog::Print("[selection] ccDBRoot::selectEntity took %lld ms",
+                     (long long)selProbe.elapsed());
     }
 }
 
@@ -1541,7 +1561,15 @@ ccHObject* ccDBRoot::find(int uniqueID) const {
 }
 
 void ccDBRoot::showPropertiesView(ccHObject* obj) {
+    // Selection-chain probe: the properties rebuild is the remaining
+    // unattributed segment of ccDBRoot::selectEntity.
+    QElapsedTimer panelTimer;
+    panelTimer.start();
     m_ccPropDelegate->fillModel(obj);
+    if (panelTimer.elapsed() > 20 && CVLog::diagnosticsEnabled()) {
+        CVLog::Print("[selection] properties fillModel took %lld ms",
+                     static_cast<long long>(panelTimer.elapsed()));
+    }
 
     m_propertiesTreeWidget->setEnabled(true);
     m_propertiesTreeWidget->setColumnWidth(0, c_propViewLeftColumnWidth);
@@ -1586,12 +1614,19 @@ void ccDBRoot::updateCCObject(ccHObject* object) {
 
 void ccDBRoot::redrawCCObject(ccHObject* object, bool forceRedraw /* = true*/) {
     assert(object);
+    // Appearance changes (scalar-field ranges, color scales, display flags)
+    // are baked into the rendered representation: arm the entity so its draw
+    // rebuilds it. redrawDisplay alone only forces the redraw pass, which
+    // clean entities skip in their fast path — scalar-field range edits
+    // (ccHistogramWindow::setMinDispValue etc.) never reached the geometry.
+    object->setRedrawFlagRecursive(true);
     object->redrawDisplay(forceRedraw);
 }
 
 void ccDBRoot::redrawCCObjectAndChildren(ccHObject* object,
                                          bool forceRedraw /* = true*/) {
     assert(object);
+    object->setRedrawFlagRecursive(true);
     object->redrawDisplay(forceRedraw);
 }
 

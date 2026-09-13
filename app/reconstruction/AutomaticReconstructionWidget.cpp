@@ -138,6 +138,21 @@ AutomaticReconstructionWidget::AutomaticReconstructionWidget(
     mesher_cb_->setEnabled(meshing_cb_->isChecked());
     texturing_cb_->setEnabled(meshing_cb_->isChecked());
 
+    QLabel* texturing_type_label = new QLabel(tr("Texturing engine"), this);
+    texturing_type_label->setFont(font());
+    texturing_type_label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    grid_layout_->addWidget(texturing_type_label, grid_layout_->rowCount(), 0);
+
+    texturing_type_cb_ = new QComboBox(this);
+    texturing_type_cb_->addItem("Mesh texturer (COLMAP)");
+    texturing_type_cb_->addItem("Image texturer (integration)");
+    texturing_type_cb_->setCurrentIndex(0);
+    grid_layout_->addWidget(texturing_type_cb_, grid_layout_->rowCount() - 1,
+                            1);
+    texturing_type_cb_->setEnabled(texturing_cb_->isChecked());
+    connect(texturing_cb_, &QCheckBox::toggled, texturing_type_cb_,
+            &QWidget::setEnabled);
+
     AddSpacer();
 
     // --- DA3 (Depth Anything V3) options ---
@@ -523,6 +538,19 @@ void AutomaticReconstructionWidget::Run() {
         default:
             options_.mesher =
                     AutomaticReconstructionController::Mesher::DELAUNAY;
+            break;
+    }
+
+    switch (texturing_type_cb_->currentIndex()) {
+        case 1:
+            options_.texturing_type =
+                    colmap::AutomaticReconstructionController::Options::
+                            TexturingType::IMAGE_TEXTUREUR;
+            break;
+        default:
+            options_.texturing_type =
+                    colmap::AutomaticReconstructionController::Options::
+                            TexturingType::MESH_TEXTUREUR;
             break;
     }
 

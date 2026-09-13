@@ -30,14 +30,14 @@
 #include "scene/synthetic.h"
 
 #include "estimators/triangulation.h"
-#include "util/math.h"
-#include "util/random.h"
+#include "math/math.h"
+#include "math/random.h"
 #include "math/random_eigen.h"
 #include "math/union_find.h"
-#include "base/database.h"
-#include "base/projection.h"
-#include "base/triangulation.h"
-#include "util/bitmap.h"
+#include "scene/database.h"
+#include "scene/projection.h"
+#include "geometry/triangulation.h"
+#include "sensor/bitmap.h"
 #include "util/eigen_matchers.h"
 #include "util/hash_containers.h"
 #include "util/misc.h"
@@ -56,7 +56,7 @@ namespace {
 const static std::string kMemoryDatabasePath = ":memory:";
 
 TEST(SynthesizeDataset, Nominal) {
-  auto database = std::make_unique<Database>(kMemoryDatabasePath);
+  auto database = Database::Open(kMemoryDatabasePath);
   Reconstruction reconstruction;
   SyntheticDatasetOptions options;
   options.num_rigs = 2;
@@ -195,7 +195,7 @@ TEST(SynthesizeDataset, Nominal) {
 }
 
 TEST(SynthesizeDataset, MultipleTimes) {
-  auto database = std::make_unique<Database>(kMemoryDatabasePath);
+  auto database = Database::Open(kMemoryDatabasePath);
   Reconstruction reconstruction;
   SyntheticDatasetOptions options;
   options.num_rigs = 2;
@@ -228,7 +228,7 @@ TEST(SynthesizeDataset, MultipleTimes) {
 }
 
 TEST(SynthesizeDataset, WithPriors) {
-  auto database = std::make_unique<Database>(kMemoryDatabasePath);
+  auto database = Database::Open(kMemoryDatabasePath);
   Reconstruction reconstruction;
   SyntheticDatasetOptions options;
   options.prior_position = true;
@@ -255,7 +255,7 @@ TEST(SynthesizeDataset, WithPriors) {
 }
 
 TEST(SynthesizeDataset, MultiReconstruction) {
-  auto database = std::make_unique<Database>(kMemoryDatabasePath);
+  auto database = Database::Open(kMemoryDatabasePath);
   Reconstruction reconstruction1;
   Reconstruction reconstruction2;
   SyntheticDatasetOptions options;
@@ -279,7 +279,7 @@ TEST(SynthesizeDataset, MultiReconstruction) {
 }
 
 TEST(SynthesizeDataset, ExhaustiveMatches) {
-  auto database = std::make_unique<Database>(kMemoryDatabasePath);
+  auto database = Database::Open(kMemoryDatabasePath);
   Reconstruction reconstruction;
   SyntheticDatasetOptions options;
   options.match_config = SyntheticDatasetOptions::MatchConfig::EXHAUSTIVE;
@@ -295,7 +295,7 @@ TEST(SynthesizeDataset, ExhaustiveMatches) {
 }
 
 TEST(SynthesizeDataset, ChainedMatches) {
-  auto database = std::make_unique<Database>(kMemoryDatabasePath);
+  auto database = Database::Open(kMemoryDatabasePath);
   Reconstruction reconstruction;
   SyntheticDatasetOptions options;
   options.match_config = SyntheticDatasetOptions::MatchConfig::CHAINED;
@@ -319,7 +319,7 @@ TEST(SynthesizeDataset, ChainedMatches) {
 }
 
 TEST(SynthesizeDataset, SparseMatchesZeroSparsity) {
-  auto database = std::make_unique<Database>(kMemoryDatabasePath);
+  auto database = Database::Open(kMemoryDatabasePath);
   Reconstruction reconstruction;
   SyntheticDatasetOptions options;
   options.match_config = SyntheticDatasetOptions::MatchConfig::SPARSE;
@@ -333,7 +333,7 @@ TEST(SynthesizeDataset, SparseMatchesZeroSparsity) {
 }
 
 TEST(SynthesizeDataset, SparseMatchesFullSparsity) {
-  auto database = std::make_unique<Database>(kMemoryDatabasePath);
+  auto database = Database::Open(kMemoryDatabasePath);
   Reconstruction reconstruction;
   SyntheticDatasetOptions options;
   options.match_config = SyntheticDatasetOptions::MatchConfig::SPARSE;
@@ -344,7 +344,7 @@ TEST(SynthesizeDataset, SparseMatchesFullSparsity) {
 }
 
 TEST(SynthesizeDataset, SparseMatchesPartialSparsity) {
-  auto database = std::make_unique<Database>(kMemoryDatabasePath);
+  auto database = Database::Open(kMemoryDatabasePath);
   Reconstruction reconstruction;
   SyntheticDatasetOptions options;
   options.num_rigs = 1;
@@ -373,7 +373,7 @@ TEST(SynthesizeDataset, SparseMatchesPartialSparsity) {
 }
 
 TEST(SynthesizeDataset, NoDatabase) {
-  auto database = std::make_unique<Database>(kMemoryDatabasePath);
+  auto database = Database::Open(kMemoryDatabasePath);
   SyntheticDatasetOptions options;
   Reconstruction reconstruction;
   SynthesizeDataset(options, &reconstruction);
@@ -419,7 +419,7 @@ TEST(SynthesizeDataset, Determinism) {
 }
 
 TEST(SynthesizeNoise, Point2DNoise) {
-  auto database = std::make_unique<Database>(kMemoryDatabasePath);
+  auto database = Database::Open(kMemoryDatabasePath);
   Reconstruction reconstruction;
   SyntheticDatasetOptions options;
   SynthesizeDataset(options, &reconstruction, database.get());
@@ -442,7 +442,7 @@ TEST(SynthesizeNoise, Point2DNoise) {
 }
 
 TEST(SynthesizeNoise, Point3DNoise) {
-  auto database = std::make_unique<Database>(kMemoryDatabasePath);
+  auto database = Database::Open(kMemoryDatabasePath);
   Reconstruction reconstruction;
   SyntheticDatasetOptions options;
 
@@ -456,7 +456,7 @@ TEST(SynthesizeNoise, Point3DNoise) {
 }
 
 TEST(SynthesizeNoise, RigFromWorldNoise) {
-  auto database = std::make_unique<Database>(kMemoryDatabasePath);
+  auto database = Database::Open(kMemoryDatabasePath);
   Reconstruction reconstruction;
   SyntheticDatasetOptions options;
 
@@ -479,7 +479,7 @@ NodeHashMap<pose_prior_t, PosePrior> ReadPosePriors(Database& database) {
 }
 
 TEST(SynthesizeNoise, PriorPositionNoise) {
-  auto database = std::make_unique<Database>(kMemoryDatabasePath);
+  auto database = Database::Open(kMemoryDatabasePath);
   Reconstruction reconstruction;
   SyntheticDatasetOptions options;
   options.prior_position = true;
@@ -511,7 +511,7 @@ TEST(SynthesizeNoise, PriorPositionNoise) {
 }
 
 TEST(SynthesizeNoise, PriorGravityNoise) {
-  auto database = std::make_unique<Database>(kMemoryDatabasePath);
+  auto database = Database::Open(kMemoryDatabasePath);
   Reconstruction reconstruction;
   SyntheticDatasetOptions options;
   options.prior_gravity = true;
