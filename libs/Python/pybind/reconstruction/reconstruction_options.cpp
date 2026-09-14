@@ -9,6 +9,7 @@
 
 #include <Logging.h>
 
+#include "mvs/mesh_postprocessing.h"
 #include "pipelines/option_utils.h"
 #include "pybind/docstring.h"
 
@@ -342,6 +343,12 @@ void pybind_sequential_matching_options(py::module& m) {
                            "retrieve in loop detection. "
                            "This number should be significantly bigger than "
                            "the sequential matching overlap.")
+            .def_readwrite(
+                    "loop_detection_min_index_distance",
+                    &colmap::SequentialMatchingOptions::
+                            loop_detection_min_index_distance,
+                    "int: (Default ``0``) Minimum sequential image-index "
+                    "distance for loop candidates. Zero disables filtering.")
             .def_readwrite("loop_detection_num_nearest_neighbors",
                            &colmap::SequentialMatchingOptions::
                                    loop_detection_num_nearest_neighbors,
@@ -680,46 +687,6 @@ void pybind_incremental_triangulator_options(py::module& m) {
                     "ignored in triangulation.");
 }
 
-#ifdef PBA_ENABLED
-void pybind_parallel_bundle_adjustment_options(py::module& m) {
-    // cloudViewer.reconstruction.options.ParallelBundleAdjustmentOptions
-    py::class_<colmap::ParallelBundleAdjuster::Options>
-            parallel_bundle_adjustment_options(
-                    m, "ParallelBundleAdjustmentOptions",
-                    "Parallel Bundle-Adjustment option class.");
-    parallel_bundle_adjustment_options.def(py::init<>())
-            .def("check", &colmap::ParallelBundleAdjuster::Options::Check,
-                 "Check parameters validation.")
-            .def_readwrite(
-                    "print_summary",
-                    &colmap::ParallelBundleAdjuster::Options::print_summary,
-                    "bool: (Default ``True``) Whether to print a final "
-                    "summary.")
-            .def_readwrite(
-                    "max_num_iterations",
-                    &colmap::ParallelBundleAdjuster::Options::
-                            max_num_iterations,
-                    "int: (Default ``50``) Maximum number of iterations.")
-            .def_readwrite("gpu_index",
-                           &colmap::ParallelBundleAdjuster::Options::gpu_index,
-                           "int: (Default ``-1``) Index of the GPU used for "
-                           "bundle adjustment.")
-            .def_readwrite(
-                    "num_threads",
-                    &colmap::ParallelBundleAdjuster::Options::num_threads,
-                    "int: (Default ``-1``) Number of threads for CPU based "
-                    "bundle adjustment.")
-            .def_readwrite("min_num_residuals_for_cpu_multi_threading",
-                           &colmap::ParallelBundleAdjuster::Options::
-                                   min_num_residuals_for_cpu_multi_threading,
-                           "int: (Default ``50000``) Minimum number of "
-                           "residuals to enable multi-threading."
-                           " Note that single-threaded is typically better for "
-                           "small bundle adjustment problems due to the "
-                           "overhead of threading.");
-}
-#endif
-
 void pybind_incremental_mapper_options(py::module& m) {
     // cloudViewer.reconstruction.options.IncrementalMapperSubOptions
     py::class_<colmap::IncrementalMapper::Options>
@@ -871,12 +838,6 @@ void pybind_incremental_mapper_options(py::module& m) {
             .def("get_global_ba_options",
                  &colmap::IncrementalMapperOptions::GlobalBundleAdjustment,
                  "Get global BundleAdjustment options.")
-#ifdef PBA_ENABLED
-            .def("get_parallel_global_ba_options",
-                 &colmap::IncrementalMapperOptions::
-                         ParallelGlobalBundleAdjustment,
-                 "Get parallel global BundleAdjustment options.")
-#endif
             .def_readwrite("min_num_matches",
                            &colmap::IncrementalMapperOptions::min_num_matches,
                            "int: (Default ``15``) The minimum number of "
@@ -981,17 +942,6 @@ void pybind_incremental_mapper_options(py::module& m) {
                                    ba_local_max_num_iterations,
                            "int: (Default ``25``) The maximum number of local "
                            "bundle adjustment iterations.")
-#ifdef PBA_ENABLED
-            .def_readwrite("ba_global_use_pba",
-                           &colmap::IncrementalMapperOptions::ba_global_use_pba,
-                           "bool: (Default ``False``) Whether to use PBA in "
-                           "global bundle adjustment.")
-            .def_readwrite(
-                    "ba_global_pba_gpu_index",
-                    &colmap::IncrementalMapperOptions::ba_global_pba_gpu_index,
-                    "int: (Default ``-1``) The GPU index for PBA bundle "
-                    "adjustment.")
-#endif
             .def_readwrite(
                     "ba_global_images_ratio",
                     &colmap::IncrementalMapperOptions::ba_global_images_ratio,
@@ -1270,6 +1220,49 @@ void pybind_delaunay_meshing_options(py::module& m) {
                            "use for reconstruction. Default is all threads.");
 }
 
+void pybind_mesh_post_processing_options(py::module& m) {
+    py::class_<colmap::mvs::MeshPostProcessingOptions> options(
+            m, "MeshPostProcessingOptions",
+            "meshoptimizer cleanup and smoothing options.");
+    options.def(py::init<>())
+            .def("check", &colmap::mvs::MeshPostProcessingOptions::Check)
+            .def_readwrite("enabled",
+                           &colmap::mvs::MeshPostProcessingOptions::enabled)
+            .def_readwrite("remove_small_components",
+                           &colmap::mvs::MeshPostProcessingOptions::
+                                   remove_small_components)
+            .def_readwrite("remove_degenerate_faces",
+                           &colmap::mvs::MeshPostProcessingOptions::
+                                   remove_degenerate_faces)
+            .def_readwrite("simplify",
+                           &colmap::mvs::MeshPostProcessingOptions::simplify)
+            .def_readwrite("smooth",
+                           &colmap::mvs::MeshPostProcessingOptions::smooth)
+            .def_readwrite(
+                    "preserve_boundary",
+                    &colmap::mvs::MeshPostProcessingOptions::preserve_boundary)
+            .def_readwrite("prune_error",
+                           &colmap::mvs::MeshPostProcessingOptions::prune_error)
+            .def_readwrite(
+                    "target_face_ratio",
+                    &colmap::mvs::MeshPostProcessingOptions::target_face_ratio)
+            .def_readwrite(
+                    "simplify_error",
+                    &colmap::mvs::MeshPostProcessingOptions::simplify_error)
+            .def_readwrite(
+                    "max_aspect_ratio",
+                    &colmap::mvs::MeshPostProcessingOptions::max_aspect_ratio)
+            .def_readwrite("smoothing_iterations",
+                           &colmap::mvs::MeshPostProcessingOptions::
+                                   smoothing_iterations)
+            .def_readwrite(
+                    "smoothing_lambda",
+                    &colmap::mvs::MeshPostProcessingOptions::smoothing_lambda)
+            .def_readwrite(
+                    "smoothing_mu",
+                    &colmap::mvs::MeshPostProcessingOptions::smoothing_mu);
+}
+
 void pybind_reconstruction_options(py::module& m) {
     py::module m_submodule =
             m.def_submodule("options", "Reconstruction options");
@@ -1285,14 +1278,12 @@ void pybind_reconstruction_options(py::module& m) {
     pybind_featurepairs_matching_options(m_submodule);
     pybind_bundle_adjustment_options(m_submodule);
     pybind_incremental_triangulator_options(m_submodule);
-#ifdef PBA_ENABLED
-    pybind_parallel_bundle_adjustment_options(m_submodule);
-#endif
     pybind_incremental_mapper_options(m_submodule);
     pybind_patch_match_options(m_submodule);
     pybind_stereo_fusion_options(m_submodule);
     pybind_poisson_meshing_options(m_submodule);
     pybind_delaunay_meshing_options(m_submodule);
+    pybind_mesh_post_processing_options(m_submodule);
 }
 
 }  // namespace options

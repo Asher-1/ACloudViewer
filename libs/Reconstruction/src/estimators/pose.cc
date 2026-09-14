@@ -31,14 +31,14 @@
 
 #include "estimators/pose.h"
 
-#include "base/camera_models.h"
-#include "base/cost_functions.h"
-#include "base/essential_matrix.h"
-#include "base/pose.h"
+#include "sensor/models.h"
+#include "estimators/cost_functions/cost_functions.h"
+#include "geometry/essential_matrix.h"
+#include "geometry/pose.h"
 #include "estimators/absolute_pose.h"
 #include "estimators/essential_matrix.h"
-#include "optim/bundle_adjustment.h"
-#include "util/matrix.h"
+#include "estimators/bundle_adjustment.h"
+#include "math/matrix.h"
 #include "util/misc.h"
 #include "util/threading.h"
 
@@ -63,13 +63,15 @@ void EstimateAbsolutePoseKernel(const Camera& camera,
     // Normalize image coordinates with current camera hypothesis.
     std::vector<Eigen::Vector2d> points2D_N(points2D.size());
     for (size_t i = 0; i < points2D.size(); ++i) {
-        points2D_N[i] = scaled_camera.ImageToWorld(points2D[i]);
+        // The scaled camera is pinhole by construction, so the unprojection
+        // cannot fail.
+        points2D_N[i] = *scaled_camera.CamFromImg(points2D[i]);
     }
 
     // Estimate pose for given focal length.
     auto custom_options = options;
     custom_options.max_error =
-            scaled_camera.ImageToWorldThreshold(options.max_error);
+            scaled_camera.CamFromImgThreshold(options.max_error);
     AbsolutePoseRANSAC ransac(custom_options);
     *report = ransac.Estimate(points2D_N, points3D);
 }
@@ -232,7 +234,7 @@ bool RefineAbsolutePose(const AbsolutePoseRefinementOptions& options,
 
         switch (camera->ModelId()) {
 #define CAMERA_MODEL_CASE(CameraModel)                                     \
-    case CameraModel::kModelId:                                            \
+    case CameraModel::model_id:                                            \
         cost_function = BundleAdjustmentCostFunction<CameraModel>::Create( \
                 points2D[i]);                                              \
         break;
@@ -251,7 +253,7 @@ bool RefineAbsolutePose(const AbsolutePoseRefinementOptions& options,
     if (problem.NumResiduals() > 0) {
         // Quaternion parameterization.
         *qvec = NormalizeQuaternion(*qvec);
-        SetQuaternionManifold(&problem, qvec_data);
+        SetQuaternionManifoldWxyz(&problem, qvec_data);
         // ceres::LocalParameterization* quaternion_parameterization =
         //     new ceres::QuaternionParameterization;
         // problem.SetParameterization(qvec_data, quaternion_parameterization);
@@ -357,7 +359,7 @@ bool RefineRelativePose(const ceres::Solver::Options& options,
     //         new ceres::HomogeneousVectorParameterization(3);
     // problem.SetParameterization(tvec->data(), homogeneous_parameterization);
 
-    SetQuaternionManifold(&problem, qvec->data());
+    SetQuaternionManifoldWxyz(&problem, qvec->data());
     SetSphereManifold<3>(&problem, tvec->data());
 
     ceres::Solver::Summary summary;

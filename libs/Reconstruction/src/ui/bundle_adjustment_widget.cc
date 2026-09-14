@@ -69,6 +69,11 @@ BundleAdjustmentWidget::BundleAdjustmentWidget(MainWindow* main_window,
                 "refine_extra_params");
   AddOptionBool(&options->bundle_adjustment->refine_extrinsics,
                 "refine_extrinsics");
+  AddOptionBool(&options->bundle_adjustment->use_caspar, "use_caspar");
+  AddOptionInt(&options->bundle_adjustment->caspar_gpu_index,
+               "caspar_gpu_index");
+  AddOptionInt(&options->bundle_adjustment->caspar_max_num_iterations,
+               "caspar_max_num_iterations");
 
   QPushButton* run_button = new QPushButton(tr("Run"), this);
   grid_layout_->addWidget(run_button, grid_layout_->rowCount(), 1);

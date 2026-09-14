@@ -6,7 +6,7 @@
 // ----------------------------------------------------------------------------
 
 // C API embed consistency: detect landmarks + embed_rgb_landmarks must match
-// embed_path on the same libjpeg-loaded buffer (InsightFace recognize path).
+// embed_path on the same Qt-decoded RGB buffer (InsightFace recognize path).
 // SKIP (77) when AICORE_TEST_FACEDETECT_GGUF or AICORE_TEST_FACEDETECT_IMAGE
 // unset.
 
@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "aicore/facedetect_capi.h"
+#include "tests/common/validation_probe.hpp"
 
 namespace {
 
@@ -36,11 +37,11 @@ bool embedPath(aicore_facedetect_ctx* ctx,
     int dim = 0;
     const int rc = aicore_facedetect_embed_path(ctx, path, minDet, &vec, &dim);
     if (rc != 0 || !vec || dim <= 0) {
-        if (vec) aicore_facedetect_free_vec(vec);
+        if (vec) aicore_facedetect_free_buffer(vec);
         return false;
     }
     out->assign(vec, vec + dim);
-    aicore_facedetect_free_vec(vec);
+    aicore_facedetect_free_buffer(vec);
     return true;
 }
 
@@ -49,6 +50,8 @@ bool embedPath(aicore_facedetect_ctx* ctx,
 int main() {
     const char* gguf = std::getenv("AICORE_TEST_FACEDETECT_GGUF");
     const char* image = std::getenv("AICORE_TEST_FACEDETECT_IMAGE");
+    const char* device = std::getenv("AICORE_TEST_FACEDETECT_DEVICE");
+    if (!device || !device[0]) device = "auto";
     if (!gguf || !image) return 77;
 
     aicore_facedetect_options* opts = aicore_facedetect_options_new();
@@ -56,9 +59,7 @@ int main() {
         std::fprintf(stderr, "failed to allocate facedetect options\n");
         return 1;
     }
-    if (const char* device = std::getenv("AICORE_TEST_FACEDETECT_DEVICE")) {
-        aicore_facedetect_options_set_device(opts, device);
-    }
+    aicore_facedetect_options_set_device(opts, device);
     aicore_facedetect_ctx* ctx = aicore_facedetect_load_opts(gguf, opts);
     aicore_facedetect_options_free(opts);
     if (!aicore_facedetect_is_ready(ctx)) {
@@ -101,7 +102,7 @@ int main() {
                      (aicore_facedetect_last_error(ctx)
                               ? aicore_facedetect_last_error(ctx)
                               : "(null)"));
-        aicore_facedetect_free_vec(reinterpret_cast<float*>(rgb));
+        aicore_facedetect_free_buffer(reinterpret_cast<float*>(rgb));
         aicore_facedetect_free(ctx);
         return 1;
     }
@@ -111,7 +112,7 @@ int main() {
     bool haveLmk = false;
     float bestArea = 0.f;
     const std::string json(detJson);
-    aicore_facedetect_free_string(detJson);
+    aicore_facedetect_free_buffer(detJson);
 
     size_t searchFrom = 0;
     while (true) {
@@ -156,7 +157,7 @@ int main() {
 
     if (!haveLmk) {
         std::fprintf(stderr, "no landmarks in detect json\n");
-        aicore_facedetect_free_vec(reinterpret_cast<float*>(rgb));
+        aicore_facedetect_free_buffer(reinterpret_cast<float*>(rgb));
         aicore_facedetect_free(ctx);
         return 1;
     }
@@ -165,7 +166,7 @@ int main() {
     int dimLmk = 0;
     const int rc = aicore_facedetect_embed_rgb_landmarks(
             ctx, rgb, w, h, landmarks, &embLmk, &dimLmk);
-    aicore_facedetect_free_vec(reinterpret_cast<float*>(rgb));
+    aicore_facedetect_free_buffer(reinterpret_cast<float*>(rgb));
     if (rc != 0 || !embLmk || dimLmk <= 0) {
         std::fprintf(stderr, "embed_rgb_landmarks failed: %s\n",
                      (aicore_facedetect_last_error(ctx)
@@ -178,7 +179,18 @@ int main() {
     const float crossDist =
             cosineDistance(embPathA.data(), embLmk,
                            std::min(static_cast<int>(embPathA.size()), dimLmk));
-    aicore_facedetect_free_vec(embLmk);
+    const uint64_t output_hash = aicore::test::fnv1a(
+            embPathA.data(), embPathA.size() * sizeof(float));
+    aicore_pipeline_timings timings{};
+    if (aicore_facedetect_last_pipeline_timings(ctx, &timings) != 0) {
+        std::fprintf(stderr, "failed to query FaceDetect pipeline timings\n");
+        aicore_facedetect_free_buffer(embLmk);
+        aicore_facedetect_free(ctx);
+        return 1;
+    }
+    aicore_facedetect_free_buffer(embLmk);
+    aicore::test::printValidationResult("facedetect", device, output_hash,
+                                        &timings);
     aicore_facedetect_free(ctx);
 
     if (crossDist > 0.05f) {

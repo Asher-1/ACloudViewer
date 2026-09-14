@@ -44,7 +44,7 @@ More on ACloudViewer [here](https://asher-1.github.io/ACloudViewer/)
 * 3D data structures
 * 3D data processing algorithms
 * Scene reconstruction (based on colmap)
-* **AICore AI plugins** — depth estimation, feature matching, and 3D Gaussian splats via GGUF (no Python runtime)
+* **AICore AI plugins** — depth, feature matching, detection / segmentation, background removal, and 3D Gaussian splats & meshes via GGUF (no Python runtime)
 * **3D Gaussian Splatting** real-time rendering and novel view synthesis (SIBR plugin)
 * Surface alignment
 * 3D visualization
@@ -141,9 +141,9 @@ See [qSIBR plugin documentation](https://github.com/Asher-1/ACloudViewer/blob/ma
 
 ---
 
-## AICore AI Plugins — Depth, Matching & 3D Gaussian Splats
+## AICore AI Plugins — Depth, Detection, Matching & 3D Generation
 
-Five GUI plugins share one native inference library — **`libAICore.so`** ([ggml](https://github.com/ggml-org/ggml)). Run quantized **GGUF** models on **CUDA / Vulkan (Linux/Windows) / Metal (macOS) / CPU** with **no Python or PyTorch** at runtime. Results land directly in the DB tree and plug into reconstruction, COLMAP, and SIBR workflows.
+Ten GUI plugins share one native inference library — **`libAICore.so`** ([ggml](https://github.com/ggml-org/ggml)). Run quantized **GGUF** models on **CUDA / Vulkan (Linux/Windows) / Metal (macOS) / CPU** with **no Python or PyTorch** at runtime. Results land directly in the DB tree and plug into reconstruction, COLMAP, and SIBR workflows.
 
 | | **qDA3** | **qDeepLSD** | **qFaceDetect** | **qLightGlue** | **qFreeSplatter** |
 |---|----------|--------------|-----------------|----------------|-------------------|
@@ -151,6 +151,13 @@ Five GUI plugins share one native inference library — **`libAICore.so`** ([ggm
 | **Model** | Depth Anything V3 GGUF | DeepLSD wireframe GGUF | face-detect.cpp GGUF packs | SIFT/ALIKED LightGlue GGUF | FreeSplatter GGUF |
 | **Standout** | Single-image depth cloud in one click | AFM + LSD lines on photos | SCRFD + ArcFace in one dialog | 300+ matches in **< 1 s** on GPU | **2 photos** → 3D scene + SIBR PLY |
 | **CMake** | `PLUGIN_STANDARD_QDA3` | `PLUGIN_STANDARD_QDEEPLSD` | `PLUGIN_STANDARD_QFACEDETECT` | `PLUGIN_STANDARD_QLIGHTGLUE` | `PLUGIN_STANDARD_QFREESPLATTER` |
+
+| | **qYOLO** | **qSAM3** | **qTrellis** | **qRFDetr** | **qRMBG** |
+|---|----------|-----------|--------------|-------------|-----------|
+| **Task** | Detect / seg / depth / pose / OBB / classify + open-vocab | Promptable segmentation + video tracking | Single image → 3D mesh with PBR | RF-DETR detection & instance masks | Background removal |
+| **Model** | YOLOv8 / YOLO26 GGUF (63 models) | SAM2 / 2.1 / 3 GGUF (39 models) | TRELLIS.2 GGUF (DINOv3 + flow DiTs) | RF-DETR GGUF (44 models) | RMBG-2.0 (BiRefNet-Swin-L) GGUF |
+| **Standout** | 9 task families incl. World / YOLOE prompts | Text / box / point prompts, video tracking | PBR-textured GLB in one click | 13 ms GPU latency + class allowlist | Transparent RGBA + raw alpha matte |
+| **CMake** | `PLUGIN_STANDARD_QYOLO` | `PLUGIN_STANDARD_QSAM3` | `PLUGIN_STANDARD_QTRELLIS` | `PLUGIN_STANDARD_QRFDETR` | `PLUGIN_STANDARD_QRMBG` |
 
 <table>
 <tr>
@@ -172,6 +179,34 @@ Five GUI plugins share one native inference library — **`libAICore.so`** ([ggm
 <div style="display:flex;gap:6px;"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qFaceDetect/images/qFaceDetect.png" width="49%"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qFaceDetect/images/qFaceDetect_video.png" width="49%"></div>
 <br><sub><b>qFaceDetect</b> — registry authentication, face recognition, and live multi-face video</sub>
 </td>
+<td width="33%" align="center">
+<img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qDeepLSD/images/qDeepLSD.png" width="100%">
+<br><sub><b>qDeepLSD</b> — AFM + LSD line-segment extraction on photos</sub>
+</td>
+<td width="33%" align="center">
+<div style="display:flex;gap:6px;"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qYOLO/images/yolo-seg.jpg" width="49%"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qYOLO/images/yolo-pose.jpg" width="49%"></div>
+<br><sub><b>qYOLO</b> — detection, segmentation, metric depth, pose, OBB, classification and open-vocab World / YOLOE prompts</sub>
+</td>
+</tr>
+<tr>
+<td width="33%" align="center">
+<div style="display:flex;gap:6px;"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qRFDetr/images/qRFDetr.jpg" width="49%"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qRFDetr/images/qRFDetr_video.jpg" width="49%"></div>
+<br><sub><b>qRFDetr</b> — real-time RF-DETR detection &amp; instance masks with per-class allowlist</sub>
+</td>
+<td width="33%" align="center">
+<div style="display:flex;gap:6px;"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qRMBG/images/qRMBG.jpg" width="49%"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qRMBG/images/qRMBG_video.jpg" width="49%"></div>
+<br><sub><b>qRMBG</b> — one-click transparent background removal (image &amp; live video)</sub>
+</td>
+<td width="33%" align="center">
+<div style="display:flex;gap:6px;"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qSAM3/images/qSam3_full.jpg" width="49%"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qSAM3/images/qSam3_visual.jpg" width="49%"></div>
+<br><sub><b>qSAM3</b> — point / box / text prompts and video object tracking (SAM 2 / 2.1 / 3)</sub>
+</td>
+</tr>
+<tr>
+<td width="33%" align="center">
+<div style="display:flex;gap:6px;"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qTrellis/images/qTrellis_f16_1024_pbr.png" width="49%"><img src="https://raw.githubusercontent.com/Asher-1/ACloudViewer/main/plugins/core/Standard/qTrellis/images/qTrellis_q8_512_pbr.png" width="49%"></div>
+<br><sub><b>qTrellis</b> — single image → PBR-textured 3D mesh &amp; GLB (TRELLIS.2)</sub>
+</td>
 </tr>
 </table>
 
@@ -190,6 +225,7 @@ cmake -B build_app \
   -DPLUGIN_STANDARD_QDEEPLSD=ON \
   -DPLUGIN_STANDARD_QFACEDETECT=ON \
   -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
+  -DPLUGIN_STANDARD_QMANUAL_CALIB=ON \
   -DPLUGIN_STANDARD_QFREESPLATTER=ON \
   -DBUILD_RECONSTRUCTION=ON \
   -DPLUGIN_STANDARD_QSIBR=ON \
@@ -198,7 +234,7 @@ cmake -B build_app \
 cmake --build build_app --target ACloudViewer -j$(nproc)
 ```
 
-User guides: [AICore plugins overview](docs/guides/plugins/README.md) · [qDA3](docs/guides/plugins/qDA3.md) · [qDeepLSD](docs/guides/plugins/qDeepLSD.md) · [qFaceDetect](docs/guides/plugins/qFaceDetect.md) · [qLightGlue](docs/guides/plugins/qLightGlue.md) · [qFreeSplatter](docs/guides/plugins/qFreeSplatter.md)
+User guides: [AICore plugins overview](docs/guides/plugins/README.md) · [qDA3](docs/guides/plugins/qDA3.md) · [qDeepLSD](docs/guides/plugins/qDeepLSD.md) · [qFaceDetect](docs/guides/plugins/qFaceDetect.md) · [qLightGlue](docs/guides/plugins/qLightGlue.md) · [qFreeSplatter](docs/guides/plugins/qFreeSplatter.md) · [qYOLO](docs/guides/plugins/qYOLO.md) · [qSAM3](docs/guides/plugins/qSAM3.md) · [qTrellis](docs/guides/plugins/qTrellis.md) · [qRFDetr](docs/guides/plugins/qRFDetr.md) · [qRMBG](docs/guides/plugins/qRMBG.md)
 
 ---
 

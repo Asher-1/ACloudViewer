@@ -1,0 +1,396 @@
+// ----------------------------------------------------------------------------
+// -                        CloudViewer: www.cloudViewer.org                  -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.cloudViewer.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+//
+// Upstream COLMAP dbb41680 (scene/correspondence_graph_test.cc) port. Fork
+// adaptations: include paths and the Database::ImagePairToPairId static
+// method instead of the upstream free function.
+
+#include "scene/correspondence_graph.h"
+
+#include "geometry/rigid3_matchers.h"
+#include "math/random_eigen.h"
+
+#include <gtest/gtest.h>
+
+#include "util/testing.h"
+
+namespace colmap {
+namespace {
+
+int CountNumTransitiveCorrespondences(const CorrespondenceGraph& graph,
+                                      const image_t image_id,
+                                      const point2D_t point2D_idx,
+                                      const size_t transitivity) {
+  std::vector<CorrespondenceGraph::Correspondence> corrs;
+  graph.ExtractTransitiveCorrespondences(
+      image_id, point2D_idx, transitivity, &corrs);
+  return corrs.size();
+}
+
+TEST(Correspondence, Print) {
+  CorrespondenceGraph::Correspondence correspondence(1, 2);
+  std::ostringstream stream;
+  stream << correspondence;
+  EXPECT_EQ(stream.str(), "Correspondence(image_id=1, point2D_idx=2)");
+}
+
+TEST(CorrespondenceGraph, Empty) {
+  CorrespondenceGraph correspondence_graph;
+  EXPECT_EQ(correspondence_graph.NumImages(), 0);
+  EXPECT_EQ(correspondence_graph.NumImagePairs(), 0);
+  EXPECT_EQ(correspondence_graph.NumMatchesBetweenAllImages().size(), 0);
+  EXPECT_EQ(correspondence_graph.ImagePairs().size(), 0);
+}
+
+TEST(CorrespondenceGraph, Print) {
+  CorrespondenceGraph correspondence_graph;
+  correspondence_graph.AddImage(0, 10);
+  correspondence_graph.AddImage(1, 10);
+  correspondence_graph.AddTwoViewGeometry(0, 1, TwoViewGeometry());
+  std::ostringstream stream;
+  stream << correspondence_graph;
+  EXPECT_EQ(stream.str(),
+            "CorrespondenceGraph(num_images=2, num_image_pairs=1)");
+}
+
+class CorrespondenceGraphFinalizeTest : public testing::TestWithParam<bool> {};
+
+TEST_P(CorrespondenceGraphFinalizeTest, TwoView) {
+  const bool finalize = GetParam();
+  CorrespondenceGraph correspondence_graph;
+  correspondence_graph.AddImage(0, 10);
+  correspondence_graph.AddImage(1, 10);
+  EXPECT_TRUE(correspondence_graph.ExistsImage(0));
+  EXPECT_TRUE(correspondence_graph.ExistsImage(1));
+  EXPECT_FALSE(correspondence_graph.ExistsImage(2));
+  EXPECT_EQ(correspondence_graph.NumImages(), 2);
+  TwoViewGeometry two_view_geometry01;
+  two_view_geometry01.cam2_from_cam1 =
+      Rigid3d(RandomEigenQuaterniond(), RandomEigenVectord<3>());
+  two_view_geometry01.inlier_matches = {
+      {0, 0},
+      {1, 2},
+      {3, 7},
+      {4, 8},
+  };
+  correspondence_graph.AddTwoViewGeometry(0, 1, two_view_geometry01);
+  if (finalize) {
+    correspondence_graph.Finalize();
+  }
+  EXPECT_EQ(correspondence_graph.NumCorrespondencesForImage(0), 4);
+  EXPECT_EQ(correspondence_graph.NumCorrespondencesForImage(1), 4);
+  const image_pair_t pair_id = Database::ImagePairToPairId(0, 1);
+  EXPECT_EQ(correspondence_graph.NumMatchesBetweenAllImages().size(), 1);
+  EXPECT_EQ(correspondence_graph.NumMatchesBetweenAllImages().at(pair_id), 4);
+  EXPECT_THAT(correspondence_graph.ImagePairs(),
+              testing::UnorderedElementsAre(pair_id));
+  const TwoViewGeometry two_view_geometry01_stored =
+      correspondence_graph.ExtractTwoViewGeometry(
+          0, 1, /*extract_inlier_matches=*/true);
+  EXPECT_THAT(two_view_geometry01_stored.cam2_from_cam1.value(),
+              Rigid3dNear(two_view_geometry01.cam2_from_cam1.value(),
+                          /*rtol=*/1e-6,
+                          /*ttol=*/1e-6));
+  EXPECT_EQ(two_view_geometry01_stored.inlier_matches,
+            two_view_geometry01.inlier_matches);
+  FeatureMatches matches01_stored;
+  correspondence_graph.ExtractMatchesBetweenImages(0, 1, matches01_stored);
+  EXPECT_EQ(matches01_stored, two_view_geometry01.inlier_matches);
+  TwoViewGeometry two_view_geometry10 = two_view_geometry01;
+  two_view_geometry10.Invert();
+  const TwoViewGeometry two_view_geometry10_stored =
+      correspondence_graph.ExtractTwoViewGeometry(
+          1, 0, /*extract_inlier_matches=*/true);
+  EXPECT_THAT(two_view_geometry10_stored.cam2_from_cam1.value(),
+              Rigid3dNear(two_view_geometry10.cam2_from_cam1.value(),
+                          /*rtol=*/1e-6,
+                          /*ttol=*/1e-6));
+  EXPECT_EQ(two_view_geometry10_stored.inlier_matches,
+            two_view_geometry10.inlier_matches);
+  FeatureMatches matches10_stored;
+  correspondence_graph.ExtractMatchesBetweenImages(1, 0, matches10_stored);
+  EXPECT_EQ(matches10_stored, two_view_geometry10.inlier_matches);
+  const TwoViewGeometry two_view_geometry01_without_matches_stored =
+      correspondence_graph.ExtractTwoViewGeometry(
+          0, 1, /*extract_inlier_matches=*/false);
+  EXPECT_THAT(two_view_geometry01_without_matches_stored.inlier_matches,
+              testing::IsEmpty());
+
+  std::vector<CorrespondenceGraph::Correspondence> corrs;
+
+  correspondence_graph.ExtractCorrespondences(0, 0, &corrs);
+  EXPECT_EQ(corrs.size(), 1);
+  EXPECT_TRUE(correspondence_graph.HasCorrespondences(0, 0));
+  EXPECT_TRUE(correspondence_graph.IsTwoViewObservation(0, 0));
+  EXPECT_EQ(corrs.at(0).image_id, 1);
+  EXPECT_EQ(corrs.at(0).point2D_idx, 0);
+
+  correspondence_graph.ExtractCorrespondences(1, 0, &corrs);
+  EXPECT_EQ(corrs.size(), 1);
+  EXPECT_TRUE(correspondence_graph.HasCorrespondences(1, 0));
+  EXPECT_TRUE(correspondence_graph.IsTwoViewObservation(1, 0));
+  EXPECT_EQ(corrs.at(0).image_id, 0);
+  EXPECT_EQ(corrs.at(0).point2D_idx, 0);
+
+  correspondence_graph.ExtractCorrespondences(0, 1, &corrs);
+  EXPECT_EQ(corrs.size(), 1);
+  EXPECT_TRUE(correspondence_graph.HasCorrespondences(0, 1));
+  EXPECT_TRUE(correspondence_graph.IsTwoViewObservation(0, 1));
+  EXPECT_EQ(corrs.at(0).image_id, 1);
+  EXPECT_EQ(corrs.at(0).point2D_idx, 2);
+
+  correspondence_graph.ExtractCorrespondences(1, 2, &corrs);
+  EXPECT_EQ(corrs.size(), 1);
+  EXPECT_TRUE(correspondence_graph.HasCorrespondences(1, 2));
+  EXPECT_TRUE(correspondence_graph.IsTwoViewObservation(1, 2));
+  EXPECT_EQ(corrs.at(0).image_id, 0);
+  EXPECT_EQ(corrs.at(0).point2D_idx, 1);
+
+  correspondence_graph.ExtractCorrespondences(0, 4, &corrs);
+  EXPECT_EQ(corrs.size(), 1);
+  EXPECT_TRUE(correspondence_graph.HasCorrespondences(0, 4));
+  EXPECT_TRUE(correspondence_graph.IsTwoViewObservation(0, 4));
+  EXPECT_EQ(corrs.at(0).image_id, 1);
+  EXPECT_EQ(corrs.at(0).point2D_idx, 8);
+
+  correspondence_graph.ExtractCorrespondences(0, 3, &corrs);
+  EXPECT_EQ(corrs.size(), 1);
+  EXPECT_TRUE(correspondence_graph.HasCorrespondences(0, 3));
+  EXPECT_EQ(corrs.at(0).image_id, 1);
+  EXPECT_EQ(corrs.at(0).point2D_idx, 7);
+
+  correspondence_graph.ExtractCorrespondences(1, 7, &corrs);
+  EXPECT_EQ(corrs.size(), 1);
+  EXPECT_TRUE(correspondence_graph.HasCorrespondences(1, 7));
+  EXPECT_TRUE(correspondence_graph.IsTwoViewObservation(1, 7));
+  EXPECT_EQ(corrs.at(0).image_id, 0);
+  EXPECT_EQ(corrs.at(0).point2D_idx, 3);
+
+  correspondence_graph.ExtractCorrespondences(1, 8, &corrs);
+  EXPECT_EQ(corrs.size(), 1);
+  EXPECT_TRUE(correspondence_graph.HasCorrespondences(1, 8));
+  EXPECT_TRUE(correspondence_graph.IsTwoViewObservation(1, 8));
+  EXPECT_EQ(corrs.at(0).image_id, 0);
+  EXPECT_EQ(corrs.at(0).point2D_idx, 4);
+
+  for (size_t i = 0; i < 10; ++i) {
+    EXPECT_EQ(CountNumTransitiveCorrespondences(correspondence_graph, 0, i, 0),
+              0);
+    correspondence_graph.ExtractCorrespondences(0, i, &corrs);
+    EXPECT_EQ(corrs.size(),
+              CountNumTransitiveCorrespondences(correspondence_graph, 0, i, 2));
+    EXPECT_EQ(CountNumTransitiveCorrespondences(correspondence_graph, 1, i, 0),
+              0);
+    correspondence_graph.ExtractCorrespondences(1, i, &corrs);
+    EXPECT_EQ(corrs.size(),
+              CountNumTransitiveCorrespondences(correspondence_graph, 1, i, 2));
+  }
+  FeatureMatches matches01;
+  correspondence_graph.ExtractMatchesBetweenImages(0, 1, matches01);
+  EXPECT_EQ(matches01, two_view_geometry01.inlier_matches);
+  FeatureMatches matches10;
+  correspondence_graph.ExtractMatchesBetweenImages(1, 0, matches10);
+  EXPECT_EQ(matches10, two_view_geometry10.inlier_matches);
+  EXPECT_EQ(correspondence_graph.NumObservationsForImage(0), 4);
+  EXPECT_EQ(correspondence_graph.NumObservationsForImage(1), 4);
+  EXPECT_EQ(correspondence_graph.NumCorrespondencesForImage(0), 4);
+  EXPECT_EQ(correspondence_graph.NumCorrespondencesForImage(1), 4);
+}
+
+TEST_P(CorrespondenceGraphFinalizeTest, ThreeView) {
+  const bool finalize = GetParam();
+  CorrespondenceGraph correspondence_graph;
+  correspondence_graph.AddImage(0, 10);
+  correspondence_graph.AddImage(1, 10);
+  correspondence_graph.AddImage(2, 10);
+  TwoViewGeometry two_view_geometry01;
+  two_view_geometry01.inlier_matches = {{0, 0}};
+  correspondence_graph.AddTwoViewGeometry(0, 1, two_view_geometry01);
+  TwoViewGeometry two_view_geometry02;
+  two_view_geometry02.inlier_matches = {{0, 0}};
+  correspondence_graph.AddTwoViewGeometry(0, 2, two_view_geometry02);
+  TwoViewGeometry two_view_geometry12;
+  two_view_geometry12.inlier_matches = {{0, 0}, {5, 5}};
+  correspondence_graph.AddTwoViewGeometry(1, 2, two_view_geometry12);
+  if (finalize) {
+    correspondence_graph.Finalize();
+  }
+  EXPECT_EQ(correspondence_graph.NumObservationsForImage(0), 1);
+  EXPECT_EQ(correspondence_graph.NumObservationsForImage(1), 2);
+  EXPECT_EQ(correspondence_graph.NumObservationsForImage(2), 2);
+  EXPECT_EQ(correspondence_graph.NumCorrespondencesForImage(0), 2);
+  EXPECT_EQ(correspondence_graph.NumCorrespondencesForImage(1), 3);
+  EXPECT_EQ(correspondence_graph.NumCorrespondencesForImage(2), 3);
+  const image_pair_t pair_id01 = Database::ImagePairToPairId(0, 1);
+  const image_pair_t pair_id02 = Database::ImagePairToPairId(0, 2);
+  const image_pair_t pair_id12 = Database::ImagePairToPairId(1, 2);
+  EXPECT_EQ(correspondence_graph.NumMatchesBetweenAllImages().size(), 3);
+  EXPECT_EQ(correspondence_graph.NumMatchesBetweenAllImages().at(pair_id01), 1);
+  EXPECT_EQ(correspondence_graph.NumMatchesBetweenAllImages().at(pair_id02), 1);
+  EXPECT_EQ(correspondence_graph.NumMatchesBetweenAllImages().at(pair_id12), 2);
+  EXPECT_THAT(correspondence_graph.ImagePairs(),
+              testing::UnorderedElementsAre(pair_id01, pair_id02, pair_id12));
+
+  std::vector<CorrespondenceGraph::Correspondence> corrs;
+  correspondence_graph.ExtractCorrespondences(0, 0, &corrs);
+  EXPECT_EQ(corrs.size(), 2);
+  EXPECT_EQ(corrs.at(0).image_id, 1);
+  EXPECT_EQ(corrs.at(0).point2D_idx, 0);
+  EXPECT_EQ(corrs.at(1).image_id, 2);
+  EXPECT_EQ(corrs.at(1).point2D_idx, 0);
+
+  correspondence_graph.ExtractCorrespondences(1, 0, &corrs);
+  EXPECT_EQ(corrs.size(), 2);
+  EXPECT_EQ(corrs.at(0).image_id, 0);
+  EXPECT_EQ(corrs.at(0).point2D_idx, 0);
+  EXPECT_EQ(corrs.at(1).image_id, 2);
+  EXPECT_EQ(corrs.at(1).point2D_idx, 0);
+
+  correspondence_graph.ExtractCorrespondences(2, 0, &corrs);
+  EXPECT_EQ(corrs.size(), 2);
+  EXPECT_EQ(corrs.at(0).image_id, 0);
+  EXPECT_EQ(corrs.at(0).point2D_idx, 0);
+  EXPECT_EQ(corrs.at(1).image_id, 1);
+  EXPECT_EQ(corrs.at(1).point2D_idx, 0);
+
+  correspondence_graph.ExtractCorrespondences(1, 5, &corrs);
+  EXPECT_EQ(corrs.size(), 1);
+  EXPECT_EQ(corrs.at(0).image_id, 2);
+  EXPECT_EQ(corrs.at(0).point2D_idx, 5);
+
+  correspondence_graph.ExtractCorrespondences(2, 5, &corrs);
+  EXPECT_EQ(corrs.size(), 1);
+  EXPECT_EQ(corrs.at(0).image_id, 1);
+  EXPECT_EQ(corrs.at(0).point2D_idx, 5);
+
+  EXPECT_EQ(CountNumTransitiveCorrespondences(correspondence_graph, 0, 0, 2),
+            2);
+  EXPECT_EQ(CountNumTransitiveCorrespondences(correspondence_graph, 1, 0, 2),
+            2);
+  EXPECT_EQ(CountNumTransitiveCorrespondences(correspondence_graph, 2, 0, 2),
+            2);
+  EXPECT_EQ(CountNumTransitiveCorrespondences(correspondence_graph, 0, 0, 3),
+            2);
+  EXPECT_EQ(CountNumTransitiveCorrespondences(correspondence_graph, 1, 0, 3),
+            2);
+  EXPECT_EQ(CountNumTransitiveCorrespondences(correspondence_graph, 2, 0, 3),
+            2);
+}
+
+INSTANTIATE_TEST_SUITE_P(CorrespondenceGraph,
+                         CorrespondenceGraphFinalizeTest,
+                         testing::Bool(),
+                         [](const auto& info) {
+                           return info.param ? "Finalized" : "NotFinalized";
+                         });
+
+TEST(CorrespondenceGraph, OutOfBounds) {
+  CorrespondenceGraph correspondence_graph;
+  correspondence_graph.AddImage(0, 10);
+  correspondence_graph.AddImage(1, 4);
+  TwoViewGeometry two_view_geometry;
+  two_view_geometry.inlier_matches = {
+      {9, 3},
+      {10, 3},
+      {9, 4},
+  };
+  correspondence_graph.AddTwoViewGeometry(0, 1, two_view_geometry);
+  EXPECT_EQ(correspondence_graph.NumCorrespondencesForImage(0), 1);
+  EXPECT_EQ(correspondence_graph.NumCorrespondencesForImage(1), 1);
+  const image_pair_t pair_id = Database::ImagePairToPairId(0, 1);
+  EXPECT_EQ(correspondence_graph.NumMatchesBetweenAllImages().at(pair_id), 1);
+}
+
+TEST(CorrespondenceGraph, Duplicate) {
+  CorrespondenceGraph correspondence_graph;
+  correspondence_graph.AddImage(0, 10);
+  correspondence_graph.AddImage(1, 10);
+  TwoViewGeometry two_view_geometry;
+  two_view_geometry.inlier_matches = {
+      {0, 0},
+      {1, 1},
+      {1, 1},
+      {3, 3},
+      {3, 4},
+  };
+  correspondence_graph.AddTwoViewGeometry(0, 1, two_view_geometry);
+  EXPECT_EQ(correspondence_graph.NumCorrespondencesForImage(0), 4);
+  EXPECT_EQ(correspondence_graph.NumCorrespondencesForImage(1), 4);
+  const image_pair_t pair_id = Database::ImagePairToPairId(0, 1);
+  EXPECT_EQ(correspondence_graph.NumMatchesBetweenAllImages().at(pair_id), 4);
+}
+
+TEST(CorrespondenceGraph, UpdateTwoViewGeometry) {
+  CorrespondenceGraph correspondence_graph;
+  correspondence_graph.AddImage(0, 10);
+  correspondence_graph.AddImage(1, 10);
+  TwoViewGeometry two_view_geometry;
+  two_view_geometry.config = TwoViewGeometry::CALIBRATED;
+  two_view_geometry.inlier_matches = {{0, 0}, {1, 2}, {3, 7}};
+  correspondence_graph.AddTwoViewGeometry(0, 1, two_view_geometry);
+  correspondence_graph.Finalize();
+
+  // Verify initial state has no relative pose.
+  TwoViewGeometry extracted =
+      correspondence_graph.ExtractTwoViewGeometry(0, 1, false);
+  EXPECT_FALSE(extracted.cam2_from_cam1.has_value());
+  EXPECT_EQ(extracted.config, TwoViewGeometry::CALIBRATED);
+
+  // Update with a decomposed relative pose.
+  TwoViewGeometry updated = extracted;
+  updated.cam2_from_cam1 =
+      Rigid3d(RandomEigenQuaterniond(), RandomEigenVectord<3>());
+  correspondence_graph.UpdateTwoViewGeometry(0, 1, updated);
+
+  // Verify the updated geometry is returned.
+  TwoViewGeometry after_update =
+      correspondence_graph.ExtractTwoViewGeometry(0, 1, false);
+  EXPECT_TRUE(after_update.cam2_from_cam1.has_value());
+  EXPECT_THAT(after_update.cam2_from_cam1.value(),
+              Rigid3dNear(updated.cam2_from_cam1.value(), 1e-6, 1e-6));
+  EXPECT_EQ(after_update.config, TwoViewGeometry::CALIBRATED);
+
+  // Verify matches are preserved (stored separately from geometry).
+  FeatureMatches matches;
+  correspondence_graph.ExtractMatchesBetweenImages(0, 1, matches);
+  EXPECT_EQ(matches, two_view_geometry.inlier_matches);
+}
+
+TEST(CorrespondenceGraph, UpdateTwoViewGeometrySwapped) {
+  CorrespondenceGraph correspondence_graph;
+  // Use image IDs where ShouldSwapImagePair(1, 0) is true, i.e. id1 > id2.
+  correspondence_graph.AddImage(0, 10);
+  correspondence_graph.AddImage(1, 10);
+  TwoViewGeometry two_view_geometry;
+  two_view_geometry.config = TwoViewGeometry::CALIBRATED;
+  two_view_geometry.inlier_matches = {{0, 0}, {1, 2}};
+  correspondence_graph.AddTwoViewGeometry(0, 1, two_view_geometry);
+  correspondence_graph.Finalize();
+
+  // Update using the swapped order (1, 0).
+  const Rigid3d cam1_from_cam0(RandomEigenQuaterniond(),
+                               RandomEigenVectord<3>());
+  TwoViewGeometry updated;
+  updated.config = TwoViewGeometry::CALIBRATED;
+  updated.cam2_from_cam1 = cam1_from_cam0;
+  correspondence_graph.UpdateTwoViewGeometry(1, 0, updated);
+
+  // Extract in the same swapped order and verify it matches.
+  const TwoViewGeometry extracted_10 =
+      correspondence_graph.ExtractTwoViewGeometry(1, 0, false);
+  EXPECT_THAT(extracted_10.cam2_from_cam1.value(),
+              Rigid3dNear(cam1_from_cam0, 1e-6, 1e-6));
+
+  // Extract in canonical order and verify it's the inverse.
+  const TwoViewGeometry extracted_01 =
+      correspondence_graph.ExtractTwoViewGeometry(0, 1, false);
+  EXPECT_THAT(extracted_01.cam2_from_cam1.value(),
+              Rigid3dNear(Inverse(cam1_from_cam0), 1e-6, 1e-6));
+}
+
+}  // namespace
+}  // namespace colmap

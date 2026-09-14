@@ -1,7 +1,9 @@
 #pragma once
 #include <vector>
-#include "image_io.hpp"
-#include "detect.hpp"
+#include "tasks/facedetect/image_io.hpp"
+
+#include "tasks/facedetect/detect.hpp"
+
 
 namespace fd {
 

@@ -191,7 +191,7 @@ FaceRegistryWidget::FaceRegistryWidget(QWidget* parent) : QWidget(parent) {
 
     m_exportAuthToDbCheck =
             new QCheckBox(tr("Export auth viz to DB tree"), authGroup);
-    m_exportAuthToDbCheck->setChecked(false);
+    m_exportAuthToDbCheck->setChecked(true);
     m_exportAuthToDbCheck->setToolTip(
             tr("When enabled, annotated probe image with match labels is added "
                "to the DB tree after authentication."));
@@ -658,7 +658,7 @@ void FaceRegistryWidget::loadSettings() {
         m_exportAuthToDbCheck->setChecked(
                 settings.value(QStringLiteral(
                                        "qFaceDetect/exportAuthResultToDb"),
-                               false)
+                               true)
                         .toBool());
     }
     if (m_registryPathUserChosen && !dbPath.isEmpty()) {

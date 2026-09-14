@@ -268,7 +268,8 @@ const ConsistencyGraph* CachedWorkspace::GetConsistencyGraph(
 
 void ImportPMVSWorkspace(const Workspace& workspace,
                          const std::string& option_name) {
-  const std::string& workspace_path = workspace.GetOptions().workspace_path;
+  const std::filesystem::path& workspace_path =
+      workspace.GetOptions().workspace_path;
   const std::string& stereo_folder = workspace.GetOptions().stereo_folder;
 
   CreateDirIfNotExists(JoinPaths(workspace_path, stereo_folder));

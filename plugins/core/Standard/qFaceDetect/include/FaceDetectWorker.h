@@ -42,7 +42,7 @@ struct FaceDetectRunResult {
     float minDetectionScoreUsed = 0.5f;
     QString mode;
     QString resolvedDevice;
-    /** Raw JSON from AICore (detect/analyze) or synthesized verify payload. */
+    /** Optional synthesized metadata payload; inference results are typed. */
     QByteArray resultJson;
 };
 

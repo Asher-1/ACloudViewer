@@ -1,8 +1,12 @@
 #pragma once
-#include "model_loader.hpp"
-#include "detect.hpp"
-#include "image_io.hpp"
-#include "landmark_graph.hpp"
+#include "tasks/facedetect/model_loader.hpp"
+
+#include "tasks/facedetect/detect.hpp"
+
+#include "tasks/facedetect/image_io.hpp"
+
+#include "tasks/facedetect/landmark_graph.hpp"
+
 
 #include <memory>
 #include <string>

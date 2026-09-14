@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "colmap_export.hpp"
+#include "tasks/depth/colmap_export.hpp"
 
 #include <cstdio>
 #include <cstring>
@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-#include "reconstruct.hpp"
+#include "tasks/depth/reconstruct.hpp"
 
 namespace aicore {
 namespace depth {

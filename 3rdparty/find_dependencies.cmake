@@ -55,6 +55,11 @@ set(CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM)
 
 set(CUSTOM_TARGET_PREFIX "CloudViewer")
 
+# Shared meshoptimizer target. It is linked explicitly by the consumers that
+# use it (AICore TRELLIS and Reconstruction), rather than every CloudViewer
+# target through the global private dependency list.
+include(${CloudViewer_3RDPARTY_DIR}/meshoptimizer/meshoptimizer.cmake)
+
 if (WIN32)
     # EXTERNAL INSTALL DIR
     set(CLOUDVIEWER_EXTERNAL_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/external")
@@ -800,6 +805,39 @@ endif()
 
 # OpenMP
 if (WITH_OPENMP)
+    if (APPLE)
+        # AppleClang does not ship OpenMP support: the driver rejects -fopenmp
+        # and there is no system libomp runtime, so FindOpenMP's try_compile
+        # probe fails when libomp.dylib lives in a non-default prefix (conda /
+        # Homebrew). Pre-set the FindOpenMP result variables from the first
+        # available libomp installation to skip the probe, following the
+        # upstream COLMAP macOS build recipe. Missing libomp only degrades to
+        # the no-OpenMP path (sources must guard omp usage with _OPENMP).
+        find_library(OpenMP_libomp_LIBRARY NAMES omp
+                     HINTS ${CONDA_PREFIX}/lib /opt/homebrew/lib /usr/local/lib)
+        find_path(OpenMP_omp_INCLUDE_DIR NAMES omp.h
+                  HINTS ${CONDA_PREFIX}/include /opt/homebrew/include /usr/local/include)
+        if (OpenMP_libomp_LIBRARY
+                AND OpenMP_omp_INCLUDE_DIR
+                AND NOT DEFINED OpenMP_CXX_FLAGS)
+            # Cache variables are mandatory here: FindOpenMP re-runs
+            # find_library(OpenMP_omp_LIBRARY) based on LIB_NAMES, and only an
+            # existing cache entry short-circuits that lookup.
+            set(OpenMP_C_FLAGS "-Xpreprocessor -fopenmp -I${OpenMP_omp_INCLUDE_DIR}"
+                    CACHE STRING "OpenMP C flags" FORCE)
+            set(OpenMP_C_LIB_NAMES omp CACHE STRING "OpenMP C library names" FORCE)
+            set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp -I${OpenMP_omp_INCLUDE_DIR}"
+                    CACHE STRING "OpenMP CXX flags" FORCE)
+            set(OpenMP_CXX_LIB_NAMES omp CACHE STRING "OpenMP CXX library names" FORCE)
+            set(OpenMP_omp_LIBRARY "${OpenMP_libomp_LIBRARY}"
+                    CACHE FILEPATH "OpenMP omp runtime library" FORCE)
+            mark_as_advanced(OpenMP_libomp_LIBRARY OpenMP_omp_LIBRARY OpenMP_omp_INCLUDE_DIR
+                    OpenMP_C_FLAGS OpenMP_C_LIB_NAMES OpenMP_CXX_FLAGS OpenMP_CXX_LIB_NAMES)
+            message(STATUS "AppleClang OpenMP: using libomp at ${OpenMP_libomp_LIBRARY}")
+        else()
+            message(STATUS "AppleClang OpenMP: libomp not found; install it with 'conda install -c conda-forge libomp' or 'brew install libomp' to enable OpenMP")
+        endif()
+    endif()
     find_package_3rdparty_library(3rdparty_openmp
             PACKAGE OpenMP
             PACKAGE_VERSION_VAR OpenMP_CXX_VERSION
@@ -825,6 +863,26 @@ if (WITH_OPENMP)
 else ()
     set(WITH_OPENMP OFF)
 endif ()
+
+# Steering arguments for vendored ExternalProjects that run their own
+# find_package(OpenMP) (today: ext_suitesparse's metis; ExternalProject sub
+# CMake processes do not inherit this project's OpenMP_* cache variables).
+# Presetting FindOpenMP's documented extension points (OpenMP_libomp_LIBRARY
+# and OpenMP_<lang>_INCLUDE_DIR, see Modules/FindOpenMP.cmake) short-circuits
+# their find_library/find_path, so their probe resolves the SAME libomp this
+# build uses (conda llvm-openmp / Homebrew) instead of whatever the build
+# host happens to expose. The find_* variables above only exist on the
+# AppleClang path, so this stays empty on Linux/Windows.
+if(APPLE AND WITH_OPENMP AND OpenMP_libomp_LIBRARY AND OpenMP_omp_INCLUDE_DIR)
+    set(OPENMP_EXTERNAL_STEER_ARGS
+            "-DOpenMP_libomp_LIBRARY:FILEPATH=${OpenMP_libomp_LIBRARY}"
+            "-DOpenMP_C_INCLUDE_DIR:PATH=${OpenMP_omp_INCLUDE_DIR}"
+            "-DOpenMP_CXX_INCLUDE_DIR:PATH=${OpenMP_omp_INCLUDE_DIR}")
+    message(STATUS "ExternalProject OpenMP steering: "
+            "libomp=${OpenMP_libomp_LIBRARY}, omp.h=${OpenMP_omp_INCLUDE_DIR}")
+else()
+    set(OPENMP_EXTERNAL_STEER_ARGS "")
+endif()
 
 
 if (${GLIBCXX_USE_CXX11_ABI})
@@ -2013,7 +2071,11 @@ else ()
         target_compile_options(3rdparty_blas INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:-m64>")
         target_link_libraries(3rdparty_blas INTERFACE 3rdparty_threads ${CMAKE_DL_LIBS})
     endif()
-    target_compile_definitions(3rdparty_blas INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")
+    if(UNIX)
+        # Windows links the LP64 interface so that faiss (32-bit indices) and
+        # the linalg wrappers share one MKL interface layer; see faiss.cmake.
+        target_compile_definitions(3rdparty_blas INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")
+    endif()
     list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_blas)
 endif ()
 
@@ -2269,37 +2331,77 @@ else()
 endif()
 
 if (BUILD_RECONSTRUCTION)
-    # freeimage
-    if (WIN32)
-        find_package(FreeImage QUIET)
-        if (FREEIMAGE_FOUND)
-            message(STATUS "FreeImage found in system")
-        else ()
-            message(STATUS "FreeImage not found in system and use prebuild")
-            include(${CloudViewer_3RDPARTY_DIR}/freeimage/freeimage_build.cmake)
-            import_3rdparty_library(3rdparty_freeimage
-                    INCLUDE_DIRS ${FREEIMAGE_INCLUDE_DIRS}
-                    LIB_DIR ${FREEIMAGE_LIB_DIR}
-                    LIBRARIES ${EX_FREEIMAGE_LIBRARIES}
-                    DEPENDS ext_freeimage
-                    )
-            add_dependencies(3rdparty_freeimage ext_freeimage)
-            set(FREEIMAGE_TARGET "3rdparty_freeimage")
-            list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_freeimage)
-            # only for static freeimage usage
-            # target_compile_definitions(3rdparty_freeimage INTERFACE FREEIMAGE_LIB)
+    option(RECONSTRUCTION_FETCH_POSELIB
+           "Fetch the pinned PoseLib minimal solvers for reconstruction" ON)
+    if (RECONSTRUCTION_FETCH_POSELIB)
+        include(${CloudViewer_3RDPARTY_DIR}/PoseLib/poselib.cmake)
+        if (NOT TARGET PoseLib::PoseLib)
+            message(FATAL_ERROR "PoseLib was requested but did not define PoseLib::PoseLib")
         endif()
-    else ()
-        include(${CloudViewer_3RDPARTY_DIR}/freeimage/freeimage_build.cmake)
-        import_shared_3rdparty_library(3rdparty_freeimage ext_freeimage
-                INCLUDE_DIRS ${FREEIMAGE_INCLUDE_DIRS}
-                LIB_DIR ${FREEIMAGE_LIB_DIR}
-                LIBRARIES ${EX_FREEIMAGE_LIBRARIES}
-                )
-        add_dependencies(3rdparty_freeimage ext_freeimage)
-        set(FREEIMAGE_TARGET "3rdparty_freeimage")
-        list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_freeimage)
     endif()
+
+    # OpenImageIO is built from a pinned 3rdparty source archive on every
+    # platform. Its adapter owns the minimal image dependency closure and
+    # explicitly disables host OpenCV discovery.
+    include(${CloudViewer_3RDPARTY_DIR}/openimageio/openimageio.cmake)
+    # Static on every platform (ceres/lapack policy): the import helper assembles
+    # the ${LIB_DIR}/<static-archive> link items, and the rsp generated by
+    # ext_openimageio's install step carries OIIO's local-dep closure. Keep it
+    # out of the global 3rdparty list: its bundled fmt headers must not be
+    # visible to unrelated CloudViewer code (Reconstruction links it explicitly).
+    import_3rdparty_library(3rdparty_openimageio
+            INCLUDE_DIRS ${OPENIMAGEIO_INCLUDE_DIRS}
+            LIB_DIR ${OPENIMAGEIO_LIB_DIR}
+            LIBRARIES ${EXT_OPENIMAGEIO_LIBRARIES}
+            DEPENDS ext_openimageio
+            )
+    # Apple/GNU ld expands @rsp from the link line, so those platforms
+    # consume the response file directly. MSVC link.exe cannot: MSBuild and
+    # the Ninja generator wrap every link line in their own response file,
+    # and link.exe expands no @file inside a response file - the @rsp item
+    # arrives nested and fails with
+    # "LNK1104: cannot open file '@...rsp.lib'" (link.exe then retries the
+    # literal name with a .lib suffix). On Windows the closure is therefore
+    # physically merged into one archive by lib.exe during the
+    # generate_static_closure step, linked here as a plain library item.
+    # The closure must be an INTERFACE *library item* (not a link option):
+    # link options land before the object libraries in the final link line,
+    # and the static archives inside the rsp then precede their first
+    # reference, leaving the exr/imath symbols unresolved.
+    if (MSVC)
+        target_link_libraries(3rdparty_openimageio
+                INTERFACE
+                "$<BUILD_INTERFACE:${OPENIMAGEIO_MERGED_LIB}>")
+    else ()
+        target_link_libraries(3rdparty_openimageio
+                INTERFACE "-Wl,@${OPENIMAGEIO_RSP_FILE}")
+    endif ()
+    # OIIO's plugin.cpp uses dlopen/dlclose. glibc < 2.34 (ubuntu-focal CI)
+    # keeps them in a separate libdl, and every consumer of the static closure
+    # must link it explicitly: pybind pulls -ldl transitively via Python/CUDA,
+    # but plain executables (the unit-test binaries) do not. CMAKE_DL_LIBS is
+    # empty where dl lives in libc (macOS, Windows, glibc >= 2.34).
+    if (CMAKE_DL_LIBS)
+        target_link_libraries(3rdparty_openimageio
+                INTERFACE ${CMAKE_DL_LIBS})
+    endif ()
+    # Match OIIO's installed OpenImageIOTargets.cmake, which exports
+    # OIIO_STATIC_DEFINE=1 for a static OIIO build: clients must compile
+    # OIIO_API without __declspec(dllimport). This custom import target
+    # carries only INCLUDE_DIRS/LIBRARIES, so without the definition every
+    # Windows consumer of the static closure links __imp_-prefixed symbols
+    # the archive does not define - LNK2001 on TypeDesc/ParamValue/
+    # ParamValueSpan/ImageSpec (ubuntu windows CI). On Linux/macOS export.h
+    # takes the visibility branch and the macro is unused.
+    target_compile_definitions(3rdparty_openimageio
+            INTERFACE OIIO_STATIC_DEFINE=1)
+
+    include(${CloudViewer_3RDPARTY_DIR}/faiss/faiss.cmake)
+    option(RECONSTRUCTION_CASPAR_ENABLED
+           "Enable COLMAP Caspar CUDA bundle adjustment" OFF)
+    option(RECONSTRUCTION_CASPAR_USE_DOUBLE
+           "Use f64 generated Caspar kernels" OFF)
+    include(${CloudViewer_3RDPARTY_DIR}/Symforce-Caspar/caspar.cmake)
 
     # other dependency
     if (WIN32 OR APPLE)
@@ -2371,7 +2473,7 @@ if (BUILD_RECONSTRUCTION)
         endif()
         target_link_libraries(3rdparty_ceres INTERFACE 3rdparty_eigen3 3rdparty_gflags 
                               3rdparty_glog 3rdparty_suitesparse)
-
+        
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_eigen3)
         list(APPEND CloudViewer_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM 3rdparty_ceres)
     elseif (UNIX)

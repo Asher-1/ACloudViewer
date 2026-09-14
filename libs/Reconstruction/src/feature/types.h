@@ -14,6 +14,17 @@
 
 namespace colmap {
 
+// Feature extractor types persisted in the database `descriptors.type`
+// column. Values must stay in sync with upstream COLMAP (SIFT = 0).
+enum class FeatureExtractorType {
+    UNDEFINED = -1,
+    SIFT = 0,
+    ALIKED_N16ROT = 1,
+    ALIKED_N32 = 2,
+    LOMA_B = 3,
+    LOMA_B128 = 4,
+};
+
 struct FeatureKeypoint {
     FeatureKeypoint();
     FeatureKeypoint(const float x, const float y);
@@ -72,11 +83,35 @@ struct FeatureMatch {
 
     // Feature index in second image.
     point2D_t point2D_idx2 = kInvalidPoint2DIdx;
+
+    // Upstream COLMAP dbb41680 parity (feature/types.h): equality so that
+    // std::vector<FeatureMatch> can be compared directly in tests.
+    inline bool operator==(const FeatureMatch& other) const {
+        return point2D_idx1 == other.point2D_idx1 &&
+               point2D_idx2 == other.point2D_idx2;
+    }
+
+    inline bool operator!=(const FeatureMatch& other) const {
+        return !(*this == other);
+    }
 };
 
 typedef std::vector<FeatureKeypoint> FeatureKeypoints;
 typedef Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
         FeatureDescriptors;
+// Learned descriptors remain native float32 values and use a separate storage
+// protocol from legacy uint8 SIFT descriptors.
+typedef Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+        FeatureDescriptorsFloat;
+
+enum class FeatureDescriptorType : uint8_t {
+    kSift = 0,
+    kLomaB = 1,
+    kLomaB128 = 2,
+    kLomaR = 3,
+    kLomaL = 4,
+    kLomaG = 5,
+};
 typedef std::vector<FeatureMatch> FeatureMatches;
 
 }  // namespace colmap

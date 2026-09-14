@@ -5,15 +5,17 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "backend.h"
+#include "tasks/aliked/backend.h"
 
 #include <ggml-backend.h>
 
-#include "ggml_backend_utils.hpp"
+#include "common/ggml_backend_utils.hpp"
+#include "tasks/aliked/aliked_common.hpp"
 
 #if defined(AICORE_VULKAN_ALIKED)
-#include "gpu_sync.hpp"
-#include "vulkan/vulkan_aliked_dispatch.hpp"
+#include "tasks/aliked/gpu_sync.hpp"
+#include "tasks/aliked/vulkan/vulkan_aliked_dispatch.hpp"
+
 #endif
 
 #include <algorithm>
@@ -34,53 +36,41 @@ std::string Lower(std::string value) {
     return value;
 }
 
-bool EnvEnabled(const char *name, bool default_value) {
-    const char *env = std::getenv(name);
-    if (env == nullptr || env[0] == '\0') return default_value;
-    return std::strcmp(env, "0") != 0 && Lower(env) != "false" &&
-           Lower(env) != "off";
-}
-
 VulkanAlikedConfig SnapshotVulkanConfig() {
     VulkanAlikedConfig config;
     config.initialized = true;
     // The custom Vulkan ALIKED kernels are not parity-qualified yet.  The
     // regular ggml graph still executes on Vulkan; this only selects the
-    // exact CPU bridge for ALIKED's custom operators.  Do not let a process
-    // environment variable re-enable an unqualified path in a GUI session.
+    // exact CPU bridge for ALIKED's custom operators. No process-environment
+    // variable may re-enable an unqualified path in a GUI session; the
+    // historical LIGHTGLUE_ALIKED_VULKAN_* escape hatches are removed (the
+    // future batch API will opt in through Session config).
     config.compute = false;
     // The current custom command-buffer implementation for these two stages
-    // has not completed its lifecycle/parity qualification. Do not expose a
-    // process-environment escape hatch that can make a GUI session lose its
-    // Vulkan device. The future batch API will opt in through Session config.
+    // has not completed its lifecycle/parity qualification.
     config.gpu_upsample = false;
     // Per-stage DCN values alone are insufficient: they still destabilize
     // cross-image LightGlue matching. Keep the exact CPU bridge until the
     // full extractor-and-matcher parity suite qualifies this path.
     config.dcn = false;
-    config.postprocess = EnvEnabled("LIGHTGLUE_ALIKED_VULKAN_POST", false);
+    config.postprocess = false;
     config.sddh = false;
-    config.defer_sync = EnvEnabled("LIGHTGLUE_ALIKED_VULKAN_DEFER_SYNC", false);
-    config.scheduler = EnvEnabled("LIGHTGLUE_ALIKED_VULKAN_SCHED", false);
-    config.scheduler_tail_only =
-            EnvEnabled("LIGHTGLUE_ALIKED_VULKAN_SCHED_TAIL", false);
+    config.defer_sync = false;
+    config.scheduler = false;
+    config.scheduler_tail_only = false;
     // Rebuilding the Vulkan backend on every extract tears down and recreates
     // the vk device, which (a) re-triggers NVIDIA TDR/device-lost on concurrent
     // submits and (b) re-runs the full GPU warmup, dominating end-to-end
-    // latency. The backend is session-persistent by default; an operator can
-    // still opt into per-extract rewarming for debugging.
-    config.fresh_extract =
-            EnvEnabled("LIGHTGLUE_ALIKED_VULKAN_FRESH_EXTRACT", false);
+    // latency. The backend is session-persistent.
+    config.fresh_extract = false;
     // The ggml-vulkan conv2d path on NVIDIA CoopMat2 devices is NOT safe for
     // ALIKED's precision-sensitive convs: the COOPMAT2 path hard-codes an fp16
     // accumulator (corrupts F32 conv score maps), and routing F32 convs through
     // the scalar _unroll pipeline is non-deterministic (spurious correct/wrong
     // outputs across runs) because the fp32 shmem layout collides with the
     // fp16-tuned spec constants. CPU bridge is the only parity-qualified path
-    // (stable 0.001px / cos=1.0 for f32 & f16). Keep it the default; operators
-    // may opt into the GPU path only for controlled experiments.
-    config.force_cpu_conv =
-            EnvEnabled("LIGHTGLUE_ALIKED_VULKAN_FORCE_CPU_CONV", true);
+    // (stable 0.001px / cos=1.0 for f32 & f16).
+    config.force_cpu_conv = true;
     return config;
 }
 
@@ -231,11 +221,9 @@ void Backend::Release() {
         } catch (const std::exception &e) {
             // A lost device cannot be recovered in-place. Destruction must
             // still release host resources without terminating the GUI.
-            std::fprintf(stderr, "[vk-aliked] backend release: %s\n", e.what());
+            ALIKED_LOG_ERR("backend release: %s", e.what());
         } catch (...) {
-            std::fprintf(stderr,
-                         "[vk-aliked] backend release failed with unknown "
-                         "exception\n");
+            ALIKED_LOG_ERR("backend release failed with unknown exception");
         }
     }
 #endif

@@ -10,11 +10,11 @@
 #include <QtCore>
 #include <QtWidgets>
 
-#include "base/database.h"
-#include "base/projection.h"
-#include "base/reconstruction.h"
+#include "controllers/option_manager.h"
+#include "scene/database.h"
+#include "scene/projection.h"
+#include "scene/reconstruction.h"
 #include "ui/qt_utils.h"
-#include "util/option_manager.h"
 
 namespace colmap {
 

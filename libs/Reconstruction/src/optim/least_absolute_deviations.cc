@@ -1,4 +1,4 @@
-// Copyright (c) 2018, ETH Zurich and UNC Chapel Hill.
+// Copyright (c), ETH Zurich and UNC Chapel Hill.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -26,14 +26,25 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
-// Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
 #include "optim/least_absolute_deviations.h"
+
+#include "optim/sparse_cholesky.h"
+#include "util/eigen_alignment.h"
+#include "util/logging.h"
+
+#include <memory>
 
 #include <Eigen/SparseCholesky>
 
 namespace colmap {
+
+struct LeastAbsoluteDeviationLinearSolverImpl {
+  virtual ~LeastAbsoluteDeviationLinearSolverImpl() = default;
+  virtual bool Compute(const Eigen::SparseMatrix<double>& A) = 0;
+  virtual bool Solve(const Eigen::VectorXd& b, Eigen::VectorXd* x) = 0;
+};
+
 namespace {
 
 Eigen::VectorXd Shrinkage(const Eigen::VectorXd& a, const double kappa) {
@@ -42,57 +53,141 @@ Eigen::VectorXd Shrinkage(const Eigen::VectorXd& a, const double kappa) {
   return a_plus_kappa.cwiseMin(0) + a_minus_kappa.cwiseMax(0);
 }
 
+Eigen::SparseMatrix<double> NormalEquations(
+    const Eigen::SparseMatrix<double>& A, double ridge_regularization) {
+  Eigen::SparseMatrix<double> AtA = A.transpose() * A;
+  if (ridge_regularization > 0) {
+    // The diagonal of A^T A is populated whenever the corresponding column of
+    // A has any non-zero entry, so coeffRef is cheap (no insertion).
+    for (int i = 0; i < AtA.cols(); ++i) {
+      AtA.coeffRef(i, i) += ridge_regularization;
+    }
+  }
+  return AtA;
+}
+
+struct SimplicialLLTLinearSolver
+    : public LeastAbsoluteDeviationLinearSolverImpl {
+  explicit SimplicialLLTLinearSolver(double ridge_regularization)
+      : ridge_regularization_(ridge_regularization) {}
+
+  bool Compute(const Eigen::SparseMatrix<double>& A) override {
+    linear_solver_.compute(NormalEquations(A, ridge_regularization_));
+    return linear_solver_.info() == Eigen::Success;
+  }
+
+  bool Solve(const Eigen::VectorXd& b, Eigen::VectorXd* x) override {
+    x->noalias() = linear_solver_.solve(b);
+    return linear_solver_.info() == Eigen::Success;
+  }
+
+ private:
+  Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> linear_solver_;
+  const double ridge_regularization_;
+};
+
+struct SupernodalCholmodLLTLinearSolver
+    : public LeastAbsoluteDeviationLinearSolverImpl {
+  explicit SupernodalCholmodLLTLinearSolver(double ridge_regularization)
+      : ridge_regularization_(ridge_regularization) {}
+
+  bool Compute(const Eigen::SparseMatrix<double>& A) override {
+    return solver_.Compute(NormalEquations(A, ridge_regularization_));
+  }
+
+  bool Solve(const Eigen::VectorXd& b, Eigen::VectorXd* x) override {
+    return solver_.Solve(b, x);
+  }
+
+ private:
+  SparseCholeskyWithFallbackSolver solver_;
+  const double ridge_regularization_;
+};
+
+std::shared_ptr<LeastAbsoluteDeviationLinearSolverImpl> CreateLinearSolver(
+    const LeastAbsoluteDeviationSolver::Options& options,
+    const Eigen::SparseMatrix<double>& A) {
+  switch (options.solver_type) {
+    case LeastAbsoluteDeviationSolver::Options::SolverType::SimplicialLLT:
+      return std::make_shared<SimplicialLLTLinearSolver>(
+          options.ridge_regularization);
+      break;
+    case LeastAbsoluteDeviationSolver::Options::SolverType::
+        SupernodalCholmodLLT:
+      return std::make_shared<SupernodalCholmodLLTLinearSolver>(
+          options.ridge_regularization);
+      break;
+    default:
+      throw std::runtime_error("Unknown linear solver type");
+  }
+}
+
 }  // namespace
 
-bool SolveLeastAbsoluteDeviations(const LeastAbsoluteDeviationsOptions& options,
-                                  const Eigen::SparseMatrix<double>& A,
-                                  const Eigen::VectorXd& b,
-                                  Eigen::VectorXd* x) {
-  CHECK_NOTNULL(x);
-  CHECK_GT(options.rho, 0);
-  CHECK_GT(options.alpha, 0);
-  CHECK_GT(options.max_num_iterations, 0);
-  CHECK_GE(options.absolute_tolerance, 0);
-  CHECK_GE(options.relative_tolerance, 0);
+LeastAbsoluteDeviationSolver::LeastAbsoluteDeviationSolver(
+    const Options& options, const Eigen::SparseMatrix<double>& A)
+    : options_(options),
+      A_(A),
+      linear_solver_(CreateLinearSolver(options_, A)) {
+  THROW_CHECK_GE(options_.ridge_regularization, 0);
+  THROW_CHECK_GT(options_.rho, 0);
+  THROW_CHECK_GT(options_.alpha, 0);
+  THROW_CHECK_GT(options_.max_num_iterations, 0);
+  THROW_CHECK_GE(options_.absolute_tolerance, 0);
+  THROW_CHECK_GE(options_.relative_tolerance, 0);
+  if (A.rows() < A.cols()) {
+    throw std::runtime_error("Underdetermined systems not supported.");
+  }
 
-  Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> linear_solver;
-  linear_solver.compute(A.transpose() * A);
+  valid_ = linear_solver_->Compute(A_);
+  if (!valid_) {
+    LOG(WARNING) << "LeastAbsoluteDeviationSolver: factorization of A^T A "
+                    "failed; system is rank deficient or not positive "
+                    "definite. Solve() will return false.";
+  }
+}
 
-  Eigen::VectorXd z = Eigen::VectorXd::Zero(A.rows());
-  Eigen::VectorXd z_old(A.rows());
-  Eigen::VectorXd u = Eigen::VectorXd::Zero(A.rows());
+bool LeastAbsoluteDeviationSolver::Solve(const Eigen::VectorXd& b,
+                                         Eigen::VectorXd* x) const {
+  THROW_CHECK_NOTNULL(x);
+  if (!valid_) {
+    return false;
+  }
 
-  Eigen::VectorXd Ax(A.rows());
-  Eigen::VectorXd Ax_hat(A.rows());
+  Eigen::VectorXd z = Eigen::VectorXd::Zero(A_.rows());
+  Eigen::VectorXd z_old(A_.rows());
+  Eigen::VectorXd u = Eigen::VectorXd::Zero(A_.rows());
+
+  Eigen::VectorXd Ax(A_.rows());
+  Eigen::VectorXd Ax_hat(A_.rows());
 
   const double b_norm = b.norm();
   const double eps_pri_threshold =
-      std::sqrt(A.rows()) * options.absolute_tolerance;
+      std::sqrt(A_.rows()) * options_.absolute_tolerance;
   const double eps_dual_threshold =
-      std::sqrt(A.cols()) * options.absolute_tolerance;
+      std::sqrt(A_.cols()) * options_.absolute_tolerance;
 
-  for (int i = 0; i < options.max_num_iterations; ++i) {
-    *x = linear_solver.solve(A.transpose() * (b + z - u));
-    if (linear_solver.info() != Eigen::Success) {
+  for (int i = 0; i < options_.max_num_iterations; ++i) {
+    if (!linear_solver_->Solve(A_.transpose() * (b + z - u), x)) {
       return false;
     }
 
-    Ax = A * *x;
-    Ax_hat = options.alpha * Ax + (1 - options.alpha) * (z + b);
+    Ax.noalias() = A_ * *x;
+    Ax_hat.noalias() = options_.alpha * Ax + (1 - options_.alpha) * (z + b);
 
-    z_old = z;
-    z = Shrinkage(Ax_hat - b + u, 1 / options.rho);
+    std::swap(z, z_old);
+    z.noalias() = Shrinkage(Ax_hat - b + u, 1 / options_.rho);
 
-    u += Ax_hat - z - b;
+    u.noalias() += Ax_hat - z - b;
 
     const double r_norm = (Ax - z - b).norm();
-    const double s_norm = (-options.rho * A.transpose() * (z - z_old)).norm();
+    const double s_norm = (-options_.rho * A_.transpose() * (z - z_old)).norm();
     const double eps_pri =
-        eps_pri_threshold + options.relative_tolerance *
+        eps_pri_threshold + options_.relative_tolerance *
                                 std::max(b_norm, std::max(Ax.norm(), z.norm()));
     const double eps_dual =
-        eps_dual_threshold +
-        options.relative_tolerance * (options.rho * A.transpose() * u).norm();
+        eps_dual_threshold + options_.relative_tolerance *
+                                 (options_.rho * A_.transpose() * u).norm();
 
     if (r_norm < eps_pri && s_norm < eps_dual) {
       break;

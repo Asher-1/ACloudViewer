@@ -31,6 +31,8 @@
 
 #include "util/threading.h"
 
+#include "util/cancellation.h"
+
 #include "util/logging.h"
 
 namespace colmap {
@@ -96,7 +98,10 @@ bool Thread::IsStarted() {
 
 bool Thread::IsStopped() {
   std::unique_lock<std::mutex> lock(mutex_);
-  return stopped_;
+  // Cooperative graceful-shutdown: a first SIGINT/SIGTERM recorded by the
+  // ScopedSignalHandler stops every running thread at its next checkpoint
+  // (upstream dbb41680 parity).
+  return stopped_ || ScopedSignalHandler::IsInterruptRequested();
 }
 
 bool Thread::IsPaused() {

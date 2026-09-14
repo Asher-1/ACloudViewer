@@ -5,10 +5,10 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "gguf_loader.hpp"
+#include "tasks/deeplsd/gguf_loader.hpp"
 
-#include "deeplsd.hpp"
-#include "simple_gguf_io.hpp"
+#include "common/simple_gguf_io.hpp"
+#include "tasks/deeplsd/deeplsd.hpp"
 
 namespace deeplsd {
 

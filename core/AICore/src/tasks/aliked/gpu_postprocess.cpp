@@ -5,16 +5,16 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "gpu_postprocess.hpp"
+#include "tasks/aliked/gpu_postprocess.hpp"
 
-#include "gpu_pipeline_cache.hpp"
-#include "gpu_sync.hpp"
+#include "tasks/aliked/gpu_pipeline_cache.hpp"
+#include "tasks/aliked/gpu_sync.hpp"
 
 #if defined(AICORE_CUDA_ALIKED)
 #include <cuda_runtime.h>
 
-#include "cuda/aliked_cuda.hpp"
-#include "ggml_backend_util.hpp"
+#include "common/ggml_backend_util.hpp"
+#include "tasks/aliked/cuda/aliked_cuda.hpp"
 
 namespace lightglue::aliked_internal {
 namespace {

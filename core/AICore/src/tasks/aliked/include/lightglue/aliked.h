@@ -11,7 +11,7 @@
 #include <memory>
 #include <string>
 
-#include "lightglue/lightglue.h"
+#include "tasks/aliked/include/lightglue/lightglue.h"
 
 namespace lightglue {
 

@@ -68,7 +68,7 @@ void LightGlueWorker::releaseContextOnMainThread() {
 
 namespace {
 
-QString resolvedDeviceFromInfoJson(char* info, void (*freeFn)(char*)) {
+QString resolvedDeviceFromInfoJson(char* info, void (*freeFn)(void*)) {
     if (!info) return {};
     const QJsonObject obj = QJsonDocument::fromJson(QByteArray(info)).object();
     freeFn(info);
@@ -251,7 +251,7 @@ bool LightGlueWorker::runModelInfo() {
     {
         char* info = aicore_lightglue_info_json(ctx);
         const QString resolved =
-                resolvedDeviceFromInfoJson(info, aicore_lightglue_free_string);
+                resolvedDeviceFromInfoJson(info, aicore_lightglue_free_buffer);
         aicore_inference_log::log_device_resolved(QStringLiteral("LG"),
                                                   resolved);
     }
@@ -259,7 +259,7 @@ bool LightGlueWorker::runModelInfo() {
     char* json = aicore_lightglue_info_json(ctx);
     if (json) {
         emit modelInfoReady(QString::fromUtf8(json));
-        aicore_lightglue_free_string(json);
+        aicore_lightglue_free_buffer(json);
     }
     m_pendingCtx = ctx;
     emit progressUpdate(100, 100);
@@ -304,7 +304,7 @@ bool LightGlueWorker::runMatch() {
     {
         char* info = aicore_lightglue_info_json(ctx);
         const QString resolved =
-                resolvedDeviceFromInfoJson(info, aicore_lightglue_free_string);
+                resolvedDeviceFromInfoJson(info, aicore_lightglue_free_buffer);
         aicore_inference_log::log_device_resolved(QStringLiteral("LG"),
                                                   resolved);
     }
@@ -319,7 +319,7 @@ bool LightGlueWorker::runMatch() {
     {
         char* info = aicore_lightglue_info_json(ctx);
         const QString resolved =
-                resolvedDeviceFromInfoJson(info, aicore_lightglue_free_string);
+                resolvedDeviceFromInfoJson(info, aicore_lightglue_free_buffer);
         m_settings.device =
                 canonicalDeviceFromResolved(resolved, m_settings.device);
     }
@@ -430,7 +430,7 @@ bool LightGlueWorker::runMatch() {
     {
         char* info = aicore_lightglue_info_json(ctx);
         result.resolvedDevice =
-                resolvedDeviceFromInfoJson(info, aicore_lightglue_free_string);
+                resolvedDeviceFromInfoJson(info, aicore_lightglue_free_buffer);
     }
     result.nKeypoints0 = f0.view.n_keypoints;
     result.nKeypoints1 = f1.view.n_keypoints;

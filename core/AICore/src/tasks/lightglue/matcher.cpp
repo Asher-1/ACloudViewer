@@ -26,15 +26,16 @@
 #include <tuple>
 #include <utility>
 
-#include "backend.hpp"
-#include "common.hpp"
-#include "types.hpp"
+#include "tasks/lightglue/backend.hpp"
+#include "tasks/lightglue/common.hpp"
+#include "tasks/lightglue/types.hpp"
 
 namespace aicore {
 namespace lightglue {
 namespace {
 
 constexpr const char *kArchitecture = "lightglue";
+constexpr const char *kLomaArchitecture = "loma";
 constexpr size_t kMaxGraphNodes = 16384;
 
 struct Linear {
@@ -68,6 +69,8 @@ struct HyperParameters {
     bool add_scale_orientation = false;
     float filter_threshold = 0.1f;
     float layer_norm_epsilon = 1e-5f;
+    bool is_loma = false;
+    std::string rope_frequency_tensor;
 };
 
 bool ParseFeatureType(const std::string &name, FeatureType *type) {
@@ -81,6 +84,8 @@ bool ParseFeatureType(const std::string &name, FeatureType *type) {
         *type = FeatureType::kSift;
     } else if (name == "doghardnet") {
         *type = FeatureType::kDogHardNet;
+    } else if (name == "loma") {
+        *type = FeatureType::kLoma;
     } else {
         return false;
     }
@@ -103,26 +108,44 @@ public:
         }
 
         const std::string architecture = String("general.architecture");
-        if (error.empty() && architecture != kArchitecture) {
+        if (error.empty() && architecture != kArchitecture &&
+            architecture != kLomaArchitecture) {
             error = "unsupported GGUF architecture '" + architecture +
-                    "' (expected lightglue)";
+                    "' (expected lightglue or loma)";
         }
-        const std::string feature = String("lightglue.feature_type");
-        if (error.empty() && !ParseFeatureType(feature, &hp.feature_type)) {
-            error = "unsupported LightGlue feature type '" + feature + "'";
+        hp.is_loma = architecture == kLomaArchitecture;
+        if (hp.is_loma) {
+            hp.feature_type = FeatureType::kLoma;
+            Uint32("loma.matcher.input_dimension", &hp.input_dim);
+            Uint32("loma.matcher.descriptor_dimension", &hp.descriptor_dim);
+            Uint32("loma.matcher.attention.head_count", &hp.num_heads);
+            Uint32("loma.matcher.block_count", &hp.num_layers);
+            Float("loma.matcher.filter_threshold", &hp.filter_threshold);
+            Float("loma.matcher.layer_norm_epsilon", &hp.layer_norm_epsilon);
+            hp.rope_frequency_tensor =
+                    String("loma.matcher.rope_frequency_tensor");
+        } else {
+            const std::string feature = String("lightglue.feature_type");
+            if (error.empty() && !ParseFeatureType(feature, &hp.feature_type)) {
+                error = "unsupported LightGlue feature type '" + feature + "'";
+            }
+            Uint32("lightglue.input_dimension", &hp.input_dim);
+            Uint32("lightglue.descriptor_dimension", &hp.descriptor_dim);
+            Uint32("lightglue.attention.head_count", &hp.num_heads);
+            Uint32("lightglue.block_count", &hp.num_layers);
+            Boolean("lightglue.add_scale_orientation",
+                    &hp.add_scale_orientation);
+            Float("lightglue.filter_threshold", &hp.filter_threshold);
+            Float("lightglue.layer_norm_epsilon", &hp.layer_norm_epsilon);
         }
-        Uint32("lightglue.input_dimension", &hp.input_dim);
-        Uint32("lightglue.descriptor_dimension", &hp.descriptor_dim);
-        Uint32("lightglue.attention.head_count", &hp.num_heads);
-        Uint32("lightglue.block_count", &hp.num_layers);
-        Boolean("lightglue.add_scale_orientation", &hp.add_scale_orientation);
-        Float("lightglue.filter_threshold", &hp.filter_threshold);
-        Float("lightglue.layer_norm_epsilon", &hp.layer_norm_epsilon);
 
         if (error.empty() &&
             (hp.input_dim <= 0 || hp.descriptor_dim <= 0 || hp.num_heads <= 0 ||
              hp.num_layers <= 0 || hp.descriptor_dim % hp.num_heads != 0)) {
             error = "invalid LightGlue dimensions in GGUF metadata";
+        }
+        if (error.empty() && hp.is_loma && hp.rope_frequency_tensor.empty()) {
+            error = "LoMa GGUF has an empty RoPE frequency tensor name";
         }
         if (!error.empty()) {
             Close();
@@ -344,8 +367,18 @@ Encoding PositionalEncoding(ggml_context *context,
                             ggml_tensor *positions,
                             ggml_tensor *weight,
                             int64_t head_dim,
-                            int64_t tokens) {
-    ggml_tensor *projected = ggml_mul_mat(context, weight, positions);
+                            int64_t tokens,
+                            bool transpose_weight = false) {
+    // ONNX LoMa stores val_8 as [position_dim, half_head_dim].  GGUF keeps
+    // its native row-major tensor order, whereas ggml mul_mat expects its
+    // left operand as [input_dim, output_dim].  LightGlue's converter already
+    // writes that latter form; LoMa therefore needs this explicit view.
+    ggml_tensor *projection_weight =
+            transpose_weight
+                    ? ggml_cont(context, ggml_transpose(context, weight))
+                    : weight;
+    ggml_tensor *projected =
+            ggml_mul_mat(context, projection_weight, positions);
     // Same fp32-accumulation requirement as LinearForward: the fp16 Vulkan
     // accumulator loses too much precision for quantized AND f16 positional
     // weights, destabilizing downstream matching.
@@ -454,14 +487,20 @@ public:
         const bool wrong_aliked_model =
                 options_.type == FeatureMatcherType::kAlikedLightGlue &&
                 file_.hp.feature_type != FeatureType::kAliked;
-        if (wrong_sift_model || wrong_aliked_model) {
+        const bool wrong_loma_model =
+                options_.type == FeatureMatcherType::kLoma && !file_.hp.is_loma;
+        if (wrong_sift_model || wrong_aliked_model || wrong_loma_model) {
             error_ = std::string("model feature type '") +
                      feature_type_name(file_.hp.feature_type) +
                      "' does not match matcher type '" +
                      feature_matcher_type_name(options_.type) + "'";
             return false;
         }
-        if (!backend_.init(options_.device, options_.num_threads)) {
+        // COLMAP dispatches LoMa pairs through several matcher workers. CPU
+        // workers need independent ggml handles; a shared handle serializes
+        // otherwise-private graph execution. GPU handles stay shared safely.
+        if (!backend_.init(options_.device, options_.num_threads,
+                           options_.type == FeatureMatcherType::kLoma)) {
             error_ = backend_.error;
             return false;
         }
@@ -514,28 +553,21 @@ public:
 
         const int64_t tokens0 = static_cast<int64_t>(image1.keypoints.size());
         const int64_t tokens1 = static_cast<int64_t>(image2.keypoints.size());
-        const auto profile_start = std::chrono::steady_clock::now();
         const int64_t input_dim = file_.hp.input_dim;
         const int64_t dim = file_.hp.descriptor_dim;
         const int64_t heads = file_.hp.num_heads;
         const int64_t head_dim = dim / heads;
         const int64_t position_dim = file_.hp.add_scale_orientation ? 4 : 2;
-        bool fused_attention =
+        // Fused attention whenever the backend supports it (and on CPU past
+        // 256 tokens, where the fused kernel wins). The historical
+        // LIGHTGLUE_ATTENTION=manual override was an A/B scaffold and is
+        // removed. The LIGHTGLUE_DUMP_DIR tap dump and LIGHTGLUE_PROFILE
+        // timing hooks were upstream-parity development scaffolding and are
+        // removed; the TapFunction plumbing stays as an identity pass-through.
+        const bool fused_attention =
                 backend_.supports_fused_attention() ||
                 (backend_.is_cpu() && std::max(tokens0, tokens1) > 256);
-        if (const char *mode = std::getenv("LIGHTGLUE_ATTENTION")) {
-            fused_attention = std::string(mode) != "manual";
-        }
-        const char *dump_directory = std::getenv("LIGHTGLUE_DUMP_DIR");
-        std::vector<std::pair<std::string, ggml_tensor *>> taps;
-        auto tap = [&](ggml_tensor *tensor, const std::string &name) {
-            if (dump_directory != nullptr) {
-                for (ggml_tensor *storage = tensor; storage != nullptr;
-                     storage = storage->view_src) {
-                    ggml_set_output(storage);
-                }
-                taps.emplace_back(name, tensor);
-            }
+        auto tap = [](ggml_tensor *tensor, const std::string &) {
             return tensor;
         };
 
@@ -574,10 +606,12 @@ public:
         }
         tap(descriptor0, "input_projection0");
         tap(descriptor1, "input_projection1");
-        const Encoding encoding0 = PositionalEncoding(
-                context, position0, positional_weight_, head_dim, tokens0);
-        const Encoding encoding1 = PositionalEncoding(
-                context, position1, positional_weight_, head_dim, tokens1);
+        const Encoding encoding0 =
+                PositionalEncoding(context, position0, positional_weight_,
+                                   head_dim, tokens0, file_.hp.is_loma);
+        const Encoding encoding1 =
+                PositionalEncoding(context, position1, positional_weight_,
+                                   head_dim, tokens1, file_.hp.is_loma);
         tap(encoding0.cosine, "encoding_cos0");
         tap(encoding0.sine, "encoding_sin0");
         tap(encoding1.cosine, "encoding_cos1");
@@ -623,25 +657,32 @@ public:
         ggml_mul_mat_set_prec(similarity, GGML_PREC_F32);
         tap(similarity, "similarity");
 
-        ggml_tensor *scores0 =
-                ggml_log(context, ggml_soft_max(context, similarity));
+        ggml_tensor *scores0 = ggml_soft_max(context, similarity);
         ggml_tensor *similarity_t =
                 ggml_cont(context, ggml_transpose(context, similarity));
-        ggml_tensor *scores1_t =
-                ggml_log(context, ggml_soft_max(context, similarity_t));
+        ggml_tensor *scores1_t = ggml_soft_max(context, similarity_t);
         ggml_tensor *scores1 =
                 ggml_cont(context, ggml_transpose(context, scores1_t));
-
-        ggml_tensor *certainty0 = LogSigmoid(
-                context, LinearForward(context, matchability_, descriptor0));
-        ggml_tensor *certainty1 = LogSigmoid(
-                context, LinearForward(context, matchability_, descriptor1));
-        certainty0 = ggml_repeat(context, certainty0, similarity);
-        certainty1 = ggml_repeat(context, ggml_transpose(context, certainty1),
-                                 similarity);
-        ggml_tensor *scores =
-                ggml_add(context, ggml_add(context, scores0, scores1),
-                         ggml_add(context, certainty0, certainty1));
+        ggml_tensor *scores = nullptr;
+        if (file_.hp.is_loma) {
+            // LoMa uses mutual softmax confidence. It has no LightGlue
+            // matchability head, so retain probabilities for its 0.1 gate.
+            scores = ggml_mul(context, scores0, scores1);
+        } else {
+            scores0 = ggml_log(context, scores0);
+            scores1 = ggml_log(context, scores1);
+            ggml_tensor *certainty0 = LogSigmoid(
+                    context,
+                    LinearForward(context, matchability_, descriptor0));
+            ggml_tensor *certainty1 = LogSigmoid(
+                    context,
+                    LinearForward(context, matchability_, descriptor1));
+            certainty0 = ggml_repeat(context, certainty0, similarity);
+            certainty1 = ggml_repeat(
+                    context, ggml_transpose(context, certainty1), similarity);
+            scores = ggml_add(context, ggml_add(context, scores0, scores1),
+                              ggml_add(context, certainty0, certainty1));
+        }
         ggml_set_name(scores, "log_assignment");
         tap(scores, "scores");
 
@@ -658,6 +699,7 @@ public:
         // does argmax / mutual / gather on the host, where the same fix
         // we use on the CPU backend is well-tested.
         const bool argmax_on_device =
+                !file_.hp.is_loma &&
                 !(backend_.is_vulkan() || backend_.is_cpu());
         if (backend_.is_cpu() || !argmax_on_device) {
             ggml_set_output(scores);
@@ -697,13 +739,11 @@ public:
             ggml_build_forward_expand(graph, device_mutual1);
             ggml_build_forward_expand(graph, device_best_score0);
         }
-        const auto profile_graph = std::chrono::steady_clock::now();
         if (!ggml_gallocr_alloc_graph(backend_.galloc, graph)) {
             error_ = "failed to allocate the LightGlue compute graph";
             ggml_free(context);
             return false;
         }
-        const auto profile_allocate = std::chrono::steady_clock::now();
 
         ggml_backend_tensor_set(position0, positions0.data(), 0,
                                 positions0.size() * sizeof(float));
@@ -740,7 +780,6 @@ public:
             ggml_free(context);
             return false;
         }
-        const auto profile_compute = std::chrono::steady_clock::now();
 
         if (backend_.is_cpu() || !argmax_on_device) {
             // Vulkan path: see argmax_on_device comment above — we routed
@@ -752,7 +791,8 @@ public:
                     static_cast<size_t>(tokens0 * tokens1));
             ggml_backend_tensor_get(scores, host_scores.data(), 0,
                                     host_scores.size() * sizeof(float));
-            FilterMatches(host_scores, tokens0, tokens1, result);
+            FilterMatches(host_scores, tokens0, tokens1, file_.hp.is_loma,
+                          result);
         } else {
             std::vector<int32_t> best0(static_cast<size_t>(tokens0));
             std::vector<int32_t> mutual1(static_cast<size_t>(tokens0));
@@ -764,41 +804,6 @@ public:
             ggml_backend_tensor_get(device_best_score0, best_score0.data(), 0,
                                     best_score0.size() * sizeof(float));
             FilterDeviceMatches(best0, mutual1, best_score0, result);
-        }
-        if (dump_directory != nullptr) {
-            std::filesystem::create_directories(dump_directory);
-            for (const auto &entry : taps) {
-                const ggml_tensor *tensor = entry.second;
-                std::ofstream stream(std::filesystem::path(dump_directory) /
-                                             (entry.first + ".bin"),
-                                     std::ios::binary);
-                const uint32_t dimensions = GGML_MAX_DIMS;
-                stream.write("LGTAP01\0", 8);
-                stream.write(reinterpret_cast<const char *>(&dimensions),
-                             sizeof(dimensions));
-                stream.write(reinterpret_cast<const char *>(tensor->ne),
-                             sizeof(tensor->ne));
-                std::vector<float> values(
-                        static_cast<size_t>(ggml_nelements(tensor)));
-                ggml_backend_tensor_get(tensor, values.data(), 0,
-                                        values.size() * sizeof(float));
-                stream.write(reinterpret_cast<const char *>(values.data()),
-                             values.size() * sizeof(float));
-            }
-        }
-        if (std::getenv("LIGHTGLUE_PROFILE") != nullptr) {
-            const auto profile_end = std::chrono::steady_clock::now();
-            auto milliseconds = [](auto begin, auto end) {
-                return std::chrono::duration<double, std::milli>(end - begin)
-                        .count();
-            };
-            std::fprintf(stderr,
-                         "profile: graph=%.3fms allocate=%.3fms compute=%.3fms "
-                         "read_filter=%.3fms\n",
-                         milliseconds(profile_start, profile_graph),
-                         milliseconds(profile_graph, profile_allocate),
-                         milliseconds(profile_allocate, profile_compute),
-                         milliseconds(profile_compute, profile_end));
         }
         ggml_free(context);
         return true;
@@ -818,6 +823,7 @@ public:
         out->num_layers = file_.hp.num_layers;
         out->feature_type = static_cast<int32_t>(file_.hp.feature_type);
         out->add_scale_orientation = file_.hp.add_scale_orientation ? 1 : 0;
+        out->is_loma = file_.hp.is_loma ? 1 : 0;
         return true;
     }
 
@@ -851,8 +857,18 @@ private:
         const float scale = std::max(width, height) / 2.0f;
         for (size_t i = 0; i < features.keypoints.size(); ++i) {
             const Keypoint &keypoint = features.keypoints[i];
-            output[i * position_dim + 0] = (keypoint.x - width / 2.0f) / scale;
-            output[i * position_dim + 1] = (keypoint.y - height / 2.0f) / scale;
+            if (file_.hp.is_loma) {
+                // Matches COLMAP loma.cc: source pixel coordinates are
+                // normalized independently by width and height to [-1, 1].
+                output[i * position_dim + 0] = 2.0f * keypoint.x / width - 1.0f;
+                output[i * position_dim + 1] =
+                        2.0f * keypoint.y / height - 1.0f;
+            } else {
+                output[i * position_dim + 0] =
+                        (keypoint.x - width / 2.0f) / scale;
+                output[i * position_dim + 1] =
+                        (keypoint.y - height / 2.0f) / scale;
+            }
             if (position_dim == 4) {
                 output[i * position_dim + 2] = keypoint.scale;
                 output[i * position_dim + 3] = keypoint.orientation;
@@ -874,25 +890,59 @@ private:
             result.output = linear(prefix + ".output");
             return result;
         };
+        auto loma_feed_forward = [&](const std::string &prefix) {
+            // LoMa exports its MLP as Sequential(Linear, LayerNorm, GELU,
+            // Linear), unlike LightGlue's named input/norm/output modules.
+            FeedForward result;
+            result.input = linear(prefix + ".0");
+            result.norm_weight = file_.Require(prefix + ".1.weight");
+            result.norm_bias = file_.Require(prefix + ".1.bias");
+            result.output = linear(prefix + ".3");
+            return result;
+        };
 
-        positional_weight_ = file_.Require("positional_encoding.weight");
+        const std::string root = file_.hp.is_loma ? "loma.model." : "";
+        positional_weight_ =
+                file_.Require(file_.hp.is_loma ? file_.hp.rope_frequency_tensor
+                                               : "positional_encoding.weight");
         if (file_.hp.input_dim != file_.hp.descriptor_dim) {
-            input_projection_ = linear("input_projection");
+            input_projection_ = linear(file_.hp.is_loma ? root + "input_proj"
+                                                        : "input_projection");
         }
         layers_.resize(file_.hp.num_layers);
         for (int i = 0; i < file_.hp.num_layers; ++i) {
-            const std::string prefix = "block." + std::to_string(i);
+            const std::string prefix =
+                    file_.hp.is_loma
+                            ? root + "transformers." + std::to_string(i)
+                            : "block." + std::to_string(i);
             LayerWeights &layer = layers_[i];
-            layer.self_qkv = linear(prefix + ".self.qkv");
-            layer.self_out = linear(prefix + ".self.output");
-            layer.self_ffn = feed_forward(prefix + ".self.ffn");
-            layer.cross_qk = linear(prefix + ".cross.qk");
-            layer.cross_v = linear(prefix + ".cross.value");
-            layer.cross_out = linear(prefix + ".cross.output");
-            layer.cross_ffn = feed_forward(prefix + ".cross.ffn");
+            if (file_.hp.is_loma) {
+                layer.self_qkv = linear(prefix + ".self_attn.Wqkv");
+                layer.self_out = linear(prefix + ".self_attn.out_proj");
+                layer.self_ffn = loma_feed_forward(prefix + ".self_attn.ffn");
+                layer.cross_qk = linear(prefix + ".cross_attn.to_qk");
+                layer.cross_v = linear(prefix + ".cross_attn.to_v");
+                layer.cross_out = linear(prefix + ".cross_attn.to_out");
+                layer.cross_ffn = loma_feed_forward(prefix + ".cross_attn.ffn");
+            } else {
+                layer.self_qkv = linear(prefix + ".self.qkv");
+                layer.self_out = linear(prefix + ".self.output");
+                layer.self_ffn = feed_forward(prefix + ".self.ffn");
+                layer.cross_qk = linear(prefix + ".cross.qk");
+                layer.cross_v = linear(prefix + ".cross.value");
+                layer.cross_out = linear(prefix + ".cross.output");
+                layer.cross_ffn = feed_forward(prefix + ".cross.ffn");
+            }
         }
-        assignment_projection_ = linear("assignment.projection");
-        matchability_ = linear("assignment.matchability");
+        assignment_projection_ =
+                file_.hp.is_loma
+                        ? linear(root + "log_assignment." +
+                                 std::to_string(file_.hp.num_layers - 1) +
+                                 ".final_proj")
+                        : linear("assignment.projection");
+        if (!file_.hp.is_loma) {
+            matchability_ = linear("assignment.matchability");
+        }
         if (!file_.error.empty()) {
             error_ = file_.error;
             return false;
@@ -925,7 +975,7 @@ private:
             visit_ffn(layer.cross_ffn);
         }
         visit_linear(assignment_projection_);
-        visit_linear(matchability_);
+        if (!file_.hp.is_loma) visit_linear(matchability_);
     }
 
     bool RealizeWeights() {
@@ -1080,6 +1130,7 @@ private:
     void FilterMatches(const std::vector<float> &scores,
                        int64_t tokens0,
                        int64_t tokens1,
+                       bool scores_are_probabilities,
                        RawResult *result) const {
         std::vector<int32_t> best0(static_cast<size_t>(tokens0));
         std::vector<int32_t> best1(static_cast<size_t>(tokens1));
@@ -1116,7 +1167,10 @@ private:
         const float threshold = static_cast<float>(options_.min_score);
         for (int64_t i = 0; i < tokens0; ++i) {
             const int32_t j = best0[static_cast<size_t>(i)];
-            const float score = std::exp(best_score0[static_cast<size_t>(i)]);
+            const float score =
+                    scores_are_probabilities
+                            ? best_score0[static_cast<size_t>(i)]
+                            : std::exp(best_score0[static_cast<size_t>(i)]);
             if (best1[static_cast<size_t>(j)] == i && score > threshold) {
                 result->matches0[static_cast<size_t>(i)] = j;
                 result->mscores0[static_cast<size_t>(i)] = score;
@@ -1208,6 +1262,8 @@ const char *feature_type_name(FeatureType type) {
             return "sift";
         case FeatureType::kDogHardNet:
             return "doghardnet";
+        case FeatureType::kLoma:
+            return "loma";
     }
     return "unknown";
 }
@@ -1220,6 +1276,8 @@ const char *feature_matcher_type_name(FeatureMatcherType type) {
             return "sift_lightglue";
         case FeatureMatcherType::kAlikedLightGlue:
             return "aliked_lightglue";
+        case FeatureMatcherType::kLoma:
+            return "loma";
     }
     return "unknown";
 }

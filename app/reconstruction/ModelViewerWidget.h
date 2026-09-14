@@ -16,11 +16,11 @@
 #include "ImageViewerWidget.h"
 #include "MovieGrabberWidget.h"
 #include "PointViewerWidget.h"
-#include "base/database.h"
-#include "base/reconstruction.h"
+#include "controllers/option_manager.h"
+#include "scene/database.h"
+#include "scene/reconstruction.h"
 #include "ui/colormaps.h"
 #include "ui/render_options.h"
-#include "util/option_manager.h"
 
 class ccPointCloud;
 class ccCameraSensor;

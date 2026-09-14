@@ -8,8 +8,8 @@
 #include <cstdlib>
 #include <string>
 
-#include "common/test_macros.hpp"
-#include "data_root_util.hpp"
+#include "common/data_root_util.hpp"
+#include "tests/common/test_macros.hpp"
 
 static int failures = 0;
 

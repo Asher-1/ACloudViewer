@@ -14,6 +14,12 @@ DISPLAY=:0
 # export DISPLAY=:0
 # startxfce4 &
 
+# Host-side mount sources are derived from this script's location (repo root
+# and its sibling CloudViewer-ML checkout). Override CLOUDVIEWER_ML_ROOT
+# when the ML repo lives elsewhere.
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ML_ROOT="${CLOUDVIEWER_ML_ROOT:-$(dirname "$REPO_ROOT")/CloudViewer-ML}"
+
 # create container instance
 docker run -dit --name=cloudviewer_env \
   --shm-size="2g" \
@@ -25,10 +31,10 @@ docker run -dit --name=cloudviewer_env \
   -p 20022:22 \
   -p 24000:4000 \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
-  -v /home/asher/develop/code/github/CloudViewer/ACloudViewer:/opt/ACloudViewer \
-  -v /home/asher/develop/code/github/CloudViewer/CloudViewer-ML:/opt/CloudViewer-ML \
-  -v /home/asher/develop/code/github/CloudViewer/ACloudViewer/docker_cache/install:/opt/install \
-  -v /home/asher/develop/code/github/CloudViewer/ACloudViewer/docker_cache/build:/opt/ACloudViewer/build \
+  -v "$REPO_ROOT":/opt/ACloudViewer \
+  -v "$ML_ROOT":/opt/CloudViewer-ML \
+  -v "$REPO_ROOT/docker_cache/install":/opt/install \
+  -v "$REPO_ROOT/docker_cache/build":/opt/ACloudViewer/build \
   registry.cn-shanghai.aliyuncs.com/asher-ai/cloudviewer-deps:latest
 
 # attach into container instance
@@ -152,6 +158,11 @@ cmakeGuiOptions=(
                 -DPLUGIN_STANDARD_QFACEDETECT=ON
                 -DPLUGIN_STANDARD_QFREESPLATTER=ON
                 -DPLUGIN_STANDARD_QLIGHTGLUE=ON
+                -DPLUGIN_STANDARD_QRFDETR=ON
+                -DPLUGIN_STANDARD_QRMBG=ON
+                -DPLUGIN_STANDARD_QYOLO=ON
+                -DPLUGIN_STANDARD_QSAM3=ON
+                -DPLUGIN_STANDARD_QTRELLIS=ON
                 -DPLUGIN_PYTHON=ON
                 -DBUILD_PYTHON_MODULE=ON
                 -DPLUGIN_STANDARD_QSRA=ON

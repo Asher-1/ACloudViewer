@@ -5,8 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef LSD_HEADER
-#define LSD_HEADER
+#pragma once
 
 /*----------------------------------------------------------------------------*/
 /** LSD Full Interface
@@ -68,7 +67,7 @@
                        modulus.
                        Suggested value: 1024
 
-    @params grad_nfa   Whether to compute the NFA based on the image gradient.
+    @param grad_nfa   Whether to compute the NFA based on the image gradient.
 
     @param reg_img     Optional output: if desired, LSD will return an
                        int image where each pixel indicates the line segment
@@ -272,5 +271,4 @@ double *lsd(int *n_out,
             double gradientThreshold = 5.2262518595055063,
             double log_eps = 0);
 
-#endif /* !LSD_HEADER */
 /*----------------------------------------------------------------------------*/

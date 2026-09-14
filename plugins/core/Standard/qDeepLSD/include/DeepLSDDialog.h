@@ -23,6 +23,7 @@
 
 #include "ecvClickableImageLabel.h"
 #include "ecvModelDownloader.h"
+#include "ecvTestDataRepository.h"
 
 class ecvMainAppInterface;
 
@@ -82,6 +83,7 @@ private slots:
     void onRun();
     void onCancel();
     void onDbListActivated(QListWidgetItem* item);
+    void onUseTestData();
 
 private:
     void setupUi();
@@ -92,6 +94,7 @@ private:
     void startDownload(const DeepLSDBuiltinModel& model);
     void cancelDownload();
     void updateImagePreview();
+    void loadTestImage();
     static QVector<DeepLSDBuiltinModel> builtinModels();
     static QString formatFileSize(qint64 bytes);
 
@@ -108,6 +111,7 @@ private:
     QProgressBar* m_progress = nullptr;
     QPushButton* m_runBtn = nullptr;
     QPushButton* m_cancelBtn = nullptr;
+    QPushButton* m_testDataBtn = nullptr;
     QCheckBox* m_addLineVizCheck = nullptr;
     QCheckBox* m_addDistanceOverlayCheck = nullptr;
     QCheckBox* m_exportPolylinesCheck = nullptr;
@@ -119,4 +123,5 @@ private:
     ecvModelDownloader* m_downloader = nullptr;
     bool m_downloadInProgress = false;
     bool m_autoRunAfterDownload = false;
+    bool m_testDataDownloadInProgress = false;
 };

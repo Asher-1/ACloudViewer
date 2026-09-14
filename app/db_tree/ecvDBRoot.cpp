@@ -398,6 +398,12 @@ ccDBRoot::ccDBRoot(ccCustomQTreeView* dbTreeWidget,
     connect(m_ccPropDelegate,
             &ccPropertiesTreeDelegate::ccObjectAndChildrenAppearanceChanged,
             this, &ccDBRoot::redrawCCObjectAndChildren);
+    connect(m_ccPropDelegate,
+            &ccPropertiesTreeDelegate::exportMetadataImageRequested, this,
+            &ccDBRoot::exportMetadataImage);
+    connect(m_ccPropDelegate,
+            &ccPropertiesTreeDelegate::exportAllMetadataImagesRequested, this,
+            &ccDBRoot::exportAllMetadataImages);
 
     // Per-view visibility: refresh checkbox states when the active view
     // changes so that checkboxes reflect the new view's visibility.
@@ -459,6 +465,8 @@ void ccDBRoot::unloadAll() {
 ccHObject* ccDBRoot::getRootEntity() { return m_treeRoot; }
 
 void ccDBRoot::addElement(ccHObject* object, bool autoExpand /*=true*/) {
+    QElapsedTimer addTimer;
+    addTimer.start();
     if (!m_treeRoot) {
         assert(false);
         return;
@@ -511,6 +519,14 @@ void ccDBRoot::addElement(ccHObject* object, bool autoExpand /*=true*/) {
 
     if (wasEmpty && m_treeRoot->getChildrenNumber() != 0) {
         emit dbIsNotEmptyAnymore();
+    }
+
+    // Bottleneck probe: massive imports must stay O(1) per element here.
+    const qint64 addMs = addTimer.elapsed();
+    if (addMs > 5) {
+        CVLog::Print("[DBTree] addElement '%s' took %lld ms",
+                     object ? object->getName().toLatin1().constData() : "?",
+                     static_cast<long long>(addMs));
     }
 }
 
@@ -1365,7 +1381,11 @@ void ccDBRoot::changeSelection(const QItemSelection& selected,
     emit selectionChanged();
 
     ecvViewManager::instance().setRedrawRecursive(false);
-    MainWindow::TheInstance()->refreshAll(false, true);
+    // Selection is a STATE change (L2): the selected/deselected entities'
+    // bounding-box highlights are drawn in the plain redraw pass, so no
+    // forced rebuild is needed — a forced pass re-converted all aggregated
+    // leaves on every DBTree selection (~230ms each click).
+    MainWindow::TheInstance()->refreshAll(false, false);
 }
 
 void ccDBRoot::unselectEntity(ccHObject* obj) {
@@ -1389,6 +1409,8 @@ void ccDBRoot::unselectAllEntities() {
 
 void ccDBRoot::selectEntity(ccHObject* obj,
                             bool forceAdditiveSelection /*=false*/) {
+    QElapsedTimer selProbe;
+    selProbe.start();
     bool additiveSelection =
             forceAdditiveSelection ||
             (QApplication::keyboardModifiers() & Qt::ControlModifier);
@@ -1439,6 +1461,10 @@ void ccDBRoot::selectEntity(ccHObject* obj,
     // otherwise we clear current selection (if CTRL is not pushed)
     else if (!additiveSelection) {
         selectionModel->clear();
+    }
+    if (selProbe.elapsed() > 50 && CVLog::diagnosticsEnabled()) {
+        CVLog::Print("[selection] ccDBRoot::selectEntity took %lld ms",
+                     (long long)selProbe.elapsed());
     }
 }
 
@@ -1535,7 +1561,15 @@ ccHObject* ccDBRoot::find(int uniqueID) const {
 }
 
 void ccDBRoot::showPropertiesView(ccHObject* obj) {
+    // Selection-chain probe: the properties rebuild is the remaining
+    // unattributed segment of ccDBRoot::selectEntity.
+    QElapsedTimer panelTimer;
+    panelTimer.start();
     m_ccPropDelegate->fillModel(obj);
+    if (panelTimer.elapsed() > 20 && CVLog::diagnosticsEnabled()) {
+        CVLog::Print("[selection] properties fillModel took %lld ms",
+                     static_cast<long long>(panelTimer.elapsed()));
+    }
 
     m_propertiesTreeWidget->setEnabled(true);
     m_propertiesTreeWidget->setColumnWidth(0, c_propViewLeftColumnWidth);
@@ -1580,12 +1614,19 @@ void ccDBRoot::updateCCObject(ccHObject* object) {
 
 void ccDBRoot::redrawCCObject(ccHObject* object, bool forceRedraw /* = true*/) {
     assert(object);
+    // Appearance changes (scalar-field ranges, color scales, display flags)
+    // are baked into the rendered representation: arm the entity so its draw
+    // rebuilds it. redrawDisplay alone only forces the redraw pass, which
+    // clean entities skip in their fast path — scalar-field range edits
+    // (ccHistogramWindow::setMinDispValue etc.) never reached the geometry.
+    object->setRedrawFlagRecursive(true);
     object->redrawDisplay(forceRedraw);
 }
 
 void ccDBRoot::redrawCCObjectAndChildren(ccHObject* object,
                                          bool forceRedraw /* = true*/) {
     assert(object);
+    object->setRedrawFlagRecursive(true);
     object->redrawDisplay(forceRedraw);
 }
 
@@ -2472,6 +2513,69 @@ void ccDBRoot::toggleSelectedEntitiesProperty(TOGGLE_PROPERTY prop) {
     } else {
         MainWindow::TheInstance()->refreshAll();
     }
+}
+
+namespace {
+
+//! True when any entity in the subtree carries the given name.
+bool treeContainsName(const ccHObject* root, const QString& name) {
+    if (!root) return false;
+    if (root->getName() == name) return true;
+    for (unsigned i = 0; i < root->getChildrenNumber(); ++i) {
+        if (treeContainsName(root->getChild(i), name)) return true;
+    }
+    return false;
+}
+
+//! Unique entity name: base, base_2, base_3, ...
+QString uniqueEntityName(const ccHObject* root, QString base) {
+    if (!treeContainsName(root, base)) return base;
+    for (int i = 2;; ++i) {
+        const QString candidate = QStringLiteral("%1_%2").arg(base).arg(i);
+        if (!treeContainsName(root, candidate)) return candidate;
+    }
+}
+
+//! Human-readable entity name from a metadata key
+//! ("RFDetr/Det1/mask_png" -> "RFDetr_Det1_mask").
+QString entityNameFromMetaKey(const QString& key) {
+    QString name = key;
+    name.replace(QLatin1Char('/'), QLatin1Char('_'));
+    if (name.endsWith(QStringLiteral("_png"))) {
+        name.chop(4);
+    }
+    return name;
+}
+
+}  // namespace
+
+void ccDBRoot::exportMetadataImage(const QImage& image, const QString& key) {
+    if (image.isNull()) return;
+    const QString name =
+            uniqueEntityName(m_treeRoot, entityNameFromMetaKey(key));
+    auto* img = new ccImage(image, name);
+    addElement(img, true);
+    CVLog::Print(tr("[DB] Exported metadata image '%1'.").arg(name));
+}
+
+void ccDBRoot::exportAllMetadataImages(
+        const QVector<QPair<QString, QImage>>& images) {
+    if (images.isEmpty()) return;
+    auto* group = new ccHObject(tr("Masks"));
+    for (const auto& entry : images) {
+        if (entry.second.isNull()) continue;
+        const QString name = uniqueEntityName(
+                m_treeRoot, entityNameFromMetaKey(entry.first));
+        group->addChild(new ccImage(entry.second, name));
+    }
+    if (group->getChildrenNumber() == 0) {
+        delete group;
+        return;
+    }
+    addElement(group, true);
+    CVLog::Print(tr("[DB] Exported %1 metadata image(s) into '%2'.")
+                         .arg(group->getChildrenNumber())
+                         .arg(group->getName()));
 }
 
 void ccDBRoot::addEmptyGroup() {

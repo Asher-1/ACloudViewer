@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.24)
 
 if (POLICY CMP0043)
     cmake_policy(SET CMP0043 NEW)
@@ -97,7 +97,11 @@ macro(COLMAP_ADD_SOURCES)
                     "${CMAKE_CURRENT_SOURCE_DIR}/${SOURCE_FILE}")
         endif ()
     endforeach ()
-    set(COLMAP_SOURCES ${COLMAP_SOURCES} ${SOURCE_FILES} PARENT_SCOPE)
+    # Source directories are nested below src/. PARENT_SCOPE loses entries as
+    # soon as a nested directory writes its own inherited list, leaving parts
+    # of COLMAP (notably estimators) out of ColmapLib. A global property keeps
+    # collection independent of the directory depth.
+    set_property(GLOBAL APPEND PROPERTY COLMAP_SOURCES ${SOURCE_FILES})
 endmacro(COLMAP_ADD_SOURCES)
 
 # Macro to add CUDA source files to COLMAP library.
@@ -119,6 +123,29 @@ macro(COLMAP_ADD_CUDA_SOURCES)
             ${SOURCE_FILES}
             PARENT_SCOPE)
 endmacro(COLMAP_ADD_CUDA_SOURCES)
+
+# HIP consumes the same CUDA-spelled MVS sources through cuda_to_hip.h. Keep a
+# separate source list so CUDA and HIP libraries can never be linked together.
+macro(COLMAP_ADD_HIP_SOURCES)
+    set(SOURCE_FILES "")
+    foreach (SOURCE_FILE ${ARGN})
+        if (SOURCE_FILE MATCHES "^/.*")
+            list(APPEND SOURCE_FILES ${SOURCE_FILE})
+        else ()
+            list(APPEND SOURCE_FILES
+                    "${CMAKE_CURRENT_SOURCE_DIR}/${SOURCE_FILE}")
+        endif ()
+    endforeach ()
+    foreach (SOURCE_FILE ${SOURCE_FILES})
+        if (SOURCE_FILE MATCHES "\\.cu$")
+            set_source_files_properties(${SOURCE_FILE} PROPERTIES LANGUAGE HIP)
+        endif ()
+    endforeach ()
+    set(COLMAP_HIP_SOURCES
+            ${COLMAP_HIP_SOURCES}
+            ${SOURCE_FILES}
+            PARENT_SCOPE)
+endmacro(COLMAP_ADD_HIP_SOURCES)
 
 # Replacement for the normal add_library() command. The syntax remains the same
 # in that the first argument is the target name, and the following arguments
@@ -220,6 +247,24 @@ macro(COLMAP_ADD_STATIC_CUDA_LIBRARY TARGET_NAME)
     # install(TARGETS ${TARGET_NAME} DESTINATION ${CloudViewer_INSTALL_LIB_DIR}/${COLMAP_APP_NAME}/)
 endmacro(COLMAP_ADD_STATIC_CUDA_LIBRARY)
 
+macro(COLMAP_ADD_STATIC_HIP_LIBRARY TARGET_NAME)
+    add_library(${TARGET_NAME} STATIC ${ARGN})
+    set_target_properties(${TARGET_NAME} PROPERTIES FOLDER
+            ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME})
+
+    if (MSVC)
+        target_compile_options(${TARGET_NAME} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/sdl->")
+    else ()
+        target_compile_options(${TARGET_NAME} PRIVATE "-Wno-deprecated-declarations")
+    endif ()
+
+    cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
+    cloudViewer_set_global_properties(${TARGET_NAME})
+    cloudViewer_set_cloudViewer_lib_properties(${TARGET_NAME})
+    COLMAP_LINK_3RDPARTY(${TARGET_NAME})
+    target_link_libraries(${TARGET_NAME} PRIVATE 3rdparty_rocm)
+endmacro(COLMAP_ADD_STATIC_HIP_LIBRARY)
+
 # Replacement for the normal add_executable() command. The syntax remains the
 # same in that the first argument is the target name, and the following
 # arguments are the source files to use when building the target.
@@ -270,7 +315,9 @@ macro(COLMAP_ADD_TEST TARGET_NAME)
         add_executable(${TARGET_NAME} ${ARGN})
         set_target_properties(${TARGET_NAME} PROPERTIES FOLDER
                 ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME})
-        target_link_libraries(${TARGET_NAME} PRIVATE ${COLMAP_LIB_NAME} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
+        # gmock provides the matcher infrastructure used by upstream test
+        # files (e.g. util/eigen_matchers.h).
+        target_link_libraries(${TARGET_NAME} PRIVATE ${COLMAP_LIB_NAME} gtest_main gmock)
 
         if (MSVC)
             # fix compiling error on windows platform
@@ -279,11 +326,13 @@ macro(COLMAP_ADD_TEST TARGET_NAME)
             target_compile_options(${TARGET_NAME} PRIVATE "-Wno-deprecated-declarations")
         endif ()
 
-        add_test("${FOLDER_NAME}/${TARGET_NAME}" ${TARGET_NAME})
+        add_test(NAME "${FOLDER_NAME}/${TARGET_NAME}"
+                 COMMAND $<TARGET_FILE:${TARGET_NAME}>)
         # Enforce 3rd party dependencies
         cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
         cloudViewer_set_global_properties(${TARGET_NAME})
         cloudViewer_set_cloudViewer_lib_properties(${TARGET_NAME})
+        cloudViewer_set_targets_independent(${TARGET_NAME})
         COLMAP_LINK_3RDPARTY(${TARGET_NAME})
 
         # install
@@ -299,7 +348,7 @@ macro(COLMAP_ADD_CUDA_TEST TARGET_NAME)
         # ${ARGN} will store the list of source files passed to this function.
         add_executable(${TARGET_NAME} ${ARGN})
         set_target_properties(${TARGET_NAME} PROPERTIES FOLDER ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME})
-        target_link_libraries(${TARGET_NAME} PRIVATE ${COLMAP_LIB_NAME} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
+        target_link_libraries(${TARGET_NAME} PRIVATE ${COLMAP_LIB_NAME} gtest_main)
 
         if (MSVC)
             # fix compiling error on windows platform
@@ -308,7 +357,8 @@ macro(COLMAP_ADD_CUDA_TEST TARGET_NAME)
             target_compile_options(${TARGET_NAME} PRIVATE "-Wno-deprecated-declarations")
         endif ()
 
-        add_test("${FOLDER_NAME}/${TARGET_NAME}" ${TARGET_NAME})
+        add_test(NAME "${FOLDER_NAME}/${TARGET_NAME}"
+                 COMMAND $<TARGET_FILE:${TARGET_NAME}>)
 
         # Enforce 3rd party dependencies
         cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
@@ -323,3 +373,34 @@ macro(COLMAP_ADD_CUDA_TEST TARGET_NAME)
         endif ()
     endif ()
 endmacro(COLMAP_ADD_CUDA_TEST)
+
+macro(COLMAP_ADD_HIP_TEST TARGET_NAME)
+    if (TESTS_ENABLED)
+        set(HIP_TEST_SOURCES "")
+        foreach (SOURCE_FILE ${ARGN})
+            if (SOURCE_FILE MATCHES "^/.*")
+                list(APPEND HIP_TEST_SOURCES ${SOURCE_FILE})
+            else ()
+                list(APPEND HIP_TEST_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/${SOURCE_FILE}")
+            endif ()
+        endforeach ()
+        set_source_files_properties(${HIP_TEST_SOURCES} PROPERTIES LANGUAGE HIP)
+        add_executable(${TARGET_NAME} ${HIP_TEST_SOURCES})
+        set_target_properties(${TARGET_NAME} PROPERTIES FOLDER ${COLMAP_TARGETS_ROOT_FOLDER}/${FOLDER_NAME})
+        target_link_libraries(${TARGET_NAME} PRIVATE ${COLMAP_LIB_NAME}
+                              gtest_main 3rdparty_rocm)
+
+        if (MSVC)
+            target_compile_options(${TARGET_NAME} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:/sdl->")
+        else ()
+            target_compile_options(${TARGET_NAME} PRIVATE "-Wno-deprecated-declarations")
+        endif ()
+
+        add_test(NAME "${FOLDER_NAME}/${TARGET_NAME}" COMMAND $<TARGET_FILE:${TARGET_NAME}>)
+        cloudViewer_show_and_abort_on_warning(${TARGET_NAME})
+        cloudViewer_set_global_properties(${TARGET_NAME})
+        cloudViewer_set_cloudViewer_lib_properties(${TARGET_NAME})
+        cloudViewer_set_targets_independent(${TARGET_NAME})
+        COLMAP_LINK_3RDPARTY(${TARGET_NAME})
+    endif ()
+endmacro(COLMAP_ADD_HIP_TEST)

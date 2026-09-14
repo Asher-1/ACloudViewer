@@ -35,7 +35,7 @@ Complete guide for building ACloudViewer from source code on Windows, Linux, and
 ### Core Build Dependencies
 
 **Required:**
-- **CMake** 3.19 or newer
+- **CMake** 3.24 or newer (CI and supported developer toolchains use 3.31.8)
 - **Python** 3.10+ (for build scripts)
 - **Qt** 5.12+ or Qt 6.2+
 - **C++17** compliant compiler
@@ -245,10 +245,13 @@ Expand the `INSTALL` group in CMake GUI to enable plugins:
 | qJSonRPCPlugin          | PLUGIN_STANDARD_QJSONRPC                 | OFF           | JSON-RPC server for AI agent integration |
 | qSIBR                   | PLUGIN_STANDARD_QSIBR                    | OFF           | SIBR Gaussian Splatting viewers (**Linux/Windows**; CI and docs default **OFF on macOS**) |
 | qDA3                    | PLUGIN_STANDARD_QDA3                     | OFF           | Depth Anything V3 — monocular depth, camera pose, COLMAP/GLB export, Automatic Reconstruction integration ([README](plugins/core/Standard/qDA3/README.md)). Requires `AICore_ENABLED=ON` (and `BUILD_RECONSTRUCTION=ON` for pipeline integration). |
+| qGKD                    | PLUGIN_STANDARD_QGKD                     | OFF           | GKDT general keypoint detection — text / 1-shot visual / multimodal prompts, multi-object via YOLO-World ([README](plugins/core/Standard/qGKD/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/gkd`). |
+| qLingbotMap             | PLUGIN_STANDARD_QLINGBOTMAP              | OFF           | LingBot-Map (GCT) streaming RGB-D 3D reconstruction from an ordered image sequence — per-frame depth/pose, fused colored point clouds, native sky masking ([README](plugins/core/Standard/qLingbotMap/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/lingbot`). |
 | qFreeSplatter           | PLUGIN_STANDARD_QFREESPLATTER            | OFF           | FreeSplatter 3D Gaussian Splatting — uncalibrated photos to 3D Gaussians, pose recovery, SIBR-compatible PLY export, optional in-app viewer via qSIBR ([README](plugins/core/Standard/qFreeSplatter/README.md)). Requires `AICore_ENABLED=ON`; pair with `PLUGIN_STANDARD_QSIBR=ON` for visualization. |
 | qLightGlue              | PLUGIN_STANDARD_QLIGHTGLUE               | OFF           | Sparse matching — **SIFT/ALIKED LightGlue** via GGUF ([README](plugins/core/Standard/qLightGlue/README.md)). Requires `AICore_ENABLED=ON`. |
 | qDeepLSD                | PLUGIN_STANDARD_QDEEPLSD                 | OFF           | DeepLSD wireframe extraction (df/angle GGUF) ([README](plugins/core/Standard/qDeepLSD/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/deeplsd`). |
 | qFaceDetect             | PLUGIN_STANDARD_QFACEDETECT              | OFF           | face-detect.cpp — SCRFD/YuNet detection, ArcFace/SFace verify, age/gender ([README](plugins/core/Standard/qFaceDetect/README.md)). Requires `AICore_ENABLED=ON` (sources in `core/AICore/src/tasks/facedetect`). |
+| qManualCalib            | PLUGIN_STANDARD_QMANUAL_CALIB            | OFF           | Manual sensor extrinsic calibration and AVM view adjustment — ROS bag v2.0, BEV, LiDAR projection ([README](plugins/core/Standard/qManualCalib/README.md), [DATA_CARD](plugins/core/Standard/qManualCalib/tests/data/DATA_CARD.md)). Requires `BUILD_OPENCV=ON`. |
 
 > 📖 **Plugin catalog:** [plugins/README.md](plugins/README.md) — per-plugin README index and AICore build recipes.
 
@@ -328,6 +331,7 @@ cmake -DBUILD_CUDA_MODULE=ON \
       -DPLUGIN_STANDARD_QFACEDETECT=ON \
       -DPLUGIN_STANDARD_QFREESPLATTER=ON \
       -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
+      -DPLUGIN_STANDARD_QMANUAL_CALIB=ON \
       ..
 cmake --build . --config Release
 ```
@@ -345,6 +349,7 @@ cmake -DBUILD_GUI=ON \
       -DPLUGIN_STANDARD_QFACEDETECT=ON \
       -DPLUGIN_STANDARD_QFREESPLATTER=ON \
       -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
+      -DPLUGIN_STANDARD_QMANUAL_CALIB=ON \
       ..
 cmake --build . --config Release --target ACloudViewer
 ```

@@ -1,6 +1,26 @@
 ACloudViewer Version History
 ============================
 
+v3.9.6-Beta (Asher) - 09/14/2026
+--------------------------------
+- LingBot-Map integration (Geometric Context Transformer, streaming 3D reconstruction)
+    - New AICore task `lingbot` (core/AICore/src/tasks/lingbot): in-tree port of the
+      cpp_ggml GCT runtime (DINO/GCT streaming blocks, CameraCausalHead, DPT heads,
+      persistent F16 KV cache) behind aicore/lingbot_capi.h
+    - New qLingbotMap plugin (PLUGIN_STANDARD_QLINGBOTMAP): image-sequence input,
+      official crop preprocessing, streaming inference, colored RGB-D point clouds +
+      camera trajectory into the DB tree, optional native skyseg sky masking
+    - Model catalog: Hugging Face Asher-1/lingbot-map-gguf (q8/f16/f32/q4 map +
+      skyseg-f16/q8_0/f32), pinned SHA-256 in asset_digests.h, auto-download via
+      ecvModelDownloader, validation scenarios in validation_manifest.json
+    - ggml patch lingbot_merged/0001-lingbot-ggml-default-path.patch: F32-weight
+      conv_2d keeps F32 im2col; coopmat2/CM1 scalar conv pipelines (SIGFPE fix);
+      conv2d coopmat variants gated to F16 weights; "lingbot_scalar_" name routing.
+      Upstream flash-attention kernel rewrites and GGML_VK_* env switches
+      deliberately NOT carried over (AICore routes precision per graph node)
+- CI: aicore-validate-all no longer depends on the whitebox-only bench_rfdetr_perf
+  target in plain builds
+
 v3.9.5-Beta (Asher) - 08/04/2026
 --------------------------------
 - CUDA deployment: ggml-cuda backend uses FORCE_MMQ + cudart_static on Linux
@@ -82,9 +102,6 @@ v3.9.5-Beta (Asher) - 08/04/2026
     - CI: fix macOS agent-integration to use Qt IFW silent install from DMG
     - CI: add missing Qt XCB runtime dependencies for Ubuntu agent-integration jobs
       (libxcb-icccm4, libxcb-image0, libxcb-keysyms1, libxcb-render-util0, libxcb-xkb1, libxkbcommon-x11-0)
-    - macOS: use dmgbuild for polished installer DMG (background image, correct icon
-      position, window size matching background); fallback to plain hdiutil if unavailable
-    - macOS: auto-launch ACloudViewer.app after installation when launch checkbox is checked
     - CI: fix Windows, macOS, and Ubuntu-focal test issues
     - Expand agent-integration docs: CLI-QUICK-REFERENCE with full command catalog,
       COMMAND-MAPPING with CLI↔MCP↔RPC cross-reference tables (including PCV, Compass,
@@ -307,6 +324,22 @@ v3.9.5-Beta (Asher) - 08/04/2026
         download/cache (SIFT / ALIKED matcher weights), match visualization in DB tree,
         JSON export, Model Info mode
       - CMake: `PLUGIN_STANDARD_QLIGHTGLUE=ON` + `AICore_ENABLED=ON` + `BUILD_OPENCV=ON`
+    - Add qManualCalib plugin: manual multi-sensor extrinsic calibration
+      (sensor / AVM / LiDAR-camera fusion)
+      - **Manual Sensor Calibration** dialog: Load Config (cameras/lidars/ground `.cfg`)
+        → Load Bag → 6-DOF per-sensor extrinsic fine-tune → Save Config / export
+      - Bird's Eye View (BEV) stitching with distance-weighted alpha fusion;
+        CUDA / OpenCL / CPU remap backends
+      - LiDAR-Camera fusion with depth coloring; BEV / LiDAR Projection / Single Frame modes
+      - Native ROS Bag v2.0 reader (BZ2/LZ4), multi-bag Flat / Nested / SingleFile layout
+        auto-discovery, topic-group time sync, HEVC/H.264 online camera decode (FFmpeg)
+      - **“use test data”** button (Sensor Calibration & AVM Adjust dialogs):
+        one-click download/cache/extract of sample bag + configs from
+        `cloudViewer_downloads` into `~/cloudViewer_data/extract/qcalib_test_data/`
+        with a live Qt download/extract progress bar; custom user data still
+        supported via Load Config / Load Bag
+      - Optional CLI tools (`MCALIB_BUILD_TOOLS`) and `test_bag_reader` (`MCALIB_BUILD_TESTS`)
+      - CMake: `PLUGIN_STANDARD_QMANUAL_CALIB=ON` + `BUILD_OPENCV=ON`
   
 - New features:
     - Unified AICore inference core (`core/AICore` → `libAICore.so`)

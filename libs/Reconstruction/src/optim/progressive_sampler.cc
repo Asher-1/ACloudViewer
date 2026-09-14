@@ -34,7 +34,7 @@
 #include <numeric>
 
 #include "util/misc.h"
-#include "util/random.h"
+#include "math/random.h"
 
 namespace colmap {
 

@@ -17,9 +17,9 @@
 #include <unordered_set>
 #include <vector>
 
+#include "math/random.h"
 #include "retrieval/inverted_file.h"
 #include "util/alignment.h"
-#include "util/random.h"
 
 namespace colmap {
 namespace retrieval {

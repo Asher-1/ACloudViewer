@@ -10,11 +10,11 @@
 #include <QtCore>
 #include <QtWidgets>
 
+#include "controllers/option_manager.h"
 #include "mvs/fusion.h"
 #include "ui/image_viewer_widget.h"
 #include "ui/options_widget.h"
 #include "ui/thread_control_widget.h"
-#include "util/option_manager.h"
 
 namespace colmap {
 
@@ -39,6 +39,7 @@ private:
     void Fusion();
     void PoissonMeshing();
     void DelaunayMeshing();
+    void AdvancingFrontMeshing();
     void Texturing();
 
     void SelectWorkspacePath();
@@ -64,6 +65,7 @@ private:
     QPushButton* fusion_button_;
     QPushButton* poisson_meshing_button_;
     QPushButton* delaunay_meshing_button_;
+    QPushButton* advancing_front_meshing_button_;
     QPushButton* texturing_button_;
     QAction* refresh_workspace_action_;
     QAction* write_fused_points_action_;

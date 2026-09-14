@@ -5,8 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#ifndef FACEDETECT_H
-#define FACEDETECT_H
+#pragma once
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -42,5 +42,3 @@ float verify(const std::string& model_path,
 
 }  // namespace fd
 #endif
-
-#endif  // FACEDETECT_H

@@ -16,7 +16,7 @@ namespace colmap {
 class Bitmap;
 }
 
-#include "util/option_manager.h"
+#include "controllers/option_manager.h"
 
 namespace cloudViewer {
 

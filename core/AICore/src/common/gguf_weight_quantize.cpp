@@ -5,9 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "gguf_weight_quantize.hpp"
+#include "common/gguf_weight_quantize.hpp"
 
-#include "simple_gguf_io.hpp"
+#include "common/simple_gguf_io.hpp"
 
 namespace aicore {
 namespace common {

@@ -247,6 +247,11 @@ Building Application (Full Configuration)
        -DPLUGIN_STANDARD_QFACEDETECT=ON \
        -DPLUGIN_STANDARD_QFREESPLATTER=ON \
        -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
+       -DPLUGIN_STANDARD_QRFDETR=ON \
+       -DPLUGIN_STANDARD_QRMBG=ON \
+       -DPLUGIN_STANDARD_QYOLO=ON \
+       -DPLUGIN_STANDARD_QSAM3=ON \
+       -DPLUGIN_STANDARD_QTRELLIS=ON \
        -DPLUGIN_PYTHON=ON \
        -DBUILD_PYTHON_MODULE=ON \
        -DBUILD_UNIT_TESTS=OFF \
@@ -332,7 +337,7 @@ Python Environment (conda)
 .. code-block:: bash
 
    cp .ci/conda_macos_cloudViewer.yml /tmp/conda_macos_cloudViewer.yml
-   sed -i "" "s/3.8/3.12/g" /tmp/conda_macos_cloudViewer.yml
+   sed -i "" "s/3.10/3.12/g" /tmp/conda_macos_cloudViewer.yml
    conda env create -f /tmp/conda_macos_cloudViewer.yml
    conda activate cloudViewer
 
@@ -419,6 +424,11 @@ Building Application
        -DPLUGIN_STANDARD_QFACEDETECT=ON \
        -DPLUGIN_STANDARD_QFREESPLATTER=ON \
        -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
+       -DPLUGIN_STANDARD_QRFDETR=ON \
+       -DPLUGIN_STANDARD_QRMBG=ON \
+       -DPLUGIN_STANDARD_QYOLO=ON \
+       -DPLUGIN_STANDARD_QSAM3=ON \
+       -DPLUGIN_STANDARD_QTRELLIS=ON \
        -DPLUGIN_PYTHON=ON \
        -DBUILD_PYTHON_MODULE=ON \
        -DBUILD_UNIT_TESTS=OFF \
@@ -489,7 +499,7 @@ System Dependencies
    - CMake tools
    - Windows 10/11 SDK
 
-2. **CMake** (3.19+): https://cmake.org/download/
+2. **CMake** (3.24+; CI and Conda environments pin 3.31.8): https://cmake.org/download/
 
 3. **Git**: https://git-scm.com/download/win
 
@@ -500,7 +510,7 @@ Python Environment (conda)
 
    $env:CLOUDVIEWER_SOURCE_ROOT = (Get-Location).Path
    Copy-Item (Join-Path $env:CLOUDVIEWER_SOURCE_ROOT ".ci\conda_windows_cloudViewer.yml") -Destination "$env:TEMP\conda_windows_cloudViewer.yml"
-   (Get-Content "$env:TEMP\conda_windows_cloudViewer.yml") -replace "3.8", "3.12" | Set-Content "$env:TEMP\conda_windows_cloudViewer.yml"
+   (Get-Content "$env:TEMP\conda_windows_cloudViewer.yml") -replace "3.10", "3.12" | Set-Content "$env:TEMP\conda_windows_cloudViewer.yml"
    
    conda env create -f "$env:TEMP\conda_windows_cloudViewer.yml"
    conda activate cloudViewer
@@ -584,6 +594,11 @@ Building Application
        -DPLUGIN_STANDARD_QFACEDETECT=ON `
        -DPLUGIN_STANDARD_QFREESPLATTER=ON `
        -DPLUGIN_STANDARD_QLIGHTGLUE=ON `
+       -DPLUGIN_STANDARD_QRFDETR=ON `
+       -DPLUGIN_STANDARD_QRMBG=ON `
+       -DPLUGIN_STANDARD_QYOLO=ON `
+       -DPLUGIN_STANDARD_QSAM3=ON `
+       -DPLUGIN_STANDARD_QTRELLIS=ON `
        -DBUILD_WITH_CONDA=ON `
        -DCONDA_PREFIX=$env:CONDA_PREFIX `
        -DCMAKE_PREFIX_PATH=$env:CONDA_LIB_DIR `

@@ -7,10 +7,10 @@
 
 #pragma once
 
-#include "base/database.h"
-#include "base/database_cache.h"
-#include "base/reconstruction.h"
-#include "optim/bundle_adjustment.h"
+#include "estimators/bundle_adjustment.h"
+#include "scene/database.h"
+#include "scene/database_cache.h"
+#include "scene/reconstruction.h"
 #include "sfm/incremental_triangulator.h"
 #include "util/alignment.h"
 
@@ -94,6 +94,28 @@ public:
 
         // If reconstruction is provided as input, fix the existing image poses.
         bool fix_existing_images = false;
+
+        // If enabled, redundant 3D points are (temporally) excluded from the
+        // global bundle adjustment and only used to compute their reprojection
+        // error in the end. This is only done for reconstructions that have
+        // reached sufficient size with at least 10 registered frames.
+        bool ba_global_ignore_redundant_points3D = false;
+
+        // The coverage gain threshold for a 3D point to be considered
+        // redundant in the global bundle adjustment. A larger value means more
+        // 3D points are pruned.
+        double ba_global_ignore_redundant_points3D_min_coverage_gain = 0.05;
+
+        // Whether to use the position prior to fix the gauge and constrain
+        // the bundle adjustment (upstream parity). Requires at least 3
+        // registered images with a position prior.
+        bool use_prior_position = false;
+
+        // Whether to use a robust loss on the position prior residuals.
+        bool use_robust_loss_on_prior_position = false;
+
+        // The scaling factor for the position prior loss function.
+        double prior_position_loss_scale = 7.815;
 
         // Number of threads.
         int num_threads = -1;
@@ -187,14 +209,9 @@ public:
             const image_t image_id,
             const std::unordered_set<point3D_t>& point3D_ids);
 
-    // Global bundle adjustment using Ceres Solver or PBA.
+    // Global bundle adjustment with the configured backend.
     bool AdjustGlobalBundle(const Options& options,
                             const BundleAdjustmentOptions& ba_options);
-#ifdef PBA_ENABLED
-    bool AdjustParallelGlobalBundle(
-            const BundleAdjustmentOptions& ba_options,
-            const ParallelBundleAdjuster::Options& parallel_ba_options);
-#endif
     // Filter images and point observations.
     size_t FilterImages(const Options& options);
     size_t FilterPoints(const Options& options);

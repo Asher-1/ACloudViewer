@@ -27,7 +27,7 @@
 #include <string>
 #include <vector>
 
-#include "model.h"
+#include "tasks/gaussian/model.h"
 
 static std::vector<float> read_f32(const std::string &path) {
     std::ifstream f(path, std::ios::binary | std::ios::ate);

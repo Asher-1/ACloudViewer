@@ -5,15 +5,16 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "backend.hpp"
+#include "tasks/facedetect/backend.hpp"
 
 #include "aicore/runtime_capi.h"
-#include "common.hpp"
+#include "common/ggml_backend_utils.hpp"
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
 #include "ggml.h"
-#include "ggml_backend_utils.hpp"
-#include "model_loader.hpp"
+#include "tasks/facedetect/common.hpp"
+#include "tasks/facedetect/model_loader.hpp"
+
 #if !defined(AICORE_BACKEND_DL)
 #include "ggml-cpu.h"
 #endif
@@ -188,18 +189,13 @@ Backend::Backend(int n_threads, const std::string& device_request)
     ggml_common::load_backends_once();
 
     // Persistent-graph cache capacity (number of distinct input shapes / call
-    // sites kept hot). 0 disables caching (one-shot per-call build, the legacy
-    // behaviour) as an A/B kill-switch.
-    if (const char* env = std::getenv("FACEDETECT_GRAPH_CACHE")) {
-        const long v = std::atol(env);
-        impl_->cache_cap = v >= 0 ? (size_t)v : impl_->cache_cap;
-    }
+    // sites kept hot). The historical FACEDETECT_GRAPH_CACHE override (a 0
+    // kill-switch / capacity knob) was an A/B scaffold and is removed.
 
-    // Explicit context requests never mutate process environment. The legacy
-    // empty request still honours FACEDETECT_DEVICE for direct C++ users.
-    const char* force = std::getenv("FACEDETECT_DEVICE");
-    const std::string want =
-            !device_request.empty() ? device_request : (force ? force : "auto");
+    // Explicit context requests never mutate process environment; an empty
+    // request resolves to "auto". The legacy FACEDETECT_DEVICE fallback is
+    // removed.
+    const std::string want = !device_request.empty() ? device_request : "auto";
     const bool force_cpu = ggml_common::to_lower(want) == "cpu";
 
     if (!force_cpu) {
@@ -638,14 +634,10 @@ void register_process_shutdown_hook() {
 // handful of threads. Profiling on a 16-core/2-CCD host shows the 640x640 SCRFD
 // detector (the dominant pipeline cost, im2col-heavy and bandwidth-bound)
 // plateaus at ~8 threads, beyond which there is no gain and a cross-CCD/SMT
-// regression risk. Cap accordingly; FACEDETECT_THREADS overrides for callers
-// who know their box, and fd::set_num_threads()/CLI --threads still win at
-// runtime.
+// regression risk. Cap accordingly; fd::set_num_threads()/CLI --threads still
+// win at runtime. The historical FACEDETECT_THREADS default override is
+// removed.
 int default_n_threads() {
-    if (const char* env = std::getenv("FACEDETECT_THREADS")) {
-        const int v = std::atoi(env);
-        if (v > 0) return v;
-    }
     unsigned hw = std::thread::hardware_concurrency();
     if (hw == 0) hw = 4;
     return (int)std::min(hw, 8u);

@@ -1,10 +1,14 @@
 #pragma once
 
-#include "backend.h"
+#include "tasks/aliked/backend.h"
 
-#include "ggml_gpu_session.hpp"
-#include "gpu_tensor.hpp"
-#include "model_weights.hpp"
+
+#include "tasks/aliked/ggml_gpu_session.hpp"
+
+#include "tasks/aliked/gpu_tensor.hpp"
+
+#include "tasks/aliked/model_weights.hpp"
+
 
 #include <memory>
 #include <string>
@@ -12,7 +16,8 @@
 #include <vector>
 
 #if defined(AICORE_CUDA_ALIKED)
-#include "cuda/aliked_cuda.hpp"
+#include "tasks/aliked/cuda/aliked_cuda.hpp"
+
 #endif
 
 namespace lightglue::aliked_internal {

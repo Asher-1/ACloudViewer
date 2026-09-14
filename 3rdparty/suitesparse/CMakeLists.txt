@@ -80,9 +80,38 @@ if(BUILD_METIS)
 						ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 						PUBLIC_HEADER DESTINATION include
 				)
+				# ACloudViewer: attach the OpenMP runtime library to the metis target
+				# so it reaches every consumer through the static-lib link
+				# interface. Guarded by OpenMP_C_INCLUDE_DIRS so this stays a no-op
+				# on Linux/MSVC/failed probes, where -fopenmp/-openmp in the
+				# consumer's own flags already resolves omp_* symbols.
+				if(OpenMP_C_INCLUDE_DIRS AND OpenMP_C_LIBRARIES)
+					target_link_libraries(metis PRIVATE \${OpenMP_C_LIBRARIES})
+				endif()
 			"
 			)
 		endif()
+			# ACloudViewer: modern FindOpenMP (CMake >= 3.27, AppleClang) reports the
+			# libomp include dir separately from OpenMP_C_FLAGS, which
+			# GKlibSystem.cmake appends next to -D__OPENMP__ -- so neither libmetis
+			# nor the metis programs would find <omp.h>. This appends a fix to
+			# GKlibSystem.cmake (included at the metis/ directory scope before
+			# add_subdirectory) that adds the include dirs to that scope, so every
+			# subdirectory inherits them. No-op when the variable is empty.
+			if(EXISTS "${METIS_DIR}/GKlib/GKlibSystem.cmake")
+				file(READ "${METIS_DIR}/GKlib/GKlibSystem.cmake" gklibContentFile)
+				string(REGEX MATCH "ACloudViewer OpenMP include fix" alreadyGklibModified ${gklibContentFile})
+				if(NOT alreadyGklibModified)
+					file(APPEND "${METIS_DIR}/GKlib/GKlibSystem.cmake"
+					"
+						# ACloudViewer OpenMP include fix: see 3rdparty/suitesparse/CMakeLists.txt.
+						if(OpenMP_C_INCLUDE_DIRS)
+							include_directories(\${OpenMP_C_INCLUDE_DIRS})
+						endif()
+					"
+					)
+				endif()
+			endif()
 	endif()
 	add_subdirectory(metis) ## important part for building metis from its src files
 endif(BUILD_METIS)

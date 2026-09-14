@@ -602,7 +602,7 @@ MainWindow::MainWindow()
 
 #ifdef USE_PYTHON_MODULE
 // QString applicationPath = QCoreApplication::applicationDirPath();
-// QString pyHome = applicationPath + "/python38";
+// QString pyHome = applicationPath + "/python310";
 // if (!PythonInterface::SetPythonHome(CVTools::FromQString(pyHome).c_str())) {
 //     CVLog::Warning(QString("Setting python home failed! Invalid path: [%1].")
 //                            .arg(pyHome));
@@ -637,6 +637,16 @@ MainWindow::~MainWindow() {
     vm.setShuttingDown(true);
     vm.blockSignals(true);
     disconnect(&vm, nullptr, this, nullptr);
+
+    // Drain the undo stack while the CV_db objects are still alive. Commands
+    // held by the stack can own DB entities (Remove-mode or undone-Add
+    // ecvEntityAddRemoveCommand); letting them reach static teardown deletes
+    // those entities from ~QUndoStack with all views already destroyed, and
+    // ~ccPointCloud -> notifyGeometryUpdate() then runs with dangling state.
+    // Clearing here releases them through the normal destruction path.
+    if (auto* undoMgr = vm.undoManager()) {
+        undoMgr->clear();
+    }
 
     // Clear active source FIRST to avoid dangling pointer access when
     // views are unregistered (which triggers updateActiveRepresentation).
@@ -2449,6 +2459,20 @@ void MainWindow::initDBRoot() {
 
                 if (imageSelected) {
                     fitActiveViewForImageEntity(first, glView);
+                    // Multiple visible ccImage entities stack in the same
+                    // window in ViewProps insertion order, so the selected
+                    // image may stay hidden under a later-rebuilt one, and
+                    // the full-refresh fit leaves the camera on the last
+                    // map-order image.  Pin both to the selected entity so
+                    // the window shows the image clicked in the DB tree.
+                    if (first->isA(CV_TYPES::IMAGE)) {
+                        if (auto imgVis = glView->getImageVis()) {
+                            const std::string layerId =
+                                    first->getViewId().toStdString();
+                            imgVis->fitLayerToWindow(layerId);
+                            imgVis->raiseLayer(layerId);
+                        }
+                    }
                 } else if (was2D) {
                     const ccBBox bbox = first->getDisplayBB_recursive(false);
                     if (bbox.isValid()) {
@@ -5755,6 +5779,8 @@ void MainWindow::disableAll() {
 }
 
 void MainWindow::updateUIWithSelection() {
+    QElapsedTimer selTimer;
+    selTimer.start();
     dbTreeSelectionInfo selInfo;
 
     m_selectedEntities.clear();
@@ -5765,6 +5791,15 @@ void MainWindow::updateUIWithSelection() {
     }
 
     enableUIItems(selInfo);
+
+    // Bottleneck probe: selection switches must stay sub-second even with
+    // thousands of entities in the DB tree.
+    const qint64 selMs = selTimer.elapsed();
+    if (selMs > 50 && CVLog::diagnosticsEnabled()) {
+        CVLog::Print(
+                "[selection] updateUIWithSelection took %lld ms (%zu selected)",
+                static_cast<long long>(selMs), m_selectedEntities.size());
+    }
 }
 
 void MainWindow::enableUIItems(dbTreeSelectionInfo& selInfo) {

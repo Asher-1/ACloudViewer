@@ -52,6 +52,7 @@ private:
     QComboBox* data_type_cb_;
     QComboBox* quality_cb_;
     QComboBox* mesher_cb_;
+    QComboBox* texturing_type_cb_;
 
     QComboBox* sparse_mode_cb_;
     QComboBox* stereo_mode_cb_;

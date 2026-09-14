@@ -31,7 +31,7 @@
 
 #include "ui/project_widget.h"
 
-#include "base/database.h"
+#include "scene/database.h"
 
 namespace colmap {
 
@@ -50,14 +50,15 @@ ProjectWidget::ProjectWidget(QWidget* parent, OptionManager* options)
           &ProjectWidget::SelectExistingDatabasePath);
   database_path_text_ = new QLineEdit(this);
   database_path_text_->setText(
-      QString::fromStdString(*options_->database_path));
+      QString::fromStdString(options_->database_path->string()));
 
   // Image path.
   QPushButton* image_path_select = new QPushButton(tr("Select"), this);
   connect(image_path_select, &QPushButton::released, this,
           &ProjectWidget::SelectImagePath);
   image_path_text_ = new QLineEdit(this);
-  image_path_text_->setText(QString::fromStdString(*options_->image_path));
+  image_path_text_->setText(
+      QString::fromStdString(options_->image_path->string()));
 
   // Save button.
   QPushButton* create_button = new QPushButton(tr("Save"), this);
@@ -95,12 +96,12 @@ std::string ProjectWidget::GetImagePath() const {
   return image_path_text_->text().toUtf8().constData();
 }
 
-void ProjectWidget::SetDatabasePath(const std::string& path) {
-  database_path_text_->setText(QString::fromStdString(path));
+void ProjectWidget::SetDatabasePath(const std::filesystem::path& path) {
+  database_path_text_->setText(QString::fromStdString(path.string()));
 }
 
-void ProjectWidget::SetImagePath(const std::string& path) {
-  image_path_text_->setText(QString::fromStdString(path));
+void ProjectWidget::SetImagePath(const std::filesystem::path& path) {
+  image_path_text_->setText(QString::fromStdString(path.string()));
 }
 
 void ProjectWidget::Save() {
@@ -109,7 +110,7 @@ void ProjectWidget::Save() {
     *options_->image_path = GetImagePath();
 
     // Save empty database file.
-    Database database(*options_->database_path);
+    auto database = Database::Open(*options_->database_path);
 
     hide();
   } else {

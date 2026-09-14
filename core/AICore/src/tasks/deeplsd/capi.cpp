@@ -12,20 +12,14 @@
 
 #include "aicore/backend_capi.h"
 #include "aicore/deeplsd_capi.h"
-#include "deeplsd.hpp"
-#include "ggml_backend_utils.hpp"
-#include "gguf_weight_quantize.hpp"
-#include "model_cache.hpp"
+#include "aicore/runtime_capi.h"
+#include "common/capi_utils.hpp"
+#include "common/ggml_backend_utils.hpp"
+#include "common/gguf_weight_quantize.hpp"
+#include "common/model_cache.hpp"
+#include "tasks/deeplsd/deeplsd.hpp"
 
 namespace {
-
-char* dup_cstr(const std::string& s) {
-    char* out = static_cast<char*>(std::malloc(s.size() + 1));
-    if (out != nullptr) {
-        std::memcpy(out, s.c_str(), s.size() + 1);
-    }
-    return out;
-}
 
 std::string normalize_device(const char* device) {
     if (device == nullptr || device[0] == '\0') {
@@ -35,6 +29,8 @@ std::string normalize_device(const char* device) {
 }
 
 }  // namespace
+
+using aicore::capi::dup_cstr;
 
 struct aicore_deeplsd_options {
     std::string device = "cpu";
@@ -46,6 +42,7 @@ struct aicore_deeplsd_ctx {
     std::string model_path;
     std::string device;
     std::string last_error;
+    aicore_pipeline_timings pipeline_timings{};
 };
 
 AICORE_CAPI int aicore_deeplsd_abi_version(void) { return 1; }
@@ -103,6 +100,7 @@ AICORE_CAPI aicore_deeplsd_ctx* aicore_deeplsd_load_opts(
 }
 
 AICORE_CAPI void aicore_deeplsd_free(aicore_deeplsd_ctx* ctx) { delete ctx; }
+AICORE_CAPI void aicore_deeplsd_shutdown(void) { aicore_runtime_shutdown(); }
 
 AICORE_CAPI int aicore_deeplsd_is_ready(const aicore_deeplsd_ctx* ctx) {
     return ctx != nullptr && ctx->extractor != nullptr ? 1 : 0;
@@ -123,6 +121,7 @@ AICORE_CAPI int aicore_deeplsd_extract_gray(aicore_deeplsd_ctx* ctx,
                                             float** out_angle,
                                             int32_t* out_width,
                                             int32_t* out_height) {
+    const auto started = aicore::capi::PipelineClock::now();
     if (ctx == nullptr || ctx->extractor == nullptr || gray == nullptr ||
         out_distance == nullptr || out_angle == nullptr ||
         out_width == nullptr || out_height == nullptr || width <= 0 ||
@@ -154,6 +153,7 @@ AICORE_CAPI int aicore_deeplsd_extract_gray(aicore_deeplsd_ctx* ctx,
     *out_angle = ang;
     *out_width = result.width;
     *out_height = result.height;
+    aicore::capi::record_pipeline_e2e(ctx->pipeline_timings, started);
     return 0;
 }
 
@@ -169,6 +169,7 @@ AICORE_CAPI int aicore_deeplsd_extract_segments(
         float** out_angle,
         int32_t* out_width,
         int32_t* out_height) {
+    const auto started = aicore::capi::PipelineClock::now();
     if (ctx == nullptr || ctx->extractor == nullptr || gray == nullptr ||
         out_distance == nullptr || out_angle == nullptr ||
         out_width == nullptr || out_height == nullptr || width <= 0 ||
@@ -208,11 +209,13 @@ AICORE_CAPI int aicore_deeplsd_extract_segments(
     *out_height = result.height;
 
     if (out_segments == nullptr || out_segment_count == nullptr) {
+        aicore::capi::record_pipeline_e2e(ctx->pipeline_timings, started);
         return 0;
     }
 
     const int32_t count = static_cast<int32_t>(result.segments.size());
     if (count == 0) {
+        aicore::capi::record_pipeline_e2e(ctx->pipeline_timings, started);
         return 0;
     }
 
@@ -231,7 +234,14 @@ AICORE_CAPI int aicore_deeplsd_extract_segments(
     }
     *out_segments = segs;
     *out_segment_count = count;
+    aicore::capi::record_pipeline_e2e(ctx->pipeline_timings, started);
     return 0;
+}
+
+AICORE_CAPI int aicore_deeplsd_last_pipeline_timings(
+        const aicore_deeplsd_ctx* ctx, aicore_pipeline_timings* out) {
+    return ctx ? aicore::capi::copy_pipeline_timings(ctx->pipeline_timings, out)
+               : -1;
 }
 
 AICORE_CAPI char* aicore_deeplsd_info_json(aicore_deeplsd_ctx* ctx) {
@@ -246,7 +256,7 @@ AICORE_CAPI char* aicore_deeplsd_info_json(aicore_deeplsd_ctx* ctx) {
     return dup_cstr(json);
 }
 
-AICORE_CAPI void aicore_deeplsd_free_string(char* s) { std::free(s); }
+AICORE_CAPI void aicore_deeplsd_free_buffer(void* p) { std::free(p); }
 
 AICORE_CAPI int aicore_deeplsd_warmup_backend(const char* device) {
     return aicore_warmup_backend(device);

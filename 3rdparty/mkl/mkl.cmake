@@ -50,16 +50,20 @@ if(WIN32)
         INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/Library/lib ${STATIC_MKL_LIB_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/Library/include ${MKL_INSTALL_PREFIX}/include
         BUILD_BYPRODUCTS
-            ${STATIC_MKL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}mkl_intel_ilp64${CMAKE_STATIC_LIBRARY_SUFFIX}
+            ${STATIC_MKL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}mkl_intel_lp64${CMAKE_STATIC_LIBRARY_SUFFIX}
             ${STATIC_MKL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}mkl_core${CMAKE_STATIC_LIBRARY_SUFFIX}
             ${STATIC_MKL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}mkl_sequential${CMAKE_STATIC_LIBRARY_SUFFIX}
             ${STATIC_MKL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}mkl_tbb_thread${CMAKE_STATIC_LIBRARY_SUFFIX}
     )
-    # Generator expression can result in an empty string "", causing CMake to try to
-    # locate ".lib". The workaround to first list all libs, and remove unneeded items
-    # using generator expressions.
+    # Windows links the LP64 interface (mkl_intel_lp64) instead of upstream's
+    # ILP64: faiss's BLAS calls use 32-bit indices, and the CPU linalg wrappers
+    # pass MKL_INT, which is 32-bit wide unless MKL_ILP64 is defined
+    # (find_dependencies.cmake only defines it on UNIX). Keeping one interface
+    # layer per link line also avoids duplicate-symbol collisions between
+    # mkl_intel_lp64.lib and mkl_intel_ilp64.lib. Threading layer selection
+    # (Debug: sequential / Release: tbb_thread) matches upstream.
     set(STATIC_MKL_LIBRARIES
-        mkl_intel_ilp64
+        mkl_intel_lp64
         mkl_core
         mkl_sequential
         mkl_tbb_thread

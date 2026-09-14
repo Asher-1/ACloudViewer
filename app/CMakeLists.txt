@@ -126,9 +126,6 @@ if (BUILD_RECONSTRUCTION)
     if (${BUILD_UNIT_TESTS})
         target_compile_definitions(${PROJECT_NAME} PRIVATE TESTS_ENABLED)
     endif ()
-    if (${PBA_ENABLED})
-        target_compile_definitions(${PROJECT_NAME} PRIVATE PBA_ENABLED)
-    endif ()
     target_compile_definitions(${PROJECT_NAME} PRIVATE OPENGL_ENABLED)
 
     if (MSVC)
@@ -249,11 +246,6 @@ elseif (APPLE)
             COMMAND ${CMAKE_COMMAND} -E make_directory "${CLOUDVIEWER_TRANSLATION_DESTINATION}"
             COMMAND sh -c "cp ${CMAKE_BINARY_DIR}/app/translations/*.qm ${CLOUDVIEWER_TRANSLATION_DESTINATION}"
             COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_BINARY_DIR}/${CloudViewer_INSTALL_BIN_DIR}/cvPlugins "${CLOUDVIEWER_PLUGINS_DESTINATION}"
-            # Remove stale Frameworks from incremental builds so that
-            # DeployQt's copy + macdeployqt + lib_bundle_app.py start clean.
-            # Without this, lib_bundle_app.py's "skip if exists" logic would
-            # keep outdated project libs (e.g. missing newly added symbols).
-            COMMAND ${CMAKE_COMMAND} -E remove_directory "${BINARY_APP_PATH}/Contents/Frameworks"
              # for macdeployqt
             COMMAND ${CMAKE_COMMAND} -E copy_directory ${BINARY_APP_PATH} ${CMAKE_BINARY_DIR}/app/${PROJECT_NAME}.app
             VERBATIM

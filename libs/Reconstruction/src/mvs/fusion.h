@@ -9,9 +9,11 @@
 
 #include <Eigen/Core>
 #include <cfloat>
+#include <filesystem>
 #include <unordered_set>
 #include <vector>
 
+#include "math/math.h"
 #include "mvs/depth_map.h"
 #include "mvs/image.h"
 #include "mvs/mat.h"
@@ -20,7 +22,6 @@
 #include "mvs/workspace.h"
 #include "util/alignment.h"
 #include "util/cache.h"
-#include "util/math.h"
 #include "util/ply.h"
 #include "util/threading.h"
 
@@ -29,7 +30,7 @@ namespace mvs {
 
 struct StereoFusionOptions {
     // Path for PNG masks. Same format expected as ImageReaderOptions.
-    std::string mask_path = "";
+    std::filesystem::path mask_path;
 
     // The number of threads to use during fusion.
     int num_threads = -1;
@@ -156,8 +157,12 @@ private:
 // correspond to the image_id of a Reconstruction, but the index of the image in
 // the mvs::Model, which is the location of the image in the images.bin/.txt.
 void WritePointsVisibility(
-        const std::string& path,
+        const std::filesystem::path& path,
         const std::vector<std::vector<int>>& points_visibility);
+
+// Read per-point visibility produced by WritePointsVisibility().
+std::vector<std::vector<int>> ReadPointsVisibility(
+        const std::filesystem::path& path, size_t num_points);
 
 }  // namespace mvs
 }  // namespace colmap

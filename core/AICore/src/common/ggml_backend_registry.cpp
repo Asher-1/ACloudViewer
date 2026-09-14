@@ -5,14 +5,14 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "ggml_backend_registry.hpp"
+#include "common/ggml_backend_registry.hpp"
 
 #include <algorithm>
 #include <cstdlib>
 #include <mutex>
 #include <unordered_map>
 
-#include "ggml_backend_utils.hpp"
+#include "common/ggml_backend_utils.hpp"
 
 namespace aicore {
 namespace runtime {
@@ -154,6 +154,28 @@ BackendLease acquire_backend_lease(const std::string& device_request,
     return adopt_backend_lease(candidate.handle, candidate.device, n_threads);
 }
 
+BackendLease acquire_parallel_backend_lease(const std::string& device_request,
+                                            int n_threads,
+                                            std::string* error) {
+    if (error) error->clear();
+    if (n_threads <= 0) {
+        n_threads = static_cast<int>(ggml_common::default_cpu_threads());
+    }
+
+    Candidate candidate = create_candidate(device_request, n_threads, error);
+    if (candidate.handle == nullptr) return BackendLease();
+    if (!ggml_common::is_cpu_backend(candidate.handle)) {
+        return adopt_backend_lease(candidate.handle, candidate.device,
+                                   n_threads);
+    }
+
+    // CPU backends own no process-global command queue. Give parallel workers
+    // independent handles so their session-local graph allocators can execute
+    // simultaneously instead of contending on the shared lease lock.
+    return BackendLease(std::make_shared<BackendLease::State>(
+            candidate.handle, candidate.device));
+}
+
 BackendLeaseLock lock_backend_leases(const std::vector<BackendLease>& leases) {
     std::vector<std::shared_ptr<BackendLease::State>> states;
     states.reserve(leases.size());
@@ -176,6 +198,17 @@ BackendLeaseLock lock_backend_leases(const std::vector<BackendLease>& leases) {
         result.locks_.emplace_back(state->execution_mutex);
     }
     return result;
+}
+
+void purge_inactive_backend_leases() {
+    std::lock_guard<std::mutex> lock(g_registry_mutex);
+    for (auto it = g_registry.begin(); it != g_registry.end();) {
+        if (it->second.expired()) {
+            it = g_registry.erase(it);
+        } else {
+            ++it;
+        }
+    }
 }
 
 }  // namespace runtime

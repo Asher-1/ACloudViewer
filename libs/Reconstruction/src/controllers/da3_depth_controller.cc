@@ -7,11 +7,11 @@
 
 #include "controllers/da3_depth_controller.h"
 
-#include "base/camera.h"
-#include "base/database.h"
-#include "base/image.h"
-#include "base/point3d.h"
-#include "base/reconstruction.h"
+#include "scene/camera.h"
+#include "scene/database.h"
+#include "scene/image.h"
+#include "scene/point3d.h"
+#include "scene/reconstruction.h"
 #include "util/logging.h"
 #include "util/misc.h"
 #include "util/threading.h"
@@ -23,11 +23,15 @@
 #include "aicore/depth_capi.h"
 #endif
 
+// Digest registry lives in AICore's public headers (resolved via the
+// AICore target's PUBLIC include dir; this TU is not Qt-dependent).
+#include "aicore/asset_digests.h"
+
 #ifdef COLMAP_DOWNLOAD_ENABLED
 #include "util/download.h"
 #endif
 
-#include "util/bitmap.h"
+#include "sensor/bitmap.h"
 
 #include <Eigen/Core>
 
@@ -204,10 +208,13 @@ bool IsImageFile(const std::string& path) {
 }  // namespace
 
 std::vector<DA3ImageEntry> CollectDA3ImageEntries(
-    const std::string& image_root) {
+    const std::filesystem::path& image_root) {
     const std::string root =
-        EnsureTrailingSlash(StringReplace(image_root, "\\", "/"));
-    std::vector<std::string> files = GetRecursiveFileList(root);
+        EnsureTrailingSlash(StringReplace(image_root.string(), "\\", "/"));
+    std::vector<std::string> files;
+    for (const auto& path : GetRecursiveFileList(root)) {
+      files.push_back(path.string());
+    }
     std::sort(files.begin(), files.end());
 
     std::vector<DA3ImageEntry> entries;
@@ -235,8 +242,8 @@ bool DA3ConfigsMatchForStereoReuse(const DA3Config& sparse,
            DA3ModelSupportsStereo(stereo.model_type);
 }
 
-bool DA3OutputsAreStale(const std::string& image_root,
-                        const std::string& output_marker_path,
+bool DA3OutputsAreStale(const std::filesystem::path& image_root,
+                        const std::filesystem::path& output_marker_path,
                         bool force_recompute) {
     if (force_recompute) {
         return true;
@@ -431,22 +438,22 @@ void RemoveColmapGeometricStereoMaps(const std::string& dense_path) {
     RemoveStereoMapsWithSuffix(dense_path, ".geometric.bin");
 }
 
-void WriteDA3PlaceholderDatabase(const std::string& database_path,
+void WriteDA3PlaceholderDatabase(const std::filesystem::path& database_path,
                                  const Reconstruction& reconstruction) {
-    Database database(database_path);
+    auto database = Database::Open(database_path);
     std::unordered_map<camera_t, camera_t> camera_id_map;
     for (const auto& [camera_id, camera] : reconstruction.Cameras()) {
-        camera_id_map[camera_id] = database.WriteCamera(camera);
+        camera_id_map[camera_id] = database->WriteCamera(camera);
     }
     for (const auto image_id : reconstruction.RegImageIds()) {
         Image image = reconstruction.Image(image_id);
         image.SetCameraId(camera_id_map.at(image.CameraId()));
-        database.WriteImage(image);
+        database->WriteImage(image);
     }
 }
 
-bool SyncWorkspaceSparseFromDense(const std::string& workspace_path,
-                                  const std::string& dense_path,
+bool SyncWorkspaceSparseFromDense(const std::filesystem::path& workspace_path,
+                                  const std::filesystem::path& dense_path,
                                   int reconstruction_index) {
     std::string src_sparse = JoinPaths(dense_path, "sparse");
     if (!ExistsFile(JoinPaths(src_sparse, "images.bin")) &&
@@ -501,7 +508,7 @@ bool SyncWorkspaceSparseFromDense(const std::string& workspace_path,
     return true;
 }
 
-size_t CountDA3Images(const std::string& image_root) {
+size_t CountDA3Images(const std::filesystem::path& image_root) {
     return CollectDA3ImageEntries(image_root).size();
 }
 
@@ -530,9 +537,10 @@ int ComputeDA3ImgResizeTarget(const std::vector<std::string>& image_paths,
     return long_edge;
 }
 
-bool WriteExifPlaceholderSparseModel(const std::string& image_root,
-                                     const std::string& sparse_output_path,
-                                     double default_focal_length_factor) {
+bool WriteExifPlaceholderSparseModel(
+    const std::filesystem::path& image_root,
+    const std::filesystem::path& sparse_output_path,
+    double default_focal_length_factor) {
     const auto entries = CollectDA3ImageEntries(image_root);
     if (entries.empty()) {
         LOG(ERROR) << "EXIF bootstrap: no images under " << image_root;
@@ -592,7 +600,13 @@ bool WriteExifPlaceholderSparseModel(const std::string& image_root,
         image.Qvec(2) = 0.0;
         image.Qvec(3) = 0.0;
         image.SetTvec(Eigen::Vector3d::Zero());
-        reconstruction.AddImage(image);
+        // Upstream-parity: a trivial frame is created per image and the
+        // identity pose is registered with it.
+        const Eigen::Quaterniond cam_q(
+            image.Qvec()(0), image.Qvec()(1), image.Qvec()(2),
+            image.Qvec()(3));
+        reconstruction.AddImageWithTrivialFrame(
+            image, Rigid3d(cam_q, image.Tvec()));
         reconstruction.RegisterImage(image.ImageId());
         ++registered;
     }
@@ -603,7 +617,7 @@ bool WriteExifPlaceholderSparseModel(const std::string& image_root,
     }
 
     if (!ExistsDir(sparse_output_path)) {
-        boost::filesystem::create_directories(sparse_output_path);
+        boost::filesystem::create_directories(sparse_output_path.string());
     }
     reconstruction.Write(sparse_output_path);
 
@@ -614,7 +628,8 @@ bool WriteExifPlaceholderSparseModel(const std::string& image_root,
     }
 
     RECON_LOG_DEBUG("DA3 EXIF bootstrap: wrote placeholder sparse model (%d images, %zu cameras) to %s\n",
-                    registered, camera_key_to_id.size(), sparse_output_path.c_str());
+                    registered, camera_key_to_id.size(),
+                    sparse_output_path.string().c_str());
     return true;
 }
 
@@ -676,15 +691,24 @@ void LogDA3InferenceDevice(aicore_depth_ctx* ctx, const char* requested_device) 
 aicore_depth_ctx* LoadDA3Context(const DA3Config& config, int n_threads) {
     const char* requested_device =
             config.device.empty() ? "auto" : config.device.c_str();
+    // AICore depth ABI v6: options-based loading (device / threads are set
+    // on an opaque options handle instead of flat load_*_device arguments).
+    aicore_depth_options* opts = aicore_depth_options_new();
+    if (!opts) {
+        RECON_LOG_ERROR("ERROR: DA3 failed to allocate load options\n");
+        return nullptr;
+    }
+    aicore_depth_options_set_threads(opts, n_threads);
+    aicore_depth_options_set_device(opts, requested_device);
     aicore_depth_ctx* ctx = nullptr;
     if (config.model_type != DA3ModelType::NESTED_METRIC &&
         config.model_type != DA3ModelType::NESTED_ANYVIEW) {
         const std::string model_path = DA3DepthController::ResolveModelPath(config);
         if (model_path.empty()) {
+            aicore_depth_options_free(opts);
             return nullptr;
         }
-        ctx = aicore_depth_load_device(model_path.c_str(), n_threads,
-                                       requested_device);
+        ctx = aicore_depth_load_opts(model_path.c_str(), opts);
     } else {
         std::string anyview_path;
         std::string metric_path;
@@ -713,12 +737,13 @@ aicore_depth_ctx* LoadDA3Context(const DA3Config& config, int n_threads) {
         }
 
         if (anyview_path.empty() || metric_path.empty()) {
+            aicore_depth_options_free(opts);
             return nullptr;
         }
-        ctx = aicore_depth_load_nested_device(anyview_path.c_str(),
-                                              metric_path.c_str(), n_threads,
-                                              requested_device);
+        ctx = aicore_depth_load_nested_opts(anyview_path.c_str(),
+                                            metric_path.c_str(), opts);
     }
+    aicore_depth_options_free(opts);
     if (ctx) {
         LogDA3InferenceDevice(ctx, requested_device);
     }
@@ -965,15 +990,11 @@ bool RunDepthPoseMulti(aicore_depth_ctx* ctx, const std::vector<std::string>& im
             int h = 0;
             int w = 0;
             float* depth_ptr = nullptr;
-            float ext[12] = {};
-            float intr[9] = {};
-            int is_metric = 0;
+            aicore_depth_dense_result dense{};
             if (aicore_depth_depth_dense(
-                    ctx, image_paths[static_cast<size_t>(i)].c_str(), &h, &w,
-                    &depth_ptr, nullptr, nullptr, ext, intr, &is_metric) != 0) {
-                if (depth_ptr) {
-                    aicore_depth_free_floats(depth_ptr);
-                }
+                    ctx, image_paths[static_cast<size_t>(i)].c_str(), &dense) !=
+                0) {
+                aicore_depth_dense_result_free(&dense);
                 const std::string err = aicore_depth_last_error(ctx);
                 LOG(ERROR) << "DA3: per-view inference failed for "
                            << image_paths[static_cast<size_t>(i)] << ": "
@@ -985,8 +1006,11 @@ bool RunDepthPoseMulti(aicore_depth_ctx* ctx, const std::vector<std::string>& im
                 aicore_depth_release_gpu_working_memory(ctx);
                 break;
             }
+            h = dense.height;
+            w = dense.width;
+            depth_ptr = dense.depth;
             if (h <= 0 || w <= 0 || !depth_ptr) {
-                aicore_depth_free_floats(depth_ptr);
+                aicore_depth_dense_result_free(&dense);
                 LOG(ERROR) << "DA3: empty depth for view " << i;
                 aicore_depth_release_gpu_working_memory(ctx);
                 oom = true;
@@ -997,7 +1021,7 @@ bool RunDepthPoseMulti(aicore_depth_ctx* ctx, const std::vector<std::string>& im
                 result.h = h;
                 result.w = w;
             } else if (h != result.h || w != result.w) {
-                aicore_depth_free_floats(depth_ptr);
+                aicore_depth_dense_result_free(&dense);
                 LOG(ERROR) << "DA3: view " << i << " size mismatch (" << w << "x"
                            << h << " vs " << result.w << "x" << result.h << ")";
                 return false;
@@ -1005,13 +1029,13 @@ bool RunDepthPoseMulti(aicore_depth_ctx* ctx, const std::vector<std::string>& im
 
             const size_t per_view =
                 static_cast<size_t>(h) * static_cast<size_t>(w);
-            result.depth.insert(result.depth.end(), depth_ptr,
-                                depth_ptr + per_view);
-            std::memcpy(result.ext.data() + static_cast<size_t>(i) * 12, ext,
-                        12 * sizeof(float));
-            std::memcpy(result.intr.data() + static_cast<size_t>(i) * 9, intr,
-                        9 * sizeof(float));
-            aicore_depth_free_floats(depth_ptr);
+            result.depth.insert(result.depth.end(), dense.depth,
+                                dense.depth + per_view);
+            std::memcpy(result.ext.data() + static_cast<size_t>(i) * 12,
+                        dense.ext, 12 * sizeof(float));
+            std::memcpy(result.intr.data() + static_cast<size_t>(i) * 9,
+                        dense.intr, 9 * sizeof(float));
+            aicore_depth_dense_result_free(&dense);
             aicore_depth_release_gpu_working_memory(ctx);
         }
 
@@ -1054,10 +1078,17 @@ bool WriteDenseSparseFromMultiview(
         cnames[static_cast<size_t>(i)] = image_names[static_cast<size_t>(i)].c_str();
     }
 
+    aicore_depth_multiview_data data{};
+    data.n_views = multi.n;
+    data.height = multi.h;
+    data.width = multi.w;
+    data.depth = multi.depth.data();
+    data.ext = multi.ext.data();
+    data.intr = multi.intr.data();
+
     if (aicore_depth_write_colmap_from_multiview(
-            ctx, cpaths.data(), cnames.data(), multi.n, multi.depth.data(),
-            multi.ext.data(), multi.intr.data(), multi.h, multi.w,
-            sparse_dir.c_str(), 1) != 0) {
+            ctx, cpaths.data(), cnames.data(), &data, sparse_dir.c_str(), 1) !=
+        0) {
         LOG(ERROR) << "DA3: failed to sync dense sparse model: "
                    << aicore_depth_last_error(ctx);
         RECON_LOG_ERROR("ERROR: DA3 dense sparse sync failed: %s\n", aicore_depth_last_error(ctx));
@@ -2155,7 +2186,14 @@ std::string DA3ModelDownloadURL(DA3ModelType model, DA3QuantType quant) {
 }
 
 std::string DA3ModelDownloadURI(DA3ModelType model, DA3QuantType quant) {
-    return DA3ModelDownloadURL(model, quant);
+    const std::string filename = DA3ModelFilename(model, quant);
+    const char* digest = aicore::AssetDigestForFile(filename.c_str());
+    if (digest == nullptr) {
+        // Digest not (yet) pinned in the registry: fall back to the
+        // URL-only format (no verification possible for this asset).
+        return DA3ModelDownloadURL(model, quant);
+    }
+    return DA3ModelDownloadURL(model, quant) + ";" + filename + ";" + digest;
 }
 
 bool DA3ModelExists(DA3ModelType model, DA3QuantType quant) {
@@ -2187,7 +2225,7 @@ std::string DA3ModelCacheDir() {
     char* dir = aicore_depth_model_cache_dir();
     if (!dir) return ".cache/da3_models";
     std::string result(dir);
-    aicore_depth_free_string(dir);
+    aicore_depth_free_buffer(dir);
     return result;
 #else
     return ".cache/da3_models";
@@ -2251,28 +2289,58 @@ void CollectDA3ModelCacheNeeds(const std::string& cache_dir,
 }
 
 std::string DA3DepthController::ResolveModelPath(const DA3Config& config) {
-    if (!config.model_path.empty() && ExistsFile(config.model_path)) {
-        return config.model_path;
+    if (!config.model_path.empty()) {
+        if (ExistsFile(config.model_path)) {
+            return config.model_path;
+        }
+        LOG(ERROR) << "DA3: explicit model path does not exist: "
+                   << config.model_path;
+        return "";
     }
 
     const std::string filename = DA3ModelFilename(config.model_type, config.quant_type);
 
 #ifdef COLMAP_DOWNLOAD_ENABLED
     const std::string url = DA3ModelDownloadURL(config.model_type, config.quant_type);
+    // Pinned content digest from the release asset registry; fails closed
+    // for filenames that are not published assets.
+    const char* pinned_digest = aicore::AssetDigestForFile(filename.c_str());
+    if (pinned_digest == nullptr) {
+        LOG(ERROR) << "DA3: no pinned digest for model asset: " << filename;
+        return "";
+    }
 
     const std::filesystem::path cache_dir(DA3ModelCacheDir());
     std::filesystem::create_directories(cache_dir);
     const auto cached_path = cache_dir / filename;
 
     if (std::filesystem::exists(cached_path)) {
-        RECON_LOG_DEBUG("DA3: Using cached model: %s\n", cached_path.string().c_str());
-        return cached_path.string();
+        // Verify the cached model before trusting it: a truncated or
+        // corrupted cache must never silently feed the reconstruction.
+        const std::string cached_digest = ComputeFileSHA256(cached_path);
+        if (cached_digest == pinned_digest) {
+            RECON_LOG_DEBUG("DA3: Using cached model: %s\n", cached_path.string().c_str());
+            return cached_path.string();
+        }
+        LOG(WARNING) << "DA3: cached model failed digest check (got " << cached_digest
+                     << ", expected " << pinned_digest << "), re-downloading: "
+                     << cached_path.string();
+        std::filesystem::remove(cached_path);
     }
 
     RECON_LOG_DEBUG("DA3: Downloading model from: %s\n", url.c_str());
     const auto blob = DownloadFile(url);
     if (!blob.has_value()) {
         LOG(ERROR) << "DA3: Failed to download model from: " << url;
+        return "";
+    }
+
+    // Verify before caching: a truncated/corrupted download must never
+    // poison the cache for every later run.
+    const std::string blob_digest = ComputeSHA256(std::string_view(blob->data(), blob->size()));
+    if (blob_digest != pinned_digest) {
+        LOG(ERROR) << "DA3: downloaded model failed digest check (got " << blob_digest
+                   << ", expected " << pinned_digest << "): " << url;
         return "";
     }
 
@@ -2292,10 +2360,13 @@ std::string DA3DepthController::ResolveModelPath(const DA3Config& config) {
 #endif
 }
 
-DA3DepthController::DA3DepthController(const DA3Config& config,
-                                       const std::string& image_path,
-                                       const std::string& output_path)
-    : config_(config), image_path_(image_path), output_path_(output_path) {}
+DA3DepthController::DA3DepthController(
+    const DA3Config& config,
+    const std::filesystem::path& image_path,
+    const std::filesystem::path& output_path)
+    : config_(config),
+      image_path_(image_path.string()),
+      output_path_(output_path.string()) {}
 
 void DA3DepthController::Run() {
     success_ = true;
@@ -2397,9 +2468,15 @@ bool DA3DepthController::GenerateSparseModel() {
             aicore_depth_free(ctx);
             return false;
         }
+        aicore_depth_multiview_data data{};
+        data.n_views = N;
+        data.height = multi.h;
+        data.width = multi.w;
+        data.depth = multi.depth.data();
+        data.ext = multi.ext.data();
+        data.intr = multi.intr.data();
         if (aicore_depth_write_colmap_from_multiview(
-                ctx, cpaths.data(), cnames.data(), N, multi.depth.data(),
-                multi.ext.data(), multi.intr.data(), multi.h, multi.w,
+                ctx, cpaths.data(), cnames.data(), &data,
                 sparse_path.c_str(), 1) != 0) {
             LOG(ERROR) << "DA3: aicore_depth_write_colmap_from_multiview failed: "
                        << aicore_depth_last_error(ctx);

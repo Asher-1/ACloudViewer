@@ -31,7 +31,7 @@
 
 #include "ui/colormaps.h"
 
-#include "util/bitmap.h"
+#include "sensor/bitmap.h"
 
 namespace colmap {
 

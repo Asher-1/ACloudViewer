@@ -116,10 +116,16 @@ resolve_and_copy() {
 }
 
 echo "Scanning ggml CUDA module: $GGML_CUDA_MODULE"
+# Feed BOTH resolved paths and "not found" bare sonames into resolve_and_copy:
+# when the CUDA toolkit lib dir is not registered in ldconfig, ldd reports
+# "not found" for libcudart/libcublas even though EXTRA_LIB_DIRS can locate
+# them. The old loop dropped those lines, so nothing was ever bundled.
 while IFS= read -r lib_ref; do
     [ -n "$lib_ref" ] || continue
-    resolve_and_copy "$lib_ref"
-done < <(ldd "$GGML_CUDA_MODULE" 2>/dev/null | awk '/=>/ {print $3}' | grep -E '^/')
+    resolve_and_copy "$lib_ref" || true
+done < <(ldd "$GGML_CUDA_MODULE" 2>/dev/null | sed -n -E \
+    -e 's/^\s*([A-Za-z0-9._+-]+\.so[^ ]*)[[:space:]]*=>[[:space:]]*(\/.*)$/\2/p' \
+    -e 's/^\s*([A-Za-z0-9._+-]+\.so[^ ]*)[[:space:]]*=>[[:space:]]*not found$/\1/p')
 
 if [ "${#COPIED[@]}" -eq 0 ]; then
     echo "Error: no CUDA runtime libraries were bundled (check build CUDA toolkit paths)" >&2

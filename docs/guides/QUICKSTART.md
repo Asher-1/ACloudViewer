@@ -20,7 +20,7 @@ Complete guide for building ACloudViewer from source code on different platforms
 
 ### Build Tools
 
-**CMake 3.19+**
+**CMake 3.24+** (the repository-pinned toolchain is 3.31.8)
 
 - Ubuntu 20.04+:
   ```bash

@@ -1,6 +1,6 @@
 # Building ACloudViewer from Source on macOS
 
-> **Automated build script:** [`scripts/build_macos.sh`](../../../scripts/build_macos.sh)
+> **Automated build script:** [`scripts/build_macos.sh`](https://github.com/Asher-1/ACloudViewer/blob/main/scripts/build_macos.sh)
 >
 > ```bash
 > ./scripts/build_macos.sh 2>&1 | tee build.log
@@ -29,6 +29,7 @@
     - [Python library](#python-library)
   - [Compilation Options Reference](#compilation-options-reference)
     - [AICore GPU (Metal, default)](#aicore-gpu-metal-default)
+      - [Platform ggml Backend Support](#platform-ggml-backend-support)
     - [OpenMP on macOS](#openmp-on-macos)
     - [ML Module (PyTorch)](#ml-module-pytorch)
     - [CUDA / GPU](#cuda--gpu)
@@ -73,7 +74,7 @@ brew install gcc --without-multilib
 PYTHON_VERSION=3.12
 
 cp .ci/conda_macos_cloudViewer.yml /tmp/conda_macos_cloudViewer.yml
-sed -i "" "s/3.8/${PYTHON_VERSION}/g" /tmp/conda_macos_cloudViewer.yml
+sed -i "" "s/3.10/${PYTHON_VERSION}/g" /tmp/conda_macos_cloudViewer.yml
 
 conda env create -f /tmp/conda_macos_cloudViewer.yml
 conda activate cloudViewer
@@ -185,6 +186,11 @@ cmake \
     -DPLUGIN_STANDARD_QFACEDETECT=ON \
     -DPLUGIN_STANDARD_QFREESPLATTER=ON \
     -DPLUGIN_STANDARD_QLIGHTGLUE=ON \
+    -DPLUGIN_STANDARD_QRFDETR=ON \
+    -DPLUGIN_STANDARD_QRMBG=ON \
+    -DPLUGIN_STANDARD_QYOLO=ON \
+    -DPLUGIN_STANDARD_QSAM3=ON \
+    -DPLUGIN_STANDARD_QTRELLIS=ON \
     -DPLUGIN_PYTHON=ON \
     -DBUILD_PYTHON_MODULE=ON \
     ..
@@ -203,7 +209,7 @@ make install -j"$(sysctl -n hw.logicalcpu)"
 PYTHON_VERSION=3.12
 
 cp .ci/conda_macos.yml /tmp/conda_macos.yml
-sed -i "" "s/3.8/${PYTHON_VERSION}/g" /tmp/conda_macos.yml
+sed -i "" "s/3.10/${PYTHON_VERSION}/g" /tmp/conda_macos.yml
 
 conda env create -f /tmp/conda_macos.yml
 conda activate python${PYTHON_VERSION}
@@ -212,7 +218,7 @@ conda activate python${PYTHON_VERSION}
 ### 2. Install Python dependencies
 
 ```bash
-export CLOUDVIEWER_ML_ROOT=/Users/asher/develop/code/github/CloudViewer-ML
+export CLOUDVIEWER_ML_ROOT="$HOME/develop/code/github/CloudViewer-ML"  # adjust to your CloudViewer-ML checkout location
 
 CLOUDVIEWER_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/ >/dev/null 2>&1 && pwd)"
 export BUILD_PYTORCH_OPS=ON
@@ -382,7 +388,7 @@ cmake -DAICore_ENABLED=ON ..
 | **Linux** | Vulkan | Vulkan → CPU | ON | OFF | Optional (`-DAICore_USE_CUDA=ON`) | CUDA takes priority when enabled: CUDA → Vulkan → CPU |
 | **Windows** | Vulkan | Vulkan → CPU | ON | OFF | Optional (`-DAICore_USE_CUDA=ON`) | Same priority as Linux |
 
-See [BUILD.md](../../../BUILD.md) for cross-platform AICore backend notes.
+See [BUILD.md](https://github.com/Asher-1/ACloudViewer/blob/main/BUILD.md) for cross-platform AICore backend notes.
 
 
 ### OpenMP on macOS

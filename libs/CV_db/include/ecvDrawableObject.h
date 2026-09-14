@@ -398,6 +398,11 @@ protected:  // members
     bool m_showNameIn3D;
     //! Last 2D position of the '3D' name
     CCVector3d m_nameIn3DPos;
+    //! Latch: a name-in-3D overlay keyed by this entity's viewID was
+    //! dispatched (drawNameIn3D) and may still exist; the per-pass cleanup
+    //! in ccHObject::draw runs once against this latch instead of
+    //! dispatching the widget-removal machinery on every traversal.
+    bool m_nameIn3DOverlayCreated;
 
     //! Active clipping planes (used for display only)
     ccClipPlaneSet m_clipPlanes;

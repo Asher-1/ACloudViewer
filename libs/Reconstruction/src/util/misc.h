@@ -8,12 +8,15 @@
 #pragma once
 
 #include <boost/filesystem.hpp>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include "util/endian.h"
+#include "util/file.h"
 #include "util/logging.h"
 #include "util/string.h"
 
@@ -24,65 +27,23 @@ namespace colmap {
 #define STRINGIFY_(s) #s
 #endif  // STRINGIFY
 
-enum class CopyType { COPY, HARD_LINK, SOFT_LINK };
-
 // Append trailing slash to string if it does not yet end with a slash.
-std::string EnsureTrailingSlash(const std::string& str);
-
-// Check whether file name has the file extension (case insensitive).
-bool HasFileExtension(const std::string& file_name, const std::string& ext);
-
-// Split the path into its root and extension, for example,
-// "dir/file.jpg" into "dir/file" and ".jpg".
-void SplitFileExtension(const std::string& path,
-                        std::string* root,
-                        std::string* ext);
-
-// Copy or link file from source to destination path
-void FileCopy(const std::string& src_path,
-              const std::string& dst_path,
-              CopyType type = CopyType::COPY);
-
-// Check if the path points to an existing directory.
-bool ExistsFile(const std::string& path);
-
-// Check if the path points to an existing directory.
-bool ExistsDir(const std::string& path);
-
-// Check if the path points to an existing file or directory.
-bool ExistsPath(const std::string& path);
-
-// Create the directory if it does not exist.
-void CreateDirIfNotExists(const std::string& path);
-
-// Extract the base name of a path, e.g., "image.jpg" for "/dir/image.jpg".
-std::string GetPathBaseName(const std::string& path);
-
-// Get the path of the parent directory for the given path.
-std::string GetParentDir(const std::string& path);
-
-// Get the relative path between from and to. Both the from and to paths must
-// exist.
-std::string GetRelativePath(const std::string& from, const std::string& to);
 
 // Join multiple paths into one path.
 template <typename... T>
 std::string JoinPaths(T const&... paths);
 
 // Return list of files in directory.
-std::vector<std::string> GetFileList(const std::string& path);
+std::vector<std::string> GetFileList(const std::filesystem::path& path);
 
-// Return list of files, recursively in all sub-directories.
-std::vector<std::string> GetRecursiveFileList(const std::string& path);
-
+// GetRecursiveFileList/GetDirList moved to util/file.h (upstream parity,
+// returning std::filesystem::path); the recursive-directory variant below is
+// a fork-only extension.
 // Return list of directories, recursively in all sub-directories.
-std::vector<std::string> GetDirList(const std::string& path);
-
-// Return list of directories, recursively in all sub-directories.
-std::vector<std::string> GetRecursiveDirList(const std::string& path);
+std::vector<std::string> GetRecursiveDirList(const std::filesystem::path& path);
 
 // Get the size in bytes of a file.
-size_t GetFileSize(const std::string& path);
+size_t GetFileSize(const std::filesystem::path& path);
 
 // Print first-order heading with over- and underscores to `std::cout`.
 void PrintHeading1(const std::string& heading);
@@ -107,15 +68,14 @@ std::string VectorToCSV(const std::vector<T>& values);
 
 // Read contiguous binary blob from file.
 template <typename T>
-void ReadBinaryBlob(const std::string& path, std::vector<T>* data);
+void ReadBinaryBlob(const std::filesystem::path& path, std::vector<T>* data);
 
 // Write contiguous binary blob to file.
 template <typename T>
-void WriteBinaryBlob(const std::string& path, const std::vector<T>& data);
+void WriteBinaryBlob(const std::filesystem::path& path,
+                     const std::vector<T>& data);
 
-// Read each line of a text file into a separate element. Empty lines are
-// ignored and leading/trailing whitespace is removed.
-std::vector<std::string> ReadTextFileLines(const std::string& path);
+// ReadTextFileLines moved to util/file.{h,cc} (upstream parity).
 
 // Remove an argument from the list of command-line arguments.
 void RemoveCommandLineArgument(const std::string& arg, int* argc, char** argv);
@@ -124,10 +84,23 @@ void RemoveCommandLineArgument(const std::string& arg, int* argc, char** argv);
 // Implementation
 ////////////////////////////////////////////////////////////////////////////////
 
+template <typename T>
+std::string JoinPathString(T const& path) {
+    if constexpr (std::is_same_v<std::decay_t<T>, std::filesystem::path>) {
+        return path.string();
+    } else {
+        // Preserve the historical boost behavior: joining with an absolute
+        // path argument appends rather than resets (std::filesystem differs).
+        return boost::filesystem::path(path).string();
+    }
+}
+
 template <typename... T>
 std::string JoinPaths(T const&... paths) {
     boost::filesystem::path result;
-    int unpack[]{0, (result = result / boost::filesystem::path(paths), 0)...};
+    int unpack[]{0, (result = result /
+                              boost::filesystem::path(JoinPathString(paths)),
+                     0)...};
     static_cast<void>(unpack);
     return result.string();
 }
@@ -156,7 +129,7 @@ std::string VectorToCSV(const std::vector<T>& values) {
 }
 
 template <typename T>
-void ReadBinaryBlob(const std::string& path, std::vector<T>* data) {
+void ReadBinaryBlob(const std::filesystem::path& path, std::vector<T>* data) {
     std::ifstream file(path, std::ios::binary | std::ios::ate);
     CHECK(file.is_open()) << path;
     file.seekg(0, std::ios::end);
@@ -168,7 +141,8 @@ void ReadBinaryBlob(const std::string& path, std::vector<T>* data) {
 }
 
 template <typename T>
-void WriteBinaryBlob(const std::string& path, const std::vector<T>& data) {
+void WriteBinaryBlob(const std::filesystem::path& path,
+                     const std::vector<T>& data) {
     std::ofstream file(path, std::ios::binary);
     CHECK(file.is_open()) << path;
     WriteBinaryLittleEndian<T>(&file, data);

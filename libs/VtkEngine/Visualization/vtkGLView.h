@@ -210,6 +210,12 @@ public:
                                  bool triggerRender = true) override;
     double getLightIntensity() const override;
     void setLightIntensity(double intensity) override;
+    // Composite-rendering queries (massive-import aggregation). Forwarding
+    // these is mandatory: the base-class defaults return false, which killed
+    // the O(1) group fast path in folder-level light/opacity applies and
+    // degraded every apply into a per-leaf eviction storm.
+    bool hasCompositeGroup(const QString& viewID) override;
+    bool isCompositeLeafEntity(const QString& viewID) override;
     void getDataAxesGridProperties(const QString& viewID,
                                    AxesGridProperties& props,
                                    int viewport = 0) const override;

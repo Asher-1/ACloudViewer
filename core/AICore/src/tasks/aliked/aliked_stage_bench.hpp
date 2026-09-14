@@ -2,15 +2,17 @@
 
 #include <chrono>
 #include <cstdio>
-#include <cstdlib>
 #include <string>
 
 namespace lightglue::aliked_internal {
 
+// Stage timing probe. The historical AICORE_ALIKED_STAGE_BENCH env gate was
+// development scaffolding and is removed; the probe is dormant (enabled_ is
+// always false) until an explicit API re-enables it.
 class StageBench {
 public:
   explicit StageBench(const char *name)
-      : name_(name), enabled_(std::getenv("AICORE_ALIKED_STAGE_BENCH") != nullptr),
+      : name_(name), enabled_(false),
         t0_(std::chrono::steady_clock::now()) {}
 
   ~StageBench() {

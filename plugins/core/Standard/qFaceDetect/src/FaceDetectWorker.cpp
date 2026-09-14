@@ -67,58 +67,129 @@ void FaceDetectWorker::releaseContextOnMainThread() {
 
 namespace {
 
+FaceDetectBox faceBox(const aicore_facedetect_detection& detection) {
+    FaceDetectBox box;
+    box.x1 = detection.x1;
+    box.y1 = detection.y1;
+    box.x2 = detection.x2;
+    box.y2 = detection.y2;
+    box.score = detection.score;
+    for (int k = 0; k < 5; ++k) {
+        box.landmarks[k][0] = detection.landmarks_xy10[2 * k];
+        box.landmarks[k][1] = detection.landmarks_xy10[2 * k + 1];
+    }
+    return box;
+}
+
+std::vector<FaceDetectBox> read_typed_detections(aicore_facedetect_ctx* ctx) {
+    std::vector<FaceDetectBox> faces;
+    const size_t count = aicore_facedetect_detection_count(ctx);
+    faces.reserve(count);
+    for (size_t i = 0; i < count; ++i) {
+        aicore_facedetect_detection d{};
+        if (aicore_facedetect_detection_at(ctx, i, &d) != 0) continue;
+        faces.push_back(faceBox(d));
+    }
+    return faces;
+}
+
+std::vector<FaceDetectBox> read_typed_analysis(aicore_facedetect_ctx* ctx) {
+    std::vector<FaceDetectBox> faces;
+    const size_t count = aicore_facedetect_analysis_count(ctx);
+    faces.reserve(count);
+    for (size_t i = 0; i < count; ++i) {
+        aicore_facedetect_analysis analysis{};
+        if (aicore_facedetect_analysis_at(ctx, i, &analysis) != 0) continue;
+        FaceDetectBox box = faceBox(analysis.detection);
+        box.age = analysis.age;
+        box.gender =
+                analysis.gender == 1 ? 'F' : (analysis.gender == 2 ? 'M' : '?');
+        faces.push_back(std::move(box));
+    }
+    return faces;
+}
+
+std::vector<FaceDetectBox> read_typed_dense_landmarks(
+        aicore_facedetect_ctx* ctx) {
+    std::vector<FaceDetectBox> faces;
+    const size_t faceCount = aicore_facedetect_dense_face_count(ctx);
+    faces.reserve(faceCount);
+    for (size_t faceIndex = 0; faceIndex < faceCount; ++faceIndex) {
+        aicore_facedetect_detection detection{};
+        if (aicore_facedetect_dense_detection_at(ctx, faceIndex, &detection) !=
+            0) {
+            continue;
+        }
+        FaceDetectBox box = faceBox(detection);
+        const size_t points2d =
+                aicore_facedetect_dense_point_count(ctx, faceIndex, 0);
+        box.denseLandmarks2d.reserve(points2d);
+        for (size_t pointIndex = 0; pointIndex < points2d; ++pointIndex) {
+            aicore_facedetect_landmark_point point{};
+            if (aicore_facedetect_dense_point_at(ctx, faceIndex, 0, pointIndex,
+                                                 &point) == 0) {
+                box.denseLandmarks2d.emplace_back(point.x, point.y);
+            }
+        }
+        const size_t points3d =
+                aicore_facedetect_dense_point_count(ctx, faceIndex, 1);
+        box.denseLandmarks3d.reserve(points3d);
+        for (size_t pointIndex = 0; pointIndex < points3d; ++pointIndex) {
+            aicore_facedetect_landmark_point point{};
+            if (aicore_facedetect_dense_point_at(ctx, faceIndex, 1, pointIndex,
+                                                 &point) == 0) {
+                box.denseLandmarks3d.emplace_back(point.x, point.y, point.z);
+            }
+        }
+        faces.push_back(std::move(box));
+    }
+    return faces;
+}
+
+aicore_image_format imageFormat(const QImage& image) {
+    switch (image.format()) {
+        case QImage::Format_RGB888:
+            return AICORE_IMAGE_RGB8;
+        case QImage::Format_RGBA8888:
+            return AICORE_IMAGE_RGBA8;
+        case QImage::Format_Grayscale8:
+            return AICORE_IMAGE_GRAY8;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+        case QImage::Format_BGR888:
+            return AICORE_IMAGE_BGR8;
+#endif
+#if Q_BYTE_ORDER == Q_LITTLE_ENDIAN
+        case QImage::Format_RGB32:
+        case QImage::Format_ARGB32:
+            return AICORE_IMAGE_BGRA8;
+#endif
+        default:
+            return static_cast<aicore_image_format>(0);
+    }
+}
+
 QImage load_rgb_image(const QString& path) {
     QImageReader reader(path);
     reader.setAutoTransform(true);
     QImage img = reader.read();
     if (img.isNull()) return {};
-    return img.convertToFormat(QImage::Format_RGB888);
+    return imageFormat(img) != 0 ? img
+                                 : img.convertToFormat(QImage::Format_RGB888);
 }
 
-bool verifyPathsWithFallback(aicore_facedetect_ctx* ctx,
-                             const QString& pathA,
-                             const QString& pathB,
-                             float threshold,
-                             int antiSpoof,
-                             float minDetectionScore,
-                             float* outDistance,
-                             int* outVerified) {
-    if (aicore_facedetect_verify_paths(
-                ctx, pathA.toUtf8().constData(), pathB.toUtf8().constData(),
-                threshold, antiSpoof, outDistance, outVerified) == 0) {
-        return true;
-    }
-    std::vector<float> embA;
-    std::vector<float> embB;
-    if (!FaceDetectEmbed::embedImagePathWithFallback(ctx, pathA, &embA,
-                                                     minDetectionScore) ||
-        !FaceDetectEmbed::embedImagePathWithFallback(ctx, pathB, &embB,
-                                                     minDetectionScore)) {
-        return false;
-    }
-    double dot = 0.0;
-    const size_t n = std::min(embA.size(), embB.size());
-    for (size_t i = 0; i < n; ++i) {
-        dot += static_cast<double>(embA[i]) * embB[i];
-    }
-    const float dist = static_cast<float>(1.0 - dot);
-    *outDistance = dist;
-    *outVerified = dist <= threshold ? 1 : 0;
-    return true;
-}
-
-std::vector<FaceDetectBox> parse_analyze_json(const QByteArray& json) {
-    return FaceDetectEmbed::parseAnalyzeJson(json);
-}
-
-std::vector<FaceDetectBox> parse_dense_json(const QByteArray& json) {
-    return FaceDetectEmbed::parseDenseJson(json);
+aicore_image_view imageView(const QImage& image) {
+    return {reinterpret_cast<const uint8_t*>(image.constBits()), image.width(),
+            image.height(), static_cast<size_t>(image.bytesPerLine()),
+            imageFormat(image)};
 }
 
 QImage draw_dense_annotations(const QImage& source,
                               const std::vector<FaceDetectBox>& faces,
                               float minDetectionScore) {
-    QImage rgb = source.convertToFormat(QImage::Format_RGB32);
+    // Draw directly on source — QPainter paints on RGB888 natively in Qt 5+
+    // (same as annotateDetect/annotateRecognize); the extra RGB32 conversion
+    // here used to copy the whole frame for nothing.
+    QImage rgb = source;
     QPainter painter(&rgb);
     painter.setRenderHint(QPainter::Antialiasing, true);
 
@@ -278,7 +349,7 @@ bool FaceDetectWorker::runInference() {
     if (char* info = aicore_facedetect_info_json(ctx)) {
         const QJsonObject obj =
                 QJsonDocument::fromJson(QByteArray(info)).object();
-        aicore_facedetect_free_string(info);
+        aicore_facedetect_free_buffer(info);
         result.resolvedDevice = obj.value(QStringLiteral("device")).toString();
         aicore_inference_log::log_device_resolved(QStringLiteral("FaceDetect"),
                                                   result.resolvedDevice);
@@ -293,12 +364,22 @@ bool FaceDetectWorker::runInference() {
             m_pendingLandmarkCtx = landmark_ctx;
             return false;
         }
-        float dist = 0.0f;
-        int verified = 0;
-        if (!verifyPathsWithFallback(
-                    ctx, m_settings.inputPath, m_settings.secondInputPath,
-                    m_settings.verifyThreshold, m_settings.antiSpoof ? 1 : 0,
-                    m_settings.minDetectionScore, &dist, &verified)) {
+        const QImage secondRgb = load_rgb_image(m_settings.secondInputPath);
+        if (secondRgb.isNull()) {
+            emit logMessage("[Error] Failed to load second input image.");
+            m_pendingCtx = ctx;
+            m_pendingLandmarkCtx = landmark_ctx;
+            return false;
+        }
+        const aicore_image_view firstView = imageView(rgb);
+        const aicore_image_view secondView = imageView(secondRgb);
+        const aicore_facedetect_verify_options verifyOptions{
+                m_settings.verifyThreshold, m_settings.minDetectionScore,
+                m_settings.antiSpoof ? 1 : 0};
+        aicore_facedetect_verify_result verifyResult{};
+        if (aicore_facedetect_verify_images(ctx, &firstView, &secondView,
+                                            &verifyOptions,
+                                            &verifyResult) != 0) {
             emit logMessage(
                     QString("[Error] Verify failed: %1")
                             .arg(aicore_facedetect_last_error(ctx)
@@ -308,26 +389,28 @@ bool FaceDetectWorker::runInference() {
             m_pendingLandmarkCtx = landmark_ctx;
             return false;
         }
-        result.verifyDistance = dist;
-        result.verifyMatched = verified;
+        const float dist = verifyResult.distance;
+        const int verified = verifyResult.verified;
+        result.verifyDistance = verifyResult.distance;
+        result.verifyMatched = verifyResult.verified;
         result.mode = QStringLiteral("verify");
 
-        // Determine whether anti-spoof vetoed a passing distance.
-        const bool distancePassed = dist <= m_settings.verifyThreshold;
-        const bool antiSpoofVeto =
-                m_settings.antiSpoof && distancePassed && verified == 0;
+        const bool antiSpoofVeto = verifyResult.anti_spoof_passed == 0;
 
         {
             QJsonObject root;
             root.insert(QStringLiteral("mode"), result.mode);
             root.insert(QStringLiteral("distance"), dist);
             root.insert(QStringLiteral("verified"), verified != 0);
-            root.insert(QStringLiteral("threshold"),
-                        m_settings.verifyThreshold);
+            root.insert(QStringLiteral("threshold"), verifyResult.threshold);
             root.insert(QStringLiteral("anti_spoof"), m_settings.antiSpoof);
             if (m_settings.antiSpoof) {
-                root.insert(QStringLiteral("anti_spoof_passed"),
-                            !antiSpoofVeto);
+                root.insert(
+                        QStringLiteral("anti_spoof_passed"),
+                        verifyResult.anti_spoof_passed < 0
+                                ? QJsonValue()
+                                : QJsonValue(verifyResult.anti_spoof_passed !=
+                                             0));
             }
             root.insert(QStringLiteral("image_a"), m_settings.inputPath);
             root.insert(QStringLiteral("image_b"), m_settings.secondInputPath);
@@ -340,37 +423,35 @@ bool FaceDetectWorker::runInference() {
             verifyMsg = QString("[FaceDetect] Cosine distance %1 — MATCH "
                                 "(threshold %2)")
                                 .arg(dist, 0, 'f', 4)
-                                .arg(m_settings.verifyThreshold, 0, 'f', 2);
+                                .arg(verifyResult.threshold, 0, 'f', 2);
         } else if (antiSpoofVeto) {
             verifyMsg = QString("[FaceDetect] Cosine distance %1 — distance "
                                 "PASSED (threshold %2) but REJECTED by "
                                 "anti-spoof (liveness check failed)")
                                 .arg(dist, 0, 'f', 4)
-                                .arg(m_settings.verifyThreshold, 0, 'f', 2);
+                                .arg(verifyResult.threshold, 0, 'f', 2);
         } else {
             verifyMsg = QString("[FaceDetect] Cosine distance %1 — NO MATCH "
                                 "(threshold %2)")
                                 .arg(dist, 0, 'f', 4)
-                                .arg(m_settings.verifyThreshold, 0, 'f', 2);
+                                .arg(verifyResult.threshold, 0, 'f', 2);
         }
         emit logMessage(verifyMsg);
     } else {
-        char* json = nullptr;
+        const aicore_image_view view = imageView(rgb);
+        int inferenceStatus = -1;
         if (m_settings.mode == Mode::DenseLandmarks) {
-            json = aicore_facedetect_dense_landmarks_rgb_json(
-                    ctx, landmark_ctx, rgb.constBits(), rgb.width(),
-                    rgb.height(), m_settings.minDetectionScore);
+            inferenceStatus = aicore_facedetect_dense_landmarks_image(
+                    ctx, landmark_ctx, &view, m_settings.minDetectionScore);
             result.mode = QStringLiteral("dense_landmarks");
         } else if (m_settings.mode == Mode::Analyze) {
-            json = aicore_facedetect_analyze_rgb_json(
-                    ctx, rgb.constBits(), rgb.width(), rgb.height(), 0.f);
+            inferenceStatus = aicore_facedetect_analyze_image(ctx, &view, 0.0f);
             result.mode = QStringLiteral("analyze");
         } else {
-            json = aicore_facedetect_detect_rgb_json(ctx, rgb.constBits(),
-                                                     rgb.width(), rgb.height());
+            inferenceStatus = aicore_facedetect_detect_image(ctx, &view);
             result.mode = QStringLiteral("detect");
         }
-        if (json == nullptr) {
+        if (inferenceStatus != 0) {
             emit logMessage(
                     QString("[Error] Inference failed: %1")
                             .arg(aicore_facedetect_last_error(ctx)
@@ -380,12 +461,9 @@ bool FaceDetectWorker::runInference() {
             m_pendingLandmarkCtx = landmark_ctx;
             return false;
         }
-        const QByteArray payload(json);
-        aicore_facedetect_free_string(json);
-        result.resultJson = payload;
 
         if (m_settings.mode == Mode::DenseLandmarks) {
-            const auto allFaces = parse_dense_json(payload);
+            const auto allFaces = read_typed_dense_landmarks(ctx);
             result.totalDetected = static_cast<int>(allFaces.size());
             result.faces = allFaces;
             result.rejectedByScore = 0;
@@ -393,7 +471,7 @@ bool FaceDetectWorker::runInference() {
             result.annotatedImage = draw_dense_annotations(
                     rgb, allFaces, m_settings.minDetectionScore);
         } else if (m_settings.mode == Mode::Analyze) {
-            const auto allFaces = parse_analyze_json(payload);
+            const auto allFaces = read_typed_analysis(ctx);
             result.totalDetected = static_cast<int>(allFaces.size());
             result.minDetectionScoreUsed = m_settings.minDetectionScore;
             result.faces = allFaces;
@@ -404,7 +482,7 @@ bool FaceDetectWorker::runInference() {
             result.annotatedImage = FaceDetectEmbed::annotateAnalyze(
                     rgb, allFaces, m_settings.minDetectionScore);
         } else {
-            const auto allFaces = FaceDetectEmbed::parseDetectJson(payload);
+            const auto allFaces = read_typed_detections(ctx);
             result.totalDetected = static_cast<int>(allFaces.size());
             result.minDetectionScoreUsed = m_settings.minDetectionScore;
             result.faces = allFaces;

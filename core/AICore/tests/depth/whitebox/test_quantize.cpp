@@ -10,8 +10,9 @@
 #include <string>
 
 #include "ggml.h"
-#include "model_loader.hpp"
-#include "quantize.hpp"
+#include "tasks/depth/model_loader.hpp"
+#include "tasks/depth/quantize.hpp"
+
 int main() {
     const char* gguf = std::getenv("AICORE_TEST_DEPTH_GGUF");
     if (!gguf) return 77;

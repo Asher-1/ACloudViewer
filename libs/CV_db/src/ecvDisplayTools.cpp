@@ -912,18 +912,12 @@ void ecvDisplayTools::StartOpenGLPicking(ecvViewContext& ctx,
     CCVector3 P(0, 0, 0);
     CCVector3* pickedPoint = nullptr;
 
-    if (ctx.lastPointIndex >= 0) {
-        pickedEntity = GetPickedEntity(ctx, params);
-        if (pickedEntity) {
-            selectedID = pickedEntity->getUniqueID();
-            selectedIDs.insert(selectedID);
-            pickedItemIndex = ctx.lastPointIndex;
-        }
-    }
-
-    if (!pickedEntity &&
-        (params.mode == ENTITY_PICKING || params.mode == ENTITY_RECT_PICKING ||
-         params.mode == FAST_PICKING)) {
+    // NOTE: ctx.lastPointIndex/lastPickedId are deliberately NOT consulted
+    // here. They are written by the point/triangle picking paths only; this
+    // function serves FAST/ENTITY/RECT picking, so a leftover value from an
+    // earlier interaction resolved every click to a stale entity (the DB root
+    // "world") instead of what is under the cursor.
+    {
         ecvGenericGLDisplay* pickView = primaryDT()->m_pickingTargetView;
         if (!pickView) pickView = ecvViewManager::instance().getActiveView();
         if (pickView) {
@@ -943,6 +937,11 @@ void ecvDisplayTools::StartOpenGLPicking(ecvViewContext& ctx,
                 if (pickedEntity) {
                     selectedID = pickedEntity->getUniqueID();
                     selectedIDs.insert(selectedID);
+                } else if (CVLog::diagnosticsEnabled()) {
+                    CVLog::Print(
+                            "[pick-resolve] viewID '%s' matched no entity in "
+                            "scene/local DB",
+                            viewID.toLatin1().constData());
                 }
             }
         }
@@ -984,6 +983,20 @@ void ecvDisplayTools::StartOpenGLPicking(ecvViewContext& ctx,
 
     ProcessPickingResult(params, pickedEntity, pickedItemIndex, pickedPoint,
                          &selectedIDs);
+    // Diagnostic probe (ACV_DIAGNOSTICS=1): off by default — per-pick
+    // I/O during the interaction it measures.
+    if (CVLog::diagnosticsEnabled()) {
+        CVLog::Print(
+                "[pick-resolve] mode=%d at (%d, %d) -> entity %s (uid %u, "
+                "class "
+                "%d)",
+                static_cast<int>(params.mode), params.centerX, params.centerY,
+                pickedEntity ? pickedEntity->getName().toLatin1().constData()
+                             : "<none>",
+                pickedEntity ? pickedEntity->getUniqueID() : 0u,
+                pickedEntity ? static_cast<int>(pickedEntity->getClassID())
+                             : -1);
+    }
 }
 
 void ecvDisplayTools::StartOpenGLPicking(const PickingParameters& params) {
@@ -2275,18 +2288,26 @@ void ecvDisplayTools::SetRedrawRecursive(ccHObject* obj,
 void ecvDisplayTools::RedrawObject(ccHObject* obj,
                                    bool only2D /* = false*/,
                                    bool forceRedraw /* = true*/) {
+    const auto tRedrawObj = std::chrono::steady_clock::now();
     auto* dt = ecvViewManager::instance().displayTools();
     if (!obj || !dt) return;
     SetRedrawRecursive(false);
     obj->setRedrawFlagRecursive(true);
 
-    // If entity lives in a secondary view, redraw that view directly
-    // so property changes (e.g. SF scale visibility) take effect there.
-    ecvGenericGLDisplay* disp = obj->getDisplay();
-    if (disp && disp != dt) {
-        disp->redraw(only2D, forceRedraw);
+    // Multi-window: ccHObject::redrawDisplay iterates EVERY view the entity
+    // is displayed in (m_displays) with an effective-view fallback —
+    // obj->getDisplay() only returns the first one, which left secondary
+    // windows rendering stale state after property changes.
+    obj->redrawDisplay(only2D, forceRedraw);
+
+    const double objMs = std::chrono::duration<double, std::milli>(
+                                 std::chrono::steady_clock::now() - tRedrawObj)
+                                 .count();
+    if (objMs > 200.0 && CVLog::diagnosticsEnabled()) {
+        CVLog::Print("[redraw] RedrawObject '%s' (force=%d) took %.1f ms",
+                     obj ? obj->getName().toLatin1().constData() : "?",
+                     forceRedraw ? 1 : 0, objMs);
     }
-    RedrawDisplay(only2D, forceRedraw);
 }
 
 void ecvDisplayTools::RedrawObjects(std::initializer_list<ccHObject*> objects,

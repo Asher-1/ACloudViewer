@@ -31,7 +31,7 @@
 
 #include "sfm/incremental_triangulator.h"
 
-#include "base/projection.h"
+#include "scene/projection.h"
 #include "estimators/triangulation.h"
 #include "util/misc.h"
 
@@ -201,8 +201,12 @@ size_t IncrementalTriangulator::CompleteImage(const Options& options,
         for (size_t i = 0; i < corrs_data.size(); ++i) {
             const CorrData& corr_data = corrs_data[i];
             point_data[i].point = corr_data.point2D->XY();
+            // See the note in Continue/Resection: pixels of an image
+            // unproject in their own camera; Zero only for out-of-domain
+            // pixels of finite-domain models.
             point_data[i].point_normalized =
-                    corr_data.camera->ImageToWorld(point_data[i].point);
+                    corr_data.camera->CamFromImg(point_data[i].point)
+                            .value_or(Eigen::Vector2d::Zero());
             pose_data[i].proj_matrix = corr_data.image->ProjectionMatrix();
             pose_data[i].proj_center = corr_data.image->ProjectionCenter();
             pose_data[i].camera = corr_data.camera;
@@ -361,9 +365,9 @@ size_t IncrementalTriangulator::Retriangulate(const Options& options) {
 
         // Find correspondences and perform retriangulation.
 
-        const FeatureMatches& corrs =
-                correspondence_graph_->FindCorrespondencesBetweenImages(
-                        image_id1, image_id2);
+        FeatureMatches corrs;
+        correspondence_graph_->ExtractMatchesBetweenImages(image_id1, image_id2,
+                                                           corrs);
 
         for (const auto& corr : corrs) {
             const Point2D& point2D1 = image1.Point2D(corr.point2D_idx1);
@@ -447,9 +451,9 @@ size_t IncrementalTriangulator::Find(const Options& options,
                                      const point2D_t point2D_idx,
                                      const size_t transitivity,
                                      std::vector<CorrData>* corrs_data) {
-    const std::vector<CorrespondenceGraph::Correspondence>& corrs =
-            correspondence_graph_->FindTransitiveCorrespondences(
-                    image_id, point2D_idx, transitivity);
+    std::vector<CorrespondenceGraph::Correspondence> corrs;
+    correspondence_graph_->ExtractTransitiveCorrespondences(
+            image_id, point2D_idx, transitivity, &corrs);
 
     corrs_data->clear();
     corrs_data->reserve(corrs.size());
@@ -523,7 +527,8 @@ size_t IncrementalTriangulator::Create(
         const CorrData& corr_data = create_corrs_data[i];
         point_data[i].point = corr_data.point2D->XY();
         point_data[i].point_normalized =
-                corr_data.camera->ImageToWorld(point_data[i].point);
+                    corr_data.camera->CamFromImg(point_data[i].point)
+                            .value_or(Eigen::Vector2d::Zero());
         pose_data[i].proj_matrix = corr_data.image->ProjectionMatrix();
         pose_data[i].proj_center = corr_data.image->ProjectionCenter();
         pose_data[i].camera = corr_data.camera;
@@ -635,17 +640,18 @@ size_t IncrementalTriangulator::Merge(const Options& options,
     const auto& point3D = reconstruction_->Point3D(point3D_id);
 
     for (const auto& track_el : point3D.Track().Elements()) {
-        const std::vector<CorrespondenceGraph::Correspondence>& corrs =
+        const CorrespondenceGraph::CorrespondenceRange corrs =
                 correspondence_graph_->FindCorrespondences(
                         track_el.image_id, track_el.point2D_idx);
 
-        for (const auto corr : corrs) {
-            const auto& image = reconstruction_->Image(corr.image_id);
+        for (const CorrespondenceGraph::Correspondence* corr = corrs.beg;
+             corr < corrs.end; ++corr) {
+            const auto& image = reconstruction_->Image(corr->image_id);
             if (!image.IsRegistered()) {
                 continue;
             }
 
-            const Point2D& corr_point2D = image.Point2D(corr.point2D_idx);
+            const Point2D& corr_point2D = image.Point2D(corr->point2D_idx);
             if (!corr_point2D.HasPoint3D() ||
                 corr_point2D.Point3DId() == point3D_id ||
                 merge_trials_[point3D_id].count(corr_point2D.Point3DId()) > 0) {
@@ -745,17 +751,18 @@ size_t IncrementalTriangulator::Complete(const Options& options,
         queue.clear();
 
         for (const TrackElement queue_elem : prev_queue) {
-            const std::vector<CorrespondenceGraph::Correspondence>& corrs =
+            const CorrespondenceGraph::CorrespondenceRange corrs =
                     correspondence_graph_->FindCorrespondences(
                             queue_elem.image_id, queue_elem.point2D_idx);
 
-            for (const auto corr : corrs) {
-                const Image& image = reconstruction_->Image(corr.image_id);
+            for (const CorrespondenceGraph::Correspondence* corr = corrs.beg;
+                 corr < corrs.end; ++corr) {
+                const Image& image = reconstruction_->Image(corr->image_id);
                 if (!image.IsRegistered()) {
                     continue;
                 }
 
-                const Point2D& point2D = image.Point2D(corr.point2D_idx);
+                const Point2D& point2D = image.Point2D(corr->point2D_idx);
                 if (point2D.HasPoint3D()) {
                     continue;
                 }
@@ -773,13 +780,13 @@ size_t IncrementalTriangulator::Complete(const Options& options,
                 }
 
                 // Success, add observation to point track.
-                const TrackElement track_el(corr.image_id, corr.point2D_idx);
+                const TrackElement track_el(corr->image_id, corr->point2D_idx);
                 reconstruction_->AddObservation(point3D_id, track_el);
                 modified_point3D_ids_.insert(point3D_id);
 
                 // Recursively complete track for this new correspondence.
                 if (transitivity < max_transitivity - 1) {
-                    queue.emplace_back(corr.image_id, corr.point2D_idx);
+                    queue.emplace_back(corr->image_id, corr->point2D_idx);
                 }
 
                 num_completed += 1;

@@ -126,17 +126,8 @@ jobs:
           sudo apt-get update
           sudo SUDO=sudo ./util/install_deps_ubuntu.sh assume-yes
 
-      - name: Install CMake 3.29.2 (same as Docker CI)
-        run: |
-          CMAKE_VERSION=cmake-3.29.2-linux-x86_64
-          CMAKE_VER=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2)
-          wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER}/${CMAKE_VERSION}.tar.gz -P /tmp
-          sudo tar -C /opt -xf /tmp/${CMAKE_VERSION}.tar.gz
-          sudo ln -sf /opt/${CMAKE_VERSION}/bin/cmake  /usr/local/bin/cmake
-          sudo ln -sf /opt/${CMAKE_VERSION}/bin/ctest  /usr/local/bin/ctest
-          sudo ln -sf /opt/${CMAKE_VERSION}/bin/cpack  /usr/local/bin/cpack
-          cmake --version
-          rm -f /tmp/${CMAKE_VERSION}.tar.gz
+      - name: Set up fixed CMake
+        uses: ./.github/actions/setup-cmake
 
       - name: Install build dependencies
         run: |
@@ -250,6 +241,11 @@ jobs:
             -DPLUGIN_STANDARD_QFACEDETECT=OFF \
             -DPLUGIN_STANDARD_QFREESPLATTER=OFF \
             -DPLUGIN_STANDARD_QLIGHTGLUE=OFF \
+            -DPLUGIN_STANDARD_QRFDETR=OFF \
+            -DPLUGIN_STANDARD_QRMBG=OFF \
+            -DPLUGIN_STANDARD_QYOLO=OFF \
+            -DPLUGIN_STANDARD_QSAM3=OFF \
+            -DPLUGIN_STANDARD_QTRELLIS=OFF \
             ..
 
       # Initialize CodeQL AFTER configure, so only the build (actual compilation) is traced.
