@@ -82,7 +82,7 @@ an accuracy failure, or unstable repeated output also makes a complete run fail.
 # fingerprints across processes); probes use one warmup and five timed
 # forwards where their API supports repeated inference. For release-grade
 # A/B statistics pass --inference-runs 10 explicitly. The default tier is
-# LIGHT: tasks that declare a lightweight subset (sam3, trellis) run only
+# LIGHT: tasks that declare a lightweight subset (sam3, trellis, gkd) run only
 # that subset and their heavy scenarios are skipped. Pass --full for the
 # complete matrix.
 python3 core/AICore/scripts/validate_all.py \

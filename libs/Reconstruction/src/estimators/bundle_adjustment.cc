@@ -219,6 +219,15 @@ bool BundleAdjustmentConfig::HasConstantSensorFromRigPose(
            constant_sensor_from_rig_poses_.end();
 }
 
+// Upstream parity (d3ccaf35 estimators/bundle_adjustment.cc).
+void BundleAdjustmentConfig::FixGauge(BundleAdjustmentGauge gauge) {
+    fixed_gauge_ = gauge;
+}
+
+BundleAdjustmentGauge BundleAdjustmentConfig::FixedGauge() const {
+    return fixed_gauge_;
+}
+
 void BundleAdjustmentConfig::SetConstantTvec(const image_t image_id,
                                              const std::vector<int>& idxs) {
     CHECK_GT(idxs.size(), 0);

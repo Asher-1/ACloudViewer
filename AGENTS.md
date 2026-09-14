@@ -473,6 +473,7 @@ Large downloads: [cloudViewer_downloads](https://github.com/Asher-1/cloudViewer_
 | Plugin | CMake | Notes |
 |--------|-------|-------|
 | qDA3 | `PLUGIN_STANDARD_QDA3` | Depth/pose/COLMAP; needs `AICore_ENABLED` |
+| qLingbotMap | `PLUGIN_STANDARD_QLINGBOTMAP` | LingBot-Map (GCT) streaming RGB-D reconstruction; needs `AICore_ENABLED` (task `lingbot`) |
 | qFreeSplatter | `PLUGIN_STANDARD_QFREESPLATTER` | 3D Gaussian splats; optional qSIBR viewer |
 | qManualCalib | `PLUGIN_STANDARD_QMANUAL_CALIB` | Sensor/AVM calibration; sample data in-tree |
 | qSIBR | `PLUGIN_STANDARD_QSIBR` | Gaussian / ULR viewers (CUDA, Linux/Win) |

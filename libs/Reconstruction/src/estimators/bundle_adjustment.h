@@ -43,6 +43,16 @@ MAKE_ENUM_CLASS_OVERLOAD_STREAM(BundleAdjustmentTerminationType,
                                 USER_SUCCESS,
                                 USER_FAILURE);
 
+// The gauge fixing strategy for bundle adjustment (upstream parity,
+// d3ccaf35 estimators/bundle_adjustment.h). Without gauge fixing, the
+// reconstruction problem has a global 7-DoF null space that makes the
+// normal equations singular for noise-free problems.
+MAKE_ENUM_CLASS_OVERLOAD_STREAM(BundleAdjustmentGauge,
+                                -1,
+                                UNSPECIFIED,
+                                TWO_CAMS_FROM_WORLD,
+                                THREE_POINTS);
+
 // Summary of bundle adjustment results, independent of solver backend
 // (upstream parity). The fork keeps its bool Solve + ceres Summary()
 // interface; the backend-specific summary subclass carries the full solver
@@ -110,6 +120,14 @@ public:
     void SetVariableSensorFromRigPose(const sensor_t sensor_id);
     bool HasConstantSensorFromRigPose(const sensor_t sensor_id) const;
 
+    // Upstream parity (d3ccaf35): fix the global gauge of the problem.
+    // UNSPECIFIED leaves the gauge unhandled (matching the fork's previous
+    // behavior); TWO_CAMS_FROM_WORLD fixes one full frame pose and one
+    // translation dimension of a second frame; THREE_POINTS fixes three
+    // non-collinear 3D points.
+    void FixGauge(BundleAdjustmentGauge gauge);
+    BundleAdjustmentGauge FixedGauge() const;
+
     // Set the translational part of the pose, hence the constant pose
     // indices may be in [0, 1, 2] and must be unique. Note that the
     // corresponding images have to be added prior to calling these methods.
@@ -143,6 +161,7 @@ private:
     std::unordered_map<image_t, std::vector<int>> constant_tvecs_;
     std::unordered_set<frame_t> constant_rig_from_world_poses_;
     std::unordered_set<sensor_t> constant_sensor_from_rig_poses_;
+    BundleAdjustmentGauge fixed_gauge_ = BundleAdjustmentGauge::UNSPECIFIED;
 };
 
 struct BundleAdjustmentOptions {

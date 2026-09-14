@@ -39,6 +39,14 @@ public:
         image_t image_id2 = kInvalidImageId;
         // Starting row in matrix A (1 row for 1-DOF, 3 rows for 3-DOF).
         int row_index = -1;
+        // Sensor-level relative rotation (cam2_from_cam1). The 3-DOF
+        // residual composes this with the estimated cam-from-world poses
+        // (which already contain the known/estimated cam_from_rig), so it
+        // must NOT be pre-reduced to the rig level: doing so cancels the
+        // cam_from_rig factors twice and biases every solution by a global
+        // rotation (GP non-trivial-rig failure). The gravity-aligned 1-DOF
+        // path keeps using the rig-level reduction below.
+        Eigen::Matrix3d R_cam2_from_cam1_sensor;
         // Column indices for unknown cam_from_rig rotations (-1 if known).
         int cam1_from_rig_param_idx = -1;
         int cam2_from_rig_param_idx = -1;

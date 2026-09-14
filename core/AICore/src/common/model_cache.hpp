@@ -52,5 +52,12 @@ inline std::string sam3_model_cache_dir() {
 inline std::string loma_model_cache_dir() {
     return extract_model_dir("loma_models");
 }
+inline std::string lingbot_model_cache_dir() {
+    return extract_model_dir("lingbot_models");
+}
+
+inline std::string gkd_model_cache_dir() {
+    return extract_model_dir("gkd_models");
+}
 
 }  // namespace aicore

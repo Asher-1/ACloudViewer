@@ -43,6 +43,7 @@ Work packages from [COLMAP_ALIGNMENT_PLAN.md](COLMAP_ALIGNMENT_PLAN.md):
 | W18.5 stage 3 (Summary surface) | done (2026-09-13(5): BundleAdjustmentTerminationType + BundleAdjustmentSummary + CeresBundleAdjustmentSummary (Create/mapping/summary() accessor) ported additively; BackendOptions pimpl restructure deferred to the caspar batch) |
 | W3-3 incremental_mapper_impl | done (2026-09-13(4): IncrementalMapperImpl stateless algorithm class with FindFirstInitialImage/FindSecondInitialImage/FindNextImages/FindLocalBundle + rank helpers moved from the mapper, mapper.cc 1266 -> 896 lines with thin delegating members; upstream InitInfo orchestration stays in the mapper, camera-ray point-data refactor not pulled) |
 | W3-2b frame-aware mapper (stage 1) | done (2026-09-13(6): mapper pose writes frame-aware via Frame::SetCamFromWorld with legacy fallback (dual-path pattern), RegisterNextImage estimates into locals + single commit + shadow sync, BA config frame-level constants (rig_from_world/sensor_from_rig) ported and honored in the problem assembly; RegisterNextImageFallback clarified as an upstream stale comment - no function to port; stage 2 = DatabaseCache pointer wiring + general/structure-less variants) |
+| W3-2b stage 2 (single pose-write entry) | done (2026-09-14: probe-verified frame-wired mapper runtime + latent pose-loss bug in the pre-stage-1 shadow-only writes; Image::SetCamFromWorld added as the single rig-aware write entry that mirrors into the legacy buffers; mapper registration uses it; IncrementalMapperFrameWiring regression test pins wiring/visibility/mirroring/fallback; full test-gate run blocked by the user's two in-progress untracked AICore tasks (gkd, lingbot) - Reconstruction itself compiles with zero errors) |
 | Upstream baseline drift | observed (2026-09-13: upstream pulled to `d3ccaf35`, Δ=33 commits vs scanned baseline `dbb41680`, incl. #4687 camera-models per-header split = the W18.4 template, GP4PS #4664, LO-RANSAC generalized pose #4690; full G1-G21 re-scan is a separate task; recorded in manifest `upstream_head_observed`) |
 
 Testing: the whole Reconstruction test suite runs on **googletest**
@@ -634,3 +635,21 @@ Gates: full build EXIT=0; database_test 31, database_cache_test 7, rig_test
 observation_manager_test green; full Reconstruction ctest shows only the
 recorded baselines (44 AICore asset-missing cases + polynomial + the GP
 rig-branch pair + LAD).
+
+## Alignment terminal state (2026-09-14)
+
+Disposition of every remaining manifest item - "thoroughly complete" means
+each item is either implemented or carries a precise, externally-justified
+terminal status:
+
+| Item | Disposition |
+|---|---|
+| W18.5 stage 3 (Summary surface) | done - TerminationType/Summary/CeresBundleAdjustmentSummary + summary() accessor, additive |
+| W18.5 BackendOptions pimpl | scheduled to the caspar batch - moves ceres/caspar option fields behind shared_ptr, re-keys ~30 `.solver_options` sites (some belong to the GLOMAP stack's own options), requires hand-written deep-copy semantics and touches option_manager CLI pointer bindings; not an open alignment gap but an interface migration with a defined trigger (caspar backend batch) |
+| W3-2b stage 1+2 | done - frame-aware pose writes via Image::SetCamFromWorld single entry (rig-aware frame write + legacy shadow mirror), frame-level config constants honored in the problem assembly, latent pre-stage-1 pose-loss bug fixed, IncrementalMapperFrameWiring regression test |
+| W3-2b stage 3 remainder | precise scope recorded - frame-centric bookkeeping (existing_frame_ids_/RegFrameIds/num_reg_frames_per_rig) and the upstream RegisterNextGeneralFrame/RegisterNextStructureLessImage variants (both depend on frame-level obs-manager registration); the two fix-existing call sites already moved to frame-level constants with image-level fallback |
+| global_mapper_glomap | done (2026-09-14(4): GP rig failure chain fully closed across two batches - (1) Wxyz quaternion manifold order fix at 4 sites, (2) upstream FixGauge mechanism (TWO_CAMS_FROM_WORLD in global_mapper BA), (3) rotation-averaging sensor-level edge residual, (4) rig pose composition order (sensor_from_rig * rig_from_world) in the FrameRig BA cost functor and TearDown mirror, (5) small-triangle filter ported to the upstream any-pair keep_point semantics; global_mapper_test 5/5 green, regression green across 12 suites; glomap_gate target remains a separate product task |
+| W12 rig configurator | done (stale blocked status corrected) |
+| sensor_models* | done (superseded entry closed) |
+| freeimage_to_openimageio | out of alignment scope by the recorded policy (dependency migration, platform-gated) |
+| hip_patchmatch | deferred by the recorded policy (no ROCm hardware in the release matrix) |

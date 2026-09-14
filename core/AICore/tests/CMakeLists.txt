@@ -63,8 +63,29 @@ function(_aicore_test_common name)
     set_target_properties(${name} PROPERTIES POSITION_INDEPENDENT_CODE ON)
     add_test(NAME ${name} COMMAND ${name})
     cloudviewer_set_aicore_test_runtime_layout(${name})
-    set_tests_properties(${name} PROPERTIES SKIP_RETURN_CODE 77)
+    if(AICORE_TEST_ENV_EXTRA)
+        set_tests_properties(${name} PROPERTIES SKIP_RETURN_CODE 77
+            ENVIRONMENT "${AICORE_TEST_ENV_EXTRA}")
+    else()
+        set_tests_properties(${name} PROPERTIES SKIP_RETURN_CODE 77)
+    endif()
 endfunction()
+
+# Propagate the configure-time Qt runtime into every test environment so the
+# dynamic loader cannot mix a compatible-but-older system Qt with the
+# selected one (versioned operator-delete interposition fails on a mixed
+# stack). Same rationale as the AICORE_QT_LIBRARY_DIR plumbing on the
+# aicore-validate-all target. Empty on Windows (no LD_LIBRARY_PATH).
+set(AICORE_TEST_ENV_EXTRA "")
+if(NOT MSVC)
+    foreach(_aicore_qt_core_target Qt6::Core Qt5::Core)
+        if(TARGET ${_aicore_qt_core_target})
+            set(AICORE_TEST_ENV_EXTRA
+                "LD_LIBRARY_PATH=$<TARGET_FILE_DIR:${_aicore_qt_core_target}>")
+            break()
+        endif()
+    endforeach()
+endif()
 
 function(aicore_add_common_test name)
     add_executable(${name} common/${name}.cpp)
@@ -160,6 +181,30 @@ endfunction()
 
 function(aicore_add_deeplsd_capi_test name)
     add_executable(${name} deeplsd/${name}.cpp)
+    target_link_libraries(${name} PRIVATE AICore)
+    _aicore_capi_link(${name})
+    _aicore_test_common(${name})
+    if(NOT MSVC)
+        target_compile_options(${name} PRIVATE -fPIC)
+        target_link_options(${name} PRIVATE "-no-pie")
+    endif()
+    set_tests_properties(${name} PROPERTIES LABELS "capi")
+endfunction()
+
+function(aicore_add_gkd_capi_test name)
+    add_executable(${name} gkd/${name}.cpp)
+    target_link_libraries(${name} PRIVATE AICore)
+    _aicore_capi_link(${name})
+    _aicore_test_common(${name})
+    if(NOT MSVC)
+        target_compile_options(${name} PRIVATE -fPIC)
+        target_link_options(${name} PRIVATE "-no-pie")
+    endif()
+    set_tests_properties(${name} PROPERTIES LABELS "capi")
+endfunction()
+
+function(aicore_add_lingbot_capi_test name)
+    add_executable(${name} lingbot/${name}.cpp)
     target_link_libraries(${name} PRIVATE AICore)
     _aicore_capi_link(${name})
     _aicore_test_common(${name})
@@ -427,6 +472,26 @@ aicore_add_deeplsd_capi_test(test_deeplsd_capi_contract)
 aicore_add_deeplsd_capi_test(test_deeplsd_capi_load)
 set_tests_properties(test_deeplsd_capi_load PROPERTIES LABELS "capi;model")
 
+aicore_add_gkd_capi_test(test_gkd_capi_contract)
+aicore_add_gkd_capi_test(test_gkd_capi_load)
+set_tests_properties(test_gkd_capi_load PROPERTIES LABELS "capi;model")
+
+aicore_add_lingbot_capi_test(test_lingbot_capi_contract)
+aicore_add_lingbot_capi_test(test_lingbot_capi_load)
+set_tests_properties(test_lingbot_capi_load PROPERTIES LABELS "capi;model")
+
+# Manual parity dump tool (NOT a ctest): writes upstream-compatible LBF3
+# per-frame binaries for the compare_lingbot_parity.py A/B against
+# lingbot-map-cli --stream-dir.
+add_executable(dump_lingbot_frames lingbot/dump_lingbot_frames.cpp)
+target_link_libraries(dump_lingbot_frames PRIVATE AICore)
+_aicore_capi_link(dump_lingbot_frames)
+_aicore_test_common(dump_lingbot_frames)
+if(NOT MSVC)
+    target_compile_options(dump_lingbot_frames PRIVATE -fPIC)
+    target_link_options(dump_lingbot_frames PRIVATE "-no-pie")
+endif()
+
 if(TARGET AICore_test)
     aicore_add_facedetect_whitebox_test(test_facedetect_align)
 endif()
@@ -673,6 +738,7 @@ function(aicore_configure_model_test_assets)
     endif()
     set(_root "${AICORE_TEST_ASSET_ROOT}")
     set(_env
+        "${AICORE_TEST_ENV_EXTRA}"
         "AICORE_TEST_DEVICE=${AICORE_TEST_DEVICE}"
         "AICORE_TEST_DEPTH_GGUF=${_root}/da3_models/depth-anything-base-q4_k.gguf"
         "AICORE_TEST_DEPTH_IMAGE=${_root}/lightglue_test_images/sacre_coeur1.jpg"
@@ -695,7 +761,9 @@ function(aicore_configure_model_test_assets)
         "AICORE_TEST_FACEDETECT_IMAGE=${_root}/friends_faces/query/friends1.jpg"
         "AICORE_TEST_FACEDETECT_DEVICE=${AICORE_TEST_DEVICE}"
         "AICORE_TEST_RFDETR_GGUF=${_root}/rfdetr_models/rfdetr-base-f16.gguf"
-        "AICORE_TEST_RMBG_GGUF=${_root}/rmbg_models/rmbg_f16.gguf")
+        "AICORE_TEST_RMBG_GGUF=${_root}/rmbg_models/rmbg_f16.gguf"
+        "AICORE_TEST_GKD_GGUF=${_root}/gkd_models/gkd_fullset-q4_K.gguf"
+        "AICORE_TEST_GKD_IMAGE=${_root}/objects_detection_data/images/bus.jpg")
     if(AICORE_TEST_AUTO_DOWNLOAD)
         # This fixture is only selected by asset-dependent CTests. It is not a
         # build dependency, so compiling ACloudViewer cannot trigger I/O.
@@ -718,7 +786,8 @@ function(aicore_configure_model_test_assets)
             test_deeplsd_capi_load
             test_facedetect_embed_capi
             test_facedetect_contexts_capi
-            test_rmbg_capi_performance)
+            test_rmbg_capi_performance
+            test_gkd_capi_load)
         if(TEST ${_test})
             set_tests_properties(${_test} PROPERTIES ENVIRONMENT "${_env}")
             if(AICORE_TEST_AUTO_DOWNLOAD)
@@ -824,6 +893,8 @@ set(_aicore_contract_targets
     test_yolo_text_model_validation
     test_rmbg_capi_contract
     test_rmbg_capi_performance
+    test_gkd_capi_contract
+    test_gkd_capi_load
     test_sam3_capi_contract
     test_trellis_capi_contract
     test_yolo_capi_performance
@@ -968,6 +1039,7 @@ set(_aicore_model_targets
     test_facedetect_dense_validation
     test_facedetect_contexts_capi
     test_rmbg_capi_performance
+    test_gkd_capi_load
     test_yolo_capi_performance)
 set(_aicore_model_targets_existing)
 foreach(_t IN LISTS _aicore_model_targets)
@@ -999,9 +1071,17 @@ if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
         bench_rfdetr_perf
         test_rmbg_capi_performance
         bench_sam3_backend_acceptance
+        test_gkd_capi_load
+        test_lingbot_capi_load
         test_yolo_capi_performance
         test_yolo_text_model_validation
         test_yolo_capi_parity)
+    # bench_rfdetr_perf is only generated when the whitebox library exists
+    # (AICore_BUILD_WHITEBOX_TESTS); drop it from the dependency list
+    # otherwise so the gate is still runnable from a plain build.
+    if(NOT TARGET AICore_test)
+        list(REMOVE_ITEM _aicore_validation_targets bench_rfdetr_perf)
+    endif()
     # The validation runner launches C API executables directly.  Propagate the
     # Qt runtime selected at configure time so it cannot accidentally resolve a
     # compatible-but-older system Qt at test time.

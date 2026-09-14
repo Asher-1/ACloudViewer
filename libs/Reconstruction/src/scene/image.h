@@ -80,6 +80,13 @@ public:
     inline void SetFramePtr(class Frame* frame);
     inline void ResetFramePtr();
     inline bool HasFramePtr() const;
+    // W3-2b stage 2 (upstream parity for the mapper write path): the single
+    // pose-write entry point for frame-wired images. Writes the frame's
+    // rig-aware cam-from-world pose AND mirrors it into the legacy image
+    // buffers, so the pose-derived accessors (ProjectionMatrix, which reads
+    // the frame) and the legacy shadow consumers always agree. Requires a
+    // wired frame.
+    void SetCamFromWorld(const Rigid3d& cam_from_world);
     inline bool IsRefInFrame() const;
     inline Rigid3d CamFromWorld() const;
     inline bool HasPose() const;
@@ -442,6 +449,15 @@ inline class Frame* Image::FramePtr() const {
     return THROW_CHECK_NOTNULL(frame_ptr_);
 }
 inline void Image::SetFramePtr(class Frame* frame) { frame_ptr_ = frame; }
+
+inline void Image::SetCamFromWorld(const Rigid3d& cam_from_world) {
+    THROW_CHECK_NOTNULL(frame_ptr_)
+            ->SetCamFromWorld(camera_id_, cam_from_world);
+    // Mirror into the legacy buffers (fork's dual-track pose storage).
+    const Eigen::Quaterniond& q = cam_from_world.rotation();
+    qvec_ = Eigen::Vector4d(q.w(), q.x(), q.y(), q.z());
+    tvec_ = cam_from_world.translation();
+}
 inline void Image::ResetFramePtr() { frame_ptr_ = nullptr; }
 inline bool Image::HasFramePtr() const { return frame_ptr_ != nullptr; }
 inline bool Image::IsRefInFrame() const {

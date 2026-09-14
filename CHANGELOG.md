@@ -1,6 +1,26 @@
 ACloudViewer Version History
 ============================
 
+v3.9.6-Beta (Asher) - 09/14/2026
+--------------------------------
+- LingBot-Map integration (Geometric Context Transformer, streaming 3D reconstruction)
+    - New AICore task `lingbot` (core/AICore/src/tasks/lingbot): in-tree port of the
+      cpp_ggml GCT runtime (DINO/GCT streaming blocks, CameraCausalHead, DPT heads,
+      persistent F16 KV cache) behind aicore/lingbot_capi.h
+    - New qLingbotMap plugin (PLUGIN_STANDARD_QLINGBOTMAP): image-sequence input,
+      official crop preprocessing, streaming inference, colored RGB-D point clouds +
+      camera trajectory into the DB tree, optional native skyseg sky masking
+    - Model catalog: Hugging Face Asher-1/lingbot-map-gguf (q8/f16/f32/q4 map +
+      skyseg-f16/q8_0/f32), pinned SHA-256 in asset_digests.h, auto-download via
+      ecvModelDownloader, validation scenarios in validation_manifest.json
+    - ggml patch lingbot_merged/0001-lingbot-ggml-default-path.patch: F32-weight
+      conv_2d keeps F32 im2col; coopmat2/CM1 scalar conv pipelines (SIGFPE fix);
+      conv2d coopmat variants gated to F16 weights; "lingbot_scalar_" name routing.
+      Upstream flash-attention kernel rewrites and GGML_VK_* env switches
+      deliberately NOT carried over (AICore routes precision per graph node)
+- CI: aicore-validate-all no longer depends on the whitebox-only bench_rfdetr_perf
+  target in plain builds
+
 v3.9.5-Beta (Asher) - 08/04/2026
 --------------------------------
 - CUDA deployment: ggml-cuda backend uses FORCE_MMQ + cudart_static on Linux

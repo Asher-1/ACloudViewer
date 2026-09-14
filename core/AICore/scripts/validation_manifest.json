@@ -6,13 +6,15 @@
     "depth",
     "facedetect",
     "gaussian",
+    "gkd",
     "lightglue",
     "loma",
     "rfdetr",
     "rmbg",
     "sam3",
     "trellis",
-    "yolo"
+    "yolo",
+    "lingbot"
   ],
   "input_assets": [
     {
@@ -76,6 +78,27 @@
           "relative_path": "objects_detection_data/images/bus.jpg",
           "sha256": "c02019c4979c191eb739ddd944445ef408dad5679acab6fd520ef9d434bfbc63",
           "size_bytes": 137419
+        }
+      ]
+    },
+    {
+      "id": "gkd-official-demos",
+      "tasks": ["gkd"],
+      "relative_path": "general_keypoint_detection_data.zip",
+      "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/general_keypoint_detection_data/general_keypoint_detection_data.zip",
+      "sha256": "14da5f5296fcac60a248cde7623f8d93d9fa6b29b8cc9a94a0258f5da4189e23",
+      "size_bytes": 3836798,
+      "archive": true,
+      "extracted_files": [
+        {
+          "relative_path": "general_keypoint_detection_data/2007_007524.jpg",
+          "sha256": "cc46566551624543508b79dc5cab318ff674e6f68e8ee21f793ae1c68860df06",
+          "size_bytes": 72643
+        },
+        {
+          "relative_path": "general_keypoint_detection_data/2007_003778.jpg",
+          "sha256": "14741e33b9571b266fe705e60a630a940af8da32193e37246263a5e9c73cbb4f",
+          "size_bytes": 150644
         }
       ]
     }
@@ -456,6 +479,149 @@
       "fingerprint_policy": "stability_only",
       "metric_parser": "yolo",
       "vram_estimate_mib": 4096
+    },
+    {
+      "id": "gkd",
+      "task": "gkd",
+      "owned_globs": ["gkd_models/gkd_fullset-*.gguf"],
+      "model_glob": "gkd_models/gkd_fullset-*.gguf",
+      "light_globs": ["gkd_models/gkd_fullset-q4_K.gguf"],
+      "for_each_model": true,
+      "executable": "binary:test_gkd_capi_load",
+      "args": ["{model}", "{assets}/general_keypoint_detection_data/2007_007524.jpg", "{backend}", "{inference_runs}", "{warmup_runs}"],
+      "env": {},
+      "accuracy_gate": "finite keypoints with descending-free scores, bounded ROI recovery, and exact repeated-output hash",
+      "fingerprint_policy": "exact",
+      "metric_parser": "generic"
+    },
+    {
+      "id": "lingbot-stream",
+      "task": "lingbot",
+      "light": true,
+      "light_globs": ["lingbot_models/lingbot-map-q8.gguf"],
+      "executable": "binary:test_lingbot_capi_load",
+      "owned_globs": [
+        "lingbot_models/lingbot-map-*.gguf",
+        "lingbot_models/lingbot-map-skyseg-*.gguf"
+      ],
+      "covered_globs": ["lingbot_models/lingbot-map-q8.gguf"],
+      "args": [],
+      "env": {
+        "AICORE_TEST_LINGBOT_GGUF": "{assets}/lingbot_models/lingbot-map-q8.gguf",
+        "AICORE_TEST_DEVICE": "{backend}",
+        "AICORE_TEST_LINGBOT_KV": "1,4"
+      },
+      "accuracy_gate": "finite depth/pose outputs, deterministic repeat stream over a reset, and honest e2e timing",
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic",
+      "vram_estimate_mib": 8192
+    },
+    {
+      "id": "lingbot-stream-skyseg",
+      "task": "lingbot",
+      "light": true,
+      "light_globs": [
+        "lingbot_models/lingbot-map-q8.gguf",
+        "lingbot_models/lingbot-map-skyseg-f16.gguf"
+      ],
+      "executable": "binary:test_lingbot_capi_load",
+      "required_globs": ["lingbot_models/lingbot-map-skyseg-f16.gguf"],
+      "covered_globs": ["lingbot_models/lingbot-map-skyseg-f16.gguf"],
+      "args": [],
+      "env": {
+        "AICORE_TEST_LINGBOT_GGUF": "{assets}/lingbot_models/lingbot-map-q8.gguf",
+        "AICORE_TEST_LINGBOT_SKYSEG": "{assets}/lingbot_models/lingbot-map-skyseg-f16.gguf",
+        "AICORE_TEST_DEVICE": "{backend}",
+        "AICORE_TEST_LINGBOT_KV": "1,4"
+      },
+      "accuracy_gate": "finite depth/pose outputs, deterministic repeat stream over a reset, honest e2e timing, sky keep-mask sized to the processed frame",
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic",
+      "vram_estimate_mib": 8192
+    },
+    {
+      "id": "lingbot-stream-f16",
+      "task": "lingbot",
+      "executable": "binary:test_lingbot_capi_load",
+      "covered_globs": ["lingbot_models/lingbot-map-f16.gguf"],
+      "args": [],
+      "env": {
+        "AICORE_TEST_LINGBOT_GGUF": "{assets}/lingbot_models/lingbot-map-f16.gguf",
+        "AICORE_TEST_DEVICE": "{backend}",
+        "AICORE_TEST_LINGBOT_KV": "1,4"
+      },
+      "accuracy_gate": "finite depth/pose outputs, deterministic repeat stream over a reset, and honest e2e timing",
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic",
+      "vram_estimate_mib": 10240
+    },
+    {
+      "id": "lingbot-stream-q4",
+      "task": "lingbot",
+      "executable": "binary:test_lingbot_capi_load",
+      "covered_globs": ["lingbot_models/lingbot-map-q4.gguf"],
+      "args": [],
+      "env": {
+        "AICORE_TEST_LINGBOT_GGUF": "{assets}/lingbot_models/lingbot-map-q4.gguf",
+        "AICORE_TEST_DEVICE": "{backend}",
+        "AICORE_TEST_LINGBOT_KV": "1,4"
+      },
+      "accuracy_gate": "finite depth/pose outputs, deterministic repeat stream over a reset, and honest e2e timing",
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic",
+      "vram_estimate_mib": 6144
+    },
+    {
+      "id": "lingbot-stream-f32",
+      "task": "lingbot",
+      "executable": "binary:test_lingbot_capi_load",
+      "covered_globs": ["lingbot_models/lingbot-map-f32.gguf"],
+      "args": [],
+      "env": {
+        "AICORE_TEST_LINGBOT_GGUF": "{assets}/lingbot_models/lingbot-map-f32.gguf",
+        "AICORE_TEST_DEVICE": "{backend}",
+        "AICORE_TEST_LINGBOT_KV": "1,4"
+      },
+      "accuracy_gate": "finite depth/pose outputs, deterministic repeat stream over a reset, and honest e2e timing",
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic",
+      "vram_estimate_mib": 14336
+    },
+    {
+      "id": "lingbot-stream-skyseg-q8_0",
+      "task": "lingbot",
+      "executable": "binary:test_lingbot_capi_load",
+      "required_globs": ["lingbot_models/lingbot-map-skyseg-q8_0.gguf"],
+      "covered_globs": ["lingbot_models/lingbot-map-skyseg-q8_0.gguf"],
+      "args": [],
+      "env": {
+        "AICORE_TEST_LINGBOT_GGUF": "{assets}/lingbot_models/lingbot-map-q8.gguf",
+        "AICORE_TEST_LINGBOT_SKYSEG": "{assets}/lingbot_models/lingbot-map-skyseg-q8_0.gguf",
+        "AICORE_TEST_DEVICE": "{backend}",
+        "AICORE_TEST_LINGBOT_KV": "1,4"
+      },
+      "accuracy_gate": "finite depth/pose outputs, deterministic repeat stream over a reset, honest e2e timing, sky keep-mask sized to the processed frame",
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic",
+      "vram_estimate_mib": 8192
+    },
+    {
+      "id": "lingbot-stream-skyseg-f32",
+      "task": "lingbot",
+      "executable": "binary:test_lingbot_capi_load",
+      "required_globs": ["lingbot_models/lingbot-map-skyseg-f32.gguf"],
+      "covered_globs": ["lingbot_models/lingbot-map-skyseg-f32.gguf"],
+      "args": [],
+      "env": {
+        "AICORE_TEST_LINGBOT_GGUF": "{assets}/lingbot_models/lingbot-map-q8.gguf",
+        "AICORE_TEST_LINGBOT_SKYSEG": "{assets}/lingbot_models/lingbot-map-skyseg-f32.gguf",
+        "AICORE_TEST_DEVICE": "{backend}",
+        "AICORE_TEST_LINGBOT_KV": "1,4"
+      },
+      "accuracy_gate": "finite depth/pose outputs, deterministic repeat stream over a reset, honest e2e timing, sky keep-mask sized to the processed frame",
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic",
+      "vram_estimate_mib": 8704
     }
   ]
 }

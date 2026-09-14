@@ -1,0 +1,14 @@
+{
+  "type": "Standard",
+  "core": true,
+  "name": "LingBot-Map Streaming 3D Reconstruction",
+  "icon": ":/CC/plugin/qLingbotMap/images/qLingbotMap.svg",
+  "description": "LingBot-Map Geometric Context Transformer: streaming RGB-D 3D reconstruction (per-frame depth, camera pose, and fused colored point cloud) from an ordered image sequence via native GGML inference, with optional native sky segmentation.",
+  "authors": [{ "name": "ACloudViewer Contributors" }],
+  "maintainers": [{ "name": "ACloudViewer Team" }],
+  "references": [
+    { "text": "lingbot-map-ggml: https://github.com/Asher-1/lingbot-map-ggml" },
+    { "text": "LingBot-Map: Geometric Context Transformer for Streaming 3D Reconstruction: https://technology.robbyant.com/lingbot-map" },
+    { "text": "Models: https://huggingface.co/Asher-1/lingbot-map-gguf" }
+  ]
+}

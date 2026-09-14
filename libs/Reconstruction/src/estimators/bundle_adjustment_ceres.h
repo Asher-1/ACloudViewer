@@ -102,6 +102,14 @@ private:
     SensorPoseBlock& GetOrCreateSensorBlock(rig_t rig_id,
                                             sensor_t sensor_id,
                                             const Rigid3d& sensor_from_rig);
+
+    // Upstream parity (d3ccaf35): global gauge fixing after parameterization.
+    // TWO_CAMS_FROM_WORLD fixes one full frame pose plus one translation
+    // dimension of a second frame; THREE_POINTS is the degenerate-case
+    // fallback that fixes three non-collinear 3D points. The fork adapts
+    // both to the split qvec/tvec pose blocks.
+    void FixGaugeWithTwoCamsFromWorld(Reconstruction* reconstruction);
+    void FixGaugeWithThreePoints(Reconstruction* reconstruction);
 };
 
 }  // namespace colmap

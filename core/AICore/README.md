@@ -82,7 +82,9 @@ borrowed pixels + width/height + row stride + channel format
 | `depth_capi.h` | Depth, pose, reconstruction, and export |
 | `facedetect_capi.h` | Detection, landmarks, analysis, embedding, verification |
 | `gaussian_capi.h` | FreeSplatter Gaussian reconstruction |
+| `gkd_capi.h` | GKDT general keypoint detection (text / visual / multimodal prompts) |
 | `lightglue_capi.h` | Sparse feature matching |
+| `lingbot_capi.h` | LingBot-Map (GCT) streaming 3D reconstruction: depth, pose, native sky masking |
 | `rfdetr_capi.h` | RF-DETR detection and segmentation |
 | `rmbg_capi.h` | RMBG alpha matte and RGBA composition |
 | `sam3_capi.h` | SAM3 segmentation and tracking |

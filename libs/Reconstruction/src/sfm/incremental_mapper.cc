@@ -224,7 +224,7 @@ bool IncrementalMapper::RegisterInitialImagePair(const Options& options,
     // the cache wiring lands (W3-2b stage 2); the frame branch mirrors the
     // established dual-path pattern of Image::ProjectionMatrix.
     if (image1.HasFramePtr()) {
-        image1.FramePtr()->SetCamFromWorld(image1.CameraId(), Rigid3d());
+        image1.SetCamFromWorld(Rigid3d());
     } else {
         image1.Qvec() = ComposeIdentityQuaternion();
         image1.Tvec() = Eigen::Vector3d(0, 0, 0);
@@ -233,8 +233,7 @@ bool IncrementalMapper::RegisterInitialImagePair(const Options& options,
         const Eigen::Quaterniond& q =
                 prev_init_two_view_geometry_.cam2_from_cam1->rotation();
         if (image2.HasFramePtr()) {
-            image2.FramePtr()->SetCamFromWorld(
-                    image2.CameraId(), *prev_init_two_view_geometry_.cam2_from_cam1);
+            image2.SetCamFromWorld(*prev_init_two_view_geometry_.cam2_from_cam1);
         } else {
             image2.Qvec() = Eigen::Vector4d(q.w(), q.x(), q.y(), q.z());
             image2.Tvec() =
@@ -480,14 +479,14 @@ bool IncrementalMapper::RegisterNextImage(const Options& options,
     }
 
     if (image.HasFramePtr()) {
-        image.FramePtr()->SetCamFromWorld(
-                image.CameraId(),
+        image.SetCamFromWorld(
                 Rigid3d(Eigen::Quaterniond(cam_qvec(0), cam_qvec(1),
                                            cam_qvec(2), cam_qvec(3)),
                         cam_tvec));
+    } else {
+        image.Qvec() = cam_qvec;
+        image.Tvec() = cam_tvec;
     }
-    image.Qvec() = cam_qvec;
-    image.Tvec() = cam_tvec;
 
     //////////////////////////////////////////////////////////////////////////////
     // Continue tracks
@@ -561,11 +560,21 @@ IncrementalMapper::AdjustLocalBundle(
             ba_config.AddImage(local_image_id);
         }
 
-        // Fix the existing images, if option specified.
+        // Fix the existing frames, if option specified (upstream parity,
+        // d3ccaf35: frame-level rig-from-world constants; the fork option
+        // name fix_existing_images is kept for CLI compatibility, and the
+        // image-level constant remains the fallback for frameless images).
         if (options.fix_existing_images) {
             for (const image_t local_image_id : local_bundle) {
                 if (existing_image_ids_.count(local_image_id)) {
-                    ba_config.SetConstantPose(local_image_id);
+                    const Image& local_image =
+                            reconstruction_->Image(local_image_id);
+                    if (local_image.HasFrameId()) {
+                        ba_config.SetConstantRigFromWorldPose(
+                                local_image.FrameId());
+                    } else {
+                        ba_config.SetConstantPose(local_image_id);
+                    }
                 }
             }
         }
@@ -690,11 +699,18 @@ bool IncrementalMapper::AdjustGlobalBundle(
         ba_config.AddImage(image_id);
     }
 
-    // Fix the existing images, if option specified.
+    // Fix the existing frames, if option specified (upstream parity,
+    // d3ccaf35 AdjustGlobalBundle: frame-level rig-from-world constants;
+    // fork option name kept, image-level fallback for frameless images).
     if (options.fix_existing_images) {
         for (const image_t image_id : reg_image_ids) {
             if (existing_image_ids_.count(image_id)) {
-                ba_config.SetConstantPose(image_id);
+                const Image& image = reconstruction_->Image(image_id);
+                if (image.HasFrameId()) {
+                    ba_config.SetConstantRigFromWorldPose(image.FrameId());
+                } else {
+                    ba_config.SetConstantPose(image_id);
+                }
             }
         }
     }
