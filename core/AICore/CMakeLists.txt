@@ -11,6 +11,7 @@
 #   src/tasks/rmbg/       — RMBG-2.0 background removal (foundational matte)
 #   src/tasks/yolo/       — YOLO object detection / metric depth (ultralytics-ggml port)
 #   src/tasks/sam3/       — SAM 2 / 2.1 / 3 segmentation (sam3-ggml port)
+#   src/tasks/gkd/        — general keypoint detection (GKDT, General-Keypoint-Detection-GGML port)
 #   src/common/           — shared utilities (data paths, ggml helpers, logging)
 #
 # Build:   libAICore.so
@@ -29,7 +30,7 @@ if(NOT TARGET 3rdparty_ggml)
 endif()
 
 project(AICore
-    DESCRIPTION "Unified AI inference core — depth + gaussian + lightglue + aliked + deeplsd + facedetect + rfdetr + rmbg + yolo"
+    DESCRIPTION "Unified AI inference core — depth + gaussian + lightglue + aliked + deeplsd + facedetect + rfdetr + rmbg + yolo + gkd"
     LANGUAGES CXX
 )
 
@@ -48,6 +49,8 @@ set(AICORE_RMBG_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/rmbg)
 set(AICORE_YOLO_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/yolo)
 set(AICORE_SAM3_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/sam3)
 set(AICORE_TRELLIS_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/trellis)
+set(AICORE_GKD_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/gkd)
+set(AICORE_LINGBOT_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/lingbot)
 
 if(NOT EXISTS ${AICORE_DEPTH_SRC_DIR}/engine.cpp)
     message(WARNING "AICore: depth module not found at ${AICORE_DEPTH_SRC_DIR}")
@@ -83,6 +86,8 @@ file(GLOB AICORE_RFDETR_SOURCES CONFIGURE_DEPENDS ${AICORE_RFDETR_SRC_DIR}/*.cpp
 file(GLOB AICORE_RMBG_SOURCES CONFIGURE_DEPENDS ${AICORE_RMBG_SRC_DIR}/*.cpp)
 file(GLOB AICORE_YOLO_SOURCES CONFIGURE_DEPENDS ${AICORE_YOLO_SRC_DIR}/*.cpp)
 file(GLOB AICORE_SAM3_SOURCES CONFIGURE_DEPENDS ${AICORE_SAM3_SRC_DIR}/*.cpp)
+file(GLOB AICORE_GKD_SOURCES CONFIGURE_DEPENDS ${AICORE_GKD_SRC_DIR}/*.cpp)
+file(GLOB AICORE_LINGBOT_SOURCES CONFIGURE_DEPENDS ${AICORE_LINGBOT_SRC_DIR}/*.cpp)
 file(GLOB AICORE_TRELLIS_SOURCES CONFIGURE_DEPENDS
     ${AICORE_TRELLIS_SRC_DIR}/*.cpp
     ${AICORE_TRELLIS_SRC_DIR}/third_party/xatlas/*.cpp
@@ -107,8 +112,14 @@ endif()
 if(NOT EXISTS ${AICORE_YOLO_SRC_DIR}/yolo_graph.cpp)
     message(FATAL_ERROR "AICore: missing YOLO module at ${AICORE_YOLO_SRC_DIR}")
 endif()
+if(NOT EXISTS ${AICORE_GKD_SRC_DIR}/gkd_graph.cpp)
+    message(FATAL_ERROR "AICore: missing GKD module at ${AICORE_GKD_SRC_DIR}")
+endif()
 if(NOT EXISTS ${AICORE_SAM3_SRC_DIR}/sam3.cpp)
     message(FATAL_ERROR "AICore: missing SAM3 module at ${AICORE_SAM3_SRC_DIR}")
+endif()
+if(NOT EXISTS ${AICORE_LINGBOT_SRC_DIR}/lingbot_model.cpp)
+    message(FATAL_ERROR "AICore: missing LingBot-Map module at ${AICORE_LINGBOT_SRC_DIR}")
 endif()
 if(NOT EXISTS ${AICORE_TRELLIS_SRC_DIR}/trellis2.cpp)
     message(FATAL_ERROR "AICore: missing TRELLIS module at ${AICORE_TRELLIS_SRC_DIR}")
@@ -131,6 +142,8 @@ add_library(${PROJECT_NAME} SHARED
     ${AICORE_YOLO_SOURCES}
     ${AICORE_SAM3_SOURCES}
     ${AICORE_TRELLIS_SOURCES}
+    ${AICORE_GKD_SOURCES}
+    ${AICORE_LINGBOT_SOURCES}
     ${AICORE_API_HEADERS}
 )
 
@@ -189,6 +202,8 @@ target_include_directories(${PROJECT_NAME}
         ${AICORE_YOLO_SRC_DIR}
         ${AICORE_SAM3_SRC_DIR}
         ${AICORE_TRELLIS_SRC_DIR}
+        ${AICORE_GKD_SRC_DIR}
+        ${AICORE_LINGBOT_SRC_DIR}
         ${AICORE_TRELLIS_SRC_DIR}/third_party/xatlas
         ${AICORE_TRELLIS_SRC_DIR}/third_party/o-voxel-fdg
         ${EIGEN_INCLUDE_DIRS}
@@ -647,6 +662,8 @@ if(AICore_BUILD_TESTS)
             ${AICORE_YOLO_SOURCES}
             ${AICORE_SAM3_SOURCES}
             ${AICORE_TRELLIS_SOURCES}
+            ${AICORE_GKD_SOURCES}
+            ${AICORE_LINGBOT_SOURCES}
         )
         list(FILTER AICORE_TEST_SOURCES EXCLUDE REGEX
              ".*/(capi|image_depth)\\.cpp$")
@@ -676,6 +693,8 @@ if(AICore_BUILD_TESTS)
             $<BUILD_INTERFACE:${AICORE_RMBG_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_YOLO_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_SAM3_SRC_DIR}>
+            $<BUILD_INTERFACE:${AICORE_GKD_SRC_DIR}>
+            $<BUILD_INTERFACE:${AICORE_LINGBOT_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_TRELLIS_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_TRELLIS_SRC_DIR}/third_party/xatlas>
             $<BUILD_INTERFACE:${AICORE_TRELLIS_SRC_DIR}/third_party/o-voxel-fdg>
@@ -717,7 +736,7 @@ if(AICore_BUILD_TESTS)
     message(STATUS "AICore: contract tests enabled")
 endif()
 
-message(STATUS "AICore (SHARED): tasks/depth + tasks/gaussian + tasks/lightglue + tasks/loma + tasks/deeplsd + tasks/facedetect + tasks/rfdetr + tasks/rmbg + tasks/yolo + tasks/sam3 + tasks/trellis, ggml linked once")
+message(STATUS "AICore (SHARED): tasks/depth + tasks/gaussian + tasks/lightglue + tasks/loma + tasks/deeplsd + tasks/facedetect + tasks/rfdetr + tasks/rmbg + tasks/yolo + tasks/sam3 + tasks/trellis + tasks/gkd + tasks/lingbot, ggml linked once")
 
 add_executable(aicore_gguf_quantize tools/aicore_gguf_quantize.cpp)
 target_link_libraries(aicore_gguf_quantize PRIVATE AICore)

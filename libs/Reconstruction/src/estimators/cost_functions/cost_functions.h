@@ -388,15 +388,19 @@ public:
                     const T* const point3D,
                     const T* const camera_params,
                     T* residuals) const {
-        // cam_from_world = rig_from_world * sensor_from_rig
+        // COLMAP composition semantics: cam_from_world transforms world
+        // vectors into the camera via the rig, i.e.
+        //   cam_from_world = sensor_from_rig * rig_from_world
+        // (world -> rig -> camera). The previous rig-first order silently
+        // corrupted every non-reference-sensor observation in the rig BA.
         T qvec[4];
-        ceres::QuaternionProduct(rig_qvec, sensor_qvec, qvec);
+        ceres::QuaternionProduct(sensor_qvec, rig_qvec, qvec);
 
         T tvec[3];
-        ceres::UnitQuaternionRotatePoint(rig_qvec, sensor_tvec, tvec);
-        tvec[0] += rig_tvec[0];
-        tvec[1] += rig_tvec[1];
-        tvec[2] += rig_tvec[2];
+        ceres::UnitQuaternionRotatePoint(sensor_qvec, rig_tvec, tvec);
+        tvec[0] += sensor_tvec[0];
+        tvec[1] += sensor_tvec[1];
+        tvec[2] += sensor_tvec[2];
 
         // Rotate and translate.
         T projection[3];

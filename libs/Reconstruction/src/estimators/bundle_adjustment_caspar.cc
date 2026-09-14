@@ -593,7 +593,7 @@ bool SolveCasparBundleAdjustment(const BundleAdjustmentOptions& options,
         }
     }
 
-    std::map<int, std::vector<camera_t>> cameras_per_model;
+    std::map<CameraModelId, std::vector<camera_t>> cameras_per_model;
     for (const image_t image_id : image_ids) {
         const Image& image = reconstruction->Image(image_id);
         cameras_per_model[reconstruction->Camera(image.CameraId()).ModelId()]

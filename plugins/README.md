@@ -40,6 +40,8 @@ Four GUI plugins link **`libAICore.so`**, which bundles DA3, DeepLSD, FaceDetect
 | **qYOLO** | `PLUGIN_STANDARD_QYOLO` | [docs/guides/plugins/qYOLO.md](../docs/guides/plugins/qYOLO.md) | [qYOLO/README.md](core/Standard/qYOLO/README.md) |
 | **qSAM3** | `PLUGIN_STANDARD_QSAM3` | [docs/guides/plugins/qSAM3.md](../docs/guides/plugins/qSAM3.md) | [qSAM3/README.md](core/Standard/qSAM3/README.md) |
 | **qTrellis** | `PLUGIN_STANDARD_QTRELLIS` | — | [qTrellis/README.md](core/Standard/qTrellis/README.md) |
+| **qGKD** | `PLUGIN_STANDARD_QGKD` | — | [qGKD/README.md](core/Standard/qGKD/README.md) |
+| **qLingbotMap** | `PLUGIN_STANDARD_QLINGBOTMAP` | — | [qLingbotMap/README.md](core/Standard/qLingbotMap/README.md) |
 
 **Core library:** enable with `-DAICore_ENABLED=ON` (auto-enables `GGML_ENABLED`).
 
@@ -58,6 +60,8 @@ cmake -DBUILD_GUI=ON \
       -DPLUGIN_STANDARD_QYOLO=ON \
       -DPLUGIN_STANDARD_QSAM3=ON \
       -DPLUGIN_STANDARD_QTRELLIS=ON \
+      -DPLUGIN_STANDARD_QGKD=ON \
+      -DPLUGIN_STANDARD_QLINGBOTMAP=ON \
       -DPLUGIN_STANDARD_QSIBR=ON \
       ..
 ```

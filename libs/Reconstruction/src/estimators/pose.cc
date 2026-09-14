@@ -253,7 +253,7 @@ bool RefineAbsolutePose(const AbsolutePoseRefinementOptions& options,
     if (problem.NumResiduals() > 0) {
         // Quaternion parameterization.
         *qvec = NormalizeQuaternion(*qvec);
-        SetQuaternionManifold(&problem, qvec_data);
+        SetQuaternionManifoldWxyz(&problem, qvec_data);
         // ceres::LocalParameterization* quaternion_parameterization =
         //     new ceres::QuaternionParameterization;
         // problem.SetParameterization(qvec_data, quaternion_parameterization);
@@ -359,7 +359,7 @@ bool RefineRelativePose(const ceres::Solver::Options& options,
     //         new ceres::HomogeneousVectorParameterization(3);
     // problem.SetParameterization(tvec->data(), homogeneous_parameterization);
 
-    SetQuaternionManifold(&problem, qvec->data());
+    SetQuaternionManifoldWxyz(&problem, qvec->data());
     SetSphereManifold<3>(&problem, tvec->data());
 
     ceres::Solver::Summary summary;

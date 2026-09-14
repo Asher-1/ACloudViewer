@@ -574,6 +574,22 @@ AICORE_CAPI aicore_yolo_ctx* aicore_yolo_load_opts(
         // F32 through cuBLAS — integrated via
         // patches/upstream_accuracy/0001-world-f32-gemm-tf32-route-...),
         // verified by test_yolo_capi_parity on real World/YOLOE GGUFs.
+        // VRAM admission guard: a model that cannot fit would surface as a
+        // fatal GGML abort deep inside a cuBLAS GEMM at inference time
+        // (observed on x-world with several resident models). Refuse the
+        // load here with an actionable message instead — the allocation
+        // paths themselves degrade gracefully, this keeps the host alive.
+        {
+            std::error_code size_ec;
+            const auto model_bytes =
+                    std::filesystem::file_size(gguf_path, size_ec);
+            if (!size_ec &&
+                !ggml_common::gpu_admission_check(
+                        ctx->device, static_cast<size_t>(model_bytes),
+                        &ctx->last_error)) {
+                return ctx;
+            }
+        }
         ctx->engine = yolo::create_session(gguf_path, ctx->device, sopts);
         if (ctx->engine == nullptr) {
             ctx->last_error = "failed to load YOLO GGUF";

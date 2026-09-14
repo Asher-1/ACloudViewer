@@ -294,6 +294,8 @@ void RotationAveragingProblem::BuildPairConstraints(
     PairConstraint& constraint = pair_constraints_[pair_id];
     constraint.image_id1 = image_id1;
     constraint.image_id2 = image_id2;
+    constraint.R_cam2_from_cam1_sensor =
+        edge.cam2_from_cam1.rotation().toRotationMatrix();
     if (options_.use_gravity && frame_gravity1 != nullptr &&
         frame_gravity2 != nullptr) {
       // Both frames have gravity: use 1-DOF constraint.
@@ -555,9 +557,11 @@ void RotationAveragingProblem::ComputeResiduals() {
             estimated_cam2_from_world;
       }
 
-      residuals_.segment<3>(constraint.row_index) = -RotationMatrixToAngleAxis(
-          estimated_cam2_from_world.transpose() * full->R_cam2_from_cam1 *
-          estimated_cam1_from_world);
+      residuals_.segment<3>(constraint.row_index) =
+          -RotationMatrixToAngleAxis(
+              estimated_cam2_from_world.transpose() *
+              constraint.R_cam2_from_cam1_sensor *
+              estimated_cam1_from_world);
     } else {
       LOG(FATAL) << "Unknown constraint type";
     }

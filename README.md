@@ -60,6 +60,8 @@ together to enable full end to end pipelines:
 
 For more, please visit the [ACloudViewer documentation](https://asher-1.github.io/ACloudViewer/documentation/).
 
+A code-level architecture overview — module map, CMake-verified dependency graph, and key data flows — is in [ARCHITECTURE.md](ARCHITECTURE.md).
+
 ---
 
 ## AI Agent Integration

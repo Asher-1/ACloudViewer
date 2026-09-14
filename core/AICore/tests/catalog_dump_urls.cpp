@@ -15,6 +15,8 @@
 
 #include "aicore/asset_digests.h"
 #include "aicore/facedetect_capi.h"
+#include "aicore/gkd_capi.h"
+#include "aicore/lingbot_capi.h"
 #include "aicore/loma_capi.h"
 #include "aicore/rfdetr_capi.h"
 #include "aicore/rmbg_capi.h"
@@ -179,6 +181,18 @@ void emitRuntimeCatalogs() {
         const aicore_yolo_model_entry* e =
                 aicore_yolo_model_at(i, AICORE_YOLO_ROLE_ANY);
         if (e) emitAsset("yolo", "yolo_models", e->filename, e->download_url);
+    }
+    for (int i = 0; i < aicore_gkd_model_count(); ++i) {
+        const aicore_gkd_model_entry* e = aicore_gkd_model_at(i);
+        if (e)
+            emitAsset("gkd", "gkd_models", e->filename, e->download_url,
+                      static_cast<long long>(e->size_bytes));
+    }
+    for (int i = 0; i < aicore_lingbot_model_count(); ++i) {
+        const aicore_lingbot_model_entry* e = aicore_lingbot_model_at(i);
+        if (e)
+            emitAsset("lingbot", "lingbot_models", e->filename, e->download_url,
+                      static_cast<long long>(e->size_bytes));
     }
 }
 

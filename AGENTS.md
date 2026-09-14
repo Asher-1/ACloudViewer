@@ -72,7 +72,7 @@ Agent control: JSON-RPC WebSocket plugin, MCP server, CLI harness — see `agent
 | Python | `libs/Python/` | pybind11 module |
 | Plugin API | `libs/CVPluginAPI/`, `libs/CVPluginStub/` | `ccStdPluginInterface`, stub loader |
 | GUI app | `app/` | Main window, properties tree, reconstruction widgets |
-| Plugins | `plugins/core/` | qDA3, qFreeSplatter, qManualCalib, qSIBR, I/O filters, … |
+| Plugins | `plugins/core/` | qDA3, qFreeSplatter, qManualCalib, qSIBR, qGKD, qLingbotMap, I/O filters, … |
 
 ## Key Classes & Files
 
@@ -473,6 +473,9 @@ Large downloads: [cloudViewer_downloads](https://github.com/Asher-1/cloudViewer_
 | Plugin | CMake | Notes |
 |--------|-------|-------|
 | qDA3 | `PLUGIN_STANDARD_QDA3` | Depth/pose/COLMAP; needs `AICore_ENABLED` |
+| qLingbotMap | `PLUGIN_STANDARD_QLINGBOTMAP` | LingBot-Map (GCT) streaming RGB-D reconstruction; needs `AICore_ENABLED` (task `lingbot`) |
+| qGKD | `PLUGIN_STANDARD_QGKD` | General keypoint detection (GKDT); needs `AICore_ENABLED` (task `gkd`) |
+| qYOLO / qSAM3 / qTrellis / qRFDetr / qRMBG | `PLUGIN_STANDARD_QYOLO` etc. | Detection / segmentation / 3D-generation AICore plugins |
 | qFreeSplatter | `PLUGIN_STANDARD_QFREESPLATTER` | 3D Gaussian splats; optional qSIBR viewer |
 | qManualCalib | `PLUGIN_STANDARD_QMANUAL_CALIB` | Sensor/AVM calibration; sample data in-tree |
 | qSIBR | `PLUGIN_STANDARD_QSIBR` | Gaussian / ULR viewers (CUDA, Linux/Win) |
@@ -486,11 +489,3 @@ Full table: [plugins/README.md](plugins/README.md) and [BUILD.md](BUILD.md).
 - Local CI helpers: `util/ci_utils.sh` (Linux), `util/ci_utils.ps1` (Windows)
 - Version: `libs/cloudViewer/version.txt`; changelog: `CHANGELOG.md`
 
-
-<claude-mem-context>
-# Memory Context
-
-# [ACloudViewer] recent context, 2026-08-03 6:54pm GMT+8
-
-No previous sessions found.
-</claude-mem-context>

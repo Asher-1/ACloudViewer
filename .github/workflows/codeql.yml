@@ -246,6 +246,8 @@ jobs:
             -DPLUGIN_STANDARD_QYOLO=OFF \
             -DPLUGIN_STANDARD_QSAM3=OFF \
             -DPLUGIN_STANDARD_QTRELLIS=OFF \
+            -DPLUGIN_STANDARD_QGKD=OFF \
+            -DPLUGIN_STANDARD_QLINGBOTMAP=OFF \
             ..
 
       # Initialize CodeQL AFTER configure, so only the build (actual compilation) is traced.

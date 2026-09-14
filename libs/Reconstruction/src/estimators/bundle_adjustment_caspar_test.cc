@@ -188,8 +188,9 @@ TEST(optim_bundle_adjustment_caspar, TestPinholeCeresCasparReprojectionParity) {
       ceres_options.CreateSolverOptions(config, options_probe);
   ASSERT_NE(effective_ceres_options.dense_linear_algebra_library_type,
                    ceres::CUDA);
-  BundleAdjuster ceres_adjuster(ceres_options, config);
-  ASSERT_TRUE(ceres_adjuster.Solve(&ceres_reconstruction));
+  std::unique_ptr<BundleAdjuster> ceres_adjuster =
+      CreateDefaultBundleAdjuster(ceres_options, config);
+  ASSERT_TRUE(ceres_adjuster->Solve(&ceres_reconstruction));
 
   BundleAdjustmentOptions caspar_options = CreateParityOptions();
   caspar_options.backend = BundleAdjustmentBackend::CASPAR;
@@ -204,19 +205,19 @@ TEST(optim_bundle_adjustment_caspar, TestPinholeCeresCasparReprojectionParity) {
   const double caspar_rms =
       ComputeRmsReprojectionError(caspar_reconstruction);
   std::cout << "Ceres CPU BA: rms=" << ceres_rms
-            << " time=" << ceres_adjuster.Summary().total_time_in_seconds
+            << " time=" << ceres_adjuster->Summary().total_time_in_seconds
             << "s; Caspar: rms=" << caspar_rms
             << " time=" << caspar_summary.total_time_in_seconds << "s";
   EXPECT_TRUE(std::isfinite(ceres_rms));
   EXPECT_TRUE(std::isfinite(caspar_rms));
   EXPECT_LT(caspar_rms, 1.0);
   EXPECT_LE(caspar_rms, ceres_rms * 1.25 + 1e-3);
-  EXPECT_GT(ceres_adjuster.Summary().total_time_in_seconds, 0.0);
+  EXPECT_GT(ceres_adjuster->Summary().total_time_in_seconds, 0.0);
   EXPECT_GT(caspar_summary.total_time_in_seconds, 0.0);
   // The fixture is intentionally small for CI. This catches runtime or graph
   // regressions without claiming a speedup from a noisy microbenchmark.
   EXPECT_LE(caspar_summary.total_time_in_seconds,
-                 ceres_adjuster.Summary().total_time_in_seconds * 20.0 +
+                 ceres_adjuster->Summary().total_time_in_seconds * 20.0 +
                      0.25);
 }
 
@@ -313,8 +314,9 @@ TEST(optim_bundle_adjustment_caspar, TestCasparSplitIntrinsicFactorVariantsCeres
     ceres_options.refine_focal_length = refine_focal_and_extra;
     ceres_options.refine_extra_params = refine_focal_and_extra;
     ceres_options.refine_principal_point = refine_principal_point;
-    BundleAdjuster ceres_adjuster(ceres_options, config);
-    ASSERT_TRUE(ceres_adjuster.Solve(&ceres_reconstruction));
+    std::unique_ptr<BundleAdjuster> ceres_adjuster =
+        CreateDefaultBundleAdjuster(ceres_options, config);
+    ASSERT_TRUE(ceres_adjuster->Solve(&ceres_reconstruction));
 
     BundleAdjustmentOptions caspar_options = ceres_options;
     caspar_options.backend = BundleAdjustmentBackend::CASPAR;

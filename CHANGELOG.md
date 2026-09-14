@@ -320,7 +320,52 @@ v3.9.5-Beta (Asher) - 08/04/2026
         supported via Load Config / Load Bag
       - Optional CLI tools (`MCALIB_BUILD_TOOLS`) and `test_bag_reader` (`MCALIB_BUILD_TESTS`)
       - CMake: `PLUGIN_STANDARD_QMANUAL_CALIB=ON` + `BUILD_OPENCV=ON`
-  
+    - Add qGKD plugin: general (open-world) keypoint detection with the GKDT-L
+      transformer (ECCV 2026) running natively on ggml — no Python at runtime
+      - Four prompt modes: Text, Visual (1-shot), Multimodal (official fusion
+        semantics), and Multi-object (YOLO-World boxes → GKD per box;
+        class-aware NMS IoU 0.6, calibrated defaults l-world + conf 0.25)
+      - Model catalog via `aicore_gkd_model_*`; missing GGUFs auto-download
+        from Hugging Face with SHA-256 verification; custom paths accepted
+      - One-click sample data per mode panel; DB results (`GKD_` prefix) with
+        labeled keypoints/boxes, metadata timings, and PNG export
+      - Multi-object presets aligned with the upstream predefined_keypoints
+        schemas (statues: coco full-body 17 texts; dish washing: `human_hand`
+        + onehand10k 21 texts; car: carfusion `car keypoint 1..14`); scene
+        conf override for the fish school (0.10, 25 → 46 real-fish boxes)
+        and plural `pigs` class prompt (2 → 4 boxes) — all measured via the
+        public C ABI on the bundled scenes
+      - Official-demo skeleton rendering: preset scenarios carry the upstream
+        `--skeleton` / predefined_keypoints.py bone topology (coco,
+        animal_pose, carfusion, onehand10k, keypoint5, face demos) and draw
+        the bone connections between shown keypoints; x-ray/awa_pose (empty
+        upstream) and scenarios without an official schema render points only
+      - Official pipeline parity: batched multi-ROI GKD forward (new
+        `aicore_gkd_detect_*_multi` C API + per-ROI accessors; the multi-object
+        mode and multi-box ROI rows run one N-box batch like the official
+        top-down pipeline, byte-identical to the upstream gkd-cli on CPU),
+        preset scenarios for tiger/penguin/fish/birds aligned with the
+        official predefined_keypoints retrieval (awa_pose 39 / animalweb 9 +
+        skeleton / CUB 15 / NABird 11 — all measured on the bundled scenes),
+        and an official-style COCO prediction JSON export (categories with
+        keypoint names + skeleton, xywh boxes with detector scores)
+      - CMake: `PLUGIN_STANDARD_QGKD=ON` + `AICore_ENABLED=ON`
+    - AICore VRAM admission guard on the yolo/gkd model loads: when free
+      device memory cannot hold the GGUF plus a fixed compute headroom, the
+      load fails with an actionable message instead of a fatal backend
+      abort under memory pressure (the reported x-world "CUDA crash" was
+      exactly this — cuBLAS hitting GGML_ABORT while an unrelated process
+      held most of the VRAM; the model itself measures clean end-to-end).
+      qGKD retries such loads once on CPU
+    - Add qLingbotMap plugin: LingBot-Map (GCT) streaming RGB-D 3D reconstruction
+      from an ordered image folder or video, native on ggml (CPU / CUDA / Vulkan / Metal)
+      - Per-frame colored point clouds + camera trajectory polyline in the DB tree
+        (`LingbotMap_*` groups; visibility-confidence and optional sky filtering)
+      - Video input via the shared `video_base` module (optional `BUILD_OPENCV=ON`),
+        native sky-segmentation GGUF, official demo test-data scenes
+      - Upstream-parity advanced KV-cache/sampling options with VRAM auto-tiering
+        (f16 default; GGUF auto-download from Hugging Face with pinned SHA-256)
+      - CMake: `PLUGIN_STANDARD_QLINGBOTMAP=ON` + `AICore_ENABLED=ON`
 - New features:
     - Unified AICore inference core (`core/AICore` → `libAICore.so`)
       - Single ggml link for depth (DA3), gaussian (FreeSplatter), and lightglue modules

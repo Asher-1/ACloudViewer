@@ -30,6 +30,8 @@ add_subdirectory( qRMBG )
 add_subdirectory( qYOLO )
 add_subdirectory( qSAM3 )
 add_subdirectory( qTrellis )
+add_subdirectory( qGKD )
+add_subdirectory( qLingbotMap )
 
 #plugins integrated as submodules
 set( submod_plugins

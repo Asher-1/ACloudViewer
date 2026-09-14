@@ -24,6 +24,7 @@
 #include <cstring>
 
 #include "aicore/facedetect_capi.h"
+#include "aicore/gkd_capi.h"
 #include "aicore/rfdetr_capi.h"
 #include "aicore/rmbg_capi.h"
 #include "aicore/sam3_capi.h"
@@ -47,6 +48,18 @@ int main() {
         AICORE_CHECK(e && e->quant_note);
         AICORE_CHECK(noteHasRecommended(e->quant_note));
         AICORE_CHECK(std::strcmp(e->filename, "rmbg_f16.gguf") == 0);
+    }
+
+    // --- GKD: declared default is the marked row --------------------------
+    {
+        const int n = aicore_gkd_model_count();
+        AICORE_CHECK(n > 0);
+        const int d = aicore_gkd_model_default_index();
+        AICORE_CHECK(d >= 0 && d < n);
+        const aicore_gkd_model_entry* e = aicore_gkd_model_at(d);
+        AICORE_CHECK(e && e->quant_note);
+        AICORE_CHECK(noteHasRecommended(e->quant_note));
+        AICORE_CHECK(std::strcmp(e->filename, "gkd_fullset-q4_K.gguf") == 0);
     }
 
     // --- RF-DETR: declared default is the marked row ----------------------

@@ -35,6 +35,10 @@
 #include "math/random_eigen.h"
 #include "math/union_find.h"
 #include "scene/database.h"
+#include "scene/database_cache.h"
+#include "scene/pose_graph.h"
+#include "estimators/rotation_averaging.h"
+#include "sfm/incremental_mapper.h"
 #include "scene/projection.h"
 #include "geometry/triangulation.h"
 #include "sensor/bitmap.h"
@@ -559,4 +563,79 @@ TEST(SynthesizeImages, Nominal) {
 }
 
 }  // namespace
+}  // namespace colmap
+
+// W3-2b stage 2 regression: the incremental mapper's runtime images are
+// frame-wired (Reconstruction::Load goes through AddImage, which attaches
+// FramePtr/CameraPtr and frames carry RigPtr), so pose writes MUST go
+// through the frame (the pose-derived accessors read the frame, not the
+// legacy image buffers). This pins the dual-path invariant that
+// RegisterInitialImagePair/RegisterNextImage (mapper stage 1) rely on.
+namespace colmap {
+TEST(IncrementalMapperFrameWiring, SyntheticCacheIsFrameWiredAndDualPathConsistent) {
+  auto database = Database::Open(":memory:");
+  Reconstruction recon0;
+  SyntheticDatasetOptions options;
+  options.num_rigs = 1;
+  options.num_cameras_per_rig = 1;
+  options.num_frames_per_rig = 4;
+  options.num_points3D = 60;
+  SynthesizeDataset(options, &recon0, database.get());
+
+  DatabaseCache cache;
+  DatabaseCache::Options cache_options;
+  cache_options.min_num_matches = 0;
+  cache.Load(*database, cache_options);
+  ASSERT_EQ(cache.NumImages(), 4);
+  ASSERT_EQ(cache.NumFrames(), 4);
+
+  // BeginReconstruction path: cache -> Reconstruction::Load.
+  Reconstruction recon;
+  IncrementalMapper mapper(&cache);
+  mapper.BeginReconstruction(&recon);
+
+  const image_t first_id = recon.Images().begin()->first;
+  Image& img = recon.Image(first_id);
+  EXPECT_TRUE(img.HasFramePtr());
+  EXPECT_TRUE(img.FramePtr()->HasRigPtr());
+  EXPECT_TRUE(img.FramePtr()->HasPose());
+  EXPECT_TRUE(img.HasCameraPtr());
+
+  // Frame write (mapper stage-1 path) must be visible through the
+  // pose-derived accessors and must keep the legacy shadow in sync.
+  const Rigid3d new_pose(
+          Eigen::Quaterniond(
+              NormalizeQuaternion(Eigen::Vector4d(0.9, 0.1, 0.2, 0.3))),
+          Eigen::Vector3d(1.5, -2.0, 3.0));
+  img.SetCamFromWorld(new_pose);
+  const Eigen::Matrix3x4d pm = img.ProjectionMatrix();
+  Eigen::Matrix3x4d expected_pm = Eigen::Matrix3x4d::Identity();
+  expected_pm.leftCols<3>() = new_pose.rotation().toRotationMatrix();
+  expected_pm.col(3) = new_pose.translation();
+  for (int r = 0; r < 3; ++r) {
+    for (int c = 0; c < 4; ++c) {
+      ASSERT_NEAR(pm(r, c), expected_pm(r, c), 1e-9);
+    }
+  }
+  // The legacy shadow mirrors the frame pose (RegisterNextImage keeps them
+  // in sync after every commit).
+  EXPECT_NEAR(img.Qvec()(0), new_pose.rotation().coeffs()(3), 1e-9);
+  EXPECT_EQ(img.Tvec(), new_pose.translation());
+
+  // An image without a frame falls back to the legacy storage path.
+  Image standalone;
+  standalone.SetCameraId(img.CameraId());
+  standalone.SetQvec(Eigen::Vector4d(
+          new_pose.rotation().coeffs()(3), new_pose.rotation().coeffs()(0),
+          new_pose.rotation().coeffs()(1), new_pose.rotation().coeffs()(2)));
+  standalone.SetTvec(new_pose.translation());
+  EXPECT_FALSE(standalone.HasFramePtr());
+  const Eigen::Matrix3x4d pm_legacy = standalone.ProjectionMatrix();
+  for (int r = 0; r < 3; ++r) {
+    for (int c = 0; c < 4; ++c) {
+      ASSERT_NEAR(pm_legacy(r, c), expected_pm(r, c), 1e-9);
+    }
+  }
+}
+
 }  // namespace colmap

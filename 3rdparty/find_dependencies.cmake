@@ -2552,7 +2552,10 @@ if (BUILD_RECONSTRUCTION)
 endif ()
 
 # opencv
-if (BUILD_OPENCV) # only needed by plugins: qAutoSeg, qManualSeg and q3DMASC
+if (BUILD_OPENCV) # only needed by plugins: qAutoSeg, qManualSeg, q3DMASC
+                  # (feature algorithms) and the video_base consumers
+                  # (qLingbotMap / qFaceDetect / qFreeSplatter / qYOLO /
+                  # qRFDetr / qRMBG / qSAM3 — video-file input)
     if (USE_SYSTEM_OPENCV)
         find_package_3rdparty_library(3rdparty_opencv
                 PUBLIC
@@ -2631,6 +2634,21 @@ if (BUILD_OPENCV) # only needed by plugins: qAutoSeg, qManualSeg and q3DMASC
     else()
         # list(APPEND CloudViewer_3RDPARTY_PUBLIC_TARGETS_FROM_CUSTOM 3rdparty_opencv)
     endif()
+else()
+    # Video-enabled plugins degrade gracefully without OpenCV (video input
+    # hidden/disabled, image-folder input unaffected) — but make the cause
+    # visible at configure time so the user can decide to enable it.
+    foreach(_video_consumer PLUGIN_STANDARD_QLINGBOTMAP PLUGIN_STANDARD_QFACEDETECT
+                             PLUGIN_STANDARD_QFREESPLATTER PLUGIN_STANDARD_QYOLO
+                             PLUGIN_STANDARD_QRFDETR PLUGIN_STANDARD_QRMBG
+                             PLUGIN_STANDARD_QSAM3)
+        if(${_video_consumer})
+            message(WARNING
+                    "${_video_consumer} is enabled but BUILD_OPENCV is OFF — "
+                    "its video-file input is disabled (image-folder input is "
+                    "unaffected). Set BUILD_OPENCV=ON for video support.")
+        endif()
+    endforeach()
 endif()
 
 # why compiling from source on windows

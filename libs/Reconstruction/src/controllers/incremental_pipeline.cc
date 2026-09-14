@@ -114,7 +114,7 @@ void ExtractColors(const std::string& image_path,
 }
 
 void WriteSnapshot(const Reconstruction& reconstruction,
-                   const std::string& snapshot_path) {
+                   const std::filesystem::path& snapshot_path) {
     PrintHeading1("Creating snapshot");
     // Get the current timestamp in milliseconds.
     const size_t timestamp =

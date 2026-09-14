@@ -39,6 +39,10 @@ bool RunBundleAdjustment(const BundleAdjustmentOptions& options,
       ba_config.AddImage(image_id);
     }
   }
+  // Upstream parity (dbb41680 global_mapper.cc): without gauge fixing the
+  // problem has a global 7-DoF null space that makes the normal equations
+  // singular for noise-free problems (non-trivial-rig GP test).
+  ba_config.FixGauge(BundleAdjustmentGauge::TWO_CAMS_FROM_WORLD);
 
   // Fork note: the bundle adjuster optimizes the legacy per-image
   // qvec_/tvec_ buffers (frame-shared parameter blocks land with the rest of
@@ -212,19 +216,22 @@ size_t FilterTracksBySmallTriangulationAngle(
     if (track.size() < 2) {
       continue;
     }
-    double min_angle = std::numeric_limits<double>::max();
-    for (size_t i = 0; i < track.size(); ++i) {
+    // Upstream parity (dbb41680 ObservationManager::FilterPoints3DWithSmallTriangulationAngle): keep the point if ANY pairwise combination of track observations has a sufficient triangulation angle. The previous fork semantics (minimum angle over all pairs below the threshold deletes the point) is strictly stricter and killed every point whose track contains a same-frame pair with a near-zero rig baseline, even when a cross-frame pair triangulates fine.
+    bool keep_point = false;
+    for (size_t i = 0; i < track.size() && !keep_point; ++i) {
+      const Eigen::Vector3d center1 = ProjectionCenterOf(
+          reconstruction, track[i].image_id);
       for (size_t j = i + 1; j < track.size(); ++j) {
-        const Eigen::Vector3d center1 = ProjectionCenterOf(
-            reconstruction, track[i].image_id);
         const Eigen::Vector3d center2 = ProjectionCenterOf(
             reconstruction, track[j].image_id);
-        min_angle = std::min(
-            min_angle,
-            CalculateTriangulationAngle(center1, center2, point3D.XYZ()));
+        if (CalculateTriangulationAngle(center1, center2, point3D.XYZ()) >=
+            min_tri_angle_rad) {
+          keep_point = true;
+          break;
+        }
       }
     }
-    if (min_angle < min_tri_angle_rad) {
+    if (!keep_point) {
       points_to_delete.push_back(point3D_id);
     }
   }

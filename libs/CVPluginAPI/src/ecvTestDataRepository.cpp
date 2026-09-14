@@ -81,6 +81,52 @@ constexpr const char* kSam3DownloadUrl =
 constexpr const char* kSam3Sha256 =
         "3c1d97fddc540dfbc134738aa29fa1607bba329c03aa5c0df37f1e6e13317e87";
 
+// Official GKDT demo images (qGKD): the 15 images behind the upstream
+// General-Keypoint-Detection README examples, incl. the text-prompt demo
+// (2007_007524.jpg) and its 1-shot support image (2007_003778.jpg).
+constexpr const char* kGkdZipName = "general_keypoint_detection_data.zip";
+constexpr const char* kGkdExtractDir = "general_keypoint_detection_data";
+constexpr const char* kGkdDownloadUrl =
+        "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
+        "general_keypoint_detection_data/general_keypoint_detection_data.zip";
+constexpr const char* kGkdSha256 =
+        "14da5f5296fcac60a248cde7623f8d93d9fa6b29b8cc9a94a0258f5da4189e23";
+
+// LingBot-Map streaming reconstruction scenes (qLingbotMap). Four official
+// demo sequences (courthouse/loop/oxford/university, pre-cropped to the
+// 518-wide processing grid) plus the cached native sky masks for the two
+// outdoor scenes that ship them. SHA-256 pins come from the
+// lingbot_map_data release (expanded_assets digest markers).
+constexpr const char* kLingbotMapDownloadBase =
+        "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
+        "lingbot_map_data/";
+constexpr const char* kLingbotMapCourthouseZipName = "courthouse.zip";
+constexpr const char* kLingbotMapCourthouseExtractDir = "courthouse";
+constexpr const char* kLingbotMapCourthouseSha256 =
+        "fd0a19083600a5d588fdbb4740c808b5ca227ad99d48f2760f65e7bb6aa34ed4";
+constexpr const char* kLingbotMapLoopZipName = "loop.zip";
+constexpr const char* kLingbotMapLoopExtractDir = "loop";
+constexpr const char* kLingbotMapLoopSha256 =
+        "67b49e8c4a56108b80700da3da6dc303f694ab4f028337625f57725eb573f3de";
+constexpr const char* kLingbotMapOxfordZipName = "oxford.zip";
+constexpr const char* kLingbotMapOxfordExtractDir = "oxford";
+constexpr const char* kLingbotMapOxfordSha256 =
+        "a81a975c80fc7f9e44224730c78dc3d3f3c52f1ca2200c13b64b57a130cbb032";
+constexpr const char* kLingbotMapOxfordSkyMasksZipName = "oxford_sky_masks.zip";
+constexpr const char* kLingbotMapOxfordSkyMasksExtractDir = "oxford_sky_masks";
+constexpr const char* kLingbotMapOxfordSkyMasksSha256 =
+        "8f8d7a6981ac8b56e9a2cd9665774a554901d0d0060caeb2fd9f873e21c02c27";
+constexpr const char* kLingbotMapUniversityZipName = "university.zip";
+constexpr const char* kLingbotMapUniversityExtractDir = "university";
+constexpr const char* kLingbotMapUniversitySha256 =
+        "bd745b5847ae8d2a5b1385e9e19a6f5de79dda80405864b42f2dee2e8492f653";
+constexpr const char* kLingbotMapUniversitySkyMasksZipName =
+        "university_sky_masks.zip";
+constexpr const char* kLingbotMapUniversitySkyMasksExtractDir =
+        "university_sky_masks";
+constexpr const char* kLingbotMapUniversitySkyMasksSha256 =
+        "fccfd832ea675d7b29708c80ed37504c1f5d1f5e6ab19bf8eb3cbf620498324e";
+
 }  // namespace
 
 // ----------------------------------------------------------------------------
@@ -180,6 +226,70 @@ ecvTestDataRepository::DatasetInfo ecvTestDataRepository::getDatasetInfo(
                     QString::fromLatin1(kSam3ExtractDir),
                     QString::fromLatin1(kSam3DownloadUrl),
                     {QCryptographicHash::Sha256, QByteArray(kSam3Sha256)}};
+        case Dataset::GeneralKeypointDetection:
+            return {kind,
+                    QStringLiteral("GeneralKeypointDetection"),
+                    QString::fromLatin1(kGkdZipName),
+                    QString::fromLatin1(kGkdExtractDir),
+                    QString::fromLatin1(kGkdDownloadUrl),
+                    {QCryptographicHash::Sha256, QByteArray(kGkdSha256)}};
+        case Dataset::LingbotMapCourthouse:
+            return {kind,
+                    QStringLiteral("LingBot-Map courthouse (outdoor)"),
+                    QString::fromLatin1(kLingbotMapCourthouseZipName),
+                    QString::fromLatin1(kLingbotMapCourthouseExtractDir),
+                    QString::fromLatin1(kLingbotMapDownloadBase) +
+                            QString::fromLatin1(kLingbotMapCourthouseZipName),
+                    {QCryptographicHash::Sha256,
+                     QByteArray(kLingbotMapCourthouseSha256)}};
+        case Dataset::LingbotMapLoop:
+            return {kind,
+                    QStringLiteral("LingBot-Map loop (indoor loop closure)"),
+                    QString::fromLatin1(kLingbotMapLoopZipName),
+                    QString::fromLatin1(kLingbotMapLoopExtractDir),
+                    QString::fromLatin1(kLingbotMapDownloadBase) +
+                            QString::fromLatin1(kLingbotMapLoopZipName),
+                    {QCryptographicHash::Sha256,
+                     QByteArray(kLingbotMapLoopSha256)}};
+        case Dataset::LingbotMapOxford:
+            return {kind,
+                    QStringLiteral("LingBot-Map Oxford Spires (outdoor)"),
+                    QString::fromLatin1(kLingbotMapOxfordZipName),
+                    QString::fromLatin1(kLingbotMapOxfordExtractDir),
+                    QString::fromLatin1(kLingbotMapDownloadBase) +
+                            QString::fromLatin1(kLingbotMapOxfordZipName),
+                    {QCryptographicHash::Sha256,
+                     QByteArray(kLingbotMapOxfordSha256)}};
+        case Dataset::LingbotMapOxfordSkyMasks:
+            return {kind,
+                    QStringLiteral("LingBot-Map oxford sky masks"),
+                    QString::fromLatin1(kLingbotMapOxfordSkyMasksZipName),
+                    QString::fromLatin1(kLingbotMapOxfordSkyMasksExtractDir),
+                    QString::fromLatin1(kLingbotMapDownloadBase) +
+                            QString::fromLatin1(
+                                    kLingbotMapOxfordSkyMasksZipName),
+                    {QCryptographicHash::Sha256,
+                     QByteArray(kLingbotMapOxfordSkyMasksSha256)}};
+        case Dataset::LingbotMapUniversity:
+            return {kind,
+                    QStringLiteral("LingBot-Map university (outdoor)"),
+                    QString::fromLatin1(kLingbotMapUniversityZipName),
+                    QString::fromLatin1(kLingbotMapUniversityExtractDir),
+                    QString::fromLatin1(kLingbotMapDownloadBase) +
+                            QString::fromLatin1(kLingbotMapUniversityZipName),
+                    {QCryptographicHash::Sha256,
+                     QByteArray(kLingbotMapUniversitySha256)}};
+        case Dataset::LingbotMapUniversitySkyMasks:
+            return {kind,
+                    QStringLiteral("LingBot-Map university sky masks"),
+                    QString::fromLatin1(kLingbotMapUniversitySkyMasksZipName),
+                    QString::fromLatin1(
+                            kLingbotMapUniversitySkyMasksExtractDir),
+                    QString::fromLatin1(kLingbotMapDownloadBase) +
+                            QString::fromLatin1(
+                                    kLingbotMapUniversitySkyMasksZipName),
+                    {QCryptographicHash::Sha256,
+                     QByteArray(kLingbotMapUniversitySkyMasksSha256)}};
     }
     Q_UNREACHABLE();
     return {};
@@ -248,6 +358,21 @@ bool ecvTestDataRepository::isDatasetAvailable(Dataset kind) const {
             // present for the qSAM3 sample-data flow to work.
             extractedComplete = !getSamImages(extract).isEmpty() &&
                                 !getSamVideos(extract).isEmpty();
+            break;
+        case Dataset::GeneralKeypointDetection:
+            // The official GKDT demo images must all be present.
+            extractedComplete =
+                    !getGeneralKeypointDetectionImages(extract).isEmpty();
+            break;
+        case Dataset::LingbotMapCourthouse:
+        case Dataset::LingbotMapLoop:
+        case Dataset::LingbotMapOxford:
+        case Dataset::LingbotMapUniversity:
+        case Dataset::LingbotMapOxfordSkyMasks:
+        case Dataset::LingbotMapUniversitySkyMasks:
+            // A LingBot-Map bundle is complete when its ordered frame
+            // sequence (or mask PNGs) is present.
+            extractedComplete = !getLingbotMapImages(extract).isEmpty();
             break;
     }
     if (extractedComplete) return true;
@@ -650,6 +775,53 @@ QStringList ecvTestDataRepository::getImage2MeshImages(
 
     QStringList images;
     QDirIterator it(imageDir, patterns, QDir::Files);
+    while (it.hasNext()) {
+        const QString path = it.next();
+        const QString fileName = QFileInfo(path).fileName();
+        if (fileName.startsWith(QLatin1Char('.'))) continue;
+        images.append(QFileInfo(path).absoluteFilePath());
+    }
+    images.sort(Qt::CaseInsensitive);
+    return images;
+}
+
+QStringList ecvTestDataRepository::getGeneralKeypointDetectionImages(
+        const QString& bundleRoot) {
+    if (bundleRoot.isEmpty()) return {};
+
+    // The official GKDT demo images sit directly in the bundle root.
+    if (!QDir(bundleRoot).exists()) return {};
+
+    const QStringList patterns = {
+            QStringLiteral("*.jpg"), QStringLiteral("*.jpeg"),
+            QStringLiteral("*.png"), QStringLiteral("*.webp")};
+
+    QStringList images;
+    QDirIterator it(bundleRoot, patterns, QDir::Files);
+    while (it.hasNext()) {
+        const QString path = it.next();
+        const QString fileName = QFileInfo(path).fileName();
+        if (fileName.startsWith(QLatin1Char('.'))) continue;
+        images.append(QFileInfo(path).absoluteFilePath());
+    }
+    images.sort(Qt::CaseInsensitive);
+    return images;
+}
+
+QStringList ecvTestDataRepository::getLingbotMapImages(
+        const QString& bundleRoot) {
+    if (bundleRoot.isEmpty()) return {};
+    if (!QDir(bundleRoot).exists()) return {};
+
+    const QStringList patterns = {
+            QStringLiteral("*.png"), QStringLiteral("*.jpg"),
+            QStringLiteral("*.jpeg"), QStringLiteral("*.bmp")};
+
+    // The lingbot_map_data archives keep a top-level scene directory
+    // (<zip stem>/<frame>.png), so the scan is recursive.
+    QStringList images;
+    QDirIterator it(bundleRoot, patterns, QDir::Files,
+                    QDirIterator::Subdirectories);
     while (it.hasNext()) {
         const QString path = it.next();
         const QString fileName = QFileInfo(path).fileName();

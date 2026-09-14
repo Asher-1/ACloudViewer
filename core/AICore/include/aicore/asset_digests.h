@@ -107,6 +107,10 @@ inline constexpr AssetDigestEntry kAssetDigests[] = {
         {"freesplatter-scene-f32.gguf", "821a2f2195a7602aaf2c89c920d0ea0de27cf70ed04defec7292691f36418872" },
         {"freesplatter-scene-q8_0.gguf", "80440a0172281fb7d9cd77170b39a317c86924ee040406f18650c2a035f892bc" },
         {"friends_faces.zip", "eb2c2daff249f8bf50e9f95ae1a37c3ce7de06bc7e2a798c4512a179265a637b" },
+        {"gkd_fullset-f16.gguf", "54f28c7260de276c5fb02a9f8987a9d19829bce0c65bf118cc02a2e887f9ab70" },
+        {"gkd_fullset-f32.gguf", "9d828db54a19926292aa8d34bdd81c37346f1b90b8407c5a1bbac0e8393d74ee" },
+        {"gkd_fullset-q4_K.gguf", "84b5c96dac5b77ff57c4b8c0cc3151eba66c310d963160aeb546187b8cfc183e" },
+        {"gkd_fullset-q8_0.gguf", "ff5aa84a6c120917bc6f943c7f0db041e86045afbfce1ccc0d75d4b2483573ba" },
         {"landmarks-2d106-1k3d68.gguf", "b0595a5cb20e1e77ede97a7b8fe2b391640033e99a1bb9c4e8583528da59b3ce" },
         {"mclip-labse-vitb32-f16.gguf", "09a8024fd2d063690b8416d63bd38dcb590a3c50762610921852288c81ecbb44" },
         {"mclip-labse-vitb32-q8_0.gguf", "885962d16fbec6fd93a1dc513063e056d0a5ca797de920fb6d2972500aea8037" },
@@ -401,6 +405,15 @@ inline constexpr AssetDigestEntry kAssetDigests[] = {
         {"yolov8x-world-f32.gguf", "9220426c30aaf0ae21d7ca8b581311fe75fdf6db0378d18c6597e89de06ff110" },
         {"yolov8x-world-q8_0.gguf", "1f093f86ebf2c4753c0e01fc9cd5b1d64a11a546f66f0d5d768dd890655a3208" },
         {"yunet-sface.gguf", "9ce78d4ba0ae9d5e8c91a0e145d511558d1d90f5d9c1f4131cca9bb4bce60902" },
+        // LingBot-Map GGUF deployment (Hugging Face Asher-1/lingbot-map-gguf,
+        // canonical LFS oids): streaming GCT reconstruction + native skyseg.
+        {"lingbot-map-f16.gguf", "7f3d4816300efe0f3576ac7a0f8e16ea1891ef8f4986e749c193b93a19e8acc5" },
+        {"lingbot-map-f32.gguf", "0ccf3dd2cb649f0279c8d07b5c431921783283d3c7e175a5c06eaffa2fa3b51c" },
+        {"lingbot-map-q4.gguf", "92e30cbbf367f4609de245889985490359aa08be29c3292d2fc8682ee3875e52" },
+        {"lingbot-map-q8.gguf", "0a7273dce77cb7580a5fc2ca8019cd8f79ea725944e5790c0c2c4e617a7c2e36" },
+        {"lingbot-map-skyseg-f16.gguf", "4e4ba738737a5f966950d24cc46b6fbdeb54c1598c081b01278b11f04d8fd211" },
+        {"lingbot-map-skyseg-f32.gguf", "0409e16a891c59efbde1350e126241f83f3acc4b89c23fc5a9f8f98f83feeb7f" },
+        {"lingbot-map-skyseg-q8_0.gguf", "759c2c0cc82e5493f48bfa7752c344c18bc13df5fa5fa36baaffe389f66dcb47" },
 };
 // clang-format on
 

@@ -156,6 +156,34 @@ target_link_libraries(${PROJECT_NAME}
         Qt::PrintSupport
         )
 
+if(UNIX AND NOT APPLE AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    # The OIIO static closure (oiio_static_closure.rsp) pulls OIIO's own
+    # image-codec archives (libpng.a, libjpeg.a, libtiff.a, ...) into this
+    # executable. Because the executable links -rdynamic (plugins resolve
+    # project symbols from it), every symbol of those archives got
+    # re-exported into the dynsym. Runtime-dlopen'd system modules (the
+    # gdk-pixbuf PNG/JPEG preview loaders behind the gtk3 native
+    # QFileDialog) bind to the executable's dynsym FIRST and then operate
+    # on their own system-libpng16/libjpeg png_structs through the
+    # ABI-mismatched static copies — png_destroy_read_struct frees garbage
+    # and kills the process as soon as a Browse dialog renders an image
+    # preview. Fix the dependency regression at its root: keep the
+    # closure's codec archives out of the dynsym. Static-period resolution
+    # inside this binary is unaffected, plugins hold no undefined png_*/
+    # jpeg_*/tiff_* references (verified: nm -D over bin/plugins), and the
+    # pybind wheel links its own closure independently — so neither
+    # Reconstruction nor the wheel changes behavior.
+    # One --exclude-libs=<archive> per library, using the `=` form: ld's
+    # -Wl prefix splits on commas, so a comma-separated list after a single
+    # --exclude-libs would leak the 2nd..Nth names as input-file arguments
+    # ("cannot find libtiff.a"). The option accumulates across repeats.
+    foreach(_codec_archive IN ITEMS libpng.a libpng16.a libjpeg.a
+            libturbojpeg.a libtiff.a libtiffxx.a)
+        target_link_options(${PROJECT_NAME} PRIVATE
+                LINKER:--exclude-libs=${_codec_archive})
+    endforeach()
+endif()
+
 if (TARGET Qt::Concurrent)
     target_link_libraries(${PROJECT_NAME}
             Qt::Concurrent

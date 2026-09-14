@@ -411,4 +411,80 @@ inline std::string resolve_device_request(const std::string& device_req) {
     return "cpu";
 }
 
+// Free/total device memory of the backend family a device request resolves
+// to. Registry-level query: no backend instance is created. `valid` is false
+// for CPU-only requests and when no accelerator matches.
+struct GpuMemoryInfo {
+    size_t free_bytes = 0;
+    size_t total_bytes = 0;
+    bool valid = false;
+};
+
+inline GpuMemoryInfo query_gpu_memory(const std::string& device_req) {
+    load_backends_once();
+    GpuMemoryInfo info;
+    std::string name;
+    int want_idx = 0;
+    parse_device(device_req, name, want_idx);
+    if (name == "cpu") return info;
+    const bool auto_pick = name.empty() || name == "auto" || name == "gpu";
+    // "auto" resolves through the same family priority as the runtime
+    // (auto_backend_ids), so the admission check inspects the device the
+    // session would actually have initialized.
+    for (const char* const* family = auto_pick ? auto_backend_ids()
+                                               : nullptr;
+         auto_pick ? *family != nullptr : true; ) {
+        const std::string want_reg =
+                auto_pick ? normalize_backend_name(*family)
+                          : normalize_backend_name(name);
+        int gpu_idx = 0;
+        for (size_t i = 0; i < ggml_backend_dev_count(); i++) {
+            ggml_backend_dev_t dev = ggml_backend_dev_get(i);
+            const auto type = ggml_backend_dev_type(dev);
+            if (type != GGML_BACKEND_DEVICE_TYPE_GPU &&
+                type != GGML_BACKEND_DEVICE_TYPE_IGPU) {
+                continue;
+            }
+            const char* reg =
+                    ggml_backend_reg_name(ggml_backend_dev_backend_reg(dev));
+            if (!reg || to_lower(reg) != want_reg) continue;
+            if (gpu_idx++ != want_idx) continue;
+            ggml_backend_dev_memory(dev, &info.free_bytes,
+                                    &info.total_bytes);
+            info.valid = info.total_bytes > 0;
+            return info;
+        }
+        if (!auto_pick) break;
+        if (!*++family) break;
+    }
+    return info;
+}
+
+// Admission check for an incoming model of `bytes_needed` on the device a
+// request resolves to. Returns false (with an actionable message) when the
+// free memory cannot hold the weights plus a fixed compute headroom, so the
+// caller can fail the load cleanly instead of hitting a fatal allocation
+// abort deep inside a backend GEMM at inference time (observed as a
+// GGML_ABORT from the cuBLAS path under VRAM pressure with several resident
+// models). The headroom covers graph pools and GEMM workspaces.
+inline bool gpu_admission_check(const std::string& device_req,
+                                size_t bytes_needed, std::string* error) {
+    const GpuMemoryInfo mem = query_gpu_memory(device_req);
+    if (!mem.valid) return true;
+    constexpr size_t kComputeHeadroom = size_t{512} << 20;
+    const size_t required = bytes_needed + kComputeHeadroom;
+    if (mem.free_bytes >= required) return true;
+    if (error != nullptr) {
+        char buf[224];
+        std::snprintf(buf, sizeof buf,
+                      "GPU memory headroom insufficient: need ~%zu MiB "
+                      "(model %zu MiB + %zu MiB compute), free %zu MiB — "
+                      "release other models or switch device",
+                      required >> 20, bytes_needed >> 20,
+                      kComputeHeadroom >> 20, mem.free_bytes >> 20);
+        *error = buf;
+    }
+    return false;
+}
+
 }  // namespace ggml_common
