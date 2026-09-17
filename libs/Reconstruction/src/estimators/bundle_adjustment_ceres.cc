@@ -13,7 +13,9 @@
 #include "estimators/bundle_adjustment_ceres.h"
 
 #include "estimators/alignment.h"
+#include "estimators/cost_functions/manifold.h"
 #include "estimators/cost_functions/pose_prior.h"
+#include "estimators/cost_functions/reprojection_error.h"
 
 #include <map>
 
@@ -242,6 +244,7 @@ void CeresBundleAdjuster::SetUp(Reconstruction* reconstruction,
     }
 
     ParameterizeCameras(reconstruction);
+    ParameterizeRigsAndFrames(reconstruction);
     ParameterizePoints(reconstruction);
 
     // Upstream parity (d3ccaf35): fix the global gauge after all
@@ -269,6 +272,17 @@ void CeresBundleAdjuster::TearDown(Reconstruction* reconstruction) {
     // refined sensor_from_rig poses back to the rigs and mirror the composed
     // camera poses into the legacy per-image buffers so both pose tracks stay
     // consistent for every consumer.
+    // W3-2b step 5: write the refined single-block poses back to the
+    // frames and rigs (the parameter blocks are node-based-map shadows).
+    for (const auto& [key, block] : frame_blocks_) {
+        if (!reconstruction->ExistsFrame(key)) {
+            continue;
+        }
+        Frame& frame = reconstruction->Frame(key);
+        if (frame.HasPose()) {
+            frame.SetRigFromWorld(block.rig_from_world);
+        }
+    }
     for (const auto& [key, block] : sensor_blocks_) {
         if (!reconstruction->ExistsRig(key.first)) {
             continue;
@@ -277,10 +291,7 @@ void CeresBundleAdjuster::TearDown(Reconstruction* reconstruction) {
         if (!rig.HasSensor(block.sensor_id)) {
             continue;
         }
-        const Eigen::Quaterniond q(block.qvec(0), block.qvec(1), block.qvec(2),
-                                   block.qvec(3));
-        rig.SetSensorFromRig(block.sensor_id,
-                             Rigid3d(q.normalized(), block.tvec));
+        rig.SetSensorFromRig(block.sensor_id, block.sensor_from_rig);
     }
 
     for (const image_t image_id : config_.Images()) {
@@ -310,6 +321,7 @@ void CeresBundleAdjuster::TearDown(Reconstruction* reconstruction) {
         image.SetTvec(cam_from_world.translation());
     }
     sensor_blocks_.clear();
+    frame_blocks_.clear();
 }
 
 CeresBundleAdjuster::SensorPoseBlock& CeresBundleAdjuster::GetOrCreateSensorBlock(
@@ -324,10 +336,20 @@ CeresBundleAdjuster::SensorPoseBlock& CeresBundleAdjuster::GetOrCreateSensorBloc
     SensorPoseBlock block;
     block.rig_id = rig_id;
     block.sensor_id = sensor_id;
-    const Eigen::Quaterniond& q = sensor_from_rig.rotation();
-    block.qvec = Eigen::Vector4d(q.w(), q.x(), q.y(), q.z());
-    block.tvec = sensor_from_rig.translation();
+    block.sensor_from_rig = sensor_from_rig;
     return sensor_blocks_.emplace(key, block).first->second;
+}
+
+CeresBundleAdjuster::FramePoseBlock& CeresBundleAdjuster::GetOrCreateFrameBlock(
+        const frame_t frame_id, const Rigid3d& rig_from_world) {
+    const auto it = frame_blocks_.find(frame_id);
+    if (it != frame_blocks_.end()) {
+        return it->second;
+    }
+    FramePoseBlock block;
+    block.frame_id = frame_id;
+    block.rig_from_world = rig_from_world;
+    return frame_blocks_.emplace(frame_id, block).first->second;
 }
 
 namespace {
@@ -391,7 +413,8 @@ void CeresBundleAdjuster::FixGaugeWithThreePoints(
 
 void CeresBundleAdjuster::FixGaugeWithTwoCamsFromWorld(
         Reconstruction* reconstruction) {
-    // No need to fix the Gauge if all frames are constant.
+    // Upstream parity (d3ccaf35): no need to fix the Gauge if all frames
+    // are constant.
     if (!options_.refine_rig_from_world) {
         return;
     }
@@ -400,116 +423,107 @@ void CeresBundleAdjuster::FixGaugeWithTwoCamsFromWorld(
     Image* image2 = nullptr;
 
     // Check if a sensor is either a reference sensor, or a non-reference
-    // sensor whose blocks are fixed in the problem (fork adaptation of the
-    // upstream Rigid3d::params single-block check to the split qvec/tvec
-    // sensor blocks).
-    auto IsParameterizedConstSensor = [this](const Image& image) {
-        const sensor_t sensor_id =
-                sensor_t(SensorType::CAMERA, image.CameraId());
-        if (image.HasFramePtr() && image.FramePtr()->HasRigPtr() &&
-            image.FramePtr()->RigPtr()->IsRefSensor(sensor_id)) {
-            return true;
-        }
-        // Cover the corner case where the composed residual freezes the
-        // sensor pose (upstream: ReprojErrorConstantPoseCostFunctor).
-        if (config_.HasConstantSensorFromRigPose(sensor_id) ||
-            !options_.refine_sensor_from_rig) {
-            return true;
-        }
-        const auto key = std::make_pair(
-                image.HasFramePtr() && image.FramePtr()->HasRigPtr()
-                        ? image.FramePtr()->RigId()
-                        : kInvalidRigId,
-                sensor_id);
-        const auto it = sensor_blocks_.find(key);
-        if (it != sensor_blocks_.end() &&
-            problem_->HasParameterBlock(it->second.qvec.data()) &&
-            problem_->IsParameterBlockConstant(it->second.qvec.data()) &&
-            problem_->IsParameterBlockConstant(it->second.tvec.data())) {
-            return true;
-        }
-        return false;
-    };
+    // sensor with sensor_from_rig fixed.
+    auto IsParameterizedConstSensor =
+            [this](const Image& image) {
+                const sensor_t sensor_id = image.CameraPtr()->SensorId();
+                if (image.FramePtr()->RigPtr()->IsRefSensor(sensor_id)) {
+                    return true;
+                }
+                const auto sb_it = sensor_blocks_.find(
+                        {image.FramePtr()->RigId(), sensor_id});
+                if (sb_it != sensor_blocks_.end() &&
+                    problem_->HasParameterBlock(
+                            sb_it->second.sensor_from_rig.params.data()) &&
+                    problem_->IsParameterBlockConstant(
+                            sb_it->second.sensor_from_rig.params.data())) {
+                    return true;
+                }
+                // Cover corner case when ReprojErrorConstantPoseCostFunctor
+                // is used.
+                if (config_.HasConstantSensorFromRigPose(sensor_id) ||
+                    !options_.refine_extrinsics ||
+                    !options_.refine_sensor_from_rig) {
+                    return true;
+                }
+                return false;
+            };
 
-    // First, search through the already fixed frames in the problem.
-    for (const image_t image_id : config_.Images()) {
+    // First, search through the already fixed cameras in the problem.
+    for (const image_t image_id : parameterized_image_ids_) {
         Image& image = reconstruction->Image(image_id);
-        if (!image.HasFrameId() || !image.HasFramePtr()) {
-            // Frameless legacy images keep their own pose buffers and take
-            // no part in the frame-level gauge.
-            continue;
-        }
         if (config_.HasConstantRigFromWorldPose(image.FrameId()) &&
             IsParameterizedConstSensor(image)) {
             if (image1 == nullptr) {
                 image1 = &image;
-            } else if (image1->FrameId() != image.FrameId()) {
+            } else if (image1 != nullptr &&
+                       image1->FrameId() != image.FrameId()) {
                 // No need to fix the Gauge if two frames are already fixed.
                 return;
             }
         }
     }
 
-    // Otherwise, search through the variable frames in the problem.
+    // Otherwise, search through the variable cameras in the problem.
     int frame2_from_world_fixed_dim = 0;
-    for (const image_t image_id : config_.Images()) {
+    for (const image_t image_id : parameterized_image_ids_) {
         Image& image = reconstruction->Image(image_id);
-        if (!image.HasFrameId() || !image.HasFramePtr()) {
+        const auto fb_it = frame_blocks_.find(image.FrameId());
+        if (fb_it == frame_blocks_.end()) {
             continue;
         }
+        const Rigid3d& rig_from_world = fb_it->second.rig_from_world;
         if (image1 == nullptr && IsParameterizedConstSensor(image)) {
             image1 = &image;
         } else if (image1 != nullptr &&
                    image1->FrameId() != image.FrameId() &&
                    IsParameterizedConstSensor(image) &&
-                   problem_->HasParameterBlock(
-                           image.FramePtr()->RigFromWorldQvec().data())) {
+                   problem_->HasParameterBlock(rig_from_world.params.data())) {
             // Check if one of the baseline dimensions is large enough and
             // choose it as the fixed coordinate. If there is no such pair
             // of frames, then the scale is not constrained well.
+            const auto fb1_it = frame_blocks_.find(image1->FrameId());
             const Eigen::Vector3d baseline =
-                    (image1->FramePtr()->RigFromWorld() *
-                     Inverse(image.FramePtr()->RigFromWorld()))
+                    (fb1_it->second.rig_from_world * Inverse(rig_from_world))
                             .translation();
             Eigen::Index max_coeff_idx = 0;
             if (baseline.cwiseAbs().maxCoeff(&max_coeff_idx) > 1e-9) {
                 image2 = &image;
-                frame2_from_world_fixed_dim =
-                        static_cast<int>(max_coeff_idx);
+                frame2_from_world_fixed_dim = max_coeff_idx;
                 break;
             }
         }
     }
 
     if (image1 == nullptr || image2 == nullptr) {
-        LOG(WARNING) << "Failed to fix Gauge with two cameras. Falling "
-                        "back to fixing Gauge with three points.";
+        LOG(WARNING) << "Failed to fix Gauge with two cameras. "
+                        "Falling back to fixing Gauge with three points.";
         FixGaugeWithThreePoints(reconstruction);
         return;
     }
 
     if (!config_.HasConstantRigFromWorldPose(image1->FrameId())) {
-        Frame& frame1 = *image1->FramePtr();
+        auto fb1_it = frame_blocks_.find(image1->FrameId());
         problem_->SetParameterBlockConstant(
-                frame1.RigFromWorldQvec().data());
-        problem_->SetParameterBlockConstant(
-                frame1.RigFromWorldTvec().data());
+                fb1_it->second.rig_from_world.params.data());
     }
 
     if (!config_.HasConstantRigFromWorldPose(image2->FrameId())) {
-        Frame& frame2 = *image2->FramePtr();
-        double* qvec = frame2.RigFromWorldQvec().data();
-        double* tvec = frame2.RigFromWorldTvec().data();
+        auto fb2_it = frame_blocks_.find(image2->FrameId());
+        Rigid3d& frame2_from_world = fb2_it->second.rig_from_world;
         if (options_.constant_rig_from_world_rotation) {
-            problem_->SetParameterBlockConstant(qvec);
-        }
-        // Fork note: the frame's quaternion manifold (Wxyz) is already
-        // installed on qvec; only the translation dimension is pinned here.
-        // Guard against a manifold already installed by SetConstantTvec on
-        // a shared image of the same frame (ceres rejects re-installation).
-        if (manifold_marked_blocks_.insert(tvec).second) {
-            SetSubsetManifold(3, {frame2_from_world_fixed_dim},
-                              problem_.get(), tvec);
+            SetManifold(problem_.get(),
+                        frame2_from_world.params.data(),
+                        CreateSubsetManifold(
+                                7, {0, 1, 2, 3,
+                                    4 + frame2_from_world_fixed_dim}));
+        } else {
+            SetManifold(problem_.get(),
+                        frame2_from_world.params.data(),
+                        CreateProductManifold(
+                                CreateEigenQuaternionManifold(),
+                                CreateSubsetManifold(
+                                        3, {frame2_from_world_fixed_dim})));
         }
     }
 }
@@ -545,50 +559,50 @@ void CeresBundleAdjuster::AddImageToProblem(const image_t image_id,
                                        ceres::LossFunction* loss_function) {
     Image& image = reconstruction->Image(image_id);
     Camera& camera = reconstruction->Camera(image.CameraId());
+    double* camera_params_data = camera.ParamsData();
 
-    // W3-2b step 4: the pose parameter blocks are the frame storage shared
-    // by every image of the frame; images without a frame (legacy fixtures)
-    // keep their own buffers.
+    // W3-2b step 5 (upstream parity, d3ccaf35): the pose parameter blocks
+    // are single Rigid3d shadow blocks (node-based map, stable addresses)
+    // shared by every image of a frame.
     bool frame_pose = false;
     bool compose_rig = false;
-    bool frame_rotation_constant = false;
     sensor_t rig_sensor_id{};
-    Eigen::Vector4d* sensor_qvec_data = nullptr;
-    Eigen::Vector3d* sensor_tvec_data = nullptr;
+    Rigid3d* sensor_from_rig_block = nullptr;
+    Rigid3d* rig_from_world_block = nullptr;
+    // Legacy frameless-cache-image path (legacy fixtures only): separate
+    // qvec/tvec buffers owned by the image itself.
+    bool legacy_pose = false;
     double* qvec_data = nullptr;
     double* tvec_data = nullptr;
-    double* camera_params_data = camera.ParamsData();
 
     if (image.HasFrameId() && reconstruction->ExistsFrame(image.FrameId())) {
         Frame& frame = reconstruction->Frame(image.FrameId());
         frame_pose = true;
-        qvec_data = frame.RigFromWorldQvec().data();
-        tvec_data = frame.RigFromWorldTvec().data();
+        FramePoseBlock& fb =
+                GetOrCreateFrameBlock(image.FrameId(), frame.RigFromWorld());
+        rig_from_world_block = &fb.rig_from_world;
         const Rig& rig = reconstruction->Rig(frame.RigId());
-        frame_rotation_constant =
-                options_.constant_rig_from_world_rotation;
         if (options_.refine_sensor_from_rig && rig.NumSensors() > 1 &&
             rig.HasSensor(camera.SensorId()) &&
             !rig.IsRefSensor(camera.SensorId()) &&
             rig.HasSensorFromRig(camera.SensorId())) {
             compose_rig = true;
             rig_sensor_id = camera.SensorId();
-            SensorPoseBlock& block =
-                    GetOrCreateSensorBlock(frame.RigId(), rig_sensor_id,
-                                           rig.SensorFromRig(rig_sensor_id));
-            sensor_qvec_data = &block.qvec;
-            sensor_tvec_data = &block.tvec;
+            SensorPoseBlock& sb = GetOrCreateSensorBlock(
+                    frame.RigId(), rig_sensor_id,
+                    rig.SensorFromRig(rig_sensor_id));
+            sensor_from_rig_block = &sb.sensor_from_rig;
         }
     } else {
         // CostFunction assumes unit quaternions.
         image.NormalizeQvec();
+        legacy_pose = true;
         qvec_data = image.Qvec().data();
         tvec_data = image.Tvec().data();
     }
 
-    // W7 pose-prior residual: absolute position prior on the sensor center,
-    // attached to this image's pose parameter blocks (fork adaptation of the
-    // upstream rig-aware functor over the fork's split qvec/tvec blocks).
+    // W7 pose-prior residual (upstream parity: single Rigid3d block functor;
+    // the legacy frameless path keeps the split qvec/tvec functor).
     if (pose_prior_options_) {
         for (const PosePrior& pose_prior : pose_priors_) {
             if (pose_prior.corr_data_id.sensor_id.type ==
@@ -597,29 +611,45 @@ void CeresBundleAdjuster::AddImageToProblem(const image_t image_id,
                 pose_prior.HasPosition()) {
                 ceres::LossFunction* prior_loss =
                         CreatePosePriorLossFunction(*pose_prior_options_);
-                problem_->AddResidualBlock(
-                        new ceres::AutoDiffCostFunction<
-                                AbsolutePosePositionPriorQvecTvecCostFunctor,
-                                3,
-                                4,
-                                3>(
-                                new AbsolutePosePositionPriorQvecTvecCostFunctor(
-                                        pose_prior.position)),
-                        prior_loss,
-                        qvec_data,
-                        tvec_data);
+                if (frame_pose) {
+                    problem_->AddResidualBlock(
+                            new ceres::AutoDiffCostFunction<
+                                    AbsolutePosePositionPriorCostFunctor,
+                                    3,
+                                    7>(
+                                    new AbsolutePosePositionPriorCostFunctor(
+                                            pose_prior.position)),
+                            prior_loss,
+                            rig_from_world_block->params.data());
+                } else {
+                    problem_->AddResidualBlock(
+                            new ceres::AutoDiffCostFunction<
+                                    AbsolutePosePositionPriorQvecTvecCostFunctor,
+                                    3,
+                                    4,
+                                    3>(
+                                    new AbsolutePosePositionPriorQvecTvecCostFunctor(
+                                            pose_prior.position)),
+                            prior_loss,
+                            qvec_data,
+                            tvec_data);
+                }
                 break;
             }
         }
     }
 
-    const bool constant_pose =
+    // Upstream parity (d3ccaf35): per-image pose freezing is split into
+    // rig-from-world and sensor-from-rig conditions (the fork's
+    // !refine_extrinsics freezes both).
+    const bool constant_rig_from_world =
             !options_.refine_extrinsics || !options_.refine_rig_from_world ||
             config_.HasConstantPose(image_id) ||
-            // Upstream parity (d3ccaf35): frame-level rig-from-world
-            // constants freeze the whole 6-DoF pose of the owning frame.
-            (image.HasFrameId() &&
-             config_.HasConstantRigFromWorldPose(image.FrameId()));
+            config_.HasConstantRigFromWorldPose(image.FrameId());
+    const bool constant_sensor_from_rig =
+            !options_.refine_extrinsics ||
+            !options_.refine_sensor_from_rig ||
+            config_.HasConstantSensorFromRigPose(rig_sensor_id);
 
     // Add residuals to bundle adjustment problem.
     size_t num_observations = 0;
@@ -629,153 +659,109 @@ void CeresBundleAdjuster::AddImageToProblem(const image_t image_id,
             continue;
         }
 
-        num_observations += 1;
-        point3D_num_observations_[point2D.Point3DId()] += 1;
-
         Point3D& point3D = reconstruction->Point3D(point2D.Point3DId());
         assert(point3D.Track().Length() > 1);
 
-        ceres::CostFunction* cost_function = nullptr;
+        // Upstream parity: skip points with track length below minimum.
+        if (options_.min_track_length > 0 &&
+            static_cast<int>(point3D.Track().Length()) <
+                    options_.min_track_length) {
+            continue;
+        }
 
-        if (constant_pose) {
-            // Read the pose through the frame-aware accessor so stale legacy
-            // buffers (non-config track images) cannot leak in.
-            const Rigid3d pose_cam_from_world =
-                    frame_pose ? image.CamFromWorld()
-                               : Rigid3d(Eigen::Quaterniond(
-                                             image.Qvec()(0), image.Qvec()(1),
-                                             image.Qvec()(2), image.Qvec()(3)),
-                                         image.Tvec());
-            const Eigen::Quaterniond pose_q = pose_cam_from_world.rotation();
-            const Eigen::Vector4d pose_qvec(
-                    pose_q.w(), pose_q.x(), pose_q.y(), pose_q.z());
-            if (camera.ModelId() == EquirectangularCameraModel::model_id) {
-                cost_function =
-                        EquirectangularBundleAdjustmentConstantPoseCostFunction::Create(
-                                pose_qvec, pose_cam_from_world.translation(),
-                                point2D.XY());
-            } else {
-                switch (camera.ModelId()) {
-#define CAMERA_MODEL_CASE(CameraModel)                                         \
-    case CameraModel::model_id:                                                \
-        cost_function =                                                        \
-                BundleAdjustmentConstantPoseCostFunction<CameraModel>::Create( \
-                        pose_qvec, pose_cam_from_world.translation(),          \
-                        point2D.XY());                                         \
-        break;
+        num_observations += 1;
+        point3D_num_observations_[point2D.Point3DId()] += 1;
 
-                CAMERA_MODEL_SWITCH_CASES
-
-#undef CAMERA_MODEL_CASE
-            }
-            }
-
-            problem_->AddResidualBlock(cost_function, loss_function,
-                                       point3D.XYZ().data(),
-                                       camera_params_data);
-        } else if (compose_rig &&
-                   camera.ModelId() == EquirectangularCameraModel::model_id) {
-            // Fork note: no composed equirectangular rig functor yet; freeze
-            // the composed camera pose at its setup value (2-block residual).
-            const Rigid3d pose_cam_from_world = image.CamFromWorld();
-            const Eigen::Quaterniond pose_q = pose_cam_from_world.rotation();
-            const Eigen::Vector4d pose_qvec(
-                    pose_q.w(), pose_q.x(), pose_q.y(), pose_q.z());
-            cost_function =
-                    EquirectangularBundleAdjustmentConstantPoseCostFunction::Create(
-                            pose_qvec, pose_cam_from_world.translation(),
-                            point2D.XY());
-            problem_->AddResidualBlock(cost_function, loss_function,
-                                       point3D.XYZ().data(),
-                                       camera_params_data);
-        } else {
-            if (compose_rig) {
-                // Multi-sensor frame: composed residual over the shared
-                // rig pose and this sensor's pose (equirectangular cameras
-                // in rigs take the frozen branch above).
-                switch (camera.ModelId()) {
-#define CAMERA_MODEL_CASE(CameraModel)                                         \
-    case CameraModel::model_id:                                                \
-        cost_function =                                                        \
-                FrameRigBundleAdjustmentCostFunction<CameraModel>::Create(     \
-                        point2D.XY());                                         \
-        break;
-
-                    CAMERA_MODEL_SWITCH_CASES
-
-#undef CAMERA_MODEL_CASE
-                }
-                problem_->AddResidualBlock(
-                        cost_function, loss_function, qvec_data, tvec_data,
-                        sensor_qvec_data->data(), sensor_tvec_data->data(),
-                        point3D.XYZ().data(), camera_params_data);
-            } else {
-                if (camera.ModelId() ==
-                    EquirectangularCameraModel::model_id) {
-                    cost_function =
-                            EquirectangularBundleAdjustmentCostFunction::Create(
-                                    point2D.XY());
-                } else {
-                    switch (camera.ModelId()) {
+        if (legacy_pose) {
+            // Legacy frameless-cache-image path: the fork's 4-block functor
+            // over the image-local qvec/tvec buffers.
+            ceres::CostFunction* cost_function = nullptr;
+            switch (camera.ModelId()) {
 #define CAMERA_MODEL_CASE(CameraModel)                                     \
     case CameraModel::model_id:                                            \
         cost_function = BundleAdjustmentCostFunction<CameraModel>::Create( \
                 point2D.XY());                                             \
         break;
 
-                    CAMERA_MODEL_SWITCH_CASES
+                CAMERA_MODEL_SWITCH_CASES
 
 #undef CAMERA_MODEL_CASE
-                    }
-                }
-                problem_->AddResidualBlock(cost_function, loss_function,
-                                           qvec_data, tvec_data,
-                                           point3D.XYZ().data(),
-                                           camera_params_data);
+            }
+            problem_->AddResidualBlock(cost_function, loss_function,
+                                       qvec_data, tvec_data,
+                                       point3D.XYZ().data(),
+                                       camera_params_data);
+            continue;
+        }
+
+        // Upstream parity (d3ccaf35): constant-pose residuals take the
+        // composed camera pose by value; variable residuals carry the
+        // single Rigid3d shadow blocks.
+        if (compose_rig) {
+            if (constant_rig_from_world && constant_sensor_from_rig) {
+                const Rigid3d cam_from_world =
+                        *sensor_from_rig_block * *rig_from_world_block;
+                problem_->AddResidualBlock(
+                        CreateCameraCostFunction<
+                                ReprojErrorConstantPoseCostFunctor>(
+                                camera.ModelId(), point2D.XY(), cam_from_world),
+                        loss_function,
+                        point3D.XYZ().data(), camera_params_data);
+            } else if (!constant_rig_from_world &&
+                       constant_sensor_from_rig) {
+                problem_->AddResidualBlock(
+                        CreateCameraCostFunction<
+                                RigReprojErrorConstantRigCostFunctor>(
+                                camera.ModelId(), point2D.XY(),
+                                *sensor_from_rig_block),
+                        loss_function,
+                        point3D.XYZ().data(),
+                        rig_from_world_block->params.data(),
+                        camera_params_data);
+            } else {
+                problem_->AddResidualBlock(
+                        CreateCameraCostFunction<RigReprojErrorCostFunctor>(
+                                camera.ModelId(), point2D.XY()),
+                        loss_function,
+                        point3D.XYZ().data(),
+                        sensor_from_rig_block->params.data(),
+                        rig_from_world_block->params.data(),
+                        camera_params_data);
+            }
+        } else {
+            if (constant_rig_from_world) {
+                problem_->AddResidualBlock(
+                        CreateCameraCostFunction<
+                                ReprojErrorConstantPoseCostFunctor>(
+                                camera.ModelId(), point2D.XY(),
+                                *rig_from_world_block),
+                        loss_function,
+                        point3D.XYZ().data(), camera_params_data);
+            } else {
+                problem_->AddResidualBlock(
+                        CreateCameraCostFunction<ReprojErrorCostFunctor>(
+                                camera.ModelId(), point2D.XY()),
+                        loss_function,
+                        point3D.XYZ().data(),
+                        rig_from_world_block->params.data(),
+                        camera_params_data);
             }
         }
     }
 
     if (num_observations > 0) {
         camera_ids_.insert(image.CameraId());
-
-        // Set pose parameterization. Constant-pose images use frozen
-        // composed-pose functors that never register the frame block, so
-        // only variable residuals may mark it here.
-        if (frame_pose && !constant_pose) {
-            if (frame_rotation_constant) {
-                problem_->SetParameterBlockConstant(qvec_data);
-            } else if (manifold_marked_blocks_.insert(qvec_data).second) {
-                // ceres::LocalParameterization* quaternion_parameterization =
-                //     new ceres::QuaternionParameterization;
-                // problem_->SetParameterization(qvec_data,
-                // quaternion_parameterization);
+        if (frame_pose) {
+            parameterized_image_ids_.insert(image_id);
+        } else {
+            // Legacy frameless path: keep the fork's qvec/tvec manifolds.
+            if (manifold_marked_blocks_.insert(qvec_data).second) {
                 SetQuaternionManifoldWxyz(problem_.get(), qvec_data);
             }
-            if (compose_rig) {
-                if (manifold_marked_blocks_.insert(sensor_qvec_data->data())
-                            .second) {
-                    SetQuaternionManifoldWxyz(problem_.get(),
-                                              sensor_qvec_data->data());
-                }
-                if (!options_.refine_sensor_from_rig ||
-                    // Upstream parity: config-level sensor-from-rig
-                    // constants (rig-extrinsic fixed independently).
-                    config_.HasConstantSensorFromRigPose(rig_sensor_id)) {
-                    problem_->SetParameterBlockConstant(sensor_qvec_data->data());
-                    problem_->SetParameterBlockConstant(sensor_tvec_data->data());
-                }
-            }
             if (config_.HasConstantTvec(image_id)) {
-                const std::vector<int>& constant_tvec_idxs =
-                        config_.ConstantTvec(image_id);
-                // ceres::SubsetParameterization* tvec_parameterization =
-                //     new ceres::SubsetParameterization(3, constant_tvec_idxs);
-                // problem_->SetParameterization(tvec_data,
-                // tvec_parameterization);
                 if (manifold_marked_blocks_.insert(tvec_data).second) {
-                    SetSubsetManifold(3, constant_tvec_idxs, problem_.get(),
-                                      tvec_data);
+                    SetSubsetManifold(3, config_.ConstantTvec(image_id),
+                                      problem_.get(), tvec_data);
                 }
             }
         }
@@ -896,6 +882,103 @@ void CeresBundleAdjuster::ParameterizeCameras(Reconstruction* reconstruction) {
                 SetSubsetManifold(static_cast<int>(camera.NumParams()),
                                   const_camera_params, problem_.get(),
                                   camera.ParamsData());
+            }
+        }
+    }
+}
+
+void CeresBundleAdjuster::ParameterizeRigsAndFrames(
+        Reconstruction* reconstruction) {
+    std::unordered_set<rig_t> parameterized_rig_ids;
+    std::unordered_set<sensor_t> parameterized_sensor_ids;
+    std::unordered_set<frame_t> parameterized_frame_ids;
+    for (const image_t image_id : parameterized_image_ids_) {
+        Image& image = reconstruction->Image(image_id);
+        parameterized_rig_ids.insert(image.FramePtr()->RigId());
+
+        // Parameterize sensor_from_rig.
+        const sensor_t sensor_id = image.CameraPtr()->SensorId();
+        const bool not_parameterized_before =
+                parameterized_sensor_ids.insert(sensor_id).second;
+        if (not_parameterized_before) {
+            const auto sb_it = sensor_blocks_.find(
+                    {image.FramePtr()->RigId(), sensor_id});
+            if (sb_it != sensor_blocks_.end()) {
+                Rigid3d& sensor_from_rig = sb_it->second.sensor_from_rig;
+                // CostFunction assumes unit quaternions.
+                sensor_from_rig.rotation().normalize();
+                if (problem_->HasParameterBlock(
+                            sensor_from_rig.params.data())) {
+                    SetManifold(problem_.get(),
+                                sensor_from_rig.params.data(),
+                                CreateProductManifold(
+                                        CreateEigenQuaternionManifold(),
+                                        CreateEuclideanManifold<3>()));
+                    if (!options_.refine_extrinsics ||
+                        !options_.refine_sensor_from_rig ||
+                        config_.HasConstantSensorFromRigPose(sensor_id)) {
+                        problem_->SetParameterBlockConstant(
+                                sensor_from_rig.params.data());
+                    }
+                }
+            }
+        }
+
+        // Parameterize rig_from_world.
+        if (parameterized_frame_ids.insert(image.FrameId()).second) {
+            const auto fb_it = frame_blocks_.find(image.FrameId());
+            if (fb_it != frame_blocks_.end()) {
+                Rigid3d& rig_from_world = fb_it->second.rig_from_world;
+                // CostFunction assumes unit quaternions.
+                rig_from_world.rotation().normalize();
+                if (problem_->HasParameterBlock(rig_from_world.params.data())) {
+                    if (!options_.refine_extrinsics ||
+                        !options_.refine_rig_from_world ||
+                        config_.HasConstantRigFromWorldPose(image.FrameId())) {
+                        problem_->SetParameterBlockConstant(
+                                rig_from_world.params.data());
+                    } else if (options_.constant_rig_from_world_rotation) {
+                        SetManifold(problem_.get(),
+                                    rig_from_world.params.data(),
+                                    CreateSubsetManifold(7, {0, 1, 2, 3}));
+                    } else if (config_.HasConstantTvec(image_id)) {
+                        // Fork parity: freeze the selected translation
+                        // dimensions within the single Rigid3d block.
+                        SetManifold(problem_.get(),
+                                    rig_from_world.params.data(),
+                                    CreateProductManifold(
+                                            CreateEigenQuaternionManifold(),
+                                            CreateSubsetManifold(
+                                                    3, config_.ConstantTvec(
+                                                            image_id))));
+                    } else {
+                        SetManifold(problem_.get(),
+                                    rig_from_world.params.data(),
+                                    CreateProductManifold(
+                                            CreateEigenQuaternionManifold(),
+                                            CreateEuclideanManifold<3>()));
+                    }
+                }
+            }
+        }
+    }
+
+    // Set the rig poses as constant, if the reference sensor is not part of
+    // the problem. Otherwise, the relative pose between the sensors is not
+    // well constrained.
+    for (const rig_t rig_id : parameterized_rig_ids) {
+        Rig& rig = reconstruction->Rig(rig_id);
+        if (parameterized_sensor_ids.count(rig.RefSensorId()) != 0) {
+            continue;
+        }
+        for (auto& [key, block] : sensor_blocks_) {
+            if (key.first != rig_id || block.sensor_id == rig.RefSensorId()) {
+                continue;
+            }
+            if (problem_->HasParameterBlock(
+                        block.sensor_from_rig.params.data())) {
+                problem_->SetParameterBlockConstant(
+                        block.sensor_from_rig.params.data());
             }
         }
     }

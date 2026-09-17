@@ -89,6 +89,10 @@
 //    - Qt5.0-5.13: load() / store() only
 //    - Functions: qtCompatLoadRelaxed(), qtCompatStoreRelaxed()
 //
+// 15. QImage BGR888 Format:
+//    - QImage::Format_BGR888 (Qt5.14+, Qt6) / not available on Qt5 < 5.14
+//    - Function: qtCompatQImageFormatBgr888()
+//
 // USAGE EXAMPLES:
 //
 //   Regular Expression:
@@ -1139,3 +1143,25 @@ inline void qtCompatStoreRelaxed(QBasicAtomicInteger<T>& atomic,
     atomic.store(value);
 }
 #endif
+
+// ----------------------------------------------------------------------------
+// QImage::Format_BGR888 Availability
+// ----------------------------------------------------------------------------
+// Qt5.0-5.13: QImage::Format_BGR888 does not exist (introduced in Qt 5.14)
+// Qt5.14+/Qt6: Format_BGR888 available
+//
+// qtCompatQImageFormatBgr888() returns the BGR888 format value where the
+// layout exists. On older Qt5 it returns QImage::Format_Invalid — a value a
+// non-null QImage can never report — so `case qtCompatQImageFormatBgr888():`
+// labels stay valid, unique, and dead on those versions.
+// ----------------------------------------------------------------------------
+
+#include <QImage>
+
+constexpr QImage::Format qtCompatQImageFormatBgr888() noexcept {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+    return QImage::Format_BGR888;
+#else
+    return QImage::Format_Invalid;
+#endif
+}

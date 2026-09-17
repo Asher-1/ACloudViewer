@@ -34,7 +34,7 @@
 #include <array>
 #include <unordered_map>
 
-#include "estimators/affine_transform.h"
+#include "estimators/solvers/affine_transform.h"
 #include "optim/ransac.h"
 #include "util/logging.h"
 #include "math/math.h"
@@ -374,9 +374,12 @@ int VoteAndVerify(const VoteAndVerifyOptions& options,
       inlier_points2[j] = Eigen::Vector2d(geometry2.x, geometry2.y);
     }
 
-    // Local optimization on matching inlier points.
-    const Eigen::Matrix<double, 2, 3> A =
-        AffineTransformEstimator::Estimate(inlier_points1, inlier_points2)[0];
+    // Local optimization on matching inlier points (solvers form: the
+    // estimate is returned through an out-param vector).
+    std::vector<AffineTransformEstimator::M_t> estimated_models;
+    AffineTransformEstimator::Estimate(inlier_points1, inlier_points2,
+                                       &estimated_models);
+    const AffineTransformEstimator::M_t A = estimated_models[0];
     Eigen::Matrix3d A_homogeneous = Eigen::Matrix3d::Identity();
     A_homogeneous.topRows<2>() = A;
     const Eigen::Matrix<double, 2, 3> inv_A =

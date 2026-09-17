@@ -210,6 +210,16 @@ double CalculateNormalizedAngularError(const Eigen::Vector2d& point2D,
   return std::acos(ray1.normalized().transpose() * ray2.normalized());
 }
 
+// Upstream parity (d3ccaf35 scene/projection.cc): bearing-vector form.
+double CalculateAngularReprojectionError(
+    const Eigen::Vector3d& cam_ray,
+    const Eigen::Vector3d& point3D,
+    const Eigen::Matrix3x4d& cam_from_world) {
+  const Eigen::Vector3d point3D_in_cam = cam_from_world * point3D.homogeneous();
+  const double cos_angle = cam_ray.transpose() * point3D_in_cam.normalized();
+  return std::acos(std::clamp(cos_angle, -1.0, 1.0));
+}
+
 double CalculateDepth(const Eigen::Matrix3x4d& proj_matrix,
                       const Eigen::Vector3d& point3D) {
   const double proj_z = proj_matrix.row(2).dot(point3D.homogeneous());

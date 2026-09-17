@@ -409,6 +409,9 @@ inline constexpr AssetDigestEntry kAssetDigests[] = {
         // canonical LFS oids): streaming GCT reconstruction + native skyseg.
         {"lingbot-map-f16.gguf", "7f3d4816300efe0f3576ac7a0f8e16ea1891ef8f4986e749c193b93a19e8acc5" },
         {"lingbot-map-f32.gguf", "0ccf3dd2cb649f0279c8d07b5c431921783283d3c7e175a5c06eaffa2fa3b51c" },
+        {"lingbot-map-long-f16.gguf", "309ef95b9883ff62cab7e34607d00281e4639387afda225416d934b62705a3a0" },
+        {"lingbot-map-long-f32.gguf", "e6a13e8169125893f889e11888ffd40579af29c9c0ef20adbea7060a5cb849a5" },
+        {"lingbot-map-long-q8.gguf", "729260e8b1639c6a22d100a1f188c213f0666bf074bfe777f3c25f985bf3805c" },
         {"lingbot-map-q4.gguf", "92e30cbbf367f4609de245889985490359aa08be29c3292d2fc8682ee3875e52" },
         {"lingbot-map-q8.gguf", "0a7273dce77cb7580a5fc2ca8019cd8f79ea725944e5790c0c2c4e617a7c2e36" },
         {"lingbot-map-skyseg-f16.gguf", "4e4ba738737a5f966950d24cc46b6fbdeb54c1598c081b01278b11f04d8fd211" },

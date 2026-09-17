@@ -15,6 +15,9 @@
 #include "util/types.h"
 
 namespace colmap {
+// Upstream parity (d3ccaf35 geometry/pose_prior.h): derive the gravity
+// direction in world frame from the EXIF orientation tag.
+std::optional<Eigen::Vector3d> GravityFromExifOrientation(int orientation);
 
 struct PosePrior {
 public:

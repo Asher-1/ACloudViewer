@@ -759,6 +759,11 @@ size_t familyFreeVram(const std::string &family, int want_idx) {
 
 }  // namespace
 
+// The helper returns std::string, so it must keep C++ language linkage —
+// the extern "C++" block below (inside the surrounding extern "C") avoids
+// MSVC warning C4190 ("returns UDT incompatible with C").
+extern "C++" {
+
 // Resolve the requested device against the actual free VRAM.  Returns the
 // device string every model load should use ("cpu" when no GPU can hold the
 // pipeline); `note` collects a user-facing explanation when the request was
@@ -899,6 +904,8 @@ std::string resolveVramAwareDevice(const std::string &requested,
     *note = buf;
     return "cpu";
 }
+
+}  // extern "C++"
 
 // ─────────────────────────────────────────────────────────────────────────
 // Pipeline load / free / introspection

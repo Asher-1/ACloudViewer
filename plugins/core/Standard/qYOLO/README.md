@@ -44,7 +44,10 @@ the upstream `*-seg.pt` checkpoints report nc=80 numeric placeholder names
 without `set_classes` (zero-embedding fallback), an empty YOLOE class list
 is rejected at Run time with an actionable hint (enter classes, draw visual
 prompts, or pick the `-pf` checkpoint of the same scale — the official
-no-input path). Device parity on real GGUFs is enforced by
+no-input path). Loading the official test image or video auto-fills the
+open-vocabulary class list (e.g. `person, party hat` on party_hats.jpg), so
+a zero-input Run demonstrates text prompting out of the box. Device parity
+on real GGUFs is enforced by
 `test_yolo_capi_parity` (CUDA and Vulkan: all task families PASS, including
 YOLOE/World text-conditioned masks; bisect tool `test_yolo_world_optrace`
 compares every user-op output across CPU/GPU devices). The savpe run path is

@@ -83,90 +83,9 @@ const Ctx* as_ctx(const aicore_lingbot_ctx* p) {
 // normalization happens inside the engine graph.
 // ---------------------------------------------------------------------------
 
-// PIL BICUBIC convolution kernel (Keys' a = -0.5).
-inline float cubic_kernel(float t) {
-    t = std::fabs(t);
-    if (t < 1.0f) return ((1.5f * t - 2.5f) * t) * t + 1.0f;
-    if (t < 2.0f) return (((-0.5f * t) + 2.5f) * t - 4.0f) * t + 2.0f;
-    return 0.0f;
-}
-void resample_x_u8_to_f32(const unsigned char* src_row,
-                          int src_len,
-                          float* dst_row,
-                          int dst_len,
-                          int channels) {
-    const float scale = static_cast<float>(dst_len) / src_len;
-    const float support = (scale < 1.0f) ? 2.0f / scale : 2.0f;
-    std::vector<float> weights;
-    std::vector<int> indices;
-    for (int d = 0; d < dst_len; ++d) {
-        const float center = (d + 0.5f) / scale - 0.5f;
-        const int lo = static_cast<int>(std::ceil(center - support));
-        const int hi = static_cast<int>(std::floor(center + support));
-        weights.clear();
-        indices.clear();
-        float sum = 0.0f;
-        for (int s = lo; s <= hi; ++s) {
-            const float w = cubic_kernel((s - center) * std::min(scale, 1.0f));
-            if (w == 0.0f) continue;
-            indices.push_back(std::min(std::max(s, 0), src_len - 1));
-            weights.push_back(w);
-            sum += w;
-        }
-        if (sum != 0.0f) {
-            for (float& w : weights) w /= sum;
-        }
-        float acc[3] = {0.f, 0.f, 0.f};
-        for (size_t i = 0; i < weights.size(); ++i) {
-            const unsigned char* p =
-                    src_row + static_cast<size_t>(indices[i]) * channels;
-            for (int c = 0; c < channels; ++c) acc[c] += weights[i] * p[c];
-        }
-        for (int c = 0; c < channels; ++c)
-            dst_row[d * channels + c] = acc[c] / 255.0f;
-    }
-}
-
-// Y axis over float HWC rows (already [0,1]).
-void resample_y_f32(const float* src_col,
-                    int src_len,
-                    float* dst_col,
-                    int dst_len,
-                    int channels,
-                    size_t src_stride_elems,
-                    size_t dst_stride_elems) {
-    const float scale = static_cast<float>(dst_len) / src_len;
-    const float support = (scale < 1.0f) ? 2.0f / scale : 2.0f;
-    std::vector<float> weights;
-    std::vector<int> indices;
-    for (int d = 0; d < dst_len; ++d) {
-        const float center = (d + 0.5f) / scale - 0.5f;
-        const int lo = static_cast<int>(std::ceil(center - support));
-        const int hi = static_cast<int>(std::floor(center + support));
-        weights.clear();
-        indices.clear();
-        float sum = 0.0f;
-        for (int s = lo; s <= hi; ++s) {
-            const float w = cubic_kernel((s - center) * std::min(scale, 1.0f));
-            if (w == 0.0f) continue;
-            indices.push_back(std::min(std::max(s, 0), src_len - 1));
-            weights.push_back(w);
-            sum += w;
-        }
-        if (sum != 0.0f) {
-            for (float& w : weights) w /= sum;
-        }
-        float acc[3] = {0.f, 0.f, 0.f};
-        for (size_t i = 0; i < weights.size(); ++i) {
-            const float* p = src_col + indices[i] * src_stride_elems;
-            for (int c = 0; c < channels; ++c) acc[c] += weights[i] * p[c];
-        }
-        for (int c = 0; c < channels; ++c)
-            dst_col[d * dst_stride_elems + c] = acc[c];
-    }
-}
-
 }  // namespace
+
+#include "pillow_resample.inc"
 
 // ---------------------------------------------------------------------------
 // Options
@@ -284,7 +203,10 @@ AICORE_CAPI int aicore_lingbot_preprocess_image(const aicore_image_view* image,
             std::lround(static_cast<double>(h0) * new_w / w0 / patch) * patch);
     if (snapped_h < patch) snapped_h = patch;
 
-    const size_t needed = static_cast<size_t>(new_w) * snapped_h * 3;
+    // Final output size AFTER the center crop: the sizing call and the
+    // data call must agree on the same NCHW element count.
+    const int out_h_final = snapped_h > image_size ? image_size : snapped_h;
+    const size_t needed = static_cast<size_t>(new_w) * out_h_final * 3;
     if (!out_nchw) return static_cast<int>(needed);
     if (out_size < static_cast<int>(needed)) return -1;
 
@@ -329,30 +251,37 @@ AICORE_CAPI int aicore_lingbot_preprocess_image(const aicore_image_view* image,
         }
     }
 
-    // 2) Bicubic resize to (new_w, snapped_h) as float HWC [0,1].
-    std::vector<float> resized(static_cast<size_t>(new_w) * snapped_h * 3);
-    for (int y = 0; y < h0; ++y) {
-        resample_x_u8_to_f32(
-                rgb.data() + static_cast<size_t>(y) * w0 * 3, w0,
-                resized.data() + static_cast<size_t>(y) * new_w * 3, new_w, 3);
+    // 2) Bicubic resize with the exact Pillow 12.2.0 8bpc pipeline
+    //    (two-pass horizontal/vertical, fixed-point coefficients, u8
+    //    intermediate). Identity axes are skipped exactly like Pillow's
+    //    need_horizontal/need_vertical, so already-processed frames (the
+    //    official scene datasets at 518-wide) are bit-identical no-ops.
+    std::vector<uint8_t> stage;
+    const uint8_t* stageData = rgb.data();
+    int stageW = w0, stageH = h0;
+    if (new_w != w0) {
+        stage.resize(static_cast<size_t>(new_w) * h0 * 3);
+        pillow_resample_horizontal(rgb.data(), w0, h0, stage.data(), new_w,
+                                   pillow_precompute_coeffs(w0, new_w));
+        stageData = stage.data();
+        stageW = new_w;
     }
-    // Vertical pass works column-by-column over the intermediate HWC buffer.
-    std::vector<float> tmp_col(h0);
-    std::vector<float> out_col(snapped_h);
-    for (int x = 0; x < new_w; ++x) {
-        for (int c = 0; c < 3; ++c) {
-            for (int y = 0; y < h0; ++y) {
-                tmp_col[y] =
-                        resized[(static_cast<size_t>(y) * new_w + x) * 3 + c];
-            }
-            resample_y_f32(tmp_col.data(), h0, out_col.data(), snapped_h, 1, 1,
-                           1);
-            for (int y = 0; y < snapped_h; ++y) {
-                resized[(static_cast<size_t>(y) * new_w + x) * 3 + c] =
-                        out_col[y];
-            }
+    if (snapped_h != h0) {
+        std::vector<uint8_t> vertical(static_cast<size_t>(stageW) * snapped_h *
+                                      3);
+        pillow_resample_vertical(stageData, stageW, h0, vertical.data(),
+                                 snapped_h,
+                                 pillow_precompute_coeffs(h0, snapped_h));
+        stageData = vertical.data();
+        stageH = snapped_h;
+        stage.swap(vertical);
+        if (new_w != w0) {
+            // horizontal already ran; keep the latest buffer alive
         }
     }
+    const std::vector<uint8_t> resizedOwned(
+            stageData, stageData + static_cast<size_t>(stageW) * stageH * 3);
+    const uint8_t* resized = resizedOwned.data();
 
     // 3) Center crop when the snapped height exceeds image_size (official
     //    crop rule: resize keeps the aspect, then crop vertically centered).
@@ -363,15 +292,15 @@ AICORE_CAPI int aicore_lingbot_preprocess_image(const aicore_image_view* image,
         out_h = image_size;
     }
 
-    // 4) HWC [0,1] -> NCHW [0,1] over the cropped region.
+    // 4) HWC u8 -> NCHW [0,1] over the cropped region.
     for (int c = 0; c < 3; ++c) {
         float* plane = out_nchw + static_cast<size_t>(c) * out_h * new_w;
         for (int y = 0; y < out_h; ++y) {
-            const float* src = resized.data() +
-                               (static_cast<size_t>(y + crop_y0) * new_w) * 3;
+            const uint8_t* src =
+                    resized + (static_cast<size_t>(y + crop_y0) * new_w) * 3;
             for (int x = 0; x < new_w; ++x) {
                 plane[static_cast<size_t>(y) * new_w + x] =
-                        src[static_cast<size_t>(x) * 3 + c];
+                        src[static_cast<size_t>(x) * 3 + c] / 255.0f;
             }
         }
     }
@@ -445,17 +374,19 @@ AICORE_CAPI int aicore_lingbot_infer_stream(aicore_lingbot_ctx* ctx,
                 mx = std::max(mx, v);
             }
             const float denom = std::max(mx - mn, 1e-8f);
-            std::vector<unsigned char> small(320 * 320);
-            for (size_t i = 0; i < small.size(); ++i) {
-                small[i] = static_cast<unsigned char>((sky_map[i] - mn) *
-                                                      255.0f / denom);
+            // NOTE: never name a local `small` — rpcndr.h (via windows.h)
+            // #defines it to `char`, which breaks MSVC compilation.
+            std::vector<unsigned char> sky_u8(320 * 320);
+            for (size_t i = 0; i < sky_u8.size(); ++i) {
+                sky_u8[i] = static_cast<unsigned char>((sky_map[i] - mn) *
+                                                       255.0f / denom);
             }
             std::vector<unsigned char>& keep = c->sky_masks[f];
             keep.assign(static_cast<size_t>(width) * height, 0);
             std::vector<unsigned char> u8map(static_cast<size_t>(width) *
                                              height);
-            lingbot::skyseg_resize_mask_u8(small.data(), 320, 320, u8map.data(),
-                                           width, height);
+            lingbot::skyseg_resize_mask_u8(sky_u8.data(), 320, 320,
+                                           u8map.data(), width, height);
             for (size_t i = 0; i < u8map.size(); ++i)
                 keep[i] = (u8map[i] == 0) ? 255 : 0;
         }
@@ -721,6 +652,30 @@ const aicore_lingbot_model_entry kModels[] = {
                       703133472,
                       "92e30cbbf367f4609de245889985490359aa08be29c3292d2fc8682e"
                       "e3875e52"),
+        // Long-sequence checkpoints (upstream lingbot-map-long.pt): the
+        // architecture is identical to the balanced ones (same tensor
+        // names/shapes), so the graph and every option apply unchanged.
+        LINGBOT_ENTRY("lingbot-map-long-q8.gguf",
+                      "LingBot-Map long q8_0 (long sequences)",
+                      "Q8 8-bit quant",
+                      "map",
+                      1264126752,
+                      "729260e8b1639c6a22d100a1f188c213f0666bf074bfe777f3c25f98"
+                      "5bf3805c"),
+        LINGBOT_ENTRY("lingbot-map-long-f16.gguf",
+                      "LingBot-Map long f16 (long sequences)",
+                      "F16 half precision",
+                      "map",
+                      2315989152,
+                      "309ef95b9883ff62cab7e34607d00281e4639387afda225416d934b6"
+                      "2705a3a0"),
+        LINGBOT_ENTRY("lingbot-map-long-f32.gguf",
+                      "LingBot-Map long f32 (long sequences)",
+                      "F32 exact reference",
+                      "map",
+                      4631876256,
+                      "e6a13e8169125893f889e11888ffd40579af29c9c0ef20adbea7060a"
+                      "5cb849a5"),
         LINGBOT_ENTRY("lingbot-map-skyseg-f16.gguf",
                       "SkySeg f16 (native sky mask)",
                       "F16 half precision",
@@ -750,7 +705,9 @@ constexpr int kDefaultMapIndex = 1;  // lingbot-map-f16.gguf — the upstream
 // pose 1.72e-04 / depth 4.72e-04 over 286 frames, an order of magnitude
 // tighter than the q8 quantization loss; validation_report.md). q8 stays the
 // memory-saving deployment option for small-VRAM tiers.
-constexpr int kDefaultSkysegIndex = 4;  // lingbot-map-skyseg-f16.gguf
+// Sky-segmentation default inside the same 10-entry table (q8, f16, f32,
+// q4, long-q8, long-f16, long-f32, skyseg-f16, skyseg-q8_0, skyseg-f32).
+constexpr int kDefaultSkysegIndex = 7;  // lingbot-map-skyseg-f16.gguf
 
 }  // namespace
 

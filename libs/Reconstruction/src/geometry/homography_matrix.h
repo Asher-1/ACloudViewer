@@ -92,4 +92,16 @@ void PoseFromHomographyMatrix(const Eigen::Matrix3d& H,
                               Eigen::Vector3d* normal,
                               std::vector<Eigen::Vector3d>* points3D);
 
+// Upstream parity (d3ccaf35 geometry/homography_matrix.h): calculate the
+// squared reprojection error for a single point pair under a homography
+// transformation.
+//
+// @param point1      First point.
+// @param point2      Second point.
+// @param H           3x3 homography matrix.
+// @return            Squared reprojection error.
+double ComputeSquaredHomographyError(const Eigen::Vector2d& point1,
+                                     const Eigen::Vector2d& point2,
+                                     const Eigen::Matrix3d& H);
+
 }  // namespace colmap

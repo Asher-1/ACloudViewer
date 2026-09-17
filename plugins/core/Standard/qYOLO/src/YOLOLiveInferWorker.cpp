@@ -63,6 +63,8 @@ void YOLOLiveInferWorker::releaseModel() {
     m_loadedModelPath.clear();
     m_loadedDevice.clear();
     m_loadedThreads = 0;
+    m_loadedClasses.clear();
+    m_loadedTextModelPath.clear();
     m_loadedTask.clear();
     m_resolvedDevice.clear();
 #endif
@@ -76,7 +78,8 @@ bool YOLOLiveInferWorker::ensureModel(const Job& job, QString* error) {
     }
     if (m_ctx && aicore_yolo_is_ready(m_ctx) &&
         m_loadedModelPath == job.modelPath && m_loadedDevice == job.device &&
-        m_loadedThreads == job.threads) {
+        m_loadedThreads == job.threads && m_loadedClasses == job.classes &&
+        m_loadedTextModelPath == job.textModelPath) {
         return true;
     }
 
@@ -88,6 +91,27 @@ bool YOLOLiveInferWorker::ensureModel(const Job& job, QString* error) {
     }
     aicore_yolo_options_set_device(opts, job.device.toUtf8().constData());
     aicore_yolo_options_set_threads(opts, job.threads);
+    // Open-vocabulary families (world/yoloe): the class list rides into
+    // load and the text tower encodes it once per context — same contract
+    // as the still-image worker. The list is pre-trimmed by the dialog.
+    if (!job.classes.isEmpty()) {
+        std::vector<const char*> classPtrs;
+        classPtrs.reserve(static_cast<size_t>(job.classes.size()));
+        QList<QByteArray> utf8;
+        utf8.reserve(job.classes.size());
+        for (const QString& c : job.classes) {
+            utf8.append(c.toUtf8());
+        }
+        for (const QByteArray& c : utf8) {
+            classPtrs.push_back(c.constData());
+        }
+        aicore_yolo_options_set_classes(opts, classPtrs.data(),
+                                        static_cast<int32_t>(classPtrs.size()));
+        if (!job.textModelPath.isEmpty()) {
+            aicore_yolo_options_set_text_model(
+                    opts, job.textModelPath.toUtf8().constData());
+        }
+    }
     m_ctx = aicore_yolo_load_opts(job.modelPath.toUtf8().constData(), opts);
     aicore_yolo_options_free(opts);
     if (!m_ctx || !aicore_yolo_is_ready(m_ctx)) {
@@ -102,6 +126,8 @@ bool YOLOLiveInferWorker::ensureModel(const Job& job, QString* error) {
     m_loadedModelPath = job.modelPath;
     m_loadedDevice = job.device;
     m_loadedThreads = job.threads;
+    m_loadedClasses = job.classes;
+    m_loadedTextModelPath = job.textModelPath;
     m_loadedTask = QString::fromUtf8(aicore_yolo_context_task(m_ctx));
     /* The backend-resolved device ("CUDA0", "cpu", ...), captured at load
      * time so every Result reports what actually ran — a requested GPU that

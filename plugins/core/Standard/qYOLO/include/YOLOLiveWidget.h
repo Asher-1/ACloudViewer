@@ -10,6 +10,7 @@
 #include <QElapsedTimer>
 #include <QImage>
 #include <QString>
+#include <QStringList>
 #include <QThread>
 #include <QWidget>
 
@@ -38,6 +39,10 @@ public:
         float confThres = 0.25f;
         float iouThres = 0.7f;
         uint32_t topK = 300;
+        // Open-vocabulary families (world/yoloe): class list encoded by the
+        // text tower at context load time; empty for closed-set tasks.
+        QStringList classes;
+        QString textModelPath;
     };
 
     explicit YOLOLiveWidget(QWidget* parent = nullptr);

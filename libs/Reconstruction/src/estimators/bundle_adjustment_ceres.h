@@ -74,40 +74,49 @@ private:
                            ceres::LossFunction* loss_function);
 
     void ParameterizeCameras(Reconstruction* reconstruction);
+    void ParameterizeRigsAndFrames(Reconstruction* reconstruction);
     void ParameterizePoints(Reconstruction* reconstruction);
 
     std::unique_ptr<ceres::Problem> problem_;
     ceres::Solver::Summary summary_;
+    std::set<image_t> parameterized_image_ids_;
     std::unordered_set<camera_t> camera_ids_;
     std::optional<PosePriorBundleAdjustmentOptions> pose_prior_options_;
     std::vector<PosePrior> pose_priors_;
     std::unordered_map<point3D_t, size_t> point3D_num_observations_;
 
-    // W3-2b step 4: shadow parameter blocks for refined sensor_from_rig
-    // poses, in the fork's [w, x, y, z] qvec convention (the fork stores
-    // sensor_from_rig as a Rigid3d whose Eigen quaternion coefficients are
-    // [x, y, z, w]). Node-based map so block addresses stay stable while
-    // SetUp adds images.
+    // W3-2b step 5 (upstream parity, d3ccaf35): the pose parameter blocks
+    // are single Rigid3d blocks (Eigen::Vector7d params, [qx, qy, qz, qw,
+    // tx, ty, tz]) held as node-based-map shadows; the refined poses are
+    // written back to the frames/rigs in TearDown(). Shadow blocks keep the
+    // parameter addresses stable while SetUp adds images and leave the
+    // fork's qvec/tvec scene storage untouched for every other consumer.
     struct SensorPoseBlock {
         rig_t rig_id;
         sensor_t sensor_id;
-        Eigen::Vector4d qvec;
-        Eigen::Vector3d tvec;
+        Rigid3d sensor_from_rig;
+    };
+    struct FramePoseBlock {
+        frame_t frame_id;
+        Rigid3d rig_from_world;
     };
     std::map<std::pair<rig_t, sensor_t>, SensorPoseBlock> sensor_blocks_;
+    std::map<frame_t, FramePoseBlock> frame_blocks_;
     // Frame blocks are shared by every image of a frame; guard the one-time
-    // quaternion manifold installation (repeated installation aborts).
+    // manifold installation (repeated installation aborts).
     std::unordered_set<const double*> manifold_marked_blocks_;
 
     SensorPoseBlock& GetOrCreateSensorBlock(rig_t rig_id,
                                             sensor_t sensor_id,
                                             const Rigid3d& sensor_from_rig);
+    FramePoseBlock& GetOrCreateFrameBlock(frame_t frame_id,
+                                          const Rigid3d& rig_from_world);
 
     // Upstream parity (d3ccaf35): global gauge fixing after parameterization.
     // TWO_CAMS_FROM_WORLD fixes one full frame pose plus one translation
     // dimension of a second frame; THREE_POINTS is the degenerate-case
-    // fallback that fixes three non-collinear 3D points. The fork adapts
-    // both to the split qvec/tvec pose blocks.
+    // fallback that fixes three non-collinear 3D points. Both operate on
+    // the single Rigid3d shadow blocks.
     void FixGaugeWithTwoCamsFromWorld(Reconstruction* reconstruction);
     void FixGaugeWithThreePoints(Reconstruction* reconstruction);
 };

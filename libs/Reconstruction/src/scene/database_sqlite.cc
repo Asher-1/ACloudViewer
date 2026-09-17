@@ -347,6 +347,7 @@ class SqliteDatabase : public Database {
   Camera ReadCamera(const camera_t camera_id) const override;
   std::vector<Camera> ReadAllCameras() const override;
   Rig ReadRig(const rig_t rig_id) const override;
+  std::optional<Rig> ReadRigWithSensor(sensor_t sensor_id) const override;
   std::vector<Rig> ReadAllRigs() const override;
   Frame ReadFrame(const frame_t frame_id) const override;
   std::vector<Frame> ReadAllFrames() const override;
@@ -751,6 +752,51 @@ std::vector<Camera> SqliteDatabase::ReadAllCameras() const {
   SQLITE3_CALL(sqlite3_reset(sql_stmt_read_cameras_));
 
   return cameras;
+}
+
+std::optional<Rig> SqliteDatabase::ReadRigWithSensor(
+    const sensor_t sensor_id) const {
+  // Non-reference sensor match.
+  {
+    sqlite3_stmt* stmt = nullptr;
+    SQLITE3_CALL(sqlite3_prepare_v2(
+        database_,
+        "SELECT rig_id FROM rig_sensors WHERE sensor_id=? AND sensor_type=? "
+        "LIMIT 1;",
+        -1, &stmt, nullptr));
+    SQLITE3_CALL(sqlite3_bind_int64(stmt, 1, sensor_id.id));
+    SQLITE3_CALL(sqlite3_bind_int64(stmt, 2,
+                                    static_cast<int>(sensor_id.type)));
+    std::optional<rig_t> rig_id;
+    if (SQLITE3_CALL(sqlite3_step(stmt)) == SQLITE_ROW) {
+      rig_id = static_cast<rig_t>(sqlite3_column_int64(stmt, 0));
+    }
+    SQLITE3_CALL(sqlite3_finalize(stmt));
+    if (rig_id.has_value()) {
+      return ReadRig(*rig_id);
+    }
+  }
+  // Reference sensor match.
+  {
+    sqlite3_stmt* stmt = nullptr;
+    SQLITE3_CALL(sqlite3_prepare_v2(
+        database_,
+        "SELECT rig_id FROM rigs WHERE ref_sensor_id=? AND ref_sensor_type=? "
+        "LIMIT 1;",
+        -1, &stmt, nullptr));
+    SQLITE3_CALL(sqlite3_bind_int64(stmt, 1, sensor_id.id));
+    SQLITE3_CALL(sqlite3_bind_int64(stmt, 2,
+                                    static_cast<int>(sensor_id.type)));
+    std::optional<rig_t> rig_id;
+    if (SQLITE3_CALL(sqlite3_step(stmt)) == SQLITE_ROW) {
+      rig_id = static_cast<rig_t>(sqlite3_column_int64(stmt, 0));
+    }
+    SQLITE3_CALL(sqlite3_finalize(stmt));
+    if (rig_id.has_value()) {
+      return ReadRig(*rig_id);
+    }
+  }
+  return std::nullopt;
 }
 
 Rig SqliteDatabase::ReadRig(const rig_t rig_id) const {

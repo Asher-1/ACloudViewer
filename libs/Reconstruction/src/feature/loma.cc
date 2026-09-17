@@ -12,7 +12,9 @@
 
 #include "aicore/asset_digests.h"
 #include "aicore/loma_capi.h"
+#include "geometry/pose_prior.h"
 #include "scene/database.h"
+#include "scene/rig.h"
 #include "util/download.h"
 #include "util/misc.h"
 
@@ -482,11 +484,14 @@ void LomaFeatureExtractor::Run() {
     }
     succeeded_ = true;
     while (reader.NextIndex() < reader.NumImages() && !IsStopped()) {
+        Rig rig;
         Camera camera;
         Image image;
+        PosePrior pose_prior;
         Bitmap bitmap;
         Bitmap mask;
-        const auto status = reader.Next(&camera, &image, &bitmap, &mask);
+        const auto status =
+            reader.Next(&rig, &camera, &image, &pose_prior, &bitmap, &mask);
         if (status == ImageReader::Status::IMAGE_EXISTS) continue;
         if (status != ImageReader::Status::SUCCESS) {
             std::cerr << "ERROR: LoMa could not read " << image.Name()

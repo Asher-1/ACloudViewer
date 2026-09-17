@@ -52,10 +52,8 @@ aicore_image_format imageFormat(const QImage& image) {
             return AICORE_IMAGE_RGBA8;
         case QImage::Format_Grayscale8:
             return AICORE_IMAGE_GRAY8;
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-        case QImage::Format_BGR888:
+        case qtCompatQImageFormatBgr888():
             return AICORE_IMAGE_BGR8;
-#endif
 #if Q_BYTE_ORDER == Q_LITTLE_ENDIAN
         case QImage::Format_RGB32:
         case QImage::Format_ARGB32:

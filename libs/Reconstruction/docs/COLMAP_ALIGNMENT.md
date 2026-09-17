@@ -42,7 +42,7 @@ Work packages from [COLMAP_ALIGNMENT_PLAN.md](COLMAP_ALIGNMENT_PLAN.md):
 | W18.5 stage 2 (Problem + covariance) | done (2026-09-13(4): CeresBundleAdjuster::Problem() upstream accessors; estimators/covariance.{h,cc,test} fully ported with the fork split-qvec/tvec PoseParam adaptation preserving [rotation, translation] tangent ordering; covariance_test 7 parameterized cases green against ceres::Covariance at 1e-8) |
 | W18.5 stage 3 (Summary surface) | done (2026-09-13(5): BundleAdjustmentTerminationType + BundleAdjustmentSummary + CeresBundleAdjustmentSummary (Create/mapping/summary() accessor) ported additively; BackendOptions pimpl restructure deferred to the caspar batch) |
 | W3-3 incremental_mapper_impl | done (2026-09-13(4): IncrementalMapperImpl stateless algorithm class with FindFirstInitialImage/FindSecondInitialImage/FindNextImages/FindLocalBundle + rank helpers moved from the mapper, mapper.cc 1266 -> 896 lines with thin delegating members; upstream InitInfo orchestration stays in the mapper, camera-ray point-data refactor not pulled) |
-| W3-2b frame-aware mapper (stage 1) | done (2026-09-13(6): mapper pose writes frame-aware via Frame::SetCamFromWorld with legacy fallback (dual-path pattern), RegisterNextImage estimates into locals + single commit + shadow sync, BA config frame-level constants (rig_from_world/sensor_from_rig) ported and honored in the problem assembly; RegisterNextImageFallback clarified as an upstream stale comment - no function to port; stage 2 = DatabaseCache pointer wiring + general/structure-less variants) |
+| W3-2b frame-aware mapper | done (2026-09-14(5) stage-3 complete body: frame-level bookkeeping (RegisterFrameEvent/DeRegisterFrameEvent + num_reg_frames_per_rig_ via the mapper-held ObservationManager), RegisterNextGeneralFrame (pooled per-frame 2D-3D + generalized absolute pose, dispatched on rig.NumSensors()>1 with all-good focal lengths), RegisterNextStructureLessImage (2D-2D resectioning + robust new-point triangulation, own trial counter), generalized_pose.{h,cc} + generalized solvers registered and adapted to the fork's split pose buffers, pipeline structure-less fallback; global_pipeline end-to-end green, full build EXIT=0, ctest 217/222 |
 | W3-2b stage 2 (single pose-write entry) | done (2026-09-14: probe-verified frame-wired mapper runtime + latent pose-loss bug in the pre-stage-1 shadow-only writes; Image::SetCamFromWorld added as the single rig-aware write entry that mirrors into the legacy buffers; mapper registration uses it; IncrementalMapperFrameWiring regression test pins wiring/visibility/mirroring/fallback; full test-gate run blocked by the user's two in-progress untracked AICore tasks (gkd, lingbot) - Reconstruction itself compiles with zero errors) |
 | Upstream baseline drift | observed (2026-09-13: upstream pulled to `d3ccaf35`, Δ=33 commits vs scanned baseline `dbb41680`, incl. #4687 camera-models per-header split = the W18.4 template, GP4PS #4664, LO-RANSAC generalized pose #4690; full G1-G21 re-scan is a separate task; recorded in manifest `upstream_head_observed`) |
 
@@ -653,3 +653,51 @@ terminal status:
 | sensor_models* | done (superseded entry closed) |
 | freeimage_to_openimageio | out of alignment scope by the recorded policy (dependency migration, platform-gated) |
 | hip_patchmatch | deferred by the recorded policy (no ROCm hardware in the release matrix) |
+
+## E2E dense-chain alignment round (2026-09-15)
+
+The end-to-end fork-vs-upstream comparison on the mini6 dataset (6 images)
+closed the remaining e2e items from
+[E2E_ALIGNMENT_TODO.md](E2E_ALIGNMENT_TODO.md) and surfaced three fork
+defects, all fixed and regression-tested:
+
+- **Bug #4** `ReadImagesBinary`/`ReadImagesText` never restored image
+  registration (the fork's image-level `reg_image_ids_` stayed empty after
+  `Reconstruction::Read`, so every downstream `NumRegImages()` consumer -
+  undistorter, dense chain, texturer - saw 0 registered images). Fixed by
+  calling `RegisterImage` per image in both read loops (the write side only
+  serializes `RegImageIds()`, so the file contract is exactly "every listed
+  image is registered"). Upstream recovers the same state through
+  `RegisterFrame` inside `AddFrame`.
+- **Bug #5** `mvs::Model::ReadFromCOLMAP` read poses from the stale legacy
+  `Qvec()/Tvec()` buffers (identity after `Read` - the read path carries the
+  pose in the frame), collapsing all triangulation angles to zero and making
+  patch-match auto source selection reject every image. Fixed to the upstream
+  `image.CamFromWorld()` form.
+- **Bug #6** `Bitmap::Read` ignored its `as_rgb` parameter after the OIIO
+  migration, so the patch-match workspace (`as_rgb=false`) aborted on the
+  `IsGrey()` check. Fixed with the upstream CloneAsRGB/CloneAsGrey conversion
+  block. The sparse pipeline had been silently masked by the explicit
+  `CloneAsGrey()` in feature extraction.
+
+E2E results (both sides same machine/GPU, same `max_image_size=2000`):
+undistorter 6/6 images both sides; patch-match depth-map coverage matches
+per-image within ~1%; stereo fusion 290319 vs 289072 points (0.43%);
+delaunay mesh within ~2%; poisson mesh size divergence (3x fewer faces) is
+fully attributed to the known sparse-outlier difference propagating through
+the auto depth ranges (see E2E_ALIGNMENT_TODO.md 5.2 for the evidence
+chain) - the dense-chain algorithms themselves are aligned; mesh_texturer
+produces texture.png + textured mesh on both sides.
+
+Per-image pose/intrinsics comparison (name-paired, Umeyama Sim3d on
+projection centers): rotation error mean 0.025 deg / max 0.029 deg,
+projection-center error ~1e-4 normalized, focal-length difference 0.053%,
+principal points identical. `model_comparer` itself works on same-database
+model pairs (fork exh-vs-seq: rotation mean 0.031 deg); cross-database
+comparisons abort on the upstream `alignment.cc:48` ImageId assertion on
+BOTH sides (upstream's own extraction order is nondeterministic across
+runs), which is an upstream tool contract, not a fork deviation.
+
+Regression gates: reconstruction_io_test 19/19, bitmap_test 31/31,
+image_test 23/23, undistortion_test 5/5, texture_mapping_test 15/15,
+models_test 21/21. Recorded in the manifest as `e2e_dense_chain_alignment`.

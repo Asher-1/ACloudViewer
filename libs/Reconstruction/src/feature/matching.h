@@ -70,7 +70,9 @@ struct SequentialMatchingOptions {
     int loop_detection_max_num_features = -1;
 
     // Path to the vocabulary tree.
-    std::filesystem::path vocab_tree_path = retrieval::kDefaultVocabTreeUri;
+    // Upstream parity (d3ccaf35 pairing.h): an empty path selects the
+    // default vocabulary tree for the feature type at match time.
+    std::filesystem::path vocab_tree_path;
 
     bool Check() const;
 };
@@ -94,7 +96,9 @@ struct VocabTreeMatchingOptions {
     int max_num_features = -1;
 
     // Path to the vocabulary tree.
-    std::filesystem::path vocab_tree_path = retrieval::kDefaultVocabTreeUri;
+    // Upstream parity (d3ccaf35 pairing.h): an empty path selects the
+    // default vocabulary tree for the feature type at match time.
+    std::filesystem::path vocab_tree_path;
 
     // Optional path to file with specific image names to match.
     std::filesystem::path match_list_path;

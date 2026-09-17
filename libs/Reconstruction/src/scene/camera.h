@@ -61,6 +61,13 @@ public:
     inline sensor_t SensorId() const {
         return sensor_t(SensorType::CAMERA, camera_id_);
     }
+    // Whether the camera model has a finite pinhole image plane (so
+    // positive-depth cheirality applies). Upstream parity (d3ccaf35 camera.h
+    // IsPerspective): omnidirectional models such as EQUIRECTANGULAR are not
+    // perspective.
+    inline bool IsPerspective() const {
+        return CameraModelIsPerspective(model_id_);
+    }
     inline bool IsPerspectivePinhole() const {
         return CameraModelIsPerspectivePinhole(model_id_);
     }

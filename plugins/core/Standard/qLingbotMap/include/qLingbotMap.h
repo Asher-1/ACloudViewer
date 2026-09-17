@@ -11,10 +11,14 @@
 #include <ecvStdPluginInterface.h>
 
 #include <QAction>
+#include <QElapsedTimer>
 #include <QTimer>
+#include <vector>
 
 #include "LingbotMapDialog.h"
 #include "LingbotMapWorker.h"
+
+class ccHObject;
 
 class qLingbotMap : public QObject, public ccStdPluginInterface {
     Q_OBJECT
@@ -33,10 +37,27 @@ private slots:
     void cancelTask();
     void onResultReady(const LingbotRunResult& result);
     void onTaskFinished(bool success);
+    /** Live online-reconstruction preview (stride-subsampled cloud +
+     *  COLMAP-style camera frustum, one per completed frame). */
+    void onFramePreview(const LingbotFramePreview& preview);
+    /** Dialog playback controls (official viewer Playing/FPS semantics). */
+    void onPlaybackSettingsChanged(bool enabled,
+                                   int fps,
+                                   bool currentFrameOnly);
+    void onPlaybackTick();
 
 private:
     bool addResultToDb(const LingbotRunResult& result,
                        const LingbotMapWorker::Settings& settings);
+    /** Removes the transient online-preview group from the DB. */
+    void disposeOnlineGroup();
+    /** Window subgroup of the online group (streaming: the group itself). */
+    ccHObject* onlineWindowGroup(int windowIndex, int windowCount);
+    /** COLMAP-style camera sensor at the preview pose (size from the
+     *  running median camera baseline, official viewer semantics). */
+    void addOnlineCamera(ccHObject* parent, const LingbotFramePreview& p);
+    void startPlayback();
+    void stopPlayback();
 
     QAction* m_action = nullptr;
     LingbotMapDialog* m_dialog = nullptr;
@@ -45,4 +66,21 @@ private:
     LingbotMapWorker::Settings m_lastSettings;
     QTimer* m_inferenceHeartbeat = nullptr;
     qint64 m_inferenceElapsedSeconds = 0;
+
+    // ---- online preview (transient; replaced by the final result) ----
+    ccHObject* m_onlineGroup = nullptr;
+    ccHObject* m_onlineCurrentWindow = nullptr;
+    int m_onlineWindowCount = 0;
+    std::vector<float> m_onlineBaselines; /**< inter-camera distances */
+    QVector<float> m_lastPreviewC2w;      /**< previous frame pose */
+    QElapsedTimer m_onlineRefreshThrottle;
+
+    // ---- loop playback over the final per-frame clouds ----
+    QTimer* m_playbackTimer = nullptr;
+    bool m_playbackEnabled = false;
+    bool m_playbackCurrentFrameOnly = true;
+    int m_playbackFps = 20;
+    int m_playbackFrame = 0;
+    unsigned m_resultGroupId = 0;
+    std::vector<unsigned> m_frameCloudIds;
 };

@@ -7,6 +7,8 @@
 
 #include "GKDModelCatalog.h"
 
+#include <QtCompat.h>
+
 #include <QFileInfo>
 #include <QFontMetrics>
 #include <QJsonArray>
@@ -180,7 +182,7 @@ bool imageView(QImage* image, aicore_image_view* out) {
             break;
 #endif
         case QImage::Format_RGBA8888:
-        case QImage::Format_BGR888:
+        case qtCompatQImageFormatBgr888():
             break;
         default:
             *image = image->convertToFormat(QImage::Format_ARGB32);
@@ -208,7 +210,7 @@ bool imageView(QImage* image, aicore_image_view* out) {
         case QImage::Format_RGBA8888:
             out->format = AICORE_IMAGE_RGBA8;
             break;
-        case QImage::Format_BGR888:
+        case qtCompatQImageFormatBgr888():
             out->format = AICORE_IMAGE_BGR8;
             break;
         default:

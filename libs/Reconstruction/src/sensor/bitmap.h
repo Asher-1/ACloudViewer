@@ -126,6 +126,8 @@ public:
     // information is embedded in the bitmap.
     bool ExifCameraModel(std::string* camera_model) const;
     bool ExifFocalLength(double* focal_length) const;
+    // Upstream parity (d3ccaf35): the EXIF orientation tag (1-8), or nullopt.
+    std::optional<int> ExifOrientation() const;
     bool ExifLatitude(double* latitude) const;
     bool ExifLongitude(double* longitude) const;
     bool ExifAltitude(double* altitude) const;

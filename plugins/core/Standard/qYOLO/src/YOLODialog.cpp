@@ -1735,6 +1735,23 @@ void YOLODialog::startLiveStream() {
     config.modelPath = m_liveWidget->resolveModelPath();
     config.device = m_liveWidget->deviceId();
     config.threads = m_liveWidget->threadCount();
+    // Open-vocabulary families (world/yoloe): carry the current panel's
+    // class list and text tower into the live worker so live runs honor
+    // open-vocabulary text prompting exactly like the still-image path.
+    if (YOLOTaskPanel* panel = currentTaskPanel()) {
+        if (panel->classesEdit) {
+            QStringList classes;
+            const QStringList raw =
+                    panel->classesEdit->text().split(QLatin1Char(','));
+            for (const QString& c : raw) {
+                const QString trimmed = c.trimmed();
+                if (!trimmed.isEmpty()) classes.append(trimmed);
+            }
+            config.classes = classes;
+        }
+        if (panel->textModelCombo)
+            config.textModelPath = panel->textModelPath();
+    }
     // Thresholds are read from the Live widget's own (adaptive) controls —
     // they stay visible/hidden according to the selected model's task.
     m_liveWidget->setConfig(config);
@@ -1917,11 +1934,44 @@ bool YOLODialog::loadTestDataFor(TestDataTarget target, const QString& task) {
         m_previewLabel = panel->previewLabel;
         updateImagePreview();
         appendLog(tr("[Test data] Loaded image: %1").arg(path));
+        // Open-vocabulary showcase (GKD-style sample preset): the demo
+        // defines class names that exercise open-vocabulary text prompting
+        // on the world / yoloe panels — fill them so a zero-input Run shows
+        // detections. Skipped in visual-prompt mode (SAVPE boxes replace
+        // the class list there).
+        if (taskHasText(panel->task) && panel->classesEdit &&
+            !panelUsesVisualPrompts(*panel)) {
+            const QStringList demo =
+                    YOLOHelpers::demoClassesForTestData(fileName);
+            if (!demo.isEmpty()) {
+                const QString joined = demo.join(QStringLiteral(", "));
+                panel->classesEdit->setText(joined);
+                appendLog(tr("[Test data] Open-vocabulary classes "
+                             "auto-filled: %1")
+                                  .arg(joined));
+            }
+        }
     } else if (m_liveWidget) {
         m_liveWidget->setInputSource(YOLOLiveWidget::InputSource::VideoFile);
         m_liveWidget->setVideoFilePath(path, false);
         appendLog(tr("[Test data] Loaded video: %1").arg(path));
         appendLog(tr("[Test data] Press Start to run inference on it."));
+        // Same showcase for the Live path: the live run validates against
+        // the CURRENT panel and carries its class list into the worker.
+        if (YOLOTaskPanel* panel = currentTaskPanel()) {
+            if (taskHasText(panel->task) && panel->classesEdit &&
+                !panelUsesVisualPrompts(*panel)) {
+                const QStringList demo =
+                        YOLOHelpers::demoClassesForTestData(fileName);
+                if (!demo.isEmpty()) {
+                    const QString joined = demo.join(QStringLiteral(", "));
+                    panel->classesEdit->setText(joined);
+                    appendLog(tr("[Test data] Open-vocabulary classes "
+                                 "auto-filled: %1")
+                                      .arg(joined));
+                }
+            }
+        }
     }
     return true;
 }
@@ -2040,6 +2090,16 @@ void YOLODialog::setTestDataControlsEnabled(bool enabled) {
 }
 
 void YOLODialog::closeEvent(QCloseEvent* event) {
+    // The dialog is reused (not deleted on close): stop everything that
+    // would keep consuming resources while hidden. The live stream decodes
+    // and infers per frame — leaving it running behind a hidden dialog
+    // holds device VRAM and CPU until the app exits. An in-progress model
+    // download keeps a socket + .part file alive; qGKD cancels it in the
+    // same spot. A running still-image task is left to finish: it is
+    // bounded and its results land in the DB (onTaskFinished frees the
+    // context).
+    if (m_downloadInProgress && m_downloader) m_downloader->cancel();
+    if (m_liveWidget) m_liveWidget->stopStream();
     saveSettings();
     m_liveWidget->saveSettings();
     event->accept();

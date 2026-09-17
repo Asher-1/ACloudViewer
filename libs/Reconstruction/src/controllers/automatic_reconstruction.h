@@ -38,7 +38,9 @@ public:
         std::filesystem::path mask_path;
 
         // The path to the vocabulary tree for feature matching.
-        std::filesystem::path vocab_tree_path = retrieval::kDefaultVocabTreeUri;
+        // Upstream parity (d3ccaf35): an empty path selects the default
+        // vocabulary tree for the feature type at match time.
+        std::filesystem::path vocab_tree_path;
 
         // The type of input data used to choose optimal mapper settings.
         DataType data_type = DataType::INDIVIDUAL;

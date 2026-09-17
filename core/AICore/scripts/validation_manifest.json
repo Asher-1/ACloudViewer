@@ -588,6 +588,54 @@
       "vram_estimate_mib": 14336
     },
     {
+      "id": "lingbot-stream-long-q8",
+      "task": "lingbot",
+      "executable": "binary:test_lingbot_capi_load",
+      "covered_globs": ["lingbot_models/lingbot-map-long-q8.gguf"],
+      "args": [],
+      "env": {
+        "AICORE_TEST_LINGBOT_GGUF": "{assets}/lingbot_models/lingbot-map-long-q8.gguf",
+        "AICORE_TEST_DEVICE": "{backend}",
+        "AICORE_TEST_LINGBOT_KV": "1,4"
+      },
+      "accuracy_gate": "finite depth/pose outputs, deterministic repeat stream over a reset, and honest e2e timing (long checkpoint, architecture-identical to balanced)",
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic",
+      "vram_estimate_mib": 8192
+    },
+    {
+      "id": "lingbot-stream-long-f16",
+      "task": "lingbot",
+      "executable": "binary:test_lingbot_capi_load",
+      "covered_globs": ["lingbot_models/lingbot-map-long-f16.gguf"],
+      "args": [],
+      "env": {
+        "AICORE_TEST_LINGBOT_GGUF": "{assets}/lingbot_models/lingbot-map-long-f16.gguf",
+        "AICORE_TEST_DEVICE": "{backend}",
+        "AICORE_TEST_LINGBOT_KV": "1,4"
+      },
+      "accuracy_gate": "finite depth/pose outputs, deterministic repeat stream over a reset, and honest e2e timing (long checkpoint, architecture-identical to balanced)",
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic",
+      "vram_estimate_mib": 10240
+    },
+    {
+      "id": "lingbot-stream-long-f32",
+      "task": "lingbot",
+      "executable": "binary:test_lingbot_capi_load",
+      "covered_globs": ["lingbot_models/lingbot-map-long-f32.gguf"],
+      "args": [],
+      "env": {
+        "AICORE_TEST_LINGBOT_GGUF": "{assets}/lingbot_models/lingbot-map-long-f32.gguf",
+        "AICORE_TEST_DEVICE": "{backend}",
+        "AICORE_TEST_LINGBOT_KV": "1,4"
+      },
+      "accuracy_gate": "finite depth/pose outputs, deterministic repeat stream over a reset, and honest e2e timing (long checkpoint, architecture-identical to balanced)",
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic",
+      "vram_estimate_mib": 14336
+    },
+    {
       "id": "lingbot-stream-skyseg-q8_0",
       "task": "lingbot",
       "executable": "binary:test_lingbot_capi_load",

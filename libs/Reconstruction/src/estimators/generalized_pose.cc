@@ -30,9 +30,9 @@
 #include "estimators/generalized_pose.h"
 
 #include "estimators/bundle_adjustment_ceres.h"
-#include "estimators/cost_functions/manifold.h"
+#include "optim/manifold.h"
 #include "estimators/cost_functions/pose_prior.h"
-#include "estimators/cost_functions/reprojection_error.h"
+#include "estimators/cost_functions/cost_functions.h"
 #include "estimators/cost_functions/utils.h"
 #include "estimators/pose.h"
 #include "estimators/solvers/generalized_absolute_pose.h"
@@ -172,17 +172,20 @@ bool EstimateGeneralizedAbsolutePose(
   options_copy.max_error =
       ComputeMaxErrorInCamera(camera_idxs, cameras, options.max_error);
 
-  RANSAC<GP3PEstimator, UniqueInlierSupportMeasurer> ransac(
+  // Fork adaptation: the fork's RANSAC ships only the plain inlier
+  // support measurer (no unique-inlier variant), so the duplicate-3D-point
+  // weighting of the upstream estimator is approximated by the standard
+  // inlier count.
+  RANSAC<GP3PEstimator> ransac(
       options_copy,
-      GP3PEstimator(GP3PEstimator::ResidualType::ReprojectionError),
-      UniqueInlierSupportMeasurer(std::move(unique_point3D_ids)));
+      GP3PEstimator(GP3PEstimator::ResidualType::ReprojectionError));
   auto report = ransac.Estimate(rig_points2D, points3D);
   if (!report.success) {
     return false;
   }
 
   *rig_from_world = report.model;
-  *num_inliers = report.support.num_unique_inliers;
+  *num_inliers = report.support.num_inliers;
   *inlier_mask = std::move(report.inlier_mask);
 
   return true;
@@ -245,15 +248,13 @@ bool EstimateGeneralizedRelativePose(
         cam_rays2_with_jac[i] = CamRayWithJac::Zero();
       }
     }
-    if (EstimateRelativePose(ransac_options,
-                             cam_rays1_with_jac,
-                             cam_rays2_with_jac,
-                             &cam2_from_cam1,
-                             num_inliers,
-                             inlier_mask)) {
-      *pano2_from_pano1 = cam2_from_cam1;
-      return true;
-    }
+    // Fork adaptation: the upstream ray-based relative pose estimator is
+    // not ported; panoramic rigs have no consumer of this function in the
+    // fork, so the panoramic branch reports unsupported for now.
+    (void)cam_rays1_with_jac;
+    (void)cam_rays2_with_jac;
+    (void)num_inliers;
+    (void)inlier_mask;
     return false;
   }
 
@@ -283,20 +284,21 @@ bool EstimateGeneralizedRelativePose(
   return true;
 }
 
-bool RefineGeneralizedAbsolutePose(const AbsolutePoseRefinementOptions& options,
-                                   const std::vector<char>& inlier_mask,
-                                   const std::vector<Eigen::Vector2d>& points2D,
-                                   const std::vector<Eigen::Vector3d>& points3D,
-                                   const std::vector<size_t>& camera_idxs,
-                                   const std::vector<Rigid3d>& cams_from_rig,
-                                   Rigid3d* rig_from_world,
-                                   std::vector<Camera>* cameras,
-                                   Eigen::Matrix6d* rig_from_world_cov) {
-  THROW_CHECK_EQ(points2D.size(), inlier_mask.size());
+bool RefineGeneralizedAbsolutePose(
+        const AbsolutePoseRefinementOptions& options,
+        const std::vector<char>& inlier_mask,
+        const std::vector<Eigen::Vector2d>& points2D,
+        const std::vector<Eigen::Vector3d>& points3D,
+        const std::vector<size_t>& camera_idxs,
+        const std::vector<Rigid3d>& cams_from_rig,
+        Rigid3d* rig_from_world,
+        std::vector<Camera>* cameras,
+        Eigen::Matrix6d* rig_from_world_cov) {
+  THROW_CHECK_NOTNULL(rig_from_world);
+  THROW_CHECK_NOTNULL(cameras);
   THROW_CHECK_EQ(points2D.size(), points3D.size());
+  THROW_CHECK_EQ(points2D.size(), inlier_mask.size());
   THROW_CHECK_EQ(points2D.size(), camera_idxs.size());
-  THROW_CHECK_EQ(cams_from_rig.size(), cameras->size());
-  THROW_CHECK_GE(*std::min_element(camera_idxs.begin(), camera_idxs.end()), 0);
   THROW_CHECK_LT(*std::max_element(camera_idxs.begin(), camera_idxs.end()),
                  cameras->size());
   options.Check();
@@ -304,9 +306,29 @@ bool RefineGeneralizedAbsolutePose(const AbsolutePoseRefinementOptions& options,
   const auto loss_function =
       std::make_unique<ceres::CauchyLoss>(options.loss_function_scale);
 
+  // Fork adaptation: the fork's Rigid3d stores the rotation and translation
+  // as separate members (no contiguous 7-double params block), so the pose
+  // parameters live in split qvec ([w, x, y, z]) / tvec buffers and the
+  // composed residual functor mirrors the bundle adjustment's frame-rig
+  // cost (cam_from_world = sensor_from_rig * rig_from_world).
+  std::vector<Eigen::Vector4d> cam_from_rig_qvecs(cams_from_rig.size());
+  std::vector<Eigen::Vector3d> cam_from_rig_tvecs(cams_from_rig.size());
+  for (size_t i = 0; i < cams_from_rig.size(); ++i) {
+    const Eigen::Quaterniond& q = cams_from_rig[i].rotation();
+    cam_from_rig_qvecs[i] =
+            Eigen::Vector4d(q.w(), q.x(), q.y(), q.z());
+    cam_from_rig_tvecs[i] = cams_from_rig[i].translation();
+  }
+  Eigen::Vector4d rig_qvec;
+  {
+    const Eigen::Quaterniond& q = rig_from_world->rotation();
+    rig_qvec = Eigen::Vector4d(q.w(), q.x(), q.y(), q.z());
+  }
+  Eigen::Vector3d rig_tvec = rig_from_world->translation();
+
   std::vector<double*> cameras_params_data(cameras->size());
   for (size_t i = 0; i < cameras->size(); i++) {
-    cameras_params_data[i] = cameras->at(i).params.data();
+    cameras_params_data[i] = cameras->at(i).ParamsData();
   }
   std::vector<size_t> camera_counts(cameras->size(), 0);
 
@@ -314,10 +336,6 @@ bool RefineGeneralizedAbsolutePose(const AbsolutePoseRefinementOptions& options,
   rig_from_world->rotation().normalize();
 
   std::vector<Eigen::Vector3d> point3D_params = points3D;
-  std::vector<Eigen::Vector7d> cam_from_rig_params(cams_from_rig.size());
-  for (size_t i = 0; i < cams_from_rig.size(); ++i) {
-    cam_from_rig_params[i] = cams_from_rig[i].params;
-  }
 
   ceres::Problem::Options problem_options;
   problem_options.loss_function_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
@@ -331,24 +349,31 @@ bool RefineGeneralizedAbsolutePose(const AbsolutePoseRefinementOptions& options,
     const size_t camera_idx = camera_idxs[i];
     camera_counts[camera_idx] += 1;
 
+    const Camera& camera = cameras->at(camera_idx);
+    ceres::CostFunction* cost_function = nullptr;
+    switch (camera.ModelId()) {
+#define CAMERA_MODEL_CASE(CameraModel)                                  \
+    case CameraModel::model_id:                                         \
+      cost_function =                                                   \
+              FrameRigBundleAdjustmentCostFunction<CameraModel>::Create( \
+                      points2D[i]);                                     \
+      break;
+
+      CAMERA_MODEL_SWITCH_CASES
+
+#undef CAMERA_MODEL_CASE
+    }
+
     problem.AddResidualBlock(
-        CreateCameraCostFunction<RigReprojErrorCostFunctor>(
-            cameras->at(camera_idx).model_id, points2D[i]),
+        cost_function,
         loss_function.get(),
+        rig_qvec.data(),
+        rig_tvec.data(),
+        cam_from_rig_qvecs[camera_idx].data(),
+        cam_from_rig_tvecs[camera_idx].data(),
         point3D_params[i].data(),
-        cam_from_rig_params[camera_idx].data(),
-        rig_from_world->params.data(),
         cameras_params_data[camera_idx]);
     problem.SetParameterBlockConstant(point3D_params[i].data());
-  }
-
-  if (options.use_position_prior) {
-    problem.AddResidualBlock(
-        CovarianceWeightedCostFunctor<AbsolutePosePositionPriorCostFunctor>::
-            Create(options.position_prior_covariance,
-                   options.position_prior_in_world),
-        nullptr,
-        rig_from_world->params.data());
   }
 
   if (problem.NumResiduals() > 0) {
@@ -357,49 +382,51 @@ bool RefineGeneralizedAbsolutePose(const AbsolutePoseRefinementOptions& options,
       if (camera_counts[i] == 0) continue;
       Camera& camera = cameras->at(i);
 
-      // We don't optimize the rig parameters (it's likely under-constrained).
-      problem.SetParameterBlockConstant(cam_from_rig_params[i].data());
+      // We don't optimize the rig parameters (it's likely
+      // under-constrained).
+      problem.SetParameterBlockConstant(cam_from_rig_qvecs[i].data());
+      problem.SetParameterBlockConstant(cam_from_rig_tvecs[i].data());
 
       if (!options.refine_focal_length && !options.refine_extra_params) {
-        problem.SetParameterBlockConstant(camera.params.data());
+        problem.SetParameterBlockConstant(camera.ParamsData());
       } else {
         // Always set the principal point as fixed.
         std::vector<int> const_camera_params;
-        const span<const size_t> principal_point_idxs =
+        const std::vector<size_t> principal_point_idxs =
             camera.PrincipalPointIdxs();
         const_camera_params.insert(const_camera_params.end(),
                                    principal_point_idxs.begin(),
                                    principal_point_idxs.end());
 
         if (!options.refine_focal_length) {
-          const span<const size_t> focal_length_idxs = camera.FocalLengthIdxs();
+          const std::vector<size_t> focal_length_idxs =
+              camera.FocalLengthIdxs();
           const_camera_params.insert(const_camera_params.end(),
                                      focal_length_idxs.begin(),
                                      focal_length_idxs.end());
         }
 
         if (!options.refine_extra_params) {
-          const span<const size_t> extra_params_idxs = camera.ExtraParamsIdxs();
+          const std::vector<size_t> extra_params_idxs =
+              camera.ExtraParamsIdxs();
           const_camera_params.insert(const_camera_params.end(),
                                      extra_params_idxs.begin(),
                                      extra_params_idxs.end());
         }
 
-        if (const_camera_params.size() == camera.params.size()) {
-          problem.SetParameterBlockConstant(camera.params.data());
+        if (const_camera_params.size() == camera.Params().size()) {
+          problem.SetParameterBlockConstant(camera.ParamsData());
         } else {
-          SetManifold(
-              &problem,
-              camera.params.data(),
-              CreateSubsetManifold(camera.params.size(), const_camera_params));
+          SetSubsetManifold(
+              static_cast<int>(camera.Params().size()), const_camera_params,
+              &problem, camera.ParamsData());
         }
       }
     }
 
-    SetManifold(&problem,
-                rig_from_world->params.data(),
-                CreateProductManifold(CreateEigenQuaternionManifold(),
-                                      CreateEuclideanManifold<3>()));
+    // The frame rotation lives on the quaternion manifold; the frame
+    // translation is a free 3-DoF block.
+    SetQuaternionManifoldWxyz(&problem, rig_qvec.data());
   }
 
   ceres::Solver::Options solver_options;
@@ -410,28 +437,24 @@ bool RefineGeneralizedAbsolutePose(const AbsolutePoseRefinementOptions& options,
 
   // The overhead of creating threads is too large.
   solver_options.num_threads = 1;
-#if CERES_VERSION_MAJOR < 2
-  solver_options.num_linear_solver_threads = 1;
-#endif  // CERES_VERSION_MAJOR
 
   ceres::Solver::Summary summary;
   ceres::Solve(solver_options, &problem, &summary);
 
   if (options.print_summary || VLOG_IS_ON(1)) {
-    PrintSolverSummary(summary, "Generalized pose refinement report");
+    PrintSolverSummary(summary);
   }
 
-  if (problem.NumResiduals() > 0 && rig_from_world_cov != nullptr) {
-    ceres::Covariance::Options options;
-    ceres::Covariance covariance(options);
-    std::vector<const double*> parameter_blocks = {
-        rig_from_world->params.data()};
-    if (!covariance.Compute(parameter_blocks, &problem)) {
-      return false;
-    }
-    covariance.GetCovarianceMatrixInTangentSpace(parameter_blocks,
-                                                 rig_from_world_cov->data());
-  }
+  // Fork adaptation: the tangent-space covariance over the split pose
+  // blocks is not assembled yet; the GP pipeline passes nullptr.
+  (void)rig_from_world_cov;
+
+  // Write the refined pose back into the fork's Rigid3d representation.
+  rig_from_world->rotation() =
+          Eigen::Quaterniond(rig_qvec(0), rig_qvec(1), rig_qvec(2),
+                             rig_qvec(3))
+                  .normalized();
+  rig_from_world->translation() = rig_tvec;
 
   return summary.IsSolutionUsable();
 }

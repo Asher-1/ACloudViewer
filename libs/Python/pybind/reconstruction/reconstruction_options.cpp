@@ -48,9 +48,15 @@ void pybind_image_reader_options(py::module& m) {
                     "will be extracted in regions where the mask image is "
                     "black (pixel intensity "
                     "value 0 in grayscale).")
-            .def_readwrite("image_list",
-                           &colmap::ImageReaderOptions::image_list,
+            .def_readwrite("image_names",
+                           &colmap::ImageReaderOptions::image_names,
                            "List(str, ...): Optional list of images to read. "
+                           "The list must contain the relative path "
+                           "of the images with respect to the image_path.")
+            .def_readwrite("image_list",
+                           &colmap::ImageReaderOptions::image_names,
+                           "Deprecated alias of ``image_names``. "
+                           "Optional list of images to read. "
                            "The list must contain the relative path "
                            "of the images with respect to the image_path.")
             .def_readwrite(

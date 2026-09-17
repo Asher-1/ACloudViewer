@@ -123,6 +123,21 @@ double CalculateNormalizedAngularError(const Eigen::Vector2d& point2D,
                                        const Eigen::Vector3d& point3D,
                                        const Eigen::Matrix3x4d& proj_matrix);
 
+// Upstream parity (d3ccaf35 scene/projection.h): angular error from an
+// observed camera-frame bearing vector. Unlike the 2D normalized-plane
+// overload, this is well-defined for every camera model, including
+// omnidirectional (EQUIRECTANGULAR) back-hemisphere rays.
+//
+// @param cam_ray          Unit bearing vector in the camera frame.
+// @param point3D          3D point as 3x1 vector.
+// @param cam_from_world   Pose of the camera as 3x4 matrix.
+//
+// @return                 Angular error in radians.
+double CalculateAngularReprojectionError(
+        const Eigen::Vector3d& cam_ray,
+        const Eigen::Vector3d& point3D,
+        const Eigen::Matrix3x4d& cam_from_world);
+
 // Calculate depth of 3D point with respect to camera.
 //
 // The depth is defined as the Euclidean distance of a 3D point from the

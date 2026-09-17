@@ -381,6 +381,49 @@ TEST(YOLOHelpers, TaskDefaultIndexPointsAtRecommendedRow) {
               -1);
 }
 
+TEST(YOLOHelpers, YoloEDefaultKeepsOpenVocabTextMode) {
+    // Open vocabulary is YOLOE's defining capability: the task default must
+    // stay the catalog-recommended NON-prompt-free F16 row (text-capable;
+    // the official test image auto-fills demo classes for it, see
+    // DemoClassesForTestData). The -pf closed-vocabulary checkpoint is the
+    // no-input alternative, one click away.
+    const QVector<YOLOModelEntry> models =
+            YOLOHelpers::taskModels(QStringLiteral("yoloe"));
+    ASSERT_FALSE(models.isEmpty());
+    const int d =
+            YOLOHelpers::defaultModelIndexForTask(QStringLiteral("yoloe"));
+    ASSERT_GE(d, 0);
+    ASSERT_LT(d, models.size());
+    EXPECT_FALSE(YOLOHelpers::isPromptFreeFilename(models[d].filename))
+            << models[d].filename.toStdString();
+    EXPECT_EQ(models[d].filename, QStringLiteral("yoloe-26n-seg-f16.gguf"));
+    EXPECT_TRUE(YOLOHelpers::modelDisplayLabel(models[d]).contains(
+            QStringLiteral("(recommended)")));
+}
+
+TEST(YOLOHelpers, DemoClassesForTestData) {
+    // The official open-vocabulary demo presets: non-COCO classes included
+    // so zero-shot text prompting is visible at a glance; unmapped files
+    // return empty (no fill) and closed-set tasks never consult this.
+    const QStringList image = YOLOHelpers::demoClassesForTestData(
+            QStringLiteral("party_hats.jpg"));
+    ASSERT_EQ(image.size(), 2);
+    EXPECT_EQ(image[0], QStringLiteral("person"));
+    EXPECT_EQ(image[1], QStringLiteral("party hat"));
+
+    const QStringList video =
+            YOLOHelpers::demoClassesForTestData(QStringLiteral("traffic.mp4"));
+    EXPECT_FALSE(video.isEmpty());
+    EXPECT_TRUE(video.contains(QStringLiteral("car")));
+    EXPECT_TRUE(video.contains(QStringLiteral("person")));
+
+    EXPECT_TRUE(YOLOHelpers::demoClassesForTestData(
+                        QStringLiteral("000000397133.jpg"))
+                        .isEmpty());
+    EXPECT_TRUE(
+            YOLOHelpers::demoClassesForTestData(QStringLiteral("")).isEmpty());
+}
+
 TEST(YOLOHelpers, DrawPoseProducesVisibleOverlay) {
     // A pose set drawn on a copy must visibly change the image (skeleton
     // lines + keypoints + box) — guards against an empty-overlay regression

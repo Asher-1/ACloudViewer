@@ -10,6 +10,7 @@
 #include <QByteArray>
 #include <QImage>
 #include <QString>
+#include <QStringList>
 #include <QVector>
 #include <cstdint>
 
@@ -290,5 +291,12 @@ QString translatePromptToEnglish(const QString& text, bool* translated);
  *  verified to demonstrate text-prompt selectivity); every other task uses
  *  the COCO street scene. */
 QString testImageForTask(const QString& task);
+
+/** Open-vocabulary class list auto-filled on the world / yoloe panels when
+ *  the official test image or video is loaded (GKD-style sample preset):
+ *  short category nouns, including non-COCO ones, so a zero-input Run
+ *  demonstrates open-vocabulary text prompting. Empty when the file has no
+ *  demo mapping. */
+QStringList demoClassesForTestData(const QString& fileName);
 
 }  // namespace YOLOHelpers

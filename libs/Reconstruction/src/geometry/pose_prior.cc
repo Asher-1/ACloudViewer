@@ -116,3 +116,25 @@ int ComputeRot90FromGravity(const Eigen::Vector3d& gravity) {
 }
 
 }  // namespace colmap
+
+std::optional<Eigen::Vector3d> GravityFromExifOrientation(int orientation) {
+  switch (orientation) {
+    case 1:  // Normal
+      return Eigen::Vector3d(0, 1, 0);
+    case 3:  // Rotate 180
+      return Eigen::Vector3d(0, -1, 0);
+    case 6:  // Rotate 90 CW
+      return Eigen::Vector3d(1, 0, 0);
+    case 8:  // Rotate 270 CW
+      return Eigen::Vector3d(-1, 0, 0);
+    case 2:
+    case 4:
+    case 5:
+    case 7:
+      LOG(WARNING) << "Unsupported EXIF orientation: " << orientation;
+      return std::nullopt;
+    default:
+      LOG(ERROR) << "Unknown EXIF orientation: " << orientation;
+      return std::nullopt;
+  }
+}

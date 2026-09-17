@@ -716,7 +716,7 @@ void AutomaticReconstructionWidget::Run() {
     // MSVC has no implicit path-to-string conversion, so bridge explicitly.
     std::string vocab_tree_path = options_.vocab_tree_path.string();
     if (vocab_tree_path.empty()) {
-        vocab_tree_path = retrieval::kDefaultVocabTreeUri;
+        vocab_tree_path = kDefaultSiftVocabTreeUri;
     }
 
     // If it's a URI, check if it's already cached or needs to be downloaded
@@ -811,7 +811,7 @@ void AutomaticReconstructionWidget::showEvent(QShowEvent* event) {
     // This ensures that even if WriteOptions() previously saved an empty value,
     // we restore the default value when the window is shown
     if (options_.vocab_tree_path.empty()) {
-        options_.vocab_tree_path = retrieval::kDefaultVocabTreeUri;
+        options_.vocab_tree_path = kDefaultSiftVocabTreeUri;
     }
 
     // Call base class showEvent to read all options (including the default

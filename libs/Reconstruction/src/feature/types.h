@@ -16,14 +16,17 @@ namespace colmap {
 
 // Feature extractor types persisted in the database `descriptors.type`
 // column. Values must stay in sync with upstream COLMAP (SIFT = 0).
-enum class FeatureExtractorType {
-    UNDEFINED = -1,
-    SIFT = 0,
-    ALIKED_N16ROT = 1,
-    ALIKED_N32 = 2,
-    LOMA_B = 3,
-    LOMA_B128 = 4,
-};
+// Upstream parity (d3ccaf35 feature/types.h): the enum is declared through
+// MAKE_ENUM_CLASS_OVERLOAD_STREAM, which also generates
+// FeatureExtractorTypeToString (consumed by retrieval/resources.cc).
+MAKE_ENUM_CLASS_OVERLOAD_STREAM(FeatureExtractorType,
+                                -1,
+                                UNDEFINED,
+                                SIFT,
+                                ALIKED_N16ROT,
+                                ALIKED_N32,
+                                LOMA_B,
+                                LOMA_B128);
 
 struct FeatureKeypoint {
     FeatureKeypoint();
@@ -103,6 +106,16 @@ typedef Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 // protocol from legacy uint8 SIFT descriptors.
 typedef Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
         FeatureDescriptorsFloat;
+// Upstream parity (d3ccaf35 feature/types.h): alias used by the faiss-backed
+// retrieval layer; the fork keeps plain matrix descriptor types.
+using FeatureDescriptorsFloatData = FeatureDescriptorsFloat;
+
+// Upstream parity (d3ccaf35 feature/types.h FeatureDescriptorsFloat::ToFloat):
+// convert uint8 descriptor blocks to the float representation consumed by the
+// faiss-backed retrieval layer.
+inline FeatureDescriptorsFloat ToFloat(const FeatureDescriptors& descriptors) {
+    return descriptors.cast<float>();
+}
 
 enum class FeatureDescriptorType : uint8_t {
     kSift = 0,

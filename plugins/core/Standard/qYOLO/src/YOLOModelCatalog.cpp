@@ -146,6 +146,11 @@ int defaultModelIndexForTask(const QString& task) {
         role = AICORE_YOLO_ROLE_TEXT;
     else
         return -1;  // unknown task: let the caller's fallback decide
+    // NOTE: intentionally the catalog default (the non-prompt-free F16
+    // row): open vocabulary is YOLOE's defining capability, and the
+    // official test image auto-fills demo classes for it (see
+    // demoClassesForTestData) — the -pf closed-vocabulary checkpoint is
+    // one click away for the no-input path.
     return aicore_yolo_model_default_index(role);
 #else
     (void)task;
@@ -436,6 +441,20 @@ QString testImageForTask(const QString& task) {
     if (task == QStringLiteral("world") || task == QStringLiteral("yoloe"))
         return QStringLiteral("party_hats.jpg");
     return QStringLiteral("000000397133.jpg");
+}
+
+QStringList demoClassesForTestData(const QString& fileName) {
+    // Open-vocabulary demo presets (same idea as GKD's sample presets):
+    // short category nouns, including non-COCO ones, so a zero-input Run on
+    // the world / yoloe panels exercises open-vocabulary text prompting.
+    // Descriptive phrases score far lower — keep the entries short.
+    if (fileName == QStringLiteral("party_hats.jpg"))
+        return {QStringLiteral("person"), QStringLiteral("party hat")};
+    if (fileName == QStringLiteral("traffic.mp4") ||
+        fileName == QStringLiteral("supervision_demo.mp4"))
+        return {QStringLiteral("car"), QStringLiteral("bus"),
+                QStringLiteral("truck"), QStringLiteral("person")};
+    return {};
 }
 
 bool parseDetectionsJson(const QByteArray& json, YOLORunResult* out) {

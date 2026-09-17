@@ -32,19 +32,15 @@
 set(FOLDER_NAME "estimators")
 
 COLMAP_ADD_SOURCES(
-    absolute_pose.h absolute_pose.cc
-    affine_transform.h affine_transform.cc
     alignment.h alignment.cc
     coordinate_frame.h coordinate_frame.cc
-    essential_matrix.h essential_matrix.cc
     fundamental_matrix_degensac.h fundamental_matrix_degensac.cc
     euclidean_transform.h
-    fundamental_matrix.h fundamental_matrix.cc
     generalized_absolute_pose.h generalized_absolute_pose.cc
     generalized_absolute_pose_coeffs.h generalized_absolute_pose_coeffs.cc
     generalized_relative_pose.h generalized_relative_pose.cc
+    generalized_pose.h generalized_pose.cc
     global_positioning.h global_positioning.cc
-    homography_matrix.h homography_matrix.cc
     pose.h pose.cc
     rotation_averaging.h rotation_averaging.cc
     rotation_averaging_impl.h rotation_averaging_impl.cc
@@ -61,9 +57,13 @@ COLMAP_ADD_SOURCES(
     cost_functions/calibration.h
     cost_functions/cost_functions.h
 
+    solvers/absolute_pose.h solvers/absolute_pose.cc
+    solvers/affine_transform.h solvers/affine_transform.cc
     solvers/essential_matrix.h solvers/essential_matrix.cc
     solvers/essential_matrix_coeffs.h
     solvers/essential_matrix_poly.h
+    solvers/generalized_absolute_pose.h solvers/generalized_absolute_pose.cc
+    solvers/generalized_relative_pose.h solvers/generalized_relative_pose.cc
     solvers/similarity_transform.h solvers/similarity_transform.cc
     solvers/fundamental_matrix.h solvers/fundamental_matrix.cc
     solvers/homography_matrix.h solvers/homography_matrix.cc
@@ -81,18 +81,18 @@ COLMAP_ADD_SOURCES(solvers/relpose_one_sided_focal.h
 COLMAP_ADD_TEST(relpose_one_sided_focal_test
                 solvers/relpose_one_sided_focal_test.cc)
 
-COLMAP_ADD_TEST(absolute_pose_test absolute_pose_test.cc)
-COLMAP_ADD_TEST(affine_transform_test affine_transform_test.cc)
+COLMAP_ADD_TEST(absolute_pose_test solvers/absolute_pose_test.cc)
+COLMAP_ADD_TEST(solvers_affine_transform_test solvers/affine_transform_test.cc)
 COLMAP_ADD_TEST(coordinate_frame_test coordinate_frame_test.cc)
-COLMAP_ADD_TEST(essential_matrix_test essential_matrix_test.cc)
 COLMAP_ADD_TEST(estimators_utils_test utils_test.cc)
-COLMAP_ADD_TEST(fundamental_matrix_test fundamental_matrix_test.cc)
 COLMAP_ADD_TEST(global_positioning_test global_positioning_test.cc)
 COLMAP_ADD_TEST(generalized_absolute_pose_test generalized_absolute_pose_test.cc)
 COLMAP_ADD_TEST(generalized_relative_pose_test generalized_relative_pose_test.cc)
-COLMAP_ADD_TEST(homography_matrix_test homography_matrix_test.cc)
 COLMAP_ADD_TEST(rotation_averaging_test rotation_averaging_test.cc)
 COLMAP_ADD_TEST(translation_transform_test translation_transform_test.cc)
+COLMAP_ADD_TEST(solvers_essential_matrix_test solvers/essential_matrix_test.cc)
+COLMAP_ADD_TEST(solvers_fundamental_matrix_test solvers/fundamental_matrix_test.cc)
+COLMAP_ADD_TEST(solvers_homography_matrix_test solvers/homography_matrix_test.cc)
 COLMAP_ADD_TEST(view_graph_calibration_test view_graph_calibration_test.cc)
 # Minimal Boost.Test parity gate for the modernized two-view estimator; the
 # full upstream gtest suite follows the W9 synthetic-dataset port.

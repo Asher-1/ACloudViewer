@@ -10,10 +10,11 @@
 #include <Eigen/Core>
 #include <vector>
 
+#include "geometry/pose.h"
 #include "math/math.h"
 #include "optim/ransac.h"
 #include "scene/camera.h"
-#include "util/alignment.h"
+#include "util/eigen_alignment.h"
 #include "util/types.h"
 
 namespace colmap {
@@ -25,6 +26,14 @@ namespace colmap {
 //
 // An observation is composed of an image measurement and the corresponding
 // camera pose and calibration.
+//
+// Upstream parity (d3ccaf35 estimators/triangulation.h): observations are
+// carried as camera-frame unit bearing vectors (Camera::CamRayFromImg), the
+// canonical representation for all camera models, including omnidirectional
+// (EQUIRECTANGULAR) back-hemisphere rays that the 2D normalized-plane
+// representation cannot encode. The fork keeps the default constructor plus
+// SetMinTriAngle/SetResidualType mutators because the fork LORANSAC engine
+// default-constructs its estimators.
 class TriangulationEstimator {
 public:
     enum class ResidualType {
@@ -33,46 +42,47 @@ public:
     };
 
     struct PointData {
-        PointData() {}
-        PointData(const Eigen::Vector2d& point_,
-                  const Eigen::Vector2d& point_N_)
-            : point(point_), point_normalized(point_N_) {}
+        PointData() = default;
+        PointData(const Eigen::Vector2d& img_point,
+                  const Eigen::Vector3d& cam_ray)
+            : img_point(img_point), cam_ray(cam_ray) {}
         // Image observation in pixels. Only needs to be set for
         // REPROJECTION_ERROR.
-        Eigen::Vector2d point;
-        // Normalized image observation. Must always be set.
-        Eigen::Vector2d point_normalized;
+        Eigen::Vector2d img_point = Eigen::Vector2d::Zero();
+        // Unit bearing vector in the camera frame (Camera::CamRayFromImg).
+        Eigen::Vector3d cam_ray = Eigen::Vector3d::Zero();
     };
 
     struct PoseData {
         PoseData() : camera(nullptr) {}
-        PoseData(const Eigen::Matrix3x4d& proj_matrix_,
-                 const Eigen::Vector3d& pose_,
-                 const Camera* camera_)
-            : proj_matrix(proj_matrix_), proj_center(pose_), camera(camera_) {}
-        // The projection matrix for the image of the observation.
-        Eigen::Matrix3x4d proj_matrix;
+        PoseData(const Eigen::Matrix3x4d& cam_from_world,
+                 const Eigen::Vector3d& proj_center,
+                 const Camera* camera)
+            : cam_from_world(cam_from_world),
+              proj_center(proj_center),
+              camera(camera) {}
+        // The pose of the camera of the observation as 3x4 matrix.
+        Eigen::Matrix3x4d cam_from_world = Eigen::Matrix3x4d::Zero();
         // The projection center for the image of the observation.
-        Eigen::Vector3d proj_center;
+        Eigen::Vector3d proj_center = Eigen::Vector3d::Zero();
         // The camera for the image of the observation.
-        const Camera* camera;
+        const Camera* camera = nullptr;
     };
 
-    typedef PointData X_t;
-    typedef PoseData Y_t;
-    typedef Eigen::Vector3d M_t;
+    using X_t = PointData;
+    using Y_t = PoseData;
+    using M_t = Eigen::Vector3d;
 
-    // Specify settings for triangulation estimator.
-    void SetMinTriAngle(const double min_tri_angle);
-    void SetResidualType(const ResidualType residual_type);
+    TriangulationEstimator() = default;
+    TriangulationEstimator(double min_tri_angle, ResidualType residual_type);
 
     // The minimum number of samples needed to estimate a model.
     static const int kMinNumSamples = 2;
 
     // Estimate a 3D point from a two-view observation.
     //
-    // @param point_data        Image measurement.
-    // @param point_data        Camera poses.
+    // @param point_data        Image measurements.
+    // @param pose_data         Camera poses.
     //
     // @return                  Triangulated point if successful, otherwise
     // none.
@@ -82,7 +92,7 @@ public:
     // Calculate residuals in terms of squared reprojection or angular error.
     //
     // @param point_data        Image measurements.
-    // @param point_data        Camera poses.
+    // @param pose_data         Camera poses.
     // @param xyz               3D point.
     //
     // @return                  Residual for each observation.
@@ -91,9 +101,13 @@ public:
                    const M_t& xyz,
                    std::vector<double>* residuals) const;
 
+    // Fork LORANSAC engine requires default construction + mutation.
+    void SetMinTriAngle(const double min_tri_angle);
+    void SetResidualType(const ResidualType residual_type);
+
 private:
-    ResidualType residual_type_ = ResidualType::REPROJECTION_ERROR;
     double min_tri_angle_ = 0.0;
+    ResidualType residual_type_ = ResidualType::ANGULAR_ERROR;
 };
 
 struct EstimateTriangulationOptions {
@@ -107,25 +121,30 @@ struct EstimateTriangulationOptions {
     // RANSAC options for TriangulationEstimator.
     RANSACOptions ransac_options;
 
+    EstimateTriangulationOptions() {
+        ransac_options.max_error = DegToRad(2.0);
+        ransac_options.confidence = 0.9999;
+        ransac_options.min_inlier_ratio = 0.02;
+        ransac_options.max_num_trials = 10000;
+    }
+
     void Check() const {
-        CHECK_GE(min_tri_angle, 0.0);
+        THROW_CHECK_GE(min_tri_angle, 0.0);
         ransac_options.Check();
     }
 };
 
 // Robustly estimate 3D point from observations in multiple views using RANSAC
-// and a subsequent non-linear refinement using all inliers. Returns true
-// if the estimated number of inliers has more than two views.
-bool EstimateTriangulation(
-        const EstimateTriangulationOptions& options,
-        const std::vector<TriangulationEstimator::PointData>& point_data,
-        const std::vector<TriangulationEstimator::PoseData>& pose_data,
-        std::vector<char>* inlier_mask,
-        Eigen::Vector3d* xyz);
+// and a subsequent non-linear refinement using all inliers. Returns true if
+// the estimated number of inliers has more than two views.
+//
+// Upstream parity (d3ccaf35): the observation-to-bearing conversion happens
+// here, so callers only provide pixel observations and camera poses.
+bool EstimateTriangulation(const EstimateTriangulationOptions& options,
+                           const std::vector<Eigen::Vector2d>& points,
+                           const std::vector<Rigid3d>& cams_from_world,
+                           const std::vector<Camera const*>& cameras,
+                           std::vector<char>* inlier_mask,
+                           Eigen::Vector3d* xyz);
 
 }  // namespace colmap
-
-// EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(
-//         colmap::TriangulationEstimator::PointData)
-// EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(
-//         colmap::TriangulationEstimator::PoseData)

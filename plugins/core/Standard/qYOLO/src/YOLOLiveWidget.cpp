@@ -454,6 +454,8 @@ void YOLOLiveWidget::submitInferJob(const QImage& rgb) {
     job.confThres = m_config.confThres;
     job.iouThres = m_config.iouThres;
     job.topK = m_config.topK;
+    job.classes = m_config.classes;
+    job.textModelPath = m_config.textModelPath;
     QMetaObject::invokeMethod(m_inferWorker, "runJob", Qt::QueuedConnection,
                               Q_ARG(YOLOLiveInferWorker::Job, job));
 }

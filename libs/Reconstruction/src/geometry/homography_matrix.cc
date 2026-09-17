@@ -292,5 +292,16 @@ void PoseFromHomographyMatrix(const Eigen::Matrix3d& H,
   }
 }
 
+// Upstream parity (d3ccaf35 geometry/homography_matrix.cc).
+double ComputeSquaredHomographyError(const Eigen::Vector2d& point1,
+                                     const Eigen::Vector2d& point2,
+                                     const Eigen::Matrix3d& H) {
+  const Eigen::Vector3d Hp1 = H * point1.homogeneous();
+  if (Hp1[2] == 0) {
+    return std::numeric_limits<double>::max();
+  }
+  return (point2 - Hp1.hnormalized()).squaredNorm();
+}
+
 
 }  // namespace colmap

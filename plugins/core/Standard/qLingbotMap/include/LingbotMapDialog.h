@@ -49,6 +49,8 @@ public:
 signals:
     void runRequested(const LingbotMapWorker::Settings& settings);
     void cancelRequested();
+    /** Loop-playback controls changed (official viewer semantics). */
+    void playbackSettingsChanged(bool enabled, int fps, bool currentFrameOnly);
 
 public slots:
     /** Automatic download wiring shared with the AICore plugin family. */
@@ -70,6 +72,7 @@ private:
     QString resolveSkysegPath() const;
     bool ensureModelAvailable(PendingAction action);
     void startDownload(const QString& filename);
+    LingbotMapWorker::Settings::Mode currentMode() const;
     void onRun();
     void onCancel();
 
@@ -110,6 +113,18 @@ private:
     QTextEdit* m_log = nullptr;
     QProgressBar* m_progress = nullptr;
     QLabel* m_downloadLabel = nullptr;
+
+    // ---- reconstruction mode (official long-sequence pipeline) ----
+    QComboBox* m_modeCombo = nullptr;
+    QWidget* m_windowRow = nullptr;
+    QSpinBox* m_windowSize = nullptr;
+    QSpinBox* m_overlap = nullptr;
+
+    // ---- loop playback (official viewer Playing/FPS semantics) ----
+    QCheckBox* m_playbackCheck = nullptr;
+    QWidget* m_playbackRow = nullptr;
+    QSpinBox* m_playbackFps = nullptr;
+    QComboBox* m_playbackMode = nullptr;
 
     ecvModelDownloader* m_downloader = nullptr;
     bool m_downloadInProgress = false;

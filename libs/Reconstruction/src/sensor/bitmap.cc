@@ -55,10 +55,13 @@ bool GetIntMetadata(const OIIO::ImageSpec& image_spec,
 bool GetPointMetadata(const OIIO::ImageSpec& image_spec,
                       const std::string& name,
                       float value[3]) {
-  const OIIO::ParamValue* attribute = FindMetadata(image_spec, name);
-  if (!attribute || attribute->nvalues() < 3) return false;
-  for (int i = 0; i < 3; ++i) value[i] = attribute->get_float_indexed(i);
-  return true;
+  // Upstream parity (d3ccaf35): read through the typed getattribute() so
+  // OIIO converts the stored data (e.g. a GPS float[3] array, whose
+  // TypeDesc::aggregate is 1 - only the arraylen encodes the component
+  // count - so an aggregate-based check wrongly rejects it and the GPS
+  // position was lost, fixed 2026-09-17).
+  return image_spec.getattribute(
+      name, OIIO::TypeDesc(OIIO::TypeDesc::FLOAT, 3), value);
 }
 }  // namespace
 
@@ -159,7 +162,15 @@ bool Bitmap::Read(const std::filesystem::path& path, const bool as_rgb) {
   input->close();
   storage->image_spec = spec;
   storage->image_spec.nchannels = file_channels;
-  data_ = std::move(storage); width_ = spec.width; height_ = spec.height; channels_ = data_->channels; return true;
+  data_ = std::move(storage); width_ = spec.width; height_ = spec.height; channels_ = data_->channels;
+  // Upstream parity: honor the as_rgb request (the patch-match workspace
+  // depends on as_rgb=false producing a grey bitmap).
+  if (as_rgb && channels_ != 3) {
+    *this = CloneAsRGB();
+  } else if (!as_rgb && channels_ != 1) {
+    *this = CloneAsGrey();
+  }
+  return true;
 }
 bool Bitmap::Write(const std::filesystem::path& path, const BitmapFormat format, const int flags) const {
   if (!data_) return false;
@@ -212,8 +223,8 @@ void Bitmap::Rescale(const int new_width, const int new_height,
   data_->image_spec.height = new_height;
 }
 Bitmap Bitmap::Clone() const { return Bitmap(*this); }
-Bitmap Bitmap::CloneAsGrey() const { if (IsGrey()) return Clone(); Bitmap out; out.Allocate(width_,height_,false); for(int y=0;y<height_;++y) for(int x=0;x<width_;++x){ BitmapColor<uint8_t> c; GetPixel(x,y,&c); out.SetPixel(x,y,BitmapColor<uint8_t>(static_cast<uint8_t>(.299*c.r+.587*c.g+.114*c.b))); } return out; }
-Bitmap Bitmap::CloneAsRGB() const { if (IsRGB()) return Clone(); Bitmap out; out.Allocate(width_,height_,true); for(int y=0;y<height_;++y) for(int x=0;x<width_;++x){ BitmapColor<uint8_t> c; GetPixel(x,y,&c); out.SetPixel(x,y,BitmapColor<uint8_t>(c.r,c.r,c.r)); } return out; }
+Bitmap Bitmap::CloneAsGrey() const { if (IsGrey()) return Clone(); Bitmap out; out.Allocate(width_,height_,false); for(int y=0;y<height_;++y) for(int x=0;x<width_;++x){ BitmapColor<uint8_t> c; GetPixel(x,y,&c); out.SetPixel(x,y,BitmapColor<uint8_t>(static_cast<uint8_t>(.299*c.r+.587*c.g+.114*c.b))); } if (data_ && out.data_) out.data_->image_spec = data_->image_spec; return out; }
+Bitmap Bitmap::CloneAsRGB() const { if (IsRGB()) return Clone(); Bitmap out; out.Allocate(width_,height_,true); for(int y=0;y<height_;++y) for(int x=0;x<width_;++x){ BitmapColor<uint8_t> c; GetPixel(x,y,&c); out.SetPixel(x,y,BitmapColor<uint8_t>(c.r,c.r,c.r)); } if (data_ && out.data_) out.data_->image_spec = data_->image_spec; return out; }
 void Bitmap::CloneMetadata(Bitmap* target) const {
   CHECK_NOTNULL(target);
   if (target->data_ && data_) target->data_->image_spec = data_->image_spec;
@@ -266,10 +277,22 @@ bool Bitmap::ExifFocalLength(double* focal_length) const {
   }
   return false;
 }
+std::optional<int> Bitmap::ExifOrientation() const {
+  if (!data_) return std::nullopt;
+  int orientation = 0;
+  if (!GetIntMetadata(data_->image_spec, "Orientation", &orientation)) {
+    return std::nullopt;
+  }
+  return orientation;
+}
+
 bool Bitmap::ExifLatitude(double* value) const {
   if (!data_ || !value) return false;
   float dms[3] = {0, 0, 0};
-  if (!GetPointMetadata(data_->image_spec, "GPS:Latitude", dms)) return false;
+  const bool ok = GetPointMetadata(data_->image_spec, "GPS:Latitude", dms);
+  LOG(INFO) << "[TEMP-DIAG2] ExifLatitude ok=" << ok
+            << " spec_attrs=" << data_->image_spec.extra_attribs.size();
+  if (!ok) return false;
   *value = dms[0] + dms[1] / 60.0 + dms[2] / 3600.0;
   std::string ref;
   if (ReadExifTag(BitmapMetadataModel::kGps, "LatitudeRef", &ref) &&

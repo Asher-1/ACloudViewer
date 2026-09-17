@@ -29,7 +29,6 @@
 
 #include "scene/synthetic.h"
 
-#include "estimators/essential_matrix.h"
 #include "geometry/essential_matrix.h"
 #include "geometry/gps.h"
 #include "math/math.h"

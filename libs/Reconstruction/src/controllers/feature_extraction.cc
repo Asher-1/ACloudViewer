@@ -201,7 +201,8 @@ void SiftFeatureExtractor::Run() {
 
     internal::ImageData image_data;
     image_data.status =
-        image_reader_.Next(&image_data.camera, &image_data.image,
+        image_reader_.Next(&image_data.rig, &image_data.camera,
+                           &image_data.image, &image_data.pose_prior,
                            &image_data.bitmap, &image_data.mask);
 
     if (image_data.status != ImageReader::Status::SUCCESS) {
@@ -260,11 +261,13 @@ void FeatureImporter::Run() {
               << std::endl;
 
     // Load image data and possibly save camera to database.
+    Rig rig;
     Camera camera;
     Image image;
+    PosePrior pose_prior;
     Bitmap bitmap;
-    if (image_reader.Next(&camera, &image, &bitmap, nullptr) !=
-        ImageReader::Status::SUCCESS) {
+    if (image_reader.Next(&rig, &camera, &image, &pose_prior, &bitmap,
+                          nullptr) != ImageReader::Status::SUCCESS) {
       continue;
     }
 
@@ -281,6 +284,17 @@ void FeatureImporter::Run() {
 
       if (image.ImageId() == kInvalidImageId) {
         image.SetImageId(database->WriteImage(image));
+
+        // Upstream parity (d3ccaf35): pose prior + one frame per image.
+        if (pose_prior.HasPosition() || pose_prior.HasGravity()) {
+          pose_prior.corr_data_id = image.DataId();
+          pose_prior.pose_prior_id = database->WritePosePrior(pose_prior);
+        }
+
+        Frame frame;
+        frame.SetRigId(rig.RigId());
+        frame.AddDataId(image.DataId());
+        database->WriteFrame(frame);
       }
 
       if (!database->ExistsKeypoints(image.ImageId())) {
@@ -510,6 +524,35 @@ void FeatureWriterThread::Run() {
 
       if (image_data.image.ImageId() == kInvalidImageId) {
         image_data.image.SetImageId(database_->WriteImage(image_data.image));
+
+        // Upstream parity (d3ccaf35 feature_extraction.cc): persist the EXIF
+        // pose prior and create one frame per image so the mapper runtime is
+        // frame-wired from the database on.
+        if (image_data.pose_prior.HasPosition() ||
+            image_data.pose_prior.HasGravity()) {
+          if (image_data.pose_prior.HasPosition()) {
+            LOG(INFO) << StringPrintf(
+                "  GPS:             LAT=%.3f, LON=%.3f, ALT=%.3f",
+                image_data.pose_prior.position.x(),
+                image_data.pose_prior.position.y(),
+                image_data.pose_prior.position.z());
+          }
+          if (image_data.pose_prior.HasGravity()) {
+            LOG(INFO) << StringPrintf(
+                "  Gravity:         X=%.3f, Y=%.3f, Z=%.3f",
+                image_data.pose_prior.gravity.x(),
+                image_data.pose_prior.gravity.y(),
+                image_data.pose_prior.gravity.z());
+          }
+          image_data.pose_prior.corr_data_id = image_data.image.DataId();
+          image_data.pose_prior.pose_prior_id =
+              database_->WritePosePrior(image_data.pose_prior);
+        }
+
+        Frame frame;
+        frame.SetRigId(image_data.rig.RigId());
+        frame.AddDataId(image_data.image.DataId());
+        database_->WriteFrame(frame);
       }
 
       if (!database_->ExistsKeypoints(image_data.image.ImageId())) {

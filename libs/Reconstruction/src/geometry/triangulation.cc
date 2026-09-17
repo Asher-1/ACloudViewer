@@ -53,6 +53,59 @@ Eigen::Vector3d TriangulatePoint(const Eigen::Matrix3x4d& proj_matrix1,
   return svd.matrixV().col(3).hnormalized();
 }
 
+// Upstream parity (d3ccaf35 geometry/triangulation.cc): two-view 2D DLT
+// with a success flag (the legacy fork overload below returns by value and
+// cannot report degeneracy).
+bool TriangulatePoint(const Eigen::Matrix3x4d& cam1_from_world,
+                      const Eigen::Matrix3x4d& cam2_from_world,
+                      const Eigen::Vector2d& cam_point1,
+                      const Eigen::Vector2d& cam_point2,
+                      Eigen::Vector3d* xyz) {
+  THROW_CHECK_NOTNULL(xyz);
+
+  Eigen::Matrix4d A;
+  A.row(0) = cam_point1(0) * cam1_from_world.row(2) - cam1_from_world.row(0);
+  A.row(1) = cam_point1(1) * cam1_from_world.row(2) - cam1_from_world.row(1);
+  A.row(2) = cam_point2(0) * cam2_from_world.row(2) - cam2_from_world.row(0);
+  A.row(3) = cam_point2(1) * cam2_from_world.row(2) - cam2_from_world.row(1);
+
+  const Eigen::JacobiSVD<Eigen::Matrix4d> svd(A, Eigen::ComputeFullV);
+
+  if (svd.matrixV()(3, 3) == 0) {
+    return false;
+  }
+
+  *xyz = svd.matrixV().col(3).hnormalized();
+  return true;
+}
+
+// Upstream parity (d3ccaf35 geometry/triangulation.cc): closed-form two-view
+// bearing-vector triangulation. Minimizes the same perpendicular-to-ray
+// residual as TriangulateMultiViewPoint below without the container overhead.
+bool TriangulatePoint(const Eigen::Matrix3x4d& cam1_from_world,
+                      const Eigen::Matrix3x4d& cam2_from_world,
+                      const Eigen::Vector3d& cam_ray1,
+                      const Eigen::Vector3d& cam_ray2,
+                      Eigen::Vector3d* xyz) {
+  THROW_CHECK_NOTNULL(xyz);
+
+  Eigen::Matrix<double, 6, 4> A;
+  A.topRows<3>() =
+      cam1_from_world - cam_ray1 * (cam_ray1.transpose() * cam1_from_world);
+  A.bottomRows<3>() =
+      cam2_from_world - cam_ray2 * (cam_ray2.transpose() * cam2_from_world);
+
+  const Eigen::JacobiSVD<Eigen::Matrix<double, 6, 4>> svd(
+      A, Eigen::ComputeFullV);
+
+  if (svd.matrixV()(3, 3) == 0) {
+    return false;
+  }
+
+  *xyz = svd.matrixV().col(3).hnormalized();
+  return true;
+}
+
 std::vector<Eigen::Vector3d> TriangulatePoints(
     const Eigen::Matrix3x4d& proj_matrix1,
     const Eigen::Matrix3x4d& proj_matrix2,
@@ -87,6 +140,31 @@ Eigen::Vector3d TriangulateMultiViewPoint(
   Eigen::SelfAdjointEigenSolver<Eigen::Matrix4d> eigen_solver(A);
 
   return eigen_solver.eigenvectors().col(0).hnormalized();
+}
+
+// Upstream parity (d3ccaf35 geometry/triangulation.cc): multi-view bearing
+// DLT. The fork passes std::vector in place of the upstream span.
+bool TriangulateMultiViewPoint(
+    const std::vector<Eigen::Matrix3x4d>& cams_from_world,
+    const std::vector<Eigen::Vector3d>& cam_rays,
+    Eigen::Vector3d* xyz) {
+  THROW_CHECK_EQ(cams_from_world.size(), cam_rays.size());
+  THROW_CHECK_NOTNULL(xyz);
+  Eigen::Matrix4d A = Eigen::Matrix4d::Zero();
+  for (size_t i = 0; i < cam_rays.size(); ++i) {
+    const Eigen::Matrix3x4d term =
+        cams_from_world[i] -
+        cam_rays[i] * cam_rays[i].transpose() * cams_from_world[i];
+    A += term.transpose() * term;
+  }
+
+  Eigen::SelfAdjointEigenSolver<Eigen::Matrix4d> eigen_solver(A);
+  if (eigen_solver.eigenvectors()(3, 0) == 0) {
+    return false;
+  }
+
+  *xyz = eigen_solver.eigenvectors().col(0).hnormalized();
+  return true;
 }
 
 Eigen::Vector3d TriangulateOptimalPoint(const Eigen::Matrix3x4d& proj_matrix1,

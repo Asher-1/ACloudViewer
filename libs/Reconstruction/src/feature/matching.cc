@@ -40,6 +40,7 @@
 #include "geometry/gps.h"
 #include "feature/utils.h"
 #include "feature/loma.h"
+#include "FLANN/flann.hpp"
 #include "retrieval/visual_index.h"
 #include "util/cuda.h"
 #include "util/download.h"
@@ -56,8 +57,8 @@ void IndexImagesInVisualIndex(const int num_threads, const int num_checks,
                               const int max_num_features,
                               const std::vector<image_t>& image_ids,
                               Thread* thread, FeatureMatcherCache* cache,
-                              retrieval::VisualIndex<>* visual_index) {
-  retrieval::VisualIndex<>::IndexOptions index_options;
+                              retrieval::VisualIndex* visual_index) {
+  retrieval::VisualIndex::IndexOptions index_options;
   index_options.num_threads = num_threads;
   index_options.num_checks = num_checks;
 
@@ -78,7 +79,8 @@ void IndexImagesInVisualIndex(const int num_threads, const int num_checks,
       ExtractTopScaleFeatures(&keypoints, &descriptors, max_num_features);
     }
 
-    visual_index->Add(index_options, image_ids[i], keypoints, descriptors);
+    visual_index->Add(index_options, image_ids[i], keypoints,
+                      ToFloat(descriptors));
 
     PrintElapsedTime(timer);
   }
@@ -92,7 +94,7 @@ void MatchNearestNeighborsInVisualIndex(
     const int num_checks, const int num_images_after_verification,
     const int max_num_features, const std::vector<image_t>& image_ids,
     Thread* thread, FeatureMatcherCache* cache,
-    retrieval::VisualIndex<>* visual_index, SiftFeatureMatcher* matcher,
+    retrieval::VisualIndex* visual_index, SiftFeatureMatcher* matcher,
     const std::function<bool(image_t, image_t)>& image_pair_filter = {}) {
   struct Retrieval {
     image_t image_id = kInvalidImageId;
@@ -106,7 +108,7 @@ void MatchNearestNeighborsInVisualIndex(
   // The retrieval thread kernel function. Note that the descriptors should be
   // extracted outside of this function sequentially to avoid any concurrent
   // access to the database causing race conditions.
-  retrieval::VisualIndex<>::QueryOptions query_options;
+  retrieval::VisualIndex::QueryOptions query_options;
   query_options.max_num_images = num_images;
   query_options.num_neighbors = num_neighbors;
   query_options.num_checks = num_checks;
@@ -127,8 +129,8 @@ void MatchNearestNeighborsInVisualIndex(
             return image_pair_filter(image_id, candidate_id);
           };
     }
-    visual_index->Query(filtered_query_options, keypoints, descriptors,
-                        &retrieval.image_scores);
+    visual_index->Query(filtered_query_options, keypoints,
+                        ToFloat(descriptors), &retrieval.image_scores);
 
     CHECK(retrieval_queue.Push(retrieval));
   };
@@ -1277,19 +1279,27 @@ void SequentialFeatureMatcher::RunSequentialMatching(
               << std::flush;
 
     image_pairs.clear();
+    // Upstream parity (d3ccaf35 SequentialPairGenerator::Next): the
+    // quadratic and linear strides are mutually exclusive branches, both
+    // forward-only - the old fork loop emitted the union of linear and
+    // quadratic pairs (including a self-pair at i == 0), overshooting the
+    // upstream pair set (15 vs 11 pairs on a 6-image sequence).
     for (int i = 0; i < options_.overlap; ++i) {
-      const size_t image_idx2 = image_idx1 + i;
-      if (image_idx2 < image_ids.size()) {
-        image_pairs.emplace_back(image_id1, image_ids.at(image_idx2));
-        if (options_.quadratic_overlap) {
-          const size_t image_idx2_quadratic = image_idx1 + (1 << i);
-          if (image_idx2_quadratic < image_ids.size()) {
-            image_pairs.emplace_back(image_id1,
-                                     image_ids.at(image_idx2_quadratic));
-          }
+      if (options_.quadratic_overlap) {
+        const size_t image_idx2_quadratic = image_idx1 + (1ull << i);
+        if (image_idx2_quadratic < image_ids.size()) {
+          image_pairs.emplace_back(image_id1,
+                                   image_ids.at(image_idx2_quadratic));
+        } else {
+          break;
         }
       } else {
-        break;
+        const size_t image_idx2 = image_idx1 + i + 1;
+        if (image_idx2 < image_ids.size()) {
+          image_pairs.emplace_back(image_id1, image_ids.at(image_idx2));
+        } else {
+          break;
+        }
       }
     }
 
@@ -1302,18 +1312,22 @@ void SequentialFeatureMatcher::RunSequentialMatching(
 
 void SequentialFeatureMatcher::RunLoopDetection(
     const std::vector<image_t>& image_ids) {
-  // Read the pre-trained vocabulary tree from disk.
-  // Automatically download and cache if URI format is provided.
-  std::string vocab_tree_path =
-      MaybeDownloadAndCacheFile(options_.vocab_tree_path.string()).string();
-  retrieval::VisualIndex<> visual_index;
-  visual_index.Read(vocab_tree_path);
+  // Read the pre-trained vocabulary tree from disk. An empty path selects
+  // the default tree for the feature type; URIs are downloaded and cached
+  // inside VisualIndex::Read (upstream parity, d3ccaf35). The fork matcher
+  // consumers on this path are SIFT-only.
+  const std::filesystem::path vocab_tree_path =
+      options_.vocab_tree_path.empty()
+          ? GetVocabTreeUriForFeatureType(
+                FeatureExtractorType::SIFT)
+          : options_.vocab_tree_path;
+  auto visual_index = retrieval::VisualIndex::Read(vocab_tree_path);
 
   // Index all images in the visual index.
   IndexImagesInVisualIndex(match_options_.num_threads,
                            options_.loop_detection_num_checks,
                            options_.loop_detection_max_num_features, image_ids,
-                           this, cache_.get(), &visual_index);
+                           this, cache_.get(), visual_index.get());
 
   if (IsStopped()) {
     return;
@@ -1338,7 +1352,7 @@ void SequentialFeatureMatcher::RunLoopDetection(
       options_.loop_detection_num_checks,
       options_.loop_detection_num_images_after_verification,
       options_.loop_detection_max_num_features, match_image_ids, this,
-      cache_.get(), &visual_index, &matcher_,
+      cache_.get(), visual_index.get(), &matcher_,
       [this, &image_id_to_index](const image_t image_id1,
                                  const image_t image_id2) {
         if (options_.loop_detection_min_index_distance == 0) {
@@ -1377,12 +1391,16 @@ void VocabTreeFeatureMatcher::Run() {
 
   cache_.Setup();
 
-  // Read the pre-trained vocabulary tree from disk.
-  // Automatically download and cache if URI format is provided.
-  std::string vocab_tree_path =
-      MaybeDownloadAndCacheFile(options_.vocab_tree_path.string()).string();
-  retrieval::VisualIndex<> visual_index;
-  visual_index.Read(vocab_tree_path);
+  // Read the pre-trained vocabulary tree from disk. An empty path selects
+  // the default tree for the feature type; URIs are downloaded and cached
+  // inside VisualIndex::Read (upstream parity, d3ccaf35). The fork matcher
+  // consumers on this path are SIFT-only.
+  const std::filesystem::path vocab_tree_path =
+      options_.vocab_tree_path.empty()
+          ? GetVocabTreeUriForFeatureType(
+                FeatureExtractorType::SIFT)
+          : options_.vocab_tree_path;
+  auto visual_index = retrieval::VisualIndex::Read(vocab_tree_path);
 
   const std::vector<image_t> all_image_ids = cache_.GetImageIds();
   std::vector<image_t> image_ids;
@@ -1419,7 +1437,7 @@ void VocabTreeFeatureMatcher::Run() {
   // Index all images in the visual index.
   IndexImagesInVisualIndex(match_options_.num_threads, options_.num_checks,
                            options_.max_num_features, all_image_ids, this,
-                           &cache_, &visual_index);
+                           &cache_, visual_index.get());
 
   if (IsStopped()) {
     GetTimer().PrintMinutes();
@@ -1431,7 +1449,7 @@ void VocabTreeFeatureMatcher::Run() {
       match_options_.num_threads, options_.num_images,
       options_.num_nearest_neighbors, options_.num_checks,
       options_.num_images_after_verification, options_.max_num_features,
-      image_ids, this, &cache_, &visual_index, &matcher_);
+      image_ids, this, &cache_, visual_index.get(), &matcher_);
 
   GetTimer().PrintMinutes();
 }

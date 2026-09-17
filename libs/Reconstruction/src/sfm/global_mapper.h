@@ -39,6 +39,10 @@ struct GlobalMapperOptions {
     GlobalPositionerOptions global_positioning;
     BundleAdjustmentOptions bundle_adjustment = [] {
         BundleAdjustmentOptions options;
+        // Upstream parity (d3ccaf35 global_mapper.h): exclude short tracks
+        // from the global bundle adjustment (points with fewer than three
+        // observations are filtered from the problem entirely).
+        options.min_track_length = 3;
         options.print_summary = false;
         options.loss_function_type =
                 BundleAdjustmentOptions::LossFunctionType::HUBER;

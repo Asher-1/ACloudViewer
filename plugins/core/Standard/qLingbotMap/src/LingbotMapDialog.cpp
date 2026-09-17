@@ -450,6 +450,69 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
     connect(m_advancedBox, &QGroupBox::toggled, m_advancedContainer,
             &QWidget::setVisible);
     form->addRow(QString(), m_advancedBox);
+    // --- reconstruction mode (official long-sequence pipeline) ---
+    m_modeCombo = new QComboBox(this);
+    m_modeCombo->addItem(tr("Streaming (single KV cache)"),
+                         QStringLiteral("streaming"));
+    m_modeCombo->addItem(tr("Windowed (long sequences)"),
+                         QStringLiteral("windowed"));
+    form->addRow(tr("Mode"), m_modeCombo);
+    m_windowSize = new QSpinBox(this);
+    m_windowSize->setRange(8, 512);
+    m_windowSize->setValue(64);
+    m_windowSize->setSingleStep(8);
+    m_overlap = new QSpinBox(this);
+    m_overlap->setRange(1, 256);
+    m_overlap->setValue(16);
+    m_windowRow = new QWidget(this);
+    auto* windowLayout = new QHBoxLayout(m_windowRow);
+    windowLayout->setContentsMargins(0, 0, 0, 0);
+    windowLayout->addWidget(new QLabel(tr("Window size:"), m_windowRow), 0);
+    windowLayout->addWidget(m_windowSize, 1);
+    windowLayout->addWidget(new QLabel(tr("Overlap:"), m_windowRow), 0);
+    windowLayout->addWidget(m_overlap, 1);
+    form->addRow(QString(), m_windowRow);
+    connect(m_modeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, [this]() {
+                m_windowRow->setVisible(
+                        currentMode() ==
+                        LingbotMapWorker::Settings::Mode::Windowed);
+            });
+
+    // --- loop playback (official viewer Playing/FPS semantics) ---
+    m_playbackCheck =
+            new QCheckBox(tr("Loop playback of reconstruction frames"), this);
+    form->addRow(QString(), m_playbackCheck);
+    m_playbackFps = new QSpinBox(this);
+    m_playbackFps->setRange(1, 60);
+    m_playbackFps->setValue(20);
+    m_playbackMode = new QComboBox(this);
+    m_playbackMode->addItem(tr("3D (all frames)"), QStringLiteral("all"));
+    m_playbackMode->addItem(tr("4D (current frame)"),
+                            QStringLiteral("current"));
+    m_playbackRow = new QWidget(this);
+    auto* playbackLayout = new QHBoxLayout(m_playbackRow);
+    playbackLayout->setContentsMargins(0, 0, 0, 0);
+    playbackLayout->addWidget(new QLabel(tr("FPS:"), m_playbackRow), 0);
+    playbackLayout->addWidget(m_playbackFps, 1);
+    playbackLayout->addWidget(new QLabel(tr("Mode:"), m_playbackRow), 0);
+    playbackLayout->addWidget(m_playbackMode, 1);
+    form->addRow(QString(), m_playbackRow);
+    auto emitPlaybackSettings = [this]() {
+        emit playbackSettingsChanged(m_playbackCheck->isChecked(),
+                                     m_playbackFps->value(),
+                                     m_playbackMode->currentData().toString() ==
+                                             QStringLiteral("current"));
+    };
+    connect(m_playbackCheck, &QCheckBox::toggled, this,
+            [this, emitPlaybackSettings]() {
+                m_playbackRow->setVisible(m_playbackCheck->isChecked());
+                emitPlaybackSettings();
+            });
+    connect(m_playbackFps, qOverload<int>(&QSpinBox::valueChanged), this,
+            emitPlaybackSettings);
+    connect(m_playbackMode, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, emitPlaybackSettings);
 
     m_addDbCheck = new QCheckBox(tr("Add reconstruction to DB tree"), this);
     m_addDbCheck->setChecked(true);
@@ -808,7 +871,17 @@ LingbotMapWorker::Settings LingbotMapDialog::collectSettings() const {
         s.skySource = LingbotMapWorker::Settings::SkySource::None;
     }
     s.addResultToDb = m_addDbCheck->isChecked();
+    s.mode = currentMode();
+    s.windowSize = m_windowSize->value();
+    s.overlap = m_overlap->value();
     return s;
+}
+
+LingbotMapWorker::Settings::Mode LingbotMapDialog::currentMode() const {
+    return m_modeCombo && m_modeCombo->currentData().toString() ==
+                                   QStringLiteral("windowed")
+                   ? LingbotMapWorker::Settings::Mode::Windowed
+                   : LingbotMapWorker::Settings::Mode::Streaming;
 }
 
 void LingbotMapDialog::onRun() {
@@ -933,6 +1006,26 @@ void LingbotMapDialog::loadSettings() {
     m_rotate90->setChecked(
             settings.value(QStringLiteral("rotateClockwise90"), false)
                     .toBool());
+    const QString mode =
+            settings.value(QStringLiteral("mode"), QStringLiteral("streaming"))
+                    .toString();
+    const int modeIdx = m_modeCombo->findData(mode);
+    if (modeIdx >= 0) m_modeCombo->setCurrentIndex(modeIdx);
+    m_windowRow->setVisible(currentMode() ==
+                            LingbotMapWorker::Settings::Mode::Windowed);
+    m_windowSize->setValue(
+            settings.value(QStringLiteral("windowSize"), 64).toInt());
+    m_overlap->setValue(settings.value(QStringLiteral("overlap"), 16).toInt());
+    m_playbackCheck->setChecked(
+            settings.value(QStringLiteral("playback"), false).toBool());
+    m_playbackRow->setVisible(m_playbackCheck->isChecked());
+    m_playbackFps->setValue(
+            settings.value(QStringLiteral("playbackFps"), 20).toInt());
+    const QString playbackMode = settings.value(QStringLiteral("playbackMode"),
+                                                QStringLiteral("current"))
+                                         .toString();
+    const int pbIdx = m_playbackMode->findData(playbackMode);
+    if (pbIdx >= 0) m_playbackMode->setCurrentIndex(pbIdx);
     settings.endGroup();
 }
 
@@ -969,6 +1062,17 @@ void LingbotMapDialog::saveSettings() const {
     settings.setValue(QStringLiteral("frameStride"), m_frameStride->value());
     settings.setValue(QStringLiteral("rotateClockwise90"),
                       m_rotate90->isChecked());
+    settings.setValue(
+            QStringLiteral("mode"),
+            currentMode() == LingbotMapWorker::Settings::Mode::Windowed
+                    ? QStringLiteral("windowed")
+                    : QStringLiteral("streaming"));
+    settings.setValue(QStringLiteral("windowSize"), m_windowSize->value());
+    settings.setValue(QStringLiteral("overlap"), m_overlap->value());
+    settings.setValue(QStringLiteral("playback"), m_playbackCheck->isChecked());
+    settings.setValue(QStringLiteral("playbackFps"), m_playbackFps->value());
+    settings.setValue(QStringLiteral("playbackMode"),
+                      m_playbackMode->currentData().toString());
     settings.endGroup();
 }
 

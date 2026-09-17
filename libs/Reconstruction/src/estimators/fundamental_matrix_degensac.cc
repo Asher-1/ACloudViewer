@@ -29,11 +29,11 @@
 
 #include "estimators/fundamental_matrix_degensac.h"
 
-#include "estimators/fundamental_matrix.h"
-#include "estimators/homography_matrix.h"
+#include "estimators/solvers/fundamental_matrix.h"
+#include "estimators/solvers/homography_matrix.h"
 #include "estimators/utils.h"
-#include "estimators/essential_matrix.h"
-#include "estimators/homography_matrix.h"
+#include "geometry/essential_matrix.h"
+#include "geometry/homography_matrix.h"
 #include "geometry/rigid3.h"
 #include "math/random.h"
 #include "optim/loransac.h"
@@ -293,8 +293,8 @@ std::optional<Eigen::Matrix3d> FundamentalFromPlaneAndParallax(
       plane_points2.push_back(points2[plane_idxs[i]]);
     }
     homographies.clear();
-    homographies =
-      homography_estimator.Estimate(plane_points1, plane_points2);
+    homography_estimator.Estimate(plane_points1, plane_points2,
+                                  &homographies);
     if (homographies.empty()) {
       break;
     }
@@ -427,8 +427,7 @@ std::optional<Eigen::Matrix3d> FundamentalFromPlaneAndParallax(
       }
 
       refined_models.clear();
-      refined_models =
-          eight_point.Estimate(sample_points1, sample_points2);
+      eight_point.Estimate(sample_points1, sample_points2, &refined_models);
       if (refined_models.empty()) {
         continue;
       }
@@ -476,11 +475,11 @@ void FundamentalMatrixDegensacEstimator::Estimate(
   // (e.g. the local-optimization inlier set).
   std::vector<M_t> sample_models;
   if (sample_points1.size() == static_cast<size_t>(kMinNumSamples)) {
-    sample_models = FundamentalMatrixSevenPointEstimator::Estimate(
-        sample_points1, sample_points2);
+    FundamentalMatrixSevenPointEstimator::Estimate(
+        sample_points1, sample_points2, &sample_models);
   } else {
-    sample_models = FundamentalMatrixEightPointEstimator::Estimate(
-        sample_points1, sample_points2);
+    FundamentalMatrixEightPointEstimator::Estimate(
+        sample_points1, sample_points2, &sample_models);
   }
 
   models->clear();

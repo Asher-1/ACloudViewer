@@ -472,7 +472,9 @@ int RunPosePriorMapper(int argc, char** argv) {
   options.AddRequiredOption("output_path", &output_path);
   options.AddMapperOptions();
 
-  options.mapper->mapper.use_prior_position = true;
+  // Upstream parity: the prior switch lives on the pipeline options
+  // (it also enables the ENU conversion of the pose priors).
+  options.mapper->use_prior_position = true;
 
   options.AddDefaultOption(
       "overwrite_priors_covariance",
@@ -522,8 +524,15 @@ int RunPosePriorMapper(int argc, char** argv) {
     return EXIT_FAILURE;
   }
 
-  if (!input_path.empty() && reconstruction_manager.Size() > 0) {
-    reconstruction_manager.Get(0).Write(output_path);
+  // Upstream parity (d3ccaf35 RunPosePriorMapper): write every reconstruction
+  // to output_path/<i> regardless of whether an input reconstruction was
+  // continued; the old fork condition skipped the write entirely when no
+  // input_path was given, silently producing an empty output.
+  for (size_t i = 0; i < reconstruction_manager.Size(); ++i) {
+    const auto reconstruction_path = output_path / std::to_string(i);
+    CreateDirIfNotExists(reconstruction_path);
+    reconstruction_manager.Get(i).Write(reconstruction_path);
+    options.Write(reconstruction_path / "project.ini");
   }
 
   return EXIT_SUCCESS;
@@ -898,7 +907,9 @@ int RunGlobalMapper(int argc, char** argv) {
     return EXIT_FAILURE;
   }
 
-  options.Write(output_path);
+  // Upstream parity (d3ccaf35 exe/sfm.cc): the option file is written to a
+  // file inside the output directory, not to the directory itself.
+  options.Write(output_path / "project.ini");
   return EXIT_SUCCESS;
 }
 

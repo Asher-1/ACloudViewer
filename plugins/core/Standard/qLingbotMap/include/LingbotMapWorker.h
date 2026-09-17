@@ -15,6 +15,7 @@
 #include <atomic>
 
 struct aicore_lingbot_ctx;
+struct aicore_lingbot_result;
 
 /** Per-frame streaming reconstruction result (processed-resolution layout).
  *  All buffers are frame-owned copies taken inside the engine callback. */
@@ -23,11 +24,31 @@ struct LingbotFrameResult {
     QVector<float> depthConf;  /**< [height * width] */
     QVector<float> c2w;        /**< 4x4 row-major camera-to-world */
     QVector<float> intrinsics; /**< [fx, fy, cx, cy] */
+    QVector<float> poseEnc;    /**< 9 floats: [t, quat_xyzw, fov_y, fov_x] */
     int width = 0;
     int height = 0;
+    int globalIndex = 0;      /**< index in the full source sequence */
+    int windowIndex = 0;      /**< owning window (windowed mode) */
     QString sourceFile;       /**< input image this frame came from */
     QImage frameRgb;          /**< processed-resolution RGB (for colors) */
     QVector<uint8_t> skyKeep; /**< empty when sky masking is off; 255 = keep */
+};
+
+/** Compact per-frame live preview emitted while the engine streams. Points
+ *  are confidence-filtered, stride-subsampled world coordinates (the same
+ *  geometry the official StreamingViewer shows) — in the owning window's
+ *  coordinate frame for windowed runs. */
+struct LingbotFramePreview {
+    int globalIndex = 0;
+    int windowIndex = 0;
+    int windowCount = 0;
+    int width = 0;             /**< processed width (camera intrinsics) */
+    int height = 0;            /**< processed height */
+    QVector<float> c2w;        /**< 16 floats, row-major camera-to-world */
+    QVector<float> intrinsics; /**< [fx, fy, cx, cy] */
+    QVector<float> points;     /**< [n * 3] world XYZ of kept points */
+    QVector<uint8_t> colors;   /**< [n * 3] RGB of kept points */
+    bool degenerate = false;   /**< non-finite depth/pose: frustum only */
 };
 
 /** Aggregated result handed back to the main thread. */
@@ -36,6 +57,8 @@ struct LingbotRunResult {
     QString modelFile;
     QString device;
     qint64 elapsedMs = 0;
+    bool windowed = false; /**< long-sequence windowed reconstruction */
+    int windowCount = 0;   /**< 1 for streaming runs */
 };
 
 /** Background LingBot-Map streaming worker.
@@ -45,7 +68,14 @@ struct LingbotRunResult {
  *  teardown never races the render thread (same pattern as qGKD/qSAM3).
  *  The worker owns preprocessing (official crop), stream submission, and
  *  per-frame result materialization; the main thread only renders DB
- *  entities from the handed-over result. */
+ *  entities from the handed-over result.
+ *
+ *  Long sequences use the official windowed pipeline (keyframe_interval=1):
+ *  every window runs the validated streaming primitive over a fresh KV cache
+ *  (aicore_lingbot_stream_reset), consecutive windows are similarity-aligned
+ *  on the overlap (LingbotWindowStitcher, port of the official numpy math)
+ *  and stitched into the first window's coordinate frame. Window results stay
+ *  resident until the stitch — same memory order as the streaming result. */
 class LingbotMapWorker : public QThread {
     Q_OBJECT
 
@@ -80,6 +110,13 @@ public:
         int frameStride = 1; /**< --stride (sample every Nth frame) */
         bool rotateClockwise90 = false; /**< --rotate_clockwise_90 */
         bool addResultToDb = true;
+        /** Reconstruction mode: single persistent KV cache, or the official
+         *  windowed pipeline for long sequences. */
+        enum class Mode { Streaming, Windowed };
+        Mode mode = Mode::Streaming;
+        int windowSize = 64;   /**< keyframes per window (official default) */
+        int overlap = 16;      /**< overlap frames (official default) */
+        int previewStride = 4; /**< live-preview subsample (official default) */
     };
 
     explicit LingbotMapWorker(const Settings& settings,
@@ -95,6 +132,8 @@ signals:
     void logMessage(const QString& msg);
     void taskStage(const QString& stage, int percent = -1);
     void framesDecoded(int count);
+    /** Live per-frame preview while the engine streams (main-thread slot). */
+    void framePreviewReady(const LingbotFramePreview& preview);
     void resultReady(const LingbotRunResult& result);
     void taskFinished(bool success);
 
@@ -103,15 +142,55 @@ protected:
 
 private:
     bool runInference(QString* error);
+    /** Shared per-frame engine-callback state (streaming + windowed). */
+    struct StreamState {
+        LingbotMapWorker* worker;
+        std::vector<LingbotFrameResult>* frames; /**< stream-local results */
+        const std::vector<QImage>*
+                rgb;     /**< processed-res RGB per global frame */
+        int total;       /**< frames in this stream call */
+        int globalStart; /**< global index of local frame 0 */
+        int windowIndex;
+        int windowCount;
+    };
+    /** Shared streaming callback: result copy + live preview + progress. */
+    static int streamCallbackEntry(void* user, const aicore_lingbot_result* r);
+    bool runStreaming(aicore_lingbot_ctx* ctx,
+                      const std::vector<float>& stream,
+                      int frameCount,
+                      int procW,
+                      int procH,
+                      const QStringList& files,
+                      const std::vector<QImage>& rgb,
+                      LingbotRunResult& result,
+                      QString* error);
+    bool runWindowed(aicore_lingbot_ctx* ctx,
+                     const std::vector<float>& stream,
+                     int frameCount,
+                     int procW,
+                     int procH,
+                     const QStringList& files,
+                     const std::vector<QImage>& rgb,
+                     LingbotRunResult& result,
+                     QString* error);
+    /** Builds one window's cached-mask injection buffer ([start, end)). */
+    bool injectCachedMasks(aicore_lingbot_ctx* ctx,
+                           const QStringList& files,
+                           int start,
+                           int frameCount,
+                           int procW,
+                           int procH);
 
     Settings m_settings;
     std::atomic<bool> m_cancelRequested{false};
     void* m_pendingCtx = nullptr; /**< aicore_lingbot_ctx* (opaque) */
     // Worker-thread-only stream state (used inside the C callback).
+    friend struct StreamState;
     int m_delivered = 0;
     bool m_skyReady = false;
     QElapsedTimer m_elapsed;
 };
 
 Q_DECLARE_METATYPE(LingbotFrameResult)
+Q_DECLARE_METATYPE(LingbotFramePreview)
 Q_DECLARE_METATYPE(LingbotRunResult)

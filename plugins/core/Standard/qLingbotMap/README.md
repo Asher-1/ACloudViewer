@@ -13,6 +13,7 @@ and writes the reconstruction into the DB tree:
 - `LingbotMap_<model>_<device>` group with one colored point cloud per frame
   (depth back-projected with the frame intrinsics, camera-to-world pose
   applied, visibility-confidence filtered, optionally sky-filtered),
+- COLMAP-style camera frustum per frame (`LingbotMap_cam_*`),
 - `LingbotMap_trajectory` camera-center polyline points.
 
 ## Requirements
@@ -33,7 +34,11 @@ and writes the reconstruction into the DB tree:
   small-VRAM tiers, f32 the exact reference, q4 experimental. Missing
   files auto-download with pinned SHA-256 ingestion. The optional native
   sky-segmentation GGUF (`lingbot-map-skyseg-*`) is downloaded the same
-  way.
+  small-VRAM tiers, f32 the exact reference, q4 experimental, and the
+  `long-*` variants serve long sequences. Missing files auto-download with
+  pinned SHA-256 ingestion (`lingbot_models/` under the shared data root).
+  The optional native sky-segmentation GGUF (`lingbot-map-skyseg-*`) is
+  downloaded the same way.
 
 ## Usage
 
@@ -115,6 +120,28 @@ apply in the same order as upstream. Requires `BUILD_OPENCV=ON`.
   `--stream_stride`, `--depth_stride`: upstream viser-viewer display knobs;
   results render through the ACloudViewer DB tree instead.
 - `--sky_mask_visualization_dir` / `--export_preprocessed`: debug dumps.
+## Long sequences (windowed mode)
+
+The release KV cache grows with the stream, so long sequences use the
+official windowed pipeline (`GCTStream.inference_windowed` at the
+`keyframe_interval=1` windowed defaults): the sequence is split into
+overlapping windows (window size 64, overlap 16, official scale pass 8),
+every window runs the streaming primitive over a fresh KV cache, and
+consecutive windows are similarity-aligned on the overlap and stitched into
+the first window's frame. Pick `Mode → Windowed (long sequences)` and the
+`long-*` GGUF variants; window size / overlap expose the official defaults.
+The numeric core (`LingbotWindowStitcher`) is gated against the official
+Python pipeline by `test_lingbot_window_stitch` (build with
+`QLINGBOTMAP_BUILD_TESTS=ON`).
+
+## Live preview and playback
+
+While the engine streams, a transient `LingbotMap_Online_*` group grows in
+the render window: one stride-subsampled point cloud plus one camera frustum
+per completed frame (windowed runs keep per-window subgroups until the final
+aligned result replaces them). After the run, the dialog's playback controls
+cycle the final per-frame clouds at 1–60 FPS in `3D (all frames)` or
+`4D (current frame)` mode — the same loop the official viewer plays.
 
 ## Memory notes
 
@@ -128,7 +155,12 @@ failing the run (CUDA aborts). The plugin also sizes the resident-KV
 special segment from the **actual** stream length (folder walk / video
 container metadata) rather than the raw `Max frames` cap, so the cap can
 stay high without preallocating unused capacity. Keep long sequences
-bounded with `Max frames` and prefer the q8 deployment format.
+bounded with `Max frames` and prefer the q8 deployment format on 12–24 GiB
+GPUs. In **Windowed mode** the per-window KV cache is sized to the window
+instead (the official per-window `clean_kv_cache` semantics), so memory
+follows the window size; if the backend reports a graph allocation
+failure, lower the window size / processing width or pick another device
+(Vulkan and CPU tolerate memory pressure differently than CUDA).
 
 ## License
 

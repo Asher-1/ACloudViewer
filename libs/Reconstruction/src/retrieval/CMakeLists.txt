@@ -31,15 +31,21 @@
 
 set(FOLDER_NAME "retrieval")
 
+# Upstream parity (d3ccaf35): the visual index is faiss-backed with its
+# implementation split into visual_index.cc; resources.{h,cc} carry the
+# faiss feature-type resources.
 COLMAP_ADD_SOURCES(
     geometry.h geometry.cc
     inverted_file.h
     inverted_file_entry.h
     inverted_index.h
+    resources.h resources.cc
     utils.h
-    visual_index.h
+    visual_index.h visual_index.cc
     vote_and_verify.h vote_and_verify.cc
 )
+
+# faiss is linked to the parent reconstruction library (see src/CMakeLists.txt).
 
 COLMAP_ADD_TEST(geometry_test geometry_test.cc)
 COLMAP_ADD_TEST(inverted_file_entry_test inverted_file_entry_test.cc)

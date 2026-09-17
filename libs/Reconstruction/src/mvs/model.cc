@@ -69,9 +69,13 @@ void Model::ReadFromCOLMAP(const std::filesystem::path& path,
     const std::string image_path = JoinPaths(path, images_path, image.Name());
     const Eigen::Matrix<float, 3, 3, Eigen::RowMajor> K =
         camera.CalibrationMatrix().cast<float>();
+    // Upstream parity: read the pose through the rig-aware CamFromWorld()
+    // accessor (frame-wired images carry their pose in the frame after
+    // Reconstruction::Read; the legacy qvec/tvec buffers are not populated
+    // by the read path).
     const Eigen::Matrix<float, 3, 3, Eigen::RowMajor> R =
-        QuaternionToRotationMatrix(image.Qvec()).cast<float>();
-    const Eigen::Vector3f T = image.Tvec().cast<float>();
+        image.CamFromWorld().rotation().toRotationMatrix().cast<float>();
+    const Eigen::Vector3f T = image.CamFromWorld().translation().cast<float>();
 
     images.emplace_back(image_path, camera.Width(), camera.Height(), K.data(),
                         R.data(), T.data());

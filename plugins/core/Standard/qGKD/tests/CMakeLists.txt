@@ -30,10 +30,14 @@ if(NOT MSVC)
     target_compile_options(test_qgkd_helpers PRIVATE -Wall -Wextra -fPIC)
     set_target_properties(test_qgkd_helpers PROPERTIES
         POSITION_INDEPENDENT_CODE ON)
-    target_link_options(test_qgkd_helpers PRIVATE "-no-pie")
-    # Dynamic ggml backends: libAICore.so keeps backend symbols unresolved
-    # until runtime dlopen (same allowance as the AICore C API tests).
-    target_link_options(test_qgkd_helpers PRIVATE "LINKER:--allow-shlib-undefined")
+    # GNU ld only: Apple ld64 rejects --allow-shlib-undefined and warns on
+    # -no-pie (same allowance as the qSAM3 / AICore C API tests).
+    if(UNIX AND NOT APPLE)
+        target_link_options(test_qgkd_helpers PRIVATE "-no-pie")
+        # Dynamic ggml backends: libAICore.so keeps backend symbols unresolved
+        # until runtime dlopen (same allowance as the AICore C API tests).
+        target_link_options(test_qgkd_helpers PRIVATE "-Wl,--allow-shlib-undefined")
+    endif()
 endif()
 
 cloudviewer_set_bin_runtime_output_directory(test_qgkd_helpers)

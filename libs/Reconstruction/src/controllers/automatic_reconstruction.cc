@@ -31,6 +31,8 @@
 
 #include "controllers/automatic_reconstruction.h"
 
+#include "retrieval/resources.h"
+
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
@@ -490,7 +492,12 @@ AutomaticReconstructionController::AutomaticReconstructionController(
   // Resolve vocab_tree_path: use default if empty, and download/cache if URI
   std::string resolved_vocab_tree_path = options_.vocab_tree_path.string();
   if (resolved_vocab_tree_path.empty()) {
-    resolved_vocab_tree_path = retrieval::kDefaultVocabTreeUri;
+    // Upstream parity (d3ccaf35 automatic_reconstruction.cc): pick the
+    // default tree for the feature type (SIFT for this pipeline).
+    resolved_vocab_tree_path =
+        GetVocabTreeUriForFeatureType(
+            FeatureExtractorType::SIFT)
+            .string();
   }
   
   // Automatically download and cache if URI format is provided

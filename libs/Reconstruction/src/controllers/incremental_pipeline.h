@@ -122,6 +122,13 @@ public:
     // If reconstruction is provided as input, fix the existing image poses.
     bool fix_existing_images = false;
 
+    // Whether to use position priors for BA and to convert them to a local
+    // ENU frame when loading the database cache (upstream parity,
+    // d3ccaf35 incremental_pipeline.h).
+    bool use_prior_position = false;
+    bool use_robust_loss_on_prior_position = false;
+    double prior_position_loss_scale = 7.815;
+
     IncrementalMapper::Options mapper;
     IncrementalTriangulator::Options triangulation;
 

@@ -9,7 +9,9 @@
 
 #include "controllers/image_reader.h"
 #include "feature/sift.h"
+#include "geometry/pose_prior.h"
 #include "scene/database.h"
+#include "scene/rig.h"
 #include "util/opengl_utils.h"
 #include "util/threading.h"
 
@@ -68,8 +70,13 @@ namespace internal {
 struct ImageData {
     ImageReader::Status status = ImageReader::Status::FAILURE;
 
+    // Upstream parity (d3ccaf35): the reader hands out the rig and the EXIF
+    // pose prior alongside the camera/image; the writer persists the pose
+    // prior and creates a frame for every image.
+    Rig rig;
     Camera camera;
     Image image;
+    PosePrior pose_prior;
     Bitmap bitmap;
     Bitmap mask;
 

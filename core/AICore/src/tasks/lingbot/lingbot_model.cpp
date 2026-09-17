@@ -1247,6 +1247,9 @@ struct model::impl {
     // runs with the cursor suspended so it can emit every scale frame itself.
     std::function<bool(int, const output &)> frame_cb;
     int frame_cursor = 0;
+    // >0 while the multi-frame dispatch loop emits frames itself; the
+    // single-frame body path must not double-emit then.
+    int multi_frame_dispatch_depth = 0;
 
     // Pooled graph allocator. A fresh gallocr per frame costs a full
     // cudaMalloc + cudaFree of the ~9 GB scratch pool on every infer, which
@@ -1781,6 +1784,7 @@ bool model::infer(const float *images,
             }
             return true;
         };
+        ++p_->multi_frame_dispatch_depth;
         int first_frame = 0;
         if (scale_frames > 1 && p_->kv_cache.empty()) {
             output scale;
@@ -1818,8 +1822,10 @@ bool model::infer(const float *images,
         for (int f = first_frame; f < frames; ++f) {
             output one;
             if (!infer(images + static_cast<size_t>(f) * frame_stride, 1, 1,
-                       channels, height, width, &one))
+                       channels, height, width, &one)) {
+                --p_->multi_frame_dispatch_depth;
                 return false;
+            }
             result->pose_enc.insert(result->pose_enc.end(),
                                     one.pose_enc.begin(), one.pose_enc.end());
             result->depth.insert(result->depth.end(), one.depth.begin(),
@@ -1832,8 +1838,12 @@ bool model::infer(const float *images,
             result->intrinsics.insert(result->intrinsics.end(),
                                       one.intrinsics.begin(),
                                       one.intrinsics.end());
-            if (!emit_frame(0, one)) return false;
+            if (!emit_frame(0, one)) {
+                --p_->multi_frame_dispatch_depth;
+                return false;
+            }
         }
+        --p_->multi_frame_dispatch_depth;
         return true;
     }
 
@@ -2624,6 +2634,20 @@ bool model::infer(const float *images,
     // keep the pooled gallocr for the next frame's same-shape reuse
     prof.mark("cache-capture");
     ggml_free(ctx);
+
+    // AICore adaptation: the single-frame body path never reaches the
+    // frames>1 emit_frame lambda (the CLI reads the result directly), but
+    // the streaming C API relies on the per-frame callback. Emit this frame
+    // exactly like the streaming loop does — guarded so the scale-pass
+    // recursion (direct_scale_pass) and the frames>1 branch keep their
+    // single-emit contract.
+    if (p_->frame_cb && frames == 1 && !p_->direct_scale_pass &&
+        p_->multi_frame_dispatch_depth == 0) {
+        if (!p_->frame_cb(p_->frame_cursor++, *result)) {
+            p_->error = "frame callback aborted";
+            return false;
+        }
+    }
     return true;
 }
 

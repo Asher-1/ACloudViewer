@@ -175,6 +175,10 @@ IncrementalMapper::Options IncrementalMapperOptions::Mapper() const {
             ba_global_ignore_redundant_points3D;
     options.ba_global_ignore_redundant_points3D_min_coverage_gain =
             ba_global_ignore_redundant_points3D_min_coverage_gain;
+    options.use_prior_position = use_prior_position;
+    options.use_robust_loss_on_prior_position =
+            use_robust_loss_on_prior_position;
+    options.prior_position_loss_scale = prior_position_loss_scale;
     return options;
 }
 
@@ -339,6 +343,7 @@ bool IncrementalMapperController::LoadDatabase() {
             static_cast<size_t>(options_->min_num_matches);
     cache_options.ignore_watermarks = options_->ignore_watermarks;
     cache_options.image_names = {image_names.begin(), image_names.end()};
+    cache_options.convert_pose_priors_to_enu = options_->use_prior_position;
     database_cache_.Load(*database, cache_options);
     std::cout << std::endl;
     timer.PrintMinutes();
@@ -446,7 +451,20 @@ void IncrementalMapperController::Reconstruct(
                 break;
             }
 
+            // Upstream parity (d3ccaf35 incremental_pipeline.cc): triangulate
+            // both initial images through the triangulator (RANSAC-based,
+            // reprojection-filtered point creation) instead of unfiltered
+            // inline triangulation inside the mapper.
+            IncrementalTriangulator::Options init_tri_options =
+                    options_->Triangulation();
+            init_tri_options.min_angle =
+                    init_mapper_options.init_min_tri_angle;
+            for (const image_t init_image_id : {image_id1, image_id2}) {
+                mapper.TriangulateImage(init_tri_options, init_image_id);
+            }
+
             AdjustGlobalBundle(*options_, &mapper);
+            reconstruction.Normalize();
             FilterPoints(*options_, &mapper);
             FilterImages(*options_, &mapper);
 
@@ -513,6 +531,18 @@ void IncrementalMapperController::Reconstruct(
 
                 reg_next_success = mapper.RegisterNextImage(options_->Mapper(),
                                                             next_image_id);
+
+                // Upstream parity (d3ccaf35): structure-less fallback
+                // registration when structure-based registration fails.
+                if (!reg_next_success) {
+                    reg_next_success = mapper.RegisterNextStructureLessImage(
+                            options_->Mapper(), next_image_id);
+                    if (reg_next_success) {
+                        TriangulateImage(*options_, next_image, &mapper);
+                        IterativeLocalRefinement(*options_, next_image_id,
+                                                 &mapper);
+                    }
+                }
 
                 if (reg_next_success) {
                     TriangulateImage(*options_, next_image, &mapper);

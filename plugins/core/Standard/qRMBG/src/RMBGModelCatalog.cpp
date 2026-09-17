@@ -7,6 +7,8 @@
 
 #include "RMBGModelCatalog.h"
 
+#include <QtCompat.h>
+
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QPainter>
@@ -95,11 +97,9 @@ bool imageView(QImage* image, aicore_image_view* out) {
         case QImage::Format_Grayscale8:
             format = AICORE_IMAGE_GRAY8;
             break;
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-        case QImage::Format_BGR888:
+        case qtCompatQImageFormatBgr888():
             format = AICORE_IMAGE_BGR8;
             break;
-#endif
 #if Q_BYTE_ORDER == Q_LITTLE_ENDIAN
         case QImage::Format_RGB32:
         case QImage::Format_ARGB32:

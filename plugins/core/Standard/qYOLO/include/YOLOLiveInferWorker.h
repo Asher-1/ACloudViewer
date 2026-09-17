@@ -10,6 +10,7 @@
 #include <QImage>
 #include <QObject>
 #include <QString>
+#include <QStringList>
 #include <QtGlobal>
 #include <cstdint>
 
@@ -32,6 +33,10 @@ public:
         float confThres = 0.25f;
         float iouThres = 0.7f;
         uint32_t topK = 300;
+        // Open-vocabulary families (world/yoloe): class list encoded by the
+        // text tower once per context load; a change reloads the context.
+        QStringList classes;
+        QString textModelPath;
         quint64 generation = 0;
     };
 
@@ -63,6 +68,8 @@ private:
     QString m_loadedModelPath;
     QString m_loadedDevice;
     int m_loadedThreads = 0;
+    QStringList m_loadedClasses;
+    QString m_loadedTextModelPath;
     /* Task of the loaded context ("detect" | "segment" | "depth"), cached
      * at load time so each Result knows which payload it carries. */
     QString m_loadedTask;

@@ -237,7 +237,13 @@ std::vector<image_t> IncrementalMapperImpl::FindNextImages(
         }
 
         // Only try registration for a certain maximum number of times.
-        const size_t trials = num_reg_trials.at(image.first);
+        // Upstream parity (d3ccaf35): images never attempted before count as
+        // zero trials, so the lookup must not require the key to exist.
+        size_t trials = 0;
+        if (const auto trials_it = num_reg_trials.find(image.first);
+            trials_it != num_reg_trials.end()) {
+            trials = trials_it->second;
+        }
         if (trials >= static_cast<size_t>(options.max_reg_trials)) {
             continue;
         }

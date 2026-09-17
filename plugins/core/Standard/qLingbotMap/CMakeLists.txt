@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION ${CLOUDVIEWER_PLUGIN_CMAKE_MINIMUM_VERSION})
 
 option( PLUGIN_STANDARD_QLINGBOTMAP "Install qLingbotMap (LingBot-Map streaming 3D reconstruction GGML) plugin" OFF )
+option( QLINGBOTMAP_BUILD_TESTS "Build qLingbotMap unit tests (windowed stitcher numeric gate)" OFF )
 
 if( PLUGIN_STANDARD_QLINGBOTMAP )
     project( QLINGBOTMAP_PLUGIN )
@@ -42,5 +43,19 @@ if( PLUGIN_STANDARD_QLINGBOTMAP )
 
     if(MSVC)
         target_compile_definitions(${PROJECT_NAME} PRIVATE _USE_MATH_DEFINES)
+    endif()
+
+    if( QLINGBOTMAP_BUILD_TESTS )
+        add_executable( test_lingbot_window_stitch
+            tests/test_lingbot_window_stitch.cpp
+            src/LingbotWindowStitcher.cpp
+        )
+        target_include_directories( test_lingbot_window_stitch
+            PRIVATE
+                ${CMAKE_CURRENT_SOURCE_DIR}/include
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests
+        )
+        add_test( NAME test_lingbot_window_stitch
+                  COMMAND test_lingbot_window_stitch )
     endif()
 endif()

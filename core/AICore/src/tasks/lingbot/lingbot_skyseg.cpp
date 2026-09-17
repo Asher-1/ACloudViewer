@@ -409,14 +409,16 @@ bool skyseg::infer(const float *rgb_hwc,
     for (size_t i = 0; i < u8.size(); ++i)
         u8[i] = static_cast<unsigned char>(
                 std::lround(std::clamp(rgb_hwc[i], 0.f, 1.f) * 255.f));
-    std::vector<unsigned char> small(static_cast<size_t>(kInput) * kInput * 3);
-    resize_u8_exact(u8.data(), width, height, 3, small.data(), kInput, kInput);
+    // NOTE: never name a local `small` — rpcndr.h (via windows.h)
+    // #defines it to `char`, which breaks MSVC compilation.
+    std::vector<unsigned char> rgb320(static_cast<size_t>(kInput) * kInput * 3);
+    resize_u8_exact(u8.data(), width, height, 3, rgb320.data(), kInput, kInput);
 
     std::vector<float> chw(3 * kInput * kInput);
     for (int c = 0; c < 3; ++c)
         for (int i = 0; i < kInput * kInput; ++i)
             chw[c * kInput * kInput + i] =
-                    (small[i * 3 + c] / 255.f - kMean[c]) / kStd[c];
+                    (rgb320[i * 3 + c] / 255.f - kMean[c]) / kStd[c];
 
     // Same graph every frame: allocate + compute + read the sigmoid map.
     if (!ggml_gallocr_alloc_graph(p_->galloc, p_->graph)) {
