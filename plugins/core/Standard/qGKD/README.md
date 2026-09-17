@@ -149,9 +149,12 @@ the ggml CUDA buffer cleanup).
 Label rendering: per-keypoint "prompt score" labels default **off** —
 in multi-object scenes the label backgrounds alone cover the objects.
 The Output group's **Show keypoint labels** checkbox opts in per run
-(persisted in QSettings); labeled runs lay overlapping labels out
-without collision (greedy top-to-bottom placement) and connect each
-moved label to its keypoint with a thin leader arrow.
+(persisted in QSettings); labeled runs spread overlapping labels apart
+with force-directed placement (the algorithm behind roboflow
+supervision's `LabelAnnotator.smart_position`: IoU-weighted repulsion
+until no overlap or an iteration cap, then labels are snapped fully
+onto the canvas) and connect each moved label to its keypoint with a
+thin leader arrow.
 
 Multi-object mode reuses the YOLO-World detector models from the existing
 yolo task catalog — no second model table. The default detector is

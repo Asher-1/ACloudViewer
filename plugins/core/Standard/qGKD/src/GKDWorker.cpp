@@ -358,6 +358,19 @@ bool GKDWorker::detectSingleObject(QVector<GKDKeypointSet>* sets,
         return false;
     }
 
+    // Stage timings for the console log: the line the user reads to
+    // locate where a slow run spent its time.
+    {
+        aicore_gkd_timings t{};
+        if (aicore_gkd_last_timings(ctx, &t) == 0) {
+            const GKDHelpers::GkdStageTimings s{
+                    t.preprocess_ms, t.vision_ms, t.text_ms, t.prompt_prep_ms,
+                    t.detect_ms,     t.decode_ms, t.e2e_ms};
+            emit logMessage(tr("[GKD] inference timings: %1")
+                                    .arg(GKDHelpers::formatGkdTimings(s, 1)));
+        }
+    }
+
     GKDKeypointSet set;
     collectRoi(ctx, 0, m_settings.kpsTexts, skeleton, QString(), 1.0f,
                m_settings.minScore, &set);
@@ -375,21 +388,26 @@ bool GKDWorker::ensureYoloContext(QString* error) {
         }
         m_pendingYoloCtx = nullptr;
     }
-    // The C API only accepts classes/cuts at load time, so they are part
-    // of the reload key: same detector + same vocabulary borrows the
-    // resident context, a scene switch reloads once and then sticks.
+    // Reload key: everything that forces a new context. The class COUNT
+    // fixes the text-input shape / graph topology (world_nc), so it stays
+    // in the key and a count change reloads once; class TEXTS and the
+    // confidence are runtime-switchable (per-call classes API + live
+    // thresholds), so switching between same-count vocabularies keeps the
+    // resident detector.
     const QString key =
-            QStringList{m_settings.yoloModelPath,
-                        m_settings.yoloTextModelPath,
-                        m_settings.device,
-                        QString::number(m_settings.threads),
-                        m_settings.objectClasses.join(QLatin1Char(',')),
-                        QString::number(m_settings.yoloConf, 'f', 4)}
+            QStringList{m_settings.yoloModelPath, m_settings.yoloTextModelPath,
+                        m_settings.device, QString::number(m_settings.threads),
+                        QString::number(m_settings.objectClasses.size())}
                     .join(QLatin1Char('|'));
     if (m_settings.cache && m_settings.cache->yoloCtx &&
         m_settings.cache->yoloKey == key) {
         m_pendingYoloCtx = m_settings.cache->yoloCtx;
         m_ownsYoloCtx = false;
+        // Thresholds ride on the context, not the reload key: a scene
+        // with a different conf re-tunes the resident detector in place.
+        aicore_yolo_set_detect_thresholds(
+                static_cast<aicore_yolo_ctx*>(m_pendingYoloCtx),
+                m_settings.yoloConf, 0.6f, /*top_k*/ 0);
         emit logMessage(
                 tr("[GKD] Reusing loaded detector: %1")
                         .arg(QFileInfo(m_settings.yoloModelPath).fileName()));
@@ -451,6 +469,7 @@ bool GKDWorker::ensureYoloContext(QString* error) {
         }
         m_settings.cache->yoloCtx = m_pendingYoloCtx;
         m_settings.cache->yoloKey = key;
+        m_settings.cache->yoloClasses = m_settings.objectClasses;
         m_ownsYoloCtx = false;  // the cache owns it now
     } else {
         m_ownsYoloCtx = true;
@@ -486,13 +505,51 @@ bool GKDWorker::detectMultiObject(QVector<GKDKeypointSet>* sets,
         if (error) *error = tr("Failed to create an image view.");
         return false;
     }
-    if (aicore_yolo_detect_image(yoloCtx, &view) != 0) {
+    // Vocabulary switch on the resident detector: the per-call classes
+    // API re-queues the text embedding (process-cached, so repeated
+    // scene switches are free) instead of reloading the 168-op model.
+    int detectRc;
+    const bool classesSwitched =
+            m_settings.cache && m_settings.cache->yoloCtx == yoloCtx &&
+            m_settings.cache->yoloClasses != m_settings.objectClasses;
+    if (classesSwitched) {
+        // Storage must outlive the call: QString::toUtf8 temporaries
+        // would dangle the c_str pointers (same trap as the load-path
+        // classStorage.reserve note below).
+        std::vector<QByteArray> classStorage;
+        std::vector<const char*> classPtrs;
+        classStorage.reserve(
+                static_cast<size_t>(m_settings.objectClasses.size()));
+        for (const QString& c : m_settings.objectClasses) {
+            classStorage.push_back(c.toUtf8());
+            classPtrs.push_back(classStorage.back().constData());
+        }
+        detectRc = aicore_yolo_detect_image_with_classes(
+                yoloCtx, &view, classPtrs.data(),
+                static_cast<int32_t>(classPtrs.size()));
+        if (detectRc == 0) {
+            m_settings.cache->yoloClasses = m_settings.objectClasses;
+        }
+    } else {
+        detectRc = aicore_yolo_detect_image(yoloCtx, &view);
+    }
+    if (detectRc != 0) {
         const char* err = aicore_yolo_last_error(yoloCtx);
         if (error)
             *error = tr("YOLO-World detection failed: %1")
                              .arg(err ? QString::fromUtf8(err)
                                       : tr("unknown error"));
         return false;
+    }
+    {
+        aicore_yolo_timings t{};
+        if (aicore_yolo_last_timings(yoloCtx, &t) == 0) {
+            const GKDHelpers::YoloStageTimings s{t.preprocess_ms,
+                                                 t.inference_ms,
+                                                 t.postprocess_ms, t.e2e_ms};
+            emit logMessage(tr("[GKD] YOLO-World timings: %1")
+                                    .arg(GKDHelpers::formatYoloTimings(s)));
+        }
     }
 
     // ---- stage 2: one batched GKD forward over every detection box (the
@@ -555,6 +612,17 @@ bool GKDWorker::detectMultiObject(QVector<GKDKeypointSet>* sets,
     if (aicore_cancel_token_requested(m_cancelToken)) {
         if (error) *error = tr("Cancelled.");
         return false;
+    }
+    {
+        aicore_gkd_timings t{};
+        if (aicore_gkd_last_timings(ctx, &t) == 0) {
+            const GKDHelpers::GkdStageTimings s{
+                    t.preprocess_ms, t.vision_ms, t.text_ms, t.prompt_prep_ms,
+                    t.detect_ms,     t.decode_ms, t.e2e_ms};
+            emit logMessage(
+                    tr("[GKD] batched GKD timings: %1")
+                            .arg(GKDHelpers::formatGkdTimings(s, detCount)));
+        }
     }
     const auto skeleton = GKDHelpers::parseSkeleton(m_settings.skeleton);
     for (int roi = 0; roi < detCount; ++roi) {

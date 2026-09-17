@@ -698,52 +698,103 @@ QVector<GKDModePreset> modePresets(const QString& mode) {
     return presets;
 }
 
+QString formatGkdTimings(const GkdStageTimings& t, int rois) {
+    // Stable stage order so lines from different runs diff by eye.
+    return QStringLiteral(
+                   "preprocess %1 ms | vision %2 ms | text %3 ms | prompt "
+                   "prep %4 ms | detect %5 ms (%6 ROI) | decode %7 ms | "
+                   "total %8 ms")
+            .arg(t.preprocessMs, 0, 'f', 1)
+            .arg(t.visionMs, 0, 'f', 1)
+            .arg(t.textMs, 0, 'f', 1)
+            .arg(t.promptPrepMs, 0, 'f', 1)
+            .arg(t.detectMs, 0, 'f', 1)
+            .arg(rois)
+            .arg(t.decodeMs, 0, 'f', 1)
+            .arg(t.e2eMs, 0, 'f', 1);
+}
+
+QString formatYoloTimings(const YoloStageTimings& t) {
+    return QStringLiteral(
+                   "preprocess %1 ms | inference %2 ms | "
+                   "postprocess %3 ms | total %4 ms")
+            .arg(t.preprocessMs, 0, 'f', 1)
+            .arg(t.inferenceMs, 0, 'f', 1)
+            .arg(t.postprocessMs, 0, 'f', 1)
+            .arg(t.e2eMs, 0, 'f', 1);
+}
+
 QVector<QRect> placeLabels(const QVector<QRect>& preferred,
                            const QSize& canvas) {
-    // Deterministic greedy pass, sorted top-to-bottom then left-to-right:
-    // each rect starts at its preferred spot and slides down until it no
-    // longer intersects any already-placed rect (2 px gutter). O(n²) in
-    // the worst case; n is the shown-keypoint count (≤ ~150), and the
-    // inner loop only re-tests the placed set, so this stays sub-ms for
-    // real runs.
-    QVector<int> order(preferred.size());
-    for (int i = 0; i < preferred.size(); ++i) order[i] = i;
-    std::sort(order.begin(), order.end(), [&](int a, int b) {
-        if (preferred[a].top() != preferred[b].top())
-            return preferred[a].top() < preferred[b].top();
-        return preferred[a].left() < preferred[b].left();
-    });
-    QVector<QRect> placed(preferred.size());
-    for (int idx : order) {
-        QRect rect = preferred.at(idx);
-        // Hard canvas bounds up front: a label never starts outside the
-        // image (right-edge keypoints used to have half their text
-        // cropped away).
-        if (rect.right() > canvas.width() - 2)
-            rect.moveRight(canvas.width() - 2);
-        if (rect.bottom() > canvas.height() - 2)
-            rect.moveBottom(canvas.height() - 2);
-        if (rect.left() < 2) rect.moveLeft(2);
-        if (rect.top() < 2) rect.moveTop(2);
-        bool moved = true;
-        while (moved) {
-            moved = false;
-            for (int other : order) {
-                if (other == idx || placed[other].isNull()) continue;
-                if (placed[other].intersects(rect.adjusted(-2, -2, 2, 2))) {
-                    rect.moveTop(placed[other].bottom() + 3);
-                    // Pin the cascade to the bottom edge: a label that
-                    // ran out of image was the measured failure mode;
-                    // pinned overlap is the lesser evil.
-                    if (rect.bottom() > canvas.height() - 2)
-                        rect.moveBottom(canvas.height() - 2);
-                    moved = true;
+    // Force-directed label spreading — a C++ port of the industry-standard
+    // implementation in roboflow/supervision (detection/utils/boxes.py
+    // spread_out_boxes + snap_boxes, the engine behind
+    // LabelAnnotator::smart_position, issue #1383). Every iteration pushes
+    // each overlapping pair apart along its center line with a force
+    // proportional to the pair's IoU (minimum 2 px per axis so tiny forces
+    // cannot stall convergence), until no overlap remains or the
+    // 100-iteration cap is hit. The cap is the termination guarantee: the
+    // previous hand-rolled cascade could iterate forever when pinning
+    // rewound a label into another one (the 2026-09-16 multi-minute hang).
+    // O(n^2) per iteration at n ≤ ~150 labels is sub-millisecond.
+    const int n = preferred.size();
+    QVector<QRect> rects(preferred);
+    if (n < 2) return rects;
+
+    for (int iteration = 0; iteration < 100; ++iteration) {
+        bool anyOverlap = false;
+        QVector<QPointF> forces(n, QPointF(0, 0));
+        for (int i = 0; i < n; ++i) {
+            for (int j = i + 1; j < n; ++j) {
+                // The upstream pads every box by 1 px before the IoU so
+                // near-touching labels already repel.
+                const QRect paddedI = rects[i].adjusted(-1, -1, 1, 1);
+                const QRect paddedJ = rects[j].adjusted(-1, -1, 1, 1);
+                const QRect overlap = paddedI.intersected(paddedJ);
+                if (overlap.isEmpty()) continue;
+                anyOverlap = true;
+                const double interArea =
+                        double(overlap.width()) * overlap.height();
+                const double unionArea =
+                        double(paddedI.width()) * paddedI.height() +
+                        double(paddedJ.width()) * paddedJ.height() - interArea;
+                const double iou = unionArea > 0 ? interArea / unionArea : 0.0;
+                QPointF dir =
+                        QPointF(rects[i].center()) - QPointF(rects[j].center());
+                double len = std::hypot(dir.x(), dir.y());
+                if (len < 1e-3) {
+                    // Identical centers are a force deadlock upstream
+                    // (zero direction, zero push); break the symmetry
+                    // upward so stacked labels still separate.
+                    dir = QPointF(0, -1);
+                    len = 1.0;
                 }
+                dir /= len;
+                forces[i] += dir * iou * 10.0;
+                forces[j] -= dir * iou * 10.0;
             }
         }
-        placed[idx] = rect;
+        if (!anyOverlap) break;
+        for (int i = 0; i < n; ++i) {
+            double fx = forces[i].x();
+            double fy = forces[i].y();
+            if (fx > 0 && fx < 2) fx = 2;
+            if (fx < 0 && fx > -2) fx = -2;
+            if (fy > 0 && fy < 2) fy = 2;
+            if (fy < 0 && fy > -2) fy = -2;
+            rects[i].translate(static_cast<int>(fx), static_cast<int>(fy));
+        }
     }
-    return placed;
+    // snap_boxes: after spreading, keep every label fully on the canvas.
+    // Labels that ended up outside are clamped back inside instead of
+    // being cropped (the measured right-edge failure mode).
+    for (QRect& r : rects) {
+        r.moveLeft(std::clamp(r.left(), 2,
+                              std::max(2, canvas.width() - r.width() - 2)));
+        r.moveTop(std::clamp(r.top(), 2,
+                             std::max(2, canvas.height() - r.height() - 2)));
+    }
+    return rects;
 }
 
 QColor groupColor(int groupId) {

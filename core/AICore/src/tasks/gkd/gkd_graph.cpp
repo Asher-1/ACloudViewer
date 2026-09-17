@@ -1008,6 +1008,7 @@ bool GkdSession::detect(const RgbImage& image,
         // one cached graph produced garbage on CUDA for the second ROI (same
         // family as the cross-call graph-cache issue; rebuild cost is
         // negligible next to the GPU compute).
+        const double tb0 = now_ms();
         if (!build_detect_graph(n_t_pad, n_v_pad)) return false;
         // query features for ROI i: vision batch index = (has_support ? 1 : 0)
         // + i
@@ -1053,7 +1054,8 @@ bool GkdSession::detect(const RgbImage& image,
         ggml_backend_tensor_get(dcache_.output, heat_q.data(), 0,
                                 out_elems * sizeof(float));
         if (bctx_.sched) ggml_backend_sched_reset(bctx_.sched);
-        detect_ms += now_ms() - td0;
+        const double compute_ms = now_ms() - td0;
+        detect_ms += compute_ms;
 
         const double tc0 = now_ms();
         // official: N_origin = N_v when visual prompts exist, else N_t
@@ -1064,7 +1066,16 @@ bool GkdSession::detect(const RgbImage& image,
                         results[i]);
         // keep the ROI transform so the C API can restore source-pixel coords
         results[i].trans = q_trans[i];
-        decode_ms += now_ms() - tc0;
+        const double decode_ms_roi = now_ms() - tc0;
+        decode_ms += decode_ms_roi;
+        // Per-ROI breakdown: the rebuild-per-ROI design makes graph prep
+        // the first suspect when a multi-object run slows down, so every
+        // run reports where its time went (2026-09-16: a 6-ROI run sat
+        // >150 s with no per-stage visibility).
+        GKD_LOG_INFO(
+                "roi %d/%d: graph prep %.1f ms, compute %.1f ms, heatmap "
+                "decode %.1f ms",
+                i + 1, n_bbox, td0 - tb0, compute_ms, decode_ms_roi);
     }
     st.detect = detect_ms;
     st.decode = decode_ms;

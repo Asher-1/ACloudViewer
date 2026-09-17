@@ -201,17 +201,16 @@ TEST(GkdRenderResult, DenseSceneFitsCapacityBudget) {
     EXPECT_LT(grayish * 100.0 / (96.0 * 64.0), 35.0);
 }
 
-TEST(GkdPlaceLabels, OverlappingRectsStackDownward) {
-    // Two labels dropped on the same spot: the greedy pass keeps the
-    // first at its preferred position and pushes the second below it
-    // with the 2 px gutter; no pair intersects after placement.
+TEST(GkdPlaceLabels, SpreadSeparatesOverlappingLabels) {
+    // Two labels dropped on the same spot: the force-directed spread
+    // (supervision spread_out_boxes port) must push them apart so no
+    // pair intersects after placement — without assuming a direction
+    // (the old cascade only pushed downward, stacking a waterfall).
     const QSize canvas(200, 200);
     QVector<QRect> preferred = {QRect(20, 10, 50, 16), QRect(20, 10, 50, 16)};
     const QVector<QRect> placed = GKDHelpers::placeLabels(preferred, canvas);
     ASSERT_EQ(placed.size(), 2);
-    EXPECT_EQ(placed[0], preferred[0]);
     EXPECT_FALSE(placed[0].intersects(placed[1].adjusted(-2, -2, 2, 2)));
-    EXPECT_GT(placed[1].top(), placed[0].bottom());
 }
 
 TEST(GkdPlaceLabels, DisjointRectsStayPut) {
@@ -223,24 +222,37 @@ TEST(GkdPlaceLabels, DisjointRectsStayPut) {
     EXPECT_EQ(placed, preferred);
 }
 
-TEST(GkdPlaceLabels, CascadePinnedToCanvas) {
+TEST(GkdPlaceLabels, SpreadStaysOnCanvas) {
     // Five labels dropped on the same spot on a 100 px tall canvas: the
-    // push-down cascade must pin the last ones to the bottom edge
-    // instead of running them out of the image (measured failure:
-    // cropped labels on dense scenes).
+    // spread pushes them apart until they fit or the iteration cap hit,
+    // then snap_boxes clamps every label fully onto the canvas (the
+    // measured failure was labels pushed out of and cropped by the
+    // image).
     const QSize canvas(200, 100);
     QVector<QRect> preferred(5, QRect(20, 10, 50, 16));
     const QVector<QRect> placed = GKDHelpers::placeLabels(preferred, canvas);
     for (const QRect& r : placed) {
         EXPECT_GE(r.top(), 2);
         EXPECT_LE(r.bottom(), canvas.height() - 2);
+        EXPECT_GE(r.left(), 2);
+        EXPECT_LE(r.right(), canvas.width() - 2);
     }
-    // At least one label actually rode the pin (the cascade reached the
-    // bottom edge rather than fitting all five with gutters).
-    int pinned = 0;
-    for (const QRect& r : placed)
-        if (r.bottom() >= canvas.height() - 3) ++pinned;
-    EXPECT_GT(pinned, 0);
+}
+
+TEST(GkdPlaceLabels, PinNeverLoopsForever) {
+    // Regression: two tall labels dropped on the same spot on a canvas
+    // barely taller than one of them. The pin used to rewind top() back
+    // into the intersection, and the greedy loop iterated it forever —
+    // measured as the multi-minute console hang after inference on the
+    // dense person/fish scenes. This must terminate and stay on canvas.
+    const QSize canvas(200, 100);
+    QVector<QRect> preferred = {QRect(20, 2, 50, 90), QRect(20, 2, 50, 90)};
+    const QVector<QRect> placed = GKDHelpers::placeLabels(preferred, canvas);
+    ASSERT_EQ(placed.size(), 2);
+    for (const QRect& r : placed) {
+        EXPECT_GE(r.top(), 2);
+        EXPECT_LE(r.bottom(), canvas.height() - 2);
+    }
 }
 
 TEST(GkdRenderResult, EmptyInputGivesEmptyImage) {
@@ -250,6 +262,36 @@ TEST(GkdRenderResult, EmptyInputGivesEmptyImage) {
 TEST(GkdGroupColor, Deterministic) {
     EXPECT_EQ(GKDHelpers::groupColor(3), GKDHelpers::groupColor(3));
     EXPECT_NE(GKDHelpers::groupColor(0), GKDHelpers::groupColor(1));
+}
+
+TEST(GkdTimingFormat, StableStageOrderAndRoiScope) {
+    GKDHelpers::GkdStageTimings t;
+    t.preprocessMs = 12.34;
+    t.visionMs = 100.0;
+    t.textMs = 50.5;
+    t.promptPrepMs = 1.0;
+    t.detectMs = 900.25;
+    t.decodeMs = 3.0;
+    t.e2eMs = 1067.09;
+    const QString line = GKDHelpers::formatGkdTimings(t, 6);
+    // Stage order is fixed so lines from different runs diff by eye; the
+    // ROI count annotates the detect stage only.
+    EXPECT_TRUE(line.contains(QStringLiteral(
+            "preprocess 12.3 ms | vision 100.0 ms | text 50.5 ms | "
+            "prompt prep 1.0 ms | detect 900.3 ms (6 ROI) | decode 3.0 ms "
+            "| total 1067.1 ms")))
+            << line.toStdString();
+
+    GKDHelpers::YoloStageTimings y;
+    y.preprocessMs = 4.0;
+    y.inferenceMs = 88.5;
+    y.postprocessMs = 7.25;
+    y.e2eMs = 99.75;
+    const QString yline = GKDHelpers::formatYoloTimings(y);
+    EXPECT_TRUE(yline.contains(QStringLiteral(
+            "preprocess 4.0 ms | inference 88.5 ms | postprocess 7.3 ms | "
+            "total 99.8 ms")))
+            << yline.toStdString();
 }
 
 // ---- Official-demo skeleton helpers ------------------------------------

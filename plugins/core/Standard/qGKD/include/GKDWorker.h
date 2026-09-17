@@ -29,14 +29,20 @@ struct aicore_gkd_ctx;
  *  main thread only (the plugin drains `retiredGkd/retiredYolo` in
  *  onTaskFinished and frees the live entries in its destructor). Keys
  *  encode every option that forces a reload: weights file, device,
- *  threads, and for YOLO also the class list + cuts (the C API only
- *  accepts classes at load time). Runs are serialized by the plugin
- *  (one worker at a time), so no extra locking is needed. */
+ *  threads. Runs are serialized by the plugin (one worker at a time), so
+ *  no extra locking is needed. Class lists and confidence thresholds are
+ *  runtime-switchable on the resident context
+ *  (aicore_yolo_detect_image_with_classes / aicore_yolo_set_detect_thresholds),
+ *  so they are deliberately NOT part of the reload key. */
 struct GKDContextCache {
     void* gkdCtx = nullptr; /**< aicore_gkd_ctx* (opaque) */
     QString gkdKey;
     void* yoloCtx = nullptr; /**< aicore_yolo_ctx* (opaque) */
     QString yoloKey;
+    /** Class list the resident detector currently embeds; differs from
+     *  Settings::objectClasses exactly when the next run must switch the
+     *  vocabulary via aicore_yolo_detect_image_with_classes. */
+    QStringList yoloClasses;
     /** Handles replaced by a newer load; freed on the main thread so GPU
      *  teardown never races the render thread. */
     std::vector<void*> retiredGkd;

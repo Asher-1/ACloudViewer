@@ -662,6 +662,12 @@ aicore_add_yolo_capi_test(test_yolo_capi_parity)
 set_tests_properties(test_yolo_capi_parity PROPERTIES
     LABELS "capi;model;gpu")
 
+# Per-call vocabulary switching on a resident world detector (the reload-
+# avoidance contract). Skips (77) without AICORE_TEST_YOLO_* assets.
+aicore_add_yolo_capi_test(test_yolo_with_classes)
+set_tests_properties(test_yolo_with_classes PROPERTIES
+    LABELS "capi;model")
+
 # Full same-model/same-input matrix: CPU/CUDA/Vulkan latency plus CPU-vs-GPU
 # numeric parity for every YOLO task and f32/f16/q8_0. Missing assets skip;
 # partial assets or a missing requested backend fail with an explicit report.

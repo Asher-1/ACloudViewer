@@ -195,14 +195,42 @@ QVector<GKDModePreset> modePresets(const QString& mode);
 /** Deterministic display color for an object/keypoint group id. */
 QColor groupColor(int groupId);
 
-/** Greedy label de-overlap: places each rect top-to-bottom, pushing a
- *  rect down (2 px gutter) until it no longer intersects an already
- *  placed one. \p canvas bounds the cascade: a label is clamped into
- *  the canvas up front and pinned to the bottom edge if the push-down
- *  would run it out of the image (staying inside the canvas, possibly
- *  overlapping, beats being cropped away). Order-preserving,
- *  deterministic; O(n²) worst case which is fine for the ≤ ~150 labels
- *  a run can show. Pure geometry — unit tested without AICore. */
+/** Plain copy of the GKD per-stage timing struct (kept AICore-free so
+ *  the formatter below stays unit-testable without the library). */
+struct GkdStageTimings {
+    double preprocessMs = 0;
+    double visionMs = 0;
+    double textMs = 0;
+    double promptPrepMs = 0;
+    double detectMs = 0;
+    double decodeMs = 0;
+    double e2eMs = 0;
+};
+
+/** Plain copy of the YOLO per-stage timing struct (same rationale). */
+struct YoloStageTimings {
+    double preprocessMs = 0;
+    double inferenceMs = 0;
+    double postprocessMs = 0;
+    double e2eMs = 0;
+};
+
+/** One stable-order console line for a GKD run: image in -> features ->
+ *  prompts -> per-ROI matching -> pixels out. \p rois annotates the
+ *  detect-stage scope. Pure formatting — unit tested without AICore. */
+QString formatGkdTimings(const GkdStageTimings& timings, int rois);
+
+/** Same contract for a YOLO-World detection run. */
+QString formatYoloTimings(const YoloStageTimings& timings);
+
+/** Force-directed label spreading (ported from roboflow/supervision's
+ *  spread_out_boxes + snap_boxes, the industry-standard engine behind
+ *  LabelAnnotator::smart_position): overlapping labels push each other
+ *  apart along their center line with IoU-weighted force until they no
+ *  longer intersect or a 100-iteration cap is hit, then every label is
+ *  snapped fully onto the \p canvas. The cap is the termination
+ *  guarantee; order-preserving and deterministic. Pure geometry — unit
+ *  tested without AICore. */
 QVector<QRect> placeLabels(const QVector<QRect>& preferred,
                            const QSize& canvas);
 

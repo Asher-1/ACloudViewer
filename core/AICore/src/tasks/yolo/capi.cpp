@@ -44,6 +44,10 @@ struct aicore_yolo_ctx {
     std::string model_path;
     std::string device;
     int32_t threads = 0;
+    // Text-encoder GGUF used at load (text-conditioned models): kept so
+    // aicore_yolo_detect_image_with_classes can re-queue a per-call
+    // class embedding without the caller re-passing the encoder path.
+    std::string text_model_path;
     std::string last_error;
 
     // Detection thresholds: the single configuration point for detect and
@@ -522,6 +526,7 @@ AICORE_CAPI aicore_yolo_ctx* aicore_yolo_load_opts(
     if (ctx == nullptr) return nullptr;
 
     ctx->model_path = gguf_path;
+    if (opts != nullptr) ctx->text_model_path = opts->text_model_path;
     ctx->device = opts != nullptr ? opts->common.device : "auto";
     ctx->threads = opts != nullptr ? opts->common.threads : 0;
     if (opts != nullptr) {
@@ -1222,6 +1227,58 @@ AICORE_CAPI int aicore_yolo_detect_image(aicore_yolo_ctx* ctx,
     if (!ctx || !ctx->engine) return -1;
     yolo::Image input;
     if (!image_from_view(image, &input)) return -1;
+    int rc = -1;
+    (void)run_detect(ctx, input, &rc, false);
+    return rc;
+}
+
+AICORE_CAPI int aicore_yolo_detect_image_with_classes(
+        aicore_yolo_ctx* ctx,
+        const aicore_image_view* image,
+        const char* const* classes,
+        int32_t n_classes) {
+    if (ctx == nullptr || ctx->engine == nullptr) {
+        if (ctx) ctx->last_error = "no loaded detector";
+        return -1;
+    }
+    if (image == nullptr || image->data == nullptr || classes == nullptr ||
+        n_classes <= 0) {
+        ctx->last_error = "invalid arguments";
+        return -1;
+    }
+    yolo::Image input;
+    if (!image_from_view(image, &input)) return -1;
+    yolo::Session* s = ctx->engine;
+    if (!s->model.has_text_input) {
+        ctx->last_error =
+                "per-call classes need a text-conditioned detector "
+                "(YOLO-World / YOLOE text path)";
+        return -1;
+    }
+    if (static_cast<int>(s->world_nc) != n_classes) {
+        ctx->last_error =
+                "class count must equal the load-time count (it fixes the "
+                "text-input shape); reload with the new count instead";
+        return -1;
+    }
+    // Swap the label table and re-queue the text embedding. The embedding
+    // goes through the process-level cache, so alternating between a
+    // fixed set of vocabularies costs one map lookup after the first
+    // round trip — the resident detector weights and graph are untouched.
+    const std::vector<std::string> previous_classes = ctx->class_names_override;
+    ctx->class_names_override.clear();
+    ctx->class_names_override.reserve(static_cast<size_t>(n_classes));
+    for (int32_t i = 0; i < n_classes; ++i) {
+        ctx->class_names_override.emplace_back(classes[i] ? classes[i] : "");
+    }
+    aicore_yolo_options requeue;
+    requeue.text_model_path = ctx->text_model_path;
+    if (!encode_open_vocab_classes(ctx, &requeue)) {
+        // Roll the label table back so the context stays consistent with
+        // the text input still queued from the previous vocabulary.
+        ctx->class_names_override = previous_classes;
+        return -1;
+    }
     int rc = -1;
     (void)run_detect(ctx, input, &rc, false);
     return rc;

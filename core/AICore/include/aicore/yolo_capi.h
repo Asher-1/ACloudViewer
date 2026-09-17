@@ -178,6 +178,21 @@ AICORE_CAPI int aicore_yolo_detect_rgb(aicore_yolo_ctx* ctx,
 /** Stride-aware equivalent; accepts RGB/RGBA/GRAY/BGR/BGRA borrowed views. */
 AICORE_CAPI int aicore_yolo_detect_image(aicore_yolo_ctx* ctx,
                                          const aicore_image_view* image);
+/** One detection with a per-call open-vocabulary class list, overriding
+ *  the load-time list (text-conditioned models only). The class COUNT
+ *  must equal the count fixed at load (it fixes the text-input shape and
+ *  graph topology); the texts are re-encoded through the same
+ *  process-level embedding cache, so alternating between a fixed set of
+ *  vocabularies is memoized and free. Only the session text input and
+ *  the result label table change — the loaded detector weights and graph
+ *  are reused untouched, so plugins can keep one resident context across
+ *  scene switches instead of reloading per vocabulary. Returns the
+ *  detect_* result codes; class-name accessors reflect the new list. */
+AICORE_CAPI int aicore_yolo_detect_image_with_classes(
+        aicore_yolo_ctx* ctx,
+        const aicore_image_view* image,
+        const char* const* classes,
+        int32_t n_classes);
 /** Update detection thresholds at runtime without rebuilding the context.
  *  Out-of-range values keep the previous value (0 for top_k = model
  *  max_det). */
