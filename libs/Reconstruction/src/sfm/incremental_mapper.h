@@ -102,6 +102,10 @@ public:
         // reached sufficient size with at least 10 registered frames.
         bool ba_global_ignore_redundant_points3D = false;
 
+        // PRNG seed for all stochastic methods during reconstruction
+        // (upstream parity, d3ccaf35 incremental_mapper.h).
+        int random_seed = -1;
+
         // The coverage gain threshold for a 3D point to be considered
         // redundant in the global bundle adjustment. A larger value means more
         // 3D points are pruned.
@@ -229,6 +233,22 @@ public:
     // Filter images and point observations.
     size_t FilterImages(const Options& options);
     size_t FilterPoints(const Options& options);
+
+    // Complete and merge all tracks (upstream parity, d3ccaf35
+    // incremental_mapper.h).
+    size_t CompleteAndMergeTracks(
+            const IncrementalTriangulator::Options& tri_options);
+
+    // Iterative global refinement: complete/merge/retriangulate the tracks
+    // and run global bundle adjustment until convergence (upstream parity,
+    // d3ccaf35 IncrementalMapper::IterativeGlobalRefinement).
+    void IterativeGlobalRefinement(
+            int max_num_refinements,
+            double max_refinement_change,
+            const Options& options,
+            const BundleAdjustmentOptions& ba_options,
+            const IncrementalTriangulator::Options& tri_options,
+            bool normalize_reconstruction = true);
 
     const Reconstruction& GetReconstruction() const;
 

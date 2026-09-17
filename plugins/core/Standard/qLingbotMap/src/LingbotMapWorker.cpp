@@ -384,7 +384,6 @@ void LingbotMapWorker::run() {
                         .arg(m_settings.image_size));
     };
 
-
     aicore_lingbot_ctx* ctx = aicore_lingbot_load_opts(
             m_settings.modelPath.toUtf8().constData(), opts);
     aicore_lingbot_options_free(opts);

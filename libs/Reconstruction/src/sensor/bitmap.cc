@@ -223,7 +223,12 @@ void Bitmap::Rescale(const int new_width, const int new_height,
   data_->image_spec.height = new_height;
 }
 Bitmap Bitmap::Clone() const { return Bitmap(*this); }
-Bitmap Bitmap::CloneAsGrey() const { if (IsGrey()) return Clone(); Bitmap out; out.Allocate(width_,height_,false); for(int y=0;y<height_;++y) for(int x=0;x<width_;++x){ BitmapColor<uint8_t> c; GetPixel(x,y,&c); out.SetPixel(x,y,BitmapColor<uint8_t>(static_cast<uint8_t>(.299*c.r+.587*c.g+.114*c.b))); } if (data_ && out.data_) out.data_->image_spec = data_->image_spec; return out; }
+Bitmap Bitmap::CloneAsGrey() const { if (IsGrey()) return Clone(); Bitmap out; out.Allocate(width_,height_,false); for(int y=0;y<height_;++y) for(int x=0;x<width_;++x){ BitmapColor<uint8_t> c; GetPixel(x,y,&c); // Upstream parity (d3ccaf35 sensor/bitmap.cc): BT.709 weights with an
+ // added 0.5 before truncation (equivalent to std::round). The old fork
+ // used BT.601 weights (.299/.587/.114) with plain truncation, shifting
+ // every grey value by up to tens of counts and perturbing the SIFT
+ // DoG responses downstream.
+ out.SetPixel(x,y,BitmapColor<uint8_t>(static_cast<uint8_t>(.2126f*c.r+.7152f*c.g+.0722f*c.b+.5f))); } if (data_ && out.data_) out.data_->image_spec = data_->image_spec; return out; }
 Bitmap Bitmap::CloneAsRGB() const { if (IsRGB()) return Clone(); Bitmap out; out.Allocate(width_,height_,true); for(int y=0;y<height_;++y) for(int x=0;x<width_;++x){ BitmapColor<uint8_t> c; GetPixel(x,y,&c); out.SetPixel(x,y,BitmapColor<uint8_t>(c.r,c.r,c.r)); } if (data_ && out.data_) out.data_->image_spec = data_->image_spec; return out; }
 void Bitmap::CloneMetadata(Bitmap* target) const {
   CHECK_NOTNULL(target);

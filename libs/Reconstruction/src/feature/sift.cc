@@ -29,6 +29,7 @@
 //
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
+#include "feature/index.h"
 #include "feature/sift.h"
 
 #include <array>
@@ -49,6 +50,107 @@
 
 namespace colmap {
 namespace {
+
+// Upstream parity (d3ccaf35 feature/sift.cc): squared norm of the unit-budget
+// SIFT descriptor (512 * 4 levels of 32 * rounding to 512).
+constexpr int kSqSiftDescriptorNorm = 512 * 512;
+
+// Upstream parity (d3ccaf35 feature/sift.cc): index-based (exact faiss L2)
+// 2-NN filtering with ratio and distance thresholds.
+size_t FindBestMatchesOneWayIndex(const Eigen::RowMajorMatrixXi& indices,
+                                  const Eigen::RowMajorMatrixXf& l2_dists,
+                                  const float max_ratio,
+                                  const float max_distance,
+                                  std::vector<int>* matches) {
+    const float max_l2_dist =
+            kSqSiftDescriptorNorm * max_distance * max_distance;
+
+    size_t num_matches = 0;
+    matches->resize(indices.rows(), -1);
+
+    for (int d1_idx = 0; d1_idx < indices.rows(); ++d1_idx) {
+        int best_d2_idx = -1;
+        float best_l2_dist = std::numeric_limits<float>::max();
+        float second_best_l2_dist = std::numeric_limits<float>::max();
+        for (int n_idx = 0; n_idx < indices.cols(); ++n_idx) {
+            const int d2_idx = indices(d1_idx, n_idx);
+            const float l2_dist = l2_dists(d1_idx, n_idx);
+            if (l2_dist < best_l2_dist) {
+                best_d2_idx = d2_idx;
+                second_best_l2_dist = best_l2_dist;
+                best_l2_dist = l2_dist;
+            } else if (l2_dist < second_best_l2_dist) {
+                second_best_l2_dist = l2_dist;
+            }
+        }
+
+        // Check if any match found.
+        if (best_d2_idx == -1) {
+            continue;
+        }
+
+        // Check if match distance passes threshold.
+        if (best_l2_dist > max_l2_dist) {
+            continue;
+        }
+
+        // Check if match passes ratio test. Keep this comparison >= in order
+        // to ensure that the case of best == second_best is detected.
+        if (std::sqrt(best_l2_dist) >=
+            max_ratio * std::sqrt(second_best_l2_dist)) {
+            continue;
+        }
+
+        ++num_matches;
+        (*matches)[d1_idx] = best_d2_idx;
+    }
+
+    return num_matches;
+}
+
+void FindBestMatchesIndex(const Eigen::RowMajorMatrixXi& indices_1to2,
+                          const Eigen::RowMajorMatrixXf& l2_dists_1to2,
+                          const Eigen::RowMajorMatrixXi& indices_2to1,
+                          const Eigen::RowMajorMatrixXf& l2_dists_2to1,
+                          const float max_ratio,
+                          const float max_distance,
+                          const bool cross_check,
+                          FeatureMatches* matches) {
+    matches->clear();
+
+    std::vector<int> matches_1to2;
+    const size_t num_matches_1to2 = FindBestMatchesOneWayIndex(
+            indices_1to2, l2_dists_1to2, max_ratio, max_distance,
+            &matches_1to2);
+
+    if (cross_check && indices_2to1.rows()) {
+        std::vector<int> matches_2to1;
+        const size_t num_matches_2to1 = FindBestMatchesOneWayIndex(
+                indices_2to1, l2_dists_2to1, max_ratio, max_distance,
+                &matches_2to1);
+        matches->reserve(std::min(num_matches_1to2, num_matches_2to1));
+        for (size_t i1 = 0; i1 < matches_1to2.size(); ++i1) {
+            if (matches_1to2[i1] != -1 &&
+                matches_2to1[matches_1to2[i1]] != -1 &&
+                matches_2to1[matches_1to2[i1]] == static_cast<int>(i1)) {
+                FeatureMatch match;
+                match.point2D_idx1 = i1;
+                match.point2D_idx2 = matches_1to2[i1];
+                matches->push_back(match);
+            }
+        }
+    } else {
+        matches->reserve(num_matches_1to2);
+        for (size_t i1 = 0; i1 < matches_1to2.size(); ++i1) {
+            if (matches_1to2[i1] != -1) {
+                FeatureMatch match;
+                match.point2D_idx1 = i1;
+                match.point2D_idx2 = matches_1to2[i1];
+                matches->push_back(match);
+            }
+        }
+    }
+}
 
 size_t FindBestMatchesOneWayBruteForce(const Eigen::MatrixXi& dists,
                                        const float max_ratio,
@@ -1050,8 +1152,26 @@ void MatchSiftFeaturesCPU(const SiftMatchingOptions& match_options,
                           const FeatureDescriptors& descriptors1,
                           const FeatureDescriptors& descriptors2,
                           FeatureMatches* matches) {
-    MatchSiftFeaturesCPUFLANN(match_options, descriptors1, descriptors2,
-                              matches);
+    // Upstream parity (d3ccaf35 SiftCPUFeatureMatcher::Match): exact 2-NN
+    // through the faiss-backed FeatureDescriptorIndex instead of the legacy
+    // approximate FLANN KD-tree (the approximate search perturbed the raw
+    // match set by ~3%).
+    auto index1 = FeatureDescriptorIndex::Create();
+    auto index2 = FeatureDescriptorIndex::Create();
+    index1->Build(ToFloat(descriptors1));
+    index2->Build(ToFloat(descriptors2));
+
+    Eigen::RowMajorMatrixXi indices_1to2, indices_2to1;
+    Eigen::RowMajorMatrixXf l2_dists_1to2, l2_dists_2to1;
+    index2->Search(/*num_neighbors=*/2, ToFloat(descriptors1), indices_1to2,
+                   l2_dists_1to2);
+    index1->Search(/*num_neighbors=*/2, ToFloat(descriptors2), indices_2to1,
+                   l2_dists_2to1);
+
+    FindBestMatchesIndex(indices_1to2, l2_dists_1to2, indices_2to1,
+                         l2_dists_2to1, match_options.max_ratio,
+                         match_options.max_distance, match_options.cross_check,
+                         matches);
 }
 
 void MatchGuidedSiftFeaturesCPU(const SiftMatchingOptions& match_options,

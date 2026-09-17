@@ -823,6 +823,59 @@ size_t IncrementalMapper::FilterPoints(const Options& options) {
                                               options.filter_min_tri_angle);
 }
 
+size_t IncrementalMapper::CompleteAndMergeTracks(
+        const IncrementalTriangulator::Options& tri_options) {
+    const size_t num_completed_observations = CompleteTracks(tri_options);
+    VLOG(1) << "=> Completed observations: " << num_completed_observations;
+    const size_t num_merged_observations = MergeTracks(tri_options);
+    VLOG(1) << "=> Merged observations: " << num_merged_observations;
+    return num_completed_observations + num_merged_observations;
+}
+
+void IncrementalMapper::IterativeGlobalRefinement(
+        const int max_num_refinements,
+        const double max_refinement_change,
+        const Options& options,
+        const BundleAdjustmentOptions& ba_options,
+        const IncrementalTriangulator::Options& tri_options,
+        const bool normalize_reconstruction) {
+    // Upstream parity (d3ccaf35 IncrementalMapper::IterativeGlobalRefinement).
+    if (ba_options.check_if_stopped && ba_options.check_if_stopped()) {
+        return;
+    }
+    CompleteAndMergeTracks(tri_options);
+    const size_t num_retriangulated_observations = Retriangulate(tri_options);
+    VLOG(1) << "=> Retriangulated observations: "
+            << num_retriangulated_observations;
+    for (int i = 0; i < max_num_refinements; ++i) {
+        if (ba_options.check_if_stopped && ba_options.check_if_stopped()) {
+            break;
+        }
+        const size_t num_observations = reconstruction_->ComputeNumObservations();
+        AdjustGlobalBundle(options, ba_options);
+        if (ba_options.check_if_stopped && ba_options.check_if_stopped()) {
+            break;
+        }
+        if (normalize_reconstruction && !options.use_prior_position) {
+            // Normalize scene for numerical stability and
+            // to avoid large scale changes in the viewer.
+            reconstruction_->Normalize();
+        }
+        size_t num_changed_observations = CompleteAndMergeTracks(tri_options);
+        num_changed_observations += FilterPoints(options);
+        const double changed =
+                num_observations == 0
+                        ? 0
+                        : static_cast<double>(num_changed_observations) /
+                              num_observations;
+        VLOG(1) << StringPrintf("=> Changed observations: %.6f", changed);
+        if (changed < max_refinement_change) {
+            break;
+        }
+    }
+    ClearModifiedPoints3D();
+}
+
 const Reconstruction& IncrementalMapper::GetReconstruction() const {
     CHECK_NOTNULL(reconstruction_);
     return *reconstruction_;

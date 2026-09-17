@@ -637,25 +637,28 @@ bool GlobalMapper::IterativeRetriangulateAndRefine(
     mapper.TriangulateImage(options, image_id);
   }
 
-  // Fork note: the upstream iterative global refinement loop
-  // (IncrementalMapper::IterativeGlobalRefinement, an ObservationManager
-  // consumer) is not ported until W3-2b step 3; the equivalent refinement is
-  // a bounded filter-and-bundle-adjust loop over the fork's Reconstruction
-  // filters with a pixel-based reprojection threshold.
+  // Set up bundle adjustment options for colmap's incremental mapper.
+  // Upstream parity (d3ccaf35): the refinement runs through the mapper's
+  // IterativeGlobalRefinement (complete/merge/retriangulate + global BA),
+  // whose MergeTracks pass is what keeps the retriangulated point set from
+  // growing (the old fork filter-and-bundle loop had no merge pass and
+  // inflated the final point count by ~9%).
   BundleAdjustmentOptions custom_ba_options = ba_options;
   custom_ba_options.print_summary = false;
+  custom_ba_options.solver_options.num_threads =
+      ba_options.solver_options.num_threads;
   custom_ba_options.solver_options.max_num_iterations = 50;
   custom_ba_options.solver_options.max_linear_solver_iterations = 100;
 
-  for (int ite = 0; ite < 5; ++ite) {
-    FilterTracksByNormalizedError(*reconstruction_,
-                                  reconstruction_->Point3DIds(),
-                                  max_normalized_reproj_error);
-    if (!RunBundleAdjustment(custom_ba_options, *reconstruction_)) {
-      return false;
-    }
-    reconstruction_->Normalize();
-  }
+  // Iterative global refinement.
+  IncrementalMapper::Options mapper_options;
+  mapper_options.random_seed = options.random_seed;
+  mapper.IterativeGlobalRefinement(/*max_num_refinements=*/5,
+                                   /*max_refinement_change=*/0.0005,
+                                   mapper_options,
+                                   custom_ba_options,
+                                   options,
+                                   /*normalize_reconstruction=*/true);
 
   mapper.EndReconstruction(/*discard=*/false);
 
