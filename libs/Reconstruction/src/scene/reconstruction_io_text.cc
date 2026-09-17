@@ -131,7 +131,7 @@ void ReadCamerasText(Reconstruction& reconstruction, std::istream& stream) {
     std::stringstream line_stream(line);
     line_stream.imbue(std::locale::classic());
 
-    struct Camera camera;
+    class Camera camera;
 
     // ID, MODEL, WIDTH, HEIGHT
     camera_t camera_id;

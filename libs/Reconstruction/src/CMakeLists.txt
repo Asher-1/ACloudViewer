@@ -136,7 +136,7 @@ if (TESTS_ENABLED)
     # ${CMAKE_BINARY_DIR} working directory would silently discover zero tests.
     add_custom_target(reconstruction_oiio_parity_gate
         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-                -R "^(util/bitmap_test|base/undistortion_test|mvs/texture_mapping_test)$"
+                -R "^(sensor/bitmap_test|image/undistortion_test|mvs/texture_mapping_test)$"
         DEPENDS bitmap_test undistortion_test texture_mapping_test
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/libs/Reconstruction"
         USES_TERMINAL
@@ -146,13 +146,13 @@ if (TESTS_ENABLED)
     # The optional PoseLib adapter appends its one-sided-focal tests only when
     # its targets exist in the configured build.
     set(RECONSTRUCTION_CAMERA_RIG_PARITY_TESTS
-        base/camera_test
-        base/projection_test
-        base/rig_test
-        estimators/essential_matrix_test
+        scene/camera_test
+        scene/projection_test
+        scene/rig_test
+        estimators/solvers_essential_matrix_test
         estimators/two_view_geometry_test)
     set(RECONSTRUCTION_CAMERA_RIG_PARITY_DEPS
-        camera_test projection_test rig_test essential_matrix_test
+        camera_test projection_test rig_test solvers_essential_matrix_test
         two_view_geometry_test)
     if (RECONSTRUCTION_FETCH_POSELIB)
         list(APPEND RECONSTRUCTION_CAMERA_RIG_PARITY_TESTS
@@ -176,7 +176,7 @@ if (TESTS_ENABLED)
     # refused instead of being silently misread.
     add_custom_target(reconstruction_db_migration_gate
         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-                -R "^base/database_test$"
+                -R "^scene/database_test$"
         DEPENDS database_test
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/libs/Reconstruction"
         USES_TERMINAL

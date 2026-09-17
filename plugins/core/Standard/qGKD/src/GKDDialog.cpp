@@ -7,6 +7,8 @@
 
 #include "GKDDialog.h"
 
+#include <QtCompat.h>
+
 #include <QCloseEvent>
 #include <QDir>
 #include <QFileDialog>
@@ -1292,7 +1294,7 @@ GKDWorker::Settings GKDDialog::workerSettings() const {
     s.multiObject = GKDHelpers::modeUsesYolo(panel->mode);
     if (s.multiObject) {
         s.objectClasses = panel->objectClasses->text().split(
-                QLatin1Char(','), Qt::SkipEmptyParts);
+                QLatin1Char(','), QtCompat::SkipEmptyParts);
         for (QString& c : s.objectClasses) c = c.trimmed();
         s.yoloModelPath = resolveYoloModelPath(panel->yoloModelCombo);
         s.yoloTextModelPath = resolveYoloModelPath(panel->yoloTextModelCombo);

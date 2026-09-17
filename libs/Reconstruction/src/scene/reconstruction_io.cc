@@ -58,7 +58,7 @@ bool ExportNVM(const Reconstruction& reconstruction,
 
   for (const auto image_id : reconstruction.RegImageIds()) {
     const class Image& image = reconstruction.Image(image_id);
-    const struct Camera& camera = reconstruction.Camera(image.CameraId());
+    const class Camera& camera = reconstruction.Camera(image.CameraId());
 
     double k;
     if (skip_distortion ||
@@ -136,7 +136,7 @@ bool ExportCam(const Reconstruction& reconstruction,
   for (const auto image_id : reconstruction.RegImageIds()) {
     std::string name, ext;
     const class Image& image = reconstruction.Image(image_id);
-    const struct Camera& camera = reconstruction.Camera(image.CameraId());
+    const class Camera& camera = reconstruction.Camera(image.CameraId());
 
     SplitFileExtension(image.Name(), &name, &ext);
     const auto name_path = path / name.append(".cam");
@@ -231,7 +231,7 @@ bool ExportRecon3D(const Reconstruction& reconstruction,
   // Write image/camera info
   for (const auto image_id : reconstruction.RegImageIds()) {
     const class Image& image = reconstruction.Image(image_id);
-    const struct Camera& camera = reconstruction.Camera(image.CameraId());
+    const class Camera& camera = reconstruction.Camera(image.CameraId());
 
     double k1, k2;
     if (skip_distortion ||
@@ -284,7 +284,7 @@ bool ExportRecon3D(const Reconstruction& reconstruction,
       // since VisualSfM does not support with multiple observations.
       if (image_ids.count(track_el.image_id) == 0) {
         const class Image& image = reconstruction.Image(track_el.image_id);
-        const struct Camera& camera = reconstruction.Camera(image.CameraId());
+        const class Camera& camera = reconstruction.Camera(image.CameraId());
         const Point2D& point2D = image.Point2D(track_el.point2D_idx);
 
         const double scale =
@@ -335,7 +335,7 @@ bool ExportBundler(const Reconstruction& reconstruction,
 
   for (const image_t image_id : reconstruction.RegImageIds()) {
     const class Image& image = reconstruction.Image(image_id);
-    const struct Camera& camera = reconstruction.Camera(image.CameraId());
+    const class Camera& camera = reconstruction.Camera(image.CameraId());
 
     double k1, k2;
     if (skip_distortion ||
@@ -389,7 +389,7 @@ bool ExportBundler(const Reconstruction& reconstruction,
 
     for (const auto& track_el : point3D.second.Track().Elements()) {
       const class Image& image = reconstruction.Image(track_el.image_id);
-      const struct Camera& camera = reconstruction.Camera(image.CameraId());
+      const class Camera& camera = reconstruction.Camera(image.CameraId());
 
       // Bundler output assumes image coordinate system origin
       // in the lower left corner of the image with the center of

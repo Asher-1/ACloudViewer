@@ -144,7 +144,7 @@ public:
     // Add new image.
     // Upstream-parity (COLMAP 4.x): the Add* methods wire the camera /
     // frame / rig back pointers and validate sensor consistency.
-    void AddCameraWithTrivialRig(struct Camera camera);
+    void AddCameraWithTrivialRig(class Camera camera);
     void AddImage(class Image image);
     void AddFrameWithTrivialRig(class Frame frame,
                                 const Rigid3d& cam_from_world);

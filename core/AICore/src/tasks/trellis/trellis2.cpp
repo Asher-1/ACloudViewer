@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "common/aicore_log.hpp"
+#include "common/ggml_backend_registry.hpp"
 #include "common/ggml_backend_utils.hpp"
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
@@ -230,6 +231,8 @@ struct trellis2_ss_flow_model {
     // Compute backend (auto-selected: GPU if available, else CPU) and the
     // buffer holding the weights on that backend. Only set when has_data.
     ggml_backend_t backend = nullptr;
+    // Registry lease owning `backend` (shared handles; last release frees).
+    aicore::runtime::BackendLease backend_lease;
     ggml_backend_buffer_t weights_buf = nullptr;
     std::string backend_name;
 
@@ -246,8 +249,8 @@ namespace {
 // device: nullptr/"auto" = GPU if available else CPU; "cpu" = force CPU;
 // "cuda" / "vulkan" / "gpu" (optionally ":N") = that specific backend family
 // (AICore extension; the upstream port resolves by build, not by name).
-ggml_backend_t init_best_backend(std::string &name_out,
-                                 const char *device = nullptr) {
+aicore::runtime::BackendLease init_best_backend(std::string &name_out,
+                                                const char *device = nullptr) {
     // Register the dynamic ggml backends (libggml-cpu-<isa>.so / CUDA /
     // Vulkan) from the library directory before querying the registry; every
     // other AICore task does this in its own backend init.
@@ -268,7 +271,7 @@ ggml_backend_t init_best_backend(std::string &name_out,
         if (ggml_backend_t b =
                     ggml_common::find_gpu_backend(fam, want_idx, resolved)) {
             name_out = resolved;
-            return b;
+            return aicore::runtime::adopt_backend_lease(b, resolved, 0);
         }
         // Requested family missing: fall through to CPU.
     }
@@ -282,7 +285,14 @@ ggml_backend_t init_best_backend(std::string &name_out,
                             ? tls_n_threads
                             : (int)std::thread::hardware_concurrency();
     if (cpu && n_threads > 0) ggml_common::set_cpu_threads(cpu, n_threads);
-    return cpu;
+    // Registry lease: share a live CPU handle when present (adopt frees the
+    // fresh duplicate), else adopt this one; re-apply thread affinity to the
+    // handle that actually survives.
+    aicore::runtime::BackendLease lease =
+            aicore::runtime::adopt_backend_lease(cpu, "cpu", n_threads);
+    cpu = lease.handle();
+    if (cpu && n_threads > 0) ggml_common::set_cpu_threads(cpu, n_threads);
+    return lease;
 }
 
 // KV readers with defaults (return the default if the key is absent).
@@ -393,7 +403,8 @@ trellis2_ss_flow_model *trellis2_ss_flow_load(const std::string &path,
     if (load_tensors) {
         // Allocate all weights on the auto-selected backend, then stream the
         // payloads from the file into that buffer.
-        m->backend = init_best_backend(m->backend_name, device);
+        m->backend_lease = init_best_backend(m->backend_name, device);
+        m->backend = m->backend_lease.handle();
         m->weights_buf = ggml_backend_alloc_ctx_tensors(m->ctx, m->backend);
         if (!m->weights_buf) {
             set_error(error, "failed to allocate weights on backend " +
@@ -436,7 +447,8 @@ trellis2_ss_flow_model *trellis2_ss_flow_load(const std::string &path,
 void trellis2_ss_flow_free(trellis2_ss_flow_model *m) {
     if (!m) return;
     if (m->weights_buf) ggml_backend_buffer_free(m->weights_buf);
-    if (m->backend) ggml_backend_free(m->backend);
+    m->backend_lease.reset();
+    m->backend = nullptr;
     if (m->gguf) gguf_free(m->gguf);
     if (m->ctx) ggml_free(m->ctx);
     delete m;
@@ -1068,6 +1080,8 @@ struct trellis2_ss_dec_model {
     bool has_data = false;
 
     ggml_backend_t backend = nullptr;
+    // Registry lease owning `backend` (shared handles; last release frees).
+    aicore::runtime::BackendLease backend_lease;
     ggml_backend_buffer_t weights_buf = nullptr;
     std::string backend_name;
 
@@ -1129,7 +1143,8 @@ trellis2_ss_dec_model *trellis2_ss_dec_load(const std::string &path,
     }
 
     if (load_tensors) {
-        m->backend = init_best_backend(m->backend_name, device);
+        m->backend_lease = init_best_backend(m->backend_name, device);
+        m->backend = m->backend_lease.handle();
         m->weights_buf = ggml_backend_alloc_ctx_tensors(m->ctx, m->backend);
         if (!m->weights_buf) {
             set_error(error, "failed to allocate weights on backend " +
@@ -1171,7 +1186,8 @@ trellis2_ss_dec_model *trellis2_ss_dec_load(const std::string &path,
 void trellis2_ss_dec_free(trellis2_ss_dec_model *m) {
     if (!m) return;
     if (m->weights_buf) ggml_backend_buffer_free(m->weights_buf);
-    if (m->backend) ggml_backend_free(m->backend);
+    m->backend_lease.reset();
+    m->backend = nullptr;
     if (m->gguf) gguf_free(m->gguf);
     if (m->ctx) ggml_free(m->ctx);
     delete m;
@@ -1388,6 +1404,8 @@ struct trellis2_dino_model {
     bool has_data = false;
 
     ggml_backend_t backend = nullptr;
+    // Registry lease owning `backend` (shared handles; last release frees).
+    aicore::runtime::BackendLease backend_lease;
     ggml_backend_buffer_t weights_buf = nullptr;
     std::string backend_name;
 
@@ -1450,7 +1468,8 @@ trellis2_dino_model *trellis2_dino_load(const std::string &path,
     }
 
     if (load_tensors) {
-        m->backend = init_best_backend(m->backend_name, device);
+        m->backend_lease = init_best_backend(m->backend_name, device);
+        m->backend = m->backend_lease.handle();
         m->weights_buf = ggml_backend_alloc_ctx_tensors(m->ctx, m->backend);
         if (!m->weights_buf) {
             set_error(error, "failed to allocate weights on backend " +
@@ -1493,7 +1512,8 @@ trellis2_dino_model *trellis2_dino_load(const std::string &path,
 void trellis2_dino_free(trellis2_dino_model *m) {
     if (!m) return;
     if (m->weights_buf) ggml_backend_buffer_free(m->weights_buf);
-    if (m->backend) ggml_backend_free(m->backend);
+    m->backend_lease.reset();
+    m->backend = nullptr;
     if (m->gguf) gguf_free(m->gguf);
     if (m->ctx) ggml_free(m->ctx);
     delete m;
@@ -2326,6 +2346,8 @@ struct trellis2_slat_flow_model {
     bool has_data = false;
 
     ggml_backend_t backend = nullptr;
+    // Registry lease owning `backend` (shared handles; last release frees).
+    aicore::runtime::BackendLease backend_lease;
     ggml_backend_buffer_t weights_buf = nullptr;
     std::string backend_name;
 
@@ -2406,7 +2428,8 @@ trellis2_slat_flow_model *trellis2_slat_flow_load(const std::string &path,
     }
 
     if (load_tensors) {
-        m->backend = init_best_backend(m->backend_name, device);
+        m->backend_lease = init_best_backend(m->backend_name, device);
+        m->backend = m->backend_lease.handle();
         m->weights_buf = ggml_backend_alloc_ctx_tensors(m->ctx, m->backend);
         if (!m->weights_buf) {
             set_error(error, "failed to allocate weights on backend " +
@@ -2448,7 +2471,8 @@ trellis2_slat_flow_model *trellis2_slat_flow_load(const std::string &path,
 void trellis2_slat_flow_free(trellis2_slat_flow_model *m) {
     if (!m) return;
     if (m->weights_buf) ggml_backend_buffer_free(m->weights_buf);
-    if (m->backend) ggml_backend_free(m->backend);
+    m->backend_lease.reset();
+    m->backend = nullptr;
     if (m->gguf) gguf_free(m->gguf);
     if (m->ctx) ggml_free(m->ctx);
     delete m;
@@ -2991,6 +3015,8 @@ struct trellis2_shape_dec_model {
     bool has_data = false;
 
     ggml_backend_t backend = nullptr;
+    // Registry lease owning `backend` (shared handles; last release frees).
+    aicore::runtime::BackendLease backend_lease;
     ggml_backend_buffer_t weights_buf = nullptr;
     std::string backend_name;
 
@@ -3049,7 +3075,8 @@ static trellis2_shape_dec_model *dec_load_impl(const std::string &path,
     }
 
     if (load_tensors) {
-        m->backend = init_best_backend(m->backend_name, device);
+        m->backend_lease = init_best_backend(m->backend_name, device);
+        m->backend = m->backend_lease.handle();
         m->weights_buf = ggml_backend_alloc_ctx_tensors(m->ctx, m->backend);
         if (!m->weights_buf) {
             set_error(error, "failed to allocate weights on backend " +
@@ -3109,7 +3136,8 @@ trellis2_shape_dec_model *trellis2_tex_dec_load(const std::string &path,
 void trellis2_shape_dec_free(trellis2_shape_dec_model *m) {
     if (!m) return;
     if (m->weights_buf) ggml_backend_buffer_free(m->weights_buf);
-    if (m->backend) ggml_backend_free(m->backend);
+    m->backend_lease.reset();
+    m->backend = nullptr;
     if (m->gguf) gguf_free(m->gguf);
     if (m->ctx) ggml_free(m->ctx);
     delete m;
@@ -3720,6 +3748,8 @@ struct trellis2_shape_enc_model {
     bool has_data = false;
 
     ggml_backend_t backend = nullptr;
+    // Registry lease owning `backend` (shared handles; last release frees).
+    aicore::runtime::BackendLease backend_lease;
     ggml_backend_buffer_t weights_buf = nullptr;
     std::string backend_name;
 
@@ -3773,7 +3803,8 @@ trellis2_shape_enc_model *trellis2_shape_enc_load(const std::string &path,
     }
 
     if (load_tensors) {
-        m->backend = init_best_backend(m->backend_name, device);
+        m->backend_lease = init_best_backend(m->backend_name, device);
+        m->backend = m->backend_lease.handle();
         m->weights_buf = ggml_backend_alloc_ctx_tensors(m->ctx, m->backend);
         if (!m->weights_buf) {
             set_error(error, "failed to allocate weights on backend " +
@@ -3814,7 +3845,8 @@ trellis2_shape_enc_model *trellis2_shape_enc_load(const std::string &path,
 void trellis2_shape_enc_free(trellis2_shape_enc_model *m) {
     if (!m) return;
     if (m->weights_buf) ggml_backend_buffer_free(m->weights_buf);
-    if (m->backend) ggml_backend_free(m->backend);
+    m->backend_lease.reset();
+    m->backend = nullptr;
     if (m->gguf) gguf_free(m->gguf);
     if (m->ctx) ggml_free(m->ctx);
     delete m;

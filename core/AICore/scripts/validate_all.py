@@ -1133,6 +1133,13 @@ def add_runtime_library_path(env: dict[str, str], build: Path) -> None:
     qt_library_dir = env.get("AICORE_QT_LIBRARY_DIR")
     if qt_library_dir:
         parts.append(qt_library_dir)
+    # Same rationale as the ctest AICORE_TEST_ENV_EXTRA plumbing: a dlopen'ed
+    # libggml-cuda.so needs the toolkit-matching cudart directory FIRST on the
+    # loader path, otherwise the CUDA backend silently disappears (NDEBUG
+    # swallows the loader failure) and cuda-requested probes fail to load.
+    cuda_library_dir = env.get("AICORE_CUDA_LIBRARY_DIR")
+    if cuda_library_dir:
+        parts.append(cuda_library_dir)
     if env.get(variable):
         parts.append(env[variable])
     env[variable] = os.pathsep.join(parts)
@@ -1174,7 +1181,17 @@ def median_metrics(attempts: list[Attempt]) -> dict[str, float]:
             for key in sorted(keys)}
 
 
-def stable_fingerprints(attempts: list[Attempt]) -> tuple[dict[str, str], list[str]]:
+def stable_fingerprints(attempts: list[Attempt],
+                        spec: "RunSpec | None" = None
+                        ) -> tuple[dict[str, str], list[str]]:
+    # "stability_only" / "none": GPU generators whose output passes through
+    # a parallel extractor (e.g. trellis mesh hashmap insertion) have no
+    # run-stable vertex ORDER, so byte-level hashes are not a valid
+    # cross-attempt gate — probe return codes plus the probe's own finite/
+    # degeneracy checks carry the stability signal instead.
+    if spec is not None and spec.fingerprint_policy in ("stability_only",
+                                                        "none"):
+        return {}, []
     keys = set().union(*(attempt.fingerprints for attempt in attempts))
     stable: dict[str, str] = {}
     failures: list[str] = []
@@ -1212,8 +1229,10 @@ def summarize_attempts(spec: RunSpec, attempts: list[Attempt],
                        allow_incomplete: bool) -> tuple[dict[str, Any], list[str]]:
     failures: list[str] = []
     codes = [attempt.returncode for attempt in attempts]
-    fingerprints, stability_failures = stable_fingerprints(attempts)
-    if (spec.require_fingerprint and all(code == 0 for code in codes) and
+    fingerprints, stability_failures = stable_fingerprints(attempts, spec)
+    if (spec.fingerprint_policy not in ("stability_only", "none") and
+            spec.require_fingerprint and
+            all(code == 0 for code in codes) and
             not fingerprints):
         stability_failures.append("probe emitted no output fingerprint")
     status = "pass"

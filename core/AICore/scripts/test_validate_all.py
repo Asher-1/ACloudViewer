@@ -65,6 +65,40 @@ class ValidateAllTests(unittest.TestCase):
         self.assertFalse(stable)
         self.assertEqual(len(failures), 1)
 
+    def test_stability_only_policy_skips_cross_attempt_hash_gate(self):
+        # GPU generators with parallel extractors (e.g. trellis mesh hashmap
+        # insertion) have no run-stable vertex order: byte hashes must not
+        # gate stability, the probe's own finite/degeneracy checks do.
+        Attempt = VALIDATE_ALL.Attempt
+        spec = VALIDATE_ALL.RunSpec(
+            scenario_id="s", task="trellis", model_id="m",
+            model_paths=(), command=(), env={},
+            accuracy_gate="fixed-seed finite mesh geometry",
+            metric_parser="trellis", fingerprint_policy="stability_only",
+            require_fingerprint=True, report_path=VALIDATE_ALL.Path("/tmp/r"),
+        )
+        stable, failures = VALIDATE_ALL.stable_fingerprints([
+            Attempt(0, 1.0, fingerprints={"json0/geometry_sha12": "aaa"}),
+            Attempt(0, 1.0, fingerprints={"json0/geometry_sha12": "bbb"}),
+        ], spec)
+        self.assertEqual((stable, failures), ({}, []))
+
+    def test_exact_policy_still_fails_on_changing_fingerprint(self):
+        Attempt = VALIDATE_ALL.Attempt
+        spec = VALIDATE_ALL.RunSpec(
+            scenario_id="s", task="depth", model_id="m",
+            model_paths=(), command=(), env={},
+            accuracy_gate="finite depth", metric_parser="generic",
+            fingerprint_policy="exact", require_fingerprint=True,
+            report_path=VALIDATE_ALL.Path("/tmp/r"),
+        )
+        stable, failures = VALIDATE_ALL.stable_fingerprints([
+            Attempt(0, 1.0, fingerprints={"output_hash": "aa"}),
+            Attempt(0, 1.0, fingerprints={"output_hash": "bb"}),
+        ], spec)
+        self.assertFalse(stable)
+        self.assertEqual(len(failures), 1)
+
     def test_compare_uses_asset_content_not_absolute_path(self):
         asset_a = {"path": "/baseline/model.gguf", "bytes": 10,
                    "sha256": "feed"}

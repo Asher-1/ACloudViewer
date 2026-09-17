@@ -39,10 +39,19 @@
 #include "aicore/facedetect_capi.h"
 #include "aicore/gaussian_capi.h"
 #include "aicore/gkd_capi.h"
+#include "aicore/image_view.h"
+// NOTE: inference_log.h is intentionally NOT umbrella-included: it depends
+// on <CVLog.h> (libs-layer logging), which lean capi test targets and other
+// non-CVLog consumers do not have on their include path. Include it
+// directly where CVLog is available (plugins, app-side code).
 #include "aicore/lightglue_capi.h"
 #include "aicore/lingbot_capi.h"
 #include "aicore/loma_capi.h"
+#include "aicore/pipeline_timing.h"
 #include "aicore/rfdetr_capi.h"
 #include "aicore/rmbg_capi.h"
+#include "aicore/runtime_capi.h"
+#include "aicore/runtime_raii.h"
 #include "aicore/sam3_capi.h"
 #include "aicore/trellis_capi.h"
+#include "aicore/yolo_capi.h"

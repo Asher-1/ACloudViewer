@@ -19,6 +19,7 @@
 #include "aicore/lightglue_capi.h"
 #include "aicore/rfdetr_capi.h"
 #include "aicore/runtime_capi.h"
+#include "aicore/runtime_raii.h"
 #include "aicore/yolo_capi.h"
 
 namespace {

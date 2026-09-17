@@ -7,6 +7,7 @@
 
 #include "GKDWorker.h"
 
+#include <QByteArray>
 #include <QDateTime>
 #include <QFileInfo>
 #include <QImage>
@@ -18,6 +19,7 @@
 #include "aicore/backend_capi.h"
 #include "aicore/gkd_capi.h"
 #include "aicore/runtime_capi.h"
+#include "aicore/runtime_raii.h"
 #include "aicore/yolo_capi.h"
 #endif
 
@@ -25,23 +27,16 @@ namespace {
 
 #ifdef AICore_ENABLED
 
-/** Serializes inference per device for the duration of one task. Same
- *  pattern as the other AICore plugin workers (qRFDetr/qYOLO/qSAM3 …):
- *  without this lock, two dialogs inferring on the same GPU interleave
- *  ggml work on one device queue. The stub this replaces never locked
- *  anything. */
-class DeviceTaskGuard {
-public:
-    explicit DeviceTaskGuard(const QString& device)
-        : m_locked(aicore_device_task_lock(device.toUtf8().constData()) == 0) {}
-    ~DeviceTaskGuard() {
-        if (m_locked) aicore_device_task_unlock();
-    }
-    bool isLocked() const { return m_locked; }
-
-private:
-    bool m_locked = false;
-};
+/** Serializes inference per device for the duration of one task. The RAII
+ *  guard is shared now (aicore/runtime_raii.h, same pattern as the other
+ *  AICore plugin workers qRFDetr/qYOLO/qSAM3 …): without the lock, two
+ *  dialogs inferring on the same GPU interleave ggml work on one device
+ *  queue. */
+inline aicore::runtime::DeviceTaskLock makeDeviceTaskLock(
+        const QString& device) {
+    const QByteArray bytes = device.toUtf8();
+    return aicore::runtime::DeviceTaskLock(bytes.constData());
+}
 
 /** Converts one per-ROI engine result into a plugin keypoint set.
  *  Keypoints below minScore are dropped; the official-demo skeleton
@@ -298,9 +293,9 @@ bool GKDWorker::detectSingleObject(QVector<GKDKeypointSet>* sets,
     emit taskStage(tr("Running GKD inference..."), 30);
     const auto skeleton = GKDHelpers::parseSkeleton(m_settings.skeleton);
     sets->clear();
-    // Serialize per device (see DeviceTaskGuard above); constructed after
+    // Serialize per device (see makeDeviceTaskLock above); constructed after
     // the CPU fallback resolved the final device, per attempt.
-    DeviceTaskGuard deviceGuard(m_settings.device);
+    auto deviceGuard = makeDeviceTaskLock(m_settings.device);
     // Multi-ROI batch (official --bbox_on_input_im semantics): 2+ xyxy
     // pairs in the ROI row go through one batched forward; otherwise the
     // legacy single-box / whole-image path runs.
@@ -595,7 +590,7 @@ bool GKDWorker::detectMultiObject(QVector<GKDKeypointSet>* sets,
     }
 
     emit taskStage(tr("GKD on %1 object(s)...").arg(detCount), 50);
-    DeviceTaskGuard deviceGuard(m_settings.device);
+    auto deviceGuard = makeDeviceTaskLock(m_settings.device);
     aicore_cancel_scope_begin(m_cancelToken);
     const int rc = aicore_gkd_detect_image_multi(ctx, &view, &req, boxes.data(),
                                                  detCount);

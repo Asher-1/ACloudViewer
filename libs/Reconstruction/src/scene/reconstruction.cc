@@ -116,7 +116,7 @@ void Reconstruction::Load(const DatabaseCache& database_cache) {
     cameras_.reserve(database_cache.NumCameras());
     for (const auto& [camera_id, camera] : database_cache.Cameras()) {
         if (ExistsCamera(camera_id)) {
-            struct Camera& existing_camera = Camera(camera_id);
+            class Camera& existing_camera = Camera(camera_id);
             THROW_CHECK_EQ(existing_camera.ModelId(), camera.ModelId());
             THROW_CHECK_EQ(existing_camera.Width(), camera.Width());
             THROW_CHECK_EQ(existing_camera.Height(), camera.Height());
@@ -1522,7 +1522,7 @@ std::unordered_set<frame_t> Reconstruction::RegFrameIds() const {
   return frame_ids;
 }
 
-void Reconstruction::AddCameraWithTrivialRig(struct Camera camera) {
+void Reconstruction::AddCameraWithTrivialRig(class Camera camera) {
   THROW_CHECK(!ExistsRig(camera.CameraId()))
       << "AddCameraWithTrivialRig tried to add a rig with the same id as the "
          "camera, but failed because Rig "

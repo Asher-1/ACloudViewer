@@ -71,7 +71,7 @@ public:
 
     // Add objects.
     void AddRig(class Rig rig);
-    void AddCamera(struct Camera camera);
+    void AddCamera(class Camera camera);
     void AddFrame(class Frame frame);
     void AddImage(class Image image);
     void AddPosePrior(struct PosePrior pose_prior);
@@ -79,8 +79,8 @@ public:
     // Get specific objects.
     inline class Rig& Rig(rig_t rig_id);
     inline const class Rig& Rig(rig_t rig_id) const;
-    inline struct Camera& Camera(camera_t camera_id);
-    inline const struct Camera& Camera(camera_t camera_id) const;
+    inline class Camera& Camera(camera_t camera_id);
+    inline const class Camera& Camera(camera_t camera_id) const;
     inline class Frame& Frame(frame_t frame_id);
     inline const class Frame& Frame(frame_t frame_id) const;
     inline class Image& Image(image_t image_id);
@@ -88,7 +88,7 @@ public:
 
     // Get all objects.
     inline const NodeHashMap<rig_t, class Rig>& Rigs() const;
-    inline const NodeHashMap<camera_t, struct Camera>& Cameras() const;
+    inline const NodeHashMap<camera_t, class Camera>& Cameras() const;
     inline const NodeHashMap<frame_t, class Frame>& Frames() const;
     inline const NodeHashMap<image_t, class Image>& Images() const;
     inline const std::vector<struct PosePrior>& PosePriors() const;
@@ -111,7 +111,7 @@ private:
     void ConvertPosePriorsToENU();
 
     NodeHashMap<rig_t, class Rig> rigs_;
-    NodeHashMap<camera_t, struct Camera> cameras_;
+    NodeHashMap<camera_t, class Camera> cameras_;
     NodeHashMap<frame_t, class Frame> frames_;
     NodeHashMap<image_t, class Image> images_;
     std::vector<struct PosePrior> pose_priors_;
@@ -138,11 +138,11 @@ const class Rig& DatabaseCache::Rig(const rig_t rig_id) const {
     return rigs_.at(rig_id);
 }
 
-struct Camera& DatabaseCache::Camera(const camera_t camera_id) {
+class Camera& DatabaseCache::Camera(const camera_t camera_id) {
     return cameras_.at(camera_id);
 }
 
-const struct Camera& DatabaseCache::Camera(const camera_t camera_id) const {
+const class Camera& DatabaseCache::Camera(const camera_t camera_id) const {
     return cameras_.at(camera_id);
 }
 
@@ -166,7 +166,7 @@ const NodeHashMap<rig_t, class Rig>& DatabaseCache::Rigs() const {
     return rigs_;
 }
 
-const NodeHashMap<camera_t, struct Camera>& DatabaseCache::Cameras() const {
+const NodeHashMap<camera_t, class Camera>& DatabaseCache::Cameras() const {
     return cameras_;
 }
 

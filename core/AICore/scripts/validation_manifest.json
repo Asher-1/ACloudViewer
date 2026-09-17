@@ -329,7 +329,7 @@
       ],
       "executable": "python",
       "args": ["{repo}/core/AICore/src/tasks/trellis/tools/trellis_backend_ab.py", "--models", "{assets}/trellis_models", "--image", "{image}", "--device", "{backend}", "--pipeline", "coarse", "--quant", "f16", "--steps", "{trellis_steps}", "--seed", "42", "--lib", "{build}/bin/libAICore.so"],
-      "env": {}, "accuracy_gate": "fixed-seed finite mesh geometry hash", "fingerprint_policy": "exact", "metric_parser": "trellis",
+      "env": {}, "accuracy_gate": "fixed-seed finite mesh geometry hash", "fingerprint_policy": "stability_only", "metric_parser": "trellis",
       "vram_estimate_mib": 8192
     },
     {
@@ -337,7 +337,7 @@
       "covered_globs": ["trellis_models/dino_q8.gguf", "trellis_models/ss_flow_q8.gguf", "trellis_models/ss_dec_q8.gguf"],
       "executable": "python",
       "args": ["{repo}/core/AICore/src/tasks/trellis/tools/trellis_backend_ab.py", "--models", "{assets}/trellis_models", "--image", "{image}", "--device", "{backend}", "--pipeline", "coarse", "--quant", "q8", "--steps", "{trellis_steps}", "--seed", "42", "--lib", "{build}/bin/libAICore.so"],
-      "env": {}, "accuracy_gate": "fixed-seed finite mesh geometry hash", "fingerprint_policy": "exact", "metric_parser": "trellis",
+      "env": {}, "accuracy_gate": "fixed-seed finite mesh geometry hash", "fingerprint_policy": "stability_only", "metric_parser": "trellis",
       "vram_estimate_mib": 6144
     },
     {
@@ -345,7 +345,7 @@
       "covered_globs": ["trellis_models/dino_f32.gguf", "trellis_models/ss_flow_f32.gguf", "trellis_models/ss_dec_f32.gguf"],
       "executable": "python",
       "args": ["{repo}/core/AICore/src/tasks/trellis/tools/trellis_backend_ab.py", "--models", "{assets}/trellis_models", "--image", "{image}", "--device", "{backend}", "--pipeline", "coarse", "--quant", "f32", "--steps", "{trellis_steps}", "--seed", "42", "--lib", "{build}/bin/libAICore.so"],
-      "env": {}, "accuracy_gate": "fixed-seed finite f32 coarse mesh geometry hash", "fingerprint_policy": "exact", "metric_parser": "trellis",
+      "env": {}, "accuracy_gate": "fixed-seed finite f32 coarse mesh geometry hash", "fingerprint_policy": "stability_only", "metric_parser": "trellis",
       "vram_estimate_mib": 12288
     },
     {
@@ -353,7 +353,7 @@
       "covered_globs": ["trellis_models/dino_f16.gguf", "trellis_models/ss_flow_f16.gguf", "trellis_models/ss_dec_f16.gguf", "trellis_models/slat_flow_f16.gguf", "trellis_models/shape_dec_f16.gguf", "trellis_models/shape_enc_f16.gguf", "trellis_models/tex_dec_f16.gguf", "trellis_models/tex_slat_flow_512_f16.gguf"],
       "executable": "python",
       "args": ["{repo}/core/AICore/src/tasks/trellis/tools/trellis_backend_ab.py", "--models", "{assets}/trellis_models", "--image", "{image}", "--device", "{backend}", "--pipeline", "512", "--quant", "f16", "--steps", "{trellis_steps}", "--seed", "42", "--lib", "{build}/bin/libAICore.so"],
-      "env": {}, "accuracy_gate": "fixed-seed finite 512 mesh geometry hash", "fingerprint_policy": "exact", "metric_parser": "trellis",
+      "env": {}, "accuracy_gate": "fixed-seed finite 512 mesh geometry hash", "fingerprint_policy": "stability_only", "metric_parser": "trellis",
       "vram_estimate_mib": 10240
     },
     {
@@ -361,7 +361,7 @@
       "covered_globs": ["trellis_models/dino_q8.gguf", "trellis_models/ss_flow_q8.gguf", "trellis_models/ss_dec_q8.gguf", "trellis_models/slat_flow_q8.gguf", "trellis_models/shape_dec_f16.gguf", "trellis_models/shape_enc_f16.gguf", "trellis_models/tex_dec_f16.gguf", "trellis_models/tex_slat_flow_512_q8.gguf"],
       "executable": "python",
       "args": ["{repo}/core/AICore/src/tasks/trellis/tools/trellis_backend_ab.py", "--models", "{assets}/trellis_models", "--image", "{image}", "--device", "{backend}", "--pipeline", "512", "--quant", "q8", "--steps", "{trellis_steps}", "--seed", "42", "--lib", "{build}/bin/libAICore.so"],
-      "env": {}, "accuracy_gate": "fixed-seed finite 512 mesh geometry hash", "fingerprint_policy": "exact", "metric_parser": "trellis",
+      "env": {}, "accuracy_gate": "fixed-seed finite 512 mesh geometry hash", "fingerprint_policy": "stability_only", "metric_parser": "trellis",
       "vram_estimate_mib": 7168
     },
     {
@@ -369,7 +369,7 @@
       "covered_globs": ["trellis_models/dino_f32.gguf", "trellis_models/ss_flow_f32.gguf", "trellis_models/ss_dec_f32.gguf", "trellis_models/slat_flow_f32.gguf", "trellis_models/shape_dec_f32.gguf", "trellis_models/shape_enc_f16.gguf", "trellis_models/tex_dec_f16.gguf", "trellis_models/tex_slat_flow_512_f16.gguf"],
       "executable": "python",
       "args": ["{repo}/core/AICore/src/tasks/trellis/tools/trellis_backend_ab.py", "--models", "{assets}/trellis_models", "--image", "{image}", "--device", "{backend}", "--pipeline", "512", "--quant", "f32", "--steps", "{trellis_steps}", "--seed", "42", "--lib", "{build}/bin/libAICore.so"],
-      "env": {}, "accuracy_gate": "fixed-seed finite f32 512 mesh geometry hash", "fingerprint_policy": "exact", "metric_parser": "trellis",
+      "env": {}, "accuracy_gate": "fixed-seed finite f32 512 mesh geometry hash", "fingerprint_policy": "stability_only", "metric_parser": "trellis",
       "vram_estimate_mib": 14336
     },
     {
@@ -377,7 +377,7 @@
       "covered_globs": ["trellis_models/dino_f16.gguf", "trellis_models/ss_flow_f16.gguf", "trellis_models/ss_dec_f16.gguf", "trellis_models/slat_flow_f16.gguf", "trellis_models/slat_flow_1024_f16.gguf", "trellis_models/shape_dec_f16.gguf", "trellis_models/shape_enc_f16.gguf", "trellis_models/tex_dec_f16.gguf", "trellis_models/tex_slat_flow_512_f16.gguf", "trellis_models/tex_slat_flow_1024_f16.gguf"],
       "executable": "python",
       "args": ["{repo}/core/AICore/src/tasks/trellis/tools/trellis_backend_ab.py", "--models", "{assets}/trellis_models", "--image", "{image}", "--device", "{backend}", "--pipeline", "1024", "--quant", "f16", "--steps", "{trellis_steps}", "--seed", "42", "--lib", "{build}/bin/libAICore.so"],
-      "env": {}, "accuracy_gate": "fixed-seed finite 1024 mesh geometry hash", "fingerprint_policy": "exact", "metric_parser": "trellis",
+      "env": {}, "accuracy_gate": "fixed-seed finite 1024 mesh geometry hash", "fingerprint_policy": "stability_only", "metric_parser": "trellis",
       "vram_estimate_mib": 12288
     },
     {
@@ -385,7 +385,7 @@
       "covered_globs": ["trellis_models/dino_q8.gguf", "trellis_models/ss_flow_q8.gguf", "trellis_models/ss_dec_q8.gguf", "trellis_models/slat_flow_q8.gguf", "trellis_models/slat_flow_1024_q8.gguf", "trellis_models/shape_dec_f16.gguf", "trellis_models/shape_enc_f16.gguf", "trellis_models/tex_dec_f16.gguf", "trellis_models/tex_slat_flow_512_q8.gguf", "trellis_models/tex_slat_flow_1024_q8.gguf"],
       "executable": "python",
       "args": ["{repo}/core/AICore/src/tasks/trellis/tools/trellis_backend_ab.py", "--models", "{assets}/trellis_models", "--image", "{image}", "--device", "{backend}", "--pipeline", "1024", "--quant", "q8", "--steps", "{trellis_steps}", "--seed", "42", "--lib", "{build}/bin/libAICore.so"],
-      "env": {}, "accuracy_gate": "fixed-seed finite 1024 mesh geometry hash", "fingerprint_policy": "exact", "metric_parser": "trellis",
+      "env": {}, "accuracy_gate": "fixed-seed finite 1024 mesh geometry hash", "fingerprint_policy": "stability_only", "metric_parser": "trellis",
       "vram_estimate_mib": 8192
     },
     {
@@ -393,7 +393,7 @@
       "covered_globs": ["trellis_models/dino_f32.gguf", "trellis_models/ss_flow_f32.gguf", "trellis_models/ss_dec_f32.gguf", "trellis_models/slat_flow_f32.gguf", "trellis_models/slat_flow_1024_f32.gguf", "trellis_models/shape_dec_f32.gguf", "trellis_models/shape_enc_f16.gguf", "trellis_models/tex_dec_f16.gguf", "trellis_models/tex_slat_flow_512_f16.gguf", "trellis_models/tex_slat_flow_1024_f16.gguf"],
       "executable": "python",
       "args": ["{repo}/core/AICore/src/tasks/trellis/tools/trellis_backend_ab.py", "--models", "{assets}/trellis_models", "--image", "{image}", "--device", "{backend}", "--pipeline", "1024", "--quant", "f32", "--steps", "{trellis_steps}", "--seed", "42", "--lib", "{build}/bin/libAICore.so"],
-      "env": {}, "accuracy_gate": "fixed-seed finite f32 1024 mesh geometry hash", "fingerprint_policy": "exact", "metric_parser": "trellis",
+      "env": {}, "accuracy_gate": "fixed-seed finite f32 1024 mesh geometry hash", "fingerprint_policy": "stability_only", "metric_parser": "trellis",
       "vram_estimate_mib": 18432
     },
     {

@@ -14,23 +14,13 @@
 #ifdef AICore_ENABLED
 #include "aicore/rmbg_capi.h"
 #include "aicore/runtime_capi.h"
+#include "ecvAICoreRuntimeHelpers.h"
 #endif
 
 namespace {
 
 #ifdef AICore_ENABLED
-class DeviceTaskGuard {
-public:
-    explicit DeviceTaskGuard(const QString& device)
-        : m_locked(aicore_device_task_lock(device.toUtf8().constData()) == 0) {}
-    ~DeviceTaskGuard() {
-        if (m_locked) aicore_device_task_unlock();
-    }
-    bool isLocked() const { return m_locked; }
-
-private:
-    bool m_locked = false;
-};
+// Device-task serialization moved to ecvAICoreRuntimeHelpers.h
 #endif
 
 }  // namespace
@@ -128,7 +118,7 @@ void RMBGLiveInferWorker::runJobImpl(RMBGLiveInferWorker::Job job) {
     emit inferComplete(result);
     return;
 #else
-    DeviceTaskGuard taskGuard(job.device);
+    auto taskGuard = ecvAICoreRuntime::makeDeviceTaskLock(job.device);
     if (!taskGuard.isLocked()) {
         result.error = tr("Failed to acquire the inference device.");
         emit inferComplete(result);

@@ -77,6 +77,11 @@ borrowed pixels + width/height + row stride + channel format
 | `runtime_capi.h` | Cancellation, device queues, process cleanup |
 | `image_view.h` | Borrowed decoded-image input |
 | `pipeline_timing.h` | Common timing ABI |
+| `export.h` | `AICORE_CAPI` / `AICORE_CXX_API` export macros |
+| `runtime_raii.h` | Header-only C++ RAII helpers (`DeviceTaskLock`, `CancelScope`); Qt-free |
+| `depth_image.h` | Qt convenience layer for depth (the single documented Qt exception) |
+| `inference_log.h` | CVLog logging helpers; intentionally not umbrella-included (depends on `CVLog.h`) |
+| `asset_digests.h` | Generated SHA-256 digest table for published model assets; Qt-free |
 | `aliked_capi.h` | ALIKED feature extraction |
 | `deeplsd_capi.h` | DeepLSD line extraction |
 | `depth_capi.h` | Depth, pose, reconstruction, and export |
@@ -85,6 +90,7 @@ borrowed pixels + width/height + row stride + channel format
 | `gkd_capi.h` | GKDT general keypoint detection (text / visual / multimodal prompts) |
 | `lightglue_capi.h` | Sparse feature matching |
 | `lingbot_capi.h` | LingBot-Map (GCT) streaming 3D reconstruction: depth, pose, native sky masking |
+| `loma_capi.h` | LoMa feature detection, description, and matching (COLMAP-aligned) |
 | `rfdetr_capi.h` | RF-DETR detection and segmentation |
 | `rmbg_capi.h` | RMBG alpha matte and RGBA composition |
 | `sam3_capi.h` | SAM3 segmentation and tracking |
@@ -93,7 +99,8 @@ borrowed pixels + width/height + row stride + channel format
 
 The individual task header is authoritative. The umbrella `aicore.h` is a
 convenience include and may intentionally lag optional task headers; new code
-should include only the headers it uses.
+should include only the headers it uses. `inference_log.h` is deliberately
+excluded from the umbrella because it depends on `CVLog.h`.
 
 ## Source Layout
 

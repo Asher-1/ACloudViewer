@@ -109,7 +109,7 @@ void ReadCamerasBinary(Reconstruction& reconstruction, std::istream& stream) {
 
   const size_t num_cameras = ReadBinaryLittleEndian<uint64_t>(&stream);
   for (size_t i = 0; i < num_cameras; ++i) {
-    struct Camera camera;
+    class Camera camera;
     camera.SetCameraId( ReadBinaryLittleEndian<camera_t>(&stream));
     camera.SetModelId( static_cast<CameraModelId>(ReadBinaryLittleEndian<int>(&stream)));
     camera.SetWidth( ReadBinaryLittleEndian<uint64_t>(&stream));

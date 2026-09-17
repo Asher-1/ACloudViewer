@@ -77,14 +77,55 @@ endfunction()
 # stack). Same rationale as the AICORE_QT_LIBRARY_DIR plumbing on the
 # aicore-validate-all target. Empty on Windows (no LD_LIBRARY_PATH).
 set(AICORE_TEST_ENV_EXTRA "")
+# CUDA runtime directory: a dlopen'ed libggml-cuda.so needs the toolkit-
+# matching libcudart FIRST on the loader path — ldconfig may expose older
+# CUDA 11.x runtimes that lack versioned symbols the backend needs (e.g.
+# cudaLaunchKernelExC), and ggml_backend_load_all_from_path is silent under
+# NDEBUG, so the CUDA backend would disappear without any error.
+# Version-agnostic by design: locate the toolkit lib DIRECTORY, never a
+# specific soname, so CUDA 12/13/14+ toolkits all work without edits here.
+if(NOT WIN32)
+    # Prefer the toolkit the build itself linked against: find_package(
+    # CUDAToolkit) in the parent project sets CUDAToolkit_LIBRARY_DIR.
+    if(CUDAToolkit_LIBRARY_DIR AND EXISTS "${CUDAToolkit_LIBRARY_DIR}")
+        set(_aicore_cuda_lib_dir "${CUDAToolkit_LIBRARY_DIR}")
+    else()
+        set(_aicore_cuda_hint "$ENV{CUDA_HOME}")
+        if(NOT _aicore_cuda_hint)
+            set(_aicore_cuda_hint "$ENV{CUDA_PATH}")
+        endif()
+        if(NOT _aicore_cuda_hint)
+            set(_aicore_cuda_hint "/usr/local/cuda")
+        endif()
+        foreach(_aicore_cuda_dir
+                "${_aicore_cuda_hint}/lib64" "${_aicore_cuda_hint}/lib"
+                "${_aicore_cuda_hint}")
+            # Any libcudart soname proves this is the toolkit runtime dir.
+            file(GLOB _aicore_cudart_libs
+                "${_aicore_cuda_dir}/libcudart.so*")
+            if(_aicore_cudart_libs)
+                set(_aicore_cuda_lib_dir "${_aicore_cuda_dir}")
+                break()
+            endif()
+        endforeach()
+        unset(_aicore_cuda_hint)
+    endif()
+endif()
 if(NOT MSVC)
+    set(_aicore_ld_library_path "")
+    if(DEFINED _aicore_cuda_lib_dir)
+        set(_aicore_ld_library_path "${_aicore_cuda_lib_dir}:")
+    endif()
     foreach(_aicore_qt_core_target Qt6::Core Qt5::Core)
         if(TARGET ${_aicore_qt_core_target})
+            string(APPEND _aicore_ld_library_path
+                "$<TARGET_FILE_DIR:${_aicore_qt_core_target}>")
             set(AICORE_TEST_ENV_EXTRA
-                "LD_LIBRARY_PATH=$<TARGET_FILE_DIR:${_aicore_qt_core_target}>")
+                "LD_LIBRARY_PATH=${_aicore_ld_library_path}")
             break()
         endif()
     endforeach()
+    unset(_aicore_ld_library_path)
 endif()
 
 function(aicore_add_common_test name)
@@ -571,7 +612,13 @@ add_library(AICore_sam3_diagnostics STATIC
     # sam3.cpp discovers backends via ggml_common::load_backends_once() (same
     # mechanism as every other task), whose implementation calls into the
     # env-bridge TU — it must be part of this archive's closure.
-    ${AICORE_COMMON_SRC_DIR}/ggml_env_bridge.cpp)
+    ${AICORE_COMMON_SRC_DIR}/ggml_env_bridge.cpp
+    # sam3.cpp holds its backend through aicore::runtime::BackendLease
+    # (acquire_backend_lease). libAICore hides all C++ symbols, so the
+    # registry TU defining those symbols must be part of this archive's
+    # closure too; its ggml_common helpers are header-only and the ggml C
+    # API resolves through libAICore's DT_NEEDED ggml library.
+    ${AICORE_COMMON_SRC_DIR}/ggml_backend_registry.cpp)
 target_include_directories(AICore_sam3_diagnostics PRIVATE
     ${AICORE_TEST_INC} ${AICORE_TEST_INC}/.. ${AICORE_INC_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../src ${AICORE_COMMON_SRC_DIR}
@@ -1108,6 +1155,13 @@ if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
             break()
         endif()
     endforeach()
+    # Same rationale as AICORE_TEST_ENV_EXTRA: the runner spawns probe
+    # processes directly, and a dlopen'ed libggml-cuda.so needs the toolkit
+    # runtime directory or CUDA silently disappears in those probes too.
+    if(DEFINED _aicore_cuda_lib_dir)
+        list(APPEND _aicore_validation_runtime_env
+             "AICORE_CUDA_LIBRARY_DIR=${_aicore_cuda_lib_dir}")
+    endif()
     add_custom_target(aicore-validate-all
         COMMAND ${CMAKE_COMMAND} -E env ${_aicore_validation_runtime_env}
                 ${Python3_EXECUTABLE}

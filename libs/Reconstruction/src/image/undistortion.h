@@ -148,8 +148,8 @@ public:
     StereoImageRectifier(
             const UndistortCameraOptions& options,
             Reconstruction* reconstruction,
-            const std::string& image_path,
-            const std::string& output_path,
+            const std::filesystem::path& image_path,
+            const std::filesystem::path& output_path,
             const std::vector<std::pair<image_t, image_t>>& stereo_pairs);
 
 private:

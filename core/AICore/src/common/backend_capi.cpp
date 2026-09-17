@@ -244,6 +244,37 @@ bool FillModelDeviceInfo(enum aicore_model_kind model,
             minimum = 512ull * 1024 * 1024;
             recommended = 1536ull * 1024 * 1024;
             break;
+        case AICORE_MODEL_SAM3:
+            // SAM3 port: ViT + neck/DETR/fusion/text encoders; published q8
+            // weights alone are large and the multi-encoder graph adds scratch.
+            minimum = 1024ull * 1024 * 1024;
+            recommended = 4ull * 1024 * 1024 * 1024;
+            break;
+        case AICORE_MODEL_TRELLIS:
+            // Multi-stage image-to-3D (structure + slat + decoders).
+            minimum = 2048ull * 1024 * 1024;
+            recommended = 6ull * 1024 * 1024 * 1024;
+            break;
+        case AICORE_MODEL_YOLO:
+            // Ultralytics port: small weights; letterbox + NMS scratch.
+            minimum = 256ull * 1024 * 1024;
+            recommended = 1024ull * 1024 * 1024;
+            break;
+        case AICORE_MODEL_GKD:
+            minimum = 256ull * 1024 * 1024;
+            recommended = 768ull * 1024 * 1024;
+            break;
+        case AICORE_MODEL_LINGBOT:
+            // Streaming RGB-D reconstruction runs several models in one
+            // pipeline (map + sky segmentation).
+            minimum = 512ull * 1024 * 1024;
+            recommended = 2048ull * 1024 * 1024;
+            break;
+        case AICORE_MODEL_LOMA:
+            // Small detector/descriptor/matcher feature nets.
+            minimum = 128ull * 1024 * 1024;
+            recommended = 512ull * 1024 * 1024;
+            break;
         default:
             return false;
     }

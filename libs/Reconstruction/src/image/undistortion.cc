@@ -659,11 +659,12 @@ bool PureImageUndistorter::Undistort(const size_t image_idx) const {
 
 StereoImageRectifier::StereoImageRectifier(
     const UndistortCameraOptions& options, Reconstruction* reconstruction,
-    const std::string& image_path, const std::string& output_path,
+    const std::filesystem::path& image_path,
+    const std::filesystem::path& output_path,
     const std::vector<std::pair<image_t, image_t>>& stereo_pairs)
     : options_(options),
-      image_path_(image_path),
-      output_path_(output_path),
+      image_path_(image_path.string()),
+      output_path_(output_path.string()),
       stereo_pairs_(stereo_pairs),
       reconstruction_(CHECK_NOTNULL(reconstruction)) {}
 

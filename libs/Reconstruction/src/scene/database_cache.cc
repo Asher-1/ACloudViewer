@@ -65,7 +65,7 @@ void DatabaseCache::Load(const Database& database, const Options& options) {
     std::cout << "Loading cameras..." << std::flush;
 
     {
-        std::vector<struct Camera> cameras = database.ReadAllCameras();
+        std::vector<class Camera> cameras = database.ReadAllCameras();
         cameras_.reserve(cameras.size());
         for (auto& camera : cameras) {
             if (!has_rigs) {
@@ -431,7 +431,7 @@ void DatabaseCache::AddRig(class Rig rig) {
     rigs_.emplace(rig_id, std::move(rig));
 }
 
-void DatabaseCache::AddCamera(struct Camera camera) {
+void DatabaseCache::AddCamera(class Camera camera) {
     const camera_t camera_id = camera.CameraId();
     THROW_CHECK(!ExistsCamera(camera_id));
     cameras_.emplace(camera_id, std::move(camera));

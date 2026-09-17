@@ -72,8 +72,8 @@ public:
     inline data_t DataId() const {
         return data_t(sensor_t(SensorType::CAMERA, CameraId()), ImageId());
     }
-    inline struct Camera* CameraPtr() const;
-    inline void SetCameraPtr(struct Camera* camera);
+    inline class Camera* CameraPtr() const;
+    inline void SetCameraPtr(class Camera* camera);
     inline void ResetCameraPtr();
     inline bool HasCameraPtr() const;
     inline class Frame* FramePtr() const;
@@ -244,7 +244,7 @@ private:
     // share the same camera. If not specified `kInvalidCameraId`.
     camera_t camera_id_;
     frame_t frame_id_ = kInvalidFrameId;
-    struct Camera* camera_ptr_ = nullptr;
+    class Camera* camera_ptr_ = nullptr;
     class Frame* frame_ptr_ = nullptr;
 
     // Whether the image is successfully registered in the reconstruction.
@@ -439,10 +439,10 @@ bool Image::IsPoint3DVisible(const point2D_t point2D_idx) const {
     return num_correspondences_have_point3D_.at(point2D_idx) > 0;
 }
 
-inline struct Camera* Image::CameraPtr() const {
+inline class Camera* Image::CameraPtr() const {
     return THROW_CHECK_NOTNULL(camera_ptr_);
 }
-inline void Image::SetCameraPtr(struct Camera* camera) { camera_ptr_ = camera; }
+inline void Image::SetCameraPtr(class Camera* camera) { camera_ptr_ = camera; }
 inline void Image::ResetCameraPtr() { camera_ptr_ = nullptr; }
 inline bool Image::HasCameraPtr() const { return camera_ptr_ != nullptr; }
 inline class Frame* Image::FramePtr() const {

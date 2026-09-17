@@ -20,7 +20,9 @@ import argparse
 import ctypes
 import hashlib
 import json
+import math
 import os
+import struct
 import sys
 import time
 
@@ -149,12 +151,34 @@ def run_once(lib, models, image_bytes, device, pipeline, quant, steps, seed):
     nt = lib.aicore_trellis_mesh_n_tris(mesh)
     verts = ctypes.string_at(lib.aicore_trellis_mesh_verts(mesh),
                              nv * 3 * 4) if nv else b""
+    # Accuracy gate (manifest: "fixed-seed finite mesh geometry"): a
+    # degenerate or non-finite mesh must fail the probe instead of hashing
+    # to the stable digest of empty/garbage bytes.
+    if nv <= 0 or nt <= 0:
+        lib.aicore_trellis_mesh_free(mesh)
+        lib.aicore_trellis_free(ctx)
+        raise SystemExit(f"degenerate mesh: verts={nv} tris={nt}")
+    floats = struct.unpack(f"<{len(verts) // 4}f", verts)
+    if not all(math.isfinite(v) for v in floats):
+        lib.aicore_trellis_mesh_free(mesh)
+        lib.aicore_trellis_free(ctx)
+        raise SystemExit("non-finite vertex coordinate in mesh")
     geo = hashlib.sha256(verts).hexdigest()[:12]
+    # Order-independent geometry stats. The mesh extractor inserts vertices
+    # through a parallel hashmap, so the vertex ORDER — and therefore the
+    # raw-byte hash — is not run-stable on GPUs even with a fixed seed;
+    # bbox extents are. The runner marks these scenarios
+    # "fingerprint_policy": "stability_only" for the same reason.
+    xs, ys, zs = floats[0::3], floats[1::3], floats[2::3]
     result = {
         "device": device,
         "verts": nv,
         "tris": nt,
         "geometry_sha12": geo,
+        "bbox_min": [round(min(xs), 5), round(min(ys), 5),
+                     round(min(zs), 5)],
+        "bbox_max": [round(max(xs), 5), round(max(ys), 5),
+                     round(max(zs), 5)],
         "stage_ms": {STAGE_NAMES.get(k, str(k)): round(v, 1)
                      for k, v in sorted(timer.stage_ms.items())},
         "total_ms": round(sum(timer.stage_ms.values()), 1),

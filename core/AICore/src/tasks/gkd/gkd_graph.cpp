@@ -196,8 +196,8 @@ std::unique_ptr<GkdSession> GkdSession::create(const std::string& gguf_path,
     }
 
     s->compute_rope_tables();
-    GKD_LOG_INFO("session ready (backend: %s, threads: %d)", s->backend(),
-                 s->bctx_.n_threads);
+    GKD_LOG_DEBUG("session ready (backend: %s, threads: %d)", s->backend(),
+                  s->bctx_.n_threads);
     return s;
 }
 
@@ -1069,10 +1069,11 @@ bool GkdSession::detect(const RgbImage& image,
         const double decode_ms_roi = now_ms() - tc0;
         decode_ms += decode_ms_roi;
         // Per-ROI breakdown: the rebuild-per-ROI design makes graph prep
-        // the first suspect when a multi-object run slows down, so every
-        // run reports where its time went (2026-09-16: a 6-ROI run sat
-        // >150 s with no per-stage visibility).
-        GKD_LOG_INFO(
+        // the first suspect when a multi-object run slows down. Kept at
+        // Debug level so a 10-ROI run does not spam the console; raise the
+        // log level via aicore_gkd_options_set_log_level() when diagnosing
+        // (2026-09-16: a 6-ROI run sat >150 s with no per-stage visibility).
+        GKD_LOG_DEBUG(
                 "roi %d/%d: graph prep %.1f ms, compute %.1f ms, heatmap "
                 "decode %.1f ms",
                 i + 1, n_bbox, td0 - tb0, compute_ms, decode_ms_roi);

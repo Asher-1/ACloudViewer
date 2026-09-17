@@ -644,30 +644,30 @@ int default_n_threads() {
 }
 }  // namespace
 
-struct BackendLease::State {
+struct EngineLease::State {
     State(const std::string& device, int threads) : backend(threads, device) {}
 
     Backend backend;
     std::mutex mutex;
 };
 
-Backend& BackendLease::backend() const { return state_->backend; }
+Backend& EngineLease::backend() const { return state_->backend; }
 
-const char* BackendLease::device_name() const {
+const char* EngineLease::device_name() const {
     return state_ ? state_->backend.device_name() : "cpu";
 }
 
-BackendLease acquire_backend_lease(const std::string& device_request,
-                                   int n_threads) {
+EngineLease acquire_engine_lease(const std::string& device_request,
+                                 int n_threads) {
     const int threads = n_threads > 0 ? n_threads : default_n_threads();
     const std::string request =
             device_request.empty() ? "auto" : device_request;
-    std::shared_ptr<BackendLease::State> state =
-            std::make_shared<BackendLease::State>(request, threads);
-    return BackendLease(std::move(state));
+    std::shared_ptr<EngineLease::State> state =
+            std::make_shared<EngineLease::State>(request, threads);
+    return EngineLease(std::move(state));
 }
 
-ScopedBackendBinding::ScopedBackendBinding(const BackendLease& lease)
+ScopedBackendBinding::ScopedBackendBinding(const EngineLease& lease)
     : previous_(t_bound_backend) {
     if (lease.state_) {
         lock_ = std::unique_lock<std::mutex>(lease.state_->mutex);

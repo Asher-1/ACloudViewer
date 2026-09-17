@@ -17,23 +17,14 @@
 
 #ifdef AICore_ENABLED
 #include <aicore/runtime_capi.h>
+
+#include "ecvAICoreRuntimeHelpers.h"
 #endif
 
 namespace {
 
 #ifdef AICore_ENABLED
-class DeviceTaskGuard {
-public:
-    explicit DeviceTaskGuard(const QString& device)
-        : m_locked(aicore_device_task_lock(device.toUtf8().constData()) == 0) {}
-    ~DeviceTaskGuard() {
-        if (m_locked) aicore_device_task_unlock();
-    }
-    bool isLocked() const { return m_locked; }
-
-private:
-    bool m_locked = false;
-};
+// Device-task serialization moved to ecvAICoreRuntimeHelpers.h
 #endif
 
 }  // namespace
@@ -46,7 +37,7 @@ VideoWorker::~VideoWorker() {
     // running track/load task a generous window to finish.
     if (isRunning()) wait();
 #ifdef AICore_ENABLED
-    DeviceTaskGuard taskGuard(m_device);
+    auto taskGuard = ecvAICoreRuntime::makeDeviceTaskLock(m_device);
 #endif
     if (m_tracker) aicore_sam3_tracker_free(m_tracker);
     if (m_ctx) aicore_sam3_free(m_ctx);
@@ -122,7 +113,7 @@ void VideoWorker::process(const TrackRequest& req) {
         m_hasModel.store(false);
         if (m_tracker || m_ctx) {
 #ifdef AICore_ENABLED
-            DeviceTaskGuard releaseGuard(m_device);
+            auto releaseGuard = ecvAICoreRuntime::makeDeviceTaskLock(m_device);
             if (!releaseGuard.isLocked()) {
                 emit logMessage(
                         tr("[SAM3] Failed to acquire the previous "
@@ -145,7 +136,7 @@ void VideoWorker::process(const TrackRequest& req) {
         m_device = req.device;
     }
 #ifdef AICore_ENABLED
-    DeviceTaskGuard taskGuard(m_device);
+    auto taskGuard = ecvAICoreRuntime::makeDeviceTaskLock(m_device);
     if (!taskGuard.isLocked()) {
         CVLog::Warning(
                 "[qSAM3][VideoWorker] failed to acquire inference device (%s)",

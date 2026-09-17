@@ -214,9 +214,29 @@ int main(int argc, char** argv) {
             ref_norm[(size_t)j * 2 + 1] = kp.y_norm;
         }
         // ROI 0 duplicates the whole-image box: the batched forward must
-        // reproduce the single-ROI norm coordinates bit-for-bit (the B
-        // dimension only batches the vision tower, it must not change the
-        // math), and ROI 1 exercises a clamped interior box.
+        // reproduce the single-ROI norm coordinates (the B dimension only
+        // batches the vision tower, it must not change the math), and ROI 1
+        // exercises a clamped interior box.
+        //
+        // Explicit dependencies this check may rely on (root-caused 2026-09):
+        //  - CPU: the two forwards are bit-identical. GPUs: NOT bit-identical
+        //    across shapes — ggml CUDA matmul/reduction kernels pick their
+        //    tiling from the matrix shape (M = n_rois*seq vs M = seq), which
+        //    reorders the floating-point accumulation. Same-shape repeats
+        //    stay bit-stable (hash gates above); cross-shape bits do not.
+        //    Precedent: the lingbot load test ("CPU is bit-exact in practice;
+        //    GPUs are not, hence a tolerance").
+        //  - The historical bit-for-bit == only ever passed because a silent
+        //    CUDA loader failure pushed this test onto the CPU fallback.
+        // The tolerance guards against batch-math regressions without
+        // encoding a CPU-only bitwise property. Probed on cuda (q4_K, bus.jpg):
+        // kp0 stays bit-identical; kp1 moves by dy = 0.0208 == 1/48 exactly —
+        // one heatmap cell. GPU tiling perturbs activations (~1e-4), and the
+        // argmax of a near-tie peak flips to the adjacent cell, so decode
+        // quantization amplifies the bitwise noise to one cell. Tolerance is
+        // sized at ~2.4 cells (0.05): it absorbs the flip while a real
+        // batching/ROI-cross-talk bug displaces coordinates by >> 0.1.
+        constexpr float kBatchParityTol = 0.05f;
         const float boxes[8] = {
                 0.0f,  0.0f,  (float)(img_w - 1),  (float)(img_h - 1),
                 10.0f, 10.0f, (float)img_w / 2.0f, (float)img_h / 2.0f};
@@ -228,8 +248,17 @@ int main(int argc, char** argv) {
         for (int j = 0; j < n_ref; ++j) {
             const aicore_gkd_keypoint batch_kp =
                     aicore_gkd_result_keypoint_at_roi(ctx, 0, j);
-            AICORE_CHECK(batch_kp.x_norm == ref_norm[(size_t)j * 2] &&
-                         batch_kp.y_norm == ref_norm[(size_t)j * 2 + 1]);
+            const float dx =
+                    std::fabs(batch_kp.x_norm - ref_norm[(size_t)j * 2]);
+            const float dy =
+                    std::fabs(batch_kp.y_norm - ref_norm[(size_t)j * 2 + 1]);
+            if (dx > kBatchParityTol || dy > kBatchParityTol) {
+                std::fprintf(stderr,
+                             "batch-vs-single parity: roi0 kp%d dx=%.3g dy=%.3g"
+                             " (tol %.3g)\n",
+                             j, dx, dy, kBatchParityTol);
+            }
+            AICORE_CHECK(dx <= kBatchParityTol && dy <= kBatchParityTol);
             const aicore_gkd_keypoint roi1_kp =
                     aicore_gkd_result_keypoint_at_roi(ctx, 1, j);
             AICORE_CHECK(std::isfinite(roi1_kp.x_norm) &&

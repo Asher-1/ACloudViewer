@@ -161,7 +161,7 @@ struct aicore_facedetect_options {
 struct aicore_facedetect_ctx {
     // Keep the lease before the model so explicit teardown can invalidate its
     // graph entries while the compatible backend is still bound.
-    fd::BackendLease backend;
+    fd::EngineLease backend;
     std::unique_ptr<fd::Model> model;
     std::string model_path;
     std::string device;
@@ -227,7 +227,7 @@ AICORE_CAPI aicore_facedetect_ctx* aicore_facedetect_load_opts(
     ctx->threads = opts != nullptr ? opts->threads : 0;
 
     try {
-        ctx->backend = fd::acquire_backend_lease(ctx->device, ctx->threads);
+        ctx->backend = fd::acquire_engine_lease(ctx->device, ctx->threads);
         fd::ScopedBackendBinding bind(ctx->backend);
         ctx->model = fd::Model::load(ctx->model_path);
         if (!ctx->model) {
@@ -856,8 +856,8 @@ AICORE_CAPI int aicore_facedetect_warmup_backend(const char* device) {
     // Warmup is intentionally lease-scoped: callers that need persistence
     // retain a model context, while this compatibility API proves availability
     // without changing any active context's selected backend.
-    const fd::BackendLease lease =
-            fd::acquire_backend_lease(device != nullptr ? device : "auto", 0);
+    const fd::EngineLease lease =
+            fd::acquire_engine_lease(device != nullptr ? device : "auto", 0);
     if (!lease || lease.backend().handle() == nullptr) return -1;
     return 0;
 }

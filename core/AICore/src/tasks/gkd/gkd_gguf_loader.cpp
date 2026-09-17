@@ -268,9 +268,12 @@ std::unique_ptr<GkdModel> load_gkd_model(const std::string& path,
             "depth=%d) + KG (%d blocks)",
             path.c_str(), P.D, P.blocks, P.heads, P.T_D, P.T_layers,
             P.K_blocks);
-    GKD_LOG_INFO("weights buffer: %.1f MiB on %s",
-                 ggml_backend_buffer_get_size(m->weight_buf) / 1024.0 / 1024.0,
-                 ggml_backend_buffer_name(m->weight_buf));
+    // Per-load allocation info is diagnostic-only: the plugin surfaces a
+    // summarized "Model loaded" line, and every-forward logs must not spam
+    // the console (default level Info hides GKD_LOG_DEBUG lines).
+    GKD_LOG_DEBUG("weights buffer: %.1f MiB on %s",
+                  ggml_backend_buffer_get_size(m->weight_buf) / 1024.0 / 1024.0,
+                  ggml_backend_buffer_name(m->weight_buf));
     return m;
 }
 

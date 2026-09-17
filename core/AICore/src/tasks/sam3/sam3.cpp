@@ -12,6 +12,7 @@
 #include "sam3.h"
 
 /* AICore common runtime (shared dynamic-backend discovery) */
+#include "common/ggml_backend_registry.hpp"
 #include "common/ggml_backend_utils.hpp"
 
 /* ggml */
@@ -739,6 +740,10 @@ struct sam3_model {
     sam3_hparams hparams;
     ggml_type weight_type = GGML_TYPE_F16;
 
+    // Registry lease owning `backend` (the registry may share one handle
+    // between models on the same device; the last released lease frees it).
+    aicore::runtime::BackendLease backend_lease;
+
     // ── SAM3-specific (loaded only when model_type != SAM2) ──────────────
     sam3_vit vit;
     sam3_neck neck_det;
@@ -1055,6 +1060,11 @@ static void sam3_backend_set_n_threads(ggml_backend_t backend, int n_threads) {
 // model-scoped backend installed by sam3_probe_backend_scope.
 static thread_local ggml_backend_t g_sam3_backend = nullptr;
 
+// Lease handoff from sam3_backend_init() to the model load path on the same
+// thread (the registry may share an existing handle for the same device —
+// the model must keep the lease alive instead of freeing the raw handle).
+static thread_local aicore::runtime::BackendLease g_sam3_backend_lease;
+
 // Backend used by graph-build capability probes (win_part expansion,
 // mean-dim0 routing, CUDA fused ops, flash-attention selection). Every
 // top-level graph-build entry scopes the model's OWN backend for the build,
@@ -1192,7 +1202,20 @@ static ggml_backend_t sam3_backend_init(sam3_device device, bool use_gpu) {
     }
     AICORE_LOG_PRINT("[sam3] ", "%s: using %s backend\n", __func__,
                      ggml_backend_dev_name(dev));
-    g_sam3_backend = ggml_backend_dev_init(dev, nullptr);
+    g_sam3_backend_lease.reset();
+    const char* reg = ggml_backend_reg_name(ggml_backend_dev_backend_reg(dev));
+    const std::string family =
+            reg ? ggml_common::registry_backend_id(reg) : std::string();
+    std::string lease_error;
+    g_sam3_backend_lease = aicore::runtime::acquire_backend_lease(
+            family.empty() ? "cpu" : family.c_str(), 0, &lease_error);
+    if (!g_sam3_backend_lease.handle()) {
+        AICORE_LOG_ERROR("[sam3] ",
+                         "%s: backend lease acquisition failed: %s\n", __func__,
+                         lease_error.c_str());
+        return nullptr;
+    }
+    g_sam3_backend = g_sam3_backend_lease.handle();
     return g_sam3_backend;
 }
 
@@ -3254,6 +3277,9 @@ std::shared_ptr<sam3_model> sam3_load_model(const sam3_params& params) {
     // library — DLL exists, no import library — reachable only via the
     // registry's `ggml_backend_dev_init`.
     model->backend = sam3_backend_init(params.device, params.use_gpu);
+    // Transfer the thread-local lease handoff into the model: the handle
+    // lives exactly as long as the model (registry frees on last lease).
+    model->backend_lease = std::move(g_sam3_backend_lease);
     if (!model->backend) {
         AICORE_LOG_ERROR("[sam3] ", "%s: failed to init backend\n", __func__);
         gguf_free(gguf);
@@ -3347,9 +3373,16 @@ void sam3_free_model(sam3_model& model) {
         model.ctx = nullptr;
     }
     if (model.backend) {
-        ggml_backend_free(model.backend);
+        if (g_sam3_backend == model.backend) {
+            // Avoid leaving the thread-local probe cache pointing at a
+            // handle that is about to be released with the lease.
+            g_sam3_backend = nullptr;
+        }
+        // Handle ownership lives in the registry lease; releasing it frees
+        // the backend exactly once (shared handles: last user frees).
         model.backend = nullptr;
     }
+    model.backend_lease.reset();
 }
 
 sam3_model::~sam3_model() { sam3_free_model(*this); }

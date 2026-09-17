@@ -16,29 +16,14 @@
 #ifdef AICore_ENABLED
 #include "aicore/rmbg_capi.h"
 #include "aicore/runtime_capi.h"
+#include "ecvAICoreRuntimeHelpers.h"
 #endif
 
 namespace {
 
 #ifdef AICore_ENABLED
-/* Serializes this worker against every other AICore inference task on the
- * same device (live video loops, other plugin workers). ggml-metal's backend
- * state machine is not safe under concurrent graph compute from two threads;
- * the shared device queue lock is the process-wide mutex that keeps command
- * buffers from racing (a failed command buffer poisons the backend for the
- * rest of the process). */
-class DeviceTaskGuard {
-public:
-    explicit DeviceTaskGuard(const QString& device)
-        : m_locked(aicore_device_task_lock(device.toUtf8().constData()) == 0) {}
-    ~DeviceTaskGuard() {
-        if (m_locked) aicore_device_task_unlock();
-    }
-    bool isLocked() const { return m_locked; }
-
-private:
-    bool m_locked = false;
-};
+// Device-task serialization moved to ecvAICoreRuntimeHelpers.h
+// (ecvAICoreRuntime::makeDeviceTaskLock) — shared across all AICore plugins.
 #endif
 
 }  // namespace
@@ -102,7 +87,7 @@ void RMBGWorker::run() {
 
 #ifdef AICore_ENABLED
 bool RMBGWorker::runInference() {
-    DeviceTaskGuard taskGuard(m_settings.device);
+    auto taskGuard = ecvAICoreRuntime::makeDeviceTaskLock(m_settings.device);
     if (!taskGuard.isLocked()) {
         emit logMessage(
                 tr("[RMBG] Failed to acquire the inference device; another "

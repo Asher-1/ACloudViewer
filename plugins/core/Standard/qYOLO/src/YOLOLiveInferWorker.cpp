@@ -18,29 +18,16 @@
 #ifdef AICore_ENABLED
 #include "aicore/runtime_capi.h"
 #include "aicore/yolo_capi.h"
+#include "ecvAICoreRuntimeHelpers.h"
 #endif
 
 namespace {
 
 #ifdef AICore_ENABLED
-class DeviceTaskGuard {
-public:
-    explicit DeviceTaskGuard(const QString& device)
-        : m_locked(aicore_device_task_lock(device.toUtf8().constData()) == 0) {}
-    ~DeviceTaskGuard() {
-        if (m_locked) aicore_device_task_unlock();
-    }
-    bool isLocked() const { return m_locked; }
-
-private:
-    bool m_locked = false;
-};
+// Device-task serialization moved to ecvAICoreRuntimeHelpers.h
 
 aicore_image_view imageView(const QImage& image) {
-    return aicore_image_view{
-            reinterpret_cast<const uint8_t*>(image.constBits()), image.width(),
-            image.height(), static_cast<size_t>(image.bytesPerLine()),
-            AICORE_IMAGE_RGB8};
+    return ecvAICoreRuntime::makeImageView(image);
 }
 #endif
 
@@ -164,7 +151,7 @@ void YOLOLiveInferWorker::runJobImpl(YOLOLiveInferWorker::Job job) {
     emit inferComplete(result);
     return;
 #else
-    DeviceTaskGuard taskGuard(job.device);
+    auto taskGuard = ecvAICoreRuntime::makeDeviceTaskLock(job.device);
     if (!taskGuard.isLocked()) {
         result.error = tr("Failed to acquire the inference device.");
         emit inferComplete(result);

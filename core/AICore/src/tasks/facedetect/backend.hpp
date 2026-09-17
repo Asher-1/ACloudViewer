@@ -96,11 +96,17 @@ private:
 // A reference-counted Session entry. Each public context gets private graph
 // storage; the underlying physical ggml handle is shared through
 // aicore::runtime::BackendLease inside Backend.
-class BackendLease {
+//
+// Named EngineLease (was BackendLease): the old name collided with
+// aicore::runtime::BackendLease — the physical ggml handle lease that Backend
+// itself acquires through the shared registry — which made architecture
+// audits misread this session lease as a registry bypass. "BackendLease" in
+// AICore must mean only the runtime registry lease.
+class EngineLease {
 public:
     struct State;
 
-    BackendLease() = default;
+    EngineLease() = default;
 
     explicit operator bool() const { return static_cast<bool>(state_); }
     Backend& backend() const;
@@ -109,22 +115,22 @@ public:
 private:
     std::shared_ptr<State> state_;
 
-    explicit BackendLease(std::shared_ptr<State> state) : state_(std::move(state)) {}
-    friend BackendLease acquire_backend_lease(const std::string&, int);
+    explicit EngineLease(std::shared_ptr<State> state) : state_(std::move(state)) {}
+    friend EngineLease acquire_engine_lease(const std::string&, int);
     friend class ScopedBackendBinding;
 };
 
 // Acquire a private FaceDetect Session. It is released when the final context
 // lease is destroyed, while its physical backend may remain leased elsewhere.
-BackendLease acquire_backend_lease(const std::string& device_request,
-                                   int n_threads);
+EngineLease acquire_engine_lease(const std::string& device_request,
+                                 int n_threads);
 
 // Binds a context-owned backend to existing face graph helpers and serializes
 // only work using that backend. This keeps the legacy graph implementation
 // source-compatible while removing global backend selection from the C API.
 class ScopedBackendBinding {
 public:
-    explicit ScopedBackendBinding(const BackendLease& lease);
+    explicit ScopedBackendBinding(const EngineLease& lease);
     ~ScopedBackendBinding();
 
     ScopedBackendBinding(const ScopedBackendBinding&) = delete;
