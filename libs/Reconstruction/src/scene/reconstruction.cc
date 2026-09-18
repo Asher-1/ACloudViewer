@@ -39,6 +39,7 @@
 #include "scene/database_cache.h"
 #include "scene/reconstruction_io.h"
 #include "geometry/gps.h"
+#include "geometry/normalization.h"
 #include "geometry/pose.h"
 #include "scene/projection.h"
 #include "geometry/triangulation.h"
@@ -616,54 +617,42 @@ Reconstruction::ComputeBoundsAndCentroid(const double p0,
     }
 
     // Coordinates of image centers or point locations.
-    std::vector<float> coords_x;
-    std::vector<float> coords_y;
-    std::vector<float> coords_z;
+    // Upstream parity (d3ccaf35 scene/reconstruction.cc +
+    // geometry/normalization.cc): collect doubles and delegate to the shared
+    // ComputeBoundingBoxAndCentroid, whose percentile indices use
+    // floor(min)/ceil(max). The old fork version truncated both indices
+    // (P1 = trunc(0.9*(n-1)) dropped the largest camera for n=6) and stored
+    // coordinates as floats, which shifted the normalization basis and
+    // produced an exported gauge x1.37 off upstream.
+    std::vector<double> coords_x;
+    std::vector<double> coords_y;
+    std::vector<double> coords_z;
+    coords_x.reserve(num_elements);
+    coords_y.reserve(num_elements);
+    coords_z.reserve(num_elements);
     if (use_images) {
-        coords_x.reserve(reg_image_ids_.size());
-        coords_y.reserve(reg_image_ids_.size());
-        coords_z.reserve(reg_image_ids_.size());
         for (const image_t im_id : reg_image_ids_) {
             const Eigen::Vector3d proj_center = Image(im_id).ProjectionCenter();
-            coords_x.push_back(static_cast<float>(proj_center(0)));
-            coords_y.push_back(static_cast<float>(proj_center(1)));
-            coords_z.push_back(static_cast<float>(proj_center(2)));
+            coords_x.push_back(proj_center(0));
+            coords_y.push_back(proj_center(1));
+            coords_z.push_back(proj_center(2));
         }
     } else {
         coords_x.reserve(points3D_.size());
         coords_y.reserve(points3D_.size());
         coords_z.reserve(points3D_.size());
         for (const auto& point3D : points3D_) {
-            coords_x.push_back(static_cast<float>(point3D.second.X()));
-            coords_y.push_back(static_cast<float>(point3D.second.Y()));
-            coords_z.push_back(static_cast<float>(point3D.second.Z()));
+            coords_x.push_back(point3D.second.X());
+            coords_y.push_back(point3D.second.Y());
+            coords_z.push_back(point3D.second.Z());
         }
     }
 
-    // Determine robust bounding box and mean.
-
-    std::sort(coords_x.begin(), coords_x.end());
-    std::sort(coords_y.begin(), coords_y.end());
-    std::sort(coords_z.begin(), coords_z.end());
-
-    const size_t P0 = static_cast<size_t>(
-            (coords_x.size() > 3) ? p0 * (coords_x.size() - 1) : 0);
-    const size_t P1 = static_cast<size_t>((coords_x.size() > 3)
-                                                  ? p1 * (coords_x.size() - 1)
-                                                  : coords_x.size() - 1);
-
-    const Eigen::Vector3d bbox_min(coords_x[P0], coords_y[P0], coords_z[P0]);
-    const Eigen::Vector3d bbox_max(coords_x[P1], coords_y[P1], coords_z[P1]);
-
-    Eigen::Vector3d mean_coord(0, 0, 0);
-    for (size_t i = P0; i <= P1; ++i) {
-        mean_coord(0) += coords_x[i];
-        mean_coord(1) += coords_y[i];
-        mean_coord(2) += coords_z[i];
-    }
-    mean_coord /= P1 - P0 + 1;
-
-    return std::make_tuple(bbox_min, bbox_max, mean_coord);
+    const auto [bbox, centroid] =
+            ComputeBoundingBoxAndCentroid(p0, p1, std::move(coords_x),
+                                          std::move(coords_y),
+                                          std::move(coords_z));
+    return std::make_tuple(bbox.min(), bbox.max(), centroid);
 }
 
 void Reconstruction::Transform(const SimilarityTransform3& tform) {
@@ -928,6 +917,30 @@ void Reconstruction::TranscribeImageIdsToDatabase(const Database& database) {
 
     images_ = std::move(new_images);
 
+    // Upstream parity (d3ccaf35 scene/reconstruction.cc): transcribe the
+    // frame data ids, otherwise the frames keep referencing the old image
+    // ids and every frame-to-image lookup (e.g. ExtractImageToFramePtr,
+    // correspondence-graph bookkeeping) misses the transcribed images.
+    for (auto& [_, frame] : frames_) {
+        class Frame new_frame = frame;
+        new_frame.ClearDataIds();
+        for (const data_t& data_id : frame.DataIds()) {
+            data_t transcribed_id = data_id;
+            if (data_id.sensor_id.type == SensorType::CAMERA) {
+                transcribed_id.id = old_to_new_image_ids.at(data_id.id);
+            }
+            new_frame.AddDataId(transcribed_id);
+        }
+        frame = std::move(new_frame);
+    }
+
+    // Upstream parity: the Image copy constructor resets the camera/frame
+    // back-pointers (they refer to the source container), so they must be
+    // re-wired against the surviving rigs_/frames_/cameras_ after the
+    // transcribed images are swapped in; otherwise every later CameraPtr()
+    // dereference throws (point_triangulator --clear_points crash).
+    RewireObjectPointers();
+
     for (auto& image_id : reg_image_ids_) {
         image_id = old_to_new_image_ids.at(image_id);
     }
@@ -1124,6 +1137,7 @@ void Reconstruction::ReadBinary(const std::filesystem::path& path) {
     }
     ReadImagesBinary(*this, path / "images.bin");
     ReadPoints3DBinary(*this, path / "points3D.bin");
+
 }
 
 void Reconstruction::WriteText(const std::filesystem::path& path) const {

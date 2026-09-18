@@ -243,6 +243,18 @@ void ReadImagesBinary(Reconstruction& reconstruction, std::istream& stream) {
     }
 
     const image_t image_id = image.ImageId();
+    // Fork dual-track parity: mirror the frame pose into the legacy
+    // per-image buffers. Upstream has a single frame-side source of truth,
+    // but the fork also serves legacy-buffer consumers and the BA forward
+    // sync copies the legacy buffers back onto the frames, so a stale
+    // (identity) legacy buffer would clobber the poses read from
+    // frames.bin at SetUp (point_triangulator --clear_points pose wipe).
+    if (image.HasPose()) {
+      const Rigid3d cam_from_world = image.CamFromWorld();
+      const Eigen::Quaterniond& q = cam_from_world.rotation();
+      image.SetQvec(Eigen::Vector4d(q.w(), q.x(), q.y(), q.z()));
+      image.SetTvec(cam_from_world.translation());
+    }
     reconstruction.AddImage(std::move(image));
     // The file format contract is that every listed image is registered (the
     // write side only serializes RegImageIds()); restore the registration

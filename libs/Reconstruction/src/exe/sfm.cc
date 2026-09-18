@@ -38,7 +38,7 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
-#include "scene/reconstruction.h"
+#include "scene/reconstruction.h"\n#include "scene/projection.h"
 #include "controllers/automatic_reconstruction.h"
 #include "controllers/da3_depth_controller.h"
 #include "controllers/da3_pipeline_defaults.h"
@@ -618,7 +618,9 @@ int RunPointFiltering(int argc, char** argv) {
 int RunPointTriangulator(int argc, char** argv) {
   std::string input_path;
   std::string output_path;
-  bool clear_points = false;
+  // Upstream parity (d3ccaf35 exe/sfm.cc): point triangulation clears the
+  // existing points by default and recomputes them from the database.
+  bool clear_points = true;
 
   OptionManager options;
   options.AddDatabaseOptions();
@@ -697,6 +699,7 @@ int RunPointTriangulator(int argc, char** argv) {
     const auto& image = reconstruction.Image(image_id);
 
     PrintHeading1(StringPrintf("Triangulating image #%d (%d)", image_id, i));
+
 
     const size_t num_existing_points3D = image.NumPoints3D();
 

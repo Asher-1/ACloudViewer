@@ -230,8 +230,13 @@ __device__ inline void ComputeViewingAngles(
     const float SX_inv_norm = rsqrt(DotProduct3(SX, SX));
 
     *cos_incident_angle = DotProduct3(SX, normal) * SX_inv_norm;
+    // Upstream parity (d3ccaf35 patch_match_cuda.cu): the ray from the point
+    // to the reference camera is -point, so the triangulation-angle cosine
+    // carries a minus. The old fork form dropped it; the consistency filter
+    // then accepted near-parallel (small-baseline) source views whose depth
+    // uncertainty inflated the dense maps (far-tail outliers).
     *cos_triangulation_angle =
-            DotProduct3(SX, point) * RX_inv_norm * SX_inv_norm;
+            -DotProduct3(SX, point) * RX_inv_norm * SX_inv_norm;
 }
 
 __device__ inline void ComposeHomography(
@@ -679,10 +684,12 @@ public:
     // Compute the triangulation angle probability.
     __device__ inline float ComputeTriProb(
             const float cos_triangulation_angle) const {
-        const float abs_cos_triangulation_angle = abs(cos_triangulation_angle);
-        if (abs_cos_triangulation_angle > cos_min_triangulation_angle_) {
+        // Upstream parity (d3ccaf35): the signed cosine is used directly; the
+        // old fork abs() form compensated the missing minus in
+        // ComputeViewingAngles and is no longer needed.
+        if (cos_triangulation_angle > cos_min_triangulation_angle_) {
             const float scaled =
-                    1.0f - (1.0f - abs_cos_triangulation_angle) /
+                    1.0f - (1.0f - cos_triangulation_angle) /
                                    (1.0f - cos_min_triangulation_angle_);
             const float likelihood = 1.0f - scaled * scaled;
             return min(1.0f, max(0.0f, likelihood));

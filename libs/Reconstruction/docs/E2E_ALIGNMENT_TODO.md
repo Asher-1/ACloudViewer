@@ -162,6 +162,54 @@
 3. **修复路径中的构建事故与修复**：flat `estimators/absolute_pose` 残留注册导致 configure 失败（CMakeHelper 静态库路径）→ 删除；`libColmapLib.a` 被并发 make 破坏 → 重建归档（188 成员）。
 4. **回归 ✅**：absolute_pose 6、bundle_adjustment 11、global_mapper 5、synthetic 19、two_view 3 全绿（BA 测试曾因 SetConstantPose 冻结缺失与 ConstantTvec 流形缺失失败 9→5→0，两处修复后全过）。
 
+**第十八轮（2026-09-18(2)，PoissonRecon 18.75 移植→撤销 ✅ + pybind Open3D 风格集成启动）**：
+
+1. **第十七轮移植（已撤销，保留其独立修正）**：曾将引擎 vendored 树从 v6（48 文件，`int PoissonRecon()` 老 API）整体替换为上游 d3ccaf35 vendored 树（99 文件，`RunPoissonRecon`，ADAPTIVE_SOLVERS_VERSION 18.75），poisson_meshing.cc 重写为 ThreadPool 直控 + `--fullDepth/--colors/--density` 参数集，color double→bool；同输入引擎残差实测 0.001%。**并完成两项与库版本无关的独立修正（撤销时保留）**：① CLI 三个 mesher（poisson/delaunay/AFM）剥离 fork 独有 MeshPostProcessing 后处理（该后处理曾改写/删减原始网格，导致引擎残差被高估为 -6.3%~-8.9%）；② GUI `--exclude-libs=libpoisson_recon.a` 防 -rdynamic 符号插拔。
+2. **撤销（用户裁定）**：精度 gap 实测仅 0.016% 场景对角线（v6 与 18.75 表面位置几乎重合，-6% 仅是采样拓扑密度差）；升级收益只剩“输出规模可比”，代价是源码冗余 +2.5MB 且 pybind 闭包会同源携带（多镜像多份实现）→ **收益/代价比为负，整体撤销**：git 恢复 v6 树 + poisson_meshing.{h,cc} + UI color double。**标签纠错**：引擎侧 vendored 树是 v6（非 v12）；3rdparty ExternalProject（v12）仅 qPoissonRecon 插件使用。
+3. **撤销后基线（v6 纯引擎，同上游 fused 输入）**：842907 verts / 1665352 faces = **-6.12% / -5.71%**，定性为版本行为差，记录接受；CGAL 保持系统 5.4 不变（从未升级；Delaunay -0.76% 为数据驱动）。
+4. **pybind Open3D 风格集成启动（上游 src/pycolmap 14 子模块 API 面的重表达）**：新增 `pybind/reconstruction/geometry/`（Rigid3d/Sim3d，四元数以 (w,x,y,z) 数组暴露，适配 fork W3-2b params 单块访问器形态）与 `pybind/reconstruction/scene/`（Camera/Image/Reconstruction 核心类）；主注册接线 + CMakeLists。**运行时冒烟全过**：read mini6 模型（6 图/1354 点/1 相机）、Image 位姿经 `reference_internal` 引用语义可读（copy 会丢 frame back-pointer——fork 双轨语义在绑定层的正确处理）、Camera SIMPLE_RADIAL focal 3296.638、Rigid3d 构造/旋转/平移/逆变换往返、mean_track_length 3.1448。
+5. **pybind 后续批次映射**：scene 补 Point2D/Point3D/Track/Frame/Rig/Database/DatabaseCache；sensor（相机模型）、estimators（pose/essential/homography/triangulation/BA）、mvs（patch_match/fusion/meshing 扩展）、pipeline（自动重建入口）、retrieval（visual_index）、feature/image/sfm 扩展、optim/util；pyceres（ceres 求解器绑定）独立评估。**约束**：不照抄上游 dataclass 机制，保持 Open3D 自由函数+简洁类绑定风格。
+6. **两项修复的用户质询复核（最终裁定）**：① `--exclude-libs=libpoisson_recon.a` **移除**（已执行）——实测 GUI dynsym 零引擎符号（连 colmap:: 都未导出）、v6 与 v12 无同名全局函数（v12 无 `PoissonRecon(int,char**)`，v6 无 PoissonRecon:: 命名空间），防御场景不存在；app/CMakeLists.txt 已恢复 codec-only 原状（多平台：该选项本为 GNU ld 专属，移除后 Windows/macOS 无影响）。② **MeshPostProcessing 剥离撤销、CLI 后处理恢复**（git 恢复 mvs.cc）——后处理是 fork 有意功能（注释明示为纹理图表质量服务）而非 bug；对齐口径的正确姿势是引擎对比时显式 `--MeshPostProcessing.enabled 0`（第十七轮判定实验已示范），而非删除 fork 功能。多平台：两处变更均为纯行为/链接层，无编译影响。
+7. **pybind scene 批次 2**：补 Point2D（xy/point3D_id/has_point3D）、TrackElement（image_id/point2D_idx）、Track（length/elements）、Point3D（xyz/color/error/track）与 Reconstruction::point3D(id)（copy 安全——Point3D 无 back-pointer 语义）；编译通过，冒烟实读 point3D(1)（xyz/error 0.5738/track_len 3/element (6,4405)）全过。
+
+**第十六轮（2026-09-17(8)，point_triangulator 收官修复 ✅ + 全链终测 + PoissonRecon 版本缺口定性）**：
+
+1. **point_triangulator round-2 BA 崩溃根因闭环 ✅（三层复合缺陷）**：① 核心根因：`Reconstruction::Read` 的 4.x 分支（有 rigs.bin/frames.bin）只接 frame 指针、**从不写 image 的 legacy qvec/tvec 缓冲**（保持默认 identity），而 W3-2b BA `SetUp` 的 forward dual-track sync 会把 legacy 缓冲**覆盖写回 frame**（`SetCamFromWorld`）→ 位姿在 BA 前被清零 → `GetOrCreateFrameBlock` 收到 identity → `TearDown` 写回全零 → FilterPoints 全滤 → round-2 BA `NumResiduals==0` 崩溃。修复：`ReadImagesBinary`/`ReadImagesText` 接好 frame 后把 `image.CamFromWorld()`（frame 真源）**镜像进 legacy 缓冲**，双轨在 Read 源头同步（上游无双轨概念，此为 fork 双轨机制的内部一致性维护，不改变数值行为）。② `TranscribeImageIdsToDatabase` 缺上游 "Transcribe frame data" 段（d3ccaf35 reconstruction.cc L870-884）——frames 的 data_ids 未随 image_id 转写更新，已补齐（CAMERA 传感器 data_id 用 old_to_new 映射转写）。③ 排查陷阱：`point_triangulator` 的 database 必须含匹配记录（用纯特征库 base.db 会 "Loading matches... 0" → 三角化 0 点 → 同型崩溃），且 output_path 必须预创建（两侧共同 CLI 契约）。
+2. **修复验证**：clear 路径 EXIT=0，三轮 BA 正常收敛（1345 点 vs 输入 1354 = -0.7%，与上游 1342→1341 = -0.07% 行为一致）；**位姿冻结检验 max|dq|=1.1e-16 / max|dt|=0**（修复前是全清零）。回归 6/6 全绿（two_view 3、BA 11、triangulation 2、synthetic 19、reconstruction_io 19、global_mapper 5）。
+3. **全链终测（/tmp/e2e_r16，两侧全新独立工作区 + point_triangulator 纳入主链）**：稀疏 1354/4258 obs vs 1342/4226（+0.9%/+0.8%）、mean reproj 1.053 vs 1.060 px（-0.7%）、triangulator 1345 vs 1335（+0.7%）、PM valid pixels +0.6%、**PM p99.9 深度 max -0.3% / mean -0.1%**（深度范围完全对齐）、fused 292073 vs 296167（-1.4%）、Delaunay faces -0.8%、带纹理 mesh 10.35MB vs 10.43MB（-0.8%）、全链耗时 14.124 vs 14.072 min（+0.4%）。
+4. **两项差异定性（实验说话）**：① 位姿旋转差 1.0041°（本轮自然初始化轨迹）：ICP gauge 对齐后稀疏点云 NN 残差 median 0.20% 对角线（p95 1.92%）→ 骨架 gauge 差而非质量差（重投影/PM/fused/Delaunay 全对齐佐证）；② **Poisson -11.4% faces 分解**：交叉 mesher（fork mesher 吃上游 fused）→ 同数据引擎残差 **-6.3% verts / -8.9% faces**，数据贡献 -2.6%。根因：**PoissonRecon 库版本不同**——fork 用 Open3D 分叉 v12（ExternalProject 3rdparty/PoissonRecon，含 macOS race patch），上游 d3ccaf35 已 vendored 新版（src/thirdparty/PoissonRecon，ADAPTIVE_SOLVERS_VERSION 18.75）且 `poisson_meshing.cc` 集成层已重写（ThreadPool 直控、`--fullDepth` 等新参数集）。记录为 P5 升级项（依赖版本决策，非 COLMAP 层代码缺陷）。
+5. **构建注意（新）**：ColmapLib 对 reconstruction*.cc 的依赖跟踪漏编——修改后需删 .o 强制重编（`libs/Reconstruction/src/CMakeFiles/ColmapLib.dir/scene/`）。
+
+**对齐闭环 v3：COLMAP 引擎层全链无可修缺陷。** 残余差异 = PRNG 自由度带内（±3.2%，gauge 对齐后几何重合）+ PoissonRecon 依赖版本差（-6.3% 引擎级，P5 决策项）+ 上游 AFM 环境性 N/A（CGAL≥6）。
+
+**第十五轮（2026-09-17(7)，全文件清单级排查 + 命令面全覆盖冒烟）**：
+
+1. **全文件清单级 diff（约 500 文件）**：上游 src/colmap 每个文件 vs fork 对应物，按去噪后实质差异分级。结论：数值层（estimators/solvers/mvs/geometry/retrieval）要么已对齐、要么差异为 API 形态噪声（typedef/宏名/容器/出参风格）；`essential_matrix_poly.h`（2315 行）与 `essential_matrix_coeffs.h`（291 行）经空白剥离后**数值恒等**（差异全为许可证头 + 折行宽度）；solvers 三个 .cc 的差异为上游已抽 helper（`SolveEpipolarConstraintMatrix`/`SolveHomographyFromConstraintMatrix`）、fork 内联且**功能等价**（均含 8 点快径、rank-2 强制、|det|≥1e-8 退化检查、共线三点检查）。
+2. **命令面全覆盖**：49 个共同命令逐类核对——重建主链 8 模式 + 稠密 + 网格 + 纹理已全部 A/B；本轮新增冒烟：`bundle_adjuster`（fork 1354 点 rc=0）、`view_graph_calibrator`（两侧日志逐字一致：12 pairs/Upgraded 1/No cameras to optimize/0 invalid）、`model_orientation_aligner`（两种 method 双侧 rc=0，IMAGE-ORIENTATION 旋转矩阵同轴 Y、角度差 0.14°）、`model_aligner`（GPS 对齐：fork mean 1.392279 m vs 上游 1.391869 m，**差 0.03%**）、模型互读（fork 模型被上游 bundle_adjuster 正常读取，反向亦然，模型文件集 cameras/frames/images/points3D/project.ini/rigs 完全一致）。
+3. **新发现缺陷（point_triangulator，已部分修复 + 剩余问题定界）**：① `--clear_points` 默认值 false → 上游 true（已修）；② `TranscribeImageIdsToDatabase` 重建 images_ 后未调 `RewireObjectPointers()`，camera_ptr/frame_ptr 悬空 → `--clear_points` 路径崩溃（已修）；③ **剩余**：clear 路径下重三角化成功（1377 点）+ 第一轮 BA 收敛（868→158px）后，帧位姿与 legacy 缓冲**同时被清零**（探针实测 post-BA center=[0,0,0]、全部观测重投影误差 >100px、max 1.34e154）→ FilterPoints 全滤 → 第二轮 BA NumResiduals==0 → CHECK 崩溃。取证链完整（READ 后位姿正确→BeginReconstruction 后正确→三角化后正确→BA SetUp 时 shadow 收到 identity→TearDown 写回后全零），破坏点锁定在 W3-2b BA 的 Solve 内部常量位姿路径，待下一会话继续。
+4. **GPS 层**：上游 `EllipsoidToUTM/UTMToEllipsoid` fork 未移植——两侧 `PosePrior::CoordinateSystem` 枚举均无 UTM 值、上游内部零消费者，记录为 S 级 API 面（非管线缺陷）。
+5. **回归**：global_mapper 5、synthetic 19、BA 11、two_view 3、reconstruction_io 19 全绿。
+
+**第十四轮（2026-09-17(6)，质询验证轮：两项真实缺陷再修复 ✅ 全链最终收敛）**：
+
+1. **三个决定性实验回应质询**：① 同库+num_threads=1 双引擎重验（当前二进制）：注册次序/点数/观测数逐位一致（1354/4258=1354/4258）、gauge 对齐后 NN 残差 1e-6——PRNG 混沌命题成立；② Poisson 交叉 mesher：规模随数据走（fork 引擎+上游数据 825K vs fork 引擎+fork 数据 327K），同数据引擎残差仅 4-5%；③ gauge Sim3-NN：主体几何逐点重合。
+2. **缺陷 A 修复 ✅（gauge ×1.37）**：`Reconstruction::ComputeBoundsAndCentroid` 分位索引截断（P1=trunc(4.5)=4 丢最大相机）→ 上游 floor/ceil 形态（委托 `geometry::ComputeBoundingBoxAndCentroid`），坐标 float→double。效果：导出 gauge ×1.37 → **0.02%**（cameras diag 8.0025 vs 8.0008）。
+3. **缺陷 B 修复 ✅（PM 远深度垃圾 100-439）**：`patch_match_cuda.cu` `ComputeViewingAngles` 的 `cos_triangulation_angle` 丢负号（`ComputeTriProb` 用 abs() 部分补偿，一致性硬过滤未补偿）→ 近平行（小基线）源视图被接受 → 深度不确定性放大。修复：恢复负号 + 移除 abs。效果：**>50 深度像素归零**（原 ~10K/图），PM p99.9 逐图与上游差 <0.5%。
+4. **修复后全链（/tmp/e2e_final/COMPARISON_FINAL.md 终审判定 v2）**：稀疏 1354 vs 1342（+0.9%）、远点 fork 12 vs 上游 15（fork 更少）、PM p99.9 逐图 <0.5%、融合离群 0=0、bbox -1.6%、**Poisson 从 2.67× 收敛到 -6.2%**、Delaunay -1.6%、PM 耗时 1.00×。回归：global_mapper 5、synthetic 19、BA 11、two_view 3、reconstruction_io 19 全绿。
+5. **当前二进制 8 模式矩阵**（含 hierarchical_mapper 首次纳入，/tmp/e2e_matrix2/）：fork exh 1354/seq 1325/spa 1354/tra 1354/vocab 1354/glb 1299/ppm 1299/hier 1354 vs 上游 1342/1324/1342/1342/1342/1328/1342/1342——全部 ≤±3.2%（自然初始化轨迹差，PRNG 自由度带内）。
+6. **构建注意**：`make colmap_exe` 不重编 colmap_cuda 目标（.cu 修改需显式 `make colmap_cuda`）——本轮曾因此误判修复无效。
+
+**对齐闭环 v2：全链无剩余可修缺陷。** 残余差异 = PRNG 自由度带内（±3.2%）+ 引擎浮点归约顺序（PoissonRecon ~5%）+ 上游 AFM 环境性 N/A。
+
+**第十三轮（2026-09-17(5)，终审 + 全链 A/B 重测 ✅ 对齐闭环）**：
+
+1. **代码终审 ✅**：全 src 残留探针清零（移除 bitmap.cc ExifLatitude 临时诊断）；texture_mapping/meshing（poisson/delaunay/AFM）与上游逐文件 diff 复核——全部为 API 形态噪声（typedef vs using、CHECK_OPTION_IN vs GE/LE、NodeHashMap vs unordered_map、InterpolateBilinear 返回值 vs 出参、CGAL≥6 版本分支），无数值差异。
+2. **全链 A/B 重测 ✅**（/tmp/e2e_final/COMPARISON_FINAL.md，双侧从 feature_extractor 独立重跑，同机同 GPU，PM max_image_size=2000）：特征 kp +0.12%；匹配 TVG inliers +1.29%；稀疏 6/6 注册、点数 1354 vs 1342（+0.9%）、reproj mean fork 1.0528 vs 1.0582（fork 更优）；内参 focal 差 0.03%、cx/cy 一致；位姿旋转差 0.019°（上游自基线 0.008°，同数量级）；PM 覆盖率逐图 ±0.5%；融合点云 -2.25%；Delaunay V/F ±0.7%；纹理/材质契约一致（texture.png 图集 + PLY 内 texture_u/v 绑定，无 MTL，两侧同契约）；PM 耗时 4.54 vs 4.29 min（1.06×）。
+3. **剩余 gap 全部定性为非代码缺陷**：① 稀疏远点尾部（45 vs 15）= 多线程 PRNG 流分配自由度的混沌放大（第七轮已证 num_threads=1 下两侧逐位一致）；② gauge ×1.37（无先验时任意，远点尾部影响 Normalize 分位基准）；③ Poisson 规模 2.67×（fork 融合云 1316 个 |p|>40 离群点撑大 bbox 稀释八叉树采样密度，上游 0）；④ 上游 AFM 需 CGAL≥6 本机环境性 N/A；⑤ 表面积指标被远点垃圾壳层主导不可比（V/F 为主指标）。
+4. **运行事故记录**：上游 PM 首跑因外部进程占 15.7GB 显存 CUDA OOM（重试成功）；AFM 脚本首次调用传参契约错误（fork AFM 的 --input_path 为 dense 工作区目录而非 fused.ply 文件）——均为运行层问题，非代码缺陷。
+
+**对齐闭环结论：libs/Reconstruction 与上游 d3ccaf35 无剩余可修的代码缺陷。** 后续任何点数/规模差异均为已定性的 PRNG 混沌或环境性因素。
+
 **第十二轮（2026-09-17(4)，P5 收官 + W18.3 匹配引擎对齐 ✅）**：
 
 1. **P5 收官 ✅（glb 1448→1329，上游 1328，差 1 点 / 0.08%）**：第十一轮"核心函数 md5 全同"的结论被本轮精确函数级 diff 部分证伪——真正的分叉是 `GlobalMapper::IterativeRetriangulateAndRefine` 的**结构差异**：fork 老版为自建 5 轮 `FilterTracksByNormalizedError + BA + Normalize` 循环（无 MergeTracks，点只增不减：Kept 1341→最终 1448）；上游注册后经 `IncrementalMapper::IterativeGlobalRefinement(5, 0.0005, ...)`（CompleteAndMergeTracks + Retriangulate + 5 轮 AdjustGlobalBundle/Normalize/FilterPoints 收敛判据），Merge 首轮合并 476 个观测（1336→最终 1328）。修复：(a) fork `IncrementalMapper` 补 `CompleteAndMergeTracks` + `IterativeGlobalRefinement`（上游形态，fork 基础件已全部就绪）；(b) fork `IncrementalTriangulator::Options` 补 `random_seed`；(c) fork `IncrementalMapper::Options` 补 `random_seed`；(d) `IterativeRetriangulateAndRefine` 重写为上游结构；(e) `GlobalMapperOptions` 的 BA lambda 补 `min_track_length = 3`。**注**：第十一轮记录的两个 L 级基础层手术（BundleAdjustmentBackendOptions / ReconstructionManager shared_ptr 化）不再必要——数值对齐经上述 M 级手术即达成，形态差异仅是接口风格。

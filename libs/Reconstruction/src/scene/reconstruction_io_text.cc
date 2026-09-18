@@ -311,6 +311,16 @@ void ReadImagesText(Reconstruction& reconstruction, std::istream& stream) {
       }
     }
 
+    // Fork dual-track parity: mirror the frame pose into the legacy
+    // per-image buffers (same rationale as the binary reader: the BA
+    // forward sync copies the legacy buffers back onto the frames, so a
+    // stale legacy buffer would clobber the poses read from frames.txt).
+    if (image.HasPose()) {
+      const Rigid3d cam_from_world = image.CamFromWorld();
+      const Eigen::Quaterniond& q = cam_from_world.rotation();
+      image.SetQvec(Eigen::Vector4d(q.w(), q.x(), q.y(), q.z()));
+      image.SetTvec(cam_from_world.translation());
+    }
     reconstruction.AddImage(std::move(image));
     // The file format contract is that every listed image is registered (the
     // write side only serializes RegImageIds()); restore the registration

@@ -51,8 +51,10 @@ namespace {
 // Loads descriptors for training from the database. Loads all descriptors from
 // the database if max_num_images < 0, otherwise the descriptors of a random
 // subset of images are selected.
+// Takes std::filesystem::path (as stored by OptionManager): MSVC's path::value_type
+// is wchar_t, so there is no implicit conversion to std::string like on POSIX.
 FeatureDescriptors LoadRandomDatabaseDescriptors(
-    const std::string& database_path, const int max_num_images) {
+    const std::filesystem::path& database_path, const int max_num_images) {
   auto database = Database::Open(database_path);
   DatabaseTransaction database_transaction(database.get());
 

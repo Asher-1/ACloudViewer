@@ -294,10 +294,7 @@ std::optional<int> Bitmap::ExifOrientation() const {
 bool Bitmap::ExifLatitude(double* value) const {
   if (!data_ || !value) return false;
   float dms[3] = {0, 0, 0};
-  const bool ok = GetPointMetadata(data_->image_spec, "GPS:Latitude", dms);
-  LOG(INFO) << "[TEMP-DIAG2] ExifLatitude ok=" << ok
-            << " spec_attrs=" << data_->image_spec.extra_attribs.size();
-  if (!ok) return false;
+  if (!GetPointMetadata(data_->image_spec, "GPS:Latitude", dms)) return false;
   *value = dms[0] + dms[1] / 60.0 + dms[2] / 3600.0;
   std::string ref;
   if (ReadExifTag(BitmapMetadataModel::kGps, "LatitudeRef", &ref) &&

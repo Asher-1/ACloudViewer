@@ -77,27 +77,18 @@ void IterativeLocalRefinement(const IncrementalMapperOptions& options,
 
 void IterativeGlobalRefinement(const IncrementalMapperOptions& options,
                                IncrementalMapper* mapper) {
-    PrintHeading1("Retriangulation");
-    CompleteAndMergeTracks(options, mapper);
-    std::cout << "  => Retriangulated observations: "
-              << mapper->Retriangulate(options.Triangulation()) << std::endl;
-
-    for (int i = 0; i < options.ba_global_max_refinements; ++i) {
-        const size_t num_observations =
-                mapper->GetReconstruction().ComputeNumObservations();
-        size_t num_changed_observations = 0;
-        AdjustGlobalBundle(options, mapper);
-        num_changed_observations += CompleteAndMergeTracks(options, mapper);
-        num_changed_observations += FilterPoints(options, mapper);
-        const double changed = static_cast<double>(num_changed_observations) /
-                               num_observations;
-        std::cout << StringPrintf("  => Changed observations: %.6f", changed)
-                  << std::endl;
-        if (changed < options.ba_global_max_refinement_change) {
-            break;
-        }
-    }
-
+    PrintHeading1("Retriangulation and Global bundle adjustment");
+    // Upstream parity (d3ccaf35 incremental_pipeline.cc): the refinement
+    // rounds run inside the mapper, which normalizes the scene after every
+    // global bundle adjustment (numerical stability) and applies the same
+    // complete/merge/retriangulate + changed-observation convergence logic.
+    // The old fork loop had no per-round Normalize, so the exported gauge
+    // drifted relative to upstream (x1.37 on mini6).
+    mapper->IterativeGlobalRefinement(
+            options.ba_global_max_refinements,
+            options.ba_global_max_refinement_change,
+            options.Mapper(), options.GlobalBundleAdjustment(),
+            options.Triangulation());
     FilterImages(options, mapper);
 }
 

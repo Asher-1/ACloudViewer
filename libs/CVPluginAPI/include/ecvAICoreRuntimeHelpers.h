@@ -57,7 +57,9 @@ inline aicore::runtime::DeviceTaskLock makeDeviceTaskLock(
  *
  *  Directly supported formats (little-endian memory order assumed):
  *    Format_RGB888      -> AICORE_IMAGE_RGB8
- *    Format_BGR888      -> AICORE_IMAGE_BGR8
+ *    Format_BGR888      -> AICORE_IMAGE_BGR8 (Qt >= 5.14; on older Qt5 no
+ *                          QImage can carry this format, so the case is
+ *                          compiled out and other formats map unchanged)
  *    Format_RGBA8888    -> AICORE_IMAGE_RGBA8
  *    Format_ARGB32      -> AICORE_IMAGE_BGRA8 (0xAARRGGBB is stored as
  *                          B,G,R,A bytes on little-endian)
@@ -82,9 +84,11 @@ inline aicore_image_view makeImageView(const QImage& image) {
         case QImage::Format_RGB888:
             view.format = AICORE_IMAGE_RGB8;
             break;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
         case QImage::Format_BGR888:
             view.format = AICORE_IMAGE_BGR8;
             break;
+#endif
         case QImage::Format_RGBA8888:
             view.format = AICORE_IMAGE_RGBA8;
             break;
