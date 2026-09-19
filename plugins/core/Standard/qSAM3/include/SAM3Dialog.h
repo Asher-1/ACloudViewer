@@ -247,10 +247,22 @@ protected:
     void showEvent(QShowEvent* e) override;
     /** Keeps the busy overlay covering the whole dialog. */
     void resizeEvent(QResizeEvent* e) override;
+    /** Closing the reused dialog for good releases every resident GPU
+     *  context (see releaseGpuResidency). Focus loss or occlusion never
+     *  reaches here. If a task is running the user is asked to confirm. */
+    void closeEvent(QCloseEvent* e) override;
+    /** Esc intercept: confirm before closing when a task is running. */
+    void keyPressEvent(QKeyEvent* e) override;
 
 private:
     /** Model families grouped per tab. */
     enum class Sam3Tab { Full = 0, Visual, Sam2 };
+
+    /** Drop every resident GPU context owned by this dialog (image worker
+     *  and video worker) so other AICore plugins can allocate. Invoked when
+     *  the dialog is closed for good (closeEvent / rejected); models reload
+     *  lazily on first use after reopening. */
+    void releaseGpuResidency();
 
     void setupUi();
     void populateModelCombo(QComboBox* combo, Sam3Tab tab);

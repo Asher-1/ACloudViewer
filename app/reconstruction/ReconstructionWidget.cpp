@@ -55,13 +55,13 @@ void ReconstructionWidget::iniEnvironment() {
             CVTools::FromQString(settings.value("import_path", "").toString());
 
     // project path
-    std::string project_path =
+    std::filesystem::path project_path =
             CVTools::FromQString(settings.value("project_path", "").toString());
     if (!import_path.empty() && project_path.empty()) {
-        project_path = JoinPaths(import_path, "project.ini");
+        project_path = std::filesystem::path(import_path) / "project.ini";
     }
 
-    if (project_path != "") {
+    if (!project_path.empty()) {
         // Only try to read the configuration file if it exists
         if (ExistsFile(project_path)) {
             if (options_.ReRead(project_path)) {
@@ -113,7 +113,7 @@ void ReconstructionWidget::ImportReconstruction(const std::string& path) {
 }
 
 void ReconstructionWidget::close() {
-    if (project_widget_->IsValid() && *options_.project_path == "") {
+    if (project_widget_->IsValid() && options_.project_path->empty()) {
         // Project was created, but not yet saved
         QMessageBox::StandardButton reply;
         reply = QMessageBox::question(
@@ -628,7 +628,7 @@ bool ReconstructionWidget::ProjectOpen() {
                     .toUtf8()
                     .constData();
     // If selection not canceled
-    if (project_path != "") {
+    if (!project_path.empty()) {
         if (options_.ReRead(project_path)) {
             *options_.project_path = project_path;
             project_widget_->SetDatabasePath(*options_.database_path);
@@ -667,7 +667,7 @@ void ReconstructionWidget::ProjectSave() {
                         .toUtf8()
                         .constData();
         // If selection not canceled
-        if (project_path != "") {
+        if (!project_path.empty()) {
             if (!HasFileExtension(project_path, ".ini")) {
                 project_path += ".ini";
             }
@@ -698,7 +698,7 @@ void ReconstructionWidget::ProjectSaveAs() {
                     tr("Project file (*.ini)"))
                     .toUtf8()
                     .constData();
-    if (new_project_path != "") {
+    if (!new_project_path.empty()) {
         *options_.project_path = new_project_path;
         options_.Write(*options_.project_path);
 
@@ -715,7 +715,7 @@ void ReconstructionWidget::Import() {
     settings.beginGroup("Reconstruction");
     QString last_import_path = settings.value("import_path", "").toString();
 
-    const std::string import_path =
+    const std::filesystem::path import_path =
             QFileDialog::getExistingDirectory(this, tr("Select source..."),
                                               last_import_path,
                                               QFileDialog::ShowDirsOnly)
@@ -723,20 +723,20 @@ void ReconstructionWidget::Import() {
                     .constData();
 
     // Selection canceled?
-    if (import_path == "") {
+    if (import_path.empty()) {
         settings.endGroup();
         return;
     }
 
-    const std::string project_path = JoinPaths(import_path, "project.ini");
-    const std::string cameras_bin_path = JoinPaths(import_path, "cameras.bin");
-    const std::string images_bin_path = JoinPaths(import_path, "images.bin");
-    const std::string points3D_bin_path =
-            JoinPaths(import_path, "points3D.bin");
-    const std::string cameras_txt_path = JoinPaths(import_path, "cameras.txt");
-    const std::string images_txt_path = JoinPaths(import_path, "images.txt");
-    const std::string points3D_txt_path =
-            JoinPaths(import_path, "points3D.txt");
+    const std::filesystem::path project_path = import_path / "project.ini";
+    const std::filesystem::path cameras_bin_path = import_path / "cameras.bin";
+    const std::filesystem::path images_bin_path = import_path / "images.bin";
+    const std::filesystem::path points3D_bin_path =
+            import_path / "points3D.bin";
+    const std::filesystem::path cameras_txt_path = import_path / "cameras.txt";
+    const std::filesystem::path images_txt_path = import_path / "images.txt";
+    const std::filesystem::path points3D_txt_path =
+            import_path / "points3D.txt";
 
     if ((!ExistsFile(cameras_bin_path) || !ExistsFile(images_bin_path) ||
          !ExistsFile(points3D_bin_path)) &&
@@ -750,11 +750,15 @@ void ReconstructionWidget::Import() {
         return;
     }
 
-    settings.setValue("import_path", CVTools::ToQString(import_path));
-    settings.setValue("project_path", CVTools::ToQString(project_path));
-    settings.setValue("cameras_path", CVTools::ToQString(cameras_bin_path));
-    settings.setValue("images_path", CVTools::ToQString(images_bin_path));
-    settings.setValue("points3D_path", CVTools::ToQString(points3D_bin_path));
+    settings.setValue("import_path", CVTools::ToQString(import_path.string()));
+    settings.setValue("project_path",
+                      CVTools::ToQString(project_path.string()));
+    settings.setValue("cameras_path",
+                      CVTools::ToQString(cameras_bin_path.string()));
+    settings.setValue("images_path",
+                      CVTools::ToQString(images_bin_path.string()));
+    settings.setValue("points3D_path",
+                      CVTools::ToQString(points3D_bin_path.string()));
     settings.endGroup();
 
     if (!ReconstructionOverwrite()) {
@@ -804,7 +808,7 @@ void ReconstructionWidget::ImportFrom() {
                     .constData();
 
     // Selection canceled?
-    if (import_path == "") {
+    if (import_path.empty()) {
         settings.endGroup();
         return;
     }
@@ -846,7 +850,7 @@ void ReconstructionWidget::Export() {
     settings.beginGroup("Reconstruction");
     QString last_export_path = settings.value("export_path", "").toString();
 
-    const std::string export_path =
+    const std::filesystem::path export_path =
             QFileDialog::getExistingDirectory(this, tr("Select destination..."),
                                               last_export_path,
                                               QFileDialog::ShowDirsOnly)
@@ -854,7 +858,7 @@ void ReconstructionWidget::Export() {
                     .constData();
 
     // Selection canceled?
-    if (export_path == "") {
+    if (export_path.empty()) {
         settings.endGroup();
         return;
     }
@@ -863,16 +867,19 @@ void ReconstructionWidget::Export() {
     const std::string images_name = "images.bin";
     const std::string points3D_name = "points3D.bin";
 
-    const std::string project_path = JoinPaths(export_path, "project.ini");
-    const std::string cameras_path = JoinPaths(export_path, cameras_name);
-    const std::string images_path = JoinPaths(export_path, images_name);
-    const std::string points3D_path = JoinPaths(export_path, points3D_name);
+    const std::filesystem::path project_path = export_path / "project.ini";
+    const std::filesystem::path cameras_path = export_path / cameras_name;
+    const std::filesystem::path images_path = export_path / images_name;
+    const std::filesystem::path points3D_path = export_path / points3D_name;
 
-    settings.setValue("project_path", CVTools::ToQString(project_path));
-    settings.setValue("export_path", CVTools::ToQString(export_path));
-    settings.setValue("cameras_path", CVTools::ToQString(cameras_path));
-    settings.setValue("images_path", CVTools::ToQString(images_path));
-    settings.setValue("points3D_path", CVTools::ToQString(points3D_path));
+    settings.setValue("project_path",
+                      CVTools::ToQString(project_path.string()));
+    settings.setValue("export_path", CVTools::ToQString(export_path.string()));
+    settings.setValue("cameras_path",
+                      CVTools::ToQString(cameras_path.string()));
+    settings.setValue("images_path", CVTools::ToQString(images_path.string()));
+    settings.setValue("points3D_path",
+                      CVTools::ToQString(points3D_path.string()));
     settings.endGroup();
 
     if (ExistsFile(cameras_path) || ExistsFile(images_path) ||
@@ -918,7 +925,7 @@ void ReconstructionWidget::ExportAll() {
                     .constData();
 
     // Selection canceled?
-    if (export_path == "") {
+    if (export_path.empty()) {
         settings.endGroup();
         return;
     } else {
@@ -952,7 +959,7 @@ void ReconstructionWidget::ExportAs() {
                     .constData();
 
     // Selection canceled?
-    if (export_path == "") {
+    if (export_path.empty()) {
         settings.endGroup();
         return;
     }
@@ -990,7 +997,7 @@ void ReconstructionWidget::ExportAsText() {
     settings.beginGroup("Reconstruction");
     QString last_export_path = settings.value("export_path", "").toString();
 
-    const std::string export_path =
+    const std::filesystem::path export_path =
             QFileDialog::getExistingDirectory(this, tr("Select destination..."),
                                               last_export_path,
                                               QFileDialog::ShowDirsOnly)
@@ -998,7 +1005,7 @@ void ReconstructionWidget::ExportAsText() {
                     .constData();
 
     // Selection canceled?
-    if (export_path == "") {
+    if (export_path.empty()) {
         settings.endGroup();
         return;
     }
@@ -1007,16 +1014,19 @@ void ReconstructionWidget::ExportAsText() {
     const std::string images_name = "images.txt";
     const std::string points3D_name = "points3D.txt";
 
-    const std::string project_path = JoinPaths(export_path, "project.ini");
-    const std::string cameras_path = JoinPaths(export_path, cameras_name);
-    const std::string images_path = JoinPaths(export_path, images_name);
-    const std::string points3D_path = JoinPaths(export_path, points3D_name);
+    const std::filesystem::path project_path = export_path / "project.ini";
+    const std::filesystem::path cameras_path = export_path / cameras_name;
+    const std::filesystem::path images_path = export_path / images_name;
+    const std::filesystem::path points3D_path = export_path / points3D_name;
 
-    settings.setValue("export_path", CVTools::ToQString(export_path));
-    settings.setValue("project_path", CVTools::ToQString(project_path));
-    settings.setValue("cameras_path", CVTools::ToQString(cameras_path));
-    settings.setValue("images_path", CVTools::ToQString(images_path));
-    settings.setValue("points3D_path", CVTools::ToQString(points3D_path));
+    settings.setValue("export_path", CVTools::ToQString(export_path.string()));
+    settings.setValue("project_path",
+                      CVTools::ToQString(project_path.string()));
+    settings.setValue("cameras_path",
+                      CVTools::ToQString(cameras_path.string()));
+    settings.setValue("images_path", CVTools::ToQString(images_path.string()));
+    settings.setValue("points3D_path",
+                      CVTools::ToQString(points3D_path.string()));
     settings.endGroup();
 
     if (ExistsFile(cameras_path) || ExistsFile(images_path) ||

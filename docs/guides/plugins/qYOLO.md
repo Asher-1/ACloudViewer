@@ -198,3 +198,94 @@ variant of the same scale — the official no-input path), because a
 fresh upstream `*-seg.pt` has no usable built-in vocabulary: without
 `set_classes` the official runtime falls back to a zero embedding and emits
 80 numeric placeholder classes ("0"…"79"), which is not usable recognition.
+
+## Multi-object tracking and ReID
+
+### Track tab
+
+The Live tab's *Track* checkbox adds stable per-object ids on top of any
+detect/segment/pose/obb model. The type combo exposes the six official
+`ultralytics/cfg/trackers` backends (`tracktrack` — the official default —
+plus `bytetrack`, `botsort`, `ocsort`, `deepocsort`, `fasttrack`); switching
+the type resets the threshold spins and the GMC combo to that tracker's
+official YAML defaults (the upstream `tracker=<yaml>` selection semantics).
+Every threshold maps 1:1 to a YAML key (`track_high_thresh`,
+`track_low_thresh`, `new_track_thresh`, `track_buffer`, `match_thresh`),
+and enabling Track lowers Conf to the official track-mode default of 0.1
+when it still carries the detect default. Overlay labels render in the
+official `results.plot()` format (`id:<n> person 0.13`) with per-class
+colors, and the stroke/font sizes follow the official `Annotator`
+defaults for the rendered image size.
+
+Headless use: `ACloudViewer -SILENT -YOLO_TRACK MODEL <gguf> VIDEO|FRAMES_DIR
+<source> [TRACKER tracktrack] [GMC sparseOptFlow] [CONF 0.1] [REID 0|1]
+TRACKS_JSON out.jsonl` (jsonl rows mirror the upstream `write_track_json_entry`
+schema, including the TRACKTRACK loose-NMS `detections_del` recovery rows);
+agents reach the same command through the `yolo.track` JSON-RPC method.
+
+![qYOLO tracked output: stable ids across detection gaps and occlusion](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qYOLO/images/yolo-track.jpg?raw=1)
+
+Tracked output on a moving-target sequence (official detector detections fed
+through the ported tracker): identities survive the detection gap and the
+occlusion window with stable ids; the sequence is the same one the
+field-by-field parity harness runs (`tests/track_parity_check.py`, official
+runtime vs the C++ tracker, 6/6 trackers identical).
+
+### ReID (appearance re-identification)
+
+The *ReID* checkbox engages the official `with_reid` cosine term for the
+BoT-SORT family (`botsort` / `deepocsort` / `tracktrack`; the other three
+trackers never read it). Two encoder paths exist, mirroring the official
+`trackers/utils/reid.py` `build_encoder`:
+
+- **`model: "auto"` (default of every official YAML, fully supported)**:
+  the detector itself provides the appearance features. The yolo engine
+  exports the detect head's input feature levels (P3/P4/P5), pools every
+  spatial position to a uniform vector (channel-group mean, exactly the
+  official `get_obj_feats`), and gathers one row per kept detection
+  (`aicore_yolo_features_view`). The tracker blends the rows into a
+  normalized EMA state (`smooth_feature`) and folds the cosine distance
+  into the association cost (`embedding_distance / 2`, gated by
+  `proximity_thresh` / `appearance_thresh`, min-fused for BoT-SORT and
+  Deep OC-SORT, weight-fused for TrackTrack). End2end heads have no input
+  feature maps — exactly like the official auto path, which swaps in a
+  separate encoder there — so those streams degrade to motion-only
+  association.
+- **`model: <path>` (explicit encoder)**: `aicore/reid_capi.h` wraps a
+  classify-task GGUF (the official auto fallback encoder,
+  e.g. `yolo26n-cls-*`) as `aicore_reid_load_opts` /
+  `aicore_reid_embed_image` — crops follow the official `save_one_box`
+  semantics (gain 1.02, pad 10, boundary clip), are stretched to the
+  model's square input, and return the pooled pre-linear feature
+  (`session_read_embed`). A stream without features degrades to
+  motion-only association, mirroring the upstream "feats missing"
+  behavior. Dedicated appearance encoders are published as the authoritative
+  family `reid-yolo26{n,s,m,l,x}-{f32,f16,q8_0}.gguf` (15 files) in the
+  [`yolo_gguf_models`](https://github.com/Asher-1/cloudViewer_downloads/releases/tag/yolo_gguf_models)
+  release and on
+  [Hugging Face `Asher-1/yolo-gguf`](https://huggingface.co/Asher-1/yolo-gguf);
+  the catalog pins their SHA-256 and the validate-all `reid-native-models`
+  rows exercise them on every backend. Upstream truth: these are converted
+  directly from the official `yolo26{n,s,m,l,x}-reid.onnx` assets — every
+  rebuilt network verifies against its onnx graph at cosine 1.000000 before
+  writing, and the AICore CUDA runtime matches the official onnx output at
+  cos=0.9999 on identical CHW input. (The earlier cls-tower family
+  `reid-yolo26*-cls-*` was withdrawn: its weights were not the official
+  ReID models.) Conversion:
+  `cpp_ggml/scripts/convert_reid_onnx_to_gguf.py` in ultralytics-ggml.
+
+![ReID embedding similarity: same identity stays at 1.0 across the occlusion gap, cross identity at ~0.68](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qYOLO/images/yolo-reid.jpg?raw=1)
+
+Validation: `core/AICore/tools/reid_validate.py` compares the C++ probe
+(`core/AICore/tools/reid_probe.cpp`, built as the `reid_probe` target into
+`build_app/bin/`) against the PyTorch and ONNX Runtime baselines on a fixed
+synthetic image; the PyTorch/ORT baselines must run in their own process
+(numpy and libAICore cannot share one). Upstream-truth accuracy after the
+RGB32 preprocessing fix: min cosine vs PyTorch 0.9975-0.9988 across
+f32/f16/q8_0 and cuda/vulkan/cpu (9/9 PASS, reports in
+`build_app/Testing/validate-*.json`); batch-3 latency p50 cuda ~4.6 ms,
+vulkan ~2.7 ms. The yolo validate-all gate (9/9 PASS) covers the
+feature-export-off bit-stability invariant. The ReID C API itself is gated
+by `test_reid_capi_contract` (no assets) and `test_reid_capi_load` (the
+`reid-embed` row in `core/AICore/scripts/validation_manifest.json`,
+consuming the shared `yolo26n-cls-q8_0.gguf` classify asset).

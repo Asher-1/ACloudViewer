@@ -44,7 +44,7 @@ public:
     void Run() override;
 
 private:
-    std::string import_path_;
+    std::filesystem::path import_path_;
 };
 
 ExtractionWidget::ExtractionWidget(QWidget* parent, OptionManager* options)

@@ -1,4 +1,4 @@
-# qYOLO — YOLO Detect, Segment, Depth, Pose, OBB, Classify, Semantic, World & YOLOE
+# qYOLO — YOLO Detect, Segment, Depth, Pose, OBB, Classify, Semantic, World, YOLOE & Tracking
 
 ![Plugin icon](images/qYOLO.svg)
 
@@ -120,9 +120,13 @@ required):
 ```bash
 cmake -DBUILD_GUI=ON -DAICore_ENABLED=ON -DPLUGIN_STANDARD_QYOLO=ON \
   -DBUILD_UNIT_TESTS=ON ..
-cmake --build build_app --target test_qyolo_helpers -j4
-ctest -R test_qyolo_helpers --output-on-failure
+cmake --build build_app --target test_qyolo_helpers test_qyolo_tracker -j4
+ctest -R "test_qyolo_(helpers|tracker)" --output-on-failure
 ```
+
+`test_qyolo_tracker` exercises the multi-object tracker port directly
+(official-YAML defaults, all six tracker backends, deterministic detection
+replay, reset semantics, OBB angle pass-through — no GGUF model required).
 
 ## Models
 
@@ -130,15 +134,19 @@ See [models/MODEL_CARD.md](models/MODEL_CARD.md). Recommended default:
 
 [`yolov8n-f16.gguf`](https://github.com/Asher-1/cloudViewer_downloads/releases/download/yolo_gguf_models/yolov8n-f16.gguf)
 
-Sixty-one variants (detection, segmentation, metric depth, pose, OBB,
+Seventy-two variants (detection, segmentation, metric depth, pose, OBB,
 classify, semantic, plus the open-vocabulary World / YOLOE families and the
 text towers — see [models/MODEL_CARD.md](models/MODEL_CARD.md) for the full
-table), each in 3 quantizations (f32 / f16 / q8_0) — 183 models total — on
+table), each in 3 quantizations (f32 / f16 / q8_0) — 215 models total — on
 [cloudViewer_downloads yolo_gguf_models](https://github.com/Asher-1/cloudViewer_downloads/releases/tag/yolo_gguf_models)
-are listed in the model combos. Each task tab shows only its own task's
+are listed in the model combos. The OBB and semantic families ship both the
+640 canonical speed graphs and the checkpoint-native **1024 resolution**
+rebuilds (`yolo26*-obb-1024` / `yolo26*-sem-1024`; the 1024 GGUFs carry
+their input size in the model metadata, so no extra configuration is
+needed). Each task tab shows only its own task's
 models (the task is a property of the model, not a runtime switch); the
 Live tab lists the closed-set real-time families (detection / segmentation /
-depth). Note for the YOLOE tab: the non-`-pf` checkpoints ship no stored
+depth / pose / OBB). Note for the YOLOE tab: the non-`-pf` checkpoints ship no stored
 vocabulary, so a class list is required before Run (the `-pf` checkpoints
 use the built-in vocabulary and need no class list; Run rejects an empty
 class list with an actionable hint instead of switching models on its
@@ -221,14 +229,74 @@ Benchmark source: [ultralytics-ggml](https://github.com/Asher-1/ultralytics-ggml
 ### Live (camera / video) tab
 
 Play a video file or use the camera. The model combo lists the closed-set
-real-time families (detection / segmentation / depth — the pose / obb /
+real-time families (detection / segmentation / depth / pose / OBB — the
 classify / semantic / world / yoloe models run in their dedicated task
 tabs); the threshold row (Conf/IoU/Top-K) appears for detect/segment
 models and hides automatically for depth models. Playback is display-paced: an
 async worker infers on the latest decoded frame and the overlay (detection
-boxes, segment masks, or the turbo depth blend at 65% opacity) refreshes on
+boxes, segment masks, pose skeletons, rotated OBB rectangles, or the turbo
+depth blend at 65% opacity) refreshes on
 completion. The capture button pushes the current annotated frame into the DB
 tree.
+
+### Multi-object tracking (Live tab)
+
+Enable **Track** on the Live tab to assign a stable id to every detection
+across frames — supported by all six official Ultralytics tracker modes,
+mirrored algorithm-for-algorithm from `ultralytics/trackers` by the
+ultralytics-ggml runtime:
+
+| Type | Notes |
+|------|-------|
+| `tracktrack` | default; occlusion-aware re-association with loose-NMS recovery in the upstream runtime (the recovery rows are not exposed by the typed AICore API, so the plugin runs the main association path) |
+| `bytetrack` | two-stage high/low score association |
+| `botsort` | ByteTrack + camera-motion compensation (GMC) + appearance gating |
+| `ocsort` | observation-centered SORT with velocity inertia |
+| `deepocsort` | DeepOCSORT on the `with_reid=false` path (no ReID encoder ships with the C++ runtime) |
+| `fasttrack` | occlusion-aware FAST tracker |
+
+Defaults mirror the official `ultralytics/cfg/trackers/*.yaml` values and
+can be tuned in the parameter area (high/low/new thresholds, lost-track
+buffer, match threshold). **GMC** (global motion compensation, used by
+botsort / deepocsort / tracktrack) calls the same cv2 routines as upstream
+(`sparseOptFlow` / `orb` / `sift` / `ecc`); the GMC combo is enabled only
+for the tracker types that consume it and
+`sparseOptFlow` is always
+available (a self-contained fallback on builds without OpenCV), while
+`orb` / `sift` / `ecc` require the plugin's OpenCV build and are only
+listed there. A tracker rejected for the current build/config (e.g. an
+OpenCV-less build with `orb`) logs a one-time "Tracking disabled" reason
+to the plugin log instead of silently dropping ids. Tracking applies to the detect / segment / pose / OBB model
+families; the track state resets automatically on source switch, seek,
+loop and restart. Tracked frames are labeled `#<id> class score` in the
+preview overlay and in the captured DB image.
+
+## Headless / agent tracking (-YOLO_TRACK)
+
+The plugin registers a `-SILENT` CLI command mirroring the upstream
+`yolo-cli track` subcommand (agents use the `cli-anything-acloudviewer`
+harness or spawn the binary directly; the JSON-RPC plugin exposes the same
+entry as the `yolo.track` method):
+
+```bash
+ACloudViewer -SILENT -NO_TIMESTAMP -YOLO_TRACK \
+    MODEL yolo26n-f16.gguf \
+    VIDEO input.mp4                     # or FRAMES_DIR frames/ (Qt decode) \
+    TRACKER tracktrack                  # bytetrack|botsort|ocsort|deepocsort|fasttrack|tracktrack \
+    GMC sparseOptFlow                   # sparseOptFlow|orb|sift|ecc|none (OpenCV methods need the OpenCV build) \
+    CONF 0.1 IOU 0.7 MAX_DET 300        # CONF defaults to the upstream track-mode 0.1 \
+    DEVICE auto THREADS 0 \
+    TRACKS_JSON tracks.jsonl            # per-frame detections, dets_del and tracked rows
+```
+
+- Tasks: detect / segment / pose / obb (the task is a property of the
+  model, exactly like the upstream track mode)
+- `detections_del`: loose-NMS recovery rows for TrackTrack (upstream
+  `compute_dets_del`, _LOOSE_NMS_IOU 0.95 / _LOOSE_NMS_DEDUP_IOU 0.97);
+  always empty for end2end heads (no NMS to loosen) and box-only by
+  design, in both the upstream and this port
+- Frames of one source must share the first frame's size (same
+  requirement as the upstream track pipeline)
 
 ## Outputs
 

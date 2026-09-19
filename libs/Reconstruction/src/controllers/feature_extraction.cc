@@ -236,7 +236,7 @@ void SiftFeatureExtractor::Run() {
 }
 
 FeatureImporter::FeatureImporter(const ImageReaderOptions& reader_options,
-                                 const std::string& import_path)
+                                 const std::filesystem::path& import_path)
     : reader_options_(reader_options), import_path_(import_path) {}
 
 void FeatureImporter::Run() {

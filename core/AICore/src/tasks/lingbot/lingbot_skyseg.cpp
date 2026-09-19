@@ -20,6 +20,8 @@
 #include <sstream>
 #include <unordered_map>
 
+#include "common/gguf_file_io.hpp"
+
 namespace lingbot {
 
 namespace {
@@ -165,10 +167,12 @@ bool skyseg::load(const std::string &gguf_path, ggml_backend_t backend) {
         return false;
     }
 
-    gguf_init_params params = {false, &p_->wctx};
-    p_->guf = gguf_init_from_file(gguf_path.c_str(), params);
+    std::string open_error;
+    p_->guf = ggml_common::open_gguf_file(gguf_path, /*no_alloc=*/false,
+                                          &p_->wctx, "lingbot_skyseg",
+                                          &open_error);
     if (!p_->guf) {
-        error_ = "skyseg: failed to open GGUF: " + gguf_path;
+        error_ = open_error;
         return false;
     }
 

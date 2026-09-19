@@ -15,6 +15,7 @@
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
+#include <QKeyEvent>
 #include <QMessageBox>
 #include <QSettings>
 #include <QStandardPaths>
@@ -503,6 +504,7 @@ void DeepLSDDialog::setProgress(int current, int total) {
 }
 
 void DeepLSDDialog::setRunning(bool running) {
+    m_taskRunning = running;
     m_runBtn->setEnabled(!running);
     m_cancelBtn->setEnabled(running);
 }
@@ -774,7 +776,32 @@ void DeepLSDDialog::onRun() {
 void DeepLSDDialog::onCancel() { emit cancelRequested(); }
 
 void DeepLSDDialog::closeEvent(QCloseEvent* event) {
+    if (m_taskRunning || m_downloadInProgress || m_testDataDownloadInProgress) {
+        if (QMessageBox::question(
+                    this, tr("Task running"),
+                    tr("A DeepLSD task is running. Close anyway?"),
+                    QMessageBox::Yes | QMessageBox::No,
+                    QMessageBox::No) != QMessageBox::Yes) {
+            event->ignore();
+            return;
+        }
+    }
     saveSettings();
     onCancel();
     QDialog::closeEvent(event);
+}
+
+void DeepLSDDialog::keyPressEvent(QKeyEvent* event) {
+    if (event->key() == Qt::Key_Escape &&
+        (m_taskRunning || m_downloadInProgress ||
+         m_testDataDownloadInProgress)) {
+        if (QMessageBox::question(
+                    this, tr("Task running"),
+                    tr("A DeepLSD task is running. Close anyway?"),
+                    QMessageBox::Yes | QMessageBox::No,
+                    QMessageBox::No) != QMessageBox::Yes) {
+            return;
+        }
+    }
+    QDialog::keyPressEvent(event);
 }

@@ -200,6 +200,34 @@ AICORE_CAPI void aicore_yolo_set_detect_thresholds(aicore_yolo_ctx* ctx,
                                                    float conf_thres,
                                                    float iou_thres,
                                                    uint32_t top_k);
+/** Enable loose-NMS recovery rows for the TrackTrack tracker (upstream
+ *  track mode's attach_raw_preds_hook + compute_dets_del). Off by
+ *  default (zero cost); adjustable at runtime without a reload; see the
+ *  typed accessors below. */
+AICORE_CAPI void aicore_yolo_set_track_recovery(aicore_yolo_ctx* ctx,
+                                                int enabled);
+
+/** Enable per-anchor object-feature export for the official model="auto"
+ *  ReID path (models/yolo/detect/predict.py get_obj_feats): the detect
+ *  head's input feature levels are pooled to a uniform per-anchor vector
+ *  (channel-group mean, dim = minimum channel count across levels) and
+ *  gathered per returned detection. Off by default (zero cost); toggling
+ *  rebuilds the graph plan on the next inference. End2end heads have no
+ *  input feature maps (the official path swaps in a separate ReID encoder
+ *  there) — the view stays empty for them. */
+AICORE_CAPI void aicore_yolo_set_detector_features(aicore_yolo_ctx* ctx,
+                                                   int enabled);
+/** Borrowed per-detection feature rows of the most recent
+ *  detect/segment/pose/obb call: row-major [count, dim], index-aligned
+ *  with the returned detection rows (NOT normalized; the tracker's EMA
+ *  owns normalization, mirroring smooth_feature). count = 0 when the
+ *  export is disabled, the task is not box-anchored, or the head is
+ *  end2end. Owned by ctx; valid until the next box-anchored call or
+ *  aicore_yolo_free. NULL-safe. */
+AICORE_CAPI void aicore_yolo_features_view(const aicore_yolo_ctx* ctx,
+                                           const float** out_data,
+                                           int32_t* out_count,
+                                           int32_t* out_dim);
 
 /** Drop the host-side copies of the model weights to halve the session's
  *  host memory footprint. The device weight buffer is untouched, so
@@ -397,6 +425,21 @@ typedef struct aicore_yolo_detection {
 AICORE_CAPI int aicore_yolo_detection_count(const aicore_yolo_ctx* ctx);
 AICORE_CAPI aicore_yolo_detection
 aicore_yolo_detection_at(const aicore_yolo_ctx* ctx, int index);
+
+/** Number of loose-NMS recovery rows from the most recent detect / obb
+ *  call: detections the tight NMS suppressed but a 0.95-IoU NMS pass
+ *  kept, minus rows whose best IoU against the tight rows is >= 0.97
+ *  (empty for end2end heads — the loose pass reproduces the tight rows
+ *  exactly — and for segment/pose tasks, mirroring the upstream track
+ *  mode where recovery is box-only). 0 unless recovery was enabled via
+ *  aicore_yolo_set_track_recovery before the call. */
+AICORE_CAPI int aicore_yolo_recovery_count(const aicore_yolo_ctx* ctx);
+/** i-th loose-NMS recovery row (source-image pixels, axis-aligned,
+ *  unclipped — the upstream loose pass does not apply the boundary clip;
+ *  class_id carries the class, score the confidence). Zeroed when out of
+ *  range. Valid until the next detect / obb call or aicore_yolo_free. */
+AICORE_CAPI aicore_yolo_detection
+aicore_yolo_recovery_at(const aicore_yolo_ctx* ctx, int index);
 /** Class name of the i-th detection from the most recent detect call
  *  (open-vocabulary class list override or the GGUF metadata; owned by the
  *  context, valid until the next detect call or aicore_yolo_free). Returns

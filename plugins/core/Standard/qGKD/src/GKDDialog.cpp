@@ -15,6 +15,7 @@
 #include <QFileInfo>
 #include <QGroupBox>
 #include <QHBoxLayout>
+#include <QKeyEvent>
 #include <QMessageBox>
 #include <QSettings>
 #include <QSplitter>
@@ -1307,19 +1308,32 @@ GKDWorker::Settings GKDDialog::workerSettings() const {
 }
 
 void GKDDialog::closeEvent(QCloseEvent* event) {
-    saveSettings();
+    // Uniform plugin-close semantics: if a task is running, ask for
+    // confirmation before closing. The rejected() hook (connected by
+    // the plugin) handles the cooperative cancel + resource release.
     if (m_taskRunning) {
-        const auto answer = QMessageBox::question(
-                this, tr("Task running"),
-                tr("A GKD task is running. Close anyway?"),
-                QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
-        if (answer != QMessageBox::Yes) {
+        if (QMessageBox::question(this, tr("Task running"),
+                                  tr("A GKD task is running. Close anyway?"),
+                                  QMessageBox::Yes | QMessageBox::No,
+                                  QMessageBox::No) != QMessageBox::Yes) {
             event->ignore();
             return;
         }
-        emit cancelRequested();
     }
+    saveSettings();
     QDialog::closeEvent(event);
+}
+
+void GKDDialog::keyPressEvent(QKeyEvent* event) {
+    if (event->key() == Qt::Key_Escape && m_taskRunning) {
+        if (QMessageBox::question(this, tr("Task running"),
+                                  tr("A GKD task is running. Close anyway?"),
+                                  QMessageBox::Yes | QMessageBox::No,
+                                  QMessageBox::No) != QMessageBox::Yes) {
+            return;
+        }
+    }
+    QDialog::keyPressEvent(event);
 }
 
 void GKDDialog::showEvent(QShowEvent* event) {

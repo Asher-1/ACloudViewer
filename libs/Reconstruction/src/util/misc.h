@@ -27,9 +27,13 @@ namespace colmap {
 #define STRINGIFY_(s) #s
 #endif  // STRINGIFY
 
-// Append trailing slash to string if it does not yet end with a slash.
-
 // Join multiple paths into one path.
+// NOTE (fork): legacy string-join helper kept for the string-domain callers
+// inside this library (exe tools, controllers, mvs internals). The
+// reconstruction UI layer (app/reconstruction) must NOT use it - that layer
+// is fs::path-native (operator/) and is gated by
+// app/reconstruction/check_fs_path_hygiene.sh. New core code should prefer
+// std::filesystem::path operator/ as well.
 template <typename... T>
 std::string JoinPaths(T const&... paths);
 

@@ -17,6 +17,7 @@
 #include <memory>
 
 #include "common/ggml_backend_utils.hpp"
+#include "common/gguf_file_io.hpp"
 #include "ggml-backend.h"
 #include "gguf.h"
 #include "tasks/rmbg/rmbg.hpp"
@@ -137,8 +138,8 @@ bool load_gguf(const char *path,
 
     // Metadata is optional for split compatibility files.
     ggml_context *meta = nullptr;
-    struct gguf_init_params params = {true, &meta};
-    gguf_context *ctx = gguf_init_from_file(path, params);
+    gguf_context *ctx =
+            ggml_common::open_gguf_file(path, /*no_alloc=*/true, &meta, "rmbg");
     if (ctx) {
         const int k_size = gguf_find_key(ctx, "rmbg.input_size");
         if (k_size >= 0)

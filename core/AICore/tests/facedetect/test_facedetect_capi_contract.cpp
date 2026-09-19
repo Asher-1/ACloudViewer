@@ -107,6 +107,18 @@ int main() {
                  std::strstr(aicore_facedetect_model_download_base(),
                              "qFaceDetect") != nullptr);
 
+    // Compat wrappers: NULL context -> NULL/-1 without crashing (the
+    // wrappers delegate to the typed API, which owns the validation).
+    AICORE_CHECK(aicore_facedetect_analyze_rgb_json(nullptr, nullptr, 0, 0,
+                                                    0.0f) == nullptr);
+    AICORE_CHECK(aicore_facedetect_dense_landmarks_rgb_json(
+                         nullptr, nullptr, nullptr, 0, 0, 0.0f) == nullptr);
+    float vf_distance = 0.0f;
+    int vf_verified = 0;
+    AICORE_CHECK(aicore_facedetect_verify_paths(nullptr, nullptr, nullptr,
+                                                -1.0f, 0, &vf_distance,
+                                                &vf_verified) == -1);
+
     // Cache dir / warmup / shutdown (idempotent).
     char* dir = aicore_facedetect_model_cache_dir();
     AICORE_CHECK(dir != nullptr && std::strlen(dir) > 0);

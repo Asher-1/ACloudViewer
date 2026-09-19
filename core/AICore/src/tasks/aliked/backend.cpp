@@ -114,15 +114,9 @@ bool Backend::Init(const std::string &request, int num_threads) {
             return false;
         }
         const auto scheduler_lock = Lock();
-        std::vector<ggml_backend_t> backs = {handle, cpu_backend};
-        std::vector<ggml_backend_buffer_type_t> bufts = {
-                ggml_backend_get_default_buffer_type(handle),
-                ggml_backend_get_default_buffer_type(cpu_backend),
-        };
-        sched = ggml_backend_sched_new(backs.data(), bufts.data(),
-                                       static_cast<int>(backs.size()),
-                                       /*graph_size=*/512, /*parallel=*/false,
-                                       /*op_offload=*/false);
+        sched = ggml_common::new_gpu_sched({handle}, cpu_backend,
+                                           /*graph_size=*/512,
+                                           /*op_offload=*/false);
         if (sched == nullptr) {
             error = "failed to create ggml backend scheduler for Vulkan";
             Release();

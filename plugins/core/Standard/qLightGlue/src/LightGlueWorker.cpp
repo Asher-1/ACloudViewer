@@ -18,6 +18,8 @@
 #include <cstring>
 #include <vector>
 
+#include "ecvAICoreRuntimeHelpers.h"
+
 #ifdef AICore_ENABLED
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -57,10 +59,7 @@ void LightGlueWorker::requestTaskCancel() {
 
 void LightGlueWorker::releaseContextOnMainThread() {
 #ifdef AICore_ENABLED
-    if (m_pendingCtx) {
-        aicore_lightglue_free(m_pendingCtx);
-        m_pendingCtx = nullptr;
-    }
+    ecvAICoreRuntime::releasePending(m_pendingCtx, &aicore_lightglue_free);
 #endif
 }
 

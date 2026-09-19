@@ -101,10 +101,7 @@ void YOLOWorker::releaseContextOnMainThread() {
     // The context is created on the worker thread; destroy it here (main
     // thread) so GPU teardown never races the render thread.
 #ifdef AICore_ENABLED
-    if (m_pendingCtx) {
-        aicore_yolo_free(m_pendingCtx);
-        m_pendingCtx = nullptr;
-    }
+    ecvAICoreRuntime::releasePending(m_pendingCtx, &aicore_yolo_free);
 #endif
 }
 

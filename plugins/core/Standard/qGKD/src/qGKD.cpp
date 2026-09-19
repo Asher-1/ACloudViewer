@@ -258,6 +258,16 @@ void qGKD::showDialog() {
         connect(m_dialog, &GKDDialog::cancelRequested, this, &qGKD::cancelTask);
         connect(m_dialog, &GKDDialog::refreshDbImagesRequested, this,
                 [this]() { refreshDbImages(); });
+        // Closing the dialog for good frees the resident model contexts
+        // (the closeEvent only handles a running task's cancel prompt).
+        // Esc/reject takes the same path; releaseResidentContexts cancels
+        // a busy worker itself and is idempotent. The retired queue (old
+        // generations replaced by a newer load) holds GPU memory too and
+        // is drained alongside.
+        connect(m_dialog, &GKDDialog::rejected, this, [this]() {
+            releaseResidentContexts();
+            drainRetiredContexts();
+        });
     }
     m_dialog->refreshModelList();
     refreshDbImages();

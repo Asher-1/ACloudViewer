@@ -9,6 +9,7 @@
 
 #include <QtCore>
 #include <QtWidgets>
+#include <filesystem>
 
 #include "ImageViewerWidget.h"
 #include "ui/options_widget.h"
@@ -49,7 +50,7 @@ private:
     void Texturing();
 
     void SelectWorkspacePath();
-    std::string GetWorkspacePath();
+    std::filesystem::path GetWorkspacePath();
     void RefreshWorkspace();
 
     void WriteFusedPoints();
@@ -80,11 +81,11 @@ private:
     bool photometric_done_;
     bool geometric_done_;
 
-    std::string images_path_;
-    std::string depth_maps_path_;
-    std::string normal_maps_path_;
+    std::filesystem::path images_path_;
+    std::filesystem::path depth_maps_path_;
+    std::filesystem::path normal_maps_path_;
 
-    std::string out_mesh_path_;
+    std::filesystem::path out_mesh_path_;
 
     std::vector<colmap::PlyPoint> fused_points_;
     std::vector<std::vector<int>> fused_points_visibility_;

@@ -28,6 +28,9 @@ public:
 
     void onNewSelection(const ccHObject::Container& selectedEntities) override;
     QList<QAction*> getActions() override;
+    /** Headless CLI: registers -YOLO_TRACK (multi-object tracking over a
+     *  video / frame directory, tracks JSONL output). */
+    void registerCommands(ccCommandLineInterface* cmd) override;
 
 private slots:
     void showDialog();

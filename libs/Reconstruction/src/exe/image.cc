@@ -531,7 +531,7 @@ int RunImageTexturer(int argc, char** argv) {
   std::string output_extension;
   SplitFileExtension(output_path, &output_prefix, &output_extension);
   if (output_extension == ".obj" || output_extension == ".OBJ") {
-    const std::string output_dir = GetParentDir(output_path);
+    const auto output_dir = GetParentDir(output_path);
     if (!output_dir.empty()) {
       CreateDirIfNotExists(output_dir);
     }

@@ -95,6 +95,7 @@ struct OBBDetection {
     float angle;  // radians
     float score;
     int class_id;
+    int anchor = -1;  // index into the raw [no, na] output (feature gather)
 };
 
 std::vector<OBBDetection> postprocess_obb(
@@ -115,5 +116,24 @@ std::vector<uint8_t> semantic_restore_logits(
 
 /* Classify: softmax probabilities [nc] from the head logits. */
 std::vector<float> classify_softmax(const std::vector<float>& logits);
+
+/* Official model="auto" ReID feature pooling (models/yolo/detect/predict.py
+ * get_obj_feats): every spatial position of each head input level is
+ * reduced from its C-channel vector to the global minimum channel count s
+ * by averaging equal channel groups (reshape(HW, s, C/s).mean(-1)); the
+ * levels concatenate in anchor-grid order (stride 8 -> 16 -> 32, row
+ * major). data is CHW row-major (c outer, h, w inner), the graph readback
+ * layout. Returns [anchor_total, s] row-major (anchor fastest) and the
+ * uniform vector length in *out_dim; empty when any level is invalid or a
+ * channel count is not a multiple of s. */
+struct ObjFeatLevel {
+    const float* data;  // [c, h, w] row-major (CHW)
+    int c = 0;
+    int w = 0;
+    int h = 0;
+};
+
+std::vector<float> pool_obj_feats(const ObjFeatLevel* levels, int n_levels,
+                                  int* out_dim);
 
 }  // namespace yolo

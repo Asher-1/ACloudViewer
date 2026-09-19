@@ -24,6 +24,7 @@
 #include <stdint.h>
 
 #include "aicore/export.h"
+#include "aicore/image_view.h"
 #include "aicore/pipeline_timing.h"
 
 #ifdef __cplusplus
@@ -127,6 +128,11 @@ AICORE_CAPI int aicore_sam3_encode_rgb(aicore_sam3_ctx* ctx,
                                        int32_t height,
                                        size_t row_stride_bytes,
                                        int pvs_only);
+/* Structured-memory twin of aicore_sam3_encode_rgb (F-01 batch A); the view
+ * must be AICORE_IMAGE_RGB8, other formats reject via last_error. */
+AICORE_CAPI int aicore_sam3_encode_image_view(aicore_sam3_ctx* ctx,
+                                              const aicore_image_view* image,
+                                              int pvs_only);
 /** 1 when the context has a successfully encoded image. */
 AICORE_CAPI int aicore_sam3_has_encoded_image(const aicore_sam3_ctx* ctx);
 

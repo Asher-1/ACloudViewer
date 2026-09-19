@@ -163,21 +163,21 @@ bool DA3OutputsAreStale(const std::filesystem::path& image_root,
                         bool force_recompute);
 
 // True when dense/<i>/stereo/depth_maps contains at least one non-empty map.
-bool DA3StereoDepthMapsReady(const std::string& dense_path);
+bool DA3StereoDepthMapsReady(const std::filesystem::path& dense_path);
 
 // True when DA3 exported PatchMatch photometric priors (.photometric.bin).
-bool DA3DepthPriorReady(const std::string& dense_path);
+bool DA3DepthPriorReady(const std::filesystem::path& dense_path);
 
 // True when PatchMatch geometric refinement outputs exist (.geometric.bin).
-bool ColmapGeometricDepthMapsReady(const std::string& dense_path);
+bool ColmapGeometricDepthMapsReady(const std::filesystem::path& dense_path);
 
 // True when photometric priors are newer than geometric outputs (or geometric
 // missing).
-bool DA3PatchMatchRefineStale(const std::string& dense_path);
+bool DA3PatchMatchRefineStale(const std::filesystem::path& dense_path);
 
 // Remove PatchMatch geometric depth/normal maps (before re-refine from DA3
 // priors).
-void RemoveColmapGeometricStereoMaps(const std::string& dense_path);
+void RemoveColmapGeometricStereoMaps(const std::filesystem::path& dense_path);
 
 // Last DA3 VRAM-based preprocess cap (set during sequential depth inference).
 struct DA3VramCapWarning {
@@ -265,8 +265,8 @@ protected:
 private:
     bool success_ = true;
     DA3Config config_;
-    std::string image_path_;
-    std::string output_path_;
+    std::filesystem::path image_path_;
+    std::filesystem::path output_path_;
     ProgressCallback progress_cb_;
     DA3MultiviewCache* multiview_cache_out_ = nullptr;
     const DA3MultiviewCache* multiview_cache_in_ = nullptr;

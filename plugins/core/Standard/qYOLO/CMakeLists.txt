@@ -20,6 +20,7 @@ if( PLUGIN_STANDARD_QYOLO )
     target_include_directories( ${PROJECT_NAME}
         PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}/include
+            ${CMAKE_CURRENT_SOURCE_DIR}/src
     )
 
     # Link to libAICore.so — ggml is PRIVATE inside AICore, not needed here
@@ -36,6 +37,12 @@ if( PLUGIN_STANDARD_QYOLO )
     if(TARGET 3rdparty_opencv)
         # HAS_OPENCV_FACE_CAPTURE is propagated PUBLIC by video_base
         target_link_libraries(${PROJECT_NAME} 3rdparty_opencv)
+        # Tracker GMC alignment: with OpenCV every GMC method is the same
+        # cv2 call as ultralytics/trackers/utils/gmc.py; without it the
+        # self-contained sparseOptFlow fallback keeps semantics and
+        # orb/sift/ecc are rejected at tracker creation (same contract as
+        # the upstream YOLO_WITH_OPENCV gate).
+        target_compile_definitions(${PROJECT_NAME} PRIVATE QYOLO_WITH_OPENCV)
     endif()
 
     if(MSVC)

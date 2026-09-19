@@ -15,6 +15,8 @@
 #include <string>
 #include <vector>
 
+#include "common/gguf_file_io.hpp"
+
 namespace aicore::loma {
 namespace {
 
@@ -98,10 +100,12 @@ bool QuantizeModel(const std::string& input_gguf,
     }
 
     ggml_context* input_context = nullptr;
-    gguf_init_params input_params{/*no_alloc=*/false, /*ctx=*/&input_context};
-    gguf_context* input = gguf_init_from_file(input_gguf.c_str(), input_params);
+    std::string open_error;
+    gguf_context* input = ggml_common::open_gguf_file(
+            input_gguf, /*no_alloc=*/false, &input_context, "loma_quantize",
+            &open_error);
     if (input == nullptr || input_context == nullptr) {
-        SetError(error, "failed to open LoMa GGUF: " + input_gguf);
+        SetError(error, open_error);
         if (input != nullptr) gguf_free(input);
         if (input_context != nullptr) ggml_free(input_context);
         return false;
@@ -257,9 +261,9 @@ bool QuantizeModel(const std::string& input_gguf,
         stream.close();
         if (success) {
             ggml_context* verify_context = nullptr;
-            gguf_init_params verify_params{/*no_alloc=*/true, &verify_context};
-            gguf_context* verify =
-                    gguf_init_from_file(output_gguf.c_str(), verify_params);
+            gguf_context* verify = ggml_common::open_gguf_file(
+                    output_gguf, /*no_alloc=*/true, &verify_context,
+                    "loma_quantize");
             if (verify == nullptr || verify_context == nullptr ||
                 gguf_get_n_tensors(verify) != tensor_count) {
                 SetError(error, "LoMa GGUF post-write validation failed");

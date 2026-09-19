@@ -716,7 +716,7 @@ void AutomaticReconstructionWidget::Run() {
     // MSVC has no implicit path-to-string conversion, so bridge explicitly.
     std::string vocab_tree_path = options_.vocab_tree_path.string();
     if (vocab_tree_path.empty()) {
-        vocab_tree_path = kDefaultSiftVocabTreeUri;
+        vocab_tree_path = kDefaultSiftVocabTreeUri.string();
     }
 
     // If it's a URI, check if it's already cached or needs to be downloaded

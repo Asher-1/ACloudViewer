@@ -16,6 +16,8 @@
 #include <algorithm>
 #include <cmath>
 
+#include "ecvAICoreRuntimeHelpers.h"
+
 #ifdef AICore_ENABLED
 #include "aicore/backend_capi.h"
 #include "aicore/depth_capi.h"
@@ -153,10 +155,7 @@ void DA3Worker::run() {
 
 void DA3Worker::releaseContextOnMainThread() {
 #ifdef AICore_ENABLED
-    if (m_pendingCtx) {
-        aicore_depth_free(m_pendingCtx);
-        m_pendingCtx = nullptr;
-    }
+    ecvAICoreRuntime::releasePending(m_pendingCtx, &aicore_depth_free);
 #endif
 }
 

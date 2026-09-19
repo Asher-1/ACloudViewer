@@ -15,6 +15,7 @@
 #include <QFileInfo>
 #include <QFormLayout>
 #include <QHBoxLayout>
+#include <QKeyEvent>
 #include <QLabel>
 #include <QListWidgetItem>
 #include <QMessageBox>
@@ -921,9 +922,41 @@ void RMBGDialog::setTestDataControlsEnabled(bool enabled) {
 }
 
 void RMBGDialog::closeEvent(QCloseEvent* event) {
+    // Uniform plugin-close semantics: if a task, download, or live
+    // stream is active, ask for confirmation before closing.
+    if (m_taskRunning || m_downloadInProgress || m_testDataDownloadInProgress ||
+        (m_liveWidget && m_liveWidget->isActive())) {
+        if (QMessageBox::question(this, tr("Task running"),
+                                  tr("A RMBG task is running. Close anyway?"),
+                                  QMessageBox::Yes | QMessageBox::No,
+                                  QMessageBox::No) != QMessageBox::Yes) {
+            event->ignore();
+            return;
+        }
+    }
+    onCancel();
+    if (m_liveWidget) {
+        m_liveWidget->stopStream();
+        m_liveWidget->releaseGpuResources();
+    }
     saveSettings();
     m_liveWidget->saveSettings();
     event->accept();
+}
+
+void RMBGDialog::keyPressEvent(QKeyEvent* event) {
+    if (event->key() == Qt::Key_Escape &&
+        (m_taskRunning || m_downloadInProgress ||
+         m_testDataDownloadInProgress ||
+         (m_liveWidget && m_liveWidget->isActive()))) {
+        if (QMessageBox::question(this, tr("Task running"),
+                                  tr("A RMBG task is running. Close anyway?"),
+                                  QMessageBox::Yes | QMessageBox::No,
+                                  QMessageBox::No) != QMessageBox::Yes) {
+            return;
+        }
+    }
+    QDialog::keyPressEvent(event);
 }
 
 void RMBGDialog::changeEvent(QEvent* event) {

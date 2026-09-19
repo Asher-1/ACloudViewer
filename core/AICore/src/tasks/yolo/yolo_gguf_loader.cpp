@@ -9,6 +9,7 @@
 
 #include <cstring>
 
+#include "common/gguf_file_io.hpp"
 #include "gguf.h"
 
 namespace yolo {
@@ -77,10 +78,13 @@ static void parse_meta(const gguf_context* g, ModelMeta& meta) {
 }  // namespace
 
 ModelMeta read_gguf_meta(const std::string& path) {
-    gguf_init_params ip{};  // no_alloc: header only, no tensor mapping
-    gguf_context* g = gguf_init_from_file(path.c_str(), ip);
+    std::string open_error;
+    // ctx=nullptr: metadata read only, no tensor mapping into a ggml ctx
+    // (the zero-initialized no_alloc flag is irrelevant in that case).
+    gguf_context* g = ggml_common::open_gguf_file(path, /*no_alloc=*/false,
+                                                  nullptr, "yolo", &open_error);
     if (!g) {
-        YOLO_LOG_ERROR("failed to open GGUF: %s", path.c_str());
+        YOLO_LOG_ERROR("%s", open_error.c_str());
         return {};
     }
     ModelMeta meta;
@@ -91,13 +95,11 @@ ModelMeta read_gguf_meta(const std::string& path) {
 
 std::unique_ptr<ModelDef> load_gguf(const std::string& path) {
     ggml_context* weight_ctx = nullptr;
-    gguf_init_params ip{};
-    ip.no_alloc = false;  // map tensor data directly
-    ip.ctx = &weight_ctx;
-
-    gguf_context* g = gguf_init_from_file(path.c_str(), ip);
+    std::string open_error;
+    gguf_context* g = ggml_common::open_gguf_file(
+            path, /*no_alloc=*/false, &weight_ctx, "yolo", &open_error);
     if (!g) {
-        YOLO_LOG_ERROR("failed to open GGUF: %s", path.c_str());
+        YOLO_LOG_ERROR("%s", open_error.c_str());
         return nullptr;
     }
 
@@ -214,7 +216,8 @@ std::unique_ptr<ModelDef> load_gguf(const std::string& path) {
              tail == "world_segment") ||
             (model->meta.task == "depth" && tail == "depth") ||
             (model->meta.task == "semantic" && tail == "semantic") ||
-            (model->meta.task == "classify" && tail == "classify");
+            (model->meta.task == "classify" && tail == "classify") ||
+            (model->meta.task == "reid" && tail == "classify");
     if (!tail_ok) {
         YOLO_LOG_ERROR("op graph does not contain the declared %s output",
                        model->meta.task.c_str());
@@ -225,7 +228,7 @@ std::unique_ptr<ModelDef> load_gguf(const std::string& path) {
     if (model->meta.task != "detect" && model->meta.task != "depth" &&
         model->meta.task != "segment" && model->meta.task != "pose" &&
         model->meta.task != "obb" && model->meta.task != "semantic" &&
-        model->meta.task != "classify") {
+        model->meta.task != "classify" && model->meta.task != "reid") {
         YOLO_LOG_ERROR("unsupported task: %s", model->meta.task.c_str());
         gguf_free(g);
         ggml_free(weight_ctx);

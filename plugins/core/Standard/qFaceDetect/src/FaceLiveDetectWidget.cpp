@@ -71,7 +71,27 @@ FaceLiveDetectWidget::FaceLiveDetectWidget(QWidget* parent)
     setPreviewFixedHeight(300);  // keep the tab geometry stable
 
     setupUi();
-    m_inferThread = new QThread(this);
+    ensureInferThread();
+
+    loadSettings();
+}
+
+FaceLiveDetectWidget::~FaceLiveDetectWidget() {
+    // Destruction guard (see ~VideoPlaybackWidget): this body runs before
+    // the base destructor, so drop outgoing connections before stopStream()
+    // emits streamStopped at ancestor-context slots.
+    disconnect(this, nullptr, nullptr, nullptr);
+    saveSettings();
+    stopStream();  // video_base owns the reader thread teardown
+    shutdownInferThread();
+}
+
+void FaceLiveDetectWidget::ensureInferThread() {
+    if (m_inferWorker) return;
+    // Rebuild the async side branch after releaseGpuResources() tore it
+    // down on dialog close. A finished QThread object is reusable; only
+    // the worker must be recreated.
+    if (!m_inferThread) m_inferThread = new QThread(this);
     m_inferWorker = new FaceLiveDetectInferWorker;
     m_inferWorker->moveToThread(m_inferThread);
     connect(m_inferThread, &QThread::finished, m_inferWorker,
@@ -97,18 +117,13 @@ FaceLiveDetectWidget::FaceLiveDetectWidget(QWidget* parent)
                 }
             },
             Qt::QueuedConnection);
-    m_inferThread->start();
-
-    loadSettings();
+    if (!m_inferThread->isRunning()) m_inferThread->start();
 }
 
-FaceLiveDetectWidget::~FaceLiveDetectWidget() {
-    // Destruction guard (see ~VideoPlaybackWidget): this body runs before
-    // the base destructor, so drop outgoing connections before stopStream()
-    // emits streamStopped at ancestor-context slots.
-    disconnect(this, nullptr, nullptr, nullptr);
-    saveSettings();
-    stopStream();  // video_base owns the reader thread teardown
+void FaceLiveDetectWidget::releaseGpuResources() {
+    // Shut the infer thread down (releasing the resident model) when the
+    // owning dialog closes for good; ensureInferThread() rebuilds it on
+    // the next live start.
     shutdownInferThread();
 }
 
@@ -717,6 +732,7 @@ void FaceLiveDetectWidget::setVideoFilePath(const QString& path,
 
 void FaceLiveDetectWidget::submitInferJob(const QImage& inferRgb,
                                           float inferScale) {
+    ensureInferThread();  // recreate after a dialog-close shutdown
     if (!m_inferWorker || m_inferBusy) return;
     m_inferBusy = true;
 
@@ -977,6 +993,7 @@ bool FaceLiveDetectWidget::onPrepareStream() {
         m_preloadProgress->setFormat(tr("Loading model…"));
         m_preloadingModel = true;
     }
+    ensureInferThread();  // recreate after a dialog-close shutdown
     QMetaObject::invokeMethod(
             m_inferWorker, "preloadModel", Qt::QueuedConnection,
             Q_ARG(QString, m_config.modelPath), Q_ARG(QString, m_config.device),

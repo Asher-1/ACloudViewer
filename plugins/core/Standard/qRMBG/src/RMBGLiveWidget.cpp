@@ -50,14 +50,7 @@ RMBGLiveWidget::RMBGLiveWidget(QWidget* parent) : VideoPlaybackWidget(parent) {
     setupUi();
     setPreviewFixedHeight(300);
 
-    m_inferThread = new QThread(this);
-    m_inferWorker = new RMBGLiveInferWorker;
-    m_inferWorker->moveToThread(m_inferThread);
-    connect(m_inferThread, &QThread::finished, m_inferWorker,
-            &QObject::deleteLater);
-    connect(m_inferWorker, &RMBGLiveInferWorker::inferComplete, this,
-            &RMBGLiveWidget::onInferComplete, Qt::QueuedConnection);
-    m_inferThread->start();
+    ensureInferThread();
 }
 
 RMBGLiveWidget::~RMBGLiveWidget() {
@@ -334,6 +327,7 @@ void RMBGLiveWidget::onDisplayFrame(QImage& display, int frameIndex) {
 }
 
 void RMBGLiveWidget::submitInferJob(const QImage& rgb) {
+    ensureInferThread();  // recreate after a dialog-close shutdown
     if (!m_inferWorker || m_inferBusy) return;
     m_inferBusy = true;
     m_inferSubmitTime.restart();
@@ -501,6 +495,28 @@ void RMBGLiveWidget::onSourceChanged(InputSource source) {
 void RMBGLiveWidget::captureSnapshotToDb() {
     if (!m_hasSnapshot || m_lastSnapshot.resultImage.isNull()) return;
     emit captureToDbRequested(m_lastSnapshot);
+}
+
+void RMBGLiveWidget::ensureInferThread() {
+    if (m_inferWorker) return;
+    // Rebuild the async side branch after releaseGpuResources() tore it
+    // down on dialog close. A finished QThread object is reusable; only
+    // the worker must be recreated.
+    if (!m_inferThread) m_inferThread = new QThread(this);
+    m_inferWorker = new RMBGLiveInferWorker;
+    m_inferWorker->moveToThread(m_inferThread);
+    connect(m_inferThread, &QThread::finished, m_inferWorker,
+            &QObject::deleteLater);
+    connect(m_inferWorker, &RMBGLiveInferWorker::inferComplete, this,
+            &RMBGLiveWidget::onInferComplete, Qt::QueuedConnection);
+    if (!m_inferThread->isRunning()) m_inferThread->start();
+}
+
+void RMBGLiveWidget::releaseGpuResources() {
+    // Shut the infer thread down (releasing the resident model) when the
+    // owning dialog closes for good; ensureInferThread() rebuilds it on
+    // the next live start.
+    shutdownInferThread();
 }
 
 void RMBGLiveWidget::shutdownInferThread() {

@@ -26,6 +26,7 @@
 #include <tuple>
 #include <utility>
 
+#include "common/gguf_file_io.hpp"
 #include "tasks/lightglue/backend.hpp"
 #include "tasks/lightglue/common.hpp"
 #include "tasks/lightglue/types.hpp"
@@ -99,10 +100,11 @@ public:
     bool Open(const std::string &path) {
         Close();
         error.clear();
-        gguf_init_params params{/*no_alloc=*/false, /*ctx=*/&context_};
-        gguf_ = gguf_init_from_file(path.c_str(), params);
+        std::string open_error;
+        gguf_ = ggml_common::open_gguf_file(path, /*no_alloc=*/false, &context_,
+                                            "lightglue", &open_error);
         if (gguf_ == nullptr || context_ == nullptr) {
-            error = "failed to read GGUF model: " + path;
+            error = open_error;
             Close();
             return false;
         }

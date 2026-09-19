@@ -6,6 +6,7 @@
 // ----------------------------------------------------------------------------
 
 #include <cstdlib>
+#include <cstring>
 
 #include "aicore/aicore.h"
 #include "tests/common/test_macros.hpp"
@@ -13,8 +14,18 @@
 static int failures = 0;
 
 int main() {
-    AICORE_CHECK(aicore_loma_abi_version() == 4);
+    AICORE_CHECK(aicore_loma_abi_version() == 6);
     AICORE_CHECK(aicore_loma_model_count() == 22);
+    /* Catalog metadata: every role has a default entry, an unknown role is
+     * rejected, and the download base is a non-empty URL string. */
+    AICORE_CHECK(aicore_loma_model_default_index(
+                         AICORE_LOMA_MODEL_ROLE_DETECTOR) >= 0);
+    AICORE_CHECK(aicore_loma_model_default_index(
+                         AICORE_LOMA_MODEL_ROLE_MATCHER) >= 0);
+    AICORE_CHECK(aicore_loma_model_default_index((aicore_loma_model_role)999) ==
+                 -1);
+    AICORE_CHECK(aicore_loma_model_download_base() != nullptr &&
+                 std::strlen(aicore_loma_model_download_base()) > 0);
     for (int role = AICORE_LOMA_MODEL_ROLE_DETECTOR;
          role <= AICORE_LOMA_MODEL_ROLE_MATCHER; ++role) {
         const aicore_loma_model_entry* model = aicore_loma_model_by_role(
@@ -43,6 +54,18 @@ int main() {
     AICORE_CHECK(aicore_loma_detector_is_ready(nullptr) == 0);
     AICORE_CHECK(aicore_loma_detector_last_error(nullptr) != nullptr);
     AICORE_CHECK(aicore_loma_detector_run(nullptr, nullptr, nullptr) != 0);
+    /* F-01 batch A: image_view entries are NULL-safe and reject non-RGB8
+     * views before touching any model state. */
+    AICORE_CHECK(aicore_loma_detector_run_image_view(nullptr, nullptr,
+                                                     nullptr) != 0);
+    AICORE_CHECK(aicore_loma_descriptor_run_image_view(
+                         nullptr, nullptr, nullptr, 0, 0, 0, nullptr) != 0);
+    /* F-10: timing queries are NULL-safe and share the matcher's shape. */
+    aicore_pipeline_timings timings{};
+    AICORE_CHECK(
+            aicore_loma_detector_last_pipeline_timings(nullptr, &timings) != 0);
+    AICORE_CHECK(aicore_loma_descriptor_last_pipeline_timings(nullptr,
+                                                              &timings) != 0);
     aicore_loma_descriptor_free(nullptr);
     aicore_loma_descriptor_options_free(nullptr);
     aicore_loma_described_features empty_descriptors{};
@@ -60,6 +83,9 @@ int main() {
     AICORE_CHECK(aicore_loma_matcher_last_error(nullptr) != nullptr);
     AICORE_CHECK(aicore_loma_matcher_run(nullptr, nullptr, nullptr, nullptr,
                                          nullptr) != 0);
+    /* F-10 (matcher shape): the matcher timing query is NULL-safe too. */
+    AICORE_CHECK(aicore_loma_matcher_last_pipeline_timings(nullptr, &timings) !=
+                 0);
 
     aicore_loma_matcher_options* options = aicore_loma_matcher_options_new();
     AICORE_CHECK(options != nullptr);

@@ -83,7 +83,7 @@ struct StereoFusionOptions {
 class StereoFusion : public Thread {
 public:
     StereoFusion(const StereoFusionOptions& options,
-                 const std::string& workspace_path,
+                 const std::filesystem::path& workspace_path,
                  const std::string& workspace_format,
                  const std::string& pmvs_option_name,
                  const std::string& input_type);
@@ -100,7 +100,7 @@ private:
               const int col);
 
     const StereoFusionOptions options_;
-    const std::string workspace_path_;
+    const std::filesystem::path workspace_path_;
     const std::string workspace_format_;
     const std::string pmvs_option_name_;
     const std::string input_type_;

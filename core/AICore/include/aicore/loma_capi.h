@@ -12,6 +12,7 @@
 #include <stdint.h>
 
 #include "aicore/export.h"
+#include "aicore/image_view.h"
 #include "aicore/pipeline_timing.h"
 
 #ifdef __cplusplus
@@ -124,6 +125,16 @@ AICORE_CAPI int aicore_loma_detector_run(
         aicore_loma_detector_ctx* ctx,
         const aicore_loma_rgb_image* image,
         aicore_loma_detected_features* out_features);
+/* Structured-memory twin of aicore_loma_detector_run (F-01 batch A): the
+ * view must be AICORE_IMAGE_RGB8 (the graph protocol's input format); the
+ * borrowed pixels are passed through unchanged. Rejects other formats by
+ * setting the context's last_error. */
+AICORE_CAPI int aicore_loma_detector_run_image_view(
+        aicore_loma_detector_ctx* ctx,
+        const aicore_image_view* image,
+        aicore_loma_detected_features* out_features);
+AICORE_CAPI int aicore_loma_detector_last_pipeline_timings(
+        const aicore_loma_detector_ctx* ctx, aicore_pipeline_timings* out);
 AICORE_CAPI void aicore_loma_detected_features_free(
         aicore_loma_detected_features* features);
 
@@ -152,6 +163,18 @@ AICORE_CAPI int aicore_loma_descriptor_run(
         int32_t keypoint_image_width,
         int32_t keypoint_image_height,
         aicore_loma_described_features* out_features);
+/* Structured-memory twin of aicore_loma_descriptor_run (F-01 batch A);
+ * AICORE_IMAGE_RGB8 views only. */
+AICORE_CAPI int aicore_loma_descriptor_run_image_view(
+        aicore_loma_descriptor_ctx* ctx,
+        const aicore_image_view* image,
+        const aicore_loma_keypoint* keypoints,
+        int32_t count,
+        int32_t keypoint_image_width,
+        int32_t keypoint_image_height,
+        aicore_loma_described_features* out_features);
+AICORE_CAPI int aicore_loma_descriptor_last_pipeline_timings(
+        const aicore_loma_descriptor_ctx* ctx, aicore_pipeline_timings* out);
 AICORE_CAPI void aicore_loma_described_features_free(
         aicore_loma_described_features* features);
 

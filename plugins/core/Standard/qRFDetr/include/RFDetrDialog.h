@@ -98,6 +98,8 @@ private slots:
 
 protected:
     void closeEvent(QCloseEvent* event) override;
+    /** Esc intercept: confirm before closing when a task is running. */
+    void keyPressEvent(QKeyEvent* event) override;
     void changeEvent(QEvent* event) override;
 
 private:

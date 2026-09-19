@@ -24,6 +24,7 @@
 #include <regex>
 #include <vector>
 
+#include "common/gguf_file_io.hpp"
 #include "ggml.h"
 #include "gguf.h"
 #include "tasks/depth/common.hpp"
@@ -107,10 +108,12 @@ bool quantize_gguf(const std::string& in_gguf,
     // Open input. no_alloc=false so the gguf init owns a ggml_context holding
     // tensor data we can read.
     ggml_context* meta_ctx = nullptr;
-    gguf_init_params ip{/*no_alloc=*/false, /*ctx=*/&meta_ctx};
-    gguf_context* in = gguf_init_from_file(in_gguf.c_str(), ip);
+    std::string open_error;
+    gguf_context* in =
+            ggml_common::open_gguf_file(in_gguf, /*no_alloc=*/false, &meta_ctx,
+                                        "depth_quantize", &open_error);
     if (!in || !meta_ctx) {
-        DA_ERR("quantize: failed to open input '%s'", in_gguf.c_str());
+        DA_ERR("%s", open_error.c_str());
         if (in) gguf_free(in);
         if (meta_ctx) ggml_free(meta_ctx);
         return false;

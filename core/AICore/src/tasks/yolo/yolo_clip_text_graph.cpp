@@ -15,6 +15,7 @@
 #include <thread>
 #include <unordered_map>
 
+#include "common/gguf_file_io.hpp"
 #include "ggml-alloc.h"
 #include "ggml-cpu.h"
 #include "ggml.h"
@@ -558,13 +559,12 @@ int clip_bpe_tokenize(ClipBpe& bpe,
 
 TextSession* text_create_session(const std::string& gguf_path, int threads) {
     ggml_context* weight_ctx = nullptr;
-    gguf_init_params ip{};
-    ip.no_alloc = false;  // map tensor data directly
-    ip.ctx = &weight_ctx;
-
-    gguf_context* g = gguf_init_from_file(gguf_path.c_str(), ip);
+    std::string open_error;
+    gguf_context* g =
+            ggml_common::open_gguf_file(gguf_path, /*no_alloc=*/false,
+                                        &weight_ctx, "yolo_clip", &open_error);
     if (!g) {
-        YOLO_LOG_ERROR("clip: failed to open GGUF: %s", gguf_path.c_str());
+        YOLO_LOG_ERROR("%s", open_error.c_str());
         return nullptr;
     }
 

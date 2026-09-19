@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "common/gguf_file_io.hpp"
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
 #include "ggml.h"
@@ -242,12 +243,11 @@ Model* model_load(const std::string& path, rfdetr_status* out_status) {
     }
 
     ggml_context* gctx = nullptr;
-    gguf_init_params init_params{/* no_alloc */ true, /* ctx */ &gctx};
-    gguf_context* gguf = gguf_init_from_file(path.c_str(), init_params);
+    std::string open_error;
+    gguf_context* gguf = ggml_common::open_gguf_file(
+            path, /*no_alloc=*/true, &gctx, "rfdetr", &open_error);
     if (!gguf) {
-        rfdetr_logf(RFDETR_LOG_ERROR,
-                    "model_load: gguf_init_from_file failed for '%s'",
-                    path.c_str());
+        rfdetr_logf(RFDETR_LOG_ERROR, "model_load: %s", open_error.c_str());
         set(RFDETR_ERR_MODEL_FORMAT);
         return nullptr;
     }

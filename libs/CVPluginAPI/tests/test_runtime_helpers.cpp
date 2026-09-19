@@ -88,6 +88,17 @@ void testPendingContext() {
     CHECK(g_freed == 2, "release is idempotent");
 }
 
+void testReleasePending() {
+    DummyCtx* ctx = new DummyCtx;
+    g_freed = 0;
+    ecvAICoreRuntime::releasePending(ctx, &freeDummy);
+    CHECK(g_freed == 1, "releasePending frees exactly once");
+    CHECK(ctx == nullptr, "releasePending nulls the pointer");
+
+    ecvAICoreRuntime::releasePending(ctx, &freeDummy);  // null-safe no-op
+    CHECK(g_freed == 1, "second call on a null pointer is a no-op");
+}
+
 void testDeviceTaskLock() {
     // Unit-process scope: this binary holds no other device queue, so the
     // cpu queue must be acquirable and released exactly once (RAII).
@@ -105,6 +116,7 @@ void testDeviceTaskLock() {
 int main() {
     testImageView();
     testPendingContext();
+    testReleasePending();
     testDeviceTaskLock();
     if (failures != 0) {
         std::fprintf(stderr, "runtime helpers: %d failure(s)\n", failures);

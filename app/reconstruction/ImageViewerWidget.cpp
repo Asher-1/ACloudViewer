@@ -105,7 +105,7 @@ void ImageViewerWidget::ShowPixmap(const QPixmap& pixmap) {
     raise();
 }
 
-void ImageViewerWidget::ReadAndShow(const std::string& path) {
+void ImageViewerWidget::ReadAndShow(const std::filesystem::path& path) {
     Bitmap bitmap;
     if (!bitmap.Read(path, true)) {
         std::cerr << "ERROR: Cannot read image at path " << path << std::endl;
@@ -153,7 +153,7 @@ FeatureImageViewerWidget::FeatureImageViewerWidget(
 }
 
 void FeatureImageViewerWidget::ReadAndShowWithKeypoints(
-        const std::string& path,
+        const std::filesystem::path& path,
         const FeatureKeypoints& keypoints,
         const std::vector<char>& tri_mask) {
     Bitmap bitmap;
@@ -193,8 +193,8 @@ void FeatureImageViewerWidget::ReadAndShowWithKeypoints(
 }
 
 void FeatureImageViewerWidget::ReadAndShowWithMatches(
-        const std::string& path1,
-        const std::string& path2,
+        const std::filesystem::path& path1,
+        const std::filesystem::path& path2,
         const FeatureKeypoints& keypoints1,
         const FeatureKeypoints& keypoints2,
         const FeatureMatches& matches) {
@@ -372,7 +372,7 @@ void DatabaseImageViewerWidget::ShowImageWithId(const image_t image_id) {
         keypoints[i].y = static_cast<float>(image.Point2D(i).Y());
     }
 
-    const std::string path = JoinPaths(*options_->image_path, image.Name());
+    const std::filesystem::path path = *options_->image_path / image.Name();
     ReadAndShowWithKeypoints(path, keypoints, tri_mask);
 }
 

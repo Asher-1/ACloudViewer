@@ -68,11 +68,11 @@ flowchart TB
     end
 
     subgraph ABI["Public C ABI (stable boundary)"]
-        HDR["include/aicore/*.h<br/>14 task headers + common contract headers"]
+        HDR["include/aicore/*.h<br/>15 task headers + common contract headers"]
     end
 
     subgraph LIB["libAICore (single SHARED, hidden symbols)"]
-        subgraph TASKS["Task layer src/tasks/[task]/ (14 tasks, mutually independent)"]
+        subgraph TASKS["Task layer src/tasks/[task]/ (15 tasks, mutually independent)"]
             T1["loader / graph /<br/>preprocess / postprocess"]
             T2["capi.cpp (C ABI landing)<br/>+ private exports (.exports.map)"]
         end
@@ -127,8 +127,8 @@ core/AICore/
 │   ├── depth_image.h        Qt exception: QImage convenience layer (AICORE_CXX_API ImageDepth)
 │   ├── inference_log.h      CVLog logging convenience layer (depends on CVLog, hence not in the umbrella)
 │   ├── asset_digests.h      Generated file: SHA-256 anchor table for published model assets (Qt-free)
-│   └── <task>_capi.h × 14   Task C APIs (aliked/deeplsd/depth/facedetect/gaussian/
-│                            gkd/lightglue/lingbot/loma/rfdetr/rmbg/sam3/trellis/yolo)
+│   └── <task>_capi.h × 15   Task C APIs (aliked/deeplsd/depth/facedetect/gaussian/
+│                            gkd/lightglue/lingbot/loma/reid/rfdetr/rmbg/sam3/trellis/yolo)
 ├── src/common/              Process service layer (devices, leases, cancellation, cache paths, logging, quantization)
 ├── src/tasks/<task>/        Task engines (loader/graph/preprocess/postprocess/capi.cpp)
 │   └── trellis/third_party/ xatlas · o-voxel-fdg · CuMesh (optional GPU chart clustering, see §11.1)
@@ -153,7 +153,7 @@ core/AICore/
 
 | Class | Headers | Rule |
 |---|---|---|
-| **C ABI headers** (`extern "C"`) | `image_view.h` `pipeline_timing.h` `runtime_capi.h` `backend_capi.h` + 14 `<task>_capi.h` | C types only; exported symbols `aicore_*` |
+| **C ABI headers** (`extern "C"`) | `image_view.h` `pipeline_timing.h` `runtime_capi.h` `backend_capi.h` + 15 `<task>_capi.h` | C types only; exported symbols `aicore_*` |
 | **Qt-free C++ headers** | `runtime_raii.h` (inline RAII), `asset_digests.h` (generated table) | Pure inline/data; never touch the export map; usable by non-Qt consumers |
 | **C++ helper headers with dependencies** | `depth_image.h` (QImage/QString, the **single documented Qt exception**), `inference_log.h` (depends on CVLog) | `inference_log.h` is **intentionally excluded from the umbrella** `aicore.h`: lean capi test targets have no CVLog include path; only plugins/app-side code includes it directly |
 
@@ -267,6 +267,13 @@ output must carry:
 Retrofitting older structs = that task's ABI bump + a contract-test update.
 Header-only C++ helpers stay Qt-free and purely inline so the export map and the
 C ABI surface remain untouched.
+
+**Frozen Qt exception:** `depth_image.h` (the `aicore::depth::ImageDepth`
+Qt/QString DB-integration shim consumed by `libs/CV_db`) is the ONLY public
+header allowed to mention Qt. It is frozen as-is: no new Qt types, no new
+functions, and no new task may follow this precedent — Qt-flavored helpers
+belong in `libs/CVPluginAPI` instead. Anything that would grow the Qt surface
+inside `include/aicore/` is an architecture-contract violation.
 
 ---
 

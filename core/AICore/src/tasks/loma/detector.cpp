@@ -30,6 +30,7 @@
 #include <utility>
 #include <vector>
 
+#include "common/gguf_file_io.hpp"
 #include "tasks/lightglue/backend.hpp"
 
 namespace aicore {
@@ -47,10 +48,11 @@ public:
     bool Open(const std::string& path) {
         Close();
         error_.clear();
-        gguf_init_params params{/*no_alloc=*/false, /*ctx=*/&context_};
-        gguf_ = gguf_init_from_file(path.c_str(), params);
+        std::string open_error;
+        gguf_ = ggml_common::open_gguf_file(path, /*no_alloc=*/false, &context_,
+                                            "loma_detector", &open_error);
         if (gguf_ == nullptr || context_ == nullptr) {
-            error_ = "failed to read DaD GGUF model: " + path;
+            error_ = open_error;
             Close();
             return false;
         }

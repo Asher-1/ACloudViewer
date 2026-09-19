@@ -581,7 +581,7 @@ struct ss_preview_ctx {
 
 extern "C" {
 
-int aicore_trellis_abi_version(void) { return 4; }
+int aicore_trellis_abi_version(void) { return 5; }
 
 // ─────────────────────────────────────────────────────────────────────────
 // Options builder
@@ -1296,6 +1296,7 @@ int aicore_trellis_preprocess_image_bytes(const void *image_bytes,
 aicore_trellis_mesh *generate_impl(aicore_trellis_ctx *p,
                                    const void *image_bytes,
                                    int image_len,
+                                   const aicore_image_view *view_rgb8,
                                    const aicore_trellis_generate_params *params,
                                    aicore_trellis_progress_fn progress,
                                    void *user,
@@ -1360,7 +1361,32 @@ aicore_trellis_mesh *generate_impl(aicore_trellis_ctx *p,
     // is fed straight in here (no intermediate encode/decode).
     std::vector<uint8_t> src_rgba;
     int iw = 0, ih = 0;
-    if (!decode_image_rgba(image_bytes, image_len, src_rgba, iw, ih, e)) {
+    if (view_rgb8 != nullptr) {
+        /* F-01 batch B: skip the in-library decode stage entirely; expand the
+         * borrowed RGB8 view (row-stride aware) into the RGBA buffer
+         * decode_image_rgba would have produced (alpha = 255). */
+        if (view_rgb8->format != AICORE_IMAGE_RGB8 || view_rgb8->width <= 0 ||
+            view_rgb8->height <= 0) {
+            copy_err(err, err_len,
+                     "image_view must be non-empty AICORE_IMAGE_RGB8");
+            return nullptr;
+        }
+        iw = view_rgb8->width;
+        ih = view_rgb8->height;
+        src_rgba.resize((size_t)iw * ih * 4);
+        for (int y = 0; y < ih; ++y) {
+            const uint8_t *src =
+                    view_rgb8->data + (size_t)y * view_rgb8->row_stride_bytes;
+            uint8_t *dst = src_rgba.data() + (size_t)y * iw * 4;
+            for (int x = 0; x < iw; ++x) {
+                dst[x * 4 + 0] = src[x * 3 + 0];
+                dst[x * 4 + 1] = src[x * 3 + 1];
+                dst[x * 4 + 2] = src[x * 3 + 2];
+                dst[x * 4 + 3] = 255;
+            }
+        }
+    } else if (!decode_image_rgba(image_bytes, image_len, src_rgba, iw, ih,
+                                  e)) {
         copy_err(err, err_len, e);
         return nullptr;
     }
@@ -1809,8 +1835,9 @@ aicore_trellis_mesh *aicore_trellis_generate(
         int err_len) {
     const auto started = aicore::capi::PipelineClock::now();
     aicore_trellis_mesh *mesh = fenced(err, err_len, [&] {
-        return generate_impl(p, image_bytes, image_len, params, progress,
-                             progress_user, nullptr, nullptr, err, err_len);
+        return generate_impl(p, image_bytes, image_len, nullptr, params,
+                             progress, progress_user, nullptr, nullptr, err,
+                             err_len);
     });
     if (mesh && p)
         aicore::capi::record_pipeline_e2e(p->pipeline_timings, started);
@@ -1830,9 +1857,30 @@ aicore_trellis_mesh *aicore_trellis_generate_ex(
         int err_len) {
     const auto started = aicore::capi::PipelineClock::now();
     aicore_trellis_mesh *mesh = fenced(err, err_len, [&] {
-        return generate_impl(p, image_bytes, image_len, params, progress,
-                             progress_user, preview, preview_user, err,
-                             err_len);
+        return generate_impl(p, image_bytes, image_len, nullptr, params,
+                             progress, progress_user, preview, preview_user,
+                             err, err_len);
+    });
+    if (mesh && p)
+        aicore::capi::record_pipeline_e2e(p->pipeline_timings, started);
+    return mesh;
+}
+
+/* F-01 batch B: decoded-pixel entry — skips the in-library image decode
+ * stage. The view must be AICORE_IMAGE_RGB8; pixels are borrowed for the
+ * duration of the call. */
+AICORE_CAPI aicore_trellis_mesh *aicore_trellis_generate_image_view(
+        aicore_trellis_ctx *p,
+        const aicore_image_view *image,
+        const aicore_trellis_generate_params *params,
+        aicore_trellis_progress_fn progress,
+        void *progress_user,
+        char *err,
+        int err_len) {
+    const auto started = aicore::capi::PipelineClock::now();
+    aicore_trellis_mesh *mesh = fenced(err, err_len, [&] {
+        return generate_impl(p, nullptr, 0, image, params, progress,
+                             progress_user, nullptr, nullptr, err, err_len);
     });
     if (mesh && p)
         aicore::capi::record_pipeline_e2e(p->pipeline_timings, started);

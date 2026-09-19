@@ -18,6 +18,7 @@
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
+#include <QKeyEvent>
 #include <QMessageBox>
 #include <QSettings>
 #include <QStandardPaths>
@@ -1327,8 +1328,32 @@ void LightGlueDialog::onCancel() {
 }
 
 void LightGlueDialog::closeEvent(QCloseEvent* event) {
+    if (m_taskRunning || m_downloadInProgress || m_testDataInProgress) {
+        if (QMessageBox::question(
+                    this, tr("Task running"),
+                    tr("A LightGlue task is running. Close anyway?"),
+                    QMessageBox::Yes | QMessageBox::No,
+                    QMessageBox::No) != QMessageBox::Yes) {
+            event->ignore();
+            return;
+        }
+    }
     onCancel();
     QDialog::closeEvent(event);
+}
+
+void LightGlueDialog::keyPressEvent(QKeyEvent* event) {
+    if (event->key() == Qt::Key_Escape &&
+        (m_taskRunning || m_downloadInProgress || m_testDataInProgress)) {
+        if (QMessageBox::question(
+                    this, tr("Task running"),
+                    tr("A LightGlue task is running. Close anyway?"),
+                    QMessageBox::Yes | QMessageBox::No,
+                    QMessageBox::No) != QMessageBox::Yes) {
+            return;
+        }
+    }
+    QDialog::keyPressEvent(event);
 }
 
 void LightGlueDialog::onExportMatches() { emit exportMatchesRequested(); }

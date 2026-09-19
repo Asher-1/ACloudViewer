@@ -1972,7 +1972,7 @@ bool MvsTexturing::SaveOBJModel(const std::string& output_path,
     std::string root, ext;
     colmap::SplitFileExtension(output_path, &root, &ext);
     std::string prefix = (ext == ".obj" || ext == ".OBJ") ? root : output_path;
-    std::string output_dir = colmap::GetParentDir(prefix);
+    auto output_dir = colmap::GetParentDir(prefix);
     std::string base_name = colmap::GetPathBaseName(prefix);
 
     // Helper to format material names (material0000, material0001, ...)
@@ -2020,7 +2020,7 @@ bool MvsTexturing::SaveOBJModel(const std::string& output_path,
 
         // Build texture path (ObjFilter's saveAsMTL will save it automatically)
         std::string texture_filename = base_name + "_" + material_name + "_map_Kd.png";
-        std::string texture_path = colmap::JoinPaths(output_dir, texture_filename);
+        std::string texture_path = (output_dir / texture_filename).string();
 
         // Create material
         ccMaterial::Shared mat(new ccMaterial(QString::fromStdString(material_name)));

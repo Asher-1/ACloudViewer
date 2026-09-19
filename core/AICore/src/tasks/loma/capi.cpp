@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "aicore/backend_capi.h"
+#include "aicore/image_view.h"
 #include "aicore/loma_capi.h"
 #include "common/capi_utils.hpp"
 #include "common/model_cache.hpp"
@@ -91,7 +92,7 @@ struct aicore_loma_matcher_ctx {
 
 extern "C" {
 
-AICORE_CAPI int aicore_loma_abi_version(void) { return 4; }
+AICORE_CAPI int aicore_loma_abi_version(void) { return 6; }
 
 AICORE_CAPI aicore_loma_detector_options* aicore_loma_detector_options_new(
         void) {
@@ -199,6 +200,25 @@ AICORE_CAPI void aicore_loma_detected_features_free(
     *features = {};
 }
 
+AICORE_CAPI int aicore_loma_detector_run_image_view(
+        aicore_loma_detector_ctx* ctx,
+        const aicore_image_view* image,
+        aicore_loma_detected_features* out_features) {
+    if (ctx == nullptr || image == nullptr || out_features == nullptr) {
+        return -1;
+    }
+    /* LoMa's graph protocol takes packed/strided RGB8; other view formats
+     * are rejected instead of silently converting. */
+    if (image->format != AICORE_IMAGE_RGB8) {
+        ctx->error = "loma image_view must be AICORE_IMAGE_RGB8";
+        return -1;
+    }
+    const aicore_loma_rgb_image rgb = {
+            image->data, image->width, image->height,
+            static_cast<int32_t>(image->row_stride_bytes)};
+    return aicore_loma_detector_run(ctx, &rgb, out_features);
+}
+
 AICORE_CAPI aicore_loma_descriptor_options* aicore_loma_descriptor_options_new(
         void) {
     return new (std::nothrow) aicore_loma_descriptor_options();
@@ -293,6 +313,29 @@ AICORE_CAPI void aicore_loma_described_features_free(
     *features = {};
 }
 
+AICORE_CAPI int aicore_loma_descriptor_run_image_view(
+        aicore_loma_descriptor_ctx* ctx,
+        const aicore_image_view* image,
+        const aicore_loma_keypoint* keypoints,
+        int32_t count,
+        int32_t keypoint_image_width,
+        int32_t keypoint_image_height,
+        aicore_loma_described_features* out_features) {
+    if (ctx == nullptr || image == nullptr || out_features == nullptr) {
+        return -1;
+    }
+    if (image->format != AICORE_IMAGE_RGB8) {
+        ctx->error = "loma image_view must be AICORE_IMAGE_RGB8";
+        return -1;
+    }
+    const aicore_loma_rgb_image rgb = {
+            image->data, image->width, image->height,
+            static_cast<int32_t>(image->row_stride_bytes)};
+    return aicore_loma_descriptor_run(ctx, &rgb, keypoints, count,
+                                      keypoint_image_width,
+                                      keypoint_image_height, out_features);
+}
+
 AICORE_CAPI aicore_loma_matcher_options* aicore_loma_matcher_options_new(void) {
     return new (std::nothrow) aicore_loma_matcher_options();
 }
@@ -383,6 +426,20 @@ AICORE_CAPI int aicore_loma_matcher_run(aicore_loma_matcher_ctx* ctx,
 
 AICORE_CAPI void aicore_loma_free_matches(aicore_loma_match* matches) {
     std::free(matches);
+}
+
+AICORE_CAPI int aicore_loma_detector_last_pipeline_timings(
+        const aicore_loma_detector_ctx* ctx, aicore_pipeline_timings* out) {
+    return ctx != nullptr
+                   ? aicore::capi::copy_pipeline_timings(ctx->timings, out)
+                   : -1;
+}
+
+AICORE_CAPI int aicore_loma_descriptor_last_pipeline_timings(
+        const aicore_loma_descriptor_ctx* ctx, aicore_pipeline_timings* out) {
+    return ctx != nullptr
+                   ? aicore::capi::copy_pipeline_timings(ctx->timings, out)
+                   : -1;
 }
 
 AICORE_CAPI int aicore_loma_matcher_last_pipeline_timings(

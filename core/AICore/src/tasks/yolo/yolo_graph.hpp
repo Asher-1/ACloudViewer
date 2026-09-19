@@ -88,6 +88,14 @@ struct Session {
     ggml_tensor* input = nullptr;   // external [W, H, 3] F32 letterboxed image
     ggml_tensor* output = nullptr;  // detect [A, no] or metric depth [W, H, 1, 1]
     ggml_tensor* output_proto = nullptr;  // segment protos [W, H, nm, 1]
+    // Object-feature export (opts.export_obj_feats): the head input feature
+    // levels [P3, P4, P5] cast to F32 and marked as graph outputs. Null
+    // when disabled or the head is not the standard detect/segment/pose/obb
+    // vocabulary head (end2end/world heads have no input feature maps).
+    ggml_tensor* feat_levels[3] = {nullptr, nullptr, nullptr};
+    // Embedding export (opts.export_embed, classify graphs): the pooled
+    // feature feeding the final linear — the ReID embedding vector.
+    ggml_tensor* embed_out = nullptr;
     ggml_cgraph* graph = nullptr;
     int input_w = 0;                // current canvas dims (stride-multiple,
     int input_h = 0;                // non-square under LetterBox auto=True)
@@ -170,6 +178,25 @@ bool session_read_proto(Session* s, std::vector<float>& out, int& nm, int& w,
 // Read back a metric depth map in meters, row-major [height, width].
 bool session_read_depth(Session* s, std::vector<float>& out, int& width,
                         int& height);
+
+// Enable/disable the object-feature export (opts.export_obj_feats). The
+// feature outputs are part of the graph structure, so toggling forces a
+// plan rebuild on the next ensure_canvas (i.e. the next inference call).
+// Returns false on a null session.
+bool session_set_export_features(Session* s, bool enabled);
+
+// Read back the pooled per-anchor object features [anchor_total, dim]
+// (row-major, anchor fastest — matching the anchors array order; dim is
+// the minimum channel count across the head input levels). Requires the
+// export enabled and a standard box-anchored head; returns false
+// otherwise (end2end heads have no input feature maps to read).
+bool session_read_obj_feats(Session* s, std::vector<float>& out, int& count,
+                            int& dim);
+
+// Read back the classif embedding vector (the pooled feature feeding the
+// final linear) of the last run: [dim] row-major F32. Requires
+// opts.export_embed and a classify-task session; returns false otherwise.
+bool session_read_embed(Session* s, std::vector<float>& out, int& dim);
 
 // Read back semantic logits [nc, H, W] on the canvas/8 grid (row-major
 // channels).

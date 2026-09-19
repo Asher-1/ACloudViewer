@@ -19,6 +19,7 @@
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
+#include <QKeyEvent>
 #include <QMessageBox>
 #include <QSettings>
 #include <QStandardItemModel>
@@ -788,8 +789,30 @@ void DA3Dialog::onCancel() {
 }
 
 void DA3Dialog::closeEvent(QCloseEvent* event) {
+    if (m_taskRunning || m_downloadInProgress || m_testDataInProgress) {
+        if (QMessageBox::question(this, tr("Task running"),
+                                  tr("A DA3 task is running. Close anyway?"),
+                                  QMessageBox::Yes | QMessageBox::No,
+                                  QMessageBox::No) != QMessageBox::Yes) {
+            event->ignore();
+            return;
+        }
+    }
     onCancel();
     QDialog::closeEvent(event);
+}
+
+void DA3Dialog::keyPressEvent(QKeyEvent* event) {
+    if (event->key() == Qt::Key_Escape &&
+        (m_taskRunning || m_downloadInProgress || m_testDataInProgress)) {
+        if (QMessageBox::question(this, tr("Task running"),
+                                  tr("A DA3 task is running. Close anyway?"),
+                                  QMessageBox::Yes | QMessageBox::No,
+                                  QMessageBox::No) != QMessageBox::Yes) {
+            return;
+        }
+    }
+    QDialog::keyPressEvent(event);
 }
 
 void DA3Dialog::setDbImages(const QList<DA3DbImageEntry>& images) {
@@ -874,6 +897,7 @@ void DA3Dialog::onModeChanged(int index) {
 }
 
 void DA3Dialog::setRunning(bool running) {
+    m_taskRunning = running;
     m_runBtn->setEnabled(!running && !m_downloadInProgress);
     m_cancelBtn->setEnabled(running || m_downloadInProgress);
     m_modeCombo->setEnabled(!running && !m_downloadInProgress);

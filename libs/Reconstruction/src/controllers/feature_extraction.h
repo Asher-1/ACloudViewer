@@ -52,13 +52,13 @@ private:
 class FeatureImporter : public Thread {
 public:
     FeatureImporter(const ImageReaderOptions& reader_options,
-                    const std::string& import_path);
+                    const std::filesystem::path& import_path);
 
 private:
     void Run();
 
     const ImageReaderOptions reader_options_;
-    const std::string import_path_;
+    const std::filesystem::path import_path_;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

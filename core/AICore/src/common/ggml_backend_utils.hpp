@@ -359,17 +359,23 @@ inline GpuBackendGroup resolve_gpu_group(const std::string& device_req,
     return group;
 }
 
+// Shared message for scheduler-creation failures so a grep finds every
+// CPU-only fallback / error site across the tasks.
+inline constexpr const char* kSchedNewFailedMsg =
+        "ggml_backend_sched_new failed";
+
 inline ggml_backend_sched_t new_gpu_sched(
         const std::vector<ggml_backend_t>& gpus,
         ggml_backend_t cpu_backend,
-        size_t graph_size) {
+        size_t graph_size,
+        bool op_offload = true) {
     if (gpus.empty()) return nullptr;
     std::vector<ggml_backend_t> backs = gpus;
     if (cpu_backend) backs.push_back(cpu_backend);
     if (backs.size() < 2) return nullptr;
     return ggml_backend_sched_new(backs.data(), nullptr,
                                   static_cast<int>(backs.size()), graph_size,
-                                  /*parallel=*/false, /*op_offload=*/true);
+                                  /*parallel=*/false, op_offload);
 }
 
 inline ggml_backend_t find_auto_backend(std::string& resolved_name) {

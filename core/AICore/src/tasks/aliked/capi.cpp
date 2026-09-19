@@ -14,6 +14,7 @@
 #include <utility>
 
 #include "aicore/aliked_capi.h"
+#include "aicore/image_view.h"
 #include "aicore/runtime_capi.h"
 #include "common/capi_utils.hpp"
 #include "common/model_cache.hpp"
@@ -132,7 +133,7 @@ struct aicore_aliked_ctx {
     aicore_pipeline_timings pipeline_timings{};
 };
 
-AICORE_CAPI int aicore_aliked_abi_version(void) { return 2; }
+AICORE_CAPI int aicore_aliked_abi_version(void) { return 3; }
 
 AICORE_CAPI aicore_aliked_options* aicore_aliked_options_new(void) {
     return new aicore_aliked_options();
@@ -205,6 +206,20 @@ AICORE_CAPI void aicore_aliked_shutdown(void) { aicore_runtime_shutdown(); }
 
 AICORE_CAPI int aicore_aliked_is_ready(const aicore_aliked_ctx* ctx) {
     return ctx != nullptr && ctx->extractor != nullptr ? 1 : 0;
+}
+
+AICORE_CAPI int aicore_aliked_extract_image_view(
+        aicore_aliked_ctx* ctx,
+        const aicore_image_view* image,
+        aicore_lightglue_features* out) {
+    if (ctx == nullptr || image == nullptr) return -1;
+    if (image->format != AICORE_IMAGE_RGB8) {
+        ctx->last_error = "aliked image_view must be AICORE_IMAGE_RGB8";
+        return -1;
+    }
+    return aicore_aliked_extract_rgb(
+            ctx, image->data, image->width, image->height,
+            static_cast<int32_t>(image->row_stride_bytes), out);
 }
 
 AICORE_CAPI const char* aicore_aliked_last_error(const aicore_aliked_ctx* ctx) {

@@ -67,8 +67,8 @@ private:
     void WriteScript(const bool geometric) const;
 
     UndistortCameraOptions options_;
-    const std::string image_path_;
-    const std::string output_path_;
+    const std::filesystem::path image_path_;
+    const std::filesystem::path output_path_;
     const CopyType copy_type_;
     const int num_patch_match_src_images_;
     Reconstruction* reconstruction_;
@@ -96,8 +96,8 @@ private:
     void WriteCMVSCOLMAPScript(const bool geometric) const;
 
     UndistortCameraOptions options_;
-    std::string image_path_;
-    std::string output_path_;
+    std::filesystem::path image_path_;
+    std::filesystem::path output_path_;
     Reconstruction* reconstruction_;
 };
 
@@ -115,8 +115,8 @@ private:
     bool Undistort(const size_t reg_image_idx) const;
 
     UndistortCameraOptions options_;
-    std::string image_path_;
-    std::string output_path_;
+    std::filesystem::path image_path_;
+    std::filesystem::path output_path_;
     Reconstruction* reconstruction_;
 };
 
@@ -137,8 +137,8 @@ private:
     bool Undistort(const size_t reg_image_idx) const;
 
     UndistortCameraOptions options_;
-    std::string image_path_;
-    std::string output_path_;
+    std::filesystem::path image_path_;
+    std::filesystem::path output_path_;
     const std::vector<std::pair<std::string, Camera>>& image_names_and_cameras_;
 };
 
@@ -158,8 +158,8 @@ private:
     void Rectify(const image_t image_id1, const image_t image_id2) const;
 
     UndistortCameraOptions options_;
-    std::string image_path_;
-    std::string output_path_;
+    std::filesystem::path image_path_;
+    std::filesystem::path output_path_;
     const std::vector<std::pair<image_t, image_t>>& stereo_pairs_;
     Reconstruction* reconstruction_;
 };

@@ -8,6 +8,7 @@
 #include "LingbotMapDialog.h"
 
 #include <QCheckBox>
+#include <QCloseEvent>
 #include <QComboBox>
 #include <QCryptographicHash>
 #include <QDateTime>
@@ -20,6 +21,7 @@
 #include <QFormLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
+#include <QKeyEvent>
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QSettings>
@@ -930,6 +932,40 @@ void LingbotMapDialog::onRun() {
 
 void LingbotMapDialog::onCancel() { emit cancelRequested(); }
 
+void LingbotMapDialog::closeEvent(QCloseEvent* event) {
+    // Uniform plugin-close semantics: if a reconstruction, download, or
+    // test-data operation is active, ask for confirmation.
+    if (m_taskRunning || m_downloadInProgress || m_testDataInProgress ||
+        m_maskDownloadPending) {
+        if (QMessageBox::question(
+                    this, tr("Task running"),
+                    tr("A LingbotMap task is running. Close anyway?"),
+                    QMessageBox::Yes | QMessageBox::No,
+                    QMessageBox::No) != QMessageBox::Yes) {
+            event->ignore();
+            return;
+        }
+    }
+    emit cancelRequested();
+    saveSettings();
+    QDialog::closeEvent(event);
+}
+
+void LingbotMapDialog::keyPressEvent(QKeyEvent* event) {
+    if (event->key() == Qt::Key_Escape &&
+        (m_taskRunning || m_downloadInProgress || m_testDataInProgress ||
+         m_maskDownloadPending)) {
+        if (QMessageBox::question(
+                    this, tr("Task running"),
+                    tr("A LingbotMap task is running. Close anyway?"),
+                    QMessageBox::Yes | QMessageBox::No,
+                    QMessageBox::No) != QMessageBox::Yes) {
+            return;
+        }
+    }
+    QDialog::keyPressEvent(event);
+}
+
 void LingbotMapDialog::loadSettings() {
     QSettings settings;
     settings.beginGroup(QStringLiteral("qLingbotMap"));
@@ -1077,6 +1113,7 @@ void LingbotMapDialog::saveSettings() const {
 }
 
 void LingbotMapDialog::setTaskRunning(bool running) {
+    m_taskRunning = running;
     m_runButton->setEnabled(!running);
     m_cancelButton->setEnabled(running);
     if (!running) {

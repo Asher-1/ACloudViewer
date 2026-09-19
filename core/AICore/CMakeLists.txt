@@ -85,6 +85,8 @@ file(GLOB AICORE_FACEDETECT_SOURCES CONFIGURE_DEPENDS ${AICORE_FACEDETECT_SRC_DI
 file(GLOB AICORE_RFDETR_SOURCES CONFIGURE_DEPENDS ${AICORE_RFDETR_SRC_DIR}/*.cpp)
 file(GLOB AICORE_RMBG_SOURCES CONFIGURE_DEPENDS ${AICORE_RMBG_SRC_DIR}/*.cpp)
 file(GLOB AICORE_YOLO_SOURCES CONFIGURE_DEPENDS ${AICORE_YOLO_SRC_DIR}/*.cpp)
+set(AICORE_REID_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/reid)
+file(GLOB AICORE_REID_SOURCES CONFIGURE_DEPENDS ${AICORE_REID_SRC_DIR}/*.cpp)
 file(GLOB AICORE_SAM3_SOURCES CONFIGURE_DEPENDS ${AICORE_SAM3_SRC_DIR}/*.cpp)
 file(GLOB AICORE_GKD_SOURCES CONFIGURE_DEPENDS ${AICORE_GKD_SRC_DIR}/*.cpp)
 file(GLOB AICORE_LINGBOT_SOURCES CONFIGURE_DEPENDS ${AICORE_LINGBOT_SRC_DIR}/*.cpp)
@@ -140,6 +142,7 @@ add_library(${PROJECT_NAME} SHARED
     ${AICORE_RFDETR_SOURCES}
     ${AICORE_RMBG_SOURCES}
     ${AICORE_YOLO_SOURCES}
+    ${AICORE_REID_SOURCES}
     ${AICORE_SAM3_SOURCES}
     ${AICORE_TRELLIS_SOURCES}
     ${AICORE_GKD_SOURCES}
@@ -664,6 +667,7 @@ if(AICore_BUILD_TESTS)
             ${AICORE_TRELLIS_SOURCES}
             ${AICORE_GKD_SOURCES}
             ${AICORE_LINGBOT_SOURCES}
+            ${AICORE_REID_SOURCES}
         )
         list(FILTER AICORE_TEST_SOURCES EXCLUDE REGEX
              ".*/(capi|image_depth)\\.cpp$")
@@ -736,7 +740,7 @@ if(AICore_BUILD_TESTS)
     message(STATUS "AICore: contract tests enabled")
 endif()
 
-message(STATUS "AICore (SHARED): tasks/depth + tasks/gaussian + tasks/lightglue + tasks/loma + tasks/deeplsd + tasks/facedetect + tasks/rfdetr + tasks/rmbg + tasks/yolo + tasks/sam3 + tasks/trellis + tasks/gkd + tasks/lingbot, ggml linked once")
+message(STATUS "AICore (SHARED): tasks/depth + tasks/gaussian + tasks/lightglue + tasks/loma + tasks/deeplsd + tasks/facedetect + tasks/rfdetr + tasks/rmbg + tasks/yolo + tasks/sam3 + tasks/trellis + tasks/gkd + tasks/lingbot + tasks/reid, ggml linked once")
 
 add_executable(aicore_gguf_quantize tools/aicore_gguf_quantize.cpp)
 target_link_libraries(aicore_gguf_quantize PRIVATE AICore)
@@ -772,4 +776,23 @@ if(GGML_DYNAMIC_BACKENDS AND GGML_RUNTIME_LIB_DIR AND GGML_BACKEND_DIR)
         add_custom_command(TARGET aicore_gguf_quantize POST_BUILD
             COMMAND ${CMAKE_COMMAND} ${_quantize_backend_copy_args}
         )
+endif()
+
+# ReID validation probe (tools/reid_validate.py drives it against PyTorch /
+# ONNX Runtime baselines; NOT a ctest — needs a classify GGUF):
+#   reid_probe --gguf <file> [--device cuda|vulkan|cpu] [--output file.json]
+add_executable(reid_probe tools/reid_probe.cpp)
+target_link_libraries(reid_probe PRIVATE AICore)
+if(TARGET AICore_capi_link)
+    target_link_libraries(reid_probe PRIVATE AICore_capi_link)
+endif()
+# The probe includes <QImage>: match the capi-test PIC/no-PIE setup, required
+# by Qt builds with -reduce-relocations.
+set_target_properties(reid_probe PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    FOLDER "core/tools")
+if(NOT MSVC)
+    target_compile_options(reid_probe PRIVATE -fPIC)
+    target_link_options(reid_probe PRIVATE "-no-pie")
 endif()

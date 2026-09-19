@@ -68,7 +68,7 @@ public:
     void Run() override;
 
 private:
-    std::string match_list_path_;
+    std::filesystem::path match_list_path_;
     QComboBox* match_type_cb_;
 };
 

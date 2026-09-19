@@ -154,10 +154,10 @@ ConsistencyGraph PatchMatch::GetConsistencyGraph() const {
 }
 
 PatchMatchController::PatchMatchController(const PatchMatchOptions& options,
-                                           const std::string& workspace_path,
+                                           const std::filesystem::path& workspace_path,
                                            const std::string& workspace_format,
                                            const std::string& pmvs_option_name,
-                                           const std::string& config_path)
+                                           const std::filesystem::path& config_path)
     : options_(options),
       workspace_path_(workspace_path),
       workspace_format_(workspace_format),
@@ -238,10 +238,10 @@ void PatchMatchController::ReadProblems() {
 
   const auto& model = workspace_->GetModel();
 
-  const std::string config_path =
+  const std::filesystem::path config_path =
       config_path_.empty()
-          ? JoinPaths(workspace_path_, workspace_->GetOptions().stereo_folder,
-                      "patch-match.cfg")
+          ? workspace_path_ / workspace_->GetOptions().stereo_folder /
+                "patch-match.cfg"
           : config_path_;
   std::vector<std::string> config = ReadTextFileLines(config_path);
 
@@ -398,12 +398,12 @@ void PatchMatchController::ProcessProblem(const PatchMatchOptions& options,
   const std::string image_name = model.GetImageName(problem.ref_image_idx);
   const std::string file_name =
       StringPrintf("%s.%s.bin", image_name.c_str(), output_type.c_str());
-  const std::string depth_map_path =
-      JoinPaths(workspace_path_, stereo_folder, "depth_maps", file_name);
-  const std::string normal_map_path =
-      JoinPaths(workspace_path_, stereo_folder, "normal_maps", file_name);
-  const std::string consistency_graph_path = JoinPaths(
-      workspace_path_, stereo_folder, "consistency_graphs", file_name);
+  const std::filesystem::path depth_map_path =
+      workspace_path_ / stereo_folder / "depth_maps" / file_name;
+  const std::filesystem::path normal_map_path =
+      workspace_path_ / stereo_folder / "normal_maps" / file_name;
+  const std::filesystem::path consistency_graph_path =
+      workspace_path_ / stereo_folder / "consistency_graphs" / file_name;
 
   if (ExistsFile(depth_map_path) && ExistsFile(normal_map_path) &&
       (!options.write_consistency_graph ||

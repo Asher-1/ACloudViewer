@@ -54,6 +54,7 @@ enum aicore_model_kind {
     AICORE_MODEL_GKD = 12,
     AICORE_MODEL_LINGBOT = 13,
     AICORE_MODEL_LOMA = 14,
+    AICORE_MODEL_REID = 15,
 };
 
 enum aicore_model_capability {

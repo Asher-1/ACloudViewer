@@ -9,6 +9,7 @@
 
 #include <utility>
 
+#include "common/gguf_file_io.hpp"
 #include "ggml-backend.h"
 #include "tasks/depth/backend.hpp"
 #include "tasks/depth/common.hpp"
@@ -114,10 +115,11 @@ bool ModelLoader::load(const std::string& path) {
         ctx_ = nullptr;
     }
     tensors_.clear();
-    gguf_init_params p{/*no_alloc=*/false, /*ctx=*/&ctx_};
-    gguf_ = gguf_init_from_file(path.c_str(), p);
+    std::string open_error;
+    gguf_ = ggml_common::open_gguf_file(path, /*no_alloc=*/false, &ctx_,
+                                        "depth", &open_error);
     if (!gguf_) {
-        DA_ERR("gguf_init_from_file failed: %s", path.c_str());
+        DA_ERR("%s", open_error.c_str());
         return false;
     }
     // Nested metric branch: config + tensors live under m_vit.*/m_head.*

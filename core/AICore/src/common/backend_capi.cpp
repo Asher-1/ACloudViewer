@@ -275,6 +275,12 @@ bool FillModelDeviceInfo(enum aicore_model_kind model,
             minimum = 128ull * 1024 * 1024;
             recommended = 512ull * 1024 * 1024;
             break;
+        case AICORE_MODEL_REID:
+            // Classification-backbone embedding encoder (224 input, tiny
+            // weights); per-detection crops run as single-image forwards.
+            minimum = 128ull * 1024 * 1024;
+            recommended = 512ull * 1024 * 1024;
+            break;
         default:
             return false;
     }

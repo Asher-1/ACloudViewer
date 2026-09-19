@@ -9,6 +9,7 @@
 
 #include <QtCore>
 #include <QtWidgets>
+#include <filesystem>
 
 #include "feature/types.h"
 
@@ -39,7 +40,7 @@ public:
 
     void ShowBitmap(const colmap::Bitmap& bitmap);
     void ShowPixmap(const QPixmap& pixmap);
-    void ReadAndShow(const std::string& path);
+    void ReadAndShow(const std::filesystem::path& path);
 
 private:
     static const double kZoomFactor;
@@ -62,12 +63,12 @@ class FeatureImageViewerWidget : public ImageViewerWidget {
 public:
     FeatureImageViewerWidget(QWidget* parent, const std::string& switch_text);
 
-    void ReadAndShowWithKeypoints(const std::string& path,
+    void ReadAndShowWithKeypoints(const std::filesystem::path& path,
                                   const colmap::FeatureKeypoints& keypoints,
                                   const std::vector<char>& tri_mask);
 
-    void ReadAndShowWithMatches(const std::string& path1,
-                                const std::string& path2,
+    void ReadAndShowWithMatches(const std::filesystem::path& path1,
+                                const std::filesystem::path& path2,
                                 const colmap::FeatureKeypoints& keypoints1,
                                 const colmap::FeatureKeypoints& keypoints2,
                                 const colmap::FeatureMatches& matches);

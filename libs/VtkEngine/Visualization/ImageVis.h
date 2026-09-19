@@ -32,6 +32,7 @@ class vtkRenderer;
 class vtkRenderWindow;
 class vtkRenderWindowInteractor;
 class vtkImageSlice;
+class vtkImageMapper3D;
 class vtkImageSliceMapper;
 
 namespace Visualization {
@@ -285,7 +286,7 @@ private:
         unsigned originalWidth;
         unsigned originalHeight;
         vtkSmartPointer<vtkImageSlice> imageSlice;
-        vtkSmartPointer<vtkImageSliceMapper> imageMapper;
+        vtkSmartPointer<vtkImageMapper3D> imageMapper;
     };
     std::map<std::string, ImageInfo> m_imageInfoMap;
     /// Layer id kept on top of the render order (set by raiseLayer).

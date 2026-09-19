@@ -76,6 +76,11 @@ public:
 
     static bool isAvailable();
 
+    /** Tear the async infer thread down (releasing the resident model).
+     *  Called when the owning dialog closes for good; the thread is
+     *  rebuilt lazily on the next live start. Idempotent. */
+    void releaseGpuResources();
+
 signals:
     void logMessage(const QString& msg);
     void snapshotUpdated(const RFDetrRunResult& result);
@@ -114,6 +119,9 @@ private:
     void repaintLivePreview();
     void clearLiveOverlay();
     void shutdownInferThread();
+    /** Rebuild the infer thread after releaseGpuResources(); no-op while
+     *  it is already running. */
+    void ensureInferThread();
 
     Config m_config;
     QLabel* m_statusLabel = nullptr;  // cached base accessor

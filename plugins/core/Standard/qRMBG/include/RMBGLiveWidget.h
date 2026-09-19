@@ -71,6 +71,11 @@ public:
 
     static bool isAvailable();
 
+    /** Tear the async infer thread down (releasing the resident model).
+     *  Called when the owning dialog closes for good; the thread is
+     *  rebuilt lazily on the next live start. Idempotent. */
+    void releaseGpuResources();
+
 signals:
     void logMessage(const QString& msg);
     void snapshotUpdated(const RMBGRunResult& result);
@@ -101,6 +106,9 @@ private:
     void updateModelPathFromCombo();
     void submitInferJob(const QImage& rgb);
     void shutdownInferThread();
+    /** Rebuild the infer thread after releaseGpuResources(); no-op while
+     *  it is already running. */
+    void ensureInferThread();
     /** Checkerboard-composite the current display frame with the latest
      *  inference alpha mask (preview resolution — ~0.5 ms per frame). */
     void applyLiveComposite(QImage& display);

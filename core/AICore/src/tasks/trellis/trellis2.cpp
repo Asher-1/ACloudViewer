@@ -25,6 +25,7 @@
 #include "common/aicore_log.hpp"
 #include "common/ggml_backend_registry.hpp"
 #include "common/ggml_backend_utils.hpp"
+#include "common/gguf_file_io.hpp"
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
 #include "ggml.h"
@@ -350,14 +351,11 @@ trellis2_ss_flow_model *trellis2_ss_flow_load(const std::string &path,
     // backend and the payloads streamed in from the file (so the GPU can use
     // them directly). This is the standard llama.cpp / stable-diffusion.cpp
     // path.
-    gguf_init_params params;
-    params.no_alloc = true;
-    params.ctx = &m->ctx;
-
-    m->gguf = gguf_init_from_file(path.c_str(), params);
+    std::string open_error;
+    m->gguf = ggml_common::open_gguf_file(path, /*no_alloc=*/true, &m->ctx,
+                                          "trellis2", &open_error);
     if (!m->gguf) {
-        set_error(error,
-                  "gguf_init_from_file failed (not a GGUF file?): " + path);
+        set_error(error, open_error + " (not a GGUF file?)");
         delete m;
         return nullptr;
     }
@@ -1094,14 +1092,11 @@ trellis2_ss_dec_model *trellis2_ss_dec_load(const std::string &path,
                                             const char *device) {
     auto *m = new trellis2_ss_dec_model();
 
-    gguf_init_params params;
-    params.no_alloc = true;
-    params.ctx = &m->ctx;
-
-    m->gguf = gguf_init_from_file(path.c_str(), params);
+    std::string open_error;
+    m->gguf = ggml_common::open_gguf_file(path, /*no_alloc=*/true, &m->ctx,
+                                          "trellis2", &open_error);
     if (!m->gguf) {
-        set_error(error,
-                  "gguf_init_from_file failed (not a GGUF file?): " + path);
+        set_error(error, open_error + " (not a GGUF file?)");
         delete m;
         return nullptr;
     }
@@ -1418,14 +1413,11 @@ trellis2_dino_model *trellis2_dino_load(const std::string &path,
                                         const char *device) {
     auto *m = new trellis2_dino_model();
 
-    gguf_init_params params;
-    params.no_alloc = true;
-    params.ctx = &m->ctx;
-
-    m->gguf = gguf_init_from_file(path.c_str(), params);
+    std::string open_error;
+    m->gguf = ggml_common::open_gguf_file(path, /*no_alloc=*/true, &m->ctx,
+                                          "trellis2", &open_error);
     if (!m->gguf) {
-        set_error(error,
-                  "gguf_init_from_file failed (not a GGUF file?): " + path);
+        set_error(error, open_error + " (not a GGUF file?)");
         delete m;
         return nullptr;
     }
@@ -2360,14 +2352,11 @@ trellis2_slat_flow_model *trellis2_slat_flow_load(const std::string &path,
                                                   const char *device) {
     auto *m = new trellis2_slat_flow_model();
 
-    gguf_init_params params;
-    params.no_alloc = true;
-    params.ctx = &m->ctx;
-
-    m->gguf = gguf_init_from_file(path.c_str(), params);
+    std::string open_error;
+    m->gguf = ggml_common::open_gguf_file(path, /*no_alloc=*/true, &m->ctx,
+                                          "trellis2", &open_error);
     if (!m->gguf) {
-        set_error(error,
-                  "gguf_init_from_file failed (not a GGUF file?): " + path);
+        set_error(error, open_error + " (not a GGUF file?)");
         delete m;
         return nullptr;
     }
@@ -3031,14 +3020,11 @@ static trellis2_shape_dec_model *dec_load_impl(const std::string &path,
                                                const char *kv_prefix) {
     auto *m = new trellis2_shape_dec_model();
 
-    gguf_init_params params;
-    params.no_alloc = true;
-    params.ctx = &m->ctx;
-
-    m->gguf = gguf_init_from_file(path.c_str(), params);
+    std::string open_error;
+    m->gguf = ggml_common::open_gguf_file(path, /*no_alloc=*/true, &m->ctx,
+                                          "trellis2", &open_error);
     if (!m->gguf) {
-        set_error(error,
-                  "gguf_init_from_file failed (not a GGUF file?): " + path);
+        set_error(error, open_error + " (not a GGUF file?)");
         delete m;
         return nullptr;
     }
@@ -3762,13 +3748,11 @@ trellis2_shape_enc_model *trellis2_shape_enc_load(const std::string &path,
                                                   const char *device) {
     auto *m = new trellis2_shape_enc_model();
 
-    gguf_init_params params;
-    params.no_alloc = true;
-    params.ctx = &m->ctx;
-    m->gguf = gguf_init_from_file(path.c_str(), params);
+    std::string open_error;
+    m->gguf = ggml_common::open_gguf_file(path, /*no_alloc=*/true, &m->ctx,
+                                          "trellis2", &open_error);
     if (!m->gguf) {
-        set_error(error,
-                  "gguf_init_from_file failed (not a GGUF file?): " + path);
+        set_error(error, open_error + " (not a GGUF file?)");
         delete m;
         return nullptr;
     }

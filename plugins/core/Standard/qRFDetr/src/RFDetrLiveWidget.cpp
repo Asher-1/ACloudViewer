@@ -50,16 +50,7 @@ RFDetrLiveWidget::RFDetrLiveWidget(QWidget* parent)
     setupUi();
     setPreviewFixedHeight(300);
 
-    m_inferThread = new QThread(this);
-    m_inferWorker = new RFDetrLiveInferWorker;
-    m_inferWorker->moveToThread(m_inferThread);
-    connect(m_inferThread, &QThread::finished, m_inferWorker,
-            &QObject::deleteLater);
-    connect(m_inferWorker, &RFDetrLiveInferWorker::inferComplete, this,
-            &RFDetrLiveWidget::onInferComplete, Qt::QueuedConnection);
-    connect(m_inferWorker, &RFDetrLiveInferWorker::modelInfoReady, this,
-            &RFDetrLiveWidget::modelInfoReady, Qt::QueuedConnection);
-    m_inferThread->start();
+    ensureInferThread();
 }
 
 RFDetrLiveWidget::~RFDetrLiveWidget() {
@@ -340,6 +331,7 @@ void RFDetrLiveWidget::onDisplayFrame(QImage& display, int frameIndex) {
 }
 
 void RFDetrLiveWidget::submitInferJob(const QImage& rgb) {
+    ensureInferThread();  // recreate after a dialog-close shutdown
     if (!m_inferWorker || m_inferBusy) return;
     m_inferBusy = true;
     m_inferSubmitTime.restart();
@@ -634,6 +626,30 @@ void RFDetrLiveWidget::captureSnapshotToDb() {
         m_lastSnapshot.annotatedImage = annotated;
     }
     emit captureToDbRequested(m_lastSnapshot);
+}
+
+void RFDetrLiveWidget::ensureInferThread() {
+    if (m_inferWorker) return;
+    // Rebuild the async side branch after releaseGpuResources() tore it
+    // down on dialog close. A finished QThread object is reusable; only
+    // the worker must be recreated.
+    if (!m_inferThread) m_inferThread = new QThread(this);
+    m_inferWorker = new RFDetrLiveInferWorker;
+    m_inferWorker->moveToThread(m_inferThread);
+    connect(m_inferThread, &QThread::finished, m_inferWorker,
+            &QObject::deleteLater);
+    connect(m_inferWorker, &RFDetrLiveInferWorker::inferComplete, this,
+            &RFDetrLiveWidget::onInferComplete, Qt::QueuedConnection);
+    connect(m_inferWorker, &RFDetrLiveInferWorker::modelInfoReady, this,
+            &RFDetrLiveWidget::modelInfoReady, Qt::QueuedConnection);
+    if (!m_inferThread->isRunning()) m_inferThread->start();
+}
+
+void RFDetrLiveWidget::releaseGpuResources() {
+    // Shut the infer thread down (releasing the resident model) when the
+    // owning dialog closes for good; ensureInferThread() rebuilds it on
+    // the next live start.
+    shutdownInferThread();
 }
 
 void RFDetrLiveWidget::shutdownInferThread() {

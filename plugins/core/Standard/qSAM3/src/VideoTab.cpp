@@ -70,6 +70,39 @@ bool isValidCatalogModel(const QString& path, const QString& filename) {
                    64 * 1024, true, ecvAssetIntegrity::OnMiss::CheapChecksOnly,
                    entry->size_bytes);
 }
+
+// Why the selected catalog model cannot be loaded as-is. modelPath()
+// falls back to the bare filename when the release check fails, so
+// prompts must classify before claiming the GGUF "was not downloaded".
+enum class ModelFileStatus { Missing, Unverified, Verified };
+
+QString cachedModelPath(const QString& filename) {
+    char* dir = aicore_sam3_model_cache_dir();
+    const QString cacheDir = QString::fromUtf8(dir);
+    aicore_sam3_free_buffer(dir);
+    return cacheDir + QLatin1Char('/') + filename;
+}
+
+QString modelDisplayPath(const QString& filename) {
+    const QFileInfo selected(filename);
+    return selected.isAbsolute() ? filename : cachedModelPath(filename);
+}
+
+ModelFileStatus classifyModelFile(const QString& filename) {
+    if (filename.isEmpty() || filename == "__browse__") {
+        return ModelFileStatus::Missing;
+    }
+    const QFileInfo selected(filename);
+    // An explicitly browsed absolute path bypasses the release check.
+    if (selected.isAbsolute()) {
+        return selected.isFile() ? ModelFileStatus::Verified
+                                 : ModelFileStatus::Missing;
+    }
+    const QString full = cachedModelPath(filename);
+    if (!QFileInfo(full).isFile()) return ModelFileStatus::Missing;
+    return isValidCatalogModel(full, filename) ? ModelFileStatus::Verified
+                                               : ModelFileStatus::Unverified;
+}
 }  // namespace
 
 VideoTab::VideoTab(QWidget* parent) : QWidget(parent) {
@@ -735,6 +768,27 @@ void VideoTab::onLoadModel() {
                 this, tr("Select SAM3 GGUF model"), QDir::homePath(),
                 tr("GGUF files (*.gguf);;All files (*)"));
         if (path.isEmpty()) return;
+    } else if (classifyModelFile(m_modelCombo->currentData().toString()) ==
+               ModelFileStatus::Unverified) {
+        // A stale generation sits in the cache; say so instead of claiming
+        // the GGUF was never downloaded.
+        const QString filename = m_modelCombo->currentData().toString();
+        const auto* entry = catalogEntry(filename);
+        const QFileInfo stale(cachedModelPath(filename));
+        const auto answer = QMessageBox::question(
+                this, tr("qSAM3"),
+                tr("A local copy of %1 exists but does not match the "
+                   "published release (size %2, expected %3).\n\n"
+                   "Download the verified version instead?")
+                        .arg(filename,
+                             ecvModelDownloader::formatFileSize(stale.size()),
+                             entry ? ecvModelDownloader::formatFileSize(
+                                             entry->size_bytes)
+                                   : QStringLiteral("unknown")),
+                QMessageBox::Yes | QMessageBox::Cancel, QMessageBox::Cancel);
+        if (answer != QMessageBox::Yes) return;
+        startDownload(false);
+        return;
     } else if (!QFileInfo::exists(path)) {
         // The combo lists published models, but the GGUF itself is not
         // downloaded yet. Tell the user instead of failing silently.
@@ -820,18 +874,61 @@ bool VideoTab::ensureModelReady() {
         connect(m_worker, &VideoWorker::busyChanged, this,
                 &VideoTab::onBusyChanged);
     }
-    if (path.isEmpty() || path == "__browse__" || !QFileInfo::exists(path)) {
+    const QString filename = m_modelCombo->currentData().toString();
+    if (filename.isEmpty() || filename == "__browse__") {
+        CVLog::Warning("[qSAM3][VideoTab] auto-load: no model selected");
+        appendLog(
+                tr("No model selected. Pick a catalog model or Browse a "
+                   "local GGUF file."));
+        return false;
+    }
+    if (classifyModelFile(filename) == ModelFileStatus::Unverified) {
+        // A stale generation sits in the cache; say so instead of claiming
+        // the GGUF was never downloaded.
+        CVLog::Warning(
+                "[qSAM3][VideoTab] auto-load: cached model does not "
+                "match the published release: %s",
+                modelDisplayPath(filename).toUtf8().constData());
+        // Offer to download the verified GGUF once per session (qDA3-style).
+        if (!m_downloadPrompted) {
+            m_downloadPrompted = true;
+            const auto* entry = catalogEntry(filename);
+            const QFileInfo stale(cachedModelPath(filename));
+            const auto answer = QMessageBox::question(
+                    this, tr("qSAM3"),
+                    tr("A local copy of %1 exists but does not match the "
+                       "published release (size %2, expected %3).\n\n"
+                       "Download the verified version now?")
+                            .arg(filename,
+                                 ecvModelDownloader::formatFileSize(
+                                         stale.size()),
+                                 entry ? ecvModelDownloader::formatFileSize(
+                                                 entry->size_bytes)
+                                       : QStringLiteral("unknown")),
+                    QMessageBox::Yes | QMessageBox::No);
+            if (answer == QMessageBox::Yes) {
+                startDownload(true);
+                return false;
+            }
+            appendLog(
+                    tr("Cached model does not match the published release. "
+                       "Use the Download button or Browse a local GGUF "
+                       "file."));
+        }
+        return false;
+    }
+    if (!QFileInfo::exists(path)) {
         CVLog::Warning("[qSAM3][VideoTab] auto-load: model file not found: %s",
-                       path.toUtf8().constData());
+                       modelDisplayPath(filename).toUtf8().constData());
         // Offer to download the catalog GGUF once per session (qDA3-style).
         if (!m_downloadPrompted) {
+            m_downloadPrompted = true;
             const auto answer = QMessageBox::question(
                     this, tr("qSAM3"),
                     tr("Model file not found:\n%1\n\n"
                        "Download it now into the model cache?")
-                            .arg(path),
+                            .arg(modelDisplayPath(filename)),
                     QMessageBox::Yes | QMessageBox::No);
-            m_downloadPrompted = true;
             if (answer == QMessageBox::Yes) {
                 startDownload(true);
                 return false;

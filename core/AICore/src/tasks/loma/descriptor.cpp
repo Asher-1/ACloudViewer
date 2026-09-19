@@ -19,6 +19,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "common/gguf_file_io.hpp"
 #include "tasks/lightglue/backend.hpp"
 
 namespace aicore::loma {
@@ -34,10 +35,11 @@ public:
     bool Open(const std::string& path) {
         Close();
         error.clear();
-        gguf_init_params p{/*no_alloc=*/false, &ctx};
-        gguf = gguf_init_from_file(path.c_str(), p);
+        std::string open_error;
+        gguf = ggml_common::open_gguf_file(path, /*no_alloc=*/false, &ctx,
+                                           "loma_descriptor", &open_error);
         if (!gguf || !ctx) {
-            error = "failed to read DeDoDe GGUF: " + path;
+            error = open_error;
             Close();
             return false;
         }

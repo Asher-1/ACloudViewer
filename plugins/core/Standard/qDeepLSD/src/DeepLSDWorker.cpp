@@ -18,6 +18,8 @@
 #include <algorithm>
 #include <cstdlib>
 
+#include "ecvAICoreRuntimeHelpers.h"
+
 #ifdef AICore_ENABLED
 #include "aicore/backend_capi.h"
 #include "aicore/deeplsd_capi.h"
@@ -48,10 +50,7 @@ void DeepLSDWorker::requestTaskCancel() {
 
 void DeepLSDWorker::releaseContextOnMainThread() {
 #ifdef AICore_ENABLED
-    if (m_pendingCtx) {
-        aicore_deeplsd_free(m_pendingCtx);
-        m_pendingCtx = nullptr;
-    }
+    ecvAICoreRuntime::releasePending(m_pendingCtx, &aicore_deeplsd_free);
 #endif
 }
 

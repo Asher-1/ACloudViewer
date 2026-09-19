@@ -168,6 +168,10 @@ void qLingbotMap::showDialog() {
                 &qLingbotMap::executeTask);
         connect(m_dialog, &LingbotMapDialog::cancelRequested, this,
                 &qLingbotMap::cancelTask);
+        // Esc/reject bypasses closeEvent: route it through the same
+        // cooperative cancel so closing for good always stops the task.
+        connect(m_dialog, &LingbotMapDialog::rejected, this,
+                &qLingbotMap::cancelTask);
         connect(m_dialog, &LingbotMapDialog::playbackSettingsChanged, this,
                 &qLingbotMap::onPlaybackSettingsChanged);
     }

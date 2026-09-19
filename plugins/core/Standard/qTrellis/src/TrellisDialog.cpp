@@ -16,6 +16,7 @@
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QImageReader>
+#include <QKeyEvent>
 #include <QMessageBox>
 #include <QMouseEvent>
 #include <QSettings>
@@ -709,8 +710,32 @@ void TrellisDialog::saveSettings() const {
 }
 
 void TrellisDialog::closeEvent(QCloseEvent* event) {
+    if (m_taskRunning || m_downloadInProgress) {
+        if (QMessageBox::question(
+                    this, tr("Task running"),
+                    tr("A TRELLIS task is running. Close anyway?"),
+                    QMessageBox::Yes | QMessageBox::No,
+                    QMessageBox::No) != QMessageBox::Yes) {
+            event->ignore();
+            return;
+        }
+    }
     saveSettings();
     QDialog::closeEvent(event);
+}
+
+void TrellisDialog::keyPressEvent(QKeyEvent* event) {
+    if (event->key() == Qt::Key_Escape &&
+        (m_taskRunning || m_downloadInProgress)) {
+        if (QMessageBox::question(
+                    this, tr("Task running"),
+                    tr("A TRELLIS task is running. Close anyway?"),
+                    QMessageBox::Yes | QMessageBox::No,
+                    QMessageBox::No) != QMessageBox::Yes) {
+            return;
+        }
+    }
+    QDialog::keyPressEvent(event);
 }
 
 TrellisDialog::Settings TrellisDialog::getSettings() const {
@@ -824,6 +849,7 @@ void TrellisDialog::setProgressStage(int stageId,
 }
 
 void TrellisDialog::setRunning(bool running) {
+    m_taskRunning = running;
     m_browseImageBtn->setEnabled(!running);
     m_useTestDataBtn->setEnabled(!running);
     m_downloadBtn->setEnabled(!running);

@@ -151,13 +151,13 @@ std::string GetPathBaseName(const std::filesystem::path& path) {
   }
 }
 
-std::string GetParentDir(const std::filesystem::path& path) {
+std::filesystem::path GetParentDir(const std::filesystem::path& path) {
   // Preserve the historical behavior verified by misc_test: parent of "/"
   // is "" rather than "/" (std::filesystem differs on this edge case).
-  if (path.string() == "/") {
-    return "";
+  if (path == "/") {
+    return {};
   }
-  return path.parent_path().string();
+  return path.parent_path();
 }
 
 std::string NormalizePath(const std::filesystem::path& path) {

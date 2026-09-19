@@ -20,6 +20,7 @@
 #include <stdint.h>
 
 #include "aicore/export.h"
+#include "aicore/image_view.h"
 #include "aicore/lightglue_capi.h"
 #include "aicore/pipeline_timing.h"
 
@@ -83,6 +84,12 @@ AICORE_CAPI int aicore_aliked_extract_rgb(aicore_aliked_ctx* ctx,
                                           int32_t height,
                                           int32_t row_stride,
                                           aicore_lightglue_features* out);
+/* Structured-memory twin of aicore_aliked_extract_rgb (F-01 batch A); the
+ * view must be AICORE_IMAGE_RGB8, other formats reject via last_error. */
+AICORE_CAPI int aicore_aliked_extract_image_view(
+        aicore_aliked_ctx* ctx,
+        const aicore_image_view* image,
+        aicore_lightglue_features* out);
 AICORE_CAPI int aicore_aliked_last_pipeline_timings(
         const aicore_aliked_ctx* ctx, aicore_pipeline_timings* out);
 

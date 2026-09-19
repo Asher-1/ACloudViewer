@@ -172,6 +172,8 @@ private slots:
 
 protected:
     void closeEvent(QCloseEvent* event) override;
+    /** Esc intercept: confirm before closing when a task is running. */
+    void keyPressEvent(QKeyEvent* event) override;
     void showEvent(QShowEvent* event) override;
 
 private:
@@ -268,6 +270,7 @@ private:
     ecvModelDownloader* m_downloader = nullptr;
     ecvMainAppInterface* m_app = nullptr;
     bool m_downloadInProgress = false;
+    bool m_taskRunning = false;
     PendingAction m_pendingActionAfterDownload = PendingAction::None;
     QString m_lastTaskError;
 

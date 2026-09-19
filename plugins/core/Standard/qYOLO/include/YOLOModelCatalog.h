@@ -200,32 +200,55 @@ bool parseDetectionsJson(const QByteArray& json, YOLORunResult* out);
 /** Parse the aicore_yolo_last_depth_json statistics envelope. */
 bool parseDepthStatsJson(const QByteArray& json, YOLODepthStats* out);
 
+/** Official ultralytics Annotator default line width for an image of the
+ *  given size: max(round(sum(shape) / 2 * 0.003), 2) — the numpy sum
+ *  includes the 3 color channels (kept for exact parity). Shared by the
+ *  capture rendering and the live preview overlay. */
+int officialAnnotatorLineWidth(int imageWidth, int imageHeight);
+
+/** Qt label font pixel size matching the official cv2 text metrics:
+ *  fontScale = lineWidth / 3 with Hershey glyph height ~ 22 px per unit. */
+int officialAnnotatorFontPixelSize(int lineWidth);
+
 /** Draw bounding boxes + class/score labels onto the image. Pure pixel
- *  logic — unit tested without AICore. */
+ *  logic — unit tested without AICore. trackIds (when non-empty) is
+ *  index-aligned with detections and prefixes each label with the
+ *  official "id:<n>" plot format; entries <= 0 (untracked) render
+ *  without an id prefix. thickness <= 0 selects the official Annotator
+ *  default for the image size (officialAnnotatorLineWidth). */
 void drawDetections(QImage* image,
                     const QVector<YOLODetection>& detections,
-                    int thickness = 3);
+                    int thickness = 0,
+                    const QVector<int>& trackIds = QVector<int>());
 
 /** Draw instance masks as a translucent per-class tint over the image,
  *  then the detection boxes/labels on top. masks and detections are
- *  index-aligned (mask i belongs to detection i). */
+ *  index-aligned (mask i belongs to detection i). trackIds and thickness
+ *  behave as in drawDetections. */
 void drawSegmentation(QImage* image,
                       const QVector<YOLOSegMask>& masks,
                       const QVector<YOLODetection>& detections,
-                      int thickness = 2);
+                      int thickness = 0,
+                      const QVector<int>& trackIds = QVector<int>());
 
 /** Draw pose results: COCO-17 skeleton lines between visible keypoints,
  *  keypoint dots and the box/label (keypoints in source pixels).
- *  keypointSets may be empty (draws nothing). */
+ *  keypointSets may be empty (draws nothing). thickness behaves as in
+ *  drawDetections (box/label/skeleton strokes). */
 void drawPose(QImage* image,
               const QVector<YOLOKeypointSet>& keypointSets,
-              int thickness = 2);
+              int thickness = 0);
+
+/** COCO-17 skeleton edge table (0-based keypoint index pairs, same data
+ *  drawPose renders) exposed for scaled previews (live overlay). */
+QVector<QPair<int, int>> cocoSkeletonEdges();
 
 /** Draw oriented boxes as rotated rectangles with a center mark and label
- *  (coordinates in source pixels). */
+ *  (coordinates in source pixels). thickness behaves as in
+ *  drawDetections. */
 void drawObb(QImage* image,
              const QVector<YOLOObbBox>& boxes,
-             int thickness = 2);
+             int thickness = 0);
 
 /** Blend the semantic class map (width*height bytes, one class id per
  *  source pixel) over the image at 50% alpha using the Cityscapes-19
@@ -256,6 +279,11 @@ void drawDepthLegend(QImage* image, double minDepth, double maxDepth);
 
 /** Deterministic per-class palette (20 colors, COCO-consistent). */
 QRgb classColor(uint32_t classId);
+
+/** Official ultralytics Colors() palette (20 fixed hex codes): stable
+ *  per-track-id identity color used by solutions annotation (colors(id)).
+ *  Negative ids wrap modulo 20 like the official int(i) % n. */
+QRgb trackIdColor(int trackId);
 
 /** True when the model filename looks like a depth variant. */
 bool filenameIsDepth(const QString& filename);

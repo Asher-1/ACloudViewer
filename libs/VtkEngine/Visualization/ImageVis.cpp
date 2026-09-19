@@ -41,6 +41,8 @@
 #include <vtkContextScene.h>
 #include <vtkImageData.h>
 #include <vtkImageProperty.h>
+#include <vtkImageResliceMapper.h>
+#include <vtkImageSincInterpolator.h>
 #include <vtkImageSlice.h>
 #include <vtkImageSliceMapper.h>
 #include <vtkInteractorObserver.h>
@@ -431,11 +433,32 @@ void ImageVis::addRGBImage(const QImage& qimage,
         ren_->RemoveViewProp(it->second.imageSlice);
     }
 
-    vtkSmartPointer<vtkImageSliceMapper> mapper =
-            vtkSmartPointer<vtkImageSliceMapper>::New();
+    // vtkImageResliceMapper resamples the image to the viewport pixels at
+    // render time (ResampleToScreenPixels is on by default), so a source
+    // image much larger than the view keeps its full detail instead of
+    // aliasing away through the single-level GL_LINEAR texture scaling of a
+    // plain vtkImageSliceMapper. Interactive frames fall back to the cheap
+    // texture path automatically (AutoAdjustImageQuality). The window/level
+    // stage stays off so RGBA color data passes through untouched.
+    vtkSmartPointer<vtkImageResliceMapper> mapper =
+            vtkSmartPointer<vtkImageResliceMapper>::New();
     mapper->SetInputData(imageData);
-    mapper->SetSliceNumber(0);
-    mapper->Update();
+    mapper->SeparateWindowLevelOperationOff();
+    // Linear resampling point-samples a 2x2 neighborhood, so a large image
+    // shown well below its native size still loses detail (same class of
+    // aliasing as the GPU path). The sinc interpolator's antialiasing mode
+    // widens its kernel while shrinking to aggregate the source pixels per
+    // screen pixel — the VTK equivalent of the SmoothTransformation the
+    // plugin previews use — and reverts to sharp sinc when magnified. It
+    // also overrides the per-frame SetInterpolationMode default (a custom
+    // interpolator takes precedence in vtkImageReslice::GetInterpolator).
+    vtkSmartPointer<vtkImageSincInterpolator> interpolator =
+            vtkSmartPointer<vtkImageSincInterpolator>::New();
+    interpolator->SetWindowFunctionToLanczos();
+    interpolator->AntialiasingOn();
+    mapper->SetInterpolator(interpolator);
+    // Pipeline update happens automatically at render time
+    // (Update() is protected on the reslice mapper).
 
     vtkSmartPointer<vtkImageSlice> imageSlice =
             vtkSmartPointer<vtkImageSlice>::New();
@@ -782,6 +805,8 @@ void ImageVis::updateImageSliceTransform(vtkImageSlice* imageSlice,
         return;
     }
 
+    // Only vtkImageSliceMapper carries a display extent; the reslice-based
+    // mapper manages its extent (viewport-sized when resampling) itself.
     vtkImageSliceMapper* mapper =
             vtkImageSliceMapper::SafeDownCast(imageSlice->GetMapper());
     if (mapper) {

@@ -114,13 +114,34 @@ std::vector<Detection> postprocess(const std::vector<float>& raw,
                 }
             }
         }
-        for (int a = 0; a < na; a++) {
-            if (best[a] > logit_thr)
-                cands.push_back({a, sigmoid(best[a]), bc[a]});
+        if (meta.end2end) {
+            // Detect26/OBB26/Pose26 end2end postprocess (head.py
+            // get_topk_index): stage 1 takes the top max_det anchors by max
+            // class, stage 2 takes the top max_det (anchor, class) pairs
+            // among them - one anchor can legitimately emit one row per
+            // class. The confidence filter runs after the cap in the
+            // predictor's end2end branch, not here.
+            const int k = std::min(cfg.max_det, na);
+            std::vector<int> order(na);
+            std::iota(order.begin(), order.end(), 0);
+            std::stable_sort(order.begin(), order.end(),
+                             [&](int a, int b) { return best[a] > best[b]; });
+            cands.reserve((size_t)k * nc);
+            for (int i = 0; i < k; i++) {
+                const int a = order[i];
+                for (int c = 0; c < nc; c++)
+                    cands.push_back(
+                            {a, sigmoid(cls_base[(size_t)c * na + a]), c});
+            }
+        } else {
+            for (int a = 0; a < na; a++) {
+                if (best[a] > logit_thr)
+                    cands.push_back({a, sigmoid(best[a]), bc[a]});
+            }
         }
     } else {
         for (int a = 0; a < na; a++) {
-            if (cls_base[a] > logit_thr)
+            if (meta.end2end || cls_base[a] > logit_thr)
                 cands.push_back({a, sigmoid(cls_base[a]), 0});
         }
     }
@@ -175,12 +196,19 @@ std::vector<Detection> postprocess(const std::vector<float>& raw,
     }
 
     if (meta.end2end) {
+        // Detect.postprocess topk (score descending) then the confidence
+        // filter of the predictor's end2end branch keeps the order; cap at
+        // max_det.
         std::stable_sort(dets.begin(), dets.end(),
                          [](const Detection& x, const Detection& y) {
                              return x.score > y.score;
                          });
         if ((int)dets.size() > cfg.max_det) dets.resize(cfg.max_det);
-        return dets;
+        std::vector<Detection> kept;
+        kept.reserve(dets.size());
+        for (const Detection& d : dets)
+            if (d.score > cfg.conf_thres) kept.push_back(d);
+        return kept;
     }
 
     // Greedy class-aware NMS
@@ -355,7 +383,7 @@ std::vector<OBBDetection> postprocess_obb(const std::vector<float>& raw,
         const float cx = (xf * cos_a - yf * sin_a + ax) * st;
         const float cy = (xf * sin_a + yf * cos_a + ay) * st;
         const float w = (lt_x + rb_x) * st, h = (lt_y + rb_y) * st;
-        out.push_back({cx, cy, w, h, ang, d.score, d.class_id});
+        out.push_back({cx, cy, w, h, ang, d.score, d.class_id, d.anchor});
     }
     return out;
 }
@@ -470,6 +498,45 @@ std::vector<float> classify_softmax(const std::vector<float>& logits) {
     }
     for (float& v : p) v /= sum;
     return p;
+}
+
+std::vector<float> pool_obj_feats(const ObjFeatLevel* levels,
+                                  int n_levels,
+                                  int* out_dim) {
+    *out_dim = 0;
+    if (levels == nullptr || n_levels <= 0) return {};
+    for (int l = 0; l < n_levels; l++) {
+        const ObjFeatLevel& lv = levels[l];
+        if (lv.data == nullptr || lv.c <= 0 || lv.w <= 0 || lv.h <= 0)
+            return {};
+        if (*out_dim == 0 || lv.c < *out_dim) *out_dim = lv.c;
+    }
+    const int s = *out_dim;
+    size_t total = 0;
+    for (int l = 0; l < n_levels; l++) {
+        if (levels[l].c % s != 0) return {};  // torch reshape would throw
+        total += (size_t)levels[l].w * levels[l].h;
+    }
+    std::vector<float> out(total * (size_t)s, 0.0f);
+    size_t base = 0;
+    for (int l = 0; l < n_levels; l++) {
+        const ObjFeatLevel& lv = levels[l];
+        const int group = lv.c / s;  // channels per averaged group
+        const int hw = lv.w * lv.h;
+        for (int p = 0; p < hw; p++) {
+            float* dst = &out[(base + (size_t)p) * (size_t)s];
+            for (int k = 0; k < s; k++) {
+                // Group k averages the contiguous channels
+                // [k*group, (k+1)*group) of this position.
+                const float* src = lv.data + (size_t)k * group * hw + p;
+                float acc = 0.0f;
+                for (int j = 0; j < group; j++) acc += src[(size_t)j * hw];
+                dst[k] = acc / (float)group;
+            }
+        }
+        base += (size_t)hw;
+    }
+    return out;
 }
 
 }  // namespace yolo

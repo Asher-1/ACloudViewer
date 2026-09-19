@@ -22,6 +22,7 @@
 #include <QGroupBox>
 #include <QGuiApplication>
 #include <QHBoxLayout>
+#include <QKeyEvent>
 #include <QMessageBox>
 #include <QScreen>
 #include <QSettings>
@@ -1386,6 +1387,16 @@ void FreeSplatterDialog::onCancel() {
 }
 
 void FreeSplatterDialog::closeEvent(QCloseEvent* event) {
+    if (m_taskRunning || m_downloadInProgress || m_testDataDownloadInProgress) {
+        if (QMessageBox::question(
+                    this, tr("Task running"),
+                    tr("A FreeSplatter task is running. Close anyway?"),
+                    QMessageBox::Yes | QMessageBox::No,
+                    QMessageBox::No) != QMessageBox::Yes) {
+            event->ignore();
+            return;
+        }
+    }
     onCancel();
     onFaceStopCamera();
     if (m_faceCaptureWidget) {
@@ -1393,6 +1404,21 @@ void FreeSplatterDialog::closeEvent(QCloseEvent* event) {
     }
     clearFaceCaptureExportDir();
     QDialog::closeEvent(event);
+}
+
+void FreeSplatterDialog::keyPressEvent(QKeyEvent* event) {
+    if (event->key() == Qt::Key_Escape &&
+        (m_taskRunning || m_downloadInProgress ||
+         m_testDataDownloadInProgress)) {
+        if (QMessageBox::question(
+                    this, tr("Task running"),
+                    tr("A FreeSplatter task is running. Close anyway?"),
+                    QMessageBox::Yes | QMessageBox::No,
+                    QMessageBox::No) != QMessageBox::Yes) {
+            return;
+        }
+    }
+    QDialog::keyPressEvent(event);
 }
 
 void FreeSplatterDialog::setDbImages(const QList<DbImageEntry>& images) {

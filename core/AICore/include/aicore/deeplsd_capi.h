@@ -19,6 +19,7 @@
 #include <stdint.h>
 
 #include "aicore/export.h"
+#include "aicore/image_view.h"
 #include "aicore/pipeline_timing.h"
 
 #ifdef __cplusplus
@@ -70,6 +71,15 @@ AICORE_CAPI int aicore_deeplsd_extract_gray(aicore_deeplsd_ctx* ctx,
                                             float** out_angle,
                                             int32_t* out_width,
                                             int32_t* out_height);
+/* Structured-memory twin of aicore_deeplsd_extract_gray (F-01 batch A); the
+ * view must be AICORE_IMAGE_GRAY8, other formats reject via last_error. */
+AICORE_CAPI int aicore_deeplsd_extract_image_view(
+        aicore_deeplsd_ctx* ctx,
+        const aicore_image_view* image,
+        float** out_distance,
+        float** out_angle,
+        int32_t* out_width,
+        int32_t* out_height);
 
 /** Returns a JSON summary of the loaded model. Caller frees with
  *  aicore_deeplsd_free_buffer. */

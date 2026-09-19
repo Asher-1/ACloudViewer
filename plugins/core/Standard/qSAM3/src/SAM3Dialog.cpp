@@ -23,6 +23,7 @@
 
 #include <QButtonGroup>
 #include <QCheckBox>
+#include <QCloseEvent>
 #include <QComboBox>
 #include <QDoubleSpinBox>
 #include <QDragEnterEvent>
@@ -33,6 +34,7 @@
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QImage>
+#include <QKeyEvent>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
@@ -75,6 +77,39 @@ bool isValidCatalogModel(const QString& path, const QString& filename) {
                             QString::fromUtf8(entry->filename))},
                    64 * 1024, true, ecvAssetIntegrity::OnMiss::CheapChecksOnly,
                    entry->size_bytes);
+}
+
+// Why the selected catalog model cannot be loaded as-is. modelPath()
+// falls back to the bare filename when the release check fails, so
+// prompts must classify before claiming the GGUF "was not downloaded".
+enum class ModelFileStatus { Missing, Unverified, Verified };
+
+QString cachedModelPath(const QString& filename) {
+    char* dir = aicore_sam3_model_cache_dir();
+    const QString cacheDir = QString::fromUtf8(dir);
+    aicore_sam3_free_buffer(dir);
+    return cacheDir + QLatin1Char('/') + filename;
+}
+
+QString modelDisplayPath(const QString& filename) {
+    const QFileInfo selected(filename);
+    return selected.isAbsolute() ? filename : cachedModelPath(filename);
+}
+
+ModelFileStatus classifyModelFile(const QString& filename) {
+    if (filename.isEmpty() || filename == "__browse__") {
+        return ModelFileStatus::Missing;
+    }
+    const QFileInfo selected(filename);
+    // An explicitly browsed absolute path bypasses the release check.
+    if (selected.isAbsolute()) {
+        return selected.isFile() ? ModelFileStatus::Verified
+                                 : ModelFileStatus::Missing;
+    }
+    const QString full = cachedModelPath(filename);
+    if (!QFileInfo(full).isFile()) return ModelFileStatus::Missing;
+    return isValidCatalogModel(full, filename) ? ModelFileStatus::Verified
+                                               : ModelFileStatus::Unverified;
 }
 
 }  // namespace
@@ -463,6 +498,12 @@ SAM3Dialog::SAM3Dialog(QWidget* parent) : QDialog(parent) {
             });
 
     loadSettings();
+
+    // Closing the dialog for good (X button / Esc / system close) drops all
+    // resident GPU contexts; being merely hidden or occluded must not.
+    // QDialog::closeEvent ends in reject(), so rejected() covers the X
+    // button as well as Esc. Idempotent.
+    connect(this, &QDialog::rejected, this, &SAM3Dialog::releaseGpuResidency);
 }
 
 void SAM3Dialog::showEvent(QShowEvent* e) {
@@ -487,6 +528,50 @@ void SAM3Dialog::resizeEvent(QResizeEvent* e) {
     if (m_busyOverlay) {
         m_busyOverlay->setGeometry(rect());
     }
+}
+
+void SAM3Dialog::closeEvent(QCloseEvent* e) {
+    // The dialog object is reused (hidden, not deleted) — but a closed
+    // qSAM3 window means the user is done with it. If a task is still
+    // running, ask for confirmation before cancelling it.
+    if (isRunning()) {
+        if (QMessageBox::question(this, tr("Task running"),
+                                  tr("A SAM3 task is running. Close anyway?"),
+                                  QMessageBox::Yes | QMessageBox::No,
+                                  QMessageBox::No) != QMessageBox::Yes) {
+            e->ignore();
+            return;
+        }
+    }
+    stopWorker();  // no-op when idle; cancels + bounded-waits otherwise
+    saveSettings();
+    QDialog::closeEvent(e);
+}
+
+void SAM3Dialog::keyPressEvent(QKeyEvent* e) {
+    if (e->key() == Qt::Key_Escape && isRunning()) {
+        if (QMessageBox::question(this, tr("Task running"),
+                                  tr("A SAM3 task is running. Close anyway?"),
+                                  QMessageBox::Yes | QMessageBox::No,
+                                  QMessageBox::No) != QMessageBox::Yes) {
+            return;
+        }
+    }
+    QDialog::keyPressEvent(e);
+}
+
+void SAM3Dialog::releaseGpuResidency() {
+    // Cancels a running task (bounded wait) and drops every resident
+    // context; safe to call repeatedly (closeEvent and rejected both land
+    // here).
+    stopWorker();
+    // A cancelled task has no pending operation; also drop the deferred
+    // device-reload flag so it never fires on a later, unrelated finish.
+    m_retryAfterModelLoad = false;
+    m_retryCanvasPrompt = false;
+    m_reloadAfterCurrentTask = false;
+    if (m_downloadInProgress && m_modelDownloader) m_modelDownloader->cancel();
+    if (m_videoTab) m_videoTab->releaseModel();
 }
 
 SAM3Dialog::~SAM3Dialog() {
@@ -1156,6 +1241,28 @@ void SAM3Dialog::onLoadModel() {
                 this, tr("Select SAM3 GGUF model"), QDir::homePath(),
                 tr("GGUF files (*.gguf);;All files (*)"));
         if (path.isEmpty()) return;
+    } else if (classifyModelFile(
+                       currentModelCombo()->currentData().toString()) ==
+               ModelFileStatus::Unverified) {
+        // A stale generation sits in the cache; say so instead of claiming
+        // the GGUF was never downloaded.
+        const QString filename = currentModelCombo()->currentData().toString();
+        const auto* entry = catalogEntry(filename);
+        const QFileInfo stale(cachedModelPath(filename));
+        const auto answer = QMessageBox::question(
+                this, tr("qSAM3"),
+                tr("A local copy of %1 exists but does not match the "
+                   "published release (size %2, expected %3).\n\n"
+                   "Download the verified version instead?")
+                        .arg(filename,
+                             ecvModelDownloader::formatFileSize(stale.size()),
+                             entry ? ecvModelDownloader::formatFileSize(
+                                             entry->size_bytes)
+                                   : QStringLiteral("unknown")),
+                QMessageBox::Yes | QMessageBox::Cancel, QMessageBox::Cancel);
+        if (answer != QMessageBox::Yes) return;
+        startDownload(false);
+        return;
     } else if (!QFileInfo::exists(path)) {
         // The combo lists published models, but the GGUF itself is not
         // downloaded yet. Tell the user instead of failing silently and
@@ -1724,17 +1831,52 @@ bool SAM3Dialog::ensureModelReady() {
         m_retryAfterModelLoad = true;
         return false;
     }
-    // The combo's GGUF file does not exist locally; offer to download it
-    // once per session (qDA3-style).
-    const QString path = modelPath();
+    const QString filename = currentModelCombo()->currentData().toString();
+    if (filename.isEmpty() || filename == "__browse__") {
+        // Browse... has no catalog entry: ask for an explicit pick instead.
+        appendLog(
+                tr("No model selected. Pick a catalog model or Browse a "
+                   "local GGUF file."));
+        return false;
+    }
+    // The combo's GGUF either misses the release check or was never
+    // downloaded; offer the verified fetch once per session (qDA3-style).
+    if (classifyModelFile(filename) == ModelFileStatus::Unverified) {
+        if (!m_downloadPrompted) {
+            m_downloadPrompted = true;
+            const auto* entry = catalogEntry(filename);
+            const QFileInfo stale(cachedModelPath(filename));
+            const auto answer = QMessageBox::question(
+                    this, tr("qSAM3"),
+                    tr("A local copy of %1 exists but does not match the "
+                       "published release (size %2, expected %3).\n\n"
+                       "Download the verified version now?")
+                            .arg(filename,
+                                 ecvModelDownloader::formatFileSize(
+                                         stale.size()),
+                                 entry ? ecvModelDownloader::formatFileSize(
+                                                 entry->size_bytes)
+                                       : QStringLiteral("unknown")),
+                    QMessageBox::Yes | QMessageBox::No);
+            if (answer == QMessageBox::Yes) {
+                startDownload(true);
+                return false;
+            }
+            appendLog(
+                    tr("Cached model does not match the published release. "
+                       "Use the Download button or Browse a local GGUF "
+                       "file."));
+        }
+        return false;
+    }
     if (!m_downloadPrompted) {
+        m_downloadPrompted = true;
         const auto answer = QMessageBox::question(
                 this, tr("qSAM3"),
                 tr("Model file not found:\n%1\n\n"
                    "Download it now into the model cache?")
-                        .arg(path),
+                        .arg(modelDisplayPath(filename)),
                 QMessageBox::Yes | QMessageBox::No);
-        m_downloadPrompted = true;
         if (answer == QMessageBox::Yes) {
             startDownload(true);
             return false;

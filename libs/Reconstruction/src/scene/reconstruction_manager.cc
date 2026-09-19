@@ -93,11 +93,12 @@ void ReconstructionManager::Write(const std::filesystem::path& path,
             });
 
   for (size_t i = 0; i < reconstructions_.size(); ++i) {
-    const std::string reconstruction_path = JoinPaths(path, std::to_string(i));
+    const std::filesystem::path reconstruction_path =
+            path / std::to_string(i);
     CreateDirIfNotExists(reconstruction_path);
     reconstructions_[recon_sizes[i].first]->Write(reconstruction_path);
     if (options != nullptr) {
-      options->Write(JoinPaths(reconstruction_path, "project.ini"));
+      options->Write(reconstruction_path / "project.ini");
     }
   }
 }

@@ -144,7 +144,7 @@ bool WriteObjMaterial(const std::filesystem::path& obj_path,
 
 TexturingReconstruction::TexturingReconstruction(
         const TexturingOptions& options,
-        const std::string& output_path)
+        const std::filesystem::path& output_path)
     : options_(options), output_path_(output_path) {}
 
 void TexturingReconstruction::Run() {
@@ -222,14 +222,15 @@ void TexturingReconstruction::Run() {
     std::string output_extension;
     SplitFileExtension(options_.textured_file_path.string(), &output_prefix,
                        &output_extension);
-    const std::string output_dir = GetParentDir(output_prefix);
+    const auto output_dir = GetParentDir(output_prefix);
     if (!output_dir.empty()) {
         CreateDirIfNotExists(output_dir);
     }
     const std::string base_name = GetPathBaseName(output_prefix);
     const std::string texture_filename =
             base_name + "_material0000_map_Kd.png";
-    const std::string texture_path = JoinPaths(output_dir, texture_filename);
+    const std::string texture_path =
+            (output_dir / texture_filename).string();
     if (!result.texture_atlas.Write(texture_path)) {
         LOG(ERROR) << "Failed to write texture atlas: " << texture_path;
         return;

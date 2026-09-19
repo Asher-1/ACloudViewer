@@ -18,6 +18,7 @@
 #include <stdint.h>
 
 #include "aicore/export.h"
+#include "aicore/image_view.h"
 #include "aicore/pipeline_timing.h"
 
 #ifdef __cplusplus
@@ -104,6 +105,14 @@ AICORE_CAPI int aicore_gaussian_run_paths(aicore_gaussian_ctx* ctx,
                                           int32_t n_images,
                                           float** out,
                                           size_t* n_out);
+/* F-01 batch C: decoded-pixel entry — each view must be AICORE_IMAGE_RGB8;
+ * pixels are borrowed for the duration of the call. Preprocessing
+ * (center-crop, resize, [0,1] normalization) matches the file-loading path. */
+AICORE_CAPI int aicore_gaussian_run_image_views(aicore_gaussian_ctx* ctx,
+                                                const aicore_image_view* views,
+                                                int32_t n_views,
+                                                float** out,
+                                                size_t* n_out);
 
 /* ---- pose recovery ---- */
 /** Estimate each view's camera pose from the engine output.

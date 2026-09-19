@@ -7,6 +7,8 @@
 
 #include "tasks/gaussian/gguf_loader.h"
 
+#include "common/gguf_file_io.hpp"
+
 namespace aicore {
 namespace gaussian {
 
@@ -58,10 +60,11 @@ std::string akey(const char* suffix) {
 bool model_file::open(const std::string& path, bool with_data) {
     close();
 
-    gguf_init_params params = {/*no_alloc =*/!with_data, /*ctx =*/&ctx};
-    guf = gguf_init_from_file(path.c_str(), params);
+    std::string open_error;
+    guf = ggml_common::open_gguf_file(path, /*no_alloc=*/!with_data, &ctx,
+                                      "gaussian", &open_error);
     if (!guf) {
-        error = "failed to read GGUF: " + path;
+        error = open_error;
         return false;
     }
 

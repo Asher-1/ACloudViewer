@@ -51,8 +51,8 @@ bool PoissonMeshingOptions::Check() const {
 }
 
 bool PoissonMeshing(const PoissonMeshingOptions& options,
-                    const std::string& input_path,
-                    const std::string& output_path) {
+                    const std::filesystem::path& input_path,
+                    const std::filesystem::path& output_path) {
   CHECK(options.Check());
 
   std::vector<std::string> args;
@@ -60,10 +60,10 @@ bool PoissonMeshing(const PoissonMeshingOptions& options,
   args.push_back("./binary");
 
   args.push_back("--in");
-  args.push_back(input_path);
+  args.push_back(input_path.string());
 
   args.push_back("--out");
-  args.push_back(output_path);
+  args.push_back(output_path.string());
 
   args.push_back("--pointWeight");
   args.push_back(std::to_string(options.point_weight));
@@ -108,10 +108,10 @@ bool PoissonMeshing(const PoissonMeshingOptions& options,
   args.push_back("./binary");
 
   args.push_back("--in");
-  args.push_back(output_path);
+  args.push_back(output_path.string());
 
   args.push_back("--out");
-  args.push_back(output_path);
+  args.push_back(output_path.string());
 
   args.push_back("--trim");
   args.push_back(std::to_string(options.trim));

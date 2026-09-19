@@ -42,10 +42,17 @@ set(SHARED_BUILD_OPENCV ON)
 #                      files only)
 # objdetect+calib3d  : qFreeSplatter Haar fallback, qManualCalib
 # ml                 : q3DMASC
-# opencv_video       : OFF — qSIBR VideoUtils.cpp (optflow/LK) excluded from build
+# opencv_video       : qYOLO multi-object tracking (tracker GMC calls the
+#                      same cv2.calcOpticalFlowPyrLK as upstream
+#                      ultralytics/trackers/utils/gmc.py sparseOptFlow);
+#                      the historical consumer (qSIBR VideoUtils.cpp) was
+#                      excluded from the build instead
+# features2d/calib3d for qYOLO: orb/sift (features2d) and ecc
+#                      (calib3d findTransformECC) GMC methods, same cv2
+#                      routines as upstream
 
 set(_opencv_features2d OFF)
-if(PLUGIN_STANDARD_QLIGHTGLUE)
+if(PLUGIN_STANDARD_QLIGHTGLUE OR PLUGIN_STANDARD_QYOLO)
     set(_opencv_features2d ON)
 endif()
 
@@ -83,15 +90,22 @@ if(PLUGIN_STANDARD_QMANUAL_CALIB OR PLUGIN_STANDARD_QFREESPLATTER)
 endif()
 # objdetect requires calib3d in OpenCV 4.7+ (ArUco was moved from contrib)
 set(_opencv_calib3d OFF)
-if(PLUGIN_STANDARD_QMANUAL_CALIB OR _opencv_objdetect)
+if(PLUGIN_STANDARD_QMANUAL_CALIB OR PLUGIN_STANDARD_QYOLO
+        OR _opencv_objdetect)
     set(_opencv_calib3d ON)
+endif()
+
+# Tracker GMC (qYOLO): sparseOptFlow needs the video module's optical flow.
+set(_opencv_video OFF)
+if(PLUGIN_STANDARD_QYOLO)
+    set(_opencv_video ON)
 endif()
 
 if(BUILD_OPENCV)
     message(STATUS "OpenCV modules: features2d=${_opencv_features2d} "
             "videoio=${_opencv_videoio} ffmpeg=${_opencv_videoio_ffmpeg} "
             "v4l=${_opencv_videoio_v4l} objdetect=${_opencv_objdetect} "
-            "calib3d=${_opencv_calib3d} video=OFF")
+            "calib3d=${_opencv_calib3d} video=${_opencv_video}")
 endif()
 
 # OpenCV's bundled OpenEXR/Imath (BUILD_OPENEXR=ON) still uses deprecated C++11
@@ -173,7 +187,7 @@ ExternalProject_Add(ext_opencv
             -DBUILD_opencv_optflow=OFF
             -DBUILD_opencv_stitching=OFF
             -DBUILD_opencv_ts=OFF
-            -DBUILD_opencv_video=OFF
+            -DBUILD_opencv_video=${_opencv_video}
             -DBUILD_opencv_videoio=${_opencv_videoio}
             -DBUILD_opencv_stereo=OFF
             -DBUILD_opencv_legacy=OFF

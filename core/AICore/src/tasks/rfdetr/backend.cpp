@@ -93,19 +93,10 @@ BackendCtx init_backend_ctx(int n_threads,
      * GPU can't run (the deformable ggml_custom_4d) fall back to CPU
      * automatically. */
     if (ctx.gpu) {
-        std::vector<ggml_backend_t> backends = {ctx.gpu, ctx.cpu};
-        std::vector<ggml_backend_buffer_type_t> bufts = {
-                ggml_backend_get_default_buffer_type(ctx.gpu),
-                ggml_backend_get_default_buffer_type(ctx.cpu),
-        };
-        ctx.sched = ggml_backend_sched_new(
-                backends.data(), bufts.data(), (int)backends.size(),
-                /*graph_size*/ kGraphSize, /*parallel*/ false,
-                /*op_offload*/ true);
+        ctx.sched = ggml_common::new_gpu_sched({ctx.gpu}, ctx.cpu, kGraphSize);
         if (!ctx.sched) {
-            rfdetr_logf(RFDETR_LOG_WARN,
-                        "ggml_backend_sched_new failed; falling back to "
-                        "CPU-only");
+            rfdetr_logf(RFDETR_LOG_WARN, "%s; falling back to CPU-only",
+                        ggml_common::kSchedNewFailedMsg);
             ctx.gpu_lease.reset();
             ctx.gpu = nullptr;
         }

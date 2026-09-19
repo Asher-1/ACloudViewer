@@ -37,6 +37,9 @@ int main() {
     int32_t h = 0;
     AICORE_CHECK(aicore_deeplsd_extract_gray(nullptr, nullptr, 0, 0, 0, &df,
                                              &ang, &w, &h) != 0);
+    /* F-01 batch A: image_view entry is NULL-safe. */
+    AICORE_CHECK(aicore_deeplsd_extract_image_view(nullptr, nullptr, &df, &ang,
+                                                   &w, &h) != 0);
 
     AICORE_CHECK(aicore_deeplsd_quantize(nullptr, nullptr, nullptr) != 0);
     AICORE_CHECK(aicore_deeplsd_warmup_backend("cpu") == 0);

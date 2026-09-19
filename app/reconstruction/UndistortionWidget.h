@@ -9,6 +9,7 @@
 
 #include <QtCore>
 #include <QtWidgets>
+#include <filesystem>
 
 #include "ThreadControlWidget.h"
 #include "image/undistortion.h"
@@ -41,7 +42,7 @@ private:
 
     QComboBox* output_format_;
     colmap::UndistortCameraOptions undistortion_options_;
-    std::string output_path_;
+    std::filesystem::path output_path_;
 };
 
 }  // namespace cloudViewer

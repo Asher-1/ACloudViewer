@@ -161,6 +161,27 @@ protected:
     // deferred success/failure path must call this exactly once.
     void completeFrameProcessing(const QImage& processedImage = QImage());
 
+    // ---- Preview-label interaction hooks (reusable ROI/annotation base) ---
+
+    // Content rect of the letterboxed preview image inside the label (label
+    // coordinates); empty when no frame is shown.
+    QRectF previewContentRect() const;
+
+    // Map a label-coordinate point to source-frame pixels (the inverse of
+    // the KeepAspectRatio scaling used by the display pipeline). Returns
+    // (-1, -1) when the geometry is unavailable. Non-const: reads the
+    // latest decoded frame under its mutex.
+    QPointF mapPreviewToSource(QPointF labelPt);
+
+    // Mouse hooks on the preview label (label coordinates), invoked from the
+    // base event filter BEFORE the label's own handler. Returning true
+    // consumes the event — including the label's click-to-enlarge behavior —
+    // which is how subclasses implement drag interactions (ROI selection,
+    // region tracking, ...) without fighting the built-in click.
+    virtual bool onPreviewMousePress(QMouseEvent* event) { return false; }
+    virtual bool onPreviewMouseMove(QMouseEvent* event) { return false; }
+    virtual bool onPreviewMouseRelease(QMouseEvent* event) { return false; }
+
     // ---- UI accessors for subclasses --------------------------------------
 
     ecvClickableImageLabel* previewLabel() const { return m_previewLabel; }

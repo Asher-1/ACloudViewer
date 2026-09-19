@@ -10,16 +10,19 @@
 #include <ggml.h>
 #include <gguf.h>
 
+#include "common/gguf_file_io.hpp"
+
 namespace lingbot {
 
 bool gguf_loader::open(const std::string& path) {
     close();
     // Load tensor bytes into one contiguous GGML context. The model owns the
     // context for its lifetime and binds it to the selected backend buffer.
-    gguf_init_params params = {false, &ctx_};
-    gctx_ = gguf_init_from_file(path.c_str(), params);
+    std::string open_error;
+    gctx_ = ggml_common::open_gguf_file(path, /*no_alloc=*/false, &ctx_,
+                                        "lingbot", &open_error);
     if (!gctx_) {
-        error_ = "failed to open GGUF: " + path;
+        error_ = open_error;
         return false;
     }
     return true;

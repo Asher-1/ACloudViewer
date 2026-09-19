@@ -12,6 +12,7 @@
 #include <QByteArray>
 #include <QElapsedTimer>
 #include <QFileInfo>
+#include <cstring>
 #include <new>
 #include <utility>
 
@@ -19,6 +20,7 @@
 #include "aicore/runtime_capi.h"
 #include "aicore/yolo_capi.h"
 #include "ecvAICoreRuntimeHelpers.h"
+#include "tracking/tracker.hpp"
 #endif
 
 namespace {
@@ -28,6 +30,21 @@ namespace {
 
 aicore_image_view imageView(const QImage& image) {
     return ecvAICoreRuntime::makeImageView(image);
+}
+
+// True when the tracker already holds this exact configuration. Any change
+// (tracker type, GMC method or the exposed thresholds) rebuilds the state
+// machine, which is equivalent to a reset.
+bool sameTrackConfig(const qyolo::track::TrackConfig& cfg,
+                     const YOLOLiveInferWorker::Job& job) {
+    return cfg.tracker_type == job.trackerType.toStdString() &&
+           cfg.gmc_method == job.gmcMethod.toStdString() &&
+           cfg.with_reid == job.withReid &&
+           cfg.track_high_thresh == job.trackHighThresh &&
+           cfg.track_low_thresh == job.trackLowThresh &&
+           cfg.new_track_thresh == job.newTrackThresh &&
+           cfg.track_buffer == job.trackBuffer &&
+           cfg.match_thresh == job.matchThresh;
 }
 #endif
 
@@ -54,6 +71,14 @@ void YOLOLiveInferWorker::releaseModel() {
     m_loadedTextModelPath.clear();
     m_loadedTask.clear();
     m_resolvedDevice.clear();
+    // A model reload also drops the tracking state: the new stream starts
+    // from a clean track table (the generation binding below covers mere
+    // restarts of the same model).
+    m_tracker.reset();
+    m_trackCfg.reset();
+    m_trackCfgValid = false;
+    m_trackGeneration = 0;
+    m_objFeatEnabled = false;
 #endif
 }
 
@@ -163,6 +188,14 @@ void YOLOLiveInferWorker::runJobImpl(YOLOLiveInferWorker::Job job) {
     }
     result.task = m_loadedTask;
 
+    // TrackTrack loose-NMS recovery (upstream want_recovered semantics):
+    // enabled only for the tracktrack tracker on the box tasks; zero cost
+    // for every other combination. Runtime setter — no model reload.
+    const bool wantRecovery = job.trackerType == QStringLiteral("tracktrack") &&
+                              (m_loadedTask == QStringLiteral("detect") ||
+                               m_loadedTask == QStringLiteral("obb"));
+    aicore_yolo_set_track_recovery(m_ctx, wantRecovery ? 1 : 0);
+
     const aicore_image_view image = imageView(job.rgb);
 
     if (result.task == QStringLiteral("depth")) {
@@ -264,12 +297,124 @@ void YOLOLiveInferWorker::runJobImpl(YOLOLiveInferWorker::Job job) {
         result.detect.resolvedDevice = m_resolvedDevice;
         result.detect.imageName = QStringLiteral("live");
         result.ok = true;
+        applyTracking(job, result.task, result);
         emit inferComplete(result);
         return;
     }
 
-    // Detect: typed context-owned records; JSON is reserved for explicit API
-    // compatibility callers and never crosses the live-video hot path.
+    if (result.task == QStringLiteral("pose")) {
+        // Pose estimation: typed detections + COCO-17 keypoints.
+        QElapsedTimer timer;
+        timer.start();
+        aicore_yolo_set_detect_thresholds(m_ctx, job.confThres, job.iouThres,
+                                          job.topK);
+        aicore_yolo_pose_result* pose = aicore_yolo_pose_image(m_ctx, &image);
+        result.detect.runtimeMs = static_cast<double>(timer.elapsed());
+        if (!pose) {
+            const char* message = aicore_yolo_last_error(m_ctx);
+            result.error = message ? QString::fromUtf8(message)
+                                   : tr("YOLO pose inference failed.");
+            emit inferComplete(result);
+            return;
+        }
+
+        const int n = aicore_yolo_pose_det_count(pose);
+        const int kpts = aicore_yolo_pose_kpt_count(pose);
+        result.detect.keypointSets.reserve(n > 0 ? n : 0);
+        // The det-box copies keep the generic overlay / tracking pipeline
+        // working for pose runs (index-aligned with keypointSets).
+        result.detect.detections.reserve(n > 0 ? n : 0);
+        for (int i = 0; i < n; ++i) {
+            const aicore_yolo_detection det = aicore_yolo_pose_det_at(pose, i);
+            YOLOKeypointSet ks;
+            ks.det.classId = static_cast<uint32_t>(det.class_id);
+            ks.det.x1 = det.x1;
+            ks.det.y1 = det.y1;
+            ks.det.x2 = det.x2;
+            ks.det.y2 = det.y2;
+            ks.det.score = det.score;
+            for (int k = 0; k < kpts; ++k) {
+                const aicore_yolo_keypoint kp =
+                        aicore_yolo_pose_kpt_at(pose, i, k);
+                ks.kpts.append({kp.x, kp.y, kp.visibility});
+            }
+            const char* name = aicore_yolo_pose_det_class_name(pose, i);
+            ks.det.className =
+                    (name != nullptr && name[0] != '\0')
+                            ? QString::fromUtf8(name)
+                            : QStringLiteral("class %1").arg(det.class_id);
+            result.detect.keypointSets.append(ks);
+            YOLODetection row;
+            row.classId = ks.det.classId;
+            row.className = ks.det.className;
+            row.score = ks.det.score;
+            row.x1 = ks.det.x1;
+            row.y1 = ks.det.y1;
+            row.x2 = ks.det.x2;
+            row.y2 = ks.det.y2;
+            result.detect.detections.append(row);
+        }
+        result.detect.kptCount = kpts;
+        result.detect.totalDetected = n;
+        result.detect.task = QStringLiteral("pose");
+        aicore_yolo_pose_result_free(pose);
+
+        result.detect.modelPath = job.modelPath;
+        result.detect.resolvedDevice = m_resolvedDevice;
+        result.detect.imageName = QStringLiteral("live");
+        result.ok = true;
+        applyTracking(job, result.task, result);
+        emit inferComplete(result);
+        return;
+    }
+
+    if (result.task == QStringLiteral("obb")) {
+        // Oriented boxes: typed rotated detections.
+        QElapsedTimer timer;
+        timer.start();
+        aicore_yolo_set_detect_thresholds(m_ctx, job.confThres, job.iouThres,
+                                          job.topK);
+        aicore_yolo_obb_result* obb = aicore_yolo_obb_image(m_ctx, &image);
+        result.detect.runtimeMs = static_cast<double>(timer.elapsed());
+        if (!obb) {
+            const char* message = aicore_yolo_last_error(m_ctx);
+            result.error = message ? QString::fromUtf8(message)
+                                   : tr("YOLO OBB inference failed.");
+            emit inferComplete(result);
+            return;
+        }
+
+        const int n = aicore_yolo_obb_count(obb);
+        result.detect.obbBoxes.reserve(n > 0 ? n : 0);
+        for (int i = 0; i < n; ++i) {
+            const aicore_yolo_obb_box b = aicore_yolo_obb_at(obb, i);
+            YOLOObbBox out;
+            out.cx = b.cx;
+            out.cy = b.cy;
+            out.w = b.w;
+            out.h = b.h;
+            out.angle = b.angle;
+            out.score = b.score;
+            out.classId = static_cast<uint32_t>(b.class_id);
+            const char* name = aicore_yolo_obb_class_name(obb, i);
+            out.className =
+                    (name != nullptr && name[0] != '\0')
+                            ? QString::fromUtf8(name)
+                            : QStringLiteral("class %1").arg(b.class_id);
+            result.detect.obbBoxes.append(out);
+        }
+        result.detect.totalDetected = n;
+        result.detect.task = QStringLiteral("obb");
+        aicore_yolo_obb_result_free(obb);
+
+        result.detect.modelPath = job.modelPath;
+        result.detect.resolvedDevice = m_resolvedDevice;
+        result.detect.imageName = QStringLiteral("live");
+        result.ok = true;
+        applyTracking(job, result.task, result);
+        emit inferComplete(result);
+        return;
+    }
     QElapsedTimer timer;
     timer.start();
     aicore_yolo_set_detect_thresholds(m_ctx, job.confThres, job.iouThres,
@@ -318,6 +463,256 @@ void YOLOLiveInferWorker::runJobImpl(YOLOLiveInferWorker::Job job) {
     result.detect.resolvedDevice = m_resolvedDevice;
     result.detect.imageName = QStringLiteral("live");
     result.ok = true;
+    applyTracking(job, result.task, result);
     emit inferComplete(result);
 #endif
 }
+
+#ifdef AICore_ENABLED
+void YOLOLiveInferWorker::applyTracking(const Job& job,
+                                        const QString& task,
+                                        Result& result) {
+    // Tracking is a frame-sequence postprocess over the trackable
+    // detection families (the same task set as the upstream track mode);
+    // depth/classify/semantic runs are never fed to the tracker.
+    if (job.trackerType.isEmpty()) return;
+    if (task != QStringLiteral("detect") && task != QStringLiteral("segment") &&
+        task != QStringLiteral("pose") && task != QStringLiteral("obb")) {
+        return;
+    }
+    // Same condition as the aicore_yolo_set_track_recovery call in
+    // runJobImpl (upstream want_recovered).
+    const bool wantRecovery =
+            job.trackerType == QStringLiteral("tracktrack") &&
+            (task == QStringLiteral("detect") || task == QStringLiteral("obb"));
+
+    // Config fingerprint: a changed tracker type / GMC method / exposed
+    // threshold rebuilds the state machine (equivalent to a reset).
+    if (m_trackCfgValid &&
+        (!m_trackCfg || !sameTrackConfig(*m_trackCfg, job))) {
+        m_trackCfgValid = false;
+    }
+    // Generation binding: a new stream generation (source switch, seek,
+    // loop, restart, stop) invalidates the track table.
+    if (m_trackCfgValid && job.generation != m_trackGeneration) {
+        m_trackCfgValid = false;
+    }
+    if (!m_trackCfgValid) {
+        m_trackWarning.clear();
+        auto cfg = std::make_unique<qyolo::track::TrackConfig>();
+        if (!qyolo::track::default_tracker_config(job.trackerType.toStdString(),
+                                                  *cfg)) {
+            // Unknown type: surface once through the result warning, then
+            // park on this config (no per-frame retry spam until the
+            // config changes).
+            m_trackWarning = QStringLiteral("Unknown tracker type '%1'")
+                                     .arg(job.trackerType);
+            m_trackCfg = std::move(cfg);
+            m_trackCfgValid = true;
+            m_trackGeneration = job.generation;
+            result.warning = m_trackWarning;
+            return;
+        }
+        cfg->tracker_type = job.trackerType.toStdString();
+        cfg->gmc_method = job.gmcMethod.toStdString();
+        cfg->with_reid = job.withReid;
+        cfg->track_high_thresh = job.trackHighThresh;
+        cfg->track_low_thresh = job.trackLowThresh;
+        cfg->new_track_thresh = job.newTrackThresh;
+        cfg->track_buffer = job.trackBuffer;
+        cfg->match_thresh = job.matchThresh;
+        auto tracker = qyolo::track::create_tracker(*cfg);
+        if (!tracker) {
+            // Rejected (e.g. with an OpenCV-less build asking for an
+            // OpenCV-only GMC method): surface once, then park as above.
+            m_trackWarning = QStringLiteral(
+                                     "Tracker rejected: type '%1' with GMC "
+                                     "'%2' (orb/sift/ecc need the plugin's "
+                                     "OpenCV build)")
+                                     .arg(job.trackerType, job.gmcMethod);
+            m_trackCfg = std::move(cfg);
+            m_trackCfgValid = true;
+            m_trackGeneration = job.generation;
+            result.warning = m_trackWarning;
+            return;
+        }
+        m_tracker = std::move(tracker);
+        m_trackCfg = std::move(cfg);
+        m_trackCfgValid = true;
+        m_trackGeneration = job.generation;
+    } else if (!m_trackWarning.isEmpty()) {
+        // Parked on a failed config: keep surfacing the reason until the
+        // user changes something (the widget logs it once per change).
+        result.warning = m_trackWarning;
+        return;
+    }
+    if (!m_tracker) return;
+
+    // Build the tracker frame input: detections in original-image pixel
+    // coordinates, center format (obb carries its angle; axis-aligned
+    // boxes use the documented sentinel). FrameInput.idx joins the track
+    // id back to the result row it came from. Official trackzone
+    // semantics: rows whose center lies outside job.trackZone keep their
+    // full-set row index but never join the association pool, so they are
+    // reported without ids (drawn untracked, like the masked-out region).
+    const QRectF zone = job.trackZone;
+    const bool zoneActive =
+            zone.isValid() && zone.width() > 0.0 && zone.height() > 0.0;
+    const int n = static_cast<int>(result.detect.detections.size());
+    std::vector<qyolo::track::TrackDet> dets;
+    if (task == QStringLiteral("obb")) {
+        dets.reserve(static_cast<size_t>(result.detect.obbBoxes.size()));
+        int idx = 0;
+        for (const YOLOObbBox& b : result.detect.obbBoxes) {
+            const int row = idx++;
+            if (zoneActive && !zone.contains(b.cx, b.cy)) continue;
+            qyolo::track::TrackDet t;
+            t.cx = b.cx;
+            t.cy = b.cy;
+            t.w = b.w;
+            t.h = b.h;
+            t.angle = b.angle;
+            t.score = b.score;
+            t.class_id = static_cast<int>(b.classId);
+            t.idx = row;
+            dets.push_back(t);
+        }
+    } else if (task == QStringLiteral("pose")) {
+        dets.reserve(static_cast<size_t>(result.detect.keypointSets.size()));
+        int idx = 0;
+        for (const YOLOKeypointSet& ks : result.detect.keypointSets) {
+            const int row = idx++;
+            const float cx = (ks.det.x1 + ks.det.x2) * 0.5f;
+            const float cy = (ks.det.y1 + ks.det.y2) * 0.5f;
+            if (zoneActive && !zone.contains(cx, cy)) continue;
+            qyolo::track::TrackDet t;
+            t.cx = cx;
+            t.cy = cy;
+            t.w = ks.det.x2 - ks.det.x1;
+            t.h = ks.det.y2 - ks.det.y1;
+            t.score = ks.det.score;
+            t.class_id = static_cast<int>(ks.det.classId);
+            t.idx = row;
+            dets.push_back(t);
+        }
+    } else {
+        dets.reserve(static_cast<size_t>(n));
+        int idx = 0;
+        for (const YOLODetection& d : result.detect.detections) {
+            const int row = idx++;
+            const float cx = (d.x1 + d.x2) * 0.5f;
+            const float cy = (d.y1 + d.y2) * 0.5f;
+            if (zoneActive && !zone.contains(cx, cy)) continue;
+            qyolo::track::TrackDet t;
+            t.cx = cx;
+            t.cy = cy;
+            t.w = d.x2 - d.x1;
+            t.h = d.y2 - d.y1;
+            t.score = d.score;
+            t.class_id = static_cast<int>(d.classId);
+            t.idx = row;
+            dets.push_back(t);
+        }
+    }
+
+    // GMC input: a tightly-packed RGB8 view of the frame. QImage scanlines
+    // are 32-bit aligned, so a RGB888 image whose width is not a multiple
+    // of 4 owns padded rows — copy those to a compact buffer once; when
+    // the rows are already compact the tracker borrows the QImage storage
+    // synchronously inside update().
+    qyolo::track::RgbFrame frame;
+    std::vector<uint8_t> tightRgb;
+    const QImage& img = job.rgb;
+    if (!img.isNull() && img.format() == QImage::Format_RGB888) {
+        const int rowBytes = img.width() * 3;
+        if (img.bytesPerLine() == rowBytes) {
+            frame.w = img.width();
+            frame.h = img.height();
+            frame.rgb = img.constBits();
+        } else {
+            tightRgb.resize(static_cast<size_t>(img.width()) *
+                            static_cast<size_t>(img.height()) * 3);
+            for (int y = 0; y < img.height(); ++y) {
+                std::memcpy(tightRgb.data() + static_cast<size_t>(y) * rowBytes,
+                            img.constScanLine(y),
+                            static_cast<size_t>(rowBytes));
+            }
+            frame.w = img.width();
+            frame.h = img.height();
+            frame.rgb = tightRgb.data();
+        }
+    }
+
+    qyolo::track::FrameInput input;
+    input.dets = dets;
+    input.frame = frame.rgb != nullptr ? &frame : nullptr;
+    // Object-feature export toggle: flips the context-side switch only on
+    // change (the toggle rebuilds the graph plan on the next inference).
+    // A model reload resets the context, so the requested state is tracked
+    // alongside.
+    if (job.withReid != m_objFeatEnabled) {
+        aicore_yolo_set_detector_features(m_ctx, job.withReid ? 1 : 0);
+        m_objFeatEnabled = job.withReid;
+    }
+    // Official model="auto" ReID features (aicore_yolo_features_view):
+    // per-detection rows index-aligned with the tracker detections; empty
+    // for end2end heads or when the export is off — the tracker then runs
+    // motion-only association (upstream "feats missing" semantics).
+    if (job.withReid && m_objFeatEnabled) {
+        const float* fdata = nullptr;
+        int32_t fcount = 0, fdim = 0;
+        aicore_yolo_features_view(m_ctx, &fdata, &fcount, &fdim);
+        if (fdata != nullptr && fdim > 0) {
+            input.feats.resize(dets.size());
+            const int rows = static_cast<int>(dets.size());
+            for (int i = 0; i < rows && i < fcount; ++i) {
+                // Feature rows are indexed by the FULL detection set; dets
+                // rows carry their original row in idx (a trackzone filter
+                // can make it differ from i).
+                const int srcRow = dets[static_cast<size_t>(i)].idx;
+                if (srcRow < 0 || srcRow >= fcount) continue;
+                input.feats[static_cast<size_t>(i)].assign(
+                        fdata + (size_t)srcRow * fdim,
+                        fdata + (size_t)(srcRow + 1) * fdim);
+            }
+        }
+    }
+    // TrackTrack loose-NMS recovery: rows the tight NMS suppressed, read
+    // straight from the context (idx = -1, upstream semantics — they do
+    // not join the rendered detection rows); the tracker filters them by
+    // track_high_thresh before they join the association pool.
+    if (wantRecovery) {
+        const int rn = aicore_yolo_recovery_count(m_ctx);
+        input.dets_del.reserve(rn > 0 ? static_cast<size_t>(rn) : 0);
+        for (int i = 0; i < rn; ++i) {
+            const aicore_yolo_detection r = aicore_yolo_recovery_at(m_ctx, i);
+            qyolo::track::TrackDet t;
+            t.cx = (r.x1 + r.x2) * 0.5f;
+            t.cy = (r.y1 + r.y2) * 0.5f;
+            t.w = r.x2 - r.x1;
+            t.h = r.y2 - r.y1;
+            t.angle = -10.0f;  // axis-aligned sentinel
+            t.score = r.score;
+            t.class_id = r.class_id;
+            t.idx = -1;
+            input.dets_del.push_back(t);
+        }
+    }
+    const std::vector<qyolo::track::TrackedBox> tracks =
+            m_tracker->update(input);
+
+    QVector<int> ids;
+    const int rows = task == QStringLiteral("obb")
+                             ? result.detect.obbBoxes.size()
+                             : (task == QStringLiteral("pose")
+                                        ? result.detect.keypointSets.size()
+                                        : n);
+    ids.resize(rows > 0 ? rows : 0);
+    for (const qyolo::track::TrackedBox& tb : tracks) {
+        if (tb.det.idx >= 0 && tb.det.idx < ids.size() && tb.track_id > 0) {
+            ids[tb.det.idx] = tb.track_id;
+        }
+    }
+    result.trackIds = ids;
+}
+#endif

@@ -31,6 +31,7 @@
 #include <stdint.h>
 
 #include "aicore/export.h"
+#include "aicore/image_view.h"
 #include "aicore/pipeline_timing.h"
 
 #ifdef __cplusplus
@@ -217,6 +218,17 @@ AICORE_CAPI aicore_trellis_mesh* aicore_trellis_generate(
         aicore_trellis_ctx* ctx,
         const void* image_bytes,
         int image_len,
+        const aicore_trellis_generate_params* params,
+        aicore_trellis_progress_fn progress,
+        void* progress_user,
+        char* err,
+        int err_len);
+/* F-01 batch B: decoded-pixel entry — skips the in-library image decode
+ * stage. The view must be AICORE_IMAGE_RGB8; pixels are borrowed for the
+ * duration of the call. */
+AICORE_CAPI aicore_trellis_mesh* aicore_trellis_generate_image_view(
+        aicore_trellis_ctx* ctx,
+        const aicore_image_view* image,
         const aicore_trellis_generate_params* params,
         aicore_trellis_progress_fn progress,
         void* progress_user,

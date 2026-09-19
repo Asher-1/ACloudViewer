@@ -182,6 +182,17 @@ void emitRuntimeCatalogs() {
                 aicore_yolo_model_at(i, AICORE_YOLO_ROLE_ANY);
         if (e) emitAsset("yolo", "yolo_models", e->filename, e->download_url);
     }
+    // ReID consumes the classify-task YOLO GGUFs (aicore/reid_capi.h wraps
+    // them as appearance encoders). These rows declare the consumption only:
+    // url/digest/size must match the yolo rows above, and the physical cache
+    // and regression ownership stay with the yolo task.
+    const int reid_encoder_count =
+            aicore_yolo_model_count(AICORE_YOLO_ROLE_CLASSIFY);
+    for (int i = 0; i < reid_encoder_count; ++i) {
+        const aicore_yolo_model_entry* e =
+                aicore_yolo_model_at(i, AICORE_YOLO_ROLE_CLASSIFY);
+        if (e) emitAsset("reid", "yolo_models", e->filename, e->download_url);
+    }
     for (int i = 0; i < aicore_gkd_model_count(); ++i) {
         const aicore_gkd_model_entry* e = aicore_gkd_model_at(i);
         if (e)

@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "common/aicore_log.hpp"
+#include "common/gguf_file_io.hpp"
 #include "ggml.h"
 #include "gguf.h"
 
@@ -92,11 +93,12 @@ bool quantize_gguf(const std::string& input_gguf,
 
     // ── Read source GGUF ────────────────────────────────────────────────
     ggml_context* meta_ctx = nullptr;
-    gguf_init_params params{/*no_alloc=*/false, /*ctx=*/&meta_ctx};
-    gguf_context* src = gguf_init_from_file(input_gguf.c_str(), params);
+    std::string open_error;
+    gguf_context* src = ggml_common::open_gguf_file(
+            input_gguf, /*no_alloc=*/false, &meta_ctx, "sam3_quantize",
+            &open_error);
     if (!src || !meta_ctx) {
-        AICORE_LOG_ERROR("[sam3] ", "quantize: failed to open '%s'\n",
-                         input_gguf.c_str());
+        AICORE_LOG_ERROR("[sam3] ", "%s\n", open_error.c_str());
         if (src) gguf_free(src);
         if (meta_ctx) ggml_free(meta_ctx);
         return false;

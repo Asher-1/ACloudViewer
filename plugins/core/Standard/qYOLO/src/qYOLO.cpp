@@ -7,6 +7,7 @@
 
 #include "qYOLO.h"
 
+#include <ecvCommandLineInterface.h>
 #include <ecvImage.h>
 #include <ecvMainAppInterface.h>
 #include <ecvPluginDbNaming.h>
@@ -19,8 +20,10 @@
 #include <QMessageBox>
 #include <QTimer>
 #include <QUuid>
+#include <cassert>
 #include <cstring>
 
+#include "YOLOTrackCommand.h"
 #include "ecvPersistentSettings.h"
 
 #ifdef AICore_ENABLED
@@ -62,6 +65,15 @@ qYOLO::qYOLO(QObject* parent)
 }
 
 QList<QAction*> qYOLO::getActions() { return {m_action}; }
+
+void qYOLO::registerCommands(ccCommandLineInterface* cmd) {
+    if (cmd == nullptr) {
+        assert(false);
+        return;
+    }
+    cmd->registerCommand(
+            ccCommandLineInterface::Command::Shared(new CommandYoloTrack));
+}
 
 void qYOLO::onNewSelection(const ccHObject::Container& selectedEntities) {
     m_selectedEntities = selectedEntities;

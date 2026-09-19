@@ -605,6 +605,13 @@ void FaceRegistryWidget::releaseStoreConnection() {
     }
 }
 
+void FaceRegistryWidget::releaseEmbedContext() {
+#ifdef AICore_ENABLED
+    // Idempotent; ensureLoaded() reloads it on the next embed operation.
+    m_embedContext.release();
+#endif
+}
+
 void FaceRegistryWidget::setRegistryPath(const QString& path, bool userChosen) {
     m_registryPathUserChosen = userChosen;
     if (m_registryPathEdit) m_registryPathEdit->setText(path);

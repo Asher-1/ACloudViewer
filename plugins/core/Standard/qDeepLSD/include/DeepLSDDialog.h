@@ -75,6 +75,8 @@ signals:
 
 protected:
     void closeEvent(QCloseEvent* event) override;
+    /** Esc intercept: confirm before closing when a task is running. */
+    void keyPressEvent(QKeyEvent* event) override;
 
 private slots:
     void onBrowseImage();
@@ -122,6 +124,7 @@ private:
     ecvMainAppInterface* m_app = nullptr;
     ecvModelDownloader* m_downloader = nullptr;
     bool m_downloadInProgress = false;
+    bool m_taskRunning = false;
     bool m_autoRunAfterDownload = false;
     bool m_testDataDownloadInProgress = false;
 };

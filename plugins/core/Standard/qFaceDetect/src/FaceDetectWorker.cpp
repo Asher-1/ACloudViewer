@@ -23,6 +23,7 @@
 #include <algorithm>
 
 #include "FaceDetectEmbedHelpers.h"
+#include "ecvAICoreRuntimeHelpers.h"
 
 #ifdef AICore_ENABLED
 #include "aicore/backend_capi.h"
@@ -54,14 +55,9 @@ void FaceDetectWorker::requestTaskCancel() {
 
 void FaceDetectWorker::releaseContextOnMainThread() {
 #ifdef AICore_ENABLED
-    if (m_pendingCtx) {
-        aicore_facedetect_free(m_pendingCtx);
-        m_pendingCtx = nullptr;
-    }
-    if (m_pendingLandmarkCtx) {
-        aicore_facedetect_free(m_pendingLandmarkCtx);
-        m_pendingLandmarkCtx = nullptr;
-    }
+    ecvAICoreRuntime::releasePending(m_pendingCtx, &aicore_facedetect_free);
+    ecvAICoreRuntime::releasePending(m_pendingLandmarkCtx,
+                                     &aicore_facedetect_free);
 #endif
 }
 

@@ -100,6 +100,8 @@ signals:
 
 protected:
     void closeEvent(QCloseEvent* event) override;
+    /** Esc intercept: confirm before closing when a task is running. */
+    void keyPressEvent(QKeyEvent* event) override;
 
 private slots:
     void onBrowseFile();
@@ -181,6 +183,7 @@ private:
     QVector<DA3BuiltinModel> m_downloadQueue;
     bool m_autoRunAfterDownload = false;
     bool m_downloadInProgress = false;
+    bool m_taskRunning = false;
     bool m_testDataInProgress = false;
     QString m_downloadTargetFilename;
 };

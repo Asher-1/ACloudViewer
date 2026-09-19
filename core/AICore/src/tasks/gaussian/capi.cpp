@@ -22,6 +22,7 @@
 
 #include "aicore/backend_capi.h"
 #include "aicore/gaussian_capi.h"
+#include "aicore/image_view.h"
 #include "aicore/runtime_capi.h"
 #include "common/capi_utils.hpp"
 #include "common/ggml_backend_utils.hpp"
@@ -57,7 +58,7 @@ struct aicore_gaussian_ctx {
 
 extern "C" {
 
-AICORE_CAPI int aicore_gaussian_abi_version(void) { return 2; }
+AICORE_CAPI int aicore_gaussian_abi_version(void) { return 3; }
 
 // ---- options builder ----
 
@@ -211,6 +212,37 @@ AICORE_CAPI int aicore_gaussian_run_paths(aicore_gaussian_ctx* ctx,
     }
 
     const int rc = aicore_gaussian_run(ctx, images.data(), n_images, size, size,
+                                       out, n_out);
+    if (rc == 0)
+        aicore::capi::record_pipeline_e2e(ctx->pipeline_timings, started);
+    return rc;
+}
+
+/* F-01 batch C: decoded-pixel entry — the views must be AICORE_IMAGE_RGB8;
+ * pixels are borrowed for the duration of the call. Preprocessing
+ * (center-crop, resize to the model resolution, [0,1] normalization) matches
+ * the file-loading path. */
+AICORE_CAPI int aicore_gaussian_run_image_views(aicore_gaussian_ctx* ctx,
+                                                const aicore_image_view* views,
+                                                int32_t n_views,
+                                                float** out,
+                                                size_t* n_out) {
+    const auto started = aicore::capi::PipelineClock::now();
+    if (out) *out = nullptr;
+    if (n_out) *n_out = 0;
+    if (!ctx || !views || n_views < 1 || !out || !n_out) return -1;
+    if (!ctx->error.empty()) return -1;
+
+    const int size = ctx->m.hp().image_size;
+    std::vector<float> images;
+    std::string err;
+    if (!aicore::gaussian::append_image_views_chw(views, n_views, size, images,
+                                                  err)) {
+        ctx->error = err;
+        return -1;
+    }
+
+    const int rc = aicore_gaussian_run(ctx, images.data(), n_views, size, size,
                                        out, n_out);
     if (rc == 0)
         aicore::capi::record_pipeline_e2e(ctx->pipeline_timings, started);

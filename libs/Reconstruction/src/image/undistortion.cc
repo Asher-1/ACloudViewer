@@ -57,7 +57,7 @@ void WriteMatrix(const Eigen::MatrixBase<Derived>& matrix,
 }
 
 // Write projection matrix P = K * [R t] to file and prepend given header.
-void WriteProjectionMatrix(const std::string& path, const Camera& camera,
+void WriteProjectionMatrix(const std::filesystem::path& path, const Camera& camera,
                            const Image& image, const std::string& header) {
   CHECK_EQ(camera.ModelId(), PinholeCameraModel::model_id);
 
@@ -161,8 +161,8 @@ COLMAPUndistorter::COLMAPUndistorter(const UndistortCameraOptions& options,
                                      const CopyType copy_type,
                                      const std::vector<image_t>& image_ids)
     : options_(options),
-      image_path_(image_path.string()),
-      output_path_(output_path.string()),
+      image_path_(image_path),
+      output_path_(output_path),
       copy_type_(copy_type),
       num_patch_match_src_images_(num_patch_match_src_images),
       reconstruction_(CHECK_NOTNULL(reconstruction)),
@@ -171,18 +171,16 @@ COLMAPUndistorter::COLMAPUndistorter(const UndistortCameraOptions& options,
 void COLMAPUndistorter::Run() {
   PrintHeading1("Image undistortion");
 
-  CreateDirIfNotExists(JoinPaths(output_path_, "images"));
-  CreateDirIfNotExists(JoinPaths(output_path_, "sparse"));
-  CreateDirIfNotExists(JoinPaths(output_path_, "stereo"));
-  CreateDirIfNotExists(JoinPaths(output_path_, "stereo/depth_maps"));
-  CreateDirIfNotExists(JoinPaths(output_path_, "stereo/normal_maps"));
-  CreateDirIfNotExists(JoinPaths(output_path_, "stereo/consistency_graphs"));
-  reconstruction_->CreateImageDirs(JoinPaths(output_path_, "images"));
-  reconstruction_->CreateImageDirs(JoinPaths(output_path_, "stereo/depth_maps"));
-  reconstruction_->CreateImageDirs(
-      JoinPaths(output_path_, "stereo/normal_maps"));
-  reconstruction_->CreateImageDirs(
-      JoinPaths(output_path_, "stereo/consistency_graphs"));
+  CreateDirIfNotExists(output_path_ / "images");
+  CreateDirIfNotExists(output_path_ / "sparse");
+  CreateDirIfNotExists(output_path_ / "stereo");
+  CreateDirIfNotExists(output_path_ / "stereo/depth_maps");
+  CreateDirIfNotExists(output_path_ / "stereo/normal_maps");
+  CreateDirIfNotExists(output_path_ / "stereo/consistency_graphs");
+  reconstruction_->CreateImageDirs(output_path_ / "images");
+  reconstruction_->CreateImageDirs(output_path_ / "stereo/depth_maps");
+  reconstruction_->CreateImageDirs(output_path_ / "stereo/normal_maps");
+  reconstruction_->CreateImageDirs(output_path_ / "stereo/consistency_graphs");
 
   ThreadPool thread_pool;
   std::vector<std::future<bool>> futures;
@@ -227,7 +225,7 @@ void COLMAPUndistorter::Run() {
   // Perform undistortion directly on the provided reconstruction pointer
   // This avoids creating a copy and ensures in-place update
   UndistortReconstruction(options_, reconstruction_);
-  reconstruction_->Write(JoinPaths(output_path_, "sparse"));
+  reconstruction_->Write(output_path_ / "sparse");
 
   std::cout << "Writing configuration..." << std::endl;
   WritePatchMatchConfig();
@@ -248,9 +246,9 @@ bool COLMAPUndistorter::Undistort(const image_t image_id) const {
   const Camera& camera = reconstruction_->Camera(image.CameraId());
   Camera undistorted_camera;
 
-  const std::string input_image_path = JoinPaths(image_path_, image.Name());
-  const std::string output_image_path =
-      JoinPaths(output_path_, "images", image.Name());
+  const std::filesystem::path input_image_path = image_path_ / image.Name();
+  const std::filesystem::path output_image_path =
+      output_path_ / "images" / image.Name();
 
   // Check if the image is already undistorted and copy from source if no
   // scaling is needed
@@ -274,7 +272,7 @@ bool COLMAPUndistorter::Undistort(const image_t image_id) const {
 }
 
 void COLMAPUndistorter::WritePatchMatchConfig() const {
-  const auto path = JoinPaths(output_path_, "stereo/patch-match.cfg");
+  const auto path = output_path_ / "stereo/patch-match.cfg";
   std::ofstream file(path, std::ios::trunc);
   CHECK(file.is_open()) << path;
   for (const auto& image_name : image_names_) {
@@ -284,7 +282,7 @@ void COLMAPUndistorter::WritePatchMatchConfig() const {
 }
 
 void COLMAPUndistorter::WriteFusionConfig() const {
-  const auto path = JoinPaths(output_path_, "stereo/fusion.cfg");
+  const auto path = output_path_ / "stereo/fusion.cfg";
   std::ofstream file(path, std::ios::trunc);
   CHECK(file.is_open()) << path;
   for (const auto& image_name : image_names_) {
@@ -293,9 +291,9 @@ void COLMAPUndistorter::WriteFusionConfig() const {
 }
 
 void COLMAPUndistorter::WriteScript(const bool geometric) const {
-  const std::string path =
-      JoinPaths(output_path_, geometric ? "run-colmap-geometric.sh"
-                                        : "run-colmap-photometric.sh");
+  const std::filesystem::path path =
+      output_path_ / (geometric ? "run-colmap-geometric.sh"
+                                : "run-colmap-photometric.sh");
   std::ofstream file(path, std::ios::trunc);
   CHECK(file.is_open()) << path;
 
@@ -309,17 +307,17 @@ PMVSUndistorter::PMVSUndistorter(const UndistortCameraOptions& options,
                                  const std::filesystem::path& image_path,
                                  const std::filesystem::path& output_path)
     : options_(options),
-      image_path_(image_path.string()),
-      output_path_(output_path.string()),
+      image_path_(image_path),
+      output_path_(output_path),
       reconstruction_(CHECK_NOTNULL(reconstruction)) {}
 
 void PMVSUndistorter::Run() {
   PrintHeading1("Image undistortion (CMVS/PMVS)");
 
-  CreateDirIfNotExists(JoinPaths(output_path_, "pmvs"));
-  CreateDirIfNotExists(JoinPaths(output_path_, "pmvs/txt"));
-  CreateDirIfNotExists(JoinPaths(output_path_, "pmvs/visualize"));
-  CreateDirIfNotExists(JoinPaths(output_path_, "pmvs/models"));
+  CreateDirIfNotExists(output_path_ / "pmvs");
+  CreateDirIfNotExists(output_path_ / "pmvs/txt");
+  CreateDirIfNotExists(output_path_ / "pmvs/visualize");
+  CreateDirIfNotExists(output_path_ / "pmvs/models");
 
   ThreadPool thread_pool;
   std::vector<std::future<bool>> futures;
@@ -348,8 +346,9 @@ void PMVSUndistorter::Run() {
 
   std::cout << "Writing bundle file..." << std::endl;
   UndistortReconstruction(options_, reconstruction_);
-  const std::string bundle_path = JoinPaths(output_path_, "pmvs/bundle.rd.out");
-  ExportBundler(*reconstruction_, bundle_path, bundle_path + ".list.txt");
+  const auto bundle_path = output_path_ / "pmvs/bundle.rd.out";
+  ExportBundler(*reconstruction_, bundle_path,
+                bundle_path.string() + ".list.txt");
 
   std::cout << "Writing visibility file..." << std::endl;
   WriteVisibilityData();
@@ -369,20 +368,20 @@ void PMVSUndistorter::Run() {
 }
 
 bool PMVSUndistorter::Undistort(const size_t reg_image_idx) const {
-  const std::string output_image_path = JoinPaths(
-      output_path_, StringPrintf("pmvs/visualize/%08d.jpg", reg_image_idx));
-  const std::string proj_matrix_path =
-      JoinPaths(output_path_, StringPrintf("pmvs/txt/%08d.txt", reg_image_idx));
+  const auto output_image_path =
+      output_path_ / StringPrintf("pmvs/visualize/%08d.jpg", reg_image_idx);
+  const auto proj_matrix_path =
+      output_path_ / StringPrintf("pmvs/txt/%08d.txt", reg_image_idx);
 
   const image_t image_id = reconstruction_->RegImageIds().at(reg_image_idx);
   const Image& image = reconstruction_->Image(image_id);
   const Camera& camera = reconstruction_->Camera(image.CameraId());
 
   Bitmap distorted_bitmap;
-  const std::string input_image_path = JoinPaths(image_path_, image.Name());
+  const auto input_image_path = image_path_ / image.Name();
   if (!distorted_bitmap.Read(input_image_path)) {
     std::cerr << StringPrintf("ERROR: Cannot read image at path %s",
-                              input_image_path.c_str())
+                              input_image_path.string().c_str())
               << std::endl;
     return false;
   }
@@ -397,7 +396,7 @@ bool PMVSUndistorter::Undistort(const size_t reg_image_idx) const {
 }
 
 void PMVSUndistorter::WriteVisibilityData() const {
-  const auto path = JoinPaths(output_path_, "pmvs/vis.dat");
+  const auto path = output_path_ / "pmvs/vis.dat";
   std::ofstream file(path, std::ios::trunc);
   CHECK(file.is_open()) << path;
 
@@ -436,7 +435,7 @@ void PMVSUndistorter::WriteVisibilityData() const {
 }
 
 void PMVSUndistorter::WritePMVSScript() const {
-  const auto path = JoinPaths(output_path_, "run-pmvs.sh");
+  const auto path = output_path_ / "run-pmvs.sh";
   std::ofstream file(path, std::ios::trunc);
   CHECK(file.is_open()) << path;
 
@@ -446,7 +445,7 @@ void PMVSUndistorter::WritePMVSScript() const {
 }
 
 void PMVSUndistorter::WriteCMVSPMVSScript() const {
-  const auto path = JoinPaths(output_path_, "run-cmvs-pmvs.sh");
+  const auto path = output_path_ / "run-cmvs-pmvs.sh";
   std::ofstream file(path, std::ios::trunc);
   CHECK(file.is_open()) << path;
 
@@ -466,9 +465,9 @@ void PMVSUndistorter::WriteCMVSPMVSScript() const {
 }
 
 void PMVSUndistorter::WriteCOLMAPScript(const bool geometric) const {
-  const std::string path =
-      JoinPaths(output_path_, geometric ? "run-colmap-geometric.sh"
-                                        : "run-colmap-photometric.sh");
+  const std::filesystem::path path =
+      output_path_ / (geometric ? "run-colmap-geometric.sh"
+                                : "run-colmap-photometric.sh");
   std::ofstream file(path, std::ios::trunc);
   CHECK(file.is_open()) << path;
 
@@ -479,9 +478,9 @@ void PMVSUndistorter::WriteCOLMAPScript(const bool geometric) const {
 }
 
 void PMVSUndistorter::WriteCMVSCOLMAPScript(const bool geometric) const {
-  const std::string path =
-      JoinPaths(output_path_, geometric ? "run-cmvs-colmap-geometric.sh"
-                                        : "run-cmvs-colmap-photometric.sh");
+  const std::filesystem::path path =
+      output_path_ / (geometric ? "run-cmvs-colmap-geometric.sh"
+                                : "run-cmvs-colmap-photometric.sh");
   std::ofstream file(path, std::ios::trunc);
   CHECK(file.is_open()) << path;
 
@@ -506,7 +505,7 @@ void PMVSUndistorter::WriteCMVSCOLMAPScript(const bool geometric) const {
 }
 
 void PMVSUndistorter::WriteOptionFile() const {
-  const auto path = JoinPaths(output_path_, "pmvs/option-all");
+  const auto path = output_path_ / "pmvs/option-all";
   std::ofstream file(path, std::ios::trunc);
   CHECK(file.is_open()) << path;
 
@@ -539,8 +538,8 @@ CMPMVSUndistorter::CMPMVSUndistorter(const UndistortCameraOptions& options,
                                      const std::filesystem::path& image_path,
                                      const std::filesystem::path& output_path)
     : options_(options),
-      image_path_(image_path.string()),
-      output_path_(output_path.string()),
+      image_path_(image_path),
+      output_path_(output_path),
       reconstruction_(CHECK_NOTNULL(reconstruction)) {}
 
 void CMPMVSUndistorter::Run() {
@@ -570,17 +569,17 @@ void CMPMVSUndistorter::Run() {
 }
 
 bool CMPMVSUndistorter::Undistort(const size_t reg_image_idx) const {
-  const std::string output_image_path =
-      JoinPaths(output_path_, StringPrintf("%05d.jpg", reg_image_idx + 1));
-  const std::string proj_matrix_path =
-      JoinPaths(output_path_, StringPrintf("%05d_P.txt", reg_image_idx + 1));
+  const auto output_image_path =
+      output_path_ / StringPrintf("%05d.jpg", reg_image_idx + 1);
+  const auto proj_matrix_path =
+      output_path_ / StringPrintf("%05d_P.txt", reg_image_idx + 1);
 
   const image_t image_id = reconstruction_->RegImageIds().at(reg_image_idx);
   const Image& image = reconstruction_->Image(image_id);
   const Camera& camera = reconstruction_->Camera(image.CameraId());
 
   Bitmap distorted_bitmap;
-  const std::string input_image_path = JoinPaths(image_path_, image.Name());
+  const auto input_image_path = image_path_ / image.Name();
   if (!distorted_bitmap.Read(input_image_path)) {
     std::cerr << "ERROR: Cannot read image at path " << input_image_path
               << std::endl;
@@ -602,8 +601,8 @@ PureImageUndistorter::PureImageUndistorter(
     const std::filesystem::path& output_path,
     const std::vector<std::pair<std::string, Camera>>& image_names_and_cameras)
     : options_(options),
-      image_path_(image_path.string()),
-      output_path_(output_path.string()),
+      image_path_(image_path),
+      output_path_(output_path),
       image_names_and_cameras_(image_names_and_cameras) {}
 
 void PureImageUndistorter::Run() {
@@ -639,10 +638,10 @@ bool PureImageUndistorter::Undistort(const size_t image_idx) const {
   const std::string& image_name = image_names_and_cameras_[image_idx].first;
   const Camera& camera = image_names_and_cameras_[image_idx].second;
 
-  const std::string output_image_path = JoinPaths(output_path_, image_name);
+  const auto output_image_path = output_path_ / image_name;
 
   Bitmap distorted_bitmap;
-  const std::string input_image_path = JoinPaths(image_path_, image_name);
+  const auto input_image_path = image_path_ / image_name;
   if (!distorted_bitmap.Read(input_image_path)) {
     std::cerr << "ERROR: Cannot read image at path " << input_image_path
               << std::endl;
@@ -663,8 +662,8 @@ StereoImageRectifier::StereoImageRectifier(
     const std::filesystem::path& output_path,
     const std::vector<std::pair<image_t, image_t>>& stereo_pairs)
     : options_(options),
-      image_path_(image_path.string()),
-      output_path_(output_path.string()),
+      image_path_(image_path),
+      output_path_(output_path),
       stereo_pairs_(stereo_pairs),
       reconstruction_(CHECK_NOTNULL(reconstruction)) {}
 
@@ -708,15 +707,15 @@ void StereoImageRectifier::Rectify(const image_t image_id1,
   const std::string stereo_pair_name =
       StringPrintf("%s-%s", image_name1.c_str(), image_name2.c_str());
 
-  CreateDirIfNotExists(JoinPaths(output_path_, stereo_pair_name));
+  CreateDirIfNotExists(output_path_ / stereo_pair_name);
 
-  const std::string output_image1_path =
-      JoinPaths(output_path_, stereo_pair_name, image_name1);
-  const std::string output_image2_path =
-      JoinPaths(output_path_, stereo_pair_name, image_name2);
+  const auto output_image1_path =
+      output_path_ / stereo_pair_name / image_name1;
+  const auto output_image2_path =
+      output_path_ / stereo_pair_name / image_name2;
 
   Bitmap distorted_bitmap1;
-  const std::string input_image1_path = JoinPaths(image_path_, image1.Name());
+  const auto input_image1_path = image_path_ / image1.Name();
   if (!distorted_bitmap1.Read(input_image1_path)) {
     std::cerr << "ERROR: Cannot read image at path " << input_image1_path
               << std::endl;
@@ -724,7 +723,7 @@ void StereoImageRectifier::Rectify(const image_t image_id1,
   }
 
   Bitmap distorted_bitmap2;
-  const std::string input_image2_path = JoinPaths(image_path_, image2.Name());
+  const auto input_image2_path = image_path_ / image2.Name();
   if (!distorted_bitmap2.Read(input_image2_path)) {
     std::cerr << "ERROR: Cannot read image at path " << input_image2_path
               << std::endl;
@@ -748,7 +747,7 @@ void StereoImageRectifier::Rectify(const image_t image_id1,
   undistorted_bitmap1.Write(output_image1_path);
   undistorted_bitmap2.Write(output_image2_path);
 
-  const auto Q_path = JoinPaths(output_path_, stereo_pair_name, "Q.txt");
+  const auto Q_path = output_path_ / stereo_pair_name / "Q.txt";
   std::ofstream Q_file(Q_path, std::ios::trunc);
   CHECK(Q_file.is_open()) << Q_path;
   WriteMatrix(Q, &Q_file);

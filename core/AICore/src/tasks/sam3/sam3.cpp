@@ -14,6 +14,7 @@
 /* AICore common runtime (shared dynamic-backend discovery) */
 #include "common/ggml_backend_registry.hpp"
 #include "common/ggml_backend_utils.hpp"
+#include "common/gguf_file_io.hpp"
 
 /* ggml */
 #include "ggml-alloc.h"
@@ -3179,15 +3180,12 @@ std::shared_ptr<sam3_model> sam3_load_model(const sam3_params& params) {
     // types, data offsets); we stream each blob into the backend buffer
     // ourselves so a 5 GB model never sits twice in RAM.
     struct ggml_context* gguf_ctx = nullptr;
-    struct gguf_init_params gparams = {
-            /*.no_alloc   =*/true,
-            /*.ctx        =*/&gguf_ctx,
-    };
+    std::string open_error;
     struct gguf_context* gguf =
-            gguf_init_from_file(params.model_path.c_str(), gparams);
+            ggml_common::open_gguf_file(params.model_path, /*no_alloc=*/true,
+                                        &gguf_ctx, "sam3", &open_error);
     if (!gguf) {
-        AICORE_LOG_ERROR("[sam3] ", "%s: failed to open GGUF model '%s'\n",
-                         __func__, params.model_path.c_str());
+        AICORE_LOG_ERROR("[sam3] ", "%s: %s\n", __func__, open_error.c_str());
         return nullptr;
     }
 
@@ -12604,12 +12602,8 @@ static thread_local bool g_test_tokenizer_loaded = false;
 bool sam3_test_load_tokenizer(const std::string& model_path) {
     // GGUF metadata only — no tensor data needed for the tokenizer test.
     struct ggml_context* gguf_ctx = nullptr;
-    struct gguf_init_params gparams = {
-            /*.no_alloc   =*/true,
-            /*.ctx        =*/&gguf_ctx,
-    };
-    struct gguf_context* gguf =
-            gguf_init_from_file(model_path.c_str(), gparams);
+    struct gguf_context* gguf = ggml_common::open_gguf_file(
+            model_path, /*no_alloc=*/true, &gguf_ctx, "sam3");
     if (!gguf) return false;
 
     std::string kv_err;

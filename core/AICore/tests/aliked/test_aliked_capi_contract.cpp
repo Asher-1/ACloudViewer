@@ -39,6 +39,9 @@ int main() {
     aicore_lightglue_features features{};
     AICORE_CHECK(aicore_aliked_extract_rgb(nullptr, nullptr, 0, 0, 0,
                                            &features) != 0);
+    /* F-01 batch A: image_view entry is NULL-safe. */
+    AICORE_CHECK(
+            aicore_aliked_extract_image_view(nullptr, nullptr, &features) != 0);
 
     char* dir = aicore_aliked_model_cache_dir();
     AICORE_CHECK(dir != nullptr);

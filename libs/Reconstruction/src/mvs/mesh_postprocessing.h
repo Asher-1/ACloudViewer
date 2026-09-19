@@ -8,6 +8,7 @@
 #pragma once
 
 #include <cstddef>
+#include <filesystem>
 #include <string>
 
 #include "util/ply.h"
@@ -53,8 +54,8 @@ PlyMesh PostProcessMesh(const PlyMesh& mesh,
 // Reads a PLY mesh through the repository's CV_IO reader, applies the shared
 // operation, and writes a binary PLY. If input and output are identical, the
 // original is replaced only after the processed file has been written.
-bool PostProcessMeshFile(const std::string& input_path,
-                         const std::string& output_path,
+bool PostProcessMeshFile(const std::filesystem::path& input_path,
+                         const std::filesystem::path& output_path,
                          const MeshPostProcessingOptions& options,
                          MeshPostProcessingStats* stats = nullptr);
 

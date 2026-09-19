@@ -101,14 +101,8 @@ SAM3Worker::~SAM3Worker() {
     // inference on the same resolved device just like model load/compute.
     auto taskGuard = ecvAICoreRuntime::makeDeviceTaskLock(m_settings.device);
 #endif
-    if (m_pendingCtx) {
-        aicore_sam3_free(m_pendingCtx);
-        m_pendingCtx = nullptr;
-    }
-    if (m_ctx) {
-        aicore_sam3_free(m_ctx);
-        m_ctx = nullptr;
-    }
+    ecvAICoreRuntime::releasePending(m_pendingCtx, &aicore_sam3_free);
+    ecvAICoreRuntime::releasePending(m_ctx, &aicore_sam3_free);
 }
 
 void SAM3Worker::requestCancel() { m_cancelled.store(true); }

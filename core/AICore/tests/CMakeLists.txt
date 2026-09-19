@@ -256,6 +256,18 @@ function(aicore_add_lingbot_capi_test name)
     set_tests_properties(${name} PROPERTIES LABELS "capi")
 endfunction()
 
+function(aicore_add_reid_capi_test name)
+    add_executable(${name} reid/${name}.cpp)
+    target_link_libraries(${name} PRIVATE AICore)
+    _aicore_capi_link(${name})
+    _aicore_test_common(${name})
+    if(NOT MSVC)
+        target_compile_options(${name} PRIVATE -fPIC)
+        target_link_options(${name} PRIVATE "-no-pie")
+    endif()
+    set_tests_properties(${name} PROPERTIES LABELS "capi")
+endfunction()
+
 function(aicore_add_facedetect_whitebox_test name)
     if(NOT TARGET AICore_test)
         return()
@@ -459,6 +471,20 @@ endif()
 # --- depth (C API / libAICore) ---
 aicore_add_common_capi_test(test_runtime_capi_contract)
 aicore_add_common_capi_test(test_pipeline_timing_contract)
+# Shared GGUF open helper (F-06): synthetic-file unit coverage for both
+# no_alloc modes, ownership round-trip, and the failure-message shape.
+# Links AICore_test (not the AICore shared lib) because the helper header
+# includes ggml's gguf.h, which only the static-test target propagates.
+if(TARGET AICore_test)
+    add_executable(test_gguf_file_io common/test_gguf_file_io.cpp)
+    target_link_libraries(test_gguf_file_io PRIVATE AICore_test)
+    _aicore_test_common(test_gguf_file_io)
+    if(NOT MSVC)
+        target_compile_options(test_gguf_file_io PRIVATE -fPIC)
+        target_link_options(test_gguf_file_io PRIVATE "-no-pie")
+    endif()
+    set_tests_properties(test_gguf_file_io PROPERTIES LABELS "capi")
+endif()
 aicore_add_depth_capi_test(test_depth_capi_contract)
 aicore_add_depth_capi_test(test_image_depth)
 aicore_add_depth_capi_test(test_depth_capi_load)
@@ -520,6 +546,10 @@ set_tests_properties(test_gkd_capi_load PROPERTIES LABELS "capi;model")
 aicore_add_lingbot_capi_test(test_lingbot_capi_contract)
 aicore_add_lingbot_capi_test(test_lingbot_capi_load)
 set_tests_properties(test_lingbot_capi_load PROPERTIES LABELS "capi;model")
+
+aicore_add_reid_capi_test(test_reid_capi_contract)
+aicore_add_reid_capi_test(test_reid_capi_load)
+set_tests_properties(test_reid_capi_load PROPERTIES LABELS "capi;model")
 
 # Manual parity dump tool (NOT a ctest): writes upstream-compatible LBF3
 # per-frame binaries for the compare_lingbot_parity.py A/B against
@@ -783,6 +813,19 @@ function(aicore_add_yolo_optrace_test name)
 endfunction()
 aicore_add_yolo_optrace_test(test_yolo_world_optrace)
 
+# ReID algebraic diagnostic (white-box bisection): feed an exact CHW tensor
+# (saved from the PyTorch baseline) and dump the SAME graph run's logits and
+# embedding, so the numpy side can check logits == W @ embed + b and pin the
+# first divergent node. Not a ctest (needs a CHW binary on the side).
+#   reid_diag --gguf <file> --chw <f32.bin> [--device cuda] [--dump <prefix>]
+add_executable(reid_diag ${CMAKE_CURRENT_SOURCE_DIR}/../tools/reid_diag.cpp)
+target_link_libraries(reid_diag PRIVATE AICore_test)
+if(NOT MSVC)
+    target_compile_options(reid_diag PRIVATE -fPIC)
+    target_link_options(reid_diag PRIVATE "-no-pie")
+endif()
+_aicore_test_common(reid_diag)
+
 add_test(
     NAME test_aicore_public_headers
     COMMAND ${CMAKE_COMMAND}
@@ -978,9 +1021,11 @@ add_custom_target(aicore-contract-tests
 # --- Catalog vs release asset consistency (network; CI only) ---------------
 # The catalog can be self-consistent while individual entries 404 on the
 # release (historical rmbg_q4_K.gguf regression). Dump every catalog URL and
-# HEAD-check it against GitHub so drift fails the build instead of the user's
-# first download. Kept out of the "capi" label so offline/contract runs stay
-# network-free.
+# HEAD-check it against GitHub/Hugging Face so drift fails the build instead
+# of the user's first download. Host throttling (HTTP 429/5xx, e.g. Hugging
+# Face anonymous rate limits on shared CI runners) is retried by the checker
+# and reported as SKIPPED when persistent — it is transient, not drift. Kept
+# out of the "capi" label so offline/contract runs stay network-free.
 add_executable(test_catalog_dump_urls catalog_dump_urls.cpp)
 target_link_libraries(test_catalog_dump_urls PRIVATE AICore)
 _aicore_capi_link(test_catalog_dump_urls)
@@ -998,7 +1043,7 @@ if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
                 ${CMAKE_CURRENT_SOURCE_DIR}/check_catalog_assets.py
                 $<TARGET_FILE:test_catalog_dump_urls>)
     set_tests_properties(test_catalog_remote_assets PROPERTIES
-        LABELS "catalog-remote" TIMEOUT 300)
+        LABELS "catalog-remote" TIMEOUT 600)
 endif()
 
 # --- Fast tier: no GGUF assets (whitebox/common/gaussian units + capi
@@ -1102,6 +1147,7 @@ set(_aicore_model_targets
     test_rmbg_capi_performance
     test_gkd_capi_load
     test_lingbot_capi_load
+    test_reid_capi_load
     test_yolo_capi_performance)
 set(_aicore_model_targets_existing)
 foreach(_t IN LISTS _aicore_model_targets)
@@ -1135,6 +1181,7 @@ if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
         bench_sam3_backend_acceptance
         test_gkd_capi_load
         test_lingbot_capi_load
+        test_reid_capi_load
         test_yolo_capi_performance
         test_yolo_text_model_validation
         test_yolo_capi_parity)

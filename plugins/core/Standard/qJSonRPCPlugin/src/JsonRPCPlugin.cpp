@@ -628,6 +628,8 @@ void JsonRPCPlugin::registerMethods() {
     // --- CLI Processing ---
     reg("process.run_cli",   "Run any CLI processing command: {input_path, output_path, args[], ?timeout_ms}",
         [this](auto& p){ return rpcProcessRunCli(p); });
+    reg("yolo.track",        "Headless multi-object tracking (six official tracker modes): {model, ?video, ?frames_dir, ?tracker: bytetrack|botsort|ocsort|deepocsort|fasttrack|tracktrack, ?gmc, ?conf, ?iou, ?max_det, ?reid: 0|1, ?device, ?threads, tracks_json, ?timeout_ms}",
+        [this](auto& p){ return rpcYoloTrack(p); });
     reg("process.csf",       "Cloth Simulation Filter: {input_path, output_path, ?scene, ?cloth_resolution, ?max_iterations, ?class_threshold, ?export_ground, ?export_offground}",
         [this](auto& p){ return rpcProcessCsf(p); });
     reg("process.m3c2",      "M3C2 distance computation: {cloud1_path, cloud2_path, params_file, output_path}",
@@ -3523,6 +3525,70 @@ JsonRPCResult JsonRPCPlugin::rpcProcessRunCli(
 
     if (process.exitCode() != 0) {
         return JsonRPCResult::error(3, "CLI processing failed",
+                                    D("exit_code", process.exitCode(), "stderr",
+                                      result["stderr"].toString()));
+    }
+    return JsonRPCResult::success(QJsonDocument(result).toVariant());
+}
+
+JsonRPCResult JsonRPCPlugin::rpcYoloTrack(
+        const QMap<QString, QVariant>& params) {
+    const QString model = params.value("model").toString();
+    const QString video = params.value("video").toString();
+    const QString framesDir = params.value("frames_dir").toString();
+    const QString tracksJson = params.value("tracks_json").toString();
+    if (model.isEmpty() || tracksJson.isEmpty() ||
+        (video.isEmpty() == framesDir.isEmpty())) {
+        return JsonRPCResult::error(
+                -32602,
+                "Missing/ambiguous parameters: need model, tracks_json and "
+                "exactly one of video / frames_dir");
+    }
+
+    int timeoutMs = params.value("timeout_ms", 600000).toInt();
+
+    // Optional key/value pairs in the -YOLO_TRACK argument order.
+    const QHash<QString, QString> optionKeys = {
+            {"tracker", "TRACKER"}, {"gmc", "GMC"},         {"conf", "CONF"},
+            {"iou", "IOU"},         {"max_det", "MAX_DET"}, {"reid", "REID"},
+            {"device", "DEVICE"},   {"threads", "THREADS"},
+    };
+
+    QStringList argList;
+    argList << "-SILENT" << "-NO_TIMESTAMP" << "-YOLO_TRACK"
+            << "MODEL" << model;
+    argList << (video.isEmpty() ? QStringLiteral("FRAMES_DIR")
+                                : QStringLiteral("VIDEO"))
+            << (video.isEmpty() ? framesDir : video);
+    for (auto it = optionKeys.constBegin(); it != optionKeys.constEnd(); ++it) {
+        const QString value = params.value(it.key()).toString().trimmed();
+        if (!value.isEmpty()) {
+            argList << it.value() << value;
+        }
+    }
+    argList << "TRACKS_JSON" << tracksJson;
+
+    QProcess process;
+    process.setProgram(QCoreApplication::applicationFilePath());
+    process.setArguments(argList);
+    process.setEnvironment(QProcess::systemEnvironment()
+                           << "QT_QPA_PLATFORM=offscreen");
+    process.start();
+    if (!process.waitForFinished(timeoutMs)) {
+        process.kill();
+        return JsonRPCResult::error(3, "YOLO tracking timed out",
+                                    D("timeout_ms", timeoutMs));
+    }
+
+    QJsonObject result;
+    result["exit_code"] = process.exitCode();
+    result["stdout"] =
+            QString::fromUtf8(process.readAllStandardOutput()).left(5000);
+    result["stderr"] =
+            QString::fromUtf8(process.readAllStandardError()).left(2000);
+    result["tracks_json"] = tracksJson;
+    if (process.exitCode() != 0) {
+        return JsonRPCResult::error(3, "YOLO tracking failed",
                                     D("exit_code", process.exitCode(), "stderr",
                                       result["stderr"].toString()));
     }

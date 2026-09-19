@@ -447,7 +447,7 @@ void DenseReconstructionWidget::showEvent(QShowEvent* event) {
 
     // Auto-load workspace path from configuration if not already set
     if (workspace_path_text_->text().isEmpty()) {
-        std::string default_workspace;
+        std::filesystem::path default_workspace;
 
         // Try multiple sources for workspace path (in order of priority)
         // 1. Try project_path's parent directory
@@ -455,10 +455,10 @@ void DenseReconstructionWidget::showEvent(QShowEvent* event) {
             default_workspace = GetParentDir(*options_->project_path);
             if (ExistsDir(default_workspace)) {
                 workspace_path_text_->setText(
-                        QString::fromStdString(default_workspace));
+                        QString::fromStdString(default_workspace.string()));
                 CVLog::Print(
                         QString("Auto-loaded workspace from project_path: %1")
-                                .arg(default_workspace.c_str()));
+                                .arg(default_workspace.string().c_str()));
                 RefreshWorkspace();
                 return;
             }
@@ -469,10 +469,10 @@ void DenseReconstructionWidget::showEvent(QShowEvent* event) {
             default_workspace = GetParentDir(*options_->database_path);
             if (ExistsDir(default_workspace)) {
                 workspace_path_text_->setText(
-                        QString::fromStdString(default_workspace));
+                        QString::fromStdString(default_workspace.string()));
                 CVLog::Print(
                         QString("Auto-loaded workspace from database_path: %1")
-                                .arg(default_workspace.c_str()));
+                                .arg(default_workspace.string().c_str()));
                 RefreshWorkspace();
                 return;
             }
@@ -481,16 +481,16 @@ void DenseReconstructionWidget::showEvent(QShowEvent* event) {
         // 3. Try image_path (it's usually already a directory)
         if (options_->image_path && !options_->image_path->empty()) {
             // First try image_path itself
-            default_workspace = options_->image_path->string();
+            default_workspace = *options_->image_path;
             if (ExistsDir(default_workspace)) {
                 // Use parent of image_path as workspace
                 default_workspace = GetParentDir(default_workspace);
                 if (ExistsDir(default_workspace)) {
                     workspace_path_text_->setText(
-                            QString::fromStdString(default_workspace));
+                            QString::fromStdString(default_workspace.string()));
                     CVLog::Print(
                             QString("Auto-loaded workspace from image_path: %1")
-                                    .arg(default_workspace.c_str()));
+                                    .arg(default_workspace.string().c_str()));
                     RefreshWorkspace();
                     return;
                 }
@@ -510,7 +510,7 @@ void DenseReconstructionWidget::Show(Reconstruction* reconstruction) {
 }
 
 void DenseReconstructionWidget::Undistort() {
-    const std::string workspace_path = GetWorkspacePath();
+    const std::filesystem::path workspace_path = GetWorkspacePath();
     if (workspace_path.empty()) {
         return;
     }
@@ -534,7 +534,7 @@ void DenseReconstructionWidget::Undistort() {
 }
 
 void DenseReconstructionWidget::Stereo() {
-    const std::string workspace_path = GetWorkspacePath();
+    const std::filesystem::path workspace_path = GetWorkspacePath();
     if (workspace_path.empty()) {
         return;
     }
@@ -556,7 +556,7 @@ void DenseReconstructionWidget::Stereo() {
 }
 
 void DenseReconstructionWidget::Fusion() {
-    const std::string workspace_path = GetWorkspacePath();
+    const std::filesystem::path workspace_path = GetWorkspacePath();
     if (workspace_path.empty()) {
         return;
     }
@@ -595,28 +595,25 @@ void DenseReconstructionWidget::Fusion() {
 }
 
 void DenseReconstructionWidget::PoissonMeshing() {
-    const std::string workspace_path = GetWorkspacePath();
+    const std::filesystem::path workspace_path = GetWorkspacePath();
     if (workspace_path.empty()) {
         return;
     }
 
-    if (ExistsFile(JoinPaths(workspace_path, kFusedFileName))) {
+    if (ExistsFile(workspace_path / kFusedFileName)) {
         thread_control_widget_->StartFunction(
                 "Poisson Meshing...", [this, workspace_path]() {
                     mvs::PoissonMeshing(
                             *options_->poisson_meshing,
-                            JoinPaths(workspace_path, kFusedFileName),
-                            JoinPaths(workspace_path, kPoissonMeshedFileName));
+                            workspace_path / kFusedFileName,
+                            workspace_path / kPoissonMeshedFileName);
                     if (options_->mesh_post_processing->enabled) {
                         mvs::PostProcessMeshFile(
-                                JoinPaths(workspace_path,
-                                          kPoissonMeshedFileName),
-                                JoinPaths(workspace_path,
-                                          kPoissonMeshedFileName),
+                                workspace_path / kPoissonMeshedFileName,
+                                workspace_path / kPoissonMeshedFileName,
                                 *options_->mesh_post_processing);
                     }
-                    out_mesh_path_ =
-                            JoinPaths(workspace_path, kPoissonMeshedFileName);
+                    out_mesh_path_ = workspace_path / kPoissonMeshedFileName;
                     refresh_workspace_action_->trigger();
                     show_meshing_info_action_->trigger();
                 });
@@ -625,27 +622,24 @@ void DenseReconstructionWidget::PoissonMeshing() {
 
 void DenseReconstructionWidget::DelaunayMeshing() {
 #ifdef CGAL_ENABLED
-    const std::string workspace_path = GetWorkspacePath();
+    const std::filesystem::path workspace_path = GetWorkspacePath();
     if (workspace_path.empty()) {
         return;
     }
 
-    if (ExistsFile(JoinPaths(workspace_path, kFusedFileName))) {
+    if (ExistsFile(workspace_path / kFusedFileName)) {
         thread_control_widget_->StartFunction(
                 "Delaunay Meshing...", [this, workspace_path]() {
                     mvs::DenseDelaunayMeshing(
                             *options_->delaunay_meshing, workspace_path,
-                            JoinPaths(workspace_path, kDelaunayMeshedFileName));
+                            workspace_path / kDelaunayMeshedFileName);
                     if (options_->mesh_post_processing->enabled) {
                         mvs::PostProcessMeshFile(
-                                JoinPaths(workspace_path,
-                                          kDelaunayMeshedFileName),
-                                JoinPaths(workspace_path,
-                                          kDelaunayMeshedFileName),
+                                workspace_path / kDelaunayMeshedFileName,
+                                workspace_path / kDelaunayMeshedFileName,
                                 *options_->mesh_post_processing);
                     }
-                    out_mesh_path_ =
-                            JoinPaths(workspace_path, kDelaunayMeshedFileName);
+                    out_mesh_path_ = workspace_path / kDelaunayMeshedFileName;
                     refresh_workspace_action_->trigger();
                     show_meshing_info_action_->trigger();
                 });
@@ -659,28 +653,25 @@ void DenseReconstructionWidget::DelaunayMeshing() {
 
 void DenseReconstructionWidget::AdvancingFrontMeshing() {
 #ifdef CGAL_ENABLED
-    const std::string workspace_path = GetWorkspacePath();
+    const std::filesystem::path workspace_path = GetWorkspacePath();
     if (workspace_path.empty()) {
         return;
     }
 
-    if (ExistsFile(JoinPaths(workspace_path, kFusedFileName))) {
+    if (ExistsFile(workspace_path / kFusedFileName)) {
         thread_control_widget_->StartFunction(
                 "Advancing Front Meshing...", [this, workspace_path]() {
                     mvs::AdvancingFrontMeshing(
                             *options_->advancing_front_meshing, workspace_path,
-                            JoinPaths(workspace_path,
-                                      kAdvancingFrontMeshedFileName));
+                            workspace_path / kAdvancingFrontMeshedFileName);
                     if (options_->mesh_post_processing->enabled) {
                         mvs::PostProcessMeshFile(
-                                JoinPaths(workspace_path,
-                                          kAdvancingFrontMeshedFileName),
-                                JoinPaths(workspace_path,
-                                          kAdvancingFrontMeshedFileName),
+                                workspace_path / kAdvancingFrontMeshedFileName,
+                                workspace_path / kAdvancingFrontMeshedFileName,
                                 *options_->mesh_post_processing);
                     }
-                    out_mesh_path_ = JoinPaths(workspace_path,
-                                               kAdvancingFrontMeshedFileName);
+                    out_mesh_path_ =
+                            workspace_path / kAdvancingFrontMeshedFileName;
                     refresh_workspace_action_->trigger();
                     show_meshing_info_action_->trigger();
                 });
@@ -693,7 +684,7 @@ void DenseReconstructionWidget::AdvancingFrontMeshing() {
 }
 
 void DenseReconstructionWidget::Texturing() {
-    const std::string workspace_path = GetWorkspacePath();
+    const std::filesystem::path workspace_path = GetWorkspacePath();
     if (workspace_path.empty()) {
         return;
     }
@@ -706,12 +697,12 @@ void DenseReconstructionWidget::Texturing() {
 
     // Determine which mesh file to use based on mesh_source option
     if (!ExistsFile(options_->texturing->meshed_file_path)) {
-        const std::string poisson_path =
-                JoinPaths(workspace_path, kPoissonMeshedFileName);
-        const std::string delaunay_path =
-                JoinPaths(workspace_path, kDelaunayMeshedFileName);
-        const std::string advancing_front_path =
-                JoinPaths(workspace_path, kAdvancingFrontMeshedFileName);
+        const std::filesystem::path poisson_path =
+                workspace_path / kPoissonMeshedFileName;
+        const std::filesystem::path delaunay_path =
+                workspace_path / kDelaunayMeshedFileName;
+        const std::filesystem::path advancing_front_path =
+                workspace_path / kAdvancingFrontMeshedFileName;
         const bool poisson_exists = ExistsFile(poisson_path);
         const bool delaunay_exists = ExistsFile(delaunay_path);
         const bool advancing_front_exists = ExistsFile(advancing_front_path);
@@ -764,10 +755,10 @@ void DenseReconstructionWidget::Texturing() {
     // use default textured file path in local worksapce path
     if (options_->texturing->textured_file_path.empty()) {
         options_->texturing->textured_file_path =
-                JoinPaths(workspace_path, kTexturedMeshFileName);
+                workspace_path / kTexturedMeshFileName;
     } else {
         std::string parent_path = utility::filesystem::GetFileParentDirectory(
-                options_->texturing->textured_file_path);
+                options_->texturing->textured_file_path.string());
         CreateDirIfNotExists(parent_path);
         std::string name, ext;
         SplitFileExtension(options_->texturing->textured_file_path.string(),
@@ -775,7 +766,7 @@ void DenseReconstructionWidget::Texturing() {
         // only support obj textured mesh file extention
         if (ext != ".obj" && ext != ".OBJ") {
             options_->texturing->textured_file_path =
-                    JoinPaths(parent_path, kTexturedMeshFileName);
+                    std::filesystem::path(parent_path) / kTexturedMeshFileName;
         }
     }
 
@@ -799,7 +790,7 @@ void DenseReconstructionWidget::Texturing() {
 }
 
 void DenseReconstructionWidget::SelectWorkspacePath() {
-    std::string workspace_path;
+    std::filesystem::path workspace_path;
     if (workspace_path_text_->text().isEmpty()) {
         workspace_path = GetParentDir(*options_->project_path);
     } else {
@@ -808,19 +799,20 @@ void DenseReconstructionWidget::SelectWorkspacePath() {
 
     workspace_path_text_->setText(QFileDialog::getExistingDirectory(
             this, tr("Select workspace path..."),
-            QString::fromStdString(workspace_path), QFileDialog::ShowDirsOnly));
+            QString::fromStdString(workspace_path.string()),
+            QFileDialog::ShowDirsOnly));
 
     RefreshWorkspace();
 }
 
-std::string DenseReconstructionWidget::GetWorkspacePath() {
-    const std::string workspace_path =
+std::filesystem::path DenseReconstructionWidget::GetWorkspacePath() {
+    const std::filesystem::path workspace_path =
             workspace_path_text_->text().toUtf8().constData();
     if (ExistsDir(workspace_path)) {
         return workspace_path;
     } else {
         QMessageBox::critical(this, "", tr("Invalid workspace path"));
-        return "";
+        return {};
     }
 }
 
@@ -828,7 +820,7 @@ void DenseReconstructionWidget::RefreshWorkspace() {
     table_widget_->clearContents();
     table_widget_->setRowCount(0);
 
-    const std::string workspace_path =
+    const std::filesystem::path workspace_path =
             workspace_path_text_->text().toUtf8().constData();
     if (ExistsDir(workspace_path)) {
         undistortion_button_->setEnabled(true);
@@ -843,16 +835,15 @@ void DenseReconstructionWidget::RefreshWorkspace() {
         return;
     }
 
-    images_path_ = JoinPaths(workspace_path, "images");
-    depth_maps_path_ = JoinPaths(workspace_path, "stereo/depth_maps");
-    normal_maps_path_ = JoinPaths(workspace_path, "stereo/normal_maps");
+    images_path_ = workspace_path / "images";
+    depth_maps_path_ = workspace_path / "stereo/depth_maps";
+    normal_maps_path_ = workspace_path / "stereo/normal_maps";
     const std::string config_path =
-            JoinPaths(workspace_path, "stereo/patch-match.cfg");
+            (workspace_path / "stereo/patch-match.cfg").string();
 
     if (ExistsDir(images_path_) && ExistsDir(depth_maps_path_) &&
-        ExistsDir(normal_maps_path_) &&
-        ExistsDir(JoinPaths(workspace_path, "sparse")) &&
-        ExistsDir(JoinPaths(workspace_path, "stereo/consistency_graphs")) &&
+        ExistsDir(normal_maps_path_) && ExistsDir(workspace_path / "sparse") &&
+        ExistsDir(workspace_path / "stereo/consistency_graphs") &&
         ExistsFile(config_path)) {
         stereo_button_->setEnabled(true);
     } else {
@@ -871,7 +862,7 @@ void DenseReconstructionWidget::RefreshWorkspace() {
     for (size_t i = 0; i < images.size(); ++i) {
         const std::string image_name = images[i].first;
         const std::string src_images = images[i].second;
-        const std::string image_path = JoinPaths(images_path_, image_name);
+        const std::filesystem::path image_path = images_path_ / image_name;
 
         QTableWidgetItem* image_name_item =
                 new QTableWidgetItem(QString::fromStdString(image_name));
@@ -900,17 +891,16 @@ void DenseReconstructionWidget::RefreshWorkspace() {
 
     fusion_button_->setEnabled(photometric_done_ || geometric_done_);
     poisson_meshing_button_->setEnabled(
-            ExistsFile(JoinPaths(workspace_path, kFusedFileName)));
+            ExistsFile(workspace_path / kFusedFileName));
     delaunay_meshing_button_->setEnabled(
-            ExistsFile(JoinPaths(workspace_path, kFusedFileName)));
+            ExistsFile(workspace_path / kFusedFileName));
     advancing_front_meshing_button_->setEnabled(
-            ExistsFile(JoinPaths(workspace_path, kFusedFileName)));
+            ExistsFile(workspace_path / kFusedFileName));
 
     texturing_button_->setEnabled(
-            ExistsFile(JoinPaths(workspace_path, kPoissonMeshedFileName)) ||
-            ExistsFile(JoinPaths(workspace_path, kDelaunayMeshedFileName)) ||
-            ExistsFile(
-                    JoinPaths(workspace_path, kAdvancingFrontMeshedFileName)));
+            ExistsFile(workspace_path / kPoissonMeshedFileName) ||
+            ExistsFile(workspace_path / kDelaunayMeshedFileName) ||
+            ExistsFile(workspace_path / kAdvancingFrontMeshedFileName));
 }
 
 void DenseReconstructionWidget::WriteFusedPoints() {
@@ -945,7 +935,7 @@ void DenseReconstructionWidget::WriteFusedPoints() {
         }
     }
 
-    const std::string workspace_path =
+    const std::filesystem::path workspace_path =
             workspace_path_text_->text().toUtf8().constData();
     if (workspace_path.empty()) {
         fused_points_ = {};
@@ -953,18 +943,19 @@ void DenseReconstructionWidget::WriteFusedPoints() {
         return;
     }
 
-    thread_control_widget_->StartFunction(
-            "Exporting...", [this, workspace_path]() {
-                const std::string output_path =
-                        JoinPaths(workspace_path, kFusedFileName);
-                WriteBinaryPlyPoints(output_path, fused_points_);
-                mvs::WritePointsVisibility(output_path + ".vis",
-                                           fused_points_visibility_);
-                fused_points_ = {};
-                fused_points_visibility_ = {};
-                poisson_meshing_button_->setEnabled(true);
-                delaunay_meshing_button_->setEnabled(true);
-            });
+    thread_control_widget_->StartFunction("Exporting...", [this,
+                                                           workspace_path]() {
+        std::filesystem::path output_path = workspace_path / kFusedFileName;
+        WriteBinaryPlyPoints(output_path, fused_points_);
+        // Append the .vis suffix to the file name (character-level
+        // concat, not operator/ which would add a path component).
+        output_path += ".vis";
+        mvs::WritePointsVisibility(output_path, fused_points_visibility_);
+        fused_points_ = {};
+        fused_points_visibility_ = {};
+        poisson_meshing_button_->setEnabled(true);
+        delaunay_meshing_button_->setEnabled(true);
+    });
 }
 
 void DenseReconstructionWidget::ShowMeshingInfo() {
@@ -982,7 +973,8 @@ void DenseReconstructionWidget::ShowMeshingInfo() {
             QMessageBox::Yes | QMessageBox::No);
     if (reply == QMessageBox::Yes) {
         if (main_window_->app_) {
-            main_window_->app_->addToDBAuto(QStringList(out_mesh_path_.c_str()),
+            main_window_->app_->addToDBAuto(QStringList{QString::fromStdString(
+                                                    out_mesh_path_.string())},
                                             false);
         }
     }
@@ -999,12 +991,12 @@ QWidget* DenseReconstructionWidget::GenerateTableButtonWidget(
         geometric_done_ = true;
     }
 
-    const std::string depth_map_path = JoinPaths(
-            depth_maps_path_,
-            StringPrintf("%s.%s.bin", image_name.c_str(), type.c_str()));
-    const std::string normal_map_path = JoinPaths(
-            normal_maps_path_,
-            StringPrintf("%s.%s.bin", image_name.c_str(), type.c_str()));
+    const std::filesystem::path depth_map_path =
+            depth_maps_path_ /
+            StringPrintf("%s.%s.bin", image_name.c_str(), type.c_str());
+    const std::filesystem::path normal_map_path =
+            normal_maps_path_ /
+            StringPrintf("%s.%s.bin", image_name.c_str(), type.c_str());
 
     QWidget* button_widget = new QWidget();
     QGridLayout* button_layout = new QGridLayout(button_widget);

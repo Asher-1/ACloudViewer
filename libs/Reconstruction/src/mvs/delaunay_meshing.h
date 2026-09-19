@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <filesystem>
 #include <string>
 
 namespace colmap {
@@ -61,11 +62,11 @@ struct DelaunayMeshingOptions {
 // COLMAP workspace folder, which has been fully processed by the stereo and
 // fusion pipeline.
 void SparseDelaunayMeshing(const DelaunayMeshingOptions& options,
-                           const std::string& input_path,
-                           const std::string& output_path);
+                           const std::filesystem::path& input_path,
+                           const std::filesystem::path& output_path);
 void DenseDelaunayMeshing(const DelaunayMeshingOptions& options,
-                          const std::string& input_path,
-                          const std::string& output_path);
+                          const std::filesystem::path& input_path,
+                          const std::filesystem::path& output_path);
 
 #endif  // CGAL_ENABLED
 

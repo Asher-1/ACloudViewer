@@ -931,13 +931,13 @@ PlyMesh DelaunayMeshing(const DelaunayMeshingOptions& options,
 }
 
 void SparseDelaunayMeshing(const DelaunayMeshingOptions& options,
-                           const std::string& input_path,
-                           const std::string& output_path) {
+                           const std::filesystem::path& input_path,
+                           const std::filesystem::path& output_path) {
   Timer timer;
   timer.Start();
 
   DelaunayMeshingInput input_data;
-  input_data.ReadSparseReconstruction(input_path);
+  input_data.ReadSparseReconstruction(input_path.string());
 
   const auto mesh = DelaunayMeshing(options, input_data);
 
@@ -948,13 +948,13 @@ void SparseDelaunayMeshing(const DelaunayMeshingOptions& options,
 }
 
 void DenseDelaunayMeshing(const DelaunayMeshingOptions& options,
-                          const std::string& input_path,
-                          const std::string& output_path) {
+                          const std::filesystem::path& input_path,
+                          const std::filesystem::path& output_path) {
   Timer timer;
   timer.Start();
 
   DelaunayMeshingInput input_data;
-  input_data.ReadDenseReconstruction(input_path);
+  input_data.ReadDenseReconstruction(input_path.string());
 
   const auto mesh = DelaunayMeshing(options, input_data);
 

@@ -57,6 +57,17 @@ struct SessionOptions {
     bool keep_all_ops = false;   // debug: keep every op output alive
     bool profile_ops = false;    // debug: per-op wall-time table
     bool profile_gaps = false;   // debug: per-stage timing on stderr
+    // Object-feature export (official model="auto" ReID path): keep the
+    // detect head's input feature levels [P3, P4, P5] as F32 graph outputs
+    // for the session_read_obj_feats readback. Toggling rebuilds the graph
+    // plan on the next canvas ensure.
+    bool export_obj_feats = false;
+    // Embedding export (classify graphs): keep the pooled feature feeding
+    // the final linear (the ReID embedding of the official embed extraction)
+    // as an F32 graph output for session_read_embed. Only meaningful for
+    // classify-task sessions; the node is tiny, so reid contexts simply
+    // enable it at load.
+    bool export_embed = false;
     // YOLO-World/YOLOE open-vocabulary class count. 0 = use the GGUF yolo.nc
     // default (plus the vocabulary embedded in the GGUF when it ships one).
     // The class count fixes the text-input shape and every nc-dependent

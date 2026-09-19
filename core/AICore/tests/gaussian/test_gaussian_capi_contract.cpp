@@ -44,6 +44,9 @@ int main() {
                  0);
     AICORE_CHECK(aicore_gaussian_run_paths(nullptr, nullptr, 0, &out, &n_out) !=
                  0);
+    /* F-01 batch C: image_view entry is NULL-safe. */
+    AICORE_CHECK(aicore_gaussian_run_image_views(nullptr, nullptr, 0, &out,
+                                                 &n_out) != 0);
     AICORE_CHECK(aicore_gaussian_estimate_poses(nullptr, nullptr, 0, 0.f,
                                                 nullptr, nullptr) != 0);
     AICORE_CHECK(aicore_gaussian_export_ply(nullptr, nullptr, 0, 0.f,

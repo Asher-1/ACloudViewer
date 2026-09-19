@@ -274,9 +274,17 @@ def parse_catalog_output(output: str, selected: set[str],
             continue
         asset = ModelAsset(task, relative, url, digest, size)
         previous = assets.get(relative)
-        if previous and previous != asset:
-            raise ValueError(f"conflicting model catalog rows for {relative}")
-        assets[relative] = asset
+        if previous is not None:
+            # One physical asset may be consumed by several tasks (reid
+            # embeds the shared yolo classify GGUFs and owns no model files
+            # of its own). The first task row keeps cache/regression
+            # ownership, but a conflicting url/digest/size declaration for
+            # the same file is still catalog drift and must fail here.
+            if (previous.url, previous.sha256, previous.size_bytes) != (
+                    asset.url, asset.sha256, asset.size_bytes):
+                raise ValueError(
+                    f"conflicting model catalog rows for {relative}")
+        assets.setdefault(relative, asset)
         if task in selected:
             tasks_with_assets.add(task)
     missing_tasks = selected - tasks_with_assets

@@ -28,6 +28,7 @@
 #include "common/debug_dump.hpp"
 #include "common/ggml_backend_registry.hpp"
 #include "common/ggml_backend_utils.hpp"
+#include "common/gguf_file_io.hpp"
 #include "common/model_cache.hpp"
 #include "common/runtime_cleanup.hpp"
 #include "gguf.h"
@@ -82,6 +83,21 @@ struct aicore_yolo_ctx {
     };
     DepthStats depth;
     std::vector<yolo::Detection> last_detections;
+
+    // Loose-NMS recovery (TrackTrack track mode): runtime switch + rows of
+    // the most recent detect / obb call. See
+    // aicore_yolo_set_track_recovery / aicore_yolo_recovery_*.
+    bool track_recovery = false;
+    std::vector<yolo::Detection> last_recovery_dets;
+
+    // Object-feature export (official model="auto" ReID path): runtime
+    // switch + per-detection features of the most recent box-anchored
+    // call. See aicore_yolo_set_detector_features /
+    // aicore_yolo_features_view.
+    bool detector_features = false;
+    std::vector<float> last_obj_feats;  // [count, dim] row-major
+    int32_t obj_feat_count = 0;
+    int32_t obj_feat_dim = 0;
 };
 
 struct aicore_yolo_options {
@@ -176,10 +192,9 @@ void clear_text_embed_cache() {
 // "mobileclip2b" = MobileCLIP2-B for YOLOE). Older bridge files without the key
 // default to "clipb32".
 std::string text_gguf_target_space(const std::string& path) {
-    gguf_init_params ip{};
-    ip.no_alloc = true;
-    ip.ctx = nullptr;
-    gguf_context* g = gguf_init_from_file(path.c_str(), ip);
+    // ctx=nullptr: header/metadata read only, no tensor mapping.
+    gguf_context* g = ggml_common::open_gguf_file(path, /*no_alloc=*/true,
+                                                  nullptr, "yolo");
     if (!g) return "";
     const int arch = gguf_find_key(g, "mclip.arch");
     if (arch < 0) {
@@ -365,7 +380,7 @@ const std::vector<std::string>& effective_class_names(
 
 }  // namespace
 
-AICORE_CAPI int aicore_yolo_abi_version(void) { return 4; }
+AICORE_CAPI int aicore_yolo_abi_version(void) { return 6; }
 
 AICORE_CAPI aicore_yolo_options* aicore_yolo_options_new(void) {
     return new (std::nothrow) aicore_yolo_options();
@@ -490,10 +505,9 @@ aicore_yolo_options_get_visual_prompt_count(const aicore_yolo_options* opts) {
 
 AICORE_CAPI int aicore_yolo_gguf_has_savpe(const char* gguf_path) {
     if (gguf_path == nullptr) return 0;
-    gguf_init_params ip{};  // header only, no tensor mapping
-    ip.no_alloc = true;
-    ip.ctx = nullptr;
-    gguf_context* g = gguf_init_from_file(gguf_path, ip);
+    // ctx=nullptr: header/metadata read only, no tensor mapping.
+    gguf_context* g = ggml_common::open_gguf_file(gguf_path, /*no_alloc=*/true,
+                                                  nullptr, "yolo");
     if (!g) return 0;
     const int64_t id = gguf_find_key(g, "yolo.savpe");
     const int has = id >= 0 ? (gguf_get_val_u32(g, id) != 0) : 0;
@@ -717,6 +731,102 @@ bool image_from_view(const aicore_image_view* view, yolo::Image* out) {
 }
 
 // Shared detect core: letterbox, inference, postprocess, JSON envelope.
+// Loose-NMS recovery rows for the TrackTrack tracker, mirroring the
+// upstream track mode (ultralytics track_tracker.compute_dets_del + the
+// C++ CLI's want_recovered block): the SAME raw output runs a second
+// postprocess with a much looser NMS IoU (0.95); rows whose best IoU
+// against the tight rows is >= 0.97 are duplicates, everything below is a
+// recovery candidate. Box-only (segment/pose never feed recovery); the
+// obb head's loose pass goes through the detect postprocess (its extra
+// angle channel is simply never read) with an EMPTY tight baseline, so
+// every loose row passes — exactly like the upstream CLI. End2end heads
+// produce an empty set by construction (no NMS to loosen); the recovery
+// cost is one extra postprocess and only when the caller enabled it.
+void compute_track_recovery(aicore_yolo_ctx* ctx,
+                            const std::vector<float>& raw,
+                            int no,
+                            int na,
+                            const yolo::LetterboxInfo& info,
+                            const yolo::PostprocConfig& cfg,
+                            const std::vector<yolo::Detection>& tight) {
+    ctx->last_recovery_dets.clear();
+    if (!ctx->track_recovery || ctx->engine == nullptr) return;
+    const yolo::Session* s = ctx->engine;
+    const std::string& task = s->model.meta.task;
+    if (task != "detect" && task != "obb") return;
+    if (s->model.meta.end2end) return;
+
+    constexpr float kLooseNmsIou = 0.95f;    // track_tracker._LOOSE_NMS_IOU
+    constexpr float kLooseDedupIou = 0.97f;  // _LOOSE_NMS_DEDUP_IOU
+    yolo::PostprocConfig loose = cfg;
+    loose.iou_thres = kLooseNmsIou;
+    std::vector<yolo::Detection> loose_dets =
+            yolo::postprocess(raw, no, na, s->model.meta, s->anchors.data(),
+                              s->anchor_strides.data(), loose);
+    // The upstream loose pass unscales WITHOUT the boundary clip.
+    yolo::unscale_boxes(loose_dets, info, 0, 0);
+    for (const auto& ld : loose_dets) {
+        float best = 0.0f;
+        for (const auto& td : tight) {
+            const float xx1 = std::max(ld.x1, td.x1);
+            const float yy1 = std::max(ld.y1, td.y1);
+            const float xx2 = std::min(ld.x2, td.x2);
+            const float yy2 = std::min(ld.y2, td.y2);
+            const float inter =
+                    std::max(0.0f, xx2 - xx1) * std::max(0.0f, yy2 - yy1);
+            const float uni = (ld.x2 - ld.x1) * (ld.y2 - ld.y1) +
+                              (td.x2 - td.x1) * (td.y2 - td.y1) - inter;
+            if (uni > 0) best = std::max(best, inter / uni);
+        }
+        if (best < kLooseDedupIou) {
+            ctx->last_recovery_dets.push_back(ld);
+        }
+    }
+}
+
+// Official model="auto" ReID feature source (models/yolo/detect/predict.py
+// get_obj_feats + BYTETracker._input_for): the pooled per-anchor features
+// of the head input levels are gathered by each kept detection's anchor
+// index into per-detection rows. End2end heads have no input feature maps
+// (the official auto path swaps in a separate ReID encoder there), so the
+// view degrades to count=0 and the tracker falls back to motion-only
+// association — mirroring the upstream "feats missing" behavior.
+inline int obj_feat_anchor(const yolo::Detection& d) { return d.anchor; }
+inline int obj_feat_anchor(const yolo::PoseDetection& p) {
+    return p.det.anchor;
+}
+inline int obj_feat_anchor(const yolo::OBBDetection& b) { return b.anchor; }
+
+template <typename Rows>
+void compute_obj_feats(aicore_yolo_ctx* ctx, const Rows& rows) {
+    ctx->last_obj_feats.clear();
+    ctx->obj_feat_count = 0;
+    ctx->obj_feat_dim = 0;
+    if (!ctx->detector_features || ctx->engine == nullptr) return;
+    yolo::Session* s = ctx->engine;
+    const std::string& task = s->model.meta.task;
+    const bool box_task = task == "detect" || task == "segment" ||
+                          task == "pose" || task == "obb";
+    if (!box_task || s->model.meta.end2end) return;
+    std::vector<float> pooled;
+    int anchor_count = 0, dim = 0;
+    if (!yolo::session_read_obj_feats(s, pooled, anchor_count, dim) ||
+        dim <= 0) {
+        return;
+    }
+    ctx->last_obj_feats.resize(rows.size() * (size_t)dim);
+    int kept = 0;
+    for (const auto& row : rows) {
+        const int anchor = obj_feat_anchor(row);
+        if (anchor < 0 || anchor >= anchor_count) continue;
+        std::memcpy(&ctx->last_obj_feats[(size_t)kept * dim],
+                    &pooled[(size_t)anchor * dim], sizeof(float) * (size_t)dim);
+        ++kept;
+    }
+    ctx->obj_feat_count = kept;
+    ctx->obj_feat_dim = dim;
+}
+
 // Everything may allocate; an uncaught bad_alloc would cross the extern "C"
 // boundary and the Qt event loop (queued worker slot) and terminate the
 // process with SIGABRT — hence the catch fencing.
@@ -778,6 +888,8 @@ char* run_detect(aicore_yolo_ctx* ctx,
                                   s->anchor_strides.data(), cfg);
         yolo::unscale_boxes(dets, info, width, height);
         ctx->last_detections = dets;
+        compute_track_recovery(ctx, raw, no, na, info, cfg, dets);
+        compute_obj_feats(ctx, dets);
         const double postprocess_ms = yolo::ms_since(t0);
 
         if (!serialize_json) {
@@ -978,6 +1090,7 @@ aicore_yolo_pose_result* run_pose(aicore_yolo_ctx* ctx,
                 raw, no, na, s->model.meta, s->anchors.data(),
                 s->anchor_strides.data(), cfg);
         yolo::unscale_pose(poses, info);
+        compute_obj_feats(ctx, poses);
         const double postprocess_ms = yolo::ms_since(t0);
 
         auto* res = new (std::nothrow) aicore_yolo_pose_result();
@@ -1044,6 +1157,12 @@ aicore_yolo_obb_result* run_obb(aicore_yolo_ctx* ctx,
                 raw, no, na, s->model.meta, s->anchors.data(),
                 s->anchor_strides.data(), cfg);
         yolo::unscale_obb(boxes, info);
+        // TrackTrack recovery with the upstream semantics: the obb loose
+        // pass uses the detect postprocess and an EMPTY tight baseline
+        // (the tight rows are rotated boxes with no aabb IoU baseline in
+        // the upstream CLI), so every loose row passes the dedup filter.
+        compute_track_recovery(ctx, raw, no, na, info, cfg, {});
+        compute_obj_feats(ctx, boxes);
         const double postprocess_ms = yolo::ms_since(t0);
 
         auto* res = new (std::nothrow) aicore_yolo_obb_result();
@@ -1316,6 +1435,27 @@ AICORE_CAPI const char* aicore_yolo_detection_class_name(
     return names[static_cast<size_t>(cid)].c_str();
 }
 
+AICORE_CAPI int aicore_yolo_recovery_count(const aicore_yolo_ctx* ctx) {
+    return ctx != nullptr ? static_cast<int>(ctx->last_recovery_dets.size())
+                          : -1;
+}
+
+AICORE_CAPI aicore_yolo_detection
+aicore_yolo_recovery_at(const aicore_yolo_ctx* ctx, int index) {
+    aicore_yolo_detection out = {};
+    if (ctx == nullptr || index < 0 ||
+        static_cast<size_t>(index) >= ctx->last_recovery_dets.size())
+        return out;
+    const auto& d = ctx->last_recovery_dets[static_cast<size_t>(index)];
+    out.x1 = d.x1;
+    out.y1 = d.y1;
+    out.x2 = d.x2;
+    out.y2 = d.y2;
+    out.score = d.score;
+    out.class_id = d.class_id;
+    return out;
+}
+
 /** Runtime threshold update without rebuilding the context (validated: out
  *  of range values keep the previous value). */
 AICORE_CAPI void aicore_yolo_set_detect_thresholds(aicore_yolo_ctx* ctx,
@@ -1326,6 +1466,45 @@ AICORE_CAPI void aicore_yolo_set_detect_thresholds(aicore_yolo_ctx* ctx,
     if (conf_thres > 0.0f && conf_thres < 1.0f) ctx->conf_thres = conf_thres;
     if (iou_thres > 0.0f && iou_thres < 1.0f) ctx->iou_thres = iou_thres;
     ctx->top_k = top_k;
+}
+
+AICORE_CAPI void aicore_yolo_set_track_recovery(aicore_yolo_ctx* ctx,
+                                                int enabled) {
+    if (ctx == nullptr) return;
+    ctx->track_recovery = enabled != 0;
+    if (!ctx->track_recovery) ctx->last_recovery_dets.clear();
+}
+
+AICORE_CAPI void aicore_yolo_set_detector_features(aicore_yolo_ctx* ctx,
+                                                   int enabled) {
+    if (ctx == nullptr || ctx->engine == nullptr) return;
+    const bool want = enabled != 0;
+    if (ctx->detector_features == want) return;
+    ctx->detector_features = want;
+    if (!yolo::session_set_export_features(ctx->engine, want)) {
+        ctx->last_error =
+                "failed to reconfigure the graph for object feature export";
+        return;
+    }
+    // Stale rows from the previous configuration are no longer meaningful.
+    ctx->last_obj_feats.clear();
+    ctx->obj_feat_count = 0;
+    ctx->obj_feat_dim = 0;
+}
+
+AICORE_CAPI void aicore_yolo_features_view(const aicore_yolo_ctx* ctx,
+                                           const float** out_data,
+                                           int32_t* out_count,
+                                           int32_t* out_dim) {
+    if (out_data != nullptr) *out_data = nullptr;
+    if (out_count != nullptr) *out_count = 0;
+    if (out_dim != nullptr) *out_dim = 0;
+    if (ctx == nullptr) return;
+    if (out_data != nullptr && !ctx->last_obj_feats.empty()) {
+        *out_data = ctx->last_obj_feats.data();
+    }
+    if (out_count != nullptr) *out_count = ctx->obj_feat_count;
+    if (out_dim != nullptr) *out_dim = ctx->obj_feat_dim;
 }
 
 /** Drop the host-side copies of the model weights (halves the host memory
@@ -1524,6 +1703,7 @@ static aicore_yolo_segment_result* run_segment(aicore_yolo_ctx* ctx,
         // window origins are lost across the C API). Full-size source masks
         // make the typed result directly drawable at 1:1 with the boxes.
         yolo::unscale_masks(masks, info, width, height);
+        compute_obj_feats(ctx, dets);
 
         auto* res = new (std::nothrow) aicore_yolo_segment_result();
         if (!res) {

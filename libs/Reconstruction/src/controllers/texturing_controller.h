@@ -51,7 +51,7 @@ struct TexturingOptions {
 class TexturingReconstruction : public Thread {
 public:
     TexturingReconstruction(const TexturingOptions& options,
-                            const std::string& output_path);
+                            const std::filesystem::path& output_path);
 
     bool IsSuccess() const { return success_.load(); }
 
@@ -59,7 +59,7 @@ private:
     void Run();
 
     TexturingOptions options_;
-    const std::string output_path_;
+    const std::filesystem::path output_path_;
     std::atomic<bool> success_{false};
 };
 

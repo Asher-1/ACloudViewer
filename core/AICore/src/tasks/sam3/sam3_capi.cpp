@@ -27,6 +27,7 @@
 #include <vector>
 
 #include "aicore/backend_capi.h"
+#include "aicore/image_view.h"
 #include "aicore/runtime_capi.h"
 #include "common/aicore_log.hpp"
 #include "common/capi_utils.hpp"
@@ -108,7 +109,7 @@ struct aicore_sam3_options {
     int fill_hole_area = 16;
 };
 
-AICORE_CAPI int aicore_sam3_abi_version(void) { return 1; }
+AICORE_CAPI int aicore_sam3_abi_version(void) { return 2; }
 
 AICORE_CAPI aicore_sam3_options* aicore_sam3_options_new(void) {
     return new (std::nothrow) aicore_sam3_options();
@@ -284,6 +285,19 @@ AICORE_CAPI void aicore_sam3_free(aicore_sam3_ctx* ctx) {
 
 AICORE_CAPI int aicore_sam3_is_ready(const aicore_sam3_ctx* ctx) {
     return ctx && ctx->model ? 1 : 0;
+}
+
+AICORE_CAPI int aicore_sam3_encode_image_view(aicore_sam3_ctx* ctx,
+                                              const aicore_image_view* image,
+                                              int pvs_only) {
+    if (ctx == nullptr || image == nullptr) return -1;
+    if (image->format != AICORE_IMAGE_RGB8) {
+        ctx->last_error = "sam3 image_view must be AICORE_IMAGE_RGB8";
+        return -1;
+    }
+    return aicore_sam3_encode_rgb(ctx, image->data, image->width, image->height,
+                                  static_cast<size_t>(image->row_stride_bytes),
+                                  pvs_only);
 }
 
 AICORE_CAPI const char* aicore_sam3_last_error(const aicore_sam3_ctx* ctx) {

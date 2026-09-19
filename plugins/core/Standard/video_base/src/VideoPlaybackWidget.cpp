@@ -209,6 +209,9 @@ void VideoPlaybackWidget::setupUi() {
     m_mainLayout->setSpacing(6);
 
     m_previewLabel = new ecvClickableImageLabel(this);
+    // Route preview-label mouse events through the base event filter so the
+    // onPreviewMouse* subclass hooks can observe/consume them (ROI drag, ...).
+    m_previewLabel->installEventFilter(this);
     m_previewLabel->setMinimumSize(320, 180);
     m_previewLabel->setSizePolicy(QSizePolicy::Expanding,
                                   QSizePolicy::Expanding);
@@ -1342,6 +1345,49 @@ void VideoPlaybackWidget::showEvent(QShowEvent* event) {
 #endif
 }
 
+QRectF VideoPlaybackWidget::previewContentRect() const {
+    if (!m_previewLabel) return QRectF();
+        // Qt5 returns a pointer, Qt6 a value; both are the label's current
+        // pixmap (the letterboxed display image set by the frame pipeline).
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    const QPixmap pm = m_previewLabel->pixmap();
+#else
+    const QPixmap* pmPtr = m_previewLabel->pixmap();
+    const QPixmap pm = pmPtr ? *pmPtr : QPixmap();
+#endif
+    if (pm.isNull()) return QRectF();
+    const QSizeF labelSize(m_previewLabel->width(), m_previewLabel->height());
+    const QSizeF pixmapSize(pm.width(), pm.height());
+    // QLabel with Qt::AlignCenter: the pixmap is centered inside the label,
+    // so the content rect is the letterbox-aware displayed image area.
+    const QPointF topLeft((labelSize.width() - pixmapSize.width()) / 2.0,
+                          (labelSize.height() - pixmapSize.height()) / 2.0);
+    return QRectF(topLeft, pixmapSize);
+}
+
+QPointF VideoPlaybackWidget::mapPreviewToSource(QPointF labelPt) {
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    int sourceWidth = 0;
+    int sourceHeight = 0;
+    {
+        QMutexLocker lock(&m_frameMutex);
+        sourceWidth = m_latestFrame.cols;
+        sourceHeight = m_latestFrame.rows;
+    }
+    const QRectF content = previewContentRect();
+    if (sourceWidth <= 0 || sourceHeight <= 0 || content.isEmpty()) {
+        return QPointF(-1, -1);
+    }
+    const qreal scaleX = static_cast<qreal>(sourceWidth) / content.width();
+    const qreal scaleY = static_cast<qreal>(sourceHeight) / content.height();
+    return QPointF((labelPt.x() - content.left()) * scaleX,
+                   (labelPt.y() - content.top()) * scaleY);
+#else
+    Q_UNUSED(labelPt);
+    return QPointF(-1, -1);
+#endif
+}
+
 bool VideoPlaybackWidget::eventFilter(QObject* obj, QEvent* event) {
 #ifdef HAS_OPENCV_FACE_CAPTURE
     if (obj == m_videoSeekSlider && m_totalVideoFrames > 0) {
@@ -1432,5 +1478,29 @@ bool VideoPlaybackWidget::eventFilter(QObject* obj, QEvent* event) {
         }
     }
 #endif
+    // Preview-label mouse hooks: forward press/move/release to the subclass
+    // before the label's own click-to-preview handler runs; a true return
+    // consumes the event entirely.
+    if (obj == m_previewLabel) {
+        switch (event->type()) {
+            case QEvent::MouseButtonPress:
+                if (onPreviewMousePress(static_cast<QMouseEvent*>(event))) {
+                    return true;
+                }
+                break;
+            case QEvent::MouseMove:
+                if (onPreviewMouseMove(static_cast<QMouseEvent*>(event))) {
+                    return true;
+                }
+                break;
+            case QEvent::MouseButtonRelease:
+                if (onPreviewMouseRelease(static_cast<QMouseEvent*>(event))) {
+                    return true;
+                }
+                break;
+            default:
+                break;
+        }
+    }
     return QWidget::eventFilter(obj, event);
 }

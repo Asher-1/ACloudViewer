@@ -62,7 +62,7 @@ void CreateDirIfNotExists(const std::filesystem::path& path,
 std::string GetPathBaseName(const std::filesystem::path& path);
 
 // Get the path of the parent directory for the given path.
-std::string GetParentDir(const std::filesystem::path& path);
+std::filesystem::path GetParentDir(const std::filesystem::path& path);
 
 // Get the relative path between from and to. Both the from and to paths must
 // exist.

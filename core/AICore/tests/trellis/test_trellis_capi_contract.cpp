@@ -124,6 +124,10 @@ int main() {
                          nullptr, kPng1x1, (int)sizeof(kPng1x1), nullptr,
                          test_progress, nullptr, test_preview, nullptr, err,
                          sizeof(err)) == nullptr);
+    /* F-01 batch B: image_view entry — null view / null context rejected. */
+    AICORE_CHECK(aicore_trellis_generate_image_view(nullptr, nullptr, nullptr,
+                                                    nullptr, nullptr, err,
+                                                    sizeof(err)) == nullptr);
 
     // Standalone texturing / export-prep contracts: guards must not crash.
     AICORE_CHECK(aicore_trellis_texture_mesh(

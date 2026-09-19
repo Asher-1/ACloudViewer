@@ -161,6 +161,8 @@ private slots:
 
 protected:
     void closeEvent(QCloseEvent* event) override;
+    /** Esc intercept: confirm before closing when a task is running. */
+    void keyPressEvent(QKeyEvent* event) override;
     void showEvent(QShowEvent* event) override;
 
 private:
@@ -257,6 +259,7 @@ private:
     ecvModelDownloader* m_downloader = nullptr;
     QStringList m_pendingDownloads;
     bool m_downloadInProgress = false;
+    bool m_taskRunning = false;
     bool m_firstShow = true;  // lock the dialog size on first show (see §13.4)
     PendingAction m_pendingActionAfterDownload = PendingAction::None;
 };

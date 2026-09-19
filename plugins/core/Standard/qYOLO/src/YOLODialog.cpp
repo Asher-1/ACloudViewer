@@ -20,6 +20,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QKeyEvent>
 #include <QLabel>
 #include <QListWidgetItem>
 #include <QMessageBox>
@@ -1659,6 +1660,7 @@ void YOLODialog::enableResultButtons(bool /*hasResult*/) {
 }
 
 void YOLODialog::setRunning(bool running) {
+    m_taskRunning = running;
     for (YOLOTaskPanel& panel : m_panels) {
         panel.runBtn->setEnabled(!running);
         panel.cancelBtn->setEnabled(running);
@@ -2090,17 +2092,40 @@ void YOLODialog::setTestDataControlsEnabled(bool enabled) {
 }
 
 void YOLODialog::closeEvent(QCloseEvent* event) {
-    // The dialog is reused (not deleted on close): stop everything that
-    // would keep consuming resources while hidden. The live stream decodes
-    // and infers per frame — leaving it running behind a hidden dialog
-    // holds device VRAM and CPU until the app exits. An in-progress model
-    // download keeps a socket + .part file alive; qGKD cancels it in the
-    // same spot. A running still-image task is left to finish: it is
-    // bounded and its results land in the DB (onTaskFinished frees the
-    // context).
+    // Uniform plugin-close semantics: if a task, download, or live
+    // stream is active, ask for confirmation before closing.
+    if (m_taskRunning || m_downloadInProgress || m_testDataDownloadInProgress ||
+        (m_liveWidget && m_liveWidget->isActive())) {
+        if (QMessageBox::question(this, tr("Task running"),
+                                  tr("A YOLO task is running. Close anyway?"),
+                                  QMessageBox::Yes | QMessageBox::No,
+                                  QMessageBox::No) != QMessageBox::Yes) {
+            event->ignore();
+            return;
+        }
+    }
+    emit cancelRequested();
     if (m_downloadInProgress && m_downloader) m_downloader->cancel();
-    if (m_liveWidget) m_liveWidget->stopStream();
+    if (m_liveWidget) {
+        m_liveWidget->stopStream();
+        m_liveWidget->releaseGpuResources();
+    }
     saveSettings();
     m_liveWidget->saveSettings();
     event->accept();
+}
+
+void YOLODialog::keyPressEvent(QKeyEvent* event) {
+    if (event->key() == Qt::Key_Escape &&
+        (m_taskRunning || m_downloadInProgress ||
+         m_testDataDownloadInProgress ||
+         (m_liveWidget && m_liveWidget->isActive()))) {
+        if (QMessageBox::question(this, tr("Task running"),
+                                  tr("A YOLO task is running. Close anyway?"),
+                                  QMessageBox::Yes | QMessageBox::No,
+                                  QMessageBox::No) != QMessageBox::Yes) {
+            return;
+        }
+    }
+    QDialog::keyPressEvent(event);
 }

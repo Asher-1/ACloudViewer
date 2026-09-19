@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "common/ggml_backend_utils.hpp"
+#include "common/gguf_file_io.hpp"
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
 #include "ggml.h"
@@ -157,12 +158,11 @@ bool ModelLoader::realize_weights(ggml_backend_t backend) {
 }
 
 bool ModelLoader::load(const std::string& path) {
-    struct gguf_init_params p { /*no_alloc*/
-        false, /*ctx*/ &ctx_
-    };
-    gguf_ = gguf_init_from_file(path.c_str(), p);
+    std::string open_error;
+    gguf_ = ggml_common::open_gguf_file(path, /*no_alloc=*/false, &ctx_,
+                                        "facedetect", &open_error);
     if (!gguf_) {
-        FD_LOG("gguf open failed: %s", path.c_str());
+        FD_LOG("%s", open_error.c_str());
         return false;
     }
 

@@ -334,7 +334,7 @@ void LoadWorkspaceSparseIfEmpty(ReconstructionManager* reconstruction_manager,
   if (reconstruction_manager == nullptr || reconstruction_manager->Size() > 0) {
     return;
   }
-  const auto sparse_path = JoinPaths(workspace_path, "sparse");
+  const auto sparse_path = workspace_path / "sparse";
   if (!ExistsDir(sparse_path)) {
     return;
   }
@@ -358,12 +358,14 @@ std::vector<std::string> RegisteredImageNames(const Reconstruction& reconstructi
 }
 
 std::vector<std::string> UndistortedImagePaths(
-    const std::string& dense_path, const Reconstruction& reconstruction) {
+    const std::filesystem::path& dense_path,
+    const Reconstruction& reconstruction) {
   std::vector<std::string> paths;
   paths.reserve(reconstruction.NumRegImages());
   for (const auto image_id : reconstruction.RegImageIds()) {
-    paths.push_back(
-        JoinPaths(dense_path, "images", reconstruction.Image(image_id).Name()));
+    paths.push_back((dense_path / "images" /
+                     reconstruction.Image(image_id).Name())
+                        .string());
   }
   return paths;
 }
@@ -407,7 +409,7 @@ AutomaticReconstructionController::AutomaticReconstructionController(
 
   *option_manager_.image_path = options_.image_path;
   *option_manager_.database_path =
-      JoinPaths(options_.workspace_path, "database.db");
+      options_.workspace_path / "database.db";
 
   if (options_.data_type == DataType::VIDEO) {
     option_manager_.ModifyForVideoData();
@@ -626,7 +628,7 @@ void AutomaticReconstructionController::Run() {
   } else {
     const bool workspace_sparse_ready =
         reconstruction_manager_->Size() > 0 &&
-        ExistsDir(JoinPaths(options_.workspace_path, "sparse"));
+        ExistsDir(options_.workspace_path / "sparse");
     const bool dense_only_resume =
         !options_.sparse && workspace_sparse_ready;
     const bool skip_feature_pipeline =
@@ -718,7 +720,7 @@ void AutomaticReconstructionController::RunFeatureMatching() {
 }
 
 void AutomaticReconstructionController::RunSparseMapper() {
-  const auto sparse_path = JoinPaths(options_.workspace_path, "sparse");
+  const auto sparse_path = options_.workspace_path / "sparse";
   if (ExistsDir(sparse_path)) {
     auto dir_list = GetDirList(sparse_path);
     std::sort(dir_list.begin(), dir_list.end());
@@ -744,11 +746,10 @@ void AutomaticReconstructionController::RunSparseMapper() {
 }
 
 void AutomaticReconstructionController::RunDA3SparseMapper() {
-  const auto sparse_path = JoinPaths(options_.workspace_path, "sparse");
-  const auto sparse_0 = JoinPaths(sparse_path, "0");
-  const std::string sparse_marker = JoinPaths(sparse_0, "images.bin");
-  const std::string undistorted_sync_marker =
-      JoinPaths(sparse_0, ".da3_undistorted_sync");
+  const auto sparse_path = options_.workspace_path / "sparse";
+  const auto sparse_0 = sparse_path / "0";
+  const auto sparse_marker = sparse_0 / "images.bin";
+  const auto undistorted_sync_marker = sparse_0 / ".da3_undistorted_sync";
 
   if (options_.da3_force_recompute) {
     RemovePathIfExists(sparse_0);
@@ -759,10 +760,10 @@ void AutomaticReconstructionController::RunDA3SparseMapper() {
     std::sort(dir_list.begin(), dir_list.end());
     if (!dir_list.empty()) {
       const bool synced_undistorted = ExistsFile(undistorted_sync_marker);
-      const std::string freshness_root =
+      const auto freshness_root =
           da3_unified_undistorted_ && synced_undistorted
-              ? JoinPaths(options_.workspace_path, "dense", "0", "images")
-              : options_.image_path.string();
+              ? options_.workspace_path / "dense" / "0" / "images"
+              : options_.image_path;
       if (!DA3OutputsAreStale(freshness_root, sparse_marker,
                               options_.da3_force_recompute)) {
         RECON_LOG_WARN(
@@ -903,26 +904,25 @@ void AutomaticReconstructionController::RunDA3DepthMaps() {
 
   RECON_LOG_DEBUG("DA3 depth maps: model_path=%s  reconstructions=%zu\n", da3_config.model_path.c_str(), reconstruction_manager_->Size());
 
-  CreateDirIfNotExists(JoinPaths(options_.workspace_path, "dense"));
+  CreateDirIfNotExists(options_.workspace_path / "dense");
 
   for (size_t i = 0; i < reconstruction_manager_->Size(); ++i) {
     if (IsStopped()) return;
 
-    const std::string dense_path =
-        JoinPaths(options_.workspace_path, "dense", std::to_string(i));
-    const std::string stereo_marker =
-        JoinPaths(dense_path, "stereo", "fusion.cfg");
+    const auto dense_path =
+        options_.workspace_path / "dense" / std::to_string(i);
+    const auto stereo_marker = dense_path / "stereo" / "fusion.cfg";
 
     if (options_.da3_force_recompute) {
-      RemovePathIfExists(JoinPaths(dense_path, "stereo"));
-      RemovePathIfExists(JoinPaths(dense_path, "fused.ply"));
-      RemovePathIfExists(JoinPaths(dense_path, "fused.ply.vis"));
+      RemovePathIfExists(dense_path / "stereo");
+      RemovePathIfExists(dense_path / "fused.ply");
+      RemovePathIfExists(dense_path / "fused.ply.vis");
     }
 
     CreateDirIfNotExists(dense_path);
 
     const bool had_undist_images =
-        ExistsDir(JoinPaths(dense_path, "images"));
+        ExistsDir(dense_path / "images");
 
     // Undistort images first
     if (!had_undist_images) {
@@ -937,13 +937,13 @@ void AutomaticReconstructionController::RunDA3DepthMaps() {
       undistorter.Wait();
       active_thread_ = nullptr;
       // COLMAPUndistorter writes empty stereo/ skeleton; depth must be rebuilt.
-      RemovePathIfExists(JoinPaths(dense_path, "stereo", "fusion.cfg"));
-      RemovePathIfExists(JoinPaths(dense_path, "stereo", "patch-match.cfg"));
+      RemovePathIfExists(dense_path / "stereo" / "fusion.cfg");
+      RemovePathIfExists(dense_path / "stereo" / "patch-match.cfg");
     }
 
     if (IsStopped()) return;
 
-    const std::string undist_images = JoinPaths(dense_path, "images");
+    const auto undist_images = dense_path / "images";
     if (ExistsDir(undist_images)) {
       const bool stereo_ready =
           da3_patchmatch_refine_
@@ -1002,7 +1002,7 @@ void AutomaticReconstructionController::RunDA3DepthMaps() {
           SyncWorkspaceSparseFromDense(options_.workspace_path, dense_path,
                                        static_cast<int>(i))) {
         const auto workspace_sparse_0 =
-            JoinPaths(options_.workspace_path, "sparse", "0");
+            options_.workspace_path / "sparse" / "0";
         reconstruction_manager_->Clear();
         if (ExistsDir(workspace_sparse_0)) {
           reconstruction_manager_->Read(workspace_sparse_0);
@@ -1018,38 +1018,37 @@ void AutomaticReconstructionController::RunDA3DepthMaps() {
 }
 
 void AutomaticReconstructionController::RunDenseMapper() {
-  CreateDirIfNotExists(JoinPaths(options_.workspace_path, "dense"));
+  CreateDirIfNotExists(options_.workspace_path / "dense");
 
   for (size_t i = 0; i < reconstruction_manager_->Size(); ++i) {
     if (IsStopped()) {
       return;
     }
 
-    const std::string dense_path =
-        JoinPaths(options_.workspace_path, "dense", std::to_string(i));
-    const std::string fused_path = JoinPaths(dense_path, "fused.ply");
-    const std::string stereo_marker =
-        JoinPaths(dense_path, "stereo", "fusion.cfg");
+    const auto dense_path =
+        options_.workspace_path / "dense" / std::to_string(i);
+    const auto fused_path = dense_path / "fused.ply";
+    const auto stereo_marker = dense_path / "stereo" / "fusion.cfg";
 
-    std::string meshing_path;
+    std::filesystem::path meshing_path;
     if (options_.mesher == Mesher::POISSON) {
-      meshing_path = JoinPaths(dense_path, "meshed-poisson.ply");
+      meshing_path = dense_path / "meshed-poisson.ply";
     } else if (options_.mesher == Mesher::DELAUNAY) {
-      meshing_path = JoinPaths(dense_path, "meshed-delaunay.ply");
+      meshing_path = dense_path / "meshed-delaunay.ply";
     } else if (options_.mesher == Mesher::ADVANCING_FRONT) {
-      meshing_path = JoinPaths(dense_path, "meshed-advancing-front.ply");
+      meshing_path = dense_path / "meshed-advancing-front.ply";
     }
 
-    const std::string undist_images = JoinPaths(dense_path, "images");
+    const auto undist_images = dense_path / "images";
     const bool fusion_freshness_root_is_undist =
         use_da3_stereo_maps_ && ExistsDir(undist_images);
-    const std::string fusion_freshness_root =
+    const auto fusion_freshness_root =
         fusion_freshness_root_is_undist ? undist_images
-                                        : options_.image_path.string();
+                                        : options_.image_path;
 
     if (options_.da3_force_recompute) {
       RemovePathIfExists(fused_path);
-      RemovePathIfExists(fused_path + ".vis");
+      RemovePathIfExists(fused_path.string() + ".vis");
       RemovePathIfExists(meshing_path);
       if (da3_patchmatch_refine_) {
         RemoveColmapGeometricStereoMaps(dense_path);
@@ -1426,10 +1425,11 @@ void AutomaticReconstructionController::RunDenseMapper() {
         fused_cloud.visibility.assign(fused_cloud.points.size(),
                                       std::vector<int>{});
       }
-      RECON_LOG_DEBUG("Writing output: %s\n", fused_path.c_str());
+      RECON_LOG_DEBUG("Writing output: %s\n", fused_path.string().c_str());
       WriteBinaryPlyPoints(fused_path, fused_cloud.points);
       if (!fused_cloud.points.empty()) {
-        mvs::WritePointsVisibility(fused_path + ".vis", fused_cloud.visibility);
+        mvs::WritePointsVisibility(fused_path.string() + ".vis",
+                                   fused_cloud.visibility);
       }
 
       // Hook for derived classes
@@ -1512,8 +1512,7 @@ void AutomaticReconstructionController::RunDenseMapper() {
 
     // Surface texturing.
     if (options_.texturing && options_.meshing) {
-      const std::string textured_path =
-              JoinPaths(dense_path, "textured-mesh.obj");
+      const auto textured_path = dense_path / "textured-mesh.obj";
       if (!ExistsFile(textured_path) && ExistsFile(meshing_path)) {
         option_manager_.texturing->meshed_file_path = meshing_path;
         option_manager_.texturing->textured_file_path = textured_path;

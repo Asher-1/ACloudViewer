@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "aicore/yolo_capi.h"
+#include "common/gguf_file_io.hpp"
 #include "gguf.h"
 
 namespace {
@@ -22,9 +23,11 @@ static constexpr const char* kDownloadBase =
         "yolo_gguf_models/";
 
 // One catalog family (release filename stem without the -<quant> suffix).
-// Filenames follow the yolo_gguf_models release exactly (61 variants x 3
-// quantizations = 183 gguf assets, verified against the GitHub release
-// expanded-assets listing).
+// Filenames follow the yolo_gguf_models release exactly (72 variants x 3
+// quantizations = 215 gguf assets — the multilingual bridge ships f16 +
+// q8_0 only —, verified against the GitHub release expanded-assets listing;
+// the obb/sem families ship both the 640 canonical speed graphs and the
+// checkpoint-native 1024 resolution rebuilds).
 struct VariantInfo {
     const char* name;     // release stem ("yolov8n", "yolo26n-depth", ...)
     const char* display;  // user-facing name
@@ -67,24 +70,52 @@ static constexpr const VariantInfo kVariants[] = {
         {"yolo26m-pose", "YOLO26 Medium (Pose)", "pose", 0},
         {"yolo26l-pose", "YOLO26 Large (Pose)", "pose", 0},
         {"yolo26x-pose", "YOLO26 XLarge (Pose)", "pose", 0},
-        // Oriented boxes (DOTA-15).
+        // Oriented boxes (DOTA-15); 640 canonical speed + 1024
+        // checkpoint-native resolution rebuilds.
         {"yolo26n-obb", "YOLO26 Nano (OBB)", "obb", 0},
         {"yolo26s-obb", "YOLO26 Small (OBB)", "obb", 0},
         {"yolo26m-obb", "YOLO26 Medium (OBB)", "obb", 0},
         {"yolo26l-obb", "YOLO26 Large (OBB)", "obb", 0},
         {"yolo26x-obb", "YOLO26 XLarge (OBB)", "obb", 0},
-        // Semantic segmentation (Cityscapes-19).
+        {"yolo26n-obb-1024", "YOLO26 Nano (OBB, 1024)", "obb", 0},
+        {"yolo26s-obb-1024", "YOLO26 Small (OBB, 1024)", "obb", 0},
+        {"yolo26m-obb-1024", "YOLO26 Medium (OBB, 1024)", "obb", 0},
+        {"yolo26l-obb-1024", "YOLO26 Large (OBB, 1024)", "obb", 0},
+        {"yolo26x-obb-1024", "YOLO26 XLarge (OBB, 1024)", "obb", 0},
+        // Semantic segmentation (Cityscapes-19); same dual resolution as
+        // the OBB family.
         {"yolo26n-sem", "YOLO26 Nano (Semantic)", "semantic", 0},
         {"yolo26s-sem", "YOLO26 Small (Semantic)", "semantic", 0},
         {"yolo26m-sem", "YOLO26 Medium (Semantic)", "semantic", 0},
         {"yolo26l-sem", "YOLO26 Large (Semantic)", "semantic", 0},
         {"yolo26x-sem", "YOLO26 XLarge (Semantic)", "semantic", 0},
+        {"yolo26n-sem-1024", "YOLO26 Nano (Semantic, 1024)", "semantic", 0},
+        {"yolo26s-sem-1024", "YOLO26 Small (Semantic, 1024)", "semantic", 0},
+        {"yolo26m-sem-1024", "YOLO26 Medium (Semantic, 1024)", "semantic", 0},
+        {"yolo26l-sem-1024", "YOLO26 Large (Semantic, 1024)", "semantic", 0},
+        {"yolo26x-sem-1024", "YOLO26 XLarge (Semantic, 1024)", "semantic", 0},
         // Classification (ImageNet-1000, 224 input).
         {"yolo26n-cls", "YOLO26 Nano (Classify)", "classify", 0},
         {"yolo26s-cls", "YOLO26 Small (Classify)", "classify", 0},
         {"yolo26m-cls", "YOLO26 Medium (Classify)", "classify", 0},
         {"yolo26l-cls", "YOLO26 Large (Classify)", "classify", 0},
         {"yolo26x-cls", "YOLO26 XLarge (Classify)", "classify", 0},
+        // (The legacy cls-tower ReID encoders were withdrawn 2026-09-19 in
+        // favor of the native reid-yolo26{...} family below.)
+        // Native ReID encoders converted from the official
+        // yolo26{n,s,m,l,x}-reid.onnx assets (standalone ReID backbones with a
+        // 512-d embedding head; task='reid' graphs). Authoritative encoder
+        // family, published 2026-09-19; consumed through aicore/reid_capi.h.
+        {"reid-yolo26n", "YOLO26 Nano ReID (official reid.onnx)", "classify",
+         0},
+        {"reid-yolo26s", "YOLO26 Small ReID (official reid.onnx)", "classify",
+         0},
+        {"reid-yolo26m", "YOLO26 Medium ReID (official reid.onnx)", "classify",
+         0},
+        {"reid-yolo26l", "YOLO26 Large ReID (official reid.onnx)", "classify",
+         0},
+        {"reid-yolo26x", "YOLO26 XLarge ReID (official reid.onnx)", "classify",
+         0},
         // Open-vocabulary detection (CLIP text embeddings).
         {"yolov8s-world", "YOLOv8 Small (World)", "detect", 1},
         {"yolov8m-world", "YOLOv8 Medium (World)", "detect", 1},
@@ -153,8 +184,10 @@ struct ModelRow {
 
 // Official release digests (exact byte count + SHA-256) for the 33 original
 // detect/depth assets, from the yolo_gguf_models release audit
-// (2026-08-19, ultralytics-ggml-integration-plan.md 3.2). Later additions
-// (segment/world/yoloe/pose/obb/sem/cls/depth s..x/text) have no published
+// (2026-08-19, ultralytics-ggml-integration-plan.md 3.2), and for the 30
+// obb/sem 1024 resolution rebuilds (release audit 2026-09-18; hashes from
+// the upstream cpp_ggml/models/gguf/SHA256SUMS). Later additions
+// (segment/world/yoloe/pose/obb/sem 640/cls/depth s..x/text) have no published
 // baseline yet — omitted, verify_model skips size/hash for them (still
 // checks magic + task). Order matches kQuantSuffixes.
 struct VariantDigest {
@@ -219,9 +252,92 @@ static constexpr VariantDigest kDigests[] = {
          {"13830a5e4d95e68fd165a5c298c82daadb5be47a686de56b82a5bd121e9b3ef7",
           "6ca6d946e774b28ce8a94e44d4eb20368fca61572a2934429c675cfb0868f795",
           "0d5795cd182c8c79c4c1a6f92e549f8e39841733f067d6b20764da568dfbac2f"}},
+        // obb/sem 1024 checkpoint-native resolution rebuilds (bytes from
+        // the yolo_gguf_models release assets, hashes from the upstream
+        // SHA256SUMS). Order f32, f16, q8_0.
+        {"yolo26n-obb-1024",
+         {9846880, 4965280, 2719232},
+         {"a5ae3bcb7739355a33376b17289487e7c21ce3f029bae3bf964a1eb438283045",
+          "ef59db803f10e563d39d372af9a707efcd7f5aaa362a1ac952632143cf533ed8",
+          "aab9dd0c2a1ba79e9ff41ece44f8a9c797c2f719ef0bde62e7b1bd613c78390f"}},
+        {"yolo26s-obb-1024",
+         {39077440, 19597504, 10485120},
+         {"aaf3914ddf3851226af05de6a13026e65a1d55a8b72a78e787322b87a6f8e670",
+          "972fc7e869b7eecafdd038dab342e3fa2397af898abce6e526886ea71dc1c64f",
+          "c8a82b57718d1fcb512a6ea0c04db941efb64e49a52241e288546f268173310f"}},
+        {"yolo26m-obb-1024",
+         {84891712, 42521920, 22682688},
+         {"a433db64fd0d457a3c5aca0d0c2362d62d9fa2489c79eb37442bec3e16188404",
+          "499b6a6d0edf732d350a23a5e45057f393054ce8c1ad1251dec6cdb3fcf4a3af",
+          "8f3cedfc8898e17527fc67ea14ca4d781494ebfc8a0f881021f7d04a8cedc124"}},
+        {"yolo26l-obb-1024",
+         {102499488, 51351456, 27398752},
+         {"3e73649a11e94a477542c48941abc6239c061e77037e16bcf90a7b87c91d3f37",
+          "bd7eedb4c4585d2aa4ef602974a9b5d89e80febfc4575a93f100c4d94ab2dcb8",
+          "2c08ad4436acc74f0a438e038e6e4936ffe27595023558f6ff8987ec6cc871b6"}},
+        {"yolo26x-obb-1024",
+         {230314272, 115290528, 61564416},
+         {"9748beda87e0d5a8193372714f9ca466bd7072dc845a9231f96c1717f5e559a7",
+          "970d903e2c8ec9c362d71686dd9ad27c71cc758970ed36297418cde8420d219c",
+          "df1f9a960288bc56f78137e7f165f7e955907744faa32647bea7c726598b9dcd"}},
+        {"yolo26n-sem-1024",
+         {6239264, 3143744, 1715744},
+         {"cb50a5185afce5928305c75c74e5fe597a78f7eee3ae132f20ab2481a28c6506",
+          "37a635b5296c6f6de7d44a16fab3c2a579c27e9288f32b4de39c6f538b67de28",
+          "145accdaebfae48f437b2c211ee09106ef4f1445f749df5a25851822837a31d2"}},
+        {"yolo26s-sem-1024",
+         {24810048, 12439168, 6646688},
+         {"bb07fcd7bd34765a1ba993e970cb2edc7c8e530de3f8033eb344c6007695406d",
+          "a454df76e453899dff4cd02a5094a385662accb11bb1d4249bf5251d9ba5d96a",
+          "42d4dee7beb08572350f39a8cbfc61eedd72d03bdb52425d162f7cb0287f401a"}},
+        {"yolo26m-sem-1024",
+         {52505280, 26297664, 14015552},
+         {"d90fafd1f1d4269ba421d63009966542f99dcab2728387b62c16476beaaa8a6f",
+          "1b8e7474d14d19a6c79625063d2297eee49cac04cf5a5778e943f470d027db80",
+          "b4a98f3b7f5da7405bd0e6a064d8f58b4eee69a3a989c1359d136b4214c286a5"}},
+        {"yolo26l-sem-1024",
+         {66698048, 33416128, 17819360},
+         {"c7c0163536fb2d7cd2e7f25ce30893d25656ae9f9d7f88a668cff775f757d6f8",
+          "547ecd08c4fa487ae785e9eaca3133b49b814fd6a25ac64cc058786912fc4a9b",
+          "fbc89d1eb619114461a69bb9d0b1b26814d2db1009ca1b168a4fa8b43d82d2be"}},
+        {"yolo26x-sem-1024",
+         {149910336, 75042816, 40111424},
+         {"280343eee856ea99c4c74fb9680c6782138ddf2ed2468b60ce286785a8db32fe",
+          "70668741e3ca5fe05cc710af8ba9877bf8be110fefc439edd4925a11d60d1061",
+          "61edbf355f3560e917037d0282535d617e19be0c7e8c3d41f5fd95559cf5789b"}},
+        // reid-yolo26*-cls family: release + Hugging Face publication audit
+        // (2026-09-19; digests measured from the published bytes).
+        // reid-yolo26{n,s,m,l,x}: native encoders converted from the official
+        // yolo26*-reid.onnx assets (2026-09-19; digests measured from the
+        // published bytes).
+        {"reid-yolo26n",
+         {9741408, 4894976, 3253248},
+         {"6e6630faf6e9b24cffa2a52985c77320d65918b8f328f16e2b6b0a07e186d828",
+          "b8882416c8e1b14e10a22ac02d49af485c52f0ea940415c8151dabca7b4b8277",
+          "c721be113ab6c770df5d2b9b5366e0c0c924cf027a8bb16cc8779bd4f38daa42"}},
+        {"reid-yolo26s",
+         {28333184, 14201280, 8200128},
+         {"013c200e1f21f2479a31559d73b659e550d0e3a75559378bf8b9807c0e249419",
+          "c9de79f801d3dc445e191bc64c994ccfd3480f738b036e9c7b0c684bcf530609",
+          "fa41d98979a79e91781ea0871dfd6aca893fae65c1884b8decc19e479fab9f34"}},
+        {"reid-yolo26m",
+         {47967392, 24025888, 13422784},
+         {"ddcf31eca0f1eef8d618a17a39310c00f5b6d1ef65a77f7d709cb3729777c601",
+          "c16b179a411d0e833e7e0fcffa306d64bd8ef9a6864cae19cfb47be215dde3a8",
+          "2d389d76479c9a90c7e5073da2d58609c30dcdeb6eba6c46ce5451bdb096beeb"}},
+        {"reid-yolo26l",
+         {59740928, 29932928, 16583648},
+         {"00a64abdab9e6198fb500639f89cf5ea50e1c06a425e717df4d3aae6b93abc7d",
+          "737944f648ed84988b5a093670fdd13f6e6fbf49e0a53f10b1b0c9a48b67d7fe",
+          "6c6725a7029da9ab0418431ff0e0b6d22f8d5c2d94f50727fabd788e80410aeb"}},
+        {"reid-yolo26x",
+         {129024256, 64594112, 35176480},
+         {"76ed20e776047a34ac92f14757e36e4be461e3522dc6e9c29f0672e2138fad6a",
+          "bf7ab447f479d95cbcbfa91efc884db28b60753505e0223744f1055d469fd466",
+          "8d42d32f371e91d4ba6f7c3f190b9032e76ba690488e274287f58877088c7377"}},
 };
 
-static_assert(sizeof(kDigests) / sizeof(kDigests[0]) == 11,
+static_assert(sizeof(kDigests) / sizeof(kDigests[0]) == 26,
               "digest count mismatch");
 
 static const VariantDigest* findDigest(const char* variant) {
@@ -469,8 +585,9 @@ AICORE_CAPI int aicore_yolo_verify_model(const char* path,
     if (out) out->magic_ok = 1;
 
     // 5. yolo.task metadata must match the catalog entry.
-    gguf_init_params ip{};  // header only
-    gguf_context* g = gguf_init_from_file(path, ip);
+    // ctx=nullptr: header/metadata read only, no tensor mapping.
+    gguf_context* g = ggml_common::open_gguf_file(path, /*no_alloc=*/false,
+                                                  nullptr, "yolo_catalog");
     if (!g) return -1;  // out->task_ok stays 0
     std::string task = "detect";
     const int kid = gguf_find_key(g, "yolo.task");

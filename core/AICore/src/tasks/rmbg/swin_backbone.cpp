@@ -11,6 +11,7 @@
 #include <cmath>
 #include <cstring>
 
+#include "common/gguf_file_io.hpp"
 #include "ggml.h"
 #include "gguf.h"
 
@@ -61,10 +62,11 @@ bool WeightMap::load_gguf(const char *path, std::string &err) {
 
 bool WeightMap::merge_gguf(const char *path, std::string &err) {
     ggml_context *ctx = nullptr;
-    gguf_init_params p{false, &ctx};
-    gguf_context *g = gguf_init_from_file(path, p);
+    std::string open_error;
+    gguf_context *g = ggml_common::open_gguf_file(
+            path, /*no_alloc=*/false, &ctx, "rmbg_swin", &open_error);
     if (!g) {
-        err = "gguf_init_from_file failed";
+        err = open_error;
         return false;
     }
     int nt = gguf_get_n_tensors(g);

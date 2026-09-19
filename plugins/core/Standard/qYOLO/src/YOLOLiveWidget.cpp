@@ -7,6 +7,9 @@
 
 #include "YOLOLiveWidget.h"
 
+#include <QtCompat.h>
+
+#include <QCheckBox>
 #include <QComboBox>
 #include <QDir>
 #include <QDoubleSpinBox>
@@ -21,6 +24,7 @@
 #include <QSizePolicy>
 #include <QSpinBox>
 #include <QThread>
+#include <QtMath>
 #include <algorithm>
 #include <cstring>
 
@@ -54,14 +58,7 @@ YOLOLiveWidget::YOLOLiveWidget(QWidget* parent) : VideoPlaybackWidget(parent) {
     setupUi();
     setPreviewFixedHeight(300);
 
-    m_inferThread = new QThread(this);
-    m_inferWorker = new YOLOLiveInferWorker;
-    m_inferWorker->moveToThread(m_inferThread);
-    connect(m_inferThread, &QThread::finished, m_inferWorker,
-            &QObject::deleteLater);
-    connect(m_inferWorker, &YOLOLiveInferWorker::inferComplete, this,
-            &YOLOLiveWidget::onInferComplete, Qt::QueuedConnection);
-    m_inferThread->start();
+    ensureInferThread();
 }
 
 YOLOLiveWidget::~YOLOLiveWidget() {
@@ -171,7 +168,249 @@ void YOLOLiveWidget::setupUi() {
     m_thresholdWidgets = {
             confLabel, m_confSpin, iouLabel, m_iouSpin, topKLabel, m_topKSpin,
     };
+
+    // Row 4: multi-object tracking (detect/segment/pose/obb models). The
+    // tracker types mirror the six official ultralytics/cfg/trackers YAMLs;
+    // GMC methods mirror utils/gmc.py (the extension methods need the
+    // plugin's OpenCV build — same gate as the upstream runtime).
+    auto* trackRow = new QHBoxLayout;
+    trackRow->setSpacing(4);
+    m_trackCheck = new QCheckBox(tr("Track"), this);
+    m_trackCheck->setToolTip(
+            tr("Multi-object tracking with stable ids (six official "
+               "tracker modes)"));
+    trackRow->addWidget(m_trackCheck);
+    // Official with_reid (model="auto"): the tracker consumes the
+    // detector's per-detection feature rows for appearance matching; the
+    // official path downgrades to a separate ReID encoder on end2end
+    // heads, so there the term degrades to motion-only association.
+    m_reidCheck = new QCheckBox(tr("ReID"), this);
+    m_reidCheck->setToolTip(
+            tr("Appearance re-identification from the detector features "
+               "(official model=\"auto\" path; end2end heads degrade to "
+               "motion-only association)"));
+    trackRow->addWidget(m_reidCheck);
+    // Trails overlay (default off — boxes+ids only, like the official
+    // model.track preview; a pinned target always shows its trail).
+    m_trailsCheck = new QCheckBox(tr("Trails"), this);
+    m_trailsCheck->setToolTip(
+            tr("Draw per-identity motion trails (official solutions style; "
+               "a pinned target always shows its trail)"));
+    connect(m_trailsCheck, &QCheckBox::toggled, this, [this](bool on) {
+        m_showTrails = on;
+        repaintLivePreview();
+    });
+    trackRow->addWidget(m_trailsCheck);
+    trackRow->addWidget(new QLabel(tr("Type:"), this));
+    m_trackerCombo = new QComboBox(this);
+    m_trackerCombo->addItem(QStringLiteral("tracktrack"),
+                            QStringLiteral("tracktrack"));
+    m_trackerCombo->addItem(QStringLiteral("bytetrack"),
+                            QStringLiteral("bytetrack"));
+    m_trackerCombo->addItem(QStringLiteral("botsort"),
+                            QStringLiteral("botsort"));
+    m_trackerCombo->addItem(QStringLiteral("ocsort"), QStringLiteral("ocsort"));
+    m_trackerCombo->addItem(QStringLiteral("deepocsort"),
+                            QStringLiteral("deepocsort"));
+    m_trackerCombo->addItem(QStringLiteral("fasttrack"),
+                            QStringLiteral("fasttrack"));
+    m_trackerCombo->setToolTip(
+            tr("Tracker backend; switching types resets the tracking "
+               "parameters and GMC method to the official defaults of "
+               "the selected ultralytics/cfg/trackers YAML"));
+    trackRow->addWidget(m_trackerCombo);
+    trackRow->addWidget(new QLabel(tr("GMC:"), this));
+    m_gmcCombo = new QComboBox(this);
+    m_gmcCombo->addItem(QStringLiteral("sparseOptFlow"),
+                        QStringLiteral("sparseOptFlow"));
+    m_gmcCombo->addItem(QStringLiteral("none"), QStringLiteral("none"));
+#ifdef QYOLO_WITH_OPENCV
+    m_gmcCombo->insertItem(1, QStringLiteral("orb"), QStringLiteral("orb"));
+    m_gmcCombo->insertItem(2, QStringLiteral("sift"), QStringLiteral("sift"));
+    m_gmcCombo->insertItem(3, QStringLiteral("ecc"), QStringLiteral("ecc"));
+#endif
+    m_gmcCombo->setToolTip(
+            tr("Global motion compensation (camera-motion estimate); "
+               "used by botsort/deepocsort/tracktrack"));
+    trackRow->addWidget(m_gmcCombo);
+    trackRow->addStretch();
+    mainLayout()->insertLayout(3, trackRow);
+
+    // Row 5: tracking parameter area (visible while tracking is enabled).
+    auto* trackParamsRow = new QHBoxLayout;
+    trackParamsRow->setSpacing(4);
+    trackParamsRow->addWidget(new QLabel(tr("High:"), this));
+    m_trackHighSpin = new QDoubleSpinBox(this);
+    m_trackHighSpin->setRange(0.05, 1.0);
+    m_trackHighSpin->setSingleStep(0.05);
+    m_trackHighSpin->setValue(0.25);
+    m_trackHighSpin->setToolTip(
+            tr("First association threshold (track_high_thresh)"));
+    trackParamsRow->addWidget(m_trackHighSpin);
+    trackParamsRow->addWidget(new QLabel(tr("Low:"), this));
+    m_trackLowSpin = new QDoubleSpinBox(this);
+    m_trackLowSpin->setRange(0.01, 1.0);
+    m_trackLowSpin->setSingleStep(0.05);
+    m_trackLowSpin->setValue(0.1);
+    m_trackLowSpin->setToolTip(
+            tr("Second association threshold (track_low_thresh)"));
+    trackParamsRow->addWidget(m_trackLowSpin);
+    trackParamsRow->addWidget(new QLabel(tr("New:"), this));
+    m_newTrackSpin = new QDoubleSpinBox(this);
+    m_newTrackSpin->setRange(0.05, 1.0);
+    m_newTrackSpin->setSingleStep(0.05);
+    m_newTrackSpin->setValue(0.25);
+    m_newTrackSpin->setToolTip(tr("New-track threshold (new_track_thresh)"));
+    trackParamsRow->addWidget(m_newTrackSpin);
+    trackParamsRow->addWidget(new QLabel(tr("Buffer:"), this));
+    m_trackBufferSpin = new QSpinBox(this);
+    m_trackBufferSpin->setRange(1, 300);
+    m_trackBufferSpin->setValue(30);
+    m_trackBufferSpin->setToolTip(
+            tr("Lost-track buffer in frames (track_buffer)"));
+    trackParamsRow->addWidget(m_trackBufferSpin);
+    trackParamsRow->addWidget(new QLabel(tr("Match:"), this));
+    m_matchSpin = new QDoubleSpinBox(this);
+    m_matchSpin->setRange(0.1, 1.0);
+    m_matchSpin->setSingleStep(0.05);
+    m_matchSpin->setValue(0.8);
+    m_matchSpin->setToolTip(tr("Association match threshold (match_thresh)"));
+    trackParamsRow->addWidget(m_matchSpin);
+    trackParamsRow->addStretch();
+    mainLayout()->insertLayout(4, trackParamsRow);
+
+    m_trackWidgets = {
+            m_trackCheck,
+            m_reidCheck,
+            m_trackerCombo,
+            m_gmcCombo,
+    };
+    m_trackParamWidgets = {
+            m_trackHighSpin,   m_trackLowSpin, m_newTrackSpin,
+            m_trackBufferSpin, m_matchSpin,
+    };
+
+    connect(m_trackCheck, &QCheckBox::toggled, this, [this](bool on) {
+        m_config.trackerType = on ? trackerTypeId() : QString();
+        updateTrackVisibility();
+        updateGmcEnabled();
+        if (on) {
+            // Upstream track-mode interaction: Model.track() and the CLI
+            // track subcommand default conf to 0.1 (the ByteTrack-family
+            // two-stage association needs low-confidence rows). Move the
+            // spin only while it still carries the detect default, so a
+            // user-tuned value is never overwritten.
+            if (m_confSpin->value() == 0.25) m_confSpin->setValue(0.1);
+        }
+    });
+    connect(m_reidCheck, &QCheckBox::toggled, this,
+            [this](bool on) { m_config.withReid = on; });
+    connect(m_trackerCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, [this](int) {
+                // Upstream tracker=<yaml> semantics: selecting a tracker
+                // loads that YAML's defaults into the exposed controls
+                // (no-op while setupUi is still building the widgets).
+                applyOfficialTrackDefaults(trackerTypeId());
+                updateGmcEnabled();
+                if (m_trackCheck->isChecked())
+                    m_config.trackerType = trackerTypeId();
+            });
+    connect(m_gmcCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, [this](int) { m_config.gmcMethod = gmcMethodId(); });
+    connect(m_trackHighSpin,
+            QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+            [this](double v) {
+                m_config.trackHighThresh = static_cast<float>(v);
+            });
+    connect(m_trackLowSpin,
+            QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+            [this](double v) {
+                m_config.trackLowThresh = static_cast<float>(v);
+            });
+    connect(m_newTrackSpin,
+            QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+            [this](double v) {
+                m_config.newTrackThresh = static_cast<float>(v);
+            });
+    connect(m_trackBufferSpin, QOverload<int>::of(&QSpinBox::valueChanged),
+            this, [this](int v) { m_config.trackBuffer = v; });
+    connect(m_matchSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+            this,
+            [this](double v) { m_config.matchThresh = static_cast<float>(v); });
+
     updateThresholdVisibility();
+    updateTrackVisibility();
+    updateGmcEnabled();
+    // Install the official per-type defaults for the initial tracker
+    // selection (tracktrack): the spin initializers above carry the shared
+    // ByteTrack-era values, and the combo's first-addItem signal fired
+    // before the spins existed.
+    applyOfficialTrackDefaults(trackerTypeId());
+}
+
+void YOLOLiveWidget::updateGmcEnabled() {
+    // GMC (camera-motion compensation) is consumed by botsort /
+    // deepocsort / tracktrack only; keep the combo visible but disabled
+    // for the other three so an irrelevant control is never editable.
+    if (!m_trackerCombo || !m_gmcCombo) return;
+    const QString type = trackerTypeId();
+    const bool usesGmc = type == QStringLiteral("botsort") ||
+                         type == QStringLiteral("deepocsort") ||
+                         type == QStringLiteral("tracktrack");
+    m_gmcCombo->setEnabled(usesGmc);
+}
+
+void YOLOLiveWidget::applyOfficialTrackDefaults(const QString& type) {
+    if (!m_trackHighSpin || !m_trackLowSpin || !m_newTrackSpin ||
+        !m_trackBufferSpin || !m_matchSpin) {
+        return;  // setupUi not finished yet (combo fires while being built)
+    }
+    // Official per-type defaults of ultralytics/cfg/trackers/<type>.yaml
+    // for the five exposed thresholds — the same values tracker.cpp's
+    // default_tracker_config installs; the remaining YAML keys are not
+    // surfaced in the UI and keep those defaults in the worker.
+    double high = 0.25;
+    double low = 0.1;
+    double newTrack = 0.25;
+    double match = 0.8;
+    if (type == QStringLiteral("tracktrack")) {
+        high = 0.6;
+        low = 0.25;
+        newTrack = 0.7;
+        match = 0.7;
+    } else if (type == QStringLiteral("deepocsort")) {
+        high = 0.3;
+        newTrack = 0.3;
+    }
+    m_trackHighSpin->setValue(high);
+    m_trackLowSpin->setValue(low);
+    m_newTrackSpin->setValue(newTrack);
+    m_trackBufferSpin->setValue(30);
+    m_matchSpin->setValue(match);
+    // GMC consumers carry a per-type official default (botsort/tracktrack
+    // use sparseOptFlow, deepocsort ships none); the other types never
+    // read it, so their combo selection is left untouched.
+    if (!m_gmcCombo) return;
+    QString gmc;
+    if (type == QStringLiteral("botsort") ||
+        type == QStringLiteral("tracktrack"))
+        gmc = QStringLiteral("sparseOptFlow");
+    else if (type == QStringLiteral("deepocsort"))
+        gmc = QStringLiteral("none");
+    if (!gmc.isEmpty()) {
+        const int gmcIdx = m_gmcCombo->findData(gmc);
+        if (gmcIdx >= 0) m_gmcCombo->setCurrentIndex(gmcIdx);
+    }
+}
+
+QString YOLOLiveWidget::trackerTypeId() const {
+    return m_trackerCombo ? m_trackerCombo->currentData().toString()
+                          : QStringLiteral("tracktrack");
+}
+
+QString YOLOLiveWidget::gmcMethodId() const {
+    return m_gmcCombo ? m_gmcCombo->currentData().toString()
+                      : QStringLiteral("sparseOptFlow");
 }
 
 QString YOLOLiveWidget::modelFilename() const {
@@ -261,17 +500,19 @@ void YOLOLiveWidget::rebuildModelCombo(const QStringList& labels,
 }
 
 void YOLOLiveWidget::populateAllModels(const QString& keepFilename) {
-    // The live pipeline covers the closed-set real-time families (detect /
-    // segment / depth). The batch-only families (pose / obb / classify /
-    // semantic) and the text-conditioned world/yoloe models (which need a
-    // class list + text tower per context) are offered by their dedicated
-    // task tabs instead.
+    // The live pipeline covers the real-time families (detect / segment /
+    // depth plus the trackable pose / obb). The batch-only families
+    // (classify / semantic) and the text-conditioned world/yoloe models
+    // (which need a class list + text tower per context) are offered by
+    // their dedicated task tabs instead.
     QVector<YOLOModelEntry> all;
     for (const YOLOModelEntry& e : YOLOHelpers::catalogModels()) {
         const bool closedSet = !e.textInput;
         const bool liveTask = e.task == QStringLiteral("detect") ||
                               e.task == QStringLiteral("segment") ||
-                              e.task == QStringLiteral("depth");
+                              e.task == QStringLiteral("depth") ||
+                              e.task == QStringLiteral("pose") ||
+                              e.task == QStringLiteral("obb");
         if (closedSet && liveTask) all.append(e);
     }
     m_syncingModelControls = true;
@@ -307,6 +548,32 @@ void YOLOLiveWidget::updateThresholdVisibility() {
     m_config.confThres = static_cast<float>(m_confSpin->value());
     m_config.iouThres = static_cast<float>(m_iouSpin->value());
     m_config.topK = static_cast<uint32_t>(m_topKSpin->value());
+    updateTrackVisibility();
+}
+
+void YOLOLiveWidget::updateTrackVisibility() {
+    // Depth models have no detections to track; everything else (detect /
+    // segment / pose / obb) supports the six tracker modes.
+    YOLOModelEntry entry;
+    const bool isDepth =
+            YOLOHelpers::findModelByFilename(modelFilename(), &entry) &&
+            entry.task == QStringLiteral("depth");
+    const bool tracking = m_trackCheck && m_trackCheck->isChecked() && !isDepth;
+    for (QWidget* w : m_trackWidgets) {
+        if (w) w->setVisible(!isDepth);
+    }
+    for (QWidget* w : m_trackParamWidgets) {
+        if (w) w->setVisible(tracking);
+    }
+    if (m_trackCheck) {
+        m_config.trackerType = tracking ? trackerTypeId() : QString();
+    }
+    m_config.gmcMethod = gmcMethodId();
+    m_config.trackHighThresh = static_cast<float>(m_trackHighSpin->value());
+    m_config.trackLowThresh = static_cast<float>(m_trackLowSpin->value());
+    m_config.newTrackThresh = static_cast<float>(m_newTrackSpin->value());
+    m_config.trackBuffer = m_trackBufferSpin->value();
+    m_config.matchThresh = static_cast<float>(m_matchSpin->value());
 }
 
 void YOLOLiveWidget::rebuildDeviceCombo(const QComboBox* sourceDeviceCombo) {
@@ -371,7 +638,41 @@ void YOLOLiveWidget::loadSettings() {
     m_topKSpin->setValue(settings.value(QStringLiteral("topK"), 300).toInt());
     m_threadsSpin->setValue(
             settings.value(QStringLiteral("threads"), 0).toInt());
+    // Tracking (six official tracker modes; disabled by default).
+    m_trackCheck->setChecked(
+            settings.value(QStringLiteral("track"), false).toBool());
+    m_reidCheck->setChecked(
+            settings.value(QStringLiteral("reid"), false).toBool());
+    m_config.withReid = m_reidCheck->isChecked();
+    const QString type =
+            settings.value(QStringLiteral("trackerType"), "tracktrack")
+                    .toString();
+    const int typeIdx = m_trackerCombo->findData(type);
+    if (typeIdx >= 0) m_trackerCombo->setCurrentIndex(typeIdx);
+    const QString gmc =
+            settings.value(QStringLiteral("gmc"), "sparseOptFlow").toString();
+    const int gmcIdx = m_gmcCombo->findData(gmc);
+    if (gmcIdx >= 0) m_gmcCombo->setCurrentIndex(gmcIdx);
+    // The tracker-type sync above already installed the official per-type
+    // defaults; only persisted user values may override them (the fallback
+    // is the current spin value, not a hardcoded ByteTrack-era default).
+    m_trackHighSpin->setValue(settings.value(QStringLiteral("trackHigh"),
+                                             m_trackHighSpin->value())
+                                      .toDouble());
+    m_trackLowSpin->setValue(
+            settings.value(QStringLiteral("trackLow"), m_trackLowSpin->value())
+                    .toDouble());
+    m_newTrackSpin->setValue(
+            settings.value(QStringLiteral("newTrack"), m_newTrackSpin->value())
+                    .toDouble());
+    m_trackBufferSpin->setValue(settings.value(QStringLiteral("trackBuffer"),
+                                               m_trackBufferSpin->value())
+                                        .toInt());
+    m_matchSpin->setValue(
+            settings.value(QStringLiteral("match"), m_matchSpin->value())
+                    .toDouble());
     settings.endGroup();
+    updateTrackVisibility();
 }
 
 void YOLOLiveWidget::saveSettings() const {
@@ -381,6 +682,16 @@ void YOLOLiveWidget::saveSettings() const {
     settings.setValue(QStringLiteral("iou"), m_iouSpin->value());
     settings.setValue(QStringLiteral("topK"), m_topKSpin->value());
     settings.setValue(QStringLiteral("threads"), m_threadsSpin->value());
+    settings.setValue(QStringLiteral("track"), m_trackCheck->isChecked());
+    settings.setValue(QStringLiteral("reid"), m_reidCheck->isChecked());
+    settings.setValue(QStringLiteral("trackerType"), trackerTypeId());
+    settings.setValue(QStringLiteral("gmc"), gmcMethodId());
+    settings.setValue(QStringLiteral("trackHigh"), m_trackHighSpin->value());
+    settings.setValue(QStringLiteral("trackLow"), m_trackLowSpin->value());
+    settings.setValue(QStringLiteral("newTrack"), m_newTrackSpin->value());
+    settings.setValue(QStringLiteral("trackBuffer"),
+                      m_trackBufferSpin->value());
+    settings.setValue(QStringLiteral("match"), m_matchSpin->value());
     settings.endGroup();
 }
 
@@ -441,6 +752,7 @@ void YOLOLiveWidget::onDisplayFrame(QImage& display, int frameIndex) {
 }
 
 void YOLOLiveWidget::submitInferJob(const QImage& rgb) {
+    ensureInferThread();  // recreate after a dialog-close shutdown
     if (!m_inferWorker || m_inferBusy) return;
     m_inferBusy = true;
     m_inferSubmitTime.restart();
@@ -456,6 +768,15 @@ void YOLOLiveWidget::submitInferJob(const QImage& rgb) {
     job.topK = m_config.topK;
     job.classes = m_config.classes;
     job.textModelPath = m_config.textModelPath;
+    job.trackerType = m_config.trackerType;
+    job.withReid = m_config.withReid;
+    job.gmcMethod = m_config.gmcMethod;
+    job.trackHighThresh = m_config.trackHighThresh;
+    job.trackLowThresh = m_config.trackLowThresh;
+    job.newTrackThresh = m_config.newTrackThresh;
+    job.trackBuffer = m_config.trackBuffer;
+    job.matchThresh = m_config.matchThresh;
+    job.trackZone = m_trackZone;
     QMetaObject::invokeMethod(m_inferWorker, "runJob", Qt::QueuedConnection,
                               Q_ARG(YOLOLiveInferWorker::Job, job));
 }
@@ -488,6 +809,15 @@ void YOLOLiveWidget::onInferComplete(YOLOLiveInferWorker::Result result) {
         emit logMessage(tr("[YOLO] Inference device: %1").arg(resolvedDevice));
         m_lastResolvedDevice = resolvedDevice;
     }
+    // Tracking warnings (tracker rejected for this build/config) repeat on
+    // every frame while parked — log each distinct reason once.
+    if (result.warning != m_lastTrackWarning) {
+        if (!result.warning.isEmpty()) {
+            emit logMessage(
+                    tr("[YOLO] Tracking disabled: %1").arg(result.warning));
+        }
+        m_lastTrackWarning = result.warning;
+    }
 
     m_lastTask = result.task;
     m_hasSnapshot = true;
@@ -498,6 +828,9 @@ void YOLOLiveWidget::onInferComplete(YOLOLiveInferWorker::Result result) {
         m_lastDepth = result.depth;
         m_overlayDetections.clear();
         m_overlayMasks.clear();
+        m_overlayObbs.clear();
+        m_overlayKeypointSets.clear();
+        m_overlayTrackIds.clear();
         m_overlayDepthImage = YOLOHelpers::depthColorImage(
                 result.depth.depthMap.constData(), result.depth.width,
                 result.depth.height, result.depth.stats.minDepth,
@@ -536,10 +869,89 @@ void YOLOLiveWidget::onInferComplete(YOLOLiveInferWorker::Result result) {
     // the immediate repaint below rebuilds it at preview resolution.
     m_overlayDepthImage = QImage();
     m_overlayDetections = result.detect.detections;
-    m_overlayMasks = result.detect.masks;  // empty for pure-detect models
+    m_overlayMasks = result.detect.masks;    // empty for non-segment models
+    m_overlayObbs = result.detect.obbBoxes;  // obb only, else empty
+    m_overlayKeypointSets = result.detect.keypointSets;  // pose only
+    m_overlayTrackIds = result.trackIds;  // empty while tracking is off
+    // Trails (official solutions track_history): per-id center path in
+    // source pixels. Ids absent this frame keep their history so a
+    // re-found target resumes its line; turning tracking off or switching
+    // the source clears everything (empty/size-mismatched ids below).
+    if (!m_overlayTrackIds.isEmpty() &&
+        m_overlayTrackIds.size() == m_overlayDetections.size()) {
+        for (qsizetype i = 0; i < m_overlayTrackIds.size(); ++i) {
+            const int id = m_overlayTrackIds[i];
+            if (id < 0) continue;
+            const YOLODetection& d = m_overlayDetections[i];
+            QVector<QPointF>& pts = m_trails[id];
+            pts.append(QPointF((d.x1 + d.x2) / 2.0, (d.y1 + d.y2) / 2.0));
+            while (pts.size() > 30) pts.removeFirst();
+        }
+    } else {
+        m_trails.clear();
+    }
     m_overlaySourceSize = m_lastSourceFrame.size();
     ++m_overlayGeneration;
     repaintLivePreview();
+}
+
+// ---- Official trackzone interaction (Ctrl+drag draw / Ctrl+click clear) ---
+
+bool YOLOLiveWidget::onPreviewMousePress(QMouseEvent* event) {
+    if (!(event->modifiers() & Qt::ControlModifier) ||
+        event->button() != Qt::LeftButton) {
+        return false;  // everything else keeps the label's own behavior
+    }
+    m_zoneDragging = true;
+    m_zoneDragStartLabel = qtCompatMouseEventPos(event);
+    m_trackZoneDraft = QRectF();
+    return true;  // consume: no click-to-enlarge during selection
+}
+
+bool YOLOLiveWidget::onPreviewMouseMove(QMouseEvent* event) {
+    if (!m_zoneDragging) return false;
+    const QPointF startSrc = mapPreviewToSource(m_zoneDragStartLabel);
+    const QPointF curSrc = mapPreviewToSource(qtCompatMouseEventPos(event));
+    if (startSrc.x() < 0 || curSrc.x() < 0) return true;
+    m_trackZoneDraft = QRectF(startSrc, curSrc).normalized();
+    repaintLivePreview();  // live rubber band at preview resolution
+    return true;
+}
+
+bool YOLOLiveWidget::onPreviewMouseRelease(QMouseEvent* event) {
+    if (!m_zoneDragging || event->button() != Qt::LeftButton) return false;
+    m_zoneDragging = false;
+    const QPointF startSrc = mapPreviewToSource(m_zoneDragStartLabel);
+    const QPointF curSrc = mapPreviewToSource(qtCompatMouseEventPos(event));
+    const QRectF rect(startSrc, curSrc);
+    if (startSrc.x() < 0 || curSrc.x() < 0 || rect.width() < 8.0 ||
+        rect.height() < 8.0) {
+        // Ctrl+click without a real drag: pin the clicked tracked identity
+        // ("track this one" — only it keeps its color, banner and trail),
+        // or release the pin when clicking empty space / the same target.
+        int hit = -1;
+        for (int i = 0; i < m_overlayDetections.size() && hit < 0; ++i) {
+            if (i >= m_overlayTrackIds.size()) break;
+            const int tid = m_overlayTrackIds[static_cast<qsizetype>(i)];
+            if (tid <= 0) continue;
+            const YOLODetection& d =
+                    m_overlayDetections[static_cast<qsizetype>(i)];
+            if (curSrc.x() >= d.x1 && curSrc.x() <= d.x2 &&
+                curSrc.y() >= d.y1 && curSrc.y() <= d.y2) {
+                hit = tid;
+            }
+        }
+        m_pinnedTrackId = (hit >= 0 && hit != m_pinnedTrackId) ? hit : -1;
+        m_trackZone = QRectF();
+        m_trackZoneDraft = QRectF();
+        repaintLivePreview();
+        return true;
+    }
+    m_trackZone = rect.normalized();
+    m_pinnedTrackId = -1;  // zone mode replaces the single-target pin
+    m_trackZoneDraft = QRectF();
+    repaintLivePreview();
+    return true;
 }
 
 /* 3-tap separable Gaussian blur [1,2,1]/4 on Grayscale8. */
@@ -592,7 +1004,8 @@ void YOLOLiveWidget::rebuildOverlayLayer(const QSize& displaySize) {
         return;
     }
 
-    if (!m_overlayDetections.isEmpty() || !m_overlayMasks.isEmpty()) {
+    if (!m_overlayDetections.isEmpty() || !m_overlayMasks.isEmpty() ||
+        !m_overlayObbs.isEmpty() || !m_overlayKeypointSets.isEmpty()) {
         if (m_overlaySourceSize.isEmpty()) {
             return;
         }
@@ -602,7 +1015,11 @@ void YOLOLiveWidget::rebuildOverlayLayer(const QSize& displaySize) {
 
     // Same rendering semantics as YOLOHelpers::drawDetections /
     // drawSegmentation, but on the small preview image with coordinates
-    // scaled from the source pixel space.
+    // scaled from the source pixel space. Box strokes and label font use
+    // the official Annotator defaults for the PREVIEW size (the full-res
+    // capture path applies the same formula at source resolution).
+    const int lw = YOLOHelpers::officialAnnotatorLineWidth(
+            displaySize.width(), displaySize.height());
     QImage layer(displaySize, QImage::Format_ARGB32_Premultiplied);
     layer.fill(Qt::transparent);
     const qreal sx = static_cast<qreal>(displaySize.width()) /
@@ -667,21 +1084,85 @@ void YOLOLiveWidget::rebuildOverlayLayer(const QSize& displaySize) {
         }
     }
 
-    // Boxes + labels, scaled from the source pixel space.
+    // Boxes + labels, scaled from the source pixel space. Tracked runs
+    // prefix the banner with the stable id in the official results.plot()
+    // format (id:<n>), same as the capture rendering in
+    // YOLOHelpers::drawDetections.
     QFont font = p.font();
-    font.setPixelSize(std::max(12, displaySize.height() / 60));
+    font.setPixelSize(YOLOHelpers::officialAnnotatorFontPixelSize(lw));
     p.setFont(font);
-    for (const YOLODetection& d : m_overlayDetections) {
-        const QColor color(YOLOHelpers::classColor(d.classId));
+    // Official trackzone border: white, double-width, around the tracking
+    // region (live rubber band while dragging).
+    const QRectF& zoneRect = m_zoneDragging ? m_trackZoneDraft : m_trackZone;
+    if (!zoneRect.isNull()) {
+        QPen zonePen(Qt::white);
+        zonePen.setWidth(lw * 2);
+        p.setPen(zonePen);
+        p.drawRect(QRectF(zoneRect.x() * sx, zoneRect.y() * sy,
+                          zoneRect.width() * sx, zoneRect.height() * sy));
+    }
+    // Track trails (official solutions annotator): only when the Trails
+    // toggle is on, or always for the pinned identity. Per-id color,
+    // beneath the boxes; the pinned trail is drawn heavier.
+    if ((!m_showTrails && m_pinnedTrackId < 0) || m_trails.isEmpty()) {
+        // no trails requested
+    } else {
+        p.setRenderHint(QPainter::Antialiasing, true);
+        QPen trailPen;
+        for (auto it = m_trails.constBegin(); it != m_trails.constEnd(); ++it) {
+            const bool pinned = it.key() == m_pinnedTrackId;
+            if (m_pinnedTrackId >= 0 && !pinned) continue;  // pinned view
+            const QVector<QPointF>& pts = it.value();
+            if (pts.size() < 2) continue;
+            trailPen.setWidthF(std::max(
+                    1.0, static_cast<double>(lw) * (pinned ? 1.25 : 0.66)));
+            trailPen.setColor(QColor(YOLOHelpers::trackIdColor(it.key())));
+            p.setPen(trailPen);
+            QPolygonF line;
+            line.reserve(pts.size());
+            for (const QPointF& pt : pts) {
+                line.append(QPointF(pt.x() * sx, pt.y() * sy));
+            }
+            p.drawPolyline(line);
+        }
+        p.setRenderHint(QPainter::Antialiasing, false);
+    }
+    for (int detIdx = 0; detIdx < m_overlayDetections.size(); ++detIdx) {
+        const YOLODetection& d =
+                m_overlayDetections[static_cast<qsizetype>(detIdx)];
+        // Official solutions identity coloring: a tracked row takes the
+        // stable per-id color; untracked rows keep the per-class palette.
+        // With a pinned target, every other row is demoted to a thin gray
+        // box without a banner so the tracked one stands out.
+        const int tid =
+                detIdx < m_overlayTrackIds.size()
+                        ? m_overlayTrackIds[static_cast<qsizetype>(detIdx)]
+                        : -1;
+        const bool demoted = m_pinnedTrackId >= 0 && tid != m_pinnedTrackId;
+        const QColor color(
+                demoted ? QColor(150, 150, 150)
+                        : (tid >= 0 ? QColor(YOLOHelpers::trackIdColor(tid))
+                                    : QColor(YOLOHelpers::classColor(
+                                              d.classId))));
         QPen pen(color);
-        pen.setWidth(2);
+        pen.setWidth(
+                demoted ? std::max(1, lw / 2)
+                        : (tid >= 0 && tid == m_pinnedTrackId ? lw * 2 : lw));
         p.setPen(pen);
         p.drawRect(QRectF(d.x1 * sx, d.y1 * sy, (d.x2 - d.x1) * sx,
                           (d.y2 - d.y1) * sy));
 
-        const QString label = QStringLiteral("%1 %2")
-                                      .arg(d.className)
-                                      .arg(d.score, 0, 'f', 2);
+        if (demoted) continue;  // thin gray box only, no banner
+
+        QString label;
+        if (detIdx < m_overlayTrackIds.size() &&
+            m_overlayTrackIds[static_cast<qsizetype>(detIdx)] > 0) {
+            label = QStringLiteral("id:%1 ").arg(
+                    m_overlayTrackIds[static_cast<qsizetype>(detIdx)]);
+        }
+        label += QStringLiteral("%1 %2")
+                         .arg(d.className)
+                         .arg(d.score, 0, 'f', 2);
         // Keep the banner fully inside the preview (same rule as
         // YOLOHelpers::drawDetections): clamp horizontally, flip below the
         // box top when the box hugs the top edge.
@@ -705,6 +1186,94 @@ void YOLOLiveWidget::rebuildOverlayLayer(const QSize& displaySize) {
         p.drawText(labelRect.adjusted(2, 3, -2, -2), label);
         p.setPen(pen);
     }
+
+    // Pose skeletons: COCO-17 lines + keypoint dots (same edge table as
+    // YOLOHelpers::drawPose), scaled to the preview. The det boxes + labels
+    // above already carry the pose rows (index-aligned with keypointSets).
+    if (!m_overlayKeypointSets.isEmpty()) {
+        const QVector<QPair<int, int>> skeleton =
+                YOLOHelpers::cocoSkeletonEdges();
+        const qreal kptRadius = std::max(2.0, displaySize.height() / 300.0);
+        QPen linePen(Qt::white);
+        linePen.setWidth(1);
+        for (const YOLOKeypointSet& set : m_overlayKeypointSets) {
+            const QColor color(YOLOHelpers::classColor(set.det.classId));
+            linePen.setColor(color);
+            p.setPen(linePen);
+            for (const auto& edge : skeleton) {
+                const int a = edge.first, b = edge.second;
+                if (a >= set.kpts.size() || b >= set.kpts.size()) continue;
+                const YOLOKeypoint& ka = set.kpts[a];
+                const YOLOKeypoint& kb = set.kpts[b];
+                if (ka.visibility < 0.5f || kb.visibility < 0.5f) continue;
+                p.drawLine(QPointF(ka.x * sx, ka.y * sy),
+                           QPointF(kb.x * sx, kb.y * sy));
+            }
+            p.setPen(Qt::NoPen);
+            for (const YOLOKeypoint& k : set.kpts) {
+                if (k.visibility < 0.5f) continue;
+                p.setBrush(QColor(Qt::white));
+                p.drawEllipse(QPointF(k.x * sx, k.y * sy), kptRadius,
+                              kptRadius);
+                p.setBrush(color);
+                p.drawEllipse(QPointF(k.x * sx, k.y * sy), kptRadius * 0.6,
+                              kptRadius * 0.6);
+            }
+        }
+    }
+
+    // Oriented boxes: rotated rectangles + center mark, scaled from the
+    // source pixel space (same shape as YOLOHelpers::drawObb).
+    for (int obbIdx = 0; obbIdx < m_overlayObbs.size(); ++obbIdx) {
+        const YOLOObbBox& b = m_overlayObbs[static_cast<qsizetype>(obbIdx)];
+        const QColor color(YOLOHelpers::classColor(b.classId));
+        QPen pen(color);
+        pen.setWidth(lw);
+        p.setPen(pen);
+        p.setBrush(Qt::NoBrush);
+        const QPointF center(b.cx * sx, b.cy * sy);
+        p.save();
+        p.translate(center);
+        p.rotate(qRadiansToDegrees(b.angle));
+        p.drawRect(
+                QRectF(-b.w * sx / 2.0, -b.h * sy / 2.0, b.w * sx, b.h * sy));
+        p.restore();
+        p.drawLine(center + QPointF(-4, 0), center + QPointF(4, 0));
+        p.drawLine(center + QPointF(0, -4), center + QPointF(0, 4));
+
+        const int deg = static_cast<int>(qRadiansToDegrees(b.angle) + 0.5);
+        QString label;
+        if (obbIdx < m_overlayTrackIds.size() &&
+            m_overlayTrackIds[static_cast<qsizetype>(obbIdx)] > 0) {
+            label = QStringLiteral("id:%1 ").arg(
+                    m_overlayTrackIds[static_cast<qsizetype>(obbIdx)]);
+        }
+        label += QStringLiteral("%1 %2%3")
+                         .arg(b.className)
+                         .arg(b.score, 0, 'f', 2)
+                         .arg(deg)
+                         .arg(QChar(0x00B0));
+        QRect labelRect(static_cast<int>(b.cx * sx - b.w * sx / 2.0),
+                        static_cast<int>(b.cy * sy - b.h * sy / 2.0) -
+                                font.pixelSize() - 6,
+                        std::max(20, label.size() * font.pixelSize()),
+                        font.pixelSize() + 6);
+        labelRect.setWidth(std::min(labelRect.width(),
+                                    std::max(20, displaySize.width() - 4)));
+        labelRect.moveLeft(std::clamp(
+                labelRect.left(), 2,
+                std::max(2, displaySize.width() - labelRect.width() - 2)));
+        if (labelRect.top() < 2) {
+            labelRect.moveTop(static_cast<int>(b.cy * sy - b.h * sy / 2.0) + 2);
+        }
+        labelRect.moveTop(std::min(
+                labelRect.top(),
+                std::max(2, displaySize.height() - labelRect.height() - 2)));
+        p.fillRect(labelRect.adjusted(0, 0, 4, 2), color);
+        p.setPen(Qt::white);
+        p.drawText(labelRect.adjusted(2, 3, -2, -2), label);
+        p.setPen(pen);
+    }
     p.end();
 
     m_overlayLayer = layer;
@@ -714,7 +1283,8 @@ void YOLOLiveWidget::rebuildOverlayLayer(const QSize& displaySize) {
 
 void YOLOLiveWidget::drawLiveOverlay(QImage& frame) {
     if (frame.isNull() ||
-        (m_overlayDetections.isEmpty() && m_overlayDepthImage.isNull())) {
+        (m_overlayDetections.isEmpty() && m_overlayDepthImage.isNull() &&
+         m_overlayObbs.isEmpty() && m_overlayKeypointSets.isEmpty())) {
         return;
     }
     // Rebuild only when the results changed or the preview was resized;
@@ -742,6 +1312,9 @@ void YOLOLiveWidget::clearLiveOverlay() {
     m_lastSourceFrame = QImage();
     m_overlayDetections.clear();
     m_overlayMasks.clear();
+    m_overlayObbs.clear();
+    m_overlayKeypointSets.clear();
+    m_overlayTrackIds.clear();
     m_overlaySourceSize = QSize();
     m_overlayDepthImage = QImage();
     m_overlayLayer = QImage();
@@ -802,21 +1375,50 @@ void YOLOLiveWidget::captureSnapshotToDb() {
         return;
     }
 
-    if (m_lastSnapshot.detections.isEmpty() && m_lastSnapshot.masks.isEmpty()) {
+    if (m_lastSnapshot.detections.isEmpty() && m_lastSnapshot.masks.isEmpty() &&
+        m_lastSnapshot.obbBoxes.isEmpty() &&
+        m_lastSnapshot.keypointSets.isEmpty()) {
         return;
     }
     if (m_lastSnapshot.annotatedImage.isNull()) {
         QImage annotated = m_lastSourceFrame;
         if (!m_lastSnapshot.masks.isEmpty()) {
             YOLOHelpers::drawSegmentation(&annotated, m_lastSnapshot.masks,
-                                          m_lastSnapshot.detections, 2);
+                                          m_lastSnapshot.detections, 0,
+                                          m_overlayTrackIds);
+        } else if (!m_lastSnapshot.obbBoxes.isEmpty()) {
+            YOLOHelpers::drawObb(&annotated, m_lastSnapshot.obbBoxes, 0);
+        } else if (!m_lastSnapshot.keypointSets.isEmpty()) {
+            YOLOHelpers::drawPose(&annotated, m_lastSnapshot.keypointSets, 0);
         } else {
             YOLOHelpers::drawDetections(&annotated, m_lastSnapshot.detections,
-                                        2);
+                                        0, m_overlayTrackIds);
         }
         m_lastSnapshot.annotatedImage = annotated;
     }
     emit captureToDbRequested(m_lastSnapshot);
+}
+
+void YOLOLiveWidget::ensureInferThread() {
+    if (m_inferWorker) return;
+    // Rebuild the async side branch after releaseGpuResources() tore it
+    // down on dialog close. A finished QThread object is reusable; only
+    // the worker must be recreated.
+    if (!m_inferThread) m_inferThread = new QThread(this);
+    m_inferWorker = new YOLOLiveInferWorker;
+    m_inferWorker->moveToThread(m_inferThread);
+    connect(m_inferThread, &QThread::finished, m_inferWorker,
+            &QObject::deleteLater);
+    connect(m_inferWorker, &YOLOLiveInferWorker::inferComplete, this,
+            &YOLOLiveWidget::onInferComplete, Qt::QueuedConnection);
+    if (!m_inferThread->isRunning()) m_inferThread->start();
+}
+
+void YOLOLiveWidget::releaseGpuResources() {
+    // Shut the infer thread down (releasing the resident model) when the
+    // owning dialog closes for good; ensureInferThread() rebuilds it on
+    // the next live start.
+    shutdownInferThread();
 }
 
 void YOLOLiveWidget::shutdownInferThread() {

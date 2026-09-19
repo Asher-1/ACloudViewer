@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <filesystem>
 #include <string>
 
 namespace colmap {
@@ -45,8 +46,8 @@ struct PoissonMeshingOptions {
 
 // Perform Poisson surface reconstruction and return true if successful.
 bool PoissonMeshing(const PoissonMeshingOptions& options,
-                    const std::string& input_path,
-                    const std::string& output_path);
+                    const std::filesystem::path& input_path,
+                    const std::filesystem::path& output_path);
 
 }  // namespace mvs
 }  // namespace colmap

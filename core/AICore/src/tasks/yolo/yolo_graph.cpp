@@ -16,9 +16,11 @@
 #include <vector>
 
 #include "common/debug_dump.hpp"
+#include "common/gguf_file_io.hpp"
 #include "ggml-alloc.h"
 #include "ggml.h"
 #include "gguf.h"
+#include "tasks/yolo/yolo_postprocess.hpp"
 
 namespace yolo {
 
@@ -943,6 +945,8 @@ void clear_run_plan(Session* s) {
     s->gctx = nullptr;
     s->input = nullptr;
     s->output = nullptr;
+    s->feat_levels[0] = s->feat_levels[1] = s->feat_levels[2] = nullptr;
+    s->embed_out = nullptr;
     s->text_input = nullptr;  // leaf lives in gctx; text_pending survives
     s->vp_input = nullptr;    // leaf lives in gctx; vp_pending survives
     s->savpe_out = nullptr;
@@ -999,6 +1003,13 @@ bool build_run_plan(Session* s, int input_w, int input_h) {
     GraphBuilder gb{gctx,         s->wctx,         s->model,
                     s->q8_direct, use_direct_conv, s->backend.is_cuda};
     std::vector<ggml_tensor*> values(s->model.ops.size(), nullptr);
+    // Detect-head input feature levels [P3, P4, P5] (feature export); the
+    // standard detect/segment/pose/obb heads record them when their op is
+    // built. Unused for world/end2end/depth/classify graphs.
+    ggml_tensor* head_in[3] = {nullptr, nullptr, nullptr};
+    // Embedding export (classify graphs): the pooled feature feeding the
+    // final linear (resolved when the classify op is built).
+    ggml_tensor* embed_in = nullptr;
 
     ggml_tensor* input =
             ggml_new_tensor_4d(gctx, GGML_TYPE_F32, input_w, input_h, 3, 1);
@@ -1159,6 +1170,7 @@ bool build_run_plan(Session* s, int input_w, int input_h) {
                     op.inputs.size() - (op.type == "segment" ? 1 : 0);
             for (size_t j = 0; j < n_feats; j++) {
                 ggml_tensor* t = values[op.inputs[j]];
+                if (j < 3) head_in[j] = t;  // feature export (P3/P4/P5)
                 const int64_t HW = t->ne[0] * t->ne[1];
                 ggml_tensor* r = ggml_reshape_2d(gctx, t, HW, no);
                 out = out ? ggml_concat(gctx, out, r, 0) : r;
@@ -1224,9 +1236,23 @@ bool build_run_plan(Session* s, int input_w, int input_h) {
                                     W, H, out->ne[0])
                           : ggml_reshape_1d(gctx, out, out->ne[0]);
         } else if (op.type == "classify") {
-            // Identity marker on the [nc] logits; softmax/topk run in
-            // postprocess.
+            // Identity marker. On a native reid graph (converted from the
+            // official yolo26*-reid.onnx assets) it sits on the final linear
+            // output, which IS the embedding; on a classify graph with
+            // export_embed the embedding is the pooled feature feeding the
+            // linear (emit_classify chain: conv -> avgpool -> linear ->
+            // classify).
             out = in0(op);
+            if (s->model.meta.task == "reid") {
+                embed_in = out;
+            } else if (s->opts.export_embed && !op.inputs.empty()) {
+                const int linear_idx = op.inputs[0];
+                if (linear_idx >= 0 && linear_idx < (int)s->model.ops.size() &&
+                    s->model.ops[linear_idx].type == "linear" &&
+                    !s->model.ops[linear_idx].inputs.empty()) {
+                    embed_in = values[s->model.ops[linear_idx].inputs[0]];
+                }
+            }
         } else if (op.type == "depth") {
             const float cal_a =
                     (float)(op.fparams.count("cal_a") ? op.fparams.at("cal_a")
@@ -1320,6 +1346,37 @@ bool build_run_plan(Session* s, int input_w, int input_h) {
         }
     }
 
+    // Object-feature export (official model="auto" ReID path): keep the
+    // head input feature levels [P3, P4, P5] as F32 graph outputs. The
+    // expands happen AFTER the main output, so the trunk computation and
+    // its bit-level results are untouched; disabled by default (zero
+    // graph cost). Non-F32 levels are cast on-device, matching the output
+    // readback convention.
+    ggml_tensor* feat_kept[3] = {nullptr, nullptr, nullptr};
+    if (s->opts.export_obj_feats) {
+        for (int l = 0; l < 3; l++) {
+            ggml_tensor* t = head_in[l];
+            if (t == nullptr) continue;
+            if (t->type != GGML_TYPE_F32) t = ggml_cast(gctx, t, GGML_TYPE_F32);
+            ggml_set_output(t);
+            ggml_build_forward_expand(graph, t);
+            feat_kept[l] = t;
+        }
+    }
+    // Embedding export (classify graphs): same post-trunk pattern for the
+    // pooled feature feeding the final linear. The avgpool output is
+    // [1, 1, C] (global pooling collapses W and H) — flatten it to the
+    // [C] embedding vector before marking it as an output.
+    ggml_tensor* embed_kept = nullptr;
+    if (embed_in && (s->opts.export_embed || s->model.meta.task == "reid")) {
+        ggml_tensor* t = ggml_reshape_1d(gctx, ggml_cont(gctx, embed_in),
+                                         ggml_nelements(embed_in));
+        if (t->type != GGML_TYPE_F32) t = ggml_cast(gctx, t, GGML_TYPE_F32);
+        ggml_set_output(t);
+        ggml_build_forward_expand(graph, t);
+        embed_kept = t;
+    }
+
     // Direct-conv backends cache transformed weights. Tensor addresses and
     // shapes may be reused after a model is freed, so neither is a sufficient
     // cache identity. Stamp every direct convolution with this session's
@@ -1348,6 +1405,8 @@ bool build_run_plan(Session* s, int input_w, int input_h) {
     s->input = input;
     s->output = output;
     s->output_proto = output_proto;
+    for (int l = 0; l < 3; l++) s->feat_levels[l] = feat_kept[l];
+    s->embed_out = embed_kept;
     s->text_input = text_input;
     s->vp_input = vp_input;
     s->savpe_out = visual ? graph_text : nullptr;  // vpe node for the dump hook
@@ -1629,8 +1688,9 @@ bool session_ensure_host_weights(Session* s) {
 
     // Re-read the raw tensor bytes straight from the GGUF file (metadata
     // only, no tensor mapping) using the offsets recorded at load time.
-    gguf_init_params ip{};  // no_alloc: header only
-    gguf_context* g = gguf_init_from_file(s->model.gguf_path.c_str(), ip);
+    // ctx=nullptr: header/metadata read only.
+    gguf_context* g = ggml_common::open_gguf_file(
+            s->model.gguf_path, /*no_alloc=*/false, nullptr, "yolo");
     if (!g) {
         YOLO_LOG_ERROR("ensure_host_weights: failed to reopen %s",
                        s->model.gguf_path.c_str());
@@ -1730,6 +1790,72 @@ bool session_run(Session* s, const float* chw_image) {
         YOLO_LOG_ERROR("graph compute failed: %d", st);
         return false;
     }
+    return true;
+}
+
+bool session_set_export_features(Session* s, bool enabled) {
+    if (s == nullptr) return false;
+    if (s->opts.export_obj_feats == enabled) return true;
+    s->opts.export_obj_feats = enabled;
+    // The feature outputs are part of the graph structure: force a plan
+    // rebuild on the next ensure_canvas (i.e. the next inference call).
+    s->input_w = 0;
+    s->input_h = 0;
+    return true;
+}
+
+bool session_read_obj_feats(Session* s,
+                            std::vector<float>& out,
+                            int& count,
+                            int& dim) {
+    out.clear();
+    count = 0;
+    dim = 0;
+    if (s == nullptr) return false;
+    if (!s->feat_levels[0] && !s->feat_levels[1] && !s->feat_levels[2]) {
+        return false;  // export disabled or unsupported head
+    }
+    std::vector<float> host;
+    yolo::ObjFeatLevel levels[3];
+    std::vector<float> level_storage[3];
+    int n = 0;
+    for (int l = 0; l < 3; l++) {
+        ggml_tensor* t = s->feat_levels[l];
+        if (t == nullptr) continue;
+        host.resize((size_t)ggml_nelements(t));
+        // The levels were cast to F32 at build time, so the readback is a
+        // plain device copy in CHW row-major order (c outer, h, w inner).
+        ggml_backend_tensor_get(t, host.data(), 0, host.size() * sizeof(float));
+        levels[n].c = (int)t->ne[2];
+        levels[n].w = (int)t->ne[0];
+        levels[n].h = (int)t->ne[1];
+        // Pool from a stable copy: `host` moves into the level's storage.
+        std::vector<float> owned = std::move(host);
+        levels[n].data = owned.data();
+        level_storage[n] = std::move(owned);
+        n++;
+    }
+    out = yolo::pool_obj_feats(levels, n, &dim);
+    if (out.empty() || dim <= 0) {
+        out.clear();
+        count = 0;
+        dim = 0;
+        return false;
+    }
+    count = (int)(out.size() / (size_t)dim);
+    return true;
+}
+
+bool session_read_embed(Session* s, std::vector<float>& out, int& dim) {
+    out.clear();
+    dim = 0;
+    if (s == nullptr || s->embed_out == nullptr) return false;
+    dim = (int)s->embed_out->ne[0];
+    out.resize((size_t)dim);
+    // The node was cast to F32 at build time, so the readback is a plain
+    // device copy.
+    ggml_backend_tensor_get(s->embed_out, out.data(), 0,
+                            out.size() * sizeof(float));
     return true;
 }
 

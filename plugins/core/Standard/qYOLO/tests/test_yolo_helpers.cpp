@@ -181,21 +181,21 @@ TEST(YOLOHelpers, TestImageForTask) {
 }
 
 TEST(YOLOHelpers, CatalogMirror) {
-    // 185 models = 61 variants x 3 quants + 2 mclip bridge quants (f16+q8_0)
-    // (10 detect + 10 seg + 5 depth + 5 pose + 5 obb + 5 sem + 5 cls +
-    // 4 world + 10 yoloe + 2 text + 1 mclip x f16), mirroring the AICore
-    // catalog.
+    // 215 models = 72 variants x 3 quants - 1 (mclip bridge ships f16 +
+    // q8_0 only) (10 detect + 10 seg + 5 depth + 5 pose + 10 obb + 10 sem
+    // + 5 cls + 4 world + 10 yoloe + 2 text + 1 mclip x f16), mirroring
+    // the AICore catalog.
     const QVector<YOLOModelEntry> all = YOLOHelpers::catalogModels();
-    ASSERT_EQ(all.size(), 185);
+    ASSERT_EQ(all.size(), 215);
     // Each task tab filters on its catalog role: pure detect / segment /
     // depth, the new batch families, and the text-conditioned families.
     EXPECT_EQ(YOLOHelpers::detectionModels().size(), 30);
     EXPECT_EQ(YOLOHelpers::segmentModels().size(), 30);
     EXPECT_EQ(YOLOHelpers::depthModels().size(), 15);
     EXPECT_EQ(YOLOHelpers::poseModels().size(), 15);
-    EXPECT_EQ(YOLOHelpers::obbModels().size(), 15);
+    EXPECT_EQ(YOLOHelpers::obbModels().size(), 30);
     EXPECT_EQ(YOLOHelpers::classifyModels().size(), 15);
-    EXPECT_EQ(YOLOHelpers::semanticModels().size(), 15);
+    EXPECT_EQ(YOLOHelpers::semanticModels().size(), 30);
     EXPECT_EQ(YOLOHelpers::worldModels().size(), 12);
     EXPECT_EQ(YOLOHelpers::yoloeModels().size(), 30);
     EXPECT_EQ(YOLOHelpers::textModels().size(), 8);
@@ -203,9 +203,9 @@ TEST(YOLOHelpers, CatalogMirror) {
     EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("segment")).size(), 30);
     EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("depth")).size(), 15);
     EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("pose")).size(), 15);
-    EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("obb")).size(), 15);
+    EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("obb")).size(), 30);
     EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("classify")).size(), 15);
-    EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("semantic")).size(), 15);
+    EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("semantic")).size(), 30);
     EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("world")).size(), 12);
     EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("yoloe")).size(), 30);
     EXPECT_EQ(YOLOHelpers::taskModels(QStringLiteral("text")).size(), 8);

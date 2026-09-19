@@ -18,6 +18,7 @@
 #include <QGroupBox>
 #include <QGuiApplication>
 #include <QHBoxLayout>
+#include <QKeyEvent>
 #include <QMessageBox>
 #include <QScreen>
 #include <QSet>
@@ -1225,6 +1226,7 @@ void FaceDetectDialog::setProgress(int current, int total) {
 }
 
 void FaceDetectDialog::setRunning(bool running) {
+    m_taskRunning = running;
     m_runBtn->setEnabled(!running);
     m_cancelBtn->setEnabled(running);
     if (m_progress) {
@@ -1837,12 +1839,49 @@ void FaceDetectDialog::onCancel() {
 }
 
 void FaceDetectDialog::closeEvent(QCloseEvent* event) {
+    // Uniform plugin-close semantics: if a task, download, live stream,
+    // or test-data operation is active, ask for confirmation.
+    if (m_taskRunning || m_downloadInProgress || m_testDataDownloadInProgress ||
+        m_testDataProcessing || (m_liveWidget && m_liveWidget->isActive())) {
+        if (QMessageBox::question(
+                    this, tr("Task running"),
+                    tr("A FaceDetect task is running. Close anyway?"),
+                    QMessageBox::Yes | QMessageBox::No,
+                    QMessageBox::No) != QMessageBox::Yes) {
+            event->ignore();
+            return;
+        }
+    }
     onCancel();
     onLiveStop();
+    // Closed for good: drop the resident live model (GPU memory); it
+    // rebuilds lazily on the next live start.
+    if (m_liveWidget) m_liveWidget->releaseGpuResources();
     saveBatchSettings();
     if (m_liveWidget) m_liveWidget->saveSettings();
-    if (m_registryWidget) m_registryWidget->saveSettings();
+    if (m_registryWidget) {
+        m_registryWidget->saveSettings();
+        // Closed for good: drop the resident embedding context (GPU
+        // memory); it reloads lazily on the next registry operation.
+        m_registryWidget->releaseEmbedContext();
+    }
     QDialog::closeEvent(event);
+}
+
+void FaceDetectDialog::keyPressEvent(QKeyEvent* event) {
+    if (event->key() == Qt::Key_Escape &&
+        (m_taskRunning || m_downloadInProgress ||
+         m_testDataDownloadInProgress || m_testDataProcessing ||
+         (m_liveWidget && m_liveWidget->isActive()))) {
+        if (QMessageBox::question(
+                    this, tr("Task running"),
+                    tr("A FaceDetect task is running. Close anyway?"),
+                    QMessageBox::Yes | QMessageBox::No,
+                    QMessageBox::No) != QMessageBox::Yes) {
+            return;
+        }
+    }
+    QDialog::keyPressEvent(event);
 }
 
 void FaceDetectDialog::showEvent(QShowEvent* event) {

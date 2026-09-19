@@ -109,6 +109,8 @@ signals:
 
 protected:
     void closeEvent(QCloseEvent* event) override;
+    /** Esc intercept: confirm before closing when a task is running. */
+    void keyPressEvent(QKeyEvent* event) override;
     // Measure the non-tab chrome (window decorations + fixed UI) on the
     // first show, once the initial layout has settled.  Every later tab
     // switch resizes to baseChrome + the incoming tab's content, so the

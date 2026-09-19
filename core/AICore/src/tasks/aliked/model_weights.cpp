@@ -12,6 +12,8 @@
 
 #include <cstring>
 
+#include "common/gguf_file_io.hpp"
+
 namespace lightglue::aliked_internal {
 namespace {
 
@@ -69,10 +71,11 @@ bool LoadAlikedTensors(const std::string &path,
     tensors->clear();
 
     ggml_context *ctx = nullptr;
-    gguf_init_params params{/*no_alloc=*/false, /*ctx=*/&ctx};
-    gguf_context *gguf = gguf_init_from_file(path.c_str(), params);
+    std::string open_error;
+    gguf_context *gguf = ggml_common::open_gguf_file(
+            path, /*no_alloc=*/false, &ctx, "aliked", &open_error);
     if (gguf == nullptr || ctx == nullptr) {
-        *error = "failed to read GGUF model: " + path;
+        *error = open_error;
         return false;
     }
 

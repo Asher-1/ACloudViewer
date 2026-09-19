@@ -12,6 +12,7 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "common/gguf_file_io.hpp"
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
 #include "tasks/gkd/gkd_common.hpp"
@@ -173,12 +174,11 @@ std::unique_ptr<GkdModel> load_gkd_model(const std::string& path,
                                          ggml_backend_buffer_type_t buft) {
     auto m = std::make_unique<GkdModel>();
 
-    gguf_init_params params{};
-    params.no_alloc = true;
-    params.ctx = &m->meta_ctx;
-    m->gguf = gguf_init_from_file(path.c_str(), params);
+    std::string open_error;
+    m->gguf = ggml_common::open_gguf_file(path, /*no_alloc=*/true, &m->meta_ctx,
+                                          "gkd", &open_error);
     if (!m->gguf) {
-        GKD_LOG_ERROR("failed to open GGUF model: %s", path.c_str());
+        GKD_LOG_ERROR("%s", open_error.c_str());
         return nullptr;
     }
 

@@ -83,6 +83,9 @@ int main() {
     static const uint8_t kRgb[4 * 3] = {0};
     AICORE_CHECK(aicore_sam3_encode_rgb(nullptr, kRgb, 2, 2, sizeof(kRgb), 0) ==
                  -1);
+    /* F-01 batch A: image_view entry is NULL-safe and rejects non-RGB8
+     * formats without touching model state. */
+    AICORE_CHECK(aicore_sam3_encode_image_view(nullptr, nullptr, 0) == -1);
     aicore_sam3_pcs_prompt pcs{};
     pcs.text = "cat";
     AICORE_CHECK(aicore_sam3_segment_pcs_rgb(nullptr, &pcs, kRgb, 2, 2,

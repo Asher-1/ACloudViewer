@@ -13,17 +13,41 @@
 
 ## Files
 
-**61 variants x 3 quantizations = 183 GGUF files** in the
-[yolo_gguf_models release](https://github.com/Asher-1/cloudViewer_downloads/releases/tag/yolo_gguf_models).
+**72 variants x 3 quantizations = 215 GGUF files** in the
+[yolo_gguf_models release](https://github.com/Asher-1/cloudViewer_downloads/releases/tag/yolo_gguf_models)
+(plus the 15-file `reid-yolo26{...}` appearance-encoder family below → 230
+assets total).
 Filename pattern: `<variant>-<quant>.gguf` (e.g. `yolov8n-f16.gguf`,
 `yolov8n-seg-f16.gguf`, `yolo26n-depth-q8_0.gguf`,
-`yoloe-26n-seg-pf-q8_0.gguf`).
+`yoloe-26n-seg-pf-q8_0.gguf`). The obb and semantic families additionally
+ship checkpoint-native **1024-resolution** rebuilds with the size inserted
+in the stem (e.g. `yolo26n-obb-1024-q8_0.gguf`,
+`yolo26x-sem-1024-f16.gguf` — 30 files); the 1024 GGUFs declare their
+input size in the `yolo.imgsz` metadata, so the engine builds the larger
+canvas automatically.
 
 YOLOE visual prompts: the non-`-pf` `yoloe-*-seg` GGUFs additionally support
 the official SAVPE visual-prompt mode when they carry savpe weights
 (`yolo.savpe = 1` + `savpe.*` tensors, added by
 `core/AICore/src/tasks/yolo/tools/convert_yoloe_savpe_gguf.py` from the matching `.pt` checkpoint);
 GGUFs without the flag keep working through the text / prompt-free paths.
+
+ReID appearance encoders (authoritative family, 2026-09-19):
+`reid-yolo26{n,s,m,l,x}-{f32,f16,q8_0}.gguf` (15 files, 3.2–129 MB) —
+converted directly from the official
+`yolo26{n,s,m,l,x}-reid.onnx` assets (standalone ReID backbones with a
+512-d embedding head, GAP+GMP→Gemm→L2norm); task='reid' graphs consumed
+through `aicore/reid_capi.h` as the explicit `model: <path>` appearance
+encoder. Same release and `yolo_models/` cache folder, plus the
+[Hugging Face `Asher-1/yolo-gguf`](https://huggingface.co/Asher-1/yolo-gguf)
+mirror; digests pinned in `aicore/asset_digests.h`, exercised by the
+`reid-native-models` validate-all rows. Upstream truth: the converter
+verifies every rebuilt network against its onnx graph at cosine 1.000000
+before writing, and the AICore CUDA runtime matches the official onnx
+output at cos=0.9999 on identical CHW input. (The earlier cls-tower
+encoder family `reid-yolo26*-cls-*` was withdrawn — its weights were not
+the official ReID models.) Conversion:
+`cpp_ggml/scripts/convert_reid_onnx_to_gguf.py` in ultralytics-ggml.
 
 | Variant family | Variants          | Task                | Head                                    | end2end |
 |----------------|-------------------|---------------------|-----------------------------------------|---------|
@@ -34,7 +58,9 @@ GGUFs without the flag keep working through the text / prompt-free paths.
 | YOLO26 depth   | n / s / m / l / x | Metric depth        | end-to-end (768 input)                  | yes     |
 | YOLO26 pose    | n / s / m / l / x | Keypoint pose       | Pose26 (RLE head, COCO-17)              | yes     |
 | YOLO26 obb     | n / s / m / l / x | Oriented boxes      | OBB26 (DOTA-15, raw radians)            | yes     |
+| YOLO26 obb-1024 | n / s / m / l / x | Oriented boxes    | OBB26 (DOTA-15, 1024 checkpoint-native input) | yes |
 | YOLO26 sem     | n / s / m / l / x | Semantic seg        | Cityscapes-19 head (canvas/8 grid)      | yes     |
+| YOLO26 sem-1024 | n / s / m / l / x | Semantic seg       | Cityscapes-19 head (1024 checkpoint-native input) | yes |
 | YOLO26 cls     | n / s / m / l / x | Classification      | ImageNet-1000 linear head (224 input)   | yes     |
 | YOLOv8-world   | s / m / l / x     | Open-vocab detect   | CLIP text-conditioned head (v3 graph)   | no      |
 | YOLOE-26-seg   | n / s / m / l / x (+ `-pf`) | Open-vocab segment | MobileCLIP text tower + reprta (v4 graph) | yes |

@@ -2785,6 +2785,7 @@ else()
                 VTK::RenderingAnnotation
                 VTK::RenderingCore
                 VTK::RenderingContext2D
+                VTK::RenderingImage       # vtkImageResliceMapper (image display quality)
                 VTK::RenderingLOD
                 VTK::RenderingFreeType
                 VTK::ViewsCore

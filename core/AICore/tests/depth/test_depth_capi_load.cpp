@@ -59,6 +59,18 @@ int main() {
 
     aicore::test::printValidationResult("depth", device, output_hash, &timings);
 
+    // Compatibility file-path entry (contract-negative consumption): the
+    // typed in-memory path above owns the real pipeline; this only proves
+    // the NULL-safe rejection contract of aicore_depth_reconstruct_path.
+    {
+        int h = 0, w = 0, n = 0;
+        float *means = nullptr, *scales = nullptr, *harm = nullptr,
+              *opac = nullptr;
+        AICORE_CHECK(aicore_depth_reconstruct_path(nullptr, 0, nullptr, &h, &w,
+                                                   &n, &means, &scales, &harm,
+                                                   &opac) == -1);
+    }
+
     aicore_depth_release_gpu_working_memory(ctx);
     aicore_depth_free(ctx);
     std::fprintf(stderr, "depth load ok: %s\n", gguf);

@@ -273,14 +273,15 @@ bool DA3OutputsAreStale(const std::filesystem::path& image_root,
     return false;
 }
 
-bool DA3StereoDepthMapsReady(const std::string& dense_path) {
+bool DA3StereoDepthMapsReady(const std::filesystem::path& dense_path) {
     return ColmapGeometricDepthMapsReady(dense_path);
 }
 
 namespace {
 
-std::vector<std::string> FusionConfigImageNames(const std::string& dense_path) {
-    const auto fusion_cfg = JoinPaths(dense_path, "stereo", "fusion.cfg");
+std::vector<std::string> FusionConfigImageNames(
+        const std::filesystem::path& dense_path) {
+    const auto fusion_cfg = dense_path / "stereo" / "fusion.cfg";
     if (!ExistsFile(fusion_cfg)) {
         return {};
     }
@@ -295,15 +296,15 @@ std::vector<std::string> FusionConfigImageNames(const std::string& dense_path) {
     return names;
 }
 
-bool StereoDepthMapsReadyWithSuffix(const std::string& dense_path,
-                                    const char* suffix) {
+bool StereoDepthMapsReadyWithSuffix(
+        const std::filesystem::path& dense_path, const char* suffix) {
     const auto image_names = FusionConfigImageNames(dense_path);
     if (image_names.empty()) {
         return false;
     }
 
-    const auto depth_dir = JoinPaths(dense_path, "stereo", "depth_maps");
-    const auto normal_dir = JoinPaths(dense_path, "stereo", "normal_maps");
+    const auto depth_dir = dense_path / "stereo" / "depth_maps";
+    const auto normal_dir = dense_path / "stereo" / "normal_maps";
     if (!ExistsDir(depth_dir) || !ExistsDir(normal_dir)) {
         return false;
     }
@@ -311,8 +312,8 @@ bool StereoDepthMapsReadyWithSuffix(const std::string& dense_path,
     constexpr std::uintmax_t kMinMapBytes = 128;
     for (const auto& name : image_names) {
         const std::string map_name = name + suffix;
-        const auto depth_path = JoinPaths(depth_dir, map_name);
-        const auto normal_path = JoinPaths(normal_dir, map_name);
+        const auto depth_path = depth_dir / map_name;
+        const auto normal_path = normal_dir / map_name;
         if (!ExistsFile(depth_path) || !ExistsFile(normal_path)) {
             return false;
         }
@@ -387,11 +388,11 @@ std::filesystem::file_time_type OldestFileTimeWithSuffix(
     return oldest;
 }
 
-void RemoveStereoMapsWithSuffix(const std::string& dense_path,
+void RemoveStereoMapsWithSuffix(const std::filesystem::path& dense_path,
                                 const char* suffix) {
-    const auto stereo_path = JoinPaths(dense_path, "stereo");
+    const auto stereo_path = dense_path / "stereo";
     for (const char* sub : {"depth_maps", "normal_maps", "consistency_graphs"}) {
-        const auto dir_path = JoinPaths(stereo_path, sub);
+        const auto dir_path = stereo_path / sub;
         if (!ExistsDir(dir_path)) {
             continue;
         }
@@ -411,22 +412,22 @@ void RemoveStereoMapsWithSuffix(const std::string& dense_path,
 
 }  // namespace
 
-bool DA3DepthPriorReady(const std::string& dense_path) {
+bool DA3DepthPriorReady(const std::filesystem::path& dense_path) {
     return StereoDepthMapsReadyWithSuffix(dense_path, ".photometric.bin");
 }
 
-bool ColmapGeometricDepthMapsReady(const std::string& dense_path) {
+bool ColmapGeometricDepthMapsReady(const std::filesystem::path& dense_path) {
     return StereoDepthMapsReadyWithSuffix(dense_path, ".geometric.bin");
 }
 
-bool DA3PatchMatchRefineStale(const std::string& dense_path) {
+bool DA3PatchMatchRefineStale(const std::filesystem::path& dense_path) {
     if (!DA3DepthPriorReady(dense_path)) {
         return true;
     }
     if (!ColmapGeometricDepthMapsReady(dense_path)) {
         return true;
     }
-    const auto depth_dir = JoinPaths(dense_path, "stereo", "depth_maps");
+    const auto depth_dir = dense_path / "stereo" / "depth_maps";
     const auto newest_prior =
         NewestFileTimeWithSuffix(depth_dir, ".photometric.bin");
     const auto oldest_geometric =
@@ -434,7 +435,8 @@ bool DA3PatchMatchRefineStale(const std::string& dense_path) {
     return newest_prior > oldest_geometric;
 }
 
-void RemoveColmapGeometricStereoMaps(const std::string& dense_path) {
+void RemoveColmapGeometricStereoMaps(
+        const std::filesystem::path& dense_path) {
     RemoveStereoMapsWithSuffix(dense_path, ".geometric.bin");
 }
 
@@ -455,20 +457,20 @@ void WriteDA3PlaceholderDatabase(const std::filesystem::path& database_path,
 bool SyncWorkspaceSparseFromDense(const std::filesystem::path& workspace_path,
                                   const std::filesystem::path& dense_path,
                                   int reconstruction_index) {
-    std::string src_sparse = JoinPaths(dense_path, "sparse");
-    if (!ExistsFile(JoinPaths(src_sparse, "images.bin")) &&
-        !ExistsFile(JoinPaths(src_sparse, "images.txt"))) {
-        src_sparse = JoinPaths(dense_path, "sparse", "0");
+    std::filesystem::path src_sparse = dense_path / "sparse";
+    if (!ExistsFile(src_sparse / "images.bin") &&
+        !ExistsFile(src_sparse / "images.txt")) {
+        src_sparse = dense_path / "sparse" / "0";
     }
-    if (!ExistsFile(JoinPaths(src_sparse, "images.bin")) &&
-        !ExistsFile(JoinPaths(src_sparse, "images.txt"))) {
+    if (!ExistsFile(src_sparse / "images.bin") &&
+        !ExistsFile(src_sparse / "images.txt")) {
         LOG(ERROR) << "DA3: no dense sparse model to sync from " << dense_path;
         return false;
     }
 
-    const std::string dst_sparse =
-        JoinPaths(workspace_path, "sparse", std::to_string(reconstruction_index));
-    CreateDirIfNotExists(JoinPaths(workspace_path, "sparse"));
+    const std::filesystem::path dst_sparse =
+        workspace_path / "sparse" / std::to_string(reconstruction_index);
+    CreateDirIfNotExists(workspace_path / "sparse");
 
     std::error_code ec;
     std::filesystem::remove_all(dst_sparse, ec);
@@ -481,12 +483,12 @@ bool SyncWorkspaceSparseFromDense(const std::filesystem::path& workspace_path,
     };
     size_t copied = 0;
     for (const char* name : kSparseFiles) {
-        const std::string src = JoinPaths(src_sparse, name);
+        const std::filesystem::path src = src_sparse / name;
         if (!ExistsFile(src)) {
             continue;
         }
         std::filesystem::copy(
-            src, JoinPaths(dst_sparse, name),
+            src, dst_sparse / name,
             std::filesystem::copy_options::overwrite_existing, ec);
         if (!ec) {
             ++copied;
@@ -499,12 +501,12 @@ bool SyncWorkspaceSparseFromDense(const std::filesystem::path& workspace_path,
     }
 
     {
-        std::ofstream marker(JoinPaths(dst_sparse, ".da3_undistorted_sync"),
+        std::ofstream marker(dst_sparse / ".da3_undistorted_sync",
                              std::ios::trunc);
         marker << "synced_from=" << dense_path << '\n';
     }
 
-    RECON_LOG_DEBUG("DA3: synced workspace sparse/%d from %s (%zu files)\n", reconstruction_index, src_sparse.c_str(), copied);
+    RECON_LOG_DEBUG("DA3: synced workspace sparse/%d from %s (%zu files)\n", reconstruction_index, src_sparse.string().c_str(), copied);
     return true;
 }
 
@@ -622,8 +624,8 @@ bool WriteExifPlaceholderSparseModel(
     reconstruction.Write(sparse_output_path);
 
     {
-        std::ofstream marker(JoinPaths(sparse_output_path, ".da3_exif_bootstrap"),
-                             std::ios::trunc);
+        std::ofstream marker(
+                sparse_output_path / ".da3_exif_bootstrap", std::ios::trunc);
         marker << "exif_placeholder=1\n";
     }
 
@@ -635,7 +637,8 @@ bool WriteExifPlaceholderSparseModel(
 
 namespace {
 
-std::vector<std::string> CollectImagePaths(const std::string& image_dir) {
+std::vector<std::string> CollectImagePaths(
+        const std::filesystem::path& image_dir) {
     std::vector<std::string> paths;
     for (const auto& entry : CollectDA3ImageEntries(image_dir)) {
         paths.push_back(entry.abs_path);
@@ -656,7 +659,7 @@ using StereoExportProgressCallback =
     std::function<void(int current, int total, const std::string& status)>;
 
 bool WriteStereoMapsFromMultiview(
-    const std::string& output_path,
+    const std::filesystem::path& output_path,
     const std::vector<std::string>& undist_image_paths,
     const std::vector<std::string>& fusion_colmap_names,
     const DepthPoseMultiResult& multi,
@@ -922,9 +925,9 @@ void CapExportDimensions(int* width, int* height, int export_max_image_size) {
     *height = std::max(1, static_cast<int>(std::lround(*height * scale)));
 }
 
-void WriteStereoFusionConfig(const std::string& stereo_path,
+void WriteStereoFusionConfig(const std::filesystem::path& stereo_path,
                              const std::vector<std::string>& image_names) {
-    std::ofstream file(JoinPaths(stereo_path, "fusion.cfg"), std::ios::trunc);
+    std::ofstream file(stereo_path / "fusion.cfg", std::ios::trunc);
     if (!file) {
         return;
     }
@@ -1058,7 +1061,7 @@ bool RunDepthPoseMulti(aicore_depth_ctx* ctx, const std::vector<std::string>& im
 
 bool WriteDenseSparseFromMultiview(
         aicore_depth_ctx* ctx,
-        const std::string& dense_path,
+        const std::filesystem::path& dense_path,
         const std::vector<std::string>& image_paths,
         const std::vector<std::string>& image_names,
         const DepthPoseMultiResult& multi) {
@@ -1068,7 +1071,7 @@ bool WriteDenseSparseFromMultiview(
         return false;
     }
 
-    const std::string sparse_dir = JoinPaths(dense_path, "sparse");
+    const std::filesystem::path sparse_dir = dense_path / "sparse";
     CreateDirIfNotExists(sparse_dir);
 
     std::vector<const char*> cpaths(static_cast<size_t>(multi.n));
@@ -1099,7 +1102,7 @@ bool WriteDenseSparseFromMultiview(
     return true;
 }
 
-void WriteColmapDepthMap(const std::string& path, int w, int h,
+void WriteColmapDepthMap(const std::filesystem::path& path, int w, int h,
                          const float* depth) {
     std::ofstream ofs(path);
     if (!ofs) {
@@ -1114,7 +1117,7 @@ void WriteColmapDepthMap(const std::string& path, int w, int h,
     }
 }
 
-void WriteColmapNormalMap(const std::string& path, int w, int h,
+void WriteColmapNormalMap(const std::filesystem::path& path, int w, int h,
                           const std::vector<float>& normals) {
     std::ofstream ofs(path);
     if (!ofs) {
@@ -1228,15 +1231,16 @@ struct ExportedDepthView {
 
 // COLMAPUndistorter writes undistorted cameras to dense/<i>/sparse/ (no /0).
 // DA3 sparse export may write dense/<i>/sparse/0/. Prefer the undistorted model.
-std::string FindUndistortedSparseModelPath(const std::string& dense_path) {
-    const auto undist_sparse = JoinPaths(dense_path, "sparse");
-    if (ExistsFile(JoinPaths(undist_sparse, "images.bin")) ||
-        ExistsFile(JoinPaths(undist_sparse, "images.txt"))) {
+std::filesystem::path FindUndistortedSparseModelPath(
+        const std::filesystem::path& dense_path) {
+    const auto undist_sparse = dense_path / "sparse";
+    if (ExistsFile(undist_sparse / "images.bin") ||
+        ExistsFile(undist_sparse / "images.txt")) {
         return undist_sparse;
     }
-    const auto sparse0 = JoinPaths(dense_path, "sparse", "0");
-    if (ExistsFile(JoinPaths(sparse0, "images.bin")) ||
-        ExistsFile(JoinPaths(sparse0, "images.txt"))) {
+    const auto sparse0 = dense_path / "sparse" / "0";
+    if (ExistsFile(sparse0 / "images.bin") ||
+        ExistsFile(sparse0 / "images.txt")) {
         return sparse0;
     }
     return {};
@@ -1349,7 +1353,7 @@ std::vector<int> BuildConsistencyGraphData(
 // PatchMatch / StereoFusion need vis.dat + patch-match.cfg; consistency graphs
 // are only used by legacy photometric paths and are expensive to compute.
 void WritePatchMatchStereoConfigFromSparse(
-        const std::string& stereo_path,
+        const std::filesystem::path& stereo_path,
         const Reconstruction& reconstruction,
         const std::vector<std::string>& fusion_colmap_names,
         size_t max_neighbors) {
@@ -1386,8 +1390,8 @@ void WritePatchMatchStereoConfigFromSparse(
         }
     }
 
-    std::ofstream vis_file(JoinPaths(stereo_path, "vis.dat"), std::ios::trunc);
-    std::ofstream patch_match_file(JoinPaths(stereo_path, "patch-match.cfg"),
+    std::ofstream vis_file(stereo_path / "vis.dat", std::ios::trunc);
+    std::ofstream patch_match_file(stereo_path / "patch-match.cfg",
                                    std::ios::trunc);
     if (!vis_file) {
         return;
@@ -1422,19 +1426,19 @@ void WritePatchMatchStereoConfigFromSparse(
         }
     }
 
-    RECON_LOG_DEBUG("DA3 depth export: wrote sparse co-visibility vis.dat and "                  "patch-match.cfg (skipped consistency graphs) under %s\n", stereo_path.c_str());
+    RECON_LOG_DEBUG("DA3 depth export: wrote sparse co-visibility vis.dat and "                  "patch-match.cfg (skipped consistency graphs) under %s\n", stereo_path.string().c_str());
 }
 
 void WriteDA3ConsistencyGraphsAndVisDat(
-        const std::string& stereo_path,
+        const std::filesystem::path& stereo_path,
         const std::vector<ExportedDepthView>& views,
         const std::vector<std::string>& fusion_colmap_names,
         float max_depth_error,
         float max_reproj_error,
         int min_partner_views,
         size_t max_neighbors) {
-    const std::string consistency_path =
-        JoinPaths(stereo_path, "consistency_graphs");
+    const std::filesystem::path consistency_path =
+        stereo_path / "consistency_graphs";
     CreateDirIfNotExists(consistency_path);
 
     std::vector<std::map<int, int>> cooccurrence(views.size());
@@ -1450,8 +1454,8 @@ void WriteDA3ConsistencyGraphsAndVisDat(
         const auto& ref_view = views[ref_idx];
         mvs::ConsistencyGraph graph(static_cast<size_t>(ref_view.w),
                                     static_cast<size_t>(ref_view.h), data);
-        graph.Write(JoinPaths(consistency_path,
-                              fusion_colmap_names[ref_idx] + ".geometric.bin"));
+        graph.Write(consistency_path /
+                    (fusion_colmap_names[ref_idx] + ".geometric.bin"));
 
         for (size_t i = 0; i < data.size();) {
             const int num = data[i + 2];
@@ -1467,8 +1471,8 @@ void WriteDA3ConsistencyGraphsAndVisDat(
     }
 
     const int num_images = static_cast<int>(views.size());
-    std::ofstream vis_file(JoinPaths(stereo_path, "vis.dat"), std::ios::trunc);
-    std::ofstream patch_match_file(JoinPaths(stereo_path, "patch-match.cfg"),
+    std::ofstream vis_file(stereo_path / "vis.dat", std::ios::trunc);
+    std::ofstream patch_match_file(stereo_path / "patch-match.cfg",
                                    std::ios::trunc);
     if (!vis_file) {
         return;
@@ -1506,7 +1510,7 @@ void WriteDA3ConsistencyGraphsAndVisDat(
         }
     }
 
-    RECON_LOG_DEBUG("DA3 depth export: wrote consistency graphs, vis.dat, "                  "patch-match.cfg under %s\n", stereo_path.c_str());
+    RECON_LOG_DEBUG("DA3 depth export: wrote consistency graphs, vis.dat, "                  "patch-match.cfg under %s\n", stereo_path.string().c_str());
 }
 
 void FilterExportedDepthMapsColmapInPlace(
@@ -1837,7 +1841,7 @@ void FilterMultiviewDepthMapsInPlace(DepthPoseMultiResult& multi,
 }
 
 bool WriteStereoMapsFromMultiview(
-    const std::string& output_path,
+    const std::filesystem::path& output_path,
     const std::vector<std::string>& undist_image_paths,
     const std::vector<std::string>& fusion_colmap_names,
     const DepthPoseMultiResult& multi,
@@ -1853,9 +1857,9 @@ bool WriteStereoMapsFromMultiview(
         return false;
     }
 
-    const std::string stereo_path = JoinPaths(output_path, "stereo");
-    const std::string depth_maps_path = JoinPaths(stereo_path, "depth_maps");
-    const std::string normal_maps_path = JoinPaths(stereo_path, "normal_maps");
+    const std::filesystem::path stereo_path = output_path / "stereo";
+    const std::filesystem::path depth_maps_path = stereo_path / "depth_maps";
+    const std::filesystem::path normal_maps_path = stereo_path / "normal_maps";
     CreateDirIfNotExists(stereo_path);
     CreateDirIfNotExists(depth_maps_path);
     CreateDirIfNotExists(normal_maps_path);
@@ -1881,12 +1885,12 @@ bool WriteStereoMapsFromMultiview(
     }
 
     std::unique_ptr<Reconstruction> undist_reconstruction;
-    const std::string undist_sparse_path =
+    const auto undist_sparse_path =
         FindUndistortedSparseModelPath(output_path);
     if (!undist_sparse_path.empty()) {
         undist_reconstruction = std::make_unique<Reconstruction>();
         undist_reconstruction->Read(undist_sparse_path);
-        RECON_LOG_DEBUG("DA3 depth export: using undistorted sparse model at %s\n", undist_sparse_path.c_str());
+        RECON_LOG_DEBUG("DA3 depth export: using undistorted sparse model at %s\n", undist_sparse_path.string().c_str());
     }
 
     std::vector<ExportedDepthView> export_views(static_cast<size_t>(multi.n));
@@ -2029,7 +2033,7 @@ bool WriteStereoMapsFromMultiview(
                     pixels_after, pixels_before);
         }
     } else {
-        RECON_LOG_DEBUG("DA3 depth export: undistorted sparse model not found under %s; skipping COLMAP-camera depth cleaning\n", JoinPaths(output_path, "sparse").c_str());
+        RECON_LOG_DEBUG("DA3 depth export: undistorted sparse model not found under %s; skipping COLMAP-camera depth cleaning\n", (output_path / "sparse").string().c_str());
     }
 
     if (fast_depth_export) {
@@ -2122,15 +2126,15 @@ bool WriteStereoMapsFromMultiview(
             export_photometric_prior ? ".photometric.bin" : ".geometric.bin";
 
         WriteColmapDepthMap(
-            JoinPaths(depth_maps_path, colmap_name + map_suffix), out_w,
-            out_h, export_view.depth.data());
+            depth_maps_path / (colmap_name + map_suffix), out_w, out_h,
+            export_view.depth.data());
 
         const std::vector<float> normals = ComputeNormalsFromDepthWithIntrinsics(
             export_view.depth.data(), out_w, out_h, export_view.fx,
             export_view.fy, export_view.cx, export_view.cy);
         WriteColmapNormalMap(
-            JoinPaths(normal_maps_path, colmap_name + map_suffix), out_w,
-            out_h, normals);
+            normal_maps_path / (colmap_name + map_suffix), out_w, out_h,
+            normals);
     }
 
     constexpr size_t kMaxPatchMatchNeighbors = 20;
@@ -2149,7 +2153,7 @@ bool WriteStereoMapsFromMultiview(
     WriteStereoFusionConfig(stereo_path, fusion_colmap_names);
     RECON_LOG_DEBUG(
             "DA3: Depth maps and normal maps written to: %s (%d views%s)\n",
-            stereo_path.c_str(), multi.n,
+            stereo_path.string().c_str(), multi.n,
             export_photometric_prior ? ", photometric priors" : "");
     return true;
 }
@@ -2365,8 +2369,8 @@ DA3DepthController::DA3DepthController(
     const std::filesystem::path& image_path,
     const std::filesystem::path& output_path)
     : config_(config),
-      image_path_(image_path.string()),
-      output_path_(output_path.string()) {}
+      image_path_(image_path),
+      output_path_(output_path) {}
 
 void DA3DepthController::Run() {
     success_ = true;
@@ -2401,7 +2405,8 @@ bool DA3DepthController::GenerateSparseModel() {
     std::vector<DA3ImageEntry> entries = CollectDA3ImageEntries(image_path_);
     if (entries.empty()) {
         LOG(ERROR) << "DA3: No images found in: " << image_path_;
-        RECON_LOG_ERROR("ERROR: DA3 no images found in: %s\n", image_path_.c_str());
+        RECON_LOG_ERROR("ERROR: DA3 no images found in: %s\n",
+                                    image_path_.string().c_str());
         return false;
     }
 
@@ -2457,7 +2462,7 @@ bool DA3DepthController::GenerateSparseModel() {
         multiview_cache_out_ != nullptr &&
         DA3ModelSupportsStereo(config_.model_type);
 
-    const std::string sparse_path = JoinPaths(output_path_, "sparse", "0");
+    const std::filesystem::path sparse_path = output_path_ / "sparse" / "0";
     if (cache_stereo) {
         if (!RunDepthPoseMulti(ctx, abs_paths, multi, config_.max_image_size,
                                [this]() { return IsStopped(); },
@@ -2477,7 +2482,7 @@ bool DA3DepthController::GenerateSparseModel() {
         data.intr = multi.intr.data();
         if (aicore_depth_write_colmap_from_multiview(
                 ctx, cpaths.data(), cnames.data(), &data,
-                sparse_path.c_str(), 1) != 0) {
+                sparse_path.string().c_str(), 1) != 0) {
             LOG(ERROR) << "DA3: aicore_depth_write_colmap_from_multiview failed: "
                        << aicore_depth_last_error(ctx);
             RECON_LOG_ERROR("ERROR: DA3 sparse COLMAP export failed: %s\n", aicore_depth_last_error(ctx));
@@ -2485,7 +2490,7 @@ bool DA3DepthController::GenerateSparseModel() {
             return false;
         }
     } else if (aicore_depth_export_colmap_multi_named(
-                   ctx, cpaths.data(), cnames.data(), N, sparse_path.c_str(),
+                   ctx, cpaths.data(), cnames.data(), N, sparse_path.string().c_str(),
                    1) != 0) {
         LOG(ERROR) << "DA3: aicore_depth_export_colmap_multi failed: "
                    << aicore_depth_last_error(ctx);
@@ -2517,7 +2522,7 @@ bool DA3DepthController::GenerateSparseModel() {
     RECON_LOG_DEBUG(
             "DA3: COLMAP sparse model written to: %s (%d images, with "
             "back-projected points3D)\n",
-            sparse_path.c_str(), N);
+            sparse_path.string().c_str(), N);
     return true;
 #endif  // AICore_ENABLED
 }
@@ -2540,7 +2545,8 @@ bool DA3DepthController::GenerateDepthMaps(
                                    : explicit_image_paths_;
     if (image_paths.empty()) {
         LOG(ERROR) << "DA3: No images found in: " << image_path_;
-        RECON_LOG_ERROR("ERROR: DA3 no images found in: %s\n", image_path_.c_str());
+        RECON_LOG_ERROR("ERROR: DA3 no images found in: %s\n",
+                                    image_path_.string().c_str());
         return false;
     }
 

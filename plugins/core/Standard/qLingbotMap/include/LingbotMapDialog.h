@@ -46,6 +46,14 @@ public:
 
     LingbotMapWorker::Settings collectSettings() const;
 
+protected:
+    /** Uniform plugin-close semantics: a running reconstruction is
+     *  cancelled cooperatively; its finished handler frees the context.
+     *  Esc/reject follows via the plugin's rejected() connection. */
+    void closeEvent(QCloseEvent* event) override;
+    /** Esc intercept: confirm before closing when a task is running. */
+    void keyPressEvent(QKeyEvent* event) override;
+
 signals:
     void runRequested(const LingbotMapWorker::Settings& settings);
     void cancelRequested();
@@ -128,6 +136,7 @@ private:
 
     ecvModelDownloader* m_downloader = nullptr;
     bool m_downloadInProgress = false;
+    bool m_taskRunning = false;
     PendingAction m_pendingActionAfterDownload = PendingAction::None;
     bool m_modelExplicit = false;
     /** Sky-source auto-switch bookkeeping: outdoor test scenes enable sky

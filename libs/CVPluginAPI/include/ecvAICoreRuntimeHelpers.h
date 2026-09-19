@@ -167,4 +167,27 @@ private:
     FreeFn free_fn_ = nullptr;
 };
 
+// ---------------------------------------------------------------------------
+//  One-shot release for a pending raw context pointer
+// ---------------------------------------------------------------------------
+
+/** Releases a pending raw context pointer with its matching free function
+ *  and nulls it — the minimal shared form of the historical
+ *  `releaseContextOnMainThread()` bodies (the worker creates the context on
+ *  the inference thread; the dialog/main thread frees it so GPU teardown
+ *  never races the render thread).
+ *
+ *  Use this when the worker keeps using the raw pointer during inference
+ *  (the common case: the pending slot is only the ownership handoff).
+ *  Use PendingContext<Ctx> instead when a slot must own-and-guard a
+ *  context between handoffs (stash/take/release lifecycle).
+ */
+template <typename Ctx>
+inline void releasePending(Ctx*& ctx, void (*free_fn)(Ctx*)) {
+    if (ctx) {
+        free_fn(ctx);
+        ctx = nullptr;
+    }
+}
+
 }  // namespace ecvAICoreRuntime

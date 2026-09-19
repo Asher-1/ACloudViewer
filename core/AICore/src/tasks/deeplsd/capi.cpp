@@ -12,6 +12,7 @@
 
 #include "aicore/backend_capi.h"
 #include "aicore/deeplsd_capi.h"
+#include "aicore/image_view.h"
 #include "aicore/runtime_capi.h"
 #include "common/capi_utils.hpp"
 #include "common/ggml_backend_utils.hpp"
@@ -45,7 +46,7 @@ struct aicore_deeplsd_ctx {
     aicore_pipeline_timings pipeline_timings{};
 };
 
-AICORE_CAPI int aicore_deeplsd_abi_version(void) { return 1; }
+AICORE_CAPI int aicore_deeplsd_abi_version(void) { return 2; }
 
 AICORE_CAPI aicore_deeplsd_options* aicore_deeplsd_options_new(void) {
     return new aicore_deeplsd_options();
@@ -104,6 +105,24 @@ AICORE_CAPI void aicore_deeplsd_shutdown(void) { aicore_runtime_shutdown(); }
 
 AICORE_CAPI int aicore_deeplsd_is_ready(const aicore_deeplsd_ctx* ctx) {
     return ctx != nullptr && ctx->extractor != nullptr ? 1 : 0;
+}
+
+AICORE_CAPI int aicore_deeplsd_extract_image_view(
+        aicore_deeplsd_ctx* ctx,
+        const aicore_image_view* image,
+        float** out_distance,
+        float** out_angle,
+        int32_t* out_width,
+        int32_t* out_height) {
+    if (ctx == nullptr || image == nullptr) return -1;
+    if (image->format != AICORE_IMAGE_GRAY8) {
+        ctx->last_error = "deeplsd image_view must be AICORE_IMAGE_GRAY8";
+        return -1;
+    }
+    return aicore_deeplsd_extract_gray(
+            ctx, image->data, image->width, image->height,
+            static_cast<int32_t>(image->row_stride_bytes), out_distance,
+            out_angle, out_width, out_height);
 }
 
 AICORE_CAPI const char* aicore_deeplsd_last_error(

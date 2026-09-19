@@ -20,7 +20,7 @@
 static int failures = 0;
 
 int main() {
-    AICORE_CHECK(aicore_yolo_abi_version() >= 4);
+    AICORE_CHECK(aicore_yolo_abi_version() >= 5);
 
     // Null-safe teardown / lifecycle.
     aicore_yolo_free(nullptr);
@@ -179,6 +179,19 @@ int main() {
     aicore_yolo_set_detect_thresholds(nullptr, 0.5f, 0.6f, 100);  // no-op
     aicore_yolo_set_detect_thresholds(ctx, 0.5f, 0.6f, 100);  // no ctx->engine
 
+    // Loose-NMS recovery (TrackTrack track mode): NULL-safe no-op setter,
+    // -1 count on null ctx, 0 rows on a context that never ran, and safe
+    // zeroed rows for any index. Recovery rows only appear after a real
+    // inference (model tier covers the numeric path).
+    aicore_yolo_set_track_recovery(nullptr, 1);  // no-op
+    AICORE_CHECK(aicore_yolo_recovery_count(nullptr) == -1);
+    aicore_yolo_set_track_recovery(ctx, 1);
+    AICORE_CHECK(aicore_yolo_recovery_count(ctx) == 0);
+    const aicore_yolo_detection rec = aicore_yolo_recovery_at(ctx, 0);
+    AICORE_CHECK(rec.score == 0.0f && rec.class_id == 0);
+    aicore_yolo_set_track_recovery(ctx, 0);
+    AICORE_CHECK(aicore_yolo_recovery_count(ctx) == 0);
+
     aicore_yolo_free(ctx);
     aicore_yolo_options_free(opts);
 
@@ -197,7 +210,8 @@ int main() {
     AICORE_CHECK(aicore_yolo_load_path_rgb(nullptr, &rgb, &iw, &ih) == -1);
 
     // Model catalog contract: task-tagged entries over the full published
-    // release (183 = 3 quant x 61 variants; counts must be stable).
+    // release (215 = 3 quant x 72 variants minus the bridge's unpublished
+    // f32; counts must be stable).
     const int n_total = aicore_yolo_model_count(AICORE_YOLO_ROLE_ANY);
     AICORE_CHECK(n_total > 0);
     AICORE_CHECK(aicore_yolo_model_at(-1, AICORE_YOLO_ROLE_ANY) == nullptr);
@@ -220,9 +234,9 @@ int main() {
             {AICORE_YOLO_ROLE_DEPTH, 15},      // 5 depth x 3
             {AICORE_YOLO_ROLE_SEGMENT, 30},    // 10 closed-set seg x 3
             {AICORE_YOLO_ROLE_POSE, 15},       // 5 pose x 3
-            {AICORE_YOLO_ROLE_OBB, 15},        // 5 obb x 3
+            {AICORE_YOLO_ROLE_OBB, 30},        // 10 obb (640 + 1024) x 3
             {AICORE_YOLO_ROLE_CLASSIFY, 15},   // 5 cls x 3
-            {AICORE_YOLO_ROLE_SEMANTIC, 15},   // 5 sem x 3
+            {AICORE_YOLO_ROLE_SEMANTIC, 30},   // 10 sem (640 + 1024) x 3
             {AICORE_YOLO_ROLE_WORLD, 12},      // 4 world x 3
             {AICORE_YOLO_ROLE_YOLOE, 30},      // 10 yoloe (incl. -pf) x 3
             {AICORE_YOLO_ROLE_TEXT, 8},  // 2 text towers x 3 + mclip f16+q8_0

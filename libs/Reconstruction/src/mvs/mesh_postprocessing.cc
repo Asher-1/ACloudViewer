@@ -293,16 +293,17 @@ PlyMesh PostProcessMesh(const PlyMesh& input,
     return mesh;
 }
 
-bool PostProcessMeshFile(const std::string& input_path,
-                         const std::string& output_path,
+bool PostProcessMeshFile(const std::filesystem::path& input_path,
+                         const std::filesystem::path& output_path,
                          const MeshPostProcessingOptions& options,
                          MeshPostProcessingStats* stats) {
     PlyMesh input;
-    if (!ReadMesh(input_path, &input)) return false;
+    if (!ReadMesh(input_path.string(), &input)) return false;
     const PlyMesh output = PostProcessMesh(input, options, stats);
     if (input_path == output_path) {
-        const std::string temp_path = output_path + ".meshopt.tmp.ply";
-        const std::string backup_path = output_path + ".meshopt.backup.ply";
+        const std::string temp_path = output_path.string() + ".meshopt.tmp.ply";
+        const std::string backup_path =
+                output_path.string() + ".meshopt.backup.ply";
         std::error_code ec;
         std::filesystem::remove(temp_path, ec);
         WriteBinaryPlyMesh(temp_path, output);

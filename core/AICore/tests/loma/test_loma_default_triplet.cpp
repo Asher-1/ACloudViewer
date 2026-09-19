@@ -116,6 +116,48 @@ int main() {
     aicore_loma_match* matches = nullptr;
     int32_t match_count = 0;
     const int detect_rc = aicore_loma_detector_run(detector, &image, &points);
+    // F-01 batch A: the image_view entry must reproduce the rgb_image entry
+    // exactly on the same borrowed pixels (same graph, same device).
+    aicore_image_view detector_view{};
+    detector_view.data = rgb.data();
+    detector_view.width = kWidth;
+    detector_view.height = kHeight;
+    detector_view.row_stride_bytes = kWidth * 3;
+    detector_view.format = AICORE_IMAGE_RGB8;
+    aicore_loma_detected_features view_points{};
+    if (aicore_loma_detector_run_image_view(detector, &detector_view,
+                                            &view_points) != 0) {
+        std::fprintf(stderr, "loma image_view detector entry failed: %s\n",
+                     aicore_loma_detector_last_error(detector));
+        aicore_loma_detected_features_free(&view_points);
+        aicore_loma_matcher_free(matcher);
+        aicore_loma_descriptor_free(descriptor);
+        aicore_loma_detector_free(detector);
+        return 1;
+    }
+    if (view_points.count != points.count || points.count <= 0) {
+        std::fprintf(stderr,
+                     "loma image_view parity: count mismatch (%d vs %d)\n",
+                     view_points.count, points.count);
+        aicore_loma_detected_features_free(&view_points);
+        aicore_loma_matcher_free(matcher);
+        aicore_loma_descriptor_free(descriptor);
+        aicore_loma_detector_free(detector);
+        return 1;
+    }
+    for (int32_t i = 0; i < points.count; ++i) {
+        if (view_points.keypoints[i].x != points.keypoints[i].x ||
+            view_points.keypoints[i].y != points.keypoints[i].y) {
+            std::fprintf(stderr, "loma image_view parity: keypoint %d moved\n",
+                         i);
+            aicore_loma_detected_features_free(&view_points);
+            aicore_loma_matcher_free(matcher);
+            aicore_loma_descriptor_free(descriptor);
+            aicore_loma_detector_free(detector);
+            return 1;
+        }
+    }
+    aicore_loma_detected_features_free(&view_points);
     const int describe_rc =
             detect_rc == 0
                     ? aicore_loma_descriptor_run(descriptor, &image,

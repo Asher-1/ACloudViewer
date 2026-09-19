@@ -102,6 +102,11 @@ public:
 
     static bool isAvailable();
 
+    /** Tear the async infer thread down (releasing the resident model).
+     *  Called when the owning dialog closes for good; the thread is
+     *  rebuilt lazily on the next live start. Idempotent. */
+    void releaseGpuResources();
+
 signals:
     void logMessage(const QString& msg);
     void snapshotUpdated(const FaceDetectRunResult& result);
@@ -140,6 +145,9 @@ private:
     void updateModelPathFromCombo();
     void submitInferJob(const QImage& inferRgb, float inferScale);
     void shutdownInferThread();
+    /** Rebuild the infer thread after releaseGpuResources(); no-op while
+     *  it is already running. */
+    void ensureInferThread();
     void drawLiveOverlay(QImage& frame);
 
     Config m_config;

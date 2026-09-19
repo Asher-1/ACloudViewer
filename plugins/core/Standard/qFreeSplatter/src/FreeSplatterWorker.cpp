@@ -17,6 +17,8 @@
 #include <algorithm>
 #include <cmath>
 
+#include "ecvAICoreRuntimeHelpers.h"
+
 #ifdef AICore_ENABLED
 #include "aicore/gaussian_capi.h"
 #include "aicore/runtime_capi.h"
@@ -127,10 +129,7 @@ void FreeSplatterWorker::stashContext(aicore_gaussian_ctx* ctx) {
 }
 
 void FreeSplatterWorker::releaseContextOnMainThread() {
-    if (m_pendingCtx) {
-        aicore_gaussian_free(m_pendingCtx);
-        m_pendingCtx = nullptr;
-    }
+    ecvAICoreRuntime::releasePending(m_pendingCtx, &aicore_gaussian_free);
 }
 
 aicore_gaussian_ctx* FreeSplatterWorker::loadModel() {

@@ -514,6 +514,21 @@ bool parseDepthStatsJson(const QByteArray& json, YOLODepthStats* out) {
     return out->width > 0 && out->height > 0;
 }
 
+QRgb trackIdColor(int trackId) {
+    // Official ultralytics Colors() palette (utils/plotting.py, RGB hexes) —
+    // the same table solutions annotation uses for colors(track_id).
+    static const QRgb kPalette[20] = {
+            qRgb(4, 42, 255),   qRgb(11, 219, 235), qRgb(243, 243, 243),
+            qRgb(0, 223, 183),  qRgb(17, 31, 104),  qRgb(255, 111, 221),
+            qRgb(255, 68, 79),  qRgb(204, 237, 0),  qRgb(0, 243, 68),
+            qRgb(189, 0, 255),  qRgb(0, 180, 255),  qRgb(221, 0, 186),
+            qRgb(0, 255, 255),  qRgb(38, 192, 0),   qRgb(1, 255, 179),
+            qRgb(125, 36, 255), qRgb(123, 0, 104),  qRgb(255, 27, 108),
+            qRgb(252, 109, 47), qRgb(162, 255, 11),
+    };
+    return kPalette[((trackId % 20) + 20) % 20];
+}
+
 QRgb classColor(uint32_t classId) {
     // COCO-consistent deterministic palette (BGR order from OpenCV heritage).
     static const QRgb kPalette[20] = {
@@ -546,11 +561,31 @@ inline QRgb turboRgb(double t) {
 
 }  // namespace
 
+int officialAnnotatorLineWidth(const int imageWidth, const int imageHeight) {
+    // Official ultralytics Annotator default: max(round(sum(shape) / 2 *
+    // 0.003), 2). The numpy sum(im.shape) counts the 3 color channels;
+    // kept for exact parity with the upstream formula.
+    const double lw = (imageWidth + imageHeight + 3) / 2.0 * 0.003;
+    return static_cast<int>(std::max(std::lround(lw), 2L));
+}
+
+int officialAnnotatorFontPixelSize(const int lineWidth) {
+    // Official cv2 label text: fontScale = lineWidth / 3, Hershey glyph
+    // height ~= 22 px per fontScale unit; QImage pixelSize is the same
+    // glyph-height metric.
+    return static_cast<int>(std::lround(lineWidth * 22.0 / 3.0));
+}
+
 void drawDetections(QImage* image,
                     const QVector<YOLODetection>& detections,
-                    int thickness) {
+                    int thickness,
+                    const QVector<int>& trackIds) {
     if (image == nullptr || image->isNull()) return;
     const int h = image->height();
+    // thickness <= 0: official Annotator default for this image size.
+    const int lw = thickness > 0
+                           ? thickness
+                           : officialAnnotatorLineWidth(image->width(), h);
 
     // Bind the painter to one stable ARGB32 data block for the whole call.
     if (image->format() != QImage::Format_ARGB32) {
@@ -561,18 +596,28 @@ void drawDetections(QImage* image,
     p.setRenderHint(QPainter::Antialiasing, false);
 
     QFont font = p.font();
-    font.setPixelSize(std::max(12, h / 60));
+    font.setPixelSize(officialAnnotatorFontPixelSize(lw));
     p.setFont(font);
-    for (const YOLODetection& d : detections) {
+    for (int detIdx = 0; detIdx < detections.size(); ++detIdx) {
+        const YOLODetection& d = detections[static_cast<size_t>(detIdx)];
         const QColor color(classColor(d.classId));
         QPen pen(color);
-        pen.setWidth(thickness);
+        pen.setWidth(lw);
         p.setPen(pen);
         p.drawRect(QRectF(d.x1, d.y1, d.x2 - d.x1, d.y2 - d.y1));
 
-        const QString label = QStringLiteral("%1 %2")
-                                      .arg(d.className)
-                                      .arg(d.score, 0, 'f', 2);
+        // Tracked runs prefix the banner with the stable track id in the
+        // official results.plot() format (id:<n>); 0 means untracked (no
+        // id assigned this frame).
+        QString label;
+        if (detIdx < trackIds.size() &&
+            trackIds[static_cast<size_t>(detIdx)] > 0) {
+            label = QStringLiteral("id:%1 ").arg(
+                    trackIds[static_cast<size_t>(detIdx)]);
+        }
+        label += QStringLiteral("%1 %2")
+                         .arg(d.className)
+                         .arg(d.score, 0, 'f', 2);
         // Anchor the banner above the box top, then keep it fully inside
         // the image: clamp horizontally, and flip below the box top when
         // the box hugs the top edge (the painter has no clipping here, so
@@ -631,7 +676,8 @@ static void gaussianBlurMask3(QImage& img) {
 void drawSegmentation(QImage* image,
                       const QVector<YOLOSegMask>& masks,
                       const QVector<YOLODetection>& detections,
-                      int thickness) {
+                      int thickness,
+                      const QVector<int>& trackIds) {
     if (image == nullptr || image->isNull() || masks.isEmpty()) return;
     if (image->format() != QImage::Format_ARGB32) {
         *image = image->convertToFormat(QImage::Format_ARGB32);
@@ -705,7 +751,7 @@ void drawSegmentation(QImage* image,
         }
     }
 
-    drawDetections(image, detections, thickness);
+    drawDetections(image, detections, thickness, trackIds);
 }
 
 // COCO-17 skeleton edges (0-based keypoint indices: 0 nose, 1-2 eyes,
@@ -720,6 +766,15 @@ static const int kSkeleton17[][2] = {
         {11, 13}, {13, 15}, {12, 14}, {14, 16},  // legs
 };
 
+QVector<QPair<int, int>> cocoSkeletonEdges() {
+    QVector<QPair<int, int>> edges;
+    edges.reserve(sizeof(kSkeleton17) / sizeof(kSkeleton17[0]));
+    for (const auto& edge : kSkeleton17) {
+        edges.append({edge[0], edge[1]});
+    }
+    return edges;
+}
+
 void drawPose(QImage* image,
               const QVector<YOLOKeypointSet>& keypointSets,
               int thickness) {
@@ -730,8 +785,12 @@ void drawPose(QImage* image,
     QPainter p(image);
     p.setRenderHint(QPainter::Antialiasing, true);
 
+    // thickness <= 0: official Annotator default for this image size.
+    const int lw = thickness > 0 ? thickness
+                                 : officialAnnotatorLineWidth(image->width(),
+                                                              image->height());
     QFont font = p.font();
-    font.setPixelSize(std::max(12, image->height() / 60));
+    font.setPixelSize(officialAnnotatorFontPixelSize(lw));
     p.setFont(font);
 
     const qreal kptRadius = std::max(2.0, image->height() / 300.0);
@@ -739,7 +798,7 @@ void drawPose(QImage* image,
         const QColor color(classColor(set.det.classId));
         // Skeleton lines between visible keypoints.
         QPen linePen(color);
-        linePen.setWidth(thickness);
+        linePen.setWidth(lw);
         p.setPen(linePen);
         for (const auto& edge : kSkeleton17) {
             const int a = edge[0], b = edge[1];
@@ -761,7 +820,7 @@ void drawPose(QImage* image,
         }
         // Box + label, mirroring drawDetections.
         QPen pen(color);
-        pen.setWidth(thickness);
+        pen.setWidth(lw);
         p.setPen(pen);
         p.setBrush(Qt::NoBrush);
         p.drawRect(QRectF(set.det.x1, set.det.y1, set.det.x2 - set.det.x1,
@@ -797,13 +856,17 @@ void drawObb(QImage* image, const QVector<YOLOObbBox>& boxes, int thickness) {
     QPainter p(image);
     p.setRenderHint(QPainter::Antialiasing, true);
 
+    // thickness <= 0: official Annotator default for this image size.
+    const int lw = thickness > 0 ? thickness
+                                 : officialAnnotatorLineWidth(image->width(),
+                                                              image->height());
     QFont font = p.font();
-    font.setPixelSize(std::max(12, image->height() / 60));
+    font.setPixelSize(officialAnnotatorFontPixelSize(lw));
     p.setFont(font);
     for (const YOLOObbBox& b : boxes) {
         const QColor color(classColor(b.classId));
         QPen pen(color);
-        pen.setWidth(thickness);
+        pen.setWidth(lw);
         p.setPen(pen);
         p.setBrush(Qt::NoBrush);
         // Rotated rectangle: translate to the center, rotate by the angle,
