@@ -130,19 +130,48 @@ function(cloudviewer_set_aicore_test_runtime_layout target)
         set_target_properties(${target} PROPERTIES
             RUNTIME_OUTPUT_DIRECTORY "${_bin_root}/aicore_tests"
         )
-        foreach(_cfg IN ITEMS Debug Release RelWithDebInfo)
-            string(TOUPPER "${_cfg}" _cfg_upper)
-            set_tests_properties(${target} PROPERTIES
-                "ENVIRONMENT_${_cfg_upper}"
-                    "PATH=${_bin_root}/${_cfg};$ENV{PATH}"
-            )
-        endforeach()
+        # Manual benchmarks (bench_rfdetr_perf, bench_sam3_backend_acceptance,
+        # cmp_sam3_vit_stages) are plain executables without add_test();
+        # set_tests_properties on a name that is not a registered test is a
+        # fatal configure error, so guard the ctest-only ENVIRONMENT_<CONFIG>
+        # properties with if(TEST).
+        if(TEST ${target})
+            foreach(_cfg IN ITEMS Debug Release RelWithDebInfo)
+                string(TOUPPER "${_cfg}" _cfg_upper)
+                set_tests_properties(${target} PROPERTIES
+                    "ENVIRONMENT_${_cfg_upper}"
+                        "PATH=${_bin_root}/${_cfg};$ENV{PATH}"
+                )
+            endforeach()
+        endif()
     else()
         set_target_properties(${target} PROPERTIES
             RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/aicore_tests"
         )
         if(APPLE)
             set(_rpath "@loader_path/..")
+            # Test binaries inherit Qt through AICore's PUBLIC Qt link. Qt
+            # dylibs use @rpath install names, so dyld also needs Qt's lib
+            # directory on the search path (BUILD_WITH_INSTALL_RPATH skips
+            # CMake's automatic rpath computation). $<TARGET_FILE_DIR:...>
+            # resolves Qt's IMPORTED_LOCATION(_<CONFIG>) whichever form the
+            # Qt package ships (plain LOCATION is NOTFOUND for config-only
+            # imports, e.g. conda-forge Qt5).  The versioned targets
+            # (Qt5::Gui/Qt6::Gui) are the real shared libraries and must be
+            # checked first: conda-forge Qt5 defines Qt::Gui as an INTERFACE
+            # aggregate target with no file location, which TARGET_FILE_DIR
+            # rejects.  The unversioned Qt::Gui fallback is only usable when
+            # it resolves to a real library via ALIASED_TARGET.
+            if(TARGET Qt5::Gui)
+                list(APPEND _rpath "$<TARGET_FILE_DIR:Qt5::Gui>")
+            elseif(TARGET Qt6::Gui)
+                list(APPEND _rpath "$<TARGET_FILE_DIR:Qt6::Gui>")
+            elseif(TARGET Qt::Gui)
+                get_target_property(_qt_gui_alias Qt::Gui ALIASED_TARGET)
+                if(_qt_gui_alias)
+                    list(APPEND _rpath "$<TARGET_FILE_DIR:${_qt_gui_alias}>")
+                endif()
+            endif()
         else()
             set(_rpath "\$ORIGIN/..")
         endif()

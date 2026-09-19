@@ -33,7 +33,7 @@
 
 #include <ceres/ceres.h>
 
-#include "optim/bundle_adjustment.h"
+#include "estimators/bundle_adjustment.h"
 #include "util/misc.h"
 
 namespace colmap {
@@ -83,6 +83,9 @@ void BundleAdjustmentController::Run() {
 
   BundleAdjustmentOptions ba_options = *options_.bundle_adjustment;
   ba_options.solver_options.minimizer_progress_to_stdout = true;
+  // Cooperative graceful shutdown (upstream parity): the SIGINT/SIGTERM
+  // handler stops the Ceres solve at the next iteration callback.
+  ba_options.check_if_stopped = [this]() { return IsStopped(); };
 
   BundleAdjustmentIterationCallback iteration_callback(this);
   ba_options.solver_options.callbacks.push_back(&iteration_callback);
@@ -96,8 +99,8 @@ void BundleAdjustmentController::Run() {
   ba_config.SetConstantTvec(reg_image_ids[1], {0});
 
   // Run bundle adjustment.
-  BundleAdjuster bundle_adjuster(ba_options, ba_config);
-  bundle_adjuster.Solve(reconstruction_);
+  auto bundle_adjuster = CreateDefaultBundleAdjuster(ba_options, ba_config);
+  bundle_adjuster->Solve(reconstruction_);
 
   GetTimer().PrintMinutes();
 }

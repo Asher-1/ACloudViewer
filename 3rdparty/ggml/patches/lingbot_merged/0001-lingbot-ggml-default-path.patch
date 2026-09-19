@@ -1,0 +1,85 @@
+--- a/src/ggml.c
++++ b/src/ggml.c
+@@ -4750,7 +4750,8 @@
+         int                   p1,
+         int                   d0,
+         int                   d1) {
+-    struct ggml_tensor * im2col = ggml_im2col(ctx, a, b, s0, s1, p0, p1, d0, d1, true, a->type == GGML_TYPE_BF16 ? GGML_TYPE_F32 : GGML_TYPE_F16); // [N, OH, OW, IC * KH * KW]
++    const enum ggml_type im2col_type = (a->type == GGML_TYPE_F32 || a->type == GGML_TYPE_BF16) ? GGML_TYPE_F32 : GGML_TYPE_F16;
++    struct ggml_tensor * im2col = ggml_im2col(ctx, a, b, s0, s1, p0, p1, d0, d1, true, im2col_type); // [N, OH, OW, IC * KH * KW]
+ 
+     struct ggml_tensor * result =
+         ggml_mul_mat(ctx,
+--- a/src/ggml-vulkan/ggml-vulkan.cpp
++++ b/src/ggml-vulkan/ggml-vulkan.cpp
+@@ -6268,14 +6268,24 @@
+         CREATE_CONV(conv_transpose_2d, _f32, spv_suffix) \
+         CREATE_CONV(conv_transpose_2d, _f16_f32, spv_suffix) \
+         CREATE_CONV(conv_transpose_2d, _f16, spv_suffix)
++#define CREATE_F16_CONVS(spv_suffix) \
++        CREATE_CONV(conv2d, _f16_f32, spv_suffix) \
++        CREATE_CONV(conv_transpose_2d, _f16_f32, spv_suffix)
+ #if defined(GGML_VULKAN_COOPMAT2_GLSLC_SUPPORT)
+         if (device->coopmat2) {
+-            CREATE_CONVS(_cm2)
++            CREATE_F16_CONVS(_cm2)
++            // lingbot patch: coopmat2 only ships the _f16_f32 conv variants,
++            // but GCT's DPT heads feed F32 weights and an F32 dst to conv2d
++            // and conv_transpose_2d; without the scalar F32 pipelines the
++            // type-based lookup returns an empty pipeline and the first
++            // dispatch dies with SIGFPE (integer divide by zero).
++            CREATE_CONVS( )
+         } else
+ #endif
+ #if defined(VK_KHR_cooperative_matrix) && defined(GGML_VULKAN_COOPMAT_GLSLC_SUPPORT)
+         if (conv2d_use_cm1) {
+-            CREATE_CONVS(_cm1)
++            CREATE_F16_CONVS(_cm1)
++            CREATE_CONVS( )
+         } else
+ #endif
+         if (conv2d_UNROLL) {
+@@ -6285,6 +6295,7 @@
+         }
+ #undef CREATE_CONV
+ #undef CREATE_CONVS
++#undef CREATE_F16_CONVS
+ 
+ #define CREATE_SCALAR_CONV(type_suffix, spv_suffix) \
+         for (auto &c : device->pipeline_conv2d##type_suffix##_scalar[s]) { \
+@@ -9437,6 +9448,14 @@
+     if (name.compare(0, 12, "rmbg_scalar_") == 0) {
+         return true;
+     }
++    // lingbot patch: the LingBot-Map streaming graph marks every matmul
++    // output "lingbot_scalar_*" (see core/AICore/src/tasks/lingbot) so its
++    // long-recurrence GEMMs run the exact scalar pipelines (and never the
++    // Q8_1 activation quantization or the coopmat2 F16-converting F32
++    // path) without any process-global state.
++    if (name.compare(0, 15, "lingbot_scalar_") == 0) {
++        return true;
++    }
+     if (name.compare(0, 8, "rmbg_tc_") == 0) {
+         return device->coopmat2;
+     }
+--- a/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
++++ b/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
+@@ -1105,14 +1105,16 @@
+                     + (a_f16 ? "_f16" : "") + (io_f16 ? "" : "_f32");
+                 string_to_spv(name + (unroll ? "_unroll" : ""), "conv2d_mm.comp", defines);
+ #if defined(GGML_VULKAN_COOPMAT2_GLSLC_SUPPORT)
+-                if (unroll) {
++                // conv2d_mm uses float16 cooperative-matrix accumulators.
++                // Do not select it for an explicit f32-weight convolution.
++                if (unroll && a_f16) {
+                     auto cm2_defines = defines;
+                     cm2_defines["COOPMAT2"] = "1";
+                     string_to_spv(name, "conv2d_mm.comp", cm2_defines, true, false, true);
+                 }
+ #endif
+ #if defined(GGML_VULKAN_COOPMAT_GLSLC_SUPPORT)
+-                if (unroll) {
++                if (unroll && a_f16) {
+                     auto cm1_defines = defines;
+                     cm1_defines["COOPMAT"] = "1";
+                     string_to_spv(name, "conv2d_mm.comp", cm1_defines, true, true, false);

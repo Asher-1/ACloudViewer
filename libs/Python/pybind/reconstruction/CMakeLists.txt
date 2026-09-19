@@ -37,3 +37,13 @@ target_sources(pybind PRIVATE
 target_sources(pybind PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/vocab_tree/vocab_tree.cpp
         )
+
+# Upstream pycolmap parity (src/pycolmap, Open3D-style bindings): the
+# geometry/scene value types; further submodules land incrementally.
+target_sources(pybind PRIVATE
+        ${CMAKE_CURRENT_LIST_DIR}/geometry/geometry.cpp
+        )
+
+target_sources(pybind PRIVATE
+        ${CMAKE_CURRENT_LIST_DIR}/scene/scene.cpp
+        )

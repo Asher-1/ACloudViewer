@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <filesystem>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -44,8 +45,8 @@ public:
 
     void Fill(const T value);
 
-    void Read(const std::string& path);
-    void Write(const std::string& path) const;
+    void Read(const std::filesystem::path& path);
+    void Write(const std::filesystem::path& path) const;
 
 protected:
     size_t width_ = 0;
@@ -133,7 +134,7 @@ void Mat<T>::Fill(const T value) {
 }
 
 template <typename T>
-void Mat<T>::Read(const std::string& path) {
+void Mat<T>::Read(const std::filesystem::path& path) {
     std::fstream text_file(path, std::ios::in | std::ios::binary);
     CHECK(text_file.is_open()) << path;
 
@@ -156,7 +157,7 @@ void Mat<T>::Read(const std::string& path) {
 }
 
 template <typename T>
-void Mat<T>::Write(const std::string& path) const {
+void Mat<T>::Write(const std::filesystem::path& path) const {
     std::fstream text_file(path, std::ios::out);
     CHECK(text_file.is_open()) << path;
     text_file << width_ << "&" << height_ << "&" << depth_ << "&";

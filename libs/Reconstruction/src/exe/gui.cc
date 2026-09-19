@@ -35,7 +35,7 @@
 
 #include "FileIO.h"
 #include "util/opengl_utils.h"
-#include "util/option_manager.h"
+#include "controllers/option_manager.h"
 #include "util/version.h"
 
 #ifdef AICore_ENABLED

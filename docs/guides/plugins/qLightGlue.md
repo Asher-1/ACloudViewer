@@ -104,6 +104,6 @@ Example outputs: `build_app/bin/libAICore.so`, `build_app/bin/plugins/libQLIGHTG
 
 ## Further reading
 
-- Plugin README: [`plugins/core/Standard/qLightGlue/README.md`](../../../plugins/core/Standard/qLightGlue/README.md)
-- LightGlue / ALIKED models: [`plugins/core/Standard/qLightGlue/models/MODEL_CARD.md`](../../../plugins/core/Standard/qLightGlue/models/MODEL_CARD.md)
+- Plugin README: [`plugins/core/Standard/qLightGlue/README.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qLightGlue/README.md)
+- LightGlue / ALIKED models: [`plugins/core/Standard/qLightGlue/models/MODEL_CARD.md`](https://github.com/Asher-1/ACloudViewer/blob/main/plugins/core/Standard/qLightGlue/models/MODEL_CARD.md)
 - [LightGlue (ICCV 2023)](https://github.com/cvg/LightGlue) · [LightGlue-GGML](https://github.com/Asher-1/LightGlue-GGML)

@@ -84,6 +84,15 @@
 //    - Qt6: Supported via iterator range constructors
 //    - Functions: qtCompatQSetFromVector(), qtCompatQVectorFromSet()
 //
+// 14. Atomic Integer Relaxed Access:
+//    - QAtomicInteger::loadRelaxed() / storeRelaxed() (Qt5.14+, Qt6)
+//    - Qt5.0-5.13: load() / store() only
+//    - Functions: qtCompatLoadRelaxed(), qtCompatStoreRelaxed()
+//
+// 15. QImage BGR888 Format:
+//    - QImage::Format_BGR888 (Qt5.14+, Qt6) / not available on Qt5 < 5.14
+//    - Function: qtCompatQImageFormatBgr888()
+//
 // USAGE EXAMPLES:
 //
 //   Regular Expression:
@@ -134,6 +143,7 @@
 
 #pragma once
 
+#include <QAtomicInteger>
 #include <QMap>
 #include <QMultiMap>
 #include <QPoint>
@@ -144,6 +154,7 @@
 #include <QTextStream>
 #include <QVector>
 #include <QtGlobal>
+#include <iterator>
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 // Qt6 includes
@@ -1077,4 +1088,80 @@ inline QSet<T> qSetFromVector(const QVector<T>& vec) {
 template <typename T>
 inline QVector<T> qVectorFromSet(const QSet<T>& set) {
     return qtCompatQVectorFromSet(set);
+}
+
+// Helper to create QVector from an arbitrary iterator range [first, last).
+// This covers raw pointer ranges (e.g. float* arrays from C APIs) which
+// qtCompatQVectorFromSet/qtCompatQSetFromVector do not handle.
+template <typename T, typename InputIt>
+inline QVector<T> qtCompatQVectorFromRange(InputIt first, InputIt last) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+    return QVector<T>(first, last);
+#else
+    // Qt5.0-5.14: no iterator-range constructor — manual copy loop
+    QVector<T> result;
+    result.reserve(static_cast<int>(std::distance(first, last)));
+    while (first != last) {
+        result.append(*first);
+        ++first;
+    }
+    return result;
+#endif
+}
+
+// ----------------------------------------------------------------------------
+// QAtomicInteger Relaxed Load/Store Compatibility
+// ----------------------------------------------------------------------------
+// Qt5.0-5.13: load() / store()
+// Qt5.14+/Qt6: loadRelaxed() / storeRelaxed() (load()/store() deprecated)
+// ----------------------------------------------------------------------------
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+// Qt5.14+/Qt6: relaxed accessors are the canonical API
+
+template <typename T>
+inline T qtCompatLoadRelaxed(const QBasicAtomicInteger<T>& atomic) noexcept {
+    return atomic.loadRelaxed();
+}
+
+template <typename T>
+inline void qtCompatStoreRelaxed(QBasicAtomicInteger<T>& atomic,
+                                 T value) noexcept {
+    atomic.storeRelaxed(value);
+}
+#else
+// Qt5.0-5.13: load()/store() are the relaxed equivalents
+
+template <typename T>
+inline T qtCompatLoadRelaxed(const QBasicAtomicInteger<T>& atomic) noexcept {
+    return atomic.load();
+}
+
+template <typename T>
+inline void qtCompatStoreRelaxed(QBasicAtomicInteger<T>& atomic,
+                                 T value) noexcept {
+    atomic.store(value);
+}
+#endif
+
+// ----------------------------------------------------------------------------
+// QImage::Format_BGR888 Availability
+// ----------------------------------------------------------------------------
+// Qt5.0-5.13: QImage::Format_BGR888 does not exist (introduced in Qt 5.14)
+// Qt5.14+/Qt6: Format_BGR888 available
+//
+// qtCompatQImageFormatBgr888() returns the BGR888 format value where the
+// layout exists. On older Qt5 it returns QImage::Format_Invalid — a value a
+// non-null QImage can never report — so `case qtCompatQImageFormatBgr888():`
+// labels stay valid, unique, and dead on those versions.
+// ----------------------------------------------------------------------------
+
+#include <QImage>
+
+constexpr QImage::Format qtCompatQImageFormatBgr888() noexcept {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+    return QImage::Format_BGR888;
+#else
+    return QImage::Format_Invalid;
+#endif
 }

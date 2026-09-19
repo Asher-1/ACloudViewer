@@ -16,8 +16,8 @@
 #include <string>
 #include <vector>
 
-#include "engine.hpp"
-#include "parity.hpp"
+#include "tasks/depth/engine.hpp"
+#include "tests/depth/whitebox/parity.hpp"
 
 int main() {
     const char* anyview = std::getenv("AICORE_TEST_DEPTH_GGUF_ANYVIEW");
@@ -46,7 +46,7 @@ int main() {
         img.rgb[i] = (unsigned char)(v + 0.5f);
     }
 
-    auto eng = aicore::depth::Engine::load_nested(anyview, metric, 0);
+    auto eng = aicore::depth::Engine::load_nested(anyview, metric, {});
     if (!eng) {
         std::fprintf(stderr, "load_nested failed\n");
         return 1;

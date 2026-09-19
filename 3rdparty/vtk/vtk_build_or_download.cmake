@@ -87,6 +87,7 @@ set(VTK_LIBRARIES
     vtkRenderingLOD-${VTK_VERSION}${VTK_LIB_SUFFIX}
     vtkRenderingVtkJS-${VTK_VERSION}${VTK_LIB_SUFFIX}
     vtkRenderingCore-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkRenderingImage-${VTK_VERSION}${VTK_LIB_SUFFIX} # vtkImageResliceMapper (image display quality)
     vtkRenderingOpenGL2-${VTK_VERSION}${VTK_LIB_SUFFIX}
     vtkRenderingGL2PSOpenGL2-${VTK_VERSION}${VTK_LIB_SUFFIX}
     vtkRenderingFreeType-${VTK_VERSION}${VTK_LIB_SUFFIX}

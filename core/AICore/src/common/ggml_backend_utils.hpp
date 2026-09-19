@@ -15,6 +15,9 @@
 #include "ggml-cpu.h"
 #endif
 
+#include "common/ggml_env_bridge.hpp"
+
+
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
@@ -69,6 +72,8 @@ inline void parse_device(const std::string& req, std::string& name, int& index) 
 // On macOS app bundles the executable is inside Contents/MacOS/ while backend
 // dylibs live alongside libAICore.dylib, so we resolve our own dylib's
 // directory and pass it to ggml_backend_load_all_from_path().
+// Registers that the backends are loaded so later ggml env overrides (see
+// aicore::apply_ggml_env_overrides) can warn about the snapshot semantics.
 inline void load_backends_once() {
     static const bool done = [] {
 #if defined(AICORE_BACKEND_DL)
@@ -110,8 +115,17 @@ inline void load_backends_once() {
                     search_dir);
         }
 #endif
+        // Process-wide Vulkan runtime defaults must precede every device
+        // initialization: ggml-vulkan snapshots its instance-level
+        // variables once, at first device use (see ggml_env_bridge.hpp).
+        // The log bridge goes first so backend registration issues are
+        // already visible in the application log.
+        aicore::install_ggml_log_bridge();
+        aicore::apply_vulkan_runtime_defaults();
         ggml_backend_load_all_from_path(search_dir);
 #else
+        aicore::install_ggml_log_bridge();
+        aicore::apply_vulkan_runtime_defaults();
         ggml_backend_load_all();
 #endif
 #ifndef NDEBUG
@@ -125,6 +139,7 @@ inline void load_backends_once() {
                     ggml_backend_reg_name(ggml_backend_dev_backend_reg(dev)));
         }
 #endif
+        aicore::mark_ggml_backends_loaded();
         return true;
     }();
     (void)done;
@@ -200,13 +215,13 @@ inline ggml_backend_t find_integrated_gpu_backend(std::string& resolved_name) {
     return nullptr;
 }
 
-// Runtime auto-pick follows the release/developer order configured at build time.
-// When AICore_CUDA was built (AICORE_AUTO_INCLUDE_CUDA), CUDA precedes Vulkan on
-// Linux/Windows so Auto and explicit "cuda" agree on the same backend.
+// Runtime auto-pick follows the build's backend order. When a CUDA backend
+// was built (AICORE_CUDA_BUILT), CUDA precedes Vulkan on Linux/Windows so Auto
+// and explicit "cuda" agree on the same backend family.
 inline const char* const* auto_backend_ids() {
 #if defined(__APPLE__)
     static const char* kOrder[] = {"metal", nullptr};
-#elif defined(AICORE_AUTO_INCLUDE_CUDA)
+#elif defined(AICORE_CUDA_BUILT)
     static const char* kOrder[] = {"cuda", "vulkan", nullptr};
 #else
     static const char* kOrder[] = {"vulkan", nullptr};
@@ -231,6 +246,17 @@ inline std::string registry_backend_id(const char* reg_name) {
     return name;
 }
 
+// Optional knobs for resolve_gpu_group(). All control stays interface-only:
+// any ggml-side environment translation happens inside the common layer
+// (see common/ggml_env_bridge.hpp), never in the calling task module.
+struct GpuResolveOptions {
+    // macOS only: scope the ggml-metal graph-optimizer/fusion disable
+    // switches to the backend-creation window inside resolve_gpu_group
+    // (ggml-metal's optimizer mis-handles the FreeSplatter graph). The
+    // shell's values are restored before returning.
+    bool disable_metal_graph_opt = false;
+};
+
 // All GPU backends for a device request. "auto" collects every GPU of the first
 // auto-priority backend family (e.g. both cuda:0 and cuda:1); "cuda:1" selects one.
 struct GpuBackendGroup {
@@ -253,12 +279,33 @@ struct GpuBackendGroup {
     }
 };
 
-inline GpuBackendGroup resolve_gpu_group(const std::string& device_req) {
+inline GpuBackendGroup resolve_gpu_group(const std::string& device_req,
+                                         const GpuResolveOptions& opts = {}) {
     load_backends_once();
     GpuBackendGroup group;
     std::string name;
     int want_idx = 0;
     parse_device(device_req, name, want_idx);
+
+#ifdef __APPLE__
+    // Interface-only metal-optimizer disable: the env-mechanism scope
+    // (snapshot -> apply -> resolve -> restore) lives here in the common
+    // layer, so the calling task module carries no environment references.
+    const bool metal_env_scoped =
+            opts.disable_metal_graph_opt &&
+            (name.empty() || name == "auto" || name == "gpu" ||
+             name == "metal");
+    aicore::GgmlEnvSnapshot metal_env_snapshot;
+    if (metal_env_scoped) {
+        metal_env_snapshot = aicore::take_ggml_env_snapshot(
+                {"GGML_METAL_GRAPH_OPTIMIZE_DISABLE",
+                 "GGML_METAL_FUSION_DISABLE"});
+        aicore::GgmlEnvOverrides disable;
+        disable.metal_graph_optimize_disable = true;
+        disable.metal_fusion_disable = true;
+        aicore::apply_ggml_env_overrides(disable);
+    }
+#endif
 
     auto append_gpu = [&](ggml_backend_dev_t dev) {
         if (ggml_backend_t be = ggml_backend_dev_init(dev, nullptr)) {
@@ -304,20 +351,31 @@ inline GpuBackendGroup resolve_gpu_group(const std::string& device_req) {
             group.names.push_back(resolved);
         }
     }
+#ifdef __APPLE__
+    if (metal_env_scoped) {
+        aicore::restore_ggml_env_snapshot(metal_env_snapshot);
+    }
+#endif
     return group;
 }
+
+// Shared message for scheduler-creation failures so a grep finds every
+// CPU-only fallback / error site across the tasks.
+inline constexpr const char* kSchedNewFailedMsg =
+        "ggml_backend_sched_new failed";
 
 inline ggml_backend_sched_t new_gpu_sched(
         const std::vector<ggml_backend_t>& gpus,
         ggml_backend_t cpu_backend,
-        size_t graph_size) {
+        size_t graph_size,
+        bool op_offload = true) {
     if (gpus.empty()) return nullptr;
     std::vector<ggml_backend_t> backs = gpus;
     if (cpu_backend) backs.push_back(cpu_backend);
     if (backs.size() < 2) return nullptr;
     return ggml_backend_sched_new(backs.data(), nullptr,
                                   static_cast<int>(backs.size()), graph_size,
-                                  /*parallel=*/false, /*op_offload=*/true);
+                                  /*parallel=*/false, op_offload);
 }
 
 inline ggml_backend_t find_auto_backend(std::string& resolved_name) {
@@ -357,6 +415,82 @@ inline std::string resolve_device_request(const std::string& device_req) {
     std::string resolved;
     if (find_gpu_backend(name, want_idx, resolved)) return with_index(name);
     return "cpu";
+}
+
+// Free/total device memory of the backend family a device request resolves
+// to. Registry-level query: no backend instance is created. `valid` is false
+// for CPU-only requests and when no accelerator matches.
+struct GpuMemoryInfo {
+    size_t free_bytes = 0;
+    size_t total_bytes = 0;
+    bool valid = false;
+};
+
+inline GpuMemoryInfo query_gpu_memory(const std::string& device_req) {
+    load_backends_once();
+    GpuMemoryInfo info;
+    std::string name;
+    int want_idx = 0;
+    parse_device(device_req, name, want_idx);
+    if (name == "cpu") return info;
+    const bool auto_pick = name.empty() || name == "auto" || name == "gpu";
+    // "auto" resolves through the same family priority as the runtime
+    // (auto_backend_ids), so the admission check inspects the device the
+    // session would actually have initialized.
+    for (const char* const* family = auto_pick ? auto_backend_ids()
+                                               : nullptr;
+         auto_pick ? *family != nullptr : true; ) {
+        const std::string want_reg =
+                auto_pick ? normalize_backend_name(*family)
+                          : normalize_backend_name(name);
+        int gpu_idx = 0;
+        for (size_t i = 0; i < ggml_backend_dev_count(); i++) {
+            ggml_backend_dev_t dev = ggml_backend_dev_get(i);
+            const auto type = ggml_backend_dev_type(dev);
+            if (type != GGML_BACKEND_DEVICE_TYPE_GPU &&
+                type != GGML_BACKEND_DEVICE_TYPE_IGPU) {
+                continue;
+            }
+            const char* reg =
+                    ggml_backend_reg_name(ggml_backend_dev_backend_reg(dev));
+            if (!reg || to_lower(reg) != want_reg) continue;
+            if (gpu_idx++ != want_idx) continue;
+            ggml_backend_dev_memory(dev, &info.free_bytes,
+                                    &info.total_bytes);
+            info.valid = info.total_bytes > 0;
+            return info;
+        }
+        if (!auto_pick) break;
+        if (!*++family) break;
+    }
+    return info;
+}
+
+// Admission check for an incoming model of `bytes_needed` on the device a
+// request resolves to. Returns false (with an actionable message) when the
+// free memory cannot hold the weights plus a fixed compute headroom, so the
+// caller can fail the load cleanly instead of hitting a fatal allocation
+// abort deep inside a backend GEMM at inference time (observed as a
+// GGML_ABORT from the cuBLAS path under VRAM pressure with several resident
+// models). The headroom covers graph pools and GEMM workspaces.
+inline bool gpu_admission_check(const std::string& device_req,
+                                size_t bytes_needed, std::string* error) {
+    const GpuMemoryInfo mem = query_gpu_memory(device_req);
+    if (!mem.valid) return true;
+    constexpr size_t kComputeHeadroom = size_t{512} << 20;
+    const size_t required = bytes_needed + kComputeHeadroom;
+    if (mem.free_bytes >= required) return true;
+    if (error != nullptr) {
+        char buf[224];
+        std::snprintf(buf, sizeof buf,
+                      "GPU memory headroom insufficient: need ~%zu MiB "
+                      "(model %zu MiB + %zu MiB compute), free %zu MiB — "
+                      "release other models or switch device",
+                      required >> 20, bytes_needed >> 20,
+                      kComputeHeadroom >> 20, mem.free_bytes >> 20);
+        *error = buf;
+    }
+    return false;
 }
 
 }  // namespace ggml_common

@@ -11,8 +11,8 @@ Generate comprehensive architecture documentation from repository analysis.
 
 1. **Scan structure**: Recursively analyze folder tree and file organization
 2. **Identify patterns**: Detect framework, architecture style, key directories
-3. **Map entry points**: Find main files, routes, APIs, CLI commands
-4. **Trace data flow**: Follow requests through layers (controllers → services → models)
+3. **Map entry points**: Find main files, libraries, CLI commands
+4. **Trace data flow**: Follow processing pipelines through layers (UI → core algorithms → I/O)
 5. **Document modules**: Explain purpose and responsibilities of each directory
 6. **Create navigation**: Build "how to" guides for common tasks
 7. **Generate diagrams**: Add Mermaid diagrams for visual architecture
@@ -30,307 +30,288 @@ Generate comprehensive architecture documentation from repository analysis.
 
 **Tech Stack:**
 
-- Frontend: [framework + key libraries]
-- Backend: [framework + key libraries]
-- Database: [database + ORM]
-- Infrastructure: [hosting + CI/CD]
+- Language: C++17
+- GUI: Qt 5/6
+- Rendering: VTK (optional backend)
+- Core algorithms: Eigen, PCL-style point cloud structures
+- Build: CMake 3.19+
+- AI inference (optional): ggml (GGUF models)
+- Python bindings (optional): pybind11
 
 ## High-Level Architecture
 
 ```mermaid
 graph TB
-    Client[Client/Browser] --> API[API Layer]
-    API --> Services[Business Logic]
-    Services --> DB[(Database)]
-    Services --> Cache[(Redis Cache)]
-    API --> Queue[Message Queue]
+    GUI[Qt GUI / app] --> Libs[Application libraries]
+    Libs --> Core[Core algorithms]
+    Libs --> IO[I/O layer]
+    Core --> ThirdParty[3rdparty vendored deps]
+    Plugins[Plugins] --> Libs
+    Plugins --> Core
 ```
+
 ````
 
 ## Project Structure
 
 ```
-src/
-├── app/              # Application entry point and routing
-├── components/       # Reusable UI components
-├── lib/              # Utility functions and helpers
-├── services/         # Business logic layer
-├── models/           # Data models and schemas
-└── types/            # TypeScript type definitions
+core/                # Core algorithms (octree, scalar fields, basic processing)
+libs/                # Application libraries (CV_db, CV_io, VtkEngine, cloudViewer, Python)
+app/                 # Desktop GUI: MainWindow, DB tree, reconstruction UI
+plugins/             # Qt plugins (core/Standard, core/IO)
+examples/            # Sample C++ programs
+docs/                # Sphinx guides, compiling docs, plugin user guides
+3rdparty/            # Vendored and fetched dependencies
+cmake/               # Version config, dependency helpers
 ```
 
 ## Key Components
 
 ### Entry Points
 
-**Main Application:** `src/app/page.tsx`
+**Desktop Application:** `app/MainWindow.cpp`
 
-- Application entry point
-- Initializes providers and routing
-- Handles global error boundaries
+- Main window, DB tree, action wiring
+- Plugin loading and menu integration
 
-**API Routes:** `src/app/api/`
+**Command-line interface:** `ecvCommandLineParser` (app/)
 
-- RESTful API endpoints
-- Authentication middleware
-- Request validation
+- Headless convert/process operations
+- Scripted reconstruction runs
 
 ### Core Modules
 
-**Authentication (`src/services/auth/`)**
+**DB entities (`libs/CV_db/`)**
 
-- User login and registration
-- JWT token management
-- OAuth2 integration
-- Dependencies: bcrypt, jsonwebtoken
+- `ccHObject` base class for the DB hierarchy
+- `ccPointCloud`, `ccMesh`, `ecvImage` entity types
+- Scalar fields and color management
 
-**User Management (`src/services/users/`)**
+**Core algorithms (`core/CVCoreLib/`)**
 
-- CRUD operations for users
-- Profile management
-- Role-based access control
-- Dependencies: Prisma, validation libraries
+- Octree construction and queries
+- Point cloud processing primitives
+- Geodesic / distance algorithms
 
-**Data Layer (`src/models/`)**
+**I/O layer (`libs/CV_io/`)**
 
-- Database schemas
-- Prisma models
-- Query builders
-- Dependencies: Prisma Client
+- File readers/writers shared with core
+- Format registry and plugins
+
+**AI inference (`core/AICore/`, optional)**
+
+- Unified C API for depth / gaussian inference
+- ggml backend with GGUF models
 
 ## Data Flow
 
-### User Registration Flow
+### Point Cloud Load Flow
 
 ```mermaid
 sequenceDiagram
-    Client->>API: POST /api/auth/register
-    API->>Validation: Validate input
-    Validation->>Services: UserService.create()
-    Services->>Database: Insert user
-    Database-->>Services: User created
-    Services->>Email: Send welcome email
-    Services-->>API: Return JWT
-    API-->>Client: 201 Created
+    User->>GUI: Open file
+    GUI->>IO: Reader plugin
+    IO->>DB: Create ccPointCloud
+    DB-->>GUI: Entity added to DB tree
+    GUI->>VtkEngine: Request render
+    VtkEngine-->>User: 3D view updated
 ```
 
-### Request Lifecycle
+### Processing Pipeline
 
-1. **Request arrives** → API route handler (`src/app/api/[endpoint]/route.ts`)
-2. **Middleware** → Auth, validation, rate limiting
-3. **Service layer** → Business logic (`src/services/`)
-4. **Data layer** → Database queries (`src/models/`)
-5. **Response** → Format and return data
+1. **Load** → reader plugin produces `ccPointCloud`
+2. **Process** → algorithm operates on cloud / octree
+3. **Validate** → run focused tests or compare with reference
+4. **Export** → writer plugin persists result
 
 ## Common Patterns
 
-### Service Pattern
+### Plugin Pattern
 
-```typescript
-// src/services/users/user.service.ts
-export class UserService {
-  async findById(id: string) {
-    return prisma.user.findUnique({ where: { id } });
-  }
-
-  async create(data: CreateUserDto) {
-    // Validation, business logic, database operations
-  }
-}
+```cpp
+// plugins/core/Standard/<Name>/q<Name>.cpp
+class qMyPlugin : public ccStdPluginInterface {
+public:
+    QList<QAction*> getActions() override {
+        // register actions, shown in plugin menu
+    }
+};
 ```
 
-### Repository Pattern
+### Entity Pattern
 
-```typescript
-// src/repositories/user.repository.ts
-export class UserRepository {
-  async findAll() {
-    /* DB queries only */
-  }
-  async findById(id: string) {
-    /* DB queries only */
-  }
-}
+```cpp
+// New DB entity derives from ccHObject
+class ccMyEntity : public ccHObject {
+public:
+    // register with the DB tree, implement serialization
+};
 ```
 
 ## How To Guides
 
-### Add a New API Endpoint
+### Add a New Standard Plugin
 
-1. **Create route file:** `src/app/api/[name]/route.ts`
+1. **Create folder:** `plugins/core/Standard/<Name>/` with `CMakeLists.txt`, `info.json`, `.qrc`
+2. **Implement interface:** subclass `ccStdPluginInterface` in `q<Name>.cpp`
+3. **Register build:** use `AddPlugin(NAME ...)` in `plugins/cmake/Plugins.cmake`
+4. **Enable option:** `-DPLUGIN_STANDARD_Q<NAME>=ON` in CMake configure
+5. **Add tests:** focus on the algorithm core, not UI dialogs
 
-   ```typescript
-   export async function GET(req: Request) {
-     // Implementation
-   }
-   ```
+### Add a New Algorithm
 
-2. **Add service logic:** `src/services/[name].service.ts`
-3. **Define types:** `src/types/[name].ts`
-4. **Add tests:** `src/app/api/[name]/route.test.ts`
-5. **Update API docs:** Document in OpenAPI/Swagger
+1. **Locate owner:** `core/CVCoreLib/` for shared algorithms, plugin `src/` for plugin-specific ones
+2. **Implement:** match surrounding naming (`cc` + PascalCase for entities)
+3. **Add tests:** `BUILD_UNIT_TESTS=ON`, run via `ctest`
+4. **Document:** update the plugin README and `plugins/README.md` catalog
 
-### Add a New Database Model
+### Add or Update Tests
 
-1. **Update schema:** `prisma/schema.prisma`
+1. **C++ unit tests:** gtest under the module's `tests/` directory, registered with `add_test`
+2. **Python tests:** pytest under `python/test/`
+3. **Run:** `cd build_app && ctest --output-on-failure`
+4. **AICore tests:** `cmake -DAICore_ENABLED=ON -DAICore_BUILD_TESTS=ON ..` then `cmake --build build_app --target test_capi`
 
-   ```prisma
-   model NewModel {
-     id String @id @default(cuid())
-     // fields
-   }
-   ```
+### Modify the GUI / DB Tree
 
-2. **Run migration:** `npx prisma migrate dev --name add-new-model`
-3. **Generate types:** `npx prisma generate`
-4. **Create service:** `src/services/new-model.service.ts`
-5. **Add CRUD routes:** `src/app/api/new-model/`
-
-### Add a New React Component
-
-1. **Create component:** `src/components/NewComponent/NewComponent.tsx`
-2. **Add styles:** `NewComponent.module.css` or inline Tailwind
-3. **Write tests:** `NewComponent.test.tsx`
-4. **Add stories:** `NewComponent.stories.tsx` (if using Storybook)
-5. **Export:** Update `src/components/index.ts`
-
-### Modify Authentication
-
-1. **Service layer:** `src/services/auth/auth.service.ts`
-2. **Middleware:** `src/middleware/auth.middleware.ts`
-3. **Routes:** `src/app/api/auth/`
-4. **Update tests:** Ensure auth flows still work
+1. **UI dialogs:** `app/` for shared dialogs, `libs/CVAppCommon/` for reusable widgets
+2. **DB property panel:** `app/db_tree/` (opacity, light intensity, recursive group apply)
+3. **Multi-view rendering:** `libs/VtkEngine/` with per-view `ecvViewContext`
 
 ## Key Files Reference
 
-| File                   | Purpose                | Modify For            |
+| File | Purpose | Modify For |
 | ---------------------- | ---------------------- | --------------------- |
-| `src/app/layout.tsx`   | Root layout, providers | Global layout changes |
-| `src/lib/db.ts`        | Database connection    | Connection config     |
-| `src/lib/api.ts`       | API client setup       | Request interceptors  |
-| `src/middleware.ts`    | Next.js middleware     | Auth, redirects       |
-| `prisma/schema.prisma` | Database schema        | Data model changes    |
-| `.env.example`         | Environment vars       | Adding config values  |
+| `CMakeLists.txt` | Root build; feature toggles | Enabling/disabling options |
+| `app/MainWindow.cpp` | Main window and action wiring | Global UI behavior |
+| `libs/CV_db/include/ecvPointCloud.h` | Point cloud entity | Cloud data model |
+| `core/CVCoreLib/` | Core algorithms | Shared algorithm changes |
+| `plugins/cmake/Plugins.cmake` | Plugin registration (`AddPlugin`) | Adding/removing plugins |
+| `BUILD.md` | CMake option table and recipes | Build documentation |
 
 ## Dependencies
 
 ### Critical Dependencies
 
-- `next` - React framework
-- `prisma` - ORM and database toolkit
-- `react` - UI library
-- `typescript` - Type safety
+- `Qt 5.12+ / 6.2+` - GUI, plugins, concurrency
+- `Eigen3` - Linear algebra (core, reconstruction, AICore)
+- `VTK` - Rendering (`libs/VtkEngine/`)
+- `CMake 3.19+` - Build system
 
-### Key Libraries
+### Optional / Modular
 
-- `zod` - Schema validation
-- `bcrypt` - Password hashing
-- `jsonwebtoken` - JWT handling
-- `date-fns` - Date utilities
+- `OpenCV` - Image processing (qManualCalib, reconstruction paths)
+- `ggml` - ML inference backend in AICore
+- `CUDA / Vulkan / Metal` - GPU acceleration per platform
+- `COLMAP` - Reconstruction stack (`BUILD_RECONSTRUCTION=ON`)
 
 ## Development Workflow
 
-1. **Local setup:** See [DEVELOPMENT.md](DEVELOPMENT.md)
-2. **Making changes:** Branch → Implement → Test → PR
-3. **Running tests:** `pnpm test`
-4. **Database changes:** Prisma migrate workflow
-5. **Deployment:** Vercel automatic deployment
+1. **Setup:** Follow the platform guide in `docs/guides/compiling_doc/` (Linux/macOS/Windows)
+2. **Configure:** `cmake` with options from `BUILD.md` (e.g. `-DAICore_ENABLED=ON -DPLUGIN_STANDARD_QDA3=ON`)
+3. **Build:** `make -j${BUILD_JOBS}` in `build_app/`; cap jobs on low-RAM machines
+4. **Test:** `ctest --output-on-failure` for unit tests
+5. **PR:** merge into `main` via pull request; CI runs the platform matrix
 
 ## Troubleshooting
 
-**Database connection errors**
+**Build killed / OOM**
 
-- Check DATABASE_URL in .env
-- Ensure database is running
-- Run `npx prisma generate`
+- Reduce `BUILD_JOBS` (e.g. `BUILD_JOBS=4`), disable heavy plugins/options
 
-**Type errors after schema changes**
+**Plugin not in menu**
 
-- Run `npx prisma generate`
-- Restart TypeScript server
+- CMake option OFF or target not built; reconfigure with `-DPLUGIN_STANDARD_Q…=ON` and rebuild
 
-**Build fails**
+**AICore test skipped (exit 77)**
 
-- Clear `.next` folder: `rm -rf .next`
-- Clear node_modules: `rm -rf node_modules && pnpm install`
+- Missing GGUF model assets; download from cloudViewer_downloads or skip
+
+**ggml fix works locally but not in CI**
+
+- Changes must go through the patch flow (`3rdparty/ggml/patches/` + `manifest.yaml`), never edit `build*/ggml/` directly
 
 ## Additional Resources
 
-- [API Documentation](./API.md) - Endpoint reference
-- [Development Guide](./DEVELOPMENT.md) - Setup and workflow
-- [Contributing Guide](./CONTRIBUTING.md) - Code standards
-- [Database Schema](./DATABASE.md) - Data model details
-
-````
+- [README.md](../../../README.md) - Project overview and quick start
+- [BUILD.md](../../../BUILD.md) - CMake option table and build recipes
+- [ARCHITECTURE.md](../../../ARCHITECTURE.md) - Repository architecture map
+- [Contributing Guide](../../../CONTRIBUTING.md) - Code standards and conventions
+- [Compiling Guide](../../../docs/guides/compiling_doc/compiling-cloudviewer-linux.md) - Platform setup and build
 
 ## Analysis Techniques
 
 ### Identify Framework
+
 Look for telltale files:
-- `next.config.js` → Next.js
-- `vite.config.ts` → Vite
-- `nest-cli.json` → NestJS
-- `manage.py` → Django
+- `CMakeLists.txt` → CMake / C++ project
+- `*.pro` or `*.pri` → Qt qmake project
+- `meson.build` → Meson build
 - `Cargo.toml` → Rust
+- `setup.py` / `pyproject.toml` → Python
+- `package.json` → Node.js
 
 ### Map Entry Points
-- Frontend: `index.html`, `main.tsx`, `app.tsx`, `_app.tsx`
-- Backend: `main.ts`, `server.ts`, `app.py`, `index.js`
-- CLI: `cli.ts`, `__main__.py`, `main.go`
+
+- Desktop: `main.cpp`, `MainWindow.cpp`, `ecvApplication.cpp`
+- Libraries: exported headers in `include/` dirs, C API headers (`*_capi.h`)
+- CLI: `ecvCommandLineParser`, `cli-anything-acloudviewer` harness
+- Plugins: `q<Name>.cpp` implementing `ccStdPluginInterface`
 
 ### Trace Request Flow
+
 Follow typical paths:
-1. Route/endpoint definition
-2. Middleware/guards
-3. Controller/handler
-4. Service/business logic
-5. Repository/model
-6. Database query
+1. Entry point / action trigger
+2. Boundary / decision (dialog, controller)
+3. Core algorithm or service layer
+4. Entity / data model
+5. I/O or rendering result
 
 ### Module Categories
-- **Core**: Essential business logic
-- **Infrastructure**: Database, cache, queue
-- **Utilities**: Helpers, formatters, validators
-- **Features**: User-facing functionality
-- **Config**: Environment, settings
+
+- **Core**: Essential algorithms (`core/`, `libs/CV_db/`)
+- **Infrastructure**: I/O, rendering engine, plugin API
+- **Utilities**: Helpers, validators, dialogs
+- **Features**: User-facing plugin functionality
+- **Config**: CMake options, CI workflows
 
 ## Mermaid Diagrams
 
 ### Architecture Diagram
+
 ```mermaid
 graph LR
-    Client --> NextJS
-    NextJS --> API
-    API --> Services
-    Services --> Prisma
-    Prisma --> PostgreSQL
-````
+    App[app/ GUI] --> Libs[libs/]
+    Libs --> Core[core/ algorithms]
+    Plugins[plugins/] --> Libs
+    Libs --> 3rdparty
+```
 
 ### Data Flow
 
 ```mermaid
 sequenceDiagram
-    participant Client
-    participant API
-    participant Service
-    participant DB
-    Client->>API: Request
-    API->>Service: Process
-    Service->>DB: Query
-    DB-->>Service: Data
-    Service-->>API: Result
-    API-->>Client: Response
+    participant UI
+    participant Lib
+    participant Core
+    participant IO
+    UI->>Lib: Request
+    Lib->>Core: Process
+    Core->>IO: Read/Write
+    IO-->>Core: Data
+    Core-->>Lib: Result
+    Lib-->>UI: Update
 ```
 
 ### Module Relationships
 
 ```mermaid
 graph TB
-    API[API Layer] --> Auth[Auth Service]
-    API --> Users[User Service]
-    Auth --> DB[(Database)]
-    Users --> DB
-    Users --> Cache[(Cache)]
+    App[app/] --> Db[libs/CV_db]
+    App --> View[libs/VtkEngine]
+    Plugins --> Db
+    Plugins --> Core[core/CVCoreLib]
+    Db --> Core
 ```
 
 ## Best Practices
@@ -359,10 +340,8 @@ Every codebase summary should include:
 - [ ] Dependencies explanation
 - [ ] Troubleshooting section
 
-
 ---
 
 ## Related Skills
 
-**Works well with:** Docs Starter Kit, Dev Onboarding Builder
-
+**Works well with:** [acloudviewer-aicore-plugin](../acloudviewer-aicore-plugin/SKILL.md), [first-principles](../first-principles/SKILL.md)

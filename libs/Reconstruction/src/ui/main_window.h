@@ -11,8 +11,9 @@
 #include <QtGui>
 #include <QtWidgets>
 
-#include "base/reconstruction.h"
-#include "controllers/incremental_mapper.h"
+#include "controllers/incremental_pipeline.h"
+#include "scene/reconstruction.h"
+#include "sensor/bitmap.h"
 #include "ui/automatic_reconstruction_widget.h"
 #include "ui/bundle_adjustment_widget.h"
 #include "ui/database_management_widget.h"
@@ -29,7 +30,6 @@
 #include "ui/reconstruction_stats_widget.h"
 #include "ui/render_options_widget.h"
 #include "ui/undistortion_widget.h"
-#include "util/bitmap.h"
 
 namespace colmap {
 

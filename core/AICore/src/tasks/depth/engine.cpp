@@ -5,39 +5,31 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "engine.hpp"
+#include "tasks/depth/engine.hpp"
 
 #include <chrono>
 #include <cmath>
 #include <cstring>
 #include <string>
 
-#include "cam_pose.hpp"
-#include "colmap_export.hpp"
-#include "common.hpp"
-#include "compute_mode.hpp"
-#include "dino_backbone.hpp"
-#include "dpt_head.hpp"
-#include "gs_adapter.hpp"
-#include "gs_head.hpp"
-#include "image_io.hpp"
-#include "nested.hpp"
-#include "preprocess.hpp"
-#include "ray_pose.hpp"
-#include "vram_budget.hpp"
+#include "tasks/depth/cam_pose.hpp"
+#include "tasks/depth/colmap_export.hpp"
+#include "tasks/depth/common.hpp"
+#include "tasks/depth/dino_backbone.hpp"
+#include "tasks/depth/dpt_head.hpp"
+#include "tasks/depth/gs_adapter.hpp"
+#include "tasks/depth/gs_head.hpp"
+#include "tasks/depth/image_io.hpp"
+#include "tasks/depth/nested.hpp"
+#include "tasks/depth/preprocess.hpp"
+#include "tasks/depth/ray_pose.hpp"
+#include "tasks/depth/vram_budget.hpp"
 
 namespace aicore {
 namespace depth {
-std::unique_ptr<Engine> Engine::load(const std::string& path, int n_threads) {
-    // Device selection is explicit at the task/session boundary. Keep this
-    // legacy overload deterministic instead of consulting process environment.
-    return load_device(path, n_threads, "auto");
-}
-std::unique_ptr<Engine> Engine::load_device(const std::string& path,
-                                            int n_threads,
-                                            const std::string& device) {
-    std::unique_ptr<Engine> e(
-            new Engine(device, n_threads > 0 ? n_threads : 1));
+std::unique_ptr<Engine> Engine::load(const std::string& path,
+                                     const EngineOptions& options) {
+    std::unique_ptr<Engine> e(new Engine(options));
     if (e->be_.has_error()) {
         DA_ERR("engine: backend init failed: %s", e->be_.error().c_str());
         return nullptr;
@@ -50,22 +42,12 @@ std::unique_ptr<Engine> Engine::load_device(const std::string& path,
         DA_ERR("engine: offload failed");
         return nullptr;
     }
-    // Route graph builders to GPU-friendly standard ops iff weights are
-    // device-resident.
-    aicore::depth::set_gpu_mode(e->be_.is_offloading());
     return e;
 }
 std::unique_ptr<Engine> Engine::load_nested(const std::string& anyview_gguf,
                                             const std::string& metric_gguf,
-                                            int n_threads) {
-    return load_nested_device(anyview_gguf, metric_gguf, n_threads, "auto");
-}
-std::unique_ptr<Engine> Engine::load_nested_device(
-        const std::string& anyview_gguf,
-        const std::string& metric_gguf,
-        int n_threads,
-        const std::string& device) {
-    auto e = load_device(anyview_gguf, n_threads, device);
+                                            const EngineOptions& options) {
+    auto e = load(anyview_gguf, options);
     if (!e) {
         DA_ERR("engine: anyview load failed");
         return nullptr;
@@ -123,16 +105,6 @@ int Engine::cap_img_resize_target(int requested) const {
     return cap_resize_target_for_vram(requested, metric_ml_ != nullptr,
                                       query_gpu_memory(be_), be_.device_name());
 }
-
-namespace {
-
-bool force_joint_multiview() {
-    const char* v = std::getenv("DA3_FORCE_JOINT_MV");
-    return v && v[0] != '\0' && v[0] != '0' && std::strcmp(v, "false") != 0 &&
-           std::strcmp(v, "FALSE") != 0;
-}
-
-}  // namespace
 
 void Engine::set_img_resize_target(uint32_t target) {
     ml_.set_img_resize_target(target);
@@ -270,11 +242,9 @@ bool Engine::depth_native_image(const Image& img,
                                 int& H,
                                 int& W) {
     // Fused backbone+head graph by default (feats stay device-resident).
-    // DA_FUSED=0 forces the original two-graph path; cat_token=false models
-    // always use unfused.
-    const char* fenv = std::getenv("DA_FUSED");
-    const bool fused_off = fenv && std::string(fenv) == "0";
-    if (ml_.config().cat_token && !fused_off)
+    // options_.use_fused_graph=false forces the original two-graph path;
+    // cat_token=false models always use unfused.
+    if (ml_.config().cat_token && options_.use_fused_graph)
         return depth_native_fused(img, depth_out, conf_out, H, W);
     return depth_native_unfused(img, depth_out, conf_out, H, W);
 }
@@ -283,7 +253,7 @@ bool Engine::depth_native_unfused(const Image& img,
                                   std::vector<float>& conf_out,
                                   int& H,
                                   int& W) {
-    const bool prof = std::getenv("DA_PROFILE") != nullptr;
+    const bool prof = options_.profile_logging;
     auto now = [] { return std::chrono::high_resolution_clock::now(); };
     auto ms = [](auto a, auto b) {
         return std::chrono::duration<double, std::milli>(b - a).count();
@@ -318,7 +288,7 @@ bool Engine::depth_native_fused(const Image& img,
                                 std::vector<float>& conf_out,
                                 int& H,
                                 int& W) {
-    const bool prof = std::getenv("DA_PROFILE") != nullptr;
+    const bool prof = options_.profile_logging;
     auto now = [] { return std::chrono::high_resolution_clock::now(); };
     auto ms = [](auto a, auto b) {
         return std::chrono::duration<double, std::milli>(b - a).count();
@@ -609,7 +579,7 @@ bool Engine::depth_pose_multi(const std::vector<Image>& imgs,
                               std::vector<ViewResult>& out,
                               int& H,
                               int& W) {
-    if (imgs.size() > 1 && force_joint_multiview()) {
+    if (imgs.size() > 1 && options_.force_joint_multiview) {
         return depth_pose_multi_joint(imgs, out, H, W);
     }
     out.clear();
@@ -880,7 +850,7 @@ bool Engine::depth_metric_multi(const std::vector<Image>& imgs,
         DA_ERR("depth_metric_multi: no images");
         return false;
     }
-    if (imgs.size() > 1 && force_joint_multiview()) {
+    if (imgs.size() > 1 && options_.force_joint_multiview) {
         return depth_metric_multi_joint(imgs, out, H, W);
     }
 

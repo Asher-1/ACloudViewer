@@ -31,6 +31,7 @@
 
 #ifdef COLMAP_DOWNLOAD_ENABLED
 
+#include "util/file.h"
 #include "util/logging.h"
 #include "util/misc.h"
 #include "util/string.h"
@@ -414,30 +415,29 @@ std::string ComputeSHA256(const std::string_view& str) {
   return SHA256DigestToHex(digest, SHA256_DIGEST_LENGTH);
 }
 
+std::string ComputeFileSHA256(const std::filesystem::path& path) {
+  std::FILE* file = std::fopen(path.string().c_str(), "rb");
+  if (file == nullptr) {
+    return "";
+  }
+  SHA256_CTX ctx;
+  SHA256_Init(&ctx);
+  std::vector<char> buffer(1 << 20);
+  size_t bytes = 0;
+  while ((bytes = std::fread(buffer.data(), 1, buffer.size(), file)) > 0) {
+    SHA256_Update(&ctx, buffer.data(), bytes);
+  }
+  std::fclose(file);
+  unsigned char digest[SHA256_DIGEST_LENGTH];
+  SHA256_Final(digest, &ctx);
+  return SHA256DigestToHex(digest, SHA256_DIGEST_LENGTH);
+}
+
 namespace {
 
 std::optional<std::filesystem::path> download_cache_dir_overwrite;
 
-std::optional<std::filesystem::path> HomeDir() {
-#ifdef _MSC_VER
-  std::optional<std::string> userprofile = GetEnvSafe("USERPROFILE");
-  if (userprofile.has_value()) {
-    return *userprofile;
-  }
-  const std::optional<std::string> homedrive = GetEnvSafe("HOMEDRIVE");
-  const std::optional<std::string> homepath = GetEnvSafe("HOMEPATH");
-  if (!homedrive.has_value() || !homepath.has_value()) {
-    return std::nullopt;
-  }
-  return std::filesystem::path(*homedrive) / std::filesystem::path(*homepath);
-#else
-  std::optional<std::string> home = GetEnvSafe("HOME");
-  if (!home.has_value()) {
-    return std::nullopt;
-  }
-  return *home;
-#endif
-}
+// HomeDir() now lives in util/file.{h,cc} (upstream parity).
 
 }  // namespace
 

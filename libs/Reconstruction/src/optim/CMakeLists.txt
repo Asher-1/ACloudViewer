@@ -32,17 +32,17 @@
 set(FOLDER_NAME "optim")
 
 COLMAP_ADD_SOURCES(
-    bundle_adjustment.h bundle_adjustment.cc
     combination_sampler.h combination_sampler.cc
     least_absolute_deviations.h least_absolute_deviations.cc
     progressive_sampler.h progressive_sampler.cc
     random_sampler.h random_sampler.cc
+    sparse_cholesky.h sparse_cholesky.cc
     sprt.h sprt.cc
     manifold.h
     support_measurement.h support_measurement.cc
 )
 
-COLMAP_ADD_TEST(bundle_adjustment_test bundle_adjustment_test.cc)
+
 COLMAP_ADD_TEST(combination_sampler_test combination_sampler_test.cc)
 COLMAP_ADD_TEST(least_absolute_deviations_test
                 least_absolute_deviations_test.cc)

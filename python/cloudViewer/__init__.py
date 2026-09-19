@@ -490,11 +490,14 @@ def _setup_linux_libraries():
         try_load_cdll('libboost_iostreams*')
         # Load Qt DBus and XcbQpa based on detected Qt version
         _load_qt_libraries(['DBus', 'XcbQpa'])
-        try_load_cdll('libfreeimage*')
+        try_load_cdll('libOpenImageIO*')
         try_load_cdll('libgflags*')
         try_load_cdll('libglog*')
         try_load_cdll('libatlas*')
         try_load_cdll('libblas*')
+        # netlib CBLAS (faiss' cblas_sgemm provider); distinct soname from
+        # libblas.so.3, so the 'libblas*' glob above does not cover it.
+        try_load_cdll('libcblas*')
         try_load_cdll('liblapack*')
         try_load_cdll('libceres*')
 

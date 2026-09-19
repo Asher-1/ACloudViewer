@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "tensor_ops.hpp"
+#include "tasks/aliked/tensor_ops.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -55,8 +55,14 @@ void Conv2d(const std::vector<float> &input,
     // collapse(2) so the OpenMP runtime can schedule work onto the available
     // cores without overhead per channel.
 #if defined(_OPENMP)
+#if defined(_MSC_VER)
+// MSVC's OpenMP 2.0 has no collapse() (warning C4849, clause ignored):
+// parallelize over the outer loop only.
+#pragma omp parallel for schedule(static) num_threads(CpuTensorThreads())
+#else
 #pragma omp parallel for collapse(2) schedule(static) \
         num_threads(CpuTensorThreads())
+#endif
 #endif
     for (int32_t o = 0; o < oc; ++o) {
         for (int32_t oy = 0; oy < OY; ++oy) {
@@ -142,8 +148,14 @@ void AvgPool2d(const std::vector<float> &input,
     output->assign(static_cast<size_t>(c) * (*oh) * (*ow), 0.0f);
     const float norm = 1.0f / static_cast<float>(kh * kw);
 #if defined(_OPENMP)
+#if defined(_MSC_VER)
+// MSVC's OpenMP 2.0 has no collapse() (warning C4849, clause ignored):
+// parallelize over the outer loop only.
+#pragma omp parallel for schedule(static) num_threads(CpuTensorThreads())
+#else
 #pragma omp parallel for collapse(2) schedule(static) \
         num_threads(CpuTensorThreads())
+#endif
 #endif
     for (int32_t ch = 0; ch < c; ++ch) {
         for (int32_t oy = 0; oy < *oh; ++oy) {
@@ -277,8 +289,14 @@ void UpsampleBilinear(const std::vector<float> &input,
     }
 
 #if defined(_OPENMP)
+#if defined(_MSC_VER)
+// MSVC's OpenMP 2.0 has no collapse() (warning C4849, clause ignored):
+// parallelize over the outer loop only.
+#pragma omp parallel for schedule(static) num_threads(CpuTensorThreads())
+#else
 #pragma omp parallel for collapse(2) schedule(static) \
         num_threads(CpuTensorThreads())
+#endif
 #endif
     for (int32_t ch = 0; ch < c; ++ch) {
         for (int32_t oy = 0; oy < out_h; ++oy) {

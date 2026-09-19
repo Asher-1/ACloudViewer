@@ -7,10 +7,11 @@
 
 #pragma once
 
-#include "base/database.h"
-#include "base/database_cache.h"
-#include "base/reconstruction.h"
-#include "optim/bundle_adjustment.h"
+#include "estimators/bundle_adjustment.h"
+#include "estimators/generalized_pose.h"
+#include "scene/database.h"
+#include "scene/database_cache.h"
+#include "scene/reconstruction.h"
 #include "sfm/incremental_triangulator.h"
 #include "util/alignment.h"
 
@@ -95,6 +96,32 @@ public:
         // If reconstruction is provided as input, fix the existing image poses.
         bool fix_existing_images = false;
 
+        // If enabled, redundant 3D points are (temporally) excluded from the
+        // global bundle adjustment and only used to compute their reprojection
+        // error in the end. This is only done for reconstructions that have
+        // reached sufficient size with at least 10 registered frames.
+        bool ba_global_ignore_redundant_points3D = false;
+
+        // PRNG seed for all stochastic methods during reconstruction
+        // (upstream parity, d3ccaf35 incremental_mapper.h).
+        int random_seed = -1;
+
+        // The coverage gain threshold for a 3D point to be considered
+        // redundant in the global bundle adjustment. A larger value means more
+        // 3D points are pruned.
+        double ba_global_ignore_redundant_points3D_min_coverage_gain = 0.05;
+
+        // Whether to use the position prior to fix the gauge and constrain
+        // the bundle adjustment (upstream parity). Requires at least 3
+        // registered images with a position prior.
+        bool use_prior_position = false;
+
+        // Whether to use a robust loss on the position prior residuals.
+        bool use_robust_loss_on_prior_position = false;
+
+        // The scaling factor for the position prior loss function.
+        double prior_position_loss_scale = 7.815;
+
         // Number of threads.
         int num_threads = -1;
 
@@ -142,7 +169,8 @@ public:
     // images should be passed to `RegisterNextImage`. This function
     // automatically ignores images that failed to registered for
     // `max_reg_trials`.
-    std::vector<image_t> FindNextImages(const Options& options);
+    std::vector<image_t> FindNextImages(const Options& options,
+                                        bool structure_less = false);
 
     // Attempt to seed the reconstruction from an image pair.
     bool RegisterInitialImagePair(const Options& options,
@@ -152,6 +180,18 @@ public:
     // Attempt to register image to the existing model. This requires that
     // a previous call to `RegisterInitialImagePair` was successful.
     bool RegisterNextImage(const Options& options, const image_t image_id);
+
+    // Upstream parity (d3ccaf35): register a full multi-sensor frame through
+    // the generalized absolute pose estimator, using 2D-3D correspondences
+    // from every image of the frame. Only valid for rigs with more than one
+    // sensor.
+    bool RegisterNextGeneralFrame(const Options& options, Frame& frame);
+
+    // Upstream parity (d3ccaf35): structure-less resectioning of a single
+    // image from 2D-2D correspondences to already registered images, used
+    // as a fallback when structure-based registration fails.
+    bool RegisterNextStructureLessImage(const Options& options,
+                                        const image_t image_id);
 
     // Triangulate observations of image.
     size_t TriangulateImage(const IncrementalTriangulator::Options& tri_options,
@@ -187,17 +227,28 @@ public:
             const image_t image_id,
             const std::unordered_set<point3D_t>& point3D_ids);
 
-    // Global bundle adjustment using Ceres Solver or PBA.
+    // Global bundle adjustment with the configured backend.
     bool AdjustGlobalBundle(const Options& options,
                             const BundleAdjustmentOptions& ba_options);
-#ifdef PBA_ENABLED
-    bool AdjustParallelGlobalBundle(
-            const BundleAdjustmentOptions& ba_options,
-            const ParallelBundleAdjuster::Options& parallel_ba_options);
-#endif
     // Filter images and point observations.
     size_t FilterImages(const Options& options);
     size_t FilterPoints(const Options& options);
+
+    // Complete and merge all tracks (upstream parity, d3ccaf35
+    // incremental_mapper.h).
+    size_t CompleteAndMergeTracks(
+            const IncrementalTriangulator::Options& tri_options);
+
+    // Iterative global refinement: complete/merge/retriangulate the tracks
+    // and run global bundle adjustment until convergence (upstream parity,
+    // d3ccaf35 IncrementalMapper::IterativeGlobalRefinement).
+    void IterativeGlobalRefinement(
+            int max_num_refinements,
+            double max_refinement_change,
+            const Options& options,
+            const BundleAdjustmentOptions& ba_options,
+            const IncrementalTriangulator::Options& tri_options,
+            bool normalize_reconstruction = true);
 
     const Reconstruction& GetReconstruction() const;
 
@@ -207,6 +258,9 @@ public:
     // Number of shared images between current reconstruction and all other
     // previous reconstructions.
     size_t NumSharedRegImages() const;
+
+    // Number of registered frames per rig (upstream parity, d3ccaf35).
+    const std::unordered_map<rig_t, size_t>& NumRegFramesPerRig() const;
 
     // Get changed 3D points, since the last call to `ClearModifiedPoints3D`.
     const std::unordered_set<point3D_t>& GetModifiedPoints3D();
@@ -240,6 +294,12 @@ private:
     void RegisterImageEvent(const image_t image_id);
     void DeRegisterImageEvent(const image_t image_id);
 
+    // Upstream parity (d3ccaf35): frame-level registration bookkeeping -
+    // bumps the per-rig frame count and the per-image counters of every
+    // image in the frame.
+    void RegisterFrameEvent(frame_t frame_id);
+    void DeRegisterFrameEvent(frame_t frame_id);
+
     bool EstimateInitialTwoViewGeometry(const Options& options,
                                         const image_t image_id1,
                                         const image_t image_id2);
@@ -252,6 +312,14 @@ private:
 
     // Class that is responsible for incremental triangulation.
     std::unique_ptr<IncrementalTriangulator> triangulator_;
+
+    // Upstream parity (d3ccaf35): per-frame observation statistics and
+    // bookkeeping shared with the triangulator.
+    std::shared_ptr<class ObservationManager> obs_manager_;
+
+    // The number of registered frames per rig. Used to prefer a seed pair
+    // whose rigs are not yet registered.
+    std::unordered_map<rig_t, size_t> num_reg_frames_per_rig_;
 
     // Number of images that are registered in at least on reconstruction.
     size_t num_total_reg_images_;
@@ -285,6 +353,10 @@ private:
     // Number of trials to register image in current reconstruction. Used to set
     // an upper bound to the number of trials to register an image.
     std::unordered_map<image_t, size_t> num_reg_trials_;
+
+    // Number of trials to structure-less register an image in the current
+    // reconstruction (upstream parity, d3ccaf35).
+    std::unordered_map<image_t, size_t> num_structure_less_reg_trials_;
 
     // Images that were registered before beginning the reconstruction.
     // This image list will be non-empty, if the reconstruction is continued

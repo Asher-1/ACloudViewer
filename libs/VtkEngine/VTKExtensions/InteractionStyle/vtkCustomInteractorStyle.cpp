@@ -217,10 +217,21 @@ void vtkCustomInteractorStyle::OnChar() {
 //////////////////////////////////////////////////////////////////////////////////////////////
 void vtkCustomInteractorStyle::OnKeyDown() {
     if (!rens_) {
-        CVLog::Error(
-                "[vtkCustomInteractorStyle] No renderer collection given! Use "
-                "SetRendererCollection () before continuing.");
-        return;
+        // Self-heal: the style is wired to the interactor before any code
+        // path calls setRendererCollection (none ever did), so take the
+        // collection straight from the interactor's render window.
+        // Without this, every key press on a live view logged the "No
+        // renderer collection" error and the keyboard shortcuts never
+        // ran.
+        if (Interactor && Interactor->GetRenderWindow()) {
+            rens_ = Interactor->GetRenderWindow()->GetRenderers();
+        }
+        if (!rens_) {
+            CVLog::Error(
+                    "[vtkCustomInteractorStyle] No renderer collection "
+                    "given and none resolvable from the interactor.");
+            return;
+        }
     }
 
     this->CameraManipulators->InitTraversal();
@@ -999,6 +1010,12 @@ bool vtkCustomInteractorStyle::handleShortcut(char key,
                                               bool shift,
                                               vtkRenderWindowInteractor* iren) {
     if (!iren) iren = Interactor;
+    if (!rens_ && iren && iren->GetRenderWindow()) {
+        // Same self-heal as OnKeyDown: resolve the collection from the
+        // render window instead of failing on the never-initialized
+        // member.
+        rens_ = iren->GetRenderWindow()->GetRenderers();
+    }
     if (!rens_ || !iren) return false;
 
     if (iren->GetRenderWindow() && iren->GetRenderWindow()->GetRenderers()) {

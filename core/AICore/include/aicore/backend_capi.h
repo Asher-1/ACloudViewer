@@ -46,6 +46,15 @@ enum aicore_model_kind {
     AICORE_MODEL_LIGHTGLUE = 4,
     AICORE_MODEL_DEEPLSD = 5,
     AICORE_MODEL_FACEDETECT = 6,
+    AICORE_MODEL_RFDETR = 7,
+    AICORE_MODEL_RMBG = 8,
+    AICORE_MODEL_SAM3 = 9,
+    AICORE_MODEL_TRELLIS = 10,
+    AICORE_MODEL_YOLO = 11,
+    AICORE_MODEL_GKD = 12,
+    AICORE_MODEL_LINGBOT = 13,
+    AICORE_MODEL_LOMA = 14,
+    AICORE_MODEL_REID = 15,
 };
 
 enum aicore_model_capability {
@@ -75,7 +84,8 @@ typedef struct {
    changes. This is the single source of truth: the implementation returns it
    (see aicore_backend_abi_version) and runtime checkers must stay in sync
    (tests/depth/test_depth_capi_contract.cpp, util/check_aicore_runtime.py). */
-#define AICORE_BACKEND_ABI_VERSION 2
+#define AICORE_BACKEND_ABI_VERSION 3
+/** Returns AICORE_BACKEND_ABI_VERSION (see the macro doc above). */
 AICORE_CAPI int aicore_backend_abi_version(void);
 
 /* Number of entries returned by aicore_device_at. Only devices successfully

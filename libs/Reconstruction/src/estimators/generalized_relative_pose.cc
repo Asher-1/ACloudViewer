@@ -58,12 +58,12 @@
 
 #include "estimators/generalized_relative_pose.h"
 
-#include "base/essential_matrix.h"
-#include "base/pose.h"
-#include "base/projection.h"
-#include "base/triangulation.h"
+#include "geometry/essential_matrix.h"
+#include "geometry/pose.h"
+#include "scene/projection.h"
+#include "geometry/triangulation.h"
 #include "util/logging.h"
-#include "util/random.h"
+#include "math/random.h"
 
 namespace colmap {
 namespace {

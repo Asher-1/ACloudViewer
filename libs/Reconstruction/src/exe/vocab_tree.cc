@@ -33,7 +33,7 @@
 
 #include <numeric>
 
-#include "base/database.h"
+#include "scene/database.h"
 #include "exe/gui.h"
 #include "feature/matching.h"
 #include "feature/sift.h"
@@ -43,7 +43,7 @@
 #include "util/download.h"
 #include "util/misc.h"
 #include "util/opengl_utils.h"
-#include "util/option_manager.h"
+#include "controllers/option_manager.h"
 
 namespace colmap {
 namespace {
@@ -51,12 +51,14 @@ namespace {
 // Loads descriptors for training from the database. Loads all descriptors from
 // the database if max_num_images < 0, otherwise the descriptors of a random
 // subset of images are selected.
+// Takes std::filesystem::path (as stored by OptionManager): MSVC's path::value_type
+// is wchar_t, so there is no implicit conversion to std::string like on POSIX.
 FeatureDescriptors LoadRandomDatabaseDescriptors(
-    const std::string& database_path, const int max_num_images) {
-  Database database(database_path);
-  DatabaseTransaction database_transaction(&database);
+    const std::filesystem::path& database_path, const int max_num_images) {
+  auto database = Database::Open(database_path);
+  DatabaseTransaction database_transaction(database.get());
 
-  const std::vector<Image> images = database.ReadAllImages();
+  const std::vector<Image> images = database->ReadAllImages();
 
   FeatureDescriptors descriptors;
 
@@ -66,7 +68,7 @@ FeatureDescriptors LoadRandomDatabaseDescriptors(
     // All images in the database.
     image_idxs.resize(images.size());
     std::iota(image_idxs.begin(), image_idxs.end(), 0);
-    num_descriptors = database.NumDescriptors();
+    num_descriptors = database->NumDescriptors();
   } else {
     // Random subset of images in the database.
     CHECK_LE(max_num_images, images.size());
@@ -75,7 +77,7 @@ FeatureDescriptors LoadRandomDatabaseDescriptors(
     image_idxs = random_sampler.Sample();
     for (const auto image_idx : image_idxs) {
       const auto& image = images.at(image_idx);
-      num_descriptors += database.NumDescriptorsForImage(image.ImageId());
+      num_descriptors += database->NumDescriptorsForImage(image.ImageId());
     }
   }
 
@@ -85,7 +87,7 @@ FeatureDescriptors LoadRandomDatabaseDescriptors(
   for (const auto image_idx : image_idxs) {
     const auto& image = images.at(image_idx);
     const FeatureDescriptors image_descriptors =
-        database.ReadDescriptors(image.ImageId());
+        database->ReadDescriptors(image.ImageId());
     descriptors.block(descriptor_row, 0, image_descriptors.rows(), 128) =
         image_descriptors;
     descriptor_row += image_descriptors.rows();
@@ -121,8 +123,8 @@ std::vector<Image> ReadVocabTreeRetrievalImageList(const std::string& path,
 }  // namespace
 
 int RunVocabTreeBuilder(int argc, char** argv) {
-  std::string vocab_tree_path = retrieval::kDefaultVocabTreeUri;
-  retrieval::VisualIndex<>::BuildOptions build_options;
+  std::filesystem::path vocab_tree_path;
+  retrieval::VisualIndex::BuildOptions build_options;
   int max_num_images = -1;
 
   OptionManager options;
@@ -130,12 +132,11 @@ int RunVocabTreeBuilder(int argc, char** argv) {
   options.AddRequiredOption("vocab_tree_path", &vocab_tree_path);
   options.AddDefaultOption("num_visual_words", &build_options.num_visual_words);
   options.AddDefaultOption("num_checks", &build_options.num_checks);
-  options.AddDefaultOption("branching", &build_options.branching);
   options.AddDefaultOption("num_iterations", &build_options.num_iterations);
   options.AddDefaultOption("max_num_images", &max_num_images);
   options.Parse(argc, argv);
 
-  retrieval::VisualIndex<> visual_index;
+  auto visual_index = retrieval::VisualIndex::Create();
 
   std::cout << "Loading descriptors..." << std::endl;
   const auto descriptors =
@@ -144,22 +145,22 @@ int RunVocabTreeBuilder(int argc, char** argv) {
             << std::endl;
 
   std::cout << "Building index for visual words..." << std::endl;
-  visual_index.Build(build_options, descriptors);
+  visual_index->Build(build_options, ToFloat(descriptors));
   std::cout << " => Quantized descriptor space using "
-            << visual_index.NumVisualWords() << " visual words" << std::endl;
+            << visual_index->NumVisualWords() << " visual words" << std::endl;
 
   std::cout << "Saving index to file..." << std::endl;
-  visual_index.Write(vocab_tree_path);
+  visual_index->Write(vocab_tree_path);
 
   return EXIT_SUCCESS;
 }
 
 int RunVocabTreeRetriever(int argc, char** argv) {
-  std::string vocab_tree_path = retrieval::kDefaultVocabTreeUri;
+  std::filesystem::path vocab_tree_path;
   std::string database_image_list_path;
   std::string query_image_list_path;
   std::string output_index_path;
-  retrieval::VisualIndex<>::QueryOptions query_options;
+  retrieval::VisualIndex::QueryOptions query_options;
   int max_num_features = -1;
 
   OptionManager options;
@@ -177,19 +178,16 @@ int RunVocabTreeRetriever(int argc, char** argv) {
   options.AddDefaultOption("max_num_features", &max_num_features);
   options.Parse(argc, argv);
 
-  // Automatically download and cache if URI format is provided.
-  std::string resolved_vocab_tree_path =
-      MaybeDownloadAndCacheFile(vocab_tree_path).string();
-  retrieval::VisualIndex<> visual_index;
-  visual_index.Read(resolved_vocab_tree_path);
+  // VisualIndex::Read downloads and caches URI paths (upstream parity).
+  auto visual_index = retrieval::VisualIndex::Read(vocab_tree_path);
 
-  Database database(*options.database_path);
+  auto database = Database::Open(*options.database_path);
 
   const auto database_images =
-      ReadVocabTreeRetrievalImageList(database_image_list_path, &database);
+      ReadVocabTreeRetrievalImageList(database_image_list_path, database.get());
   const auto query_images =
       (!query_image_list_path.empty() || output_index_path.empty())
-          ? ReadVocabTreeRetrievalImageList(query_image_list_path, &database)
+          ? ReadVocabTreeRetrievalImageList(query_image_list_path, database.get())
           : std::vector<Image>();
 
   //////////////////////////////////////////////////////////////////////////////
@@ -204,30 +202,31 @@ int RunVocabTreeRetriever(int argc, char** argv) {
                               database_images.size())
               << std::flush;
 
-    if (visual_index.ImageIndexed(database_images[i].ImageId())) {
+    if (visual_index->IsImageIndexed(database_images[i].ImageId())) {
       std::cout << std::endl;
       continue;
     }
 
-    auto keypoints = database.ReadKeypoints(database_images[i].ImageId());
-    auto descriptors = database.ReadDescriptors(database_images[i].ImageId());
+    auto keypoints = database->ReadKeypoints(database_images[i].ImageId());
+    auto descriptors = database->ReadDescriptors(database_images[i].ImageId());
     if (max_num_features > 0 && descriptors.rows() > max_num_features) {
       ExtractTopScaleFeatures(&keypoints, &descriptors, max_num_features);
     }
 
-    visual_index.Add(retrieval::VisualIndex<>::IndexOptions(),
-                     database_images[i].ImageId(), keypoints, descriptors);
+    visual_index->Add(retrieval::VisualIndex::IndexOptions(),
+                      database_images[i].ImageId(), keypoints,
+                      descriptors.cast<float>());
 
     std::cout << StringPrintf(" in %.3fs", timer.ElapsedSeconds()) << std::endl;
   }
 
   // Compute the TF-IDF weights, etc.
-  visual_index.Prepare();
+  visual_index->Prepare();
 
   // Optionally save the indexing data for the database images (as well as the
   // original vocabulary tree data) to speed up future indexing.
   if (!output_index_path.empty()) {
-    visual_index.Write(output_index_path);
+    visual_index->Write(output_index_path);
   }
 
   if (query_images.empty()) {
@@ -253,14 +252,15 @@ int RunVocabTreeRetriever(int argc, char** argv) {
                               query_images.size())
               << std::flush;
 
-    auto keypoints = database.ReadKeypoints(query_images[i].ImageId());
-    auto descriptors = database.ReadDescriptors(query_images[i].ImageId());
+    auto keypoints = database->ReadKeypoints(query_images[i].ImageId());
+    auto descriptors = database->ReadDescriptors(query_images[i].ImageId());
     if (max_num_features > 0 && descriptors.rows() > max_num_features) {
       ExtractTopScaleFeatures(&keypoints, &descriptors, max_num_features);
     }
 
     std::vector<retrieval::ImageScore> image_scores;
-    visual_index.Query(query_options, keypoints, descriptors, &image_scores);
+    visual_index->Query(query_options, keypoints, descriptors.cast<float>(),
+                        &image_scores);
 
     std::cout << StringPrintf(" in %.3fs", timer.ElapsedSeconds()) << std::endl;
     for (const auto& image_score : image_scores) {

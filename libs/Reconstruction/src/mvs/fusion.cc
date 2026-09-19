@@ -122,7 +122,7 @@ bool StereoFusionOptions::Check() const {
 }
 
 StereoFusion::StereoFusion(const StereoFusionOptions& options,
-                           const std::string& workspace_path,
+                           const std::filesystem::path& workspace_path,
                            const std::string& workspace_format,
                            const std::string& pmvs_option_name,
                            const std::string& input_type)
@@ -172,8 +172,8 @@ void StereoFusion::Run() {
     workspace_options.workspace_format = workspace_format_;
     workspace_options.input_type = input_type_;
 
-    const auto image_names = ReadTextFileLines(JoinPaths(
-            workspace_path_, workspace_options.stereo_folder, "fusion.cfg"));
+    const auto image_names = ReadTextFileLines(
+            workspace_path_ / workspace_options.stereo_folder / "fusion.cfg");
     int num_threads = 1;
     if (options_.use_cache) {
         workspace_.reset(new CachedWorkspace(workspace_options));
@@ -367,15 +367,15 @@ void StereoFusion::InitFusedPixelMask(int image_idx,
                                       size_t height) {
     Bitmap mask;
     Mat<char>& fused_pixel_mask = fused_pixel_masks_.at(image_idx);
-    const std::string mask_path =
-            JoinPaths(options_.mask_path,
-                      workspace_->GetModel().GetImageName(image_idx) + ".png");
+    const std::filesystem::path mask_path =
+            options_.mask_path /
+            (workspace_->GetModel().GetImageName(image_idx) + ".png");
     fused_pixel_mask = Mat<char>(width, height, 1);
     if (!options_.mask_path.empty() && ExistsFile(mask_path) &&
         mask.Read(mask_path, false)) {
         BitmapColor<uint8_t> color;
         mask.Rescale(static_cast<int>(width), static_cast<int>(height),
-                     FILTER_BOX);
+                     BitmapRescaleFilter::kBox);
         for (size_t row = 0; row < height; ++row) {
             for (size_t col = 0; col < width; ++col) {
                 mask.GetPixel(col, row, &color);
@@ -650,7 +650,7 @@ void StereoFusion::Fuse(const int thread_id,
 }
 
 void WritePointsVisibility(
-        const std::string& path,
+        const std::filesystem::path& path,
         const std::vector<std::vector<int>>& points_visibility) {
     std::fstream file(path, std::ios::out | std::ios::binary);
     CHECK(file.is_open()) << path;
@@ -663,6 +663,26 @@ void WritePointsVisibility(
             WriteBinaryLittleEndian<uint32_t>(&file, image_idx);
         }
     }
+}
+
+std::vector<std::vector<int>> ReadPointsVisibility(
+        const std::filesystem::path& path, size_t num_points) {
+    std::fstream file(path, std::ios::in | std::ios::binary);
+    CHECK(file.is_open()) << path;
+
+    const size_t file_num_points = ReadBinaryLittleEndian<uint64_t>(&file);
+    CHECK_EQ(file_num_points, num_points);
+
+    std::vector<std::vector<int>> visibility(num_points);
+    for (size_t i = 0; i < num_points; ++i) {
+        const uint32_t num_visible = ReadBinaryLittleEndian<uint32_t>(&file);
+        visibility[i].resize(num_visible);
+        for (uint32_t j = 0; j < num_visible; ++j) {
+            visibility[i][j] = static_cast<int>(
+                    ReadBinaryLittleEndian<uint32_t>(&file));
+        }
+    }
+    return visibility;
 }
 
 }  // namespace mvs

@@ -7,9 +7,9 @@
 
 #include "UndistortionWidget.h"
 
-#include "base/reconstruction.h"
+#include "controllers/option_manager.h"
+#include "scene/reconstruction.h"
 #include "util/misc.h"
-#include "util/option_manager.h"
 
 namespace cloudViewer {
 

@@ -21,6 +21,8 @@
 #include <stdio.h>
 #include <float.h>
 #include <cuda_runtime.h>
+#include <atomic>
+#include <cstdint>
 #include <unordered_map>
 #include "CuTexImage.h"
 #include "ProgramCU.h"
@@ -89,6 +91,13 @@ static std::unordered_map<PBA_TexKey, cudaTextureObject_t, PBA_TexKeyHasher>& PB
   return cache;
 }
 
+// cudaTextureObject_t values may be recycled after destruction. The generation
+// makes every device symbol rebind after the object cache is released.
+static std::atomic<uint64_t>& PBA_TextureBindingGeneration() {
+  static std::atomic<uint64_t> generation{1};
+  return generation;
+}
+
 static cudaTextureObject_t PBA_AcquireTextureObject1D(CuTexImage& img,
                                                       const cudaTextureDesc& tex_desc,
                                                       const cudaChannelFormatDesc& ch_desc) {
@@ -139,6 +148,7 @@ static cudaTextureObject_t PBA_AcquireTextureObject1DRange(const void* base_dev_
 }
 
 static void PBA_ClearTextureObjectCache() {
+  PBA_TextureBindingGeneration().fetch_add(1, std::memory_order_relaxed);
   auto& cache = PBA_GetTexCache();
   int prev_device = 0;
   cudaGetDevice(&prev_device);
@@ -205,12 +215,25 @@ __device__ cudaTextureObject_t tex_mjx_x;
 __device__ cudaTextureObject_t tex_jte_q_idx;
 __device__ cudaTextureObject_t tex_jte_q_w;
 
-// Macro to bind a CuTexImage to a device-side texture object symbol using cache
-// Avoid frequent cudaMemcpyToSymbol if handle unchanged
+// Macro to bind a CuTexImage to a device-side texture object symbol using cache.
+// A CUDA handle value alone is not a stable identity across cache clears or devices.
 #define PBA_SET_TEX_SYMBOL(sym, handle)                                                            \
-  do { static cudaTextureObject_t __last_##sym = 0;                                               \
-       if (__last_##sym != (handle)) { cudaMemcpyToSymbol(sym, &(handle), sizeof(handle));         \
-         __last_##sym = (handle); } } while (0)
+  do {                                                                                              \
+    static cudaTextureObject_t __last_##sym = 0;                                                    \
+    static uint64_t __last_generation_##sym = 0;                                                    \
+    static int __last_device_##sym = -1;                                                           \
+    const uint64_t __generation =                                                                 \
+        PBA_TextureBindingGeneration().load(std::memory_order_relaxed);                            \
+    int __device = 0;                                                                               \
+    cudaGetDevice(&__device);                                                                       \
+    if (__last_##sym != (handle) || __last_generation_##sym != __generation ||                    \
+        __last_device_##sym != __device) {                                                         \
+      cudaMemcpyToSymbol(sym, &(handle), sizeof(handle));                                           \
+      __last_##sym = (handle);                                                                      \
+      __last_generation_##sym = __generation;                                                      \
+      __last_device_##sym = __device;                                                              \
+    }                                                                                               \
+  } while (0)
 
 #define PBA_BIND_TEX1D(sym, img, read_mode, chdesc)                                                \
   do {                                                                                             \

@@ -136,6 +136,9 @@ private:
     JsonRPCResult rpcMeshMerge(const QMap<QString, QVariant>& params);
     // --- CLI Processing ---
     JsonRPCResult rpcProcessRunCli(const QMap<QString, QVariant>& params);
+    /** Spawns a headless ACloudViewer -SILENT -YOLO_TRACK child process
+     *  (same offscreen pattern as rpcProcessRunCli). */
+    JsonRPCResult rpcYoloTrack(const QMap<QString, QVariant>& params);
     JsonRPCResult rpcProcessCsf(const QMap<QString, QVariant>& params);
     JsonRPCResult rpcProcessM3c2(const QMap<QString, QVariant>& params);
     JsonRPCResult rpcProcessRansac(const QMap<QString, QVariant>& params);
