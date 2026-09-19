@@ -10,6 +10,8 @@
 #include <QByteArray>
 #include <QObject>
 #include <QString>
+#include <QStringList>
+#include <QTimer>
 #include <QUrl>
 
 #include "CVPluginAPI.h"
@@ -52,6 +54,12 @@ public:
         // Exact expected byte count, used ONLY when contentAnchor has no
         // digest (see policy item 4 above).
         qint64 ingestExactSize = 0;
+        // Alternate URLs tried in rotation when the primary endpoint yields
+        // no bytes (github release CDN endpoints are unreachable on some
+        // networks). Content safety does not depend on the mirror: the
+        // pinned digest (or exact size) still gates finalize, and a failed
+        // verification deletes the artifact.
+        QStringList mirrorUrls;
     };
 
     explicit ecvModelDownloader(QObject* parent = nullptr);
@@ -91,6 +99,9 @@ public:
 
 private:
     void cleanupActiveReply();
+    void startAttempt();
+    void scheduleRetry(const QString& reason);
+    void finishAttempt(bool ok);
 
     QNetworkAccessManager* m_net = nullptr;
     QNetworkReply* m_reply = nullptr;
@@ -103,4 +114,33 @@ private:
     QCryptographicHash* m_hash = nullptr;  // streamed while downloading
     bool m_requireGgufMagic = true;
     bool m_busy = false;
+
+    // ── Resume + retry state ────────────────────────────────────────────
+    // Large assets over lossy links stall mid-transfer. The .part file is
+    // KEPT across failures and each attempt resumes it with an HTTP Range
+    // request; the streamed digest covers the full file (the already-
+    // downloaded prefix is hashed once when the attempt opens the part in
+    // append mode), so resuming can never produce a silently corrupted
+    // artifact. Consecutive failed attempts rotate through the URL
+    // candidates (primary + mirrors): resume stays valid across mirrors
+    // because the candidates serve identical, digest-pinned content.
+    ecvModelDownloader::Request m_request;
+    QStringList m_candidates;
+    int m_candidateIndex = 0;
+    qint64 m_resumeOffset = 0; /**< bytes already on disk for attempt */
+    int m_attempt = 0;         /**< 0-based attempt counter */
+    qint64 m_lastProgressBytes = -1;
+    qint64 m_lastWatchdogBytes = -1;
+    qint64 m_fullTotal = 0; /**< resume prefix + reply total */
+    int m_stallTicks = 0;
+    QTimer* m_stallTimer = nullptr; /**< no-progress watchdog */
+    QTimer* m_retryTimer = nullptr; /**< backoff between attempts */
+    bool m_rangeNegotiated = false; /**< 206 verified for this attempt */
+
+    double progressPercent() const;
+
+    static constexpr int kMaxAttempts = 6;
+    static constexpr int kStallCheckMs = 5000;
+    static constexpr int kStallTimeoutMs = 30000;
+    static constexpr int kRetryDelayBaseMs = 2000;
 };

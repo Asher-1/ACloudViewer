@@ -701,10 +701,17 @@ void SynthesizeNoise(const SyntheticNoiseOptions& options,
   THROW_CHECK_GE(options.prior_position_stddev, 0.);
   THROW_CHECK_GE(options.prior_gravity_stddev, 0.);
 
-  for (const frame_t frame_id : reconstruction->RegFrameIds()) {
+  // The fork's registration is image-level and no synthetic frame is
+  // registered at this point (AddFrame does not auto-register), so iterate
+  // the posed frames directly - the upstream loop over RegFrameIds() is
+  // equivalent under the upstream auto-registering AddFrame semantics.
+  for (auto& [frame_id, frame] : reconstruction->Frames()) {
+    if (!frame.HasPose()) {
+      continue;
+    }
     // Fork parity: RigFromWorld() returns by value; mutate and write back
     // through SetRigFromWorld.
-    Rigid3d rig_from_world = reconstruction->Frame(frame_id).RigFromWorld();
+    Rigid3d rig_from_world = frame.RigFromWorld();
 
     if (options.rig_from_world_rotation_stddev > 0.0) {
       const double angle = std::clamp(

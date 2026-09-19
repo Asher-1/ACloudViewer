@@ -240,13 +240,19 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
 
     // Custom-data reminder: outdoor sequences with sky in view should enable
     // sky masking (the official test scenes toggle it automatically).
-    m_skyHint = ecvAICoreUi::makeHintLabel(
+    m_customSkyHintText =
             tr("Tip: for custom outdoor data with sky in view, enable Sky "
-               "masking (Native skyseg or cached masks) to filter sky "
-               "points."),
-            this);
+               "masking (Native skyseg or cached masks) to filter sky points.");
+    m_skyHint = ecvAICoreUi::makeHintLabel(m_customSkyHintText, this);
     m_skyHint->setVisible(false);
     form->addRow(QString(), m_skyHint);
+
+    // Dataset → model guidance (tips/label): tells the user which model
+    // and pipeline each dataset is adapted for, per the upstream long_real
+    // campaign.
+    m_datasetHint = ecvAICoreUi::makeHintLabel(QString(), this);
+    m_datasetHint->setWordWrap(true);
+    form->addRow(QString(), m_datasetHint);
 
     // --- input source: image folder (default) or video file ---
     m_inputModeCombo = new QComboBox(this);
@@ -407,6 +413,18 @@ LingbotMapDialog::LingbotMapDialog(QWidget* parent)
                "first-run default is auto-profiled to the detected GPU "
                "memory."));
     advForm->addRow(tr("KV cache window"), m_kvWindow);
+    m_keyframeInterval = new QSpinBox(m_advancedContainer);
+    m_keyframeInterval->setRange(0, 64);
+    m_keyframeInterval->setValue(0);
+    m_keyframeInterval->setSpecialValueText(tr("Auto"));
+    m_keyframeInterval->setToolTip(
+            tr("Official long-stream keyframe policy (upstream "
+               "--keyframe_interval): every N-th streaming frame persists "
+               "its KV; non-keyframes attend but do not persist. Auto "
+               "resolves to ceil(N/320) per the official streaming rule "
+               "(1 when the stream is shorter). Windowed mode always runs "
+               "per-window interval 1."));
+    advForm->addRow(tr("Keyframe interval"), m_keyframeInterval);
     if (kvAutoProfiled) {
         advForm->addRow(
                 QString(),
@@ -649,6 +667,16 @@ void LingbotMapDialog::populateCatalogs() {
             currentDefault = i;
         }
     }
+    m_modelCombo->setToolTip(
+            tr("Dataset → model guidance:\n"
+               "• Official long datasets (Drive, Lingbo World — video, "
+               "N>320): use a long-* model (long-f16 recommended) with "
+               "the streaming auto keyframe policy.\n"
+               "• Short demo streams (Courthouse, Oxford, University, "
+               "Loop): use a balanced model (f16 recommended, q8 for "
+               "smaller VRAM).\n"
+               "f16 is the upstream GUI default; q8 trades accuracy for "
+               "half the weight memory; f32 is the exact reference."));
     m_modelCombo->setCurrentIndex(currentDefault);
     if (!previous.isEmpty()) {
         const int idx = m_modelCombo->findData(previous);
@@ -860,6 +888,7 @@ LingbotMapWorker::Settings LingbotMapDialog::collectSettings() const {
     s.confThreshold = static_cast<float>(m_confThreshold->value());
     s.kvScale = m_kvScale->value();
     s.kvWindow = m_kvWindow->value();
+    s.keyframeInterval = m_keyframeInterval->value();
     s.frameStride = m_frameStride->value();
     s.rotateClockwise90 = m_rotate90->isChecked();
     const QString skySource = m_skySourceCombo->currentData().toString();
@@ -886,6 +915,13 @@ LingbotMapWorker::Settings::Mode LingbotMapDialog::currentMode() const {
                    : LingbotMapWorker::Settings::Mode::Streaming;
 }
 
+// Forward declaration: the definition lives with the other file-local
+// helpers below (onRun needs it before that point).
+namespace {
+bool lingbotDatasetFromName(const QString& name,
+                            ecvTestDataRepository::Dataset* out);
+}
+
 void LingbotMapDialog::onRun() {
     if (!ensureModelAvailable(PendingAction::Run)) return;
     const LingbotMapWorker::Settings s = collectSettings();
@@ -896,6 +932,34 @@ void LingbotMapDialog::onRun() {
                                  tr("Select an existing video file first."));
             return;
         }
+    } else if (m_inputModeCombo->currentData().toString() ==
+               QStringLiteral("video")) {
+        // Video mode with no file resolved: pull it from the selected
+        // official test video (downloading + caching it on first use) and
+        // start the run when ready. A custom path always wins (it was
+        // already validated above by its existence check).
+        ecvTestDataRepository::Dataset scene;
+        const bool isTestVideo =
+                lingbotDatasetFromName(
+                        m_testSceneCombo->currentData().toString(), &scene) &&
+                ecvTestDataRepository::isSingleFileDataset(scene);
+        if (isTestVideo) {
+            if (ecvTestDataRepository::instance().isDatasetAvailable(scene)) {
+                applyTestSceneSelection();  // fills the video input
+                onRun();                    // re-collect settings and run
+            } else {
+                m_pendingRunAfterTestData = true;
+                appendLog(
+                        tr("[LingbotMap] Test video not cached yet — "
+                           "downloading it; the run starts "
+                           "automatically when ready."));
+                requestTestData();
+            }
+            return;
+        }
+        QMessageBox::warning(this, tr("LingBot-Map"),
+                             tr("Select an existing video file first."));
+        return;
     } else
 #endif
             if (s.imageFolder.isEmpty() || !QFileInfo::exists(s.imageFolder)) {
@@ -1037,6 +1101,10 @@ void LingbotMapDialog::loadSettings() {
         m_kvWindow->setValue(
                 settings.value(QStringLiteral("kvWindow")).toInt());
     }
+    if (settings.contains(QStringLiteral("keyframeInterval"))) {
+        m_keyframeInterval->setValue(
+                settings.value(QStringLiteral("keyframeInterval")).toInt());
+    }
     m_frameStride->setValue(
             settings.value(QStringLiteral("frameStride"), 1).toInt());
     m_rotate90->setChecked(
@@ -1063,6 +1131,15 @@ void LingbotMapDialog::loadSettings() {
     const int pbIdx = m_playbackMode->findData(playbackMode);
     if (pbIdx >= 0) m_playbackMode->setCurrentIndex(pbIdx);
     settings.endGroup();
+
+    // Re-apply the test-scene defaults AFTER the persisted values land.
+    // loadSettings runs after populateTestDataScenes() (whose automatic
+    // sky-mask selection had already picked the scene-appropriate source);
+    // restoring skySource here would otherwise silently override that with
+    // a stale persisted value (e.g. "None" chosen for an unrelated scene
+    // in a previous session). The programmatic restore is deliberately NOT
+    // a user-explicit choice, so the scene auto-switch still wins.
+    applyTestSceneSelection();
 }
 
 void LingbotMapDialog::saveSettings() const {
@@ -1095,6 +1172,8 @@ void LingbotMapDialog::saveSettings() const {
                       m_advancedBox->isChecked());
     settings.setValue(QStringLiteral("kvScale"), m_kvScale->value());
     settings.setValue(QStringLiteral("kvWindow"), m_kvWindow->value());
+    settings.setValue(QStringLiteral("keyframeInterval"),
+                      m_keyframeInterval->value());
     settings.setValue(QStringLiteral("frameStride"), m_frameStride->value());
     settings.setValue(QStringLiteral("rotateClockwise90"),
                       m_rotate90->isChecked());
@@ -1152,6 +1231,10 @@ bool lingbotDatasetFromName(const QString& name,
         *out = ecvTestDataRepository::Dataset::LingbotMapOxfordSkyMasks;
     } else if (name == QStringLiteral("LingbotMapUniversitySkyMasks")) {
         *out = ecvTestDataRepository::Dataset::LingbotMapUniversitySkyMasks;
+    } else if (name == QStringLiteral("LingbotMapDriveVideo")) {
+        *out = ecvTestDataRepository::Dataset::LingbotMapDriveVideo;
+    } else if (name == QStringLiteral("LingbotMapLingboWorldVideo")) {
+        *out = ecvTestDataRepository::Dataset::LingbotMapLingboWorldVideo;
     } else {
         return false;
     }
@@ -1191,15 +1274,41 @@ void LingbotMapDialog::populateTestDataScenes() {
     QComboBox* combo = m_testSceneCombo;
     combo->blockSignals(true);
     combo->clear();
-    combo->addItem(tr("Courthouse (outdoor)"),
+    combo->addItem(tr("Courthouse (outdoor, short)"),
                    QStringLiteral("LingbotMapCourthouse"));
-    combo->addItem(tr("Loop (indoor loop closure)"),
+    combo->addItem(tr("Loop (indoor loop closure, short)"),
                    QStringLiteral("LingbotMapLoop"));
-    combo->addItem(tr("Oxford Spires (outdoor)"),
+    combo->addItem(tr("Oxford Spires (outdoor, short)"),
                    QStringLiteral("LingbotMapOxford"));
-    combo->addItem(tr("University (outdoor)"),
+    combo->addItem(tr("University (outdoor, short)"),
                    QStringLiteral("LingbotMapUniversity"));
+    combo->addItem(tr("Drive (long, car-mounted camera)"),
+                   QStringLiteral("LingbotMapDriveVideo"));
+    combo->addItem(tr("Lingbo World (long, walkthrough)"),
+                   QStringLiteral("LingbotMapLingboWorldVideo"));
     combo->addItem(tr("Custom (own image folder)"), QStringLiteral("Custom"));
+    combo->setItemData(
+            0,
+            tr("Official courthouse demo stream (~286 frames): use a "
+               "balanced model (f16 recommended / q8)."),
+            Qt::ToolTipRole);
+    combo->setItemData(
+            1,
+            tr("Indoor loop-closure demo stream: use a balanced model; "
+               "no sky masking needed."),
+            Qt::ToolTipRole);
+    combo->setItemData(
+            4,
+            tr("Official long-model dataset (car-mounted, ~1050 frames @ "
+               "10 fps): use a long-* model with the streaming auto "
+               "keyframe policy."),
+            Qt::ToolTipRole);
+    combo->setItemData(
+            5,
+            tr("Official long-model dataset (walkthrough, ~667 frames @ "
+               "10 fps): use a long-* model with the streaming auto "
+               "keyframe policy."),
+            Qt::ToolTipRole);
     combo->blockSignals(false);
     applyTestSceneSelection();
 }
@@ -1210,6 +1319,7 @@ void LingbotMapDialog::applyTestSceneSelection() {
         // User-provided folder: no auto-fill; the sky-masking reminder
         // (hint label) is driven by refreshSkySourceOptions instead.
         m_customDataSelected = true;
+        updateDatasetHint();
         refreshSkySourceOptions();
         return;
     }
@@ -1218,6 +1328,27 @@ void LingbotMapDialog::applyTestSceneSelection() {
         return;
     }
     m_customDataSelected = false;
+    // Official long-model video datasets fill the VIDEO input (not the
+    // image folder) once downloaded; sky masking is left untouched (the
+    // upstream long_real campaign runs them unmasked).
+    if (ecvTestDataRepository::isSingleFileDataset(scene)) {
+#ifdef HAS_OPENCV_FACE_CAPTURE
+        if (m_inputModeCombo) {
+            const int videoIdx =
+                    m_inputModeCombo->findData(QStringLiteral("video"));
+            if (videoIdx >= 0) m_inputModeCombo->setCurrentIndex(videoIdx);
+        }
+        const QString video = ecvTestDataRepository::findDatasetFile(
+                scene,
+                ecvTestDataRepository::getDatasetInfo(scene).zipFileName);
+        if (!video.isEmpty() && m_videoPath) {
+            m_videoPath->setText(video);
+        }
+#endif
+        updateDatasetHint();
+        refreshSkySourceOptions();
+        return;
+    }
     // Auto sky masking: outdoor demo scenes enable it (the paired cached
     // mask bundle when already available, native skyseg otherwise); the
     // indoor loop scene has no sky. A user-explicit combo choice always
@@ -1252,7 +1383,47 @@ void LingbotMapDialog::applyTestSceneSelection() {
     if (!ecvTestDataRepository::getLingbotMapImages(extract).isEmpty()) {
         m_imageFolder->setText(lingbotFrameDirOf(extract));
     }
+    updateDatasetHint();
     refreshSkySourceOptions();
+}
+
+void LingbotMapDialog::updateDatasetHint() {
+    if (!m_datasetHint) return;
+    const QString sceneName = m_testSceneCombo->currentData().toString();
+    QString hint;
+    if (sceneName == QStringLiteral("LingbotMapDriveVideo")) {
+        hint =
+                tr("Drive dataset: official long-model sequence (car-mounted, "
+                   "~1050 frames @ 10 fps, auto keyframe interval = 4). "
+                   "Recommended model: long-f16 (or long-q8 for smaller VRAM). "
+                   "Run in Streaming mode — the auto keyframe policy bounds "
+                   "the KV cache for the long run.");
+    } else if (sceneName == QStringLiteral("LingbotMapLingboWorldVideo")) {
+        hint =
+                tr("Lingbo World dataset: official long-model sequence "
+                   "(walkthrough, ~667 frames @ 10 fps, auto keyframe "
+                   "interval = 3). Recommended model: long-f16 (or long-q8 "
+                   "for smaller VRAM). Run in Streaming mode with the auto "
+                   "keyframe policy.");
+    } else if (sceneName.startsWith(QStringLiteral("LingbotMap")) &&
+               sceneName != QStringLiteral("LingbotMapLoop")) {
+        hint =
+                tr("Short outdoor demo sequence: use a balanced model (f16 "
+                   "recommended, q8 for smaller VRAM) in Streaming mode. "
+                   "Outdoor scenes benefit from sky masking.");
+    } else if (sceneName == QStringLiteral("LingbotMapLoop")) {
+        hint =
+                tr("Indoor loop-closure sequence: use a balanced model (f16 "
+                   "recommended). No sky masking needed.");
+    } else if (sceneName == QStringLiteral("Custom")) {
+        hint =
+                tr("Model guidance: sequences above ~320 frames are long runs "
+                   "— prefer a long-* model with the auto keyframe policy "
+                   "(Streaming); shorter sequences match the balanced f16/q8 "
+                   "models.");
+    }
+    m_datasetHint->setText(hint);
+    m_datasetHint->setVisible(!hint.isEmpty());
 }
 
 void LingbotMapDialog::refreshSkySourceOptions() {
@@ -1283,9 +1454,31 @@ void LingbotMapDialog::refreshSkySourceOptions() {
                         QStringLiteral("cached");
     m_skysegRow->setVisible(native);
     m_skyMaskRow->setVisible(cached);
-    // The custom-data reminder only shows while sky masking is off.
+    // Sky-effect warnings for the log panel reader:
+    //  - custom data with masking off: the original reminder;
+    //  - an OFFICIAL outdoor scene with masking explicitly set to None:
+    //    outdoor reconstruction quality degrades without sky masking
+    //    (sky pixels look like ground planes to the depth head).
     if (m_skyHint) {
-        m_skyHint->setVisible(m_customDataSelected && !native && !cached);
+        const bool outdoorScene =
+                knownScene &&
+                scene != ecvTestDataRepository::Dataset::LingbotMapLoop;
+        const bool videoScene =
+                knownScene && ecvTestDataRepository::isSingleFileDataset(scene);
+        const bool warnNone = outdoorScene && !videoScene && !native && !cached;
+        const bool remindCustom = m_customDataSelected && !native && !cached;
+        const bool show = remindCustom || warnNone;
+        m_skyHint->setVisible(show);
+        if (show) {
+            m_skyHint->setText(warnNone ? tr("Sky masking is OFF for this "
+                                             "outdoor sequence — sky pixels "
+                                             "will be treated as geometry "
+                                             "and reconstruction quality may "
+                                             "be noticeably worse. Switch "
+                                             "Sky masking to Native skyseg "
+                                             "for best results.")
+                                        : m_customSkyHintText);
+        }
     }
 }
 
@@ -1316,6 +1509,22 @@ void LingbotMapDialog::requestTestData() {
                           .arg(ecvTestDataRepository::getDatasetInfo(scene)
                                        .displayName));
         repo.startDownload(scene);
+        return;
+    }
+    if (ecvTestDataRepository::isSingleFileDataset(scene)) {
+        // Video datasets: apply directly when the mp4 is materialized.
+        if (ecvTestDataRepository::instance().isDatasetAvailable(scene)) {
+            applyTestSceneSelection();
+            finishTestDataFlow();
+        } else {
+            // Not cached even though the earlier availability check said
+            // so — fall through to the download path above is impossible
+            // here; report and bail out.
+            appendLog(
+                    tr("[Test data] Video asset missing — retry the "
+                       "download."));
+            finishTestDataFlow();
+        }
         return;
     }
     if (!ecvTestDataRepository::getLingbotMapImages(
@@ -1357,6 +1566,7 @@ void LingbotMapDialog::onTestDataDownloadFinished(
     if (!m_testDataInProgress) return;
     if (!success) {
         appendLog(tr("[Test data] Download failed."));
+        m_pendingRunAfterTestData = false;
         finishTestDataFlow();
         return;
     }
@@ -1369,15 +1579,33 @@ void LingbotMapDialog::onTestDataExtractionFinished(
     if (!m_testDataInProgress) return;
     if (!success) {
         appendLog(tr("[Test data] Failed to extract zip archive."));
+        m_pendingRunAfterTestData = false;
         finishTestDataFlow();
         return;
     }
     // Mask bundles just complete the cached-mask flow; scene bundles fill
-    // the image folder.
+    // the image folder. Video datasets fill the video input instead.
     const bool isMask =
             kind == ecvTestDataRepository::Dataset::LingbotMapOxfordSkyMasks ||
             kind == ecvTestDataRepository::Dataset::
                             LingbotMapUniversitySkyMasks;
+    if (ecvTestDataRepository::isSingleFileDataset(kind)) {
+        applyTestSceneSelection();
+        appendLog(
+                tr("[Test data] Long-model video ready — video input "
+                   "auto-filled (sampled at 10 fps). Recommended model: "
+                   "a long-* GGUF (long-f16); Streaming mode with the "
+                   "auto keyframe policy."));
+        const bool runNow = m_pendingRunAfterTestData;
+        m_pendingRunAfterTestData = false;
+        finishTestDataFlow();
+        if (runNow) {
+            // Run was clicked while the video was still uncached; the
+            // video input is filled now, so continue the run.
+            onRun();
+        }
+        return;
+    }
     if (isMask) {
         appendLog(tr("[Test data] Sky masks ready."));
         m_skyMaskDir->setText(

@@ -43,9 +43,13 @@ int main(int argc, char** argv) {
     const std::string outDir = argv[6];
     int nFrames = argc > 7 && argv[7][0] != '-' ? std::atoi(argv[7]) : 0;
     const char* kvArg = nullptr;
+    const char* kfArg = nullptr;
     for (int i = 7; i < argc; ++i) {
         if (std::strcmp(argv[i], "--kv") == 0 && i + 1 < argc) {
             kvArg = argv[i + 1];
+        }
+        if (std::strcmp(argv[i], "--kf") == 0 && i + 1 < argc) {
+            kfArg = argv[i + 1];
         }
     }
 
@@ -78,6 +82,9 @@ int main(int argc, char** argv) {
             window > 0) {
             aicore_lingbot_options_set_kv_profile(opts, scale, window);
         }
+    }
+    if (kfArg) {
+        aicore_lingbot_options_set_keyframe_interval(opts, std::atoi(kfArg));
     }
     aicore_lingbot_ctx* ctx = aicore_lingbot_load_opts(modelPath, opts);
     aicore_lingbot_options_free(opts);

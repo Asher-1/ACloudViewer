@@ -62,6 +62,14 @@ AICORE_CAPI void aicore_lingbot_options_set_kv_profile(
  *  (0 = unknown; the engine then sizes from the first stream call). */
 AICORE_CAPI void aicore_lingbot_options_set_stream_capacity(
         aicore_lingbot_options* opts, int total_frames);
+/** Official long-stream keyframe policy (demo.py --keyframe_interval):
+ *  every N-th streaming frame persists its KV; non-keyframes attend to
+ *  [cache | own KV] and discard. Scale frames are always cached. Values
+ *  < 1 are clamped to 1 (default). The official demo auto-selects
+ *  ceil(N/320) for streaming runs above 320 frames — the caller owns that
+ *  policy (the engine takes only explicit options). */
+AICORE_CAPI void aicore_lingbot_options_set_keyframe_interval(
+        aicore_lingbot_options* opts, int interval);
 
 /** Load a LingBot-Map GGUF (lingbot-map q8/f16/f32). Returns NULL on
  *  failure; inspect aicore_lingbot_last_error() for the reason. */

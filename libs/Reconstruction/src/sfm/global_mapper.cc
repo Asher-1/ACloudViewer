@@ -743,10 +743,32 @@ bool GlobalMapper::Solve(const GlobalMapperOptions& options,
     LOG(INFO) << "Global positioning done in " << run_timer.ElapsedSeconds()
               << " seconds";
 
+
     // Report the first 3D view after global positioning and stop early if
     // requested.
     if (report_and_check_stop()) {
       return true;
+    }
+  }
+
+  // Upstream parity (d3ccaf35 estimators/rotation_averaging.cc L375-381):
+  // register the frames with computed poses once all poses are in place.
+  // The upstream RotationEstimator registers right after the solve; this
+  // fork folds the registration at the GlobalMapper level after global
+  // positioning, which is the first point where every solved frame has a
+  // pose. Without this, the explicit registration state stays empty (the
+  // reconstruction comes from DatabaseCache::Load, which does not register)
+  // and every consumer that counts registered frames/images - including the
+  // internal incremental mapper's retriangulation pass - sees an empty
+  // model.
+  for (const auto& [frame_id, frame] : reconstruction_->Frames()) {
+    if (!frame.HasPose()) {
+      continue;
+    }
+    for (const image_t image_id : frame.ImageIds()) {
+      if (!reconstruction_->IsImageRegistered(image_id)) {
+        reconstruction_->RegisterImage(image_id);
+      }
     }
   }
 

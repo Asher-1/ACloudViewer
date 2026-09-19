@@ -154,6 +154,11 @@ struct graph_builder {
     // [dim, token_count, first-frame|stream-frame, 1].  This is derived from
     // the stateful global KV cache before constructing each one-frame graph.
     bool stream_token_row = false;
+    // Official keyframe policy: when true, this streaming frame attends to
+    // [special | scale | live | fresh] but its fresh K/V is NOT persisted
+    // (no append, no eviction, no specials) — mirrors inference_streaming's
+    // _set_skip_append for non-keyframes.
+    bool skip_append = false;
     bool use_dpt_pos = true;
     int cache_scale_frames = 1;
     int cache_window_frames = 4;
@@ -363,9 +368,11 @@ struct graph_builder {
                 const int64_t n = n_tok * tw;
                 if (to_f16) {
                     std::vector<ggml_fp16_t> h16(static_cast<size_t>(n));
-                    for (int64_t i = 0; i < n; ++i)
-                        h16[static_cast<size_t>(i)] =
-                                ggml_fp32_to_fp16(srcf[static_cast<size_t>(i)]);
+                    // Array conversion entry (ggml-base export; identical RNE
+                    // rounding to the upstream ggml-cpu seeding path, whose
+                    // libggml-cpu symbol is a runtime-only backend in the
+                    // AICore linking topology).
+                    ggml_fp32_to_fp16_row(srcf.data(), h16.data(), n);
                     ggml_backend_tensor_set(dst, h16.data(), tok0 * dst->nb[2],
                                             n * sizeof(ggml_fp16_t));
                 } else {
@@ -392,7 +399,9 @@ struct graph_builder {
         // ---- pre-evict (mirrors prepare_cache_for_next_attention): move the
         // oldest frame's leading specials into the F32 segment, then compact
         // the live segment through a gallocr temporary (overlap-free) ----
-        if (rp.used >= cache_window_frames) {
+        // A non-keyframe appends nothing, so nothing can overflow and the
+        // live segment stays untouched.
+        if (!skip_append && rp.used >= cache_window_frames) {
             if (rp.sp_count + rp.spf > rp.cap_sp) {
                 error = "resident special segment overflow";
                 return;
@@ -472,19 +481,25 @@ struct graph_builder {
         k = ggml_concat(ctx, ks, fa ? (ggml_tensor *)kf16 : k, 2);
         v = ggml_concat(ctx, vs, fa ? (ggml_tensor *)vf16 : v, 2);
         // ---- persist the fresh frame into the live segment (in-graph; the
-        // next frame's segment views read it back) ----
-        res_writes.push_back(ggml_cpy(
-                ctx,
-                fa ? (ggml_tensor *)kf16
-                   : (ggml_tensor *)ggml_cast(ctx, k_in, GGML_TYPE_F16),
-                res_live(rp, rp.pk, rp.used, 1)));
-        res_writes.push_back(ggml_cpy(
-                ctx,
-                fa ? (ggml_tensor *)vf16
-                   : (ggml_tensor *)ggml_cast(ctx, v_in, GGML_TYPE_F16),
-                res_live(rp, rp.pv, rp.used, 1)));
-        rp.used += 1;
-        st.tokens = old_tokens + ft;
+        // next frame's segment views read it back). Non-keyframes discard
+        // their K/V (official skip_append): the concat above still lets this
+        // frame attend to its own tokens, nothing is written. ----
+        if (!skip_append) {
+            res_writes.push_back(ggml_cpy(
+                    ctx,
+                    fa ? (ggml_tensor *)kf16
+                       : (ggml_tensor *)ggml_cast(ctx, k_in, GGML_TYPE_F16),
+                    res_live(rp, rp.pk, rp.used, 1)));
+            res_writes.push_back(ggml_cpy(
+                    ctx,
+                    fa ? (ggml_tensor *)vf16
+                       : (ggml_tensor *)ggml_cast(ctx, v_in, GGML_TYPE_F16),
+                    res_live(rp, rp.pv, rp.used, 1)));
+            rp.used += 1;
+            st.tokens = old_tokens + ft;
+        } else {
+            st.tokens = old_tokens;
+        }
     }
 
     ggml_tensor *scalar(float value) {
@@ -808,7 +823,9 @@ struct graph_builder {
                 // cache entry has more than one token per frame.  Camera head
                 // entries contain one token, so they retain their complete
                 // history; global entries use the bounded patch-token window.
-                if (global) prepare_cache_for_next_attention(&it->second, true);
+                // A non-keyframe appends nothing, so nothing can overflow.
+                if (global && !skip_append)
+                    prepare_cache_for_next_attention(&it->second, true);
                 old_tokens = it->second.tokens;
             }
             // The camera trunk keeps an F32 cache even in the F16/flash modes:
@@ -868,7 +885,8 @@ struct graph_builder {
                     }
                 }
                 // Resident layers persist in-graph; no capture readback.
-                if (persistent && !res_active) {
+                // Non-keyframes persist nothing (official skip_append).
+                if (persistent && !res_active && !skip_append) {
                     auto *kc = ggml_cont(
                             ctx,
                             ggml_view_3d(ctx, k, hd, heads, tokens, k->nb[1],
@@ -926,7 +944,7 @@ struct graph_builder {
                     k = ggml_concat(ctx, pk, k, 2);
                     v = ggml_concat(ctx, pv, v, 2);
                 }
-                if (persistent) {
+                if (persistent && !skip_append) {
                     auto *kc = ggml_cont(
                             ctx,
                             ggml_view_3d(ctx, k, hd, heads, tokens, k->nb[1],
@@ -1242,6 +1260,9 @@ struct model::impl {
     uint64_t dump_index = 0;
     uint64_t inference_index = 0;
     bool direct_scale_pass = false;
+    // Set by the top-level streaming loop for non-keyframe frames (official
+    // keyframe policy); consumed by the per-frame graph build.
+    bool stream_skip_append = false;
     // Per-frame streaming hook (see model::set_frame_callback). Active only
     // for the top-level streaming dispatch; the internal scale-pass recursion
     // runs with the cursor suspended so it can emit every scale frame itself.
@@ -1820,6 +1841,12 @@ bool model::infer(const float *images,
             p_->pooled_key = 0;
         }
         for (int f = first_frame; f < frames; ++f) {
+            // Official keyframe rule (inference_streaming): every interval-th
+            // frame after the scale pass persists its KV; the rest attend and
+            // discard. Scale frames are always cached.
+            const int kf_interval = std::max(1, g_opt->keyframe_interval);
+            p_->stream_skip_append =
+                    kf_interval > 1 && ((f - first_frame) % kf_interval) != 0;
             output one;
             if (!infer(images + static_cast<size_t>(f) * frame_stride, 1, 1,
                        channels, height, width, &one)) {
@@ -1843,6 +1870,7 @@ bool model::infer(const float *images,
                 return false;
             }
         }
+        p_->stream_skip_append = false;
         --p_->multi_frame_dispatch_depth;
         return true;
     }
@@ -1894,6 +1922,7 @@ bool model::infer(const float *images,
     g.rope_patch_h = ph;
     g.cache_scale_frames = g_opt->kv_cache_scale;
     g.cache_window_frames = g_opt->kv_cache_window;
+    g.skip_append = p_->stream_skip_append;
     g.kv_cache_f16 = g_opt->kv_f16 != kv_f16_mode::none;
     g.kv_cache_flash = g_opt->kv_f16 == kv_f16_mode::flash;
     // Device-resident KV cache: the streaming global-layer payload lives in
@@ -1903,6 +1932,21 @@ bool model::infer(const float *images,
     g.kv_resident = g.kv_cache_f16 && g_opt->kv_resident;
     g.res_frames_hint =
             g_opt->kv_total_frames > 0 ? g_opt->kv_total_frames : 512;
+    if (g_opt->keyframe_interval > 1) {
+        // Special tokens only accumulate for cached (keyframe) frames, so the
+        // resident special segment is sized for the stored keyframe count,
+        // not the raw stream length.
+        const int64_t total =
+                g_opt->kv_total_frames > 0 ? g_opt->kv_total_frames : 512;
+        const int sc = std::min<int64_t>(
+                total, g_opt->num_scale_frames > 0 ? g_opt->num_scale_frames
+                                                   : g_opt->kv_cache_scale);
+        const int64_t stream_kf =
+                total > sc ? (total - sc + g_opt->keyframe_interval - 1) /
+                                     g_opt->keyframe_interval
+                           : 0;
+        g.res_frames_hint = sc + stream_kf;
+    }
     g.res_map = &p_->res_cache;
     g.res_be = p_->be.get();
     g.cache_capture_frames = batch == 1 ? frames : 1;
@@ -2525,11 +2569,14 @@ bool model::infer(const float *images,
             out.write(reinterpret_cast<const char *>(values.data()),
                       static_cast<std::streamsize>(n * sizeof(float)));
         }
-    if (dump_stages || dump_camera_stages || g.dump_internal)
-        if (const char *dump = (dump_stages || g.dump_internal
-                                        ? g_opt->dump_stages_dir
-                                        : g_opt->dump_camera_stages_dir)
-                                       .c_str()) {
+    if (dump_stages || dump_camera_stages || g.dump_internal) {
+        // Named lvalue: a conditional expression over two std::string lvalues
+        // yields a prvalue whose .c_str() would dangle before the loop body
+        // runs (the upstream port had the same latent UB).
+        const std::string &dump = dump_stages || g.dump_internal
+                                          ? g_opt->dump_stages_dir
+                                          : g_opt->dump_camera_stages_dir;
+        if (!dump.empty()) {
             std::fprintf(stderr,
                          "DBG dump write: dump_stages=%d dump_internal=%d "
                          "debug_tensors=%zu path=%s\n",
@@ -2544,7 +2591,7 @@ bool model::infer(const float *images,
                 std::vector<float> values(n);
                 ggml_backend_tensor_get(tensor, values.data(), 0,
                                         n * sizeof(float));
-                std::string path = std::string(dump) + "." + item.first;
+                std::string path = dump + "." + item.first;
                 if (frames == 1 && p_->backend_name != "cpu")
                     path += "." + std::to_string(inference_index);
                 if (di < 2)
@@ -2559,6 +2606,7 @@ bool model::infer(const float *images,
                           static_cast<std::streamsize>(n * sizeof(float)));
             }
         }
+    }
     if (!capture_groups.empty()) {
         // one synchronized readback per shape group, then split host-side
         for (auto &grp : capture_groups) {

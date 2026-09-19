@@ -61,6 +61,12 @@ struct model_options {
     bool kv_resident = true;   // device-resident cache (F16 modes)
     int kv_total_frames = 0;   // 0 -> infer() frames (capacity hint)
     int num_scale_frames = 0;  // 0 -> kv_cache_scale
+    // Official keyframe policy (demo.py --keyframe_interval): every N-th
+    // streaming frame persists its KV in the cache; non-keyframes attend to
+    // [cache | own KV] and discard. Scale frames are always cached. The
+    // official demo auto-selects ceil(N/320) for streaming runs above 320
+    // frames.
+    int keyframe_interval = 1;
     bool disable_kv_cache = false;
     bool force_f32_weights = false;  // dequant every weight to F32 buffers
     bool use_dpt_pos = true;         // DPT positional embedding

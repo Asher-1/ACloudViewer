@@ -86,6 +86,16 @@ int main() {
             aicore_lingbot_options_set_kv_profile(opts, scale, window);
         }
     }
+    // Official long-stream keyframe policy for the keyframe scenario
+    // (AICORE_TEST_LINGBOT_KF = interval); unset keeps the every-frame
+    // default (1). The 3-frame probe stream then covers one keyframe and
+    // one skip (attend-but-do-not-persist) streaming frame.
+    if (const char* kf = std::getenv("AICORE_TEST_LINGBOT_KF")) {
+        int interval = std::atoi(kf);
+        if (interval > 0) {
+            aicore_lingbot_options_set_keyframe_interval(opts, interval);
+        }
+    }
 
     aicore_lingbot_ctx* ctx = aicore_lingbot_load_opts(gguf, opts);
     aicore_lingbot_options_free(opts);

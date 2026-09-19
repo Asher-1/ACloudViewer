@@ -74,6 +74,13 @@ private:
     std::vector<float> m_onlineBaselines; /**< inter-camera distances */
     QVector<float> m_lastPreviewC2w;      /**< previous frame pose */
     QElapsedTimer m_onlineRefreshThrottle;
+    /** Rolling chunk cloud: streaming frames APPEND into one growing
+     *  ccPointCloud instead of creating one cloud object per frame, so
+     *  the DB tree stays small and the render update is O(new points). */
+    ccPointCloud* m_onlineCloud = nullptr;
+    unsigned m_onlineCloudCapacity = 0;
+    unsigned m_onlineCloudUsed = 0;
+    int m_onlineChunkIndex = 0;
 
     // ---- loop playback over the final per-frame clouds ----
     QTimer* m_playbackTimer = nullptr;

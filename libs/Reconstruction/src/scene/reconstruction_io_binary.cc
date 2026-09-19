@@ -258,8 +258,9 @@ void ReadImagesBinary(Reconstruction& reconstruction, std::istream& stream) {
     reconstruction.AddImage(std::move(image));
     // The file format contract is that every listed image is registered (the
     // write side only serializes RegImageIds()); restore the registration
-    // state the fork tracks in reg_image_ids_ (upstream recovers it through
-    // RegisterFrame inside AddFrame, which the fork defers to image level).
+    // state (upstream recovers it through RegisterFrame inside AddFrame; the
+    // fork registers at image level here and keeps the frame-level set in
+    // lockstep).
     reconstruction.RegisterImage(image_id);
   }
 }

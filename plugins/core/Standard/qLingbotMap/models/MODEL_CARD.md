@@ -20,7 +20,7 @@
 | `lingbot-map-f32.gguf` | 4.63 GiB | exact reference (deepest alignment, pose ~1.3e-04 / depth 1.35e-04); same per-frame speed as f16, 2× the weight memory |
 | `lingbot-map-q4.gguf` | 703 MiB | experimental (not upstream-validated — no accuracy data) |
 | `lingbot-map-long-q8.gguf` | 1.21 GiB | **long sequences**: architecture-identical to `lingbot-map-q8` (same tensor names/shapes; graph and options apply unchanged) |
-| `lingbot-map-long-f16.gguf` | 2.31 GiB | long-sequence variant of the f16 format |
+| `lingbot-map-long-f16.gguf` | 2.31 GiB | long-sequence variant of the f16 format — **recommended for the long-model datasets** (drive_frames.mp4, lingbo_world_frames.mp4) with the streaming auto keyframe policy |
 | `lingbot-map-long-f32.gguf` | 4.63 GiB | long-sequence variant of the f32 format |
 
 ## Published files (skyseg role, optional native sky masking)

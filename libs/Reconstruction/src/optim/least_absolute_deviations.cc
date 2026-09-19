@@ -73,7 +73,19 @@ struct SimplicialLLTLinearSolver
 
   bool Compute(const Eigen::SparseMatrix<double>& A) override {
     linear_solver_.compute(NormalEquations(A, ridge_regularization_));
-    return linear_solver_.info() == Eigen::Success;
+    if (linear_solver_.info() != Eigen::Success) {
+      return false;
+    }
+    // Fork robustness: under -march=x86-64-v3 (FMA) the LLT pivots of a
+    // rank-deficient A^T A can round to tiny positive values instead of
+    // exact zeros, so info() alone misses singularity. The upstream CI
+    // relied on the baseline x86-64 rounding. Reject factorizations whose
+    // smallest diagonal is negligible w.r.t. the largest one.
+    const Eigen::VectorXd diag =
+            linear_solver_.matrixL().nestedExpression().diagonal().cwiseAbs2();
+    return diag.minCoeff() >
+           diag.maxCoeff() * Eigen::NumTraits<double>::dummy_precision() *
+                   static_cast<double>(diag.size());
   }
 
   bool Solve(const Eigen::VectorXd& b, Eigen::VectorXd* x) override {

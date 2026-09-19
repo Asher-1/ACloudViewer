@@ -39,6 +39,7 @@ struct Options {
     int kv_scale = 8;
     int kv_window = 64;
     int stream_capacity = 0;
+    int keyframe_interval = 1;
 };
 
 struct Ctx {
@@ -127,6 +128,11 @@ AICORE_CAPI void aicore_lingbot_options_set_stream_capacity(
     if (Options* o = as_opts(opts)) o->stream_capacity = total_frames;
 }
 
+AICORE_CAPI void aicore_lingbot_options_set_keyframe_interval(
+        aicore_lingbot_options* opts, int interval) {
+    if (Options* o = as_opts(opts)) o->keyframe_interval = interval;
+}
+
 // ---------------------------------------------------------------------------
 // Context lifecycle
 // ---------------------------------------------------------------------------
@@ -144,6 +150,7 @@ AICORE_CAPI aicore_lingbot_ctx* aicore_lingbot_load_opts(
     mo.kv_cache_scale = ctx->opt.kv_scale;
     mo.kv_cache_window = ctx->opt.kv_window;
     mo.kv_f16 = lingbot::kv_f16_mode::strict;
+    mo.keyframe_interval = std::max(1, ctx->opt.keyframe_interval);
     if (ctx->opt.stream_capacity > 0)
         mo.kv_total_frames = ctx->opt.stream_capacity;
 

@@ -60,6 +60,19 @@ public:
     ceres::Problem& Problem();
     const ceres::Problem& Problem() const;
 
+    struct FramePoseBlock {
+        frame_t frame_id;
+        Rigid3d rig_from_world;
+    };
+
+    // Pose shadow blocks registered in the problem, keyed by frame. The
+    // covariance estimator resolves pose parameter blocks through this map:
+    // the fork's frames store split qvec/tvec (database-compatible), so the
+    // rig-from-world block the BA registers is an internal 7-dim shadow and
+    // cannot be resolved statically from the reconstruction alone (upstream
+    // reads frame.RigFromWorld().params.data() directly).
+    const std::map<frame_t, FramePoseBlock>& frame_blocks() const;
+
 private:
     void SetUp(Reconstruction* reconstruction,
                ceres::LossFunction* loss_function);
@@ -95,10 +108,6 @@ private:
         rig_t rig_id;
         sensor_t sensor_id;
         Rigid3d sensor_from_rig;
-    };
-    struct FramePoseBlock {
-        frame_t frame_id;
-        Rigid3d rig_from_world;
     };
     std::map<std::pair<rig_t, sensor_t>, SensorPoseBlock> sensor_blocks_;
     std::map<frame_t, FramePoseBlock> frame_blocks_;

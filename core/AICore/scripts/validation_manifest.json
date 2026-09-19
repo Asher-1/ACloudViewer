@@ -923,6 +923,25 @@
       "vram_estimate_mib": 8192
     },
     {
+      "id": "lingbot-stream-keyframe",
+      "task": "lingbot",
+      "light": true,
+      "light_globs": ["lingbot_models/lingbot-map-q8.gguf"],
+      "executable": "binary:test_lingbot_capi_load",
+      "covered_globs": ["lingbot_models/lingbot-map-q8.gguf"],
+      "args": [],
+      "env": {
+        "AICORE_TEST_LINGBOT_GGUF": "{assets}/lingbot_models/lingbot-map-q8.gguf",
+        "AICORE_TEST_DEVICE": "{backend}",
+        "AICORE_TEST_LINGBOT_KV": "1,4",
+        "AICORE_TEST_LINGBOT_KF": "2"
+      },
+      "accuracy_gate": "finite depth/pose outputs, deterministic repeat stream over a reset, and honest e2e timing (official keyframe policy: the 3-frame probe covers one keyframe and one attend-but-do-not-persist streaming frame)",
+      "fingerprint_policy": "stability_only",
+      "metric_parser": "generic",
+      "vram_estimate_mib": 8192
+    },
+    {
       "id": "lingbot-stream-skyseg",
       "task": "lingbot",
       "light": true,

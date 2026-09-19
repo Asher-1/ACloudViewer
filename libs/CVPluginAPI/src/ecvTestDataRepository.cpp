@@ -104,6 +104,19 @@ constexpr const char* kLingbotMapCourthouseZipName = "courthouse.zip";
 constexpr const char* kLingbotMapCourthouseExtractDir = "courthouse";
 constexpr const char* kLingbotMapCourthouseSha256 =
         "fd0a19083600a5d588fdbb4740c808b5ca227ad99d48f2760f65e7bb6aa34ed4";
+// Official long-model demo videos (single-file mp4 assets: the downloaded
+// file is the content, no extraction). SHA-256 pinned from the release
+// assets (locally verified against the upstream long_real campaign inputs).
+constexpr const char* kLingbotMapDriveVideoName = "drive_frames.mp4";
+constexpr const char* kLingbotMapDriveVideoExtractDir = "lingbot_map_long";
+constexpr const char* kLingbotMapDriveVideoSha256 =
+        "da814b6ca859d189c5e636ddbadfcc7e14ee532eed904d06b5f3e20de79497d9";
+constexpr const char* kLingbotMapLingboWorldVideoName =
+        "lingbo_world_frames.mp4";
+constexpr const char* kLingbotMapLingboWorldVideoExtractDir =
+        "lingbot_map_long";
+constexpr const char* kLingbotMapLingboWorldVideoSha256 =
+        "28bd8cbb7cf6b214865176c74083e89ed40adba50add05a768adae990913478e";
 constexpr const char* kLingbotMapLoopZipName = "loop.zip";
 constexpr const char* kLingbotMapLoopExtractDir = "loop";
 constexpr const char* kLingbotMapLoopSha256 =
@@ -290,6 +303,27 @@ ecvTestDataRepository::DatasetInfo ecvTestDataRepository::getDatasetInfo(
                                     kLingbotMapUniversitySkyMasksZipName),
                     {QCryptographicHash::Sha256,
                      QByteArray(kLingbotMapUniversitySkyMasksSha256)}};
+        case Dataset::LingbotMapDriveVideo:
+            // Single-file mp4 asset: zipFileName carries the download file,
+            // extractDirName the directory it is materialized into.
+            return {kind,
+                    QStringLiteral("LingBot-Map drive (long model)"),
+                    QString::fromLatin1(kLingbotMapDriveVideoName),
+                    QString::fromLatin1(kLingbotMapDriveVideoExtractDir),
+                    QString::fromLatin1(kLingbotMapDownloadBase) +
+                            QString::fromLatin1(kLingbotMapDriveVideoName),
+                    {QCryptographicHash::Sha256,
+                     QByteArray(kLingbotMapDriveVideoSha256)}};
+        case Dataset::LingbotMapLingboWorldVideo:
+            return {kind,
+                    QStringLiteral("LingBot-Map lingbo world (long model)"),
+                    QString::fromLatin1(kLingbotMapLingboWorldVideoName),
+                    QString::fromLatin1(kLingbotMapLingboWorldVideoExtractDir),
+                    QString::fromLatin1(kLingbotMapDownloadBase) +
+                            QString::fromLatin1(
+                                    kLingbotMapLingboWorldVideoName),
+                    {QCryptographicHash::Sha256,
+                     QByteArray(kLingbotMapLingboWorldVideoSha256)}};
     }
     Q_UNREACHABLE();
     return {};
@@ -310,6 +344,12 @@ ecvTestDataRepository::ecvTestDataRepository(QObject* parent)
             &ecvTestDataRepository::onDownloaderProgress);
     connect(m_downloader, &ecvModelDownloader::finished, this,
             &ecvTestDataRepository::onDownloaderFinished);
+    // Surface the transport-level detail (resume attempts, stall aborts,
+    // the actual Qt error string) that the wrapper messages below omit.
+    connect(m_downloader, &ecvModelDownloader::logMessage, this,
+            [this](const QString& message) {
+                emit downloadLogMessage(message);
+            });
 }
 
 ecvTestDataRepository::~ecvTestDataRepository() = default;
@@ -373,6 +413,14 @@ bool ecvTestDataRepository::isDatasetAvailable(Dataset kind) const {
             // A LingBot-Map bundle is complete when its ordered frame
             // sequence (or mask PNGs) is present.
             extractedComplete = !getLingbotMapImages(extract).isEmpty();
+            break;
+        case Dataset::LingbotMapDriveVideo:
+        case Dataset::LingbotMapLingboWorldVideo:
+            // Single-file mp4 datasets: complete when the video is
+            // materialized under the extract directory.
+            extractedComplete =
+                    !findDatasetFile(kind, getDatasetInfo(kind).zipFileName)
+                             .isEmpty();
             break;
     }
     if (extractedComplete) return true;
@@ -643,6 +691,16 @@ bool ecvTestDataRepository::extractZip(const QString& zipPath,
                               onProgress);
 }
 
+bool ecvTestDataRepository::isSingleFileDataset(Dataset kind) {
+    switch (kind) {
+        case Dataset::LingbotMapDriveVideo:
+        case Dataset::LingbotMapLingboWorldVideo:
+            return true;
+        default:
+            return false;
+    }
+}
+
 bool ecvTestDataRepository::extractDataset(Dataset kind) {
     const auto info = getDatasetInfo(kind);
     const QString zip = zipPath(kind);
@@ -655,6 +713,32 @@ bool ecvTestDataRepository::extractDataset(Dataset kind) {
                         .arg(zip));
         emit extractionFinished(false, kind);
         return false;
+    }
+
+    // Single-file datasets (e.g. the LingBot-Map long-model mp4s): the
+    // downloaded file itself is the content. Materialize it under the
+    // extract directory and skip the zip machinery entirely.
+    if (isSingleFileDataset(kind)) {
+        if (!QDir().mkpath(extract)) {
+            emit downloadLogMessage(
+                    QStringLiteral(
+                            "[Error] Cannot create extract directory: %1")
+                            .arg(extract));
+            emit extractionFinished(false, kind);
+            return false;
+        }
+        const QString dest = QDir(extract).filePath(info.zipFileName);
+        QFile::remove(dest);
+        if (!QFile::copy(zip, dest)) {
+            emit downloadLogMessage(
+                    QStringLiteral("[Error] Cannot materialize %1 -> %2")
+                            .arg(zip, dest));
+            emit extractionFinished(false, kind);
+            return false;
+        }
+        emit extractionProgress(1, 1);
+        emit extractionFinished(true, kind);
+        return true;
     }
 
     // Ensure extract directory exists

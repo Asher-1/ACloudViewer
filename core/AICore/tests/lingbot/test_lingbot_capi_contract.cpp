@@ -34,6 +34,7 @@ int main() {
     aicore_lingbot_options_set_image_size(nullptr, 518);
     aicore_lingbot_options_set_kv_profile(nullptr, 8, 64);
     aicore_lingbot_options_set_stream_capacity(nullptr, 0);
+    aicore_lingbot_options_set_keyframe_interval(nullptr, 4);
 
     AICORE_CHECK(aicore_lingbot_load_opts(nullptr, nullptr) == nullptr);
     AICORE_CHECK(aicore_lingbot_is_ready(nullptr) == 0);

@@ -88,6 +88,7 @@ collapsed:
 | Frame stride | `--stride` | 1 | Process every Nth frame (applied after `Max frames`) |
 | Image extensions | `--image_ext` | .jpg,.png,.jpeg,.bmp,.tif,.tiff | Case-insensitive extension filter for the folder input |
 | Rotate frames 90° clockwise | `--rotate_clockwise_90` | off | For portrait phone sequences stored sideways |
+| Keyframe interval | `--keyframe_interval` | Auto | Every N-th streaming frame persists its KV; Auto = ceil(N/320), 1 when the stream is shorter. Windowed mode always runs per-window interval 1. |
 
 On the **first run** (no persisted choice yet) the KV-cache profile AND the
 model format are auto-profiled to the detected GPU memory via
@@ -133,6 +134,32 @@ the first window's frame. Pick `Mode → Windowed (long sequences)` and the
 The numeric core (`LingbotWindowStitcher`) is gated against the official
 Python pipeline by `test_lingbot_window_stitch` (build with
 `QLINGBOTMAP_BUILD_TESTS=ON`).
+
+## Long sequences (streaming + official keyframe policy)
+
+Alternatively, keep `Streaming` mode with a `long-*` model: the engine now
+implements the official `--keyframe_interval` policy (`Keyframe interval`
+in Advanced; `Auto` = ceil(N/320) per demo.py's streaming rule, e.g. Drive
+→ 4, Lingbo World → 3). Non-keyframes attend to
+`[cache | own KV]` but do not persist their KV, bounding the cache for
+arbitrarily long runs without the window stitching step (upstream
+`verify_keyframe.sh` parity: interval 2/4 land pose/depth RMSE
+1.02e-04/1.31e-04 vs the official mirror — the same 1e-4 class as
+interval=1).
+
+## Dataset → model guidance
+
+| Dataset | Frames | Recommended model | Pipeline |
+|---|---|---|---|
+| Drive (long, car-mounted) | ~1050 @ 10 fps | `long-f16` (or `long-q8`) | Streaming, Auto keyframe |
+| Lingbo World (long, walkthrough) | ~667 @ 10 fps | `long-f16` (or `long-q8`) | Streaming, Auto keyframe |
+| Courthouse / Oxford / University (short) | ~286 | `f16` (or `q8`) | Streaming |
+| Loop (indoor, short) | ~300 | `f16` (or `q8`) | Streaming |
+
+The `Test data` combo carries these scenes with per-item tooltips, and a
+hint label below it repeats the recommendation for the selected scene.
+Selecting a long dataset auto-fills the video input (10 fps sampling) and
+suggests the matching `Max frames`; the model choice always stays yours.
 
 ## Live preview and playback
 

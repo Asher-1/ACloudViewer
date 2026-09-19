@@ -51,7 +51,13 @@ public:
         LingbotMapOxford,  ///< LingBot-Map Oxford Spires stream (outdoor)
         LingbotMapOxfordSkyMasks,  ///< Cached native sky masks for oxford
         LingbotMapUniversity,      ///< LingBot-Map university stream (outdoor)
-        LingbotMapUniversitySkyMasks  ///< Cached sky masks for university
+        LingbotMapUniversitySkyMasks,  ///< Cached sky masks for university
+        /** LingBot-Map official long-model demo videos (single-file mp4
+         *  assets, no extraction): drive = N=1050 @ fps10 / auto kf=4,
+         *  lingbo_world = N=667 / auto kf=3 — the datasets the upstream
+         *  long_real campaign runs with the long-model GGUFs. */
+        LingbotMapDriveVideo,       ///< drive_frames.mp4 (long-model dataset)
+        LingbotMapLingboWorldVideo  ///< lingbo_world_frames.mp4 (long model)
     };
 
     /** Dataset metadata. */
@@ -93,6 +99,10 @@ public:
 
     /** Find one uniquely named file below a dataset's extraction directory. */
     static QString findDatasetFile(Dataset kind, const QString& fileName);
+
+    /** True when the dataset is a single-file asset (the downloaded file
+     *  itself is the content; no zip extraction step). */
+    static bool isSingleFileDataset(Dataset kind);
 
     /** List the sample images of a GeneralKeypointDetection bundle root
      *  (the official GKDT demo images, sorted case-insensitively). */

@@ -61,6 +61,7 @@ Reconstruction::Reconstruction(const Reconstruction& other)
       points3D_(other.Points3D()),
       image_pair_stats_(other.ImagePairs()),
       reg_image_ids_(other.RegImageIds()),
+      reg_frame_ids_(other.reg_frame_ids_),
       num_added_points3D_(other.NumAddedPoints3D()) {
     RewireObjectPointers();
 }
@@ -75,6 +76,7 @@ Reconstruction& Reconstruction::operator=(const Reconstruction& other) {
         points3D_ = other.Points3D();
         image_pair_stats_ = other.ImagePairs();
         reg_image_ids_ = other.RegImageIds();
+        reg_frame_ids_ = other.reg_frame_ids_;
         num_added_points3D_ = other.NumAddedPoints3D();
         RewireObjectPointers();
     }
@@ -334,12 +336,15 @@ void Reconstruction::AddFrame(class Frame frame) {
   const frame_t frame_id = frame.FrameId();
   auto [it, inserted] = frames_.emplace(frame_id, std::move(frame));
   THROW_CHECK(inserted);
-  (void)is_registered;
-  // NOTE: the upstream version registers posed frames here (RegisterFrame);
-  // this fork keeps the image-level registration model until W3-2b, and the
-  // synthetic dataset generator performs the equivalent image registration
-  // after its AddImage() calls (the images do not exist in the
-  // reconstruction yet at this point).
+  // Upstream parity (d3ccaf35 scene/reconstruction.cc L436): a frame that
+  // carries a pose is registered on insertion. The fork's disk-read path
+  // calls ResetRegistrationState() afterwards to preserve the
+  // fresh-load-starts-unregistered semantics of the fork's database pose
+  // columns.
+  if (is_registered) {
+    THROW_CHECK_NE(frame_id, kInvalidFrameId);
+    RegisterFrame(frame_id);
+  }
 }
 
 point3D_t Reconstruction::AddPoint3D(const Eigen::Vector3d& xyz,
@@ -490,11 +495,33 @@ void Reconstruction::DeleteAllPoints2DAndPoints3D() {
     }
 }
 
+void Reconstruction::RegisterFrame(const frame_t frame_id) {
+  // Upstream parity (d3ccaf35 scene/reconstruction.cc L638): registration
+  // requires a pose and is idempotent. The fork keeps the image-level set in
+  // lockstep for the images that already exist (upstream counts
+  // num_reg_images_ here; the fork derives it from reg_image_ids_).
+  const class Frame& frame = Frame(frame_id);
+  THROW_CHECK(frame.HasPose());
+  if (reg_frame_ids_.insert(frame_id).second) {
+    for (const image_t image_id : frame.ImageIds()) {
+      if (ExistsImage(image_id) && !Image(image_id).IsRegistered()) {
+        Image(image_id).SetRegistered(true);
+        reg_image_ids_.push_back(image_id);
+      }
+    }
+  }
+}
+
 void Reconstruction::RegisterImage(const image_t image_id) {
     class Image& image = Image(image_id);
     if (!image.IsRegistered()) {
         image.SetRegistered(true);
         reg_image_ids_.push_back(image_id);
+        // Frame-level lockstep (upstream registers at frame level only).
+        if (image.HasFrameId() && ExistsFrame(image.FrameId()) &&
+            Frame(image.FrameId()).HasPose()) {
+            reg_frame_ids_.insert(image.FrameId());
+        }
     }
 }
 
@@ -513,6 +540,20 @@ void Reconstruction::DeRegisterImage(const image_t image_id) {
     reg_image_ids_.erase(
             std::remove(reg_image_ids_.begin(), reg_image_ids_.end(), image_id),
             reg_image_ids_.end());
+    // Frame-level lockstep: drop the frame when none of its images is
+    // registered anymore.
+    if (image.HasFrameId() && ExistsFrame(image.FrameId())) {
+        bool any_image_registered = false;
+        for (const image_t other_id : Frame(image.FrameId()).ImageIds()) {
+            if (ExistsImage(other_id) && Image(other_id).IsRegistered()) {
+                any_image_registered = true;
+                break;
+            }
+        }
+        if (!any_image_registered) {
+            reg_frame_ids_.erase(image.FrameId());
+        }
+    }
 }
 
 void Reconstruction::SetRigsAndFrames(std::vector<class Rig> rigs,
@@ -525,9 +566,15 @@ void Reconstruction::SetRigsAndFrames(std::vector<class Rig> rigs,
 
   frames_.clear();
   frames_.reserve(frames.size());
-  // The fork tracks registration image-level (reg_image_ids_); frame
-  // registration is derived dynamically from frame poses.
+  // Reset the registration state first, then rebuild it consistently: the
+  // imported frames carry poses and are registered on insertion (upstream
+  // parity; AddFrame registers posed frames), which also re-registers their
+  // existing images in lockstep.
   reg_image_ids_.clear();
+  reg_frame_ids_.clear();
+  for (auto& [image_id, image] : images_) {
+    image.SetRegistered(false);
+  }
   NodeHashMap<image_t, frame_t> image_to_frame_ids;
   for (auto& frame : frames) {
     for (const image_t image_id : frame.ImageIds()) {
@@ -556,6 +603,7 @@ void Reconstruction::DeRegisterFrame(const frame_t frame_id) {
             DeRegisterImage(image_id);
         }
     }
+    reg_frame_ids_.erase(frame_id);
     frame.ResetPose();
 }
 
@@ -1526,14 +1574,20 @@ void Reconstruction::ResetTriObservations(const image_t image_id,
 
 
 std::unordered_set<frame_t> Reconstruction::RegFrameIds() const {
-  std::unordered_set<frame_t> frame_ids;
-  frame_ids.reserve(frames_.size());
-  for (const auto& [frame_id, frame] : frames_) {
-    if (frame.HasPose()) {
-      frame_ids.insert(frame_id);
-    }
+  // Upstream d3ccaf35 semantics: registration is an explicit state held in
+  // reg_frame_ids_; AddFrame registers frames that carry a pose, and
+  // RegisterImage keeps the legacy image-level set in lockstep. The fork
+  // database round-trip persists poses (a fork extension), so the disk-read
+  // path calls ResetRegistrationState() to start unregistered.
+  return reg_frame_ids_;
+}
+
+void Reconstruction::ResetRegistrationState() {
+  reg_frame_ids_.clear();
+  reg_image_ids_.clear();
+  for (auto& [image_id, image] : images_) {
+    image.SetRegistered(false);
   }
-  return frame_ids;
 }
 
 void Reconstruction::AddCameraWithTrivialRig(class Camera camera) {

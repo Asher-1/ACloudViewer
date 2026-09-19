@@ -66,10 +66,10 @@ TEST(base_polynomial, TestFindLinearPolynomialRoots) {
   EXPECT_EQ(imag(0), 0);
   EXPECT_NEAR(EvaluatePolynomial(Eigen::Vector2d(3, -2),
                                        std::complex<double>(real(0), imag(0)))
-                        .real(), 0.0, std::abs(0.0) * (1e-6) / 100.0);
+                        .real(), 0.0, 1e-6);
   EXPECT_NEAR(EvaluatePolynomial(Eigen::Vector2d(3, -2),
                                        std::complex<double>(real(0), imag(0)))
-                        .imag(), 0.0, std::abs(0.0) * (1e-6) / 100.0);
+                        .imag(), 0.0, 1e-6);
 
   EXPECT_FALSE(FindLinearPolynomialRoots(Eigen::Vector2d(0, 1), &real, &imag));
 }
@@ -81,8 +81,8 @@ TEST(base_polynomial, TestFindQuadraticPolynomialRootsReal) {
   EXPECT_TRUE(FindQuadraticPolynomialRoots(coeffs, &real, &imag));
   EXPECT_TRUE(real.isApprox(Eigen::Vector2d(-0.868517092, 1.535183758), 1e-6));
   EXPECT_EQ(imag, Eigen::Vector2d(0, 0));
-  EXPECT_NEAR(EvaluatePolynomial(coeffs, std::complex<double>(real(0), imag(0))).real(), 0.0, std::abs(0.0) * (1e-6) / 100.0);
-  EXPECT_NEAR(EvaluatePolynomial(coeffs, std::complex<double>(real(1), imag(1))).imag(), 0.0, std::abs(0.0) * (1e-6) / 100.0);
+  EXPECT_NEAR(EvaluatePolynomial(coeffs, std::complex<double>(real(0), imag(0))).real(), 0.0, 1e-6);
+  EXPECT_NEAR(EvaluatePolynomial(coeffs, std::complex<double>(real(1), imag(1))).imag(), 0.0, 1e-6);
 }
 
 TEST(base_polynomial, TestFindQuadraticPolynomialRootsComplex) {
@@ -95,8 +95,8 @@ TEST(base_polynomial, TestFindQuadraticPolynomialRootsComplex) {
       Eigen::Vector2d(-1.231233560813707, -1.231233560813707), 1e-6));
   EXPECT_TRUE(imag.isApprox(
       Eigen::Vector2d(0.925954520440279, -0.925954520440279), 1e-6));
-  EXPECT_NEAR(EvaluatePolynomial(coeffs, std::complex<double>(real(0), imag(0))).real(), 0.0, std::abs(0.0) * (1e-6) / 100.0);
-  EXPECT_NEAR(EvaluatePolynomial(coeffs, std::complex<double>(real(1), imag(1))).imag(), 0.0, std::abs(0.0) * (1e-6) / 100.0);
+  EXPECT_NEAR(EvaluatePolynomial(coeffs, std::complex<double>(real(0), imag(0))).real(), 0.0, 1e-6);
+  EXPECT_NEAR(EvaluatePolynomial(coeffs, std::complex<double>(real(1), imag(1))).imag(), 0.0, 1e-6);
 }
 
 TEST(base_polynomial, TestFindPolynomialRootsDurandKerner) {

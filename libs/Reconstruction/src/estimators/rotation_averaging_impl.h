@@ -40,13 +40,23 @@ public:
         // Starting row in matrix A (1 row for 1-DOF, 3 rows for 3-DOF).
         int row_index = -1;
         // Sensor-level relative rotation (cam2_from_cam1). The 3-DOF
-        // residual composes this with the estimated cam-from-world poses
-        // (which already contain the known/estimated cam_from_rig), so it
-        // must NOT be pre-reduced to the rig level: doing so cancels the
-        // cam_from_rig factors twice and biases every solution by a global
-        // rotation (GP non-trivial-rig failure). The gravity-aligned 1-DOF
-        // path keeps using the rig-level reduction below.
+        // residual composes this with the estimated cam-from-world poses,
+        // so it must NOT be pre-reduced to the rig level: doing so cancels
+        // the cam_from_rig factors twice and biases every solution by a
+        // global rotation (GP non-trivial-rig failure). The estimated
+        // cam-from-world poses below carry the *estimated* cam_from_rig;
+        // the *known* (calibrated) cam_from_rig rotations are cached here
+        // and composed in ComputeResiduals, keeping the factor balance:
+        // residual = (a2*r2)^T * R_sensor * (a1*r1) vanishes at the truth
+        // for both known and estimated cam_from_rig (upstream achieves the
+        // same by absorbing known factors into its rig-level relative).
+        // The gravity-aligned 1-DOF path keeps using the rig-level
+        // reduction below.
         Eigen::Matrix3d R_cam2_from_cam1_sensor;
+        bool has_known_cam1_from_rig = false;
+        bool has_known_cam2_from_rig = false;
+        Eigen::Matrix3d known_R_cam1_from_rig = Eigen::Matrix3d::Identity();
+        Eigen::Matrix3d known_R_cam2_from_rig = Eigen::Matrix3d::Identity();
         // Column indices for unknown cam_from_rig rotations (-1 if known).
         int cam1_from_rig_param_idx = -1;
         int cam2_from_rig_param_idx = -1;

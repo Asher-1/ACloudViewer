@@ -296,6 +296,21 @@ void RotationAveragingProblem::BuildPairConstraints(
     constraint.image_id2 = image_id2;
     constraint.R_cam2_from_cam1_sensor =
         edge.cam2_from_cam1.rotation().toRotationMatrix();
+    // Cache the known (calibrated) cam_from_rig rotations so
+    // ComputeResiduals can compose them into the estimated cam-from-world
+    // poses; without them the sensor-level relative rotation leaves the
+    // known factors unbalanced and the 3-DOF solve is biased (the
+    // non-trivial known-rig RA failure).
+    if (cam1_from_rig1.has_value()) {
+      constraint.has_known_cam1_from_rig = true;
+      constraint.known_R_cam1_from_rig =
+          cam1_from_rig1->rotation().toRotationMatrix();
+    }
+    if (cam2_from_rig2.has_value()) {
+      constraint.has_known_cam2_from_rig = true;
+      constraint.known_R_cam2_from_rig =
+          cam2_from_rig2->rotation().toRotationMatrix();
+    }
     if (options_.use_gravity && frame_gravity1 != nullptr &&
         frame_gravity2 != nullptr) {
       // Both frames have gravity: use 1-DOF constraint.
@@ -549,12 +564,18 @@ void RotationAveragingProblem::ComputeResiduals() {
             AngleAxisToRotationMatrix(estimated_rotations_.segment<3>(
                 constraint.cam1_from_rig_param_idx)) *
             estimated_cam1_from_world;
+      } else if (constraint.has_known_cam1_from_rig) {
+        estimated_cam1_from_world =
+            constraint.known_R_cam1_from_rig * estimated_cam1_from_world;
       }
       if (constraint.cam2_from_rig_param_idx != -1) {
         estimated_cam2_from_world =
             AngleAxisToRotationMatrix(estimated_rotations_.segment<3>(
                 constraint.cam2_from_rig_param_idx)) *
             estimated_cam2_from_world;
+      } else if (constraint.has_known_cam2_from_rig) {
+        estimated_cam2_from_world =
+            constraint.known_R_cam2_from_rig * estimated_cam2_from_world;
       }
 
       residuals_.segment<3>(constraint.row_index) =

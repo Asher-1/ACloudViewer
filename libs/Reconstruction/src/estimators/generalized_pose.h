@@ -73,6 +73,21 @@ bool EstimateGeneralizedRelativePose(
         size_t* num_inliers,
         std::vector<char>* inlier_mask);
 
+// Estimate the generalized absolute pose and the scale of the rig geometry
+// (GP4PS). Upstream parity (d3ccaf35 estimators/generalized_pose.{h,cc}):
+// the scale is unobservable from a panoramic (single projection center)
+// selection, in which case the function returns false.
+bool EstimateScaledGeneralizedAbsolutePose(
+        const RANSACOptions& options,
+        const std::vector<Eigen::Vector2d>& points2D,
+        const std::vector<Eigen::Vector3d>& points3D,
+        const std::vector<size_t>& camera_idxs,
+        const std::vector<Rigid3d>& cams_from_rig,
+        const std::vector<Camera>& cameras,
+        Sim3d* rig_from_world,
+        size_t* num_inliers,
+        std::vector<char>* inlier_mask);
+
 // Refine generalized absolute pose (optionally focal lengths)
 // from 2D-3D correspondences.
 //
@@ -100,6 +115,21 @@ bool RefineGeneralizedAbsolutePose(
         Rigid3d* rig_from_world,
         std::vector<Camera>* cameras,
         Eigen::Matrix6d* rig_from_world_cov = nullptr);
+
+// Refine the generalized absolute pose and the rig scale (optionally focal
+// lengths). The optional 7x7 covariance covers the rotation (axis-angle,
+// tangent space), translation, and log-scale terms, with the scale
+// rows/columns propagated from log-scale to scale.
+bool RefineScaledGeneralizedAbsolutePose(
+        const AbsolutePoseRefinementOptions& options,
+        const std::vector<char>& inlier_mask,
+        const std::vector<Eigen::Vector2d>& points2D,
+        const std::vector<Eigen::Vector3d>& points3D,
+        const std::vector<size_t>& camera_idxs,
+        const std::vector<Rigid3d>& cams_from_rig,
+        Sim3d* rig_from_world,
+        std::vector<Camera>* cameras,
+        Eigen::Matrix7d* rig_from_world_cov = nullptr);
 
 struct StructureLessAbsolutePoseEstimationOptions {
     // Options used for RANSAC.

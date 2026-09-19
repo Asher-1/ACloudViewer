@@ -212,6 +212,11 @@ void CeresBundleAdjuster::SetUp(Reconstruction* reconstruction,
     // first. Do not change order of instructions!
 
     manifold_marked_blocks_.clear();
+    // W3-2b: the shadow blocks are rebuilt for every SetUp; they are kept
+    // alive after TearDown so post-solve consumers (e.g. the BA covariance
+    // estimator) can still resolve the registered pose pointers.
+    frame_blocks_.clear();
+    sensor_blocks_.clear();
 
     // W3-2b step 4: forward dual-track sync. The pose parameter blocks are
     // the frame storage; make sure it holds the freshest camera poses before
@@ -320,8 +325,8 @@ void CeresBundleAdjuster::TearDown(Reconstruction* reconstruction) {
         image.SetQvec(Eigen::Vector4d(q.w(), q.x(), q.y(), q.z()));
         image.SetTvec(cam_from_world.translation());
     }
-    sensor_blocks_.clear();
-    frame_blocks_.clear();
+    // The shadow block maps stay alive after TearDown for post-solve
+    // consumers; the next SetUp clears them (see the top of SetUp).
 }
 
 CeresBundleAdjuster::SensorPoseBlock& CeresBundleAdjuster::GetOrCreateSensorBlock(
@@ -338,6 +343,11 @@ CeresBundleAdjuster::SensorPoseBlock& CeresBundleAdjuster::GetOrCreateSensorBloc
     block.sensor_id = sensor_id;
     block.sensor_from_rig = sensor_from_rig;
     return sensor_blocks_.emplace(key, block).first->second;
+}
+
+const std::map<frame_t, CeresBundleAdjuster::FramePoseBlock>&
+CeresBundleAdjuster::frame_blocks() const {
+    return frame_blocks_;
 }
 
 CeresBundleAdjuster::FramePoseBlock& CeresBundleAdjuster::GetOrCreateFrameBlock(

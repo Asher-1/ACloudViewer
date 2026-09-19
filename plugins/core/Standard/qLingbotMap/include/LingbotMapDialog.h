@@ -108,10 +108,17 @@ private:
     QLineEdit* m_skyMaskDir = nullptr;
     QWidget* m_skyMaskRow = nullptr;
     QLabel* m_skyHint = nullptr;
+    /** Original custom-data reminder text (the label is reused for the
+     *  official-outdoor-None warning and restored when that clears). */
+    QString m_customSkyHintText;
+    /** Dataset → model/pipeline guidance (tips label, refreshed on scene
+     *  selection; per the upstream long_real campaign). */
+    QLabel* m_datasetHint = nullptr;
     QGroupBox* m_advancedBox = nullptr;
     QWidget* m_advancedContainer = nullptr;
     QSpinBox* m_kvScale = nullptr;
     QSpinBox* m_kvWindow = nullptr;
+    QSpinBox* m_keyframeInterval = nullptr;
     QSpinBox* m_frameStride = nullptr;
     QCheckBox* m_rotate90 = nullptr;
     QCheckBox* m_addDbCheck = nullptr;
@@ -156,10 +163,15 @@ private:
                                       ecvTestDataRepository::Dataset kind);
     void finishTestDataFlow();
     void refreshSkySourceOptions();
+    /** Refreshes the dataset → model/pipeline guidance hint. */
+    void updateDatasetHint();
     QComboBox* m_testSceneCombo = nullptr;
     QPushButton* m_testDataBtn = nullptr;
     bool m_testDataInProgress = false;
     ecvTestDataRepository::Dataset m_pendingMaskDownload =
             ecvTestDataRepository::Dataset::LingbotMapCourthouse;
     bool m_maskDownloadPending = false;
+    /** Run clicked while the selected test video was still uncached: the
+     *  extraction-finished handler starts the run automatically. */
+    bool m_pendingRunAfterTestData = false;
 };

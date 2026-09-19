@@ -29,18 +29,24 @@ bool ComputeSchurComplement(bool estimate_point_covs,
   VLOG(2) << "Evaluating the Jacobian for Schur elimination";
 
   ceres::Problem::EvaluateOptions eval_options;
-  eval_options.parameter_blocks.reserve(2 * poses.size() + points.size() +
+  eval_options.parameter_blocks.reserve(3 * poses.size() + points.size() +
                                         others.size());
   if (estimate_pose_covs || estimate_other_covs) {
     for (const auto& pose : poses) {
-      // Fork adaptation: separate qvec/tvec blocks per pose.
-      if (pose.qvec != nullptr) {
+      // Fork adaptation: one 7-dim Rigid3d shadow block for frame poses, or
+      // the split qvec/tvec pair for legacy frameless images.
+      if (pose.rigid7 != nullptr) {
         eval_options.parameter_blocks.push_back(
-            const_cast<double*>(pose.qvec));
-      }
-      if (pose.tvec != nullptr) {
-        eval_options.parameter_blocks.push_back(
-            const_cast<double*>(pose.tvec));
+            const_cast<double*>(pose.rigid7));
+      } else {
+        if (pose.qvec != nullptr) {
+          eval_options.parameter_blocks.push_back(
+              const_cast<double*>(pose.qvec));
+        }
+        if (pose.tvec != nullptr) {
+          eval_options.parameter_blocks.push_back(
+              const_cast<double*>(pose.tvec));
+        }
       }
     }
     for (const double* other : others) {
@@ -125,6 +131,13 @@ bool SchurEliminateOtherParams(double damping,
                                Eigen::SparseMatrix<double>& S) {
   VLOG(2) << "Schur elimination of other parameters (n = " << other_num_params
           << ")";
+
+  // Upstream gap fix (fork): SimplicialLLT fails on an empty 0x0 matrix,
+  // which rejects POSES-mode estimation whenever the problem happens to
+  // contain no other variable blocks. Nothing to eliminate in that case.
+  if (other_num_params == 0) {
+    return true;
+  }
 
   // Notice that here "c" refers to pose and "o" to other parameters.
   const Eigen::SparseMatrix<double> S_cc =
@@ -285,13 +298,16 @@ std::optional<BACovariance> EstimateBACovariance(
     const Reconstruction& reconstruction,
     CeresBundleAdjuster& bundle_adjuster) {
   return EstimateBACovarianceFromProblem(
-      options, reconstruction, bundle_adjuster.Problem());
+      options, reconstruction, bundle_adjuster.Problem(),
+      &bundle_adjuster.frame_blocks());
 }
 
 std::optional<BACovariance> EstimateBACovarianceFromProblem(
     const BACovarianceOptions& options,
     const Reconstruction& reconstruction,
-    ceres::Problem& problem) {
+    ceres::Problem& problem,
+    const std::map<frame_t, CeresBundleAdjuster::FramePoseBlock>*
+        frame_blocks) {
   const bool estimate_point_covs =
       options.params == BACovarianceOptions::Params::POINTS ||
       options.params == BACovarianceOptions::Params::POSES_AND_POINTS ||
@@ -307,7 +323,7 @@ std::optional<BACovariance> EstimateBACovarianceFromProblem(
       internal::GetPointParams(reconstruction, problem);
   const std::vector<internal::PoseParam>& poses =
       options.experimental_custom_poses.empty()
-          ? internal::GetPoseParams(reconstruction, problem)
+          ? internal::GetPoseParams(reconstruction, problem, frame_blocks)
           : options.experimental_custom_poses;
   const std::vector<const double*> others =
       GetOtherParams(problem, poses, points);
@@ -323,15 +339,21 @@ std::optional<BACovariance> EstimateBACovarianceFromProblem(
   if (estimate_pose_covs || estimate_other_covs) {
     pose_L_start_size.reserve(poses.size());
     for (const auto& pose : poses) {
-      // Fork adaptation: the pose occupies the concatenation of its
-      // variable qvec and tvec tangent dimensions (rotation first, matching
-      // the upstream [rotation, translation] ordering).
+      // Fork adaptation: the pose occupies the tangent dimensions of its
+      // single 7-dim Rigid3d shadow block (frame poses) or of the split
+      // qvec/tvec pair (legacy frameless images); both yield 6 under the
+      // quaternion manifold, rotation first, matching the upstream
+      // [rotation, translation] ordering.
       int num_params = 0;
-      if (pose.qvec != nullptr) {
-        num_params += ParameterBlockTangentSize(&problem, pose.qvec);
-      }
-      if (pose.tvec != nullptr) {
-        num_params += ParameterBlockTangentSize(&problem, pose.tvec);
+      if (pose.rigid7 != nullptr) {
+        num_params += ParameterBlockTangentSize(&problem, pose.rigid7);
+      } else {
+        if (pose.qvec != nullptr) {
+          num_params += ParameterBlockTangentSize(&problem, pose.qvec);
+        }
+        if (pose.tvec != nullptr) {
+          num_params += ParameterBlockTangentSize(&problem, pose.tvec);
+        }
       }
       pose_L_start_size.emplace(pose.image_id,
                                 std::make_pair(pose_num_params, num_params));
@@ -393,18 +415,23 @@ std::optional<BACovariance> EstimateBACovarianceFromProblem(
 
 namespace internal {
 
-std::vector<PoseParam> GetPoseParams(const Reconstruction& reconstruction,
-                                     const ceres::Problem& problem) {
+std::vector<PoseParam> GetPoseParams(
+    const Reconstruction& reconstruction,
+    const ceres::Problem& problem,
+    const std::map<frame_t, CeresBundleAdjuster::FramePoseBlock>*
+        frame_blocks) {
   std::vector<PoseParam> params;
   params.reserve(reconstruction.NumImages());
   for (const auto& [image_id, image] : reconstruction.Images()) {
     // Fork adaptation: resolve the image's pose blocks the same way the
-    // bundle adjuster does - frame rig-from-world blocks for frame images
-    // (only the reference sensor owns the pose), the image-local blocks
-    // otherwise. The frame blocks are shared by all reference images of the
-    // frame, so de-duplicate by the qvec pointer.
-    const double* qvec = nullptr;
-    const double* tvec = nullptr;
+    // bundle adjuster does - the W3-2b 7-dim rig-from-world shadow block
+    // for frame images (only the reference sensor owns the pose), the
+    // legacy split image-local blocks otherwise. The shadow blocks are
+    // shared by all reference images of the frame, so de-duplicate by the
+    // resolved pointer.
+    const double* primary = nullptr;
+    PoseParam param;
+    param.image_id = image_id;
     if (image.HasFramePtr()) {
       if (!image.IsRefInFrame()) {
         // Non-reference sensors use the (constant) sensor-from-rig block;
@@ -412,19 +439,48 @@ std::vector<PoseParam> GetPoseParams(const Reconstruction& reconstruction,
         continue;
       }
       const Frame& frame = *image.FramePtr();
-      qvec = frame.RigFromWorldQvec().data();
-      tvec = frame.RigFromWorldTvec().data();
+      if (frame_blocks != nullptr) {
+        const auto it = frame_blocks->find(image.FrameId());
+        if (it != frame_blocks->end()) {
+          param.rigid7 = it->second.rig_from_world.params.data();
+          primary = param.rigid7;
+        }
+      }
+      if (primary == nullptr) {
+        // Fallback for problems assembled without the adjuster's shadow
+        // blocks: the split frame storage only participates if registered.
+        param.qvec = frame.RigFromWorldQvec().data();
+        param.tvec = frame.RigFromWorldTvec().data();
+        primary = param.qvec;
+      }
     } else {
-      qvec = image.Qvec().data();
-      tvec = image.Tvec().data();
+      param.qvec = image.Qvec().data();
+      param.tvec = image.Tvec().data();
+      primary = param.qvec;
     }
-    if (params.size() > 0 && params.back().qvec == qvec &&
-        params.back().tvec == tvec) {
+    if (params.size() > 0 && params.back().rigid7 == param.rigid7 &&
+        params.back().qvec == param.qvec &&
+        params.back().tvec == param.tvec) {
       continue;
     }
-    if (problem.HasParameterBlock(qvec) &&
-        !problem.IsParameterBlockConstant(const_cast<double*>(qvec))) {
-      params.push_back({image_id, qvec, tvec});
+    const bool is_variable =
+        problem.HasParameterBlock(primary) &&
+        !problem.IsParameterBlockConstant(const_cast<double*>(primary));
+    if (is_variable) {
+      if (param.rigid7 == nullptr) {
+        // Split path: only include poses with at least one variable part.
+        const bool split_variable =
+            (param.qvec != nullptr &&
+             !problem.IsParameterBlockConstant(
+                 const_cast<double*>(param.qvec))) ||
+            (param.tvec != nullptr &&
+             !problem.IsParameterBlockConstant(
+                 const_cast<double*>(param.tvec)));
+        if (!split_variable) {
+          continue;
+        }
+      }
+      params.push_back(param);
     }
   }
   return params;
@@ -449,8 +505,11 @@ std::vector<const double*> GetOtherParams(
     const std::vector<PoseParam>& poses,
     const std::vector<PointParam>& points) {
   FlatHashSet<const double*> pose_and_point_params;
-  pose_and_point_params.reserve(poses.size() + points.size());
+  pose_and_point_params.reserve(2 * poses.size() + points.size());
   for (const auto& pose : poses) {
+    if (pose.rigid7 != nullptr) {
+      pose_and_point_params.insert(pose.rigid7);
+    }
     if (pose.qvec != nullptr) {
       pose_and_point_params.insert(pose.qvec);
     }

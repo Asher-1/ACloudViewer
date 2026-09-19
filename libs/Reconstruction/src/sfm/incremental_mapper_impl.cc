@@ -71,8 +71,11 @@ std::vector<image_t> IncrementalMapperImpl::FindFirstInitialImage(
     std::vector<ImageInfo> image_infos;
     image_infos.reserve(reconstruction.NumImages());
     for (const auto& image : reconstruction.Images()) {
-        // Only images with correspondences can be registered.
-        if (image.second.NumCorrespondences() == 0) {
+        // Only images with correspondences can be registered. Upstream
+        // d3ccaf35 derives this from the correspondence graph; the fork's
+        // legacy per-image counter is not maintained on a fresh Load.
+        if (correspondence_graph.NumCorrespondencesForImage(image.first) ==
+            0) {
             continue;
         }
 
@@ -94,7 +97,8 @@ std::vector<image_t> IncrementalMapperImpl::FindFirstInitialImage(
         ImageInfo image_info;
         image_info.image_id = image.first;
         image_info.prior_focal_length = camera.HasPriorFocalLength();
-        image_info.num_correspondences = image.second.NumCorrespondences();
+        image_info.num_correspondences =
+                correspondence_graph.NumCorrespondencesForImage(image.first);
         image_infos.push_back(image_info);
     }
 

@@ -8,12 +8,13 @@
 #pragma once
 
 // Upstream port (COLMAP d3ccaf35 estimators/covariance.{h,cc}). Fork
-// adaptation: the fork's bundle adjustment registers the pose as separate
-// qvec (4) and tvec (3) parameter blocks instead of a single contiguous
-// Rigid3d block, so `internal::PoseParam` carries two pointers and the
-// Schur assembly pushes both blocks per pose. The tangent-space results are
-// identical: [rotation(3), translation(3)] per pose under the quaternion
-// manifold.
+// adaptation: the fork's bundle adjustment registers the frame pose as a
+// single contiguous 7-dim Rigid3d shadow block (W3-2b), while legacy
+// frameless cache images keep separate qvec (4) and tvec (3) blocks. A
+// PoseParam therefore carries either the single shadow pointer (`rigid7`,
+// tangent 6 under the quaternion manifold) or the split pair; the
+// tangent-space results are identical: [rotation(3), translation(3)] per
+// pose.
 
 #include <ceres/problem.h>
 
@@ -115,21 +116,27 @@ std::optional<BACovariance> EstimateBACovariance(
 std::optional<BACovariance> EstimateBACovarianceFromProblem(
         const BACovarianceOptions& options,
         const Reconstruction& reconstruction,
-        ceres::Problem& problem);
+        ceres::Problem& problem,
+        const std::map<frame_t, CeresBundleAdjuster::FramePoseBlock>*
+                frame_blocks = nullptr);
 
 namespace internal {
 
-// Fork adaptation: the pose is a (qvec, tvec) pair of parameter blocks
-// instead of a single Rigid3d block. Either pointer may be null when that
-// part of the pose is not a variable in the problem.
+// Fork adaptation: a pose is either the W3-2b single 7-dim Rigid3d shadow
+// block (`rigid7`) registered by the bundle adjuster, or the legacy split
+// (qvec, tvec) pair of a frameless image. The unused pointers are null.
 struct PoseParam {
     image_t image_id = kInvalidImageId;
+    const double* rigid7 = nullptr;
     const double* qvec = nullptr;
     const double* tvec = nullptr;
 };
 
-std::vector<PoseParam> GetPoseParams(const Reconstruction& reconstruction,
-                                     const ceres::Problem& problem);
+std::vector<PoseParam> GetPoseParams(
+        const Reconstruction& reconstruction,
+        const ceres::Problem& problem,
+        const std::map<frame_t, CeresBundleAdjuster::FramePoseBlock>*
+                frame_blocks);
 
 struct PointParam {
     point3D_t point3D_id = kInvalidPoint3DId;

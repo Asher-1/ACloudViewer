@@ -105,8 +105,14 @@ public:
         QString skysegModelPath; /**< Native mode: skyseg GGUF path */
         QString skyMaskDir;      /**< CachedMasks mode: PNG mask directory */
         /** Upstream ggml_demo parity options. */
-        int kvScale = 8;     /**< --kv_cache_scale (persistent scale frames) */
-        int kvWindow = 64;   /**< --kv_cache_window (sliding window) */
+        int kvScale = 8;   /**< --kv_cache_scale (persistent scale frames) */
+        int kvWindow = 64; /**< --kv_cache_window (sliding window) */
+        /** Official long-stream keyframe policy (demo.py
+         *  --keyframe_interval): every N-th streaming frame persists its KV;
+         *  0 = auto (ceil(N/320) per the official streaming rule, 1 when the
+         *  stream is shorter). Windowed mode always runs per-window
+         *  keyframe_interval=1. */
+        int keyframeInterval = 0;
         int frameStride = 1; /**< --stride (sample every Nth frame) */
         bool rotateClockwise90 = false; /**< --rotate_clockwise_90 */
         bool addResultToDb = true;

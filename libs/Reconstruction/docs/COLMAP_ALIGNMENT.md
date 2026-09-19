@@ -701,3 +701,145 @@ runs), which is an upstream tool contract, not a fork deviation.
 Regression gates: reconstruction_io_test 19/19, bitmap_test 31/31,
 image_test 23/23, undistortion_test 5/5, texture_mapping_test 15/15,
 models_test 21/21. Recorded in the manifest as `e2e_dense_chain_alignment`.
+
+## W16 pybind parity batches (2026-09-18)
+
+The W16 fusion (upstream pycolmap classes into the existing
+`cloudViewer.reconstruction` module per D2, Open3D-style bindings without
+the upstream dataclass machinery) continued from the 2026-09-18(2)
+geometry/scene/estimators start and landed the remaining exposure surface:
+geometry (triangulation angles, GPSTransform, PosePrior, essential/homography
+geometry functions), scene (Frame, Rig, SensorType/SensorId/DataId,
+TwoViewGeometry, synthetic dataset generation, DatabaseCache, Reconstruction
+frame/rig accessors, writable Image id/name/camera_id), estimators
+(TwoViewGeometryOptions, essential/fundamental/homography/two-view-geometry
+estimation, model alignment, rigid3d/sim3d), database (the abstract
+`Database` class with numpy views and a scoped transaction context manager),
+sensor (Bitmap with EXIF accessors), mvs (DepthMap, NormalMap, MVSModel),
+feature (FeatureKeypoint/FeatureMatch) and retrieval (the faiss VisualIndex).
+Two binding-layer defects were caught by the smoke test: `Bitmap::Data()`
+returns the Storage handle (not the pixel buffer), so pixel access goes
+through ConvertToRawBits/SetPixel; NormalMap's engine channel-plane layout is
+converted to the numpy (H, W, 3) convention. pybuild EXIT=0 and the runtime
+smoke suite (GPS ECEF roundtrip, synthetic dataset, Sim3d, database
+roundtrip, bitmap bit-exact write/read, depth/normal maps, VisualIndex) is
+green. Remaining class-level bindings (sfm wrappers, BA/covariance/
+motion-averaging estimators, CorrespondenceGraph/PoseGraph/Reconstruction-
+Manager) are scoped in the manifest entry `pycolmap_parity_bindings`
+(partial, with prerequisites and resolution); the pyceres ceres-solver
+bindings are evaluated and deferred (autodiff template surface, negative
+cost/benefit without a concrete consumer).
+
+The sfm/scene/estimators class batch landed the same day (round 2026-09-18(4)):
+`sfm.IncrementalMapper`/`IncrementalTriangulator`/`ObservationManager` (owner
+wrappers holding py::object references - py::init keep_alive does not pin
+lifetimes on this pybind build), scene `CorrespondenceGraph`/`PoseGraph`/
+`ReconstructionManager`, and estimators `BundleAdjustmentConfig`/`Summary`/
+`adjust_bundle`/`estimate_affine2d`/`estimate_two_view_geometry_pose`. Two
+real engine defects were surfaced by the smoke pipeline: (1) FIXED -
+`IncrementalMapperImpl::FindFirstInitialImage` filtered candidates by the
+fork-legacy `image.NumCorrespondences()` counter (never maintained on a fresh
+Load) instead of the upstream correspondence-graph query, so the CLI mapper
+could never find an initial pair on a fresh database; (2) FILED -
+`Reconstruction::RegFrameIds()` returns every frame with a pose while upstream
+maintains an explicit registration set, which marks all frames of a
+database with prior poses (synthetic/pose-prior scenarios) as already
+registered on a fresh Load; the fix (frame-level registration-set semantics)
+is scoped as an L-level batch in the manifest. With fix (1) in, the Python
+side runs a full incremental SfM pipeline end to end for the first time
+(synthetic DB -> DatabaseCache -> mapper -> CONVERGENCE, 6/6 images
+registered, 60 points, mean track 6.0); 8 regression suites stay green.
+
+Round 2026-09-19 (26) closed three follow-up threads. (1) generalized_pose
+bindings landed against the fork engine's actual API surface: the four
+upstream-parity entries (estimate/refine/estimate_and_refine generalized
+absolute pose with 6x6 covariance, estimate_generalized_relative_pose with
+the rig2_from_rig1/pano2_from_pano1 dual exit) plus the fork-extension
+estimate_structure_less_absolute_pose with its options class; the upstream
+scaled variants (Sim3d + 7x7, GP4PS family) have no fork-engine counterpart
+and stay unbound as a recorded engine gap. Numeric rig smoke is green. (2)
+The covariance single-block unification (L-level) closed the pre-existing
+W3-2b regression: PoseParam now carries the 7-dim Rigid3d shadow pointer
+alongside the legacy split pair, GetPoseParams resolves frame poses through
+the adjuster's frame_blocks() map (cleared at SetUp, alive after TearDown so
+post-solve consumers work), the 0x0 other-elimination fix was re-landed
+(the round-24 rollback had silently reverted it), and covariance_test was
+updated to the representation-agnostic block-list form - 7/7 green with
+bundle_adjustment_test 11/11, and the Python e2e exposes usable pose,
+cross, point and relative-pose covariances. The rotation_averaging_test
+failure on the gravity + non-trivial-rig path (frame.cc:104 CHECK(has_pose_))
+pre-dates this round and is filed separately. (3) The pyceres question is
+closed as NOT an alignment gap: upstream's C++ engine has zero pyceres
+references - it is an optional pycolmap Python package (runtime probe,
+host-side custom cost-function BA extension) and stays deferred.
+
+Round 2026-09-19(2) fixed the filed rotation_averaging_test failure and
+closed the scaled generalized pose engine gap. (1) The RA failure root
+cause was a factor imbalance in the fork's GP fix: the 3-DOF residual uses
+the sensor-level relative rotation but ComputeResiduals only composed the
+estimated cam_from_rig, so a known (calibrated) rig left its factors
+unbalanced, the residual did not vanish at the truth, and the
+use_gravity=false solve was biased (20/28 edges >10deg) - after filtering
+and DeRegister the test read a pose-less frame and hit the frame.cc:104
+CHECK. Fix: cache the known cam_from_rig rotations in PairConstraint and
+compose them in ComputeResiduals (equivalent to the upstream rig-level
+reduction by matrix association); rotation_averaging_test 15/15. (2)
+EstimateScaledGeneralizedAbsolutePose and RefineScaledGeneralizedAbsolute-
+Pose landed on top of the existing GP4PSEstimator/ScaledRigReprojErrorCost-
+Functor (upstream ceres architecture: log-scale optimization, ProductMani-
+fold, 7x7 tangent covariance with scale propagation; plain-LORANSAC
+adaptation for the missing unique-inlier measurer), with the mask-aware
+IsPanoramicCameraSelection and the upstream Matrix7d typedef; all three
+pycolmap scaled bindings are exposed and numerically verified. (3) The
+non-scaled refine binding now honestly emits covariance=None because the
+fork split-block engine does not assemble the 6x6 tangent covariance yet
+(the pointer was accepted but left unwritten - the earlier smoke's
+"cov finite" was an uninitialized-memory false positive; engine follow-up
+filed).
+
+Round 2026-09-19(3) closed the filed follow-ups and one new engine
+defect. (1) The non-scaled refine covariance debt is closed: RefineGenera-
+lizedAbsolutePose was rebuilt upstream-isomorphic (single Rigid3d params
+block under a ProductManifold with RigReprojErrorCostFunctor, replacing
+the stale split-qvec/tvec transitional implementation), the position-prior
+branch and options fields were added, and both the generalized and the
+monocular RefineAbsolutePose now assemble the 6x6 tangent covariance via
+ceres GetCovarianceMatrixInTangentSpace; a 120-trial Monte-Carlo check
+puts the rotation-dimension empirical/predicted eigenvalue ratios at
+0.86-0.96 (translation dims ~0.24, the expected Cauchy-loss contraction).
+(2) The util bindings landed as a pybind.reconstruction.util submodule
+(Timer, glog logging surface with Python call-site frames, Cancellation-
+Token, version strings), closing the cosmetic gap. (3) The regression run
+exposed engine defect (3): upstream AddFrame auto-registers posed frames
+while the fork skipped it and the round-21 derived RegFrameIds dropped
+the explicit frame-level set half of the semantics. The fork now keeps an
+explicit reg_frame_ids_ set in lockstep with reg_image_ids_, AddFrame
+registers posed frames, SetRigsAndFrames rebuilds a consistent state, and
+the Python registration API (register/deregister image/frame, copy ctor)
+is exposed; coordinate_frame/rig/observation_manager/global_pipeline/
+rotation_averaging/covariance all green, 43/43 group tests, plus a
+5-check Python registration e2e. Round 2026-09-19(4) ported the full generalized_pose_test (938 lines, 16
+cases) and closed three engine gaps it exposed: (1) the upstream
+UniqueInlierSupportMeasurer landed and both GP3P/GP4PS estimates now run
+LORANSAC with unique-inlier counting (replacing the fork's plain-count
+adaptation note); (2) ThrowCheckCameras gained the upstream empty-input
+guard (deref of the end iterator segfaulted on empty inputs); (3) the
+ray-based EstimateRelativePose landed and the panoramic branch of
+EstimateGeneralizedRelativePose is no longer a stub. generalized_pose_test
+16/16; two pre-existing failures in math/polynomial and optim/LAD
+surfaced by the widened regression net are filed separately.
+Round 2026-09-19(5) fixed the two filed test failures (the polynomial
+tolerance was mis-ported as a zero-baseline relative tolerance, upstream
+uses an absolute 1e-6; the LAD ridge failure came from -march=x86-64-v3
+FMA rounding a rank-deficient LLT pivot to a tiny positive value, fixed by
+a deterministic diagonal-ratio check that is immune to FMA) bringing the
+widened regression net to 73/73, completed the file-level alignment audit
+against upstream src/colmap (engine algorithm layer clean; feature/pairing/
+undistorters covered by the ACloudViewer product pipeline by design; one
+S-level gap filed: the ceres_loss_function factory), and ran the mini6
+end-to-end A/B (6 iPhone7 photos, identical command chain): fork 6/6 vs
+upstream 5/6 registered images, fused point cloud -3.3%, textured mesh
+-3.5%/-6.2% - all within the established PRNG/floating-point freedom
+band. Textured OBJ outputs for manual comparison:
+/tmp/ab_mini6/{fork,upstream}/dense/textured_obj/mesh.obj (+ mesh.mtl,
+texture.png).

@@ -365,6 +365,28 @@ void LingbotMapWorker::run() {
     } else if (streamBound > 0) {
         aicore_lingbot_options_set_stream_capacity(opts, streamBound);
     }
+    // Official long-stream keyframe policy: auto (0) resolves to
+    // ceil(N/320) once the real stream length is known; windowed mode runs
+    // each window as an independent stream (< 320 frames) with kf=1.
+    if (m_settings.mode == Settings::Mode::Windowed) {
+        aicore_lingbot_options_set_keyframe_interval(opts, 1);
+    } else {
+        int kf = 1;
+        if (m_settings.keyframeInterval > 0) {
+            kf = m_settings.keyframeInterval;
+        } else if (streamBound > 0) {
+            kf = std::max(1, (streamBound + 319) / 320);
+        }
+        aicore_lingbot_options_set_keyframe_interval(opts, kf);
+        if (kf > 1) {
+            emit logMessage(tr("[LingbotMap] Official keyframe policy: "
+                               "keyframe interval = %1 (stream ~%2 frames; "
+                               "non-keyframes attend but do not persist KV, "
+                               "bounding the cache for long runs)")
+                                    .arg(kf)
+                                    .arg(streamBound));
+        }
+    }
 
     // VRAM guidance for GPU OOM paths: the official 8/64 release profile's
     // scale pass dominates the compute workspace and cannot fit small GPUs.

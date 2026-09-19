@@ -17,6 +17,7 @@
 #include "pipelines/sfm.h"
 #include "pybind/docstring.h"
 #include "pybind/reconstruction/reconstruction_options.h"
+#include "pybind/reconstruction/sfm/mappers.h"
 
 namespace cloudViewer {
 namespace reconstruction {
@@ -254,6 +255,9 @@ void pybind_structure_from_motion(py::module& m) {
     py::module m_submodule =
             m.def_submodule("sfm", "Reconstruction structure from motion.");
     pybind_sfm_methods(m_submodule);
+    // Upstream pycolmap parity (src/pycolmap/sfm): the incremental mapping
+    // class bindings share the same submodule.
+    pybind_mappers(m_submodule);
 }
 
 }  // namespace sfm

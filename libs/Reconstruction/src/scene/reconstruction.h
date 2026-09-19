@@ -69,7 +69,7 @@ public:
     inline size_t NumFrames() const;
     // Upstream-parity accessor (COLMAP 4.x scene/reconstruction.h): number of
     // registered (pose-estimated) frames.
-    inline size_t NumRegFrames() const { return RegFrameIds().size(); }
+    inline size_t NumRegFrames() const { return reg_frame_ids_.size(); }
     inline size_t NumRegImages() const;
     inline size_t NumPoints3D() const;
     inline size_t NumImagePairs() const;
@@ -103,6 +103,12 @@ public:
 
     // Upstream-parity (COLMAP 4.x): IDs of registered (posed) frames.
     std::unordered_set<frame_t> RegFrameIds() const;
+
+    // Fork: the database round-trip persists frame poses (a fork extension
+    // absent upstream); a freshly loaded reconstruction starts unregistered.
+    // Drops the registration state implied by the persisted poses without
+    // touching the poses or the observations.
+    void ResetRegistrationState();
     // Upstream-parity (COLMAP 4.x): recompute the reprojection error of all
     // points after batch modifications.
     void UpdatePoint3DErrors();
@@ -193,6 +199,11 @@ public:
 
     // Register an existing image.
     void RegisterImage(const image_t image_id);
+
+    // Upstream-parity (COLMAP 4.x scene/reconstruction.h): register an
+    // existing frame with a pose. The fork keeps both a frame-level
+    // registration set and the legacy image-level set in lockstep.
+    void RegisterFrame(const frame_t frame_id);
 
     // De-register an existing image, and all its references.
     void DeRegisterImage(const image_t image_id);
@@ -399,6 +410,12 @@ private:
 
     // { image_id, ... } where `images_.at(image_id).registered == true`.
     std::vector<image_t> reg_image_ids_;
+
+    // Upstream-parity (COLMAP 4.x scene/reconstruction.h): the explicit
+    // frame-level registration fact. Maintained in lockstep with
+    // `reg_image_ids_` by RegisterFrame/RegisterImage; AddFrame registers
+    // frames that carry a pose, as upstream does.
+    std::unordered_set<frame_t> reg_frame_ids_;
 
     // Total number of added 3D points, used to generate unique identifiers.
     point3D_t num_added_points3D_;

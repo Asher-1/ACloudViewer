@@ -33,6 +33,7 @@
 
 #include "estimators/cost_functions/cost_functions.h"
 #include "estimators/cost_functions/manifold.h"
+#include "estimators/cost_functions/pose_prior.h"
 #include "estimators/cost_functions/reprojection_error.h"
 #include "estimators/solvers/absolute_pose.h"
 #include "estimators/solvers/essential_matrix.h"
@@ -131,12 +132,60 @@ bool EstimateAbsolutePose(const AbsolutePoseEstimationOptions& options,
     return true;
 }
 
+bool EstimateRelativePose(
+        const RANSACOptions& ransac_options,
+        const std::vector<CamRayWithJac>& cam_rays1_with_jac,
+        const std::vector<CamRayWithJac>& cam_rays2_with_jac,
+        Rigid3d* cam2_from_cam1,
+        size_t* num_inliers,
+        std::vector<char>* inlier_mask) {
+    THROW_CHECK_EQ(cam_rays1_with_jac.size(), cam_rays2_with_jac.size());
+
+    LORANSAC<EssentialMatrixTangentSampsonEstimator,
+             EssentialMatrixTangentSampsonEstimator>
+            ransac(ransac_options);
+    auto report = ransac.Estimate(cam_rays1_with_jac, cam_rays2_with_jac);
+
+    if (!report.success) {
+        return false;
+    }
+
+    std::vector<Eigen::Vector3d> inlier_cam_rays1;
+    std::vector<Eigen::Vector3d> inlier_cam_rays2;
+    inlier_cam_rays1.reserve(report.support.num_inliers);
+    inlier_cam_rays2.reserve(report.support.num_inliers);
+    for (size_t i = 0; i < cam_rays1_with_jac.size(); ++i) {
+        if (report.inlier_mask[i]) {
+            inlier_cam_rays1.push_back(cam_rays1_with_jac[i].ray);
+            inlier_cam_rays2.push_back(cam_rays2_with_jac[i].ray);
+        }
+    }
+
+    std::vector<int> valid_indices;
+    PoseFromEssentialMatrix(report.model,
+                            inlier_cam_rays1,
+                            inlier_cam_rays2,
+                            cam2_from_cam1,
+                            &valid_indices);
+
+    if (cam2_from_cam1->rotation().coeffs().array().isNaN().any() ||
+        cam2_from_cam1->translation().array().isNaN().any()) {
+        return false;
+    }
+
+    *num_inliers = report.support.num_inliers;
+    *inlier_mask = std::move(report.inlier_mask);
+
+    return !valid_indices.empty();
+}
+
 bool RefineAbsolutePose(const AbsolutePoseRefinementOptions& options,
                         const std::vector<char>& inlier_mask,
                         const std::vector<Eigen::Vector2d>& points2D,
                         const std::vector<Eigen::Vector3d>& points3D,
                         Rigid3d* cam_from_world,
-                        Camera* camera) {
+                        Camera* camera,
+                        Eigen::Matrix6d* cam_from_world_cov) {
     CHECK_EQ(inlier_mask.size(), points2D.size());
     CHECK_EQ(points2D.size(), points3D.size());
     options.Check();
@@ -162,6 +211,16 @@ bool RefineAbsolutePose(const AbsolutePoseRefinementOptions& options,
                 loss_function.get(),
                 cam_from_world->params.data(),
                 camera->ParamsData());
+    }
+
+    if (options.use_position_prior) {
+        problem.AddResidualBlock(
+                CovarianceWeightedCostFunctor<
+                        AbsolutePosePositionPriorCostFunctor>::Create(
+                        options.position_prior_covariance,
+                        options.position_prior_in_world),
+                nullptr,
+                cam_from_world->params.data());
     }
 
     if (problem.NumResiduals() > 0) {
@@ -232,7 +291,26 @@ bool RefineAbsolutePose(const AbsolutePoseRefinementOptions& options,
         PrintSolverSummary(summary);
     }
 
-    return summary.IsSolutionUsable();
+    if (!summary.IsSolutionUsable()) {
+        return false;
+    }
+
+    if (problem.NumResiduals() > 0 && cam_from_world_cov != nullptr) {
+        ceres::Covariance::Options cov_options;
+        ceres::Covariance covariance(cov_options);
+        std::vector<const double*> parameter_blocks = {
+                cam_from_world->params.data()};
+        if (!covariance.Compute(parameter_blocks, &problem)) {
+            return false;
+        }
+        // The rotation covariance is estimated in the tangent space of the
+        // quaternion, which corresponds to the 3-DoF axis-angle local
+        // parameterization.
+        covariance.GetCovarianceMatrixInTangentSpace(
+                parameter_blocks, cam_from_world_cov->data());
+    }
+
+    return true;
 }
 
 bool RefineRelativePose(const ceres::Solver::Options& options,

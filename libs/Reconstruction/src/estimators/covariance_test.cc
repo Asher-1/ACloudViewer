@@ -109,7 +109,8 @@ TEST_P(ParameterizedBACovarianceTests, CompareWithCeres) {
   }
 
   const std::vector<internal::PoseParam> poses =
-      internal::GetPoseParams(reconstruction, problem);
+      internal::GetPoseParams(reconstruction, problem,
+                              &bundle_adjuster.frame_blocks());
   if (test_options.fixed_cam_poses) {
     ASSERT_TRUE(poses.empty());
   } else {
@@ -129,35 +130,48 @@ TEST_P(ParameterizedBACovarianceTests, CompareWithCeres) {
 
     for (const auto& pose1 : poses) {
       for (const auto& pose2 : poses) {
-        // Fork adaptation: reference covariance over the two blocks of each
-        // pose, jointly in tangent space.
+        // Fork adaptation: a pose is either the W3-2b single 7-dim Rigid3d
+        // shadow block or the legacy split (qvec, tvec) pair; build the
+        // reference blocks from whichever representation is present.
+        const auto pose_blocks =
+            [](const internal::PoseParam& pose) {
+              if (pose.rigid7 != nullptr) {
+                return std::vector<const double*>{pose.rigid7};
+              }
+              return std::vector<const double*>{pose.qvec, pose.tvec};
+            };
+        const std::vector<const double*> blocks1 = pose_blocks(pose1);
+        const std::vector<const double*> blocks2 = pose_blocks(pose2);
+
         std::vector<std::pair<const double*, const double*>> cov_param_pairs;
         std::vector<const double*> param_blocks;
 
-        cov_param_pairs.emplace_back(pose1.qvec, pose1.qvec);
-        cov_param_pairs.emplace_back(pose1.tvec, pose1.tvec);
-        cov_param_pairs.emplace_back(pose1.qvec, pose1.tvec);
-        param_blocks.push_back(pose1.qvec);
-        param_blocks.push_back(pose1.tvec);
+        for (const double* b1 : blocks1) {
+          cov_param_pairs.emplace_back(b1, b1);
+          param_blocks.push_back(b1);
+        }
+        if (pose1.image_id != pose2.image_id) {
+          for (const double* b1 : blocks1) {
+            for (const double* b2 : blocks2) {
+              cov_param_pairs.emplace_back(b1, b2);
+            }
+          }
+        } else if (blocks1.size() == 2) {
+          // Split pair of the same pose: the (qvec, tvec) cross block only.
+          cov_param_pairs.emplace_back(blocks1[0], blocks1[1]);
+        }
 
-        int tangent_size1 =
-            ParameterBlockTangentSize(&problem, pose1.qvec) +
-            ParameterBlockTangentSize(&problem, pose1.tvec);
+        int tangent_size1 = 0;
+        for (const double* b1 : blocks1) {
+          tangent_size1 += ParameterBlockTangentSize(&problem, b1);
+        }
 
         int tangent_size2 = 0;
         if (pose1.image_id != pose2.image_id) {
-          cov_param_pairs.emplace_back(pose2.qvec, pose2.qvec);
-          cov_param_pairs.emplace_back(pose2.tvec, pose2.tvec);
-          cov_param_pairs.emplace_back(pose2.qvec, pose2.tvec);
-          cov_param_pairs.emplace_back(pose1.qvec, pose2.qvec);
-          cov_param_pairs.emplace_back(pose1.qvec, pose2.tvec);
-          cov_param_pairs.emplace_back(pose1.tvec, pose2.qvec);
-          cov_param_pairs.emplace_back(pose1.tvec, pose2.tvec);
-          param_blocks.push_back(pose2.qvec);
-          param_blocks.push_back(pose2.tvec);
-          tangent_size2 +=
-              ParameterBlockTangentSize(&problem, pose2.qvec) +
-              ParameterBlockTangentSize(&problem, pose2.tvec);
+          for (const double* b2 : blocks2) {
+            param_blocks.push_back(b2);
+            tangent_size2 += ParameterBlockTangentSize(&problem, b2);
+          }
         }
 
         ceres::Covariance::Options ceres_cov_options;
@@ -230,8 +244,15 @@ TEST_P(ParameterizedBACovarianceTests, CompareWithCeres) {
 
     // Set all pose/other parameters as constant.
     for (const auto& pose : poses) {
-      problem.SetParameterBlockConstant(const_cast<double*>(pose.qvec));
-      problem.SetParameterBlockConstant(const_cast<double*>(pose.tvec));
+      if (pose.rigid7 != nullptr) {
+        problem.SetParameterBlockConstant(const_cast<double*>(pose.rigid7));
+      }
+      if (pose.qvec != nullptr) {
+        problem.SetParameterBlockConstant(const_cast<double*>(pose.qvec));
+      }
+      if (pose.tvec != nullptr) {
+        problem.SetParameterBlockConstant(const_cast<double*>(pose.tvec));
+      }
     }
     for (const double* other : others) {
       if (other != nullptr) {
