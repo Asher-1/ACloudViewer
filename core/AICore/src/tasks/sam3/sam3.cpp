@@ -5421,7 +5421,10 @@ static bool sam2_encode_image_hiera(sam3_state& state,
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(t_end -
                                                                     t_start)
                       .count();
-    SAM3_LOG(1, "%s: SAM2 image encoded in %ld ms\n", __func__, ms);
+    // std::chrono::milliseconds::rep is long long on macOS, long on Linux —
+    // format the cast explicitly so -Wformat stays clean on both.
+    SAM3_LOG(1, "%s: SAM2 image encoded in %lld ms\n", __func__,
+             static_cast<long long>(ms));
 
     return true;
 }

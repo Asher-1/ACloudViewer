@@ -53,6 +53,17 @@ function(_aicore_capi_link name)
 endfunction()
 
 function(_aicore_test_common name)
+    # Optional extra args:
+    #   NO_CTEST — set up the target (defines/includes/runtime layout) but do
+    #   NOT register a CTest entry. For manual diagnostic tools that need
+    #   side inputs (e.g. reid_diag's CHW binary); registering them would
+    #   make the fast tier fail with a Not Run / usage-exit test.
+    set(_aicore_no_ctest FALSE)
+    foreach(_aicore_arg IN LISTS ARGN)
+        if(_aicore_arg STREQUAL "NO_CTEST")
+            set(_aicore_no_ctest TRUE)
+        endif()
+    endforeach()
     if(NOT MSVC)
         target_compile_options(${name} PRIVATE -Wall -Wextra)
     endif()
@@ -61,8 +72,11 @@ function(_aicore_test_common name)
     include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/AICoreCompileDefinitions.cmake)
     aicore_apply_compile_definitions(${name})
     set_target_properties(${name} PROPERTIES POSITION_INDEPENDENT_CODE ON)
-    add_test(NAME ${name} COMMAND ${name})
     cloudviewer_set_aicore_test_runtime_layout(${name})
+    if(_aicore_no_ctest)
+        return()
+    endif()
+    add_test(NAME ${name} COMMAND ${name})
     if(AICORE_TEST_ENV_EXTRA)
         set_tests_properties(${name} PROPERTIES SKIP_RETURN_CODE 77
             ENVIRONMENT "${AICORE_TEST_ENV_EXTRA}")
@@ -816,15 +830,21 @@ aicore_add_yolo_optrace_test(test_yolo_world_optrace)
 # ReID algebraic diagnostic (white-box bisection): feed an exact CHW tensor
 # (saved from the PyTorch baseline) and dump the SAME graph run's logits and
 # embedding, so the numpy side can check logits == W @ embed + b and pin the
-# first divergent node. Not a ctest (needs a CHW binary on the side).
+# first divergent node. Manual tool, NOT a ctest: it needs a CHW binary on
+# the side, and it links the whitebox library, which only exists with
+# AICore_BUILD_WHITEBOX_TESTS=ON (without the guard the unconditional target
+# would compile without Qt include dirs / link a nonexistent -lAICore_test
+# on GUI builds like macOS CI).
 #   reid_diag --gguf <file> --chw <f32.bin> [--device cuda] [--dump <prefix>]
-add_executable(reid_diag ${CMAKE_CURRENT_SOURCE_DIR}/../tools/reid_diag.cpp)
-target_link_libraries(reid_diag PRIVATE AICore_test)
-if(NOT MSVC)
-    target_compile_options(reid_diag PRIVATE -fPIC)
-    target_link_options(reid_diag PRIVATE "-no-pie")
+if(TARGET AICore_test)
+    add_executable(reid_diag ${CMAKE_CURRENT_SOURCE_DIR}/../tools/reid_diag.cpp)
+    target_link_libraries(reid_diag PRIVATE AICore_test)
+    if(NOT MSVC)
+        target_compile_options(reid_diag PRIVATE -fPIC)
+        target_link_options(reid_diag PRIVATE "-no-pie")
+    endif()
+    _aicore_test_common(reid_diag NO_CTEST)
 endif()
-_aicore_test_common(reid_diag)
 
 add_test(
     NAME test_aicore_public_headers
@@ -1002,17 +1022,34 @@ set(_aicore_contract_targets
     test_sam3_capi_contract
     test_trellis_capi_contract
     test_yolo_capi_performance
-    test_model_catalog_defaults)
+    test_model_catalog_defaults
+    # Registered-capable tests that were missing from this list ran in the
+    # capi tier with no built binary (CTest "Not Run"): the shared GGUF open
+    # helper (whitebox-guarded), the reid contract pair, and the model-tier
+    # loaders reached when AICORE_TEST_ENABLE_MODEL_TESTS=ON.
+    test_gguf_file_io
+    test_reid_capi_contract
+    test_reid_capi_load
+    test_deeplsd_capi_load
+    test_depth_capi_backend_parity)
 set(_aicore_contract_model_exclude)
 if(NOT AICORE_TEST_ENABLE_MODEL_TESTS)
     list(APPEND _aicore_contract_model_exclude -LE "model|gpu|e2e")
 endif()
+# Drop entries whose target was not created (test_gguf_file_io needs the
+# whitebox library) so the tier stays buildable in every configuration.
+set(_aicore_contract_targets_existing)
+foreach(_aicore_t IN LISTS _aicore_contract_targets)
+    if(TARGET ${_aicore_t})
+        list(APPEND _aicore_contract_targets_existing ${_aicore_t})
+    endif()
+endforeach()
 add_custom_target(aicore-contract-tests
     COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -L capi
             ${_aicore_contract_model_exclude}
             -j1
             -C $<CONFIG>
-    DEPENDS ${_aicore_contract_targets}
+    DEPENDS ${_aicore_contract_targets_existing}
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     COMMENT "Running AICore public contract tests"
     VERBATIM
@@ -1037,9 +1074,15 @@ endif()
 
 find_package(Python3 COMPONENTS Interpreter QUIET)
 if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
+    # The checker spawns test_catalog_dump_urls directly, so propagate the
+    # configure-time Qt runtime (same rationale as AICORE_TEST_ENV_EXTRA and
+    # the validation runner below): on a mixed Qt stack the spawned binary
+    # would otherwise resolve a system Qt and fail on versioned operator
+    # delete (exit 127).
     add_test(
         NAME test_catalog_remote_assets
-        COMMAND ${Python3_EXECUTABLE}
+        COMMAND ${CMAKE_COMMAND} -E env ${AICORE_TEST_ENV_EXTRA}
+                ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/check_catalog_assets.py
                 $<TARGET_FILE:test_catalog_dump_urls>)
     set_tests_properties(test_catalog_remote_assets PROPERTIES

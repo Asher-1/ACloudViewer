@@ -187,9 +187,13 @@ LingbotFramePreview buildPreview(const aicore_lingbot_result* r,
             if (!finitePose) continue;
             if (r->depth_conf[i] < confThreshold) continue;
             if (skyKeep && skyKeep[i] == 0) continue;
-            // OpenCV camera frame (x right, y down, z forward), then c2w.
+            // Raw OpenCV pixel coords (x right, y down, z forward), then
+            // c2w — byte-identical to the official ggml_demo add_frame
+            // unprojection (pts_cam @ R.T + t). No axis flip anywhere:
+            // a flipped Y would mirror every frame about its own camera
+            // horizontal plane and scramble the shared map.
             const float X = (x - cx) / fx * d;
-            const float Y = -(y - cy) / fy * d;
+            const float Y = (y - cy) / fy * d;
             const float Z = d;
             const float* R = r->c2w;
             preview.points.append(R[0] * X + R[1] * Y + R[2] * Z + R[3]);

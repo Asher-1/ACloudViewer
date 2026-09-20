@@ -26,6 +26,7 @@
 #include <cstring>
 #include <deque>
 #include <limits>
+#include <optional>
 #include <unordered_map>
 
 namespace qyolo {

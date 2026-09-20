@@ -210,8 +210,9 @@ int main() {
     AICORE_CHECK(aicore_yolo_load_path_rgb(nullptr, &rgb, &iw, &ih) == -1);
 
     // Model catalog contract: task-tagged entries over the full published
-    // release (215 = 3 quant x 72 variants minus the bridge's unpublished
-    // f32; counts must be stable).
+    // release (230 = 3 quant x 77 variants minus the bridge's unpublished
+    // f32; the 77 include the 5 native reid encoders published 2026-09-19;
+    // counts must be stable).
     const int n_total = aicore_yolo_model_count(AICORE_YOLO_ROLE_ANY);
     AICORE_CHECK(n_total > 0);
     AICORE_CHECK(aicore_yolo_model_at(-1, AICORE_YOLO_ROLE_ANY) == nullptr);
@@ -224,7 +225,7 @@ int main() {
                      e->download_url != nullptr && e->display_name != nullptr &&
                      e->license_note != nullptr && e->task != nullptr);
     }
-    // Per-role counts: 61 variants x 3 quants, partitioned by role.
+    // Per-role counts: 77 variants x 3 quants, partitioned by role.
     struct RoleCount {
         enum aicore_yolo_model_role role;
         int expected;
@@ -235,7 +236,7 @@ int main() {
             {AICORE_YOLO_ROLE_SEGMENT, 30},    // 10 closed-set seg x 3
             {AICORE_YOLO_ROLE_POSE, 15},       // 5 pose x 3
             {AICORE_YOLO_ROLE_OBB, 30},        // 10 obb (640 + 1024) x 3
-            {AICORE_YOLO_ROLE_CLASSIFY, 15},   // 5 cls x 3
+            {AICORE_YOLO_ROLE_CLASSIFY, 30},   // 5 cls + 5 native reid x 3
             {AICORE_YOLO_ROLE_SEMANTIC, 30},   // 10 sem (640 + 1024) x 3
             {AICORE_YOLO_ROLE_WORLD, 12},      // 4 world x 3
             {AICORE_YOLO_ROLE_YOLOE, 30},      // 10 yoloe (incl. -pf) x 3

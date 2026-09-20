@@ -78,6 +78,13 @@ jobs:
           else
             echo "DEVELOPER_BUILD=${{ github.event.inputs.developer_build || 'ON' }}" >> $GITHUB_ENV
           fi
+      # Install the fixed CMake BEFORE the disk reshaping below: lukka/get-cmake
+      # extracts into /home/runner/work/_temp on the root filesystem, and
+      # maximize-build-space leaves the root with only its ~10 GB reserve —
+      # tight enough that the tar extraction failed with "Wrote only N of M
+      # bytes" (ENOSPC). On the pre-maximize root there is ample space.
+      - name: Set up fixed CMake
+        uses: ./.github/actions/setup-cmake
       - name: Maximize build space
         uses: easimon/maximize-build-space@master
         with:
@@ -126,8 +133,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: 'false'
-      - name: Set up fixed CMake
-        uses: ./.github/actions/setup-cmake
       - name: Additional space optimization
         run: |
           source util/ci_utils.sh

@@ -10,6 +10,7 @@
 #include <ecvCameraSensor.h>
 #include <ecvCameraSensorDisplayUtils.h>
 #include <ecvColorTypes.h>
+#include <ecvHObjectCaster.h>
 #include <ecvImage.h>
 #include <ecvMainAppInterface.h>
 #include <ecvPluginDbNaming.h>
@@ -215,7 +216,7 @@ void qLingbotMap::executeTask(const LingbotMapWorker::Settings& settings) {
     m_lastPreviewC2w.clear();
     m_onlineRefreshThrottle.start();
     stopPlayback();
-    m_frameCloudIds.clear();
+    m_frameCameraIds.clear();
     m_resultGroupId = 0;
 
     m_worker->start();
@@ -276,30 +277,29 @@ void qLingbotMap::onFramePreview(const LingbotFramePreview& preview) {
     if (!parent) return;
 
     if (!preview.points.isEmpty()) {
-        const unsigned n = static_cast<unsigned>(preview.points.size() / 3);
-        ccPointCloud* cloud = new ccPointCloud(
-                QStringLiteral("LingbotMap_online_%1")
-                        .arg(preview.globalIndex, 6, 10, QLatin1Char('0')));
-        cloud->setMetaData(QStringLiteral("LingbotMap"), true);
-        if (cloud->reserve(n)) {
-            const float* xyz = preview.points.constData();
-            const bool hasColors =
-                    !preview.colors.isEmpty() && cloud->reserveTheRGBTable();
-            for (unsigned i = 0; i < n; ++i) {
-                cloud->addPoint(
-                        CCVector3(xyz[i * 3], xyz[i * 3 + 1], xyz[i * 3 + 2]));
-                if (hasColors) {
-                    cloud->addRGBColor(preview.colors[i * 3],
-                                       preview.colors[i * 3 + 1],
-                                       preview.colors[i * 3 + 2]);
+        if (ccPointCloud* cloud = onlineCloud(parent)) {
+            const unsigned n =
+                    static_cast<unsigned>(preview.points.size() / 3);
+            const unsigned cur = cloud->size();
+            // Grow with slack so most appends skip the realloc+copy.
+            if (cloud->reserve(cur + n + std::max<unsigned>(4096, cur / 4))) {
+                const float* xyz = preview.points.constData();
+                bool hasColors = !preview.colors.isEmpty();
+                if (hasColors && !cloud->hasColors() &&
+                    !cloud->reserveTheRGBTable()) {
+                    hasColors = false;
                 }
+                for (unsigned i = 0; i < n; ++i) {
+                    cloud->addPoint(CCVector3(xyz[i * 3], xyz[i * 3 + 1],
+                                              xyz[i * 3 + 2]));
+                    if (hasColors) {
+                        cloud->addRGBColor(preview.colors[i * 3],
+                                           preview.colors[i * 3 + 1],
+                                           preview.colors[i * 3 + 2]);
+                    }
+                }
+                cloud->showColors(hasColors);
             }
-            if (hasColors) cloud->showColors(true);
-            cloud->setDisplay(m_app->getActiveGLDisplay());
-            cloud->setVisible(true);
-            parent->addChild(cloud);
-        } else {
-            delete cloud;
         }
     }
     addOnlineCamera(parent, preview);
@@ -351,6 +351,22 @@ ccHObject* qLingbotMap::onlineWindowGroup(int windowIndex, int windowCount) {
     windowGroup->setVisible(true);
     m_onlineGroup->addChild(windowGroup);
     return windowGroup;
+}
+
+ccPointCloud* qLingbotMap::onlineCloud(ccHObject* parent) {
+    if (!parent) return nullptr;
+    for (unsigned i = 0; i < parent->getChildrenNumber(); ++i) {
+        ccHObject* child = parent->getChild(i);
+        if (child && child->getName() == QStringLiteral("LingbotMap_points")) {
+            return ccHObjectCaster::ToPointCloud(child);
+        }
+    }
+    auto* cloud = new ccPointCloud(QStringLiteral("LingbotMap_points"));
+    cloud->setMetaData(QStringLiteral("LingbotMap"), true);
+    cloud->setDisplay(m_app->getActiveGLDisplay());
+    cloud->setVisible(true);
+    parent->addChild(cloud);
+    return cloud;
 }
 
 void qLingbotMap::addOnlineCamera(ccHObject* parent,
@@ -428,6 +444,27 @@ bool qLingbotMap::addResultToDb(const LingbotRunResult& result,
             medBaseline > 0.f ? medBaseline * kCameraBaselineFraction
                               : kFallbackCameraSize;
 
+    // ONE merged map cloud: every frame's filtered points append into a
+    // single entity, so the DB tree holds the map + camera frustums —
+    // never one cloud object per frame.
+    struct FrameInput {
+        const LingbotFrameResult* frame;
+        int w;
+        int h;
+        float fx, fy, cx, cy;
+        const float* R;  // row-major 4x4 c2w
+        bool hasRgb;
+        unsigned count;
+    };
+    const float confThreshold = settings.confThreshold;
+    auto keepPixel = [confThreshold](const LingbotFrameResult& frame,
+                                     size_t i) {
+        const float d = frame.depth[i];
+        if (d <= 0.f || !std::isfinite(d)) return false;
+        if (frame.depthConf[i] < confThreshold) return false;
+        return frame.skyKeep.isEmpty() || frame.skyKeep[i] != 0;
+    };
+    std::vector<FrameInput> inputs;
     for (int f = 0; f < result.frames.size(); ++f) {
         const LingbotFrameResult& frame = result.frames[f];
         const int w = frame.width;
@@ -438,99 +475,117 @@ bool qLingbotMap::addResultToDb(const LingbotRunResult& result,
         const float cx = frame.intrinsics.value(2, 0.f);
         const float cy = frame.intrinsics.value(3, 0.f);
         if (fx <= 0.f || fy <= 0.f) continue;
+        if (frame.c2w.size() < 16) continue;
 
-        const float* R = frame.c2w.data();  // row-major 4x4
-        bool hasRgb = !frame.frameRgb.isNull() &&
-                      frame.frameRgb.size() == QSize(w, h);
-
-        // First pass: count valid pixels.
+        FrameInput in{};
+        in.frame = &frame;
+        in.w = w;
+        in.h = h;
+        in.fx = fx;
+        in.fy = fy;
+        in.cx = cx;
+        in.cy = cy;
+        in.R = frame.c2w.data();
+        in.hasRgb = !frame.frameRgb.isNull() &&
+                    frame.frameRgb.size() == QSize(w, h);
+        const size_t plane = static_cast<size_t>(w) * h;
         unsigned count = 0;
-        for (int y = 0; y < h; ++y) {
-            for (int x = 0; x < w; ++x) {
-                const size_t i = static_cast<size_t>(y) * w + x;
-                const float d = frame.depth[i];
-                if (d <= 0.f || !std::isfinite(d)) continue;
-                if (frame.depthConf[i] < settings.confThreshold) continue;
-                if (!frame.skyKeep.isEmpty() && frame.skyKeep[i] == 0) continue;
-                ++count;
-            }
+        for (size_t i = 0; i < plane; ++i) {
+            if (keepPixel(frame, i)) ++count;
         }
         if (count == 0) continue;
+        in.count = count;
+        totalPoints += count;
+        inputs.push_back(in);
+    }
 
-        ccPointCloud* cloud = new ccPointCloud(
-                QStringLiteral("LingbotMap_frame_%1")
-                        .arg(frame.globalIndex >= 0 ? frame.globalIndex : f, 6,
-                             10, QLatin1Char('0')));
-        cloud->setMetaData(QStringLiteral("LingbotMap"), true);
-        cloud->setMetaData(QStringLiteral("source"),
-                           QFileInfo(frame.sourceFile).fileName());
-        if (!cloud->reserve(count)) {
-            delete cloud;
-            continue;
-        }
-        if (hasRgb && !cloud->reserveTheRGBTable()) {
-            hasRgb = false;
-        }
-
-        unsigned added = 0;
-        for (int y = 0; y < h; ++y) {
-            for (int x = 0; x < w; ++x) {
-                const size_t i = static_cast<size_t>(y) * w + x;
-                const float d = frame.depth[i];
-                if (d <= 0.f || !std::isfinite(d)) continue;
-                if (frame.depthConf[i] < settings.confThreshold) continue;
-                if (!frame.skyKeep.isEmpty() && frame.skyKeep[i] == 0) continue;
-                // OpenCV camera frame (x right, y down, z forward), matching
-                // the official unprojection; then c2w into the world frame.
-                const float X = (x - cx) / fx * d;
-                const float Y = -(y - cy) / fy * d;
-                const float Z = d;
-                const float wx = R[0] * X + R[1] * Y + R[2] * Z + R[3];
-                const float wy = R[4] * X + R[5] * Y + R[6] * Z + R[7];
-                const float wz = R[8] * X + R[9] * Y + R[10] * Z + R[11];
-                if (!std::isfinite(wx) || !std::isfinite(wy) ||
-                    !std::isfinite(wz) || std::abs(wx) > kMaxWorldCoordinate ||
-                    std::abs(wy) > kMaxWorldCoordinate ||
-                    std::abs(wz) > kMaxWorldCoordinate) {
-                    continue;
+    if (totalPoints > 0) {
+        ccPointCloud* mapCloud =
+                new ccPointCloud(QStringLiteral("LingbotMap_points"));
+        mapCloud->setMetaData(QStringLiteral("LingbotMap"), true);
+        if (mapCloud->reserve(static_cast<unsigned>(totalPoints))) {
+            bool anyRgb = false;
+            for (const FrameInput& in : inputs) {
+                if (in.hasRgb) {
+                    anyRgb = true;
+                    break;
                 }
-                cloud->addPoint(CCVector3(wx, wy, wz));
-                if (hasRgb) {
-                    const QRgb rgb = frame.frameRgb.pixel(x, y);
-                    cloud->addRGBColor(static_cast<ColorCompType>(qRed(rgb)),
-                                       static_cast<ColorCompType>(qGreen(rgb)),
-                                       static_cast<ColorCompType>(qBlue(rgb)));
-                }
-                ++added;
             }
-        }
-        if (added == 0) {
-            delete cloud;
-            continue;
-        }
-        cloud->resize(added);
-        if (hasRgb) cloud->showColors(true);
-        cloud->setDisplay(m_app->getActiveGLDisplay());
-        cloud->setVisible(true);
-        group->addChild(cloud);
-        m_frameCloudIds.push_back(cloud->getUniqueID());
-        totalPoints += added;
+            if (anyRgb && !mapCloud->reserveTheRGBTable()) anyRgb = false;
 
-        // COLMAP-style camera frustum per frame.
-        if (frame.c2w.size() >= 16) {
-            ccCameraSensor* sensor = buildCameraSensor(
-                    frame.c2w.constData(), fx, w, h, cameraDisplaySize);
-            if (sensor) {
-                sensor->setName(QStringLiteral("LingbotMap_cam_%1")
-                                        .arg(frame.globalIndex >= 0
-                                                     ? frame.globalIndex
-                                                     : f,
-                                             6, 10, QLatin1Char('0')));
-                sensor->setMetaData(QStringLiteral("LingbotMap"), true);
-                sensor->setDisplay(m_app->getActiveGLDisplay());
-                group->addChild(sensor);
+            unsigned long long added = 0;
+            for (const FrameInput& in : inputs) {
+                const LingbotFrameResult& frame = *in.frame;
+                const float* R = in.R;
+                for (int y = 0; y < in.h; ++y) {
+                    for (int x = 0; x < in.w; ++x) {
+                        const size_t i = static_cast<size_t>(y) * in.w + x;
+                        if (!keepPixel(frame, i)) continue;
+                        const float d = frame.depth[i];
+                        // Raw OpenCV pixel coords (x right, y down,
+                        // z forward), then c2w — identical to the official
+                        // ggml_demo unprojection (pts_cam @ R.T + t); no
+                        // axis flip (a flipped Y mirrors every frame about
+                        // its own camera horizontal plane and scrambles
+                        // the shared map).
+                        const float X = (x - in.cx) / in.fx * d;
+                        const float Y = (y - in.cy) / in.fy * d;
+                        const float Z = d;
+                        const float wx =
+                                R[0] * X + R[1] * Y + R[2] * Z + R[3];
+                        const float wy =
+                                R[4] * X + R[5] * Y + R[6] * Z + R[7];
+                        const float wz =
+                                R[8] * X + R[9] * Y + R[10] * Z + R[11];
+                        if (!std::isfinite(wx) || !std::isfinite(wy) ||
+                            !std::isfinite(wz) ||
+                            std::abs(wx) > kMaxWorldCoordinate ||
+                            std::abs(wy) > kMaxWorldCoordinate ||
+                            std::abs(wz) > kMaxWorldCoordinate) {
+                            continue;
+                        }
+                        mapCloud->addPoint(CCVector3(wx, wy, wz));
+                        if (anyRgb) {
+                            const QRgb rgb = frame.frameRgb.pixel(x, y);
+                            mapCloud->addRGBColor(
+                                    static_cast<ColorCompType>(qRed(rgb)),
+                                    static_cast<ColorCompType>(qGreen(rgb)),
+                                    static_cast<ColorCompType>(qBlue(rgb)));
+                        }
+                        ++added;
+                    }
+                }
             }
+            totalPoints = added;
+            mapCloud->showColors(anyRgb);
+            mapCloud->setDisplay(m_app->getActiveGLDisplay());
+            mapCloud->setVisible(true);
+            group->addChild(mapCloud);
+        } else {
+            delete mapCloud;
         }
+    }
+
+    // COLMAP-style camera frustum per frame (the same ccCameraSensor
+    // objects the Reconstruction module renders).
+    for (int f = 0; f < result.frames.size(); ++f) {
+        const LingbotFrameResult& frame = result.frames[f];
+        if (frame.c2w.size() < 16) continue;
+        const float fx = frame.intrinsics.value(0, 0.f);
+        if (fx <= 0.f) continue;
+        ccCameraSensor* sensor = buildCameraSensor(
+                frame.c2w.constData(), fx, frame.width, frame.height,
+                cameraDisplaySize);
+        if (!sensor) continue;
+        sensor->setName(QStringLiteral("LingbotMap_cam_%1")
+                                .arg(frame.globalIndex >= 0
+                                             ? frame.globalIndex
+                                             : f,
+                                     6, 10, QLatin1Char('0')));
+        sensor->setMetaData(QStringLiteral("LingbotMap"), true);
+        sensor->setDisplay(m_app->getActiveGLDisplay());
+        group->addChild(sensor);
+        m_frameCameraIds.push_back(sensor->getUniqueID());
     }
 
     // Camera trajectory as a continuous polyline through the per-frame
@@ -580,9 +635,7 @@ bool qLingbotMap::addResultToDb(const LingbotRunResult& result,
     // Playback state over this result (official viewer playback).
     m_resultGroupId = group->getUniqueID();
     m_playbackFrame = 0;
-    const unsigned cameraCount = static_cast<unsigned>(
-            group->getChildrenNumber() - m_frameCloudIds.size() -
-            (trajectory ? 1u : 0u));
+    const unsigned cameraCount = static_cast<unsigned>(m_frameCameraIds.size());
 
     // addToDB (not a raw addChild): the app facade handles the DB tree
     // insertion AND refits the active VTK window on the new reconstruction,
@@ -590,9 +643,8 @@ bool qLingbotMap::addResultToDb(const LingbotRunResult& result,
     m_app->addToDB(group, /*updateZoom=*/true, /*autoExpandDBTree=*/true,
                    /*checkDimensions=*/false, /*autoRedraw=*/true);
     m_dialog->appendLog(
-            tr("[LingbotMap] Added %1 frame clouds (%2 points) + %3 cameras + "
-               "trajectory in %4 s.")
-                    .arg(m_frameCloudIds.size())
+            tr("[LingbotMap] Added merged map cloud (%1 points) + %2 cameras "
+               "+ trajectory in %3 s.")
                     .arg(totalPoints)
                     .arg(cameraCount)
                     .arg(timer.elapsed() / 1000.0, 0, 'f', 1));
@@ -616,9 +668,9 @@ void qLingbotMap::onPlaybackSettingsChanged(bool enabled,
         if (m_app && m_resultGroupId != 0) {
             if (ccHObject* group =
                         m_app->dbRootObject()->find(m_resultGroupId)) {
-                for (unsigned id : m_frameCloudIds) {
-                    if (ccHObject* cloud = group->find(id)) {
-                        cloud->setEnabled(true);
+                for (unsigned id : m_frameCameraIds) {
+                    if (ccHObject* cam = group->find(id)) {
+                        cam->setEnabled(true);
                     }
                 }
                 m_app->refreshAll(false, false);
@@ -628,7 +680,7 @@ void qLingbotMap::onPlaybackSettingsChanged(bool enabled,
 }
 
 void qLingbotMap::startPlayback() {
-    if (!m_app || m_frameCloudIds.empty()) return;
+    if (!m_app || m_frameCameraIds.empty()) return;
     m_playbackFrame = 0;
     m_playbackTimer->start(1000 / std::max(1, m_playbackFps));
 }
@@ -638,7 +690,7 @@ void qLingbotMap::stopPlayback() {
 }
 
 void qLingbotMap::onPlaybackTick() {
-    if (!m_app || m_frameCloudIds.empty()) {
+    if (!m_app || m_frameCameraIds.empty()) {
         stopPlayback();
         return;
     }
@@ -646,15 +698,17 @@ void qLingbotMap::onPlaybackTick() {
     ccHObject* group = root ? root->find(m_resultGroupId) : nullptr;
     if (!group) {  // result deleted by the user: stop the loop
         stopPlayback();
-        m_frameCloudIds.clear();
+        m_frameCameraIds.clear();
         m_resultGroupId = 0;
         return;
     }
-    const int count = static_cast<int>(m_frameCloudIds.size());
+    // The map is a single merged cloud; the frame walk cycles the camera
+    // frustums instead (currentFrameOnly: one frustum at a time).
+    const int count = static_cast<int>(m_frameCameraIds.size());
     for (int i = 0; i < count; ++i) {
-        ccHObject* cloud = group->find(m_frameCloudIds[static_cast<size_t>(i)]);
-        if (!cloud) continue;
-        cloud->setEnabled(!m_playbackCurrentFrameOnly || i == m_playbackFrame);
+        ccHObject* cam = group->find(m_frameCameraIds[static_cast<size_t>(i)]);
+        if (!cam) continue;
+        cam->setEnabled(!m_playbackCurrentFrameOnly || i == m_playbackFrame);
     }
     m_playbackFrame = (m_playbackFrame + 1) % count;
     m_app->refreshAll(/*only2D=*/false, /*forceRedraw=*/false);

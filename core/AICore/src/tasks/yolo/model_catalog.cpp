@@ -23,10 +23,11 @@ static constexpr const char* kDownloadBase =
         "yolo_gguf_models/";
 
 // One catalog family (release filename stem without the -<quant> suffix).
-// Filenames follow the yolo_gguf_models release exactly (72 variants x 3
-// quantizations = 215 gguf assets — the multilingual bridge ships f16 +
+// Filenames follow the yolo_gguf_models release exactly (77 variants x 3
+// quantizations = 230 gguf assets — the multilingual bridge ships f16 +
 // q8_0 only —, verified against the GitHub release expanded-assets listing;
-// the obb/sem families ship both the 640 canonical speed graphs and the
+// the 77 include the 5 native reid encoders published 2026-09-19; the
+// obb/sem families ship both the 640 canonical speed graphs and the
 // checkpoint-native 1024 resolution rebuilds).
 struct VariantInfo {
     const char* name;     // release stem ("yolov8n", "yolo26n-depth", ...)
