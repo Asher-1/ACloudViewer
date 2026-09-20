@@ -331,7 +331,7 @@ bool StereoDepthMapsReadyWithSuffix(
 }
 
 std::filesystem::file_time_type NewestFileTimeWithSuffix(
-        const std::string& dir_path, const char* suffix) {
+        const std::filesystem::path& dir_path, const char* suffix) {
     std::filesystem::file_time_type newest{};
     bool found = false;
     std::error_code ec;
@@ -360,7 +360,7 @@ std::filesystem::file_time_type NewestFileTimeWithSuffix(
 }
 
 std::filesystem::file_time_type OldestFileTimeWithSuffix(
-        const std::string& dir_path, const char* suffix) {
+        const std::filesystem::path& dir_path, const char* suffix) {
     std::filesystem::file_time_type oldest{};
     bool found = false;
     std::error_code ec;
@@ -1090,15 +1090,15 @@ bool WriteDenseSparseFromMultiview(
     data.intr = multi.intr.data();
 
     if (aicore_depth_write_colmap_from_multiview(
-            ctx, cpaths.data(), cnames.data(), &data, sparse_dir.c_str(), 1) !=
-        0) {
+            ctx, cpaths.data(), cnames.data(), &data,
+            sparse_dir.string().c_str(), 1) != 0) {
         LOG(ERROR) << "DA3: failed to sync dense sparse model: "
                    << aicore_depth_last_error(ctx);
         RECON_LOG_ERROR("ERROR: DA3 dense sparse sync failed: %s\n", aicore_depth_last_error(ctx));
         return false;
     }
 
-    RECON_LOG_DEBUG("DA3 depth export: synced dense sparse model (cameras/poses) to %s\n", sparse_dir.c_str());
+    RECON_LOG_DEBUG("DA3 depth export: synced dense sparse model (cameras/poses) to %s\n", sparse_dir.string().c_str());
     return true;
 }
 
@@ -1426,7 +1426,7 @@ void WritePatchMatchStereoConfigFromSparse(
         }
     }
 
-    RECON_LOG_DEBUG("DA3 depth export: wrote sparse co-visibility vis.dat and "                  "patch-match.cfg (skipped consistency graphs) under %s\n", stereo_path.string().c_str());
+    RECON_LOG_DEBUG("DA3 depth export: wrote sparse co-visibility vis.dat and " "patch-match.cfg (skipped consistency graphs) under %s\n", stereo_path.string().c_str());
 }
 
 void WriteDA3ConsistencyGraphsAndVisDat(
@@ -1510,7 +1510,7 @@ void WriteDA3ConsistencyGraphsAndVisDat(
         }
     }
 
-    RECON_LOG_DEBUG("DA3 depth export: wrote consistency graphs, vis.dat, "                  "patch-match.cfg under %s\n", stereo_path.string().c_str());
+    RECON_LOG_DEBUG("DA3 depth export: wrote consistency graphs, vis.dat, " "patch-match.cfg under %s\n", stereo_path.string().c_str());
 }
 
 void FilterExportedDepthMapsColmapInPlace(
@@ -1525,7 +1525,7 @@ void FilterExportedDepthMapsColmapInPlace(
     for (const auto& view : *views) {
         if (!view.has_camera || view.depth.empty() || view.w <= 0 ||
             view.h <= 0) {
-            RECON_LOG_DEBUG("DA3 depth export: skip COLMAP-camera cleaning "                          "(missing undistorted camera for one or more views)\n");
+            RECON_LOG_DEBUG("DA3 depth export: skip COLMAP-camera cleaning " "(missing undistorted camera for one or more views)\n");
             return;
         }
     }
@@ -1881,7 +1881,7 @@ bool WriteStereoMapsFromMultiview(
                                         /*min_views=*/2,
                                         /*sample_stride=*/4);
     } else {
-        RECON_LOG_DEBUG("DA3 depth export: skip low-res DA3-camera cleaning "                      "(COLMAP poses authoritative)\n");
+        RECON_LOG_DEBUG("DA3 depth export: skip low-res DA3-camera cleaning " "(COLMAP poses authoritative)\n");
     }
 
     std::unique_ptr<Reconstruction> undist_reconstruction;
@@ -1970,9 +1970,9 @@ bool WriteStereoMapsFromMultiview(
         }
 
         if (export_photometric_prior && fast_depth_export) {
-            RECON_LOG_DEBUG("DA3 depth export: skip COLMAP-camera cleaning "                          "(direct fusion path; voxel consensus filters priors)\n");
+            RECON_LOG_DEBUG("DA3 depth export: skip COLMAP-camera cleaning " "(direct fusion path; voxel consensus filters priors)\n");
         } else if (export_photometric_prior && !fast_depth_export) {
-            RECON_LOG_DEBUG("DA3 depth export: skip COLMAP-camera cleaning "                          "(PatchMatch geometric refine will optimize depth)\n");
+            RECON_LOG_DEBUG("DA3 depth export: skip COLMAP-camera cleaning " "(PatchMatch geometric refine will optimize depth)\n");
         } else {
         if (export_photometric_prior) {
             RECON_LOG_DEBUG("DA3 depth export: COLMAP-camera cleaning on priors\n");
@@ -1993,7 +1993,7 @@ bool WriteStereoMapsFromMultiview(
                 /*min_views=*/2,
                 /*sample_stride=*/4);
         } else {
-            RECON_LOG_DEBUG("DA3 depth export: skip COLMAP-camera cleaning "                          "(depth scale not aligned to sparse model)\n");
+            RECON_LOG_DEBUG("DA3 depth export: skip COLMAP-camera cleaning " "(depth scale not aligned to sparse model)\n");
         }
 
         const size_t pixels_after = CountValidDepthPixels(export_views);
@@ -2017,7 +2017,7 @@ bool WriteStereoMapsFromMultiview(
         }
     } else if (undist_reconstruction &&
                IsExifPlaceholderReconstruction(*undist_reconstruction)) {
-        RECON_LOG_DEBUG("DA3 depth export: undistorted sparse has EXIF placeholder "                      "poses; using DA3 inference cameras for cleaning\n");
+        RECON_LOG_DEBUG("DA3 depth export: undistorted sparse has EXIF placeholder " "poses; using DA3 inference cameras for cleaning\n");
         const size_t pixels_before = CountValidDepthPixels(export_views);
         FilterExportedDepthMapsColmapInPlace(
             &export_views,
@@ -2399,7 +2399,7 @@ void DA3DepthController::Run() {
 bool DA3DepthController::GenerateSparseModel() {
 #ifndef AICore_ENABLED
     LOG(ERROR) << "DA3: DA3 core library not enabled. Cannot run depth estimation.";
-    RECON_LOG_ERROR("ERROR: AICore not enabled (AICore_ENABLED not set at "                  "compile time). Rebuild with -DAICore_ENABLED=ON.\n");
+    RECON_LOG_ERROR("ERROR: AICore not enabled (AICore_ENABLED not set at " "compile time). Rebuild with -DAICore_ENABLED=ON.\n");
     return false;
 #else
     std::vector<DA3ImageEntry> entries = CollectDA3ImageEntries(image_path_);
@@ -2531,12 +2531,12 @@ bool DA3DepthController::GenerateDepthMaps(
     const DA3MultiviewCache* multiview_cache) {
 #ifndef AICore_ENABLED
     LOG(ERROR) << "DA3: DA3 core library not enabled. Cannot run depth estimation.";
-    RECON_LOG_ERROR("ERROR: AICore not enabled (AICore_ENABLED not set at "                  "compile time). Rebuild with -DAICore_ENABLED=ON.\n");
+    RECON_LOG_ERROR("ERROR: AICore not enabled (AICore_ENABLED not set at " "compile time). Rebuild with -DAICore_ENABLED=ON.\n");
     return false;
 #else
     if (!DA3ModelSupportsStereo(config_.model_type)) {
         LOG(ERROR) << "DA3: stereo depth inference requires a nested model";
-        RECON_LOG_ERROR("ERROR: DA3 stereo requires nested model "                      "(Nested AnyView / Nested Metric).\n");
+        RECON_LOG_ERROR("ERROR: DA3 stereo requires nested model " "(Nested AnyView / Nested Metric).\n");
         return false;
     }
 
@@ -2580,7 +2580,7 @@ bool DA3DepthController::GenerateDepthMaps(
 
     if (cache != nullptr && cache->valid && on_undistorted &&
         !cache->undistorted_images) {
-        RECON_LOG_DEBUG("DA3 GenerateDepthMaps: not reusing sparse multiview cache "                      "(need undistorted-image inference).\n");
+        RECON_LOG_DEBUG("DA3 GenerateDepthMaps: not reusing sparse multiview cache " "(need undistorted-image inference).\n");
     }
 
     if (reuse_cache) {

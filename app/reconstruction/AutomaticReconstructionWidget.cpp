@@ -763,8 +763,8 @@ void AutomaticReconstructionWidget::Run() {
     controller->AddCallback(Thread::FINISHED_CALLBACK, [this, controller]() {
         struct Results {
             std::vector<std::vector<colmap::PlyPoint>> fusedPoints;
-            std::vector<std::string> meshingPaths;
-            std::vector<std::string> texturedPaths;
+            std::vector<std::filesystem::path> meshingPaths;
+            std::vector<std::filesystem::path> texturedPaths;
             bool texturingSuccess = false;
             colmap::DA3VramCapWarning vramWarning;
         };
@@ -942,15 +942,15 @@ void AutomaticReconstructionWidget::RenderResult() {
                 // meshes
                 if (options_.texturing && texturing_success_ &&
                     !textured_paths_.empty()) {
-                    for (const std::string& path : textured_paths_) {
+                    for (const std::filesystem::path& path : textured_paths_) {
                         if (!ExistsFile(path)) {
                             CVLog::Warning(
                                     "[RenderResult] Ignore invalid textured "
                                     "mesh for file [%s]",
-                                    path.c_str());
+                                    path.string().c_str());
                             continue;
                         }
-                        filenames.push_back(path.c_str());
+                        filenames.push_back(path.string().c_str());
                     }
                     if (!filenames.isEmpty()) {
                         CVLog::Print("Adding %d textured mesh(es) to scene",
@@ -960,15 +960,15 @@ void AutomaticReconstructionWidget::RenderResult() {
                 }
                 // Otherwise, add non-textured meshes
                 else if (!meshing_paths_.empty()) {
-                    for (const std::string& path : meshing_paths_) {
+                    for (const std::filesystem::path& path : meshing_paths_) {
                         if (!ExistsFile(path)) {
                             CVLog::Warning(
                                     "[RenderResult] Ignore invalid meshed "
                                     "model for file [%s]",
-                                    path.c_str());
+                                    path.string().c_str());
                             continue;
                         }
-                        filenames.push_back(path.c_str());
+                        filenames.push_back(path.string().c_str());
                     }
                     if (!filenames.isEmpty()) {
                         CVLog::Print("Adding %d mesh(es) to scene",

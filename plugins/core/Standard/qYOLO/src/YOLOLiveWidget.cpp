@@ -16,6 +16,7 @@
 #include <QFileInfo>
 #include <QFont>
 #include <QFormLayout>
+#include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMetaObject>
@@ -56,7 +57,17 @@ YOLOLiveWidget::YOLOLiveWidget(QWidget* parent) : VideoPlaybackWidget(parent) {
     // display tick paints the newest frame with the latest cached results.
     // Inference runs as an async side branch — it must not pace the display.
     setupUi();
-    setPreviewFixedHeight(300);
+    // Live preview is the main content of the dialog: size its baseline to
+    // the screen (~60% of the available height; availableGeometry is in
+    // device-independent pixels, so this adapts to any resolution and
+    // platform) instead of a fixed 300 px that squeezed the video under
+    // the surrounding controls. The label still grows with the window
+    // (fixed height = minimum here, no maximum is imposed).
+    const QRect screenAvail =
+            QGuiApplication::primaryScreen()
+                    ? QGuiApplication::primaryScreen()->availableGeometry()
+                    : QRect(0, 0, 1280, 800);
+    setPreviewFixedHeight(std::clamp(screenAvail.height() * 3 / 5, 480, 900));
 
     ensureInferThread();
 }

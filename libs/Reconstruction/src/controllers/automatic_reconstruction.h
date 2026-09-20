@@ -162,9 +162,10 @@ protected:
     virtual void OnFusedPointsGenerated(size_t reconstruction_idx,
                                         const std::vector<PlyPoint>& points) {}
     virtual void OnMeshGenerated(size_t reconstruction_idx,
-                                 const std::string& mesh_path) {}
-    virtual void OnTexturedMeshGenerated(size_t reconstruction_idx,
-                                         const std::string& textured_path) {}
+                                 const std::filesystem::path& mesh_path) {}
+    virtual void OnTexturedMeshGenerated(
+            size_t reconstruction_idx,
+            const std::filesystem::path& textured_path) {}
 
     // Protected members for derived classes
     const Options options_;

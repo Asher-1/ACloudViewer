@@ -9,6 +9,8 @@
 // official appearance-embedding extraction semantics (save_one_box crops,
 // square stretch to the model input, pooled pre-linear feature readback).
 
+#include <QtCompat.h>
+
 #include <QImage>
 #include <algorithm>
 #include <cmath>
@@ -112,8 +114,12 @@ QImage view_to_rgb(const aicore_image_view* view) {
                          (int)view->row_stride_bytes, QImage::Format_RGB888);
             break;
         case AICORE_IMAGE_BGR8:
+            // Format_BGR888 requires Qt 5.14+; on older Qt5 the compat
+            // helper returns Format_Invalid so the QImage stays null and is
+            // rejected by the isNull() guard below.
             img = QImage(view->data, view->width, view->height,
-                         (int)view->row_stride_bytes, QImage::Format_BGR888);
+                         (int)view->row_stride_bytes,
+                         qtCompatQImageFormatBgr888());
             break;
         case AICORE_IMAGE_RGBA8:
             img = QImage(view->data, view->width, view->height,

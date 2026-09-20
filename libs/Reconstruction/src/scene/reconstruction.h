@@ -174,7 +174,7 @@ public:
             const Eigen::Vector3ub& color = Eigen::Vector3ub::Zero());
 
     // Add new 3D point with known ID (upstream parity, dbb41680).
-    void AddPoint3D(const point3D_t point3D_id, struct Point3D point3D);
+    void AddPoint3D(const point3D_t point3D_id, class Point3D point3D);
 
     // Add observation to existing 3D point.
     void AddObservation(const point3D_t point3D_id,

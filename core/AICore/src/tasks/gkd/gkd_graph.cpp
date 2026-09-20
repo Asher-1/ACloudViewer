@@ -671,16 +671,16 @@ bool GkdSession::build_detect_graph(int n_t_pad, int n_v_pad) {
                                        (size_t)n_t_pad * msk_c->nb[0]);
         ggml_tensor* num =
                 ggml_add(b, ggml_mul(b, hm_t, mt), ggml_mul(b, hm_v, mv));
-        ggml_tensor* den = ggml_add1(
+        ggml_tensor* den = ggml_add(
                 b, ggml_add(b, mt, mv),
                 ggml_fill(b, ggml_new_tensor_1d(b, GGML_TYPE_F32, 1), 1e-12f));
         fused = ggml_div(b, num, den);
     } else {
         fused = ggml_div(
                 b, ggml_mul(b, heat, msk_c),
-                ggml_add1(b, msk_c,
-                          ggml_fill(b, ggml_new_tensor_1d(b, GGML_TYPE_F32, 1),
-                                    1e-12f)));
+                ggml_add(b, msk_c,
+                         ggml_fill(b, ggml_new_tensor_1d(b, GGML_TYPE_F32, 1),
+                                   1e-12f)));
     }
 
     dcache_.output = fused;

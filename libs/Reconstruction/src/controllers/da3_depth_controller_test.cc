@@ -139,8 +139,8 @@ TEST(controllers_da3_depth_controller, TestDA3DepthControllerConstruction) {
     auto temp_dir = std::filesystem::temp_directory_path() / "da3_ctrl_test";
     std::filesystem::create_directories(temp_dir);
 
-    DA3DepthController controller(config, (std::filesystem::temp_directory_path() / "images").string(),
-                                    temp_dir.string());
+    DA3DepthController controller(
+            config, std::filesystem::temp_directory_path() / "images", temp_dir);
 
     bool callback_called = false;
     controller.SetProgressCallback(

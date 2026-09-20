@@ -304,7 +304,7 @@ void ObservationManager::DeleteObservation(const image_t image_id,
   // to `ObservationManager::ResetTriObservations`
   Image& image = reconstruction_.Image(image_id);
   const point3D_t point3D_id = image.Point2D(point2D_idx).Point3DId();
-  struct Point3D& point3D = reconstruction_.Point3D(point3D_id);
+  class Point3D& point3D = reconstruction_.Point3D(point3D_id);
 
   if (point3D.Track().Length() <= 2) {
     DeletePoint3D(point3D_id);
@@ -391,7 +391,7 @@ size_t ObservationManager::FilterPoints3DWithShortTracks(
   const std::unordered_set<point3D_t> all_point3D_ids =
       reconstruction_.Point3DIds();
   for (const point3D_t point3D_id : all_point3D_ids) {
-    const struct Point3D& point3D = reconstruction_.Point3D(point3D_id);
+    const class Point3D& point3D = reconstruction_.Point3D(point3D_id);
     if (point3D.Track().Length() < min_track_length) {
       num_filtered_observations += point3D.Track().Length();
       DeletePoint3D(point3D_id);
@@ -414,7 +414,7 @@ size_t ObservationManager::FilterObservationsWithNegativeDepth() {
            ++point2D_idx) {
         const Point2D& point2D = image.Point2D(point2D_idx);
         if (point2D.HasPoint3D()) {
-          const struct Point3D& point3D =
+          const class Point3D& point3D =
               reconstruction_.Point3D(point2D.Point3DId());
           if (!HasPointPositiveDepth(cam_from_world, point3D.XYZ())) {
             DeleteObservation(image_id, point2D_idx);
@@ -443,7 +443,7 @@ size_t ObservationManager::FilterPoints3DWithSmallTriangulationAngle(
       continue;
     }
 
-    const struct Point3D& point3D = reconstruction_.Point3D(point3D_id);
+    const class Point3D& point3D = reconstruction_.Point3D(point3D_id);
 
     // Calculate triangulation angle for all pairwise combinations of image
     // poses in the track. Only delete point if none of the combinations
@@ -499,7 +499,7 @@ size_t ObservationManager::FilterPoints3DWithLargeReprojectionError(
       continue;
     }
 
-    struct Point3D& point3D = reconstruction_.Point3D(point3D_id);
+    class Point3D& point3D = reconstruction_.Point3D(point3D_id);
 
     if (point3D.Track().Length() < 2) {
       num_filtered_observations += point3D.Track().Length();

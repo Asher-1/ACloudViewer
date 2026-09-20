@@ -16,6 +16,7 @@
 #include <QFontMetrics>
 #include <QFormLayout>
 #include <QGridLayout>
+#include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -24,6 +25,7 @@
 #include <QLabel>
 #include <QListWidgetItem>
 #include <QMessageBox>
+#include <QScreen>
 #include <QScrollArea>
 #include <QSet>
 #include <QSettings>
@@ -32,6 +34,7 @@
 #include <QSplitter>
 #include <QTimer>
 #include <QVBoxLayout>
+#include <algorithm>
 
 #include "ecvAICoreUiHelper.h"
 #include "ecvClickableImageLabel.h"
@@ -915,6 +918,23 @@ void YOLODialog::loadSettings() {
         m_bodySplitter->restoreState(splitterState)) {
         m_splitterRestored = true;
     }
+    // Window geometry: restore the last session; on first run (or a
+    // missing/invalid blob) fall back to a screen-adaptive default of ~80%
+    // of the available geometry, never below the content-driven minimum —
+    // so the dialog opens large enough for the Live preview on any
+    // resolution and platform without covering its own controls.
+    const QByteArray windowGeo =
+            settings.value(QStringLiteral("windowGeometry")).toByteArray();
+    if (!windowGeo.isEmpty() && restoreGeometry(windowGeo)) {
+        // restored
+    } else {
+        const QRect avail =
+                QGuiApplication::primaryScreen()
+                        ? QGuiApplication::primaryScreen()->availableGeometry()
+                        : QRect(0, 0, 1280, 800);
+        resize(std::max(minimumSizeHint().width(), avail.width() * 4 / 5),
+               std::max(minimumSizeHint().height(), avail.height() * 4 / 5));
+    }
     settings.endGroup();
     // Recalibrate every panel's confidence to its restored text tower's
     // score band. The tower combo may not emit when the restored entry
@@ -963,6 +983,8 @@ void YOLODialog::saveSettings() const {
         settings.setValue(QStringLiteral("bodySplitterState"),
                           m_bodySplitter->saveState());
     }
+    // Window geometry: persist across sessions.
+    settings.setValue(QStringLiteral("windowGeometry"), saveGeometry());
     settings.endGroup();
 }
 

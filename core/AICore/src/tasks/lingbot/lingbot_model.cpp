@@ -2581,7 +2581,7 @@ bool model::infer(const float *images,
                          "DBG dump write: dump_stages=%d dump_internal=%d "
                          "debug_tensors=%zu path=%s\n",
                          (int)dump_stages, (int)g.dump_internal,
-                         g.debug_tensors.size(), dump);
+                         g.debug_tensors.size(), dump.c_str());
             for (size_t di = 0; di < g.debug_tensors.size(); ++di) {
                 const auto &item = g.debug_tensors[di];
                 const auto *tensor = item.second;

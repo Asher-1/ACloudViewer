@@ -277,7 +277,7 @@ void ReadPoints3DBinary(Reconstruction& reconstruction, std::istream& stream) {
 
   const size_t num_points3D = ReadBinaryLittleEndian<uint64_t>(&stream);
   for (size_t i = 0; i < num_points3D; ++i) {
-    struct Point3D point3D;
+    class Point3D point3D;
 
     const point3D_t point3D_id = ReadBinaryLittleEndian<point3D_t>(&stream);
 

@@ -320,7 +320,7 @@ std::vector<PlyPoint> SparsePointsToPly(const Reconstruction& reconstruction) {
   return points;
 }
 
-void RemovePathIfExists(const std::string& path) {
+void RemovePathIfExists(const std::filesystem::path& path) {
   std::error_code ec;
   if (ExistsFile(path)) {
     std::filesystem::remove(path, ec);
@@ -605,16 +605,16 @@ void AutomaticReconstructionController::Run() {
   LoadWorkspaceSparseIfEmpty(reconstruction_manager_, options_.workspace_path);
 
   if (da3_auto_colmap_sparse_) {
-    RECON_LOG_DEBUG("DA3: %zu images — using COLMAP sparse reconstruction for global "                  "camera poses; DA3 sequential per-view depth for dense.\n", num_da3_images);
+    RECON_LOG_DEBUG("DA3: %zu images — using COLMAP sparse reconstruction for global " "camera poses; DA3 sequential per-view depth for dense.\n", num_da3_images);
     if (da3_patchmatch_refine_) {
       if (da3_skip_geometric_refine_) {
-        RECON_LOG_DEBUG("DA3: dense stage uses metric depth priors + DA3 voxel "                      "fusion (skip geometric refine; auto-fallback to "                      "PatchMatch geometric if fusion is sparse).\n");
+        RECON_LOG_DEBUG("DA3: dense stage uses metric depth priors + DA3 voxel " "fusion (skip geometric refine; auto-fallback to " "PatchMatch geometric if fusion is sparse).\n");
       } else {
-        RECON_LOG_DEBUG("DA3: dense stage uses metric depth priors (replace "                      "PatchMatch photometric) + fast geometric refine + "                      "StereoFusion.\n");
+        RECON_LOG_DEBUG("DA3: dense stage uses metric depth priors (replace " "PatchMatch photometric) + fast geometric refine + " "StereoFusion.\n");
       }
     }
   } else if (da3_unified_undistorted_) {
-    RECON_LOG_DEBUG("DA3: unified undistorted mode (sequential per-view depth on "                  "undistorted images; workspace sparse synced from dense)\n");
+    RECON_LOG_DEBUG("DA3: unified undistorted mode (sequential per-view depth on " "undistorted images; workspace sparse synced from dense)\n");
   } else if (da3_reuse_sparse_stereo_) {
     RECON_LOG_DEBUG("DA3: sparse and stereo share sequential depth inference cache\n");
   }
@@ -648,7 +648,7 @@ void AutomaticReconstructionController::Run() {
         return;
       }
     } else {
-      RECON_LOG_DEBUG("Skipping feature extraction/matching (workspace sparse "                    "model already available).\n");
+      RECON_LOG_DEBUG("Skipping feature extraction/matching (workspace sparse " "model already available).\n");
     }
 
     if (options_.sparse) {
@@ -664,14 +664,14 @@ void AutomaticReconstructionController::Run() {
     if (options_.stereo_mode == StereoPipelineMode::DA3_DEPTH_INFERENCE &&
         options_.sparse_mode != SparseModelMode::DA3_DEPTH_POSE &&
         !da3_auto_colmap_sparse_) {
-      RECON_LOG_WARN("WARNING: DA3 depth inference is configured with a non-DA3 "                    "sparse model. Camera poses may not match metric depth; "                    "prefer Sparse mode = DA3 (depth+pose).\n");
+      RECON_LOG_WARN("WARNING: DA3 depth inference is configured with a non-DA3 " "sparse model. Camera poses may not match metric depth; " "prefer Sparse mode = DA3 (depth+pose).\n");
     }
     if (options_.stereo_mode == StereoPipelineMode::DA3_DEPTH_INFERENCE &&
         !use_da3_stereo_maps_) {
 #ifdef CUDA_ENABLED
-      RECON_LOG_WARN("WARNING: DA3 depth inference requires a nested model "                    "(Nested AnyView / Nested Metric). "                    "Falling back to COLMAP PatchMatch stereo.\n");
+      RECON_LOG_WARN("WARNING: DA3 depth inference requires a nested model " "(Nested AnyView / Nested Metric). " "Falling back to COLMAP PatchMatch stereo.\n");
 #else
-      RECON_LOG_WARN("ERROR: DA3 depth inference requires a nested model "                    "(Nested AnyView / Nested Metric) and AICore. "                    "COLMAP PatchMatch stereo is not available without CUDA.\n");
+      RECON_LOG_WARN("ERROR: DA3 depth inference requires a nested model " "(Nested AnyView / Nested Metric) and AICore. " "COLMAP PatchMatch stereo is not available without CUDA.\n");
 #endif
     }
     if (use_da3_stereo_maps_) {
@@ -725,7 +725,7 @@ void AutomaticReconstructionController::RunSparseMapper() {
     auto dir_list = GetDirList(sparse_path);
     std::sort(dir_list.begin(), dir_list.end());
     if (dir_list.size() > 0) {
-      RECON_LOG_WARN("WARNING: Skipping sparse reconstruction because it is "                    "already computed\n");
+      RECON_LOG_WARN("WARNING: Skipping sparse reconstruction because it is " "already computed\n");
       for (const auto& dir : dir_list) {
         reconstruction_manager_->Read(dir);
       }
@@ -852,14 +852,14 @@ void AutomaticReconstructionController::RunDA3SparseMapper() {
   // Read back the generated sparse model
   if (ExistsDir(sparse_0)) {
     reconstruction_manager_->Read(sparse_0);
-    RECON_LOG_DEBUG("DA3 sparse: loaded %zu reconstruction(s) from %s\n", reconstruction_manager_->Size(), sparse_0.c_str());
+    RECON_LOG_DEBUG("DA3 sparse: loaded %zu reconstruction(s) from %s\n", reconstruction_manager_->Size(), sparse_0.string().c_str());
 
     if (reconstruction_manager_->Size() > 0) {
       WriteDA3PlaceholderDatabase(*option_manager_.database_path,
                                   reconstruction_manager_->Get(0));
     }
   } else {
-    RECON_LOG_ERROR("ERROR: DA3 sparse model generation produced no output at %s.  Check stderr / glog for details.\n", sparse_0.c_str());
+    RECON_LOG_ERROR("ERROR: DA3 sparse model generation produced no output at %s.  Check stderr / glog for details.\n", sparse_0.string().c_str());
   }
 }
 
@@ -898,7 +898,7 @@ void AutomaticReconstructionController::RunDA3DepthMaps() {
   }
 
   if (reconstruction_manager_->Size() == 0) {
-    RECON_LOG_WARN("WARNING: DA3 depth map generation skipped — no sparse "                  "reconstructions available.  Run sparse reconstruction first.\n");
+    RECON_LOG_WARN("WARNING: DA3 depth map generation skipped — no sparse " "reconstructions available.  Run sparse reconstruction first.\n");
     return;
   }
 
@@ -1070,9 +1070,9 @@ void AutomaticReconstructionController::RunDenseMapper() {
                 DA3OutputsAreStale(fusion_freshness_root, stereo_marker,
                                    options_.da3_force_recompute)));
 
-    const std::string freshness_marker =
+    const std::filesystem::path freshness_marker =
         use_da3_stereo_maps_ && ExistsFile(stereo_marker) ? stereo_marker
-                                                          : fused_path;
+                                                        : fused_path;
     if (ExistsFile(fused_path) &&
         (!options_.meshing || ExistsFile(meshing_path)) &&
         !dense_outputs_stale &&
@@ -1122,9 +1122,9 @@ void AutomaticReconstructionController::RunDenseMapper() {
               MakeDA3PatchMatchRefineOptions(*option_manager_.patch_match_stereo);
           da3_used_fast_patchmatch = patch_match_options.skip_photometric_pass;
           if (patch_match_options.skip_photometric_pass) {
-            RECON_LOG_DEBUG("DA3: fast PatchMatch geometric refine from metric "                          "depth priors (photometric pass skipped; set "                          "DA3_FULL_PATCHMATCH=1 for full NCC re-optimization).\n");
+            RECON_LOG_DEBUG("DA3: fast PatchMatch geometric refine from metric " "depth priors (photometric pass skipped; set " "DA3_FULL_PATCHMATCH=1 for full NCC re-optimization).\n");
           } else {
-            RECON_LOG_DEBUG("DA3: full PatchMatch refine from metric depth priors "                          "(photometric NCC re-optimization enabled).\n");
+            RECON_LOG_DEBUG("DA3: full PatchMatch refine from metric depth priors " "(photometric NCC re-optimization enabled).\n");
           }
           mvs::PatchMatchController patch_match_controller(
               patch_match_options, dense_path, "COLMAP", "");
@@ -1150,7 +1150,7 @@ void AutomaticReconstructionController::RunDenseMapper() {
               i);
 #endif  // CUDA_ENABLED
     } else if (use_da3_stereo_maps_ && da3_skip_geometric_refine_) {
-      RECON_LOG_DEBUG("DA3: skipping PatchMatch geometric refine; fusing DA3 "                    "priors directly.\n");
+      RECON_LOG_DEBUG("DA3: skipping PatchMatch geometric refine; fusing DA3 " "priors directly.\n");
     } else if (use_da3_stereo_maps_) {
       RECON_LOG_DEBUG("Skipping PatchMatch stereo: using DA3 depth maps directly.\n");
     }
@@ -1193,7 +1193,7 @@ void AutomaticReconstructionController::RunDenseMapper() {
       } else if (use_da3_stereo_maps_ &&
                  (!ExistsFile(stereo_marker) ||
                   !DA3StereoDepthMapsReady(dense_path))) {
-        RECON_LOG_ERROR("ERROR: DA3 stereo outputs missing for dense/%zu (fusion.cfg or depth maps). Skipping fusion — "                      "depth inference may have failed (e.g. GPU out of memory).\n", i);
+        RECON_LOG_ERROR("ERROR: DA3 stereo outputs missing for dense/%zu (fusion.cfg or depth maps). Skipping fusion — " "depth inference may have failed (e.g. GPU out of memory).\n", i);
         continue;
       }
 
@@ -1203,9 +1203,9 @@ void AutomaticReconstructionController::RunDenseMapper() {
         const auto da3_fusion_options = MakeDA3FusionOptions(
             options_, option_manager_.patch_match_stereo->max_image_size,
             *option_manager_.stereo_fusion);
-        RECON_LOG_DEBUG("Using DA3 voxel fusion on geometric depth maps "                      "(consensus_cell=%fm, stride=%d, min_views=%d, depth_err=%f).\n", da3_fusion_options.fusion_voxel_size, da3_fusion_options.pixel_stride, da3_fusion_options.min_num_views, da3_fusion_options.max_depth_error);
+        RECON_LOG_DEBUG("Using DA3 voxel fusion on geometric depth maps " "(consensus_cell=%fm, stride=%d, min_views=%d, depth_err=%f).\n", da3_fusion_options.fusion_voxel_size, da3_fusion_options.pixel_stride, da3_fusion_options.min_num_views, da3_fusion_options.max_depth_error);
         const auto da3_fusion_result =
-            mvs::FuseDA3DepthMaps(dense_path, da3_fusion_options);
+            mvs::FuseDA3DepthMaps(dense_path.string(), da3_fusion_options);
         fused_cloud.points = da3_fusion_result.points;
         fused_cloud.visibility = da3_fusion_result.visibility;
         used_da3_custom_fusion = true;
@@ -1267,14 +1267,14 @@ void AutomaticReconstructionController::RunDenseMapper() {
           da3_fusion_options = MakeDA3DirectPriorFusionOptions(
               options_, option_manager_.stereo_fusion->max_image_size,
               *option_manager_.stereo_fusion);
-          RECON_LOG_DEBUG("Using DA3 voxel fusion on photometric depth priors "                        "(consensus_cell=%fm, depth_err=%f, point_dist=%f, min_views=%d).\n", da3_fusion_options.fusion_voxel_size, da3_fusion_options.max_depth_error, da3_fusion_options.max_point_dist, da3_fusion_options.min_num_views);
+          RECON_LOG_DEBUG("Using DA3 voxel fusion on photometric depth priors " "(consensus_cell=%fm, depth_err=%f, point_dist=%f, min_views=%d).\n", da3_fusion_options.fusion_voxel_size, da3_fusion_options.max_depth_error, da3_fusion_options.max_point_dist, da3_fusion_options.min_num_views);
           direct_fusion_result = mvs::FuseDA3DepthMaps(
-              dense_path, da3_fusion_options, "photometric");
+              dense_path.string(), da3_fusion_options, "photometric");
           fused_cloud.points = direct_fusion_result.points;
           fused_cloud.visibility = direct_fusion_result.visibility;
         } else {
           if (da3_patchmatch_refine_) {
-            RECON_LOG_DEBUG("Using COLMAP StereoFusion on PatchMatch-refined "                          "geometric depth maps.\n");
+            RECON_LOG_DEBUG("Using COLMAP StereoFusion on PatchMatch-refined " "geometric depth maps.\n");
           }
           mvs::StereoFusion fuser(fusion_options, dense_path, "COLMAP", "",
                                   fusion_input_type);
@@ -1290,7 +1290,7 @@ void AutomaticReconstructionController::RunDenseMapper() {
             direct_fusion_result, num_reg_images);
         if (da3_skip_geometric_refine_ && direct_fusion_gate.should_fallback) {
           const auto run_patchmatch_geometric_fallback = [&]() {
-            RECON_LOG_WARN("WARNING: falling back to PatchMatch geometric refine "                          "(close SIBR/BEV viewers to free GPU memory).\n");
+            RECON_LOG_WARN("WARNING: falling back to PatchMatch geometric refine " "(close SIBR/BEV viewers to free GPU memory).\n");
 #ifdef CUDA_ENABLED
             RemoveColmapGeometricStereoMaps(dense_path);
             auto patch_match_options = MakeDA3PatchMatchRefineOptions(
@@ -1341,14 +1341,14 @@ void AutomaticReconstructionController::RunDenseMapper() {
           }
 
           if (direct_fusion_gate.poor_consensus) {
-            RECON_LOG_WARN("WARNING: multi-view depth consensus too low; skipping "                          "relaxed fusion retry.\n");
+            RECON_LOG_WARN("WARNING: multi-view depth consensus too low; skipping " "relaxed fusion retry.\n");
             run_patchmatch_geometric_fallback();
           } else {
             RECON_LOG_DEBUG("Retrying with relaxed fusion thresholds.\n");
             const auto relaxed_fusion_options =
                 MakeDA3DirectPriorFusionRetryOptions(da3_fusion_options);
             const auto relaxed_fusion_result = mvs::FuseDA3DepthMaps(
-                dense_path, relaxed_fusion_options, "photometric");
+                dense_path.string(), relaxed_fusion_options, "photometric");
             const auto relaxed_gate = EvaluateDirectFusionQuality(
                 relaxed_fusion_result, num_reg_images);
             if (!relaxed_gate.should_fallback &&
@@ -1359,7 +1359,7 @@ void AutomaticReconstructionController::RunDenseMapper() {
               fused_cloud.visibility = relaxed_fusion_result.visibility;
               direct_fusion_gate = relaxed_gate;
             } else {
-              RECON_LOG_WARN("WARNING: relaxed DA3 fusion produced %zu points "                            "(adaptive min %zu).\n", relaxed_fusion_result.points.size(), relaxed_gate.min_points);
+              RECON_LOG_WARN("WARNING: relaxed DA3 fusion produced %zu points " "(adaptive min %zu).\n", relaxed_fusion_result.points.size(), relaxed_gate.min_points);
               run_patchmatch_geometric_fallback();
             }
           }
@@ -1404,7 +1404,7 @@ void AutomaticReconstructionController::RunDenseMapper() {
       }
 
       if (fused_cloud.points.empty() && use_da3_stereo_maps_) {
-        RECON_LOG_ERROR("ERROR: DA3 dense fusion failed; not writing sparse "                      "points3D into fused.ply (would cause fan-like ghosting). "                      "Enable Force recompute or check dense/0/stereo depth maps.\n");
+        RECON_LOG_ERROR("ERROR: DA3 dense fusion failed; not writing sparse " "points3D into fused.ply (would cause fan-like ghosting). " "Enable Force recompute or check dense/0/stereo depth maps.\n");
       }
       if (options_.fused_point_filter.enabled && !fused_cloud.points.empty()) {
         const auto unfiltered_cloud = fused_cloud;
@@ -1453,7 +1453,7 @@ void AutomaticReconstructionController::RunDenseMapper() {
       RECON_LOG_DEBUG("Skipping surface meshing (disabled in options).\n");
     } else if (!ExistsFile(meshing_path)) {
       if (!has_fused_points) {
-        RECON_LOG_WARN("WARNING: Skipping surface meshing because stereo fusion "                      "produced no points.\n");
+        RECON_LOG_WARN("WARNING: Skipping surface meshing because stereo fusion " "produced no points.\n");
       } else if (IsStopped()) {
         RECON_LOG_DEBUG("Skipping surface meshing (cancelled).\n");
       } else if (options_.mesher == Mesher::POISSON) {
@@ -1462,11 +1462,11 @@ void AutomaticReconstructionController::RunDenseMapper() {
                             meshing_path);
       } else if (options_.mesher == Mesher::DELAUNAY) {
 #ifdef CGAL_ENABLED
-        RECON_LOG_DEBUG("Starting Delaunay meshing (this step cannot be "                      "interrupted until it finishes)...\n");
+        RECON_LOG_DEBUG("Starting Delaunay meshing (this step cannot be " "interrupted until it finishes)...\n");
         mvs::DenseDelaunayMeshing(*option_manager_.delaunay_meshing, dense_path,
                                   meshing_path);
 #else  // CGAL_ENABLED
-        RECON_LOG_WARN("WARNING: Skipping Delaunay meshing because CGAL is "                      "not available.\n");
+        RECON_LOG_WARN("WARNING: Skipping Delaunay meshing because CGAL is " "not available.\n");
         return;
 
 #endif  // CGAL_ENABLED
@@ -1545,11 +1545,11 @@ void AutomaticReconstructionController::RunDenseMapper() {
         active_thread_ = nullptr;
 
         if (texturing.IsSuccess() && ExistsFile(textured_path)) {
-          RECON_LOG_DEBUG("Writing textured mesh: %s\n", textured_path.c_str());
+          RECON_LOG_DEBUG("Writing textured mesh: %s\n", textured_path.string().c_str());
           // Hook for derived classes
           OnTexturedMeshGenerated(i, textured_path);
         } else {
-          RECON_LOG_ERROR("Mesh texturing failed: %s\n", textured_path.c_str());
+          RECON_LOG_ERROR("Mesh texturing failed: %s\n", textured_path.string().c_str());
         }
       } else if (ExistsFile(textured_path)) {
         // Textured mesh already exists, notify derived classes

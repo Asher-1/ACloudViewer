@@ -357,7 +357,7 @@ void ReadPoints3DText(Reconstruction& reconstruction, std::istream& stream) {
     // ID
     point3D_t point3D_id;
 
-    struct Point3D point3D;
+    class Point3D point3D;
 
     // ID, XYZ, RGB
     int r, g, b;

@@ -378,7 +378,7 @@ point3D_t Reconstruction::AddPoint3D(const Eigen::Vector3d& xyz,
 
 // Add new 3D point with known ID (upstream parity, dbb41680 scene/reconstruction.cc).
 void Reconstruction::AddPoint3D(const point3D_t point3D_id,
-                                struct Point3D point3D) {
+                                class Point3D point3D) {
     // Fork parity: the fork allocates ids from num_added_points3D_; bump it
     // so subsequent allocating AddPoint3D calls never collide with loaded ids.
     num_added_points3D_ = std::max(num_added_points3D_, point3D_id);

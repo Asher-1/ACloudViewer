@@ -55,13 +55,13 @@ void AutomaticReconstructionController::OnFusedPointsGenerated(
 }
 
 void AutomaticReconstructionController::OnMeshGenerated(
-        size_t reconstruction_idx, const std::string& mesh_path) {
+        size_t reconstruction_idx, const std::filesystem::path& mesh_path) {
     // app-specific: Collect mesh path for visualization
     meshing_paths_.push_back(mesh_path);
 }
 
 void AutomaticReconstructionController::OnTexturedMeshGenerated(
-        size_t reconstruction_idx, const std::string& textured_path) {
+        size_t reconstruction_idx, const std::filesystem::path& textured_path) {
     // app-specific: Collect textured mesh path and mark success
     textured_paths_.push_back(textured_path);
     texturing_success_ = true;
