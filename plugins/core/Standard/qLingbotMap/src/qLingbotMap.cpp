@@ -278,8 +278,7 @@ void qLingbotMap::onFramePreview(const LingbotFramePreview& preview) {
 
     if (!preview.points.isEmpty()) {
         if (ccPointCloud* cloud = onlineCloud(parent)) {
-            const unsigned n =
-                    static_cast<unsigned>(preview.points.size() / 3);
+            const unsigned n = static_cast<unsigned>(preview.points.size() / 3);
             const unsigned cur = cloud->size();
             // Grow with slack so most appends skip the realloc+copy.
             if (cloud->reserve(cur + n + std::max<unsigned>(4096, cur / 4))) {
@@ -531,10 +530,8 @@ bool qLingbotMap::addResultToDb(const LingbotRunResult& result,
                         const float X = (x - in.cx) / in.fx * d;
                         const float Y = (y - in.cy) / in.fy * d;
                         const float Z = d;
-                        const float wx =
-                                R[0] * X + R[1] * Y + R[2] * Z + R[3];
-                        const float wy =
-                                R[4] * X + R[5] * Y + R[6] * Z + R[7];
+                        const float wx = R[0] * X + R[1] * Y + R[2] * Z + R[3];
+                        const float wy = R[4] * X + R[5] * Y + R[6] * Z + R[7];
                         const float wz =
                                 R[8] * X + R[9] * Y + R[10] * Z + R[11];
                         if (!std::isfinite(wx) || !std::isfinite(wy) ||
@@ -573,15 +570,14 @@ bool qLingbotMap::addResultToDb(const LingbotRunResult& result,
         if (frame.c2w.size() < 16) continue;
         const float fx = frame.intrinsics.value(0, 0.f);
         if (fx <= 0.f) continue;
-        ccCameraSensor* sensor = buildCameraSensor(
-                frame.c2w.constData(), fx, frame.width, frame.height,
-                cameraDisplaySize);
+        ccCameraSensor* sensor =
+                buildCameraSensor(frame.c2w.constData(), fx, frame.width,
+                                  frame.height, cameraDisplaySize);
         if (!sensor) continue;
-        sensor->setName(QStringLiteral("LingbotMap_cam_%1")
-                                .arg(frame.globalIndex >= 0
-                                             ? frame.globalIndex
-                                             : f,
-                                     6, 10, QLatin1Char('0')));
+        sensor->setName(
+                QStringLiteral("LingbotMap_cam_%1")
+                        .arg(frame.globalIndex >= 0 ? frame.globalIndex : f, 6,
+                             10, QLatin1Char('0')));
         sensor->setMetaData(QStringLiteral("LingbotMap"), true);
         sensor->setDisplay(m_app->getActiveGLDisplay());
         group->addChild(sensor);
