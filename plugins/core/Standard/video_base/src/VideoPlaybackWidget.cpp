@@ -959,6 +959,11 @@ void VideoPlaybackWidget::processFrame() {
         curFrameNum = m_frameReaderSeekTo.load();
     }
     m_currentFrameNum = curFrameNum;
+    // Last decoded frame SIZE, kept separately from m_latestFrame: in
+    // ConsumerDriven mode processFrame swaps m_latestFrame out (it stays
+    // empty between frames), so the coordinate mapping must not depend on
+    // it.
+    m_lastFrameSize = QSize(frame.cols, frame.rows);
 
     // Update video seek slider and time label
     if (m_inputSource == InputSource::VideoFile && !m_userSeeking) {
@@ -1367,13 +1372,11 @@ QRectF VideoPlaybackWidget::previewContentRect() const {
 
 QPointF VideoPlaybackWidget::mapPreviewToSource(QPointF labelPt) {
 #ifdef HAS_OPENCV_FACE_CAPTURE
-    int sourceWidth = 0;
-    int sourceHeight = 0;
-    {
-        QMutexLocker lock(&m_frameMutex);
-        sourceWidth = m_latestFrame.cols;
-        sourceHeight = m_latestFrame.rows;
-    }
+    // Source size comes from the cached last-frame size (m_latestFrame is
+    // swapped out between frames in ConsumerDriven mode and would read as
+    // empty here, breaking every mapping).
+    const int sourceWidth = m_lastFrameSize.width();
+    const int sourceHeight = m_lastFrameSize.height();
     const QRectF content = previewContentRect();
     if (sourceWidth <= 0 || sourceHeight <= 0 || content.isEmpty()) {
         return QPointF(-1, -1);
@@ -1483,7 +1486,19 @@ bool VideoPlaybackWidget::eventFilter(QObject* obj, QEvent* event) {
     // consumes the event entirely.
     if (obj == m_previewLabel) {
         switch (event->type()) {
+            case QEvent::Enter:
+                // Lowest-cost reachability probe: fires on hover, before
+                // any click is needed — a missing Enter line means events
+                // never reach the preview label at all (occlusion or
+                // filter installation), not a gesture-logic issue.
+                emit logMessage(
+                        QStringLiteral("[preview] mouse entered (events "
+                                       "reach the preview filter)"));
+                break;
             case QEvent::MouseButtonPress:
+                // Gesture-chain probe: proves the mouse event reaches the
+                // base filter and whether the subclass consumed it.
+                emit logMessage(QStringLiteral("[preview] press forwarded"));
                 if (onPreviewMousePress(static_cast<QMouseEvent*>(event))) {
                     return true;
                 }
@@ -1494,6 +1509,7 @@ bool VideoPlaybackWidget::eventFilter(QObject* obj, QEvent* event) {
                 }
                 break;
             case QEvent::MouseButtonRelease:
+                emit logMessage(QStringLiteral("[preview] release forwarded"));
                 if (onPreviewMouseRelease(static_cast<QMouseEvent*>(event))) {
                     return true;
                 }

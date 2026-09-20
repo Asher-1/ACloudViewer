@@ -439,11 +439,11 @@ DenseReconstructionWidget::DenseReconstructionWidget(MainWindow* main_window,
 
 void DenseReconstructionWidget::showEvent(QShowEvent* event) {
   Q_UNUSED(event);
-    
+
     // Auto-load workspace path from configuration if not already set
     if (workspace_path_text_->text().isEmpty()) {
         std::filesystem::path default_workspace;
-        
+
         // Try multiple sources for workspace path (in order of priority)
         // 1. Try project_path's parent directory
         if (options_->project_path && !options_->project_path->empty()) {
@@ -455,7 +455,7 @@ void DenseReconstructionWidget::showEvent(QShowEvent* event) {
                 return;
             }
         }
-        
+
         // 2. Try database_path's parent directory
         if (options_->database_path && !options_->database_path->empty()) {
             default_workspace = GetParentDir(*options_->database_path);
@@ -466,7 +466,7 @@ void DenseReconstructionWidget::showEvent(QShowEvent* event) {
                 return;
             }
         }
-        
+
         // 3. Try image_path (it's usually already a directory)
         if (options_->image_path && !options_->image_path->empty()) {
             // First try image_path itself
@@ -484,7 +484,7 @@ void DenseReconstructionWidget::showEvent(QShowEvent* event) {
         }
         std::cout << "Could not auto-load workspace path. Please select manually." << std::endl;
     }
-    
+
     RefreshWorkspace();
 }
 

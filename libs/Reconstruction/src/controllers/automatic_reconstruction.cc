@@ -501,7 +501,7 @@ AutomaticReconstructionController::AutomaticReconstructionController(
             FeatureExtractorType::SIFT)
             .string();
   }
-  
+
   // Automatically download and cache if URI format is provided
   if (!resolved_vocab_tree_path.empty()) {
 #ifdef COLMAP_DOWNLOAD_ENABLED
@@ -1496,7 +1496,7 @@ void AutomaticReconstructionController::RunDenseMapper() {
                          stats.input_faces, stats.output_faces);
         }
       }
-      
+
       // Hook for derived classes
       if (ExistsFile(meshing_path)) {
         OnMeshGenerated(i, meshing_path);

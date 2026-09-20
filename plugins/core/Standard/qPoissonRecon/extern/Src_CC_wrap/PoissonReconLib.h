@@ -77,7 +77,7 @@ public:
 		/** Exponent to be applied to a point's confidence to adjust its weight. (A point's confidence is defined by the magnitude of its normal.)
 		**/
 		float normalConfidence = 0.0;
-		
+
 		//! Normal confidence bias exponent
 		/** Exponent to be applied to a point's confidence to bias the resolution at which the sample contributes to the linear system. (Points with lower confidence are biased to contribute at coarser resolutions.)
 		**/

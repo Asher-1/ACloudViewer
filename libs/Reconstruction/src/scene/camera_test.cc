@@ -245,7 +245,7 @@ TEST(base_camera, TestVerifyParams) {
   EXPECT_EQ(camera.VerifyParams(), false);
 }
 
-TEST(base_camera, TestIsUndistorted) { 
+TEST(base_camera, TestIsUndistorted) {
   Camera camera;
   camera.InitializeWithId(SimplePinholeCameraModel::model_id, 1.0, 1, 1);
   EXPECT_TRUE(camera.IsUndistorted());

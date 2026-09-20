@@ -108,17 +108,17 @@ int CurlProgressCallback(void* clientp,
                          curl_off_t /* ultotal */,
                          curl_off_t /* ulnow */) {
   ProgressData* progress_data = static_cast<ProgressData*>(clientp);
-  
+
   // Check if download was canceled
   if (progress_data && progress_data->cancel_callback &&
       progress_data->cancel_callback()) {
     return 1;  // Return non-zero to cancel download
   }
-  
+
   if (progress_data && progress_data->callback) {
     // Call the user-provided callback (convert curl_off_t to int64_t)
     progress_data->callback(static_cast<int64_t>(dlnow), static_cast<int64_t>(dltotal));
-    
+
     // Check again after the progress update so a UI cancel request can abort
     // this transfer without pumping the GUI event loop on the worker thread.
     if (progress_data->cancel_callback && progress_data->cancel_callback()) {
@@ -137,7 +137,7 @@ int CurlProgressCallback(void* clientp,
     // Print progress bar: [====>    ] 45.2% (12.3/27.2 MB)
     const int bar_width = 40;
     const int filled = static_cast<int>(bar_width * percent / 100.0);
-    
+
     // Use \r to overwrite the same line (single-line progress bar)
     // Use std::cout for normal log output
     std::cout << "\r[";
@@ -153,7 +153,7 @@ int CurlProgressCallback(void* clientp,
     std::cout << "] " << std::fixed << std::setprecision(1) << percent << "% ("
               << dlnow_mb << "/" << dltotal_mb << " MB)" << std::flush;
   }
-  
+
   return 0;  // Continue download
 }
 
@@ -559,7 +559,7 @@ std::filesystem::path GetCachedFilePath(const std::string& uri) {
   if (!IsURI(uri)) {
     return std::filesystem::path();  // Not a URI, return empty
   }
-  
+
   const std::vector<std::string> parts = StringSplit(uri, ";");
   if (parts.size() != 3) {
     return std::filesystem::path();  // Invalid URI format
@@ -594,7 +594,7 @@ std::filesystem::path GetCachedFilePath(const std::string& uri) {
   if (std::filesystem::exists(path)) {
     return path;
   }
-  
+
   return std::filesystem::path();  // File doesn't exist
 }
 

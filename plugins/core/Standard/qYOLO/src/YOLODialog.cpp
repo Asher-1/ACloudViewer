@@ -16,7 +16,6 @@
 #include <QFontMetrics>
 #include <QFormLayout>
 #include <QGridLayout>
-#include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -25,7 +24,6 @@
 #include <QLabel>
 #include <QListWidgetItem>
 #include <QMessageBox>
-#include <QScreen>
 #include <QScrollArea>
 #include <QSet>
 #include <QSettings>
@@ -599,8 +597,15 @@ void YOLODialog::setupUi() {
     auto* liveBtnRow = new QHBoxLayout;
     liveBtnRow->setSpacing(ecvAICoreUi::hSpacing());
     m_testVideoCombo = new QComboBox(m_liveTab);
+    // Un-annotated raw clips first (official tracking evaluation material):
+    // supervision_demo.mp4 ships with baked-in tracking overlays from
+    // another tool, so it stays last for regression comparison only.
+    m_testVideoCombo->addItem(QStringLiteral("people-walking.mp4"),
+                              QStringLiteral("people-walking.mp4"));
     m_testVideoCombo->addItem(QStringLiteral("traffic.mp4"),
                               QStringLiteral("traffic.mp4"));
+    m_testVideoCombo->addItem(QStringLiteral("vehicles.mp4"),
+                              QStringLiteral("vehicles.mp4"));
     m_testVideoCombo->addItem(QStringLiteral("supervision_demo.mp4"),
                               QStringLiteral("supervision_demo.mp4"));
     m_testDataBtn = ecvAICoreUi::makeSampleDataBtn(m_liveTab);
@@ -631,6 +636,13 @@ void YOLODialog::setupUi() {
             [this]() { requestTestData(TestDataTarget::Video); });
 
     // Keep the live button states in sync with the stream lifecycle.
+    // Wire the widget's log lines into the dialog log — without this
+    // connection, every logMessage emitted by the live widget (warmup /
+    // gesture diagnostics / ReID fallback notices) never reaches the log
+    // file: the AICore C-API logs go through YOLO_LOG_INFO directly, but
+    // widget-side diagnostics ride this signal.
+    connect(m_liveWidget, &YOLOLiveWidget::logMessage, this,
+            [this](const QString& msg) { appendLog(msg); });
     connect(m_liveWidget, &YOLOLiveWidget::streamStarted, this, [this]() {
         m_liveStartBtn->setEnabled(false);
         m_liveStopBtn->setEnabled(true);
@@ -918,23 +930,6 @@ void YOLODialog::loadSettings() {
         m_bodySplitter->restoreState(splitterState)) {
         m_splitterRestored = true;
     }
-    // Window geometry: restore the last session; on first run (or a
-    // missing/invalid blob) fall back to a screen-adaptive default of ~80%
-    // of the available geometry, never below the content-driven minimum —
-    // so the dialog opens large enough for the Live preview on any
-    // resolution and platform without covering its own controls.
-    const QByteArray windowGeo =
-            settings.value(QStringLiteral("windowGeometry")).toByteArray();
-    if (!windowGeo.isEmpty() && restoreGeometry(windowGeo)) {
-        // restored
-    } else {
-        const QRect avail =
-                QGuiApplication::primaryScreen()
-                        ? QGuiApplication::primaryScreen()->availableGeometry()
-                        : QRect(0, 0, 1280, 800);
-        resize(std::max(minimumSizeHint().width(), avail.width() * 4 / 5),
-               std::max(minimumSizeHint().height(), avail.height() * 4 / 5));
-    }
     settings.endGroup();
     // Recalibrate every panel's confidence to its restored text tower's
     // score band. The tower combo may not emit when the restored entry
@@ -983,8 +978,6 @@ void YOLODialog::saveSettings() const {
         settings.setValue(QStringLiteral("bodySplitterState"),
                           m_bodySplitter->saveState());
     }
-    // Window geometry: persist across sessions.
-    settings.setValue(QStringLiteral("windowGeometry"), saveGeometry());
     settings.endGroup();
 }
 

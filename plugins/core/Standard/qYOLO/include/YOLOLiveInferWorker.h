@@ -23,6 +23,7 @@ struct TrackConfig;
 }  // namespace qyolo::track
 
 struct aicore_yolo_ctx;
+struct aicore_reid_ctx;
 
 /** Serialized live YOLO inference with a context reused across frames. The
  *  model decides the path per load (detect or metric depth); Result::task
@@ -36,6 +37,10 @@ public:
         QString modelPath;
         QString device;
         int threads = 0;
+        // Pipeline frame index the image was decoded from; echoed back on
+        // the Result so the widget can display each frame with ITS OWN
+        // overlay (frame-exact sync, no stale-box drift).
+        int frameIndex = -1;
         float confThres = 0.25f;
         float iouThres = 0.7f;
         uint32_t topK = 300;
@@ -56,6 +61,11 @@ public:
         // context (aicore_yolo_features_view); a stream without features
         // degrades to motion-only association.
         bool withReid = false;
+        // Explicit appearance encoder (official model=<path> semantics):
+        // reid-yolo26{n..x}-{f32,f16,q8_0}.gguf from the yolo_models cache.
+        // Non-empty switches the feature source from the detector-feature
+        // tap to aicore_reid_embed_image on this worker.
+        QString reidModelPath;
         float trackHighThresh = 0.25f;
         float trackLowThresh = 0.1f;
         float newTrackThresh = 0.25f;
@@ -74,6 +84,8 @@ public:
         YOLODepthResult depth;  // valid when task == "depth"
         QString task;
         QString error;
+        /** Pipeline frame index of the source frame (mirrors Job). */
+        int frameIndex = -1;
         /** Non-fatal tracking diagnostics (e.g. the tracker was rejected
          *  because this build lacks OpenCV): inference results are still
          *  delivered, but without track ids. Empty = no warning. */
@@ -132,6 +144,12 @@ private:
     // Object-feature export state last requested from the context (the
     // toggle rebuilds the graph plan, so it only flips on change).
     bool m_objFeatEnabled = false;
+    // Explicit appearance encoder (aicore reid task): loaded when the user
+    // picks a reid-yolo26{n..x}-{f32,f16,q8_0} GGUF; per-detection
+    // embeddings are then computed here (aicore_reid_embed_image) instead
+    // of the detector-feature tap. Worker-thread only.
+    aicore_reid_ctx* m_reidCtx = nullptr;
+    QString m_loadedReidPath;
     /** Last tracker-creation failure reason surfaced to the UI (cleared
      *  once a tracker is created again). */
     QString m_trackWarning;

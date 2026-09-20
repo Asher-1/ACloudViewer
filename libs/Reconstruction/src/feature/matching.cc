@@ -1134,7 +1134,7 @@ ExhaustiveFeatureMatcher::ExhaustiveFeatureMatcher(
       match_options_(match_options) {
   CHECK(options_.Check());
   CHECK(match_options_.Check());
-  
+
   database_ = Database::Open(database_path);
   cache_ = std::make_shared<FeatureMatcherCache>(5 * options_.block_size, database_.get());
   matcher_ = std::make_shared<SiftFeatureMatcher>(match_options, database_.get(), cache_.get());

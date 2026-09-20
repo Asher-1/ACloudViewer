@@ -12,11 +12,13 @@
 #include <QByteArray>
 #include <QElapsedTimer>
 #include <QFileInfo>
+#include <cmath>
 #include <cstring>
 #include <new>
 #include <utility>
 
 #ifdef AICore_ENABLED
+#include "aicore/reid_capi.h"
 #include "aicore/runtime_capi.h"
 #include "aicore/yolo_capi.h"
 #include "ecvAICoreRuntimeHelpers.h"
@@ -64,6 +66,11 @@ void YOLOLiveInferWorker::releaseModel() {
         aicore_yolo_free(m_ctx);
         m_ctx = nullptr;
     }
+    if (m_reidCtx) {
+        aicore_reid_free(m_reidCtx);
+        m_reidCtx = nullptr;
+    }
+    m_loadedReidPath.clear();
     m_loadedModelPath.clear();
     m_loadedDevice.clear();
     m_loadedThreads = 0;
@@ -103,6 +110,24 @@ bool YOLOLiveInferWorker::ensureModel(const Job& job, QString* error) {
     }
     aicore_yolo_options_set_device(opts, job.device.toUtf8().constData());
     aicore_yolo_options_set_threads(opts, job.threads);
+    // Pin the initial graph plan to the ACTUAL letterbox canvas of the
+    // first frame (Ultralytics LetterBox auto=True, stride=32 — the same
+    // formula as yolo_image.cpp letterbox_image): otherwise create_session
+    // builds a square-imgsz plan that the first inference immediately
+    // rebuilds, one extra full graph construction per load (~8 s on cuda
+    // for a 162-op model).
+    if (!job.rgb.isNull()) {
+        constexpr int kLetterboxBase = 640;  // YOLO letterbox base size
+        const float r =
+                std::min(static_cast<float>(kLetterboxBase) / job.rgb.width(),
+                         static_cast<float>(kLetterboxBase) / job.rgb.height());
+        const int new_w = static_cast<int>(std::nearbyint(job.rgb.width() * r));
+        const int new_h =
+                static_cast<int>(std::nearbyint(job.rgb.height() * r));
+        const int dw = (kLetterboxBase - new_w) % 32;
+        const int dh = (kLetterboxBase - new_h) % 32;
+        aicore_yolo_options_set_input_size(opts, new_w + dw, new_h + dh);
+    }
     // Open-vocabulary families (world/yoloe): the class list rides into
     // load and the text tower encodes it once per context — same contract
     // as the still-image worker. The list is pre-trimmed by the dialog.
@@ -157,11 +182,13 @@ void YOLOLiveInferWorker::runJob(YOLOLiveInferWorker::Job job) {
     // terminate the whole process (SIGABRT). Surface it as a per-frame error
     // instead so video inference keeps running.
     const quint64 generation = job.generation;
+    const int frameIndex = job.frameIndex;
     try {
         runJobImpl(std::move(job));
     } catch (const std::bad_alloc&) {
         Result result;
         result.generation = generation;
+        result.frameIndex = frameIndex;
         result.error = tr("Out of memory while processing the frame.");
         emit inferComplete(result);
     }
@@ -170,6 +197,7 @@ void YOLOLiveInferWorker::runJob(YOLOLiveInferWorker::Job job) {
 void YOLOLiveInferWorker::runJobImpl(YOLOLiveInferWorker::Job job) {
     Result result;
     result.generation = job.generation;
+    result.frameIndex = job.frameIndex;
 
 #ifndef AICore_ENABLED
     result.error = tr("AICore is not enabled.");
@@ -649,16 +677,53 @@ void YOLOLiveInferWorker::applyTracking(const Job& job,
     // Object-feature export toggle: flips the context-side switch only on
     // change (the toggle rebuilds the graph plan on the next inference).
     // A model reload resets the context, so the requested state is tracked
-    // alongside.
-    if (job.withReid != m_objFeatEnabled) {
-        aicore_yolo_set_detector_features(m_ctx, job.withReid ? 1 : 0);
-        m_objFeatEnabled = job.withReid;
+    // alongside. Not needed when an explicit ReID encoder owns appearance
+    // features (the detector graph stays tap-free and lighter).
+    const bool wantFeatExport = job.withReid && job.reidModelPath.isEmpty();
+    if (wantFeatExport != m_objFeatEnabled) {
+        aicore_yolo_set_detector_features(m_ctx, wantFeatExport ? 1 : 0);
+        m_objFeatEnabled = wantFeatExport;
     }
-    // Official model="auto" ReID features (aicore_yolo_features_view):
-    // per-detection rows index-aligned with the tracker detections; empty
-    // for end2end heads or when the export is off — the tracker then runs
-    // motion-only association (upstream "feats missing" semantics).
-    if (job.withReid && m_objFeatEnabled) {
+    // Appearance features for the tracker, two mutually exclusive sources:
+    //  - explicit encoder (official model=<path>): the picked
+    //    reid-yolo26{n..x}-{f32,f16,q8_0}.gguf runs per-detection embeds
+    //    on this worker (aicore_reid_embed_image) over the SAME tight RGB
+    //    frame the tracker receives;
+    //  - model="auto" detector features (aicore_yolo_features_view):
+    //    per-detection rows index-aligned with the FULL detection set;
+    //    empty for end2end heads or when the export is off — the tracker
+    //    then runs motion-only association (upstream "feats missing"
+    //    semantics).
+    if (job.withReid && m_reidCtx != nullptr) {
+        if (!dets.empty() && frame.rgb != nullptr) {
+            std::vector<float> boxes;
+            boxes.reserve(dets.size() * 4);
+            for (const auto& d : dets) {
+                boxes.push_back(d.cx - d.w * 0.5f);
+                boxes.push_back(d.cy - d.h * 0.5f);
+                boxes.push_back(d.cx + d.w * 0.5f);
+                boxes.push_back(d.cy + d.h * 0.5f);
+            }
+            aicore_image_view view{};
+            view.data = frame.rgb;
+            view.width = frame.w;
+            view.height = frame.h;
+            view.row_stride_bytes = static_cast<size_t>(frame.w) * 3;
+            view.format = AICORE_IMAGE_RGB8;
+            float* emb = nullptr;
+            int32_t ecount = 0, edim = 0;
+            if (aicore_reid_embed_image(m_reidCtx, &view, boxes.data(),
+                                        static_cast<int32_t>(dets.size()), &emb,
+                                        &ecount, &edim) == 0 &&
+                emb != nullptr && edim > 0) {
+                input.feats.resize(dets.size());
+                for (size_t i = 0; i < dets.size(); ++i) {
+                    input.feats[i].assign(emb + (size_t)i * edim,
+                                          emb + (size_t)(i + 1) * edim);
+                }
+            }
+        }
+    } else if (job.withReid && m_objFeatEnabled) {
         const float* fdata = nullptr;
         int32_t fcount = 0, fdim = 0;
         aicore_yolo_features_view(m_ctx, &fdata, &fcount, &fdim);

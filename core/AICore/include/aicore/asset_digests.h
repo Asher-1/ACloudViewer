@@ -117,7 +117,7 @@ inline constexpr AssetDigestEntry kAssetDigests[] = {
         {"mobileclip2_b-f16.gguf", "07a0ddadfc631242efc9f6ea8d1185f3a22cd5d7aa1545e0e9563c4ef26eacd1" },
         {"mobileclip2_b-f32.gguf", "2a2fca7dda339e98ab148ff6c5661ab9fd670715975c257d7f7521117e895ff3" },
         {"mobileclip2_b-q8_0.gguf", "bf168825e26e28a97d1299e968184ae6f3c8a56b8c4f1b9a71de847113f2d552" },
-        {"objects_detection_data.zip", "dec2c84dff7adefe992291533952f2314ff867a7c35cd705470c622d27515ef5" },
+        {"objects_detection_data.zip", "f6dc7755a124d3ffa4454e5d0b52c8f97d149f2807ac877420c4fd319feaddd2" },
         {"reid-yolo26l-f32.gguf", "00a64abdab9e6198fb500639f89cf5ea50e1c06a425e717df4d3aae6b93abc7d" },
         {"reid-yolo26l-f16.gguf", "737944f648ed84988b5a093670fdd13f6e6fbf49e0a53f10b1b0c9a48b67d7fe" },
         {"reid-yolo26l-q8_0.gguf", "6c6725a7029da9ab0418431ff0e0b6d22f8d5c2d94f50727fabd788e80410aeb" },

@@ -63,19 +63,19 @@ Example:
             "target_features"_a, "mutual_filter"_a = false,
             "mutual_consistency_ratio"_a = 0.1f,
             R"(Function to query nearest neighbors of source_features in target_features.
-            
+
 Args:
     source_features (cloudViewer.core.Tensor): The source features in shape (N, dim).
     target_features (cloudViewer.core.Tensor): The target features in shape (M, dim).
-    mutual_filter (bool, optional): Filter correspondences and return the 
-        collection of (i, j) s.t. source_features[i] and target_features[j] are 
+    mutual_filter (bool, optional): Filter correspondences and return the
+        collection of (i, j) s.t. source_features[i] and target_features[j] are
         mutually the nearest neighbor. Default is False.
-    mutual_consistency_ratio (float, optional): Threshold to decide whether the 
-        number of filtered correspondences is sufficient. Only used when 
+    mutual_consistency_ratio (float, optional): Threshold to decide whether the
+        number of filtered correspondences is sufficient. Only used when
         `mutual_filter` is enabled. Default is 0.1.
 
 Returns:
-    Tensor with shape (K,2) of source_indices and target_indices with K as the 
+    Tensor with shape (K,2) of source_indices and target_indices with K as the
     number of correspondences.
 
 Example:

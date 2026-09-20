@@ -116,12 +116,12 @@ void SIFTExtractionWidget::Run() {
     }
 
     // Ensure database directory exists
-    const std::string database_dir = GetParentDir(*options_->database_path);
+    const auto database_dir = GetParentDir(*options_->database_path);
     if (!ExistsDir(database_dir)) {
         QMessageBox::critical(
                 this, "",
                 tr("Database directory does not exist: %1")
-                        .arg(QString::fromStdString(database_dir)));
+                        .arg(QString::fromStdString(database_dir.string())));
         return;
     }
 

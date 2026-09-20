@@ -85,14 +85,34 @@
       ],
       "relative_path": "objects_detection_data.zip",
       "url": "https://github.com/Asher-1/cloudViewer_downloads/releases/download/objects_detection_data/objects_detection_data.zip",
-      "sha256": "dec2c84dff7adefe992291533952f2314ff867a7c35cd705470c622d27515ef5",
-      "size_bytes": 62381393,
+      "sha256": "f6dc7755a124d3ffa4454e5d0b52c8f97d149f2807ac877420c4fd319feaddd2",
+      "size_bytes": 105537126,
       "archive": true,
       "extracted_files": [
         {
           "relative_path": "objects_detection_data/images/bus.jpg",
           "sha256": "c02019c4979c191eb739ddd944445ef408dad5679acab6fd520ef9d434bfbc63",
           "size_bytes": 137419
+        },
+        {
+          "relative_path": "objects_detection_data/videos/people-walking.mp4",
+          "sha256": "822671fb20ed13ef9ead91d1f3678863b5aa078dd3b2ed45953fda39a61c979d",
+          "size_bytes": 7606633
+        },
+        {
+          "relative_path": "objects_detection_data/videos/traffic.mp4",
+          "sha256": "9e18115c6dd7ec9fb41734d497c71effaa4f6184e7df5acaca4185a4f72f6794",
+          "size_bytes": 21966072
+        },
+        {
+          "relative_path": "objects_detection_data/videos/vehicles.mp4",
+          "sha256": "ac81100d9310bd4e9c02bc0b13b6492781d009742ced347766b2601be3c44ad4",
+          "size_bytes": 35345757
+        },
+        {
+          "relative_path": "objects_detection_data/videos/supervision_demo.mp4",
+          "sha256": "02a842ce04ada498923173ad7400684e4b791f2982f6db5e63208dc08633be06",
+          "size_bytes": 39236015
         }
       ]
     },

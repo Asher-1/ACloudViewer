@@ -264,7 +264,11 @@ private:
     VideoFrameReader* m_frameReader = nullptr;
     QThread* m_frameReaderThread = nullptr;
     cv::Mat m_latestFrame;  // most recently decoded frame (GUI thread)
-    QMutex m_frameMutex;    // guards m_latestFrame
+    // Last decoded frame SIZE — kept separately because m_latestFrame is
+    // swapped out between frames in ConsumerDriven mode (coordinate
+    // mapping for the preview interactions must stay valid).
+    QSize m_lastFrameSize;
+    QMutex m_frameMutex;              // guards m_latestFrame
     bool m_frameReaderReady = false;  // background reader has opened source
     QAtomicInt m_frameReaderRunning{0};
     QAtomicInt m_frameReaderSeekTo{-1};

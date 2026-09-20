@@ -1558,8 +1558,14 @@ static void prepare_host_weights(Session* s) {
 Session* create_session(const std::string& gguf_path,
                         const std::string& device_request,
                         const SessionOptions& opts) {
+    // Stage timings for the load log: context creation dominates the time
+    // to first frame on cold starts, and the 20-30 s users report must be
+    // attributable to a stage (gguf parse / backend init / weight prep /
+    // graph build) before it can be fixed.
+    const auto t_load = std::chrono::steady_clock::now();
     auto model = load_gguf(gguf_path);
     if (!model) return nullptr;
+    const auto t_gguf = std::chrono::steady_clock::now();
 
     yolo::set_log_level(opts.log_level);
 
@@ -1574,6 +1580,7 @@ Session* create_session(const std::string& gguf_path,
         free_session(s);
         return nullptr;
     }
+    const auto t_backend = std::chrono::steady_clock::now();
     if (opts.profile_ops) {
         backend_enable_op_profile(s->backend);
     }
@@ -1634,7 +1641,9 @@ Session* create_session(const std::string& gguf_path,
 
     // One-shot load-time weight preprocessing (idempotent; also run by
     // session_ensure_host_weights after an on-demand reload).
+    const auto t_weights = std::chrono::steady_clock::now();
     prepare_host_weights(s);
+    const auto t_plan = std::chrono::steady_clock::now();
 
     // Build the initial run plan through THE single graph builder — the
     // same path session_ensure_canvas() uses for canvas rebuilds, so the
@@ -1643,6 +1652,15 @@ Session* create_session(const std::string& gguf_path,
         free_session(s);
         return nullptr;
     }
+    const auto ms = [](auto a, auto b) {
+        return (int)std::chrono::duration_cast<std::chrono::milliseconds>(b - a)
+                .count();
+    };
+    YOLO_LOG_INFO(
+            "load timings: gguf=%d ms, backend=%d ms, weight_prep=%d ms, "
+            "graph_build=%d ms",
+            ms(t_load, t_gguf), ms(t_gguf, t_backend), ms(t_backend, t_weights),
+            ms(t_plan, std::chrono::steady_clock::now()));
 
     YOLO_LOG_INFO(
             "session ready: backend=%s, task=%s, %d ops, input=%dx%d, "

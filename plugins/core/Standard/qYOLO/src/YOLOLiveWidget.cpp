@@ -9,14 +9,16 @@
 
 #include <QtCompat.h>
 
+#include <QApplication>
 #include <QCheckBox>
 #include <QComboBox>
+#include <QCursor>
 #include <QDir>
 #include <QDoubleSpinBox>
 #include <QFileInfo>
 #include <QFont>
+#include <QFontMetrics>
 #include <QFormLayout>
-#include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMetaObject>
@@ -25,6 +27,7 @@
 #include <QSizePolicy>
 #include <QSpinBox>
 #include <QThread>
+#include <QTimer>
 #include <QtMath>
 #include <algorithm>
 #include <cstring>
@@ -57,17 +60,12 @@ YOLOLiveWidget::YOLOLiveWidget(QWidget* parent) : VideoPlaybackWidget(parent) {
     // display tick paints the newest frame with the latest cached results.
     // Inference runs as an async side branch — it must not pace the display.
     setupUi();
-    // Live preview is the main content of the dialog: size its baseline to
-    // the screen (~60% of the available height; availableGeometry is in
-    // device-independent pixels, so this adapts to any resolution and
-    // platform) instead of a fixed 300 px that squeezed the video under
-    // the surrounding controls. The label still grows with the window
-    // (fixed height = minimum here, no maximum is imposed).
-    const QRect screenAvail =
-            QGuiApplication::primaryScreen()
-                    ? QGuiApplication::primaryScreen()->availableGeometry()
-                    : QRect(0, 0, 1280, 800);
-    setPreviewFixedHeight(std::clamp(screenAvail.height() * 3 / 5, 480, 900));
+    setPreviewFixedHeight(300);
+
+    // Frame-exact overlay sync: decode one frame -> infer -> display THAT
+    // frame with ITS OWN boxes -> decode next (official annotate-then-
+    // display semantics). Playback paces itself to the inference rate.
+    setFrameAdvanceMode(FrameAdvanceMode::ConsumerDriven);
 
     ensureInferThread();
 }
@@ -201,6 +199,34 @@ void YOLOLiveWidget::setupUi() {
                "(official model=\"auto\" path; end2end heads degrade to "
                "motion-only association)"));
     trackRow->addWidget(m_reidCheck);
+    // Explicit appearance-encoder picker (official model=<path>): ONE combo
+    // over the reid-yolo26{n..x}-<quant>.gguf family in the yolo_models
+    // cache, styled after the model combo's entries (size — quant hint).
+    // The tracker degrades to the model="auto" detector-feature path if
+    // the selected file is absent.
+    m_reidModelCombo = new QComboBox(this);
+    for (const char* sz : {"n", "s", "m", "l", "x"}) {
+        static const struct {
+            const char* quant;
+            const char* label;
+        } quants[] = {
+                {"f16", "F16 (recommended)"}, {"f32", "F32"}, {"q8_0", "Q8_0"}};
+        for (const auto& q : quants) {
+            const QString file =
+                    QStringLiteral("reid-yolo26%1-%2.gguf").arg(sz, q.quant);
+            m_reidModelCombo->addItem(
+                    QStringLiteral("ReID %1 — %2").arg(sz, q.label), file);
+        }
+    }
+    m_reidModelCombo->setToolTip(
+            tr("ReID encoder (size — quantization); larger models are more "
+               "discriminative but slower per frame"));
+    trackRow->addWidget(m_reidModelCombo);
+    const auto syncReidPicker = [this](bool on) {
+        m_reidModelCombo->setEnabled(on);
+    };
+    syncReidPicker(m_reidCheck->isChecked());
+    connect(m_reidCheck, &QCheckBox::toggled, this, syncReidPicker);
     // Trails overlay (default off — boxes+ids only, like the official
     // model.track preview; a pinned target always shows its trail).
     m_trailsCheck = new QCheckBox(tr("Trails"), this);
@@ -209,6 +235,7 @@ void YOLOLiveWidget::setupUi() {
                "a pinned target always shows its trail)"));
     connect(m_trailsCheck, &QCheckBox::toggled, this, [this](bool on) {
         m_showTrails = on;
+        ++m_overlayGeneration;  // force a layer rebuild (cached otherwise)
         repaintLivePreview();
     });
     trackRow->addWidget(m_trailsCheck);
@@ -244,10 +271,28 @@ void YOLOLiveWidget::setupUi() {
             tr("Global motion compensation (camera-motion estimate); "
                "used by botsort/deepocsort/tracktrack"));
     trackRow->addWidget(m_gmcCombo);
+    // Collapsible advanced-parameter toggle (High/Low/New/Buffer/Match
+    // row): collapsed by default so the preview keeps the space.
+    m_trackParamsBtn = new QToolButton(this);
+    m_trackParamsBtn->setText(QStringLiteral("Params \u25b8"));
+    m_trackParamsBtn->setToolTip(
+            tr("Show/hide the tracker thresholds (official YAML defaults "
+               "already applied per tracker type)"));
+    m_trackParamsBtn->setAutoRaise(true);
+    m_trackParamsBtn->setCheckable(true);
+    trackRow->addWidget(m_trackParamsBtn);
+    connect(m_trackParamsBtn, &QToolButton::toggled, this, [this](bool on) {
+        m_trackParamsBtn->setText(on ? QStringLiteral("Params \u25be")
+                                     : QStringLiteral("Params \u25b8"));
+        updateTrackVisibility();
+    });
     trackRow->addStretch();
     mainLayout()->insertLayout(3, trackRow);
 
     // Row 5: tracking parameter area (visible while tracking is enabled).
+    // Wrapped in a collapsible container: the five official thresholds are
+    // advanced tuning, hidden by default behind the Params toggle so the
+    // video preview keeps the vertical space.
     auto* trackParamsRow = new QHBoxLayout;
     trackParamsRow->setSpacing(4);
     trackParamsRow->addWidget(new QLabel(tr("High:"), this));
@@ -288,7 +333,10 @@ void YOLOLiveWidget::setupUi() {
     m_matchSpin->setToolTip(tr("Association match threshold (match_thresh)"));
     trackParamsRow->addWidget(m_matchSpin);
     trackParamsRow->addStretch();
-    mainLayout()->insertLayout(4, trackParamsRow);
+    m_trackParamsWrap = new QWidget(this);
+    m_trackParamsWrap->setLayout(trackParamsRow);
+    m_trackParamsWrap->setVisible(false);  // collapsed behind Params
+    mainLayout()->insertWidget(4, m_trackParamsWrap);
 
     m_trackWidgets = {
             m_trackCheck,
@@ -300,6 +348,25 @@ void YOLOLiveWidget::setupUi() {
             m_trackHighSpin,   m_trackLowSpin, m_newTrackSpin,
             m_trackBufferSpin, m_matchSpin,
     };
+
+    // Interaction hint: share the status row's empty right side (the
+    // status label is centered, so the row has room on both sides) —
+    // visible at all times, no extra layout row needed.
+    if (QBoxLayout* main = mainLayout();
+        m_statusLabel && main && main->indexOf(m_statusLabel) >= 0) {
+        const int statusIdx = main->indexOf(m_statusLabel);
+        main->removeWidget(m_statusLabel);
+        auto* statusRow = new QHBoxLayout;
+        statusRow->setSpacing(8);
+        statusRow->addWidget(m_statusLabel, 1);
+        auto* interactHint = new QLabel(
+                tr("Click: pin target · Drag: tracking zone · Click empty: "
+                   "clear"),
+                this);
+        interactHint->setStyleSheet(QStringLiteral("color: gray;"));
+        statusRow->addWidget(interactHint);
+        main->insertLayout(statusIdx, statusRow);
+    }
 
     connect(m_trackCheck, &QCheckBox::toggled, this, [this](bool on) {
         m_config.trackerType = on ? trackerTypeId() : QString();
@@ -316,6 +383,16 @@ void YOLOLiveWidget::setupUi() {
     });
     connect(m_reidCheck, &QCheckBox::toggled, this,
             [this](bool on) { m_config.withReid = on; });
+    const auto reidPickChanged = [this]() {
+        // The worker reloads the encoder when the resolved path changes;
+        // persist immediately so a crash does not lose the choice.
+        QSettings s;
+        s.setValue(QStringLiteral("qYOLO/live/reidModel"),
+                   m_reidModelCombo->currentData().toString());
+    };
+    connect(m_reidModelCombo,
+            QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            reidPickChanged);
     connect(m_trackerCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, [this](int) {
                 // Upstream tracker=<yaml> semantics: selecting a tracker
@@ -576,6 +653,12 @@ void YOLOLiveWidget::updateTrackVisibility() {
     for (QWidget* w : m_trackParamWidgets) {
         if (w) w->setVisible(tracking);
     }
+    // Advanced thresholds collapse behind the Params toggle: the row only
+    // claims vertical space when tracking is on AND the user expanded it.
+    if (m_trackParamsWrap) {
+        m_trackParamsWrap->setVisible(tracking && m_trackParamsBtn &&
+                                      m_trackParamsBtn->isChecked());
+    }
     if (m_trackCheck) {
         m_config.trackerType = tracking ? trackerTypeId() : QString();
     }
@@ -654,34 +737,47 @@ void YOLOLiveWidget::loadSettings() {
             settings.value(QStringLiteral("track"), false).toBool());
     m_reidCheck->setChecked(
             settings.value(QStringLiteral("reid"), false).toBool());
+    const QString reidModel =
+            settings.value(QStringLiteral("reidModel"), "reid-yolo26n-f16.gguf")
+                    .toString();
+    if (m_reidModelCombo) {
+        const int modelIdx = m_reidModelCombo->findData(reidModel);
+        if (modelIdx >= 0) m_reidModelCombo->setCurrentIndex(modelIdx);
+    }
     m_config.withReid = m_reidCheck->isChecked();
     const QString type =
             settings.value(QStringLiteral("trackerType"), "tracktrack")
                     .toString();
     const int typeIdx = m_trackerCombo->findData(type);
     if (typeIdx >= 0) m_trackerCombo->setCurrentIndex(typeIdx);
-    const QString gmc =
-            settings.value(QStringLiteral("gmc"), "sparseOptFlow").toString();
-    const int gmcIdx = m_gmcCombo->findData(gmc);
-    if (gmcIdx >= 0) m_gmcCombo->setCurrentIndex(gmcIdx);
-    // The tracker-type sync above already installed the official per-type
-    // defaults; only persisted user values may override them (the fallback
-    // is the current spin value, not a hardcoded ByteTrack-era default).
-    m_trackHighSpin->setValue(settings.value(QStringLiteral("trackHigh"),
-                                             m_trackHighSpin->value())
-                                      .toDouble());
+    // Tracker thresholds and the GMC method are PER-TYPE state: the
+    // tracker-type sync above (and the setupUi init) already installed
+    // the official ultralytics/cfg/trackers/<type>.yaml defaults, and a
+    // persisted set only overrides the SAME type. The former flat keys
+    // leaked one tracker's tuned values into every other type (a
+    // bytetrack-era 0.25/0.10/0.25/0.80 set masqueraded as the
+    // tracktrack default).
+    settings.beginGroup(QStringLiteral("track/") + trackerTypeId());
+    m_trackHighSpin->setValue(
+            settings.value(QStringLiteral("high"), m_trackHighSpin->value())
+                    .toDouble());
     m_trackLowSpin->setValue(
-            settings.value(QStringLiteral("trackLow"), m_trackLowSpin->value())
+            settings.value(QStringLiteral("low"), m_trackLowSpin->value())
                     .toDouble());
     m_newTrackSpin->setValue(
-            settings.value(QStringLiteral("newTrack"), m_newTrackSpin->value())
+            settings.value(QStringLiteral("new"), m_newTrackSpin->value())
                     .toDouble());
-    m_trackBufferSpin->setValue(settings.value(QStringLiteral("trackBuffer"),
-                                               m_trackBufferSpin->value())
-                                        .toInt());
+    m_trackBufferSpin->setValue(
+            settings.value(QStringLiteral("buffer"), m_trackBufferSpin->value())
+                    .toInt());
     m_matchSpin->setValue(
             settings.value(QStringLiteral("match"), m_matchSpin->value())
                     .toDouble());
+    const QString gmc =
+            settings.value(QStringLiteral("gmc"), gmcMethodId()).toString();
+    settings.endGroup();
+    const int gmcIdx = m_gmcCombo->findData(gmc);
+    if (gmcIdx >= 0) m_gmcCombo->setCurrentIndex(gmcIdx);
     settings.endGroup();
     updateTrackVisibility();
 }
@@ -695,14 +791,21 @@ void YOLOLiveWidget::saveSettings() const {
     settings.setValue(QStringLiteral("threads"), m_threadsSpin->value());
     settings.setValue(QStringLiteral("track"), m_trackCheck->isChecked());
     settings.setValue(QStringLiteral("reid"), m_reidCheck->isChecked());
+    settings.setValue(QStringLiteral("reidModel"),
+                      m_reidModelCombo
+                              ? m_reidModelCombo->currentData().toString()
+                              : QStringLiteral("reid-yolo26n-f16.gguf"));
     settings.setValue(QStringLiteral("trackerType"), trackerTypeId());
-    settings.setValue(QStringLiteral("gmc"), gmcMethodId());
-    settings.setValue(QStringLiteral("trackHigh"), m_trackHighSpin->value());
-    settings.setValue(QStringLiteral("trackLow"), m_trackLowSpin->value());
-    settings.setValue(QStringLiteral("newTrack"), m_newTrackSpin->value());
-    settings.setValue(QStringLiteral("trackBuffer"),
-                      m_trackBufferSpin->value());
+    // Per-type tracker state (official defaults differ per tracker YAML;
+    // see loadSettings).
+    settings.beginGroup(QStringLiteral("track/") + trackerTypeId());
+    settings.setValue(QStringLiteral("high"), m_trackHighSpin->value());
+    settings.setValue(QStringLiteral("low"), m_trackLowSpin->value());
+    settings.setValue(QStringLiteral("new"), m_newTrackSpin->value());
+    settings.setValue(QStringLiteral("buffer"), m_trackBufferSpin->value());
     settings.setValue(QStringLiteral("match"), m_matchSpin->value());
+    settings.setValue(QStringLiteral("gmc"), gmcMethodId());
+    settings.endGroup();
     settings.endGroup();
 }
 
@@ -718,24 +821,39 @@ bool YOLOLiveWidget::onPrepareStream() {
         return false;
     }
 #ifdef AICore_ENABLED
+    // Cold-start cost attribution: the backend warmup (CUDA context +
+    // kernel modules) runs synchronously before the first decode and was
+    // previously invisible in the time-to-first-frame budget.
+    QElapsedTimer warmupClock;
+    warmupClock.start();
     if (aicore_yolo_warmup_backend(m_config.device.toUtf8().constData()) != 0) {
         emit logMessage(
                 tr("[YOLO] Backend unavailable, falling back to "
                    "CPU for this stream."));
         m_config.device = QStringLiteral("cpu");
     }
+    emit logMessage(
+            tr("[YOLO] backend warmup: %1 ms").arg(warmupClock.elapsed()));
+    // Gesture-reachability probe: shortly after the stream starts, dump
+    // the widget ACTUALLY under the cursor. If mouse events die before
+    // the preview label, this names the culprit widget that is eating
+    // them (an invisible overlay, a covering sibling, ...).
+    for (int delay : {2500, 4500}) {
+        QTimer::singleShot(delay, this, [this] {
+            const QWidget* under = QApplication::widgetAt(QCursor::pos());
+            emit logMessage(
+                    tr("[YOLO] widget under cursor: %1 at %2,%3")
+                            .arg(under ? under->metaObject()->className()
+                                       : QStringLiteral("<none>"),
+                                 QString::number(QCursor::pos().x()),
+                                 QString::number(QCursor::pos().y())));
+        });
+    }
 #endif
     return true;
 }
 
 void YOLOLiveWidget::onFrameDecoded(cv::Mat& frame, int frameIndex) {
-    Q_UNUSED(frameIndex);
-    // Inference paces itself: frames decoded while the worker is busy are
-    // skipped (the overlay lags 1-2 frames behind, imperceptible at preview
-    // size). The RGB conversion only runs when a job is actually submitted —
-    // it is a full-frame copy.
-    if (m_inferBusy) return;
-
 #ifdef HAS_OPENCV_FACE_CAPTURE
     const QImage rgb =
             VideoPlaybackWidget::cvMatToQImage(frame).convertToFormat(
@@ -750,7 +868,18 @@ void YOLOLiveWidget::onFrameDecoded(cv::Mat& frame, int frameIndex) {
     // metadata, and avoids an extra resampling pass for small objects.
     // Implicit-shared copy — annotated rendering at capture time reuses it.
     m_lastSourceFrame = rgb;
-    submitInferJob(rgb);
+
+    // ConsumerDriven pacing: this exact frame is displayed with its own
+    // result in finishConsumerFrame() — boxes can never drift ahead of or
+    // behind the video. A busy worker here can only be a job that outlived
+    // a stop/resume race — show the frame unannotated instead of dropping
+    // it (a dropped frame would stall the pipeline).
+    if (!submitInferJob(rgb, frameIndex)) {
+        completeFrameProcessing(rgb);
+        return;
+    }
+    m_pendingFrame = rgb;
+    m_pendingFrameIndex = frameIndex;
 }
 
 void YOLOLiveWidget::onDisplayFrame(QImage& display, int frameIndex) {
@@ -762,9 +891,9 @@ void YOLOLiveWidget::onDisplayFrame(QImage& display, int frameIndex) {
     drawLiveOverlay(display);
 }
 
-void YOLOLiveWidget::submitInferJob(const QImage& rgb) {
+bool YOLOLiveWidget::submitInferJob(const QImage& rgb, int frameIndex) {
     ensureInferThread();  // recreate after a dialog-close shutdown
-    if (!m_inferWorker || m_inferBusy) return;
+    if (!m_inferWorker || m_inferBusy) return false;
     m_inferBusy = true;
     m_inferSubmitTime.restart();
 
@@ -788,8 +917,46 @@ void YOLOLiveWidget::submitInferJob(const QImage& rgb) {
     job.trackBuffer = m_config.trackBuffer;
     job.matchThresh = m_config.matchThresh;
     job.trackZone = m_trackZone;
+    job.frameIndex = frameIndex;
+    if (job.withReid) {
+        QString reidErr;
+        const QString reidPath = resolveReidEncoderPath(&reidErr);
+        if (reidPath.isEmpty()) {
+            // Keep the stream running on detector features (official
+            // downgrade); surface the reason once per resolution.
+            if (m_lastTrackWarning != reidErr) {
+                emit logMessage(tr("[YOLO] %1").arg(reidErr));
+                m_lastTrackWarning = reidErr;
+            }
+        } else {
+            job.reidModelPath = reidPath;
+        }
+    }
     QMetaObject::invokeMethod(m_inferWorker, "runJob", Qt::QueuedConnection,
                               Q_ARG(YOLOLiveInferWorker::Job, job));
+    return true;
+}
+
+QString YOLOLiveWidget::resolveReidEncoderPath(QString* error) const {
+    const QString fileName =
+            m_reidModelCombo ? m_reidModelCombo->currentData().toString()
+                             : QStringLiteral("reid-yolo26n-f16.gguf");
+    const QString dir = YOLOHelpers::modelCacheDir();
+    const QString path =
+            dir.isEmpty() ? QString() : QDir(dir).filePath(fileName);
+    if (path.isEmpty() || !QFileInfo::exists(path)) {
+        if (error != nullptr) {
+            *error =
+                    tr("ReID encoder %1 not found in %2 — download it via "
+                       "the aicore validation gate or pick another "
+                       "size/quantization")
+                            .arg(fileName,
+                                 dir.isEmpty() ? QStringLiteral("<model cache>")
+                                               : dir);
+        }
+        return QString();
+    }
+    return path;
 }
 
 void YOLOLiveWidget::onInferComplete(YOLOLiveInferWorker::Result result) {
@@ -807,6 +974,9 @@ void YOLOLiveWidget::onInferComplete(YOLOLiveInferWorker::Result result) {
     if (!result.ok) {
         emit logMessage(
                 tr("[YOLO] Live inference failed: %1").arg(result.error));
+        // Keep the ConsumerDriven pipeline alive: display the in-flight
+        // frame (previous overlay stays cached) and decode on.
+        finishConsumerFrame();
         return;
     }
 
@@ -862,7 +1032,7 @@ void YOLOLiveWidget::onInferComplete(YOLOLiveInferWorker::Result result) {
                         .arg(result.depth.resolvedDevice));
         emit depthSnapshotUpdated(result.depth);
         ++m_overlayGeneration;
-        repaintLivePreview();
+        finishConsumerFrame();
         return;
     }
 
@@ -871,10 +1041,21 @@ void YOLOLiveWidget::onInferComplete(YOLOLiveInferWorker::Result result) {
             result.detect.runtimeMs >= 0.0
                     ? static_cast<qint64>(result.detect.runtimeMs)
                     : m_lastInferLatencyMs;
-    m_statusLabel->setText(tr("Objects: %1 | infer %2 (%3)")
-                                   .arg(result.detect.detections.size())
-                                   .arg(formatLatency(modelMs))
-                                   .arg(result.detect.resolvedDevice));
+    QString status = tr("Objects: %1 | infer %2 (%3)")
+                             .arg(result.detect.detections.size())
+                             .arg(formatLatency(modelMs))
+                             .arg(result.detect.resolvedDevice);
+    // Visible interaction state: an active tracking zone / pinned target
+    // must be observable somewhere besides the preview itself.
+    if (m_trackZone.isValid() && m_trackZone.width() > 0.0) {
+        status += tr(" | zone %1x%2")
+                          .arg(qRound(m_trackZone.width()))
+                          .arg(qRound(m_trackZone.height()));
+    }
+    if (m_pinnedTrackId >= 0) {
+        status += tr(" | pinned id:%1").arg(m_pinnedTrackId);
+    }
+    m_statusLabel->setText(status);
     emit snapshotUpdated(result.detect);
     // New detections: update overlay data and invalidate the layer cache;
     // the immediate repaint below rebuilds it at preview resolution.
@@ -901,22 +1082,32 @@ void YOLOLiveWidget::onInferComplete(YOLOLiveInferWorker::Result result) {
     } else {
         m_trails.clear();
     }
-    m_overlaySourceSize = m_lastSourceFrame.size();
+    m_overlaySourceSize = m_pendingFrame.isNull() ? m_lastSourceFrame.size()
+                                                  : m_pendingFrame.size();
     ++m_overlayGeneration;
-    repaintLivePreview();
+    finishConsumerFrame();
 }
 
-// ---- Official trackzone interaction (Ctrl+drag draw / Ctrl+click clear) ---
+// ---- Tracking gestures (plain left button: click = pin, drag = zone) -----
 
 bool YOLOLiveWidget::onPreviewMousePress(QMouseEvent* event) {
-    if (!(event->modifiers() & Qt::ControlModifier) ||
-        event->button() != Qt::LeftButton) {
-        return false;  // everything else keeps the label's own behavior
+    if (event->button() != Qt::LeftButton) {
+        return false;  // right/middle keep the label's own behavior
     }
+    // PLAIN left button drives both gestures (the Ctrl variants keep
+    // working too): a sub-8px move on release pins the clicked identity,
+    // a real drag draws the tracking zone. Consuming the press also
+    // suppresses the label's click-to-enlarge during the gesture.
     m_zoneDragging = true;
     m_zoneDragStartLabel = qtCompatMouseEventPos(event);
     m_trackZoneDraft = QRectF();
-    return true;  // consume: no click-to-enlarge during selection
+    const QPointF src = mapPreviewToSource(m_zoneDragStartLabel);
+    emit logMessage(tr("[YOLO] press at label %1,%2 -> source %3,%4")
+                            .arg(m_zoneDragStartLabel.x(), 0, 'f', 1)
+                            .arg(m_zoneDragStartLabel.y(), 0, 'f', 1)
+                            .arg(src.x(), 0, 'f', 1)
+                            .arg(src.y(), 0, 'f', 1));
+    return true;  // consume: no click-to-enlarge during the gesture
 }
 
 bool YOLOLiveWidget::onPreviewMouseMove(QMouseEvent* event) {
@@ -937,7 +1128,7 @@ bool YOLOLiveWidget::onPreviewMouseRelease(QMouseEvent* event) {
     const QRectF rect(startSrc, curSrc);
     if (startSrc.x() < 0 || curSrc.x() < 0 || rect.width() < 8.0 ||
         rect.height() < 8.0) {
-        // Ctrl+click without a real drag: pin the clicked tracked identity
+        // Click without a real drag: pin the clicked tracked identity
         // ("track this one" — only it keeps its color, banner and trail),
         // or release the pin when clicking empty space / the same target.
         int hit = -1;
@@ -955,12 +1146,27 @@ bool YOLOLiveWidget::onPreviewMouseRelease(QMouseEvent* event) {
         m_pinnedTrackId = (hit >= 0 && hit != m_pinnedTrackId) ? hit : -1;
         m_trackZone = QRectF();
         m_trackZoneDraft = QRectF();
+        // The overlay layer caches by generation: a pin/zone change alone
+        // never invalidates it, so bump explicitly or the repaint below
+        // blits the PREVIOUS layer and the interaction looks dead.
+        ++m_overlayGeneration;
+        emit logMessage(tr("[YOLO] click: %1")
+                                .arg(m_pinnedTrackId >= 0
+                                             ? QStringLiteral("pinned id:%1")
+                                                       .arg(m_pinnedTrackId)
+                                             : QStringLiteral("pin cleared")));
         repaintLivePreview();
         return true;
     }
     m_trackZone = rect.normalized();
     m_pinnedTrackId = -1;  // zone mode replaces the single-target pin
     m_trackZoneDraft = QRectF();
+    ++m_overlayGeneration;  // see the pin branch: force a layer rebuild
+    emit logMessage(tr("[YOLO] tracking zone set to %1x%2 at %3,%4")
+                            .arg(qRound(m_trackZone.width()))
+                            .arg(qRound(m_trackZone.height()))
+                            .arg(qRound(m_trackZone.x()))
+                            .arg(qRound(m_trackZone.y())));
     repaintLivePreview();
     return true;
 }
@@ -1099,8 +1305,13 @@ void YOLOLiveWidget::rebuildOverlayLayer(const QSize& displaySize) {
     // prefix the banner with the stable id in the official results.plot()
     // format (id:<n>), same as the capture rendering in
     // YOLOHelpers::drawDetections.
+    // Label text: the official 22/3*lw glyph height and its opaque strip
+    // flood crowded previews (banners covered neighboring targets), so the
+    // live preview renders at 50% of the official size over a translucent
+    // strip; the capture path keeps the exact official formula.
     QFont font = p.font();
-    font.setPixelSize(YOLOHelpers::officialAnnotatorFontPixelSize(lw));
+    font.setPixelSize(
+            std::max(9, static_cast<int>(std::lround(lw * 22.0 / 3.0 * 0.5))));
     p.setFont(font);
     // Official trackzone border: white, double-width, around the tracking
     // region (live rubber band while dragging).
@@ -1120,21 +1331,44 @@ void YOLOLiveWidget::rebuildOverlayLayer(const QSize& displaySize) {
     } else {
         p.setRenderHint(QPainter::Antialiasing, true);
         QPen trailPen;
-        for (auto it = m_trails.constBegin(); it != m_trails.constEnd(); ++it) {
-            const bool pinned = it.key() == m_pinnedTrackId;
-            if (m_pinnedTrackId >= 0 && !pinned) continue;  // pinned view
+        // Official solutions semantics: only targets present in the CURRENT
+        // frame draw their track_history — one that left the frame stops
+        // painting (its history resumes if it re-appears). Segments longer
+        // than the jump threshold are skipped: a reused track id splices
+        // two objects' centers into one history and the connecting straight
+        // line would cross the whole frame.
+        const double maxSrc = static_cast<double>(std::max(
+                m_overlaySourceSize.width(), m_overlaySourceSize.height()));
+        const double jumpSq = (0.12 * maxSrc) * (0.12 * maxSrc);
+        const int trailRows = static_cast<int>(m_overlayTrackIds.size());
+        for (int row = 0; row < trailRows; ++row) {
+            const int tid = m_overlayTrackIds[row];
+            if (tid <= 0) continue;
+            if (m_pinnedTrackId >= 0 && tid != m_pinnedTrackId) continue;
+            const auto it = m_trails.constFind(tid);
+            if (it == m_trails.constEnd()) continue;
             const QVector<QPointF>& pts = it.value();
             if (pts.size() < 2) continue;
+            const bool pinned = tid == m_pinnedTrackId;
             trailPen.setWidthF(std::max(
                     1.0, static_cast<double>(lw) * (pinned ? 1.25 : 0.66)));
-            trailPen.setColor(QColor(YOLOHelpers::trackIdColor(it.key())));
+            trailPen.setColor(QColor(YOLOHelpers::trackIdColor(tid)));
             p.setPen(trailPen);
-            QPolygonF line;
-            line.reserve(pts.size());
-            for (const QPointF& pt : pts) {
-                line.append(QPointF(pt.x() * sx, pt.y() * sy));
+            QPointF prevSrc;
+            bool havePrev = false;
+            for (const QPointF& raw : pts) {
+                const QPointF pt(raw.x() * sx, raw.y() * sy);
+                if (havePrev) {
+                    const double dx = raw.x() - prevSrc.x();
+                    const double dy = raw.y() - prevSrc.y();
+                    if (dx * dx + dy * dy <= jumpSq) {
+                        p.drawLine(QPointF(prevSrc.x() * sx, prevSrc.y() * sy),
+                                   pt);
+                    }
+                }
+                prevSrc = raw;
+                havePrev = true;
             }
-            p.drawPolyline(line);
         }
         p.setRenderHint(QPainter::Antialiasing, false);
     }
@@ -1177,10 +1411,13 @@ void YOLOLiveWidget::rebuildOverlayLayer(const QSize& displaySize) {
         // Keep the banner fully inside the preview (same rule as
         // YOLOHelpers::drawDetections): clamp horizontally, flip below the
         // box top when the box hugs the top edge.
+        // Official box_label: the strip hugs the text (font metrics), not
+        // a char-count estimate that doubled its width.
+        const QFontMetrics fm(font);
         QRect labelRect(static_cast<int>(d.x1 * sx),
-                        static_cast<int>(d.y1 * sy) - font.pixelSize() - 6,
-                        std::max(20, label.size() * font.pixelSize()),
-                        font.pixelSize() + 6);
+                        static_cast<int>(d.y1 * sy) - fm.height() - 4,
+                        std::max(20, fm.horizontalAdvance(label) + 8),
+                        fm.height() + 6);
         labelRect.setWidth(std::min(labelRect.width(),
                                     std::max(20, displaySize.width() - 4)));
         labelRect.moveLeft(std::clamp(
@@ -1192,7 +1429,9 @@ void YOLOLiveWidget::rebuildOverlayLayer(const QSize& displaySize) {
         labelRect.moveTop(std::min(
                 labelRect.top(),
                 std::max(2, displaySize.height() - labelRect.height() - 2)));
-        p.fillRect(labelRect.adjusted(0, 0, 4, 2), color);
+        QColor fill = color;
+        fill.setAlpha(150);  // translucent strip: targets stay visible
+        p.fillRect(labelRect.adjusted(0, 0, 4, 2), fill);
         p.setPen(Qt::white);
         p.drawText(labelRect.adjusted(2, 3, -2, -2), label);
         p.setPen(pen);
@@ -1264,11 +1503,11 @@ void YOLOLiveWidget::rebuildOverlayLayer(const QSize& displaySize) {
                          .arg(b.score, 0, 'f', 2)
                          .arg(deg)
                          .arg(QChar(0x00B0));
-        QRect labelRect(static_cast<int>(b.cx * sx - b.w * sx / 2.0),
-                        static_cast<int>(b.cy * sy - b.h * sy / 2.0) -
-                                font.pixelSize() - 6,
-                        std::max(20, label.size() * font.pixelSize()),
-                        font.pixelSize() + 6);
+        const QFontMetrics fm(font);
+        QRect labelRect(
+                static_cast<int>(b.cx * sx - b.w * sx / 2.0),
+                static_cast<int>(b.cy * sy - b.h * sy / 2.0) - fm.height() - 4,
+                std::max(20, fm.horizontalAdvance(label) + 8), fm.height() + 6);
         labelRect.setWidth(std::min(labelRect.width(),
                                     std::max(20, displaySize.width() - 4)));
         labelRect.moveLeft(std::clamp(
@@ -1280,7 +1519,9 @@ void YOLOLiveWidget::rebuildOverlayLayer(const QSize& displaySize) {
         labelRect.moveTop(std::min(
                 labelRect.top(),
                 std::max(2, displaySize.height() - labelRect.height() - 2)));
-        p.fillRect(labelRect.adjusted(0, 0, 4, 2), color);
+        QColor fill = color;
+        fill.setAlpha(150);  // translucent strip: targets stay visible
+        p.fillRect(labelRect.adjusted(0, 0, 4, 2), fill);
         p.setPen(Qt::white);
         p.drawText(labelRect.adjusted(2, 3, -2, -2), label);
         p.setPen(pen);
@@ -1310,6 +1551,48 @@ void YOLOLiveWidget::drawLiveOverlay(QImage& frame) {
     p.end();
 }
 
+void YOLOLiveWidget::finishConsumerFrame() {
+    QImage out;
+    if (!m_pendingFrame.isNull()) {
+        // Same display-size contract as the base scaledDisplayImage path:
+        // aspect-fit into the preview label so the base's
+        // completeFrameProcessing scale becomes a no-op, then annotate at
+        // the final resolution.
+        const QWidget* lbl = previewLabel();
+        const QSize target = lbl ? lbl->size() : QSize();
+        out = target.isEmpty()
+                      ? m_pendingFrame
+                      : m_pendingFrame.scaled(target, Qt::KeepAspectRatio,
+                                              Qt::SmoothTransformation);
+        drawLiveOverlay(out);
+    }
+    if (!out.isNull()) m_lastDisplayFrame = out;
+    m_pendingFrame = QImage();
+    m_pendingFrameIndex = -1;
+
+    // Pace the ConsumerDriven pipeline to the SOURCE frame rate: a light
+    // model infers in ~10 ms, which would fast-forward a 25 fps video to
+    // ~3x. The annotated frame is ready; the display (completeFrame-
+    // Processing) simply waits out the remainder of the frame slot —
+    // m_waitingForConsumer stays true meanwhile, so no extra frame is
+    // decoded. Heavy models already exceed the slot and pass through.
+    const double fps = videoFps();
+    const qint64 interval =
+            fps > 1.0 ? qint64(1000.0 / fps) : qint64(33);  // camera: ~30 fps
+    const qint64 elapsed =
+            m_framePace.isValid() ? m_framePace.elapsed() : interval;
+    const qint64 wait = interval - elapsed;
+    if (wait > 4) {
+        QTimer::singleShot(static_cast<int>(wait), this, [this, out]() {
+            m_framePace.restart();
+            completeFrameProcessing(out);
+        });
+    } else {
+        m_framePace.restart();
+        completeFrameProcessing(out);
+    }
+}
+
 void YOLOLiveWidget::repaintLivePreview() {
     if (m_lastDisplayFrame.isNull() || !previewLabel()) return;
     // m_lastDisplayFrame is already scaled to the preview label by the
@@ -1321,6 +1604,8 @@ void YOLOLiveWidget::repaintLivePreview() {
 
 void YOLOLiveWidget::clearLiveOverlay() {
     m_lastSourceFrame = QImage();
+    m_pendingFrame = QImage();
+    m_pendingFrameIndex = -1;
     m_overlayDetections.clear();
     m_overlayMasks.clear();
     m_overlayObbs.clear();
@@ -1456,4 +1741,10 @@ void YOLOLiveWidget::shutdownInferThread() {
     m_inferThread->wait();
     delete m_inferWorker;
     m_inferWorker = nullptr;
+    // The in-flight job's result (if any) was dropped with the thread; a
+    // stale busy flag would keep submitInferJob rejecting forever after a
+    // reopen (every frame displayed unannotated).
+    m_inferBusy = false;
+    m_pendingFrame = QImage();
+    m_pendingFrameIndex = -1;
 }

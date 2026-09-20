@@ -221,7 +221,7 @@ void COLMAPUndistorter::Run() {
   }
 
   std::cout << "Writing reconstruction..." << std::endl;
-  
+
   // Perform undistortion directly on the provided reconstruction pointer
   // This avoids creating a copy and ensures in-place update
   UndistortReconstruction(options_, reconstruction_);
@@ -652,7 +652,7 @@ bool PureImageUndistorter::Undistort(const size_t image_idx) const {
   Camera undistorted_camera;
   UndistortImage(options_, distorted_bitmap, camera, &undistorted_bitmap,
                  &undistorted_camera);
-    
+
   return undistorted_bitmap.Write(output_image_path);
 }
 

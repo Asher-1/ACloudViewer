@@ -450,7 +450,10 @@ QStringList demoClassesForTestData(const QString& fileName) {
     // Descriptive phrases score far lower — keep the entries short.
     if (fileName == QStringLiteral("party_hats.jpg"))
         return {QStringLiteral("person"), QStringLiteral("party hat")};
+    if (fileName == QStringLiteral("people-walking.mp4"))
+        return {QStringLiteral("person")};
     if (fileName == QStringLiteral("traffic.mp4") ||
+        fileName == QStringLiteral("vehicles.mp4") ||
         fileName == QStringLiteral("supervision_demo.mp4"))
         return {QStringLiteral("car"), QStringLiteral("bus"),
                 QStringLiteral("truck"), QStringLiteral("person")};

@@ -155,7 +155,7 @@ QString ProjectWidget::DefaultDirectory() {
     if (!options_->project_path->empty()) {
         const auto parent_path = GetParentDir(*options_->project_path);
         if (ExistsDir(parent_path)) {
-            return QString::fromStdString(parent_path);
+            return QString::fromStdString(parent_path.string());
         }
     }
 
@@ -163,7 +163,7 @@ QString ProjectWidget::DefaultDirectory() {
         const auto parent_path =
                 GetParentDir(database_path_text_->text().toUtf8().constData());
         if (ExistsDir(parent_path)) {
-            return QString::fromStdString(parent_path);
+            return QString::fromStdString(parent_path.string());
         }
     }
 

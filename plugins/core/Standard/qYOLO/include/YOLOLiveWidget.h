@@ -22,6 +22,7 @@ class QCheckBox;
 class QComboBox;
 class QDoubleSpinBox;
 class QLabel;
+class QToolButton;
 class QSpinBox;
 /** Live camera / video preview with inference-paced YOLO rendering. Detect
  *  models overlay boxes; metric-depth models blend a turbo colorized depth
@@ -162,7 +163,18 @@ private:
      *  tracker=<yaml> selection semantics. Called on tracker type
      *  changes and once for the initial selection. */
     void applyOfficialTrackDefaults(const QString& type);
-    void submitInferJob(const QImage& rgb);
+    /** Submit one inference job (ConsumerDriven: at most one in flight).
+     *  Returns false when the worker is unavailable — the caller must then
+     *  complete the frame unannotated so the pipeline never stalls. */
+    bool submitInferJob(const QImage& rgb, int frameIndex);
+    /** Resolve the picked ReID encoder GGUF in the yolo_models cache;
+     *  empty + error text when the file is missing. */
+    QString resolveReidEncoderPath(QString* error) const;
+    /** Scale the in-flight source frame to the preview size, draw the
+     *  current overlay onto it (annotate-then-display, official tracking
+     *  semantics: a frame is only ever shown WITH its own boxes) and hand
+     *  it to completeFrameProcessing(). */
+    void finishConsumerFrame();
     void rebuildOverlayLayer(const QSize& displaySize);
     void drawLiveOverlay(QImage& frame);
     void repaintLivePreview();
@@ -187,8 +199,17 @@ private:
     QCheckBox* m_trackCheck = nullptr;
     QCheckBox* m_reidCheck = nullptr;
     QCheckBox* m_trailsCheck = nullptr;
+    // Explicit appearance-encoder picker (official model=<path>): ONE combo
+    // over the reid-yolo26{n..x}-<quant>.gguf family in the yolo_models
+    // cache, entries styled like the model combo's.
+    QComboBox* m_reidModelCombo = nullptr;
     QComboBox* m_trackerCombo = nullptr;
     QComboBox* m_gmcCombo = nullptr;
+    // Collapsible advanced-parameter row (High/Low/New/Buffer/Match):
+    // hidden by default behind the Params toggle so the video preview
+    // keeps the vertical space.
+    QToolButton* m_trackParamsBtn = nullptr;
+    QWidget* m_trackParamsWrap = nullptr;
     QDoubleSpinBox* m_trackHighSpin = nullptr;
     QDoubleSpinBox* m_trackLowSpin = nullptr;
     QDoubleSpinBox* m_newTrackSpin = nullptr;
@@ -220,15 +241,19 @@ private:
     // config, the log must not).
     QString m_lastTrackWarning;
 
-    // ---- live overlay state (ClockDriven decoupling) ----------------------
-    // The display tick paints the newest frame plus a cached overlay layer
-    // (detect boxes at preview resolution, or the blended depth layer);
-    // inference completions only bump m_overlayGeneration and trigger a
-    // repaint. Inference never paces the display, and the full-resolution
-    // annotated image is rendered once at capture time from
-    // m_lastSourceFrame.
-    QImage m_lastDisplayFrame;  // preview-size frame from the display tick
+    // ---- live overlay state (ConsumerDriven frame pairing) --------------
+    // The base decodes exactly one frame and waits for
+    // completeFrameProcessing(): the widget renders the annotated copy of
+    // THAT frame and displays it, so the overlay can never lag the video
+    // (the old ClockDriven path kept painting the newest result over
+    // whatever frame happened to be displayed — visible box drift).
+    QImage m_lastDisplayFrame;  // last annotated preview frame (parked)
     QImage m_lastSourceFrame;   // full-res frame of the last submitted job
+    QImage m_pendingFrame;      // in-flight ConsumerDriven source frame
+    int m_pendingFrameIndex = -1;
+    // Display pacing clock: ConsumerDriven frames are shown at the SOURCE
+    // frame rate (a light model would otherwise fast-forward the video).
+    QElapsedTimer m_framePace;
     QVector<YOLODetection> m_overlayDetections;
     QVector<YOLOSegMask> m_overlayMasks;  // instance masks (segment only)
     QVector<YOLOObbBox> m_overlayObbs;    // oriented boxes (obb only)

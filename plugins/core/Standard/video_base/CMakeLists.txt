@@ -86,3 +86,18 @@ endif()
 if( MSVC )
     target_compile_definitions( video_base PUBLIC _USE_MATH_DEFINES )
 endif()
+
+# Offline regression test for the preview-label gesture chain: a synthetic
+# mouse event sent to m_previewLabel must reach the onPreviewMouse* hooks
+# through the base event filter (installEventFilter -> eventFilter ->
+# virtual hook). The live interaction is dead if any link breaks.
+add_executable( test_video_base_gestures
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_preview_gestures.cpp )
+target_link_libraries( test_video_base_gestures PRIVATE video_base )
+set_target_properties( test_video_base_gestures PROPERTIES AUTOMOC ON
+    POSITION_INDEPENDENT_CODE ON )
+if(NOT MSVC)
+    target_compile_options( test_video_base_gestures PRIVATE -fPIC)
+    target_link_options( test_video_base_gestures PRIVATE "-no-pie")
+endif()
+add_test( NAME video_base_gestures COMMAND test_video_base_gestures )

@@ -51,15 +51,16 @@ constexpr const char* kFriendsSha256 =
         "eb2c2daff249f8bf50e9f95ae1a37c3ce7de06bc7e2a798c4512a179265a637b";
 
 // Shared object detection / background removal / line detection samples.
-// SHA-256 computed from the MD5-pinned release artifact
-// (78b6cfa17cdcb99a54dda160b242a52f, 62381393 bytes).
+// SHA-256 of the 2026-09-20 release refresh (105537126 bytes): adds the raw
+// tracking videos people-walking.mp4 / vehicles.mp4 (un-annotated evaluation
+// material; supervision_demo.mp4 keeps its baked-in overlays).
 constexpr const char* kObjectsDetectionZipName = "objects_detection_data.zip";
 constexpr const char* kObjectsDetectionExtractDir = "objects_detection_data";
 constexpr const char* kObjectsDetectionDownloadUrl =
         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
         "objects_detection_data/objects_detection_data.zip";
 constexpr const char* kObjectsDetectionSha256 =
-        "dec2c84dff7adefe992291533952f2314ff867a7c35cd705470c622d27515ef5";
+        "f6dc7755a124d3ffa4454e5d0b52c8f97d149f2807ac877420c4fd319feaddd2";
 
 // Single-image-to-3D samples (qTrellis): 33 curated images in examples_images/
 // plus multi-view (mv/), texture (example_texturing/), HDRI and webp extras.
@@ -378,6 +379,8 @@ bool ecvTestDataRepository::isDatasetAvailable(Dataset kind) const {
                     QStringLiteral("cat.jpg"),
                     QStringLiteral("aerial_airport.jpg"),
                     QStringLiteral("deeplsd_examples.jpg"),
+                    QStringLiteral("people-walking.mp4"),
+                    QStringLiteral("vehicles.mp4"),
                     QStringLiteral("supervision_demo.mp4"),
                     QStringLiteral("traffic.mp4")};
             extractedComplete = true;
