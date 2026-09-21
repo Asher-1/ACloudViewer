@@ -697,6 +697,35 @@ target_include_directories(cmp_sam3_vit_stages PRIVATE ${AICORE_TEST_INC}/../src
 aicore_apply_compile_definitions(cmp_sam3_vit_stages)
 cloudviewer_set_aicore_test_runtime_layout(cmp_sam3_vit_stages)
 aicore_add_trellis_capi_test(test_trellis_capi_contract)
+
+# SAM 3D C API contract test (model-free) plus the real-asset acceptance
+# probe consumed by the aicore-validate-all runner.
+function(aicore_add_sam3d_capi_test name)
+    add_executable(${name} sam3d/${name}.cpp)
+    target_link_libraries(${name} PRIVATE AICore)
+    _aicore_capi_link(${name})
+    _aicore_test_common(${name})
+    if(NOT MSVC)
+        target_compile_options(${name} PRIVATE -fPIC)
+        target_link_options(${name} PRIVATE "-no-pie")
+    endif()
+    set_tests_properties(${name} PROPERTIES LABELS "capi")
+endfunction()
+aicore_add_sam3d_capi_test(test_sam3d_capi_contract)
+
+add_executable(bench_sam3d_backend_acceptance sam3d/bench_sam3d_backend_acceptance.cpp)
+target_link_libraries(bench_sam3d_backend_acceptance PRIVATE AICore)
+_aicore_capi_link(bench_sam3d_backend_acceptance)
+if(NOT MSVC)
+    target_compile_options(bench_sam3d_backend_acceptance PRIVATE -Wall -Wextra -fPIC)
+    target_link_options(bench_sam3d_backend_acceptance PRIVATE "-no-pie")
+endif()
+target_include_directories(bench_sam3d_backend_acceptance PRIVATE
+    ${AICORE_TEST_INC}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/sam3d/stb)
+aicore_apply_compile_definitions(bench_sam3d_backend_acceptance)
+cloudviewer_set_aicore_test_runtime_layout(bench_sam3d_backend_acceptance)
+
 set_tests_properties(test_rmbg_capi_performance PROPERTIES
     LABELS "capi;model;gpu;performance")
 
@@ -1020,6 +1049,7 @@ set(_aicore_contract_targets
     test_lingbot_capi_contract
     test_lingbot_capi_load
     test_sam3_capi_contract
+    test_sam3d_capi_contract
     test_trellis_capi_contract
     test_yolo_capi_performance
     test_model_catalog_defaults
@@ -1117,7 +1147,11 @@ set(_aicore_fast_targets
     test_rfdetr_preprocess
     test_rfdetr_two_stage_mask
     test_yolo_unscale_masks
-    test_catalog_dump_urls)
+    test_catalog_dump_urls
+    # Registered by plugins/core/Standard/video_base (no labels, so ctest -LE
+    # above selects it): must be built as a dependency or ctest fails with a
+    # missing binary, exactly like the AICore targets above.
+    test_video_base_gestures)
 # The fast tier also runs the no-asset subset of the capi contract suite
 # (ctest -LE "model|gpu|e2e" selects them), so those binaries must exist too.
 list(APPEND _aicore_fast_targets ${_aicore_contract_targets})
@@ -1222,6 +1256,7 @@ if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
         bench_rfdetr_perf
         test_rmbg_capi_performance
         bench_sam3_backend_acceptance
+        bench_sam3d_backend_acceptance
         test_gkd_capi_load
         test_lingbot_capi_load
         test_reid_capi_load
@@ -1264,7 +1299,7 @@ if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
         DEPENDS test_catalog_dump_urls ${_aicore_validation_targets}
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         COMMENT "Running AICore model/task regression matrix (light tier: "
-                "sam3/trellis lightweight subsets; use validate_all.py --full "
+                "sam3/trellis/sam3d lightweight subsets; use validate_all.py --full "
                 "for the complete matrix)"
         USES_TERMINAL
         VERBATIM)

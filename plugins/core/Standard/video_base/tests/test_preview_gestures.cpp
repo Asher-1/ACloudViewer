@@ -37,6 +37,13 @@ protected:
 }  // namespace
 
 int main(int argc, char** argv) {
+    // Never require a display: the gesture chain is pure event delivery, so
+    // all assertions run offscreen on every CI runner.  An externally set
+    // platform (e.g. a local xcb session or xvfb-run) is respected so the
+    // test can also be exercised under a real display.
+    if (!qEnvironmentVariableIsSet("QT_QPA_PLATFORM")) {
+        qputenv("QT_QPA_PLATFORM", "offscreen");
+    }
     QApplication app(argc, argv);
     ProbeWidget w;
     w.resize(640, 480);

@@ -35,6 +35,21 @@ else()
         "<INSTALL_DIR>/${CloudViewer_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}OpenImageIO_Util${CMAKE_STATIC_LIBRARY_SUFFIX}")
 endif()
 
+# Pin the inner OIIO project to the single configuration actually built and
+# delivered: the static closure is one artifact consumed by every outer
+# config. On Windows the ExternalProject inherits the outer multi-config VS
+# generator, whose generate step evaluates Debug/MinSizeRel/RelWithDebInfo;
+# dependencies consumed through OCIO's OpenColorIOConfig.cmake (yaml-cpp,
+# via find_dependency -> yaml-cpp-targets-release.cmake) export only the
+# Release location, so generate dies with "IMPORTED_LOCATION not set for
+# imported target yaml-cpp::yaml-cpp" (windows wheel CI). Restricting the
+# config set is inert on the single-config Make/Ninja builds of Linux/macOS.
+if(WIN32)
+    set(_openimageio_inner_config_args -DCMAKE_CONFIGURATION_TYPES=Release)
+else()
+    set(_openimageio_inner_config_args "")
+endif()
+
 # ext_zlib artifact consumed via ZLIB_LIBRARY below, pinned to the STATIC
 # archive on every platform. zlib always builds the static `zlibstatic`
 # target; non-MSVC renames it to `z` (libz.a) alongside the shared
@@ -86,7 +101,8 @@ ExternalProject_Add(ext_openimageio
     CMAKE_ARGS
         -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         ${ExternalProject_CMAKE_ARGS_hidden}
-        -DCMAKE_BUILD_TYPE=$<IF:$<PLATFORM_ID:Windows>,${CMAKE_BUILD_TYPE},Release>
+        -DCMAKE_BUILD_TYPE=Release
+        ${_openimageio_inner_config_args}
         -DCMAKE_PREFIX_PATH=${OPENIMAGEIO_PREFIX_PATH}
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DCMAKE_INSTALL_LIBDIR=${CloudViewer_INSTALL_LIB_DIR}
