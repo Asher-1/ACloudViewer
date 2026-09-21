@@ -622,6 +622,16 @@ if(NOT MSVC)
 endif()
 set_tests_properties(test_model_catalog_defaults PROPERTIES LABELS "capi")
 
+add_executable(test_shared_model_catalog catalog/test_shared_model_catalog.cpp)
+target_link_libraries(test_shared_model_catalog PRIVATE AICore)
+_aicore_capi_link(test_shared_model_catalog)
+_aicore_test_common(test_shared_model_catalog)
+if(NOT MSVC)
+    target_compile_options(test_shared_model_catalog PRIVATE -fPIC)
+    target_link_options(test_shared_model_catalog PRIVATE "-no-pie")
+endif()
+set_tests_properties(test_shared_model_catalog PROPERTIES LABELS "capi")
+
 # Manual real-model acceptance probe for a ggml-version worktree. It is not a
 # CTest because it requires a local SAM3 GGUF, a Vulkan-capable GPU, and takes
 # several minutes on CPU. See the source header for its exact parity gates.
@@ -721,10 +731,24 @@ if(NOT MSVC)
     target_link_options(bench_sam3d_backend_acceptance PRIVATE "-no-pie")
 endif()
 target_include_directories(bench_sam3d_backend_acceptance PRIVATE
-    ${AICORE_TEST_INC}
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/sam3d/stb)
+    ${AICORE_TEST_INC})
 aicore_apply_compile_definitions(bench_sam3d_backend_acceptance)
 cloudviewer_set_aicore_test_runtime_layout(bench_sam3d_backend_acceptance)
+
+# White-box stage-bisect probe: runs cmd_e2e from a fixed condition/noise
+# directory (upstream sam3d-cli --conditions-out layout) so output
+# divergence versus the upstream reference is attributable to kernel
+# execution. Static white-box link keeps cmd_e2e private.
+if(TARGET AICore_test)
+    add_executable(sam3d_stage_bisect sam3d/sam3d_stage_bisect.cpp)
+    target_link_libraries(sam3d_stage_bisect PRIVATE AICore_test)
+    target_include_directories(sam3d_stage_bisect PRIVATE
+        ${AICORE_TEST_INC}
+        ${CMAKE_CURRENT_SOURCE_DIR}/../src
+        ${CMAKE_CURRENT_SOURCE_DIR}/../src/tasks/sam3d)
+    aicore_apply_compile_definitions(sam3d_stage_bisect)
+    cloudviewer_set_aicore_test_runtime_layout(sam3d_stage_bisect)
+endif()
 
 set_tests_properties(test_rmbg_capi_performance PROPERTIES
     LABELS "capi;model;gpu;performance")
@@ -1049,10 +1073,10 @@ set(_aicore_contract_targets
     test_lingbot_capi_contract
     test_lingbot_capi_load
     test_sam3_capi_contract
-    test_sam3d_capi_contract
     test_trellis_capi_contract
     test_yolo_capi_performance
     test_model_catalog_defaults
+    test_shared_model_catalog
     # Registered-capable tests that were missing from this list ran in the
     # capi tier with no built binary (CTest "Not Run"): the shared GGUF open
     # helper (whitebox-guarded), the reid contract pair, and the model-tier
@@ -1062,6 +1086,28 @@ set(_aicore_contract_targets
     test_reid_capi_load
     test_deeplsd_capi_load
     test_depth_capi_backend_parity)
+list(APPEND _aicore_contract_targets test_sam3d_capi_contract)
+# capi-labeled model tests: registered unconditionally below, but their
+# binaries are normally only built by the model tier. With
+# AICORE_TEST_ENABLE_MODEL_TESTS=ON the contract tier selects them via
+# -L capi with no -LE exclusion, and an unbuilt binary is a CTest "Not Run"
+# failure — so build them here too (workflow_dispatch model-tests variant;
+# see ubuntu.yml: enabling model tests must never introduce an unreachable
+# check). Gated so the default CPU-only CI lane pays no extra build cost.
+if(AICORE_TEST_ENABLE_MODEL_TESTS)
+    list(APPEND _aicore_contract_targets
+        test_loma_default_triplet
+        test_loma_matcher_e2e
+        test_loma_published_model_gate
+        test_loma_detector_reference_gate
+        test_loma_descriptor_reference_gate
+        test_loma_b128_e2e_reference_gate
+        test_loma_matcher_reference_gate
+        test_facedetect_embed_capi
+        test_facedetect_dense_validation
+        test_facedetect_contexts_capi
+        test_yolo_with_classes)
+endif()
 set(_aicore_contract_model_exclude)
 if(NOT AICORE_TEST_ENABLE_MODEL_TESTS)
     list(APPEND _aicore_contract_model_exclude -LE "model|gpu|e2e")
@@ -1149,8 +1195,12 @@ set(_aicore_fast_targets
     test_yolo_unscale_masks
     test_catalog_dump_urls
     # Registered by plugins/core/Standard/video_base (no labels, so ctest -LE
-    # above selects it): must be built as a dependency or ctest fails with a
-    # missing binary, exactly like the AICore targets above.
+    # above selects it). Its binary is NOT buildable from this list: this
+    # directory is processed by add_subdirectory(core) before
+    # add_subdirectory(plugins), so the if(TARGET) filter below never sees the
+    # target here. video_base/CMakeLists.txt attaches it with
+    # add_dependencies(aicore-fast-tests ...) instead — kept in this list as
+    # the tier contract record only.
     test_video_base_gestures)
 # The fast tier also runs the no-asset subset of the capi contract suite
 # (ctest -LE "model|gpu|e2e" selects them), so those binaries must exist too.
@@ -1221,6 +1271,21 @@ set(_aicore_model_targets
     test_facedetect_embed_capi
     test_facedetect_dense_validation
     test_facedetect_contexts_capi
+    # capi-labeled model tests registered unconditionally above (loma gates,
+    # yolo classes): -L model selects them, so their binaries belong in this
+    # dependency list too — same Not Run contract as the fast/contract tiers.
+    test_loma_default_triplet
+    test_loma_matcher_e2e
+    test_loma_published_model_gate
+    test_loma_detector_reference_gate
+    test_loma_descriptor_reference_gate
+    test_loma_b128_e2e_reference_gate
+    test_loma_matcher_reference_gate
+    test_yolo_with_classes
+    # loma whitebox reference gates (model-labeled, no capi label): built by
+    # aicore_add_loma_whitebox_test when the whitebox library exists.
+    test_loma_g_token_reference_gate
+    test_loma_g_backend_parity
     test_rmbg_capi_performance
     test_gkd_capi_load
     test_lingbot_capi_load
@@ -1256,13 +1321,13 @@ if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
         bench_rfdetr_perf
         test_rmbg_capi_performance
         bench_sam3_backend_acceptance
-        bench_sam3d_backend_acceptance
         test_gkd_capi_load
         test_lingbot_capi_load
         test_reid_capi_load
         test_yolo_capi_performance
         test_yolo_text_model_validation
         test_yolo_capi_parity)
+    list(APPEND _aicore_validation_targets bench_sam3d_backend_acceptance)
     # bench_rfdetr_perf is only generated when the whitebox library exists
     # (AICore_BUILD_WHITEBOX_TESTS); drop it from the dependency list
     # otherwise so the gate is still runnable from a plain build.
@@ -1294,13 +1359,13 @@ if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
                 --build ${CMAKE_BINARY_DIR}
                 --assets ${AICORE_TEST_ASSET_ROOT}
                 --backend ${AICORE_TEST_DEVICE}
+                --tasks ${_aicore_enabled_tasks_csv}
                 --timeout 14400
                 --output ${CMAKE_BINARY_DIR}/Testing/aicore_validation.json
         DEPENDS test_catalog_dump_urls ${_aicore_validation_targets}
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        COMMENT "Running AICore model/task regression matrix (light tier: "
-                "sam3/trellis/sam3d lightweight subsets; use validate_all.py --full "
-                "for the complete matrix)"
+        COMMENT "Running AICore model/task regression matrix (manifest-declared "
+                "light tier; use validate_all.py --full for the complete matrix)"
         USES_TERMINAL
         VERBATIM)
 
@@ -1308,5 +1373,19 @@ if(Python3_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING)
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_validate_all.py)
     set_tests_properties(test_aicore_validation_runner PROPERTIES
+        LABELS "fast;validation")
+
+    add_test(NAME test_aicore_plugin_boundaries
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/check_plugin_aicore_boundaries.py
+                --root ${CMAKE_SOURCE_DIR}
+                --strict)
+    set_tests_properties(test_aicore_plugin_boundaries PROPERTIES
+        LABELS "fast;validation")
+
+    add_test(NAME test_aicore_plugin_boundary_scanner
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/test_check_plugin_aicore_boundaries.py)
+    set_tests_properties(test_aicore_plugin_boundary_scanner PROPERTIES
         LABELS "fast;validation")
 endif()

@@ -28,6 +28,7 @@
 #include "aicore/backend_capi.h"
 #include "aicore/depth_capi.h"
 #include "aicore/inference_log.h"
+#include "aicore/model_catalog_capi.h"
 #include "ecvAICoreUiHelper.h"
 #include "ecvClickableImageLabel.h"
 #include "ecvModelDownloader.h"
@@ -73,47 +74,44 @@ QStringList listImageFilesInDir(const QString& dirPath) {
 
 }  // namespace
 
-static const char* kDownloadBase =
-        "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
-        "DA3/";
-
 // QComboBox data role carrying the full-resolution ccImage for the
 // click-to-enlarge preview (the combo text is only the entity name).
 static constexpr int kDbFullImageRole = Qt::UserRole + 1;
 
 QVector<DA3BuiltinModel> DA3Dialog::builtinModels() {
-    const QString base = QString::fromLatin1(kDownloadBase);
-    return {
-            {tr("Base Q8_0 (recommended)"), "depth-anything-base-q8_0.gguf",
-             base + "depth-anything-base-q8_0.gguf"},
-            {tr("Base Q4_K (smallest)"), "depth-anything-base-q4_k.gguf",
-             base + "depth-anything-base-q4_k.gguf"},
-            {tr("Base F16 (half precision)"), "depth-anything-base-f16.gguf",
-             base + "depth-anything-base-f16.gguf"},
-            {tr("Large Q8_0 (better quality)"),
-             "depth-anything-large-q8_0.gguf",
-             base + "depth-anything-large-q8_0.gguf"},
-            {tr("Large Q4_K (compact)"), "depth-anything-large-q4_k.gguf",
-             base + "depth-anything-large-q4_k.gguf"},
-            {tr("Giant Q8_0 (best quality)"), "depth-anything-giant-q8_0.gguf",
-             base + "depth-anything-giant-q8_0.gguf"},
-            {tr("Giant Q4_K (balanced)"), "depth-anything-giant-q4_k.gguf",
-             base + "depth-anything-giant-q4_k.gguf"},
-    };
+    QVector<DA3BuiltinModel> out;
+    const int count = aicore_model_count(AICORE_MODEL_FAMILY_DEPTH);
+    for (int i = 0; i < count; ++i) {
+        const aicore_model_entry* entry =
+                aicore_model_at(AICORE_MODEL_FAMILY_DEPTH, i);
+        if (!entry || !entry->filename || !entry->download_url ||
+            !entry->role || QString::fromUtf8(entry->role) != "depth") {
+            continue;
+        }
+        out.append({tr(entry->display_name ? entry->display_name : "Model"),
+                    QString::fromUtf8(entry->filename),
+                    QString::fromUtf8(entry->download_url),
+                    QString::fromLatin1(entry->sha256 ? entry->sha256 : "")});
+    }
+    return out;
 }
 
 QVector<DA3BuiltinModel> DA3Dialog::builtinMetricModels() {
-    const QString base = QString::fromLatin1(kDownloadBase);
-    return {
-            {tr("Nested Metric F32"), "depth-anything-nested-metric.gguf",
-             base + "depth-anything-nested-metric.gguf"},
-            {tr("Nested AnyView Q8_0"),
-             "depth-anything-nested-anyview-q8_0.gguf",
-             base + "depth-anything-nested-anyview-q8_0.gguf"},
-            {tr("Nested AnyView Q4_K"),
-             "depth-anything-nested-anyview-q4_k.gguf",
-             base + "depth-anything-nested-anyview-q4_k.gguf"},
-    };
+    QVector<DA3BuiltinModel> out;
+    const int count = aicore_model_count(AICORE_MODEL_FAMILY_DEPTH);
+    for (int i = 0; i < count; ++i) {
+        const aicore_model_entry* entry =
+                aicore_model_at(AICORE_MODEL_FAMILY_DEPTH, i);
+        if (!entry || !entry->filename || !entry->download_url ||
+            !entry->role || QString::fromUtf8(entry->role) != "metric") {
+            continue;
+        }
+        out.append({tr(entry->display_name ? entry->display_name : "Model"),
+                    QString::fromUtf8(entry->filename),
+                    QString::fromUtf8(entry->download_url),
+                    QString::fromLatin1(entry->sha256 ? entry->sha256 : "")});
+    }
+    return out;
 }
 
 QString DA3Dialog::modelCacheDir() {
@@ -526,8 +524,7 @@ void DA3Dialog::populateModelCombos(const QString& keepModelFilename,
         QString suffix;
         if (ecvAssetIntegrity::isVerified(
                     fi.absoluteFilePath(),
-                    {QCryptographicHash::Sha256,
-                     ecvAssetIntegrity::PinnedDigest(m.filename)},
+                    {QCryptographicHash::Sha256, m.sha256.toLatin1()},
                     64 * 1024, true,
                     ecvAssetIntegrity::OnMiss::CheapChecksOnly)) {
             suffix =
@@ -553,8 +550,7 @@ void DA3Dialog::populateModelCombos(const QString& keepModelFilename,
         QString suffix;
         if (ecvAssetIntegrity::isVerified(
                     fi.absoluteFilePath(),
-                    {QCryptographicHash::Sha256,
-                     ecvAssetIntegrity::PinnedDigest(m.filename)},
+                    {QCryptographicHash::Sha256, m.sha256.toLatin1()},
                     64 * 1024, true,
                     ecvAssetIntegrity::OnMiss::CheapChecksOnly)) {
             suffix =
@@ -695,21 +691,23 @@ bool DA3Dialog::ensureAllModelsAvailable() {
                               const QVector<DA3BuiltinModel>& catalog) {
         QString data = combo->currentData().toString();
         if (data == "CUSTOM" || data == "NONE") return;
+        const DA3BuiltinModel* selected = nullptr;
+        for (const auto& model : catalog) {
+            if (model.filename == data) {
+                selected = &model;
+                break;
+            }
+        }
+        if (!selected) return;
         QString cached = cacheDir + "/" + data;
         if (ecvAssetIntegrity::isVerified(
                     cached,
-                    {QCryptographicHash::Sha256,
-                     ecvAssetIntegrity::PinnedDigest(data)},
+                    {QCryptographicHash::Sha256, selected->sha256.toLatin1()},
                     64 * 1024, true,
                     ecvAssetIntegrity::OnMiss::CheapChecksOnly)) {
             return;
         }
-        for (const auto& bm : catalog) {
-            if (bm.filename == data) {
-                needed.append(bm);
-                break;
-            }
-        }
+        needed.append(*selected);
     };
 
     collectMissing(m_modelCombo, builtinModels());
@@ -763,8 +761,7 @@ void DA3Dialog::startDownload(const DA3BuiltinModel& model) {
     req.destPath = dest;
     // Content identity from the release digest registry — streamed SHA-256
     // check at ingestion (truncation and corruption both caught).
-    req.contentAnchor = {QCryptographicHash::Sha256,
-                         ecvAssetIntegrity::PinnedDigest(model.filename)};
+    req.contentAnchor = {QCryptographicHash::Sha256, model.sha256.toLatin1()};
     m_downloader->download(req);
 }
 

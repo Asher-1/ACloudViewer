@@ -24,11 +24,9 @@
 #include "aicore/backend_capi.h"
 #include "aicore/deeplsd_capi.h"
 #include "aicore/inference_log.h"
+#include "aicore/model_catalog_capi.h"
 #include "ecvAICoreUiHelper.h"
 #include "ecvModelDownloader.h"
-static const char* kDownloadBase =
-        "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
-        "DeepLSD/";
 
 namespace {
 
@@ -47,32 +45,31 @@ bool isSupportedImageFile(const QString& filePath) {
 }
 
 bool isValidCachedGguf(const QFileInfo& fi) {
+    const QByteArray filename = fi.fileName().toUtf8();
+    const aicore_model_entry* entry = aicore_model_by_filename(
+            AICORE_MODEL_FAMILY_DEEPLSD, filename.constData());
+    if (!entry || !entry->sha256 || !*entry->sha256) return false;
     return ecvAssetIntegrity::isVerified(
             fi.absoluteFilePath(),
-            {QCryptographicHash::Sha256,
-             ecvAssetIntegrity::PinnedDigest(fi.fileName())},
-            64 * 1024, true, ecvAssetIntegrity::OnMiss::CheapChecksOnly);
+            {QCryptographicHash::Sha256, QByteArray(entry->sha256)}, 64 * 1024,
+            true, ecvAssetIntegrity::OnMiss::CheapChecksOnly);
 }
 
 }  // namespace
 
 QVector<DeepLSDBuiltinModel> DeepLSDDialog::builtinModels() {
-    const QString base = QString::fromLatin1(kDownloadBase);
-    return {
-            {tr("DeepLSD Wireframe F16 (recommended)"),
-             "deeplsd_wireframe-f16.gguf", base + "deeplsd_wireframe-f16.gguf"},
-            {tr("DeepLSD Wireframe Q8_0 (smaller)"),
-             "deeplsd_wireframe-q8_0.gguf",
-             base + "deeplsd_wireframe-q8_0.gguf"},
-            {tr("DeepLSD Wireframe F32"), "deeplsd_wireframe-f32.gguf",
-             base + "deeplsd_wireframe-f32.gguf"},
-            {tr("DeepLSD MegaDepth F16 (outdoor)"), "deeplsd_md-f16.gguf",
-             base + "deeplsd_md-f16.gguf"},
-            {tr("DeepLSD MegaDepth Q8_0"), "deeplsd_md-q8_0.gguf",
-             base + "deeplsd_md-q8_0.gguf"},
-            {tr("DeepLSD MegaDepth F32"), "deeplsd_md-f32.gguf",
-             base + "deeplsd_md-f32.gguf"},
-    };
+    QVector<DeepLSDBuiltinModel> out;
+    const int count = aicore_model_count(AICORE_MODEL_FAMILY_DEEPLSD);
+    for (int i = 0; i < count; ++i) {
+        const aicore_model_entry* entry =
+                aicore_model_at(AICORE_MODEL_FAMILY_DEEPLSD, i);
+        if (!entry || !entry->filename || !entry->download_url) continue;
+        out.append({tr(entry->display_name ? entry->display_name : "Model"),
+                    QString::fromUtf8(entry->filename),
+                    QString::fromUtf8(entry->download_url),
+                    QString::fromLatin1(entry->sha256 ? entry->sha256 : "")});
+    }
+    return out;
 }
 
 QString DeepLSDDialog::modelCacheDir() {
@@ -757,8 +754,7 @@ void DeepLSDDialog::startDownload(const DeepLSDBuiltinModel& model) {
     req.destPath = dest;
     // Content identity from the release digest registry — streamed SHA-256
     // check at ingestion (truncation and corruption both caught).
-    req.contentAnchor = {QCryptographicHash::Sha256,
-                         ecvAssetIntegrity::PinnedDigest(model.filename)};
+    req.contentAnchor = {QCryptographicHash::Sha256, model.sha256.toLatin1()};
     m_downloader->download(req);
 }
 

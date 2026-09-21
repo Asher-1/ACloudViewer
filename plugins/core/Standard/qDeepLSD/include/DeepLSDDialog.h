@@ -31,6 +31,7 @@ struct DeepLSDBuiltinModel {
     QString displayName;
     QString filename;
     QString downloadUrl;
+    QString sha256;
 };
 
 class DeepLSDDialog : public QDialog {

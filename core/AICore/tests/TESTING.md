@@ -78,20 +78,29 @@ JSON plus Markdown reports. A missing backend, exit 77, an uncovered new model,
 an accuracy failure, or unstable repeated output also makes a complete run fail.
 
 ```bash
-# Defaults: two process repeats (the minimum needed to compare output
-# fingerprints across processes); probes use one warmup and five timed
-# forwards where their API supports repeated inference. For release-grade
-# A/B statistics pass --inference-runs 10 explicitly. The default tier is
-# LIGHT: tasks that declare a lightweight subset (sam3, trellis, gkd,
-# lingbot) run only that subset and their heavy scenarios are skipped. Pass
+# Developer profile: two process repeats, one warmup, and two timed forwards.
+# It is a fast local diagnostic loop, not release evidence. The release profile
+# requires a same-host baseline and uses three repeats, two warmups, and ten
+# timed forwards. It also rejects `--allow-incomplete` and every selected row
+# that still has only legacy `accuracy_gate` prose instead of a structured,
+# machine-evaluated `accuracy` contract. The default tier is LIGHT: tasks that declare a lightweight
+# subset run only that subset and their heavy scenarios are skipped. Pass
 # --full for the complete matrix.
 python3 core/AICore/scripts/validate_all.py \
+  --profile developer \
   --build build_app --backend cuda \
   --output build_app/Testing/aicore_validation.json
 
-# Complete matrix (all sam3/trellis models and pipeline scenarios). This is
-# the only form that is evidence for a complete regression or release claim.
+# Controlled release A/B (required for release/regression or speed claims).
 python3 core/AICore/scripts/validate_all.py \
+  --profile release --build build_app --baseline-build build_app.before \
+  --backend cuda --output build_app/Testing/aicore_validation-release.json
+
+# Complete matrix (all sam3/trellis models and pipeline scenarios). This is
+# required for a complete coverage claim; release claims also require the
+# release profile and a controlled baseline.
+python3 core/AICore/scripts/validate_all.py \
+  --profile developer \
   --build build_app --backend cuda --full \
   --output build_app/Testing/aicore_validation.json
 
@@ -132,14 +141,17 @@ both builds.
 
 ```bash
 python3 core/AICore/scripts/validate_all.py \
+  --profile release \
   --build build-after --backend cuda \
   --baseline-build build-before \
   --output build-after/Testing/aicore_validation.json
 ```
 
-The default performance gate requires both a `+5%` relative increase and an
-absolute increase above `3` metric units (`ms` for latency, `MiB` for memory).
-Task probes own their numeric accuracy gates. Deterministic probes require an
+The performance gate requires both a `+5%` relative increase and an absolute
+increase above `3` metric units (`ms` for latency, `MiB` for memory). Task
+probes own their numeric accuracy gates. New manifest rows use a structured
+`accuracy` object with a reference, checks, and required metrics; the legacy
+`accuracy_gate` string is display text only. Deterministic probes require an
 exact cross-build output fingerprint; ALIKED, SAM3, and YOLO instead run
 explicit CPU/backend numeric parity gates and use fingerprints for same-build
 stability only. A previously captured report can still be supplied with

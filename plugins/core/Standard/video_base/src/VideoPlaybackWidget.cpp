@@ -139,8 +139,8 @@ bool VideoPlaybackWidget::isAvailable() {
 #endif
 }
 
-QImage VideoPlaybackWidget::cvMatToQImage(const cv::Mat& mat) {
 #ifdef HAS_OPENCV_FACE_CAPTURE
+QImage VideoPlaybackWidget::cvMatToQImage(const cv::Mat& mat) {
     if (mat.empty()) return QImage();
 
     if (mat.channels() == 3) {
@@ -169,11 +169,8 @@ QImage VideoPlaybackWidget::cvMatToQImage(const cv::Mat& mat) {
                   rgb.channels() == 4 ? QImage::Format_RGBA8888
                                       : QImage::Format_RGB888)
             .copy();
-#else
-    Q_UNUSED(mat);
-    return QImage();
-#endif
 }
+#endif
 
 QString VideoPlaybackWidget::browseVideoFile(const QString& settingsPrefix) {
     QSettings settings;
@@ -200,7 +197,11 @@ void VideoPlaybackWidget::setPreviewFixedHeight(int height) {
 }
 
 bool VideoPlaybackWidget::videoFileLoaded() const {
+#ifdef HAS_OPENCV_FACE_CAPTURE
     return m_frameReaderReady && m_inputSource == InputSource::VideoFile;
+#else
+    return false;
+#endif
 }
 
 void VideoPlaybackWidget::setupUi() {
@@ -449,8 +450,10 @@ void VideoPlaybackWidget::setupFrameReader() {
 // Subclass hooks (default no-ops)
 // ---------------------------------------------------------------------------
 
+#ifdef HAS_OPENCV_FACE_CAPTURE
 void VideoPlaybackWidget::onFrameDecoded(cv::Mat& /*frame*/,
                                          int /*frameIndex*/) {}
+#endif
 void VideoPlaybackWidget::onDisplayFrame(QImage& /*display*/,
                                          int /*frameIndex*/) {}
 void VideoPlaybackWidget::onVideoLooped() {}
@@ -751,8 +754,11 @@ void VideoPlaybackWidget::stopStream() {
 
     // For video files that are paused (not released), keep the slider and
     // metadata intact so the user can still seek and preview.
-    const bool videoStillLoaded =
-            isVideoFile && m_frameReaderReady && !m_openVideoPath.isEmpty();
+    bool videoStillLoaded = false;
+#ifdef HAS_OPENCV_FACE_CAPTURE
+    videoStillLoaded = m_inputSource == InputSource::VideoFile &&
+                       m_frameReaderReady && !m_openVideoPath.isEmpty();
+#endif
     if (!videoStillLoaded) {
         m_totalVideoFrames = 0;
         if (m_videoSeekSlider) {
@@ -778,6 +784,7 @@ void VideoPlaybackWidget::stopStream() {
 }
 
 void VideoPlaybackWidget::resumePlayback() {
+#ifdef HAS_OPENCV_FACE_CAPTURE
     if (!m_videoPaused || !m_frameReaderReady) return;
     m_videoPaused = false;
     m_streamActive = true;
@@ -787,6 +794,7 @@ void VideoPlaybackWidget::resumePlayback() {
     onStreamResumed();
     beginFrameProcessing();
     emit streamStarted();
+#endif
 }
 
 void VideoPlaybackWidget::seekToFrame(int frameIndex) {
@@ -812,6 +820,7 @@ void VideoPlaybackWidget::seekToFrame(int frameIndex) {
 
 void VideoPlaybackWidget::setPlaybackSpeed(double speed) {
     m_playbackSpeed = std::max(0.1, speed);
+#ifdef HAS_OPENCV_FACE_CAPTURE
     if (m_playbackSpeedCombo) {
         const int index =
                 std::min(kSpeedPresetCount - 1,
@@ -821,6 +830,7 @@ void VideoPlaybackWidget::setPlaybackSpeed(double speed) {
         m_playbackSpeedCombo->setCurrentIndex(index);
         m_playbackSpeedCombo->blockSignals(false);
     }
+#endif
     // Recompute both clocks for clock-driven playback: the UI tick and the
     // reader-thread decode clock advance at fps × speed.  Consumer-driven
     // mode intentionally advances only when its subclass completes
@@ -858,7 +868,11 @@ QString VideoPlaybackWidget::videoFilePath() const {
 }
 
 void VideoPlaybackWidget::setVideoFilePath(const QString& path) {
+#ifdef HAS_OPENCV_FACE_CAPTURE
     const QString requestedPath = normalizedVideoPath(path);
+#else
+    const QString requestedPath = path.trimmed();
+#endif
     if (m_streamActive && m_inputSource == InputSource::VideoFile &&
         !m_openVideoPath.isEmpty() && m_openVideoPath != requestedPath) {
         stopStream();
@@ -903,19 +917,23 @@ void VideoPlaybackWidget::beginFrameProcessing() {
         // makes playback speed effective — the video timeline advances on
         // the decode clock, while the UI tick consumes the newest decoded
         // frame (dropping frames when processing is slower than the clock).
+#ifdef HAS_OPENCV_FACE_CAPTURE
         if (m_frameReaderReady) {
             QMetaObject::invokeMethod(m_frameReader, "startClockReading",
                                       Qt::QueuedConnection,
                                       Q_ARG(int, interval));
         }
+#endif
     } else {
         m_frameTimer->stop();
         // Consumer-driven mode decodes one frame per request (the subclass's
         // inference completion drives advancement).
+#ifdef HAS_OPENCV_FACE_CAPTURE
         if (m_frameReaderReady) {
             QMetaObject::invokeMethod(m_frameReader, "readFrame",
                                       Qt::QueuedConnection);
         }
+#endif
     }
     if (isVideo) {
         m_statusLabel->setText(tr("Playing video"));
@@ -1006,8 +1024,8 @@ void VideoPlaybackWidget::processFrame() {
 #endif
 }
 
-QImage VideoPlaybackWidget::scaledDisplayImage(const cv::Mat& frame) const {
 #ifdef HAS_OPENCV_FACE_CAPTURE
+QImage VideoPlaybackWidget::scaledDisplayImage(const cv::Mat& frame) const {
     if (frame.empty() || !m_previewLabel) return QImage();
     // QSize::scaled shares its arithmetic with QImage::scaled(
     // KeepAspectRatio), so the output size (and therefore subclass overlay
@@ -1025,11 +1043,8 @@ QImage VideoPlaybackWidget::scaledDisplayImage(const cv::Mat& frame) const {
         scaled = frame;  // shallow — Mat refcount bump only
     }
     return cvMatToQImage(scaled);
-#else
-    Q_UNUSED(frame);
-    return QImage();
-#endif
 }
+#endif
 
 int VideoPlaybackWidget::computeTimerInterval() const {
     // For video files: match the video's native frame rate × playback speed.
@@ -1116,8 +1131,12 @@ void VideoPlaybackWidget::onVideoSeekSliderChanged(int value) {
 }
 
 void VideoPlaybackWidget::onPlaybackSpeedChanged(int index) {
+#ifdef HAS_OPENCV_FACE_CAPTURE
     if (index < 0 || index >= kSpeedPresetCount) return;
     setPlaybackSpeed(kSpeedPresets[index]);
+#else
+    Q_UNUSED(index);
+#endif
 }
 
 void VideoPlaybackWidget::updateVideoTimeLabel(int frameIndex) {

@@ -107,10 +107,115 @@ if(GGML_USE_CUDA)
     # DT_NEEDED for driver-only deployments). The companion patch in
     # 3rdparty/ggml/patches/cuda_mmq/ is inert when GGML_CUDA_FORCE_MMQ=OFF.
     list(APPEND GGML_CMAKE_ARGS -DGGML_CUDA_FORCE_MMQ=${GGML_CUDA_FORCE_MMQ})
+    # NOTE: the upstream sam-3d-objects-ggml production build replays CUDA
+    # graphs (run_ggml.sh: GGML_CUDA_GRAPHS ON FORCE), but replay bypasses the
+    # per-call host-side logic of our ported sam3d custom ops (spconv plan
+    # selection and the masked-attention workspaces); the ss flow occupancy
+    # collapses (58182 -> 4992 coords on the kidsroom fixture) because the
+    # capture bakes the first call's internal scratch pointers into the
+    # replay. Keep graphs OFF until those ops route their scratch through the
+    # ggml allocator like upstream's do.
     set(_GGML_CUDA_ENABLED ON)
     message(STATUS "ggml: CUDA backend enabled (FORCE_MMQ=${GGML_CUDA_FORCE_MMQ}, static cudart)")
 else()
     list(APPEND GGML_CMAKE_ARGS -DGGML_CUDA=OFF)
+endif()
+
+# ── SAM 3D Objects operator set (patches/sam3d_merged) ──────────────────────
+# SAM3D is part of the unified AICore task set. When CUDA is enabled the pinned
+# PyTorch mem-eff attention headers and CUTLASS tarball are fetched here and
+# handed to the ggml build through GGML_SAM3D_* directory caches; the vendored
+# spconv sources live in 3rdparty/ggml/sam3d/spconv. Without CUDA the op set
+# still builds (CPU reference kernels + Vulkan scatter shader) and the ggml
+# patch simply compiles the CUDA-only kernels out.
+_ggml_read_synced_cache(GGML_USE_SAM3D_OPS BOOL ON
+    "Internal: required by the unified AICore task set")
+set(_GGML_SAM3D_DEPS_DIR "${CLOUDVIEWER_THIRD_PARTY_DOWNLOAD_DIR}/ggml/sam3d-deps")
+if(GGML_USE_SAM3D_OPS AND _GGML_CUDA_ENABLED)
+    # PyTorch 2.5.1 mem-efficient attention public header closure, pinned by
+    # content hash (header-only; neither libtorch nor cuDNN is linked).
+    set(_sam3d_memeff_dir "${_GGML_SAM3D_DEPS_DIR}/pytorch-v2.5.1-mem-eff-attention")
+    set(_sam3d_pytorch_url "https://raw.githubusercontent.com/pytorch/pytorch/v2.5.1/aten/src")
+    function(_ggml_sam3d_fetch_memeff_header relative_path expected_sha256)
+        set(destination "${_sam3d_memeff_dir}/${relative_path}")
+        if(EXISTS "${destination}")
+            file(SHA256 "${destination}" actual_sha256)
+            if(actual_sha256 STREQUAL expected_sha256)
+                return()
+            endif()
+            file(REMOVE "${destination}")
+        endif()
+        get_filename_component(destination_dir "${destination}" DIRECTORY)
+        file(MAKE_DIRECTORY "${destination_dir}")
+        message(STATUS "ggml: fetching SAM3D pinned header ${relative_path}")
+        file(DOWNLOAD "${_sam3d_pytorch_url}/${relative_path}" "${destination}"
+            EXPECTED_HASH "SHA256=${expected_sha256}" TLS_VERIFY ON
+            STATUS _sam3d_dl_status)
+        list(GET _sam3d_dl_status 0 _sam3d_dl_code)
+        if(NOT _sam3d_dl_code EQUAL 0)
+            list(GET _sam3d_dl_status 1 _sam3d_dl_msg)
+            message(FATAL_ERROR "Failed to fetch pinned PyTorch attention header ${relative_path}: ${_sam3d_dl_msg}")
+        endif()
+    endfunction()
+    _ggml_sam3d_fetch_memeff_header("ATen/native/transformers/cuda/mem_eff_attention/debug_utils.h" "0bc7029c77ea42c8144e92814a7417c7b49acb4dee002fba0763a35a7ee27c02")
+    _ggml_sam3d_fetch_memeff_header("ATen/native/transformers/cuda/mem_eff_attention/epilogue/epilogue_pipelined.h" "220dcb8e76c6f95339f9ef8630aae000a2c65fc003f7063d0c1d2da7df5ef8d8")
+    _ggml_sam3d_fetch_memeff_header("ATen/native/transformers/cuda/mem_eff_attention/epilogue/epilogue_rescale_output.h" "01937cbd90f837ba0aa0674a111b56b7a2fdac93acd7bd46384066a26310f78c")
+    _ggml_sam3d_fetch_memeff_header("ATen/native/transformers/cuda/mem_eff_attention/epilogue/epilogue_thread_apply_logsumexp.h" "c5ca7711ae4f94cd2b1c3cd8275114b5740b804748ca4d08c501bed9f42f6941")
+    _ggml_sam3d_fetch_memeff_header("ATen/native/transformers/cuda/mem_eff_attention/gemm/custom_mma.h" "5bdb4c6606d73a76fd740e762dcda90b175039d5e13cec18e1b074e1e9179397")
+    _ggml_sam3d_fetch_memeff_header("ATen/native/transformers/cuda/mem_eff_attention/gemm/custom_mma_base.h" "9281f07cebb654fb3107a4150a9b840a54a0318957ec8c4c9535586d6369b6c1")
+    _ggml_sam3d_fetch_memeff_header("ATen/native/transformers/cuda/mem_eff_attention/gemm/custom_mma_multistage.h" "2b73ea750e2f2455d42a2b6dcdf2553ed223a1efcd0865688866f3253dd80b41")
+    _ggml_sam3d_fetch_memeff_header("ATen/native/transformers/cuda/mem_eff_attention/gemm/custom_mma_pipelined.h" "71c2bb92d8a3ba5926cf27d1bf4657cd61b018f9cc6f03d937386bbb1f4876f1")
+    _ggml_sam3d_fetch_memeff_header("ATen/native/transformers/cuda/mem_eff_attention/gemm/find_default_mma.h" "223613991c96520b6dbeeefeb160b948483f80cb60800e81f184c22a0d335994")
+    _ggml_sam3d_fetch_memeff_header("ATen/native/transformers/cuda/mem_eff_attention/gemm/mma_accum_lambda_iterator.h" "ec666626f49dd4b6570a3f284735bf38bbbd5d56b53c49ffd3ff1f9345462784")
+    _ggml_sam3d_fetch_memeff_header("ATen/native/transformers/cuda/mem_eff_attention/gemm/mma_from_smem.h" "aa18d0eb6812037d128471464a20887192c84193e8f78396b8d3b1a3442abce8")
+    _ggml_sam3d_fetch_memeff_header("ATen/native/transformers/cuda/mem_eff_attention/gemm_kernel_utils.h" "ce914b76b79d92c487a44cfc3ed19f41da947d0354672ab716489091fb0a7cbf")
+    _ggml_sam3d_fetch_memeff_header("ATen/native/transformers/cuda/mem_eff_attention/iterators/default_warp_iterator_from_smem.h" "c46d8c01507a4a049f784545379b323194750f9b34b3400a020f2ccc2bb912d8")
+    _ggml_sam3d_fetch_memeff_header("ATen/native/transformers/cuda/mem_eff_attention/iterators/epilogue_predicated_tile_iterator.h" "bee2b0cf715346a45c96a45a16bbe7f362a2a74d2ec5b1cd4410881a3920fd4f")
+    _ggml_sam3d_fetch_memeff_header("ATen/native/transformers/cuda/mem_eff_attention/iterators/make_residual_last.h" "17f4e1b6e4b473e21e106d2d4f71a07196a6849d41be8769c16fd2db43a0e666")
+    _ggml_sam3d_fetch_memeff_header("ATen/native/transformers/cuda/mem_eff_attention/iterators/predicated_tile_access_iterator_residual_last.h" "d17ec394229e52e693cea853694f0278f813624dc7cd497e2a2ace515d1d9ff6")
+    _ggml_sam3d_fetch_memeff_header("ATen/native/transformers/cuda/mem_eff_attention/iterators/predicated_tile_iterator_residual_last.h" "880a3383d716b50f5527564d01e066a8eabeace93a534562065c55fa4faaf220")
+    _ggml_sam3d_fetch_memeff_header("ATen/native/transformers/cuda/mem_eff_attention/iterators/transpose_warp_iterator.h" "8eb466e7e3013da32d0a083a3e5df978d7983b83a2dd2a5e362c526892ae894e")
+    _ggml_sam3d_fetch_memeff_header("ATen/native/transformers/cuda/mem_eff_attention/iterators/warp_iterator_from_smem.h" "3e97f7b3eae7cb5c21fb9b18761a6472b0b1b317923508c6a0cfcf8240983258")
+    _ggml_sam3d_fetch_memeff_header("ATen/native/transformers/cuda/mem_eff_attention/kernel_forward.h" "6019c38609117f0b7c28c7f2da4cbd24713aaa3d37b028d23da744bfd46dd2ec")
+    _ggml_sam3d_fetch_memeff_header("ATen/native/transformers/cuda/mem_eff_attention/transform/tile_smem_loader.h" "798f55c4a47fadbaad11316d7a175f1063f63919069e034cf67debc946a2ecb0")
+
+    # CUTLASS pinned tarball (BSD-3).
+    set(_sam3d_cutlass_dir "${_GGML_SAM3D_DEPS_DIR}/cutlass-bbe579a9e3beb6ea6626d9227ec32d0dae119a49")
+    if(NOT EXISTS "${_sam3d_cutlass_dir}/include/cutlass/cutlass.h")
+        set(_sam3d_cutlass_tarball "${_GGML_SAM3D_DEPS_DIR}/cutlass-bbe579a9.tar.gz")
+        message(STATUS "ggml: fetching SAM3D pinned CUTLASS tarball")
+        file(DOWNLOAD
+            "https://github.com/NVIDIA/cutlass/archive/bbe579a9e3beb6ea6626d9227ec32d0dae119a49.tar.gz"
+            "${_sam3d_cutlass_tarball}"
+            EXPECTED_HASH "SHA256=9fa1da6be3d2d9207b801d5768cbced59c202444a8c84b82325b0670f47f9d48"
+            TLS_VERIFY ON
+            STATUS _sam3d_cutlass_status)
+        list(GET _sam3d_cutlass_status 0 _sam3d_cutlass_code)
+        if(NOT _sam3d_cutlass_code EQUAL 0)
+            list(GET _sam3d_cutlass_status 1 _sam3d_cutlass_msg)
+            message(FATAL_ERROR "Failed to fetch pinned CUTLASS for SAM3D ops: ${_sam3d_cutlass_msg}")
+        endif()
+        file(ARCHIVE_EXTRACT INPUT "${_sam3d_cutlass_tarball}" DESTINATION "${_GGML_SAM3D_DEPS_DIR}")
+        file(RENAME "${_GGML_SAM3D_DEPS_DIR}/cutlass-bbe579a9e3beb6ea6626d9227ec32d0dae119a49"
+                    "${_sam3d_cutlass_dir}")
+    endif()
+
+    list(APPEND GGML_CMAKE_ARGS
+        -DGGML_SAM3D_OPS=ON
+        -DGGML_SAM3D_MEMEFF_DIR=${_sam3d_memeff_dir}
+        -DGGML_SAM3D_MEMEFF_COMPAT_DIR=${CMAKE_CURRENT_LIST_DIR}/sam3d/pytorch-mem-eff-attention-compat
+        -DGGML_SAM3D_CUTLASS_DIR=${_sam3d_cutlass_dir}
+        -DGGML_SAM3D_SPCONV_DIR=${CMAKE_CURRENT_LIST_DIR}/sam3d/spconv)
+    # Mirror the upstream sam-3d-objects-ggml production build: its
+    # cpp_ggml/build-cuda CMakeCache resolves GGML_CUDA_FAST_MATH=OFF (the
+    # ggml default), and its unary.cuh additionally forces precise device
+    # math for SiLU (sam3d_merged/0002). Keeping fast math ON perturbs F16
+    # activation outputs by ULPs and the sam3d diffusion samplers amplify
+    # that into a real occupancy/parity gap vs the upstream reference.
+    list(APPEND GGML_CMAKE_ARGS -DGGML_CUDA_FAST_MATH=OFF)
+    message(STATUS "ggml: SAM3D operator set enabled (mem-eff + CUTLASS + spconv)")
+else()
+    list(APPEND GGML_CMAKE_ARGS -DGGML_SAM3D_OPS=${GGML_USE_SAM3D_OPS})
 endif()
 
 # Optional: redist CUDA runtime (cudart/cublas/cublasLt) into installer for

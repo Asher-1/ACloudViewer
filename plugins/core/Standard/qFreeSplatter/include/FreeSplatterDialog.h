@@ -34,6 +34,7 @@ struct FreeSplatterBuiltinModel {
     QString displayName;
     QString filename;
     QString downloadUrl;
+    QString sha256;
 };
 
 class FreeSplatterDialog : public QDialog {

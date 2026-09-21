@@ -2555,6 +2555,7 @@ class TestLevel4_GUIRPC:
                          "colmap.reconstruct", "colmap.run",
                          "transform.apply",
                          "entity.rename", "entity.setColor",
+                         "yolo.track", "sam3d.generate",
                          "methods.list", "ping"]:
             assert expected in names, f"Missing RPC method: {expected}"
 

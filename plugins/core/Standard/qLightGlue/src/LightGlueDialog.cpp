@@ -28,13 +28,11 @@
 #include "aicore/backend_capi.h"
 #include "aicore/inference_log.h"
 #include "aicore/lightglue_capi.h"
+#include "aicore/model_catalog_capi.h"
 #include "ecvAICoreUiHelper.h"
 #include "ecvModelDownloader.h"
 #include "ecvTestDataRepository.h"
 #include "feature_extractor.h"
-static const char* kDownloadBase =
-        "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
-        "LightGlue/";
 
 namespace {
 
@@ -55,12 +53,15 @@ bool isSupportedImageFile(const QString& filePath) {
                                Qt::CaseInsensitive);
 }
 
-bool isValidCachedGguf(const QFileInfo& fi) {
+bool isValidCachedGguf(const QFileInfo& fi, aicore_model_family family) {
+    const QByteArray filename = fi.fileName().toUtf8();
+    const aicore_model_entry* entry =
+            aicore_model_by_filename(family, filename.constData());
+    if (!entry || !entry->sha256 || !*entry->sha256) return false;
     return ecvAssetIntegrity::isVerified(
             fi.absoluteFilePath(),
-            {QCryptographicHash::Sha256,
-             ecvAssetIntegrity::PinnedDigest(fi.fileName())},
-            64 * 1024, true, ecvAssetIntegrity::OnMiss::CheapChecksOnly);
+            {QCryptographicHash::Sha256, QByteArray(entry->sha256)}, 64 * 1024,
+            true, ecvAssetIntegrity::OnMiss::CheapChecksOnly);
 }
 
 QStringList listImageFilesInDir(const QString& dirPath) {
@@ -79,21 +80,18 @@ QStringList listImageFilesInDir(const QString& dirPath) {
 }  // namespace
 
 QVector<LightGlueBuiltinModel> LightGlueDialog::builtinModels() {
-    const QString base = QString::fromLatin1(kDownloadBase);
-    return {
-            {tr("SIFT F16 (recommended)"), "sift-lightglue-f16.gguf",
-             base + "sift-lightglue-f16.gguf", 1},
-            {tr("SIFT Q8_0 (smaller)"), "sift-lightglue-q8_0.gguf",
-             base + "sift-lightglue-q8_0.gguf", 1},
-            {tr("SIFT F32"), "sift-lightglue-f32.gguf",
-             base + "sift-lightglue-f32.gguf", 1},
-            {tr("ALIKED F16 (recommended)"), "aliked-lightglue-f16.gguf",
-             base + "aliked-lightglue-f16.gguf", 2},
-            {tr("ALIKED Q8_0 (smaller)"), "aliked-lightglue-q8_0.gguf",
-             base + "aliked-lightglue-q8_0.gguf", 2},
-            {tr("ALIKED F32"), "aliked-lightglue-f32.gguf",
-             base + "aliked-lightglue-f32.gguf", 2},
-    };
+    QVector<LightGlueBuiltinModel> out;
+    const int count = aicore_model_count(AICORE_MODEL_FAMILY_LIGHTGLUE);
+    for (int i = 0; i < count; ++i) {
+        const aicore_model_entry* entry =
+                aicore_model_at(AICORE_MODEL_FAMILY_LIGHTGLUE, i);
+        if (!entry || !entry->filename || !entry->download_url) continue;
+        out.append({tr(entry->display_name ? entry->display_name : "Model"),
+                    QString::fromUtf8(entry->filename),
+                    QString::fromUtf8(entry->download_url), entry->matcher_type,
+                    QString::fromLatin1(entry->sha256 ? entry->sha256 : "")});
+    }
+    return out;
 }
 
 QString LightGlueDialog::modelCacheDir() {
@@ -473,7 +471,7 @@ void LightGlueDialog::populateModelCombo(const QString& keepFilename) {
         const QString cached = cacheDir + "/" + m.filename;
         const QFileInfo fi(cached);
         const QString suffix =
-                isValidCachedGguf(fi)
+                isValidCachedGguf(fi, AICORE_MODEL_FAMILY_LIGHTGLUE)
                         ? QString(" [%1] ✓").arg(formatFileSize(fi.size()))
                         : QString(" [download]");
         m_modelCombo->addItem(m.displayName + suffix, m.filename);
@@ -550,7 +548,9 @@ bool LightGlueDialog::isModelReady() const {
     }
     if (data.isEmpty()) return false;
     const QString cached = modelCacheDir() + "/" + data;
-    if (isValidCachedGguf(QFileInfo(cached))) return true;
+    if (isValidCachedGguf(QFileInfo(cached), AICORE_MODEL_FAMILY_LIGHTGLUE)) {
+        return true;
+    }
     for (const auto& m : builtinModels()) {
         if (m.filename == data) return true;
     }
@@ -1054,7 +1054,7 @@ bool LightGlueDialog::ensureAlikedExtractorAvailable(
     QDir().mkpath(cache);
     const QString cached = cache + QLatin1Char('/') + extractorName;
     const QFileInfo cachedInfo(cached);
-    if (isValidCachedGguf(cachedInfo)) return true;
+    if (isValidCachedGguf(cachedInfo, AICORE_MODEL_FAMILY_ALIKED)) return true;
     if (cachedInfo.exists()) {
         QFile::remove(cached);
         appendLog(tr("[Warning] Removed incomplete ALIKED extractor cache: %1")
@@ -1088,7 +1088,15 @@ void LightGlueDialog::startAlikedExtractorDownload(
     const QString cache = alikedExtractorCacheDir();
     QDir().mkpath(cache);
     const QString dest = cache + QLatin1Char('/') + extractorFilename;
-    const QString url = QString::fromLatin1(kDownloadBase) + extractorFilename;
+    const QByteArray extractorUtf8 = extractorFilename.toUtf8();
+    const aicore_model_entry* extractor = aicore_model_by_filename(
+            AICORE_MODEL_FAMILY_ALIKED, extractorUtf8.constData());
+    if (!extractor || !extractor->download_url) {
+        appendLog(tr("[Error] ALIKED extractor is absent from the AICore "
+                     "catalog: %1")
+                          .arg(extractorFilename));
+        return;
+    }
 
     m_downloadInProgress = true;
     m_downloadTargetFilename = extractorFilename;
@@ -1099,12 +1107,13 @@ void LightGlueDialog::startAlikedExtractorDownload(
     updateRunButtonState();
 
     ecvModelDownloader::Request req;
-    req.url = url;
+    req.url = QString::fromUtf8(extractor->download_url);
     req.destPath = dest;
     // Content identity from the release digest registry — streamed SHA-256
     // check at ingestion (truncation and corruption both caught).
-    req.contentAnchor = {QCryptographicHash::Sha256,
-                         ecvAssetIntegrity::PinnedDigest(extractorFilename)};
+    req.contentAnchor = {
+            QCryptographicHash::Sha256,
+            QByteArray(extractor->sha256 ? extractor->sha256 : "")};
     m_downloader->download(req);
 }
 
@@ -1116,7 +1125,8 @@ bool LightGlueDialog::ensureModelAvailable() {
     const QString cache = modelCacheDir();
     const QString cached = cache + "/" + data;
     const QFileInfo cachedInfo(cached);
-    const bool matcherCached = isValidCachedGguf(cachedInfo);
+    const bool matcherCached =
+            isValidCachedGguf(cachedInfo, AICORE_MODEL_FAMILY_LIGHTGLUE);
     if (!matcherCached && cachedInfo.exists()) {
         QFile::remove(cached);
         appendLog(
@@ -1134,7 +1144,8 @@ bool LightGlueDialog::ensureModelAvailable() {
         const QString extCachedPath =
                 extCache + QLatin1Char('/') + extractorName;
         const QFileInfo extInfo(extCachedPath);
-        extractorCached = isValidCachedGguf(extInfo);
+        extractorCached =
+                isValidCachedGguf(extInfo, AICORE_MODEL_FAMILY_ALIKED);
         if (!extractorCached && extInfo.exists()) {
             QFile::remove(extCachedPath);
             appendLog(tr("[Warning] Removed incomplete ALIKED extractor "
@@ -1250,8 +1261,7 @@ void LightGlueDialog::startDownload(const LightGlueBuiltinModel& model) {
     req.destPath = dest;
     // Content identity from the release digest registry — streamed SHA-256
     // check at ingestion (truncation and corruption both caught).
-    req.contentAnchor = {QCryptographicHash::Sha256,
-                         ecvAssetIntegrity::PinnedDigest(model.filename)};
+    req.contentAnchor = {QCryptographicHash::Sha256, model.sha256.toLatin1()};
     m_downloader->download(req);
 }
 

@@ -40,13 +40,11 @@
 #include "aicore/backend_capi.h"
 #include "aicore/gaussian_capi.h"
 #include "aicore/inference_log.h"
+#include "aicore/model_catalog_capi.h"
 #include "ecvAICoreUiHelper.h"
 #include "ecvClickableImageLabel.h"
 #include "ecvModelDownloader.h"
 #include "ecvTestDataRepository.h"
-static const char* kDownloadBase =
-        "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
-        "3dgs/";
 
 static const int kThumbSize = ecvAICoreUi::previewSize();
 static const int kThumbCaptionH = 18;
@@ -95,30 +93,18 @@ QStringList listImageFilesInDir(const QString& dirPath) {
 }  // namespace
 
 QVector<FreeSplatterBuiltinModel> FreeSplatterDialog::builtinModels() {
-    const QString base = QString::fromLatin1(kDownloadBase);
-    return {
-            {tr("Scene Q8_0 (recommended)"), "freesplatter-scene-q8_0.gguf",
-             base + "freesplatter-scene-q8_0.gguf"},
-            {tr("Scene F16"), "freesplatter-scene-f16.gguf",
-             base + "freesplatter-scene-f16.gguf"},
-            {tr("Scene F32 (full precision)"), "freesplatter-scene-f32.gguf",
-             base + "freesplatter-scene-f32.gguf"},
-            {tr("Object-2DGS Q8_0 (recommended)"),
-             "freesplatter-object-2dgs-q8_0.gguf",
-             base + "freesplatter-object-2dgs-q8_0.gguf"},
-            {tr("Object-2DGS F16"), "freesplatter-object-2dgs-f16.gguf",
-             base + "freesplatter-object-2dgs-f16.gguf"},
-            {tr("Object-2DGS F32 (full precision)"),
-             "freesplatter-object-2dgs-f32.gguf",
-             base + "freesplatter-object-2dgs-f32.gguf"},
-            {tr("Object-3DGS Q8_0 (deprecated)"),
-             "freesplatter-object-q8_0.gguf",
-             base + "freesplatter-object-q8_0.gguf"},
-            {tr("Object-3DGS F16 (deprecated)"), "freesplatter-object-f16.gguf",
-             base + "freesplatter-object-f16.gguf"},
-            {tr("Object-3DGS F32 (deprecated)"), "freesplatter-object-f32.gguf",
-             base + "freesplatter-object-f32.gguf"},
-    };
+    QVector<FreeSplatterBuiltinModel> out;
+    const int count = aicore_model_count(AICORE_MODEL_FAMILY_GAUSSIAN);
+    for (int i = 0; i < count; ++i) {
+        const aicore_model_entry* entry =
+                aicore_model_at(AICORE_MODEL_FAMILY_GAUSSIAN, i);
+        if (!entry || !entry->filename || !entry->download_url) continue;
+        out.append({tr(entry->display_name ? entry->display_name : "Model"),
+                    QString::fromUtf8(entry->filename),
+                    QString::fromUtf8(entry->download_url),
+                    QString::fromLatin1(entry->sha256 ? entry->sha256 : "")});
+    }
+    return out;
 }
 
 QString FreeSplatterDialog::modelCacheDir() {
@@ -906,8 +892,7 @@ void FreeSplatterDialog::populateModelCombo(const QString& keepFilename) {
         QString suffix;
         if (ecvAssetIntegrity::isVerified(
                     fi.absoluteFilePath(),
-                    {QCryptographicHash::Sha256,
-                     ecvAssetIntegrity::PinnedDigest(m.filename)},
+                    {QCryptographicHash::Sha256, m.sha256.toLatin1()},
                     64 * 1024, true,
                     ecvAssetIntegrity::OnMiss::CheapChecksOnly)) {
             suffix = QString(" [%1] \u2713").arg(formatFileSize(fi.size()));
@@ -1052,15 +1037,17 @@ bool FreeSplatterDialog::isModelReady() const {
                QFile::exists(m_customModelPath->text().trimmed());
     }
     if (data.isEmpty()) return false;
-    if (ecvAssetIntegrity::isVerified(
-                modelCacheDir() + "/" + data,
-                {QCryptographicHash::Sha256,
-                 ecvAssetIntegrity::PinnedDigest(data)},
-                64 * 1024, true, ecvAssetIntegrity::OnMiss::CheapChecksOnly)) {
-        return true;
-    }
     for (const auto& m : builtinModels()) {
-        if (m.filename == data) return true;
+        if (m.filename != data) continue;
+        if (ecvAssetIntegrity::isVerified(
+                    modelCacheDir() + "/" + data,
+                    {QCryptographicHash::Sha256, m.sha256.toLatin1()},
+                    64 * 1024, true,
+                    ecvAssetIntegrity::OnMiss::CheapChecksOnly)) {
+            return true;
+        }
+        // A published row is ready for the normal download-on-run path.
+        return true;
     }
     return false;
 }
@@ -1309,16 +1296,15 @@ bool FreeSplatterDialog::ensureModelAvailable() {
     if (data == "CUSTOM") return true;
 
     QString cached = modelCacheDir() + "/" + data;
-    if (ecvAssetIntegrity::isVerified(
-                cached,
-                {QCryptographicHash::Sha256,
-                 ecvAssetIntegrity::PinnedDigest(data)},
-                64 * 1024, true, ecvAssetIntegrity::OnMiss::CheapChecksOnly)) {
-        return true;
-    }
-
     for (const auto& bm : builtinModels()) {
         if (bm.filename == data) {
+            if (ecvAssetIntegrity::isVerified(
+                        cached,
+                        {QCryptographicHash::Sha256, bm.sha256.toLatin1()},
+                        64 * 1024, true,
+                        ecvAssetIntegrity::OnMiss::CheapChecksOnly)) {
+                return true;
+            }
             auto result =
                     QMessageBox::question(this, tr("Download Model"),
                                           tr("The model '%1' is not cached "
@@ -1363,8 +1349,7 @@ void FreeSplatterDialog::startDownload(const FreeSplatterBuiltinModel& model) {
     req.destPath = dest;
     // Content identity from the release digest registry — streamed SHA-256
     // check at ingestion (truncation and corruption both caught).
-    req.contentAnchor = {QCryptographicHash::Sha256,
-                         ecvAssetIntegrity::PinnedDigest(model.filename)};
+    req.contentAnchor = {QCryptographicHash::Sha256, model.sha256.toLatin1()};
     m_downloader->download(req);
 }
 

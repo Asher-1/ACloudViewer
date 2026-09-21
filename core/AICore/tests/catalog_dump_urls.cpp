@@ -18,9 +18,11 @@
 #include "aicore/gkd_capi.h"
 #include "aicore/lingbot_capi.h"
 #include "aicore/loma_capi.h"
+#include "aicore/model_catalog_capi.h"
 #include "aicore/rfdetr_capi.h"
 #include "aicore/rmbg_capi.h"
 #include "aicore/sam3_capi.h"
+#include "aicore/sam3d_capi.h"
 #include "aicore/trellis_capi.h"
 #include "aicore/yolo_capi.h"
 
@@ -81,65 +83,25 @@ void emitAsset(const char* task,
             jsonEscape(url).c_str(), jsonEscape(digest).c_str(), size_bytes);
 }
 
-template <size_t N>
-void emitFixed(const char* task,
-               const char* folder,
-               const char* release_tag,
-               const char* const (&filenames)[N]) {
-    const std::string base =
-            "https://github.com/Asher-1/cloudViewer_downloads/releases/"
-            "download/" +
-            std::string(release_tag) + "/";
-    for (const char* filename : filenames) {
-        const std::string url = base + filename;
-        emitAsset(task, folder, filename, url.c_str());
+void emitSharedCatalog(aicore_model_family family,
+                       const char* task,
+                       const char* folder) {
+    for (int i = 0; i < aicore_model_count(family); ++i) {
+        const aicore_model_entry* entry = aicore_model_at(family, i);
+        if (entry) {
+            emitAsset(task, folder, entry->filename, entry->download_url);
+        }
     }
 }
 
 void emitFixedCatalogs() {
-    static constexpr const char* kDepth[] = {
-            "depth-anything-base-q8_0.gguf",
-            "depth-anything-base-q4_k.gguf",
-            "depth-anything-base-f16.gguf",
-            "depth-anything-large-q8_0.gguf",
-            "depth-anything-large-q4_k.gguf",
-            "depth-anything-giant-q8_0.gguf",
-            "depth-anything-giant-q4_k.gguf",
-            "depth-anything-nested-metric.gguf",
-            "depth-anything-nested-anyview-q8_0.gguf",
-            "depth-anything-nested-anyview-q4_k.gguf",
-    };
-    static constexpr const char* kGaussian[] = {
-            "freesplatter-scene-q8_0.gguf",
-            "freesplatter-scene-f16.gguf",
-            "freesplatter-scene-f32.gguf",
-            "freesplatter-object-2dgs-q8_0.gguf",
-            "freesplatter-object-2dgs-f16.gguf",
-            "freesplatter-object-2dgs-f32.gguf",
-            "freesplatter-object-q8_0.gguf",
-            "freesplatter-object-f16.gguf",
-            "freesplatter-object-f32.gguf",
-    };
-    static constexpr const char* kAliked[] = {
-            "aliked-n16rot-f16.gguf",
-            "aliked-n16rot-q8_0.gguf",
-            "aliked-n16rot-f32.gguf",
-    };
-    static constexpr const char* kLightGlue[] = {
-            "sift-lightglue-f16.gguf",    "sift-lightglue-q8_0.gguf",
-            "sift-lightglue-f32.gguf",    "aliked-lightglue-f16.gguf",
-            "aliked-lightglue-q8_0.gguf", "aliked-lightglue-f32.gguf",
-    };
-    static constexpr const char* kDeepLsd[] = {
-            "deeplsd_wireframe-f16.gguf", "deeplsd_wireframe-q8_0.gguf",
-            "deeplsd_wireframe-f32.gguf", "deeplsd_md-f16.gguf",
-            "deeplsd_md-q8_0.gguf",       "deeplsd_md-f32.gguf",
-    };
-    emitFixed("depth", "da3_models", "DA3", kDepth);
-    emitFixed("gaussian", "freesplatter_models", "3dgs", kGaussian);
-    emitFixed("aliked", "lightglue_models", "LightGlue", kAliked);
-    emitFixed("lightglue", "lightglue_models", "LightGlue", kLightGlue);
-    emitFixed("deeplsd", "deeplsd_models", "DeepLSD", kDeepLsd);
+    emitSharedCatalog(AICORE_MODEL_FAMILY_DEPTH, "depth", "da3_models");
+    emitSharedCatalog(AICORE_MODEL_FAMILY_GAUSSIAN, "gaussian",
+                      "freesplatter_models");
+    emitSharedCatalog(AICORE_MODEL_FAMILY_ALIKED, "aliked", "lightglue_models");
+    emitSharedCatalog(AICORE_MODEL_FAMILY_LIGHTGLUE, "lightglue",
+                      "lightglue_models");
+    emitSharedCatalog(AICORE_MODEL_FAMILY_DEEPLSD, "deeplsd", "deeplsd_models");
 }
 
 void emitRuntimeCatalogs() {
@@ -166,6 +128,12 @@ void emitRuntimeCatalogs() {
         const aicore_sam3_model_entry* e = aicore_sam3_model_at(i);
         if (e)
             emitAsset("sam3", "sam3_models", e->filename, e->download_url,
+                      static_cast<long long>(e->size_bytes));
+    }
+    for (int i = 0; i < aicore_sam3d_model_count(); ++i) {
+        const aicore_sam3d_model_entry* e = aicore_sam3d_model_at(i);
+        if (e)
+            emitAsset("sam3d", "sam3d_models", e->filename, e->download_url,
                       static_cast<long long>(e->size_bytes));
     }
     for (int i = 0; i < aicore_trellis_model_count(); ++i) {

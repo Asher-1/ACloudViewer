@@ -97,8 +97,10 @@ public:
     // True when OpenCV video capture support is compiled in.
     static bool isAvailable();
 
+#ifdef HAS_OPENCV_FACE_CAPTURE
     // BGR cv::Mat -> RGB888 QImage with a single deep copy.
     static QImage cvMatToQImage(const cv::Mat& mat);
+#endif
 
     // File picker for video inputs; remembers the last directory under
     // <settingsPrefix>/lastVideoDir (ecvPS convention).
@@ -124,10 +126,12 @@ signals:
 protected:
     // ---- Subclass hooks (all invoked on the GUI thread) -------------------
 
+#ifdef HAS_OPENCV_FACE_CAPTURE
     // Raw BGR frame before any scaling; the subclass submits inference /
     // detection jobs here (throttling is the subclass's own responsibility).
     // frame is a local copy owned by the pipeline — safe to keep references.
     virtual void onFrameDecoded(cv::Mat& frame, int frameIndex);
+#endif
 
     // Display-resolution RGB frame (already scaled to the preview label);
     // the subclass draws overlays (boxes, labels) here, coordinates must be
@@ -211,6 +215,7 @@ private:
     void setupUi();
     void setupFrameReader();
 
+#ifdef HAS_OPENCV_FACE_CAPTURE
     // Scale a decoded BGR frame to the preview label (KeepAspectRatio) in
     // the cv domain first and convert the small result — converting the
     // full-resolution frame only to shrink it right after costs a full-frame
@@ -218,6 +223,7 @@ private:
     // INTER_AREA also downscales with fewer artifacts than Qt's
     // FastTransformation nearest-neighbour.
     QImage scaledDisplayImage(const cv::Mat& frame) const;
+#endif
 
     void onSourceChangedInternal(int index);
     void onBrowseVideoFile();

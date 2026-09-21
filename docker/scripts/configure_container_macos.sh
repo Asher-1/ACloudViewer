@@ -165,6 +165,7 @@ cmakeGuiOptions=(
                 -DPLUGIN_STANDARD_QTRELLIS=ON
                 -DPLUGIN_STANDARD_QGKD=ON
                 -DPLUGIN_STANDARD_QLINGBOTMAP=ON
+                -DPLUGIN_STANDARD_QSAM3D=ON
                 -DPLUGIN_PYTHON=ON
                 -DBUILD_PYTHON_MODULE=ON
                 -DPLUGIN_STANDARD_QSRA=ON

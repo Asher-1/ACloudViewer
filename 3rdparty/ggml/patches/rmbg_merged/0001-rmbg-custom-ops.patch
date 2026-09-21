@@ -202,7 +202,7 @@ index 0000000..2a3c3c1
 +namespace {
 +
 +constexpr const char * kOpName = "rmbg_deform_im2col";
-+constexpr const char * kConvName = "rmbg_conv2d_";
++
 +constexpr const char * kSwinAttentionName = "rmbg_swin_attn_";
 +constexpr const char * kPatchMergeName = "rmbg_patch_merge_";
 +constexpr const char * kImagePatchesName = "rmbg_image_patches_";
@@ -592,7 +592,7 @@ index 0000000..2a3c3c1
 +    return false;
 +}
 +
-+void ggml_cuda_op_rmbg_conv2d(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
++[[noreturn]] void ggml_cuda_op_rmbg_conv2d(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
 +    GGML_UNUSED(ctx);
 +    GGML_UNUSED(dst);
 +    GGML_ABORT("RMBG conv2d must not be dispatched on CUDA; graph falls back to im2col");
@@ -812,7 +812,7 @@ index 0000000..46f9b9e
 +bool ggml_cuda_is_rmbg_deform_im2col(const ggml_tensor * dst);
 +void ggml_cuda_op_rmbg_deform_im2col(ggml_backend_cuda_context & ctx, ggml_tensor * dst);
 +bool ggml_cuda_is_rmbg_conv2d(const ggml_tensor * dst);
-+void ggml_cuda_op_rmbg_conv2d(ggml_backend_cuda_context & ctx, ggml_tensor * dst);
++[[noreturn]] void ggml_cuda_op_rmbg_conv2d(ggml_backend_cuda_context & ctx, ggml_tensor * dst);
 +bool ggml_cuda_is_rmbg_swin_attention(const ggml_tensor * dst);
 +void ggml_cuda_op_rmbg_swin_attention(ggml_backend_cuda_context & ctx, ggml_tensor * dst);
 +bool rmbg_is_nn_weight(const ggml_tensor * weight);

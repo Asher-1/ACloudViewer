@@ -9,6 +9,7 @@ import unittest
 import zipfile
 from pathlib import Path
 from types import SimpleNamespace
+from unittest import mock
 
 
 MODULE_PATH = Path(__file__).with_name("validate_all.py")
@@ -163,6 +164,129 @@ class ValidateAllTests(unittest.TestCase):
             {"graph_ms": {"p50": 12.0, "p90": 14.0}})
         self.assertEqual(metrics,
                          {"graph_ms/p50": 12.0, "graph_ms/p90": 14.0})
+
+    def test_structured_accuracy_gate_resolves_leaf_metric_and_rejects_threshold(self):
+        gate = {
+            "reference": "cpu_reference",
+            "checks": [{"metric": "kpt_median_px", "op": "<=", "value": 0.005}],
+            "require_metrics": ["descriptor_cosine_median"],
+        }
+        self.assertEqual(
+            VALIDATE_ALL.evaluate_accuracy_gate(
+                gate, {"json0/kpt_median_px": 0.006,
+                       "json0/descriptor_cosine_median": 0.9999}),
+            ["accuracy gate failed: kpt_median_px 0.006 <= 0.005"])
+        self.assertIn(
+            "required accuracy metric missing/non-finite: descriptor_cosine_median",
+            VALIDATE_ALL.evaluate_accuracy_gate(
+                gate, {"json0/kpt_median_px": 0.001}))
+
+    def test_legacy_accuracy_gate_is_explicitly_probe_owned(self):
+        scenario = {"id": "demo", "accuracy_gate": "finite output"}
+        normalized = VALIDATE_ALL.normalize_accuracy_gate(scenario)
+        self.assertFalse(normalized["structured"])
+        self.assertEqual(normalized["reference"], "probe_legacy")
+
+    def test_structured_accuracy_requires_metrics_unless_probe_invariant(self):
+        invalid = {"id": "demo", "accuracy": {
+            "reference": "upstream", "reference_id": "fixture-v1",
+            "checks": [], "require_metrics": []}}
+        with self.assertRaisesRegex(ValueError, "checks or require_metrics"):
+            VALIDATE_ALL.normalize_accuracy_gate(invalid)
+
+        probe_owned = {"id": "demo", "accuracy": {
+            "reference": "probe_invariant", "reference_id": "probe-v1",
+            "checks": [], "require_metrics": []}}
+        normalized = VALIDATE_ALL.normalize_accuracy_gate(probe_owned)
+        self.assertTrue(normalized["structured"])
+        self.assertEqual(normalized["reference"], "probe_invariant")
+
+    def test_summary_fails_when_structured_accuracy_check_fails(self):
+        spec = VALIDATE_ALL.RunSpec(
+            scenario_id="s", task="demo", model_id="m", model_paths=(),
+            command=(), env={}, accuracy_gate="numeric", metric_parser="generic",
+            fingerprint_policy="none", require_fingerprint=False,
+            report_path=Path("/tmp/report"), accuracy={
+                "reference": "cpu_reference",
+                "checks": [{"metric": "mask_iou", "op": ">=", "value": 0.9}],
+                "require_metrics": [], "structured": True,
+            })
+        row, failures = VALIDATE_ALL.summarize_attempts(
+            spec, [VALIDATE_ALL.Attempt(
+                0, 1.0, metrics={"mask_iou": 0.8})], False)
+        self.assertEqual(row["status"], "fail")
+        self.assertTrue(any("accuracy gate failed" in item for item in failures))
+
+    def test_profile_defaults_and_release_baseline_requirement(self):
+        with mock.patch.object(sys, "argv", ["validate_all.py"]):
+            args = VALIDATE_ALL.parse_args()
+        self.assertEqual((args.profile, args.repeats, args.warmup_runs,
+                          args.inference_runs), ("developer", 2, 1, 2))
+        with mock.patch.object(sys, "argv", ["validate_all.py", "--profile",
+                                               "release"]):
+            with self.assertRaises(SystemExit) as error:
+                VALIDATE_ALL.parse_args()
+        self.assertEqual(error.exception.code, 2)
+
+    def test_release_profile_rejects_allow_incomplete(self):
+        with tempfile.TemporaryDirectory() as directory:
+            baseline = Path(directory) / "baseline.json"
+            baseline.write_text("{}", encoding="utf-8")
+            with mock.patch.object(
+                    sys, "argv", ["validate_all.py", "--profile", "release",
+                                  "--baseline", str(baseline),
+                                  "--allow-incomplete"]):
+                with self.assertRaises(SystemExit) as error:
+                    VALIDATE_ALL.parse_args()
+        self.assertEqual(error.exception.code, 2)
+
+    def test_release_accuracy_contract_rejects_legacy_prose(self):
+        common = dict(
+            scenario_id="s", task="demo", model_id="m", model_paths=(),
+            command=(), env={}, accuracy_gate="finite output",
+            metric_parser="generic", fingerprint_policy="none",
+            require_fingerprint=False, report_path=Path("/tmp/report"))
+        legacy = VALIDATE_ALL.RunSpec(**common, accuracy={
+            "reference": "probe_legacy", "structured": False})
+        structured = VALIDATE_ALL.RunSpec(**common, accuracy={
+            "reference": "pytorch", "reference_id": "commit:fixture",
+            "checks": [{"metric": "mae", "op": "<=", "value": 0.01}],
+            "require_metrics": [], "structured": True})
+        failures = VALIDATE_ALL.release_accuracy_contract_failures(
+            [legacy, structured])
+        self.assertEqual(len(failures), 1)
+        self.assertIn(legacy.key, failures[0])
+
+    def test_release_manifest_contract_fails_before_download_and_honors_model_selection(self):
+        manifest = {
+            "tasks": {"demo": {}},
+            "scenarios": [
+                {"id": "old", "task": "demo", "for_each_model": True,
+                 "model_glob": "demo_models/old*.gguf",
+                 "accuracy_gate": "legacy invariant"},
+                {"id": "new", "task": "demo", "for_each_model": True,
+                 "model_glob": "demo_models/new*.gguf",
+                 "accuracy_gate": "numeric invariant", "accuracy": {
+                     "reference": "golden", "reference_id": "fixture-v1",
+                     "checks": [{"metric": "mae", "op": "<=",
+                                 "value": 0.01}],
+                     "require_metrics": ["mae"]}},
+            ],
+        }
+        assets = [VALIDATE_ALL.ModelAsset(
+            "demo", VALIDATE_ALL.PurePosixPath("demo_models/new-f16.gguf"),
+            "https://example.invalid/new-f16.gguf", "a" * 64)]
+        selected = {"demo"}
+        full_args = SimpleNamespace(models="", full=True)
+        failures = VALIDATE_ALL.release_manifest_accuracy_contract_failures(
+            manifest, full_args, selected, assets)
+        self.assertEqual(len(failures), 1)
+        self.assertIn("demo/old", failures[0])
+
+        selected_args = SimpleNamespace(models="new-f16", full=False)
+        self.assertEqual(
+            VALIDATE_ALL.release_manifest_accuracy_contract_failures(
+                manifest, selected_args, selected, assets), [])
 
     def test_catalog_parser_requires_every_selected_task(self):
         row = {

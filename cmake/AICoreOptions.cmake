@@ -155,6 +155,10 @@ function(aicore_sync_options_to_ggml)
         "Internal: synced from AICore_BUNDLE_CUDA_RUNTIME" FORCE)
     set(GGML_CUDA_FORCE_MMQ ${AICore_CUDA_FORCE_MMQ} CACHE BOOL
         "Internal: synced from AICore_CUDA_FORCE_MMQ" FORCE)
+    # SAM3D is part of the unified AICore task set. This private flag only
+    # tells the fetched ggml build to wire its task-specific CUDA sources.
+    set(GGML_USE_SAM3D_OPS ON CACHE BOOL
+        "Internal: required by the unified AICore task set" FORCE)
     set(GGML_OPENCL_TARGET_VERSION ${AICore_OPENCL_TARGET_VERSION} CACHE STRING
         "Internal: synced from AICore_OPENCL_TARGET_VERSION" FORCE)
     set(GGML_CPU_ALL_VARIANTS ${AICore_CPU_ALL_VARIANTS} CACHE BOOL
@@ -169,7 +173,7 @@ function(aicore_sync_options_to_ggml)
     mark_as_advanced(
         GGML_USE_METAL GGML_USE_VULKAN GGML_USE_CUDA GGML_USE_SYCL GGML_SYCL_USE_DNN
         GGML_USE_OPENCL GGML_BUNDLE_CUDA_RUNTIME GGML_CUDA_FORCE_MMQ
-        GGML_OPENCL_TARGET_VERSION
+        GGML_USE_SAM3D_OPS GGML_OPENCL_TARGET_VERSION
         GGML_CPU_ALL_VARIANTS GGML_BUILD_SHARED GGML_USE_LLAMAFILE)
 endfunction()
 

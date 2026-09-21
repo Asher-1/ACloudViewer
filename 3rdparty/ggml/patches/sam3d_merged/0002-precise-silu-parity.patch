@@ -1,0 +1,28 @@
+Ported from the sam-3d-objects-ggml upstream ggml tree (third_party/ggml
+unary.cuh, submodule 8599e0ea): make the CUDA SiLU activation use precise
+device math instead of the fast-math approximation.
+
+Rationale: with GGML_CUDA_FAST_MATH the generic `x / (1.0f + expf(-x))`
+form lowers to __fdividef/__expf, which perturbs F16 activation outputs by
+ULPs. The sam3d diffusion samplers amplify those ULP flips into a real
+occupancy gap (~6% gaussian count divergence vs the upstream reference),
+so the upstream project forces the numerator/denominator onto the precise
+device-math path. Applied globally to match upstream exactly; non-sam3d
+accuracy gates are tolerance-based and precise math only moves them closer
+to the PyTorch reference.
+
+--- a/src/ggml-cuda/unary.cuh
++++ b/src/ggml-cuda/unary.cuh
+@@ -94,7 +94,11 @@
+ void ggml_cuda_op_relu_sqr(ggml_backend_cuda_context & ctx, ggml_tensor * relu_node, ggml_tensor * sqr_node);
+ 
+ __device__ __forceinline__ float ggml_cuda_op_silu_single(float x) {
+-    return x / (1.0f + expf(-x));
++    // CUDA's -use_fast_math lowers both the division and expf. PyTorch's F16
++    // SiLU rounds the F32 expression before the F16 store, so keep its
++    // numerator and denominator on the precise device-math path.
++    const float denominator = 1.0f + static_cast<float>(exp(static_cast<double>(-x)));
++    return __fdiv_rn(x, denominator);
+ }
+ 
+ __device__ __forceinline__ float ggml_cuda_op_gelu_single(float x) {

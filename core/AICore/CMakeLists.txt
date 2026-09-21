@@ -11,7 +11,12 @@
 #   src/tasks/rmbg/       — RMBG-2.0 background removal (foundational matte)
 #   src/tasks/yolo/       — YOLO object detection / metric depth (ultralytics-ggml port)
 #   src/tasks/sam3/       — SAM 2 / 2.1 / 3 segmentation (sam3-ggml port)
+#   src/tasks/sam3d/      — SAM 3D Objects image-to-Gaussians/mesh (optional)
+#   src/tasks/trellis/    — TRELLIS image-to-3D generation
 #   src/tasks/gkd/        — general keypoint detection (GKDT, General-Keypoint-Detection-GGML port)
+#   src/tasks/lingbot/    — LingBot-Map streaming RGB-D reconstruction
+#   src/tasks/loma/       — LoMa feature extraction and matching
+#   src/tasks/reid/       — appearance embeddings for multi-object tracking
 #   src/common/           — shared utilities (data paths, ggml helpers, logging)
 #
 # Build:   libAICore.so
@@ -30,7 +35,7 @@ if(NOT TARGET 3rdparty_ggml)
 endif()
 
 project(AICore
-    DESCRIPTION "Unified AI inference core — depth + gaussian + lightglue + aliked + deeplsd + facedetect + rfdetr + rmbg + yolo + gkd"
+    DESCRIPTION "Unified AI inference core for ACloudViewer inference tasks"
     LANGUAGES CXX
 )
 
@@ -51,6 +56,7 @@ set(AICORE_SAM3_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/sam3)
 set(AICORE_TRELLIS_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/trellis)
 set(AICORE_GKD_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/gkd)
 set(AICORE_LINGBOT_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/lingbot)
+set(AICORE_SAM3D_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/tasks/sam3d)
 
 if(NOT EXISTS ${AICORE_DEPTH_SRC_DIR}/engine.cpp)
     message(WARNING "AICore: depth module not found at ${AICORE_DEPTH_SRC_DIR}")
@@ -90,6 +96,9 @@ file(GLOB AICORE_REID_SOURCES CONFIGURE_DEPENDS ${AICORE_REID_SRC_DIR}/*.cpp)
 file(GLOB AICORE_SAM3_SOURCES CONFIGURE_DEPENDS ${AICORE_SAM3_SRC_DIR}/*.cpp)
 file(GLOB AICORE_GKD_SOURCES CONFIGURE_DEPENDS ${AICORE_GKD_SRC_DIR}/*.cpp)
 file(GLOB AICORE_LINGBOT_SOURCES CONFIGURE_DEPENDS ${AICORE_LINGBOT_SRC_DIR}/*.cpp)
+file(GLOB AICORE_SAM3D_SOURCES CONFIGURE_DEPENDS ${AICORE_SAM3D_SRC_DIR}/*.cpp)
+file(GLOB AICORE_SAM3D_HEADERS CONFIGURE_DEPENDS
+    ${AICORE_SAM3D_SRC_DIR}/*.hpp ${AICORE_SAM3D_SRC_DIR}/*.h)
 file(GLOB AICORE_TRELLIS_SOURCES CONFIGURE_DEPENDS
     ${AICORE_TRELLIS_SRC_DIR}/*.cpp
     ${AICORE_TRELLIS_SRC_DIR}/third_party/xatlas/*.cpp
@@ -129,6 +138,9 @@ endif()
 if(NOT EXISTS ${AICORE_TRELLIS_SRC_DIR}/third_party/xatlas/xatlas.cpp)
     message(FATAL_ERROR "AICore: missing TRELLIS third_party (xatlas) at ${AICORE_TRELLIS_SRC_DIR}/third_party")
 endif()
+if(NOT EXISTS ${AICORE_SAM3D_SRC_DIR}/session.cpp)
+    message(FATAL_ERROR "AICore: missing SAM3D module at ${AICORE_SAM3D_SRC_DIR}")
+endif()
 
 add_library(${PROJECT_NAME} SHARED
     ${AICORE_COMMON_SOURCES} ${AICORE_COMMON_HEADERS}
@@ -147,6 +159,7 @@ add_library(${PROJECT_NAME} SHARED
     ${AICORE_TRELLIS_SOURCES}
     ${AICORE_GKD_SOURCES}
     ${AICORE_LINGBOT_SOURCES}
+    ${AICORE_SAM3D_SOURCES} ${AICORE_SAM3D_HEADERS}
     ${AICORE_API_HEADERS}
 )
 
@@ -209,6 +222,7 @@ target_include_directories(${PROJECT_NAME}
         ${AICORE_LINGBOT_SRC_DIR}
         ${AICORE_TRELLIS_SRC_DIR}/third_party/xatlas
         ${AICORE_TRELLIS_SRC_DIR}/third_party/o-voxel-fdg
+        ${AICORE_SAM3D_SRC_DIR}
         ${EIGEN_INCLUDE_DIRS}
 )
 
@@ -273,6 +287,11 @@ aicore_apply_compile_definitions(${PROJECT_NAME})
 
 if(AICore_CUDA_ENABLED)
     target_sources(${PROJECT_NAME} PRIVATE ${AICORE_ALIKED_SRC_DIR}/cuda/aliked_cuda.cu)
+    # PyTorch-2.5.1-compatible CUDA normal RNG for the sam3d samplers
+    # (same compile-definition contract as the source sam3dggml build:
+    # SAM3D_USE_CUDA selects the device kernel over the Philox CPU path).
+    target_sources(${PROJECT_NAME} PRIVATE ${AICORE_SAM3D_SRC_DIR}/pytorch_cuda_rng.cu)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE SAM3D_USE_CUDA)
     # Static-link the CUDA runtime (cudart) on UNIX so libAICore.so has no
     # DT_NEEDED on libcudart.so.X and loads on machines without a CUDA toolkit.
     # This is the same strategy as the qSIBR plugin (see qSIBR/CMakeLists.txt).
@@ -651,6 +670,11 @@ if(GGML_DYNAMIC_BACKENDS AND GGML_RUNTIME_LIB_DIR AND GGML_BACKEND_DIR)
     install(SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/InstallGgmlBackends.cmake")
 endif()
 
+set(_aicore_enabled_task_names
+    aliked deeplsd depth facedetect gaussian gkd lightglue lingbot loma reid
+    rfdetr rmbg sam3 sam3d trellis yolo)
+list(JOIN _aicore_enabled_task_names "," _aicore_enabled_tasks_csv)
+
 if(AICore_BUILD_TESTS)
     if(AICore_BUILD_WHITEBOX_TESTS)
         set(AICORE_TEST_SOURCES
@@ -668,6 +692,7 @@ if(AICore_BUILD_TESTS)
             ${AICORE_GKD_SOURCES}
             ${AICORE_LINGBOT_SOURCES}
             ${AICORE_REID_SOURCES}
+            ${AICORE_SAM3D_SOURCES}
         )
         list(FILTER AICORE_TEST_SOURCES EXCLUDE REGEX
              ".*/(capi|image_depth)\\.cpp$")
@@ -702,6 +727,7 @@ if(AICore_BUILD_TESTS)
             $<BUILD_INTERFACE:${AICORE_TRELLIS_SRC_DIR}>
             $<BUILD_INTERFACE:${AICORE_TRELLIS_SRC_DIR}/third_party/xatlas>
             $<BUILD_INTERFACE:${AICORE_TRELLIS_SRC_DIR}/third_party/o-voxel-fdg>
+            $<BUILD_INTERFACE:${AICORE_SAM3D_SRC_DIR}>
         )
         add_dependencies(AICore_test 3rdparty_ggml 3rdparty_meshoptimizer)
         target_link_libraries(AICore_test PUBLIC 3rdparty_ggml 3rdparty_meshoptimizer CVCoreLib)
@@ -730,6 +756,17 @@ if(AICore_BUILD_TESTS)
             endif()
         endif()
         target_compile_definitions(AICore_test PUBLIC AICore_ENABLED)
+        if(AICore_CUDA_ENABLED)
+            # Same compile-definition contract as libAICore: the white-box
+            # sam3d probes (stage bisect against upstream condition dumps)
+            # need the PyTorch-compatible CUDA normal RNG so a fixed-conditions
+            # replay generates the same seed noise as the production session.
+            target_sources(AICore_test PRIVATE ${AICORE_SAM3D_SRC_DIR}/pytorch_cuda_rng.cu)
+            target_compile_definitions(AICore_test PUBLIC SAM3D_USE_CUDA)
+            if(TARGET CUDA::cudart)
+                target_link_libraries(AICore_test PUBLIC CUDA::cudart)
+            endif()
+        endif()
         aicore_apply_compile_definitions(AICore_test)
         if(MSVC)
             target_compile_definitions(AICore_test PRIVATE _USE_MATH_DEFINES)
@@ -740,7 +777,7 @@ if(AICore_BUILD_TESTS)
     message(STATUS "AICore: contract tests enabled")
 endif()
 
-message(STATUS "AICore (SHARED): tasks/depth + tasks/gaussian + tasks/lightglue + tasks/loma + tasks/deeplsd + tasks/facedetect + tasks/rfdetr + tasks/rmbg + tasks/yolo + tasks/sam3 + tasks/trellis + tasks/gkd + tasks/lingbot + tasks/reid, ggml linked once")
+message(STATUS "AICore (SHARED): tasks=${_aicore_enabled_tasks_csv}; ggml linked once")
 
 add_executable(aicore_gguf_quantize tools/aicore_gguf_quantize.cpp)
 target_link_libraries(aicore_gguf_quantize PRIVATE AICore)

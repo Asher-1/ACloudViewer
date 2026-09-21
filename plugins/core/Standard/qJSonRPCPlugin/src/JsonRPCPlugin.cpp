@@ -31,6 +31,7 @@
 
 #include <QDir>
 #include <QElapsedTimer>
+#include <QFile>
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -630,6 +631,8 @@ void JsonRPCPlugin::registerMethods() {
         [this](auto& p){ return rpcProcessRunCli(p); });
     reg("yolo.track",        "Headless multi-object tracking (six official tracker modes): {model, ?video, ?frames_dir, ?tracker: bytetrack|botsort|ocsort|deepocsort|fasttrack|tracktrack, ?gmc, ?conf, ?iou, ?max_det, ?reid: 0|1, ?device, ?threads, tracks_json, ?timeout_ms}",
         [this](auto& p){ return rpcYoloTrack(p); });
+    reg("sam3d.generate",    "Batch SAM 3D Objects image-to-3D (Gaussian PLY + optional FlexiCubes mesh, single model load): {images[], ?masks[], output_dir, ?device: auto|cpu|cuda|vulkan, ?dtype: f16|q8_0|q4_k, ?steps, ?seed, ?mesh: 0|1, ?rmbg: 0|1, ?moge_cache: 0|1, ?threads, ?models_dir, ?result_json, ?timeout_ms}",
+        [this](auto& p){ return rpcSam3dGenerate(p); });
     reg("process.csf",       "Cloth Simulation Filter: {input_path, output_path, ?scene, ?cloth_resolution, ?max_iterations, ?class_threshold, ?export_ground, ?export_offground}",
         [this](auto& p){ return rpcProcessCsf(p); });
     reg("process.m3c2",      "M3C2 distance computation: {cloud1_path, cloud2_path, params_file, output_path}",
@@ -3591,6 +3594,123 @@ JsonRPCResult JsonRPCPlugin::rpcYoloTrack(
         return JsonRPCResult::error(3, "YOLO tracking failed",
                                     D("exit_code", process.exitCode(), "stderr",
                                       result["stderr"].toString()));
+    }
+    return JsonRPCResult::success(QJsonDocument(result).toVariant());
+}
+
+JsonRPCResult JsonRPCPlugin::rpcSam3dGenerate(
+        const QMap<QString, QVariant>& params) {
+    const QVariantList imageList = params.value("images").toList();
+    const QVariantList maskList = params.value("masks").toList();
+    const QString outputDir = params.value("output_dir").toString();
+    if (imageList.isEmpty() || outputDir.isEmpty()) {
+        return JsonRPCResult::error(
+                -32602, "Missing required parameters: images[] and output_dir");
+    }
+
+    QStringList images;
+    for (const QVariant& v : imageList) {
+        const QString path = v.toString().trimmed();
+        if (path.isEmpty()) {
+            return JsonRPCResult::error(-32602,
+                                        "images[] contains an empty path");
+        }
+        images << path;
+    }
+    QStringList masks;
+    if (!maskList.isEmpty() && maskList.size() != images.size()) {
+        return JsonRPCResult::error(
+                -32602,
+                "masks[] must be empty or match images[] length (ordered "
+                "companion files; pass null/empty strings for images without "
+                "a mask)");
+    }
+    for (const QVariant& v : maskList) {
+        masks << v.toString().trimmed();
+    }
+
+    // Default manifest path inside the output directory so the response can
+    // embed the parsed per-image results.
+    QString resultJson = params.value("result_json").toString().trimmed();
+    if (resultJson.isEmpty()) {
+        resultJson = QDir(outputDir).filePath(
+                QStringLiteral("_sam3d_batch_result.json"));
+    }
+
+    int timeoutMs = params.value("timeout_ms", 3600000).toInt();
+
+    QStringList argList;
+    argList << "-SILENT" << "-NO_TIMESTAMP" << "-SAM3D_GENERATE";
+    for (int i = 0; i < images.size(); ++i) {
+        argList << "IMAGE" << images[i];
+        if (i < masks.size() && !masks[i].isEmpty()) {
+            argList << "MASK" << masks[i];
+        }
+    }
+    argList << "OUT_DIR" << outputDir;
+
+    // Optional key/value pairs in the -SAM3D_GENERATE argument order.
+    const QHash<QString, QString> optionKeys = {
+            {"device", "DEVICE"},
+            {"dtype", "DTYPE"},
+            {"steps", "STEPS"},
+            {"seed", "SEED"},
+            {"mesh", "MESH"},
+            {"rmbg", "RMBG"},
+            {"moge_cache", "MOGE_CACHE"},
+            {"threads", "THREADS"},
+            {"models_dir", "MODELS_DIR"},
+    };
+    for (auto it = optionKeys.constBegin(); it != optionKeys.constEnd(); ++it) {
+        const QString value = params.value(it.key()).toString().trimmed();
+        if (!value.isEmpty()) {
+            argList << it.value() << value;
+        }
+    }
+    argList << "RESULT_JSON" << resultJson;
+
+    QElapsedTimer timer;
+    timer.start();
+    QProcess process;
+    process.setProgram(QCoreApplication::applicationFilePath());
+    process.setArguments(argList);
+    process.setEnvironment(QProcess::systemEnvironment()
+                           << "QT_QPA_PLATFORM=offscreen");
+    process.start();
+    if (!process.waitForFinished(timeoutMs)) {
+        process.kill();
+        return JsonRPCResult::error(
+                3, "SAM 3D batch generation timed out",
+                D("timeout_ms", timeoutMs, "images_count", images.size()));
+    }
+
+    QJsonObject result;
+    result["exit_code"] = process.exitCode();
+    result["stdout"] =
+            QString::fromUtf8(process.readAllStandardOutput()).left(5000);
+    result["stderr"] =
+            QString::fromUtf8(process.readAllStandardError()).left(2000);
+    result["result_json"] = resultJson;
+    result["elapsed_ms"] = static_cast<qint64>(timer.elapsed());
+
+    // Embed the parsed manifest so clients do not need a second file read.
+    QFile jsonFile(resultJson);
+    if (jsonFile.open(QIODevice::ReadOnly)) {
+        const QJsonDocument doc = QJsonDocument::fromJson(jsonFile.readAll());
+        jsonFile.close();
+        if (doc.isObject()) {
+            result["items"] = doc.object().value("items").toArray();
+            result["ok_count"] = doc.object().value("ok").toInt();
+            result["failed_count"] = doc.object().value("failed").toInt();
+            result["backend"] = doc.object().value("backend").toString();
+        }
+    }
+
+    if (process.exitCode() != 0) {
+        return JsonRPCResult::error(
+                3, "SAM 3D batch generation failed",
+                D("exit_code", process.exitCode(), "stderr",
+                  result["stderr"].toString(), "items", result["items"]));
     }
     return JsonRPCResult::success(QJsonDocument(result).toVariant());
 }

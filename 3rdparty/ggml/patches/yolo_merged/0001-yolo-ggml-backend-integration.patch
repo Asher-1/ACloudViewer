@@ -460,7 +460,7 @@ index 14774d4..152c47d 100644
 +    float * sc = reinterpret_cast<float *>(smem_raw); // overlays both buffers
 +
 +    constexpr int WARPS_N = NT / (16 * FN); // warp columns
-+    constexpr int WARPS_M = 4 / WARPS_N;    // warp rows
++
 +    const int warp_m = (tid / (32 * WARPS_N)) * 16 * FM;
 +    const int warp_n = ((tid / 32) % WARPS_N) * 16 * FN;
 +

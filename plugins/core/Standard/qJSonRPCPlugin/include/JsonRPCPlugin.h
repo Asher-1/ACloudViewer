@@ -139,6 +139,10 @@ private:
     /** Spawns a headless ACloudViewer -SILENT -YOLO_TRACK child process
      *  (same offscreen pattern as rpcProcessRunCli). */
     JsonRPCResult rpcYoloTrack(const QMap<QString, QVariant>& params);
+    /** Spawns a headless ACloudViewer -SILENT -SAM3D_GENERATE child
+     *  process: batch image-to-3D (Gaussian PLY + optional mesh) with a
+     *  single model load, RESULT_JSON manifest (same offscreen pattern). */
+    JsonRPCResult rpcSam3dGenerate(const QMap<QString, QVariant>& params);
     JsonRPCResult rpcProcessCsf(const QMap<QString, QVariant>& params);
     JsonRPCResult rpcProcessM3c2(const QMap<QString, QVariant>& params);
     JsonRPCResult rpcProcessRansac(const QMap<QString, QVariant>& params);

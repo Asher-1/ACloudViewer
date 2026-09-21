@@ -61,18 +61,18 @@ project's problem domain.
 %%{init: {"theme":"base","themeVariables":{"primaryColor":"#ffffff","primaryTextColor":"#111827","primaryBorderColor":"#6b7280","secondaryColor":"#f3f4f6","tertiaryColor":"#e5e7eb","mainBkg":"#ffffff","nodeBorder":"#6b7280","textColor":"#111827","titleColor":"#111827","lineColor":"#6b7280","clusterBkg":"#f3f4f6","clusterBorder":"#9ca3af","edgeLabelBackground":"#e5e7eb","labelBoxBkgColor":"#e5e7eb","labelTextColor":"#111827","noteBkgColor":"#fef3c7","noteTextColor":"#111827","noteBorderColor":"#a16207","actorBkg":"#ffffff","actorTextColor":"#111827","actorBorder":"#6b7280","actorLineColor":"#9ca3af","signalColor":"#6b7280","signalTextColor":"#6b7280","sequenceNumberColor":"#ffffff","loopTextColor":"#111827","activationBkgColor":"#f3f4f6","activationBorderColor":"#6b7280"},"themeCSS":".edgeLabel span, .edgeLabel p, .edgeLabel .labelText, .labelText { color: #111827 !important; fill: #111827 !important; }"}}%%
 flowchart TB
     subgraph CONSUMERS["Consumers (link AICore only, include aicore/*.h only)"]
-        PLUGINS["12 Qt plugins<br/>qDA3 · qYOLO · qSAM3 · qTrellis · qRFDetr<br/>qRMBG · qGKD · qLingbotMap · qFreeSplatter<br/>qLightGlue · qDeepLSD · qFaceDetect"]
+        PLUGINS["13 Qt plugins<br/>qDA3 · qYOLO · qSAM3 · qSAM3D · qTrellis · qRFDetr<br/>qRMBG · qGKD · qLingbotMap · qFreeSplatter<br/>qLightGlue · qDeepLSD · qFaceDetect"]
         RECON["libs/Reconstruction<br/>(COLMAP-derived SfM/MVS)"]
         CVDB["libs/CV_db<br/>(ecvImage depth hooks)"]
         TOOLS["Tools / tests / free_splatter-cli"]
     end
 
     subgraph ABI["Public C ABI (stable boundary)"]
-        HDR["include/aicore/*.h<br/>15 task headers + common contract headers"]
+        HDR["include/aicore/*.h<br/>16 task headers when SAM3D is enabled<br/>+ common contract headers"]
     end
 
     subgraph LIB["libAICore (single SHARED, hidden symbols)"]
-        subgraph TASKS["Task layer src/tasks/[task]/ (15 tasks, mutually independent)"]
+        subgraph TASKS["Task layer src/tasks/[task]/<br/>(16 tasks in the unified library)"]
             T1["loader / graph /<br/>preprocess / postprocess"]
             T2["capi.cpp (C ABI landing)<br/>+ private exports (.exports.map)"]
         end
@@ -123,12 +123,13 @@ core/AICore/
 │   ├── pipeline_timing.h    Unified timing contract
 │   ├── runtime_capi.h       Cancellation / device queues / process cleanup
 │   ├── backend_capi.h       Device enumeration / resolution / capabilities / warmup (model_kind admission enum)
+│   ├── model_catalog_capi.h Shared read-only published-model metadata used by legacy task families
 │   ├── runtime_raii.h       Header-only C++ RAII (DeviceTaskLock / CancelScope, Qt-free)
 │   ├── depth_image.h        Qt exception: QImage convenience layer (AICORE_CXX_API ImageDepth)
 │   ├── inference_log.h      CVLog logging convenience layer (depends on CVLog, hence not in the umbrella)
 │   ├── asset_digests.h      Generated file: SHA-256 anchor table for published model assets (Qt-free)
-│   └── <task>_capi.h × 15   Task C APIs (aliked/deeplsd/depth/facedetect/gaussian/
-│                            gkd/lightglue/lingbot/loma/reid/rfdetr/rmbg/sam3/trellis/yolo)
+│   └── <task>_capi.h × 16   Task C APIs (aliked/deeplsd/depth/facedetect/gaussian/
+│                            gkd/lightglue/lingbot/loma/reid/rfdetr/rmbg/sam3/sam3d/trellis/yolo)
 ├── src/common/              Process service layer (devices, leases, cancellation, cache paths, logging, quantization)
 ├── src/tasks/<task>/        Task engines (loader/graph/preprocess/postprocess/capi.cpp)
 │   └── trellis/third_party/ xatlas · o-voxel-fdg · CuMesh (optional GPU chart clustering, see §11.1)
@@ -153,14 +154,14 @@ core/AICore/
 
 | Class | Headers | Rule |
 |---|---|---|
-| **C ABI headers** (`extern "C"`) | `image_view.h` `pipeline_timing.h` `runtime_capi.h` `backend_capi.h` + 15 `<task>_capi.h` | C types only; exported symbols `aicore_*` |
-| **Qt-free C++ headers** | `runtime_raii.h` (inline RAII), `asset_digests.h` (generated table) | Pure inline/data; never touch the export map; usable by non-Qt consumers |
+| **C ABI headers** (`extern "C"`) | `image_view.h` `pipeline_timing.h` `runtime_capi.h` `backend_capi.h` `model_catalog_capi.h` + task C APIs | C types only; exported symbols `aicore_*` |
+| **Qt-free C++ headers** | `runtime_raii.h` (inline RAII), `asset_digests.h` (generated source table) | Pure inline/data; plugins use the exported catalog/shared integrity facade instead of reading the digest table directly |
 | **C++ helper headers with dependencies** | `depth_image.h` (QImage/QString, the **single documented Qt exception**), `inference_log.h` (depends on CVLog) | `inference_log.h` is **intentionally excluded from the umbrella** `aicore.h`: lean capi test targets have no CVLog include path; only plugins/app-side code includes it directly |
 
 > The umbrella `aicore.h` is a convenience include; new code should **include only
 > the headers it uses**. Adding a new task header to the umbrella is optional.
 
-### 3.2 The Fourteen Tasks at a Glance
+### 3.2 The Sixteen Tasks at a Glance
 
 | Task header | Capability | Image input shape |
 |---|---|---|
@@ -178,6 +179,8 @@ core/AICore/
 | `yolo_capi.h` | YOLO detect/segment/pose/OBB/semantic/classify/depth + prompts | `aicore_image_view` |
 | `gkd_capi.h` | GKDT general keypoint detection (text/visual/multimodal prompts) | `aicore_image_view` |
 | `lingbot_capi.h` | LingBot-Map (GCT) streaming RGB-D reconstruction: depth/pose/native sky masking | `aicore_image_view` |
+| `reid_capi.h` | Appearance embeddings for detection boxes used by multi-object tracking | `aicore_image_view` + typed XYXY boxes |
+| `sam3d_capi.h` | SAM 3D Objects image-to-Gaussians generation with optional mesh decoding | `aicore_image_view` + optional stride-aware mask |
 
 > Shape rule: **new bitmap-consuming tasks must use `aicore_image_view`**. A few
 > tasks use their own typed structs because the input is not a bitmap (features,
@@ -523,9 +526,10 @@ $CLOUDVIEWER_DATA_ROOT (default ~/cloudViewer_data)
 ```
 
 - `src/common/model_cache.hpp` provides the per-task directory functions;
-  plugin-side downloads go through `ecvModelDownloader` / `ecvAssetIntegrity`
-  (`asset_digests.h` is the content-anchor table, no size-only fallback);
-  plugins must **not** build private download/extract state machines;
+  published metadata comes from task catalogs or `model_catalog_capi.h`, while
+  plugin-side transport goes through `ecvModelDownloader` /
+  `ecvAssetIntegrity`; plugins must **not** own URL/digest tables or build
+  private download/extract state machines;
 - **RMBG is a shared dependency**: consumers such as trellis must obtain
   `rmbg_models` through the RMBG cache API and must not duplicate it.
 
@@ -744,22 +748,33 @@ bash core/AICore/tests/check_no_legacy_symbols.sh \
      build_app/bin/libAICore.so core/AICore/include/aicore   # export whitelist + ggml leak
 bash core/AICore/tests/check_no_env_getenv.sh core/AICore/src  # env whitelist + task isolation
 python3 core/AICore/tests/check_capi_coverage.py               # C API coverage ≥95%
+python3 core/AICore/tests/check_plugin_aicore_boundaries.py \
+     --root . --strict                                      # plugin public-boundary scan
 ```
 
 ### 12.4 One-Click Regression Gate (`aicore-validate-all`)
 
 ```bash
-# Default LIGHT tier (sam3/trellis et al. run only their declared lightweight
+# Default LIGHT tier with the developer profile (manifest-declared lightweight
 # subsets; missing/corrupt models are SHA-256 verified then downloaded into
 # ~/cloudViewer_data/extract; probe outputs and the model cache are kept by default)
 cmake --build build_app --target aicore-validate-all -j1
 # Equivalent direct invocation:
 python3 core/AICore/scripts/validate_all.py \
+  --profile developer \
   --build build_app --backend cuda \
   --output build_app/Testing/aicore_validation.json
 
-# Complete matrix (the only form that supports a "complete regression/release/
-# parity/speedup" claim)
+# Release/regression or speed claim: controlled same-host A/B. The release
+# profile enforces stronger sampling, requires the baseline argument, rejects
+# incomplete runs, and requires structured accuracy for every selected row.
+python3 core/AICore/scripts/validate_all.py \
+  --profile release --baseline-build build_app.before \
+  --build build_app --backend cuda \
+  --output build_app/Testing/aicore_validation-release.json
+
+# Complete matrix (the only form that supports a complete coverage claim;
+# release/parity/speedup also require the release profile and baseline above)
 python3 core/AICore/scripts/validate_all.py --build build_app --backend cuda --full \
   --output build_app/Testing/aicore_validation.json
 
@@ -773,7 +788,10 @@ Key points: the gate **never** silently shrinks the matrix to the local cache;
 tier subsets are declared in `validation_manifest.json` (`"light": true` /
 `"light_globs"`); catalog/download/digest/uncovered-model/exit 77/accuracy/
 stability/performance failures all fail the gate; A/B uses
-`--baseline-build <before-build>` (tiers must match); use
+`--profile release --baseline-build <before-build>` (profile and tiers must
+match); structured `accuracy` checks are executable while legacy
+`accuracy_gate` text is probe-owned display metadata accepted only by the
+developer profile; use
 `--clean-probe-outputs` / `--clean-model-cache` on space-constrained CI. The
 intake checklist for new tasks/models/plugins is §13.1.
 

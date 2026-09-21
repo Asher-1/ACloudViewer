@@ -13,6 +13,7 @@ import copy
 import fnmatch
 import hashlib
 import json
+import math
 import os
 import platform
 import re
@@ -73,6 +74,7 @@ class RunSpec:
     fingerprint_policy: str
     require_fingerprint: bool
     report_path: Path
+    accuracy: dict[str, Any] = field(default_factory=dict)
     # VRAM budget: explicit working-set estimate in MiB, or model bytes plus
     # an activation/working-set overhead when the scenario does not declare
     # one. Only consulted for GPU backends; see vram_gate_decision().
@@ -664,12 +666,194 @@ def filter_unavailable_specs(
 def load_manifest(path: Path) -> dict[str, Any]:
     with path.open(encoding="utf-8") as stream:
         manifest = json.load(stream)
-    if manifest.get("schema") != 1:
+    if manifest.get("schema") not in (1, 2):
         raise ValueError(f"unsupported manifest schema: {manifest.get('schema')}")
     if (not manifest.get("tasks") or not manifest.get("scenarios") or
             not manifest.get("input_assets")):
         raise ValueError("manifest must declare tasks, scenarios, and input assets")
+    for scenario in manifest["scenarios"]:
+        normalize_accuracy_gate(scenario)
     return manifest
+
+
+def normalize_accuracy_gate(scenario: dict[str, Any]) -> dict[str, Any]:
+    """Return the executable accuracy contract for one manifest scenario.
+
+    ``accuracy_gate`` is retained as a human-readable compatibility field.
+    New scenarios should use the structured ``accuracy`` object. Existing
+    rows are explicitly marked ``probe_legacy`` until their probe exports
+    named numeric metrics; this prevents a prose claim from being mistaken
+    for an enforced threshold.
+    """
+    legacy = scenario.get("accuracy_gate", "")
+    gate = scenario.get("accuracy")
+    if gate is None:
+        if not legacy:
+            raise ValueError(f"scenario {scenario.get('id', '<unknown>')} "
+                             "must declare accuracy or accuracy_gate")
+        return {
+            "reference": "probe_legacy",
+            "description": legacy,
+            "checks": [],
+            "require_metrics": [],
+            "structured": False,
+        }
+    if not isinstance(gate, dict):
+        raise ValueError(f"scenario {scenario.get('id', '<unknown>')} "
+                         "accuracy must be an object")
+    reference = gate.get("reference")
+    if not isinstance(reference, str) or not reference:
+        raise ValueError(f"scenario {scenario.get('id', '<unknown>')} "
+                         "accuracy.reference must be a non-empty string")
+    reference_id = gate.get("reference_id")
+    if not isinstance(reference_id, str) or not reference_id:
+        raise ValueError(f"scenario {scenario.get('id', '<unknown>')} "
+                         "accuracy.reference_id must be a non-empty string")
+    checks = gate.get("checks", [])
+    required = gate.get("require_metrics", [])
+    if not isinstance(checks, list) or not isinstance(required, list):
+        raise ValueError(f"scenario {scenario.get('id', '<unknown>')} "
+                         "accuracy checks/require_metrics must be lists")
+    allowed_ops = {"<", "<=", ">", ">=", "==", "!=", "finite"}
+    normalized_checks: list[dict[str, Any]] = []
+    for check in checks:
+        if not isinstance(check, dict):
+            raise ValueError(f"scenario {scenario.get('id', '<unknown>')} "
+                             "accuracy check must be an object")
+        metric = check.get("metric")
+        operator = check.get("op")
+        if (not isinstance(metric, str) or not metric or
+                operator not in allowed_ops):
+            raise ValueError(f"scenario {scenario.get('id', '<unknown>')} "
+                             "accuracy check needs metric and valid op")
+        if operator != "finite" and not isinstance(
+                check.get("value"), (int, float)):
+            raise ValueError(f"scenario {scenario.get('id', '<unknown>')} "
+                             f"accuracy check {metric} needs numeric value")
+        normalized = {"metric": metric, "op": operator}
+        if operator != "finite":
+            normalized["value"] = float(check["value"])
+        if check.get("label"):
+            normalized["label"] = str(check["label"])
+        normalized_checks.append(normalized)
+    if any(not isinstance(item, str) or not item for item in required):
+        raise ValueError(f"scenario {scenario.get('id', '<unknown>')} "
+                         "accuracy.require_metrics must contain names")
+    if not normalized_checks and not required and reference != "probe_invariant":
+        raise ValueError(
+            f"scenario {scenario.get('id', '<unknown>')} accuracy must "
+            "declare checks or require_metrics; only probe_invariant may "
+            "delegate non-numeric invariants to a failing probe exit code")
+    normalized_gate = dict(gate)
+    normalized_gate["checks"] = normalized_checks
+    normalized_gate["require_metrics"] = list(required)
+    normalized_gate["structured"] = True
+    return normalized_gate
+
+
+def resolve_metric(metrics: dict[str, float], name: str) -> float | None:
+    """Resolve an exact or unique leaf metric path from a probe report."""
+    if name in metrics:
+        return metrics[name]
+    suffix = "/" + name
+    matches = [value for key, value in metrics.items()
+               if key.endswith(suffix)]
+    return matches[0] if len(matches) == 1 else None
+
+
+def evaluate_accuracy_gate(gate: dict[str, Any],
+                           metrics: dict[str, float]) -> list[str]:
+    """Evaluate structured metric checks; legacy prose remains probe-owned."""
+    failures: list[str] = []
+    for name in gate.get("require_metrics", []):
+        value = resolve_metric(metrics, name)
+        if value is None or not isinstance(value, (int, float)) or not \
+                math.isfinite(float(value)):
+            failures.append(f"required accuracy metric missing/non-finite: {name}")
+    for check in gate.get("checks", []):
+        name = check["metric"]
+        value = resolve_metric(metrics, name)
+        if value is None or not math.isfinite(float(value)):
+            failures.append(f"accuracy metric missing/non-finite: {name}")
+            continue
+        operator = check["op"]
+        expected = check.get("value")
+        passed = {
+            "<": value < expected,
+            "<=": value <= expected,
+            ">": value > expected,
+            ">=": value >= expected,
+            "==": value == expected,
+            "!=": value != expected,
+            "finite": True,
+        }[operator]
+        if not passed:
+            label = check.get("label", name)
+            failures.append(f"accuracy gate failed: {label} {value:.8g} "
+                            f"{operator} {expected}")
+    return failures
+
+
+def release_accuracy_contract_failures(specs: list[RunSpec]) -> list[str]:
+    """Reject prose-only accuracy claims from release evidence.
+
+    Legacy probes may still enforce useful assertions internally, so they
+    remain available to the developer profile.  A release row, however, must
+    expose a structured reference identity and either a machine-evaluated
+    metric contract or an explicit probe-owned invariant; otherwise the
+    runner cannot prove what was gated. Probe invariants establish structural
+    correctness only, not upstream semantic accuracy.
+    """
+    return [
+        f"{spec.key}: release profile requires structured accuracy; "
+        "migrate accuracy_gate prose to accuracy.reference/reference_id and "
+        "checks/require_metrics or an explicit probe_invariant"
+        for spec in specs if not spec.accuracy.get("structured", False)
+    ]
+
+
+def release_manifest_accuracy_contract_failures(
+        manifest: dict[str, Any], args: argparse.Namespace,
+        selected: set[str], catalog: list[ModelAsset]) -> list[str]:
+    """Fail release accuracy metadata before downloading large model files.
+
+    The catalog has already been narrowed by tier and ``--models``. Match its
+    relative paths back to the owning scenarios, excluding required dependency
+    globs so a shared dependency does not select unrelated bundle rows.
+    ``release_accuracy_contract_failures`` remains as a post-expansion defense.
+    """
+    model_filter = [
+        item.strip() for item in (getattr(args, "models", "") or "").split(",")
+        if item.strip()]
+    full = bool(getattr(args, "full", False)) or bool(model_filter)
+    tiered = tiered_tasks(manifest)
+    catalog_paths = [str(asset.relative_path) for asset in catalog]
+    failures: list[str] = []
+    for scenario in manifest["scenarios"]:
+        task = scenario["task"]
+        if task not in selected or not scenario_runs_in_tier(
+                scenario, task, tiered, full):
+            continue
+        if model_filter and not model_id_matches(scenario["id"], model_filter):
+            keys = (("model_glob",) if scenario.get("for_each_model") else
+                    ("owned_globs", "covered_globs", "model_glob"))
+            patterns: list[str] = []
+            for key in keys:
+                values = scenario.get(key, [])
+                if isinstance(values, str):
+                    values = [values]
+                patterns.extend(values)
+            if not any(fnmatch.fnmatchcase(path, pattern)
+                       for path in catalog_paths for pattern in patterns):
+                continue
+        gate = normalize_accuracy_gate(scenario)
+        if not gate.get("structured", False):
+            failures.append(
+                f"{task}/{scenario['id']}: release profile requires "
+                "structured accuracy; migrate accuracy_gate prose to "
+                "accuracy.reference/reference_id and checks/require_metrics "
+                "or an explicit probe_invariant")
+    return failures
 
 
 def find_binary(build: Path, name: str) -> Path:
@@ -740,7 +924,10 @@ def expand_specs(manifest: dict[str, Any], args: argparse.Namespace,
         if item.strip()]
     # An explicit model selection declares its own scope, so it bypasses the
     # cost-motivated light tier; the tier keeps guarding unscoped runs.
-    full = bool(getattr(args, "full", False)) or bool(model_filter)
+    # Programmatic callers that predate the CLI tier flag are treated as full
+    # matrix requests. The command-line parser always supplies ``full`` and
+    # therefore retains the explicit light-tier default.
+    full = bool(getattr(args, "full", True)) or bool(model_filter)
     tiered = tiered_tasks(manifest)
 
     inputs = {
@@ -907,6 +1094,7 @@ def expand_specs(manifest: dict[str, Any], args: argparse.Namespace,
                                            "exact"),
                 require_fingerprint=raw.get("require_fingerprint", True),
                 report_path=scenario_report,
+                accuracy=normalize_accuracy_gate(raw),
                 vram_estimate_mib=(float(vram_estimate)
                                    if vram_estimate is not None else None),
                 vram_overhead_mib=(float(vram_overhead)
@@ -997,6 +1185,13 @@ def parse_output(output: str, parser: str, report_path: Path) -> tuple[dict[str,
             if isinstance(value, dict) and "geometry_sha12" in value:
                 fingerprints[f"geometry/{value.get('device', 'unknown')}"] = str(
                     value["geometry_sha12"])
+    elif parser == "sam3d":
+        for value in json_values:
+            if isinstance(value, dict) and "geometry_sha12" in value:
+                fingerprints[f"geometry/{value.get('device', 'unknown')}"] = str(
+                    value["geometry_sha12"])
+                if value.get("finite") is not True or value.get("stable") is not True:
+                    fingerprints["degenerate"] = "true"
     elif parser == "yolo":
         for value in json_values:
             if not isinstance(value, dict):
@@ -1250,9 +1445,15 @@ def summarize_attempts(spec: RunSpec, attempts: list[Attempt],
         status = "fail"
     if stability_failures:
         status = "unstable"
+    metrics = median_metrics(attempts)
+    accuracy_failures = (evaluate_accuracy_gate(spec.accuracy, metrics)
+                         if status == "pass" else [])
+    if accuracy_failures:
+        status = "fail"
     if status != "pass" and not (allow_incomplete and status == "skipped"):
         failures.append(f"{spec.key}: {status}, return codes={codes}")
     failures.extend(f"{spec.key}: {message}" for message in stability_failures)
+    failures.extend(f"{spec.key}: {message}" for message in accuracy_failures)
     assets = [file_identity(path) for path in spec.model_paths if path.is_file()]
     return {
         "key": spec.key,
@@ -1261,10 +1462,11 @@ def summarize_attempts(spec: RunSpec, attempts: list[Attempt],
         "model_id": spec.model_id,
         "model_assets": assets,
         "accuracy_gate": spec.accuracy_gate,
+        "accuracy": spec.accuracy,
         "fingerprint_policy": spec.fingerprint_policy,
         "status": status,
         "return_codes": codes,
-        "metrics": median_metrics(attempts),
+        "metrics": metrics,
         "fingerprints": fingerprints,
         "output_tail": attempts[-1].output_tail if attempts else "",
         "error_summary": extract_error_summary(
@@ -1295,6 +1497,7 @@ def vram_skipped_row(spec: RunSpec, gate: dict[str, float]) -> dict[str, Any]:
         "model_assets": [file_identity(path) for path in spec.model_paths
                          if path.is_file()],
         "accuracy_gate": spec.accuracy_gate,
+        "accuracy": spec.accuracy,
         "fingerprint_policy": spec.fingerprint_policy,
         "status": VRAM_SKIP_STATUS,
         "return_codes": [],
@@ -1327,12 +1530,16 @@ def compare_report(current: dict[str, Any], baseline: dict[str, Any],
                    threshold: float, absolute_noise_floor: float,
                    allow_incomplete: bool = False) -> list[str]:
     failures: list[str] = []
-    for key in ("backend", "repeats", "warmup_runs", "inference_runs",
+    for key in ("backend", "profile", "repeats", "warmup_runs", "inference_runs",
                 "threads", "trellis_steps", "tier"):
-        if baseline.get(key) != current.get(key):
+        baseline_value = baseline.get(key, "developer" if key == "profile"
+                                      else None)
+        current_value = current.get(key, "developer" if key == "profile"
+                                    else None)
+        if baseline_value != current_value:
             failures.append(
                 f"validation protocol mismatch {key}: "
-                f"{baseline.get(key)!r} -> {current.get(key)!r}")
+                f"{baseline_value!r} -> {current_value!r}")
     if baseline.get("manifest", {}).get("sha256") != current.get(
             "manifest", {}).get("sha256"):
         failures.append("validation manifest identity changed")
@@ -1531,20 +1738,25 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines = ["# AICore model validation", "",
              f"- verdict: **{report['verdict']}**",
              f"- backend: `{report['backend']}`",
+             f"- profile: `{report.get('profile', 'developer')}`",
              f"- scenarios: {len(rows)}",
              f"- repeated process runs: {report['repeats']}",
              f"- revision: `{report['revision'] or 'unknown'}`", "",
              *render_summary_section(rows),
              *render_per_task_section(rows)]
-    lines.extend(["| Task | Scenario/model | Accuracy gate | Stability | Metrics |",
-                  "|---|---|---|---|---|"])
+    lines.extend(["| Task | Scenario/model | Accuracy gate | Accuracy contract | Stability | Metrics |",
+                  "|---|---|---|---|---|---|"])
     for row in rows:
         metric_text = ", ".join(f"{key}={value:.3f}"
                                 for key, value in row["metrics"].items())
         stable = "PASS" if row["status"] == "pass" else \
             STATUS_LABELS.get(row["status"], row["status"].upper())
+        accuracy = row.get("accuracy", {})
+        accuracy_text = ("structured" if accuracy.get("structured")
+                         else accuracy.get("reference", "probe"))
         lines.append(f"| {row['task']} | `{row['model_id']}` | "
-                     f"{row['accuracy_gate']} | {stable} | {metric_text} |")
+                     f"{row['accuracy_gate']} | {accuracy_text} | {stable} | "
+                     f"{metric_text} |")
     lines.extend(["", *render_failure_details(rows),
                   *render_vram_section(rows)])
     lines.extend(["## All failures (raw)", ""])
@@ -1590,20 +1802,19 @@ def parse_args() -> argparse.Namespace:
                              "expansion for the selected tasks and narrows "
                              "the coverage audit to the selection; a pattern "
                              "that matches nothing is an error")
-    parser.add_argument("--repeats", type=int, default=2,
-                        help="process-level stability repeats; 2 is the minimum "
-                             "needed to compare output fingerprints across "
-                             "processes and detect the 'unstable' status, so "
-                             "lower it only for throwaway diagnostics")
-    parser.add_argument("--warmup-runs", type=int, default=1,
-                        help="per-process warmup forwards before timing; one "
-                             "suffices because the performance gate requires "
-                             "both a relative and an absolute increase")
-    parser.add_argument("--inference-runs", type=int, default=5,
-                        help="timed forwards per process; 5 keeps the p50 "
-                             "stable for the default gate. For release-grade "
-                             "A/B verdicts pass --inference-runs 10 for "
-                             "tighter p95 statistics")
+    parser.add_argument("--profile", choices=("developer", "release"),
+                        default="developer",
+                        help="developer is a fast diagnostic loop; release "
+                             "requires a controlled baseline and stronger sampling")
+    parser.add_argument("--repeats", type=int, default=None,
+                        help="process-level stability repeats (profile default: "
+                             "developer=2, release=3)")
+    parser.add_argument("--warmup-runs", type=int, default=None,
+                        help="per-process warmup forwards (profile default: "
+                             "developer=1, release=2)")
+    parser.add_argument("--inference-runs", type=int, default=None,
+                        help="timed forwards per process (profile default: "
+                             "developer=2, release=10)")
     parser.add_argument("--trellis-steps", type=int, default=12)
     parser.add_argument("--threads", type=int, default=0)
     parser.add_argument("--timeout", type=int, default=3600)
@@ -1661,6 +1872,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sam-image", default="")
     parser.add_argument("--yolo-image", default="")
     args = parser.parse_args()
+    profile_defaults = {
+        "developer": (2, 1, 2),
+        "release": (3, 2, 10),
+    }[args.profile]
+    if args.repeats is None:
+        args.repeats = profile_defaults[0]
+    if args.warmup_runs is None:
+        args.warmup_runs = profile_defaults[1]
+    if args.inference_runs is None:
+        args.inference_runs = profile_defaults[2]
     args.repo = args.repo.resolve()
     args.build = args.build.resolve()
     args.assets = args.assets.resolve()
@@ -1672,6 +1893,14 @@ def parse_args() -> argparse.Namespace:
         args.baseline_build = args.baseline_build.resolve()
     if args.baseline and args.baseline_build:
         parser.error("--baseline and --baseline-build are mutually exclusive")
+    if args.profile == "release":
+        if not args.baseline and not args.baseline_build:
+            parser.error("--profile release requires --baseline or --baseline-build")
+        if args.allow_incomplete:
+            parser.error("--profile release is incompatible with --allow-incomplete")
+        if args.repeats < 3 or args.warmup_runs < 2 or args.inference_runs < 5:
+            parser.error("release profile requires repeats >= 3, warmup-runs >= 2, "
+                         "and inference-runs >= 5")
     default_images = args.assets / "lightglue_test_images"
     if not args.image:
         args.image = str(default_images / "sacre_coeur1.jpg")
@@ -1698,6 +1927,14 @@ def main() -> int:
     selected = selected_tasks(manifest, args.tasks)
     try:
         catalog = load_model_catalog(args, manifest, selected)
+        if args.profile == "release":
+            contract_failures = release_manifest_accuracy_contract_failures(
+                manifest, args, selected, catalog)
+            if contract_failures:
+                print("release accuracy contract failed:", file=sys.stderr)
+                for failure in contract_failures:
+                    print(f"- {failure}", file=sys.stderr)
+                return 1
         cache_summary, cache_failures = ensure_model_assets(
             catalog, args.assets, offline=args.offline,
             timeout=args.download_timeout, retries=args.download_retries,
@@ -1740,6 +1977,14 @@ def main() -> int:
         specs, skipped = filter_unavailable_specs(
             specs, args.assets, cache_summary["unavailable"])
         diagnostics["skipped_scenarios"].extend(skipped)
+    release_contract_failures = (
+        release_accuracy_contract_failures(specs)
+        if args.profile == "release" else [])
+    if release_contract_failures:
+        print("release accuracy contract failed:", file=sys.stderr)
+        for failure in release_contract_failures:
+            print(f"- {failure}", file=sys.stderr)
+        return 1
     baseline_args = None
     baseline_specs: dict[str, RunSpec] = {}
     if args.baseline_build:
@@ -1863,6 +2108,7 @@ def main() -> int:
                      "--format=csv,noheader"])},
         "build": str(args.build), "assets": str(args.assets),
         "backend": args.backend,
+        "profile": args.profile,
         "tier": "full" if args.full else "light",
         "repeats": args.repeats,
         "warmup_runs": args.warmup_runs, "inference_runs": args.inference_runs,

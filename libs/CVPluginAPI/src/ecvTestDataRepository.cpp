@@ -62,15 +62,17 @@ constexpr const char* kObjectsDetectionDownloadUrl =
 constexpr const char* kObjectsDetectionSha256 =
         "f6dc7755a124d3ffa4454e5d0b52c8f97d149f2807ac877420c4fd319feaddd2";
 
-// Single-image-to-3D samples (qTrellis): 33 curated images in examples_images/
-// plus multi-view (mv/), texture (example_texturing/), HDRI and webp extras.
+// Single-image-to-3D samples (qTrellis, qSAM3D): 33 curated images in
+// examples_images/ plus multi-view (mv/), texture (example_texturing/),
+// HDRI and webp extras, and the official SAM 3D Objects scene set in
+// sam3d_images/ (RGBA image.png with the object mask as alpha).
 constexpr const char* kImage2MeshZipName = "image_to_mesh_data.zip";
 constexpr const char* kImage2MeshExtractDir = "image_to_mesh_data";
 constexpr const char* kImage2MeshDownloadUrl =
         "https://github.com/Asher-1/cloudViewer_downloads/releases/download/"
         "Image2MeshData/image_to_mesh_data.zip";
 constexpr const char* kImage2MeshSha256 =
-        "3a6f4c4156f5b4554f7a002dc898d7a09b2061300e205c06230400e44d65cf41";
+        "490f85a45c37f278bff8011109e91f66488d155c438015e3fdd7b95bbc297cac";
 
 // SAM3 segmentation samples (qSAM3): 14 images in images/ + 7 tracking
 // videos in videos/.
@@ -932,6 +934,33 @@ QStringList ecvTestDataRepository::getSamImages(const QString& bundleRoot) {
 
     QStringList images;
     QDirIterator it(imageDir, patterns, QDir::Files);
+    while (it.hasNext()) {
+        const QString path = it.next();
+        const QString fileName = QFileInfo(path).fileName();
+        if (fileName.startsWith(QLatin1Char('.'))) continue;
+        images.append(QFileInfo(path).absoluteFilePath());
+    }
+    images.sort(Qt::CaseInsensitive);
+    return images;
+}
+
+QStringList ecvTestDataRepository::getSam3dObjectImages(
+        const QString& bundleRoot) {
+    if (bundleRoot.isEmpty()) return {};
+
+    // The official scene images live in <root>/sam3d_images/ inside the
+    // Image2Mesh bundle (image_to_mesh_data.zip).
+    const QString imageDir =
+            QDir(bundleRoot).filePath(QStringLiteral("sam3d_images"));
+    if (!QDir(imageDir).exists()) return {};
+
+    const QStringList patterns = {
+            QStringLiteral("*.png"), QStringLiteral("*.jpg"),
+            QStringLiteral("*.jpeg"), QStringLiteral("*.webp")};
+
+    QStringList images;
+    QDirIterator it(imageDir, patterns, QDir::Files,
+                    QDirIterator::Subdirectories);
     while (it.hasNext()) {
         const QString path = it.next();
         const QString fileName = QFileInfo(path).fileName();

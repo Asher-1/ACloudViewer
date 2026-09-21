@@ -33,6 +33,7 @@ struct LightGlueBuiltinModel {
     QString filename;
     QString downloadUrl;
     int matcherType = 2;
+    QString sha256;
 };
 
 class LightGlueDialog : public QDialog {

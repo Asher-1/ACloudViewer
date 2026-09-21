@@ -28,7 +28,6 @@
 #include <QStandardItemModel>
 #include <QVBoxLayout>
 
-#include "aicore/asset_digests.h"
 #include "aicore/lingbot_capi.h"
 #include "cvFileDialog.h"
 #include "ecvAICoreUiHelper.h"

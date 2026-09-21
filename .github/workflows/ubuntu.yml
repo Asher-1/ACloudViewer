@@ -321,6 +321,7 @@ jobs:
             aicore:
               - 'core/AICore/**'
               - 'libs/CVPluginAPI/**'
+              - 'plugins/core/Standard/video_base/**'
               - 'plugins/core/Standard/qDA3/**'
               - 'plugins/core/Standard/qFreeSplatter/**'
               - 'plugins/core/Standard/qDeepLSD/**'

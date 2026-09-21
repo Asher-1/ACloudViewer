@@ -185,6 +185,16 @@ public:
     static QStringList getSamImages(const QString& bundleRoot);
 
     /**
+     * @brief Get the SAM 3D Objects scene images from the Image2Mesh bundle.
+     * Scans <root>/sam3d_images (the official sam-3d-objects demo scenes
+     * shipped inside image_to_mesh_data.zip; RGBA image.png with the object
+     * mask embedded as alpha).
+     * @param bundleRoot Path to the extracted dataset root
+     * @return Sorted list of absolute image file paths
+     */
+    static QStringList getSam3dObjectImages(const QString& bundleRoot);
+
+    /**
      * @brief Get the sample videos from the SAM3 dataset.
      * Scans <root>/videos for tracking samples.
      * @param bundleRoot Path to the extracted dataset root

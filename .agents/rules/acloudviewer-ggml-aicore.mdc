@@ -15,6 +15,40 @@ alwaysApply: false
 
 # ACloudViewer ggml / AICore Build Rules
 
+## AICore Integration Ownership (mandatory)
+
+For any new task, model, pipeline, or AICore-dependent plugin, read
+`.agents/skills/acloudviewer-aicore-plugin/SKILL.md` before implementation. It
+is the integration router; its `references/validation-gates.md` and
+`references/reuse-contract.md` own the executable accuracy/profile and reuse
+rules. This rule only provides fail-fast guards.
+
+- Classify the change first: existing-task consumer, model variant, genuinely
+  new task contract, UI-specific composition, or reusable headless pipeline.
+- Keep one `libAICore`; consumers include only public `aicore/*` headers and
+  must not link or expose ggml.
+- Keep process services in `src/common/`, model execution/state in
+  `src/tasks/<task>/`, and Qt/application behavior in the plugin. Do not create
+  a second backend registry, device queue, cancellation mechanism, cache root,
+  model source of truth, private downloader implementation, or validation
+  runner. A plugin may orchestrate the shared `ecvModelDownloader` using only
+  URL/digest metadata exported by an AICore catalog.
+- A new published model is incomplete until its runtime catalog entry, stable
+  URL/cache folder/SHA-256, catalog-dump exposure, probe, manifest consumer, and
+  light/full tier policy land together.
+- A new task contract is incomplete until headless ABI/lifecycle tests, two
+  forwards, context recreation, real-model truth/parity, and timing ownership
+  pass without depending on a plugin.
+- Promote code to `src/common/` only when at least two real consumers share the
+  same semantics, ownership, errors, and lifecycle. Model-specific similarity
+  is not sufficient.
+- New manifest rows use structured `accuracy.reference`, `checks`, and
+  `require_metrics`; `accuracy_gate` is display text only. Release claims use
+  `validate_all.py --profile release` with a same-host baseline and stronger
+  sampling, never the developer profile defaults.
+- Run `python3 core/AICore/tests/check_plugin_aicore_boundaries.py --root .
+  --strict`; the repository-wide strict gate is mandatory.
+
 ## ⚠️ ggml Source Modification Rules (mandatory)
 
 **Directly modifying ggml source files in build directories is absolutely forbidden** (`build/ggml/`, `build_app/ggml/`, etc.).
@@ -135,4 +169,3 @@ chain replay → contract tier → parity tier → performance A/B).
 - Known pre-existing defects (never classify as upgrade regression):
   0.18.1-only Vulkan DeviceLost (fixed upstream >= 0.19, FLOP-based submit policy),
   RMBG Vulkan conv2d descriptor-count assert (present on 0.18.1 and 0.21).
-

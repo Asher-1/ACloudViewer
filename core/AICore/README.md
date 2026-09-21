@@ -75,13 +75,14 @@ borrowed pixels + width/height + row stride + channel format
 |---|---|
 | `backend_capi.h` | Device discovery, resolution, warmup, capabilities |
 | `runtime_capi.h` | Cancellation, device queues, process cleanup |
+| `model_catalog_capi.h` | Shared read-only model metadata (role, URL, digest) for plugin/UI consumers |
 | `image_view.h` | Borrowed decoded-image input |
 | `pipeline_timing.h` | Common timing ABI |
 | `export.h` | `AICORE_CAPI` / `AICORE_CXX_API` export macros |
 | `runtime_raii.h` | Header-only C++ RAII helpers (`DeviceTaskLock`, `CancelScope`); Qt-free |
 | `depth_image.h` | Qt convenience layer for depth (the single documented Qt exception) |
 | `inference_log.h` | CVLog logging helpers; intentionally not umbrella-included (depends on `CVLog.h`) |
-| `asset_digests.h` | Generated SHA-256 digest table for published model assets; Qt-free |
+| `asset_digests.h` | Generated SHA-256 source table; plugins consume digests through exported catalogs/shared integrity helpers |
 | `aliked_capi.h` | ALIKED feature extraction |
 | `deeplsd_capi.h` | DeepLSD line extraction |
 | `depth_capi.h` | Depth, pose, reconstruction, and export |
@@ -94,13 +95,14 @@ borrowed pixels + width/height + row stride + channel format
 | `rfdetr_capi.h` | RF-DETR detection and segmentation |
 | `rmbg_capi.h` | RMBG alpha matte and RGBA composition |
 | `sam3_capi.h` | SAM3 segmentation and tracking |
+| `sam3d_capi.h` | SAM 3D Objects image-to-3D generation (Gaussian PLY + FlexiCubes mesh) |
 | `trellis_capi.h` | TRELLIS image-to-3D generation |
 | `yolo_capi.h` | YOLO detection, segment, pose, OBB, semantic, classify, depth, and prompts |
 
 The individual task header is authoritative. The umbrella `aicore.h` is a
-convenience include and may intentionally lag optional task headers; new code
-should include only the headers it uses. `inference_log.h` is deliberately
-excluded from the umbrella because it depends on `CVLog.h`.
+complete convenience include for public task contracts and must be updated
+when a task is added. New code should still include only the headers it uses.
+`inference_log.h` is deliberately excluded because it depends on `CVLog.h`.
 
 ## Source Layout
 
@@ -149,6 +151,8 @@ cmake --build build_app --target AICore aicore-contract-tests -j4
 
 Use only `AICore_*` public options. Internal `GGML_*` cache entries are derived
 by `cmake/AICoreOptions.cmake`; do not pass them as user configuration.
+The unified library exposes all 16 tasks. Task-specific plugin switches only
+control their Qt consumers; they do not remove task contracts from AICore.
 
 ggml is an ExternalProject. Persistent modifications are ordered unified diff
 patches in `3rdparty/ggml/patches/manifest.yaml`. Extracted sources under any
