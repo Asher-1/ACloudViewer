@@ -9,6 +9,7 @@
 
 #include <QDir>
 #include <QFileInfo>
+#include <algorithm>
 
 #include "aicore/image_view.h"
 #include "aicore/rmbg_capi.h"
@@ -270,10 +271,14 @@ bool Sam3dWorker::runGeneration() {
     if (aicore_sam3d_result_has_mesh(sam3d)) {
         const float* verts = aicore_sam3d_result_mesh_vertices(sam3d);
         const uint32_t* tris = aicore_sam3d_result_mesh_triangles(sam3d);
-        result.vertices =
-                QVector<float>(verts, verts + result.meshVertexCount * 3);
-        result.triangles =
-                QVector<uint32_t>(tris, tris + result.meshTriangleCount * 3);
+        // QVector's iterator-pair constructor requires Qt >= 5.14; copy
+        // through resize() so the plugin also builds against Qt 5.12.
+        const int vertCount = result.meshVertexCount * 3;
+        result.vertices.resize(vertCount);
+        std::copy(verts, verts + vertCount, result.vertices.data());
+        const int triCount = result.meshTriangleCount * 3;
+        result.triangles.resize(triCount);
+        std::copy(tris, tris + triCount, result.triangles.data());
     }
     aicore_pipeline_timings timings{};
     if (aicore_sam3d_last_pipeline_timings(ctx, &timings) == 0) {

@@ -7,6 +7,7 @@
 
 #include "gguf_loader.hpp"
 
+#include <cstdio>
 #include <cstring>
 
 #include "common.hpp"

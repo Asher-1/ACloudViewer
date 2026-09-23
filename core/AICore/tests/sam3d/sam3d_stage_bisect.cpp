@@ -43,7 +43,10 @@ int main(int argc, char** argv) {
     sam3d::E2eOptions e2e;
     e2e.models_dir = argv[1];
     e2e.cond_dir = argv[2];
-    e2e.backend = "cuda";
+    // Production C API default (capi.cpp): "auto" keeps the SS flow in F32 —
+    // f16_autocast requires an explicit "cuda" request, matching the upstream
+    // production path. Pass --backend cuda for the F16 autocast variant.
+    e2e.backend = "auto";
     e2e.dtype = "q4_k";
     e2e.seed = 42;
     e2e.threads = 8;

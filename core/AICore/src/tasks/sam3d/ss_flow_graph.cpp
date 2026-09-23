@@ -161,18 +161,24 @@ std::vector<ggml_tensor*> SsFlowGraph::build() {
     inputs.push_back(freqs);
     table_data.push_back(freq_data);
 
+    // Parity ladder: capture the pre-GEMM embedding (cos/sin concat) so a
+    // t_emb divergence can be attributed to the GEMMs vs the unary chain.
+    ggml_tensor* t_freq_dbg = nullptr;
     auto embedder = [&](ggml_tensor* scalar, const std::string& pfx) {
         ggml_tensor* tf = ggml_mul(ctx, ggml_repeat(ctx, scalar, freqs), freqs);
         ggml_tensor* c = ggml_cos(ctx, tf);
         ggml_tensor* s = ggml_sin(ctx, tf);
         ggml_tensor* emb = ggml_concat(ctx, c, s, 0);  // (256, 1)
+        if (debug_stage == "t_freq") t_freq_dbg = emb;
         ggml_tensor* h = linear(pfx + ".mlp.0.weight",
                                 as_f32(ctx, m->get(pfx + ".mlp.0.bias")), emb);
         h = ggml_silu(ctx, h);
         return linear(pfx + ".mlp.2.weight",
                       as_f32(ctx, m->get(pfx + ".mlp.2.bias")), h);  // (C, 1)
     };
-    ggml_tensor* mod = ggml_add(ctx, embedder(t, prefix + ".t_embedder"),
+    ggml_tensor* t_emb_out = embedder(t, prefix + ".t_embedder");
+    if (debug_stage == "t_freq" && t_freq_dbg) return {t_freq_dbg};
+    ggml_tensor* mod = ggml_add(ctx, t_emb_out,
                                 embedder(d, prefix + ".d_embedder"));  // (C,1)
     if (debug_stage == "t_emb") return {mod};
 

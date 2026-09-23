@@ -12,6 +12,9 @@ struct SsDecoderGraph {
     ggml_context* ctx = nullptr;
     const GGUFModel* m = nullptr;
     std::vector<ggml_tensor*> debug_tensors;  // valid after compute
+    // Parity probe: when set, build() short-circuits and returns the
+    // boundary tensor (im2col/gemm/convout or after each res block).
+    const char* debug_stage = nullptr;
 
     // returns the raw logits field (1, 64, 64, 64)
     ggml_tensor* build(ggml_tensor* latent);

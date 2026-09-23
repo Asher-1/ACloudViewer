@@ -7,6 +7,7 @@
 
 #include "common.hpp"
 
+#include <chrono>
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
@@ -48,9 +49,12 @@ void log_printf(LogLevel level, const char* fmt, ...) {
 }
 
 double now_ms() {
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return ts.tv_sec * 1000.0 + ts.tv_nsec / 1.0e6;
+    // std::chrono steady_clock maps to clock_gettime(CLOCK_MONOTONIC) on
+    // POSIX and QueryPerformanceCounter on Windows; one portable
+    // implementation instead of per-platform clock code.
+    return std::chrono::duration<double, std::milli>(
+                   std::chrono::steady_clock::now().time_since_epoch())
+            .count();
 }
 
 ScopedTimer::ScopedTimer(const char* name_) : name(name_), t0(now_ms()) {}

@@ -1004,6 +1004,12 @@ int cmd_e2e(const E2eOptions& opt) {
             LOGE("e2e-cond: dino failed");
             return 1;
         }
+        if (dino_dbg_cfg.enabled) {
+            // The debug graph returns a single boundary tensor, but the fuser
+            // below consumes all four DINO outputs: stop once the dump is on
+            // disk instead of indexing out-of-bounds vectors.
+            return 0;
+        }
         auto p2 = run_pointpatch_batch(ss, "cemb.emb2",
                                        {{&ci.pointmap, {ci.W, ci.H}},
                                         {&ci.rgb_pointmap, {ci.W, ci.H}}});
@@ -1106,6 +1112,11 @@ int cmd_e2e(const E2eOptions& opt) {
         if (d.empty() || d[0].empty()) {
             LOGE("e2e: dino forward failed");
             return 1;
+        }
+        if (dino_dbg_cfg.enabled) {
+            // Same as the cond stage: the debug dump is a single boundary
+            // tensor; stop before the fuser that needs all four outputs.
+            return 0;
         }
         std::vector<float> d_img = std::move(d[0]), d_rgb = std::move(d[1]);
         std::vector<float> d_mask = std::move(d[2]), d_rgbm = std::move(d[3]);
@@ -1295,10 +1306,14 @@ int cmd_e2e(const E2eOptions& opt) {
         // The official SS backbone is an F32 model (use_fp16=false): its
         // attention contract is F32 SDPA, so K/V stay in F32 by default.
         sfg.strict_attention = opt.ss_strict_attention;
-        // Mirror torch.autocast(float16) on CUDA only: its F32 GEMM lowers to a
-        // slow non-TF32 cuBLAS path, while Vulkan's F32 coopmat loses more to
-        // the extra casts than the F16 tiles gain (measured 44.5 vs 42.3 min).
-        sfg.f16_autocast = be_is_cuda(be_name);
+        // Exact raw-string match like the upstream reference implementation:
+        // only an explicit "cuda" request enables the F16 autocast chain, so
+        // the default "auto" keeps the SS flow in F32 and bit-exact with the
+        // upstream production path (888224 gaussian count parity).
+        sfg.f16_autocast = std::strcmp(be_name, "cuda") == 0;
+        // SS debug probe: ss_flow_graph's build() short-circuits and returns
+        // the debug-stage tensor as the only output when debug_stage is set.
+        if (!opt.debug_stage.empty()) sfg.debug_stage = opt.debug_stage;
         auto outs = sfg.build();  // dict order: 6drot, scale, shape,
                                   // translation, ts
         ggml_cgraph* fgraph = ggml_new_graph_custom(fg.ctx(), 32768, false);
@@ -1386,6 +1401,43 @@ int cmd_e2e(const E2eOptions& opt) {
             return 1;
         }
         const auto ss_schedule = make_euler_schedule(kSsSteps, kSsRescaleT);
+        if (!opt.debug_stage.empty() &&
+            strcmp(opt.debug_stage.c_str(), "im2col") != 0 &&
+            strcmp(opt.debug_stage.c_str(), "gemm") != 0 &&
+            strcmp(opt.debug_stage.c_str(), "convout") != 0) {
+            // SS debug probe: replay only the first Euler step (the same t the
+            // main loop would use) and dump the debug-stage tensor. Used by
+            // the sam3d parity ladder to bisect SS DiT internals block by
+            // block (b0_adaln -> b0_qkv -> b0_attn_out -> b0_res ...).
+            // The decoder boundary names (im2col/gemm/convout) are handled by
+            // the SS decoder probe further down.
+            if (outs.size() != 1) {
+                LOGE("e2e: ss debug stage '%s' did not short-circuit build",
+                     opt.debug_stage.c_str());
+                return 1;
+            }
+            const float t_v = ss_schedule[0].t * 1000.0f;
+            if (!upload_and_run(t_v, false)) {
+                LOGE("e2e: ss debug probe run failed");
+                return 1;
+            }
+            std::vector<float> vals;
+            if (!ssf.backend->get_tensor_f32(outs[0], vals)) {
+                LOGE("e2e: ss debug probe readback failed");
+                return 1;
+            }
+            const std::string dbg_out =
+                    dbg_dir.empty()
+                            ? "ss_dbg_" + opt.debug_stage + ".samt"
+                            : dbg_dir + "/ss_dbg_" + opt.debug_stage + ".samt";
+            save_raw_tensor_f32(
+                    dbg_out,
+                    std::vector<int64_t>{outs[0]->ne[0], outs[0]->ne[1]},
+                    vals.data());
+            LOGI("e2e: ss debug stage '%s' dumped (%zu elems) -> %s",
+                 opt.debug_stage.c_str(), vals.size(), dbg_out.c_str());
+            return 0;
+        }
         for (int step = 0; step < ss_steps; ++step) {
             const float t_v = ss_schedule[step].t * 1000.0f;
             if (!upload_and_run(t_v, false)) {
@@ -1492,6 +1544,10 @@ int cmd_e2e(const E2eOptions& opt) {
             SsDecoderGraph sdg;
             sdg.ctx = gctx.ctx();
             sdg.m = dec.model.get();
+            // SS decoder debug probe: short-circuit build() at the requested
+            // boundary (im2col/gemm/convout) for parity bisects.
+            if (!opt.debug_stage.empty())
+                sdg.debug_stage = opt.debug_stage.c_str();
             // torch lat_in =
             // shape_latent(1,4096,8).permute(0,2,1).view(1,8,16,16,16): memory
             // becomes channel-major c*4096 + (x*16+y)*16+z -> transpose here
@@ -1518,6 +1574,23 @@ int cmd_e2e(const E2eOptions& opt) {
             std::vector<float> occ_f;
             dec.backend->get_tensor_f32(occ, occ_f);
             dec.close();
+            if (!opt.debug_stage.empty()) {
+                // Debug build returned the boundary tensor; dump it and stop
+                // before the occupancy expansion that expects (64,64,64).
+                const std::string dbg_out2 =
+                        dbg_dir.empty()
+                                ? "ss_dbg_dec_" + opt.debug_stage + ".samt"
+                                : dbg_dir + "/ss_dbg_dec_" + opt.debug_stage +
+                                          ".samt";
+                save_raw_tensor_f32(
+                        dbg_out2,
+                        {occ->ne[0], occ->ne[1], occ->ne[2], occ->ne[3]},
+                        occ_f.data());
+                LOGI("e2e: ss decoder debug stage '%s' dumped (%zu elems) -> "
+                     "%s",
+                     opt.debug_stage.c_str(), occ_f.size(), dbg_out2.c_str());
+                return 0;
+            }
             LOGI("e2e: ss decoder done in %.1fs", elapsed_seconds());
             // torch (1,1,64,64,64) C-order: flat = (x*64 + y)*64 + z
             for (int x = 0; x < 64; x++)

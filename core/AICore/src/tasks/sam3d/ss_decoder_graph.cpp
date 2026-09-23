@@ -184,7 +184,7 @@ ggml_tensor* SsDecoderGraph::build(ggml_tensor* latent) {
           &debug_tensors,
           nullptr,
           (int64_t)m->u32("dec.max_conv_oc_ic"),
-          nullptr};
+          debug_stage};
     const auto channels = m->i32_array("dec.channels");
     GGML_ASSERT(!channels.empty());
     const int n_res = (int)m->u32("dec.num_res_blocks");
