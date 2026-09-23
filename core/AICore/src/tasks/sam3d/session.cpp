@@ -64,6 +64,13 @@
 #include <unordered_set>
 #include <vector>
 
+#ifdef _WIN32
+/* MSVC provides no strncasecmp (POSIX); _strnicmp is the equivalent
+ * case-insensitive n-char compare. Defined after all includes so the
+ * replacement never rewrites declarations inside vendored headers. */
+#define strncasecmp _strnicmp
+#endif
+
 namespace sam3d {
 
 namespace {

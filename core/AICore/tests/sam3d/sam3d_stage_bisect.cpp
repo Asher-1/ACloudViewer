@@ -23,6 +23,7 @@
 //       [--debug-stage <name>] [--dino-dbg <out.bin>]
 
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <string>
 

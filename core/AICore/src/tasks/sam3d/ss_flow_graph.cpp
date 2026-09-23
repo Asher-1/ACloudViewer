@@ -314,17 +314,19 @@ std::vector<ggml_tensor*> SsFlowGraph::build() {
         if (i == 0 && debug_stage == "b0_q_6drotation_normalized") return {qp};
 
         const float attn_scale = 1.0f / sqrtf((float)Hd);
+        // Project standard is C++17: explicit member init instead of
+        // designated initializers (MSVC C7555 below C++20).
+        AttentionOptions attn_opts;
+        attn_opts.force_manual = strict_attention;
         // shape: self-attention within 4096 tokens
-        ggml_tensor* out_s = gb_attention(
-                ctx, qs, ks, vs, attn_scale, true,
-                AttentionOptions{.force_manual = strict_attention});
+        ggml_tensor* out_s =
+                gb_attention(ctx, qs, ks, vs, attn_scale, true, attn_opts);
         // pose group: attends pose + shape keys (inference: no detach needed)
         ggml_tensor* kc =
                 ggml_concat(ctx, kp, ks, 1);  // (Hd, 4+n_shape, heads)
         ggml_tensor* vc = ggml_concat(ctx, vp, vs, 1);
-        ggml_tensor* out_p = gb_attention(
-                ctx, qp, kc, vc, attn_scale, true,
-                AttentionOptions{.force_manual = strict_attention});
+        ggml_tensor* out_p =
+                gb_attention(ctx, qp, kc, vc, attn_scale, true, attn_opts);
         // flash output memory is token-major (N, H, Hd) -> straight reshape
         out_s = ggml_reshape_2d(ctx, out_s, C, n_shape);
         out_p = ggml_reshape_2d(ctx, out_p, C, n_pose);
@@ -403,9 +405,10 @@ std::vector<ggml_tensor*> SsFlowGraph::build() {
             q = heads(q, n_q);
             k = heads(k, n_kv);
             v = heads(v, n_kv);
-            ggml_tensor* o = gb_attention(
-                    ctx, q, k, v, attn_scale, true,
-                    AttentionOptions{.force_manual = strict_attention});
+            AttentionOptions attn_opts;
+            attn_opts.force_manual = strict_attention;
+            ggml_tensor* o =
+                    gb_attention(ctx, q, k, v, attn_scale, true, attn_opts);
             o = ggml_reshape_2d(ctx, o, C, q->ne[1]);  // flash out ne=(Hd,H,N)
             o = linear(b + ".cross_attn." + mn + ".to_out.weight",
                        as_f32(ctx,

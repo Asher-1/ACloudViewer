@@ -70,9 +70,10 @@ std::vector<float> make_bicubic_resample_table(int source_size,
                                                int target_size,
                                                float scale_factor) {
     GGML_ASSERT(source_size > 0 && target_size > 0 && scale_factor > 0.0f);
-    constexpr float cubic_a = -0.75f;
     const auto cubic = [](float distance) {
-        constexpr float a = cubic_a;
+        // a lives inside the lambda: MSVC rejects a capture-less lambda
+        // referencing an enclosing constexpr variable (C3493).
+        constexpr float a = -0.75f;
         distance = std::fabs(distance);
         if (distance <= 1.0f) {
             return ((a + 2.0f) * distance - (a + 3.0f)) * distance * distance +
